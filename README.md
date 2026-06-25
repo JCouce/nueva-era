@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nueva Era — Fichas de rol
 
-## Getting Started
+App mobile-first para que el grupo lleve sus fichas de personaje. Login con
+email+contraseña (Google se añade más adelante), lista de personajes y ficha con
+tabs (v1: estadísticas). Sistema de rol **homebrew**: las stats son flexibles.
 
-First, run the development server:
+## Stack
+- **Next.js 16** (App Router, React Server Components + Server Actions) — sin tRPC.
+- **Prisma 7** + **Postgres** (Docker en local, Neon en prod).
+- **Auth.js v5** (NextAuth) con sesión JWT en cookie (login recordado).
+- **Tailwind v4**, TypeScript estricto, Zod para validación.
+
+## Arranque local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env          # rellena AUTH_SECRET: openssl rand -base64 33
+npm install
+npm run dev                   # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`npm run dev` se encarga de todo: levanta Postgres en Docker (puerto 5433),
+espera a que esté sano, aplica migraciones y arranca Next. Solo necesitas Docker
+corriendo.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Primer arranque: regístrate en `/login`. Para hacerte máster:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run make-master -- tu@email.com   # cierra y reabre sesión tras esto
+```
 
-## Learn More
+## Roles y permisos
+- **PLAYER**: ve y edita solo sus personajes.
+- **MASTER**: ve y edita todas las fichas.
 
-To learn more about Next.js, take a look at the following resources:
+La regla vive en `canEditCharacter()` (`src/lib/auth-helpers.ts`) y se aplica en
+**todos** los server actions y reads. El rol viaja en el JWT: un cambio de rol
+requiere cerrar y reabrir sesión.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Modelo de datos
+`prisma/schema.prisma`. Las estadísticas se guardan en `Character.stats` (`Json`)
+para crecer sin migrar en cada campo. Cuando una categoría se estabilice
+(ataques, inventario, mascotas...), se promueve a su propio modelo con
+`npm run db:migrate`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
+| Script | Qué hace |
+|---|---|
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` / `start` | Build y arranque de producción |
+| `npm run db:up` / `db:down` | Levanta / para Postgres en Docker |
+| `npm run db:migrate` | Crea y aplica migraciones |
+| `npm run db:studio` | Prisma Studio (inspeccionar DB) |
+| `npm run make-master -- <email>` | Asciende un usuario a MASTER |
 
-## Deploy on Vercel
+## Deploy (Vercel + Neon)
+1. Crea una base en [Neon](https://neon.tech) y copia la connection string.
+2. En Vercel: importa el repo y configura las env vars:
+   - `DATABASE_URL` → la de Neon (usa la **pooled connection**).
+   - `AUTH_SECRET` → `openssl rand -base64 33`.
+3. Las migraciones se aplican en el build (`prisma migrate deploy`); si no, lánzalo
+   a mano una vez contra Neon.
+4. `git push` y a iterar.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Pendiente (siguientes versiones)
+- Login con Google (modelos `Account`/`Session` ya listos; solo falta el provider
+  y las credenciales de Google Cloud → `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`).
+- PWA instalable.
+- Nuevas tabs: ataques, defensas, inventario, build, mascotas, reglas...

@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16
+    container_name: nueva-era-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rol
+      POSTGRES_PASSWORD: rol
+      POSTGRES_DB: nuevaera
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rol -d nuevaera"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  pgdata:
