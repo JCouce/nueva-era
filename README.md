@@ -55,7 +55,8 @@ para crecer sin migrar en cada campo. Cuando una categoría se estabilice
 ## Deploy (Vercel + Neon)
 1. Crea una base en [Neon](https://neon.tech) y copia la connection string.
 2. En Vercel: importa el repo y configura las env vars:
-   - `DATABASE_URL` → la de Neon (usa la **pooled connection**).
+   - `DATABASE_URL` → la de Neon (usa la connection string **directa**, sin `-pooler`;
+     para esta escala no hace falta pooling y las migraciones del build no dan guerra).
    - `AUTH_SECRET` → `openssl rand -base64 33`.
 3. Las migraciones se aplican en el build (`prisma migrate deploy`); si no, lánzalo
    a mano una vez contra Neon.
