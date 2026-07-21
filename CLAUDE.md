@@ -84,8 +84,31 @@ Regla central en `canEditCharacter(user, character)` = `role === 'MASTER' || own
   `auth.ts` + credenciales `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET`).
 - PWA instalable. Nuevas tabs: ataques, defensas, inventario, build, mascotas, reglas.
 
-## Deploy (Vercel + Neon)
-`DATABASE_URL` a la pooled connection de Neon y `AUTH_SECRET` (`openssl rand -base64 33`).
-El `build` corre `prisma migrate deploy`, así que las migraciones se aplican solas. `git push` y listo.
+## Deploy — "¿cómo hago deploy?"
+**Un `git push origin main` es el deploy completo. No hay pasos manuales aparte.**
+
+Hay dos paneles de administración:
+- **Vercel** → la app (hosting, deploys, env vars, logs). URL pública: https://nueva-era-ochre.vercel.app
+- **Neon** → la base de datos en vivo (datos, roles/passwords, backups).
+
+Vercel está conectado al repo `JCouce/nueva-era`: **cada push a `main` dispara un
+deploy automático**. El `build` es `prisma migrate deploy && next build`, así que
+Vercel **primero aplica las migraciones pendientes en Neon y luego construye la app**,
+en el mismo paso. Las migraciones NO se aplican a mano contra prod.
+
+Flujo según lo que cambies:
+
+| Cambias... | Qué haces |
+|---|---|
+| Solo código (UI, lógica, sin tocar el modelo) | `git push` y ya |
+| El modelo de datos (`prisma/schema.prisma`) | `npm run db:migrate` (crea el archivo de migración en local) → `git add` + commit → `git push` |
+
+Clave: una migración es un **archivo versionado** que vive en `prisma/migrations/`.
+Lo generas en local con `npm run db:migrate`, se commitea junto al schema, y el build
+de Vercel lo aplica solo en Neon al deployar. Nunca ejecutas migraciones contra la
+base de prod manualmente.
+
+Env vars en Vercel (ya configuradas): `DATABASE_URL` (connection string **directa**
+de Neon, sin `-pooler`) y `AUTH_SECRET` (`openssl rand -base64 33`).
 
 @AGENTS.md
