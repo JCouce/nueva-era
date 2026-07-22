@@ -34,7 +34,7 @@ export const NETRUNNER_TREE: DisciplineNode[] = [
   // Daño
   { id: "sobrecarga", label: "Sobrecarga", branch: "dano", tier: 2, desc: "Daño directo a un objetivo. Rango = dados de daño." },
   { id: "virus", label: "Virus", branch: "dano", tier: 3, desc: "Daño persistente (DoT). Rango = daño/turno." },
-  { id: "cascada", label: "Cascada", branch: "dano", tier: 4, desc: "El daño salta a enemigos en red. Rango = nº de saltos." },
+  { id: "cascada", label: "Cascada", branch: "dano", tier: 4, requires: { node: "sobrecarga", rank: 1 }, desc: "El daño salta a enemigos en red. Rango = nº de saltos." },
   { id: "suicidio", label: "Suicidio inducido", branch: "dano", tier: 5, exclusive: true, desc: "Execute: bajo umbral, el enemigo se dispara. Rango = umbral." },
   { id: "fuerza_bruta", label: "Fuerza bruta", branch: "dano", tier: 5, cross: "fuerza", requires: { node: "sobrecarga", rank: 1 }, desc: "El daño escala con Fuerza (no INT). Rango = tope de FUE." },
   // Control
@@ -100,13 +100,24 @@ function requiresState(
   };
 }
 
-// ¿Desbloqueado? Gating global por puntos del tier + su prereq específico (si lo tiene).
+// Rango de la troncal (Hackeo) = profundidad de acceso: tier N exige Hackeo ≥ N.
+export function troncoRank(
+  especialidad: string | null,
+  disciplinas: Record<string, number>,
+): number {
+  const t = treeFor(especialidad).find((n) => n.gift);
+  return t ? nodeRank(t, disciplinas) : 0;
+}
+
+// ¿Desbloqueado? (para nodos de rama) Puntos del tier + Hackeo ≥ tier + prereq propio.
 export function nodeUnlocked(
   node: DisciplineNode,
   especialidad: string | null,
   disciplinas: Record<string, number>,
 ): boolean {
+  if (node.branch === "tronco") return true; // el tronco no se gatea a sí mismo
   if (pointsInTree(especialidad, disciplinas) < (TIER_GATING[node.tier] ?? 0)) return false;
+  if (troncoRank(especialidad, disciplinas) < node.tier) return false;
   const req = requiresState(node, especialidad, disciplinas);
   return req ? req.met : true;
 }
@@ -127,13 +138,18 @@ export function disciplineBuyState(
   const rank = nodeRank(node, disciplinas);
   const cost = disciplineStepCost(node, rank);
   if (cost === null) return { rank, cost, canBuy: false, locked: false, reason: "MÁX" };
-  const need = TIER_GATING[node.tier] ?? 0;
-  if (pointsInTree(especialidad, disciplinas) < need) {
-    return { rank, cost, canBuy: false, locked: true, reason: `${need} pts en árbol` };
-  }
-  const req = requiresState(node, especialidad, disciplinas);
-  if (req && !req.met) {
-    return { rank, cost, canBuy: false, locked: true, reason: `${req.label} ≥${req.rank}` };
+  if (node.branch !== "tronco") {
+    const need = TIER_GATING[node.tier] ?? 0;
+    if (pointsInTree(especialidad, disciplinas) < need) {
+      return { rank, cost, canBuy: false, locked: true, reason: `${need} pts en árbol` };
+    }
+    if (troncoRank(especialidad, disciplinas) < node.tier) {
+      return { rank, cost, canBuy: false, locked: true, reason: `Hackeo ≥${node.tier}` };
+    }
+    const req = requiresState(node, especialidad, disciplinas);
+    if (req && !req.met) {
+      return { rank, cost, canBuy: false, locked: true, reason: `${req.label} ≥${req.rank}` };
+    }
   }
   if (xpDisponible < cost) return { rank, cost, canBuy: false, locked: false, reason: `${cost}xp` };
   return { rank, cost, canBuy: true, locked: false, reason: `${cost}xp` };

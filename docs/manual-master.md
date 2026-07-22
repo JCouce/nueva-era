@@ -284,27 +284,30 @@ tier**. Ejemplo: `1-3-2-4-2` = 5 tiers; el primero tiene 1 nodo, el segundo 3, e
 
 ### Gating: contador global + prereqs selectivos **[FIRME]**
 
-Dos mecanismos, separados:
+Tres mecanismos, separados:
 
 1. **Desbloqueo de tier: contador global.** Los **puntos en el árbol** (suma de rangos,
    en cualquier rama) abren cada tier **en todas las ramas por igual**. Ej.: con 4
-   puntos se abren TODOS los T3, los metas donde los metas. Así el jugador **picotea
-   libre** entre ramas.
+   puntos se abren TODOS los T3, los metas donde los metas. Picoteo libre entre ramas.
 
    | Tier | Puntos en árbol |
    |---|---|
    | T2 | 1 *(el regalo Hackeo 1)* |
    | T3 | 4 · T4 | 8 · T5 | 13 |
 
-2. **Prerrequisitos por nodo: solo donde hacen falta.** La mayoría de nodos no tienen
-   prereq (basta el tier). Solo lo llevan los que serían **absurdos sin su base**:
-   - **Fuerza bruta** requiere **Sobrecarga ≥1**: no puedes escalar con Fuerza un daño
-     que no tienes. (Ajustable a ≥3 si quieres forzar un build de daño real.)
-   - Los demás son autónomos: Firma cero, Golpe de sombra, Suicidio, etc. funcionan
-     solos → sin prereq.
+2. **Troncal como profundidad de acceso: Hackeo ≥ tier.** Para tocar un nodo de tier N,
+   tu **Hackeo** (tronco) debe estar a **rango ≥ N** (T5 exige Hackeo 5). Hace la
+   troncal **obligatoria** (deja de poder quedarse en 1) y es tu "nivel de netrunner".
 
-> Se descartó el gate por rama (escalera): rigidizaba todos los nodos. Global + prereqs
-> puntuales da libertad de picoteo y coherencia donde importa.
+3. **Prerrequisitos por nodo: solo donde hacen falta.** La mayoría no tienen (basta el
+   tier + Hackeo). Solo los que serían **absurdos sin su base**:
+   - **Fuerza bruta** → **Sobrecarga ≥1** (no escalas un daño que no tienes).
+   - **Cascada** → **Sobrecarga ≥1** (propaga tu daño; sin daño no salta nada).
+   - El resto son autónomos: Firma cero, Golpe de sombra, Suicidio… → sin prereq.
+
+> Se descartó el gate por rama (escalera): rigidizaba todo. Global + Hackeo-por-tier +
+> prereqs puntuales da libertad de picoteo, hace la troncal relevante y mantiene la
+> coherencia donde importa.
 
 ### Hackeo y detección **[FIRME modelo · números TBD]**
 
@@ -380,8 +383,8 @@ replicamos el patrón a Merc y Cazatalentos.
 | Intrusión | **Dios de la máquina** | Dominas el entorno tech de una zona en combate. |
 
 **Gating** (ver *Gating* arriba): contador **global** de puntos (T3 a los 4, T4 a los
-8, T5 a los 13) abre los tiers en todas las ramas. Prereq por nodo **solo** en
-**Fuerza bruta** (requiere Sobrecarga ≥1). El resto, autónomos.
+8, T5 a los 13) + **Hackeo ≥ tier** (T5 exige Hackeo 5). Prereq por nodo solo en
+**Fuerza bruta** y **Cascada** (ambos requieren Sobrecarga ≥1). El resto, autónomos.
 
 **Las dos habilitadoras de cruce**, una por atributo alternativo, ambas en T5 y con
 rango = **tope**:

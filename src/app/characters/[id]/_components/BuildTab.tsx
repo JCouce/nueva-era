@@ -2,6 +2,7 @@ import {
   treeFor,
   disciplineBuyState,
   pointsInTree,
+  troncoRank,
   TIER_GATING,
   DISC_MAX,
   type DisciplineNode,
@@ -119,6 +120,7 @@ export function BuildTab({
   }
 
   const pts = pointsInTree(sheet.especialidad, sheet.disciplinas);
+  const hackeo = troncoRank(sheet.especialidad, sheet.disciplinas);
   const nextTier = [3, 4, 5].find((t) => pts < TIER_GATING[t]);
 
   return (
@@ -134,13 +136,16 @@ export function BuildTab({
       </div>
 
       {TIERS.filter((t) => tree.some((n) => n.tier === t)).map((t) => {
-        const unlocked = pts >= (TIER_GATING[t] ?? 0);
+        const ptsOk = pts >= (TIER_GATING[t] ?? 0);
+        const hackOk = hackeo >= t;
+        const unlocked = ptsOk && hackOk;
+        const lockReason = !ptsOk ? `${TIER_GATING[t]} pts` : `Hackeo ${t}`;
         return (
           <div key={t}>
             <div className="mb-1.5 flex items-center justify-between font-mono text-[11px] uppercase tracking-widest text-muted">
               <span>/// Tier {t}</span>
               <span className={unlocked ? "text-muted" : "text-danger"}>
-                {unlocked ? "abierto" : `🔒 ${TIER_GATING[t]} pts`}
+                {unlocked ? "abierto" : `🔒 ${lockReason}`}
               </span>
             </div>
             <div className="flex flex-col gap-2">
