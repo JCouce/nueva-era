@@ -282,22 +282,29 @@ tier**. Ejemplo: `1-3-2-4-2` = 5 tiers; el primero tiene 1 nodo, el segundo 3, e
   puntos metidos en el árbol (número **[PENDIENTE]**). "Puntos" = suma de rangos
   comprados.
 
-### Gating: escalera por rama (1,5 carriles) **[FIRME]**
+### Gating: contador global + prereqs selectivos **[FIRME]**
 
-**No hay contador global de puntos.** Cada rama es su propia escalera: para abrir un
-nodo, **el de encima en su rama debe llegar a rango 3** (`PREREQ_RANK`). Los T2
-(entrada de cada rama) están abiertos desde la creación (el tronco los desbloquea).
+Dos mecanismos, separados:
 
-- Bajar por una rama **solo requiere invertir en esa rama** — no te obliga a tocar las
-  otras. Invertir en Daño abre el siguiente de **Daño**, no de todas.
-- Como el XP no da para maxear tres escaleras, **emerge el "1,5 carriles" solo**
-  (maxeas una, medio de otra, dejas una vacía).
-- Coherencia: cada poder tiene el de encima → la habilitadora exige la cadena de su
-  rama (Fuerza bruta pide Sobrecarga→Virus→Cascada a rango 3) → el cruce sigue **caro**.
+1. **Desbloqueo de tier: contador global.** Los **puntos en el árbol** (suma de rangos,
+   en cualquier rama) abren cada tier **en todas las ramas por igual**. Ej.: con 4
+   puntos se abren TODOS los T3, los metas donde los metas. Así el jugador **picotea
+   libre** entre ramas.
 
-> Se descartó el gate por puntos-en-el-árbol (picoteo): abarataba los cruces y permitía
-> tener nodos avanzados sin su base. La escalera por rama es más simple y da la
-> identidad que buscábamos.
+   | Tier | Puntos en árbol |
+   |---|---|
+   | T2 | 1 *(el regalo Hackeo 1)* |
+   | T3 | 4 · T4 | 8 · T5 | 13 |
+
+2. **Prerrequisitos por nodo: solo donde hacen falta.** La mayoría de nodos no tienen
+   prereq (basta el tier). Solo lo llevan los que serían **absurdos sin su base**:
+   - **Fuerza bruta** requiere **Sobrecarga ≥1**: no puedes escalar con Fuerza un daño
+     que no tienes. (Ajustable a ≥3 si quieres forzar un build de daño real.)
+   - Los demás son autónomos: Firma cero, Golpe de sombra, Suicidio, etc. funcionan
+     solos → sin prereq.
+
+> Se descartó el gate por rama (escalera): rigidizaba todos los nodos. Global + prereqs
+> puntuales da libertad de picoteo y coherencia donde importa.
 
 ### Hackeo y detección **[FIRME modelo · números TBD]**
 
@@ -372,10 +379,9 @@ replicamos el patrón a Merc y Cazatalentos.
 | Intrusión | **Firma cero** ⇄ | Hackeas **sin rastro digital**: sumas **Destreza** contra el rastreo. Rango = **tope** de DES. |
 | Intrusión | **Dios de la máquina** | Dominas el entorno tech de una zona en combate. |
 
-**Gating: escalera por rama** (ver *Gating* arriba). Para abrir un nodo, el de
-encima **en su rama** debe estar a **rango ≥ 3**. Los T2 están abiertos desde la
-creación. Así, bajar por Daño solo requiere invertir en Daño (T3 abre con Sobrecarga
-3, T4 con Virus 3, T5 con Cascada 3), y el "1,5 carriles" emerge solo.
+**Gating** (ver *Gating* arriba): contador **global** de puntos (T3 a los 4, T4 a los
+8, T5 a los 13) abre los tiers en todas las ramas. Prereq por nodo **solo** en
+**Fuerza bruta** (requiere Sobrecarga ≥1). El resto, autónomos.
 
 **Las dos habilitadoras de cruce**, una por atributo alternativo, ambas en T5 y con
 rango = **tope**:

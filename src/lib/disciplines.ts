@@ -13,6 +13,7 @@ export type DisciplineNode = {
   gift?: boolean; // tronco: rango 1 gratis
   exclusive?: boolean; // ⚡ firma exclusiva
   cross?: CrossAttr; // ⇄ habilitadora de cruce
+  requires?: { node: string; rank: number }; // prereq específico (solo donde hace falta)
 };
 
 export const BRANCHES: { id: Branch; label: string }[] = [
@@ -24,9 +25,9 @@ export const BRANCHES: { id: Branch; label: string }[] = [
 export const DISC_MIN = 0;
 export const DISC_MAX = 5;
 
-// Escalera por rama: para abrir un nodo, el de encima en su rama debe llegar a
-// este rango. No hay contador global de puntos — cada carril se abre solo.
-export const PREREQ_RANK = 3;
+// Gating global: puntos en el árbol (suma de rangos) desbloquean cada tier, en
+// TODAS las ramas por igual. Los prerrequisitos específicos van por nodo (`requires`).
+export const TIER_GATING: Record<number, number> = { 1: 0, 2: 1, 3: 4, 4: 8, 5: 13 };
 
 export const NETRUNNER_TREE: DisciplineNode[] = [
   { id: "hackeo", label: "Hackeo", branch: "tronco", tier: 1, gift: true, desc: "El verbo: interfacear. Potencia de intrusión (seguridad + magnitud base)." },
@@ -35,7 +36,7 @@ export const NETRUNNER_TREE: DisciplineNode[] = [
   { id: "virus", label: "Virus", branch: "dano", tier: 3, desc: "Daño persistente (DoT). Rango = daño/turno." },
   { id: "cascada", label: "Cascada", branch: "dano", tier: 4, desc: "El daño salta a enemigos en red. Rango = nº de saltos." },
   { id: "suicidio", label: "Suicidio inducido", branch: "dano", tier: 5, exclusive: true, desc: "Execute: bajo umbral, el enemigo se dispara. Rango = umbral." },
-  { id: "fuerza_bruta", label: "Fuerza bruta", branch: "dano", tier: 5, cross: "fuerza", desc: "El daño escala con Fuerza (no INT). Rango = tope de FUE." },
+  { id: "fuerza_bruta", label: "Fuerza bruta", branch: "dano", tier: 5, cross: "fuerza", requires: { node: "sobrecarga", rank: 1 }, desc: "El daño escala con Fuerza (no INT). Rango = tope de FUE." },
   // Control
   { id: "interferencia", label: "Interferencia", branch: "control", tier: 2, desc: "Ciegas ópticas (penaliza puntería). Rango = penalización." },
   { id: "bloqueo", label: "Bloqueo", branch: "control", tier: 3, desc: "Atascas arma o cyberware enemigo. Rango = duración." },
@@ -84,26 +85,30 @@ export function pointsInTree(especialidad: string | null, disciplinas: Record<st
   return treeFor(especialidad).reduce((s, n) => s + nodeRank(n, disciplinas), 0);
 }
 
-// El nodo de encima en la misma rama (para el prereq). Puede haber varios.
-function prevInBranch(
+// El prereq específico de un nodo (si lo tiene), y si está cumplido.
+function requiresState(
   node: DisciplineNode,
   especialidad: string | null,
-): DisciplineNode[] {
-  return treeFor(especialidad).filter(
-    (n) => n.branch === node.branch && n.tier === node.tier - 1,
-  );
+  disciplinas: Record<string, number>,
+): { met: boolean; label: string; rank: number } | null {
+  if (!node.requires) return null;
+  const req = treeFor(especialidad).find((n) => n.id === node.requires!.node);
+  return {
+    met: !!req && nodeRank(req, disciplinas) >= node.requires.rank,
+    label: req?.label ?? node.requires.node,
+    rank: node.requires.rank,
+  };
 }
 
-// ¿Desbloqueado? T2 siempre (el tronco los abre). T≥3: un nodo de encima ≥ PREREQ_RANK.
+// ¿Desbloqueado? Gating global por puntos del tier + su prereq específico (si lo tiene).
 export function nodeUnlocked(
   node: DisciplineNode,
   especialidad: string | null,
   disciplinas: Record<string, number>,
 ): boolean {
-  if (node.tier <= 2) return true;
-  return prevInBranch(node, especialidad).some(
-    (n) => nodeRank(n, disciplinas) >= PREREQ_RANK,
-  );
+  if (pointsInTree(especialidad, disciplinas) < (TIER_GATING[node.tier] ?? 0)) return false;
+  const req = requiresState(node, especialidad, disciplinas);
+  return req ? req.met : true;
 }
 
 // Estado de compra para la UI: coste, si se puede, si está bloqueado y el motivo.
@@ -122,17 +127,13 @@ export function disciplineBuyState(
   const rank = nodeRank(node, disciplinas);
   const cost = disciplineStepCost(node, rank);
   if (cost === null) return { rank, cost, canBuy: false, locked: false, reason: "MÁX" };
-  if (!nodeUnlocked(node, especialidad, disciplinas)) {
-    const best = prevInBranch(node, especialidad).sort(
-      (a, b) => nodeRank(b, disciplinas) - nodeRank(a, disciplinas),
-    )[0];
-    return {
-      rank,
-      cost,
-      canBuy: false,
-      locked: true,
-      reason: best ? `${best.label} ≥${PREREQ_RANK}` : "bloqueado",
-    };
+  const need = TIER_GATING[node.tier] ?? 0;
+  if (pointsInTree(especialidad, disciplinas) < need) {
+    return { rank, cost, canBuy: false, locked: true, reason: `${need} pts en árbol` };
+  }
+  const req = requiresState(node, especialidad, disciplinas);
+  if (req && !req.met) {
+    return { rank, cost, canBuy: false, locked: true, reason: `${req.label} ≥${req.rank}` };
   }
   if (xpDisponible < cost) return { rank, cost, canBuy: false, locked: false, reason: `${cost}xp` };
   return { rank, cost, canBuy: true, locked: false, reason: `${cost}xp` };

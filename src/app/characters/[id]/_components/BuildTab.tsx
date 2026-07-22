@@ -3,7 +3,7 @@ import {
   treeFor,
   disciplineBuyState,
   pointsInTree,
-  PREREQ_RANK,
+  TIER_GATING,
   DISC_MAX,
   type DisciplineNode,
 } from "@/lib/disciplines";
@@ -111,14 +111,18 @@ export function BuildTab({
 
   const pts = pointsInTree(sheet.especialidad, sheet.disciplinas);
   const tronco = tree.find((n) => n.branch === "tronco");
+  const nextTier = [3, 4, 5].find((t) => pts < TIER_GATING[t]);
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2 border-y border-border py-2 font-mono text-[11px]">
-        <span className="text-muted">
-          sube un nodo a {PREREQ_RANK} → abre el siguiente de su rama
+      <div className="flex items-center justify-between gap-2 border-y border-border py-2 font-mono text-xs">
+        <span className="uppercase tracking-wide text-muted">Puntos en árbol</span>
+        <span className="tabular-nums text-info">
+          {pts}
+          {nextTier && (
+            <span className="text-muted"> · T{nextTier} a los {TIER_GATING[nextTier]}</span>
+          )}
         </span>
-        <span className="shrink-0 tabular-nums text-info">{pts} pts</span>
       </div>
 
       {tronco && (
