@@ -282,19 +282,22 @@ tier**. Ejemplo: `1-3-2-4-2` = 5 tiers; el primero tiene 1 nodo, el segundo 3, e
   puntos metidos en el árbol (número **[PENDIENTE]**). "Puntos" = suma de rangos
   comprados.
 
-### Picoteo vs "1,5 carriles" — la perilla de *gating*
+### Gating: escalera por rama (1,5 carriles) **[FIRME]**
 
-Que un personaje pueda maxear varias ramas o solo una **depende de cómo gatees los
-tiers altos**:
+**No hay contador global de puntos.** Cada rama es su propia escalera: para abrir un
+nodo, **el de encima en su rama debe llegar a rango 3** (`PREREQ_RANK`). Los T2
+(entrada de cada rama) están abiertos desde la creación (el tronco los desbloquea).
 
-| Modelo de gate | Efecto |
-|---|---|
-| **Por puntos en el árbol** | Con XP suficiente profundizas en varias ramas → **picoteo libre** |
-| **Por puntos en la rama** (estilo runas de LoL) | Necesitas invertir *en esa rama* para bajar → emerge **"1,5 carriles"** (maxeas 1, medio de otra, dejas 1 vacía) |
+- Bajar por una rama **solo requiere invertir en esa rama** — no te obliga a tocar las
+  otras. Invertir en Daño abre el siguiente de **Daño**, no de todas.
+- Como el XP no da para maxear tres escaleras, **emerge el "1,5 carriles" solo**
+  (maxeas una, medio de otra, dejas una vacía).
+- Coherencia: cada poder tiene el de encima → la habilitadora exige la cadena de su
+  rama (Fuerza bruta pide Sobrecarga→Virus→Cascada a rango 3) → el cruce sigue **caro**.
 
-> **Plan:** empezamos con **gate por árbol (picoteo)**. Jugamos. Si vemos que todos
-> maxean todo, apretamos a **gate por rama** y el "1,5 carriles" aparece solo. Es una
-> perilla que se gira después, **no un rediseño**.
+> Se descartó el gate por puntos-en-el-árbol (picoteo): abarataba los cruces y permitía
+> tener nodos avanzados sin su base. La escalera por rama es más simple y da la
+> identidad que buscábamos.
 
 ### Hackeo y detección **[FIRME modelo · números TBD]**
 
@@ -369,14 +372,10 @@ replicamos el patrón a Merc y Cazatalentos.
 | Intrusión | **Firma cero** ⇄ | Hackeas **sin rastro digital**: sumas **Destreza** contra el rastreo. Rango = **tope** de DES. |
 | Intrusión | **Dios de la máquina** | Dominas el entorno tech de una zona en combate. |
 
-**Gating de tiers** (puntos en el árbol = suma de rangos):
-
-| Tier | Puntos requeridos |
-|---|---|
-| T2 | 1 *(lo tienes al crear: Hackeo 1)* |
-| T3 | 4 |
-| T4 | 8 |
-| T5 | 13 |
+**Gating: escalera por rama** (ver *Gating* arriba). Para abrir un nodo, el de
+encima **en su rama** debe estar a **rango ≥ 3**. Los T2 están abiertos desde la
+creación. Así, bajar por Daño solo requiere invertir en Daño (T3 abre con Sobrecarga
+3, T4 con Virus 3, T5 con Cascada 3), y el "1,5 carriles" emerge solo.
 
 **Las dos habilitadoras de cruce**, una por atributo alternativo, ambas en T5 y con
 rango = **tope**:

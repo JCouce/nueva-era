@@ -24,8 +24,9 @@ export const BRANCHES: { id: Branch; label: string }[] = [
 export const DISC_MIN = 0;
 export const DISC_MAX = 5;
 
-// Puntos en el árbol (suma de rangos) para desbloquear cada tier.
-export const TIER_GATING: Record<number, number> = { 1: 0, 2: 1, 3: 4, 4: 8, 5: 13 };
+// Escalera por rama: para abrir un nodo, el de encima en su rama debe llegar a
+// este rango. No hay contador global de puntos — cada carril se abre solo.
+export const PREREQ_RANK = 3;
 
 export const NETRUNNER_TREE: DisciplineNode[] = [
   { id: "hackeo", label: "Hackeo", branch: "tronco", tier: 1, gift: true, desc: "El verbo: interfacear. Potencia de intrusión (seguridad + magnitud base)." },
@@ -83,39 +84,56 @@ export function pointsInTree(especialidad: string | null, disciplinas: Record<st
   return treeFor(especialidad).reduce((s, n) => s + nodeRank(n, disciplinas), 0);
 }
 
-// ¿Está desbloqueado el nodo? Gating por puntos del tier + prerreq de rama.
+// El nodo de encima en la misma rama (para el prereq). Puede haber varios.
+function prevInBranch(
+  node: DisciplineNode,
+  especialidad: string | null,
+): DisciplineNode[] {
+  return treeFor(especialidad).filter(
+    (n) => n.branch === node.branch && n.tier === node.tier - 1,
+  );
+}
+
+// ¿Desbloqueado? T2 siempre (el tronco los abre). T≥3: un nodo de encima ≥ PREREQ_RANK.
 export function nodeUnlocked(
   node: DisciplineNode,
   especialidad: string | null,
   disciplinas: Record<string, number>,
 ): boolean {
-  if (pointsInTree(especialidad, disciplinas) < (TIER_GATING[node.tier] ?? 0)) return false;
-  if (node.tier >= 3) {
-    const prev = treeFor(especialidad).filter(
-      (n) => n.branch === node.branch && n.tier === node.tier - 1,
-    );
-    if (!prev.some((n) => nodeRank(n, disciplinas) >= 1)) return false;
-  }
-  return true;
+  if (node.tier <= 2) return true;
+  return prevInBranch(node, especialidad).some(
+    (n) => nodeRank(n, disciplinas) >= PREREQ_RANK,
+  );
 }
 
-// Estado de compra para la UI: coste, si se puede, y el motivo si no.
+// Estado de compra para la UI: coste, si se puede, si está bloqueado y el motivo.
 export function disciplineBuyState(
   node: DisciplineNode,
   especialidad: string | null,
   disciplinas: Record<string, number>,
   xpDisponible: number,
-): { rank: number; cost: number | null; canBuy: boolean; reason?: string } {
+): {
+  rank: number;
+  cost: number | null;
+  canBuy: boolean;
+  locked: boolean;
+  reason: string;
+} {
   const rank = nodeRank(node, disciplinas);
   const cost = disciplineStepCost(node, rank);
-  if (cost === null) return { rank, cost, canBuy: false, reason: "MÁX" };
+  if (cost === null) return { rank, cost, canBuy: false, locked: false, reason: "MÁX" };
   if (!nodeUnlocked(node, especialidad, disciplinas)) {
-    const need = TIER_GATING[node.tier] ?? 0;
-    if (pointsInTree(especialidad, disciplinas) < need) {
-      return { rank, cost, canBuy: false, reason: `T${node.tier} · ${need}pts` };
-    }
-    return { rank, cost, canBuy: false, reason: "nodo previo" };
+    const best = prevInBranch(node, especialidad).sort(
+      (a, b) => nodeRank(b, disciplinas) - nodeRank(a, disciplinas),
+    )[0];
+    return {
+      rank,
+      cost,
+      canBuy: false,
+      locked: true,
+      reason: best ? `${best.label} ≥${PREREQ_RANK}` : "bloqueado",
+    };
   }
-  if (xpDisponible < cost) return { rank, cost, canBuy: false, reason: `${cost}xp` };
-  return { rank, cost, canBuy: true };
+  if (xpDisponible < cost) return { rank, cost, canBuy: false, locked: false, reason: `${cost}xp` };
+  return { rank, cost, canBuy: true, locked: false, reason: `${cost}xp` };
 }

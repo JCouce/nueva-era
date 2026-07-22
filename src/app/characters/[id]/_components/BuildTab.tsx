@@ -3,7 +3,7 @@ import {
   treeFor,
   disciplineBuyState,
   pointsInTree,
-  TIER_GATING,
+  PREREQ_RANK,
   DISC_MAX,
   type DisciplineNode,
 } from "@/lib/disciplines";
@@ -21,7 +21,7 @@ function NodeCard({
   xpDisponible: number;
   onSet: (id: string, value: number) => void;
 }) {
-  const { rank, cost, canBuy, reason } = disciplineBuyState(
+  const { rank, cost, canBuy, locked, reason } = disciplineBuyState(
     node,
     sheet.especialidad,
     sheet.disciplinas,
@@ -44,6 +44,11 @@ function NodeCard({
           <p className="mt-0.5 font-sans text-xs leading-tight text-muted">
             {node.desc}
           </p>
+          {locked && (
+            <p className="mt-1 font-mono text-[10px] text-danger">
+              🔒 requiere {reason}
+            </p>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           <button
@@ -69,7 +74,7 @@ function NodeCard({
               +
             </button>
             <span className="mt-0.5 font-mono text-[9px] leading-none text-muted">
-              {rank >= DISC_MAX ? "MÁX" : canBuy ? `${cost}xp` : reason}
+              {rank >= DISC_MAX ? "MÁX" : locked ? "🔒" : `${cost}xp`}
             </span>
           </div>
         </div>
@@ -106,23 +111,14 @@ export function BuildTab({
 
   const pts = pointsInTree(sheet.especialidad, sheet.disciplinas);
   const tronco = tree.find((n) => n.branch === "tronco");
-  const nextTier = [2, 3, 4, 5].find((t) => pts < TIER_GATING[t]);
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between border-y border-border py-2 font-mono text-xs">
-        <span className="uppercase tracking-wide text-muted">
-          Puntos en árbol
+      <div className="flex items-center justify-between gap-2 border-y border-border py-2 font-mono text-[11px]">
+        <span className="text-muted">
+          sube un nodo a {PREREQ_RANK} → abre el siguiente de su rama
         </span>
-        <span className="tabular-nums text-info">
-          {pts}
-          {nextTier && (
-            <span className="text-muted">
-              {" "}
-              · T{nextTier} a los {TIER_GATING[nextTier]}
-            </span>
-          )}
-        </span>
+        <span className="shrink-0 tabular-nums text-info">{pts} pts</span>
       </div>
 
       {tronco && (
