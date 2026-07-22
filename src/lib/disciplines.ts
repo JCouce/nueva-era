@@ -168,15 +168,23 @@ export type DisciplineInfo = {
   targets: string;
   rango: string;
   ejemplo: string;
+  porRango?: string[]; // desglose opcional rango 1..5 (ej. qué seguridad alcanza Hackeo)
 };
 
 export const DISCIPLINE_INFO: Record<string, DisciplineInfo> = {
   hackeo: {
-    uso: "La acción de hackeo base: tiras Inteligencia + Netrunning (skill) vs la seguridad del objetivo; los éxitos marcan la potencia. Toda disciplina parte de aquí.",
+    uso: "La acción de hackeo base: tiras Inteligencia + Netrunning (skill) y cuentas éxitos. Tu rango de Hackeo marca el NIVEL DE SEGURIDAD máximo que puedes tocar (ver desglose abajo) y la magnitud base de tus hacks. Además, Hackeo = a qué tier del árbol accedes (tier N pide Hackeo N).",
     targets: "Cualquier objetivo con electrónica en alcance o en red: personas con cyberware, cámaras, puertas, torretas, drones.",
-    rango: "Sube el nivel de seguridad al que llegas y la magnitud base de tus hacks. Además tu Hackeo = a qué tier del árbol accedes (tier N pide Hackeo N).",
+    rango: "Cada rango sube un nivel de seguridad accesible. Solo puedes hackear objetivos de nivel ≤ tu Hackeo.",
     ejemplo:
-      "Quieres freír a un guardia con implantes. Tiras INT 3 + Netrunning 2 = 5 dados vs su seguridad 6; sacas 3 éxitos → tu hack pega con potencia 3. Con Hackeo 1 solo llegas a sistemas flojos; con Hackeo 4, a blindados.",
+      "Un guardia con implantes es nivel de seguridad 2. Con Hackeo 1 no llegas a él; con Hackeo 2 sí. Tiras INT 3 + Netrunning 2 = 5 dados y cuentas éxitos. Un servidor corpo (nivel 5) solo lo tocas con Hackeo 5.",
+    porRango: [
+      "Cacharros civiles: móviles, cerraduras simples, cyberware de mercadillo.",
+      "Nivel calle: matones con implantes, cámaras de tienda, coches, drones básicos.",
+      "Corpo estándar: torretas, puertas de seguridad, cyberware militar de serie.",
+      "Blindado: instalaciones corpo, ICE defensivo, netrunners enemigos.",
+      "Black ICE: servidores corpo profundos, sistemas militares top, lo más letal.",
+    ],
   },
   sobrecarga: {
     uso: "Tu hackeo de daño directo. Aciertas con INT + Netrunning y luego aplicas el daño según el rango.",

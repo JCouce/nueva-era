@@ -86,6 +86,18 @@ export function DisciplineModal({
           {info && <Section label="Cómo se usa">{info.uso}</Section>}
           {info && <Section label="Objetivos posibles">{info.targets}</Section>}
           {info && <Section label="Qué sube el rango (1–5)">{info.rango}</Section>}
+          {info?.porRango && (
+            <Section label="Nivel de seguridad por rango">
+              <ol className="flex flex-col gap-1">
+                {info.porRango.map((n, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="shrink-0 font-mono text-info">R{i + 1}</span>
+                    <span className="leading-snug">{n}</span>
+                  </li>
+                ))}
+              </ol>
+            </Section>
+          )}
           {info && (
             <div className="clip-chamfer-sm border-l-2 border-accent bg-night p-3">
               <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-accent">
