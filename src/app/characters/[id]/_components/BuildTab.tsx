@@ -23,11 +23,13 @@ function NodeCard({
   sheet,
   xpDisponible,
   onSet,
+  onOpen,
 }: {
   node: DisciplineNode;
   sheet: BuildSheet;
   xpDisponible: number;
   onSet: (id: string, value: number) => void;
+  onOpen: (id: string) => void;
 }) {
   const { rank, cost, canBuy, locked, reason } = disciplineBuyState(
     node,
@@ -46,9 +48,13 @@ function NodeCard({
             <span className="font-mono text-[10px] uppercase text-muted">
               {BRANCH_LABEL[node.branch]}
             </span>
-            <span className="font-display text-sm font-semibold uppercase">
+            <button
+              type="button"
+              onClick={() => onOpen(node.id)}
+              className="text-left font-display text-sm font-semibold uppercase underline-offset-2 hover:text-info hover:underline"
+            >
               {node.label}
-            </span>
+            </button>
             {badge && <span className="text-xs">{badge}</span>}
           </div>
           <p className="mt-0.5 font-sans text-xs leading-tight text-muted">
@@ -105,10 +111,12 @@ export function BuildTab({
   sheet,
   xpDisponible,
   onSet,
+  onOpen,
 }: {
   sheet: BuildSheet;
   xpDisponible: number;
   onSet: (id: string, value: number) => void;
+  onOpen: (id: string) => void;
 }) {
   const tree = treeFor(sheet.especialidad);
   if (tree.length === 0) {
@@ -158,6 +166,7 @@ export function BuildTab({
                     sheet={sheet}
                     xpDisponible={xpDisponible}
                     onSet={onSet}
+                    onOpen={onOpen}
                   />
                 ))}
             </div>

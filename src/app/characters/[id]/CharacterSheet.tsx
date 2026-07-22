@@ -25,6 +25,7 @@ import {
   type EspecialidadId,
 } from "@/lib/rules";
 import { weaponById } from "@/lib/weapons";
+import { treeFor } from "@/lib/disciplines";
 import type { BuildSheet } from "@/lib/validation";
 import { ResumenTab } from "./_components/ResumenTab";
 import { AtributosTab } from "./_components/AtributosTab";
@@ -32,6 +33,7 @@ import { HabilidadesTab } from "./_components/HabilidadesTab";
 import { BuildTab } from "./_components/BuildTab";
 import { ArmasTab } from "./_components/ArmasTab";
 import { RepertorioTab } from "./_components/RepertorioTab";
+import { DisciplineModal } from "./_components/DisciplineModal";
 import { accentFor } from "./_components/accents";
 
 const TABS = [
@@ -70,6 +72,7 @@ export function CharacterSheet({
   const [sheet, setSheet] = useState<BuildSheet>(initialSheet);
   const [name, setName] = useState(initialName);
   const [status, setStatus] = useState<SaveStatus>("idle");
+  const [openDisc, setOpenDisc] = useState<string | null>(null);
 
   // Refs con el último valor, para leerlos dentro de los saves con debounce.
   const sheetRef = useRef(sheet);
@@ -266,7 +269,12 @@ export function CharacterSheet({
         />
       )}
       {active === "build" && (
-        <BuildTab sheet={sheet} xpDisponible={xpDisp} onSet={commitDiscipline} />
+        <BuildTab
+          sheet={sheet}
+          xpDisponible={xpDisp}
+          onSet={commitDiscipline}
+          onOpen={setOpenDisc}
+        />
       )}
       {active === "armas" && (
         <ArmasTab
@@ -276,7 +284,9 @@ export function CharacterSheet({
           onSell={sellWeapon}
         />
       )}
-      {active === "repertorio" && <RepertorioTab sheet={sheet} />}
+      {active === "repertorio" && (
+        <RepertorioTab sheet={sheet} onOpen={setOpenDisc} />
+      )}
 
       {(active === "build" || active === "armas") && (
         <button
@@ -287,6 +297,16 @@ export function CharacterSheet({
           ⟲ Reset build
         </button>
       )}
+
+      <DisciplineModal
+        node={
+          openDisc
+            ? (treeFor(sheet.especialidad).find((n) => n.id === openDisc) ?? null)
+            : null
+        }
+        especialidad={sheet.especialidad}
+        onClose={() => setOpenDisc(null)}
+      />
     </div>
   );
 }

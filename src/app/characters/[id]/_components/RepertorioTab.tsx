@@ -4,7 +4,13 @@ import type { BuildSheet } from "@/lib/validation";
 import { HudCard } from "@/components/HudCard";
 
 // Compila la ficha en acciones jugables. Solo lectura: refleja lo comprado.
-export function RepertorioTab({ sheet }: { sheet: BuildSheet }) {
+export function RepertorioTab({
+  sheet,
+  onOpen,
+}: {
+  sheet: BuildSheet;
+  onOpen: (id: string) => void;
+}) {
   const hackPool = sheet.attributes.inteligencia + sheet.skills.netrunning;
 
   const active = treeFor(sheet.especialidad)
@@ -32,9 +38,13 @@ export function RepertorioTab({ sheet }: { sheet: BuildSheet }) {
             {hacks.map(({ node, rank }) => (
               <HudCard key={node.id} className="p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-display text-sm font-semibold uppercase">
+                  <button
+                    type="button"
+                    onClick={() => onOpen(node.id)}
+                    className="text-left font-display text-sm font-semibold uppercase underline-offset-2 hover:text-info hover:underline"
+                  >
                     {node.label}
-                  </span>
+                  </button>
                   <span className="font-mono text-xs text-info">R{rank}</span>
                 </div>
                 <p className="mt-0.5 font-sans text-xs leading-tight text-muted">
@@ -56,9 +66,13 @@ export function RepertorioTab({ sheet }: { sheet: BuildSheet }) {
             {passives.map(({ node, rank }) => (
               <HudCard key={node.id} className="border-glitch p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-display text-sm font-semibold uppercase text-glitch">
+                  <button
+                    type="button"
+                    onClick={() => onOpen(node.id)}
+                    className="text-left font-display text-sm font-semibold uppercase text-glitch underline-offset-2 hover:underline"
+                  >
                     {node.label}
-                  </span>
+                  </button>
                   <span className="font-mono text-xs text-glitch">R{rank}</span>
                 </div>
                 <p className="mt-0.5 font-sans text-xs leading-tight text-muted">

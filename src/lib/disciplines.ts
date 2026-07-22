@@ -154,3 +154,119 @@ export function disciplineBuyState(
   if (xpDisponible < cost) return { rank, cost, canBuy: false, locked: false, reason: `${cost}xp` };
   return { rank, cost, canBuy: true, locked: false, reason: `${cost}xp` };
 }
+
+// ── Contenido para el modal de detalle ─────────────────────────────
+export const BRANCH_LABELS: Record<string, string> = {
+  tronco: "Tronco",
+  dano: "Daño",
+  control: "Control",
+  intrusion: "Intrusión",
+};
+
+export type DisciplineInfo = { uso: string; targets: string; rango: string };
+
+export const DISCIPLINE_INFO: Record<string, DisciplineInfo> = {
+  hackeo: {
+    uso: "La acción de hackeo base: tiras INT + Netrunning vs la seguridad del objetivo; los éxitos marcan la potencia. Toda disciplina parte de aquí.",
+    targets: "Cualquier objetivo con electrónica en alcance o en red: personas con cyberware, cámaras, puertas, torretas, drones.",
+    rango: "Sube el nivel de seguridad al que llegas y la magnitud base de tus hacks. Además tu Hackeo = a qué tier del árbol accedes (tier N pide Hackeo N).",
+  },
+  sobrecarga: {
+    uso: "Hackeo ofensivo contra un objetivo. INT + Netrunning vs su seguridad; los éxitos aplican el daño.",
+    targets: "Un enemigo con cyberware o electrónica (o cualquier sistema dañable).",
+    rango: "Sube los dados de daño.",
+  },
+  virus: {
+    uso: "Inyectas un programa malicioso: el daño se aplica al inicio de cada turno durante varios turnos. Es tu propia fuente de daño (no necesita Sobrecarga).",
+    targets: "Un enemigo. Ataca por dentro, ignora coberturas físicas.",
+    rango: "Sube el daño por turno y/o la duración.",
+  },
+  cascada: {
+    uso: "Modificador: cuando dañas con un hack, el daño 'salta' a enemigos conectados a la misma red.",
+    targets: "El objetivo principal + enemigos cercanos con cyberware en red. Necesita un hack de daño (Sobrecarga).",
+    rango: "Sube el nº de saltos (objetivos secundarios).",
+  },
+  suicidio: {
+    uso: "Execute: si el objetivo está por debajo de un umbral de vida, hackeas su sistema motor y se dispara con su propia arma. No usa tu daño.",
+    targets: "Un enemigo por debajo del umbral de vida, con arma y cyberware motor.",
+    rango: "Sube el umbral de vida al que funciona (ejecutas antes).",
+  },
+  fuerza_bruta: {
+    uso: "Pasiva. Tu daño de hackeo escala con Fuerza en vez de Inteligencia. Ojo: sigues necesitando INT para ACERTAR el hackeo.",
+    targets: "N/A — modifica tus propios hacks de daño.",
+    rango: "Sube el tope de Fuerza que canalizas al daño (rango 3 = metes 3 de FUE).",
+  },
+  interferencia: {
+    uso: "Hackeo de debuff. INT + Netrunning vs su seguridad; al impactar ciegas sus ópticas.",
+    targets: "Un enemigo con ópticas cibernéticas o sensores. Penaliza su puntería/percepción.",
+    rango: "Sube la penalización y/o la duración.",
+  },
+  bloqueo: {
+    uso: "Hackeo que inutiliza un dispositivo del enemigo (arma inteligente, implante).",
+    targets: "Un arma smart/tech o una pieza de cyberware enemiga.",
+    rango: "Sube la duración del bloqueo.",
+  },
+  marioneta: {
+    uso: "Tomas el control del sistema motor del enemigo y le haces gastar una acción a tu favor.",
+    targets: "Un enemigo con cyberware suficiente. Resistido por su voluntad/seguridad.",
+    rango: "Sube la resistencia que superas (objetivos más duros).",
+  },
+  colapso: {
+    uso: "Pulso en área: apagas armas y cyberware de todos los enemigos de una zona un turno.",
+    targets: "Todos los enemigos con electrónica en un área.",
+    rango: "Sube el área y/o la duración.",
+  },
+  ganzua: {
+    uso: "Hackeo de intrusión sobre tech del entorno. INT + Netrunning vs la seguridad del sistema.",
+    targets: "Puertas, cámaras, torretas, cerraduras, terminales.",
+    rango: "Sube el nivel de seguridad que puedes vencer.",
+  },
+  fantasma: {
+    uso: "Te borras de los sistemas de vigilancia y/o extraes datos de un sistema.",
+    targets: "Cámaras y sensores (para borrarte), o un terminal/base de datos (para extraer).",
+    rango: "Sube el alcance: a cuántos sistemas afectas / cuánto extraes.",
+  },
+  golpe_sombra: {
+    uso: "Rider: si hackeas a un objetivo que NO te ha detectado, el hackeo gana éxitos extra (alpha desde sigilo). Estar oculto se logra con la skill Sigilo.",
+    targets: "Un objetivo que no te ha detectado. Aplica a cualquiera de tus hacks.",
+    rango: "Sube los éxitos añadidos.",
+  },
+  puerta_trasera: {
+    uso: "Hackeo de soporte: potencias el cyberware de un aliado.",
+    targets: "Un aliado con cyberware.",
+    rango: "Sube la magnitud del buff.",
+  },
+  firma_cero: {
+    uso: "Pasiva. Al hackear no dejas rastro digital: sumas Destreza a la tirada opuesta contra el rastreo (solo netrunners/ICE rastrean lo digital). El sigilo físico sigue siendo la skill Sigilo.",
+    targets: "N/A — modifica el acto de hackear.",
+    rango: "Sube el tope de Destreza que aportas contra el rastreo.",
+  },
+  dios_maquina: {
+    uso: "Tomas el control del entorno tecnológico de una zona durante el combate: torretas, puertas y cámaras a tu favor.",
+    targets: "Todos los sistemas tech de una zona.",
+    rango: "Sube el alcance / la cantidad de sistemas dominados.",
+  },
+};
+
+// Requisitos legibles para el modal (derivados del gating).
+export function disciplineRequirements(
+  node: DisciplineNode,
+  especialidad: string | null,
+): string[] {
+  if (node.branch === "tronco") {
+    return ["Ninguno — disciplina de regalo, empieza en rango 1."];
+  }
+  const reqs = [
+    `Hackeo ≥ ${node.tier} (profundidad de acceso)`,
+    `${TIER_GATING[node.tier] ?? 0} puntos en el árbol`,
+  ];
+  if (node.requires) {
+    const req = treeFor(especialidad).find((n) => n.id === node.requires!.node);
+    reqs.push(`${req?.label ?? node.requires.node} ≥ ${node.requires.rank}`);
+  }
+  if (node.cross) {
+    const a = node.cross === "fuerza" ? "Fuerza" : "Destreza";
+    reqs.push(`Cruce: mantienes INT para acertar; el rango es tu tope de ${a}.`);
+  }
+  return reqs;
+}
