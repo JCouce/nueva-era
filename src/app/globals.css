@@ -1,25 +1,134 @@
 @import "tailwindcss";
 
-:root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --card: #161616;
-  --border: #2a2a2a;
-  --accent: #c9a227;
+/* ─────────────────────────────────────────────────────────────
+   NUEVA ERA — sistema de diseño (Cyberpunk / Night City)
+   Capa 1: paleta cruda   → tokens de marca, no se usan casi directos
+   Capa 2: alias semántico → lo que consumen los componentes
+   Capa 3: utilidades      → efectos HUD (glow, chamfer, scanlines…)
+   ───────────────────────────────────────────────────────────── */
+
+@theme {
+  /* ── Capa 1: paleta cruda ───────────────────────────────── */
+
+  /* Neones (mandan; úsalos con moderación) */
+  --color-neon-yellow: #fcee0a; /* color firma, acentos y CTAs */
+  --color-neon-cyan: #00f0ff; /* hologramas, hielo, netrunner */
+  --color-neon-magenta: #ff2e97; /* glitch, Night City nocturno */
+  --color-neon-red: #ff003c; /* peligro, sangre, KIA */
+
+  /* Fondos (oscuros azulados, no negros puros) */
+  --color-night: #0a0a0f; /* negro Night City */
+  --color-surface: #14141c; /* superficie */
+  --color-elevated: #1e1e2a; /* superficie elevada */
+  --color-line: #2a2a3a; /* bordes / retícula */
+
+  /* Neutros */
+  --color-ink: #e6e6f0; /* texto principal */
+  --color-ink-dim: #8a8aa0; /* texto secundario */
+  --color-purple-shadow: #2d1b4e; /* púrpura sombra (degradados) */
+
+  /* ── Capa 2: alias semánticos (lo que consumen los componentes) ── */
+  --color-background: var(--color-night);
+  --color-foreground: var(--color-ink);
+  --color-muted: var(--color-ink-dim);
+  --color-card: var(--color-surface);
+  --color-border: var(--color-line);
+  --color-accent: var(--color-neon-yellow); /* la firma */
+  --color-danger: var(--color-neon-red);
+  --color-info: var(--color-neon-cyan);
+  --color-glitch: var(--color-neon-magenta);
+
+  /* Glows neón → generan utilidades shadow-glow-* (alfa en hex de 8 dígitos) */
+  --shadow-glow-yellow: 0 0 4px #fcee0a99, 0 0 18px #fcee0a59;
+  --shadow-glow-cyan: 0 0 4px #00f0ff99, 0 0 18px #00f0ff59;
+  --shadow-glow-magenta: 0 0 4px #ff2e9799, 0 0 18px #ff2e9759;
+  --shadow-glow-danger: 0 0 4px #ff003c99, 0 0 18px #ff003c59;
 }
 
+/* Fuentes: en bloque inline porque son variables de runtime (next/font) */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-border: var(--border);
-  --color-accent: var(--accent);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-chakra), system-ui, sans-serif; /* titulares técnicos */
+  --font-sans: var(--font-rajdhani), system-ui, sans-serif; /* UI / cuerpo */
+  --font-mono: var(--font-share-tech), ui-monospace, monospace; /* HUD / datos */
+}
+
+/* ─── Capa 3: utilidades de efecto ────────────────────────── */
+
+/* Esquinas cortadas (chamfered) — la card/botón HUD por defecto */
+@utility clip-chamfer {
+  clip-path: polygon(
+    0 0.5rem,
+    0.5rem 0,
+    100% 0,
+    100% calc(100% - 0.5rem),
+    calc(100% - 0.5rem) 100%,
+    0 100%
+  );
+}
+@utility clip-chamfer-sm {
+  clip-path: polygon(
+    0 0.25rem,
+    0.25rem 0,
+    100% 0,
+    100% calc(100% - 0.25rem),
+    calc(100% - 0.25rem) 100%,
+    0 100%
+  );
+}
+
+/* Degradados icónicos */
+@utility bg-edgerunners {
+  background-image: linear-gradient(
+    135deg,
+    var(--color-neon-cyan),
+    var(--color-neon-magenta)
+  );
+}
+@utility bg-nightsky {
+  background-image: linear-gradient(
+    160deg,
+    var(--color-neon-magenta),
+    var(--color-purple-shadow)
+  );
+}
+
+/* Retícula blueprint sutil (para fondos de sección) */
+@utility grid-blueprint {
+  background-image: linear-gradient(var(--color-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Scanlines / CRT — overlay de líneas horizontales */
+@utility scanlines {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 2px,
+    rgba(0, 0, 0, 0.28) 3px
+  );
+}
+
+/* Barras de peligro amarillo/negro (警告) */
+@utility hazard-stripes {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--color-neon-yellow) 0,
+    var(--color-neon-yellow) 10px,
+    var(--color-night) 10px,
+    var(--color-night) 20px
+  );
+}
+
+/* Aberración cromática en texto (glitch RGB split) */
+@utility text-glitch {
+  text-shadow:
+    -1px 0 var(--color-neon-cyan),
+    1px 0 var(--color-neon-magenta);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
 }

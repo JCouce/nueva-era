@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
-import { statsSchema } from "@/lib/validation";
+import { parseSheet } from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
-import { CharacterTabs } from "./CharacterTabs";
+import { CharacterSheet } from "./CharacterSheet";
 
 export default async function CharacterPage({
   params,
@@ -17,7 +17,7 @@ export default async function CharacterPage({
   // En este modelo, ver = poder editar (dueño o máster).
   if (!character || !canEditCharacter(user, character)) notFound();
 
-  const stats = statsSchema.catch({}).parse(character.stats);
+  const sheet = parseSheet(character.stats);
 
   return (
     <>
@@ -27,8 +27,11 @@ export default async function CharacterPage({
         back={{ href: "/characters", label: "Personajes" }}
       />
       <main className="mx-auto w-full max-w-md flex-1 px-4 py-5">
-        <h1 className="mb-4 text-2xl font-bold">{character.name}</h1>
-        <CharacterTabs characterId={character.id} initialStats={stats} />
+        <CharacterSheet
+          characterId={character.id}
+          initialName={character.name}
+          initialSheet={sheet}
+        />
       </main>
     </>
   );

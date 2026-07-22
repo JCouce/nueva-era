@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
 import { AppHeader } from "@/components/AppHeader";
+import { HudCard } from "@/components/HudCard";
 import { createCharacter, deleteCharacter } from "./actions";
 
 export default async function CharactersPage() {
@@ -18,18 +19,20 @@ export default async function CharactersPage() {
     <>
       <AppHeader name={user.name} role={user.role} />
       <main className="mx-auto w-full max-w-md flex-1 px-4 py-5">
-        <h1 className="mb-4 text-xl font-bold">
+        <h1 className="mb-4 font-display text-2xl font-bold uppercase tracking-wide">
           {isMaster ? "Todas las fichas" : "Mis personajes"}
         </h1>
 
         <ul className="flex flex-col gap-2">
           {characters.map((c) => (
             <li key={c.id}>
-              <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-3">
+              <HudCard className="flex items-center gap-2 px-4 py-3">
                 <Link href={`/characters/${c.id}`} className="flex-1">
-                  <span className="text-base font-medium">{c.name}</span>
+                  <span className="font-display text-base font-medium uppercase tracking-wide">
+                    {c.name}
+                  </span>
                   {isMaster && (
-                    <span className="block text-xs text-zinc-500">
+                    <span className="block font-mono text-xs text-muted">
                       {c.owner.name ?? c.owner.email}
                     </span>
                   )}
@@ -38,17 +41,17 @@ export default async function CharactersPage() {
                   <input type="hidden" name="id" value={c.id} />
                   <button
                     type="submit"
-                    className="rounded px-2 py-1 text-sm text-zinc-500 hover:text-red-400"
+                    className="px-2 py-1 font-mono text-xs uppercase tracking-wide text-muted transition hover:text-danger"
                     aria-label={`Borrar ${c.name}`}
                   >
                     Borrar
                   </button>
                 </form>
-              </div>
+              </HudCard>
             </li>
           ))}
           {characters.length === 0 && (
-            <li className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-zinc-500">
+            <li className="clip-chamfer border border-dashed border-border px-4 py-8 text-center font-mono text-sm text-muted">
               Aún no hay personajes. Crea el primero.
             </li>
           )}
@@ -60,11 +63,11 @@ export default async function CharactersPage() {
             required
             maxLength={80}
             placeholder="Nombre del personaje"
-            className="flex-1 rounded-lg border border-border bg-card px-4 py-3 text-base outline-none focus:border-accent"
+            className="clip-chamfer-sm flex-1 border border-border bg-surface px-4 py-3 text-base outline-none focus:border-accent"
           />
           <button
             type="submit"
-            className="rounded-lg bg-accent px-4 py-3 font-semibold text-black active:scale-[0.99]"
+            className="clip-chamfer bg-accent px-4 py-3 font-display font-semibold uppercase tracking-wide text-black shadow-glow-yellow active:scale-[0.99]"
           >
             Crear
           </button>

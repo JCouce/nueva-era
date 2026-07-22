@@ -10,7 +10,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="mt-2 w-full rounded-lg bg-accent px-4 py-3 text-base font-semibold text-black transition active:scale-[0.99] disabled:opacity-60"
+      className="clip-chamfer mt-2 w-full bg-accent px-4 py-3 font-display text-base font-semibold uppercase tracking-wider text-black shadow-glow-yellow transition active:scale-[0.99] disabled:opacity-60"
     >
       {pending ? "Un momento…" : label}
     </button>
@@ -33,7 +33,7 @@ export function LoginForm() {
           type="text"
           placeholder="Nombre (opcional)"
           autoComplete="name"
-          className="rounded-lg border border-border bg-card px-4 py-3 text-base outline-none focus:border-accent"
+          className="clip-chamfer-sm border border-border bg-night px-4 py-3 text-base text-foreground outline-none placeholder:text-muted focus:border-accent"
         />
       )}
       <input
@@ -42,7 +42,7 @@ export function LoginForm() {
         required
         placeholder="Email"
         autoComplete="email"
-        className="rounded-lg border border-border bg-card px-4 py-3 text-base outline-none focus:border-accent"
+        className="clip-chamfer-sm border border-border bg-night px-4 py-3 text-base text-foreground outline-none placeholder:text-muted focus:border-accent"
       />
       <input
         name="password"
@@ -51,11 +51,11 @@ export function LoginForm() {
         minLength={6}
         placeholder="Contraseña"
         autoComplete={mode === "login" ? "current-password" : "new-password"}
-        className="rounded-lg border border-border bg-card px-4 py-3 text-base outline-none focus:border-accent"
+        className="clip-chamfer-sm border border-border bg-night px-4 py-3 text-base text-foreground outline-none placeholder:text-muted focus:border-accent"
       />
 
       {state?.error && (
-        <p className="text-sm text-red-400">{state.error}</p>
+        <p className="font-mono text-sm text-danger">// {state.error}</p>
       )}
 
       <SubmitButton label={mode === "login" ? "Entrar" : "Crear cuenta"} />
@@ -63,7 +63,7 @@ export function LoginForm() {
       <button
         type="button"
         onClick={() => setMode(mode === "login" ? "register" : "login")}
-        className="mt-2 text-center text-sm text-zinc-400 underline-offset-4 hover:underline"
+        className="mt-2 text-center font-mono text-xs uppercase tracking-wide text-muted transition hover:text-info"
       >
         {mode === "login"
           ? "¿No tienes cuenta? Regístrate"
