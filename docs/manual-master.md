@@ -370,7 +370,7 @@ replicamos el patrón a Merc y Cazatalentos.
 | Daño | **Virus** | Daño persistente (DoT). Rango = daño/turno. |
 | Daño | **Cascada** | El daño salta a enemigos en red (área). Rango = nº de saltos. |
 | Daño | **Suicidio inducido** ⚡ | *Execute*: bajo umbral de vida, el enemigo se dispara. Rango = umbral. |
-| Daño | **Fuerza bruta** ⇄ | El daño de hackeo escala con **Fuerza** (no INT). Rango = **tope** de FUE que aportas. |
+| Daño | **Fuerza bruta** ⇄ | **Suma** tu **Fuerza** al daño de hackeo (además de INT). Rango = **tope** de FUE que añades. |
 | Control | **Interferencia** | Ciegas ópticas (penaliza puntería). Rango = penalización/duración. |
 | Control | **Bloqueo** | Atascas arma o cyberware enemigo. Rango = duración. |
 | Control | **Marioneta** | Controlas a un enemigo una acción. Rango = resistencia superada. |
@@ -388,8 +388,8 @@ replicamos el patrón a Merc y Cazatalentos.
 
 **Las dos habilitadoras de cruce**, una por atributo alternativo, ambas en T5 y con
 rango = **tope**:
-- **Fuerza bruta** (Daño): el daño escala con FUE → el *netrunner-FUE*, el hacker que
-  pega como un camión.
+- **Fuerza bruta** (Daño): **suma** tu FUE al daño (además de INT) → el *netrunner-FUE*,
+  el hacker que además pega como un camión.
 - **Firma cero** (Intrusión): sumas DES contra el rastreo → el *netrunner-DES*, el
   hacker fantasma. Combina con **Golpe de sombra** (el burst) para el build asesino.
 

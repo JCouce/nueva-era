@@ -36,7 +36,7 @@ export const NETRUNNER_TREE: DisciplineNode[] = [
   { id: "virus", label: "Virus", branch: "dano", tier: 3, desc: "Daño persistente (DoT). Rango = daño/turno." },
   { id: "cascada", label: "Cascada", branch: "dano", tier: 4, requires: { node: "sobrecarga", rank: 1 }, desc: "El daño salta a enemigos en red. Rango = nº de saltos." },
   { id: "suicidio", label: "Suicidio inducido", branch: "dano", tier: 5, exclusive: true, desc: "Execute: bajo umbral, el enemigo se dispara. Rango = umbral." },
-  { id: "fuerza_bruta", label: "Fuerza bruta", branch: "dano", tier: 5, cross: "fuerza", requires: { node: "sobrecarga", rank: 1 }, desc: "El daño escala con Fuerza (no INT). Rango = tope de FUE." },
+  { id: "fuerza_bruta", label: "Fuerza bruta", branch: "dano", tier: 5, cross: "fuerza", requires: { node: "sobrecarga", rank: 1 }, desc: "Suma tu Fuerza al daño de tus hacks (además de INT). Rango = tope de FUE que añades." },
   // Control
   { id: "interferencia", label: "Interferencia", branch: "control", tier: 2, desc: "Ciegas ópticas (penaliza puntería). Rango = penalización." },
   { id: "bloqueo", label: "Bloqueo", branch: "control", tier: 3, desc: "Atascas arma o cyberware enemigo. Rango = duración." },
@@ -163,88 +163,125 @@ export const BRANCH_LABELS: Record<string, string> = {
   intrusion: "Intrusión",
 };
 
-export type DisciplineInfo = { uso: string; targets: string; rango: string };
+export type DisciplineInfo = {
+  uso: string;
+  targets: string;
+  rango: string;
+  ejemplo: string;
+};
 
 export const DISCIPLINE_INFO: Record<string, DisciplineInfo> = {
   hackeo: {
-    uso: "La acción de hackeo base: tiras INT + Netrunning vs la seguridad del objetivo; los éxitos marcan la potencia. Toda disciplina parte de aquí.",
+    uso: "La acción de hackeo base: tiras Inteligencia + Netrunning (skill) vs la seguridad del objetivo; los éxitos marcan la potencia. Toda disciplina parte de aquí.",
     targets: "Cualquier objetivo con electrónica en alcance o en red: personas con cyberware, cámaras, puertas, torretas, drones.",
     rango: "Sube el nivel de seguridad al que llegas y la magnitud base de tus hacks. Además tu Hackeo = a qué tier del árbol accedes (tier N pide Hackeo N).",
+    ejemplo:
+      "Quieres freír a un guardia con implantes. Tiras INT 3 + Netrunning 2 = 5 dados vs su seguridad 6; sacas 3 éxitos → tu hack pega con potencia 3. Con Hackeo 1 solo llegas a sistemas flojos; con Hackeo 4, a blindados.",
   },
   sobrecarga: {
-    uso: "Hackeo ofensivo contra un objetivo. INT + Netrunning vs su seguridad; los éxitos aplican el daño.",
-    targets: "Un enemigo con cyberware o electrónica (o cualquier sistema dañable).",
-    rango: "Sube los dados de daño.",
+    uso: "Tu hackeo de daño directo. Aciertas con INT + Netrunning y luego aplicas el daño según el rango.",
+    targets: "Un enemigo con cyberware o electrónica.",
+    rango: "Sube los dados de daño (rango 3 = 3 dados de daño).",
+    ejemplo:
+      "Sobrecarga rango 3 contra un mercenario: aciertas y tiras 3 dados de daño; 2 éxitos = 2 de daño que le queman los implantes por dentro.",
   },
   virus: {
-    uso: "Inyectas un programa malicioso: el daño se aplica al inicio de cada turno durante varios turnos. Es tu propia fuente de daño (no necesita Sobrecarga).",
-    targets: "Un enemigo. Ataca por dentro, ignora coberturas físicas.",
+    uso: "Inyectas un programa malicioso: el daño se aplica al INICIO de cada turno durante varios turnos. Es tu propia fuente de daño (no necesita Sobrecarga).",
+    targets: "Un enemigo. Ataca por dentro: da igual que se cubra o huya, el daño sigue.",
     rango: "Sube el daño por turno y/o la duración.",
+    ejemplo:
+      "Virus rango 2 al jefe: cada turno, al empezar, sufre 2 de daño durante 3 turnos aunque se esconda. Perfecto para desgastar tanques o rematar a quien huye.",
   },
   cascada: {
-    uso: "Modificador: cuando dañas con un hack, el daño 'salta' a enemigos conectados a la misma red.",
-    targets: "El objetivo principal + enemigos cercanos con cyberware en red. Necesita un hack de daño (Sobrecarga).",
-    rango: "Sube el nº de saltos (objetivos secundarios).",
+    uso: "Modificador de área: cuando dañas con un hack, ese daño 'salta' a enemigos cercanos conectados a la misma red.",
+    targets: "El objetivo principal + enemigos cercanos con cyberware. Necesita un hack de daño (Sobrecarga) para tener algo que propagar.",
+    rango: "Sube el nº de saltos (objetivos secundarios alcanzados).",
+    ejemplo:
+      "Cuatro enemigos con implantes juntos. Lanzas Sobrecarga con Cascada rango 2: el daño golpea al primero y salta a 2 más. Sin Sobrecarga, Cascada no hace nada.",
   },
   suicidio: {
-    uso: "Execute: si el objetivo está por debajo de un umbral de vida, hackeas su sistema motor y se dispara con su propia arma. No usa tu daño.",
+    uso: "Ejecución: si el objetivo está por debajo de un umbral de vida, hackeas su sistema motor y se dispara a sí mismo. NO usa tu daño — usa su propia arma.",
     targets: "Un enemigo por debajo del umbral de vida, con arma y cyberware motor.",
-    rango: "Sube el umbral de vida al que funciona (ejecutas antes).",
+    rango: "Sube el umbral de vida al que funciona (más alto = ejecutas antes, sin tener que dejarlo casi muerto).",
+    ejemplo:
+      "Un enemigo baja del 10% de vida. Activas Suicidio: le hackeas el brazo y se pega un tiro en la cabeza. No gastas daño tuyo, lo remata su propia pistola.",
   },
   fuerza_bruta: {
-    uso: "Pasiva. Tu daño de hackeo escala con Fuerza en vez de Inteligencia. Ojo: sigues necesitando INT para ACERTAR el hackeo.",
+    uso: "Pasiva. Tu daño de hackeo SUMA tu Fuerza además de tu Inteligencia (no la reemplaza). Sigues necesitando INT para acertar y para el daño base; la Fuerza es un extra encima.",
     targets: "N/A — modifica tus propios hacks de daño.",
-    rango: "Sube el tope de Fuerza que canalizas al daño (rango 3 = metes 3 de FUE).",
+    rango: "Sube el tope de Fuerza que añades al daño (rango 3 = +3 de FUE al daño).",
+    ejemplo:
+      "Netrunner con INT 4, FUE 3 y Fuerza bruta rango 3. Su Sobrecarga hace el daño normal de INT 4 y ADEMÁS le suma +3 de Fuerza encima → pega como hacker Y como un bruto. Sin la pasiva, tu Fuerza no cuenta para los hacks.",
   },
   interferencia: {
-    uso: "Hackeo de debuff. INT + Netrunning vs su seguridad; al impactar ciegas sus ópticas.",
-    targets: "Un enemigo con ópticas cibernéticas o sensores. Penaliza su puntería/percepción.",
+    uso: "Hackeo de estorbo: aciertas con INT + Netrunning y, al impactar, le ciegas las ópticas al enemigo.",
+    targets: "Un enemigo con ópticas cibernéticas o sensores. Le penaliza puntería/percepción.",
     rango: "Sube la penalización y/o la duración.",
+    ejemplo:
+      "Interferencia rango 2 al francotirador enemigo: le ciegas las ópticas, −2 a su puntería durante 2 turnos. No le haces daño, pero deja de acertar.",
   },
   bloqueo: {
-    uso: "Hackeo que inutiliza un dispositivo del enemigo (arma inteligente, implante).",
+    uso: "Hackeo que inutiliza un dispositivo concreto del enemigo (arma inteligente o implante).",
     targets: "Un arma smart/tech o una pieza de cyberware enemiga.",
     rango: "Sube la duración del bloqueo.",
+    ejemplo:
+      "Bloqueo al brazo-cañón de un pesado: su arma smart se traba y no puede disparar mientras dure el bloqueo. Lo dejas vendido para que tu equipo entre.",
   },
   marioneta: {
-    uso: "Tomas el control del sistema motor del enemigo y le haces gastar una acción a tu favor.",
-    targets: "Un enemigo con cyberware suficiente. Resistido por su voluntad/seguridad.",
-    rango: "Sube la resistencia que superas (objetivos más duros).",
+    uso: "Tomas el control del sistema motor del enemigo y le haces gastar UNA acción a tu favor.",
+    targets: "Un enemigo con cyberware suficiente. Lo resiste con su voluntad/seguridad.",
+    rango: "Sube la resistencia que superas (objetivos más duros / control más fiable).",
+    ejemplo:
+      "Marioneta rango 3 a un guardia: le controlas un turno y le haces disparar a su propio compañero antes de soltar el control.",
   },
   colapso: {
-    uso: "Pulso en área: apagas armas y cyberware de todos los enemigos de una zona un turno.",
+    uso: "Pulso en área: apagas las armas y el cyberware de TODOS los enemigos de una zona durante un turno.",
     targets: "Todos los enemigos con electrónica en un área.",
     rango: "Sube el área y/o la duración.",
+    ejemplo:
+      "Cuatro enemigos en una sala. Colapso apaga todas sus armas y cyberware un turno: ventana perfecta para que tu equipo entre a saco sin que respondan.",
   },
   ganzua: {
-    uso: "Hackeo de intrusión sobre tech del entorno. INT + Netrunning vs la seguridad del sistema.",
+    uso: "Hackeo sobre la tecnología del entorno: aciertas con INT + Netrunning vs la seguridad del sistema.",
     targets: "Puertas, cámaras, torretas, cerraduras, terminales.",
     rango: "Sube el nivel de seguridad que puedes vencer.",
+    ejemplo:
+      "Una puerta blindada de seguridad 4. Con Ganzúa rango 4 la abres sin llave ni ruido. También apaga cámaras o vuelve una torreta inofensiva.",
   },
   fantasma: {
-    uso: "Te borras de los sistemas de vigilancia y/o extraes datos de un sistema.",
-    targets: "Cámaras y sensores (para borrarte), o un terminal/base de datos (para extraer).",
+    uso: "Te borras de los sistemas de vigilancia, o te cuelas en un sistema para extraer datos.",
+    targets: "Cámaras y sensores (para borrarte), o un terminal/base de datos (para extraer info).",
     rango: "Sube el alcance: a cuántos sistemas afectas / cuánto extraes.",
+    ejemplo:
+      "Entras en una zona vigilada. Con Fantasma te borras de las cámaras un rato para moverte sin que salte la alarma; o te conectas a un terminal y sacas los planos del objetivo.",
   },
   golpe_sombra: {
-    uso: "Rider: si hackeas a un objetivo que NO te ha detectado, el hackeo gana éxitos extra (alpha desde sigilo). Estar oculto se logra con la skill Sigilo.",
+    uso: "Bonus: si hackeas a un objetivo que NO te ha detectado, el hackeo gana éxitos extra (un golpe fuerte desde las sombras). Estar oculto se logra con la skill Sigilo.",
     targets: "Un objetivo que no te ha detectado. Aplica a cualquiera de tus hacks.",
-    rango: "Sube los éxitos añadidos.",
+    rango: "Sube los éxitos extra que añade.",
+    ejemplo:
+      "Estás oculto (skill Sigilo) y el enemigo no te ve. Abres con Sobrecarga: Golpe de sombra rango 2 le añade +2 éxitos a ese primer hackeo. Un alfa strike brutal por sorpresa.",
   },
   puerta_trasera: {
-    uso: "Hackeo de soporte: potencias el cyberware de un aliado.",
+    uso: "Hackeo de apoyo: en vez de atacar, potencias el cyberware de un aliado.",
     targets: "Un aliado con cyberware.",
     rango: "Sube la magnitud del buff.",
+    ejemplo:
+      "Puerta trasera al Merc del equipo: le sobrecargas los reflejos cibernéticos y le das un buff a su próxima acción justo antes de que cargue.",
   },
   firma_cero: {
-    uso: "Pasiva. Al hackear no dejas rastro digital: sumas Destreza a la tirada opuesta contra el rastreo (solo netrunners/ICE rastrean lo digital). El sigilo físico sigue siendo la skill Sigilo.",
-    targets: "N/A — modifica el acto de hackear.",
-    rango: "Sube el tope de Destreza que aportas contra el rastreo.",
+    uso: "Pasiva. Al hackear no dejas rastro digital: SUMAS tu Destreza a la tirada para que no te rastreen (solo netrunners/ICE enemigos rastrean lo digital). El sigilo físico sigue siendo la skill Sigilo.",
+    targets: "N/A — protege el acto de hackear.",
+    rango: "Sube el tope de Destreza que sumas contra el rastreo.",
+    ejemplo:
+      "Hackeas a un enemigo desde una furgoneta a una manzana. Su netrunner intenta rastrearte (tira INT+Netrunning vs tu defensa). Con Firma cero rango 3 sumas +3 de Destreza a tu defensa → no te encuentra. Sin ella, defiendes solo con lo justo.",
   },
   dios_maquina: {
-    uso: "Tomas el control del entorno tecnológico de una zona durante el combate: torretas, puertas y cámaras a tu favor.",
+    uso: "Tomas el control del entorno tecnológico de toda una zona durante el combate: torretas, puertas y cámaras pasan a tu bando.",
     targets: "Todos los sistemas tech de una zona.",
-    rango: "Sube el alcance / la cantidad de sistemas dominados.",
+    rango: "Sube el alcance / la cantidad de sistemas que dominas a la vez.",
+    ejemplo:
+      "Combate en una sala llena de tech. Dios de la máquina pone las torretas a disparar a tus enemigos, cierra puertas para atraparlos y te enseña todo por las cámaras: la habitación entera lucha por ti.",
   },
 };
 
@@ -264,9 +301,10 @@ export function disciplineRequirements(
     const req = treeFor(especialidad).find((n) => n.id === node.requires!.node);
     reqs.push(`${req?.label ?? node.requires.node} ≥ ${node.requires.rank}`);
   }
-  if (node.cross) {
-    const a = node.cross === "fuerza" ? "Fuerza" : "Destreza";
-    reqs.push(`Cruce: mantienes INT para acertar; el rango es tu tope de ${a}.`);
+  if (node.cross === "fuerza") {
+    reqs.push("Cruce: suma tu Fuerza al daño además de INT; rango = tope de FUE.");
+  } else if (node.cross === "destreza") {
+    reqs.push("Cruce: suma tu Destreza contra el rastreo; rango = tope de DES.");
   }
   return reqs;
 }

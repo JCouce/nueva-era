@@ -86,6 +86,16 @@ export function DisciplineModal({
           {info && <Section label="Cómo se usa">{info.uso}</Section>}
           {info && <Section label="Objetivos posibles">{info.targets}</Section>}
           {info && <Section label="Qué sube el rango (1–5)">{info.rango}</Section>}
+          {info && (
+            <div className="clip-chamfer-sm border-l-2 border-accent bg-night p-3">
+              <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-accent">
+                // Ejemplo
+              </p>
+              <p className="font-sans text-sm italic leading-snug text-foreground">
+                {info.ejemplo}
+              </p>
+            </div>
+          )}
           <Section label="Requisitos">
             <ul className="flex flex-col gap-0.5">
               {reqs.map((r, i) => (
