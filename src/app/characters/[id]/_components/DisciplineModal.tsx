@@ -84,6 +84,18 @@ export function DisciplineModal({
         <div className="mt-4 flex flex-col gap-4">
           <Section label="Efecto">{node.desc}</Section>
           {info && <Section label="Cómo se usa">{info.uso}</Section>}
+          {info?.acciones && (
+            <Section label="Qué puedes hacer">
+              <ul className="flex flex-col gap-1.5">
+                {info.acciones.map((a, i) => (
+                  <li key={i} className="flex gap-1.5">
+                    <span className="text-info">›</span>
+                    <span className="leading-snug">{a}</span>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          )}
           {info && <Section label="Objetivos posibles">{info.targets}</Section>}
           {info && <Section label="Qué sube el rango (1–5)">{info.rango}</Section>}
           {info?.porRango && (

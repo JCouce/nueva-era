@@ -30,7 +30,7 @@ export const DISC_MAX = 5;
 export const TIER_GATING: Record<number, number> = { 1: 0, 2: 1, 3: 4, 4: 8, 5: 13 };
 
 export const NETRUNNER_TREE: DisciplineNode[] = [
-  { id: "hackeo", label: "Hackeo", branch: "tronco", tier: 1, gift: true, desc: "El verbo: interfacear. Potencia de intrusión (seguridad + magnitud base)." },
+  { id: "hackeo", label: "Hackeo", branch: "tronco", tier: 1, gift: true, desc: "El verbo del netrunner: escanea redes, accede a dispositivos y descarga info. Su rango marca la seguridad accesible y habilita el árbol." },
   // Daño
   { id: "sobrecarga", label: "Sobrecarga", branch: "dano", tier: 2, desc: "Daño directo a un objetivo. Rango = dados de daño." },
   { id: "virus", label: "Virus", branch: "dano", tier: 3, desc: "Daño persistente (DoT). Rango = daño/turno." },
@@ -168,16 +168,22 @@ export type DisciplineInfo = {
   targets: string;
   rango: string;
   ejemplo: string;
+  acciones?: string[]; // usos concretos (para disciplinas versátiles como Hackeo)
   porRango?: string[]; // desglose opcional rango 1..5 (ej. qué seguridad alcanza Hackeo)
 };
 
 export const DISCIPLINE_INFO: Record<string, DisciplineInfo> = {
   hackeo: {
-    uso: "La acción de hackeo base: tiras Inteligencia + Netrunning (skill) y cuentas éxitos. Tu rango de Hackeo marca el NIVEL DE SEGURIDAD máximo que puedes tocar (ver desglose abajo) y la magnitud base de tus hacks. Además, Hackeo = a qué tier del árbol accedes (tier N pide Hackeo N).",
-    targets: "Cualquier objetivo con electrónica en alcance o en red: personas con cyberware, cámaras, puertas, torretas, drones.",
-    rango: "Cada rango sube un nivel de seguridad accesible. Solo puedes hackear objetivos de nivel ≤ tu Hackeo.",
+    uso: "Toda tirada es Inteligencia + Netrunning (skill) vs la seguridad del objetivo, contando éxitos. Hackeo no es solo la base de otros hacks: es una acción con usos propios (abajo). Y su rango marca el nivel de seguridad que puedes tocar y a qué tier del árbol accedes (tier N pide Hackeo N).",
+    acciones: [
+      "Escanear la red: detectas qué dispositivos hay en la zona o en red local — enemigos con cyberware, cámaras, drones, torretas, terminales. Reconocimiento antes de actuar.",
+      "Acceder y descargar: te cuelas en un terminal o dispositivo y lees o descargas su información (datos, claves, planos, credenciales, registros).",
+      "Base del árbol: potencia y habilita el resto de tus disciplinas; su rango marca el nivel de seguridad accesible.",
+    ],
+    targets: "Cualquier objetivo con electrónica en alcance o en red: personas con cyberware, cámaras, puertas, torretas, drones, terminales.",
+    rango: "Cada rango sube un nivel de seguridad accesible. Solo puedes hackear (escanear, acceder o atacar) objetivos de nivel ≤ tu Hackeo.",
     ejemplo:
-      "Un guardia con implantes es nivel de seguridad 2. Con Hackeo 1 no llegas a él; con Hackeo 2 sí. Tiras INT 3 + Netrunning 2 = 5 dados y cuentas éxitos. Un servidor corpo (nivel 5) solo lo tocas con Hackeo 5.",
+      "Entras a una oficina corpo. Escaneas la red (Hackeo) y ves 3 cámaras, 2 guardias con implantes y un terminal de nivel 3 — necesitas Hackeo 3 para tocarlo. Te conectas al terminal y descargas los turnos de guardia. Todo con INT + Netrunning vs la seguridad de cada cosa.",
     porRango: [
       "Cacharros civiles: móviles, cerraduras simples, cyberware de mercadillo.",
       "Nivel calle: matones con implantes, cámaras de tienda, coches, drones básicos.",
