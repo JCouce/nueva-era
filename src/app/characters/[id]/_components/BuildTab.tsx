@@ -1,5 +1,4 @@
 import {
-  BRANCHES,
   treeFor,
   disciplineBuyState,
   pointsInTree,
@@ -9,6 +8,14 @@ import {
 } from "@/lib/disciplines";
 import type { BuildSheet } from "@/lib/validation";
 import { HudCard } from "@/components/HudCard";
+
+const BRANCH_LABEL: Record<string, string> = {
+  tronco: "Tronco",
+  dano: "Daño",
+  control: "Control",
+  intrusion: "Intrusión",
+};
+const TIERS = [1, 2, 3, 4, 5];
 
 function NodeCard({
   node,
@@ -35,7 +42,9 @@ function NodeCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <span className="font-mono text-[10px] text-muted">T{node.tier}</span>
+            <span className="font-mono text-[10px] uppercase text-muted">
+              {BRANCH_LABEL[node.branch]}
+            </span>
             <span className="font-display text-sm font-semibold uppercase">
               {node.label}
             </span>
@@ -110,7 +119,6 @@ export function BuildTab({
   }
 
   const pts = pointsInTree(sheet.especialidad, sheet.disciplinas);
-  const tronco = tree.find((n) => n.branch === "tronco");
   const nextTier = [3, 4, 5].find((t) => pts < TIER_GATING[t]);
 
   return (
@@ -125,36 +133,32 @@ export function BuildTab({
         </span>
       </div>
 
-      {tronco && (
-        <div>
-          <p className="mb-1.5 font-mono text-[11px] uppercase tracking-widest text-muted">
-            /// Tronco
-          </p>
-          <NodeCard node={tronco} sheet={sheet} xpDisponible={xpDisponible} onSet={onSet} />
-        </div>
-      )}
-
-      {BRANCHES.map((b) => (
-        <div key={b.id}>
-          <p className="mb-1.5 font-mono text-[11px] uppercase tracking-widest text-muted">
-            /// {b.label}
-          </p>
-          <div className="flex flex-col gap-2">
-            {tree
-              .filter((n) => n.branch === b.id)
-              .sort((a, c) => a.tier - c.tier)
-              .map((n) => (
-                <NodeCard
-                  key={n.id}
-                  node={n}
-                  sheet={sheet}
-                  xpDisponible={xpDisponible}
-                  onSet={onSet}
-                />
-              ))}
+      {TIERS.filter((t) => tree.some((n) => n.tier === t)).map((t) => {
+        const unlocked = pts >= (TIER_GATING[t] ?? 0);
+        return (
+          <div key={t}>
+            <div className="mb-1.5 flex items-center justify-between font-mono text-[11px] uppercase tracking-widest text-muted">
+              <span>/// Tier {t}</span>
+              <span className={unlocked ? "text-muted" : "text-danger"}>
+                {unlocked ? "abierto" : `🔒 ${TIER_GATING[t]} pts`}
+              </span>
+            </div>
+            <div className="flex flex-col gap-2">
+              {tree
+                .filter((n) => n.tier === t)
+                .map((n) => (
+                  <NodeCard
+                    key={n.id}
+                    node={n}
+                    sheet={sheet}
+                    xpDisponible={xpDisponible}
+                    onSet={onSet}
+                  />
+                ))}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
