@@ -6,6 +6,7 @@ import {
   treeSpent,
   nodeRank,
   nodeUnlocked,
+  troncoRank,
   DISC_MAX,
 } from "./disciplines";
 
@@ -196,9 +197,26 @@ export function setDisciplineValue(
 ): BuildSheet {
   const node = treeFor(sheet.especialidad).find((n) => n.id === nodeId);
   if (!node) return sheet;
-  const floor = node.gift ? 1 : 0;
   const current = nodeRank(node, sheet.disciplinas);
-  const target = clampInt(value, floor, DISC_MAX, current);
+
+  let floor: number;
+  let cap: number;
+  if (node.branch === "tronco") {
+    // Hackeo es el techo: no puede bajar de 1 ni por debajo de la disciplina más alta.
+    const maxOther = Math.max(
+      0,
+      ...treeFor(sheet.especialidad)
+        .filter((n) => n.branch !== "tronco")
+        .map((n) => nodeRank(n, sheet.disciplinas)),
+    );
+    floor = Math.max(1, maxOther);
+    cap = DISC_MAX;
+  } else {
+    floor = 0;
+    cap = Math.min(DISC_MAX, troncoRank(sheet.especialidad, sheet.disciplinas));
+  }
+
+  const target = clampInt(value, floor, cap, current);
   if (target === current) return sheet;
   if (target > current && !nodeUnlocked(node, sheet.especialidad, sheet.disciplinas)) {
     return sheet;

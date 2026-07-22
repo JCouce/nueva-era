@@ -30,7 +30,7 @@ export const DISC_MAX = 5;
 export const TIER_GATING: Record<number, number> = { 1: 0, 2: 1, 3: 4, 4: 8, 5: 13 };
 
 export const NETRUNNER_TREE: DisciplineNode[] = [
-  { id: "hackeo", label: "Hackeo", branch: "tronco", tier: 1, gift: true, desc: "El verbo del netrunner: escanea redes, accede a dispositivos y descarga info. Su rango marca la seguridad accesible y habilita el árbol." },
+  { id: "hackeo", label: "Hackeo", branch: "tronco", tier: 1, gift: true, desc: "Tu NIVEL de netrunner: el techo de rango de todas tus disciplinas (ninguna lo supera) y de la seguridad que puedes tocar. Además escanea, accede y descarga." },
   // Daño
   { id: "sobrecarga", label: "Sobrecarga", branch: "dano", tier: 2, desc: "Daño directo a un objetivo. Rango = dados de daño." },
   { id: "virus", label: "Virus", branch: "dano", tier: 3, desc: "Daño persistente (DoT). Rango = daño/turno." },
@@ -150,6 +150,10 @@ export function disciplineBuyState(
     if (req && !req.met) {
       return { rank, cost, canBuy: false, locked: true, reason: `${req.label} ≥${req.rank}` };
     }
+    // Techo: ninguna disciplina supera tu Hackeo.
+    if (rank >= troncoRank(especialidad, disciplinas)) {
+      return { rank, cost, canBuy: false, locked: true, reason: `Hackeo ≥${rank + 1}` };
+    }
   }
   if (xpDisponible < cost) return { rank, cost, canBuy: false, locked: false, reason: `${cost}xp` };
   return { rank, cost, canBuy: true, locked: false, reason: `${cost}xp` };
@@ -174,14 +178,13 @@ export type DisciplineInfo = {
 
 export const DISCIPLINE_INFO: Record<string, DisciplineInfo> = {
   hackeo: {
-    uso: "Toda tirada es Inteligencia + Netrunning (skill) vs la seguridad del objetivo, contando éxitos. Hackeo no es solo la base de otros hacks: es una acción con usos propios (abajo). Y su rango marca el nivel de seguridad que puedes tocar y a qué tier del árbol accedes (tier N pide Hackeo N).",
+    uso: "Toda acción es Inteligencia + Netrunning (skill) vs la seguridad del objetivo, contando éxitos. Pero lo clave es que tu Hackeo es tu NIVEL de netrunner (ver 'qué sube el rango').",
     acciones: [
       "Escanear la red: detectas qué dispositivos hay en la zona o en red local — enemigos con cyberware, cámaras, drones, torretas, terminales. Reconocimiento antes de actuar.",
       "Acceder y descargar: te cuelas en un terminal o dispositivo y lees o descargas su información (datos, claves, planos, credenciales, registros).",
-      "Base del árbol: potencia y habilita el resto de tus disciplinas; su rango marca el nivel de seguridad accesible.",
     ],
     targets: "Cualquier objetivo con electrónica en alcance o en red: personas con cyberware, cámaras, puertas, torretas, drones, terminales.",
-    rango: "Cada rango sube un nivel de seguridad accesible. Solo puedes hackear (escanear, acceder o atacar) objetivos de nivel ≤ tu Hackeo.",
+    rango: "Subir Hackeo sube tu NIVEL, que es el TECHO de todo: ① eleva el rango máximo de TODAS tus disciplinas (ninguna supera tu Hackeo — para algo a rango 5, Hackeo 5); ② abre tiers más profundos (tier N pide Hackeo N); ③ te deja tocar seguridad más alta (desglose abajo).",
     ejemplo:
       "Entras a una oficina corpo. Escaneas la red (Hackeo) y ves 3 cámaras, 2 guardias con implantes y un terminal de nivel 3 — necesitas Hackeo 3 para tocarlo. Te conectas al terminal y descargas los turnos de guardia. Todo con INT + Netrunning vs la seguridad de cada cosa.",
     porRango: [
@@ -308,7 +311,8 @@ export function disciplineRequirements(
     return ["Ninguno — disciplina de regalo, empieza en rango 1."];
   }
   const reqs = [
-    `Hackeo ≥ ${node.tier} (profundidad de acceso)`,
+    `Hackeo ≥ ${node.tier} para entrar al tier`,
+    `Rango máximo = tu Hackeo (ninguna disciplina lo supera)`,
     `${TIER_GATING[node.tier] ?? 0} puntos en el árbol`,
   ];
   if (node.requires) {

@@ -295,9 +295,14 @@ Tres mecanismos, separados:
    | T2 | 1 *(el regalo Hackeo 1)* |
    | T3 | 4 · T4 | 8 · T5 | 13 |
 
-2. **Troncal como profundidad de acceso: Hackeo ≥ tier.** Para tocar un nodo de tier N,
-   tu **Hackeo** (tronco) debe estar a **rango ≥ N** (T5 exige Hackeo 5). Hace la
-   troncal **obligatoria** (deja de poder quedarse en 1) y es tu "nivel de netrunner".
+2. **Hackeo = tu nivel de netrunner = TECHO de todo.** El rango de la troncal (Hackeo)
+   marca tu nivel, y actúa como techo doble:
+   - **Acceso a tier**: solo entras a tiers ≤ tu Hackeo (tier N pide Hackeo N; T5 = Hackeo 5).
+   - **Techo de rango**: **ninguna disciplina puede superar tu Hackeo.** Para tener algo
+     a rango 5 necesitas Hackeo 5; con Hackeo 3, todo tope a 3.
+
+   Con Hackeo N: accedes a tiers ≤ N y subes cualquier disciplina hasta rango N. Además,
+   Hackeo no puede bajar por debajo de tu disciplina más alta (mantiene el invariante).
 
 3. **Prerrequisitos por nodo: solo donde hacen falta.** La mayoría no tienen (basta el
    tier + Hackeo). Solo los que serían **absurdos sin su base**:
