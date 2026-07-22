@@ -4,9 +4,13 @@ import { useCallback, useRef, useState } from "react";
 import {
   setAttributeAction,
   setSkillAction,
+  setDisciplineAction,
   setEspecialidadAction,
   grantResourcesAction,
   saveIdentityAction,
+  buyWeaponAction,
+  sellWeaponAction,
+  resetBuildAction,
   type SaveResult,
 } from "./actions";
 import {
@@ -15,20 +19,28 @@ import {
   dineroDisponible,
   setAttributeValue,
   setSkillValue,
+  setDisciplineValue,
   type AttributeId,
   type SkillId,
   type EspecialidadId,
 } from "@/lib/rules";
+import { weaponById } from "@/lib/weapons";
 import type { BuildSheet } from "@/lib/validation";
 import { ResumenTab } from "./_components/ResumenTab";
 import { AtributosTab } from "./_components/AtributosTab";
 import { HabilidadesTab } from "./_components/HabilidadesTab";
+import { BuildTab } from "./_components/BuildTab";
+import { ArmasTab } from "./_components/ArmasTab";
+import { RepertorioTab } from "./_components/RepertorioTab";
 import { accentFor } from "./_components/accents";
 
 const TABS = [
   { id: "resumen", label: "Resumen" },
   { id: "attrs", label: "Atributos" },
   { id: "skills", label: "Habilidades" },
+  { id: "build", label: "Build" },
+  { id: "armas", label: "Armas" },
+  { id: "repertorio", label: "Repertorio" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -70,15 +82,23 @@ export function CharacterSheet({
   const idTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const runSave = useCallback((fn: () => Promise<SaveResult>) => {
-    setStatus("saving");
-    queue.current = queue.current
-      .then(() => fn())
-      .then(
-        (res) => setStatus(res.ok ? "saved" : "error"),
-        () => setStatus("error"),
-      );
-  }, []);
+  const runSave = useCallback(
+    (fn: () => Promise<SaveResult>, onOk?: (s: BuildSheet) => void) => {
+      setStatus("saving");
+      queue.current = queue.current
+        .then(() => fn())
+        .then(
+          (res) => {
+            if (res.ok) {
+              onOk?.(res.sheet);
+              setStatus("saved");
+            } else setStatus("error");
+          },
+          () => setStatus("error"),
+        );
+    },
+    [],
+  );
 
   // ── Economía (inmediato). El estado optimista usa las mismas funciones puras
   // que el servidor, así que no hace falta reconciliar en éxito. ──
@@ -90,9 +110,29 @@ export function CharacterSheet({
     setSheet((s) => setSkillValue(s, id, value));
     runSave(() => setSkillAction(characterId, id, value));
   };
+  const commitDiscipline = (id: string, value: number) => {
+    setSheet((s) => setDisciplineValue(s, id, value));
+    runSave(() => setDisciplineAction(characterId, id, value));
+  };
   const onEspecialidad = (value: EspecialidadId | null) => {
     setSheet((s) => ({ ...s, especialidad: value }));
     runSave(() => setEspecialidadAction(characterId, value));
+  };
+
+  // ── Armas y reset (discretos: reconcilian desde el servidor). ──
+  const buyWeapon = (id: string) => {
+    const w = weaponById(id);
+    if (w && !sheet.weapons.some((x) => x.id === id)) {
+      setSheet((s) => ({ ...s, weapons: [...s.weapons, { id, costePagado: w.precio }] }));
+    }
+    runSave(() => buyWeaponAction(characterId, id), setSheet);
+  };
+  const sellWeapon = (id: string) => {
+    setSheet((s) => ({ ...s, weapons: s.weapons.filter((x) => x.id !== id) }));
+    runSave(() => sellWeaponAction(characterId, id), setSheet);
+  };
+  const resetBuild = () => {
+    runSave(() => resetBuildAction(characterId), setSheet);
   };
 
   // ── Identidad y recursos (debounced, fire-and-forget). ──
@@ -169,8 +209,8 @@ export function CharacterSheet({
         </span>
       </div>
 
-      <div className="flex items-center justify-between border-b border-border">
-        <nav className="flex gap-1">
+      <div className="flex items-end justify-between border-b border-border">
+        <nav className="flex flex-wrap gap-1">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -224,6 +264,28 @@ export function CharacterSheet({
           accentText={accent?.text ?? "text-info"}
           onSet={commitSkill}
         />
+      )}
+      {active === "build" && (
+        <BuildTab sheet={sheet} xpDisponible={xpDisp} onSet={commitDiscipline} />
+      )}
+      {active === "armas" && (
+        <ArmasTab
+          sheet={sheet}
+          dineroDisponible={dineroDisp}
+          onBuy={buyWeapon}
+          onSell={sellWeapon}
+        />
+      )}
+      {active === "repertorio" && <RepertorioTab sheet={sheet} />}
+
+      {(active === "build" || active === "armas") && (
+        <button
+          type="button"
+          onClick={resetBuild}
+          className="clip-chamfer-sm mt-2 self-start border border-danger px-3 py-1.5 font-mono text-[11px] uppercase tracking-wide text-danger active:scale-95"
+        >
+          ⟲ Reset build
+        </button>
       )}
     </div>
   );

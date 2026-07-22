@@ -48,8 +48,10 @@ export const buildSheetSchema = z.object({
     inteligencia: attrValue,
   }),
   skills: z.object(skillsShape),
-  // Contenedores reservados para cuando lleguen (rebanadas 2 y 3).
-  disciplinas: z.array(acquisitionSchema),
+  // Disciplinas: rango 0–5 por nodo del árbol. Gasto derivado por fórmula.
+  disciplinas: z.record(z.string(), z.number().int().min(0).max(5)),
+  // Compras con €$ (foto del coste). Cyberware reservado para su rebanada.
+  weapons: z.array(acquisitionSchema),
   cyberware: z.array(acquisitionSchema),
 });
 

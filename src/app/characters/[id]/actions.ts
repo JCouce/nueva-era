@@ -7,11 +7,17 @@ import {
   parseSheet,
   setAttributeValue,
   setSkillValue,
+  setDisciplineValue,
+  dineroDisponible,
   ESPECIALIDADES,
+  SKILLS,
+  ATTR_MIN,
+  SKILL_MIN,
   type AttributeId,
   type SkillId,
   type EspecialidadId,
 } from "@/lib/rules";
+import { weaponById } from "@/lib/weapons";
 
 export type SaveResult =
   | { ok: true; sheet: BuildSheet }
@@ -62,6 +68,62 @@ export async function setSkillAction(
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(characterId, setSkillValue(ctx.sheet, skillId, value));
+}
+
+export async function setDisciplineAction(
+  characterId: string,
+  nodeId: string,
+  value: number,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, setDisciplineValue(ctx.sheet, nodeId, value));
+}
+
+export async function buyWeaponAction(
+  characterId: string,
+  weaponId: string,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const weapon = weaponById(weaponId);
+  if (!weapon) return { ok: false, error: "Arma no válida" };
+  if (ctx.sheet.weapons.some((w) => w.id === weaponId)) return { ok: true, sheet: ctx.sheet };
+  if (dineroDisponible(ctx.sheet) < weapon.precio) {
+    return { ok: false, error: "Sin €$ suficientes" };
+  }
+  return persist(characterId, {
+    ...ctx.sheet,
+    weapons: [...ctx.sheet.weapons, { id: weaponId, costePagado: weapon.precio }],
+  });
+}
+
+export async function sellWeaponAction(
+  characterId: string,
+  weaponId: string,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, {
+    ...ctx.sheet,
+    weapons: ctx.sheet.weapons.filter((w) => w.id !== weaponId),
+  });
+}
+
+// Resetea el BUILD (para probar rutas): vuelve a 0 lo gastado y conserva lo
+// ganado, el arquetipo y la identidad. El respec es gratis por el modelo derivado.
+export async function resetBuildAction(characterId: string): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const s = ctx.sheet;
+  return persist(characterId, {
+    ...s,
+    attributes: { fuerza: ATTR_MIN, destreza: ATTR_MIN, inteligencia: ATTR_MIN },
+    skills: Object.fromEntries(SKILLS.map((sk) => [sk.id, SKILL_MIN])) as BuildSheet["skills"],
+    disciplinas: {},
+    weapons: [],
+    cyberware: [],
+  });
 }
 
 export async function setEspecialidadAction(

@@ -1,0 +1,160 @@
+import {
+  BRANCHES,
+  treeFor,
+  disciplineBuyState,
+  pointsInTree,
+  TIER_GATING,
+  DISC_MAX,
+  type DisciplineNode,
+} from "@/lib/disciplines";
+import type { BuildSheet } from "@/lib/validation";
+import { HudCard } from "@/components/HudCard";
+
+function NodeCard({
+  node,
+  sheet,
+  xpDisponible,
+  onSet,
+}: {
+  node: DisciplineNode;
+  sheet: BuildSheet;
+  xpDisponible: number;
+  onSet: (id: string, value: number) => void;
+}) {
+  const { rank, cost, canBuy, reason } = disciplineBuyState(
+    node,
+    sheet.especialidad,
+    sheet.disciplinas,
+    xpDisponible,
+  );
+  const floor = node.gift ? 1 : 0;
+  const badge = node.exclusive ? "⚡" : node.cross ? "⇄" : "";
+
+  return (
+    <HudCard className="p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-[10px] text-muted">T{node.tier}</span>
+            <span className="font-display text-sm font-semibold uppercase">
+              {node.label}
+            </span>
+            {badge && <span className="text-xs">{badge}</span>}
+          </div>
+          <p className="mt-0.5 font-sans text-xs leading-tight text-muted">
+            {node.desc}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => onSet(node.id, rank - 1)}
+            disabled={rank <= floor}
+            aria-label="Bajar"
+            className="h-8 w-8 border border-border bg-elevated font-mono text-muted active:scale-95 disabled:opacity-30"
+          >
+            −
+          </button>
+          <span className="w-4 text-center font-mono text-lg tabular-nums">
+            {rank}
+          </span>
+          <div className="flex w-11 flex-col items-center">
+            <button
+              type="button"
+              onClick={() => onSet(node.id, rank + 1)}
+              disabled={!canBuy}
+              aria-label="Subir"
+              className="h-8 w-8 border border-accent bg-accent font-mono text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted"
+            >
+              +
+            </button>
+            <span className="mt-0.5 font-mono text-[9px] leading-none text-muted">
+              {rank >= DISC_MAX ? "MÁX" : canBuy ? `${cost}xp` : reason}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div className="mt-2 flex gap-1">
+        {Array.from({ length: DISC_MAX }).map((_, i) => (
+          <span
+            key={i}
+            className={`h-1.5 flex-1 ${i < rank ? "bg-info" : "bg-elevated"}`}
+          />
+        ))}
+      </div>
+    </HudCard>
+  );
+}
+
+export function BuildTab({
+  sheet,
+  xpDisponible,
+  onSet,
+}: {
+  sheet: BuildSheet;
+  xpDisponible: number;
+  onSet: (id: string, value: number) => void;
+}) {
+  const tree = treeFor(sheet.especialidad);
+  if (tree.length === 0) {
+    return (
+      <p className="font-mono text-sm text-muted">
+        // Árbol pendiente para este arquetipo. Elige Netrunner en Resumen.
+      </p>
+    );
+  }
+
+  const pts = pointsInTree(sheet.especialidad, sheet.disciplinas);
+  const tronco = tree.find((n) => n.branch === "tronco");
+  const nextTier = [2, 3, 4, 5].find((t) => pts < TIER_GATING[t]);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between border-y border-border py-2 font-mono text-xs">
+        <span className="uppercase tracking-wide text-muted">
+          Puntos en árbol
+        </span>
+        <span className="tabular-nums text-info">
+          {pts}
+          {nextTier && (
+            <span className="text-muted">
+              {" "}
+              · T{nextTier} a los {TIER_GATING[nextTier]}
+            </span>
+          )}
+        </span>
+      </div>
+
+      {tronco && (
+        <div>
+          <p className="mb-1.5 font-mono text-[11px] uppercase tracking-widest text-muted">
+            /// Tronco
+          </p>
+          <NodeCard node={tronco} sheet={sheet} xpDisponible={xpDisponible} onSet={onSet} />
+        </div>
+      )}
+
+      {BRANCHES.map((b) => (
+        <div key={b.id}>
+          <p className="mb-1.5 font-mono text-[11px] uppercase tracking-widest text-muted">
+            /// {b.label}
+          </p>
+          <div className="flex flex-col gap-2">
+            {tree
+              .filter((n) => n.branch === b.id)
+              .sort((a, c) => a.tier - c.tier)
+              .map((n) => (
+                <NodeCard
+                  key={n.id}
+                  node={n}
+                  sheet={sheet}
+                  xpDisponible={xpDisponible}
+                  onSet={onSet}
+                />
+              ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

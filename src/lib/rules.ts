@@ -1,6 +1,13 @@
 // Reglas del sistema homebrew de Nueva Era (Vampiro d10 point-buy + Cyberpunk).
 // Fuente única de verdad: edita aquí atributos, habilidades, especialidades y costes.
 import type { BuildSheet, Acquisition } from "./validation";
+import {
+  treeFor,
+  treeSpent,
+  nodeRank,
+  nodeUnlocked,
+  DISC_MAX,
+} from "./disciplines";
 
 export const ATTRIBUTES = [
   { id: "fuerza", label: "Fuerza", abbr: "FUE" },
@@ -57,7 +64,8 @@ export function defaultSheet(): BuildSheet {
     dineroGanado: 0,
     attributes: { fuerza: ATTR_MIN, destreza: ATTR_MIN, inteligencia: ATTR_MIN },
     skills: Object.fromEntries(SKILLS.map((s) => [s.id, SKILL_MIN])) as BuildSheet["skills"],
-    disciplinas: [],
+    disciplinas: {},
+    weapons: [],
     cyberware: [],
   };
 }
@@ -99,9 +107,19 @@ export function parseSheet(raw: unknown): BuildSheet {
     dineroGanado: clampInt(r.dineroGanado, 0, 1_000_000_000, 0),
     attributes,
     skills,
-    disciplinas: parseAcquisitions(r.disciplinas),
+    disciplinas: parseRanks(r.disciplinas),
+    weapons: parseAcquisitions(r.weapons),
     cyberware: parseAcquisitions(r.cyberware),
   };
+}
+
+function parseRanks(raw: unknown): Record<string, number> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    out[k] = clampInt(v, 0, 5, 0);
+  }
+  return out;
 }
 
 function parseAcquisitions(raw: unknown): Acquisition[] {
@@ -133,11 +151,13 @@ export function xpSpent(sheet: BuildSheet): number {
   let total = 0;
   for (const a of ATTRIBUTES) total += attrSpent(sheet.attributes[a.id]);
   for (const s of SKILLS) total += skillSpent(sheet.skills[s.id]);
-  for (const d of sheet.disciplinas) total += d.costePagado;
+  total += treeSpent(sheet.especialidad, sheet.disciplinas);
   return total;
 }
 export function moneySpent(sheet: BuildSheet): number {
-  return sheet.cyberware.reduce((t, c) => t + c.costePagado, 0);
+  const w = sheet.weapons.reduce((t, x) => t + x.costePagado, 0);
+  const c = sheet.cyberware.reduce((t, x) => t + x.costePagado, 0);
+  return w + c;
 }
 export function xpDisponible(sheet: BuildSheet): number {
   return sheet.xpGanado - xpSpent(sheet);
@@ -164,5 +184,28 @@ export function setSkillValue(
 ): BuildSheet {
   const v = clampInt(value, SKILL_MIN, SKILL_MAX, sheet.skills[id]);
   const next = { ...sheet, skills: { ...sheet.skills, [id]: v } };
+  return xpDisponible(next) < 0 ? sheet : next;
+}
+
+// Fija el rango de un nodo de disciplina. Al subir valida gating/prerreq y XP;
+// bajar siempre vale (respec). El tronco (regalo) no baja de 1.
+export function setDisciplineValue(
+  sheet: BuildSheet,
+  nodeId: string,
+  value: number,
+): BuildSheet {
+  const node = treeFor(sheet.especialidad).find((n) => n.id === nodeId);
+  if (!node) return sheet;
+  const floor = node.gift ? 1 : 0;
+  const current = nodeRank(node, sheet.disciplinas);
+  const target = clampInt(value, floor, DISC_MAX, current);
+  if (target === current) return sheet;
+  if (target > current && !nodeUnlocked(node, sheet.especialidad, sheet.disciplinas)) {
+    return sheet;
+  }
+  const next = {
+    ...sheet,
+    disciplinas: { ...sheet.disciplinas, [nodeId]: target },
+  };
   return xpDisponible(next) < 0 ? sheet : next;
 }
