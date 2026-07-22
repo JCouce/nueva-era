@@ -73,6 +73,10 @@ Las **habilidades** que existen hoy (4 por atributo):
 > No hay descuentos ni penalizaciones por arquetipo. Un Merc paga por Inteligencia
 > exactamente lo mismo que un Netrunner. La clase **no toca las stats**.
 
+> **Pairing flexible (estilo Vampiro):** una habilidad **no está soldada a un
+> atributo**. El agrupamiento de arriba es el pairing *típico*, pero la acción decide
+> con qué atributo se tira (ej.: las armas dictan el suyo — ver §10).
+
 ---
 
 ## 4. Los tres arquetipos (tu "clan") **[FIRME]**
@@ -292,41 +296,191 @@ tiers altos**:
 > maxean todo, apretamos a **gate por rama** y el "1,5 carriles" aparece solo. Es una
 > perilla que se gira después, **no un rediseño**.
 
-### El Netrunner (prototipo) **[FIRME dirección · PENDIENTE nodos]**
+### Hackeo y detección **[FIRME modelo · números TBD]**
 
-El Netrunner es un **mago digital**. Diseñamos su árbol **entero** primero como
-prototipo; una vez funcione, replicamos el patrón a Merc y Cazatalentos.
+**Cómo funciona un hackeo:**
+1. **Alcance**: percibes o tienes en red al objetivo. `Hackeo` (rango) gatea a qué
+   nivel de **seguridad** llegas.
+2. **Tirada**: **INT + Netrunning** vs la seguridad del objetivo. Éxitos = potencia.
+3. **Efecto**: lo pone el nodo de disciplina (Sobrecarga daña, Ganzúa abre…).
 
-- **Tronco (regalo): Hackeo.** No es "hack de daño", es el **verbo**: interfacear con
-  la tecnología. Su rango 1–5 = tu potencia de intrusión (a qué nivel de seguridad
-  llegas y la magnitud base). **Las tres ramas escalan de aquí.**
-- **Rama Daño → Sobrecarga.** El *blaster*: daño directo, y arriba DoT, área y el
-  **execute** (obligar al enemigo a dispararse). Aquí, en lo hondo, va la
-  **habilitadora de cruce** ("tu daño escala con Fuerza").
-- **Rama Control → Interferencia.** El *controlador*: ciegas ópticas, atascas armas,
-  y arriba la marioneta.
-- **Rama Intrusión → Ganzúa.** El *infiltrador/soporte*: abres puertas, cámaras y
-  torretas, extraes datos y **buffeas el cyberware de un aliado**.
+**Detección (clave para no romper el equilibrio):**
+- **Hackear NO te revela automáticamente.** Es discreto por defecto.
+- El **efecto** sí es visible (el guardia frito se cae) → sube la **alerta** ("hay un
+  runner"), pero **no revela tu posición**.
+- Localizar al hacker tiene **dos canales**:
+
+| Canal | Qué hace | Tirada | Quién puede |
+|---|---|---|---|
+| **Físico** | Spotear su cuerpo si está cerca | INT + Percepción vs su DES + Sigilo | **Todas las clases** † |
+| **Digital** | Rastrearlo por la red aunque esté oculto/remoto | INT + Netrunning vs su defensa | **Solo netrunners / ICE** |
+
+† Detectar la **firma digital** de un runner oculto requiere **ópticas cibernéticas**
+(algunas, las avanzadas): sin cyber-ojos ves a una persona escondida, pero no "ves" al
+fantasma digital. Es el *sink* de €$ anti-runner para los no-hackers.
+
+- **Firma cero** (cross DES, ver abajo) vive en el canal **digital**: sumas Destreza →
+  el rastreo enemigo penaliza o no engancha. El nativo defiende el rastreo con
+  contra-hackeo (INT+Netrunning); el DES-cross directamente **no deja firma**.
+- **Balance:** cerca → cualquiera con Percepción (y ópticas) te caza; remoto → solo un
+  runner/ICE enemigo, pero pagas estando **ausente físicamente** de la escena. Las
+  instalaciones serias tienen ICE: esa es la amenaza natural del hacker sigiloso.
+
+### El Netrunner (prototipo) **[FIRME estructura · PROPUESTA números]**
+
+El Netrunner es un **mago digital**. Es el árbol prototipo: una vez funcione,
+replicamos el patrón a Merc y Cazatalentos.
+
+**Forma: `1-3-3-4-5`** (16 nodos). Daño e Intrusión bajan más porque cargan las dos
+**habilitadoras de cruce** (FUE y DES) y sus pagos; Control es el carril INT puro.
+
+```
+                          [T1]  HACKEO  (tronco · regalo)
+                            │
+        ┌───────────────────┼───────────────────────┐
+      DAÑO               CONTROL                 INTRUSIÓN
+   [T2] Sobrecarga    [T2] Interferencia   [T2] Ganzúa
+   [T3] Virus         [T3] Bloqueo         [T3] Fantasma
+   [T4] Cascada       [T4] Marioneta       [T4] Golpe de sombra
+                                           [T4] Puerta trasera
+   [T5] Suicidio ⚡    [T5] Colapso         [T5] Firma cero ⇄
+   [T5] Fuerza bruta ⇄                     [T5] Dios de la máquina
+```
+⚡ firma exclusiva · ⇄ habilitadora de cruce
+
+**Nodos (rango 1–5):**
+
+| Rama | Nodo | Efecto · qué sube el rango |
+|---|---|---|
+| Tronco | **Hackeo** | El verbo: interfacear. Rango = potencia de intrusión (seguridad + magnitud base). Prerreq de todo. |
+| Daño | **Sobrecarga** | Daño directo a un objetivo. Rango = dados de daño. |
+| Daño | **Virus** | Daño persistente (DoT). Rango = daño/turno. |
+| Daño | **Cascada** | El daño salta a enemigos en red (área). Rango = nº de saltos. |
+| Daño | **Suicidio inducido** ⚡ | *Execute*: bajo umbral de vida, el enemigo se dispara. Rango = umbral. |
+| Daño | **Fuerza bruta** ⇄ | El daño de hackeo escala con **Fuerza** (no INT). Rango = **tope** de FUE que aportas. |
+| Control | **Interferencia** | Ciegas ópticas (penaliza puntería). Rango = penalización/duración. |
+| Control | **Bloqueo** | Atascas arma o cyberware enemigo. Rango = duración. |
+| Control | **Marioneta** | Controlas a un enemigo una acción. Rango = resistencia superada. |
+| Control | **Colapso** | Apagas armas/cyberware de un área un turno. |
+| Intrusión | **Ganzúa** | Abres/desactivas tech (puertas, cámaras, torretas). Rango = seguridad. |
+| Intrusión | **Fantasma** | Te borras de vigilancia / extraes datos. Rango = alcance. |
+| Intrusión | **Golpe de sombra** | Hackear a un objetivo que **no te ha detectado** = éxitos extra (burst desde sigilo). Rango = éxitos añadidos. |
+| Intrusión | **Puerta trasera** | Buffeas el cyberware de un **aliado**. Rango = magnitud. |
+| Intrusión | **Firma cero** ⇄ | Hackeas **sin rastro digital**: sumas **Destreza** contra el rastreo. Rango = **tope** de DES. |
+| Intrusión | **Dios de la máquina** | Dominas el entorno tech de una zona en combate. |
+
+**Gating de tiers** (puntos en el árbol = suma de rangos):
+
+| Tier | Puntos requeridos |
+|---|---|
+| T2 | 1 *(lo tienes al crear: Hackeo 1)* |
+| T3 | 4 |
+| T4 | 8 |
+| T5 | 13 |
+
+**Las dos habilitadoras de cruce**, una por atributo alternativo, ambas en T5 y con
+rango = **tope**:
+- **Fuerza bruta** (Daño): el daño escala con FUE → el *netrunner-FUE*, el hacker que
+  pega como un camión.
+- **Firma cero** (Intrusión): sumas DES contra el rastreo → el *netrunner-DES*, el
+  hacker fantasma. Combina con **Golpe de sombra** (el burst) para el build asesino.
+
+Ambas mantienen **INT para acertar** el hackeo → el cruce **paga dos atributos** (ver
+*Hackeo y detección*). Ese es su coste real, más que la habilitadora en sí.
+
+Cada rama de cruce tiene una **elección terminal** en T5: **Suicidio inducido** (pago
+del netrunner-INT nativo) vs **Fuerza bruta** en Daño; **Dios de la máquina** vs
+**Firma cero** en Intrusión. Difícil pillar las dos: el árbol separa solo las
+fantasías.
+
+#### Ejemplo trabajado: ¿cuánto cuesta "meter 3 de FUE en las Sobrecargas"?
+
+Un netrunner-FUE que quiere canalizar 3 de Fuerza en su daño:
+
+| Bloque | Detalle | XP |
+|---|---|---|
+| Disciplinas | Hackeo 3, Sobrecarga 4, Virus 2, Cascada 2, Interferencia 2 (→13 pts, abre T5) | 64 |
+| Disciplinas | Fuerza bruta 3 | 16 |
+| Atributos | FUE 3 (canalizar) + INT 3 (acertar) | 24 |
+| Habilidades | Netrunning 3 | 9 |
+| **Total** | | **~115 XP** |
+
+Cae en **Veterano** (~mitad de campaña, ~11-12 combates): la fantasía "hacker que
+pega como un camión" **se enciende a media campaña**. A igual XP, un netrunner-INT
+nativo va más profundo (roza el *execute*); el cruce **sacrifica profundidad**, no
+choca contra un muro. Es lo buscado.
 
 ---
 
-## 10. Sistemas pendientes de diseñar **[PENDIENTE]**
+## 10. Armas y equipo **[PROPUESTA — números a validar]**
+
+Las armas se compran con **€$** y están **ligadas a un atributo** (no a la clase). El
+ataque se resuelve:
+
+```
+Ataque = atributo del ARMA + skill (Cuerpo a cuerpo si melee · Armas a distancia si distancia)
+```
+
+Las skills **no están soldadas a un atributo**: el pairing depende de la acción y **el
+arma dicta el atributo**. Como cada uno usa armas de su stat, sale natural (daga smart
+= INT + Cuerpo a cuerpo; mazo = FUE + Cuerpo a cuerpo).
+
+**Armas híbridas**: las que tienen dos atributos usan **el mayor de los dos**.
+Accesibles a dos builds — la "infantería genérica" entre las armas de especialista.
+
+**Los tres sabores de combate (el triángulo):**
+- **FUE** = pega fuerte. Daño alto, requisito de fuerza, lenta/aparatosa.
+- **DES** = versátil y precisa. Equilibrada, ocultable, buena en cualquier situación.
+- **INT** = *smart-targeting*. Daño base más bajo pero **apunta sola** (ignora
+  cobertura/evasión, bonus a impactar). Cerebro > músculo.
+
+**Stat block:** Daño · **Alcance** (corto/medio/largo) · **Cadencia** (lenta = 1 tiro,
+permite Apuntar / normal / automática = ráfaga) · **Ocultación** · **Requisito** de
+atributo. *(Sin munición/cargador: fuera por simplicidad.)*
+
+| Arma | Atributo | Tipo | Daño | Alcance | Cadencia | Ocult. | €$ | Req |
+|---|---|---|---|---|---|---|---|---|
+| Mazo pesado | FUE | Melee | 4 | — | — | No | 800 | FUE 2 |
+| Escopeta | FUE | Distancia | 4 | Corto | Normal | No | 1 200 | FUE 2 |
+| Katana | DES | Melee | 3 | — | — | Difícil | 900 | DES 2 |
+| Pistola | DES | Distancia | 3 | Medio | Normal | Sí | 600 | — |
+| Fusil de francotirador | DES | Distancia | 5 | Largo | Lenta (Apuntar) | No | 2 500 | DES 3 |
+| Daga smart | INT | Melee | 2 | — | — | Sí | 500 | — |
+| Smartgun | INT | Distancia | 3 | Medio | Normal | Sí | 1 500 | INT 2 |
+| Fusil de asalto | DES/FUE | Distancia | 4 | Medio | Automática | No | 2 000 | DES 2 · FUE 2 |
+| Subfusil (SMG) | DES/INT | Distancia | 3 | Corto | Automática | Sí | 1 400 | DES 2 · INT 2 |
+
+**Firmas por build:**
+- **Daga smart + Smartgun** = las del netrunner (respaldo a los hacks; daga + *Golpe
+  de sombra* = alpha desde el sigilo).
+- **Fusil de francotirador** = firma del cazatalentos (alcance + alpha desde sigilo).
+
+> La resolución completa de combate (impactar → daño → soak, y cómo se usa el "Daño N")
+> es el **capítulo de combate**, aún pendiente. Aquí solo definimos el *stat block* que
+> ese sistema consumirá.
+
+---
+
+## 11. Sistemas pendientes de diseñar **[PENDIENTE]**
 
 Anotados para no perderlos; se diseñan más adelante:
 
 - **Cyberware**: catálogo común comprado con €$, con **tope de capacidad**. La "carga
   de cromo" es un solo número que sirve doble: te limita cuánto instalas **y** sube
   la dificultad de la tirada de ciberpsicosis.
+  - **Ópticas cibernéticas**: algunas (las avanzadas) habilitan **Percepción contra
+    runners** — detectar la firma digital de un hacker oculto. Es el equipo anti-runner
+    de los no-hackers y un buen sink de €$ (ver *Hackeo y detección*).
 - **Ciberpsicosis**: si la vida baja del ~10%, tiras Humanidad; la dificultad escala
   con el cromo instalado; si fallas, entras en *berserk*/cyberpsicópata X turnos.
-- **Equipo/armas**: 3 tipos ligados a stat (armas de Fuerza, de Destreza, de
-  Inteligencia). Agnósticas al arquetipo, no a la estadística.
+- **Combate**: resolución completa (impactar → daño → soak), la cadencia en acción,
+  y la vida/salud del personaje.
 - **Árboles de Merc y Cazatalentos**: se replican del patrón del Netrunner.
 - **Disciplinas exclusivas** por arquetipo y **habilitadoras** de cruce (colocación).
 
 ---
 
-## 11. Recomendaciones para el máster
+## 12. Recomendaciones para el máster
 
 Chuleta de lo que hemos aprendido diseñando esto. Léela antes de crear contenido.
 
