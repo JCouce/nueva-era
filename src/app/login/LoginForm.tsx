@@ -38,17 +38,16 @@ export function LoginForm() {
       )}
       <input
         name="email"
-        type="email"
+        type="text"
         required
-        placeholder="Email"
-        autoComplete="email"
+        placeholder="Usuario"
+        autoComplete="username"
         className="clip-chamfer-sm border border-border bg-night px-4 py-3 text-base text-foreground outline-none placeholder:text-muted focus:border-accent"
       />
       <input
         name="password"
         type="password"
         required
-        minLength={6}
         placeholder="Contraseña"
         autoComplete={mode === "login" ? "current-password" : "new-password"}
         className="clip-chamfer-sm border border-border bg-night px-4 py-3 text-base text-foreground outline-none placeholder:text-muted focus:border-accent"

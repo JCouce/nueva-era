@@ -7,9 +7,11 @@ import {
   SKILLS,
 } from "./rules";
 
+// Login flexible para el grupo: acepta usuario simple (no hace falta email) y
+// contraseñas cortas. El campo se llama `email` porque mapea a User.email.
 export const loginSchema = z.object({
-  email: z.email(),
-  password: z.string().min(6, "Mínimo 6 caracteres"),
+  email: z.string().trim().min(1, "Pon un usuario"),
+  password: z.string().min(1, "Pon una contraseña"),
 });
 
 export const registerSchema = loginSchema.extend({
