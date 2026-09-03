@@ -1,48 +1,40 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  setAttributeAction,
-  setSkillAction,
-  setDisciplineAction,
-  setEspecialidadAction,
-  grantResourcesAction,
+  setAtributoAction,
+  setHabilidadAction,
+  addEspecialidadAction,
+  removeEspecialidadAction,
   saveIdentityAction,
-  buyWeaponAction,
-  sellWeaponAction,
   resetBuildAction,
   type SaveResult,
 } from "./actions";
 import {
-  ESPECIALIDADES,
-  xpDisponible,
-  dineroDisponible,
-  setAttributeValue,
-  setSkillValue,
-  setDisciplineValue,
-  type AttributeId,
-  type SkillId,
-  type EspecialidadId,
+  setAtributoValue,
+  setHabilidadValue,
+  addEspecialidad,
+  removeEspecialidad,
+  puntosAtributosDisponibles,
+  puntosHabilidadesDisponibles,
+  salud,
+  type AtributoId,
+  type HabilidadId,
 } from "@/lib/rules";
-import { weaponById } from "@/lib/weapons";
-import { treeFor } from "@/lib/disciplines";
-import type { BuildSheet } from "@/lib/validation";
+import type { Sheet } from "@/lib/rules";
 import { ResumenTab } from "./_components/ResumenTab";
 import { AtributosTab } from "./_components/AtributosTab";
 import { HabilidadesTab } from "./_components/HabilidadesTab";
-import { BuildTab } from "./_components/BuildTab";
-import { ArmasTab } from "./_components/ArmasTab";
-import { RepertorioTab } from "./_components/RepertorioTab";
-import { DisciplineModal } from "./_components/DisciplineModal";
-import { accentFor } from "./_components/accents";
+import { PendienteTab } from "./_components/PendienteTab";
 
 const TABS = [
   { id: "resumen", label: "Resumen" },
   { id: "attrs", label: "Atributos" },
   { id: "skills", label: "Habilidades" },
-  { id: "build", label: "Build" },
-  { id: "armas", label: "Armas" },
-  { id: "repertorio", label: "Repertorio" },
+  { id: "dotes", label: "Dotes" },
+  { id: "poderes", label: "Poderes" },
+  { id: "aumentos", label: "Aumentos" },
+  { id: "equipo", label: "Equipo" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -66,27 +58,29 @@ export function CharacterSheet({
 }: {
   characterId: string;
   initialName: string;
-  initialSheet: BuildSheet;
+  initialSheet: Sheet;
 }) {
   const [active, setActive] = useState<TabId>("resumen");
-  const [sheet, setSheet] = useState<BuildSheet>(initialSheet);
+  const [sheet, setSheet] = useState<Sheet>(initialSheet);
   const [name, setName] = useState(initialName);
   const [status, setStatus] = useState<SaveStatus>("idle");
-  const [openDisc, setOpenDisc] = useState<string | null>(null);
 
   // Refs con el último valor, para leerlos dentro de los saves con debounce.
+  // Se sincronizan en efecto, no en render: escribirlas durante el render
+  // rompe la garantía de React y lo avisa el linter.
   const sheetRef = useRef(sheet);
-  sheetRef.current = sheet;
   const nameRef = useRef(name);
-  nameRef.current = name;
+  useEffect(() => {
+    sheetRef.current = sheet;
+    nameRef.current = name;
+  }, [sheet, name]);
 
   // Cola secuencial: los autosaves no se pisan (evita carreras load-modify-write).
   const queue = useRef<Promise<unknown>>(Promise.resolve());
   const idTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const resTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const runSave = useCallback(
-    (fn: () => Promise<SaveResult>, onOk?: (s: BuildSheet) => void) => {
+    (fn: () => Promise<SaveResult>, onOk?: (s: Sheet) => void) => {
       setStatus("saving");
       queue.current = queue.current
         .then(() => fn())
@@ -103,42 +97,29 @@ export function CharacterSheet({
     [],
   );
 
-  // ── Economía (inmediato). El estado optimista usa las mismas funciones puras
+  // ── Build (inmediato). El estado optimista usa las mismas funciones puras
   // que el servidor, así que no hace falta reconciliar en éxito. ──
-  const commitAttribute = (id: AttributeId, value: number) => {
-    setSheet((s) => setAttributeValue(s, id, value));
-    runSave(() => setAttributeAction(characterId, id, value));
+  const commitAtributo = (id: AtributoId, value: number) => {
+    setSheet((s) => setAtributoValue(s, id, value));
+    runSave(() => setAtributoAction(characterId, id, value));
   };
-  const commitSkill = (id: SkillId, value: number) => {
-    setSheet((s) => setSkillValue(s, id, value));
-    runSave(() => setSkillAction(characterId, id, value));
+  const commitHabilidad = (id: HabilidadId, value: number) => {
+    setSheet((s) => setHabilidadValue(s, id, value));
+    runSave(() => setHabilidadAction(characterId, id, value));
   };
-  const commitDiscipline = (id: string, value: number) => {
-    setSheet((s) => setDisciplineValue(s, id, value));
-    runSave(() => setDisciplineAction(characterId, id, value));
+  const commitAddEspecialidad = (id: HabilidadId, nombre: string) => {
+    setSheet((s) => addEspecialidad(s, id, nombre));
+    runSave(() => addEspecialidadAction(characterId, id, nombre));
   };
-  const onEspecialidad = (value: EspecialidadId | null) => {
-    setSheet((s) => ({ ...s, especialidad: value }));
-    runSave(() => setEspecialidadAction(characterId, value));
+  const commitRemoveEspecialidad = (id: HabilidadId, nombre: string) => {
+    setSheet((s) => removeEspecialidad(s, id, nombre));
+    runSave(() => removeEspecialidadAction(characterId, id, nombre));
   };
-
-  // ── Armas y reset (discretos: reconcilian desde el servidor). ──
-  const buyWeapon = (id: string) => {
-    const w = weaponById(id);
-    if (w && !sheet.weapons.some((x) => x.id === id)) {
-      setSheet((s) => ({ ...s, weapons: [...s.weapons, { id, costePagado: w.precio }] }));
-    }
-    runSave(() => buyWeaponAction(characterId, id), setSheet);
-  };
-  const sellWeapon = (id: string) => {
-    setSheet((s) => ({ ...s, weapons: s.weapons.filter((x) => x.id !== id) }));
-    runSave(() => sellWeaponAction(characterId, id), setSheet);
-  };
-  const resetBuild = () => {
+  const reset = () => {
     runSave(() => resetBuildAction(characterId), setSheet);
   };
 
-  // ── Identidad y recursos (debounced, fire-and-forget). ──
+  // ── Identidad (debounced, fire-and-forget). ──
   const scheduleIdentity = () => {
     if (idTimer.current) clearTimeout(idTimer.current);
     idTimer.current = setTimeout(() => {
@@ -146,18 +127,9 @@ export function CharacterSheet({
         saveIdentityAction(characterId, {
           name: nameRef.current,
           edad: sheetRef.current.edad,
+          especie: sheetRef.current.especie,
           trasfondo: sheetRef.current.trasfondo,
-        }),
-      );
-    }, 500);
-  };
-  const scheduleResources = () => {
-    if (resTimer.current) clearTimeout(resTimer.current);
-    resTimer.current = setTimeout(() => {
-      runSave(() =>
-        grantResourcesAction(characterId, {
-          xpGanado: sheetRef.current.xpGanado,
-          dineroGanado: sheetRef.current.dineroGanado,
+          motivacion: sheetRef.current.motivacion,
         }),
       );
     }, 500);
@@ -171,23 +143,22 @@ export function CharacterSheet({
     setSheet((s) => ({ ...s, edad: v === null ? null : clampInt(v, 0, 999) }));
     scheduleIdentity();
   };
+  const onEspecie = (v: string) => {
+    setSheet((s) => ({ ...s, especie: v }));
+    scheduleIdentity();
+  };
   const onTrasfondo = (v: string) => {
     setSheet((s) => ({ ...s, trasfondo: v }));
     scheduleIdentity();
   };
-  const onGanadoXp = (v: number) => {
-    setSheet((s) => ({ ...s, xpGanado: clampInt(v, 0, 1_000_000) }));
-    scheduleResources();
-  };
-  const onGanadoDinero = (v: number) => {
-    setSheet((s) => ({ ...s, dineroGanado: clampInt(v, 0, 1_000_000_000) }));
-    scheduleResources();
+  const onMotivacion = (v: string) => {
+    setSheet((s) => ({ ...s, motivacion: v }));
+    scheduleIdentity();
   };
 
-  const esp = ESPECIALIDADES.find((e) => e.id === sheet.especialidad);
-  const accent = accentFor(sheet.especialidad);
-  const xpDisp = xpDisponible(sheet);
-  const dineroDisp = dineroDisponible(sheet);
+  const puntosAttr = puntosAtributosDisponibles(sheet);
+  const puntosSkill = puntosHabilidadesDisponibles(sheet);
+  const { vida, fatiga } = salud(sheet);
 
   return (
     <div className="flex flex-col gap-4">
@@ -195,20 +166,18 @@ export function CharacterSheet({
         {name || "Sin nombre"}
       </h1>
 
-      {/* HUD fino: estado de solo lectura (la edición está en Resumen) */}
+      {/* HUD fino: estado de solo lectura (la edición está en cada tab) */}
       <div className="flex items-center gap-3 border-y border-border py-2 font-mono text-sm">
-        <span
-          className={`uppercase tracking-wide ${accent?.text ?? "text-muted"}`}
-        >
-          {esp ? esp.label : "sin arquetipo"}
+        <span className="uppercase tracking-wide text-muted">
+          {sheet.especie || "sin especie"}
         </span>
-        <span className="ml-auto tabular-nums text-info">
-          {xpDisp}
-          <span className="text-muted"> xp</span>
+        <span className="ml-auto tabular-nums text-danger">
+          {vida}
+          <span className="text-muted"> pv</span>
         </span>
-        <span className="tabular-nums text-accent">
-          {dineroDisp.toLocaleString("es-ES")}
-          <span className="text-muted"> €$</span>
+        <span className="tabular-nums text-info">
+          {fatiga}
+          <span className="text-muted"> fat</span>
         </span>
       </div>
 
@@ -242,71 +211,63 @@ export function CharacterSheet({
         <ResumenTab
           name={name}
           sheet={sheet}
-          xpDisponible={xpDisp}
-          dineroDisponible={dineroDisp}
           onName={onName}
           onEdad={onEdad}
+          onEspecie={onEspecie}
           onTrasfondo={onTrasfondo}
-          onEspecialidad={onEspecialidad}
-          onGanadoXp={onGanadoXp}
-          onGanadoDinero={onGanadoDinero}
+          onMotivacion={onMotivacion}
         />
       )}
       {active === "attrs" && (
         <AtributosTab
-          attributes={sheet.attributes}
-          xpDisponible={xpDisp}
-          onSet={commitAttribute}
+          sheet={sheet}
+          puntosDisponibles={puntosAttr}
+          onSet={commitAtributo}
         />
       )}
       {active === "skills" && (
         <HabilidadesTab
-          attributes={sheet.attributes}
-          skills={sheet.skills}
-          xpDisponible={xpDisp}
-          accentText={accent?.text ?? "text-info"}
-          onSet={commitSkill}
-        />
-      )}
-      {active === "build" && (
-        <BuildTab
           sheet={sheet}
-          xpDisponible={xpDisp}
-          onSet={commitDiscipline}
-          onOpen={setOpenDisc}
+          puntosDisponibles={puntosSkill}
+          onSet={commitHabilidad}
+          onAddEspecialidad={commitAddEspecialidad}
+          onRemoveEspecialidad={commitRemoveEspecialidad}
         />
       )}
-      {active === "armas" && (
-        <ArmasTab
-          sheet={sheet}
-          dineroDisponible={dineroDisp}
-          onBuy={buyWeapon}
-          onSell={sellWeapon}
+      {active === "dotes" && (
+        <PendienteTab
+          titulo="dotes"
+          falta="El diseñador aún no ha definido qué son las dotes, cuántas se eligen ni qué cuestan."
         />
       )}
-      {active === "repertorio" && (
-        <RepertorioTab sheet={sheet} onOpen={setOpenDisc} />
+      {active === "poderes" && (
+        <PendienteTab
+          titulo="poderes"
+          falta="Los poderes psiónicos están a medio escribir. Se sabe que consumen fatiga y que operan sobre materia, energía e información."
+        />
+      )}
+      {active === "aumentos" && (
+        <PendienteTab
+          titulo="aumentos"
+          falta="Los aumentos son biónicos y genéticos. Falta el catálogo y saber si hay un tope de lo que un cuerpo aguanta."
+        />
+      )}
+      {active === "equipo" && (
+        <PendienteTab
+          titulo="equipo"
+          falta="El catálogo está transcrito en docs/equipamiento.md, pero falta decidir cómo se compra: con qué dinero empieza un personaje y cómo se llevan las ranuras de mejoras."
+        />
       )}
 
-      {(active === "build" || active === "armas") && (
+      {(active === "attrs" || active === "skills") && (
         <button
           type="button"
-          onClick={resetBuild}
+          onClick={reset}
           className="clip-chamfer-sm mt-2 self-start border border-danger px-3 py-1.5 font-mono text-[11px] uppercase tracking-wide text-danger active:scale-95"
         >
           ⟲ Reset build
         </button>
       )}
-
-      <DisciplineModal
-        node={
-          openDisc
-            ? (treeFor(sheet.especialidad).find((n) => n.id === openDisc) ?? null)
-            : null
-        }
-        especialidad={sheet.especialidad}
-        onClose={() => setOpenDisc(null)}
-      />
     </div>
   );
 }

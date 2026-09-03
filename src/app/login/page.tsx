@@ -7,7 +7,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.3em] text-info">
-            // acceso al sistema
+            {"// acceso al sistema"}
           </p>
           <h1 className="text-glitch font-display text-4xl font-bold uppercase tracking-wide">
             Nueva Era

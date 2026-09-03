@@ -1,7 +1,7 @@
-// Control +/− con coste en XP. Presentacional: la lógica vive en el padre.
+// Control +/− con una pista de coste debajo. Presentacional: la lógica vive en el padre.
 export function Stepper({
   value,
-  cost,
+  hint,
   canBuy,
   atMin,
   atMax,
@@ -9,7 +9,7 @@ export function Stepper({
   onSell,
 }: {
   value: number;
-  cost: number;
+  hint: string;
   canBuy: boolean;
   atMin: boolean;
   atMax: boolean;
@@ -27,7 +27,7 @@ export function Stepper({
       >
         −
       </button>
-      <span className="w-6 text-center font-mono text-xl tabular-nums text-foreground">
+      <span className="w-7 text-center font-mono text-xl tabular-nums text-foreground">
         {value}
       </span>
       <div className="flex flex-col items-center">
@@ -41,7 +41,7 @@ export function Stepper({
           +
         </button>
         <span className="mt-0.5 font-mono text-[10px] leading-none text-muted">
-          {atMax ? "MÁX" : `${cost}xp`}
+          {hint}
         </span>
       </div>
     </div>

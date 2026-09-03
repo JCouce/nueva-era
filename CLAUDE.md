@@ -1,9 +1,19 @@
 # Nueva Era — guía del proyecto
 
 App mobile-first para que un grupo de rol (≈10 jugadores) lleve sus fichas de
-personaje. Sistema **homebrew** (reglas propias), así que el modelo de datos es
-flexible. v1: login, lista de personajes y ficha con tab de estadísticas. El
-modelo crecerá (ataques, defensas, inventario, build, mascotas, reglas...).
+personaje. Sistema **propio, y todavía en diseño**: el diseñador va soltando las
+reglas a cuentagotas, así que el modelo de datos es flexible a propósito.
+
+**`docs/sistema.md` es la fuente de verdad de las reglas.** Lo que no esté ahí no
+existe para el código. Cada bloque lleva estado (`FIRME`, `INFERIDO`, `PARCIAL`,
+`PENDIENTE`) y fuente, y al final hay una lista de supuestos tomados al implementar
+y de preguntas abiertas. Antes de tocar reglas, léelo; después de tocarlas,
+actualízalo.
+
+Hoy la ficha cubre identidad, atributos (6 básicos + 6 aplicados derivados),
+habilidades con especialidades, salud y movimiento. Dotes, poderes psiónicos,
+aumentos y equipo están declarados como tabs vacías porque el sistema aún no los
+define.
 
 ## Stack
 - **Next.js 16** — App Router, React Server Components + Server Actions. **Sin tRPC**:
@@ -20,6 +30,7 @@ modelo crecerá (ataques, defensas, inventario, build, mascotas, reglas...).
 | `npm run build` | `prisma migrate deploy && next build` (deploy aplica migraciones automáticamente). |
 | `npm start` | Arranque de producción. |
 | `npm run lint` | ESLint. |
+| `npm test` | Tests del motor de reglas (`node --test`, sin dependencias). Rápidos: ~120 ms. Corre antes de dar por buena cualquier fórmula. |
 | `npm run db:up` / `db:down` | Levanta / para Postgres en Docker (sueltos). |
 | `npm run db:migrate` | `prisma migrate dev` — crear migración nueva al cambiar el schema. |
 | `npm run db:studio` | Prisma Studio. |
@@ -33,7 +44,14 @@ src/
 ├─ proxy.ts             # Middleware de Next 16 (¡NO middleware.ts!). Protege rutas vía callback authorized.
 ├─ lib/
 │  ├─ db.ts             # Singleton PrismaClient con driver adapter PrismaPg.
-│  ├─ validation.ts     # Esquemas Zod (login, register, character, stats).
+│  ├─ rules/            # EL SISTEMA. Espejo de docs/sistema.md. Importar siempre de "@/lib/rules".
+│  │  ├─ atributos.ts   #   6 básicos + 6 aplicados, con sus límites
+│  │  ├─ habilidades.ts #   las 10 habilidades y las reglas de especialidad
+│  │  ├─ sheet.ts       #   forma de la ficha, Zod, SCHEMA_VERSION y parseSheet tolerante
+│  │  ├─ derivados.ts   #   lo que se calcula y nunca se guarda (aplicados, salud, movimiento)
+│  │  ├─ creacion.ts    #   point-buy: costes, pools y operaciones puras sobre la ficha
+│  │  └─ *.test.ts      #   39 tests. Al tocar una fórmula, se toca su test.
+│  ├─ validation.ts     # Zod de entrada de la app (login, register, character). NO la ficha.
 │  └─ auth-helpers.ts   # requireUser() y canEditCharacter() — regla central de permisos.
 ├─ generated/prisma/    # Cliente Prisma generado (gitignored, lo crea `prisma generate`).
 ├─ components/AppHeader.tsx
@@ -41,7 +59,7 @@ src/
    ├─ page.tsx                       # redirige a /characters
    ├─ login/                         # page + LoginForm (cliente) + actions (login/register)
    ├─ characters/                    # lista (RSC) + actions (crear/borrar)
-   ├─ characters/[id]/               # detalle (RSC) + CharacterTabs (cliente) + actions (saveStats)
+   ├─ characters/[id]/               # detalle (RSC) + CharacterSheet (cliente) + actions (autosave)
    └─ api/auth/[...nextauth]/route.ts
 prisma/schema.prisma · prisma.config.ts · docker-compose.yml · scripts/make-master.mjs
 ```
@@ -50,12 +68,16 @@ prisma/schema.prisma · prisma.config.ts · docker-compose.yml · scripts/make-m
 - **User**: `email`, `passwordHash` (bcrypt, nullable para Google futuro), `role`
   (`PLAYER`|`MASTER`). Incluye `Account`/`Session`/`VerificationToken` del adapter
   de Auth.js (listos para Google, hoy sin uso porque la sesión es JWT).
-- **Character**: `name`, `ownerId`, y **`stats` (`Json`)** — las estadísticas
-  homebrew viven aquí para crecer sin migrar en cada campo. Cuando una categoría
-  se estabilice (ataques, inventario, mascotas...), se promueve a su propio modelo
-  con `npm run db:migrate`.
-- En `saveStats` (`app/characters/[id]/actions.ts`) los valores numéricos se
-  coaccionan a number y el resto se quedan como string; se validan con `statsSchema` (Zod).
+- **Character**: `name`, `ownerId`, y **`stats` (`Json`)** — la ficha entera vive
+  aquí. Es lo que permite que el sistema cambie de arriba abajo sin una sola
+  migración; mientras las reglas no se estabilicen, no promuevas nada a tabla.
+  `parseSheet` (`lib/rules.ts`) lee ese Json de forma tolerante: valores fuera de
+  rango se recortan y lo que no reconoce se descarta con el valor por defecto, así
+  que una ficha vieja nunca revienta la página.
+- **Solo se guarda lo que el jugador decide** (atributos básicos y habilidades).
+  Todo lo derivable —aplicados, puntos gastados, vida, fatiga, movimiento— se
+  recalcula en cada render. Así no hay estados que se desincronicen ni forma de
+  falsear el saldo de puntos.
 
 ## Permisos
 Regla central en `canEditCharacter(user, character)` = `role === 'MASTER' || ownerId === user.id`.
@@ -82,7 +104,11 @@ Regla central en `canEditCharacter(user, character)` = `role === 'MASTER' || own
 ## Pendiente
 - Login con Google (modelos `Account`/`Session` listos; falta el provider en
   `auth.ts` + credenciales `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET`).
-- PWA instalable. Nuevas tabs: ataques, defensas, inventario, build, mascotas, reglas.
+- PWA instalable.
+- Bloques de ficha a la espera de que el diseñador los cierre: **dotes**, **poderes
+  psiónicos**, **aumentos** (biónicos y genéticos) y **equipo**. El catálogo de equipo
+  ya está transcrito en `docs/equipamiento.md`; falta decidir cómo se compra.
+- Progresión post-creación: hoy solo existen los 10+10 puntos de creación.
 
 ## Deploy — "¿cómo hago deploy?"
 **Un `git push origin main` es el deploy completo. No hay pasos manuales aparte.**

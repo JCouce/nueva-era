@@ -54,7 +54,10 @@ export function LoginForm() {
       />
 
       {state?.error && (
-        <p className="font-mono text-sm text-danger">// {state.error}</p>
+        <p className="font-mono text-sm text-danger">
+          {"// "}
+          {state.error}
+        </p>
       )}
 
       <SubmitButton label={mode === "login" ? "Entrar" : "Crear cuenta"} />

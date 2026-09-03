@@ -1,68 +1,174 @@
+"use client";
+
+import { useState } from "react";
 import {
-  ATTRIBUTES,
-  SKILLS,
-  skillCost,
-  SKILL_MIN,
-  SKILL_MAX,
-  type SkillId,
+  HABILIDADES,
+  HABILIDAD_NO_ENTRENADA,
+  HABILIDAD_MIN_ENTRENADA,
+  HABILIDAD_MAX_CREACION,
+  MAX_ESPECIALIDADES,
+  COSTE_ESPECIALIDAD_EXTRA,
+  type HabilidadId,
 } from "@/lib/rules";
-import type { BuildSheet } from "@/lib/validation";
+import type { Sheet } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { Stepper } from "./Stepper";
 
-export function HabilidadesTab({
-  attributes,
-  skills,
-  xpDisponible,
-  accentText,
-  onSet,
+function Especialidades({
+  id,
+  nombres,
+  puntosDisponibles,
+  onAdd,
+  onRemove,
 }: {
-  attributes: BuildSheet["attributes"];
-  skills: BuildSheet["skills"];
-  xpDisponible: number;
-  accentText: string;
-  onSet: (id: SkillId, value: number) => void;
+  id: HabilidadId;
+  nombres: string[];
+  puntosDisponibles: number;
+  onAdd: (id: HabilidadId, nombre: string) => void;
+  onRemove: (id: HabilidadId, nombre: string) => void;
+}) {
+  const [abierto, setAbierto] = useState(false);
+  const [texto, setTexto] = useState("");
+
+  // La primera especialidad va incluida al entrenar; las siguientes cuestan punto.
+  const cuesta = nombres.length >= 1;
+  const puedeAnadir =
+    nombres.length < MAX_ESPECIALIDADES &&
+    (!cuesta || puntosDisponibles >= COSTE_ESPECIALIDAD_EXTRA);
+
+  const confirmar = () => {
+    const limpio = texto.trim();
+    if (limpio) onAdd(id, limpio);
+    setTexto("");
+    setAbierto(false);
+  };
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      {nombres.map((n, i) => (
+        <span
+          key={n}
+          className="clip-chamfer-sm flex items-center gap-1 border border-info px-2 py-1 font-mono text-[10px] uppercase text-info"
+        >
+          {n}
+          {i > 0 && <span className="text-muted">1pt</span>}
+          <button
+            type="button"
+            onClick={() => onRemove(id, n)}
+            aria-label={`Quitar ${n}`}
+            className="text-muted active:scale-95"
+          >
+            ×
+          </button>
+        </span>
+      ))}
+
+      {abierto ? (
+        <input
+          autoFocus
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          onBlur={confirmar}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") confirmar();
+            if (e.key === "Escape") {
+              setTexto("");
+              setAbierto(false);
+            }
+          }}
+          maxLength={40}
+          placeholder="especialidad"
+          className="w-32 border border-border bg-elevated px-2 py-1 font-mono text-[11px] text-foreground outline-none focus:border-accent"
+        />
+      ) : (
+        puedeAnadir && (
+          <button
+            type="button"
+            onClick={() => setAbierto(true)}
+            className="clip-chamfer-sm border border-border px-2 py-1 font-mono text-[10px] uppercase text-muted active:scale-95"
+          >
+            + especialidad{cuesta ? " (1pt)" : ""}
+          </button>
+        )
+      )}
+    </div>
+  );
+}
+
+export function HabilidadesTab({
+  sheet,
+  puntosDisponibles,
+  onSet,
+  onAddEspecialidad,
+  onRemoveEspecialidad,
+}: {
+  sheet: Sheet;
+  puntosDisponibles: number;
+  onSet: (id: HabilidadId, value: number) => void;
+  onAddEspecialidad: (id: HabilidadId, nombre: string) => void;
+  onRemoveEspecialidad: (id: HabilidadId, nombre: string) => void;
 }) {
   return (
-    <div className="flex flex-col gap-4">
-      {ATTRIBUTES.map((a) => (
-        <div key={a.id}>
-          <p className="mb-1.5 font-mono text-[11px] uppercase tracking-widest text-muted">
-            /// {a.label}
-          </p>
-          <div className="flex flex-col gap-2">
-            {SKILLS.filter((s) => s.attr === a.id).map((s) => {
-              const value = skills[s.id];
-              const cost = skillCost(value);
-              const pool = attributes[a.id] + value;
-              return (
-                <HudCard key={s.id} className="flex items-center gap-3 p-3">
-                  <div className="flex flex-1 items-center gap-2">
-                    <span className="font-display text-sm font-medium">
-                      {s.label}
-                    </span>
-                    <span
-                      className={`${accentText} font-mono text-xs tabular-nums`}
-                      title="Dice pool (atributo + habilidad)"
-                    >
-                      [{pool}d]
-                    </span>
-                  </div>
-                  <Stepper
-                    value={value}
-                    cost={cost}
-                    canBuy={xpDisponible >= cost}
-                    atMin={value <= SKILL_MIN}
-                    atMax={value >= SKILL_MAX}
-                    onBuy={() => onSet(s.id, value + 1)}
-                    onSell={() => onSet(s.id, value - 1)}
-                  />
-                </HudCard>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+    <div className="flex flex-col gap-2">
+      <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
+        <span className="uppercase tracking-wide text-muted">Puntos</span>
+        <span
+          className={`tabular-nums ${puntosDisponibles < 0 ? "text-danger" : "text-accent"}`}
+        >
+          {puntosDisponibles}
+        </span>
+      </div>
+
+      <p className="font-mono text-[11px] leading-relaxed text-muted">
+        Sin entrenar tiras a −1. En tu especialidad usas el valor entero; fuera de
+        ella, la mitad redondeando hacia arriba.
+      </p>
+
+      {HABILIDADES.map((h) => {
+        const { valor, especialidades } = sheet.habilidades[h.id];
+        const entrenada = valor >= HABILIDAD_MIN_ENTRENADA;
+        const siguiente = entrenada ? valor + 1 : HABILIDAD_MIN_ENTRENADA;
+        const coste = entrenada ? 1 : HABILIDAD_MIN_ENTRENADA;
+        const fuera = entrenada ? Math.ceil(valor / 2) : HABILIDAD_NO_ENTRENADA;
+
+        return (
+          <HudCard key={h.id} className="p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <span className="block truncate font-display text-base font-semibold uppercase leading-none">
+                  {h.label}
+                </span>
+                <span className="mt-1 block font-mono text-[10px] uppercase text-muted">
+                  {entrenada ? `fuera de especialidad ${fuera}` : "no entrenada"}
+                </span>
+              </div>
+              <Stepper
+                value={valor}
+                hint={
+                  valor >= HABILIDAD_MAX_CREACION ? "MÁX" : `${coste} pt${coste > 1 ? "s" : ""}`
+                }
+                canBuy={puntosDisponibles >= coste}
+                atMin={valor <= HABILIDAD_NO_ENTRENADA}
+                atMax={valor >= HABILIDAD_MAX_CREACION}
+                onBuy={() => onSet(h.id, siguiente)}
+                onSell={() =>
+                  onSet(h.id, valor - 1 < HABILIDAD_MIN_ENTRENADA ? HABILIDAD_NO_ENTRENADA : valor - 1)
+                }
+              />
+            </div>
+
+            {entrenada && (
+              <Especialidades
+                id={h.id}
+                nombres={especialidades}
+                puntosDisponibles={puntosDisponibles}
+                onAdd={onAddEspecialidad}
+                onRemove={onRemoveEspecialidad}
+              />
+            )}
+          </HudCard>
+        );
+      })}
     </div>
   );
 }
