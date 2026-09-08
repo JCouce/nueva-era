@@ -106,11 +106,28 @@ usuario lo pida**: un push a `main` despliega a producción en Vercel.
 
 Es la única pieza que falta del mínimo para jugar, y la que traerá decisiones de interfaz.
 
+> **Hay un encargo escrito y listo para pegar en una sesión nueva: `docs/prompt-equipo.md`.**
+> Trae las cinco decisiones ya planteadas y prohíbe empezar a codificar antes de cerrarlas.
+
 **Los datos ya están**: `docs/equipamiento.md` tiene el catálogo completo transcrito y
 verificado — armaduras y trajes, mejoras estándar, subsistemas, seis familias de armas de
 fuego con su alcance por tramos, armamento pesado, granadas, melee, armas modificadas, el
 material kerzul, herramientas y medicina. Van a `src/lib/catalog/` como TypeScript tipado,
 siguiendo el patrón de `especies.ts`.
+
+**El catálogo no es una lista de objetos con precio.** Hay **25 módulos instalables con
+niveles**, repartidos en cuatro familias que se comportan distinto:
+
+| Familia | Cuáles | Regla propia |
+|---|---|---|
+| **Subsistemas** (5) | camuflaje trifásico, derivación psiónica, escudo deflector, malla plasmática, proyector de pulso | **Consumen ranura**: la armadura admite de 0 a 3. Tienen modos, célula de 10 cargas, acción de activación y efectos distintos por nivel |
+| **Mejoras estándar** (9) | soporte vital, compartimento oculto, funda, inyector, ignífuga, anticorrosivo, tejido conductor, visor nocturno, visor térmico | **No consumen ranura** |
+| **Movimiento** (2) | exoesqueleto, movilidad aérea | No gastan ranura de subsistema, pero la armadura les pone **tope de nivel** |
+| **Mejoras de arma** (4 con niveles + varias sin) | mira, puntero, bípode, retroceso, bayoneta, lanzagranadas, silenciador, linterna, munición especial | **Compatibilidad por tipo de arma**, y cada arma dice cuántas admite |
+
+Los subsistemas son, en la práctica, **poderes que se instalan**: un arma cabe en una fila de
+tabla, pero el camuflaje trifásico tiene descripción, dos modos, cuatro niveles con coberturas
+distintas y gestión de cargas. Cómo se muestra eso en un móvil es la decisión gorda.
 
 **Lo que hay que decidir con el usuario antes de codificar:**
 
