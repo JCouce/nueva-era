@@ -3,11 +3,14 @@ import {
   APLICADOS,
   ATRIBUTO_MIN,
   ATRIBUTO_MAX_CREACION,
-  aplicados as calcAplicados,
+  modificadoresActivos,
+  desgloseAtributo,
+  desgloseAplicado,
   type AtributoId,
 } from "@/lib/rules";
 import type { Sheet } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
+import { Desglose } from "@/components/Desglose";
 import { Stepper } from "./Stepper";
 
 // Escala pintada: de -1 a 4. El −1 se marca en rojo porque es deuda, no compra.
@@ -22,7 +25,9 @@ export function AtributosTab({
   puntosDisponibles: number;
   onSet: (id: AtributoId, value: number) => void;
 }) {
-  const derivados = calcAplicados(sheet);
+  // Se calculan una vez y se pasan hacia abajo: evita recalcular la especie
+  // por cada atributo y cada aplicado del render.
+  const mods = modificadoresActivos(sheet);
 
   return (
     <div className="flex flex-col gap-2">
@@ -38,6 +43,8 @@ export function AtributosTab({
       {ATRIBUTOS.map((a) => {
         const value = sheet.atributos[a.id];
         const siguiente = value + 1;
+        const desglose = desgloseAtributo(sheet, a.id, mods);
+        const tieneModificadores = desglose.fuentes.length > 1;
         return (
           <HudCard key={a.id} className="p-3">
             <div className="flex items-center justify-between gap-3">
@@ -63,6 +70,20 @@ export function AtributosTab({
                 onSell={() => onSet(a.id, value - 1)}
               />
             </div>
+            {/* Comprado vs. en juego: el Stepper edita la compra; esto es lo
+                que de verdad cuenta a la mesa cuando algo lo está modificando. */}
+            {tieneModificadores && (
+              <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
+                  En juego
+                </span>
+                <Desglose
+                  total={desglose.total}
+                  fuentes={desglose.fuentes}
+                  className="text-sm text-info"
+                />
+              </div>
+            )}
             <div className="mt-3 flex gap-1">
               {Array.from({ length: CASILLAS }).map((_, i) => {
                 const nivel = ATRIBUTO_MIN + i + 1; // -1 … 4
@@ -97,15 +118,18 @@ export function AtributosTab({
           const de = a.de.map(
             (b) => ATRIBUTOS.find((x) => x.id === b)!.abbr,
           );
+          const desglose = desgloseAplicado(sheet, a.id, mods);
           return (
             <HudCard key={a.id} className="p-3">
               <div className="flex items-baseline justify-between gap-2">
                 <span className="truncate font-display text-sm font-semibold uppercase leading-none">
                   {a.label}
                 </span>
-                <span className="font-mono text-xl tabular-nums text-info">
-                  {derivados[a.id]}
-                </span>
+                <Desglose
+                  total={desglose.total}
+                  fuentes={desglose.fuentes}
+                  className="text-xl text-info"
+                />
               </div>
               <p className="mt-1 font-mono text-[10px] uppercase text-muted">
                 {de.join(" + ")}

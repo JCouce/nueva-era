@@ -8,6 +8,8 @@ import {
   removeEspecialidadAction,
   saveIdentityAction,
   resetBuildAction,
+  equiparAction,
+  desequiparAction,
   type SaveResult,
 } from "./actions";
 import {
@@ -19,8 +21,11 @@ import {
   puntosHabilidadesDisponibles,
   salud,
   especiePorId,
+  equipar,
+  desequipar,
   type AtributoId,
   type HabilidadId,
+  type PiezaEquipada,
 } from "@/lib/rules";
 import type { Sheet } from "@/lib/rules";
 import { ResumenTab } from "./_components/ResumenTab";
@@ -28,6 +33,8 @@ import { AtributosTab } from "./_components/AtributosTab";
 import { HabilidadesTab } from "./_components/HabilidadesTab";
 import { TiradasTab } from "./_components/TiradasTab";
 import { PendienteTab } from "./_components/PendienteTab";
+import { TiendaTab } from "./_components/TiendaTab";
+import { EquipoTab } from "./_components/EquipoTab";
 
 const TABS = [
   { id: "resumen", label: "Resumen" },
@@ -37,6 +44,7 @@ const TABS = [
   { id: "dotes", label: "Dotes" },
   { id: "poderes", label: "Poderes" },
   { id: "aumentos", label: "Aumentos" },
+  { id: "tienda", label: "Tienda" },
   { id: "equipo", label: "Equipo" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
@@ -120,6 +128,14 @@ export function CharacterSheet({
   };
   const reset = () => {
     runSave(() => resetBuildAction(characterId), setSheet);
+  };
+  const commitEquipar = (pieza: PiezaEquipada) => {
+    setSheet((s) => equipar(s, pieza));
+    runSave(() => equiparAction(characterId, pieza));
+  };
+  const commitDesequipar = (instanciaId: string) => {
+    setSheet((s) => desequipar(s, instanciaId));
+    runSave(() => desequiparAction(characterId, instanciaId));
   };
 
   // ── Identidad (debounced, fire-and-forget). ──
@@ -256,12 +272,8 @@ export function CharacterSheet({
           falta="Los aumentos son biónicos y genéticos. Falta el catálogo y saber si hay un tope de lo que un cuerpo aguanta."
         />
       )}
-      {active === "equipo" && (
-        <PendienteTab
-          titulo="equipo"
-          falta="El catálogo está transcrito en docs/equipamiento.md, pero falta decidir cómo se compra: con qué dinero empieza un personaje y cómo se llevan las ranuras de mejoras."
-        />
-      )}
+      {active === "tienda" && <TiendaTab sheet={sheet} onEquipar={commitEquipar} />}
+      {active === "equipo" && <EquipoTab sheet={sheet} onDesequipar={commitDesequipar} />}
 
       {(active === "attrs" || active === "skills") && (
         <button

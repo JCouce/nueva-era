@@ -1,6 +1,7 @@
 import {
   salud,
   movimiento,
+  vuelo,
   modificadoresActivos,
   especiePorId,
   ESPECIES,
@@ -19,11 +20,15 @@ function Dato({
   value,
   unidad,
   tono = "text-foreground",
+  nota,
 }: {
   label: string;
   value: number;
   unidad?: string;
   tono?: string;
+  // Paréntesis que explica de dónde sale un extra, p.ej. "+4 exoesqueleto".
+  // Se pinta en el mismo tono que el valor: los dos van azules a la vez.
+  nota?: string;
 }) {
   return (
     <div className="flex items-baseline justify-between gap-2 border-b border-border py-1.5 last:border-0">
@@ -31,6 +36,7 @@ function Dato({
       <span className={`font-mono text-sm tabular-nums ${tono}`}>
         {value}
         {unidad && <span className="text-muted"> {unidad}</span>}
+        {nota && ` (${nota})`}
       </span>
     </div>
   );
@@ -55,6 +61,9 @@ export function ResumenTab({
 }) {
   const { vida, fatiga } = salud(sheet);
   const mov = movimiento(sheet);
+  const vue = vuelo(sheet);
+  const conExo = mov.bonoExoesqueleto > 0;
+  const notaExo = conExo ? `+${mov.bonoExoesqueleto} exoesqueleto` : undefined;
 
   return (
     <div className="flex flex-col gap-4">
@@ -180,11 +189,49 @@ export function ResumenTab({
         <p className="mb-2 font-mono text-[11px] uppercase tracking-widest text-muted">
           {"//SYSTEM · movimiento"}
         </p>
-        <Dato label="Carrera" value={mov.carrera} unidad="m" />
-        <Dato label="Salto vertical" value={mov.saltoVertical} unidad="cm" />
-        <Dato label="Salto horizontal" value={mov.saltoHorizontal} unidad="cm" />
-        <Dato label="Escalada" value={mov.escalada} unidad="m" />
-        <Dato label="Nado" value={mov.nado} unidad="m" />
+        <Dato
+          label="Carrera"
+          value={mov.carrera}
+          unidad="m"
+          tono={conExo ? "text-info" : "text-foreground"}
+          nota={notaExo}
+        />
+        <Dato
+          label="Salto vertical"
+          value={mov.saltoVertical}
+          unidad="cm"
+          tono={conExo ? "text-info" : "text-foreground"}
+          nota={notaExo}
+        />
+        <Dato
+          label="Salto horizontal"
+          value={mov.saltoHorizontal}
+          unidad="cm"
+          tono={conExo ? "text-info" : "text-foreground"}
+          nota={notaExo}
+        />
+        <Dato
+          label="Escalada"
+          value={mov.escalada}
+          unidad="m"
+          tono={conExo ? "text-info" : "text-foreground"}
+          nota={notaExo}
+        />
+        <Dato
+          label="Nado"
+          value={mov.nado}
+          unidad="m"
+          tono={conExo ? "text-info" : "text-foreground"}
+          nota={notaExo}
+        />
+        {vue && (
+          <Dato
+            label={`Vuelo (movilidad aérea ${vue.nivel})`}
+            value={vue.velocidadM}
+            unidad="m"
+            tono="text-info"
+          />
+        )}
       </HudCard>
 
       {/* Trasfondo */}

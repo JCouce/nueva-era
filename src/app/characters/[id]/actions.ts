@@ -11,8 +11,12 @@ import {
   addEspecialidad,
   removeEspecialidad,
   resetBuild,
+  equipar,
+  desequipar,
+  piezaEquipadaSchema,
   type AtributoId,
   type HabilidadId,
+  type PiezaEquipada,
 } from "@/lib/rules";
 
 export type SaveResult =
@@ -84,6 +88,28 @@ export async function removeEspecialidadAction(
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(characterId, removeEspecialidad(ctx.sheet, habilidadId, nombre));
+}
+
+export async function equiparAction(
+  characterId: string,
+  pieza: PiezaEquipada,
+): Promise<SaveResult> {
+  // El shape llega del cliente sin garantías: se valida aquí, no solo se confía
+  // en que `equipar` recorte lo que no reconoce.
+  const parsed = piezaEquipadaSchema.safeParse(pieza);
+  if (!parsed.success) return { ok: false, error: "Pieza de equipo inválida" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, equipar(ctx.sheet, parsed.data));
+}
+
+export async function desequiparAction(
+  characterId: string,
+  instanciaId: string,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, desequipar(ctx.sheet, instanciaId));
 }
 
 // Devuelve atributos y habilidades a cero. La identidad se conserva.
