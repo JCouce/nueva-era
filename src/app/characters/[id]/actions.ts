@@ -98,7 +98,7 @@ export async function saveIdentityAction(
   patch: {
     name: string;
     edad: number | null;
-    especie: string;
+    especieId: string | null;
     trasfondo: string;
     motivacion: string;
   },
@@ -116,7 +116,7 @@ export async function saveIdentityAction(
     {
       ...ctx.sheet,
       edad,
-      especie: String(patch.especie ?? "").slice(0, 60),
+      especieId: patch.especieId ? String(patch.especieId).slice(0, 40) : null,
       trasfondo: String(patch.trasfondo ?? "").slice(0, 2000),
       motivacion: String(patch.motivacion ?? "").slice(0, 500),
     },

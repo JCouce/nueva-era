@@ -7,6 +7,7 @@ import {
   ATRIBUTO_MIN,
   ATRIBUTO_MAX,
 } from "./atributos";
+import { migrar } from "./migraciones";
 import {
   HABILIDADES,
   HABILIDAD_NO_ENTRENADA,
@@ -15,11 +16,11 @@ import {
   MAX_ESPECIALIDADES,
 } from "./habilidades";
 
-// Versión del formato de ficha. Se escribe desde ya, aunque todavía no haya
-// migraciones: sin este número, el día que haya que migrar no se puede saber de
-// qué versión viene cada ficha y hay que adivinarlo por heurística.
-// Al subirlo, añadir la migración correspondiente (docs/plan-app.md §2).
-export const SCHEMA_VERSION = 1;
+// Versión del formato de ficha. Al subirla hay que añadir su migración en
+// migraciones.ts y el test que la cubre.
+//   1 → primera versión versionada
+//   2 → la especie pasa de texto libre a id del catálogo
+export const SCHEMA_VERSION = 2;
 
 const atributoValue = z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX);
 
@@ -39,7 +40,7 @@ const habilidadesShape = Object.fromEntries(
 export const sheetSchema = z.object({
   schemaVersion: z.number().int().min(1),
   edad: z.number().int().min(0).max(999).nullable(),
-  especie: z.string().max(60),
+  especieId: z.string().max(40).nullable(),
   trasfondo: z.string().max(2000),
   motivacion: z.string().max(500),
   atributos: z.object(atributosShape),
@@ -52,7 +53,7 @@ export function defaultSheet(): Sheet {
   return {
     schemaVersion: SCHEMA_VERSION,
     edad: null,
-    especie: "",
+    especieId: null,
     trasfondo: "",
     motivacion: "",
     atributos: Object.fromEntries(
@@ -85,7 +86,8 @@ export function clampInt(
 export function parseSheet(raw: unknown): Sheet {
   const base = defaultSheet();
   if (!raw || typeof raw !== "object") return base;
-  const r = raw as Record<string, unknown>;
+  // Primero se lleva la ficha al formato actual; después se normaliza.
+  const { ficha: r } = migrar(raw, SCHEMA_VERSION);
 
   const rAtributos = (r.atributos ?? {}) as Record<string, unknown>;
   const atributos = { ...base.atributos };
@@ -120,7 +122,7 @@ export function parseSheet(raw: unknown): Sheet {
   return {
     schemaVersion: clampInt(r.schemaVersion, 1, SCHEMA_VERSION, SCHEMA_VERSION),
     edad: r.edad === null || r.edad === undefined ? null : clampInt(r.edad, 0, 999, 0),
-    especie: typeof r.especie === "string" ? r.especie.slice(0, 60) : "",
+    especieId: typeof r.especieId === "string" ? r.especieId.slice(0, 40) : null,
     trasfondo: typeof r.trasfondo === "string" ? r.trasfondo.slice(0, 2000) : "",
     motivacion: typeof r.motivacion === "string" ? r.motivacion.slice(0, 500) : "",
     atributos,

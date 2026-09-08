@@ -130,13 +130,13 @@ describe("especialidades", () => {
 describe("reset", () => {
   test("devuelve los dos pools y conserva la identidad", () => {
     let s = defaultSheet();
-    s = { ...s, especie: "Arkorü", trasfondo: "algo", edad: 40 };
+    s = { ...s, especieId: "arkoru", trasfondo: "algo", edad: 40 };
     s = setAtributoValue(s, "fuerza", 3);
     s = setHabilidadValue(s, "sigilo", 2);
     const r = resetBuild(s);
     assert.equal(puntosAtributosDisponibles(r), PUNTOS_ATRIBUTOS);
     assert.equal(puntosHabilidadesDisponibles(r), PUNTOS_HABILIDADES);
-    assert.equal(r.especie, "Arkorü");
+    assert.equal(r.especieId, "arkoru");
     assert.equal(r.trasfondo, "algo");
     assert.equal(r.edad, 40);
   });

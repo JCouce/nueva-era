@@ -18,6 +18,7 @@ import {
   puntosAtributosDisponibles,
   puntosHabilidadesDisponibles,
   salud,
+  especiePorId,
   type AtributoId,
   type HabilidadId,
 } from "@/lib/rules";
@@ -25,12 +26,14 @@ import type { Sheet } from "@/lib/rules";
 import { ResumenTab } from "./_components/ResumenTab";
 import { AtributosTab } from "./_components/AtributosTab";
 import { HabilidadesTab } from "./_components/HabilidadesTab";
+import { TiradasTab } from "./_components/TiradasTab";
 import { PendienteTab } from "./_components/PendienteTab";
 
 const TABS = [
   { id: "resumen", label: "Resumen" },
   { id: "attrs", label: "Atributos" },
   { id: "skills", label: "Habilidades" },
+  { id: "tiradas", label: "Tiradas" },
   { id: "dotes", label: "Dotes" },
   { id: "poderes", label: "Poderes" },
   { id: "aumentos", label: "Aumentos" },
@@ -127,7 +130,7 @@ export function CharacterSheet({
         saveIdentityAction(characterId, {
           name: nameRef.current,
           edad: sheetRef.current.edad,
-          especie: sheetRef.current.especie,
+          especieId: sheetRef.current.especieId,
           trasfondo: sheetRef.current.trasfondo,
           motivacion: sheetRef.current.motivacion,
         }),
@@ -143,8 +146,8 @@ export function CharacterSheet({
     setSheet((s) => ({ ...s, edad: v === null ? null : clampInt(v, 0, 999) }));
     scheduleIdentity();
   };
-  const onEspecie = (v: string) => {
-    setSheet((s) => ({ ...s, especie: v }));
+  const onEspecie = (v: string | null) => {
+    setSheet((s) => ({ ...s, especieId: v }));
     scheduleIdentity();
   };
   const onTrasfondo = (v: string) => {
@@ -169,7 +172,7 @@ export function CharacterSheet({
       {/* HUD fino: estado de solo lectura (la edición está en cada tab) */}
       <div className="flex items-center gap-3 border-y border-border py-2 font-mono text-sm">
         <span className="uppercase tracking-wide text-muted">
-          {sheet.especie || "sin especie"}
+          {especiePorId(sheet.especieId)?.label ?? "sin especie"}
         </span>
         <span className="ml-auto tabular-nums text-danger">
           {vida}
@@ -234,6 +237,7 @@ export function CharacterSheet({
           onRemoveEspecialidad={commitRemoveEspecialidad}
         />
       )}
+      {active === "tiradas" && <TiradasTab sheet={sheet} />}
       {active === "dotes" && (
         <PendienteTab
           titulo="dotes"

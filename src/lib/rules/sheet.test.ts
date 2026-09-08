@@ -45,9 +45,8 @@ describe("parseSheet aguanta cualquier cosa", () => {
   });
 
   test("el texto largo se trunca en lugar de reventar la validación", () => {
-    const s = parseSheet({ trasfondo: "x".repeat(5000), especie: "y".repeat(200) });
+    const s = parseSheet({ trasfondo: "x".repeat(5000) });
     assert.equal(s.trasfondo.length, 2000);
-    assert.equal(s.especie.length, 60);
   });
 
   test("lo que sale de parseSheet siempre valida contra el esquema", () => {

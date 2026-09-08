@@ -6,9 +6,16 @@
 //   sheet.ts       forma de la ficha, validación Zod y lectura tolerante
 //   derivados.ts   lo que se calcula y nunca se guarda
 //   creacion.ts    point-buy: costes, pools y operaciones sobre la ficha
+//   tiradas.ts     catálogo de acciones, dificultades y resolución del d12
+//   modificadores.ts  cómo especies, dotes, aumentos, equipo y estados alteran números
+//   migraciones.ts    qué pasa con las fichas cuando cambia el formato
 
 export * from "./atributos";
 export * from "./habilidades";
 export * from "./sheet";
 export * from "./derivados";
 export * from "./creacion";
+export * from "./tiradas";
+export * from "./modificadores";
+export * from "./migraciones";
+export * from "../catalog/especies";

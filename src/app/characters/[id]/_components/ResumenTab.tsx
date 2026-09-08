@@ -1,4 +1,12 @@
-import { salud, movimiento } from "@/lib/rules";
+import {
+  salud,
+  movimiento,
+  modificadoresActivos,
+  especiePorId,
+  ESPECIES,
+  ATRIBUTOS,
+  HABILIDADES,
+} from "@/lib/rules";
 import type { Sheet } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 
@@ -41,7 +49,7 @@ export function ResumenTab({
   sheet: Sheet;
   onName: (v: string) => void;
   onEdad: (v: number | null) => void;
-  onEspecie: (v: string) => void;
+  onEspecie: (v: string | null) => void;
   onTrasfondo: (v: string) => void;
   onMotivacion: (v: string) => void;
 }) {
@@ -79,16 +87,25 @@ export function ResumenTab({
                 className={`${fieldInput} text-lg tabular-nums text-foreground`}
               />
             </label>
-            <label className="flex flex-1 flex-col gap-1">
+            <div className="flex flex-1 flex-col gap-1">
               <span className={fieldLabel}>{"// Especie"}</span>
-              <input
-                type="text"
-                value={sheet.especie}
-                maxLength={60}
-                onChange={(e) => onEspecie(e.target.value)}
-                className={`${fieldInput} text-lg text-foreground`}
-              />
-            </label>
+              <div className="flex flex-wrap gap-1">
+                {ESPECIES.map((e) => (
+                  <button
+                    key={e.id}
+                    type="button"
+                    onClick={() => onEspecie(sheet.especieId === e.id ? null : e.id)}
+                    className={`clip-chamfer-sm border px-2 py-2 font-display text-xs font-semibold uppercase tracking-wide active:scale-95 ${
+                      sheet.especieId === e.id
+                        ? "border-info text-info"
+                        : "border-border text-muted"
+                    }`}
+                  >
+                    {e.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
           <label className="flex flex-col gap-1">
             <span className={fieldLabel}>{"// Motivación"}</span>
@@ -103,6 +120,52 @@ export function ResumenTab({
           </label>
         </div>
       </HudCard>
+
+      {/* Qué aporta la especie, con su procedencia a la vista */}
+      {(() => {
+        const especie = especiePorId(sheet.especieId);
+        if (!especie) return null;
+        const mods = modificadoresActivos(sheet);
+        const etiqueta = (m: (typeof mods)[number]) => {
+          if (m.tipo === "atributo")
+            return ATRIBUTOS.find((a) => a.id === m.id)!.label;
+          if (m.tipo === "habilidad")
+            return HABILIDADES.find((h) => h.id === m.id)!.label;
+          if (m.tipo === "derivado") return m.id;
+          return m.contexto;
+        };
+        return (
+          <HudCard className="p-4">
+            <p className="mb-2 font-mono text-[11px] uppercase tracking-widest text-muted">
+              {"//SYSTEM · "}
+              {especie.label}
+            </p>
+            <p className="font-sans text-sm leading-relaxed text-muted">
+              {especie.descripcion}
+            </p>
+            {mods.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {mods.map((m, i) => (
+                  <span
+                    key={i}
+                    className={`clip-chamfer-sm border px-2 py-1 font-mono text-[10px] uppercase ${
+                      m.valor >= 0 ? "border-info text-info" : "border-danger text-danger"
+                    }`}
+                  >
+                    {m.valor >= 0 ? `+${m.valor}` : m.valor} {etiqueta(m)}
+                  </span>
+                ))}
+              </div>
+            )}
+            {especie.provisional && (
+              <p className="mt-3 border-t border-border pt-2 font-mono text-[10px] leading-relaxed text-danger">
+                Especie provisional: el diseñador aún no ha enviado el documento,
+                así que estos modificadores son de andamio y cambiarán.
+              </p>
+            )}
+          </HudCard>
+        );
+      })()}
 
       {/* Derivados: nada de esto se edita, todo sale de atributos y habilidades */}
       <HudCard className="p-4">
