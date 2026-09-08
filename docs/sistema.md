@@ -296,6 +296,12 @@ techo real.
 
 **Es el próximo documento que envía el diseñador** (`CONV-1`).
 
+> **En la app hay dos especies de andamio** (`src/lib/catalog/especies.ts`): Humano, sin
+> modificadores, y Arkorü, con números **inventados por nosotros** para poder construir y probar el
+> motor de modificadores. La ficha las marca como provisionales a la vista del jugador. Cuando
+> llegue el documento real, sustituir las especies es añadir entradas al catálogo: no hay código
+> que tocar.
+
 ---
 
 ## Supuestos tomados al implementar
@@ -326,6 +332,12 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | C5 | `COMBATE` nombra **Resiliencia** (resistencia al shock en sintéticos) y **Estructura** (en equipamiento) como puntuaciones de salvación. Ninguna está entre los 6 aplicados de `HOJA`. ¿Son atributos de PNJ/objeto y no de PJ? | Sin resolver |
 | C6 | `EQUIP` habla de daño **agravado**; `COMBATE` define solo no letal, letal y grave. Probablemente "agravado" sea el nombre viejo de "grave". | Sin resolver |
 | C7 | `COMBATE` usa **Potencia + Atletismo** para levantarse de un derribo y **Fortaleza o Potencia + Atletismo** para escapar de un agarre: confirma que el par atributo-habilidad es libre, pero no hay tabla de pares canónicos. | Informativo |
+| C8 | **La notación de las tiradas mezcla habilidades y especialidades sin avisar.** Los documentos escriben tanto `Perspicacia + Biociencia (Medicina)` —forma larga y correcta— como `Perspicacia + Medicina` a secas, y lo mismo con Empatía, Manipulación y Bioquímica. De 12 pares distintos, **4 usan el nombre de una especialidad como si fuera la habilidad**. No es cosmético: decide si la habilidad cuenta entera o a la mitad. | Sin resolver |
+| C9 | **Una casilla no tiene medida.** El movimiento se calcula en metros (`carrera = 15 + Potencia + Atletismo`), pero las penalizaciones por herida dicen "solo una casilla por turno" y las áreas de las armas van en casillas (6x6, 8x8). Sin la equivalencia metros/casilla, las dos escalas no se pueden conectar. | Sin resolver |
+| C10 | **"Niveles" de fatiga contra "puntos" de fatiga.** La salud define **puntos** (8 + Voluntad) y dos estados (Fatigado, Exhausto), pero los fármacos hablan de "consume 2 **niveles** de fatiga" y de "ignorar el primer **nivel** de fatiga acumulada". ¿Un nivel es un punto, o es un estado? | Sin resolver |
+| C11 | **La escala de daño y la de vida no encajan del todo.** Las armas hacen de 7 a 20 de daño (mediana 12), los personajes tienen entre 6 y 16 puntos de golpe y los blindajes absorben de 1 a 8. Un fusil corriente (10) contra armadura ligera (4) se lleva 6 puntos: media vida de un PJ típico, antes de sumar +1 por cada dos éxitos. Puede ser letalidad buscada, pero conviene confirmar que **el daño del arma se resta 1:1 de los puntos de golpe**. | Sin resolver |
+| C12 | **Cultura y Supervivencia no se usan en ninguna regla** (0 menciones en los dos documentos), mientras que Exploración aparece 5 veces sin estar en la lista. Si Exploración acabara siendo una especialidad, Supervivencia sería su habilidad madre natural — y explicaría por qué esta no se usa nunca de forma directa. | Sin resolver, relacionado con C4 |
+| C13 | **Impacto Estructural** (crítico de las armas de kerzul: reduce el blindaje del objetivo de forma permanente) está definido solo dentro de `EQUIP` y no aparece en el catálogo de 23 estados de `COMBATE`. Menor, pero es un efecto que vive fuera de su sitio. | Informativo |
 
 ## Preguntas abiertas para el diseñador
 
@@ -369,6 +381,13 @@ Agrupadas para soltarlas en tandas. Se tachan según lleguen respuestas.
 23. ¿La app debe **llevar la cuenta de PG y fatiga actuales** en partida, con sus estados de herida, o eso se lleva en mesa? Es la decisión que determina si la ficha pasa a guardar estado mutable además de la creación.
 24. Si se lleva en la app: ¿se registra el daño **por categoría** (no letal / letal / grave), que es lo que exige el sistema para saber cuándo alguien está muerto de verdad?
 25. **Resiliencia** y **Estructura**: ¿son puntuaciones de PNJ y equipo, o algún personaje jugador (un sintético) puede tenerlas? *(C5)*
+
+**Incongruencias entre documentos, para la misma tanda de preguntas**
+26. Cuando el sistema dice "Perspicacia + Medicina", ¿quiere decir Biociencia usando la especialidad Medicina? Lo mismo con Empatía, Manipulación y Bioquímica. Es lo que decide si la habilidad cuenta entera o a la mitad. *(C8)*
+27. ¿Cuántos metros mide una casilla? *(C9)*
+28. Un "nivel de fatiga", ¿es un punto de fatiga o un estado (Fatigado/Exhausto)? *(C10)*
+29. El daño de un arma, ¿se resta 1:1 de los puntos de golpe tras el blindaje? Con armas de 7 a 20 y personajes de 6 a 16 puntos, un disparo corriente se lleva media vida. *(C11)*
+30. **Cultura** y **Supervivencia** no aparecen en ninguna regla de los dos documentos. ¿Siguen en la lista de habilidades? ¿Es Supervivencia la habilidad madre de Exploración? *(C12)*
 
 ---
 

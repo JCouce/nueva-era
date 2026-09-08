@@ -62,15 +62,14 @@ Propuesta: `schemaVersion: number` en el Json y una cadena de migraciones
 `migrations[from → to]`, aplicadas al leer. Cada cambio de reglas añade una función de 5 líneas y
 un test. Es lo que permite tocar el sistema sin miedo.
 
-> **Estado (3 sep 2026).** El **número de versión ya se escribe** (`SCHEMA_VERSION` en
-> `lib/rules/sheet.ts`), porque sin él no se puede saber después de qué versión viene cada ficha.
-> Las **migraciones están pospuestas a propósito**: hoy no hay datos que proteger, solo fichas de
-> prueba.
+> **Estado (4 sep 2026): hecho.** `SCHEMA_VERSION` va en la ficha y la cadena de migraciones vive
+> en `lib/rules/migraciones.ts`. La primera (v1 → v2, la especie deja de ser texto libre) sirvió de
+> estreno y está probada de punta a punta: una ficha v1 en la base de datos se lee, se migra, se
+> muestra y se vuelve a guardar ya convertida.
 >
-> **El disparador para hacerlas no es "cuando haya un hueco", es antes de que el grupo cree sus
-> personajes.** A partir de ese momento, cada cambio de reglas toca datos que le importan a
-> alguien. Si llega un documento nuevo del diseñador antes de eso: se transcribe a los documentos,
-> pero no se toca el modelo de datos.
+> Al subir la versión hay que añadir el paso y su test. Si una migración no se puede resolver sin
+> decidir algo (¿a qué habilidad van los puntos que sobran?), esa decisión se toma en el paso,
+> explícitamente, en vez de dejar que `parseSheet` descarte en silencio.
 
 ---
 
@@ -82,11 +81,11 @@ viva**. Queda así:
 
 | Fase | Qué se construye | Depende de | Estado |
 |---|---|---|---|
-| **0. Cimientos** | ~~`schemaVersion` escrito · tests del motor · reorganizar `lib/rules/`~~ · **falta: las migraciones** | — | **Hecha, salvo migraciones** |
-| **1. Motor de tiradas** | Tabla de dificultades · pares atributo+habilidad · derivados de combate (alerta, iniciativa, defensa) · **chuleta de tiradas** en la ficha · lanzador de d12 con los modificadores ya sumados | Fase 0 | **Se puede hacer ya** |
+| **0. Cimientos** | ~~`schemaVersion` · tests del motor · reorganizar `lib/rules/` · migraciones~~ | — | **Hecha** |
+| **1. Motor de tiradas** | ~~Tabla de dificultades · pares atributo+habilidad · chuleta de tiradas · lanzador de d12~~ · falta la Alerta (bloqueada por C4) | Fase 0 | **Hecha, salvo la Alerta** |
 | **2. Ficha viva** | PG y fatiga actuales · daño por categoría (no letal/letal/grave) · estados activos con sus penalizadores automáticos · gasto de fatiga por +1 · descanso | Decisión 23 (ver abajo) | Bloqueada por una decisión, no por el diseñador |
 | **3. Equipo** | Catálogo completo desde `equipamiento.md` · comprar con créditos · equipar · ranuras (subsistemas por armadura, mejoras por arma) · peso y carga | Fases 0-1 · pregunta de carga | Casi lista |
-| **4. Razas** | Motor de modificadores + 2 razas placeholder | Fase 1 | **Se puede hacer ya** |
+| **4. Razas** | ~~Motor de modificadores + 2 especies placeholder~~ | Fase 1 | **Hecha** (las especies reales son datos, no código) |
 | **5. Poderes, dotes, aumentos** | Lo que el diseñador aún no ha escrito | Documentos | Bloqueada por el diseñador |
 | **6. Máster** | Aplicar daño a fichas ajenas · fichas ligeras de PNJ · repartir recursos | Fase 2 | Más adelante |
 

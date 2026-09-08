@@ -144,8 +144,8 @@ escena social, un personaje puede usar **Actitud con especialidad de Empatía o 
 averiguar cuándo le mienten.
 
 De forma activa se pueden emplear acciones simples o reacciones de **Perspicacia + Exploración** para
-buscar objetivos ocultos. **En caso de empate, alerta gana a sigilo.** También sirve para
-reconocimiento del terreno.
+buscar objetivos ocultos. **En caso de empate, alerta gana a sigilo.** También **esta habilidad** se
+utiliza para reconocimiento del terreno.
 
 **Ataque furtivo y sorpresivo.**
 
