@@ -15,12 +15,14 @@ import {
   HABILIDAD_MAX,
   MAX_ESPECIALIDADES,
 } from "./habilidades";
+import { piezaEquipadaSchema, type PiezaEquipada } from "./equipo";
 
 // Versión del formato de ficha. Al subirla hay que añadir su migración en
 // migraciones.ts y el test que la cubre.
 //   1 → primera versión versionada
 //   2 → la especie pasa de texto libre a id del catálogo
-export const SCHEMA_VERSION = 2;
+//   3 → se añade el equipo instalado
+export const SCHEMA_VERSION = 3;
 
 const atributoValue = z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX);
 
@@ -45,6 +47,7 @@ export const sheetSchema = z.object({
   motivacion: z.string().max(500),
   atributos: z.object(atributosShape),
   habilidades: z.object(habilidadesShape),
+  equipo: z.array(piezaEquipadaSchema).max(200),
 });
 
 export type Sheet = z.infer<typeof sheetSchema>;
@@ -65,6 +68,7 @@ export function defaultSheet(): Sheet {
         { valor: HABILIDAD_NO_ENTRENADA, especialidades: [] as string[] },
       ]),
     ) as Sheet["habilidades"],
+    equipo: [],
   };
 }
 
@@ -119,6 +123,15 @@ export function parseSheet(raw: unknown): Sheet {
         : { valor, especialidades };
   }
 
+  // Cada pieza se valida por separado: una entrada corrupta se descarta sin
+  // tirar el resto del equipo por la borda.
+  const rEquipo = Array.isArray(r.equipo) ? r.equipo : [];
+  const equipo: PiezaEquipada[] = rEquipo
+    .map((p) => piezaEquipadaSchema.safeParse(p))
+    .filter((res): res is { success: true; data: PiezaEquipada } => res.success)
+    .map((res) => res.data)
+    .slice(0, 200);
+
   return {
     schemaVersion: clampInt(r.schemaVersion, 1, SCHEMA_VERSION, SCHEMA_VERSION),
     edad: r.edad === null || r.edad === undefined ? null : clampInt(r.edad, 0, 999, 0),
@@ -127,5 +140,6 @@ export function parseSheet(raw: unknown): Sheet {
     motivacion: typeof r.motivacion === "string" ? r.motivacion.slice(0, 500) : "",
     atributos,
     habilidades,
+    equipo,
   };
 }

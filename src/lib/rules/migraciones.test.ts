@@ -77,6 +77,20 @@ describe("v1 → v2: la especie deja de ser texto libre", () => {
   });
 });
 
+describe("v2 → v3: se añade el equipo instalado", () => {
+  test("una ficha sin campo equipo arranca con la lista vacía", () => {
+    const { ficha } = migrar({ schemaVersion: 2, especieId: "humano" }, 3);
+    assert.deepEqual(ficha.equipo, []);
+    assert.equal(ficha.schemaVersion, 3);
+  });
+
+  test("no toca el resto de la ficha", () => {
+    const { ficha } = migrar({ schemaVersion: 2, especieId: "arkoru", edad: 40 }, 3);
+    assert.equal(ficha.especieId, "arkoru");
+    assert.equal(ficha.edad, 40);
+  });
+});
+
 describe("parseSheet migra antes de normalizar", () => {
   test("una ficha v1 entra por la puerta y sale al día", () => {
     const s = parseSheet({ schemaVersion: 1, especie: "Arkorü", edad: 40 });

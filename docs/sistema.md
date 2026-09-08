@@ -320,6 +320,8 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S6 | El movimiento **no baja de 0**. | Con Potencia 0 y Atletismo −1, las fórmulas dan un salto vertical de **−10 cm**. Se corta en 0 hasta saber qué quiere el diseñador. |
 | S7 | En creación el tope es **4** en atributos y **3** en habilidades; 5 queda como techo del sistema para más adelante. | Lectura de "máxima puntuación 4/5" y "3/5". |
 | S8 | El **valor de Atletismo** que entra en las fórmulas de movimiento es el valor puro, sin aplicar la mitad por estar fuera de especialidad. | Las fórmulas de `HOJA` dicen "Potencia + Atletismo" a secas. |
+| S9 | En un módulo con niveles (mejora estándar o subsistema de `EQUIP`), un efecto que un nivel introduce y los superiores no repiten ni anulan se **acumula**: el nivel N conserva lo desbloqueado en 1..N-1. Cuando el documento da un total explícito para ese nivel ("mejora la bonificación a +2"), se usa ese total tal cual, sin sumarlo al de niveles inferiores. | `EQUIP` describe cada nivel como una mejora sobre el anterior, nunca como un reemplazo (p. ej. Soporte Vital nivel 1 da Resistencia Térmica y los niveles 2-3 no la repiten, pero tampoco dicen que se pierda). Asumir que se pierde algo al subir de nivel sería más raro que asumir que se mantiene. |
+| S10 | El bono de Fuerza del Exoesqueleto, que `EQUIP` duplica para "carga transportable y proezas de fuerza", se aplica **x2 a las 5 fórmulas de movimiento** (Carrera, Salto Vertical, Salto Horizontal, Escalada, Nado). No toca la Fuerza general ni Fortaleza/Vida, que siguen sin mecanizar. | `EQUIP` no dice explícitamente qué cuenta como "proeza de fuerza"; las 5 fórmulas salen de Potencia + Atletismo, la misma base física, así que tratarlas todas igual es lo más consistente. Pendiente de confirmar con Murillo. |
 
 ## Conflictos detectados
 
@@ -354,6 +356,11 @@ Agrupadas para soltarlas en tandas. Se tachan según lleguen respuestas.
 **Bloqueantes para el catálogo de equipo**
 7. ¿Los créditos son la única moneda? ¿Cuánto empieza teniendo un personaje?
 8. Ranuras: ¿las mejoras de arma se limitan solo por la columna "Mejoras" de cada arma?
+8b. Los efectos de nivel de una mejora estándar o subsistema, ¿se acumulan al subir de nivel o
+cada nivel sustituye entero al anterior? *(S9)*
+8c. El bono de Fuerza del Exoesqueleto se duplica para "carga transportable y proezas de
+fuerza": ¿cuenta el movimiento entero (Carrera, Saltos, Escalada, Nado) como "proeza de
+fuerza", o solo alguna de esas cinco fórmulas? *(S10)*
 
 **Diseño pendiente**
 9. Dotes: qué son, cuántas se eligen, coste.

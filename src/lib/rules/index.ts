@@ -9,6 +9,7 @@
 //   tiradas.ts     catálogo de acciones, dificultades y resolución del d12
 //   modificadores.ts  cómo especies, dotes, aumentos, equipo y estados alteran números
 //   migraciones.ts    qué pasa con las fichas cuando cambia el formato
+//   equipo.ts         qué lleva puesto un personaje: validación de ranuras y sus modificadores
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -18,4 +19,7 @@ export * from "./creacion";
 export * from "./tiradas";
 export * from "./modificadores";
 export * from "./migraciones";
+export * from "./equipo";
 export * from "../catalog/especies";
+export * from "../catalog/equipo";
+export * from "../catalog/armasMelee";

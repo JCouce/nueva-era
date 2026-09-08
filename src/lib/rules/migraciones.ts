@@ -47,6 +47,12 @@ export const MIGRACIONES: Migracion[] = [
       };
     },
   },
+  {
+    desde: 2,
+    hasta: 3,
+    descripcion: "Se añade el equipo instalado; las fichas antiguas empiezan sin nada equipado",
+    migrar: (ficha) => ({ ...ficha, equipo: Array.isArray(ficha.equipo) ? ficha.equipo : [] }),
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le
