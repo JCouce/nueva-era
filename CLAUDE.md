@@ -4,6 +4,9 @@ App mobile-first para que un grupo de rol (≈10 jugadores) lleve sus fichas de
 personaje. Sistema **propio, y todavía en diseño**: el diseñador va soltando las
 reglas a cuentagotas, así que el modelo de datos es flexible a propósito.
 
+**Si acabas de llegar al proyecto, lee `docs/handoff.md` primero**: estado exacto,
+cómo se trabaja aquí, trampas conocidas y qué toca ahora.
+
 **`docs/sistema.md` es la fuente de verdad de las reglas.** Lo que no esté ahí no
 existe para el código. Cada bloque lleva estado (`FIRME`, `INFERIDO`, `PARCIAL`,
 `PENDIENTE`) y fuente, y al final hay una lista de supuestos tomados al implementar
