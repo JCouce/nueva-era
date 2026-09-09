@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Character" ADD COLUMN     "creditos" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "xp" INTEGER NOT NULL DEFAULT 0;

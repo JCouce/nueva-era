@@ -36,3 +36,35 @@ export async function revertToDraftAction(formData: FormData) {
   revalidatePath("/master");
   revalidatePath(`/characters/${id}`);
 }
+
+// xp y créditos son recursos que solo concede el máster — por eso viven aquí y
+// no en el autosave de la ficha (@/app/characters/[id]/actions.ts), que el
+// propio jugador puede disparar.
+async function adjustResource(
+  formData: FormData,
+  field: "xp" | "creditos",
+): Promise<void> {
+  if (!(await requireMaster())) return;
+  const id = String(formData.get("id") ?? "");
+  const delta = Number(formData.get("delta") ?? "0");
+  if (!id || !Number.isFinite(delta) || delta === 0) return;
+
+  const character = await prisma.character.findUnique({
+    where: { id },
+    select: { [field]: true },
+  });
+  if (!character) return;
+
+  const next = Math.max(0, character[field] + delta);
+  await prisma.character.update({ where: { id }, data: { [field]: next } });
+  revalidatePath("/master");
+  revalidatePath(`/characters/${id}`);
+}
+
+export async function adjustXpAction(formData: FormData) {
+  return adjustResource(formData, "xp");
+}
+
+export async function adjustCreditosAction(formData: FormData) {
+  return adjustResource(formData, "creditos");
+}

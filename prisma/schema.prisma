@@ -39,6 +39,8 @@ model Character {
   stats      Json            @default("{}")
   status     CharacterStatus @default(DRAFT)
   approvedAt DateTime?
+  xp         Int             @default(0)
+  creditos   Int             @default(0)
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
 
