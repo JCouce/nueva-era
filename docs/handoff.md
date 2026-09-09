@@ -45,7 +45,7 @@ motor de modificadores, dos especies de andamio y las migraciones de ficha.
 | **3. Equipo** | ⬜ **es la siguiente** | Nada (ver §6) |
 | 2. Ficha viva | ⬜ | Resuelta en el diseño de la fase 6b (§9): sí, la vida y los estados de combate se llevan en la app |
 | 5. Poderes, dotes, aumentos | ⬜ | El diseñador, que aún no los ha escrito |
-| 6. Máster | ⬜ diseño cerrado, ver §9 | Va después de la 2 y la 3 |
+| 6. Máster | 🟨 6a en marcha, ver §9 | Falta el guardarraíl del snapshot y la 6b (combate) |
 
 ## 4. Cómo se trabaja aquí
 
@@ -195,37 +195,40 @@ dentro del mismo permiso.
 
 Lo que de verdad falta es superficie de UI dedicada y un puñado de campos nuevos.
 
-### Alcance de la fase 6a (esto es lo que se construye)
+### Alcance de la fase 6a
 
-- **Schema**: `status` (`DRAFT` | `APPROVED`, default `DRAFT`), `approvedAt`, `xp Int`,
+- ✅ **Schema**: `status` (`DRAFT` | `APPROVED`, default `DRAFT`), `approvedAt`, `xp Int`,
   `creditos Int` en `Character`. Un solo máster confirmado → sin `approvedBy`.
-- **`xp` y `creditos` van como columnas propias, no dentro de `stats`.** A diferencia del resto
-  de la ficha, estos los concede el máster, no el jugador. Si vivieran en el mismo `stats` que
-  escribe el autosave del jugador, el criterio de permiso de esa acción ("dueño o máster")
+- ✅ **`xp` y `creditos` van como columnas propias, no dentro de `stats`.** A diferencia del
+  resto de la ficha, estos los concede el máster, no el jugador. Si vivieran en el mismo `stats`
+  que escribe el autosave del jugador, el criterio de permiso de esa acción ("dueño o máster")
   dejaría al jugador con una vía, aunque fuera por bug, de tocar un recurso que no es suyo.
-  Server actions propias (`grantXp`, `grantCreditos`), con `role === 'MASTER'` comprobado ahí y
-  en ningún otro sitio.
-- **Aprobar bloquea Atributos y Habilidades**, no el resto de la ficha (Identidad, Equipo,
-  narrativa siguen editables por el jugador). Mecanismo: al aprobar se congela una copia de esos
-  dos bloques (`approvedSnapshot Json`); cualquier guardado posterior del jugador se valida
-  contra ese snapshot y se rechaza si algún atributo o habilidad **baja** por debajo de su valor
-  aprobado. Solo comprar, nunca vender — el usuario fue explícito en esto: una vez comprado un
-  punto no se puede devolver ni para reasignarlo a otro sitio.
+  Server actions propias (`adjustXpAction`, `adjustCreditosAction` en `app/master/actions.ts`),
+  con `role === 'MASTER'` comprobado ahí y en ningún otro sitio.
+- ✅ **Ruta `/master`**: dashboard único, no enlaces sueltos en la nav. Cola de fichas en `DRAFT`
+  arriba (para aprobar), `APPROVED` abajo, con `xp`/`creditos` editables inline. En
+  `characters/[id]` hay una tira solo-máster (estado, botón aprobar/revertir, steppers de
+  xp/créditos) encima de la ficha ya existente — no hizo falta una vista nueva para leerla, esa
+  ya estaba. Markup compartido entre ambas en `app/master/MasterControls.tsx`. En `AppHeader`,
+  link "Panel" visible solo si `role === 'MASTER'`, y los tres puntos de entrada (login,
+  `/login` ya logueado, `/`) aterrizan directo en `/master` para ese rol.
+- ✅ **Notificación**: ninguna en 6a, como estaba previsto. El jugador ve el estado/xp/créditos
+  actualizados la próxima vez que entra a su ficha. Sin websockets.
+- ⬜ **Pendiente: aprobar bloquea Atributos y Habilidades**, no el resto de la ficha (Identidad,
+  Equipo, narrativa siguen editables por el jugador). Mecanismo previsto: al aprobar se congela
+  una copia de esos dos bloques (`approvedSnapshot Json`, campo aún sin añadir al schema);
+  cualquier guardado posterior del jugador se valida contra ese snapshot y se rechaza si algún
+  atributo o habilidad **baja** por debajo de su valor aprobado. Solo comprar, nunca vender — el
+  usuario fue explícito en esto: una vez comprado un punto no se puede devolver ni para
+  reasignarlo a otro sitio.
   - **Esto es el guardarraíl, no el sistema de progresión.** Subir un punto por encima del
     snapshot vía XP necesita una fórmula de coste que el diseñador no ha dado — Progresión sigue
     `[PENDIENTE]` en `docs/sistema.md`. La 6a solo impide bajar; el "cómo se compra un punto
     nuevo con XP" es trabajo aparte en cuanto llegue esa regla.
-  - Revertir de `APPROVED` a `DRAFT` (el máster mete la pata, o hace falta reabrir la ficha) es
-    barato de tener ya con este diseño — inclúyelo aunque no se haya pedido explícitamente.
-- **Ruta `/master`**: dashboard único, no enlaces sueltos en la nav. Cola de fichas en `DRAFT`
-  arriba (para aprobar), `APPROVED` abajo, con `xp`/`creditos` editables inline. En
-  `characters/[id]` se añade una tira solo-máster (estado, botón aprobar/revertir, steppers de
-  xp/créditos) encima de la ficha ya existente — no hace falta una vista nueva para leerla, esa
-  ya está. En `AppHeader`, un link "Panel del Máster" visible solo si `role === 'MASTER'`,
-  mismo patrón que el `isMaster` que ya usa `characters/page.tsx`.
-- **Notificación**: ninguna en 6a. El jugador ve el estado/xp/créditos actualizados la próxima
-  vez que entra a su ficha. Sin websockets — el patrón de uso es de ráfagas, no de colaboración
-  simultánea, y Vercel (serverless) no encaja con sockets persistentes.
+  - Revertir de `APPROVED` a `DRAFT` ya está hecho (`revertToDraftAction`), pero hoy no deshace
+    nada del guardarraíl porque el guardarraíl todavía no existe — cuando se implemente, revisar
+    si revertir también debe soltar el snapshot o dejarlo (probablemente dejarlo: si el máster
+    revierte para corregir algo puntual, el suelo de "no vender" no debería desaparecer).
 
 ### Fase 6b — panel de combate (después de 6a, diseño sin cerrar)
 
