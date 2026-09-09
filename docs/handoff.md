@@ -45,7 +45,7 @@ motor de modificadores, dos especies de andamio y las migraciones de ficha.
 | **3. Equipo** | ⬜ **es la siguiente** | Nada (ver §6) |
 | 2. Ficha viva | ⬜ | Resuelta en el diseño de la fase 6b (§9): sí, la vida y los estados de combate se llevan en la app |
 | 5. Poderes, dotes, aumentos | ⬜ | El diseñador, que aún no los ha escrito |
-| 6. Máster | 🟨 6a en marcha, ver §9 | Falta el guardarraíl del snapshot y la 6b (combate) |
+| 6. Máster | ✅ 6a cerrada, ver §9 | Queda la 6b (combate en vivo), sin diseño cerrado todavía |
 
 ## 4. Cómo se trabaja aquí
 
@@ -214,21 +214,28 @@ Lo que de verdad falta es superficie de UI dedicada y un puñado de campos nuevo
   `/login` ya logueado, `/`) aterrizan directo en `/master` para ese rol.
 - ✅ **Notificación**: ninguna en 6a, como estaba previsto. El jugador ve el estado/xp/créditos
   actualizados la próxima vez que entra a su ficha. Sin websockets.
-- ⬜ **Pendiente: aprobar bloquea Atributos y Habilidades**, no el resto de la ficha (Identidad,
-  Equipo, narrativa siguen editables por el jugador). Mecanismo previsto: al aprobar se congela
-  una copia de esos dos bloques (`approvedSnapshot Json`, campo aún sin añadir al schema);
-  cualquier guardado posterior del jugador se valida contra ese snapshot y se rechaza si algún
-  atributo o habilidad **baja** por debajo de su valor aprobado. Solo comprar, nunca vender — el
-  usuario fue explícito en esto: una vez comprado un punto no se puede devolver ni para
-  reasignarlo a otro sitio.
+- ✅ **Aprobar bloquea bajar Atributos y Habilidades**, no el resto de la ficha (Identidad,
+  Equipo, narrativa siguen editables por el jugador). Al aprobar se congela una foto de esos dos
+  bloques (`Character.approvedSnapshot Json?`, motor en `lib/rules/aprobacion.ts` — 8 tests
+  propios); cualquier guardado posterior del jugador se recorta si algún atributo o habilidad
+  **baja** por debajo de su valor aprobado, en `characters/[id]/actions.ts`
+  (`setAtributoAction`/`setHabilidadAction`). Solo comprar, nunca vender. `resetBuildAction`
+  queda bloqueado del todo en ficha aprobada (resetear es vender todo de golpe). Verificado en
+  Chrome con datos reales: bajar un atributo/habilidad en el suelo se recorta tanto en servidor
+  como en el cliente (el autosave optimista de `CharacterSheet.tsx` ahora reconcilia con lo que
+  devuelve el servidor en vez de asumir que siempre coincide — si no, el recorte del guardarraíl
+  no se veía hasta el siguiente F5). Revertir a `DRAFT` suelta el snapshot
+  (`Prisma.DbNull`); volver a aprobar congela uno nuevo con los valores de ese momento.
   - **Esto es el guardarraíl, no el sistema de progresión.** Subir un punto por encima del
     snapshot vía XP necesita una fórmula de coste que el diseñador no ha dado — Progresión sigue
     `[PENDIENTE]` en `docs/sistema.md`. La 6a solo impide bajar; el "cómo se compra un punto
     nuevo con XP" es trabajo aparte en cuanto llegue esa regla.
-  - Revertir de `APPROVED` a `DRAFT` ya está hecho (`revertToDraftAction`), pero hoy no deshace
-    nada del guardarraíl porque el guardarraíl todavía no existe — cuando se implemente, revisar
-    si revertir también debe soltar el snapshot o dejarlo (probablemente dejarlo: si el máster
-    revierte para corregir algo puntual, el suelo de "no vender" no debería desaparecer).
+  - Fichas aprobadas **antes** de que existiera este campo tienen `approvedSnapshot: null` — sin
+    snapshot no hay suelo (fallback deliberado, no bug); vuelven a tener guardarraíl la próxima
+    vez que se aprueben.
+
+**La 6a está cerrada.** Las cuatro piezas de arriba, verificadas en Chrome con datos reales, no
+solo con tests.
 
 ### Fase 6b — panel de combate (después de 6a, diseño sin cerrar)
 

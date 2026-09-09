@@ -12,6 +12,7 @@
 //   equipo.ts         qué lleva puesto un personaje: validación de ranuras y sus modificadores
 //   condiciones.ts    controles de un modal de tirada: toggle, opción, contador
 //   combate.ts        el equipo convertido en tiradas de ataque concretas
+//   aprobacion.ts      guardarraíl de la ficha aprobada: solo comprar, nunca vender
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -24,6 +25,7 @@ export * from "./migraciones";
 export * from "./equipo";
 export * from "./condiciones";
 export * from "./combate";
+export * from "./aprobacion";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

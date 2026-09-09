@@ -17,16 +17,22 @@ import {
   type AtributoId,
   type HabilidadId,
   type PiezaEquipada,
+  type AprobacionSnapshot,
+  parseSnapshot,
+  aplicarSueloAtributo,
+  aplicarSueloHabilidad,
 } from "@/lib/rules";
 
 export type SaveResult =
   | { ok: true; sheet: Sheet }
   | { ok: false; error: string };
 
+type Editable = { sheet: Sheet; aprobada: boolean; snapshot: AprobacionSnapshot | null };
+
 // Carga la ficha comprobando permisos. Base de todas las acciones de autosave.
-async function loadEditable(
-  characterId: string,
-): Promise<{ sheet: Sheet } | { error: string }> {
+// Trae también el estado de aprobación: aprobacion.ts lo necesita para el
+// guardarraíl de solo-comprar (ver setAtributoAction/setHabilidadAction).
+async function loadEditable(characterId: string): Promise<Editable | { error: string }> {
   const user = await requireUser();
   const character = await prisma.character.findUnique({
     where: { id: characterId },
@@ -35,7 +41,11 @@ async function loadEditable(
   if (!canEditCharacter(user, character)) {
     return { error: "No tienes permiso para editar esta ficha" };
   }
-  return { sheet: parseSheet(character.stats) };
+  return {
+    sheet: parseSheet(character.stats),
+    aprobada: character.status === "APPROVED",
+    snapshot: parseSnapshot(character.approvedSnapshot),
+  };
 }
 
 async function persist(
@@ -57,7 +67,10 @@ export async function setAtributoAction(
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, setAtributoValue(ctx.sheet, atributoId, value));
+  // Aprobada: solo comprar, nunca vender. Sin esto, el jugador podría bajar
+  // un atributo por debajo de lo que el máster ya validó.
+  const v = ctx.aprobada ? aplicarSueloAtributo(value, atributoId, ctx.snapshot) : value;
+  return persist(characterId, setAtributoValue(ctx.sheet, atributoId, v));
 }
 
 export async function setHabilidadAction(
@@ -67,7 +80,8 @@ export async function setHabilidadAction(
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, setHabilidadValue(ctx.sheet, habilidadId, value));
+  const v = ctx.aprobada ? aplicarSueloHabilidad(value, habilidadId, ctx.snapshot) : value;
+  return persist(characterId, setHabilidadValue(ctx.sheet, habilidadId, v));
 }
 
 export async function addEspecialidadAction(
@@ -113,9 +127,11 @@ export async function desequiparAction(
 }
 
 // Devuelve atributos y habilidades a cero. La identidad se conserva.
+// Bloqueado en fichas aprobadas: resetear es vender todo de golpe.
 export async function resetBuildAction(characterId: string): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
+  if (ctx.aprobada) return { ok: false, error: "La ficha ya está aprobada" };
   return persist(characterId, resetBuild(ctx.sheet));
 }
 

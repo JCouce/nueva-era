@@ -32,17 +32,20 @@ model User {
 }
 
 model Character {
-  id         String          @id @default(cuid())
-  name       String
-  ownerId    String
-  owner      User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  stats      Json            @default("{}")
-  status     CharacterStatus @default(DRAFT)
-  approvedAt DateTime?
-  xp         Int             @default(0)
-  creditos   Int             @default(0)
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
+  id               String          @id @default(cuid())
+  name             String
+  ownerId          String
+  owner            User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  stats            Json            @default("{}")
+  status           CharacterStatus @default(DRAFT)
+  approvedAt       DateTime?
+  // Foto de atributos/habilidades en el momento de aprobar (aprobacion.ts).
+  // null = nunca aprobada, o aprobada antes de que existiera este campo.
+  approvedSnapshot Json?
+  xp               Int             @default(0)
+  creditos         Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   @@index([ownerId])
 }

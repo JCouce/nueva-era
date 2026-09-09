@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@/generated/prisma/client";
 import { requireUser } from "@/lib/auth-helpers";
+import { parseSheet, snapshotFromSheet } from "@/lib/rules";
 
 // Aprobar/revertir es cosa del máster, no del dueño de la ficha — a diferencia
 // de canEditCharacter(), aquí el dueño NO vale.
@@ -25,9 +27,18 @@ export async function approveCharacterAction(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
+  // Congela el suelo de Atributos/Habilidades en el momento exacto de
+  // aprobar — de ahí en adelante solo se puede subir (aprobacion.ts).
+  const character = await prisma.character.findUnique({
+    where: { id },
+    select: { stats: true },
+  });
+  if (!character) return;
+  const snapshot = snapshotFromSheet(parseSheet(character.stats));
+
   await prisma.character.update({
     where: { id },
-    data: { status: "APPROVED", approvedAt: new Date() },
+    data: { status: "APPROVED", approvedAt: new Date(), approvedSnapshot: snapshot },
   });
   revalidateCharacterViews(id);
 }
@@ -37,9 +48,11 @@ export async function revertToDraftAction(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
+  // Suelta el snapshot: mientras esté en DRAFT no hay guardarraíl, y si se
+  // vuelve a aprobar se congela uno nuevo con los valores de ese momento.
   await prisma.character.update({
     where: { id },
-    data: { status: "DRAFT", approvedAt: null },
+    data: { status: "DRAFT", approvedAt: null, approvedSnapshot: Prisma.DbNull },
   });
   revalidateCharacterViews(id);
 }

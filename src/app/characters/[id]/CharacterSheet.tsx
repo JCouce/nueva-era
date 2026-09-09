@@ -130,14 +130,17 @@ export function CharacterSheet({
   );
 
   // ── Build (inmediato). El estado optimista usa las mismas funciones puras
-  // que el servidor, así que no hace falta reconciliar en éxito. ──
+  // que el servidor, así que normalmente no hace falta reconciliar en éxito
+  // — salvo atributos/habilidades: si la ficha está aprobada, el servidor
+  // aplica además el guardarraíl de solo-comprar (aprobacion.ts), que el
+  // cliente no conoce. Por eso aquí sí se reconcilia con lo que devuelve. ──
   const commitAtributo = (id: AtributoId, value: number) => {
     setSheet((s) => setAtributoValue(s, id, value));
-    runSave(() => setAtributoAction(characterId, id, value));
+    runSave(() => setAtributoAction(characterId, id, value), setSheet);
   };
   const commitHabilidad = (id: HabilidadId, value: number) => {
     setSheet((s) => setHabilidadValue(s, id, value));
-    runSave(() => setHabilidadAction(characterId, id, value));
+    runSave(() => setHabilidadAction(characterId, id, value), setSheet);
   };
   const commitAddEspecialidad = (id: HabilidadId, nombre: string) => {
     setSheet((s) => addEspecialidad(s, id, nombre));
