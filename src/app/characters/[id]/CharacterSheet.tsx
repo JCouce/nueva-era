@@ -32,7 +32,6 @@ import { ResumenTab } from "./_components/ResumenTab";
 import { AtributosTab } from "./_components/AtributosTab";
 import { HabilidadesTab } from "./_components/HabilidadesTab";
 import { TiradasTab } from "./_components/TiradasTab";
-import { PendienteTab } from "./_components/PendienteTab";
 import { TiendaTab } from "./_components/TiendaTab";
 import { EquipoTab } from "./_components/EquipoTab";
 
@@ -41,9 +40,6 @@ const TABS = [
   { id: "attrs", label: "Atributos" },
   { id: "skills", label: "Habilidades" },
   { id: "tiradas", label: "Tiradas" },
-  { id: "dotes", label: "Dotes" },
-  { id: "poderes", label: "Poderes" },
-  { id: "aumentos", label: "Aumentos" },
   { id: "tienda", label: "Tienda" },
   { id: "equipo", label: "Equipo" },
 ] as const;
@@ -254,24 +250,6 @@ export function CharacterSheet({
         />
       )}
       {active === "tiradas" && <TiradasTab sheet={sheet} />}
-      {active === "dotes" && (
-        <PendienteTab
-          titulo="dotes"
-          falta="El diseñador aún no ha definido qué son las dotes, cuántas se eligen ni qué cuestan."
-        />
-      )}
-      {active === "poderes" && (
-        <PendienteTab
-          titulo="poderes"
-          falta="Los poderes psiónicos están a medio escribir. Se sabe que consumen fatiga y que operan sobre materia, energía e información."
-        />
-      )}
-      {active === "aumentos" && (
-        <PendienteTab
-          titulo="aumentos"
-          falta="Los aumentos son biónicos y genéticos. Falta el catálogo y saber si hay un tope de lo que un cuerpo aguanta."
-        />
-      )}
       {active === "tienda" && <TiendaTab sheet={sheet} onEquipar={commitEquipar} />}
       {active === "equipo" && <EquipoTab sheet={sheet} onDesequipar={commitDesequipar} />}
 
