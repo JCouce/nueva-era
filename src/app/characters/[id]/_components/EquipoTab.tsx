@@ -9,7 +9,13 @@ import {
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { Acordeon } from "@/components/Acordeon";
-import { DetalleArmadura, DetalleArma, DetalleArmaMelee, DetalleModulo } from "./equipo/PiezaDetalle";
+import {
+  BadgeRareza,
+  DetalleArmadura,
+  DetalleArma,
+  DetalleArmaMelee,
+  DetalleModulo,
+} from "./equipo/PiezaDetalle";
 
 function BotonQuitar({ onClick }: { onClick: () => void }) {
   return (
@@ -99,7 +105,12 @@ export function EquipoTab({
             key={a.instanciaId}
             titulo={cat.label}
             resumen={cat.resumen}
-            etiqueta={<BotonQuitar onClick={() => onDesequipar(a.instanciaId)} />}
+            etiqueta={
+              <div className="flex flex-col items-end gap-1">
+                <BadgeRareza rareza={cat.rareza} />
+                <BotonQuitar onClick={() => onDesequipar(a.instanciaId)} />
+              </div>
+            }
             defaultAbierto
           >
             <DetalleArmadura p={cat} />

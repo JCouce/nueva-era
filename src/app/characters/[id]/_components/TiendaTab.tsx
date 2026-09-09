@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ARMADURAS,
   ARMAS,
@@ -24,16 +24,75 @@ import {
   type MejoraMovimiento,
 } from "@/lib/rules";
 import { Acordeon } from "@/components/Acordeon";
-import { DetalleArmadura, DetalleArma, DetalleArmaMelee, DetalleModulo } from "./equipo/PiezaDetalle";
+import {
+  BadgeRareza,
+  DetalleArmadura,
+  DetalleArma,
+  DetalleArmaMelee,
+  DetalleModulo,
+} from "./equipo/PiezaDetalle";
 
-function Seccion({ titulo, children }: { titulo: string; children: ReactNode }) {
+// El catálogo entero (~110 piezas) como menú de terminal: un grid de
+// categorías —mismo lenguaje que las tiles de Aplicados en AtributosTab— en
+// vez de nueve secciones apiladas y siempre visibles. Se elige una y solo esa
+// pinta su lista debajo; cambiar de categoría es un tap, no un scroll.
+const CATEGORIAS = [
+  { id: "armaduras", titulo: "Armaduras", cantidad: ARMADURAS.length },
+  { id: "armas", titulo: "Armas de fuego", cantidad: ARMAS.length },
+  {
+    id: "melee",
+    titulo: "Armas melee",
+    cantidad: ARMAS_MELEE.length - ARMAS_MELEE_KERZUL.length,
+  },
+  { id: "kerzul", titulo: "Kerzul", cantidad: ARMAS_MELEE_KERZUL.length },
+  { id: "mejorasEstandar", titulo: "Mejoras estándar", cantidad: MEJORAS_ESTANDAR.length },
+  { id: "subsistemas", titulo: "Subsistemas", cantidad: SUBSISTEMAS.length },
+  { id: "mejorasArma", titulo: "Mejoras de arma", cantidad: MEJORAS_ARMA.length },
+  { id: "movimiento", titulo: "Movimiento", cantidad: MOVIMIENTO.length },
+] as const;
+
+type CategoriaId = (typeof CATEGORIAS)[number]["id"];
+
+// Las únicas cuatro familias que viven dentro de otra pieza (armadura o
+// arma): a esas les vale el filtro "solo lo instalable ahora".
+const INSTALABLES = new Set<CategoriaId>([
+  "mejorasEstandar",
+  "subsistemas",
+  "mejorasArma",
+  "movimiento",
+]);
+
+function Tile({
+  titulo,
+  cantidad,
+  activo,
+  onClick,
+}: {
+  titulo: string;
+  cantidad: number;
+  activo: boolean;
+  onClick: () => void;
+}) {
   return (
-    <div className="flex flex-col gap-2">
-      <h2 className="border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={activo}
+      className={`clip-chamfer border p-3 text-left active:scale-95 ${
+        activo ? "border-accent bg-elevated shadow-glow-yellow" : "border-border bg-surface"
+      }`}
+    >
+      <span
+        className={`block font-display text-xs font-semibold uppercase leading-tight ${
+          activo ? "text-accent" : "text-foreground"
+        }`}
+      >
         {titulo}
-      </h2>
-      {children}
-    </div>
+      </span>
+      <span className="mt-1 block font-mono text-[10px] tabular-nums text-muted">
+        {cantidad} {cantidad === 1 ? "pieza" : "piezas"}
+      </span>
+    </button>
   );
 }
 
@@ -49,6 +108,99 @@ const BOTON_EQUIPAR =
   "clip-chamfer-sm w-full border border-accent bg-accent py-2 font-display text-xs font-semibold " +
   "uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted";
 
+const VINCULANDO_MS = 900;
+const VINCULADO_MS = 550;
+
+// Barra de progreso real (no decorativa): arranca en 0 y transiciona a 100%
+// en exactamente VINCULANDO_MS, así que la barra siempre acaba de llenarse
+// justo cuando dispara el timeout que cambia de fase. El doble
+// requestAnimationFrame es el truco de siempre para que el navegador pinte
+// el 0% antes de animar a 100% — si no, no hay transición que ver.
+function BarraVinculando({ ms }: { ms: number }) {
+  const [lleno, setLleno] = useState(false);
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => requestAnimationFrame(() => setLleno(true)));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return (
+    <span className="mt-1.5 block h-1 w-full overflow-hidden bg-night">
+      <span
+        className="block h-full bg-info shadow-glow-cyan"
+        style={{
+          width: lleno ? "100%" : "0%",
+          transitionProperty: "width",
+          transitionDuration: `${ms}ms`,
+          transitionTimingFunction: "linear",
+        }}
+      />
+    </span>
+  );
+}
+
+// El equipar en sí es instantáneo (estado optimista, ver CharacterSheet), así
+// que la secuencia de abajo no espera a nada real: es la confirmación táctil
+// de "esto se ha instalado", no una carga. Tres fases con el mismo lenguaje
+// que el resto de la ficha — mono/info para "el sistema está trabajando",
+// display/accent-glow para el resultado, como el crítico en TiradasTab.
+function BotonEquipar({
+  onClick,
+  disabled = false,
+  className = "",
+  children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  const [fase, setFase] = useState<"lista" | "vinculando" | "vinculado">("lista");
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    const t = timers.current;
+    return () => t.forEach(clearTimeout);
+  }, []);
+
+  const disparar = () => {
+    onClick();
+    setFase("vinculando");
+    timers.current.push(setTimeout(() => setFase("vinculado"), VINCULANDO_MS));
+    timers.current.push(setTimeout(() => setFase("lista"), VINCULANDO_MS + VINCULADO_MS));
+  };
+
+  if (fase === "vinculando") {
+    return (
+      <button
+        type="button"
+        disabled
+        className={`clip-chamfer-sm w-full border border-info bg-elevated px-3 py-2 text-center ${className}`}
+      >
+        <span className="font-mono text-[11px] uppercase tracking-widest text-info">
+          {"// vinculando"}
+          <span className="animate-pulse">_</span>
+        </span>
+        <BarraVinculando ms={VINCULANDO_MS} />
+      </button>
+    );
+  }
+  if (fase === "vinculado") {
+    return (
+      <button
+        type="button"
+        disabled
+        className={`clip-chamfer-sm w-full border border-accent bg-elevated py-2 font-display text-xs font-semibold uppercase tracking-wide text-accent shadow-glow-yellow ${className}`}
+      >
+        ✓ Equipado
+      </button>
+    );
+  }
+  return (
+    <button type="button" disabled={disabled} onClick={disparar} className={`${BOTON_EQUIPAR} ${className}`}>
+      {children}
+    </button>
+  );
+}
+
 // Armas, armaduras y armas melee no necesitan dónde instalarse: un botón y ya.
 function AccionSimple({
   pieza,
@@ -58,13 +210,12 @@ function AccionSimple({
   onEquipar: (p: PiezaEquipada) => void;
 }) {
   return (
-    <button
-      type="button"
+    <BotonEquipar
+      className="mt-3"
       onClick={() => onEquipar({ instanciaId: nuevaInstanciaId(), catalogoId: pieza.id })}
-      className={`${BOTON_EQUIPAR} mt-3`}
     >
       Equipar
-    </button>
+    </BotonEquipar>
   );
 }
 
@@ -126,8 +277,7 @@ function AccionInstalable({
             const v = validarInstalacion(sheet, pieza.id, h.instanciaId, nivel);
             return (
               <div key={h.instanciaId}>
-                <button
-                  type="button"
+                <BotonEquipar
                   disabled={!v.ok}
                   onClick={() =>
                     onEquipar({
@@ -137,10 +287,9 @@ function AccionInstalable({
                       instaladoEnId: h.instanciaId,
                     })
                   }
-                  className={BOTON_EQUIPAR}
                 >
                   Equipar en {cat.label}
-                </button>
+                </BotonEquipar>
                 {!v.ok && (
                   <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
                     {v.motivo}
@@ -155,6 +304,61 @@ function AccionInstalable({
   );
 }
 
+// Instalable o ya instalada: si solo mirásemos "instalable ahora mismo",
+// equipar algo lo saca de la lista en cuanto se instala (ya no hay hueco
+// libre para él) y la pieza desaparece de debajo del propio botón que
+// acabas de pulsar, cortando en seco la animación de BotonEquipar. Contar
+// también lo ya puesto evita ese parpadeo y de paso deja ver aquí mismo qué
+// llevas encima, sin saltar a la tab Equipo.
+function relevanteAhora(
+  sheet: Sheet,
+  pieza: MejoraEstandar | Subsistema | MejoraDeArma | MejoraMovimiento,
+): boolean {
+  const familiaHost = pieza.familia === "mejoraArma" ? "arma" : "armadura";
+  const hosts = sheet.equipo.filter((p) => equipoPorId(p.catalogoId)?.familia === familiaHost);
+  const yaInstalada = sheet.equipo.some((p) => p.catalogoId === pieza.id && p.instaladoEnId);
+  if (yaInstalada) return true;
+  return hosts.some((h) =>
+    pieza.niveles.some((n) => validarInstalacion(sheet, pieza.id, h.instanciaId, n.nivel).ok),
+  );
+}
+
+const SIN_COMPATIBLES: Record<Exclude<CategoriaId, "armaduras" | "armas" | "melee" | "kerzul">, string> = {
+  mejorasEstandar: "Nada instalable ni instalado: necesitas una armadura equipada.",
+  subsistemas: "Nada instalable ni instalado: necesitas una armadura equipada con ranuras libres.",
+  mejorasArma: "Nada instalable ni instalado: necesitas un arma equipada y compatible.",
+  movimiento: "Nada instalable ni instalado: necesitas una armadura equipada que admita movimiento.",
+};
+
+// Las cuatro categorías "instalables" comparten forma: filtrar por
+// compatibilidad, y si eso las vacía, explicar por qué en vez de dejar el
+// hueco en blanco.
+function ListaInstalable({
+  piezas,
+  mensajeVacio,
+  sheet,
+  onEquipar,
+}: {
+  piezas: readonly (MejoraEstandar | Subsistema | MejoraDeArma | MejoraMovimiento)[];
+  mensajeVacio: string;
+  sheet: Sheet;
+  onEquipar: (p: PiezaEquipada) => void;
+}) {
+  if (piezas.length === 0) {
+    return <p className="font-sans text-[11px] leading-relaxed text-muted">{mensajeVacio}</p>;
+  }
+  return (
+    <>
+      {piezas.map((p) => (
+        <Acordeon key={p.id} titulo={p.label} resumen={p.resumen}>
+          <DetalleModulo p={p} />
+          <AccionInstalable pieza={p} sheet={sheet} onEquipar={onEquipar} />
+        </Acordeon>
+      ))}
+    </>
+  );
+}
+
 export function TiendaTab({
   sheet,
   onEquipar,
@@ -162,84 +366,133 @@ export function TiendaTab({
   sheet: Sheet;
   onEquipar: (p: PiezaEquipada) => void;
 }) {
+  const [categoria, setCategoria] = useState<CategoriaId>("armaduras");
+  const [soloCompatible, setSoloCompatible] = useState(false);
+
+  const filtrar = <T extends MejoraEstandar | Subsistema | MejoraDeArma | MejoraMovimiento>(
+    piezas: readonly T[],
+  ) => (soloCompatible ? piezas.filter((p) => relevanteAhora(sheet, p)) : piezas);
+
   return (
     <div className="flex flex-col gap-4">
-      <p className="font-sans text-[11px] leading-relaxed text-muted">
-        Catálogo de consulta: por ahora comprar es marcar como tuyo, sin descontar créditos
-        — no sabemos con cuánto empieza un personaje (pregunta 7 de docs/sistema.md).
-      </p>
+      <div className="flex flex-col gap-1">
+        <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+          {"//SYSTEM · catálogo"}
+        </p>
+        <p className="font-sans text-[11px] leading-relaxed text-muted">
+          Consulta: por ahora comprar es marcar como tuyo, sin descontar créditos — no sabemos
+          con cuánto empieza un personaje (pregunta 7 de docs/sistema.md).
+        </p>
+      </div>
 
-      <Seccion titulo="Armaduras">
-        {ARMADURAS.map((p) => (
-          <Acordeon key={p.id} titulo={p.label} resumen={p.resumen} etiqueta={<Precio coste={p.coste} />}>
-            <DetalleArmadura p={p} />
-            <AccionSimple pieza={p} onEquipar={onEquipar} />
-          </Acordeon>
+      <div className="grid grid-cols-2 gap-2">
+        {CATEGORIAS.map((c) => (
+          <Tile
+            key={c.id}
+            titulo={c.titulo}
+            cantidad={c.cantidad}
+            activo={categoria === c.id}
+            onClick={() => setCategoria(c.id)}
+          />
         ))}
-      </Seccion>
+      </div>
 
-      <Seccion titulo="Armas">
-        {ARMAS.map((p) => (
-          <Acordeon key={p.id} titulo={p.label} resumen={p.resumen} etiqueta={<Precio coste={p.coste} />}>
-            <DetalleArma p={p} />
-            <AccionSimple pieza={p} onEquipar={onEquipar} />
-          </Acordeon>
-        ))}
-      </Seccion>
+      <div className="flex items-center justify-between gap-2 border-b border-border pb-1">
+        <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-muted">
+          {CATEGORIAS.find((c) => c.id === categoria)!.titulo}
+        </h2>
+        {INSTALABLES.has(categoria) && (
+          <button
+            type="button"
+            onClick={() => setSoloCompatible((v) => !v)}
+            className={`clip-chamfer-sm shrink-0 border px-2 py-1 font-mono text-[10px] uppercase tracking-wide active:scale-95 ${
+              soloCompatible ? "border-info text-info" : "border-border text-muted"
+            }`}
+          >
+            {soloCompatible ? "✓ " : ""}Instalable o instalado
+          </button>
+        )}
+      </div>
 
-      <Seccion titulo="Mejoras estándar">
-        {MEJORAS_ESTANDAR.map((p) => (
-          <Acordeon key={p.id} titulo={p.label} resumen={p.resumen}>
-            <DetalleModulo p={p} />
-            <AccionInstalable pieza={p} sheet={sheet} onEquipar={onEquipar} />
-          </Acordeon>
-        ))}
-      </Seccion>
+      <div className="flex flex-col gap-2">
+        {categoria === "armaduras" &&
+          ARMADURAS.map((p) => (
+            <Acordeon
+              key={p.id}
+              titulo={p.label}
+              resumen={p.resumen}
+              etiqueta={
+                <div className="flex flex-col items-end gap-1">
+                  <BadgeRareza rareza={p.rareza} />
+                  <Precio coste={p.coste} />
+                </div>
+              }
+            >
+              <DetalleArmadura p={p} />
+              <AccionSimple pieza={p} onEquipar={onEquipar} />
+            </Acordeon>
+          ))}
 
-      <Seccion titulo="Subsistemas">
-        {SUBSISTEMAS.map((p) => (
-          <Acordeon key={p.id} titulo={p.label} resumen={p.resumen}>
-            <DetalleModulo p={p} />
-            <AccionInstalable pieza={p} sheet={sheet} onEquipar={onEquipar} />
-          </Acordeon>
-        ))}
-      </Seccion>
+        {categoria === "armas" &&
+          ARMAS.map((p) => (
+            <Acordeon key={p.id} titulo={p.label} resumen={p.resumen} etiqueta={<Precio coste={p.coste} />}>
+              <DetalleArma p={p} />
+              <AccionSimple pieza={p} onEquipar={onEquipar} />
+            </Acordeon>
+          ))}
 
-      <Seccion titulo="Mejoras de arma">
-        {MEJORAS_ARMA.map((p) => (
-          <Acordeon key={p.id} titulo={p.label} resumen={p.resumen}>
-            <DetalleModulo p={p} />
-            <AccionInstalable pieza={p} sheet={sheet} onEquipar={onEquipar} />
-          </Acordeon>
-        ))}
-      </Seccion>
+        {categoria === "mejorasEstandar" && (
+          <ListaInstalable
+            piezas={filtrar(MEJORAS_ESTANDAR)}
+            mensajeVacio={SIN_COMPATIBLES.mejorasEstandar}
+            sheet={sheet}
+            onEquipar={onEquipar}
+          />
+        )}
 
-      <Seccion titulo="Movimiento">
-        {MOVIMIENTO.map((p) => (
-          <Acordeon key={p.id} titulo={p.label} resumen={p.resumen}>
-            <DetalleModulo p={p} />
-            <AccionInstalable pieza={p} sheet={sheet} onEquipar={onEquipar} />
-          </Acordeon>
-        ))}
-      </Seccion>
+        {categoria === "subsistemas" && (
+          <ListaInstalable
+            piezas={filtrar(SUBSISTEMAS)}
+            mensajeVacio={SIN_COMPATIBLES.subsistemas}
+            sheet={sheet}
+            onEquipar={onEquipar}
+          />
+        )}
 
-      <Seccion titulo="Combate melee">
-        {ARMAS_MELEE.filter((p) => !ARMAS_MELEE_KERZUL.includes(p)).map((p) => (
-          <Acordeon key={p.id} titulo={p.label} resumen={p.resumen} etiqueta={<Precio coste={p.coste} />}>
-            <DetalleArmaMelee p={p} />
-            <AccionSimple pieza={p} onEquipar={onEquipar} />
-          </Acordeon>
-        ))}
-      </Seccion>
+        {categoria === "mejorasArma" && (
+          <ListaInstalable
+            piezas={filtrar(MEJORAS_ARMA)}
+            mensajeVacio={SIN_COMPATIBLES.mejorasArma}
+            sheet={sheet}
+            onEquipar={onEquipar}
+          />
+        )}
 
-      <Seccion titulo="Kerzul">
-        {ARMAS_MELEE_KERZUL.map((p) => (
-          <Acordeon key={p.id} titulo={p.label} resumen={p.resumen} etiqueta={<Precio coste={p.coste} />}>
-            <DetalleArmaMelee p={p} />
-            <AccionSimple pieza={p} onEquipar={onEquipar} />
-          </Acordeon>
-        ))}
-      </Seccion>
+        {categoria === "movimiento" && (
+          <ListaInstalable
+            piezas={filtrar(MOVIMIENTO)}
+            mensajeVacio={SIN_COMPATIBLES.movimiento}
+            sheet={sheet}
+            onEquipar={onEquipar}
+          />
+        )}
+
+        {categoria === "melee" &&
+          ARMAS_MELEE.filter((p) => !ARMAS_MELEE_KERZUL.includes(p)).map((p) => (
+            <Acordeon key={p.id} titulo={p.label} resumen={p.resumen} etiqueta={<Precio coste={p.coste} />}>
+              <DetalleArmaMelee p={p} />
+              <AccionSimple pieza={p} onEquipar={onEquipar} />
+            </Acordeon>
+          ))}
+
+        {categoria === "kerzul" &&
+          ARMAS_MELEE_KERZUL.map((p) => (
+            <Acordeon key={p.id} titulo={p.label} resumen={p.resumen} etiqueta={<Precio coste={p.coste} />}>
+              <DetalleArmaMelee p={p} />
+              <AccionSimple pieza={p} onEquipar={onEquipar} />
+            </Acordeon>
+          ))}
+      </div>
     </div>
   );
 }

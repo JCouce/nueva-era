@@ -8,7 +8,32 @@ import type {
   MejoraDeArma,
   MejoraMovimiento,
   Modificador,
+  Rareza,
 } from "@/lib/rules";
+
+// Un color por tramo de rareza, no uno por palabra: cinco tonos ya sobran de
+// sistema, así que se reutilizan los que ya existen (info/accent/glitch) y
+// solo se suma el naranja, que no tenía hueco en la paleta.
+const RAREZA_CLASES: Record<Rareza, string> = {
+  Común: "border-border text-foreground",
+  "Poco Habitual": "border-info text-info",
+  Extraño: "border-accent text-accent",
+  "Muy Extraño": "border-neon-orange text-neon-orange",
+  Singular: "border-glitch text-glitch",
+};
+
+// Null solo lo usan las armas melee que no se compran (ver armasMelee.ts):
+// sin rareza asignada, no hay badge que pintar.
+export function BadgeRareza({ rareza }: { rareza: Rareza | null }) {
+  if (rareza === null) return null;
+  return (
+    <span
+      className={`clip-chamfer-sm shrink-0 whitespace-nowrap border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide ${RAREZA_CLASES[rareza]}`}
+    >
+      {rareza}
+    </span>
+  );
+}
 
 function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
@@ -43,11 +68,17 @@ function ChipsModificadores({ mods }: { mods: Modificador[] }) {
   );
 }
 
+// Mismo criterio de color que ChipsModificadores: un valor que empieza por
+// signo es un bonificador o penalizador, así que lleva su tinte (info/danger)
+// en vez del blanco liso de un dato neutro como "8 kg" o "Nivel 4". Ninguno
+// de los demás Stat de este fichero empieza por +/-, así que no hay riesgo
+// de teñir algo que no toca.
 function Stat({ label, value }: { label: string; value: string }) {
+  const tono = value.startsWith("+") ? "text-info" : value.startsWith("-") ? "text-danger" : "text-foreground";
   return (
     <div className="flex items-baseline justify-between gap-2 border-b border-border py-1 last:border-0">
       <span className="text-muted">{label}</span>
-      <span className="tabular-nums text-foreground">{value}</span>
+      <span className={`tabular-nums ${tono}`}>{value}</span>
     </div>
   );
 }
@@ -71,7 +102,6 @@ export function DetalleArmadura({ p }: { p: Armadura }) {
           label="Tope mov. aérea"
           value={p.topeMovilidadAerea === null ? "No admite" : `Nivel ${p.topeMovilidadAerea}`}
         />
-        <Stat label="Rareza" value={`${p.rareza} · ${p.coste} cr.`} />
       </dl>
       <ChipsModificadores mods={p.modificadores} />
     </>

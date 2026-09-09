@@ -15,6 +15,7 @@
   --color-neon-cyan: #00f0ff; /* hologramas, hielo, netrunner */
   --color-neon-magenta: #ff2e97; /* glitch, Night City nocturno */
   --color-neon-red: #ff003c; /* peligro, sangre, KIA */
+  --color-neon-orange: #ff8800; /* rareza: Muy Extraño (el resto de tramos reutiliza los neones de arriba) */
 
   /* Fondos (oscuros azulados, no negros puros) */
   --color-night: #0a0a0f; /* negro Night City */
