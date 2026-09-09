@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { defaultSheet } from "./sheet";
 import { equipar } from "./equipo";
 import { tiradasDeAtaque } from "./combate";
-import type { CondicionTirada } from "./condiciones";
+import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 
 function opcion(c: CondicionTirada | undefined, id: string) {
   assert.ok(c && c.tipo === "opcion", "no es una condición de opción");
@@ -75,7 +75,7 @@ describe("arma de fuego equipada", () => {
 });
 
 describe("mejoras que afectan a la distancia", () => {
-  test("la mira telescópica nivel 1 suma +1 a media y larga", () => {
+  test("la mira telescópica nivel 1 no toca el tramo: sale como bono aparte, con su fuente", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
     sheet = equipar(sheet, {
@@ -86,9 +86,12 @@ describe("mejoras que afectan a la distancia", () => {
     });
     const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
     const tramo = fila.condiciones?.find((c) => c.id === "tramo");
-    assert.equal(opcion(tramo, "corta"), 2); // sin cambios: la mira no toca corta
-    assert.equal(opcion(tramo, "media"), 1);
-    assert.equal(opcion(tramo, "larga"), -1);
+    assert.equal(opcion(tramo, "corta"), 2);
+    assert.equal(opcion(tramo, "media"), 0);
+    assert.equal(opcion(tramo, "larga"), -2);
+    assert.deepEqual(fila.bonosTramo, [
+      { fuente: "Mira Telescópica", porTramo: { media: 1, larga: 1 } },
+    ]);
   });
 
   test("la mira telescópica nivel 3 da +2, no +1 encima del nivel 1", () => {
@@ -101,9 +104,16 @@ describe("mejoras que afectan a la distancia", () => {
       instaladoEnId: "arma1",
     });
     const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
-    const tramo = fila.condiciones?.find((c) => c.id === "tramo");
-    assert.equal(opcion(tramo, "media"), 2);
-    assert.equal(opcion(tramo, "larga"), 0);
+    assert.deepEqual(fila.bonosTramo, [
+      { fuente: "Mira Telescópica", porTramo: { media: 2, larga: 2 } },
+    ]);
+  });
+
+  test("el bono de la mira solo cuenta en el tramo elegido", () => {
+    const bonos = [{ fuente: "Mira Telescópica", porTramo: { media: 1, larga: 1 } }];
+    assert.equal(valorBonosTramo(bonos, { tramo: "corta" }), 0);
+    assert.equal(valorBonosTramo(bonos, { tramo: "media" }), 1);
+    assert.equal(valorBonosTramo(bonos, { tramo: "larga" }), 1);
   });
 
   test("el bípode aparece como toggle 'apoyado'", () => {

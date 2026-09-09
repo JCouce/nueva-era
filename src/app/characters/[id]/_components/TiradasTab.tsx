@@ -12,6 +12,7 @@ import {
   tirarD12,
   tiradasDeAtaque,
   valorCondiciones,
+  valorBonosTramo,
   type Tirada,
   type Resultado,
   type ResultadoDanio,
@@ -310,9 +311,10 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
     if (!modal) return;
     const { tirada, modBase } = modal;
     const bonoCondiciones = valorCondiciones(tirada.condiciones ?? [], estadoCondiciones);
+    const bonoTramo = valorBonosTramo(tirada.bonosTramo ?? [], estadoCondiciones);
     const r = resolverTirada({
       dado: tirarD12(),
-      modificador: modBase + bonoCondiciones,
+      modificador: modBase + bonoCondiciones + bonoTramo,
       circunstancial,
       dificultad,
     });
@@ -413,6 +415,7 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
           modBase={modal.modBase}
           desgloseBase={modal.desgloseBase}
           condiciones={modal.tirada.condiciones ?? []}
+          bonosTramo={modal.tirada.bonosTramo ?? []}
           dificultadInicial={memoria[modal.tirada.id]?.dificultad ?? 7}
           circunstancialInicial={memoria[modal.tirada.id]?.circunstancial ?? 0}
           onCerrar={() => setModal(null)}

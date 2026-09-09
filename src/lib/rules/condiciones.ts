@@ -97,3 +97,31 @@ export function desgloseCondiciones(
     return { etiqueta: `${c.etiqueta} ×${n}`, valor: n * c.valorPorUnidad };
   });
 }
+
+// Un bono que no es una elección propia del jugador: depende del tramo que
+// ya eligió en la condición "tramo" (la mira telescópica solo ayuda a media
+// y larga, por ejemplo). Va aparte de CondicionTirada porque no se pinta
+// como control — se limita a aparecer o no en el desglose según lo que el
+// jugador ya haya elegido arriba. Cada uno lleva su fuente (la pieza que lo
+// trae) para que, a diferencia de antes, no se funda en silencio dentro del
+// valor de la opción de tramo.
+export type BonoPorTramo = { fuente: string; porTramo: Partial<Record<TramoDistancia, number>> };
+
+function tramoElegido(estado: EstadoCondiciones): TramoDistancia | null {
+  return typeof estado.tramo === "string" ? (estado.tramo as TramoDistancia) : null;
+}
+
+export function valorBonosTramo(bonos: BonoPorTramo[], estado: EstadoCondiciones): number {
+  const tramo = tramoElegido(estado);
+  if (!tramo) return 0;
+  return bonos.reduce((total, b) => total + (b.porTramo[tramo] ?? 0), 0);
+}
+
+export function desgloseBonosTramo(
+  bonos: BonoPorTramo[],
+  estado: EstadoCondiciones,
+): { etiqueta: string; valor: number }[] {
+  const tramo = tramoElegido(estado);
+  if (!tramo) return [];
+  return bonos.map((b) => ({ etiqueta: b.fuente, valor: b.porTramo[tramo] ?? 0 }));
+}

@@ -6,8 +6,11 @@ import {
   estadoInicial,
   valorCondiciones,
   desgloseCondiciones,
+  valorBonosTramo,
+  desgloseBonosTramo,
   type CondicionTirada,
   type EstadoCondiciones,
+  type BonoPorTramo,
 } from "@/lib/rules";
 import { HudCard } from "./HudCard";
 
@@ -127,6 +130,7 @@ export function TiradaModal({
   modBase,
   desgloseBase,
   condiciones,
+  bonosTramo,
   dificultadInicial,
   circunstancialInicial,
   onCerrar,
@@ -137,6 +141,7 @@ export function TiradaModal({
   modBase: number;
   desgloseBase: { etiqueta: string; valor: number }[];
   condiciones: CondicionTirada[];
+  bonosTramo?: BonoPorTramo[];
   dificultadInicial: number | null;
   circunstancialInicial: number;
   onCerrar: () => void;
@@ -155,7 +160,8 @@ export function TiradaModal({
     setEstado((e) => ({ ...e, [id]: valor }));
 
   const totalCondiciones = valorCondiciones(condiciones, estado);
-  const totalPrevisto = modBase + totalCondiciones + circunstancial;
+  const totalBonosTramo = valorBonosTramo(bonosTramo ?? [], estado);
+  const totalPrevisto = modBase + totalCondiciones + totalBonosTramo + circunstancial;
 
   return (
     <div
@@ -290,6 +296,9 @@ export function TiradaModal({
             ))}
             {desgloseCondiciones(condiciones, estado).map((f, i) => (
               <LineaDesglose key={`cond-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
+            ))}
+            {desgloseBonosTramo(bonosTramo ?? [], estado).map((f, i) => (
+              <LineaDesglose key={`tramo-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
             ))}
             {circunstancial !== 0 && (
               <LineaDesglose etiqueta="Modificador circunstancial" valor={circunstancial} />

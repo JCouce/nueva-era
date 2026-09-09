@@ -8,7 +8,7 @@ import type { AplicadoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
 import { aplicado, valorEfectivo } from "./derivados";
 import type { Sheet } from "./sheet";
-import type { CondicionTirada } from "./condiciones";
+import type { CondicionTirada, BonoPorTramo } from "./condiciones";
 
 export const CARAS_DADO = 12;
 
@@ -47,6 +47,10 @@ export type Tirada = {
   // lleva, la dificultad -2 fija de su propio disparo... Se suman al
   // modificador base y se pintan como una línea más del desglose.
   ajustesFijos?: { valor: number; fuente: string }[];
+  // Bonos que dependen del tramo ya elegido en la condición "tramo" (la mira
+  // telescópica solo ayuda a media y larga): no se funden en el valor de esa
+  // opción, salen como su propia línea del desglose — ver condiciones.ts.
+  bonosTramo?: BonoPorTramo[];
   // Solo las tiradas de ataque generadas por combate.ts: qué modo de disparo
   // o de golpe hay detrás de cada opción de la condición "modo" (si la
   // tirada tiene más de un modo), para poder encadenar la tirada de daño con

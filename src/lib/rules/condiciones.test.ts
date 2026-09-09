@@ -1,6 +1,13 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { estadoInicial, valorCondiciones, desgloseCondiciones, type CondicionTirada } from "./condiciones";
+import {
+  estadoInicial,
+  valorCondiciones,
+  desgloseCondiciones,
+  valorBonosTramo,
+  desgloseBonosTramo,
+  type CondicionTirada,
+} from "./condiciones";
 
 const TOGGLE: CondicionTirada = {
   id: "apoyado",
@@ -106,6 +113,37 @@ describe("desglose de las condiciones", () => {
     assert.deepEqual(
       lineas.map((l) => l.valor),
       [1, 2, -1],
+    );
+  });
+});
+
+describe("bonos por tramo", () => {
+  const MIRA = { fuente: "Mira Telescópica", porTramo: { media: 1, larga: 1 } };
+
+  test("no aporta nada si el tramo no está entre los suyos", () => {
+    assert.equal(valorBonosTramo([MIRA], { tramo: "corta" }), 0);
+  });
+
+  test("aporta su valor en el tramo que sí cubre", () => {
+    assert.equal(valorBonosTramo([MIRA], { tramo: "media" }), 1);
+  });
+
+  test("sin tramo elegido en el estado, no aporta nada", () => {
+    assert.equal(valorBonosTramo([MIRA], {}), 0);
+  });
+
+  test("el desglose muestra la fuente y el valor en ese tramo, aunque sea 0", () => {
+    const [linea] = desgloseBonosTramo([MIRA], { tramo: "corta" });
+    assert.equal(linea.etiqueta, "Mira Telescópica");
+    assert.equal(linea.valor, 0);
+  });
+
+  test("varios bonos se listan cada uno con su fuente", () => {
+    const otro = { fuente: "Otra Mejora", porTramo: { larga: 2 } };
+    const lineas = desgloseBonosTramo([MIRA, otro], { tramo: "larga" });
+    assert.deepEqual(
+      lineas.map((l) => l.valor),
+      [1, 2],
     );
   });
 });

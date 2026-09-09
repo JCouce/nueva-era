@@ -15,7 +15,7 @@ import {
 } from "../catalog/equipo";
 import { PELEA, type ArmaMelee } from "../catalog/armasMelee";
 import { MUNICION_GRANADA } from "../catalog/municion";
-import type { CondicionTirada, TramoDistancia } from "./condiciones";
+import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condiciones";
 import type { Tirada } from "./tiradas";
 
 const TRAMOS: TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
@@ -51,28 +51,12 @@ function etiquetaTramo(tramo: TramoDistancia, alcance: ArmaFuego["alcance"]): st
   }
 }
 
-// La opción de tramo de una tirada de ataque concreta: parte del ajuste base
-// del tipo de arma y le suma el `ajusteTramo` de cada mejora instalada en
-// ESA arma (mira telescópica y lo que llegue después) — mecanizar la
-// siguiente pieza que module la distancia es un dato nuevo en el catálogo,
-// no código nuevo aquí.
-function condicionTramo(sheet: Sheet, arma: ArmaFuego, instanciaId: string): CondicionTirada {
-  const ajuste = { ...ajusteTramoBase(arma.tipo) };
-  for (const pieza of sheet.equipo) {
-    if (pieza.instaladoEnId !== instanciaId) continue;
-    const cat = equipoPorId(pieza.catalogoId);
-    if (!cat || cat.familia !== "mejoraArma") continue;
-    const nivel = cat.niveles.find((n) => n.nivel === pieza.nivel);
-    if (!nivel) continue;
-    for (const tramo of TRAMOS) {
-      const delta = nivel.ajusteTramo?.[tramo];
-      if (delta !== undefined) ajuste[tramo] += delta;
-    }
-    // `ajusteAtaque` (el -1 del Lanzagranadas Integrado por el peso) NO se
-    // funde aquí a propósito: es una razón distinta de la distancia, y
-    // fundirlo en cada tramo lo dejaría sin etiqueta. Sale como su propia
-    // línea del desglose — ver ajustesFijosDeMejoras.
-  }
+// La opción de tramo de una tirada de ataque concreta: solo el ajuste base
+// del tipo de arma (con las excepciones de familia). Lo que module una
+// mejora instalada (mira telescópica y lo que llegue después) NO se funde
+// aquí — sale aparte, con su fuente, en bonosTramoDeMejoras.
+function condicionTramo(arma: ArmaFuego): CondicionTirada {
+  const ajuste = ajusteTramoBase(arma.tipo);
   return {
     id: "tramo",
     tipo: "opcion",
@@ -87,8 +71,7 @@ function condicionTramo(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Con
 }
 
 // El resto de condiciones que traiga cualquier mejora instalada en esta
-// arma en concreto (bípode apoyado, y lo que llegue después). `ajusteTramo`
-// no se repite aquí: ya está fusionado en condicionTramo.
+// arma en concreto (bípode apoyado, y lo que llegue después).
 function condicionesDeMejoras(sheet: Sheet, instanciaId: string): CondicionTirada[] {
   const condiciones: CondicionTirada[] = [];
   for (const pieza of sheet.equipo) {
@@ -99,6 +82,22 @@ function condicionesDeMejoras(sheet: Sheet, instanciaId: string): CondicionTirad
     if (nivel?.condiciones) condiciones.push(...nivel.condiciones);
   }
   return condiciones;
+}
+
+// Bonos que dependen del tramo YA elegido (la mira telescópica solo ayuda a
+// media y larga), uno por mejora instalada que traiga `ajusteTramo`. Cada
+// uno con la etiqueta de la pieza, para que el desglose diga "Mira
+// Telescópica +1" en vez de subir el número de Distancia sin explicarlo.
+function bonosTramoDeMejoras(sheet: Sheet, instanciaId: string): BonoPorTramo[] {
+  const bonos: BonoPorTramo[] = [];
+  for (const pieza of sheet.equipo) {
+    if (pieza.instaladoEnId !== instanciaId) continue;
+    const cat = equipoPorId(pieza.catalogoId);
+    if (!cat || cat.familia !== "mejoraArma") continue;
+    const nivel = cat.niveles.find((n) => n.nivel === pieza.nivel);
+    if (nivel?.ajusteTramo) bonos.push({ fuente: cat.label, porTramo: nivel.ajusteTramo });
+  }
+  return bonos;
 }
 
 // Ajustes incondicionales de las mejoras instaladas en esta arma en
@@ -130,7 +129,7 @@ function condicionModo(modos: { id: string; etiqueta: string; dificultad: number
 
 function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Tirada {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
-  const condiciones = [condicionTramo(sheet, arma, instanciaId), condicionModo(modosConId)].filter(
+  const condiciones = [condicionTramo(arma), condicionModo(modosConId)].filter(
     (c): c is CondicionTirada => c !== null,
   );
   condiciones.push(...condicionesDeMejoras(sheet, instanciaId));
@@ -144,6 +143,7 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
     nota: arma.especial ?? undefined,
     condiciones,
     ajustesFijos: ajustesFijosDeMejoras(sheet, instanciaId),
+    bonosTramo: bonosTramoDeMejoras(sheet, instanciaId),
     ataque: {
       modos: modosConId.map((m) => ({
         id: m.id,
