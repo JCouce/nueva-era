@@ -43,9 +43,9 @@ motor de modificadores, dos especies de andamio y las migraciones de ficha.
 | 1. Motor de tiradas | ✅ salvo la Alerta | Conflicto C4 (Exploración) |
 | 4. Modificadores y especies | ✅ con especies provisionales | El documento de especies |
 | **3. Equipo** | ⬜ **es la siguiente** | Nada (ver §6) |
-| 2. Ficha viva | ⬜ | **Decisión del usuario**: ¿la vida se lleva en la app o en papel? |
+| 2. Ficha viva | ⬜ | Resuelta en el diseño de la fase 6b (§9): sí, la vida y los estados de combate se llevan en la app |
 | 5. Poderes, dotes, aumentos | ⬜ | El diseñador, que aún no los ha escrito |
-| 6. Máster | ⬜ | Va después de la 2 |
+| 6. Máster | ⬜ diseño cerrado, ver §9 | Va después de la 2 y la 3 |
 
 ## 4. Cómo se trabaja aquí
 
@@ -178,3 +178,73 @@ Las 30 preguntas están en `docs/sistema.md`. Por impacto:
 - Prefiere **pragmatismo con red**: nada de ceremonia, pero los guardarraíles del motor sí.
 - Los documentos del diseñador se transcriben **fielmente**, con las erratas marcadas *(sic)*
   y sin corregirle las reglas.
+
+## 9. Diseño cerrado: panel de máster (fase 6)
+
+Brainstorm cerrado con el usuario el 2026-09-09. Va después de **3. Equipo**, no antes: no
+tiene sentido aprobar ni dar créditos de una ficha que aún no puede comprar nada. Antes de
+tocar código aquí, lee esta sección entera — evita rehacer las mismas preguntas.
+
+**El punto de partida cambia el enfoque de toda la fase.** `canEditCharacter()` ya deja al
+`MASTER` editar cualquier ficha, y `/characters` ya le lista todas. No hace falta ningún
+mecanismo de "enviar" la ficha al máster (ni foto, ni export): vive en la misma base de datos
+y él ya tiene lectura y escritura totales, hoy. Tampoco hace falta un modelo `Campaign`
+mientras solo haya una mesa — se añade el día que haga falta una segunda, no antes. Y añadir
+equipo a la ficha de un jugador **ya funciona** sin código nuevo, porque `stats.equipo` cae
+dentro del mismo permiso.
+
+Lo que de verdad falta es superficie de UI dedicada y un puñado de campos nuevos.
+
+### Alcance de la fase 6a (esto es lo que se construye)
+
+- **Schema**: `status` (`DRAFT` | `APPROVED`, default `DRAFT`), `approvedAt`, `xp Int`,
+  `creditos Int` en `Character`. Un solo máster confirmado → sin `approvedBy`.
+- **`xp` y `creditos` van como columnas propias, no dentro de `stats`.** A diferencia del resto
+  de la ficha, estos los concede el máster, no el jugador. Si vivieran en el mismo `stats` que
+  escribe el autosave del jugador, el criterio de permiso de esa acción ("dueño o máster")
+  dejaría al jugador con una vía, aunque fuera por bug, de tocar un recurso que no es suyo.
+  Server actions propias (`grantXp`, `grantCreditos`), con `role === 'MASTER'` comprobado ahí y
+  en ningún otro sitio.
+- **Aprobar bloquea Atributos y Habilidades**, no el resto de la ficha (Identidad, Equipo,
+  narrativa siguen editables por el jugador). Mecanismo: al aprobar se congela una copia de esos
+  dos bloques (`approvedSnapshot Json`); cualquier guardado posterior del jugador se valida
+  contra ese snapshot y se rechaza si algún atributo o habilidad **baja** por debajo de su valor
+  aprobado. Solo comprar, nunca vender — el usuario fue explícito en esto: una vez comprado un
+  punto no se puede devolver ni para reasignarlo a otro sitio.
+  - **Esto es el guardarraíl, no el sistema de progresión.** Subir un punto por encima del
+    snapshot vía XP necesita una fórmula de coste que el diseñador no ha dado — Progresión sigue
+    `[PENDIENTE]` en `docs/sistema.md`. La 6a solo impide bajar; el "cómo se compra un punto
+    nuevo con XP" es trabajo aparte en cuanto llegue esa regla.
+  - Revertir de `APPROVED` a `DRAFT` (el máster mete la pata, o hace falta reabrir la ficha) es
+    barato de tener ya con este diseño — inclúyelo aunque no se haya pedido explícitamente.
+- **Ruta `/master`**: dashboard único, no enlaces sueltos en la nav. Cola de fichas en `DRAFT`
+  arriba (para aprobar), `APPROVED` abajo, con `xp`/`creditos` editables inline. En
+  `characters/[id]` se añade una tira solo-máster (estado, botón aprobar/revertir, steppers de
+  xp/créditos) encima de la ficha ya existente — no hace falta una vista nueva para leerla, esa
+  ya está. En `AppHeader`, un link "Panel del Máster" visible solo si `role === 'MASTER'`,
+  mismo patrón que el `isMaster` que ya usa `characters/page.tsx`.
+- **Notificación**: ninguna en 6a. El jugador ve el estado/xp/créditos actualizados la próxima
+  vez que entra a su ficha. Sin websockets — el patrón de uso es de ráfagas, no de colaboración
+  simultánea, y Vercel (serverless) no encaja con sockets persistentes.
+
+### Fase 6b — panel de combate (después de 6a, diseño sin cerrar)
+
+Encargo del usuario, no diseñado en detalle todavía: el máster aplica estados/buffs/debuffs,
+controla la vida de cada jugador y gestiona el combate en vivo. Dos cosas que ya se saben:
+
+- Resuelve la pregunta 23 de `docs/sistema.md` (¿la app lleva PG y fatiga en vivo, o eso se
+  lleva en mesa?): con esta fase, la respuesta pasa a ser sí. Necesita un recurso de **estado en
+  vivo** separado de `stats` (PG actuales, estados activos) — mismo motivo que `xp`/`creditos`:
+  lo escribe el máster, no el jugador, así que no puede colgar del JSON que guarda el autosave.
+  El catálogo de 20 estados de `docs/sistema.md` §7 es la base para "qué se le puede aplicar a
+  alguien".
+- **Aquí sí compensa algo más vivo que un refresco al entrar** — es el sitio real donde el
+  usuario quiere el efecto "wow" de ver la vida o la XP moverse sin recargar. La solución sigue
+  sin ser websockets: polling corto (5-10 s) contra el mismo endpoint de siempre, activo solo
+  mientras hay un combate marcado como en curso. Cero infraestructura nueva, funciona igual en
+  serverless. Si eso se queda corto, se escala a algo real-time (Postgres LISTEN/NOTIFY, o un
+  servicio como Supabase Realtime) — pero no antes de probar que el polling no basta.
+
+**Fuera de alcance de 6b, fase propia sin fecha:** chat máster-jugador. Pedido por el usuario,
+pero es un modelo de mensajes y una UI nuevos, sin relación directa con la ficha — no se diseña
+hasta que 6a y 6b estén cerradas.
