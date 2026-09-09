@@ -35,16 +35,47 @@ import { TiradasTab } from "./_components/TiradasTab";
 import { TiendaTab } from "./_components/TiendaTab";
 import { EquipoTab } from "./_components/EquipoTab";
 
-const TABS = [
+// Tres grupos, no una lista plana: la ficha en sí (fila 1), lo que el
+// personaje hace o lleva (fila 2, izquierda) y el catálogo — que no es del
+// personaje, es la dirección del juego consultando o repartiendo equipo —
+// separado a la derecha en esa misma fila.
+const TABS_FICHA = [
   { id: "resumen", label: "Resumen" },
   { id: "attrs", label: "Atributos" },
   { id: "skills", label: "Habilidades" },
+] as const;
+const TABS_PERSONAJE = [
   { id: "tiradas", label: "Tiradas" },
-  { id: "tienda", label: "Tienda" },
   { id: "equipo", label: "Equipo" },
 ] as const;
-type TabId = (typeof TABS)[number]["id"];
+const TABS_CATALOGO = [{ id: "tienda", label: "Tienda" }] as const;
+type TabId =
+  | (typeof TABS_FICHA)[number]["id"]
+  | (typeof TABS_PERSONAJE)[number]["id"]
+  | (typeof TABS_CATALOGO)[number]["id"];
 type SaveStatus = "idle" | "saving" | "saved" | "error";
+
+function TabButton({
+  tab,
+  active,
+  onClick,
+}: {
+  tab: { id: TabId; label: string };
+  active: boolean;
+  onClick: (id: TabId) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(tab.id)}
+      className={`-mb-px border-b-2 px-3 py-2 font-display text-sm font-semibold uppercase tracking-wide ${
+        active ? "border-accent text-foreground" : "border-transparent text-muted"
+      }`}
+    >
+      {tab.label}
+    </button>
+  );
+}
 
 const STATUS_LABEL: Record<SaveStatus, string> = {
   idle: "",
@@ -196,30 +227,36 @@ export function CharacterSheet({
         </span>
       </div>
 
-      <div className="flex items-end justify-between border-b border-border">
-        <nav className="flex flex-wrap gap-1">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setActive(t.id)}
-              className={`-mb-px border-b-2 px-3 py-2 font-display text-sm font-semibold uppercase tracking-wide ${
-                active === t.id
-                  ? "border-accent text-foreground"
-                  : "border-transparent text-muted"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
-        <span
-          className={`pr-1 font-mono text-[11px] uppercase tracking-wide ${
-            status === "error" ? "text-danger" : "text-muted"
-          }`}
-        >
-          {STATUS_LABEL[status]}
-        </span>
+      <div className="flex flex-col gap-1 border-b border-border">
+        <div className="flex items-end justify-between">
+          <nav className="flex flex-wrap gap-1">
+            {TABS_FICHA.map((t) => (
+              <TabButton key={t.id} tab={t} active={active === t.id} onClick={setActive} />
+            ))}
+          </nav>
+          <span
+            className={`pr-1 font-mono text-[11px] uppercase tracking-wide ${
+              status === "error" ? "text-danger" : "text-muted"
+            }`}
+          >
+            {STATUS_LABEL[status]}
+          </span>
+        </div>
+
+        <div className="flex items-end justify-between gap-2">
+          <nav className="flex flex-wrap gap-1">
+            {TABS_PERSONAJE.map((t) => (
+              <TabButton key={t.id} tab={t} active={active === t.id} onClick={setActive} />
+            ))}
+          </nav>
+          {/* Separada del resto: la Tienda es catálogo, no algo que "es" del
+              personaje — el borde y el hueco a la izquierda lo marcan. */}
+          <nav className="flex flex-wrap gap-1 border-l border-border pl-2">
+            {TABS_CATALOGO.map((t) => (
+              <TabButton key={t.id} tab={t} active={active === t.id} onClick={setActive} />
+            ))}
+          </nav>
+        </div>
       </div>
 
       {active === "resumen" && (
