@@ -183,7 +183,7 @@ describe("mejoras de arma", () => {
     assert.deepEqual(mods, [
       {
         tipo: "tirada",
-        contexto: "ataque en modo automático",
+        alcance: { tipo: "modo", contieneEtiqueta: "F. Auto" },
         valor: 1,
         origen: "equipo",
         fuente: "Sistema de Retroceso 1",
@@ -321,7 +321,13 @@ describe("modificadores de equipo", () => {
     const s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "pistola_mosquito" });
     const mods = modificadoresDeEquipo(s);
     assert.deepEqual(mods, [
-      { tipo: "tirada", contexto: "ocultar arma", valor: 2, origen: "equipo", fuente: "Mosquito" },
+      {
+        tipo: "tirada",
+        alcance: { tipo: "tiradaId", id: "ocultar_objeto" },
+        valor: 2,
+        origen: "equipo",
+        fuente: "Mosquito",
+      },
     ]);
   });
 

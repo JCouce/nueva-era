@@ -91,8 +91,8 @@ export const ARMADURAS: Armadura[] = [
     rareza: "Común",
     coste: 4000,
     modificadores: [
-      { tipo: "tirada", contexto: "salvación de congelación", valor: 1 },
-      { tipo: "tirada", contexto: "salvación de llamarada", valor: 1 },
+      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
+      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
     ],
   },
   {
@@ -113,8 +113,8 @@ export const ARMADURAS: Armadura[] = [
     rareza: "Poco Habitual",
     coste: 5000,
     modificadores: [
-      { tipo: "tirada", contexto: "salvación de congelación", valor: 1 },
-      { tipo: "tirada", contexto: "salvación de llamarada", valor: 1 },
+      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
+      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
     ],
   },
   {
@@ -136,8 +136,8 @@ export const ARMADURAS: Armadura[] = [
     rareza: "Común",
     coste: 6000,
     modificadores: [
-      { tipo: "tirada", contexto: "salvación de congelación", valor: 1 },
-      { tipo: "tirada", contexto: "salvación de llamarada", valor: 1 },
+      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
+      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
     ],
   },
   {
@@ -158,8 +158,8 @@ export const ARMADURAS: Armadura[] = [
     rareza: "Poco Habitual",
     coste: 12000,
     modificadores: [
-      { tipo: "tirada", contexto: "salvación de congelación", valor: 1 },
-      { tipo: "tirada", contexto: "salvación de llamarada", valor: 1 },
+      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
+      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
     ],
   },
   {
@@ -182,8 +182,8 @@ export const ARMADURAS: Armadura[] = [
     rareza: "Extraño",
     coste: 20000,
     modificadores: [
-      { tipo: "tirada", contexto: "salvación de congelación", valor: 1 },
-      { tipo: "tirada", contexto: "salvación de llamarada", valor: 1 },
+      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
+      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
     ],
   },
   {
@@ -314,7 +314,9 @@ export const ARMAS: ArmaFuego[] = [
     pesoKg: 0.5,
     rareza: "Común",
     coste: 100,
-    modificadores: [{ tipo: "tirada", contexto: "ocultar arma", valor: 2 }],
+    // "ocultar arma": no hay tirada de ocultar un objeto en TIRADAS hoy — el
+    // id es un marcador para cuando exista, no se aplica a nada mientras tanto.
+    modificadores: [{ tipo: "tirada", alcance: { tipo: "tiradaId", id: "ocultar_objeto" }, valor: 2 }],
   },
   {
     familia: "arma",
@@ -1250,8 +1252,11 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         // Ambiental depende de sufrir daño en un ambiente tóxico, así que se
         // queda solo en `detalle`, sin mecanizar).
         modificadores: [
-          { tipo: "tirada", contexto: "salvación de congelación", valor: 1 },
-          { tipo: "tirada", contexto: "salvación de calor extremo", valor: 1 },
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
+          // "calor extremo" no es un estado con nombre propio en sistema-y-combate.md:
+          // se empareja con congelación (el extremo opuesto de temperatura) y se
+          // asume la misma salvación de Fortaleza — inferencia, no dato explícito.
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
         ],
       },
       {
@@ -1267,8 +1272,11 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         // los niveles 2-3, pero tampoco dice que se pierda al subir de nivel —
         // se asume que se mantiene. Si Murillo confirma lo contrario, se corrige aquí.
         modificadores: [
-          { tipo: "tirada", contexto: "salvación de congelación", valor: 1 },
-          { tipo: "tirada", contexto: "salvación de calor extremo", valor: 1 },
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
+          // "calor extremo" no es un estado con nombre propio en sistema-y-combate.md:
+          // se empareja con congelación (el extremo opuesto de temperatura) y se
+          // asume la misma salvación de Fortaleza — inferencia, no dato explícito.
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
         ],
       },
       {
@@ -1280,8 +1288,11 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           "Blindaje Ambiental Avanzado: +3 contra efectos tóxicos en las mismas condiciones.",
         ],
         modificadores: [
-          { tipo: "tirada", contexto: "salvación de congelación", valor: 1 },
-          { tipo: "tirada", contexto: "salvación de calor extremo", valor: 1 },
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
+          // "calor extremo" no es un estado con nombre propio en sistema-y-combate.md:
+          // se empareja con congelación (el extremo opuesto de temperatura) y se
+          // asume la misma salvación de Fortaleza — inferencia, no dato explícito.
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
         ],
       },
     ],
@@ -1425,7 +1436,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         rareza: "Común",
         coste: 1000,
         detalle: ["+1 contra corrosión.", "Esta mejora no es susceptible a shock."],
-        modificadores: [{ tipo: "tirada", contexto: "salvación de corrosión", valor: 1 }],
+        modificadores: [
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
+        ],
       },
       {
         nivel: 2,
@@ -1435,7 +1448,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           "El daño corrosivo se considera letal en vez de grave.",
           "El bonificador contra corrosión sube a +2.",
         ],
-        modificadores: [{ tipo: "tirada", contexto: "salvación de corrosión", valor: 2 }],
+        modificadores: [
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 2 },
+        ],
       },
     ],
   },
@@ -1453,7 +1468,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         rareza: "Común",
         coste: 1000,
         detalle: ["+1 contra shock.", "Esta mejora no es susceptible a su propio efecto."],
-        modificadores: [{ tipo: "tirada", contexto: "salvación de shock", valor: 1 }],
+        modificadores: [
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
+        ],
       },
       {
         nivel: 2,
@@ -1463,7 +1480,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           "Ignora el primer nivel de daño eléctrico.",
           "El bonificador contra shock sube a +2.",
         ],
-        modificadores: [{ tipo: "tirada", contexto: "salvación de shock", valor: 2 }],
+        modificadores: [
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 2 },
+        ],
       },
     ],
   },
@@ -1499,7 +1518,11 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
             "saturarse.",
         ],
         modificadores: [
-          { tipo: "tirada", contexto: "salvación de ceguera por destello", valor: 3 },
+          // El estado Ceguera (sistema-y-combate.md) no declara qué atributo la
+          // salva — a diferencia de Congelación/Corrosión/Fusión/Llamarada, que sí
+          // dicen "salvación habitual de X". No se le asigna una al azar: el id
+          // queda como marcador para cuando se aclare, sin aplicarse a nada.
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_ceguera_destello" }, valor: 3 },
         ],
       },
     ],
@@ -1674,7 +1697,10 @@ export const SUBSISTEMAS: Subsistema[] = [
             "retroceso o la desorientación por el uso prolongado de disciplinas psiónicas.",
         ],
         modificadores: [
-          { tipo: "tirada", contexto: "resistir retroceso o desorientación psiónica", valor: 1 },
+          // Los poderes psiónicos están PENDIENTE en sistema.md: no hay tirada
+          // de resistir retroceso psiónico todavía. El id queda como marcador
+          // para cuando exista — no se aplica a nada mientras tanto.
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_retroceso_psionico" }, valor: 1 },
         ],
       },
       {
@@ -1689,7 +1715,10 @@ export const SUBSISTEMAS: Subsistema[] = [
         // S9: se mantiene la ventaja de nivel 1 (no se repite ni se anula); el
         // +10% de alcance no tiene número fijo que mecanizar.
         modificadores: [
-          { tipo: "tirada", contexto: "resistir retroceso o desorientación psiónica", valor: 1 },
+          // Los poderes psiónicos están PENDIENTE en sistema.md: no hay tirada
+          // de resistir retroceso psiónico todavía. El id queda como marcador
+          // para cuando exista — no se aplica a nada mientras tanto.
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_retroceso_psionico" }, valor: 1 },
         ],
       },
       {
@@ -1702,8 +1731,11 @@ export const SUBSISTEMAS: Subsistema[] = [
             "metasensoria contra el usuario.",
         ],
         modificadores: [
-          { tipo: "tirada", contexto: "resistir retroceso o desorientación psiónica", valor: 1 },
-          { tipo: "tirada", contexto: "resistir metasensoria", valor: 1 },
+          // Los poderes psiónicos están PENDIENTE en sistema.md: no hay tirada
+          // de resistir retroceso psiónico todavía. El id queda como marcador
+          // para cuando exista — no se aplica a nada mientras tanto.
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_retroceso_psionico" }, valor: 1 },
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_metasensoria" }, valor: 1 },
         ],
       },
       {
@@ -1716,9 +1748,12 @@ export const SUBSISTEMAS: Subsistema[] = [
             "al hacer una tirada relacionada con el empleo de un poder psiónico.",
         ],
         modificadores: [
-          { tipo: "tirada", contexto: "resistir retroceso o desorientación psiónica", valor: 1 },
-          { tipo: "tirada", contexto: "resistir metasensoria", valor: 1 },
-          { tipo: "tirada", contexto: "tiradas de poder psiónico", valor: 1 },
+          // Los poderes psiónicos están PENDIENTE en sistema.md: no hay tirada
+          // de resistir retroceso psiónico todavía. El id queda como marcador
+          // para cuando exista — no se aplica a nada mientras tanto.
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_retroceso_psionico" }, valor: 1 },
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_metasensoria" }, valor: 1 },
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "poder_psionico" }, valor: 1 },
         ],
       },
     ],
@@ -2296,8 +2331,14 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
           "Reduce en 1 el penalizador de dificultad en tiradas de ataque en modo automático.",
           "En ametralladoras, mejora el ataque en cualquiera de sus modos.",
         ],
+        // "En ametralladoras, mejora el ataque en cualquiera de sus modos" es
+        // una excepción de familia que este alcance no distingue (no sabe qué
+        // tipo de arma es, solo qué modo está elegido): con una ametralladora
+        // en modo Estándar (no automático), este +1 no se aplicaría, aunque el
+        // documento diga que debería. Pendiente de un alcance más fino si hace
+        // falta — ver docs/modificadores-tiradas.md.
         modificadores: [
-          { tipo: "tirada", contexto: "ataque en modo automático", valor: 1 },
+          { tipo: "tirada", alcance: { tipo: "modo", contieneEtiqueta: "F. Auto" }, valor: 1 },
         ],
       },
       {
@@ -2309,7 +2350,7 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // es un efecto sobre la tirada de OTRO personaje (el que esquiva), no
         // del portador: se queda en texto.
         modificadores: [
-          { tipo: "tirada", contexto: "ataque en modo automático", valor: 1 },
+          { tipo: "tirada", alcance: { tipo: "modo", contieneEtiqueta: "F. Auto" }, valor: 1 },
         ],
       },
     ],

@@ -10,7 +10,14 @@ import {
   valorEfectivo,
   movimiento,
 } from "./derivados";
-import { bonoAtributo, bonoTirada, porFuente, type ModificadorConFuente } from "./modificadores";
+import {
+  bonoAtributo,
+  bonoAlcance,
+  desgloseAlcance,
+  porFuente,
+  type ModificadorConFuente,
+  type ContextoTirada,
+} from "./modificadores";
 import { ESPECIES, especiePorId } from "../catalog/especies";
 
 const conEspecie = (id: string | null): Sheet => ({ ...defaultSheet(), especieId: id });
@@ -96,7 +103,13 @@ describe("helpers de modificadores", () => {
   const mods: ModificadorConFuente[] = [
     { tipo: "atributo", id: "fuerza", valor: 2, origen: "especie", fuente: "X" },
     { tipo: "atributo", id: "fuerza", valor: -1, origen: "estado", fuente: "Malherido" },
-    { tipo: "tirada", contexto: "salvaciones de fortaleza", valor: 1, origen: "equipo", fuente: "Traje" },
+    {
+      tipo: "tirada",
+      alcance: { tipo: "tiradaId", id: "salv_fortaleza" },
+      valor: 1,
+      origen: "equipo",
+      fuente: "Traje",
+    },
   ];
 
   test("los bonos del mismo destino se acumulan", () => {
@@ -104,16 +117,62 @@ describe("helpers de modificadores", () => {
     assert.equal(bonoAtributo(mods, "agilidad"), 0);
   });
 
-  test("el contexto de tirada casa por coincidencia parcial", () => {
-    assert.equal(bonoTirada(mods, "salvaciones de fortaleza"), 1);
-    assert.equal(bonoTirada(mods, "salvaciones"), 1);
-    assert.equal(bonoTirada(mods, "sigilo"), 0);
-  });
-
   test("se pueden agrupar por procedencia para mostrarlos", () => {
     const grupos = porFuente(mods);
     assert.equal(grupos.length, 3);
     assert.ok(grupos.find((g) => g.fuente === "Malherido" && g.origen === "estado"));
+  });
+});
+
+describe("alcance de un modificador de tirada", () => {
+  const ctx = (over: Partial<ContextoTirada> = {}): ContextoTirada => ({
+    id: "salv_fortaleza",
+    grupo: "Salvaciones",
+    habilidad: null,
+    modoElegido: null,
+    ...over,
+  });
+
+  test("tiradaId casa por id exacto", () => {
+    const mods: ModificadorConFuente[] = [
+      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1, origen: "equipo", fuente: "Traje" },
+    ];
+    assert.equal(bonoAlcance(mods, ctx()), 1);
+    assert.equal(bonoAlcance(mods, ctx({ id: "salv_reflejos" })), 0);
+  });
+
+  test("grupo casa cualquier tirada de ese grupo", () => {
+    const mods: ModificadorConFuente[] = [
+      { tipo: "tirada", alcance: { tipo: "grupo", grupo: "Salvaciones" }, valor: 2, origen: "especie", fuente: "Arkorü" },
+    ];
+    assert.equal(bonoAlcance(mods, ctx({ id: "salv_voluntad" })), 2);
+    assert.equal(bonoAlcance(mods, ctx({ id: "sigilo", grupo: "Acciones" })), 0);
+  });
+
+  test("habilidad casa cualquier tirada que la use", () => {
+    const mods: ModificadorConFuente[] = [
+      { tipo: "tirada", alcance: { tipo: "habilidad", habilidad: "sigilo" }, valor: 1, origen: "equipo", fuente: "Silenciador" },
+    ];
+    assert.equal(bonoAlcance(mods, ctx({ habilidad: "sigilo" })), 1);
+    assert.equal(bonoAlcance(mods, ctx({ habilidad: "atletismo" })), 0);
+  });
+
+  test("modo solo casa si el modo elegido contiene el texto", () => {
+    const mods: ModificadorConFuente[] = [
+      { tipo: "tirada", alcance: { tipo: "modo", contieneEtiqueta: "F. Auto" }, valor: 1, origen: "equipo", fuente: "Sistema de Retroceso" },
+    ];
+    assert.equal(bonoAlcance(mods, ctx({ modoElegido: "Estándar (F. Auto)" })), 1);
+    assert.equal(bonoAlcance(mods, ctx({ modoElegido: "Simple" })), 0);
+    assert.equal(bonoAlcance(mods, ctx({ modoElegido: null })), 0);
+  });
+
+  test("el desglose lleva la fuente de cada uno", () => {
+    const mods: ModificadorConFuente[] = [
+      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1, origen: "equipo", fuente: "Traje" },
+      { tipo: "atributo", id: "fuerza", valor: 1, origen: "especie", fuente: "Arkorü" }, // no debe aparecer
+    ];
+    const desglose = desgloseAlcance(mods, ctx());
+    assert.deepEqual(desglose, [{ etiqueta: "Traje", valor: 1 }]);
   });
 });
 

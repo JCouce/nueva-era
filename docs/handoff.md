@@ -102,12 +102,14 @@ usuario lo pida**: un push a `main` despliega a producción en Vercel.
   campo a campo.
 - **En la base local hay un personaje del usuario** (`ADEROX`, en 2026-09-09; el nombre puede
   volver a cambiar). No lo toques — crea uno de prueba y bórralo al terminar.
-- **Un modificador de equipo puede calcularse y no llegar a ninguna tirada.** Antes de dar por
-  bueno un bono nuevo, ábrelo en el modal de Tiradas y mira si aparece en el desglose — no te
-  fíes de que "está en el catálogo" signifique "se aplica". Ver
-  `docs/modificadores-tiradas.md` antes de tocar nada de esto: explica los tres mecanismos que
-  sí funcionan, el que no (`Modificador` tipo `"tirada"`, con 31 sitios del catálogo que hoy no
-  hacen nada), y cómo decidir cuál usar para uno nuevo.
+- **Antes de dar por bueno un modificador nuevo, ábrelo en el modal de Tiradas y mira si
+  aparece en el desglose** — no te fíes de que "está en el catálogo" signifique "se aplica".
+  Hay cuatro mecanismos distintos según el tipo de bono (condición interactiva, ajuste fijo,
+  bono por tramo, o alcance de personaje entero); usar el que no toca es la forma más fácil de
+  que algo se calcule y no llegue a ningún sitio. Lee `docs/modificadores-tiradas.md` antes de
+  tocar nada de esto — trae el árbol de decisión y un aviso importante: varios `tiradaId` del
+  catálogo apuntan a tiradas que **todavía no existen** (poderes psiónicos, ceguera por
+  destello...) a propósito, porque la regla no está clara — no es un bug, no le busques id.
 
 ## 6. La siguiente fase: el equipo
 

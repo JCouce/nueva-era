@@ -18,13 +18,34 @@ export const DERIVADOS_MODIFICABLES = [
 ] as const;
 export type DerivadoId = (typeof DERIVADOS_MODIFICABLES)[number];
 
+// Los cinco grupos de la pestaña Tiradas. Vive aquí (y no en tiradas.ts,
+// donde se usa) para que Modificador pueda dirigir un bono a un grupo entero
+// sin que este fichero, más bajo en la cadena de imports, dependa de aquel.
+export type GrupoTirada = "Ataques" | "Defensa" | "Salvaciones" | "Iniciativa" | "Acciones";
+
+// A qué tirada(s) afecta un modificador de tipo "tirada". Cerrado a propósito
+// — ver docs/modificadores-tiradas.md antes de añadir un quinto caso:
+//
+//   tiradaId  → una tirada concreta, por su id estable ("salv_fortaleza").
+//               Sirve para las fijas de TIRADAS; las de ataque generadas por
+//               combate.ts tienen id por instancia, así que esto no las
+//               alcanza — para esas ya existen ajustesFijos/bonosTramo/
+//               condiciones, más precisos.
+//   grupo     → todas las tiradas de un grupo (Salvaciones, Acciones...).
+//   habilidad → cualquier tirada que use esa habilidad, sea cual sea.
+//   modo      → solo si el modo de disparo/golpe elegido contiene ese texto
+//               ("F. Auto"). Exige que la tirada tenga condición "modo".
+export type AlcanceModificador =
+  | { tipo: "tiradaId"; id: string }
+  | { tipo: "grupo"; grupo: GrupoTirada }
+  | { tipo: "habilidad"; habilidad: HabilidadId }
+  | { tipo: "modo"; contieneEtiqueta: string };
+
 export type Modificador =
   | { tipo: "atributo"; id: AtributoId; valor: number }
   | { tipo: "derivado"; id: DerivadoId; valor: number }
   | { tipo: "habilidad"; id: HabilidadId; valor: number }
-  // Contexto libre mientras no exista un catálogo cerrado de situaciones:
-  // "salvaciones de fortaleza", "tiradas de sigilo", "ataques a distancia"…
-  | { tipo: "tirada"; contexto: string; valor: number };
+  | { tipo: "tirada"; alcance: AlcanceModificador; valor: number };
 
 export type OrigenModificador =
   | "especie"
@@ -70,27 +91,43 @@ export function bonoHabilidad(
   );
 }
 
-// ⚠️ Nadie llama a esta función desde tiradas.ts, combate.ts ni el modal:
-// los 31 `Modificador` de tipo "tirada" del catálogo se calculan y no llegan
-// a ninguna tirada. No es un bug de una sesión — es un mecanismo a medio
-// construir. Antes de darlo por bueno o de "arreglarlo" enganchándolo tal
-// cual, lee docs/modificadores-tiradas.md §5: el contexto libre de abajo
-// necesita convertirse en un alcance cerrado primero, o un bono como el del
-// Sistema de Retroceso se aplicaría a todos los modos de disparo, no solo al
-// automático.
-//
-// Los contextos se comparan en minúsculas y sin exigir coincidencia exacta, para
-// que "salvaciones" case con "salvaciones de fortaleza" mientras no haya catálogo.
-export function bonoTirada(
+// Lo que hace falta saber de una tirada concreta para decidir si le toca un
+// modificador de alcance "tiradaId"/"grupo"/"habilidad"/"modo". La UI lo
+// arma: `id`/`grupo`/`habilidad` salen de la propia Tirada; `modoElegido` es
+// la etiqueta de la opción de la condición "modo" que esté seleccionada
+// ahora mismo en el modal (o null si no hay tal condición o no aplica).
+export type ContextoTirada = {
+  id: string;
+  grupo: GrupoTirada;
+  habilidad: HabilidadId | null;
+  modoElegido: string | null;
+};
+
+function alcanzaA(alcance: AlcanceModificador, ctx: ContextoTirada): boolean {
+  if (alcance.tipo === "tiradaId") return alcance.id === ctx.id;
+  if (alcance.tipo === "grupo") return alcance.grupo === ctx.grupo;
+  if (alcance.tipo === "habilidad") return alcance.habilidad === ctx.habilidad;
+  return ctx.modoElegido !== null && ctx.modoElegido.includes(alcance.contieneEtiqueta);
+}
+
+export function bonoAlcance(mods: ModificadorConFuente[], ctx: ContextoTirada): number {
+  return mods.reduce(
+    (t, m) => (m.tipo === "tirada" && alcanzaA(m.alcance, ctx) ? t + m.valor : t),
+    0,
+  );
+}
+
+// Una línea por modificador que le toca a esta tirada ahora mismo, con su
+// fuente — mismo patrón que desgloseCondiciones/desgloseBonosTramo.
+export function desgloseAlcance(
   mods: ModificadorConFuente[],
-  contexto: string,
-): number {
-  const c = contexto.toLowerCase();
-  return mods.reduce((t, m) => {
-    if (m.tipo !== "tirada") return t;
-    const suyo = m.contexto.toLowerCase();
-    return c.includes(suyo) || suyo.includes(c) ? t + m.valor : t;
-  }, 0);
+  ctx: ContextoTirada,
+): { etiqueta: string; valor: number }[] {
+  return mods
+    .filter((m): m is Extract<Modificador, { tipo: "tirada" }> & ModificadorConFuente =>
+      m.tipo === "tirada" && alcanzaA(m.alcance, ctx),
+    )
+    .map((m) => ({ etiqueta: m.fuente, valor: m.valor }));
 }
 
 // Agrupa por fuente para poder mostrar "Arkorü: +1 Aguante" en la ficha.

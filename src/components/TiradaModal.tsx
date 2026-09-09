@@ -8,9 +8,14 @@ import {
   desgloseCondiciones,
   valorBonosTramo,
   desgloseBonosTramo,
+  modoElegido,
+  bonoAlcance,
+  desgloseAlcance,
   type CondicionTirada,
   type EstadoCondiciones,
   type BonoPorTramo,
+  type ModificadorConFuente,
+  type ContextoTirada,
 } from "@/lib/rules";
 import { HudCard } from "./HudCard";
 
@@ -131,6 +136,8 @@ export function TiradaModal({
   desgloseBase,
   condiciones,
   bonosTramo,
+  mods,
+  ctxBase,
   dificultadInicial,
   circunstancialInicial,
   onCerrar,
@@ -142,6 +149,11 @@ export function TiradaModal({
   desgloseBase: { etiqueta: string; valor: number }[];
   condiciones: CondicionTirada[];
   bonosTramo?: BonoPorTramo[];
+  // Modificadores de especie/equipo con alcance (salvaciones del traje, el
+  // Sistema de Retroceso...) y lo que hace falta de esta tirada para
+  // resolverlos — ver docs/modificadores-tiradas.md.
+  mods: ModificadorConFuente[];
+  ctxBase: Omit<ContextoTirada, "modoElegido">;
   dificultadInicial: number | null;
   circunstancialInicial: number;
   onCerrar: () => void;
@@ -161,7 +173,9 @@ export function TiradaModal({
 
   const totalCondiciones = valorCondiciones(condiciones, estado);
   const totalBonosTramo = valorBonosTramo(bonosTramo ?? [], estado);
-  const totalPrevisto = modBase + totalCondiciones + totalBonosTramo + circunstancial;
+  const ctx: ContextoTirada = { ...ctxBase, modoElegido: modoElegido(condiciones, estado) };
+  const totalAlcance = bonoAlcance(mods, ctx);
+  const totalPrevisto = modBase + totalCondiciones + totalBonosTramo + totalAlcance + circunstancial;
 
   return (
     <div
@@ -293,6 +307,9 @@ export function TiradaModal({
             </p>
             {desgloseBase.map((f, i) => (
               <LineaDesglose key={`base-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
+            ))}
+            {desgloseAlcance(mods, ctx).map((f, i) => (
+              <LineaDesglose key={`alcance-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
             ))}
             {desgloseCondiciones(condiciones, estado).map((f, i) => (
               <LineaDesglose key={`cond-${i}`} etiqueta={f.etiqueta} valor={f.valor} />

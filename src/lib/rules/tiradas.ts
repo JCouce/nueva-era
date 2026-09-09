@@ -9,6 +9,7 @@ import type { HabilidadId } from "./habilidades";
 import { aplicado, valorEfectivo } from "./derivados";
 import type { Sheet } from "./sheet";
 import type { CondicionTirada, BonoPorTramo } from "./condiciones";
+import type { GrupoTirada } from "./modificadores";
 
 export const CARAS_DADO = 12;
 
@@ -29,7 +30,7 @@ export type Tirada = {
   label: string;
   // "Ataques" no vive en TIRADAS ni en GRUPOS_TIRADA: la generan las
   // funciones de combate.ts a partir del equipo, no este catálogo fijo.
-  grupo: "Ataques" | "Defensa" | "Salvaciones" | "Iniciativa" | "Acciones";
+  grupo: GrupoTirada;
   aplicado: AplicadoId;
   habilidad: HabilidadId | null; // las salvaciones van con el aplicado a secas
   nota?: string;

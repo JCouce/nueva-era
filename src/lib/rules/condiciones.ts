@@ -1,7 +1,7 @@
 // Antes de añadir un modificador nuevo a una tirada, lee
-// docs/modificadores-tiradas.md — explica los tres mecanismos de este
-// fichero, el que existe en modificadores.ts pero no funciona todavía, y
-// cómo elegir entre ellos.
+// docs/modificadores-tiradas.md — explica los mecanismos de este fichero, el
+// de alcance de modificadores.ts (para bonos de personaje entero, sin arma
+// de por medio), y cómo elegir entre ellos.
 //
 // Controles interactivos dentro del modal de una tirada: el jugador los toca
 // antes de tirar y su efecto se suma al modificador. Tres formas, las
@@ -129,4 +129,17 @@ export function desgloseBonosTramo(
   const tramo = tramoElegido(estado);
   if (!tramo) return [];
   return bonos.map((b) => ({ etiqueta: b.fuente, valor: b.porTramo[tramo] ?? 0 }));
+}
+
+// La etiqueta del modo actualmente elegido (si la tirada tiene condición
+// "modo"), o null si no la tiene o no hay nada elegido todavía. Lo usa
+// ContextoTirada (modificadores.ts) para resolver los modificadores con
+// alcance "modo" — el Sistema de Retroceso, que solo ayuda en F. Auto.
+export function modoElegido(
+  condiciones: CondicionTirada[],
+  estado: EstadoCondiciones,
+): string | null {
+  const modo = condiciones.find((c) => c.id === "modo" && c.tipo === "opcion");
+  if (!modo || modo.tipo !== "opcion") return null;
+  return modo.opciones.find((o) => o.id === estado.modo)?.etiqueta ?? null;
 }

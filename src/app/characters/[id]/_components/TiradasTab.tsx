@@ -13,11 +13,15 @@ import {
   tiradasDeAtaque,
   valorCondiciones,
   valorBonosTramo,
+  modificadoresActivos,
+  bonoAlcance,
+  modoElegido,
   type Tirada,
   type Resultado,
   type ResultadoDanio,
   type Sheet,
   type EstadoCondiciones,
+  type ModificadorConFuente,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { TiradaModal } from "@/components/TiradaModal";
@@ -281,6 +285,8 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
     tirada: Tirada;
     modBase: number;
     desgloseBase: { etiqueta: string; valor: number }[];
+    mods: ModificadorConFuente[];
+    ctxBase: { id: string; grupo: Tirada["grupo"]; habilidad: Tirada["habilidad"] };
   } | null>(null);
 
   const ataques = tiradasDeAtaque(sheet);
@@ -296,7 +302,13 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
         : []),
       ...(t.ajustesFijos ?? []).map((a) => ({ etiqueta: a.fuente, valor: a.valor })),
     ];
-    setModal({ tirada: t, modBase: mod.total + sumaAjustesFijos(t), desgloseBase });
+    setModal({
+      tirada: t,
+      modBase: mod.total + sumaAjustesFijos(t),
+      desgloseBase,
+      mods: modificadoresActivos(sheet),
+      ctxBase: { id: t.id, grupo: t.grupo, habilidad: t.habilidad },
+    });
   };
 
   const tirar = ({
@@ -309,12 +321,16 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
     circunstancial: number;
   }) => {
     if (!modal) return;
-    const { tirada, modBase } = modal;
+    const { tirada, modBase, mods, ctxBase } = modal;
     const bonoCondiciones = valorCondiciones(tirada.condiciones ?? [], estadoCondiciones);
     const bonoTramo = valorBonosTramo(tirada.bonosTramo ?? [], estadoCondiciones);
+    const bonoEquipoEspecie = bonoAlcance(mods, {
+      ...ctxBase,
+      modoElegido: modoElegido(tirada.condiciones ?? [], estadoCondiciones),
+    });
     const r = resolverTirada({
       dado: tirarD12(),
-      modificador: modBase + bonoCondiciones + bonoTramo,
+      modificador: modBase + bonoCondiciones + bonoTramo + bonoEquipoEspecie,
       circunstancial,
       dificultad,
     });
@@ -416,6 +432,8 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
           desgloseBase={modal.desgloseBase}
           condiciones={modal.tirada.condiciones ?? []}
           bonosTramo={modal.tirada.bonosTramo ?? []}
+          mods={modal.mods}
+          ctxBase={modal.ctxBase}
           dificultadInicial={memoria[modal.tirada.id]?.dificultad ?? 7}
           circunstancialInicial={memoria[modal.tirada.id]?.circunstancial ?? 0}
           onCerrar={() => setModal(null)}
