@@ -8,6 +8,7 @@ import type { AplicadoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
 import { aplicado, valorEfectivo } from "./derivados";
 import type { Sheet } from "./sheet";
+import type { CondicionTirada } from "./condiciones";
 
 export const CARAS_DADO = 12;
 
@@ -26,56 +27,67 @@ export const MARGEN_CRITICO = 6;
 export type Tirada = {
   id: string;
   label: string;
-  grupo: "Combate" | "Salvaciones" | "Acciones";
+  // "Ataques" no vive en TIRADAS ni en GRUPOS_TIRADA: la generan las
+  // funciones de combate.ts a partir del equipo, no este catálogo fijo.
+  grupo: "Ataques" | "Defensa" | "Salvaciones" | "Iniciativa" | "Acciones";
   aplicado: AplicadoId;
   habilidad: HabilidadId | null; // las salvaciones van con el aplicado a secas
   nota?: string;
   // Cuando una tirada depende de algo que el sistema aún no define, se declara
   // en vez de inventársela: la UI la muestra apagada con el motivo.
   bloqueada?: string;
+  // Controles del modal (ver condiciones.ts): tramo de distancia, apoyado con
+  // bípode, atacantes adicionales... Las tiradas de ataque las llevan
+  // calculadas al vuelo desde el equipo (ver combate.ts); las demás las
+  // declaran aquí mismo, fijas.
+  condiciones?: CondicionTirada[];
+  // Solo las tiradas de ataque generadas por combate.ts: qué modo de disparo
+  // o de golpe hay detrás de cada opción de la condición "modo" (si la
+  // tirada tiene más de un modo), para poder encadenar la tirada de daño con
+  // el modo que de verdad se usó.
+  ataque?: {
+    modos: {
+      id: string;
+      danio: number | null; // null en armas melee: el daño es una fórmula, no un número
+      formulaDanio: string | null;
+      categoriaDanio: string;
+    }[];
+  };
 };
 
 const FALTA_EXPLORACION =
   "El sistema tira Perspicacia + Exploración, pero Exploración no está entre las 10 habilidades (conflicto C4 de docs/sistema.md)";
 
+// −1 acumulativo por cada atacante adicional en la ronda (sistema-y-combate.md).
+// Un contador y no un toggle porque el penalizador escala con cuántos atacan,
+// no con un sí/no.
+const CONDICION_ATACANTES_ADICIONALES: CondicionTirada = {
+  id: "atacantes_adicionales",
+  tipo: "contador",
+  etiqueta: "Atacantes adicionales esta ronda",
+  valorPorUnidad: -1,
+  min: 0,
+  max: 6,
+  porDefecto: 0,
+};
+
 export const TIRADAS: Tirada[] = [
-  // ── Combate ──
-  {
-    id: "ataque_distancia",
-    label: "Ataque a distancia",
-    grupo: "Combate",
-    aplicado: "reflejos",
-    habilidad: "combate_distancia",
-    nota: "Suma el modificador de distancia del arma: +4 a bocajarro, +2 corta, 0 media, −2 larga",
-  },
-  {
-    id: "ataque_melee",
-    label: "Ataque melee",
-    grupo: "Combate",
-    aplicado: "potencia",
-    habilidad: "combate_melee",
-    nota: "Con estilo Sutil se tira Reflejos en lugar de Potencia",
-  },
-  {
-    id: "ataque_melee_sutil",
-    label: "Ataque melee (Sutil)",
-    grupo: "Combate",
-    aplicado: "reflejos",
-    habilidad: "combate_melee",
-    nota: "El daño usa Potencia en lugar de Fuerza",
-  },
+  // ── Defensa ──
   {
     id: "defensa",
     label: "Defensa / esquiva",
-    grupo: "Combate",
+    grupo: "Defensa",
     aplicado: "reflejos",
     habilidad: "atletismo",
-    nota: "Reacción gratuita e ilimitada, pero −1 acumulativo por cada atacante adicional en la ronda",
+    nota: "Reacción gratuita e ilimitada. Gastar la reacción normal del turno en defender limpia el penalizador acumulado",
+    condiciones: [CONDICION_ATACANTES_ADICIONALES],
   },
+
+  // ── Iniciativa ──
   {
     id: "iniciativa_arma",
     label: "Iniciativa (desenfundando)",
-    grupo: "Combate",
+    grupo: "Iniciativa",
     aplicado: "reflejos",
     habilidad: "combate_distancia",
     nota: "La tirada depende de cómo entres al combate; esta es la de sacar el arma para atacar",
@@ -83,7 +95,7 @@ export const TIRADAS: Tirada[] = [
   {
     id: "iniciativa_distraccion",
     label: "Iniciativa (distrayendo)",
-    grupo: "Combate",
+    grupo: "Iniciativa",
     aplicado: "expresion",
     habilidad: "actitud",
     nota: "Para abrir con una distracción. El rival puede oponer Perspicacia + Empatía",
@@ -91,7 +103,7 @@ export const TIRADAS: Tirada[] = [
   {
     id: "iniciativa",
     label: "Iniciativa (habitual)",
-    grupo: "Combate",
+    grupo: "Iniciativa",
     aplicado: "perspicacia",
     habilidad: null,
     bloqueada: FALTA_EXPLORACION,
@@ -174,7 +186,9 @@ export const TIRADAS: Tirada[] = [
   },
 ];
 
-export const GRUPOS_TIRADA = ["Combate", "Salvaciones", "Acciones"] as const;
+// "Ataques" va primero pero no es un grupo de TIRADAS: TiradasTab lo pinta
+// aparte, con las filas que genera combate.ts a partir del equipo.
+export const GRUPOS_TIRADA = ["Defensa", "Salvaciones", "Iniciativa", "Acciones"] as const;
 
 // Modificador fijo de una tirada: lo que se suma al dado antes de nada más.
 export function modificadorTirada(
@@ -243,6 +257,25 @@ export function resolverTirada({
     // Crítico en los dos sentidos: superar por 6 o quedarse a 6 o más.
     critico: Math.abs(margen) >= MARGEN_CRITICO,
   };
+}
+
+export type ResultadoDanio = {
+  base: number;
+  bonoExitos: number;
+  total: number;
+  categoria: string;
+};
+
+// Fuente: sistema-y-combate.md — "por cada dos éxitos acumulados en la
+// tirada, +1 al daño". El margen es el de la tirada de ataque YA resuelta
+// (después de la acción defensiva del objetivo, si la hubo): esta función no
+// vuelve a tirar el dado, solo aplica la regla sobre un resultado que ya
+// existe. Un margen negativo (fracaso) no debería llegar aquí — la UI solo
+// ofrece "tirar daño" tras un ataque con éxito — pero por si acaso no resta
+// daño, se queda en la base.
+export function resolverDanio(danioBase: number, margen: number, categoria: string): ResultadoDanio {
+  const bonoExitos = margen > 0 ? Math.floor(margen / 2) : 0;
+  return { base: danioBase, bonoExitos, total: danioBase + bonoExitos, categoria };
 }
 
 // Dado honesto: getRandomValues con descarte del resto, para que las 12 caras

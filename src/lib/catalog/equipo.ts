@@ -22,6 +22,7 @@
 // ESE nivel ("mejora la bonificación a +2"), se usa ese total tal cual, sin
 // sumarlo al de niveles inferiores.
 import type { Modificador } from "../rules/modificadores";
+import type { CondicionTirada, TramoDistancia } from "../rules/condiciones";
 import { ARMAS_MELEE, type ArmaMelee } from "./armasMelee";
 
 export type Rareza = "Común" | "Poco Habitual" | "Extraño" | "Muy Extraño" | "Singular";
@@ -1191,6 +1192,18 @@ export type NivelModulo = {
   // de nivel 3): esa elección no se guarda todavía en la ficha, se queda en
   // `detalle` como texto.
   velocidadM?: number;
+  // Efectos condicionados a una elección del jugador EN el momento de tirar
+  // (apoyar el bípode, activar el puntero…): a diferencia de `modificadores`,
+  // que es incondicional mientras se lleva puesto, esto solo se pinta en el
+  // modal de la tirada de ataque del arma que aloja esta mejora. Ver
+  // lib/rules/condiciones.ts.
+  condiciones?: CondicionTirada[];
+  // Caso particular de condición, reservado a mejoras de arma que alteran el
+  // bono por tramo de distancia (mira telescópica y las que lleguen después):
+  // se fusiona en la opción de tramo de la propia tirada de ataque en vez de
+  // pintarse como control aparte — ver combate.ts. Las claves ausentes no
+  // tocan ese tramo.
+  ajusteTramo?: Partial<Record<TramoDistancia, number>>;
 };
 
 export type MejoraEstandar = {
@@ -2114,9 +2127,10 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
           "+1 al ataque a distancia, solo en media y larga distancia.",
           "El mismo bonificador sirve para tiradas de búsqueda (percepción visual).",
         ],
-        // El bono solo aplica a media/larga distancia: es condicional al tramo
-        // de la tirada, no un +1 incondicional — se queda en texto.
+        // El bono solo aplica a media/larga distancia: se fusiona en la
+        // opción de tramo de la tirada de ataque, no es un +1 incondicional.
         modificadores: [],
+        ajusteTramo: { media: 1, larga: 1 },
       },
       {
         nivel: 2,
@@ -2134,6 +2148,9 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
             "visual sube a +2 (mismas condiciones de distancia que el nivel 1).",
         ],
         modificadores: [],
+        // Total explícito del nivel, no +1 adicional sobre el del nivel 1
+        // (supuesto S9: solo aplica dentro de la MISMA pieza instalada).
+        ajusteTramo: { media: 2, larga: 2 },
       },
     ],
   },
@@ -2206,9 +2223,18 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
             "parcial a media altura.",
           "Suma 5 kg de carga al arma: sin apoyar, -1 al ataque.",
         ],
-        // El +1 y el -1 son condicionales (apoyado o no): no hay un número
-        // incondicional que aplique siempre mientras está instalado.
+        // El +1 y el -1 son condicionales (apoyado o no): se pintan como
+        // toggle en el modal de la tirada de ataque, no como modificador fijo.
         modificadores: [],
+        condiciones: [
+          {
+            id: "apoyado",
+            tipo: "toggle",
+            etiqueta: "Apoyado / tumbado (bípode)",
+            valorActivo: 1,
+            valorInactivo: -1,
+          },
+        ],
       },
       {
         nivel: 2,
@@ -2216,6 +2242,15 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         coste: 4500,
         detalle: ["Materiales sofisticados: pierde el penalizador de peso y no suma carga."],
         modificadores: [],
+        condiciones: [
+          {
+            id: "apoyado",
+            tipo: "toggle",
+            etiqueta: "Apoyado / tumbado (bípode)",
+            valorActivo: 1,
+            valorInactivo: 0,
+          },
+        ],
       },
     ],
   },

@@ -9,6 +9,7 @@ import {
   MARGEN_CRITICO,
   modificadorTirada,
   resolverTirada,
+  resolverDanio,
   tirarD12,
 } from "./tiradas";
 
@@ -48,14 +49,14 @@ describe("modificador de una tirada", () => {
   };
 
   test("suma el aplicado y la habilidad", () => {
-    const m = modificadorTirada(ficha(), buscar("ataque_distancia"), true);
+    const m = modificadorTirada(ficha(), buscar("iniciativa_arma"), true);
     assert.equal(m.aplicado, 4);
     assert.equal(m.habilidad, 3);
     assert.equal(m.total, 7);
   });
 
   test("fuera de especialidad la habilidad cuenta la mitad", () => {
-    const m = modificadorTirada(ficha(), buscar("ataque_distancia"), false);
+    const m = modificadorTirada(ficha(), buscar("iniciativa_arma"), false);
     assert.equal(m.habilidad, 2); // ceil(3/2)
     assert.equal(m.total, 6);
   });
@@ -138,6 +139,30 @@ describe("resolución contra dificultad", () => {
     const r = resolverTirada({ dado: 1, modificador: -3, dificultad: 2 });
     assert.equal(r.total, -2);
     assert.equal(r.exito, false);
+  });
+});
+
+describe("daño por éxitos", () => {
+  test("sin éxitos de sobra, solo el daño base", () => {
+    const d = resolverDanio(10, 0, "Letal");
+    assert.equal(d.bonoExitos, 0);
+    assert.equal(d.total, 10);
+  });
+
+  test("por cada dos éxitos, +1 al daño", () => {
+    assert.equal(resolverDanio(10, 2, "Letal").total, 11);
+    assert.equal(resolverDanio(10, 3, "Letal").total, 11); // floor(3/2) = 1
+    assert.equal(resolverDanio(10, 4, "Letal").total, 12);
+  });
+
+  test("un margen negativo no resta daño", () => {
+    const d = resolverDanio(10, -3, "Letal");
+    assert.equal(d.bonoExitos, 0);
+    assert.equal(d.total, 10);
+  });
+
+  test("conserva la categoría de daño", () => {
+    assert.equal(resolverDanio(10, 6, "Plasma").categoria, "Plasma");
   });
 });
 

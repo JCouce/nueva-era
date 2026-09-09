@@ -4,27 +4,49 @@ import { useState } from "react";
 import {
   TIRADAS,
   GRUPOS_TIRADA,
-  DIFICULTADES,
   APLICADOS,
   HABILIDADES,
   modificadorTirada,
   resolverTirada,
+  resolverDanio,
   tirarD12,
+  tiradasDeAtaque,
+  valorCondiciones,
   type Tirada,
   type Resultado,
+  type ResultadoDanio,
   type Sheet,
+  type EstadoCondiciones,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
-
-type Lanzamiento = Resultado & { id: number; label: string };
+import { TiradaModal } from "@/components/TiradaModal";
 
 function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
 }
 
+// Info de daño de la tirada de ataque que la generó: null si la tirada no es
+// un ataque. `base` es null en melee — el daño ahí es una fórmula sobre un
+// atributo ("Fue+2"), no un número, así que no hay botón de "tirar daño"
+// todavía para esas filas: se muestra la fórmula para calcularla a mano.
+type DanioInfo = { base: number | null; formulaDanio: string | null; categoriaDanio: string };
+
+type Lanzamiento = Resultado & {
+  id: number;
+  label: string;
+  danioInfo?: DanioInfo | null;
+  danioResuelto?: ResultadoDanio;
+};
+
 // Panel del último resultado. Es lo primero que se mira tras pulsar, así que
 // va arriba y con el total en grande.
-function Marcador({ ultimo }: { ultimo: Lanzamiento | null }) {
+function Marcador({
+  ultimo,
+  onTirarDanio,
+}: {
+  ultimo: Lanzamiento | null;
+  onTirarDanio: () => void;
+}) {
   if (!ultimo) {
     return (
       <HudCard className="border-dashed p-4 text-center">
@@ -60,6 +82,14 @@ function Marcador({ ultimo }: { ultimo: Lanzamiento | null }) {
         : critico
           ? "FRACASO CRÍTICO"
           : "fracaso";
+
+  const puedeTirarDanio =
+    ultimo.danioInfo?.base !== null &&
+    ultimo.danioInfo !== null &&
+    ultimo.danioInfo !== undefined &&
+    exito === true &&
+    margen !== null &&
+    !ultimo.danioResuelto;
 
   return (
     <HudCard className={`p-4 ${critico ? "border-accent" : ""}`}>
@@ -99,6 +129,36 @@ function Marcador({ ultimo }: { ultimo: Lanzamiento | null }) {
           )}
         </span>
       </div>
+
+      {ultimo.danioInfo && (
+        <div className="mt-3 border-t border-border pt-3">
+          {ultimo.danioResuelto ? (
+            <p className="font-mono text-xs uppercase text-danger">
+              Daño: <span className="text-lg tabular-nums">{ultimo.danioResuelto.total}</span>{" "}
+              {ultimo.danioInfo.categoriaDanio}
+              {ultimo.danioResuelto.bonoExitos > 0 && (
+                <span className="text-muted">
+                  {" "}
+                  ({ultimo.danioResuelto.base} base +{ultimo.danioResuelto.bonoExitos} por éxitos)
+                </span>
+              )}
+            </p>
+          ) : puedeTirarDanio ? (
+            <button
+              type="button"
+              onClick={onTirarDanio}
+              className="clip-chamfer-sm w-full border border-danger py-2 font-display text-xs font-semibold uppercase tracking-wide text-danger active:scale-[0.98]"
+            >
+              Tirar daño ({ultimo.danioInfo.base} {ultimo.danioInfo.categoriaDanio} base)
+            </button>
+          ) : ultimo.danioInfo.formulaDanio ? (
+            <p className="font-mono text-[10px] uppercase text-muted">
+              Daño: {ultimo.danioInfo.formulaDanio} {ultimo.danioInfo.categoriaDanio} (fórmula — se
+              calcula a mano)
+            </p>
+          ) : null}
+        </div>
+      )}
     </HudCard>
   );
 }
@@ -106,11 +166,11 @@ function Marcador({ ultimo }: { ultimo: Lanzamiento | null }) {
 function FilaTirada({
   tirada,
   sheet,
-  onTirar,
+  onAbrir,
 }: {
   tirada: Tirada;
   sheet: Sheet;
-  onTirar: (t: Tirada, enEspecialidad: boolean) => void;
+  onAbrir: (t: Tirada, enEspecialidad: boolean) => void;
 }) {
   const [enEspecialidad, setEnEspecialidad] = useState(false);
 
@@ -165,7 +225,7 @@ function FilaTirada({
 
         <button
           type="button"
-          onClick={() => onTirar(tirada, enEspecialidad)}
+          onClick={() => onAbrir(tirada, enEspecialidad)}
           className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95"
         >
           Tirar
@@ -202,99 +262,79 @@ function FilaTirada({
 }
 
 export function TiradasTab({ sheet }: { sheet: Sheet }) {
-  const [dificultad, setDificultad] = useState<number | null>(7);
-  const [circunstancial, setCircunstancial] = useState(0);
   const [historial, setHistorial] = useState<Lanzamiento[]>([]);
+  // Última dificultad/circunstancial usada en CADA tirada, no una global: un
+  // francotirador repite la misma tirada varias veces por turno, pero eso no
+  // dice nada de la siguiente salvación o de otra arma.
+  const [memoria, setMemoria] = useState<
+    Record<string, { dificultad: number | null; circunstancial: number }>
+  >({});
+  const [modal, setModal] = useState<{ tirada: Tirada; modBase: number } | null>(null);
 
-  const tirar = (t: Tirada, enEspecialidad: boolean) => {
+  const ataques = tiradasDeAtaque(sheet);
+
+  const abrir = (t: Tirada, enEspecialidad: boolean) => {
     const mod = modificadorTirada(sheet, t, enEspecialidad);
+    setModal({ tirada: t, modBase: mod.total });
+  };
+
+  const tirar = ({
+    estadoCondiciones,
+    dificultad,
+    circunstancial,
+  }: {
+    estadoCondiciones: EstadoCondiciones;
+    dificultad: number | null;
+    circunstancial: number;
+  }) => {
+    if (!modal) return;
+    const { tirada, modBase } = modal;
+    const bonoCondiciones = valorCondiciones(tirada.condiciones ?? [], estadoCondiciones);
     const r = resolverTirada({
       dado: tirarD12(),
-      modificador: mod.total,
+      modificador: modBase + bonoCondiciones,
       circunstancial,
       dificultad,
     });
-    setHistorial((h) => [{ ...r, id: Date.now(), label: t.label }, ...h].slice(0, 6));
+
+    setMemoria((m) => ({ ...m, [tirada.id]: { dificultad, circunstancial } }));
+
+    let danioInfo: DanioInfo | null = null;
+    if (tirada.ataque) {
+      const modoId = typeof estadoCondiciones.modo === "string" ? estadoCondiciones.modo : tirada.ataque.modos[0].id;
+      const modo = tirada.ataque.modos.find((m) => m.id === modoId) ?? tirada.ataque.modos[0];
+      danioInfo = { base: modo.danio, formulaDanio: modo.formulaDanio, categoriaDanio: modo.categoriaDanio };
+    }
+
+    setHistorial((h) => [{ ...r, id: Date.now(), label: tirada.label, danioInfo }, ...h].slice(0, 6));
+    setModal(null);
   };
+
+  const tirarDanio = () => {
+    setHistorial((h) => {
+      const [ultimo, ...resto] = h;
+      if (!ultimo?.danioInfo || ultimo.danioInfo.base === null || ultimo.margen === null) return h;
+      const danioResuelto = resolverDanio(ultimo.danioInfo.base, ultimo.margen, ultimo.danioInfo.categoriaDanio);
+      return [{ ...ultimo, danioResuelto }, ...resto];
+    });
+  };
+
+  const especialidadesActuales = modal?.tirada.habilidad
+    ? sheet.habilidades[modal.tirada.habilidad].especialidades
+    : [];
 
   return (
     <div className="flex flex-col gap-3">
-      <Marcador ultimo={historial[0] ?? null} />
+      <Marcador ultimo={historial[0] ?? null} onTirarDanio={tirarDanio} />
 
-      {/* Ajustes que se aplican a la siguiente tirada */}
-      <HudCard className="p-3">
-        <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
-          {"// Dificultad"}
-        </p>
-        <div className="mt-2 grid grid-cols-4 gap-1">
-          {DIFICULTADES.map((d) => (
-            <button
-              key={d.id}
-              type="button"
-              onClick={() => setDificultad(d.valor)}
-              className={`clip-chamfer-sm border px-1 py-1.5 font-mono text-[10px] uppercase active:scale-95 ${
-                dificultad === d.valor
-                  ? "border-accent text-accent"
-                  : "border-border text-muted"
-              }`}
-            >
-              {d.label}
-              <span className="block tabular-nums">{d.valor}</span>
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setDificultad(null)}
-            className={`clip-chamfer-sm col-span-2 border px-1 py-1.5 font-mono text-[10px] uppercase active:scale-95 ${
-              dificultad === null
-                ? "border-accent text-accent"
-                : "border-border text-muted"
-            }`}
-          >
-            sin dificultad
-          </button>
-        </div>
-
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
-              {"// Modificador"}
-            </p>
-            <p className="font-sans text-[11px] text-muted">
-              Heridas, fatiga, cobertura, distancia…
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setCircunstancial((v) => Math.max(-10, v - 1))}
-              aria-label="Bajar modificador"
-              className="h-9 w-9 border border-border bg-elevated font-mono text-lg leading-none text-muted active:scale-95"
-            >
-              −
-            </button>
-            <span
-              className={`w-10 text-center font-mono text-xl tabular-nums ${
-                circunstancial === 0
-                  ? "text-muted"
-                  : circunstancial > 0
-                    ? "text-info"
-                    : "text-danger"
-              }`}
-            >
-              {signo(circunstancial)}
-            </span>
-            <button
-              type="button"
-              onClick={() => setCircunstancial((v) => Math.min(10, v + 1))}
-              aria-label="Subir modificador"
-              className="h-9 w-9 border border-border bg-elevated font-mono text-lg leading-none text-muted active:scale-95"
-            >
-              +
-            </button>
-          </div>
-        </div>
-      </HudCard>
+      <div className="flex flex-col gap-2">
+        <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
+          Ataques
+        </h2>
+        {ataques.map((t) => (
+          <FilaTirada key={t.id} tirada={t} sheet={sheet} onAbrir={abrir} />
+        ))}
+      </div>
 
       {GRUPOS_TIRADA.map((grupo) => (
         <div key={grupo} className="flex flex-col gap-2">
@@ -302,7 +342,7 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
             {grupo}
           </h2>
           {TIRADAS.filter((t) => t.grupo === grupo).map((t) => (
-            <FilaTirada key={t.id} tirada={t} sheet={sheet} onTirar={tirar} />
+            <FilaTirada key={t.id} tirada={t} sheet={sheet} onAbrir={abrir} />
           ))}
         </div>
       ))}
@@ -332,11 +372,31 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
                   >
                     {h.total}
                   </span>
+                  {h.danioResuelto && (
+                    <span className="text-danger"> · daño {h.danioResuelto.total}</span>
+                  )}
                 </span>
               </div>
             ))}
           </div>
         </>
+      )}
+
+      {modal && (
+        <TiradaModal
+          titulo={modal.tirada.label}
+          subtitulo={
+            especialidadesActuales.length > 0
+              ? `especialidad: ${especialidadesActuales.join(" / ")}`
+              : undefined
+          }
+          modBase={modal.modBase}
+          condiciones={modal.tirada.condiciones ?? []}
+          dificultadInicial={memoria[modal.tirada.id]?.dificultad ?? 7}
+          circunstancialInicial={memoria[modal.tirada.id]?.circunstancial ?? 0}
+          onCerrar={() => setModal(null)}
+          onTirar={tirar}
+        />
       )}
     </div>
   );

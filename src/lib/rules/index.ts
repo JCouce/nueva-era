@@ -10,6 +10,8 @@
 //   modificadores.ts  cómo especies, dotes, aumentos, equipo y estados alteran números
 //   migraciones.ts    qué pasa con las fichas cuando cambia el formato
 //   equipo.ts         qué lleva puesto un personaje: validación de ranuras y sus modificadores
+//   condiciones.ts    controles de un modal de tirada: toggle, opción, contador
+//   combate.ts        el equipo convertido en tiradas de ataque concretas
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -20,6 +22,8 @@ export * from "./tiradas";
 export * from "./modificadores";
 export * from "./migraciones";
 export * from "./equipo";
+export * from "./condiciones";
+export * from "./combate";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";
