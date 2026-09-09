@@ -11,6 +11,15 @@ async function requireMaster() {
   return user.role === "MASTER" ? user : null;
 }
 
+// Las tres vistas que pueden tener esta ficha en caché del lado del cliente:
+// el panel, la lista general y la ficha en sí. Sin las tres, navegar entre
+// ellas por link (sin recargar) enseña datos viejos hasta el siguiente F5.
+function revalidateCharacterViews(id: string) {
+  revalidatePath("/master");
+  revalidatePath("/characters");
+  revalidatePath(`/characters/${id}`);
+}
+
 export async function approveCharacterAction(formData: FormData) {
   if (!(await requireMaster())) return;
   const id = String(formData.get("id") ?? "");
@@ -20,8 +29,7 @@ export async function approveCharacterAction(formData: FormData) {
     where: { id },
     data: { status: "APPROVED", approvedAt: new Date() },
   });
-  revalidatePath("/master");
-  revalidatePath(`/characters/${id}`);
+  revalidateCharacterViews(id);
 }
 
 export async function revertToDraftAction(formData: FormData) {
@@ -33,8 +41,7 @@ export async function revertToDraftAction(formData: FormData) {
     where: { id },
     data: { status: "DRAFT", approvedAt: null },
   });
-  revalidatePath("/master");
-  revalidatePath(`/characters/${id}`);
+  revalidateCharacterViews(id);
 }
 
 // xp y créditos son recursos que solo concede el máster — por eso viven aquí y
@@ -57,8 +64,7 @@ async function adjustResource(
 
   const next = Math.max(0, character[field] + delta);
   await prisma.character.update({ where: { id }, data: { [field]: next } });
-  revalidatePath("/master");
-  revalidatePath(`/characters/${id}`);
+  revalidateCharacterViews(id);
 }
 
 export async function adjustXpAction(formData: FormData) {
