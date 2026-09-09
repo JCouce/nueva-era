@@ -3,6 +3,7 @@ import {
   APLICADOS,
   ATRIBUTO_MIN,
   ATRIBUTO_MAX_CREACION,
+  ATRIBUTO_MAX,
   modificadoresActivos,
   desgloseAtributo,
   desgloseAplicado,
@@ -13,8 +14,12 @@ import { HudCard } from "@/components/HudCard";
 import { Desglose } from "@/components/Desglose";
 import { Stepper } from "./Stepper";
 
-// Escala pintada: de -1 a 4. El −1 se marca en rojo porque es deuda, no compra.
-const CASILLAS = ATRIBUTO_MAX_CREACION - ATRIBUTO_MIN;
+// Escala pintada: 5 casillas, el techo del sistema (ATRIBUTO_MAX), no el de
+// creación. La 5ª solo puede encenderse por progresión post-creación: la
+// compra en la ficha nunca pasa de ATRIBUTO_MAX_CREACION, así que hoy se ve
+// siempre vacía. El -1 no tiene casilla propia: reutiliza la primera en rojo
+// (deuda) en vez de sumar un amarillo.
+const CASILLAS = ATRIBUTO_MAX;
 
 export function AtributosTab({
   sheet,
@@ -86,15 +91,17 @@ export function AtributosTab({
             )}
             <div className="mt-3 flex gap-1">
               {Array.from({ length: CASILLAS }).map((_, i) => {
-                const nivel = ATRIBUTO_MIN + i + 1; // -1 … 4
-                const negativo = nivel <= 0;
-                const activo = negativo ? value <= nivel : value >= nivel;
+                // Con valor negativo solo se enciende la primera casilla, en
+                // rojo (deuda). Con valor positivo se rellena desde la
+                // primera, en amarillo, una casilla por punto.
+                const enDeuda = value < 0;
+                const activo = enDeuda ? i === 0 : i < value;
                 return (
                   <span
-                    key={nivel}
+                    key={i}
                     className={`h-2 flex-1 ${
                       activo
-                        ? negativo
+                        ? enDeuda
                           ? "bg-danger"
                           : "bg-accent shadow-glow-yellow"
                         : "bg-elevated"
