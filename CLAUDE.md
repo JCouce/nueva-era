@@ -53,7 +53,11 @@ src/
 │  │  ├─ sheet.ts       #   forma de la ficha, Zod, SCHEMA_VERSION y parseSheet tolerante
 │  │  ├─ derivados.ts   #   lo que se calcula y nunca se guarda (aplicados, salud, movimiento)
 │  │  ├─ creacion.ts    #   point-buy: costes, pools y operaciones puras sobre la ficha
-│  │  └─ *.test.ts      #   39 tests. Al tocar una fórmula, se toca su test.
+│  │  ├─ tiradas.ts     #   catálogo de tiradas fijas, resolución del d12, daño por éxitos
+│  │  ├─ condiciones.ts #   controles del modal de una tirada (toggle/opción/contador) y sus desgloses —
+│  │  │                 #   ver docs/modificadores-tiradas.md antes de añadir un modificador nuevo
+│  │  ├─ combate.ts     #   equipo → tiradas de ataque concretas (una por arma, con sus condiciones)
+│  │  └─ *.test.ts      #   ~170 tests. Al tocar una fórmula, se toca su test.
 │  ├─ validation.ts     # Zod de entrada de la app (login, register, character). NO la ficha.
 │  └─ auth-helpers.ts   # requireUser() y canEditCharacter() — regla central de permisos.
 ├─ generated/prisma/    # Cliente Prisma generado (gitignored, lo crea `prisma generate`).

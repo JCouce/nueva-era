@@ -100,7 +100,14 @@ usuario lo pida**: un push a `main` despliega a producción en Vercel.
   comprobar el HTML renderizado en servidor.
 - **Rellenar formularios con `fill_form` no siempre dispara los eventos de React.** Usa `fill`
   campo a campo.
-- **En la base local hay un personaje del usuario** (`Testo1`). No lo toques.
+- **En la base local hay un personaje del usuario** (`ADEROX`, en 2026-09-09; el nombre puede
+  volver a cambiar). No lo toques — crea uno de prueba y bórralo al terminar.
+- **Un modificador de equipo puede calcularse y no llegar a ninguna tirada.** Antes de dar por
+  bueno un bono nuevo, ábrelo en el modal de Tiradas y mira si aparece en el desglose — no te
+  fíes de que "está en el catálogo" signifique "se aplica". Ver
+  `docs/modificadores-tiradas.md` antes de tocar nada de esto: explica los tres mecanismos que
+  sí funcionan, el que no (`Modificador` tipo `"tirada"`, con 31 sitios del catálogo que hoy no
+  hacen nada), y cómo decidir cuál usar para uno nuevo.
 
 ## 6. La siguiente fase: el equipo
 

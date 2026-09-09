@@ -1,3 +1,8 @@
+// Antes de añadir un modificador nuevo a una tirada, lee
+// docs/modificadores-tiradas.md — explica los tres mecanismos de este
+// fichero, el que existe en modificadores.ts pero no funciona todavía, y
+// cómo elegir entre ellos.
+//
 // Controles interactivos dentro del modal de una tirada: el jugador los toca
 // antes de tirar y su efecto se suma al modificador. Tres formas, las
 // mínimas que hacen falta hoy — cualquier condición futura (dotes, poderes,

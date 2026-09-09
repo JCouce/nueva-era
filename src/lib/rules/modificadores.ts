@@ -70,6 +70,15 @@ export function bonoHabilidad(
   );
 }
 
+// ⚠️ Nadie llama a esta función desde tiradas.ts, combate.ts ni el modal:
+// los 31 `Modificador` de tipo "tirada" del catálogo se calculan y no llegan
+// a ninguna tirada. No es un bug de una sesión — es un mecanismo a medio
+// construir. Antes de darlo por bueno o de "arreglarlo" enganchándolo tal
+// cual, lee docs/modificadores-tiradas.md §5: el contexto libre de abajo
+// necesita convertirse en un alcance cerrado primero, o un bono como el del
+// Sistema de Retroceso se aplicaría a todos los modos de disparo, no solo al
+// automático.
+//
 // Los contextos se comparan en minúsculas y sin exigir coincidencia exacta, para
 // que "salvaciones" case con "salvaciones de fortaleza" mientras no haya catálogo.
 export function bonoTirada(
