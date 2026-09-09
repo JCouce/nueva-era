@@ -47,7 +47,6 @@ export function AtributosTab({
 
       {ATRIBUTOS.map((a) => {
         const value = sheet.atributos[a.id];
-        const siguiente = value + 1;
         const desglose = desgloseAtributo(sheet, a.id, mods);
         const tieneModificadores = desglose.fuentes.length > 1;
         return (
@@ -61,14 +60,13 @@ export function AtributosTab({
               </div>
               <Stepper
                 value={value}
-                hint={
-                  value >= ATRIBUTO_MAX_CREACION
-                    ? "MÁX"
-                    : siguiente <= 0
-                      ? "+1 pt"
-                      : `${siguiente} pts`
-                }
-                canBuy={puntosDisponibles >= siguiente}
+                // El coste de subir un punto es siempre 1, suba desde donde
+                // suba (coste = valor absoluto, así que la diferencia
+                // marginal es constante) — igual que en Habilidades. Mostrar
+                // el valor destino aquí en vez del coste real bloqueaba la
+                // compra de más en cuanto el pool bajaba de ese número.
+                hint={value >= ATRIBUTO_MAX_CREACION ? "MÁX" : "1 pt"}
+                canBuy={puntosDisponibles >= 1}
                 atMin={value <= ATRIBUTO_MIN}
                 atMax={value >= ATRIBUTO_MAX_CREACION}
                 onBuy={() => onSet(a.id, value + 1)}
