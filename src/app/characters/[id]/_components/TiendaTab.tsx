@@ -18,6 +18,7 @@ import {
   type Armadura,
   type ArmaFuego,
   type ArmaMelee,
+  type TipoArma,
   type MejoraEstandar,
   type Subsistema,
   type MejoraDeArma,
@@ -52,6 +53,19 @@ const CATEGORIAS = [
 ] as const;
 
 type CategoriaId = (typeof CATEGORIAS)[number]["id"];
+
+// Mismo orden que el catálogo (catalog/equipo.ts): de la más ligera a la más
+// pesada. 39 armas en una sola lista era mucho scroll para encontrar un
+// fusil de precisión — subdividir por tipo es lo mismo que ya hace Armas
+// Melee/Kerzul, pero dentro de una sola categoría en vez de dos tiles.
+const TIPOS_ARMA: { tipo: TipoArma; titulo: string }[] = [
+  { tipo: "pistola", titulo: "Pistolas" },
+  { tipo: "escopeta", titulo: "Escopetas" },
+  { tipo: "subfusil", titulo: "Subfusiles" },
+  { tipo: "fusil_asalto", titulo: "Fusiles de Asalto" },
+  { tipo: "fusil_precision", titulo: "Fusiles de Precisión" },
+  { tipo: "ametralladora", titulo: "Ametralladoras" },
+];
 
 // Las únicas cuatro familias que viven dentro de otra pieza (armadura o
 // arma): a esas les vale el filtro "solo lo instalable ahora".
@@ -434,12 +448,28 @@ export function TiendaTab({
           ))}
 
         {categoria === "armas" &&
-          ARMAS.map((p) => (
-            <Acordeon key={p.id} titulo={p.label} resumen={p.resumen} etiqueta={<Precio coste={p.coste} />}>
-              <DetalleArma p={p} />
-              <AccionSimple pieza={p} onEquipar={onEquipar} />
-            </Acordeon>
-          ))}
+          TIPOS_ARMA.map(({ tipo, titulo }) => {
+            const piezas = ARMAS.filter((p) => p.tipo === tipo);
+            if (piezas.length === 0) return null;
+            return (
+              <div key={tipo} className="flex flex-col gap-2">
+                <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+                  {`// ${titulo} · ${piezas.length}`}
+                </p>
+                {piezas.map((p) => (
+                  <Acordeon
+                    key={p.id}
+                    titulo={p.label}
+                    resumen={p.resumen}
+                    etiqueta={<Precio coste={p.coste} />}
+                  >
+                    <DetalleArma p={p} />
+                    <AccionSimple pieza={p} onEquipar={onEquipar} />
+                  </Acordeon>
+                ))}
+              </div>
+            );
+          })}
 
         {categoria === "mejorasEstandar" && (
           <ListaInstalable
