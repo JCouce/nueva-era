@@ -45,7 +45,7 @@ const CATEGORIAS = [
     titulo: "Armas melee",
     cantidad: ARMAS_MELEE.length - ARMAS_MELEE_KERZUL.length,
   },
-  { id: "kerzul", titulo: "Kerzul", cantidad: ARMAS_MELEE_KERZUL.length },
+  { id: "kerzul", titulo: "Armas Kerzul", cantidad: ARMAS_MELEE_KERZUL.length },
   { id: "mejorasEstandar", titulo: "Mejoras estándar", cantidad: MEJORAS_ESTANDAR.length },
   { id: "subsistemas", titulo: "Subsistemas", cantidad: SUBSISTEMAS.length },
   { id: "mejorasArma", titulo: "Mejoras de arma", cantidad: MEJORAS_ARMA.length },
