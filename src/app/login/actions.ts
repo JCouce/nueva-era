@@ -18,8 +18,14 @@ export async function loginAction(
   });
   if (!parsed.success) return { error: "Email o contraseña no válidos" };
 
+  const user = await prisma.user.findUnique({
+    where: { email: parsed.data.email },
+    select: { role: true },
+  });
+  const redirectTo = user?.role === "MASTER" ? "/master" : "/characters";
+
   try {
-    await signIn("credentials", { ...parsed.data, redirectTo: "/characters" });
+    await signIn("credentials", { ...parsed.data, redirectTo });
   } catch (error) {
     // El redirect de éxito NO es AuthError: se repropaga abajo.
     if (error instanceof AuthError) return { error: "Credenciales incorrectas" };

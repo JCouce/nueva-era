@@ -11,7 +11,10 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const isOnLogin = nextUrl.pathname.startsWith("/login");
       if (isOnLogin) {
-        if (isLoggedIn) return Response.redirect(new URL("/characters", nextUrl));
+        if (isLoggedIn) {
+          const home = auth.user.role === "MASTER" ? "/master" : "/characters";
+          return Response.redirect(new URL(home, nextUrl));
+        }
         return true;
       }
       return isLoggedIn;
