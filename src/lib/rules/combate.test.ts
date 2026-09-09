@@ -13,18 +13,23 @@ function opcion(c: CondicionTirada | undefined, id: string) {
 }
 
 describe("sin nada equipado", () => {
-  test("solo aparecen las tres de pelea", () => {
-    const tiradas = tiradasDeAtaque(defaultSheet());
-    const labels = tiradas.map((t) => t.label);
-    assert.deepEqual(labels, [
-      "Golpear con Puñetazo (o Sutil)",
-      "Golpear con Patada (o Sutil)",
-      "Golpear con Codazo o Rodillazo (o Sutil)",
-    ]);
+  test("no aparece ningún ataque, ni siquiera puñetazo o patada", () => {
+    assert.deepEqual(tiradasDeAtaque(defaultSheet()), []);
+  });
+});
+
+describe("pelea (puñetazo, patada, codazo)", () => {
+  test("solo aparece si el jugador la equipa, como cualquier otra arma", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "p1", catalogoId: "pelea_punetazo" });
+    const labels = tiradasDeAtaque(sheet).map((t) => t.label);
+    assert.deepEqual(labels, ["Golpear con Puñetazo (o Sutil)"]);
   });
 
   test("el puñetazo tiene dos modos y su condición de modo", () => {
-    const [punetazo] = tiradasDeAtaque(defaultSheet());
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "p1", catalogoId: "pelea_punetazo" });
+    const [punetazo] = tiradasDeAtaque(sheet);
     const modo = punetazo.condiciones?.find((c) => c.id === "modo");
     assert.equal(opcion(modo, "0"), 0); // Simple
     assert.equal(opcion(modo, "1"), 0); // Estándar

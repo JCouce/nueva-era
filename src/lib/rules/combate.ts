@@ -3,17 +3,13 @@
 // pieza que faltaba para que el equipo alimente de verdad la chuleta de
 // tiradas (ver docs/handoff.md §6, punto 4).
 //
-// Puños y patadas (PELEA) están siempre disponibles sin equipar nada — el
-// documento es explícito en eso — así que se generan igual que un arma
-// equipada, con una instancia estable (su propio id de catálogo).
 import type { Sheet } from "./sheet";
-import type { PiezaEquipada } from "./equipo";
 import {
   equipoPorId,
   type ArmaFuego,
   type TipoArma,
 } from "../catalog/equipo";
-import { PELEA, type ArmaMelee } from "../catalog/armasMelee";
+import type { ArmaMelee } from "../catalog/armasMelee";
 import { MUNICION_GRANADA } from "../catalog/municion";
 import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condiciones";
 import type { Tirada } from "./tiradas";
@@ -213,9 +209,10 @@ function tiradaDeArmaMelee(arma: ArmaMelee, instanciaId: string): Tirada {
 }
 
 // Todas las filas de la categoría "Ataques": una por arma de fuego
-// equipada, una por arma melee equipada, y las tres de pelea (siempre
-// disponibles). El orden es estable: fuego primero, luego melee equipado,
-// luego pelea — así lo más probable que se vaya a tirar queda arriba.
+// equipada y una por arma melee equipada — incluida Pelea (Puñetazo,
+// Patada, Codazo o Rodillazo), que ya no se añade sola: si el jugador la
+// quiere en Tiradas, la equipa desde la Tienda como cualquier otra arma
+// (aparece con "no se compra" en vez de precio, pero es el mismo flujo).
 export function tiradasDeAtaque(sheet: Sheet): Tirada[] {
   const tiradas: Tirada[] = [];
 
@@ -227,17 +224,9 @@ export function tiradasDeAtaque(sheet: Sheet): Tirada[] {
     if (lanzagranadas) tiradas.push(lanzagranadas);
   }
 
-  const meleeEquipada: { pieza: PiezaEquipada; cat: ArmaMelee }[] = [];
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
-    if (cat?.familia === "armaMelee") meleeEquipada.push({ pieza, cat });
-  }
-  for (const { pieza, cat } of meleeEquipada) {
-    tiradas.push(tiradaDeArmaMelee(cat, pieza.instanciaId));
-  }
-
-  for (const cat of PELEA) {
-    tiradas.push(tiradaDeArmaMelee(cat, cat.id));
+    if (cat?.familia === "armaMelee") tiradas.push(tiradaDeArmaMelee(cat, pieza.instanciaId));
   }
 
   return tiradas;
