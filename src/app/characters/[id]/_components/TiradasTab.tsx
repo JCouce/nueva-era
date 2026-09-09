@@ -216,11 +216,12 @@ function FilaTirada({
                 {nombreHabilidad} {mod.habilidad}
               </>
             )}
+            {tirada.ajusteFijo ? ` ${signo(tirada.ajusteFijo)}` : ""}
           </span>
         </div>
 
         <span className="font-mono text-2xl tabular-nums text-info">
-          {signo(mod.total)}
+          {signo(mod.total + (tirada.ajusteFijo ?? 0))}
         </span>
 
         <button
@@ -275,7 +276,7 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
 
   const abrir = (t: Tirada, enEspecialidad: boolean) => {
     const mod = modificadorTirada(sheet, t, enEspecialidad);
-    setModal({ tirada: t, modBase: mod.total });
+    setModal({ tirada: t, modBase: mod.total + (t.ajusteFijo ?? 0) });
   };
 
   const tirar = ({

@@ -41,6 +41,11 @@ export type Tirada = {
   // calculadas al vuelo desde el equipo (ver combate.ts); las demás las
   // declaran aquí mismo, fijas.
   condiciones?: CondicionTirada[];
+  // Ajuste fijo de la tirada, sin elección del jugador de por medio — a
+  // diferencia de las condiciones. Lo usa el Lanzagranadas Integrado: su
+  // texto fija una dificultad -2 pase lo que pase, no depende de tramo ni de
+  // munición (ver combate.ts).
+  ajusteFijo?: number;
   // Solo las tiradas de ataque generadas por combate.ts: qué modo de disparo
   // o de golpe hay detrás de cada opción de la condición "modo" (si la
   // tirada tiene más de un modo), para poder encadenar la tirada de daño con

@@ -123,6 +123,53 @@ describe("mejoras que afectan a la distancia", () => {
   });
 });
 
+describe("lanzagranadas integrado", () => {
+  test("el -1 por el peso se suma a los cuatro tramos del arma que lo lleva", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
+    sheet = equipar(sheet, {
+      instanciaId: "lanza1",
+      catalogoId: "lanzagranadas_integrado",
+      nivel: 1,
+      instaladoEnId: "arma1",
+    });
+    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
+    const tramo = fila.condiciones?.find((c) => c.id === "tramo");
+    assert.equal(opcion(tramo, "bocajarro"), 3); // 4 - 1
+    assert.equal(opcion(tramo, "corta"), 1); // 2 - 1
+    assert.equal(opcion(tramo, "media"), -1); // 0 - 1
+    assert.equal(opcion(tramo, "larga"), -3); // -2 - 1
+  });
+
+  test("aparece como tirada aparte, con dificultad fija -2 y selector de granada", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
+    sheet = equipar(sheet, {
+      instanciaId: "lanza1",
+      catalogoId: "lanzagranadas_integrado",
+      nivel: 1,
+      instaladoEnId: "arma1",
+    });
+    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Lanzagranadas (Impetus)")!;
+    assert.ok(fila);
+    assert.equal(fila.bloqueada, undefined);
+    assert.equal(fila.ajusteFijo, -2);
+    const modo = fila.condiciones?.find((c) => c.id === "modo");
+    assert.ok(modo && modo.tipo === "opcion");
+    assert.equal(modo.opciones.length, 14);
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "granada_plasma")?.danio, 16);
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "granada_plasma")?.categoriaDanio, "Plasma");
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "granada_aturdidora")?.categoriaDanio, "Efecto (sin daño directo)");
+  });
+
+  test("sin lanzagranadas instalado, no aparece esa fila", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
+    const labels = tiradasDeAtaque(sheet).map((t) => t.label);
+    assert.ok(!labels.some((l) => l.startsWith("Lanzagranadas")));
+  });
+});
+
 describe("arma melee equipada", () => {
   test("genera 'Golpear con...' con la fórmula de daño, no un número", () => {
     let sheet = defaultSheet();

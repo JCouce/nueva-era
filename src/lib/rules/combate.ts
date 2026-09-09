@@ -14,6 +14,7 @@ import {
   type TipoArma,
 } from "../catalog/equipo";
 import { PELEA, type ArmaMelee } from "../catalog/armasMelee";
+import { MUNICION_GRANADA } from "../catalog/municion";
 import type { CondicionTirada, TramoDistancia } from "./condiciones";
 import type { Tirada } from "./tiradas";
 
@@ -62,10 +63,15 @@ function condicionTramo(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Con
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat || cat.familia !== "mejoraArma") continue;
     const nivel = cat.niveles.find((n) => n.nivel === pieza.nivel);
-    if (!nivel?.ajusteTramo) continue;
+    if (!nivel) continue;
     for (const tramo of TRAMOS) {
-      const delta = nivel.ajusteTramo[tramo];
+      const delta = nivel.ajusteTramo?.[tramo];
       if (delta !== undefined) ajuste[tramo] += delta;
+    }
+    // Incondicional: se suma a los cuatro tramos por igual (el -1 del
+    // Lanzagranadas Integrado por el peso, por ejemplo).
+    if (nivel.ajusteAtaque) {
+      for (const tramo of TRAMOS) ajuste[tramo] += nivel.ajusteAtaque;
     }
   }
   return {
@@ -133,6 +139,38 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
   };
 }
 
+// El Lanzagranadas Integrado no es una condición de la tirada del arma que
+// lo lleva (ver ajusteAtaque): es un perfil de disparo propio, con su propia
+// dificultad fija (-2, sea cual sea la granada) y su daño según la munición
+// elegida — igual que un modo de disparo, salvo que aquí hay 13 en vez de 2.
+function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Tirada | null {
+  const tieneLanzagranadas = sheet.equipo.some(
+    (p) => p.instaladoEnId === instanciaId && p.catalogoId === "lanzagranadas_integrado",
+  );
+  if (!tieneLanzagranadas) return null;
+
+  const modo = condicionModo(MUNICION_GRANADA.map((m) => ({ id: m.id, etiqueta: m.label, dificultad: 0 })));
+
+  return {
+    id: `lanzagranadas_${instanciaId}`,
+    label: `Lanzagranadas (${arma.label})`,
+    grupo: "Ataques",
+    aplicado: "reflejos",
+    habilidad: "combate_distancia",
+    nota: "Acción estándar · cargador 1 · alcance 200 m. Área y efecto según la granada elegida (docs/equipamiento.md).",
+    ajusteFijo: -2,
+    condiciones: modo ? [modo] : [],
+    ataque: {
+      modos: MUNICION_GRANADA.map((m) => ({
+        id: m.id,
+        danio: m.danio,
+        formulaDanio: null,
+        categoriaDanio: m.categoriaDanio ?? "Efecto (sin daño directo)",
+      })),
+    },
+  };
+}
+
 function tiradaDeArmaMelee(arma: ArmaMelee, instanciaId: string): Tirada {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
   const modo = condicionModo(modosConId);
@@ -167,7 +205,10 @@ export function tiradasDeAtaque(sheet: Sheet): Tirada[] {
 
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
-    if (cat?.familia === "arma") tiradas.push(tiradaDeArmaFuego(sheet, cat, pieza.instanciaId));
+    if (cat?.familia !== "arma") continue;
+    tiradas.push(tiradaDeArmaFuego(sheet, cat, pieza.instanciaId));
+    const lanzagranadas = tiradaDeLanzagranadas(sheet, cat, pieza.instanciaId);
+    if (lanzagranadas) tiradas.push(lanzagranadas);
   }
 
   const meleeEquipada: { pieza: PiezaEquipada; cat: ArmaMelee }[] = [];

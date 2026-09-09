@@ -1204,6 +1204,11 @@ export type NivelModulo = {
   // pintarse como control aparte — ver combate.ts. Las claves ausentes no
   // tocan ese tramo.
   ajusteTramo?: Partial<Record<TramoDistancia, number>>;
+  // Igual que ajusteTramo, pero incondicional: se suma a los cuatro tramos
+  // por igual mientras la pieza está instalada (el -1 del Lanzagranadas
+  // Integrado por el peso, por ejemplo). No es una condición porque no hay
+  // elección del jugador de por medio.
+  ajusteAtaque?: number;
 };
 
 export type MejoraEstandar = {
@@ -2351,10 +2356,12 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
           "Lanzagranadas acoplado: acción estándar, dificultad -2, daño según munición, cargador " +
             "1, alcance 200 m, área y efecto según la munición empleada.",
         ],
-        // El -1 es al ataque de ESTA arma en concreto, y el lanzagranadas es
-        // un perfil de disparo aparte (con su propia munición, aparcada): no
-        // hay un modificador de personaje limpio que sacar de aquí.
+        // El -1 es al ataque de ESTA arma en concreto: se mecaniza como
+        // ajusteAtaque. El lanzagranadas en sí es un perfil de disparo
+        // aparte (con su propia munición) que combate.ts declara bloqueado:
+        // no hay tabla de granadas en el catálogo con la que dar su daño.
         modificadores: [],
+        ajusteAtaque: -1,
       },
     ],
   },
