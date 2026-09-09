@@ -32,6 +32,11 @@ export function AppHeader({
             )}
           </span>
         )}
+        {role === "MASTER" && (
+          <Link href="/master" className="text-sm text-zinc-400 underline-offset-4 hover:underline">
+            Panel
+          </Link>
+        )}
         <form action={logoutAction}>
           <button
             type="submit"
