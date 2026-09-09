@@ -73,3 +73,27 @@ export function valorCondiciones(
     return total + n * c.valorPorUnidad;
   }, 0);
 }
+
+// Una línea por condición, con el valor que aporta AHORA MISMO según el
+// estado — es el desglose que se pinta en el modal para que no haya ningún
+// número fantasma: todo lo que suma o resta tiene su etiqueta al lado.
+export function desgloseCondiciones(
+  condiciones: CondicionTirada[],
+  estado: EstadoCondiciones,
+): { etiqueta: string; valor: number }[] {
+  return condiciones.map((c) => {
+    if (c.tipo === "toggle") {
+      const activo = Boolean(estado[c.id]);
+      return {
+        etiqueta: activo ? c.etiqueta : `${c.etiqueta} (sin activar)`,
+        valor: activo ? c.valorActivo : (c.valorInactivo ?? 0),
+      };
+    }
+    if (c.tipo === "opcion") {
+      const elegida = c.opciones.find((o) => o.id === estado[c.id]);
+      return { etiqueta: `${c.etiqueta}: ${elegida?.etiqueta ?? "—"}`, valor: elegida?.valor ?? 0 };
+    }
+    const n = typeof estado[c.id] === "number" ? (estado[c.id] as number) : c.porDefecto;
+    return { etiqueta: `${c.etiqueta} ×${n}`, valor: n * c.valorPorUnidad };
+  });
+}

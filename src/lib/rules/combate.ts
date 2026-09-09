@@ -68,11 +68,10 @@ function condicionTramo(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Con
       const delta = nivel.ajusteTramo?.[tramo];
       if (delta !== undefined) ajuste[tramo] += delta;
     }
-    // Incondicional: se suma a los cuatro tramos por igual (el -1 del
-    // Lanzagranadas Integrado por el peso, por ejemplo).
-    if (nivel.ajusteAtaque) {
-      for (const tramo of TRAMOS) ajuste[tramo] += nivel.ajusteAtaque;
-    }
+    // `ajusteAtaque` (el -1 del Lanzagranadas Integrado por el peso) NO se
+    // funde aquí a propósito: es una razón distinta de la distancia, y
+    // fundirlo en cada tramo lo dejaría sin etiqueta. Sale como su propia
+    // línea del desglose — ver ajustesFijosDeMejoras.
   }
   return {
     id: "tramo",
@@ -102,6 +101,22 @@ function condicionesDeMejoras(sheet: Sheet, instanciaId: string): CondicionTirad
   return condiciones;
 }
 
+// Ajustes incondicionales de las mejoras instaladas en esta arma en
+// concreto (el -1 del Lanzagranadas Integrado por el peso, y lo que llegue
+// después): cada uno con la etiqueta de la pieza que lo trae, para que el
+// desglose del modal no tenga ningún número sin firmar.
+function ajustesFijosDeMejoras(sheet: Sheet, instanciaId: string): { valor: number; fuente: string }[] {
+  const ajustes: { valor: number; fuente: string }[] = [];
+  for (const pieza of sheet.equipo) {
+    if (pieza.instaladoEnId !== instanciaId) continue;
+    const cat = equipoPorId(pieza.catalogoId);
+    if (!cat || cat.familia !== "mejoraArma") continue;
+    const nivel = cat.niveles.find((n) => n.nivel === pieza.nivel);
+    if (nivel?.ajusteAtaque) ajustes.push({ valor: nivel.ajusteAtaque, fuente: cat.label });
+  }
+  return ajustes;
+}
+
 function condicionModo(modos: { id: string; etiqueta: string; dificultad: number }[]): CondicionTirada | null {
   if (modos.length <= 1) return null;
   return {
@@ -128,6 +143,7 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
     habilidad: "combate_distancia",
     nota: arma.especial ?? undefined,
     condiciones,
+    ajustesFijos: ajustesFijosDeMejoras(sheet, instanciaId),
     ataque: {
       modos: modosConId.map((m) => ({
         id: m.id,
@@ -158,7 +174,7 @@ function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: strin
     aplicado: "reflejos",
     habilidad: "combate_distancia",
     nota: "Acción estándar · cargador 1 · alcance 200 m. Área y efecto según la granada elegida (docs/equipamiento.md).",
-    ajusteFijo: -2,
+    ajustesFijos: [{ valor: -2, fuente: "Lanzagranadas acoplado" }],
     condiciones: modo ? [modo] : [],
     ataque: {
       modos: MUNICION_GRANADA.map((m) => ({

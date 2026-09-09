@@ -25,6 +25,10 @@ function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
 }
 
+function sumaAjustesFijos(tirada: Tirada): number {
+  return (tirada.ajustesFijos ?? []).reduce((t, a) => t + a.valor, 0);
+}
+
 // Info de daño de la tirada de ataque que la generó: null si la tirada no es
 // un ataque. `base` es null en melee — el daño ahí es una fórmula sobre un
 // atributo ("Fue+2"), no un número, así que no hay botón de "tirar daño"
@@ -216,12 +220,14 @@ function FilaTirada({
                 {nombreHabilidad} {mod.habilidad}
               </>
             )}
-            {tirada.ajusteFijo ? ` ${signo(tirada.ajusteFijo)}` : ""}
+            {(tirada.ajustesFijos ?? []).map((a, i) => (
+              <span key={i}> {signo(a.valor)}</span>
+            ))}
           </span>
         </div>
 
         <span className="font-mono text-2xl tabular-nums text-info">
-          {signo(mod.total + (tirada.ajusteFijo ?? 0))}
+          {signo(mod.total + sumaAjustesFijos(tirada))}
         </span>
 
         <button
@@ -270,13 +276,26 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
   const [memoria, setMemoria] = useState<
     Record<string, { dificultad: number | null; circunstancial: number }>
   >({});
-  const [modal, setModal] = useState<{ tirada: Tirada; modBase: number } | null>(null);
+  const [modal, setModal] = useState<{
+    tirada: Tirada;
+    modBase: number;
+    desgloseBase: { etiqueta: string; valor: number }[];
+  } | null>(null);
 
   const ataques = tiradasDeAtaque(sheet);
 
   const abrir = (t: Tirada, enEspecialidad: boolean) => {
     const mod = modificadorTirada(sheet, t, enEspecialidad);
-    setModal({ tirada: t, modBase: mod.total + (t.ajusteFijo ?? 0) });
+    const nombreAplicado = APLICADOS.find((a) => a.id === t.aplicado)!;
+    const nombreHabilidad = t.habilidad ? HABILIDADES.find((h) => h.id === t.habilidad)!.label : null;
+    const desgloseBase = [
+      { etiqueta: nombreAplicado.label, valor: mod.aplicado },
+      ...(nombreHabilidad
+        ? [{ etiqueta: `${nombreHabilidad}${enEspecialidad ? " (especialidad)" : ""}`, valor: mod.habilidad ?? 0 }]
+        : []),
+      ...(t.ajustesFijos ?? []).map((a) => ({ etiqueta: a.fuente, valor: a.valor })),
+    ];
+    setModal({ tirada: t, modBase: mod.total + sumaAjustesFijos(t), desgloseBase });
   };
 
   const tirar = ({
@@ -392,6 +411,7 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
               : undefined
           }
           modBase={modal.modBase}
+          desgloseBase={modal.desgloseBase}
           condiciones={modal.tirada.condiciones ?? []}
           dificultadInicial={memoria[modal.tirada.id]?.dificultad ?? 7}
           circunstancialInicial={memoria[modal.tirada.id]?.circunstancial ?? 0}

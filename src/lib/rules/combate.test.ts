@@ -124,7 +124,7 @@ describe("mejoras que afectan a la distancia", () => {
 });
 
 describe("lanzagranadas integrado", () => {
-  test("el -1 por el peso se suma a los cuatro tramos del arma que lo lleva", () => {
+  test("el -1 por el peso no toca el tramo: sale como su propia línea con fuente", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
     sheet = equipar(sheet, {
@@ -135,10 +135,11 @@ describe("lanzagranadas integrado", () => {
     });
     const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
     const tramo = fila.condiciones?.find((c) => c.id === "tramo");
-    assert.equal(opcion(tramo, "bocajarro"), 3); // 4 - 1
-    assert.equal(opcion(tramo, "corta"), 1); // 2 - 1
-    assert.equal(opcion(tramo, "media"), -1); // 0 - 1
-    assert.equal(opcion(tramo, "larga"), -3); // -2 - 1
+    assert.equal(opcion(tramo, "bocajarro"), 4);
+    assert.equal(opcion(tramo, "corta"), 2);
+    assert.equal(opcion(tramo, "media"), 0);
+    assert.equal(opcion(tramo, "larga"), -2);
+    assert.deepEqual(fila.ajustesFijos, [{ valor: -1, fuente: "Lanzagranadas Integrado" }]);
   });
 
   test("aparece como tirada aparte, con dificultad fija -2 y selector de granada", () => {
@@ -153,7 +154,7 @@ describe("lanzagranadas integrado", () => {
     const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Lanzagranadas (Impetus)")!;
     assert.ok(fila);
     assert.equal(fila.bloqueada, undefined);
-    assert.equal(fila.ajusteFijo, -2);
+    assert.deepEqual(fila.ajustesFijos, [{ valor: -2, fuente: "Lanzagranadas acoplado" }]);
     const modo = fila.condiciones?.find((c) => c.id === "modo");
     assert.ok(modo && modo.tipo === "opcion");
     assert.equal(modo.opciones.length, 14);

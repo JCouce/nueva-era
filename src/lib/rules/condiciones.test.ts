@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { estadoInicial, valorCondiciones, type CondicionTirada } from "./condiciones";
+import { estadoInicial, valorCondiciones, desgloseCondiciones, type CondicionTirada } from "./condiciones";
 
 const TOGGLE: CondicionTirada = {
   id: "apoyado",
@@ -74,5 +74,38 @@ describe("valor de las condiciones", () => {
   test("varias condiciones se suman", () => {
     const estado = { apoyado: true, tramo: "corta", atacantes: 2 };
     assert.equal(valorCondiciones([TOGGLE, OPCION, CONTADOR], estado), 1 + 2 - 2);
+  });
+});
+
+describe("desglose de las condiciones", () => {
+  test("un toggle inactivo se marca 'sin activar'", () => {
+    const [linea] = desgloseCondiciones([TOGGLE], { apoyado: false });
+    assert.match(linea.etiqueta, /sin activar/);
+    assert.equal(linea.valor, -1);
+  });
+
+  test("una opción muestra la elegida en la etiqueta", () => {
+    const [linea] = desgloseCondiciones([OPCION], { tramo: "larga" });
+    assert.equal(linea.etiqueta, "Distancia: Larga");
+    assert.equal(linea.valor, -2);
+  });
+
+  test("un contador muestra las unidades en la etiqueta", () => {
+    const [linea] = desgloseCondiciones([CONTADOR], { atacantes: 3 });
+    assert.equal(linea.etiqueta, "Atacantes adicionales ×3");
+    assert.equal(linea.valor, -3);
+  });
+
+  test("una línea por condición, en el mismo orden", () => {
+    const lineas = desgloseCondiciones([TOGGLE, OPCION, CONTADOR], {
+      apoyado: true,
+      tramo: "corta",
+      atacantes: 1,
+    });
+    assert.equal(lineas.length, 3);
+    assert.deepEqual(
+      lineas.map((l) => l.valor),
+      [1, 2, -1],
+    );
   });
 });

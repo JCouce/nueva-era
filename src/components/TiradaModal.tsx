@@ -5,6 +5,7 @@ import {
   DIFICULTADES,
   estadoInicial,
   valorCondiciones,
+  desgloseCondiciones,
   type CondicionTirada,
   type EstadoCondiciones,
 } from "@/lib/rules";
@@ -105,10 +106,26 @@ function ControlCondicion({
   );
 }
 
+// Una línea del desglose: etiqueta a la izquierda, valor con signo a la
+// derecha. Nada suma en silencio — cada número que entra en el total tiene
+// aquí su fuente, para que abrir el modal sea la fuente única de la verdad
+// de lo que se va a tirar.
+function LineaDesglose({ etiqueta, valor }: { etiqueta: string; valor: number }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 font-mono text-[11px]">
+      <span className="truncate text-muted">{etiqueta}</span>
+      <span className={`shrink-0 tabular-nums ${valor > 0 ? "text-info" : valor < 0 ? "text-danger" : "text-muted"}`}>
+        {signo(valor)}
+      </span>
+    </div>
+  );
+}
+
 export function TiradaModal({
   titulo,
   subtitulo,
   modBase,
+  desgloseBase,
   condiciones,
   dificultadInicial,
   circunstancialInicial,
@@ -118,6 +135,7 @@ export function TiradaModal({
   titulo: string;
   subtitulo?: string;
   modBase: number;
+  desgloseBase: { etiqueta: string; valor: number }[];
   condiciones: CondicionTirada[];
   dificultadInicial: number | null;
   circunstancialInicial: number;
@@ -263,10 +281,31 @@ export function TiradaModal({
             </div>
           </div>
 
+          <div className="mt-4 flex flex-col gap-1 border-t border-border pt-3">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+              {"// Desglose"}
+            </p>
+            {desgloseBase.map((f, i) => (
+              <LineaDesglose key={`base-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
+            ))}
+            {desgloseCondiciones(condiciones, estado).map((f, i) => (
+              <LineaDesglose key={`cond-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
+            ))}
+            {circunstancial !== 0 && (
+              <LineaDesglose etiqueta="Modificador circunstancial" valor={circunstancial} />
+            )}
+            <div className="mt-1 flex items-baseline justify-between border-t border-border pt-1.5">
+              <span className="font-mono text-xs uppercase text-foreground">Total</span>
+              <span className="font-mono text-lg font-bold tabular-nums text-accent">
+                {signo(totalPrevisto)}
+              </span>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={() => onTirar({ estadoCondiciones: estado, dificultad, circunstancial })}
-            className="clip-chamfer-sm mt-4 w-full border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98]"
+            className="clip-chamfer-sm mt-3 w-full border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98]"
           >
             Tirar ({signo(totalPrevisto)})
           </button>
