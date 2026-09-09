@@ -77,12 +77,6 @@ function TabButton({
   );
 }
 
-const STATUS_LABEL: Record<SaveStatus, string> = {
-  idle: "",
-  saving: "guardando…",
-  saved: "guardado ✓",
-  error: "error al guardar",
-};
 
 function clampInt(n: number, min: number, max: number) {
   if (!Number.isFinite(n)) return min;
@@ -227,21 +221,22 @@ export function CharacterSheet({
         </span>
       </div>
 
+      {/* El guardado es automático y casi siempre invisible a propósito —
+          "guardando…"/"guardado ✓" permanente en la fila de tabs sobraba
+          más de lo que ayudaba. Solo se avisa cuando de verdad hace falta
+          hacer algo: el guardado ha fallado. */}
+      {status === "error" && (
+        <p className="font-mono text-[11px] uppercase tracking-wide text-danger">
+          Error al guardar — vuelve a intentarlo
+        </p>
+      )}
+
       <div className="flex flex-col gap-1 border-b border-border">
-        <div className="flex items-end justify-between">
-          <nav className="flex flex-wrap gap-1">
-            {TABS_FICHA.map((t) => (
-              <TabButton key={t.id} tab={t} active={active === t.id} onClick={setActive} />
-            ))}
-          </nav>
-          <span
-            className={`pr-1 font-mono text-[11px] uppercase tracking-wide ${
-              status === "error" ? "text-danger" : "text-muted"
-            }`}
-          >
-            {STATUS_LABEL[status]}
-          </span>
-        </div>
+        <nav className="flex flex-wrap gap-1">
+          {TABS_FICHA.map((t) => (
+            <TabButton key={t.id} tab={t} active={active === t.id} onClick={setActive} />
+          ))}
+        </nav>
 
         <div className="flex items-end justify-between gap-2">
           <nav className="flex flex-wrap gap-1">
