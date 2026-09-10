@@ -490,7 +490,12 @@ export function TiendaTab({
                     key={p.id}
                     titulo={p.label}
                     resumen={p.resumen}
-                    etiqueta={<Precio coste={p.coste} />}
+                    etiqueta={
+                      <div className="flex flex-col items-end gap-1">
+                        <BadgeRareza rareza={p.rareza} />
+                        <Precio coste={p.coste} />
+                      </div>
+                    }
                   >
                     <DetalleArma p={p} />
                     <AccionSimple pieza={p} creditos={creditos} onEquipar={onEquipar} />
@@ -542,7 +547,17 @@ export function TiendaTab({
 
         {categoria === "melee" &&
           ARMAS_MELEE.filter((p) => !ARMAS_MELEE_KERZUL.includes(p)).map((p) => (
-            <Acordeon key={p.id} titulo={p.label} resumen={p.resumen} etiqueta={<Precio coste={p.coste} />}>
+            <Acordeon
+              key={p.id}
+              titulo={p.label}
+              resumen={p.resumen}
+              etiqueta={
+                <div className="flex flex-col items-end gap-1">
+                  <BadgeRareza rareza={p.rareza} />
+                  <Precio coste={p.coste} />
+                </div>
+              }
+            >
               <DetalleArmaMelee p={p} />
               <AccionSimple pieza={p} creditos={creditos} onEquipar={onEquipar} />
             </Acordeon>
@@ -550,7 +565,17 @@ export function TiendaTab({
 
         {categoria === "kerzul" &&
           ARMAS_MELEE_KERZUL.map((p) => (
-            <Acordeon key={p.id} titulo={p.label} resumen={p.resumen} etiqueta={<Precio coste={p.coste} />}>
+            <Acordeon
+              key={p.id}
+              titulo={p.label}
+              resumen={p.resumen}
+              etiqueta={
+                <div className="flex flex-col items-end gap-1">
+                  <BadgeRareza rareza={p.rareza} />
+                  <Precio coste={p.coste} />
+                </div>
+              }
+            >
               <DetalleArmaMelee p={p} />
               <AccionSimple pieza={p} creditos={creditos} onEquipar={onEquipar} />
             </Acordeon>
