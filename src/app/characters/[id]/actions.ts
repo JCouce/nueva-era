@@ -14,6 +14,8 @@ import {
   resetBuild,
   equipar,
   desequipar,
+  costeDePieza,
+  costeDeRetirar,
   piezaEquipadaSchema,
   type AtributoId,
   type HabilidadId,
@@ -32,7 +34,7 @@ import {
 } from "@/lib/rules";
 
 export type SaveResult =
-  | { ok: true; sheet: Sheet; xp?: number }
+  | { ok: true; sheet: Sheet; xp?: number; creditos?: number }
   | { ok: false; error: string };
 
 type Editable = {
@@ -40,6 +42,7 @@ type Editable = {
   aprobada: boolean;
   snapshot: AprobacionSnapshot | null;
   xp: number;
+  creditos: number;
 };
 
 // Carga la ficha comprobando permisos. Base de todas las acciones de autosave.
@@ -60,6 +63,7 @@ async function loadEditable(characterId: string): Promise<Editable | { error: st
     aprobada: character.status === "APPROVED",
     snapshot: parseSnapshot(character.approvedSnapshot),
     xp: character.xp,
+    creditos: character.creditos,
   };
 }
 
@@ -175,10 +179,12 @@ export async function setPrioridadAction(
     });
     // El creditos que se acaba de fijar lo lee la tira de máster de esta
     // misma página (server component) y el panel /master — sin esto se
-    // quedan con el valor viejo hasta un F5.
+    // quedan con el valor viejo hasta un F5. Por el mismo motivo va también
+    // en la respuesta: es lo que CharacterSheet reconcilia para que la
+    // Tienda no siga mostrando el saldo de antes de elegir la letra.
     revalidatePath(`/characters/${characterId}`);
     revalidatePath("/master");
-    return { ok: true, sheet };
+    return { ok: true, sheet, creditos };
   }
   return persist(characterId, sheet);
 }
@@ -203,6 +209,11 @@ export async function removeEspecialidadAction(
   return persist(characterId, removeEspecialidad(ctx.sheet, habilidadId, nombre));
 }
 
+// Comprar = equipar: no hay inventario aparte (ver lib/rules/equipo.ts), así
+// que el coste se cobra en el mismo golpe que se añade la pieza. El precio
+// se recalcula aquí con el catálogo — no se confía en lo que mande el
+// cliente — y si no llega a cubrirlo, se rechaza sin tocar ni la ficha ni
+// los créditos.
 export async function equiparAction(
   characterId: string,
   pieza: PiezaEquipada,
@@ -213,16 +224,37 @@ export async function equiparAction(
   if (!parsed.success) return { ok: false, error: "Pieza de equipo inválida" };
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, equipar(ctx.sheet, parsed.data));
+
+  const coste = costeDePieza(parsed.data);
+  if (coste > ctx.creditos) return { ok: false, error: "No tienes créditos suficientes" };
+
+  const sheet = equipar(ctx.sheet, parsed.data);
+  if (sheet === ctx.sheet) return { ok: false, error: "Pieza de equipo inválida" };
+
+  const creditos = ctx.creditos - coste;
+  await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, creditos } });
+  revalidatePath(`/characters/${characterId}`);
+  revalidatePath("/master");
+  return { ok: true, sheet, creditos };
 }
 
+// Desequipar devuelve el coste íntegro de lo retirado (decisión del usuario,
+// 2026-09-10) — incluida cualquier mejora o subsistema que colgara de la
+// pieza, porque desequipar() se los lleva por delante en el mismo golpe.
 export async function desequiparAction(
   characterId: string,
   instanciaId: string,
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, desequipar(ctx.sheet, instanciaId));
+
+  const refund = costeDeRetirar(ctx.sheet, instanciaId);
+  const sheet = desequipar(ctx.sheet, instanciaId);
+  const creditos = ctx.creditos + refund;
+  await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, creditos } });
+  revalidatePath(`/characters/${characterId}`);
+  revalidatePath("/master");
+  return { ok: true, sheet, creditos };
 }
 
 // Devuelve atributos y habilidades a cero. La identidad se conserva.

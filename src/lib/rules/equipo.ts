@@ -196,6 +196,32 @@ export function desequipar(sheet: Sheet, instanciaId: string): Sheet {
   };
 }
 
+// Precio de una pieza equipada, para la Tienda con créditos (docs/handoff.md
+// §6). Armas/armaduras/melee cotizan por el catálogo tal cual; las
+// instalables (mejora estándar, subsistema, mejora de arma, movimiento)
+// cotizan por el nivel elegido — el nivel N ya incluye lo del N-1 (S9), así
+// que el coste de la tabla para ese nivel es el precio final, no se suma con
+// niveles inferiores. Sin entrada en el catálogo o sin coste (Pelea, a mano
+// vacía) cuesta 0.
+export function costeDePieza(pieza: PiezaEquipada): number {
+  const cat = equipoPorId(pieza.catalogoId);
+  if (!cat) return 0;
+  if (cat.familia === "armadura" || cat.familia === "arma" || cat.familia === "armaMelee") {
+    return cat.coste ?? 0;
+  }
+  return cat.niveles.find((n) => n.nivel === pieza.nivel)?.coste ?? 0;
+}
+
+// Cuánto se devuelve al desequipar `instanciaId`: la pieza en sí, más todo
+// lo que llevara instalado dentro, porque desequipar() se lo lleva por
+// delante en el mismo golpe. Decisión del usuario (2026-09-10): desequipar
+// devuelve el coste íntegro, no hay medias tintas ni penalización.
+export function costeDeRetirar(sheet: Sheet, instanciaId: string): number {
+  return sheet.equipo
+    .filter((p) => p.instanciaId === instanciaId || p.instaladoEnId === instanciaId)
+    .reduce((total, p) => total + costeDePieza(p), 0);
+}
+
 // Los modificadores que aporta lo que el jugador lleva puesto. Solo llegan
 // aquí las piezas con `modificadores` numéricos sin condición (ver el
 // comentario de cabecera de catalog/equipo.ts); el resto se queda en texto.

@@ -50,6 +50,7 @@ export default async function CharacterPage({
           initialSheet={sheet}
           characterStatus={character.status}
           initialXp={character.xp}
+          initialCreditos={character.creditos}
         />
       </main>
     </>

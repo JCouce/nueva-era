@@ -7,6 +7,8 @@ import {
   validarInstalacion,
   ranurasSubsistemaUsadas,
   modificadoresDeEquipo,
+  costeDePieza,
+  costeDeRetirar,
   type PiezaEquipada,
 } from "./equipo";
 
@@ -363,5 +365,53 @@ describe("modificadores de equipo", () => {
 
   test("sin nada equipado no hay modificadores de equipo", () => {
     assert.deepEqual(modificadoresDeEquipo(defaultSheet()), []);
+  });
+});
+
+describe("costeDePieza", () => {
+  test("armadura o arma: el coste del catálogo tal cual", () => {
+    assert.equal(costeDePieza({ instanciaId: "a1", catalogoId: "armadura_ligera" }), 6000);
+    assert.equal(costeDePieza({ instanciaId: "a2", catalogoId: "pistola_mosquito" }), 100);
+  });
+
+  test("instalable: el coste del nivel elegido, no el del primero", () => {
+    assert.equal(
+      costeDePieza({
+        instanciaId: "c1",
+        catalogoId: "camuflaje_trifasico",
+        nivel: 1,
+        instaladoEnId: "armadura-1",
+      }),
+      8000,
+    );
+  });
+
+  test("arma melee sin coste en el catálogo (a mano vacía) cuesta 0", () => {
+    assert.equal(costeDePieza({ instanciaId: "p1", catalogoId: "pelea_punetazo" }), 0);
+  });
+
+  test("pieza que no existe en el catálogo cuesta 0", () => {
+    assert.equal(costeDePieza({ instanciaId: "x1", catalogoId: "no_existe" }), 0);
+  });
+});
+
+describe("costeDeRetirar", () => {
+  test("una armadura sola devuelve su propio coste", () => {
+    assert.equal(costeDeRetirar(conArmaduraPuesta(), "armadura-1"), 6000);
+  });
+
+  test("una armadura con un subsistema instalado devuelve la suma de ambos", () => {
+    let s = conArmaduraPuesta();
+    s = equipar(s, {
+      instanciaId: "c1",
+      catalogoId: "camuflaje_trifasico",
+      nivel: 1,
+      instaladoEnId: "armadura-1",
+    });
+    assert.equal(costeDeRetirar(s, "armadura-1"), 6000 + 8000);
+  });
+
+  test("una instancia que no existe no devuelve nada", () => {
+    assert.equal(costeDeRetirar(defaultSheet(), "no-existe"), 0);
   });
 });

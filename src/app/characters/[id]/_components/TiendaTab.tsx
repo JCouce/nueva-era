@@ -215,21 +215,35 @@ function BotonEquipar({
   );
 }
 
-// Armas, armaduras y armas melee no necesitan dónde instalarse: un botón y ya.
+// Armas, armaduras y armas melee no necesitan dónde instalarse: un botón y
+// ya — salvo que no llegue el saldo, entonces se bloquea igual que
+// AccionInstalable bloquea por falta de hueco.
 function AccionSimple({
   pieza,
+  creditos,
   onEquipar,
 }: {
   pieza: Armadura | ArmaFuego | ArmaMelee;
+  creditos: number;
   onEquipar: (p: PiezaEquipada) => void;
 }) {
+  const coste = pieza.coste ?? 0;
+  const sinFondos = coste > creditos;
   return (
-    <BotonEquipar
-      className="mt-3"
-      onClick={() => onEquipar({ instanciaId: nuevaInstanciaId(), catalogoId: pieza.id })}
-    >
-      Equipar
-    </BotonEquipar>
+    <>
+      <BotonEquipar
+        className="mt-3"
+        disabled={sinFondos}
+        onClick={() => onEquipar({ instanciaId: nuevaInstanciaId(), catalogoId: pieza.id })}
+      >
+        Equipar
+      </BotonEquipar>
+      {sinFondos && (
+        <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
+          Te faltan {(coste - creditos).toLocaleString("es-ES")} créditos.
+        </p>
+      )}
+    </>
   );
 }
 
@@ -241,10 +255,12 @@ function AccionSimple({
 function AccionInstalable({
   pieza,
   sheet,
+  creditos,
   onEquipar,
 }: {
   pieza: MejoraEstandar | Subsistema | MejoraDeArma | MejoraMovimiento;
   sheet: Sheet;
+  creditos: number;
   onEquipar: (p: PiezaEquipada) => void;
 }) {
   const [nivel, setNivel] = useState(pieza.niveles[0].nivel);
@@ -254,14 +270,19 @@ function AccionInstalable({
     familiaHost === "armadura"
       ? "Necesitas tener puesta una armadura para instalarlo."
       : "Necesitas tener un arma equipada para instalarlo.";
+  const costeNivel = pieza.niveles.find((n) => n.nivel === nivel)?.coste ?? 0;
+  const sinFondos = costeNivel > creditos;
 
   return (
     <div className="mt-3 border-t border-border pt-3">
       {pieza.niveles.length > 1 && (
         <>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
-            {"// Nivel a instalar"}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+              {"// Nivel a instalar"}
+            </p>
+            <Precio coste={costeNivel} />
+          </div>
           <div className="mt-1.5 flex gap-1">
             {pieza.niveles.map((n) => (
               <button
@@ -289,10 +310,15 @@ function AccionInstalable({
           {hosts.map((h) => {
             const cat = equipoPorId(h.catalogoId)!;
             const v = validarInstalacion(sheet, pieza.id, h.instanciaId, nivel);
+            const motivo = !v.ok
+              ? v.motivo
+              : sinFondos
+                ? `Te faltan ${(costeNivel - creditos).toLocaleString("es-ES")} créditos.`
+                : null;
             return (
               <div key={h.instanciaId}>
                 <BotonEquipar
-                  disabled={!v.ok}
+                  disabled={!v.ok || sinFondos}
                   onClick={() =>
                     onEquipar({
                       instanciaId: nuevaInstanciaId(),
@@ -304,9 +330,9 @@ function AccionInstalable({
                 >
                   Equipar en {cat.label}
                 </BotonEquipar>
-                {!v.ok && (
+                {motivo && (
                   <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
-                    {v.motivo}
+                    {motivo}
                   </p>
                 )}
               </div>
@@ -351,11 +377,13 @@ function ListaInstalable({
   piezas,
   mensajeVacio,
   sheet,
+  creditos,
   onEquipar,
 }: {
   piezas: readonly (MejoraEstandar | Subsistema | MejoraDeArma | MejoraMovimiento)[];
   mensajeVacio: string;
   sheet: Sheet;
+  creditos: number;
   onEquipar: (p: PiezaEquipada) => void;
 }) {
   if (piezas.length === 0) {
@@ -366,7 +394,7 @@ function ListaInstalable({
       {piezas.map((p) => (
         <Acordeon key={p.id} titulo={p.label} resumen={p.resumen}>
           <DetalleModulo p={p} />
-          <AccionInstalable pieza={p} sheet={sheet} onEquipar={onEquipar} />
+          <AccionInstalable pieza={p} sheet={sheet} creditos={creditos} onEquipar={onEquipar} />
         </Acordeon>
       ))}
     </>
@@ -375,9 +403,11 @@ function ListaInstalable({
 
 export function TiendaTab({
   sheet,
+  creditos,
   onEquipar,
 }: {
   sheet: Sheet;
+  creditos: number;
   onEquipar: (p: PiezaEquipada) => void;
 }) {
   const [categoria, setCategoria] = useState<CategoriaId>("armaduras");
@@ -389,13 +419,12 @@ export function TiendaTab({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between gap-2 border-b border-border pb-2">
         <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
           {"//SYSTEM · catálogo"}
         </p>
-        <p className="font-sans text-[11px] leading-relaxed text-muted">
-          Consulta: por ahora comprar es marcar como tuyo, sin descontar créditos — no sabemos
-          con cuánto empieza un personaje (pregunta 7 de docs/sistema.md).
+        <p className="font-mono text-sm tabular-nums text-accent">
+          {creditos.toLocaleString("es-ES")} <span className="text-[10px] text-muted">cr.</span>
         </p>
       </div>
 
@@ -443,7 +472,7 @@ export function TiendaTab({
               }
             >
               <DetalleArmadura p={p} />
-              <AccionSimple pieza={p} onEquipar={onEquipar} />
+              <AccionSimple pieza={p} creditos={creditos} onEquipar={onEquipar} />
             </Acordeon>
           ))}
 
@@ -464,7 +493,7 @@ export function TiendaTab({
                     etiqueta={<Precio coste={p.coste} />}
                   >
                     <DetalleArma p={p} />
-                    <AccionSimple pieza={p} onEquipar={onEquipar} />
+                    <AccionSimple pieza={p} creditos={creditos} onEquipar={onEquipar} />
                   </Acordeon>
                 ))}
               </div>
@@ -476,6 +505,7 @@ export function TiendaTab({
             piezas={filtrar(MEJORAS_ESTANDAR)}
             mensajeVacio={SIN_COMPATIBLES.mejorasEstandar}
             sheet={sheet}
+            creditos={creditos}
             onEquipar={onEquipar}
           />
         )}
@@ -485,6 +515,7 @@ export function TiendaTab({
             piezas={filtrar(SUBSISTEMAS)}
             mensajeVacio={SIN_COMPATIBLES.subsistemas}
             sheet={sheet}
+            creditos={creditos}
             onEquipar={onEquipar}
           />
         )}
@@ -494,6 +525,7 @@ export function TiendaTab({
             piezas={filtrar(MEJORAS_ARMA)}
             mensajeVacio={SIN_COMPATIBLES.mejorasArma}
             sheet={sheet}
+            creditos={creditos}
             onEquipar={onEquipar}
           />
         )}
@@ -503,6 +535,7 @@ export function TiendaTab({
             piezas={filtrar(MOVIMIENTO)}
             mensajeVacio={SIN_COMPATIBLES.movimiento}
             sheet={sheet}
+            creditos={creditos}
             onEquipar={onEquipar}
           />
         )}
@@ -511,7 +544,7 @@ export function TiendaTab({
           ARMAS_MELEE.filter((p) => !ARMAS_MELEE_KERZUL.includes(p)).map((p) => (
             <Acordeon key={p.id} titulo={p.label} resumen={p.resumen} etiqueta={<Precio coste={p.coste} />}>
               <DetalleArmaMelee p={p} />
-              <AccionSimple pieza={p} onEquipar={onEquipar} />
+              <AccionSimple pieza={p} creditos={creditos} onEquipar={onEquipar} />
             </Acordeon>
           ))}
 
@@ -519,7 +552,7 @@ export function TiendaTab({
           ARMAS_MELEE_KERZUL.map((p) => (
             <Acordeon key={p.id} titulo={p.label} resumen={p.resumen} etiqueta={<Precio coste={p.coste} />}>
               <DetalleArmaMelee p={p} />
-              <AccionSimple pieza={p} onEquipar={onEquipar} />
+              <AccionSimple pieza={p} creditos={creditos} onEquipar={onEquipar} />
             </Acordeon>
           ))}
       </div>

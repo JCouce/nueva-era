@@ -97,18 +97,21 @@ export function CharacterSheet({
   initialSheet,
   characterStatus,
   initialXp,
+  initialCreditos,
 }: {
   characterId: string;
   initialName: string;
   initialSheet: Sheet;
   characterStatus: "DRAFT" | "APPROVED";
   initialXp: number;
+  initialCreditos: number;
 }) {
   const aprobada = characterStatus === "APPROVED";
   const [active, setActive] = useState<TabId>("resumen");
   const [sheet, setSheet] = useState<Sheet>(initialSheet);
   const [name, setName] = useState(initialName);
   const [xp, setXp] = useState(initialXp);
+  const [creditos, setCreditos] = useState(initialCreditos);
   const [status, setStatus] = useState<SaveStatus>("idle");
 
   // Refs con el último valor, para leerlos dentro de los saves con debounce.
@@ -134,9 +137,11 @@ export function CharacterSheet({
           (res) => {
             if (res.ok) {
               onOk?.(res.sheet);
-              // Subir de nivel tras aprobar gasta XP en el servidor — se
+              // Subir de nivel tras aprobar gasta XP, y equipar/desequipar
+              // cobra o devuelve créditos, siempre en el servidor — se
               // refleja aquí en vez de en cada callsite.
               if (res.xp !== undefined) setXp(res.xp);
+              if (res.creditos !== undefined) setCreditos(res.creditos);
               setStatus("saved");
             } else setStatus("error");
           },
@@ -174,13 +179,16 @@ export function CharacterSheet({
     setSheet((s) => setPrioridad(s, categoria, letra));
     runSave(() => setPrioridadAction(characterId, categoria, letra), setSheet);
   };
+  // Reconcilia con lo que devuelve el servidor: el cliente ya filtra por
+  // crédito suficiente antes de dejar pulsar el botón (ver TiendaTab), pero
+  // el precio real y el guardarraíl de instalación viven en el servidor.
   const commitEquipar = (pieza: PiezaEquipada) => {
     setSheet((s) => equipar(s, pieza));
-    runSave(() => equiparAction(characterId, pieza));
+    runSave(() => equiparAction(characterId, pieza), setSheet);
   };
   const commitDesequipar = (instanciaId: string) => {
     setSheet((s) => desequipar(s, instanciaId));
-    runSave(() => desequiparAction(characterId, instanciaId));
+    runSave(() => desequiparAction(characterId, instanciaId), setSheet);
   };
 
   // ── Identidad (debounced, fire-and-forget). ──
@@ -326,8 +334,12 @@ export function CharacterSheet({
       {active === "dotes" && <DotesTab sheet={sheet} />}
       {active === "psionica" && <PsionicaTab sheet={sheet} />}
       {active === "tiradas" && <TiradasTab sheet={sheet} />}
-      {active === "tienda" && <TiendaTab sheet={sheet} onEquipar={commitEquipar} />}
-      {active === "equipo" && <EquipoTab sheet={sheet} onDesequipar={commitDesequipar} />}
+      {active === "tienda" && (
+        <TiendaTab sheet={sheet} creditos={creditos} onEquipar={commitEquipar} />
+      )}
+      {active === "equipo" && (
+        <EquipoTab sheet={sheet} creditos={creditos} onDesequipar={commitDesequipar} />
+      )}
 
       {/* Resetear es vender todo de golpe: no tiene sentido, y el servidor
           lo rechaza, en cuanto la ficha está aprobada. */}

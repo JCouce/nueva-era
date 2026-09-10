@@ -71,19 +71,32 @@ function Instalado({
   );
 }
 
+function Fondos({ creditos }: { creditos: number }) {
+  return (
+    <p className="font-mono text-sm tabular-nums text-accent">
+      {creditos.toLocaleString("es-ES")} <span className="text-[10px] text-muted">cr.</span>
+    </p>
+  );
+}
+
 export function EquipoTab({
   sheet,
+  creditos,
   onDesequipar,
 }: {
   sheet: Sheet;
+  creditos: number;
   onDesequipar: (instanciaId: string) => void;
 }) {
   if (sheet.equipo.length === 0) {
     return (
       <HudCard className="border-dashed p-5">
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
-          {"//SYSTEM · equipo"}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
+            {"//SYSTEM · equipo"}
+          </p>
+          <Fondos creditos={creditos} />
+        </div>
         <p className="mt-2 font-sans text-sm leading-relaxed text-muted">
           No llevas nada equipado. Ve a la Tienda para coger algo.
         </p>
@@ -97,6 +110,12 @@ export function EquipoTab({
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-2 border-b border-border pb-2">
+        <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+          {"//SYSTEM · equipo"}
+        </p>
+        <Fondos creditos={creditos} />
+      </div>
       {armaduras.map((a) => {
         const cat = equipoPorId(a.catalogoId) as Armadura;
         const usadas = ranurasSubsistemaUsadas(sheet, a.instanciaId);

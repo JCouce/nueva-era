@@ -147,9 +147,14 @@ distintas y gestión de cargas. Cómo se muestra eso en un móvil es la decisió
 
 **Lo que hay que decidir con el usuario antes de codificar:**
 
-1. **¿Comprar o solo consultar?** El sistema tiene créditos y rareza, pero no sabemos con
-   cuánto dinero empieza un personaje (pregunta 7). Un catálogo consultable con "lo tengo
-   equipado" resuelve la mesa sin esa respuesta; una tienda con presupuesto, no.
+1. ~~¿Comprar o solo consultar?~~ **Resuelto (2026-09-10): tienda con presupuesto real.**
+   `equiparAction`/`desequiparAction` (`characters/[id]/actions.ts`) cobran y devuelven
+   `Character.creditos` — el precio se recalcula en servidor con `costeDePieza`
+   (`lib/rules/equipo.ts`), nunca se fía del cliente. Desequipar devuelve el coste íntegro
+   de lo retirado, incluida cualquier mejora/subsistema instalado dentro (decisión del
+   usuario: sin penalización). `TiendaTab`/`EquipoTab` muestran el saldo y bloquean el botón
+   de equipar si no llega, mismo patrón que la XP en Atributos/Habilidades. Verificado en
+   Chrome con datos reales.
 2. **Ranuras.** Las armaduras admiten un número de subsistemas y un nivel máximo de
    exoesqueleto y movilidad aérea; las armas, un número de mejoras. Está todo en las tablas.
    ¿Se validan las ranuras o se confía en el jugador?
