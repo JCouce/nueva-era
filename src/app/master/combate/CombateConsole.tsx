@@ -8,6 +8,7 @@
 import { useRef, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { HudCard } from "@/components/HudCard";
+import { ESTADOS, estadoPorId, type EstadoActivo } from "@/lib/rules";
 import {
   crearCombateAction,
   terminarCombateAction,
@@ -19,6 +20,8 @@ import {
   moverCombatienteAction,
   ajustarPgAction,
   ajustarFatigaAction,
+  aplicarEstadoAction,
+  quitarEstadoAction,
   type CombateResult,
 } from "./actions";
 
@@ -32,6 +35,7 @@ type CombatienteView = {
   iniciativa: number | null;
   characterId: string | null;
   derrotado: boolean;
+  estados: EstadoActivo[];
 };
 
 type CombateView = {
@@ -184,90 +188,19 @@ export function CombateConsole({
         </div>
         <ul className="flex flex-col gap-2">
           {combate.combatientes.map((c, i) => (
-            <li key={c.id}>
-              <HudCard
-                className={`flex flex-col gap-2 px-4 py-3 ${c.derrotado ? "opacity-50" : ""} ${
-                  i === combate.turnoIndex ? "!border-accent shadow-glow-yellow" : ""
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col">
-                    <button
-                      type="button"
-                      disabled={pending || i === 0}
-                      onClick={() => ejecutar(() => moverCombatienteAction(c.id, "arriba"))}
-                      aria-label={`Subir a ${c.nombre}`}
-                      className="h-5 w-5 text-muted transition hover:text-accent disabled:opacity-30"
-                    >
-                      ▲
-                    </button>
-                    <button
-                      type="button"
-                      disabled={pending || i === combate.combatientes.length - 1}
-                      onClick={() => ejecutar(() => moverCombatienteAction(c.id, "abajo"))}
-                      aria-label={`Bajar a ${c.nombre}`}
-                      className="h-5 w-5 text-muted transition hover:text-accent disabled:opacity-30"
-                    >
-                      ▼
-                    </button>
-                  </div>
-
-                  <div className="flex-1">
-                    <span className="font-display text-base font-medium uppercase tracking-wide">
-                      {c.nombre}
-                      {c.derrotado && " (derrotado)"}
-                    </span>
-                    <span className="block font-mono text-xs text-muted">
-                      PG {c.pgActual}/{c.pgMax} · Fatiga {c.fatigaActual}/{c.fatigaMax}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col items-end gap-1">
-                    <label htmlFor={`iniciativa-${c.id}`} className="font-mono text-[10px] text-muted">
-                      Iniciativa
-                    </label>
-                    <input
-                      id={`iniciativa-${c.id}`}
-                      type="number"
-                      defaultValue={c.iniciativa ?? ""}
-                      onBlur={(e) => {
-                        const valor = e.target.value === "" ? null : Number(e.target.value);
-                        ejecutar(() => establecerIniciativaAction(c.id, valor));
-                      }}
-                      className="clip-chamfer-sm w-16 border border-border bg-background px-2 py-1 text-right font-mono text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 border-t border-border pt-2">
-                  <input
-                    ref={(el) => {
-                      deltaRefs.current[c.id] = el;
-                    }}
-                    type="number"
-                    aria-label={`Delta de PG o fatiga para ${c.nombre}`}
-                    placeholder="±N"
-                    className="clip-chamfer-sm w-20 border border-border bg-background px-2 py-2.5 text-center font-mono text-sm"
-                  />
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => aplicarDelta(c.id, "pg")}
-                    className="clip-chamfer-sm flex-1 border border-border px-3 py-2.5 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
-                  >
-                    Aplicar a PG
-                  </button>
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => aplicarDelta(c.id, "fatiga")}
-                    className="clip-chamfer-sm flex-1 border border-border px-3 py-2.5 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
-                  >
-                    Aplicar a fatiga
-                  </button>
-                </div>
-              </HudCard>
-            </li>
+            <CombatienteRow
+              key={c.id}
+              c={c}
+              esTurnoActual={i === combate.turnoIndex}
+              esPrimero={i === 0}
+              esUltimo={i === combate.combatientes.length - 1}
+              pending={pending}
+              ejecutar={ejecutar}
+              aplicarDelta={aplicarDelta}
+              deltaRef={(el) => {
+                deltaRefs.current[c.id] = el;
+              }}
+            />
           ))}
           {combate.combatientes.length === 0 && (
             <li className="clip-chamfer border border-dashed border-border px-4 py-8 text-center font-mono text-sm text-muted">
@@ -356,5 +289,249 @@ export function CombateConsole({
 
       {error && <p className="font-mono text-xs text-danger">{error}</p>}
     </div>
+  );
+}
+
+// Componente aparte, no un bloque más de la lista: los desplegables de
+// estado/grado (subtarea 2.5) necesitan su propio estado local — grado
+// depende de qué estado está elegido, duración depende de qué grado — y
+// eso no cabe bien en el patrón de refs sin control que usa el delta de
+// PG/fatiga (2.4), donde no hace falta reaccionar a lo que el usuario va
+// eligiendo, solo leer un valor al final.
+function CombatienteRow({
+  c,
+  esTurnoActual,
+  esPrimero,
+  esUltimo,
+  pending,
+  ejecutar,
+  aplicarDelta,
+  deltaRef,
+}: {
+  c: CombatienteView;
+  esTurnoActual: boolean;
+  esPrimero: boolean;
+  esUltimo: boolean;
+  pending: boolean;
+  ejecutar: (accion: () => Promise<CombateResult>) => void;
+  aplicarDelta: (combatienteId: string, recurso: "pg" | "fatiga") => void;
+  deltaRef: (el: HTMLInputElement | null) => void;
+}) {
+  const [estadoId, setEstadoId] = useState("");
+  const [gradoId, setGradoId] = useState("");
+  const [duracion, setDuracion] = useState("");
+
+  const estadoElegido = estadoId ? estadoPorId(estadoId) : null;
+  const grados = estadoElegido?.grados ?? [];
+
+  function elegirEstado(id: string) {
+    setEstadoId(id);
+    const primerGrado = estadoPorId(id)?.grados[0] ?? null;
+    setGradoId(primerGrado?.id ?? "");
+    setDuracion(primerGrado?.duracionTurnos != null ? String(primerGrado.duracionTurnos) : "");
+  }
+
+  function elegirGrado(id: string) {
+    setGradoId(id);
+    const grado = grados.find((g) => g.id === id);
+    setDuracion(grado?.duracionTurnos != null ? String(grado.duracionTurnos) : "");
+  }
+
+  function aplicarEstado() {
+    if (!estadoId || !gradoId) return;
+    const rondas = duracion === "" ? null : Number(duracion);
+    ejecutar(() => aplicarEstadoAction(c.id, estadoId, gradoId, rondas));
+  }
+
+  // El label del grado se resuelve una vez, no en cada render de la
+  // lista de activos — con pocos estados a la vez el coste es nulo, pero
+  // deja claro que estadoPorId es una búsqueda en catálogo, no gratis.
+  const activos = c.estados.map((ea) => {
+    const estado = estadoPorId(ea.estadoId);
+    const grado = estado?.grados.find((g) => g.id === ea.gradoId);
+    return {
+      ...ea,
+      // OJO: el número de grados de ESTE estado, no de `grados` (que es el
+      // del desplegable, otro estado mientras el máster elige el siguiente).
+      label:
+        estado && grado && estado.grados.length !== 1
+          ? `${estado.label} (${grado.label})`
+          : (estado?.label ?? ea.estadoId),
+      detalle: grado?.detalle.join(" ") ?? "",
+    };
+  });
+
+  return (
+    <li>
+      <HudCard
+        className={`flex flex-col gap-2 px-4 py-3 ${c.derrotado ? "opacity-50" : ""} ${
+          esTurnoActual ? "!border-accent shadow-glow-yellow" : ""
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col">
+            <button
+              type="button"
+              disabled={pending || esPrimero}
+              onClick={() => ejecutar(() => moverCombatienteAction(c.id, "arriba"))}
+              aria-label={`Subir a ${c.nombre}`}
+              className="h-5 w-5 text-muted transition hover:text-accent disabled:opacity-30"
+            >
+              ▲
+            </button>
+            <button
+              type="button"
+              disabled={pending || esUltimo}
+              onClick={() => ejecutar(() => moverCombatienteAction(c.id, "abajo"))}
+              aria-label={`Bajar a ${c.nombre}`}
+              className="h-5 w-5 text-muted transition hover:text-accent disabled:opacity-30"
+            >
+              ▼
+            </button>
+          </div>
+
+          <div className="flex-1">
+            <span className="font-display text-base font-medium uppercase tracking-wide">
+              {c.nombre}
+              {c.derrotado && " (derrotado)"}
+            </span>
+            <span className="block font-mono text-xs text-muted">
+              PG {c.pgActual}/{c.pgMax} · Fatiga {c.fatigaActual}/{c.fatigaMax}
+            </span>
+          </div>
+
+          <div className="flex flex-col items-end gap-1">
+            <label htmlFor={`iniciativa-${c.id}`} className="font-mono text-[10px] text-muted">
+              Iniciativa
+            </label>
+            <input
+              id={`iniciativa-${c.id}`}
+              type="number"
+              defaultValue={c.iniciativa ?? ""}
+              onBlur={(e) => {
+                const valor = e.target.value === "" ? null : Number(e.target.value);
+                ejecutar(() => establecerIniciativaAction(c.id, valor));
+              }}
+              className="clip-chamfer-sm w-16 border border-border bg-background px-2 py-1 text-right font-mono text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 border-t border-border pt-2">
+          <input
+            ref={deltaRef}
+            type="number"
+            aria-label={`Delta de PG o fatiga para ${c.nombre}`}
+            placeholder="±N"
+            className="clip-chamfer-sm w-20 border border-border bg-background px-2 py-2.5 text-center font-mono text-sm"
+          />
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => aplicarDelta(c.id, "pg")}
+            className="clip-chamfer-sm flex-1 border border-border px-3 py-2.5 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
+          >
+            Aplicar a PG
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => aplicarDelta(c.id, "fatiga")}
+            className="clip-chamfer-sm flex-1 border border-border px-3 py-2.5 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
+          >
+            Aplicar a fatiga
+          </button>
+        </div>
+
+        {activos.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 border-t border-border pt-2">
+            {activos.map((a) => (
+              <span
+                key={a.estadoId}
+                title={a.detalle}
+                className="clip-chamfer-sm flex items-center gap-1.5 border border-accent px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-accent"
+              >
+                {a.label}
+                {a.rondasRestantes !== null && ` · ${a.rondasRestantes}r`}
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => ejecutar(() => quitarEstadoAction(c.id, a.estadoId))}
+                  aria-label={`Quitar ${a.label} a ${c.nombre}`}
+                  className="disabled:opacity-50"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-end gap-2 border-t border-border pt-2">
+          <div className="flex flex-1 flex-col gap-1">
+            <label htmlFor={`estado-${c.id}`} className="font-mono text-[10px] text-muted">
+              Estado
+            </label>
+            <select
+              id={`estado-${c.id}`}
+              value={estadoId}
+              onChange={(e) => elegirEstado(e.target.value)}
+              className="clip-chamfer-sm w-full border border-border bg-background px-2 py-2 font-mono text-xs"
+            >
+              <option value="">— elegir —</option>
+              {ESTADOS.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {grados.length > 1 && (
+            <div className="flex flex-col gap-1">
+              <label htmlFor={`grado-${c.id}`} className="font-mono text-[10px] text-muted">
+                Grado
+              </label>
+              <select
+                id={`grado-${c.id}`}
+                value={gradoId}
+                onChange={(e) => elegirGrado(e.target.value)}
+                className="clip-chamfer-sm border border-border bg-background px-2 py-2 font-mono text-xs"
+              >
+                {grados.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor={`rondas-${c.id}`} className="font-mono text-[10px] text-muted">
+              Rondas
+            </label>
+            <input
+              id={`rondas-${c.id}`}
+              type="number"
+              min={0}
+              value={duracion}
+              onChange={(e) => setDuracion(e.target.value)}
+              placeholder="∞"
+              className="clip-chamfer-sm w-16 border border-border bg-background px-2 py-2 text-center font-mono text-xs"
+            />
+          </div>
+
+          <button
+            type="button"
+            disabled={pending || !estadoId}
+            onClick={aplicarEstado}
+            className="clip-chamfer-sm border border-border px-3 py-2 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
+          >
+            Aplicar estado
+          </button>
+        </div>
+      </HudCard>
+    </li>
   );
 }

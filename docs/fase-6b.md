@@ -255,9 +255,26 @@ para el máster, sin intentar simularlo.
   revienta, se queda en 0/0 sin error — mismo `Math.max(0, Math.min(máx, actual+delta))`
   que ya cubre PG. Probado también con un personaje real (villa, PG 9/9 → 6/9).
   `tsc`, 295/295 tests y lint limpios.
-- [ ] **2.5 — Aplicar/quitar estado del catálogo.** Selector del catálogo de 0.3, grado si
-  el estado lo tiene, duración en rondas (con el valor por defecto de 0.3 precargado,
-  editable). Enchufa con 0.4.
+- [x] **2.5 — Aplicar/quitar estado del catálogo.** Hecha (2026-09-11). Nuevo componente
+  `CombatienteRow` (antes vivía inline en el `.map()`): las filas ganaron suficiente
+  estado propio — qué estado/grado está elegido ahora mismo en el desplegable, cuya
+  duración depende del grado — que ya no cabía en el patrón de refs sin control del
+  delta de PG/fatiga (2.4), donde nunca hacía falta reaccionar a una elección a medias.
+  Desplegable de estado (los 20 de 0.3), desplegable de grado que solo aparece si el
+  estado tiene más de uno, campo de rondas precargado con el valor por defecto de ese
+  grado y editable, botón "Aplicar estado" (enchufa con `aplicarEstadoAction` de la 1.3).
+  Insignias con "×" para quitarlo (`quitarEstadoAction`), con el grado entre paréntesis
+  solo cuando el estado tiene más de uno (para no repetir "Atrapado (Atrapado)").
+  **Bug propio encontrado y arreglado antes de verificar** (releyendo el código, no en
+  Chrome): el cálculo de esa condición usaba `grados.length` (los grados del
+  desplegable, el estado que se está a punto de elegir) en vez de `estado.grados.length`
+  (los del estado real de esa insignia) — un desajuste sutil entre "lo que se está
+  editando" y "lo que ya está aplicado" en el mismo componente.
+  **Verificado en Chrome**, con el caso exacto que motivó el arreglo: insignia de
+  Aturdido (4 grados) → `"ATURDIDO (ÉXITO) · 1R"`; insignia de Atrapado (1 grado) →
+  `"ATRAPADO"`, sin paréntesis. Duración se recalcula sola al cambiar de grado. Catálogo
+  del desplegable confirmado: los 20, sin Fatiga/Heridas/Muerte.
+  `tsc`, 295/295 tests y lint limpios.
 - [ ] **2.6 — Descuento automático de duración.** Al avanzar turno/ronda (2.3), las
   `rondasRestantes` de cada estado activo bajan solas y el estado se cae a 0 sin que
   nadie lo quite a mano.

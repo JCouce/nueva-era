@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
 import { AppHeader } from "@/components/AppHeader";
+import type { EstadoActivo } from "@/lib/rules";
 import { CombateConsole } from "./CombateConsole";
 
 // Fase 6b (docs/fase-6b.md), subtarea 2.1: la consola de combate en sí. Solo
@@ -11,10 +12,22 @@ export default async function CombatePage() {
   const user = await requireUser();
   if (user.role !== "MASTER") redirect("/characters");
 
-  const combate = await prisma.combate.findFirst({
+  const combateRaw = await prisma.combate.findFirst({
     where: { estado: "EN_CURSO" },
     include: { combatientes: { orderBy: { orden: "asc" } } },
   });
+
+  // `estados` es Json en la base (lib/rules/estados.ts, EstadoActivo[]) —
+  // lo escriben solo las server actions de este mismo módulo, nunca el
+  // cliente, así que un cast basta aquí. Si algún día algo más lo escribe,
+  // esto necesita el mismo tratamiento tolerante que parseSheet.
+  const combate = combateRaw && {
+    ...combateRaw,
+    combatientes: combateRaw.combatientes.map((c) => ({
+      ...c,
+      estados: c.estados as unknown as EstadoActivo[],
+    })),
+  };
 
   const characters = await prisma.character.findMany({
     orderBy: { name: "asc" },
