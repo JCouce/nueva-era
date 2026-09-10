@@ -7,6 +7,8 @@ import {
   modificadoresActivos,
   desgloseAtributo,
   desgloseAplicado,
+  costeMarginal,
+  COSTE_FACTOR_ATRIBUTO,
   type AtributoId,
 } from "@/lib/rules";
 import type { Sheet } from "@/lib/rules";
@@ -24,10 +26,12 @@ const CASILLAS = ATRIBUTO_MAX;
 export function AtributosTab({
   sheet,
   puntosDisponibles,
+  aprobada,
   onSet,
 }: {
   sheet: Sheet;
   puntosDisponibles: number;
+  aprobada: boolean;
   onSet: (id: AtributoId, value: number) => void;
 }) {
   // Se calculan una vez y se pasan hacia abajo: evita recalcular la especie
@@ -36,19 +40,27 @@ export function AtributosTab({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
-        <span className="uppercase tracking-wide text-muted">Puntos</span>
-        <span
-          className={`tabular-nums ${puntosDisponibles < 0 ? "text-danger" : "text-accent"}`}
-        >
-          {puntosDisponibles}
-        </span>
-      </div>
+      {/* El pool de creación deja de significar nada en cuanto se aprueba —
+          subir más ahora es cosa de progresión con XP, todavía sin construir. */}
+      {!aprobada && (
+        <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
+          <span className="uppercase tracking-wide text-muted">Puntos</span>
+          <span
+            className={`tabular-nums ${puntosDisponibles < 0 ? "text-danger" : "text-accent"}`}
+          >
+            {puntosDisponibles}
+          </span>
+        </div>
+      )}
 
       {ATRIBUTOS.map((a) => {
         const value = sheet.atributos[a.id];
         const desglose = desgloseAtributo(sheet, a.id, mods);
         const tieneModificadores = desglose.fuentes.length > 1;
+        // Coste marginal del siguiente punto: triangular, Nivel × 2
+        // (docs/sistema.md, "Coste y progresión") — no es fijo ni es el
+        // valor destino, crece con el nivel al que subes.
+        const costeSiguiente = costeMarginal(value + 1, COSTE_FACTOR_ATRIBUTO);
         return (
           <HudCard key={a.id} className="p-3">
             <div className="flex items-center justify-between gap-3">
@@ -60,15 +72,10 @@ export function AtributosTab({
               </div>
               <Stepper
                 value={value}
-                // El coste de subir un punto es siempre 1, suba desde donde
-                // suba (coste = valor absoluto, así que la diferencia
-                // marginal es constante) — igual que en Habilidades. Mostrar
-                // el valor destino aquí en vez del coste real bloqueaba la
-                // compra de más en cuanto el pool bajaba de ese número.
-                hint={value >= ATRIBUTO_MAX_CREACION ? "MÁX" : "1 pt"}
-                canBuy={puntosDisponibles >= 1}
-                atMin={value <= ATRIBUTO_MIN}
-                atMax={value >= ATRIBUTO_MAX_CREACION}
+                hint={value >= ATRIBUTO_MAX_CREACION ? "MÁX" : `${costeSiguiente} pts`}
+                canBuy={!aprobada && puntosDisponibles >= costeSiguiente}
+                atMin={aprobada || value <= ATRIBUTO_MIN}
+                atMax={aprobada || value >= ATRIBUTO_MAX_CREACION}
                 onBuy={() => onSet(a.id, value + 1)}
                 onSell={() => onSet(a.id, value - 1)}
               />

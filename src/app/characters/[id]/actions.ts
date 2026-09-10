@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
 import { characterCreateSchema } from "@/lib/validation";
@@ -19,8 +20,10 @@ import {
   type PiezaEquipada,
   type AprobacionSnapshot,
   parseSnapshot,
-  aplicarSueloAtributo,
-  aplicarSueloHabilidad,
+  setPrioridad,
+  RECURSOS_POR_LETRA,
+  type CategoriaPrioridad,
+  type LetraPrioridad,
 } from "@/lib/rules";
 
 export type SaveResult =
@@ -60,6 +63,11 @@ async function persist(
   return { ok: true, sheet };
 }
 
+// Aprobada: congelado del todo, ni subir ni bajar. El guardarraíl de
+// solo-comprar (aprobacion.ts, aplicarSueloAtributo/Habilidad) se queda listo
+// para cuando exista "subir con XP" — hasta entonces, tocar el pool de
+// creación tras aprobar sería colarse la progresión gratis con puntos que
+// sobraron sin gastar. `snapshot` en Editable queda ahí para esa fase.
 export async function setAtributoAction(
   characterId: string,
   atributoId: AtributoId,
@@ -67,10 +75,8 @@ export async function setAtributoAction(
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  // Aprobada: solo comprar, nunca vender. Sin esto, el jugador podría bajar
-  // un atributo por debajo de lo que el máster ya validó.
-  const v = ctx.aprobada ? aplicarSueloAtributo(value, atributoId, ctx.snapshot) : value;
-  return persist(characterId, setAtributoValue(ctx.sheet, atributoId, v));
+  if (ctx.aprobada) return { ok: false, error: "La ficha ya está aprobada" };
+  return persist(characterId, setAtributoValue(ctx.sheet, atributoId, value));
 }
 
 export async function setHabilidadAction(
@@ -80,8 +86,42 @@ export async function setHabilidadAction(
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  const v = ctx.aprobada ? aplicarSueloHabilidad(value, habilidadId, ctx.snapshot) : value;
-  return persist(characterId, setHabilidadValue(ctx.sheet, habilidadId, v));
+  if (ctx.aprobada) return { ok: false, error: "La ficha ya está aprobada" };
+  return persist(characterId, setHabilidadValue(ctx.sheet, habilidadId, value));
+}
+
+// Reparto de letras (creación por prioridad, docs/sistema.md §2). Congelado
+// tras aprobar, igual que atributos/habilidades. El caso de Recursos es
+// especial: la letra fija los créditos iniciales (Character.creditos), un
+// campo que normalmente solo toca el máster — aquí es seguro porque el valor
+// sale de una tabla fija (RECURSOS_POR_LETRA), el jugador nunca escribe el
+// número a mano.
+export async function setPrioridadAction(
+  characterId: string,
+  categoria: CategoriaPrioridad,
+  letra: LetraPrioridad | null,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  if (ctx.aprobada) return { ok: false, error: "La ficha ya está aprobada" };
+
+  const sheet = setPrioridad(ctx.sheet, categoria, letra);
+  if (categoria === "recursos") {
+    const creditos = sheet.prioridades.recursos
+      ? RECURSOS_POR_LETRA[sheet.prioridades.recursos].creditos
+      : 0;
+    await prisma.character.update({
+      where: { id: characterId },
+      data: { stats: sheet, creditos },
+    });
+    // El creditos que se acaba de fijar lo lee la tira de máster de esta
+    // misma página (server component) y el panel /master — sin esto se
+    // quedan con el valor viejo hasta un F5.
+    revalidatePath(`/characters/${characterId}`);
+    revalidatePath("/master");
+    return { ok: true, sheet };
+  }
+  return persist(characterId, sheet);
 }
 
 export async function addEspecialidadAction(
@@ -140,6 +180,8 @@ export async function saveIdentityAction(
   patch: {
     name: string;
     edad: number | null;
+    altura: number | null;
+    peso: number | null;
     especieId: string | null;
     trasfondo: string;
     motivacion: string;
@@ -151,13 +193,15 @@ export async function saveIdentityAction(
   const nameParsed = characterCreateSchema.safeParse({ name: patch.name });
   if (!nameParsed.success) return { ok: false, error: "El nombre no es válido" };
 
-  const edad = patch.edad === null ? null : clampInt(patch.edad, 0, 999);
+  const numeroOpcional = (v: number | null) => (v === null ? null : clampInt(v, 0, 999));
 
   return persist(
     characterId,
     {
       ...ctx.sheet,
-      edad,
+      edad: numeroOpcional(patch.edad),
+      altura: numeroOpcional(patch.altura),
+      peso: numeroOpcional(patch.peso),
       especieId: patch.especieId ? String(patch.especieId).slice(0, 40) : null,
       trasfondo: String(patch.trasfondo ?? "").slice(0, 2000),
       motivacion: String(patch.motivacion ?? "").slice(0, 500),

@@ -8,6 +8,8 @@ import {
   HABILIDAD_MAX_CREACION,
   MAX_ESPECIALIDADES,
   COSTE_ESPECIALIDAD_EXTRA,
+  costeMarginal,
+  COSTE_FACTOR_HABILIDAD,
   type HabilidadId,
 } from "@/lib/rules";
 import type { Sheet } from "@/lib/rules";
@@ -98,26 +100,30 @@ function Especialidades({
 export function HabilidadesTab({
   sheet,
   puntosDisponibles,
+  aprobada,
   onSet,
   onAddEspecialidad,
   onRemoveEspecialidad,
 }: {
   sheet: Sheet;
   puntosDisponibles: number;
+  aprobada: boolean;
   onSet: (id: HabilidadId, value: number) => void;
   onAddEspecialidad: (id: HabilidadId, nombre: string) => void;
   onRemoveEspecialidad: (id: HabilidadId, nombre: string) => void;
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
-        <span className="uppercase tracking-wide text-muted">Puntos</span>
-        <span
-          className={`tabular-nums ${puntosDisponibles < 0 ? "text-danger" : "text-accent"}`}
-        >
-          {puntosDisponibles}
-        </span>
-      </div>
+      {!aprobada && (
+        <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
+          <span className="uppercase tracking-wide text-muted">Puntos</span>
+          <span
+            className={`tabular-nums ${puntosDisponibles < 0 ? "text-danger" : "text-accent"}`}
+          >
+            {puntosDisponibles}
+          </span>
+        </div>
+      )}
 
       <p className="font-mono text-[11px] leading-relaxed text-muted">
         Sin entrenar tiras a −1. En tu especialidad usas el valor entero; fuera de
@@ -128,7 +134,9 @@ export function HabilidadesTab({
         const { valor, especialidades } = sheet.habilidades[h.id];
         const entrenada = valor >= HABILIDAD_MIN_ENTRENADA;
         const siguiente = entrenada ? valor + 1 : HABILIDAD_MIN_ENTRENADA;
-        const coste = entrenada ? 1 : HABILIDAD_MIN_ENTRENADA;
+        // Coste marginal del siguiente punto: triangular, Nivel × 1 — no es
+        // fijo en 1, crece con el nivel (docs/sistema.md, "Coste y progresión").
+        const costeSiguiente = costeMarginal(siguiente, COSTE_FACTOR_HABILIDAD);
         const fuera = entrenada ? Math.ceil(valor / 2) : HABILIDAD_NO_ENTRENADA;
 
         return (
@@ -144,12 +152,10 @@ export function HabilidadesTab({
               </div>
               <Stepper
                 value={valor}
-                hint={
-                  valor >= HABILIDAD_MAX_CREACION ? "MÁX" : `${coste} pt${coste > 1 ? "s" : ""}`
-                }
-                canBuy={puntosDisponibles >= coste}
-                atMin={valor <= HABILIDAD_NO_ENTRENADA}
-                atMax={valor >= HABILIDAD_MAX_CREACION}
+                hint={valor >= HABILIDAD_MAX_CREACION ? "MÁX" : `${costeSiguiente} pts`}
+                canBuy={!aprobada && puntosDisponibles >= costeSiguiente}
+                atMin={aprobada || valor <= HABILIDAD_NO_ENTRENADA}
+                atMax={aprobada || valor >= HABILIDAD_MAX_CREACION}
                 onBuy={() => onSet(h.id, siguiente)}
                 onSell={() =>
                   onSet(h.id, valor - 1 < HABILIDAD_MIN_ENTRENADA ? HABILIDAD_NO_ENTRENADA : valor - 1)

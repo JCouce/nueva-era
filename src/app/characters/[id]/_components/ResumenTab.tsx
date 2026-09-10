@@ -9,8 +9,9 @@ import {
   HABILIDADES,
   TIRADAS,
 } from "@/lib/rules";
-import type { Sheet } from "@/lib/rules";
+import type { Sheet, CategoriaPrioridad, LetraPrioridad } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
+import { PrioridadCard } from "./PrioridadCard";
 
 const fieldLabel = "font-mono text-[10px] uppercase tracking-widest text-muted";
 const fieldInput =
@@ -46,19 +47,27 @@ function Dato({
 export function ResumenTab({
   name,
   sheet,
+  aprobada,
   onName,
   onEdad,
+  onAltura,
+  onPeso,
   onEspecie,
   onTrasfondo,
   onMotivacion,
+  onPrioridad,
 }: {
   name: string;
   sheet: Sheet;
+  aprobada: boolean;
   onName: (v: string) => void;
   onEdad: (v: number | null) => void;
+  onAltura: (v: number | null) => void;
+  onPeso: (v: number | null) => void;
   onEspecie: (v: string | null) => void;
   onTrasfondo: (v: string) => void;
   onMotivacion: (v: string) => void;
+  onPrioridad: (categoria: CategoriaPrioridad, letra: LetraPrioridad | null) => void;
 }) {
   const { vida, fatiga } = salud(sheet);
   const mov = movimiento(sheet);
@@ -68,6 +77,11 @@ export function ResumenTab({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Solo tiene sentido mientras se construye la ficha. Una vez aprobada
+          las letras quedan fijadas en los pools ya gastados — enseñar el
+          selector solo invitaría a tocar algo que ya no se puede cambiar. */}
+      {!aprobada && <PrioridadCard prioridades={sheet.prioridades} onSet={onPrioridad} />}
+
       {/* Identidad */}
       <HudCard className="p-4">
         <p className="mb-3 font-mono text-[11px] uppercase tracking-widest text-muted">
@@ -85,7 +99,7 @@ export function ResumenTab({
             />
           </label>
           <div className="flex gap-3">
-            <label className="flex w-24 flex-col gap-1">
+            <label className="flex w-16 flex-col gap-1">
               <span className={fieldLabel}>{"// Edad"}</span>
               <input
                 type="number"
@@ -93,6 +107,30 @@ export function ResumenTab({
                 value={sheet.edad ?? ""}
                 onChange={(e) =>
                   onEdad(e.target.value === "" ? null : Number(e.target.value))
+                }
+                className={`${fieldInput} text-lg tabular-nums text-foreground`}
+              />
+            </label>
+            <label className="flex w-20 flex-col gap-1">
+              <span className={fieldLabel}>{"// Altura (cm)"}</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={sheet.altura ?? ""}
+                onChange={(e) =>
+                  onAltura(e.target.value === "" ? null : Number(e.target.value))
+                }
+                className={`${fieldInput} text-lg tabular-nums text-foreground`}
+              />
+            </label>
+            <label className="flex w-20 flex-col gap-1">
+              <span className={fieldLabel}>{"// Peso (kg)"}</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={sheet.peso ?? ""}
+                onChange={(e) =>
+                  onPeso(e.target.value === "" ? null : Number(e.target.value))
                 }
                 className={`${fieldInput} text-lg tabular-nums text-foreground`}
               />

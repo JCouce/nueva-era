@@ -10,6 +10,7 @@ import {
   resetBuildAction,
   equiparAction,
   desequiparAction,
+  setPrioridadAction,
   type SaveResult,
 } from "./actions";
 import {
@@ -23,14 +24,19 @@ import {
   especiePorId,
   equipar,
   desequipar,
+  setPrioridad,
   type AtributoId,
   type HabilidadId,
   type PiezaEquipada,
+  type CategoriaPrioridad,
+  type LetraPrioridad,
 } from "@/lib/rules";
 import type { Sheet } from "@/lib/rules";
 import { ResumenTab } from "./_components/ResumenTab";
 import { AtributosTab } from "./_components/AtributosTab";
 import { HabilidadesTab } from "./_components/HabilidadesTab";
+import { DotesTab } from "./_components/DotesTab";
+import { PsionicaTab } from "./_components/PsionicaTab";
 import { TiradasTab } from "./_components/TiradasTab";
 import { TiendaTab } from "./_components/TiendaTab";
 import { EquipoTab } from "./_components/EquipoTab";
@@ -43,6 +49,8 @@ const TABS_FICHA = [
   { id: "resumen", label: "Resumen" },
   { id: "attrs", label: "Atributos" },
   { id: "skills", label: "Habilidades" },
+  { id: "dotes", label: "Dotes" },
+  { id: "psionica", label: "Psiónica" },
 ] as const;
 const TABS_PERSONAJE = [
   { id: "tiradas", label: "Tiradas" },
@@ -87,11 +95,14 @@ export function CharacterSheet({
   characterId,
   initialName,
   initialSheet,
+  characterStatus,
 }: {
   characterId: string;
   initialName: string;
   initialSheet: Sheet;
+  characterStatus: "DRAFT" | "APPROVED";
 }) {
+  const aprobada = characterStatus === "APPROVED";
   const [active, setActive] = useState<TabId>("resumen");
   const [sheet, setSheet] = useState<Sheet>(initialSheet);
   const [name, setName] = useState(initialName);
@@ -153,6 +164,10 @@ export function CharacterSheet({
   const reset = () => {
     runSave(() => resetBuildAction(characterId), setSheet);
   };
+  const commitPrioridad = (categoria: CategoriaPrioridad, letra: LetraPrioridad | null) => {
+    setSheet((s) => setPrioridad(s, categoria, letra));
+    runSave(() => setPrioridadAction(characterId, categoria, letra), setSheet);
+  };
   const commitEquipar = (pieza: PiezaEquipada) => {
     setSheet((s) => equipar(s, pieza));
     runSave(() => equiparAction(characterId, pieza));
@@ -170,6 +185,8 @@ export function CharacterSheet({
         saveIdentityAction(characterId, {
           name: nameRef.current,
           edad: sheetRef.current.edad,
+          altura: sheetRef.current.altura,
+          peso: sheetRef.current.peso,
           especieId: sheetRef.current.especieId,
           trasfondo: sheetRef.current.trasfondo,
           motivacion: sheetRef.current.motivacion,
@@ -184,6 +201,14 @@ export function CharacterSheet({
   };
   const onEdad = (v: number | null) => {
     setSheet((s) => ({ ...s, edad: v === null ? null : clampInt(v, 0, 999) }));
+    scheduleIdentity();
+  };
+  const onAltura = (v: number | null) => {
+    setSheet((s) => ({ ...s, altura: v === null ? null : clampInt(v, 0, 999) }));
+    scheduleIdentity();
+  };
+  const onPeso = (v: number | null) => {
+    setSheet((s) => ({ ...s, peso: v === null ? null : clampInt(v, 0, 999) }));
     scheduleIdentity();
   };
   const onEspecie = (v: string | null) => {
@@ -261,17 +286,22 @@ export function CharacterSheet({
         <ResumenTab
           name={name}
           sheet={sheet}
+          aprobada={aprobada}
           onName={onName}
           onEdad={onEdad}
+          onAltura={onAltura}
+          onPeso={onPeso}
           onEspecie={onEspecie}
           onTrasfondo={onTrasfondo}
           onMotivacion={onMotivacion}
+          onPrioridad={commitPrioridad}
         />
       )}
       {active === "attrs" && (
         <AtributosTab
           sheet={sheet}
           puntosDisponibles={puntosAttr}
+          aprobada={aprobada}
           onSet={commitAtributo}
         />
       )}
@@ -279,16 +309,21 @@ export function CharacterSheet({
         <HabilidadesTab
           sheet={sheet}
           puntosDisponibles={puntosSkill}
+          aprobada={aprobada}
           onSet={commitHabilidad}
           onAddEspecialidad={commitAddEspecialidad}
           onRemoveEspecialidad={commitRemoveEspecialidad}
         />
       )}
+      {active === "dotes" && <DotesTab sheet={sheet} />}
+      {active === "psionica" && <PsionicaTab sheet={sheet} />}
       {active === "tiradas" && <TiradasTab sheet={sheet} />}
       {active === "tienda" && <TiendaTab sheet={sheet} onEquipar={commitEquipar} />}
       {active === "equipo" && <EquipoTab sheet={sheet} onDesequipar={commitDesequipar} />}
 
-      {(active === "attrs" || active === "skills") && (
+      {/* Resetear es vender todo de golpe: no tiene sentido, y el servidor
+          lo rechaza, en cuanto la ficha está aprobada. */}
+      {!aprobada && (active === "attrs" || active === "skills") && (
         <button
           type="button"
           onClick={reset}
