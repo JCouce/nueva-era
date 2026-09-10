@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { umbralSalud, umbralFatiga, modificadoresDeUmbrales } from "./estados";
+import { umbralSalud, umbralFatiga, modificadoresDeUmbrales, modificadoresDeEstados } from "./estados";
 
 // PG/fatiga máx = 20 da fronteras limpias: 50%→10, 25%→5, 10%→2 (el "mínimo
 // 1" de S15 solo entra en juego con máximos bajos, ver el describe de abajo).
@@ -72,5 +72,58 @@ describe("modificadoresDeUmbrales (S14: no se acumulan dentro del mismo recurso)
     assert.equal(mods.length, 2);
     assert.ok(mods.find((m) => m.fuente === "Herido" && m.valor === -1));
     assert.ok(mods.find((m) => m.fuente === "Fatigado" && m.valor === -1));
+  });
+});
+
+describe("modificadoresDeEstados: estados del catálogo aplicados a un combatiente", () => {
+  test("sin estados activos, sin modificadores", () => {
+    assert.deepEqual(modificadoresDeEstados([]), []);
+  });
+
+  test("un estado real con grado real trae sus modificadores, con origen 'estado'", () => {
+    const mods = modificadoresDeEstados([
+      { estadoId: "aturdido", gradoId: "exito", rondasRestantes: 1 },
+    ]);
+    assert.deepEqual(mods, [
+      {
+        tipo: "tirada",
+        alcance: { tipo: "todas" },
+        valor: -1,
+        origen: "estado",
+        fuente: "Aturdido",
+      },
+    ]);
+  });
+
+  test("varios estados activos se combinan", () => {
+    const mods = modificadoresDeEstados([
+      { estadoId: "aturdido", gradoId: "exito", rondasRestantes: 1 },
+      { estadoId: "paralisis", gradoId: "fracaso", rondasRestantes: 1 },
+    ]);
+    // -1 a todas (aturdido) + fuerza -4 + agilidad -4 (parálisis)
+    assert.equal(mods.length, 3);
+    assert.ok(mods.some((m) => m.fuente === "Aturdido" && m.valor === -1));
+    assert.ok(mods.filter((m) => m.fuente === "Parálisis").length === 2);
+  });
+
+  test("un estadoId que no existe en el catálogo se ignora, no revienta", () => {
+    assert.deepEqual(
+      modificadoresDeEstados([{ estadoId: "esto-no-existe", gradoId: "fracaso", rondasRestantes: null }]),
+      [],
+    );
+  });
+
+  test("un gradoId que no existe para ese estado se ignora, no revienta", () => {
+    assert.deepEqual(
+      modificadoresDeEstados([{ estadoId: "aturdido", gradoId: "grado-inventado", rondasRestantes: null }]),
+      [],
+    );
+  });
+
+  test("un estado sin modificadores mecanizados (p. ej. Corrosión) no aporta nada, pero tampoco revienta", () => {
+    assert.deepEqual(
+      modificadoresDeEstados([{ estadoId: "corrosion", gradoId: "fracaso", rondasRestantes: null }]),
+      [],
+    );
   });
 });

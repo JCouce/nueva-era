@@ -18,6 +18,7 @@
 // recurso no se acumulan, solo el más profundo aporta su penalizador) y S15
 // (cómo se interpreta el "mínimo 1" de Moribundo/Exhausto).
 import type { ModificadorConFuente } from "./modificadores";
+import { estadoPorId } from "../catalog/estados";
 
 export type UmbralSalud = "normal" | "herido" | "malherido" | "moribundo";
 export type UmbralFatiga = "normal" | "fatigado" | "exhausto";
@@ -101,4 +102,36 @@ export function modificadoresDeUmbrales(
   }
 
   return mods;
+}
+
+// Un estado del catálogo (0.3) puesto en un combatiente concreto: qué grado
+// le tocó y cuántas rondas le quedan. Vive aquí, no en el schema de Prisma
+// del bloque 1 todavía — esa forma se decide al construir Combatiente, esto
+// es solo lo que necesita la función de abajo para hacer su trabajo.
+export type EstadoActivo = {
+  estadoId: string;
+  gradoId: string;
+  // null = sin límite de rondas conocido (algunos estados no dan uno, ver
+  // catalog/estados.ts); un número que descuenta el bloque 2 al avanzar
+  // turno.
+  rondasRestantes: number | null;
+};
+
+// Traduce los estados que el máster ha aplicado a un combatiente en
+// ModificadorConFuente[] — calcado de modificadoresDeEquipo()
+// (lib/rules/equipo.ts): un estadoId o gradoId que ya no exista en el
+// catálogo (dato viejo, typo) se ignora sin reventar el resto del cálculo,
+// igual que equipoPorId con un catalogoId huérfano.
+export function modificadoresDeEstados(activos: EstadoActivo[]): ModificadorConFuente[] {
+  return activos.flatMap((activo): ModificadorConFuente[] => {
+    const estado = estadoPorId(activo.estadoId);
+    if (!estado) return [];
+    const grado = estado.grados.find((g) => g.id === activo.gradoId);
+    if (!grado) return [];
+    return grado.modificadores.map((m) => ({
+      ...m,
+      origen: "estado" as const,
+      fuente: estado.label,
+    }));
+  });
 }

@@ -131,10 +131,18 @@ para el máster, sin intentar simularlo.
   "cualquier tirada que use tal atributo/aplicado" — aparcado igual que 0.2b, anotado en
   el catálogo y en S16 por si algún día compensa cerrarlo. 10 tests de integridad +
   contenido (`estados.test.ts`). 282/282 en total, `tsc`/`lint` limpios.
-- [ ] **0.4 — `lib/rules/estados.ts`: `modificadoresDeEstados()`.** Recibe la lista de
-  estados activos de un combatiente (`{estadoId, grado?, rondasRestantes}`) y el catálogo
-  de 0.3, devuelve `ModificadorConFuente[]` con `origen: "estado"`. Calcado de
-  `modificadoresDeEquipo()` en forma y en test.
+- [x] **0.4 — `lib/rules/estados.ts`: `modificadoresDeEstados()`.** Hecha (2026-09-11).
+  Tipo `EstadoActivo = {estadoId, gradoId, rondasRestantes}` (la forma que necesitará
+  `Combatiente.estados` en el bloque 1, sin comprometerse todavía al schema exacto de
+  Prisma) + `modificadoresDeEstados()`, calcada de `modificadoresDeEquipo()`: un
+  `estadoId`/`gradoId` que no exista en el catálogo se ignora sin reventar, igual que un
+  `catalogoId` huérfano. `fuente` es el `label` del estado (no del grado — un combatiente
+  solo lleva un grado de cada estado a la vez, no hace falta distinguir más en el
+  desglose). 6 tests nuevos. 288/288 en total, `tsc`/`lint` limpios.
+  **Con esto se cierra el bloque 0** — el motor de estados está completo y probado, listo
+  para que el bloque 1 le dé un sitio donde vivir de verdad (hoy sigue desconectado de
+  cualquier ficha, ver la respuesta a "¿se puede aplicar un estado ahora?" del
+  2026-09-11).
 
 ## Bloque 1 — Modelo de datos y permisos
 
