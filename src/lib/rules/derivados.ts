@@ -135,13 +135,14 @@ export function salud(
 }
 
 // El exoesqueleto "duplica el bonificador al calcular la carga transportable
-// y realizar proezas de fuerza" (docs/equipamiento.md), pero no toca Fuerza
-// en general ni Fortaleza/Vida (ver catalog/equipo.ts). Supuesto S10 de
-// docs/sistema.md: las 5 fórmulas de movimiento cuentan como "proezas de
-// fuerza", pendiente de confirmar con Murillo — por eso vive aquí, aparte
-// del sistema de modificadores normal, y no contamina Potencia en ningún
+// y realizar proezas de fuerza" (docs/equipamiento.md) — cita completa: las
+// dos cosas que menciona EQUIP. No toca Fuerza en general ni Fortaleza/Vida
+// (ver catalog/equipo.ts). Supuesto S10 de docs/sistema.md: las 5 fórmulas de
+// movimiento cuentan como "proezas de fuerza", pendiente de confirmar con
+// Murillo. La usan movimiento() y cargaMaxima() — por eso vive aparte del
+// sistema de modificadores normal, y no contamina Potencia/Fuerza en ningún
 // otro sitio (combate, ficha de atributos).
-function bonoExoesqueletoParaMovimiento(sheet: Sheet): number {
+function bonoFuerzaExoesqueleto(sheet: Sheet): number {
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
     if (cat?.familia === "movimiento" && cat.tope === "exoesqueleto" && pieza.nivel) {
@@ -156,7 +157,7 @@ function bonoExoesqueletoParaMovimiento(sheet: Sheet): number {
 // vertical saldría en negativo, así que se corta en 0. Supuesto S6 de
 // docs/sistema.md: el documento no dice qué pasa por debajo de cero.
 export function movimiento(sheet: Sheet, mods = modificadoresActivos(sheet)) {
-  const bonoExoesqueleto = bonoExoesqueletoParaMovimiento(sheet);
+  const bonoExoesqueleto = bonoFuerzaExoesqueleto(sheet);
   const base =
     aplicado(sheet, "potencia", mods) +
     bonoExoesqueleto +
@@ -173,6 +174,25 @@ export function movimiento(sheet: Sheet, mods = modificadoresActivos(sheet)) {
     escalada: noNegativo(4 + Math.floor(base / 2)), // metros
     nado: noNegativo(4 + Math.floor(base / 2)), // metros
   };
+}
+
+// Carga transportable (docs/sistema.md §5.5, HOJA2, resuelve la pregunta 26).
+// Sale de Fuerza, no de Potencia — a diferencia del movimiento, no entra
+// Atletismo. Tres tramos:
+//   Fuerza > 0 → Fuerza × 20 kg
+//   Fuerza = 0 → 15 kg (caso especial, no sigue el ×20)
+//   Fuerza < 0 → 15 − 5 por cada punto por debajo de 0
+// El bono duplicado del exoesqueleto (bonoFuerzaExoesqueleto) entra aquí
+// también: EQUIP lo cita para "carga transportable Y proezas de fuerza", las
+// dos cosas — hasta ahora solo se aplicaba a movimiento() (las proezas, por
+// S10), cerrando el hueco.
+export function cargaMaxima(sheet: Sheet, mods = modificadoresActivos(sheet)): number {
+  const fuerza = atributoEfectivo(sheet, "fuerza", mods) + bonoFuerzaExoesqueleto(sheet);
+  if (fuerza > 0) return fuerza * 20;
+  if (fuerza === 0) return 15;
+  // Suelo en 0, mismo criterio que S6 para el movimiento: el documento no
+  // dice qué pasa si esta cuenta también se va a negativo.
+  return Math.max(0, 15 + fuerza * 5);
 }
 
 // Vuelo: solo existe si hay Movilidad Aérea equipada. A diferencia del resto

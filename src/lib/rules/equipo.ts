@@ -253,6 +253,23 @@ export function rarezaPermitida(rareza: Rareza | null, tope: Rareza): boolean {
   return RAREZA_ORDEN.indexOf(rareza) <= RAREZA_ORDEN.indexOf(tope);
 }
 
+// Peso de una pieza equipada, para Carga Transportable (docs/sistema.md
+// §5.5). Solo arma y armaMelee tienen `pesoKg` en el catálogo — armaduras y
+// las cuatro familias instalables no traen columna de Peso en EQUIP, así que
+// devuelven 0: no es que pesen cero, es que el documento no lo dice.
+export function pesoDePieza(pieza: PiezaEquipada): number {
+  const cat = equipoPorId(pieza.catalogoId);
+  if (!cat) return 0;
+  if (cat.familia === "arma" || cat.familia === "armaMelee") return cat.pesoKg ?? 0;
+  return 0;
+}
+
+// Suma de lo que SÍ se sabe pesar (ver pesoDePieza) de todo lo equipado. No
+// es "el peso total real" — la interfaz avisa de qué falta (ResumenTab).
+export function pesoEquipado(sheet: Sheet): number {
+  return sheet.equipo.reduce((total, p) => total + pesoDePieza(p), 0);
+}
+
 // Los modificadores que aporta lo que el jugador lleva puesto. Solo llegan
 // aquí las piezas con `modificadores` numéricos sin condición (ver el
 // comentario de cabecera de catalog/equipo.ts); el resto se queda en texto.

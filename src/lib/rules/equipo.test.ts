@@ -11,6 +11,8 @@ import {
   costeDeRetirar,
   rarezaDePieza,
   rarezaPermitida,
+  pesoDePieza,
+  pesoEquipado,
   type PiezaEquipada,
 } from "./equipo";
 
@@ -456,5 +458,45 @@ describe("rarezaPermitida", () => {
 
   test("una rareza por encima del tope no cabe", () => {
     assert.equal(rarezaPermitida("Muy Extraño", "Extraño"), false);
+  });
+});
+
+describe("pesoDePieza", () => {
+  test("un arma de fuego suma su pesoKg", () => {
+    assert.equal(pesoDePieza({ instanciaId: "a1", catalogoId: "pistola_mosquito" }), 0.5);
+  });
+
+  test("un arma melee con pesoKg suma su pesoKg", () => {
+    assert.equal(pesoDePieza({ instanciaId: "e1", catalogoId: "escudo_rodela" }), 1);
+  });
+
+  test("un arma melee sin pesoKg (Pelea, no tiene el dato) pesa 0", () => {
+    assert.equal(pesoDePieza({ instanciaId: "p1", catalogoId: "pelea_punetazo" }), 0);
+  });
+
+  test("una armadura pesa 0: el catálogo no tiene columna de Peso para ellas", () => {
+    assert.equal(pesoDePieza({ instanciaId: "a1", catalogoId: "armadura_ligera" }), 0);
+  });
+
+  test("pieza que no existe en el catálogo pesa 0", () => {
+    assert.equal(pesoDePieza({ instanciaId: "x1", catalogoId: "no_existe" }), 0);
+  });
+});
+
+describe("pesoEquipado", () => {
+  test("sin nada equipado, 0 kg", () => {
+    assert.equal(pesoEquipado(defaultSheet()), 0);
+  });
+
+  test("suma el peso de cada pieza equipada", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "pistola_mosquito" });
+    s = equipar(s, { instanciaId: "e1", catalogoId: "escudo_rodela" });
+    assert.equal(pesoEquipado(s), 0.5 + 1);
+  });
+
+  test("una armadura equipada no suma nada, el resto sigue contando", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "armadura_ligera" });
+    s = equipar(s, { instanciaId: "p1", catalogoId: "pistola_mosquito" });
+    assert.equal(pesoEquipado(s), 0.5);
   });
 });

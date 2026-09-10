@@ -167,9 +167,15 @@ distintas y gestión de cargas. Cómo se muestra eso en un móvil es la decisió
 2. **Ranuras.** Las armaduras admiten un número de subsistemas y un nivel máximo de
    exoesqueleto y movilidad aérea; las armas, un número de mejoras. Está todo en las tablas.
    ¿Se validan las ranuras o se confía en el jugador?
-3. **El peso no sirve de nada todavía.** Todo el equipo pesa, y las heridas penalizan la
-   capacidad de carga, pero **ningún documento dice cuánta carga aguanta un personaje**
-   (pregunta 26). Sin eso, mostrar kilos es decorativo.
+3. ~~El peso no sirve de nada todavía.~~ **Resuelto en parte (2026-09-11): Carga
+   Transportable, primer pase.** La pregunta 26 ya la había resuelto `HOJA2`
+   (`docs/sistema.md` §5.5); ahora está enganchada: `cargaMaxima()`
+   (`lib/rules/derivados.ts`) y `pesoEquipado()` (`lib/rules/equipo.ts`) se muestran en
+   Resumen. **Hallazgo al implementarlo:** `EQUIP` no trae columna de Peso para armaduras
+   ni para ningún módulo instalable — solo armas de fuego y casi todas las armas melee
+   pesan en el catálogo. El dato que se enseña es parcial a propósito, con aviso en la
+   interfaz; los penalizadores por exceso de carga (y la Proeza de Fuerza) siguen sin
+   mecanizar, son fase aparte.
 4. **Cómo se enchufa al resto.** Un arma equipada debería alimentar la chuleta de tiradas
    (su dificultad, el modificador por distancia) y una armadura debería aportar sus
    modificadores por la vía de `ModificadorConFuente`, que ya existe. Ahí está el valor real.

@@ -217,6 +217,19 @@ dificultad 10. El propio documento invita a no tomárselo demasiado al pie de la
 permite que el narrador fije una "fuerza efectiva necesaria" para un obstáculo concreto en
 vez de calcular el peso exacto siempre.
 
+> **Implementación (2026-09-11), primer pase:** `cargaMaxima()` en `lib/rules/derivados.ts`
+> calcula el límite sin penalizador y se muestra en Resumen junto al peso equipado
+> conocido (`pesoEquipado()`, `lib/rules/equipo.ts`). Los tramos de penalizador (por
+> encima del límite, doble, cuádruple) y la Proeza de Fuerza **no** están mecanizados
+> todavía — son mecánica de tirada/estado, fase aparte.
+>
+> **Hueco de datos, no del motor:** `EQUIP` no trae columna de Peso para armaduras ni
+> para ningún módulo instalable (subsistemas, mejoras estándar, mejoras de arma,
+> movimiento) — solo armas de fuego y la mayoría de armas melee tienen kg. `pesoEquipado()`
+> solo suma lo que el catálogo sí sabe pesar; la interfaz avisa de qué falta en vez de
+> fingir un total real. Decisión del usuario: mostrar el dato parcial con el aviso, no
+> esperar a que llegue el peso de armaduras/módulos.
+
 ## 6. Resolución de acciones `[FIRME · COMBATE]`
 
 Detalle completo en `docs/sistema-y-combate.md`. Lo esencial:
@@ -436,7 +449,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S7 | En creación el tope es **4** tanto en atributos como en habilidades; 6 queda como techo del sistema para más adelante. | `HOJA2` sube el "4/5" y "3/5" de `HOJA` a "4/6" en los dos, unificando el máximo de creación. La partición 4-creación/6-techo sigue siendo lectura nuestra, no está dicho explícitamente. |
 | S8 | El **valor de Atletismo** que entra en las fórmulas de movimiento es el valor puro, sin aplicar la mitad por estar fuera de especialidad. | Las fórmulas de `HOJA` dicen "Potencia + Atletismo" a secas. |
 | S9 | En un módulo con niveles (mejora estándar o subsistema de `EQUIP`), un efecto que un nivel introduce y los superiores no repiten ni anulan se **acumula**: el nivel N conserva lo desbloqueado en 1..N-1. Cuando el documento da un total explícito para ese nivel ("mejora la bonificación a +2"), se usa ese total tal cual, sin sumarlo al de niveles inferiores. | `EQUIP` describe cada nivel como una mejora sobre el anterior, nunca como un reemplazo (p. ej. Soporte Vital nivel 1 da Resistencia Térmica y los niveles 2-3 no la repiten, pero tampoco dicen que se pierda). Asumir que se pierde algo al subir de nivel sería más raro que asumir que se mantiene. |
-| S10 | El bono de Fuerza del Exoesqueleto, que `EQUIP` duplica para "carga transportable y proezas de fuerza", se aplica **x2 a las 5 fórmulas de movimiento** (Carrera, Salto Vertical, Salto Horizontal, Escalada, Nado). No toca la Fuerza general ni Fortaleza/Vida, que siguen sin mecanizar. | `EQUIP` no dice explícitamente qué cuenta como "proeza de fuerza"; las 5 fórmulas salen de Potencia + Atletismo, la misma base física, así que tratarlas todas igual es lo más consistente. Pendiente de confirmar con Murillo. |
+| S10 | El bono de Fuerza del Exoesqueleto, que `EQUIP` duplica para "carga transportable y proezas de fuerza", se aplica **x2 a las 5 fórmulas de movimiento** (Carrera, Salto Vertical, Salto Horizontal, Escalada, Nado) **y a la Carga Transportable** (sección 5.5, `cargaMaxima()`) — la cita completa de `EQUIP`, ya cerrada del todo (2026-09-11: hasta ahora solo se aplicaba a movimiento). No toca la Fuerza general ni Fortaleza/Vida, que siguen sin mecanizar. | `EQUIP` no dice explícitamente qué cuenta como "proeza de fuerza"; las 5 fórmulas salen de Potencia + Atletismo, la misma base física, así que tratarlas todas igual es lo más consistente. Pendiente de confirmar con Murillo. |
 | S11 | El redondeo de los Aplicados (media de dos básicos) es **hacia arriba**. | Decisión explícita del usuario (2026-09-10): mismo criterio que ya usa el motor para especialidades fuera de especialidad (`Math.ceil`), por consistencia con lo que ya existía. `HOJA2` no especifica el redondeo. |
 | S12 | Dotes no tiene presupuesto de creación en las letras A-D, solo **0 en la letra E**. | `HOJA2` solo rellena esa casilla de la tabla de prioridad; las demás están vacías. Puede ser que falten por transcribir — pendiente de confirmar con Murillo antes de construir nada sobre esto. |
 | S13 | Espada Ligera, Espada y Montante (`catalog/armasMelee.ts`) son **Común**. | `EQUIP` deja esas tres celdas de rareza en blanco (a diferencia de Pelea, que también tiene el coste en blanco: aquí sí hay coste, 100-150 cr.). Decisión del usuario (2026-09-11): Común encaja con ese rango de precio, igual que el resto de piezas Común del catálogo. |

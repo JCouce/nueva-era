@@ -7,6 +7,7 @@ import {
   salud,
   movimiento,
   vuelo,
+  cargaMaxima,
   valorEfectivo,
   desgloseAtributo,
   desgloseAplicado,
@@ -181,6 +182,42 @@ describe("movimiento (HOJA2: constantes nuevas)", () => {
       habilidades: { atletismo: { valor: 3, especialidades: [] } },
     });
     assert.equal(movimiento(s).carrera, 22); // 16 + 6 (potencia 3 + atletismo 3)
+  });
+});
+
+describe("cargaMaxima (docs/sistema.md §5.5)", () => {
+  test("Fuerza 0 son 15 kg, no 0 (caso especial)", () => {
+    assert.equal(cargaMaxima(defaultSheet()), 15);
+  });
+
+  test("Fuerza positiva es Fuerza × 20", () => {
+    const s = ficha({ atributos: { fuerza: 3 } });
+    assert.equal(cargaMaxima(s), 60);
+  });
+
+  test("Fuerza negativa resta 5 por punto por debajo de 0", () => {
+    const s = ficha({ atributos: { fuerza: -1 } });
+    assert.equal(cargaMaxima(s), 10);
+  });
+
+  test("el exoesqueleto duplica su bono también aquí (cierra el hueco de S10)", () => {
+    // Mismo montaje que el test de movimiento: Armadura Pesada + Exoesqueleto
+    // nivel 2 → +4 a la Fuerza que entra en la fórmula.
+    let s = ficha({ atributos: { fuerza: 3 } });
+    s = equipar(s, { instanciaId: "a1", catalogoId: "armadura_pesada" });
+    s = equipar(s, {
+      instanciaId: "e1",
+      catalogoId: "exoesqueleto",
+      nivel: 2,
+      instaladoEnId: "a1",
+    });
+    assert.equal(cargaMaxima(s), (3 + 4) * 20); // 140
+
+    // El bono no se filtra a la Fuerza que se ve en Atributos.
+    assert.deepEqual(desgloseAtributo(s, "fuerza"), {
+      total: 3,
+      fuentes: [{ etiqueta: "Base", valor: 3 }],
+    });
   });
 });
 

@@ -2,6 +2,8 @@ import {
   salud,
   movimiento,
   vuelo,
+  cargaMaxima,
+  pesoEquipado,
   modificadoresActivos,
   especiePorId,
   ESPECIES,
@@ -74,6 +76,8 @@ export function ResumenTab({
   const vue = vuelo(sheet);
   const conExo = mov.bonoExoesqueleto > 0;
   const notaExo = conExo ? `+${mov.bonoExoesqueleto} exoesqueleto` : undefined;
+  const limiteCarga = cargaMaxima(sheet);
+  const pesoArmas = pesoEquipado(sheet);
 
   return (
     <div className="flex flex-col gap-4">
@@ -275,6 +279,25 @@ export function ResumenTab({
             tono="text-info"
           />
         )}
+      </HudCard>
+
+      {/* Carga transportable (docs/sistema.md §5.5): solo el dato, sin
+          penalizadores todavía — eso es fase aparte. */}
+      <HudCard className="p-4">
+        <p className="mb-2 font-mono text-[11px] uppercase tracking-widest text-muted">
+          {"//SYSTEM · carga"}
+        </p>
+        <Dato
+          label="Peso equipado (armas)"
+          value={pesoArmas}
+          unidad="kg"
+          tono={pesoArmas > limiteCarga ? "text-danger" : "text-foreground"}
+        />
+        <Dato label="Límite sin penalizador" value={limiteCarga} unidad="kg" />
+        <p className="mt-2 font-mono text-[10px] leading-relaxed text-muted">
+          Armaduras y módulos no traen peso en el documento — este número cuenta solo las
+          armas equipadas.
+        </p>
       </HudCard>
 
       {/* Trasfondo */}
