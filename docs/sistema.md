@@ -22,53 +22,95 @@ cambie, se edita aquí y se anota qué lo tumbó.
 | Ref | Documento | Fecha |
 |---|---|---|
 | `HOJA` | `docs/Creación de Personaje-1.txt` | 2026-08-26 |
+| `HOJA2` | `docs/Creación de Personaje.odt` — revisión de `HOJA`: creación por prioridad, Aplicados como media, movimiento con otras constantes, coste de progresión, carga transportable, Altura/Peso | 2026-09-10 |
 | `COMBATE` | `docs/sistema-y-combate.md` (transcrito de `Sistema y Combate.pdf`) | 2026-08-28 |
 | `EQUIP` | `docs/equipamiento.md` (transcrito de `Equipamiento.pdf`) | 2026-08-31 |
 | `CONV-1` | Conversación con Murillo (diseñador) — aumentos, psiónica cuántica | 2026-08-26 |
 | `CONV-n` | Conversaciones con el diseñador (se anotan abajo según lleguen) | — |
 
+**`HOJA2` sustituye a `HOJA` allí donde se contradicen** (creación por prioridad en vez de
+10 puntos planos, Aplicados como media en vez de suma, otras constantes de movimiento). Donde
+`HOJA2` no dice nada nuevo, `HOJA` sigue siendo la fuente.
+
 ---
 
-## 1. Identidad `[FIRME · HOJA]`
+## 1. Identidad `[FIRME · HOJA + HOJA2]`
 
-Campos de ficha: **Nombre**, **Edad**, **Especie**, **Trasfondo**, **Motivación**.
+Campos de ficha: **Nombre**, **Edad**, **Especie**, **Trasfondo**, **Motivación**, **Altura**,
+**Peso**. Los dos últimos los añade `HOJA2`; no estaban en `HOJA` y la ficha implementada
+todavía no los guarda.
 
 ## 2. Atributos
 
-### Básicos `[FIRME · HOJA]`
+### Básicos `[FIRME · HOJA + HOJA2]`
 
 Fuerza · Agilidad · Aguante · Percepción · Inteligencia · Carácter.
 
 - Se empieza con **0** en todos.
-- **10 puntos** para repartir.
-- Coste **lineal**: subir un atributo a N cuesta N puntos.
-- Máximo **4/5** (interpretado como: 4 en creación, 5 techo del sistema — *pendiente de
-  confirmar*).
+- **Máximo 4/6** (`HOJA2`, era 4/5 en `HOJA`) — misma lectura que antes: 4 en creación, 6
+  techo del sistema. La partición sigue *pendiente de confirmar* explícitamente, pero el
+  patrón (creación/techo) ya lo dio por bueno el propio Murillo la vez anterior.
 - Bajar un atributo a **-1** otorga **1 punto adicional**.
+- **De dónde sale el pool para comprar y cuánto cuesta cada punto**: ver "Creación por
+  prioridad" y "Coste y progresión" más abajo — `HOJA2` sustituye aquí a los "10 puntos
+  planos, coste = valor a conseguir" de `HOJA`.
 
-### Aplicados `[FIRME · HOJA]`
+### Creación por prioridad `[FIRME · HOJA2 + CONV-4]`
 
-Derivados, **no se compran**: son suma de dos básicos. Cada básico alimenta dos aplicados.
+`HOJA2` sustituye el pool plano de 10 puntos por un reparto de prioridades, calcado de
+Shadowrun. Hay **5 categorías** — Atributos, Habilidades, Dotes, Psiónica, Recursos — y
+**5 letras** (A-E), cada una con su propio presupuesto:
+
+| Letra | Atributos | Habilidades | Dotes | Psiónica | Recursos |
+|---|---|---|---|---|---|
+| A | 18 pts | 18 pts | — | 18 pts | 66.000 créditos · Rareza Muy Extraño |
+| B | 14 pts | 15 pts | — | 12 pts | 41.000 créditos · Rareza Extraño |
+| C | 12 pts | 12 pts | — | 9 pts | 27.000 créditos · Rareza Poco Habitual |
+| D | 10 pts | 9 pts | — | 3 pts | 13.000 créditos · Rareza Poco Habitual |
+| E | 8 pts | 6 pts | 0 | 0 pts | 1.500 créditos · Rareza Común |
+
+**Confirmado por Murillo el 2026-09-10 (`CONV-4`): cada letra se usa una sola vez, una por
+categoría — hay que repartir las 5 entre las 5, sin repetir ninguna.** Es la decisión de
+build: dónde pones la A y dónde la E define el personaje.
+
+- **Dotes** solo tiene número en la fila E (0); el resto de casillas no aparecen en
+  `HOJA2` tal cual — *pendiente de confirmar si faltan por transcribir o si Dotes no tiene
+  pool propio en A-D*.
+- Dotes y Psiónica ganan presupuesto pero **siguen sin catálogo**: no hay lista de dotes
+  ni de poderes psiónicos todavía (ver secciones 9 y 10). El presupuesto se puede declarar
+  en la ficha; gastarlo no, hasta que llegue el catálogo.
+- Resuelve la pregunta 10 (¿la psiónica tiene pool propio?) y responde a la pregunta 7 en
+  la parte de "cuánto dinero inicial" (ver sección 8, Economía).
+
+### Aplicados `[FIRME · HOJA2]`
+
+Derivados, **no se compran**: son la **media** de dos básicos, redondeando hacia arriba.
+`HOJA` decía que eran la suma; `HOJA2` lo corrige — cada básico sigue alimentando dos
+aplicados.
 
 | Aplicado | Fórmula |
 |---|---|
-| Fortaleza | Fuerza + Aguante |
-| Potencia | Fuerza + Agilidad |
-| Reflejos | Agilidad + Percepción |
-| Voluntad | Aguante + Carácter |
-| Perspicacia | Inteligencia + Percepción |
-| Expresión | Carácter + Inteligencia |
+| Fortaleza | ⌈(Fuerza + Aguante) / 2⌉ |
+| Potencia | ⌈(Fuerza + Agilidad) / 2⌉ |
+| Reflejos | ⌈(Agilidad + Percepción) / 2⌉ |
+| Voluntad | ⌈(Aguante + Carácter) / 2⌉ |
+| Perspicacia | ⌈(Inteligencia + Percepción) / 2⌉ |
+| Expresión | ⌈(Carácter + Inteligencia) / 2⌉ |
 
 > **Implementación:** se guardan los 6 básicos y se calculan los 6 aplicados, igual que
-> hoy el XP gastado se deriva de la ficha. Nunca se persisten los aplicados.
+> hoy el XP gastado se deriva de la ficha. Nunca se persisten los aplicados. Al cambiar de
+> suma a media, Vida, Fatiga y las 5 fórmulas de Movimiento cambian en cascada — pero como
+> son derivados que nunca se guardan, no hace falta migrar nada: se recalculan solos.
 
-## 3. Habilidades `[FIRME · HOJA]`
+## 3. Habilidades `[FIRME · HOJA + HOJA2]`
 
 Actitud · Atletismo · Biociencia · Combate a Distancia · Combate Melee · Cultura ·
 Interpretación · Sigilo · Supervivencia · Tecnociencia.
 
-- **10 puntos** para repartir. Máximo **3/5** (misma lectura que en atributos: 3 en
-  creación, 5 techo — *pendiente de confirmar*).
+- **Máximo 4/6** (`HOJA2`, era 3/5 en `HOJA`) — mismo criterio que en atributos: 4 en
+  creación, 6 techo del sistema, *pendiente de confirmar la partición exacta*.
+- El pool de creación ya no es "10 puntos planos": sale de la letra de prioridad asignada
+  a Habilidades (ver arriba).
 - Habilidad **no entrenada = -1**.
 - Al entrenar una habilidad se **escoge una especialidad**:
   - En la especialidad escogida se usa el **valor total**.
@@ -77,6 +119,24 @@ Interpretación · Sigilo · Supervivencia · Tecnociencia.
 
 > **Implementación:** una habilidad deja de ser un entero y pasa a ser
 > `{ valor: number, especialidades: string[] }`.
+
+## 2.5 / 3.5 Coste y progresión `[FIRME · HOJA2]`
+
+`HOJA2` da una fórmula de coste **por nivel**, no un coste total plano — y el usuario
+confirma que **rige tanto la compra en creación (dentro del pool de la prioridad) como la
+progresión posterior con XP**, sin distinguir fase:
+
+| Categoría | Coste del nivel N | Ej. llegar a nivel 5 |
+|---|---|---|
+| Atributos | N × 2 | 2+4+6+8+10 = 30 |
+| Habilidades | N × 1 | 1+2+3+4+5 = 15 |
+| Psiónica | N × 3 | 3+6+9+12+15 = 45 |
+
+Esto **sustituye** la regla vieja de `HOJA` ("el coste es exactamente el valor a
+conseguir", coste marginal constante de 1 — la que estaba en el supuesto S1 y en la
+sección "Básicos" original). Con `HOJA2` el coste marginal **crece con el nivel**: el
+primer punto de un atributo cuesta 2, el segundo 4, etc. Responde a la pregunta 12
+(progresión post-creación: sí hay XP, y esta es su fórmula).
 
 ### Emparejamiento atributo + habilidad `[INFERIDO · EQUIP]`
 
@@ -107,15 +167,47 @@ Falta el catálogo completo de las 10 habilidades.
 - **Puntos de Vida** = 8 + Fortaleza
 - **Puntos de Fatiga** = 8 + Voluntad
 
-## 5. Movimiento `[FIRME · HOJA]`
+Sin cambios de fórmula, pero Fortaleza y Voluntad ahora son media (no suma) de sus dos
+básicos — ver sección 2, Aplicados — así que el resultado numérico cambia aunque la
+fórmula de esta sección se quede igual.
 
-| Tipo | Fórmula |
-|---|---|
-| Carrera | 15 + (Potencia + Atletismo) metros |
-| Salto vertical | 10 × (Potencia + Atletismo) centímetros |
-| Salto horizontal | 150 + [(Potencia + Atletismo) × 60] centímetros |
-| Escalada | 5 + [(Potencia + Atletismo) / 2] metros |
-| Nado | 5 + [(Potencia + Atletismo) / 2] metros |
+## 5. Movimiento `[FIRME · HOJA2]`
+
+`HOJA2` cambia las cinco constantes respecto a `HOJA` (columna vieja a la derecha, para
+que quede el rastro):
+
+| Tipo | Fórmula (`HOJA2`) | Fórmula vieja (`HOJA`) |
+|---|---|---|
+| Carrera | 16 + (Potencia + Atletismo) metros | 15 + (Potencia + Atletismo) |
+| Salto vertical | 15 × (Potencia + Atletismo) centímetros | 10 × (Potencia + Atletismo) |
+| Salto horizontal | 100 + [(Potencia + Atletismo) × 20] centímetros | 150 + [... × 60] |
+| Escalada | 4 + [(Potencia + Atletismo) / 2] metros | 5 + [... / 2] |
+| Nado | 4 + [(Potencia + Atletismo) / 2] metros | 5 + [... / 2] |
+
+Ojo doble cambio: además de las constantes, **Potencia** ya no es la suma de Fuerza +
+Agilidad, es su media redondeada hacia arriba (sección 2) — así que "Potencia +
+Atletismo" da un número distinto aunque no toques nada de la fórmula de esta tabla.
+
+## 5.5 Carga transportable `[FIRME · HOJA2]`
+
+Resuelve la pregunta 26 (no había fórmula, y todo el equipo de `EQUIP` pesa en kg sin
+nada que lo penalizara). Sale de **Fuerza**, no de Potencia:
+
+- **Carga sin penalizador** = Fuerza × 20 kg. Con Fuerza 0, son 15 kg (no 0). Con Fuerza
+  negativa, −5 kg por cada punto por debajo de 0 (no sigue la fórmula ×20 ahí).
+- **Por encima del límite**: −1 a todas las acciones físicas, más −2 acumulativo (máx.
+  −8) por cada 20% de exceso, velocidad de movimiento y nado/trepa a la mitad, y 1 punto
+  de fatiga por hora mientras se mantenga la carga.
+- **Al doble del límite**: −10 a acciones físicas, movimiento a un cuarto, 1 punto de
+  fatiga por minuto.
+- **Al cuádruple**: no puede moverse; 1 punto de fatiga por turno solo por sostener la
+  carga.
+
+**Proeza de Fuerza**: acción compleja + 1 punto de fatiga. Levantar/empujar/arrastrar algo
+que supera 4-5 veces la carga sin penalizador. Se resuelve con Potencia + Atletismo,
+dificultad 10. El propio documento invita a no tomárselo demasiado al pie de la letra —
+permite que el narrador fije una "fuerza efectiva necesaria" para un obstáculo concreto en
+vez de calcular el peso exacto siempre.
 
 ## 6. Resolución de acciones `[FIRME · COMBATE]`
 
@@ -175,19 +267,33 @@ imponen penalizadores por umbral:
 - **Descanso**: 8 horas para un descanso completo; 5 comidas de 1 punto de fatiga y 2
   descansos breves de 2 puntos a lo largo del día.
 
-## 8. Economía `[INFERIDO · EQUIP]`
+## 8. Economía `[PARCIAL · EQUIP + HOJA2]`
 
 - Moneda: **créditos**.
 - **Rareza**: Común → Poco Habitual → Extraño → Muy Extraño → Singular. Afecta al coste,
   a la dificultad de fabricación (base 7, +2 por rango) y a los materiales necesarios.
 - Objetos por **niveles 1-4** y **ranuras** (subsistemas por armadura, mejoras por arma),
   con topes ya definidos en las tablas de `EQUIP`.
+- **Recursos iniciales, por fin con número** (`HOJA2`, responde a la pregunta 7): salen de
+  la letra de prioridad asignada a Recursos — ver la tabla en "Creación por prioridad"
+  (sección 2). De 1.500 créditos/Común (letra E) a 66.000 créditos/Muy Extraño (letra A).
+  Sigue sin confirmar si los créditos son la **única** moneda.
 
-## 9. Dotes `[PENDIENTE]`
+## 9. Dotes `[PARCIAL · HOJA2]`
 
-Título en `HOJA` sin contenido. Se desconoce qué son, cuántas se eligen y qué cuestan.
+`HOJA` tenía el título sin contenido. `HOJA2` le da presupuesto de creación (0 puntos en
+la letra E; el resto de casillas de la tabla de prioridad no aparecen en el documento,
+*pendiente de confirmar si faltan por transcribir*), pero sigue sin decir **qué son las
+dotes, cuántas se eligen ni qué compra cada punto** — no hay catálogo. Se puede declarar
+el pool en la ficha; gastarlo no, hasta que llegue.
 
-## 10. Psiónica y arquitectura cuántica `[PARCIAL · CONV-1 + CONV-2 + EQUIP]`
+## 10. Psiónica y arquitectura cuántica `[PARCIAL · CONV-1 + CONV-2 + EQUIP + HOJA2]`
+
+**Pregunta 10 resuelta por `HOJA2`:** la psiónica tiene **pool de creación propio** (letra
+de prioridad asignada a Psiónica, ver sección 2), no sale de los puntos de Atributos ni de
+Habilidades. También tiene fórmula de coste por nivel (Nivel × 3, ver "Coste y
+progresión" en la sección 2). Sigue sin existir el **catálogo de poderes** — hay pool y
+coste, pero no hay en qué gastarlo todavía.
 
 ### 10.0 Principio rector `[FIRME · CONV-2]`
 
@@ -283,11 +389,12 @@ ficha (`CONV-1`).
 El título está vacío en `HOJA`, pero el catálogo completo existe en `EQUIP` — ver
 secciones 8 (economía) y el propio `docs/equipamiento.md`.
 
-## 13. Progresión `[PENDIENTE]`
+## 13. Progresión `[PARCIAL · HOJA2]`
 
-`HOJA` cubre solo la creación (10 puntos de atributos + 10 de habilidades). No hay nada
-sobre cómo se progresa después: si hay XP, si se reparten puntos por hitos, ni cuál es el
-techo real.
+`HOJA2` da la fórmula de coste por nivel (Atributos N×2, Habilidades N×1, Psiónica N×3 —
+ver "Coste y progresión", sección 2) y confirma que rige tanto creación como progresión.
+Sigue sin decir **de dónde sale la XP** (por sesión, por hito, por encuentro) ni si hay
+techo real más allá del 6 de atributos/habilidades.
 
 ## 14. Especies `[PENDIENTE — en camino]`
 
@@ -312,16 +419,18 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 
 | # | Supuesto | Por qué |
 |---|---|---|
-| S1 | El coste de una habilidad es **lineal**, igual que en atributos: subirla a N cuesta N puntos. | `HOJA` lo dice de los atributos ("el coste es exactamente el valor a conseguir") pero no de las habilidades, y solo hay 10 puntos para repartir. |
+| ~~S1~~ | ~~El coste de una habilidad es lineal, igual que en atributos: subirla a N cuesta N puntos.~~ **Superado por `HOJA2`**: el coste es por nivel (Atributos N×2, Habilidades N×1, Psiónica N×3), no un total plano — ver "Coste y progresión", sección 2. | Se queda aquí tachado como rastro: así se ve qué regla vieja sustituyó `HOJA2` y por qué. |
 | S2 | Una habilidad **no puede valer 0**: o está sin entrenar (−1) o vale 1 como mínimo. | `HOJA` solo contempla "no entrenada = −1" y valores entrenados. El 0 no aparece. |
 | S3 | Al entrenar, la **primera especialidad va incluida**; a partir de la segunda cuesta 1 punto. | `HOJA` dice que al entrenar "se debe escoger una especialidad" y que "una segunda especialidad tiene de coste 1 punto". |
 | S4 | Tope de **3 especialidades** por habilidad. | No hay tope escrito; se pone uno para que la UI no crezca sin fin. |
 | S5 | Las especialidades son **texto libre**. | No existe catálogo todavía. Cuando llegue, se cambia a lista cerrada. |
 | S6 | El movimiento **no baja de 0**. | Con Potencia 0 y Atletismo −1, las fórmulas dan un salto vertical de **−10 cm**. Se corta en 0 hasta saber qué quiere el diseñador. |
-| S7 | En creación el tope es **4** en atributos y **3** en habilidades; 5 queda como techo del sistema para más adelante. | Lectura de "máxima puntuación 4/5" y "3/5". |
+| S7 | En creación el tope es **4** tanto en atributos como en habilidades; 6 queda como techo del sistema para más adelante. | `HOJA2` sube el "4/5" y "3/5" de `HOJA` a "4/6" en los dos, unificando el máximo de creación. La partición 4-creación/6-techo sigue siendo lectura nuestra, no está dicho explícitamente. |
 | S8 | El **valor de Atletismo** que entra en las fórmulas de movimiento es el valor puro, sin aplicar la mitad por estar fuera de especialidad. | Las fórmulas de `HOJA` dicen "Potencia + Atletismo" a secas. |
 | S9 | En un módulo con niveles (mejora estándar o subsistema de `EQUIP`), un efecto que un nivel introduce y los superiores no repiten ni anulan se **acumula**: el nivel N conserva lo desbloqueado en 1..N-1. Cuando el documento da un total explícito para ese nivel ("mejora la bonificación a +2"), se usa ese total tal cual, sin sumarlo al de niveles inferiores. | `EQUIP` describe cada nivel como una mejora sobre el anterior, nunca como un reemplazo (p. ej. Soporte Vital nivel 1 da Resistencia Térmica y los niveles 2-3 no la repiten, pero tampoco dicen que se pierda). Asumir que se pierde algo al subir de nivel sería más raro que asumir que se mantiene. |
 | S10 | El bono de Fuerza del Exoesqueleto, que `EQUIP` duplica para "carga transportable y proezas de fuerza", se aplica **x2 a las 5 fórmulas de movimiento** (Carrera, Salto Vertical, Salto Horizontal, Escalada, Nado). No toca la Fuerza general ni Fortaleza/Vida, que siguen sin mecanizar. | `EQUIP` no dice explícitamente qué cuenta como "proeza de fuerza"; las 5 fórmulas salen de Potencia + Atletismo, la misma base física, así que tratarlas todas igual es lo más consistente. Pendiente de confirmar con Murillo. |
+| S11 | El redondeo de los Aplicados (media de dos básicos) es **hacia arriba**. | Decisión explícita del usuario (2026-09-10): mismo criterio que ya usa el motor para especialidades fuera de especialidad (`Math.ceil`), por consistencia con lo que ya existía. `HOJA2` no especifica el redondeo. |
+| S12 | Dotes no tiene presupuesto de creación en las letras A-D, solo **0 en la letra E**. | `HOJA2` solo rellena esa casilla de la tabla de prioridad; las demás están vacías. Puede ser que falten por transcribir — pendiente de confirmar con Murillo antes de construir nada sobre esto. |
 
 ## Conflictos detectados
 
@@ -346,15 +455,15 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 Agrupadas para soltarlas en tandas. Se tachan según lleguen respuestas.
 
 **Sobre la ficha ya implementada** (cada una valida o tumba un supuesto)
-1. "Máxima puntuación 4/5" y "3/5": ¿es 4 en creación y 5 el techo del sistema? ¿O el 5 se alcanza de otra forma? *(S7)*
+1. ~~"Máxima puntuación 4/5" y "3/5"~~ **`HOJA2` los sube a "4/6" en los dos** (antes eran distintos entre sí). Sigue abierto si el 4 es de creación y el 6 techo del sistema, o el 6 se alcanza de otra forma. *(S7)*
 2. ¿Los atributos aplicados tienen tope propio, o son libremente la suma?
 3. Catálogo de especialidades de cada una de las 10 habilidades. *(S5)*
 4. ¿Cuántas especialidades puede tener una habilidad como máximo? *(S4)*
-5. ¿Cuánto cuesta subir una habilidad? Se ha asumido coste lineal como en atributos. *(S1)*
+5. ~~¿Cuánto cuesta subir una habilidad?~~ **Resuelta por `HOJA2`:** Nivel × 1 (Atributos Nivel × 2, Psiónica Nivel × 3) — ver "Coste y progresión", sección 2. *(S1, tachado)*
 6. Un personaje recién creado tiene salto vertical **negativo** con las fórmulas tal cual (Potencia 0 + Atletismo −1 → −10 cm). ¿Se corta en 0, hay un mínimo, o Atletismo no entrenado cuenta como 0 aquí? *(S6, S8)*
 
 **Bloqueantes para el catálogo de equipo**
-7. ¿Los créditos son la única moneda? ¿Cuánto empieza teniendo un personaje?
+7. ~~¿Cuánto empieza teniendo un personaje?~~ **Resuelta por `HOJA2`:** depende de la letra de prioridad en Recursos, de 1.500 a 66.000 créditos. Sigue abierto si los créditos son la **única** moneda.
 8. Ranuras: ¿las mejoras de arma se limitan solo por la columna "Mejoras" de cada arma?
 8b. Los efectos de nivel de una mejora estándar o subsistema, ¿se acumulan al subir de nivel o
 cada nivel sustituye entero al anterior? *(S9)*
@@ -363,10 +472,10 @@ fuerza": ¿cuenta el movimiento entero (Carrera, Saltos, Escalada, Nado) como "p
 fuerza", o solo alguna de esas cinco fórmulas? *(S10)*
 
 **Diseño pendiente**
-9. Dotes: qué son, cuántas se eligen, coste.
-10. Psiónica: ¿los poderes se compran con los 10 puntos de creación, con otro pool, o vienen dados por especie/dote?
+9. Dotes: `HOJA2` da presupuesto (0 en la letra E, el resto sin rellenar — *¿falta por transcribir?*), pero sigue sin decir **qué son, cuántas se eligen ni qué compra cada punto**.
+10. ~~Psiónica: ¿los poderes se compran con los 10 puntos de creación, con otro pool, o vienen dados por especie/dote?~~ **Resuelta por `HOJA2`:** pool propio, ligado a la letra de prioridad. Sigue sin catálogo de poderes.
 11. Aumentos: ¿hay un **tope de capacidad** de lo que un cuerpo aguanta instalado? ¿Biónicos y genéticos comparten ese tope o van por separado? ¿Instalarse de más tiene consecuencia (rechazo, pérdida de humanidad, algo)?
-12. Progresión post-creación: ¿XP, hitos, puntos por sesión?
+12. ~~Progresión post-creación: ¿XP, hitos, puntos por sesión?~~ **Resuelta por `HOJA2`:** hay XP, y el coste por nivel es el mismo que en creación (Nivel × factor según categoría) — ver "Coste y progresión", sección 2.
 13. Especies: lista y qué modifican. *(En camino.)*
 
 **Sobre la dualidad hackeo digital / cuántico** (`CONV-1`, `CONV-2`)
@@ -379,7 +488,7 @@ fuerza", o solo alguna de esas cinco fórmulas? *(S10)*
 20. ¿Los aumentos genéticos usan Biociencia donde los biónicos usan Tecnociencia?
 
 **Huecos detectados al planificar la app** (ver `docs/plan-app.md`)
-26. **No existe fórmula de capacidad de carga.** El sistema la penaliza (−25% malherido, −50% moribundo, −25% exhausto) y todo el equipo tiene peso en kg, pero ningún documento dice cuánto puede cargar un personaje. ¿Sale de Fuerza? ¿De Potencia? Sin esto, el peso del catálogo no sirve para nada.
+26. ~~No existe fórmula de capacidad de carga.~~ **Resuelta por `HOJA2`:** sale de Fuerza (Fuerza × 20 kg, con pisos y penalizadores propios) — ver "Carga transportable", sección 5.5.
 27. **No hay tabla canónica de tiradas.** Los documentos citan 14 pares atributo + habilidad dispersos en prosa. Hace falta una tabla cerrada de las acciones habituales (atacar, defender, esquivar, saltar, escalar, iniciativa, alerta, ocultarse, tratar heridas…), porque parte de los pares actuales son inferencia nuestra.
 
 **Sobre combate y salud** (`COMBATE`)
@@ -405,6 +514,7 @@ dónde y qué tumbó a qué.
 
 | Ref | Fecha | Qué aportó | Qué cambió |
 |---|---|---|---|
+| `CONV-4` | 2026-09-10 | `docs/Creación de Personaje.odt` (`HOJA2`), revisión de la hoja de creación: sistema de prioridad (A-E entre Atributos/Habilidades/Dotes/Psiónica/Recursos), Aplicados como media en vez de suma, techo de creación 4/6 unificado, otras constantes de movimiento, coste por nivel (Nivel×factor) para creación y progresión, carga transportable completa, Altura y Peso en identidad. Por WhatsApp, Murillo confirma que las 5 letras de prioridad se usan **una vez cada una, sin repetir** ("Es igual que shadowrun"). | Resuelve las preguntas 5, 7 (parcial), 10, 12 y 26. Tumba el supuesto S1 (coste lineal de habilidades) y actualiza S7 (4/6 en vez de 4/5 y 3/5). Añade S11 (redondeo de Aplicados hacia arriba, decisión del usuario) y S12 (Dotes sin presupuesto en A-D, solo pendiente confirmar). Deja pendiente si el pool de Dotes A-D existe y no se transcribió. **Con este alcance, el motor de creación implementado hoy queda desactualizado en varios puntos — ver `docs/handoff.md` para el plan de qué tocar.** |
 | `CONV-3` | 2026-09-03 | Dos PDFs: **Sistema y Combate** (28 ago, 12 págs) y **Equipamiento** revisado (31 ago, 49 págs frente a las 43 anteriores). | Secciones 6 y 7 pasan de `[INFERIDO]` a `[FIRME]`: ya se conoce el dado (1d12), la tabla de dificultades, los críticos, las acciones por turno, los umbrales de herida y fatiga, las categorías de daño y 20 estados. Resuelve la pregunta 21; abre C4-C7 y las preguntas 22-25. En equipamiento: cambian **todas** las tablas de armas, aparece el efecto **fusión**, las **distancias de disparo** con modificadores y 12 secciones nuevas (armas de Kerzul, otras armas a distancia, medicina y farmacia). |
 | `CONV-2` | 2026-08-26 | Documento de arquitectura cuántica y psiónica: principio rector (cuántica y psiónica comparten naturaleza — ondas, superposición, probabilidad — y no necesitan traductores), entorno de cúbits que colapsan ante estímulo externo, psiónica como campo neuro-eléctrico que actúa sobre materia/energía/información, y los tres ejes de interacción (entrelazamiento neural, navegación por probabilidad, resonancia y resistencia). | Nueva sección 10 completa. Cierra el *por qué* de la dualidad de hackeo; abre las preguntas 13-18 sobre su mecánica. La ciberseguridad deja de ser "muro con nivel" y pasa a ser duelo de estabilidad mental. |
 | `CONV-1` | 2026-08-26 | Aumentos = biónicos + genéticos. La psiónica es **cuántica**, no digital-cibernética; por eso los psiónicos también hackean, aunque el modelo digital sigue existiendo. Próximos envíos: especies, luego poderes psiónicos; ambos documentos a poco más de la mitad. | Secciones 10 y 11 pasan de `[PENDIENTE]` a `[PARCIAL]`. Nuevas preguntas sobre la dualidad de hackeo. |
