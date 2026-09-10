@@ -96,16 +96,19 @@ export function CharacterSheet({
   initialName,
   initialSheet,
   characterStatus,
+  initialXp,
 }: {
   characterId: string;
   initialName: string;
   initialSheet: Sheet;
   characterStatus: "DRAFT" | "APPROVED";
+  initialXp: number;
 }) {
   const aprobada = characterStatus === "APPROVED";
   const [active, setActive] = useState<TabId>("resumen");
   const [sheet, setSheet] = useState<Sheet>(initialSheet);
   const [name, setName] = useState(initialName);
+  const [xp, setXp] = useState(initialXp);
   const [status, setStatus] = useState<SaveStatus>("idle");
 
   // Refs con el último valor, para leerlos dentro de los saves con debounce.
@@ -131,6 +134,9 @@ export function CharacterSheet({
           (res) => {
             if (res.ok) {
               onOk?.(res.sheet);
+              // Subir de nivel tras aprobar gasta XP en el servidor — se
+              // refleja aquí en vez de en cada callsite.
+              if (res.xp !== undefined) setXp(res.xp);
               setStatus("saved");
             } else setStatus("error");
           },
@@ -302,6 +308,7 @@ export function CharacterSheet({
           sheet={sheet}
           puntosDisponibles={puntosAttr}
           aprobada={aprobada}
+          xp={xp}
           onSet={commitAtributo}
         />
       )}
@@ -310,6 +317,7 @@ export function CharacterSheet({
           sheet={sheet}
           puntosDisponibles={puntosSkill}
           aprobada={aprobada}
+          xp={xp}
           onSet={commitHabilidad}
           onAddEspecialidad={commitAddEspecialidad}
           onRemoveEspecialidad={commitRemoveEspecialidad}

@@ -6,6 +6,7 @@ import {
   HABILIDAD_NO_ENTRENADA,
   HABILIDAD_MIN_ENTRENADA,
   HABILIDAD_MAX_CREACION,
+  HABILIDAD_MAX,
   MAX_ESPECIALIDADES,
   COSTE_ESPECIALIDAD_EXTRA,
   costeMarginal,
@@ -101,6 +102,7 @@ export function HabilidadesTab({
   sheet,
   puntosDisponibles,
   aprobada,
+  xp,
   onSet,
   onAddEspecialidad,
   onRemoveEspecialidad,
@@ -108,22 +110,22 @@ export function HabilidadesTab({
   sheet: Sheet;
   puntosDisponibles: number;
   aprobada: boolean;
+  xp: number;
   onSet: (id: HabilidadId, value: number) => void;
   onAddEspecialidad: (id: HabilidadId, nombre: string) => void;
   onRemoveEspecialidad: (id: HabilidadId, nombre: string) => void;
 }) {
+  const tope = aprobada ? HABILIDAD_MAX : HABILIDAD_MAX_CREACION;
+  const disponible = aprobada ? xp : puntosDisponibles;
+
   return (
     <div className="flex flex-col gap-2">
-      {!aprobada && (
-        <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
-          <span className="uppercase tracking-wide text-muted">Puntos</span>
-          <span
-            className={`tabular-nums ${puntosDisponibles < 0 ? "text-danger" : "text-accent"}`}
-          >
-            {puntosDisponibles}
-          </span>
-        </div>
-      )}
+      <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
+        <span className="uppercase tracking-wide text-muted">{aprobada ? "XP" : "Puntos"}</span>
+        <span className={`tabular-nums ${disponible < 0 ? "text-danger" : "text-accent"}`}>
+          {disponible}
+        </span>
+      </div>
 
       <p className="font-mono text-[11px] leading-relaxed text-muted">
         Sin entrenar tiras a −1. En tu especialidad usas el valor entero; fuera de
@@ -152,10 +154,10 @@ export function HabilidadesTab({
               </div>
               <Stepper
                 value={valor}
-                hint={valor >= HABILIDAD_MAX_CREACION ? "MÁX" : `${costeSiguiente} pts`}
-                canBuy={!aprobada && puntosDisponibles >= costeSiguiente}
+                hint={valor >= tope ? "MÁX" : `${costeSiguiente} ${aprobada ? "xp" : "pts"}`}
+                canBuy={disponible >= costeSiguiente}
                 atMin={aprobada || valor <= HABILIDAD_NO_ENTRENADA}
-                atMax={aprobada || valor >= HABILIDAD_MAX_CREACION}
+                atMax={valor >= tope}
                 onBuy={() => onSet(h.id, siguiente)}
                 onSell={() =>
                   onSet(h.id, valor - 1 < HABILIDAD_MIN_ENTRENADA ? HABILIDAD_NO_ENTRENADA : valor - 1)

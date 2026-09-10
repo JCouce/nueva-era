@@ -22,19 +22,30 @@ import {
   parseSnapshot,
   setPrioridad,
   RECURSOS_POR_LETRA,
+  costeMarginal,
+  COSTE_FACTOR_ATRIBUTO,
+  COSTE_FACTOR_HABILIDAD,
+  ATRIBUTO_MAX,
+  HABILIDAD_MAX,
   type CategoriaPrioridad,
   type LetraPrioridad,
 } from "@/lib/rules";
 
 export type SaveResult =
-  | { ok: true; sheet: Sheet }
+  | { ok: true; sheet: Sheet; xp?: number }
   | { ok: false; error: string };
 
-type Editable = { sheet: Sheet; aprobada: boolean; snapshot: AprobacionSnapshot | null };
+type Editable = {
+  sheet: Sheet;
+  aprobada: boolean;
+  snapshot: AprobacionSnapshot | null;
+  xp: number;
+};
 
 // Carga la ficha comprobando permisos. Base de todas las acciones de autosave.
-// Trae también el estado de aprobación: aprobacion.ts lo necesita para el
-// guardarraíl de solo-comprar (ver setAtributoAction/setHabilidadAction).
+// Trae también el estado de aprobación y la XP disponible: aprobada + subir
+// de nivel se paga con XP (ver setAtributoAction/setHabilidadAction), al
+// mismo coste por nivel que en creación (docs/sistema.md, "Coste y progresión").
 async function loadEditable(characterId: string): Promise<Editable | { error: string }> {
   const user = await requireUser();
   const character = await prisma.character.findUnique({
@@ -48,7 +59,16 @@ async function loadEditable(characterId: string): Promise<Editable | { error: st
     sheet: parseSheet(character.stats),
     aprobada: character.status === "APPROVED",
     snapshot: parseSnapshot(character.approvedSnapshot),
+    xp: character.xp,
   };
+}
+
+// Coste total en XP para subir de `desde` a `hasta` (ambos inclusive del
+// lado alto), sumando el coste marginal de cada nivel intermedio.
+function costeSubidaXp(desde: number, hasta: number, factor: number): number {
+  let total = 0;
+  for (let nivel = desde + 1; nivel <= hasta; nivel++) total += costeMarginal(nivel, factor);
+  return total;
 }
 
 async function persist(
@@ -63,11 +83,12 @@ async function persist(
   return { ok: true, sheet };
 }
 
-// Aprobada: congelado del todo, ni subir ni bajar. El guardarraíl de
-// solo-comprar (aprobacion.ts, aplicarSueloAtributo/Habilidad) se queda listo
-// para cuando exista "subir con XP" — hasta entonces, tocar el pool de
-// creación tras aprobar sería colarse la progresión gratis con puntos que
-// sobraron sin gastar. `snapshot` en Editable queda ahí para esa fase.
+// Aprobada: ya no es el pool de creación, es progresión con XP. Solo se
+// puede subir (nunca bajar del valor actual — "comprado" con XP es tan
+// firme como comprado en creación) y el techo pasa a ser el del sistema
+// (6), no el de creación (4). El coste es el mismo Nivel×factor de
+// "Coste y progresión" (docs/sistema.md), sumado nivel a nivel desde el
+// valor actual hasta el pedido.
 export async function setAtributoAction(
   characterId: string,
   atributoId: AtributoId,
@@ -75,8 +96,24 @@ export async function setAtributoAction(
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  if (ctx.aprobada) return { ok: false, error: "La ficha ya está aprobada" };
-  return persist(characterId, setAtributoValue(ctx.sheet, atributoId, value));
+
+  if (!ctx.aprobada) {
+    return persist(characterId, setAtributoValue(ctx.sheet, atributoId, value));
+  }
+
+  const actual = ctx.sheet.atributos[atributoId];
+  const objetivo = Math.max(actual, Math.min(ATRIBUTO_MAX, Math.round(value)));
+  if (objetivo === actual) return { ok: true, sheet: ctx.sheet, xp: ctx.xp };
+
+  const coste = costeSubidaXp(actual, objetivo, COSTE_FACTOR_ATRIBUTO);
+  if (coste > ctx.xp) return { ok: false, error: "No tienes XP suficiente" };
+
+  const sheet: Sheet = { ...ctx.sheet, atributos: { ...ctx.sheet.atributos, [atributoId]: objetivo } };
+  const xp = ctx.xp - coste;
+  await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, xp } });
+  revalidatePath(`/characters/${characterId}`);
+  revalidatePath("/master");
+  return { ok: true, sheet, xp };
 }
 
 export async function setHabilidadAction(
@@ -86,8 +123,30 @@ export async function setHabilidadAction(
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  if (ctx.aprobada) return { ok: false, error: "La ficha ya está aprobada" };
-  return persist(characterId, setHabilidadValue(ctx.sheet, habilidadId, value));
+
+  if (!ctx.aprobada) {
+    return persist(characterId, setHabilidadValue(ctx.sheet, habilidadId, value));
+  }
+
+  const actual = ctx.sheet.habilidades[habilidadId].valor;
+  const objetivo = Math.max(actual, Math.min(HABILIDAD_MAX, Math.round(value)));
+  if (objetivo === actual) return { ok: true, sheet: ctx.sheet, xp: ctx.xp };
+
+  const coste = costeSubidaXp(actual, objetivo, COSTE_FACTOR_HABILIDAD);
+  if (coste > ctx.xp) return { ok: false, error: "No tienes XP suficiente" };
+
+  const sheet: Sheet = {
+    ...ctx.sheet,
+    habilidades: {
+      ...ctx.sheet.habilidades,
+      [habilidadId]: { ...ctx.sheet.habilidades[habilidadId], valor: objetivo },
+    },
+  };
+  const xp = ctx.xp - coste;
+  await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, xp } });
+  revalidatePath(`/characters/${characterId}`);
+  revalidatePath("/master");
+  return { ok: true, sheet, xp };
 }
 
 // Reparto de letras (creación por prioridad, docs/sistema.md §2). Congelado

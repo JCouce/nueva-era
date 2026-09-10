@@ -27,31 +27,31 @@ export function AtributosTab({
   sheet,
   puntosDisponibles,
   aprobada,
+  xp,
   onSet,
 }: {
   sheet: Sheet;
   puntosDisponibles: number;
   aprobada: boolean;
+  xp: number;
   onSet: (id: AtributoId, value: number) => void;
 }) {
   // Se calculan una vez y se pasan hacia abajo: evita recalcular la especie
   // por cada atributo y cada aplicado del render.
   const mods = modificadoresActivos(sheet);
+  // Tras aprobar, el "pool" es la XP del personaje y el techo pasa a ser el
+  // del sistema, no el de creación — mismo coste por nivel, otra cuenta.
+  const tope = aprobada ? ATRIBUTO_MAX : ATRIBUTO_MAX_CREACION;
+  const disponible = aprobada ? xp : puntosDisponibles;
 
   return (
     <div className="flex flex-col gap-2">
-      {/* El pool de creación deja de significar nada en cuanto se aprueba —
-          subir más ahora es cosa de progresión con XP, todavía sin construir. */}
-      {!aprobada && (
-        <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
-          <span className="uppercase tracking-wide text-muted">Puntos</span>
-          <span
-            className={`tabular-nums ${puntosDisponibles < 0 ? "text-danger" : "text-accent"}`}
-          >
-            {puntosDisponibles}
-          </span>
-        </div>
-      )}
+      <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
+        <span className="uppercase tracking-wide text-muted">{aprobada ? "XP" : "Puntos"}</span>
+        <span className={`tabular-nums ${disponible < 0 ? "text-danger" : "text-accent"}`}>
+          {disponible}
+        </span>
+      </div>
 
       {ATRIBUTOS.map((a) => {
         const value = sheet.atributos[a.id];
@@ -59,7 +59,8 @@ export function AtributosTab({
         const tieneModificadores = desglose.fuentes.length > 1;
         // Coste marginal del siguiente punto: triangular, Nivel × 2
         // (docs/sistema.md, "Coste y progresión") — no es fijo ni es el
-        // valor destino, crece con el nivel al que subes.
+        // valor destino, crece con el nivel al que subes. Aprobada o no, es
+        // la misma fórmula; solo cambia contra qué se compara (XP o pool).
         const costeSiguiente = costeMarginal(value + 1, COSTE_FACTOR_ATRIBUTO);
         return (
           <HudCard key={a.id} className="p-3">
@@ -72,10 +73,10 @@ export function AtributosTab({
               </div>
               <Stepper
                 value={value}
-                hint={value >= ATRIBUTO_MAX_CREACION ? "MÁX" : `${costeSiguiente} pts`}
-                canBuy={!aprobada && puntosDisponibles >= costeSiguiente}
+                hint={value >= tope ? "MÁX" : `${costeSiguiente} ${aprobada ? "xp" : "pts"}`}
+                canBuy={disponible >= costeSiguiente}
                 atMin={aprobada || value <= ATRIBUTO_MIN}
-                atMax={aprobada || value >= ATRIBUTO_MAX_CREACION}
+                atMax={value >= tope}
                 onBuy={() => onSet(a.id, value + 1)}
                 onSell={() => onSet(a.id, value - 1)}
               />
