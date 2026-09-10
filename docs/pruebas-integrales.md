@@ -312,20 +312,32 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
 
 ## Casos de permisos (transversal a todo el bloque)
 
-- [ ] **Un jugador (rol PLAYER) no puede entrar en `/master/combate`.** Con la sesión de
+- [x] **Un jugador (rol PLAYER) no puede entrar en `/master/combate`.** Con la sesión de
   un usuario PLAYER, navega directamente a la URL — debe redirigir a `/characters`, sin
   enseñar nada de la consola.
-- [ ] **D2 desde fuera de la UI** (no hay pantalla de jugador todavía, ver "Huecos
+  Registrado un usuario de prueba PLAYER (`qa-player-test`, borrado después) en un
+  contexto de navegador aislado y navegado directamente a `/master/combate`: redirige
+  limpio a `/characters` ("MIS PERSONAJES"), sin ningún rastro del panel de máster.
+- [x] **D2 desde fuera de la UI** (no hay pantalla de jugador todavía, ver "Huecos
   conocidos"): con la sesión de un PLAYER, comprueba que **su propio** combatiente sí
   puede ajustarse y el de **otro** no. Como no hay botón, esto se prueba llamando a la
   acción directamente — o simplemente confía en `permisos.test.ts` (`canAdjustCombatiente`,
   8 tests) hasta que exista una UI real de jugador que lo ejerza de verdad. Si tocas esta
   lógica, no te fíes solo del test unitario: en cuanto exista la vista de jugador
   (fase 3), repite este caso de punta a punta en el navegador.
-- [ ] **El resto de acciones (crear/terminar combate, añadir combatiente, mover turno,
+  Sin UI para probarlo hoy — cubierto por test unitario: `npm test` pasa entero (300/300),
+  incluyendo `canAdjustCombatiente (fase 6b, D2: el jugador solo toca su propio
+  combatiente)` en `permisos.test.ts`.
+- [x] **El resto de acciones (crear/terminar combate, añadir combatiente, mover turno,
   iniciativa, reordenar, aplicar/quitar estado) son solo-máster.** Confirma que ninguna
   tiene rastro de "o el dueño también" en el código (`requireMaster()`, no
   `canAdjustCombatiente`) — repásalo en `combate/actions.ts` si tocas permisos.
+  Repasado `src/app/master/combate/actions.ts`: todas las acciones (crear, terminar,
+  añadir jugador/NPC de catálogo/ad-hoc, marcar derrotado, avanzar turno, establecer
+  iniciativa, ordenar por iniciativa, mover combatiente, aplicar/quitar estado) llaman a
+  `requireMaster()`. Solo `ajustarRecurso` (usado por `ajustarPgAction` /
+  `ajustarFatigaAction`) usa `canAdjustCombatiente(user, combatiente)` — el permiso mixto
+  de D2. Sin rastro de "o el dueño también" en ninguna otra acción.
 
 ## Robustez general
 
