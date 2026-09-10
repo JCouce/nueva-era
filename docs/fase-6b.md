@@ -95,13 +95,26 @@ para el máster, sin intentar simularlo.
   consumidores de UI (`PiezaDetalle.tsx`, `ResumenTab.tsx`) narrowaban el tipo asumiendo
   que "lo que no es tiradaId/grupo/habilidad es modo" — `tsc` los pilló solo, se les añadió
   el caso. Test en `modificadores.test.ts`. 256/256 tests, `tsc --noEmit` limpio.
-- [ ] **0.2 — Derivar los umbrales de salud/fatiga como estados automáticos.**
-  `derivados.ts` hoy solo calcula el máximo (`salud()`). Añadir una función que, dado
-  PG/fatiga **actuales** (no antes disponibles — vienen del bloque 1), devuelva los
-  `ModificadorConFuente[]` de Herido/Malherido/Moribundo/Fatigado/Exhausto según los
-  umbrales de `docs/sistema.md` §7. No son estados que el máster aplique a mano: se
-  derivan solos del número actual, igual que hoy se deriva todo lo demás. Test con las
-  fronteras exactas de cada umbral (<50%, <25%, <10%).
+- [x] **0.2a — Penalizador de tiradas por umbral de PG/fatiga.** Hecha (2026-09-11).
+  `lib/rules/estados.ts` (nuevo, primera pieza — el resto llega en 0.3/0.4):
+  `umbralSalud()`/`umbralFatiga()` clasifican PG/fatiga actual vs. máximo en
+  normal/herido/malherido/moribundo (o normal/fatigado/exhausto), y
+  `modificadoresDeUmbrales()` los traduce a `ModificadorConFuente[]` (`tipo: "tirada"`,
+  `alcance: "todas"` de 0.1, `origen: "estado"`). Formalizados como supuestos S14 (los
+  umbrales de un mismo recurso no se acumulan, solo el más profundo) y S15 (cómo se
+  interpreta el "mínimo 1" de Moribundo/Exhausto) en `docs/sistema.md`. Test con las
+  fronteras exactas (con PG máx=20: 10 normal, 9 herido, 5 herido, 4 malherido, 2
+  malherido, 1 moribundo, 0 moribundo).
+- [ ] **0.2b — Velocidad y carga reducidas por umbral (mecanismo distinto a 0.2a).**
+  **Hallazgo al construir 0.2a:** "velocidad básica a la mitad" y "capacidad de carga
+  -25%/-50%" (Malherido, Moribundo, Exhausto) **no son deltas planas** — son porcentajes
+  sobre un valor ya calculado, y `Modificador` (0.1) solo suma/resta, no multiplica.
+  Forzarlo ahí rompería el "un único tipo de efecto" de la fase 4. Pendiente decidir el
+  mecanismo: lo más probable es que `movimiento()`/`cargaMaxima()`
+  (`lib/rules/derivados.ts`) acepten el umbral ya calculado por 0.2a y apliquen el
+  multiplicador al final de la función, fuera del pipeline de `Modificador` — a
+  confirmar al cogerla. La reducción de Moribundo ("una casilla por turno") es aún más
+  especial: no es ni delta ni porcentaje, es un tope fijo que ignora las fórmulas.
 - [ ] **0.3 — Catálogo `src/lib/catalog/estados.ts`.** Transcribir los ~20 estados de
   `docs/sistema-y-combate.md` §"Efectos y estados", separando número (→ `Modificador[]`,
   puede variar por grado de fracaso/éxito) de texto narrativo (→ campo `detalle`, sin
