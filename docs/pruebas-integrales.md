@@ -93,23 +93,39 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
 
 ## Bloque 2.2 — Añadir NPC ad-hoc
 
-- [ ] Camino feliz: nombre + PG → aparece en la cola con PG actual = máximo, el
+- [x] Camino feliz: nombre + PG → aparece en la cola con PG actual = máximo, el
   formulario se vacía solo.
-- [ ] **Nombre vacío o solo espacios.** El botón "Añadir NPC" debe seguir deshabilitado
+  "Guardia" PG 15 → aparece "PG 15/15 · Fatiga 0/0", campos Nombre y PG vacíos tras el
+  submit.
+- [x] **Nombre vacío o solo espacios.** El botón "Añadir NPC" debe seguir deshabilitado
   con el campo vacío; si se fuerza espacios en blanco (" "), no debe crear un NPC sin
   nombre real.
-- [ ] **PG en 0 o negativo.** El input es `type=number min=1`, pero prueba forzar un 0 o
+  Con el campo Nombre en "   " (tres espacios) y PG "10", el botón "Añadir NPC" sigue
+  deshabilitado (el cliente hace `trim()` antes de habilitar) — no llegó a intentarse el
+  envío.
+- [x] **PG en 0 o negativo.** El input es `type=number min=1`, pero prueba forzar un 0 o
   un negativo (pegar el valor, o cambiar el `min` desde las devtools) — el servidor debe
   rechazarlo igual ("PG inválidos."), el cliente no es la única barrera.
-- [ ] **PG con decimales** (ej. "12.5"). El campo no lo impide a nivel de HTML. Compueba
+  Forzado por consola (quitando `min` y disparando `input`/`change`) a PG=0 y luego
+  PG=-5, ambos con nombre real: el botón se habilita pero al enviar el servidor responde
+  "PG inválidos." las dos veces y no se crea ningún `Combatiente` nuevo.
+- [x] **PG con decimales** (ej. "12.5"). El campo no lo impide a nivel de HTML. Compueba
   qué pasa: ¿se guarda un PG fraccionario (12.5/12.5) o se trunca? Si se guarda
   fraccionario, anótalo como hallazgo — un PG con decimales no tiene sentido en las
   reglas del sistema.
-- [ ] **Dos NPC con el mismo nombre.** A diferencia de los jugadores, no hay guardarraíl
+  Con PG forzado a "12.5", el servidor lo acepta y la UI muestra "PG 12/12" — confirmado
+  en la base (`SELECT "pgActual","pgMax" FROM "Combatiente" WHERE nombre='Decimal12_5'`
+  → `12 | 12`, sin decimales). Se trunca a entero antes de guardar, no hay hallazgo.
+- [x] **Dos NPC con el mismo nombre.** A diferencia de los jugadores, no hay guardarraíl
   contra duplicados — debe permitir dos filas "Guardia" sin fundirlas ni pisarse los PG
   entre sí.
-- [ ] **Nombre muy largo** (40+ caracteres). Comprueba que no rompe el layout de la fila
+  Añadidos dos "Guardia" (PG 15 y PG 20): quedan como dos filas independientes,
+  "PG 15/15" y "PG 20/20", sin fundirse.
+- [x] **Nombre muy largo** (40+ caracteres). Comprueba que no rompe el layout de la fila
   ni la desborda fuera de la tarjeta.
+  "Comandante Supremo de la Guardia Imperial del Norte" (52 caracteres) a 390px de
+  ancho (viewport móvil): el nombre hace wrap a dos líneas dentro de la tarjeta, no
+  desborda ni rompe el layout (comprobado con captura de pantalla).
 
 ## Bloque 2.3 — Cola de iniciativa
 
