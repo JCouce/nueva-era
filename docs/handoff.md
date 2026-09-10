@@ -48,7 +48,7 @@ motor de modificadores, dos especies de andamio y las migraciones de ficha.
 | 0. Cimientos | ✅ | — |
 | 1. Motor de tiradas | ✅ completo, Alerta incluida | — (C4 resuelto 2026-09-10: Exploración sustituye a Supervivencia) |
 | 4. Modificadores y especies | ✅ con especies provisionales | El documento de especies |
-| **3. Equipo** | ⬜ **es la siguiente** | Nada (ver §6) |
+| **3. Equipo** | ✅ catálogo cerrado (ver §6) | — |
 | 2. Ficha viva | ⬜ | Resuelta en el diseño de la fase 6b (§9): sí, la vida y los estados de combate se llevan en la app |
 | 5. Poderes, dotes, aumentos | ⬜ | El diseñador, que aún no los ha escrito |
 | 6. Máster | ✅ 6a cerrada, ver §9 | Queda la 6b (combate en vivo), sin diseño cerrado todavía |
@@ -185,6 +185,33 @@ distintas y gestión de cargas. Cómo se muestra eso en un móvil es la decisió
 **Sugerencia de orden:** catálogo de datos primero (mecánico, sin riesgo), luego la tab de
 consulta con lo equipado, y solo después la compra, si el usuario quiere y llega la respuesta
 sobre el dinero inicial.
+
+### Cierre del catálogo (2026-09-11)
+
+Las cinco decisiones de arriba están resueltas y las tres tandas que faltaban por transcribir
+(Medicina y Farmacia, Herramientas y Accesorios, Otras Armas a Distancia) están hechas, cada
+una enganchada a una tirada real donde `docs/equipamiento.md` daba un bono limpio que
+mecanizar — detalle completo en `docs/sistema.md` §12. **El catálogo de equipo, como bloque de
+trabajo, está cerrado.**
+
+Quedan **dos piezas fuera a propósito**, no son huecos por descuido:
+
+- **Munición Especial** (mejora de arma: perforante, incendiaria, tóxica, electrizante,
+  criogénica, corrosiva, radiactiva, supresora — `docs/equipamiento.md` líneas 694 y 762-802).
+  Su coste depende de qué munición elijas cargar en el arma, y la munición en general
+  (regular y especial) sigue aparcada hasta que Murillo conteste la pregunta 7 de economía
+  (`docs/sistema.md`). Añadirla ahora sería incoherente sin esa pieza resuelta —
+  ver el comentario en `src/lib/catalog/equipo.ts` justo antes de `MEJORAS_ARMA`.
+- **Armas Modificadas** (Electrificantes, Térmicas, de Plasma, de Nanofilamento —
+  `docs/equipamiento.md` línea 936). Su coste es un **multiplicador** sobre el precio de otra
+  arma ya comprada ("Básico × 10"), no un objeto propio con precio fijo: no encaja en el
+  patrón del resto del catálogo (`Equipo` con `coste: number` plano o por nivel) sin decidir
+  antes cómo se modela "coste = precio de otra pieza × N". Documentado en el comentario de
+  cabecera de `src/lib/catalog/armasMelee.ts`.
+
+Las granadas, que en el diseño original de esta sección aparecían como pendientes de una
+tirada propia, ya la tienen (`lib/rules/combate.ts`, `tiradaDeGranada`) — dejaron de ser un
+hueco en el mismo cierre.
 
 ## 7. Lo que hay que preguntarle al diseñador
 
