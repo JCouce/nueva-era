@@ -45,6 +45,17 @@ defecto — cualquiera se puede reabrir si al construir algo no encaja:
 - **D4 — Niebla sobre NPCs (ocultar nombre/PG al jugador) fuera del MVP.** Es la pieza de
   más "brillo" pero también la que más UI nueva pide; se añade sin rehacer nada porque el
   campo `oculto` ya está en el modelo de datos desde el bloque 1.
+- **D5 — Sincronización de un solo sentido: combate → ficha, nunca al revés** (charla con
+  el usuario, 2026-09-11). El jugador **ve** su estado de combate en su propia ficha
+  (PG/fatiga, estados activos y sus modificadores reflejados en la pestaña Tiradas — si
+  tiene Confusión con -4 a distancia, lo ve ahí antes de tirar). Lo único que el jugador
+  puede **escribir** hacia el combate es su propio PG/fatiga (D2) — un número objetivo,
+  sin juicio de por medio. Todo lo demás que se planteó y se descartó explícitamente por
+  esto: que el jugador tire su Iniciativa y la mande al combate (era la 3.3 de más abajo,
+  eliminada), o cualquier otra acción que necesite que alguien arbitre un resultado
+  (resistir un efecto, declarar una reacción...) — eso sigue siendo del máster, mismo
+  principio fundacional de `docs/plan-app.md` §1 ("la app asiste, no arbitra"), aplicado
+  ahora también a la dirección del dato, no solo a qué se mecaniza.
 
 ---
 
@@ -305,10 +316,23 @@ adelantó aquí — `agregarNpcDeCatalogoAction` existe desde la 1.3 pero no tie
 ## Bloque 3 — Vista del jugador
 
 - [ ] **3.1 — Tira de combate en la ficha.** Cuando hay un `Combate EN_CURSO` con el
-  jugador dentro: su PG/fatiga actual, sus estados activos con su `detalle`, de quién es
-  el turno, número de ronda. Mobile-first estricto, como el resto de la ficha.
-- [ ] **3.2 — Autogestión de daño propio** (según D2). Mismo guardarraíl de permisos que
-  el resto de acciones del jugador sobre su propia ficha.
+  jugador dentro: su PG/fatiga actual, sus estados activos con su `detalle` **visible de
+  verdad, no en un tooltip** (hallazgo real de uso: la consola del máster lo esconde en
+  un `title`, que en móvil no existe — arreglarlo ahí también, no hace falta esperar a
+  este bloque), de quién es el turno, número de ronda. Mobile-first estricto, como el
+  resto de la ficha.
+- [ ] **3.1b — Los modificadores de los estados activos entran en la pestaña Tiradas**
+  (D5: la mitad "combate → ficha" de la sincronización). Si el máster le aplica Confusión
+  con -4 a distancia, el jugador lo ve reflejado ahí antes de tirar, no solo como
+  insignia informativa. El motor ya existe entero (`modificadoresDeEstados()`, fase 0) —
+  lo que falta es que `modificadoresActivos(sheet)` (o quien alimenta `TiradasTab`) sume
+  también los estados del `Combatiente` del jugador cuando hay un combate activo, no solo
+  los de la ficha en sí.
+- [ ] **3.2 — Autogestión de daño propio** (D2). Mismo guardarraíl de permisos que el
+  resto de acciones del jugador sobre su propia ficha. Es la única vía "ficha → combate"
+  que existe — todo lo demás que se planteó (que el jugador tire su Iniciativa y la
+  mande al combate) se descartó explícitamente por D5: sincronización de un solo
+  sentido, ver la decisión arriba.
 
 ## Bloque 4 — Reactividad
 
