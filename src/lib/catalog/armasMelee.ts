@@ -369,7 +369,9 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     ],
     efectos: "Crítico de Hemorragia (1d6 turnos)",
     pesoKg: null,
-    rareza: null,
+    // Rareza en blanco en EQUIP (a diferencia de Pelea, esta sí tiene coste):
+    // Común, coherente con su precio — ver S13 en docs/sistema.md.
+    rareza: "Común",
     coste: 100,
     defensa: null,
   },
@@ -386,7 +388,8 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     ],
     efectos: "Crítico de Hemorragia (1d8 turnos)",
     pesoKg: null,
-    rareza: null,
+    // Ver S13 en docs/sistema.md.
+    rareza: "Común",
     coste: 100,
     defensa: null,
   },
@@ -403,7 +406,8 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     ],
     efectos: "Crítico de Hemorragia (1d10 turnos)",
     pesoKg: null,
-    rareza: null,
+    // Ver S13 en docs/sistema.md.
+    rareza: "Común",
     coste: 150,
     defensa: null,
   },

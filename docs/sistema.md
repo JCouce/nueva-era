@@ -431,6 +431,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S10 | El bono de Fuerza del Exoesqueleto, que `EQUIP` duplica para "carga transportable y proezas de fuerza", se aplica **x2 a las 5 fórmulas de movimiento** (Carrera, Salto Vertical, Salto Horizontal, Escalada, Nado). No toca la Fuerza general ni Fortaleza/Vida, que siguen sin mecanizar. | `EQUIP` no dice explícitamente qué cuenta como "proeza de fuerza"; las 5 fórmulas salen de Potencia + Atletismo, la misma base física, así que tratarlas todas igual es lo más consistente. Pendiente de confirmar con Murillo. |
 | S11 | El redondeo de los Aplicados (media de dos básicos) es **hacia arriba**. | Decisión explícita del usuario (2026-09-10): mismo criterio que ya usa el motor para especialidades fuera de especialidad (`Math.ceil`), por consistencia con lo que ya existía. `HOJA2` no especifica el redondeo. |
 | S12 | Dotes no tiene presupuesto de creación en las letras A-D, solo **0 en la letra E**. | `HOJA2` solo rellena esa casilla de la tabla de prioridad; las demás están vacías. Puede ser que falten por transcribir — pendiente de confirmar con Murillo antes de construir nada sobre esto. |
+| S13 | Espada Ligera, Espada y Montante (`catalog/armasMelee.ts`) son **Común**. | `EQUIP` deja esas tres celdas de rareza en blanco (a diferencia de Pelea, que también tiene el coste en blanco: aquí sí hay coste, 100-150 cr.). Decisión del usuario (2026-09-11): Común encaja con ese rango de precio, igual que el resto de piezas Común del catálogo. |
 
 ## Conflictos detectados
 
