@@ -54,24 +54,42 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
 
 ## Bloque 2.1 — Crear combate + añadir jugadores
 
-- [ ] Camino feliz: sin combate en curso → "Crear combate" → aparece "Ronda 1", cola
+- [x] Camino feliz: sin combate en curso → "Crear combate" → aparece "Ronda 1", cola
   vacía, lista de personajes disponibles.
-- [ ] **Ya hay un combate en curso.** Con un combate `EN_CURSO` ya creado, intenta crear
+- [x] **Ya hay un combate en curso.** Con un combate `EN_CURSO` ya creado, intenta crear
   otro (recarga la página con dos pestañas, o llama a la acción dos veces seguidas antes
   de que la UI se actualice). Debe rechazarlo: "Ya hay un combate en curso." No debe
   aparecer un segundo `Combate` en la base.
-- [ ] **Añadir el mismo personaje dos veces.** Añade a "villa" (o quien exista), y sin
+  Probado con dos pestañas reales sobre el mismo estado "sin combate": crear en la
+  primera y, sin recargar, crear en la segunda. Mensaje exacto "Ya hay un combate en
+  curso." y `SELECT count(*) FROM "Combate" WHERE estado='EN_CURSO';` devuelve 1.
+- [x] **Añadir el mismo personaje dos veces.** Añade a "villa" (o quien exista), y sin
   recargar intenta añadirlo otra vez desde la lista (si ya desapareció de "Añadir
   jugador", provoca la llamada igualmente, p. ej. reabriendo la página a mitad). Debe
   rechazarlo: "Ese personaje ya está en este combate."
+  Probado con dos pestañas sobre el mismo combate vacío: añadir "gordo" en la primera y,
+  sin recargar, añadir "gordo" también en la segunda. Mensaje exacto "Ese personaje ya
+  está en este combate." y en la base solo queda una fila de `Combatiente` para ese
+  `characterId` dentro del combate `EN_CURSO` (confirmado con
+  `SELECT nombre, "combateId" FROM "Combatiente"` cruzado con el estado del combate).
 - [ ] **Sin personajes creados.** Si en algún entorno de pruebas no hay ningún
   `Character`, la sección "Añadir jugador" debe decir "No hay personajes creados." (no
   "Ya están todos en combate.", que es el otro mensaje para lista vacía).
-- [ ] **PG del jugador coincide con su ficha real.** Al añadirlo, "PG X/X" debe coincidir
+  **No probado esta sesión**: el entorno solo tiene dos `Character` reales (`villa`,
+  `gordo`) y la norma de limpieza prohíbe tocarlos — no hay forma de vaciar la tabla sin
+  borrar datos reales. Sí se confirmó el otro lado del mensaje: con ambos personajes ya
+  en combate, la sección muestra "Ya están todos en combate." (visto al añadir a los dos
+  durante esta misma sesión), así que al menos la rama contraria está verificada.
+- [x] **PG del jugador coincide con su ficha real.** Al añadirlo, "PG X/X" debe coincidir
   con la vida calculada en su propia ficha (`/characters/<id>`, pestaña Resumen) — no un
   número inventado ni desfasado.
-- [ ] Terminar combate sin nadie en la cola (0 combatientes) — no debe reventar, debe
+  "gordo" en combate: PG 10/10, Fatiga 9/9. Su ficha (`/characters/cmtvdieth0006z1yug9ombd7s`,
+  Resumen): Puntos de vida 10, Puntos de fatiga 9. Coincide exacto.
+- [x] Terminar combate sin nadie en la cola (0 combatientes) — no debe reventar, debe
   volver limpio a "No hay ningún combate en curso."
+  Probado dos veces (una con la cola vacía tras el intento de duplicado, otra la
+  original con "gordo" dentro terminada primero) — en ambos casos vuelve limpio a "No hay
+  ningún combate en curso." sin error en consola.
 
 ## Bloque 2.2 — Añadir NPC ad-hoc
 
@@ -219,3 +237,15 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
   combate existe o ya está `TERMINADO` antes de actualizar — confirma si esto revienta
   con un error de Prisma sin capturar (registro no encontrado) en vez de un
   `{ok:false, error}` limpio. Si revienta, es un hallazgo real, no un caso exótico.
+
+---
+
+## Progreso de esta sesión de pruebas
+
+- **Inicio:** 2026-09-10 19:04 CEST.
+- Dev server y Postgres ya estaban arriba, con la migración de las 17:51 aplicada antes
+  del arranque del server (18:23) — no hizo falta reiniciar.
+- Sesión MASTER: ya había una sesión activa en el Chrome del MCP (usuario `master`,
+  reutilizada de una sesión manual anterior) — no hizo falta registrar cuenta de prueba.
+- Estado inicial de la base: 0 `Combate`, personajes `villa` (sin aprobar) y `gordo`
+  (aprobado). Nada que limpiar antes de empezar.
