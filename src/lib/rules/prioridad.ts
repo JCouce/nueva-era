@@ -3,6 +3,7 @@
 // cada letra se usa una sola vez, y la letra fija el presupuesto de esa categoría.
 // Confirmado por el diseñador: las 5 letras se reparten entre las 5 categorías sin
 // repetir ninguna — igual que Shadowrun.
+import type { Rareza } from "../catalog/equipo";
 
 export const CATEGORIAS_PRIORIDAD = [
   "atributos",
@@ -54,7 +55,11 @@ export const PUNTOS_DOTES_POR_LETRA: Partial<Record<LetraPrioridad, number>> = {
   E: 0,
 };
 
-export const RECURSOS_POR_LETRA: Record<LetraPrioridad, { creditos: number; rareza: string }> = {
+// La rareza es el tope de lo que se puede equipar en creación (Tienda con
+// créditos, docs/handoff.md §6): quien pone Recursos en E no puede equipar
+// nada por encima de Común aunque encuentre el dinero, ni con la letra A se
+// llega a Singular — el tope más alto de la tabla es Muy Extraño.
+export const RECURSOS_POR_LETRA: Record<LetraPrioridad, { creditos: number; rareza: Rareza }> = {
   A: { creditos: 66000, rareza: "Muy Extraño" },
   B: { creditos: 41000, rareza: "Extraño" },
   C: { creditos: 27000, rareza: "Poco Habitual" },

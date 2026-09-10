@@ -16,6 +16,8 @@ import {
   desequipar,
   costeDePieza,
   costeDeRetirar,
+  rarezaDePieza,
+  rarezaPermitida,
   piezaEquipadaSchema,
   type AtributoId,
   type HabilidadId,
@@ -43,12 +45,16 @@ type Editable = {
   snapshot: AprobacionSnapshot | null;
   xp: number;
   creditos: number;
+  esMaster: boolean;
 };
 
 // Carga la ficha comprobando permisos. Base de todas las acciones de autosave.
 // Trae también el estado de aprobación y la XP disponible: aprobada + subir
 // de nivel se paga con XP (ver setAtributoAction/setHabilidadAction), al
 // mismo coste por nivel que en creación (docs/sistema.md, "Coste y progresión").
+// `esMaster` es de quien EDITA, no del dueño de la ficha — lo usa
+// equiparAction para saltarse el tope de rareza (decisión del usuario:
+// el máster no tiene techo).
 async function loadEditable(characterId: string): Promise<Editable | { error: string }> {
   const user = await requireUser();
   const character = await prisma.character.findUnique({
@@ -64,6 +70,7 @@ async function loadEditable(characterId: string): Promise<Editable | { error: st
     snapshot: parseSnapshot(character.approvedSnapshot),
     xp: character.xp,
     creditos: character.creditos,
+    esMaster: user.role === "MASTER",
   };
 }
 
@@ -224,6 +231,18 @@ export async function equiparAction(
   if (!parsed.success) return { ok: false, error: "Pieza de equipo inválida" };
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
+
+  // Tope de rareza por letra de Recursos (docs/sistema.md §2): solo en
+  // creación, nunca al máster (decisión del usuario, 2026-09-11) — aprobada
+  // o editando el máster, cualquier rareza pasa siempre que llegue el saldo.
+  if (!ctx.aprobada && !ctx.esMaster) {
+    const letra = ctx.sheet.prioridades.recursos;
+    const tope = letra ? RECURSOS_POR_LETRA[letra].rareza : null;
+    const rareza = rarezaDePieza(parsed.data);
+    if (tope && !rarezaPermitida(rareza, tope)) {
+      return { ok: false, error: `Tu letra de Recursos no llega a ${rareza}: tope ${tope}.` };
+    }
+  }
 
   const coste = costeDePieza(parsed.data);
   if (coste > ctx.creditos) return { ok: false, error: "No tienes créditos suficientes" };

@@ -13,6 +13,7 @@ import {
   equipoPorId,
   validarInstalacion,
   nuevaInstanciaId,
+  rarezaPermitida,
   type Sheet,
   type PiezaEquipada,
   type Armadura,
@@ -23,6 +24,7 @@ import {
   type Subsistema,
   type MejoraDeArma,
   type MejoraMovimiento,
+  type Rareza,
 } from "@/lib/rules";
 import { Acordeon } from "@/components/Acordeon";
 import {
@@ -216,28 +218,37 @@ function BotonEquipar({
 }
 
 // Armas, armaduras y armas melee no necesitan dónde instalarse: un botón y
-// ya — salvo que no llegue el saldo, entonces se bloquea igual que
-// AccionInstalable bloquea por falta de hueco.
+// ya — salvo que no llegue el saldo o se pase de la rareza que permite la
+// letra de Recursos, entonces se bloquea igual que AccionInstalable bloquea
+// por falta de hueco.
 function AccionSimple({
   pieza,
   creditos,
+  topeRareza,
   onEquipar,
 }: {
   pieza: Armadura | ArmaFuego | ArmaMelee;
   creditos: number;
+  topeRareza: Rareza | null;
   onEquipar: (p: PiezaEquipada) => void;
 }) {
   const coste = pieza.coste ?? 0;
   const sinFondos = coste > creditos;
+  const sinRareza = topeRareza !== null && !rarezaPermitida(pieza.rareza, topeRareza);
   return (
     <>
       <BotonEquipar
         className="mt-3"
-        disabled={sinFondos}
+        disabled={sinFondos || sinRareza}
         onClick={() => onEquipar({ instanciaId: nuevaInstanciaId(), catalogoId: pieza.id })}
       >
         Equipar
       </BotonEquipar>
+      {sinRareza && (
+        <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
+          Tu letra de Recursos no llega a {pieza.rareza}: tope {topeRareza}.
+        </p>
+      )}
       {sinFondos && (
         <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
           Te faltan {(coste - creditos).toLocaleString("es-ES")} créditos.
@@ -256,11 +267,13 @@ function AccionInstalable({
   pieza,
   sheet,
   creditos,
+  topeRareza,
   onEquipar,
 }: {
   pieza: MejoraEstandar | Subsistema | MejoraDeArma | MejoraMovimiento;
   sheet: Sheet;
   creditos: number;
+  topeRareza: Rareza | null;
   onEquipar: (p: PiezaEquipada) => void;
 }) {
   const [nivel, setNivel] = useState(pieza.niveles[0].nivel);
@@ -270,8 +283,11 @@ function AccionInstalable({
     familiaHost === "armadura"
       ? "Necesitas tener puesta una armadura para instalarlo."
       : "Necesitas tener un arma equipada para instalarlo.";
-  const costeNivel = pieza.niveles.find((n) => n.nivel === nivel)?.coste ?? 0;
+  const nivelInfo = pieza.niveles.find((n) => n.nivel === nivel);
+  const costeNivel = nivelInfo?.coste ?? 0;
   const sinFondos = costeNivel > creditos;
+  const sinRareza =
+    topeRareza !== null && !!nivelInfo && !rarezaPermitida(nivelInfo.rareza, topeRareza);
 
   return (
     <div className="mt-3 border-t border-border pt-3">
@@ -312,13 +328,15 @@ function AccionInstalable({
             const v = validarInstalacion(sheet, pieza.id, h.instanciaId, nivel);
             const motivo = !v.ok
               ? v.motivo
-              : sinFondos
-                ? `Te faltan ${(costeNivel - creditos).toLocaleString("es-ES")} créditos.`
-                : null;
+              : sinRareza
+                ? `Tu letra de Recursos no llega a ${nivelInfo!.rareza}: tope ${topeRareza}.`
+                : sinFondos
+                  ? `Te faltan ${(costeNivel - creditos).toLocaleString("es-ES")} créditos.`
+                  : null;
             return (
               <div key={h.instanciaId}>
                 <BotonEquipar
-                  disabled={!v.ok || sinFondos}
+                  disabled={!v.ok || sinFondos || sinRareza}
                   onClick={() =>
                     onEquipar({
                       instanciaId: nuevaInstanciaId(),
@@ -378,12 +396,14 @@ function ListaInstalable({
   mensajeVacio,
   sheet,
   creditos,
+  topeRareza,
   onEquipar,
 }: {
   piezas: readonly (MejoraEstandar | Subsistema | MejoraDeArma | MejoraMovimiento)[];
   mensajeVacio: string;
   sheet: Sheet;
   creditos: number;
+  topeRareza: Rareza | null;
   onEquipar: (p: PiezaEquipada) => void;
 }) {
   if (piezas.length === 0) {
@@ -394,7 +414,13 @@ function ListaInstalable({
       {piezas.map((p) => (
         <Acordeon key={p.id} titulo={p.label} resumen={p.resumen}>
           <DetalleModulo p={p} />
-          <AccionInstalable pieza={p} sheet={sheet} creditos={creditos} onEquipar={onEquipar} />
+          <AccionInstalable
+            pieza={p}
+            sheet={sheet}
+            creditos={creditos}
+            topeRareza={topeRareza}
+            onEquipar={onEquipar}
+          />
         </Acordeon>
       ))}
     </>
@@ -404,10 +430,12 @@ function ListaInstalable({
 export function TiendaTab({
   sheet,
   creditos,
+  topeRareza,
   onEquipar,
 }: {
   sheet: Sheet;
   creditos: number;
+  topeRareza: Rareza | null;
   onEquipar: (p: PiezaEquipada) => void;
 }) {
   const [categoria, setCategoria] = useState<CategoriaId>("armaduras");
@@ -420,9 +448,16 @@ export function TiendaTab({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2 border-b border-border pb-2">
-        <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
-          {"//SYSTEM · catálogo"}
-        </p>
+        <div className="flex flex-col gap-0.5">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+            {"//SYSTEM · catálogo"}
+          </p>
+          {topeRareza && (
+            <p className="font-mono text-[10px] uppercase text-muted">
+              Tope de rareza en creación: <span className="text-foreground">{topeRareza}</span>
+            </p>
+          )}
+        </div>
         <p className="font-mono text-sm tabular-nums text-accent">
           {creditos.toLocaleString("es-ES")} <span className="text-[10px] text-muted">cr.</span>
         </p>
@@ -472,7 +507,7 @@ export function TiendaTab({
               }
             >
               <DetalleArmadura p={p} />
-              <AccionSimple pieza={p} creditos={creditos} onEquipar={onEquipar} />
+              <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
             </Acordeon>
           ))}
 
@@ -498,7 +533,7 @@ export function TiendaTab({
                     }
                   >
                     <DetalleArma p={p} />
-                    <AccionSimple pieza={p} creditos={creditos} onEquipar={onEquipar} />
+                    <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
                   </Acordeon>
                 ))}
               </div>
@@ -511,6 +546,7 @@ export function TiendaTab({
             mensajeVacio={SIN_COMPATIBLES.mejorasEstandar}
             sheet={sheet}
             creditos={creditos}
+            topeRareza={topeRareza}
             onEquipar={onEquipar}
           />
         )}
@@ -521,6 +557,7 @@ export function TiendaTab({
             mensajeVacio={SIN_COMPATIBLES.subsistemas}
             sheet={sheet}
             creditos={creditos}
+            topeRareza={topeRareza}
             onEquipar={onEquipar}
           />
         )}
@@ -531,6 +568,7 @@ export function TiendaTab({
             mensajeVacio={SIN_COMPATIBLES.mejorasArma}
             sheet={sheet}
             creditos={creditos}
+            topeRareza={topeRareza}
             onEquipar={onEquipar}
           />
         )}
@@ -541,6 +579,7 @@ export function TiendaTab({
             mensajeVacio={SIN_COMPATIBLES.movimiento}
             sheet={sheet}
             creditos={creditos}
+            topeRareza={topeRareza}
             onEquipar={onEquipar}
           />
         )}
@@ -559,7 +598,7 @@ export function TiendaTab({
               }
             >
               <DetalleArmaMelee p={p} />
-              <AccionSimple pieza={p} creditos={creditos} onEquipar={onEquipar} />
+              <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
             </Acordeon>
           ))}
 
@@ -577,7 +616,7 @@ export function TiendaTab({
               }
             >
               <DetalleArmaMelee p={p} />
-              <AccionSimple pieza={p} creditos={creditos} onEquipar={onEquipar} />
+              <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
             </Acordeon>
           ))}
       </div>

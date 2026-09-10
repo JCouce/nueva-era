@@ -5,13 +5,21 @@
 // compatibilidad por tipo o por categoría de daño). Fuente:
 // docs/equipamiento.md + las decisiones de la fase 3 en docs/handoff.md §6.
 //
-// Simplificación deliberada del slice: no hay tienda con saldo todavía
-// (pregunta 7 de docs/sistema.md sin responder), así que "comprar" y
-// "equipar" son la misma acción — sheet.equipo es lo que el personaje lleva
-// puesto, no un inventario aparte. Si algún día hace falta poseer algo sin
-// llevarlo encima, se añade un campo `equipado: boolean` sin romper esto.
+// "Comprar" y "equipar" son la misma acción — sheet.equipo es lo que el
+// personaje lleva puesto, no un inventario aparte. Si algún día hace falta
+// poseer algo sin llevarlo encima, se añade un campo `equipado: boolean` sin
+// romper esto. El precio se cobra en créditos reales (Character.creditos,
+// characters/[id]/actions.ts) y la rareza tiene su propio tope, ligado a la
+// letra de Recursos — ver rarezaPermitida() más abajo.
 import { z } from "zod";
-import { equipoPorId, type ArmaFuego, type Equipo, type MejoraDeArma } from "../catalog/equipo";
+import {
+  equipoPorId,
+  RAREZA_ORDEN,
+  type ArmaFuego,
+  type Equipo,
+  type MejoraDeArma,
+  type Rareza,
+} from "../catalog/equipo";
 import type { ModificadorConFuente } from "./modificadores";
 import type { Sheet } from "./sheet";
 
@@ -220,6 +228,29 @@ export function costeDeRetirar(sheet: Sheet, instanciaId: string): number {
   return sheet.equipo
     .filter((p) => p.instanciaId === instanciaId || p.instaladoEnId === instanciaId)
     .reduce((total, p) => total + costeDePieza(p), 0);
+}
+
+// Rareza de una pieza equipada, con el mismo criterio de nivel que
+// costeDePieza (las instalables cotizan por el nivel elegido). null si no
+// existe en el catálogo o no tiene rareza asignada (Pelea, a mano vacía):
+// sin rareza no hay tope que aplicarle.
+export function rarezaDePieza(pieza: PiezaEquipada): Rareza | null {
+  const cat = equipoPorId(pieza.catalogoId);
+  if (!cat) return null;
+  if (cat.familia === "armadura" || cat.familia === "arma" || cat.familia === "armaMelee") {
+    return cat.rareza;
+  }
+  return cat.niveles.find((n) => n.nivel === pieza.nivel)?.rareza ?? null;
+}
+
+// ¿Cabe `rareza` dentro del `tope` de la letra de Recursos (docs/sistema.md
+// §2, "Creación por prioridad")? Sin rareza asignada, siempre cabe — no hay
+// nada que restringir. Decisión del usuario (2026-09-11): el tope solo rige
+// en creación, nunca para el máster — quien llama decide cuándo consultarla,
+// esta función no sabe de aprobación ni de roles.
+export function rarezaPermitida(rareza: Rareza | null, tope: Rareza): boolean {
+  if (rareza === null) return true;
+  return RAREZA_ORDEN.indexOf(rareza) <= RAREZA_ORDEN.indexOf(tope);
 }
 
 // Los modificadores que aporta lo que el jugador lleva puesto. Solo llegan

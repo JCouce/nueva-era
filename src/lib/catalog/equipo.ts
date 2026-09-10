@@ -27,6 +27,16 @@ import { ARMAS_MELEE, type ArmaMelee } from "./armasMelee";
 
 export type Rareza = "Común" | "Poco Habitual" | "Extraño" | "Muy Extraño" | "Singular";
 
+// De más a menos accesible: el índice es el rango que usa rarezaPermitida()
+// (lib/rules/equipo.ts) para comparar contra el tope de la letra de Recursos.
+export const RAREZA_ORDEN: readonly Rareza[] = [
+  "Común",
+  "Poco Habitual",
+  "Extraño",
+  "Muy Extraño",
+  "Singular",
+];
+
 // ── Armaduras y trajes ──────────────────────────────────────────────────
 export type Armadura = {
   familia: "armadura";

@@ -81,6 +81,14 @@ build: dónde pones la A y dónde la E define el personaje.
   en la ficha; gastarlo no, hasta que llegue el catálogo.
 - Resuelve la pregunta 10 (¿la psiónica tiene pool propio?) y responde a la pregunta 7 en
   la parte de "cuánto dinero inicial" (ver sección 8, Economía).
+- **La "Rareza X" de la columna Recursos es un tope de equipable, no solo flavor.**
+  Implementado (2026-09-11): la Tienda bloquea equipar cualquier pieza por encima de la
+  rareza de la letra elegida (`rarezaPermitida`, `lib/rules/equipo.ts`), con el mismo
+  criterio de dos gastos que ya existía para los créditos. Decisiones del usuario al
+  cerrarlo: el tope rige **solo en creación** (ficha sin aprobar) — una vez aprobada, o
+  editando el máster, cualquier rareza pasa siempre que llegue el saldo; el **máster nunca
+  tiene techo**, ni siquiera en `DRAFT`, para poder regalar algo narrativamente por encima
+  del tope del jugador.
 
 ### Aplicados `[FIRME · HOJA2]`
 

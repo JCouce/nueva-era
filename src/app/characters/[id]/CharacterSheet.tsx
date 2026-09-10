@@ -25,6 +25,7 @@ import {
   equipar,
   desequipar,
   setPrioridad,
+  RECURSOS_POR_LETRA,
   type AtributoId,
   type HabilidadId,
   type PiezaEquipada,
@@ -98,6 +99,7 @@ export function CharacterSheet({
   characterStatus,
   initialXp,
   initialCreditos,
+  esMaster,
 }: {
   characterId: string;
   initialName: string;
@@ -105,6 +107,7 @@ export function CharacterSheet({
   characterStatus: "DRAFT" | "APPROVED";
   initialXp: number;
   initialCreditos: number;
+  esMaster: boolean;
 }) {
   const aprobada = characterStatus === "APPROVED";
   const [active, setActive] = useState<TabId>("resumen");
@@ -242,6 +245,15 @@ export function CharacterSheet({
   const puntosSkill = puntosHabilidadesDisponibles(sheet);
   const { vida, fatiga } = salud(sheet);
 
+  // Tope de rareza de la letra de Recursos (docs/sistema.md §2): solo en
+  // creación, nunca al máster — aprobada la ficha, o editando el máster,
+  // cualquier rareza pasa siempre que llegue el saldo (mismo criterio que el
+  // servidor en equiparAction).
+  const topeRareza =
+    !aprobada && !esMaster && sheet.prioridades.recursos
+      ? RECURSOS_POR_LETRA[sheet.prioridades.recursos].rareza
+      : null;
+
   return (
     <div className="flex flex-col gap-4">
       <h1 className="font-display text-3xl font-bold uppercase tracking-wide">
@@ -335,7 +347,12 @@ export function CharacterSheet({
       {active === "psionica" && <PsionicaTab sheet={sheet} />}
       {active === "tiradas" && <TiradasTab sheet={sheet} />}
       {active === "tienda" && (
-        <TiendaTab sheet={sheet} creditos={creditos} onEquipar={commitEquipar} />
+        <TiendaTab
+          sheet={sheet}
+          creditos={creditos}
+          topeRareza={topeRareza}
+          onEquipar={commitEquipar}
+        />
       )}
       {active === "equipo" && (
         <EquipoTab sheet={sheet} creditos={creditos} onDesequipar={commitDesequipar} />

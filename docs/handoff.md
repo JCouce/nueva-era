@@ -155,6 +155,15 @@ distintas y gestión de cargas. Cómo se muestra eso en un móvil es la decisió
    usuario: sin penalización). `TiendaTab`/`EquipoTab` muestran el saldo y bloquean el botón
    de equipar si no llega, mismo patrón que la XP en Atributos/Habilidades. Verificado en
    Chrome con datos reales.
+   - **Añadido después (2026-09-11): tope de rareza por letra de Recursos.** La "Rareza X"
+     de la tabla de prioridad (docs/sistema.md §2) ya no es decorativa: equiparAction
+     rechaza cualquier pieza por encima de esa rareza (`rarezaPermitida`,
+     `lib/rules/equipo.ts`). Solo rige en creación (ficha `DRAFT`) y nunca al máster, que
+     puede equipar cualquier rareza en cualquier ficha — dos decisiones del usuario.
+     Verificado en Chrome con tres cuentas (jugador con letra E, y máster saltándose su
+     tope). De paso, tres armas melee (Espada Ligera, Espada, Montante) que `EQUIP` dejaba
+     sin rareza pasan a Común (S13 en docs/sistema.md) — sin eso no había tope que
+     aplicarles.
 2. **Ranuras.** Las armaduras admiten un número de subsistemas y un nivel máximo de
    exoesqueleto y movilidad aérea; las armas, un número de mejoras. Está todo en las tablas.
    ¿Se validan las ranuras o se confía en el jugador?

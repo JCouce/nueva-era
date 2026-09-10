@@ -9,6 +9,8 @@ import {
   modificadoresDeEquipo,
   costeDePieza,
   costeDeRetirar,
+  rarezaDePieza,
+  rarezaPermitida,
   type PiezaEquipada,
 } from "./equipo";
 
@@ -413,5 +415,46 @@ describe("costeDeRetirar", () => {
 
   test("una instancia que no existe no devuelve nada", () => {
     assert.equal(costeDeRetirar(defaultSheet(), "no-existe"), 0);
+  });
+});
+
+describe("rarezaDePieza", () => {
+  test("armadura o arma: la rareza del catálogo tal cual", () => {
+    assert.equal(rarezaDePieza({ instanciaId: "a1", catalogoId: "armadura_ligera" }), "Común");
+    assert.equal(rarezaDePieza({ instanciaId: "a2", catalogoId: "pistola_mosquito" }), "Común");
+  });
+
+  test("instalable: la rareza del nivel elegido, no la del primero", () => {
+    assert.equal(
+      rarezaDePieza({
+        instanciaId: "c1",
+        catalogoId: "camuflaje_trifasico",
+        nivel: 2,
+        instaladoEnId: "armadura-1",
+      }),
+      "Extraño",
+    );
+  });
+
+  test("pieza que no existe en el catálogo no tiene rareza", () => {
+    assert.equal(rarezaDePieza({ instanciaId: "x1", catalogoId: "no_existe" }), null);
+  });
+});
+
+describe("rarezaPermitida", () => {
+  test("sin rareza asignada, siempre cabe", () => {
+    assert.equal(rarezaPermitida(null, "Común"), true);
+  });
+
+  test("una rareza igual al tope cabe", () => {
+    assert.equal(rarezaPermitida("Extraño", "Extraño"), true);
+  });
+
+  test("una rareza por debajo del tope cabe", () => {
+    assert.equal(rarezaPermitida("Común", "Extraño"), true);
+  });
+
+  test("una rareza por encima del tope no cabe", () => {
+    assert.equal(rarezaPermitida("Muy Extraño", "Extraño"), false);
   });
 });

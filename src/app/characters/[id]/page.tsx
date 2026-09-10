@@ -51,6 +51,7 @@ export default async function CharacterPage({
           characterStatus={character.status}
           initialXp={character.xp}
           initialCreditos={character.creditos}
+          esMaster={user.role === "MASTER"}
         />
       </main>
     </>
