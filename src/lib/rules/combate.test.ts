@@ -203,3 +203,70 @@ describe("arma melee equipada", () => {
     assert.match(fila.nota ?? "", /Potencia en lugar de Fuerza/);
   });
 });
+
+describe("armamento pesado equipado", () => {
+  test("dificultad fija por arma, mecanizada como ajustesFijos", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "lac1", catalogoId: "lanzacohetes_rt" });
+    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Lanzacohetes RT")!;
+    assert.equal(fila.grupo, "Ataques");
+    assert.equal(fila.aplicado, "reflejos");
+    assert.equal(fila.habilidad, "combate_distancia");
+    assert.deepEqual(fila.ajustesFijos, [{ valor: -3, fuente: "Lanzacohetes RT" }]);
+    assert.equal(fila.ataque?.modos[0].danio, 14);
+    assert.equal(fila.ataque?.modos[0].categoriaDanio, "Letal");
+    assert.match(fila.nota ?? "", /Alcance 450 m/);
+  });
+
+  test("el Lanzallamas Ligero no tiene alcance en metros, no aparece en la nota", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "lf1", catalogoId: "lanzallamas_ligero" });
+    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Lanzallamas Ligero")!;
+    assert.doesNotMatch(fila.nota ?? "", /Alcance/);
+    assert.equal(fila.ataque?.modos[0].danio, 10);
+    assert.equal(fila.ataque?.modos[0].categoriaDanio, "Fuego");
+  });
+
+  test("el Lanzagranadas pesado tiene el daño según la granada elegida, como el integrado", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "lg1", catalogoId: "lanzagranadas_pesado" });
+    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Lanzagranadas")!;
+    assert.deepEqual(fila.ajustesFijos, [{ valor: -2, fuente: "Lanzagranadas" }]);
+    const modo = fila.condiciones?.find((c) => c.id === "modo");
+    assert.ok(modo && modo.tipo === "opcion");
+    assert.equal(modo.opciones.length, 14);
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "granada_plasma")?.danio, 16);
+  });
+});
+
+describe("granada equipada", () => {
+  test("genera 'Lanzar...' con Potencia + Atletismo y la dificultad de lanzarla a mano", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "g1", catalogoId: "granada_fragmentacion" });
+    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Lanzar Granada de Fragmentación")!;
+    assert.equal(fila.grupo, "Ataques");
+    assert.equal(fila.aplicado, "potencia");
+    assert.equal(fila.habilidad, "atletismo");
+    assert.deepEqual(fila.ajustesFijos, [{ valor: -2, fuente: "Granada de Fragmentación" }]);
+    assert.equal(fila.ataque?.modos[0].danio, 14);
+    assert.equal(fila.ataque?.modos[0].categoriaDanio, "Letal");
+    assert.match(fila.nota ?? "", /Potencia × 10 m/);
+  });
+
+  test("una granada de solo efecto (sin daño directo) lo indica en la categoría", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "g1", catalogoId: "granada_humo" });
+    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Lanzar Granada de Humo")!;
+    assert.equal(fila.ataque?.modos[0].categoriaDanio, "Efecto (sin daño directo)");
+  });
+
+  test("dos granadas equipadas dan dos filas independientes", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "g1", catalogoId: "granada_casera" });
+    sheet = equipar(sheet, { instanciaId: "g2", catalogoId: "granada_plasma" });
+    const labels = tiradasDeAtaque(sheet)
+      .map((t) => t.label)
+      .filter((l) => l.startsWith("Lanzar"));
+    assert.deepEqual(labels, ["Lanzar Granada Casera", "Lanzar Granada de Plasma"]);
+  });
+});

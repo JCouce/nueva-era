@@ -10,7 +10,8 @@ import {
   type TipoArma,
 } from "../catalog/equipo";
 import type { ArmaMelee } from "../catalog/armasMelee";
-import { MUNICION_GRANADA } from "../catalog/municion";
+import type { ArmaPesada } from "../catalog/armamentoPesado";
+import { MUNICION_GRANADA, ALCANCE_ARROJADA, type MunicionGranada } from "../catalog/municion";
 import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condiciones";
 import type { Tirada } from "./tiradas";
 
@@ -183,6 +184,88 @@ function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: strin
   };
 }
 
+// Armamento pesado: una dificultad fija por arma (columna "Dif." de EQIP),
+// no varios modos entre los que elegir como en ArmaFuego/ArmaMelee — se
+// mecaniza como ajustesFijos (automático, sin condición) en vez de
+// condicionModo (que es para cuando el jugador elige entre opciones). El
+// alcance no tiene tramos (un único número, o ninguno en el Lanzallamas): se
+// queda como texto informativo en `nota`, igual que el resto de "Otras
+// Armas a Distancia" — mismo criterio que Radar/Escáner (ver herramientas.ts).
+function tiradaDeArmamentoPesado(arma: ArmaPesada, instanciaId: string): Tirada {
+  const notaAlcance = arma.alcanceM !== null ? `Alcance ${arma.alcanceM} m. · ` : "";
+
+  // Lanzagranadas (pesado): el daño depende de la granada cargada, igual
+  // que el Lanzagranadas Integrado (mejora de arma) — aquí como arma
+  // independiente con su propio cargador.
+  if (arma.danio === null) {
+    const modo = condicionModo(MUNICION_GRANADA.map((m) => ({ id: m.id, etiqueta: m.label, dificultad: 0 })));
+    return {
+      id: `ataque_pesado_${instanciaId}`,
+      label: `Disparar con ${arma.label}`,
+      grupo: "Ataques",
+      aplicado: "reflejos",
+      habilidad: "combate_distancia",
+      nota: `${notaAlcance}Cargador ${arma.cargador}. ${arma.efectos}`,
+      ajustesFijos: [{ valor: arma.dificultad, fuente: arma.label }],
+      condiciones: modo ? [modo] : [],
+      ataque: {
+        modos: MUNICION_GRANADA.map((m) => ({
+          id: m.id,
+          danio: m.danio,
+          formulaDanio: null,
+          categoriaDanio: m.categoriaDanio ?? "Efecto (sin daño directo)",
+        })),
+      },
+    };
+  }
+
+  return {
+    id: `ataque_pesado_${instanciaId}`,
+    label: `Disparar con ${arma.label}`,
+    grupo: "Ataques",
+    aplicado: "reflejos",
+    habilidad: "combate_distancia",
+    nota: `${notaAlcance}${arma.efectos}`,
+    ajustesFijos: [{ valor: arma.dificultad, fuente: arma.label }],
+    ataque: {
+      modos: [
+        {
+          id: "0",
+          danio: arma.danio,
+          formulaDanio: null,
+          categoriaDanio: arma.categoriaDanio ?? "Efecto (sin daño directo)",
+        },
+      ],
+    },
+  };
+}
+
+// Granadas lanzadas a mano: Potencia + Atletismo (no Combate a Distancia,
+// es un lanzamiento, no un disparo), con la dificultad propia de lanzarla
+// (`dificultadArrojada`) como único ajuste fijo — automática, no hay nada
+// que el jugador elija al respecto.
+function tiradaDeGranada(granada: MunicionGranada, instanciaId: string): Tirada {
+  return {
+    id: `lanzar_granada_${instanciaId}`,
+    label: `Lanzar ${granada.label}`,
+    grupo: "Ataques",
+    aplicado: "potencia",
+    habilidad: "atletismo",
+    nota: `${granada.areaEfecto} · Alcance ${ALCANCE_ARROJADA}.`,
+    ajustesFijos: [{ valor: granada.dificultadArrojada, fuente: granada.label }],
+    ataque: {
+      modos: [
+        {
+          id: "0",
+          danio: granada.danio,
+          formulaDanio: null,
+          categoriaDanio: granada.categoriaDanio ?? "Efecto (sin daño directo)",
+        },
+      ],
+    },
+  };
+}
+
 function tiradaDeArmaMelee(arma: ArmaMelee, instanciaId: string): Tirada {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
   const modo = condicionModo(modosConId);
@@ -208,11 +291,11 @@ function tiradaDeArmaMelee(arma: ArmaMelee, instanciaId: string): Tirada {
   };
 }
 
-// Todas las filas de la categoría "Ataques": una por arma de fuego
-// equipada y una por arma melee equipada — incluida Pelea (Puñetazo,
-// Patada, Codazo o Rodillazo), que ya no se añade sola: si el jugador la
-// quiere en Tiradas, la equipa desde la Tienda como cualquier otra arma
-// (aparece con "no se compra" en vez de precio, pero es el mismo flujo).
+// Todas las filas de la categoría "Ataques": una por arma de fuego, arma
+// melee, arma pesada o granada equipada — incluida Pelea (Puñetazo, Patada,
+// Codazo o Rodillazo), que ya no se añade sola: si el jugador la quiere en
+// Tiradas, la equipa desde la Tienda como cualquier otra arma (aparece con
+// "no se compra" en vez de precio, pero es el mismo flujo).
 export function tiradasDeAtaque(sheet: Sheet): Tirada[] {
   const tiradas: Tirada[] = [];
 
@@ -227,6 +310,16 @@ export function tiradasDeAtaque(sheet: Sheet): Tirada[] {
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
     if (cat?.familia === "armaMelee") tiradas.push(tiradaDeArmaMelee(cat, pieza.instanciaId));
+  }
+
+  for (const pieza of sheet.equipo) {
+    const cat = equipoPorId(pieza.catalogoId);
+    if (cat?.familia === "armaPesada") tiradas.push(tiradaDeArmamentoPesado(cat, pieza.instanciaId));
+  }
+
+  for (const pieza of sheet.equipo) {
+    const cat = equipoPorId(pieza.catalogoId);
+    if (cat?.familia === "granada") tiradas.push(tiradaDeGranada(cat, pieza.instanciaId));
   }
 
   return tiradas;

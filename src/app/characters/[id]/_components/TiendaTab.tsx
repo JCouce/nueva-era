@@ -17,6 +17,8 @@ import {
   DISFRAZ_HOLOGRAFICO,
   ESCANER_DETECTOR,
   MATERIALES,
+  ARMAMENTO_PESADO,
+  MUNICION_GRANADA,
   equipoPorId,
   validarInstalacion,
   nuevaInstanciaId,
@@ -33,6 +35,8 @@ import {
   type MejoraMovimiento,
   type Herramienta,
   type Consumible,
+  type ArmaPesada,
+  type MunicionGranada,
   type Rareza,
 } from "@/lib/rules";
 import { Acordeon } from "@/components/Acordeon";
@@ -43,6 +47,8 @@ import {
   DetalleArmaMelee,
   DetalleModulo,
   DetalleConsumible,
+  DetalleArmaPesada,
+  DetalleGranada,
 } from "./equipo/PiezaDetalle";
 
 // Las cuatro herramientas con niveles de la categoría "Herramientas" — igual
@@ -74,6 +80,11 @@ const CATEGORIAS = [
   { id: "movimiento", titulo: "Movimiento", cantidad: MOVIMIENTO.length },
   { id: "medicina", titulo: "Medicina", cantidad: 1 + FARMACOS.length },
   { id: "herramientas", titulo: "Herramientas", cantidad: HERRAMIENTAS_CON_NIVEL.length + MATERIALES.length },
+  {
+    id: "armamentoPesado",
+    titulo: "Armamento Pesado",
+    cantidad: ARMAMENTO_PESADO.length + MUNICION_GRANADA.length,
+  },
 ] as const;
 
 type CategoriaId = (typeof CATEGORIAS)[number]["id"];
@@ -249,7 +260,7 @@ function AccionSimple({
   topeRareza,
   onEquipar,
 }: {
-  pieza: Armadura | ArmaFuego | ArmaMelee | Consumible;
+  pieza: Armadura | ArmaFuego | ArmaMelee | Consumible | ArmaPesada | MunicionGranada;
   creditos: number;
   topeRareza: Rareza | null;
   onEquipar: (p: PiezaEquipada) => void;
@@ -468,7 +479,10 @@ function relevanteAhora(
 }
 
 const SIN_COMPATIBLES: Record<
-  Exclude<CategoriaId, "armaduras" | "armas" | "melee" | "kerzul" | "medicina" | "herramientas">,
+  Exclude<
+    CategoriaId,
+    "armaduras" | "armas" | "melee" | "kerzul" | "medicina" | "herramientas" | "armamentoPesado"
+  >,
   string
 > = {
   mejorasEstandar: "Nada instalable ni instalado: necesitas una armadura equipada.",
@@ -775,6 +789,46 @@ export function TiendaTab({
                 }
               >
                 <DetalleConsumible p={p} />
+                <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
+              </Acordeon>
+            ))}
+          </>
+        )}
+
+        {categoria === "armamentoPesado" && (
+          <>
+            {ARMAMENTO_PESADO.map((p) => (
+              <Acordeon
+                key={p.id}
+                titulo={p.label}
+                resumen={p.resumen}
+                etiqueta={
+                  <div className="flex flex-col items-end gap-1">
+                    <BadgeRareza rareza={p.rareza} />
+                    <Precio coste={p.coste} />
+                  </div>
+                }
+              >
+                <DetalleArmaPesada p={p} />
+                <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
+              </Acordeon>
+            ))}
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+              {`// Granadas · ${MUNICION_GRANADA.length}`}
+            </p>
+            {MUNICION_GRANADA.map((p) => (
+              <Acordeon
+                key={p.id}
+                titulo={p.label}
+                resumen={p.areaEfecto}
+                etiqueta={
+                  <div className="flex flex-col items-end gap-1">
+                    <BadgeRareza rareza={p.rareza} />
+                    <Precio coste={p.coste} />
+                  </div>
+                }
+              >
+                <DetalleGranada p={p} />
                 <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
               </Acordeon>
             ))}

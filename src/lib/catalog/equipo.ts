@@ -32,6 +32,8 @@ import {
   ESCANER_DETECTOR,
   MATERIALES,
 } from "./herramientas";
+import { ARMAMENTO_PESADO, type ArmaPesada } from "./armamentoPesado";
+import { MUNICION_GRANADA, type MunicionGranada } from "./municion";
 
 export type Rareza = "Común" | "Poco Habitual" | "Extraño" | "Muy Extraño" | "Singular";
 
@@ -2461,8 +2463,8 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         ],
         // El -1 es al ataque de ESTA arma en concreto: se mecaniza como
         // ajusteAtaque. El lanzagranadas en sí es un perfil de disparo
-        // aparte (con su propia munición) que combate.ts declara bloqueado:
-        // no hay tabla de granadas en el catálogo con la que dar su daño.
+        // aparte (con su propia munición): combate.ts genera su propia
+        // tirada usando MUNICION_GRANADA (catalog/municion.ts) para el daño.
         modificadores: [],
         ajusteAtaque: -1,
       },
@@ -2479,7 +2481,9 @@ export type Equipo =
   | MejoraDeArma
   | ArmaMelee
   | Herramienta
-  | Consumible;
+  | Consumible
+  | ArmaPesada
+  | MunicionGranada;
 
 export const EQUIPO: Equipo[] = [
   ...ARMADURAS,
@@ -2496,6 +2500,8 @@ export const EQUIPO: Equipo[] = [
   DISFRAZ_HOLOGRAFICO,
   ESCANER_DETECTOR,
   ...MATERIALES,
+  ...ARMAMENTO_PESADO,
+  ...MUNICION_GRANADA,
 ];
 
 export function equipoPorId(id: string): Equipo | null {

@@ -455,8 +455,33 @@ transcribir — Medicina y Farmacia, Herramientas y Accesorios, y Otras Armas a 
 > criterio que la `nota` de las tiradas fijas. La VTF, a diferencia de la VTM, **tampoco**
 > trae ningún bono limpio (nada de "+N a las tiradas"): se equipa como referencia para la
 > tirada fija `tecnica`, sin modificador y sin tirada propia. Los Materiales son
-> `consumible` sin tirada, igual que los Fármacos. Queda Otras Armas a Distancia
-> (armamento pesado + granadas).
+> `consumible` sin tirada, igual que los Fármacos.
+>
+> **Otras Armas a Distancia (Armamento Pesado + Granadas), hecho — cierra el catálogo de
+> equipo.** `catalog/armamentoPesado.ts`: Lanzallamas Ligero, Lanzacohetes RT, Lanzagranadas
+> (pesado, independiente), Lanzamisiles AT y Cañón de Plasma. No encajan en `ArmaFuego`: esa
+> tabla da tramos corta/media/larga con dificultad por tramo (mecanizados con
+> `condicionTramo`, elección del jugador); Armamento Pesado da una única dificultad fija por
+> arma y un único "Alcance" en metros (o ninguno, el Lanzallamas es de área pura). Familia de
+> catálogo nueva (`armaPesada`, sin host, precio plano — mismo perfil que `ArmaFuego`/
+> `Consumible`); su dificultad se mecaniza como `ajustesFijos` en `lib/rules/combate.ts`
+> (automática, sin elección — no `condicionModo`, que es para cuando SÍ hay varias opciones)
+> y el alcance queda como texto informativo en `nota`, mismo criterio que Radar/Escáner. El
+> Lanzagranadas pesado reutiliza `MUNICION_GRANADA` para su daño según granada cargada, igual
+> que el Lanzagranadas Integrado (mejora de arma) ya hacía. `mejorasAdmitidas` es solo
+> informativo: el catálogo de Mejoras de Arma filtra por `TipoArma` (fusil_asalto,
+> ametralladora...) y `armaPesada` no es una de esas familias — extender ese sistema a
+> armamento pesado es una decisión aparte que este bloque no pedía.
+>
+> Granadas: los datos ya existían (`MUNICION_GRANADA` en `catalog/municion.ts`, usados hasta
+> ahora solo como munición del Lanzagranadas). Ahora tienen familia propia (`granada`) y se
+> compran/equipan sueltas, igual que un Consumible. Cada una equipada genera su propia tirada
+> "Lanzar [Granada]" (`lib/rules/combate.ts`) — **Potencia + Atletismo** (es un lanzamiento a
+> mano, no un disparo, por eso no comparte pareja con las armas de fuego), con
+> `dificultadArrojada` como único `ajustesFijos`. Sin `modificadores`: su único número
+> mecanizado va en la tirada, no como bono de personaje. Con esto se cierra el catálogo de
+> equipo entero — las cuatro grandes familias que quedaban (Medicina, Herramientas, Armamento
+> Pesado, Granadas) están todas transcritas y enganchadas a tiradas donde correspondía.
 
 ## 13. Progresión `[PARCIAL · HOJA2]`
 

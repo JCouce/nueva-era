@@ -35,3 +35,4 @@ export * from "../catalog/armasMelee";
 export * from "../catalog/municion";
 export * from "../catalog/medicina";
 export * from "../catalog/herramientas";
+export * from "../catalog/armamentoPesado";

@@ -180,8 +180,9 @@ export function equipar(sheet: Sheet, pieza: PiezaEquipada): Sheet {
   const cat = equipoPorId(pieza.catalogoId);
   if (!cat) return sheet;
 
-  // herramienta y consumible se equipan directo, como una armadura — no
-  // están en esta lista a propósito, caen en la rama de abajo sin host.
+  // herramienta, consumible, armaPesada y granada se equipan directo, como
+  // una armadura — no están en esta lista a propósito, caen en la rama de
+  // abajo sin host.
   const necesitaHost =
     cat.familia === "subsistema" ||
     cat.familia === "mejoraEstandar" ||
@@ -220,7 +221,9 @@ export function costeDePieza(pieza: PiezaEquipada): number {
     cat.familia === "armadura" ||
     cat.familia === "arma" ||
     cat.familia === "armaMelee" ||
-    cat.familia === "consumible"
+    cat.familia === "consumible" ||
+    cat.familia === "armaPesada" ||
+    cat.familia === "granada"
   ) {
     return cat.coste ?? 0;
   }
@@ -248,7 +251,9 @@ export function rarezaDePieza(pieza: PiezaEquipada): Rareza | null {
     cat.familia === "armadura" ||
     cat.familia === "arma" ||
     cat.familia === "armaMelee" ||
-    cat.familia === "consumible"
+    cat.familia === "consumible" ||
+    cat.familia === "armaPesada" ||
+    cat.familia === "granada"
   ) {
     return cat.rareza;
   }
@@ -266,14 +271,22 @@ export function rarezaPermitida(rareza: Rareza | null, tope: Rareza): boolean {
 }
 
 // Peso de una pieza equipada, para Carga Transportable (docs/sistema.md
-// §5.5). Arma, armaMelee y consumible tienen `pesoKg` en el catálogo —
+// §5.5). Arma, armaMelee, consumible, armaPesada y granada tienen `pesoKg`
+// en el catálogo (granada siempre `null`: EQUIP marca esa columna con "I" y
+// no se ha podido determinar qué significa, ver catalog/municion.ts) —
 // armaduras, herramienta y las familias instalables no traen columna de
 // Peso en EQUIP, así que devuelven 0: no es que pesen cero, es que el
 // documento no lo dice.
 export function pesoDePieza(pieza: PiezaEquipada): number {
   const cat = equipoPorId(pieza.catalogoId);
   if (!cat) return 0;
-  if (cat.familia === "arma" || cat.familia === "armaMelee" || cat.familia === "consumible") {
+  if (
+    cat.familia === "arma" ||
+    cat.familia === "armaMelee" ||
+    cat.familia === "consumible" ||
+    cat.familia === "armaPesada" ||
+    cat.familia === "granada"
+  ) {
     return cat.pesoKg ?? 0;
   }
   return 0;
@@ -293,14 +306,22 @@ export function modificadoresDeEquipo(sheet: Sheet): ModificadorConFuente[] {
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat) return [];
 
-    if (cat.familia === "armadura" || cat.familia === "arma" || cat.familia === "consumible") {
+    if (
+      cat.familia === "armadura" ||
+      cat.familia === "arma" ||
+      cat.familia === "consumible" ||
+      cat.familia === "armaPesada"
+    ) {
       return cat.modificadores.map((m) => ({ ...m, origen: "equipo" as const, fuente: cat.label }));
     }
 
     // Las armas melee no tienen niveles ni modificadores mecanizados: el
     // daño es una fórmula ("Fue+2") que se calcula al golpear, no un bono
-    // fijo del personaje (ver catalog/armasMelee.ts).
-    if (cat.familia === "armaMelee") return [];
+    // fijo del personaje (ver catalog/armasMelee.ts). Las granadas tampoco:
+    // su único número es `dificultadArrojada`, que se mecaniza como
+    // ajustesFijos de la tirada de lanzarla (lib/rules/combate.ts), no como
+    // Modificador de personaje entero — por eso ni siquiera tienen el campo.
+    if (cat.familia === "armaMelee" || cat.familia === "granada") return [];
 
     const nivelInfo = cat.niveles.find((n) => n.nivel === pieza.nivel);
     if (!nivelInfo) return [];

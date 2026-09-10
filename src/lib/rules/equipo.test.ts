@@ -582,3 +582,29 @@ describe("herramienta y consumible (Medicina, docs/handoff.md §6)", () => {
     assert.deepEqual(modificadoresDeEquipo(s), []);
   });
 });
+
+describe("armaPesada y granada (Armamento Pesado, bloque 3 del catálogo pendiente)", () => {
+  test("se equipan sin host ni nivel, como un arma o un consumible", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "lg1", catalogoId: "lanzallamas_ligero" });
+    s = equipar(s, { instanciaId: "g1", catalogoId: "granada_casera" });
+    assert.equal(s.equipo.length, 2);
+  });
+
+  test("costeDePieza y rarezaDePieza: cotizan plano, como un arma", () => {
+    assert.equal(costeDePieza({ instanciaId: "cp1", catalogoId: "canon_plasma" }), 210000);
+    assert.equal(rarezaDePieza({ instanciaId: "cp1", catalogoId: "canon_plasma" }), "Muy Extraño");
+    assert.equal(costeDePieza({ instanciaId: "g1", catalogoId: "granada_plasma" }), 2000);
+    assert.equal(rarezaDePieza({ instanciaId: "g1", catalogoId: "granada_plasma" }), "Extraño");
+  });
+
+  test("pesoDePieza: armaPesada suma su pesoKg, granada pesa 0 (columna 'I' sin determinar)", () => {
+    assert.equal(pesoDePieza({ instanciaId: "cp1", catalogoId: "canon_plasma" }), 9);
+    assert.equal(pesoDePieza({ instanciaId: "g1", catalogoId: "granada_plasma" }), 0);
+  });
+
+  test("modificadoresDeEquipo: ninguna de las dos aporta bono de personaje (su número va en la tirada, no aquí)", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "cp1", catalogoId: "canon_plasma" });
+    s = equipar(s, { instanciaId: "g1", catalogoId: "granada_plasma" });
+    assert.deepEqual(modificadoresDeEquipo(s), []);
+  });
+});

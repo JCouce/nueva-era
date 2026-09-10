@@ -1,4 +1,4 @@
-import { ATRIBUTOS, HABILIDADES, TIRADAS } from "@/lib/rules";
+import { ATRIBUTOS, HABILIDADES, TIRADAS, ALCANCE_ARROJADA } from "@/lib/rules";
 import type {
   Armadura,
   ArmaFuego,
@@ -9,6 +9,8 @@ import type {
   MejoraMovimiento,
   Herramienta,
   Consumible,
+  ArmaPesada,
+  MunicionGranada,
   Modificador,
   Rareza,
 } from "@/lib/rules";
@@ -292,6 +294,62 @@ export function DetalleModulo({
           </div>
         ))}
       </div>
+    </>
+  );
+}
+
+// Armamento Pesado: dificultad y daño fijos (sin modos entre los que
+// elegir, a diferencia de DetalleArma) — mismos campos que la tirada
+// dinámica de lib/rules/combate.ts pinta en el modal, para que la ficha
+// técnica de la Tienda no diga algo distinto de lo que sale al tirar.
+export function DetalleArmaPesada({ p }: { p: ArmaPesada }) {
+  return (
+    <>
+      <p className="font-sans text-sm leading-relaxed text-muted">{p.descripcion}</p>
+
+      <div className="mt-3 flex items-baseline justify-between gap-2 font-mono text-[11px]">
+        <span className="uppercase text-foreground">{p.accion}</span>
+        <span className="tabular-nums text-muted">
+          dif. {signo(p.dificultad)} ·{" "}
+          {p.danio === null ? "según granada" : `${p.danio} ${p.categoriaDanio}`}
+        </span>
+      </div>
+
+      <dl className="mt-3 grid grid-cols-1 gap-x-4 font-mono text-[11px] sm:grid-cols-2">
+        <Stat label="Alcance" value={p.alcanceM === null ? "— (área)" : `${p.alcanceM} m`} />
+        <Stat label="Cargador" value={String(p.cargador)} />
+        <Stat label="Mejoras admitidas" value={String(p.mejorasAdmitidas)} />
+        <Stat label="Peso" value={p.pesoNota ? `${p.pesoKg} kg (${p.pesoNota})` : `${p.pesoKg} kg`} />
+        <Stat label="Rareza" value={`${p.rareza} · ${p.coste} cr.`} />
+      </dl>
+      {p.efectos && (
+        <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed text-info">{p.efectos}</p>
+      )}
+      <ChipsModificadores mods={p.modificadores} />
+    </>
+  );
+}
+
+// Granadas: se lanzan a mano (Potencia + Atletismo, dificultad
+// `dificultadArrojada`) — mismo dato que usa su tirada dinámica en
+// lib/rules/combate.ts. Sin `modificadores`: su único número mecanizado es
+// la dificultad de lanzarla, que vive en la tirada, no en un bono de
+// personaje (ver catalog/municion.ts).
+export function DetalleGranada({ p }: { p: MunicionGranada }) {
+  return (
+    <>
+      <div className="flex items-baseline justify-between gap-2 font-mono text-[11px]">
+        <span className="uppercase text-foreground">Lanzada a mano</span>
+        <span className="tabular-nums text-muted">
+          dif. {signo(p.dificultadArrojada)} ·{" "}
+          {p.categoriaDanio === null ? "sin daño directo" : `${p.danio} ${p.categoriaDanio}`}
+        </span>
+      </div>
+      <dl className="mt-3 grid grid-cols-1 gap-x-4 font-mono text-[11px] sm:grid-cols-2">
+        <Stat label="Alcance" value={ALCANCE_ARROJADA} />
+        <Stat label="Rareza" value={`${p.rareza} · ${p.coste} cr.`} />
+      </dl>
+      <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed text-info">{p.areaEfecto}</p>
     </>
   );
 }

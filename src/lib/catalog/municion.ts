@@ -1,15 +1,15 @@
 // Munición de granada — fuente: docs/equipamiento.md, sección "Granadas"
-// (líneas 822-842). Quedó fuera de la fase de equipo original junto con el
-// resto de "Otras Armas a Distancia" (armamento pesado, lanzagranadas
-// independiente): no es una regla sin definir, es transcripción pendiente —
-// la tabla existe entera en el documento, solo faltaba pasarla a datos.
+// (líneas 822-842). Familia equipable propia (bloque 3 de "Otras Armas a
+// Distancia", junto con catalog/armamentoPesado.ts): se compra/equipa igual
+// que un Consumible (precio plano, sin host) y genera su propia tirada de
+// "Lanzar [Granada]" en lib/rules/combate.ts — Potencia + Atletismo,
+// ajustesFijos con `dificultadArrojada` como único ajuste.
 //
 // `dificultadArrojada` y ALCANCE_ARROJADA son los de lanzarla A MANO (acción
-// simple, propia); el Lanzagranadas Integrado (catalog/equipo.ts) NO usa
-// ninguno de los dos — su propio texto fija una dificultad -2 y un alcance
-// de 200 m sea cual sea la granada cargada. Se transcriben de todos modos
-// porque son datos reales del documento, para el día que "lanzar granada a
-// mano" tenga su propia tirada.
+// simple, propia); el Lanzagranadas Integrado y el Lanzagranadas pesado
+// (catalog/equipo.ts / catalog/armamentoPesado.ts) NO usan ninguno de los
+// dos — su propio texto fija su propia dificultad y alcance sea cual sea la
+// granada cargada.
 //
 // `pesoKg: null` en todas: EQUIP marca la columna Peso con una "I" para las
 // granadas, igual que varias armas melee (ver catalog/armasMelee.ts) — no se
@@ -20,6 +20,7 @@ import type { Rareza } from "./equipo";
 export const ALCANCE_ARROJADA = "Potencia × 10 m";
 
 export type MunicionGranada = {
+  familia: "granada";
   id: string;
   label: string;
   dificultadArrojada: number;
@@ -33,6 +34,7 @@ export type MunicionGranada = {
 
 export const MUNICION_GRANADA: MunicionGranada[] = [
   {
+    familia: "granada",
     id: "granada_casera",
     label: "Granada Casera",
     dificultadArrojada: -2,
@@ -44,6 +46,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     coste: 20,
   },
   {
+    familia: "granada",
     id: "granada_fragmentacion",
     label: "Granada de Fragmentación",
     dificultadArrojada: -2,
@@ -55,6 +58,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     coste: 50,
   },
   {
+    familia: "granada",
     id: "granada_aturdidora",
     label: "Granada Aturdidora",
     dificultadArrojada: -2,
@@ -66,6 +70,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     coste: 100,
   },
   {
+    familia: "granada",
     id: "granada_cegadora",
     label: "Granada Cegadora",
     dificultadArrojada: -2,
@@ -77,6 +82,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     coste: 100,
   },
   {
+    familia: "granada",
     id: "granada_humo",
     label: "Granada de Humo",
     dificultadArrojada: -2,
@@ -88,6 +94,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     coste: 30,
   },
   {
+    familia: "granada",
     id: "granada_pem",
     label: "Granada PEM",
     dificultadArrojada: -2,
@@ -99,6 +106,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     coste: 100,
   },
   {
+    familia: "granada",
     id: "granada_gas_toxico",
     label: "Granada Gas Tóxico",
     dificultadArrojada: -2,
@@ -110,6 +118,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     coste: 150,
   },
   {
+    familia: "granada",
     id: "bomba_sonica",
     label: "Bomba Sónica",
     dificultadArrojada: -2,
@@ -121,6 +130,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     coste: 150,
   },
   {
+    familia: "granada",
     id: "granada_incendiaria",
     label: "Granada Incendiaria",
     dificultadArrojada: -2,
@@ -132,6 +142,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     coste: 150,
   },
   {
+    familia: "granada",
     id: "granada_fragmentacion_toxica",
     label: "Granada de Fragmentación Tóxica",
     dificultadArrojada: -2,
@@ -143,6 +154,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     coste: 250,
   },
   {
+    familia: "granada",
     id: "electro_granada",
     label: "Electro Granada",
     dificultadArrojada: -1,
@@ -154,6 +166,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     coste: 250,
   },
   {
+    familia: "granada",
     id: "granada_corrosiva",
     label: "Granada Corrosiva",
     dificultadArrojada: -2,
@@ -165,6 +178,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     coste: 350,
   },
   {
+    familia: "granada",
     id: "crio_granada",
     label: "Crio Granada",
     dificultadArrojada: -2,
@@ -176,6 +190,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     coste: 350,
   },
   {
+    familia: "granada",
     id: "granada_plasma",
     label: "Granada de Plasma",
     dificultadArrojada: -2,
