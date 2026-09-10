@@ -396,11 +396,33 @@ adelantó aquí — `agregarNpcDeCatalogoAction` existe desde la 1.3 pero no tie
   distintos para lo mismo. Con "Confusión (Fallo)" (-1 a todas) añadida encima, el modal
   de "Sigilo" mostró una línea de desglose "Confusión -1" y el total bajó en consonancia
   (-1 sigilo, -1 confusión = -2). `tsc`, 306/306 tests y lint limpios.
-- [ ] **3.2 — Autogestión de daño propio** (D2). Mismo guardarraíl de permisos que el
-  resto de acciones del jugador sobre su propia ficha. Es la única vía "ficha → combate"
-  que existe — todo lo demás que se planteó (que el jugador tire su Iniciativa y la
-  mande al combate) se descartó explícitamente por D5: sincronización de un solo
-  sentido, ver la decisión arriba.
+- [x] **3.2 — Autogestión de daño propio** (D2). Hecha (2026-09-10, sesión de relevo).
+  Mismo guardarraíl de permisos que el resto de acciones del jugador sobre su propia
+  ficha. Es la única vía "ficha → combate" que existe — todo lo demás que se planteó
+  (que el jugador tire su Iniciativa y la mande al combate) se descartó explícitamente
+  por D5: sincronización de un solo sentido, ver la decisión arriba.
+  **Implementación:** `CombateTab.tsx` gana `"use client"` + el mismo patrón de
+  `CombateConsole.tsx` (input `±N` sin control de React vía ref, `useTransition`,
+  `router.refresh()` en éxito) — pero solo en la fila marcada `esYo` (y no derrotada):
+  ningún otro combatiente de la cola tiene el control, ni siquiera visualmente. Llama
+  directo a `ajustarPgAction`/`ajustarFatigaAction` de `master/combate/actions.ts`
+  (ya listas para el jugador desde la 1.3, `canAdjustCombatiente`) — nada de wrapper
+  nuevo, ni server action propia: la única pieza que faltaba era la UI. Sin test nuevo
+  de motor: no hay fórmula aquí, el guardarraíl de permisos ya lo cubre
+  `permisos.test.ts` desde 1.3.
+  **Verificado en Chrome con una sesión de jugador real** (cuenta y personaje de prueba,
+  borrados al terminar): en el tab Combate, `-3` a PG en la fila propia bajó 8/8 a 5/8,
+  reflejado sin recargar tanto en la tira compacta como en la propia fila del tab —
+  confirmado también del lado máster (`/master/combate` en otra pestaña) que el cambio
+  llegó a la base, no solo al estado local del cliente. `tsc`, 306/306 tests y lint
+  limpios.
+
+**Con esto se cierra el bloque 3 — vista del jugador completa: tira compacta y tab
+Combate (3.1), estados de combate reflejados en Tiradas (3.1b), autogestión de PG/fatiga
+propio (3.2). D5 (combate → ficha) y D2 (el jugador toca su propio combatiente) quedan
+verificados de punta a punta con UI real, no solo con `permisos.test.ts`.** Sigue el
+bloque 4 (reactividad — polling), luego el 5 (catálogo de NPCs) y el 6 (brillo, después
+de validar el MVP en mesa real).
 
 ## Bloque 4 — Reactividad
 
