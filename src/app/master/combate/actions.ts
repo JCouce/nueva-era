@@ -190,6 +190,105 @@ export async function avanzarTurnoAction(combateId: string): Promise<CombateResu
   return { ok: true };
 }
 
+// --- Iniciativa y orden de la cola ---
+//
+// `orden` es la posición real en la cola (subtarea 1.1); `iniciativa` es solo
+// el número que el máster teclea para decidirla. Reordenar (a mano con las
+// flechas, o de golpe con "ordenar por iniciativa") mueve `orden`, y las dos
+// funciones de abajo tienen que recalcular `Combate.turnoIndex` para que
+// siga apuntando al MISMO combatiente que estaba en su turno, no a la
+// posición numérica que ahora ocupa otro — exactamente el riesgo que ya
+// avisaba el comentario de `turnoIndex` en schema.prisma.
+
+export async function establecerIniciativaAction(
+  combatienteId: string,
+  iniciativa: number | null,
+): Promise<CombateResult> {
+  if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede fijar la iniciativa." };
+  if (iniciativa !== null && !Number.isFinite(iniciativa)) {
+    return { ok: false, error: "Iniciativa inválida." };
+  }
+
+  await prisma.combatiente.update({ where: { id: combatienteId }, data: { iniciativa } });
+  revalidateCombate();
+  return { ok: true };
+}
+
+// Recoloca a todo el mundo por iniciativa descendente (los que no tienen
+// iniciativa puesta van al final) y conserva a quién le tocaba el turno.
+export async function ordenarPorIniciativaAction(combateId: string): Promise<CombateResult> {
+  if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede reordenar la cola." };
+
+  const combate = await prisma.combate.findUnique({
+    where: { id: combateId },
+    include: { combatientes: { orderBy: { orden: "asc" } } },
+  });
+  if (!combate) return { ok: false, error: "No existe ese combate." };
+
+  const activoId = combate.combatientes[combate.turnoIndex]?.id ?? null;
+
+  // sort() es estable: entre dos iniciativas iguales gana quien ya iba
+  // primero en el orden actual, no un desempate arbitrario.
+  const ordenados = [...combate.combatientes].sort(
+    (a, b) => (b.iniciativa ?? -Infinity) - (a.iniciativa ?? -Infinity),
+  );
+
+  await prisma.$transaction(
+    ordenados.map((c, i) => prisma.combatiente.update({ where: { id: c.id }, data: { orden: i } })),
+  );
+
+  const nuevoIndex = activoId ? ordenados.findIndex((c) => c.id === activoId) : 0;
+  await prisma.combate.update({
+    where: { id: combateId },
+    data: { turnoIndex: nuevoIndex < 0 ? 0 : nuevoIndex },
+  });
+
+  revalidateCombate();
+  return { ok: true };
+}
+
+// Sube o baja un puesto a un combatiente, intercambiando `orden` con su
+// vecino inmediato — nada de drag-and-drop (ver el brainstorm de diseño).
+export async function moverCombatienteAction(
+  combatienteId: string,
+  direccion: "arriba" | "abajo",
+): Promise<CombateResult> {
+  if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede reordenar la cola." };
+
+  const combatiente = await prisma.combatiente.findUnique({ where: { id: combatienteId } });
+  if (!combatiente) return { ok: false, error: "No existe ese combatiente." };
+
+  const combate = await prisma.combate.findUnique({
+    where: { id: combatiente.combateId },
+    include: { combatientes: { orderBy: { orden: "asc" } } },
+  });
+  if (!combate) return { ok: false, error: "No existe ese combate." };
+
+  const lista = combate.combatientes;
+  const idx = lista.findIndex((c) => c.id === combatienteId);
+  const vecinoIdx = direccion === "arriba" ? idx - 1 : idx + 1;
+  if (vecinoIdx < 0 || vecinoIdx >= lista.length) {
+    return { ok: false, error: "No se puede mover más en esa dirección." };
+  }
+  const vecino = lista[vecinoIdx];
+
+  const activoId = lista[combate.turnoIndex]?.id ?? null;
+
+  await prisma.$transaction([
+    prisma.combatiente.update({ where: { id: combatiente.id }, data: { orden: vecino.orden } }),
+    prisma.combatiente.update({ where: { id: vecino.id }, data: { orden: combatiente.orden } }),
+  ]);
+
+  const nuevoIndex =
+    activoId === combatiente.id ? vecinoIdx : activoId === vecino.id ? idx : combate.turnoIndex;
+  if (nuevoIndex !== combate.turnoIndex) {
+    await prisma.combate.update({ where: { id: combate.id }, data: { turnoIndex: nuevoIndex } });
+  }
+
+  revalidateCombate();
+  return { ok: true };
+}
+
 // --- PG / fatiga (D2: el dueño del Character también puede, no solo el máster) ---
 
 async function ajustarRecurso(

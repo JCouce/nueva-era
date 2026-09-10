@@ -100,6 +100,17 @@ usuario lo pida**: un push a `main` despliega a producción en Vercel.
 - **Fresh start el 2026-09-10**: se borraron todos los `Character` de la base local al cerrar
   la creación por prioridad (`HOJA2`). No hay ficha del usuario que evitar tocar — pero sigue
   la misma norma de siempre: si creas una de prueba, bórrala al terminar.
+- **`border-accent` sobre `HudCard` no siempre gana** — `HudCard` ya trae `border-border` en su
+  propia plantilla, y con Tailwind v4 dos utilidades de igual especificidad (mismo elemento,
+  mismo tipo de propiedad) las decide el orden en que el motor las generó en el CSS final, no
+  el orden del `className` en el JSX. Encontrado en 2026-09-11 (fase 6b, resaltar la fila del
+  turno activo en `CombateConsole.tsx`): `border-accent` se aplicaba en el DOM pero el borde
+  seguía gris — confirmado con `getComputedStyle` antes de arreglarlo, no a ojo. Arreglo:
+  `!border-accent` (el `!` de Tailwind fuerza `!important`, gana siempre). **Mismo patrón sin
+  el `!` ya existía antes en `TiradasTab.tsx` (`critico ? "border-accent"`) y `TiendaTab.tsx`
+  (`activo ? "border-accent ..."`)** — no se ha comprobado si ahí también falla; si tocas esas
+  pantallas, verifica el borde de verdad (con `getComputedStyle`, no de un vistazo) antes de
+  asumir que se ve.
 - **Antes de dar por bueno un modificador nuevo, ábrelo en el modal de Tiradas y mira si
   aparece en el desglose** — no te fíes de que "está en el catálogo" signifique "se aplica".
   Hay cuatro mecanismos distintos según el tipo de bono (condición interactiva, ajuste fijo,

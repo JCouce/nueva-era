@@ -220,10 +220,25 @@ para el máster, sin intentar simularlo.
   deshabilitado hasta que los dos campos tienen algo; se vacían solos tras añadir, para
   meter varios de seguido sin tocar el ratón de más. Verificado en Chrome: dos NPC
   distintos añadidos uno detrás de otro sin pisarse (15/15 y 8/8 PG cada uno).
-- [ ] **2.3 — Cola de iniciativa.** Input manual de iniciativa por combatiente, ordenar
-  automático, turno actual resaltado, botón "siguiente turno" (sube ronda al dar la
-  vuelta), reordenar manual con flechas (nada de drag-and-drop, ver el brainstorm sobre
-  por qué en móvil es mala idea).
+- [x] **2.3 — Cola de iniciativa.** Hecha (2026-09-11). Tres acciones nuevas en
+  `combate/actions.ts` (no estaban en el esqueleto de 1.3, hacían falta para esto):
+  `establecerIniciativaAction`, `ordenarPorIniciativaAction` (descendente, `sort()` estable
+  — un empate lo desempata quien ya iba primero) y `moverCombatienteAction` (flechas
+  ▲/▼, intercambia `orden` con el vecino). Las tres recalculan `Combate.turnoIndex` para
+  que el turno siga al **mismo combatiente**, no a la posición numérica — el riesgo que ya
+  avisaba el comentario de `turnoIndex` en `schema.prisma` desde el bloque 1.
+  **Verificado en Chrome con el caso que de verdad importa**: turno en Alfa → ordenar por
+  iniciativa (Alfa acaba último) → seguía diciendo "Turno de: Alfa", no saltó a quien
+  ocupa ahora su posición vieja. Turno en Beta → bajar a Beta un puesto con la flecha →
+  seguía diciendo "Turno de: Beta". Iniciativa persiste tras F5. Flechas de los extremos
+  deshabilitadas correctamente.
+  **Bug real encontrado y arreglado en la propia verificación** (no a ojo — con
+  `getComputedStyle` en el DOM): el resaltado del turno activo (`border-accent` sobre
+  `HudCard`) no se veía — `border-border`, ya presente en `HudCard`, le ganaba el cascade
+  a igual especificidad en Tailwind v4. Arreglado con `!border-accent`. **El mismo patrón
+  sin el `!` ya existía antes en `TiradasTab.tsx` y `TiendaTab.tsx`** — no revisado si ahí
+  también falla, anotado como trampa en `docs/traspaso.md` §5.
+  `tsc`, 295/295 tests y lint limpios.
 - [ ] **2.4 — Delta de PG/fatiga.** Input rápido +N/-N con categoría de daño (no
   letal/letal/grave), target táctil grande. Enchufa con 0.2: los umbrales aparecen solos
   en cuanto baja el número, cero lógica nueva de UI para eso.

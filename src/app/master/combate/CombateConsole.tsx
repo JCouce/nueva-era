@@ -13,6 +13,10 @@ import {
   terminarCombateAction,
   agregarJugadorAction,
   agregarAdHocAction,
+  avanzarTurnoAction,
+  establecerIniciativaAction,
+  ordenarPorIniciativaAction,
+  moverCombatienteAction,
   type CombateResult,
 } from "./actions";
 
@@ -21,6 +25,7 @@ type CombatienteView = {
   nombre: string;
   pgActual: number;
   pgMax: number;
+  iniciativa: number | null;
   characterId: string | null;
   derrotado: boolean;
 };
@@ -28,6 +33,7 @@ type CombatienteView = {
 type CombateView = {
   id: string;
   ronda: number;
+  turnoIndex: number;
   combatientes: CombatienteView[];
 };
 
@@ -107,37 +113,105 @@ export function CombateConsole({
     });
   };
 
+  const turnoActual = combate.combatientes[combate.turnoIndex] ?? null;
+
   return (
     <div className="flex flex-col gap-6">
-      <HudCard className="flex items-center justify-between px-4 py-3">
-        <span className="font-mono text-sm uppercase tracking-wide">Ronda {combate.ronda}</span>
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => ejecutar(() => terminarCombateAction(combate.id))}
-          className="px-2 py-1 font-mono text-xs uppercase tracking-wide text-muted transition hover:text-danger disabled:opacity-50"
-        >
-          Terminar combate
-        </button>
+      <HudCard className="flex flex-col gap-3 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <span className="font-mono text-sm uppercase tracking-wide">Ronda {combate.ronda}</span>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => ejecutar(() => terminarCombateAction(combate.id))}
+            className="px-2 py-1 font-mono text-xs uppercase tracking-wide text-muted transition hover:text-danger disabled:opacity-50"
+          >
+            Terminar combate
+          </button>
+        </div>
+        <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+          <span className="font-display text-sm uppercase tracking-wide">
+            Turno de: <span className="text-accent">{turnoActual?.nombre ?? "—"}</span>
+          </span>
+          <button
+            type="button"
+            disabled={pending || combate.combatientes.length === 0}
+            onClick={() => ejecutar(() => avanzarTurnoAction(combate.id))}
+            className="clip-chamfer-sm bg-accent px-3 py-2 font-mono text-xs font-semibold uppercase tracking-wide text-black shadow-glow-yellow active:scale-[0.99] disabled:opacity-50"
+          >
+            Siguiente turno
+          </button>
+        </div>
       </HudCard>
 
       <section>
-        <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted">
-          En combate ({combate.combatientes.length})
-        </h2>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="font-mono text-xs uppercase tracking-wide text-muted">
+            En combate ({combate.combatientes.length})
+          </h2>
+          <button
+            type="button"
+            disabled={pending || combate.combatientes.length < 2}
+            onClick={() => ejecutar(() => ordenarPorIniciativaAction(combate.id))}
+            className="font-mono text-xs uppercase tracking-wide text-muted transition hover:text-accent disabled:opacity-50"
+          >
+            Ordenar por iniciativa
+          </button>
+        </div>
         <ul className="flex flex-col gap-2">
-          {combate.combatientes.map((c) => (
+          {combate.combatientes.map((c, i) => (
             <li key={c.id}>
               <HudCard
-                className={`flex items-center justify-between px-4 py-3 ${c.derrotado ? "opacity-50" : ""}`}
+                className={`flex items-center gap-3 px-4 py-3 ${c.derrotado ? "opacity-50" : ""} ${
+                  i === combate.turnoIndex ? "!border-accent shadow-glow-yellow" : ""
+                }`}
               >
-                <span className="font-display text-base font-medium uppercase tracking-wide">
-                  {c.nombre}
-                  {c.derrotado && " (derrotado)"}
-                </span>
-                <span className="font-mono text-xs text-muted">
-                  PG {c.pgActual}/{c.pgMax}
-                </span>
+                <div className="flex flex-col">
+                  <button
+                    type="button"
+                    disabled={pending || i === 0}
+                    onClick={() => ejecutar(() => moverCombatienteAction(c.id, "arriba"))}
+                    aria-label={`Subir a ${c.nombre}`}
+                    className="h-5 w-5 text-muted transition hover:text-accent disabled:opacity-30"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending || i === combate.combatientes.length - 1}
+                    onClick={() => ejecutar(() => moverCombatienteAction(c.id, "abajo"))}
+                    aria-label={`Bajar a ${c.nombre}`}
+                    className="h-5 w-5 text-muted transition hover:text-accent disabled:opacity-30"
+                  >
+                    ▼
+                  </button>
+                </div>
+
+                <div className="flex-1">
+                  <span className="font-display text-base font-medium uppercase tracking-wide">
+                    {c.nombre}
+                    {c.derrotado && " (derrotado)"}
+                  </span>
+                  <span className="block font-mono text-xs text-muted">
+                    PG {c.pgActual}/{c.pgMax}
+                  </span>
+                </div>
+
+                <div className="flex flex-col items-end gap-1">
+                  <label htmlFor={`iniciativa-${c.id}`} className="font-mono text-[10px] text-muted">
+                    Iniciativa
+                  </label>
+                  <input
+                    id={`iniciativa-${c.id}`}
+                    type="number"
+                    defaultValue={c.iniciativa ?? ""}
+                    onBlur={(e) => {
+                      const valor = e.target.value === "" ? null : Number(e.target.value);
+                      ejecutar(() => establecerIniciativaAction(c.id, valor));
+                    }}
+                    className="clip-chamfer-sm w-16 border border-border bg-background px-2 py-1 text-right font-mono text-sm"
+                  />
+                </div>
               </HudCard>
             </li>
           ))}
