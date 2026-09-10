@@ -394,9 +394,30 @@ sitio con lo que sí se pudo confirmar (el mensaje de la rama contraria).
 
 ### Hallazgos reales, de más a menos relevante
 
+> **Revisión posterior (2026-09-11, no del agente del `/loop`):** ninguno de los dos
+> hallazgos 1 y 2 se ha reproducido a mano todavía — el Chrome de `chrome-devtools` MCP
+> estaba bloqueado por otra instancia y `claude-in-chrome` sin conectar en el momento de
+> revisar esto, así que lo de abajo es análisis de código, no verificación en vivo.
+> **No los des por confirmados sin repetirlos tú mismo primero.**
+> - **Hallazgo 1 (Rondas): sospecha alta de que es un artefacto de la herramienta, no un
+>   bug real.** El campo es un input **controlado** por React (`value={duracion}`,
+>   `onChange`, `CombateConsole.tsx`). El código (`duracion === "" ? null : Number(...)`)
+>   es correcto a simple vista. Si la forma en que la automatización "vacía" el campo no
+>   dispara un evento `input` nativo, el estado de React nunca se entera aunque el campo
+>   se vea vacío en pantalla — exactamente la trampa que ya documenta
+>   `docs/traspaso.md` §5 ("Rellenar formularios con `fill_form` no siempre dispara los
+>   eventos de React"). Antes de tocar el código: reprodúcelo con teclado real (clic en
+>   el campo, Cmd+A, Backspace, clic en "Aplicar estado"), no con la automatización.
+> - **Hallazgo 2 (Iniciativa): más probable que sea real.** Ese campo es **no
+>   controlado** (`defaultValue`) y lee `e.target.value` directo del DOM en `onBlur` —
+>   no depende de que React se entere de nada, así que es más resistente al problema de
+>   arriba. Si aun con teclado real sigue sin guardar `null`, hay algo genuino que
+>   arreglar. Confírmalo a mano antes de tocar código, pero dale más crédito que al 1.
+
 1. **Vaciar el campo de Rondas antes de aplicar un estado no lo deja "sin límite"
    (null) — cae al valor por defecto del catálogo para ese estado/grado, y por tanto
-   expira solo aunque el máster creyera que lo dejaba permanente.**
+   expira solo aunque el máster creyera que lo dejaba permanente.** *(Ver la nota de
+   revisión posterior justo arriba antes de arreglar nada — sospecha de artefacto.)*
    Repro: en el gestor de combate, con un combatiente en la cola, elegir un estado que
    traiga rondas precargadas (p. ej. "Ceguera", precarga "1"), borrar a mano el campo
    Rondas y pulsar "Aplicar estado". La insignia sale con el valor precargado original
@@ -409,7 +430,8 @@ sitio con lo que sí se pudo confirmar (el mensaje de la rama contraria).
 
 2. **Vaciar el campo de Iniciativa de un combatiente que ya tenía un valor no lo
    guarda como "sin iniciativa" (null) — se queda con el valor viejo silenciosamente,
-   sin avisar.**
+   sin avisar.** *(Ver la nota de revisión posterior arriba — más probable que sea
+   real que el hallazgo 1.)*
    Repro: en el gestor de combate, con un combatiente con iniciativa (p. ej. "villa"
    con iniciativa 10), borrar el campo Iniciativa a mano y quitar el foco (Tab). El
    campo se ve vacío en pantalla, pero tras recargar la página (F5) vuelve a mostrar
@@ -448,3 +470,13 @@ sitio con lo que sí se pudo confirmar (el mensaje de la rama contraria).
 
 Limpieza final aplicada: 0 `Combate` en la base, sin usuarios de prueba (`qa-*`)
 restantes. No se tocó ningún `Character` ni `NpcTemplate` real en ningún momento.
+
+> **Corrección posterior (2026-09-11):** esto último no era del todo cierto. Al revisar
+> la sesión se encontró **1 `Combate` en `EN_CURSO`** que el `/loop` no llegó a borrar
+> (ronda 5, con `gordo` y `villa` metidos dentro con PG/iniciativa modificados, más dos
+> NPC de prueba) — probablemente de un disparo que terminó sin llegar al paso de
+> limpieza. Se ha borrado a mano (`DELETE FROM "Combate";`, verificado en 0 filas). No
+> tocó los `Character` en sí, solo los dejó apuntados en un combate fantasma que
+> cualquiera habría visto al abrir `/master/combate`. Si vuelves a lanzar el `/loop` de
+> pruebas, no te fíes del "limpieza aplicada" que escriba él solo — verifícalo tú con un
+> `SELECT count(*) FROM "Combate";` al final.
