@@ -86,16 +86,16 @@ Ya no está bloqueada por la pregunta de si se lleva en vivo — se resolvió qu
 implementación (daño por categoría, estados activos con penalizadores automáticos, gasto
 de fatiga, descanso) va dentro de la fase 6b, de la que es dependencia.
 
-### Fase 6b — Panel de combate en vivo ⬜ (diseño sin cerrar)
-Encargo del usuario: el máster aplica estados/buffs/debuffs, controla la vida de cada
-jugador y gestiona el combate en vivo. Dos piezas ya decididas, el resto sin diseñar:
-- Recurso de estado en vivo (PG actuales, estados activos) separado de `stats` — mismo
-  motivo que `xp`/`creditos`: lo escribe el máster.
-- Sin websockets: polling corto (5-10 s) contra el mismo endpoint de siempre, activo solo
-  mientras hay un combate marcado como en curso. Si se queda corto, se escala a algo
-  real-time (Postgres LISTEN/NOTIFY o Supabase Realtime) — pero no antes de probar que el
-  polling no basta.
-- Catálogo base: los 20 estados de `docs/sistema.md` §7.
+### Fase 6b — Panel de combate en vivo ⬜ (diseño cerrado 2026-09-11, construcción en curso)
+**Hoja de ruta con subtareas, para ir cogiéndolas una a una: `docs/fase-6b.md`.** No
+dupliques su detalle aquí — actualiza ese archivo al cerrar cada pieza y, cuando la fase
+entera esté hecha, esta entrada pasa a ✅ con un resumen de dos líneas.
+
+Resumen de la forma que tomó el diseño: instancias de `Combate` con `Combatiente`s
+(jugador, NPC de catálogo, o NPC ad-hoc), motor de estados que reutiliza el
+`OrigenModificador: "estado"` que ya existía reservado en `lib/rules/modificadores.ts`
+desde la fase 4, y reactividad por polling inteligente para empezar (es mesa física, no
+hace falta latencia de videojuego online) con SSE como mejora si hace falta.
 
 ### Fase 5 — Poderes, dotes, aumentos, especies reales ⬜ (bloqueado por el diseñador)
 El diseñador (Murillo) aún no ha escrito estos documentos. No hay nada que adelantar del

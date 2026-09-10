@@ -28,6 +28,7 @@ todo lo demás, en `docs/tareas.md`.
 |---|---|---|
 | `docs/sistema.md` | **La fuente de verdad de las reglas.** Estado por bloque, fuente de cada regla, supuestos numerados (S1-S8), conflictos (C4-C13) y 30 preguntas abiertas | Siempre que se implemente o se aclare una regla |
 | `docs/tareas.md` | **La fuente de verdad del estado.** Qué está hecho, qué falta, qué lo bloquea | Al cerrar o abrir cualquier tarea — es el único sitio donde se anota esto |
+| `docs/fase-6b.md` | Hoja de ruta con subtareas del gestor de combate, para cogerlas una a una | Al coger o cerrar una subtarea. Se archiva (resumen a `docs/tareas.md`) cuando la fase entera cierre |
 | `docs/plan-app.md` | Por qué la arquitectura es como es (capas, versionado de ficha, sistema de modificadores) | Al cambiar una decisión de arquitectura, no de estado |
 | `docs/sistema-y-combate.md` | Transcripción del PDF de combate: dado, dificultades, salud, daño, 23 estados | Solo si llega una revisión del PDF |
 | `docs/equipamiento.md` | Transcripción del PDF de equipamiento: armaduras, armas, kerzul, medicina | Idem |
@@ -201,6 +202,8 @@ intencional (el 4 no tiene por qué ser alcanzable solo con el pool de creación
 que no cuadra en `HOJA2`. Preguntado al usuario, pendiente de que lo lleve al diseñador.
 
 ### Fase 6b — panel de combate: por qué así
+
+Diseño cerrado el 2026-09-11, ahora en construcción por subtareas: `docs/fase-6b.md`.
 
 Aquí sí compensa algo más vivo que un refresco al entrar — es el sitio real donde el
 usuario quiere el efecto "wow" de ver la vida moverse sin recargar. La solución sigue sin
