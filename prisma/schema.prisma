@@ -17,6 +17,11 @@ enum CharacterStatus {
   APPROVED
 }
 
+enum EstadoCombate {
+  EN_CURSO
+  TERMINADO
+}
+
 model User {
   id            String      @id @default(cuid())
   email         String      @unique
@@ -46,8 +51,76 @@ model Character {
   creditos         Int             @default(0)
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
+  combatientes     Combatiente[]
 
   @@index([ownerId])
+}
+
+// Fase 6b (docs/fase-6b.md), subtarea 1.1. Una instancia de combate: el
+// máster la crea, mete dentro Combatientes y lleva ronda/turno. Una sola
+// EN_CURSO a la vez (se comprueba en el server action, no aquí — no hay
+// forma limpia de expresar "unique where estado = EN_CURSO" en el schema de
+// Prisma sin SQL a mano, y con un solo máster no compensa la complejidad).
+//
+// No vive dentro de Character.stats ni tiene ownerId: lo escribe y lo lee
+// el máster, igual que xp/creditos — mismo motivo, ver docs/traspaso.md §9.
+model Combate {
+  id           String        @id @default(cuid())
+  estado       EstadoCombate @default(EN_CURSO)
+  ronda        Int           @default(1)
+  // Posición dentro del orden de Combatientes (por su campo `orden`), no un
+  // id — más simple que una relación con nombre propio, a cambio de que el
+  // bloque 2 (consola) tenga que recalcularla al reordenar o quitar a
+  // alguien. Ver la subtarea 2.3 antes de tocar esto.
+  turnoIndex   Int           @default(0)
+  combatientes Combatiente[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  terminadoAt  DateTime?
+}
+
+// Una fila en la cola de iniciativa de un Combate: un jugador (characterId),
+// o un NPC ad-hoc (solo `nombre`, sin fila en ningún catálogo) — el NPC de
+// catálogo (NpcTemplate, subtarea 1.2) llega en un paso aparte.
+//
+// pgActual/pgMax/fatigaActual/fatigaMax son una FOTO al añadir al combate,
+// no un valor derivado en vivo: si el personaje sube de nivel a mitad de
+// sesión, el combate en curso no debe moverse solo bajo los pies de nadie.
+// `estados` guarda EstadoActivo[] (lib/rules/estados.ts) como Json — mismo
+// criterio que Character.stats: es la forma más barata de iterar mientras
+// el catálogo de estados siga cambiando.
+model Combatiente {
+  id           String     @id @default(cuid())
+  combateId    String
+  combate      Combate    @relation(fields: [combateId], references: [id], onDelete: Cascade)
+  characterId  String?
+  character    Character? @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  // Nombre a mostrar, copiado al añadir (del Character, de un NpcTemplate
+  // futuro, o tecleado a mano para un NPC ad-hoc). Nunca se lee en vivo del
+  // Character — mismo motivo que la foto de PG/fatiga de arriba.
+  nombre       String
+  pgActual     Int
+  pgMax        Int
+  fatigaActual Int
+  fatigaMax    Int
+  iniciativa   Int?
+  // Orden de la cola de iniciativa. No se deriva solo de `iniciativa`
+  // (empates, reordenar a mano con las flechas de la subtarea 2.3): es su
+  // propio campo, que el máster puede mover sin tocar la iniciativa tirada.
+  orden        Int        @default(0)
+  estados      Json       @default("[]")
+  // Bloque 6.1 (niebla sobre NPCs): el jugador ve "Enemigo A" sin nombre ni
+  // PG exactos mientras esto sea true. Se añade ahora, sin UI todavía, para
+  // no tener que migrar el schema otra vez cuando llegue esa pieza.
+  oculto       Boolean    @default(false)
+  // Sale de la cola de turnos sin borrar la fila (guarda su sitio en el
+  // historial de la fase 6.5).
+  derrotado    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([combateId])
+  @@index([characterId])
 }
 
 // --- Modelos del adapter de Auth.js (para Google OAuth futuro) ---

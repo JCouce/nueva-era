@@ -146,13 +146,19 @@ para el máster, sin intentar simularlo.
 
 ## Bloque 1 — Modelo de datos y permisos
 
-- [ ] **1.1 — Schema: `Combate` y `Combatiente`.** `Combate` (id, estado `EN_CURSO` |
-  `TERMINADO`, ronda, turnoActual, timestamps). `Combatiente` (perteneceA `Combate`,
-  referencia opcional a `Character` **o** a `NpcTemplate` **o** ninguna de las dos —
-  ad-hoc con nombre/PG sueltos —, pgActual/fatigaActual, iniciativa, orden, `estados Json`
-  con la lista de `{estadoId, grado, rondasRestantes}`, `oculto Boolean` para el bloque
-  6). Ni `Combate` ni `Combatiente` viven dentro de `Character.stats` — mismo motivo que
-  `xp`/`creditos`: los escribe el máster, no el autosave del jugador. Migración.
+- [x] **1.1 — Schema: `Combate` y `Combatiente`.** Hecha (2026-09-11). `Combate` (estado
+  `EN_CURSO`/`TERMINADO`, ronda, `turnoIndex`, timestamps). `Combatiente` (`combateId`,
+  `characterId` opcional — null es NPC ad-hoc por ahora, `NpcTemplate` llega en 1.2 —,
+  `nombre` copiado al añadir, `pgActual`/`pgMax`/`fatigaActual`/`fatigaMax` como **foto**
+  del momento de añadir, no derivado en vivo, `iniciativa`, `orden` para reordenar a mano,
+  `estados Json` con `EstadoActivo[]` de `lib/rules/estados.ts`, `oculto` para la niebla
+  de 6.1, `derrotado` en vez de borrar la fila). Ni uno ni otro viven en `Character.stats`
+  — mismo motivo que `xp`/`creditos`. Migración `20260910154742_combate_combatiente`
+  aplicada en local. Sin "una sola EN_CURSO a la vez" en el schema — se valida en el
+  server action de 1.3, no hay forma limpia de expresarlo en Prisma sin SQL a mano.
+  **Efecto colateral corregido de paso:** el `select` dinámico de `adjustResource`
+  (`app/master/actions.ts`) dejó de tipar bien al crecer `Character` con la relación
+  nueva — cambiado a un `select` fijo. `tsc`, 288/288 tests y lint limpios.
 - [ ] **1.2 — Schema: `NpcTemplate`.** Del máster (no del jugador), nombre, PG base, nota
   de texto libre. Migración — puede ir en el mismo paso que 1.1 o aparte, a discreción de
   quien lo coja.

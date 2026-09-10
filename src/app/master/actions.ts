@@ -71,7 +71,7 @@ async function adjustResource(
 
   const character = await prisma.character.findUnique({
     where: { id },
-    select: { [field]: true },
+    select: { xp: true, creditos: true },
   });
   if (!character) return;
 
