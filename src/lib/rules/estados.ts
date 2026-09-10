@@ -135,3 +135,15 @@ export function modificadoresDeEstados(activos: EstadoActivo[]): ModificadorConF
     }));
   });
 }
+
+// Un turno que pasa (para cualquiera, no solo para quien lo lleva puesto —
+// subtarea 2.6) descuenta una ronda a cada estado activo con duración
+// conocida y se cae solo al llegar a 0, sin que el máster tenga que
+// quitarlo a mano. `null` es "sin límite" (varios estados del catálogo no
+// dan una duración por defecto, ver catalog/estados.ts) y no se toca — no
+// hay nada que decrementar.
+export function descontarDuracion(estados: EstadoActivo[]): EstadoActivo[] {
+  return estados
+    .map((e) => (e.rondasRestantes === null ? e : { ...e, rondasRestantes: e.rondasRestantes - 1 }))
+    .filter((e) => e.rondasRestantes === null || e.rondasRestantes > 0);
+}

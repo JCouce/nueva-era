@@ -275,9 +275,30 @@ para el máster, sin intentar simularlo.
   `"ATRAPADO"`, sin paréntesis. Duración se recalcula sola al cambiar de grado. Catálogo
   del desplegable confirmado: los 20, sin Fatiga/Heridas/Muerte.
   `tsc`, 295/295 tests y lint limpios.
-- [ ] **2.6 — Descuento automático de duración.** Al avanzar turno/ronda (2.3), las
-  `rondasRestantes` de cada estado activo bajan solas y el estado se cae a 0 sin que
-  nadie lo quite a mano.
+- [x] **2.6 — Descuento automático de duración.** Hecha (2026-09-11).
+  `descontarDuracion()` (nuevo, `lib/rules/estados.ts` — pura, con test, calcada del
+  resto del motor de estados) descuenta una ronda a cada estado activo con duración
+  conocida y filtra los que llegan a 0; `rondasRestantes: null` ("sin límite", varios
+  estados del catálogo no dan una por defecto) no se toca. `avanzarTurnoAction` (1.3) la
+  aplica a todos los combatientes en la misma transacción que mueve el turno — "un turno
+  que pasa" descuenta para cualquiera, no solo para quien tiene el estado puesto.
+  **Bug propio corregido antes de escribir el test:** el primer filtro de qué filas
+  escribir comparaba longitudes de array ("¿se cayó algún estado?") en vez de "¿había
+  algo que descontar?" — con eso, una duración que baja de 3 a 2 rondas (sigue en la
+  lista, no se cae) nunca se habría guardado, y el contador se habría quedado congelado
+  hasta el último tick. Corregido a "escribe si el combatiente tenía algo antes",
+  independientemente de si algo se cae en este paso.
+  **Verificado en Chrome con los tres casos que importaban**: duración 2 → "· 1R" tras
+  un turno → insignia desaparece del todo tras el siguiente; un estado sin duración
+  (Atrapado) sobrevive intacto a tres avances de turno seguidos.
+  5 tests nuevos. `tsc`, 300/300 tests y lint limpios.
+
+**Con esto se cierra el bloque 2 — hay un gestor de combate funcional de punta a punta,
+verificado en Chrome paso a paso: crear combate, añadir jugadores y NPC ad-hoc, cola de
+iniciativa con turno que sobrevive a reordenar, daño y curación con clamps correctos,
+aplicar/quitar estados del catálogo con su duración descontándose sola.** Añadir NPC
+*desde* el catálogo de `NpcTemplate` (en vez de solo ad-hoc) sigue siendo la 5.2, no se
+adelantó aquí — `agregarNpcDeCatalogoAction` existe desde la 1.3 pero no tiene UI todavía.
 
 ## Bloque 3 — Vista del jugador
 

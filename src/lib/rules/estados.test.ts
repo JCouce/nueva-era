@@ -1,6 +1,12 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { umbralSalud, umbralFatiga, modificadoresDeUmbrales, modificadoresDeEstados } from "./estados";
+import {
+  umbralSalud,
+  umbralFatiga,
+  modificadoresDeUmbrales,
+  modificadoresDeEstados,
+  descontarDuracion,
+} from "./estados";
 
 // PG/fatiga máx = 20 da fronteras limpias: 50%→10, 25%→5, 10%→2 (el "mínimo
 // 1" de S15 solo entra en juego con máximos bajos, ver el describe de abajo).
@@ -125,5 +131,39 @@ describe("modificadoresDeEstados: estados del catálogo aplicados a un combatien
       modificadoresDeEstados([{ estadoId: "corrosion", gradoId: "fracaso", rondasRestantes: null }]),
       [],
     );
+  });
+});
+
+describe("descontarDuracion (subtarea 2.6: un turno que pasa descuenta rondas solo)", () => {
+  test("una duración de 1 baja a 0 y desaparece — no se queda en 0 mudo", () => {
+    assert.deepEqual(descontarDuracion([{ estadoId: "aturdido", gradoId: "exito", rondasRestantes: 1 }]), []);
+  });
+
+  test("una duración de 3 baja a 2 y se queda (no hace falta llegar a 0 para escribir el cambio)", () => {
+    assert.deepEqual(descontarDuracion([{ estadoId: "aturdido", gradoId: "exito", rondasRestantes: 3 }]), [
+      { estadoId: "aturdido", gradoId: "exito", rondasRestantes: 2 },
+    ]);
+  });
+
+  test("rondasRestantes null (sin límite) no se toca, ni se cae", () => {
+    assert.deepEqual(descontarDuracion([{ estadoId: "atrapado", gradoId: "activo", rondasRestantes: null }]), [
+      { estadoId: "atrapado", gradoId: "activo", rondasRestantes: null },
+    ]);
+  });
+
+  test("varios a la vez: cada uno sigue su propia cuenta", () => {
+    const resultado = descontarDuracion([
+      { estadoId: "aturdido", gradoId: "exito", rondasRestantes: 1 },
+      { estadoId: "miedo", gradoId: "asustado", rondasRestantes: 3 },
+      { estadoId: "atrapado", gradoId: "activo", rondasRestantes: null },
+    ]);
+    assert.deepEqual(resultado, [
+      { estadoId: "miedo", gradoId: "asustado", rondasRestantes: 2 },
+      { estadoId: "atrapado", gradoId: "activo", rondasRestantes: null },
+    ]);
+  });
+
+  test("lista vacía no revienta", () => {
+    assert.deepEqual(descontarDuracion([]), []);
   });
 });

@@ -10,7 +10,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser, canAdjustCombatiente } from "@/lib/auth-helpers";
-import { parseSheet, salud, estadoPorId, type EstadoActivo } from "@/lib/rules";
+import { parseSheet, salud, estadoPorId, descontarDuracion, type EstadoActivo } from "@/lib/rules";
 
 export type CombateResult = { ok: true } | { ok: false; error: string };
 
@@ -164,8 +164,8 @@ export async function marcarDerrotadoAction(
 // --- Turno ---
 
 // No salta a los derrotados todavía — es una decisión de UX (¿se saltan
-// solos, o el máster los deja en la cola a propósito?) que le toca a la
-// 2.3, no a este esqueleto.
+// solos, o el máster los deja en la cola a propósito?) que le toca a una
+// subtarea aparte, no a este esqueleto.
 export async function avanzarTurnoAction(combateId: string): Promise<CombateResult> {
   if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede mover el turno." };
 
@@ -179,13 +179,29 @@ export async function avanzarTurnoAction(combateId: string): Promise<CombateResu
   const siguiente = combate.turnoIndex + 1;
   const daLaVuelta = siguiente >= combate.combatientes.length;
 
-  await prisma.combate.update({
-    where: { id: combateId },
-    data: {
-      turnoIndex: daLaVuelta ? 0 : siguiente,
-      ronda: daLaVuelta ? combate.ronda + 1 : combate.ronda,
-    },
+  // Solo escribe las filas que de verdad tenían algo que descontar — la
+  // mayoría de combatientes no llevan estados puestos, no hace falta
+  // tocarlas. Ojo: "tenía algo antes" es la condición correcta, no "cambió
+  // de tamaño" — una duración que baja de 3 a 2 rondas sigue siendo un
+  // cambio real aunque el array no pierda ninguna entrada.
+  const actualizaciones = combate.combatientes.flatMap((c) => {
+    const originales = c.estados as unknown as EstadoActivo[];
+    if (originales.length === 0) return [];
+    return [{ id: c.id, estados: descontarDuracion(originales) }];
   });
+
+  await prisma.$transaction([
+    prisma.combate.update({
+      where: { id: combateId },
+      data: {
+        turnoIndex: daLaVuelta ? 0 : siguiente,
+        ronda: daLaVuelta ? combate.ronda + 1 : combate.ronda,
+      },
+    }),
+    ...actualizaciones.map((c) =>
+      prisma.combatiente.update({ where: { id: c.id }, data: { estados: c.estados } }),
+    ),
+  ]);
   revalidateCombate();
   return { ok: true };
 }
