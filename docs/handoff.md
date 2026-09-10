@@ -3,6 +3,10 @@
 Para quien recoja el trabajo (otra sesión, otro agente, tú mismo dentro de tres semanas).
 Se lee entero antes de tocar nada: son cinco minutos y evita rehacer decisiones ya tomadas.
 
+> **Si vas a arrancar una sesión nueva para seguir el desarrollo, hay un encargo ya escrito
+> y listo para pegar: `docs/prompt-relevo.md`.** Cita este documento y los archivos de
+> código que más importan, con el estado exacto a 2026-09-10.
+
 ---
 
 ## 1. Qué es esto en una frase
@@ -27,6 +31,8 @@ hechos.
 | `src/lib/rules/` | El motor: atributos, habilidades, ficha, derivados, creación, tiradas, modificadores, migraciones | Con su test al lado |
 | `src/lib/catalog/` | Datos puros: hoy solo especies; aquí irá el equipo | Al añadir contenido |
 | `CLAUDE.md` | Stack, comandos, arquitectura y gotchas del proyecto | Al cambiar estructura o comandos |
+| `docs/prompt-relevo.md` | Encargo para arrancar una sesión nueva: archivos clave, estado exacto, método de trabajo | Al cerrar una fase grande |
+| `docs/prompt-equipo.md` | **Desfasado**: encargo para la fase de Equipo, que ya está construida (Tienda, Equipo, ranuras) | Histórico, no seguir como si fuera el siguiente paso |
 
 ## 3. Estado exacto
 
