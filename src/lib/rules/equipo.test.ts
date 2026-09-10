@@ -507,7 +507,7 @@ describe("pesoEquipado", () => {
   });
 });
 
-describe("herramienta y consumible (Medicina, docs/handoff.md §6)", () => {
+describe("herramienta y consumible (Medicina, docs/traspaso.md §6)", () => {
   test("una herramienta se equipa sin host, eligiendo nivel", () => {
     const s = equipar(defaultSheet(), {
       instanciaId: "v1",

@@ -1,4 +1,4 @@
-// Catálogo de equipo (fase 3, ver docs/handoff.md §6 y docs/plan-app.md).
+// Catálogo de equipo (fase 3, ver docs/traspaso.md §6 y docs/plan-app.md).
 //
 // Fase A: catálogo completo de armaduras, mejoras estándar y subsistemas, más
 // los datos (sin motor todavía) de las dos mejoras de movimiento. Empezó como
@@ -1201,7 +1201,7 @@ export const ARMAS: ArmaFuego[] = [
 // de columnas (duración, cobertura, cargas, ventajas…) y forzar una forma
 // numérica común inventaría estructura que el documento no tiene. `detalle`
 // son líneas de texto libres, una por efecto del nivel — es justo lo que se
-// decidió para los módulos "medio objeto, medio poder" (ver docs/handoff.md).
+// decidió para los módulos "medio objeto, medio poder" (ver docs/traspaso.md).
 export type NivelModulo = {
   nivel: number;
   rareza: Rareza;
@@ -1692,7 +1692,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         ],
         // Sin modificadores: la cobertura depende del modo y de si el usuario
         // está quieto o en movimiento, así que no hay un número único que
-        // aplique "mientras se lleva puesto" (ver docs/handoff.md §6).
+        // aplique "mientras se lleva puesto" (ver docs/traspaso.md §6).
         modificadores: [],
       },
       {

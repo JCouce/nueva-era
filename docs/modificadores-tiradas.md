@@ -164,7 +164,7 @@ está implementada o el documento no dice qué salvación la cubre. Eso es
 correcto: el modificador se calcula, no encuentra destino, y no aporta nada
 — ni de más ni de menos — hasta que la tirada exista o se aclare la regla.
 **No le asignes un `tiradaId` que exista solo para que "haga algo"**: eso
-sería inventar una regla, y aquí no se hace (ver `docs/handoff.md` §4).
+sería inventar una regla, y aquí no se hace (ver `docs/traspaso.md` §4).
 
 ## 6. Ejemplo trazado de punta a punta: el Bípode
 

@@ -1,7 +1,7 @@
 // Convierte el equipo de la ficha en tiradas concretas — "Disparar con Fusil
 // Plaga (Compleja)" en vez del genérico "Ataque a distancia" de antes. Es la
 // pieza que faltaba para que el equipo alimente de verdad la chuleta de
-// tiradas (ver docs/handoff.md §6, punto 4).
+// tiradas (ver docs/traspaso.md §6, punto 4).
 //
 import type { Sheet } from "./sheet";
 import {

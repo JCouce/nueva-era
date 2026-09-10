@@ -56,7 +56,7 @@ export const PUNTOS_DOTES_POR_LETRA: Partial<Record<LetraPrioridad, number>> = {
 };
 
 // La rareza es el tope de lo que se puede equipar en creación (Tienda con
-// créditos, docs/handoff.md §6): quien pone Recursos en E no puede equipar
+// créditos, docs/traspaso.md §6): quien pone Recursos en E no puede equipar
 // nada por encima de Común aunque encuentre el dinero, ni con la letra A se
 // llega a Singular — el tope más alto de la tabla es Muy Extraño.
 export const RECURSOS_POR_LETRA: Record<LetraPrioridad, { creditos: number; rareza: Rareza }> = {

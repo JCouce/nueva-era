@@ -3,7 +3,7 @@
 // distintos con la misma forma: subsistemas/mejoras estándar viven dentro de
 // una ARMADURA (ranura), mejoras de arma viven dentro de un ARMA (ranura +
 // compatibilidad por tipo o por categoría de daño). Fuente:
-// docs/equipamiento.md + las decisiones de la fase 3 en docs/handoff.md §6.
+// docs/equipamiento.md + las decisiones de la fase 3 en docs/traspaso.md §6.
 //
 // "Comprar" y "equipar" son la misma acción — sheet.equipo es lo que el
 // personaje lleva puesto, no un inventario aparte. Si algún día hace falta
@@ -207,7 +207,7 @@ export function desequipar(sheet: Sheet, instanciaId: string): Sheet {
   };
 }
 
-// Precio de una pieza equipada, para la Tienda con créditos (docs/handoff.md
+// Precio de una pieza equipada, para la Tienda con créditos (docs/traspaso.md
 // §6). Armas/armaduras/melee/consumibles cotizan por el catálogo tal cual —
 // no tienen niveles, herramienta incluida (VTM, y lo que llegue después)
 // cotiza por el nivel elegido, igual que las instalables — el nivel N ya

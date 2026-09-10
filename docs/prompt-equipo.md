@@ -1,12 +1,12 @@
 # Encargo: la fase del equipo
 
 > Prompt listo para arrancar la fase 3 en una sesión nueva. Se copia entero y se pega.
-> El análisis de por qué está escrito así vive en `docs/handoff.md` §6.
+> El análisis de por qué está escrito así vive en `docs/traspaso.md` §6.
 
 ---
 
 Vamos con la fase del equipo (fase 3 de `docs/plan-app.md`). Lee antes
-`docs/handoff.md` entero: tiene el estado del proyecto, cómo se trabaja aquí y las
+`docs/traspaso.md` entero: tiene el estado del proyecto, cómo se trabaja aquí y las
 trampas que ya nos han mordido. La fuente de verdad de las reglas es
 `docs/sistema.md`; el catálogo transcrito está en `docs/equipamiento.md`.
 
@@ -67,7 +67,7 @@ No las resuelvas por tu cuenta: propón tu recomendación de cada una y espera.
    irreducibles a un número y solo se pueden mostrar como texto. ¿Conectamos los
    mecanizables desde el principio o primero solo consulta?
 
-## Restricciones de método (están en el handoff, las repito por importantes)
+## Restricciones de método (están en el traspaso, las repito por importantes)
 
 - **No te inventes reglas.** Si algo no está definido, se declara en la interfaz con su
   motivo (patrón `PendienteTab` y las tiradas con `bloqueada`) o se anota como supuesto
@@ -86,7 +86,7 @@ No las resuelvas por tu cuenta: propón tu recomendación de cada una y espera.
 
 ## Cómo quiero que empieces
 
-1. Lee el handoff y la sección de equipamiento que necesites.
+1. Lee el traspaso y la sección de equipamiento que necesites.
 2. Enséñame las cinco decisiones con tu recomendación en cada una, en corto.
 3. Cuando las cerremos, propón el plan por trozos y vamos uno a uno, empezando por el
    catálogo de datos, que es mecánico y sin riesgo.

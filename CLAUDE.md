@@ -4,8 +4,9 @@ App mobile-first para que un grupo de rol (≈10 jugadores) lleve sus fichas de
 personaje. Sistema **propio, y todavía en diseño**: el diseñador va soltando las
 reglas a cuentagotas, así que el modelo de datos es flexible a propósito.
 
-**Si acabas de llegar al proyecto, lee `docs/handoff.md` primero**: estado exacto,
-cómo se trabaja aquí, trampas conocidas y qué toca ahora.
+**Si acabas de llegar al proyecto, lee `docs/traspaso.md` primero**: cómo se trabaja
+aquí, mapa de archivos y trampas conocidas. Para qué está hecho y qué falta,
+`docs/tareas.md`.
 
 **`docs/sistema.md` es la fuente de verdad de las reglas.** Lo que no esté ahí no
 existe para el código. Cada bloque lleva estado (`FIRME`, `INFERIDO`, `PARCIAL`,
@@ -14,9 +15,9 @@ y de preguntas abiertas. Antes de tocar reglas, léelo; después de tocarlas,
 actualízalo.
 
 Hoy la ficha cubre identidad, atributos (6 básicos + 6 aplicados derivados),
-habilidades con especialidades, salud y movimiento. Dotes, poderes psiónicos,
-aumentos y equipo están declarados como tabs vacías porque el sistema aún no los
-define.
+habilidades con especialidades, salud, movimiento y el catálogo de equipo entero
+(comprar, equipar, ranuras). Dotes, poderes psiónicos y aumentos siguen como tabs
+vacías porque el sistema aún no los define.
 
 ## Stack
 - **Next.js 16** — App Router, React Server Components + Server Actions. **Sin tRPC**:
@@ -109,13 +110,8 @@ Regla central en `canEditCharacter(user, character)` = `role === 'MASTER' || own
 - Comentarios solo cuando el WHY no es obvio.
 
 ## Pendiente
-- Login con Google (modelos `Account`/`Session` listos; falta el provider en
-  `auth.ts` + credenciales `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET`).
-- PWA instalable.
-- Bloques de ficha a la espera de que el diseñador los cierre: **dotes**, **poderes
-  psiónicos**, **aumentos** (biónicos y genéticos) y **equipo**. El catálogo de equipo
-  ya está transcrito en `docs/equipamiento.md`; falta decidir cómo se compra.
-- Progresión post-creación: hoy solo existen los 10+10 puntos de creación.
+Qué está hecho y qué falta vive en `docs/tareas.md` — es la única fuente de estado del
+proyecto, no lo dupliques aquí.
 
 ## Deploy — "¿cómo hago deploy?"
 **Un `git push origin main` es el deploy completo. No hay pasos manuales aparte.**

@@ -1,6 +1,6 @@
 // Catálogo de Herramientas y Accesorios — fuente: docs/equipamiento.md,
 // sección "Herramientas y Accesorios" (líneas 1059-1206). Segundo de los
-// tres bloques que quedaban sin transcribir (ver docs/handoff.md); primero
+// tres bloques que quedaban sin transcribir (ver docs/traspaso.md); primero
 // fue Medicina y Farmacia (catalog/medicina.ts), tercero es Armamento
 // Pesado + Granadas.
 //

@@ -1,6 +1,6 @@
 // Catálogo de Medicina y Farmacia — fuente: docs/equipamiento.md, sección
 // "Medicina y Farmacia" (líneas 1207-1347). Primer bloque de los tres que
-// quedaban sin transcribir del catálogo (ver docs/handoff.md); Herramientas
+// quedaban sin transcribir del catálogo (ver docs/traspaso.md); Herramientas
 // y Otras Armas a Distancia (armamento pesado + granadas) van después.
 //
 // Cómo conecta a tiradas (docs/modificadores-tiradas.md): la Valija Táctica

@@ -3,6 +3,10 @@
 Cómo pasar de "documentos de reglas" a "ficha que se usa en mesa", con el sistema todavía a
 medio escribir. Acompaña a `docs/sistema.md` (las reglas) y describe **cómo** se implementan.
 
+> **Esto es arquitectura y razonamiento, no estado.** Qué fase está hecha y qué falta vive
+> en `docs/tareas.md` — las fases y los "flancos" que este documento enumeraba se movieron
+> allí y se actualizan ahí, no aquí.
+
 ---
 
 ## 1. El principio: la app asiste, no arbitra
@@ -73,28 +77,7 @@ un test. Es lo que permite tocar el sistema sin miedo.
 
 ---
 
-## 3. Fases
-
-Tu orden (reglas → habilidades → equipo) es el correcto. Un matiz: las habilidades **ya están**
-implementadas; lo que falta entre las reglas y el equipo es la **capa de tiradas** y la **ficha
-viva**. Queda así:
-
-| Fase | Qué se construye | Depende de | Estado |
-|---|---|---|---|
-| **0. Cimientos** | ~~`schemaVersion` · tests del motor · reorganizar `lib/rules/` · migraciones~~ | — | **Hecha** |
-| **1. Motor de tiradas** | ~~Tabla de dificultades · pares atributo+habilidad · chuleta de tiradas · lanzador de d12~~ · falta la Alerta (bloqueada por C4) | Fase 0 | **Hecha, salvo la Alerta** |
-| **2. Ficha viva** | PG y fatiga actuales · daño por categoría (no letal/letal/grave) · estados activos con sus penalizadores automáticos · gasto de fatiga por +1 · descanso | Decisión 23 (ver abajo) | Bloqueada por una decisión, no por el diseñador |
-| **3. Equipo** | Catálogo completo desde `equipamiento.md` · comprar con créditos · equipar · ranuras (subsistemas por armadura, mejoras por arma) · peso y carga | Fases 0-1 · pregunta de carga | Casi lista |
-| **4. Razas** | ~~Motor de modificadores + 2 especies placeholder~~ | Fase 1 | **Hecha** (las especies reales son datos, no código) |
-| **5. Poderes, dotes, aumentos** | Lo que el diseñador aún no ha escrito | Documentos | Bloqueada por el diseñador |
-| **6. Máster** | Aplicar daño a fichas ajenas · fichas ligeras de PNJ · repartir recursos | Fase 2 | Más adelante |
-
-**Lo importante:** las fases 0, 1 y 4 no dependen del diseñador. Se pueden construir enteras
-mientras Murillo escribe especies y poderes.
-
----
-
-## 4. Razas: lo que importa no son las razas
+## 3. Razas: lo que importa no son las razas
 
 Dos placeholder está bien, pero el trabajo de verdad no es inventarse dos especies: es construir el
 **sistema de modificadores** por el que entrarán cuando lleguen las reales.
@@ -125,52 +108,15 @@ lleguen las de verdad, al menos los nombres encajan con la ficción.
 
 ---
 
-## 5. Flancos que no estaban en la lista
+## 4. Cosas a tener en cuenta para cuando llegue la fase 2 / 6b
 
-Salen de revisar los tres documentos contra el código actual.
+No son tareas en sí (esas están en `docs/tareas.md`), son consideraciones de diseño que se
+detectaron pronto y todavía no se han aplicado porque la ficha viva no está construida:
 
-**a. La decisión que bloquea la fase 2.** ¿La app lleva PG y fatiga **en partida**? Hasta ahora la
-ficha es una hoja de creación: guarda decisiones, no estado. Llevar la cuenta significa guardar
-estado mutable (daño por categoría, fatiga gastada, estados activos), y con eso vienen concurrencia
-(dos personas tocando la misma ficha), historial y "deshacer". Es una decisión tuya y del grupo,
-no del diseñador: **¿lleváis la vida en la app o en papel?**
+**Sintéticos.** `COMBATE` distingue resistencia por **Fortaleza** (orgánicos), **Resiliencia**
+(sintéticos) y **Estructura** (equipo). Si un jugador puede ser sintético, la ficha no debe
+asumir "orgánico" en su modelo cuando se construya el estado en vivo.
 
-**b. No hay fórmula de capacidad de carga.** El sistema la penaliza (−25% malherido, −50%
-moribundo, −25% exhausto) y todo el equipo tiene peso en kg, pero **ningún documento dice cuánta
-carga aguanta un personaje**. Sin eso, el peso del catálogo es decorativo. Pregunta para el
-diseñador.
-
-**c. No hay tabla canónica de tiradas.** Los documentos citan 14 pares distintos
-(`potencia + atletismo` para saltos y derribos, `perspicacia + exploración` para alerta e
-iniciativa, `reflejos + atletismo` para defender…) pero de forma dispersa, en prosa. Para la chuleta
-de la fase 1 hace falta consolidarlos en una tabla, y eso hay que validarlo con el diseñador porque
-algunos pares son inferencia nuestra.
-
-**d. Cero tests.** Hay decenas de fórmulas y 20 estados con cuatro grados de resultado cada uno.
-Cada vez que el diseñador cambie un número, algo se romperá en silencio. Los tests del motor son
-baratos (funciones puras, sin React ni base de datos) y son lo que permite ir rápido después.
-
-**e. Sintéticos.** `COMBATE` distingue resistencia por **Fortaleza** (orgánicos), **Resiliencia**
-(sintéticos) y **Estructura** (equipo). Si un jugador puede ser sintético, la ficha no debe asumir
-"orgánico" en su modelo. Conviene saberlo antes de la fase 2, no después.
-
-**f. En mesa puede no haber cobertura.** La PWA instalable ya estaba en pendientes; si la ficha pasa
-a llevar la vida en combate (fase 2), deja de ser un capricho.
-
-**g. PNJs.** El máster necesitará enemigos con PG y estados. Hoy `Character` asume "personaje de un
-jugador". No hay que construirlo ahora, pero conviene no cerrarle la puerta en el modelo.
-
----
-
-## 6. Por dónde empezar
-
-Orden recomendado para las próximas sesiones:
-
-1. **Fase 0** entera. Es aburrida y es la que hace que todo lo demás sea seguro.
-2. **Fase 1** hasta la chuleta de tiradas. Es lo que hará que el grupo empiece a usar la app en
-   mesa de verdad.
-3. **Fase 4** (motor de modificadores + 2 razas placeholder), porque es la pieza que necesitan
-   dotes, aumentos y equipo para no duplicarse.
-4. **Fase 3** (equipo), que es mucho volumen de datos pero poco riesgo.
-
-La fase 2 espera a que decidas si la vida se lleva en la app. Las fases 5 y 6, a que llegue material.
+**PNJs.** El máster necesitará enemigos con PG y estados. Hoy `Character` asume "personaje de
+un jugador". No hay que construirlo antes de que haga falta, pero conviene no cerrarle la
+puerta en el modelo cuando llegue la fase 6b.
