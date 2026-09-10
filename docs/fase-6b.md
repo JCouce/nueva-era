@@ -358,13 +358,44 @@ adelantó aquí — `agregarNpcDeCatalogoAction` existe desde la 1.3 pero no tie
   confirma el layout mobile-first sin overflow. Mismo detalle visible confirmado también
   en `CombateConsole.tsx` (el fix de la consola del máster). `tsc`, 305/305 tests y lint
   limpios.
-- [ ] **3.1b — Los modificadores de los estados activos entran en la pestaña Tiradas**
-  (D5: la mitad "combate → ficha" de la sincronización). Si el máster le aplica Confusión
-  con -4 a distancia, el jugador lo ve reflejado ahí antes de tirar, no solo como
-  insignia informativa. El motor ya existe entero (`modificadoresDeEstados()`, fase 0) —
-  lo que falta es que `modificadoresActivos(sheet)` (o quien alimenta `TiradasTab`) sume
-  también los estados del `Combatiente` del jugador cuando hay un combate activo, no solo
-  los de la ficha en sí.
+- [x] **3.1b — Los modificadores de los estados activos entran en la pestaña Tiradas.**
+  Hecha (2026-09-10, sesión de relevo). (D5: la mitad "combate → ficha" de la
+  sincronización). Si el máster le aplica Confusión con -4 a distancia, el jugador lo ve
+  reflejado ahí antes de tirar, no solo como insignia informativa. El motor ya existe
+  entero (`modificadoresDeEstados()`, fase 0) — lo que falta es que
+  `modificadoresActivos(sheet)` (o quien alimenta `TiradasTab`) sume también los estados
+  del `Combatiente` del jugador cuando hay un combate activo, no solo los de la ficha en
+  sí.
+  **Alcance decidido:** solo los modificadores del catálogo de estados
+  (`modificadoresDeEstados`), no los umbrales automáticos de salud/fatiga
+  (`modificadoresDeUmbrales`, 0.2a) — el texto de la propia subtarea cita solo la
+  primera función, y el PG/fatiga "actual" que necesitan los umbrales solo existe en el
+  `Combatiente` durante combate, no en la ficha derivada. Sumar también los umbrales
+  ahí queda como hueco anotado, no relleno en silencio: si algún día se decide que
+  Malherido/Exhausto también debe penalizar tiradas desde la ficha del jugador (no solo
+  arbitrado a ojo por el máster viendo la consola), es la misma vía la que hay que
+  extender.
+  **Implementación:** `modificadorTirada()` (`lib/rules/tiradas.ts`) gana un cuarto
+  parámetro opcional `mods` (default `modificadoresActivos(sheet)`, como el resto del
+  motor) y lo reenvía a `aplicado()`/`valorEfectivo()` — antes SIEMPRE recalculaba desde
+  cero, ignorando cualquier mod que no viniera de la ficha en reposo. `TiradasTab.tsx`
+  gana la prop `estadosCombate` (default `[]`), calcula
+  `mods = [...modificadoresActivos(sheet), ...modificadoresDeEstados(estadosCombate)]`
+  una vez, y lo pasa tanto a `FilaTirada` (el número que se ve sin abrir nada) como al
+  modal (`bonoAlcance`/`desgloseAlcance` ya lo consumían, no hizo falta tocarlos) — antes
+  el modal recalculaba `modificadoresActivos(sheet)` por su cuenta, así que ni siquiera
+  el modal veía los mods de combate. `CharacterSheet.tsx` pasa
+  `estadosCombate={miCombatiente?.estados ?? []}`. Test nuevo en `tiradas.test.ts`: un
+  mods extra cambia el `aplicado` de una tirada (Potencia, vía Enfermedad restando
+  Fuerza), no solo el desglose del modal.
+  **Verificado en Chrome con una sesión de jugador real** (cuenta y personaje de prueba
+  nuevos, borrados al terminar; letra de prioridad A en Atributos, Fuerza=1 para que el
+  redondeo del aplicado sea sensible a un -1): con "Enfermedad (Nivel 1)" aplicada
+  (Fuerza/Aguante -1), la fila "Saltar, escalar, levantarse" bajó de "POT 1" a "POT 0" y
+  el modal mostró el mismo "Potencia +0" — antes y después coinciden, no hay dos números
+  distintos para lo mismo. Con "Confusión (Fallo)" (-1 a todas) añadida encima, el modal
+  de "Sigilo" mostró una línea de desglose "Confusión -1" y el total bajó en consonancia
+  (-1 sigilo, -1 confusión = -2). `tsc`, 306/306 tests y lint limpios.
 - [ ] **3.2 — Autogestión de daño propio** (D2). Mismo guardarraíl de permisos que el
   resto de acciones del jugador sobre su propia ficha. Es la única vía "ficha → combate"
   que existe — todo lo demás que se planteó (que el jugador tire su Iniciativa y la

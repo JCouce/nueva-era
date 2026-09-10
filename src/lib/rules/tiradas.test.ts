@@ -18,6 +18,7 @@ import {
   resolverDanio,
   tirarD12,
 } from "./tiradas";
+import { modificadoresDeEstados } from "./estados";
 
 function buscar(id: string) {
   const t = TIRADAS.find((x) => x.id === id);
@@ -99,6 +100,24 @@ describe("modificador de una tirada", () => {
     const fuera = modificadorTirada(s, buscar("medicina"), false);
     assert.equal(dentro.habilidad, 2);
     assert.equal(fuera.habilidad, 1); // ceil(2/2)
+  });
+
+  // Fase 6b, 3.1b (D5: combate → ficha): un mods extra (aquí, el de un
+  // estado de combate activo) tiene que llegar hasta el aplicado, no solo
+  // vivir en el modal — sin esto, la fila de la tirada mostraría un número
+  // que ni siquiera coincide con lo que el jugador acaba tirando.
+  test("un mods extra (p. ej. estados de combate activos) se suma al aplicado", () => {
+    let s = conPresupuesto();
+    s = setAtributoValue(s, "fuerza", 2);
+    s = setAtributoValue(s, "agilidad", 1); // potencia = ceil((2+1)/2) = 2
+    const sinEstado = modificadorTirada(s, buscar("atletismo"), false);
+    assert.equal(sinEstado.aplicado, 2);
+
+    const mods = modificadoresDeEstados([
+      { estadoId: "enfermedad", gradoId: "nivel_1", rondasRestantes: null }, // Fuerza -1
+    ]);
+    const conEstado = modificadorTirada(s, buscar("atletismo"), false, mods);
+    assert.equal(conEstado.aplicado, 1); // potencia = ceil((1+1)/2) = 1
   });
 });
 

@@ -429,7 +429,9 @@ export function CharacterSheet({
       )}
       {activeEfectivo === "dotes" && <DotesTab sheet={sheet} />}
       {activeEfectivo === "psionica" && <PsionicaTab sheet={sheet} />}
-      {activeEfectivo === "tiradas" && <TiradasTab sheet={sheet} />}
+      {activeEfectivo === "tiradas" && (
+        <TiradasTab sheet={sheet} estadosCombate={miCombatiente?.estados ?? []} />
+      )}
       {activeEfectivo === "tienda" && (
         <TiendaTab
           sheet={sheet}

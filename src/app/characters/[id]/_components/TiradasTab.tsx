@@ -15,6 +15,7 @@ import {
   valorCondiciones,
   valorBonosTramo,
   modificadoresActivos,
+  modificadoresDeEstados,
   bonoAlcance,
   modoElegido,
   type Tirada,
@@ -22,6 +23,7 @@ import {
   type ResultadoDanio,
   type Sheet,
   type EstadoCondiciones,
+  type EstadoActivo,
   type ModificadorConFuente,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
@@ -176,10 +178,12 @@ function Marcador({
 function FilaTirada({
   tirada,
   sheet,
+  mods,
   onAbrir,
 }: {
   tirada: Tirada;
   sheet: Sheet;
+  mods: ModificadorConFuente[];
   onAbrir: (t: Tirada, enEspecialidad: boolean) => void;
 }) {
   const [enEspecialidad, setEnEspecialidad] = useState(false);
@@ -187,7 +191,7 @@ function FilaTirada({
   const especialidades = tirada.habilidad
     ? sheet.habilidades[tirada.habilidad].especialidades
     : [];
-  const mod = modificadorTirada(sheet, tirada, enEspecialidad);
+  const mod = modificadorTirada(sheet, tirada, enEspecialidad, mods);
   const nombreAplicado = APLICADOS.find((a) => a.id === tirada.aplicado)!;
   const nombreHabilidad = tirada.habilidad
     ? HABILIDADES.find((h) => h.id === tirada.habilidad)!.label
@@ -274,8 +278,20 @@ function FilaTirada({
   );
 }
 
-export function TiradasTab({ sheet }: { sheet: Sheet }) {
+export function TiradasTab({
+  sheet,
+  estadosCombate = [],
+}: {
+  sheet: Sheet;
+  // Fase 6b, 3.1b (D5: combate → ficha): los estados que el máster le tenga
+  // puestos ahora mismo en el Combate EN_CURSO, si el jugador está metido en
+  // uno — vacío si no hay combate o no está dentro. Se combinan con los
+  // modificadores "en reposo" de la ficha antes de que nada se calcule, así
+  // que fila y modal ven exactamente los mismos números.
+  estadosCombate?: EstadoActivo[];
+}) {
   const [historial, setHistorial] = useState<Lanzamiento[]>([]);
+  const mods = [...modificadoresActivos(sheet), ...modificadoresDeEstados(estadosCombate)];
   // Última dificultad/circunstancial usada en CADA tirada, no una global: un
   // francotirador repite la misma tirada varias veces por turno, pero eso no
   // dice nada de la siguiente salvación o de otra arma.
@@ -294,7 +310,7 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
   const herramientas = tiradasDeHerramientas(sheet);
 
   const abrir = (t: Tirada, enEspecialidad: boolean) => {
-    const mod = modificadorTirada(sheet, t, enEspecialidad);
+    const mod = modificadorTirada(sheet, t, enEspecialidad, mods);
     const nombreAplicado = APLICADOS.find((a) => a.id === t.aplicado)!;
     const nombreHabilidad = t.habilidad ? HABILIDADES.find((h) => h.id === t.habilidad)!.label : null;
     const desgloseBase = [
@@ -308,7 +324,7 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
       tirada: t,
       modBase: mod.total + sumaAjustesFijos(t),
       desgloseBase,
-      mods: modificadoresActivos(sheet),
+      mods,
       ctxBase: { id: t.id, grupo: t.grupo, habilidad: t.habilidad },
     });
   };
@@ -372,7 +388,7 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
           Ataques
         </h2>
         {ataques.map((t) => (
-          <FilaTirada key={t.id} tirada={t} sheet={sheet} onAbrir={abrir} />
+          <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
         ))}
       </div>
 
@@ -386,7 +402,7 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
             Herramientas
           </h2>
           {herramientas.map((t) => (
-            <FilaTirada key={t.id} tirada={t} sheet={sheet} onAbrir={abrir} />
+            <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
           ))}
         </div>
       )}
@@ -397,7 +413,7 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
             {grupo}
           </h2>
           {TIRADAS.filter((t) => t.grupo === grupo).map((t) => (
-            <FilaTirada key={t.id} tirada={t} sheet={sheet} onAbrir={abrir} />
+            <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
           ))}
         </div>
       ))}

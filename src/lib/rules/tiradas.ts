@@ -6,10 +6,10 @@
 // azar lo pone quien llama (ver `tirarD12`).
 import type { AplicadoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
-import { aplicado, valorEfectivo } from "./derivados";
+import { aplicado, valorEfectivo, modificadoresActivos } from "./derivados";
 import type { Sheet } from "./sheet";
 import type { CondicionTirada, BonoPorTramo } from "./condiciones";
-import type { GrupoTirada } from "./modificadores";
+import type { GrupoTirada, ModificadorConFuente } from "./modificadores";
 
 export const CARAS_DADO = 12;
 
@@ -200,14 +200,23 @@ export const TIRADAS: Tirada[] = [
 export const GRUPOS_TIRADA = ["Defensa", "Salvaciones", "Iniciativa", "Acciones"] as const;
 
 // Modificador fijo de una tirada: lo que se suma al dado antes de nada más.
+// `mods` opcional (fase 6b bloque 3.1b): quien alimenta TiradasTab puede
+// sumarle aquí los modificadores de tipo "atributo"/"habilidad" que traigan
+// los estados de combate activos del jugador (p. ej. Parálisis restando
+// Fuerza/Agilidad directamente) — sin esto, la ficha derivaría siempre de la
+// ficha "en reposo", ignorando el combate en curso. Los de tipo "tirada"
+// (el -1/-3/-5 "a todas" de los umbrales, el -2 a Defensa de Aturdido...) no
+// entran aquí: esos se aplican más tarde, en el modal, vía bonoAlcance — este
+// número es la base que se ve en la fila antes de abrir nada.
 export function modificadorTirada(
   sheet: Sheet,
   tirada: Tirada,
   enEspecialidad = false,
+  mods: ModificadorConFuente[] = modificadoresActivos(sheet),
 ): { total: number; aplicado: number; habilidad: number | null } {
-  const modAplicado = aplicado(sheet, tirada.aplicado);
+  const modAplicado = aplicado(sheet, tirada.aplicado, mods);
   const modHabilidad = tirada.habilidad
-    ? valorEfectivo(sheet, tirada.habilidad, enEspecialidad)
+    ? valorEfectivo(sheet, tirada.habilidad, enEspecialidad, mods)
     : null;
   return {
     total: modAplicado + (modHabilidad ?? 0),
