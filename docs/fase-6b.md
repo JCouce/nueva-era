@@ -105,7 +105,11 @@ para el máster, sin intentar simularlo.
   interpreta el "mínimo 1" de Moribundo/Exhausto) en `docs/sistema.md`. Test con las
   fronteras exactas (con PG máx=20: 10 normal, 9 herido, 5 herido, 4 malherido, 2
   malherido, 1 moribundo, 0 moribundo).
-- [ ] **0.2b — Velocidad y carga reducidas por umbral (mecanismo distinto a 0.2a).**
+- [~] **0.2b — Velocidad y carga reducidas por umbral (mecanismo distinto a 0.2a).**
+  Aparcada a propósito (usuario, 2026-09-11): Carga Transportable en general sigue
+  `[PENDIENTE]` de penalizadores (ver `docs/tareas.md`), no tiene sentido mecanizar la
+  mitad de ese hueco aquí antes de que esté cerrado del todo. Retomar cuando se
+  desbloquee esa pieza, no antes.
   **Hallazgo al construir 0.2a:** "velocidad básica a la mitad" y "capacidad de carga
   -25%/-50%" (Malherido, Moribundo, Exhausto) **no son deltas planas** — son porcentajes
   sobre un valor ya calculado, y `Modificador` (0.1) solo suma/resta, no multiplica.
@@ -115,13 +119,18 @@ para el máster, sin intentar simularlo.
   multiplicador al final de la función, fuera del pipeline de `Modificador` — a
   confirmar al cogerla. La reducción de Moribundo ("una casilla por turno") es aún más
   especial: no es ni delta ni porcentaje, es un tope fijo que ignora las fórmulas.
-- [ ] **0.3 — Catálogo `src/lib/catalog/estados.ts`.** Transcribir los ~20 estados de
-  `docs/sistema-y-combate.md` §"Efectos y estados", separando número (→ `Modificador[]`,
-  puede variar por grado de fracaso/éxito) de texto narrativo (→ campo `detalle`, sin
-  mecanizar). Incluir duración por defecto en rondas donde el documento la da. Es
-  transcripción fiel, no interpretación — si un estado no tiene número limpio en ningún
-  grado (p. ej. "Sorprendido y desprevenido"), se queda entero en `detalle` y punto,
-  mismo criterio que la VTF.
+- [x] **0.3 — Catálogo `src/lib/catalog/estados.ts`.** Hecha (2026-09-11). Los 20 estados
+  de `docs/sistema.md` §7 (Fatiga y Heridas no cuentan aparte: son los umbrales que ya
+  deriva 0.2a; Muerte tampoco: es un marcador del `Combatiente`, no un estado con
+  duración — ver el comentario de cabecera del catálogo). Metodología fijada como **S16**
+  en `docs/sistema.md`: se mecaniza un número que reduce un atributo básico directamente
+  o penaliza "todas las tiradas" sin condición; el resto (penalizadores a "tiradas que
+  usen" un atributo/aplicado concreto, daño narrado, velocidad/carga, condiciones que
+  dependen del narrador) se queda en `detalle`. **Segundo hueco del motor encontrado al
+  transcribir** (el primero fue "todas" en 0.1): no hay alcance de modificador para
+  "cualquier tirada que use tal atributo/aplicado" — aparcado igual que 0.2b, anotado en
+  el catálogo y en S16 por si algún día compensa cerrarlo. 10 tests de integridad +
+  contenido (`estados.test.ts`). 282/282 en total, `tsc`/`lint` limpios.
 - [ ] **0.4 — `lib/rules/estados.ts`: `modificadoresDeEstados()`.** Recibe la lista de
   estados activos de un combatiente (`{estadoId, grado?, rondasRestantes}`) y el catálogo
   de 0.3, devuelve `ModificadorConFuente[]` con `origen: "estado"`. Calcado de
