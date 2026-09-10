@@ -432,6 +432,23 @@ de validar el MVP en mesa real).
   intervalo corto (3-5s), refresco manual como red de seguridad.
 - [ ] **4.2 — (Evaluar después de probar en mesa) Migrar a SSE si el polling se siente
   lento.** No es parte del MVP (D3) — anotado aquí para que no se pierda si hace falta.
+  **Sobre `Postgres LISTEN/NOTIFY` como alternativa (charla 2026-09-11, sin construir
+  nada):** Neon es Postgres real, así que `LISTEN`/`NOTIFY` existe a nivel de protocolo,
+  pero no encaja bien con este stack tal como está montado — dos obstáculos, no uno:
+  1. Tiene que ser sobre la conexión **directa**, no el pooler — en modo transaction
+     pooling (PgBouncer, lo típico en serverless) las notificaciones se pierden porque la
+     conexión física vuelve al pool en cuanto acaba la transacción. La app ya usa la
+     directa (`CLAUDE.md`), así que este obstáculo concreto ya está esquivado.
+  2. **El problema de fondo es Vercel, no Neon.** `LISTEN` necesita una conexión abierta
+     indefinidamente escuchando. Una función serverless (Server Action, ruta de API) se
+     ejecuta, responde y se acaba — no hay sitio en este stack 100% serverless para dejar
+     un proceso escuchando para siempre sin montar infraestructura nueva (un workerito
+     persistente en otro lado, tipo Railway/Fly.io).
+  **Conclusión:** si el polling se queda corto, la alternativa realista no es LISTEN/NOTIFY
+  casero — es un servicio gestionado que ya resuelve "quién mantiene la conexión viva"
+  (Supabase Realtime, Pusher, Ably...), ya mencionado como opción en el resumen de
+  `docs/traspaso.md` §9. No evaluar LISTEN/NOTIFY a pelo sin decidir antes dónde correría
+  ese proceso persistente.
 
 ## Bloque 5 — Catálogo de NPCs y plantillas de encuentro
 
