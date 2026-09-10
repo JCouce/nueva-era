@@ -39,6 +39,7 @@ vacías porque el sistema aún no los define.
 | `npm run db:migrate` | `prisma migrate dev` — crear migración nueva al cambiar el schema. |
 | `npm run db:studio` | Prisma Studio. |
 | `npm run make-master -- <email>` | Asciende un usuario a MASTER. |
+| `npm run seed-npcs` | Crea/actualiza NPCs de ejemplo (`NpcTemplate`) — cómo crear uno, ver "NPCs" más abajo. |
 
 ## Arquitectura y archivos clave
 ```
@@ -69,7 +70,8 @@ src/
    ├─ characters/                    # lista (RSC) + actions (crear/borrar)
    ├─ characters/[id]/               # detalle (RSC) + CharacterSheet (cliente) + actions (autosave)
    └─ api/auth/[...nextauth]/route.ts
-prisma/schema.prisma · prisma.config.ts · docker-compose.yml · scripts/make-master.mjs
+prisma/schema.prisma · prisma.config.ts · docker-compose.yml
+scripts/make-master.mjs · scripts/seed-npcs.mjs  # crear NPCs de ejemplo, ver sección "NPCs"
 ```
 
 ## Modelo de datos (`prisma/schema.prisma`)
@@ -112,6 +114,22 @@ Regla central en `canEditCharacter(user, character)` = `role === 'MASTER' || own
 ## Pendiente
 Qué está hecho y qué falta vive en `docs/tareas.md` — es la única fuente de estado del
 proyecto, no lo dupliques aquí.
+
+## NPCs — "¿cómo creo un NPC?"
+**Todavía no hay UI para esto** (llega en la subtarea 5.1 de `docs/fase-6b.md`, el gestor
+de combate). Hoy se hace con un script:
+
+1. Abre `scripts/seed-npcs.mjs` y añade tu NPC al array `SAMPLES`: `nombre`, `pgBase`,
+   `nota` (texto libre, opcional).
+2. `npm run seed-npcs`.
+
+Es **upsert por `nombre`**: si lo vuelves a correr con datos distintos para un NPC que ya
+existe, lo actualiza en vez de duplicarlo — edita el array y relanza tantas veces como
+quieras mientras iteras. Necesita Postgres levantado (ya lo está si `npm run dev` está
+corriendo; si no, `npm run db:up`).
+
+Esto es un atajo mientras no existe la 5.1, no el método definitivo — cuando esa subtarea
+se cierre, esta sección se sustituye por cómo se hace desde la UI del máster.
 
 ## Deploy — "¿cómo hago deploy?"
 **Un `git push origin main` es el deploy completo. No hay pasos manuales aparte.**

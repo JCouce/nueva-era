@@ -218,7 +218,9 @@ para el máster, sin intentar simularlo.
 ## Bloque 5 — Catálogo de NPCs y plantillas de encuentro
 
 - [ ] **5.1 — UI del máster para `NpcTemplate`.** Crear/editar/listar, mismo patrón de
-  formulario que el resto del panel de máster.
+  formulario que el resto del panel de máster. **Al cerrarla, actualiza la sección "NPCs"
+  de `CLAUDE.md`** — hoy documenta `npm run seed-npcs` como atajo explícito porque esto
+  no existe; que no se quede diciendo eso cuando ya haya UI de verdad.
 - [ ] **5.2 — Añadir al combate desde catálogo**, en vez de solo ad-hoc (2.2).
 - [ ] **5.3 — Clonar NPC en varias instancias numeradas** ("Goblin #1, #2, #3"), cada una
   con su propio PG — el ahorro de tiempo real de Combat Manager, según el brainstorm.
