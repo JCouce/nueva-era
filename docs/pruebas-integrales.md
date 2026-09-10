@@ -282,17 +282,31 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
 
 ## Bloque 2.6 — Descuento automático de duración
 
-- [ ] Camino feliz: una duración de N rondas baja de uno en uno en cada "Siguiente
+- [x] Camino feliz: una duración de N rondas baja de uno en uno en cada "Siguiente
   turno" y desaparece sola al llegar a 0; un estado sin duración (`null`) no se toca
   nunca — ya verificado, repetir tras cualquier cambio en esta zona.
-- [ ] **Varios estados con distinta duración a la vez**, en el mismo o en distintos
+  gordo con "Aturdido · 3R": tres "Siguiente turno" seguidos → 3→2→1→desaparece
+  (`estados: []`). villa con "Envenenamiento" sin rondas (`rondasRestantes: null`,
+  aplicado dejando el campo tal cual venía, sin tocarlo): tras los mismos tres avances
+  de turno sigue exactamente igual, `rondasRestantes: null` sin cambiar.
+- [x] **Varios estados con distinta duración a la vez**, en el mismo o en distintos
   combatientes. Cada uno debe descontar de forma independiente — que uno llegue a 0 y
   desaparezca no debe afectar a la cuenta de otro.
-- [ ] **Duración de 1 ronda.** Debe desaparecer en el siguiente "Siguiente turno" que se
+  Entre dos combatientes: gordo (Aturdido 3R) y villa (Envenenamiento sin límite) a la
+  vez — cada uno siguió su cuenta sin interferirse. En el mismo combatiente: villa con
+  Envenenamiento (sin límite) + Ceguera (1R) simultáneos — al avanzar turno, Ceguera
+  desapareció y Envenenamiento quedó intacto en la misma fila.
+- [x] **Duración de 1 ronda.** Debe desaparecer en el siguiente "Siguiente turno" que se
   pulse — no esperar a dos.
-- [ ] **"Siguiente turno" con nadie en la cola con estados activos.** No debe fallar ni
+  "Ceguera · 1R" en villa desapareció en el primer "Siguiente turno" tras aplicarla, no
+  hizo falta un segundo clic.
+- [x] **"Siguiente turno" con nadie en la cola con estados activos.** No debe fallar ni
   hacer trabajo de más (comprueba que no hay escrituras innecesarias si es fácil de ver,
   p. ej. por los logs del dev server).
+  Con `estados: []` en los dos combatientes, "Siguiente turno" avanzó de GORDO a VILLA
+  sin error visible ni en consola. No se revisaron los logs del dev server para
+  escrituras de más (no era fácil de ver desde Chrome sin acceso a la terminal del
+  servidor en este disparo), pero el comportamiento observable es correcto.
 
 ---
 
