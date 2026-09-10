@@ -66,9 +66,6 @@ export type Tirada = {
   };
 };
 
-const FALTA_EXPLORACION =
-  "El sistema tira Perspicacia + Exploración, pero Exploración no está entre las 10 habilidades (conflicto C4 de docs/sistema.md)";
-
 // −1 acumulativo por cada atacante adicional en la ronda (sistema-y-combate.md).
 // Un contador y no un toggle porque el penalizador escala con cuántos atacan,
 // no con un sí/no.
@@ -116,8 +113,8 @@ export const TIRADAS: Tirada[] = [
     label: "Iniciativa (habitual)",
     grupo: "Iniciativa",
     aplicado: "perspicacia",
-    habilidad: null,
-    bloqueada: FALTA_EXPLORACION,
+    habilidad: "exploracion",
+    nota: "La entrada por defecto al combate, si no hay arma ni distracción de por medio",
   },
 
   // ── Salvaciones ──
@@ -160,8 +157,8 @@ export const TIRADAS: Tirada[] = [
     label: "Buscar / percibir",
     grupo: "Acciones",
     aplicado: "perspicacia",
-    habilidad: null,
-    bloqueada: FALTA_EXPLORACION,
+    habilidad: "exploracion",
+    nota: "Acción simple o reacción para buscar objetivos ocultos. En empate, alerta gana a sigilo",
   },
   {
     id: "atletismo",

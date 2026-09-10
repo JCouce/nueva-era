@@ -113,6 +113,34 @@ describe("v3 → v4: creación por prioridad (HOJA2)", () => {
   });
 });
 
+describe("v4 → v5: Exploración sustituye a Supervivencia (C4/C12)", () => {
+  test("lo comprado en Supervivencia pasa tal cual a Exploración", () => {
+    const { ficha } = migrar(
+      {
+        schemaVersion: 4,
+        habilidades: { supervivencia: { valor: 2, especialidades: ["Rastreo"] } },
+      },
+      5,
+    );
+    const habilidades = ficha.habilidades as Record<string, unknown>;
+    assert.deepEqual(habilidades.exploracion, { valor: 2, especialidades: ["Rastreo"] });
+    assert.equal("supervivencia" in habilidades, false);
+    assert.equal(ficha.schemaVersion, 5);
+  });
+
+  test("una ficha sin Supervivencia no revienta", () => {
+    const { ficha } = migrar({ schemaVersion: 4, habilidades: { sigilo: { valor: 1, especialidades: [] } } }, 5);
+    const habilidades = ficha.habilidades as Record<string, unknown>;
+    assert.deepEqual(habilidades.sigilo, { valor: 1, especialidades: [] });
+    assert.equal("exploracion" in habilidades, false);
+  });
+
+  test("no toca el resto de la ficha", () => {
+    const { ficha } = migrar({ schemaVersion: 4, especieId: "arkoru" }, 5);
+    assert.equal(ficha.especieId, "arkoru");
+  });
+});
+
 describe("parseSheet migra antes de normalizar", () => {
   test("una ficha v1 entra por la puerta y sale al día", () => {
     const s = parseSheet({ schemaVersion: 1, especie: "Arkorü", edad: 40 });

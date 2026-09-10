@@ -1,5 +1,6 @@
 import {
   salud,
+  alerta,
   movimiento,
   vuelo,
   cargaMaxima,
@@ -72,6 +73,7 @@ export function ResumenTab({
   onPrioridad: (categoria: CategoriaPrioridad, letra: LetraPrioridad | null) => void;
 }) {
   const { vida, fatiga } = salud(sheet);
+  const alertaPasiva = alerta(sheet);
   const mov = movimiento(sheet);
   const vue = vuelo(sheet);
   const conExo = mov.bonoExoesqueleto > 0;
@@ -230,6 +232,7 @@ export function ResumenTab({
         </p>
         <Dato label="Puntos de vida" value={vida} tono="text-danger" />
         <Dato label="Puntos de fatiga" value={fatiga} tono="text-info" />
+        <Dato label="Alerta" value={alertaPasiva} tono="text-accent" />
       </HudCard>
 
       <HudCard className="p-4">

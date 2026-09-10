@@ -46,7 +46,7 @@ motor de modificadores, dos especies de andamio y las migraciones de ficha.
 | Fase | Estado | Qué la frena |
 |---|---|---|
 | 0. Cimientos | ✅ | — |
-| 1. Motor de tiradas | ✅ salvo la Alerta | Conflicto C4 (Exploración) |
+| 1. Motor de tiradas | ✅ completo, Alerta incluida | — (C4 resuelto 2026-09-10: Exploración sustituye a Supervivencia) |
 | 4. Modificadores y especies | ✅ con especies provisionales | El documento de especies |
 | **3. Equipo** | ⬜ **es la siguiente** | Nada (ver §6) |
 | 2. Ficha viva | ⬜ | Resuelta en el diseño de la fase 6b (§9): sí, la vida y los estados de combate se llevan en la app |

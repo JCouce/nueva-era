@@ -113,7 +113,12 @@ aplicados.
 ## 3. Habilidades `[FIRME · HOJA + HOJA2]`
 
 Actitud · Atletismo · Biociencia · Combate a Distancia · Combate Melee · Cultura ·
-Interpretación · Sigilo · Supervivencia · Tecnociencia.
+Exploración · Interpretación · Sigilo · Tecnociencia.
+
+**Exploración sustituye a Supervivencia** (decisión del usuario, 2026-09-10, resuelve C4 y
+C12): Supervivencia no se usaba en ninguna regla de `HOJA`/`COMBATE`, mientras que
+Exploración aparece 5 veces (iniciativa, alerta, buscar/percibir) sin estar en la lista de
+habilidades. Se sustituye la habilidad entera, no se añade como especialidad de otra.
 
 - **Máximo 4/6** (`HOJA2`, era 3/5 en `HOJA`) — mismo criterio que en atributos: 4 en
   creación, 6 techo del sistema, *pendiente de confirmar la partición exacta*.
@@ -468,7 +473,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | 1 | `EQUIP` pide tiradas de "Perspicacia + **Medicina**", pero Medicina no está entre las 10 habilidades de `HOJA`. Encaja como **especialidad de Biociencia** (`EQUIP` ya nombra Mecánica/Química/Bioquímica como especialidades). | Resuelto por inferencia, confirmar |
 | 2 | `EQUIP` llama a la misma escopeta **Plasma SC** en la tabla y **Plasma SG** en la descripción; el fusil, **Plasma SA** / **Plasma AR**. | Errata del original, elegir nombre |
 | 3 | ~~La munición corrosiva no indica dificultad del efecto.~~ | **Resuelto** en la revisión del 31 ago: Corrosión (dificultad 7) |
-| C4 | **Exploración** se usa en las tiradas más importantes del juego —iniciativa, alerta, descubrir a un atacante oculto— pero **no está entre las 10 habilidades** de `HOJA`. O es una habilidad que falta en la hoja, o una especialidad (¿de Supervivencia? ¿de Cultura?) que se nombra como si fuera habilidad. **Bloquea implementar la Alerta.** | Sin resolver |
+| C4 | ~~**Exploración** se usa en las tiradas más importantes del juego... pero no está entre las 10 habilidades.~~ **Resuelto** (2026-09-10, decisión del usuario): Exploración sustituye a Supervivencia en la lista de habilidades. Desbloquea Iniciativa y Alerta. | Resuelto |
 | C5 | `COMBATE` nombra **Resiliencia** (resistencia al shock en sintéticos) y **Estructura** (en equipamiento) como puntuaciones de salvación. Ninguna está entre los 6 aplicados de `HOJA`. ¿Son atributos de PNJ/objeto y no de PJ? | Sin resolver |
 | C6 | `EQUIP` habla de daño **agravado**; `COMBATE` define solo no letal, letal y grave. Probablemente "agravado" sea el nombre viejo de "grave". | Sin resolver |
 | C7 | `COMBATE` usa **Potencia + Atletismo** para levantarse de un derribo y **Fortaleza o Potencia + Atletismo** para escapar de un agarre: confirma que el par atributo-habilidad es libre, pero no hay tabla de pares canónicos. | Informativo |
@@ -476,7 +481,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | C9 | **Una casilla no tiene medida.** El movimiento se calcula en metros (`carrera = 15 + Potencia + Atletismo`), pero las penalizaciones por herida dicen "solo una casilla por turno" y las áreas de las armas van en casillas (6x6, 8x8). Sin la equivalencia metros/casilla, las dos escalas no se pueden conectar. | Sin resolver |
 | C10 | **"Niveles" de fatiga contra "puntos" de fatiga.** La salud define **puntos** (8 + Voluntad) y dos estados (Fatigado, Exhausto), pero los fármacos hablan de "consume 2 **niveles** de fatiga" y de "ignorar el primer **nivel** de fatiga acumulada". ¿Un nivel es un punto, o es un estado? | Sin resolver |
 | C11 | **La escala de daño y la de vida no encajan del todo.** Las armas hacen de 7 a 20 de daño (mediana 12), los personajes tienen entre 6 y 16 puntos de golpe y los blindajes absorben de 1 a 8. Un fusil corriente (10) contra armadura ligera (4) se lleva 6 puntos: media vida de un PJ típico, antes de sumar +1 por cada dos éxitos. Puede ser letalidad buscada, pero conviene confirmar que **el daño del arma se resta 1:1 de los puntos de golpe**. | Sin resolver |
-| C12 | **Cultura y Supervivencia no se usan en ninguna regla** (0 menciones en los dos documentos), mientras que Exploración aparece 5 veces sin estar en la lista. Si Exploración acabara siendo una especialidad, Supervivencia sería su habilidad madre natural — y explicaría por qué esta no se usa nunca de forma directa. | Sin resolver, relacionado con C4 |
+| C12 | ~~Cultura y Supervivencia no se usan en ninguna regla, mientras que Exploración aparece 5 veces sin estar en la lista.~~ **Resuelto junto con C4**: Supervivencia se sustituye por Exploración. Cultura se queda en la lista tal cual, sigue sin usarse en ninguna regla conocida — no es parte de esta decisión. | Resuelto (parcial: Cultura sigue sin uso) |
 | C13 | **Impacto Estructural** (crítico de las armas de kerzul: reduce el blindaje del objetivo de forma permanente) está definido solo dentro de `EQUIP` y no aparece en el catálogo de 23 estados de `COMBATE`. Menor, pero es un efecto que vive fuera de su sitio. | Informativo |
 
 ## Preguntas abiertas para el diseñador
@@ -522,7 +527,7 @@ fuerza", o solo alguna de esas cinco fórmulas? *(S10)*
 
 **Sobre combate y salud** (`COMBATE`)
 21. ~~Mecánica exacta del dado y conteo de éxitos.~~ **Resuelta:** 1d12 + aplicado + habilidad vs dificultad; crítico al superar por 6.
-22. **Exploración** no existe como habilidad en la hoja pero se usa en iniciativa y alerta. ¿Habilidad que falta o especialidad? *(C4 — bloquea la Alerta en la ficha.)*
+22. ~~**Exploración** no existe como habilidad en la hoja pero se usa en iniciativa y alerta.~~ **Resuelta**: sustituye a Supervivencia. *(C4)*
 23. ~~¿La app debe llevar la cuenta de PG y fatiga actuales en partida, con sus estados de herida, o eso se lleva en mesa?~~ **Resuelta (usuario, 2026-09-10): en vivo.** La app lleva PG y fatiga en partida — confirma lo ya apuntado en `docs/handoff.md` §9 (fase 6b). Es la decisión que determina que la ficha pasa a guardar estado mutable además de la creación.
 24. ~~Si se lleva en la app: ¿se registra el daño por categoría (no letal / letal / grave)?~~ **Resuelta: sí.** "Grave" ya es categoría documentada (`COMBATE`, ver también la línea 278 de este documento); las tres categorías se registran por separado.
 25. **Resiliencia** y **Estructura**: ¿son puntuaciones de PNJ y equipo, o algún personaje jugador (un sintético) puede tenerlas? *(C5)*
@@ -532,7 +537,7 @@ fuerza", o solo alguna de esas cinco fórmulas? *(S10)*
 27. ¿Cuántos metros mide una casilla? *(C9)*
 28. Un "nivel de fatiga", ¿es un punto de fatiga o un estado (Fatigado/Exhausto)? *(C10)*
 29. El daño de un arma, ¿se resta 1:1 de los puntos de golpe tras el blindaje? Con armas de 7 a 20 y personajes de 6 a 16 puntos, un disparo corriente se lleva media vida. *(C11)*
-30. **Cultura** y **Supervivencia** no aparecen en ninguna regla de los dos documentos. ¿Siguen en la lista de habilidades? ¿Es Supervivencia la habilidad madre de Exploración? *(C12)*
+30. ~~**Cultura** y **Supervivencia** no aparecen en ninguna regla... ¿Es Supervivencia la habilidad madre de Exploración?~~ **Resuelta**: Supervivencia desaparece, la sustituye Exploración entera. Cultura se queda sin resolver — sigue sin uso conocido. *(C12)*
 
 ---
 

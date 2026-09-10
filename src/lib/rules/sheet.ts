@@ -24,7 +24,8 @@ import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./pri
 //   2 → la especie pasa de texto libre a id del catálogo
 //   3 → se añade el equipo instalado
 //   4 → creación por prioridad (HOJA2): prioridades, altura, peso
-export const SCHEMA_VERSION = 4;
+//   5 → Exploración sustituye a Supervivencia (C4/C12 de docs/sistema.md)
+export const SCHEMA_VERSION = 5;
 
 const atributoValue = z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX);
 

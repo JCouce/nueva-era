@@ -5,6 +5,7 @@ import {
   aplicado,
   aplicados,
   salud,
+  alerta,
   movimiento,
   vuelo,
   cargaMaxima,
@@ -113,6 +114,20 @@ describe("salud", () => {
     const s = ficha({ atributos: { fuerza: -1, aguante: -1, caracter: -1 } });
     assert.equal(salud(s).vida, 7); // 8 + ceil((-1-1)/2)
     assert.equal(salud(s).fatiga, 7);
+  });
+});
+
+describe("alerta (percepción pasiva, C4 resuelto: Exploración sustituye a Supervivencia)", () => {
+  test("una ficha recién creada tiene 5: 6 + perspicacia 0 + exploración sin entrenar (-1)", () => {
+    assert.equal(alerta(defaultSheet()), 5);
+  });
+
+  test("6 + perspicacia + exploración entera, no la mitad fuera de especialidad", () => {
+    const s = ficha({
+      atributos: { percepcion: 2, inteligencia: 2 }, // perspicacia = ceil((2+2)/2) = 2
+      habilidades: { exploracion: { valor: 3, especialidades: [] } },
+    });
+    assert.equal(alerta(s), 11); // 6 + 2 + 3, no 6 + 2 + ceil(3/2)
   });
 });
 

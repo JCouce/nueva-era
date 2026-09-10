@@ -68,6 +68,23 @@ export const MIGRACIONES: Migracion[] = [
       peso: null,
     }),
   },
+  {
+    desde: 4,
+    hasta: 5,
+    descripcion:
+      "Exploración sustituye a Supervivencia (conflictos C4/C12 de docs/sistema.md): " +
+      "Supervivencia no se usaba en ninguna regla y Exploración la necesitaba para " +
+      "desbloquear Iniciativa y Alerta. Se renombra la habilidad entera — lo que el " +
+      "jugador tuviera comprado en Supervivencia pasa tal cual a Exploración, no se pierde.",
+    migrar: (ficha) => {
+      const habilidades = { ...(ficha.habilidades as Record<string, unknown> | undefined) };
+      if ("supervivencia" in habilidades) {
+        habilidades.exploracion = habilidades.supervivencia;
+        delete habilidades.supervivencia;
+      }
+      return { ...ficha, habilidades };
+    },
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le

@@ -134,6 +134,20 @@ export function salud(
   };
 }
 
+// Percepción pasiva: la dificultad contra la que tira el sigilo ajeno
+// (docs/sistema.md §6, antes bloqueada por el conflicto C4 — Exploración no
+// estaba entre las 10 habilidades hasta que sustituyó a Supervivencia).
+// Se usa el valor entero de la habilidad, no la mitad fuera de especialidad:
+// es tu estado de alerta permanente, no una tirada declarada en un contexto.
+export function alerta(sheet: Sheet, mods = modificadoresActivos(sheet)): number {
+  return (
+    6 +
+    aplicado(sheet, "perspicacia", mods) +
+    valorEfectivo(sheet, "exploracion", true, mods) +
+    bonoDerivado(mods, "alerta")
+  );
+}
+
 // El exoesqueleto "duplica el bonificador al calcular la carga transportable
 // y realizar proezas de fuerza" (docs/equipamiento.md) — cita completa: las
 // dos cosas que menciona EQUIP. No toca Fuerza en general ni Fortaleza/Vida

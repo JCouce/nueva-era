@@ -11,7 +11,12 @@ export const HABILIDADES = [
   { id: "cultura", label: "Cultura" },
   { id: "interpretacion", label: "Interpretación" },
   { id: "sigilo", label: "Sigilo" },
-  { id: "supervivencia", label: "Supervivencia" },
+  // Sustituye a Supervivencia (C4/C12 de docs/sistema.md): Supervivencia no
+  // se usaba en ninguna regla de los dos documentos, mientras que Exploración
+  // aparece 5 veces (iniciativa, alerta, buscar/percibir) sin estar en la
+  // lista de habilidades. Decisión del usuario, 2026-09-10: se sustituye
+  // entera, no se añade como especialidad de otra habilidad.
+  { id: "exploracion", label: "Exploración" },
   { id: "tecnociencia", label: "Tecnociencia" },
 ] as const;
 export type HabilidadId = (typeof HABILIDADES)[number]["id"];

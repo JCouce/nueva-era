@@ -43,6 +43,15 @@ describe("catálogo de tiradas", () => {
       assert.equal(t.habilidad, null);
     }
   });
+
+  test("iniciativa y buscar/percibir ya no están bloqueadas (C4 resuelto)", () => {
+    const iniciativa = buscar("iniciativa");
+    const buscarPercibir = buscar("alerta_activa");
+    assert.equal(iniciativa.bloqueada, undefined);
+    assert.equal(iniciativa.habilidad, "exploracion");
+    assert.equal(buscarPercibir.bloqueada, undefined);
+    assert.equal(buscarPercibir.habilidad, "exploracion");
+  });
 });
 
 describe("modificador de una tirada", () => {
