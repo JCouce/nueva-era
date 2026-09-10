@@ -26,6 +26,16 @@ export default async function MasterPage() {
           Panel del máster
         </h1>
 
+        <Link
+          href="/master/combate"
+          className="clip-chamfer mb-6 flex items-center justify-between border border-border bg-surface px-4 py-3 transition hover:border-accent"
+        >
+          <span className="font-display text-base font-medium uppercase tracking-wide">
+            Gestor de combate
+          </span>
+          <span className="font-mono text-xs text-muted">›</span>
+        </Link>
+
         <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted">
           Pendientes de aprobar ({pendientes.length})
         </h2>

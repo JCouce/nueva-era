@@ -197,9 +197,24 @@ para el máster, sin intentar simularlo.
 
 ## Bloque 2 — Consola del máster (MVP funcional de punta a punta)
 
-- [ ] **2.1 — Crear combate + añadir jugadores.** Ruta dentro de `/master`. Elegir de la
-  lista de `Character` existentes, copiar su `salud()` máxima calculada como punto de
-  partida de "actual".
+- [x] **2.1 — Crear combate + añadir jugadores.** Hecha (2026-09-11).
+  `/master/combate` (`page.tsx` + `CombateConsole.tsx`, cliente): sin combate en curso,
+  botón "Crear combate"; con uno activo, ronda, lista de combatientes con PG actual/máximo
+  y lista de personajes que faltan por añadir (excluye a los que ya están en fila no
+  derrotados, mismo criterio que valida el server action). Enlazado desde `/master` con
+  una tarjeta "Gestor de combate". No usa el patrón FormData+no-op de
+  `MasterControls.tsx`: llama directo a las acciones tipadas de `combate/actions.ts` y
+  refresca con `router.refresh()`, como ya hace `CharacterSheet.tsx` con las suyas.
+  **Verificado en Chrome con datos reales** (usuario MASTER, personajes "villa"/"gordo"
+  ya existentes): crear combate → ronda 1, cola vacía → añadir "villa" → aparece con
+  PG 9/9 (actual = máximo) y desaparece de "añadir" → terminar combate → vuelve al
+  estado inicial. Limpieza confirmada, sin tocar los personajes reales.
+  **Trampa real encontrada:** el dev server llevaba corriendo desde antes de los modelos
+  `Combate`/`Combatiente`/`NpcTemplate` (bloque 1) — su cliente de Prisma en memoria no
+  los tenía, `/master/combate` caía con `Cannot read properties of undefined (reading
+  'findFirst')`. Exactamente la trampa ya anotada en `docs/traspaso.md` §5 ("reinicia el
+  dev server"); confirma que ese aviso sigue vigente y hay que seguirlo al pie de la
+  letra tras cualquier migración.
 - [ ] **2.2 — Añadir NPC ad-hoc.** Nombre + PG sueltos, sin depender aún de 1.2/bloque 5.
 - [ ] **2.3 — Cola de iniciativa.** Input manual de iniciativa por combatiente, ordenar
   automático, turno actual resaltado, botón "siguiente turno" (sube ronda al dar la

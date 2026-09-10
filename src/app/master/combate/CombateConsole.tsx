@@ -1,0 +1,164 @@
+"use client";
+
+// Fase 6b, subtarea 2.1: crear combate + añadir jugadores. Nada de
+// FormData+no-op como MasterControls.tsx — las acciones de ./actions son
+// tipadas (ver su cabecera), así que esto llama directo y refresca con
+// router.refresh() al terminar, mismo patrón que CharacterSheet.tsx usa
+// para sus propias acciones tipadas.
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { HudCard } from "@/components/HudCard";
+import { crearCombateAction, terminarCombateAction, agregarJugadorAction, type CombateResult } from "./actions";
+
+type CombatienteView = {
+  id: string;
+  nombre: string;
+  pgActual: number;
+  pgMax: number;
+  characterId: string | null;
+  derrotado: boolean;
+};
+
+type CombateView = {
+  id: string;
+  ronda: number;
+  combatientes: CombatienteView[];
+};
+
+type CharacterOption = {
+  id: string;
+  name: string;
+  owner: { name: string | null; email: string };
+};
+
+export function CombateConsole({
+  combate,
+  characters,
+}: {
+  combate: CombateView | null;
+  characters: CharacterOption[];
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function ejecutar(accion: () => Promise<CombateResult>) {
+    setError(null);
+    startTransition(async () => {
+      const res = await accion();
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
+  if (!combate) {
+    return (
+      <div className="flex flex-col gap-4">
+        <HudCard className="border-dashed px-4 py-8 text-center">
+          <p className="font-mono text-sm text-muted">No hay ningún combate en curso.</p>
+        </HudCard>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => ejecutar(() => crearCombateAction())}
+          className="clip-chamfer-sm bg-accent px-4 py-3 font-mono text-sm font-semibold uppercase tracking-wide text-black shadow-glow-yellow active:scale-[0.99] disabled:opacity-50"
+        >
+          Crear combate
+        </button>
+        {error && <p className="font-mono text-xs text-danger">{error}</p>}
+      </div>
+    );
+  }
+
+  // Mismo criterio que agregarJugadorAction: solo cuenta "ya está" si tiene
+  // una fila activa (no derrotada) — un jugador derrotado se puede volver a
+  // meter en fila aparte.
+  const enCombateIds = new Set(
+    combate.combatientes
+      .filter((c) => c.characterId !== null && !c.derrotado)
+      .map((c) => c.characterId as string),
+  );
+  const disponibles = characters.filter((c) => !enCombateIds.has(c.id));
+
+  return (
+    <div className="flex flex-col gap-6">
+      <HudCard className="flex items-center justify-between px-4 py-3">
+        <span className="font-mono text-sm uppercase tracking-wide">Ronda {combate.ronda}</span>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => ejecutar(() => terminarCombateAction(combate.id))}
+          className="px-2 py-1 font-mono text-xs uppercase tracking-wide text-muted transition hover:text-danger disabled:opacity-50"
+        >
+          Terminar combate
+        </button>
+      </HudCard>
+
+      <section>
+        <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted">
+          En combate ({combate.combatientes.length})
+        </h2>
+        <ul className="flex flex-col gap-2">
+          {combate.combatientes.map((c) => (
+            <li key={c.id}>
+              <HudCard
+                className={`flex items-center justify-between px-4 py-3 ${c.derrotado ? "opacity-50" : ""}`}
+              >
+                <span className="font-display text-base font-medium uppercase tracking-wide">
+                  {c.nombre}
+                  {c.derrotado && " (derrotado)"}
+                </span>
+                <span className="font-mono text-xs text-muted">
+                  PG {c.pgActual}/{c.pgMax}
+                </span>
+              </HudCard>
+            </li>
+          ))}
+          {combate.combatientes.length === 0 && (
+            <li className="clip-chamfer border border-dashed border-border px-4 py-8 text-center font-mono text-sm text-muted">
+              Todavía no hay nadie en la cola.
+            </li>
+          )}
+        </ul>
+      </section>
+
+      <section>
+        <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted">Añadir jugador</h2>
+        <ul className="flex flex-col gap-2">
+          {disponibles.map((c) => (
+            <li key={c.id}>
+              <HudCard className="flex items-center justify-between px-4 py-3">
+                <div>
+                  <span className="font-display text-base font-medium uppercase tracking-wide">
+                    {c.name}
+                  </span>
+                  <span className="block font-mono text-xs text-muted">
+                    {c.owner.name ?? c.owner.email}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => ejecutar(() => agregarJugadorAction(combate.id, c.id))}
+                  className="clip-chamfer-sm border border-border px-3 py-2 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
+                >
+                  Añadir
+                </button>
+              </HudCard>
+            </li>
+          ))}
+          {disponibles.length === 0 && (
+            <li className="clip-chamfer border border-dashed border-border px-4 py-8 text-center font-mono text-sm text-muted">
+              {characters.length === 0 ? "No hay personajes creados." : "Ya están todos en combate."}
+            </li>
+          )}
+        </ul>
+      </section>
+
+      {error && <p className="font-mono text-xs text-danger">{error}</p>}
+    </div>
+  );
+}
