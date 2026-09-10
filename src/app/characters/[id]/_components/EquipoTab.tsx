@@ -6,6 +6,8 @@ import {
   type Armadura,
   type ArmaFuego,
   type ArmaMelee,
+  type Herramienta,
+  type Consumible,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { Acordeon } from "@/components/Acordeon";
@@ -15,6 +17,7 @@ import {
   DetalleArma,
   DetalleArmaMelee,
   DetalleModulo,
+  DetalleConsumible,
 } from "./equipo/PiezaDetalle";
 
 function BotonQuitar({ onClick }: { onClick: () => void }) {
@@ -107,6 +110,12 @@ export function EquipoTab({
   const armaduras = sheet.equipo.filter((p) => equipoPorId(p.catalogoId)?.familia === "armadura");
   const armas = sheet.equipo.filter((p) => equipoPorId(p.catalogoId)?.familia === "arma");
   const armasMelee = sheet.equipo.filter((p) => equipoPorId(p.catalogoId)?.familia === "armaMelee");
+  const herramientas = sheet.equipo.filter(
+    (p) => equipoPorId(p.catalogoId)?.familia === "herramienta",
+  );
+  const consumibles = sheet.equipo.filter(
+    (p) => equipoPorId(p.catalogoId)?.familia === "consumible",
+  );
 
   return (
     <div className="flex flex-col gap-3">
@@ -172,6 +181,41 @@ export function EquipoTab({
             etiqueta={<BotonQuitar onClick={() => onDesequipar(a.instanciaId)} />}
           >
             <DetalleArmaMelee p={cat} />
+          </Acordeon>
+        );
+      })}
+
+      {herramientas.map((a) => {
+        const cat = equipoPorId(a.catalogoId) as Herramienta | null;
+        if (!cat || cat.familia !== "herramienta") return null;
+        return (
+          <Acordeon
+            key={a.instanciaId}
+            titulo={cat.label}
+            resumen={`Nivel ${a.nivel} · ${cat.resumen}`}
+            etiqueta={<BotonQuitar onClick={() => onDesequipar(a.instanciaId)} />}
+          >
+            <DetalleModulo p={cat} nivelActual={a.nivel} />
+          </Acordeon>
+        );
+      })}
+
+      {consumibles.map((a) => {
+        const cat = equipoPorId(a.catalogoId) as Consumible | null;
+        if (!cat || cat.familia !== "consumible") return null;
+        return (
+          <Acordeon
+            key={a.instanciaId}
+            titulo={cat.label}
+            resumen={cat.resumen}
+            etiqueta={
+              <div className="flex flex-col items-end gap-1">
+                <BadgeRareza rareza={cat.rareza} />
+                <BotonQuitar onClick={() => onDesequipar(a.instanciaId)} />
+              </div>
+            }
+          >
+            <DetalleConsumible p={cat} />
           </Acordeon>
         );
       })}

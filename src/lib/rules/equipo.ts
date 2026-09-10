@@ -180,6 +180,8 @@ export function equipar(sheet: Sheet, pieza: PiezaEquipada): Sheet {
   const cat = equipoPorId(pieza.catalogoId);
   if (!cat) return sheet;
 
+  // herramienta y consumible se equipan directo, como una armadura — no
+  // están en esta lista a propósito, caen en la rama de abajo sin host.
   const necesitaHost =
     cat.familia === "subsistema" ||
     cat.familia === "mejoraEstandar" ||
@@ -205,16 +207,21 @@ export function desequipar(sheet: Sheet, instanciaId: string): Sheet {
 }
 
 // Precio de una pieza equipada, para la Tienda con créditos (docs/handoff.md
-// §6). Armas/armaduras/melee cotizan por el catálogo tal cual; las
-// instalables (mejora estándar, subsistema, mejora de arma, movimiento)
-// cotizan por el nivel elegido — el nivel N ya incluye lo del N-1 (S9), así
-// que el coste de la tabla para ese nivel es el precio final, no se suma con
-// niveles inferiores. Sin entrada en el catálogo o sin coste (Pelea, a mano
-// vacía) cuesta 0.
+// §6). Armas/armaduras/melee/consumibles cotizan por el catálogo tal cual —
+// no tienen niveles, herramienta incluida (VTM, y lo que llegue después)
+// cotiza por el nivel elegido, igual que las instalables — el nivel N ya
+// incluye lo del N-1 (S9), así que el coste de la tabla para ese nivel es
+// el precio final, no se suma con niveles inferiores. Sin entrada en el
+// catálogo o sin coste (Pelea, a mano vacía) cuesta 0.
 export function costeDePieza(pieza: PiezaEquipada): number {
   const cat = equipoPorId(pieza.catalogoId);
   if (!cat) return 0;
-  if (cat.familia === "armadura" || cat.familia === "arma" || cat.familia === "armaMelee") {
+  if (
+    cat.familia === "armadura" ||
+    cat.familia === "arma" ||
+    cat.familia === "armaMelee" ||
+    cat.familia === "consumible"
+  ) {
     return cat.coste ?? 0;
   }
   return cat.niveles.find((n) => n.nivel === pieza.nivel)?.coste ?? 0;
@@ -237,7 +244,12 @@ export function costeDeRetirar(sheet: Sheet, instanciaId: string): number {
 export function rarezaDePieza(pieza: PiezaEquipada): Rareza | null {
   const cat = equipoPorId(pieza.catalogoId);
   if (!cat) return null;
-  if (cat.familia === "armadura" || cat.familia === "arma" || cat.familia === "armaMelee") {
+  if (
+    cat.familia === "armadura" ||
+    cat.familia === "arma" ||
+    cat.familia === "armaMelee" ||
+    cat.familia === "consumible"
+  ) {
     return cat.rareza;
   }
   return cat.niveles.find((n) => n.nivel === pieza.nivel)?.rareza ?? null;
@@ -254,13 +266,16 @@ export function rarezaPermitida(rareza: Rareza | null, tope: Rareza): boolean {
 }
 
 // Peso de una pieza equipada, para Carga Transportable (docs/sistema.md
-// §5.5). Solo arma y armaMelee tienen `pesoKg` en el catálogo — armaduras y
-// las cuatro familias instalables no traen columna de Peso en EQUIP, así que
-// devuelven 0: no es que pesen cero, es que el documento no lo dice.
+// §5.5). Arma, armaMelee y consumible tienen `pesoKg` en el catálogo —
+// armaduras, herramienta y las familias instalables no traen columna de
+// Peso en EQUIP, así que devuelven 0: no es que pesen cero, es que el
+// documento no lo dice.
 export function pesoDePieza(pieza: PiezaEquipada): number {
   const cat = equipoPorId(pieza.catalogoId);
   if (!cat) return 0;
-  if (cat.familia === "arma" || cat.familia === "armaMelee") return cat.pesoKg ?? 0;
+  if (cat.familia === "arma" || cat.familia === "armaMelee" || cat.familia === "consumible") {
+    return cat.pesoKg ?? 0;
+  }
   return 0;
 }
 
@@ -278,7 +293,7 @@ export function modificadoresDeEquipo(sheet: Sheet): ModificadorConFuente[] {
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat) return [];
 
-    if (cat.familia === "armadura" || cat.familia === "arma") {
+    if (cat.familia === "armadura" || cat.familia === "arma" || cat.familia === "consumible") {
       return cat.modificadores.map((m) => ({ ...m, origen: "equipo" as const, fuente: cat.label }));
     }
 

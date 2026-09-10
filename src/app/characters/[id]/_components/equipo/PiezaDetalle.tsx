@@ -7,6 +7,8 @@ import type {
   Subsistema,
   MejoraDeArma,
   MejoraMovimiento,
+  Herramienta,
+  Consumible,
   Modificador,
   Rareza,
 } from "@/lib/rules";
@@ -224,14 +226,17 @@ export function DetalleArmaMelee({ p }: { p: ArmaMelee }) {
   );
 }
 
-// Mejoras estándar, subsistemas y mejoras de arma: mismo cuerpo (niveles, con
-// el instalado resaltado si se pasa `nivelActual`), con el añadido de
-// modos/célula cuando es un subsistema.
+// Mejoras estándar, subsistemas, mejoras de arma y herramientas (Valija
+// Táctica Médica y lo que llegue después): mismo cuerpo (niveles, con el
+// instalado resaltado si se pasa `nivelActual`), con el añadido de
+// modos/célula cuando es un subsistema. Herramienta encaja tal cual porque
+// comparte forma con MejoraEstandar (niveles con NivelModulo) — la única
+// diferencia, que no se instala en nada, no afecta a cómo se muestra.
 export function DetalleModulo({
   p,
   nivelActual,
 }: {
-  p: MejoraEstandar | Subsistema | MejoraDeArma | MejoraMovimiento;
+  p: MejoraEstandar | Subsistema | MejoraDeArma | MejoraMovimiento | Herramienta;
   nivelActual?: number;
 }) {
   return (
@@ -287,6 +292,37 @@ export function DetalleModulo({
           </div>
         ))}
       </div>
+    </>
+  );
+}
+
+// Consumibles (fármacos, y más adelante materiales): precio plano, sin
+// niveles. La mayoría no traen `modificadores` a propósito — son bonos por
+// dosis, no de personaje entero, y el motor no lleva inventario de dosis
+// consumidas (ver catalog/medicina.ts).
+export function DetalleConsumible({ p }: { p: Consumible }) {
+  return (
+    <>
+      <p className="font-sans text-sm leading-relaxed text-muted">{p.descripcion}</p>
+      <ul className="mt-3 list-disc pl-4 font-sans text-[11px] leading-relaxed text-muted">
+        {p.detalle.map((d, i) => (
+          <li key={i}>{d}</li>
+        ))}
+      </ul>
+      <dl className="mt-3 grid grid-cols-1 gap-x-4 font-mono text-[11px] sm:grid-cols-2">
+        <Stat
+          label="Peso"
+          value={
+            p.pesoKg === null
+              ? "No especificado"
+              : p.pesoKg === 0
+                ? "Insignificante"
+                : `${p.pesoKg} kg`
+          }
+        />
+        <Stat label="Rareza" value={`${p.rareza} · ${p.coste} cr.`} />
+      </dl>
+      <ChipsModificadores mods={p.modificadores} />
     </>
   );
 }

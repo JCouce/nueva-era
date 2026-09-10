@@ -422,6 +422,28 @@ ficha (`CONV-1`).
 El título está vacío en `HOJA`, pero el catálogo completo existe en `EQUIP` — ver
 secciones 8 (economía) y el propio `docs/equipamiento.md`.
 
+**Estado de la transcripción (2026-09-11):** armaduras, armas de fuego, mejoras estándar,
+subsistemas, movimiento, mejoras de arma y todo el combate melee (incluido Kerzul) están
+en el catálogo desde la fase 3 (docs/handoff.md §6). Quedaban tres bloques enteros sin
+transcribir — Medicina y Farmacia, Herramientas y Accesorios, y Otras Armas a Distancia
+(armamento pesado + granadas) — que se cierran de uno en uno:
+
+> **Medicina y Farmacia, hecho.** `catalog/medicina.ts`: Valija Táctica Médica (VTM, 4
+> niveles) y los 10 Fármacos. Dos familias de catálogo nuevas para esto —
+> `herramienta` (con niveles, pero sin host: se equipa directo, como una armadura) y
+> `consumible` (precio plano, sin niveles) — reutilizables para Herramientas (bloque
+> siguiente). La VTM da su bono de aplicación ("+1/+2/+3 según nivel") como
+> `Modificador` tipo `"tirada"` con alcance a la tirada fija `medicina` ("Tratar
+> heridas") — no hizo falta ninguna tirada nueva. Los Fármacos van **sin ningún
+> modificador mecanizado**, a propósito: sus bonos son por dosis (un solo uso), y el
+> motor no lleva inventario de dosis consumidas — tratarlos como "mientras está
+> equipado" daría un bono permanente por poseer una sola unidad, que no es la regla.
+> Se quedan en `detalle`, para aplicar a mano al narrar el uso — el Nano-Elixir (+5 a
+> esa tirada) es el caso más claro. Xovromium (Voluntad + Biociencia o Actitud) no
+> tiene tirada fija a la que engancharse sin inventar una: se queda igual, en texto.
+> Herramientas (VTF, Radar, Disfraz Holográfico, Escáner Detector) y Otras Armas a
+> Distancia siguen pendientes.
+
 ## 13. Progresión `[PARCIAL · HOJA2]`
 
 `HOJA2` da la fórmula de coste por nivel (Atributos N×2, Habilidades N×1, Psiónica N×3 —

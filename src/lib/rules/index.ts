@@ -31,3 +31,4 @@ export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";
 export * from "../catalog/municion";
+export * from "../catalog/medicina";

@@ -506,3 +506,79 @@ describe("pesoEquipado", () => {
     assert.equal(pesoEquipado(s), 0.5);
   });
 });
+
+describe("herramienta y consumible (Medicina, docs/handoff.md §6)", () => {
+  test("una herramienta se equipa sin host, eligiendo nivel", () => {
+    const s = equipar(defaultSheet(), {
+      instanciaId: "v1",
+      catalogoId: "valija_tactica_medica",
+      nivel: 1,
+    });
+    assert.equal(s.equipo.length, 1);
+  });
+
+  test("un consumible se equipa sin host ni nivel", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "farmaco_analgesico" });
+    assert.equal(s.equipo.length, 1);
+  });
+
+  test("costeDePieza: herramienta cotiza por el nivel elegido", () => {
+    assert.equal(
+      costeDePieza({ instanciaId: "v1", catalogoId: "valija_tactica_medica", nivel: 1 }),
+      4000,
+    );
+    assert.equal(
+      costeDePieza({ instanciaId: "v1", catalogoId: "valija_tactica_medica", nivel: 3 }),
+      48000,
+    );
+  });
+
+  test("costeDePieza: consumible cotiza plano, como un arma", () => {
+    assert.equal(costeDePieza({ instanciaId: "f1", catalogoId: "farmaco_analgesico" }), 5);
+  });
+
+  test("rarezaDePieza: herramienta y consumible, mismo criterio que el coste", () => {
+    assert.equal(
+      rarezaDePieza({ instanciaId: "v1", catalogoId: "valija_tactica_medica", nivel: 2 }),
+      "Poco Habitual",
+    );
+    assert.equal(rarezaDePieza({ instanciaId: "f1", catalogoId: "farmaco_xovromium" }), "Extraño");
+  });
+
+  test("pesoDePieza: un consumible sin pesoKg (Medicina no trae columna de Peso) pesa 0", () => {
+    assert.equal(pesoDePieza({ instanciaId: "f1", catalogoId: "farmaco_analgesico" }), 0);
+  });
+
+  test("modificadoresDeEquipo: la Valija Táctica Médica da su bono a la tirada de Medicina", () => {
+    const s = equipar(defaultSheet(), {
+      instanciaId: "v1",
+      catalogoId: "valija_tactica_medica",
+      nivel: 1,
+    });
+    assert.deepEqual(modificadoresDeEquipo(s), [
+      {
+        tipo: "tirada",
+        alcance: { tipo: "tiradaId", id: "medicina" },
+        valor: 1,
+        origen: "equipo",
+        fuente: "Valija Táctica Médica (VTM) 1",
+      },
+    ]);
+  });
+
+  test("modificadoresDeEquipo: en nivel 3 el bono sube a +2, no se suma al de nivel 1", () => {
+    const s = equipar(defaultSheet(), {
+      instanciaId: "v1",
+      catalogoId: "valija_tactica_medica",
+      nivel: 3,
+    });
+    const mods = modificadoresDeEquipo(s);
+    assert.equal(mods.length, 1);
+    assert.equal(mods[0].valor, 2);
+  });
+
+  test("modificadoresDeEquipo: los fármacos no aportan ningún modificador (bonos por dosis, no de personaje)", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "farmaco_nano_elixir" });
+    assert.deepEqual(modificadoresDeEquipo(s), []);
+  });
+});

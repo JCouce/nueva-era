@@ -10,6 +10,8 @@ import {
   MOVIMIENTO,
   ARMAS_MELEE,
   ARMAS_MELEE_KERZUL,
+  VALIJA_TACTICA_MEDICA,
+  FARMACOS,
   equipoPorId,
   validarInstalacion,
   nuevaInstanciaId,
@@ -24,6 +26,8 @@ import {
   type Subsistema,
   type MejoraDeArma,
   type MejoraMovimiento,
+  type Herramienta,
+  type Consumible,
   type Rareza,
 } from "@/lib/rules";
 import { Acordeon } from "@/components/Acordeon";
@@ -33,6 +37,7 @@ import {
   DetalleArma,
   DetalleArmaMelee,
   DetalleModulo,
+  DetalleConsumible,
 } from "./equipo/PiezaDetalle";
 
 // El catálogo entero (~110 piezas) como menú de terminal: un grid de
@@ -52,6 +57,7 @@ const CATEGORIAS = [
   { id: "subsistemas", titulo: "Subsistemas", cantidad: SUBSISTEMAS.length },
   { id: "mejorasArma", titulo: "Mejoras de arma", cantidad: MEJORAS_ARMA.length },
   { id: "movimiento", titulo: "Movimiento", cantidad: MOVIMIENTO.length },
+  { id: "medicina", titulo: "Medicina", cantidad: 1 + FARMACOS.length },
 ] as const;
 
 type CategoriaId = (typeof CATEGORIAS)[number]["id"];
@@ -217,17 +223,17 @@ function BotonEquipar({
   );
 }
 
-// Armas, armaduras y armas melee no necesitan dónde instalarse: un botón y
-// ya — salvo que no llegue el saldo o se pase de la rareza que permite la
-// letra de Recursos, entonces se bloquea igual que AccionInstalable bloquea
-// por falta de hueco.
+// Armas, armaduras, armas melee y consumibles (fármacos) no necesitan dónde
+// instalarse: un botón y ya — salvo que no llegue el saldo o se pase de la
+// rareza que permite la letra de Recursos, entonces se bloquea igual que
+// AccionInstalable bloquea por falta de hueco.
 function AccionSimple({
   pieza,
   creditos,
   topeRareza,
   onEquipar,
 }: {
-  pieza: Armadura | ArmaFuego | ArmaMelee;
+  pieza: Armadura | ArmaFuego | ArmaMelee | Consumible;
   creditos: number;
   topeRareza: Rareza | null;
   onEquipar: (p: PiezaEquipada) => void;
@@ -362,6 +368,70 @@ function AccionInstalable({
   );
 }
 
+// Herramientas (Valija Táctica Médica, y lo que llegue después): elige
+// nivel y equipa directo — a diferencia de AccionInstalable, no hay paso de
+// "instalar en X", porque no viven dentro de ninguna otra pieza.
+function AccionHerramienta({
+  pieza,
+  creditos,
+  topeRareza,
+  onEquipar,
+}: {
+  pieza: Herramienta;
+  creditos: number;
+  topeRareza: Rareza | null;
+  onEquipar: (p: PiezaEquipada) => void;
+}) {
+  const [nivel, setNivel] = useState(pieza.niveles[0].nivel);
+  const nivelInfo = pieza.niveles.find((n) => n.nivel === nivel);
+  const costeNivel = nivelInfo?.coste ?? 0;
+  const sinFondos = costeNivel > creditos;
+  const sinRareza =
+    topeRareza !== null && !!nivelInfo && !rarezaPermitida(nivelInfo.rareza, topeRareza);
+  const motivo = sinRareza
+    ? `Tu letra de Recursos no llega a ${nivelInfo!.rareza}: tope ${topeRareza}.`
+    : sinFondos
+      ? `Te faltan ${(costeNivel - creditos).toLocaleString("es-ES")} créditos.`
+      : null;
+
+  return (
+    <div className="mt-3 border-t border-border pt-3">
+      {pieza.niveles.length > 1 && (
+        <>
+          <div className="flex items-center justify-between">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+              {"// Nivel"}
+            </p>
+            <Precio coste={costeNivel} />
+          </div>
+          <div className="mt-1.5 flex gap-1">
+            {pieza.niveles.map((n) => (
+              <button
+                key={n.nivel}
+                type="button"
+                onClick={() => setNivel(n.nivel)}
+                className={`clip-chamfer-sm flex-1 border py-1.5 font-mono text-xs active:scale-95 ${
+                  nivel === n.nivel ? "border-accent text-accent" : "border-border text-muted"
+                }`}
+              >
+                {n.nivel}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      <BotonEquipar
+        className="mt-3"
+        disabled={sinFondos || sinRareza}
+        onClick={() => onEquipar({ instanciaId: nuevaInstanciaId(), catalogoId: pieza.id, nivel })}
+      >
+        Equipar
+      </BotonEquipar>
+      {motivo && <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">{motivo}</p>}
+    </div>
+  );
+}
+
 // Instalable o ya instalada: si solo mirásemos "instalable ahora mismo",
 // equipar algo lo saca de la lista en cuanto se instala (ya no hay hueco
 // libre para él) y la pieza desaparece de debajo del propio botón que
@@ -381,7 +451,10 @@ function relevanteAhora(
   );
 }
 
-const SIN_COMPATIBLES: Record<Exclude<CategoriaId, "armaduras" | "armas" | "melee" | "kerzul">, string> = {
+const SIN_COMPATIBLES: Record<
+  Exclude<CategoriaId, "armaduras" | "armas" | "melee" | "kerzul" | "medicina">,
+  string
+> = {
   mejorasEstandar: "Nada instalable ni instalado: necesitas una armadura equipada.",
   subsistemas: "Nada instalable ni instalado: necesitas una armadura equipada con ranuras libres.",
   mejorasArma: "Nada instalable ni instalado: necesitas un arma equipada y compatible.",
@@ -619,6 +692,43 @@ export function TiendaTab({
               <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
             </Acordeon>
           ))}
+
+        {categoria === "medicina" && (
+          <>
+            <Acordeon
+              key={VALIJA_TACTICA_MEDICA.id}
+              titulo={VALIJA_TACTICA_MEDICA.label}
+              resumen={VALIJA_TACTICA_MEDICA.resumen}
+            >
+              <DetalleModulo p={VALIJA_TACTICA_MEDICA} />
+              <AccionHerramienta
+                pieza={VALIJA_TACTICA_MEDICA}
+                creditos={creditos}
+                topeRareza={topeRareza}
+                onEquipar={onEquipar}
+              />
+            </Acordeon>
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+              {`// Fármacos · ${FARMACOS.length}`}
+            </p>
+            {FARMACOS.map((p) => (
+              <Acordeon
+                key={p.id}
+                titulo={p.label}
+                resumen={p.resumen}
+                etiqueta={
+                  <div className="flex flex-col items-end gap-1">
+                    <BadgeRareza rareza={p.rareza} />
+                    <Precio coste={p.coste} />
+                  </div>
+                }
+              >
+                <DetalleConsumible p={p} />
+                <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
+              </Acordeon>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );

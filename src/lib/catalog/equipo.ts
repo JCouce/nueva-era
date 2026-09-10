@@ -24,6 +24,7 @@
 import type { Modificador } from "../rules/modificadores";
 import type { CondicionTirada, TramoDistancia } from "../rules/condiciones";
 import { ARMAS_MELEE, type ArmaMelee } from "./armasMelee";
+import { VALIJA_TACTICA_MEDICA, FARMACOS } from "./medicina";
 
 export type Rareza = "Común" | "Poco Habitual" | "Extraño" | "Muy Extraño" | "Singular";
 
@@ -1232,6 +1233,41 @@ export type MejoraEstandar = {
   niveles: NivelModulo[];
 };
 
+// ── Herramientas ── Objetos con niveles que, a diferencia de las mejoras y
+// subsistemas de arriba, no se instalan en nada: se equipan directos, como
+// una armadura (Valija Táctica Médica, y lo que llegue después — VTF,
+// Radar, Disfraz Holográfico, Escáner Detector). Comparten `NivelModulo`
+// por el mismo motivo que las mejoras: cada una trae su propia tabla de
+// efectos por nivel, y forzar una forma numérica común inventaría
+// estructura que el documento no tiene.
+export type Herramienta = {
+  familia: "herramienta";
+  id: string;
+  label: string;
+  resumen: string;
+  descripcion: string;
+  niveles: NivelModulo[];
+};
+
+// ── Consumibles ── Objetos sueltos de precio fijo, sin niveles: fármacos,
+// materiales... Mismo perfil que Armadura/ArmaFuego (rareza y coste en la
+// propia pieza), sin las columnas de combate que no les aplican. `detalle`
+// son líneas de texto libres — mismo criterio que NivelModulo para lo que
+// no se mecaniza (una dificultad concreta de una tirada ya existente, un
+// efecto narrativo sin número limpio que modelar).
+export type Consumible = {
+  familia: "consumible";
+  id: string;
+  label: string;
+  resumen: string;
+  descripcion: string;
+  detalle: string[];
+  pesoKg: number | null;
+  rareza: Rareza;
+  coste: number;
+  modificadores: Modificador[];
+};
+
 export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
   {
     familia: "mejoraEstandar",
@@ -2425,7 +2461,9 @@ export type Equipo =
   | Subsistema
   | MejoraMovimiento
   | MejoraDeArma
-  | ArmaMelee;
+  | ArmaMelee
+  | Herramienta
+  | Consumible;
 
 export const EQUIPO: Equipo[] = [
   ...ARMADURAS,
@@ -2435,6 +2473,8 @@ export const EQUIPO: Equipo[] = [
   ...MOVIMIENTO,
   ...MEJORAS_ARMA,
   ...ARMAS_MELEE,
+  VALIJA_TACTICA_MEDICA,
+  ...FARMACOS,
 ];
 
 export function equipoPorId(id: string): Equipo | null {
