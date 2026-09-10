@@ -129,34 +129,68 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
 
 ## Bloque 2.3 — Cola de iniciativa
 
-- [ ] Camino feliz: iniciativa por combatiente, "Ordenar por iniciativa" reordena
+- [x] Camino feliz: iniciativa por combatiente, "Ordenar por iniciativa" reordena
   descendente, "Siguiente turno" avanza y sube ronda al dar la vuelta, flechas mueven un
   puesto.
-- [ ] **El turno sigue a la persona, no a la posición**, en los dos reordenamientos
+  4 combatientes (gordo=5, villa=10, Alfa=3, Beta=8): "Ordenar por iniciativa" deja el
+  orden villa(10), Beta(8), gordo(5), Alfa(3) — confirmado en la base (`orden` 0-3).
+  "Siguiente turno" recorrido completo: villa→gordo→Beta→Alfa→villa, y al volver a villa
+  sube "RONDA 2". La flecha ▲ subió a gordo un puesto (confirmado con `orden` en la base).
+- [x] **El turno sigue a la persona, no a la posición**, en los dos reordenamientos
   posibles — ya verificado al cerrar la subtarea, pero merece repetirse tras cualquier
   cambio futuro en esta zona: turno activo → "ordenar por iniciativa" → sigue el mismo
   nombre en "Turno de: X", aunque cambie de puesto. Turno activo → moverlo con una flecha
   → mismo nombre en "Turno de: X".
-- [ ] **Iniciativa vacía tras haber tenido un valor.** Pon una iniciativa, guárdala,
+  Con el turno en "GORDO" (puesto 0), "Ordenar por iniciativa" lo mandó al puesto 2 y
+  "TURNO DE:" siguió diciendo "GORDO". Después, subir a "GORDO" un puesto con la flecha
+  ▲ tampoco cambió "TURNO DE: GORDO".
+- [x] **Iniciativa vacía tras haber tenido un valor.** Pon una iniciativa, guárdala,
   bórrala del campo (déjalo en blanco) y quita el foco. Debe guardarse como "sin
   iniciativa" (null), no fallar ni dejar el valor viejo.
-- [ ] **Iniciativa negativa y con decimales.** Prueba -3 y 7.5. ¿Se guarda tal cual? Con
+  **HALLAZGO:** no se guarda como "sin iniciativa" — se queda con el valor viejo. Pasos:
+  con "villa" en iniciativa=10, borrar el campo (dejarlo vacío) y perder el foco (Tab).
+  El campo se ve vacío en pantalla, pero tras recargar la página (F5) vuelve a mostrar
+  "10" — `SELECT iniciativa FROM "Combatiente" WHERE nombre='villa'` confirma que en la
+  base sigue en `10`, nunca llegó a `NULL`. No revienta ni da error visible, simplemente
+  no persiste el vaciado.
+- [x] **Iniciativa negativa y con decimales.** Prueba -3 y 7.5. ¿Se guarda tal cual? Con
   negativos, "ordenar por iniciativa" debería seguir funcionando (van al final, por
   debajo de los positivos). Con decimales, comprueba que el orden resultante tiene
   sentido (7.5 debe quedar entre 7 y 8 si los hay).
-- [ ] **Todos con la misma iniciativa (o todos sin iniciativa).** "Ordenar por
+  Negativo: -3 se guarda tal cual (confirmado en base y tras recargar). Decimal: 7.5 se
+  trunca a `7` antes de guardar (igual que el PG, no se guarda fraccionario). Con
+  iniciativas 10/7/3/-3, "Ordenar por iniciativa" dejó villa(10), Beta(7), Alfa(3),
+  gordo(-3) — el negativo al final, orden correcto.
+- [x] **Todos con la misma iniciativa (o todos sin iniciativa).** "Ordenar por
   iniciativa" no debe reventar ni mezclar aleatoriamente — con empates totales, el orden
   resultante debe ser el mismo que ya tenían (orden estable).
-- [ ] **Un solo combatiente en la cola.** "Siguiente turno" debe dar la vuelta
+  Los 4 combatientes con iniciativa=5: antes de ordenar, `orden` 0-3 era
+  villa/Beta/Alfa/gordo; después de pulsar "Ordenar por iniciativa", el `orden` en la
+  base es exactamente el mismo (villa/Beta/Alfa/gordo, 0-3) — orden estable confirmado.
+- [x] **Un solo combatiente en la cola.** "Siguiente turno" debe dar la vuelta
   inmediatamente cada vez que se pulsa (ronda sube cada pulsación), sin quedarse
   colgado ni marcar error.
-- [ ] **Flechas en los extremos.** Ya verificado que se deshabilitan visualmente en el
+  Combate nuevo con un único NPC ("Solitario"): cada pulsación de "Siguiente turno" subió
+  la ronda (1→2→3) sin bloquearse ni dar error, "Turno de: SOLITARIO" siempre.
+- [x] **Flechas en los extremos.** Ya verificado que se deshabilitan visualmente en el
   primero (▲) y el último (▼) — confirma también que si de alguna forma se fuerza el
   clic (por ejemplo con las devtools, saltándose `disabled`), el servidor lo rechaza con
   "No se puede mover más en esa dirección." en vez de reventar o mover a nadie.
-- [ ] **Doble clic rápido en "Siguiente turno".** Comprueba que no avanza dos turnos de
+  Deshabilitadas visualmente en los extremos, confirmado. Forzando el clic en "Subir a
+  villa" (primer puesto) quitando el atributo `disabled` por consola: no revienta y el
+  `orden` en la base no cambia (correcto), **pero no aparece ningún mensaje de rechazo en
+  pantalla** — ni "No se puede mover más en esa dirección." ni ningún otro texto, y la
+  consola del navegador tampoco registra error. El checklist esperaba ver ese mensaje
+  explícito; lo que hay es un no-op silencioso.
+- [x] **Doble clic rápido en "Siguiente turno".** Comprueba que no avanza dos turnos de
   golpe por una doble pulsación accidental — la UI debe deshabilitar los botones mientras
   hay una acción en curso (`pending`).
+  Con un doble clic real (evento de navegador, `dblClick`) sobre "Siguiente turno" solo
+  avanzó un turno (`turnoIndex` +1, no +2) — el guardarraíl funciona para un doble clic
+  real. Nota aparte: forzando dos `.click()` síncronos desde consola (sin dejar que React
+  procese el primero, un caso más agresivo que cualquier doble clic humano) sí avanzó dos
+  turnos de golpe — no lo cuento como hallazgo porque no representa una interacción real,
+  pero queda anotado por si se quiere blindar también ese caso límite.
 
 ## Bloque 2.4 — Delta de PG/fatiga
 
