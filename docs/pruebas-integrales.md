@@ -194,21 +194,37 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
 
 ## Bloque 2.4 — Delta de PG/fatiga
 
-- [ ] Camino feliz: `±N` aplicado a PG y a fatiga, clampado en `[0, máximo]` en los dos
+- [x] Camino feliz: `±N` aplicado a PG y a fatiga, clampado en `[0, máximo]` en los dos
   sentidos (daño de sobra no baja de 0, curación de sobra no sube del máximo) — ya
   verificado, repetir tras cualquier cambio en esta zona.
-- [ ] **Delta con decimales** (ej. "2.5"). El servidor no lo rechaza (`Number.isFinite`
+  "gordo" (PG 10/10, Fatiga 9/9): `-3` a PG → 7/10; `+100` a PG → clampa a 10/10; `-20` a
+  fatiga → clampa a 0/9; `+100` a fatiga → clampa de vuelta a 9/9. Los cuatro casos
+  correctos.
+- [x] **Delta con decimales** (ej. "2.5"). El servidor no lo rechaza (`Number.isFinite`
   acepta decimales) — comprueba qué PG queda. Si sale un PG fraccionario (17.5/20),
   anótalo como hallazgo, igual que el PG del NPC ad-hoc.
-- [ ] **Delta en 0 o vacío.** El botón no debe hacer nada visible (ni gastar la llamada,
+  NPC "Muñeco" en 10/20, delta `+2.5` → queda en 12/20 (`SELECT "pgActual"` confirma
+  `12` en la base) — trunca el resultado, no se guarda fraccionario. Mismo criterio que
+  el PG inicial del NPC ad-hoc, no es un hallazgo.
+- [x] **Delta en 0 o vacío.** El botón no debe hacer nada visible (ni gastar la llamada,
   ni "aplicar 0") si el campo está vacío o en 0.
-- [ ] **Delta no numérico** (pegar texto en el campo, aunque sea `type=number`). No debe
+  Con el campo vacío, "Aplicar a PG" no generó ninguna petición nueva (contadas antes y
+  después con `list_network_requests`: mismo número). Con el campo en `0` explícito,
+  tampoco generó petición ni cambió el PG.
+- [x] **Delta no numérico** (pegar texto en el campo, aunque sea `type=number`). No debe
   reventar la petición ni dejar el campo en un estado raro.
-- [ ] **Aplicar a fatiga en un NPC ad-hoc o de catálogo** (fatiga máxima 0 siempre, no
+  Forzando `value = "texto"` por consola sobre el input: el propio `type=number` del
+  navegador lo descarta y el campo queda vacío (no hay forma de que llegue texto crudo).
+  Pulsar "Aplicar a PG" en ese estado no cambia el PG ni revienta — se comporta como el
+  caso de campo vacío.
+- [x] **Aplicar a fatiga en un NPC ad-hoc o de catálogo** (fatiga máxima 0 siempre, no
   llevan ficha completa). Ya verificado que no revienta y se queda en 0/0 — repetir si se
   toca esta zona.
-- [ ] **PG a un personaje jugador real**, para confirmar que el clamp usa su máximo
+  "Muñeco" (fatiga 0/0): aplicar `+5` a fatiga no revienta y se queda en 0/0.
+- [x] **PG a un personaje jugador real**, para confirmar que el clamp usa su máximo
   real (el de su ficha), no un valor genérico.
+  Cubierto con "gordo" arriba: el clamp usa su máximo real de ficha (10), no un valor
+  genérico.
 
 ## Bloque 2.5 — Aplicar/quitar estado
 
