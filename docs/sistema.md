@@ -225,10 +225,17 @@ vez de calcular el peso exacto siempre.
 >
 > **Hueco de datos, no del motor:** `EQUIP` no trae columna de Peso para armaduras ni
 > para ningún módulo instalable (subsistemas, mejoras estándar, mejoras de arma,
-> movimiento) — solo armas de fuego y la mayoría de armas melee tienen kg. `pesoEquipado()`
-> solo suma lo que el catálogo sí sabe pesar; la interfaz avisa de qué falta en vez de
-> fingir un total real. Decisión del usuario: mostrar el dato parcial con el aviso, no
-> esperar a que llegue el peso de armaduras/módulos.
+> movimiento) — solo armas de fuego y prácticamente toda arma melee tienen kg.
+> `pesoEquipado()` solo suma lo que el catálogo sí sabe pesar; la interfaz avisa de qué
+> falta en vez de fingir un total real. Decisión del usuario: mostrar el dato parcial con
+> el aviso, no esperar a que llegue el peso de armaduras/módulos.
+>
+> **Corrección (2026-09-11):** la leyenda de `EQUIP` ("Peso `I` = insignificante", cabecera
+> del documento) se había leído mal al transcribir el catálogo — 7 armas melee (Armas
+> Cortas, Cuchillo de Combate, Látigo, Rodela de Metamaterial) llevaban `pesoKg: null`
+> ("sin dato") en vez de `pesoKg: 0` ("pesa, pero no cuenta"). Corregido en
+> `catalog/armasMelee.ts`. El total de `pesoEquipado()` no cambia (ambos sumaban 0), pero
+> el detalle de cada pieza ahora dice "Insignificante" en vez de "No especificado".
 
 ## 6. Resolución de acciones `[FIRME · COMBATE]`
 
@@ -446,7 +453,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S4 | Tope de **3 especialidades** por habilidad. | No hay tope escrito; se pone uno para que la UI no crezca sin fin. |
 | S5 | Las especialidades son **texto libre**. | No existe catálogo todavía. Cuando llegue, se cambia a lista cerrada. |
 | S6 | El movimiento **no baja de 0**. | Con Potencia 0 y Atletismo −1, las fórmulas dan un salto vertical de **−10 cm**. Se corta en 0 hasta saber qué quiere el diseñador. |
-| S7 | En creación el tope es **4** tanto en atributos como en habilidades; 6 queda como techo del sistema para más adelante. | `HOJA2` sube el "4/5" y "3/5" de `HOJA` a "4/6" en los dos, unificando el máximo de creación. La partición 4-creación/6-techo sigue siendo lectura nuestra, no está dicho explícitamente. |
+| S7 | En creación el tope es **4** tanto en atributos como en habilidades; 6 es el techo del sistema, alcanzable en partida con puntos que reparte el máster. | `HOJA2` sube el "4/5" y "3/5" de `HOJA` a "4/6" en los dos, unificando el máximo de creación. La partición 4-creación/6-techo la confirma el usuario (2026-09-10); falta que Murillo la valide con una fórmula de progresión concreta. |
 | S8 | El **valor de Atletismo** que entra en las fórmulas de movimiento es el valor puro, sin aplicar la mitad por estar fuera de especialidad. | Las fórmulas de `HOJA` dicen "Potencia + Atletismo" a secas. |
 | S9 | En un módulo con niveles (mejora estándar o subsistema de `EQUIP`), un efecto que un nivel introduce y los superiores no repiten ni anulan se **acumula**: el nivel N conserva lo desbloqueado en 1..N-1. Cuando el documento da un total explícito para ese nivel ("mejora la bonificación a +2"), se usa ese total tal cual, sin sumarlo al de niveles inferiores. | `EQUIP` describe cada nivel como una mejora sobre el anterior, nunca como un reemplazo (p. ej. Soporte Vital nivel 1 da Resistencia Térmica y los niveles 2-3 no la repiten, pero tampoco dicen que se pierda). Asumir que se pierde algo al subir de nivel sería más raro que asumir que se mantiene. |
 | S10 | El bono de Fuerza del Exoesqueleto, que `EQUIP` duplica para "carga transportable y proezas de fuerza", se aplica **x2 a las 5 fórmulas de movimiento** (Carrera, Salto Vertical, Salto Horizontal, Escalada, Nado) **y a la Carga Transportable** (sección 5.5, `cargaMaxima()`) — la cita completa de `EQUIP`, ya cerrada del todo (2026-09-11: hasta ahora solo se aplicaba a movimiento). No toca la Fuerza general ni Fortaleza/Vida, que siguen sin mecanizar. | `EQUIP` no dice explícitamente qué cuenta como "proeza de fuerza"; las 5 fórmulas salen de Potencia + Atletismo, la misma base física, así que tratarlas todas igual es lo más consistente. Pendiente de confirmar con Murillo. |
@@ -477,15 +484,15 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 Agrupadas para soltarlas en tandas. Se tachan según lleguen respuestas.
 
 **Sobre la ficha ya implementada** (cada una valida o tumba un supuesto)
-1. ~~"Máxima puntuación 4/5" y "3/5"~~ **`HOJA2` los sube a "4/6" en los dos** (antes eran distintos entre sí). Sigue abierto si el 4 es de creación y el 6 techo del sistema, o el 6 se alcanza de otra forma. *(S7)*
-2. ¿Los atributos aplicados tienen tope propio, o son libremente la suma?
+1. ~~"Máxima puntuación 4/5" y "3/5"~~ **`HOJA2` los sube a "4/6" en los dos** (antes eran distintos entre sí). ~~Sigue abierto si el 4 es de creación y el 6 techo del sistema, o el 6 se alcanza de otra forma.~~ **Resuelta (usuario, 2026-09-10):** el 4 es el tope de creación; el 6 se alcanza en partida, con puntos adicionales que el máster reparte durante la aventura. *(S7)*
+2. ~~¿Los atributos aplicados tienen tope propio, o son libremente la suma?~~ **Resuelta (usuario, 2026-09-10):** es una media, no una suma — ya implementado así (ver S11). No hay tope propio aparte del redondeo.
 3. Catálogo de especialidades de cada una de las 10 habilidades. *(S5)*
 4. ¿Cuántas especialidades puede tener una habilidad como máximo? *(S4)*
 5. ~~¿Cuánto cuesta subir una habilidad?~~ **Resuelta por `HOJA2`:** Nivel × 1 (Atributos Nivel × 2, Psiónica Nivel × 3) — ver "Coste y progresión", sección 2. *(S1, tachado)*
-6. Un personaje recién creado tiene salto vertical **negativo** con las fórmulas tal cual (Potencia 0 + Atletismo −1 → −10 cm). ¿Se corta en 0, hay un mínimo, o Atletismo no entrenado cuenta como 0 aquí? *(S6, S8)*
+6. Un personaje recién creado tiene salto vertical **negativo** con las fórmulas tal cual (Potencia 0 + Atletismo −1 → −10 cm). ¿Se corta en 0, hay un mínimo, o Atletismo no entrenado cuenta como 0 aquí? *(S6, S8)* — Verificado 2026-09-10: con las fórmulas de `HOJA2` sigue dando −10 cm sin el corte de S6; el motor ya lo recorta (`derivados.ts`, test en `derivados.test.ts`). Sigue pendiente de designer si el corte en 0 es lo correcto.
 
 **Bloqueantes para el catálogo de equipo**
-7. ~~¿Cuánto empieza teniendo un personaje?~~ **Resuelta por `HOJA2`:** depende de la letra de prioridad en Recursos, de 1.500 a 66.000 créditos. Sigue abierto si los créditos son la **única** moneda.
+7. ~~¿Cuánto empieza teniendo un personaje?~~ **Resuelta por `HOJA2`:** depende de la letra de prioridad en Recursos, de 1.500 a 66.000 créditos. ~~Sigue abierto si los créditos son la única moneda.~~ **Resuelta (usuario, 2026-09-10): sí, es la única moneda.**
 8. Ranuras: ¿las mejoras de arma se limitan solo por la columna "Mejoras" de cada arma?
 8b. Los efectos de nivel de una mejora estándar o subsistema, ¿se acumulan al subir de nivel o
 cada nivel sustituye entero al anterior? *(S9)*
@@ -494,11 +501,11 @@ fuerza": ¿cuenta el movimiento entero (Carrera, Saltos, Escalada, Nado) como "p
 fuerza", o solo alguna de esas cinco fórmulas? *(S10)*
 
 **Diseño pendiente**
-9. Dotes: `HOJA2` da presupuesto (0 en la letra E, el resto sin rellenar — *¿falta por transcribir?*), pero sigue sin decir **qué son, cuántas se eligen ni qué compra cada punto**.
+9. ~~Dotes: `HOJA2` da presupuesto (0 en la letra E, el resto sin rellenar), pero sigue sin decir qué son, cuántas se eligen ni qué compra cada punto.~~ **En proceso (usuario, 2026-09-10):** el diseñador ya lo está preparando, no hace falta insistir — se retoma cuando llegue el documento.
 10. ~~Psiónica: ¿los poderes se compran con los 10 puntos de creación, con otro pool, o vienen dados por especie/dote?~~ **Resuelta por `HOJA2`:** pool propio, ligado a la letra de prioridad. Sigue sin catálogo de poderes.
-11. Aumentos: ¿hay un **tope de capacidad** de lo que un cuerpo aguanta instalado? ¿Biónicos y genéticos comparten ese tope o van por separado? ¿Instalarse de más tiene consecuencia (rechazo, pérdida de humanidad, algo)?
+11. ~~Aumentos: ¿hay un tope de capacidad de lo que un cuerpo aguanta instalado? ¿Biónicos y genéticos comparten ese tope o van por separado? ¿Instalarse de más tiene consecuencia?~~ **En proceso (usuario, 2026-09-10):** el diseñador ya lo está preparando — se retoma cuando llegue el documento.
 12. ~~Progresión post-creación: ¿XP, hitos, puntos por sesión?~~ **Resuelta por `HOJA2`:** hay XP, y el coste por nivel es el mismo que en creación (Nivel × factor según categoría) — ver "Coste y progresión", sección 2.
-13. Especies: lista y qué modifican. *(En camino.)*
+13. ~~Especies: lista y qué modifican.~~ **En proceso (usuario, 2026-09-10):** confirmado, ya en camino.
 
 **Sobre la dualidad hackeo digital / cuántico** (`CONV-1`, `CONV-2`)
 14. Si mente y máquina comparten naturaleza (ondas, superposición, probabilidad), ¿la intrusión psiónica y la digital usan **la misma mecánica** con distinto vector, o son dos subsistemas separados? *(Lo primero simplifica muchísimo la app: un motor, dos entradas.)*
@@ -507,7 +514,7 @@ fuerza", o solo alguna de esas cinco fórmulas? *(S10)*
 17. Fallar la intrusión psiónica provoca "colapso cognitivo o pérdida de consciencia". ¿Eso es fatiga, daño (no letal/letal), o los estados Aturdido/Inconsciente que ya usa `EQUIP`?
 18. ¿Existen sistemas **no cuánticos** (legacy digital) donde el psiónico no pueda entrar y sí el hacker clásico? Sería la razón de diseño para que ambas vías convivan.
 19. Si el cerebro actúa como cúbit y hay **interfaces neurales** para no psiónicos (`EQUIP`, camuflaje trifásico), ¿puede un no psiónico entrelazarse con hardware, o eso está vetado?
-20. ¿Los aumentos genéticos usan Biociencia donde los biónicos usan Tecnociencia?
+20. ~~¿Los aumentos genéticos usan Biociencia donde los biónicos usan Tecnociencia?~~ **En proceso (usuario, 2026-09-10):** parte del documento de aumentos que el diseñador ya está preparando.
 
 **Huecos detectados al planificar la app** (ver `docs/plan-app.md`)
 26. ~~No existe fórmula de capacidad de carga.~~ **Resuelta por `HOJA2`:** sale de Fuerza (Fuerza × 20 kg, con pisos y penalizadores propios) — ver "Carga transportable", sección 5.5.
@@ -516,8 +523,8 @@ fuerza", o solo alguna de esas cinco fórmulas? *(S10)*
 **Sobre combate y salud** (`COMBATE`)
 21. ~~Mecánica exacta del dado y conteo de éxitos.~~ **Resuelta:** 1d12 + aplicado + habilidad vs dificultad; crítico al superar por 6.
 22. **Exploración** no existe como habilidad en la hoja pero se usa en iniciativa y alerta. ¿Habilidad que falta o especialidad? *(C4 — bloquea la Alerta en la ficha.)*
-23. ¿La app debe **llevar la cuenta de PG y fatiga actuales** en partida, con sus estados de herida, o eso se lleva en mesa? Es la decisión que determina si la ficha pasa a guardar estado mutable además de la creación.
-24. Si se lleva en la app: ¿se registra el daño **por categoría** (no letal / letal / grave), que es lo que exige el sistema para saber cuándo alguien está muerto de verdad?
+23. ~~¿La app debe llevar la cuenta de PG y fatiga actuales en partida, con sus estados de herida, o eso se lleva en mesa?~~ **Resuelta (usuario, 2026-09-10): en vivo.** La app lleva PG y fatiga en partida — confirma lo ya apuntado en `docs/handoff.md` §9 (fase 6b). Es la decisión que determina que la ficha pasa a guardar estado mutable además de la creación.
+24. ~~Si se lleva en la app: ¿se registra el daño por categoría (no letal / letal / grave)?~~ **Resuelta: sí.** "Grave" ya es categoría documentada (`COMBATE`, ver también la línea 278 de este documento); las tres categorías se registran por separado.
 25. **Resiliencia** y **Estructura**: ¿son puntuaciones de PNJ y equipo, o algún personaje jugador (un sintético) puede tenerlas? *(C5)*
 
 **Incongruencias entre documentos, para la misma tanda de preguntas**

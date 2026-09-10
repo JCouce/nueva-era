@@ -15,12 +15,13 @@
 // mecaniza aquí (mismo criterio que el resto del catálogo: nada que dependa
 // de una elección en juego se convierte en modificador fijo).
 //
-// "I" en el peso: varias filas de EQUIP traen una "I" en la columna Peso en
-// vez de un número (Armas Cortas, el Cuchillo de Combate, el Látigo, la
-// Rodela de Metamaterial). No se ha podido determinar qué significa —no
-// encaja como unidad de kg— así que se transcribe como `pesoKg: null` en vez
-// de inventarse un valor. Mismo criterio para las celdas de Peso, Rareza o
-// Categoría de daño que el documento deja en blanco.
+// "I" en el peso: la leyenda de EQUIP lo dice en la cabecera del documento
+// ("Peso I = insignificante") — no es un dato que falte, es un dato: pesa
+// tan poco que no cuenta. Se transcribe como `pesoKg: 0`, no como `null`
+// (Armas Cortas, el Cuchillo de Combate, el Látigo, la Rodela de
+// Metamaterial). `null` se reserva para cuando el documento de verdad no da
+// nada — casilla en blanco, o una familia entera sin columna de Peso (Armas
+// de Asta) — no para "insignificante".
 //
 // Deliberadamente NO se incluyen las "Armas Modificadas" (Electrificantes,
 // Térmicas, de Plasma, de Nanofilamento): su coste es un MULTIPLICADOR del
@@ -119,7 +120,7 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     uso: ["Arma a 1 mano"],
     modos: [{ etiqueta: "Simple", dificultad: 0, formulaDanio: "Fue+2", categoriaDanio: "No Letal" }],
     efectos: "Crítico de Aturdimiento (7)",
-    pesoKg: null,
+    pesoKg: 0, // insignificante (I)
     rareza: "Común",
     coste: 40,
     defensa: null,
@@ -133,7 +134,7 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     uso: ["Arma a 1 mano"],
     modos: [{ etiqueta: "Simple", dificultad: -1, formulaDanio: "Fue+2", categoriaDanio: "Letal" }],
     efectos: "Crítico de Aturdimiento (8)",
-    pesoKg: null,
+    pesoKg: 0, // insignificante (I)
     rareza: "Común",
     coste: 50,
     defensa: null,
@@ -147,7 +148,7 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     uso: ["Arma a 1 mano"],
     modos: [{ etiqueta: "Simple", dificultad: -1, formulaDanio: "Fue+2", categoriaDanio: "Letal" }],
     efectos: "Crítico de Hemorragia (1d6 turnos)",
-    pesoKg: null,
+    pesoKg: 0, // insignificante (I)
     rareza: "Poco Habitual",
     coste: 50,
     defensa: null,
@@ -161,7 +162,7 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     uso: ["Arma a 1 mano"],
     modos: [{ etiqueta: "Simple", dificultad: -1, formulaDanio: "Fue+2", categoriaDanio: "Letal" }],
     efectos: "Crítico de Hemorragia (1d6 turnos)",
-    pesoKg: null,
+    pesoKg: 0, // insignificante (I)
     rareza: "Común",
     coste: 30,
     defensa: null,
@@ -319,7 +320,7 @@ export const ESCUDOS: ArmaMelee[] = [
     uso: ["Arma a 1 mano"],
     modos: [{ etiqueta: "Simple", dificultad: 0, formulaDanio: "Fue+2", categoriaDanio: "No Letal" }],
     efectos: "Crítico de Aturdimiento (8)",
-    pesoKg: null,
+    pesoKg: 0, // insignificante (I)
     rareza: "Poco Habitual",
     coste: 1200,
     defensa: { cobertura: 1, blindaje: 8, puntosGolpe: 16 },
@@ -351,7 +352,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     uso: ["Arma a 1 mano", "Sutil", "Arrojadizo"],
     modos: [{ etiqueta: "Simple", dificultad: 0, formulaDanio: "Fue+2", categoriaDanio: "Letal" }],
     efectos: "Crítico de Hemorragia (1d6 turnos)",
-    pesoKg: null,
+    pesoKg: 0, // insignificante (I)
     rareza: "Común",
     coste: 30,
     defensa: null,
@@ -424,7 +425,7 @@ export const FLAGELOS: ArmaMelee[] = [
     uso: ["Arma a 1 mano", "Sutil"],
     modos: [{ etiqueta: "Simple", dificultad: -2, formulaDanio: "Fue+2", categoriaDanio: "Letal" }],
     efectos: "Crítico Derribado o Entorpecido (10)",
-    pesoKg: null,
+    pesoKg: 0, // insignificante (I)
     rareza: "Común",
     coste: 50,
     defensa: null,

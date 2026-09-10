@@ -474,6 +474,12 @@ describe("pesoDePieza", () => {
     assert.equal(pesoDePieza({ instanciaId: "p1", catalogoId: "pelea_punetazo" }), 0);
   });
 
+  test("un arma melee con Peso 'I' (insignificante) pesa 0, con dato", () => {
+    // corta_tonfa_porra: EQUIP marca su Peso como "I" (leyenda del documento:
+    // insignificante), no en blanco como Pelea — pesoKg es 0, no null.
+    assert.equal(pesoDePieza({ instanciaId: "t1", catalogoId: "corta_tonfa_porra" }), 0);
+  });
+
   test("una armadura pesa 0: el catálogo no tiene columna de Peso para ellas", () => {
     assert.equal(pesoDePieza({ instanciaId: "a1", catalogoId: "armadura_ligera" }), 0);
   });

@@ -198,7 +198,16 @@ export function DetalleArmaMelee({ p }: { p: ArmaMelee }) {
       )}
 
       <dl className="mt-3 grid grid-cols-1 gap-x-4 font-mono text-[11px] sm:grid-cols-2">
-        <Stat label="Peso" value={p.pesoKg === null ? "No especificado" : `${p.pesoKg} kg`} />
+        <Stat
+          label="Peso"
+          value={
+            p.pesoKg === null
+              ? "No especificado"
+              : p.pesoKg === 0
+                ? "Insignificante"
+                : `${p.pesoKg} kg`
+          }
+        />
         <Stat
           label="Rareza"
           value={
