@@ -190,6 +190,7 @@ export function ResumenTab({
           if (a.tipo === "tiradaId") return TIRADAS.find((t) => t.id === a.id)?.label ?? a.id;
           if (a.tipo === "grupo") return a.grupo;
           if (a.tipo === "habilidad") return HABILIDADES.find((h) => h.id === a.habilidad)!.label;
+          if (a.tipo === "todas") return "Todas las tiradas";
           return `Modo ${a.contieneEtiqueta}`;
         };
         return (

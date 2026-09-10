@@ -33,7 +33,7 @@ export type GrupoTirada =
   | "Herramientas";
 
 // A qué tirada(s) afecta un modificador de tipo "tirada". Cerrado a propósito
-// — ver docs/modificadores-tiradas.md antes de añadir un quinto caso:
+// — ver docs/modificadores-tiradas.md antes de añadir un sexto caso:
 //
 //   tiradaId  → una tirada concreta, por su id estable ("salv_fortaleza").
 //               Sirve para las fijas de TIRADAS; las de ataque generadas por
@@ -44,11 +44,18 @@ export type GrupoTirada =
 //   habilidad → cualquier tirada que use esa habilidad, sea cual sea.
 //   modo      → solo si el modo de disparo/golpe elegido contiene ese texto
 //               ("F. Auto"). Exige que la tirada tenga condición "modo".
+//   todas     → cualquier tirada, sin excepción. Para los "-1/-3/-5 a todo"
+//               de los umbrales de salud/fatiga (docs/sistema.md §7) y los
+//               estados que penalizan toda acción por igual — no hay forma
+//               de expresar eso con los otros cuatro casos sin enumerar
+//               grupos a mano y arriesgarse a que un grupo nuevo se quede
+//               fuera en silencio.
 export type AlcanceModificador =
   | { tipo: "tiradaId"; id: string }
   | { tipo: "grupo"; grupo: GrupoTirada }
   | { tipo: "habilidad"; habilidad: HabilidadId }
-  | { tipo: "modo"; contieneEtiqueta: string };
+  | { tipo: "modo"; contieneEtiqueta: string }
+  | { tipo: "todas" };
 
 export type Modificador =
   | { tipo: "atributo"; id: AtributoId; valor: number }
@@ -113,6 +120,7 @@ export type ContextoTirada = {
 };
 
 function alcanzaA(alcance: AlcanceModificador, ctx: ContextoTirada): boolean {
+  if (alcance.tipo === "todas") return true;
   if (alcance.tipo === "tiradaId") return alcance.id === ctx.id;
   if (alcance.tipo === "grupo") return alcance.grupo === ctx.grupo;
   if (alcance.tipo === "habilidad") return alcance.habilidad === ctx.habilidad;

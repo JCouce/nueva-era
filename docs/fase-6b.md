@@ -89,11 +89,12 @@ para el máster, sin intentar simularlo.
 
 ## Bloque 0 — Motor de estados (sin esto no hay nada que construir encima)
 
-- [ ] **0.1 — Alcance global en `AlcanceModificador`.** Añadir un caso `{ tipo: "todas" }`
-  (o el nombre que encaje mejor con los ya existentes: `tiradaId`/`grupo`/`habilidad`/
-  `modo`) en `lib/rules/modificadores.ts`, y que `bonoTirada`/lo que sume los
-  modificadores lo contemple. Test: un modificador `{tipo: "todas"}` aparece sumado en
-  cualquier tirada, sea del grupo que sea.
+- [x] **0.1 — Alcance global en `AlcanceModificador`.** Hecha (2026-09-11). Caso
+  `{ tipo: "todas" }` en `lib/rules/modificadores.ts` (`AlcanceModificador` + `alcanzaA`),
+  documentado en `docs/modificadores-tiradas.md` §5 junto a los otros cuatro. Dos
+  consumidores de UI (`PiezaDetalle.tsx`, `ResumenTab.tsx`) narrowaban el tipo asumiendo
+  que "lo que no es tiradaId/grupo/habilidad es modo" — `tsc` los pilló solo, se les añadió
+  el caso. Test en `modificadores.test.ts`. 256/256 tests, `tsc --noEmit` limpio.
 - [ ] **0.2 — Derivar los umbrales de salud/fatiga como estados automáticos.**
   `derivados.ts` hoy solo calcula el máximo (`salud()`). Añadir una función que, dado
   PG/fatiga **actuales** (no antes disponibles — vienen del bloque 1), devuelva los

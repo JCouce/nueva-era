@@ -175,6 +175,15 @@ describe("alcance de un modificador de tirada", () => {
     assert.equal(bonoAlcance(mods, ctx({ modoElegido: null })), 0);
   });
 
+  test("todas casa cualquier tirada, sin importar id, grupo o habilidad", () => {
+    const mods: ModificadorConFuente[] = [
+      { tipo: "tirada", alcance: { tipo: "todas" }, valor: -3, origen: "estado", fuente: "Malherido" },
+    ];
+    assert.equal(bonoAlcance(mods, ctx()), -3);
+    assert.equal(bonoAlcance(mods, ctx({ id: "sigilo", grupo: "Acciones", habilidad: "sigilo" })), -3);
+    assert.equal(bonoAlcance(mods, ctx({ modoElegido: "F. Auto" })), -3);
+  });
+
   test("el desglose lleva la fuente de cada uno", () => {
     const mods: ModificadorConFuente[] = [
       { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1, origen: "equipo", fuente: "Traje" },

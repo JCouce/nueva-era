@@ -130,7 +130,8 @@ type AlcanceModificador =
   | { tipo: "tiradaId"; id: string }                 // una tirada fija, por su id ("salv_fortaleza")
   | { tipo: "grupo"; grupo: GrupoTirada }             // todas las de un grupo (Salvaciones, Acciones...)
   | { tipo: "habilidad"; habilidad: HabilidadId }     // cualquier tirada que use esa habilidad
-  | { tipo: "modo"; contieneEtiqueta: string };       // solo si el modo elegido la contiene ("F. Auto")
+  | { tipo: "modo"; contieneEtiqueta: string }        // solo si el modo elegido la contiene ("F. Auto")
+  | { tipo: "todas" };                                // cualquier tirada, sin excepción
 ```
 
 `bonoAlcance()`/`desgloseAlcance()` (mismo fichero) resuelven cuál le toca a
@@ -155,6 +156,11 @@ modificador nuevo, solo declararlo en el catálogo con el alcance correcto.
   conocida:** no distingue por tipo de arma — el documento dice que en
   ametralladoras el Sistema de Retroceso ayuda en *cualquier* modo, y este
   alcance no lo captura (ver el comentario en su entrada del catálogo).
+- `todas` → para un penalizador de personaje entero, sin excepción: los
+  "-1/-3/-5 a todo" de los umbrales de salud/fatiga (`docs/sistema.md` §7) y
+  los estados de la fase 6b que golpean cualquier acción por igual. Úsalo
+  poco — si el bono en realidad solo afecta a un grupo o una habilidad,
+  usa ese alcance más preciso, no `todas` por comodidad.
 
 **Ojo con inventar el alcance de algo que no está claro en las reglas.**
 Varios de los 31 modificadores migrados con este mecanismo apuntan a un
