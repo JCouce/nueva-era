@@ -239,9 +239,22 @@ para el máster, sin intentar simularlo.
   sin el `!` ya existía antes en `TiradasTab.tsx` y `TiendaTab.tsx`** — no revisado si ahí
   también falla, anotado como trampa en `docs/traspaso.md` §5.
   `tsc`, 295/295 tests y lint limpios.
-- [ ] **2.4 — Delta de PG/fatiga.** Input rápido +N/-N con categoría de daño (no
-  letal/letal/grave), target táctil grande. Enchufa con 0.2: los umbrales aparecen solos
-  en cuanto baja el número, cero lógica nueva de UI para eso.
+- [x] **2.4 — Delta de PG/fatiga.** Hecha (2026-09-11). Un input `±N` por combatiente
+  (sin `useState` — se lee del DOM al aplicar y se limpia a mano; con la cola llena, un
+  input controlado por fila fuerza re-render de toda la lista en cada tecla) + dos
+  botones grandes ("Aplicar a PG"/"Aplicar a fatiga"), reutilizando
+  `ajustarPgAction`/`ajustarFatigaAction` de la 1.3 (ya clampaban a `[0, máximo]`, nada
+  nuevo que tocar ahí).
+  **Recorte deliberado sobre lo escrito originalmente aquí:** sin selector de categoría
+  de daño (no letal/letal/grave). `docs/sistema.md` §7 dice que las tres restan el mismo
+  número de los mismos PG — solo cambia cómo se cura, y eso no está mecanizado. Un
+  selector que no mueve ningún cálculo sería decorativo, y aquí no se hace eso (S16).
+  **Verificado en Chrome**, clamps en los dos extremos confirmados (-50 a un 20/20 deja
+  0/20, no negativo; +100 a un 20/20 deja 20/20, no se pasa) y un caso borde a propósito:
+  aplicar delta de fatiga a un NPC con fatiga máxima 0 (los NPC ligeros no la llevan) no
+  revienta, se queda en 0/0 sin error — mismo `Math.max(0, Math.min(máx, actual+delta))`
+  que ya cubre PG. Probado también con un personaje real (villa, PG 9/9 → 6/9).
+  `tsc`, 295/295 tests y lint limpios.
 - [ ] **2.5 — Aplicar/quitar estado del catálogo.** Selector del catálogo de 0.3, grado si
   el estado lo tiene, duración en rondas (con el valor por defecto de 0.3 precargado,
   editable). Enchufa con 0.4.
