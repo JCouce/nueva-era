@@ -38,6 +38,7 @@ todo lo demás, en `docs/tareas.md`.
 | `src/lib/catalog/` | Datos puros: especies y el catálogo de equipo entero | Al añadir contenido |
 | `CLAUDE.md` | Stack, comandos, arquitectura y gotchas del proyecto | Al cambiar estructura o comandos |
 | `docs/prompt-relevo.md` | Encargo para arrancar una sesión nueva: archivos clave, estado exacto, método de trabajo | Al cerrar una fase grande |
+| `docs/prompt-fase-6b.md` | Encargo específico para seguir con el gestor de combate — decisiones recientes que no están en ningún otro sitio | Mientras dure la fase 6b; se archiva (como `prompt-equipo.md`) cuando cierre entera |
 | `docs/prompt-equipo.md` | **Desfasado**: encargo para la fase de Equipo, que ya está construida (Tienda, Equipo, ranuras) | Histórico, no seguir como si fuera el siguiente paso |
 
 ## 3. Estado exacto
