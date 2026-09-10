@@ -341,20 +341,33 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
 
 ## Robustez general
 
-- [ ] **Recargar la página (F5) a mitad de una sesión de combate.** Todo debe seguir
+- [x] **Recargar la página (F5) a mitad de una sesión de combate.** Todo debe seguir
   ahí tal cual (ronda, turno, cola, insignias, PG/fatiga) — nada vive solo en estado de
   React sin persistir.
-- [ ] **Dos pestañas de máster abiertas a la vez**, ambas sobre el mismo combate. Aplica
+  Con "gordo" en Ronda 2, PG 6/10 e Iniciativa 7: tras F5, exactamente el mismo estado
+  (Ronda 2, Turno de: GORDO, PG 6/10, Iniciativa 7). Nada se perdió.
+- [x] **Dos pestañas de máster abiertas a la vez**, ambas sobre el mismo combate. Aplica
   un cambio en una, y sin recargar la otra, comprueba qué pasa si intentas otra acción
   desde la pestaña vieja (p. ej. mover un combatiente que la otra pestaña ya movió). No
   hay bloqueo optimista todavía — puede que "gane" el último en escribir; confirma que al
   menos no revienta ni dejar datos corruptos (dos combatientes con el mismo `orden`, por
   ejemplo).
-- [ ] **Terminar un combate que ya está terminado** (dos clics rápidos en "Terminar
+  Probado el mismo patrón de dos pestañas tres veces a lo largo de esta sesión (bloque
+  2.1: crear combate duplicado y añadir personaje duplicado; aquí: terminar combate
+  duplicado) — en los tres casos, la pestaña vieja no revienta: o el servidor rechaza con
+  un mensaje limpio (crear/añadir duplicado), o el `update` es un no-op inofensivo
+  (terminar ya terminado). Sin datos corruptos en ningún caso (comprobado en la base
+  cada vez).
+- [x] **Terminar un combate que ya está terminado** (dos clics rápidos en "Terminar
   combate", o forzar la llamada dos veces). `terminarCombateAction` no comprueba si el
   combate existe o ya está `TERMINADO` antes de actualizar — confirma si esto revienta
   con un error de Prisma sin capturar (registro no encontrado) en vez de un
   `{ok:false, error}` limpio. Si revienta, es un hallazgo real, no un caso exótico.
+  Con dos pestañas sobre el mismo combate activo, terminado en ambas seguidas: la
+  segunda llamada responde `200` (visto en Network), sin excepción de Prisma sin
+  capturar ni error en consola — vuelve limpio a "No hay ningún combate en curso." El
+  `id` del Combate sigue existiendo (solo cambia de estado), así que el `update` nunca
+  choca con un "registro no encontrado". No hay hallazgo aquí.
 
 ---
 
@@ -367,3 +380,71 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
   reutilizada de una sesión manual anterior) — no hizo falta registrar cuenta de prueba.
 - Estado inicial de la base: 0 `Combate`, personajes `villa` (sin aprobar) y `gordo`
   (aprobado). Nada que limpiar antes de empezar.
+
+---
+
+## Veredicto
+
+Checklist cubierto entero (bloques 2.1-2.6, casos de permisos y robustez general) en
+~54 minutos, dentro del presupuesto de ~1 hora. **42 de 43 casos pasaron** probados de
+verdad en Chrome (MCP chrome-devtools) contra el dev server y la base local; 1 caso
+(2.1, "sin personajes creados") no se pudo probar porque el entorno solo tiene dos
+`Character` reales y la norma de limpieza prohíbe borrarlos — queda documentado en su
+sitio con lo que sí se pudo confirmar (el mensaje de la rama contraria).
+
+### Hallazgos reales, de más a menos relevante
+
+1. **Vaciar el campo de Rondas antes de aplicar un estado no lo deja "sin límite"
+   (null) — cae al valor por defecto del catálogo para ese estado/grado, y por tanto
+   expira solo aunque el máster creyera que lo dejaba permanente.**
+   Repro: en el gestor de combate, con un combatiente en la cola, elegir un estado que
+   traiga rondas precargadas (p. ej. "Ceguera", precarga "1"), borrar a mano el campo
+   Rondas y pulsar "Aplicar estado". La insignia sale con el valor precargado original
+   (p. ej. "CEGUERA (FRACASO) · 1R"), no "sin límite" — confirmado en la base
+   (`estados` guarda `"rondasRestantes": 1`, nunca `null`) y confirmado además con el
+   siguiente "Siguiente turno": la insignia desaparece, cuando no debería si fuera
+   permanente. Reproducido dos veces con estados distintos (Aturdido ya activo con 3R,
+   y Ceguera desde cero).
+   Ver bloque 2.5.
+
+2. **Vaciar el campo de Iniciativa de un combatiente que ya tenía un valor no lo
+   guarda como "sin iniciativa" (null) — se queda con el valor viejo silenciosamente,
+   sin avisar.**
+   Repro: en el gestor de combate, con un combatiente con iniciativa (p. ej. "villa"
+   con iniciativa 10), borrar el campo Iniciativa a mano y quitar el foco (Tab). El
+   campo se ve vacío en pantalla, pero tras recargar la página (F5) vuelve a mostrar
+   "10" — confirmado en la base (`iniciativa` sigue en `10`, nunca llegó a `NULL`). No
+   revienta ni da error, solo no persiste el vaciado.
+   Ver bloque 2.3.
+
+3. **(Menor) Forzar el clic en una flecha de reordenar en su extremo (saltándose el
+   `disabled` del cliente, p. ej. desde las devtools) no revienta ni mueve a nadie —
+   correcto — pero tampoco muestra el mensaje "No se puede mover más en esa dirección."
+   que describe el checklist: es un no-op silencioso, sin feedback en pantalla ni en
+   consola.**
+   Repro: con un combatiente en el primer puesto de la cola, quitar el atributo
+   `disabled` del botón "Subir a <nombre>" por consola y hacer clic. El `orden` en la
+   base no cambia (correcto) pero no aparece ningún texto de rechazo en la página.
+   Solo se dispara saltándose la barrera del cliente; un máster usando la UI normal
+   nunca lo ve, porque el botón está deshabilitado.
+   Ver bloque 2.3.
+
+### Qué quedó sin probar y por qué
+
+- **2.1 "Sin personajes creados"**: no se pudo vaciar la tabla de `Character` sin tocar
+  datos reales (`villa` y `gordo` son los únicos que existen en este entorno). Se
+  confirmó en su lugar la rama contraria del mismo mensaje ("Ya están todos en
+  combate."). Pendiente de probar el día que haya un entorno con la tabla de
+  `Character` vacía, o de aceptar el riesgo de vaciarla temporalmente con permiso
+  explícito del usuario.
+- **D2 (permiso del jugador sobre su propio combatiente)**: sigue sin haber UI de
+  jugador (fase 3 todavía no construida) — cubierto por `permisos.test.ts`
+  (`canAdjustCombatiente`, 8 tests, `npm test` pasa 300/300). Repetir de punta a punta
+  en el navegador en cuanto exista esa pantalla.
+- No se revisaron los logs del dev server para confirmar ausencia de escrituras de más
+  en "Siguiente turno" sin nadie con estados activos (bloque 2.6) — no había forma
+  cómoda de leerlos desde Chrome en este disparo; el comportamiento observable (sin
+  error, sin bloqueo) sí se confirmó.
+
+Limpieza final aplicada: 0 `Combate` en la base, sin usuarios de prueba (`qa-*`)
+restantes. No se tocó ningún `Character` ni `NpcTemplate` real en ningún momento.
