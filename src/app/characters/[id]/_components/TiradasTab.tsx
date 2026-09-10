@@ -11,6 +11,7 @@ import {
   resolverDanio,
   tirarD12,
   tiradasDeAtaque,
+  tiradasDeHerramientas,
   valorCondiciones,
   valorBonosTramo,
   modificadoresActivos,
@@ -290,6 +291,7 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
   } | null>(null);
 
   const ataques = tiradasDeAtaque(sheet);
+  const herramientas = tiradasDeHerramientas(sheet);
 
   const abrir = (t: Tirada, enEspecialidad: boolean) => {
     const mod = modificadorTirada(sheet, t, enEspecialidad);
@@ -373,6 +375,21 @@ export function TiradasTab({ sheet }: { sheet: Sheet }) {
           <FilaTirada key={t.id} tirada={t} sheet={sheet} onAbrir={abrir} />
         ))}
       </div>
+
+      {/* Como Ataques: dinámica, generada por lo que hay equipado, no del
+          catálogo fijo (ver herramientas.ts). Solo se pinta si hay algo que
+          la use — a diferencia de Ataques, es opcional para la mayoría de
+          personajes y no merece un hueco vacío permanente. */}
+      {herramientas.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
+            Herramientas
+          </h2>
+          {herramientas.map((t) => (
+            <FilaTirada key={t.id} tirada={t} sheet={sheet} onAbrir={abrir} />
+          ))}
+        </div>
+      )}
 
       {GRUPOS_TIRADA.map((grupo) => (
         <div key={grupo} className="flex flex-col gap-2">

@@ -18,10 +18,19 @@ export const DERIVADOS_MODIFICABLES = [
 ] as const;
 export type DerivadoId = (typeof DERIVADOS_MODIFICABLES)[number];
 
-// Los cinco grupos de la pestaña Tiradas. Vive aquí (y no en tiradas.ts,
-// donde se usa) para que Modificador pueda dirigir un bono a un grupo entero
-// sin que este fichero, más bajo en la cadena de imports, dependa de aquel.
-export type GrupoTirada = "Ataques" | "Defensa" | "Salvaciones" | "Iniciativa" | "Acciones";
+// Los grupos de la pestaña Tiradas. Vive aquí (y no en tiradas.ts, donde se
+// usa) para que Modificador pueda dirigir un bono a un grupo entero sin que
+// este fichero, más bajo en la cadena de imports, dependa de aquel.
+// "Ataques" y "Herramientas" no viven en TIRADAS ni en GRUPOS_TIRADA: los
+// generan combate.ts y herramientas.ts a partir del equipo, no el catálogo
+// fijo — ver el comentario de cabecera de tiradas.ts.
+export type GrupoTirada =
+  | "Ataques"
+  | "Defensa"
+  | "Salvaciones"
+  | "Iniciativa"
+  | "Acciones"
+  | "Herramientas";
 
 // A qué tirada(s) afecta un modificador de tipo "tirada". Cerrado a propósito
 // — ver docs/modificadores-tiradas.md antes de añadir un quinto caso:

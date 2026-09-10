@@ -25,6 +25,13 @@ import type { Modificador } from "../rules/modificadores";
 import type { CondicionTirada, TramoDistancia } from "../rules/condiciones";
 import { ARMAS_MELEE, type ArmaMelee } from "./armasMelee";
 import { VALIJA_TACTICA_MEDICA, FARMACOS } from "./medicina";
+import {
+  VALIJA_TACTICA_FABRICACION,
+  RADAR,
+  DISFRAZ_HOLOGRAFICO,
+  ESCANER_DETECTOR,
+  MATERIALES,
+} from "./herramientas";
 
 export type Rareza = "Común" | "Poco Habitual" | "Extraño" | "Muy Extraño" | "Singular";
 
@@ -1222,6 +1229,15 @@ export type NivelModulo = {
   // Integrado por el peso, por ejemplo). No es una condición porque no hay
   // elección del jugador de por medio.
   ajusteAtaque?: number;
+  // Solo lo usan las Herramientas activas (Radar, Escáner Detector, Disfraz
+  // Holográfico): la nota de la tirada propia que ese nivel habilita —
+  // aplicado y habilidad los pone lib/rules/herramientas.ts (siempre
+  // Perspicacia + Tecnociencia, es la pareja que da el documento para las
+  // tres), esto es solo la dificultad/alcance/detalle de ESE nivel, texto
+  // libre igual que `nota` en TIRADAS. Ninguna trae un bono numérico que
+  // mecanizar — la dificultad que citan es la que el jugador teclea en el
+  // modal, no un modificador; por eso no hay `modificadores` para esto.
+  notaTirada?: string;
 };
 
 export type MejoraEstandar = {
@@ -2475,6 +2491,11 @@ export const EQUIPO: Equipo[] = [
   ...ARMAS_MELEE,
   VALIJA_TACTICA_MEDICA,
   ...FARMACOS,
+  VALIJA_TACTICA_FABRICACION,
+  RADAR,
+  DISFRAZ_HOLOGRAFICO,
+  ESCANER_DETECTOR,
+  ...MATERIALES,
 ];
 
 export function equipoPorId(id: string): Equipo | null {

@@ -28,8 +28,9 @@ export const MARGEN_CRITICO = 6;
 export type Tirada = {
   id: string;
   label: string;
-  // "Ataques" no vive en TIRADAS ni en GRUPOS_TIRADA: la generan las
-  // funciones de combate.ts a partir del equipo, no este catálogo fijo.
+  // "Ataques" y "Herramientas" no viven en TIRADAS ni en GRUPOS_TIRADA: los
+  // generan combate.ts y herramientas.ts a partir del equipo, no este
+  // catálogo fijo.
   grupo: GrupoTirada;
   aplicado: AplicadoId;
   habilidad: HabilidadId | null; // las salvaciones van con el aplicado a secas

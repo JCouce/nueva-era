@@ -12,6 +12,11 @@ import {
   ARMAS_MELEE_KERZUL,
   VALIJA_TACTICA_MEDICA,
   FARMACOS,
+  VALIJA_TACTICA_FABRICACION,
+  RADAR,
+  DISFRAZ_HOLOGRAFICO,
+  ESCANER_DETECTOR,
+  MATERIALES,
   equipoPorId,
   validarInstalacion,
   nuevaInstanciaId,
@@ -40,6 +45,16 @@ import {
   DetalleConsumible,
 } from "./equipo/PiezaDetalle";
 
+// Las cuatro herramientas con niveles de la categoría "Herramientas" — igual
+// que VALIJA_TACTICA_MEDICA en Medicina, ninguna se instala en nada. Arriba
+// de CATEGORIAS porque esta ya cuenta cuántas hay.
+const HERRAMIENTAS_CON_NIVEL: Herramienta[] = [
+  VALIJA_TACTICA_FABRICACION,
+  RADAR,
+  DISFRAZ_HOLOGRAFICO,
+  ESCANER_DETECTOR,
+];
+
 // El catálogo entero (~110 piezas) como menú de terminal: un grid de
 // categorías —mismo lenguaje que las tiles de Aplicados en AtributosTab— en
 // vez de nueve secciones apiladas y siempre visibles. Se elige una y solo esa
@@ -58,6 +73,7 @@ const CATEGORIAS = [
   { id: "mejorasArma", titulo: "Mejoras de arma", cantidad: MEJORAS_ARMA.length },
   { id: "movimiento", titulo: "Movimiento", cantidad: MOVIMIENTO.length },
   { id: "medicina", titulo: "Medicina", cantidad: 1 + FARMACOS.length },
+  { id: "herramientas", titulo: "Herramientas", cantidad: HERRAMIENTAS_CON_NIVEL.length + MATERIALES.length },
 ] as const;
 
 type CategoriaId = (typeof CATEGORIAS)[number]["id"];
@@ -452,7 +468,7 @@ function relevanteAhora(
 }
 
 const SIN_COMPATIBLES: Record<
-  Exclude<CategoriaId, "armaduras" | "armas" | "melee" | "kerzul" | "medicina">,
+  Exclude<CategoriaId, "armaduras" | "armas" | "melee" | "kerzul" | "medicina" | "herramientas">,
   string
 > = {
   mejorasEstandar: "Nada instalable ni instalado: necesitas una armadura equipada.",
@@ -712,6 +728,41 @@ export function TiendaTab({
               {`// Fármacos · ${FARMACOS.length}`}
             </p>
             {FARMACOS.map((p) => (
+              <Acordeon
+                key={p.id}
+                titulo={p.label}
+                resumen={p.resumen}
+                etiqueta={
+                  <div className="flex flex-col items-end gap-1">
+                    <BadgeRareza rareza={p.rareza} />
+                    <Precio coste={p.coste} />
+                  </div>
+                }
+              >
+                <DetalleConsumible p={p} />
+                <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
+              </Acordeon>
+            ))}
+          </>
+        )}
+
+        {categoria === "herramientas" && (
+          <>
+            {HERRAMIENTAS_CON_NIVEL.map((h) => (
+              <Acordeon key={h.id} titulo={h.label} resumen={h.resumen}>
+                <DetalleModulo p={h} />
+                <AccionHerramienta
+                  pieza={h}
+                  creditos={creditos}
+                  topeRareza={topeRareza}
+                  onEquipar={onEquipar}
+                />
+              </Acordeon>
+            ))}
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+              {`// Materiales · ${MATERIALES.length}`}
+            </p>
+            {MATERIALES.map((p) => (
               <Acordeon
                 key={p.id}
                 titulo={p.label}

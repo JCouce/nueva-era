@@ -441,8 +441,22 @@ transcribir — Medicina y Farmacia, Herramientas y Accesorios, y Otras Armas a 
 > Se quedan en `detalle`, para aplicar a mano al narrar el uso — el Nano-Elixir (+5 a
 > esa tirada) es el caso más claro. Xovromium (Voluntad + Biociencia o Actitud) no
 > tiene tirada fija a la que engancharse sin inventar una: se queda igual, en texto.
-> Herramientas (VTF, Radar, Disfraz Holográfico, Escáner Detector) y Otras Armas a
-> Distancia siguen pendientes.
+>
+> **Herramientas y Accesorios, hecho.** `catalog/herramientas.ts`: Valija Táctica de
+> Fabricación (VTF, 4 niveles), Radar (4), Disfraz Holográfico (2), Escáner Detector (2) y
+> los 3 Materiales. Radar, Escáner Detector y Disfraz Holográfico piden **Perspicacia +
+> Tecnociencia** — pareja distinta de "Buscar/percibir" (Perspicacia + Exploración), así
+> que **no son un bono a esa tirada: son su propia acción**, generada dinámicamente por
+> tenerlas equipadas (`lib/rules/herramientas.ts`, `tiradasDeHerramientas()` — mismo
+> patrón que `combate.ts` con las armas, nueva fila "Herramientas" en la pestaña Tiradas).
+> Ninguna trae un bono numérico limpio: la "dificultad 7" o "dificultad 6 superficial, 8
+> profundo" que da el documento es la dificultad que el jugador teclea en el modal, no un
+> modificador — va como texto en `notaTirada` (nuevo campo de `NivelModulo`), mismo
+> criterio que la `nota` de las tiradas fijas. La VTF, a diferencia de la VTM, **tampoco**
+> trae ningún bono limpio (nada de "+N a las tiradas"): se equipa como referencia para la
+> tirada fija `tecnica`, sin modificador y sin tirada propia. Los Materiales son
+> `consumible` sin tirada, igual que los Fármacos. Queda Otras Armas a Distancia
+> (armamento pesado + granadas).
 
 ## 13. Progresión `[PARCIAL · HOJA2]`
 
@@ -520,7 +534,7 @@ Agrupadas para soltarlas en tandas. Se tachan según lleguen respuestas.
 
 **Bloqueantes para el catálogo de equipo**
 7. ~~¿Cuánto empieza teniendo un personaje?~~ **Resuelta por `HOJA2`:** depende de la letra de prioridad en Recursos, de 1.500 a 66.000 créditos. ~~Sigue abierto si los créditos son la única moneda.~~ **Resuelta (usuario, 2026-09-10): sí, es la única moneda.**
-8. Ranuras: ¿las mejoras de arma se limitan solo por la columna "Mejoras" de cada arma?
+8. ~~Ranuras: ¿las mejoras de arma se limitan solo por la columna "Mejoras" de cada arma?~~ **Resuelta (usuario, 2026-09-10):** sí, se valida solo el número de esa columna, sin restricción adicional por tipo de mejora.
 8b. Los efectos de nivel de una mejora estándar o subsistema, ¿se acumulan al subir de nivel o
 cada nivel sustituye entero al anterior? *(S9)*
 8c. El bono de Fuerza del Exoesqueleto se duplica para "carga transportable y proezas de
@@ -555,7 +569,7 @@ fuerza", o solo alguna de esas cinco fórmulas? *(S10)*
 25. **Resiliencia** y **Estructura**: ¿son puntuaciones de PNJ y equipo, o algún personaje jugador (un sintético) puede tenerlas? *(C5)*
 
 **Incongruencias entre documentos, para la misma tanda de preguntas**
-26. Cuando el sistema dice "Perspicacia + Medicina", ¿quiere decir Biociencia usando la especialidad Medicina? Lo mismo con Empatía, Manipulación y Bioquímica. Es lo que decide si la habilidad cuenta entera o a la mitad. *(C8)*
+26. Cuando el sistema dice "Perspicacia + Medicina", ¿quiere decir Biociencia usando la especialidad Medicina? Lo mismo con Empatía, Manipulación y Bioquímica. Es lo que decide si la habilidad cuenta entera o a la mitad. *(C8)* — Nota (usuario, 2026-09-10): depende del catálogo de especialidades, que aún está por definir (pregunta 3); no hay mucho en los documentos que hable de ellas todavía. Sigue abierta, ligada a esa.
 27. ¿Cuántos metros mide una casilla? *(C9)*
 28. Un "nivel de fatiga", ¿es un punto de fatiga o un estado (Fatigado/Exhausto)? *(C10)*
 29. El daño de un arma, ¿se resta 1:1 de los puntos de golpe tras el blindaje? Con armas de 7 a 20 y personajes de 6 a 16 puntos, un disparo corriente se lleva media vida. *(C11)*
