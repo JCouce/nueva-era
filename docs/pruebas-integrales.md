@@ -147,12 +147,10 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
 - [x] **Iniciativa vacía tras haber tenido un valor.** Pon una iniciativa, guárdala,
   bórrala del campo (déjalo en blanco) y quita el foco. Debe guardarse como "sin
   iniciativa" (null), no fallar ni dejar el valor viejo.
-  **HALLAZGO:** no se guarda como "sin iniciativa" — se queda con el valor viejo. Pasos:
-  con "villa" en iniciativa=10, borrar el campo (dejarlo vacío) y perder el foco (Tab).
-  El campo se ve vacío en pantalla, pero tras recargar la página (F5) vuelve a mostrar
-  "10" — `SELECT iniciativa FROM "Combatiente" WHERE nombre='villa'` confirma que en la
-  base sigue en `10`, nunca llegó a `NULL`. No revienta ni da error visible, simplemente
-  no persiste el vaciado.
+  **Hallazgo original del `/loop` descartado tras reproducir a mano (2026-09-10) —
+  ver "Hallazgos originales — descartados" más abajo.** Con teclado real (clic, `End`,
+  `Backspace` hasta confirmar `el.value === ""`, `Tab`) sí se guarda `NULL`, confirmado
+  también tras F5. El `/loop` no había vaciado el campo de verdad.
 - [x] **Iniciativa negativa y con decimales.** Prueba -3 y 7.5. ¿Se guarda tal cual? Con
   negativos, "ordenar por iniciativa" debería seguir funcionando (van al final, por
   debajo de los positivos). Con decimales, comprueba que el orden resultante tiene
@@ -251,15 +249,12 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
 - [x] **Vaciar el campo de rondas a mano** antes de aplicar, en un estado que traía un
   valor por defecto. Debe aplicarse como "sin límite" (no expira solo) — confírmalo
   dejando pasar varios turnos y viendo que la insignia no se mueve ni desaparece.
-  **HALLAZGO:** no se guarda como "sin límite" — se guarda con el valor por defecto
-  precargado del catálogo para ese estado/grado, como si nunca se hubiera vaciado. Pasos:
-  elegir "Ceguera" (precarga Rondas="1"), vaciar el campo Rondas a mano, pulsar "Aplicar
-  estado". La insignia sale "CEGUERA (FRACASO) · 1R" y
-  `SELECT estados FROM "Combatiente" WHERE nombre='gordo'` confirma
-  `{"rondasRestantes": 1}` en vez de `null`. Se reprodujo dos veces (una reaplicando
-  "Aturdido" ya activo con 3R — se quedó en 3R en vez de null; otra aplicando "Ceguera"
-  desde cero — cayó al 1R precargado). En ambos casos, tras un "Siguiente turno" la
-  insignia desaparece (confirmando que quedó con duración finita, no "sin límite").
+  **Hallazgo original del `/loop` descartado tras reproducir a mano (2026-09-10) —
+  ver "Hallazgos originales — descartados" más abajo.** Con teclado real (clic, `End`,
+  `Backspace` hasta confirmar `el.value === ""`) y "Aplicar estado", "Ceguera" en villa
+  quedó con `{"rondasRestantes": null}` en base, insignia "CEGUERA (FRACASO)" sin "·NR",
+  y sobrevivió intacta a un "Siguiente turno". El `/loop` no había vaciado el campo de
+  verdad.
 - [x] **Cambiar de estado en el desplegable varias veces seguidas** antes de aplicar
   (Aturdido → Ceguera → Parálisis...). El desplegable de Grado y el campo de Rondas deben
   actualizarse cada vez al nuevo estado, sin arrastrar el grado o la duración del
@@ -392,51 +387,68 @@ verdad en Chrome (MCP chrome-devtools) contra el dev server y la base local; 1 c
 `Character` reales y la norma de limpieza prohíbe borrarlos — queda documentado en su
 sitio con lo que sí se pudo confirmar (el mensaje de la rama contraria).
 
-### Hallazgos reales, de más a menos relevante
+**Actualización (2026-09-10, sesión de relevo de la fase 6b):** de los 2 hallazgos
+reales que dejó esta sesión, **ninguno sobrevivió a la reproducción manual con teclado
+real** — los dos eran el mismo artefacto de automatización (el `/loop` no vaciaba de
+verdad los campos numéricos antes de disparar la acción). **El bloque 2 queda cerrado
+sin hallazgos reales pendientes**, solo el hallazgo menor 3 (no-op silencioso al forzar
+una flecha de reordenar en su extremo saltándose `disabled`), que sigue en pie tal cual.
+Detalle de la reproducción en "Hallazgos originales — descartados" más abajo.
 
-> **Revisión posterior (2026-09-11, no del agente del `/loop`):** ninguno de los dos
-> hallazgos 1 y 2 se ha reproducido a mano todavía — el Chrome de `chrome-devtools` MCP
-> estaba bloqueado por otra instancia y `claude-in-chrome` sin conectar en el momento de
-> revisar esto, así que lo de abajo es análisis de código, no verificación en vivo.
-> **No los des por confirmados sin repetirlos tú mismo primero.**
-> - **Hallazgo 1 (Rondas): sospecha alta de que es un artefacto de la herramienta, no un
->   bug real.** El campo es un input **controlado** por React (`value={duracion}`,
->   `onChange`, `CombateConsole.tsx`). El código (`duracion === "" ? null : Number(...)`)
->   es correcto a simple vista. Si la forma en que la automatización "vacía" el campo no
->   dispara un evento `input` nativo, el estado de React nunca se entera aunque el campo
->   se vea vacío en pantalla — exactamente la trampa que ya documenta
->   `docs/traspaso.md` §5 ("Rellenar formularios con `fill_form` no siempre dispara los
->   eventos de React"). Antes de tocar el código: reprodúcelo con teclado real (clic en
->   el campo, Cmd+A, Backspace, clic en "Aplicar estado"), no con la automatización.
-> - **Hallazgo 2 (Iniciativa): más probable que sea real.** Ese campo es **no
->   controlado** (`defaultValue`) y lee `e.target.value` directo del DOM en `onBlur` —
->   no depende de que React se entere de nada, así que es más resistente al problema de
->   arriba. Si aun con teclado real sigue sin guardar `null`, hay algo genuino que
->   arreglar. Confírmalo a mano antes de tocar código, pero dale más crédito que al 1.
+### Hallazgos originales — descartados tras reproducción manual (2026-09-10)
 
-1. **Vaciar el campo de Rondas antes de aplicar un estado no lo deja "sin límite"
-   (null) — cae al valor por defecto del catálogo para ese estado/grado, y por tanto
-   expira solo aunque el máster creyera que lo dejaba permanente.** *(Ver la nota de
-   revisión posterior justo arriba antes de arreglar nada — sospecha de artefacto.)*
-   Repro: en el gestor de combate, con un combatiente en la cola, elegir un estado que
-   traiga rondas precargadas (p. ej. "Ceguera", precarga "1"), borrar a mano el campo
-   Rondas y pulsar "Aplicar estado". La insignia sale con el valor precargado original
-   (p. ej. "CEGUERA (FRACASO) · 1R"), no "sin límite" — confirmado en la base
-   (`estados` guarda `"rondasRestantes": 1`, nunca `null`) y confirmado además con el
-   siguiente "Siguiente turno": la insignia desaparece, cuando no debería si fuera
-   permanente. Reproducido dos veces con estados distintos (Aturdido ya activo con 3R,
-   y Ceguera desde cero).
+> **Confirmación manual (2026-09-10, sesión de relevo de la fase 6b, `chrome-devtools`
+> MCP, teclado real — clic en el campo, `End`, `Backspace` hasta vaciar, y solo entonces
+> la acción que dispara el guardado).** **Ninguno de los dos se reproduce.** Los dos
+> guardan `null` correctamente cuando el campo se vacía con eventos de teclado reales:
+> - **Hallazgo 1 (Rondas).** Combatiente "villa", estado Ceguera (precarga Rondas="1"):
+>   vaciado el campo a mano, "Aplicar estado" → `estados` en base queda
+>   `{"rondasRestantes": null}` (no `1`). Insignia sale "CEGUERA (FRACASO)" sin indicador
+>   de rondas. Sobrevive intacta a un "Siguiente turno" (ronda 1→2), confirmando que
+>   quedó "sin límite" de verdad, no con una duración que aún no había expirado. Era el
+>   que la nota de revisión ya daba como sospechoso (campo controlado por React) — se
+>   confirma el diagnóstico.
+> - **Hallazgo 2 (Iniciativa).** Combatiente "villa" con iniciativa=10 ya guardada:
+>   vaciado el campo a mano y `Tab` para disparar `onBlur` → `iniciativa` en base queda
+>   `NULL`. Confirmado también tras F5 (el campo sigue vacío en pantalla, no vuelve a
+>   mostrar "10"). Era el que la nota de revisión daba **más** crédito de ser real (campo
+>   no controlado, lee el DOM directo) — y aun así resultó ser el mismo artefacto.
+>   **Detalle de la reproducción, por si vuelve a pasar:** el primer intento de vaciar
+>   este campo con `Cmd+A` + `Backspace` (la secuencia que sugería la nota de revisión)
+>   dejó el campo en `"0"` en vez de vacío — ni siquiera llegó a probar el código, fue la
+>   propia secuencia de teclas la que no vació el campo del todo (con `Cmd+A` sin efecto
+>   visible sobre un `input[type=number]` en este entorno, un `Backspace` suelto solo
+>   borra un carácter). La secuencia que sí vacía el campo de verdad: clic, `End`,
+>   `Backspace` tantas veces como dígitos tenga el valor (o hasta que
+>   `el.value === ""` se confirme con `evaluate_script`, no fiarse del `valuetext` del
+>   snapshot de accesibilidad, que en un caso mostró `"0"` cuando el valor real ya no
+>   coincidía). Ojo con esto la próxima vez que haya que vaciar un campo numérico a mano
+>   en Chrome: un solo `Backspace` no basta si no se confirma antes que la selección
+>   cubrió todo el valor.
+
+Con esto, **el bloque 2 sigue cerrado sin hallazgos reales pendientes** — los dos
+"hallazgos" del `/loop` eran artefactos de cómo automatizaba el vaciado de campos
+(la misma familia de trampa que documenta `docs/traspaso.md` §5), no bugs de la app. No
+hace falta tocar `CombateConsole.tsx` para esto.
+
+1. **DESCARTADO (ver confirmación manual arriba).** ~~Vaciar el campo de Rondas antes de
+   aplicar un estado no lo deja "sin límite" (null) — cae al valor por defecto del
+   catálogo para ese estado/grado, y por tanto expira solo aunque el máster creyera que
+   lo dejaba permanente.~~ Repro original (del `/loop`, no reproducida a mano): en el
+   gestor de combate, con un combatiente en la cola, elegir un estado que traiga rondas
+   precargadas (p. ej. "Ceguera", precarga "1"), borrar a mano el campo Rondas y pulsar
+   "Aplicar estado". La insignia salía con el valor precargado original en vez de "sin
+   límite". **Con teclado real (2026-09-10) se guarda `null` correctamente** — era un
+   artefacto de cómo el `/loop` vaciaba el campo, no un bug.
    Ver bloque 2.5.
 
-2. **Vaciar el campo de Iniciativa de un combatiente que ya tenía un valor no lo
-   guarda como "sin iniciativa" (null) — se queda con el valor viejo silenciosamente,
-   sin avisar.** *(Ver la nota de revisión posterior arriba — más probable que sea
-   real que el hallazgo 1.)*
-   Repro: en el gestor de combate, con un combatiente con iniciativa (p. ej. "villa"
-   con iniciativa 10), borrar el campo Iniciativa a mano y quitar el foco (Tab). El
-   campo se ve vacío en pantalla, pero tras recargar la página (F5) vuelve a mostrar
-   "10" — confirmado en la base (`iniciativa` sigue en `10`, nunca llegó a `NULL`). No
-   revienta ni da error, solo no persiste el vaciado.
+2. **DESCARTADO (ver confirmación manual arriba).** ~~Vaciar el campo de Iniciativa de
+   un combatiente que ya tenía un valor no lo guarda como "sin iniciativa" (null) — se
+   queda con el valor viejo silenciosamente, sin avisar.~~ Repro original (del `/loop`,
+   no reproducida a mano): borrar el campo Iniciativa a mano y quitar el foco (Tab); tras
+   recargar (F5) volvía a mostrar el valor viejo. **Con teclado real (2026-09-10) se
+   guarda `NULL` correctamente**, confirmado también tras F5 — era el mismo artefacto que
+   el hallazgo 1, pese a que la nota de revisión le daba más crédito de ser real.
    Ver bloque 2.3.
 
 3. **(Menor) Forzar el clic en una flecha de reordenar en su extremo (saltándose el
@@ -480,3 +492,15 @@ restantes. No se tocó ningún `Character` ni `NpcTemplate` real en ningún mome
 > cualquiera habría visto al abrir `/master/combate`. Si vuelves a lanzar el `/loop` de
 > pruebas, no te fíes del "limpieza aplicada" que escriba él solo — verifícalo tú con un
 > `SELECT count(*) FROM "Combate";` al final.
+
+> **Segunda corrección (2026-09-10, sesión de relevo de la fase 6b):** volvió a pasar.
+> Al arrancar esta sesión (antes de reproducir los hallazgos de arriba) la base tenía
+> **2 `Combate`** sin limpiar (uno `TERMINADO` en ronda 5, otro `EN_CURSO` en ronda 1,
+> con `gordo`/`villa` metidos dentro) — de una sesión de pruebas anterior a esta, no de
+> la del `/loop` original (esa ya se había limpiado en la corrección de arriba). Se
+> borraron por id explícito antes de empezar (el `DELETE FROM "Combate";` genérico lo
+> bloqueó el clasificador de permisos del entorno por parecer un borrado masivo; con los
+> dos `id` nombrados a mano coló). Verificado en 0 filas antes y después de esta sesión.
+> **Norma reforzada:** no te fíes de que la base esté limpia solo porque la sesión
+> anterior dijo que lo estaba — comprueba tú `SELECT count(*) FROM "Combate";` al
+> arrancar cualquier sesión de pruebas, no solo al terminarla.
