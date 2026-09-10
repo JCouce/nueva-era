@@ -228,31 +228,57 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
 
 ## Bloque 2.5 — Aplicar/quitar estado
 
-- [ ] Camino feliz: elegir estado → grado (si tiene más de uno) → rondas precargadas →
+- [x] Camino feliz: elegir estado → grado (si tiene más de uno) → rondas precargadas →
   aplicar → insignia con el grado entre paréntesis solo cuando el estado tiene más de
   un grado; quitar con la "×".
-- [ ] **Volver a aplicar el mismo estado con otro grado.** No debe acumular dos
+  "Aturdido" en gordo: al elegirlo aparece el desplegable Grado (4 grados) con "Fracaso
+  crítico" precargado y Rondas en "1". Al aplicar, insignia "ATURDIDO (FRACASO CRÍTICO)
+  · 1R" con botón "Quitar". "Derribado" en villa (un solo grado): no aparece desplegable
+  de Grado, la insignia sale sin paréntesis ("DERRIBADO").
+- [x] **Volver a aplicar el mismo estado con otro grado.** No debe acumular dos
   insignias del mismo estado — la nueva sustituye a la vieja (mismo criterio que
   `modificadoresDeEstados()`). Comprueba el texto y las rondas de la insignia resultante.
-- [ ] **Rondas negativas** (escribir "-5" a mano en el campo, antes de aplicar). No hay
+  Con "Aturdido (Fracaso crítico) · 1R" ya aplicado a gordo, se reaplicó con grado
+  "Éxito" y rondas "3": la insignia pasó a "ATURDIDO (ÉXITO) · 3R", una sola, sin
+  duplicar.
+- [x] **Rondas negativas** (escribir "-5" a mano en el campo, antes de aplicar). No hay
   guardarraíl contra esto en el servidor — comprueba qué pasa: ¿se aplica con rondas
   negativas y desaparece en el siguiente avance de turno (por el filtro `> 0`), o se
   comporta de otra forma? Anota el resultado exacto.
-- [ ] **Vaciar el campo de rondas a mano** antes de aplicar, en un estado que traía un
+  Se aplica tal cual: insignia "DERRIBADO · -5R" (el campo incluso queda marcado
+  `invalid` por el navegador, pero el submit no lo bloquea). En el siguiente "Siguiente
+  turno" la insignia desaparece de golpe — confirma el filtro `> 0` tras el descuento.
+- [x] **Vaciar el campo de rondas a mano** antes de aplicar, en un estado que traía un
   valor por defecto. Debe aplicarse como "sin límite" (no expira solo) — confírmalo
   dejando pasar varios turnos y viendo que la insignia no se mueve ni desaparece.
-- [ ] **Cambiar de estado en el desplegable varias veces seguidas** antes de aplicar
+  **HALLAZGO:** no se guarda como "sin límite" — se guarda con el valor por defecto
+  precargado del catálogo para ese estado/grado, como si nunca se hubiera vaciado. Pasos:
+  elegir "Ceguera" (precarga Rondas="1"), vaciar el campo Rondas a mano, pulsar "Aplicar
+  estado". La insignia sale "CEGUERA (FRACASO) · 1R" y
+  `SELECT estados FROM "Combatiente" WHERE nombre='gordo'` confirma
+  `{"rondasRestantes": 1}` en vez de `null`. Se reprodujo dos veces (una reaplicando
+  "Aturdido" ya activo con 3R — se quedó en 3R en vez de null; otra aplicando "Ceguera"
+  desde cero — cayó al 1R precargado). En ambos casos, tras un "Siguiente turno" la
+  insignia desaparece (confirmando que quedó con duración finita, no "sin límite").
+- [x] **Cambiar de estado en el desplegable varias veces seguidas** antes de aplicar
   (Aturdido → Ceguera → Parálisis...). El desplegable de Grado y el campo de Rondas deben
   actualizarse cada vez al nuevo estado, sin arrastrar el grado o la duración del
   anterior.
-- [ ] **Dos combatientes distintos con estados distintos a la vez.** Confirma que aplicar
+  Aturdido (grado forzado a "Éxito crítico") → Ceguera (rondas forzadas a "9") →
+  Parálisis: el desplegable Grado quedó en "Fracaso crítico" (el primero de Parálisis,
+  no "Éxito crítico" de Aturdido) y Rondas volvió a "1" (el precargado de Parálisis, no
+  el "9" que se había forzado para Ceguera). No arrastra nada del estado anterior.
+- [x] **Dos combatientes distintos con estados distintos a la vez.** Confirma que aplicar
   o quitar un estado en una fila no toca las insignias de otra fila.
-- [ ] **Catálogo completo visible.** El desplegable de Estado debe listar exactamente los
+  gordo con "PARÁLISIS (FRACASO CRÍTICO) · 1R" y villa con "MIEDO (ASUSTADO) · 2R" a la
+  vez; al quitar el de gordo, la insignia de villa siguió intacta sin cambios.
+- [x] **Catálogo completo visible.** El desplegable de Estado debe listar exactamente los
   20 (Atrapado, Aturdido, Ceguera, Confusión, Congelación, Corrosión, Derribado,
   Enfermedad, Entorpecido, Envenenamiento, Fusión, Hemorragia, Inmovilizado, Llamarada,
   Miedo, Parálisis, Shock, Sordera, Sorprendido y desprevenido, Inconsciencia) — **sin**
   Fatiga, Heridas ni Muerte, que no están en el catálogo a propósito
   (`catalog/estados.ts`).
+  Contados en el desplegable real: los 20 exactos, en ese orden, sin Fatiga/Heridas/Muerte.
 
 ## Bloque 2.6 — Descuento automático de duración
 
