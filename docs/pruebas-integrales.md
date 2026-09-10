@@ -1,0 +1,221 @@
+# Pruebas integrales
+
+Checklist de pruebas manuales para pasar antes de dar por buena una pieza de UI grande —
+más allá del camino feliz que ya se verifica al cerrar cada subtarea. Un bloque por
+sección; dentro de cada uno, casos límite, validaciones y permisos, no solo "funciona si
+todo sale bien".
+
+**Cómo se usa:** antes de una sesión de pruebas, lee "Preparación". Al terminar cada
+bloque, "Limpieza" — siempre, aunque algo haya fallado. Marca `[x]` lo que pasa, anota al
+lado lo que falla con el texto exacto del error, no un "no funciona".
+
+---
+
+## Preparación
+
+1. Dev server corriendo (`npm run dev`) y **reiniciado si hubo una migración de Prisma
+   desde la última vez** — el cliente en memoria se queda desfasado, ver
+   `docs/traspaso.md` §5.
+2. Sesión con rol MASTER. Si no tienes contraseña de una cuenta MASTER existente,
+   registra una de prueba en `/login` y asciéndela: `npm run make-master -- <email>`
+   (hace falta cerrar y reabrir sesión después, el rol viaja en el JWT).
+3. Para los casos de permisos de jugador (D2, ver bloque de Casos de permisos más abajo),
+   hace falta además una segunda sesión con rol PLAYER — puede ser una cuenta de prueba
+   distinta, o una pestaña en modo incógnito para no pisar la sesión de máster.
+
+## Limpieza (después de cada sesión de pruebas, sin excepción)
+
+```sql
+DELETE FROM "Combate";  -- los Combatiente se van solos por cascade
+```
+
+Verifica con `SELECT count(*) FROM "Combate";` que queda en 0. Si registraste usuarios de
+prueba, bórralos (`DELETE FROM "User" WHERE email = '...';`). **No toques** personajes ni
+`NpcTemplate` reales — son datos de la mesa, no de pruebas.
+
+---
+
+## Huecos conocidos — no son fallos, son piezas de otra subtarea
+
+No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
+
+- **No hay botón para marcar a alguien "derrotado".** `marcarDerrotadoAction` existe
+  desde la 1.3, pero ninguna subtarea del bloque 2 le puso una UI — quedó suelta. No es
+  parte de 2.1-2.6.
+- **No hay forma de añadir un NPC desde el catálogo de `NpcTemplate`** (solo ad-hoc).
+  `agregarNpcDeCatalogoAction` existe desde la 1.3; su UI es la subtarea 5.2.
+- **No hay ninguna pantalla donde un jugador vea u opere su propio combatiente.** El
+  permiso D2 (el dueño del Character puede ajustar su propio PG/fatiga) está
+  implementado y tiene test unitario (`permisos.test.ts`), pero **hoy no hay ningún
+  camino de UI para ejercerlo** — la vista de jugador es la fase 3, todavía sin
+  construir. Ver "Casos de permisos" más abajo para cómo probar esto de todas formas.
+
+---
+
+## Bloque 2.1 — Crear combate + añadir jugadores
+
+- [ ] Camino feliz: sin combate en curso → "Crear combate" → aparece "Ronda 1", cola
+  vacía, lista de personajes disponibles.
+- [ ] **Ya hay un combate en curso.** Con un combate `EN_CURSO` ya creado, intenta crear
+  otro (recarga la página con dos pestañas, o llama a la acción dos veces seguidas antes
+  de que la UI se actualice). Debe rechazarlo: "Ya hay un combate en curso." No debe
+  aparecer un segundo `Combate` en la base.
+- [ ] **Añadir el mismo personaje dos veces.** Añade a "villa" (o quien exista), y sin
+  recargar intenta añadirlo otra vez desde la lista (si ya desapareció de "Añadir
+  jugador", provoca la llamada igualmente, p. ej. reabriendo la página a mitad). Debe
+  rechazarlo: "Ese personaje ya está en este combate."
+- [ ] **Sin personajes creados.** Si en algún entorno de pruebas no hay ningún
+  `Character`, la sección "Añadir jugador" debe decir "No hay personajes creados." (no
+  "Ya están todos en combate.", que es el otro mensaje para lista vacía).
+- [ ] **PG del jugador coincide con su ficha real.** Al añadirlo, "PG X/X" debe coincidir
+  con la vida calculada en su propia ficha (`/characters/<id>`, pestaña Resumen) — no un
+  número inventado ni desfasado.
+- [ ] Terminar combate sin nadie en la cola (0 combatientes) — no debe reventar, debe
+  volver limpio a "No hay ningún combate en curso."
+
+## Bloque 2.2 — Añadir NPC ad-hoc
+
+- [ ] Camino feliz: nombre + PG → aparece en la cola con PG actual = máximo, el
+  formulario se vacía solo.
+- [ ] **Nombre vacío o solo espacios.** El botón "Añadir NPC" debe seguir deshabilitado
+  con el campo vacío; si se fuerza espacios en blanco (" "), no debe crear un NPC sin
+  nombre real.
+- [ ] **PG en 0 o negativo.** El input es `type=number min=1`, pero prueba forzar un 0 o
+  un negativo (pegar el valor, o cambiar el `min` desde las devtools) — el servidor debe
+  rechazarlo igual ("PG inválidos."), el cliente no es la única barrera.
+- [ ] **PG con decimales** (ej. "12.5"). El campo no lo impide a nivel de HTML. Compueba
+  qué pasa: ¿se guarda un PG fraccionario (12.5/12.5) o se trunca? Si se guarda
+  fraccionario, anótalo como hallazgo — un PG con decimales no tiene sentido en las
+  reglas del sistema.
+- [ ] **Dos NPC con el mismo nombre.** A diferencia de los jugadores, no hay guardarraíl
+  contra duplicados — debe permitir dos filas "Guardia" sin fundirlas ni pisarse los PG
+  entre sí.
+- [ ] **Nombre muy largo** (40+ caracteres). Comprueba que no rompe el layout de la fila
+  ni la desborda fuera de la tarjeta.
+
+## Bloque 2.3 — Cola de iniciativa
+
+- [ ] Camino feliz: iniciativa por combatiente, "Ordenar por iniciativa" reordena
+  descendente, "Siguiente turno" avanza y sube ronda al dar la vuelta, flechas mueven un
+  puesto.
+- [ ] **El turno sigue a la persona, no a la posición**, en los dos reordenamientos
+  posibles — ya verificado al cerrar la subtarea, pero merece repetirse tras cualquier
+  cambio futuro en esta zona: turno activo → "ordenar por iniciativa" → sigue el mismo
+  nombre en "Turno de: X", aunque cambie de puesto. Turno activo → moverlo con una flecha
+  → mismo nombre en "Turno de: X".
+- [ ] **Iniciativa vacía tras haber tenido un valor.** Pon una iniciativa, guárdala,
+  bórrala del campo (déjalo en blanco) y quita el foco. Debe guardarse como "sin
+  iniciativa" (null), no fallar ni dejar el valor viejo.
+- [ ] **Iniciativa negativa y con decimales.** Prueba -3 y 7.5. ¿Se guarda tal cual? Con
+  negativos, "ordenar por iniciativa" debería seguir funcionando (van al final, por
+  debajo de los positivos). Con decimales, comprueba que el orden resultante tiene
+  sentido (7.5 debe quedar entre 7 y 8 si los hay).
+- [ ] **Todos con la misma iniciativa (o todos sin iniciativa).** "Ordenar por
+  iniciativa" no debe reventar ni mezclar aleatoriamente — con empates totales, el orden
+  resultante debe ser el mismo que ya tenían (orden estable).
+- [ ] **Un solo combatiente en la cola.** "Siguiente turno" debe dar la vuelta
+  inmediatamente cada vez que se pulsa (ronda sube cada pulsación), sin quedarse
+  colgado ni marcar error.
+- [ ] **Flechas en los extremos.** Ya verificado que se deshabilitan visualmente en el
+  primero (▲) y el último (▼) — confirma también que si de alguna forma se fuerza el
+  clic (por ejemplo con las devtools, saltándose `disabled`), el servidor lo rechaza con
+  "No se puede mover más en esa dirección." en vez de reventar o mover a nadie.
+- [ ] **Doble clic rápido en "Siguiente turno".** Comprueba que no avanza dos turnos de
+  golpe por una doble pulsación accidental — la UI debe deshabilitar los botones mientras
+  hay una acción en curso (`pending`).
+
+## Bloque 2.4 — Delta de PG/fatiga
+
+- [ ] Camino feliz: `±N` aplicado a PG y a fatiga, clampado en `[0, máximo]` en los dos
+  sentidos (daño de sobra no baja de 0, curación de sobra no sube del máximo) — ya
+  verificado, repetir tras cualquier cambio en esta zona.
+- [ ] **Delta con decimales** (ej. "2.5"). El servidor no lo rechaza (`Number.isFinite`
+  acepta decimales) — comprueba qué PG queda. Si sale un PG fraccionario (17.5/20),
+  anótalo como hallazgo, igual que el PG del NPC ad-hoc.
+- [ ] **Delta en 0 o vacío.** El botón no debe hacer nada visible (ni gastar la llamada,
+  ni "aplicar 0") si el campo está vacío o en 0.
+- [ ] **Delta no numérico** (pegar texto en el campo, aunque sea `type=number`). No debe
+  reventar la petición ni dejar el campo en un estado raro.
+- [ ] **Aplicar a fatiga en un NPC ad-hoc o de catálogo** (fatiga máxima 0 siempre, no
+  llevan ficha completa). Ya verificado que no revienta y se queda en 0/0 — repetir si se
+  toca esta zona.
+- [ ] **PG a un personaje jugador real**, para confirmar que el clamp usa su máximo
+  real (el de su ficha), no un valor genérico.
+
+## Bloque 2.5 — Aplicar/quitar estado
+
+- [ ] Camino feliz: elegir estado → grado (si tiene más de uno) → rondas precargadas →
+  aplicar → insignia con el grado entre paréntesis solo cuando el estado tiene más de
+  un grado; quitar con la "×".
+- [ ] **Volver a aplicar el mismo estado con otro grado.** No debe acumular dos
+  insignias del mismo estado — la nueva sustituye a la vieja (mismo criterio que
+  `modificadoresDeEstados()`). Comprueba el texto y las rondas de la insignia resultante.
+- [ ] **Rondas negativas** (escribir "-5" a mano en el campo, antes de aplicar). No hay
+  guardarraíl contra esto en el servidor — comprueba qué pasa: ¿se aplica con rondas
+  negativas y desaparece en el siguiente avance de turno (por el filtro `> 0`), o se
+  comporta de otra forma? Anota el resultado exacto.
+- [ ] **Vaciar el campo de rondas a mano** antes de aplicar, en un estado que traía un
+  valor por defecto. Debe aplicarse como "sin límite" (no expira solo) — confírmalo
+  dejando pasar varios turnos y viendo que la insignia no se mueve ni desaparece.
+- [ ] **Cambiar de estado en el desplegable varias veces seguidas** antes de aplicar
+  (Aturdido → Ceguera → Parálisis...). El desplegable de Grado y el campo de Rondas deben
+  actualizarse cada vez al nuevo estado, sin arrastrar el grado o la duración del
+  anterior.
+- [ ] **Dos combatientes distintos con estados distintos a la vez.** Confirma que aplicar
+  o quitar un estado en una fila no toca las insignias de otra fila.
+- [ ] **Catálogo completo visible.** El desplegable de Estado debe listar exactamente los
+  20 (Atrapado, Aturdido, Ceguera, Confusión, Congelación, Corrosión, Derribado,
+  Enfermedad, Entorpecido, Envenenamiento, Fusión, Hemorragia, Inmovilizado, Llamarada,
+  Miedo, Parálisis, Shock, Sordera, Sorprendido y desprevenido, Inconsciencia) — **sin**
+  Fatiga, Heridas ni Muerte, que no están en el catálogo a propósito
+  (`catalog/estados.ts`).
+
+## Bloque 2.6 — Descuento automático de duración
+
+- [ ] Camino feliz: una duración de N rondas baja de uno en uno en cada "Siguiente
+  turno" y desaparece sola al llegar a 0; un estado sin duración (`null`) no se toca
+  nunca — ya verificado, repetir tras cualquier cambio en esta zona.
+- [ ] **Varios estados con distinta duración a la vez**, en el mismo o en distintos
+  combatientes. Cada uno debe descontar de forma independiente — que uno llegue a 0 y
+  desaparezca no debe afectar a la cuenta de otro.
+- [ ] **Duración de 1 ronda.** Debe desaparecer en el siguiente "Siguiente turno" que se
+  pulse — no esperar a dos.
+- [ ] **"Siguiente turno" con nadie en la cola con estados activos.** No debe fallar ni
+  hacer trabajo de más (comprueba que no hay escrituras innecesarias si es fácil de ver,
+  p. ej. por los logs del dev server).
+
+---
+
+## Casos de permisos (transversal a todo el bloque)
+
+- [ ] **Un jugador (rol PLAYER) no puede entrar en `/master/combate`.** Con la sesión de
+  un usuario PLAYER, navega directamente a la URL — debe redirigir a `/characters`, sin
+  enseñar nada de la consola.
+- [ ] **D2 desde fuera de la UI** (no hay pantalla de jugador todavía, ver "Huecos
+  conocidos"): con la sesión de un PLAYER, comprueba que **su propio** combatiente sí
+  puede ajustarse y el de **otro** no. Como no hay botón, esto se prueba llamando a la
+  acción directamente — o simplemente confía en `permisos.test.ts` (`canAdjustCombatiente`,
+  8 tests) hasta que exista una UI real de jugador que lo ejerza de verdad. Si tocas esta
+  lógica, no te fíes solo del test unitario: en cuanto exista la vista de jugador
+  (fase 3), repite este caso de punta a punta en el navegador.
+- [ ] **El resto de acciones (crear/terminar combate, añadir combatiente, mover turno,
+  iniciativa, reordenar, aplicar/quitar estado) son solo-máster.** Confirma que ninguna
+  tiene rastro de "o el dueño también" en el código (`requireMaster()`, no
+  `canAdjustCombatiente`) — repásalo en `combate/actions.ts` si tocas permisos.
+
+## Robustez general
+
+- [ ] **Recargar la página (F5) a mitad de una sesión de combate.** Todo debe seguir
+  ahí tal cual (ronda, turno, cola, insignias, PG/fatiga) — nada vive solo en estado de
+  React sin persistir.
+- [ ] **Dos pestañas de máster abiertas a la vez**, ambas sobre el mismo combate. Aplica
+  un cambio en una, y sin recargar la otra, comprueba qué pasa si intentas otra acción
+  desde la pestaña vieja (p. ej. mover un combatiente que la otra pestaña ya movió). No
+  hay bloqueo optimista todavía — puede que "gane" el último en escribir; confirma que al
+  menos no revienta ni dejar datos corruptos (dos combatientes con el mismo `orden`, por
+  ejemplo).
+- [ ] **Terminar un combate que ya está terminado** (dos clics rápidos en "Terminar
+  combate", o forzar la llamada dos veces). `terminarCombateAction` no comprueba si el
+  combate existe o ya está `TERMINADO` antes de actualizar — confirma si esto revienta
+  con un error de Prisma sin capturar (registro no encontrado) en vez de un
+  `{ok:false, error}` limpio. Si revienta, es un hallazgo real, no un caso exótico.

@@ -296,7 +296,9 @@ para el máster, sin intentar simularlo.
 **Con esto se cierra el bloque 2 — hay un gestor de combate funcional de punta a punta,
 verificado en Chrome paso a paso: crear combate, añadir jugadores y NPC ad-hoc, cola de
 iniciativa con turno que sobrevive a reordenar, daño y curación con clamps correctos,
-aplicar/quitar estados del catálogo con su duración descontándose sola.** Añadir NPC
+aplicar/quitar estados del catálogo con su duración descontándose sola.** Checklist de
+pruebas manuales exhaustivas (no solo el camino feliz de cada subtarea) en
+`docs/pruebas-integrales.md`. Añadir NPC
 *desde* el catálogo de `NpcTemplate` (en vez de solo ad-hoc) sigue siendo la 5.2, no se
 adelantó aquí — `agregarNpcDeCatalogoAction` existe desde la 1.3 pero no tiene UI todavía.
 
