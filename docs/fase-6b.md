@@ -159,9 +159,19 @@ para el máster, sin intentar simularlo.
   **Efecto colateral corregido de paso:** el `select` dinámico de `adjustResource`
   (`app/master/actions.ts`) dejó de tipar bien al crecer `Character` con la relación
   nueva — cambiado a un `select` fijo. `tsc`, 288/288 tests y lint limpios.
-- [ ] **1.2 — Schema: `NpcTemplate`.** Del máster (no del jugador), nombre, PG base, nota
-  de texto libre. Migración — puede ir en el mismo paso que 1.1 o aparte, a discreción de
-  quien lo coja.
+- [x] **1.2 — Schema: `NpcTemplate`.** Hecha (2026-09-11). `nombre`/`pgBase`/`nota`
+  (opcional), en base de datos y no en `catalog/` como TypeScript — a diferencia de
+  especies/equipo, esto no son reglas del diseñador, son los PNJs de esta mesa, así que
+  los crea el máster, no un desarrollador. `Combatiente.npcTemplateId` (opcional, junto a
+  `characterId`) enchufado de paso — cierra los tres orígenes posibles de un combatiente
+  (jugador / NPC de catálogo / NPC ad-hoc) que quedaron abiertos en 1.1. Migración
+  `20260910155125_npc_template`.
+  **Para crear samples e iterar sin esperar a la UI del máster (subtarea 5.1):**
+  `npm run seed-npcs` (`scripts/seed-npcs.mjs`, mismo patrón que `make-master.mjs` —
+  `pg` a pelo, sin pasar por el cliente de Prisma). Hace upsert por nombre, así que
+  edita `SAMPLES` en el script y vuelve a correrlo cuando quieras probar otros NPC;
+  verificado con 3 de ejemplo, creados la primera vez y actualizados la segunda.
+  `tsc`, 288/288 tests y lint limpios.
 - [ ] **1.3 — Permisos y server actions esqueleto.** Extender el criterio ya usado en
   `app/master/actions.ts` (rol `MASTER`, o dueño para lo que le corresponda al jugador
   según D2) a: crear/cerrar combate, añadir/quitar combatiente, mover turno, aplicar

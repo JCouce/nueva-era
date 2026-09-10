@@ -80,8 +80,10 @@ model Combate {
 }
 
 // Una fila en la cola de iniciativa de un Combate: un jugador (characterId),
-// o un NPC ad-hoc (solo `nombre`, sin fila en ningún catálogo) — el NPC de
-// catálogo (NpcTemplate, subtarea 1.2) llega en un paso aparte.
+// un NPC de catálogo (npcTemplateId), o un NPC ad-hoc (ni uno ni otro, solo
+// `nombre` tecleado a mano) — los tres orígenes conviven porque a veces
+// merece la pena tener el bicho guardado (subtarea 5.1) y a veces es un
+// guardia suelto que no va a volver a salir.
 //
 // pgActual/pgMax/fatigaActual/fatigaMax son una FOTO al añadir al combate,
 // no un valor derivado en vivo: si el personaje sube de nivel a mitad de
@@ -90,37 +92,60 @@ model Combate {
 // criterio que Character.stats: es la forma más barata de iterar mientras
 // el catálogo de estados siga cambiando.
 model Combatiente {
-  id           String     @id @default(cuid())
-  combateId    String
-  combate      Combate    @relation(fields: [combateId], references: [id], onDelete: Cascade)
-  characterId  String?
-  character    Character? @relation(fields: [characterId], references: [id], onDelete: Cascade)
-  // Nombre a mostrar, copiado al añadir (del Character, de un NpcTemplate
-  // futuro, o tecleado a mano para un NPC ad-hoc). Nunca se lee en vivo del
-  // Character — mismo motivo que la foto de PG/fatiga de arriba.
-  nombre       String
-  pgActual     Int
-  pgMax        Int
-  fatigaActual Int
-  fatigaMax    Int
-  iniciativa   Int?
+  id            String       @id @default(cuid())
+  combateId     String
+  combate       Combate      @relation(fields: [combateId], references: [id], onDelete: Cascade)
+  characterId   String?
+  character     Character?   @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  npcTemplateId String?
+  npcTemplate   NpcTemplate? @relation(fields: [npcTemplateId], references: [id], onDelete: SetNull)
+  // Nombre a mostrar, copiado al añadir (del Character, del NpcTemplate, o
+  // tecleado a mano para un NPC ad-hoc). Nunca se lee en vivo de ninguno de
+  // los dos — mismo motivo que la foto de PG/fatiga de arriba. También es
+  // lo que permite "Goblin #1, #2, #3" al clonar (subtarea 5.3): cada clon
+  // es su propia fila con su propio nombre, sin tocar el NpcTemplate.
+  nombre        String
+  pgActual      Int
+  pgMax         Int
+  fatigaActual  Int
+  fatigaMax     Int
+  iniciativa    Int?
   // Orden de la cola de iniciativa. No se deriva solo de `iniciativa`
   // (empates, reordenar a mano con las flechas de la subtarea 2.3): es su
   // propio campo, que el máster puede mover sin tocar la iniciativa tirada.
-  orden        Int        @default(0)
-  estados      Json       @default("[]")
+  orden         Int          @default(0)
+  estados       Json         @default("[]")
   // Bloque 6.1 (niebla sobre NPCs): el jugador ve "Enemigo A" sin nombre ni
   // PG exactos mientras esto sea true. Se añade ahora, sin UI todavía, para
   // no tener que migrar el schema otra vez cuando llegue esa pieza.
-  oculto       Boolean    @default(false)
+  oculto        Boolean      @default(false)
   // Sale de la cola de turnos sin borrar la fila (guarda su sitio en el
   // historial de la fase 6.5).
-  derrotado    Boolean    @default(false)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  derrotado     Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   @@index([combateId])
   @@index([characterId])
+  @@index([npcTemplateId])
+}
+
+// El catálogo de NPCs del máster (subtarea 1.2) — a diferencia de
+// especies.ts/equipo.ts, esto NO es un catálogo de reglas del diseñador:
+// son los monstruos y PNJs de esta mesa, así que vive en base de datos y lo
+// crea/edita el máster desde la UI (subtarea 5.1), no un desarrollador
+// desde el código. Deliberadamente mínimo — nombre, PG base y una nota de
+// texto libre, nada de atributos/habilidades completos todavía (ver la
+// nota sobre NPCs ligeros en docs/fase-6b.md, bloque "El motor de
+// estados").
+model NpcTemplate {
+  id           String        @id @default(cuid())
+  nombre       String
+  pgBase       Int
+  nota         String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  combatientes Combatiente[]
 }
 
 // --- Modelos del adapter de Auth.js (para Google OAuth futuro) ---
