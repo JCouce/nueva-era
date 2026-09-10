@@ -100,8 +100,9 @@ usuario lo pida**: un push a `main` despliega a producción en Vercel.
   comprobar el HTML renderizado en servidor.
 - **Rellenar formularios con `fill_form` no siempre dispara los eventos de React.** Usa `fill`
   campo a campo.
-- **En la base local hay un personaje del usuario** (`ADEROX`, en 2026-09-09; el nombre puede
-  volver a cambiar). No lo toques — crea uno de prueba y bórralo al terminar.
+- **Fresh start el 2026-09-10**: se borraron todos los `Character` de la base local al cerrar
+  la creación por prioridad (`HOJA2`). No hay ficha del usuario que evitar tocar — pero sigue
+  la misma norma de siempre: si creas una de prueba, bórrala al terminar.
 - **Antes de dar por bueno un modificador nuevo, ábrelo en el modal de Tiradas y mira si
   aparece en el desglose** — no te fíes de que "está en el catálogo" signifique "se aplica".
   Hay cuatro mecanismos distintos según el tipo de bono (condición interactiva, ajuste fijo,
@@ -236,6 +237,28 @@ Lo que de verdad falta es superficie de UI dedicada y un puñado de campos nuevo
 
 **La 6a está cerrada.** Las cuatro piezas de arriba, verificadas en Chrome con datos reales, no
 solo con tests.
+
+### Creación por prioridad (HOJA2) — hecha durante la 6a, no era el plan original
+
+`docs/Creación de Personaje.odt` (`HOJA2`) llegó a mitad de la fase 6a y reemplaza buena parte
+del motor de creación de `HOJA`. Se implementó entera antes de seguir, porque bloqueaba probar
+el guardarraíl de aprobación con datos reales. Ver `docs/sistema.md` §2 y `CONV-4` para el
+detalle de las reglas; aquí solo el estado de la implementación:
+
+- **Hecho y verificado en Chrome**: reparto de letras (`prioridad.ts`, `PrioridadCard.tsx`),
+  coste triangular en creación (`creacion.ts`, Stepper de Atributos/Habilidades), Aplicados
+  como media, Movimiento con las constantes nuevas, tabs de Dotes/Psiónica con presupuesto
+  declarado y catálogo pendiente, Recursos → créditos iniciales, Altura/Peso.
+- **Fresh start hecho** (2026-09-10): se borraron los `Character` existentes, las cuentas de
+  usuario se quedan igual. Todo el mundo crea ficha desde cero con el sistema nuevo.
+- **Deliberadamente fuera de esta pasada**: Carga Transportable (el usuario pidió centrarse en
+  la creación primero) y "subir con XP por encima del snapshot tras aprobar" — el guardarraíl
+  de `aprobacion.ts` hoy congela atributos/habilidades del todo en cuanto se aprueba, sin
+  excepción; la fórmula Nivel×factor de `HOJA2` ya está lista para cuando se conecte esa pieza.
+- **Sin resolver**: con la fórmula Nivel×2, llegar a 4 en un atributo (el tope de creación)
+  cuesta 20 puntos — más que el presupuesto de la mejor letra posible (A, 18). Puede ser
+  intencional (el 4 no tiene por qué ser alcanzable solo con el pool de creación) o un número
+  que no cuadra en `HOJA2`. Preguntado al usuario, pendiente de que lo lleve al diseñador.
 
 ### Fase 6b — panel de combate (después de 6a, diseño sin cerrar)
 
