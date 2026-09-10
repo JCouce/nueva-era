@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
-import { parseSheet } from "@/lib/rules";
+import { parseSheet, type EstadoActivo } from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
 import { HudCard } from "@/components/HudCard";
 import { StatusControl, ResourceRow } from "@/app/master/MasterControls";
@@ -20,6 +20,26 @@ export default async function CharacterPage({
   if (!character || !canEditCharacter(user, character)) notFound();
 
   const sheet = parseSheet(character.stats);
+
+  // Fase 6b bloque 3 (D5: combate → ficha, nunca al revés): si el personaje
+  // está metido en el Combate EN_CURSO actual, la ficha se lo enseña — tira
+  // compacta siempre visible + tab "Combate" con la cola completa. Mismo
+  // patrón de cast tolerante que master/combate/page.tsx: `estados` es Json
+  // escrito solo por las server actions de ese módulo.
+  const combateRaw = await prisma.combate.findFirst({
+    where: { estado: "EN_CURSO" },
+    include: { combatientes: { orderBy: { orden: "asc" } } },
+  });
+  const combate = combateRaw && {
+    ...combateRaw,
+    combatientes: combateRaw.combatientes.map((c) => ({
+      ...c,
+      estados: c.estados as unknown as EstadoActivo[],
+    })),
+  };
+  // Si el personaje no tiene fila en este combate, no hay "su combate" que
+  // enseñar (mismo criterio que la redacción original de la 3.1).
+  const enCombate = combate?.combatientes.some((c) => c.characterId === character.id) ?? false;
 
   return (
     <>
@@ -52,6 +72,7 @@ export default async function CharacterPage({
           initialXp={character.xp}
           initialCreditos={character.creditos}
           esMaster={user.role === "MASTER"}
+          combate={enCombate ? combate : null}
         />
       </main>
     </>

@@ -5,6 +5,7 @@ import {
   umbralFatiga,
   modificadoresDeUmbrales,
   modificadoresDeEstados,
+  describirEstadosActivos,
   descontarDuracion,
 } from "./estados";
 
@@ -131,6 +132,45 @@ describe("modificadoresDeEstados: estados del catálogo aplicados a un combatien
       modificadoresDeEstados([{ estadoId: "corrosion", gradoId: "fracaso", rondasRestantes: null }]),
       [],
     );
+  });
+});
+
+describe("describirEstadosActivos (fase 6b bloque 3: label/detalle para pintar, sin repetir la búsqueda en cada consumidor)", () => {
+  test("sin estados activos, sin nada que describir", () => {
+    assert.deepEqual(describirEstadosActivos([]), []);
+  });
+
+  test("estado con más de un grado: label incluye el grado entre paréntesis, detalle trae las frases del grado", () => {
+    const [d] = describirEstadosActivos([
+      { estadoId: "aturdido", gradoId: "fracaso_critico", rondasRestantes: 1 },
+    ]);
+    assert.equal(d.label, "Aturdido (Fracaso crítico)");
+    assert.deepEqual(d.detalle, [
+      "Solo puede moverse una casilla o defenderse, con -2 a la defensa.",
+      "Suelta automáticamente lo que sujetara.",
+    ]);
+    assert.equal(d.rondasRestantes, 1);
+  });
+
+  test("estado con un solo grado: label sin paréntesis (no repite el nombre)", () => {
+    const [d] = describirEstadosActivos([{ estadoId: "atrapado", gradoId: "activo", rondasRestantes: null }]);
+    assert.equal(d.label, "Atrapado");
+  });
+
+  test("estadoId huérfano: cae al propio id, detalle vacío, no revienta", () => {
+    const [d] = describirEstadosActivos([
+      { estadoId: "esto-no-existe", gradoId: "x", rondasRestantes: null },
+    ]);
+    assert.equal(d.label, "esto-no-existe");
+    assert.deepEqual(d.detalle, []);
+  });
+
+  test("gradoId huérfano para un estado real: mismo criterio, cae al id del estado y detalle vacío", () => {
+    const [d] = describirEstadosActivos([
+      { estadoId: "aturdido", gradoId: "grado-inventado", rondasRestantes: null },
+    ]);
+    assert.equal(d.label, "Aturdido");
+    assert.deepEqual(d.detalle, []);
   });
 });
 

@@ -8,7 +8,7 @@
 import { useRef, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { HudCard } from "@/components/HudCard";
-import { ESTADOS, estadoPorId, type EstadoActivo } from "@/lib/rules";
+import { ESTADOS, estadoPorId, describirEstadosActivos, type EstadoActivo } from "@/lib/rules";
 import {
   crearCombateAction,
   terminarCombateAction,
@@ -343,23 +343,9 @@ function CombatienteRow({
     ejecutar(() => aplicarEstadoAction(c.id, estadoId, gradoId, rondas));
   }
 
-  // El label del grado se resuelve una vez, no en cada render de la
-  // lista de activos — con pocos estados a la vez el coste es nulo, pero
-  // deja claro que estadoPorId es una búsqueda en catálogo, no gratis.
-  const activos = c.estados.map((ea) => {
-    const estado = estadoPorId(ea.estadoId);
-    const grado = estado?.grados.find((g) => g.id === ea.gradoId);
-    return {
-      ...ea,
-      // OJO: el número de grados de ESTE estado, no de `grados` (que es el
-      // del desplegable, otro estado mientras el máster elige el siguiente).
-      label:
-        estado && grado && estado.grados.length !== 1
-          ? `${estado.label} (${grado.label})`
-          : (estado?.label ?? ea.estadoId),
-      detalle: grado?.detalle.join(" ") ?? "",
-    };
-  });
+  // lib/rules/estados.ts (bloque 3): antes vivía inline aquí, ahora
+  // compartido con la ficha del jugador.
+  const activos = describirEstadosActivos(c.estados);
 
   return (
     <li>
@@ -444,25 +430,34 @@ function CombatienteRow({
         </div>
 
         {activos.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 border-t border-border pt-2">
+          <div className="flex flex-col gap-1.5 border-t border-border pt-2">
             {activos.map((a) => (
-              <span
+              <div
                 key={a.estadoId}
-                title={a.detalle}
-                className="clip-chamfer-sm flex items-center gap-1.5 border border-accent px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-accent"
+                className="clip-chamfer-sm border border-accent px-2 py-1 font-mono text-accent"
               >
-                {a.label}
-                {a.rondasRestantes !== null && ` · ${a.rondasRestantes}r`}
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => ejecutar(() => quitarEstadoAction(c.id, a.estadoId))}
-                  aria-label={`Quitar ${a.label} a ${c.nombre}`}
-                  className="disabled:opacity-50"
-                >
-                  ×
-                </button>
-              </span>
+                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide">
+                  <span>{a.label}</span>
+                  {a.rondasRestantes !== null && <span>· {a.rondasRestantes}r</span>}
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => ejecutar(() => quitarEstadoAction(c.id, a.estadoId))}
+                    aria-label={`Quitar ${a.label} a ${c.nombre}`}
+                    className="ml-auto disabled:opacity-50"
+                  >
+                    ×
+                  </button>
+                </div>
+                {/* Detalle visible de verdad, no en un `title` — en móvil no
+                    hay hover que lo enseñe (hallazgo real de uso, fase 6b
+                    bloque 3). */}
+                {a.detalle.length > 0 && (
+                  <p className="mt-0.5 text-[10px] normal-case tracking-normal text-muted">
+                    {a.detalle.join(" ")}
+                  </p>
+                )}
+              </div>
             ))}
           </div>
         )}

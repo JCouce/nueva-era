@@ -26,6 +26,7 @@ import {
   desequipar,
   setPrioridad,
   RECURSOS_POR_LETRA,
+  describirEstadosActivos,
   type AtributoId,
   type HabilidadId,
   type PiezaEquipada,
@@ -41,6 +42,7 @@ import { PsionicaTab } from "./_components/PsionicaTab";
 import { TiradasTab } from "./_components/TiradasTab";
 import { TiendaTab } from "./_components/TiendaTab";
 import { EquipoTab } from "./_components/EquipoTab";
+import { CombateTab, type CombateView } from "./_components/CombateTab";
 
 // Tres grupos, no una lista plana: la ficha en sí (fila 1), lo que el
 // personaje hace o lleva (fila 2, izquierda) y el catálogo — que no es del
@@ -58,10 +60,15 @@ const TABS_PERSONAJE = [
   { id: "equipo", label: "Equipo" },
 ] as const;
 const TABS_CATALOGO = [{ id: "tienda", label: "Tienda" }] as const;
+// No es un cuarto grupo estático: "combate" solo existe mientras el
+// personaje está metido en un Combate EN_CURSO (fase 6b bloque 3, D5), así
+// que se añade a mano junto a TABS_PERSONAJE en vez de vivir en su propia
+// lista siempre visible.
 type TabId =
   | (typeof TABS_FICHA)[number]["id"]
   | (typeof TABS_PERSONAJE)[number]["id"]
-  | (typeof TABS_CATALOGO)[number]["id"];
+  | (typeof TABS_CATALOGO)[number]["id"]
+  | "combate";
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 function TabButton({
@@ -100,6 +107,7 @@ export function CharacterSheet({
   initialXp,
   initialCreditos,
   esMaster,
+  combate,
 }: {
   characterId: string;
   initialName: string;
@@ -108,6 +116,10 @@ export function CharacterSheet({
   initialXp: number;
   initialCreditos: number;
   esMaster: boolean;
+  // null si no hay Combate EN_CURSO, o si lo hay pero este personaje no
+  // tiene fila dentro (fase 6b bloque 3) — en los dos casos, nada de
+  // combate se enseña en la ficha.
+  combate: CombateView | null;
 }) {
   const aprobada = characterStatus === "APPROVED";
   const [active, setActive] = useState<TabId>("resumen");
@@ -116,6 +128,13 @@ export function CharacterSheet({
   const [xp, setXp] = useState(initialXp);
   const [creditos, setCreditos] = useState(initialCreditos);
   const [status, setStatus] = useState<SaveStatus>("idle");
+
+  // Derivado durante el render, no sincronizado en un efecto (ver "you
+  // might not need an effect" de React): si `combate` desaparece entre una
+  // carga y otra de esta página (el combate terminó) con `active` todavía
+  // en "combate", cae a "resumen" en vez de dejar la ficha en blanco — el
+  // switch de abajo no renderiza nada para "combate" sin `combate`.
+  const activeEfectivo: TabId = active === "combate" && !combate ? "resumen" : active;
 
   // Refs con el último valor, para leerlos dentro de los saves con debounce.
   // Se sincronizan en efecto, no en render: escribirlas durante el render
@@ -245,6 +264,14 @@ export function CharacterSheet({
   const puntosSkill = puntosHabilidadesDisponibles(sheet);
   const { vida, fatiga } = salud(sheet);
 
+  // Fase 6b bloque 3: mi fila en el combate activo, si la hay. `combate` ya
+  // viene null desde el servidor si este personaje no está metido dentro
+  // (page.tsx) — esto solo busca cuál de las filas es la mía para resaltar
+  // turno/estados en la tira compacta.
+  const miCombatiente = combate?.combatientes.find((c) => c.characterId === characterId) ?? null;
+  const esMiTurno = !!(miCombatiente && combate!.combatientes[combate!.turnoIndex]?.id === miCombatiente.id);
+  const misEstadosActivos = miCombatiente ? describirEstadosActivos(miCombatiente.estados) : [];
+
   // Tope de rareza de la letra de Recursos (docs/sistema.md §2): solo en
   // creación, nunca al máster — aprobada la ficha, o editando el máster,
   // cualquier rareza pasa siempre que llegue el saldo (mismo criterio que el
@@ -275,6 +302,54 @@ export function CharacterSheet({
         </span>
       </div>
 
+      {/* Tira de combate (fase 6b, bloque 3, D5: combate → ficha, nunca al
+          revés): solo aparece si este personaje está metido en el Combate
+          EN_CURSO actual. PG/fatiga aquí son la foto del combatiente, no el
+          derivado de la ficha de arriba — durante combate son magnitudes
+          distintas a propósito (ver comentario de Combatiente en
+          schema.prisma). */}
+      {miCombatiente && (
+        <div
+          className={`clip-chamfer-sm flex flex-col gap-1.5 border px-3 py-2 font-mono text-xs ${
+            esMiTurno ? "!border-accent shadow-glow-yellow" : "border-border"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <span className="uppercase tracking-wide text-muted">Ronda {combate!.ronda}</span>
+            {esMiTurno && (
+              <span className="uppercase tracking-wide text-accent">Tu turno</span>
+            )}
+            <span className="ml-auto tabular-nums text-danger">
+              {miCombatiente.pgActual}
+              <span className="text-muted">/{miCombatiente.pgMax} pv</span>
+            </span>
+            <span className="tabular-nums text-info">
+              {miCombatiente.fatigaActual}
+              <span className="text-muted">/{miCombatiente.fatigaMax} fat</span>
+            </span>
+          </div>
+          {misEstadosActivos.length > 0 && (
+            <div className="flex flex-col gap-1 border-t border-border pt-1.5">
+              {misEstadosActivos.map((a) => (
+                <div key={a.estadoId}>
+                  <span className="uppercase tracking-wide text-accent">
+                    {a.label}
+                    {a.rondasRestantes !== null && ` · ${a.rondasRestantes}r`}
+                  </span>
+                  {/* Detalle visible de verdad, no en un `title` — mismo
+                      arreglo que CombateConsole.tsx. */}
+                  {a.detalle.length > 0 && (
+                    <p className="text-[11px] normal-case tracking-normal text-muted">
+                      {a.detalle.join(" ")}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* El guardado es automático y casi siempre invisible a propósito —
           "guardando…"/"guardado ✓" permanente en la fila de tabs sobraba
           más de lo que ayudaba. Solo se avisa cuando de verdad hace falta
@@ -288,27 +363,36 @@ export function CharacterSheet({
       <div className="flex flex-col gap-1 border-b border-border">
         <nav className="flex flex-wrap gap-1">
           {TABS_FICHA.map((t) => (
-            <TabButton key={t.id} tab={t} active={active === t.id} onClick={setActive} />
+            <TabButton key={t.id} tab={t} active={activeEfectivo === t.id} onClick={setActive} />
           ))}
         </nav>
 
         <div className="flex items-end justify-between gap-2">
           <nav className="flex flex-wrap gap-1">
             {TABS_PERSONAJE.map((t) => (
-              <TabButton key={t.id} tab={t} active={active === t.id} onClick={setActive} />
+              <TabButton key={t.id} tab={t} active={activeEfectivo === t.id} onClick={setActive} />
             ))}
+            {/* Solo mientras el personaje está en el Combate EN_CURSO — no
+                un tab más de la lista estática, ver TabId más arriba. */}
+            {combate && (
+              <TabButton
+                tab={{ id: "combate", label: "Combate" }}
+                active={activeEfectivo === "combate"}
+                onClick={setActive}
+              />
+            )}
           </nav>
           {/* Separada del resto: la Tienda es catálogo, no algo que "es" del
               personaje — el borde y el hueco a la izquierda lo marcan. */}
           <nav className="flex flex-wrap gap-1 border-l border-border pl-2">
             {TABS_CATALOGO.map((t) => (
-              <TabButton key={t.id} tab={t} active={active === t.id} onClick={setActive} />
+              <TabButton key={t.id} tab={t} active={activeEfectivo === t.id} onClick={setActive} />
             ))}
           </nav>
         </div>
       </div>
 
-      {active === "resumen" && (
+      {activeEfectivo === "resumen" && (
         <ResumenTab
           name={name}
           sheet={sheet}
@@ -323,7 +407,7 @@ export function CharacterSheet({
           onPrioridad={commitPrioridad}
         />
       )}
-      {active === "attrs" && (
+      {activeEfectivo === "attrs" && (
         <AtributosTab
           sheet={sheet}
           puntosDisponibles={puntosAttr}
@@ -332,7 +416,7 @@ export function CharacterSheet({
           onSet={commitAtributo}
         />
       )}
-      {active === "skills" && (
+      {activeEfectivo === "skills" && (
         <HabilidadesTab
           sheet={sheet}
           puntosDisponibles={puntosSkill}
@@ -343,10 +427,10 @@ export function CharacterSheet({
           onRemoveEspecialidad={commitRemoveEspecialidad}
         />
       )}
-      {active === "dotes" && <DotesTab sheet={sheet} />}
-      {active === "psionica" && <PsionicaTab sheet={sheet} />}
-      {active === "tiradas" && <TiradasTab sheet={sheet} />}
-      {active === "tienda" && (
+      {activeEfectivo === "dotes" && <DotesTab sheet={sheet} />}
+      {activeEfectivo === "psionica" && <PsionicaTab sheet={sheet} />}
+      {activeEfectivo === "tiradas" && <TiradasTab sheet={sheet} />}
+      {activeEfectivo === "tienda" && (
         <TiendaTab
           sheet={sheet}
           creditos={creditos}
@@ -354,13 +438,16 @@ export function CharacterSheet({
           onEquipar={commitEquipar}
         />
       )}
-      {active === "equipo" && (
+      {activeEfectivo === "equipo" && (
         <EquipoTab sheet={sheet} creditos={creditos} onDesequipar={commitDesequipar} />
+      )}
+      {activeEfectivo === "combate" && combate && (
+        <CombateTab combate={combate} miCombatienteId={miCombatiente?.id ?? null} />
       )}
 
       {/* Resetear es vender todo de golpe: no tiene sentido, y el servidor
           lo rechaza, en cuanto la ficha está aprobada. */}
-      {!aprobada && (active === "attrs" || active === "skills") && (
+      {!aprobada && (activeEfectivo === "attrs" || activeEfectivo === "skills") && (
         <button
           type="button"
           onClick={reset}

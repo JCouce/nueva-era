@@ -315,12 +315,49 @@ adelantó aquí — `agregarNpcDeCatalogoAction` existe desde la 1.3 pero no tie
 
 ## Bloque 3 — Vista del jugador
 
-- [ ] **3.1 — Tira de combate en la ficha.** Cuando hay un `Combate EN_CURSO` con el
+- [x] **3.1 — Tira de combate en la ficha.** Hecha (2026-09-10, sesión de relevo).
+  Cuando hay un `Combate EN_CURSO` con el
   jugador dentro: su PG/fatiga actual, sus estados activos con su `detalle` **visible de
   verdad, no en un tooltip** (hallazgo real de uso: la consola del máster lo esconde en
   un `title`, que en móvil no existe — arreglarlo ahí también, no hace falta esperar a
   este bloque), de quién es el turno, número de ronda. Mobile-first estricto, como el
   resto de la ficha.
+  **Ampliación decidida con el usuario (2026-09-10, sesión de relevo), no estaba en el
+  diseño cerrado del 2026-09-11 tal como estaba escrito arriba:** dos piezas, no una —
+  una tira compacta (mini-HUD, junto al de especie/PV/fatiga que ya existe) visible en
+  **todos** los tabs de la ficha con lo esencial (PG/fatiga propios, ronda, si es mi
+  turno), y una **tab nueva "Combate"** con la cola completa — todos los combatientes,
+  no solo el propio, con su PG/fatiga y sus estados con detalle. Motivo: sin ver a los
+  demás no hay contexto táctico (si el enemigo está aturdido, por ejemplo) antes de
+  actuar. No choca con D4 (niebla sobre NPCs, bloque 6, todavía sin construir): hoy
+  "todo visible" es lo coherente porque no hay niebla que aplicar — el día que 6.1 se
+  construya, se le pone un filtro encima a esta misma vista, no hace falta rehacerla.
+  Solo aparece (tira y tab) si el `Combatiente` del jugador existe en el combate
+  `EN_CURSO` actual — si su personaje no está metido en el combate, no hay "su combate"
+  que mostrar (mismo criterio que ya fijaba la redacción original).
+  **Implementación:** `lib/rules/estados.ts` gana `describirEstadosActivos()` (con
+  test), que traduce `EstadoActivo[]` a `{label, detalle, rondasRestantes}` — antes vivía
+  inline en `CombateConsole.tsx`, ahora compartida con la ficha del jugador y con el
+  fix del `title`. `characters/[id]/page.tsx` consulta el `Combate EN_CURSO` (mismo
+  patrón que `master/combate/page.tsx`) y decide si el personaje tiene fila dentro;
+  `CharacterSheet.tsx` recibe `combate: CombateView | null`, pinta la tira compacta
+  junto al HUD existente (fuera del switch de tabs, visible en todos) y añade
+  condicionalmente el tab "Combate" (`_components/CombateTab.tsx`, solo lectura, cola
+  completa). El tab activo se deriva en render (`activeEfectivo`), no con un `useEffect`
+  + `setState` (el linter de React lo rechaza — "you might not need an effect"), para el
+  caso borde de que el combate termine con el tab "Combate" todavía abierto.
+  **Verificado en Chrome con una sesión de jugador real** (primera vez en toda la fase
+  que hay UI de jugador — hasta ahora D2 solo se probaba por test unitario): cuenta y
+  personaje de prueba nuevos (`qa-player-31@test.local` / "QA Combatiente", borrados al
+  terminar), metido en un combate real junto a `villa` desde la consola de máster (otra
+  pestaña, contexto de Chrome aislado), con un delta de PG (8→5) y "Aturdido (Fracaso
+  crítico)" aplicados. En la ficha del jugador: tira compacta con "RONDA 1", "TU TURNO"
+  en accent, PG 5/8, el estado con su detalle en texto plano (no title); tab "Combate"
+  con las dos filas (la propia marcada "(TÚ)", la de villa sin estados), turno y ronda
+  correctos. Sin combate, ni la tira ni el tab aparecen. Captura de pantalla a 390px
+  confirma el layout mobile-first sin overflow. Mismo detalle visible confirmado también
+  en `CombateConsole.tsx` (el fix de la consola del máster). `tsc`, 305/305 tests y lint
+  limpios.
 - [ ] **3.1b — Los modificadores de los estados activos entran en la pestaña Tiradas**
   (D5: la mitad "combate → ficha" de la sincronización). Si el máster le aplica Confusión
   con -4 a distancia, el jugador lo ve reflejado ahí antes de tirar, no solo como

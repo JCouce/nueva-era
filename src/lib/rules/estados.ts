@@ -136,6 +136,36 @@ export function modificadoresDeEstados(activos: EstadoActivo[]): ModificadorConF
   });
 }
 
+// Un EstadoActivo (solo ids) con el label/detalle que trae su grado en el
+// catálogo, para pintarlo sin que cada consumidor repita la búsqueda —
+// antes vivía inline en CombateConsole.tsx (subtarea 2.5); la fase 6b
+// bloque 3 necesita la misma traducción en la ficha del jugador, así que
+// se comparte aquí. Un estadoId/gradoId huérfano (dato viejo, typo) cae al
+// propio id en vez de reventar, mismo criterio que modificadoresDeEstados().
+export type EstadoActivoDescrito = EstadoActivo & {
+  label: string;
+  // Frases del catálogo ya unidas para pintar directo — array vacío si el
+  // grado no trae detalle o no se encontró en el catálogo.
+  detalle: string[];
+};
+
+export function describirEstadosActivos(activos: EstadoActivo[]): EstadoActivoDescrito[] {
+  return activos.map((ea) => {
+    const estado = estadoPorId(ea.estadoId);
+    const grado = estado?.grados.find((g) => g.id === ea.gradoId);
+    return {
+      ...ea,
+      // El número de grados de ESTE estado, no de un desplegable ajeno que
+      // pueda estar mostrando otro estado a medio elegir.
+      label:
+        estado && grado && estado.grados.length !== 1
+          ? `${estado.label} (${grado.label})`
+          : (estado?.label ?? ea.estadoId),
+      detalle: grado?.detalle ?? [],
+    };
+  });
+}
+
 // Un turno que pasa (para cualquiera, no solo para quien lo lleva puesto —
 // subtarea 2.6) descuenta una ronda a cada estado activo con duración
 // conocida y se cae solo al llegar a 0, sin que el máster tenga que
