@@ -24,8 +24,23 @@ describe("parseSheet aguanta cualquier cosa", () => {
 
   test("los valores fuera de rango se recortan", () => {
     const s = parseSheet({ atributos: { fuerza: 99, agilidad: -50 } });
-    assert.equal(s.atributos.fuerza, 5); // ATRIBUTO_MAX
+    assert.equal(s.atributos.fuerza, 6); // ATRIBUTO_MAX (HOJA2: 6, no 5)
     assert.equal(s.atributos.agilidad, -1); // ATRIBUTO_MIN
+  });
+
+  test("una letra de prioridad inválida se ignora, no revienta", () => {
+    const s = parseSheet({
+      schemaVersion: SCHEMA_VERSION,
+      prioridades: { atributos: "Z", habilidades: "A" },
+    });
+    assert.equal(s.prioridades.atributos, null);
+    assert.equal(s.prioridades.habilidades, "A");
+  });
+
+  test("altura y peso fuera de rango se recortan igual que la edad", () => {
+    const s = parseSheet({ schemaVersion: SCHEMA_VERSION, altura: -5, peso: 9999 });
+    assert.equal(s.altura, 0);
+    assert.equal(s.peso, 999);
   });
 
   test("una habilidad sin entrenar no conserva especialidades", () => {

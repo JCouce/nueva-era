@@ -1,7 +1,12 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
-import { setAtributoValue, setHabilidadValue, puntosAtributosDisponibles } from "./creacion";
+import {
+  setAtributoValue,
+  setHabilidadValue,
+  puntosAtributosDisponibles,
+  setPrioridad,
+} from "./creacion";
 import {
   modificadoresActivos,
   atributoEfectivo,
@@ -71,7 +76,7 @@ describe("los modificadores de especie llegan a los números", () => {
   });
 
   test("el bono de habilidad se suma al valor efectivo", () => {
-    let s = conEspecie("arkoru");
+    let s = setPrioridad(conEspecie("arkoru"), "habilidades", "A");
     s = setHabilidadValue(s, "tecnociencia", 2);
     // 2 entero + 1 de especie dentro de especialidad; ceil(2/2)=1 +1 fuera.
     assert.equal(valorEfectivo(s, "tecnociencia", true), 3);
@@ -86,7 +91,11 @@ describe("los modificadores de especie llegan a los números", () => {
 
 describe("los modificadores NO tocan el point-buy", () => {
   test("el bono de especie no gasta ni regala puntos de creación", () => {
-    const sinEspecie = setAtributoValue(defaultSheet(), "aguante", 2);
+    const sinEspecie = setAtributoValue(
+      setPrioridad(defaultSheet(), "atributos", "A"),
+      "aguante",
+      2,
+    );
     const conArkoru = { ...sinEspecie, especieId: "arkoru" };
     assert.equal(
       puntosAtributosDisponibles(conArkoru),

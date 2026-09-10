@@ -1,38 +1,71 @@
 // Point-buy de creación: cuánto cuesta cada cosa y las operaciones que modifican
 // la ficha. Todas son puras y las ejecuta tanto el servidor (autoridad) como el
 // cliente (estado optimista). Fuente: docs/sistema.md §2 y §3.
-import {
-  ATRIBUTOS,
-  ATRIBUTO_MIN,
-  ATRIBUTO_MAX_CREACION,
-  PUNTOS_ATRIBUTOS,
-  type AtributoId,
-} from "./atributos";
+import { ATRIBUTOS, ATRIBUTO_MIN, ATRIBUTO_MAX_CREACION, type AtributoId } from "./atributos";
 import {
   HABILIDADES,
   HABILIDAD_NO_ENTRENADA,
   HABILIDAD_MIN_ENTRENADA,
   HABILIDAD_MAX_CREACION,
-  PUNTOS_HABILIDADES,
   COSTE_ESPECIALIDAD_EXTRA,
   MAX_ESPECIALIDADES,
   type HabilidadId,
 } from "./habilidades";
 import { clampInt, defaultSheet, type Sheet } from "./sheet";
+import {
+  costeTotal,
+  setLetra,
+  PUNTOS_ATRIBUTOS_POR_LETRA,
+  PUNTOS_HABILIDADES_POR_LETRA,
+  COSTE_FACTOR_ATRIBUTO,
+  COSTE_FACTOR_HABILIDAD,
+  type CategoriaPrioridad,
+  type LetraPrioridad,
+} from "./prioridad";
 
-// El coste de un atributo es su propio valor; el -1 devuelve un punto.
+// Wrapper a nivel de ficha: setLetra (prioridad.ts) opera sobre el objeto
+// Prioridades solo; esto lo engancha a la Sheet completa, que es lo que
+// manejan las acciones y el resto de este módulo.
+export function setPrioridad(
+  sheet: Sheet,
+  categoria: CategoriaPrioridad,
+  letra: LetraPrioridad | null,
+): Sheet {
+  return { ...sheet, prioridades: setLetra(sheet.prioridades, categoria, letra) };
+}
+
+// El presupuesto de creación ya no es una constante: lo fija la letra de
+// prioridad elegida para esa categoría. Sin letra asignada, no hay nada que
+// gastar todavía — es preferible a inventar un pool por defecto.
+export function presupuestoAtributos(sheet: Sheet): number {
+  const letra = sheet.prioridades.atributos;
+  return letra ? PUNTOS_ATRIBUTOS_POR_LETRA[letra] : 0;
+}
+export function presupuestoHabilidades(sheet: Sheet): number {
+  const letra = sheet.prioridades.habilidades;
+  return letra ? PUNTOS_HABILIDADES_POR_LETRA[letra] : 0;
+}
+
+// Coste de un atributo: triangular (docs/sistema.md, "Coste y progresión",
+// Nivel × 2). Bajar a -1 sigue devolviendo 1 punto (FIRME · HOJA, sin tocar
+// por HOJA2), así que un -1 cuenta como gasto negativo, no como coste 0.
+function costeAtributo(valor: number): number {
+  if (valor <= ATRIBUTO_MIN) return -1;
+  return costeTotal(valor, COSTE_FACTOR_ATRIBUTO);
+}
+
 export function puntosAtributosGastados(sheet: Sheet): number {
-  return ATRIBUTOS.reduce((total, a) => total + sheet.atributos[a.id], 0);
+  return ATRIBUTOS.reduce((total, a) => total + costeAtributo(sheet.atributos[a.id]), 0);
 }
 export function puntosAtributosDisponibles(sheet: Sheet): number {
-  return PUNTOS_ATRIBUTOS - puntosAtributosGastados(sheet);
+  return presupuestoAtributos(sheet) - puntosAtributosGastados(sheet);
 }
 
-// Supuesto S1 de docs/sistema.md: la hoja no dice el coste de las habilidades,
-// se asume lineal como en atributos. La primera especialidad va incluida.
+// Coste de una habilidad: triangular (Nivel × 1). La primera especialidad va
+// incluida al entrenar; a partir de la segunda cuesta 1 punto cada una.
 export function costeHabilidad(valor: number, especialidades: number): number {
   if (valor < HABILIDAD_MIN_ENTRENADA) return 0;
-  return valor + Math.max(0, especialidades - 1) * COSTE_ESPECIALIDAD_EXTRA;
+  return costeTotal(valor, COSTE_FACTOR_HABILIDAD) + Math.max(0, especialidades - 1) * COSTE_ESPECIALIDAD_EXTRA;
 }
 
 export function puntosHabilidadesGastados(sheet: Sheet): number {
@@ -42,7 +75,7 @@ export function puntosHabilidadesGastados(sheet: Sheet): number {
   }, 0);
 }
 export function puntosHabilidadesDisponibles(sheet: Sheet): number {
-  return PUNTOS_HABILIDADES - puntosHabilidadesGastados(sheet);
+  return presupuestoHabilidades(sheet) - puntosHabilidadesGastados(sheet);
 }
 
 // ── Operaciones ────────────────────────────────────────────────────

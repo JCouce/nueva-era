@@ -53,6 +53,21 @@ export const MIGRACIONES: Migracion[] = [
     descripcion: "Se añade el equipo instalado; las fichas antiguas empiezan sin nada equipado",
     migrar: (ficha) => ({ ...ficha, equipo: Array.isArray(ficha.equipo) ? ficha.equipo : [] }),
   },
+  {
+    desde: 3,
+    hasta: 4,
+    descripcion:
+      "Creación por prioridad (HOJA2): se añaden las 5 letras de reparto, sin asignar, y " +
+      "altura/peso vacíos. El pool de creación pasa a depender de la letra, así que una " +
+      "ficha vieja no puede recalcular sola cuánto llevaba gastado — se queda sin letra " +
+      "hasta que el jugador la elija.",
+    migrar: (ficha) => ({
+      ...ficha,
+      prioridades: { atributos: null, habilidades: null, dotes: null, psionica: null, recursos: null },
+      altura: null,
+      peso: null,
+    }),
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le

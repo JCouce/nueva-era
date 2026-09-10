@@ -26,8 +26,8 @@ export const APLICADOS = [
 }[];
 export type AplicadoId = (typeof APLICADOS)[number]["id"];
 
-// Límites y pool de creación.
+// Límites. El pool de creación ya no es una constante: sale de la letra de
+// prioridad asignada a Atributos (ver prioridad.ts, PUNTOS_ATRIBUTOS_POR_LETRA).
 export const ATRIBUTO_MIN = -1; // bajar a -1 devuelve un punto al pool
 export const ATRIBUTO_MAX_CREACION = 4;
-export const ATRIBUTO_MAX = 5;
-export const PUNTOS_ATRIBUTOS = 10;
+export const ATRIBUTO_MAX = 6; // HOJA2: techo del sistema sube de 5 a 6

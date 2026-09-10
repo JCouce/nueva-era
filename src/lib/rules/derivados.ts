@@ -75,20 +75,32 @@ export function desgloseAtributo(
   return { total: fuentes.reduce((t, f) => t + f.valor, 0), fuentes };
 }
 
+// HOJA2: un Aplicado es la media de sus dos básicos, no la suma — redondeo
+// hacia arriba (S11, decisión del usuario: mismo criterio que ya usaba el
+// motor para habilidades fuera de especialidad).
+function media(a: number, b: number): number {
+  // `|| 0` normaliza el -0 que da Math.ceil(-0.5): mismo valor, pero
+  // Object.is(-0, 0) es false y eso confunde a assert.strict más adelante.
+  return Math.ceil((a + b) / 2) || 0;
+}
+
 export function aplicado(
   sheet: Sheet,
   id: AplicadoId,
   mods = modificadoresActivos(sheet),
 ): number {
   const def = APLICADOS.find((a) => a.id === id)!;
-  return (
-    atributoEfectivo(sheet, def.de[0], mods) + atributoEfectivo(sheet, def.de[1], mods)
+  return media(
+    atributoEfectivo(sheet, def.de[0], mods),
+    atributoEfectivo(sheet, def.de[1], mods),
   );
 }
 
 // Desglose de un aplicado: los dos básicos que lo alimentan, ya con sus
 // propios modificadores incluidos (no se repiten aquí, cada básico se
 // desglosa a su vez con desgloseAtributo si hace falta bajar un nivel más).
+// OJO: `total` es la MEDIA de las dos fuentes, no su suma — el desglose lista
+// los dos básicos tal cual para que se vea de dónde sale, no para que sumen.
 export function desgloseAplicado(
   sheet: Sheet,
   id: AplicadoId,
@@ -99,7 +111,7 @@ export function desgloseAplicado(
     etiqueta: ATRIBUTOS.find((a) => a.id === atrId)!.label,
     valor: atributoEfectivo(sheet, atrId, mods),
   }));
-  return { total: fuentes[0].valor + fuentes[1].valor, fuentes };
+  return { total: media(fuentes[0].valor, fuentes[1].valor), fuentes };
 }
 
 export function aplicados(
@@ -108,7 +120,7 @@ export function aplicados(
 ): Record<AplicadoId, number> {
   const efectivos = atributosEfectivos(sheet, mods);
   return Object.fromEntries(
-    APLICADOS.map((a) => [a.id, efectivos[a.de[0]] + efectivos[a.de[1]]]),
+    APLICADOS.map((a) => [a.id, media(efectivos[a.de[0]], efectivos[a.de[1]])]),
   ) as Record<AplicadoId, number>;
 }
 
@@ -155,11 +167,11 @@ export function movimiento(sheet: Sheet, mods = modificadoresActivos(sheet)) {
     // >0 si un exoesqueleto está afectando a las cinco fórmulas de abajo —
     // la ficha lo usa para señalarlo (ver ResumenTab).
     bonoExoesqueleto,
-    carrera: noNegativo(15 + base + bonoDerivado(mods, "carrera")), // metros
-    saltoVertical: noNegativo(10 * base), // centímetros
-    saltoHorizontal: noNegativo(150 + base * 60), // centímetros
-    escalada: noNegativo(5 + Math.floor(base / 2)), // metros
-    nado: noNegativo(5 + Math.floor(base / 2)), // metros
+    carrera: noNegativo(16 + base + bonoDerivado(mods, "carrera")), // metros
+    saltoVertical: noNegativo(15 * base), // centímetros
+    saltoHorizontal: noNegativo(100 + base * 20), // centímetros
+    escalada: noNegativo(4 + Math.floor(base / 2)), // metros
+    nado: noNegativo(4 + Math.floor(base / 2)), // metros
   };
 }
 

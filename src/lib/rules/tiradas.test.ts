@@ -1,7 +1,13 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
-import { setAtributoValue, setHabilidadValue, addEspecialidad } from "./creacion";
+import { setAtributoValue, setHabilidadValue, addEspecialidad, setPrioridad } from "./creacion";
+
+// Sin letra de prioridad, el pool de creación es 0 — estos tests necesitan
+// presupuesto para poder fijar valores con setAtributoValue/setHabilidadValue.
+function conPresupuesto(): Sheet {
+  return setPrioridad(setPrioridad(defaultSheet(), "atributos", "A"), "habilidades", "B");
+}
 import {
   TIRADAS,
   DIFICULTADES,
@@ -41,44 +47,44 @@ describe("catálogo de tiradas", () => {
 
 describe("modificador de una tirada", () => {
   const ficha = (): Sheet => {
-    let s = defaultSheet();
+    let s = conPresupuesto();
     s = setAtributoValue(s, "agilidad", 2);
-    s = setAtributoValue(s, "percepcion", 2); // reflejos = 4
+    s = setAtributoValue(s, "percepcion", 2); // reflejos = ceil((2+2)/2) = 2
     s = setHabilidadValue(s, "combate_distancia", 3);
     return s;
   };
 
   test("suma el aplicado y la habilidad", () => {
     const m = modificadorTirada(ficha(), buscar("iniciativa_arma"), true);
-    assert.equal(m.aplicado, 4);
+    assert.equal(m.aplicado, 2);
     assert.equal(m.habilidad, 3);
-    assert.equal(m.total, 7);
+    assert.equal(m.total, 5);
   });
 
   test("fuera de especialidad la habilidad cuenta la mitad", () => {
     const m = modificadorTirada(ficha(), buscar("iniciativa_arma"), false);
     assert.equal(m.habilidad, 2); // ceil(3/2)
-    assert.equal(m.total, 6);
+    assert.equal(m.total, 4);
   });
 
   test("una habilidad sin entrenar resta 1", () => {
-    const s = setAtributoValue(defaultSheet(), "agilidad", 2); // reflejos 2
+    const s = setAtributoValue(conPresupuesto(), "agilidad", 2); // reflejos ceil((2+0)/2)=1
     const m = modificadorTirada(s, buscar("sigilo"), false);
     assert.equal(m.habilidad, -1);
-    assert.equal(m.total, 1);
+    assert.equal(m.total, 0);
   });
 
   test("una salvación solo usa el aplicado", () => {
-    let s = defaultSheet();
+    let s = conPresupuesto();
     s = setAtributoValue(s, "fuerza", 3);
-    s = setAtributoValue(s, "aguante", 2); // fortaleza 5
+    s = setAtributoValue(s, "aguante", 2); // fortaleza = ceil((3+2)/2) = 3
     const m = modificadorTirada(s, buscar("salv_fortaleza"));
     assert.equal(m.habilidad, null);
-    assert.equal(m.total, 5);
+    assert.equal(m.total, 3);
   });
 
   test("la especialidad declarada se refleja en el modificador", () => {
-    let s = setHabilidadValue(defaultSheet(), "biociencia", 2);
+    let s = setHabilidadValue(conPresupuesto(), "biociencia", 2);
     s = addEspecialidad(s, "biociencia", "Medicina");
     const dentro = modificadorTirada(s, buscar("medicina"), true);
     const fuera = modificadorTirada(s, buscar("medicina"), false);

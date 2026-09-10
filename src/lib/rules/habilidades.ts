@@ -18,9 +18,10 @@ export type HabilidadId = (typeof HABILIDADES)[number]["id"];
 
 export const HABILIDAD_NO_ENTRENADA = -1;
 export const HABILIDAD_MIN_ENTRENADA = 1;
-export const HABILIDAD_MAX_CREACION = 3;
-export const HABILIDAD_MAX = 5;
-export const PUNTOS_HABILIDADES = 10;
+// El pool de creación ya no es una constante: sale de la letra de prioridad
+// asignada a Habilidades (ver prioridad.ts, PUNTOS_HABILIDADES_POR_LETRA).
+export const HABILIDAD_MAX_CREACION = 4; // HOJA2: sube de 3 a 4, iguala a atributos
+export const HABILIDAD_MAX = 6; // HOJA2: techo del sistema sube de 5 a 6
 export const COSTE_ESPECIALIDAD_EXTRA = 1; // la primera va incluida al entrenar
 export const MAX_ESPECIALIDADES = 3;
 

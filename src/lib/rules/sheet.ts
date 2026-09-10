@@ -16,13 +16,15 @@ import {
   MAX_ESPECIALIDADES,
 } from "./habilidades";
 import { piezaEquipadaSchema, type PiezaEquipada } from "./equipo";
+import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./prioridad";
 
 // Versión del formato de ficha. Al subirla hay que añadir su migración en
 // migraciones.ts y el test que la cubre.
 //   1 → primera versión versionada
 //   2 → la especie pasa de texto libre a id del catálogo
 //   3 → se añade el equipo instalado
-export const SCHEMA_VERSION = 3;
+//   4 → creación por prioridad (HOJA2): prioridades, altura, peso
+export const SCHEMA_VERSION = 4;
 
 const atributoValue = z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX);
 
@@ -39,14 +41,22 @@ const habilidadesShape = Object.fromEntries(
   HABILIDADES.map((h) => [h.id, habilidadValue]),
 ) as Record<(typeof HABILIDADES)[number]["id"], typeof habilidadValue>;
 
+const letraValue = z.enum(LETRAS_PRIORIDAD).nullable();
+const prioridadesShape = Object.fromEntries(
+  CATEGORIAS_PRIORIDAD.map((c) => [c, letraValue]),
+) as Record<(typeof CATEGORIAS_PRIORIDAD)[number], typeof letraValue>;
+
 export const sheetSchema = z.object({
   schemaVersion: z.number().int().min(1),
   edad: z.number().int().min(0).max(999).nullable(),
+  altura: z.number().int().min(0).max(999).nullable(),
+  peso: z.number().int().min(0).max(999).nullable(),
   especieId: z.string().max(40).nullable(),
   trasfondo: z.string().max(2000),
   motivacion: z.string().max(500),
   atributos: z.object(atributosShape),
   habilidades: z.object(habilidadesShape),
+  prioridades: z.object(prioridadesShape),
   equipo: z.array(piezaEquipadaSchema).max(200),
 });
 
@@ -56,6 +66,8 @@ export function defaultSheet(): Sheet {
   return {
     schemaVersion: SCHEMA_VERSION,
     edad: null,
+    altura: null,
+    peso: null,
     especieId: null,
     trasfondo: "",
     motivacion: "",
@@ -68,6 +80,7 @@ export function defaultSheet(): Sheet {
         { valor: HABILIDAD_NO_ENTRENADA, especialidades: [] as string[] },
       ]),
     ) as Sheet["habilidades"],
+    prioridades: prioridadesVacias(),
     equipo: [],
   };
 }
@@ -132,14 +145,29 @@ export function parseSheet(raw: unknown): Sheet {
     .map((res) => res.data)
     .slice(0, 200);
 
+  const rPrioridades = (r.prioridades ?? {}) as Record<string, unknown>;
+  const prioridades = { ...base.prioridades };
+  for (const c of CATEGORIAS_PRIORIDAD) {
+    const v = rPrioridades[c];
+    prioridades[c] = (LETRAS_PRIORIDAD as readonly string[]).includes(v as string)
+      ? (v as Sheet["prioridades"][typeof c])
+      : null;
+  }
+
+  const numeroOpcional = (v: unknown): number | null =>
+    v === null || v === undefined ? null : clampInt(v, 0, 999, 0);
+
   return {
     schemaVersion: clampInt(r.schemaVersion, 1, SCHEMA_VERSION, SCHEMA_VERSION),
     edad: r.edad === null || r.edad === undefined ? null : clampInt(r.edad, 0, 999, 0),
+    altura: numeroOpcional(r.altura),
+    peso: numeroOpcional(r.peso),
     especieId: typeof r.especieId === "string" ? r.especieId.slice(0, 40) : null,
     trasfondo: typeof r.trasfondo === "string" ? r.trasfondo.slice(0, 2000) : "",
     motivacion: typeof r.motivacion === "string" ? r.motivacion.slice(0, 500) : "",
     atributos,
     habilidades,
+    prioridades,
     equipo,
   };
 }

@@ -1,7 +1,13 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet } from "./sheet";
-import { setAtributoValue, setHabilidadValue } from "./creacion";
+import { setAtributoValue, setHabilidadValue, setPrioridad } from "./creacion";
+
+// Sin letra de prioridad asignada, el pool de creación es 0 — para estos
+// tests hace falta una ficha con presupuesto de sobra.
+function conPresupuesto() {
+  return setPrioridad(setPrioridad(defaultSheet(), "atributos", "A"), "habilidades", "B");
+}
 import {
   snapshotFromSheet,
   parseSnapshot,
@@ -11,7 +17,7 @@ import {
 
 describe("snapshot de aprobación", () => {
   test("congela los valores actuales de atributos y habilidades", () => {
-    let s = defaultSheet();
+    let s = conPresupuesto();
     s = setAtributoValue(s, "fuerza", 3);
     s = setHabilidadValue(s, "sigilo", 2);
     const snap = snapshotFromSheet(s);
@@ -46,7 +52,7 @@ describe("aplicarSueloAtributo / aplicarSueloHabilidad", () => {
   });
 
   test("con snapshot, no deja bajar del valor congelado", () => {
-    let s = defaultSheet();
+    let s = conPresupuesto();
     s = setAtributoValue(s, "fuerza", 3);
     const snap = snapshotFromSheet(s);
     assert.equal(aplicarSueloAtributo(0, "fuerza", snap), 3, "sube al suelo");
@@ -54,7 +60,7 @@ describe("aplicarSueloAtributo / aplicarSueloHabilidad", () => {
   });
 
   test("mismo comportamiento para habilidades", () => {
-    let s = defaultSheet();
+    let s = conPresupuesto();
     s = setHabilidadValue(s, "sigilo", 2);
     const snap = snapshotFromSheet(s);
     assert.equal(aplicarSueloHabilidad(-1, "sigilo", snap), 2);

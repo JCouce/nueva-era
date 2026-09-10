@@ -91,6 +91,28 @@ describe("v2 → v3: se añade el equipo instalado", () => {
   });
 });
 
+describe("v3 → v4: creación por prioridad (HOJA2)", () => {
+  test("una ficha vieja arranca con las 5 letras sin asignar", () => {
+    const { ficha } = migrar({ schemaVersion: 3, especieId: "humano" }, 4);
+    assert.deepEqual(ficha.prioridades, {
+      atributos: null,
+      habilidades: null,
+      dotes: null,
+      psionica: null,
+      recursos: null,
+    });
+    assert.equal(ficha.altura, null);
+    assert.equal(ficha.peso, null);
+    assert.equal(ficha.schemaVersion, 4);
+  });
+
+  test("no toca el resto de la ficha", () => {
+    const { ficha } = migrar({ schemaVersion: 3, especieId: "arkoru", edad: 40 }, 4);
+    assert.equal(ficha.especieId, "arkoru");
+    assert.equal(ficha.edad, 40);
+  });
+});
+
 describe("parseSheet migra antes de normalizar", () => {
   test("una ficha v1 entra por la puerta y sale al día", () => {
     const s = parseSheet({ schemaVersion: 1, especie: "Arkorü", edad: 40 });

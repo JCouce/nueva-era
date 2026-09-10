@@ -26,6 +26,7 @@ export * from "./equipo";
 export * from "./condiciones";
 export * from "./combate";
 export * from "./aprobacion";
+export * from "./prioridad";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";
