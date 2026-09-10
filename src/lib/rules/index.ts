@@ -14,6 +14,7 @@
 //   combate.ts        el equipo convertido en tiradas de ataque concretas
 //   herramientas.ts    herramientas activas equipadas (Radar…) convertidas en su propia tirada
 //   aprobacion.ts      guardarraíl de la ficha aprobada: solo comprar, nunca vender
+//   estados.ts         fase 6b — umbrales de salud/fatiga y catálogo de estados de combate
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -29,6 +30,7 @@ export * from "./combate";
 export * from "./herramientas";
 export * from "./aprobacion";
 export * from "./prioridad";
+export * from "./estados";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";
@@ -36,3 +38,4 @@ export * from "../catalog/municion";
 export * from "../catalog/medicina";
 export * from "../catalog/herramientas";
 export * from "../catalog/armamentoPesado";
+export * from "../catalog/estados";

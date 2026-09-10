@@ -172,11 +172,28 @@ para el máster, sin intentar simularlo.
   edita `SAMPLES` en el script y vuelve a correrlo cuando quieras probar otros NPC;
   verificado con 3 de ejemplo, creados la primera vez y actualizados la segunda.
   `tsc`, 288/288 tests y lint limpios.
-- [ ] **1.3 — Permisos y server actions esqueleto.** Extender el criterio ya usado en
-  `app/master/actions.ts` (rol `MASTER`, o dueño para lo que le corresponda al jugador
-  según D2) a: crear/cerrar combate, añadir/quitar combatiente, mover turno, aplicar
-  delta de PG/fatiga, aplicar/quitar estado. Sin UI todavía — solo las acciones y sus
-  guardas, con algún test de permisos si el patrón lo pide.
+- [x] **1.3 — Permisos y server actions esqueleto.** Hecha (2026-09-11).
+  `app/master/combate/actions.ts`: `crearCombateAction`/`terminarCombateAction`,
+  `agregarJugadorAction`/`agregarNpcDeCatalogoAction`/`agregarAdHocAction`,
+  `marcarDerrotadoAction`, `avanzarTurnoAction` (sube ronda al dar la vuelta a la cola,
+  sin saltar derrotados — eso es UX de la 2.3), `ajustarPgAction`/`ajustarFatigaAction`
+  (D2: el dueño del Character también puede, no solo el máster), `aplicarEstadoAction`/
+  `quitarEstadoAction` (valida contra el catálogo de 0.3; aplicar de nuevo un estado
+  sustituye el grado, no lo acumula — mismo criterio que `modificadoresDeEstados()`).
+  Patrón de retorno tipado `{ok:true} | {ok:false, error}`, como
+  `characters/[id]/actions.ts`, no el FormData+no-op de `master/actions.ts` — esto
+  alimentará una consola interactiva (bloque 2), no formularios sueltos.
+  **Refactor de paso:** `canEditCharacter` no tenía test — vivía en `auth-helpers.ts`,
+  que importa `next/navigation`/`@/auth` y no carga bajo `node --test`. Se extrajo (junto
+  al nuevo `canAdjustCombatiente`) a `lib/permisos.ts`, puro y sin esas dependencias;
+  `auth-helpers.ts` lo reexporta, así que ningún import existente se rompe. 8 tests
+  nuevos de permisos.
+  **Verificado con un smoke test manual** (no commiteado, borrado al terminar) contra
+  Postgres real: crear combate, añadir NPC de catálogo y ad-hoc, aplicar delta de PG con
+  clave calculada, aplicar/sustituir estado en el Json, avanzar turno con vuelta de
+  ronda, marcar derrotado, terminar combate — los 10 pasos correctos, sin dejar basura en
+  la base. No hay UI que verificar en Chrome todavía (eso es 2.x).
+  `tsc`, 295/295 tests y lint limpios.
 
 ## Bloque 2 — Consola del máster (MVP funcional de punta a punta)
 

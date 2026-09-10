@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 
+// Reglas de permiso puras — sin Next/Auth.js, con su propio test. Ver el
+// comentario de cabecera de permisos.ts.
+export * from "./permisos";
+
 export type SessionUser = {
   id: string;
   role: "PLAYER" | "MASTER";
@@ -13,12 +17,4 @@ export async function requireUser(): Promise<SessionUser> {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
   return session.user as SessionUser;
-}
-
-/** Regla central de permisos: el dueño o el máster pueden editar. */
-export function canEditCharacter(
-  user: Pick<SessionUser, "id" | "role">,
-  character: { ownerId: string },
-): boolean {
-  return user.role === "MASTER" || character.ownerId === user.id;
 }
