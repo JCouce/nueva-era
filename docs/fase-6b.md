@@ -215,7 +215,11 @@ para el máster, sin intentar simularlo.
   'findFirst')`. Exactamente la trampa ya anotada en `docs/traspaso.md` §5 ("reinicia el
   dev server"); confirma que ese aviso sigue vigente y hay que seguirlo al pie de la
   letra tras cualquier migración.
-- [ ] **2.2 — Añadir NPC ad-hoc.** Nombre + PG sueltos, sin depender aún de 1.2/bloque 5.
+- [x] **2.2 — Añadir NPC ad-hoc.** Hecha (2026-09-11). Formulario nombre + PG dentro de
+  `CombateConsole.tsx`, llama a `agregarAdHocAction` (ya existía desde 1.3). Botón
+  deshabilitado hasta que los dos campos tienen algo; se vacían solos tras añadir, para
+  meter varios de seguido sin tocar el ratón de más. Verificado en Chrome: dos NPC
+  distintos añadidos uno detrás de otro sin pisarse (15/15 y 8/8 PG cada uno).
 - [ ] **2.3 — Cola de iniciativa.** Input manual de iniciativa por combatiente, ordenar
   automático, turno actual resaltado, botón "siguiente turno" (sube ronda al dar la
   vuelta), reordenar manual con flechas (nada de drag-and-drop, ver el brainstorm sobre

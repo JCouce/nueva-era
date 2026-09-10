@@ -5,10 +5,16 @@
 // tipadas (ver su cabecera), así que esto llama directo y refresca con
 // router.refresh() al terminar, mismo patrón que CharacterSheet.tsx usa
 // para sus propias acciones tipadas.
-import { useState, useTransition } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { HudCard } from "@/components/HudCard";
-import { crearCombateAction, terminarCombateAction, agregarJugadorAction, type CombateResult } from "./actions";
+import {
+  crearCombateAction,
+  terminarCombateAction,
+  agregarJugadorAction,
+  agregarAdHocAction,
+  type CombateResult,
+} from "./actions";
 
 type CombatienteView = {
   id: string;
@@ -41,6 +47,8 @@ export function CombateConsole({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [npcNombre, setNpcNombre] = useState("");
+  const [npcPg, setNpcPg] = useState("");
 
   function ejecutar(accion: () => Promise<CombateResult>) {
     setError(null);
@@ -82,6 +90,22 @@ export function CombateConsole({
       .map((c) => c.characterId as string),
   );
   const disponibles = characters.filter((c) => !enCombateIds.has(c.id));
+
+  const agregarNpc = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const pg = Number(npcPg);
+    setError(null);
+    startTransition(async () => {
+      const res = await agregarAdHocAction(combate.id, npcNombre, pg);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      setNpcNombre("");
+      setNpcPg("");
+      router.refresh();
+    });
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -156,6 +180,50 @@ export function CombateConsole({
             </li>
           )}
         </ul>
+      </section>
+
+      <section>
+        <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted">
+          Añadir NPC (suelto, sin catálogo)
+        </h2>
+        <HudCard className="p-4">
+          <form onSubmit={agregarNpc} className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="npc-nombre" className="font-mono text-xs text-muted">
+                Nombre
+              </label>
+              <input
+                id="npc-nombre"
+                type="text"
+                value={npcNombre}
+                onChange={(e) => setNpcNombre(e.target.value)}
+                className="clip-chamfer-sm border border-border bg-background px-3 py-2 font-mono text-sm"
+                placeholder="Guardia de seguridad"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="npc-pg" className="font-mono text-xs text-muted">
+                PG
+              </label>
+              <input
+                id="npc-pg"
+                type="number"
+                min={1}
+                value={npcPg}
+                onChange={(e) => setNpcPg(e.target.value)}
+                className="clip-chamfer-sm border border-border bg-background px-3 py-2 font-mono text-sm"
+                placeholder="12"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={pending || !npcNombre.trim() || !npcPg}
+              className="clip-chamfer-sm border border-border px-3 py-2 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
+            >
+              Añadir NPC
+            </button>
+          </form>
+        </HudCard>
       </section>
 
       {error && <p className="font-mono text-xs text-danger">{error}</p>}
