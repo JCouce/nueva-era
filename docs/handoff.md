@@ -249,12 +249,16 @@ detalle de las reglas; aquí solo el estado de la implementación:
   coste triangular en creación (`creacion.ts`, Stepper de Atributos/Habilidades), Aplicados
   como media, Movimiento con las constantes nuevas, tabs de Dotes/Psiónica con presupuesto
   declarado y catálogo pendiente, Recursos → créditos iniciales, Altura/Peso.
+- **Progresión con XP tras aprobar, hecha** (2026-09-10, después del fresh start): subir un
+  atributo/habilidad ya no está bloqueado del todo — se paga con XP al mismo coste por nivel
+  que en creación (`characters/[id]/actions.ts`), nunca se puede bajar del valor actual, y el
+  techo pasa a ser el del sistema (6) en vez del de creación (4). `aprobacion.ts`
+  (`aplicarSueloAtributo`/`Habilidad`) queda sin usar en este camino — el "no bajar" ya lo
+  garantiza comparar siempre contra el valor actual, no hizo falta el snapshot para eso.
 - **Fresh start hecho** (2026-09-10): se borraron los `Character` existentes, las cuentas de
   usuario se quedan igual. Todo el mundo crea ficha desde cero con el sistema nuevo.
 - **Deliberadamente fuera de esta pasada**: Carga Transportable (el usuario pidió centrarse en
-  la creación primero) y "subir con XP por encima del snapshot tras aprobar" — el guardarraíl
-  de `aprobacion.ts` hoy congela atributos/habilidades del todo en cuanto se aprueba, sin
-  excepción; la fórmula Nivel×factor de `HOJA2` ya está lista para cuando se conecte esa pieza.
+  la creación primero).
 - **Sin resolver**: con la fórmula Nivel×2, llegar a 4 en un atributo (el tope de creación)
   cuesta 20 puntos — más que el presupuesto de la mejor letra posible (A, 18). Puede ser
   intencional (el 4 no tiene por qué ser alcanzable solo con el pool de creación) o un número
