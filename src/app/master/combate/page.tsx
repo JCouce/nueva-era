@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
 import { AppHeader } from "@/components/AppHeader";
 import { MasterTabs } from "@/components/MasterTabs";
-import type { EstadoActivo } from "@/lib/rules";
+import { parseSheet, poder, type EstadoActivo } from "@/lib/rules";
 import { CombateConsole } from "./CombateConsole";
 
 // Fase 6b (docs/fase-6b.md), subtarea 2.1: la consola de combate en sí. Solo
@@ -39,6 +39,17 @@ export default async function CombatePage() {
     select: { id: true, name: true, owner: { select: { name: true, email: true } } },
   });
 
+  // Fase 6b, subtarea 5.2: el catálogo entero (nombre + nota + Poder de
+  // 5.0b, no solo el id) para que el máster elija con algo de contexto sin
+  // saltar a /master/npcs — mismo criterio que ya usa esa pantalla.
+  const npcTemplates = await prisma.npcTemplate.findMany({ orderBy: { nombre: "asc" } });
+  const npcs = npcTemplates.map((n) => ({
+    id: n.id,
+    nombre: n.nombre,
+    nota: n.nota,
+    poder: poder(parseSheet(n.stats)),
+  }));
+
   return (
     <>
       <AppHeader name={user.name} role={user.role} />
@@ -47,7 +58,7 @@ export default async function CombatePage() {
           Gestor de combate
         </h1>
         <MasterTabs />
-        <CombateConsole combate={combate} characters={characters} />
+        <CombateConsole combate={combate} characters={characters} npcs={npcs} />
       </main>
     </>
   );

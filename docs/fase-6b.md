@@ -680,9 +680,26 @@ enemigo ataque de verdad, solo llevar la cuenta de su PG a ojo. Con encuentros d
   MCP esté libre. Sigue sin decidir qué es "especialización" en la card (punto 4 de
   arriba) — no bloquea el resto.
   **`CLAUDE.md`, sección NPCs**: actualizada — ya no dice "todavía no hay UI".
-- [ ] **5.2 — Añadir al combate desde catálogo.** Ahora es la **única** vía para meter
-  un NPC en un combate (el ad-hoc desapareció) — sin esto, la consola no puede añadir
-  NPCs en absoluto. `agregarNpcDeCatalogoAction` ya está lista (5.0).
+- [x] **5.2 — Añadir al combate desde catálogo.** Hecha (2026-09-11). Sección "Añadir
+  NPC" de `CombateConsole.tsx` (antes el aviso de "pendiente"): lista el catálogo entero
+  (nombre, Poder de 5.0b y nota, cargados en `combate/page.tsx` igual que ya hace
+  `/master/npcs`) con un botón "Añadir" por fila, mismo patrón `ejecutar()` +
+  `router.refresh()` que ya usa "Añadir jugador" — llama directo a
+  `agregarNpcDeCatalogoAction` (lista desde la 5.0, sin cambios). A diferencia de
+  jugadores, **sin filtrar "ya está en combate"**: una plantilla se puede añadir varias
+  veces a propósito (varias instancias del mismo NPC son un caso real de mesa; ponerles
+  nombre numerado, "Goblin #1/#2/#3" en vez de repetir el mismo nombre tal cual, es la
+  5.3, todavía sin construir — hoy salen todas con el nombre de la plantilla). Catálogo
+  vacío: enlace directo a `/master/npcs` en vez de un callejón sin salida.
+  **Verificación**: `tsc`, lint y 315/315 tests limpios; SSR de `/master/combate`
+  confirmada por HTTP (mismo login de prueba que la 5.1) con los tres NPCs sembrados
+  listados y el bloque "Añadir NPC" ya no diciendo "pendiente". El propio botón "Añadir"
+  no se pudo pulsar de verdad — es una server action tipada invocada desde `onClick`, no
+  un `<form>`, así que no es replicable por HTTP a pelo como sí lo fueron los formularios
+  de la 5.1 — pero llama exactamente al mismo `agregarNpcDeCatalogoAction` que el smoke
+  test manual de la 5.0 ya verificó de punta a punta (deriva PG/fatiga de `salud()`,
+  congela la foto del `Sheet`). Mismo Chrome ocupado que en 5.1 (`traspaso.md` §5):
+  pendiente el mismo vistazo con JS real en cuanto se libere.
 - [ ] **5.3 — Clonar NPC en varias instancias numeradas** ("Goblin #1, #2, #3"), cada
   una con su propio PG — el ahorro de tiempo real de Combat Manager, según el
   brainstorm. La mitad del trabajo ya está (`clonarNpcAction`, 5.0); falta la UI que

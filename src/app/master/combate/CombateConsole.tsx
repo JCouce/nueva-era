@@ -7,6 +7,7 @@
 // para sus propias acciones tipadas.
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { HudCard } from "@/components/HudCard";
 import { usePollingCombate } from "@/hooks/usePollingCombate";
 import { ESTADOS, estadoPorId, describirEstadosActivos, type EstadoActivo } from "@/lib/rules";
@@ -15,6 +16,7 @@ import {
   comenzarCombateAction,
   terminarCombateAction,
   agregarJugadorAction,
+  agregarNpcDeCatalogoAction,
   avanzarTurnoAction,
   establecerIniciativaAction,
   ordenarPorIniciativaAction,
@@ -55,12 +57,21 @@ type CharacterOption = {
   owner: { name: string | null; email: string };
 };
 
+type NpcOption = {
+  id: string;
+  nombre: string;
+  nota: string | null;
+  poder: number;
+};
+
 export function CombateConsole({
   combate,
   characters,
+  npcs,
 }: {
   combate: CombateView | null;
   characters: CharacterOption[];
+  npcs: NpcOption[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -253,12 +264,39 @@ export function CombateConsole({
 
       <section>
         <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted">Añadir NPC</h2>
-        <HudCard className="border-dashed px-4 py-6 text-center">
-          <p className="font-mono text-xs text-muted">
-            Pendiente: se añaden desde el catálogo de NPCs (subtarea 5.2). El ad-hoc suelto
-            desapareció el 2026-09-11 — todo NPC sale ahora de una plantilla con ficha.
-          </p>
-        </HudCard>
+        <ul className="flex flex-col gap-2">
+          {npcs.map((n) => (
+            <li key={n.id}>
+              <HudCard className="flex items-center justify-between gap-2 px-4 py-3">
+                <div className="min-w-0">
+                  <span className="block truncate font-display text-base font-medium uppercase tracking-wide">
+                    {n.nombre}
+                  </span>
+                  <span className="block font-mono text-xs text-muted">
+                    {n.poder.toFixed(1)} poder{n.nota ? ` · ${n.nota}` : ""}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => ejecutar(() => agregarNpcDeCatalogoAction(combate.id, n.id))}
+                  className="clip-chamfer-sm shrink-0 border border-border px-3 py-2 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
+                >
+                  Añadir
+                </button>
+              </HudCard>
+            </li>
+          ))}
+          {npcs.length === 0 && (
+            <li className="clip-chamfer border border-dashed border-border px-4 py-8 text-center font-mono text-sm text-muted">
+              No hay NPCs en el catálogo.{" "}
+              <Link href="/master/npcs" className="text-accent hover:underline">
+                Crea el primero
+              </Link>
+              .
+            </li>
+          )}
+        </ul>
       </section>
 
       {error && <p className="font-mono text-xs text-danger">{error}</p>}
