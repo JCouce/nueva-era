@@ -124,6 +124,13 @@ export async function agregarJugadorAction(
   return { ok: true };
 }
 
+// Ficha obligatoria (2026-09-11): mismo patrón que agregarJugadorAction —
+// PG/fatiga máximos salen de salud(sheet), no de un campo propio, y se
+// congela una foto del Sheet entero (campo nuevo `sheet` en Combatiente)
+// para que editar la plantilla después no afecte a un combate en marcha.
+// Sin ad-hoc: era el tercer origen de Combatiente, desapareció a propósito
+// — todo NPC sale de una plantilla del catálogo, ver docs/fase-6b.md
+// "Catálogo de NPCs — rediseño".
 export async function agregarNpcDeCatalogoAction(
   combateId: string,
   npcTemplateId: string,
@@ -133,43 +140,19 @@ export async function agregarNpcDeCatalogoAction(
   const npc = await prisma.npcTemplate.findUnique({ where: { id: npcTemplateId } });
   if (!npc) return { ok: false, error: "No existe ese NPC." };
 
+  const sheet = parseSheet(npc.stats);
+  const { vida, fatiga } = salud(sheet);
+
   await prisma.combatiente.create({
     data: {
       combateId,
       npcTemplateId,
       nombre: npc.nombre,
-      pgActual: npc.pgBase,
-      pgMax: npc.pgBase,
-      // Los NPC ligeros no llevan fatiga (ver docs/fase-6b.md, "El motor de
-      // estados"): sin ficha completa no hay Voluntad de la que derivarla.
-      fatigaActual: 0,
-      fatigaMax: 0,
-      orden: await ordenSiguiente(combateId),
-    },
-  });
-  revalidateCombate();
-  return { ok: true };
-}
-
-export async function agregarAdHocAction(
-  combateId: string,
-  nombre: string,
-  pgMax: number,
-): Promise<CombateResult> {
-  if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede añadir combatientes." };
-
-  const nombreLimpio = nombre.trim();
-  if (!nombreLimpio) return { ok: false, error: "Falta el nombre." };
-  if (!Number.isFinite(pgMax) || pgMax <= 0) return { ok: false, error: "PG inválidos." };
-
-  await prisma.combatiente.create({
-    data: {
-      combateId,
-      nombre: nombreLimpio,
-      pgActual: pgMax,
-      pgMax,
-      fatigaActual: 0,
-      fatigaMax: 0,
+      sheet,
+      pgActual: vida,
+      pgMax: vida,
+      fatigaActual: fatiga,
+      fatigaMax: fatiga,
       orden: await ordenSiguiente(combateId),
     },
   });

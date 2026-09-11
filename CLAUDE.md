@@ -117,10 +117,14 @@ proyecto, no lo dupliques aquí.
 
 ## NPCs — "¿cómo creo un NPC?"
 **Todavía no hay UI para esto** (llega en la subtarea 5.1 de `docs/fase-6b.md`, el gestor
-de combate). Hoy se hace con un script:
+de combate). Cada NPC lleva **ficha obligatoria** (mismo `Sheet` que un `Character` —
+decisión 2026-09-11, ver "Catálogo de NPCs — rediseño" en `docs/fase-6b.md`): no hay modo
+sin ficha, y no hay ad-hoc suelto en la consola de combate — todo NPC sale de una
+plantilla del catálogo. Hoy, sin esa UI, se hace con un script:
 
-1. Abre `scripts/seed-npcs.mjs` y añade tu NPC al array `SAMPLES`: `nombre`, `pgBase`,
-   `nota` (texto libre, opcional).
+1. Abre `scripts/seed-npcs.mjs` y añade tu NPC al array `SAMPLES`: `nombre`, `nota`
+   (texto libre, opcional) y `stats` — construido con el helper `sheet({ atributos, habilidades })`
+   que ya trae el propio script (solo hace falta listar lo que se sale del default).
 2. `npm run seed-npcs`.
 
 Es **upsert por `nombre`**: si lo vuelves a correr con datos distintos para un NPC que ya

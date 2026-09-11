@@ -42,8 +42,11 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
 - **No hay botón para marcar a alguien "derrotado".** `marcarDerrotadoAction` existe
   desde la 1.3, pero ninguna subtarea del bloque 2 le puso una UI — quedó suelta. No es
   parte de 2.1-2.6.
-- **No hay forma de añadir un NPC desde el catálogo de `NpcTemplate`** (solo ad-hoc).
-  `agregarNpcDeCatalogoAction` existe desde la 1.3; su UI es la subtarea 5.2.
+- **No hay forma de añadir ningún NPC a un combate ahora mismo, ni desde catálogo ni
+  ad-hoc.** El ad-hoc desapareció (2026-09-11, ver bloque 2.2 más abajo); añadir desde
+  catálogo (`agregarNpcDeCatalogoAction`, actualizada esa fecha para ficha obligatoria)
+  sigue sin UI — es la subtarea 5.2. Ventana aceptada a propósito mientras se construye
+  esa UI.
 - **No hay ninguna pantalla donde un jugador vea u opere su propio combatiente.** El
   permiso D2 (el dueño del Character puede ajustar su propio PG/fatiga) está
   implementado y tiene test unitario (`permisos.test.ts`), pero **hoy no hay ningún
@@ -100,6 +103,12 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
   ningún combate en curso." sin error en consola.
 
 ## Bloque 2.2 — Añadir NPC ad-hoc
+
+> **Revertida entera (2026-09-11).** El NPC ad-hoc (nombre+PG sueltos, sin catálogo)
+> desapareció — decisión del usuario al rediseñar el catálogo de NPCs con ficha
+> obligatoria: "todo pasa por el catálogo", ver `docs/fase-6b.md` "Catálogo de NPCs —
+> rediseño". Todo lo que sigue en este bloque es histórico de una función que ya no
+> existe — no reproducir, no lo cuentes como regresión si no funciona.
 
 - [x] Camino feliz: nombre + PG → aparece en la cola con PG actual = máximo, el
   formulario se vacía solo.

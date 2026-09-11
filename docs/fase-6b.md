@@ -524,17 +524,110 @@ de validar el MVP en mesa real).
   `docs/traspaso.md` §9. No evaluar LISTEN/NOTIFY a pelo sin decidir antes dónde correría
   ese proceso persistente.
 
-## Bloque 5 — Catálogo de NPCs y plantillas de encuentro
+## Bloque 5 — Catálogo de NPCs con ficha y plantillas de encuentro
 
-- [ ] **5.1 — UI del máster para `NpcTemplate`.** Crear/editar/listar, mismo patrón de
-  formulario que el resto del panel de máster. **Al cerrarla, actualiza la sección "NPCs"
-  de `CLAUDE.md`** — hoy documenta `npm run seed-npcs` como atajo explícito porque esto
-  no existe; que no se quede diciendo eso cuando ya haya UI de verdad.
-- [ ] **5.2 — Añadir al combate desde catálogo**, en vez de solo ad-hoc (2.2).
-- [ ] **5.3 — Clonar NPC en varias instancias numeradas** ("Goblin #1, #2, #3"), cada una
-  con su propio PG — el ahorro de tiempo real de Combat Manager, según el brainstorm.
+### Catálogo de NPCs — rediseño (2026-09-11), por qué así
+
+Charla con el usuario antes de coger el bloque 5 tal como estaba escrito originalmente
+(nombre+PG+nota, el `NpcTemplate` "ligero" del bloque 1). El disparador: los NPCs del
+MVP no podían **tirar** — sin atributos ni habilidades, el máster no puede hacer que un
+enemigo ataque de verdad, solo llevar la cuenta de su PG a ojo. Con encuentros de hasta
+30-50 combatientes en mente, eso no escala en mesa.
+
+**Decisiones tomadas, en orden:**
+
+1. **Reutilizar el tipo `Sheet` y el motor (`lib/rules`), no la tabla `Character`.**
+   `NpcTemplate` gana `stats: Json` con la misma forma que `Character.stats` — así
+   `aplicado`, `valorEfectivo`, `tiradasDeAtaque`, `TiradasTab.tsx`... funcionan
+   idénticos para un NPC sin duplicar una sola línea del motor. Pero **tabla separada**
+   de `Character`, no una fila más ahí: `ownerId` es una FK a `User` que no tiene
+   sentido para un NPC (no lo juega nadie, lo interpreta el máster), y `status`/`xp`/
+   `creditos`/`approvedSnapshot` son conceptos de progresión de PJ que no significan
+   nada para una plantilla. Compartir tabla habría obligado a poner condicionales por
+   todo el código que hoy asume "todo `Character` es un PJ de jugador" (`/characters`,
+   la cola de `/master`, `canEditCharacter`...). Precedente ya sentado desde el bloque 1
+   (`NpcTemplate` ya se separó de `Character` con el mismo argumento de fondo).
+2. **Ficha obligatoria, sin modo "ligero".** Se planteó mantener un modo sin `Sheet`
+   para el mook improvisado en mesa (el PG ya no es un campo directo, sale de
+   `salud(sheet)`, así que un guardia rápido cuesta más de montar que antes) — el
+   usuario lo descartó: la vía para el NPC rápido es **clonar una plantilla ya del
+   catálogo** (`clonarNpcAction`), no rebajar el modelo. Si hace falta un mook al vuelo
+   en mitad de la partida y no hay plantilla parecida a mano, se acepta el coste de
+   montarla una vez — se reutiliza después.
+3. **Desaparece el NPC ad-hoc** (nombre+PG sueltos en la consola, subtarea 2.2). Era el
+   tercer origen de `Combatiente` junto a jugador y NPC de catálogo; con ficha
+   obligatoria en todos lados, "para tenerlo todo organizado" (palabras del usuario) no
+   tiene sentido un combatiente sin ninguna plantilla detrás. **Bloque 2.2 queda
+   revertido** — ver la nota en `docs/pruebas-integrales.md`. Consecuencia aceptada a
+   propósito: hasta que la 5.2 tenga UI, no hay ninguna forma de añadir un NPC a un
+   combate desde la consola (ni ad-hoc ni catálogo).
+4. **Pendiente de decidir en la ronda de UX** (no bloquea el back): probablemente hace
+   falta una tab/sección nueva en el panel de máster para el catálogo de NPCs, aparte de
+   "Gestor de combate" — sin diseñar todavía, se decide al coger la 5.1.
+
+- [x] **5.0 — Backend: ficha obligatoria, sin ad-hoc.** Hecha (2026-09-11).
+  **Schema** (`20260911091153_npc_ficha_obligatoria`): `NpcTemplate.stats: Json`
+  (obligatorio, reemplaza a `pgBase`); `Combatiente.sheet: Json?` — foto del `Sheet` del
+  NPC al añadirlo al combate (null para un Combatiente-jugador, que sigue leyendo su
+  Sheet en vivo de `Character.stats`), mismo motivo que el resto de fotos de
+  `Combatiente`: editar la plantilla después no debe afectar a un combate en marcha.
+  **`combate/actions.ts`**: `agregarNpcDeCatalogoAction` deriva PG/fatiga de
+  `salud(parseSheet(npc.stats))` (antes `pgBase` a pelo) y congela `sheet`; eliminada
+  `agregarAdHocAction` entera.
+  **`master/npcs/actions.ts` (nuevo)**: espejo simplificado de
+  `characters/[id]/actions.ts` — crear (`Sheet` por defecto), editar identidad/nota,
+  editar atributos/habilidades/especialidades/equipo, clonar, eliminar. Sin XP, sin
+  aprobación, sin coste en créditos al equipar (el máster no tiene pool que gastar).
+  **Hallazgo real haciendo el smoke test**: `setAtributoValue`/`setHabilidadValue`
+  (`lib/rules/creacion.ts`) NO son una asignación directa — respetan el pool de
+  creación (`puntosAtributosDisponibles`) y lo rechazan en silencio si queda negativo.
+  Sin letra de prioridad asignada (el caso de un `NpcTemplate`, que no pasa por
+  prioridades), el pool es 0, así que esas funciones nunca movían el número. Las
+  acciones de NPC clampan directo contra los límites del sistema
+  (`ATRIBUTO_MIN`/`ATRIBUTO_MAX`, `HABILIDAD_NO_ENTRENADA`/`HABILIDAD_MAX`), sin pool y
+  sin la restricción de "solo subir" que sí tiene un PJ en progresión con XP.
+  **`CombateConsole.tsx`**: fuera el formulario "Añadir NPC (suelto)"; en su sitio, una
+  nota explícita de que está pendiente (subtarea 5.2), no un hueco silencioso.
+  **`scripts/seed-npcs.mjs`**: actualizado para generar un `Sheet` real por cada
+  sample (helper `sheet({ atributos, habilidades })` en el propio script — no importa
+  `lib/rules`, mismo motivo que `make-master.mjs`: Node normal no resuelve los imports
+  sin extensión ni los alias `@/` que sí entiende el bundler de Next).
+  **Verificado con un smoke test manual contra Postgres real** (no commiteado, borrado
+  al terminar, igual que el de la subtarea 1.3): crear NPC con Sheet por defecto, editar
+  un atributo, clonar, añadir al combate derivando PG de `salud()` y congelando la foto,
+  editar la plantilla después y confirmar que la foto congelada NO cambia, eliminar la
+  plantilla y confirmar `onDelete: SetNull` (el combatiente sobrevive con su nombre y
+  sheet congelados) — 7/7 pasos correctos. Verificado también en Chrome que
+  `/master/combate` sigue funcionando (crear, comenzar, terminar, añadir jugador) con la
+  sección de NPC mostrando el aviso de pendiente. `tsc`, 306/306 tests y lint limpios.
+  **Sin UI para las acciones de `master/npcs/actions.ts` todavía** — llega en la 5.1, ahí
+  se verifican de punta a punta en el navegador.
+
+- [ ] **5.1 — UI del máster para `NpcTemplate` con ficha.** Crear/editar/listar,
+  reutilizando lo que tenga sentido de `characters/[id]/_components/*Tab.tsx`
+  (`AtributosTab`/`HabilidadesTab`/`EquipoTab` en modo "edición directa", sin point-buy
+  ni tope de rareza) en vez de construir un editor desde cero. **Al cerrarla, actualiza
+  la sección "NPCs" de `CLAUDE.md`** — hoy documenta `npm run seed-npcs` como atajo
+  explícito porque esto no existe; que no se quede diciendo eso cuando ya haya UI de
+  verdad. Decidir aquí si hace falta una tab/sección nueva en el panel de máster (punto
+  4 de arriba, sin cerrar).
+- [ ] **5.2 — Añadir al combate desde catálogo.** Ahora es la **única** vía para meter
+  un NPC en un combate (el ad-hoc desapareció) — sin esto, la consola no puede añadir
+  NPCs en absoluto. `agregarNpcDeCatalogoAction` ya está lista (5.0).
+- [ ] **5.3 — Clonar NPC en varias instancias numeradas** ("Goblin #1, #2, #3"), cada
+  una con su propio PG — el ahorro de tiempo real de Combat Manager, según el
+  brainstorm. La mitad del trabajo ya está (`clonarNpcAction`, 5.0); falta la UI que
+  clona varias de golpe con nombres numerados.
 - [ ] **5.4 — Plantillas de encuentro.** Guardar un grupo de `NpcTemplate` ya montado y
   añadirlo entero a un combate de un tap.
+- [ ] **5.5 — Tirar por un NPC en combate** (el motivo original de todo este rediseño).
+  Un control en la fila de un combatiente NPC dentro de la consola que abre sus
+  tiradas — mismo `TiradasTab.tsx` que ya usa el jugador, alimentado por el `sheet`
+  congelado del `Combatiente` (no el de la plantilla, que puede haber cambiado) y sus
+  estados activos (mismo patrón que 3.1b: `modificadoresDeEstados()` sumado a
+  `modificadoresActivos(sheet)`). Con 30-50 combatientes en la cola, probablemente un
+  panel/modal que se abre bajo demanda para un combatiente a la vez, no 50
+  `TiradasTab` completos renderizados de golpe.
 
 ## Bloque 6 — Brillo (después de validar el MVP en mesa real)
 

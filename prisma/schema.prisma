@@ -107,12 +107,19 @@ model Combatiente {
   character     Character?   @relation(fields: [characterId], references: [id], onDelete: Cascade)
   npcTemplateId String?
   npcTemplate   NpcTemplate? @relation(fields: [npcTemplateId], references: [id], onDelete: SetNull)
-  // Nombre a mostrar, copiado al añadir (del Character, del NpcTemplate, o
-  // tecleado a mano para un NPC ad-hoc). Nunca se lee en vivo de ninguno de
-  // los dos — mismo motivo que la foto de PG/fatiga de arriba. También es
-  // lo que permite "Goblin #1, #2, #3" al clonar (subtarea 5.3): cada clon
-  // es su propia fila con su propio nombre, sin tocar el NpcTemplate.
+  // Nombre a mostrar, copiado al añadir (del Character o del NpcTemplate —
+  // dos orígenes, no tres: el ad-hoc desapareció el 2026-09-11, todo NPC
+  // sale del catálogo con ficha). Nunca se lee en vivo de ninguno de los
+  // dos — mismo motivo que la foto de PG/fatiga de abajo. También es lo que
+  // permite "Goblin #1, #2, #3" al clonar (subtarea 5.3): cada clon es su
+  // propia fila con su propio nombre, sin tocar el NpcTemplate.
   nombre        String
+  // Foto del Sheet del NPC al añadirlo (null para un Combatiente-jugador,
+  // que sigue leyendo su Sheet en vivo de Character.stats vía su propia
+  // ficha) — si el máster edita la plantilla después para reusarla en otra
+  // mesa, no debe afectar a un combate ya en marcha. Alimenta las tiradas
+  // del NPC en combate (mismo lib/rules que un jugador).
+  sheet         Json?
   pgActual      Int
   pgMax         Int
   fatigaActual  Int
@@ -146,10 +153,19 @@ model Combatiente {
 // texto libre, nada de atributos/habilidades completos todavía (ver la
 // nota sobre NPCs ligeros en docs/fase-6b.md, bloque "El motor de
 // estados").
+// Ficha obligatoria (decisión 2026-09-11, ver docs/fase-6b.md "Catálogo de
+// NPCs — rediseño"): tabla separada de Character (ownership, ciclo de vida
+// y campos de progresión distintos — no tiene sentido un NPC con xp o
+// approvedSnapshot), pero MISMO tipo de datos (`stats` es un Sheet, igual
+// que Character.stats) para que lib/rules y TiradasTab funcionen idénticos
+// sin duplicar una sola línea del motor. Nada de modo "ligero" sin ficha:
+// para un NPC rápido de mesa, se clona una plantilla ya del catálogo
+// (subtarea 5.3), no se rebaja el modelo — el PG ya no es un campo propio,
+// sale de salud(parseSheet(stats)) como en cualquier ficha.
 model NpcTemplate {
   id           String        @id @default(cuid())
   nombre       String
-  pgBase       Int
+  stats        Json
   nota         String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
