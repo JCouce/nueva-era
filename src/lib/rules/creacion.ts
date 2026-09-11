@@ -49,7 +49,8 @@ export function presupuestoHabilidades(sheet: Sheet): number {
 // Coste de un atributo: triangular (docs/sistema.md, "Coste y progresión",
 // Nivel × 2). Bajar a -1 sigue devolviendo 1 punto (FIRME · HOJA, sin tocar
 // por HOJA2), así que un -1 cuenta como gasto negativo, no como coste 0.
-function costeAtributo(valor: number): number {
+// Exportada: la reutiliza npc.ts (métrica de "Poder") sin duplicar la regla.
+export function costeAtributo(valor: number): number {
   if (valor <= ATRIBUTO_MIN) return -1;
   return costeTotal(valor, COSTE_FACTOR_ATRIBUTO);
 }

@@ -15,6 +15,7 @@
 //   herramientas.ts    herramientas activas equipadas (Radar…) convertidas en su propia tirada
 //   aprobacion.ts      guardarraíl de la ficha aprobada: solo comprar, nunca vender
 //   estados.ts         fase 6b — umbrales de salud/fatiga y catálogo de estados de combate
+//   npc.ts             fase 6b — "Poder" del catálogo de NPCs (métrica del usuario, no del sistema)
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -31,6 +32,7 @@ export * from "./herramientas";
 export * from "./aprobacion";
 export * from "./prioridad";
 export * from "./estados";
+export * from "./npc";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

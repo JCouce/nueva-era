@@ -561,9 +561,42 @@ enemigo ataque de verdad, solo llevar la cuenta de su PG a ojo. Con encuentros d
    revertido** — ver la nota en `docs/pruebas-integrales.md`. Consecuencia aceptada a
    propósito: hasta que la 5.2 tenga UI, no hay ninguna forma de añadir un NPC a un
    combate desde la consola (ni ad-hoc ni catálogo).
-4. **Pendiente de decidir en la ronda de UX** (no bloquea el back): probablemente hace
-   falta una tab/sección nueva en el panel de máster para el catálogo de NPCs, aparte de
-   "Gestor de combate" — sin diseñar todavía, se decide al coger la 5.1.
+4. **Diseño de UI decidido con el usuario (2026-09-11), antes de picar código de UX:**
+   - **Header bifurcado**: el logo "Nueva Era" pasa a "Nueva Era **Master**" (Master en
+     naranja) cuando `role === "MASTER"` — hoy `AppHeader.tsx` solo muestra un badge
+     "MÁSTER" aparte, esto lo complementa (a decidir al construirlo si el badge se queda
+     o el título ya basta, para no duplicar la misma información dos veces).
+   - **Panel de máster en tabs horizontales**, mismo patrón visual que ya usa
+     `CharacterSheet.tsx` para sus propios tabs: **Jugadores** (la cola de aprobación que
+     hoy vive en `/master` a secas), **Combate** (`/master/combate`, ya existe),
+     **NPC** (`/master/npcs`, el catálogo — la 5.1).
+   - **Catálogo de NPCs**: botón "+" siempre visible que lleva a crear una ficha nueva;
+     lista de cards (una por NPC) con nombre y, más adelante, "Poder" (5.0b, ya lista) y
+     "especialización" (sin definir todavía, no bloquea nada — ver más abajo); click en
+     una card abre su ficha para editar, los cambios se reflejan solos en el catálogo
+     (`revalidateNpcs()` ya cubre esto desde la 5.0); filtros/orden sobre esos mismos
+     valores — con 30-50 NPCs como mucho, se resuelve entero en cliente sobre los datos
+     ya cargados, sin query parametrizada al servidor.
+   - **"Especialización"** en la card: sin definir todavía (no es lo mismo que las
+     "especialidades" de una habilidad, que ya existen) — se decide cuando toque
+     construirla, no ahora.
+
+- [x] **5.0b — "Poder": métrica de catálogo (experiencia + créditos invertidos).**
+  Hecha (2026-09-11). Fórmula del propio usuario, no del sistema del diseñador — "para
+  calibrarse más adelante con una herramienta de balance" (mencionada esa sesión, sin
+  construir todavía): `poder(sheet) = experienciaInvertida(sheet) + creditosInvertidos(sheet) / 100`.
+  Nuevo módulo `lib/rules/npc.ts`, reutilizando el motor de coste ya existente
+  (`creacion.ts`, `equipo.ts`) sin duplicar ninguna fórmula: `creditosInvertidos` suma
+  `costeDePieza` de cada pieza en `sheet.equipo`; `experienciaInvertida` suma el coste
+  triangular (mismo `costeAtributo`/`costeHabilidad` del point-buy de creación,
+  `costeAtributo` recién exportada para esto) de cada atributo/habilidad — a diferencia
+  de `puntosAtributosGastados`/`puntosHabilidadesGastados` (que sí dejan que un atributo
+  bajado a -1 reste del pool de creación), aquí cada rasgo por debajo de su base cuenta
+  como 0, nunca negativo: un atributo penalizado no debe restar poder a uno bueno. Sin
+  server action ni UI todavía — es una función pura, el futuro `page.tsx` de
+  `/master/npcs` la llama directo al listar (`poder(parseSheet(npc.stats))`), igual que
+  ya hace `ResumenTab.tsx` con `salud(sheet)` y el resto de derivados. 9 tests nuevos.
+  `tsc`, 315/315 tests y lint limpios.
 
 - [x] **5.0 — Backend: ficha obligatoria, sin ad-hoc.** Hecha (2026-09-11).
   **Schema** (`20260911091153_npc_ficha_obligatoria`): `NpcTemplate.stats: Json`
@@ -603,14 +636,16 @@ enemigo ataque de verdad, solo llevar la cuenta de su PG a ojo. Con encuentros d
   **Sin UI para las acciones de `master/npcs/actions.ts` todavía** — llega en la 5.1, ahí
   se verifican de punta a punta en el navegador.
 
-- [ ] **5.1 — UI del máster para `NpcTemplate` con ficha.** Crear/editar/listar,
-  reutilizando lo que tenga sentido de `characters/[id]/_components/*Tab.tsx`
-  (`AtributosTab`/`HabilidadesTab`/`EquipoTab` en modo "edición directa", sin point-buy
-  ni tope de rareza) en vez de construir un editor desde cero. **Al cerrarla, actualiza
-  la sección "NPCs" de `CLAUDE.md`** — hoy documenta `npm run seed-npcs` como atajo
-  explícito porque esto no existe; que no se quede diciendo eso cuando ya haya UI de
-  verdad. Decidir aquí si hace falta una tab/sección nueva en el panel de máster (punto
-  4 de arriba, sin cerrar).
+- [ ] **5.1 — UI del máster para `NpcTemplate` con ficha.** Diseño ya decidido (punto 4
+  de arriba): panel de máster en tabs horizontales (Jugadores/Combate/NPC), header
+  "Nueva Era Master", catálogo en cards con botón "+" para crear, filtros/orden en
+  cliente. Crear/editar/listar la ficha en sí reutilizando lo que tenga sentido de
+  `characters/[id]/_components/*Tab.tsx` (`AtributosTab`/`HabilidadesTab`/`EquipoTab` en
+  modo "edición directa", sin point-buy ni tope de rareza) en vez de construir un editor
+  desde cero. **Al cerrarla, actualiza la sección "NPCs" de `CLAUDE.md`** — hoy
+  documenta `npm run seed-npcs` como atajo explícito porque esto no existe; que no se
+  quede diciendo eso cuando ya haya UI de verdad. Sigue sin decidir qué es
+  "especialización" en la card (punto 4 de arriba) — no bloquea el resto.
 - [ ] **5.2 — Añadir al combate desde catálogo.** Ahora es la **única** vía para meter
   un NPC en un combate (el ad-hoc desapareció) — sin esto, la consola no puede añadir
   NPCs en absoluto. `agregarNpcDeCatalogoAction` ya está lista (5.0).
