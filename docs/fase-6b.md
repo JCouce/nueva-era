@@ -714,6 +714,25 @@ enemigo ataque de verdad, solo llevar la cuenta de su PG a ojo. Con encuentros d
   `modificadoresActivos(sheet)`). Con 30-50 combatientes en la cola, probablemente un
   panel/modal que se abre bajo demanda para un combatiente a la vez, no 50
   `TiradasTab` completos renderizados de golpe.
+- [ ] **5.6 — Tab Tiradas en el editor de NPC, con estados simulados.** Añadida al
+  plan el 2026-09-11 tras revisar el argumento de por qué se dejó fuera en la 5.1 — no
+  se sostenía: `TiradasTab.tsx` es agnóstico al objetivo (dificultad y circunstancial son
+  inputs manuales del modal, nunca lee el sheet de nadie más) y `estadosCombate` ya es
+  opcional (`= []` por defecto), así que el componente no necesita estar dentro de un
+  `Combate` para funcionar — mismo criterio por el que un `Character` en `DRAFT` ya
+  puede previsualizar sus tiradas antes de aprobar (`TABS_PERSONAJE` no lo condiciona).
+  **Sin persistir en DB.** Un `EstadoActivo` decae por `rondasRestantes`, un contador que
+  solo el motor de turnos de un `Combate` real descuenta (`avanzarTurnoAction`) — fuera
+  de un combate no hay nada que lo consuma, así que guardarlo en la plantilla lo dejaría
+  congelado sin sentido. En vez de eso: una lista de estados **simulados**, en estado de
+  cliente (`useState`, sin `rondasRestantes` real) dentro del propio editor, que se pasa
+  tal cual al `estadosCombate` que `TiradasTab` ya acepta — cero migración, cero server
+  action nueva, mismo criterio que el historial de tiradas del jugador (tampoco se
+  persiste) y que "Poder" (5.0b: cálculo, no dato guardado). Si algún día hace falta un
+  estado *permanente* de una criatura (no ligado a rondas de un combate concreto), eso
+  no es un `EstadoActivo` — sería un rasgo/trait, concepto que el sistema del diseñador
+  no define todavía (como Dotes); no se fuerza el modelo de estados de combate para
+  cubrirlo.
 
 ## Bloque 6 — Brillo (después de validar el MVP en mesa real)
 
