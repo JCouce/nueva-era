@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Sheet, AtributoId, HabilidadId, PiezaEquipada } from "@/lib/rules";
 import { AtributosTab } from "@/app/characters/[id]/_components/AtributosTab";
 import { HabilidadesTab } from "@/app/characters/[id]/_components/HabilidadesTab";
+import { TiradasTab } from "@/app/characters/[id]/_components/TiradasTab";
 import { EquipoTab } from "@/app/characters/[id]/_components/EquipoTab";
 import { TiendaTab } from "@/app/characters/[id]/_components/TiendaTab";
 import {
@@ -30,6 +31,7 @@ const TABS = [
   { id: "identidad", label: "Identidad" },
   { id: "attrs", label: "Atributos" },
   { id: "skills", label: "Habilidades" },
+  { id: "tiradas", label: "Tiradas" },
   { id: "equipo", label: "Equipo" },
   { id: "tienda", label: "Tienda" },
 ] as const;
@@ -206,6 +208,20 @@ export function NpcEditor({
           onAddEspecialidad={commitAddEspecialidad}
           onRemoveEspecialidad={commitRemoveEspecialidad}
         />
+      )}
+      {active === "tiradas" && (
+        <div className="flex flex-col gap-3">
+          {/* 5.6: preview en reposo, sin estados — una NpcTemplate no tiene
+              dónde guardarlos (rondasRestantes solo lo consume el motor de
+              turnos de un Combate real, ver docs/fase-6b.md). Para tirar
+              con confuso/enfermo/etc. aplicados, la 5.5 en la consola de
+              combate usa el sheet+estados congelados del Combatiente. */}
+          <p className="font-mono text-[11px] leading-relaxed text-muted">
+            Vista previa en reposo, sin estados aplicados — para eso hace falta un
+            combate real (fase 6b, subtarea 5.5).
+          </p>
+          <TiradasTab sheet={sheet} />
+        </div>
       )}
       {active === "equipo" && <EquipoTab sheet={sheet} onDesequipar={commitDesequipar} />}
       {active === "tienda" && (
