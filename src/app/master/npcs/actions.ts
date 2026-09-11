@@ -10,6 +10,7 @@
 // (llega en 5.1) — esto es el esqueleto, verificado con smoke test manual,
 // mismo patrón que combate/actions.ts en la subtarea 1.3.
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
 import {
@@ -88,6 +89,21 @@ export async function clonarNpcAction(npcId: string, nuevoNombre: string): Promi
   });
   revalidateNpcs();
   return { ok: true, id: clon.id };
+}
+
+// Envoltorios para <form action={...}> sin JS (5.1, mismo patrón que
+// createCharacter/deleteCharacter en characters/actions.ts): las de arriba
+// devuelven un resultado tipado para llamarse desde un client component,
+// estas dos hablan FormData y navegan solas.
+export async function crearNpcFormAction(formData: FormData) {
+  const res = await crearNpcAction(String(formData.get("nombre") ?? ""));
+  if (res.ok) redirect(`/master/npcs/${res.id}`);
+}
+
+export async function eliminarNpcFormAction(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  await eliminarNpcAction(id);
 }
 
 export async function eliminarNpcAction(npcId: string): Promise<NpcResult> {

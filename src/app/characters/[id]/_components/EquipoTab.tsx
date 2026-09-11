@@ -92,7 +92,10 @@ export function EquipoTab({
   onDesequipar,
 }: {
   sheet: Sheet;
-  creditos: number;
+  // Ausente para un NPC (fase 6b 5.1): no lleva cartera de créditos que
+  // enseñar, así que el bloque de fondos se oculta entero en vez de
+  // inventarse un número.
+  creditos?: number;
   onDesequipar: (instanciaId: string) => void;
 }) {
   if (sheet.equipo.length === 0) {
@@ -102,7 +105,7 @@ export function EquipoTab({
           <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
             {"//SYSTEM · equipo"}
           </p>
-          <Fondos creditos={creditos} />
+          {creditos !== undefined && <Fondos creditos={creditos} />}
         </div>
         <p className="mt-2 font-sans text-sm leading-relaxed text-muted">
           No llevas nada equipado. Ve a la Tienda para coger algo.
@@ -131,7 +134,7 @@ export function EquipoTab({
         <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
           {"//SYSTEM · equipo"}
         </p>
-        <Fondos creditos={creditos} />
+        {creditos !== undefined && <Fondos creditos={creditos} />}
       </div>
       {armaduras.map((a) => {
         const cat = equipoPorId(a.catalogoId) as Armadura;

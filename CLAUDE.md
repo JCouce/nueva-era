@@ -116,24 +116,21 @@ Qué está hecho y qué falta vive en `docs/tareas.md` — es la única fuente d
 proyecto, no lo dupliques aquí.
 
 ## NPCs — "¿cómo creo un NPC?"
-**Todavía no hay UI para esto** (llega en la subtarea 5.1 de `docs/fase-6b.md`, el gestor
-de combate). Cada NPC lleva **ficha obligatoria** (mismo `Sheet` que un `Character` —
-decisión 2026-09-11, ver "Catálogo de NPCs — rediseño" en `docs/fase-6b.md`): no hay modo
-sin ficha, y no hay ad-hoc suelto en la consola de combate — todo NPC sale de una
-plantilla del catálogo. Hoy, sin esa UI, se hace con un script:
+Desde `/master/npcs` (tab **NPC** del panel de máster): botón "+" para crear, click en
+una card para editar su ficha (Identidad/Atributos/Habilidades/Equipo/Tienda),
+"Borrar" en la propia card para eliminarla. Cada NPC lleva **ficha obligatoria** (mismo
+`Sheet` que un `Character` — decisión 2026-09-11, ver "Catálogo de NPCs — rediseño" en
+`docs/fase-6b.md`): no hay modo sin ficha, y no hay ad-hoc suelto en la consola de
+combate — todo NPC sale de una plantilla del catálogo. La edición es "libre" (sin
+point-buy, sin XP, sin tope de rareza): el máster clampa cualquier valor directo contra
+los límites del sistema, en las dos direcciones (`master/npcs/actions.ts`).
 
-1. Abre `scripts/seed-npcs.mjs` y añade tu NPC al array `SAMPLES`: `nombre`, `nota`
-   (texto libre, opcional) y `stats` — construido con el helper `sheet({ atributos, habilidades })`
-   que ya trae el propio script (solo hace falta listar lo que se sale del default).
-2. `npm run seed-npcs`.
+Meterlo en un combate desde el catálogo es la subtarea 5.2, todavía sin UI —
+`agregarNpcDeCatalogoAction` ya existe.
 
-Es **upsert por `nombre`**: si lo vuelves a correr con datos distintos para un NPC que ya
-existe, lo actualiza en vez de duplicarlo — edita el array y relanza tantas veces como
-quieras mientras iteras. Necesita Postgres levantado (ya lo está si `npm run dev` está
-corriendo; si no, `npm run db:up`).
-
-Esto es un atajo mientras no existe la 5.1, no el método definitivo — cuando esa subtarea
-se cierre, esta sección se sustituye por cómo se hace desde la UI del máster.
+`scripts/seed-npcs.mjs` (`npm run seed-npcs`) sigue disponible para sembrar varios NPCs
+de golpe por código en vez de uno a uno en la UI — upsert por `nombre`, útil para datos
+de ejemplo o pruebas masivas, no es ya el único camino.
 
 ## Deploy — "¿cómo hago deploy?"
 **Un `git push origin main` es el deploy completo. No hay pasos manuales aparte.**

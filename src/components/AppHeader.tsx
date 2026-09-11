@@ -17,21 +17,15 @@ export function AppHeader({
           ‹ {back.label}
         </Link>
       ) : (
+        // Cabecera bifurcada (fase 6b, diseño del panel de máster, 2026-09-11):
+        // "Nueva Era Master" en vez de un badge aparte junto al nombre — el
+        // badge "MÁSTER" que había antes duplicaba la misma información.
         <Link href="/characters" className="text-base font-bold tracking-tight">
-          Nueva Era
+          Nueva Era{role === "MASTER" && <span className="text-accent"> Master</span>}
         </Link>
       )}
       <div className="flex items-center gap-3">
-        {name && (
-          <span className="text-sm text-zinc-400">
-            {name}
-            {role === "MASTER" && (
-              <span className="ml-1 rounded bg-accent px-1.5 py-0.5 text-xs font-semibold text-black">
-                MÁSTER
-              </span>
-            )}
-          </span>
-        )}
+        {name && <span className="text-sm text-zinc-400">{name}</span>}
         {role === "MASTER" && (
           <Link href="/master" className="text-sm text-zinc-400 underline-offset-4 hover:underline">
             Panel

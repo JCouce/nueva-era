@@ -121,6 +121,25 @@
   );
 }
 
+/* Pulso de núcleo — glow que respira en vez de solo estar encendido, para el
+   único botón que el usuario pidió "deslumbrante" de verdad (fase 6b 5.1,
+   crear NPC): mismo token shadow-glow-yellow en reposo, se infla en el pico. */
+@keyframes pulso-nucleo {
+  0%,
+  100% {
+    box-shadow: var(--shadow-glow-yellow);
+  }
+  50% {
+    box-shadow:
+      0 0 10px #fcee0acc,
+      0 0 34px #fcee0a99,
+      0 0 58px #fcee0a4d;
+  }
+}
+@utility animate-pulso-nucleo {
+  animation: pulso-nucleo 2.4s ease-in-out infinite;
+}
+
 /* Aberración cromática en texto (glitch RGB split) */
 @utility text-glitch {
   text-shadow:

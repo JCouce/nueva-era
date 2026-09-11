@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
 import { AppHeader } from "@/components/AppHeader";
 import { HudCard } from "@/components/HudCard";
+import { MasterTabs } from "@/components/MasterTabs";
 import { StatusControl, ResourceRow } from "./MasterControls";
 
 export default async function MasterPage() {
@@ -25,16 +26,7 @@ export default async function MasterPage() {
         <h1 className="mb-4 font-display text-2xl font-bold uppercase tracking-wide">
           Panel del máster
         </h1>
-
-        <Link
-          href="/master/combate"
-          className="clip-chamfer mb-6 flex items-center justify-between border border-border bg-surface px-4 py-3 transition hover:border-accent"
-        >
-          <span className="font-display text-base font-medium uppercase tracking-wide">
-            Gestor de combate
-          </span>
-          <span className="font-mono text-xs text-muted">›</span>
-        </Link>
+        <MasterTabs />
 
         <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted">
           Pendientes de aprobar ({pendientes.length})

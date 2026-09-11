@@ -636,16 +636,50 @@ enemigo ataque de verdad, solo llevar la cuenta de su PG a ojo. Con encuentros d
   **Sin UI para las acciones de `master/npcs/actions.ts` todavía** — llega en la 5.1, ahí
   se verifican de punta a punta en el navegador.
 
-- [ ] **5.1 — UI del máster para `NpcTemplate` con ficha.** Diseño ya decidido (punto 4
-  de arriba): panel de máster en tabs horizontales (Jugadores/Combate/NPC), header
-  "Nueva Era Master", catálogo en cards con botón "+" para crear, filtros/orden en
-  cliente. Crear/editar/listar la ficha en sí reutilizando lo que tenga sentido de
-  `characters/[id]/_components/*Tab.tsx` (`AtributosTab`/`HabilidadesTab`/`EquipoTab` en
-  modo "edición directa", sin point-buy ni tope de rareza) en vez de construir un editor
-  desde cero. **Al cerrarla, actualiza la sección "NPCs" de `CLAUDE.md`** — hoy
-  documenta `npm run seed-npcs` como atajo explícito porque esto no existe; que no se
-  quede diciendo eso cuando ya haya UI de verdad. Sigue sin decidir qué es
-  "especialización" en la card (punto 4 de arriba) — no bloquea el resto.
+- [x] **5.1 — UI del máster para `NpcTemplate` con ficha.** Hecha (2026-09-11).
+  **Header bifurcado**: `AppHeader.tsx` — "Nueva Era **Master**" (Master en naranja)
+  cuando `role === "MASTER"`, y se quitó el badge "MÁSTER" que había junto al nombre (la
+  decisión pendiente del punto 4: el título ya basta, no duplicar).
+  **`MasterTabs.tsx`** (nuevo, `src/components/`): tabs horizontales
+  Jugadores/Combate/NPC — de navegación real (cada uno su propio RSC en
+  `/master`/`/master/combate`/`/master/npcs`), no un switch de cliente; resalta por
+  `pathname`. Metido en las tres páginas; la tarjeta-enlace "Gestor de combate" que
+  vivía en `/master` desapareció (la sustituye la tab).
+  **`/master/npcs`** (nuevo): cards nombre + Poder (5.0b) + nota, "Borrar" inline.
+  Formulario de alta arriba (`crearNpcFormAction`, nuevo en `actions.ts`, mismo patrón
+  sin JS que `createCharacter`) — es el único botón al que se le pidió que se saliera
+  del lenguaje visual estándar: `animate-pulso-nucleo` (keyframe nuevo en
+  `globals.css`, el glow respira en vez de estar fijo).
+  **`/master/npcs/[id]`** (nuevo, `NpcEditor.tsx`): tabs Identidad (nombre+nota,
+  debounced)/Atributos/Habilidades/Equipo/Tienda. Reutiliza
+  `AtributosTab`/`HabilidadesTab`/`EquipoTab`/`TiendaTab` de
+  `characters/[id]/_components/` tal cual pidió el diseño, con un prop nuevo `libre`
+  (`creditos` pasa a opcional en Equipo/Tienda) que en los cuatro casos: oculta la barra
+  de puntos/XP y el número de créditos, sube el tope al del sistema
+  (`ATRIBUTO_MAX`/`HABILIDAD_MAX`) y deja bajar/subir libre en las dos direcciones —
+  sin tocar el camino del jugador (los cuatro props son opcionales, `libre` por defecto
+  `false`). Sin cola de autosave con estado optimista como `CharacterSheet.tsx`: cada
+  cambio es un único viaje al servidor y se pinta lo que devuelve — no hay carreras que
+  evitar editando una plantilla, a diferencia del autosave en vivo de un jugador.
+  **Deliberadamente fuera de esta subtarea** (backend no lo expone, ver 5.0): especie/
+  edad/altura/trasfondo/motivación del NPC — la ficha del combatiente no los necesita
+  hoy y añadir esa acción sin que se pidiera habría sido rellenar un hueco en silencio,
+  no una decisión tomada. Si hace falta especie por sus efectos derivados (movimiento,
+  salud…), es una subtarea aparte, no un añadido de última hora aquí.
+  **Verificación**: `tsc`, lint y 315/315 tests limpios. El Chrome del MCP
+  `chrome-devtools` estaba ocupado por otra sesión (la trampa de `traspaso.md` §5) y la
+  extensión `claude-in-chrome` no conectó — verificado en su lugar con peticiones HTTP
+  reales contra Postgres local: login del usuario de prueba `master`, SSR de
+  `/master/npcs` y `/master/npcs/[id]` con el contenido esperado, y un alta+borrado de
+  NPC de punta a punta a través del propio formulario sin JS (`crearNpcFormAction` →
+  redirect a la ficha nueva → `eliminarNpcFormAction` → desaparece del listado), dato de
+  prueba borrado al terminar. **Sin confirmar todavía con JS real en el navegador**: los
+  steppers de Atributos/Habilidades y equipar/desequipar (Tienda/Equipo) llaman a server
+  actions tipadas desde el cliente, no a través de un `<form>` — esas no se pueden
+  replicar por HTTP a pelo. Queda pendiente un vistazo en Chrome de verdad en cuanto el
+  MCP esté libre. Sigue sin decidir qué es "especialización" en la card (punto 4 de
+  arriba) — no bloquea el resto.
+  **`CLAUDE.md`, sección NPCs**: actualizada — ya no dice "todavía no hay UI".
 - [ ] **5.2 — Añadir al combate desde catálogo.** Ahora es la **única** vía para meter
   un NPC en un combate (el ad-hoc desapareció) — sin esto, la consola no puede añadir
   NPCs en absoluto. `agregarNpcDeCatalogoAction` ya está lista (5.0).

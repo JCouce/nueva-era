@@ -534,15 +534,22 @@ export function TiendaTab({
   sheet,
   creditos,
   topeRareza,
+  // NPC (fase 6b 5.1): el máster no tiene cartera que gastar ni tope de
+  // rareza (mismo criterio que master/npcs/actions.ts) — todo el catálogo
+  // sale siempre "asequible" y se oculta el número de créditos, que aquí no
+  // significaría nada real.
+  libre = false,
   onEquipar,
 }: {
   sheet: Sheet;
-  creditos: number;
+  creditos?: number;
   topeRareza: Rareza | null;
+  libre?: boolean;
   onEquipar: (p: PiezaEquipada) => void;
 }) {
   const [categoria, setCategoria] = useState<CategoriaId>("armaduras");
   const [soloCompatible, setSoloCompatible] = useState(false);
+  const creditosEfectivos = libre ? Number.POSITIVE_INFINITY : creditos!;
 
   const filtrar = <T extends MejoraEstandar | Subsistema | MejoraDeArma | MejoraMovimiento>(
     piezas: readonly T[],
@@ -561,9 +568,13 @@ export function TiendaTab({
             </p>
           )}
         </div>
-        <p className="font-mono text-sm tabular-nums text-accent">
-          {creditos.toLocaleString("es-ES")} <span className="text-[10px] text-muted">cr.</span>
-        </p>
+        {libre ? (
+          <p className="font-mono text-[10px] uppercase tracking-widest text-info">Edición libre</p>
+        ) : (
+          <p className="font-mono text-sm tabular-nums text-accent">
+            {creditos!.toLocaleString("es-ES")} <span className="text-[10px] text-muted">cr.</span>
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-2">
@@ -610,7 +621,7 @@ export function TiendaTab({
               }
             >
               <DetalleArmadura p={p} />
-              <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
+              <AccionSimple pieza={p} creditos={creditosEfectivos} topeRareza={topeRareza} onEquipar={onEquipar} />
             </Acordeon>
           ))}
 
@@ -636,7 +647,7 @@ export function TiendaTab({
                     }
                   >
                     <DetalleArma p={p} />
-                    <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
+                    <AccionSimple pieza={p} creditos={creditosEfectivos} topeRareza={topeRareza} onEquipar={onEquipar} />
                   </Acordeon>
                 ))}
               </div>
@@ -648,7 +659,7 @@ export function TiendaTab({
             piezas={filtrar(MEJORAS_ESTANDAR)}
             mensajeVacio={SIN_COMPATIBLES.mejorasEstandar}
             sheet={sheet}
-            creditos={creditos}
+            creditos={creditosEfectivos}
             topeRareza={topeRareza}
             onEquipar={onEquipar}
           />
@@ -659,7 +670,7 @@ export function TiendaTab({
             piezas={filtrar(SUBSISTEMAS)}
             mensajeVacio={SIN_COMPATIBLES.subsistemas}
             sheet={sheet}
-            creditos={creditos}
+            creditos={creditosEfectivos}
             topeRareza={topeRareza}
             onEquipar={onEquipar}
           />
@@ -670,7 +681,7 @@ export function TiendaTab({
             piezas={filtrar(MEJORAS_ARMA)}
             mensajeVacio={SIN_COMPATIBLES.mejorasArma}
             sheet={sheet}
-            creditos={creditos}
+            creditos={creditosEfectivos}
             topeRareza={topeRareza}
             onEquipar={onEquipar}
           />
@@ -681,7 +692,7 @@ export function TiendaTab({
             piezas={filtrar(MOVIMIENTO)}
             mensajeVacio={SIN_COMPATIBLES.movimiento}
             sheet={sheet}
-            creditos={creditos}
+            creditos={creditosEfectivos}
             topeRareza={topeRareza}
             onEquipar={onEquipar}
           />
@@ -701,7 +712,7 @@ export function TiendaTab({
               }
             >
               <DetalleArmaMelee p={p} />
-              <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
+              <AccionSimple pieza={p} creditos={creditosEfectivos} topeRareza={topeRareza} onEquipar={onEquipar} />
             </Acordeon>
           ))}
 
@@ -719,7 +730,7 @@ export function TiendaTab({
               }
             >
               <DetalleArmaMelee p={p} />
-              <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
+              <AccionSimple pieza={p} creditos={creditosEfectivos} topeRareza={topeRareza} onEquipar={onEquipar} />
             </Acordeon>
           ))}
 
@@ -733,7 +744,7 @@ export function TiendaTab({
               <DetalleModulo p={VALIJA_TACTICA_MEDICA} />
               <AccionHerramienta
                 pieza={VALIJA_TACTICA_MEDICA}
-                creditos={creditos}
+                creditos={creditosEfectivos}
                 topeRareza={topeRareza}
                 onEquipar={onEquipar}
               />
@@ -754,7 +765,7 @@ export function TiendaTab({
                 }
               >
                 <DetalleConsumible p={p} />
-                <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
+                <AccionSimple pieza={p} creditos={creditosEfectivos} topeRareza={topeRareza} onEquipar={onEquipar} />
               </Acordeon>
             ))}
           </>
@@ -767,7 +778,7 @@ export function TiendaTab({
                 <DetalleModulo p={h} />
                 <AccionHerramienta
                   pieza={h}
-                  creditos={creditos}
+                  creditos={creditosEfectivos}
                   topeRareza={topeRareza}
                   onEquipar={onEquipar}
                 />
@@ -789,7 +800,7 @@ export function TiendaTab({
                 }
               >
                 <DetalleConsumible p={p} />
-                <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
+                <AccionSimple pieza={p} creditos={creditosEfectivos} topeRareza={topeRareza} onEquipar={onEquipar} />
               </Acordeon>
             ))}
           </>
@@ -810,7 +821,7 @@ export function TiendaTab({
                 }
               >
                 <DetalleArmaPesada p={p} />
-                <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
+                <AccionSimple pieza={p} creditos={creditosEfectivos} topeRareza={topeRareza} onEquipar={onEquipar} />
               </Acordeon>
             ))}
             <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
@@ -829,7 +840,7 @@ export function TiendaTab({
                 }
               >
                 <DetalleGranada p={p} />
-                <AccionSimple pieza={p} creditos={creditos} topeRareza={topeRareza} onEquipar={onEquipar} />
+                <AccionSimple pieza={p} creditos={creditosEfectivos} topeRareza={topeRareza} onEquipar={onEquipar} />
               </Acordeon>
             ))}
           </>

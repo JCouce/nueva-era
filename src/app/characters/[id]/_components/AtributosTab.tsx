@@ -28,30 +28,38 @@ export function AtributosTab({
   puntosDisponibles,
   aprobada,
   xp,
+  libre = false,
   onSet,
 }: {
   sheet: Sheet;
-  puntosDisponibles: number;
-  aprobada: boolean;
-  xp: number;
+  // No aplican en modo libre (edición de NPC, fase 6b 5.1: el máster no
+  // tiene pool que gastar ni XP que llevar — clampa directo contra los
+  // límites del sistema, en las dos direcciones). Opcionales para no
+  // obligar al caller de ese modo a inventarse un valor sin sentido.
+  puntosDisponibles?: number;
+  aprobada?: boolean;
+  xp?: number;
+  libre?: boolean;
   onSet: (id: AtributoId, value: number) => void;
 }) {
   // Se calculan una vez y se pasan hacia abajo: evita recalcular la especie
   // por cada atributo y cada aplicado del render.
   const mods = modificadoresActivos(sheet);
-  // Tras aprobar, el "pool" es la XP del personaje y el techo pasa a ser el
-  // del sistema, no el de creación — mismo coste por nivel, otra cuenta.
-  const tope = aprobada ? ATRIBUTO_MAX : ATRIBUTO_MAX_CREACION;
-  const disponible = aprobada ? xp : puntosDisponibles;
+  // Tras aprobar (o en modo libre), el techo pasa a ser el del sistema, no
+  // el de creación — mismo coste por nivel, otra cuenta.
+  const tope = libre || aprobada ? ATRIBUTO_MAX : ATRIBUTO_MAX_CREACION;
+  const disponible = libre ? Infinity : aprobada ? xp! : puntosDisponibles!;
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
-        <span className="uppercase tracking-wide text-muted">{aprobada ? "XP" : "Puntos"}</span>
-        <span className={`tabular-nums ${disponible < 0 ? "text-danger" : "text-accent"}`}>
-          {disponible}
-        </span>
-      </div>
+      {!libre && (
+        <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
+          <span className="uppercase tracking-wide text-muted">{aprobada ? "XP" : "Puntos"}</span>
+          <span className={`tabular-nums ${disponible < 0 ? "text-danger" : "text-accent"}`}>
+            {disponible}
+          </span>
+        </div>
+      )}
 
       {ATRIBUTOS.map((a) => {
         const value = sheet.atributos[a.id];
@@ -73,9 +81,9 @@ export function AtributosTab({
               </div>
               <Stepper
                 value={value}
-                hint={value >= tope ? "MÁX" : `${costeSiguiente} ${aprobada ? "xp" : "pts"}`}
-                canBuy={disponible >= costeSiguiente}
-                atMin={aprobada || value <= ATRIBUTO_MIN}
+                hint={value >= tope ? "MÁX" : libre ? "" : `${costeSiguiente} ${aprobada ? "xp" : "pts"}`}
+                canBuy={libre || disponible >= costeSiguiente}
+                atMin={libre ? value <= ATRIBUTO_MIN : aprobada || value <= ATRIBUTO_MIN}
                 atMax={value >= tope}
                 onBuy={() => onSet(a.id, value + 1)}
                 onSell={() => onSet(a.id, value - 1)}

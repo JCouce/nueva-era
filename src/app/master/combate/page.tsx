@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
 import { AppHeader } from "@/components/AppHeader";
+import { MasterTabs } from "@/components/MasterTabs";
 import type { EstadoActivo } from "@/lib/rules";
 import { CombateConsole } from "./CombateConsole";
 
@@ -40,11 +41,12 @@ export default async function CombatePage() {
 
   return (
     <>
-      <AppHeader name={user.name} role={user.role} back={{ href: "/master", label: "Panel" }} />
+      <AppHeader name={user.name} role={user.role} />
       <main className="mx-auto w-full max-w-md flex-1 px-4 py-5">
         <h1 className="mb-4 font-display text-2xl font-bold uppercase tracking-wide">
           Gestor de combate
         </h1>
+        <MasterTabs />
         <CombateConsole combate={combate} characters={characters} />
       </main>
     </>

@@ -103,29 +103,34 @@ export function HabilidadesTab({
   puntosDisponibles,
   aprobada,
   xp,
+  libre = false,
   onSet,
   onAddEspecialidad,
   onRemoveEspecialidad,
 }: {
   sheet: Sheet;
-  puntosDisponibles: number;
-  aprobada: boolean;
-  xp: number;
+  // No aplican en modo libre (edición de NPC, fase 6b 5.1) — ver AtributosTab.
+  puntosDisponibles?: number;
+  aprobada?: boolean;
+  xp?: number;
+  libre?: boolean;
   onSet: (id: HabilidadId, value: number) => void;
   onAddEspecialidad: (id: HabilidadId, nombre: string) => void;
   onRemoveEspecialidad: (id: HabilidadId, nombre: string) => void;
 }) {
-  const tope = aprobada ? HABILIDAD_MAX : HABILIDAD_MAX_CREACION;
-  const disponible = aprobada ? xp : puntosDisponibles;
+  const tope = libre || aprobada ? HABILIDAD_MAX : HABILIDAD_MAX_CREACION;
+  const disponible = libre ? Infinity : aprobada ? xp! : puntosDisponibles!;
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
-        <span className="uppercase tracking-wide text-muted">{aprobada ? "XP" : "Puntos"}</span>
-        <span className={`tabular-nums ${disponible < 0 ? "text-danger" : "text-accent"}`}>
-          {disponible}
-        </span>
-      </div>
+      {!libre && (
+        <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
+          <span className="uppercase tracking-wide text-muted">{aprobada ? "XP" : "Puntos"}</span>
+          <span className={`tabular-nums ${disponible < 0 ? "text-danger" : "text-accent"}`}>
+            {disponible}
+          </span>
+        </div>
+      )}
 
       <p className="font-mono text-[11px] leading-relaxed text-muted">
         Sin entrenar tiras a −1. En tu especialidad usas el valor entero; fuera de
@@ -154,9 +159,9 @@ export function HabilidadesTab({
               </div>
               <Stepper
                 value={valor}
-                hint={valor >= tope ? "MÁX" : `${costeSiguiente} ${aprobada ? "xp" : "pts"}`}
-                canBuy={disponible >= costeSiguiente}
-                atMin={aprobada || valor <= HABILIDAD_NO_ENTRENADA}
+                hint={valor >= tope ? "MÁX" : libre ? "" : `${costeSiguiente} ${aprobada ? "xp" : "pts"}`}
+                canBuy={libre || disponible >= costeSiguiente}
+                atMin={libre ? valor <= HABILIDAD_NO_ENTRENADA : aprobada || valor <= HABILIDAD_NO_ENTRENADA}
                 atMax={valor >= tope}
                 onBuy={() => onSet(h.id, siguiente)}
                 onSell={() =>
@@ -169,7 +174,12 @@ export function HabilidadesTab({
               <Especialidades
                 id={h.id}
                 nombres={especialidades}
-                puntosDisponibles={puntosDisponibles}
+                // Mismo valor que recibía antes de "libre" (el pool de
+                // creación tal cual, sin tocar el criterio existente del
+                // resto de la ficha) — solo se sustituye por Infinity en
+                // modo libre, para no cambiar de paso el comportamiento del
+                // jugador.
+                puntosDisponibles={libre ? Infinity : puntosDisponibles!}
                 onAdd={onAddEspecialidad}
                 onRemove={onRemoveEspecialidad}
               />
