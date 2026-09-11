@@ -8,6 +8,7 @@
 import { useRef, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { HudCard } from "@/components/HudCard";
+import { usePollingCombate } from "@/hooks/usePollingCombate";
 import { ESTADOS, estadoPorId, describirEstadosActivos, type EstadoActivo } from "@/lib/rules";
 import {
   crearCombateAction,
@@ -63,6 +64,10 @@ export function CombateConsole({
   const [error, setError] = useState<string | null>(null);
   const [npcNombre, setNpcNombre] = useState("");
   const [npcPg, setNpcPg] = useState("");
+  // 4.1: mientras haya un combate en curso, alguien más (otra pestaña, el
+  // jugador desde su ficha) puede cambiarlo sin que esta pantalla se
+  // entere hasta el próximo refresh manual — esto lo hace solo.
+  usePollingCombate(combate !== null);
   // Un input sin control de React por combatiente (subtarea 2.4): con la
   // cola llena, un estado controlado por fila fuerza un re-render de toda
   // la lista en cada tecla. Se lee del DOM al aplicar y se limpia a mano.

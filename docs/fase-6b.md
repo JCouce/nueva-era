@@ -426,10 +426,37 @@ de validar el MVP en mesa real).
 
 ## Bloque 4 — Reactividad
 
-- [ ] **4.1 — Polling inteligente.** Hook compartido: activo solo mientras hay un
-  `Combate EN_CURSO`, se pausa si la pestaña está en background
+- [x] **4.1 — Polling inteligente.** Hecha (2026-09-11). Hook compartido: activo solo
+  mientras hay un `Combate EN_CURSO`, se pausa si la pestaña está en background
   (`document.visibilitychange` o el equivalente de la librería de fetching que se elija),
   intervalo corto (3-5s), refresco manual como red de seguridad.
+  **Implementación:** `src/hooks/usePollingCombate.ts` (nuevo — primer hook compartido
+  del proyecto, no había convención previa que seguir). `useEffect` con `setInterval`
+  llamando a `router.refresh()` cada 4s mientras `activo` es `true`; un listener de
+  `visibilitychange` para el `setInterval`/`clearInterval` según `document.hidden`, con
+  cleanup completo al desmontar. Sin fetch propio ni endpoint nuevo — ambas páginas
+  (`master/combate/page.tsx`, `characters/[id]/page.tsx`) ya son Server Components que
+  leen el `Combate EN_CURSO` directo de Prisma, así que `router.refresh()` re-ejecuta ese
+  mismo fetch, sin duplicar la query en el cliente. Enganchado con
+  `usePollingCombate(combate !== null)` en `CombateConsole.tsx` (máster) y
+  `CharacterSheet.tsx` (jugador) — la condición `activo` ya existía en ambos sitios
+  como el mismo `combate !== null` que decide si se pinta la UI de combate.
+  **Por qué es seguro en `CharacterSheet.tsx` sin pisar la edición en curso:**
+  `sheet`/`name`/`xp`/`creditos` viven en `useState` ya montado (solo cambian vía
+  autosave); un refresh de fondo solo trae fresco lo que se lee directo de la prop
+  `combate` en cada render (`miCombatiente`, estados, PG/fatiga) — nunca resetea lo que
+  el jugador esté tocando en otro tab en ese momento.
+  **Verificado en Chrome con dos sesiones reales a la vez** (máster + jugador de prueba,
+  contextos aislados, datos borrados al terminar): aplicado un delta de PG desde el
+  máster sin tocar la pestaña del jugador, la tira de combate del jugador pasó de "8/8
+  pv" a "4/8 pv" sola, sin recargar, confirmado con `wait_for` (dentro de los 9s de
+  margen sobre el intervalo de 4s). Pausa en background confirmada contando peticiones
+  de red: forzado `document.hidden = true` + `visibilitychange` a mano (el propio MCP de
+  Chrome no simula pérdida real de foco entre pestañas de una misma ventana), 0
+  peticiones nuevas mientras estuvo "oculta"; restaurada la visibilidad, el polling
+  retomó solo (peticiones `_rsc=` nuevas de inmediato). `tsc`, 306/306 tests y lint
+  limpios — sin test de motor porque no hay ninguna fórmula nueva, es infraestructura de
+  UI ya cubierta por la verificación en vivo.
 - [ ] **4.2 — (Evaluar después de probar en mesa) Migrar a SSE si el polling se siente
   lento.** No es parte del MVP (D3) — anotado aquí para que no se pierda si hace falta.
   **Sobre `Postgres LISTEN/NOTIFY` como alternativa (charla 2026-09-11, sin construir

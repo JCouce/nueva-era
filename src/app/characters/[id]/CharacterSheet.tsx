@@ -43,6 +43,7 @@ import { TiradasTab } from "./_components/TiradasTab";
 import { TiendaTab } from "./_components/TiendaTab";
 import { EquipoTab } from "./_components/EquipoTab";
 import { CombateTab, type CombateView } from "./_components/CombateTab";
+import { usePollingCombate } from "@/hooks/usePollingCombate";
 
 // Tres grupos, no una lista plana: la ficha en sí (fila 1), lo que el
 // personaje hace o lleva (fila 2, izquierda) y el catálogo — que no es del
@@ -128,6 +129,14 @@ export function CharacterSheet({
   const [xp, setXp] = useState(initialXp);
   const [creditos, setCreditos] = useState(initialCreditos);
   const [status, setStatus] = useState<SaveStatus>("idle");
+
+  // 4.1: solo mientras el personaje está en el combate — para el resto de
+  // la ficha (fuera de combate) no hay nada que otra pestaña pueda cambiar
+  // por su cuenta. Seguro para el resto del estado de este componente:
+  // `sheet`/`name`/`xp`/`creditos` viven en useState ya montado, así que un
+  // refresh no los pisa — solo trae fresco lo que se lee directo de props
+  // en cada render, que es `combate`.
+  usePollingCombate(combate !== null);
 
   // Derivado durante el render, no sincronizado en un efecto (ver "you
   // might not need an effect" de React): si `combate` desaparece entre una
