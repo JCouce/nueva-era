@@ -6,14 +6,18 @@ import type { EstadoActivo } from "@/lib/rules";
 import { CombateConsole } from "./CombateConsole";
 
 // Fase 6b (docs/fase-6b.md), subtarea 2.1: la consola de combate en sí. Solo
-// un Combate EN_CURSO a la vez (D1 del brainstorm), así que no hay id en la
-// URL — esta ruta ES el combate activo, o la pantalla para crear uno.
+// un combate abierto a la vez (D1 del brainstorm), así que no hay id en la
+// URL — esta ruta ES el combate activo (preparándose o en curso), o la
+// pantalla para crear uno. PREPARANDO también cuenta como "abierto" aquí —
+// el máster necesita ver la consola para montar la escena antes de pulsar
+// "Comenzar combate" (a diferencia de characters/[id]/page.tsx, que solo
+// busca EN_CURSO: el jugador no ve nada hasta que el máster empieza).
 export default async function CombatePage() {
   const user = await requireUser();
   if (user.role !== "MASTER") redirect("/characters");
 
   const combateRaw = await prisma.combate.findFirst({
-    where: { estado: "EN_CURSO" },
+    where: { estado: { in: ["PREPARANDO", "EN_CURSO"] } },
     include: { combatientes: { orderBy: { orden: "asc" } } },
   });
 

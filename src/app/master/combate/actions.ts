@@ -32,15 +32,44 @@ async function ordenSiguiente(combateId: string): Promise<number> {
 
 // --- Combate ---
 
-// Una sola EN_CURSO a la vez (docs/fase-6b.md, D1) — se comprueba aquí, no
-// en el schema: no hay forma limpia de expresarlo en Prisma sin SQL a mano.
+// Una sola instancia abierta a la vez (PREPARANDO o EN_CURSO, docs/fase-6b.md
+// D1) — se comprueba aquí, no en el schema: no hay forma limpia de
+// expresarlo en Prisma sin SQL a mano.
 export async function crearCombateAction(): Promise<CombateResult> {
   if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede crear un combate." };
 
-  const enCurso = await prisma.combate.findFirst({ where: { estado: "EN_CURSO" } });
-  if (enCurso) return { ok: false, error: "Ya hay un combate en curso." };
+  const abierto = await prisma.combate.findFirst({
+    where: { estado: { in: ["PREPARANDO", "EN_CURSO"] } },
+  });
+  if (abierto) return { ok: false, error: "Ya hay un combate abierto." };
 
+  // Nace en PREPARANDO (default del schema): el máster monta la escena sin
+  // que nadie más lo vea hasta que pulse "Comenzar combate".
   await prisma.combate.create({ data: {} });
+  revalidateCombate();
+  return { ok: true };
+}
+
+// Separada de crearCombateAction a propósito (pedido explícito del usuario,
+// 2026-09-11): antes "crear" ya dejaba el combate EN_CURSO de inmediato, así
+// que el jugador podía ver combatientes a medio montar antes de que el
+// máster estuviera listo. Ahora el paso de PREPARANDO a EN_CURSO es una
+// decisión aparte, y es justo lo que decide cuándo el jugador empieza a ver
+// algo (characters/[id]/page.tsx solo busca EN_CURSO) y cuándo arranca el
+// polling (4.1, mismo criterio).
+export async function comenzarCombateAction(combateId: string): Promise<CombateResult> {
+  if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede comenzar el combate." };
+
+  const combate = await prisma.combate.findUnique({ where: { id: combateId } });
+  if (!combate) return { ok: false, error: "No existe ese combate." };
+  if (combate.estado !== "PREPARANDO") {
+    return { ok: false, error: "Ese combate ya no está en preparación." };
+  }
+
+  await prisma.combate.update({
+    where: { id: combateId },
+    data: { estado: "EN_CURSO", iniciadoAt: new Date() },
+  });
   revalidateCombate();
   return { ok: true };
 }
@@ -174,6 +203,7 @@ export async function avanzarTurnoAction(combateId: string): Promise<CombateResu
     include: { combatientes: { orderBy: { orden: "asc" } } },
   });
   if (!combate) return { ok: false, error: "No existe ese combate." };
+  if (combate.estado !== "EN_CURSO") return { ok: false, error: "El combate todavía no ha empezado." };
   if (combate.combatientes.length === 0) return { ok: false, error: "No hay combatientes en la cola." };
 
   const siguiente = combate.turnoIndex + 1;

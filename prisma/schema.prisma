@@ -18,6 +18,7 @@ enum CharacterStatus {
 }
 
 enum EstadoCombate {
+  PREPARANDO
   EN_CURSO
   TERMINADO
 }
@@ -66,7 +67,13 @@ model Character {
 // el máster, igual que xp/creditos — mismo motivo, ver docs/traspaso.md §9.
 model Combate {
   id           String        @id @default(cuid())
-  estado       EstadoCombate @default(EN_CURSO)
+  // PREPARANDO: el máster monta la escena (añade gente, iniciativa,
+  // estados...) sin que nadie más lo vea todavía. EN_CURSO: el máster le
+  // dio a "Comenzar combate" — a partir de ahí los jugadores lo ven en su
+  // ficha (D5) y el polling empieza a refrescar. Separado a propósito de
+  // "crear combate": antes ambos pasos eran el mismo botón, y el jugador
+  // veía combatientes a medio montar antes de que el máster estuviera listo.
+  estado       EstadoCombate @default(PREPARANDO)
   ronda        Int           @default(1)
   // Posición dentro del orden de Combatientes (por su campo `orden`), no un
   // id — más simple que una relación con nombre propio, a cambio de que el
@@ -76,6 +83,7 @@ model Combate {
   combatientes Combatiente[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  iniciadoAt   DateTime?
   terminadoAt  DateTime?
 }
 

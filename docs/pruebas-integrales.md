@@ -56,6 +56,9 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
 
 - [x] Camino feliz: sin combate en curso → "Crear combate" → aparece "Ronda 1", cola
   vacía, lista de personajes disponibles.
+  **Desfasado tras `PREPARANDO`:** "Crear combate" ahora deja el combate en
+  "Preparando combate", no en "Ronda 1" — hace falta pulsar el botón nuevo "Comenzar
+  combate" para llegar a ese estado. Ver bloque 2 de `docs/fase-6b.md`.
 - [x] **Ya hay un combate en curso.** Con un combate `EN_CURSO` ya creado, intenta crear
   otro (recarga la página con dos pestañas, o llama a la acción dos veces seguidas antes
   de que la UI se actualice). Debe rechazarlo: "Ya hay un combate en curso." No debe
@@ -63,6 +66,11 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
   Probado con dos pestañas reales sobre el mismo estado "sin combate": crear en la
   primera y, sin recargar, crear en la segunda. Mensaje exacto "Ya hay un combate en
   curso." y `SELECT count(*) FROM "Combate" WHERE estado='EN_CURSO';` devuelve 1.
+  **Desfasado tras la introducción de `PREPARANDO` (2026-09-11, ver `docs/fase-6b.md`
+  bloque 2, "Comenzar combate" separado de "Crear combate"):** el mensaje real ahora es
+  "Ya hay un combate abierto." y la comprobación es contra `PREPARANDO` **o** `EN_CURSO`,
+  no solo `EN_CURSO` — el resto del caso (no debe crearse un segundo `Combate`) sigue
+  vigente tal cual, verificado de nuevo al construir esa subtarea.
 - [x] **Añadir el mismo personaje dos veces.** Añade a "villa" (o quien exista), y sin
   recargar intenta añadirlo otra vez desde la lista (si ya desapareció de "Añadir
   jugador", provoca la llamada igualmente, p. ej. reabriendo la página a mitad). Debe

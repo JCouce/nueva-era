@@ -130,13 +130,20 @@ export function CharacterSheet({
   const [creditos, setCreditos] = useState(initialCreditos);
   const [status, setStatus] = useState<SaveStatus>("idle");
 
-  // 4.1: solo mientras el personaje está en el combate — para el resto de
-  // la ficha (fuera de combate) no hay nada que otra pestaña pueda cambiar
-  // por su cuenta. Seguro para el resto del estado de este componente:
+  // 4.1: SIEMPRE activo aquí, no solo cuando `combate !== null` — a
+  // diferencia de CombateConsole.tsx (donde el máster ve el combate desde
+  // que se crea), el jugador no se entera de nada hasta que el máster pulsa
+  // "Comenzar combate" (PREPARANDO → EN_CURSO, combate/actions.ts). Si el
+  // polling solo arrancara con `combate !== null`, un jugador que cargó la
+  // ficha mientras el combate seguía en preparación se quedaría colgado sin
+  // enterarse nunca de que empezó — bug real encontrado verificando esto
+  // mismo en Chrome. Intervalo largo (15s) mientras no hay nada que ver
+  // (solo para detectar que algo apareció), corto (4s) en cuanto sí lo hay.
+  // Seguro para el resto del estado de este componente:
   // `sheet`/`name`/`xp`/`creditos` viven en useState ya montado, así que un
   // refresh no los pisa — solo trae fresco lo que se lee directo de props
   // en cada render, que es `combate`.
-  usePollingCombate(combate !== null);
+  usePollingCombate(true, combate !== null ? 4000 : 15000);
 
   // Derivado durante el render, no sincronizado en un efecto (ver "you
   // might not need an effect" de React): si `combate` desaparece entre una

@@ -23,36 +23,46 @@
 ## Dónde está la fase ahora mismo
 
 No lo duplico — está todo en `docs/fase-6b.md` — pero el resumen de una línea: **bloques
-0 (motor), 1 (datos y permisos), 2 (consola del máster) y 3 (vista del jugador)
-cerrados**; bloque 4 (reactividad) es el siguiente.
+0 (motor), 1 (datos y permisos), 2 (consola del máster, con la ampliación 2.7) y 3
+(vista del jugador) cerrados**; 4.1 (polling) también hecho — solo queda 4.2, condicional
+a probar en mesa real. Bloque 5 (catálogo de NPCs) es el siguiente trozo de trabajo real.
 
-El bloque 3 quedó **ampliado** sobre el diseño original del 2026-09-11, en una charla con
-el usuario al construirlo (2026-09-10): no solo una tira compacta con el propio
-combatiente, sino también una **tab "Combate"** con la cola completa (todos los
-combatientes, no solo el propio) — sin ver a los demás no hay contexto táctico. Detalle
-completo de por qué y cómo, en la entrada de 3.1 de `docs/fase-6b.md`.
+Dos ampliaciones sobre el diseño original del 2026-09-11, ambas decididas con el usuario
+al construir (no estaban en el brainstorm inicial):
+
+- **Bloque 3 (2026-09-10):** no solo una tira compacta con el propio combatiente, sino
+  también una **tab "Combate"** con la cola completa (todos los combatientes, no solo el
+  propio) — sin ver a los demás no hay contexto táctico. Detalle en la entrada de 3.1.
+- **2.7 (2026-09-11, pedido explícito):** "Comenzar combate" separado de "Crear
+  combate" — `EstadoCombate` gana `PREPARANDO` antes de `EN_CURSO`. El máster monta la
+  escena (añade gente, iniciativa...) sin que el jugador vea nada, y solo cuando pulsa
+  "Comenzar combate" el jugador empieza a verlo (D5). **Ojo con esto si tocas el polling
+  o `characters/[id]/page.tsx`:** ahí se encontró un bug real — el polling estaba
+  condicionado a `combate !== null`, pero esa prop es `null` mientras el jugador no ve
+  el combate (`PREPARANDO`), así que nunca arrancaba y el jugador se quedaba colgado sin
+  enterarse cuando el máster empezaba. Arreglado con un polling siempre activo en la
+  ficha del jugador (intervalo largo mientras no hay nada que ver, corto en cuanto lo
+  hay) — ver la entrada de 2.7 en `docs/fase-6b.md` antes de tocar esta zona otra vez.
 
 D5 (sincronización de un solo sentido, combate → ficha) y D2 (el jugador toca su propio
 combatiente) están verificados de punta a punta con UI real de jugador — antes solo
 tenían cobertura de `permisos.test.ts`.
 
-## El siguiente paso: bloque 4 — Reactividad
+## El siguiente paso: bloque 5 — Catálogo de NPCs y plantillas de encuentro
 
-- **4.1 — Polling inteligente.** Hoy cada acción hace `router.refresh()`, así que quien
-  pulsa el botón ve su propio cambio al instante — pero otra pestaña o dispositivo
-  mirando el mismo combate no se entera hasta que recarga a mano. D3 (decisión ya
-  cerrada): un hook compartido que haga polling corto (3-5s) contra el mismo endpoint de
-  siempre, activo **solo** mientras hay un `Combate EN_CURSO`, pausado si la pestaña está
-  en background (`document.visibilitychange`), con refresco manual como red de
-  seguridad. Nada de websockets ni infraestructura nueva — es mesa física, no hace falta
-  latencia de videojuego online.
-- **4.2 — (Evaluar después de probar en mesa) Migrar a SSE si el polling se siente
-  lento.** No es parte del MVP — no la adelantes sin que 4.1 ya esté en mesa real y se
-  haya notado el problema.
+- **5.1 — UI del máster para `NpcTemplate`.** Crear/editar/listar, mismo patrón de
+  formulario que el resto del panel de máster. Al cerrarla, actualiza la sección "NPCs"
+  de `CLAUDE.md` (hoy documenta `npm run seed-npcs` como atajo explícito porque esto no
+  existe todavía).
+- **5.2 — Añadir al combate desde catálogo**, en vez de solo ad-hoc (2.2).
+  `agregarNpcDeCatalogoAction` existe desde la 1.3, sin UI.
+- **5.3 — Clonar NPC en varias instancias numeradas** ("Goblin #1, #2, #3").
+- **5.4 — Plantillas de encuentro.**
 
-Después del bloque 4 viene el 5 (catálogo de NPCs y plantillas de encuentro) y el 6
-(brillo — niebla, selección múltiple, log, avisos, historial), en ese orden. Detalle de
-sus subtareas en `docs/fase-6b.md`.
+Después viene el bloque 6 (brillo — niebla, selección múltiple, log, avisos, historial),
+después de validar el MVP en mesa real. Detalle de todas las subtareas en
+`docs/fase-6b.md`. **4.2 (SSE si el polling se siente lento) sigue condicional** — no la
+adelantes sin haber probado 4.1 en mesa de verdad.
 
 ## Cómo seguir cogiendo subtareas
 

@@ -12,6 +12,7 @@ import { usePollingCombate } from "@/hooks/usePollingCombate";
 import { ESTADOS, estadoPorId, describirEstadosActivos, type EstadoActivo } from "@/lib/rules";
 import {
   crearCombateAction,
+  comenzarCombateAction,
   terminarCombateAction,
   agregarJugadorAction,
   agregarAdHocAction,
@@ -41,6 +42,9 @@ type CombatienteView = {
 
 type CombateView = {
   id: string;
+  // TERMINADO nunca llega aquí (page.tsx solo busca PREPARANDO/EN_CURSO),
+  // pero se deja el tipo completo por si algún día se lista uno terminado.
+  estado: "PREPARANDO" | "EN_CURSO" | "TERMINADO";
   ronda: number;
   turnoIndex: number;
   combatientes: CombatienteView[];
@@ -89,7 +93,7 @@ export function CombateConsole({
     return (
       <div className="flex flex-col gap-4">
         <HudCard className="border-dashed px-4 py-8 text-center">
-          <p className="font-mono text-sm text-muted">No hay ningún combate en curso.</p>
+          <p className="font-mono text-sm text-muted">No hay ningún combate abierto.</p>
         </HudCard>
         <button
           type="button"
@@ -152,7 +156,9 @@ export function CombateConsole({
     <div className="flex flex-col gap-6">
       <HudCard className="flex flex-col gap-3 px-4 py-3">
         <div className="flex items-center justify-between">
-          <span className="font-mono text-sm uppercase tracking-wide">Ronda {combate.ronda}</span>
+          <span className="font-mono text-sm uppercase tracking-wide">
+            {combate.estado === "PREPARANDO" ? "Preparando combate" : `Ronda ${combate.ronda}`}
+          </span>
           <button
             type="button"
             disabled={pending}
@@ -162,19 +168,35 @@ export function CombateConsole({
             Terminar combate
           </button>
         </div>
-        <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
-          <span className="font-display text-sm uppercase tracking-wide">
-            Turno de: <span className="text-accent">{turnoActual?.nombre ?? "—"}</span>
-          </span>
+        {/* PREPARANDO: el máster monta la escena sin que nadie más lo vea
+            (characters/[id]/page.tsx solo busca EN_CURSO) — "Turno de: X" no
+            significa nada todavía, así que en su lugar va el botón que de
+            verdad decide cuándo empieza (pedido explícito del usuario,
+            2026-09-11: antes "crear combate" ya lo dejaba EN_CURSO). */}
+        {combate.estado === "PREPARANDO" ? (
           <button
             type="button"
-            disabled={pending || combate.combatientes.length === 0}
-            onClick={() => ejecutar(() => avanzarTurnoAction(combate.id))}
-            className="clip-chamfer-sm bg-accent px-3 py-2 font-mono text-xs font-semibold uppercase tracking-wide text-black shadow-glow-yellow active:scale-[0.99] disabled:opacity-50"
+            disabled={pending}
+            onClick={() => ejecutar(() => comenzarCombateAction(combate.id))}
+            className="clip-chamfer-sm border-t border-border bg-accent px-3 py-3 font-mono text-sm font-semibold uppercase tracking-wide text-black shadow-glow-yellow active:scale-[0.99] disabled:opacity-50"
           >
-            Siguiente turno
+            Comenzar combate
           </button>
-        </div>
+        ) : (
+          <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+            <span className="font-display text-sm uppercase tracking-wide">
+              Turno de: <span className="text-accent">{turnoActual?.nombre ?? "—"}</span>
+            </span>
+            <button
+              type="button"
+              disabled={pending || combate.combatientes.length === 0}
+              onClick={() => ejecutar(() => avanzarTurnoAction(combate.id))}
+              className="clip-chamfer-sm bg-accent px-3 py-2 font-mono text-xs font-semibold uppercase tracking-wide text-black shadow-glow-yellow active:scale-[0.99] disabled:opacity-50"
+            >
+              Siguiente turno
+            </button>
+          </div>
+        )}
       </HudCard>
 
       <section>

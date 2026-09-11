@@ -313,6 +313,53 @@ pruebas manuales exhaustivas (no solo el camino feliz de cada subtarea) en
 *desde* el catálogo de `NpcTemplate` (en vez de solo ad-hoc) sigue siendo la 5.2, no se
 adelantó aquí — `agregarNpcDeCatalogoAction` existe desde la 1.3 pero no tiene UI todavía.
 
+### 2.7 — "Comenzar combate" separado de "Crear combate" (ampliación, 2026-09-11)
+
+Pedido explícito del usuario, después de que el bloque 3 (vista del jugador) ya
+estuviera cerrado: antes "Crear combate" dejaba el `Combate` en `EN_CURSO` de
+inmediato, así que en cuanto el máster metía al primer jugador en la cola, ese jugador
+ya lo veía en su ficha (D5) — aunque el máster todavía estuviera montando la escena
+(añadiendo NPCs, fijando iniciativa...), no listo para empezar de verdad.
+
+**Modelo:** `EstadoCombate` gana un tercer valor, `PREPARANDO` (nuevo default del
+schema, migración `20260911080301_combate_preparando`), antes de `EN_CURSO`. También
+`Combate.iniciadoAt` (simetría con `terminadoAt`). `crearCombateAction` ahora deja el
+combate en `PREPARANDO`; `comenzarCombateAction` (nueva) lo pasa a `EN_CURSO` — solo el
+máster, solo si estaba en `PREPARANDO`. La comprobación de "uno solo a la vez" (D1)
+pasa a mirar `PREPARANDO` *o* `EN_CURSO`, no solo `EN_CURSO`.
+
+**Quién ve qué:** `master/combate/page.tsx` busca `PREPARANDO` o `EN_CURSO` (el máster
+necesita ver la consola en los dos estados para montar la escena). `characters/[id]/page.tsx`
+sigue buscando solo `EN_CURSO`, sin tocar — así el jugador no ve nada, ni la tira ni el
+tab Combate, hasta que el máster pulsa "Comenzar combate". `avanzarTurnoAction` rechaza
+moverse si el combate no está `EN_CURSO` ("El combate todavía no ha empezado.") — no
+tiene sentido avanzar turnos antes de empezar.
+
+**Consola del máster:** durante `PREPARANDO`, el header muestra "Preparando combate" y
+el botón "Comenzar combate" en vez de "Turno de: X" / "Siguiente turno" — esas dos
+cosas no significan nada todavía. El resto (añadir gente, iniciativa, delta de PG,
+estados) sigue funcionando igual en preparación que en curso, sin guardarraíl nuevo: el
+máster puede montar la escena con total libertad antes de que nadie más la vea.
+
+**Bug real encontrado y arreglado al verificar esto mismo en Chrome:** el polling (4.1)
+en `CharacterSheet.tsx` estaba condicionado a `combate !== null` — pero mientras el
+combate está `PREPARANDO`, esa prop ya es `null` para el jugador (no lo ve), así que el
+polling nunca arrancaba, y si cargaba la ficha antes de que el máster comenzara el
+combate, se quedaba colgado sin enterarse nunca de que había empezado (salvo F5 a mano).
+Arreglado: el polling en `CharacterSheet.tsx` está **siempre** activo mientras la ficha
+esté abierta, con intervalo largo (15s, solo para detectar que algo apareció) cuando no
+hay combate visible, y corto (4s) en cuanto sí lo hay. `CombateConsole.tsx` no tenía
+este problema — el máster ve el combate desde que se crea, `combate !== null` es cierto
+desde el primer instante.
+
+**Verificado en Chrome con una sesión de jugador real** (cuenta y personaje de prueba,
+borrados al terminar): con el combate en `PREPARANDO` y el personaje ya en la cola, la
+ficha del jugador no muestra tira ni tab Combate; pulsado "Comenzar combate" desde el
+máster sin tocar la pestaña del jugador, la tira apareció sola (confirmado con el
+polling lento de 15s, sin recargar). Reproducido también el bug del polling colgado
+antes del fix (con `wait_for` fallando) y confirmado que desaparece después. `tsc`,
+306/306 tests y lint limpios.
+
 ## Bloque 3 — Vista del jugador
 
 - [x] **3.1 — Tira de combate en la ficha.** Hecha (2026-09-10, sesión de relevo).
