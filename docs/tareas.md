@@ -86,16 +86,34 @@ Ya no está bloqueada por la pregunta de si se lleva en vivo — se resolvió qu
 implementación (daño por categoría, estados activos con penalizadores automáticos, gasto
 de fatiga, descanso) va dentro de la fase 6b, de la que es dependencia.
 
-### Fase 6b — Panel de combate en vivo ⬜ (diseño cerrado 2026-09-11, construcción en curso)
+### Fase 6b — Panel de combate en vivo ⬜ (MVP funcional cerrado 2026-09-11, pausada)
 **Hoja de ruta con subtareas, para ir cogiéndolas una a una: `docs/fase-6b.md`.** No
 dupliques su detalle aquí — actualiza ese archivo al cerrar cada pieza y, cuando la fase
 entera esté hecha, esta entrada pasa a ✅ con un resumen de dos líneas.
 
+El camino completo funciona de punta a punta: crear/editar NPCs con ficha en un
+catálogo propio, montar un combate, meter jugadores y NPCs, llevar la cola de turnos e
+iniciativa, aplicar estados, y que un NPC ataque de verdad (tirada real, no PG a ojo).
+Pausada aquí a propósito — lo que queda (clonar NPC en instancias numeradas, plantillas
+de encuentro, y el bloque 6 de brillo: niebla, selección múltiple, log, aviso de turno,
+historial) es todo azúcar sobre un MVP que ya sirve, y el bloque 6 en concreto está
+pensado para después de probarlo en mesa real, no antes.
+
 Resumen de la forma que tomó el diseño: instancias de `Combate` con `Combatiente`s
-(jugador, NPC de catálogo, o NPC ad-hoc), motor de estados que reutiliza el
+(jugador o NPC de catálogo — el NPC ad-hoc suelto se probó y se quitó, ver
+`docs/fase-6b.md` "Catálogo de NPCs — rediseño"), motor de estados que reutiliza el
 `OrigenModificador: "estado"` que ya existía reservado en `lib/rules/modificadores.ts`
 desde la fase 4, y reactividad por polling inteligente para empezar (es mesa física, no
 hace falta latencia de videojuego online) con SSE como mejora si hace falta.
+
+### Equipo — mecanizar efectos especiales por pieza ⬜ (arrancada 2026-09-11)
+**Hoja de ruta pieza a pieza: `docs/equipo-efectos-especiales.md`.** El catálogo de
+equipo (fase 3) transcribió fielmente el texto de cada pieza, pero columnas como
+"Crítico de Fusión (11)" son hoy decorativas — no mueven ningún número ni avisan de
+nada al tirar. La tarea: un mecanismo genérico en `TiradasTab` (aviso, no
+auto-aplicación — la app no arbitra) más el barrido pieza a pieza para poblarlo con
+datos correctos. Sin empezar la implementación todavía, solo el diseño y el primer
+mapeo (familia de armas de plasma).
 
 ### Fase 5 — Poderes, dotes, aumentos, especies reales ⬜ (bloqueado por el diseñador)
 El diseñador (Murillo) aún no ha escrito estos documentos. No hay nada que adelantar del
