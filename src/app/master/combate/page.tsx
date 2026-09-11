@@ -26,11 +26,17 @@ export default async function CombatePage() {
   // lo escriben solo las server actions de este mismo módulo, nunca el
   // cliente, así que un cast basta aquí. Si algún día algo más lo escribe,
   // esto necesita el mismo tratamiento tolerante que parseSheet.
+  // `sheet` sí pasa por `parseSheet` (subtarea 5.5): es la foto congelada al
+  // añadir el NPC (5.0), pero sigue siendo Json guardado hace tiempo —
+  // mismo tratamiento tolerante que la ficha de un Character, no un cast a
+  // pelo. `null` para un Combatiente-jugador, que no lo necesita (lee su
+  // Sheet en vivo desde su propia ficha).
   const combate = combateRaw && {
     ...combateRaw,
     combatientes: combateRaw.combatientes.map((c) => ({
       ...c,
       estados: c.estados as unknown as EstadoActivo[],
+      sheet: c.sheet ? parseSheet(c.sheet) : null,
     })),
   };
 

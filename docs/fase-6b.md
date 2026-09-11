@@ -706,14 +706,28 @@ enemigo ataque de verdad, solo llevar la cuenta de su PG a ojo. Con encuentros d
   clona varias de golpe con nombres numerados.
 - [ ] **5.4 — Plantillas de encuentro.** Guardar un grupo de `NpcTemplate` ya montado y
   añadirlo entero a un combate de un tap.
-- [ ] **5.5 — Tirar por un NPC en combate** (el motivo original de todo este rediseño).
-  Un control en la fila de un combatiente NPC dentro de la consola que abre sus
-  tiradas — mismo `TiradasTab.tsx` que ya usa el jugador, alimentado por el `sheet`
-  congelado del `Combatiente` (no el de la plantilla, que puede haber cambiado) y sus
-  estados activos (mismo patrón que 3.1b: `modificadoresDeEstados()` sumado a
-  `modificadoresActivos(sheet)`). Con 30-50 combatientes en la cola, probablemente un
-  panel/modal que se abre bajo demanda para un combatiente a la vez, no 50
-  `TiradasTab` completos renderizados de golpe.
+- [x] **5.5 — Tirar por un NPC en combate** (el motivo original de todo este
+  rediseño). Hecha (2026-09-11). **Sin backend nuevo**: `Combatiente.sheet` y
+  `Combatiente.estados` ya se guardaban y ya se cargaban en `combate/page.tsx` desde la
+  5.0 — esto era una tarea 100% de front. `sheet` pasa ahora por `parseSheet` al
+  mapear (antes solo `estados` llevaba tratamiento tolerante) y `null` para un
+  Combatiente-jugador, que sigue leyendo su Sheet en vivo de su propia ficha.
+  **`NpcTiradasPanel.tsx`** (nuevo): mismo `TiradasTab.tsx` que ya usa el jugador,
+  alimentado por el `sheet` **congelado** del `Combatiente` (no el de la plantilla,
+  que puede haber cambiado) y sus `estados` activos — `TiradasTab` ya combina
+  `modificadoresDeEstados()` con `modificadoresActivos(sheet)` por dentro, no hizo
+  falta tocar nada ahí. Mismo lenguaje visual que `TiradaModal.tsx` (z-index un punto
+  por debajo, `z-40` vs `z-50`, para que el modal de tirar que `TiradasTab` abre por
+  dentro quede siempre encima sin conflicto). Botón "Tiradas" en `CombatienteRow` solo
+  cuando `c.sheet` existe (es un NPC) — un panel a la vez (`useState` en
+  `CombateConsole`), no un `TiradasTab` por fila con 30-50 combatientes en la cola,
+  tal y como se planteó al anotar la subtarea.
+  **Verificación**: `tsc`, lint y 315/315 tests limpios; SSR de `/master/combate`
+  confirmada por HTTP con el botón "Tiradas" apareciendo en la fila del NPC ya
+  sembrado. Nada que probar por HTTP a pelo aquí — abrir el panel y tirar es 100%
+  interacción de cliente, sin ningún viaje al servidor de por medio (ni antes con el
+  jugador, ni ahora). Mismo Chrome ocupado que en 5.1/5.2 (`traspaso.md` §5): pendiente
+  el vistazo con JS real en cuanto se libere.
 - [ ] **5.6 — Tab Tiradas en el editor de NPC, con estados simulados.** Añadida al
   plan el 2026-09-11 tras revisar el argumento de por qué se dejó fuera en la 5.1 — no
   se sostenía: `TiradasTab.tsx` es agnóstico al objetivo (dificultad y circunstancial son

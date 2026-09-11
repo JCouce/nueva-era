@@ -10,7 +10,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { HudCard } from "@/components/HudCard";
 import { usePollingCombate } from "@/hooks/usePollingCombate";
-import { ESTADOS, estadoPorId, describirEstadosActivos, type EstadoActivo } from "@/lib/rules";
+import { ESTADOS, estadoPorId, describirEstadosActivos, type EstadoActivo, type Sheet } from "@/lib/rules";
+import { NpcTiradasPanel } from "./NpcTiradasPanel";
 import {
   crearCombateAction,
   comenzarCombateAction,
@@ -39,6 +40,10 @@ type CombatienteView = {
   characterId: string | null;
   derrotado: boolean;
   estados: EstadoActivo[];
+  // Solo un NPC lo trae (foto congelada al añadirlo, 5.0) — un
+  // Combatiente-jugador siempre lo trae `null`, lee su Sheet en vivo desde
+  // su propia ficha. Es lo que habilita el botón "Tiradas" de la 5.5.
+  sheet: Sheet | null;
 };
 
 type CombateView = {
@@ -76,6 +81,10 @@ export function CombateConsole({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  // 5.5: un panel a la vez, no un TiradasTab montado por fila — con 30-50
+  // combatientes en la cola sería trabajo de más para lo que se ve en cada
+  // momento.
+  const [tiradasDe, setTiradasDe] = useState<CombatienteView | null>(null);
   // 4.1: mientras haya un combate en curso, alguien más (otra pestaña, el
   // jugador desde su ficha) puede cambiarlo sin que esta pantalla se
   // entere hasta el próximo refresh manual — esto lo hace solo.
@@ -216,6 +225,7 @@ export function CombateConsole({
               pending={pending}
               ejecutar={ejecutar}
               aplicarDelta={aplicarDelta}
+              onAbrirTiradas={setTiradasDe}
               deltaRef={(el) => {
                 deltaRefs.current[c.id] = el;
               }}
@@ -300,6 +310,15 @@ export function CombateConsole({
       </section>
 
       {error && <p className="font-mono text-xs text-danger">{error}</p>}
+
+      {tiradasDe && tiradasDe.sheet && (
+        <NpcTiradasPanel
+          nombre={tiradasDe.nombre}
+          sheet={tiradasDe.sheet}
+          estadosCombate={tiradasDe.estados}
+          onCerrar={() => setTiradasDe(null)}
+        />
+      )}
     </div>
   );
 }
@@ -318,6 +337,7 @@ function CombatienteRow({
   pending,
   ejecutar,
   aplicarDelta,
+  onAbrirTiradas,
   deltaRef,
 }: {
   c: CombatienteView;
@@ -327,6 +347,7 @@ function CombatienteRow({
   pending: boolean;
   ejecutar: (accion: () => Promise<CombateResult>) => void;
   aplicarDelta: (combatienteId: string, recurso: "pg" | "fatiga") => void;
+  onAbrirTiradas: (c: CombatienteView) => void;
   deltaRef: (el: HTMLInputElement | null) => void;
 }) {
   const [estadoId, setEstadoId] = useState("");
@@ -388,7 +409,7 @@ function CombatienteRow({
             </button>
           </div>
 
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <span className="font-display text-base font-medium uppercase tracking-wide">
               {c.nombre}
               {c.derrotado && " (derrotado)"}
@@ -397,6 +418,18 @@ function CombatienteRow({
               PG {c.pgActual}/{c.pgMax} · Fatiga {c.fatigaActual}/{c.fatigaMax}
             </span>
           </div>
+
+          {/* Solo un NPC trae `sheet` (foto congelada, 5.0) — un jugador
+              tira desde su propia ficha, no desde aquí. */}
+          {c.sheet && (
+            <button
+              type="button"
+              onClick={() => onAbrirTiradas(c)}
+              className="clip-chamfer-sm shrink-0 border border-info px-2 py-1.5 font-mono text-[10px] uppercase tracking-wide text-info active:scale-95"
+            >
+              Tiradas
+            </button>
+          )}
 
           <div className="flex flex-col items-end gap-1">
             <label htmlFor={`iniciativa-${c.id}`} className="font-mono text-[10px] text-muted">
