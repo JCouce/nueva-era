@@ -103,6 +103,15 @@ mejor tratarlas aparte:
 - Piezas condicionadas a algo que el motor no rastrea en absoluto (distancia real al
   objetivo más allá del tramo, si hubo daño previo, ambiente narrativo) no encajan —
   para esas, la nota de texto de siempre, sin aviso automático.
+- **Cuarta variante, corregida 2026-09-12**: el aviso no tiene por qué ser siempre "el
+  objetivo resiste un estado" — también sirve para enseñar **la dificultad de esquiva
+  de un ataque en área** (F. Auto de un arma de fuego, granadas, armamento pesado).
+  Es la tirada de un tercero, la app no la resuelve — pero ocultarla del todo (como se
+  hizo al principio con "F. Auto (Esquiva N)", corregido más abajo) fue un error: no
+  auto-resolver y no informar son cosas distintas. Esta variante en concreto ni
+  siquiera necesita depender de impacto/crítico, solo de qué modo está elegido — el
+  disparador ya existe en el motor (`alcance: { tipo: "modo", contieneEtiqueta: "F.
+  Auto" }`), es la variante más barata de las cuatro.
 
 ## Propuesta: tirada nueva "Ocultar objeto" (2026-09-12, sin construir)
 
@@ -263,9 +272,17 @@ lista principal con casos de uno.
 - `Efecto Derribo a Corta Distancia (N)` (Feritas, Azra, S.A.79, Gong, Asina, Graviter,
   Zotrex, Matanza, Electro TK): **✅ IMPLEMENTAR** con la variante por tramo (ver
   "El mecanismo genérico" arriba).
-- `F. Auto (Esquiva N)`: **🔕 IGNORAR** — es la dificultad de esquiva de quien recibe
-  el disparo en área, no del atacante; queda como nota, cualquier objetivo con ficha
-  propia ya puede tirar su Esquiva genérica y aplicar esa dificultad a mano.
+- `F. Auto (Esquiva N)`: **✅ IMPLEMENTAR (corregido 2026-09-12)**. Duda del usuario que
+  destapó el error: se había marcado "ignorar" razonando solo "es la tirada de un
+  tercero, no la resuelve la app" — cierto, pero eso no es motivo para no *enseñarla*.
+  En F. Auto el arma deja de tirar contra un objetivo y pasa a atacar en área (2
+  casillas, 4 en ametralladoras): quien cae dentro tira su propia Esquiva contra esa
+  dificultad fija, la app no la resuelve — pero sí debería aparecer junto al daño
+  ("Daño: 11 Fuego · Esquiva del área: dificultad 9"), igual que un aviso de crítico.
+  Más fácil de montar que el propio mecanismo genérico: el disparador ya existe en el
+  motor (`alcance: { tipo: "modo", contieneEtiqueta: "F. Auto" }`, el mismo que usa el
+  Sistema de Retroceso) — solo hace falta un campo `esquivaFAuto?: number` por arma y
+  mostrarlo cuando ese modo esté elegido, sin inventar ningún mecanismo nuevo.
 - Mosquito ("+2 para esconder el arma"): **❌ CORREGIDO (2026-09-12): no está hecho.**
   Se había marcado "hecho" porque el modificador `+2` con
   `alcance: { tipo: "tiradaId", id: "ocultar_objeto" }` ya existe en el catálogo — pero
@@ -305,8 +322,9 @@ lista principal con casos de uno.
 
 - Ambas categorías: `Efecto X (N)` que golpea a quien falla la esquiva de área:
   **✅ IMPLEMENTAR**, mismo mecanismo. La propia dificultad de esquiva del área
-  (`Esquiva (N)`) es la del objetivo, no del atacante: **🔕 IGNORAR** esa parte, mismo
-  criterio que "F. Auto (Esquiva N)" de las armas de fuego.
+  (`Esquiva (N)`) — **corregido 2026-09-12, mismo motivo que el de arriba**: es la
+  tirada del objetivo, la app no la resuelve, pero sí se enseña junto al daño
+  ("Esquiva del área: dificultad 8") — **✅ IMPLEMENTAR** también, no ignorar.
 - Granada de Plasma: mismo patrón Shock+Llamarada / Crítico de Fusión que las armas de
   plasma — **✅ IMPLEMENTAR** junto con el resto de la familia.
 

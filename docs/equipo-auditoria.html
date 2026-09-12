@@ -355,7 +355,7 @@
       titulo: "El mecanismo genérico",
       items: [
         { id: "m1", v: "implementar", t: "Diseñar y construir el mecanismo (aún sin empezar)",
-          d: "<code>efectoImpacto</code>/<code>efectoCritico</code>: <code>{ estadoId, dificultad }</code> en vez de <code>especial</code>/<code>efectos: string</code>. Aviso en el Marcador de <code>TiradasTab</code> tras un ataque con éxito, sin auto-aplicar nada — el máster lo resuelve con el control de estados que ya existe. Variante encontrada: <code>efectoPorTramo</code> para \"Derribo a Corta Distancia\" (ya se sabe qué tramo se eligió)." }
+          d: "<code>efectoImpacto</code>/<code>efectoCritico</code>: <code>{ estadoId, dificultad }</code> en vez de <code>especial</code>/<code>efectos: string</code>. Aviso en el Marcador de <code>TiradasTab</code> tras un ataque con éxito, sin auto-aplicar nada — el máster lo resuelve con el control de estados que ya existe. Cuatro variantes ya identificadas: por impacto, por crítico, por tramo (\"Derribo a Corta Distancia\") y por modo elegido (\"F. Auto (Esquiva N)\", la más barata — el disparador <code>contieneEtiqueta: \"F. Auto\"</code> ya existe)." }
       ]
     },
     {
@@ -450,8 +450,8 @@
           d: "Bellum, Dragon, Sydiasi, Norgul, Pistola Láser, Rayo Ligero, toda la familia Plasma (SD/SC/SB/SA/SS/AAA/Plaga), Feritas, Azra, S.A.79, Gong, Nova, Vrekoy, FAS 300, Victoria, Impetus, Davray, B12, Fusil Láser, Yojimbo, Rayo de Partículas, Telum, Yivrem, K9K, Tshulok, Láser/Rayo de Largo Alcance, Asina, Graviter, Zotrex, Matanza, Electro TK. El grueso del trabajo — piloto ya analizado en conversación (familia de plasma)." },
         { id: "af3", v: "implementar", t: "\"Efecto Derribo a Corta Distancia (N)\"",
           d: "Feritas, Azra, S.A.79, Gong, Asina, Graviter, Zotrex, Matanza, Electro TK. Variante por tramo, no por crítico." },
-        { id: "af4", v: "ignorar", t: "\"F. Auto (Esquiva N)\"",
-          d: "Dificultad de esquiva de quien RECIBE el disparo en área, no del atacante. Queda como nota." },
+        { id: "af4", v: "implementar", t: "CORREGIDO: \"F. Auto (Esquiva N)\" sí se enseña",
+          d: "Es la tirada de un tercero (quien recibe el disparo en área), la app no la resuelve — pero eso no es motivo para no enseñarla junto al daño (\"Daño: 11 Fuego · Esquiva del área: dificultad 9\"), detectado al preguntar el usuario. Más barato que el mecanismo de crítico: el disparador ya existe (<code>alcance: { tipo: \"modo\", contieneEtiqueta: \"F. Auto\" }</code>, el mismo que usa Sistema de Retroceso)." },
         { id: "af5", v: "verificar", t: "CORREGIDO: Mosquito — \"+2 para esconder el arma\" NO está hecho",
           d: "Se había marcado hecho por error. <code>ocultar_objeto</code> no es una tirada real — no está en <code>TIRADAS</code>. Es un marcador sin destino, detectado por el usuario probando la app de verdad. Ver la propuesta \"Ocultar objeto\" más abajo." }
       ]
@@ -484,8 +484,8 @@
       items: [
         { id: "oa1", v: "implementar", t: "\"Efecto X (N)\" en área — Armamento Pesado y Granadas",
           d: "Mismo mecanismo, golpea a quien falla la esquiva de área." },
-        { id: "oa2", v: "ignorar", t: "La dificultad de \"Esquiva (N)\" del área en sí",
-          d: "Es del objetivo, no del atacante — mismo criterio que \"F. Auto (Esquiva N)\"." },
+        { id: "oa2", v: "implementar", t: "CORREGIDO: la dificultad de \"Esquiva (N)\" del área sí se enseña",
+          d: "Mismo motivo que af4 (F. Auto): es la tirada del objetivo, no se resuelve sola, pero sí se muestra junto al daño." },
         { id: "oa3", v: "implementar", t: "Granada de Plasma — Shock+Llamarada / Crítico de Fusión",
           d: "Junto con el resto de la familia de plasma." }
       ]
