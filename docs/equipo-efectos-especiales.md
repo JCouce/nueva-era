@@ -139,6 +139,26 @@ que sea:
 **Siguiente paso si se construye**: añadir el supuesto (S17) y la pregunta asociada en
 `docs/sistema.md`, igual que el resto del catálogo de reglas inventadas-a-falta-de-dato.
 
+## Casos sueltos, por arma (genuinamente ad hoc)
+
+A diferencia del mecanismo genérico de arriba (que cubre decenas de armas con el mismo
+código), esto es exactamente lo que el usuario predijo al principio de la tarea:
+reglas de una sola pieza, que no generalizan. Se recogen aquí aparte para no diluir la
+lista principal con casos de uno.
+
+- **Sydiasi — "puede usarse a dos manos para eliminar el penalizador por retroceso"**
+  (2026-09-12). Hoy solo vive en `descripcion` (texto narrativo, no en `especial`) —
+  cero mecánica: el modo F. Auto siempre cuesta -4, no hay forma de bajarlo a -3
+  declarando que se agarra a dos manos. Un toggle tipo Bípode ("A dos manos") sería
+  fácil de montar, **pero el motor de condiciones no sabe condicionar un toggle a qué
+  opción está elegida en OTRA condición** (aquí, que el modo sea F. Auto) — sumaría el
+  +1 también en modo Simple, donde no hay penalización que quitar. Arreglarlo bien
+  exigiría lógica especial solo para esta pistola en `tiradaDeArmaFuego`
+  (`combate.ts`), no el mecanismo genérico. **Verdad ignorable** (el propio usuario lo
+  apunta): es un único punto de dificultad, en una sola pistola Poco Habitual, con una
+  imprecisión menor si se implementa sin la condición cruzada (el jugador tendría que
+  saber no activar el toggle en modo Simple). Sin decidir si merece la pena.
+
 ## Leyenda de la lista
 
 | Marca | Significa |

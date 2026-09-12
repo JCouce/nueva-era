@@ -254,6 +254,7 @@
   .verdict-verificar { color: var(--glitch); }
   .verdict-hallazgo { color: var(--danger); }
   .verdict-fuera { color: var(--ink-dim); }
+  .verdict-adhoc { color: #ff8800; }
 
   .item-detail { margin: 0; font-size: 0.88rem; color: var(--ink-dim); line-height: 1.45; }
   .item-detail code {
@@ -318,6 +319,7 @@
     <button class="chip" data-filter="verificar" aria-pressed="false">Verificar</button>
     <button class="chip" data-filter="hecho" aria-pressed="false">Ya hecho</button>
     <button class="chip" data-filter="ignorar" aria-pressed="false">Ignorar</button>
+    <button class="chip" data-filter="adhoc" aria-pressed="false">Ad hoc</button>
     <button class="chip hide-done" data-filter="hide-done" aria-pressed="false">Ocultar revisados</button>
   </div>
 </header>
@@ -364,6 +366,14 @@
           d: "Idea del usuario (2026-09-12), al detectar que <code>ocultar_objeto</code> es un marcador sin tirada real. Selector (<code>CondicionTirada</code> tipo opción): \"Objeto pequeño\" genérico + una opción por cada arma equipada, dificultad según categoría. El +2 del Mosquito (u otro bono futuro) se sumaría solo a la opción de esa arma — mismo patrón que ya usa <code>modo</code>." },
         { id: "oo2", v: "verificar", t: "Las dificultades por categoría son inventadas, no del documento",
           d: "<code>docs/equipamiento.md</code> solo da el +2 relativo del Mosquito \"respecto al resto de pistolas\" — ninguna tabla de dificultad absoluta de esconder un arma. Punto de partida propuesto (a validar con el diseñador): Pistolas 7 (Mosquito 5), Escopetas 8, Fusiles de Asalto 9, Fusiles de Precisión 10 — el resto sin asignar. Sería el supuesto S17 de <code>sistema.md</code> si se construye." }
+      ]
+    },
+    {
+      id: "casosSueltos",
+      titulo: "Casos sueltos por arma (genuinamente ad hoc)",
+      items: [
+        { id: "cs1", v: "adhoc", t: "Sydiasi — \"a dos manos elimina el penalizador por retroceso\"",
+          d: "Solo en <code>descripcion</code> (texto narrativo), cero mecánica: el modo F. Auto siempre cuesta -4. Un toggle tipo Bípode (\"A dos manos\") sería fácil, pero el motor de condiciones no sabe condicionar un toggle a qué opción está elegida en OTRA condición (aquí, que el modo sea F. Auto) — sumaría el bono también en modo Simple, donde no hay penalización que quitar. El propio usuario lo apunta como quizás ignorable: un solo punto de dificultad, en una sola pistola Poco Habitual." }
       ]
     },
     {
@@ -534,7 +544,8 @@
     ignorar: "Ignorar",
     verificar: "Verificar",
     hallazgo: "Hallazgo",
-    fuera: "Fuera de alcance"
+    fuera: "Fuera de alcance",
+    adhoc: "Ad hoc suelto"
   };
 
   var app = document.getElementById("app");
