@@ -377,6 +377,17 @@ lista principal con casos de uno.
   vez del habitual), Linterna, Bayoneta, Lanzagranadas Integrado: **❓ VERIFICAR** — no
   confirmado en esta pasada si están cableados como `CondicionTirada`/`ajustesFijos` o
   se quedaron en texto; revisar uno a uno, es rápido (mismo patrón que Bípode).
+- Láser de Largo Alcance / Rayo de Largo Alcance — alcances: **✔️ YA HECHO**, verificado
+  contra el código a petición del usuario (2026-09-13): `equipo.ts` ya lleva
+  `{ corta: 50, media: 1000, larga: 2000 }` y `{ corta: 50, media: 1200, larga: 2400 }`
+  exactos de la tabla, y ya son los de mayor alcance de los 8 fusiles de precisión
+  (por encima de Telum/Yivrem/K9K/Tshulok). Nada que cambiar. **Pendiente relacionado,
+  sin verificar todavía**: las dos dicen llevar integrada la Mira Telescópica de nivel
+  1, y la característica general de Fusiles de Precisión dice que ese +1 "ya está
+  contabilizado en la dificultad de ataque y en las mejoras disponibles" — no
+  comprobado si `mejorasAdmitidas: 3` en estas dos realmente descuenta el hueco
+  ocupado por la mira integrada o es el mismo número que un fusil de precisión sin
+  ella.
 - Munición Especial (mejora de arma, para instalar munición perforante/incendiaria/
   etc.): **❓ VERIFICAR si existe siquiera en el catálogo** — no la vi en
   `MEJORAS_ARMA` al buscar. Si no está, hace falta darla de alta antes de mecanizar
