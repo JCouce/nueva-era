@@ -11,9 +11,9 @@ quien tira.
 que aparezca una regla genuinamente ambigua — la mayoría de esto ya está `FIRME` en
 `docs/equipamiento.md`, solo sin mecanizar.
 
-## Dos hallazgos, antes de la lista (2026-09-12)
+## Tres hallazgos, antes de la lista (2026-09-12)
 
-Revisando pieza a pieza contra el código real (no solo contra el PDF) aparecieron dos
+Revisando pieza a pieza contra el código real (no solo contra el PDF) aparecieron tres
 cosas más grandes que "falta el efecto especial" — no son parte del barrido en sí,
 mejor tratarlas aparte:
 
@@ -31,6 +31,37 @@ mejor tratarlas aparte:
    Antes de mecanizar su efecto hay que darlas de alta como piezas, con la
    complicación añadida de que su dificultad depende del tramo de daño básico del
    arma huésped (2 / 3-6 / 7+), no es un número fijo del catálogo como en el resto.
+3. **Las salvaciones genéricas no saben contra qué se está resistiendo — y eso va a
+   importar mucho en cuanto exista el mecanismo genérico de esta hoja de ruta.**
+   Encontrado al preguntar por qué varias armaduras enseñan "+1 Fortaleza" y
+   "+1 Reflejos" en azul (`docs/equipo-efectos-especiales.md` §Armaduras, item `arm2`):
+   solo hay tres tiradas de salvación en `TIRADAS` — `salv_fortaleza`, `salv_reflejos`,
+   `salv_voluntad` — y cada una cubre varios estados a la vez (`salv_fortaleza`: veneno,
+   enfermedad, congelación, corrosión, fusión, shock, sordera, aturdimiento;
+   `salv_reflejos`: al menos llamarada). Un bono como "+1 contra congelación y
+   llamarada" (Traje Ultra Ligero, Soporte Vital, Polímero Anticorrosivo, Tejido
+   Conductor...) hoy solo puede engancharse a TODA la tirada de Fortaleza o de
+   Reflejos — no hay forma de decir "esto solo cuenta cuando se resiste congelación,
+   no cuando se resiste veneno".
+   **Por qué importa ahora, no antes:** hasta esta tarea, nadie había mirado con
+   detalle qué resiste cada salvación — pero el propio mecanismo genérico que se está
+   diseñando aquí (armas que en crítico exigen tirar contra Fusión, Shock, Ceguera,
+   Aturdimiento...) multiplica los casos donde la especificidad de la salvación
+   importa de verdad: un personaje con "+1 contra congelación" no debería llevarse ese
+   +1 al resistir una Fusión de un arma de plasma, y hoy sí se lo llevaría porque las
+   dos comparten `salv_fortaleza`.
+   **Dirección propuesta (sin decidir, sin construir):** que la tirada de salvación
+   pregunte "¿contra qué resistes?" — un array largo de opciones (congelación, veneno,
+   corrosión, fusión, shock, sordera, aturdimiento, enfermedad, llamarada...), como un
+   `CondicionTirada` tipo `opción` — y un tipo de alcance nuevo para `Modificador`
+   (algo como `{ tipo: "salvacionContra", estadoId }`) que solo aplique cuando esa
+   opción sea la elegida, mismo patrón que ya usa `modo` (que resuelve un modificador
+   comparando contra la etiqueta del modo elegido, ver `docs/modificadores-tiradas.md`
+   §5). Esto tocaría `tiradas.ts`, `modificadores.ts`, `TiradaModal.tsx`, y todo lo
+   que hoy declara un modificador contra `salv_fortaleza`/`salv_reflejos` a pelo
+   (armaduras, Soporte Vital, Anticorrosivo, Tejido Conductor). No es parte del
+   barrido pieza a pieza — es una pieza de diseño de motor que varios items del
+   barrido (`arm2`, `me1`, `me5`) están bloqueados por ella hasta que se decida.
 
 ## Cómo coger un item
 
@@ -46,6 +77,12 @@ mejor tratarlas aparte:
 
 **[ ] Sin construir todavía.** Diseño hablado (2026-09-11/12):
 
+- **Relacionado con el hallazgo #3** (arriba): este aviso solo dice "tira Salvación de
+  Fortaleza/Reflejos contra Fusión/Shock/lo que sea, dificultad N" — no hace falta
+  resolver la especificidad de la salvación para mostrarlo. Pero el día que además
+  haya bonos que solo cuenten "contra tal estado" (como los que ya existen en
+  armaduras), los dos mecanismos se cruzan: ese día sí hará falta la pieza de diseño
+  del hallazgo #3, no antes.
 - La gramática que sigue `docs/equipamiento.md` en decenas de filas es consistente:
   `Efecto X (N)` = al impactar, el objetivo tira de salvación contra el estado X con
   dificultad N; `Crítico de X (N)` = lo mismo pero solo en golpe crítico (en las armas
