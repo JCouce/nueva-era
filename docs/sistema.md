@@ -568,6 +568,12 @@ cada nivel sustituye entero al anterior? *(S9)*
 8c. El bono de Fuerza del Exoesqueleto se duplica para "carga transportable y proezas de
 fuerza": ¿cuenta el movimiento entero (Carrera, Saltos, Escalada, Nado) como "proeza de
 fuerza", o solo alguna de esas cinco fórmulas? *(S10)*
+8d. Las Armaduras Avanzadas (Ultra Ligero, Ligera, Intermedia y Pesada Avanzadas): a
+diferencia de sus versiones base — que repiten cada una, explícitas, el "+1 en tiradas de
+salvación contra efectos de congelación y llamarada" — el párrafo de las Avanzadas no lo
+menciona en absoluto (verificado contra el render de la página 2 del PDF, no solo el texto
+plano). ¿Lo conservan igual que la base, lo pierden, o ganan alguno adicional (el usuario
+sospecha que también contra eléctrico, 2026-09-12)? Pendiente de confirmar con el diseñador.
 
 **Diseño pendiente**
 9. ~~Dotes: `HOJA2` da presupuesto (0 en la letra E, el resto sin rellenar), pero sigue sin decir qué son, cuántas se eligen ni qué compra cada punto.~~ **En proceso (usuario, 2026-09-10):** el diseñador ya lo está preparando, no hace falta insistir — se retoma cuando llegue el documento.
