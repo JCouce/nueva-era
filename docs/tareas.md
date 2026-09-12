@@ -137,6 +137,17 @@ cómo modelar "coste = precio de otra pieza × N". Ver comentario de cabecera en
 La fórmula y el dato en pantalla ya están (Fase 3); falta aplicar los penalizadores por
 exceso de carga (−25% malherido, −50% moribundo, −25% exhausto) y la Proeza de Fuerza.
 
+### Sigilo / Visibilidad en combate ⬜ (idea sin construir, 2026-09-12)
+Salió de revisar los penalizadores "al sigilo" de varias armas (`docs/
+equipo-efectos-especiales.md`). Modelo propuesto por el usuario, pendiente de validar
+con el diseñador — ver `docs/sistema.md` pregunta 25b: el sigilo no se re-tira en cada
+instante, se tira una vez al esconderse y el margen queda como un valor persistente
+("Escondido: X éxitos") hasta que ocurre un evento de alerta (disparo, alarma...), que
+es lo que dispara el derecho a tirada de quien podría notarlo. Si se confirma, hace
+falta un campo nuevo tipo **Visible / Escondido (X éxitos)** por combatiente — no
+existe hoy ni en la ficha ni en la consola de combate. Sin empezar: es una pregunta de
+reglas sin cerrar, no una tarea de implementación todavía.
+
 ### Búsqueda por texto en la Tienda ⬜
 `TiendaTab` agrupa por familia y filtra "solo compatible ahora", pero no hay campo de
 búsqueda libre. Con cientos de piezas en una pantalla estrecha, puede hacer falta antes de

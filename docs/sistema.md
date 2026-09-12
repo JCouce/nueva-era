@@ -619,6 +619,21 @@ puede que sea justo la pieza que falta por escribir. Detectado por el usuario
 (2026-09-12) al preguntar cómo funciona la secuencia completa de disparar estando
 oculto; sin resolver.
 
+**Modelo propuesto por el usuario (2026-09-12), pendiente de validar con el
+diseñador, no implementar todavía:** el sigilo no se re-tira en cada instante —
+se tira **una vez**, al esconderse/infiltrarse, y el margen de esa tirada
+("X éxitos") queda como un **valor persistente** ("Escondido: X éxitos") mientras
+nada cambie: quien tenga una Alerta pasiva por debajo de ese número no ve al
+personaje, a todos los efectos, hasta que ocurra un **evento de alerta** (disparo,
+alarma, ataque...). Ese evento es lo que dispara el derecho a tirada de los que
+podrían haberlo notado — no antes. El penalizador de sigilo de un arma ("-6 al
+disparar") **restaría de ese valor persistente** en el momento de disparar, no de
+una tirada nueva. Consecuencia de interfaz si esto se confirma: la ficha y/o el
+combate necesitarían un campo **Visible / Escondido (X éxitos)** por personaje —
+hoy no existe ningún sitio donde vivir ese número. Sin decidir todavía si además
+el descuento por arma se resta automáticamente al disparar o es el máster quien
+lo anota a mano.
+
 **Incongruencias entre documentos, para la misma tanda de preguntas**
 26. Cuando el sistema dice "Perspicacia + Medicina", ¿quiere decir Biociencia usando la especialidad Medicina? Lo mismo con Empatía, Manipulación y Bioquímica. Es lo que decide si la habilidad cuenta entera o a la mitad. *(C8)* — Nota (usuario, 2026-09-10): depende del catálogo de especialidades, que aún está por definir (pregunta 3); no hay mucho en los documentos que hable de ellas todavía. Sigue abierta, ligada a esa.
 27. ¿Cuántos metros mide una casilla? *(C9)*
