@@ -348,6 +348,19 @@ lista principal con casos de uno.
 - Mira Telescópica (niveles 1 y 3, bonos a media/larga distancia y percepción), Bípode
   (apoyado/no apoyado), Sistema de Retroceso (F. Auto): **✔️ YA HECHO** — trazados en
   `docs/modificadores-tiradas.md` como ejemplo del mecanismo de condiciones.
+  **Aclaración (2026-09-13, pregunta del usuario sobre qué es "retroceso"):** no es un
+  penalizador que se acumule disparo a disparo — es la dificultad, ya fija, que F. Auto
+  tiene peor que Simple/Estándar en el propio arma (p. ej. Sydiasi -3/-4: ese -1 de
+  diferencia ES el retroceso, ya viene en los `modos` del catálogo, nada que
+  implementar ahí). Las armas de plasma ya llevan la MISMA dificultad en sus dos modos
+  (p. ej. Plasma SD: -3/-3) — así es como el catálogo ya refleja "no acumulan
+  retroceso", correcto tal cual. La mejora Sistema de Retroceso (+1 en F. Auto) ya
+  excluye plasma vía `compatibilidad: excluyeCategoriaDanio: ["Plasma"]`. Único límite,
+  ya conocido y ya comentado en el propio catálogo (no un hallazgo nuevo): "en
+  ametralladoras ayuda en cualquiera de sus modos" no se puede expresar con el alcance
+  actual (`modo`, que solo sabe si F. Auto está elegido, no si el arma es una
+  ametralladora) — en una ametralladora disparando en modo Estándar, ese +1 no se
+  aplica aunque debería.
 - Puntero Láser (+1 ataque / -2 sigilo mientras esté activo), Silenciador (-2 sigilo en
   vez del habitual), Linterna, Bayoneta, Lanzagranadas Integrado: **❓ VERIFICAR** — no
   confirmado en esta pasada si están cableados como `CondicionTirada`/`ajustesFijos` o
