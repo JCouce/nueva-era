@@ -601,6 +601,23 @@ sospecha que también contra eléctrico, 2026-09-12)? Pendiente de confirmar con
 23. ~~¿La app debe llevar la cuenta de PG y fatiga actuales en partida, con sus estados de herida, o eso se lleva en mesa?~~ **Resuelta (usuario, 2026-09-10): en vivo.** La app lleva PG y fatiga en partida — confirma lo ya apuntado en `docs/traspaso.md` §9 (fase 6b). Es la decisión que determina que la ficha pasa a guardar estado mutable además de la creación.
 24. ~~Si se lleva en la app: ¿se registra el daño por categoría (no letal / letal / grave)?~~ **Resuelta: sí.** "Grave" ya es categoría documentada (`COMBATE`, ver también la línea 278 de este documento); las tres categorías se registran por separado.
 25. **Resiliencia** y **Estructura**: ¿son puntuaciones de PNJ y equipo, o algún personaje jugador (un sintético) puede tenerlas? *(C5)*
+25b. Varias armas de fuego llevan un penalizador propio "al sigilo" al dispararlas
+(p. ej. Rayo Ligero y Plasma SD/SC/etc.: "-6 al sigilo, solo percepción visual"; el
+Silenciador da a entender que el disparo normal ya trae un penalizador implícito,
+"reduce a -2" sin decir a cuánto). `COMBATE` (`docs/sistema-y-combate.md` §"Ataque
+furtivo y sorpresivo") sí explica el flujo general — el objetivo, tras el primer
+ataque, gana una reacción gratuita de Perspicacia + Exploración para descubrir al
+atacante, y esa tirada **"solo cuenta factores sensoriales... no la tirada de sigilo
+del atacante"** — pero el Silenciador liga su bonificador explícitamente a "ataques
+sorpresivos con el arma", lo que sugiere que el penalizador de sigilo del arma SÍ
+debería entrar en juego ahí de alguna forma. Las dos frases no encajan del todo: ¿hay
+una tirada de sigilo distinta (una comprobación más genérica de "sigo oculto", aparte
+de la reacción específica tras el primer disparo) a la que se aplica el penalizador
+del arma? `COMBATE` tampoco está todavía consolidado en este documento (sigue solo en
+`sistema-y-combate.md`, sin pasar por el filtro `FIRME`/`INFERIDO` de aquí), así que
+puede que sea justo la pieza que falta por escribir. Detectado por el usuario
+(2026-09-12) al preguntar cómo funciona la secuencia completa de disparar estando
+oculto; sin resolver.
 
 **Incongruencias entre documentos, para la misma tanda de preguntas**
 26. Cuando el sistema dice "Perspicacia + Medicina", ¿quiere decir Biociencia usando la especialidad Medicina? Lo mismo con Empatía, Manipulación y Bioquímica. Es lo que decide si la habilidad cuenta entera o a la mitad. *(C8)* — Nota (usuario, 2026-09-10): depende del catálogo de especialidades, que aún está por definir (pregunta 3); no hay mucho en los documentos que hable de ellas todavía. Sigue abierta, ligada a esa.
