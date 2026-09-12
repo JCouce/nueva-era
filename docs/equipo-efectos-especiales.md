@@ -11,11 +11,11 @@ quien tira.
 que aparezca una regla genuinamente ambigua — la mayoría de esto ya está `FIRME` en
 `docs/equipamiento.md`, solo sin mecanizar.
 
-## Tres hallazgos, antes de la lista (2026-09-12)
+## Cuatro hallazgos, antes de la lista (2026-09-12)
 
-Revisando pieza a pieza contra el código real (no solo contra el PDF) aparecieron tres
-cosas más grandes que "falta el efecto especial" — no son parte del barrido en sí,
-mejor tratarlas aparte:
+Revisando pieza a pieza contra el código real (no solo contra el PDF) aparecieron
+cuatro cosas más grandes que "falta el efecto especial" — no son parte del barrido en
+sí, mejor tratarlas aparte:
 
 1. **El Proyector de Pulso no genera ninguna tirada de ataque.** Es un `Subsistema`
    (`catalog/equipo.ts`), y `combate.ts` (`tiradasDeAtaque`) solo recorre
@@ -62,6 +62,37 @@ mejor tratarlas aparte:
    (armaduras, Soporte Vital, Anticorrosivo, Tejido Conductor). No es parte del
    barrido pieza a pieza — es una pieza de diseño de motor que varios items del
    barrido (`arm2`, `me1`, `me5`) están bloqueados por ella hasta que se decida.
+4. **El tipo de daño elemental y su categoría de gravedad son cosas distintas, y el
+   catálogo solo guarda una de las dos según lo que imprimiera la fila de origen.**
+   `docs/sistema-y-combate.md` §"Daño específico" trae la tabla completa (ya `FIRME`,
+   resumida en `sistema.md` líneas 290-294) — cada tipo elemental tiene su propia
+   categoría de gravedad, y no siempre coincide con lo intuitivo:
+
+   | Tipo | Categoría | Efecto |
+   |---|---|---|
+   | Eléctrico | Letal (grave en crítico) | Shock |
+   | Fuego | Grave | Llamarada |
+   | Frío | No letal (letal en crítico) | Congelamiento |
+   | Corrosivo | Grave | Corrosión |
+   | Plasma | Grave | Shock y llamarada — cuenta también como eléctrico **y** fuego si el objetivo es resistente/vulnerable a esos |
+   | Sónico | No letal (letal en crítico) | Sordera y aturdimiento |
+   | Tóxico | Letal | Envenenamiento, enfermedad o parálisis |
+   | Mental | Letal | Omite armaduras y blindajes |
+
+   `categoriaDanio: string` (`tiradas.ts`) es un texto suelto, sin tipo, y
+   `resolverDanio()` lo pasa a través sin tocarlo — hoy carga lo que sea que
+   escribiera la fila de `docs/equipamiento.md`: unas veces el **tipo elemental**
+   ("Plasma" en la Plasma SD, "Fuego" en el Fusil Láser), otras ya la **categoría
+   resuelta** ("Letal"/"Grave" directamente, como en Bellum o Rayo Ligero). El
+   Marcador de `TiradasTab` ya muestra ese texto junto al daño (detectado por el
+   usuario al preguntar por la Plasma SD: "debería aparecer 12 daño grave") — pero no
+   siempre es la categoría real: un arma "Eléctrico" no dice en ningún sitio que
+   cuenta como Letal. **Propuesta (sin construir)**: una tabla `TIPO_A_CATEGORIA` fija
+   en el motor, y mostrar los dos en el Marcador cuando no coincidan ("Daño: 12 Plasma
+   · Grave") — no colapsar el tipo elemental en la categoría, porque el propio Plasma
+   lo necesita distinto (la regla de "cuenta como eléctrico y fuego" depende del tipo,
+   no de la categoría). Toca a prácticamente todas las armas con daño elemental del
+   barrido de abajo, no es un caso aislado de la Plasma SD.
 
 ## Cómo coger un item
 
