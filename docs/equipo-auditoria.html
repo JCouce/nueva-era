@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoría de Equipo — Nueva Era</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap">
+<style>
+  /* Tema único, oscuro a propósito — mismo lenguaje visual que la app que
+     esto audita (Nueva Era: Chakra Petch / Rajdhani / Share Tech Mono,
+     esquinas cortadas, acento amarillo neón). No es un checklist genérico
+     con piel encima: es el mismo terminal, mirando su propio catálogo. */
+  :root {
+    --night: #0a0a0f;
+    --surface: #14141c;
+    --elevated: #1e1e2a;
+    --line: #2a2a3a;
+    --ink: #e6e6f0;
+    --ink-dim: #8a8aa0;
+    --accent: #fcee0a;   /* implementar-listo / progreso */
+    --info: #00f0ff;     /* ya hecho */
+    --glitch: #ff2e97;   /* verificar */
+    --danger: #ff003c;   /* hallazgo */
+    --glow-accent: 0 0 4px #fcee0a99, 0 0 16px #fcee0a4d;
+    --glow-info: 0 0 4px #00f0ff99, 0 0 16px #00f0ff4d;
+    --font-display: "Chakra Petch", system-ui, sans-serif;
+    --font-body: "Rajdhani", system-ui, sans-serif;
+    --font-mono: "Share Tech Mono", ui-monospace, monospace;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { background: var(--night); }
+
+  body {
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.5;
+    padding-inline: 16px;
+    padding-block: 20px 64px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  h1, .eyebrow, .verdict, .count {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  /* ── Cabecera + progreso ─────────────────────────────────────────── */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: color-mix(in srgb, var(--night) 92%, transparent);
+    backdrop-filter: blur(6px);
+    padding-block: 14px 12px;
+    margin-inline: -16px;
+    padding-inline: 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  h1 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  h1 span { color: var(--accent); }
+  .subtitle {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .progress-track {
+    flex: 1;
+    height: 8px;
+    background: var(--elevated);
+    border: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    box-shadow: var(--glow-accent);
+    width: 0%;
+    transition: width 0.35s ease;
+  }
+  .count {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--accent);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    padding: 8px 10px;
+  }
+  .search svg { flex-shrink: 0; color: var(--ink-dim); }
+  .search input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    outline: none;
+  }
+  .search input::placeholder { color: var(--ink-dim); }
+  .search:focus-within { border-color: var(--accent); }
+  .search-clear {
+    border: none;
+    background: none;
+    color: var(--ink-dim);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
+  }
+  .search-clear:hover { color: var(--ink); }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chip {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 5px 10px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-dim);
+    cursor: pointer;
+    user-select: none;
+  }
+  .chip[aria-pressed="true"] {
+    color: var(--night);
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .chip.hide-done[aria-pressed="true"] {
+    background: var(--info);
+    border-color: var(--info);
+  }
+
+  /* ── Hallazgos ────────────────────────────────────────────────────── */
+  .hallazgos { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+  .hallazgos .eyebrow { color: var(--danger); }
+
+  /* ── Secciones / cards ───────────────────────────────────────────── */
+  section.categoria { margin-top: 30px; }
+  .eyebrow {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-dim);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .eyebrow b { color: var(--ink); font-weight: 600; }
+
+  ul.items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+
+  .item {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    transition: opacity 0.2s ease, border-color 0.2s ease;
+  }
+  .item.verdict-hallazgo { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
+  .item.checked { opacity: 0.5; }
+
+  .box {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    margin: 2px 0 0;
+    border: 1.5px solid var(--ink-dim);
+    background: var(--night);
+    cursor: pointer;
+    display: grid;
+    place-content: center;
+    clip-path: polygon(0 4px, 4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%);
+  }
+  .box:checked { background: var(--info); border-color: var(--info); box-shadow: var(--glow-info); }
+  .box:checked::after {
+    content: "";
+    width: 10px;
+    height: 6px;
+    border-left: 2.5px solid var(--night);
+    border-bottom: 2.5px solid var(--night);
+    transform: rotate(-45deg) translateY(-1px);
+  }
+  .box:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .item-body { min-width: 0; }
+  .item-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+  .item-title {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+  }
+  .item.checked .item-title { text-decoration: line-through; text-decoration-color: var(--ink-dim); }
+
+  .verdict {
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 7px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+  }
+  .verdict-implementar { color: var(--info); }
+  .verdict-hecho { color: var(--accent); }
+  .verdict-ignorar { color: var(--ink-dim); border-style: dashed; }
+  .verdict-verificar { color: var(--glitch); }
+  .verdict-hallazgo { color: var(--danger); }
+  .verdict-fuera { color: var(--ink-dim); }
+
+  .item-detail { margin: 0; font-size: 0.88rem; color: var(--ink-dim); line-height: 1.45; }
+  .item-detail code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: var(--ink);
+    background: var(--elevated);
+    padding: 1px 4px;
+  }
+
+  footer {
+    margin-top: 40px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .no-results {
+    margin-top: 30px;
+    padding: 20px;
+    text-align: center;
+    border: 1px dashed var(--line);
+    color: var(--ink-dim);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .progress-fill { transition: none; }
+    .item { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Equipo<span> // </span>Auditoría de efectos</h1>
+  <p class="subtitle">Nueva Era · docs/equipo-efectos-especiales.md · repaso pieza a pieza</p>
+  <div class="progress-row">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="count" id="progress-count">0/0</span>
+  </div>
+  <div class="search">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <input id="search-input" type="search" placeholder="Buscar por cualquier palabra… (arma, estado, código)" aria-label="Buscar en la lista">
+    <button class="search-clear" id="search-clear" type="button" aria-label="Borrar búsqueda" hidden>✕</button>
+  </div>
+  <div class="filters" id="filters">
+    <button class="chip" data-filter="all" aria-pressed="true">Todo</button>
+    <button class="chip" data-filter="implementar" aria-pressed="false">Implementar</button>
+    <button class="chip" data-filter="verificar" aria-pressed="false">Verificar</button>
+    <button class="chip" data-filter="hecho" aria-pressed="false">Ya hecho</button>
+    <button class="chip" data-filter="ignorar" aria-pressed="false">Ignorar</button>
+    <button class="chip hide-done" data-filter="hide-done" aria-pressed="false">Ocultar revisados</button>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<footer>
+  <span>Se guarda solo en este navegador (localStorage) — sin cuenta, sin login.</span>
+  <span>docs/equipo-efectos-especiales.md, 2026-09-12</span>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  // ── Datos: transcripción 1:1 del backlog de docs/equipo-efectos-especiales.md ──
+  var DATA = [
+    {
+      id: "hallazgos",
+      titulo: "Hallazgos (antes de la lista)",
+      especial: true,
+      items: [
+        { id: "h1", v: "hallazgo", t: "El Proyector de Pulso no genera ninguna tirada de ataque",
+          d: "Es un <code>Subsistema</code>, y <code>combate.ts</code> (<code>tiradasDeAtaque</code>) solo recorre arma/armaMelee/armaPesada/granada. Instalado, nunca aparece en la tab Tiradas — más grande que \"le falta el crítico\": falta la tirada entera. Candidato a subtarea propia." },
+        { id: "h2", v: "hallazgo", t: "\"Munición Especial\" y las 4 familias de \"Armas Modificadas\" no existen en el catálogo",
+          d: "Electrificantes, Térmicas, de Plasma, de Nanofilamento: ninguna tiene entrada en <code>MEJORAS_ARMA</code>. Hoy no se pueden ni comprar ni instalar. Además su dificultad depende del tramo de daño básico del arma huésped (2 / 3-6 / 7+), no es un número fijo del catálogo." },
+        { id: "h3", v: "hallazgo", t: "Las salvaciones genéricas no saben contra qué se está resistiendo",
+          d: "Solo hay 3 tiradas de salvación (<code>salv_fortaleza</code>, <code>salv_reflejos</code>, <code>salv_voluntad</code>), cada una cubre varios estados a la vez (Fortaleza: veneno, enfermedad, congelación, corrosión, fusión, shock, sordera, aturdimiento). Un bono \"+1 contra congelación\" hoy solo puede engancharse a TODA la salvación de Fortaleza — se lleva de más ese +1 al resistir cualquiera de las otras siete cosas. Va a importar mucho en cuanto los críticos de arma (fusión, shock...) empiecen a exigir salvaciones específicas. Propuesta sin construir: que la tirada pregunte \"¿contra qué resistes?\" (array de opciones) y un alcance de <code>Modificador</code> nuevo que solo aplique con esa opción elegida — mismo patrón que ya usa <code>modo</code>. Bloquea arm2/me1/me5 hasta que se decida." }
+      ]
+    },
+    {
+      id: "mecanismo",
+      titulo: "El mecanismo genérico",
+      items: [
+        { id: "m1", v: "implementar", t: "Diseñar y construir el mecanismo (aún sin empezar)",
+          d: "<code>efectoImpacto</code>/<code>efectoCritico</code>: <code>{ estadoId, dificultad }</code> en vez de <code>especial</code>/<code>efectos: string</code>. Aviso en el Marcador de <code>TiradasTab</code> tras un ataque con éxito, sin auto-aplicar nada — el máster lo resuelve con el control de estados que ya existe. Variante encontrada: <code>efectoPorTramo</code> para \"Derribo a Corta Distancia\" (ya se sabe qué tramo se eligió)." }
+      ]
+    },
+    {
+      id: "ocultarObjeto",
+      titulo: "Propuesta: tirada \"Ocultar objeto\"",
+      items: [
+        { id: "oo1", v: "implementar", t: "Tirada nueva, con selector de qué se esconde",
+          d: "Idea del usuario (2026-09-12), al detectar que <code>ocultar_objeto</code> es un marcador sin tirada real. Selector (<code>CondicionTirada</code> tipo opción): \"Objeto pequeño\" genérico + una opción por cada arma equipada, dificultad según categoría. El +2 del Mosquito (u otro bono futuro) se sumaría solo a la opción de esa arma — mismo patrón que ya usa <code>modo</code>." },
+        { id: "oo2", v: "verificar", t: "Las dificultades por categoría son inventadas, no del documento",
+          d: "<code>docs/equipamiento.md</code> solo da el +2 relativo del Mosquito \"respecto al resto de pistolas\" — ninguna tabla de dificultad absoluta de esconder un arma. Punto de partida propuesto (a validar con el diseñador): Pistolas 7 (Mosquito 5), Escopetas 8, Fusiles de Asalto 9, Fusiles de Precisión 10 — el resto sin asignar. Sería el supuesto S17 de <code>sistema.md</code> si se construye." }
+      ]
+    },
+    {
+      id: "armaduras",
+      titulo: "Armaduras y Trajes",
+      items: [
+        { id: "arm1", v: "hecho", t: "Blindaje, bonif. Agilidad, ranuras, tope exo/mov. aérea",
+          d: "Campos numéricos del catálogo, ya consumidos por <code>derivados.ts</code>/<code>equipo.ts</code>." },
+        { id: "arm2", v: "verificar", t: "\"+1 salvación contra congelación y llamarada\" (las 5 armaduras base)",
+          d: "Cableado como +1 a TODA <code>salv_fortaleza</code> y <code>salv_reflejos</code> — pero <code>salv_fortaleza</code> también cubre veneno, aturdimiento, sordera, corrosión, fusión, shock, enfermedad. Más amplio que \"contra congelación y llamarada\". ¿Simplificación consciente o descuido? Sin forma limpia de acotarlo con el sistema actual." },
+        { id: "arm3", v: "ignorar", t: "Armaduras Avanzadas — \"más rendimiento de subsistemas\"",
+          d: "Sin número, puramente narrativo." }
+      ]
+    },
+    {
+      id: "mejorasEstandar",
+      titulo: "Mejoras Estándar",
+      items: [
+        { id: "me1", v: "verificar", t: "Soporte Vital — +1/+2/+3 salvación ambiental",
+          d: "Mismo caso que las armaduras: cableado a <code>salv_fortaleza</code> genérico cuando el texto lo condiciona a \"si sufre daño en ambiente tóxico\"." },
+        { id: "me2", v: "ignorar", t: "Compartimento Oculto — +3/+4 dificultad para ser descubierto",
+          d: "Es la dificultad de QUIEN TE CACHEA, no una tirada propia del portador. No hay tirada de \"cacheo\" en el catálogo." },
+        { id: "me3", v: "ignorar", t: "Funda Automática / Inyector Hipodérmico",
+          d: "Cambian el tipo de acción (gratuita en vez de simple/compleja) — sin concepto de \"coste de acción\" en las tiradas." },
+        { id: "me4", v: "ignorar", t: "Mejora Ignífuga (blindaje total contra fuego / fuego cuenta como letal)",
+          d: "Depende de si el motor resta blindaje por categoría de daño al resolver un impacto — no visto en esta pasada. Revisar junto con Anticorrosivo/Tejido Conductor si algún día se mecaniza." },
+        { id: "me5", v: "verificar", t: "Polímero Anticorrosivo / Tejido Conductor — el +1/+2 a la salvación",
+          d: "Mismo caso <code>salv_fortaleza</code> genérico que las armaduras y Soporte Vital." },
+        { id: "me6", v: "ignorar", t: "Polímero Anticorrosivo / Tejido Conductor — \"ignora el primer nivel de daño X\"",
+          d: "Sin resta de daño por categoría en el motor hoy (mismo motivo que Mejora Ignífuga)." },
+        { id: "me7", v: "hecho", t: "Visor Nocturno nivel 2 — +3 contra ceguera",
+          d: "<code>salv_ceguera_destello</code>, +3 — bien acotado: es un <code>tiradaId</code> marcador específico, no el Fortaleza genérico." },
+        { id: "me8", v: "ignorar", t: "Visor Nocturno nivel 1 (cegado ante fogonazo, -2 cobertura a 50m)",
+          d: "Depende de que el máster narre un fogonazo, o de distancia real al objetivo más allá del tramo de disparo." },
+        { id: "me9", v: "ignorar", t: "Visor Térmico — -3 percepción fuera del gradiente, rastreo de huellas",
+          d: "Narrativo/situacional." }
+      ]
+    },
+    {
+      id: "subsistemas",
+      titulo: "Subsistemas",
+      items: [
+        { id: "sub1", v: "ignorar", t: "Camuflaje Trifásico",
+          d: "Coberturas dependen de modo/movimiento; sin concepto de \"cobertura\" en el motor (ya documentado así en el propio catálogo)." },
+        { id: "sub2", v: "hecho", t: "Derivación Psiónica",
+          d: "Los <code>tiradaId</code> marcadores (retroceso psiónico, metasensoria, poder psiónico) apuntan a tiradas que no existen porque psiónica está PENDIENTE en sistema.md. Correcto tal cual." },
+        { id: "sub3", v: "ignorar", t: "Escudo Deflector — absorción de daño",
+          d: "Sin concepto de absorción en el motor (ya documentado)." },
+        { id: "sub4", v: "ignorar", t: "Malla Plasmática — el colchón de PG",
+          d: "Mismo motivo que Escudo Deflector." },
+        { id: "sub5", v: "implementar", t: "Malla Plasmática — crítico melee con plasma liberado (shock/llamarada/fusión)",
+          d: "Mismo patrón que un arma, pero condicionado a una elección del jugador (\"¿liberar plasma este golpe?\") — encaja como <code>CondicionTirada</code> tipo toggle." },
+        { id: "sub6", v: "implementar", t: "Proyector de Pulso — sus 4 efectos (Shock, Hemorragia, Ceguera, Envenenamiento)",
+          d: "Depende del hallazgo #1: primero necesita existir como tirada de ataque." }
+      ]
+    },
+    {
+      id: "movimiento",
+      titulo: "Mejoras de Movimiento",
+      items: [
+        { id: "mov1", v: "ignorar", t: "Exoesqueleto — +N Fuerza",
+          d: "Ya documentado explícitamente en el catálogo: \"se queda sin mecanizar a propósito... hasta que aparezca un segundo caso que justifique generalizarlo\"." },
+        { id: "mov2", v: "ignorar", t: "Movilidad Aérea — dificultad de maniobra, velocidad, potencia máxima",
+          d: "Depende de estar en \"modo vuelo\" activo, sin ese contexto en el motor." }
+      ]
+    },
+    {
+      id: "armasFuego",
+      titulo: "Armas de fuego (pistolas → ametralladoras)",
+      items: [
+        { id: "af1", v: "hecho", t: "Daño / dificultad / alcance por modo de disparo",
+          d: "<code>arma.modos</code> y <code>arma.alcance</code> ya alimentan <code>combate.ts</code>." },
+        { id: "af2", v: "implementar", t: "\"Efecto X (N)\" / \"Crítico de X (N)\" — ≈30 armas",
+          d: "Bellum, Dragon, Sydiasi, Norgul, Pistola Láser, Rayo Ligero, toda la familia Plasma (SD/SC/SB/SA/SS/AAA/Plaga), Feritas, Azra, S.A.79, Gong, Nova, Vrekoy, FAS 300, Victoria, Impetus, Davray, B12, Fusil Láser, Yojimbo, Rayo de Partículas, Telum, Yivrem, K9K, Tshulok, Láser/Rayo de Largo Alcance, Asina, Graviter, Zotrex, Matanza, Electro TK. El grueso del trabajo — piloto ya analizado en conversación (familia de plasma)." },
+        { id: "af3", v: "implementar", t: "\"Efecto Derribo a Corta Distancia (N)\"",
+          d: "Feritas, Azra, S.A.79, Gong, Asina, Graviter, Zotrex, Matanza, Electro TK. Variante por tramo, no por crítico." },
+        { id: "af4", v: "ignorar", t: "\"F. Auto (Esquiva N)\"",
+          d: "Dificultad de esquiva de quien RECIBE el disparo en área, no del atacante. Queda como nota." },
+        { id: "af5", v: "verificar", t: "CORREGIDO: Mosquito — \"+2 para esconder el arma\" NO está hecho",
+          d: "Se había marcado hecho por error. <code>ocultar_objeto</code> no es una tirada real — no está en <code>TIRADAS</code>. Es un marcador sin destino, detectado por el usuario probando la app de verdad. Ver la propuesta \"Ocultar objeto\" más abajo." }
+      ]
+    },
+    {
+      id: "mejorasArma",
+      titulo: "Mejoras en Armas de Fuego",
+      items: [
+        { id: "ma1", v: "hecho", t: "Mira Telescópica, Bípode, Sistema de Retroceso",
+          d: "Trazados en <code>docs/modificadores-tiradas.md</code> como ejemplo del mecanismo de condiciones." },
+        { id: "ma2", v: "verificar", t: "Puntero Láser, Silenciador, Linterna, Bayoneta, Lanzagranadas Integrado",
+          d: "No confirmado en esta pasada si están cableados o se quedaron en texto — revisar uno a uno, mismo patrón que el Bípode." },
+        { id: "ma3", v: "verificar", t: "¿\"Munición Especial\" existe como mejora instalable?",
+          d: "No la vi en <code>MEJORAS_ARMA</code> al buscar. Si no está, hace falta darla de alta antes de tocar la sección Munición." }
+      ]
+    },
+    {
+      id: "municion",
+      titulo: "Munición",
+      items: [
+        { id: "mu1", v: "ignorar", t: "Munición Regular",
+          d: "Solo coste, sin efecto — nada que hacer." },
+        { id: "mu2", v: "implementar", t: "Munición Especial (Perforante, Incendiaria, Electrizante, Tóxica, Criogénica, Corrosiva, Radiactiva, Supresora)",
+          d: "Mismo patrón impacto/crítico, pero depende del hallazgo #2. Perforante además \"ignora los 2 primeros puntos de blindaje\" — campo estructurado nuevo." }
+      ]
+    },
+    {
+      id: "otrasArmas",
+      titulo: "Otras Armas a Distancia (pesado, granadas)",
+      items: [
+        { id: "oa1", v: "implementar", t: "\"Efecto X (N)\" en área — Armamento Pesado y Granadas",
+          d: "Mismo mecanismo, golpea a quien falla la esquiva de área." },
+        { id: "oa2", v: "ignorar", t: "La dificultad de \"Esquiva (N)\" del área en sí",
+          d: "Es del objetivo, no del atacante — mismo criterio que \"F. Auto (Esquiva N)\"." },
+        { id: "oa3", v: "implementar", t: "Granada de Plasma — Shock+Llamarada / Crítico de Fusión",
+          d: "Junto con el resto de la familia de plasma." }
+      ]
+    },
+    {
+      id: "melee",
+      titulo: "Combate Melee",
+      items: [
+        { id: "me10", v: "implementar", t: "Críticos de toda la sección melee (Pelea, Cortas, Asta, Espadas, Flagelos, Mecánicas)",
+          d: "<code>ArmaMelee.efectos</code> confirmado en código como puramente decorativo, igual que <code>especial</code> en <code>ArmaFuego</code>. Se aplica en <code>tiradaDeArmaMelee</code>." },
+        { id: "me11", v: "implementar", t: "Armas Mecánicas — Acción Compleja alternativa (Derribo / ignora blindaje)",
+          d: "Encaja como <code>CondicionTirada</code> tipo opción (Estándar vs. Compleja). Algo más de trabajo por la doble vía." },
+        { id: "me12", v: "implementar", t: "Flagelos — \"Crítico Derribado o Entorpecido (N)\"",
+          d: "El jugador elige cuál de los dos en el momento — variante con dos opciones en vez de un estado fijo." },
+        { id: "me13", v: "ignorar", t: "Escudos — cobertura/armadura/PG propios",
+          d: "Mismo \"colchón\" sin concepto que Malla Plasmática/Escudo Deflector." },
+        { id: "me14", v: "implementar", t: "Escudos — Crítico de Aturdimiento del golpe",
+          d: "Mismo patrón melee normal." }
+      ]
+    },
+    {
+      id: "armasModificadas",
+      titulo: "Armas Modificadas (mejora comprable)",
+      items: [
+        { id: "amo1", v: "verificar", t: "Electrificantes, Térmicas, de Plasma, de Nanofilamento",
+          d: "Depende del hallazgo #2 (no existen en el catálogo). Una vez dadas de alta: dificultad dinámica según el tramo de daño básico del arma huésped, no un valor fijo — hace falta código nuevo, no solo datos. Nanofilamento además \"ignora N de blindaje\" y exclusivo de armas de filo (revisar si <code>excluyeCategoriaDanio</code> alcanza o hace falta ampliar <code>compatibilidad</code>)." }
+      ]
+    },
+    {
+      id: "kerzul",
+      titulo: "Kerzul",
+      items: [
+        { id: "ker1", v: "ignorar", t: "Armas Melee de Kerzul — \"Ignora N puntos de blindaje\"",
+          d: "Mismo motivo que Mejora Ignífuga: sin resta de blindaje por categoría en el motor." },
+        { id: "ker2", v: "implementar", t: "\"Crítico: Impacto Estructural (N)\"",
+          d: "Aviso como cualquier melee — pero reducir el blindaje del objetivo de forma permanente es algo que la app no aplica sola: informa, el máster lo anota a mano." },
+        { id: "ker3", v: "verificar", t: "Inercia Entrópica (tirada de Fortaleza extra al atacar Estándar/Complejo con kerzul)",
+          d: "No es un efecto de crítico del objetivo, es una regla de uso que afecta a quien empuña el arma. No encaja en efectoImpacto/efectoCritico tal cual — candidata a mini-tarea propia." },
+        { id: "ker4", v: "verificar", t: "Escudo de Kerzul",
+          d: "Combina el patrón de escudos normales + kerzul — revisar junto con ambas secciones." }
+      ]
+    },
+    {
+      id: "fueraAlcance",
+      titulo: "Herramientas, Accesorios, Medicina y Farmacia",
+      items: [
+        { id: "fa1", v: "fuera", t: "VTF, VTM, Materiales, Radar, Disfraz Holográfico, Escáner Detector, Fármacos",
+          d: "Fuera de alcance de esta tarea. Son tiradas de uso activo o estados que el jugador se aplica a sí mismo — un tipo de contenido distinto del que la motivó (críticos de arma). Anotado para no perderlo, no para cogerlo aquí." }
+      ]
+    }
+  ];
+
+  var VERDICT_LABEL = {
+    implementar: "Implementar",
+    hecho: "Ya hecho",
+    ignorar: "Ignorar",
+    verificar: "Verificar",
+    hallazgo: "Hallazgo",
+    fuera: "Fuera de alcance"
+  };
+
+  var app = document.getElementById("app");
+  var filtersEl = document.getElementById("filters");
+  var searchInput = document.getElementById("search-input");
+  var searchClear = document.getElementById("search-clear");
+  var activeFilter = "all";
+  var hideDone = false;
+  var searchQuery = "";
+  var checked = {};
+  var storageKey = "nueva-era-equipo-checklist";
+
+  function allItems() {
+    var out = [];
+    DATA.forEach(function (g) { g.items.forEach(function (it) { out.push(it); }); });
+    return out;
+  }
+
+  // Sin acentos ni mayúsculas, y sin las etiquetas <code> de por medio — así
+  // "codigo" encuentra "código" y buscar "estadoId" encuentra el texto
+  // aunque vaya envuelto en <code>estadoId</code>.
+  function normalizar(s) {
+    return s
+      .replace(/<[^>]+>/g, " ")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  }
+  function coincide(it, query) {
+    if (!query) return true;
+    var haystack = normalizar(it.t + " " + it.d);
+    return query.split(/\s+/).filter(Boolean).every(function (palabra) {
+      return haystack.indexOf(palabra) !== -1;
+    });
+  }
+
+  function loadLocal() {
+    try {
+      var raw = localStorage.getItem(storageKey);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+  function saveLocal(state) {
+    try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function render() {
+    var total = allItems().length;
+    var done = allItems().filter(function (it) { return checked[it.id]; }).length;
+    document.getElementById("progress-fill").style.width = (total ? (done / total * 100) : 0) + "%";
+    document.getElementById("progress-count").textContent = done + "/" + total;
+
+    app.innerHTML = "";
+    var query = normalizar(searchQuery.trim());
+    var huboResultados = false;
+
+    DATA.forEach(function (group) {
+      var visibleItems = group.items.filter(function (it) {
+        if (hideDone && checked[it.id]) return false;
+        if (activeFilter !== "all" && it.v !== activeFilter) return false;
+        return coincide(it, query);
+      });
+      if (visibleItems.length === 0) return;
+      huboResultados = true;
+
+      var section = document.createElement("section");
+      section.className = group.especial ? "hallazgos" : "categoria";
+
+      var eyebrow = document.createElement("div");
+      eyebrow.className = "eyebrow";
+      var doneInGroup = group.items.filter(function (it) { return checked[it.id]; }).length;
+      eyebrow.innerHTML = "<b>" + group.titulo + "</b><span>" + doneInGroup + "/" + group.items.length + "</span>";
+      section.appendChild(eyebrow);
+
+      var ul = document.createElement("ul");
+      ul.className = "items";
+
+      visibleItems.forEach(function (it) {
+        var li = document.createElement("li");
+        li.className = "item verdict-" + it.v + (checked[it.id] ? " checked" : "");
+
+        var label = document.createElement("label");
+        label.style.display = "contents";
+
+        var box = document.createElement("input");
+        box.type = "checkbox";
+        box.className = "box";
+        box.checked = !!checked[it.id];
+        box.setAttribute("aria-label", "Marcar revisado: " + it.t);
+        box.addEventListener("change", function () { toggle(it.id, box.checked); });
+
+        var body = document.createElement("div");
+        body.className = "item-body";
+        body.innerHTML =
+          '<div class="item-head"><span class="item-title">' + it.t + '</span>' +
+          '<span class="verdict verdict-' + it.v + '">' + VERDICT_LABEL[it.v] + "</span></div>" +
+          '<p class="item-detail">' + it.d + "</p>";
+
+        label.appendChild(box);
+        label.appendChild(body);
+        li.appendChild(label);
+        ul.appendChild(li);
+      });
+
+      section.appendChild(ul);
+      app.appendChild(section);
+    });
+
+    if (!huboResultados) {
+      var vacio = document.createElement("p");
+      vacio.className = "no-results";
+      vacio.textContent = "Sin resultados para \"" + searchQuery.trim() + "\".";
+      app.appendChild(vacio);
+    }
+
+    searchClear.hidden = searchQuery.length === 0;
+  }
+
+  function toggle(id, value) {
+    checked[id] = value;
+    render();
+    saveLocal(checked);
+  }
+
+  filtersEl.addEventListener("click", function (e) {
+    var btn = e.target.closest(".chip");
+    if (!btn) return;
+    var f = btn.getAttribute("data-filter");
+    if (f === "hide-done") {
+      hideDone = !hideDone;
+      btn.setAttribute("aria-pressed", String(hideDone));
+    } else {
+      activeFilter = f;
+      filtersEl.querySelectorAll('.chip:not(.hide-done)').forEach(function (c) {
+        c.setAttribute("aria-pressed", String(c === btn));
+      });
+    }
+    render();
+  });
+
+  searchInput.addEventListener("input", function () {
+    searchQuery = searchInput.value;
+    render();
+  });
+  searchClear.addEventListener("click", function () {
+    searchQuery = "";
+    searchInput.value = "";
+    searchInput.focus();
+    render();
+  });
+
+  checked = loadLocal();
+  render();
+})();
+</script>
+</body>
+</html>

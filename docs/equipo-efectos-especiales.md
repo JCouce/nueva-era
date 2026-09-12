@@ -104,6 +104,41 @@ mejor tratarlas aparte:
   objetivo más allá del tramo, si hubo daño previo, ambiente narrativo) no encajan —
   para esas, la nota de texto de siempre, sin aviso automático.
 
+## Propuesta: tirada nueva "Ocultar objeto" (2026-09-12, sin construir)
+
+Salió de revisar el item del Mosquito de arriba: `ocultar_objeto` es un marcador sin
+tirada real detrás, así que hoy el "+2 para esconder el arma" del Mosquito no hace
+nada. Idea del usuario para darle destino de verdad, no solo al Mosquito — a
+**cualquier arma que se quiera esconder**, con la dificultad subiendo según lo grande
+que sea:
+
+- Una tirada fija nueva, "Ocultar objeto" (Sigilo, seguramente + Reflejos o Agilidad —
+  a decidir), con un selector (`CondicionTirada` tipo `opción`) de qué se esconde:
+  **"Objeto pequeño"** genérico (dificultad baja, para lo que no es un arma) y una
+  opción por cada arma que el personaje lleve equipada, con la dificultad subiendo por
+  categoría de arma (más grande, más difícil de esconder).
+- El **+2 del Mosquito** (y cualquier bono equivalente de otra pieza, ya cableado con
+  el mismo `alcance: { tiradaId: "ocultar_objeto" }`) se sumaría solo a la opción de
+  esa arma en concreto — necesita el mismo patrón que ya usa `modo` (un alcance que
+  mira qué opción está elegida), no un bono a la tirada entera.
+- **Las dificultades por categoría son una propuesta del usuario, no una regla del
+  documento** — `docs/equipamiento.md` solo da el +2 del Mosquito, "respecto al resto
+  de pistolas" (un bono relativo, no una dificultad absoluta de ocultar nada). No hay
+  ninguna tabla de "dificultad de esconder un arma" en la fuente. Por eso esto no se
+  implementa como una regla `FIRME`, sino como **supuesto numerado** con números de
+  partida deliberadamente provisionales, para que el diseñador tenga algo concreto que
+  corregir en vez de un hueco en blanco — mismo espíritu que ya usa el proyecto con
+  otros supuestos (`docs/sistema.md`, S1-S16). Punto de partida propuesto (ajustable):
+  Pistolas 7 (Mosquito 5, por su +2), Escopetas 8, Fusiles de Asalto 9, Fusiles de
+  Precisión 10 — el resto de categorías (subfusiles, ametralladoras, armas melee,
+  armamento pesado) sin asignar todavía.
+- **Pendiente de decidir antes de construirlo**: ¿el par atributo+habilidad correcto es
+  Sigilo a secas, o combina con algo más? ¿Aplica igual a un arma enfundada que a una
+  claramente visible? Esto son preguntas para el diseñador, no para inventar aquí.
+
+**Siguiente paso si se construye**: añadir el supuesto (S17) y la pregunta asociada en
+`docs/sistema.md`, igual que el resto del catálogo de reglas inventadas-a-falta-de-dato.
+
 ## Leyenda de la lista
 
 | Marca | Significa |
@@ -211,7 +246,16 @@ mejor tratarlas aparte:
 - `F. Auto (Esquiva N)`: **🔕 IGNORAR** — es la dificultad de esquiva de quien recibe
   el disparo en área, no del atacante; queda como nota, cualquier objetivo con ficha
   propia ya puede tirar su Esquiva genérica y aplicar esa dificultad a mano.
-- Mosquito ("+2 para esconder el arma"): **✔️ YA HECHO** (`ocultar_objeto`, +2).
+- Mosquito ("+2 para esconder el arma"): **❌ CORREGIDO (2026-09-12): no está hecho.**
+  Se había marcado "hecho" porque el modificador `+2` con
+  `alcance: { tipo: "tiradaId", id: "ocultar_objeto" }` ya existe en el catálogo — pero
+  `ocultar_objeto` **no es una tirada real**, no está en `TIRADAS` (`tiradas.ts`). Es el
+  mismo patrón que `resistir_retroceso_psionico` (marcador sin destino, `docs/
+  modificadores-tiradas.md` §5): el modificador se calcula y no llega a ningún sitio.
+  El usuario lo detectó probando la app de verdad — no hay ninguna tirada de "ocultar
+  un objeto" ni una opción dentro de Sigilo. Ver la propuesta de diseño más abajo
+  ("Tirada nueva: Ocultar objeto"), que resuelve esto y de paso da destino real al
+  marcador.
 
 ### Mejoras en Armas de Fuego
 
