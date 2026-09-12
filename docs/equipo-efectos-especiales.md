@@ -94,6 +94,18 @@ sí, mejor tratarlas aparte:
    no de la categoría). Toca a prácticamente todas las armas con daño elemental del
    barrido de abajo, no es un caso aislado de la Plasma SD.
 
+   **Aclaración (2026-09-13, pregunta del usuario sobre la Rayo de Partículas):**
+   "cinético" no es un noveno tipo elemental — es justo el caso base, "sin elemento",
+   un golpe físico corriente. La frase "el ataque es de tipo cinético" (Rayo Ligero,
+   Rayo de Partículas, Rayo de Largo Alcance) aclara que, aunque se vendan como armas
+   de energía, mecánicamente golpean como un disparo normal. Confirmado en el
+   catálogo: las tres ya llevan `categoriaDanio: "Grave"` **directamente**, sin nombre
+   elemental — la ausencia de tipo elemental ES la forma correcta de representar
+   "esto es cinético", nada que traducir con la tabla `TIPO_A_CATEGORIA`. Esto también
+   explica el porqué del propio hallazgo: las armas que ya muestran la categoría
+   resuelta directamente son las cinéticas (no la necesitan); las que muestran un
+   nombre elemental son las que sí necesitan pasar por la tabla.
+
 ## Cómo coger un item
 
 1. Búscalo en `docs/equipamiento.md` (fuente de verdad) y lee la regla completa, no
