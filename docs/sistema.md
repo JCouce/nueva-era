@@ -638,8 +638,41 @@ lo anota a mano.
 26. Cuando el sistema dice "Perspicacia + Medicina", ¿quiere decir Biociencia usando la especialidad Medicina? Lo mismo con Empatía, Manipulación y Bioquímica. Es lo que decide si la habilidad cuenta entera o a la mitad. *(C8)* — Nota (usuario, 2026-09-10): depende del catálogo de especialidades, que aún está por definir (pregunta 3); no hay mucho en los documentos que hable de ellas todavía. Sigue abierta, ligada a esa.
 27. ¿Cuántos metros mide una casilla? *(C9)*
 28. Un "nivel de fatiga", ¿es un punto de fatiga o un estado (Fatigado/Exhausto)? *(C10)*
-29. El daño de un arma, ¿se resta 1:1 de los puntos de golpe tras el blindaje? Con armas de 7 a 20 y personajes de 6 a 16 puntos, un disparo corriente se lleva media vida. *(C11)*
+29. El daño de un arma, ¿se resta 1:1 de los puntos de golpe tras el blindaje? Con armas de 7 a 20 y personajes de 6 a 16 puntos, un disparo corriente se lleva media vida. *(C11)* — **Confirmado 2026-09-21 (repaso de efectos especiales de equipo, Hallazgo #5 de `docs/equipo-efectos-especiales.md`): `blindaje` no aparece ni una vez en `src/lib/rules/`, no hay ningún cálculo de absorción implementado.** Bloquea Mejora Ignífuga, Polímero Anticorrosivo/Tejido Conductor nivel 2, y una propuesta de tirada "Bloquear daño" (mostrar cuánto se absorbe de un impacto dado).
 30. ~~**Cultura** y **Supervivencia** no aparecen en ninguna regla... ¿Es Supervivencia la habilidad madre de Exploración?~~ **Resuelta**: Supervivencia desaparece, la sustituye Exploración entera. Cultura se queda sin resolver — sigue sin uso conocido. *(C12)*
+31. **"Bloqueo" no está definido en ningún sitio.** `COMBATE` (`docs/sistema-y-combate.md`
+    §"Acción defensiva") dice que la defensa pasiva por defecto es Reflejos + Atletismo y
+    cierra con "Existen otras formas de defensa" — sin desarrollarlas. La única aparición
+    de la palabra "Bloqueo" en todo el proyecto es la fila del Mangual en `EQUIP`
+    (`docs/equipamiento.md`, Flagelos): "Bloqueo -2". ¿Es una de esas "otras formas de
+    defensa" (defenderse activamente con el arma en mano, en vez de esquivar)? Si es así,
+    ¿qué atributo + habilidad usa, y sobre qué valor base se aplica el -2? Detectado por
+    el usuario al revisar el Mangual (2026-09-21) — bloquea cómo mecanizar ese ítem del
+    barrido de `docs/equipo-efectos-especiales.md`.
+32. **"Susceptible a shock" / "apagón" no está definido de forma consistente.** Varias
+    piezas de `EQUIP` dicen ser inmunes o susceptibles a shock (Inyector Hipodérmico,
+    Soporte Vital, Polímero Anticorrosivo, Tejido Conductor), pero: (a) "apagón" — lo
+    que dispara la pérdida de bonos en Soporte Vital — aparece **una sola vez en todo
+    el documento** (`docs/equipamiento.md:108`), sin definir qué lo causa ni si es lo
+    mismo que sufrir el estado `Shock` en combate; (b) Inyector Hipodérmico nivel 2
+    dice "se vuelve susceptible a efectos de shock" pero nunca dice **qué pasa** cuando
+    le afecta; (c) las cuatro piezas no se comportan igual entre sí — inmunidad total
+    (Anticorrosivo, Tejido Conductor, Inyector n1) frente a degradación parcial
+    (Soporte Vital: bonos a +1 salvo uno que se pierde entero). ¿Es "apagón" lo mismo
+    que el estado `Shock` (`catalog/estados.ts:670-678`, que ya prevé una rama sin
+    mecanizar para "equipamiento o armadura tecnológica", resistida por Estructura) o
+    un evento distinto? Esa rama del estado `Shock` está deliberadamente sin construir
+    porque depende de que existan sintéticos/aumentos en la ficha (Fase 5, bloqueada).
+    Detectado por el usuario al revisar el Inyector Hipodérmico (2026-09-21).
+33. **Propuesta, no ambigüedad: Canal de Alta Resonancia (Derivación Psiónica nivel 2)
+    da "+10% de alcance efectivo de los poderes" — sugerir a Murillo que sea un +N
+    fijo en vez de un porcentaje.** Todo el resto del catálogo (armas, mejoras,
+    subsistemas) usa bonos planos — un porcentaje sería el único caso de todo `EQUIP`
+    que no encaja en la forma `Modificador { valor: number }` ya usada en cientos de
+    sitios. No es una regla dudosa, es una propuesta de simplificación para que el
+    día que existan poderes psiónicos (Fase 5) esto no obligue a un tipo de bono
+    nuevo solo para un caso. Detectado por el usuario al revisar Derivación Psiónica
+    (2026-09-22).
 
 ---
 

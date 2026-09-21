@@ -106,6 +106,37 @@ Resumen de la forma que tomó el diseño: instancias de `Combate` con `Combatien
 desde la fase 4, y reactividad por polling inteligente para empezar (es mesa física, no
 hace falta latencia de videojuego online) con SSE como mejora si hace falta.
 
+**Extensión propuesta (2026-09-22, repaso de efectos especiales de equipo — idea del
+usuario, corregida en conversación): RECURSOS — cargas de batería, munición, dosis,
+gastadas y recargadas en partida.** No está en el MVP cerrado. Un personaje puede
+llegar a llevar **6+ recursos distintos a la vez** (batería del Camuflaje, batería de
+la Malla Plasmática, cargador de cada arma con capacidad propia, pilas del Visor
+Nocturno, dosis del Inyector...) — no son dos campos más, es una lista de N recursos
+por personaje, cada uno atado a una instancia de equipo concreta.
+- **Precedente parcial, no la solución entera**: `ajustarRecurso()`
+  (`master/combate/actions.ts:323-345`) ya resuelve el patrón de UI para PG/fatiga —
+  delta manual, clamp a `[0, max]`, permiso para dueño del personaje **y** máster —
+  pero hoy son dos columnas fijas del schema (`pgActual`/`fatigaActual`), no una
+  lista dinámica. Habría que generalizar a algo tipo
+  `recursos: { instanciaId, actual, max }[]`.
+- **Candidatos reales ya en el catálogo, sin unificar entre sí**: `célula`
+  (Subsistema: cargas/recarga/coste — Camuflaje Trifásico, Derivación Psiónica) y
+  `cargador` (ArmaFuego: solo un número).
+- **Dos formas de "automático" que NO son lo mismo, y las dos aportan valor sin
+  romper "la app informa, no arbitra":**
+  1. **Auto-poblar la lista de recursos desde el equipo** (al comprar una batería,
+     aparece sola) — esto no es arbitrar nada, es lo mismo que ya hace toda la ficha
+     hoy: derivar de lo que llevas equipado, no dar de alta a mano.
+  2. **Avisos proactivos de insuficiencia** ("no tienes balas para F. Auto, pero sí
+     para Ráfaga") — es información, no un bloqueo automático de la tirada. Encaja
+     directo en el mecanismo del §8 de `docs/modificadores-tiradas.md`: un
+     `CondicionTirada` de modo que lea el recurso restante y muestre el aviso, misma
+     idea que el resto del texto informativo de esta tarea, con el recurso como
+     fuente del número en vez de una dificultad fija.
+  Lo único que sigue sin automatizarse es **el gasto en sí** — eso se queda manual
+  (botones +/-), igual que PG/fatiga hoy.
+- Sin diseñar del todo, sin construir.
+
 ### Equipo — mecanizar efectos especiales por pieza ⬜ (arrancada 2026-09-11)
 **Hoja de ruta pieza a pieza: `docs/equipo-efectos-especiales.md`.** El catálogo de
 equipo (fase 3) transcribió fielmente el texto de cada pieza, pero columnas como
@@ -115,9 +146,76 @@ auto-aplicación — la app no arbitra) más el barrido pieza a pieza para pobla
 datos correctos. Sin empezar la implementación todavía, solo el diseño y el primer
 mapeo (familia de armas de plasma).
 
+**Consolidación 2026-09-22 (el usuario lo pide: demasiados apuntes en demasiados
+sitios, sin orden de prioridad claro).** El barrido llevaba `docs/equipo-efectos-
+especiales.md`, `docs/modificadores-tiradas.md` §8 y `docs/sistema.md` (preguntas
+31-33) acumulando hallazgos de peso muy distinto. Esto es el resumen priorizado —
+la fuente detallada de cada uno sigue viviendo en su documento, este es el mapa.
+**Ojo con la fecha: la partida empieza mañana (23 de septiembre) — nada de lo
+"bloqueado por diseño" de abajo se espera para entonces, solo los dos quick-wins.**
+
+1. **Ya construible hoy, cero diseño pendiente, una línea cada uno:**
+   - 🐛 Bug: Soporte Vital duplica su +1 a `salv_fortaleza` → aplica +2 real
+     (`equipo.ts:1318-1324`/`1338-1344`/`1354-1360`, borrar una línea en los 3
+     niveles). Detalle: `docs/equipo-efectos-especiales.md` §Mejoras Estándar.
+   - Fix barato: `tiradaDeArmaMelee` (`combate.ts:269`) no vuelca `arma.efectos` al
+     `nota`, a diferencia de `tiradaDeArmaFuego`. Una línea, sin condicionar por
+     modo, hace visibles en Tiradas todos los "Crítico de X"/"Ignora N blindaje" de
+     Combate Melee que hoy solo se ven en la ficha de Equipo. Detalle: `docs/equipo-
+     efectos-especiales.md` §Kerzul.
+
+2. **Preguntas para Murillo, ya redactadas, listas para soltar en tanda — coste es
+   enviarlas, no construir nada:** preguntas 31 (Bloqueo del Mangual), 32
+   ("susceptible a shock"/"apagón" sin definir), 33 (Canal de Alta Resonancia,
+   %→+N) en `docs/sistema.md` — las tres nuevas de esta sesión. Ver "Preguntas al
+   diseñador" al final de este documento para la lista completa por impacto,
+   ahora con la 29 (blindaje) añadida ahí también.
+
+3. **Diseño pendiente que bloquea construcción real, por orden de cuántas cosas
+   desbloquea cada uno:**
+   - **Hallazgo #5 — absorción de daño por blindaje** (prioridad alta, el usuario
+     lo marca explícitamente). No existe cálculo en todo el motor; `sistema.md`
+     pregunta 29/C11 sigue sin fórmula. Bloquea Mejora Ignífuga, Anticorrosivo n2,
+     Tejido Conductor n2. Detalle: `docs/equipo-efectos-especiales.md`, hallazgo #5.
+   - **§8 de `docs/modificadores-tiradas.md` — `CondicionTirada` y texto
+     informativo en tiradas fijas de `TIRADAS`.** Bloquea Visor Nocturno/Térmico,
+     Camuflaje Trifásico (sigilo/defensa), y previsiblemente **toda** Fase 5
+     (dotes/poderes/aumentos van a necesitar el mismo enganche). El de mayor
+     apalancamiento de los tres: cuanto antes se diseñe, menos re-trabajo en Fase 5.
+   - **RECURSOS — extensión de Fase 6b** (ver entrada de arriba). Bloquea
+     Conversión Psiónica (Derivación Psiónica) y previsiblemente poderes/dotes que
+     gasten cargas o fatiga en Fase 5.
+   - **Hallazgo #3 — salvaciones sin especificidad** ("¿contra qué resistes?").
+     Bloquea `arm2`/`me1`/`me5` y Munición Especial en cuanto se dé de alta
+     (hallazgo #2). Detalle: `docs/equipo-efectos-especiales.md`, hallazgo #3.
+
+4. **El barrido pieza a pieza en sí sigue mereciendo terminarse** (quedan Escudo
+   Deflector, Malla Plasmática, Proyector de Pulso, Armas Modificadas, Kerzul,
+   Munición) — es barato (lectura + anotación, sin código) y da el mapa completo
+   antes de decidir qué construir primero. Pero la mayoría de lo ya marcado
+   `✅ IMPLEMENTAR` depende de que el punto 3 se resuelva antes — terminar el
+   inventario no sustituye a diseñar.
+
 ### Fase 5 — Poderes, dotes, aumentos, especies reales ⬜ (bloqueado por el diseñador)
 El diseñador (Murillo) aún no ha escrito estos documentos. No hay nada que adelantar del
 lado del código.
+
+**Dependencia detectada (2026-09-21, repaso de efectos especiales de equipo):** el
+estado `Shock` (`src/lib/catalog/estados.ts:670-678`) ya prevé una rama para
+"equipamiento o armadura tecnológica" (resistencia = Estructura, no Fortaleza),
+explícitamente sin mecanizar hoy porque no hay sintéticos ni aumentos en la ficha.
+En cuanto arranque la Fase 5, revisar esto junto con la pregunta 32 de `sistema.md`
+("susceptible a shock"/"apagón" sin definir, detectado en Inyector Hipodérmico/
+Soporte Vital/Anticorrosivo/Tejido Conductor — `docs/equipo-efectos-especiales.md`
+§Mejoras Estándar) — es la misma pieza de motor vista desde dos tareas distintas.
+
+**Segunda dependencia, más grande (2026-09-21, mismo repaso — propuesta del usuario
+de tratarla como mini épica propia):** antes de construir dotes/poderes/aumentos,
+conviene resolver cómo llegan `CondicionTirada` (opciones seleccionables) y texto
+informativo a **tiradas fijas** de `TIRADAS` (hoy solo funciona por arma concreta) —
+problema completo en `docs/modificadores-tiradas.md` §8. Los modificadores numéricos
+ya están resueltos y son extensibles sin cambios (`modificadoresActivos`); lo que
+falta es específico de condiciones/texto, no de números. Sin diseñar, sin construir.
 
 ### Munición Especial ⬜
 Mejora de arma (perforante, incendiaria, tóxica, electrizante, criogénica, corrosiva,
@@ -168,7 +266,7 @@ con la ficha. No se diseña hasta que 6a y 6b estén cerradas.
 
 ## Preguntas al diseñador
 
-Las 30 preguntas completas, numeradas, viven en `docs/sistema.md` → "Preguntas abiertas
+Las 33 preguntas completas, numeradas, viven en `docs/sistema.md` → "Preguntas abiertas
 para el diseñador". Por impacto:
 
 1. **Notación de las tiradas** (`C8`): si "Perspicacia + Medicina" significa Biociencia
@@ -177,3 +275,7 @@ para el diseñador". Por impacto:
    penalizadores pendientes arriba).
 3. **Especies, poderes, dotes y aumentos**: fases enteras esperando a que el diseñador las
    escriba.
+4. **Absorción de daño por blindaje** (pregunta 29/`C11`, añadido 2026-09-22): sin
+   fórmula, bloquea el Hallazgo #5 completo (`docs/equipo-efectos-especiales.md`) —
+   Mejora Ignífuga, Anticorrosivo, Tejido Conductor, y cualquier futuro poder que
+   ignore niveles de daño. El propio usuario la marca prioridad alta.

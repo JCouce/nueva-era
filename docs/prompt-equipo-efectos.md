@@ -54,6 +54,14 @@ tienen que quedar sincronizados.
 artefacto se derivan del mismo contenido) y comitea en git con mensaje descriptivo.
 **Nunca hagas push sin que el usuario lo pida** — norma general del proyecto.
 
+**Cadencia real (decidida 2026-09-21, Combate Melee):** el sync completo de los tres
+en cada respuesta era ceremonia de más para aclaraciones menores sobre un ítem ya
+existente. En el día a día: **anota cada respuesta solo en el `.md`** al momento; el
+HTML local + el artefacto publicado se regeneran juntos en una pasada al final de la
+sesión (o cuando el usuario lo pida explícitamente), no micro-aclaración a
+micro-aclaración. El sync de los tres sigue aplicando tal cual para hallazgos grandes
+o piezas que de verdad se cierran (como los 4 hallazgos ya documentados).
+
 ## Método (ya rodado, no lo reinventes)
 
 1. El usuario señala una pieza o pregunta algo ("¿el X está contemplado?", "¿qué es
@@ -111,21 +119,43 @@ artefacto se derivan del mismo contenido) y comitea en git con mensaje descripti
 
 ## Dónde se quedó — sigue por aquí
 
-Repasado a fondo (con correcciones aplicadas): Armaduras, Mejoras Estándar,
-Subsistemas, Mejoras de Movimiento, **Armas de fuego completo** (pistolas →
-ametralladoras), y la mayoría de Mejoras en Armas de Fuego.
+**Actualizado 2026-09-22.** Repasado a fondo, con correcciones y hallazgos nuevos:
+Armaduras, Mejoras Estándar (completo: Soporte Vital, Compartimento Oculto, Inyector
+Hipodérmico, Mejora Ignífuga, Visor Nocturno/Térmico), Mejoras de Movimiento,
+**Armas de fuego completo** (pistolas → ametralladoras) y la mayoría de Mejoras en
+Armas de Fuego, **Combate Melee entero** (incluido Kerzul: Inercia Entrópica,
+Escudo de Kerzul), y de Subsistemas: Camuflaje Trifásico y Derivación Psiónica.
 
-**Sin terminar, en este orden:**
+**IMPORTANTE — antes de seguir el barrido pieza a pieza, lee la consolidación de
+prioridades en `docs/tareas.md`** (entrada "Equipo — mecanizar efectos especiales
+por pieza", sección "Consolidación 2026-09-22"): hay dos bugs de una línea listos
+para arreglar ya, tres preguntas nuevas para Murillo listas para enviar (31-33 en
+`sistema.md`), y tres bloques de diseño (Hallazgo #5 absorción de daño, §8 de
+`docs/modificadores-tiradas.md` condiciones/texto en tiradas fijas, RECURSOS) que
+bloquean casi todo lo que queda marcado `✅ IMPLEMENTAR` — terminar el inventario no
+sustituye a decidir esos tres. El usuario pidió explícitamente esta consolidación
+porque el barrido llevaba demasiados hallazgos repartidos en 4 documentos sin un
+orden de prioridad claro — no repitas el problema, mantén `tareas.md` al día según
+avances.
+
+**Sin terminar del barrido, en este orden:**
+- Subsistemas: **Escudo Deflector, Malla Plasmática, Proyector de Pulso** — sigue
+  por aquí, es justo donde se quedó la conversación.
 - `ma2` (Puntero Láser, Silenciador, Linterna, Bayoneta, Lanzagranadas Integrado) y
   `ma4` (Mira Telescópica integrada de los fusiles "de Largo Alcance" — ¿descuenta el
   hueco de mejoras?) siguen en ❓ Verificar, sin cerrar del todo.
 - Munición y Otras Armas a Distancia: listadas con veredicto, pero sin el repaso
   arma-por-arma en conversación que sí tuvo "Armas de fuego".
-- **Combate Melee — aquí es donde el usuario dijo "sigo mañana", empieza por aquí.**
-- Armas Modificadas, Kerzul: pendientes enteros.
+- Armas Modificadas: pendiente entero (bloqueado de raíz por el Hallazgo #2 — ni
+  existen en el catálogo).
 - Herramientas/Medicina: **fuera de alcance a propósito** (ya decidido, no lo repitas
   — son tiradas de uso activo, un tipo de contenido distinto al que motivó esto).
 
-Coge la sección "Combate Melee" de `docs/equipamiento.md`, mira lo que ya dice el
-backlog del `.md` sobre ella (ya hay una entrada genérica, `me10`-`me14`), y sigue el
-mismo patrón: el usuario pregunta pieza a pieza, tú verificas y anotas.
+**El método ahora es más profundo que al principio**: para cada pieza, pregúntate
+explícitamente las tres categorías que surgieron esta sesión — ¿modificador
+numérico? ¿`CondicionTirada`? ¿texto informativo? — y si algo afecta a la tirada de
+un TERCERO (no de quien lleva la pieza puesta), es 🔕 IGNORAR estructural, no "falta
+esfuerzo" (ver `docs/modificadores-tiradas.md` §8, límite de "objetivo"). Varios
+verdictos de piezas ya cerradas en sesiones anteriores (antes de este método) podrían
+merecer una segunda pasada si el usuario lo pide — no lo hagas por iniciativa propia,
+solo si lo señala.

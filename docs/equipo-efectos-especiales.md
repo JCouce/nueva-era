@@ -11,11 +11,11 @@ quien tira.
 que aparezca una regla genuinamente ambigua — la mayoría de esto ya está `FIRME` en
 `docs/equipamiento.md`, solo sin mecanizar.
 
-## Cuatro hallazgos, antes de la lista (2026-09-12)
+## Cinco hallazgos, antes de la lista (2026-09-12, el 5º añadido 2026-09-21)
 
 Revisando pieza a pieza contra el código real (no solo contra el PDF) aparecieron
-cuatro cosas más grandes que "falta el efecto especial" — no son parte del barrido en
-sí, mejor tratarlas aparte:
+cosas más grandes que "falta el efecto especial" — no son parte del barrido en sí,
+mejor tratarlas aparte:
 
 1. **El Proyector de Pulso no genera ninguna tirada de ataque.** Es un `Subsistema`
    (`catalog/equipo.ts`), y `combate.ts` (`tiradasDeAtaque`) solo recorre
@@ -106,6 +106,43 @@ sí, mejor tratarlas aparte:
    resuelta directamente son las cinéticas (no la necesitan); las que muestran un
    nombre elemental son las que sí necesitan pasar por la tabla.
 
+5. **No existe ningún cálculo de absorción de daño por blindaje en todo el motor —
+   y el propio sistema tampoco dice la fórmula.** (2026-09-21, pregunta del usuario
+   sobre Mejora Ignífuga.) `blindaje` **no aparece ni una vez en `src/lib/rules/`** —
+   solo vive como número suelto del catálogo (`equipo.ts`), pintado en la ficha de
+   Equipo (`PiezaDetalle.tsx:100`) sin que ningún cálculo lo consuma.
+   `resolverDanio()` (`tiradas.ts:294`) hace `base + bonoExitos = total` y termina ahí:
+   no resta blindaje, no sabe que existe. Tampoco hay un "blindaje total" agregado en
+   `derivados.ts` (que sí suma Aplicados, Movimiento, etc.) — ni siquiera está
+   calculado el ingrediente, solo el número de una pieza suelta.
+   **Y no es solo que falte implementarlo: `sistema.md` ya tiene una pregunta abierta
+   sin responder exactamente sobre esto — la 29** ("¿El daño de un arma se resta 1:1
+   de los PG tras el blindaje? Con armas de 7-20 y personajes de 6-16, un disparo
+   corriente se lleva media vida" — marcada *(C11)*, conflicto detectado). La única
+   pista es la línea de "Absorción de daño" (`sistema-y-combate.md:134-136`): "el
+   objetivo puede tener una puntuación de armadura que reduzca el daño total... algunas
+   formas de absorción solo sirven contra determinados ataques o tipos" — dice QUE
+   existe, no CÓMO se resta. El dato de que "Mental omite armaduras y blindajes"
+   (`sistema-y-combate.md:279`) confirma que para el resto de tipos algo debería
+   aplicar, sin decir cuánto.
+   **Bloquea, sin conectar hasta ahora**: Mejora Ignífuga nivel 1 ("usar el blindaje
+   total contra fuego" — implica que por defecto NO aplica), y todos los "el daño pasa
+   a letal en vez de grave" ya marcados 🔕 IGNORAR por el mismo motivo sin que nadie
+   los hubiera enlazado entre sí: Mejora Ignífuga nivel 2, Polímero Anticorrosivo
+   nivel 2, Tejido Conductor nivel 2 (`me4`/`me6` del backlog).
+   **Propuesta del usuario, sin construir, bloqueada por la pregunta 29**: una tirada
+   "que no tira" — "Bloquear daño" — donde eliges tipo de daño + valor recibido y la
+   app calcula cuánto se "come" el blindaje, consultable en cualquier momento (hoy no
+   hay dónde consultar "cuánto aguanto", ni en la app ni en el documento). Necesita
+   primero la fórmula de la 29, y que blindaje se agregue de verdad (armadura +
+   subsistemas tipo Escudo Deflector/Malla Plasmática, que hoy tampoco suman a nada).
+   **Prioridad alta (2026-09-21, el usuario lo marca explícitamente).** Además, la
+   estructura de datos no puede ser un "blindaje total" plano y único — tiene que
+   **entender de cuánto daño bloquea y contra qué tipos de daño concretos**, no un
+   número suelto que se aplica igual a todo. Encaja con el propio Hallazgo #4 (tipo
+   elemental vs. categoría): la absorción probablemente necesite razonar por tipo
+   igual que las salvaciones del Hallazgo #3, no solo por categoría de gravedad.
+
 ## Cómo coger un item
 
 1. Búscalo en `docs/equipamiento.md` (fuente de verdad) y lee la regla completa, no
@@ -155,6 +192,23 @@ sí, mejor tratarlas aparte:
   siquiera necesita depender de impacto/crítico, solo de qué modo está elegido — el
   disparador ya existe en el motor (`alcance: { tipo: "modo", contieneEtiqueta: "F.
   Auto" }`), es la variante más barata de las cuatro.
+- **Quinta variante, propuesta 2026-09-21 (pregunta del usuario sobre el Mangual):
+  texto libre segmentado por modo, sin estructurar en estado+dificultad.** Las cuatro
+  variantes de arriba asumen que el efecto se puede reducir a `{ estadoId, dificultad,
+  ... }` — pero hay reglas de arma que no encajan en esa forma (el "Bloqueo -2" y el
+  "ignora 2 niveles de Cobertura física" del Mangual, `docs/equipamiento.md` §Flagelos:
+  no son un estado que se resista, son texto de regla). Para esos casos no hace falta
+  forzar la estructura: basta con mostrar el texto **tal cual, en el Marcador, filtrado
+  por qué modo está seleccionado** (mismo disparador `alcance: { tipo: "modo", ... }`
+  que ya usa la variante 4) — sin inventar un campo por cada regla nueva que aparezca.
+  Sirve tanto para reglas mecanizables más adelante (Bloqueo, en cuanto se resuelva la
+  pregunta 31 de `sistema.md`) como para las que nunca lo serán — el propio usuario lo
+  resume con un ejemplo: una pistola cuyo efecto sea "el objetivo se enamora" se queda
+  en texto para siempre, y **eso está bien**, no hay que perseguir un medidor de
+  enamoramiento en la ficha. **Confirmado por el tipo `Tirada` (`tiradas.ts:27-65`):
+  no lleva ningún campo de objetivo ni enlace a otro personaje** — arquitectónicamente
+  no hay dónde engancharía un auto-aplicado aunque se quisiera, lo que hace explícito y
+  no solo por convención el principio "la app informa, no arbitra".
 
 ## Propuesta: tirada nueva "Ocultar objeto" (2026-09-12, sin construir)
 
@@ -191,6 +245,26 @@ que sea:
 **Siguiente paso si se construye**: añadir el supuesto (S17) y la pregunta asociada en
 `docs/sistema.md`, igual que el resto del catálogo de reglas inventadas-a-falta-de-dato.
 
+**Extensión propuesta (2026-09-21, pregunta del usuario sobre Compartimento
+Oculto): reusar el mismo selector para "resistir un registro", no solo para "pasar
+desapercibido".** Compartimento Oculto (`docs/equipamiento.md:121-134`) sube +3/+4 la
+dificultad **de quien te registra** — un momento de juego distinto al de "Ocultar
+objeto" original (activo, del portador, para que nadie note el arma mientras camina)
+pero con la misma necesidad de un selector "qué escondo, de qué tamaño". Complicaciones
+genuinas antes de dar esto por diseñado:
+- **La tirada contra la que compite ya existe, pero es de Herramientas**: `Escáner
+  Detector` (`herramientas.ts:196-230`, Perspicacia + Tecnociencia/Biociencia,
+  dificultad fija 6 superficial / 8 profundo) — y Herramientas está **fuera de
+  alcance de esta tarea a propósito** (ver cabecera del documento). El +3/+4 de
+  Compartimento Oculto apunta justo a esa frontera.
+- **"Cacheo físico rutinario" no tiene tirada en ningún sitio** — ni fija ni de
+  herramienta. Sería territorio nuevo entero, no un enganche a algo existente.
+- **Decisión de diseño pendiente, no solo de datos**: ¿el Escáner Detector pasa de
+  dificultad fija a **enfrentado** contra "Ocultar objeto" (cambia el diseño de una
+  tirada que ya existe), o el +3/+4 se queda como nota informativa que el máster suma
+  a mano sin tocar esa tirada? El cacheo físico seguiría sin sitio donde enganchar
+  nada en cualquiera de los dos casos.
+
 ## Casos sueltos, por arma (genuinamente ad hoc)
 
 A diferencia del mecanismo genérico de arriba (que cubre decenas de armas con el mismo
@@ -210,6 +284,70 @@ lista principal con casos de uno.
   apunta): es un único punto de dificultad, en una sola pistola Poco Habitual, con una
   imprecisión menor si se implementa sin la condición cruzada (el jugador tendría que
   saber no activar el toggle en modo Simple). Sin decidir si merece la pena.
+
+## Control de subtareas independientes (2026-09-21)
+
+El barrido pieza a pieza de más abajo son casi todas variantes del mismo mecanismo
+genérico — pero según se avanza van saliendo piezas que son **trabajo propio, aparte**,
+que no se resuelven solas cuando el mecanismo genérico se construya. Se centralizan
+aquí para no perder de vista qué queda, más allá de "qué arma falta revisar". Cada una
+ya tiene su detalle completo en la sección que le corresponde — esto es solo el índice
+de control.
+
+- ⬜ **El mecanismo genérico en sí** (§"El mecanismo genérico") — sin construir, las 5
+  variantes: impacto, crítico, por tramo, por modo elegido, y texto libre segmentado
+  por modo (la quinta, 2026-09-21).
+- ⬜ **Fix barato: `arma.efectos` no llega al `nota` en melee** (§Kerzul, 2026-09-21) —
+  a `tiradaDeArmaMelee` (`combate.ts:269`) le falta la misma línea que ya tiene
+  `tiradaDeArmaFuego` (`nota: arma.especial`). Un cambio de una línea, sin condicionar
+  por modo, hace visibles en Tiradas todos los "Crítico de X (N)" y "Ignora N de
+  blindaje" de toda la sección Combate Melee que hoy solo se ven en la ficha de
+  Equipo. Independiente del mecanismo genérico completo — se puede hacer antes.
+- ⬜🏗️ **MINI ÉPICA (2026-09-21, el usuario la propone): `CondicionTirada` y texto
+  informativo en tiradas fijas de `TIRADAS`.** Generaliza el caso de `alerta_activa`
+  (Visor Nocturno/Térmico) — en cuanto lleguen dotes/poderes/aumentos (Fase 5, ya
+  inminente según el usuario) van a necesitar el mismo enganche. Problema completo,
+  qué ya está resuelto (los modificadores numéricos, mecanismo 4) y qué falta de
+  verdad (extender `CondicionTirada` con `alcance`, formalizar el texto informativo)
+  en **`docs/modificadores-tiradas.md` §8** — sin decidir, sin construir, pendiente de
+  sesión de diseño dedicada, no de esta tarea de diagnóstico.
+- ⬜🏗️ **RECURSOS (2026-09-22, el usuario la propone)** — cargas de batería, munición,
+  dosis, gastadas/recargadas en partida (Derivación Psiónica "Conversión Psiónica" es
+  el primer caso concreto). Extensión de Fase 6b, no tab nueva de la ficha — precedente
+  ya construido (`ajustarRecurso`, PG/fatiga). Detalle en `docs/tareas.md`, entrada de
+  Fase 6b. Sin diseñar del todo, sin construir.
+- ⬜ **Hallazgo #1** — Proyector de Pulso no genera tirada de ataque, falta la tirada
+  entera antes de poder aplicarle ningún efecto.
+- ⬜ **Hallazgo #2** — Munición Especial y las 4 Armas Modificadas no existen en el
+  catálogo; hay que darlas de alta antes de mecanizar su efecto.
+- ⬜ **Hallazgo #3** — Salvaciones genéricas sin especificidad ("¿contra qué resistes?").
+  Bloquea `arm2`, `me1`, `me5` del backlog.
+- ⬜ **Hallazgo #4** — Tipo elemental vs. categoría de daño mezclados en
+  `categoriaDanio: string`; falta la tabla `TIPO_A_CATEGORIA`.
+- ⬜🔴 **Hallazgo #5 — PRIORIDAD ALTA** (2026-09-21) — no existe cálculo de absorción de
+  daño por blindaje en todo el motor, y `sistema.md` pregunta 29/C11 sigue sin
+  responder la fórmula. Bloquea Mejora Ignífuga, Anticorrosivo nivel 2, Tejido
+  Conductor nivel 2, y la propuesta de tirada "Bloquear daño". La estructura tiene que
+  ser consciente de **tipo de daño**, no un blindaje plano único — conecta con el
+  Hallazgo #4.
+- ⬜ **Tirada nueva "Ocultar objeto"** (§"Propuesta: tirada nueva") — pendiente de
+  validar con el diseñador antes de construir (dificultades por categoría inventadas).
+- ⬜ **Sydiasi — caso ad hoc del retroceso a dos manos** (§"Casos sueltos, por arma") —
+  lógica especial fuera del mecanismo genérico, sin decidir si merece la pena.
+- ⬜ **Pregunta 31 de `sistema.md` — "Bloqueo" sin definir** — bloquea cómo mecanizar el
+  Mangual (`docs/equipo-efectos-especiales.md` §Combate Melee). Pendiente de que
+  Murillo la responda.
+- ⬜ **Kerzul — Inercia Entrópica** (§Kerzul, `ker3`) — mini-tarea propia: dificultad
+  dinámica (el propio daño básico de la acción, no un número de catálogo), afecta a
+  quien empuña, no al objetivo. No encaja en `efectoImpacto`/`efectoCritico`.
+- ⬜ **Pregunta 32 de `sistema.md` — "susceptible a shock"/"apagón" sin definir de
+  forma consistente** — bloquea Inyector Hipodérmico, y roza Soporte Vital/
+  Anticorrosivo/Tejido Conductor. Pendiente de que Murillo la responda; parte de la
+  respuesta además choca con Fase 5 (sintéticos/aumentos), ya bloqueada.
+- 🐛 **Bug confirmado: Soporte Vital duplica su modificador de +1 salv_fortaleza**
+  (§Mejoras Estándar, `me1`, 2026-09-21) — distinto del hallazgo #3, es un bug de
+  implementación, no de diseño. Prioridad aparte: es rápido de arreglar (borrar una
+  línea) en cuanto se decida qué hacer con el resto de `me1`.
 
 ## Leyenda de la lista
 
@@ -242,43 +380,151 @@ lista principal con casos de uno.
 
 ### Mejoras Estándar
 
-- Soporte Vital (niveles 1-3, +1/+2/+3 salv. ambiental): **❓ VERIFICAR**, mismo caso
-  que las armaduras — cableado a `salv_fortaleza` genérico, cuando el texto lo
-  condiciona a "si sufre daño en ambiente tóxico".
-- Compartimento Oculto (+3/+4 dificultad para ser descubierto): **🔕 IGNORAR** — la
-  dificultad sube para QUIEN TE CACHEA, no hay tirada de "cacheo" en el catálogo a la
-  que aplicarlo.
+- **Soporte Vital (niveles 1-3): ❓ VERIFICAR, más grave de lo que parecía**
+  (revisado a fondo 2026-09-21, pregunta del usuario). Dos problemas distintos, no uno:
+  - **Bloqueado por el hallazgo #3** (igual que las armaduras) — la regla real
+    (`docs/equipamiento.md:97-119`) distingue **tres cosas separadas**: Resistencia
+    Térmica (+1 fijo contra frío/calor, solo nivel 1, incondicional) y Blindaje
+    Ambiental (+1/+2/+3 según nivel contra tóxico/radiación, **y solo si hay daño en
+    ese ambiente concreto** — nivel 1 da protección total normalmente, se degrada a
+    +1 solo al recibir daño). El catálogo lo aplana todo a `salv_fortaleza` genérico
+    sin nivel ni condición. Bloqueado hasta que se resuelva el hallazgo #3.
+  - **🐛 Bug de implementación aparte, confirmado, no relacionado con el hallazgo #3**:
+    los tres niveles (`catalog/equipo.ts:1318-1324`, `1338-1344`, `1354-1360`) llevan
+    el modificador `{ tiradaId: "salv_fortaleza", valor: 1 }` **literalmente
+    duplicado** — la intención (según el comentario del propio código) era cubrir
+    "congelación y calor extremo" con el mismo +1, pero al no haber forma de decir eso
+    sin repetir la entrada, `resolverModificadores` (`modificadores.ts:131-132`, un
+    `reduce` que suma sin deduplicar) aplica **+2 real** a Salvación de Fortaleza en
+    vez de +1 — en los tres niveles. Se ve en la UI como dos chips azules idénticos
+    "+1 Salvación de Fortaleza" (`ChipsModificadores`, un chip por entrada del
+    array). Verificado que NO pasa en Anticorrosivo/Tejido Conductor ni en las
+    armaduras (`arm2`) — ahí cada modificador aparece una vez. Arreglo trivial (borrar
+    una de las dos líneas) en cuanto se decida qué hacer con el resto del ítem.
+- **Compartimento Oculto (+3/+4 dificultad para ser descubierto): ❓ VERIFICAR,
+  reabierto 2026-09-21 (pregunta del usuario)** — antes marcado 🔕 IGNORAR liso
+  ("sube la dificultad de QUIEN TE CACHEA, no hay tirada de cacheo a la que
+  aplicarlo"), pero la mitad de la regla (nivel 2, "contra escáneres avanzados") SÍ
+  apunta a una tirada real: `Escáner Detector` (Herramientas). Desarrollado como
+  extensión de la propuesta "Ocultar objeto" más abajo — pendiente de decidir si el
+  Escáner Detector se vuelve enfrentado, y el "cacheo físico" sigue sin ninguna
+  tirada a la que engancharse en cualquier caso.
 - Funda Automática / Inyector Hipodérmico (cambian el tipo de acción de un desenfundado
   o una aplicación): **🔕 IGNORAR** — no hay concepto de "coste de acción" mecanizado
   en ninguna tirada.
-- Mejora Ignífuga: nivel 1 (usar blindaje total contra fuego) y nivel 2 (fuego cuenta
-  como letal, +2 en vez de +1 contra llamarada): **🔕 IGNORAR** por ahora — depende de
-  si el motor resta blindaje por categoría de daño al resolver un impacto, cosa que no
-  vi en esta pasada (no confundir con `resolverDanio`, que es daño por éxitos, no
-  reducción por blindaje). Si en algún momento se mecaniza blindaje-vs-categoría, esto
-  se revisita junto con Polímero Anticorrosivo/Tejido Conductor.
+  **Aparte (2026-09-21, pregunta del usuario): "inmune/susceptible a shock" del propio
+  Inyector Hipodérmico — ❓ VERIFICAR, bloqueado por pregunta 32 de `sistema.md`.**
+  Nivel 1 es puramente mecánico (inmune a shock y pirateo); nivel 2 incorpora
+  electrónica y "se vuelve susceptible a efectos de shock" — pero el documento nunca
+  dice qué pasa exactamente cuando le afecta. Mismo patrón suelto que Soporte Vital
+  ("apagón") y Anticorrosivo/Tejido Conductor ("no es susceptible a shock") — cuatro
+  piezas, tres comportamientos distintos bajo la misma etiqueta de texto, ninguno
+  definido del todo. El estado `Shock` (`estados.ts:670-678`) ya prevé una rama para
+  "equipamiento o armadura tecnológica" pero está deliberadamente sin mecanizar,
+  bloqueada por Fase 5 (sintéticos/aumentos, `tareas.md`). No es "añadir una variable
+  a todo": hay al menos tres comportamientos distintos que unificar primero, y una
+  dependencia real con una fase ya bloqueada por el diseñador.
+- **Mejora Ignífuga: nivel 1 (usar blindaje total contra fuego) y nivel 2 (fuego cuenta
+  como letal, +2 en vez de +1 contra llamarada): 🔕 IGNORAR — ahora formalmente
+  bloqueado por el Hallazgo #5** (2026-09-21, confirmado que no es solo "no lo vi en
+  esta pasada": `blindaje` no aparece en `src/lib/rules/` en absoluto, y `sistema.md`
+  pregunta 29 sigue sin responder la fórmula). No confundir con `resolverDanio`, que
+  es daño por éxitos, no reducción por blindaje. Se revisita junto con Polímero
+  Anticorrosivo/Tejido Conductor en cuanto se resuelva el Hallazgo #5.
 - Polímero Anticorrosivo / Tejido Conductor (+1/+2 contra un estado; "ignora el primer
   nivel de daño X"): el "+1/+2" **❓ VERIFICAR** (mismo caso salv_fortaleza genérico de
-  arriba); el "ignora el primer nivel de daño" **🔕 IGNORAR**, mismo motivo que Mejora
-  Ignífuga.
-- Visor Nocturno: nivel 2 "+3 contra ceguera" **✔️ YA HECHO** (`salv_ceguera_destello`,
-  +3 — y este SÍ está bien acotado: `salv_ceguera_destello` es un `tiradaId` marcador
-  específico, no el Fortaleza genérico). Nivel 1 "cegado dificultad 8 ante fogonazo" y
-  "-2 niveles de cobertura visual dentro de 50 m": **🔕 IGNORAR**, dependen de que el
-  máster narre un fogonazo o de distancia real al objetivo (más allá del tramo de
-  disparo, que sí se rastrea).
-- Visor Térmico (-3 percepción fuera del gradiente, rastreo de huellas térmicas):
-  **🔕 IGNORAR**, narrativo/situacional.
+  arriba); el "ignora el primer nivel de daño" **🔕 IGNORAR, bloqueado por el
+  Hallazgo #5**, mismo motivo que Mejora Ignífuga.
+- **Visor Nocturno / Visor Térmico — reabierto 2026-09-21 (pregunta del usuario),
+  encontrado el enganche real y una pega de arquitectura nueva.**
+  - `+3 contra ceguera` (Visor Nocturno n2): **✔️ YA HECHO** (`salv_ceguera_destello`,
+    bien acotado — es un `tiradaId` marcador específico, no el Fortaleza genérico).
+  - El resto de números concretos — "cegado dificultad 8 ante fogonazo" (n1), "-2
+    cobertura visual dentro de 50m" (n2), "-3 fuera del gradiente térmico" (Térmico
+    n1) — **auto-aplicar sigue 🔕 IGNORAR**, todos dependen de algo situacional que el
+    motor no rastrea (que el máster narre un fogonazo, distancia real al objetivo,
+    si lo mirado está dentro/fuera del gradiente resaltado).
+  - **Pero mostrarlos como texto es ✅ IMPLEMENTAR (quinta variante)** — la tirada
+    objetivo existe y no la toca nadie hoy: `alerta_activa` ("Buscar / percibir",
+    Perspicacia+Exploración, `tiradas.ts:157-163`). Con una `CondicionTirada` tipo
+    "opción" (qué visor llevas puesto) se puede mostrar "ves a través de humo/niebla/
+    polvo, cobertura -2 dentro de 50m" o "-3 fuera del gradiente térmico en modo
+    térmico" sin auto-aplicar el número — mismo patrón que Mangual/Kerzul.
+  - **Pega de arquitectura nueva, no vista hasta ahora en el barrido**: `alerta_activa`
+    vive en el array **estático** `TIRADAS` (`tiradas.ts:83`), pintado tal cual por
+    `TiradasTab.tsx:415` sin awareness de la ficha — a diferencia de
+    `tiradasDeAtaque(sheet)`/`tiradasDeHerramientas(sheet)`, que sí generan sus
+    tiradas mirando el equipo. Para que la opción "Visor Nocturno n2" solo aparezca si
+    el personaje lo lleva puesto de verdad, hace falta sacar `alerta_activa` de la
+    lista estática a algo sheet-aware — no es solo "añadir una condición", es mover
+    dónde vive la tirada. Primera vez que este patrón hace falta para una tirada fija
+    de Acciones, no de Ataques/Herramientas.
+  - **Visor Térmico n2 (rastro térmico reciente, con caducidad 5 turnos/10-15 min, a
+    la mitad con frío/ventilación) no encaja en nada de esto**: no es un modificador de
+    ninguna tirada, es una capacidad narrativa de rastreo — se queda en texto puro,
+    **🔕 IGNORAR** confirmado.
 
 ### Subsistemas
 
-- Camuflaje Trifásico: **🔕 IGNORAR** entero — las coberturas dependen de modo/
-  movimiento, sin concepto de "cobertura" en el motor (ya documentado así en el propio
-  catálogo, `notaApilamiento`).
-- Derivación Psiónica: **✔️ YA HECHO** — los `tiradaId` marcadores
-  (`resistir_retroceso_psionico`, `resistir_metasensoria`, `poder_psionico`) apuntan a
-  tiradas que no existen todavía porque la psiónica está `PENDIENTE` en `sistema.md`.
-  Correcto tal cual, no tocar hasta que exista esa parte del sistema.
+- **Camuflaje Trifásico — reabierto 2026-09-21 (pregunta del usuario: ¿a qué tirada
+  afecta, numérico/condición/texto?).** Confirma algo más grande que la propia pieza:
+  - **Bonificador numérico: 🔕 IGNORAR, y no es "falta esfuerzo" — es estructural.**
+    La Cobertura (narrativa y la de esta pieza) sube la dificultad de la tirada de
+    **quien ataca o busca al portador**, nunca la del propio portador — y
+    `Modificador`/`alcance` solo sabe aplicar bonos a la tirada de quien la lleva
+    puesta (`modificadoresActivos(sheet)`, siempre del propio personaje). No hay
+    ningún mecanismo, ni en teoría, para que un bono alcance la tirada de un tercero
+    — consecuencia directa de que `Tirada` no lleva campo de objetivo (`tiradas.ts:
+    27-65`, ya confirmado al principio de esta sesión). `modificadores: []` vacío en
+    los 4 niveles (`equipo.ts:1682-1697` y siguientes) ya lo reflejaba, solo que sin
+    explicar el porqué estructural.
+  - **CondicionTirada: mismo bloqueo**, mismo motivo (no hay tirada de un tercero a
+    la que enganchar nada).
+  - **Texto informativo: ✅ IMPLEMENTAR (quinta variante) — caso limpio, dos tiradas
+    candidatas (corrección 2026-09-21, apunte del usuario).** `sigilo` (detección:
+    visual/térmica/acústica) y **`defensa`** ("Defensa / esquiva" — encaja aún mejor
+    para "dificulta ser acertado por ataques a distancia o melee",
+    `equipamiento.md:255`) — las dos ya existen en `TIRADAS`, las dos son del propio
+    portador. Con una `CondicionTirada` tipo opción (Modo Activo Estático/Dinámico,
+    Pasivo, Desactivado) mostrarían "Cobertura 3/3/4 (Visual/Térmica/Acústica)" como
+    recordatorio para que el máster lo aplique a mano contra quien ataque o busque
+    al portador — informa donde sí tiene sentido (la tirada propia), no donde no
+    puede (la ajena). Mismo bloqueo de arquitectura que el §8 de
+    `modificadores-tiradas.md` (extender `CondicionTirada` a tiradas fijas) — buen
+    caso de prueba real para cuando se diseñe.
+  - El apartado de "ocultar un objeto en contacto directo, tamaño limitado" refuerza
+    la propuesta "Ocultar objeto" de más arriba, mismo tipo de necesidad.
+- **Derivación Psiónica — desglosado en 5 piezas (2026-09-22, pregunta del usuario:
+  a qué tirada afecta cada una, conceptualmente e ignorando límites de hoy).**
+  Confirmado en código que los `tiradaId` marcadores (`resistir_retroceso_psionico`,
+  `resistir_metasensoria`, `poder_psionico`) apuntan a tiradas que no existen todavía
+  porque la psiónica está `PENDIENTE` en `sistema.md` — correcto tal cual, no tocar
+  hasta que exista esa parte del sistema. El desglose:
+  - **Estabilizador Neuronal Básico** (+1 resistir retroceso/desorientación):
+    **✔️ YA HECHO** (en cuanto exista la tirada) — numérico limpio, self-tirada, sin
+    problema de objetivo.
+  - **Blindaje Psico-Reactivo** (+1 resistir metasensoria): **✔️ YA HECHO** igual —
+    es una salvación, la tira el propio objetivo (a diferencia de la Cobertura de
+    arriba, aquí no hay problema de "tirada de un tercero").
+  - **Simbiosis Sináptica Total** (reduce en 1 el penalizador por fatiga en tiradas
+    de poder): **✔️ YA HECHO como simplificación** — numéricamente equivale a +1,
+    pero conceptualmente es "cancela parte de un penalizador condicional que ya
+    existe" (Fatigado/-1, Exhausto/-2), no un bono nuevo — condicional sobre otra
+    condición. Aceptado tal cual por ahora, sin mejor forma de representarlo con el
+    motor actual.
+  - **Canal de Alta Resonancia** (+10% de alcance efectivo del poder): **❓
+    VERIFICAR/PROPUESTA** — no es un bono a una dificultad, es un modificador
+    porcentual a un valor derivado distinto (alcance del poder, no existe todavía).
+    Añadida como pregunta 33 en `sistema.md`: sugerir a Murillo que sea un +N fijo
+    en vez de %, para no necesitar un tipo de `Modificador` nuevo solo para este caso.
+  - **Conversión Psiónica** (N cargas de la célula → absorbe 1 punto de fatiga
+    psiónica): **❓ VERIFICAR, no es ninguna de las tres categorías tal cual.** No
+    modifica la dificultad de ninguna tirada — es una conversión de recurso (batería
+    → fatiga), declarada al usar el poder. Emparentado con **RECURSOS**, discusión
+    nueva abierta 2026-09-22 (ver `docs/tareas.md`, entrada de Fase 6b) — mismo
+    patrón que ya existe para PG/fatiga en combate (`ajustarRecurso`,
+    `master/combate/actions.ts:323`), generalizado a cargas de equipo. No es un
+    modificador de tirada, es una acción de recurso ligada al momento de tirar.
 - Escudo Deflector: la "absorción de daño" **🔕 IGNORAR** — sin concepto de absorción
   en el motor (ya documentado en el catálogo).
 - Malla Plasmática: el "colchón de PG" **🔕 IGNORAR** (mismo motivo). Pero el "crítico
@@ -402,6 +648,15 @@ lista principal con casos de uno.
   pieza no existe en el catálogo, hay que crearla primero. Perforante además "ignora
   los 2 primeros puntos de blindaje" — campo estructurado nuevo, no solo estado+
   dificultad (mismo caso que Nanofilamento más abajo).
+  **También depende del hallazgo #3, confirmado 2026-09-21 (pregunta del usuario)**:
+  `docs/equipamiento.md:762-802` nombra el estado y dificultad exactos de cada una —
+  Incendiaria→Llamarada(7)/Ceguera(10) en crítico, Electrizante→Shock(7→10),
+  Tóxica/Radiactiva→envenenamiento(7), Criogénica→Congelación(7), Corrosiva→
+  Corrosión(7), Supresora→"la toxina"(8) — casi todas bajo `salv_fortaleza`
+  (Llamarada bajo `salv_reflejos`). En cuanto existan como pieza, los bonos ya
+  cableados de Anticorrosivo ("+2 contra corrosión") o Tejido Conductor ("+2 contra
+  shock") se aplicarían a las ocho munición por igual sin el hallazgo #3 resuelto —
+  mismo bug de sobre-aplicación que `arm2`/`me1`/`me5`, multiplicado.
 
 ### Otras Armas a Distancia (Armamento Pesado, Granadas)
 
@@ -415,18 +670,72 @@ lista principal con casos de uno.
 
 ### Combate Melee
 
+- **Mangual — "Bloqueo -2" y "Acción Estándar ignora 2 niveles de Cobertura física"**
+  (2026-09-21, pregunta del usuario): **❓ VERIFICAR, bloqueado por regla sin definir**.
+  Ojo, esto vive en `uso`, no en `efectos` — es distinto del resto de esta sección.
+  - **"Bloqueo" no existe como mecánica en ningún sitio del proyecto** — ni en
+    `sistema.md`, ni en `sistema-y-combate.md`, ni en el código (`tiradas.ts` no tiene
+    ningún `tiradaId` ni nota que lo mencione). La única aparición en todo el proyecto
+    es esta fila del Mangual. La única defensa que el sistema define es la "Acción
+    defensiva" genérica (`sistema-y-combate.md` §"Acción defensiva"): reacción
+    gratuita, por defecto Reflejos + Atletismo (ya cableada como la tirada fija
+    `defensa`, `tiradas.ts:86`) — con la frase "Existen otras formas de defensa" sin
+    desarrollar. Bloqueo probablemente sea una de esas otras formas (defenderse con el
+    arma en mano), pero no hay fórmula ni valor base al que aplicarle el -2. Añadida
+    pregunta 31 a `sistema.md` — bloquea decidir si esto se engancha a la tirada
+    `defensa` existente (condicionado a "Mangual equipado + elige bloquear") o necesita
+    algo nuevo.
+  - **"Ignora 2 niveles de Cobertura física" no se puede auto-aplicar** — Cobertura
+    (`sistema-y-combate.md` §"Cobertura", `FIRME`) es puramente narrativa: la decide el
+    máster según la escena, sin ningún campo "cobertura del objetivo" en el motor.
+    Mismo motivo que ya justificó 🔕 IGNORAR el "-2 niveles de cobertura visual" del
+    Visor Nocturno (`me8`).
+  - **Hallazgo aparte, más barato de arreglar**: hoy ninguno de los dos avisos llega ni
+    siquiera como texto a la tab Tiradas. `arma.uso` (donde viven ambas frases) solo se
+    lee en la ficha de Equipo (`PiezaDetalle.tsx:184`) — `tiradaDeArmaMelee`
+    (`combate.ts:269`) no lo vuelca a `nota`, solo mira `uso` para el caso de "Sutil".
+    Mismo principio que ya aplicasteis con F.Auto (Esquiva)/Derribo a tramo: "no
+    auto-resolver" y "no informar" son cosas distintas — esto ni se resuelve ni se
+    informa. Candidato **✅ IMPLEMENTAR** barato (volcar `uso` al `nota`, sin tocar el
+    -2 de cobertura que no hay dónde aplicar), independiente de si "Bloqueo" se acaba
+    mecanizando o no.
 - Pelea, Armas Cortas, Armas de Asta, Espadas y Dagas, Flagelos, Armas Mecánicas: TODAS
   llevan `efectos: string | null` con `Crítico de Aturdimiento (N)` / `Crítico de
   Hemorragia (N turnos)` / `Crítico de Hemorragia Exanguinante` — **✅ IMPLEMENTAR**,
   mismo mecanismo que las armas de fuego, aplicado en `tiradaDeArmaMelee` (`combate.ts`)
   en vez de `tiradaDeArmaFuego`. Confirmado en código: `ArmaMelee.efectos` es hoy
   puramente decorativo, igual que `especial` en `ArmaFuego`.
-- Armas Mecánicas en concreto (Hoja Dentada, Guantelete de Pistón, Sierra Circular,
-  Martillo de Pistón, Ariete Percusivo): además de la parte de crítico, combinan una
-  "Acción Compleja" alternativa (Derribo, ignora blindaje) — encaja como
-  `CondicionTirada` tipo `opción` (modo de golpe: Estándar vs. Compleja), cuyo efecto
-  extra sería igual de mecanizable. **✅ IMPLEMENTAR**, algo más de trabajo que el resto
-  de melee por la doble vía.
+- **Armas Mecánicas — desglose completo (2026-09-21, pregunta del usuario, verificado
+  contra el render del PDF páginas 34-35, no solo `pdftotext -layout` que aquí también
+  corrompe la tabla)**: Hoja Dentada, Guantelete de Pistón, Sierra Circular, Martillo
+  de Pistón, Ariete Percusivo. Dos matices que no habían salido en el resto del barrido:
+  - **No todos los efectos son "estado + dificultad".** `estados.ts` confirma que
+    `aturdido`/`derribado` sí son salvación contra una dificultad (encajan en
+    `{ estadoId, dificultad }`), pero `hemorragia` (`estados.ts:521`) se aplica
+    **directo, sin salvación**, solo con duración ("1 turno" aquí, "1d6 turnos" en
+    Armas Cortas/Asta/Espadas/Flagelos). El mecanismo genérico necesita que
+    `efectoImpacto`/`efectoCritico` sean una **unión**: `{ estadoId, dificultad }` si
+    hay salvación, o `{ estadoId, duracionTurnos }` si se aplica directo — afecta a
+    todo el "Crítico de Hemorragia (N turnos)" del resto de la sección, no solo a
+    Mecánicas.
+  - **Ariete Percusivo cambia de estado entre impacto y crítico** — Derribo(6) al
+    impactar, pero Crítico: **Aturdimiento**(12), no "más Derribo". El resto de la
+    familia sí mantiene el mismo estado en los dos (Guantelete/Martillo: Aturdimiento
+    en ambos). Así en el render, no es artefacto de extracción.
+  - Tabla por pieza:
+
+    | Arma | Al impactar | Crítico | Acción Compleja (solo con ese modo elegido) |
+    |---|---|---|---|
+    | Hoja Dentada | Hemorragia 1 turno (duración) | Hemorragia Exanguinante | "ignora 1 nivel de armadura" — texto libre (quinta variante), sin resta de blindaje por categoría en el motor, mismo motivo que `me4`/`ker1` |
+    | Sierra Circular | Igual que Hoja Dentada | Igual | Igual |
+    | Guantelete de Pistón | Aturdimiento(6) | Aturdimiento(10) | Derribo(8) — estado+dificultad normal, mecanizable, condicionado al modo |
+    | Martillo de Pistón | Aturdimiento(6) | Aturdimiento(12) | Derribo(8) |
+    | Ariete Percusivo | Derribo(6) | Aturdimiento(12) | Derribo(10) + "doble daño contra puertas/muros/estructuras" (texto libre, sin concepto de "tipo de objetivo" en el motor) |
+
+  El modo Estándar/Compleja ya es una `CondicionTirada` tipo `opción` — la parte de
+  Derribo(8)/(10) es **✅ IMPLEMENTAR** normal; "ignora armadura" y "doble daño
+  estructuras" son **✅ IMPLEMENTAR (quinta variante, texto segmentado por modo)**, no
+  estado+dificultad.
 - Flagelos (Látigo, Cadena Armada): "Crítico Derribado o Entorpecido (N)" — el jugador
   elige cuál de los dos en el momento, no es un estado fijo. **✅ IMPLEMENTAR** con una
   pequeña variante (el aviso ofrece los dos, el máster/jugador elige cuál aplicar).
@@ -434,6 +743,12 @@ lista principal con casos de uno.
   propios" del escudo **🔕 IGNORAR** (mismo "colchón" sin concepto que Malla
   Plasmática/Escudo Deflector). El "Crítico de Aturdimiento" del golpe con el propio
   escudo sí: **✅ IMPLEMENTAR**, mismo patrón melee normal.
+  **Aclaración (2026-09-21, pregunta del usuario):** "levantar la Rodela/Escudo cuesta
+  una acción simple/estándar" **🔕 IGNORAR también, no es una tirada** — no hay dado de
+  por medio, es puro coste de turno (el documento ni siquiera lo describe como tirada,
+  solo como requisito de acción). Mismo motivo que Funda Automática/Inyector
+  Hipodérmico arriba: el motor no modela "coste de acción" en ninguna tirada, así que
+  no hay sitio donde engancharlo aunque quisiéramos.
 
 ### Armas Modificadas (mejora comprable)
 
@@ -450,18 +765,46 @@ lista principal con casos de uno.
 
 ### Kerzul
 
-- Armas Melee de Kerzul: "Ignora N puntos de blindaje" **🔕 IGNORAR** por ahora, mismo
-  motivo que Mejora Ignífuga (sin resta de blindaje por categoría en el motor). "Crítico:
-  Impacto Estructural (N)" **✅ IMPLEMENTAR** como aviso (mismo patrón melee) — pero su
-  efecto real (reducir el blindaje del objetivo de forma permanente) es algo que la app
-  no puede aplicar sola sin tocar la ficha ajena: el aviso informa, el máster lo anota a
-  mano, coherente con "la app no arbitra".
+- Armas Melee de Kerzul: "Ignora N puntos de blindaje" — **auto-aplicar sigue 🔕
+  IGNORAR** (sin resta de blindaje por categoría en el motor, mismo motivo que Mejora
+  Ignífuga), **pero mostrarlo como texto en el Marcador es ✅ IMPLEMENTAR, y barato**
+  (2026-09-21, pregunta del usuario). "Crítico: Impacto Estructural (N)" **✅
+  IMPLEMENTAR** como aviso igual — su efecto real (reducir blindaje del objetivo de
+  forma permanente) sigue siendo "el máster lo anota a mano", coherente con "la app
+  informa, no arbitra".
+  **Hallazgo consolidado**: esto no es un caso especial de Kerzul, es la confirmación
+  de que falta un fix genérico en TODA la sección Combate Melee. Hoy
+  `tiradaDeArmaMelee` (`combate.ts:269`) no vuelca nada de `arma.efectos` al `nota` —
+  a diferencia de `tiradaDeArmaFuego` (`combate.ts:140`), que sí hace
+  `nota: arma.especial ?? undefined`. Falta la misma línea al lado melee:
+  `nota: arma.efectos ?? undefined`. Con ese único cambio (sin condicionar por modo)
+  se resuelve de golpe: el "Ignora N de blindaje" de Kerzul, y cualquier "Crítico de X
+  (N)" de toda la sección (Pelea, Cortas, Asta, Espadas, Flagelos, Mecánicas) — hoy
+  invisibles en Tiradas, visibles solo en la ficha de Equipo (`PiezaDetalle.tsx`).
+  **No hace falta la quinta variante (texto segmentado por modo) para esto** — esa
+  solo hace falta para lo que de verdad depende del modo elegido (Mangual: "Bloqueo"/
+  "ignora Cobertura" viven en `uso`, no en `efectos`, y "Acción Estándar ignora..." no
+  debería verse en modo Simple; Armas Mecánicas: "Acción Compleja: X" solo con ese
+  modo). El fix de `efectos` → `nota` sin condición es el caso base, más barato, y
+  cubre la mayoría de la sección de una vez.
 - **Inercia Entrópica** (tirada de Fortaleza extra al atacar Estándar/Complejo con
   kerzul, o daño no letal + entorpecido, con fallo crítico además derribado): **❓
   VERIFICAR / candidata a mini-tarea propia** — no es un "efecto de crítico del
   objetivo", es una regla de uso del arma que afecta a quien la empuña. No encaja en
   `efectoImpacto`/`efectoCritico` tal cual; necesitaría su propio diseño si se decide
-  mecanizar.
+  mecanizar. Regla completa en `docs/equipamiento.md:1024-1033` (recuadro aparte antes
+  de la tabla, fácil pasarlo por alto). **Matices verificados (2026-09-21, pregunta del
+  usuario) contra la tabla de modos de cada pieza:**
+  - **Puñal de Kerzul es inmune** — su único modo es "Simple" (nunca Estándar/Compleja),
+    así que Inercia Entrópica no se dispara jamás con él.
+  - **Escudo de Kerzul siempre está en riesgo** — su único modo es "Estándar" (no tiene
+    Simple), así que CADA golpe con él dispara la tirada de Fortaleza.
+  - **La dificultad de esa tirada de Fortaleza no es un número fijo del catálogo**: es
+    el propio "daño básico de la acción empleada" — una fórmula `Fue+N` que depende del
+    modo elegido y de la Fuerza del propio atacante, resuelta en el momento de tirar, no
+    un valor que se pueda poner tal cual en `tiradas.ts`. Es justo lo que confirma que
+    esto necesita diseño propio y no encaja en el mecanismo genérico (que asume
+    dificultades fijas de catálogo).
 - Escudo de Kerzul: mismo patrón que los escudos normales + kerzul (ver ambas
   secciones).
 

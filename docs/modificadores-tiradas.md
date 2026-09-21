@@ -216,3 +216,172 @@ algo se ha hecho a mano que no hacía falta.
    `"modo"` y el texto está contenido en la etiqueta de la opción elegida?
    Puede que el id apunte a una tirada que aún no existe (ver sección 5) —
    eso no es un bug, es una regla pendiente de aclarar.
+
+## 8. Problema abierto (2026-09-21, sin decidir, sin construir): `CondicionTirada` y
+   texto informativo en tiradas fijas de `TIRADAS`
+
+Detectado durante el repaso de efectos especiales de equipo
+(`docs/equipo-efectos-especiales.md`), al intentar enganchar el Visor Nocturno/
+Térmico a `alerta_activa` ("Buscar / percibir"). El usuario lo generalizó: en
+cuanto lleguen dotes, poderes psiónicos y aumentos (Fase 5, `docs/tareas.md`),
+van a necesitar el mismo tipo de enganche a tiradas fijas — no solo equipo.
+
+**Lo que ya está resuelto, no hace falta tocarlo:** el mecanismo 4 de la sección 2
+(`Modificador` tipo `"tirada"` con `alcance`) ya es genérico y ya llega a
+cualquier tirada fija por su `tiradaId`/`grupo`/`habilidad`/`modo`, venga de
+donde venga (`modificadoresActivos(sheet)`, `derivados.ts:24`). El día que exista
+`modificadoresDeDotes(sheet)` o `modificadoresDePoderes(sheet)`, se añaden a esa
+misma lista y ya está — cero cambios en `tiradas.ts`, `combate.ts` o el modal.
+
+**Lo que falta, confirmado con casos reales de esta sesión:**
+
+1. **`CondicionTirada` (mecanismo 1) solo se recoge hoy por arma concreta** —
+   `condicionesDeMejoras(sheet, instanciaId)` recorre mejoras instaladas en ESA
+   arma. No existe ningún `condicionesActivas(sheet, tiradaId)` simétrico a
+   `modificadoresActivos` para una tirada fija de `TIRADAS`. Sin eso, no se puede
+   mostrar "¿qué visor llevas puesto?" como opción de `alerta_activa` — la tirada
+   fija no sabe mirar el equipo del personaje en absoluto hoy.
+2. **El "texto informativo condicionado" no es ninguno de los 4 mecanismos** —
+   la necesidad, detectada varias veces esta sesión (Mangual: "Bloqueo"/"ignora
+   Cobertura" en modo Estándar; Kerzul: "Ignora N de blindaje"; Visores: "ves a
+   través del humo"), es mostrar una nota de texto en el Marcador **sin sumar
+   ningún número** — puramente informativa, condicionada a qué opción/modo esté
+   elegido. Hoy cada caso se resolvería a mano, sin patrón común.
+
+**Ojo, esto NO significa "unificar los 4 mecanismos en uno"** — la sección 2 ya
+explica por qué se mantienen separados a propósito (cada uno resuelve una
+pregunta distinta, forzarlos a converger no compensa la ceremonia). La lectura
+más consistente con esa decisión ya tomada es **extender el mecanismo 1** con el
+mismo `alcance` que ya usa el mecanismo 4, y **darle un lugar formal al texto
+informativo** (quizá un campo opcional en `CondicionTirada` que se muestre en vez
+de/además de sumar un `valor`) — no inventar un quinto sistema paralelo.
+
+**Por qué importa el momento**: si esto se diseña antes de que arranque la Fase
+5, dotes/poderes/aumentos se construyen sobre una pieza central ya resuelta. Si
+no, cada uno se inventa su propio enganche suelto — el mismo patrón ad hoc que ya
+se ha repetido esta sesión con Mangual, Kerzul y los Visores, que servirían de
+casos de prueba reales para lo que se diseñe aquí.
+
+**Sin decidir, sin construir** — pendiente de una sesión de diseño dedicada, no
+de esta tarea de diagnóstico. Ver también `docs/equipo-efectos-especiales.md`
+§"Control de subtareas independientes".
+
+### El modelo mental: "todo lo que no es la ficha en sí es equipo en otro sitio"
+
+Idea del usuario (2026-09-21), y no es solo una metáfora — ya está así en el
+código, solo que nadie lo había puesto en estos términos. Equipo, Estados, y lo
+que traiga la Fase 5 (Dotes, Poderes, Aumentos) son la misma forma de cosa vista
+desde ángulos distintos: algo que se **activa/desactiva sobre la ficha** (el
+jugador equipa un arma, el máster aplica un estado, algo que se elige en algún
+sitio) y que, mientras está activo, **aporta cosas a las tiradas**. La única
+diferencia real es **quién decide activarlo/desactivarlo**:
+
+- **Equipo**: el jugador, desde la Tienda (`equipar`/`desequipar`).
+- **Estados**: el máster, desde la consola de combate (`aplicarEstadoAction`,
+  `master/combate/actions.ts:360`) — con duración en vez de ranura, pero el
+  mismo gesto de "esto está puesto ahora mismo".
+- **Dotes/Poderes/Aumentos** (Fase 5, sin construir): previsiblemente el
+  jugador al crear personaje o al conseguirlos en partida — mismo patrón otra
+  vez.
+
+Prueba de que esto no es una idea nueva sino una descripción de lo que ya hay:
+`modificadoresDeEstados()` (`estados.ts:125`) lleva el comentario **"calcado de
+`modificadoresDeEquipo()`"**, y `TiradasTab.tsx:294` ya mezcla los dos en el
+mismo array antes de pasarlo a la tirada: `[...modificadoresActivos(sheet),
+...modificadoresDeEstados(estadosCombate)]`. Dotes/Poderes/Aumentos serían un
+tercer (cuarto, quinto) `...modificadoresDeX(sheet)` en esa misma lista — el
+lado numérico ya está preparado para esto sin cambios, es el problema del §8
+de arriba (`CondicionTirada` + texto) el que falta generalizar igual.
+
+```
+                              ┌─────────────────┐
+                              │      TIRADA      │   (TiradaModal.tsx)
+                              └────────┬─────────┘
+                                       │
+                    recibe, ya mezclados en un único array
+                                       │
+        ┌──────────┬──────────────────┼──────────────────┬──────────┐
+        │          │                  │                  │          │
+    ┌───▼───┐  ┌───▼────┐        ┌────▼────┐        ┌────▼───┐  ┌───▼────┐
+    │Especie│  │ Equipo │        │ Estados │        │ Dotes  │  │Poderes/│
+    │       │  │(jugador,│       │(máster, │        │(Fase 5,│  │Aumentos│
+    │       │  │ Tienda)│        │ consola)│        │  sin   │  │(Fase 5,│
+    │       │  │        │        │         │        │construir)│construir)│
+    └───┬───┘  └───┬────┘        └────┬────┘        └────┬───┘  └────┬───┘
+        │          │                  │                  │           │
+        └──────────┴──────────────────┴──────────────────┴───────────┘
+                                       │
+                   cada fuente puede aportar 3 cosas a una tirada:
+                                       │
+       ┌───────────────────────┬──────┴───────────────────┬───────────────────────┐
+       │                       │                           │                       │
+┌──────▼───────────┐  ┌────────▼─────────────┐   ┌─────────▼──────────────────────┐
+│ Modificador       │  │ CondicionTirada        │   │ Texto informativo              │
+│ numérico          │  │ (opción/toggle/contador)│   │ (nota, sin número)             │
+│ (bono/penalizador  │  │ elegida por el jugador  │   │                                 │
+│  a la dificultad) │  │ al tirar                │   │                                 │
+│                   │  │                         │   │                                 │
+│ ✅ YA GENÉRICO      │  │ ❌ solo funciona hoy si  │   │ ❌ sin mecanismo formal —         │
+│ (mecanismo 4,     │  │  la tirada la genera    │   │ hoy cada caso es ad hoc          │
+│  sección 5, con   │  │  combate.ts para un arma │   │ (arma.efectos/especial → nota   │
+│  alcance)         │  │  concreta (mecanismo 1) │   │  a mano, distinto por familia)  │
+└───────────────────┘  └─────────────────────────┘   └─────────────────────────────────┘
+```
+
+**Qué falta, en una frase**: los dos mecanismos de la derecha del diagrama solo
+saben mirar equipo-de-un-arma-concreta hoy — necesitan aprender a mirar
+"cualquier fuente activa sobre la ficha, para cualquier tirada", igual que ya
+sabe hacerlo el modificador numérico. Ese es el diseño pendiente del §8.
+
+**Límite adicional, no un "falta construir" — un "no puede", confirmado con la
+Cobertura/Camuflaje Trifásico (`docs/equipo-efectos-especiales.md` §Subsistemas,
+2026-09-21):** los tres canales de arriba solo alcanzan la tirada de **quien lleva
+puesta la fuente**. No existe ni en teoría un "alcance: objetivo" — algo que suba
+la dificultad de la tirada de OTRO personaje (un atacante, alguien que te busca)
+por llevar tú algo puesto. Es consecuencia directa de que `Tirada` no tiene campo
+de objetivo. Cualquier diseño que salga de este §8 debería decidir explícitamente
+si esto se queda fuera para siempre (coherente con "la app informa, no arbitra":
+esos casos se informan en la tirada del PROPIO portador, como recordatorio para
+que el máster se lo aplique al de enfrente, nunca en la tirada ajena) o si en
+algún momento compensa modelarlo — no es una limitación técnica accidental, es la
+misma que hace que el motor no pueda enganchar nada a un "objetivo" en absoluto.
+
+### Nota (2026-09-22): variables transversales vs. de un solo consumidor
+
+Idea del usuario, con un matiz importante. Hay campos del catálogo que solo
+alimentan una cosa (`danio` solo sirve para la tirada de daño) y otros que varias
+piezas distintas del motor querrían leer a la vez (`pesoKg`, ya usado por Carga
+Transportable, y previsiblemente por más cosas el día de mañana). Al diseñar
+nuevos campos para Dotes/Poderes/Aumentos (Fase 5), o al extender el mecanismo del
+§8, merece la pena preguntarse cuál es cada campo nuevo — no para que cada pieza
+lleve una lista fija de "variables importantes", sino para no duplicar en tres
+sitios distintos algo que debería ser un único campo compartido.
+
+**Disciplina a mantener, ya establecida en el propio catálogo**: no formalices un
+campo nuevo (tipo, enum, lo que sea) hasta que haya un **segundo consumidor real**
+— mismo criterio que ya usa Exoesqueleto ("se queda sin mecanizar a propósito...
+hasta que aparezca un segundo caso que justifique generalizarlo"). Ejemplo de
+cuándo SÍ toca generalizar: `célula` (Subsistema: cargas/recarga/coste) y
+`cargador` (ArmaFuego: solo un número) ya son dos formas distintas resolviendo lo
+mismo sin que nadie las una — eso ya pasó el umbral, hoy. Ejemplo de cuándo
+esperar: "tamaño" no existe como campo tipado en ningún sitio del catálogo hoy —
+solo la propuesta "Ocultar objeto" lo necesitaría, un único consumidor — mejor
+esperar a un segundo caso real que adivinar la forma (¿enum? ¿número?) sin
+evidencia. **El usuario está de acuerdo con esto para "tamaño" en concreto.**
+
+**Matiz aparte (2026-09-22): `required` en el validador de TypeScript no es lo
+mismo que "formalizar el campo ahora".** La propuesta del usuario es marcar como
+obligatorios (no `T | null` opcional) los campos que **el documento SÍ da** pero
+que alguien podría saltarse al transcribir — buena disciplina, sin relación con
+"esperar a un segundo consumidor" (eso es sobre inventar campos nuevos, esto es
+sobre no perder datos que ya existen). Ojo con la línea: `pesoKg` ya está bien
+resuelto así (`null` reservado para cuando el documento de verdad no dice nada,
+nunca para "no me molesté en poner el número" — ver cabecera de
+`armasMelee.ts`). Pero forzar `required` en un campo que **no existe en el
+documento en absoluto** (como "tamaño" hoy) obligaría a inventar un valor en las
+~80 piezas del catálogo sin ninguna base textual — eso sí choca con la norma que
+ya sigue el proyecto en todo lo demás (los datos inventados se marcan como
+supuesto numerado, `sistema.md` S1-S17, no se cuelan silenciosos por todo el
+catálogo). Regla práctica: `required` para lo que el documento da y se podría
+saltar por descuido; campo opcional + supuesto numerado para lo que de verdad
+hay que inventar.
