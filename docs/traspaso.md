@@ -30,6 +30,7 @@ todo lo demás, en `docs/tareas.md`.
 | `docs/tareas.md` | **La fuente de verdad del estado.** Qué está hecho, qué falta, qué lo bloquea | Al cerrar o abrir cualquier tarea — es el único sitio donde se anota esto |
 | `docs/fase-6b.md` | Hoja de ruta con subtareas del gestor de combate, para cogerlas una a una | Al coger o cerrar una subtarea. Se archiva (resumen a `docs/tareas.md`) cuando la fase entera cierre |
 | `docs/equipo-efectos-especiales.md` | Hoja de ruta pieza a pieza para mecanizar los efectos especiales del catálogo de equipo (críticos, efectos al impactar) | Al coger o cerrar una pieza/categoría |
+| `docs/prompt-equipo-efectos.md` | Encargo para retomar el repaso de efectos especiales en una sesión nueva — método, hallazgos ya cerrados, por dónde sigue | Al cerrar una tanda grande del repaso; se archiva cuando el barrido entero termine |
 | `docs/pruebas-integrales.md` | Checklist de pruebas manuales exhaustivas (no solo el camino feliz) para piezas de UI grandes | Al cerrar un bloque grande de UI, o al tocar código que ya tenga su sección aquí |
 | `docs/plan-app.md` | Por qué la arquitectura es como es (capas, versionado de ficha, sistema de modificadores) | Al cambiar una decisión de arquitectura, no de estado |
 | `docs/sistema-y-combate.md` | Transcripción del PDF de combate: dado, dificultades, salud, daño, 23 estados | Solo si llega una revisión del PDF |
