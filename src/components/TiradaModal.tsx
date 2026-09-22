@@ -33,7 +33,7 @@ const RODANDO_INTERVALO_MS = 70;
 // Cuánto se queda el número REAL fijo en pantalla antes de pasar a la vista
 // completa de resultado (UX 2026-09-23, pedido del usuario: "que se vea lo
 // que ha salido un poco más de tiempo" antes de saltar a la otra vista).
-const ASENTADO_MS = 500;
+const ASENTADO_MS = 900;
 
 function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
