@@ -18,6 +18,7 @@ import {
   type ContextoTirada,
 } from "@/lib/rules";
 import { HudCard } from "./HudCard";
+import { ContenidoResultado, type Lanzamiento } from "./ResultadoTirada";
 
 function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
@@ -149,6 +150,8 @@ export function TiradaModal({
   ctxBase,
   dificultadInicial,
   circunstancialInicial,
+  resultado,
+  onTirarDanio,
   onCerrar,
   onTirar,
 }: {
@@ -165,6 +168,11 @@ export function TiradaModal({
   ctxBase: Omit<ContextoTirada, "modoElegido">;
   dificultadInicial: number | null;
   circunstancialInicial: number;
+  // Presente en cuanto se pulsa Tirar: el modal deja de pintar los controles
+  // y pasa a mostrar el resultado in-place, sin cerrarse — corrección de UX
+  // 2026-09-23 (ver ResultadoTirada.tsx). null mientras se eligen condiciones.
+  resultado: Lanzamiento | null;
+  onTirarDanio: () => void;
   onCerrar: () => void;
   onTirar: (args: {
     estadoCondiciones: EstadoCondiciones;
@@ -216,7 +224,20 @@ export function TiradaModal({
             </button>
           </div>
 
-          {condiciones.length > 0 && (
+          {resultado && (
+            <div className="mt-4 border-t border-border pt-3">
+              <ContenidoResultado resultado={resultado} onTirarDanio={onTirarDanio} />
+              <button
+                type="button"
+                onClick={onCerrar}
+                className="clip-chamfer-sm mt-3 w-full border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98]"
+              >
+                Cerrar
+              </button>
+            </div>
+          )}
+
+          {!resultado && condiciones.length > 0 && (
             <div className="mt-4 flex flex-col gap-3 border-t border-border pt-3">
               {condiciones.map((c) => (
                 <ControlCondicion key={c.id} condicion={c} estado={estado} onCambiar={cambiar} />
@@ -224,126 +245,134 @@ export function TiradaModal({
             </div>
           )}
 
-          <div className="mt-4 border-t border-border pt-3">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
-              {"// Dificultad"}
-            </p>
-            <div className="mt-2 grid grid-cols-4 gap-1">
-              {DIFICULTADES.map((d) => (
+          {!resultado && (
+            <div className="mt-4 border-t border-border pt-3">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+                {"// Dificultad"}
+              </p>
+              <div className="mt-2 grid grid-cols-4 gap-1">
+                {DIFICULTADES.map((d) => (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => {
+                      setDificultad(d.valor);
+                      setDificultadCustom("");
+                    }}
+                    className={`clip-chamfer-sm border px-1 py-1.5 font-mono text-[10px] uppercase active:scale-95 ${
+                      dificultad === d.valor && dificultadCustom === ""
+                        ? "border-accent text-accent"
+                        : "border-border text-muted"
+                    }`}
+                  >
+                    {d.label}
+                    <span className="block tabular-nums">{d.valor}</span>
+                  </button>
+                ))}
                 <button
-                  key={d.id}
                   type="button"
                   onClick={() => {
-                    setDificultad(d.valor);
+                    setDificultad(null);
                     setDificultadCustom("");
                   }}
                   className={`clip-chamfer-sm border px-1 py-1.5 font-mono text-[10px] uppercase active:scale-95 ${
-                    dificultad === d.valor && dificultadCustom === ""
+                    dificultad === null
                       ? "border-accent text-accent"
                       : "border-border text-muted"
                   }`}
                 >
-                  {d.label}
-                  <span className="block tabular-nums">{d.valor}</span>
+                  sin dificultad
                 </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => {
-                  setDificultad(null);
-                  setDificultadCustom("");
-                }}
-                className={`clip-chamfer-sm border px-1 py-1.5 font-mono text-[10px] uppercase active:scale-95 ${
-                  dificultad === null
-                    ? "border-accent text-accent"
-                    : "border-border text-muted"
-                }`}
-              >
-                sin dificultad
-              </button>
-              <input
-                type="number"
-                inputMode="numeric"
-                placeholder="custom"
-                value={dificultadCustom}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setDificultadCustom(v);
-                  setDificultad(v === "" ? null : Number(v));
-                }}
-                className="clip-chamfer-sm border border-border bg-elevated px-1 py-1.5 text-center font-mono text-[10px] uppercase text-foreground placeholder:text-muted"
-              />
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="custom"
+                  value={dificultadCustom}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setDificultadCustom(v);
+                    setDificultad(v === "" ? null : Number(v));
+                  }}
+                  className="clip-chamfer-sm border border-border bg-elevated px-1 py-1.5 text-center font-mono text-[10px] uppercase text-foreground placeholder:text-muted"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
-            <div>
+          {!resultado && (
+            <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+                  {"// Modificador circunstancial"}
+                </p>
+                <p className="font-sans text-[11px] text-muted">Heridas, fatiga, cobertura…</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCircunstancial((v) => Math.max(-10, v - 1))}
+                  aria-label="Bajar modificador"
+                  className="h-9 w-9 border border-border bg-elevated font-mono text-lg leading-none text-muted active:scale-95"
+                >
+                  −
+                </button>
+                <span
+                  className={`w-10 text-center font-mono text-xl tabular-nums ${
+                    circunstancial === 0 ? "text-muted" : circunstancial > 0 ? "text-info" : "text-danger"
+                  }`}
+                >
+                  {signo(circunstancial)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCircunstancial((v) => Math.min(10, v + 1))}
+                  aria-label="Subir modificador"
+                  className="h-9 w-9 border border-border bg-elevated font-mono text-lg leading-none text-muted active:scale-95"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!resultado && (
+            <div className="mt-4 flex flex-col gap-1 border-t border-border pt-3">
               <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
-                {"// Modificador circunstancial"}
+                {"// Desglose"}
               </p>
-              <p className="font-sans text-[11px] text-muted">Heridas, fatiga, cobertura…</p>
+              {desgloseBase.map((f, i) => (
+                <LineaDesglose key={`base-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
+              ))}
+              {desgloseAlcance(mods, ctx).map((f, i) => (
+                <LineaDesglose key={`alcance-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
+              ))}
+              {desgloseCondiciones(condiciones, estado).map((f, i) => (
+                <LineaDesglose key={`cond-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
+              ))}
+              {desgloseBonosTramo(bonosTramo ?? [], estado).map((f, i) => (
+                <LineaDesglose key={`tramo-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
+              ))}
+              {circunstancial !== 0 && (
+                <LineaDesglose etiqueta="Modificador circunstancial" valor={circunstancial} />
+              )}
+              <div className="mt-1 flex items-baseline justify-between border-t border-border pt-1.5">
+                <span className="font-mono text-xs uppercase text-foreground">Total</span>
+                <span className="font-mono text-lg font-bold tabular-nums text-accent">
+                  {signo(totalPrevisto)}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setCircunstancial((v) => Math.max(-10, v - 1))}
-                aria-label="Bajar modificador"
-                className="h-9 w-9 border border-border bg-elevated font-mono text-lg leading-none text-muted active:scale-95"
-              >
-                −
-              </button>
-              <span
-                className={`w-10 text-center font-mono text-xl tabular-nums ${
-                  circunstancial === 0 ? "text-muted" : circunstancial > 0 ? "text-info" : "text-danger"
-                }`}
-              >
-                {signo(circunstancial)}
-              </span>
-              <button
-                type="button"
-                onClick={() => setCircunstancial((v) => Math.min(10, v + 1))}
-                aria-label="Subir modificador"
-                className="h-9 w-9 border border-border bg-elevated font-mono text-lg leading-none text-muted active:scale-95"
-              >
-                +
-              </button>
-            </div>
-          </div>
+          )}
 
-          <div className="mt-4 flex flex-col gap-1 border-t border-border pt-3">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
-              {"// Desglose"}
-            </p>
-            {desgloseBase.map((f, i) => (
-              <LineaDesglose key={`base-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
-            ))}
-            {desgloseAlcance(mods, ctx).map((f, i) => (
-              <LineaDesglose key={`alcance-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
-            ))}
-            {desgloseCondiciones(condiciones, estado).map((f, i) => (
-              <LineaDesglose key={`cond-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
-            ))}
-            {desgloseBonosTramo(bonosTramo ?? [], estado).map((f, i) => (
-              <LineaDesglose key={`tramo-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
-            ))}
-            {circunstancial !== 0 && (
-              <LineaDesglose etiqueta="Modificador circunstancial" valor={circunstancial} />
-            )}
-            <div className="mt-1 flex items-baseline justify-between border-t border-border pt-1.5">
-              <span className="font-mono text-xs uppercase text-foreground">Total</span>
-              <span className="font-mono text-lg font-bold tabular-nums text-accent">
-                {signo(totalPrevisto)}
-              </span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => onTirar({ estadoCondiciones: estado, dificultad, circunstancial })}
-            className="clip-chamfer-sm mt-3 w-full border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98]"
-          >
-            Tirar ({signo(totalPrevisto)})
-          </button>
+          {!resultado && (
+            <button
+              type="button"
+              onClick={() => onTirar({ estadoCondiciones: estado, dificultad, circunstancial })}
+              className="clip-chamfer-sm mt-3 w-full border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98]"
+            >
+              Tirar ({signo(totalPrevisto)})
+            </button>
+          )}
         </div>
       </HudCard>
     </div>

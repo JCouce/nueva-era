@@ -20,8 +20,6 @@ import {
   bonoAlcance,
   modoElegido,
   type Tirada,
-  type Resultado,
-  type ResultadoDanio,
   type Sheet,
   type EstadoCondiciones,
   type EstadoActivo,
@@ -29,6 +27,7 @@ import {
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { TiradaModal } from "@/components/TiradaModal";
+import { ContenidoResultado, type DanioInfo, type Lanzamiento } from "@/components/ResultadoTirada";
 
 function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
@@ -38,21 +37,11 @@ function sumaAjustesFijos(tirada: Tirada): number {
   return (tirada.ajustesFijos ?? []).reduce((t, a) => t + a.valor, 0);
 }
 
-// Info de daño de la tirada de ataque que la generó: null si la tirada no es
-// un ataque. `base` es null en melee — el daño ahí es una fórmula sobre un
-// atributo ("Fue+2"), no un número, así que no hay botón de "tirar daño"
-// todavía para esas filas: se muestra la fórmula para calcularla a mano.
-type DanioInfo = { base: number | null; formulaDanio: string | null; categoriaDanio: string };
-
-type Lanzamiento = Resultado & {
-  id: number;
-  label: string;
-  danioInfo?: DanioInfo | null;
-  danioResuelto?: ResultadoDanio;
-};
-
-// Panel del último resultado. Es lo primero que se mira tras pulsar, así que
-// va arriba y con el total en grande.
+// Panel del último resultado — log rápido mientras miras la lista sin abrir
+// nada. Deja de ser el sitio PRINCIPAL donde te enteras de si has acertado:
+// eso pasó al propio TiradaModal (ver ContenidoResultado) tras la corrección
+// de UX 2026-09-23 — este panel se pierde al cambiar de tab, así que no
+// merece ser la única fuente del resultado.
 function Marcador({
   ultimo,
   onTirarDanio,
@@ -73,105 +62,9 @@ function Marcador({
     );
   }
 
-  const { exito, critico, margen } = ultimo;
-  const tono =
-    exito === null
-      ? "text-foreground"
-      : exito
-        ? critico
-          ? "text-accent"
-          : "text-info"
-        : critico
-          ? "text-danger"
-          : "text-muted";
-
-  const veredicto =
-    exito === null
-      ? "sin dificultad"
-      : exito
-        ? critico
-          ? "ÉXITO CRÍTICO"
-          : "éxito"
-        : critico
-          ? "FRACASO CRÍTICO"
-          : "fracaso";
-
-  const puedeTirarDanio =
-    ultimo.danioInfo?.base !== null &&
-    ultimo.danioInfo !== null &&
-    ultimo.danioInfo !== undefined &&
-    exito === true &&
-    margen !== null &&
-    !ultimo.danioResuelto;
-
   return (
-    <HudCard className={`p-4 ${critico ? "border-accent" : ""}`}>
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="truncate font-display text-sm font-semibold uppercase tracking-wide">
-          {ultimo.label}
-        </span>
-        <span className={`font-mono text-[11px] uppercase tracking-widest ${tono}`}>
-          {veredicto}
-        </span>
-      </div>
-
-      <div className="mt-2 flex items-baseline gap-3">
-        <span className={`font-display text-5xl font-bold tabular-nums ${tono}`}>
-          {ultimo.total}
-        </span>
-        <span className="font-mono text-xs leading-tight text-muted">
-          d12 <span className="text-foreground">{ultimo.dado}</span>
-          {" · mod "}
-          <span className="text-foreground">{signo(ultimo.modificador)}</span>
-          {ultimo.circunstancial !== 0 && (
-            <>
-              {" · circ "}
-              <span className="text-foreground">{signo(ultimo.circunstancial)}</span>
-            </>
-          )}
-          {ultimo.dificultad !== null && (
-            <>
-              <br />
-              {"vs dificultad "}
-              <span className="text-foreground">{ultimo.dificultad}</span>
-              {" · "}
-              <span className={tono}>
-                {margen! >= 0 ? `${margen} éxitos` : `${Math.abs(margen!)} fracasos`}
-              </span>
-            </>
-          )}
-        </span>
-      </div>
-
-      {ultimo.danioInfo && (
-        <div className="mt-3 border-t border-border pt-3">
-          {ultimo.danioResuelto ? (
-            <p className="font-mono text-xs uppercase text-danger">
-              Daño: <span className="text-lg tabular-nums">{ultimo.danioResuelto.total}</span>{" "}
-              {ultimo.danioInfo.categoriaDanio}
-              {ultimo.danioResuelto.bonoExitos > 0 && (
-                <span className="text-muted">
-                  {" "}
-                  ({ultimo.danioResuelto.base} base +{ultimo.danioResuelto.bonoExitos} por éxitos)
-                </span>
-              )}
-            </p>
-          ) : puedeTirarDanio ? (
-            <button
-              type="button"
-              onClick={onTirarDanio}
-              className="clip-chamfer-sm w-full border border-danger py-2 font-display text-xs font-semibold uppercase tracking-wide text-danger active:scale-[0.98]"
-            >
-              Tirar daño ({ultimo.danioInfo.base} {ultimo.danioInfo.categoriaDanio} base)
-            </button>
-          ) : ultimo.danioInfo.formulaDanio ? (
-            <p className="font-mono text-[10px] uppercase text-muted">
-              Daño: {ultimo.danioInfo.formulaDanio} {ultimo.danioInfo.categoriaDanio} (fórmula — se
-              calcula a mano)
-            </p>
-          ) : null}
-        </div>
-      )}
+    <HudCard className={`p-4 ${ultimo.critico ? "border-accent" : ""}`}>
+      <ContenidoResultado resultado={ultimo} onTirarDanio={onTirarDanio} />
     </HudCard>
   );
 }
@@ -305,6 +198,11 @@ export function TiradasTab({
     desgloseBase: { etiqueta: string; valor: number }[];
     mods: ModificadorConFuente[];
     ctxBase: { id: string; grupo: Tirada["grupo"]; habilidad: Tirada["habilidad"] };
+    // null mientras se eligen condiciones/dificultad; el id del Lanzamiento
+    // recién creado en cuanto se pulsa Tirar — el modal pasa a mostrar el
+    // resultado in-place en vez de cerrarse (UX corregida 2026-09-23: cerrar
+    // dejaba al jugador mirando la lista de botones si había hecho scroll).
+    resultadoId: number | null;
   } | null>(null);
 
   // Mezcla las condiciones de alcance (Visor Nocturno y lo que venga después,
@@ -339,6 +237,7 @@ export function TiradasTab({
       desgloseBase,
       mods,
       ctxBase: { id: t.id, grupo: t.grupo, habilidad: t.habilidad },
+      resultadoId: null,
     });
   };
 
@@ -375,8 +274,9 @@ export function TiradasTab({
       danioInfo = { base: modo.danio, formulaDanio: modo.formulaDanio, categoriaDanio: modo.categoriaDanio };
     }
 
-    setHistorial((h) => [{ ...r, id: Date.now(), label: tirada.label, danioInfo }, ...h].slice(0, 6));
-    setModal(null);
+    const id = Date.now();
+    setHistorial((h) => [{ ...r, id, label: tirada.label, danioInfo }, ...h].slice(0, 6));
+    setModal((m) => (m ? { ...m, resultadoId: id } : m));
   };
 
   const tirarDanio = () => {
@@ -391,6 +291,11 @@ export function TiradasTab({
   const especialidadesActuales = modal?.tirada.habilidad
     ? sheet.habilidades[modal.tirada.habilidad].especialidades
     : [];
+  // El resultado vive en `historial` (tirarDanio lo actualiza ahí), no
+  // duplicado en el propio `modal` — se busca por id para que las dos vistas
+  // (Marcador arriba, TiradaModal) lean siempre el mismo objeto.
+  const resultadoModal =
+    modal?.resultadoId != null ? (historial.find((h) => h.id === modal.resultadoId) ?? null) : null;
 
   return (
     <div className="flex flex-col gap-3">
@@ -482,6 +387,8 @@ export function TiradasTab({
           ctxBase={modal.ctxBase}
           dificultadInicial={memoria[modal.tirada.id]?.dificultad ?? 7}
           circunstancialInicial={memoria[modal.tirada.id]?.circunstancial ?? 0}
+          resultado={resultadoModal}
+          onTirarDanio={tirarDanio}
           onCerrar={() => setModal(null)}
           onTirar={tirar}
         />

@@ -31,6 +31,17 @@ Tabla de dificultades, pares atributo+habilidad, chuleta de tiradas, lanzador de
 Alerta se desbloqueó el 2026-09-10 al resolverse que Exploración sustituye a Supervivencia
 (`C4` en `docs/sistema.md`).
 
+**UX corregida 2026-09-23 (feedback del usuario probando el §8 de arriba):** pulsar
+"Tirar" cerraba el modal de golpe — si la tirada estaba lejos en la lista (scroll
+hecho), el jugador se quedaba mirando la lista de botones sin ver el resultado, que
+solo se actualizaba arriba del todo (`Marcador`, fuera de la vista). El resultado
+ahora se muestra **dentro del propio modal**, sustituyendo a los controles tras
+pulsar Tirar, con un botón "Cerrar" explícito — nuevo componente compartido
+`ContenidoResultado` (`src/components/ResultadoTirada.tsx`) que usan tanto
+`TiradaModal` como el `Marcador` de `TiradasTab` (que se queda como log rápido, ya
+no como única fuente del resultado). El usuario probará el feeling antes de decidir
+si hace falta más (p. ej. un atajo de "tirar otra vez" en la misma pantalla).
+
 ### Fase 4 — Modificadores y especies ✅ (con especies provisionales)
 Motor de modificadores (`Modificador` + `Fuente`, un único tipo de efecto para razas,
 dotes, aumentos y equipo) y dos especies placeholder: Humano y Arkorü. Las especies reales
