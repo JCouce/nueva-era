@@ -2680,6 +2680,9 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         // también ahí, que es incorrecto. Se deja sin mecanizar hasta decidir
         // cómo modelar esa excepción (Fase D).
         modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // +1 Fuerza con excepciones, sin forma de modelar el carve-out hoy
+        ],
       },
       {
         nivel: 2,
@@ -2687,6 +2690,9 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         coste: 24000,
         detalle: ["+2 a la Fuerza en las mismas tiradas."],
         modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+        ],
       },
       {
         nivel: 3,
@@ -2694,6 +2700,9 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         coste: 48000,
         detalle: ["+3 a la Fuerza en las mismas tiradas."],
         modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+        ],
       },
       {
         nivel: 4,
@@ -2701,6 +2710,9 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         coste: 72000,
         detalle: ["+4 a la Fuerza en las mismas tiradas."],
         modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+        ],
       },
     ],
   },
@@ -2730,6 +2742,19 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         ],
         modificadores: [],
         velocidadM: 50,
+        motor: [
+          // velocidadM: derivado ya construido (lib/rules/derivados.ts::vuelo,
+          // mostrado en ResumenTab) — Capa 1 → Derivado, sin Accion todavía
+          // (no hay tirada "volar" en el motor), mismo patrón que el peso de
+          // un arma en docs/motor.md. No es un hueco: el derivado en sí SÍ
+          // está construido.
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+          // Dificultad de maniobrabilidad: apunta a una tirada "volar" que no
+          // existe en ningún catálogo de tiradas (comprobado, no hay match en
+          // tiradas.ts/derivados.ts) — a diferencia de velocidadM, esto ni
+          // siquiera tiene un derivado que lo use.
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+        ],
       },
       {
         nivel: 2,
@@ -2742,6 +2767,10 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         ],
         modificadores: [],
         velocidadM: 70,
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+        ],
       },
       {
         nivel: 3,
@@ -2757,6 +2786,13 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         ],
         modificadores: [],
         velocidadM: 100,
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          // La elección Velocidad/Maniobrabilidad no se guarda en la ficha
+          // todavía (comentario de NivelModulo.velocidadM) — texto puro hoy.
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+        ],
       },
       {
         nivel: 4,
@@ -2770,6 +2806,10 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         ],
         modificadores: [],
         velocidadM: 140,
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+        ],
       },
     ],
   },
