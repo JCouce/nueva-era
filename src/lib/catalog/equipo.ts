@@ -418,6 +418,13 @@ export const ARMAS: ArmaFuego[] = [
     // "ocultar arma": no hay tirada de ocultar un objeto en TIRADAS hoy — el
     // id es un marcador para cuando exista, no se aplica a nada mientras tanto.
     modificadores: [{ tipo: "tirada", alcance: { tipo: "tiradaId", id: "ocultar_objeto" }, valor: 2 }],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ocultar_objeto" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "pregunta 27" }, // tirada de ocultar objeto no existe todavía en TIRADAS
+    ],
   },
   {
     familia: "arma",
@@ -436,6 +443,12 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 150,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -456,6 +469,12 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 300,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -480,6 +499,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Poco Habitual",
     coste: 500,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -500,6 +526,12 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 5000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -524,6 +556,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 8000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -548,6 +587,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Muy Extraño",
     coste: 30000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -573,12 +619,14 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Muy Extraño",
     coste: 45000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
-
-  // ── Escopetas ── Empleo: dos manos. Desenfundado: acción simple. +1 al
-  // ataque en Corta Distancia y A Bocajarro (acumulativo), y a esas
-  // distancias el arma causa Derribo. Las que tienen F. Auto disparan en
-  // área de dos casillas adyacentes, consumiendo el cargador completo.
   {
     familia: "arma",
     id: "escopeta_feritas",
@@ -598,6 +646,12 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 250,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -618,6 +672,12 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 400,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -641,6 +701,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Poco Habitual",
     coste: 1200,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -664,6 +731,12 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Muy Extraño",
     coste: 12500,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -691,11 +764,14 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Muy Extraño",
     coste: 56000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
-
-  // ── Subfusiles ── Empleo: dos manos. Desenfundado: acción simple. Todos
-  // tienen fuego automático en área de dos casillas adyacentes, consumiendo
-  // el cargador completo.
   {
     familia: "arma",
     id: "subfusil_nova",
@@ -716,6 +792,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 350,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -737,6 +820,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 500,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -758,6 +848,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Poco Habitual",
     coste: 900,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -781,6 +878,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 25500,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -805,11 +909,14 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 56000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
-
-  // ── Fusiles de Asalto ── Empleo: dos manos. Desenfundado: acción simple.
-  // Todos tienen fuego automático en área de dos casillas adyacentes,
-  // consumiendo el cargador completo.
   {
     familia: "arma",
     id: "fusil_asalto_impetus",
@@ -830,6 +937,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 500,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -851,6 +965,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 750,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -872,6 +993,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Poco Habitual",
     coste: 1100,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -896,6 +1024,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 16000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -917,6 +1052,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 18500,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -942,6 +1084,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 55000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -967,12 +1116,14 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 60500,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
-
-  // ── Fusiles de Precisión ── Empleo: dos manos. Desenfundado: acción
-  // estándar. Todos llevan integrada la Mira Telescópica de nivel 1 (ya
-  // contabilizada en la dificultad y en las mejoras admitidas). En Corta
-  // Distancia reciben -2 en vez del bonificador habitual de distancia.
   {
     familia: "arma",
     id: "fusil_precision_telum",
@@ -992,6 +1143,12 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 3700,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -1012,6 +1169,12 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 4900,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -1035,6 +1198,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Poco Habitual",
     coste: 6500,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -1055,6 +1225,12 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 11000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -1076,6 +1252,12 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 20000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -1097,6 +1279,12 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Muy Extraño",
     coste: 70000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -1121,6 +1309,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Muy Extraño",
     coste: 78000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -1141,12 +1336,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Singular",
     coste: 156000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
-
-  // ── Ametralladoras ── Empleo: dos manos. Desenfundado: acción estándar.
-  // En Corta Distancia y a Bocajarro causan Derribo. Todas tienen fuego
-  // automático en área de 4 casillas adyacentes, consumiendo 100 proyectiles
-  // por ataque.
   {
     familia: "arma",
     id: "ametralladora_asina",
@@ -1169,6 +1365,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 4500,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -1192,6 +1395,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Poco Habitual",
     coste: 6000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -1215,6 +1425,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Poco Habitual",
     coste: 7000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -1238,6 +1455,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 22000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -1262,6 +1486,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Muy Extraño",
     coste: 55000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
   {
     familia: "arma",
@@ -1286,6 +1517,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Muy Extraño",
     coste: 99000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+    ],
   },
 ];
 
