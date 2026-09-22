@@ -423,7 +423,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ocultar_objeto" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "pregunta 27" }, // tirada de ocultar objeto no existe todavía en TIRADAS
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ocultar_objeto" }, mecanismo: "siempre_activo", estado: "pendiente" }, // hay propuesta de diseño escrita para "Ocultar objeto" (equipo-efectos-especiales.md, 2026-09-12), solo falta construirla — no es una pregunta sin responder, así que "pendiente" y no "bloqueado"
     ],
   },
   {
@@ -593,6 +593,13 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      // Hallazgo del barrido de motor (2026-09-22): el -6 al sigilo vive en
+      // `descripcion`, no en `especial` — tiradaDeArmaFuego solo vuelca
+      // `especial` a la nota, así que esto no llega a ningún sitio hoy, ni
+      // siquiera como texto. Bloqueado por pregunta 25b (¿a qué tirada
+      // concreta resta? depende del modelo de sigilo persistente propuesto
+      // ahí mismo, sin validar con Murillo).
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 25b" },
     ],
   },
   {
@@ -625,6 +632,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 25b" }, // -6 sigilo en descripcion, no llega a ningún sitio (mismo hallazgo que Rayo Ligero)
     ],
   },
   {
@@ -770,6 +778,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 25b" }, // -6 sigilo en descripcion, no llega a ningún sitio
     ],
   },
   {
@@ -915,6 +924,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 25b" }, // -5 sigilo en descripcion, no llega a ningún sitio
     ],
   },
   {
@@ -1122,6 +1132,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 25b" }, // -5 sigilo en descripcion, no llega a ningún sitio
     ],
   },
   {
