@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import {
   TIRADAS,
   GRUPOS_TIRADA,
@@ -26,7 +26,7 @@ import {
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { TiradaModal } from "@/components/TiradaModal";
-import { ContenidoResultado, type DanioInfo, type Lanzamiento } from "@/components/ResultadoTirada";
+import { type DanioInfo, type Lanzamiento } from "@/components/ResultadoTirada";
 
 function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
@@ -36,35 +36,41 @@ function sumaAjustesFijos(tirada: Tirada): number {
   return (tirada.ajustesFijos ?? []).reduce((t, a) => t + a.valor, 0);
 }
 
-// Panel del último resultado — log rápido mientras miras la lista sin abrir
-// nada. Deja de ser el sitio PRINCIPAL donde te enteras de si has acertado:
-// eso pasó al propio TiradaModal (ver ContenidoResultado) tras la corrección
-// de UX 2026-09-23 — este panel se pierde al cambiar de tab, así que no
-// merece ser la única fuente del resultado.
-function Marcador({
-  ultimo,
-  onTirarDanio,
-}: {
-  ultimo: Lanzamiento | null;
-  onTirarDanio: () => void;
-}) {
-  if (!ultimo) {
-    return (
-      <HudCard className="border-dashed p-4 text-center">
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
-          {"//SYSTEM · sin tiradas"}
-        </p>
-        <p className="mt-2 font-sans text-sm text-muted">
-          Elige una acción y pulsa TIRAR.
-        </p>
-      </HudCard>
-    );
-  }
+// Color por resultado — mismas 4 categorías que ya usa ContenidoResultado
+// (tono), reutilizadas aquí para que el historial compacto hable el mismo
+// idioma que la vista completa: acento = éxito crítico, cian = éxito,
+// peligro = pifia (fracaso crítico), apagado = fracaso.
+function tonoResultado(h: Lanzamiento): string {
+  if (h.exito === null) return "text-foreground";
+  if (h.exito) return h.critico ? "text-accent" : "text-info";
+  return h.critico ? "text-danger" : "text-muted";
+}
 
+// "3 éxitos" / "1 fracaso" / "2 fracasos" — o el total a secas si la tirada
+// no llevaba dificultad (no hay margen que contar).
+function textoExitos(h: Lanzamiento): string {
+  if (h.margen === null) return `total ${h.total}`;
+  const n = Math.abs(h.margen);
+  return h.margen >= 0 ? `${n} éxito${n === 1 ? "" : "s"}` : `${n} fracaso${n === 1 ? "" : "s"}`;
+}
+
+// Una fila del historial — reemplaza al Marcador de antes (2026-09-23/24):
+// mostrar solo la última tirada, sola, en su propio panel, no compensaba
+// (se perdía al cambiar de tab y no aportaba mucho estéticamente). Ahora es
+// una lista compacta de las últimas tiradas (acotado a 6, ver `tirar()` más
+// abajo), "Nombre --- N éxitos", coloreada por
+// resultado — pedido explícito del usuario. El detalle completo (dado,
+// modificador, avisos de condiciones) sigue viviendo en TiradaModal mientras
+// se tira; esto es el log, no un sustituto de esa vista.
+function FilaHistorial({ h }: { h: Lanzamiento }) {
   return (
-    <HudCard className={`p-4 ${ultimo.critico ? "border-accent" : ""}`}>
-      <ContenidoResultado resultado={ultimo} onTirarDanio={onTirarDanio} />
-    </HudCard>
+    <div className="flex items-baseline justify-between gap-2 border-b border-border py-1.5 font-mono text-[11px] last:border-0">
+      <span className="truncate text-muted">{h.label}</span>
+      <span className={`shrink-0 tabular-nums ${tonoResultado(h)}`}>
+        {textoExitos(h)}
+        {h.danioResuelto && <span className="text-danger"> · daño {h.danioResuelto.total}</span>}
+      </span>
+    </div>
   );
 }
 
@@ -174,6 +180,10 @@ function FilaTirada({
 export function TiradasTab({
   sheet,
   estadosCombate = [],
+  historial,
+  setHistorial,
+  memoria,
+  setMemoria,
 }: {
   sheet: Sheet;
   // Fase 6b, 3.1b (D5: combate → ficha): los estados que el máster le tenga
@@ -182,15 +192,19 @@ export function TiradasTab({
   // modificadores "en reposo" de la ficha antes de que nada se calcule, así
   // que fila y modal ven exactamente los mismos números.
   estadosCombate?: EstadoActivo[];
-}) {
-  const [historial, setHistorial] = useState<Lanzamiento[]>([]);
-  const mods = [...modificadoresActivos(sheet), ...modificadoresDeEstados(estadosCombate)];
-  // Última dificultad/circunstancial usada en CADA tirada, no una global: un
+  // Viven en CharacterSheet, no aquí — sobreviven a cambiar de tab (ver el
+  // comentario junto a su useState en CharacterSheet.tsx). Última
+  // dificultad/circunstancial por tirada, no un valor global: un
   // francotirador repite la misma tirada varias veces por turno, pero eso no
   // dice nada de la siguiente salvación o de otra arma.
-  const [memoria, setMemoria] = useState<
-    Record<string, { dificultad: number | null; circunstancial: number }>
-  >({});
+  historial: Lanzamiento[];
+  setHistorial: Dispatch<SetStateAction<Lanzamiento[]>>;
+  memoria: Record<string, { dificultad: number | null; circunstancial: number }>;
+  setMemoria: Dispatch<
+    SetStateAction<Record<string, { dificultad: number | null; circunstancial: number }>>
+  >;
+}) {
+  const mods = [...modificadoresActivos(sheet), ...modificadoresDeEstados(estadosCombate)];
   const [modal, setModal] = useState<{
     tirada: Tirada;
     modBase: number;
@@ -305,7 +319,29 @@ export function TiradasTab({
 
   return (
     <div className="flex flex-col gap-3">
-      <Marcador ultimo={historial[0] ?? null} onTirarDanio={tirarDanio} />
+      <div className="flex flex-col gap-2">
+        <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
+          Tiradas recientes
+        </h2>
+        {historial.length === 0 ? (
+          <HudCard className="border-dashed p-4 text-center">
+            <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
+              {"//SYSTEM · sin tiradas"}
+            </p>
+            <p className="mt-2 font-sans text-sm text-muted">
+              Elige una acción y pulsa Tirar.
+            </p>
+          </HudCard>
+        ) : (
+          <HudCard className="p-3">
+            <div className="flex flex-col">
+              {historial.map((h) => (
+                <FilaHistorial key={h.id} h={h} />
+              ))}
+            </div>
+          </HudCard>
+        )}
+      </div>
 
       <div className="flex flex-col gap-2">
         <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
@@ -341,41 +377,6 @@ export function TiradasTab({
           ))}
         </div>
       ))}
-
-      {historial.length > 1 && (
-        <>
-          <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
-            Anteriores
-          </h2>
-          <div className="flex flex-col gap-1">
-            {historial.slice(1).map((h) => (
-              <div
-                key={h.id}
-                className="flex items-baseline justify-between gap-2 border-b border-border py-1.5 font-mono text-[11px] last:border-0"
-              >
-                <span className="truncate text-muted">{h.label}</span>
-                <span className="shrink-0 tabular-nums text-muted">
-                  d12 {h.dado} {signo(h.modificador + h.circunstancial)} ={" "}
-                  <span
-                    className={
-                      h.exito === null
-                        ? "text-foreground"
-                        : h.exito
-                          ? "text-info"
-                          : "text-danger"
-                    }
-                  >
-                    {h.total}
-                  </span>
-                  {h.danioResuelto && (
-                    <span className="text-danger"> · daño {h.danioResuelto.total}</span>
-                  )}
-                </span>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
 
       {modal && (
         <TiradaModal

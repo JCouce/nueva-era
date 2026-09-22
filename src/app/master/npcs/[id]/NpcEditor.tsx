@@ -6,6 +6,7 @@ import type { Sheet, AtributoId, HabilidadId, PiezaEquipada } from "@/lib/rules"
 import { AtributosTab } from "@/app/characters/[id]/_components/AtributosTab";
 import { HabilidadesTab } from "@/app/characters/[id]/_components/HabilidadesTab";
 import { TiradasTab } from "@/app/characters/[id]/_components/TiradasTab";
+import type { Lanzamiento } from "@/components/ResultadoTirada";
 import { EquipoTab } from "@/app/characters/[id]/_components/EquipoTab";
 import { TiendaTab } from "@/app/characters/[id]/_components/TiendaTab";
 import {
@@ -77,6 +78,13 @@ export function NpcEditor({
   const [nombre, setNombre] = useState(initialNombre);
   const [nota, setNota] = useState(initialNota);
   const [status, setStatus] = useState<SaveStatus>("idle");
+  // Mismo motivo que en CharacterSheet.tsx (2026-09-24): TiradasTab se
+  // desmonta al cambiar de tab, así que su historial sube aquí para
+  // sobrevivir al ir y volver a "Tiradas" mientras se edita el NPC.
+  const [tiradasHistorial, setTiradasHistorial] = useState<Lanzamiento[]>([]);
+  const [tiradasMemoria, setTiradasMemoria] = useState<
+    Record<string, { dificultad: number | null; circunstancial: number }>
+  >({});
 
   const nombreTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const notaTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -220,7 +228,13 @@ export function NpcEditor({
             Vista previa en reposo, sin estados aplicados — para eso hace falta un
             combate real (fase 6b, subtarea 5.5).
           </p>
-          <TiradasTab sheet={sheet} />
+          <TiradasTab
+            sheet={sheet}
+            historial={tiradasHistorial}
+            setHistorial={setTiradasHistorial}
+            memoria={tiradasMemoria}
+            setMemoria={setTiradasMemoria}
+          />
         </div>
       )}
       {active === "equipo" && <EquipoTab sheet={sheet} onDesequipar={commitDesequipar} />}

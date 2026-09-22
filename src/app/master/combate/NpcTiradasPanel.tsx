@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import type { Sheet, EstadoActivo } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { TiradasTab } from "@/app/characters/[id]/_components/TiradasTab";
+import type { Lanzamiento } from "@/components/ResultadoTirada";
 
 // Fase 6b, subtarea 5.5 (el motivo original de todo el rediseño del bloque
 // 5): mismo TiradasTab.tsx que ya usa el jugador, alimentado por el `sheet`
@@ -25,6 +27,16 @@ export function NpcTiradasPanel({
   estadosCombate: EstadoActivo[];
   onCerrar: () => void;
 }) {
+  // Panel bajo demanda: se desmonta al cerrar (onCerrar, en el padre), así
+  // que este estado ya nacía fresco en cada apertura incluso cuando vivía
+  // dentro de TiradasTab — el historial subió de nivel (2026-09-24, para que
+  // sobreviva a cambiar de tab en la ficha del jugador), pero aquí no aplica
+  // ese problema: no hay tabs que cambiar dentro de este panel.
+  const [historial, setHistorial] = useState<Lanzamiento[]>([]);
+  const [memoria, setMemoria] = useState<
+    Record<string, { dificultad: number | null; circunstancial: number }>
+  >({});
+
   return (
     <div
       className="fixed inset-0 z-40 flex items-end justify-center bg-black/70 sm:items-center"
@@ -46,7 +58,14 @@ export function NpcTiradasPanel({
             </button>
           </div>
           <div className="mt-3">
-            <TiradasTab sheet={sheet} estadosCombate={estadosCombate} />
+            <TiradasTab
+              sheet={sheet}
+              estadosCombate={estadosCombate}
+              historial={historial}
+              setHistorial={setHistorial}
+              memoria={memoria}
+              setMemoria={setMemoria}
+            />
           </div>
         </div>
       </HudCard>

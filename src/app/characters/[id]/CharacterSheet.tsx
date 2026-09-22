@@ -43,6 +43,7 @@ import { TiradasTab } from "./_components/TiradasTab";
 import { TiendaTab } from "./_components/TiendaTab";
 import { EquipoTab } from "./_components/EquipoTab";
 import { CombateTab, type CombateView } from "./_components/CombateTab";
+import type { Lanzamiento } from "@/components/ResultadoTirada";
 
 // Único sitio para tocar el delay de autosave — lo usan tanto identidad como
 // el debounce por campo de atributos/habilidades (y, cuando existan, dotes/
@@ -134,6 +135,18 @@ export function CharacterSheet({
   const [xp, setXp] = useState(initialXp);
   const [creditos, setCreditos] = useState(initialCreditos);
   const [status, setStatus] = useState<SaveStatus>("idle");
+  // Historial de tiradas y memoria de dificultad/circunstancial por tirada:
+  // vive aquí, no dentro de TiradasTab, para que sobreviva a cambiar de tab
+  // (antes se perdía porque TiradasTab se desmonta entero al cambiar de tab
+  // — ver el `{activeEfectivo === "tiradas" && (...)}` de abajo). Dura lo que
+  // dure esta pestaña del navegador abierta — sin persistir a servidor ni a
+  // almacenamiento del navegador a propósito: es un log de cortesía de las
+  // últimas tiradas, no un dato mecánico como PG/fatiga (2026-09-24, pedido
+  // del usuario — "si cierras es nueva sesión").
+  const [tiradasHistorial, setTiradasHistorial] = useState<Lanzamiento[]>([]);
+  const [tiradasMemoria, setTiradasMemoria] = useState<
+    Record<string, { dificultad: number | null; circunstancial: number }>
+  >({});
 
   // 4.1: SIEMPRE activo aquí, no solo cuando `combate !== null` — a
   // diferencia de CombateConsole.tsx (donde el máster ve el combate desde
@@ -477,7 +490,14 @@ export function CharacterSheet({
       {activeEfectivo === "dotes" && <DotesTab sheet={sheet} />}
       {activeEfectivo === "psionica" && <PsionicaTab sheet={sheet} />}
       {activeEfectivo === "tiradas" && (
-        <TiradasTab sheet={sheet} estadosCombate={miCombatiente?.estados ?? []} />
+        <TiradasTab
+          sheet={sheet}
+          estadosCombate={miCombatiente?.estados ?? []}
+          historial={tiradasHistorial}
+          setHistorial={setTiradasHistorial}
+          memoria={tiradasMemoria}
+          setMemoria={setTiradasMemoria}
+        />
       )}
       {activeEfectivo === "tienda" && (
         <TiendaTab
