@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { BarraProgreso } from "@/components/BarraProgreso";
 import {
   ARMADURAS,
   ARMAS,
@@ -160,32 +161,6 @@ const BOTON_EQUIPAR =
 const VINCULANDO_MS = 900;
 const VINCULADO_MS = 550;
 
-// Barra de progreso real (no decorativa): arranca en 0 y transiciona a 100%
-// en exactamente VINCULANDO_MS, así que la barra siempre acaba de llenarse
-// justo cuando dispara el timeout que cambia de fase. El doble
-// requestAnimationFrame es el truco de siempre para que el navegador pinte
-// el 0% antes de animar a 100% — si no, no hay transición que ver.
-function BarraVinculando({ ms }: { ms: number }) {
-  const [lleno, setLleno] = useState(false);
-  useEffect(() => {
-    const raf = requestAnimationFrame(() => requestAnimationFrame(() => setLleno(true)));
-    return () => cancelAnimationFrame(raf);
-  }, []);
-  return (
-    <span className="mt-1.5 block h-1 w-full overflow-hidden bg-night">
-      <span
-        className="block h-full bg-info shadow-glow-cyan"
-        style={{
-          width: lleno ? "100%" : "0%",
-          transitionProperty: "width",
-          transitionDuration: `${ms}ms`,
-          transitionTimingFunction: "linear",
-        }}
-      />
-    </span>
-  );
-}
-
 // El equipar en sí es instantáneo (estado optimista, ver CharacterSheet), así
 // que la secuencia de abajo no espera a nada real: es la confirmación táctil
 // de "esto se ha instalado", no una carga. Tres fases con el mismo lenguaje
@@ -228,7 +203,7 @@ function BotonEquipar({
           {"// vinculando"}
           <span className="animate-pulse">_</span>
         </span>
-        <BarraVinculando ms={VINCULANDO_MS} />
+        <BarraProgreso ms={VINCULANDO_MS} />
       </button>
     );
   }

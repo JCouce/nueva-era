@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DIFICULTADES,
+  CARAS_DADO,
   estadoInicial,
   valorCondiciones,
   desgloseCondiciones,
@@ -18,7 +19,15 @@ import {
   type ContextoTirada,
 } from "@/lib/rules";
 import { HudCard } from "./HudCard";
+import { BarraProgreso } from "./BarraProgreso";
 import { ContenidoResultado, type Lanzamiento } from "./ResultadoTirada";
+
+// Cuánto "rueda" el dado antes de asentarse en el resultado real — ver
+// dispararTirada más abajo. Más corto que el VINCULANDO_MS de la Tienda
+// (900ms): un dado se siente mejor rápido y seco, no como una transacción.
+const RODANDO_MS = 650;
+// Cada cuánto cambia el número mientras rueda — ~9 cambios en total.
+const RODANDO_INTERVALO_MS = 70;
 
 function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
@@ -184,9 +193,32 @@ export function TiradaModal({
   const [dificultad, setDificultad] = useState(dificultadInicial);
   const [dificultadCustom, setDificultadCustom] = useState("");
   const [circunstancial, setCircunstancial] = useState(circunstancialInicial);
+  // El dado "rueda" (número aleatorio cambiando rápido) durante RODANDO_MS
+  // antes de que llegue el `resultado` real del padre — ver dispararTirada.
+  // Puramente táctil, igual que la secuencia de BotonEquipar en TiendaTab: no
+  // espera a nada real, el dado ya se ha tirado en cuanto arranca.
+  const [rodando, setRodando] = useState(false);
+  const [numeroRodando, setNumeroRodando] = useState(1);
+
+  useEffect(() => {
+    if (!rodando) return;
+    const id = setInterval(
+      () => setNumeroRodando(1 + Math.floor(Math.random() * CARAS_DADO)),
+      RODANDO_INTERVALO_MS,
+    );
+    return () => clearInterval(id);
+  }, [rodando]);
 
   const cambiar = (id: string, valor: string | number | boolean) =>
     setEstado((e) => ({ ...e, [id]: valor }));
+
+  const dispararTirada = () => {
+    setRodando(true);
+    setTimeout(() => {
+      onTirar({ estadoCondiciones: estado, dificultad, circunstancial });
+      setRodando(false);
+    }, RODANDO_MS);
+  };
 
   const totalCondiciones = valorCondiciones(condiciones, estado);
   const totalBonosTramo = valorBonosTramo(bonosTramo ?? [], estado);
@@ -194,10 +226,13 @@ export function TiradaModal({
   const totalAlcance = bonoAlcance(mods, ctx);
   const totalPrevisto = modBase + totalCondiciones + totalBonosTramo + totalAlcance + circunstancial;
 
+  // Bloqueado mientras rueda el dado: 650ms es corto, mejor no dejar que un
+  // tap accidental en el fondo o la ✕ corte la animación a medias — el dado
+  // ya se ha tirado de verdad en cuanto arranca (ver dispararTirada).
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center"
-      onClick={onCerrar}
+      onClick={rodando ? undefined : onCerrar}
     >
       <HudCard
         className="max-h-[85vh] w-full max-w-md overflow-y-auto p-4 sm:mx-4"
@@ -217,12 +252,29 @@ export function TiradaModal({
             <button
               type="button"
               onClick={onCerrar}
+              disabled={rodando}
               aria-label="Cerrar"
-              className="shrink-0 border border-border px-2 py-1 font-mono text-xs text-muted active:scale-95"
+              className="shrink-0 border border-border px-2 py-1 font-mono text-xs text-muted active:scale-95 disabled:opacity-40"
             >
               ✕
             </button>
           </div>
+
+          {rodando && (
+            <div className="mt-4 border-t border-border pt-3">
+              <p className="font-mono text-[11px] uppercase tracking-widest text-info">
+                {"// tirando"}
+                <span className="animate-pulse">_</span>
+              </p>
+              <div className="mt-2 flex items-baseline gap-3">
+                <span className="font-display text-5xl font-bold tabular-nums text-info">
+                  {numeroRodando}
+                </span>
+                <span className="font-mono text-xs text-muted">d{CARAS_DADO}</span>
+              </div>
+              <BarraProgreso ms={RODANDO_MS} />
+            </div>
+          )}
 
           {resultado && (
             <div className="mt-4 border-t border-border pt-3">
@@ -237,7 +289,7 @@ export function TiradaModal({
             </div>
           )}
 
-          {!resultado && condiciones.length > 0 && (
+          {!resultado && !rodando && condiciones.length > 0 && (
             <div className="mt-4 flex flex-col gap-3 border-t border-border pt-3">
               {condiciones.map((c) => (
                 <ControlCondicion key={c.id} condicion={c} estado={estado} onCambiar={cambiar} />
@@ -245,7 +297,7 @@ export function TiradaModal({
             </div>
           )}
 
-          {!resultado && (
+          {!resultado && !rodando && (
             <div className="mt-4 border-t border-border pt-3">
               <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
                 {"// Dificultad"}
@@ -299,7 +351,7 @@ export function TiradaModal({
             </div>
           )}
 
-          {!resultado && (
+          {!resultado && !rodando && (
             <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
@@ -335,7 +387,7 @@ export function TiradaModal({
             </div>
           )}
 
-          {!resultado && (
+          {!resultado && !rodando && (
             <div className="mt-4 flex flex-col gap-1 border-t border-border pt-3">
               <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
                 {"// Desglose"}
@@ -364,10 +416,10 @@ export function TiradaModal({
             </div>
           )}
 
-          {!resultado && (
+          {!resultado && !rodando && (
             <button
               type="button"
-              onClick={() => onTirar({ estadoCondiciones: estado, dificultad, circunstancial })}
+              onClick={dispararTirada}
               className="clip-chamfer-sm mt-3 w-full border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98]"
             >
               Tirar ({signo(totalPrevisto)})
