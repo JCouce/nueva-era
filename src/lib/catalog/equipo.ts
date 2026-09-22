@@ -1656,6 +1656,11 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         modificadores: [
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
         ],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" }, // Resistencia Térmica
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // Blindaje Ambiental: condicional a daño en ambiente tóxico, sin CondicionTirada ni Modificador que lo represente hoy
+          { tipo: "habilitador", afecta: { modo: "ninguna" }, mecanismo: null, arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "pregunta 32" }, // Vulnerabilidad al Shock (apagón): degrada/deshabilita los bonos de arriba, exacto comportamiento sin definir
+        ],
       },
       {
         nivel: 2,
@@ -1673,6 +1678,11 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         modificadores: [
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
         ],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" }, // Resistencia Térmica (heredada de nivel 1, S9)
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // Blindaje Ambiental Mejorado
+          { tipo: "habilitador", afecta: { modo: "ninguna" }, mecanismo: null, arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "pregunta 32" }, // Vulnerabilidad al Shock, heredada
+        ],
       },
       {
         nivel: 3,
@@ -1685,6 +1695,11 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         // Un único +1 (ver nota de nivel 1) — bug de duplicado corregido 2026-09-23.
         modificadores: [
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
+        ],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" }, // Resistencia Térmica (heredada, S9)
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // Blindaje Ambiental Avanzado
+          { tipo: "habilitador", afecta: { modo: "ninguna" }, mecanismo: null, arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "pregunta 32" }, // Vulnerabilidad al Shock, heredada
         ],
       },
     ],
@@ -1710,6 +1725,16 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         // La dificultad que sube es la de QUIEN TE REGISTRA, no una tirada propia:
         // no encaja en "tirada" (que hoy solo modela tiradas del portador).
         modificadores: [],
+        motor: [
+          // objetivo_tercero: sube la dificultad de un tercero (quien registra al
+          // portador), nunca la del propio portador. mecanismo "nota_fija" es la
+          // resolución ya aceptada (modificadores-tiradas.md: "se informa en la
+          // tirada del propio portador, para que el máster lo aplique al de
+          // enfrente") — pero AQUÍ no hay ninguna tirada del portador en la que
+          // colgar esa nota (a diferencia de Visor Nocturno, que la cuelga de
+          // Buscar/percibir): bloqueado hasta que se diseñe dónde vive.
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "deteccion_fisica" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+        ],
       },
       {
         nivel: 2,
@@ -1721,6 +1746,13 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
             "visuales o físicas superficiales.",
         ],
         modificadores: [],
+        motor: [
+          // Igual que nivel 1, pero el barrido de motor (2026-09-22) apunta que
+          // esto "apunta parcialmente a una tirada real (Escáner Detector)" — no
+          // suficientemente claro para comprometerme a un id concreto, lo marco
+          // como caso inconcluso en vez de adivinar cuál.
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "deteccion_fisica_o_escaner" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+        ],
       },
     ],
   },
@@ -1742,6 +1774,13 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           "Solo puede usarse con un arma a la vez; el enfundado sigue costando lo de siempre.",
         ],
         modificadores: [],
+        // Cambia el COSTE de una acción (desenfundar gratis en vez de gastar
+        // turno), no crea una acción ni suma un número a una tirada: el motor no
+        // modela economía de acciones/turnos todavía. Resuelto como texto
+        // informativo, sin forzar un sexto tipo (decisión ya cerrada).
+        motor: [
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+        ],
       },
       {
         nivel: 2,
@@ -1749,6 +1788,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         coste: 3600,
         detalle: ["El desenfundado gratuito también funciona con armas a dos manos."],
         modificadores: [],
+        motor: [
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+        ],
       },
     ],
   },
@@ -1767,6 +1809,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         coste: 250,
         detalle: ["Usar medicamentos o drogas sobre uno mismo pasa de acción compleja a simple."],
         modificadores: [],
+        motor: [
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // coste de acción, mismo caso que Funda Automática
+        ],
       },
       {
         nivel: 2,
@@ -1779,6 +1824,10 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
             "del nivel 1).",
         ],
         modificadores: [],
+        motor: [
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // coste de acción
+          { tipo: "habilitador", afecta: { modo: "ninguna" }, mecanismo: null, arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "pregunta 32" }, // susceptible a shock
+        ],
       },
     ],
   },
@@ -1798,6 +1847,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         coste: 1000,
         detalle: ["El usuario puede usar la puntuación total de blindaje de su armadura contra daño de fuego."],
         modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "H5" },
+        ],
       },
       {
         nivel: 2,
@@ -1810,6 +1862,10 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         // El +2 mejora el bono de LA ARMADURA (otra pieza), no aporta uno propio
         // independiente: no hay forma limpia de modelarlo sin acoplar ambas piezas.
         modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "H5" }, // daño de fuego letal en vez de grave
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // mejora el bono de OTRA pieza (la armadura), sin forma de modelar el acoplamiento hoy
+        ],
       },
     ],
   },
@@ -1831,6 +1887,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         modificadores: [
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
         ],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
+        ],
       },
       {
         nivel: 2,
@@ -1842,6 +1901,10 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         ],
         modificadores: [
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 2 },
+        ],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "H5" }, // daño corrosivo letal en vez de grave
         ],
       },
     ],
@@ -1863,6 +1926,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         modificadores: [
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
         ],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
+        ],
       },
       {
         nivel: 2,
@@ -1874,6 +1940,10 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         ],
         modificadores: [
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 2 },
+        ],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "H5" }, // ignora el primer nivel de daño eléctrico
         ],
       },
     ],
@@ -1898,6 +1968,12 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
             "el sensor.",
         ],
         modificadores: [],
+        // Correctamente sin mecanizar (no un hueco): "ver en penumbra" no toca
+        // ninguna tirada existente (no hay penalizador de luz en el motor hoy) y
+        // el fogonazo es una vulnerabilidad narrativa que el máster arbitra.
+        motor: [
+          { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+        ],
       },
       {
         nivel: 2,
@@ -1933,6 +2009,10 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
             valorInactivo: 0,
             nota: "Ves a través de humo denso, niebla o partículas. Cobertura visual -2 dentro de 50 m (aplícalo a mano).",
           },
+        ],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_ceguera_destello" }, mecanismo: "siempre_activo", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" }, // toggle real (condiciones), no nota_fija
         ],
       },
     ],
@@ -1970,6 +2050,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
             nota: "-3 en percepción visual de lo que quede fuera del gradiente térmico resaltado.",
           },
         ],
+        motor: [
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
+        ],
       },
       {
         nivel: 2,
@@ -1982,6 +2065,11 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
             "o ventilación; algo más en interiores sellados sin convección).",
         ],
         modificadores: [],
+        // Narrativo puro, correctamente sin mecanizar: el motor no lleva reloj
+        // de turnos por rastro ni mapa de posiciones pasadas.
+        motor: [
+          { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+        ],
       },
     ],
   },
