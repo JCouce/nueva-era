@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   DIFICULTADES,
   CARAS_DADO,
+  tirarD12,
   estadoInicial,
   valorCondiciones,
   desgloseCondiciones,
@@ -22,12 +23,17 @@ import { HudCard } from "./HudCard";
 import { BarraProgreso } from "./BarraProgreso";
 import { ContenidoResultado, type Lanzamiento } from "./ResultadoTirada";
 
-// Cuánto "rueda" el dado antes de asentarse en el resultado real — ver
-// dispararTirada más abajo. Más corto que el VINCULANDO_MS de la Tienda
-// (900ms): un dado se siente mejor rápido y seco, no como una transacción.
+// Cuánto "rueda" el dado (número aleatorio cambiando) antes de aterrizar en
+// el valor real — ver dispararTirada más abajo. Más corto que el
+// VINCULANDO_MS de la Tienda (900ms): un dado se siente mejor rápido y seco,
+// no como una transacción.
 const RODANDO_MS = 650;
 // Cada cuánto cambia el número mientras rueda — ~9 cambios en total.
 const RODANDO_INTERVALO_MS = 70;
+// Cuánto se queda el número REAL fijo en pantalla antes de pasar a la vista
+// completa de resultado (UX 2026-09-23, pedido del usuario: "que se vea lo
+// que ha salido un poco más de tiempo" antes de saltar a la otra vista).
+const ASENTADO_MS = 500;
 
 function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
@@ -184,6 +190,7 @@ export function TiradaModal({
   onTirarDanio: () => void;
   onCerrar: () => void;
   onTirar: (args: {
+    dado: number;
     estadoCondiciones: EstadoCondiciones;
     dificultad: number | null;
     circunstancial: number;
@@ -193,30 +200,40 @@ export function TiradaModal({
   const [dificultad, setDificultad] = useState(dificultadInicial);
   const [dificultadCustom, setDificultadCustom] = useState("");
   const [circunstancial, setCircunstancial] = useState(circunstancialInicial);
-  // El dado "rueda" (número aleatorio cambiando rápido) durante RODANDO_MS
-  // antes de que llegue el `resultado` real del padre — ver dispararTirada.
-  // Puramente táctil, igual que la secuencia de BotonEquipar en TiendaTab: no
-  // espera a nada real, el dado ya se ha tirado en cuanto arranca.
+  // El dado "rueda" (número aleatorio cambiando rápido) durante RODANDO_MS,
+  // luego se congela en el valor REAL (`dadoAsentado`) durante ASENTADO_MS
+  // antes de que llegue el `resultado` completo del padre — ver
+  // dispararTirada. Puramente táctil, igual que BotonEquipar en TiendaTab: el
+  // dado ya se ha tirado de verdad en cuanto arranca (con tirarD12 aquí
+  // mismo, no en el padre) — solo se retrasa cuándo se revela y cómo.
   const [rodando, setRodando] = useState(false);
+  const [dadoAsentado, setDadoAsentado] = useState(false);
   const [numeroRodando, setNumeroRodando] = useState(1);
 
   useEffect(() => {
-    if (!rodando) return;
+    if (!rodando || dadoAsentado) return;
     const id = setInterval(
       () => setNumeroRodando(1 + Math.floor(Math.random() * CARAS_DADO)),
       RODANDO_INTERVALO_MS,
     );
     return () => clearInterval(id);
-  }, [rodando]);
+  }, [rodando, dadoAsentado]);
 
   const cambiar = (id: string, valor: string | number | boolean) =>
     setEstado((e) => ({ ...e, [id]: valor }));
 
   const dispararTirada = () => {
+    const dado = tirarD12();
     setRodando(true);
+    setDadoAsentado(false);
     setTimeout(() => {
-      onTirar({ estadoCondiciones: estado, dificultad, circunstancial });
-      setRodando(false);
+      setNumeroRodando(dado);
+      setDadoAsentado(true);
+      setTimeout(() => {
+        onTirar({ dado, estadoCondiciones: estado, dificultad, circunstancial });
+        setRodando(false);
+        setDadoAsentado(false);
+      }, ASENTADO_MS);
     }, RODANDO_MS);
   };
 
@@ -262,12 +279,20 @@ export function TiradaModal({
 
           {rodando && (
             <div className="mt-4 border-t border-border pt-3">
-              <p className="font-mono text-[11px] uppercase tracking-widest text-info">
-                {"// tirando"}
-                <span className="animate-pulse">_</span>
+              <p
+                className={`font-mono text-[11px] uppercase tracking-widest ${
+                  dadoAsentado ? "text-accent" : "text-info"
+                }`}
+              >
+                {dadoAsentado ? "// tirada" : "// tirando"}
+                {!dadoAsentado && <span className="animate-pulse">_</span>}
               </p>
               <div className="mt-2 flex items-baseline gap-3">
-                <span className="font-display text-5xl font-bold tabular-nums text-info">
+                <span
+                  className={`font-display text-5xl font-bold tabular-nums ${
+                    dadoAsentado ? "text-accent" : "text-info"
+                  }`}
+                >
                   {numeroRodando}
                 </span>
                 <span className="font-mono text-xs text-muted">d{CARAS_DADO}</span>

@@ -9,7 +9,6 @@ import {
   modificadorTirada,
   resolverTirada,
   resolverDanio,
-  tirarD12,
   tiradasDeAtaque,
   tiradasDeHerramientas,
   valorCondiciones,
@@ -242,10 +241,17 @@ export function TiradasTab({
   };
 
   const tirar = ({
+    dado,
     estadoCondiciones,
     dificultad,
     circunstancial,
   }: {
+    // El dado ya se tiró dentro de TiradaModal, al pulsar Tirar — no aquí.
+    // Así el modal conoce el valor real desde el principio de la animación
+    // de "rodar" y puede aterrizar en él en vez de en uno aleatorio más
+    // (UX 2026-09-23: dejar el número real fijo un momento antes de pasar
+    // al resultado completo).
+    dado: number;
     estadoCondiciones: EstadoCondiciones;
     dificultad: number | null;
     circunstancial: number;
@@ -259,7 +265,7 @@ export function TiradasTab({
       modoElegido: modoElegido(tirada.condiciones ?? [], estadoCondiciones),
     });
     const r = resolverTirada({
-      dado: tirarD12(),
+      dado,
       modificador: modBase + bonoCondiciones + bonoTramo + bonoEquipoEspecie,
       circunstancial,
       dificultad,
