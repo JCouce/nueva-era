@@ -8,6 +8,7 @@ import {
   estadoInicial,
   valorCondiciones,
   desgloseCondiciones,
+  notasCondiciones,
   valorBonosTramo,
   desgloseBonosTramo,
   modoElegido,
@@ -242,6 +243,11 @@ export function TiradaModal({
   const ctx: ContextoTirada = { ...ctxBase, modoElegido: modoElegido(condiciones, estado) };
   const totalAlcance = bonoAlcance(mods, ctx);
   const totalPrevisto = modBase + totalCondiciones + totalBonosTramo + totalAlcance + circunstancial;
+  // Textos de las opciones activas (Visor Nocturno y demás "texto
+  // informativo" del §8) — `estado` no cambia entre elegir y ver el
+  // resultado, así que esto sigue siendo válido en la pantalla final sin
+  // necesidad de guardarlo aparte.
+  const notas = notasCondiciones(condiciones, estado);
 
   // Bloqueado mientras rueda el dado: 650ms es corto, mejor no dejar que un
   // tap accidental en el fondo o la ✕ corte la animación a medias — el dado
@@ -304,6 +310,15 @@ export function TiradaModal({
           {resultado && !rodando && (
             <div className="mt-4 border-t border-border pt-3">
               <ContenidoResultado resultado={resultado} onTirarDanio={onTirarDanio} />
+              {notas.length > 0 && (
+                <div className="mt-3 flex flex-col gap-1.5 border-t border-border pt-3">
+                  {notas.map((n, i) => (
+                    <p key={i} className="font-sans text-[11px] leading-relaxed text-muted">
+                      {n}
+                    </p>
+                  ))}
+                </div>
+              )}
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <button
                   type="button"

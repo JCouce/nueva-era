@@ -122,6 +122,28 @@ export function desgloseCondiciones(
   });
 }
 
+// Los textos de las condiciones activas AHORA MISMO — el "texto informativo"
+// del §8 de docs/modificadores-tiradas.md (Visor Nocturno, Mangual...), que
+// no suma número pero sí debe leerse. Solo toggle/opción llevan `nota`; el
+// contador no tiene sentido de "activo/inactivo" así que no aporta ninguna.
+// Pensado para mostrarse junto al resultado, no solo mientras se elige — ver
+// TiradaModal.
+export function notasCondiciones(
+  condiciones: CondicionTirada[],
+  estado: EstadoCondiciones,
+): string[] {
+  const notas: string[] = [];
+  for (const c of condiciones) {
+    if (c.tipo === "toggle") {
+      if (Boolean(estado[c.id]) && c.nota) notas.push(c.nota);
+    } else if (c.tipo === "opcion") {
+      const elegida = c.opciones.find((o) => o.id === estado[c.id]);
+      if (elegida?.nota) notas.push(elegida.nota);
+    }
+  }
+  return notas;
+}
+
 // Un bono que no es una elección propia del jugador: depende del tramo que
 // ya eligió en la condición "tramo" (la mira telescópica solo ayuda a media
 // y larga, por ejemplo). Va aparte de CondicionTirada porque no se pinta

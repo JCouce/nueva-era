@@ -4,6 +4,7 @@ import {
   estadoInicial,
   valorCondiciones,
   desgloseCondiciones,
+  notasCondiciones,
   valorBonosTramo,
   desgloseBonosTramo,
   type CondicionTirada,
@@ -114,6 +115,59 @@ describe("desglose de las condiciones", () => {
       lineas.map((l) => l.valor),
       [1, 2, -1],
     );
+  });
+});
+
+describe("notasCondiciones", () => {
+  const TOGGLE_CON_NOTA: CondicionTirada = {
+    id: "visor",
+    tipo: "toggle",
+    etiqueta: "Visor Nocturno activo",
+    valorActivo: 0,
+    valorInactivo: 0,
+    nota: "Ves a través del humo.",
+  };
+  const OPCION_CON_NOTA: CondicionTirada = {
+    id: "modo",
+    tipo: "opcion",
+    etiqueta: "Modo",
+    opciones: [
+      { id: "simple", etiqueta: "Simple", valor: 0 },
+      { id: "rafaga", etiqueta: "Ráfaga", valor: -2, nota: "Consume 3 balas." },
+    ],
+    porDefecto: "simple",
+  };
+
+  test("un toggle inactivo no aporta nota, aunque la tenga declarada", () => {
+    assert.deepEqual(notasCondiciones([TOGGLE_CON_NOTA], { visor: false }), []);
+  });
+
+  test("un toggle activo con nota la incluye", () => {
+    assert.deepEqual(notasCondiciones([TOGGLE_CON_NOTA], { visor: true }), [
+      "Ves a través del humo.",
+    ]);
+  });
+
+  test("una opción sin nota (la elegida) no aporta nada", () => {
+    assert.deepEqual(notasCondiciones([OPCION_CON_NOTA], { modo: "simple" }), []);
+  });
+
+  test("la opción elegida con nota la incluye", () => {
+    assert.deepEqual(notasCondiciones([OPCION_CON_NOTA], { modo: "rafaga" }), [
+      "Consume 3 balas.",
+    ]);
+  });
+
+  test("un contador nunca aporta nota", () => {
+    assert.deepEqual(notasCondiciones([CONTADOR], { atacantes: 2 }), []);
+  });
+
+  test("se acumulan varias notas activas a la vez, en orden", () => {
+    const notas = notasCondiciones([TOGGLE_CON_NOTA, OPCION_CON_NOTA], {
+      visor: true,
+      modo: "rafaga",
+    });
+    assert.deepEqual(notas, ["Ves a través del humo.", "Consume 3 balas."]);
   });
 });
 
