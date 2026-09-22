@@ -2022,7 +2022,11 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           },
         ],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_ceguera_destello" }, mecanismo: "siempre_activo", estado: "construido" },
+          // NO "construido": el propio comentario de `modificadores` (arriba) dice
+          // que "salv_ceguera_destello" es un id marcador sin tirada real detrás —
+          // el +3 nunca se aplica a nada hasta que se sepa qué atributo salva
+          // Ceguera. Corregido en revisión 2026-09-23 (estaba mal como "construido").
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_ceguera_destello" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "qué salva Ceguera (sin definir, sistema-y-combate.md §Ceguera)" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" }, // toggle real (condiciones), no nota_fija
         ],
       },
