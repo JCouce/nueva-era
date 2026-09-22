@@ -360,6 +360,28 @@ export const ESCUDOS: ArmaMelee[] = [
     rareza: "Común",
     coste: 130,
     defensa: { cobertura: 1, blindaje: 4, puntosGolpe: 8 },
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      // defensa.blindaje: se sumaría a la absorción de daño del portador — bloqueado por el
+      // mismo hueco que el blindaje de armadura (no existe cálculo de absorción, pregunta 29).
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // defensa.puntosGolpe: el escudo como objeto destructible (se le puede restar daño hasta
+      // romperlo). No es el mismo hueco que pregunta 29 (esa es sobre el PG del PERSONAJE) — no
+      // existe ningún mecanismo de "objeto con sus propios PG" en el motor, en ningún sitio.
+      // Hallazgo nuevo, sin pregunta numerada que lo cubra — ver informe.
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+      // defensa.cobertura: regla FIRME (docs/sistema.md:271-273, "del 1 al 4 suma su valor a la
+      // dificultad de ataques"), pero afecta a la tirada del ATACANTE, no a la del portador —
+      // mismo patrón "objetivo_tercero" que Cobertura del Camuflaje Trifásico (motor.md, ya
+      // identificado como listo para construir sin bloqueo real, solo falta la nota a mano).
+      {
+        tipo: "texto",
+        afecta: { modo: "objetivo_tercero", id: "ataque_contra_portador_escudo" },
+        mecanismo: "nota_fija",
+        estado: "pendiente",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -376,6 +398,18 @@ export const ESCUDOS: ArmaMelee[] = [
     rareza: "Común",
     coste: 190,
     defensa: { cobertura: 2, blindaje: 4, puntosGolpe: 12 },
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+      {
+        tipo: "texto",
+        afecta: { modo: "objetivo_tercero", id: "ataque_contra_portador_escudo" },
+        mecanismo: "nota_fija",
+        estado: "pendiente",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -390,6 +424,18 @@ export const ESCUDOS: ArmaMelee[] = [
     rareza: "Poco Habitual",
     coste: 1200,
     defensa: { cobertura: 1, blindaje: 8, puntosGolpe: 16 },
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+      {
+        tipo: "texto",
+        afecta: { modo: "objetivo_tercero", id: "ataque_contra_portador_escudo" },
+        mecanismo: "nota_fija",
+        estado: "pendiente",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -404,6 +450,18 @@ export const ESCUDOS: ArmaMelee[] = [
     rareza: "Poco Habitual",
     coste: 2000,
     defensa: { cobertura: 2, blindaje: 8, puntosGolpe: 24 },
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+      {
+        tipo: "texto",
+        afecta: { modo: "objetivo_tercero", id: "ataque_contra_portador_escudo" },
+        mecanismo: "nota_fija",
+        estado: "pendiente",
+      },
+    ],
   },
 ];
 
