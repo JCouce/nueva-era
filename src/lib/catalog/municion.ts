@@ -20,6 +20,26 @@ import type { MotorMetadata } from "../rules/motor";
 
 export const ALCANCE_ARROJADA = "Potencia × 10 m";
 
+// Las 14 granadas comparten exactamente el mismo MotorMetadata (docs/motor.md):
+// solo cambian los valores de sus propios campos (dificultadArrojada, danio,
+// areaEfecto...), nunca la clasificación. `tiradaDeGranada` (combate.ts) genera
+// la tirada "Lanzar X" y vuelca areaEfecto a su nota — construido. Cuando la
+// misma granada se carga en un Lanzagranadas (integrado o pesado),
+// `tiradaDeLanzagranadas`/`tiradaDeArmamentoPesado` SÍ leen danio/categoriaDanio
+// para el modo de esa tirada, pero su `nota` es un texto genérico fijo ("Área y
+// efecto según la granada elegida") que NO interpola el areaEfecto real de la
+// granada seleccionada — confirmado leyendo combate.ts, es la tarea pendiente
+// "nota Área/Esquiva/Efecto en Granadas" de docs/barrido-motor-2026-09-22/
+// barrido-armaduras-subsistemas-pesado.md. Por eso esas dos últimas entradas
+// van "pendiente", no "construido".
+const MOTOR_GRANADA: MotorMetadata[] = [
+  { tipo: "accion", afecta: { modo: "accion_nueva", id: "lanzar_granada" }, mecanismo: "accion_equipo", estado: "construido" },
+  { tipo: "numerico", afecta: { modo: "accion_existente", id: "lanzar_granada" }, mecanismo: "ajuste_fijo", estado: "construido" },
+  { tipo: "texto", afecta: { modo: "accion_existente", id: "lanzar_granada" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+  { tipo: "texto", afecta: { modo: "accion_existente", id: "lanzagranadas_integrado" }, mecanismo: "nota_fija", estado: "pendiente" },
+  { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "nota_fija", estado: "pendiente" },
+];
+
 export type MunicionGranada = {
   familia: "granada";
   id: string;
@@ -46,6 +66,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     pesoKg: null,
     rareza: "Común",
     coste: 20,
+    motor: MOTOR_GRANADA,
   },
   {
     familia: "granada",
@@ -58,6 +79,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     pesoKg: null,
     rareza: "Común",
     coste: 50,
+    motor: MOTOR_GRANADA,
   },
   {
     familia: "granada",
@@ -70,6 +92,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     pesoKg: null,
     rareza: "Común",
     coste: 100,
+    motor: MOTOR_GRANADA,
   },
   {
     familia: "granada",
@@ -82,6 +105,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     pesoKg: null,
     rareza: "Común",
     coste: 100,
+    motor: MOTOR_GRANADA,
   },
   {
     familia: "granada",
@@ -94,6 +118,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     pesoKg: null,
     rareza: "Común",
     coste: 30,
+    motor: MOTOR_GRANADA,
   },
   {
     familia: "granada",
@@ -106,6 +131,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     pesoKg: null,
     rareza: "Común",
     coste: 100,
+    motor: MOTOR_GRANADA,
   },
   {
     familia: "granada",
@@ -118,6 +144,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     pesoKg: null,
     rareza: "Poco Habitual",
     coste: 150,
+    motor: MOTOR_GRANADA,
   },
   {
     familia: "granada",
@@ -130,6 +157,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     pesoKg: null,
     rareza: "Poco Habitual",
     coste: 150,
+    motor: MOTOR_GRANADA,
   },
   {
     familia: "granada",
@@ -142,6 +170,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     pesoKg: null,
     rareza: "Poco Habitual",
     coste: 150,
+    motor: MOTOR_GRANADA,
   },
   {
     familia: "granada",
@@ -154,6 +183,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     pesoKg: null,
     rareza: "Poco Habitual",
     coste: 250,
+    motor: MOTOR_GRANADA,
   },
   {
     familia: "granada",
@@ -166,6 +196,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     pesoKg: null,
     rareza: "Poco Habitual",
     coste: 250,
+    motor: MOTOR_GRANADA,
   },
   {
     familia: "granada",
@@ -178,6 +209,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     pesoKg: null,
     rareza: "Extraño",
     coste: 350,
+    motor: MOTOR_GRANADA,
   },
   {
     familia: "granada",
@@ -190,6 +222,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     pesoKg: null,
     rareza: "Extraño",
     coste: 350,
+    motor: MOTOR_GRANADA,
   },
   {
     familia: "granada",
@@ -202,6 +235,7 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     pesoKg: null,
     rareza: "Extraño",
     coste: 2000,
+    motor: MOTOR_GRANADA,
   },
 ];
 
