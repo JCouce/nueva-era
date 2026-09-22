@@ -663,6 +663,21 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
     rareza: "Poco Habitual",
     coste: 700,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      // "Hemorragia 1 turno · Crítico de Hemorragia Exanguinante" — funciona igual que el resto.
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      // "Acción Compleja: ignora 1 nivel de armadura" — bloqueado por el mismo hueco que
+      // blindaje de armadura (pregunta 29, no existe cálculo de absorción por niveles).
+      {
+        tipo: "numerico",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "eleccion_jugador",
+        estado: "bloqueado",
+        bloqueoPor: "pregunta 29",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -680,6 +695,23 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
     rareza: "Poco Habitual",
     coste: 700,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      // "Aturdimiento (6) · Crítico: Aturdimiento (10)" — funciona igual que el resto.
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      // "Acción Compleja: Derribo (8)" — no es un simple ajuste numérico ni una nota: es una
+      // tirada/estado nuevo ("Derribo") que hoy no existe en el catálogo de 23 estados de
+      // sistema-y-combate.md. Tipo dudoso entre "accion" (genera su propia salvación) y
+      // "numerico" (penalizador si falla) — marcado inconcluso en el informe.
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
+        mecanismo: "accion_equipo",
+        estado: "bloqueado",
+        bloqueoPor: "estado Derribo no catalogado (23 estados, sistema-y-combate.md)",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -708,6 +740,18 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
     rareza: "Extraño",
     coste: 1500,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      {
+        tipo: "numerico",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "eleccion_jugador",
+        estado: "bloqueado",
+        bloqueoPor: "pregunta 29",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -725,6 +769,18 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
     rareza: "Extraño",
     coste: 2100,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
+        mecanismo: "accion_equipo",
+        estado: "bloqueado",
+        bloqueoPor: "estado Derribo no catalogado (23 estados, sistema-y-combate.md)",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -744,6 +800,25 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
     rareza: "Extraño",
     coste: 2500,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      // Solo "Crítico: Aturdimiento (12)" — el resto del string se desglosa aparte abajo.
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      // "Derribo (6)" en modo base y "Derribo (10)" en Compleja: mismo hueco que las otras
+      // Armas Mecánicas (estado sin catalogar), un único efecto con dos valores según el modo.
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
+        mecanismo: "accion_equipo",
+        estado: "bloqueado",
+        bloqueoPor: "estado Derribo no catalogado (23 estados, sistema-y-combate.md)",
+      },
+      // "Doble daño contra puertas, muros y estructuras" — no hay concepto de "objetivo
+      // estructura" en el motor (todo objetivo es un Combatiente). Sin acción a la que apuntar
+      // todavía, pero la regla en sí es clara — pendiente, no bloqueada por una pregunta abierta.
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+    ],
   },
 ];
 
