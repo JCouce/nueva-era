@@ -76,6 +76,11 @@ export const ARMAMENTO_PESADO: ArmaPesada[] = [
     rareza: "Común",
     coste: 1000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_pesado" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "ajuste_fijo", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+    ],
   },
   {
     familia: "armaPesada",
@@ -96,6 +101,11 @@ export const ARMAMENTO_PESADO: ArmaPesada[] = [
     rareza: "Común",
     coste: 3000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_pesado" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "ajuste_fijo", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+    ],
   },
   {
     familia: "armaPesada",
@@ -119,6 +129,12 @@ export const ARMAMENTO_PESADO: ArmaPesada[] = [
     rareza: "Poco Habitual",
     coste: 12000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_pesado" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "ajuste_fijo", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "eleccion_jugador", estado: "construido" },
+    ],
   },
   {
     familia: "armaPesada",
@@ -139,6 +155,11 @@ export const ARMAMENTO_PESADO: ArmaPesada[] = [
     rareza: "Extraño",
     coste: 105000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_pesado" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "ajuste_fijo", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+    ],
   },
   {
     familia: "armaPesada",
@@ -159,6 +180,11 @@ export const ARMAMENTO_PESADO: ArmaPesada[] = [
     rareza: "Muy Extraño",
     coste: 210000,
     modificadores: [],
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_pesado" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "ajuste_fijo", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+    ],
   },
 ];
 
