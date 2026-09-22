@@ -1,8 +1,18 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Sheet, AtributoId, HabilidadId, PiezaEquipada } from "@/lib/rules";
+import {
+  clampInt,
+  ATRIBUTO_MIN,
+  ATRIBUTO_MAX,
+  HABILIDAD_NO_ENTRENADA,
+  HABILIDAD_MAX,
+  type Sheet,
+  type AtributoId,
+  type HabilidadId,
+  type PiezaEquipada,
+} from "@/lib/rules";
 import { AtributosTab } from "@/app/characters/[id]/_components/AtributosTab";
 import { HabilidadesTab } from "@/app/characters/[id]/_components/HabilidadesTab";
 import { TiradasTab } from "@/app/characters/[id]/_components/TiradasTab";
@@ -19,15 +29,23 @@ import {
   equiparNpcAction,
   desequiparNpcAction,
   eliminarNpcAction,
+  type NpcResult,
 } from "../actions";
 
 // Fase 6b 5.1: espejo simplificado de CharacterSheet.tsx — reusa sus tabs de
 // Atributos/Habilidades/Equipo/Tienda en modo "libre" (sin point-buy, sin
 // pool, sin tope de rareza, ver master/npcs/actions.ts) en vez de un editor
-// desde cero. Sin XP ni build en cola: cada cambio es un único viaje al
-// servidor, no la cola secuencial con estado optimista que sí necesita el
-// autosave del jugador — aquí no hay carreras que evitar, es el máster
-// editando una plantilla, no un jugador tecleando en directo.
+// desde cero.
+//
+// Atributos/habilidades SÍ usan la cola con debounce y estado optimista de
+// CharacterSheet.tsx (añadido 2026-09-22 tras medir en producción: sin esto,
+// cada click esperaba el viaje completo a Vercel/Neon — 200-700ms, con
+// picos por el salto de región cdg1→iad1 — sin ningún feedback visual, y
+// clicks rápidos ni siquiera se acumulaban porque cada uno partía del mismo
+// valor todavía no confirmado por el servidor). El resto (nombre, nota,
+// especialidades, equipo) se queda con el viaje directo: son ediciones de
+// texto o de un solo click, no steppers que se mashean.
+const AUTOSAVE_DEBOUNCE_MS = 500;
 const TABS = [
   { id: "identidad", label: "Identidad" },
   { id: "attrs", label: "Atributos" },
@@ -96,7 +114,7 @@ export function NpcEditor({
       setStatus("saving");
       const res = await renombrarNpcAction(npcId, v);
       setStatus(res.ok ? "saved" : "error");
-    }, 500);
+    }, AUTOSAVE_DEBOUNCE_MS);
   };
   const onNota = (v: string) => {
     setNota(v);
@@ -105,22 +123,63 @@ export function NpcEditor({
       setStatus("saving");
       const res = await setNotaNpcAction(npcId, v);
       setStatus(res.ok ? "saved" : "error");
-    }, 500);
+    }, AUTOSAVE_DEBOUNCE_MS);
   };
 
-  // Sin cola ni estado optimista (ver comentario de arriba): se espera la
-  // respuesta del servidor y se pinta lo que él devuelve, ya clampado.
-  const commitAtributo = async (id: AtributoId, value: number) => {
+  // Cola secuencial (evita carreras load-modify-write si dos guardados se
+  // cruzan) + debounce por campo (clics rápidos en un stepper colapsan en un
+  // único guardado) — mismo mecanismo que CharacterSheet.tsx, ver comentario
+  // de cabecera.
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
+  const pendingTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
+  const runSave = useCallback((fn: () => Promise<NpcResult>, onOk?: (s: Sheet) => void) => {
     setStatus("saving");
-    const res = await setAtributoNpcAction(npcId, id, value);
-    if (res.ok) setSheet(res.sheet);
-    setStatus(res.ok ? "saved" : "error");
+    queue.current = queue.current.then(() => fn()).then(
+      (res) => {
+        if (res.ok) {
+          onOk?.(res.sheet);
+          setStatus("saved");
+        } else setStatus("error");
+      },
+      () => setStatus("error"),
+    );
+  }, []);
+
+  const scheduleCommit = (key: string, fn: () => Promise<NpcResult>, onOk?: (s: Sheet) => void) => {
+    const existing = pendingTimers.current.get(key);
+    if (existing) clearTimeout(existing);
+    pendingTimers.current.set(
+      key,
+      setTimeout(() => {
+        pendingTimers.current.delete(key);
+        runSave(fn, onOk);
+      }, AUTOSAVE_DEBOUNCE_MS),
+    );
   };
-  const commitHabilidad = async (id: HabilidadId, value: number) => {
-    setStatus("saving");
-    const res = await setHabilidadNpcAction(npcId, id, value);
-    if (res.ok) setSheet(res.sheet);
-    setStatus(res.ok ? "saved" : "error");
+
+  // Pinta ya con el mismo clamp que aplica el servidor (sin pool: modo
+  // libre, ver master/npcs/actions.ts), y reconcilia solo el campo tocado
+  // con lo que confirme el servidor — nunca el sheet entero, que pisaría un
+  // click optimista posterior a otro campo mientras este seguía en vuelo
+  // (mismo bug que se arregló en CharacterSheet.tsx el 2026-09-24).
+  const commitAtributo = (id: AtributoId, value: number) => {
+    const v = clampInt(value, ATRIBUTO_MIN, ATRIBUTO_MAX, sheet.atributos[id]);
+    setSheet((s) => ({ ...s, atributos: { ...s.atributos, [id]: v } }));
+    scheduleCommit(
+      `atributo:${id}`,
+      () => setAtributoNpcAction(npcId, id, value),
+      (servidor) => setSheet((actual) => ({ ...actual, atributos: { ...actual.atributos, [id]: servidor.atributos[id] } })),
+    );
+  };
+  const commitHabilidad = (id: HabilidadId, value: number) => {
+    const v = clampInt(value, HABILIDAD_NO_ENTRENADA, HABILIDAD_MAX, sheet.habilidades[id].valor);
+    setSheet((s) => ({ ...s, habilidades: { ...s.habilidades, [id]: { ...s.habilidades[id], valor: v } } }));
+    scheduleCommit(
+      `habilidad:${id}`,
+      () => setHabilidadNpcAction(npcId, id, value),
+      (servidor) => setSheet((actual) => ({ ...actual, habilidades: { ...actual.habilidades, [id]: servidor.habilidades[id] } })),
+    );
   };
   const commitAddEspecialidad = async (id: HabilidadId, esp: string) => {
     setStatus("saving");
