@@ -301,16 +301,25 @@ export function TiradaModal({
             </div>
           )}
 
-          {resultado && (
+          {resultado && !rodando && (
             <div className="mt-4 border-t border-border pt-3">
               <ContenidoResultado resultado={resultado} onTirarDanio={onTirarDanio} />
-              <button
-                type="button"
-                onClick={onCerrar}
-                className="clip-chamfer-sm mt-3 w-full border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98]"
-              >
-                Cerrar
-              </button>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={onCerrar}
+                  className="clip-chamfer-sm border border-border py-3 font-display text-sm font-semibold uppercase tracking-wide text-muted active:scale-[0.98]"
+                >
+                  Cerrar
+                </button>
+                <button
+                  type="button"
+                  onClick={dispararTirada}
+                  className="clip-chamfer-sm border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98]"
+                >
+                  Tirar otra vez
+                </button>
+              </div>
             </div>
           )}
 
