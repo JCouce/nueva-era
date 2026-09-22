@@ -152,8 +152,10 @@ type Mecanismo =
   | "siempre_activo"     // Modificador tipo "tirada" con alcance, solo por llevarlo puesto
   | "ajuste_fijo"        // ajustesFijos
   | "bono_tramo"         // bonosTramo
-  | "accion_sin_equipo"  // genera su propia acción sin ser una pieza de equipo (poderes, dotes)
-  | "gate_instalacion";  // bloquea/atenúa/avisa sobre una acción entera (el mecanismo que falta del tipo 5)
+  | "accion_sin_equipo"  // genera su propia acción sin ser una pieza de equipo (poderes, dotes) — pendiente de construir
+  | "gate_instalacion"   // bloquea/atenúa/avisa sobre una acción entera (el mecanismo que falta del tipo 5)
+  | "accion_equipo"      // genera su propia acción SIENDO equipo — función hardcodeada por familia/id (combate.ts, lib/rules/herramientas.ts), ya construido, diseño permanente
+  | "nota_fija";         // texto siempre presente, sin CondicionTirada de por medio, leído directo de un campo y volcado a Tirada.nota
 
 type Afecta =
   | { modo: "accion_existente"; id: string }  // tiradaId/accionId que modifica
@@ -170,6 +172,26 @@ type MotorMetadata = {
   bloqueoPor?: string;                         // "H5", "pregunta 29", "Fase 5"... obligatorio si estado === "bloqueado"
 };
 ```
+
+**`accion_equipo`/`nota_fija` (2026-09-23, al empezar el barrido pieza a pieza):**
+la lista de mecanismos de arriba se escribió antes de rellenar un solo dato real, y
+se quedaron dos huecos que no son "pendientes de construir" — son cosas **ya
+construidas** que nunca tuvieron etiqueta:
+
+- **`accion_equipo`**: el tipo 1 (modificador de acción) ya funciona para armas y
+  herramientas activas — pero vía una función hardcodeada por familia (o por id,
+  en el caso de Radar/Escáner/Disfraz) en `combate.ts`/`lib/rules/herramientas.ts`,
+  no vía ningún mecanismo de datos genérico. `accion_sin_equipo` no vale para esto
+  porque su propio nombre lo excluye ("sin ser una pieza de equipo") — es el hueco
+  simétrico, y a diferencia de su hermano, este SÍ está construido y es el diseño
+  permanente, no un hueco a rellenar.
+- **`nota_fija`**: texto siempre presente (`arma.especial`, `arma.efectos`,
+  `granada.areaEfecto`, `NivelModulo.notaTirada`) volcado directo a `Tirada.nota`,
+  sin ningún `CondicionTirada` de por medio — a diferencia del texto condicional de
+  Visor Nocturno (mecanismo `eleccion_jugador`, un toggle real). No es un
+  descubrimiento nuevo: `docs/modificadores-tiradas.md` ya lo tenía dibujado con
+  estas palabras exactas ("❌ sin mecanismo formal — hoy cada caso es ad hoc"), solo
+  le faltaba el nombre en el tipo.
 
 Dos ejes deliberadamente separados dentro del mismo tipo:
 

@@ -16,8 +16,13 @@ export const MECANISMOS_MOTOR = [
   "siempre_activo", // Modificador tipo "tirada" con alcance, solo por llevarlo puesto
   "ajuste_fijo", // ajustesFijos
   "bono_tramo", // bonosTramo
-  "accion_sin_equipo", // genera su propia acción sin ser una pieza de equipo (poderes, dotes)
+  "accion_sin_equipo", // genera su propia acción sin ser una pieza de equipo (poderes, dotes) — mecanismo que aún no existe
   "gate_instalacion", // bloquea/atenúa/avisa sobre una acción entera (tipo 5)
+  // Los dos de abajo se añadieron el 2026-09-23 al rellenar MotorMetadata:
+  // motor.md solo documentaba "hace falta generalizar" para el tipo 1 no-equipo
+  // y el tipo 5, pero dos patrones YA CONSTRUIDOS se quedaron sin etiqueta.
+  "accion_equipo", // genera su propia acción SIENDO equipo — función hardcodeada por familia/id en combate.ts / lib/rules/herramientas.ts (tiradaDeArmaFuego, tiradaDeArmaMelee, tiradaDeArmamentoPesado, tiradaDeGranada, tiradasDeHerramientas), sin mecanismo de datos genérico. A diferencia de accion_sin_equipo, este SÍ está construido — es el diseño permanente para equipo, no un hueco a rellenar.
+  "nota_fija", // texto siempre presente, sin elección del jugador, leído directo de un campo del catálogo (arma.especial, arma.efectos, granada.areaEfecto, NivelModulo.notaTirada) y concatenado a Tirada.nota — docs/modificadores-tiradas.md lo llama "ad hoc" en su propio diagrama (la tercera caja, "Texto informativo"). Distinto de eleccion_jugador: aquí no hay ningún CondicionTirada de por medio, ni checkbox que activar/desactivar.
 ] as const;
 export type MecanismoMotor = (typeof MECANISMOS_MOTOR)[number];
 
