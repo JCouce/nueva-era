@@ -14,6 +14,12 @@ existe para el código. Cada bloque lleva estado (`FIRME`, `INFERIDO`, `PARCIAL`
 y de preguntas abiertas. Antes de tocar reglas, léelo; después de tocarlas,
 actualízalo.
 
+**`docs/motor.md` es de lectura obligatoria antes de dar de alta cualquier elemento
+nuevo en el catálogo** — equipo, especies, poderes psiónicos, dotes, aumentos,
+cualquier cosa que se transcriba de prosa a motor. Define el análisis de dos
+preguntas (a qué acción afecta, de cuál de los cinco tipos de modificador es) que
+todo elemento nuevo tiene que responder antes de darse por transcrito.
+
 Hoy la ficha cubre identidad, atributos (6 básicos + 6 aplicados derivados),
 habilidades con especialidades, salud, movimiento y el catálogo de equipo entero
 (comprar, equipar, ranuras). Dotes, poderes psiónicos y aumentos siguen como tabs

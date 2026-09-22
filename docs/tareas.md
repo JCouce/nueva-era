@@ -7,7 +7,9 @@ sustituye a todo eso para el estado: **si vas a escribir "esto está pendiente" 
 está hecho" en cualquier otro documento del proyecto, para — va aquí, no allí.**
 
 `docs/traspaso.md` explica cómo se trabaja (normas, trampas, mapa de archivos).
-`docs/sistema.md` manda en las reglas del juego. Este archivo manda en el estado.
+`docs/sistema.md` manda en las reglas del juego. `docs/motor.md` manda en la
+arquitectura — el modelo obligatorio para pasar cualquier elemento nuevo (equipo,
+razas, poderes, dotes, aumentos) de prosa a motor. Este archivo manda en el estado.
 
 **Última actualización:** 2026-09-11.
 
@@ -105,6 +107,21 @@ techo pasa a ser el del sistema (6) en vez del de creación (4). Fresh start hec
 ---
 
 ## Pendiente
+
+### El motor — regularizar metadatos de capa 1 ⬜ (modelo cerrado 2026-09-22)
+**El modelo entero vive en `docs/motor.md` — léelo antes de dar de alta cualquier
+elemento nuevo (equipo, razas, poderes, dotes, aumentos), es de lectura obligatoria a
+partir de ahora.** Resumen: la app es un motor de tiradas; todo elemento de la ficha
+(capa 1) debe declarar a qué acción(es) de capa 2 afecta y de cuál de cinco tipos de
+modificador es (acción / numérico / texto / narrativo / habilitador-deshabilitador).
+El código en sí está mayormente hecho (RECURSOS de hoy cubre los tipos 2 y 3 para
+equipo) — lo que falta es sobre todo **trabajo de metadatos**: pasar el catálogo
+entero por esta checklist y encontrar los casos que de verdad escapen a la
+regularización. Dos huecos de motor detectados que sí hacen falta construir, no solo
+rellenar datos: un mecanismo para que un elemento no-equipo (poder, dote) declare que
+genera su propia acción, y un mecanismo real para el tipo 5 (habilitar/deshabilitar
+una acción entera — hoy ningún mecanismo existente sabe hacer eso). Sin empezar el
+barrido todavía.
 
 ### Fase 2 — Ficha viva (PG y fatiga en partida) ⬜
 Ya no está bloqueada por la pregunta de si se lleva en vivo — se resolvió que sí. La

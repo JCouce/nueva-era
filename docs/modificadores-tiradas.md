@@ -1,10 +1,13 @@
 # Modificadores de una tirada — cómo llegan y cómo añadir uno nuevo
 
-Documento técnico, no de reglas (eso es `sistema.md`). Es la guía para cuando
-alguien —tú dentro de tres meses, u otra persona— necesite añadir un bono a
-una tirada y no sepa dónde tocar. Léelo entero antes de añadir el primero:
-son diez minutos y evita reinventar uno de los cuatro mecanismos que ya
-existen.
+**`docs/motor.md` es el documento marco** (los cinco tipos de modificador que
+puede ser cualquier elemento de la ficha, capa 1/2/2.5). Este documento es el
+detalle técnico de uno solo de esos cinco tipos — el numérico y el de
+texto/condición — y de los cuatro mecanismos de entrega que ya existen para
+ellos. Léelo entero antes de añadir el primero: son diez minutos y evita
+reinventar uno de los cuatro mecanismos que ya existen.
+
+Documento técnico, no de reglas (eso es `sistema.md`).
 
 ## 1. El modelo mental
 
