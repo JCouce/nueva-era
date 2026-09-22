@@ -2142,6 +2142,16 @@ export const SUBSISTEMAS: Subsistema[] = [
         // está quieto o en movimiento, así que no hay un número único que
         // aplique "mientras se lleva puesto" (ver docs/traspaso.md §6).
         modificadores: [],
+        // Cobertura: sube la dificultad de QUIEN busca/detecta/dispara al
+        // portador, nunca una tirada propia — mismo problema estructural que
+        // Compartimento Oculto (objetivo_tercero, mecanismo nota_fija ya
+        // aceptado en conversación, sin tirada de portador donde colgarlo
+        // todavía). Un único efecto por nivel aunque `detalle` liste varios
+        // números (activo estático/dinámico, pasivo): son variantes del mismo
+        // concepto según modo/movimiento, no efectos distintos.
+        motor: [
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "buscar_percibir" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+        ],
       },
       {
         nivel: 2,
@@ -2154,6 +2164,9 @@ export const SUBSISTEMAS: Subsistema[] = [
           "Cobertura pasiva (Térmica/Acústica): 1 / 1.",
         ],
         modificadores: [],
+        motor: [
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "buscar_percibir" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+        ],
       },
       {
         nivel: 3,
@@ -2166,6 +2179,9 @@ export const SUBSISTEMAS: Subsistema[] = [
           "Cobertura pasiva (Térmica/Acústica): 2 / 2.",
         ],
         modificadores: [],
+        motor: [
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "buscar_percibir" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+        ],
       },
       {
         nivel: 4,
@@ -2178,6 +2194,9 @@ export const SUBSISTEMAS: Subsistema[] = [
           "Cobertura pasiva (Térmica/Acústica): 3 / 3.",
         ],
         modificadores: [],
+        motor: [
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "buscar_percibir" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+        ],
       },
     ],
   },
@@ -2214,6 +2233,10 @@ export const SUBSISTEMAS: Subsistema[] = [
           // para cuando exista — no se aplica a nada mientras tanto.
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_retroceso_psionico" }, valor: 1 },
         ],
+        motor: [
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "conversion_psionica" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "Acciones sin dado" }, // Conversión Psiónica: acción sin dado, motor.md ya la cita como ejemplo del hueco
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // Estabilizador Neuronal Básico
+        ],
       },
       {
         nivel: 2,
@@ -2232,6 +2255,11 @@ export const SUBSISTEMAS: Subsistema[] = [
           // para cuando exista — no se aplica a nada mientras tanto.
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_retroceso_psionico" }, valor: 1 },
         ],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "conversion_psionica" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "Acciones sin dado" }, // cambia la eficiencia (3 cargas), la acción ya se declaró en nivel 1
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // Estabilizador Neuronal, heredado (S9)
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 33" }, // Canal de Alta Resonancia, +10% sin número fijo que mecanizar
+        ],
       },
       {
         nivel: 3,
@@ -2248,6 +2276,12 @@ export const SUBSISTEMAS: Subsistema[] = [
           // para cuando exista — no se aplica a nada mientras tanto.
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_retroceso_psionico" }, valor: 1 },
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_metasensoria" }, valor: 1 },
+        ],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "conversion_psionica" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "Acciones sin dado" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" },
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 33" }, // Canal de Alta Resonancia, heredado
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_metasensoria" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // Blindaje Psico-Reactivo
         ],
       },
       {
@@ -2266,6 +2300,13 @@ export const SUBSISTEMAS: Subsistema[] = [
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_retroceso_psionico" }, valor: 1 },
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_metasensoria" }, valor: 1 },
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "poder_psionico" }, valor: 1 },
+        ],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "conversion_psionica" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "Acciones sin dado" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" },
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 33" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_metasensoria" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "poder_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // Simbiosis Sináptica Total
         ],
       },
     ],
@@ -2295,6 +2336,9 @@ export const SUBSISTEMAS: Subsistema[] = [
         // "Absorción de daño" no tiene un concepto equivalente en el motor hoy
         // (ni derivado ni tirada): no se mecaniza, ver cabecera del fichero.
         modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "H5" },
+        ],
       },
       {
         nivel: 2,
@@ -2302,6 +2346,9 @@ export const SUBSISTEMAS: Subsistema[] = [
         coste: 30000,
         detalle: ["Absorción de 2 puntos."],
         modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "H5" },
+        ],
       },
       {
         nivel: 3,
@@ -2309,6 +2356,9 @@ export const SUBSISTEMAS: Subsistema[] = [
         coste: 60000,
         detalle: ["Absorción de 3 puntos."],
         modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "H5" },
+        ],
       },
       {
         nivel: 4,
@@ -2316,6 +2366,9 @@ export const SUBSISTEMAS: Subsistema[] = [
         coste: 90000,
         detalle: ["Absorción de 4 puntos."],
         modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "H5" },
+        ],
       },
     ],
   },
@@ -2359,6 +2412,35 @@ export const SUBSISTEMAS: Subsistema[] = [
         // recibido) o un recurso propio (colchón de PG) sin equivalente en el
         // motor: no se mecaniza.
         modificadores: [],
+        motor: [
+          // Colchón de PG: buffer temporal ligado a "estar activo", con su
+          // propia mini-máquina de estados (destruido → tiempo de
+          // reactivación). No es RECURSOS de instancia (no tiene actual/max
+          // recargable por compra) ni un derivado de personaje (PG/fatiga) —
+          // caso límite sin nombre todavía en capa 2 y media, ver informe final.
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "buffer temporal sin nombre en capa 2 y media" },
+          // Sacrificar PG del colchón → +N daño de plasma en golpe melee: acción
+          // del jugador declarada antes de atacar, más cercano a eleccion_jugador
+          // que a nada más, aunque hoy no hay CondicionTirada real.
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          // Crítico melee con plasma (shock/llamarada/fusión condicional): mismo
+          // patrón que Visor Nocturno (toggle con nota), "ya propuesto, sin
+          // construir" según el barrido de motor — no es duda, es pendiente.
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          // Devuelve daño de plasma al atacante: tirada/daño de un TERCERO (quien
+          // golpea al portador), mismo problema estructural que Compartimento
+          // Oculto/Cobertura del Camuflaje.
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+          // -8 al sigilo al activarse: numérico condicionado a "está activa", sin
+          // CondicionTirada construida todavía.
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          // Neutraliza el Camuflaje Trifásico activo: una pieza deshabilita el
+          // efecto de OTRA pieza — no hay precedente de esto en el motor hoy
+          // (gate_instalacion es el mecanismo más cercano, pero siempre se ha
+          // usado pieza-sobre-sí-misma, nunca pieza-sobre-otra-pieza). Caso
+          // inconcluso, ver informe final.
+          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "camuflaje_trifasico" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "pendiente" },
+        ],
       },
       {
         nivel: 2,
@@ -2371,6 +2453,18 @@ export const SUBSISTEMAS: Subsistema[] = [
             "(dificultad 6 + nivel); con fallo crítico en la esquiva, también fusión.",
         ],
         modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "buffer temporal sin nombre en capa 2 y media" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "camuflaje_trifasico" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "pendiente" },
+          // Detonación de pulso térmico en área: necesita una tirada de ataque
+          // propia que no existe — amplía el Hallazgo #1 (igual que el
+          // Proyector de Pulso), no se re-abre la duda, solo se cita.
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "detonacion_pulso_termico" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "H1" },
+        ],
       },
       {
         nivel: 3,
@@ -2383,6 +2477,18 @@ export const SUBSISTEMAS: Subsistema[] = [
           "Pueden gastarse 4 puntos del colchón para sumar 2 al daño adicional de plasma.",
         ],
         modificadores: [],
+        // Mismos 7 efectos que nivel 2 (solo cambian números: colchón,
+        // dificultades de crítico, coste del sacrificio) — nada nuevo que
+        // clasificar en este nivel.
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "buffer temporal sin nombre en capa 2 y media" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "camuflaje_trifasico" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "pendiente" },
+          { tipo: "accion", afecta: { modo: "accion_existente", id: "detonacion_pulso_termico" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "H1" },
+        ],
       },
       {
         nivel: 4,
@@ -2394,6 +2500,15 @@ export const SUBSISTEMAS: Subsistema[] = [
           "La detonación de pulso térmico puede ampliarse a área 10x10.",
         ],
         modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "buffer temporal sin nombre en capa 2 y media" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "camuflaje_trifasico" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "pendiente" },
+          { tipo: "accion", afecta: { modo: "accion_existente", id: "detonacion_pulso_termico" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "H1" },
+        ],
       },
     ],
   },
@@ -2453,6 +2568,22 @@ export const SUBSISTEMAS: Subsistema[] = [
             "cualquier modo de ataque.",
         ],
         modificadores: [],
+        motor: [
+          // El subsistema entero es tipo 1: sus 4 modos (Pulso, Pulso Cargado,
+          // Barrido, Aguijón) necesitan su propia tirada de ataque, que no
+          // existe hoy — Hallazgo #1 (incluye el matiz ya conocido de Aguijón
+          // siendo melee-dentro-de-arma-a-distancia, "elige habilidad" en vez
+          // de "elige atributo", sin precedente).
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_proyector_pulso" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "H1" },
+          // "-5 al sigilo al disparar" no es eleccion_jugador (no hay toggle) ni
+          // siempre_activo (no es incondicional, solo tras disparar) — es un
+          // tercer momento de activación, "tras esta acción concreta", que
+          // ningún mecanismo actual nombra. Uso eleccion_jugador por ser el más
+          // cercano, pero es la clasificación menos segura de todo mi tramo —
+          // caso inconcluso, ver informe final (puede hacer falta un mecanismo
+          // nuevo, no solo un tipo).
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_proyector_pulso" }, mecanismo: "eleccion_jugador", estado: "bloqueado", bloqueoPor: "H1" },
+        ],
       },
       {
         nivel: 2,
@@ -2463,6 +2594,9 @@ export const SUBSISTEMAS: Subsistema[] = [
             "Envenenamiento por Radiación (dificultad 8 + nivel).",
         ],
         modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_proyector_pulso" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "H1" },
+        ],
       },
       {
         nivel: 3,
@@ -2473,6 +2607,9 @@ export const SUBSISTEMAS: Subsistema[] = [
             "(misma salvación que el shock); el crítico pasa a Ceguera (dificultad 8 + nivel).",
         ],
         modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_proyector_pulso" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "H1" },
+        ],
       },
       {
         nivel: 4,
@@ -2484,6 +2621,9 @@ export const SUBSISTEMAS: Subsistema[] = [
             "Hemorragia normal).",
         ],
         modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_proyector_pulso" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "H1" },
+        ],
       },
     ],
   },
