@@ -574,6 +574,11 @@ export const FLAGELOS: ArmaMelee[] = [
     rareza: "Común",
     coste: 50,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+    ],
   },
   {
     familia: "armaMelee",
@@ -595,6 +600,23 @@ export const FLAGELOS: ArmaMelee[] = [
     rareza: "Poco Habitual",
     coste: 100,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      // uso: "Bloqueo -2" — "Bloqueo" no está definido en ningún sitio del sistema.
+      { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 31" },
+      // uso: "Acción Estándar ignora 2 niveles de Cobertura física" — condicionado al modo
+      // Estándar, mismo mecanismo que el selector de arriba, pero la cobertura en sí (afectada
+      // aquí desde el punto de vista del ATACANTE, no de quien se cubre) no tiene ningún cálculo
+      // implementado en ningún sitio del motor todavía, aunque la regla es FIRME (sistema.md:271).
+      {
+        tipo: "numerico",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "eleccion_jugador",
+        estado: "pendiente",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -612,6 +634,12 @@ export const FLAGELOS: ArmaMelee[] = [
     rareza: "Poco Habitual",
     coste: 150,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+    ],
   },
 ];
 
