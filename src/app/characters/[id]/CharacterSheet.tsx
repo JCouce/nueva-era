@@ -237,14 +237,39 @@ export function CharacterSheet({
   // conoce. Por eso aquí sí se reconcilia con lo que devuelve. Atributos y
   // habilidades van debounced por campo (clics rápidos en un stepper durante
   // la creación no deben disparar un round-trip por clic); el resto es
-  // inmediato. ──
+  // inmediato.
+  //
+  // Bug de producción arreglado 2026-09-24 (reportado por el usuario, "no se
+  // siente instantáneo"): reconciliar con `setSheet(res.sheet)` a secas
+  // reemplaza el SHEET ENTERO con la foto que tenía el servidor al procesar
+  // ESE campo — si mientras tanto (500ms de debounce + latencia real de
+  // producción) el jugador tocó OTRO atributo/habilidad, su cambio optimista
+  // ya en pantalla se pisaba con esa foto vieja hasta que le llegara su
+  // propia reconciliación. En local, con latencia casi cero, la ventana para
+  // que esto pasara era minúscula; en producción, no. Arreglo: fusionar solo
+  // el campo que se acaba de guardar, no el sheet entero — y solo hace falta
+  // hacerlo en absoluto si `aprobada` (en creación cliente y servidor
+  // calculan idéntico, reconciliar no aporta nada y solo abre la ventana de
+  // la carrera). ──
   const commitAtributo = (id: AtributoId, value: number) => {
     setSheet((s) => setAtributoValue(s, id, value));
-    scheduleCommit(`atributo:${id}`, () => setAtributoAction(characterId, id, value), setSheet);
+    scheduleCommit(
+      `atributo:${id}`,
+      () => setAtributoAction(characterId, id, value),
+      aprobada
+        ? (servidor) => setSheet((actual) => ({ ...actual, atributos: { ...actual.atributos, [id]: servidor.atributos[id] } }))
+        : undefined,
+    );
   };
   const commitHabilidad = (id: HabilidadId, value: number) => {
     setSheet((s) => setHabilidadValue(s, id, value));
-    scheduleCommit(`habilidad:${id}`, () => setHabilidadAction(characterId, id, value), setSheet);
+    scheduleCommit(
+      `habilidad:${id}`,
+      () => setHabilidadAction(characterId, id, value),
+      aprobada
+        ? (servidor) => setSheet((actual) => ({ ...actual, habilidades: { ...actual.habilidades, [id]: servidor.habilidades[id] } }))
+        : undefined,
+    );
   };
   const commitAddEspecialidad = (id: HabilidadId, nombre: string) => {
     setSheet((s) => addEspecialidad(s, id, nombre));
