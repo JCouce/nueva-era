@@ -159,27 +159,24 @@ export function NpcEditor({
   };
 
   // Pinta ya con el mismo clamp que aplica el servidor (sin pool: modo
-  // libre, ver master/npcs/actions.ts), y reconcilia solo el campo tocado
-  // con lo que confirme el servidor — nunca el sheet entero, que pisaría un
-  // click optimista posterior a otro campo mientras este seguía en vuelo
-  // (mismo bug que se arregló en CharacterSheet.tsx el 2026-09-24).
+  // libre, ver master/npcs/actions.ts — mismos límites en las dos
+  // direcciones, sin ningún guardarraíl extra que el cliente no conozca).
+  // Sin reconciliar al volver el servidor, a propósito: a diferencia de
+  // CharacterSheet.tsx (que sí reconcilia cuando `aprobada`, porque ahí el
+  // servidor aplica un guardarraíl de XP que el cliente no puede calcular),
+  // aquí cliente y servidor siempre calculan el mismo número — reconciliar
+  // igualmente solo servía para que una respuesta en vuelo pisara, un
+  // instante, un valor ya más nuevo si subías y bajabas rápido (flick
+  // reportado en directo el 2026-09-22).
   const commitAtributo = (id: AtributoId, value: number) => {
     const v = clampInt(value, ATRIBUTO_MIN, ATRIBUTO_MAX, sheet.atributos[id]);
     setSheet((s) => ({ ...s, atributos: { ...s.atributos, [id]: v } }));
-    scheduleCommit(
-      `atributo:${id}`,
-      () => setAtributoNpcAction(npcId, id, value),
-      (servidor) => setSheet((actual) => ({ ...actual, atributos: { ...actual.atributos, [id]: servidor.atributos[id] } })),
-    );
+    scheduleCommit(`atributo:${id}`, () => setAtributoNpcAction(npcId, id, value));
   };
   const commitHabilidad = (id: HabilidadId, value: number) => {
     const v = clampInt(value, HABILIDAD_NO_ENTRENADA, HABILIDAD_MAX, sheet.habilidades[id].valor);
     setSheet((s) => ({ ...s, habilidades: { ...s.habilidades, [id]: { ...s.habilidades[id], valor: v } } }));
-    scheduleCommit(
-      `habilidad:${id}`,
-      () => setHabilidadNpcAction(npcId, id, value),
-      (servidor) => setSheet((actual) => ({ ...actual, habilidades: { ...actual.habilidades, [id]: servidor.habilidades[id] } })),
-    );
+    scheduleCommit(`habilidad:${id}`, () => setHabilidadNpcAction(npcId, id, value));
   };
   const commitAddEspecialidad = async (id: HabilidadId, esp: string) => {
     setStatus("saving");
