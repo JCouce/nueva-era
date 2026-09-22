@@ -311,20 +311,17 @@ export function TiradaModal({
             <div className="mt-4 border-t border-border pt-3">
               <ContenidoResultado resultado={resultado} onTirarDanio={onTirarDanio} />
               {notas.length > 0 && (
-                <div className="mt-3 border-t border-border pt-3">
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-info">
-                    {"// aviso"}
-                  </p>
-                  <div className="mt-1.5 flex flex-col gap-2">
-                    {notas.map((n, i) => (
-                      <p
-                        key={i}
-                        className="border-l-2 border-info pl-2 font-sans text-[12px] leading-relaxed text-foreground"
-                      >
-                        {n}
+                <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+                  {notas.map((n, i) => (
+                    <div key={i}>
+                      <p className="font-mono text-[10px] uppercase tracking-widest text-info">
+                        {n.etiqueta}
                       </p>
-                    ))}
-                  </div>
+                      <p className="mt-0.5 border-l-2 border-info pl-2 font-sans text-[12px] leading-relaxed text-foreground">
+                        {n.nota}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               )}
               <div className="mt-3 grid grid-cols-2 gap-2">

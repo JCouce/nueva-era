@@ -122,23 +122,24 @@ export function desgloseCondiciones(
   });
 }
 
-// Los textos de las condiciones activas AHORA MISMO — el "texto informativo"
-// del §8 de docs/modificadores-tiradas.md (Visor Nocturno, Mangual...), que
-// no suma número pero sí debe leerse. Solo toggle/opción llevan `nota`; el
-// contador no tiene sentido de "activo/inactivo" así que no aporta ninguna.
-// Pensado para mostrarse junto al resultado, no solo mientras se elige — ver
-// TiradaModal.
+// Los textos de las condiciones activas AHORA MISMO, con la etiqueta de qué
+// condición los trae — el "texto informativo" del §8 de
+// docs/modificadores-tiradas.md (Visor Nocturno, Mangual...), que no suma
+// número pero sí debe leerse, y de dónde viene. Solo toggle/opción llevan
+// `nota`; el contador no tiene sentido de "activo/inactivo" así que no
+// aporta ninguna. Pensado para mostrarse junto al resultado, no solo
+// mientras se elige — ver TiradaModal.
 export function notasCondiciones(
   condiciones: CondicionTirada[],
   estado: EstadoCondiciones,
-): string[] {
-  const notas: string[] = [];
+): { etiqueta: string; nota: string }[] {
+  const notas: { etiqueta: string; nota: string }[] = [];
   for (const c of condiciones) {
     if (c.tipo === "toggle") {
-      if (Boolean(estado[c.id]) && c.nota) notas.push(c.nota);
+      if (Boolean(estado[c.id]) && c.nota) notas.push({ etiqueta: c.etiqueta, nota: c.nota });
     } else if (c.tipo === "opcion") {
       const elegida = c.opciones.find((o) => o.id === estado[c.id]);
-      if (elegida?.nota) notas.push(elegida.nota);
+      if (elegida?.nota) notas.push({ etiqueta: c.etiqueta, nota: elegida.nota });
     }
   }
   return notas;

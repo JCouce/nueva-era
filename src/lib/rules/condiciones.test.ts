@@ -142,9 +142,9 @@ describe("notasCondiciones", () => {
     assert.deepEqual(notasCondiciones([TOGGLE_CON_NOTA], { visor: false }), []);
   });
 
-  test("un toggle activo con nota la incluye", () => {
+  test("un toggle activo con nota la incluye, con la etiqueta de la condición", () => {
     assert.deepEqual(notasCondiciones([TOGGLE_CON_NOTA], { visor: true }), [
-      "Ves a través del humo.",
+      { etiqueta: "Visor Nocturno activo", nota: "Ves a través del humo." },
     ]);
   });
 
@@ -152,9 +152,9 @@ describe("notasCondiciones", () => {
     assert.deepEqual(notasCondiciones([OPCION_CON_NOTA], { modo: "simple" }), []);
   });
 
-  test("la opción elegida con nota la incluye", () => {
+  test("la opción elegida con nota la incluye, con la etiqueta de la condición (no de la opción)", () => {
     assert.deepEqual(notasCondiciones([OPCION_CON_NOTA], { modo: "rafaga" }), [
-      "Consume 3 balas.",
+      { etiqueta: "Modo", nota: "Consume 3 balas." },
     ]);
   });
 
@@ -167,7 +167,10 @@ describe("notasCondiciones", () => {
       visor: true,
       modo: "rafaga",
     });
-    assert.deepEqual(notas, ["Ves a través del humo.", "Consume 3 balas."]);
+    assert.deepEqual(notas, [
+      { etiqueta: "Visor Nocturno activo", nota: "Ves a través del humo." },
+      { etiqueta: "Modo", nota: "Consume 3 balas." },
+    ]);
   });
 });
 
