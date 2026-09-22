@@ -29,6 +29,7 @@
 // (daño según la granada cargada de MUNICION_GRANADA, dificultad fija).
 import type { Modificador } from "../rules/modificadores";
 import type { Rareza } from "./equipo";
+import type { MotorMetadata } from "../rules/motor";
 
 export type ArmaPesada = {
   familia: "armaPesada";
@@ -49,6 +50,7 @@ export type ArmaPesada = {
   rareza: Rareza;
   coste: number;
   modificadores: Modificador[];
+  motor?: MotorMetadata[]; // docs/motor.md
 };
 
 export const ARMAMENTO_PESADO: ArmaPesada[] = [

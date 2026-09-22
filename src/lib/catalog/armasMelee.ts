@@ -31,6 +31,7 @@
 // en armas de fuego (ver catalog/equipo.ts). Añadirlas pide decidir cómo se
 // modela "coste = precio de otra pieza × N" antes de tocar el catálogo.
 import type { Rareza } from "./equipo";
+import type { MotorMetadata } from "../rules/motor";
 
 export type ModoAtaqueMelee = {
   etiqueta: string; // "Simple", "Estándar", "Estándar / Compleja"…
@@ -53,6 +54,7 @@ export type ArmaMelee = {
   coste: number | null;
   // Solo Escudos: cobertura y blindaje propios mientras se sostiene en alto.
   defensa: { cobertura: number; blindaje: number; puntosGolpe: number } | null;
+  motor?: MotorMetadata[]; // docs/motor.md
 };
 
 // ── Pelea ── A mano vacía: no se compra, no tiene peso ni rareza.

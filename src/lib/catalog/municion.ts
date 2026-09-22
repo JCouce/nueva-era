@@ -16,6 +16,7 @@
 // ha podido determinar qué significa, así que se transcribe como null en vez
 // de inventarse un valor.
 import type { Rareza } from "./equipo";
+import type { MotorMetadata } from "../rules/motor";
 
 export const ALCANCE_ARROJADA = "Potencia × 10 m";
 
@@ -30,6 +31,7 @@ export type MunicionGranada = {
   pesoKg: null;
   rareza: Rareza;
   coste: number;
+  motor?: MotorMetadata[]; // docs/motor.md
 };
 
 export const MUNICION_GRANADA: MunicionGranada[] = [

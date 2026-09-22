@@ -23,6 +23,7 @@
 // sumarlo al de niveles inferiores.
 import type { Modificador } from "../rules/modificadores";
 import type { CondicionTirada, TramoDistancia } from "../rules/condiciones";
+import type { MotorMetadata } from "../rules/motor";
 import { ARMAS_MELEE, type ArmaMelee } from "./armasMelee";
 import { VALIJA_TACTICA_MEDICA, FARMACOS } from "./medicina";
 import {
@@ -62,6 +63,10 @@ export type Armadura = {
   rareza: Rareza;
   coste: number;
   modificadores: Modificador[];
+  // docs/motor.md: un MotorMetadata por efecto de la pieza. Opcional para
+  // que el barrido sea incremental — catalog/motor.test.ts es quien exige
+  // que acabe estando completo, no el tipo.
+  motor?: MotorMetadata[];
 };
 
 // Las 4 "avanzadas" comparten un único párrafo de descripción en el
@@ -314,6 +319,7 @@ export type ArmaFuego = {
   rareza: Rareza;
   coste: number;
   modificadores: Modificador[];
+  motor?: MotorMetadata[]; // docs/motor.md
 };
 
 // ── Pistolas ── Empleo: una mano. Desenfundado: acción simple. Algunas
@@ -1257,6 +1263,7 @@ export type NivelModulo = {
   // mecanizar — la dificultad que citan es la que el jugador teclea en el
   // modal, no un modificador; por eso no hay `modificadores` para esto.
   notaTirada?: string;
+  motor?: MotorMetadata[]; // docs/motor.md — un MotorMetadata por efecto DE ESTE NIVEL
 };
 
 export type MejoraEstandar = {
@@ -1301,6 +1308,7 @@ export type Consumible = {
   rareza: Rareza;
   coste: number;
   modificadores: Modificador[];
+  motor?: MotorMetadata[]; // docs/motor.md
 };
 
 export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
