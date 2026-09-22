@@ -100,6 +100,11 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
   ],
 };
 
+// Agregado, mismo motivo que HERRAMIENTAS_UNICAS en catalog/herramientas.ts:
+// una sola pieza de por sí, pero como array para que el barrido de
+// MotorMetadata (docs/motor.md) tenga un patrón de iteración uniforme.
+export const MEDICINA_UNICAS: Herramienta[] = [VALIJA_TACTICA_MEDICA];
+
 export const FARMACOS: Consumible[] = [
   {
     familia: "consumible",

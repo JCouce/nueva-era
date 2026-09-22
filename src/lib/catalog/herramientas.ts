@@ -229,6 +229,19 @@ export const ESCANER_DETECTOR: Herramienta = {
   ],
 };
 
+// Agregado — las 4 de arriba son piezas únicas (no una familia con niveles
+// de rareza como armas/armaduras), así que se exportaban sueltas. Este array
+// existe solo para que el código que recorre "todas las piezas de un
+// catálogo" (el test de MotorMetadata, docs/motor.md) tenga un único patrón
+// de iteración en vez de tener que distinguir objeto-suelto de array. Los
+// exports individuales de arriba siguen igual para quien ya los use por nombre.
+export const HERRAMIENTAS_UNICAS: Herramienta[] = [
+  VALIJA_TACTICA_FABRICACION,
+  RADAR,
+  DISFRAZ_HOLOGRAFICO,
+  ESCANER_DETECTOR,
+];
+
 export const MATERIALES: Consumible[] = [
   {
     familia: "consumible",
