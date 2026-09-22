@@ -844,6 +844,37 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     rareza: "Singular",
     coste: 12000,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      // Solo "Hemorragia (1d8 turnos)" — Ignora blindaje e Impacto Estructural van aparte abajo.
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      // "Ignora N puntos de blindaje": bloqueado por el mismo hueco que blindaje de armadura.
+      {
+        tipo: "numerico",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "ajuste_fijo",
+        estado: "bloqueado",
+        bloqueoPor: "pregunta 29",
+      },
+      // "Crítico: Impacto Estructural (N)": reduce el blindaje del objetivo de forma PERMANENTE —
+      // no está en el catálogo de 23 estados (conflicto C13 de sistema.md).
+      {
+        tipo: "texto",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "nota_fija",
+        estado: "bloqueado",
+        bloqueoPor: "C13",
+      },
+      // Retroceso entrópico (comentario de cabecera del archivo): compartido por las 10 armas
+      // Kerzul. Regla clara (Fortaleza vs. daño básico del arma), pero hoy ni siquiera se
+      // muestra en la UI — no está bloqueado por ninguna pregunta, solo sin construir.
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
+        mecanismo: "accion_equipo",
+        estado: "pendiente",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -861,6 +892,31 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     rareza: "Singular",
     coste: 24000,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      {
+        tipo: "numerico",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "ajuste_fijo",
+        estado: "bloqueado",
+        bloqueoPor: "pregunta 29",
+      },
+      {
+        tipo: "texto",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "nota_fija",
+        estado: "bloqueado",
+        bloqueoPor: "C13",
+      },
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
+        mecanismo: "accion_equipo",
+        estado: "pendiente",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -880,6 +936,40 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     rareza: "Singular",
     coste: 42000,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      // "Hemorragia Exanguinante" funciona igual que el resto; "Derribo (12)" es el mismo hueco
+      // que el Derribo de las Armas Mecánicas (estado sin catalogar) — se desglosa aparte.
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
+        mecanismo: "accion_equipo",
+        estado: "bloqueado",
+        bloqueoPor: "estado Derribo no catalogado (23 estados, sistema-y-combate.md)",
+      },
+      {
+        tipo: "numerico",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "ajuste_fijo",
+        estado: "bloqueado",
+        bloqueoPor: "pregunta 29",
+      },
+      {
+        tipo: "texto",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "nota_fija",
+        estado: "bloqueado",
+        bloqueoPor: "C13",
+      },
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
+        mecanismo: "accion_equipo",
+        estado: "pendiente",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -897,6 +987,38 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     rareza: "Singular",
     coste: 26000,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
+        mecanismo: "accion_equipo",
+        estado: "bloqueado",
+        bloqueoPor: "estado Derribo no catalogado (23 estados, sistema-y-combate.md)",
+      },
+      {
+        tipo: "numerico",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "ajuste_fijo",
+        estado: "bloqueado",
+        bloqueoPor: "pregunta 29",
+      },
+      {
+        tipo: "texto",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "nota_fija",
+        estado: "bloqueado",
+        bloqueoPor: "C13",
+      },
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
+        mecanismo: "accion_equipo",
+        estado: "pendiente",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -914,6 +1036,38 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     rareza: "Singular",
     coste: 20000,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
+        mecanismo: "accion_equipo",
+        estado: "bloqueado",
+        bloqueoPor: "estado Derribo no catalogado (23 estados, sistema-y-combate.md)",
+      },
+      {
+        tipo: "numerico",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "ajuste_fijo",
+        estado: "bloqueado",
+        bloqueoPor: "pregunta 29",
+      },
+      {
+        tipo: "texto",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "nota_fija",
+        estado: "bloqueado",
+        bloqueoPor: "C13",
+      },
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
+        mecanismo: "accion_equipo",
+        estado: "pendiente",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -931,6 +1085,31 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     rareza: "Singular",
     coste: 18000,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      {
+        tipo: "numerico",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "ajuste_fijo",
+        estado: "bloqueado",
+        bloqueoPor: "pregunta 29",
+      },
+      {
+        tipo: "texto",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "nota_fija",
+        estado: "bloqueado",
+        bloqueoPor: "C13",
+      },
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
+        mecanismo: "accion_equipo",
+        estado: "pendiente",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -948,6 +1127,31 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     rareza: "Singular",
     coste: 22000,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      {
+        tipo: "numerico",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "ajuste_fijo",
+        estado: "bloqueado",
+        bloqueoPor: "pregunta 29",
+      },
+      {
+        tipo: "texto",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "nota_fija",
+        estado: "bloqueado",
+        bloqueoPor: "C13",
+      },
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
+        mecanismo: "accion_equipo",
+        estado: "pendiente",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -965,6 +1169,38 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     rareza: "Singular",
     coste: 48000,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
+        mecanismo: "accion_equipo",
+        estado: "bloqueado",
+        bloqueoPor: "estado Derribo no catalogado (23 estados, sistema-y-combate.md)",
+      },
+      {
+        tipo: "numerico",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "ajuste_fijo",
+        estado: "bloqueado",
+        bloqueoPor: "pregunta 29",
+      },
+      {
+        tipo: "texto",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "nota_fija",
+        estado: "bloqueado",
+        bloqueoPor: "C13",
+      },
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
+        mecanismo: "accion_equipo",
+        estado: "pendiente",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -982,6 +1218,31 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     rareza: "Singular",
     coste: 38000,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      {
+        tipo: "numerico",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "ajuste_fijo",
+        estado: "bloqueado",
+        bloqueoPor: "pregunta 29",
+      },
+      {
+        tipo: "texto",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "nota_fija",
+        estado: "bloqueado",
+        bloqueoPor: "C13",
+      },
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
+        mecanismo: "accion_equipo",
+        estado: "pendiente",
+      },
+    ],
   },
   {
     familia: "armaMelee",
@@ -996,6 +1257,46 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     rareza: "Singular",
     coste: 37000,
     defensa: { cobertura: 2, blindaje: 16, puntosGolpe: 60 },
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
+        mecanismo: "accion_equipo",
+        estado: "bloqueado",
+        bloqueoPor: "estado Derribo no catalogado (23 estados, sistema-y-combate.md)",
+      },
+      {
+        tipo: "numerico",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "ajuste_fijo",
+        estado: "bloqueado",
+        bloqueoPor: "pregunta 29",
+      },
+      {
+        tipo: "texto",
+        afecta: { modo: "accion_existente", id: "ataque_melee" },
+        mecanismo: "nota_fija",
+        estado: "bloqueado",
+        bloqueoPor: "C13",
+      },
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
+        mecanismo: "accion_equipo",
+        estado: "pendiente",
+      },
+      // Hereda la misma duda de defensa que los Escudos normales.
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+      {
+        tipo: "texto",
+        afecta: { modo: "objetivo_tercero", id: "ataque_contra_portador_escudo" },
+        mecanismo: "nota_fija",
+        estado: "pendiente",
+      },
+    ],
   },
 ];
 
