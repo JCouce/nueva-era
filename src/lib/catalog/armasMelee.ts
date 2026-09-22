@@ -75,6 +75,12 @@ export const PELEA: ArmaMelee[] = [
     rareza: null,
     coste: null,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+    ],
   },
   {
     familia: "armaMelee",
@@ -92,6 +98,12 @@ export const PELEA: ArmaMelee[] = [
     rareza: null,
     coste: null,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+    ],
   },
   {
     familia: "armaMelee",
@@ -108,6 +120,11 @@ export const PELEA: ArmaMelee[] = [
     rareza: null,
     coste: null,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+    ],
   },
 ];
 
@@ -126,6 +143,10 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     rareza: "Común",
     coste: 40,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+    ],
   },
   {
     familia: "armaMelee",
@@ -140,6 +161,10 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     rareza: "Común",
     coste: 50,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+    ],
   },
   {
     familia: "armaMelee",
@@ -154,6 +179,10 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     rareza: "Poco Habitual",
     coste: 50,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+    ],
   },
   {
     familia: "armaMelee",
@@ -168,6 +197,10 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     rareza: "Común",
     coste: 30,
     defensa: null,
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+    ],
   },
 ];
 
