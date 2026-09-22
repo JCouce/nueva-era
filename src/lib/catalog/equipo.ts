@@ -98,6 +98,12 @@ export const ARMADURAS: Armadura[] = [
     rareza: "Común",
     coste: 100,
     modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+    ],
   },
   {
     familia: "armadura",
@@ -118,6 +124,14 @@ export const ARMADURAS: Armadura[] = [
     modificadores: [
       { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
       { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
+    ],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "siempre_activo", estado: "construido" },
     ],
   },
   {
@@ -140,6 +154,14 @@ export const ARMADURAS: Armadura[] = [
     modificadores: [
       { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
       { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
+    ],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "siempre_activo", estado: "construido" },
     ],
   },
   {
@@ -164,6 +186,14 @@ export const ARMADURAS: Armadura[] = [
       { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
       { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
     ],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "siempre_activo", estado: "construido" },
+    ],
   },
   {
     familia: "armadura",
@@ -185,6 +215,14 @@ export const ARMADURAS: Armadura[] = [
     modificadores: [
       { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
       { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
+    ],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "siempre_activo", estado: "construido" },
     ],
   },
   {
@@ -210,6 +248,14 @@ export const ARMADURAS: Armadura[] = [
       { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
       { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
     ],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "siempre_activo", estado: "construido" },
+    ],
   },
   {
     familia: "armadura",
@@ -225,6 +271,12 @@ export const ARMADURAS: Armadura[] = [
     rareza: "Muy Extraño",
     coste: 100000,
     modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+    ],
   },
   {
     familia: "armadura",
@@ -240,6 +292,12 @@ export const ARMADURAS: Armadura[] = [
     rareza: "Muy Extraño",
     coste: 105000,
     modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+    ],
   },
   {
     familia: "armadura",
@@ -255,6 +313,12 @@ export const ARMADURAS: Armadura[] = [
     rareza: "Muy Extraño",
     coste: 120000,
     modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+    ],
   },
   {
     familia: "armadura",
@@ -270,6 +334,12 @@ export const ARMADURAS: Armadura[] = [
     rareza: "Muy Extraño",
     coste: 200000,
     modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+    ],
   },
 ];
 
