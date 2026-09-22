@@ -363,8 +363,11 @@ describe("modificadores de equipo", () => {
       nivel: 2,
       instaladoEnId: "armadura-1",
     });
+    // Un único +1 a salv_fortaleza (Resistencia Térmica, cubre congelación y calor
+    // extremo con el mismo bono) — antes había un duplicado que sumaba +2 real.
     const delSoporte = modificadoresDeEquipo(s).filter((m) => m.fuente === "Soporte Vital 2");
-    assert.equal(delSoporte.length, 2);
+    assert.equal(delSoporte.length, 1);
+    assert.equal(delSoporte[0]?.valor, 1);
   });
 
   test("sin nada equipado no hay modificadores de equipo", () => {

@@ -1314,12 +1314,13 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         ],
         // Resistencia Térmica es el único bono incondicional (el Blindaje
         // Ambiental depende de sufrir daño en un ambiente tóxico, así que se
-        // queda solo en `detalle`, sin mecanizar).
+        // queda solo en `detalle`, sin mecanizar). Un único +1: cubre
+        // congelación y calor extremo a la vez (ninguno tiene salvación propia,
+        // los dos caen en salv_fortaleza — no son dos bonos, es el mismo +1
+        // aplicable a dos disparadores distintos). Bug corregido 2026-09-23:
+        // antes había dos entradas idénticas, sumando +2 real en vez de +1
+        // (ver docs/equipo-efectos-especiales.md §Mejoras Estándar, `me1`).
         modificadores: [
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
-          // "calor extremo" no es un estado con nombre propio en sistema-y-combate.md:
-          // se empareja con congelación (el extremo opuesto de temperatura) y se
-          // asume la misma salvación de Fortaleza — inferencia, no dato explícito.
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
         ],
       },
@@ -1335,11 +1336,8 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         // Supuesto: el documento no repite la Resistencia Térmica de nivel 1 en
         // los niveles 2-3, pero tampoco dice que se pierda al subir de nivel —
         // se asume que se mantiene. Si Murillo confirma lo contrario, se corrige aquí.
+        // Un único +1 (ver nota de nivel 1) — bug de duplicado corregido 2026-09-23.
         modificadores: [
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
-          // "calor extremo" no es un estado con nombre propio en sistema-y-combate.md:
-          // se empareja con congelación (el extremo opuesto de temperatura) y se
-          // asume la misma salvación de Fortaleza — inferencia, no dato explícito.
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
         ],
       },
@@ -1351,11 +1349,8 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           "Duración: 144 horas de autonomía.",
           "Blindaje Ambiental Avanzado: +3 contra efectos tóxicos en las mismas condiciones.",
         ],
+        // Un único +1 (ver nota de nivel 1) — bug de duplicado corregido 2026-09-23.
         modificadores: [
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
-          // "calor extremo" no es un estado con nombre propio en sistema-y-combate.md:
-          // se empareja con congelación (el extremo opuesto de temperatura) y se
-          // asume la misma salvación de Fortaleza — inferencia, no dato explícito.
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
         ],
       },

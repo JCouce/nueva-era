@@ -202,6 +202,21 @@ describe("arma melee equipada", () => {
     assert.match(fila.label, /Sutil/);
     assert.match(fila.nota ?? "", /Potencia en lugar de Fuerza/);
   });
+
+  test("el 'efectos' del arma llega a la nota, igual que 'especial' en armas de fuego", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "tonfa1", catalogoId: "corta_tonfa_porra" });
+    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Golpear con Tonfa o Porra")!;
+    assert.match(fila.nota ?? "", /Crítico de Aturdimiento \(7\)/);
+  });
+
+  test("Sutil y 'efectos' se combinan en la misma nota, sin pisarse", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada_ligera" });
+    const fila = tiradasDeAtaque(sheet).find((t) => t.label.includes("Espada Ligera"))!;
+    assert.match(fila.nota ?? "", /Potencia en lugar de Fuerza/);
+    assert.match(fila.nota ?? "", /Crítico de Hemorragia \(1d6 turnos\)/);
+  });
 });
 
 describe("armamento pesado equipado", () => {

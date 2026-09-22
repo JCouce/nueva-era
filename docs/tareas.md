@@ -154,15 +154,17 @@ la fuente detallada de cada uno sigue viviendo en su documento, este es el mapa.
 **Ojo con la fecha: la partida empieza mañana (23 de septiembre) — nada de lo
 "bloqueado por diseño" de abajo se espera para entonces, solo los dos quick-wins.**
 
-1. **Ya construible hoy, cero diseño pendiente, una línea cada uno:**
-   - 🐛 Bug: Soporte Vital duplica su +1 a `salv_fortaleza` → aplica +2 real
-     (`equipo.ts:1318-1324`/`1338-1344`/`1354-1360`, borrar una línea en los 3
-     niveles). Detalle: `docs/equipo-efectos-especiales.md` §Mejoras Estándar.
-   - Fix barato: `tiradaDeArmaMelee` (`combate.ts:269`) no vuelca `arma.efectos` al
-     `nota`, a diferencia de `tiradaDeArmaFuego`. Una línea, sin condicionar por
-     modo, hace visibles en Tiradas todos los "Crítico de X"/"Ignora N blindaje" de
-     Combate Melee que hoy solo se ven en la ficha de Equipo. Detalle: `docs/equipo-
-     efectos-especiales.md` §Kerzul.
+1. **✅ Hechos 2026-09-23, los dos quick-wins:**
+   - 🐛 Bug: Soporte Vital duplicaba su +1 a `salv_fortaleza` (aplicaba +2 real) —
+     corregido en `catalog/equipo.ts`, un modificador por nivel. Test
+     `equipo.test.ts` actualizado.
+   - Fix: `tiradaDeArmaMelee` (`combate.ts`) ahora vuelca `arma.efectos` al `nota`,
+     igual que `tiradaDeArmaFuego`. Hace visibles en Tiradas todos los "Crítico de
+     X"/"Ignora N blindaje" de Combate Melee que antes solo se veían en la ficha de
+     Equipo. Tests nuevos en `combate.test.ts`.
+   - Sin cambios de tipo ni de modelo de datos en ninguno de los dos. 317 tests
+     pasan, lint y `tsc --noEmit` limpios. Detalle completo:
+     `docs/equipo-efectos-especiales.md` §Mejoras Estándar y §Kerzul.
 
 2. **Preguntas para Murillo, ya redactadas, listas para soltar en tanda — coste es
    enviarlas, no construir nada:** preguntas 31 (Bloqueo del Mangual), 32

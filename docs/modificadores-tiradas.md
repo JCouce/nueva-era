@@ -385,3 +385,30 @@ supuesto numerado, `sistema.md` S1-S17, no se cuelan silenciosos por todo el
 catálogo). Regla práctica: `required` para lo que el documento da y se podría
 saltar por descuido; campo opcional + supuesto numerado para lo que de verdad
 hay que inventar.
+
+### Nota (2026-09-23): "Tiradas" vs. "Acciones" — el cuarto concepto tiene nombre
+
+Idea del usuario, surgida al mirar Malla Plasmática. Ya habíamos chocado con esto
+sin nombrarlo: la Conversión Psiónica de Derivación Psiónica (ayer) no encajaba en
+numérico/condición/texto porque **no modifica una tirada, es una declaración de
+gasto de recurso sin dado de por medio**. Malla Plasmática da dos casos más del
+mismo patrón: **activarla** (gastas 1 carga, no tiras nada, pero desde ese momento
+tienes -8 a `sigilo` mientras dure) y **sacrificar 2 puntos del colchón** para sumar
+daño de plasma a un golpe melee (se declara antes de tirar, no es la tirada en sí).
+
+Propuesta del usuario: dejar de pensar en "Tiradas" como el contenedor de todo lo
+que pasa en combate/acciones, y pensar en **Acciones** como el contenedor —
+**algunas Acciones tiran dados (las Tiradas de hoy) y otras no** (declarar un gasto
+de recurso, activar algo, sacrificar parte de un colchón). Encaja con el modelo
+mental de la nota de arriba ("todo lo que no es la ficha en sí es equipo en otro
+sitio"): una Acción-sin-dado es exactamente el mismo tipo de "fuente que se
+activa/desactiva" que ya describe ese modelo, solo que su efecto no es un bono a
+una tirada — es un cambio de estado (gastar recurso, activar un modo) que **luego**
+sí puede alimentar a otras Tiradas (el -8 a sigilo, condicionado a que la Malla
+esté activa, es un `Modificador` normal una vez declarada la activación).
+
+**No construir todavía** — mismo problema del §8 de arriba, ampliado: el diseño
+pendiente ya no es solo "`CondicionTirada` y texto en tiradas fijas", es también
+"qué es una Acción, y cuáles de ellas tiran dado". Casos reales acumulados para
+cuando se diseñe: Conversión Psiónica, activar/sacrificar de Malla Plasmática, y
+presumiblemente la mayoría de RECURSOS (gastar munición, cargar un poder).

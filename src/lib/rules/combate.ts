@@ -270,15 +270,25 @@ function tiradaDeArmaMelee(arma: ArmaMelee, instanciaId: string): Tirada {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
   const modo = condicionModo(modosConId);
 
+  // `arma.efectos` (Crítico de X, Ignora N de blindaje...) es hoy puramente
+  // decorativo en el catálogo, pero al menos debe llegar como texto a la
+  // tirada — mismo criterio que `arma.especial` en tiradaDeArmaFuego. Antes de
+  // este fix no llegaba ni como texto (ver docs/equipo-efectos-especiales.md
+  // §Kerzul, "fix barato" 2026-09-23).
+  const notas = [
+    arma.uso.includes("Sutil")
+      ? "Con estilo Sutil se tira Reflejos en lugar de Potencia, y el daño usa Potencia en lugar de Fuerza"
+      : null,
+    arma.efectos,
+  ].filter((n): n is string => n !== null);
+
   return {
     id: `ataque_melee_${instanciaId}`,
     label: arma.uso.includes("Sutil") ? `Golpear con ${arma.label} (o Sutil)` : `Golpear con ${arma.label}`,
     grupo: "Ataques",
     aplicado: "potencia",
     habilidad: "combate_melee",
-    nota: arma.uso.includes("Sutil")
-      ? "Con estilo Sutil se tira Reflejos en lugar de Potencia, y el daño usa Potencia en lugar de Fuerza"
-      : undefined,
+    nota: notas.length > 0 ? notas.join(" · ") : undefined,
     condiciones: modo ? [modo] : [],
     ataque: {
       modos: modosConId.map((m) => ({

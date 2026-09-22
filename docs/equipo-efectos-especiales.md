@@ -17,14 +17,41 @@ Revisando pieza a pieza contra el código real (no solo contra el PDF) aparecier
 cosas más grandes que "falta el efecto especial" — no son parte del barrido en sí,
 mejor tratarlas aparte:
 
-1. **El Proyector de Pulso no genera ninguna tirada de ataque.** Es un `Subsistema`
-   (`catalog/equipo.ts`), y `combate.ts` (`tiradasDeAtaque`) solo recorre
-   `arma`/`armaMelee`/`armaPesada`/`granada` — un subsistema instalado nunca aparece
-   en la tab Tiradas. Sus 4 modos de ataque (Pulso, Pulso Cargado, Barrido, Aguijón)
-   están descritos en `modos[].descripcion` como texto, no como `Tirada`. Esto es más
-   grande que "añadir un efecto de crítico": falta la tirada entera. Candidato a su
-   propia subtarea si se decide que merece la pena (es la única pieza así, del resto
-   de subsistemas ninguno genera ataques).
+1. **El Proyector de Pulso no genera ninguna tirada de ataque — y no es el único
+   subsistema con este problema.** Es un `Subsistema` (`catalog/equipo.ts`), y
+   `combate.ts` (`tiradasDeAtaque`) solo recorre `arma`/`armaMelee`/`armaPesada`/
+   `granada` — un subsistema instalado nunca aparece en la tab Tiradas. Sus 4 modos
+   de ataque (Pulso, Pulso Cargado, Barrido, Aguijón) están descritos en
+   `modos[].descripcion` como texto, no como `Tirada`. Esto es más grande que "añadir
+   un efecto de crítico": falta la tirada entera. **Ampliado 2026-09-23**: la
+   "detonación de pulso térmico" de Malla Plasmática nivel 2 (área 6x6, esquiva,
+   shock+llamarada, fusión) es el mismo problema exacto — ya no es "la única pieza
+   así". Candidato a su propia subtarea si se decide que merece la pena, cubriendo
+   las dos piezas a la vez.
+   **Desglosado del todo 2026-09-23 (pregunta del usuario): deja de ser "hueco de
+   arquitectura sin mapear" — es un arma con nombre de subsistema.** La tabla de
+   modos (`equipamiento.md:398-403`) es calcada a las de `ArmaFuego`. Tres matices
+   concretos que una copia directa no resuelve:
+   - **Aguijón es un modo melee dentro de un arma a distancia** — fórmula de daño
+     "2+Fuerza+Nivel" (no constante), alcance "Melee", etiqueta "Sutil": forma de
+     `ArmaMelee`, no de `ArmaFuego`. Hoy `ArmaFuego` es siempre
+     `aplicado: "reflejos"` / `habilidad: "combate_distancia"` fijo — no hay
+     precedente de un arma con modos mixtos melee+distancia.
+   - **"Puede operarse con Tecnociencia en lugar de Combate a Distancia (mismo
+     atributo Reflejos)"** — elección de HABILIDAD, no de atributo (Sutil ya
+     resuelve "elige atributo"; esto es "elige habilidad", sin precedente hoy).
+   - **Los "Modo Adicional" de nivel 2/3/4 (Envenenamiento por Radiación / Ceguera /
+     Shock+1 y destruye blindaje) probablemente son excluyentes entre sí** (cada
+     uno sustituye "el efecto crítico convencional"), pero el documento no dice
+     "elige" explícitamente — **❓ VERIFICAR** antes de mecanizar como
+     `CondicionTirada` tipo opción.
+   - Confirmado, sin ambigüedad: cada modo consume cargas de una célula compartida
+     (Pulso 1, Pulso Cargado 4, Barrido 5, Aguijón 1) — va directo a RECURSOS. El
+     "-5 al sigilo al usar cualquier modo" (nivel 1) es el mismo patrón ya pendiente
+     en la pregunta 25b (sigilo de armas de fuego).
+   - Nivel 4, crítico "destruye 1 punto de blindaje del objetivo" — mismo patrón que
+     Impacto Estructural de Kerzul: aviso, el máster lo anota a mano, la app no lo
+     aplica sola.
 2. **"Munición Especial" y las 4 familias de "Armas Modificadas" (Electrificantes,
    Térmicas, de Plasma, de Nanofilamento) no existen en el catálogo.** No hay ninguna
    entrada en `MEJORAS_ARMA` con esos ids — hoy no se pueden ni comprar ni instalar.
@@ -297,12 +324,11 @@ de control.
 - ⬜ **El mecanismo genérico en sí** (§"El mecanismo genérico") — sin construir, las 5
   variantes: impacto, crítico, por tramo, por modo elegido, y texto libre segmentado
   por modo (la quinta, 2026-09-21).
-- ⬜ **Fix barato: `arma.efectos` no llega al `nota` en melee** (§Kerzul, 2026-09-21) —
-  a `tiradaDeArmaMelee` (`combate.ts:269`) le falta la misma línea que ya tiene
-  `tiradaDeArmaFuego` (`nota: arma.especial`). Un cambio de una línea, sin condicionar
-  por modo, hace visibles en Tiradas todos los "Crítico de X (N)" y "Ignora N de
-  blindaje" de toda la sección Combate Melee que hoy solo se ven en la ficha de
-  Equipo. Independiente del mecanismo genérico completo — se puede hacer antes.
+- ✅ **Fix barato: `arma.efectos` no llega al `nota` en melee** (§Kerzul, 2026-09-21,
+  **arreglado 2026-09-23**) — `tiradaDeArmaMelee` (`combate.ts:269-296`) ahora
+  combina el aviso de Sutil con `arma.efectos` en el `nota`, mismo criterio que
+  `arma.especial` en `tiradaDeArmaFuego`. Tests nuevos en `combate.test.ts`
+  ("arma melee equipada"). Sin cambios de tipo ni de modelo de datos.
 - ⬜🏗️ **MINI ÉPICA (2026-09-21, el usuario la propone): `CondicionTirada` y texto
   informativo en tiradas fijas de `TIRADAS`.** Generaliza el caso de `alerta_activa`
   (Visor Nocturno/Térmico) — en cuanto lleguen dotes/poderes/aumentos (Fase 5, ya
@@ -344,10 +370,13 @@ de control.
   forma consistente** — bloquea Inyector Hipodérmico, y roza Soporte Vital/
   Anticorrosivo/Tejido Conductor. Pendiente de que Murillo la responda; parte de la
   respuesta además choca con Fase 5 (sintéticos/aumentos), ya bloqueada.
-- 🐛 **Bug confirmado: Soporte Vital duplica su modificador de +1 salv_fortaleza**
-  (§Mejoras Estándar, `me1`, 2026-09-21) — distinto del hallazgo #3, es un bug de
-  implementación, no de diseño. Prioridad aparte: es rápido de arreglar (borrar una
-  línea) en cuanto se decida qué hacer con el resto de `me1`.
+- ✅ **Bug arreglado: Soporte Vital duplicaba su modificador de +1 salv_fortaleza**
+  (§Mejoras Estándar, `me1`, encontrado 2026-09-21, **arreglado 2026-09-23**) —
+  distinto del hallazgo #3 (que sigue abierto, bloquea el resto de `me1`): esto era
+  un bug de implementación puro, ya corregido en los 3 niveles de
+  `catalog/equipo.ts`. Test `equipo.test.ts` actualizado para reflejar el +1
+  correcto (antes esperaba el +2 del bug). Sin cambios de tipo ni de modelo de
+  datos.
 
 ## Leyenda de la lista
 
@@ -389,18 +418,20 @@ de control.
     ese ambiente concreto** — nivel 1 da protección total normalmente, se degrada a
     +1 solo al recibir daño). El catálogo lo aplana todo a `salv_fortaleza` genérico
     sin nivel ni condición. Bloqueado hasta que se resuelva el hallazgo #3.
-  - **🐛 Bug de implementación aparte, confirmado, no relacionado con el hallazgo #3**:
-    los tres niveles (`catalog/equipo.ts:1318-1324`, `1338-1344`, `1354-1360`) llevan
-    el modificador `{ tiradaId: "salv_fortaleza", valor: 1 }` **literalmente
-    duplicado** — la intención (según el comentario del propio código) era cubrir
-    "congelación y calor extremo" con el mismo +1, pero al no haber forma de decir eso
-    sin repetir la entrada, `resolverModificadores` (`modificadores.ts:131-132`, un
-    `reduce` que suma sin deduplicar) aplica **+2 real** a Salvación de Fortaleza en
-    vez de +1 — en los tres niveles. Se ve en la UI como dos chips azules idénticos
-    "+1 Salvación de Fortaleza" (`ChipsModificadores`, un chip por entrada del
-    array). Verificado que NO pasa en Anticorrosivo/Tejido Conductor ni en las
-    armaduras (`arm2`) — ahí cada modificador aparece una vez. Arreglo trivial (borrar
-    una de las dos líneas) en cuanto se decida qué hacer con el resto del ítem.
+  - **✅ Bug de implementación aparte, arreglado 2026-09-23, no relacionado con el
+    hallazgo #3**: los tres niveles (`catalog/equipo.ts`) llevaban el modificador
+    `{ tiradaId: "salv_fortaleza", valor: 1 }` **literalmente duplicado** — la
+    intención (según el comentario del propio código) era cubrir "congelación y
+    calor extremo" con el mismo +1, pero al no haber forma de decir eso sin repetir
+    la entrada, `resolverModificadores` (`modificadores.ts:131-132`, un `reduce` que
+    suma sin deduplicar) aplicaba **+2 real** a Salvación de Fortaleza en vez de +1.
+    Se veía en la UI como dos chips azules idénticos "+1 Salvación de Fortaleza"
+    (`ChipsModificadores`, un chip por entrada del array). Verificado que NO pasa en
+    Anticorrosivo/Tejido Conductor ni en las armaduras (`arm2`) — ahí cada
+    modificador aparece una vez. **Corregido**: un único modificador por nivel, con
+    comentario explicando por qué (congelación y calor extremo comparten el mismo
+    +1, no son dos bonos). Test `equipo.test.ts` actualizado (antes esperaba el +2
+    del bug). El resto del ítem (bloqueo por el hallazgo #3) sigue sin resolver.
 - **Compartimento Oculto (+3/+4 dificultad para ser descubierto): ❓ VERIFICAR,
   reabierto 2026-09-21 (pregunta del usuario)** — antes marcado 🔕 IGNORAR liso
   ("sube la dificultad de QUIEN TE CACHEA, no hay tirada de cacheo a la que
@@ -525,17 +556,41 @@ de control.
     patrón que ya existe para PG/fatiga en combate (`ajustarRecurso`,
     `master/combate/actions.ts:323`), generalizado a cargas de equipo. No es un
     modificador de tirada, es una acción de recurso ligada al momento de tirar.
-- Escudo Deflector: la "absorción de daño" **🔕 IGNORAR** — sin concepto de absorción
-  en el motor (ya documentado en el catálogo).
-- Malla Plasmática: el "colchón de PG" **🔕 IGNORAR** (mismo motivo). Pero el "crítico
-  melee con plasma liberado causa shock/llamarada/fusión (dificultad 6-8 + nivel)" es
-  **✅ IMPLEMENTAR** — mismo patrón que un arma, aplicado a un golpe melee cuando el
-  jugador declaró liberar plasma (encaja como `CondicionTirada` tipo `toggle`,
-  "¿liberar plasma este golpe?", ya que es una elección declarada antes de atacar).
-- Proyector de Pulso: ver el hallazgo #1 de arriba — no genera tirada de ataque en
-  absoluto hoy. Sus 4 efectos (Shock/Hemorragia en Pulso y Pulso Cargado, Esquiva+Shock
-  en Barrido, Envenenamiento por Radiación o Ceguera según el modo del nivel 2/3) serían
-  **✅ IMPLEMENTAR** en cuanto exista la tirada — no antes.
+- **Escudo Deflector — confirmado 2026-09-23 (pregunta del usuario): directo, sin
+  nada nuevo que decidir.** La "absorción de daño" **🔕 IGNORAR por ahora** — pero no
+  por falta de concepto genérico, es literalmente otro contribuyente más a la misma
+  fórmula que le falta al Hallazgo #5 (blindaje de armadura + esto). Se resuelve el
+  día que se diseñe el Hallazgo #5, no antes.
+- **Malla Plasmática — desglosada del todo 2026-09-23 (pregunta del usuario: "¿es
+  un recurso, ni siquiera entra en Tiradas?").** Tenía razón en parte, pero hay más
+  piezas de las que parecía:
+  - **El "colchón de PG" no es blindaje** — es un buffer separado con vida propia
+    (10-16 PG según nivel, regenera N/turno, tiempo muerto si se destruye), distinto
+    de una resta plana de blindaje. **🔕 IGNORAR** sigue aplicando, pero como nuance
+    nueva para cuando se diseñe Hallazgo #5/RECURSOS: hay al menos dos formas de
+    "absorber daño" en el sistema, no solo una.
+  - "Crítico melee con plasma liberado causa shock/llamarada/fusión (dificultad
+    6-8+nivel)": **✅ IMPLEMENTAR**, sin cambios — `CondicionTirada` tipo `toggle`.
+  - **El coste de esa opción (2 puntos del colchón, "se declara antes de la tirada
+    de ataque") es una acción sin dado** — mismo patrón exacto que la Conversión
+    Psiónica de Derivación Psiónica (ayer). Ver la nota nueva de "Acciones vs.
+    Tiradas" en `docs/modificadores-tiradas.md` §8.
+  - **"Si el usuario es impactado en melee, devuelve daño al atacante"**: mismo
+    problema que la Cobertura — es la tirada de un TERCERO (el atacante), no la
+    propia. No auto-aplicable; como mucho, aviso en la propia `defensa`.
+  - **"-8 sigilo al activarse, anula el camuflaje"**: modificador numérico limpio a
+    `sigilo`, condicionado a que la Malla esté activa — y **activar la Malla en sí
+    es una acción sin dado** (gastas 1 carga, no tiras nada), que luego SÍ modifica
+    otras tiradas mientras dura. Otro caso real del mismo patrón de "Acciones".
+  - **Nivel 2, "detonación de pulso térmico" (área 6x6, esquiva, shock+llamarada,
+    fusión con fracaso crítico) — amplía el Hallazgo #1**: no es solo el Proyector
+    de Pulso el que necesita una tirada de ataque propia que hoy no existe, la Malla
+    Plasmática también.
+- **Proyector de Pulso: ver el Hallazgo #1 de arriba (ampliado 2026-09-23 con la
+  detonación de la Malla Plasmática, mismo problema)** — no genera tirada de ataque
+  en absoluto hoy. Sus 4 efectos (Shock/Hemorragia en Pulso y Pulso Cargado,
+  Esquiva+Shock en Barrido, Envenenamiento por Radiación o Ceguera según el modo del
+  nivel 2/3) serían **✅ IMPLEMENTAR** en cuanto exista la tirada — no antes.
 
 ### Mejoras de Movimiento
 
@@ -772,21 +827,19 @@ de control.
   IMPLEMENTAR** como aviso igual — su efecto real (reducir blindaje del objetivo de
   forma permanente) sigue siendo "el máster lo anota a mano", coherente con "la app
   informa, no arbitra".
-  **Hallazgo consolidado**: esto no es un caso especial de Kerzul, es la confirmación
-  de que falta un fix genérico en TODA la sección Combate Melee. Hoy
-  `tiradaDeArmaMelee` (`combate.ts:269`) no vuelca nada de `arma.efectos` al `nota` —
-  a diferencia de `tiradaDeArmaFuego` (`combate.ts:140`), que sí hace
-  `nota: arma.especial ?? undefined`. Falta la misma línea al lado melee:
-  `nota: arma.efectos ?? undefined`. Con ese único cambio (sin condicionar por modo)
-  se resuelve de golpe: el "Ignora N de blindaje" de Kerzul, y cualquier "Crítico de X
-  (N)" de toda la sección (Pelea, Cortas, Asta, Espadas, Flagelos, Mecánicas) — hoy
-  invisibles en Tiradas, visibles solo en la ficha de Equipo (`PiezaDetalle.tsx`).
-  **No hace falta la quinta variante (texto segmentado por modo) para esto** — esa
-  solo hace falta para lo que de verdad depende del modo elegido (Mangual: "Bloqueo"/
-  "ignora Cobertura" viven en `uso`, no en `efectos`, y "Acción Estándar ignora..." no
-  debería verse en modo Simple; Armas Mecánicas: "Acción Compleja: X" solo con ese
-  modo). El fix de `efectos` → `nota` sin condición es el caso base, más barato, y
-  cubre la mayoría de la sección de una vez.
+  **Hallazgo consolidado, arreglado 2026-09-23**: esto no era un caso especial de
+  Kerzul, era la confirmación de que faltaba un fix genérico en TODA la sección
+  Combate Melee. `tiradaDeArmaMelee` (`combate.ts:269-296`) ahora vuelca
+  `arma.efectos` al `nota` — mismo criterio que `arma.especial` en
+  `tiradaDeArmaFuego`. Con ese único cambio (sin condicionar por modo) se resolvió
+  de golpe: el "Ignora N de blindaje" de Kerzul, y cualquier "Crítico de X (N)" de
+  toda la sección (Pelea, Cortas, Asta, Espadas, Flagelos, Mecánicas) — antes
+  invisibles en Tiradas, visibles solo en la ficha de Equipo (`PiezaDetalle.tsx`),
+  ahora en las dos. Tests nuevos en `combate.test.ts`. **La quinta variante (texto
+  segmentado por modo) sigue pendiente para lo que de verdad depende del modo
+  elegido** (Mangual: "Bloqueo"/"ignora Cobertura" viven en `uso`, no en `efectos`;
+  Armas Mecánicas: "Acción Compleja: X" solo con ese modo) — este fix era el caso
+  base, más barato, cubría la mayoría de la sección de una vez, pero no todo.
 - **Inercia Entrópica** (tirada de Fortaleza extra al atacar Estándar/Complejo con
   kerzul, o daño no letal + entorpecido, con fallo crítico además derribado): **❓
   VERIFICAR / candidata a mini-tarea propia** — no es un "efecto de crítico del
