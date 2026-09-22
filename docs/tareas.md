@@ -56,6 +56,20 @@ siguen bloqueadas por el diseñador — ver Pendiente.
 - **Fuera del catálogo a propósito** (no son huecos por descuido) — ver Pendiente:
   Munición Especial y Armas Modificadas.
 
+**Fix de rendimiento (2026-09-23, detectado por el usuario en producción):** cada
+clic en el stepper de un atributo/habilidad durante la creación disparaba un
+server action inmediato (`SELECT` + `UPDATE` a Postgres por clic, sin fusionar) —
+subir una habilidad de 0 a 4 eran 4 round-trips en fila. `CharacterSheet.tsx` ya
+tenía el patrón correcto para identidad (`scheduleIdentity`, debounce 500ms); se
+generalizó a un helper `scheduleCommit(key, fn, onOk)` con un timer por campo
+(`atributo:id`/`habilidad:id`), reutilizable cuando existan dotes/poderes (Fase 5).
+Delay centralizado en `AUTOSAVE_DEBOUNCE_MS`. Sin riesgo de guardarraíl: durante
+creación, cliente y servidor validan el pool de puntos con la misma función pura
+(`creacion.ts`). **Sin test automatizado** — el proyecto no tiene infraestructura
+de test de componentes React (`npm test` solo cubre `lib/rules/*.test.ts`);
+verificado con `tsc --noEmit` y `lint` limpios más revisión manual del código,
+no con un check en navegador.
+
 ### Fase 6a — Panel de máster ✅
 - Schema: `status` (`DRAFT`/`APPROVED`), `approvedAt`, `xp`, `creditos` en `Character`,
   como columnas propias — no dentro de `stats`, porque los concede el máster, no el

@@ -43,6 +43,11 @@ import { TiradasTab } from "./_components/TiradasTab";
 import { TiendaTab } from "./_components/TiendaTab";
 import { EquipoTab } from "./_components/EquipoTab";
 import { CombateTab, type CombateView } from "./_components/CombateTab";
+
+// Único sitio para tocar el delay de autosave — lo usan tanto identidad como
+// el debounce por campo de atributos/habilidades (y, cuando existan, dotes/
+// poderes: mismo helper, otra clave).
+const AUTOSAVE_DEBOUNCE_MS = 500;
 import { usePollingCombate } from "@/hooks/usePollingCombate";
 
 // Tres grupos, no una lista plana: la ficha en sí (fila 1), lo que el
@@ -165,6 +170,11 @@ export function CharacterSheet({
   // Cola secuencial: los autosaves no se pisan (evita carreras load-modify-write).
   const queue = useRef<Promise<unknown>>(Promise.resolve());
   const idTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Un timer por campo (clave = "atributo:fuerza", "habilidad:sigilo"...) para
+  // que subir dos campos casi a la vez no comparta ventana de debounce — a
+  // diferencia de identidad, que siempre manda el objeto entero y sí puede
+  // compartir un único timer.
+  const pendingTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   const runSave = useCallback(
     (fn: () => Promise<SaveResult>, onOk?: (s: Sheet) => void) => {
@@ -189,18 +199,39 @@ export function CharacterSheet({
     [],
   );
 
-  // ── Build (inmediato). El estado optimista usa las mismas funciones puras
-  // que el servidor, así que normalmente no hace falta reconciliar en éxito
-  // — salvo atributos/habilidades: si la ficha está aprobada, el servidor
-  // aplica además el guardarraíl de solo-comprar (aprobacion.ts), que el
-  // cliente no conoce. Por eso aquí sí se reconcilia con lo que devuelve. ──
+  // Debounce genérico por clave (independiente de scheduleIdentity, que manda
+  // el objeto entero): pensado para steppers que se clican varias veces
+  // seguidas — atributos/habilidades hoy, dotes/poderes el día que existan,
+  // sin tocar nada más que la clave y la llamada al action. El estado
+  // optimista (setSheet) ya ocurre en el callsite antes de llamar aquí, así
+  // que la UI no se entera del delay — solo se retrasa la escritura.
+  const scheduleCommit = (key: string, fn: () => Promise<SaveResult>, onOk?: (s: Sheet) => void) => {
+    const existing = pendingTimers.current.get(key);
+    if (existing) clearTimeout(existing);
+    pendingTimers.current.set(
+      key,
+      setTimeout(() => {
+        pendingTimers.current.delete(key);
+        runSave(fn, onOk);
+      }, AUTOSAVE_DEBOUNCE_MS),
+    );
+  };
+
+  // ── Build. El estado optimista usa las mismas funciones puras que el
+  // servidor, así que normalmente no hace falta reconciliar en éxito — salvo
+  // atributos/habilidades: si la ficha está aprobada, el servidor aplica
+  // además el guardarraíl de solo-comprar (aprobacion.ts), que el cliente no
+  // conoce. Por eso aquí sí se reconcilia con lo que devuelve. Atributos y
+  // habilidades van debounced por campo (clics rápidos en un stepper durante
+  // la creación no deben disparar un round-trip por clic); el resto es
+  // inmediato. ──
   const commitAtributo = (id: AtributoId, value: number) => {
     setSheet((s) => setAtributoValue(s, id, value));
-    runSave(() => setAtributoAction(characterId, id, value), setSheet);
+    scheduleCommit(`atributo:${id}`, () => setAtributoAction(characterId, id, value), setSheet);
   };
   const commitHabilidad = (id: HabilidadId, value: number) => {
     setSheet((s) => setHabilidadValue(s, id, value));
-    runSave(() => setHabilidadAction(characterId, id, value), setSheet);
+    scheduleCommit(`habilidad:${id}`, () => setHabilidadAction(characterId, id, value), setSheet);
   };
   const commitAddEspecialidad = (id: HabilidadId, nombre: string) => {
     setSheet((s) => addEspecialidad(s, id, nombre));
@@ -244,7 +275,7 @@ export function CharacterSheet({
           motivacion: sheetRef.current.motivacion,
         }),
       );
-    }, 500);
+    }, AUTOSAVE_DEBOUNCE_MS);
   };
 
   const onName = (v: string) => {
