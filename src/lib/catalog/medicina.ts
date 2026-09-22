@@ -17,6 +17,23 @@
 // criterio que ya sigue la nota de la propia tirada `medicina`
 // ("Gel sanador y estabilizar tienen dificultad 4").
 import type { Herramienta, Consumible } from "./equipo";
+import type { MotorMetadata } from "../rules/motor";
+
+// docs/motor.md: el bono de aplicación de la VTM ya está mecanizado como
+// Modificador tipo "tirada" con alcance a la tirada fija "medicina" — mismo
+// MotorMetadata en los 4 niveles, solo cambia `valor` (que no forma parte de
+// la clasificación). El resto de `detalle` de cada nivel (diagnóstico +2 con
+// 1 minuto, "cualquier éxito cuenta como crítico"...) es prosa todavía sin
+// transcribir a ningún campo de datos — no lleva entrada propia hasta que se
+// capture como Modificador/CondicionTirada real, igual que `descripcion`.
+const MOTOR_BONO_APLICACION: MotorMetadata[] = [
+  {
+    tipo: "numerico",
+    afecta: { modo: "accion_existente", id: "medicina" },
+    mecanismo: "siempre_activo",
+    estado: "construido",
+  },
+];
 
 export const VALIJA_TACTICA_MEDICA: Herramienta = {
   familia: "herramienta",
@@ -52,6 +69,7 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
       // +1 a las tiradas de aplicación (nivel 1-2): bono de personaje entero
       // mientras se lleva la valija, va a la tirada fija "medicina".
       modificadores: [{ tipo: "tirada", alcance: { tipo: "tiradaId", id: "medicina" }, valor: 1 }],
+      motor: MOTOR_BONO_APLICACION,
     },
     {
       nivel: 2,
@@ -69,6 +87,7 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
       // tampoco dice que se pierda — se mantiene hasta que nivel 3 lo suba
       // a un total explícito.
       modificadores: [{ tipo: "tirada", alcance: { tipo: "tiradaId", id: "medicina" }, valor: 1 }],
+      motor: MOTOR_BONO_APLICACION,
     },
     {
       nivel: 3,
@@ -82,6 +101,7 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
           "la valija pasa a acción estándar.",
       ],
       modificadores: [{ tipo: "tirada", alcance: { tipo: "tiradaId", id: "medicina" }, valor: 2 }],
+      motor: MOTOR_BONO_APLICACION,
     },
     {
       nivel: 4,
@@ -96,6 +116,7 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
           "fármaco.",
       ],
       modificadores: [{ tipo: "tirada", alcance: { tipo: "tiradaId", id: "medicina" }, valor: 3 }],
+      motor: MOTOR_BONO_APLICACION,
     },
   ],
 };
@@ -104,6 +125,16 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
 // una sola pieza de por sí, pero como array para que el barrido de
 // MotorMetadata (docs/motor.md) tenga un patrón de iteración uniforme.
 export const MEDICINA_UNICAS: Herramienta[] = [VALIJA_TACTICA_MEDICA];
+
+// docs/motor.md: decisión de diseño ya cerrada (ver cabecera del archivo),
+// no un hueco — un fármaco no lleva `modificadores` a propósito (bono POR
+// DOSIS de un solo uso, el motor no rastrea inventario) y su `detalle` no se
+// vuelca a ningún `Tirada.nota` en ningún sitio del código (comprobado:
+// FARMACOS solo se usa en TiendaTab.tsx). Narrativo, sin conexión, construido
+// tal cual está — no "pendiente".
+const MOTOR_FARMACO: MotorMetadata[] = [
+  { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+];
 
 export const FARMACOS: Consumible[] = [
   {
@@ -120,6 +151,7 @@ export const FARMACOS: Consumible[] = [
     rareza: "Común",
     coste: 5,
     modificadores: [],
+    motor: MOTOR_FARMACO,
   },
   {
     familia: "consumible",
@@ -135,6 +167,7 @@ export const FARMACOS: Consumible[] = [
     rareza: "Común",
     coste: 10,
     modificadores: [],
+    motor: MOTOR_FARMACO,
   },
   {
     familia: "consumible",
@@ -150,6 +183,7 @@ export const FARMACOS: Consumible[] = [
     rareza: "Común",
     coste: 10,
     modificadores: [],
+    motor: MOTOR_FARMACO,
   },
   {
     familia: "consumible",
@@ -168,6 +202,7 @@ export const FARMACOS: Consumible[] = [
     rareza: "Común",
     coste: 20,
     modificadores: [],
+    motor: MOTOR_FARMACO,
   },
   {
     familia: "consumible",
@@ -184,6 +219,7 @@ export const FARMACOS: Consumible[] = [
     rareza: "Común",
     coste: 50,
     modificadores: [],
+    motor: MOTOR_FARMACO,
   },
   {
     familia: "consumible",
@@ -202,6 +238,7 @@ export const FARMACOS: Consumible[] = [
     rareza: "Común",
     coste: 50,
     modificadores: [],
+    motor: MOTOR_FARMACO,
   },
   {
     familia: "consumible",
@@ -222,6 +259,7 @@ export const FARMACOS: Consumible[] = [
     rareza: "Común",
     coste: 50,
     modificadores: [],
+    motor: MOTOR_FARMACO,
   },
   {
     familia: "consumible",
@@ -239,6 +277,7 @@ export const FARMACOS: Consumible[] = [
     rareza: "Poco Habitual",
     coste: 250,
     modificadores: [],
+    motor: MOTOR_FARMACO,
   },
   {
     familia: "consumible",
@@ -259,6 +298,7 @@ export const FARMACOS: Consumible[] = [
     rareza: "Extraño",
     coste: 750,
     modificadores: [],
+    motor: MOTOR_FARMACO,
   },
   {
     familia: "consumible",
@@ -285,5 +325,6 @@ export const FARMACOS: Consumible[] = [
     rareza: "Extraño",
     coste: 1000,
     modificadores: [],
+    motor: MOTOR_FARMACO,
   },
 ];
