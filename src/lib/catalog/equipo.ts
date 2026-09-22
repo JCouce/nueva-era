@@ -1583,6 +1583,24 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           // queda como marcador para cuando se aclare, sin aplicarse a nada.
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_ceguera_destello" }, valor: 3 },
         ],
+        // Primer caso real del mecanismo de docs/modificadores-tiradas.md §8:
+        // "ve a través de humo/cobertura -2 dentro de 50m" no se puede
+        // auto-aplicar (el motor no rastrea distancia real ni cobertura, ver
+        // el Camuflaje Trifásico) — pero sí informar en la propia tirada de
+        // Buscar/percibir del portador, para que el máster lo aplique a mano
+        // contra quien busca al personaje. Sin valor numérico (0/0): solo la
+        // nota. docs/equipo-efectos-especiales.md §Mejoras Estándar.
+        condiciones: [
+          {
+            id: "visor_nocturno_n2_activo",
+            tipo: "toggle",
+            etiqueta: "Visor Nocturno activo",
+            alcance: { tipo: "tiradaId", id: "alerta_activa" },
+            valorActivo: 0,
+            valorInactivo: 0,
+            nota: "Ves a través de humo denso, niebla o partículas. Cobertura visual -2 dentro de 50 m (aplícalo a mano).",
+          },
+        ],
       },
     ],
   },
@@ -1605,6 +1623,20 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
             "térmico.",
         ],
         modificadores: [],
+        // Mismo caso que Visor Nocturno n2 (ver ese comentario): el -3 depende
+        // de si lo mirado está fuera del gradiente resaltado, algo que el
+        // motor no sabe — se informa en Buscar/percibir, no se auto-aplica.
+        condiciones: [
+          {
+            id: "visor_termico_n1_activo",
+            tipo: "toggle",
+            etiqueta: "Modo térmico activo",
+            alcance: { tipo: "tiradaId", id: "alerta_activa" },
+            valorActivo: 0,
+            valorInactivo: 0,
+            nota: "-3 en percepción visual de lo que quede fuera del gradiente térmico resaltado.",
+          },
+        ],
       },
       {
         nivel: 2,

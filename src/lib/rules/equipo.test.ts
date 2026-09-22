@@ -7,6 +7,7 @@ import {
   validarInstalacion,
   ranurasSubsistemaUsadas,
   modificadoresDeEquipo,
+  condicionesActivas,
   costeDePieza,
   costeDeRetirar,
   rarezaDePieza,
@@ -372,6 +373,69 @@ describe("modificadores de equipo", () => {
 
   test("sin nada equipado no hay modificadores de equipo", () => {
     assert.deepEqual(modificadoresDeEquipo(defaultSheet()), []);
+  });
+});
+
+describe("condicionesActivas", () => {
+  const ctxAlertaActiva = { id: "alerta_activa", grupo: "Acciones" as const, habilidad: "exploracion" as const, modoElegido: null };
+
+  test("un Visor Nocturno n2 equipado aporta su toggle con alcance a alerta_activa", () => {
+    let s = conArmaduraPuesta();
+    s = equipar(s, {
+      instanciaId: "vn1",
+      catalogoId: "visor_nocturno",
+      nivel: 2,
+      instaladoEnId: "armadura-1",
+    });
+    const cs = condicionesActivas(s, ctxAlertaActiva);
+    assert.equal(cs.length, 1);
+    assert.equal(cs[0]?.id, "visor_nocturno_n2_activo");
+  });
+
+  test("nivel 1 del Visor Nocturno no aporta la condición de nivel 2", () => {
+    let s = conArmaduraPuesta();
+    s = equipar(s, {
+      instanciaId: "vn1",
+      catalogoId: "visor_nocturno",
+      nivel: 1,
+      instaladoEnId: "armadura-1",
+    });
+    assert.deepEqual(condicionesActivas(s, ctxAlertaActiva), []);
+  });
+
+  test("una tirada con otro id no recibe la condición del Visor Nocturno", () => {
+    let s = conArmaduraPuesta();
+    s = equipar(s, {
+      instanciaId: "vn1",
+      catalogoId: "visor_nocturno",
+      nivel: 2,
+      instaladoEnId: "armadura-1",
+    });
+    assert.deepEqual(
+      condicionesActivas(s, { ...ctxAlertaActiva, id: "sigilo", habilidad: "sigilo" }),
+      [],
+    );
+  });
+
+  test("sin nada equipado no hay condiciones activas", () => {
+    assert.deepEqual(condicionesActivas(defaultSheet(), ctxAlertaActiva), []);
+  });
+
+  test("una mejora de arma (Bípode) no se recoge aquí — vive en condicionesDeMejoras", () => {
+    // Bípode no declara alcance hoy, así que ni haría falta este filtro —
+    // pero confirma que mejoraArma queda fuera de condicionesActivas incluso
+    // si algún día alguien le añadiera alcance por error.
+    let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "fusil_asalto_impetus" });
+    s = equipar(s, {
+      instanciaId: "b1",
+      catalogoId: "bipode",
+      nivel: 1,
+      instaladoEnId: "a1",
+    });
+    assert.deepEqual(
+      condicionesActivas(s, { id: "x", grupo: "Ataques", habilidad: "combate_distancia", modoElegido: null }),
+      [],
+    );
   });
 });
 

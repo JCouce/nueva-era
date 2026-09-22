@@ -329,14 +329,14 @@ de control.
   combina el aviso de Sutil con `arma.efectos` en el `nota`, mismo criterio que
   `arma.especial` en `tiradaDeArmaFuego`. Tests nuevos en `combate.test.ts`
   ("arma melee equipada"). Sin cambios de tipo ni de modelo de datos.
-- ⬜🏗️ **MINI ÉPICA (2026-09-21, el usuario la propone): `CondicionTirada` y texto
-  informativo en tiradas fijas de `TIRADAS`.** Generaliza el caso de `alerta_activa`
-  (Visor Nocturno/Térmico) — en cuanto lleguen dotes/poderes/aumentos (Fase 5, ya
-  inminente según el usuario) van a necesitar el mismo enganche. Problema completo,
-  qué ya está resuelto (los modificadores numéricos, mecanismo 4) y qué falta de
-  verdad (extender `CondicionTirada` con `alcance`, formalizar el texto informativo)
-  en **`docs/modificadores-tiradas.md` §8** — sin decidir, sin construir, pendiente de
-  sesión de diseño dedicada, no de esta tarea de diagnóstico.
+- ✅ **MINI ÉPICA (2026-09-21, propuesta del usuario — construida 2026-09-23):
+  `CondicionTirada` y texto informativo en tiradas fijas de `TIRADAS`.**
+  `condicionesActivas(sheet, ctx)` (`equipo.ts`) + `alcance`/`nota` en
+  `CondicionTirada` (`condiciones.ts`) + enganche en `TiradasTab`/`TiradaModal`.
+  Dos casos reales migrados: Visor Nocturno n2 y Visor Térmico n1. Detalle
+  completo, incluida la forma exacta que quedó construida, en
+  `docs/modificadores-tiradas.md` §8. Lo que queda es migrar más piezas
+  (Mangual, Camuflaje Trifásico) — datos, no arquitectura.
 - ⬜🏗️ **RECURSOS (2026-09-22, el usuario la propone)** — cargas de batería, munición,
   dosis, gastadas/recargadas en partida (Derivación Psiónica "Conversión Psiónica" es
   el primer caso concreto). Extensión de Fase 6b, no tab nueva de la ficha — precedente
@@ -466,30 +466,21 @@ de control.
   nivel de daño X"): el "+1/+2" **❓ VERIFICAR** (mismo caso salv_fortaleza genérico de
   arriba); el "ignora el primer nivel de daño" **🔕 IGNORAR, bloqueado por el
   Hallazgo #5**, mismo motivo que Mejora Ignífuga.
-- **Visor Nocturno / Visor Térmico — reabierto 2026-09-21 (pregunta del usuario),
-  encontrado el enganche real y una pega de arquitectura nueva.**
+- **Visor Nocturno / Visor Térmico — reabierto 2026-09-21, ✅ construido
+  2026-09-23.**
   - `+3 contra ceguera` (Visor Nocturno n2): **✔️ YA HECHO** (`salv_ceguera_destello`,
     bien acotado — es un `tiradaId` marcador específico, no el Fortaleza genérico).
-  - El resto de números concretos — "cegado dificultad 8 ante fogonazo" (n1), "-2
-    cobertura visual dentro de 50m" (n2), "-3 fuera del gradiente térmico" (Térmico
-    n1) — **auto-aplicar sigue 🔕 IGNORAR**, todos dependen de algo situacional que el
-    motor no rastrea (que el máster narre un fogonazo, distancia real al objetivo,
-    si lo mirado está dentro/fuera del gradiente resaltado).
-  - **Pero mostrarlos como texto es ✅ IMPLEMENTAR (quinta variante)** — la tirada
-    objetivo existe y no la toca nadie hoy: `alerta_activa` ("Buscar / percibir",
-    Perspicacia+Exploración, `tiradas.ts:157-163`). Con una `CondicionTirada` tipo
-    "opción" (qué visor llevas puesto) se puede mostrar "ves a través de humo/niebla/
-    polvo, cobertura -2 dentro de 50m" o "-3 fuera del gradiente térmico en modo
-    térmico" sin auto-aplicar el número — mismo patrón que Mangual/Kerzul.
-  - **Pega de arquitectura nueva, no vista hasta ahora en el barrido**: `alerta_activa`
-    vive en el array **estático** `TIRADAS` (`tiradas.ts:83`), pintado tal cual por
-    `TiradasTab.tsx:415` sin awareness de la ficha — a diferencia de
-    `tiradasDeAtaque(sheet)`/`tiradasDeHerramientas(sheet)`, que sí generan sus
-    tiradas mirando el equipo. Para que la opción "Visor Nocturno n2" solo aparezca si
-    el personaje lo lleva puesto de verdad, hace falta sacar `alerta_activa` de la
-    lista estática a algo sheet-aware — no es solo "añadir una condición", es mover
-    dónde vive la tirada. Primera vez que este patrón hace falta para una tirada fija
-    de Acciones, no de Ataques/Herramientas.
+  - "cegado dificultad 8 ante fogonazo" (n1): sigue **🔕 IGNORAR** — depende de que el
+    máster narre un fogonazo, ningún mecanismo lo resuelve.
+  - **"-2 cobertura visual dentro de 50m" (n2) y "-3 fuera del gradiente térmico"
+    (Térmico n1): ✅ HECHO, como texto informativo, no auto-aplicado** (siguen sin
+    poder auto-aplicarse — dependen de distancia real / si lo mirado está dentro o
+    fuera del gradiente, cosas que el motor no rastrea). Construido el mecanismo del
+    §8 de `docs/modificadores-tiradas.md`: cada mejora declara un `CondicionTirada`
+    tipo `toggle` con `alcance: { tipo: "tiradaId", id: "alerta_activa" }` y `nota`
+    — aparece como interruptor en la tirada "Buscar / percibir" **solo si el
+    personaje lleva el visor puesto**, y al activarlo se ve el texto en el modal.
+    Primeros dos casos reales del mecanismo genérico nuevo.
   - **Visor Térmico n2 (rastro térmico reciente, con caducidad 5 turnos/10-15 min, a
     la mitad con frío/ventilación) no encaja en nada de esto**: no es un modificador de
     ninguna tirada, es una capacidad narrativa de rastreo — se queda en texto puro,

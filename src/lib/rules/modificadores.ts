@@ -119,7 +119,9 @@ export type ContextoTirada = {
   modoElegido: string | null;
 };
 
-function alcanzaA(alcance: AlcanceModificador, ctx: ContextoTirada): boolean {
+// Exportada para condicionesActivas() (equipo.ts) — mismo criterio de alcance
+// para CondicionTirada que para Modificador, sin duplicar la lógica de match.
+export function alcanzaA(alcance: AlcanceModificador, ctx: ContextoTirada): boolean {
   if (alcance.tipo === "todas") return true;
   if (alcance.tipo === "tiradaId") return alcance.id === ctx.id;
   if (alcance.tipo === "grupo") return alcance.grupo === ctx.grupo;

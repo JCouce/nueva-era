@@ -35,24 +35,30 @@ function ControlCondicion({
   if (condicion.tipo === "toggle") {
     const activo = Boolean(estado[condicion.id]);
     return (
-      <button
-        type="button"
-        onClick={() => onCambiar(condicion.id, !activo)}
-        aria-pressed={activo}
-        className={`clip-chamfer-sm w-full border px-3 py-2 text-left font-mono text-xs uppercase active:scale-[0.99] ${
-          activo ? "border-info text-info" : "border-border text-muted"
-        }`}
-      >
-        {activo ? "✓ " : ""}
-        {condicion.etiqueta}
-        <span className="float-right tabular-nums">
-          {signo(activo ? condicion.valorActivo : (condicion.valorInactivo ?? 0))}
-        </span>
-      </button>
+      <div>
+        <button
+          type="button"
+          onClick={() => onCambiar(condicion.id, !activo)}
+          aria-pressed={activo}
+          className={`clip-chamfer-sm w-full border px-3 py-2 text-left font-mono text-xs uppercase active:scale-[0.99] ${
+            activo ? "border-info text-info" : "border-border text-muted"
+          }`}
+        >
+          {activo ? "✓ " : ""}
+          {condicion.etiqueta}
+          <span className="float-right tabular-nums">
+            {signo(activo ? condicion.valorActivo : (condicion.valorInactivo ?? 0))}
+          </span>
+        </button>
+        {activo && condicion.nota && (
+          <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">{condicion.nota}</p>
+        )}
+      </div>
     );
   }
 
   if (condicion.tipo === "opcion") {
+    const elegida = condicion.opciones.find((o) => o.id === estado[condicion.id]);
     return (
       <div>
         <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
@@ -75,6 +81,9 @@ function ControlCondicion({
             </button>
           ))}
         </div>
+        {elegida?.nota && (
+          <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">{elegida.nota}</p>
+        )}
       </div>
     );
   }

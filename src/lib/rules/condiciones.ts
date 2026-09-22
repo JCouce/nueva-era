@@ -12,12 +12,20 @@
 //   opcion   → una de varias, excluyentes ("tramo de distancia", "modo de disparo")
 //   contador → un número entre un mínimo y un máximo ("atacantes adicionales esta ronda")
 //
+import type { AlcanceModificador } from "./modificadores";
+
 // Vive aparte de modificadores.ts a propósito: un ModificadorConFuente es
 // permanente mientras se lleve algo puesto; una CondicionTirada es una
 // elección de un instante, solo para ESTA tirada.
-export type OpcionCondicion = { id: string; etiqueta: string; valor: number };
+//
+// `nota`: texto informativo que se muestra en el modal cuando la opción/el
+// toggle está activo — sin sumar ningún número (docs/modificadores-tiradas.md
+// §8, "texto informativo condicionado": Visor Nocturno, Mangual, Kerzul...).
+// Independiente de `valorActivo`/`valor`: una condición puede llevar las dos
+// cosas, solo el número, o solo la nota (con valor 0).
+export type OpcionCondicion = { id: string; etiqueta: string; valor: number; nota?: string };
 
-export type CondicionTirada =
+export type CondicionTirada = (
   | {
       id: string;
       tipo: "toggle";
@@ -25,6 +33,7 @@ export type CondicionTirada =
       valorActivo: number;
       valorInactivo?: number; // por defecto 0
       activaPorDefecto?: boolean;
+      nota?: string;
     }
   | {
       id: string;
@@ -41,7 +50,17 @@ export type CondicionTirada =
       min: number;
       max: number;
       porDefecto: number;
-    };
+    }
+) & {
+  // Sin `alcance`: la condición solo se pinta en la tirada del arma/mejora
+  // que la declara (patrón de siempre, condicionesDeMejoras en combate.ts).
+  // Con `alcance`: además se recoge para CUALQUIER tirada que matchee (fija o
+  // generada), vía condicionesActivas() (equipo.ts) — mismo AlcanceModificador
+  // que ya usa Modificador tipo "tirada", sin inventar un segundo concepto de
+  // alcance. Excluye "modo" en la práctica: no tiene sentido de origen (ver
+  // condicionesActivas). docs/modificadores-tiradas.md §8.
+  alcance?: AlcanceModificador;
+};
 
 export type TramoDistancia = "bocajarro" | "corta" | "media" | "larga";
 

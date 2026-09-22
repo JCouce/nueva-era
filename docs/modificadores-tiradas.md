@@ -217,8 +217,8 @@ algo se ha hecho a mano que no hacía falta.
    Puede que el id apunte a una tirada que aún no existe (ver sección 5) —
    eso no es un bug, es una regla pendiente de aclarar.
 
-## 8. Problema abierto (2026-09-21, sin decidir, sin construir): `CondicionTirada` y
-   texto informativo en tiradas fijas de `TIRADAS`
+## 8. `CondicionTirada` y texto informativo en tiradas fijas de `TIRADAS`
+   (2026-09-21, **construido 2026-09-23**)
 
 Detectado durante el repaso de efectos especiales de equipo
 (`docs/equipo-efectos-especiales.md`), al intentar enganchar el Visor Nocturno/
@@ -250,17 +250,51 @@ misma lista y ya está — cero cambios en `tiradas.ts`, `combate.ts` o el modal
 
 **Ojo, esto NO significa "unificar los 4 mecanismos en uno"** — la sección 2 ya
 explica por qué se mantienen separados a propósito (cada uno resuelve una
-pregunta distinta, forzarlos a converger no compensa la ceremonia). La lectura
-más consistente con esa decisión ya tomada es **extender el mecanismo 1** con el
-mismo `alcance` que ya usa el mecanismo 4, y **darle un lugar formal al texto
-informativo** (quizá un campo opcional en `CondicionTirada` que se muestre en vez
-de/además de sumar un `valor`) — no inventar un quinto sistema paralelo.
+pregunta distinta, forzarlos a converger no compensa la ceremonia). Por eso se
+**extendió el mecanismo 1** con el mismo `alcance` que ya usa el mecanismo 4, en
+vez de inventar un quinto sistema paralelo.
 
-**Por qué importa el momento**: si esto se diseña antes de que arranque la Fase
-5, dotes/poderes/aumentos se construyen sobre una pieza central ya resuelta. Si
-no, cada uno se inventa su propio enganche suelto — el mismo patrón ad hoc que ya
-se ha repetido esta sesión con Mangual, Kerzul y los Visores, que servirían de
-casos de prueba reales para lo que se diseñe aquí.
+**Por qué importaba el momento**: al construirse antes de que arranque la Fase
+5, dotes/poderes/aumentos se construyen sobre una pieza central ya resuelta, en
+vez de que cada uno se invente su propio enganche suelto — el mismo patrón ad
+hoc que se había repetido esta sesión con Mangual, Kerzul y los Visores.
+
+### Cómo quedó construido
+
+- **`CondicionTirada`** (`condiciones.ts`) gana `alcance?: AlcanceModificador`
+  (las 3 variantes) y `nota?: string` (`toggle` y cada `OpcionCondicion`). Sin
+  `alcance`, se comporta exactamente igual que siempre — cero cambios para lo
+  que ya existía (Bípode, Sistema de Retroceso...).
+- **`condicionesActivas(sheet, ctx)`** (`equipo.ts`), simétrica a
+  `modificadoresDeEquipo`: recorre `sheet.equipo`, filtra a `mejoraEstandar`/
+  `subsistema`/`herramienta` (excluye `mejoraArma` a propósito — esa familia ya
+  se recoge por instancia de arma en `condicionesDeMejoras`, sin `alcance`, y
+  mezclar las dos rutas duplicaría la condición si algún día una mejora de
+  arma también declarase `alcance`), y se queda con las condiciones cuyo
+  `alcance` matchea vía `alcanzaA()` (exportada de `modificadores.ts`, misma
+  lógica que ya usaba `Modificador`, sin duplicarla).
+- **`TiradasTab.tsx`**: un helper `conCondicionesDeEquipo(tirada)` mezcla
+  `condicionesActivas(sheet, ctx)` en CUALQUIER tirada (ataques, herramientas,
+  y las fijas de `TIRADAS`) antes de renderizarla — ninguna de las tres sabe
+  que esto existe. `TIRADAS` en sí sigue siendo el array estático de siempre;
+  no hizo falta moverlo a una función sheet-aware como se pensó al principio.
+- **`TiradaModal.tsx`**: el texto de `nota` se pinta **en el propio modal**
+  (bajo el toggle/la opción activa), no en el Marcador tras tirar — es donde
+  el jugador ya está mirando mientras decide, y evita tener que arrastrar la
+  nota por el histórico de tiradas.
+- **Dos casos reales migrados**, ambos sobre `alerta_activa`: Visor Nocturno
+  nivel 2 y Visor Térmico nivel 1 (`catalog/equipo.ts`) — los dos con
+  `valorActivo: 0`, solo la nota, porque los números de verdad (cobertura -2,
+  percepción -3) siguen sin poder auto-aplicarse (el motor no rastrea
+  distancia real ni "dentro/fuera del gradiente").
+- Sin cambios de schema/DB, sin dependencias nuevas. Tests en
+  `equipo.test.ts` (`describe("condicionesActivas")`). 322 tests, lint y
+  `tsc --noEmit` limpios.
+
+**Pendiente, ahora que la pieza central existe — es migración de datos, no
+arquitectura**: Mangual (Bloqueo/ignora Cobertura, bloqueado además por la
+pregunta 31), Camuflaje Trifásico (`sigilo`/`defensa`), y cualquier caso nuevo
+de Fase 5.
 
 **Sin decidir, sin construir** — pendiente de una sesión de diseño dedicada, no
 de esta tarea de diagnóstico. Ver también `docs/equipo-efectos-especiales.md`

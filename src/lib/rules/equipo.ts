@@ -20,7 +20,8 @@ import {
   type MejoraDeArma,
   type Rareza,
 } from "../catalog/equipo";
-import type { ModificadorConFuente } from "./modificadores";
+import { alcanzaA, type ContextoTirada, type ModificadorConFuente } from "./modificadores";
+import type { CondicionTirada } from "./condiciones";
 import type { Sheet } from "./sheet";
 
 export type PiezaEquipada = {
@@ -330,5 +331,27 @@ export function modificadoresDeEquipo(sheet: Sheet): ModificadorConFuente[] {
       origen: "equipo" as const,
       fuente: `${cat.label} ${nivelInfo.nivel}`,
     }));
+  });
+}
+
+// CondicionTirada (toggle/opción/contador) que el equipo aporta a CUALQUIER
+// tirada por su `alcance` — simétrico a modificadoresDeEquipo, pero para
+// condiciones en vez de modificadores numéricos (docs/modificadores-tiradas.md
+// §8). Solo recoge condiciones que declaren `alcance`; las que no lo llevan
+// siguen viviendo solo en su arma, vía condicionesDeMejoras (combate.ts).
+//
+// Excluye `mejoraArma` a propósito: esa familia ya se recoge por instancia de
+// arma en condicionesDeMejoras, sin mirar `alcance` — incluirla aquí también
+// duplicaría la condición el día que una mejora de arma declare alcance.
+export function condicionesActivas(sheet: Sheet, ctx: ContextoTirada): CondicionTirada[] {
+  return sheet.equipo.flatMap((pieza): CondicionTirada[] => {
+    const cat = equipoPorId(pieza.catalogoId);
+    if (!cat) return [];
+    if (cat.familia !== "mejoraEstandar" && cat.familia !== "subsistema" && cat.familia !== "herramienta") {
+      return [];
+    }
+    const nivelInfo = cat.niveles.find((n) => n.nivel === pieza.nivel);
+    if (!nivelInfo?.condiciones) return [];
+    return nivelInfo.condiciones.filter((c) => c.alcance && alcanzaA(c.alcance, ctx));
   });
 }

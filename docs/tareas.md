@@ -160,44 +160,43 @@ auto-aplicación — la app no arbitra) más el barrido pieza a pieza para pobla
 datos correctos. Sin empezar la implementación todavía, solo el diseño y el primer
 mapeo (familia de armas de plasma).
 
-**Consolidación 2026-09-22 (el usuario lo pide: demasiados apuntes en demasiados
-sitios, sin orden de prioridad claro).** El barrido llevaba `docs/equipo-efectos-
-especiales.md`, `docs/modificadores-tiradas.md` §8 y `docs/sistema.md` (preguntas
-31-33) acumulando hallazgos de peso muy distinto. Esto es el resumen priorizado —
-la fuente detallada de cada uno sigue viviendo en su documento, este es el mapa.
-**Ojo con la fecha: la partida empieza mañana (23 de septiembre) — nada de lo
-"bloqueado por diseño" de abajo se espera para entonces, solo los dos quick-wins.**
+**Consolidación, actualizada 2026-09-23** (arrancó 2026-09-22 porque el barrido
+llevaba `docs/equipo-efectos-especiales.md`, `docs/modificadores-tiradas.md` §8 y
+`docs/sistema.md` acumulando hallazgos sin orden de prioridad claro). Resumen
+priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
 
-1. **✅ Hechos 2026-09-23, los dos quick-wins:**
+1. **✅ Hechos 2026-09-23:**
    - 🐛 Bug: Soporte Vital duplicaba su +1 a `salv_fortaleza` (aplicaba +2 real) —
-     corregido en `catalog/equipo.ts`, un modificador por nivel. Test
-     `equipo.test.ts` actualizado.
-   - Fix: `tiradaDeArmaMelee` (`combate.ts`) ahora vuelca `arma.efectos` al `nota`,
-     igual que `tiradaDeArmaFuego`. Hace visibles en Tiradas todos los "Crítico de
-     X"/"Ignora N blindaje" de Combate Melee que antes solo se veían en la ficha de
-     Equipo. Tests nuevos en `combate.test.ts`.
-   - Sin cambios de tipo ni de modelo de datos en ninguno de los dos. 317 tests
-     pasan, lint y `tsc --noEmit` limpios. Detalle completo:
-     `docs/equipo-efectos-especiales.md` §Mejoras Estándar y §Kerzul.
+     corregido, un modificador por nivel.
+   - Fix: `tiradaDeArmaMelee` ahora vuelca `arma.efectos` al `nota`, igual que
+     `tiradaDeArmaFuego` — visible en Tiradas todo el "Crítico de X" de Combate
+     Melee que antes solo se veía en la ficha de Equipo.
+   - Perf: debounce por campo (`scheduleCommit`, `AUTOSAVE_DEBOUNCE_MS`) en
+     atributos/habilidades — antes cada clic de un stepper disparaba un
+     round-trip completo a la DB, detectado por el usuario en producción.
+   - **§8 de `docs/modificadores-tiradas.md` construido entero**:
+     `condicionesActivas(sheet, ctx)` + `alcance`/`nota` en `CondicionTirada` +
+     enganche en `TiradasTab`/`TiradaModal`. Dos casos reales migrados (Visor
+     Nocturno n2, Visor Térmico n1). Desbloquea Fase 5 y el resto del barrido de
+     equipo que solo necesitaba texto informativo (Mangual, Camuflaje
+     Trifásico — ahora son migración de datos, no arquitectura).
+   - Barrido de Subsistemas terminado entero (Escudo Deflector, Malla
+     Plasmática, Proyector de Pulso) — ver `docs/equipo-efectos-especiales.md`.
+   - 322 tests pasan, lint y `tsc --noEmit` limpios en todo lo anterior. Push a
+     `main` hecho hasta el commit de los quick-wins y el fix de rendimiento —
+     el commit del §8 pendiente de que el usuario pida el push.
 
 2. **Preguntas para Murillo, ya redactadas, listas para soltar en tanda — coste es
    enviarlas, no construir nada:** preguntas 31 (Bloqueo del Mangual), 32
    ("susceptible a shock"/"apagón" sin definir), 33 (Canal de Alta Resonancia,
-   %→+N) en `docs/sistema.md` — las tres nuevas de esta sesión. Ver "Preguntas al
-   diseñador" al final de este documento para la lista completa por impacto,
-   ahora con la 29 (blindaje) añadida ahí también.
+   %→+N) en `docs/sistema.md`. Ver "Preguntas al diseñador" al final de este
+   documento para la lista completa por impacto, con la 29 (blindaje) incluida.
 
-3. **Diseño pendiente que bloquea construcción real, por orden de cuántas cosas
-   desbloquea cada uno:**
+3. **Diseño pendiente que bloquea construcción real:**
    - **Hallazgo #5 — absorción de daño por blindaje** (prioridad alta, el usuario
      lo marca explícitamente). No existe cálculo en todo el motor; `sistema.md`
      pregunta 29/C11 sigue sin fórmula. Bloquea Mejora Ignífuga, Anticorrosivo n2,
      Tejido Conductor n2. Detalle: `docs/equipo-efectos-especiales.md`, hallazgo #5.
-   - **§8 de `docs/modificadores-tiradas.md` — `CondicionTirada` y texto
-     informativo en tiradas fijas de `TIRADAS`.** Bloquea Visor Nocturno/Térmico,
-     Camuflaje Trifásico (sigilo/defensa), y previsiblemente **toda** Fase 5
-     (dotes/poderes/aumentos van a necesitar el mismo enganche). El de mayor
-     apalancamiento de los tres: cuanto antes se diseñe, menos re-trabajo en Fase 5.
    - **RECURSOS — extensión de Fase 6b** (ver entrada de arriba). Bloquea
      Conversión Psiónica (Derivación Psiónica) y previsiblemente poderes/dotes que
      gasten cargas o fatiga en Fase 5.
@@ -205,12 +204,11 @@ la fuente detallada de cada uno sigue viviendo en su documento, este es el mapa.
      Bloquea `arm2`/`me1`/`me5` y Munición Especial en cuanto se dé de alta
      (hallazgo #2). Detalle: `docs/equipo-efectos-especiales.md`, hallazgo #3.
 
-4. **El barrido pieza a pieza en sí sigue mereciendo terminarse** (quedan Escudo
-   Deflector, Malla Plasmática, Proyector de Pulso, Armas Modificadas, Kerzul,
-   Munición) — es barato (lectura + anotación, sin código) y da el mapa completo
-   antes de decidir qué construir primero. Pero la mayoría de lo ya marcado
-   `✅ IMPLEMENTAR` depende de que el punto 3 se resuelva antes — terminar el
-   inventario no sustituye a diseñar.
+4. **El barrido pieza a pieza en sí sigue mereciendo terminarse** (quedan ma2/ma4
+   de Mejoras en Armas de Fuego, Munición, Otras Armas a Distancia, Armas
+   Modificadas) — barato (lectura + anotación), da el mapa completo. La mayoría de
+   lo ya marcado `✅ IMPLEMENTAR` con texto informativo ya se puede construir de
+   verdad (el §8 existe); lo bloqueado por Hallazgo #3/#5 sigue esperando diseño.
 
 ### Fase 5 — Poderes, dotes, aumentos, especies reales ⬜ (bloqueado por el diseñador)
 El diseñador (Murillo) aún no ha escrito estos documentos. No hay nada que adelantar del

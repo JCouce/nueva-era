@@ -16,6 +16,7 @@ import {
   valorBonosTramo,
   modificadoresActivos,
   modificadoresDeEstados,
+  condicionesActivas,
   bonoAlcance,
   modoElegido,
   type Tirada,
@@ -306,8 +307,20 @@ export function TiradasTab({
     ctxBase: { id: string; grupo: Tirada["grupo"]; habilidad: Tirada["habilidad"] };
   } | null>(null);
 
-  const ataques = tiradasDeAtaque(sheet);
-  const herramientas = tiradasDeHerramientas(sheet);
+  // Mezcla las condiciones de alcance (Visor Nocturno y lo que venga después,
+  // ver docs/modificadores-tiradas.md §8) en CUALQUIER tirada — de ataque,
+  // de herramienta o fija de TIRADAS — sin que ninguna de las tres sepa que
+  // eso existe. `modoElegido: null` aquí a propósito: en este punto la tirada
+  // ni siquiera se ha abierto, así que una condición con alcance "modo" no
+  // tiene nada que matchear todavía (no tiene sentido de origen de todos
+  // modos, ver condicionesActivas en equipo.ts).
+  const conCondicionesDeEquipo = (t: Tirada): Tirada => {
+    const extra = condicionesActivas(sheet, { id: t.id, grupo: t.grupo, habilidad: t.habilidad, modoElegido: null });
+    return extra.length > 0 ? { ...t, condiciones: [...(t.condiciones ?? []), ...extra] } : t;
+  };
+
+  const ataques = tiradasDeAtaque(sheet).map(conCondicionesDeEquipo);
+  const herramientas = tiradasDeHerramientas(sheet).map(conCondicionesDeEquipo);
 
   const abrir = (t: Tirada, enEspecialidad: boolean) => {
     const mod = modificadorTirada(sheet, t, enEspecialidad, mods);
@@ -412,7 +425,7 @@ export function TiradasTab({
           <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
             {grupo}
           </h2>
-          {TIRADAS.filter((t) => t.grupo === grupo).map((t) => (
+          {TIRADAS.filter((t) => t.grupo === grupo).map(conCondicionesDeEquipo).map((t) => (
             <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
           ))}
         </div>
