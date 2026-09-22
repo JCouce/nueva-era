@@ -2874,6 +2874,15 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // opción de tramo de la tirada de ataque, no es un +1 incondicional.
         modificadores: [],
         ajusteTramo: { media: 1, larga: 1 },
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "bono_tramo", estado: "construido" },
+          // "El mismo bonificador sirve para tiradas de búsqueda" no está
+          // construido: ajusteTramo solo alimenta la tirada de ataque del arma
+          // huésped, no ninguna tirada de percepción. Caso inconcluso: no está
+          // claro si el destino es "alerta_activa"/Buscar-percibir u otra —
+          // ver informe final.
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+        ],
       },
       {
         nivel: 2,
@@ -2881,6 +2890,13 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         coste: 700,
         detalle: ["Aporta visión nocturna y térmica, como un visor de nivel 1, hasta 500 metros."],
         modificadores: [],
+        // Mismo patrón exacto que Visor Nocturno/Visor Térmico n1 (toggle con
+        // nota, mecanismo eleccion_jugador del §8) pero sin aplicar aquí —
+        // "hallazgo real, no duda" según el barrido de motor: falta trabajo de
+        // datos, no de diseño. Uno de los "quick wins" ya identificados.
+        motor: [
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+        ],
       },
       {
         nivel: 3,
@@ -2894,6 +2910,10 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // Total explícito del nivel, no +1 adicional sobre el del nivel 1
         // (supuesto S9: solo aplica dentro de la MISMA pieza instalada).
         ajusteTramo: { media: 2, larga: 2 },
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "bono_tramo", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // percepción visual, mismo caso inconcluso que nivel 1
+        ],
       },
     ],
   },
@@ -2913,6 +2933,12 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // Condicionado a tenerlo activo (es un toggle, como el camuflaje): no
         // se mecaniza como un +1 permanente.
         modificadores: [],
+        // El propio comentario dice "es un toggle, como el camuflaje" pero
+        // nunca se construyó — a diferencia del Bípode, que sí lo tiene. Otro
+        // de los "quick wins" ya identificados (mismo patrón que Bípode).
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+        ],
       },
       {
         nivel: 2,
@@ -2922,6 +2948,11 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
           "Con ojo biónico o Mira Telescópica de nivel 3, el puntero deja de penalizar el sigilo.",
         ],
         modificadores: [],
+        // Depende de que nivel 1 se construya primero, y "ojo biónico" no
+        // existe en el catálogo (Fase 5, aumentos).
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "Fase 5" },
+        ],
       },
     ],
   },
@@ -2941,6 +2972,14 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         coste: 120,
         detalle: ["Sin dificultad ni acción asociada: se enciende y apaga cuando se quiera."],
         modificadores: [],
+        // El propio catálogo dice "sin dificultad ni acción asociada": no hay
+        // número que mecanizar. Correctamente narrativo por ahora — no un
+        // hueco (podría pasar a tipo 3 el día que exista una acción de "ver
+        // en la oscuridad" con tramos, pero hoy no hay ninguna a la que
+        // engancharlo).
+        motor: [
+          { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+        ],
       },
     ],
   },
@@ -2978,6 +3017,9 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
             valorInactivo: -1,
           },
         ],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" },
+        ],
       },
       {
         nivel: 2,
@@ -2993,6 +3035,9 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
             valorActivo: 1,
             valorInactivo: 0,
           },
+        ],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
     ],
@@ -3015,6 +3060,12 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // Fija un penalizador a un valor concreto en vez de sumar un bono
         // propio: no encaja como modificador simple de "+N".
         modificadores: [],
+        // Mismo bloqueo que el sigilo de las armas de plasma: sin saber a qué
+        // tirada concreta resta el "penalizador habitual" (pregunta 25b), no
+        // se puede fijar esto a -2 de algo que no existe todavía como número.
+        motor: [
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 25b" },
+        ],
       },
     ],
   },
@@ -3043,6 +3094,9 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         modificadores: [
           { tipo: "tirada", alcance: { tipo: "modo", contieneEtiqueta: "F. Auto" }, valor: 1 },
         ],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "siempre_activo", estado: "construido" },
+        ],
       },
       {
         nivel: 2,
@@ -3054,6 +3108,10 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // del portador: se queda en texto.
         modificadores: [
           { tipo: "tirada", alcance: { tipo: "modo", contieneEtiqueta: "F. Auto" }, valor: 1 },
+        ],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "siempre_activo", estado: "construido" }, // heredado de nivel 1 (S9)
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "esquiva" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" }, // sube la esquiva de QUIEN te dispara, no una tirada propia
         ],
       },
     ],
@@ -3080,6 +3138,14 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // manos), no un modificador sobre el personaje: encaja mejor cuando
         // exista el tipo ArmaMelee (Fase E) que como Modificador suelto.
         modificadores: [],
+        // El bloqueo original ("encaja mejor cuando exista ArmaMelee") está
+        // desfasado: ArmaMelee ya existe (39 piezas en armasMelee.ts). Es el
+        // hallazgo más accionable del barrido — falta generar una segunda
+        // Tirada (perfil de cuchillo de combate), mismo patrón que
+        // tiradaDeLanzagranadas.
+        motor: [
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "golpear_bayoneta" }, mecanismo: "accion_equipo", estado: "pendiente" },
+        ],
       },
     ],
   },
@@ -3106,6 +3172,10 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // tirada usando MUNICION_GRANADA (catalog/municion.ts) para el daño.
         modificadores: [],
         ajusteAtaque: -1,
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "ajuste_fijo", estado: "construido" }, // -1 al arma huésped
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "lanzagranadas_integrado" }, mecanismo: "accion_equipo", estado: "construido" }, // tiradaDeLanzagranadas, combate.ts
+        ],
       },
     ],
   },
