@@ -19,6 +19,19 @@
 // tiradas de aplicación"): se equipa como referencia para la tirada fija
 // "tecnica", sin modificador.
 import type { Herramienta, Consumible } from "./equipo";
+import type { MotorMetadata } from "../rules/motor";
+
+// docs/motor.md — patrones compartidos por varios niveles de este archivo,
+// para no repetir el mismo array literal en cada uno.
+
+// VTF: decisión de diseño ya cerrada (cabecera del archivo) — se equipa como
+// referencia para la tirada fija "tecnica" sin ningún Modificador propio, a
+// diferencia de la Valija Médica. Confirmado: "valija_tactica_fabricacion" no
+// aparece en ETIQUETA_ACCION de lib/rules/herramientas.ts, no genera tirada
+// propia. Narrativo, sin conexión, construido — no es un hueco.
+const MOTOR_VTF: MotorMetadata[] = [
+  { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+];
 
 export const VALIJA_TACTICA_FABRICACION: Herramienta = {
   familia: "herramienta",
@@ -50,6 +63,7 @@ export const VALIJA_TACTICA_FABRICACION: Herramienta = {
           "fabricación. Éxito crítico recupera el 50% del precio base; éxito normal, el 25%.",
       ],
       modificadores: [],
+      motor: MOTOR_VTF,
     },
     {
       nivel: 2,
@@ -60,6 +74,7 @@ export const VALIJA_TACTICA_FABRICACION: Herramienta = {
         "Reparar un objeto dañado o en shock pasa a acción estándar.",
       ],
       modificadores: [],
+      motor: MOTOR_VTF,
     },
     {
       nivel: 3,
@@ -71,6 +86,7 @@ export const VALIJA_TACTICA_FABRICACION: Herramienta = {
           "estándar.",
       ],
       modificadores: [],
+      motor: MOTOR_VTF,
     },
     {
       nivel: 4,
@@ -83,9 +99,27 @@ export const VALIJA_TACTICA_FABRICACION: Herramienta = {
           "los daños graves se consideran de categoría ordinaria.",
       ],
       modificadores: [],
+      motor: MOTOR_VTF,
     },
   ],
 };
+
+// Las 3 herramientas activas (Radar, Escáner Detector, Disfraz Holográfico)
+// generan su propia tirada vía tiradasDeHerramientas() (lib/rules/herramientas.ts)
+// SOLO en los niveles que traen `notaTirada` — hoy son todos los niveles de
+// las 3, pero el motor por id, no por familia entera (comentario de cabecera
+// de lib/rules/herramientas.ts: "no hay una fórmula común, cada herramienta
+// tiene su propia mecánica"). Dos efectos por nivel: la acción en sí, y el
+// propio notaTirada volcado como nota — mismo patrón que arma.especial.
+function motorHerramientaActiva(idAccion: string): MotorMetadata[] {
+  return [
+    { tipo: "accion", afecta: { modo: "accion_nueva", id: idAccion }, mecanismo: "accion_equipo", estado: "construido" },
+    { tipo: "texto", afecta: { modo: "accion_existente", id: idAccion }, mecanismo: "nota_fija", estado: "ad_hoc" },
+  ];
+}
+const MOTOR_RADAR = motorHerramientaActiva("herramienta_radar");
+const MOTOR_DISFRAZ = motorHerramientaActiva("herramienta_disfraz_holografico");
+const MOTOR_ESCANER = motorHerramientaActiva("herramienta_escaner_detector");
 
 export const RADAR: Herramienta = {
   familia: "herramienta",
@@ -105,6 +139,7 @@ export const RADAR: Herramienta = {
       detalle: ["Localiza movimiento, calor, masas inanimadas y firmas biológicas."],
       modificadores: [],
       notaTirada: "Acción simple para barrido rápido. Dificultad 7. Alcance 20 m.",
+      motor: MOTOR_RADAR,
     },
     {
       nivel: 2,
@@ -118,6 +153,7 @@ export const RADAR: Herramienta = {
       notaTirada:
         "Acción simple, dificultad 7. Alcance 100 m; distingue orgánicos/maquinaria/sintéticos " +
         "con crítico, y a 20 m o menos el éxito normal cuenta como crítico a ese efecto.",
+      motor: MOTOR_RADAR,
     },
     {
       nivel: 3,
@@ -131,6 +167,7 @@ export const RADAR: Herramienta = {
       notaTirada:
         "Penetración parcial: acción estándar, dificultad 8, alcance 20 m. En función habitual, " +
         "alcance 500 m, distinguiendo tipos hasta 100 m.",
+      motor: MOTOR_RADAR,
     },
     {
       nivel: 4,
@@ -145,6 +182,7 @@ export const RADAR: Herramienta = {
       notaTirada:
         "Alcance habitual 1 km, distinguiendo tipos en todo el alcance; penetra coberturas " +
         "ligeras hasta 100 m.",
+      motor: MOTOR_RADAR,
     },
   ],
 };
@@ -174,6 +212,7 @@ export const DISFRAZ_HOLOGRAFICO: Herramienta = {
       notaTirada:
         "Activar es acción simple. El resultado de la tirada marca la dificultad para ser " +
         "descubierto.",
+      motor: MOTOR_DISFRAZ,
     },
     {
       nivel: 2,
@@ -189,6 +228,7 @@ export const DISFRAZ_HOLOGRAFICO: Herramienta = {
       notaTirada:
         "Activar es acción simple. El resultado de la tirada marca la dificultad para ser " +
         "descubierto.",
+      motor: MOTOR_DISFRAZ,
     },
   ],
 };
@@ -210,6 +250,7 @@ export const ESCANER_DETECTOR: Herramienta = {
       detalle: [],
       modificadores: [],
       notaTirada: "Dificultad 6.",
+      motor: MOTOR_ESCANER,
     },
     {
       nivel: 2,
@@ -225,6 +266,7 @@ export const ESCANER_DETECTOR: Herramienta = {
       notaTirada:
         "Perspicacia + Tecnociencia, o Biociencia para peritaje orgánico/químico. Acción " +
         "compleja. Dificultad 6 superficial, 8 escáner profundo.",
+      motor: MOTOR_ESCANER,
     },
   ],
 };
@@ -242,6 +284,23 @@ export const HERRAMIENTAS_UNICAS: Herramienta[] = [
   ESCANER_DETECTOR,
 ];
 
+// "Permite construir hasta rareza X" no está mecanizado (grep confirma que
+// MATERIALES solo se usa en TiendaTab.tsx): ningún código valida rareza al
+// fabricar con la VTF, es puro gating narrativo/de tienda. Las 3 lo llevan.
+const MOTOR_MATERIAL_RAREZA: MotorMetadata[] = [
+  { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+];
+// Materiales Sofisticados/Avanzados además dan "+N a la tirada al reparar
+// con la valija" — una de las 9 tareas ya identificadas como listas para
+// construir (docs/barrido-motor-2026-09-22/barrido-melee-medicina-herramientas.md,
+// "patrón VTM"): hoy `modificadores: []`, sin construir todavía.
+const MOTOR_MATERIAL_REPARAR: MotorMetadata = {
+  tipo: "numerico",
+  afecta: { modo: "accion_existente", id: "tecnica" },
+  mecanismo: "siempre_activo",
+  estado: "pendiente",
+};
+
 export const MATERIALES: Consumible[] = [
   {
     familia: "consumible",
@@ -258,6 +317,7 @@ export const MATERIALES: Consumible[] = [
     rareza: "Poco Habitual",
     coste: 250,
     modificadores: [],
+    motor: MOTOR_MATERIAL_RAREZA,
   },
   {
     familia: "consumible",
@@ -274,6 +334,7 @@ export const MATERIALES: Consumible[] = [
     rareza: "Extraño",
     coste: 500,
     modificadores: [],
+    motor: [...MOTOR_MATERIAL_RAREZA, MOTOR_MATERIAL_REPARAR],
   },
   {
     familia: "consumible",
@@ -290,5 +351,6 @@ export const MATERIALES: Consumible[] = [
     rareza: "Muy Extraño",
     coste: 750,
     modificadores: [],
+    motor: [...MOTOR_MATERIAL_RAREZA, MOTOR_MATERIAL_REPARAR],
   },
 ];
