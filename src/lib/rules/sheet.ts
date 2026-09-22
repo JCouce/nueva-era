@@ -16,6 +16,7 @@ import {
   MAX_ESPECIALIDADES,
 } from "./habilidades";
 import { piezaEquipadaSchema, type PiezaEquipada } from "./equipo";
+import { recursoSchema, reconciliarRecursos, type RecursoInstancia } from "./recursos";
 import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./prioridad";
 
 // Versión del formato de ficha. Al subirla hay que añadir su migración en
@@ -25,7 +26,8 @@ import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./pri
 //   3 → se añade el equipo instalado
 //   4 → creación por prioridad (HOJA2): prioridades, altura, peso
 //   5 → Exploración sustituye a Supervivencia (C4/C12 de docs/sistema.md)
-export const SCHEMA_VERSION = 5;
+//   6 → se añade RECURSOS (cargas/munición gastadas y recargadas en partida)
+export const SCHEMA_VERSION = 6;
 
 const atributoValue = z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX);
 
@@ -59,6 +61,7 @@ export const sheetSchema = z.object({
   habilidades: z.object(habilidadesShape),
   prioridades: z.object(prioridadesShape),
   equipo: z.array(piezaEquipadaSchema).max(200),
+  recursos: z.array(recursoSchema).max(200),
 });
 
 export type Sheet = z.infer<typeof sheetSchema>;
@@ -83,6 +86,7 @@ export function defaultSheet(): Sheet {
     ) as Sheet["habilidades"],
     prioridades: prioridadesVacias(),
     equipo: [],
+    recursos: [],
   };
 }
 
@@ -146,6 +150,15 @@ export function parseSheet(raw: unknown): Sheet {
     .map((res) => res.data)
     .slice(0, 200);
 
+  // Mismo criterio que el equipo: cada recurso se valida por separado, uno
+  // corrupto no tira el resto por la borda.
+  const rRecursos = Array.isArray(r.recursos) ? r.recursos : [];
+  const recursos: RecursoInstancia[] = rRecursos
+    .map((x) => recursoSchema.safeParse(x))
+    .filter((res): res is { success: true; data: RecursoInstancia } => res.success)
+    .map((res) => res.data)
+    .slice(0, 200);
+
   const rPrioridades = (r.prioridades ?? {}) as Record<string, unknown>;
   const prioridades = { ...base.prioridades };
   for (const c of CATEGORIAS_PRIORIDAD) {
@@ -158,7 +171,14 @@ export function parseSheet(raw: unknown): Sheet {
   const numeroOpcional = (v: unknown): number | null =>
     v === null || v === undefined ? null : clampInt(v, 0, 999, 0);
 
-  return {
+  // reconciliarRecursos() aquí, no solo en equipar()/desequipar(): una ficha
+  // que ya llevaba armas o subsistemas con célula equipados ANTES de que
+  // existiera RECURSOS necesita auto-poblarse en la primera lectura, no solo
+  // la próxima vez que se toque el equipo — si no, un arma vieja se queda
+  // invisible a RECURSOS hasta que alguien la desequipe y la vuelva a poner.
+  // Idempotente y sin efectos destructivos: nunca toca una entrada que ya
+  // existe, solo añade/quita para que coincida con sheet.equipo.
+  return reconciliarRecursos({
     schemaVersion: clampInt(r.schemaVersion, 1, SCHEMA_VERSION, SCHEMA_VERSION),
     edad: r.edad === null || r.edad === undefined ? null : clampInt(r.edad, 0, 999, 0),
     altura: numeroOpcional(r.altura),
@@ -170,5 +190,6 @@ export function parseSheet(raw: unknown): Sheet {
     habilidades,
     prioridades,
     equipo,
-  };
+    recursos,
+  });
 }

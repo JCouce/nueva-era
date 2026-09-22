@@ -19,6 +19,8 @@ import {
   rarezaDePieza,
   rarezaPermitida,
   piezaEquipadaSchema,
+  ajustarRecurso,
+  comprarRecarga,
   type AtributoId,
   type HabilidadId,
   type PiezaEquipada,
@@ -274,6 +276,43 @@ export async function desequiparAction(
   revalidatePath(`/characters/${characterId}`);
   revalidatePath("/master");
   return { ok: true, sheet, creditos };
+}
+
+// RECURSOS (docs/tareas.md, fase 6b): gasto manual (+/-), igual que PG/fatiga
+// en combate, pero sobre la ficha persistente — sin coste en créditos, es
+// solo anotar cuánto queda.
+export async function ajustarRecursoAction(
+  characterId: string,
+  instanciaId: string,
+  delta: number,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, ajustarRecurso(ctx.sheet, instanciaId, delta));
+}
+
+// "Recargar" (cargador de balas / batería portátil, S17/S18 de sistema.md):
+// precio fijo, no se confía en lo que calcule el cliente — se recalcula aquí
+// con el catálogo, igual que equiparAction.
+export async function comprarRecargaAction(
+  characterId: string,
+  instanciaId: string,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+
+  const resultado = comprarRecarga(ctx.sheet, instanciaId);
+  if (!resultado) return { ok: false, error: "No hay ningún recurso que recargar ahí." };
+  if (resultado.coste > ctx.creditos) return { ok: false, error: "No tienes créditos suficientes" };
+
+  const creditos = ctx.creditos - resultado.coste;
+  await prisma.character.update({
+    where: { id: characterId },
+    data: { stats: resultado.sheet, creditos },
+  });
+  revalidatePath(`/characters/${characterId}`);
+  revalidatePath("/master");
+  return { ok: true, sheet: resultado.sheet, creditos };
 }
 
 // Devuelve atributos y habilidades a cero. La identidad se conserva.

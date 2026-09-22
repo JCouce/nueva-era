@@ -13,6 +13,7 @@ import type { ArmaMelee } from "../catalog/armasMelee";
 import type { ArmaPesada } from "../catalog/armamentoPesado";
 import { MUNICION_GRANADA, ALCANCE_ARROJADA, type MunicionGranada } from "../catalog/municion";
 import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condiciones";
+import { recursoDe, gastoDelModo } from "./recursos";
 import type { Tirada } from "./tiradas";
 
 const TRAMOS: TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
@@ -124,11 +125,39 @@ function condicionModo(modos: { id: string; etiqueta: string; dificultad: number
   };
 }
 
+// Aviso de "no te llega" (docs/tareas.md, RECURSOS): solo se pinta cuando el
+// modo pedido gasta más de lo que queda — informativo, no bloquea la
+// tirada (§8 de docs/modificadores-tiradas.md, "la app avisa, no arbitra").
+// Sin `recurso` rastreado (arma equipada antes de que existiera RECURSOS, o
+// sin capacidadDePieza — no debería pasar con un arma, pero por si acaso) no
+// hay nada que avisar.
+function notaInsuficiente(gasto: number, recurso: { actual: number; max: number } | undefined): string | undefined {
+  if (!recurso || recurso.actual >= gasto) return undefined;
+  return `Solo quedan ${recurso.actual}/${recurso.max} balas — este modo gasta ${gasto}.`;
+}
+
 function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Tirada {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
-  const condiciones = [condicionTramo(arma), condicionModo(modosConId)].filter(
-    (c): c is CondicionTirada => c !== null,
-  );
+  const recurso = recursoDe(sheet, instanciaId);
+  const modoBase = condicionModo(modosConId);
+  // Con selector de modo (dos o más): el aviso va como `nota` de la opción
+  // insuficiente, se ve en el modal en el momento de elegir. Con un único
+  // modo (no hay selector que pintar) va al `nota` general de la tirada.
+  const modo: CondicionTirada | null =
+    modoBase && modoBase.tipo === "opcion"
+      ? {
+          ...modoBase,
+          opciones: modoBase.opciones.map((o) => ({
+            ...o,
+            nota: notaInsuficiente(gastoDelModo(o.etiqueta, arma.municion), recurso),
+          })),
+        }
+      : modoBase;
+  const notaModoUnico = !modo
+    ? notaInsuficiente(gastoDelModo(modosConId[0].etiqueta, arma.municion), recurso)
+    : undefined;
+
+  const condiciones = [condicionTramo(arma), modo].filter((c): c is CondicionTirada => c !== null);
   condiciones.push(...condicionesDeMejoras(sheet, instanciaId));
 
   return {
@@ -137,7 +166,7 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
     grupo: "Ataques",
     aplicado: "reflejos",
     habilidad: "combate_distancia",
-    nota: arma.especial ?? undefined,
+    nota: [arma.especial, notaModoUnico].filter((n): n is string => !!n).join(" · ") || undefined,
     condiciones,
     ajustesFijos: ajustesFijosDeMejoras(sheet, instanciaId),
     bonosTramo: bonosTramoDeMejoras(sheet, instanciaId),

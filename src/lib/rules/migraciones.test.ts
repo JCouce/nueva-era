@@ -141,6 +141,20 @@ describe("v4 → v5: Exploración sustituye a Supervivencia (C4/C12)", () => {
   });
 });
 
+describe("v5 → v6: se añade RECURSOS", () => {
+  test("una ficha sin campo recursos arranca con la lista vacía", () => {
+    const { ficha } = migrar({ schemaVersion: 5, especieId: "humano" }, 6);
+    assert.deepEqual(ficha.recursos, []);
+    assert.equal(ficha.schemaVersion, 6);
+  });
+
+  test("no toca el resto de la ficha", () => {
+    const { ficha } = migrar({ schemaVersion: 5, especieId: "arkoru", edad: 40 }, 6);
+    assert.equal(ficha.especieId, "arkoru");
+    assert.equal(ficha.edad, 40);
+  });
+});
+
 describe("parseSheet migra antes de normalizar", () => {
   test("una ficha v1 entra por la puerta y sale al día", () => {
     const s = parseSheet({ schemaVersion: 1, especie: "Arkorü", edad: 40 });

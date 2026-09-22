@@ -303,6 +303,11 @@ export type ArmaFuego = {
   // a bocajarro +4, corta +2, media +0, larga -2 — modificador común a toda arma de fuego).
   alcance: { corta: number; media: number; larga: number };
   municion: number;
+  // RECURSOS (docs/tareas.md, fase 6b): sin este campo, el arma usa el
+  // recurso genérico "balas normales" — compatible con el cargador de balas
+  // normales de la tienda. "energia" marca la familia Láser/Plasma/Rayo, que
+  // necesita su propio recurso distinto (batería, no munición balística).
+  tipoMunicion?: "energia";
   mejorasAdmitidas: number;
   especial: string | null;
   pesoKg: number;
@@ -436,6 +441,7 @@ export const ARMAS: ArmaFuego[] = [
     ],
     alcance: { corta: 16, media: 60, larga: 120 },
     municion: 80,
+    tipoMunicion: "energia",
     mejorasAdmitidas: 2,
     especial: "Efecto Llamarada (9) · Crítico de Ceguera (10) · F. Auto (Esquiva 9)",
     pesoKg: 1,
@@ -459,6 +465,7 @@ export const ARMAS: ArmaFuego[] = [
     ],
     alcance: { corta: 12, media: 40, larga: 80 },
     municion: 26,
+    tipoMunicion: "energia",
     mejorasAdmitidas: 2,
     especial: "Efecto Shock (5) · Crítico de Shock (12) · F. Auto (Esquiva 9)",
     pesoKg: 2,
@@ -483,6 +490,7 @@ export const ARMAS: ArmaFuego[] = [
     ],
     alcance: { corta: 10, media: 30, larga: 60 },
     municion: 13,
+    tipoMunicion: "energia",
     mejorasAdmitidas: 2,
     especial: "Efecto Shock y Llamarada (7) · Crítico de Fusión (11) · F. Auto (Esquiva 9)",
     pesoKg: 3,
@@ -600,6 +608,7 @@ export const ARMAS: ArmaFuego[] = [
     ],
     alcance: { corta: 16, media: 40, larga: 74 },
     municion: 18,
+    tipoMunicion: "energia",
     mejorasAdmitidas: 2,
     especial: "Efecto Shock y Llamarada (8) · Crítico de Fusión (12) · F. Auto (Esquiva 10)",
     pesoKg: 7.5,
@@ -713,6 +722,7 @@ export const ARMAS: ArmaFuego[] = [
     ],
     alcance: { corta: 40, media: 120, larga: 240 },
     municion: 26,
+    tipoMunicion: "energia",
     mejorasAdmitidas: 2,
     especial: "Efecto Shock y Llamarada (8) · Crítico de Fusión (12) · F. Auto (Esquiva 10)",
     pesoKg: 4.5,
@@ -803,6 +813,7 @@ export const ARMAS: ArmaFuego[] = [
     ],
     alcance: { corta: 60, media: 450, larga: 900 },
     municion: 800,
+    tipoMunicion: "energia",
     mejorasAdmitidas: 3,
     especial: "Efecto Llamarada (8) · Crítico de Ceguera (10) · F. Auto (Esquiva 10)",
     pesoKg: 3.5,
@@ -848,6 +859,7 @@ export const ARMAS: ArmaFuego[] = [
     ],
     alcance: { corta: 50, media: 400, larga: 800 },
     municion: 66,
+    tipoMunicion: "energia",
     mejorasAdmitidas: 3,
     especial: "Efecto Shock (6) · Crítico de Shock (11) · F. Auto (Esquiva 10)",
     pesoKg: 5.5,
@@ -872,6 +884,7 @@ export const ARMAS: ArmaFuego[] = [
     ],
     alcance: { corta: 46, media: 280, larga: 560 },
     municion: 30,
+    tipoMunicion: "energia",
     mejorasAdmitidas: 2,
     especial: "Efecto Shock y Llamarada (6) · Crítico de Fusión (11) · F. Auto (Esquiva 10)",
     pesoKg: 6,
@@ -980,6 +993,7 @@ export const ARMAS: ArmaFuego[] = [
     modos: [{ etiqueta: "Estándar", dificultad: -2, danio: 9, categoriaDanio: "Fuego" }],
     alcance: { corta: 50, media: 1000, larga: 2000 },
     municion: 60,
+    tipoMunicion: "energia",
     mejorasAdmitidas: 3,
     especial: "Efecto Llamarada (6) · Crítico de Ceguera (10)",
     pesoKg: 6,
@@ -1000,6 +1014,7 @@ export const ARMAS: ArmaFuego[] = [
     modos: [{ etiqueta: "Estándar", dificultad: -2, danio: 11, categoriaDanio: "Grave" }],
     alcance: { corta: 50, media: 1200, larga: 2400 },
     municion: 30,
+    tipoMunicion: "energia",
     mejorasAdmitidas: 3,
     especial: "Efecto Shock (6) · Crítico de Shock (11)",
     pesoKg: 7,
@@ -1023,6 +1038,7 @@ export const ARMAS: ArmaFuego[] = [
     ],
     alcance: { corta: 50, media: 600, larga: 1200 },
     municion: 15,
+    tipoMunicion: "energia",
     mejorasAdmitidas: 2,
     especial: "Efecto Shock y Llamarada (8) · Crítico de Fusión (12) · F. Auto (Esquiva 9)",
     pesoKg: 9,
@@ -1187,6 +1203,7 @@ export const ARMAS: ArmaFuego[] = [
     ],
     alcance: { corta: 150, media: 450, larga: 900 },
     municion: 300,
+    tipoMunicion: "energia",
     mejorasAdmitidas: 2,
     especial: "Efecto Shock y Llamarada (8) · Crítico de Fusión (12) · F. Auto (Esquiva 11)",
     pesoKg: 10,

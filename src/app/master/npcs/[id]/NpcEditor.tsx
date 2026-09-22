@@ -19,6 +19,7 @@ import { TiradasTab } from "@/app/characters/[id]/_components/TiradasTab";
 import type { Lanzamiento } from "@/components/ResultadoTirada";
 import { EquipoTab } from "@/app/characters/[id]/_components/EquipoTab";
 import { TiendaTab } from "@/app/characters/[id]/_components/TiendaTab";
+import { RecursosTab } from "@/app/characters/[id]/_components/RecursosTab";
 import {
   renombrarNpcAction,
   setNotaNpcAction,
@@ -28,6 +29,8 @@ import {
   removeEspecialidadNpcAction,
   equiparNpcAction,
   desequiparNpcAction,
+  ajustarRecursoNpcAction,
+  comprarRecargaNpcAction,
   eliminarNpcAction,
   type NpcResult,
 } from "../actions";
@@ -52,6 +55,7 @@ const TABS = [
   { id: "skills", label: "Habilidades" },
   { id: "tiradas", label: "Tiradas" },
   { id: "equipo", label: "Equipo" },
+  { id: "recursos", label: "Recursos" },
   { id: "tienda", label: "Tienda" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
@@ -202,6 +206,18 @@ export function NpcEditor({
     if (res.ok) setSheet(res.sheet);
     setStatus(res.ok ? "saved" : "error");
   };
+  const commitAjustarRecurso = async (instanciaId: string, delta: number) => {
+    setStatus("saving");
+    const res = await ajustarRecursoNpcAction(npcId, instanciaId, delta);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
+  const commitRecargar = async (instanciaId: string) => {
+    setStatus("saving");
+    const res = await comprarRecargaNpcAction(npcId, instanciaId);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
 
   // Sin confirm() — bloquea el hilo con un diálogo nativo, y el resto de la
   // app (deleteCharacter en characters/page.tsx) tampoco pide confirmación
@@ -294,6 +310,9 @@ export function NpcEditor({
         </div>
       )}
       {active === "equipo" && <EquipoTab sheet={sheet} onDesequipar={commitDesequipar} />}
+      {active === "recursos" && (
+        <RecursosTab sheet={sheet} onAjustar={commitAjustarRecurso} onRecargar={commitRecargar} />
+      )}
       {active === "tienda" && (
         <TiendaTab sheet={sheet} topeRareza={null} libre onEquipar={commitEquipar} />
       )}

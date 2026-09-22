@@ -11,6 +11,8 @@ import {
   equiparAction,
   desequiparAction,
   setPrioridadAction,
+  ajustarRecursoAction,
+  comprarRecargaAction,
   type SaveResult,
 } from "./actions";
 import {
@@ -25,6 +27,7 @@ import {
   equipar,
   desequipar,
   setPrioridad,
+  ajustarRecurso,
   RECURSOS_POR_LETRA,
   describirEstadosActivos,
   type AtributoId,
@@ -42,6 +45,7 @@ import { PsionicaTab } from "./_components/PsionicaTab";
 import { TiradasTab } from "./_components/TiradasTab";
 import { TiendaTab } from "./_components/TiendaTab";
 import { EquipoTab } from "./_components/EquipoTab";
+import { RecursosTab } from "./_components/RecursosTab";
 import { CombateTab, type CombateView } from "./_components/CombateTab";
 import type { Lanzamiento } from "@/components/ResultadoTirada";
 
@@ -65,6 +69,7 @@ const TABS_FICHA = [
 const TABS_PERSONAJE = [
   { id: "tiradas", label: "Tiradas" },
   { id: "equipo", label: "Equipo" },
+  { id: "recursos", label: "Recursos" },
 ] as const;
 const TABS_CATALOGO = [{ id: "tienda", label: "Tienda" }] as const;
 // No es un cuarto grupo estático: "combate" solo existe mientras el
@@ -296,6 +301,13 @@ export function CharacterSheet({
   const commitDesequipar = (instanciaId: string) => {
     setSheet((s) => desequipar(s, instanciaId));
     runSave(() => desequiparAction(characterId, instanciaId), setSheet);
+  };
+  const commitAjustarRecurso = (instanciaId: string, delta: number) => {
+    setSheet((s) => ajustarRecurso(s, instanciaId, delta));
+    runSave(() => ajustarRecursoAction(characterId, instanciaId, delta), setSheet);
+  };
+  const commitRecargar = (instanciaId: string) => {
+    runSave(() => comprarRecargaAction(characterId, instanciaId), setSheet);
   };
 
   // ── Identidad (debounced, fire-and-forget). ──
@@ -534,6 +546,14 @@ export function CharacterSheet({
       )}
       {activeEfectivo === "equipo" && (
         <EquipoTab sheet={sheet} creditos={creditos} onDesequipar={commitDesequipar} />
+      )}
+      {activeEfectivo === "recursos" && (
+        <RecursosTab
+          sheet={sheet}
+          creditos={creditos}
+          onAjustar={commitAjustarRecurso}
+          onRecargar={commitRecargar}
+        />
       )}
       {activeEfectivo === "combate" && combate && (
         <CombateTab combate={combate} miCombatienteId={miCombatiente?.id ?? null} />

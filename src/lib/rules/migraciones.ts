@@ -85,6 +85,16 @@ export const MIGRACIONES: Migracion[] = [
       return { ...ficha, habilidades };
     },
   },
+  {
+    desde: 5,
+    hasta: 6,
+    descripcion:
+      "Se añade RECURSOS (cargas de batería/munición gastadas y recargadas en partida, " +
+      "docs/tareas.md fase 6b); las fichas antiguas empiezan sin ninguno — se auto-puebla " +
+      "solo la próxima vez que se equipe o desequipe algo (equipar()/desequipar() ya " +
+      "reconcilian, ver lib/rules/recursos.ts).",
+    migrar: (ficha) => ({ ...ficha, recursos: Array.isArray(ficha.recursos) ? ficha.recursos : [] }),
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le

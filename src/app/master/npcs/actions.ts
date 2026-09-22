@@ -23,6 +23,8 @@ import {
   equipar,
   desequipar,
   piezaEquipadaSchema,
+  ajustarRecurso,
+  comprarRecarga,
   ATRIBUTO_MIN,
   ATRIBUTO_MAX,
   HABILIDAD_NO_ENTRENADA,
@@ -217,4 +219,24 @@ export async function desequiparNpcAction(npcId: string, instanciaId: string): P
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(npcId, desequipar(ctx.sheet, instanciaId));
+}
+
+// RECURSOS: mismo criterio "libre" que el resto de la ficha del NPC — sin
+// créditos que cobrar al recargar, el máster ajusta el número directo.
+export async function ajustarRecursoNpcAction(
+  npcId: string,
+  instanciaId: string,
+  delta: number,
+): Promise<NpcResult> {
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(npcId, ajustarRecurso(ctx.sheet, instanciaId, delta));
+}
+
+export async function comprarRecargaNpcAction(npcId: string, instanciaId: string): Promise<NpcResult> {
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const resultado = comprarRecarga(ctx.sheet, instanciaId);
+  if (!resultado) return { ok: false, error: "No hay ningún recurso que recargar ahí." };
+  return persist(npcId, resultado.sheet);
 }

@@ -2,6 +2,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet } from "./sheet";
 import { equipar } from "./equipo";
+import { ajustarRecurso } from "./recursos";
 import { tiradasDeAtaque } from "./combate";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 
@@ -76,6 +77,42 @@ describe("arma de fuego equipada", () => {
     assert.equal(opcion(modo, "0"), -3); // Simple
     assert.equal(opcion(modo, "1"), -4); // Estándar (F. Auto)
     assert.equal(fila.ataque?.modos[1].danio, 12);
+  });
+});
+
+describe("aviso de munición insuficiente (RECURSOS, docs/tareas.md)", () => {
+  function opcionCompleta(c: CondicionTirada | undefined, id: string) {
+    assert.ok(c && c.tipo === "opcion", "no es una condición de opción");
+    const o = c.opciones.find((x) => x.id === id);
+    assert.ok(o, `no existe la opción ${id}`);
+    return o;
+  }
+
+  test("sin recurso rastreado (equipar auto-puebla) no hay ningún aviso al equipar", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_sydiasi" }); // 20/20
+    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
+    const modo = fila.condiciones?.find((c) => c.id === "modo");
+    assert.equal(opcionCompleta(modo, "0").nota, undefined); // Simple, gasta 1
+    assert.equal(opcionCompleta(modo, "1").nota, undefined); // F. Auto, gasta 20 — justo llega
+  });
+
+  test("con menos balas que las que pide F. Auto, esa opción lleva nota — Simple no", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_sydiasi" });
+    sheet = ajustarRecurso(sheet, "arma1", -15); // 5/20 — no llega a los 20 de F. Auto
+    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
+    const modo = fila.condiciones?.find((c) => c.id === "modo");
+    assert.equal(opcionCompleta(modo, "0").nota, undefined);
+    assert.match(opcionCompleta(modo, "1").nota ?? "", /5\/20/);
+  });
+
+  test("un arma con un único modo (sin selector) lleva el aviso en la nota general", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_mosquito" }); // sin F. Auto
+    sheet = ajustarRecurso(sheet, "arma1", -7); // 0/7
+    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Mosquito")!;
+    assert.match(fila.nota ?? "", /0\/7/);
   });
 });
 

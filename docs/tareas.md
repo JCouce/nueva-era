@@ -131,36 +131,107 @@ Resumen de la forma que tomó el diseño: instancias de `Combate` con `Combatien
 desde la fase 4, y reactividad por polling inteligente para empezar (es mesa física, no
 hace falta latencia de videojuego online) con SSE como mejora si hace falta.
 
-**Extensión propuesta (2026-09-22, repaso de efectos especiales de equipo — idea del
-usuario, corregida en conversación): RECURSOS — cargas de batería, munición, dosis,
-gastadas y recargadas en partida.** No está en el MVP cerrado. Un personaje puede
-llegar a llevar **6+ recursos distintos a la vez** (batería del Camuflaje, batería de
-la Malla Plasmática, cargador de cada arma con capacidad propia, pilas del Visor
-Nocturno, dosis del Inyector...) — no son dos campos más, es una lista de N recursos
-por personaje, cada uno atado a una instancia de equipo concreta.
+**RECURSOS — cargas de batería, munición, dosis, gastadas y recargadas en partida.**
+Propuesta 2026-09-22, **diseñado y construido 2026-09-22.** No estaba en el MVP
+cerrado de fase 6b — se añade como extensión aparte. Un personaje puede llegar a llevar
+**6+ recursos distintos a la vez** (batería del Camuflaje, batería de la Malla
+Plasmática, cargador de cada arma con capacidad propia, pilas del Visor Nocturno,
+dosis del Inyector...) — no son dos campos más, es una lista de N recursos por
+personaje, cada uno atado a una instancia de equipo concreta.
+
 - **Precedente parcial, no la solución entera**: `ajustarRecurso()`
-  (`master/combate/actions.ts:323-345`) ya resuelve el patrón de UI para PG/fatiga —
+  (`master/combate/actions.ts:323-345`) resuelve el patrón de UI para PG/fatiga —
   delta manual, clamp a `[0, max]`, permiso para dueño del personaje **y** máster —
-  pero hoy son dos columnas fijas del schema (`pgActual`/`fatigaActual`), no una
-  lista dinámica. Habría que generalizar a algo tipo
-  `recursos: { instanciaId, actual, max }[]`.
-- **Candidatos reales ya en el catálogo, sin unificar entre sí**: `célula`
-  (Subsistema: cargas/recarga/coste — Camuflaje Trifásico, Derivación Psiónica) y
-  `cargador` (ArmaFuego: solo un número).
-- **Dos formas de "automático" que NO son lo mismo, y las dos aportan valor sin
-  romper "la app informa, no arbitra":**
-  1. **Auto-poblar la lista de recursos desde el equipo** (al comprar una batería,
-     aparece sola) — esto no es arbitrar nada, es lo mismo que ya hace toda la ficha
-     hoy: derivar de lo que llevas equipado, no dar de alta a mano.
-  2. **Avisos proactivos de insuficiencia** ("no tienes balas para F. Auto, pero sí
-     para Ráfaga") — es información, no un bloqueo automático de la tirada. Encaja
-     directo en el mecanismo del §8 de `docs/modificadores-tiradas.md`: un
-     `CondicionTirada` de modo que lea el recurso restante y muestre el aviso, misma
-     idea que el resto del texto informativo de esta tarea, con el recurso como
-     fuente del número en vez de una dificultad fija.
-  Lo único que sigue sin automatizarse es **el gasto en sí** — eso se queda manual
-  (botones +/-), igual que PG/fatiga hoy.
-- Sin diseñar del todo, sin construir.
+  pero PG/fatiga son una **foto snapshot dentro de `Combatiente`** (se pierde al
+  cerrar el combate, confirmado en el propio schema). RECURSOS necesita lo
+  contrario: persistir fuera de combate, igual que el equipo.
+- **Dónde vive**: dentro del `Sheet` (`Character.stats` y `NpcTemplate.stats`), NO en
+  `Combatiente`. Como `Character` y `NpcTemplate` comparten el mismo `Sheet`, el
+  panel de NPC lo hereda gratis — sin trabajo aparte, incluida la edición manual
+  fuera de combate (mismo patrón que atributos/habilidades del NPC hoy).
+- **Estructura**: `recursos: { instanciaId, actual, max }[]` en el `Sheet`, por
+  instancia de pieza equipada (dos armas iguales = dos totales independientes).
+  Se auto-puebla al equipar una pieza con `célula` (Subsistema) o `municion`
+  (ArmaFuego), y desaparece al desequiparla.
+- **Dos comportamientos de recarga distintos, no uno solo** (corrección en
+  conversación tras un primer intento de unificarlos):
+  1. **Balas** (`ArmaFuego.municion`): recurso tipo **stock**, sin cargadores
+     individuales que rastrear (se ignora cuál está puesto, igual que en mesa) —
+     un único total. Empieza en `actual = max = municion` al equipar el arma.
+     Comprar "cargador de balas normales" **suma** `municion` tanto a `max` como a
+     `actual` (sin tope superior — la Carga Transportable es el límite natural,
+     aunque sus penalizadores siguen sin mecanizar). Precio fijo: **50 créditos**,
+     válido para cualquier arma (no depende de su capacidad).
+  2. **Batería** (`Subsistema.célula`): recurso tipo **tope fijo** — el máximo es
+     la capacidad de la célula y no cambia nunca. Comprar "batería portátil"
+     **recarga** `actual` a `max`, sin más. Precio fijo: **150 créditos**.
+  Los dos ítems de prueba para testear esto: **batería portátil** (150 cr.) y
+  **cargador de balas normales** (50 cr.) — comprar es una acción de tienda de
+  efecto inmediato, no dejan objeto en el inventario ni ocupan ranura. Solo se
+  pueden comprar para piezas que el personaje ya tiene equipadas (mismo patrón de
+  compatibilidad que mejoras de arma/`puedeInstalar`).
+- **Compatibilidad de "balas normales"**: genérico para toda `ArmaFuego` balística,
+  con excepción explícita de la familia de energía (Láser/Plasma/Rayo — 12 piezas
+  marcadas `tipoMunicion: "energia"` en `equipo.ts`), que necesita su propio tipo de
+  recurso. El Cañón de Plasma (`armamentoPesado.ts`) queda fuera a propósito —
+  `ArmaPesada` no entra en este primer pase de RECURSOS (ver más abajo).
+- **Gasto por disparo**: confirmado que no existe una tabla "Ráfaga" separada en el
+  catálogo — solo `"Simple"/"Estándar"/"Compleja"` (un disparo) frente a
+  `"... (F. Auto)"` (automático). Regla: modo sin "F. Auto" gasta **1**; modo con
+  "F. Auto" gasta **fijo = `municion` del arma** (el "cargador completo" ya
+  documentado en `equipamiento.md`, ahora sin cargadores físicos que rastrear — el
+  número no cambia aunque queden más balas sueltas en el stock).
+- **Avisos proactivos de insuficiencia** ("no tienes balas para F. Auto, pero sí para
+  disparo simple") — información, no bloqueo. Amplía el mecanismo del §8 de
+  `docs/modificadores-tiradas.md` a `arma`/`armaMelee`, que hoy lo excluye a
+  propósito (`condicionesActivas` solo recorre `mejoraEstandar`/`subsistema`/
+  `herramienta`).
+- **El gasto en sí sigue sin automatizarse** — se queda manual (botones +/-), igual
+  que PG/fatiga hoy.
+- **Gasto de recurso de un NPC durante un combate: escribe sobre `NpcTemplate.stats`
+  en vivo, no sobre el `sheet` congelado de `Combatiente`.** Decisión explícita del
+  usuario (2026-09-22), a sabiendas de que esto rompe el aislamiento que ese snapshot
+  busca a propósito (`master/combate/page.tsx:29-33`: "editar la plantilla después no
+  afecte a un combate en marcha") — si el máster edita la ficha del NPC a mitad de
+  pelea, se mezcla con lo que pasa en el combate. Aceptado sin más: es el máster
+  quien lo tocaría, y el efecto es menor que el de otros campos ya mutables en vivo.
+  Sin problema equivalente para jugadores: un `Combatiente`-jugador nunca lleva
+  `sheet` propio, siempre lee/escribe su `Character.stats` en vivo.
+- Precios de los dos ítems de prueba, decisión del usuario sin base en `EQUIP`
+  (`sistema.md` S17/S18).
+
+**Construido 2026-09-22.** `lib/rules/recursos.ts` (nuevo, funciones puras: capacidad
+por pieza, reconciliación, delta manual, comprar recarga, gasto por modo de disparo),
+`sheet.ts` (`SCHEMA_VERSION` 5→6, migración 5→6 en `migraciones.ts`),
+`equipo.ts` (rules: `equipar()`/`desequipar()` reconcilian; catalog: `tipoMunicion` en
+`ArmaFuego`), `combate.ts` (aviso de insuficiencia en `tiradaDeArmaFuego`),
+`characters/[id]/actions.ts` + `master/npcs/actions.ts` (`ajustarRecursoAction`/
+`comprarRecargaAction` y sus gemelas NPC), `RecursosTab.tsx` (nuevo, compartido entre
+ficha de jugador y editor de NPC). 27 tests nuevos (`recursos.test.ts` + casos en
+`sheet.test.ts`/`migraciones.test.ts`/`combate.test.ts`), 355 en total, lint y
+`tsc --noEmit` limpios. Probado en navegador con cuentas nuevas de jugador y máster:
+auto-poblado al equipar, gasto manual, aviso de insuficiencia en el modal de tirada,
+recarga tipo stock (balas) y tipo tope (batería) por separado, bloqueo por fondos
+insuficientes, y — hallazgo corregido en el propio testing — una pieza YA equipada
+antes de que existiera RECURSOS no se auto-poblaba hasta tocar el equipo; arreglado
+moviendo la reconciliación también a `parseSheet()`, no solo a `equipar()`/
+`desequipar()`, para que cualquier ficha vieja se ponga al día en la primera lectura.
+
+**Fuera de alcance de este primer pase, a propósito:**
+- `ArmaPesada`, `ArmaMelee` y `MunicionGranada` no aportan recurso — solo
+  `ArmaFuego.municion` y `Subsistema.célula`. El Cañón de Plasma y el resto de
+  Armamento Pesado se quedan para una extensión futura si hace falta.
+- El gasto por modo usa la regla genérica confirmada en conversación (sin "F. Auto" =
+  1, con "F. Auto" = `municion` fija), no el dato real por arma que da
+  `equipamiento.md` en algunos casos — la Sydiasi, por ejemplo, documenta "consume 3
+  disparos del cargador por ataque" en automático, no el cargador completo (20). Con
+  la regla genérica se le cobran 20 en vez de 3. Decisión consciente tomada en el
+  diseño (`docs/tareas.md`, "Gasto por disparo" arriba); un barrido pieza a pieza como
+  el de `docs/equipo-efectos-especiales.md` lo afinaría si algún día compensa.
+- No hay ningún atajo de +/- de recursos dentro de la consola de combate
+  (`CombateConsole.tsx`) — el gasto de un NPC en plena pelea se hace desde su propia
+  ficha (`master/npcs/[id]`), abierta aparte, no desde la fila del combatiente. La
+  consola de combate no se tocó en absoluto en esta tarea.
 
 ### Equipo — mecanizar efectos especiales por pieza ⬜ (arrancada 2026-09-11)
 **Hoja de ruta pieza a pieza: `docs/equipo-efectos-especiales.md`.** El catálogo de

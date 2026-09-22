@@ -22,6 +22,7 @@ import {
 } from "../catalog/equipo";
 import { alcanzaA, type ContextoTirada, type ModificadorConFuente } from "./modificadores";
 import type { CondicionTirada } from "./condiciones";
+import { reconciliarRecursos } from "./recursos";
 import type { Sheet } from "./sheet";
 
 export type PiezaEquipada = {
@@ -194,18 +195,18 @@ export function equipar(sheet: Sheet, pieza: PiezaEquipada): Sheet {
     if (!validarInstalacion(sheet, pieza.catalogoId, pieza.instaladoEnId, pieza.nivel).ok) return sheet;
   }
 
-  return { ...sheet, equipo: [...sheet.equipo, pieza] };
+  return reconciliarRecursos({ ...sheet, equipo: [...sheet.equipo, pieza] });
 }
 
 // Quitar una armadura o un arma se lleva también lo que tuviera instalado
 // dentro: un subsistema o una mejora no puede quedar flotando sin dónde vivir.
 export function desequipar(sheet: Sheet, instanciaId: string): Sheet {
-  return {
+  return reconciliarRecursos({
     ...sheet,
     equipo: sheet.equipo.filter(
       (p) => p.instanciaId !== instanciaId && p.instaladoEnId !== instanciaId,
     ),
-  };
+  });
 }
 
 // Precio de una pieza equipada, para la Tienda con créditos (docs/traspaso.md

@@ -76,6 +76,40 @@ describe("parseSheet aguanta cualquier cosa", () => {
       assert.doesNotThrow(() => sheetSchema.parse(parseSheet(c)));
     }
   });
+
+  test("un recurso corrupto se descarta sin tirar el resto por la borda", () => {
+    const s = parseSheet({
+      schemaVersion: SCHEMA_VERSION,
+      // Con una pieza equipada de verdad para "a1" — si no, la reconciliación
+      // de RECURSOS (ver recursos.ts) lo descartaría por huérfano, que es el
+      // comportamiento correcto pero no lo que este test quiere comprobar.
+      equipo: [{ instanciaId: "a1", catalogoId: "pistola_mosquito" }],
+      recursos: [
+        { instanciaId: "a1", actual: 5, max: 7 },
+        { instanciaId: "a1" }, // sin actual/max: inválido
+        { actual: -1, max: 10 }, // sin instanciaId: inválido
+        "basura",
+      ],
+    });
+    assert.deepEqual(s.recursos, [{ instanciaId: "a1", actual: 5, max: 7 }]);
+  });
+
+  test("un recurso huérfano (sin pieza equipada que lo respalde) se limpia solo", () => {
+    const s = parseSheet({
+      schemaVersion: SCHEMA_VERSION,
+      recursos: [{ instanciaId: "ya-no-existe", actual: 3, max: 10 }],
+    });
+    assert.deepEqual(s.recursos, []);
+  });
+
+  test("un arma equipada antes de que existiera RECURSOS se auto-puebla en la primera lectura", () => {
+    const s = parseSheet({
+      schemaVersion: 5,
+      equipo: [{ instanciaId: "vieja", catalogoId: "pistola_mosquito" }],
+      // sin campo `recursos` en absoluto — ficha de antes de v6
+    });
+    assert.deepEqual(s.recursos, [{ instanciaId: "vieja", actual: 7, max: 7 }]);
+  });
 });
 
 describe("versión del esquema", () => {
