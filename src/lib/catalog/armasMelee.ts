@@ -700,16 +700,18 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       // "Aturdimiento (6) · Crítico: Aturdimiento (10)" — funciona igual que el resto.
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      // "Acción Compleja: Derribo (8)" — no es un simple ajuste numérico ni una nota: es una
-      // tirada/estado nuevo ("Derribo") que hoy no existe en el catálogo de 23 estados de
-      // sistema-y-combate.md. Tipo dudoso entre "accion" (genera su propia salvación) y
-      // "numerico" (penalizador si falla) — marcado inconcluso en el informe.
+      // "Acción Compleja: Derribo (8)" — no es un simple ajuste numérico ni una nota: dispara
+      // el estado Derribado, que SÍ existe en el catálogo (estados.ts:312) pero hoy nada en
+      // combate.ts lo conecta a un crítico de arma — corregido 2026-09-24, la auditoría había
+      // marcado el estado como "sin catalogar", que era falso; el hueco real es el trigger.
+      // Tipo dudoso entre "accion" (genera su propia salvación) y "numerico" (penalizador si
+      // falla) — sigue marcado inconcluso.
       {
         tipo: "accion",
         afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
         mecanismo: "accion_equipo",
         estado: "bloqueado",
-        bloqueoPor: "estado Derribo no catalogado (23 estados, sistema-y-combate.md)",
+        bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
       },
     ],
   },
@@ -778,7 +780,7 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
         afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
         mecanismo: "accion_equipo",
         estado: "bloqueado",
-        bloqueoPor: "estado Derribo no catalogado (23 estados, sistema-y-combate.md)",
+        bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
       },
     ],
   },
@@ -806,13 +808,15 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
       // Solo "Crítico: Aturdimiento (12)" — el resto del string se desglosa aparte abajo.
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
       // "Derribo (6)" en modo base y "Derribo (10)" en Compleja: mismo hueco que las otras
-      // Armas Mecánicas (estado sin catalogar), un único efecto con dos valores según el modo.
+      // Armas Mecánicas (falta el trigger al estado Derribado, no el estado en sí — ver
+      // corrección 2026-09-24 más abajo en el archivo), un único efecto con dos valores según
+      // el modo.
       {
         tipo: "accion",
         afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
         mecanismo: "accion_equipo",
         estado: "bloqueado",
-        bloqueoPor: "estado Derribo no catalogado (23 estados, sistema-y-combate.md)",
+        bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
       },
       // "Doble daño contra puertas, muros y estructuras" — no hay concepto de "objetivo
       // estructura" en el motor (todo objetivo es un Combatiente). Sin acción a la que apuntar
@@ -947,7 +951,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
         mecanismo: "accion_equipo",
         estado: "bloqueado",
-        bloqueoPor: "estado Derribo no catalogado (23 estados, sistema-y-combate.md)",
+        bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
       },
       {
         tipo: "numerico",
@@ -996,7 +1000,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
         mecanismo: "accion_equipo",
         estado: "bloqueado",
-        bloqueoPor: "estado Derribo no catalogado (23 estados, sistema-y-combate.md)",
+        bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
       },
       {
         tipo: "numerico",
@@ -1045,7 +1049,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
         mecanismo: "accion_equipo",
         estado: "bloqueado",
-        bloqueoPor: "estado Derribo no catalogado (23 estados, sistema-y-combate.md)",
+        bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
       },
       {
         tipo: "numerico",
@@ -1178,7 +1182,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
         mecanismo: "accion_equipo",
         estado: "bloqueado",
-        bloqueoPor: "estado Derribo no catalogado (23 estados, sistema-y-combate.md)",
+        bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
       },
       {
         tipo: "numerico",
@@ -1265,7 +1269,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
         mecanismo: "accion_equipo",
         estado: "bloqueado",
-        bloqueoPor: "estado Derribo no catalogado (23 estados, sistema-y-combate.md)",
+        bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
       },
       {
         tipo: "numerico",
