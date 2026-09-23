@@ -3,9 +3,10 @@ import assert from "node:assert/strict";
 import { defaultSheet } from "./sheet";
 import { equipar } from "./equipo";
 import { ajustarRecurso } from "./recursos";
-import { tiradasDeAtaque } from "./combate";
+import { tiradasDeAtaque, generaAccionPropia } from "./combate";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
+import type { MotorMetadata } from "./motor";
 
 function opcion(c: CondicionTirada | undefined, id: string) {
   assert.ok(c && c.tipo === "opcion", "no es una condición de opción");
@@ -357,4 +358,68 @@ describe("REGISTRO_DE_ATAQUE (combate.ts) cubre exactamente las familias esperad
       assert.deepEqual(tiradasDeAtaque(sheet), []);
     });
   }
+});
+
+// T6 (artifact de escalabilidad): generaAccionPropia() es lo que hace que
+// tiradasDeAtaque() consulte MotorMetadata además del registro por familia.
+// No hay ninguna pieza real hoy en arma/armaMelee/armaPesada/granada cuya
+// ÚNICA entrada "accion"/"accion_equipo" sea pendiente/bloqueada (todas
+// tienen al menos una construida para su acción principal) — se prueba la
+// función pura en aislado, con piezas sintéticas, en vez de depender de que
+// el catálogo real tenga un caso así.
+describe("generaAccionPropia() — el filtro de T6", () => {
+  function piezaCon(motor: MotorMetadata[]): Equipo {
+    return { familia: "arma", motor } as unknown as Equipo;
+  }
+
+  test("con una entrada accion/accion_equipo construida, genera", () => {
+    const pieza = piezaCon([
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "x" }, mecanismo: "accion_equipo", estado: "construido" },
+    ]);
+    assert.equal(generaAccionPropia(pieza), true);
+  });
+
+  test("con esa misma entrada en 'pendiente', no genera", () => {
+    const pieza = piezaCon([
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "x" }, mecanismo: "accion_equipo", estado: "pendiente" },
+    ]);
+    assert.equal(generaAccionPropia(pieza), false);
+  });
+
+  test("con esa misma entrada en 'bloqueado', no genera", () => {
+    const pieza = piezaCon([
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "x" },
+        mecanismo: "accion_equipo",
+        estado: "bloqueado",
+        bloqueoPor: "pregunta de prueba",
+      },
+    ]);
+    assert.equal(generaAccionPropia(pieza), false);
+  });
+
+  test("sin ninguna entrada accion/accion_equipo, no genera", () => {
+    const pieza = piezaCon([{ tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" }]);
+    assert.equal(generaAccionPropia(pieza), false);
+  });
+
+  test("sin motor en absoluto (undefined), no genera y no revienta", () => {
+    const pieza = { familia: "arma" } as unknown as Equipo;
+    assert.equal(generaAccionPropia(pieza), false);
+  });
+
+  test("una construida y otra bloqueada a la vez (patrón Kerzul/Armas Mecánicas) — basta con que una lo esté", () => {
+    const pieza = piezaCon([
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
+      {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
+        mecanismo: "accion_equipo",
+        estado: "bloqueado",
+        bloqueoPor: "pregunta de prueba",
+      },
+    ]);
+    assert.equal(generaAccionPropia(pieza), true);
+  });
 });

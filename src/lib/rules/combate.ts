@@ -389,7 +389,7 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
 // familias sin niveles (arma/armaMelee/armaPesada/granada, exactamente las
 // que vive este registro) — el cast a `{ motor?: ... }` es seguro aquí por
 // el mismo motivo que el cast a la familia concreta dentro de cada wrapper.
-function generaAccionPropia(cat: Equipo): boolean {
+export function generaAccionPropia(cat: Equipo): boolean {
   const motor = (cat as { motor?: MotorMetadata[] }).motor ?? [];
   return motor.some((m) => m.tipo === "accion" && m.mecanismo === "accion_equipo" && m.estado === "construido");
 }
