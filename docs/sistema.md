@@ -516,7 +516,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | ~~S1~~ | ~~El coste de una habilidad es lineal, igual que en atributos: subirla a N cuesta N puntos.~~ **Superado por `HOJA2`**: el coste es por nivel (Atributos N×2, Habilidades N×1, Psiónica N×3), no un total plano — ver "Coste y progresión", sección 2. | Se queda aquí tachado como rastro: así se ve qué regla vieja sustituyó `HOJA2` y por qué. |
 | S2 | Una habilidad **no puede valer 0**: o está sin entrenar (−1) o vale 1 como mínimo. | `HOJA` solo contempla "no entrenada = −1" y valores entrenados. El 0 no aparece. |
 | S3 | Al entrenar, la **primera especialidad va incluida**; a partir de la segunda cuesta 1 punto. | `HOJA` dice que al entrenar "se debe escoger una especialidad" y que "una segunda especialidad tiene de coste 1 punto". |
-| S4 | Tope de **3 especialidades** por habilidad. | No hay tope escrito; se pone uno para que la UI no crezca sin fin. |
+| S4 | Tope de **3 especialidades** por habilidad. | **Murillo (2026-09-23) confirma que las reglas no ponen tope, solo el coste en experiencia.** Se mantiene el 3 igualmente, como límite de interfaz deliberado (decisión del usuario, 2026-09-23: la diferencia es menor, no compensa tocarlo ahora) — ya no es un hueco de regla, es UX. |
 | S5 | Las especialidades son **texto libre**. | No existe catálogo todavía. Cuando llegue, se cambia a lista cerrada. |
 | ~~S6~~ | ~~El movimiento no baja de 0.~~ **Superado (Murillo, 2026-09-23):** el salto vertical tiene mínimo **15 cm**, no 0; el resto de fórmulas de movimiento sigue cortándose en 0 (no preguntado, no respondido). | Se queda aquí tachado como rastro — igual que S1. |
 | S7 | En creación el tope es **4** tanto en atributos como en habilidades; 6 es el techo del sistema, alcanzable en partida con puntos que reparte el máster. | `HOJA2` sube el "4/5" y "3/5" de `HOJA` a "4/6" en los dos, unificando el máximo de creación. La partición 4-creación/6-techo la confirma el usuario (2026-09-10); falta que Murillo la valide con una fórmula de progresión concreta. |
@@ -543,7 +543,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | C5 | `COMBATE` nombra **Resiliencia** (resistencia al shock en sintéticos) y **Estructura** (en equipamiento) como puntuaciones de salvación. Ninguna está entre los 6 aplicados de `HOJA`. ¿Son atributos de PNJ/objeto y no de PJ? | Sin resolver |
 | C6 | `EQUIP` habla de daño **agravado**; `COMBATE` define solo no letal, letal y grave. Probablemente "agravado" sea el nombre viejo de "grave". | Sin resolver |
 | C7 | `COMBATE` usa **Potencia + Atletismo** para levantarse de un derribo y **Fortaleza o Potencia + Atletismo** para escapar de un agarre: confirma que el par atributo-habilidad es libre, pero no hay tabla de pares canónicos. | Informativo |
-| C8 | **La notación de las tiradas mezcla habilidades y especialidades sin avisar.** Los documentos escriben tanto `Perspicacia + Biociencia (Medicina)` —forma larga y correcta— como `Perspicacia + Medicina` a secas, y lo mismo con Empatía, Manipulación y Bioquímica. De 12 pares distintos, **4 usan el nombre de una especialidad como si fuera la habilidad**. No es cosmético: decide si la habilidad cuenta entera o a la mitad. | Sin resolver |
+| C8 | ~~**La notación de las tiradas mezcla habilidades y especialidades sin avisar.** Los documentos escriben tanto `Perspicacia + Biociencia (Medicina)` —forma larga y correcta— como `Perspicacia + Medicina` a secas, y lo mismo con Empatía, Manipulación y Bioquímica. De 12 pares distintos, **4 usan el nombre de una especialidad como si fuera la habilidad**. No es cosmético: decide si la habilidad cuenta entera o a la mitad.~~ | **Resuelto (Murillo, 2026-09-23):** la forma corta es siempre una especialidad de la habilidad aplicada — la escogida cuenta entera, la no escogida a la mitad. Ver pregunta 26. |
 | C9 | **Una casilla no tiene medida.** El movimiento se calcula en metros (`carrera = 15 + Potencia + Atletismo`), pero las penalizaciones por herida dicen "solo una casilla por turno" y las áreas de las armas van en casillas (6x6, 8x8). Sin la equivalencia metros/casilla, las dos escalas no se pueden conectar. | Sin resolver |
 | C10 | **"Niveles" de fatiga contra "puntos" de fatiga.** La salud define **puntos** (8 + Voluntad) y dos estados (Fatigado, Exhausto), pero los fármacos hablan de "consume 2 **niveles** de fatiga" y de "ignorar el primer **nivel** de fatiga acumulada". ¿Un nivel es un punto, o es un estado? | Sin resolver |
 | C11 | **La escala de daño y la de vida no encajan del todo.** Las armas hacen de 7 a 20 de daño (mediana 12), los personajes tienen entre 6 y 16 puntos de golpe y los blindajes absorben de 1 a 8. Un fusil corriente (10) contra armadura ligera (4) se lleva 6 puntos: media vida de un PJ típico, antes de sumar +1 por cada dos éxitos. Puede ser letalidad buscada, pero conviene confirmar que **el daño del arma se resta 1:1 de los puntos de golpe**. | Sin resolver |
@@ -557,8 +557,16 @@ Agrupadas para soltarlas en tandas. Se tachan según lleguen respuestas.
 **Sobre la ficha ya implementada** (cada una valida o tumba un supuesto)
 1. ~~"Máxima puntuación 4/5" y "3/5"~~ **`HOJA2` los sube a "4/6" en los dos** (antes eran distintos entre sí). ~~Sigue abierto si el 4 es de creación y el 6 techo del sistema, o el 6 se alcanza de otra forma.~~ **Resuelta (usuario, 2026-09-10):** el 4 es el tope de creación; el 6 se alcanza en partida, con puntos adicionales que el máster reparte durante la aventura. *(S7)*
 2. ~~¿Los atributos aplicados tienen tope propio, o son libremente la suma?~~ **Resuelta (usuario, 2026-09-10):** es una media, no una suma — ya implementado así (ver S11). No hay tope propio aparte del redondeo.
-3. Catálogo de especialidades de cada una de las 10 habilidades. *(S5)*
-4. ¿Cuántas especialidades puede tener una habilidad como máximo? *(S4)*
+3. Catálogo de especialidades de cada una de las 10 habilidades. *(S5)* — **Parcialmente
+respondida (Murillo, 2026-09-23): "existe el catálogo de las especialidades: están
+descritas pero no desarrolladas."** Confirma que hay un catálogo en camino, pero no
+entrega la lista — sigue sin haber nada concreto que transcribir. Sin cambio de producto,
+`S5` sigue en pie.
+4. ~~¿Cuántas especialidades puede tener una habilidad como máximo?~~ **Resuelta
+(Murillo, 2026-09-23): sin límite, siempre que se pague la experiencia pertinente** ("que
+no es demasiada"). **Decisión de producto (2026-09-23, el usuario): se deja el tope de 3
+que ya tiene la app (`S4`) — la diferencia es menor y no compensa el cambio ahora mismo.**
+`S4` queda marcado como límite de interfaz deliberado, no como límite de las reglas.
 5. ~~¿Cuánto cuesta subir una habilidad?~~ **Resuelta por `HOJA2`:** Nivel × 1 (Atributos Nivel × 2, Psiónica Nivel × 3) — ver "Coste y progresión", sección 2. *(S1, tachado)*
 6. ~~Un personaje recién creado tiene salto vertical **negativo** con las fórmulas tal cual (Potencia 0 + Atletismo −1 → −10 cm). ¿Se corta en 0, hay un mínimo, o Atletismo no entrenado cuenta como 0 aquí?~~ **Resuelta (Murillo, 2026-09-23):** el mínimo es **15 cm**, no 0 — "otra errata del documento". Implementado en `derivados.ts` (`Math.max(15, 15 * base)`), test actualizado en `derivados.test.ts`. *(S6, tachado; S8 sigue en pie)*
 
@@ -567,9 +575,15 @@ Agrupadas para soltarlas en tandas. Se tachan según lleguen respuestas.
 8. ~~Ranuras: ¿las mejoras de arma se limitan solo por la columna "Mejoras" de cada arma?~~ **Resuelta (usuario, 2026-09-10):** sí, se valida solo el número de esa columna, sin restricción adicional por tipo de mejora.
 8b. Los efectos de nivel de una mejora estándar o subsistema, ¿se acumulan al subir de nivel o
 cada nivel sustituye entero al anterior? *(S9)*
-8c. El bono de Fuerza del Exoesqueleto se duplica para "carga transportable y proezas de
+8c. ~~El bono de Fuerza del Exoesqueleto se duplica para "carga transportable y proezas de
 fuerza": ¿cuenta el movimiento entero (Carrera, Saltos, Escalada, Nado) como "proeza de
-fuerza", o solo alguna de esas cinco fórmulas? *(S10)*
+fuerza", o solo alguna de esas cinco fórmulas?~~ **Parcialmente resuelta (Murillo,
+2026-09-23):** "Duplica la fuerza que él mismo otorga, en carga transportable y proezas de
+fuerza" — confirma que lo que se duplica es **solo el bono que el propio exoesqueleto da**,
+no la Fuerza entera del personaje, que es como ya lo implementa `bonoFuerzaExoesqueleto()`
+(`derivados.ts`) — nada que cambiar ahí. Sigue sin decir si las cinco fórmulas de
+movimiento cuentan todas igual como "proeza de fuerza", o solo alguna. *(S10, sigue en pie
+en esa parte)*
 8d. Las Armaduras Avanzadas (Ultra Ligero, Ligera, Intermedia y Pesada Avanzadas): a
 diferencia de sus versiones base — que repiten cada una, explícitas, el "+1 en tiradas de
 salvación contra efectos de congelación y llamarada" — el párrafo de las Avanzadas no lo
@@ -603,23 +617,19 @@ sospecha que también contra eléctrico, 2026-09-12)? Pendiente de confirmar con
 23. ~~¿La app debe llevar la cuenta de PG y fatiga actuales en partida, con sus estados de herida, o eso se lleva en mesa?~~ **Resuelta (usuario, 2026-09-10): en vivo.** La app lleva PG y fatiga en partida — confirma lo ya apuntado en `docs/traspaso.md` §9 (fase 6b). Es la decisión que determina que la ficha pasa a guardar estado mutable además de la creación.
 24. ~~Si se lleva en la app: ¿se registra el daño por categoría (no letal / letal / grave)?~~ **Resuelta: sí.** "Grave" ya es categoría documentada (`COMBATE`, ver también la línea 278 de este documento); las tres categorías se registran por separado.
 25. **Resiliencia** y **Estructura**: ¿son puntuaciones de PNJ y equipo, o algún personaje jugador (un sintético) puede tenerlas? *(C5)*
-25b. Varias armas de fuego llevan un penalizador propio "al sigilo" al dispararlas
+25b. ~~Varias armas de fuego llevan un penalizador propio "al sigilo" al dispararlas
 (p. ej. Rayo Ligero y Plasma SD/SC/etc.: "-6 al sigilo, solo percepción visual"; el
 Silenciador da a entender que el disparo normal ya trae un penalizador implícito,
-"reduce a -2" sin decir a cuánto). `COMBATE` (`docs/sistema-y-combate.md` §"Ataque
-furtivo y sorpresivo") sí explica el flujo general — el objetivo, tras el primer
-ataque, gana una reacción gratuita de Perspicacia + Exploración para descubrir al
-atacante, y esa tirada **"solo cuenta factores sensoriales... no la tirada de sigilo
-del atacante"** — pero el Silenciador liga su bonificador explícitamente a "ataques
-sorpresivos con el arma", lo que sugiere que el penalizador de sigilo del arma SÍ
-debería entrar en juego ahí de alguna forma. Las dos frases no encajan del todo: ¿hay
-una tirada de sigilo distinta (una comprobación más genérica de "sigo oculto", aparte
-de la reacción específica tras el primer disparo) a la que se aplica el penalizador
-del arma? `COMBATE` tampoco está todavía consolidado en este documento (sigue solo en
-`sistema-y-combate.md`, sin pasar por el filtro `FIRME`/`INFERIDO` de aquí), así que
-puede que sea justo la pieza que falta por escribir. Detectado por el usuario
-(2026-09-12) al preguntar cómo funciona la secuencia completa de disparar estando
-oculto; sin resolver.
+"reduce a -2" sin decir a cuánto). ¿A qué tirada concreta se resta?~~ **Resuelta
+(Murillo, 2026-09-23):** el penalizador se aplica **justo después de resolver el
+ataque**, a la reacción de detección de los observadores (Perspicacia + Exploración)
+— no a una tirada propia del atacante. Encaja con el flujo que ya describe `COMBATE`
+(§"Ataque furtivo y sorpresivo"). **Decisión de producto (2026-09-23, el usuario):**
+aunque es mecanizable como aviso `objetivo_tercero` colgado de la propia tirada de
+disparo, **no se construye** — saldría en casi toda arma de fuego del catálogo y
+sobrecargaría la UI de avisos por poco beneficio. Se queda como texto en la
+descripción del arma, sin aviso automático (`MotorMetadata` de las piezas afectadas
+pasa de `bloqueado` a `pendiente`, `armasFuego.ts` + Silenciador en `mejorasArma.ts`).
 
 **Modelo propuesto por el usuario (2026-09-12), pendiente de validar con el
 diseñador, no implementar todavía:** el sigilo no se re-tira en cada instante —
@@ -637,7 +647,7 @@ el descuento por arma se resta automáticamente al disparar o es el máster quie
 lo anota a mano.
 
 **Incongruencias entre documentos, para la misma tanda de preguntas**
-26. Cuando el sistema dice "Perspicacia + Medicina", ¿quiere decir Biociencia usando la especialidad Medicina? Lo mismo con Empatía, Manipulación y Bioquímica. Es lo que decide si la habilidad cuenta entera o a la mitad. *(C8)* — Nota (usuario, 2026-09-10): depende del catálogo de especialidades, que aún está por definir (pregunta 3); no hay mucho en los documentos que hable de ellas todavía. Sigue abierta, ligada a esa.
+26. ~~Cuando el sistema dice "Perspicacia + Medicina", ¿quiere decir Biociencia usando la especialidad Medicina? Lo mismo con Empatía, Manipulación y Bioquímica. Es lo que decide si la habilidad cuenta entera o a la mitad.~~ *(C8)* **Resuelta (Murillo, 2026-09-23):** sí — es una especialidad de Biociencia: "la escogida suma el total de puntos, la no escogida la mitad". Confirma el criterio general para cualquier caso de "Aplicado + nombre de especialidad" a secas en los documentos (Empatía, Manipulación y Bioquímica incluidas), sin cambio de comportamiento — así es como ya lo calcula el motor.
 27. ¿Cuántos metros mide una casilla? *(C9)*
 28. Un "nivel de fatiga", ¿es un punto de fatiga o un estado (Fatigado/Exhausto)? *(C10)*
 29. El daño de un arma, ¿se resta 1:1 de los puntos de golpe tras el blindaje? Con armas de 7 a 20 y personajes de 6 a 16 puntos, un disparo corriente se lleva media vida. *(C11)* — **Confirmado 2026-09-21 (repaso de efectos especiales de equipo, Hallazgo #5 de `docs/equipo-efectos-especiales.md`): `blindaje` no aparece ni una vez en `src/lib/rules/`, no hay ningún cálculo de absorción implementado.** Bloquea Mejora Ignífuga, Polímero Anticorrosivo/Tejido Conductor nivel 2, y una propuesta de tirada "Bloquear daño" (mostrar cuánto se absorbe de un impacto dado).

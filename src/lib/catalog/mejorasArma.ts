@@ -235,11 +235,13 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // Fija un penalizador a un valor concreto en vez de sumar un bono
         // propio: no encaja como modificador simple de "+N".
         modificadores: [],
-        // Mismo bloqueo que el sigilo de las armas de plasma: sin saber a qué
-        // tirada concreta resta el "penalizador habitual" (pregunta 25b), no
-        // se puede fijar esto a -2 de algo que no existe todavía como número.
+        // Pregunta 25b resuelta (Murillo, 2026-09-23): mismo caso que el
+        // sigilo de las armas de fuego (armasFuego.ts) — afecta a la
+        // reacción de detección de los observadores, no a una tirada propia.
+        // Decisión de producto: no avisarlo en la UI para no sobrecargarla
+        // (se repetiría en casi toda arma de fuego); se queda en texto.
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 25b" },
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
         ],
       },
     ],
