@@ -65,17 +65,17 @@ export function ContenidoResultado({
 
   return (
     <>
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="truncate font-display text-sm font-semibold uppercase tracking-wide">
-          {resultado.label}
-        </span>
-        <span className={`font-mono text-[11px] uppercase tracking-widest ${tono}`}>
-          {veredicto}
-        </span>
-      </div>
+      {/* Sin el label aquí a propósito (2026-09-24): el único sitio que pinta
+          esto es AccionModal, y su propio <h2> ya lleva el nombre de la
+          tirada justo encima — repetirlo aquí (encima truncado, "Golpear con
+          Proyector de Pulso (A...") era ruido, no información. El veredicto
+          se queda, pero ya no comparte fila con nada. */}
+      <span className={`font-mono text-[11px] uppercase tracking-widest ${tono}`}>
+        {veredicto}
+      </span>
 
       <div className="mt-2 flex items-baseline gap-3">
-        <span className={`font-display text-5xl font-bold tabular-nums ${tono}`}>
+        <span className={`font-display text-6xl font-bold tabular-nums ${tono}`}>
           {resultado.total}
         </span>
         <span className="font-mono text-xs leading-tight text-muted">
