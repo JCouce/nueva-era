@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import {
   TIRADAS,
   GRUPOS_TIRADA,
@@ -231,14 +231,40 @@ export function TiradasTab({
   // repitiendo una pasada completa de sheet.equipo cada vez (docs/motor.md,
   // "Escalabilidad para las fases que vienen"). El índice se construye una
   // sola vez aquí y cada tirada solo consulta (T2).
-  const indiceCondiciones = indiceDeCondiciones(sheet);
+  //
+  // T3: todo esto se recalculaba en CADA render del componente, sea cual sea
+  // la causa — incluidos cambios de atributos/habilidades que no tocan el
+  // equipo para nada, porque `sheet` cambia de referencia entera en
+  // CharacterSheet.tsx con cualquier setSheet(...) (spread). indiceDeCondiciones()
+  // solo lee sheet.equipo (verificado, ningún otro campo) — se memoiza aparte
+  // porque también la usa la lista de tiradas fijas más abajo, no solo
+  // ataques/herramientas.
+  // Deps a propósito: solo sheet.equipo importa aquí, no sheet entero (ver
+  // comentario de arriba).
+  const indiceCondiciones = useMemo(
+    () => indiceDeCondiciones(sheet),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sheet.equipo],
+  );
   const conCondicionesDeEquipo = (t: Tirada): Tirada => {
     const extra = consultaIndiceCondiciones(indiceCondiciones, { id: t.id, grupo: t.grupo, habilidad: t.habilidad, modoElegido: null });
     return extra.length > 0 ? { ...t, condiciones: [...(t.condiciones ?? []), ...extra] } : t;
   };
 
-  const ataques = tiradasDeAtaque(sheet).map(conCondicionesDeEquipo);
-  const herramientas = tiradasDeHerramientas(sheet).map(conCondicionesDeEquipo);
+  // Igual que arriba: tiradasDeAtaque()/tiradasDeHerramientas() solo leen
+  // sheet.equipo, salvo tiradaDeArmaFuego (dentro de tiradasDeAtaque), que
+  // además lee sheet.recursos vía recursoDe() para el aviso de munición
+  // insuficiente — sin esa segunda dependencia, gastar/recargar munición no
+  // invalidaría el aviso. conCondicionesDeEquipo no entra en las deps: su
+  // comportamiento depende solo de indiceCondiciones, que ya está.
+  const { ataques, herramientas } = useMemo(
+    () => ({
+      ataques: tiradasDeAtaque(sheet).map(conCondicionesDeEquipo),
+      herramientas: tiradasDeHerramientas(sheet).map(conCondicionesDeEquipo),
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sheet.equipo, sheet.recursos, indiceCondiciones],
+  );
 
   const abrir = (t: Tirada, enEspecialidad: boolean) => {
     const mod = modificadorTirada(sheet, t, enEspecialidad, mods);
