@@ -305,11 +305,11 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      `main` hecho hasta el commit de los quick-wins y el fix de rendimiento —
      el commit del §8 pendiente de que el usuario pida el push.
 
-2. **Preguntas para Murillo, ya redactadas, listas para soltar en tanda — coste es
-   enviarlas, no construir nada:** preguntas 31 (Bloqueo del Mangual), 32
-   ("susceptible a shock"/"apagón" sin definir), 33 (Canal de Alta Resonancia,
-   %→+N) en `docs/sistema.md`. Ver "Preguntas al diseñador" al final de este
-   documento para la lista completa por impacto, con la 29 (blindaje) incluida.
+2. **Tanda de respuestas de Murillo recibida y procesada (2026-09-23).** Ver
+   "Preguntas al diseñador" al final de este documento — la mayoría se resolvió
+   (algunas con cambio de código: salto vertical, Proyector de Pulso construido
+   entero); 31 (Bloqueo), 32 (shock/apagón), 8d (armaduras avanzadas) y 29
+   (blindaje) siguen sin respuesta, son las que más bloquean ahora.
 
 3. **Diseño pendiente que bloquea construcción real:**
    - **Hallazgo #5 — absorción de daño por blindaje** (prioridad alta, el usuario
@@ -404,16 +404,24 @@ con la ficha. No se diseña hasta que 6a y 6b estén cerradas.
 
 ## Preguntas al diseñador
 
-Las 33 preguntas completas, numeradas, viven en `docs/sistema.md` → "Preguntas abiertas
-para el diseñador". Por impacto:
+Las preguntas completas, numeradas, viven en `docs/sistema.md` → "Preguntas abiertas
+para el diseñador".
 
-1. **Notación de las tiradas** (`C8`): si "Perspicacia + Medicina" significa Biociencia
-   con la especialidad Medicina, cambia el cálculo de media docena de tiradas.
-2. **Capacidad de carga** (pregunta 26, parcialmente resuelta — ver Fase 3 y los
-   penalizadores pendientes arriba).
-3. **Especies, poderes, dotes y aumentos**: fases enteras esperando a que el diseñador las
+**Tanda de respuestas de Murillo, 2026-09-23** — la mayoría de lo que llevaba tiempo
+abierto se resolvió (especialidades, tabla canónica de acciones, sigilo al disparar,
+metros/casilla, nivel de fatiga, psiónica/hackeo, exoesqueleto, Proyector de Pulso ya
+construido). **Lo que sigue sin respuesta, y es lo que más bloquea:**
+
+1. **Absorción de daño por blindaje** (pregunta 29/`C11`, prioridad alta marcada por el
+   usuario): sin fórmula, sigue bloqueando el Hallazgo #5 completo
+   (`docs/equipo-efectos-especiales.md`) — Mejora Ignífuga, Anticorrosivo, Tejido
+   Conductor, y cualquier futuro poder que ignore niveles de daño.
+2. **Armaduras Avanzadas y el +1 de salvación** (pregunta 8d): ¿lo mantienen, lo pierden,
+   o ganan otro? Bloquea 10 piezas de `armaduras.ts`.
+3. **"Susceptible a shock"/"apagón"** (pregunta 32): 3 piezas en `mejorasEstandar.ts`.
+4. **"Bloqueo" del Mangual** (pregunta 31): 1 pieza en `armasMelee.ts`.
+5. **Defensa de un sistema, fija o enfrentada** (pregunta 16, hackeo/psiónica): sin
+   efecto en la app todavía (Fase 5 sigue bloqueada por el diseñador), pero cierra el
+   diseño de esa sección en cuanto llegue.
+6. **Especies, poderes, dotes y aumentos**: fases enteras esperando a que el diseñador las
    escriba.
-4. **Absorción de daño por blindaje** (pregunta 29/`C11`, añadido 2026-09-22): sin
-   fórmula, bloquea el Hallazgo #5 completo (`docs/equipo-efectos-especiales.md`) —
-   Mejora Ignífuga, Anticorrosivo, Tejido Conductor, y cualquier futuro poder que
-   ignore niveles de daño. El propio usuario la marca prioridad alta.

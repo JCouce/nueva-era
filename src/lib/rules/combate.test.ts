@@ -293,6 +293,95 @@ describe("armamento pesado equipado", () => {
   });
 });
 
+describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () => {
+  function conProyectorPulso(nivel: number) {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "a1", catalogoId: "armadura_pesada" });
+    sheet = equipar(sheet, {
+      instanciaId: "pp1",
+      catalogoId: "proyector_pulso",
+      nivel,
+      instaladoEnId: "a1",
+    });
+    return sheet;
+  }
+
+  test("genera dos filas gemelas, una por habilidad elegible", () => {
+    const sheet = conProyectorPulso(1);
+    const labels = accionesDeAtaque(sheet)
+      .map((t) => t.label)
+      .filter((l) => l.includes("Proyector de Pulso"));
+    assert.deepEqual(labels, [
+      "Disparar Proyector de Pulso (Combate a Distancia)",
+      "Disparar Proyector de Pulso (Tecnociencia)",
+    ]);
+  });
+
+  test("las dos filas usan Reflejos, cada una con su propia habilidad", () => {
+    const sheet = conProyectorPulso(1);
+    const filas = accionesDeAtaque(sheet).filter((t) => t.label.includes("Proyector de Pulso"));
+    assert.deepEqual(
+      filas.map((f) => [f.aplicado, f.habilidad]),
+      [
+        ["reflejos", "combate_distancia"],
+        ["reflejos", "tecnociencia"],
+      ],
+    );
+  });
+
+  test("el daño y el modo de disparo escalan con el nivel instalado", () => {
+    const fila = accionesDeAtaque(conProyectorPulso(2)).find((t) =>
+      t.label.includes("Combate a Distancia"),
+    )!;
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso")?.danio, 10); // 8 + 2
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso_cargado")?.danio, 13); // 11 + 2
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "barrido")?.danio, 12); // 10 + 2
+    const modo = fila.condiciones?.find((c) => c.id === "modo");
+    assert.equal(opcion(modo, "pulso"), -2);
+    assert.equal(opcion(modo, "pulso_cargado"), -2);
+    assert.equal(opcion(modo, "barrido"), -3);
+    assert.equal(opcion(modo, "aguijon"), 0);
+  });
+
+  test("Aguijón es melee: sin daño numérico, fórmula con Fuerza + nivel", () => {
+    const fila = accionesDeAtaque(conProyectorPulso(3)).find((t) => t.label.includes("Tecnociencia"))!;
+    const aguijon = fila.ataque?.modos.find((m) => m.id === "aguijon");
+    assert.equal(aguijon?.danio, null);
+    assert.equal(aguijon?.formulaDanio, "Fue+5"); // 2 + nivel(3)
+  });
+
+  test("con nivel 1 la nota no menciona ninguna variante de crítico desbloqueada", () => {
+    const fila = accionesDeAtaque(conProyectorPulso(1)).find((t) => t.label.includes("Combate a Distancia"))!;
+    assert.doesNotMatch(fila.nota ?? "", /Nivel 2|Nivel 3|Nivel 4/);
+  });
+
+  test("con nivel 4 la nota lista las tres variantes de crítico desbloqueadas", () => {
+    const fila = accionesDeAtaque(conProyectorPulso(4)).find((t) => t.label.includes("Combate a Distancia"))!;
+    assert.match(fila.nota ?? "", /Nivel 2: crítico alternativo Envenenamiento por Radiación \(dificultad 12\)/);
+    assert.match(fila.nota ?? "", /Nivel 3: crítico alternativo Ceguera \(dificultad 12\)/);
+    assert.match(fila.nota ?? "", /Nivel 4: el Shock sube \+1/);
+  });
+
+  test("con las cargas del catálogo (10) nunca avisa de insuficiencia recién equipado", () => {
+    const fila = accionesDeAtaque(conProyectorPulso(1)).find((t) => t.label.includes("Combate a Distancia"))!;
+    const modo = fila.condiciones?.find((c) => c.id === "modo");
+    assert.ok(modo && modo.tipo === "opcion");
+    for (const o of modo.opciones) assert.equal(o.nota, undefined);
+  });
+
+  test("un subsistema sin acción propia construida (Camuflaje Trifásico) no genera ninguna fila", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "a1", catalogoId: "armadura_pesada" });
+    sheet = equipar(sheet, {
+      instanciaId: "ct1",
+      catalogoId: "camuflaje_trifasico",
+      nivel: 1,
+      instaladoEnId: "a1",
+    });
+    assert.deepEqual(accionesDeAtaque(sheet), []);
+  });
+});
+
 describe("granada equipada", () => {
   test("genera 'Lanzar...' con Potencia + Atletismo y la dificultad de lanzarla a mano", () => {
     let sheet = defaultSheet();

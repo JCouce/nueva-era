@@ -17,41 +17,38 @@ Revisando pieza a pieza contra el código real (no solo contra el PDF) aparecier
 cosas más grandes que "falta el efecto especial" — no son parte del barrido en sí,
 mejor tratarlas aparte:
 
-1. **El Proyector de Pulso no genera ninguna tirada de ataque — y no es el único
-   subsistema con este problema.** Es un `Subsistema` (`catalog/equipo.ts`), y
-   `combate.ts` (`tiradasDeAtaque`) solo recorre `arma`/`armaMelee`/`armaPesada`/
-   `granada` — un subsistema instalado nunca aparece en la tab Tiradas. Sus 4 modos
-   de ataque (Pulso, Pulso Cargado, Barrido, Aguijón) están descritos en
-   `modos[].descripcion` como texto, no como `Tirada`. Esto es más grande que "añadir
-   un efecto de crítico": falta la tirada entera. **Ampliado 2026-09-23**: la
-   "detonación de pulso térmico" de Malla Plasmática nivel 2 (área 6x6, esquiva,
-   shock+llamarada, fusión) es el mismo problema exacto — ya no es "la única pieza
-   así". Candidato a su propia subtarea si se decide que merece la pena, cubriendo
-   las dos piezas a la vez.
-   **Desglosado del todo 2026-09-23 (pregunta del usuario): deja de ser "hueco de
-   arquitectura sin mapear" — es un arma con nombre de subsistema.** La tabla de
-   modos (`equipamiento.md:398-403`) es calcada a las de `ArmaFuego`. Tres matices
-   concretos que una copia directa no resuelve:
-   - **Aguijón es un modo melee dentro de un arma a distancia** — fórmula de daño
-     "2+Fuerza+Nivel" (no constante), alcance "Melee", etiqueta "Sutil": forma de
-     `ArmaMelee`, no de `ArmaFuego`. Hoy `ArmaFuego` es siempre
-     `aplicado: "reflejos"` / `habilidad: "combate_distancia"` fijo — no hay
-     precedente de un arma con modos mixtos melee+distancia.
-   - **"Puede operarse con Tecnociencia en lugar de Combate a Distancia (mismo
-     atributo Reflejos)"** — elección de HABILIDAD, no de atributo (Sutil ya
-     resuelve "elige atributo"; esto es "elige habilidad", sin precedente hoy).
-   - **Los "Modo Adicional" de nivel 2/3/4 (Envenenamiento por Radiación / Ceguera /
-     Shock+1 y destruye blindaje) probablemente son excluyentes entre sí** (cada
-     uno sustituye "el efecto crítico convencional"), pero el documento no dice
-     "elige" explícitamente — **❓ VERIFICAR** antes de mecanizar como
-     `CondicionTirada` tipo opción.
-   - Confirmado, sin ambigüedad: cada modo consume cargas de una célula compartida
-     (Pulso 1, Pulso Cargado 4, Barrido 5, Aguijón 1) — va directo a RECURSOS. El
-     "-5 al sigilo al usar cualquier modo" (nivel 1) es el mismo patrón ya pendiente
-     en la pregunta 25b (sigilo de armas de fuego).
-   - Nivel 4, crítico "destruye 1 punto de blindaje del objetivo" — mismo patrón que
-     Impacto Estructural de Kerzul: aviso, el máster lo anota a mano, la app no lo
-     aplica sola.
+1. ~~**El Proyector de Pulso no genera ninguna tirada de ataque — y no es el único
+   subsistema con este problema.**~~ **Construido 2026-09-23** (Murillo responde,
+   sin número asignado en `sistema.md`: los "modo adicional" de nivel 2-4 son
+   alternativas que el jugador elige libremente y puede cambiar cuando quiera, no
+   niveles que se sustituyen). `tiradaDeProyectorPulso()` (`lib/rules/combate.ts`), registrada en
+   `REGISTRO_DE_ATAQUE` bajo `"subsistema"` — primera familia con niveles que genera
+   su propia Acción, requirió que `generaAccionPropia()` mirase el `MotorMetadata`
+   acumulado de los niveles hasta el instalado (S9), no solo el del nivel exacto.
+   Genera **dos Acciones gemelas** por pieza equipada, una por habilidad (Combate a
+   Distancia / Tecnociencia) — la propia `descripcion` del subsistema dice que el
+   aplicado es Reflejos "en ambos casos", así que no hizo falta inventar un
+   mecanismo de "elige habilidad dentro de la misma tirada". Los tres matices que
+   parecían bloqueantes se resolvieron así:
+   - **Aguijón (melee dentro de arma a distancia):** al ser siempre Reflejos (nunca
+     Potencia), no hay mezcla real de aplicados — es un modo más del selector, con
+     `formulaDanio: "Fue+N"` en vez de un número, igual que un arma melee.
+   - **"Elige habilidad":** resuelto con las dos Acciones gemelas (arriba), sin
+     mecanismo nuevo.
+   - **Los "Modo Adicional" de nivel 2-4:** confirmado por Murillo que son
+     alternativas de elección libre, no exclusión forzada por un `CondicionTirada`.
+     Se mecanizaron como texto informativo en la `nota` (mismo criterio "la app
+     informa, no arbitra" que el resto del catálogo) en vez de un selector
+     estructurado — el mecanismo genérico de impacto/crítico sigue sin construir
+     (ver "El mecanismo genérico" más abajo), así que un selector estructurado solo
+     para esta pieza habría sido inconsistente con el resto.
+   **Lo que se queda fuera, a propósito:** las cargas por célula (RECURSOS) sí están
+   conectadas (aviso de insuficiencia igual que munición); el "-5 al sigilo al
+   disparar" **no** se construye — misma decisión de producto que la pregunta 25b
+   (no sobrecargar la UI). El crítico "destruye 1 punto de blindaje" (nivel 4) se
+   queda en texto, mismo patrón que Impacto Estructural de Kerzul. La "detonación de
+   pulso térmico" de Malla Plasmática nivel 2 (mismo problema, ampliado 2026-09-23)
+   **sigue sin construir** — esta tanda solo cubrió el Proyector de Pulso.
 2. **"Munición Especial" y las 4 familias de "Armas Modificadas" (Electrificantes,
    Térmicas, de Plasma, de Nanofilamento) no existen en el catálogo.** No hay ninguna
    entrada en `MEJORAS_ARMA` con esos ids — hoy no se pueden ni comprar ni instalar.
@@ -342,8 +339,9 @@ de control.
   el primer caso concreto). Extensión de Fase 6b, no tab nueva de la ficha — precedente
   ya construido (`ajustarRecurso`, PG/fatiga). Detalle en `docs/tareas.md`, entrada de
   Fase 6b. Sin diseñar del todo, sin construir.
-- ⬜ **Hallazgo #1** — Proyector de Pulso no genera tirada de ataque, falta la tirada
-  entera antes de poder aplicarle ningún efecto.
+- ✅ **Hallazgo #1 (Proyector de Pulso), construido 2026-09-23.** Sigue pendiente la
+  mitad de la ampliación: la "detonación de pulso térmico" de Malla Plasmática
+  nivel 2, mismo problema, no cubierta en esta tanda.
 - ⬜ **Hallazgo #2** — Munición Especial y las 4 Armas Modificadas no existen en el
   catálogo; hay que darlas de alta antes de mecanizar su efecto.
 - ⬜ **Hallazgo #3** — Salvaciones genéricas sin especificidad ("¿contra qué resistes?").
@@ -574,14 +572,14 @@ de control.
     es una acción sin dado** (gastas 1 carga, no tiras nada), que luego SÍ modifica
     otras tiradas mientras dura. Otro caso real del mismo patrón de "Acciones".
   - **Nivel 2, "detonación de pulso térmico" (área 6x6, esquiva, shock+llamarada,
-    fusión con fracaso crítico) — amplía el Hallazgo #1**: no es solo el Proyector
-    de Pulso el que necesita una tirada de ataque propia que hoy no existe, la Malla
-    Plasmática también.
-- **Proyector de Pulso: ver el Hallazgo #1 de arriba (ampliado 2026-09-23 con la
-  detonación de la Malla Plasmática, mismo problema)** — no genera tirada de ataque
-  en absoluto hoy. Sus 4 efectos (Shock/Hemorragia en Pulso y Pulso Cargado,
-  Esquiva+Shock en Barrido, Envenenamiento por Radiación o Ceguera según el modo del
-  nivel 2/3) serían **✅ IMPLEMENTAR** en cuanto exista la tirada — no antes.
+    fusión con fracaso crítico) — mismo problema que tenía el Proyector de Pulso
+    (Hallazgo #1), ya resuelto para éste pero NO para la Malla Plasmática**: sigue
+    sin tirada de ataque propia. Candidata siguiente si se decide que merece la pena.
+- **Proyector de Pulso: Hallazgo #1, construido 2026-09-23** —
+  `tiradaDeProyectorPulso()` (`lib/rules/combate.ts`). Sus 4 modos y los tres "modo
+  adicional" de nivel 2-4 están todos mecanizados: **✅ HECHO**, texto informativo
+  en la nota de la tirada (no un `CondicionTirada` estructurado, ver detalle en el
+  propio Hallazgo #1 más arriba).
 
 ### Mejoras de Movimiento
 

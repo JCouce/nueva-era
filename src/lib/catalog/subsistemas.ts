@@ -494,20 +494,19 @@ export const SUBSISTEMAS: Subsistema[] = [
         ],
         modificadores: [],
         motor: [
-          // El subsistema entero es tipo 1: sus 4 modos (Pulso, Pulso Cargado,
-          // Barrido, Aguijón) necesitan su propia tirada de ataque, que no
-          // existe hoy — Hallazgo #1 (incluye el matiz ya conocido de Aguijón
-          // siendo melee-dentro-de-arma-a-distancia, "elige habilidad" en vez
-          // de "elige atributo", sin precedente).
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_proyector_pulso" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "H1" },
-          // "-5 al sigilo al disparar" no es eleccion_jugador (no hay toggle) ni
-          // siempre_activo (no es incondicional, solo tras disparar) — es un
-          // tercer momento de activación, "tras esta acción concreta", que
-          // ningún mecanismo actual nombra. Uso eleccion_jugador por ser el más
-          // cercano, pero es la clasificación menos segura de todo mi tramo —
-          // caso inconcluso, ver informe final (puede hacer falta un mecanismo
-          // nuevo, no solo un tipo).
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_proyector_pulso" }, mecanismo: "eleccion_jugador", estado: "bloqueado", bloqueoPor: "H1" },
+          // Hallazgo #1, construido 2026-09-23: tiradaDeProyectorPulso()
+          // (combate.ts), registrado en REGISTRO_DE_ATAQUE bajo "subsistema".
+          // Aguijón (melee-dentro-de-arma-a-distancia) y "elige habilidad" ya
+          // no son ambigüedad: la propia descripción del subsistema dice que
+          // el aplicado es Reflejos "en ambos casos" (Combate a Distancia o
+          // Tecnociencia), así que se generan dos Acciones gemelas, una por
+          // habilidad — sin inventar un mecanismo de "elige atributo/habilidad
+          // dentro de la misma tirada" que no existe.
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_proyector_pulso" }, mecanismo: "accion_equipo", estado: "construido" },
+          // "-5 al sigilo al disparar": mismo caso que la pregunta 25b
+          // (armasFuego.ts) — decisión de producto (2026-09-23) de no
+          // avisarlo en la UI. Se queda en `detalle`, sin más.
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
         ],
       },
       {
@@ -520,7 +519,12 @@ export const SUBSISTEMAS: Subsistema[] = [
         ],
         modificadores: [],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_proyector_pulso" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "H1" },
+          // Texto informativo en la nota de la tirada (mismo criterio "app
+          // informa, no arbitra" que el resto del catálogo) — el jugador
+          // elige entre los críticos desbloqueados en el momento de tirar,
+          // sin mecanismo estructurado (el mecanismo genérico de impacto/
+          // crítico sigue sin construir, ver equipo-efectos-especiales.md).
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_proyector_pulso" }, mecanismo: "nota_fija", estado: "ad_hoc" },
         ],
       },
       {
@@ -533,7 +537,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         ],
         modificadores: [],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_proyector_pulso" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "H1" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_proyector_pulso" }, mecanismo: "nota_fija", estado: "ad_hoc" },
         ],
       },
       {
@@ -547,7 +551,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         ],
         modificadores: [],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_proyector_pulso" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "H1" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_proyector_pulso" }, mecanismo: "nota_fija", estado: "ad_hoc" },
         ],
       },
     ],

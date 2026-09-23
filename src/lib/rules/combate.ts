@@ -134,9 +134,13 @@ function condicionModo(modos: { id: string; etiqueta: string; dificultad: number
 // Sin `recurso` rastreado (arma equipada antes de que existiera RECURSOS, o
 // sin capacidadDePieza — no debería pasar con un arma, pero por si acaso) no
 // hay nada que avisar.
-function notaInsuficiente(gasto: number, recurso: { actual: number; max: number } | undefined): string | undefined {
+function notaInsuficiente(
+  gasto: number,
+  recurso: { actual: number; max: number } | undefined,
+  unidad = "balas",
+): string | undefined {
   if (!recurso || recurso.actual >= gasto) return undefined;
-  return `Solo quedan ${recurso.actual}/${recurso.max} balas — este modo gasta ${gasto}.`;
+  return `Solo quedan ${recurso.actual}/${recurso.max} ${unidad} — este modo gasta ${gasto}.`;
 }
 
 function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Accion {
@@ -333,6 +337,93 @@ function tiradaDeArmaMelee(arma: ArmaMelee, instanciaId: string): Accion {
   };
 }
 
+// Proyector de Pulso (Subsistema, catalogoId "proyector_pulso"): el único
+// subsistema del catálogo que es, de hecho, un arma — Hallazgo #1 de
+// docs/equipo-efectos-especiales.md, construido 2026-09-23 tras la respuesta
+// de Murillo a la pregunta 13 (los "modo adicional" de nivel 2-4 son
+// alternativas que el jugador elige libremente, no niveles que se sustituyen).
+// Sus números escalan con el Nivel instalado de la pieza (daño, alcance,
+// dificultad de los efectos) — algo que ningún arma normal hace — por eso
+// vive en su propia función en vez de encajar en tiradaDeArmaFuego. La propia
+// descripción del subsistema dice que el aplicado es Reflejos "en ambos
+// casos" (Combate a Distancia o Tecnociencia) — incluido Aguijón, su modo
+// melee — así que no hace falta inventar un mecanismo de "elige
+// atributo/habilidad dentro de la misma tirada": se generan dos Acciones
+// gemelas, una por habilidad, mismo patrón que ya usa el resto del motor
+// (una función, varias Acciones — ver tiradaDeArmaFuego + tiradaDeLanzagranadas).
+// Los 3 "modo adicional" (envenenamiento/ceguera+fuego/disrupción de campo) y
+// el -5 al sigilo se quedan como texto informativo o sin construir — ver
+// docs/sistema.md pregunta 13 y el MotorMetadata de cada nivel en
+// catalog/subsistemas.ts.
+const GASTO_MODO_PULSO: Record<string, number> = {
+  pulso: 1,
+  pulso_cargado: 4,
+  barrido: 5,
+  aguijon: 1,
+};
+
+function tiradaDeProyectorPulso(
+  sheet: Sheet,
+  pieza: PiezaEquipada,
+  habilidad: Extract<Accion["habilidad"], "combate_distancia" | "tecnociencia">,
+): Accion {
+  const nivel = pieza.nivel ?? 1;
+  const recurso = recursoDe(sheet, pieza.instanciaId);
+  const modo: CondicionTirada = {
+    id: "modo",
+    tipo: "opcion",
+    etiqueta: "Modo de disparo",
+    opciones: [
+      { id: "pulso", etiqueta: "Pulso", valor: -2 },
+      { id: "pulso_cargado", etiqueta: "Pulso Cargado", valor: -2 },
+      { id: "barrido", etiqueta: "Barrido", valor: -3 },
+      { id: "aguijon", etiqueta: "Aguijón (melee, Sutil)", valor: 0 },
+    ].map((o) => ({ ...o, nota: notaInsuficiente(GASTO_MODO_PULSO[o.id], recurso, "cargas") })),
+    porDefecto: "pulso",
+  };
+
+  const variantesDesbloqueadas = [
+    nivel >= 2
+      ? `Nivel 2: crítico alternativo Envenenamiento por Radiación (dificultad ${8 + nivel}), a elección en vez de Hemorragia.`
+      : null,
+    nivel >= 3
+      ? `Nivel 3: crítico alternativo Ceguera (dificultad ${8 + nivel}) y el daño pasa a Fuego con Llamarada, a elección.`
+      : null,
+    nivel >= 4
+      ? `Nivel 4: el Shock sube +1 de dificultad; en crítico destruye 1 punto de blindaje del objetivo (sin blindaje, Hemorragia normal), a elección.`
+      : null,
+  ].filter((v): v is string => v !== null);
+
+  const nota = [
+    "Daño grave.",
+    `Pulso: alcance ${40 * nivel}m · Efecto Shock (${4 + nivel}) · Crítico Hemorragia.`,
+    `Pulso Cargado: alcance ${60 * nivel}m · Efecto Shock (${6 + nivel}) · Crítico Hemorragia.`,
+    `Barrido: área 6x6 a ${40 * nivel}m · Efecto Esquiva (${7 + nivel}) y Shock (${7 + nivel}).`,
+    `Aguijón: duración ${nivel} turno(s) · Efecto Shock (${4 + nivel}) · Crítico Hemorragia.`,
+    ...variantesDesbloqueadas,
+  ].join(" · ");
+
+  const etiquetaHabilidad = habilidad === "combate_distancia" ? "Combate a Distancia" : "Tecnociencia";
+
+  return {
+    id: `ataque_proyector_pulso_${habilidad}_${pieza.instanciaId}`,
+    label: `Disparar Proyector de Pulso (${etiquetaHabilidad})`,
+    grupo: "Ataques",
+    aplicado: "reflejos",
+    habilidad,
+    nota,
+    condiciones: [modo],
+    ataque: {
+      modos: [
+        { id: "pulso", danio: 8 + nivel, formulaDanio: null, categoriaDanio: "Grave" },
+        { id: "pulso_cargado", danio: 11 + nivel, formulaDanio: null, categoriaDanio: "Grave" },
+        { id: "barrido", danio: 10 + nivel, formulaDanio: null, categoriaDanio: "Grave" },
+        { id: "aguijon", danio: null, formulaDanio: `Fue+${2 + nivel}`, categoriaDanio: "Grave" },
+      ],
+    },
+  };
+}
+
 // Registro familia -> generador de acción (T5, docs/motor.md §Escalabilidad):
 // una función por familia con firma uniforme, en vez de un bucle hardcodeado
 // por familia repetido 4 veces sobre sheet.equipo. Dar de alta una familia
@@ -367,6 +458,19 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
   armaMelee: (_sheet, pieza, cat) => [tiradaDeArmaMelee(cat as ArmaMelee, pieza.instanciaId)],
   armaPesada: (_sheet, pieza, cat) => [tiradaDeArmamentoPesado(cat as ArmaPesada, pieza.instanciaId)],
   granada: (_sheet, pieza, cat) => [tiradaDeGranada(cat as MunicionGranada, pieza.instanciaId)],
+  // Único caso hoy: Proyector de Pulso (ver tiradaDeProyectorPulso arriba).
+  // El resto de subsistemas no llega aquí — generaAccionPropia() ya los
+  // filtra por catalogoId+nivel antes de invocar este generador. Si en el
+  // futuro otro subsistema construye su propia acción (la Malla Plasmática
+  // es la siguiente candidata, ver Hallazgo #1 ampliado), este `if` necesita
+  // una rama nueva, no una reescritura.
+  subsistema: (sheet, pieza) => {
+    if (pieza.catalogoId !== "proyector_pulso") return [];
+    return [
+      tiradaDeProyectorPulso(sheet, pieza, "combate_distancia"),
+      tiradaDeProyectorPulso(sheet, pieza, "tecnociencia"),
+    ];
+  },
 };
 
 // T6 (docs/motor.md §Escalabilidad): el registro de arriba sigue siendo la
@@ -385,12 +489,27 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
 // que ningún generador construye todavía — un match "alguna entrada
 // construida" basta, no hace falta que TODAS lo estén.
 //
-// "cat" es la unión Equipo; motor solo existe como campo directo en las
-// familias sin niveles (arma/armaMelee/armaPesada/granada, exactamente las
-// que vive este registro) — el cast a `{ motor?: ... }` es seguro aquí por
-// el mismo motivo que el cast a la familia concreta dentro de cada wrapper.
-export function generaAccionPropia(cat: Equipo): boolean {
-  const motor = (cat as { motor?: MotorMetadata[] }).motor ?? [];
+// "cat" es la unión Equipo; motor existe como campo directo en las familias
+// sin niveles (arma/armaMelee/armaPesada/granada) — el cast a `{ motor?: ... }`
+// es seguro aquí por el mismo motivo que el cast a la familia concreta dentro
+// de cada wrapper. Las familias CON niveles (subsistema, hoy solo el
+// Proyector de Pulso en este registro) llevan el `motor` colgado de cada
+// `NivelModulo`, no de la pieza — de ahí el segundo parámetro `nivel`,
+// obligatorio en ese caso: sin él, cat.motor siempre da `[]` y ninguna pieza
+// con niveles podría generar su acción nunca, por muy "construido" que
+// declare su MotorMetadata.
+export function generaAccionPropia(cat: Equipo, nivel?: number): boolean {
+  const motorDirecto = (cat as { motor?: MotorMetadata[] }).motor;
+  // Acumulado, no exacto: por S9 (docs/sistema.md) el nivel N conserva lo
+  // desbloqueado en 1..N-1, y la acción base de un módulo por niveles se
+  // declara en el nivel donde nace (normalmente el 1) — un Proyector de
+  // Pulso instalado en nivel 3 sigue teniendo la acción que se desbloqueó en
+  // el 1, así que hay que mirar todos los niveles hasta el instalado, no
+  // solo la entrada que coincide exacta.
+  const motorPorNivel = (cat as { niveles?: { nivel: number; motor?: MotorMetadata[] }[] }).niveles
+    ?.filter((n) => nivel !== undefined && n.nivel <= nivel)
+    .flatMap((n) => n.motor ?? []);
+  const motor = motorDirecto ?? motorPorNivel ?? [];
   return motor.some((m) => m.tipo === "accion" && m.mecanismo === "accion_equipo" && m.estado === "construido");
 }
 
@@ -406,7 +525,7 @@ export function accionesDeAtaque(sheet: Sheet): Accion[] {
     if (!cat) continue;
     const generador = REGISTRO_DE_ATAQUE[cat.familia];
     if (!generador) continue;
-    if (!generaAccionPropia(cat)) continue;
+    if (!generaAccionPropia(cat, pieza.nivel)) continue;
     tiradas.push(...generador(sheet, pieza, cat));
   }
   return tiradas;
