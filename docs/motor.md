@@ -160,7 +160,7 @@ type Mecanismo =
 type Afecta =
   | { modo: "accion_existente"; id: string }  // tiradaId/accionId que modifica
   | { modo: "accion_nueva"; id: string }      // genera esta acción nueva (tipo "accion")
-  | { modo: "objetivo_tercero"; id: string }  // toca la tirada de OTRO personaje — casi siempre tipo "texto"
+  | { modo: "objetivo_tercero"; id: string }  // toca la tirada de OTRO personaje — SIEMPRE tipo "texto", ver nota más abajo
   | { modo: "ninguna" };                      // sin conexión, narrativo puro
 
 type MotorMetadata = {
@@ -192,6 +192,16 @@ construidas** que nunca tuvieron etiqueta:
   descubrimiento nuevo: `docs/modificadores-tiradas.md` ya lo tenía dibujado con
   estas palabras exactas ("❌ sin mecanismo formal — hoy cada caso es ad hoc"), solo
   le faltaba el nombre en el tipo.
+
+**`objetivo_tercero` es SIEMPRE tipo "texto", cerrado 2026-09-24 (duda que
+dejó la auditoría, resuelta en conversación):** aunque la regla original traiga
+un número real (la cobertura del Escudo, "+1 a +4 a la dificultad de quien te
+ataca"), el motor nunca lo suma — no puede, no tiene forma de tocar la tirada
+de otro personaje — así que ese número solo llega como una frase que un
+jugador le dice al máster, o el máster al jugador, en la propia mesa. El `tipo`
+describe cómo lo trata el motor, no si la frase original lleva una cifra
+dentro: si la app jamás lo calcula, es texto, punto. No reabrir esta duda para
+ninguna entrada `objetivo_tercero` nueva.
 
 Dos ejes deliberadamente separados dentro del mismo tipo:
 
