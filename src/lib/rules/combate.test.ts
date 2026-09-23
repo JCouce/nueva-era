@@ -1,12 +1,18 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { defaultSheet } from "./sheet";
+import { defaultSheet, type Sheet } from "./sheet";
 import { equipar } from "./equipo";
 import { ajustarRecurso } from "./recursos";
 import { accionesDeAtaque, generaAccionPropia } from "./combate";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
 import type { MotorMetadata } from "./motor";
+
+// Ficha de trabajo: se parte de la de por defecto y se tocan atributos sueltos.
+function ficha(patch: { atributos?: Partial<Sheet["atributos"]> }): Sheet {
+  const s = defaultSheet();
+  return { ...s, atributos: { ...s.atributos, ...patch.atributos } };
+}
 
 function opcion(c: CondicionTirada | undefined, id: string) {
   assert.ok(c && c.tipo === "opcion", "no es una condición de opción");
@@ -226,12 +232,26 @@ describe("lanzagranadas integrado", () => {
 });
 
 describe("arma melee equipada", () => {
-  test("genera 'Golpear con...' con la fórmula de daño, no un número", () => {
-    let sheet = defaultSheet();
+  test("el daño se calcula solo desde la Fuerza del personaje (ya no 'a mano')", () => {
+    let sheet = defaultSheet(); // Fuerza 0
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada" });
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Espada")!;
-    assert.equal(fila.ataque?.modos[0].danio, null);
+    assert.equal(fila.ataque?.modos[0].danio, 3); // Fue(0) + 3
     assert.equal(fila.ataque?.modos[0].formulaDanio, "Fue+3");
+  });
+
+  test("el daño escala con la Fuerza efectiva del personaje", () => {
+    let sheet = ficha({ atributos: { fuerza: 4 } });
+    sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada" });
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Espada")!;
+    assert.equal(fila.ataque?.modos[0].danio, 7); // Fue(4) + 3
+  });
+
+  test("una fórmula sin '+N' (solo 'Fuerza' o 'Fue') usa la Fuerza tal cual", () => {
+    let sheet = ficha({ atributos: { fuerza: 2 } });
+    sheet = equipar(sheet, { instanciaId: "punetazo1", catalogoId: "pelea_punetazo" });
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Puñetazo (o Sutil)")!;
+    assert.equal(fila.ataque?.modos[0].danio, 2); // Fuerza(2) + 0
   });
 
   test("un arma Sutil lo indica en la etiqueta y la nota", () => {
@@ -391,12 +411,12 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
     assert.equal(opcion(modo, "barrido"), -3);
   });
 
-  test("Aguijón: sin daño numérico, fórmula con Fuerza + nivel, escala con el nivel", () => {
+  test("Aguijón: daño calculado desde la Fuerza del personaje, escala con el nivel", () => {
     const fila = accionesDeAtaque(conProyectorPulso(3)).find(
       (t) => t.label === "Golpear con Proyector de Pulso (Aguijón)",
     )!;
     const aguijon = fila.ataque?.modos[0];
-    assert.equal(aguijon?.danio, null);
+    assert.equal(aguijon?.danio, 5); // Fue(0) + 2 + nivel(3)
     assert.equal(aguijon?.formulaDanio, "Fue+5"); // 2 + nivel(3)
   });
 

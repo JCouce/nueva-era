@@ -18,6 +18,7 @@ import type { PiezaEquipada } from "./equipo";
 import type { MotorMetadata } from "./motor";
 import { recursoDe, gastoDelModo } from "./recursos";
 import { CONDICION_ATACANTES_ADICIONALES, type Accion } from "./acciones";
+import { atributoEfectivo } from "./derivados";
 
 const TRAMOS: TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
 
@@ -302,15 +303,38 @@ function tiradaDeGranada(granada: MunicionGranada, instanciaId: string): Accion 
   };
 }
 
-function tiradaDeArmaMelee(arma: ArmaMelee, instanciaId: string): Accion {
+// El daño melee es una fórmula sobre Fuerza ("Fue+3"), no un número suelto
+// del catálogo — por eso, a diferencia de las armas de fuego, no se podía
+// calcular solo. Todo `formulaDanio` de armasMelee.ts sigue el mismo patrón
+// cerrado: "Fuerza"/"Fue" y, opcionalmente, "+N" (verificado contra el
+// catálogo entero, sin excepciones) — se resuelve leyendo la Fuerza efectiva
+// del propio personaje. Si algún día aparece una fórmula que no seguía este
+// patrón, se detecta aquí (null) y cae al texto "se calcula a mano" de
+// siempre, no revienta.
+function bonoFormulaFuerza(formula: string): number | null {
+  const m = /^(?:Fuerza|Fue)(?:\+(\d+))?$/.exec(formula);
+  if (!m) return null;
+  return m[1] ? Number(m[1]) : 0;
+}
+
+function tiradaDeArmaMelee(sheet: Sheet, arma: ArmaMelee, instanciaId: string): Accion {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
   const modo = condicionModo(modosConId);
+  const fuerza = atributoEfectivo(sheet, "fuerza");
 
   // `arma.efectos` (Crítico de X, Ignora N de blindaje...) es hoy puramente
   // decorativo en el catálogo, pero al menos debe llegar como texto a la
   // tirada — mismo criterio que `arma.especial` en tiradaDeArmaFuego. Antes de
   // este fix no llegaba ni como texto (ver docs/equipo-efectos-especiales.md
   // §Kerzul, "fix barato" 2026-09-23).
+  //
+  // Nota sobre Sutil (gap conocido, sin cerrar): "con estilo Sutil ... el daño
+  // usa Potencia en vez de Fuerza" es una elección del jugador en el momento
+  // de golpear, no un dato fijo del arma — el `danio` que se calcula aquí
+  // abajo es siempre con Fuerza (el caso no-Sutil, y el único que ataque ya
+  // mecanizaba con `aplicado: "potencia"` fijo). Elegir Sutil de verdad sigue
+  // sin tener un toggle real; cuando lo tenga, este cálculo necesita la
+  // misma rama condicional.
   const notas = [
     arma.uso.includes("Sutil")
       ? "Con estilo Sutil se tira Reflejos en lugar de Potencia, y el daño usa Potencia en lugar de Fuerza"
@@ -327,12 +351,15 @@ function tiradaDeArmaMelee(arma: ArmaMelee, instanciaId: string): Accion {
     nota: notas.length > 0 ? notas.join(" · ") : undefined,
     condiciones: modo ? [modo] : [],
     ataque: {
-      modos: modosConId.map((m) => ({
-        id: m.id,
-        danio: null,
-        formulaDanio: m.formulaDanio,
-        categoriaDanio: m.categoriaDanio,
-      })),
+      modos: modosConId.map((m) => {
+        const bono = bonoFormulaFuerza(m.formulaDanio);
+        return {
+          id: m.id,
+          danio: bono === null ? null : fuerza + bono,
+          formulaDanio: m.formulaDanio,
+          categoriaDanio: m.categoriaDanio,
+        };
+      }),
     },
   };
 }
@@ -481,7 +508,14 @@ function tiradaGolpeAguijon(sheet: Sheet, pieza: PiezaEquipada): Accion {
       .filter((n): n is string => !!n)
       .join(" · "),
     ataque: {
-      modos: [{ id: "0", danio: null, formulaDanio: `Fue+${2 + nivel}`, categoriaDanio: "Grave" }],
+      modos: [
+        {
+          id: "0",
+          danio: atributoEfectivo(sheet, "fuerza") + 2 + nivel,
+          formulaDanio: `Fue+${2 + nivel}`,
+          categoriaDanio: "Grave",
+        },
+      ],
     },
   };
 }
@@ -529,9 +563,9 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
     const lanzagranadas = tiradaDeLanzagranadas(sheet, arma, pieza.instanciaId);
     return [tiradaDeArmaFuego(sheet, arma, pieza.instanciaId), ...(lanzagranadas ? [lanzagranadas] : [])];
   },
-  armaMelee: (_sheet, pieza, cat) => {
+  armaMelee: (sheet, pieza, cat) => {
     const arma = cat as ArmaMelee;
-    return [tiradaDeArmaMelee(arma, pieza.instanciaId), tiradaBloqueoDeArmaMelee(arma, pieza.instanciaId)];
+    return [tiradaDeArmaMelee(sheet, arma, pieza.instanciaId), tiradaBloqueoDeArmaMelee(arma, pieza.instanciaId)];
   },
   armaPesada: (_sheet, pieza, cat) => [tiradaDeArmamentoPesado(cat as ArmaPesada, pieza.instanciaId)],
   granada: (_sheet, pieza, cat) => [tiradaDeGranada(cat as MunicionGranada, pieza.instanciaId)],
