@@ -54,6 +54,10 @@ export const ARMADURAS: Armadura[] = [
     modificadores: [],
     motor: [
       { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
+      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
+      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -81,6 +85,10 @@ export const ARMADURAS: Armadura[] = [
     ],
     motor: [
       { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
+      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
+      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -111,6 +119,10 @@ export const ARMADURAS: Armadura[] = [
     ],
     motor: [
       { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
+      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
+      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -142,6 +154,10 @@ export const ARMADURAS: Armadura[] = [
     ],
     motor: [
       { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
+      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
+      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -172,6 +188,10 @@ export const ARMADURAS: Armadura[] = [
     ],
     motor: [
       { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
+      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
+      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -204,6 +224,10 @@ export const ARMADURAS: Armadura[] = [
     ],
     motor: [
       { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
+      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
+      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -227,6 +251,10 @@ export const ARMADURAS: Armadura[] = [
     modificadores: [],
     motor: [
       { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
+      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
+      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -248,6 +276,10 @@ export const ARMADURAS: Armadura[] = [
     modificadores: [],
     motor: [
       { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
+      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
+      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -269,6 +301,10 @@ export const ARMADURAS: Armadura[] = [
     modificadores: [],
     motor: [
       { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
+      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
+      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -290,6 +326,10 @@ export const ARMADURAS: Armadura[] = [
     modificadores: [],
     motor: [
       { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
+      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
+      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
