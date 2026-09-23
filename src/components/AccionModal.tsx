@@ -158,6 +158,7 @@ function LineaDesglose({ etiqueta, valor }: { etiqueta: string; valor: number })
 export function AccionModal({
   titulo,
   subtitulo,
+  nota,
   modBase,
   desgloseBase,
   condiciones,
@@ -173,6 +174,15 @@ export function AccionModal({
 }: {
   titulo: string;
   subtitulo?: string;
+  // Texto fijo de la propia Acción (arma.efectos/especial volcado en
+  // combate.ts — "Crítico de Hemorragia (9)", "Daño grave. Pulso: alcance...",
+  // etc.). Antes de 2026-09-24 solo se pintaba en la tarjeta cerrada
+  // (FilaTirada, AccionesTab.tsx) — el modal nunca lo recibía, así que
+  // desaparecía justo cuando más falta hace (al tirar daño). Se muestra
+  // siempre que existe, en cualquier estado del modal (eligiendo, rodando,
+  // con resultado) — es información de la pieza, no del resultado de la
+  // tirada.
+  nota?: string;
   modBase: number;
   desgloseBase: { etiqueta: string; valor: number }[];
   condiciones: CondicionTirada[];
@@ -282,6 +292,10 @@ export function AccionModal({
               ✕
             </button>
           </div>
+
+          {nota && (
+            <p className="mt-2 font-sans text-[11px] leading-relaxed text-muted">{nota}</p>
+          )}
 
           {rodando && (
             <div className="mt-4 border-t border-border pt-3">

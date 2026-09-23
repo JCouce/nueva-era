@@ -49,6 +49,12 @@ export type ArmaMelee = {
   uso: string[]; // "Arma a 1 mano", "Sutil", "Arrojadiza", "Alcance 4"…
   modos: ModoAtaqueMelee[];
   efectos: string | null;
+  // Piloto (Cuchillo de Combate, 2026-09-23): texto de crítico, separado de
+  // `efectos` porque solo aplica si la tirada acaba en crítico — `efectos` se
+  // muestra siempre, esté o no en crítico. Solo el Cuchillo lo usa por ahora;
+  // el resto del catálogo sigue con el texto de crítico dentro de `efectos`
+  // hasta que se migre pieza a pieza (fuera de alcance de este cambio).
+  efectoCritico?: string;
   pesoKg: number | null;
   rareza: Rareza | null;
   coste: number | null;
@@ -84,7 +90,7 @@ export const PELEA: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
     ],
   },
@@ -107,7 +113,7 @@ export const PELEA: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
     ],
   },
@@ -128,7 +134,7 @@ export const PELEA: ArmaMelee[] = [
     defensa: null,
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
     ],
   },
@@ -253,7 +259,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
     ],
   },
@@ -481,15 +487,19 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     descripcion: "Daga a una mano, ligera y fácil de arrojar.",
     uso: ["Arma a 1 mano", "Sutil", "Arrojadizo"],
     modos: [{ etiqueta: "Simple", dificultad: 0, formulaDanio: "Fue+2", categoriaDanio: "Letal" }],
-    efectos: "Crítico de Hemorragia (1d6 turnos)",
+    efectos: null,
+    efectoCritico: "Hemorragia (1d6 turnos)",
     pesoKg: 0, // insignificante (I)
     rareza: "Común",
     coste: 30,
     defensa: null,
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
+      // efectoCritico: ya no es un volcado de texto sin lógica — solo se
+      // pinta cuando resultado.critico es true (ResultadoTirada.tsx), así
+      // que pasa a "construido" (piloto, 2026-09-23).
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "construido" },
     ],
   },
   {
@@ -513,7 +523,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
     ],
   },
@@ -582,7 +592,7 @@ export const FLAGELOS: ArmaMelee[] = [
     defensa: null,
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
     ],
   },
@@ -647,7 +657,7 @@ export const FLAGELOS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
     ],
   },

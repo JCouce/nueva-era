@@ -14,6 +14,7 @@ import {
   valorCondiciones,
   valorBonosTramo,
   modificadoresActivos,
+  aplicado,
   modificadoresDeEstados,
   indiceDeCondiciones,
   consultaIndiceCondiciones,
@@ -84,15 +85,25 @@ function FilaTirada({
   tirada: Accion;
   sheet: Sheet;
   mods: ModificadorConFuente[];
-  onAbrir: (t: Accion, enEspecialidad: boolean) => void;
+  onAbrir: (t: Accion, enEspecialidad: boolean, sutilActivo: boolean) => void;
 }) {
   const [enEspecialidad, setEnEspecialidad] = useState(false);
+  // Sutil (Feature 1, docs/equipamiento.md:848-850): pre-seleccionado por el
+  // aplicado que dé más bonificador de ATAQUE, no de daño — es la parte que
+  // decide si conviene tirar. Lazy initializer: solo se calcula una vez, al
+  // montar la fila.
+  const [sutilActivo, setSutilActivo] = useState(() =>
+    tirada.aplicadoSutil
+      ? aplicado(sheet, tirada.aplicadoSutil, mods) > aplicado(sheet, tirada.aplicado, mods)
+      : false,
+  );
 
   const especialidades = tirada.habilidad
     ? sheet.habilidades[tirada.habilidad].especialidades
     : [];
-  const mod = modificadorAccion(sheet, tirada, enEspecialidad, mods);
-  const nombreAplicado = APLICADOS.find((a) => a.id === tirada.aplicado)!;
+  const mod = modificadorAccion(sheet, tirada, enEspecialidad, mods, sutilActivo);
+  const aplicadoActivoId = sutilActivo && tirada.aplicadoSutil ? tirada.aplicadoSutil : tirada.aplicado;
+  const nombreAplicado = APLICADOS.find((a) => a.id === aplicadoActivoId)!;
   const nombreHabilidad = tirada.habilidad
     ? HABILIDADES.find((h) => h.id === tirada.habilidad)!.label
     : null;
@@ -142,12 +153,32 @@ function FilaTirada({
 
         <button
           type="button"
-          onClick={() => onAbrir(tirada, enEspecialidad)}
+          onClick={() => onAbrir(tirada, enEspecialidad, sutilActivo)}
           className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95"
         >
           Tirar
         </button>
       </div>
+
+      {tirada.aplicadoSutil && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <span className="font-mono text-[10px] uppercase text-muted">
+            estilo:
+          </span>
+          <button
+            type="button"
+            onClick={() => setSutilActivo((v) => !v)}
+            className={`clip-chamfer-sm border px-2 py-1 font-mono text-[10px] uppercase active:scale-95 ${
+              sutilActivo
+                ? "border-info text-info"
+                : "border-border text-muted"
+            }`}
+          >
+            {sutilActivo ? "✓ " : ""}
+            Sutil
+          </button>
+        </div>
+      )}
 
       {especialidades.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -212,6 +243,9 @@ export function AccionesTab({
     desgloseBase: { etiqueta: string; valor: number }[];
     mods: ModificadorConFuente[];
     ctxBase: { id: string; grupo: Accion["grupo"]; habilidad: Accion["habilidad"] };
+    // Estilo Sutil elegido en la fila antes de abrir el modal (Feature 1) —
+    // `tirar()` lo necesita para saber si usar `modo.danio` o `modo.danioSutil`.
+    sutilActivo: boolean;
     // null mientras se eligen condiciones/dificultad; el id del Lanzamiento
     // recién creado en cuanto se pulsa Tirar — el modal pasa a mostrar el
     // resultado in-place en vez de cerrarse (UX corregida 2026-09-23: cerrar
@@ -271,9 +305,10 @@ export function AccionesTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet.equipo, sheet.recursos, indiceCondiciones]);
 
-  const abrir = (t: Accion, enEspecialidad: boolean) => {
-    const mod = modificadorAccion(sheet, t, enEspecialidad, mods);
-    const nombreAplicado = APLICADOS.find((a) => a.id === t.aplicado)!;
+  const abrir = (t: Accion, enEspecialidad: boolean, sutilActivo: boolean) => {
+    const mod = modificadorAccion(sheet, t, enEspecialidad, mods, sutilActivo);
+    const aplicadoId = sutilActivo && t.aplicadoSutil ? t.aplicadoSutil : t.aplicado;
+    const nombreAplicado = APLICADOS.find((a) => a.id === aplicadoId)!;
     const nombreHabilidad = t.habilidad ? HABILIDADES.find((h) => h.id === t.habilidad)!.label : null;
     const desgloseBase = [
       { etiqueta: nombreAplicado.label, valor: mod.aplicado },
@@ -288,6 +323,7 @@ export function AccionesTab({
       desgloseBase,
       mods,
       ctxBase: { id: t.id, grupo: t.grupo, habilidad: t.habilidad },
+      sutilActivo,
       resultadoId: null,
     });
   };
@@ -309,7 +345,7 @@ export function AccionesTab({
     circunstancial: number;
   }) => {
     if (!modal) return;
-    const { tirada, modBase, mods, ctxBase } = modal;
+    const { tirada, modBase, mods, ctxBase, sutilActivo } = modal;
     const bonoCondiciones = valorCondiciones(tirada.condiciones ?? [], estadoCondiciones);
     const bonoTramo = valorBonosTramo(tirada.bonosTramo ?? [], estadoCondiciones);
     const bonoEquipoEspecie = bonoAlcance(mods, {
@@ -329,11 +365,14 @@ export function AccionesTab({
     if (tirada.ataque) {
       const modoId = typeof estadoCondiciones.modo === "string" ? estadoCondiciones.modo : tirada.ataque.modos[0].id;
       const modo = tirada.ataque.modos.find((m) => m.id === modoId) ?? tirada.ataque.modos[0];
-      danioInfo = { base: modo.danio, formulaDanio: modo.formulaDanio, categoriaDanio: modo.categoriaDanio };
+      const danioBase = sutilActivo ? (modo.danioSutil ?? modo.danio) : modo.danio;
+      danioInfo = { base: danioBase, formulaDanio: modo.formulaDanio, categoriaDanio: modo.categoriaDanio };
     }
 
     const id = Date.now();
-    setHistorial((h) => [{ ...r, id, label: tirada.label, danioInfo }, ...h].slice(0, 6));
+    setHistorial((h) =>
+      [{ ...r, id, label: tirada.label, danioInfo, efectoCritico: tirada.efectoCritico }, ...h].slice(0, 6),
+    );
     setModal((m) => (m ? { ...m, resultadoId: id } : m));
   };
 
@@ -425,6 +464,7 @@ export function AccionesTab({
       {modal && (
         <AccionModal
           titulo={modal.tirada.label}
+          nota={modal.tirada.nota}
           subtitulo={
             especialidadesActuales.length > 0
               ? `especialidad: ${especialidadesActuales.join(" / ")}`

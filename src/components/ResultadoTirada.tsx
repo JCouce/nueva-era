@@ -18,6 +18,10 @@ export type Lanzamiento = Resultado & {
   label: string;
   danioInfo?: DanioInfo | null;
   danioResuelto?: ResultadoDanio;
+  // Texto de crítico de la Accion que generó esta tirada (Accion.efectoCritico,
+  // combate.ts) — solo tiene sentido pintarlo si esta tirada acabó en crítico,
+  // ver el bloque de daño más abajo.
+  efectoCritico?: string;
 };
 
 // Contenido de un resultado de tirada — dado, total, veredicto, daño. Lo
@@ -121,6 +125,9 @@ export function ContenidoResultado({
                   {" "}
                   ({resultado.danioResuelto.base} base +{resultado.danioResuelto.bonoExitos} por éxitos)
                 </span>
+              )}
+              {resultado.critico && resultado.efectoCritico && (
+                <span className="text-accent"> · {resultado.efectoCritico}</span>
               )}
             </p>
           ) : puedeTirarDanio ? (

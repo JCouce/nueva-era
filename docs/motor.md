@@ -155,7 +155,8 @@ type Mecanismo =
   | "accion_sin_equipo"  // genera su propia acción sin ser una pieza de equipo (poderes, dotes) — pendiente de construir
   | "gate_instalacion"   // bloquea/atenúa/avisa sobre una acción entera (el mecanismo que falta del tipo 5)
   | "accion_equipo"      // genera su propia acción SIENDO equipo — función hardcodeada por familia/id (combate.ts, lib/rules/herramientas.ts), ya construido, diseño permanente
-  | "nota_fija";         // texto siempre presente, sin CondicionTirada de por medio, leído directo de un campo y volcado a Tirada.nota
+  | "nota_fija"          // texto siempre presente, sin CondicionTirada de por medio, leído directo de un campo y volcado a Tirada.nota
+  | "sustitucion_aplicado"; // el jugador elige al tirar QUÉ aplicado alimenta la acción (no un +N encima) — no es eleccion_jugador porque no hay CondicionTirada de por medio
 
 type Afecta =
   | { modo: "accion_existente"; id: string }  // tiradaId/accionId que modifica
@@ -192,6 +193,24 @@ construidas** que nunca tuvieron etiqueta:
   descubrimiento nuevo: `docs/modificadores-tiradas.md` ya lo tenía dibujado con
   estas palabras exactas ("❌ sin mecanismo formal — hoy cada caso es ad hoc"), solo
   le faltaba el nombre en el tipo.
+
+**`sustitucion_aplicado` (2026-09-24, estilo Sutil en armas melee,
+`docs/equipamiento.md:848-850`):** un pase anterior había etiquetado el toggle
+de Sutil como `eleccion_jugador` porque "el jugador elige al tirar" — cierto en
+espíritu, falso en los hechos: `eleccion_jugador` significa concretamente
+"pasa por una `CondicionTirada`" (`condiciones.ts`), y Sutil no pasa por ahí.
+Su valor no es un número fijo del catálogo (lo que `CondicionTirada.valorActivo`
+exige) sino `aplicado(sheet, "potencia") - aplicado(sheet, "fuerza")`, que
+depende de la ficha del personaje — así que se resuelve con un booleano ad hoc
+(`FilaTirada` → `modificadorAccion`, ver `combate.ts`/`acciones.ts`), no con la
+infraestructura de condiciones. Se le da nombre propio en vez de forzarlo
+dentro de `eleccion_jugador` (que habría sido mentir en el dato para no abrir
+un mecanismo nuevo) y en vez de generalizar `CondicionTirada` para admitir
+valores calculados (que habría sido construir infraestructura para una
+muestra de tamaño uno). Si aparece un segundo caso real — un poder, una
+dote — que necesite "cambiar qué aplicado alimenta una tirada", ese es el
+momento de fusionar los dos mecanismos; hasta entonces, `sustitucion_aplicado`
+se queda tal cual, sin generalizar.
 
 **`objetivo_tercero` es SIEMPRE tipo "texto", cerrado 2026-09-24 (duda que
 dejó la auditoría, resuelta en conversación):** aunque la regla original traiga

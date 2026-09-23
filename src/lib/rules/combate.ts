@@ -18,7 +18,7 @@ import type { PiezaEquipada } from "./equipo";
 import type { MotorMetadata } from "./motor";
 import { recursoDe, gastoDelModo } from "./recursos";
 import { CONDICION_ATACANTES_ADICIONALES, type Accion } from "./acciones";
-import { atributoEfectivo } from "./derivados";
+import { atributoEfectivo, aplicado } from "./derivados";
 
 const TRAMOS: TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
 
@@ -321,34 +321,31 @@ function tiradaDeArmaMelee(sheet: Sheet, arma: ArmaMelee, instanciaId: string): 
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
   const modo = condicionModo(modosConId);
   const fuerza = atributoEfectivo(sheet, "fuerza");
+  const esSutil = arma.uso.includes("Sutil");
+  // Solo se calcula si hace falta: el resto de armas (no Sutil) no necesita
+  // el aplicado de Potencia para nada aquí.
+  const potencia = esSutil ? aplicado(sheet, "potencia") : null;
 
   // `arma.efectos` (Crítico de X, Ignora N de blindaje...) es hoy puramente
   // decorativo en el catálogo, pero al menos debe llegar como texto a la
   // tirada — mismo criterio que `arma.especial` en tiradaDeArmaFuego. Antes de
   // este fix no llegaba ni como texto (ver docs/equipo-efectos-especiales.md
   // §Kerzul, "fix barato" 2026-09-23).
-  //
-  // Nota sobre Sutil (gap conocido, sin cerrar): "con estilo Sutil ... el daño
-  // usa Potencia en vez de Fuerza" es una elección del jugador en el momento
-  // de golpear, no un dato fijo del arma — el `danio` que se calcula aquí
-  // abajo es siempre con Fuerza (el caso no-Sutil, y el único que ataque ya
-  // mecanizaba con `aplicado: "potencia"` fijo). Elegir Sutil de verdad sigue
-  // sin tener un toggle real; cuando lo tenga, este cálculo necesita la
-  // misma rama condicional.
-  const notas = [
-    arma.uso.includes("Sutil")
-      ? "Con estilo Sutil se tira Reflejos en lugar de Potencia, y el daño usa Potencia en lugar de Fuerza"
-      : null,
-    arma.efectos,
-  ].filter((n): n is string => n !== null);
+  const nota = arma.efectos ?? undefined;
 
   return {
     id: `ataque_melee_${instanciaId}`,
-    label: arma.uso.includes("Sutil") ? `Golpear con ${arma.label} (o Sutil)` : `Golpear con ${arma.label}`,
+    label: `Golpear con ${arma.label}`,
     grupo: "Ataques",
     aplicado: "potencia",
+    // Sutil (docs/equipamiento.md:848-850): elección del jugador al tirar,
+    // resuelta con un toggle en FilaTirada (AccionesTab.tsx) — ya no una nota
+    // de texto que solo avisaba de que existía. La habilidad (Combate Melee)
+    // no cambia en ningún caso, solo el aplicado.
+    aplicadoSutil: esSutil ? "reflejos" : undefined,
     habilidad: "combate_melee",
-    nota: notas.length > 0 ? notas.join(" · ") : undefined,
+    nota,
+    efectoCritico: arma.efectoCritico,
     condiciones: modo ? [modo] : [],
     ataque: {
       modos: modosConId.map((m) => {
@@ -356,6 +353,7 @@ function tiradaDeArmaMelee(sheet: Sheet, arma: ArmaMelee, instanciaId: string): 
         return {
           id: m.id,
           danio: bono === null ? null : fuerza + bono,
+          danioSutil: esSutil && bono !== null && potencia !== null ? potencia + bono : undefined,
           formulaDanio: m.formulaDanio,
           categoriaDanio: m.categoriaDanio,
         };
@@ -371,12 +369,18 @@ function tiradaDeArmaMelee(sheet: Sheet, arma: ArmaMelee, instanciaId: string): 
 // atacante adicional que Esquivar. `arma.bloqueoAjuste` es el ajuste propio
 // de una pieza concreta sobre ESTE bloqueo (hoy solo el Mangual, -2) — no
 // confundir con un bono al ataque.
+//
+// Sutil aquí ya no se asume en automático (era un bug: el jugador no podía
+// elegir bloquear "a lo bruto" con un arma Sutil) — mismo toggle que el
+// ataque, `aplicado: "potencia"` por defecto y `aplicadoSutil: "reflejos"`
+// como opción si el arma lo admite.
 function tiradaBloqueoDeArmaMelee(arma: ArmaMelee, instanciaId: string): Accion {
   return {
     id: `bloquear_melee_${instanciaId}`,
     label: `Bloquear con ${arma.label}`,
     grupo: "Defensa",
-    aplicado: arma.uso.includes("Sutil") ? "reflejos" : "potencia",
+    aplicado: "potencia",
+    aplicadoSutil: arma.uso.includes("Sutil") ? "reflejos" : undefined,
     habilidad: "combate_melee",
     nota: "Reacción gratuita e ilimitada, como Esquivar — activa mientras se lleva el arma.",
     condiciones: [CONDICION_ATACANTES_ADICIONALES],
@@ -425,6 +429,24 @@ const DESCRIPCION_MODO_PULSO: Record<string, string> = {
   barrido: "El haz se abre en abanico y arrasa un área entera de un plumazo, a costa de perder precisión.",
 };
 
+// Las 3 variantes de crítico de los "modo adicional" (nivel 2-4) son del
+// SUBSISTEMA entero, no solo de los 3 modos a distancia — Aguijón también
+// las desbloquea (2026-09-24: se quedó fuera al partir Aguijón en su propia
+// función, mismo texto duplicado en dos sitios habría vuelto a desincronizarse).
+function variantesCriticoDesbloqueadas(nivel: number): string[] {
+  return [
+    nivel >= 2
+      ? `Nivel 2: crítico alternativo Envenenamiento por Radiación (dificultad ${8 + nivel}), a elección en vez de Hemorragia.`
+      : null,
+    nivel >= 3
+      ? `Nivel 3: crítico alternativo Ceguera (dificultad ${8 + nivel}) y el daño pasa a Fuego con Llamarada, a elección.`
+      : null,
+    nivel >= 4
+      ? `Nivel 4: el Shock sube +1 de dificultad; en crítico destruye 1 punto de blindaje del objetivo (sin blindaje, Hemorragia normal), a elección.`
+      : null,
+  ].filter((v): v is string => v !== null);
+}
+
 function tiradaDeProyectorPulso(
   sheet: Sheet,
   pieza: PiezaEquipada,
@@ -449,17 +471,7 @@ function tiradaDeProyectorPulso(
     porDefecto: "pulso",
   };
 
-  const variantesDesbloqueadas = [
-    nivel >= 2
-      ? `Nivel 2: crítico alternativo Envenenamiento por Radiación (dificultad ${8 + nivel}), a elección en vez de Hemorragia.`
-      : null,
-    nivel >= 3
-      ? `Nivel 3: crítico alternativo Ceguera (dificultad ${8 + nivel}) y el daño pasa a Fuego con Llamarada, a elección.`
-      : null,
-    nivel >= 4
-      ? `Nivel 4: el Shock sube +1 de dificultad; en crítico destruye 1 punto de blindaje del objetivo (sin blindaje, Hemorragia normal), a elección.`
-      : null,
-  ].filter((v): v is string => v !== null);
+  const variantesDesbloqueadas = variantesCriticoDesbloqueadas(nivel);
 
   const nota = [
     "Daño grave.",
@@ -503,6 +515,7 @@ function tiradaGolpeAguijon(sheet: Sheet, pieza: PiezaEquipada): Accion {
     nota: [
       "Repliega el emisor a un pincho corto de energía y lo descarga a bocajarro, casi sin gesto — Sutil.",
       `Duración ${nivel} turno(s) · Efecto Shock (${4 + nivel}) · Crítico Hemorragia.`,
+      ...variantesCriticoDesbloqueadas(nivel),
       notaInsuficiente(GASTO_MODO_PULSO.aguijon, recurso, "cargas"),
     ]
       .filter((n): n is string => !!n)

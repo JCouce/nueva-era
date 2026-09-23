@@ -7,6 +7,8 @@ import { accionesDeAtaque, generaAccionPropia } from "./combate";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
 import type { MotorMetadata } from "./motor";
+import { modificadorAccion } from "./acciones";
+import { aplicado } from "./derivados";
 
 // Ficha de trabajo: se parte de la de por defecto y se tocan atributos sueltos.
 function ficha(patch: { atributos?: Partial<Sheet["atributos"]> }): Sheet {
@@ -32,7 +34,7 @@ describe("pelea (puñetazo, patada, codazo)", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "p1", catalogoId: "pelea_punetazo" });
     const labels = accionesDeAtaque(sheet).map((t) => t.label);
-    assert.deepEqual(labels, ["Golpear con Puñetazo (o Sutil)", "Bloquear con Puñetazo"]);
+    assert.deepEqual(labels, ["Golpear con Puñetazo", "Bloquear con Puñetazo"]);
   });
 
   test("el puñetazo tiene dos modos y su condición de modo", () => {
@@ -250,16 +252,16 @@ describe("arma melee equipada", () => {
   test("una fórmula sin '+N' (solo 'Fuerza' o 'Fue') usa la Fuerza tal cual", () => {
     let sheet = ficha({ atributos: { fuerza: 2 } });
     sheet = equipar(sheet, { instanciaId: "punetazo1", catalogoId: "pelea_punetazo" });
-    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Puñetazo (o Sutil)")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Puñetazo")!;
     assert.equal(fila.ataque?.modos[0].danio, 2); // Fuerza(2) + 0
   });
 
-  test("un arma Sutil lo indica en la etiqueta y la nota", () => {
+  test("un arma Sutil ya no lo indica en la etiqueta (el toggle lo comunica solo)", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada_ligera" });
     const fila = accionesDeAtaque(sheet).find((t) => t.label.includes("Espada Ligera"))!;
-    assert.match(fila.label, /Sutil/);
-    assert.match(fila.nota ?? "", /Potencia en lugar de Fuerza/);
+    assert.equal(fila.label, "Golpear con Espada Ligera");
+    assert.doesNotMatch(fila.nota ?? "", /Sutil/);
   });
 
   test("el 'efectos' del arma llega a la nota, igual que 'especial' en armas de fuego", () => {
@@ -269,12 +271,70 @@ describe("arma melee equipada", () => {
     assert.match(fila.nota ?? "", /Crítico de Aturdimiento \(7\)/);
   });
 
-  test("Sutil y 'efectos' se combinan en la misma nota, sin pisarse", () => {
+  test("un arma Sutil sigue mostrando su 'efectos' en la nota, sin el texto de Sutil", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada_ligera" });
     const fila = accionesDeAtaque(sheet).find((t) => t.label.includes("Espada Ligera"))!;
-    assert.match(fila.nota ?? "", /Potencia en lugar de Fuerza/);
     assert.match(fila.nota ?? "", /Crítico de Hemorragia \(1d6 turnos\)/);
+    assert.doesNotMatch(fila.nota ?? "", /Sutil/);
+  });
+});
+
+describe("estilo Sutil — toggle en vez de fila duplicada (docs/equipamiento.md:848-850)", () => {
+  test("un arma Sutil expone aplicadoSutil (Reflejos) y danioSutil (base Potencia) por modo", () => {
+    let sheet = ficha({ atributos: { fuerza: 4, agilidad: 2 } }); // potencia = media(4,2) = 3
+    sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada_ligera" });
+    const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Espada Ligera")!;
+    assert.equal(golpe.aplicado, "potencia");
+    assert.equal(golpe.aplicadoSutil, "reflejos");
+    assert.equal(golpe.ataque?.modos[0].danio, 6); // Fue(4) + 2
+    assert.equal(golpe.ataque?.modos[0].danioSutil, 5); // Potencia(3) + 2
+  });
+
+  test("un arma no Sutil no lleva aplicadoSutil ni danioSutil", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada" });
+    const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Espada")!;
+    assert.equal(golpe.aplicadoSutil, undefined);
+    assert.equal(golpe.ataque?.modos[0].danioSutil, undefined);
+  });
+
+  test("modificadorAccion: el toggle sutilActivo cambia el aplicado usado, la habilidad no cambia", () => {
+    let sheet = ficha({ atributos: { fuerza: 2, agilidad: 0, percepcion: 4 } }); // potencia=1, reflejos=2
+    sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada_ligera" });
+    const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Espada Ligera")!;
+    const normal = modificadorAccion(sheet, golpe, false, undefined, false);
+    const sutil = modificadorAccion(sheet, golpe, false, undefined, true);
+    assert.equal(normal.aplicado, aplicado(sheet, "potencia"));
+    assert.equal(sutil.aplicado, aplicado(sheet, "reflejos"));
+    assert.equal(normal.habilidad, sutil.habilidad);
+  });
+
+  test("preselección: con más Potencia que Reflejos, el estilo normal gana el bonificador de ataque", () => {
+    const sheet = ficha({ atributos: { fuerza: 4, agilidad: 0, percepcion: -1 } }); // potencia=2, reflejos=0
+    assert.ok(aplicado(sheet, "potencia") > aplicado(sheet, "reflejos"));
+  });
+
+  test("preselección: con más Reflejos que Potencia, el estilo Sutil gana el bonificador de ataque", () => {
+    const sheet = ficha({ atributos: { fuerza: -1, agilidad: 4, percepcion: 4 } }); // potencia=2, reflejos=4
+    assert.ok(aplicado(sheet, "reflejos") > aplicado(sheet, "potencia"));
+  });
+});
+
+describe("efectoCritico (Feature 2, piloto Cuchillo de Combate)", () => {
+  test("el Cuchillo de Combate propaga su efectoCritico a la Accion generada, fuera de 'nota'", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "cuchillo1", catalogoId: "espada_cuchillo_combate" });
+    const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Cuchillo de Combate")!;
+    assert.equal(golpe.efectoCritico, "Hemorragia (1d6 turnos)");
+    assert.equal(golpe.nota, undefined);
+  });
+
+  test("un arma sin efectoCritico en el catálogo no lo lleva en la Accion", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada" });
+    const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Espada")!;
+    assert.equal(golpe.efectoCritico, undefined);
   });
 });
 
@@ -286,15 +346,17 @@ describe("Bloqueo (otra forma de defensa, pregunta 31 resuelta)", () => {
     assert.ok(bloqueo);
     assert.equal(bloqueo.grupo, "Defensa");
     assert.equal(bloqueo.aplicado, "potencia");
+    assert.equal(bloqueo.aplicadoSutil, undefined);
     assert.equal(bloqueo.habilidad, "combate_melee");
     assert.deepEqual(bloqueo.ajustesFijos, []);
   });
 
-  test("con un arma Sutil, el Bloqueo usa Reflejos en vez de Potencia", () => {
+  test("con un arma Sutil, el Bloqueo expone Reflejos como opción, sin asumirlo (elección del jugador)", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada_ligera" });
     const bloqueo = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Espada Ligera")!;
-    assert.equal(bloqueo.aplicado, "reflejos");
+    assert.equal(bloqueo.aplicado, "potencia");
+    assert.equal(bloqueo.aplicadoSutil, "reflejos");
     assert.equal(bloqueo.habilidad, "combate_melee");
   });
 
@@ -427,6 +489,15 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
 
   test("con nivel 4 la nota lista las tres variantes de crítico desbloqueadas", () => {
     const fila = accionesDeAtaque(conProyectorPulso(4)).find((t) => t.label.includes("Combate a Distancia"))!;
+    assert.match(fila.nota ?? "", /Nivel 2: crítico alternativo Envenenamiento por Radiación \(dificultad 12\)/);
+    assert.match(fila.nota ?? "", /Nivel 3: crítico alternativo Ceguera \(dificultad 12\)/);
+    assert.match(fila.nota ?? "", /Nivel 4: el Shock sube \+1/);
+  });
+
+  test("Aguijón también lista las variantes de crítico desbloqueadas (mismo subsistema, no solo los modos a distancia)", () => {
+    const fila = accionesDeAtaque(conProyectorPulso(4)).find(
+      (t) => t.label === "Golpear con Proyector de Pulso (Aguijón)",
+    )!;
     assert.match(fila.nota ?? "", /Nivel 2: crítico alternativo Envenenamiento por Radiación \(dificultad 12\)/);
     assert.match(fila.nota ?? "", /Nivel 3: crítico alternativo Ceguera \(dificultad 12\)/);
     assert.match(fila.nota ?? "", /Nivel 4: el Shock sube \+1/);

@@ -23,6 +23,17 @@ export const MECANISMOS_MOTOR = [
   // y el tipo 5, pero dos patrones YA CONSTRUIDOS se quedaron sin etiqueta.
   "accion_equipo", // genera su propia acción SIENDO equipo — función hardcodeada por familia/id en combate.ts / lib/rules/herramientas.ts (tiradaDeArmaFuego, tiradaDeArmaMelee, tiradaDeArmamentoPesado, tiradaDeGranada, accionesDeHerramientas), sin mecanismo de datos genérico. A diferencia de accion_sin_equipo, este SÍ está construido — es el diseño permanente para equipo, no un hueco a rellenar.
   "nota_fija", // texto siempre presente, sin elección del jugador, leído directo de un campo del catálogo (arma.especial, arma.efectos, granada.areaEfecto, NivelModulo.notaTirada) y concatenado a Accion.nota — docs/modificadores-tiradas.md lo llama "ad hoc" en su propio diagrama (la tercera caja, "Texto informativo"). Distinto de eleccion_jugador: aquí no hay ningún CondicionTirada de por medio, ni checkbox que activar/desactivar.
+  // Añadido el 2026-09-24 (estilo Sutil en armas melee, docs/equipamiento.md:848-850):
+  // el jugador elige al tirar, PERO no es eleccion_jugador porque no pasa por
+  // CondicionTirada — su valor (Potencia en vez de Fuerza) depende de la ficha,
+  // y CondicionTirada.valorActivo es un número fijo del catálogo, no calculable
+  // desde el sheet. Se resuelve con un booleano ad hoc (FilaTirada → modificadorAccion),
+  // no con la infraestructura de condiciones.ts. No generalizar CondicionTirada para
+  // esto con un solo caso real — si aparece un segundo (poder, dote) que necesite
+  // "cambiar qué aplicado alimenta una tirada", ese es el momento de fusionar los dos
+  // mecanismos, no antes.
+  "sustitucion_aplicado", // cambia qué AplicadoId alimenta una acción existente, a elección del jugador al tirar — no aditivo, no CondicionTirada
+
 ] as const;
 export type MecanismoMotor = (typeof MECANISMOS_MOTOR)[number];
 

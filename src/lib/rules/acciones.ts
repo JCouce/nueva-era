@@ -33,8 +33,18 @@ export type Accion = {
   // catálogo fijo.
   grupo: GrupoAccion;
   aplicado: AplicadoId;
+  // Estilo Sutil (docs/equipamiento.md:848-850): solo presente si el arma
+  // admite Sutil. Es una ELECCIÓN del jugador al tirar (toggle en
+  // FilaTirada/AccionesTab.tsx), no un dato fijo — por eso vive aparte de
+  // `aplicado` en vez de sustituirlo. La habilidad NO cambia con Sutil, solo
+  // el aplicado (ver `modificadorAccion`).
+  aplicadoSutil?: AplicadoId;
   habilidad: HabilidadId | null; // las salvaciones van con el aplicado a secas
   nota?: string;
+  // Texto que solo aplica si la tirada acaba en crítico (Feature 2, piloto en
+  // el Cuchillo de Combate) — a diferencia de `nota`, que se muestra siempre.
+  // Se pinta en ResultadoTirada.tsx solo cuando `resultado.critico` es true.
+  efectoCritico?: string;
   // Cuando una tirada depende de algo que el sistema aún no define, se declara
   // en vez de inventársela: la UI la muestra apagada con el motivo.
   bloqueada?: string;
@@ -61,6 +71,11 @@ export type Accion = {
     modos: {
       id: string;
       danio: number | null; // null en armas melee: el daño es una fórmula, no un número
+      // Daño de este mismo modo con el estilo Sutil activo (Potencia en vez de
+      // Fuerza como base) — hermano de `danio`, presente solo si el arma
+      // admite Sutil y la fórmula se pudo parsear (ver bonoFormulaFuerza en
+      // combate.ts).
+      danioSutil?: number | null;
       formulaDanio: string | null;
       categoriaDanio: string;
     }[];
@@ -215,8 +230,12 @@ export function modificadorAccion(
   tirada: Accion,
   enEspecialidad = false,
   mods: ModificadorConFuente[] = modificadoresActivos(sheet),
+  // Estilo Sutil elegido (ver `Accion.aplicadoSutil`): la habilidad no cambia
+  // en ningún caso, solo qué aplicado se usa para calcular el ataque.
+  sutilActivo = false,
 ): { total: number; aplicado: number; habilidad: number | null } {
-  const modAplicado = aplicado(sheet, tirada.aplicado, mods);
+  const aplicadoId = sutilActivo && tirada.aplicadoSutil ? tirada.aplicadoSutil : tirada.aplicado;
+  const modAplicado = aplicado(sheet, aplicadoId, mods);
   const modHabilidad = tirada.habilidad
     ? valorEfectivo(sheet, tirada.habilidad, enEspecialidad, mods)
     : null;
