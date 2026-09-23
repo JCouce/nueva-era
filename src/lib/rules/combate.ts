@@ -7,12 +7,14 @@ import type { Sheet } from "./sheet";
 import {
   equipoPorId,
   type ArmaFuego,
+  type Equipo,
   type TipoArma,
 } from "../catalog/equipo";
 import type { ArmaMelee } from "../catalog/armasMelee";
 import type { ArmaPesada } from "../catalog/armamentoPesado";
 import { MUNICION_GRANADA, ALCANCE_ARROJADA, type MunicionGranada } from "../catalog/municion";
 import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condiciones";
+import type { PiezaEquipada } from "./equipo";
 import { recursoDe, gastoDelModo } from "./recursos";
 import type { Tirada } from "./tiradas";
 
@@ -330,6 +332,42 @@ function tiradaDeArmaMelee(arma: ArmaMelee, instanciaId: string): Tirada {
   };
 }
 
+// Registro familia -> generador de acción (T5, docs/motor.md §Escalabilidad):
+// una función por familia con firma uniforme, en vez de un bucle hardcodeado
+// por familia repetido 4 veces sobre sheet.equipo. Dar de alta una familia
+// nueva en esta lista (armas de fuego/melee/pesadas, granadas) es añadir una
+// entrada aquí, no tocar tiradasDeAtaque(). Cada wrapper es una cáscara fina
+// sobre la función real (tiradaDeArmaFuego, tiradaDeArmaMelee...) — la lógica
+// de cada una no cambia, solo el mecanismo de despacho.
+//
+// El cast a la familia concreta dentro de cada wrapper es seguro: el
+// registro solo se consulta con REGISTRO_DE_ATAQUE[cat.familia], así que
+// dentro de la entrada "arma" el `cat` que llega siempre es de verdad un
+// ArmaFuego, etc. — TypeScript no puede inferir esa correlación por sí solo
+// en un Record indexado por la propia familia.
+//
+// "herramienta" queda FUERA de este registro a propósito, aunque también
+// genera su propia acción (tiradasDeHerramientas, lib/rules/herramientas.ts):
+// TiradasTab.tsx llama a tiradasDeAtaque() y a tiradasDeHerramientas() por
+// separado, para pintarlas en secciones distintas ("Ataques" vs
+// "Herramientas"). Meter "herramienta" en este mismo registro haría que
+// tiradasDeAtaque() empezara a devolver también filas de herramientas,
+// duplicándolas en la pestaña. tiradasDeHerramientas() se adaptó al mismo
+// patrón de generador por pieza (ver herramientas.ts), pero vive en su
+// propio registro/función, no en este.
+type GeneradorDeAtaque = (sheet: Sheet, pieza: PiezaEquipada, cat: Equipo) => Tirada[];
+
+const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> = {
+  arma: (sheet, pieza, cat) => {
+    const arma = cat as ArmaFuego;
+    const lanzagranadas = tiradaDeLanzagranadas(sheet, arma, pieza.instanciaId);
+    return [tiradaDeArmaFuego(sheet, arma, pieza.instanciaId), ...(lanzagranadas ? [lanzagranadas] : [])];
+  },
+  armaMelee: (_sheet, pieza, cat) => [tiradaDeArmaMelee(cat as ArmaMelee, pieza.instanciaId)],
+  armaPesada: (_sheet, pieza, cat) => [tiradaDeArmamentoPesado(cat as ArmaPesada, pieza.instanciaId)],
+  granada: (_sheet, pieza, cat) => [tiradaDeGranada(cat as MunicionGranada, pieza.instanciaId)],
+};
+
 // Todas las filas de la categoría "Ataques": una por arma de fuego, arma
 // melee, arma pesada o granada equipada — incluida Pelea (Puñetazo, Patada,
 // Codazo o Rodillazo), que ya no se añade sola: si el jugador la quiere en
@@ -337,29 +375,12 @@ function tiradaDeArmaMelee(arma: ArmaMelee, instanciaId: string): Tirada {
 // "no se compra" en vez de precio, pero es el mismo flujo).
 export function tiradasDeAtaque(sheet: Sheet): Tirada[] {
   const tiradas: Tirada[] = [];
-
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
-    if (cat?.familia !== "arma") continue;
-    tiradas.push(tiradaDeArmaFuego(sheet, cat, pieza.instanciaId));
-    const lanzagranadas = tiradaDeLanzagranadas(sheet, cat, pieza.instanciaId);
-    if (lanzagranadas) tiradas.push(lanzagranadas);
+    if (!cat) continue;
+    const generador = REGISTRO_DE_ATAQUE[cat.familia];
+    if (!generador) continue;
+    tiradas.push(...generador(sheet, pieza, cat));
   }
-
-  for (const pieza of sheet.equipo) {
-    const cat = equipoPorId(pieza.catalogoId);
-    if (cat?.familia === "armaMelee") tiradas.push(tiradaDeArmaMelee(cat, pieza.instanciaId));
-  }
-
-  for (const pieza of sheet.equipo) {
-    const cat = equipoPorId(pieza.catalogoId);
-    if (cat?.familia === "armaPesada") tiradas.push(tiradaDeArmamentoPesado(cat, pieza.instanciaId));
-  }
-
-  for (const pieza of sheet.equipo) {
-    const cat = equipoPorId(pieza.catalogoId);
-    if (cat?.familia === "granada") tiradas.push(tiradaDeGranada(cat, pieza.instanciaId));
-  }
-
   return tiradas;
 }
