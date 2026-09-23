@@ -718,15 +718,16 @@ lo anota a mano.
 28. ~~Un "nivel de fatiga", ¿es un punto de fatiga o un estado (Fatigado/Exhausto)?~~ **Resuelta (Murillo, 2026-09-23): es lo mismo, un punto.** *(C10)*
 29. El daño de un arma, ¿se resta 1:1 de los puntos de golpe tras el blindaje? Con armas de 7 a 20 y personajes de 6 a 16 puntos, un disparo corriente se lleva media vida. *(C11)* — **Confirmado 2026-09-21 (repaso de efectos especiales de equipo, Hallazgo #5 de `docs/equipo-efectos-especiales.md`): `blindaje` no aparece ni una vez en `src/lib/rules/`, no hay ningún cálculo de absorción implementado.** Bloquea Mejora Ignífuga, Polímero Anticorrosivo/Tejido Conductor nivel 2, y una propuesta de tirada "Bloquear daño" (mostrar cuánto se absorbe de un impacto dado).
 30. ~~**Cultura** y **Supervivencia** no aparecen en ninguna regla... ¿Es Supervivencia la habilidad madre de Exploración?~~ **Resuelta**: Supervivencia desaparece, la sustituye Exploración entera. Cultura se queda sin resolver — sigue sin uso conocido. *(C12)*
-31. **"Bloqueo" no está definido en ningún sitio.** `COMBATE` (`docs/sistema-y-combate.md`
-    §"Acción defensiva") dice que la defensa pasiva por defecto es Reflejos + Atletismo y
-    cierra con "Existen otras formas de defensa" — sin desarrollarlas. La única aparición
-    de la palabra "Bloqueo" en todo el proyecto es la fila del Mangual en `EQUIP`
-    (`docs/equipamiento.md`, Flagelos): "Bloqueo -2". ¿Es una de esas "otras formas de
-    defensa" (defenderse activamente con el arma en mano, en vez de esquivar)? Si es así,
-    ¿qué atributo + habilidad usa, y sobre qué valor base se aplica el -2? Detectado por
-    el usuario al revisar el Mangual (2026-09-21) — bloquea cómo mecanizar ese ítem del
-    barrido de `docs/equipo-efectos-especiales.md`.
+31. ~~**"Bloqueo" no está definido en ningún sitio.**~~ **Resuelta (2026-09-24).**
+    Bloqueo es "otra forma de defensa" (junto a Esquivar), activa con cualquier arma
+    melee equipada: mismo par atributo+habilidad que el **ataque** de esa arma
+    (Potencia + Combate Melee; Reflejos + Combate Melee si el arma es Sutil — decisión
+    del usuario por el mismo patrón ya confirmado por Murillo para atacar, ver
+    "Emparejamiento atributo + habilidad"). Igual que Esquivar, es reacción gratuita
+    e ilimitada con el mismo -1 acumulativo por atacante adicional. El "-2" del
+    Mangual es un ajuste propio de esa pieza sobre su Bloqueo, no la regla base.
+    Implementado: `tiradaBloqueoDeArmaMelee()` (`lib/rules/combate.ts`), genera
+    "Bloquear con X" junto a "Golpear con X" para cualquier arma melee equipada.
 32. **"Susceptible a shock" / "apagón" no está definido de forma consistente.** Varias
     piezas de `EQUIP` dicen ser inmunes o susceptibles a shock (Inyector Hipodérmico,
     Soporte Vital, Polímero Anticorrosivo, Tejido Conductor), pero: (a) "apagón" — lo

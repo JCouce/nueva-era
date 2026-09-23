@@ -69,8 +69,10 @@ export type Accion = {
 
 // −1 acumulativo por cada atacante adicional en la ronda (sistema-y-combate.md).
 // Un contador y no un toggle porque el penalizador escala con cuántos atacan,
-// no con un sí/no.
-const CONDICION_ATACANTES_ADICIONALES: CondicionTirada = {
+// no con un sí/no. Exportada porque combate.ts la reutiliza en "Bloquear con
+// X" (pregunta 31, Bloqueo confirmado como otra forma de defensa activa —
+// misma reacción gratuita, mismo penalizador por atacante adicional).
+export const CONDICION_ATACANTES_ADICIONALES: CondicionTirada = {
   id: "atacantes_adicionales",
   tipo: "contador",
   etiqueta: "Atacantes adicionales esta ronda",

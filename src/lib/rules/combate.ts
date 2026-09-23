@@ -17,7 +17,7 @@ import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condicione
 import type { PiezaEquipada } from "./equipo";
 import type { MotorMetadata } from "./motor";
 import { recursoDe, gastoDelModo } from "./recursos";
-import type { Accion } from "./acciones";
+import { CONDICION_ATACANTES_ADICIONALES, type Accion } from "./acciones";
 
 const TRAMOS: TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
 
@@ -337,6 +337,26 @@ function tiradaDeArmaMelee(arma: ArmaMelee, instanciaId: string): Accion {
   };
 }
 
+// Bloqueo (pregunta 31, resuelta 2026-09-24): "otra forma de defensa" además
+// de Esquivar (defensa/atletismo en ACCIONES), activa con cualquier arma
+// melee equipada — mismo par que su propio ataque (Potencia + Combate Melee,
+// o Reflejos + Combate Melee si el arma es Sutil) y mismo penalizador por
+// atacante adicional que Esquivar. `arma.bloqueoAjuste` es el ajuste propio
+// de una pieza concreta sobre ESTE bloqueo (hoy solo el Mangual, -2) — no
+// confundir con un bono al ataque.
+function tiradaBloqueoDeArmaMelee(arma: ArmaMelee, instanciaId: string): Accion {
+  return {
+    id: `bloquear_melee_${instanciaId}`,
+    label: `Bloquear con ${arma.label}`,
+    grupo: "Defensa",
+    aplicado: arma.uso.includes("Sutil") ? "reflejos" : "potencia",
+    habilidad: "combate_melee",
+    nota: "Reacción gratuita e ilimitada, como Esquivar — activa mientras se lleva el arma.",
+    condiciones: [CONDICION_ATACANTES_ADICIONALES],
+    ajustesFijos: arma.bloqueoAjuste ? [{ valor: arma.bloqueoAjuste, fuente: arma.label }] : [],
+  };
+}
+
 // Proyector de Pulso (Subsistema, catalogoId "proyector_pulso"): el único
 // subsistema del catálogo que es, de hecho, un arma — Hallazgo #1 de
 // docs/equipo-efectos-especiales.md, construido 2026-09-23 tras la respuesta
@@ -344,13 +364,18 @@ function tiradaDeArmaMelee(arma: ArmaMelee, instanciaId: string): Accion {
 // alternativas que el jugador elige libremente, no niveles que se sustituyen).
 // Sus números escalan con el Nivel instalado de la pieza (daño, alcance,
 // dificultad de los efectos) — algo que ningún arma normal hace — por eso
-// vive en su propia función en vez de encajar en tiradaDeArmaFuego. La propia
-// descripción del subsistema dice que el aplicado es Reflejos "en ambos
-// casos" (Combate a Distancia o Tecnociencia) — incluido Aguijón, su modo
-// melee — así que no hace falta inventar un mecanismo de "elige
-// atributo/habilidad dentro de la misma tirada": se generan dos Acciones
-// gemelas, una por habilidad, mismo patrón que ya usa el resto del motor
-// (una función, varias Acciones — ver tiradaDeArmaFuego + tiradaDeLanzagranadas).
+// vive en su propia función en vez de encajar en tiradaDeArmaFuego.
+//
+// Aguijón (2026-09-24, corregido tras confirmar con Murillo): NO comparte
+// aplicado/habilidad con los otros 3 modos. Es Combate Melee — no la elección
+// Combate a Distancia/Tecnociencia de los modos a distancia — así que genera
+// sus propias dos Acciones (Golpear/Bloquear), mismo patrón que cualquier
+// arma melee (tiradaDeArmaMelee/tiradaBloqueoDeArmaMelee), no una opción más
+// dentro del selector de modo a distancia. Es Sutil (aplicado Reflejos, no
+// Potencia) — coincide con la lectura original ("aplicado Reflejos en ambos
+// casos") solo por coincidencia con la regla general de Sutil, no porque siga
+// perteneciendo al par Combate a Distancia/Tecnociencia.
+//
 // Los 3 "modo adicional" (envenenamiento/ceguera+fuego/disrupción de campo) y
 // el -5 al sigilo se quedan como texto informativo o sin construir — ver
 // docs/sistema.md pregunta 13 y el MotorMetadata de cada nivel en
@@ -377,7 +402,6 @@ function tiradaDeProyectorPulso(
       { id: "pulso", etiqueta: "Pulso", valor: -2 },
       { id: "pulso_cargado", etiqueta: "Pulso Cargado", valor: -2 },
       { id: "barrido", etiqueta: "Barrido", valor: -3 },
-      { id: "aguijon", etiqueta: "Aguijón (melee, Sutil)", valor: 0 },
     ].map((o) => ({ ...o, nota: notaInsuficiente(GASTO_MODO_PULSO[o.id], recurso, "cargas") })),
     porDefecto: "pulso",
   };
@@ -399,7 +423,6 @@ function tiradaDeProyectorPulso(
     `Pulso: alcance ${40 * nivel}m · Efecto Shock (${4 + nivel}) · Crítico Hemorragia.`,
     `Pulso Cargado: alcance ${60 * nivel}m · Efecto Shock (${6 + nivel}) · Crítico Hemorragia.`,
     `Barrido: área 6x6 a ${40 * nivel}m · Efecto Esquiva (${7 + nivel}) y Shock (${7 + nivel}).`,
-    `Aguijón: duración ${nivel} turno(s) · Efecto Shock (${4 + nivel}) · Crítico Hemorragia.`,
     ...variantesDesbloqueadas,
   ].join(" · ");
 
@@ -418,9 +441,44 @@ function tiradaDeProyectorPulso(
         { id: "pulso", danio: 8 + nivel, formulaDanio: null, categoriaDanio: "Grave" },
         { id: "pulso_cargado", danio: 11 + nivel, formulaDanio: null, categoriaDanio: "Grave" },
         { id: "barrido", danio: 10 + nivel, formulaDanio: null, categoriaDanio: "Grave" },
-        { id: "aguijon", danio: null, formulaDanio: `Fue+${2 + nivel}`, categoriaDanio: "Grave" },
       ],
     },
+  };
+}
+
+// Aguijón, separado del resto de modos (ver comentario de arriba): Combate
+// Melee, Sutil, mismo patrón Golpear+Bloquear que cualquier arma melee.
+function tiradaGolpeAguijon(sheet: Sheet, pieza: PiezaEquipada): Accion {
+  const nivel = pieza.nivel ?? 1;
+  const recurso = recursoDe(sheet, pieza.instanciaId);
+  return {
+    id: `ataque_proyector_pulso_aguijon_${pieza.instanciaId}`,
+    label: "Golpear con Proyector de Pulso (Aguijón)",
+    grupo: "Ataques",
+    aplicado: "reflejos", // Sutil
+    habilidad: "combate_melee",
+    nota: [
+      "Sutil.",
+      `Duración ${nivel} turno(s) · Efecto Shock (${4 + nivel}) · Crítico Hemorragia.`,
+      notaInsuficiente(GASTO_MODO_PULSO.aguijon, recurso, "cargas"),
+    ]
+      .filter((n): n is string => !!n)
+      .join(" · "),
+    ataque: {
+      modos: [{ id: "0", danio: null, formulaDanio: `Fue+${2 + nivel}`, categoriaDanio: "Grave" }],
+    },
+  };
+}
+
+function tiradaBloqueoAguijon(pieza: PiezaEquipada): Accion {
+  return {
+    id: `bloquear_proyector_pulso_aguijon_${pieza.instanciaId}`,
+    label: "Bloquear con Proyector de Pulso (Aguijón)",
+    grupo: "Defensa",
+    aplicado: "reflejos", // Sutil
+    habilidad: "combate_melee",
+    nota: "Reacción gratuita e ilimitada, como Esquivar — activa mientras se lleva el arma.",
+    condiciones: [CONDICION_ATACANTES_ADICIONALES],
   };
 }
 
@@ -455,7 +513,10 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
     const lanzagranadas = tiradaDeLanzagranadas(sheet, arma, pieza.instanciaId);
     return [tiradaDeArmaFuego(sheet, arma, pieza.instanciaId), ...(lanzagranadas ? [lanzagranadas] : [])];
   },
-  armaMelee: (_sheet, pieza, cat) => [tiradaDeArmaMelee(cat as ArmaMelee, pieza.instanciaId)],
+  armaMelee: (_sheet, pieza, cat) => {
+    const arma = cat as ArmaMelee;
+    return [tiradaDeArmaMelee(arma, pieza.instanciaId), tiradaBloqueoDeArmaMelee(arma, pieza.instanciaId)];
+  },
   armaPesada: (_sheet, pieza, cat) => [tiradaDeArmamentoPesado(cat as ArmaPesada, pieza.instanciaId)],
   granada: (_sheet, pieza, cat) => [tiradaDeGranada(cat as MunicionGranada, pieza.instanciaId)],
   // Único caso hoy: Proyector de Pulso (ver tiradaDeProyectorPulso arriba).
@@ -469,6 +530,8 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
     return [
       tiradaDeProyectorPulso(sheet, pieza, "combate_distancia"),
       tiradaDeProyectorPulso(sheet, pieza, "tecnociencia"),
+      tiradaGolpeAguijon(sheet, pieza),
+      tiradaBloqueoAguijon(pieza),
     ];
   },
 };

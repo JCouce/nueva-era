@@ -26,7 +26,7 @@ describe("pelea (puñetazo, patada, codazo)", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "p1", catalogoId: "pelea_punetazo" });
     const labels = accionesDeAtaque(sheet).map((t) => t.label);
-    assert.deepEqual(labels, ["Golpear con Puñetazo (o Sutil)"]);
+    assert.deepEqual(labels, ["Golpear con Puñetazo (o Sutil)", "Bloquear con Puñetazo"]);
   });
 
   test("el puñetazo tiene dos modos y su condición de modo", () => {
@@ -258,6 +258,43 @@ describe("arma melee equipada", () => {
   });
 });
 
+describe("Bloqueo (otra forma de defensa, pregunta 31 resuelta)", () => {
+  test("toda arma melee equipada genera también su 'Bloquear con...'", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada" });
+    const bloqueo = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Espada")!;
+    assert.ok(bloqueo);
+    assert.equal(bloqueo.grupo, "Defensa");
+    assert.equal(bloqueo.aplicado, "potencia");
+    assert.equal(bloqueo.habilidad, "combate_melee");
+    assert.deepEqual(bloqueo.ajustesFijos, []);
+  });
+
+  test("con un arma Sutil, el Bloqueo usa Reflejos en vez de Potencia", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada_ligera" });
+    const bloqueo = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Espada Ligera")!;
+    assert.equal(bloqueo.aplicado, "reflejos");
+    assert.equal(bloqueo.habilidad, "combate_melee");
+  });
+
+  test("el Mangual trae su propio -2 al Bloqueo", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "mangual1", catalogoId: "flagelo_mangual" });
+    const bloqueo = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Mangual")!;
+    assert.deepEqual(bloqueo.ajustesFijos, [{ valor: -2, fuente: "Mangual" }]);
+  });
+
+  test("mismo penalizador por atacante adicional que Esquivar", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada" });
+    const bloqueo = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Espada")!;
+    const contador = bloqueo.condiciones?.find((c) => c.id === "atacantes_adicionales");
+    assert.ok(contador && contador.tipo === "contador");
+    assert.equal(contador.valorPorUnidad, -1);
+  });
+});
+
 describe("armamento pesado equipado", () => {
   test("dificultad fija por arma, mecanizada como ajustesFijos", () => {
     let sheet = defaultSheet();
@@ -306,7 +343,7 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
     return sheet;
   }
 
-  test("genera dos filas gemelas, una por habilidad elegible", () => {
+  test("genera cuatro filas: dos a distancia (por habilidad) y dos con Aguijón (melee)", () => {
     const sheet = conProyectorPulso(1);
     const labels = accionesDeAtaque(sheet)
       .map((t) => t.label)
@@ -314,12 +351,14 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
     assert.deepEqual(labels, [
       "Disparar Proyector de Pulso (Combate a Distancia)",
       "Disparar Proyector de Pulso (Tecnociencia)",
+      "Golpear con Proyector de Pulso (Aguijón)",
+      "Bloquear con Proyector de Pulso (Aguijón)",
     ]);
   });
 
-  test("las dos filas usan Reflejos, cada una con su propia habilidad", () => {
+  test("las dos filas a distancia usan Reflejos, cada una con su propia habilidad", () => {
     const sheet = conProyectorPulso(1);
-    const filas = accionesDeAtaque(sheet).filter((t) => t.label.includes("Proyector de Pulso"));
+    const filas = accionesDeAtaque(sheet).filter((t) => t.label.startsWith("Disparar"));
     assert.deepEqual(
       filas.map((f) => [f.aplicado, f.habilidad]),
       [
@@ -327,6 +366,16 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
         ["reflejos", "tecnociencia"],
       ],
     );
+  });
+
+  test("Aguijón (golpear y bloquear) es Reflejos + Combate Melee, no Combate a Distancia/Tecnociencia", () => {
+    const sheet = conProyectorPulso(1);
+    const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Proyector de Pulso (Aguijón)")!;
+    const bloqueo = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Proyector de Pulso (Aguijón)")!;
+    assert.deepEqual([golpe.aplicado, golpe.habilidad], ["reflejos", "combate_melee"]);
+    assert.deepEqual([bloqueo.aplicado, bloqueo.habilidad], ["reflejos", "combate_melee"]);
+    assert.equal(golpe.grupo, "Ataques");
+    assert.equal(bloqueo.grupo, "Defensa");
   });
 
   test("el daño y el modo de disparo escalan con el nivel instalado", () => {
@@ -340,12 +389,13 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
     assert.equal(opcion(modo, "pulso"), -2);
     assert.equal(opcion(modo, "pulso_cargado"), -2);
     assert.equal(opcion(modo, "barrido"), -3);
-    assert.equal(opcion(modo, "aguijon"), 0);
   });
 
-  test("Aguijón es melee: sin daño numérico, fórmula con Fuerza + nivel", () => {
-    const fila = accionesDeAtaque(conProyectorPulso(3)).find((t) => t.label.includes("Tecnociencia"))!;
-    const aguijon = fila.ataque?.modos.find((m) => m.id === "aguijon");
+  test("Aguijón: sin daño numérico, fórmula con Fuerza + nivel, escala con el nivel", () => {
+    const fila = accionesDeAtaque(conProyectorPulso(3)).find(
+      (t) => t.label === "Golpear con Proyector de Pulso (Aguijón)",
+    )!;
+    const aguijon = fila.ataque?.modos[0];
     assert.equal(aguijon?.danio, null);
     assert.equal(aguijon?.formulaDanio, "Fue+5"); // 2 + nivel(3)
   });

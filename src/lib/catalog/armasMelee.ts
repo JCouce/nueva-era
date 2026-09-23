@@ -54,6 +54,12 @@ export type ArmaMelee = {
   coste: number | null;
   // Solo Escudos: cobertura y blindaje propios mientras se sostiene en alto.
   defensa: { cobertura: number; blindaje: number; puntosGolpe: number } | null;
+  // Bloqueo (pregunta 31, resuelta 2026-09-24): toda arma melee genera su
+  // propia acción de "Bloquear" además de "Golpear" (lib/rules/combate.ts),
+  // con el mismo par atributo+habilidad que su ataque. Este campo es solo el
+  // ajuste PROPIO de esta pieza sobre ese bloqueo genérico (el Mangual: -2) —
+  // la mayoría de armas no tiene ninguno.
+  bloqueoAjuste?: number;
   motor?: MotorMetadata[]; // docs/motor.md
 };
 
@@ -600,12 +606,16 @@ export const FLAGELOS: ArmaMelee[] = [
     rareza: "Poco Habitual",
     coste: 100,
     defensa: null,
+    bloqueoAjuste: -2,
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      // uso: "Bloqueo -2" — "Bloqueo" no está definido en ningún sitio del sistema.
-      { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 31" },
+      // uso: "Bloqueo -2" — pregunta 31 resuelta (2026-09-24): Bloqueo es una
+      // acción de defensa activa más, generada para cualquier arma melee
+      // (bloquear_melee_<instancia>, ver combate.ts), con el mismo par que su
+      // ataque. Este -2 es el ajuste propio del Mangual sobre esa acción.
+      { tipo: "numerico", afecta: { modo: "accion_nueva", id: "bloquear_melee" }, mecanismo: "ajuste_fijo", estado: "construido" },
       // uso: "Acción Estándar ignora 2 niveles de Cobertura física" — condicionado al modo
       // Estándar, mismo mecanismo que el selector de arriba, pero la cobertura en sí (afectada
       // aquí desde el punto de vista del ATACANTE, no de quien se cubre) no tiene ningún cálculo
