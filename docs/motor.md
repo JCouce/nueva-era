@@ -315,14 +315,88 @@ como transcrita de verdad:
    transcrito de verdad — copiar el texto a `descripcion`/`detalle` no cuenta
    como transcripción, es solo el primer paso.
 
-## Siguiente paso
+## Siguiente paso (hecho 2026-09-23/24)
 
-El código de RECURSOS de hoy ya cubre bien los tipos 2 y 3 para equipo. Lo
-que queda es sobre todo trabajo de **metadatos**, no de arquitectura nueva:
-construir el schema Zod de `MotorMetadata` (ver más arriba) y el test que lo
-exige en cada efecto de cada pieza del catálogo entero, dejar que marque en
-rojo lo que falta por clasificar, y rellenar hasta que esté todo en verde —
-`construido`, `pendiente`, `bloqueado` o `ad_hoc`, pero nunca sin declarar.
-Ese mismo schema es el filtro obligatorio antes de dar de alta cualquier
-elemento de las fases que vienen: especies reales, poderes psiónicos, dotes,
-aumentos.
+El barrido está cerrado: `src/lib/rules/motor.ts` (tipo + schema Zod) y
+`src/lib/catalog/motor.test.ts` (recorre el catálogo entero de equipo,
+exige `MotorMetadata` completo en cada efecto) llevan las 550 entradas de
+las 215 piezas/niveles del catálogo de equipo, en verde. `ESPECIES` queda
+fuera a propósito (scaffolding provisional, ver su cabecera) — el día que
+se aborde de verdad, evaluar primero si el modelo le vale tal cual.
+
+Una auditoría adversarial posterior (agente fresco, releyendo la fuente
+desde cero, sin mirar primero lo declarado) encontró un puñado de errores
+reales, concentrados en patrones (una constante compartida mal tipada, una
+justificación de bloqueo copiada sin revalidar, un campo entero sin
+declarar) — la lección, no solo para este barrido: **un test en verde
+prueba forma, no contenido; un barrido de datos-con-juicio repartido en
+paralelo necesita una auditoría adversarial después, no basta con el test.**
+
+## Escalabilidad para las fases que vienen (2026-09-24)
+
+`MotorMetadata` describe fielmente cómo se comporta cada pieza hoy, pero
+**ningún código lo lee todavía** — es documentación al lado del dato real,
+no conectada al motor. Eso importa ahora porque vienen ~300 elementos
+nuevos de capa 1 (poderes, dotes, ciberware, razas, más estados, y
+probablemente más tipos todavía) repartidos en varios catálogos nuevos, y
+un personaje puede llevar activos simultáneamente del orden de 20-25
+elementos de capa 1 a la vez (equipo + accesorios + poderes + dotes +
+consumibles + estados). El proceso de hoy no está pensado para eso.
+
+**Diagnóstico, verificado contra el código real, no especulado:**
+
+1. **Generar la lista de Tiradas hace hasta 5 pasadas completas separadas**
+   sobre `sheet.equipo` — una función hardcodeada por familia en
+   `combate.ts` (`tiradaDeArmaFuego`, `tiradaDeArmaMelee`,
+   `tiradaDeArmamentoPesado`, `tiradaDeGranada`) más una en
+   `lib/rules/herramientas.ts` — y cada pasada busca cada pieza en el
+   catálogo con `equipoPorId()`, que es `EQUIPO.find(...)`: una búsqueda
+   **lineal sobre el catálogo entero**, no un índice.
+2. **El cuello de botella real: `condicionesActivas()` se invoca una vez
+   POR CADA tirada mostrada** (`TiradasTab.tsx`, dentro de un `.map()` que
+   corre sobre todas las tiradas de ataque y de herramientas), y cada
+   invocación repite una pasada completa sobre `sheet.equipo` con su propio
+   `equipoPorId()` por pieza. Es un bucle anidado de verdad: tiradas ×
+   piezas equipadas × tamaño del catálogo, no una sola pasada.
+3. **Cero memoización.** `TiradasTab.tsx` es un componente cliente sin un
+   solo `useMemo` — los tres pasos de arriba se recalculan enteros en
+   **cada render**, no solo cuando cambia el equipo. En una app
+   mobile-first, eso es jank evitable, no solo cómputo de sobra.
+4. **El `Sheet` de hoy solo tiene un array de capa 1** (`sheet.equipo`,
+   tope 200). No hay ningún patrón pensado para varios arrays de capa 1 a
+   la vez. Si Poderes/Dotes/Ciberware/Estados se añaden copiando el patrón
+   de arriba, el problema no es solo que cada copia sea lenta — es que son
+   **5-10 pipelines casi idénticos y separados que hay que mantener
+   sincronizados a mano**, el mismo riesgo de divergencia que ya se
+   documentó para el aviso de munición ("si llega un segundo caso parecido,
+   es señal de generalizar en vez de repetir el parche").
+
+En cómputo puro, a la escala dada esto sigue siendo rápido en términos
+absolutos incluso multiplicado por varias familias más — el problema real
+no es CPU, es **recalcular sin necesidad en cada render** y **multiplicar
+por 5-10 el mismo patrón hardcodeado en vez de generalizarlo una vez**.
+
+**Arquitectura genérica propuesta (sin construir, para cuando se aborde):**
+
+1. Un índice de catálogo por id (`Map`, no `.find()`) por familia, o uno
+   global si los ids son únicos entre familias.
+2. Una única función que enumera "todo lo activo de capa 1 de un
+   personaje", agnóstica de familia — recorre `sheet.equipo` +
+   `sheet.poderes` + `sheet.dotes` + `sheet.ciberware` + `sheet.estados` (+
+   lo que venga) y devuelve una lista plana de piezas con su
+   `MotorMetadata`. Calculada una vez, no una vez por consumidor.
+3. Generación de acciones **dirigida por el dato**: recorre esa lista una
+   vez; cada efecto con `mecanismo: "accion_equipo"` dispara un *renderer*
+   registrado para su familia (un mapa `familia → función`, no un `if`
+   disperso en varios archivos). Dar de alta una familia de capa 1 nueva
+   pasa a ser añadir una entrada a ese mapa, no tocar 4 sitios distintos.
+4. Un índice de bonos/condiciones **construido una sola vez** (`Map` por
+   `tiradaId`/`grupo`/`habilidad`), no un escaneo completo por cada tirada
+   abierta — así se pasa de tiradas × fuentes a fuentes + tiradas.
+5. Memoización real de los puntos 2-4, recalculado solo cuando cambia la
+   ficha, no en cada render.
+
+El día que esto se construya, dar de alta un poder/dote/aumento pasa a ser
+solo datos — catálogo + `MotorMetadata` correcto — sin tocar el motor
+genérico, que es justo el punto de haber cristalizado `MotorMetadata` como
+dato en primer lugar.
