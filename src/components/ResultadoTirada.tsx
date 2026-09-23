@@ -5,9 +5,12 @@ function signo(n: number) {
 }
 
 // Info de daño de la tirada de ataque que la generó: null si la tirada no es
-// un ataque. `base` es null en melee — el daño ahí es una fórmula sobre un
-// atributo ("Fue+2"), no un número, así que no hay botón de "tirar daño"
-// todavía para esas filas: se muestra la fórmula para calcularla a mano.
+// un ataque. En melee `base` se calcula desde la Fuerza efectiva del propio
+// personaje (combate.ts, bonoFormulaFuerza) — antes de 2026-09-24 se dejaba
+// en null y solo se mostraba la fórmula ("Fue+2") para calcularla a mano;
+// `formulaDanio` se conserva igual, ahora solo como referencia de dónde sale
+// el número. `base` solo queda null si una fórmula futura no sigue el
+// patrón "Fuerza"/"Fue" (+N) que hoy cubre el catálogo entero.
 export type DanioInfo = { base: number | null; formulaDanio: string | null; categoriaDanio: string };
 
 export type Lanzamiento = Resultado & {
@@ -67,41 +70,45 @@ export function ContenidoResultado({
     <>
       {/* Sin el label de la tirada aquí a propósito (2026-09-24): el único
           sitio que pinta esto es AccionModal, y su propio <h2> ya lleva el
-          nombre justo encima — repetirlo aquí (encima truncado, "Golpear con
-          Proyector de Pulso (A...") era ruido, no información. El veredicto
-          se queda, pero ahora comparte la línea del total en vez de flotar
-          solo arriba con todo el ancho vacío a su lado (2026-09-24, feedback
-          del usuario: "un poco feo, usa mejor el espacio"). */}
-      <div className="flex items-baseline gap-3">
-        <span className={`font-display text-6xl font-bold tabular-nums ${tono}`}>
-          {resultado.total}
-        </span>
-        <span className={`font-mono text-xs uppercase tracking-widest ${tono}`}>
-          {veredicto}
-        </span>
-      </div>
+          nombre justo encima. "Hero stat" (feedback del usuario, tres
+          vueltas): el número (6rem) es lo primero que impacta, veredicto
+          como eyebrow encima de él — y el desglose técnico vuelve al hueco
+          de la derecha, que quedaba vacío junto a un número tan alto. */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col">
+          <span className={`font-mono text-xs uppercase tracking-widest ${tono}`}>
+            {veredicto}
+          </span>
+          <span className={`-mt-1 font-display text-[6rem] font-bold leading-none tabular-nums ${tono}`}>
+            {resultado.total}
+          </span>
+        </div>
 
-      <p className="mt-1.5 font-mono text-xs leading-relaxed text-muted">
-        d12 <span className="text-foreground">{resultado.dado}</span>
-        {" · mod "}
-        <span className="text-foreground">{signo(resultado.modificador)}</span>
-        {resultado.circunstancial !== 0 && (
-          <>
-            {" · circ "}
-            <span className="text-foreground">{signo(resultado.circunstancial)}</span>
-          </>
-        )}
-        {resultado.dificultad !== null && (
-          <>
-            {" · vs dificultad "}
-            <span className="text-foreground">{resultado.dificultad}</span>
-            {" · "}
-            <span className={tono}>
-              {margen! >= 0 ? `${margen} éxitos` : `${Math.abs(margen!)} fracasos`}
-            </span>
-          </>
-        )}
-      </p>
+        <p className="text-right font-mono text-xs leading-relaxed text-muted">
+          d12 <span className="text-foreground">{resultado.dado}</span>
+          <br />
+          {"mod "}
+          <span className="text-foreground">{signo(resultado.modificador)}</span>
+          {resultado.circunstancial !== 0 && (
+            <>
+              <br />
+              {"circ "}
+              <span className="text-foreground">{signo(resultado.circunstancial)}</span>
+            </>
+          )}
+          {resultado.dificultad !== null && (
+            <>
+              <br />
+              {"vs "}
+              <span className="text-foreground">{resultado.dificultad}</span>
+              <br />
+              <span className={tono}>
+                {margen! >= 0 ? `${margen} éxitos` : `${Math.abs(margen!)} fracasos`}
+              </span>
+            </>
+          )}
+        </p>
+      </div>
 
       {resultado.danioInfo && (
         <div className="mt-3 border-t border-border pt-3">
