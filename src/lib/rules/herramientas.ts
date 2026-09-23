@@ -8,7 +8,8 @@
 // catálogo, no por familia entera. La Valija Táctica de Fabricación no
 // genera tirada propia: no trae ningún bono numérico limpio que mecanizar
 // (ver catalog/herramientas.ts) — se usa la tirada fija "tecnica" tal cual.
-import { equipoPorId } from "../catalog/equipo";
+import { equipoPorId, type Equipo, type Herramienta } from "../catalog/equipo";
+import type { PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
 import type { Tirada } from "./tiradas";
 
@@ -22,25 +23,35 @@ const ETIQUETA_ACCION: Record<string, string> = {
   disfraz_holografico: "Activar",
 };
 
+// Generador por pieza, mismo patrón que REGISTRO_DE_ATAQUE en combate.ts
+// (T5, docs/motor.md §Escalabilidad) — aquí no hace falta un registro por
+// familia porque solo hay una familia ("herramienta"), y encima no hay una
+// fórmula común entre sus piezas: cada una se distingue por su propio id de
+// catálogo, no por la familia entera (VTF no genera tirada propia).
+function tiradaDeHerramienta(pieza: PiezaEquipada, cat: Herramienta): Tirada | null {
+  const etiqueta = ETIQUETA_ACCION[cat.id];
+  if (!etiqueta) return null; // VTF, o cualquier herramienta futura sin tirada propia
+
+  const nivelInfo = cat.niveles.find((n) => n.nivel === pieza.nivel);
+  if (!nivelInfo?.notaTirada) return null;
+
+  return {
+    id: `herramienta_${pieza.instanciaId}`,
+    label: `${etiqueta} ${cat.label}`,
+    grupo: "Herramientas",
+    aplicado: "perspicacia",
+    habilidad: "tecnociencia",
+    nota: nivelInfo.notaTirada,
+  };
+}
+
 export function tiradasDeHerramientas(sheet: Sheet): Tirada[] {
   const tiradas: Tirada[] = [];
   for (const pieza of sheet.equipo) {
-    const cat = equipoPorId(pieza.catalogoId);
+    const cat: Equipo | null = equipoPorId(pieza.catalogoId);
     if (cat?.familia !== "herramienta") continue;
-    const etiqueta = ETIQUETA_ACCION[cat.id];
-    if (!etiqueta) continue; // VTF, o cualquier herramienta futura sin tirada propia
-
-    const nivelInfo = cat.niveles.find((n) => n.nivel === pieza.nivel);
-    if (!nivelInfo?.notaTirada) continue;
-
-    tiradas.push({
-      id: `herramienta_${pieza.instanciaId}`,
-      label: `${etiqueta} ${cat.label}`,
-      grupo: "Herramientas",
-      aplicado: "perspicacia",
-      habilidad: "tecnociencia",
-      nota: nivelInfo.notaTirada,
-    });
+    const tirada = tiradaDeHerramienta(pieza, cat);
+    if (tirada) tiradas.push(tirada);
   }
   return tiradas;
 }
