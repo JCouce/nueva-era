@@ -8,6 +8,8 @@ import {
   ranurasSubsistemaUsadas,
   modificadoresDeEquipo,
   condicionesActivas,
+  indiceDeCondiciones,
+  consultaIndiceCondiciones,
   costeDePieza,
   costeDeRetirar,
   rarezaDePieza,
@@ -419,6 +421,55 @@ describe("condicionesActivas", () => {
 
   test("sin nada equipado no hay condiciones activas", () => {
     assert.deepEqual(condicionesActivas(defaultSheet(), ctxAlertaActiva), []);
+  });
+});
+
+// Equivalencia con la versión indexada (T2, docs de escalabilidad de
+// motor.md): indiceDeCondiciones()+consultaIndiceCondiciones() tiene que
+// devolver EXACTAMENTE lo mismo que condicionesActivas() — mismo contenido,
+// mismo orden — para cualquier ficha/ctx, antes de sustituir la llamada en
+// TiradasTab.tsx por la versión indexada.
+describe("indiceDeCondiciones + consultaIndiceCondiciones ≡ condicionesActivas", () => {
+  const ctxAlertaActiva = { id: "alerta_activa", grupo: "Acciones" as const, habilidad: "exploracion" as const, modoElegido: null };
+
+  function equivalente(s: ReturnType<typeof defaultSheet>, ctx: Parameters<typeof condicionesActivas>[1]) {
+    assert.deepEqual(consultaIndiceCondiciones(indiceDeCondiciones(s), ctx), condicionesActivas(s, ctx));
+  }
+
+  test("ficha sin nada equipado", () => {
+    equivalente(defaultSheet(), ctxAlertaActiva);
+  });
+
+  test("un Visor Nocturno n2 equipado", () => {
+    let s = conArmaduraPuesta();
+    s = equipar(s, { instanciaId: "vn1", catalogoId: "visor_nocturno", nivel: 2, instaladoEnId: "armadura-1" });
+    equivalente(s, ctxAlertaActiva);
+    equivalente(s, { ...ctxAlertaActiva, id: "sigilo", habilidad: "sigilo" });
+  });
+
+  test("Visor Nocturno n2 y Visor Térmico n1 a la vez — mismo orden de aparición", () => {
+    let s = conArmaduraPuesta();
+    s = equipar(s, { instanciaId: "vn1", catalogoId: "visor_nocturno", nivel: 2, instaladoEnId: "armadura-1" });
+    s = equipar(s, { instanciaId: "vt1", catalogoId: "visor_termico", nivel: 1, instaladoEnId: "armadura-1" });
+    const directo = condicionesActivas(s, ctxAlertaActiva);
+    const indexado = consultaIndiceCondiciones(indiceDeCondiciones(s), ctxAlertaActiva);
+    assert.deepEqual(indexado, directo);
+    assert.deepEqual(
+      directo.map((c) => c.id),
+      ["visor_nocturno_n2_activo", "visor_termico_n1_activo"],
+    );
+  });
+
+  test("nivel 1 del Visor Nocturno (sin condición) — ambas vacías por igual", () => {
+    let s = conArmaduraPuesta();
+    s = equipar(s, { instanciaId: "vn1", catalogoId: "visor_nocturno", nivel: 1, instaladoEnId: "armadura-1" });
+    equivalente(s, ctxAlertaActiva);
+  });
+
+  test("una mejora de arma (Bípode) sigue fuera de las dos versiones por igual", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "fusil_asalto_impetus" });
+    s = equipar(s, { instanciaId: "b1", catalogoId: "bipode", nivel: 1, instaladoEnId: "a1" });
+    equivalente(s, { id: "x", grupo: "Ataques", habilidad: "combate_distancia", modoElegido: null });
   });
 
   test("una mejora de arma (Bípode) no se recoge aquí — vive en condicionesDeMejoras", () => {

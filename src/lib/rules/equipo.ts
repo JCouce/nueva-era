@@ -20,8 +20,9 @@ import {
   type MejoraDeArma,
   type Rareza,
 } from "../catalog/equipo";
-import { alcanzaA, type ContextoTirada, type ModificadorConFuente } from "./modificadores";
+import { alcanzaA, type ContextoTirada, type GrupoTirada, type ModificadorConFuente } from "./modificadores";
 import type { CondicionTirada } from "./condiciones";
+import type { HabilidadId } from "./habilidades";
 import { reconciliarRecursos } from "./recursos";
 import type { Sheet } from "./sheet";
 
@@ -355,4 +356,74 @@ export function condicionesActivas(sheet: Sheet, ctx: ContextoTirada): Condicion
     if (!nivelInfo?.condiciones) return [];
     return nivelInfo.condiciones.filter((c) => c.alcance && alcanzaA(c.alcance, ctx));
   });
+}
+
+// Versión indexada de condicionesActivas(): construye UNA VEZ, con una sola
+// pasada de sheet.equipo, un índice por cada alcance que sí se puede indexar
+// (tiradaId exacto, o las listas — pequeñas en la práctica — de grupo/
+// habilidad/todas), en vez de repetir la pasada completa por cada tirada
+// mostrada (TiradasTab.tsx la llamaba una vez por fila). Alcance "modo" queda
+// fuera a propósito: en el único call site que consume esto hoy, ctx llega
+// siempre con `modoElegido: null` (la tirada ni se ha abierto todavía), así
+// que "modo" nunca hace match ahí — se resuelve aparte, dentro del modal.
+//
+// `orden` se guarda para poder devolver el resultado en el mismo orden que
+// condicionesActivas() (orden de aparición en sheet.equipo): repartir en
+// varios Map/arrays por tipo de alcance y luego concatenarlos por bucket
+// perdería ese orden si dos piezas con alcances de tipo distinto se
+// intercalan.
+type CondicionIndexada = { condicion: CondicionTirada; orden: number };
+
+export type IndiceCondiciones = {
+  porTiradaId: Map<string, CondicionIndexada[]>;
+  porGrupo: Map<GrupoTirada, CondicionIndexada[]>;
+  porHabilidad: Map<HabilidadId, CondicionIndexada[]>;
+  todas: CondicionIndexada[];
+};
+
+function agregaIndexada<K>(mapa: Map<K, CondicionIndexada[]>, clave: K, entrada: CondicionIndexada) {
+  const lista = mapa.get(clave);
+  if (lista) lista.push(entrada);
+  else mapa.set(clave, [entrada]);
+}
+
+export function indiceDeCondiciones(sheet: Sheet): IndiceCondiciones {
+  const indice: IndiceCondiciones = {
+    porTiradaId: new Map(),
+    porGrupo: new Map(),
+    porHabilidad: new Map(),
+    todas: [],
+  };
+
+  let orden = 0;
+  for (const pieza of sheet.equipo) {
+    const cat = equipoPorId(pieza.catalogoId);
+    if (!cat) continue;
+    if (cat.familia !== "mejoraEstandar" && cat.familia !== "subsistema" && cat.familia !== "herramienta") continue;
+    const nivelInfo = cat.niveles.find((n) => n.nivel === pieza.nivel);
+    if (!nivelInfo?.condiciones) continue;
+
+    for (const condicion of nivelInfo.condiciones) {
+      const alcance = condicion.alcance;
+      if (!alcance) continue;
+      const entrada: CondicionIndexada = { condicion, orden: orden++ };
+      if (alcance.tipo === "tiradaId") agregaIndexada(indice.porTiradaId, alcance.id, entrada);
+      else if (alcance.tipo === "grupo") agregaIndexada(indice.porGrupo, alcance.grupo, entrada);
+      else if (alcance.tipo === "habilidad" && alcance.habilidad) agregaIndexada(indice.porHabilidad, alcance.habilidad, entrada);
+      else if (alcance.tipo === "todas") indice.todas.push(entrada);
+      // "modo" queda fuera del índice a propósito, ver comentario de arriba.
+    }
+  }
+
+  return indice;
+}
+
+export function consultaIndiceCondiciones(indice: IndiceCondiciones, ctx: ContextoTirada): CondicionTirada[] {
+  const candidatas: CondicionIndexada[] = [
+    ...(indice.porTiradaId.get(ctx.id) ?? []),
+    ...(indice.porGrupo.get(ctx.grupo) ?? []),
+    ...(ctx.habilidad ? (indice.porHabilidad.get(ctx.habilidad) ?? []) : []),
+    ...indice.todas,
+  ];
+  return candidatas.sort((a, b) => a.orden - b.orden).map((c) => c.condicion);
 }
