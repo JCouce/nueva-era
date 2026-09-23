@@ -15,6 +15,7 @@ import type { ArmaPesada } from "../catalog/armamentoPesado";
 import { MUNICION_GRANADA, ALCANCE_ARROJADA, type MunicionGranada } from "../catalog/municion";
 import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condiciones";
 import type { PiezaEquipada } from "./equipo";
+import type { MotorMetadata } from "./motor";
 import { recursoDe, gastoDelModo } from "./recursos";
 import type { Tirada } from "./tiradas";
 
@@ -368,6 +369,31 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
   granada: (_sheet, pieza, cat) => [tiradaDeGranada(cat as MunicionGranada, pieza.instanciaId)],
 };
 
+// T6 (docs/motor.md §Escalabilidad): el registro de arriba sigue siendo la
+// autoridad de "sé renderizar esta familia" — esto es un filtro ADICIONAL,
+// nunca lo sustituye. Sin él, una pieza cuya familia esté registrada pero
+// cuyo MotorMetadata todavía no declare su acción como "construido" (una
+// Bayoneta el día de mañana, por ejemplo) generaría igualmente su fila, solo
+// porque su familia sabe generar tiradas en general. Las 4 familias del
+// registro (arma/armaMelee/armaPesada/granada) tienen hoy el 100% de sus
+// piezas con al menos una entrada { tipo: "accion", mecanismo:
+// "accion_equipo", estado: "construido" } para su acción principal —
+// confirmado tras el barrido y la auditoría del catálogo — así que este
+// filtro no cambia el resultado de ninguna pieza real de hoy; varias piezas
+// (Kerzul, Armas Mecánicas) tienen ADEMÁS una segunda entrada "accion"
+// bloqueada/pendiente para un efecto distinto (Derribo, Retroceso Entrópico)
+// que ningún generador construye todavía — un match "alguna entrada
+// construida" basta, no hace falta que TODAS lo estén.
+//
+// "cat" es la unión Equipo; motor solo existe como campo directo en las
+// familias sin niveles (arma/armaMelee/armaPesada/granada, exactamente las
+// que vive este registro) — el cast a `{ motor?: ... }` es seguro aquí por
+// el mismo motivo que el cast a la familia concreta dentro de cada wrapper.
+function generaAccionPropia(cat: Equipo): boolean {
+  const motor = (cat as { motor?: MotorMetadata[] }).motor ?? [];
+  return motor.some((m) => m.tipo === "accion" && m.mecanismo === "accion_equipo" && m.estado === "construido");
+}
+
 // Todas las filas de la categoría "Ataques": una por arma de fuego, arma
 // melee, arma pesada o granada equipada — incluida Pelea (Puñetazo, Patada,
 // Codazo o Rodillazo), que ya no se añade sola: si el jugador la quiere en
@@ -380,6 +406,7 @@ export function tiradasDeAtaque(sheet: Sheet): Tirada[] {
     if (!cat) continue;
     const generador = REGISTRO_DE_ATAQUE[cat.familia];
     if (!generador) continue;
+    if (!generaAccionPropia(cat)) continue;
     tiradas.push(...generador(sheet, pieza, cat));
   }
   return tiradas;
