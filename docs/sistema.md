@@ -151,7 +151,7 @@ sección "Básicos" original). Con `HOJA2` el coste marginal **crece con el nive
 primer punto de un atributo cuesta 2, el segundo 4, etc. Responde a la pregunta 12
 (progresión post-creación: sí hay XP, y esta es su fórmula).
 
-### Emparejamiento atributo + habilidad `[INFERIDO · EQUIP]`
+### Emparejamiento atributo + habilidad `[FIRME · CONV-5 + ya construido]`
 
 Las habilidades **no están soldadas a un atributo**. El par lo dicta
 la acción, y hay equipo que altera el par por diseño (el Proyector de Pulso permite tirar
@@ -160,6 +160,28 @@ Tecnociencia en lugar de Combate a Distancia).
 Pares vistos en `EQUIP`: Perspicacia + Tecnociencia · Perspicacia + Biociencia ·
 Perspicacia + Medicina · Reflejos + Tecnociencia · Voluntad + Biociencia · Voluntad +
 Actitud · Reflejos + Combate a Distancia.
+
+**Tabla canónica de acciones habituales (resuelve la pregunta 27, Murillo 2026-09-23
++ lo ya construido en el motor):**
+
+| Acción | Atributo + Habilidad | Fuente |
+|---|---|---|
+| Atacar a distancia | Reflejos + Combate a Distancia | Murillo, ya en `combate.ts` |
+| Atacar cuerpo a cuerpo | Potencia + Combate Melee (excepción: armas "Sutiles" → Reflejos + Combate Melee) | Murillo, ya en `combate.ts` |
+| Esquivar / Defensa | Reflejos + Atletismo | Murillo, ya en `acciones.ts` (`defensa`) |
+| Alerta (percepción pasiva) | Perspicacia + Exploración | Murillo, ya en `acciones.ts` (`alerta_activa`) |
+| Iniciativa | Perspicacia + Exploración por defecto; variantes según cómo se entra en combate (con arma en mano: Reflejos + Combate a Distancia; con distracción: Expresión + Actitud) | Ya `FIRME` más arriba (sección "Combate"), ya en `acciones.ts` |
+| Ocultarse | Reflejos + Sigilo | Ya en `acciones.ts` (`sigilo`) — no la tocó esta tanda, se incluye por consistencia con el resto de la tabla |
+| Saltar / Escalar / Nadar | Potencia + Atletismo | Ya en `acciones.ts` (`atletismo`, tirada genérica) — misma base que las 5 fórmulas de movimiento |
+| Tratar heridas | Perspicacia + Biociencia (especialidad Medicina si se tiene) | Ya en `acciones.ts` (`medicina`) + confirmado por Murillo en la pregunta 26 |
+
+Murillo añade que "también entra en juego alguna dote" en varias de estas tiradas — sin
+efecto hoy, porque Dotes sigue sin catálogo (sección 9).
+
+**Hallazgo de paso, no resuelto por esta tanda:** en armas melee, "Sutil" hoy solo es una
+nota de texto en la tirada ("se tira Reflejos en vez de Potencia") — el código sigue
+fijando `aplicado: "potencia"` siempre, no hay un toggle real que cambie el atributo.
+Gap anterior a esta conversación, sin tocar.
 
 ### Catálogo de especialidades `[PARCIAL]`
 
@@ -609,7 +631,7 @@ sospecha que también contra eléctrico, 2026-09-12)? Pendiente de confirmar con
 
 **Huecos detectados al planificar la app** (ver `docs/plan-app.md`)
 26. ~~No existe fórmula de capacidad de carga.~~ **Resuelta por `HOJA2`:** sale de Fuerza (Fuerza × 20 kg, con pisos y penalizadores propios) — ver "Carga transportable", sección 5.5.
-27. **No hay tabla canónica de tiradas.** Los documentos citan 14 pares atributo + habilidad dispersos en prosa. Hace falta una tabla cerrada de las acciones habituales (atacar, defender, esquivar, saltar, escalar, iniciativa, alerta, ocultarse, tratar heridas…), porque parte de los pares actuales son inferencia nuestra.
+27. ~~**No hay tabla canónica de tiradas.** Los documentos citan 14 pares atributo + habilidad dispersos en prosa. Hace falta una tabla cerrada de las acciones habituales (atacar, defender, esquivar, saltar, escalar, iniciativa, alerta, ocultarse, tratar heridas…), porque parte de los pares actuales son inferencia nuestra.~~ **Resuelta (Murillo, 2026-09-23):** ver la tabla canónica en "Emparejamiento atributo + habilidad" (sección 2.5/3.5) — la mayoría de las acciones pedidas ya estaban implementadas correctamente, esto era más "escribirlo cerrado" que "inventar pares nuevos".
 
 **Sobre combate y salud** (`COMBATE`)
 21. ~~Mecánica exacta del dado y conteo de éxitos.~~ **Resuelta:** 1d12 + aplicado + habilidad vs dificultad; crítico al superar por 6.
