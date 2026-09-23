@@ -1,11 +1,34 @@
-# Modificadores de una tirada — cómo llegan y cómo añadir uno nuevo
+# Cómo enganchar un elemento nuevo a una Acción — la guía práctica
+
+**Este es el documento que abres cuando llega el momento de implementar un Poder,
+Dote o Aumento de verdad** (o cualquier pieza de capa 1 nueva), después de haber
+leído `docs/motor.md` y decidido su `MotorMetadata`. `motor.md` responde "¿qué
+tipo de efecto es esto?" — este documento responde "¿y ahora cómo lo escribo?".
+
+## Antes de nada: ¿este documento es para ti, o necesitas otro?
+
+Un Poder puede conectar al motor de tres formas distintas — mira su
+`MotorMetadata` (`motor.md`) y sigue el camino que le toque:
+
+| Si su `MotorMetadata` dice... | Vas a... |
+|---|---|
+| `tipo: "numerico"` o `tipo: "texto"`, `afecta.modo: "accion_existente"` | **Sigue leyendo este documento** — es justo lo que cubre: elegir uno de los cuatro mecanismos y declararlo. |
+| `tipo: "accion"`, `mecanismo: "accion_equipo"` (o `"accion_sin_equipo"`, todavía sin construir) | Este documento NO lo cubre. Es el patrón del registro `familia → generador` en `src/lib/rules/combate.ts` (T5/T6, `docs/motor.md` §Escalabilidad) — hoy sin guía propia escrita, lee ese código directamente antes de replicarlo. |
+| Una "Acción sin dado" (declarar un gasto, activar algo sin tirar) | Ninguno de los dos documentos lo cubre — está sin diseñar. Ver la nota final de este documento ("Tiradas vs Acciones") antes de improvisar algo. |
+
+Si tu Poder hace VARIAS cosas a la vez (genera su propia tirada Y además da un
++1 a otra Acción mientras está activo), es normal acabar usando este documento
+para una parte y el patrón de `combate.ts` para la otra — no es ni/o.
+
+---
 
 **`docs/motor.md` es el documento marco** (los cinco tipos de modificador que
 puede ser cualquier elemento de la ficha, capa 1/2/2.5). Este documento es el
 detalle técnico de uno solo de esos cinco tipos — el numérico y el de
-texto/condición — y de los cuatro mecanismos de entrega que ya existen para
-ellos. Léelo entero antes de añadir el primero: son diez minutos y evita
-reinventar uno de los cuatro mecanismos que ya existen.
+texto/condición, cuando afectan a una Acción que ya existe — y de los cuatro
+mecanismos de entrega que ya existen para ellos. Léelo entero antes de añadir
+el primero: son diez minutos y evita reinventar uno de los cuatro mecanismos
+que ya existen.
 
 Documento técnico, no de reglas (eso es `sistema.md`).
 
