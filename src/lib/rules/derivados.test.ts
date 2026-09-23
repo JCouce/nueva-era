@@ -134,9 +134,10 @@ describe("alerta (percepción pasiva, C4 resuelto: Exploración sustituye a Supe
 describe("movimiento (HOJA2: constantes nuevas)", () => {
   test("un personaje recién creado no se mueve hacia atrás", () => {
     // Potencia 0 y Atletismo sin entrenar (-1) dan base -1: las fórmulas
-    // saldrían negativas y se cortan en 0 (supuesto S6 de docs/sistema.md).
+    // saldrían negativas y se cortan en 0, salvo el salto vertical, con
+    // mínimo 15 (Murillo, pregunta 6 de docs/sistema.md).
     const m = movimiento(defaultSheet());
-    assert.equal(m.saltoVertical, 0);
+    assert.equal(m.saltoVertical, 15);
     assert.equal(m.carrera, 15); // 16 - 1
     for (const v of Object.values(m)) assert.ok(v >= 0, "ningún valor es negativo");
   });

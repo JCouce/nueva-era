@@ -167,9 +167,10 @@ function bonoFuerzaExoesqueleto(sheet: Sheet): number {
 }
 
 // Movimiento: todas las fórmulas cuelgan de Potencia + Atletismo.
-// Con Potencia 0 y Atletismo sin entrenar (−1) la base es negativa y el salto
-// vertical saldría en negativo, así que se corta en 0. Supuesto S6 de
-// docs/sistema.md: el documento no dice qué pasa por debajo de cero.
+// Con Potencia 0 y Atletismo sin entrenar (−1) la base es negativa y las
+// fórmulas saldrían en negativo, así que se cortan en 0 — salvo el salto
+// vertical, que Murillo fija en un mínimo de 15 cm (resuelve la pregunta 6
+// de docs/sistema.md, antes supuesto S6).
 export function movimiento(sheet: Sheet, mods = modificadoresActivos(sheet)) {
   const bonoExoesqueleto = bonoFuerzaExoesqueleto(sheet);
   const base =
@@ -183,7 +184,7 @@ export function movimiento(sheet: Sheet, mods = modificadoresActivos(sheet)) {
     // la ficha lo usa para señalarlo (ver ResumenTab).
     bonoExoesqueleto,
     carrera: noNegativo(16 + base + bonoDerivado(mods, "carrera")), // metros
-    saltoVertical: noNegativo(15 * base), // centímetros
+    saltoVertical: Math.max(15, 15 * base), // centímetros, mínimo 15
     saltoHorizontal: noNegativo(100 + base * 20), // centímetros
     escalada: noNegativo(4 + Math.floor(base / 2)), // metros
     nado: noNegativo(4 + Math.floor(base / 2)), // metros
