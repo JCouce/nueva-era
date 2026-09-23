@@ -132,6 +132,10 @@ export const MEDICINA_UNICAS: Herramienta[] = [VALIJA_TACTICA_MEDICA];
 // vuelca a ningún `Tirada.nota` en ningún sitio del código (comprobado:
 // FARMACOS solo se usa en TiendaTab.tsx). Narrativo, sin conexión, construido
 // tal cual está — no "pendiente".
+//
+// Vale para 7 de los 10 — Analgésico, Ultra Estimulante y Xovromium sí traen
+// un número real en su `detalle` (no solo prosa), corregido 2026-09-24
+// (auditoría): esos tres llevan su propio `motor` en vez de esta constante.
 const MOTOR_FARMACO: MotorMetadata[] = [
   { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
 ];
@@ -151,7 +155,15 @@ export const FARMACOS: Consumible[] = [
     rareza: "Común",
     coste: 5,
     modificadores: [],
-    motor: MOTOR_FARMACO,
+    // Corregido 2026-09-24 (auditoría del catálogo): a diferencia del resto de
+    // FARMACOS, este SÍ trae un número real ("reduce en 1 el penalizador por
+    // heridas") — no es narrativo puro. `afecta: ninguna` porque el penalizador
+    // por heridas es un ajuste de sistema (derivados.ts), no una tirada
+    // concreta a la que apuntar; `pendiente` porque el motor no lleva bonos
+    // temporales de dosis consumida, ni conecta con el cálculo de heridas.
+    motor: [
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+    ],
   },
   {
     familia: "consumible",
@@ -238,7 +250,19 @@ export const FARMACOS: Consumible[] = [
     rareza: "Común",
     coste: 50,
     modificadores: [],
-    motor: MOTOR_FARMACO,
+    // Corregido 2026-09-24 (auditoría): dos números reales, dos entradas — el
+    // resto del texto (penalizador por heridas/fatiga, el peaje al terminar,
+    // el colapso por doble dosis) se queda sin transcribir a propósito, mismo
+    // criterio que el resto del catálogo para prosa sin campo de datos propio.
+    motor: [
+      // +2 a la iniciativa: "iniciativa" es una tiradaId real (tiradas.ts),
+      // pero el bono es temporal (30 min de la dosis) — no existe mecanismo
+      // de bono temporal, así que pendiente aunque el objetivo sí sea real.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "iniciativa" }, mecanismo: "ajuste_fijo", estado: "pendiente" },
+      // +1 a las acciones físicas de Agilidad o Fuerza: no hay un grupo/tirada
+      // único al que apunte ("acciones físicas" no es una categoría del motor).
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+    ],
   },
   {
     familia: "consumible",
@@ -325,6 +349,13 @@ export const FARMACOS: Consumible[] = [
     rareza: "Extraño",
     coste: 1000,
     modificadores: [],
-    motor: MOTOR_FARMACO,
+    // Corregido 2026-09-24 (auditoría): "+1 a las manifestaciones psiónicas"
+    // es un número real, no narrativo — pero "manifestaciones psiónicas" no
+    // existe como mecánica todavía (Fase 5, poderes psiónicos sin catálogo).
+    // Bloqueado por Fase 5, no "pendiente" — no es solo que falte construir
+    // el enganche, es que el propio objetivo no existe.
+    motor: [
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "Fase 5" },
+    ],
   },
 ];
