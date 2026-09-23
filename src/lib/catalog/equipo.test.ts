@@ -22,6 +22,16 @@ describe("integridad del catálogo de equipo", () => {
     assert.equal(equipoPorId("esto-no-existe"), null);
   });
 
+  // equipoPorId pasó de EQUIPO.find(...) a un Map construido una vez (docs/motor.md,
+  // escalabilidad) — mismo resultado exacto para cada id, comparado contra un .find()
+  // de control independiente del índice.
+  test("equipoPorId coincide con un .find() de control para cada id de EQUIPO", () => {
+    for (const e of EQUIPO) {
+      const control = EQUIPO.find((x) => x.id === e.id) ?? null;
+      assert.equal(equipoPorId(e.id), control);
+    }
+  });
+
   function niveles(mod: { label: string; niveles: NivelModulo[] }) {
     return mod.niveles;
   }

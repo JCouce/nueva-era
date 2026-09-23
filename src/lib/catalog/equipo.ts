@@ -185,6 +185,11 @@ export const EQUIPO: Equipo[] = [
   ...MUNICION_GRANADA,
 ];
 
+// Índice O(1), construido una sola vez a partir de EQUIPO (ya evaluado por
+// completo en este punto). Sustituye el .find() lineal de antes — misma
+// firma pública, mismo comportamiento, sin que ningún caller cambie.
+const EQUIPO_POR_ID = new Map<string, Equipo>(EQUIPO.map((e) => [e.id, e]));
+
 export function equipoPorId(id: string): Equipo | null {
-  return EQUIPO.find((e) => e.id === id) ?? null;
+  return EQUIPO_POR_ID.get(id) ?? null;
 }
