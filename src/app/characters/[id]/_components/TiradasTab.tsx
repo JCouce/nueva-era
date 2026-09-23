@@ -15,7 +15,8 @@ import {
   valorBonosTramo,
   modificadoresActivos,
   modificadoresDeEstados,
-  condicionesActivas,
+  indiceDeCondiciones,
+  consultaIndiceCondiciones,
   bonoAlcance,
   modoElegido,
   type Tirada,
@@ -224,9 +225,15 @@ export function TiradasTab({
   // eso existe. `modoElegido: null` aquí a propósito: en este punto la tirada
   // ni siquiera se ha abierto, así que una condición con alcance "modo" no
   // tiene nada que matchear todavía (no tiene sentido de origen de todos
-  // modos, ver condicionesActivas en equipo.ts).
+  // modos, ver indiceDeCondiciones en equipo.ts).
+  //
+  // Antes esto llamaba a condicionesActivas(sheet, ctx) una vez POR TIRADA,
+  // repitiendo una pasada completa de sheet.equipo cada vez (docs/motor.md,
+  // "Escalabilidad para las fases que vienen"). El índice se construye una
+  // sola vez aquí y cada tirada solo consulta (T2).
+  const indiceCondiciones = indiceDeCondiciones(sheet);
   const conCondicionesDeEquipo = (t: Tirada): Tirada => {
-    const extra = condicionesActivas(sheet, { id: t.id, grupo: t.grupo, habilidad: t.habilidad, modoElegido: null });
+    const extra = consultaIndiceCondiciones(indiceCondiciones, { id: t.id, grupo: t.grupo, habilidad: t.habilidad, modoElegido: null });
     return extra.length > 0 ? { ...t, condiciones: [...(t.condiciones ?? []), ...extra] } : t;
   };
 
