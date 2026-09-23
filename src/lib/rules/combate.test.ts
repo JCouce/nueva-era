@@ -5,6 +5,7 @@ import { equipar } from "./equipo";
 import { ajustarRecurso } from "./recursos";
 import { tiradasDeAtaque } from "./combate";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
+import { EQUIPO, type Equipo } from "../catalog/equipo";
 
 function opcion(c: CondicionTirada | undefined, id: string) {
   assert.ok(c && c.tipo === "opcion", "no es una condición de opción");
@@ -321,4 +322,39 @@ describe("granada equipada", () => {
       .filter((l) => l.startsWith("Lanzar"));
     assert.deepEqual(labels, ["Lanzar Granada Casera", "Lanzar Granada de Plasma"]);
   });
+});
+
+// N4 (artifact de escalabilidad): fija qué familias debe cubrir
+// REGISTRO_DE_ATAQUE (combate.ts) — si alguien borra o rompe una entrada sin
+// querer, esto se pone en rojo en vez de fallar en silencio. No recorre las
+// 11 familias de Equipo: la mayoría (mejoraEstandar, subsistema, movimiento,
+// mejoraArma) necesitan un host válido para poder equiparse siquiera
+// (equipar() las rechaza sin uno, ver lib/rules/equipo.ts) y nunca llegan a
+// sheet.equipo sin él, así que no hace falta comprobarlas aparte — quedan
+// fuera por construcción, no por omisión de este test.
+describe("REGISTRO_DE_ATAQUE (combate.ts) cubre exactamente las familias esperadas", () => {
+  const FAMILIAS_QUE_GENERAN_ATAQUE: Equipo["familia"][] = ["arma", "armaMelee", "armaPesada", "granada"];
+  const FAMILIAS_SIN_ATAQUE_SIN_HOST: Equipo["familia"][] = ["armadura", "herramienta", "consumible"];
+
+  function primerIdDe(familia: Equipo["familia"]): string {
+    const pieza = EQUIPO.find((p) => p.familia === familia);
+    assert.ok(pieza, `no hay ninguna pieza de familia "${familia}" en EQUIPO`);
+    return pieza!.id;
+  }
+
+  for (const familia of FAMILIAS_QUE_GENERAN_ATAQUE) {
+    test(`"${familia}" genera al menos una fila en tiradasDeAtaque()`, () => {
+      let sheet = defaultSheet();
+      sheet = equipar(sheet, { instanciaId: "x1", catalogoId: primerIdDe(familia) });
+      assert.ok(tiradasDeAtaque(sheet).length > 0, `familia "${familia}" no generó ninguna fila`);
+    });
+  }
+
+  for (const familia of FAMILIAS_SIN_ATAQUE_SIN_HOST) {
+    test(`"${familia}" no genera ninguna fila en tiradasDeAtaque()`, () => {
+      let sheet = defaultSheet();
+      sheet = equipar(sheet, { instanciaId: "x1", catalogoId: primerIdDe(familia) });
+      assert.deepEqual(tiradasDeAtaque(sheet), []);
+    });
+  }
 });
