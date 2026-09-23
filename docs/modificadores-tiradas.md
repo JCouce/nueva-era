@@ -25,7 +25,7 @@ aumentos, estados). La cadena es:
 ```
 sheet.equipo cambia
   → se vuelve a renderizar con el sheet nuevo
-    → modificadorTirada() (tiradas.ts) llama a aplicado() / valorEfectivo() (derivados.ts)
+    → modificadorAccion() (acciones.ts) llama a aplicado() / valorEfectivo() (derivados.ts)
       → estas llaman a modificadoresActivos(sheet) con el sheet YA actualizado
         → que recorre especie + modificadoresDeEquipo(sheet)
           → que recorre TODO el equipo (armadura, arma, mejoras, subsistemas, movimiento) sin distinción
@@ -34,7 +34,7 @@ sheet.equipo cambia
 **Consecuencia práctica: si añades un `Modificador` de tipo `"atributo"`,
 `"derivado"` o `"habilidad"` en el catálogo (a una mejora, una armadura, lo
 que sea), llega solo a todas las tiradas que usen ese atributo o esa
-habilidad. No hay que tocar `tiradas.ts` ni `combate.ts` ni el modal.** Este
+habilidad. No hay que tocar `acciones.ts` ni `combate.ts` ni el modal.** Este
 tipo de modificador vive en `modificadores.ts` y ya está resuelto — no sigas
 leyendo si es lo único que necesitas, esta guía es para el resto de casos.
 
@@ -54,7 +54,7 @@ cuatro mecanismos:
 | **`Modificador` tipo `"tirada"`** (alcance) | Un bono de personaje entero, no ligado a un arma o pieza concreta: una tirada fija por su id, un grupo entero, cualquier tirada de una habilidad, o solo cuando cierto modo está elegido | El +1 a Salvación de Fortaleza del Traje Ultra Ligero | `modificadores` del catálogo (especie o equipo), campo `alcance` |
 
 Los cuatro se pintan en el mismo sitio: el bloque **"// Desglose"** de
-`TiradaModal` (`src/components/TiradaModal.tsx`), una línea por cada uno,
+`AccionModal` (`src/components/AccionModal.tsx`), una línea por cada uno,
 con su fuente. Nunca se funden en silencio dentro de otro número — si lo
 están, es un bug (ya nos pasó dos veces con el lanzagranadas y la mira, y
 las dos veces el arreglo fue separar la línea, no esconder el número).
@@ -79,7 +79,7 @@ Cuando añadas un modificador nuevo, hazte estas preguntas en orden:
    - `contador`: un número entre un mínimo y un máximo.
 
    **No hace falta tocar nada más.** El modal ya sabe dibujar los tres tipos
-   (`ControlCondicion` en `TiradaModal.tsx`), y `combate.ts` ya recoge las
+   (`ControlCondicion` en `AccionModal.tsx`), y `combate.ts` ya recoge las
    condiciones de cualquier mejora instalada en el arma en cuestión
    (`condicionesDeMejoras`), sea cual sea. Es la razón de que estos tres
    tipos existan: cerrar la lista a formas conocidas es lo que permite que
@@ -131,21 +131,21 @@ un arma concreta. Vive en `modificadores.ts`:
 ```ts
 type AlcanceModificador =
   | { tipo: "tiradaId"; id: string }                 // una tirada fija, por su id ("salv_fortaleza")
-  | { tipo: "grupo"; grupo: GrupoTirada }             // todas las de un grupo (Salvaciones, Acciones...)
+  | { tipo: "grupo"; grupo: GrupoAccion }             // todas las de un grupo (Salvaciones, Acciones...)
   | { tipo: "habilidad"; habilidad: HabilidadId }     // cualquier tirada que use esa habilidad
   | { tipo: "modo"; contieneEtiqueta: string }        // solo si el modo elegido la contiene ("F. Auto")
   | { tipo: "todas" };                                // cualquier tirada, sin excepción
 ```
 
 `bonoAlcance()`/`desgloseAlcance()` (mismo fichero) resuelven cuál le toca a
-una tirada dada, con un `ContextoTirada` que la UI arma sola (id, grupo,
+una tirada dada, con un `ContextoAccion` que la UI arma sola (id, grupo,
 habilidad de la tirada, y el modo que esté elegido ahora mismo en el modal,
-si lo tiene). `TiradasTab` pasa `modificadoresActivos(sheet)` al modal junto
+si lo tiene). `AccionesTab` pasa `modificadoresActivos(sheet)` al modal junto
 a la tirada; el modal hace el resto — no hay que tocar nada por cada
 modificador nuevo, solo declararlo en el catálogo con el alcance correcto.
 
 **Cuál elegir:**
-- `tiradaId` → para salvaciones y otras tiradas fijas de `TIRADAS` (no sirve
+- `tiradaId` → para salvaciones y otras tiradas fijas de `ACCIONES` (no sirve
   para las de ataque generadas por `combate.ts`, que tienen id por
   instancia — para esas, `ajustesFijos`/`bonosTramo`/`condiciones` son más
   precisos y ya existen).
@@ -193,7 +193,7 @@ Para ver `CondicionTirada` con código real, sigue el Bípode:
    `sheet.equipo`, encuentra el bípode instalado en esa arma, coge su
    `condiciones` y las añade a la tirada "Disparar con...". No sabe nada
    específico del bípode — trataría igual una mejora nueva.
-3. **UI** (`src/components/TiradaModal.tsx`, `ControlCondicion`): ve un
+3. **UI** (`src/components/AccionModal.tsx`, `ControlCondicion`): ve un
    objeto `tipo: "toggle"` y dibuja el botón sí/no, sin saber qué mejora lo
    originó.
 4. **Cálculo** (`src/lib/rules/condiciones.ts`, `valorCondiciones` /
@@ -215,12 +215,12 @@ algo se ha hecho a mano que no hacía falta.
    instancia de arma correcta (`instaladoEnId`).
 3. ¿Es un `Modificador` tipo `"tirada"`? Comprueba el `alcance`: si es
    `tiradaId`, ¿el id coincide EXACTAMENTE con el de la tirada en
-   `TIRADAS`? Si es `modo`, ¿la tirada tiene de verdad una condición
+   `ACCIONES`? Si es `modo`, ¿la tirada tiene de verdad una condición
    `"modo"` y el texto está contenido en la etiqueta de la opción elegida?
    Puede que el id apunte a una tirada que aún no existe (ver sección 5) —
    eso no es un bug, es una regla pendiente de aclarar.
 
-## 8. `CondicionTirada` y texto informativo en tiradas fijas de `TIRADAS`
+## 8. `CondicionTirada` y texto informativo en tiradas fijas de `ACCIONES`
    (2026-09-21, **construido 2026-09-23**)
 
 Detectado durante el repaso de efectos especiales de equipo
@@ -234,14 +234,14 @@ van a necesitar el mismo tipo de enganche a tiradas fijas — no solo equipo.
 cualquier tirada fija por su `tiradaId`/`grupo`/`habilidad`/`modo`, venga de
 donde venga (`modificadoresActivos(sheet)`, `derivados.ts:24`). El día que exista
 `modificadoresDeDotes(sheet)` o `modificadoresDePoderes(sheet)`, se añaden a esa
-misma lista y ya está — cero cambios en `tiradas.ts`, `combate.ts` o el modal.
+misma lista y ya está — cero cambios en `acciones.ts`, `combate.ts` o el modal.
 
 **Lo que falta, confirmado con casos reales de esta sesión:**
 
 1. **`CondicionTirada` (mecanismo 1) solo se recoge hoy por arma concreta** —
    `condicionesDeMejoras(sheet, instanciaId)` recorre mejoras instaladas en ESA
    arma. No existe ningún `condicionesActivas(sheet, tiradaId)` simétrico a
-   `modificadoresActivos` para una tirada fija de `TIRADAS`. Sin eso, no se puede
+   `modificadoresActivos` para una tirada fija de `ACCIONES`. Sin eso, no se puede
    mostrar "¿qué visor llevas puesto?" como opción de `alerta_activa` — la tirada
    fija no sabe mirar el equipo del personaje en absoluto hoy.
 2. **El "texto informativo condicionado" no es ninguno de los 4 mecanismos** —
@@ -276,12 +276,12 @@ hoc que se había repetido esta sesión con Mangual, Kerzul y los Visores.
   arma también declarase `alcance`), y se queda con las condiciones cuyo
   `alcance` matchea vía `alcanzaA()` (exportada de `modificadores.ts`, misma
   lógica que ya usaba `Modificador`, sin duplicarla).
-- **`TiradasTab.tsx`**: un helper `conCondicionesDeEquipo(tirada)` mezcla
+- **`AccionesTab.tsx`**: un helper `conCondicionesDeEquipo(tirada)` mezcla
   `condicionesActivas(sheet, ctx)` en CUALQUIER tirada (ataques, herramientas,
-  y las fijas de `TIRADAS`) antes de renderizarla — ninguna de las tres sabe
-  que esto existe. `TIRADAS` en sí sigue siendo el array estático de siempre;
+  y las fijas de `ACCIONES`) antes de renderizarla — ninguna de las tres sabe
+  que esto existe. `ACCIONES` en sí sigue siendo el array estático de siempre;
   no hizo falta moverlo a una función sheet-aware como se pensó al principio.
-- **`TiradaModal.tsx`**: el texto de `nota` se pinta **en el propio modal**
+- **`AccionModal.tsx`**: el texto de `nota` se pinta **en el propio modal**
   (bajo el toggle/la opción activa), no en el Marcador tras tirar — es donde
   el jugador ya está mirando mientras decide, y evita tener que arrastrar la
   nota por el histórico de tiradas.
@@ -293,6 +293,19 @@ hoc que se había repetido esta sesión con Mangual, Kerzul y los Visores.
 - Sin cambios de schema/DB, sin dependencias nuevas. Tests en
   `equipo.test.ts` (`describe("condicionesActivas")`). 322 tests, lint y
   `tsc --noEmit` limpios.
+
+**Actualizado 2026-09-24 — `condicionesActivas()` ya no es el camino real:**
+seguía recorriendo `sheet.equipo` entero POR CADA tirada mostrada (`.map()`
+sobre todas las de ataque/herramientas en la pestaña) — cuello de botella real
+documentado en `docs/motor.md` §Escalabilidad. Se sustituyó por
+`indiceDeCondiciones(sheet)` + `consultaIndiceCondiciones(indice, ctx)`
+(`lib/rules/equipo.ts`): el índice se construye UNA VEZ (Map exacto por
+`tiradaId` + listas para `grupo`/`habilidad`/`todas`, con el mismo criterio de
+`alcanzaA()` de siempre), y cada tirada solo consulta. Devuelve exactamente lo
+mismo que `condicionesActivas()` — verificado con test de equivalencia antes de
+sustituir el call site — así que todo lo de arriba (qué familias cubre, qué
+excluye, cómo se dibuja) sigue siendo cierto, solo cambió el cómo se calcula.
+`condicionesActivas()` se queda en el código, sin uso real, con su test.
 
 **Pendiente, ahora que la pieza central existe — es migración de datos, no
 arquitectura**: Mangual (Bloqueo/ignora Cobertura, bloqueado además por la
@@ -323,7 +336,7 @@ diferencia real es **quién decide activarlo/desactivarlo**:
 
 Prueba de que esto no es una idea nueva sino una descripción de lo que ya hay:
 `modificadoresDeEstados()` (`estados.ts:125`) lleva el comentario **"calcado de
-`modificadoresDeEquipo()`"**, y `TiradasTab.tsx:294` ya mezcla los dos en el
+`modificadoresDeEquipo()`"**, y `AccionesTab.tsx:294` ya mezcla los dos en el
 mismo array antes de pasarlo a la tirada: `[...modificadoresActivos(sheet),
 ...modificadoresDeEstados(estadosCombate)]`. Dotes/Poderes/Aumentos serían un
 tercer (cuarto, quinto) `...modificadoresDeX(sheet)` en esa misma lista — el
@@ -332,7 +345,7 @@ de arriba (`CondicionTirada` + texto) el que falta generalizar igual.
 
 ```
                               ┌─────────────────┐
-                              │      TIRADA      │   (TiradaModal.tsx)
+                              │      ACCIÓN       │   (AccionModal.tsx)
                               └────────┬─────────┘
                                        │
                     recibe, ya mezclados en un único array
@@ -358,30 +371,47 @@ de arriba (`CondicionTirada` + texto) el que falta generalizar igual.
 │ (bono/penalizador  │  │ elegida por el jugador  │   │                                 │
 │  a la dificultad) │  │ al tirar                │   │                                 │
 │                   │  │                         │   │                                 │
-│ ✅ YA GENÉRICO      │  │ ❌ solo funciona hoy si  │   │ ❌ sin mecanismo formal —         │
-│ (mecanismo 4,     │  │  la tirada la genera    │   │ hoy cada caso es ad hoc          │
-│  sección 5, con   │  │  combate.ts para un arma │   │ (arma.efectos/especial → nota   │
-│  alcance)         │  │  concreta (mecanismo 1) │   │  a mano, distinto por familia)  │
+│ ✅ YA GENÉRICO      │  │ ✅ genérico para equipo, │   │ ✅ FORMALIZADO           │
+│ (mecanismo 4,     │  │  desde el §8 de abajo   │   │ (mecanismo `nota_fija`,         │
+│  sección 5, con   │  │  (indiceDeCondiciones,  │   │  docs/motor.md) — 2026-09-24   │
+│  alcance)         │  │  2026-09-24)            │   │                                 │
 └───────────────────┘  └─────────────────────────┘   └─────────────────────────────────┘
 ```
 
-**Qué falta, en una frase**: los dos mecanismos de la derecha del diagrama solo
-saben mirar equipo-de-un-arma-concreta hoy — necesitan aprender a mirar
-"cualquier fuente activa sobre la ficha, para cualquier tirada", igual que ya
-sabe hacerlo el modificador numérico. Ese es el diseño pendiente del §8.
+**Actualizado 2026-09-24 — este diagrama describía un problema que ya se cerró:**
+cuando se escribió (2026-09-22), los dos mecanismos de la derecha no sabían mirar
+más que el equipo de un arma concreta, y el texto informativo no tenía mecanismo
+con nombre. Los dos se resolvieron: `CondicionTirada` con `alcance` llegó a
+cualquier tirada para equipo (`mejoraEstandar`/`subsistema`/`herramienta`, §8 de
+abajo), y el texto informativo incondicional se formalizó como mecanismo
+`nota_fija` en `docs/motor.md` al rellenar `MotorMetadata` sobre el catálogo
+entero (2026-09-23/24) — es exactamente el mismo patrón que `arma.efectos`/
+`especial` ya usaban, solo que ahora tiene nombre y está declarado pieza a pieza.
+
+**Lo que SIGUE pendiente, más acotado que antes**: los tres canales de arriba
+solo miran `sheet.equipo` — ninguno mira todavía `sheet.poderes`/`sheet.dotes`/
+lo que traiga Fase 5. `src/lib/rules/capa1.ts` (`fuentesDeCapa1`, 2026-09-24) es
+el punto de extensión pensado para el día que exista una segunda fuente, pero
+hoy solo envuelve `sheet.equipo` — nadie lo consume todavía. Cuando llegue Fase
+5, ese es el sitio donde sumar las fuentes nuevas, no un mecanismo nuevo.
 
 **Límite adicional, no un "falta construir" — un "no puede", confirmado con la
 Cobertura/Camuflaje Trifásico (`docs/equipo-efectos-especiales.md` §Subsistemas,
 2026-09-21):** los tres canales de arriba solo alcanzan la tirada de **quien lleva
 puesta la fuente**. No existe ni en teoría un "alcance: objetivo" — algo que suba
 la dificultad de la tirada de OTRO personaje (un atacante, alguien que te busca)
-por llevar tú algo puesto. Es consecuencia directa de que `Tirada` no tiene campo
-de objetivo. Cualquier diseño que salga de este §8 debería decidir explícitamente
-si esto se queda fuera para siempre (coherente con "la app informa, no arbitra":
-esos casos se informan en la tirada del PROPIO portador, como recordatorio para
-que el máster se lo aplique al de enfrente, nunca en la tirada ajena) o si en
-algún momento compensa modelarlo — no es una limitación técnica accidental, es la
-misma que hace que el motor no pueda enganchar nada a un "objetivo" en absoluto.
+por llevar tú algo puesto. Es consecuencia directa de que `Accion` no tiene campo
+de objetivo.
+
+**Decidido 2026-09-24, ya no queda abierto:** en `docs/motor.md`, `afecta.modo:
+"objetivo_tercero"` es **siempre** tipo "texto" — esto SÍ se queda fuera para
+siempre, no es un "pendiente de construir". La app nunca calcula ese número
+aunque la regla original traiga uno (la cobertura del Escudo, +1 a +4): llega
+como una frase que un jugador y el máster se dicen en mesa, nunca como una suma
+de la app — "informa, no arbitra" hasta el final, no solo como parada intermedia.
+Las piezas con este patrón (Escudos, Camuflaje Trifásico, Malla Plasmática,
+Compartimento Oculto...) cuelgan la nota de la tirada del propio portador, igual
+que ya hacían Visor Nocturno/Térmico.
 
 ### Nota (2026-09-22): variables transversales vs. de un solo consumidor
 
@@ -449,3 +479,13 @@ pendiente ya no es solo "`CondicionTirada` y texto en tiradas fijas", es tambié
 "qué es una Acción, y cuáles de ellas tiran dado". Casos reales acumulados para
 cuando se diseñe: Conversión Psiónica, activar/sacrificar de Malla Plasmática, y
 presumiblemente la mayoría de RECURSOS (gastar munición, cargar un poder).
+
+**Actualizado 2026-09-24 — el nombre ya cambió, el diseño de fondo sigue sin
+construir.** El rename de "Tiradas" a "Acciones" en todo el código (tipo
+`Tirada`→`Accion`, `tiradas.ts`→`acciones.ts`, la pestaña, el modal...) se hizo
+como limpieza (N2, `docs/motor.md` §Escalabilidad) — pero es **solo el nombre**.
+Sigue sin existir una forma de representar una Acción sin dado: `Accion`
+(antes `Tirada`) sigue implicando "aplicado + habilidad + d12 contra dificultad"
+siempre. Conversión Psiónica, el activar/sacrificar de Malla Plasmática, y el
+gasto de RECURSOS siguen sin poder vivir en esta lista — el rename deja el
+nombre ya preparado para el día que se diseñe esto, no lo adelanta.

@@ -11,7 +11,7 @@ está hecho" en cualquier otro documento del proyecto, para — va aquí, no all
 arquitectura — el modelo obligatorio para pasar cualquier elemento nuevo (equipo,
 razas, poderes, dotes, aumentos) de prosa a motor. Este archivo manda en el estado.
 
-**Última actualización:** 2026-09-11.
+**Última actualización:** 2026-09-24.
 
 ## Ahora mismo
 
@@ -104,24 +104,44 @@ atributo/habilidad cuesta XP al mismo coste que en creación, nunca se puede baj
 techo pasa a ser el del sistema (6) en vez del de creación (4). Fresh start hecho el
 2026-09-10: no quedan personajes de prueba viejos que evitar tocar.
 
+### El motor — MotorMetadata + arquitectura escalable ✅ (2026-09-23/24)
+**El modelo entero vive en `docs/motor.md` — léelo antes de dar de alta cualquier
+elemento nuevo (equipo, razas, poderes, dotes, aumentos), es de lectura obligatoria.**
+Dos partes, las dos cerradas:
+
+1. **Barrido de metadatos**: las 550 entradas `MotorMetadata` de las 215 piezas/niveles
+   del catálogo de equipo (`src/lib/rules/motor.ts` + `src/lib/catalog/motor.test.ts`,
+   en verde). Hecho por 4 forks en paralelo, uno por archivo — **una auditoría
+   adversarial posterior encontró errores reales pese al test en verde** (una pieza
+   "construida" que apuntaba a un id de tirada inexistente, una justificación de
+   bloqueo copiada sin revalidar en 8 piezas, un campo entero sin declarar en 10
+   armaduras, 3 fármacos mal tipados) — los 5 corregidos y commiteados. Lección para la
+   próxima vez que se reparta trabajo de datos-con-juicio en paralelo: el test en verde
+   prueba forma, no contenido, hace falta la auditoría después.
+2. **Arquitectura escalable, construida y probada en vivo** (no solo propuesta): con
+   ~300 elementos de capa 1 en camino (Poderes/Dotes/Ciberware, Fase 5) el proceso de
+   generar la pestaña de Acciones tenía un cuello de botella real — `condicionesActivas()`
+   se reescaneaba el equipo entero por cada fila mostrada, y `TiradasTab.tsx` no
+   memoizaba nada. Construido: índice `Map` para `equipoPorId()`, un índice de
+   condiciones construido una sola vez (`indiceDeCondiciones`/`consultaIndiceCondiciones`),
+   memoización real en la pestaña, un registro `familia → generador` que sustituye los
+   bucles hardcodeados de `combate.ts`, y el propio registro ya consulta
+   `MotorMetadata.mecanismo` para decidir si genera una acción — `MotorMetadata` dejó de
+   ser solo documentación. `src/lib/rules/capa1.ts` (`fuentesDeCapa1`) es el punto de
+   extensión para cuando exista una segunda fuente de capa 1, todavía sin consumidores.
+   Además, rename completo "Tiradas" → "Acciones" en código y UI (`docs/motor.md`
+   §Escalabilidad, `docs/modificadores-tiradas.md` actualizado a la par) — el nombre ya
+   encaja con que la pestaña vaya a acabar teniendo filas con y sin dado, pero esa parte
+   (Acciones sin dado en sí) **sigue sin diseñar**, el rename no la adelanta.
+
+**Catálogo dividido**, de paso: `src/lib/catalog/equipo.ts` pasó de 3222 a 190 líneas,
+las 6 familias que vivían ahí (armaduras, armas de fuego, mejoras estándar, subsistemas,
+movimiento, mejoras de arma) están en sus propios archivos, mismo patrón que ya usaban
+`armasMelee.ts`/`armamentoPesado.ts`/`municion.ts`.
+
 ---
 
 ## Pendiente
-
-### El motor — regularizar metadatos de capa 1 ⬜ (modelo cerrado 2026-09-22)
-**El modelo entero vive en `docs/motor.md` — léelo antes de dar de alta cualquier
-elemento nuevo (equipo, razas, poderes, dotes, aumentos), es de lectura obligatoria a
-partir de ahora.** Resumen: la app es un motor de tiradas; todo elemento de la ficha
-(capa 1) debe declarar a qué acción(es) de capa 2 afecta y de cuál de cinco tipos de
-modificador es (acción / numérico / texto / narrativo / habilitador-deshabilitador).
-El código en sí está mayormente hecho (RECURSOS de hoy cubre los tipos 2 y 3 para
-equipo) — lo que falta es sobre todo **trabajo de metadatos**: pasar el catálogo
-entero por esta checklist y encontrar los casos que de verdad escapen a la
-regularización. Dos huecos de motor detectados que sí hacen falta construir, no solo
-rellenar datos: un mecanismo para que un elemento no-equipo (poder, dote) declare que
-genera su propia acción, y un mecanismo real para el tipo 5 (habilitar/deshabilitar
-una acción entera — hoy ningún mecanismo existente sabe hacer eso). Sin empezar el
-barrido todavía.
 
 ### Fase 2 — Ficha viva (PG y fatiga en partida) ⬜
 Ya no está bloqueada por la pregunta de si se lleva en vivo — se resolvió que sí. La
@@ -310,8 +330,13 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
    verdad (el §8 existe); lo bloqueado por Hallazgo #3/#5 sigue esperando diseño.
 
 ### Fase 5 — Poderes, dotes, aumentos, especies reales ⬜ (bloqueado por el diseñador)
-El diseñador (Murillo) aún no ha escrito estos documentos. No hay nada que adelantar del
-lado del código.
+El diseñador (Murillo) aún no ha escrito estos documentos. No hay reglas que adelantar,
+pero sí se adelantó la arquitectura que las va a recibir (ver "El motor — MotorMetadata +
+arquitectura escalable" en Hecho): `fuentesDeCapa1` (`src/lib/rules/capa1.ts`) es el punto
+de extensión ya construido para cuando exista una segunda fuente de capa 1, y el registro
+`familia → generador` de `combate.ts` ya consulta `MotorMetadata.mecanismo` en vez de
+tener familias hardcodeadas — dar de alta Poderes/Dotes/Ciberware el día que lleguen es,
+en teoría, sumarlos a `fuentesDeCapa1` + registrar su generador, no rediseñar el proceso.
 
 **Dependencia detectada (2026-09-21, repaso de efectos especiales de equipo):** el
 estado `Shock` (`src/lib/catalog/estados.ts:670-678`) ya prevé una rama para
