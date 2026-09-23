@@ -65,42 +65,43 @@ export function ContenidoResultado({
 
   return (
     <>
-      {/* Sin el label aquí a propósito (2026-09-24): el único sitio que pinta
-          esto es AccionModal, y su propio <h2> ya lleva el nombre de la
-          tirada justo encima — repetirlo aquí (encima truncado, "Golpear con
+      {/* Sin el label de la tirada aquí a propósito (2026-09-24): el único
+          sitio que pinta esto es AccionModal, y su propio <h2> ya lleva el
+          nombre justo encima — repetirlo aquí (encima truncado, "Golpear con
           Proyector de Pulso (A...") era ruido, no información. El veredicto
-          se queda, pero ya no comparte fila con nada. */}
-      <span className={`font-mono text-[11px] uppercase tracking-widest ${tono}`}>
-        {veredicto}
-      </span>
-
-      <div className="mt-2 flex items-baseline gap-3">
+          se queda, pero ahora comparte la línea del total en vez de flotar
+          solo arriba con todo el ancho vacío a su lado (2026-09-24, feedback
+          del usuario: "un poco feo, usa mejor el espacio"). */}
+      <div className="flex items-baseline gap-3">
         <span className={`font-display text-6xl font-bold tabular-nums ${tono}`}>
           {resultado.total}
         </span>
-        <span className="font-mono text-xs leading-tight text-muted">
-          d12 <span className="text-foreground">{resultado.dado}</span>
-          {" · mod "}
-          <span className="text-foreground">{signo(resultado.modificador)}</span>
-          {resultado.circunstancial !== 0 && (
-            <>
-              {" · circ "}
-              <span className="text-foreground">{signo(resultado.circunstancial)}</span>
-            </>
-          )}
-          {resultado.dificultad !== null && (
-            <>
-              <br />
-              {"vs dificultad "}
-              <span className="text-foreground">{resultado.dificultad}</span>
-              {" · "}
-              <span className={tono}>
-                {margen! >= 0 ? `${margen} éxitos` : `${Math.abs(margen!)} fracasos`}
-              </span>
-            </>
-          )}
+        <span className={`font-mono text-xs uppercase tracking-widest ${tono}`}>
+          {veredicto}
         </span>
       </div>
+
+      <p className="mt-1.5 font-mono text-xs leading-relaxed text-muted">
+        d12 <span className="text-foreground">{resultado.dado}</span>
+        {" · mod "}
+        <span className="text-foreground">{signo(resultado.modificador)}</span>
+        {resultado.circunstancial !== 0 && (
+          <>
+            {" · circ "}
+            <span className="text-foreground">{signo(resultado.circunstancial)}</span>
+          </>
+        )}
+        {resultado.dificultad !== null && (
+          <>
+            {" · vs dificultad "}
+            <span className="text-foreground">{resultado.dificultad}</span>
+            {" · "}
+            <span className={tono}>
+              {margen! >= 0 ? `${margen} éxitos` : `${Math.abs(margen!)} fracasos`}
+            </span>
+          </>
+        )}
+      </p>
 
       {resultado.danioInfo && (
         <div className="mt-3 border-t border-border pt-3">
