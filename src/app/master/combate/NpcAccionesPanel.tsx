@@ -3,20 +3,20 @@
 import { useState } from "react";
 import type { Sheet, EstadoActivo } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
-import { TiradasTab } from "@/app/characters/[id]/_components/TiradasTab";
+import { AccionesTab } from "@/app/characters/[id]/_components/AccionesTab";
 import type { Lanzamiento } from "@/components/ResultadoTirada";
 
 // Fase 6b, subtarea 5.5 (el motivo original de todo el rediseño del bloque
-// 5): mismo TiradasTab.tsx que ya usa el jugador, alimentado por el `sheet`
+// 5): mismo AccionesTab.tsx que ya usa el jugador, alimentado por el `sheet`
 // y los `estados` congelados del Combatiente (no los de la plantilla, que
 // puede haber cambiado desde que se añadió — mismo criterio de "foto" que
 // el resto de `Combatiente`). Un panel bajo demanda, uno a la vez — con
-// 30-50 combatientes en la cola, montar un TiradasTab por fila sería
+// 30-50 combatientes en la cola, montar un AccionesTab por fila sería
 // bastante trabajo de más para lo que se ve en pantalla en cada momento.
-// Mismo lenguaje visual que TiradaModal.tsx (el modal que TiradasTab abre
+// Mismo lenguaje visual que AccionModal.tsx (el modal que AccionesTab abre
 // por dentro al pulsar "Tirar" queda encima de este, sin conflicto: cada
 // overlay cierra solo con su propio fondo).
-export function NpcTiradasPanel({
+export function NpcAccionesPanel({
   nombre,
   sheet,
   estadosCombate,
@@ -29,7 +29,7 @@ export function NpcTiradasPanel({
 }) {
   // Panel bajo demanda: se desmonta al cerrar (onCerrar, en el padre), así
   // que este estado ya nacía fresco en cada apertura incluso cuando vivía
-  // dentro de TiradasTab — el historial subió de nivel (2026-09-24, para que
+  // dentro de AccionesTab — el historial subió de nivel (2026-09-24, para que
   // sobreviva a cambiar de tab en la ficha del jugador), pero aquí no aplica
   // ese problema: no hay tabs que cambiar dentro de este panel.
   const [historial, setHistorial] = useState<Lanzamiento[]>([]);
@@ -58,7 +58,7 @@ export function NpcTiradasPanel({
             </button>
           </div>
           <div className="mt-3">
-            <TiradasTab
+            <AccionesTab
               sheet={sheet}
               estadosCombate={estadosCombate}
               historial={historial}

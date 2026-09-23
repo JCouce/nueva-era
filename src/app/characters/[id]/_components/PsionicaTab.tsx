@@ -3,7 +3,7 @@ import type { Sheet } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 
 // Psiónica tiene presupuesto de creación (HOJA2, letra de prioridad) pero
-// sigue sin catálogo de poderes — mismo patrón que TiradasTab.tsx usa para
+// sigue sin catálogo de poderes — mismo patrón que AccionesTab.tsx usa para
 // una tirada bloqueada: se declara el hueco, no se rellena en silencio.
 export function PsionicaTab({ sheet }: { sheet: Sheet }) {
   const letra = sheet.prioridades.psionica;

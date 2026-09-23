@@ -74,7 +74,7 @@ export const ARMAS: ArmaFuego[] = [
     pesoKg: 0.5,
     rareza: "Común",
     coste: 100,
-    // "ocultar arma": no hay tirada de ocultar un objeto en TIRADAS hoy — el
+    // "ocultar arma": no hay tirada de ocultar un objeto en ACCIONES hoy — el
     // id es un marcador para cuando exista, no se aplica a nada mientras tanto.
     modificadores: [{ tipo: "tirada", alcance: { tipo: "tiradaId", id: "ocultar_objeto" }, valor: 2 }],
     motor: [

@@ -18,13 +18,13 @@ export const DERIVADOS_MODIFICABLES = [
 ] as const;
 export type DerivadoId = (typeof DERIVADOS_MODIFICABLES)[number];
 
-// Los grupos de la pestaña Tiradas. Vive aquí (y no en tiradas.ts, donde se
+// Los grupos de la pestaña Acciones. Vive aquí (y no en acciones.ts, donde se
 // usa) para que Modificador pueda dirigir un bono a un grupo entero sin que
 // este fichero, más bajo en la cadena de imports, dependa de aquel.
-// "Ataques" y "Herramientas" no viven en TIRADAS ni en GRUPOS_TIRADA: los
+// "Ataques" y "Herramientas" no viven en ACCIONES ni en GRUPOS_ACCION: los
 // generan combate.ts y herramientas.ts a partir del equipo, no el catálogo
 // fijo — ver el comentario de cabecera de tiradas.ts.
-export type GrupoTirada =
+export type GrupoAccion =
   | "Ataques"
   | "Defensa"
   | "Salvaciones"
@@ -36,7 +36,7 @@ export type GrupoTirada =
 // — ver docs/modificadores-tiradas.md antes de añadir un sexto caso:
 //
 //   tiradaId  → una tirada concreta, por su id estable ("salv_fortaleza").
-//               Sirve para las fijas de TIRADAS; las de ataque generadas por
+//               Sirve para las fijas de ACCIONES; las de ataque generadas por
 //               combate.ts tienen id por instancia, así que esto no las
 //               alcanza — para esas ya existen ajustesFijos/bonosTramo/
 //               condiciones, más precisos.
@@ -52,7 +52,7 @@ export type GrupoTirada =
 //               fuera en silencio.
 export type AlcanceModificador =
   | { tipo: "tiradaId"; id: string }
-  | { tipo: "grupo"; grupo: GrupoTirada }
+  | { tipo: "grupo"; grupo: GrupoAccion }
   | { tipo: "habilidad"; habilidad: HabilidadId }
   | { tipo: "modo"; contieneEtiqueta: string }
   | { tipo: "todas" };
@@ -109,19 +109,19 @@ export function bonoHabilidad(
 
 // Lo que hace falta saber de una tirada concreta para decidir si le toca un
 // modificador de alcance "tiradaId"/"grupo"/"habilidad"/"modo". La UI lo
-// arma: `id`/`grupo`/`habilidad` salen de la propia Tirada; `modoElegido` es
+// arma: `id`/`grupo`/`habilidad` salen de la propia Accion; `modoElegido` es
 // la etiqueta de la opción de la condición "modo" que esté seleccionada
 // ahora mismo en el modal (o null si no hay tal condición o no aplica).
-export type ContextoTirada = {
+export type ContextoAccion = {
   id: string;
-  grupo: GrupoTirada;
+  grupo: GrupoAccion;
   habilidad: HabilidadId | null;
   modoElegido: string | null;
 };
 
 // Exportada para condicionesActivas() (equipo.ts) — mismo criterio de alcance
 // para CondicionTirada que para Modificador, sin duplicar la lógica de match.
-export function alcanzaA(alcance: AlcanceModificador, ctx: ContextoTirada): boolean {
+export function alcanzaA(alcance: AlcanceModificador, ctx: ContextoAccion): boolean {
   if (alcance.tipo === "todas") return true;
   if (alcance.tipo === "tiradaId") return alcance.id === ctx.id;
   if (alcance.tipo === "grupo") return alcance.grupo === ctx.grupo;
@@ -129,7 +129,7 @@ export function alcanzaA(alcance: AlcanceModificador, ctx: ContextoTirada): bool
   return ctx.modoElegido !== null && ctx.modoElegido.includes(alcance.contieneEtiqueta);
 }
 
-export function bonoAlcance(mods: ModificadorConFuente[], ctx: ContextoTirada): number {
+export function bonoAlcance(mods: ModificadorConFuente[], ctx: ContextoAccion): number {
   return mods.reduce(
     (t, m) => (m.tipo === "tirada" && alcanzaA(m.alcance, ctx) ? t + m.valor : t),
     0,
@@ -140,7 +140,7 @@ export function bonoAlcance(mods: ModificadorConFuente[], ctx: ContextoTirada): 
 // fuente — mismo patrón que desgloseCondiciones/desgloseBonosTramo.
 export function desgloseAlcance(
   mods: ModificadorConFuente[],
-  ctx: ContextoTirada,
+  ctx: ContextoAccion,
 ): { etiqueta: string; valor: number }[] {
   return mods
     .filter((m): m is Extract<Modificador, { tipo: "tirada" }> & ModificadorConFuente =>

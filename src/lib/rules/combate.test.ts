@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { defaultSheet } from "./sheet";
 import { equipar } from "./equipo";
 import { ajustarRecurso } from "./recursos";
-import { tiradasDeAtaque, generaAccionPropia } from "./combate";
+import { accionesDeAtaque, generaAccionPropia } from "./combate";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
 import type { MotorMetadata } from "./motor";
@@ -17,7 +17,7 @@ function opcion(c: CondicionTirada | undefined, id: string) {
 
 describe("sin nada equipado", () => {
   test("no aparece ningún ataque, ni siquiera puñetazo o patada", () => {
-    assert.deepEqual(tiradasDeAtaque(defaultSheet()), []);
+    assert.deepEqual(accionesDeAtaque(defaultSheet()), []);
   });
 });
 
@@ -25,14 +25,14 @@ describe("pelea (puñetazo, patada, codazo)", () => {
   test("solo aparece si el jugador la equipa, como cualquier otra arma", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "p1", catalogoId: "pelea_punetazo" });
-    const labels = tiradasDeAtaque(sheet).map((t) => t.label);
+    const labels = accionesDeAtaque(sheet).map((t) => t.label);
     assert.deepEqual(labels, ["Golpear con Puñetazo (o Sutil)"]);
   });
 
   test("el puñetazo tiene dos modos y su condición de modo", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "p1", catalogoId: "pelea_punetazo" });
-    const [punetazo] = tiradasDeAtaque(sheet);
+    const [punetazo] = accionesDeAtaque(sheet);
     const modo = punetazo.condiciones?.find((c) => c.id === "modo");
     assert.equal(opcion(modo, "0"), 0); // Simple
     assert.equal(opcion(modo, "1"), 0); // Estándar
@@ -43,7 +43,7 @@ describe("arma de fuego equipada", () => {
   test("genera una fila 'Disparar con...' con la distancia por defecto", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_precision_plaga" });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Plaga");
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Plaga");
     assert.ok(fila);
     assert.equal(fila!.ataque?.modos[0].danio, 17);
     assert.equal(fila!.ataque?.modos[0].categoriaDanio, "Plasma");
@@ -52,7 +52,7 @@ describe("arma de fuego equipada", () => {
   test("un fusil de precisión cambia el +2 de corta por -2", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_precision_plaga" });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Plaga")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Plaga")!;
     const tramo = fila.condiciones?.find((c) => c.id === "tramo");
     assert.equal(opcion(tramo, "bocajarro"), 4);
     assert.equal(opcion(tramo, "corta"), -2);
@@ -63,7 +63,7 @@ describe("arma de fuego equipada", () => {
   test("una escopeta suma +1 a corta y bocajarro", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "escopeta_feritas" });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Feritas")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Feritas")!;
     const tramo = fila.condiciones?.find((c) => c.id === "tramo");
     assert.equal(opcion(tramo, "bocajarro"), 5);
     assert.equal(opcion(tramo, "corta"), 3);
@@ -74,7 +74,7 @@ describe("arma de fuego equipada", () => {
   test("un arma con dos modos trae la condición de modo", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_sydiasi" });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
     const modo = fila.condiciones?.find((c) => c.id === "modo");
     assert.equal(opcion(modo, "0"), -3); // Simple
     assert.equal(opcion(modo, "1"), -4); // Estándar (F. Auto)
@@ -93,7 +93,7 @@ describe("aviso de munición insuficiente (RECURSOS, docs/tareas.md)", () => {
   test("sin recurso rastreado (equipar auto-puebla) no hay ningún aviso al equipar", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_sydiasi" }); // 20/20
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
     const modo = fila.condiciones?.find((c) => c.id === "modo");
     assert.equal(opcionCompleta(modo, "0").nota, undefined); // Simple, gasta 1
     assert.equal(opcionCompleta(modo, "1").nota, undefined); // F. Auto, gasta 20 — justo llega
@@ -103,7 +103,7 @@ describe("aviso de munición insuficiente (RECURSOS, docs/tareas.md)", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_sydiasi" });
     sheet = ajustarRecurso(sheet, "arma1", -15); // 5/20 — no llega a los 20 de F. Auto
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
     const modo = fila.condiciones?.find((c) => c.id === "modo");
     assert.equal(opcionCompleta(modo, "0").nota, undefined);
     assert.match(opcionCompleta(modo, "1").nota ?? "", /5\/20/);
@@ -113,7 +113,7 @@ describe("aviso de munición insuficiente (RECURSOS, docs/tareas.md)", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_mosquito" }); // sin F. Auto
     sheet = ajustarRecurso(sheet, "arma1", -7); // 0/7
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Mosquito")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Mosquito")!;
     assert.match(fila.nota ?? "", /0\/7/);
   });
 });
@@ -128,7 +128,7 @@ describe("mejoras que afectan a la distancia", () => {
       nivel: 1,
       instaladoEnId: "arma1",
     });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
     const tramo = fila.condiciones?.find((c) => c.id === "tramo");
     assert.equal(opcion(tramo, "corta"), 2);
     assert.equal(opcion(tramo, "media"), 0);
@@ -147,7 +147,7 @@ describe("mejoras que afectan a la distancia", () => {
       nivel: 3,
       instaladoEnId: "arma1",
     });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
     assert.deepEqual(fila.bonosTramo, [
       { fuente: "Mira Telescópica", porTramo: { media: 2, larga: 2 } },
     ]);
@@ -169,7 +169,7 @@ describe("mejoras que afectan a la distancia", () => {
       nivel: 1,
       instaladoEnId: "arma1",
     });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
     const apoyado = fila.condiciones?.find((c) => c.id === "apoyado");
     assert.ok(apoyado && apoyado.tipo === "toggle");
     assert.equal(apoyado.valorActivo, 1);
@@ -187,7 +187,7 @@ describe("lanzagranadas integrado", () => {
       nivel: 1,
       instaladoEnId: "arma1",
     });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
     const tramo = fila.condiciones?.find((c) => c.id === "tramo");
     assert.equal(opcion(tramo, "bocajarro"), 4);
     assert.equal(opcion(tramo, "corta"), 2);
@@ -205,7 +205,7 @@ describe("lanzagranadas integrado", () => {
       nivel: 1,
       instaladoEnId: "arma1",
     });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Lanzagranadas (Impetus)")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Lanzagranadas (Impetus)")!;
     assert.ok(fila);
     assert.equal(fila.bloqueada, undefined);
     assert.deepEqual(fila.ajustesFijos, [{ valor: -2, fuente: "Lanzagranadas acoplado" }]);
@@ -220,7 +220,7 @@ describe("lanzagranadas integrado", () => {
   test("sin lanzagranadas instalado, no aparece esa fila", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
-    const labels = tiradasDeAtaque(sheet).map((t) => t.label);
+    const labels = accionesDeAtaque(sheet).map((t) => t.label);
     assert.ok(!labels.some((l) => l.startsWith("Lanzagranadas")));
   });
 });
@@ -229,7 +229,7 @@ describe("arma melee equipada", () => {
   test("genera 'Golpear con...' con la fórmula de daño, no un número", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada" });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Golpear con Espada")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Espada")!;
     assert.equal(fila.ataque?.modos[0].danio, null);
     assert.equal(fila.ataque?.modos[0].formulaDanio, "Fue+3");
   });
@@ -237,7 +237,7 @@ describe("arma melee equipada", () => {
   test("un arma Sutil lo indica en la etiqueta y la nota", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada_ligera" });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label.includes("Espada Ligera"))!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label.includes("Espada Ligera"))!;
     assert.match(fila.label, /Sutil/);
     assert.match(fila.nota ?? "", /Potencia en lugar de Fuerza/);
   });
@@ -245,14 +245,14 @@ describe("arma melee equipada", () => {
   test("el 'efectos' del arma llega a la nota, igual que 'especial' en armas de fuego", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "tonfa1", catalogoId: "corta_tonfa_porra" });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Golpear con Tonfa o Porra")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Tonfa o Porra")!;
     assert.match(fila.nota ?? "", /Crítico de Aturdimiento \(7\)/);
   });
 
   test("Sutil y 'efectos' se combinan en la misma nota, sin pisarse", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada_ligera" });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label.includes("Espada Ligera"))!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label.includes("Espada Ligera"))!;
     assert.match(fila.nota ?? "", /Potencia en lugar de Fuerza/);
     assert.match(fila.nota ?? "", /Crítico de Hemorragia \(1d6 turnos\)/);
   });
@@ -262,7 +262,7 @@ describe("armamento pesado equipado", () => {
   test("dificultad fija por arma, mecanizada como ajustesFijos", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "lac1", catalogoId: "lanzacohetes_rt" });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Lanzacohetes RT")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Lanzacohetes RT")!;
     assert.equal(fila.grupo, "Ataques");
     assert.equal(fila.aplicado, "reflejos");
     assert.equal(fila.habilidad, "combate_distancia");
@@ -275,7 +275,7 @@ describe("armamento pesado equipado", () => {
   test("el Lanzallamas Ligero no tiene alcance en metros, no aparece en la nota", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "lf1", catalogoId: "lanzallamas_ligero" });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Lanzallamas Ligero")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Lanzallamas Ligero")!;
     assert.doesNotMatch(fila.nota ?? "", /Alcance/);
     assert.equal(fila.ataque?.modos[0].danio, 10);
     assert.equal(fila.ataque?.modos[0].categoriaDanio, "Fuego");
@@ -284,7 +284,7 @@ describe("armamento pesado equipado", () => {
   test("el Lanzagranadas pesado tiene el daño según la granada elegida, como el integrado", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "lg1", catalogoId: "lanzagranadas_pesado" });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Disparar con Lanzagranadas")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Lanzagranadas")!;
     assert.deepEqual(fila.ajustesFijos, [{ valor: -2, fuente: "Lanzagranadas" }]);
     const modo = fila.condiciones?.find((c) => c.id === "modo");
     assert.ok(modo && modo.tipo === "opcion");
@@ -297,7 +297,7 @@ describe("granada equipada", () => {
   test("genera 'Lanzar...' con Potencia + Atletismo y la dificultad de lanzarla a mano", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "g1", catalogoId: "granada_fragmentacion" });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Lanzar Granada de Fragmentación")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Lanzar Granada de Fragmentación")!;
     assert.equal(fila.grupo, "Ataques");
     assert.equal(fila.aplicado, "potencia");
     assert.equal(fila.habilidad, "atletismo");
@@ -310,7 +310,7 @@ describe("granada equipada", () => {
   test("una granada de solo efecto (sin daño directo) lo indica en la categoría", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "g1", catalogoId: "granada_humo" });
-    const fila = tiradasDeAtaque(sheet).find((t) => t.label === "Lanzar Granada de Humo")!;
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Lanzar Granada de Humo")!;
     assert.equal(fila.ataque?.modos[0].categoriaDanio, "Efecto (sin daño directo)");
   });
 
@@ -318,7 +318,7 @@ describe("granada equipada", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "g1", catalogoId: "granada_casera" });
     sheet = equipar(sheet, { instanciaId: "g2", catalogoId: "granada_plasma" });
-    const labels = tiradasDeAtaque(sheet)
+    const labels = accionesDeAtaque(sheet)
       .map((t) => t.label)
       .filter((l) => l.startsWith("Lanzar"));
     assert.deepEqual(labels, ["Lanzar Granada Casera", "Lanzar Granada de Plasma"]);
@@ -344,24 +344,24 @@ describe("REGISTRO_DE_ATAQUE (combate.ts) cubre exactamente las familias esperad
   }
 
   for (const familia of FAMILIAS_QUE_GENERAN_ATAQUE) {
-    test(`"${familia}" genera al menos una fila en tiradasDeAtaque()`, () => {
+    test(`"${familia}" genera al menos una fila en accionesDeAtaque()`, () => {
       let sheet = defaultSheet();
       sheet = equipar(sheet, { instanciaId: "x1", catalogoId: primerIdDe(familia) });
-      assert.ok(tiradasDeAtaque(sheet).length > 0, `familia "${familia}" no generó ninguna fila`);
+      assert.ok(accionesDeAtaque(sheet).length > 0, `familia "${familia}" no generó ninguna fila`);
     });
   }
 
   for (const familia of FAMILIAS_SIN_ATAQUE_SIN_HOST) {
-    test(`"${familia}" no genera ninguna fila en tiradasDeAtaque()`, () => {
+    test(`"${familia}" no genera ninguna fila en accionesDeAtaque()`, () => {
       let sheet = defaultSheet();
       sheet = equipar(sheet, { instanciaId: "x1", catalogoId: primerIdDe(familia) });
-      assert.deepEqual(tiradasDeAtaque(sheet), []);
+      assert.deepEqual(accionesDeAtaque(sheet), []);
     });
   }
 });
 
 // T6 (artifact de escalabilidad): generaAccionPropia() es lo que hace que
-// tiradasDeAtaque() consulte MotorMetadata además del registro por familia.
+// accionesDeAtaque() consulte MotorMetadata además del registro por familia.
 // No hay ninguna pieza real hoy en arma/armaMelee/armaPesada/granada cuya
 // ÚNICA entrada "accion"/"accion_equipo" sea pendiente/bloqueada (todas
 // tienen al menos una construida para su acción principal) — se prueba la

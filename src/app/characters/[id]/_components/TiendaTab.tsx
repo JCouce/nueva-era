@@ -165,7 +165,7 @@ const VINCULADO_MS = 550;
 // que la secuencia de abajo no espera a nada real: es la confirmación táctil
 // de "esto se ha instalado", no una carga. Tres fases con el mismo lenguaje
 // que el resto de la ficha — mono/info para "el sistema está trabajando",
-// display/accent-glow para el resultado, como el crítico en TiradasTab.
+// display/accent-glow para el resultado, como el crítico en AccionesTab.
 function BotonEquipar({
   onClick,
   disabled = false,

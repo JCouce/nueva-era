@@ -2,11 +2,11 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet } from "./sheet";
 import { equipar } from "./equipo";
-import { tiradasDeHerramientas } from "./herramientas";
+import { accionesDeHerramientas } from "./herramientas";
 
 describe("sin nada equipado", () => {
   test("no aparece ninguna herramienta", () => {
-    assert.deepEqual(tiradasDeHerramientas(defaultSheet()), []);
+    assert.deepEqual(accionesDeHerramientas(defaultSheet()), []);
   });
 });
 
@@ -17,14 +17,14 @@ describe("Valija Táctica de Fabricación", () => {
       catalogoId: "valija_tactica_fabricacion",
       nivel: 1,
     });
-    assert.deepEqual(tiradasDeHerramientas(sheet), []);
+    assert.deepEqual(accionesDeHerramientas(sheet), []);
   });
 });
 
 describe("Radar", () => {
   test("equipado, genera su propia fila con Perspicacia + Tecnociencia", () => {
     const sheet = equipar(defaultSheet(), { instanciaId: "r1", catalogoId: "radar", nivel: 1 });
-    const [fila] = tiradasDeHerramientas(sheet);
+    const [fila] = accionesDeHerramientas(sheet);
     assert.equal(fila.label, "Escanear con Radar");
     assert.equal(fila.grupo, "Herramientas");
     assert.equal(fila.aplicado, "perspicacia");
@@ -34,7 +34,7 @@ describe("Radar", () => {
 
   test("la nota cambia con el nivel equipado", () => {
     const sheet = equipar(defaultSheet(), { instanciaId: "r1", catalogoId: "radar", nivel: 3 });
-    const [fila] = tiradasDeHerramientas(sheet);
+    const [fila] = accionesDeHerramientas(sheet);
     assert.match(fila.nota ?? "", /dificultad 8/i);
   });
 });
@@ -51,7 +51,7 @@ describe("Escáner Detector y Disfraz Holográfico", () => {
       catalogoId: "disfraz_holografico",
       nivel: 1,
     });
-    const labels = tiradasDeHerramientas(sheet).map((t) => t.label);
+    const labels = accionesDeHerramientas(sheet).map((t) => t.label);
     assert.deepEqual(labels, ["Usar Escáner Detector", "Activar Disfraz Holográfico"]);
   });
 });
@@ -59,7 +59,7 @@ describe("Escáner Detector y Disfraz Holográfico", () => {
 describe("no confunde con Buscar/percibir", () => {
   test("la habilidad de Radar/Escáner es Tecnociencia, no Exploración", () => {
     const sheet = equipar(defaultSheet(), { instanciaId: "r1", catalogoId: "radar", nivel: 1 });
-    const [fila] = tiradasDeHerramientas(sheet);
+    const [fila] = accionesDeHerramientas(sheet);
     assert.notEqual(fila.habilidad, "exploracion");
   });
 });

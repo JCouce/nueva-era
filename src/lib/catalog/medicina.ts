@@ -129,7 +129,7 @@ export const MEDICINA_UNICAS: Herramienta[] = [VALIJA_TACTICA_MEDICA];
 // docs/motor.md: decisión de diseño ya cerrada (ver cabecera del archivo),
 // no un hueco — un fármaco no lleva `modificadores` a propósito (bono POR
 // DOSIS de un solo uso, el motor no rastrea inventario) y su `detalle` no se
-// vuelca a ningún `Tirada.nota` en ningún sitio del código (comprobado:
+// vuelca a ningún `Accion.nota` en ningún sitio del código (comprobado:
 // FARMACOS solo se usa en TiendaTab.tsx). Narrativo, sin conexión, construido
 // tal cual está — no "pendiente".
 //

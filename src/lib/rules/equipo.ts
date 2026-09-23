@@ -20,7 +20,7 @@ import {
   type MejoraDeArma,
   type Rareza,
 } from "../catalog/equipo";
-import { alcanzaA, type ContextoTirada, type GrupoTirada, type ModificadorConFuente } from "./modificadores";
+import { alcanzaA, type ContextoAccion, type GrupoAccion, type ModificadorConFuente } from "./modificadores";
 import type { CondicionTirada } from "./condiciones";
 import type { HabilidadId } from "./habilidades";
 import { reconciliarRecursos } from "./recursos";
@@ -345,7 +345,7 @@ export function modificadoresDeEquipo(sheet: Sheet): ModificadorConFuente[] {
 // Excluye `mejoraArma` a propósito: esa familia ya se recoge por instancia de
 // arma en condicionesDeMejoras, sin mirar `alcance` — incluirla aquí también
 // duplicaría la condición el día que una mejora de arma declare alcance.
-export function condicionesActivas(sheet: Sheet, ctx: ContextoTirada): CondicionTirada[] {
+export function condicionesActivas(sheet: Sheet, ctx: ContextoAccion): CondicionTirada[] {
   return sheet.equipo.flatMap((pieza): CondicionTirada[] => {
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat) return [];
@@ -362,7 +362,7 @@ export function condicionesActivas(sheet: Sheet, ctx: ContextoTirada): Condicion
 // pasada de sheet.equipo, un índice por cada alcance que sí se puede indexar
 // (tiradaId exacto, o las listas — pequeñas en la práctica — de grupo/
 // habilidad/todas), en vez de repetir la pasada completa por cada tirada
-// mostrada (TiradasTab.tsx la llamaba una vez por fila). Alcance "modo" queda
+// mostrada (AccionesTab.tsx la llamaba una vez por fila). Alcance "modo" queda
 // fuera a propósito: en el único call site que consume esto hoy, ctx llega
 // siempre con `modoElegido: null` (la tirada ni se ha abierto todavía), así
 // que "modo" nunca hace match ahí — se resuelve aparte, dentro del modal.
@@ -376,7 +376,7 @@ type CondicionIndexada = { condicion: CondicionTirada; orden: number };
 
 export type IndiceCondiciones = {
   porTiradaId: Map<string, CondicionIndexada[]>;
-  porGrupo: Map<GrupoTirada, CondicionIndexada[]>;
+  porGrupo: Map<GrupoAccion, CondicionIndexada[]>;
   porHabilidad: Map<HabilidadId, CondicionIndexada[]>;
   todas: CondicionIndexada[];
 };
@@ -418,7 +418,7 @@ export function indiceDeCondiciones(sheet: Sheet): IndiceCondiciones {
   return indice;
 }
 
-export function consultaIndiceCondiciones(indice: IndiceCondiciones, ctx: ContextoTirada): CondicionTirada[] {
+export function consultaIndiceCondiciones(indice: IndiceCondiciones, ctx: ContextoAccion): CondicionTirada[] {
   const candidatas: CondicionIndexada[] = [
     ...(indice.porTiradaId.get(ctx.id) ?? []),
     ...(indice.porGrupo.get(ctx.grupo) ?? []),

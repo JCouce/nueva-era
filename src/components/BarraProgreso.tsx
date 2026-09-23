@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 // pinte el 0% antes de animar a 100%; si no, no hay transición que ver.
 //
 // Compartida por TiendaTab (confirmación de "vinculando" al equipar algo) y
-// TiradaModal (el dado "rodando" antes del resultado) — mismo lenguaje
+// AccionModal (el dado "rodando" antes del resultado) — mismo lenguaje
 // visual de "el sistema está trabajando" en los dos sitios donde hace falta,
 // en vez de reinventarlo. `className` decide el color/glow del relleno; el
 // track siempre es el mismo.

@@ -15,7 +15,7 @@ import {
 } from "@/lib/rules";
 import { AtributosTab } from "@/app/characters/[id]/_components/AtributosTab";
 import { HabilidadesTab } from "@/app/characters/[id]/_components/HabilidadesTab";
-import { TiradasTab } from "@/app/characters/[id]/_components/TiradasTab";
+import { AccionesTab } from "@/app/characters/[id]/_components/AccionesTab";
 import type { Lanzamiento } from "@/components/ResultadoTirada";
 import { EquipoTab } from "@/app/characters/[id]/_components/EquipoTab";
 import { TiendaTab } from "@/app/characters/[id]/_components/TiendaTab";
@@ -53,7 +53,7 @@ const TABS = [
   { id: "identidad", label: "Identidad" },
   { id: "attrs", label: "Atributos" },
   { id: "skills", label: "Habilidades" },
-  { id: "tiradas", label: "Tiradas" },
+  { id: "acciones", label: "Acciones" },
   { id: "equipo", label: "Equipo" },
   { id: "recursos", label: "Recursos" },
   { id: "tienda", label: "Tienda" },
@@ -100,11 +100,11 @@ export function NpcEditor({
   const [nombre, setNombre] = useState(initialNombre);
   const [nota, setNota] = useState(initialNota);
   const [status, setStatus] = useState<SaveStatus>("idle");
-  // Mismo motivo que en CharacterSheet.tsx (2026-09-24): TiradasTab se
+  // Mismo motivo que en CharacterSheet.tsx (2026-09-24): AccionesTab se
   // desmonta al cambiar de tab, así que su historial sube aquí para
-  // sobrevivir al ir y volver a "Tiradas" mientras se edita el NPC.
-  const [tiradasHistorial, setTiradasHistorial] = useState<Lanzamiento[]>([]);
-  const [tiradasMemoria, setTiradasMemoria] = useState<
+  // sobrevivir al ir y volver a "Acciones" mientras se edita el NPC.
+  const [accionesHistorial, setAccionesHistorial] = useState<Lanzamiento[]>([]);
+  const [accionesMemoria, setAccionesMemoria] = useState<
     Record<string, { dificultad: number | null; circunstancial: number }>
   >({});
 
@@ -289,7 +289,7 @@ export function NpcEditor({
           onRemoveEspecialidad={commitRemoveEspecialidad}
         />
       )}
-      {active === "tiradas" && (
+      {active === "acciones" && (
         <div className="flex flex-col gap-3">
           {/* 5.6: preview en reposo, sin estados — una NpcTemplate no tiene
               dónde guardarlos (rondasRestantes solo lo consume el motor de
@@ -300,12 +300,12 @@ export function NpcEditor({
             Vista previa en reposo, sin estados aplicados — para eso hace falta un
             combate real (fase 6b, subtarea 5.5).
           </p>
-          <TiradasTab
+          <AccionesTab
             sheet={sheet}
-            historial={tiradasHistorial}
-            setHistorial={setTiradasHistorial}
-            memoria={tiradasMemoria}
-            setMemoria={setTiradasMemoria}
+            historial={accionesHistorial}
+            setHistorial={setAccionesHistorial}
+            memoria={accionesMemoria}
+            setMemoria={setAccionesMemoria}
           />
         </div>
       )}

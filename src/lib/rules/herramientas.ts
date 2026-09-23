@@ -1,6 +1,6 @@
 // Convierte las herramientas activas equipadas (Radar, Escáner Detector,
 // Disfraz Holográfico) en su propia tirada — mismo patrón que combate.ts usa
-// con las armas: una fila dinámica en vez de una entrada fija en TIRADAS.
+// con las armas: una fila dinámica en vez de una entrada fija en ACCIONES.
 //
 // Diferencia con combate.ts: ahí una sola fórmula sirve para CUALQUIER arma
 // de fuego (misma familia, mismo cálculo). Aquí no hay una fórmula común —
@@ -11,7 +11,7 @@
 import { equipoPorId, type Equipo, type Herramienta } from "../catalog/equipo";
 import type { PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
-import type { Tirada } from "./tiradas";
+import type { Accion } from "./acciones";
 
 // Qué acción describe cada una, para el label de la fila ("Escanear con
 // Radar"). Los tres piden Perspicacia + Tecnociencia — pareja distinta de
@@ -28,7 +28,7 @@ const ETIQUETA_ACCION: Record<string, string> = {
 // familia porque solo hay una familia ("herramienta"), y encima no hay una
 // fórmula común entre sus piezas: cada una se distingue por su propio id de
 // catálogo, no por la familia entera (VTF no genera tirada propia).
-function tiradaDeHerramienta(pieza: PiezaEquipada, cat: Herramienta): Tirada | null {
+function tiradaDeHerramienta(pieza: PiezaEquipada, cat: Herramienta): Accion | null {
   const etiqueta = ETIQUETA_ACCION[cat.id];
   if (!etiqueta) return null; // VTF, o cualquier herramienta futura sin tirada propia
 
@@ -45,8 +45,8 @@ function tiradaDeHerramienta(pieza: PiezaEquipada, cat: Herramienta): Tirada | n
   };
 }
 
-export function tiradasDeHerramientas(sheet: Sheet): Tirada[] {
-  const tiradas: Tirada[] = [];
+export function accionesDeHerramientas(sheet: Sheet): Accion[] {
+  const tiradas: Accion[] = [];
   for (const pieza of sheet.equipo) {
     const cat: Equipo | null = equipoPorId(pieza.catalogoId);
     if (cat?.familia !== "herramienta") continue;

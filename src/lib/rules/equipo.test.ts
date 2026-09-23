@@ -428,7 +428,7 @@ describe("condicionesActivas", () => {
 // motor.md): indiceDeCondiciones()+consultaIndiceCondiciones() tiene que
 // devolver EXACTAMENTE lo mismo que condicionesActivas() — mismo contenido,
 // mismo orden — para cualquier ficha/ctx, antes de sustituir la llamada en
-// TiradasTab.tsx por la versión indexada.
+// AccionesTab.tsx por la versión indexada.
 describe("indiceDeCondiciones + consultaIndiceCondiciones ≡ condicionesActivas", () => {
   const ctxAlertaActiva = { id: "alerta_activa", grupo: "Acciones" as const, habilidad: "exploracion" as const, modoElegido: null };
 

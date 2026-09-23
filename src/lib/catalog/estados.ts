@@ -268,7 +268,7 @@ export const ESTADOS: Estado[] = [
     id: "corrosion",
     label: "Corrosión",
     resumen:
-      "Destruye materiales y tejido. Tirada de Fortaleza; al fracasar, dos niveles de daño grave " +
+      "Destruye materiales y tejido. Accion de Fortaleza; al fracasar, dos niveles de daño grave " +
       "y el equipamiento arriesga su estructura o blindaje.",
     grados: [
       {
@@ -431,7 +431,7 @@ export const ESTADOS: Estado[] = [
   {
     id: "envenenamiento",
     label: "Envenenamiento",
-    resumen: "Tirada casi siempre de Fortaleza. Algunos venenos imponen penalizadores propios.",
+    resumen: "Accion casi siempre de Fortaleza. Algunos venenos imponen penalizadores propios.",
     grados: [
       {
         id: "nivel_1",
@@ -474,7 +474,7 @@ export const ESTADOS: Estado[] = [
     id: "fusion",
     label: "Fusión",
     resumen:
-      "Somete tejido y equipamiento a temperaturas extremas. Tirada de Fortaleza; al fracasar, " +
+      "Somete tejido y equipamiento a temperaturas extremas. Accion de Fortaleza; al fracasar, " +
       "dos niveles de daño grave y el equipamiento arriesga estructura o blindaje.",
     grados: [
       {

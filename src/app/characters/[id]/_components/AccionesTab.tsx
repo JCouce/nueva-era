@@ -2,15 +2,15 @@
 
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import {
-  TIRADAS,
-  GRUPOS_TIRADA,
+  ACCIONES,
+  GRUPOS_ACCION,
   APLICADOS,
   HABILIDADES,
-  modificadorTirada,
+  modificadorAccion,
   resolverTirada,
   resolverDanio,
-  tiradasDeAtaque,
-  tiradasDeHerramientas,
+  accionesDeAtaque,
+  accionesDeHerramientas,
   valorCondiciones,
   valorBonosTramo,
   modificadoresActivos,
@@ -19,21 +19,21 @@ import {
   consultaIndiceCondiciones,
   bonoAlcance,
   modoElegido,
-  type Tirada,
+  type Accion,
   type Sheet,
   type EstadoCondiciones,
   type EstadoActivo,
   type ModificadorConFuente,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
-import { TiradaModal } from "@/components/TiradaModal";
+import { AccionModal } from "@/components/AccionModal";
 import { type DanioInfo, type Lanzamiento } from "@/components/ResultadoTirada";
 
 function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
 }
 
-function sumaAjustesFijos(tirada: Tirada): number {
+function sumaAjustesFijos(tirada: Accion): number {
   return (tirada.ajustesFijos ?? []).reduce((t, a) => t + a.valor, 0);
 }
 
@@ -61,7 +61,7 @@ function textoExitos(h: Lanzamiento): string {
 // una lista compacta de las últimas tiradas (acotado a 6, ver `tirar()` más
 // abajo), "Nombre --- N éxitos", coloreada por
 // resultado — pedido explícito del usuario. El detalle completo (dado,
-// modificador, avisos de condiciones) sigue viviendo en TiradaModal mientras
+// modificador, avisos de condiciones) sigue viviendo en AccionModal mientras
 // se tira; esto es el log, no un sustituto de esa vista.
 function FilaHistorial({ h }: { h: Lanzamiento }) {
   return (
@@ -81,17 +81,17 @@ function FilaTirada({
   mods,
   onAbrir,
 }: {
-  tirada: Tirada;
+  tirada: Accion;
   sheet: Sheet;
   mods: ModificadorConFuente[];
-  onAbrir: (t: Tirada, enEspecialidad: boolean) => void;
+  onAbrir: (t: Accion, enEspecialidad: boolean) => void;
 }) {
   const [enEspecialidad, setEnEspecialidad] = useState(false);
 
   const especialidades = tirada.habilidad
     ? sheet.habilidades[tirada.habilidad].especialidades
     : [];
-  const mod = modificadorTirada(sheet, tirada, enEspecialidad, mods);
+  const mod = modificadorAccion(sheet, tirada, enEspecialidad, mods);
   const nombreAplicado = APLICADOS.find((a) => a.id === tirada.aplicado)!;
   const nombreHabilidad = tirada.habilidad
     ? HABILIDADES.find((h) => h.id === tirada.habilidad)!.label
@@ -178,7 +178,7 @@ function FilaTirada({
   );
 }
 
-export function TiradasTab({
+export function AccionesTab({
   sheet,
   estadosCombate = [],
   historial,
@@ -207,11 +207,11 @@ export function TiradasTab({
 }) {
   const mods = [...modificadoresActivos(sheet), ...modificadoresDeEstados(estadosCombate)];
   const [modal, setModal] = useState<{
-    tirada: Tirada;
+    tirada: Accion;
     modBase: number;
     desgloseBase: { etiqueta: string; valor: number }[];
     mods: ModificadorConFuente[];
-    ctxBase: { id: string; grupo: Tirada["grupo"]; habilidad: Tirada["habilidad"] };
+    ctxBase: { id: string; grupo: Accion["grupo"]; habilidad: Accion["habilidad"] };
     // null mientras se eligen condiciones/dificultad; el id del Lanzamiento
     // recién creado en cuanto se pulsa Tirar — el modal pasa a mostrar el
     // resultado in-place en vez de cerrarse (UX corregida 2026-09-23: cerrar
@@ -221,7 +221,7 @@ export function TiradasTab({
 
   // Mezcla las condiciones de alcance (Visor Nocturno y lo que venga después,
   // ver docs/modificadores-tiradas.md §8) en CUALQUIER tirada — de ataque,
-  // de herramienta o fija de TIRADAS — sin que ninguna de las tres sepa que
+  // de herramienta o fija de ACCIONES — sin que ninguna de las tres sepa que
   // eso existe. `modoElegido: null` aquí a propósito: en este punto la tirada
   // ni siquiera se ha abierto, así que una condición con alcance "modo" no
   // tiene nada que matchear todavía (no tiene sentido de origen de todos
@@ -246,28 +246,28 @@ export function TiradasTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [sheet.equipo],
   );
-  const conCondicionesDeEquipo = (t: Tirada): Tirada => {
+  const conCondicionesDeEquipo = (t: Accion): Accion => {
     const extra = consultaIndiceCondiciones(indiceCondiciones, { id: t.id, grupo: t.grupo, habilidad: t.habilidad, modoElegido: null });
     return extra.length > 0 ? { ...t, condiciones: [...(t.condiciones ?? []), ...extra] } : t;
   };
 
-  // Igual que arriba: tiradasDeAtaque()/tiradasDeHerramientas() solo leen
-  // sheet.equipo, salvo tiradaDeArmaFuego (dentro de tiradasDeAtaque), que
+  // Igual que arriba: accionesDeAtaque()/accionesDeHerramientas() solo leen
+  // sheet.equipo, salvo tiradaDeArmaFuego (dentro de accionesDeAtaque), que
   // además lee sheet.recursos vía recursoDe() para el aviso de munición
   // insuficiente — sin esa segunda dependencia, gastar/recargar munición no
   // invalidaría el aviso. conCondicionesDeEquipo no entra en las deps: su
   // comportamiento depende solo de indiceCondiciones, que ya está.
   const { ataques, herramientas } = useMemo(
     () => ({
-      ataques: tiradasDeAtaque(sheet).map(conCondicionesDeEquipo),
-      herramientas: tiradasDeHerramientas(sheet).map(conCondicionesDeEquipo),
+      ataques: accionesDeAtaque(sheet).map(conCondicionesDeEquipo),
+      herramientas: accionesDeHerramientas(sheet).map(conCondicionesDeEquipo),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [sheet.equipo, sheet.recursos, indiceCondiciones],
   );
 
-  const abrir = (t: Tirada, enEspecialidad: boolean) => {
-    const mod = modificadorTirada(sheet, t, enEspecialidad, mods);
+  const abrir = (t: Accion, enEspecialidad: boolean) => {
+    const mod = modificadorAccion(sheet, t, enEspecialidad, mods);
     const nombreAplicado = APLICADOS.find((a) => a.id === t.aplicado)!;
     const nombreHabilidad = t.habilidad ? HABILIDADES.find((h) => h.id === t.habilidad)!.label : null;
     const desgloseBase = [
@@ -293,7 +293,7 @@ export function TiradasTab({
     dificultad,
     circunstancial,
   }: {
-    // El dado ya se tiró dentro de TiradaModal, al pulsar Tirar — no aquí.
+    // El dado ya se tiró dentro de AccionModal, al pulsar Tirar — no aquí.
     // Así el modal conoce el valor real desde el principio de la animación
     // de "rodar" y puede aterrizar en él en vez de en uno aleatorio más
     // (UX 2026-09-23: dejar el número real fijo un momento antes de pasar
@@ -346,7 +346,7 @@ export function TiradasTab({
     : [];
   // El resultado vive en `historial` (tirarDanio lo actualiza ahí), no
   // duplicado en el propio `modal` — se busca por id para que las dos vistas
-  // (Marcador arriba, TiradaModal) lean siempre el mismo objeto.
+  // (Marcador arriba, AccionModal) lean siempre el mismo objeto.
   const resultadoModal =
     modal?.resultadoId != null ? (historial.find((h) => h.id === modal.resultadoId) ?? null) : null;
 
@@ -354,7 +354,7 @@ export function TiradasTab({
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-2">
         <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
-          Tiradas recientes
+          Acciones recientes
         </h2>
         {historial.length === 0 ? (
           <HudCard className="border-dashed p-4 text-center">
@@ -400,19 +400,19 @@ export function TiradasTab({
         </div>
       )}
 
-      {GRUPOS_TIRADA.map((grupo) => (
+      {GRUPOS_ACCION.map((grupo) => (
         <div key={grupo} className="flex flex-col gap-2">
           <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
             {grupo}
           </h2>
-          {TIRADAS.filter((t) => t.grupo === grupo).map(conCondicionesDeEquipo).map((t) => (
+          {ACCIONES.filter((t) => t.grupo === grupo).map(conCondicionesDeEquipo).map((t) => (
             <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
           ))}
         </div>
       ))}
 
       {modal && (
-        <TiradaModal
+        <AccionModal
           titulo={modal.tirada.label}
           subtitulo={
             especialidadesActuales.length > 0

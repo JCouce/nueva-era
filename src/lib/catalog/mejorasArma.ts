@@ -316,7 +316,7 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // El bloqueo original ("encaja mejor cuando exista ArmaMelee") está
         // desfasado: ArmaMelee ya existe (39 piezas en armasMelee.ts). Es el
         // hallazgo más accionable del barrido — falta generar una segunda
-        // Tirada (perfil de cuchillo de combate), mismo patrón que
+        // Accion (perfil de cuchillo de combate), mismo patrón que
         // tiradaDeLanzagranadas.
         motor: [
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "golpear_bayoneta" }, mecanismo: "accion_equipo", estado: "pendiente" },

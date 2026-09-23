@@ -23,7 +23,7 @@ export * from "./habilidades";
 export * from "./sheet";
 export * from "./derivados";
 export * from "./creacion";
-export * from "./tiradas";
+export * from "./acciones";
 export * from "./modificadores";
 export * from "./migraciones";
 export * from "./equipo";

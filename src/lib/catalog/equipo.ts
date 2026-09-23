@@ -110,7 +110,7 @@ export type NivelModulo = {
   // aplicado y habilidad los pone lib/rules/herramientas.ts (siempre
   // Perspicacia + Tecnociencia, es la pareja que da el documento para las
   // tres), esto es solo la dificultad/alcance/detalle de ESE nivel, texto
-  // libre igual que `nota` en TIRADAS. Ninguna trae un bono numérico que
+  // libre igual que `nota` en ACCIONES. Ninguna trae un bono numérico que
   // mecanizar — la dificultad que citan es la que el jugador teclea en el
   // modal, no un modificador; por eso no hay `modificadores` para esto.
   notaTirada?: string;

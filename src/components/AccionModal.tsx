@@ -18,7 +18,7 @@ import {
   type EstadoCondiciones,
   type BonoPorTramo,
   type ModificadorConFuente,
-  type ContextoTirada,
+  type ContextoAccion,
 } from "@/lib/rules";
 import { HudCard } from "./HudCard";
 import { BarraProgreso } from "./BarraProgreso";
@@ -155,7 +155,7 @@ function LineaDesglose({ etiqueta, valor }: { etiqueta: string; valor: number })
   );
 }
 
-export function TiradaModal({
+export function AccionModal({
   titulo,
   subtitulo,
   modBase,
@@ -181,7 +181,7 @@ export function TiradaModal({
   // Sistema de Retroceso...) y lo que hace falta de esta tirada para
   // resolverlos — ver docs/modificadores-tiradas.md.
   mods: ModificadorConFuente[];
-  ctxBase: Omit<ContextoTirada, "modoElegido">;
+  ctxBase: Omit<ContextoAccion, "modoElegido">;
   dificultadInicial: number | null;
   circunstancialInicial: number;
   // Presente en cuanto se pulsa Tirar: el modal deja de pintar los controles
@@ -240,7 +240,7 @@ export function TiradaModal({
 
   const totalCondiciones = valorCondiciones(condiciones, estado);
   const totalBonosTramo = valorBonosTramo(bonosTramo ?? [], estado);
-  const ctx: ContextoTirada = { ...ctxBase, modoElegido: modoElegido(condiciones, estado) };
+  const ctx: ContextoAccion = { ...ctxBase, modoElegido: modoElegido(condiciones, estado) };
   const totalAlcance = bonoAlcance(mods, ctx);
   const totalPrevisto = modBase + totalCondiciones + totalBonosTramo + totalAlcance + circunstancial;
   // Textos de las opciones activas (Visor Nocturno y demás "texto

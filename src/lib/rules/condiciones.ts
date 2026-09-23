@@ -128,7 +128,7 @@ export function desgloseCondiciones(
 // número pero sí debe leerse, y de dónde viene. Solo toggle/opción llevan
 // `nota`; el contador no tiene sentido de "activo/inactivo" así que no
 // aporta ninguna. Pensado para mostrarse junto al resultado, no solo
-// mientras se elige — ver TiradaModal.
+// mientras se elige — ver AccionModal.
 export function notasCondiciones(
   condiciones: CondicionTirada[],
   estado: EstadoCondiciones,
@@ -175,7 +175,7 @@ export function desgloseBonosTramo(
 
 // La etiqueta del modo actualmente elegido (si la tirada tiene condición
 // "modo"), o null si no la tiene o no hay nada elegido todavía. Lo usa
-// ContextoTirada (modificadores.ts) para resolver los modificadores con
+// ContextoAccion (modificadores.ts) para resolver los modificadores con
 // alcance "modo" — el Sistema de Retroceso, que solo ayuda en F. Auto.
 export function modoElegido(
   condiciones: CondicionTirada[],

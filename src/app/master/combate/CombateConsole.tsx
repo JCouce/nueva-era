@@ -11,7 +11,7 @@ import Link from "next/link";
 import { HudCard } from "@/components/HudCard";
 import { usePollingCombate } from "@/hooks/usePollingCombate";
 import { ESTADOS, estadoPorId, describirEstadosActivos, type EstadoActivo, type Sheet } from "@/lib/rules";
-import { NpcTiradasPanel } from "./NpcTiradasPanel";
+import { NpcAccionesPanel } from "./NpcAccionesPanel";
 import {
   crearCombateAction,
   comenzarCombateAction,
@@ -42,7 +42,7 @@ type CombatienteView = {
   estados: EstadoActivo[];
   // Solo un NPC lo trae (foto congelada al añadirlo, 5.0) — un
   // Combatiente-jugador siempre lo trae `null`, lee su Sheet en vivo desde
-  // su propia ficha. Es lo que habilita el botón "Tiradas" de la 5.5.
+  // su propia ficha. Es lo que habilita el botón "Acciones" de la 5.5.
   sheet: Sheet | null;
 };
 
@@ -81,7 +81,7 @@ export function CombateConsole({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  // 5.5: un panel a la vez, no un TiradasTab montado por fila — con 30-50
+  // 5.5: un panel a la vez, no un AccionesTab montado por fila — con 30-50
   // combatientes en la cola sería trabajo de más para lo que se ve en cada
   // momento.
   const [tiradasDe, setTiradasDe] = useState<CombatienteView | null>(null);
@@ -312,7 +312,7 @@ export function CombateConsole({
       {error && <p className="font-mono text-xs text-danger">{error}</p>}
 
       {tiradasDe && tiradasDe.sheet && (
-        <NpcTiradasPanel
+        <NpcAccionesPanel
           nombre={tiradasDe.nombre}
           sheet={tiradasDe.sheet}
           estadosCombate={tiradasDe.estados}
@@ -427,7 +427,7 @@ function CombatienteRow({
               onClick={() => onAbrirTiradas(c)}
               className="clip-chamfer-sm shrink-0 border border-info px-2 py-1.5 font-mono text-[10px] uppercase tracking-wide text-info active:scale-95"
             >
-              Tiradas
+              Acciones
             </button>
           )}
 

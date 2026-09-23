@@ -13,7 +13,7 @@
 // limpio que mecanizar: la "dificultad 7" o "dificultad 6 superficial, 8
 // profundo" que da el documento es la dificultad que el jugador teclea en
 // el modal, no un modificador — se transcribe en `notaTirada`, igual que
-// ya hace `nota` en TIRADAS con "Gel sanador y estabilizar tienen
+// ya hace `nota` en ACCIONES con "Gel sanador y estabilizar tienen
 // dificultad 4". La Valija Táctica de Fabricación tampoco trae ningún
 // número limpio (a diferencia de la Valija Médica, que sí daba "+N a las
 // tiradas de aplicación"): se equipa como referencia para la tirada fija
@@ -105,7 +105,7 @@ export const VALIJA_TACTICA_FABRICACION: Herramienta = {
 };
 
 // Las 3 herramientas activas (Radar, Escáner Detector, Disfraz Holográfico)
-// generan su propia tirada vía tiradasDeHerramientas() (lib/rules/herramientas.ts)
+// generan su propia tirada vía accionesDeHerramientas() (lib/rules/herramientas.ts)
 // SOLO en los niveles que traen `notaTirada` — hoy son todos los niveles de
 // las 3, pero el motor por id, no por familia entera (comentario de cabecera
 // de lib/rules/herramientas.ts: "no hay una fórmula común, cada herramienta

@@ -17,7 +17,7 @@ import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condicione
 import type { PiezaEquipada } from "./equipo";
 import type { MotorMetadata } from "./motor";
 import { recursoDe, gastoDelModo } from "./recursos";
-import type { Tirada } from "./tiradas";
+import type { Accion } from "./acciones";
 
 const TRAMOS: TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
 
@@ -139,7 +139,7 @@ function notaInsuficiente(gasto: number, recurso: { actual: number; max: number 
   return `Solo quedan ${recurso.actual}/${recurso.max} balas — este modo gasta ${gasto}.`;
 }
 
-function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Tirada {
+function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Accion {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
   const recurso = recursoDe(sheet, instanciaId);
   const modoBase = condicionModo(modosConId);
@@ -188,7 +188,7 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
 // lo lleva (ver ajusteAtaque): es un perfil de disparo propio, con su propia
 // dificultad fija (-2, sea cual sea la granada) y su daño según la munición
 // elegida — igual que un modo de disparo, salvo que aquí hay 13 en vez de 2.
-function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Tirada | null {
+function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Accion | null {
   const tieneLanzagranadas = sheet.equipo.some(
     (p) => p.instaladoEnId === instanciaId && p.catalogoId === "lanzagranadas_integrado",
   );
@@ -223,7 +223,7 @@ function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: strin
 // alcance no tiene tramos (un único número, o ninguno en el Lanzallamas): se
 // queda como texto informativo en `nota`, igual que el resto de "Otras
 // Armas a Distancia" — mismo criterio que Radar/Escáner (ver herramientas.ts).
-function tiradaDeArmamentoPesado(arma: ArmaPesada, instanciaId: string): Tirada {
+function tiradaDeArmamentoPesado(arma: ArmaPesada, instanciaId: string): Accion {
   const notaAlcance = arma.alcanceM !== null ? `Alcance ${arma.alcanceM} m. · ` : "";
 
   // Lanzagranadas (pesado): el daño depende de la granada cargada, igual
@@ -276,7 +276,7 @@ function tiradaDeArmamentoPesado(arma: ArmaPesada, instanciaId: string): Tirada 
 // es un lanzamiento, no un disparo), con la dificultad propia de lanzarla
 // (`dificultadArrojada`) como único ajuste fijo — automática, no hay nada
 // que el jugador elija al respecto.
-function tiradaDeGranada(granada: MunicionGranada, instanciaId: string): Tirada {
+function tiradaDeGranada(granada: MunicionGranada, instanciaId: string): Accion {
   return {
     id: `lanzar_granada_${instanciaId}`,
     label: `Lanzar ${granada.label}`,
@@ -298,7 +298,7 @@ function tiradaDeGranada(granada: MunicionGranada, instanciaId: string): Tirada 
   };
 }
 
-function tiradaDeArmaMelee(arma: ArmaMelee, instanciaId: string): Tirada {
+function tiradaDeArmaMelee(arma: ArmaMelee, instanciaId: string): Accion {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
   const modo = condicionModo(modosConId);
 
@@ -337,7 +337,7 @@ function tiradaDeArmaMelee(arma: ArmaMelee, instanciaId: string): Tirada {
 // una función por familia con firma uniforme, en vez de un bucle hardcodeado
 // por familia repetido 4 veces sobre sheet.equipo. Dar de alta una familia
 // nueva en esta lista (armas de fuego/melee/pesadas, granadas) es añadir una
-// entrada aquí, no tocar tiradasDeAtaque(). Cada wrapper es una cáscara fina
+// entrada aquí, no tocar accionesDeAtaque(). Cada wrapper es una cáscara fina
 // sobre la función real (tiradaDeArmaFuego, tiradaDeArmaMelee...) — la lógica
 // de cada una no cambia, solo el mecanismo de despacho.
 //
@@ -348,15 +348,15 @@ function tiradaDeArmaMelee(arma: ArmaMelee, instanciaId: string): Tirada {
 // en un Record indexado por la propia familia.
 //
 // "herramienta" queda FUERA de este registro a propósito, aunque también
-// genera su propia acción (tiradasDeHerramientas, lib/rules/herramientas.ts):
-// TiradasTab.tsx llama a tiradasDeAtaque() y a tiradasDeHerramientas() por
+// genera su propia acción (accionesDeHerramientas, lib/rules/herramientas.ts):
+// AccionesTab.tsx llama a accionesDeAtaque() y a accionesDeHerramientas() por
 // separado, para pintarlas en secciones distintas ("Ataques" vs
 // "Herramientas"). Meter "herramienta" en este mismo registro haría que
-// tiradasDeAtaque() empezara a devolver también filas de herramientas,
-// duplicándolas en la pestaña. tiradasDeHerramientas() se adaptó al mismo
+// accionesDeAtaque() empezara a devolver también filas de herramientas,
+// duplicándolas en la pestaña. accionesDeHerramientas() se adaptó al mismo
 // patrón de generador por pieza (ver herramientas.ts), pero vive en su
 // propio registro/función, no en este.
-type GeneradorDeAtaque = (sheet: Sheet, pieza: PiezaEquipada, cat: Equipo) => Tirada[];
+type GeneradorDeAtaque = (sheet: Sheet, pieza: PiezaEquipada, cat: Equipo) => Accion[];
 
 const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> = {
   arma: (sheet, pieza, cat) => {
@@ -397,10 +397,10 @@ export function generaAccionPropia(cat: Equipo): boolean {
 // Todas las filas de la categoría "Ataques": una por arma de fuego, arma
 // melee, arma pesada o granada equipada — incluida Pelea (Puñetazo, Patada,
 // Codazo o Rodillazo), que ya no se añade sola: si el jugador la quiere en
-// Tiradas, la equipa desde la Tienda como cualquier otra arma (aparece con
+// Acciones, la equipa desde la Tienda como cualquier otra arma (aparece con
 // "no se compra" en vez de precio, pero es el mismo flujo).
-export function tiradasDeAtaque(sheet: Sheet): Tirada[] {
-  const tiradas: Tirada[] = [];
+export function accionesDeAtaque(sheet: Sheet): Accion[] {
+  const tiradas: Accion[] = [];
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat) continue;

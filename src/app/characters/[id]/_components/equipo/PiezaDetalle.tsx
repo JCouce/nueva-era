@@ -1,4 +1,4 @@
-import { ATRIBUTOS, HABILIDADES, TIRADAS, ALCANCE_ARROJADA } from "@/lib/rules";
+import { ATRIBUTOS, HABILIDADES, ACCIONES, ALCANCE_ARROJADA } from "@/lib/rules";
 import type {
   Armadura,
   ArmaFuego,
@@ -52,7 +52,7 @@ function etiquetaModificador(m: Modificador): string {
   if (m.tipo === "habilidad") return HABILIDADES.find((h) => h.id === m.id)!.label;
   if (m.tipo === "derivado") return m.id;
   const a = m.alcance;
-  if (a.tipo === "tiradaId") return TIRADAS.find((t) => t.id === a.id)?.label ?? a.id;
+  if (a.tipo === "tiradaId") return ACCIONES.find((t) => t.id === a.id)?.label ?? a.id;
   if (a.tipo === "grupo") return a.grupo;
   if (a.tipo === "habilidad") return HABILIDADES.find((h) => h.id === a.habilidad)!.label;
   if (a.tipo === "todas") return "Todas las tiradas";

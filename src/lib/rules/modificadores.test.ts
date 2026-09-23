@@ -21,7 +21,7 @@ import {
   desgloseAlcance,
   porFuente,
   type ModificadorConFuente,
-  type ContextoTirada,
+  type ContextoAccion,
 } from "./modificadores";
 import { ESPECIES, especiePorId } from "../catalog/especies";
 
@@ -134,7 +134,7 @@ describe("helpers de modificadores", () => {
 });
 
 describe("alcance de un modificador de tirada", () => {
-  const ctx = (over: Partial<ContextoTirada> = {}): ContextoTirada => ({
+  const ctx = (over: Partial<ContextoAccion> = {}): ContextoAccion => ({
     id: "salv_fortaleza",
     grupo: "Salvaciones",
     habilidad: null,

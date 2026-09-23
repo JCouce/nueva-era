@@ -18,8 +18,8 @@ export type Lanzamiento = Resultado & {
 };
 
 // Contenido de un resultado de tirada — dado, total, veredicto, daño. Lo
-// comparten el Marcador de TiradasTab (panel superior, log rápido que se
-// pierde al cambiar de tab) y TiradaModal (resultado in-place tras pulsar
+// comparten el Marcador de AccionesTab (panel superior, log rápido que se
+// pierde al cambiar de tab) y AccionModal (resultado in-place tras pulsar
 // Tirar, sin cerrar el modal) para no duplicar la lógica de tono/veredicto
 // en dos sitios. Ver docs/equipo-efectos-especiales.md, UX del modal,
 // 2026-09-23: cerrar el modal dejaba al jugador mirando la lista de botones

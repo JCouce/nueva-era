@@ -42,7 +42,7 @@ import { AtributosTab } from "./_components/AtributosTab";
 import { HabilidadesTab } from "./_components/HabilidadesTab";
 import { DotesTab } from "./_components/DotesTab";
 import { PsionicaTab } from "./_components/PsionicaTab";
-import { TiradasTab } from "./_components/TiradasTab";
+import { AccionesTab } from "./_components/AccionesTab";
 import { TiendaTab } from "./_components/TiendaTab";
 import { EquipoTab } from "./_components/EquipoTab";
 import { RecursosTab } from "./_components/RecursosTab";
@@ -67,7 +67,7 @@ const TABS_FICHA = [
   { id: "psionica", label: "Psiónica" },
 ] as const;
 const TABS_PERSONAJE = [
-  { id: "tiradas", label: "Tiradas" },
+  { id: "acciones", label: "Acciones" },
   { id: "equipo", label: "Equipo" },
   { id: "recursos", label: "Recursos" },
 ] as const;
@@ -141,15 +141,15 @@ export function CharacterSheet({
   const [creditos, setCreditos] = useState(initialCreditos);
   const [status, setStatus] = useState<SaveStatus>("idle");
   // Historial de tiradas y memoria de dificultad/circunstancial por tirada:
-  // vive aquí, no dentro de TiradasTab, para que sobreviva a cambiar de tab
-  // (antes se perdía porque TiradasTab se desmonta entero al cambiar de tab
-  // — ver el `{activeEfectivo === "tiradas" && (...)}` de abajo). Dura lo que
+  // vive aquí, no dentro de AccionesTab, para que sobreviva a cambiar de tab
+  // (antes se perdía porque AccionesTab se desmonta entero al cambiar de tab
+  // — ver el `{activeEfectivo === "acciones" && (...)}` de abajo). Dura lo que
   // dure esta pestaña del navegador abierta — sin persistir a servidor ni a
   // almacenamiento del navegador a propósito: es un log de cortesía de las
   // últimas tiradas, no un dato mecánico como PG/fatiga (2026-09-24, pedido
   // del usuario — "si cierras es nueva sesión").
-  const [tiradasHistorial, setTiradasHistorial] = useState<Lanzamiento[]>([]);
-  const [tiradasMemoria, setTiradasMemoria] = useState<
+  const [accionesHistorial, setAccionesHistorial] = useState<Lanzamiento[]>([]);
+  const [accionesMemoria, setAccionesMemoria] = useState<
     Record<string, { dificultad: number | null; circunstancial: number }>
   >({});
 
@@ -526,14 +526,14 @@ export function CharacterSheet({
       )}
       {activeEfectivo === "dotes" && <DotesTab sheet={sheet} />}
       {activeEfectivo === "psionica" && <PsionicaTab sheet={sheet} />}
-      {activeEfectivo === "tiradas" && (
-        <TiradasTab
+      {activeEfectivo === "acciones" && (
+        <AccionesTab
           sheet={sheet}
           estadosCombate={miCombatiente?.estados ?? []}
-          historial={tiradasHistorial}
-          setHistorial={setTiradasHistorial}
-          memoria={tiradasMemoria}
-          setMemoria={setTiradasMemoria}
+          historial={accionesHistorial}
+          setHistorial={setAccionesHistorial}
+          memoria={accionesMemoria}
+          setMemoria={setAccionesMemoria}
         />
       )}
       {activeEfectivo === "tienda" && (

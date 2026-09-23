@@ -9,38 +9,38 @@ function conPresupuesto(): Sheet {
   return setPrioridad(setPrioridad(defaultSheet(), "atributos", "A"), "habilidades", "B");
 }
 import {
-  TIRADAS,
+  ACCIONES,
   DIFICULTADES,
   CARAS_DADO,
   MARGEN_CRITICO,
-  modificadorTirada,
+  modificadorAccion,
   resolverTirada,
   resolverDanio,
   tirarD12,
-} from "./tiradas";
+} from "./acciones";
 import { modificadoresDeEstados } from "./estados";
 
 function buscar(id: string) {
-  const t = TIRADAS.find((x) => x.id === id);
+  const t = ACCIONES.find((x) => x.id === id);
   assert.ok(t, `no existe la tirada ${id}`);
   return t;
 }
 
 describe("catálogo de tiradas", () => {
   test("no hay ids repetidos", () => {
-    const ids = TIRADAS.map((t) => t.id);
+    const ids = ACCIONES.map((t) => t.id);
     assert.equal(new Set(ids).size, ids.length);
   });
 
   test("las bloqueadas declaran el motivo y no tienen habilidad", () => {
-    for (const t of TIRADAS.filter((x) => x.bloqueada)) {
+    for (const t of ACCIONES.filter((x) => x.bloqueada)) {
       assert.ok(t.bloqueada && t.bloqueada.length > 10, `${t.id} sin motivo`);
       assert.equal(t.habilidad, null);
     }
   });
 
   test("las salvaciones van con el aplicado a secas", () => {
-    for (const t of TIRADAS.filter((x) => x.grupo === "Salvaciones")) {
+    for (const t of ACCIONES.filter((x) => x.grupo === "Salvaciones")) {
       assert.equal(t.habilidad, null);
     }
   });
@@ -65,21 +65,21 @@ describe("modificador de una tirada", () => {
   };
 
   test("suma el aplicado y la habilidad", () => {
-    const m = modificadorTirada(ficha(), buscar("iniciativa_arma"), true);
+    const m = modificadorAccion(ficha(), buscar("iniciativa_arma"), true);
     assert.equal(m.aplicado, 2);
     assert.equal(m.habilidad, 3);
     assert.equal(m.total, 5);
   });
 
   test("fuera de especialidad la habilidad cuenta la mitad", () => {
-    const m = modificadorTirada(ficha(), buscar("iniciativa_arma"), false);
+    const m = modificadorAccion(ficha(), buscar("iniciativa_arma"), false);
     assert.equal(m.habilidad, 2); // ceil(3/2)
     assert.equal(m.total, 4);
   });
 
   test("una habilidad sin entrenar resta 1", () => {
     const s = setAtributoValue(conPresupuesto(), "agilidad", 2); // reflejos ceil((2+0)/2)=1
-    const m = modificadorTirada(s, buscar("sigilo"), false);
+    const m = modificadorAccion(s, buscar("sigilo"), false);
     assert.equal(m.habilidad, -1);
     assert.equal(m.total, 0);
   });
@@ -88,7 +88,7 @@ describe("modificador de una tirada", () => {
     let s = conPresupuesto();
     s = setAtributoValue(s, "fuerza", 3);
     s = setAtributoValue(s, "aguante", 2); // fortaleza = ceil((3+2)/2) = 3
-    const m = modificadorTirada(s, buscar("salv_fortaleza"));
+    const m = modificadorAccion(s, buscar("salv_fortaleza"));
     assert.equal(m.habilidad, null);
     assert.equal(m.total, 3);
   });
@@ -96,8 +96,8 @@ describe("modificador de una tirada", () => {
   test("la especialidad declarada se refleja en el modificador", () => {
     let s = setHabilidadValue(conPresupuesto(), "biociencia", 2);
     s = addEspecialidad(s, "biociencia", "Medicina");
-    const dentro = modificadorTirada(s, buscar("medicina"), true);
-    const fuera = modificadorTirada(s, buscar("medicina"), false);
+    const dentro = modificadorAccion(s, buscar("medicina"), true);
+    const fuera = modificadorAccion(s, buscar("medicina"), false);
     assert.equal(dentro.habilidad, 2);
     assert.equal(fuera.habilidad, 1); // ceil(2/2)
   });
@@ -110,13 +110,13 @@ describe("modificador de una tirada", () => {
     let s = conPresupuesto();
     s = setAtributoValue(s, "fuerza", 2);
     s = setAtributoValue(s, "agilidad", 1); // potencia = ceil((2+1)/2) = 2
-    const sinEstado = modificadorTirada(s, buscar("atletismo"), false);
+    const sinEstado = modificadorAccion(s, buscar("atletismo"), false);
     assert.equal(sinEstado.aplicado, 2);
 
     const mods = modificadoresDeEstados([
       { estadoId: "enfermedad", gradoId: "nivel_1", rondasRestantes: null }, // Fuerza -1
     ]);
-    const conEstado = modificadorTirada(s, buscar("atletismo"), false, mods);
+    const conEstado = modificadorAccion(s, buscar("atletismo"), false, mods);
     assert.equal(conEstado.aplicado, 1); // potencia = ceil((1+1)/2) = 1
   });
 });

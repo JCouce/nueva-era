@@ -10,7 +10,7 @@ import {
   ESPECIES,
   ATRIBUTOS,
   HABILIDADES,
-  TIRADAS,
+  ACCIONES,
 } from "@/lib/rules";
 import type { Sheet, CategoriaPrioridad, LetraPrioridad } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
@@ -187,7 +187,7 @@ export function ResumenTab({
             return HABILIDADES.find((h) => h.id === m.id)!.label;
           if (m.tipo === "derivado") return m.id;
           const a = m.alcance;
-          if (a.tipo === "tiradaId") return TIRADAS.find((t) => t.id === a.id)?.label ?? a.id;
+          if (a.tipo === "tiradaId") return ACCIONES.find((t) => t.id === a.id)?.label ?? a.id;
           if (a.tipo === "grupo") return a.grupo;
           if (a.tipo === "habilidad") return HABILIDADES.find((h) => h.id === a.habilidad)!.label;
           if (a.tipo === "todas") return "Todas las tiradas";

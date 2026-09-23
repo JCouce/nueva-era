@@ -9,7 +9,7 @@ import type { HabilidadId } from "./habilidades";
 import { aplicado, valorEfectivo, modificadoresActivos } from "./derivados";
 import type { Sheet } from "./sheet";
 import type { CondicionTirada, BonoPorTramo } from "./condiciones";
-import type { GrupoTirada, ModificadorConFuente } from "./modificadores";
+import type { GrupoAccion, ModificadorConFuente } from "./modificadores";
 
 export const CARAS_DADO = 12;
 
@@ -25,13 +25,13 @@ export const DIFICULTADES = [
 // Margen de éxitos o fracasos acumulados que convierte un resultado en crítico.
 export const MARGEN_CRITICO = 6;
 
-export type Tirada = {
+export type Accion = {
   id: string;
   label: string;
-  // "Ataques" y "Herramientas" no viven en TIRADAS ni en GRUPOS_TIRADA: los
+  // "Ataques" y "Herramientas" no viven en ACCIONES ni en GRUPOS_ACCION: los
   // generan combate.ts y herramientas.ts a partir del equipo, no este
   // catálogo fijo.
-  grupo: GrupoTirada;
+  grupo: GrupoAccion;
   aplicado: AplicadoId;
   habilidad: HabilidadId | null; // las salvaciones van con el aplicado a secas
   nota?: string;
@@ -80,7 +80,7 @@ const CONDICION_ATACANTES_ADICIONALES: CondicionTirada = {
   porDefecto: 0,
 };
 
-export const TIRADAS: Tirada[] = [
+export const ACCIONES: Accion[] = [
   // ── Defensa ──
   {
     id: "defensa",
@@ -195,12 +195,12 @@ export const TIRADAS: Tirada[] = [
   },
 ];
 
-// "Ataques" va primero pero no es un grupo de TIRADAS: TiradasTab lo pinta
+// "Ataques" va primero pero no es un grupo de ACCIONES: AccionesTab lo pinta
 // aparte, con las filas que genera combate.ts a partir del equipo.
-export const GRUPOS_TIRADA = ["Defensa", "Salvaciones", "Iniciativa", "Acciones"] as const;
+export const GRUPOS_ACCION = ["Defensa", "Salvaciones", "Iniciativa", "Acciones"] as const;
 
 // Modificador fijo de una tirada: lo que se suma al dado antes de nada más.
-// `mods` opcional (fase 6b bloque 3.1b): quien alimenta TiradasTab puede
+// `mods` opcional (fase 6b bloque 3.1b): quien alimenta AccionesTab puede
 // sumarle aquí los modificadores de tipo "atributo"/"habilidad" que traigan
 // los estados de combate activos del jugador (p. ej. Parálisis restando
 // Fuerza/Agilidad directamente) — sin esto, la ficha derivaría siempre de la
@@ -208,9 +208,9 @@ export const GRUPOS_TIRADA = ["Defensa", "Salvaciones", "Iniciativa", "Acciones"
 // (el -1/-3/-5 "a todas" de los umbrales, el -2 a Defensa de Aturdido...) no
 // entran aquí: esos se aplican más tarde, en el modal, vía bonoAlcance — este
 // número es la base que se ve en la fila antes de abrir nada.
-export function modificadorTirada(
+export function modificadorAccion(
   sheet: Sheet,
-  tirada: Tirada,
+  tirada: Accion,
   enEspecialidad = false,
   mods: ModificadorConFuente[] = modificadoresActivos(sheet),
 ): { total: number; aplicado: number; habilidad: number | null } {
