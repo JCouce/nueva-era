@@ -387,6 +387,17 @@ const GASTO_MODO_PULSO: Record<string, number> = {
   aguijon: 1,
 };
 
+// Sabor, no regla — texto libre nuestro (2026-09-24, a petición del usuario)
+// para que el selector de modo no sea solo un nombre suelto. Se muestra
+// debajo del selector cuando ese modo está elegido (AccionModal.tsx, mismo
+// mecanismo que ya usa `notaInsuficiente`).
+const DESCRIPCION_MODO_PULSO: Record<string, string> = {
+  pulso: "Un único disparo de energía concentrada, como el fogonazo corto de un bláster — rápido y barato en cargas.",
+  pulso_cargado:
+    "El emisor retiene la descarga un instante antes de soltarla entera de golpe: más lento, mucho más contundente.",
+  barrido: "El haz se abre en abanico y arrasa un área entera de un plumazo, a costa de perder precisión.",
+};
+
 function tiradaDeProyectorPulso(
   sheet: Sheet,
   pieza: PiezaEquipada,
@@ -402,7 +413,12 @@ function tiradaDeProyectorPulso(
       { id: "pulso", etiqueta: "Pulso", valor: -2 },
       { id: "pulso_cargado", etiqueta: "Pulso Cargado", valor: -2 },
       { id: "barrido", etiqueta: "Barrido", valor: -3 },
-    ].map((o) => ({ ...o, nota: notaInsuficiente(GASTO_MODO_PULSO[o.id], recurso, "cargas") })),
+    ].map((o) => ({
+      ...o,
+      nota: [DESCRIPCION_MODO_PULSO[o.id], notaInsuficiente(GASTO_MODO_PULSO[o.id], recurso, "cargas")]
+        .filter((n): n is string => !!n)
+        .join(" "),
+    })),
     porDefecto: "pulso",
   };
 
@@ -458,7 +474,7 @@ function tiradaGolpeAguijon(sheet: Sheet, pieza: PiezaEquipada): Accion {
     aplicado: "reflejos", // Sutil
     habilidad: "combate_melee",
     nota: [
-      "Sutil.",
+      "Repliega el emisor a un pincho corto de energía y lo descarga a bocajarro, casi sin gesto — Sutil.",
       `Duración ${nivel} turno(s) · Efecto Shock (${4 + nivel}) · Crítico Hemorragia.`,
       notaInsuficiente(GASTO_MODO_PULSO.aguijon, recurso, "cargas"),
     ]

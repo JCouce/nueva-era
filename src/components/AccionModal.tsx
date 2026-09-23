@@ -265,7 +265,7 @@ export function AccionModal({
         <div onClick={(e) => e.stopPropagation()}>
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h2 className="truncate font-display text-lg font-semibold uppercase leading-tight">
+              <h2 className="font-display text-lg font-semibold uppercase leading-tight">
                 {titulo}
               </h2>
               {subtitulo && (

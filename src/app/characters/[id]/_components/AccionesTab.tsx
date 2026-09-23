@@ -119,7 +119,7 @@ function FilaTirada({
     <HudCard className="p-3">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <span className="block truncate font-display text-base font-semibold uppercase leading-none">
+          <span className="block font-display text-base font-semibold uppercase leading-tight">
             {tirada.label}
           </span>
           <span className="mt-1 block font-mono text-[10px] uppercase text-muted">
@@ -257,14 +257,19 @@ export function AccionesTab({
   // insuficiente — sin esa segunda dependencia, gastar/recargar munición no
   // invalidaría el aviso. conCondicionesDeEquipo no entra en las deps: su
   // comportamiento depende solo de indiceCondiciones, que ya está.
-  const { ataques, herramientas } = useMemo(
-    () => ({
-      ataques: accionesDeAtaque(sheet).map(conCondicionesDeEquipo),
+  // accionesDeAtaque() ya no es solo "Ataques": desde que Bloqueo (pregunta 31)
+  // se genera junto al Golpear de cada arma melee, trae filas con
+  // `grupo: "Defensa"` también — se separan aquí por `grupo`, no se asume que
+  // todo lo que venga de equipo vaya a la sección Ataques.
+  const { ataques, defensaGenerada, herramientas } = useMemo(() => {
+    const generadas = accionesDeAtaque(sheet).map(conCondicionesDeEquipo);
+    return {
+      ataques: generadas.filter((t) => t.grupo === "Ataques"),
+      defensaGenerada: generadas.filter((t) => t.grupo === "Defensa"),
       herramientas: accionesDeHerramientas(sheet).map(conCondicionesDeEquipo),
-    }),
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sheet.equipo, sheet.recursos, indiceCondiciones],
-  );
+  }, [sheet.equipo, sheet.recursos, indiceCondiciones]);
 
   const abrir = (t: Accion, enEspecialidad: boolean) => {
     const mod = modificadorAccion(sheet, t, enEspecialidad, mods);
@@ -405,9 +410,15 @@ export function AccionesTab({
           <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
             {grupo}
           </h2>
-          {ACCIONES.filter((t) => t.grupo === grupo).map(conCondicionesDeEquipo).map((t) => (
-            <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
-          ))}
+          {ACCIONES.filter((t) => t.grupo === grupo)
+            .map(conCondicionesDeEquipo)
+            // Defensa/Esquiva (fija) primero, Bloquear-con-X (generado por
+            // equipo) detrás — mismo orden que Ataques: lo fijo antes que lo
+            // que trae cada arma.
+            .concat(grupo === "Defensa" ? defensaGenerada : [])
+            .map((t) => (
+              <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
+            ))}
         </div>
       ))}
 

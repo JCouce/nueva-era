@@ -416,7 +416,14 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
     const fila = accionesDeAtaque(conProyectorPulso(1)).find((t) => t.label.includes("Combate a Distancia"))!;
     const modo = fila.condiciones?.find((c) => c.id === "modo");
     assert.ok(modo && modo.tipo === "opcion");
-    for (const o of modo.opciones) assert.equal(o.nota, undefined);
+    for (const o of modo.opciones) assert.doesNotMatch(o.nota ?? "", /Solo quedan/);
+  });
+
+  test("cada modo trae una breve descripción de sabor", () => {
+    const fila = accionesDeAtaque(conProyectorPulso(1)).find((t) => t.label.includes("Combate a Distancia"))!;
+    const modo = fila.condiciones?.find((c) => c.id === "modo");
+    assert.ok(modo && modo.tipo === "opcion");
+    for (const o of modo.opciones) assert.ok(o.nota && o.nota.length > 0, `sin descripción: ${o.id}`);
   });
 
   test("un subsistema sin acción propia construida (Camuflaje Trifásico) no genera ninguna fila", () => {
