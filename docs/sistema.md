@@ -431,6 +431,50 @@ Esto casa con el equipo que ya describe `EQUIP`:
 **Estado del documento del diseñador:** poco más de la mitad escrito. Llega después de
 las especies (`CONV-1`).
 
+### 10.5 Mecánica de resolución `[FIRME · CONV-5]`
+
+Respuestas de Murillo (2026-09-23) a las preguntas 14, 15, 17, 18 y 19. Sin efecto en la
+app todavía — el catálogo de poderes psiónicos sigue sin existir (Fase 5) — pero cierran
+el diseño para cuando llegue.
+
+- **Pregunta 14, resuelta:** mente y máquina **no son mecánicas separadas, pero tampoco
+  una única tirada universal**. Usan el mismo poder y el mismo marco conceptual (la base
+  de la sección 10.0-10.3), pero cada poder concreto está pensado para un tipo de objetivo
+  — orgánico o sintético — y la tirada y las consecuencias cambian según cuál sea (ejemplo
+  de Murillo: Modulación es un poder pensado para sintéticos). No hay "un motor, dos
+  entradas" limpio como proponía la pregunta original — hay un motor, y cada poder declara
+  para qué tipo de objetivo vale.
+- **Preguntas 15/19, resueltas — norma general de qué tirada resuelve cada poder:** *"lo
+  indica cada poder"* (no hay una tirada universal), pero Murillo da la norma por defecto:
+  - Objetivo **orgánico no psiónico** → Voluntad + Actitud (lo tira quien intenta influir).
+  - Objetivo **sintético** → Perspicacia + **"Informática"**.
+  - Objetivo/resolución **psiónica** → tirada enfrentada de Voluntad + Biociencia (los dos
+    bandos).
+
+  **Ojo, sin corregir a propósito:** "Informática" no es ninguna de las 10 habilidades de
+  la sección 3 (la más parecida es Tecnociencia). No lo doy por Tecnociencia sin más
+  porque sería una decisión nuestra, no la palabra de Murillo — se deja tal cual la dijo,
+  pendiente de que confirme si es un nombre informal de Tecnociencia o una habilidad
+  nueva que falta añadir a la lista.
+- **Pregunta 17/21, resuelta:** fallar una intrusión psiónica **no tiene una consecuencia
+  única** — cada poder describe sus propios grados de fracaso (fracaso y fracaso crítico),
+  y varían: "a veces no pasa nada, a veces hay daño y aturdimiento". Mismo patrón que ya
+  usa el catálogo de equipo (efecto por grado de resultado), no hace falta una regla
+  aparte.
+- **Pregunta 18/22, resuelta:** sí existen sistemas digitales **no cuánticos** (legacy) —
+  "no son lo más común, es tecnología que existió y sigue existiendo". Confirma la razón
+  de diseño para que convivan hackeo psiónico y hackeo digital clásico: el legacy es
+  terreno exclusivo del segundo.
+- **Pregunta 19/23, resuelta:** sí existen interfaces para que un **no psiónico** se
+  entrelace con un sistema cuántico — es la propia tecnología con la que se entrena a los
+  aspirantes a psiónico. Cara y arriesgada para quien no está entrenado, y ocupa bastante
+  (el tamaño de una habitación normal), no es portátil. Ejemplo de Murillo: la cabina del
+  navegante en naves con salto al hiperespacio — el salto lo hace un psiónico, pero sin el
+  apoyo técnico de la nave sería incapaz o moriría.
+
+**Sigue abierta, sin respuesta en esta tanda:** la pregunta 16 (¿la defensa de un sistema
+es un número fijo del objetivo o una tirada enfrentada?).
+
 ## 11. Aumentos `[PARCIAL · CONV-1]`
 
 **Aumentos = biónicos + genéticos.** Los **biónicos** son implantes de hardware; los
@@ -566,8 +610,8 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | C6 | `EQUIP` habla de daño **agravado**; `COMBATE` define solo no letal, letal y grave. Probablemente "agravado" sea el nombre viejo de "grave". | Sin resolver |
 | C7 | `COMBATE` usa **Potencia + Atletismo** para levantarse de un derribo y **Fortaleza o Potencia + Atletismo** para escapar de un agarre: confirma que el par atributo-habilidad es libre, pero no hay tabla de pares canónicos. | Informativo |
 | C8 | ~~**La notación de las tiradas mezcla habilidades y especialidades sin avisar.** Los documentos escriben tanto `Perspicacia + Biociencia (Medicina)` —forma larga y correcta— como `Perspicacia + Medicina` a secas, y lo mismo con Empatía, Manipulación y Bioquímica. De 12 pares distintos, **4 usan el nombre de una especialidad como si fuera la habilidad**. No es cosmético: decide si la habilidad cuenta entera o a la mitad.~~ | **Resuelto (Murillo, 2026-09-23):** la forma corta es siempre una especialidad de la habilidad aplicada — la escogida cuenta entera, la no escogida a la mitad. Ver pregunta 26. |
-| C9 | **Una casilla no tiene medida.** El movimiento se calcula en metros (`carrera = 15 + Potencia + Atletismo`), pero las penalizaciones por herida dicen "solo una casilla por turno" y las áreas de las armas van en casillas (6x6, 8x8). Sin la equivalencia metros/casilla, las dos escalas no se pueden conectar. | Sin resolver |
-| C10 | **"Niveles" de fatiga contra "puntos" de fatiga.** La salud define **puntos** (8 + Voluntad) y dos estados (Fatigado, Exhausto), pero los fármacos hablan de "consume 2 **niveles** de fatiga" y de "ignorar el primer **nivel** de fatiga acumulada". ¿Un nivel es un punto, o es un estado? | Sin resolver |
+| C9 | ~~**Una casilla no tiene medida.** El movimiento se calcula en metros (`carrera = 15 + Potencia + Atletismo`), pero las penalizaciones por herida dicen "solo una casilla por turno" y las áreas de las armas van en casillas (6x6, 8x8). Sin la equivalencia metros/casilla, las dos escalas no se pueden conectar.~~ | **Resuelto (Murillo, 2026-09-23): una casilla son 2 metros.** Sin cambio de código — hoy no hay ninguna pantalla que trabaje en casillas, queda documentado para cuando exista un mapa de combate. |
+| C10 | ~~**"Niveles" de fatiga contra "puntos" de fatiga.** La salud define **puntos** (8 + Voluntad) y dos estados (Fatigado, Exhausto), pero los fármacos hablan de "consume 2 **niveles** de fatiga" y de "ignorar el primer **nivel** de fatiga acumulada". ¿Un nivel es un punto, o es un estado?~~ | **Resuelto (Murillo, 2026-09-23): es lo mismo** — vas consumiendo puntos hasta llegar a Fatigado o Exhausto. Sin cambio de código, ya se implementaba así (`fatigaActual`, puntos). |
 | C11 | **La escala de daño y la de vida no encajan del todo.** Las armas hacen de 7 a 20 de daño (mediana 12), los personajes tienen entre 6 y 16 puntos de golpe y los blindajes absorben de 1 a 8. Un fusil corriente (10) contra armadura ligera (4) se lleva 6 puntos: media vida de un PJ típico, antes de sumar +1 por cada dos éxitos. Puede ser letalidad buscada, pero conviene confirmar que **el daño del arma se resta 1:1 de los puntos de golpe**. | Sin resolver |
 | C12 | ~~Cultura y Supervivencia no se usan en ninguna regla, mientras que Exploración aparece 5 veces sin estar en la lista.~~ **Resuelto junto con C4**: Supervivencia se sustituye por Exploración. Cultura se queda en la lista tal cual, sigue sin usarse en ninguna regla conocida — no es parte de esta decisión. | Resuelto (parcial: Cultura sigue sin uso) |
 | C13 | **Impacto Estructural** (crítico de las armas de kerzul: reduce el blindaje del objetivo de forma permanente) está definido solo dentro de `EQUIP` y no aparece en el catálogo de 23 estados de `COMBATE`. Menor, pero es un efecto que vive fuera de su sitio. | Informativo |
@@ -621,12 +665,12 @@ sospecha que también contra eléctrico, 2026-09-12)? Pendiente de confirmar con
 13. ~~Especies: lista y qué modifican.~~ **En proceso (usuario, 2026-09-10):** confirmado, ya en camino.
 
 **Sobre la dualidad hackeo digital / cuántico** (`CONV-1`, `CONV-2`)
-14. Si mente y máquina comparten naturaleza (ondas, superposición, probabilidad), ¿la intrusión psiónica y la digital usan **la misma mecánica** con distinto vector, o son dos subsistemas separados? *(Lo primero simplifica muchísimo la app: un motor, dos entradas.)*
-15. ¿Qué par atributo + habilidad resuelve la intrusión psiónica? El eje C apunta a **Voluntad** para sostener la sincronía, pero no sabemos si la habilidad es Tecnociencia, una habilidad psiónica propia o el rango del poder.
-16. ¿Qué mide la defensa de un sistema? `CONV-2` la describe como tormenta de ruido de fase: ¿es un número del objetivo o una tirada enfrentada del núcleo?
-17. Fallar la intrusión psiónica provoca "colapso cognitivo o pérdida de consciencia". ¿Eso es fatiga, daño (no letal/letal), o los estados Aturdido/Inconsciente que ya usa `EQUIP`?
-18. ¿Existen sistemas **no cuánticos** (legacy digital) donde el psiónico no pueda entrar y sí el hacker clásico? Sería la razón de diseño para que ambas vías convivan.
-19. Si el cerebro actúa como cúbit y hay **interfaces neurales** para no psiónicos (`EQUIP`, camuflaje trifásico), ¿puede un no psiónico entrelazarse con hardware, o eso está vetado?
+14. ~~Si mente y máquina comparten naturaleza (ondas, superposición, probabilidad), ¿la intrusión psiónica y la digital usan **la misma mecánica** con distinto vector, o son dos subsistemas separados?~~ **Resuelta, ver sección 10.5.**
+15. ~~¿Qué par atributo + habilidad resuelve la intrusión psiónica?~~ **Resuelta, ver sección 10.5** (norma por defecto según tipo de objetivo; "lo indica cada poder").
+16. ¿Qué mide la defensa de un sistema? `CONV-2` la describe como tormenta de ruido de fase: ¿es un número del objetivo o una tirada enfrentada del núcleo? — **Sin respuesta en la tanda de 2026-09-23.**
+17. ~~Fallar la intrusión psiónica provoca "colapso cognitivo o pérdida de consciencia". ¿Eso es fatiga, daño (no letal/letal), o los estados Aturdido/Inconsciente que ya usa `EQUIP`?~~ **Resuelta, ver sección 10.5** (varía por poder, sin regla universal).
+18. ~~¿Existen sistemas **no cuánticos** (legacy digital) donde el psiónico no pueda entrar y sí el hacker clásico?~~ **Resuelta, ver sección 10.5:** sí existen.
+19. ~~Si el cerebro actúa como cúbit y hay **interfaces neurales** para no psiónicos (`EQUIP`, camuflaje trifásico), ¿puede un no psiónico entrelazarse con hardware, o eso está vetado?~~ **Resuelta, ver sección 10.5:** sí, existe esa tecnología (así se entrena a los aspirantes a psiónico).
 20. ~~¿Los aumentos genéticos usan Biociencia donde los biónicos usan Tecnociencia?~~ **En proceso (usuario, 2026-09-10):** parte del documento de aumentos que el diseñador ya está preparando.
 
 **Huecos detectados al planificar la app** (ver `docs/plan-app.md`)
@@ -670,8 +714,8 @@ lo anota a mano.
 
 **Incongruencias entre documentos, para la misma tanda de preguntas**
 26. ~~Cuando el sistema dice "Perspicacia + Medicina", ¿quiere decir Biociencia usando la especialidad Medicina? Lo mismo con Empatía, Manipulación y Bioquímica. Es lo que decide si la habilidad cuenta entera o a la mitad.~~ *(C8)* **Resuelta (Murillo, 2026-09-23):** sí — es una especialidad de Biociencia: "la escogida suma el total de puntos, la no escogida la mitad". Confirma el criterio general para cualquier caso de "Aplicado + nombre de especialidad" a secas en los documentos (Empatía, Manipulación y Bioquímica incluidas), sin cambio de comportamiento — así es como ya lo calcula el motor.
-27. ¿Cuántos metros mide una casilla? *(C9)*
-28. Un "nivel de fatiga", ¿es un punto de fatiga o un estado (Fatigado/Exhausto)? *(C10)*
+27. ~~¿Cuántos metros mide una casilla?~~ **Resuelta (Murillo, 2026-09-23): 2 metros.** *(C9)*
+28. ~~Un "nivel de fatiga", ¿es un punto de fatiga o un estado (Fatigado/Exhausto)?~~ **Resuelta (Murillo, 2026-09-23): es lo mismo, un punto.** *(C10)*
 29. El daño de un arma, ¿se resta 1:1 de los puntos de golpe tras el blindaje? Con armas de 7 a 20 y personajes de 6 a 16 puntos, un disparo corriente se lleva media vida. *(C11)* — **Confirmado 2026-09-21 (repaso de efectos especiales de equipo, Hallazgo #5 de `docs/equipo-efectos-especiales.md`): `blindaje` no aparece ni una vez en `src/lib/rules/`, no hay ningún cálculo de absorción implementado.** Bloquea Mejora Ignífuga, Polímero Anticorrosivo/Tejido Conductor nivel 2, y una propuesta de tirada "Bloquear daño" (mostrar cuánto se absorbe de un impacto dado).
 30. ~~**Cultura** y **Supervivencia** no aparecen en ninguna regla... ¿Es Supervivencia la habilidad madre de Exploración?~~ **Resuelta**: Supervivencia desaparece, la sustituye Exploración entera. Cultura se queda sin resolver — sigue sin uso conocido. *(C12)*
 31. **"Bloqueo" no está definido en ningún sitio.** `COMBATE` (`docs/sistema-y-combate.md`
