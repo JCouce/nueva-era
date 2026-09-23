@@ -125,6 +125,14 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
           // tiradas.ts/derivados.ts) — a diferencia de velocidadM, esto ni
           // siquiera tiene un derivado que lo use.
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          // -1 a los ataques mientras se está en vuelo, y las esquivas usan
+          // Tecnociencia en vez de Atletismo mientras se vuela (descripcion de
+          // la pieza, mismo texto para los 4 niveles) — corregido 2026-09-24
+          // (auditoría, faltaban enteros). No hay estado "en vuelo" rastreado
+          // en la ficha/Combatiente, así que ninguno de los dos puede engancharse
+          // a una tirada concreta todavía.
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
         ],
       },
       {
@@ -141,6 +149,14 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         motor: [
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          // -1 a los ataques mientras se está en vuelo, y las esquivas usan
+          // Tecnociencia en vez de Atletismo mientras se vuela (descripcion de
+          // la pieza, mismo texto para los 4 niveles) — corregido 2026-09-24
+          // (auditoría, faltaban enteros). No hay estado "en vuelo" rastreado
+          // en la ficha/Combatiente, así que ninguno de los dos puede engancharse
+          // a una tirada concreta todavía.
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
         ],
       },
       {
@@ -160,6 +176,14 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         motor: [
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          // -1 a los ataques mientras se está en vuelo, y las esquivas usan
+          // Tecnociencia en vez de Atletismo mientras se vuela (descripcion de
+          // la pieza, mismo texto para los 4 niveles) — corregido 2026-09-24
+          // (auditoría, faltaban enteros). No hay estado "en vuelo" rastreado
+          // en la ficha/Combatiente, así que ninguno de los dos puede engancharse
+          // a una tirada concreta todavía.
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
           // La elección Velocidad/Maniobrabilidad no se guarda en la ficha
           // todavía (comentario de NivelModulo.velocidadM) — texto puro hoy.
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
@@ -180,6 +204,14 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         motor: [
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          // -1 a los ataques mientras se está en vuelo, y las esquivas usan
+          // Tecnociencia en vez de Atletismo mientras se vuela (descripcion de
+          // la pieza, mismo texto para los 4 niveles) — corregido 2026-09-24
+          // (auditoría, faltaban enteros). No hay estado "en vuelo" rastreado
+          // en la ficha/Combatiente, así que ninguno de los dos puede engancharse
+          // a una tirada concreta todavía.
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
         ],
       },
     ],
