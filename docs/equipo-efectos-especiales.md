@@ -322,10 +322,12 @@ de control.
   variantes: impacto, crítico, por tramo, por modo elegido, y texto libre segmentado
   por modo (la quinta, 2026-09-21).
 - ✅ **Fix barato: `arma.efectos` no llega al `nota` en melee** (§Kerzul, 2026-09-21,
-  **arreglado 2026-09-23**) — `tiradaDeArmaMelee` (`combate.ts:269-296`) ahora
-  combina el aviso de Sutil con `arma.efectos` en el `nota`, mismo criterio que
-  `arma.especial` en `tiradaDeArmaFuego`. Tests nuevos en `combate.test.ts`
-  ("arma melee equipada"). Sin cambios de tipo ni de modelo de datos.
+  **arreglado 2026-09-23**) — `tiradaDeArmaMelee` (`combate.ts:269-296`) combinaba el
+  aviso de Sutil con `arma.efectos` en el `nota`, mismo criterio que `arma.especial`
+  en `tiradaDeArmaFuego`. Tests nuevos en `combate.test.ts` ("arma melee equipada").
+  **Superado 2026-09-24**: el aviso de Sutil en texto desapareció al construirse el
+  toggle real (ver `sistema.md` §"Tabla canónica de acciones") — `arma.efectos` sigue
+  volcándose al `nota` igual que entonces, ya sin el texto de Sutil mezclado.
 - ✅ **MINI ÉPICA (2026-09-21, propuesta del usuario — construida 2026-09-23):
   `CondicionTirada` y texto informativo en tiradas fijas de `TIRADAS`.**
   `condicionesActivas(sheet, ctx)` (`equipo.ts`) + `alcance`/`nota` en
@@ -348,19 +350,23 @@ de control.
   Bloquea `arm2`, `me1`, `me5` del backlog.
 - ⬜ **Hallazgo #4** — Tipo elemental vs. categoría de daño mezclados en
   `categoriaDanio: string`; falta la tabla `TIPO_A_CATEGORIA`.
-- ⬜🔴 **Hallazgo #5 — PRIORIDAD ALTA** (2026-09-21) — no existe cálculo de absorción de
-  daño por blindaje en todo el motor, y `sistema.md` pregunta 29/C11 sigue sin
-  responder la fórmula. Bloquea Mejora Ignífuga, Anticorrosivo nivel 2, Tejido
-  Conductor nivel 2, y la propuesta de tirada "Bloquear daño". La estructura tiene que
-  ser consciente de **tipo de daño**, no un blindaje plano único — conecta con el
-  Hallazgo #4.
+- 🟡 **Hallazgo #5 — fórmula resuelta 2026-09-24, sin construir todavía** — `sistema.md`
+  pregunta 29/C11: **1 punto de blindaje absorbe 1 nivel (= 1 punto) de daño.** Sigue
+  sin existir el cálculo en el motor (`blindaje` no aparece en `src/lib/rules/`).
+  Desbloquea Mejora Ignífuga, Anticorrosivo nivel 2, Tejido Conductor nivel 2, y la
+  propuesta de tirada "Bloquear daño". **Confirmado 2026-09-24:** el "ignora el
+  primer nivel de daño X" de Ignífuga/Anticorrosivo/Tejido Conductor **suma** al
+  blindaje normal contra ese tipo (un +1 a blindaje específico de tipo), no lo
+  sustituye. Sigue abierto si la absorción base (sin esas mejoras) es plana para
+  cualquier tipo de daño o el Mental es la única excepción confirmada (§7 de
+  `sistema.md`) — conecta con el Hallazgo #4.
 - ⬜ **Tirada nueva "Ocultar objeto"** (§"Propuesta: tirada nueva") — pendiente de
   validar con el diseñador antes de construir (dificultades por categoría inventadas).
 - ⬜ **Sydiasi — caso ad hoc del retroceso a dos manos** (§"Casos sueltos, por arma") —
   lógica especial fuera del mecanismo genérico, sin decidir si merece la pena.
-- ⬜ **Pregunta 31 de `sistema.md` — "Bloqueo" sin definir** — bloquea cómo mecanizar el
-  Mangual (`docs/equipo-efectos-especiales.md` §Combate Melee). Pendiente de que
-  Murillo la responda.
+- ✅ **Pregunta 31 de `sistema.md` — "Bloqueo" sin definir — resuelta y construida
+  2026-09-24.** Bloqueo mecanizado (`tiradaBloqueoDeArmaMelee()`, `combate.ts`), con
+  el ajuste propio del Mangual (-2) y test (`combate.test.ts:342-373`).
 - ⬜ **Kerzul — Inercia Entrópica** (§Kerzul, `ker3`) — mini-tarea propia: dificultad
   dinámica (el propio daño básico de la acción, no un número de catálogo), afecta a
   quien empuña, no al objetivo. No encaja en `efectoImpacto`/`efectoCritico`.
@@ -454,15 +460,15 @@ de control.
   a todo": hay al menos tres comportamientos distintos que unificar primero, y una
   dependencia real con una fase ya bloqueada por el diseñador.
 - **Mejora Ignífuga: nivel 1 (usar blindaje total contra fuego) y nivel 2 (fuego cuenta
-  como letal, +2 en vez de +1 contra llamarada): 🔕 IGNORAR — ahora formalmente
-  bloqueado por el Hallazgo #5** (2026-09-21, confirmado que no es solo "no lo vi en
-  esta pasada": `blindaje` no aparece en `src/lib/rules/` en absoluto, y `sistema.md`
-  pregunta 29 sigue sin responder la fórmula). No confundir con `resolverDanio`, que
-  es daño por éxitos, no reducción por blindaje. Se revisita junto con Polímero
-  Anticorrosivo/Tejido Conductor en cuanto se resuelva el Hallazgo #5.
+  como letal, +2 en vez de +1 contra llamarada): 🔕 IGNORAR hasta que se construya el
+  Hallazgo #5** (fórmula ya resuelta 2026-09-24: 1 blindaje = 1 nivel de daño; falta el
+  cálculo en código). No confundir con `resolverDanio`, que es daño por éxitos, no
+  reducción por blindaje. Se revisita junto con Polímero Anticorrosivo/Tejido Conductor
+  en cuanto se construya el Hallazgo #5.
 - Polímero Anticorrosivo / Tejido Conductor (+1/+2 contra un estado; "ignora el primer
   nivel de daño X"): el "+1/+2" **❓ VERIFICAR** (mismo caso salv_fortaleza genérico de
-  arriba); el "ignora el primer nivel de daño" **🔕 IGNORAR, bloqueado por el
+  arriba); el "ignora el primer nivel de daño" es un **+1 a blindaje específico de ese
+  tipo de daño (confirmado 2026-09-24)** — **🔕 IGNORAR hasta que se construya el
   Hallazgo #5**, mismo motivo que Mejora Ignífuga.
 - **Visor Nocturno / Visor Térmico — reabierto 2026-09-21, ✅ construido
   2026-09-23.**
@@ -663,10 +669,20 @@ de control.
   actual (`modo`, que solo sabe si F. Auto está elegido, no si el arma es una
   ametralladora) — en una ametralladora disparando en modo Estándar, ese +1 no se
   aplica aunque debería.
-- Puntero Láser (+1 ataque / -2 sigilo mientras esté activo), Silenciador (-2 sigilo en
-  vez del habitual), Linterna, Bayoneta, Lanzagranadas Integrado: **❓ VERIFICAR** — no
-  confirmado en esta pasada si están cableados como `CondicionTirada`/`ajustesFijos` o
-  se quedaron en texto; revisar uno a uno, es rápido (mismo patrón que Bípode).
+- **Revisión pieza a pieza 2026-09-25** (Puntero Láser, Silenciador, Linterna, Bayoneta,
+  Lanzagranadas Integrado) — confirmado que la mayoría de "huecos" de esta lista no son
+  arquitectura, es `MotorMetadata`/dato sin rellenar en la pieza (barrida por agentes en
+  paralelo antes de existir el motor, ver `docs/tareas.md`):
+  - **Puntero Láser: ✅ construido 2026-09-25.** El +1 al ataque (`ataque_fuego`) le
+    faltaba el bloque `condiciones` (toggle) que el Bípode ya tenía — `condicionesDeMejoras()`
+    (`combate.ts`) es genérico, no hacía falta código nuevo, solo el dato
+    (`mejorasArma.ts`). El **-2 al sigilo sigue sin poder construirse**: afecta a la
+    tirada fija `sigilo`, no a `ataque_fuego`, y `condicionesActivas()` (`equipo.ts`)
+    excluye `mejoraArma` a propósito — no hay hoy mecanismo genérico para que una
+    mejora de arma alcance una tirada distinta de la suya. Motor actualizado con las
+    dos entradas por separado (`construido` / `bloqueado`).
+  - Silenciador, Linterna, Bayoneta, Lanzagranadas Integrado: pendientes de esta misma
+    revisión, uno a uno.
 - Láser de Largo Alcance / Rayo de Largo Alcance — alcances: **✔️ YA HECHO**, verificado
   contra el código a petición del usuario (2026-09-13): `equipo.ts` ya lleva
   `{ corta: 50, media: 1000, larga: 2000 }` y `{ corta: 50, media: 1200, larga: 2400 }`
@@ -715,8 +731,10 @@ de control.
 ### Combate Melee
 
 - **Mangual — "Bloqueo -2" y "Acción Estándar ignora 2 niveles de Cobertura física"**
-  (2026-09-21, pregunta del usuario): **❓ VERIFICAR, bloqueado por regla sin definir**.
-  Ojo, esto vive en `uso`, no en `efectos` — es distinto del resto de esta sección.
+  (2026-09-21, pregunta del usuario). Ojo, esto vive en `uso`, no en `efectos` — es
+  distinto del resto de esta sección. **"Bloqueo -2": ✅ resuelto y construido
+  2026-09-24 (pregunta 31, ver más abajo).** "Ignora 2 niveles de Cobertura física"
+  sigue **❓ VERIFICAR, bloqueado** (ver más abajo, es un problema aparte).
   - **"Bloqueo" no existe como mecánica en ningún sitio del proyecto** — ni en
     `sistema.md`, ni en `sistema-y-combate.md`, ni en el código (`tiradas.ts` no tiene
     ningún `tiradaId` ni nota que lo mencione). La única aparición en todo el proyecto

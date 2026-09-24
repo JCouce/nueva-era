@@ -105,14 +105,30 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         rareza: "Común",
         coste: 150,
         detalle: ["Mientras esté activo: +1 al modificador de ataque, -2 al sigilo (visual)."],
-        // Condicionado a tenerlo activo (es un toggle, como el camuflaje): no
-        // se mecaniza como un +1 permanente.
+        // Condicionado a tenerlo activo (es un toggle, como el camuflaje) —
+        // mismo patrón que el Bípode (condicionesDeMejoras() en combate.ts ya
+        // recoge esto genérico, sin código nuevo).
         modificadores: [],
-        // El propio comentario dice "es un toggle, como el camuflaje" pero
-        // nunca se construyó — a diferencia del Bípode, que sí lo tiene. Otro
-        // de los "quick wins" ya identificados (mismo patrón que Bípode).
+        condiciones: [
+          {
+            id: "activo",
+            tipo: "toggle",
+            etiqueta: "Puntero activo",
+            valorActivo: 1,
+            valorInactivo: 0,
+          },
+        ],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          // El -2 al sigilo es un efecto aparte: afecta a la tirada fija
+          // "sigilo" (acciones.ts), no a ataque_fuego, y condicionesActivas()
+          // (equipo.ts) excluye `mejoraArma` a propósito — hoy no hay forma
+          // genérica de que una mejora de arma llegue a otra tirada distinta
+          // de la del arma que la lleva. Bloqueado en el mecanismo, no un
+          // hueco de dato: haría falta extender condicionesActivas() para
+          // mejoraArma con alcance, algo que su propio comentario ya avisa
+          // que no está resuelto.
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "bloqueado", bloqueoPor: "condicionesActivas() excluye mejoraArma — sin mecanismo genérico para que una mejora de arma alcance una tirada fija distinta de la suya" },
         ],
       },
       {

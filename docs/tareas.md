@@ -312,16 +312,23 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
    (blindaje) siguen sin respuesta, son las que más bloquean ahora.
 
 3. **Diseño pendiente que bloquea construcción real:**
-   - **Hallazgo #5 — absorción de daño por blindaje** (prioridad alta, el usuario
-     lo marca explícitamente). No existe cálculo en todo el motor; `sistema.md`
-     pregunta 29/C11 sigue sin fórmula. Bloquea Mejora Ignífuga, Anticorrosivo n2,
-     Tejido Conductor n2. Detalle: `docs/equipo-efectos-especiales.md`, hallazgo #5.
-   - **RECURSOS — extensión de Fase 6b** (ver entrada de arriba). Bloquea
-     Conversión Psiónica (Derivación Psiónica) y previsiblemente poderes/dotes que
-     gasten cargas o fatiga en Fase 5.
    - **Hallazgo #3 — salvaciones sin especificidad** ("¿contra qué resistes?").
      Bloquea `arm2`/`me1`/`me5` y Munición Especial en cuanto se dé de alta
      (hallazgo #2). Detalle: `docs/equipo-efectos-especiales.md`, hallazgo #3.
+   - **RECURSOS — extensión de Fase 6b** (ver entrada de arriba). Bloquea
+     Conversión Psiónica (Derivación Psiónica) y previsiblemente poderes/dotes que
+     gasten cargas o fatiga en Fase 5.
+
+   **Hallazgo #5 — absorción de daño por blindaje: fórmula resuelta 2026-09-24,
+   sin construir.** Murillo confirmó `sistema.md` pregunta 29/C11: **1 punto de
+   blindaje absorbe 1 nivel (= 1 punto) de daño**, y que "ignora el primer nivel
+   de daño X" (Ignífuga/Anticorrosivo/Tejido Conductor) **suma** a ese blindaje
+   para ese tipo (+1 específico, no lo sustituye). Ya no bloquea el diseño, falta
+   el cálculo en código (`blindaje` no aparece hoy en `src/lib/rules/`) —
+   desbloquea Mejora Ignífuga, Anticorrosivo n2, Tejido Conductor n2 y una
+   tirada "Bloquear daño". Abierto: si la absorción base es plana para cualquier
+   tipo de daño o el Mental es la única excepción confirmada (§7 de
+   `sistema.md`). Detalle: `docs/equipo-efectos-especiales.md`, hallazgo #5.
 
 4. **El barrido pieza a pieza en sí sigue mereciendo terminarse** (quedan ma2/ma4
    de Mejoras en Armas de Fuego, Munición, Otras Armas a Distancia, Armas
@@ -410,18 +417,19 @@ para el diseñador".
 **Tanda de respuestas de Murillo, 2026-09-23** — la mayoría de lo que llevaba tiempo
 abierto se resolvió (especialidades, tabla canónica de acciones, sigilo al disparar,
 metros/casilla, nivel de fatiga, psiónica/hackeo, exoesqueleto, Proyector de Pulso ya
-construido). **Lo que sigue sin respuesta, y es lo que más bloquea:**
+construido).
 
-1. **Absorción de daño por blindaje** (pregunta 29/`C11`, prioridad alta marcada por el
-   usuario): sin fórmula, sigue bloqueando el Hallazgo #5 completo
-   (`docs/equipo-efectos-especiales.md`) — Mejora Ignífuga, Anticorrosivo, Tejido
-   Conductor, y cualquier futuro poder que ignore niveles de daño.
-2. **Armaduras Avanzadas y el +1 de salvación** (pregunta 8d): ¿lo mantienen, lo pierden,
+**2026-09-24: absorción de daño por blindaje resuelta** (pregunta 29/`C11`, prioridad
+alta marcada por el usuario): 1 punto de blindaje = 1 nivel de daño. Ver Hallazgo #5
+arriba — falta construirla en código, pero ya no bloquea el diseño.
+
+**Lo que sigue sin respuesta, y es lo que más bloquea:**
+
+1. **Armaduras Avanzadas y el +1 de salvación** (pregunta 8d): ¿lo mantienen, lo pierden,
    o ganan otro? Bloquea 10 piezas de `armaduras.ts`.
-3. **"Susceptible a shock"/"apagón"** (pregunta 32): 3 piezas en `mejorasEstandar.ts`.
-4. **"Bloqueo" del Mangual** (pregunta 31): 1 pieza en `armasMelee.ts`.
-5. **Defensa de un sistema, fija o enfrentada** (pregunta 16, hackeo/psiónica): sin
+2. **"Susceptible a shock"/"apagón"** (pregunta 32): 3 piezas en `mejorasEstandar.ts`.
+3. **Defensa de un sistema, fija o enfrentada** (pregunta 16, hackeo/psiónica): sin
    efecto en la app todavía (Fase 5 sigue bloqueada por el diseñador), pero cierra el
    diseño de esa sección en cuanto llegue.
-6. **Especies, poderes, dotes y aumentos**: fases enteras esperando a que el diseñador las
+4. **Especies, poderes, dotes y aumentos**: fases enteras esperando a que el diseñador las
    escriba.

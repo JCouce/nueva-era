@@ -178,10 +178,13 @@ Actitud · Reflejos + Combate a Distancia.
 Murillo añade que "también entra en juego alguna dote" en varias de estas tiradas — sin
 efecto hoy, porque Dotes sigue sin catálogo (sección 9).
 
-**Hallazgo de paso, no resuelto por esta tanda:** en armas melee, "Sutil" hoy solo es una
-nota de texto en la tirada ("se tira Reflejos en vez de Potencia") — el código sigue
-fijando `aplicado: "potencia"` siempre, no hay un toggle real que cambie el atributo.
-Gap anterior a esta conversación, sin tocar.
+**Cerrado 2026-09-24:** en armas melee, "Sutil" era solo una nota de texto en la tirada
+("se tira Reflejos en vez de Potencia"), sin toggle real. Ahora es un toggle de verdad
+en `FilaTirada` (`AccionesTab.tsx`): el jugador elige al tirar si ataca/bloquea con
+Potencia (por defecto) o Reflejos+Potencia-para-daño (`aplicadoSutil`/`danioSutil` en
+`Accion`, `lib/rules/acciones.ts`/`combate.ts`). Mecanismo propio en `MotorMetadata`
+(`sustitucion_aplicado`, ver `docs/motor.md`) porque no pasa por `CondicionTirada` — su
+valor depende de la ficha (Potencia - Fuerza), no es un número fijo del catálogo.
 
 ### Catálogo de especialidades `[PARCIAL]`
 
@@ -612,7 +615,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | C8 | ~~**La notación de las tiradas mezcla habilidades y especialidades sin avisar.** Los documentos escriben tanto `Perspicacia + Biociencia (Medicina)` —forma larga y correcta— como `Perspicacia + Medicina` a secas, y lo mismo con Empatía, Manipulación y Bioquímica. De 12 pares distintos, **4 usan el nombre de una especialidad como si fuera la habilidad**. No es cosmético: decide si la habilidad cuenta entera o a la mitad.~~ | **Resuelto (Murillo, 2026-09-23):** la forma corta es siempre una especialidad de la habilidad aplicada — la escogida cuenta entera, la no escogida a la mitad. Ver pregunta 26. |
 | C9 | ~~**Una casilla no tiene medida.** El movimiento se calcula en metros (`carrera = 15 + Potencia + Atletismo`), pero las penalizaciones por herida dicen "solo una casilla por turno" y las áreas de las armas van en casillas (6x6, 8x8). Sin la equivalencia metros/casilla, las dos escalas no se pueden conectar.~~ | **Resuelto (Murillo, 2026-09-23): una casilla son 2 metros.** Sin cambio de código — hoy no hay ninguna pantalla que trabaje en casillas, queda documentado para cuando exista un mapa de combate. |
 | C10 | ~~**"Niveles" de fatiga contra "puntos" de fatiga.** La salud define **puntos** (8 + Voluntad) y dos estados (Fatigado, Exhausto), pero los fármacos hablan de "consume 2 **niveles** de fatiga" y de "ignorar el primer **nivel** de fatiga acumulada". ¿Un nivel es un punto, o es un estado?~~ | **Resuelto (Murillo, 2026-09-23): es lo mismo** — vas consumiendo puntos hasta llegar a Fatigado o Exhausto. Sin cambio de código, ya se implementaba así (`fatigaActual`, puntos). |
-| C11 | **La escala de daño y la de vida no encajan del todo.** Las armas hacen de 7 a 20 de daño (mediana 12), los personajes tienen entre 6 y 16 puntos de golpe y los blindajes absorben de 1 a 8. Un fusil corriente (10) contra armadura ligera (4) se lleva 6 puntos: media vida de un PJ típico, antes de sumar +1 por cada dos éxitos. Puede ser letalidad buscada, pero conviene confirmar que **el daño del arma se resta 1:1 de los puntos de golpe**. | Sin resolver |
+| C11 | ~~**La escala de daño y la de vida no encajan del todo.** Las armas hacen de 7 a 20 de daño (mediana 12), los personajes tienen entre 6 y 16 puntos de golpe y los blindajes absorben de 1 a 8. Un fusil corriente (10) contra armadura ligera (4) se lleva 6 puntos: media vida de un PJ típico, antes de sumar +1 por cada dos éxitos. Puede ser letalidad buscada, pero conviene confirmar que **el daño del arma se resta 1:1 de los puntos de golpe**.~~ | **Resuelto (Murillo, 2026-09-24): 1 punto de blindaje = 1 nivel de daño.** Ver pregunta 29. |
 | C12 | ~~Cultura y Supervivencia no se usan en ninguna regla, mientras que Exploración aparece 5 veces sin estar en la lista.~~ **Resuelto junto con C4**: Supervivencia se sustituye por Exploración. Cultura se queda en la lista tal cual, sigue sin usarse en ninguna regla conocida — no es parte de esta decisión. | Resuelto (parcial: Cultura sigue sin uso) |
 | C13 | **Impacto Estructural** (crítico de las armas de kerzul: reduce el blindaje del objetivo de forma permanente) está definido solo dentro de `EQUIP` y no aparece en el catálogo de 23 estados de `COMBATE`. Menor, pero es un efecto que vive fuera de su sitio. | Informativo |
 
@@ -716,7 +719,12 @@ lo anota a mano.
 26. ~~Cuando el sistema dice "Perspicacia + Medicina", ¿quiere decir Biociencia usando la especialidad Medicina? Lo mismo con Empatía, Manipulación y Bioquímica. Es lo que decide si la habilidad cuenta entera o a la mitad.~~ *(C8)* **Resuelta (Murillo, 2026-09-23):** sí — es una especialidad de Biociencia: "la escogida suma el total de puntos, la no escogida la mitad". Confirma el criterio general para cualquier caso de "Aplicado + nombre de especialidad" a secas en los documentos (Empatía, Manipulación y Bioquímica incluidas), sin cambio de comportamiento — así es como ya lo calcula el motor.
 27. ~~¿Cuántos metros mide una casilla?~~ **Resuelta (Murillo, 2026-09-23): 2 metros.** *(C9)*
 28. ~~Un "nivel de fatiga", ¿es un punto de fatiga o un estado (Fatigado/Exhausto)?~~ **Resuelta (Murillo, 2026-09-23): es lo mismo, un punto.** *(C10)*
-29. El daño de un arma, ¿se resta 1:1 de los puntos de golpe tras el blindaje? Con armas de 7 a 20 y personajes de 6 a 16 puntos, un disparo corriente se lleva media vida. *(C11)* — **Confirmado 2026-09-21 (repaso de efectos especiales de equipo, Hallazgo #5 de `docs/equipo-efectos-especiales.md`): `blindaje` no aparece ni una vez en `src/lib/rules/`, no hay ningún cálculo de absorción implementado.** Bloquea Mejora Ignífuga, Polímero Anticorrosivo/Tejido Conductor nivel 2, y una propuesta de tirada "Bloquear daño" (mostrar cuánto se absorbe de un impacto dado).
+29. ~~El daño de un arma, ¿se resta 1:1 de los puntos de golpe tras el blindaje? Con armas de 7 a 20 y personajes de 6 a 16 puntos, un disparo corriente se lleva media vida.~~ *(C11)* — **Resuelta (Murillo, 2026-09-24): 1 punto de blindaje absorbe 1 nivel (= 1 punto) de daño.** Mismo uso de "nivel" que la pregunta 28 (fatiga): un nivel es un punto, no un estado. Lo que queda de tras la absorción se resta 1:1 de los puntos de golpe. Desbloquea Mejora Ignífuga, Polímero Anticorrosivo/Tejido Conductor nivel 2 y una futura tirada "Bloquear daño" — pendiente de construir en código, y de confirmar si la absorción es plana para cualquier tipo de daño o si el Mental (que ya "omite armaduras", §7) es la única excepción o hay más (el propio Hallazgo #5 apunta a que la estructura debe ser consciente de tipo de daño, no un blindaje plano único).
+    **Sub-pregunta resuelta (Murillo, 2026-09-24):** el "ignora el primer nivel de daño
+    X" de Mejora Ignífuga/Polímero Anticorrosivo/Tejido Conductor **suma** al blindaje
+    normal contra ese tipo de daño (equivale a un +1 a blindaje específico de tipo), no
+    lo sustituye. Sigue abierto si la absorción base es plana para cualquier tipo o el
+    Mental es la única excepción.
 30. ~~**Cultura** y **Supervivencia** no aparecen en ninguna regla... ¿Es Supervivencia la habilidad madre de Exploración?~~ **Resuelta**: Supervivencia desaparece, la sustituye Exploración entera. Cultura se queda sin resolver — sigue sin uso conocido. *(C12)*
 31. ~~**"Bloqueo" no está definido en ningún sitio.**~~ **Resuelta (2026-09-24).**
     Bloqueo es "otra forma de defensa" (junto a Esquivar), activa con cualquier arma
