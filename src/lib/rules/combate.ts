@@ -14,7 +14,7 @@ import type { ArmaMelee } from "../catalog/armasMelee";
 import type { ArmaPesada } from "../catalog/armamentoPesado";
 import { MUNICION_GRANADA, ALCANCE_ARROJADA, type MunicionGranada } from "../catalog/municion";
 import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condiciones";
-import type { PiezaEquipada } from "./equipo";
+import { nivelesHasta, acumulaPorClave, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import type { MotorMetadata } from "./motor";
 import { recursoDe, gastoDelModo } from "./recursos";
 import { CONDICION_ATACANTES_ADICIONALES, type Accion } from "./acciones";
@@ -77,11 +77,11 @@ function condicionTramo(arma: ArmaFuego): CondicionTirada {
 function condicionesDeMejoras(sheet: Sheet, instanciaId: string): CondicionTirada[] {
   const condiciones: CondicionTirada[] = [];
   for (const pieza of sheet.equipo) {
-    if (pieza.instaladoEnId !== instanciaId) continue;
+    if (pieza.instaladoEnId !== instanciaId || pieza.nivel === undefined) continue;
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat || cat.familia !== "mejoraArma") continue;
-    const nivel = cat.niveles.find((n) => n.nivel === pieza.nivel);
-    if (nivel?.condiciones) condiciones.push(...nivel.condiciones);
+    const niveles = nivelesHasta(cat.niveles, pieza.nivel);
+    condiciones.push(...acumulaPorClave(niveles.map((n) => n.condiciones ?? []), (c) => c.id));
   }
   return condiciones;
 }
@@ -90,14 +90,17 @@ function condicionesDeMejoras(sheet: Sheet, instanciaId: string): CondicionTirad
 // media y larga), uno por mejora instalada que traiga `ajusteTramo`. Cada
 // uno con la etiqueta de la pieza, para que el desglose diga "Mira
 // Telescópica +1" en vez de subir el número de Distancia sin explicarlo.
+// `ajusteTramo` es un total por nivel (S9), no acumulable entre niveles: se
+// usa el del nivel más alto que lo define, no la suma de todos.
 function bonosTramoDeMejoras(sheet: Sheet, instanciaId: string): BonoPorTramo[] {
   const bonos: BonoPorTramo[] = [];
   for (const pieza of sheet.equipo) {
-    if (pieza.instaladoEnId !== instanciaId) continue;
+    if (pieza.instaladoEnId !== instanciaId || pieza.nivel === undefined) continue;
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat || cat.familia !== "mejoraArma") continue;
-    const nivel = cat.niveles.find((n) => n.nivel === pieza.nivel);
-    if (nivel?.ajusteTramo) bonos.push({ fuente: cat.label, porTramo: nivel.ajusteTramo });
+    const niveles = nivelesHasta(cat.niveles, pieza.nivel);
+    const nivelConAjuste = ultimoQueDefine(niveles, "ajusteTramo");
+    if (nivelConAjuste?.ajusteTramo) bonos.push({ fuente: cat.label, porTramo: nivelConAjuste.ajusteTramo });
   }
   return bonos;
 }
@@ -105,15 +108,17 @@ function bonosTramoDeMejoras(sheet: Sheet, instanciaId: string): BonoPorTramo[] 
 // Ajustes incondicionales de las mejoras instaladas en esta arma en
 // concreto (el -1 del Lanzagranadas Integrado por el peso, y lo que llegue
 // después): cada uno con la etiqueta de la pieza que lo trae, para que el
-// desglose del modal no tenga ningún número sin firmar.
+// desglose del modal no tenga ningún número sin firmar. Mismo criterio que
+// ajusteTramo: total por nivel, no acumulable (S9).
 function ajustesFijosDeMejoras(sheet: Sheet, instanciaId: string): { valor: number; fuente: string }[] {
   const ajustes: { valor: number; fuente: string }[] = [];
   for (const pieza of sheet.equipo) {
-    if (pieza.instaladoEnId !== instanciaId) continue;
+    if (pieza.instaladoEnId !== instanciaId || pieza.nivel === undefined) continue;
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat || cat.familia !== "mejoraArma") continue;
-    const nivel = cat.niveles.find((n) => n.nivel === pieza.nivel);
-    if (nivel?.ajusteAtaque) ajustes.push({ valor: nivel.ajusteAtaque, fuente: cat.label });
+    const niveles = nivelesHasta(cat.niveles, pieza.nivel);
+    const nivelConAjuste = ultimoQueDefine(niveles, "ajusteAtaque");
+    if (nivelConAjuste?.ajusteAtaque) ajustes.push({ valor: nivelConAjuste.ajusteAtaque, fuente: cat.label });
   }
   return ajustes;
 }

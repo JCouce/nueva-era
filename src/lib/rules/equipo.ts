@@ -20,11 +20,60 @@ import {
   type MejoraDeArma,
   type Rareza,
 } from "../catalog/equipo";
-import { alcanzaA, type ContextoAccion, type GrupoAccion, type ModificadorConFuente } from "./modificadores";
+import { alcanzaA, type ContextoAccion, type GrupoAccion, type Modificador, type ModificadorConFuente } from "./modificadores";
 import type { CondicionTirada } from "./condiciones";
 import type { HabilidadId } from "./habilidades";
 import { reconciliarRecursos } from "./recursos";
 import type { Sheet } from "./sheet";
+
+// Acumulación de niveles, supuesto S9 (docs/sistema.md): "un efecto que un
+// nivel introduce y los superiores no repiten ni anulan se acumula — el
+// nivel N conserva lo desbloqueado en 1..N-1. Cuando el documento da un total
+// explícito para ese nivel, se usa ese total tal cual, sin sumarlo al de
+// niveles inferiores." Antes de esto (2026-09-25), cada función que leía una
+// pieza con niveles hacía `niveles.find(n => n.nivel === pieza.nivel)` — solo
+// el bloque exacto, perdiendo todo lo de 1..N-1 que el nivel actual no
+// repitiera (bug real: Mira Telescópica n2/Visor Nocturno n1 desaparecían al
+// subir de nivel). El catálogo lo venía parcheando a mano, pieza por pieza
+// (Soporte Vital, Sistema de Retroceso, Estabilizador Neuronal repetían el
+// efecto de nivel 1 en los superiores) — ya no hace falta, y esos parches se
+// han quitado.
+
+// Los niveles 1..nivelActual de una pieza, en orden ascendente. Exportada:
+// combate.ts la reutiliza para mejoraArma (condicionesDeMejoras,
+// bonosTramoDeMejoras, ajustesFijosDeMejoras) en vez de duplicarla.
+export function nivelesHasta<T extends { nivel: number }>(niveles: T[], nivelActual: number): T[] {
+  return niveles.filter((n) => n.nivel <= nivelActual).sort((a, b) => a.nivel - b.nivel);
+}
+
+// Pliega un campo tipo array (condiciones, modificadores) de varios niveles:
+// por cada entrada se indexa por `claveDe` — un nivel superior que declare la
+// MISMA clave sustituye a la de un nivel inferior (no se suman: así un total
+// explícito que sube de nivel en nivel, como el bono de Medicina de
+// FÁRMACOS, no se duplica), una clave nueva se añade (así una ventaja no
+// repetida por niveles superiores se conserva, S9). El orden de aparición se
+// conserva vía Map (itera en orden de inserción).
+export function acumulaPorClave<T>(porNivel: T[][], claveDe: (item: T) => string): T[] {
+  const mapa = new Map<string, T>();
+  for (const items of porNivel) {
+    for (const item of items) mapa.set(claveDe(item), item);
+  }
+  return [...mapa.values()];
+}
+
+function claveModificador(m: Modificador): string {
+  return m.tipo === "tirada" ? `tirada:${JSON.stringify(m.alcance)}` : `${m.tipo}:${m.id}`;
+}
+
+// Para campos de valor único por nivel (ajusteTramo, ajusteAtaque): el nivel
+// más alto de la lista que lo define gana — no se combinan entre sí, cada
+// uno ya es el total de ESE nivel (S9).
+export function ultimoQueDefine<T, K extends keyof T>(niveles: T[], campo: K): T | undefined {
+  for (let i = niveles.length - 1; i >= 0; i--) {
+    if (niveles[i][campo] !== undefined) return niveles[i];
+  }
+  return undefined;
+}
 
 export type PiezaEquipada = {
   instanciaId: string;
@@ -326,12 +375,17 @@ export function modificadoresDeEquipo(sheet: Sheet): ModificadorConFuente[] {
     // Modificador de personaje entero — por eso ni siquiera tienen el campo.
     if (cat.familia === "armaMelee" || cat.familia === "granada") return [];
 
-    const nivelInfo = cat.niveles.find((n) => n.nivel === pieza.nivel);
-    if (!nivelInfo) return [];
-    return nivelInfo.modificadores.map((m) => ({
+    if (pieza.nivel === undefined) return [];
+    const niveles = nivelesHasta(cat.niveles, pieza.nivel);
+    if (niveles.length === 0) return [];
+    const modificadores = acumulaPorClave(
+      niveles.map((n) => n.modificadores),
+      claveModificador,
+    );
+    return modificadores.map((m) => ({
       ...m,
       origen: "equipo" as const,
-      fuente: `${cat.label} ${nivelInfo.nivel}`,
+      fuente: `${cat.label} ${pieza.nivel}`,
     }));
   });
 }
@@ -342,19 +396,36 @@ export function modificadoresDeEquipo(sheet: Sheet): ModificadorConFuente[] {
 // §8). Solo recoge condiciones que declaren `alcance`; las que no lo llevan
 // siguen viviendo solo en su arma, vía condicionesDeMejoras (combate.ts).
 //
-// Excluye `mejoraArma` a propósito: esa familia ya se recoge por instancia de
-// arma en condicionesDeMejoras, sin mirar `alcance` — incluirla aquí también
-// duplicaría la condición el día que una mejora de arma declare alcance.
+// `mejoraArma` incluida desde 2026-09-25 (Puntero Láser -2 sigilo, Mira
+// Telescópica bono a percepción — dos casos reales pidiendo lo mismo, ver
+// docs/equipo-efectos-especiales.md). Antes se excluía por miedo a duplicar
+// con condicionesDeMejoras (combate.ts), que vuelca TODAS las condiciones de
+// una mejora en la tirada de su propia arma sin mirar `alcance`. El riesgo
+// solo es real si una mejora de arma declarara `alcance: "grupo"/"todas"`
+// sobre el propio grupo "Ataques" (o un `tiradaId` que coincida con el de su
+// arma huésped) — nadie lo hace hoy, y no tiene sentido hacerlo: sería
+// redundante con lo que condicionesDeMejoras ya aporta gratis. Convención, no
+// código que lo impida: una condición de mejoraArma con `alcance` debe
+// apuntar SIEMPRE a una tirada fija ajena a la del arma que la lleva.
 export function condicionesActivas(sheet: Sheet, ctx: ContextoAccion): CondicionTirada[] {
   return sheet.equipo.flatMap((pieza): CondicionTirada[] => {
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat) return [];
-    if (cat.familia !== "mejoraEstandar" && cat.familia !== "subsistema" && cat.familia !== "herramienta") {
+    if (
+      cat.familia !== "mejoraEstandar" &&
+      cat.familia !== "subsistema" &&
+      cat.familia !== "herramienta" &&
+      cat.familia !== "mejoraArma"
+    ) {
       return [];
     }
-    const nivelInfo = cat.niveles.find((n) => n.nivel === pieza.nivel);
-    if (!nivelInfo?.condiciones) return [];
-    return nivelInfo.condiciones.filter((c) => c.alcance && alcanzaA(c.alcance, ctx));
+    if (pieza.nivel === undefined) return [];
+    const niveles = nivelesHasta(cat.niveles, pieza.nivel);
+    const condiciones = acumulaPorClave(
+      niveles.map((n) => n.condiciones ?? []),
+      (c) => c.id,
+    );
+    return condiciones.filter((c) => c.alcance && alcanzaA(c.alcance, ctx));
   });
 }
 
@@ -399,11 +470,22 @@ export function indiceDeCondiciones(sheet: Sheet): IndiceCondiciones {
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat) continue;
-    if (cat.familia !== "mejoraEstandar" && cat.familia !== "subsistema" && cat.familia !== "herramienta") continue;
-    const nivelInfo = cat.niveles.find((n) => n.nivel === pieza.nivel);
-    if (!nivelInfo?.condiciones) continue;
+    if (
+      cat.familia !== "mejoraEstandar" &&
+      cat.familia !== "subsistema" &&
+      cat.familia !== "herramienta" &&
+      cat.familia !== "mejoraArma"
+    ) {
+      continue;
+    }
+    if (pieza.nivel === undefined) continue;
+    const niveles = nivelesHasta(cat.niveles, pieza.nivel);
+    const condiciones = acumulaPorClave(
+      niveles.map((n) => n.condiciones ?? []),
+      (c) => c.id,
+    );
 
-    for (const condicion of nivelInfo.condiciones) {
+    for (const condicion of condiciones) {
       const alcance = condicion.alcance;
       if (!alcance) continue;
       const entrada: CondicionIndexada = { condicion, orden: orden++ };

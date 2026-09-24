@@ -172,14 +172,10 @@ export const SUBSISTEMAS: Subsistema[] = [
           "Ventaja Táctica — Canal de Alta Resonancia: +10% de alcance efectivo de los poderes " +
             "(mínimo 2 metros, redondeando a la baja).",
         ],
-        // S9: se mantiene la ventaja de nivel 1 (no se repite ni se anula); el
-        // +10% de alcance no tiene número fijo que mecanizar.
-        modificadores: [
-          // Los poderes psiónicos están PENDIENTE en sistema.md: no hay tirada
-          // de resistir retroceso psiónico todavía. El id queda como marcador
-          // para cuando exista — no se aplica a nada mientras tanto.
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_retroceso_psionico" }, valor: 1 },
-        ],
+        // S9: la ventaja de nivel 1 ya llega acumulada (acumulaPorClave() en
+        // equipo.ts) — repetirla aquí la duplicaría el día que Fase 5 la
+        // desbloquee. El +10% de alcance no tiene número fijo que mecanizar.
+        modificadores: [],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "conversion_psionica" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "Acciones sin dado" }, // cambia la eficiencia (3 cargas), la acción ya se declaró en nivel 1
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // Estabilizador Neuronal, heredado (S9)
@@ -195,16 +191,17 @@ export const SUBSISTEMAS: Subsistema[] = [
           "Ventaja Táctica — Blindaje Psico-Reactivo: +1 para resistir efectos de poderes de " +
             "metasensoria contra el usuario.",
         ],
+        // Solo lo NUEVO de este nivel — resistir_retroceso_psionico (nivel 1)
+        // y el +10% de alcance (nivel 2, sin número) ya llegan acumulados.
         modificadores: [
           // Los poderes psiónicos están PENDIENTE en sistema.md: no hay tirada
-          // de resistir retroceso psiónico todavía. El id queda como marcador
-          // para cuando exista — no se aplica a nada mientras tanto.
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_retroceso_psionico" }, valor: 1 },
+          // de resistir metasensoría todavía. El id queda como marcador para
+          // cuando exista — no se aplica a nada mientras tanto.
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_metasensoria" }, valor: 1 },
         ],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "conversion_psionica" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "Acciones sin dado" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // heredado de nivel 1 (S9)
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 33" }, // Canal de Alta Resonancia, heredado
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_metasensoria" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // Blindaje Psico-Reactivo
         ],
@@ -218,19 +215,19 @@ export const SUBSISTEMAS: Subsistema[] = [
           "Ventaja Táctica — Simbiosis Sináptica Total: reduce en 1 los penalizadores por fatiga " +
             "al hacer una tirada relacionada con el empleo de un poder psiónico.",
         ],
+        // Solo lo NUEVO de este nivel — resistir_retroceso_psionico (n1) y
+        // resistir_metasensoria (n3) ya llegan acumulados.
         modificadores: [
           // Los poderes psiónicos están PENDIENTE en sistema.md: no hay tirada
-          // de resistir retroceso psiónico todavía. El id queda como marcador
-          // para cuando exista — no se aplica a nada mientras tanto.
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_retroceso_psionico" }, valor: 1 },
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_metasensoria" }, valor: 1 },
+          // de poder psiónico genérico todavía. El id queda como marcador para
+          // cuando exista — no se aplica a nada mientras tanto.
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "poder_psionico" }, valor: 1 },
         ],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "conversion_psionica" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "Acciones sin dado" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // heredado de nivel 1 (S9)
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 33" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_metasensoria" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_metasensoria" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // heredado de nivel 3 (S9)
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poder_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // Simbiosis Sináptica Total
         ],
       },

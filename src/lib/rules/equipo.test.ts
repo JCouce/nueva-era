@@ -199,6 +199,26 @@ describe("mejoras de arma", () => {
       },
     ]);
   });
+
+  test("S9: Sistema de Retroceso en nivel 2 mantiene un único +1 (nivel 1), no lo duplica", () => {
+    let s = conFusilAsaltoPuesto();
+    s = equipar(s, {
+      instanciaId: "sr1",
+      catalogoId: "sistema_retroceso",
+      nivel: 2,
+      instaladoEnId: "arma-1",
+    });
+    const mods = modificadoresDeEquipo(s).filter((m) => m.fuente === "Sistema de Retroceso 2");
+    assert.deepEqual(mods, [
+      {
+        tipo: "tirada",
+        alcance: { tipo: "modo", contieneEtiqueta: "F. Auto" },
+        valor: 1,
+        origen: "equipo",
+        fuente: "Sistema de Retroceso 2",
+      },
+    ]);
+  });
 });
 
 describe("movimiento", () => {
@@ -373,6 +393,19 @@ describe("modificadores de equipo", () => {
     assert.equal(delSoporte[0]?.valor, 1);
   });
 
+  test("S9: Soporte Vital en nivel 3 da un único +1, no lo acumula 3 veces (nivel 1+2+3)", () => {
+    let s = conArmaduraPuesta();
+    s = equipar(s, {
+      instanciaId: "sv1",
+      catalogoId: "soporte_vital",
+      nivel: 3,
+      instaladoEnId: "armadura-1",
+    });
+    const delSoporte = modificadoresDeEquipo(s).filter((m) => m.fuente === "Soporte Vital 3");
+    assert.equal(delSoporte.length, 1);
+    assert.equal(delSoporte[0]?.valor, 1);
+  });
+
   test("sin nada equipado no hay modificadores de equipo", () => {
     assert.deepEqual(modificadoresDeEquipo(defaultSheet()), []);
   });
@@ -381,7 +414,7 @@ describe("modificadores de equipo", () => {
 describe("condicionesActivas", () => {
   const ctxAlertaActiva = { id: "alerta_activa", grupo: "Acciones" as const, habilidad: "exploracion" as const, modoElegido: null };
 
-  test("un Visor Nocturno n2 equipado aporta su toggle con alcance a alerta_activa", () => {
+  test("un Visor Nocturno n2 equipado aporta su toggle Y el de nivel 1 (S9: se acumula)", () => {
     let s = conArmaduraPuesta();
     s = equipar(s, {
       instanciaId: "vn1",
@@ -390,11 +423,13 @@ describe("condicionesActivas", () => {
       instaladoEnId: "armadura-1",
     });
     const cs = condicionesActivas(s, ctxAlertaActiva);
-    assert.equal(cs.length, 1);
-    assert.equal(cs[0]?.id, "visor_nocturno_n2_activo");
+    assert.deepEqual(
+      cs.map((c) => c.id),
+      ["visor_nocturno_n1_activo", "visor_nocturno_n2_activo"],
+    );
   });
 
-  test("nivel 1 del Visor Nocturno no aporta la condición de nivel 2", () => {
+  test("nivel 1 del Visor Nocturno aporta SOLO su propia condición (no adelanta la de nivel 2)", () => {
     let s = conArmaduraPuesta();
     s = equipar(s, {
       instanciaId: "vn1",
@@ -402,7 +437,17 @@ describe("condicionesActivas", () => {
       nivel: 1,
       instaladoEnId: "armadura-1",
     });
-    assert.deepEqual(condicionesActivas(s, ctxAlertaActiva), []);
+    const cs = condicionesActivas(s, ctxAlertaActiva);
+    assert.equal(cs.length, 1);
+    assert.equal(cs[0]?.id, "visor_nocturno_n1_activo");
+  });
+
+  test("S9: Mira Telescópica en nivel 3 conserva el toggle de visión de nivel 2", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "fusil_asalto_impetus" });
+    s = equipar(s, { instanciaId: "m1", catalogoId: "mira_telescopica", nivel: 3, instaladoEnId: "a1" });
+    const cs = condicionesActivas(s, ctxAlertaActiva);
+    assert.equal(cs.length, 1);
+    assert.equal(cs[0]?.id, "mira_telescopica_n2_activo");
   });
 
   test("una tirada con otro id no recibe la condición del Visor Nocturno", () => {
@@ -456,7 +501,7 @@ describe("indiceDeCondiciones + consultaIndiceCondiciones ≡ condicionesActivas
     assert.deepEqual(indexado, directo);
     assert.deepEqual(
       directo.map((c) => c.id),
-      ["visor_nocturno_n2_activo", "visor_termico_n1_activo"],
+      ["visor_nocturno_n1_activo", "visor_nocturno_n2_activo", "visor_termico_n1_activo"],
     );
   });
 
@@ -473,9 +518,9 @@ describe("indiceDeCondiciones + consultaIndiceCondiciones ≡ condicionesActivas
   });
 
   test("una mejora de arma (Bípode) no se recoge aquí — vive en condicionesDeMejoras", () => {
-    // Bípode no declara alcance hoy, así que ni haría falta este filtro —
-    // pero confirma que mejoraArma queda fuera de condicionesActivas incluso
-    // si algún día alguien le añadiera alcance por error.
+    // Bípode no declara alcance: se queda fuera de este filtro por eso, no
+    // porque mejoraArma esté excluida (ya no lo está, ver test siguiente) —
+    // vive solo en la tirada de su propia arma, vía condicionesDeMejoras.
     let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "fusil_asalto_impetus" });
     s = equipar(s, {
       instanciaId: "b1",
@@ -485,6 +530,22 @@ describe("indiceDeCondiciones + consultaIndiceCondiciones ≡ condicionesActivas
     });
     assert.deepEqual(
       condicionesActivas(s, { id: "x", grupo: "Ataques", habilidad: "combate_distancia", modoElegido: null }),
+      [],
+    );
+  });
+
+  test("una mejora de arma CON alcance (Puntero Láser, -2 sigilo) sí llega a otra tirada fija", () => {
+    // 2026-09-25: condicionesActivas() dejó de excluir mejoraArma — Puntero
+    // Láser es el primer caso real (junto a Mira Telescópica n2).
+    let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "fusil_asalto_impetus" });
+    s = equipar(s, { instanciaId: "p1", catalogoId: "puntero_laser", nivel: 1, instaladoEnId: "a1" });
+    const cs = condicionesActivas(s, { id: "sigilo", grupo: "Acciones", habilidad: "sigilo", modoElegido: null });
+    assert.equal(cs.length, 1);
+    assert.equal(cs[0]?.id, "activo_sigilo");
+    // Su otro toggle (+1 ataque, sin alcance) no se cuela aquí ni en ninguna
+    // otra tirada por esta vía — sigue viviendo solo en condicionesDeMejoras.
+    assert.deepEqual(
+      condicionesActivas(s, { id: "ataque_fuego_a1", grupo: "Ataques", habilidad: "combate_distancia", modoElegido: null }),
       [],
     );
   });

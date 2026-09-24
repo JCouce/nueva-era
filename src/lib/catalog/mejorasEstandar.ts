@@ -61,15 +61,14 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           "Blindaje Ambiental Mejorado: +2 frente a efectos tóxicos cuando el traje o el usuario " +
             "reciben daño en ese entorno.",
         ],
-        // Supuesto: el documento no repite la Resistencia Térmica de nivel 1 en
-        // los niveles 2-3, pero tampoco dice que se pierda al subir de nivel —
-        // se asume que se mantiene. Si Murillo confirma lo contrario, se corrige aquí.
-        // Un único +1 (ver nota de nivel 1) — bug de duplicado corregido 2026-09-23.
-        modificadores: [
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
-        ],
+        // Resistencia Térmica de nivel 1 (S9: se acumula, no se repite ni se
+        // pierde). Antes de 2026-09-25 el código no acumulaba niveles, así que
+        // aquí se copiaba el +1 a mano — ya no hace falta: acumulaPorClave()
+        // (equipo.ts) lo trae solo desde nivel 1, y repetirlo aquí lo
+        // duplicaría (nivel1 +1 + nivel2 +1 = +2 real, el bug que S9 quería
+        // evitar). Solo lo que este nivel añade DE NUEVO va en su propio array.
+        modificadores: [],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" }, // Resistencia Térmica (heredada de nivel 1, S9)
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // Blindaje Ambiental Mejorado
           { tipo: "habilitador", afecta: { modo: "ninguna" }, mecanismo: null, arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "pregunta 32" }, // Vulnerabilidad al Shock, heredada
         ],
@@ -82,12 +81,10 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           "Duración: 144 horas de autonomía.",
           "Blindaje Ambiental Avanzado: +3 contra efectos tóxicos en las mismas condiciones.",
         ],
-        // Un único +1 (ver nota de nivel 1) — bug de duplicado corregido 2026-09-23.
-        modificadores: [
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
-        ],
+        // Mismo criterio que nivel 2: Resistencia Térmica ya llega acumulada
+        // desde nivel 1, no se repite aquí.
+        modificadores: [],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" }, // Resistencia Térmica (heredada, S9)
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // Blindaje Ambiental Avanzado
           { tipo: "habilitador", afecta: { modo: "ninguna" }, mecanismo: null, arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "pregunta 32" }, // Vulnerabilidad al Shock, heredada
         ],
@@ -357,12 +354,26 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           "Un fogonazo o explosión puede cegar al usuario (dificultad de Fortaleza 8) al saturar " +
             "el sensor.",
         ],
+        // El fogonazo sigue sin mecanizar a propósito: vulnerabilidad
+        // narrativa que arbitra el máster, sin dato que tocar.
         modificadores: [],
-        // Correctamente sin mecanizar (no un hueco): "ver en penumbra" no toca
-        // ninguna tirada existente (no hay penalizador de luz en el motor hoy) y
-        // el fogonazo es una vulnerabilidad narrativa que el máster arbitra.
+        // Homogeneizado 2026-09-25 con Visor Térmico n1/Mira Telescópica n2
+        // (mismo resultado de juego: capacidad sensorial sin matiz numérico,
+        // recordatorio en Buscar/percibir) — antes era `narrativo/construido`
+        // sin toggle ni nota, la única de las tres con esa forma distinta.
+        condiciones: [
+          {
+            id: "visor_nocturno_n1_activo",
+            tipo: "toggle",
+            etiqueta: "Visor Nocturno activo",
+            alcance: { tipo: "tiradaId", id: "alerta_activa" },
+            valorActivo: 0,
+            valorInactivo: 0,
+            nota: "Ves en penumbra y oscuridad parcial.",
+          },
+        ],
         motor: [
-          { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
       {
@@ -441,7 +452,7 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
             alcance: { tipo: "tiradaId", id: "alerta_activa" },
             valorActivo: 0,
             valorInactivo: 0,
-            nota: "-3 en percepción visual de lo que quede fuera del gradiente térmico resaltado.",
+            nota: "Ves en un gradiente de calor. -3 a lo que esté fuera del gradiente.",
           },
         ],
         motor: [

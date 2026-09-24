@@ -11,7 +11,7 @@ está hecho" en cualquier otro documento del proyecto, para — va aquí, no all
 arquitectura — el modelo obligatorio para pasar cualquier elemento nuevo (equipo,
 razas, poderes, dotes, aumentos) de prosa a motor. Este archivo manda en el estado.
 
-**Última actualización:** 2026-09-24.
+**Última actualización:** 2026-09-25.
 
 ## Ahora mismo
 
@@ -138,6 +138,39 @@ Dos partes, las dos cerradas:
 las 6 familias que vivían ahí (armaduras, armas de fuego, mejoras estándar, subsistemas,
 movimiento, mejoras de arma) están en sus propios archivos, mismo patrón que ya usaban
 `armasMelee.ts`/`armamentoPesado.ts`/`municion.ts`.
+
+### Revisión pieza a pieza del catálogo, sesión 2026-09-24/25
+
+Repaso sistemático de `docs/equipo-efectos-especiales.md` a raíz de que el barrido de
+`MotorMetadata` se hizo con agentes en paralelo antes de que el motor existiera de
+verdad (ver [[motor-metadata-barrido-estado]] en memoria) — método adoptado: ante una
+pieza rara, comprobar primero si le falta dato/metadata antes de sospechar de la
+lógica genérica.
+
+- **Sutil en armas melee**: dejó de ser una nota de texto fija y pasa a un toggle real
+  (`aplicadoSutil`/`danioSutil`), con mecanismo propio en `MotorMetadata`
+  (`sustitucion_aplicado`) porque no encaja en `eleccion_jugador` (no pasa por
+  `CondicionTirada`, su valor depende de la ficha). Bloqueo con arma Sutil ya no fuerza
+  Potencia en automático.
+- **Absorción de daño por blindaje resuelta (Murillo): 1 punto de blindaje = 1 nivel de
+  daño**, y las mejoras "ignora el primer nivel de daño X" (Tejido Conductor) suman como
+  +1 a blindaje de ese tipo. Sin construir en código todavía — ver Pendiente.
+- **Puntero Láser construido entero** (+1 ataque, -2 sigilo) y **`condicionesActivas()`/
+  `indiceDeCondiciones()` (`equipo.ts`) dejaron de excluir `mejoraArma`** — dos piezas
+  reales (Puntero Láser, Mira Telescópica) necesitaban que una mejora de arma alcance
+  una tirada fija ajena a la suya.
+- **Visor Nocturno n1 y Mira Telescópica n2 homogeneizados**: mismo resultado de juego
+  (capacidad sensorial sin matiz numérico) ahora con la misma forma de dato (toggle con
+  nota en Buscar/percibir) que ya tenía Visor Térmico n1.
+- **Bug grande, S9 no estaba implementado**: los niveles de una pieza no se acumulaban
+  (`niveles.find` en vez de acumular 1..N) — detectado por el usuario al notar que Mira
+  Telescópica/Visor Nocturno perdían capacidades de niveles inferiores al subir de
+  nivel. Arreglado de raíz con dos helpers genéricos en `equipo.ts`
+  (`nivelesHasta`/`acumulaPorClave`/`ultimoQueDefine`), y quitados los parches a mano
+  que el catálogo venía usando para compensarlo (Soporte Vital, Sistema de Retroceso,
+  Estabilizador Neuronal). Detalle completo en `docs/equipo-efectos-especiales.md`
+  §"Control de subtareas independientes" y en `sistema.md` (supuesto S9).
+- 416 tests, lint y `tsc --noEmit` limpios en todo lo anterior.
 
 ---
 

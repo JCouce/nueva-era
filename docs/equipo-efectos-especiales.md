@@ -318,6 +318,21 @@ aquí para no perder de vista qué queda, más allá de "qué arma falta revisar
 ya tiene su detalle completo en la sección que le corresponde — esto es solo el índice
 de control.
 
+- ✅ **Bug grande: los niveles de una pieza no se acumulaban (S9) — arreglado
+  2026-09-25.** Detectado por el usuario probando Mira Telescópica + Visor Nocturno a
+  la vez: equipar un nivel alto de una mejora hacía desaparecer lo que daban los
+  niveles inferiores (`niveles.find(n => n.nivel === pieza.nivel)` en 6 funciones de
+  `equipo.ts`/`combate.ts` solo miraba el bloque exacto). `sistema.md` ya documentaba
+  S9 ("se acumula, salvo total explícito") pero nadie lo había implementado — el
+  catálogo lo venía parcheando a mano, pieza por pieza (Soporte Vital, Sistema de
+  Retroceso, Estabilizador Neuronal repetían el efecto de nivel 1 en los niveles
+  superiores), parches que además se habrían duplicado con la nueva acumulación real.
+  Arreglado con dos helpers genéricos en `equipo.ts` (`nivelesHasta`,
+  `acumulaPorClave` para arrays indexados por clave — id de condición, alcance de
+  modificador —, `ultimoQueDefine` para valores únicos tipo total como `ajusteTramo`)
+  y quitados los parches a mano, que ya no hacen falta. Test nuevo por caso
+  (`equipo.test.ts`): Soporte Vital n3 (un único +1, no +3), Sistema de Retroceso n2
+  (un único +1, no +2), Mira Telescópica n3 (conserva el toggle de visión de n2).
 - ⬜ **El mecanismo genérico en sí** (§"El mecanismo genérico") — sin construir, las 5
   variantes: impacto, crítico, por tramo, por modo elegido, y texto libre segmentado
   por modo (la quinta, 2026-09-21).
@@ -489,6 +504,16 @@ de control.
     la mitad con frío/ventilación) no encaja en nada de esto**: no es un modificador de
     ninguna tirada, es una capacidad narrativa de rastreo — se queda en texto puro,
     **🔕 IGNORAR** confirmado.
+  - **Homogeneización 2026-09-25 (revisión de Mira Telescópica n2):** Visor Nocturno
+    **n1** (visión en penumbra, sin matiz numérico) se había dejado `narrativo/construido`,
+    sin toggle ni nota — la única pieza de este grupo con esa forma distinta, aunque da
+    exactamente el mismo tipo de resultado (una capacidad sensorial, sin número, que vale
+    la pena recordar en Buscar/percibir) que sus hermanas. Corregido a la misma forma que
+    Visor Térmico n1: toggle con `alcance: alerta_activa`, `valorActivo/valorInactivo: 0`,
+    nota "Ves en penumbra y oscuridad parcial." **Mira Telescópica n2** ("visión nocturna y
+    térmica, como el visor de nivel 1", `docs/equipamiento.md:674`) recibe la misma forma,
+    sin heredar el -3 del gradiente térmico (el texto no lo menciona) — a confirmar con
+    Murillo si debería. Test actualizado (`equipo.test.ts`).
 
 ### Subsistemas
 
@@ -653,9 +678,25 @@ de control.
 
 ### Mejoras en Armas de Fuego
 
-- Mira Telescópica (niveles 1 y 3, bonos a media/larga distancia y percepción), Bípode
-  (apoyado/no apoyado), Sistema de Retroceso (F. Auto): **✔️ YA HECHO** — trazados en
-  `docs/modificadores-tiradas.md` como ejemplo del mecanismo de condiciones.
+- Bípode (apoyado/no apoyado), Sistema de Retroceso (F. Auto): **✔️ YA HECHO** — trazados
+  en `docs/modificadores-tiradas.md` como ejemplo del mecanismo de condiciones.
+  **Arquitectura corregida 2026-09-25: `condicionesActivas()`/`indiceDeCondiciones()`
+  (`equipo.ts`) ya no excluyen `mejoraArma`.** Dos casos reales (Puntero Láser -2
+  sigilo, Mira Telescópica bono a percepción) pedían lo mismo — dejó de ser
+  "generalizar por si acaso" para ser el segundo caso confirmado. Salvaguarda contra
+  duplicar lo que `condicionesDeMejoras()` ya aporta sin condiciones: una mejora de
+  arma nunca debe declarar `alcance` sobre su propia tiradaId. Test nuevo en
+  `equipo.test.ts` que fija este comportamiento.
+  **Mira Telescópica niveles 1/3, sigue sin construir — ya no por arquitectura, por
+  diseño sin resolver:** el bono al **ataque** (media/larga distancia) sí está
+  construido (`ajusteTramo`). El mismo bono a **percepción/búsqueda** (`alerta_activa`)
+  no tiene dónde enganchar el "solo en media/larga distancia" — `alerta_activa` es una
+  tirada fija sin ningún concepto de tramo/Distancia (eso solo existe en las tiradas de
+  ataque, vía la `CondicionTirada` "Distancia" que genera cada arma). Antes de
+  construirlo hay que decidir: ¿se simplifica a un toggle plano (+1/+2 mientras se use
+  la mira para buscar, sin condicionar a distancia) o se le añade un selector de
+  Distancia a `alerta_activa` solo para esto? Metadata dejada en `bloqueado` con el
+  motivo real hasta que se decida.
   **Aclaración (2026-09-13, pregunta del usuario sobre qué es "retroceso"):** no es un
   penalizador que se acumule disparo a disparo — es la dificultad, ya fija, que F. Auto
   tiene peor que Simple/Estándar en el propio arma (p. ej. Sydiasi -3/-4: ese -1 de
@@ -673,14 +714,16 @@ de control.
   Lanzagranadas Integrado) — confirmado que la mayoría de "huecos" de esta lista no son
   arquitectura, es `MotorMetadata`/dato sin rellenar en la pieza (barrida por agentes en
   paralelo antes de existir el motor, ver `docs/tareas.md`):
-  - **Puntero Láser: ✅ construido 2026-09-25.** El +1 al ataque (`ataque_fuego`) le
-    faltaba el bloque `condiciones` (toggle) que el Bípode ya tenía — `condicionesDeMejoras()`
-    (`combate.ts`) es genérico, no hacía falta código nuevo, solo el dato
-    (`mejorasArma.ts`). El **-2 al sigilo sigue sin poder construirse**: afecta a la
-    tirada fija `sigilo`, no a `ataque_fuego`, y `condicionesActivas()` (`equipo.ts`)
-    excluye `mejoraArma` a propósito — no hay hoy mecanismo genérico para que una
-    mejora de arma alcance una tirada distinta de la suya. Motor actualizado con las
-    dos entradas por separado (`construido` / `bloqueado`).
+  - **Puntero Láser: ✅ construido entero 2026-09-25** (+1 al ataque y -2 al sigilo,
+    los dos). El +1 al ataque (`ataque_fuego`) le faltaba el bloque `condiciones`
+    (toggle) que el Bípode ya tenía — `condicionesDeMejoras()` (`combate.ts`) es
+    genérico, no hacía falta código nuevo, solo el dato (`mejorasArma.ts`). El -2 al
+    sigilo necesitó además quitar la exclusión de `mejoraArma` en
+    `condicionesActivas()`/`indiceDeCondiciones()` (`equipo.ts`) — dos toggles
+    independientes en el mismo nivel, uno sin `alcance` (vive en `ataque_fuego` vía
+    `condicionesDeMejoras`) y otro con `alcance: {tiradaId: "sigilo"}` (vive en la
+    tirada fija "Sigilo" vía `condicionesActivas`), sin estado compartido entre ellos
+    — mismo patrón de toggles independientes que Visor Nocturno/Térmico.
   - Silenciador, Linterna, Bayoneta, Lanzagranadas Integrado: pendientes de esta misma
     revisión, uno a uno.
 - Láser de Largo Alcance / Rayo de Largo Alcance — alcances: **✔️ YA HECHO**, verificado

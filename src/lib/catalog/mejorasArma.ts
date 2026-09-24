@@ -51,12 +51,15 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         ajusteTramo: { media: 1, larga: 1 },
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "bono_tramo", estado: "construido" },
-          // "El mismo bonificador sirve para tiradas de búsqueda" no está
-          // construido: ajusteTramo solo alimenta la tirada de ataque del arma
-          // huésped, no ninguna tirada de percepción. Caso inconcluso: no está
-          // claro si el destino es "alerta_activa"/Buscar-percibir u otra —
-          // ver informe final.
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          // "El mismo bonificador sirve para tiradas de búsqueda" (alerta_activa):
+          // condicionesActivas() ya admite mejoraArma (2026-09-25), pero
+          // "alerta_activa" es una tirada fija sin ningún concepto de tramo/
+          // Distancia (eso solo existe en las tiradas de ataque, generado por
+          // condicionTramo() en combate.ts) — no hay a qué "media/larga
+          // distancia" enganchar el bono ahí. Diseño sin decidir, no
+          // arquitectura: ¿toggle plano sin condicionar a distancia, o
+          // Distancia nueva en alerta_activa solo para esto?
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "bono_tramo", estado: "bloqueado", bloqueoPor: "alerta_activa no tiene concepto de tramo/Distancia — falta decidir si se simplifica a toggle plano o se le añade Distancia solo para esto" },
         ],
       },
       {
@@ -65,12 +68,24 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         coste: 700,
         detalle: ["Aporta visión nocturna y térmica, como un visor de nivel 1, hasta 500 metros."],
         modificadores: [],
-        // Mismo patrón exacto que Visor Nocturno/Visor Térmico n1 (toggle con
-        // nota, mecanismo eleccion_jugador del §8) pero sin aplicar aquí —
-        // "hallazgo real, no duda" según el barrido de motor: falta trabajo de
-        // datos, no de diseño. Uno de los "quick wins" ya identificados.
+        // Misma forma que Visor Nocturno n1/Visor Térmico n1 (2026-09-25,
+        // homogeneizado): mismo resultado de juego, mismo toggle+nota.
+        // `docs/equipamiento.md:674` dice "como el visor de nivel 1" sin más —
+        // no menciona el -3 del gradiente térmico, así que no se hereda ese
+        // caveat aquí. Si Murillo confirma que sí aplica, se añade entonces.
+        condiciones: [
+          {
+            id: "mira_telescopica_n2_activo",
+            tipo: "toggle",
+            etiqueta: "Visión nocturna/térmica activa",
+            alcance: { tipo: "tiradaId", id: "alerta_activa" },
+            valorActivo: 0,
+            valorInactivo: 0,
+            nota: "Visión nocturna y térmica hasta 500 m.",
+          },
+        ],
         motor: [
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
       {
@@ -87,7 +102,7 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         ajusteTramo: { media: 2, larga: 2 },
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "bono_tramo", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // percepción visual, mismo caso inconcluso que nivel 1
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "bono_tramo", estado: "bloqueado", bloqueoPor: "alerta_activa no tiene concepto de tramo/Distancia — falta decidir si se simplifica a toggle plano o se le añade Distancia solo para esto" }, // percepción visual, mismo bloqueo que nivel 1
         ],
       },
     ],
@@ -117,18 +132,22 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
             valorActivo: 1,
             valorInactivo: 0,
           },
+          // Toggle aparte (2026-09-25, condicionesActivas() ya admite
+          // mejoraArma): independiente del de arriba — mismo patrón que
+          // Visor Nocturno/Mira Telescópica, un toggle por tirada a la que
+          // llega, sin estado compartido entre ellos.
+          {
+            id: "activo_sigilo",
+            tipo: "toggle",
+            etiqueta: "Puntero activo",
+            alcance: { tipo: "tiradaId", id: "sigilo" },
+            valorActivo: -2,
+            valorInactivo: 0,
+          },
         ],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          // El -2 al sigilo es un efecto aparte: afecta a la tirada fija
-          // "sigilo" (acciones.ts), no a ataque_fuego, y condicionesActivas()
-          // (equipo.ts) excluye `mejoraArma` a propósito — hoy no hay forma
-          // genérica de que una mejora de arma llegue a otra tirada distinta
-          // de la del arma que la lleva. Bloqueado en el mecanismo, no un
-          // hueco de dato: haría falta extender condicionesActivas() para
-          // mejoraArma con alcance, algo que su propio comentario ya avisa
-          // que no está resuelto.
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "bloqueado", bloqueoPor: "condicionesActivas() excluye mejoraArma — sin mecanismo genérico para que una mejora de arma alcance una tirada fija distinta de la suya" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
       {
@@ -296,12 +315,11 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         rareza: "Extraño",
         coste: 5000,
         detalle: ["La dificultad de esquiva contra ataques en modo automático sube en 1."],
-        // S9: se mantiene el +1 de nivel 1. La subida de dificultad de esquiva
-        // es un efecto sobre la tirada de OTRO personaje (el que esquiva), no
-        // del portador: se queda en texto.
-        modificadores: [
-          { tipo: "tirada", alcance: { tipo: "modo", contieneEtiqueta: "F. Auto" }, valor: 1 },
-        ],
+        // El +1 de nivel 1 ya llega acumulado (S9, acumulaPorClave() en
+        // equipo.ts) — repetirlo aquí lo duplicaría (+2 real). La subida de
+        // dificultad de esquiva es un efecto sobre la tirada de OTRO personaje
+        // (el que esquiva), no del portador: se queda en texto.
+        modificadores: [],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "siempre_activo", estado: "construido" }, // heredado de nivel 1 (S9)
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "esquiva" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" }, // sube la esquiva de QUIEN te dispara, no una tirada propia

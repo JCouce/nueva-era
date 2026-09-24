@@ -359,6 +359,9 @@ export function AccionModal({
 
           {!resultado && !rodando && condiciones.length > 0 && (
             <div className="mt-4 flex flex-col gap-3 border-t border-border pt-3">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+                {"// Activaciones"}
+              </p>
               {condiciones.map((c) => (
                 <ControlCondicion key={c.id} condicion={c} estado={estado} onCambiar={cambiar} />
               ))}
