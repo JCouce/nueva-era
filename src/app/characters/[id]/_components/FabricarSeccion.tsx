@@ -265,6 +265,7 @@ export function FabricarSeccion({
   // aquí, no en `modal` de AccionesTab.tsx — ver el comentario de cabecera.
   const [rollOpen, setRollOpen] = useState<{
     tirada: Accion;
+    piezaLabel: string;
     catalogoId: string;
     tier: MaterialTier;
     modBase: number;
@@ -272,6 +273,11 @@ export function FabricarSeccion({
     dificultadSugerida: number;
   } | null>(null);
   const [resultado, setResultado] = useState<Lanzamiento | null>(null);
+  // Efecto de ESTA tirada en concreto ("has construido X" / "has perdido
+  // los materiales") — no es información de la pieza como `nota` de la
+  // Accion, así que vive aparte y solo se pinta junto al resultado
+  // (AccionModal.tsx, prop `notaResultado`, ver su comentario).
+  const [mensajeResultado, setMensajeResultado] = useState<string | null>(null);
 
   const onConstruir = (pieza: PiezaFabricable, tier: MaterialTier) => {
     if (libre) {
@@ -291,8 +297,10 @@ export function FabricarSeccion({
     };
     const mod = modificadorAccion(sheet, tirada, false, mods, false);
     setResultado(null);
+    setMensajeResultado(null);
     setRollOpen({
       tirada,
+      piezaLabel: pieza.label,
       catalogoId: pieza.id,
       tier,
       modBase: mod.total,
@@ -329,12 +337,17 @@ export function FabricarSeccion({
     // r.exito es null solo si el jugador elige a propósito "sin dificultad"
     // en el modal — sin comparación no hay fracaso que señalar, se trata
     // como éxito (mismo comportamiento que antes de esta corrección).
-    onFabricar(rollOpen.catalogoId, rollOpen.tier, r.exito ?? true);
+    const exito = r.exito ?? true;
+    setMensajeResultado(
+      exito ? `Has construido: ${rollOpen.piezaLabel}.` : "Has perdido los materiales.",
+    );
+    onFabricar(rollOpen.catalogoId, rollOpen.tier, exito);
   };
 
   const cerrarRoll = () => {
     setRollOpen(null);
     setResultado(null);
+    setMensajeResultado(null);
   };
 
   return (
@@ -452,6 +465,7 @@ export function FabricarSeccion({
           dificultadInicial={memoria[rollOpen.tirada.id]?.dificultad ?? rollOpen.dificultadSugerida}
           circunstancialInicial={memoria[rollOpen.tirada.id]?.circunstancial ?? 0}
           resultado={resultado}
+          notaResultado={mensajeResultado ?? undefined}
           onTirarDanio={() => {}}
           onCerrar={cerrarRoll}
           onTirar={onTirar}

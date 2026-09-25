@@ -122,6 +122,7 @@ function ReparacionSeccion({
   // Tirada de Reparar en curso: null mientras no se ha pulsado ningún tier.
   const [rollOpen, setRollOpen] = useState<{
     tirada: Accion;
+    piezaLabel: string;
     instanciaId: string;
     tier: MaterialTier;
     modBase: number;
@@ -129,6 +130,9 @@ function ReparacionSeccion({
     dificultadSugerida: number;
   } | null>(null);
   const [resultado, setResultado] = useState<Lanzamiento | null>(null);
+  // Ver el mismo comentario en FabricarSeccion.tsx / AccionModal.tsx
+  // (prop `notaResultado`): efecto de esta tirada en concreto.
+  const [mensajeResultado, setMensajeResultado] = useState<string | null>(null);
 
   const onElegirTier = (instanciaId: string, titulo: string, rareza: Rareza | null, tier: MaterialTier) => {
     if (libre) {
@@ -148,8 +152,10 @@ function ReparacionSeccion({
     };
     const mod = modificadorAccion(sheet, tirada, false, mods, false);
     setResultado(null);
+    setMensajeResultado(null);
     setRollOpen({
       tirada,
+      piezaLabel: titulo,
       instanciaId,
       tier,
       modBase: mod.total,
@@ -185,12 +191,15 @@ function ReparacionSeccion({
     setResultado(lanzamiento);
     // Ver el mismo comentario en FabricarSeccion.tsx: sin dificultad elegida
     // a propósito no hay fracaso que señalar, se trata como éxito.
-    onReparar(rollOpen.instanciaId, rollOpen.tier, r.exito ?? true);
+    const exito = r.exito ?? true;
+    setMensajeResultado(exito ? `Has reparado: ${rollOpen.piezaLabel}.` : "Has perdido los materiales.");
+    onReparar(rollOpen.instanciaId, rollOpen.tier, exito);
   };
 
   const cerrarRoll = () => {
     setRollOpen(null);
     setResultado(null);
+    setMensajeResultado(null);
   };
 
   return (
@@ -232,6 +241,7 @@ function ReparacionSeccion({
           dificultadInicial={memoria[rollOpen.tirada.id]?.dificultad ?? rollOpen.dificultadSugerida}
           circunstancialInicial={memoria[rollOpen.tirada.id]?.circunstancial ?? 0}
           resultado={resultado}
+          notaResultado={mensajeResultado ?? undefined}
           onTirarDanio={() => {}}
           onCerrar={cerrarRoll}
           onTirar={onTirar}

@@ -673,6 +673,17 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      `modal` único de AccionesTab), material gastado siempre, reparación solo
      con éxito, NPCs (`libre`) sin tirada. `repararPieza()` (`recursos.ts`)
      gana el mismo parámetro `exito` que `fabricar()`.
+   - **Mensaje de efecto (2026-09-25, pedido del usuario tras probar la
+     tirada):** el modal de la tirada de Fabricar/Reparar muestra, solo tras
+     resolver, una línea con el efecto real — "Has construido: X." / "Has
+     reparado: X." si hay éxito, "Has perdido los materiales." si no.
+     `AccionModal.tsx` gana la prop opcional `notaResultado` (solo se pinta
+     junto al resultado, nunca antes de tirar) — el resto de tiradas de la
+     app no la pasan, así que no les afecta. De paso, se corrigió un fallo
+     real detectado al construir esto: cuando `dificultadInicial` no
+     coincidía con ningún botón fijo (el 3 de Reparar Común, 7-4), el campo
+     "custom" se quedaba vacío en vez de mostrar el número — la tirada ya lo
+     usaba bien internamente, era solo un fallo de visualización.
 
 ### Fase 5 — Poderes, dotes, aumentos, especies reales ⬜ (bloqueado por el diseñador)
 El diseñador (Murillo) aún no ha escrito estos documentos. No hay reglas que adelantar,

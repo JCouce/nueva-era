@@ -168,6 +168,7 @@ export function AccionModal({
   dificultadInicial,
   circunstancialInicial,
   resultado,
+  notaResultado,
   onTirarDanio,
   onCerrar,
   onTirar,
@@ -198,6 +199,12 @@ export function AccionModal({
   // y pasa a mostrar el resultado in-place, sin cerrarse — corrección de UX
   // 2026-09-23 (ver ResultadoTirada.tsx). null mientras se eligen condiciones.
   resultado: Lanzamiento | null;
+  // Mensaje sobre el EFECTO de esta tirada en concreto (Fabricar/Reparar:
+  // "Has construido X" / "Has perdido los materiales"), no información de
+  // la pieza como `nota` — por eso solo se pinta junto al resultado, nunca
+  // antes de tirar, y por eso el resto de tiradas de la app no lo usan
+  // (dejan el prop sin pasar, ver FabricarSeccion.tsx/ReparaFabricaModal.tsx).
+  notaResultado?: string;
   onTirarDanio: () => void;
   onCerrar: () => void;
   onTirar: (args: {
@@ -333,6 +340,11 @@ export function AccionModal({
           {resultado && !rodando && (
             <div className="mt-4 border-t border-border pt-3">
               <ContenidoResultado resultado={resultado} onTirarDanio={onTirarDanio} />
+              {notaResultado && (
+                <p className="mt-3 border-l-2 border-accent pl-2 font-sans text-[12px] font-semibold leading-relaxed text-accent">
+                  {notaResultado}
+                </p>
+              )}
               {notas.length > 0 && (
                 <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
                   {notas.map((n, i) => (
