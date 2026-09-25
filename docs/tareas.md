@@ -504,12 +504,9 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
    herramientas.md` antes de borrarlo** (ese archivo era clasificación estructural
    puntual, ya cumplió su función — esto es lo único que no estaba ya en
    `docs/equipo-efectos-especiales.md` ni en `docs/sistema.md`):
-   - **`defensa` de Escudos sin acción (Rodela, Escudo, sus dos versiones de
-     metamaterial, y Escudo de Kerzul — 5 piezas).** Distinto de la decisión de
-     hoy sobre "levantar escudo" (esa sí quedó resuelta sin código): esto es que
-     el `blindaje` propio del escudo no se suma a ningún cálculo, y sus
-     `puntosGolpe` no tienen ningún sitio donde restarles daño — el escudo no
-     puede "romperse" hoy aunque el dato ya existe. Sin construir.
+   - **`defensa.puntosGolpe` de Escudos (durabilidad/roto) — en construcción
+     2026-09-25, ver tarea 8 más abajo.** `defensa.blindaje` sigue bloqueado
+     por la pregunta 29 (absorción de daño, sin relación con esto).
    - **Mangual — "ignora N de Cobertura física" en modo Estándar.** Modificador
      numérico condicionado al modo, mecanizable con el mecanismo 1 de
      `modificadores-tiradas.md` en cuanto se decida a qué tirada de "cobertura"
@@ -532,14 +529,11 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
    - **Xovromium — sin tirada fija de "manifestación psiónica".** Mismo
      bloqueo que Derivación Psiónica (arriba): depende de que exista Fase 5
      (Poderes). No urge.
-   - **Materiales Sofisticados/Avanzados — la más barata de arreglar de todo
-     el lote.** Prometen +2/+4 a la tirada fija `tecnica` ("Reparar/hackear/
-     fabricar"), mismo patrón exacto que ya resolvió la Valija Táctica Médica
-     (`{tipo:"tirada", alcance:{tiradaId:"tecnica"}, valor:N}`) — el único
-     fleco es que el bono depende de **poseer** el material, no de llevarlo
-     equipado (`sheet.equipo` hoy es "lo que llevas puesto"), lo que empalma
-     con la duda de `docs/motor.md` sobre si Materiales debería ser un
-     recurso "de stock" en vez de un `Consumible` simple.
+   - **Materiales Sofisticados/Avanzados — el +2/+4 a `tecnica` queda
+     APARCADO (decisión del usuario, 2026-09-25): es un fallo de diseño, la
+     rareza del material debe ser la capacidad para construir/reparar cosas
+     más raras, no un bono numérico a la tirada.** Absorbido por la tarea 8
+     de abajo (Fabricar y Reparar), que sustituye por completo esta entrada.
 
 6. **Rescatado 2026-09-24 de `barrido-armaduras-subsistemas-pesado.md` y
    `barrido-armas-fuego.md`** (mismo `docs/barrido-motor-2026-09-22/`, antes
@@ -594,6 +588,44 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
    Modificadas) — barato (lectura + anotación), da el mapa completo. La mayoría de
    lo ya marcado `✅ IMPLEMENTAR` con texto informativo ya se puede construir de
    verdad (el §8 existe); lo bloqueado por Hallazgo #3/#5 sigue esperando diseño.
+
+8. **Fabricar y Reparar — feature nueva, diseñada 2026-09-25, en construcción.**
+   Nace de dar de alta el bono de Materiales (arriba) y del hallazgo de
+   `defensa.puntosGolpe` de Escudos sin mecanismo (ítem 5) a la vez — el
+   usuario decidió unirlos en una sola pantalla dentro de la pestaña
+   **Acciones**, con dos áreas independientes. Diseño cerrado:
+   - **Materiales pasa de `Consumible` equipable a un recurso con cantidad**,
+     un pool de personaje (no por instancia) con 3 contadores — Sencillos/
+     Sofisticados/Avanzados —, comprado por unidades al precio ya transcrito
+     en `herramientas.ts` (250/500/750). Vive junto a RECURSOS, no en
+     `sheet.equipo`; las 3 piezas dejan de listarse en la Tienda.
+   - **Reparar (hoy solo Escudos, vía `defensa.puntosGolpe`):** reutiliza
+     `sheet.recursos` con un `TipoRecarga` nuevo (`"durabilidad"`,
+     `capacidadDePieza()` en `recursos.ts`) en vez de un array aparte — se
+     reconcilia solo al equipar un escudo, mismo mecanismo que ya reconcilia
+     munición/batería. Gastar **1 unidad de material de rareza ≥ la del
+     escudo** repara del todo (`actual = max`), sin tirada asociada (la
+     conexión recursos↔tiradas se deja para cuando la feature esté cerrada,
+     decisión del usuario). **Área siempre visible, sin requisito de VTF.**
+   - **Fabricar:** coste en materiales = **precio de catálogo completo**
+     (fuente: `docs/equipamiento.md:1130`, "igualar el precio del objeto" —
+     NO precio/2, se descartó esa idea). Rareza mínima = la del objeto;
+     cualquier tier de material ≥ esa rareza vale, el jugador elige de qué
+     tier paga (un solo tier, sin combinar varios). Alcance v1: solo piezas
+     "sueltas" sin nivel y sin host (armadura, arma, armaMelee, consumible,
+     armaPesada, munición/granada) — ni instalables (mejora/subsistema/
+     movimiento, necesitan elegir host) ni Herramientas con nivel (VTF,
+     Radar...). La UI solo manda el `catalogoId`; al fabricar se añade a
+     `sheet.equipo` exactamente igual que `equiparAction` (mismo `equipar()`,
+     mismo `nuevaInstanciaId()`), pagando en materiales en vez de créditos.
+     **Área visible solo con la VTF (`valija_tactica_fabricacion`) equipada
+     — cualquier nivel, la VTF no gatea rareza, solo dificultad/tiempo/
+     recuperación de materia prima (`herramientas.ts:36-105`).**
+   - Servidor recalcula todo con el catálogo, igual que `equiparAction`
+     (nunca confía en lo que mande el cliente).
+   - Etapas de construcción: 0) quitar Materiales de la Tienda, 1) pool de
+     materiales + compra, 2) durabilidad de Escudos + reparar, 3) fabricar +
+     gating VTF + UI en Acciones, 4) esta documentación. Commit por etapa.
 
 ### Fase 5 — Poderes, dotes, aumentos, especies reales ⬜ (bloqueado por el diseñador)
 El diseñador (Murillo) aún no ha escrito estos documentos. No hay reglas que adelantar,

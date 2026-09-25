@@ -17,7 +17,6 @@ import {
   RADAR,
   DISFRAZ_HOLOGRAFICO,
   ESCANER_DETECTOR,
-  MATERIALES,
   ARMAMENTO_PESADO,
   MUNICION_GRANADA,
   equipoPorId,
@@ -80,7 +79,7 @@ const CATEGORIAS = [
   { id: "mejorasArma", titulo: "Mejoras de arma", cantidad: MEJORAS_ARMA.length },
   { id: "movimiento", titulo: "Movimiento", cantidad: MOVIMIENTO.length },
   { id: "medicina", titulo: "Medicina", cantidad: 1 + FARMACOS.length },
-  { id: "herramientas", titulo: "Herramientas", cantidad: HERRAMIENTAS_CON_NIVEL.length + MATERIALES.length },
+  { id: "herramientas", titulo: "Herramientas", cantidad: HERRAMIENTAS_CON_NIVEL.length },
   {
     id: "armamentoPesado",
     titulo: "Armamento Pesado",
@@ -757,25 +756,6 @@ export function TiendaTab({
                   topeRareza={topeRareza}
                   onEquipar={onEquipar}
                 />
-              </Acordeon>
-            ))}
-            <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
-              {`// Materiales · ${MATERIALES.length}`}
-            </p>
-            {MATERIALES.map((p) => (
-              <Acordeon
-                key={p.id}
-                titulo={p.label}
-                resumen={p.resumen}
-                etiqueta={
-                  <div className="flex flex-col items-end gap-1">
-                    <BadgeRareza rareza={p.rareza} />
-                    <Precio coste={p.coste} />
-                  </div>
-                }
-              >
-                <DetalleConsumible p={p} />
-                <AccionSimple pieza={p} creditos={creditosEfectivos} topeRareza={topeRareza} onEquipar={onEquipar} />
               </Acordeon>
             ))}
           </>

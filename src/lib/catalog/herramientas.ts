@@ -284,23 +284,17 @@ export const HERRAMIENTAS_UNICAS: Herramienta[] = [
   ESCANER_DETECTOR,
 ];
 
-// "Permite construir hasta rareza X" no está mecanizado (grep confirma que
-// MATERIALES solo se usa en TiendaTab.tsx): ningún código valida rareza al
-// fabricar con la VTF, es puro gating narrativo/de tienda. Las 3 lo llevan.
+// "Permite construir hasta rareza X" y "+N a la tirada al reparar con la
+// valija" (columna Extra): ninguno de los dos se mecaniza como Modificador
+// numérico — decisión del usuario 2026-09-25 (docs/tareas.md, tarea 8,
+// "Fabricar y Reparar"): la rareza del material es la CAPACIDAD para
+// fabricar/reparar objetos de esa rareza, no un bono a una tirada existente.
+// Materiales deja de equiparse como pieza (ver MATERIALES más abajo) y pasa
+// a ser un recurso con cantidad; el efecto real vive en las acciones
+// Fabricar/Reparar de la pestaña Acciones, no aquí.
 const MOTOR_MATERIAL_RAREZA: MotorMetadata[] = [
   { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
 ];
-// Materiales Sofisticados/Avanzados además dan "+N a la tirada al reparar
-// con la valija" — tarea ya identificada como lista para construir
-// (docs/tareas.md, "Equipo — mecanizar efectos especiales por pieza",
-// mismo patrón que ya usa la VTM): hoy `modificadores: []`, sin construir
-// todavía.
-const MOTOR_MATERIAL_REPARAR: MotorMetadata = {
-  tipo: "numerico",
-  afecta: { modo: "accion_existente", id: "tecnica" },
-  mecanismo: "siempre_activo",
-  estado: "pendiente",
-};
 
 export const MATERIALES: Consumible[] = [
   {
@@ -335,7 +329,7 @@ export const MATERIALES: Consumible[] = [
     rareza: "Extraño",
     coste: 500,
     modificadores: [],
-    motor: [...MOTOR_MATERIAL_RAREZA, MOTOR_MATERIAL_REPARAR],
+    motor: MOTOR_MATERIAL_RAREZA,
   },
   {
     familia: "consumible",
@@ -352,6 +346,6 @@ export const MATERIALES: Consumible[] = [
     rareza: "Muy Extraño",
     coste: 750,
     modificadores: [],
-    motor: [...MOTOR_MATERIAL_RAREZA, MOTOR_MATERIAL_REPARAR],
+    motor: MOTOR_MATERIAL_RAREZA,
   },
 ];
