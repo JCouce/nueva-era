@@ -44,7 +44,7 @@ entonces vas a mirarlo.** El resto del archivo (debajo) es la referencia
 temática con el detalle completo de cada pieza; esta lista es el orden real.
 
 **Tier 1 — código puro, cero decisiones pendientes:**
-1. Derribo (4 armas de fuego, sección de abajo)
+1. ~~Derribo (4 armas de fuego, sección de abajo)~~ — ✅ hecho 2026-09-25 (9 armas, más Plasma SC/AAA tras cerrar la ambigüedad)
 2. Bayoneta (`docs/tareas.md`, ítem 6 — el bloqueo que tenía ya no existe)
 3. Materiales Sofisticados/Avanzados (`docs/tareas.md`, ítem 5 — copia el patrón de la VTM)
 4. Lanzagranadas, interpolar `areaEfecto` real (`docs/tareas.md`, ítem 6 — copia el patrón de `tiradaDeGranada`)
@@ -84,16 +84,22 @@ original).
 
 ---
 
-## Derribo (Knockdown) nunca se implementó
+## Derribo (Knockdown) — ✅ IMPLEMENTADO 2026-09-25
 
-**Antes de construir: `docs/equipo-efectos-especiales.md` ya tiene análisis más
-profundo de esto (verificado contra el PDF original, no solo contra el
-catálogo transcrito) — léelo antes, no repitas el análisis.**
+**Cerrado, con más alcance que este checklist original**: no solo las 4 armas
+listadas abajo — las **9** armas de fuego con "Efecto Derribo a Corta
+Distancia (N)" en `especial` (Feritas, Azra, S.A.79, Gong, Asina, Graviter,
+Zotrex, Matanza, Electro TK) llevan ahora `ArmaFuego.efectoDerribo` + nota
+condicionada a Corta/Bocajarro (`condicionTramo()`, `combate.ts`). Detalle
+completo y decisión sobre Plasma SC/Plasma AAA en
+`docs/equipo-efectos-especiales.md` §Armas de fuego.
 
-- [ ] Azra (`escopeta_azra`) — Derribo en Corta Distancia y a Bocajarro
-- [ ] S.A.79 (`escopeta_sa79`) — Derribo (regla genérica + versión cuantificada)
-- [ ] Plasma SG (`escopeta_plasma_sc`) — **ojo, caso ambiguo, no lo trates como los demás.** El barrido de hoy lo marca "falta" porque la `descripcion` sí promete Derribo ("como toda escopeta..."), pero `docs/equipo-efectos-especiales.md` (verificado contra el render del PDF, no `pdftotext`) ya encontró que la columna específica "Efecto" de las variantes de plasma (escopeta y ametralladora) NO repite Derribo con número, a diferencia del resto de su categoría — lectura más probable: usan esa casilla para su efecto elemental en vez de Derribo. Sin confirmar con Murillo. No implementar sin decidir esto primero.
-- [ ] Asina (`ametralladora_asina`) — Derribo a Bocajarro
+- [x] Azra (`escopeta_azra`) — Derribo en Corta Distancia y a Bocajarro
+- [x] S.A.79 (`escopeta_sa79`) — Derribo (regla genérica + versión cuantificada)
+- [x] ~~Plasma SG (`escopeta_plasma_sc`) — caso ambiguo~~ — **resuelto 2026-09-25 (el usuario): sí lleva Derribo, dificultad 9 (par de Gong).** Ya no es una pregunta abierta para Murillo.
+- [x] Asina (`ametralladora_asina`) — Derribo a Bocajarro
+- [x] Feritas, Gong, Graviter, Zotrex, Matanza, Electro TK — mismo fix, no estaban en la lista original de 4 pero tenían el mismo problema (`especial` prometía Derribo siempre, sin condicionar a tramo).
+- [x] Plasma AAA (`ametralladora_plasma_aaa`) — mismo caso ambiguo que Plasma SC, mismo resuelto: dificultad 11 (par de Matanza).
 
 ## `arma.uso` (armas melee) es etiqueta muerta — el motor solo la lee para Sutil
 

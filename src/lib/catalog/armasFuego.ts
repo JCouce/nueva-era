@@ -51,6 +51,16 @@ export type ArmaFuego = {
   // aviso para otra tirada que el motor no automatiza. Ver combate.ts,
   // tiradaDeArmaFuego. docs/sistema.md, pregunta 25b.
   notaTercero?: string;
+  // Derribo a Corta Distancia y a Bocajarro (escopetas/ametralladoras,
+  // docs/equipo-efectos-especiales.md §Armas de fuego): a diferencia de
+  // `notaTercero` (siempre activo), este solo aplica en esos dos tramos —
+  // mismo mecanismo "texto informativo condicionado" que ya usa
+  // condicionTramo() (OpcionCondicion.nota, docs/modificadores-tiradas.md
+  // §8), no `especial` (que se muestra siempre, sea cual sea el tramo
+  // elegido — el bug real que reportó el barrido). Objetivo_tercero: el
+  // objetivo tira su propia salvación contra `derribado` (catalog/estados.ts),
+  // el motor solo avisa. Valor = dificultad de esa salvación.
+  efectoDerribo?: number;
   pesoKg: number;
   rareza: Rareza;
   coste: number;
@@ -317,7 +327,8 @@ export const ARMAS: ArmaFuego[] = [
     alcance: { corta: 12, media: 32, larga: 58 },
     municion: 7,
     mejorasAdmitidas: 2,
-    especial: "Efecto Derribo a Corta Distancia (9) · Crítico de Aturdimiento (12)",
+    especial: "Crítico de Aturdimiento (12)",
+    efectoDerribo: 9,
     pesoKg: 4,
     rareza: "Común",
     coste: 250,
@@ -327,6 +338,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
     ],
   },
   {
@@ -343,7 +355,8 @@ export const ARMAS: ArmaFuego[] = [
     alcance: { corta: 16, media: 40, larga: 74 },
     municion: 8,
     mejorasAdmitidas: 3,
-    especial: "Efecto Derribo a Corta Distancia (8) · Crítico de Aturdimiento (11)",
+    especial: "Crítico de Aturdimiento (11)",
+    efectoDerribo: 8,
     pesoKg: 4,
     rareza: "Común",
     coste: 400,
@@ -353,6 +366,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
     ],
   },
   {
@@ -372,7 +386,8 @@ export const ARMAS: ArmaFuego[] = [
     alcance: { corta: 14, media: 36, larga: 68 },
     municion: 24,
     mejorasAdmitidas: 4,
-    especial: "Efecto Derribo a Corta Distancia (8) · Crítico de Aturdimiento (11) · F. Auto (Esquiva 8)",
+    especial: "Crítico de Aturdimiento (11) · F. Auto (Esquiva 8)",
+    efectoDerribo: 8,
     pesoKg: 6.5,
     rareza: "Poco Habitual",
     coste: 1200,
@@ -383,6 +398,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
     ],
   },
   {
@@ -402,7 +418,8 @@ export const ARMAS: ArmaFuego[] = [
     alcance: { corta: 14, media: 36, larga: 68 },
     municion: 12,
     mejorasAdmitidas: 4,
-    especial: "Efecto Derribo a Corta Distancia (9) · Crítico de Aturdimiento (14)",
+    especial: "Crítico de Aturdimiento (14)",
+    efectoDerribo: 9,
     pesoKg: 6,
     rareza: "Muy Extraño",
     coste: 12500,
@@ -412,6 +429,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
     ],
   },
   {
@@ -437,6 +455,12 @@ export const ARMAS: ArmaFuego[] = [
     mejorasAdmitidas: 2,
     especial: "Efecto Shock y Llamarada (8) · Crítico de Fusión (12) · F. Auto (Esquiva 10)",
     notaTercero: "-6 a la Alerta Activa de quien te detecta (percepción visual).",
+    // Decidido 2026-09-25 (el usuario): sí lleva Derribo como el resto de su
+    // categoría, pese a que "Efecto" no lo listaba con número en el PDF —
+    // dificultad 9, igual que Gong (mismo tramo de daño, danio 14). Cierra la
+    // ambigüedad de docs/equipo-efectos-especiales.md §Armas de fuego y del
+    // checklist 2026-09-24.
+    efectoDerribo: 9,
     pesoKg: 7.5,
     rareza: "Muy Extraño",
     coste: 56000,
@@ -448,6 +472,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" }, // decisión de 25b revertida 2026-09-24, ver Rayo Ligero
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
     ],
   },
   {
@@ -1042,7 +1067,8 @@ export const ARMAS: ArmaFuego[] = [
     alcance: { corta: 150, media: 450, larga: 900 },
     municion: 150,
     mejorasAdmitidas: 2,
-    especial: "Efecto Derribo a Corta Distancia (10) · Crítico de Aturdimiento (12) · F. Auto (Esquiva 9)",
+    especial: "Crítico de Aturdimiento (12) · F. Auto (Esquiva 9)",
+    efectoDerribo: 10,
     pesoKg: 10,
     rareza: "Común",
     coste: 4500,
@@ -1053,6 +1079,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
     ],
   },
   {
@@ -1072,7 +1099,8 @@ export const ARMAS: ArmaFuego[] = [
     alcance: { corta: 100, media: 300, larga: 600 },
     municion: 180,
     mejorasAdmitidas: 3,
-    especial: "Efecto Derribo a Corta Distancia (10) · Crítico de Aturdimiento (12) · F. Auto (Esquiva 9)",
+    especial: "Crítico de Aturdimiento (12) · F. Auto (Esquiva 9)",
+    efectoDerribo: 10,
     pesoKg: 12,
     rareza: "Poco Habitual",
     coste: 6000,
@@ -1083,6 +1111,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
     ],
   },
   {
@@ -1102,7 +1131,8 @@ export const ARMAS: ArmaFuego[] = [
     alcance: { corta: 166, media: 500, larga: 1000 },
     municion: 150,
     mejorasAdmitidas: 4,
-    especial: "Efecto Derribo a Corta Distancia (10) · Crítico de Aturdimiento (12) · F. Auto (Esquiva 9)",
+    especial: "Crítico de Aturdimiento (12) · F. Auto (Esquiva 9)",
+    efectoDerribo: 10,
     pesoKg: 9,
     rareza: "Poco Habitual",
     coste: 7000,
@@ -1113,6 +1143,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
     ],
   },
   {
@@ -1132,7 +1163,8 @@ export const ARMAS: ArmaFuego[] = [
     alcance: { corta: 150, media: 450, larga: 900 },
     municion: 200,
     mejorasAdmitidas: 4,
-    especial: "Efecto Derribo a Corta Distancia (11) · Crítico de Aturdimiento (13) · F. Auto (Esquiva 10)",
+    especial: "Crítico de Aturdimiento (13) · F. Auto (Esquiva 10)",
+    efectoDerribo: 11,
     pesoKg: 11.5,
     rareza: "Extraño",
     coste: 22000,
@@ -1143,6 +1175,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
     ],
   },
   {
@@ -1163,7 +1196,8 @@ export const ARMAS: ArmaFuego[] = [
     alcance: { corta: 200, media: 600, larga: 1200 },
     municion: 120,
     mejorasAdmitidas: 2,
-    especial: "Efecto Derribo a Corta Distancia (10) · Crítico de Llamarada (12) · F. Auto (Esquiva 10)",
+    especial: "Crítico de Llamarada (12) · F. Auto (Esquiva 10)",
+    efectoDerribo: 10,
     pesoKg: 16,
     rareza: "Muy Extraño",
     coste: 55000,
@@ -1174,6 +1208,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
     ],
   },
   {
@@ -1195,6 +1230,13 @@ export const ARMAS: ArmaFuego[] = [
     tipoMunicion: "energia",
     mejorasAdmitidas: 2,
     especial: "Efecto Shock y Llamarada (8) · Crítico de Fusión (12) · F. Auto (Esquiva 11)",
+    // Decidido 2026-09-25 (el usuario): sí lleva Derribo como el resto de su
+    // categoría, pese a que "Efecto" no lo listaba con número en el PDF —
+    // dificultad 11, igual que Matanza (mismo tramo de daño, la más alta de
+    // la categoría). Cierra la ambigüedad de
+    // docs/equipo-efectos-especiales.md §Armas de fuego y del checklist
+    // 2026-09-24.
+    efectoDerribo: 11,
     pesoKg: 10,
     rareza: "Muy Extraño",
     coste: 99000,
@@ -1205,6 +1247,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
     ],
   },
 ];

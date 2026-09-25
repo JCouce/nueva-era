@@ -645,26 +645,26 @@ de control.
   Llamarada al impactar, Crítico de Fusión en su lugar, dificultad 11-14 según el
   modelo).
 - `Efecto Derribo a Corta Distancia (N)` (Feritas, Azra, S.A.79, Gong, Asina, Graviter,
-  Zotrex, Matanza, Electro TK): **✅ IMPLEMENTAR** con la variante por tramo (ver
-  "El mecanismo genérico" arriba). El estado `derribado` en sí **ya existe entero**
-  (`catalog/estados.ts`) — falta solo el aviso, no el estado. **Nota (2026-09-12,
-  pregunta del usuario):** el **+1 al ataque** que además llevan las escopetas en
-  Corta/Bocajarro (característica de familia, no de esta columna) **ya está
-  implementado** — `ajusteTramoBase()` en `combate.ts` ya lo suma solo para
+  Zotrex, Matanza, Electro TK, Plasma SC, Plasma AAA): **✅ IMPLEMENTADO 2026-09-25**
+  — `ArmaFuego.efectoDerribo` + nota condicionada a Corta/Bocajarro en
+  `condicionTramo()` (`combate.ts`), mismo mecanismo "texto informativo condicionado"
+  que Visor Nocturno/Térmico (`OpcionCondicion.nota`, docs/modificadores-tiradas.md
+  §8) — no `especial`, que se veía siempre sin importar el tramo elegido (el bug que
+  reportó el barrido motorMetadata-vs-prosa 2026-09-24). El estado `derribado` en sí
+  ya existía entero (`catalog/estados.ts`). El **+1 al ataque** que además llevan las
+  escopetas en Corta/Bocajarro (característica de familia, no de esta columna) ya
+  estaba implementado aparte — `ajusteTramoBase()` en `combate.ts`, solo para
   `tipo === "escopeta"` (y el -2 de fusiles de precisión, la otra excepción de
-  familia, también). El Derribo en sí no lleva ese +1, son dos cosas separadas que
-  coinciden en el mismo tramo. **Hallazgo menor, confirmado contra el render del PDF
-  (páginas 18 y 23-24, no solo pdftotext, 2026-09-13)**: las versiones de plasma de
-  escopeta y ametralladora (Plasma SC, Plasma AAA) son las únicas de sus categorías
-  cuya columna "Efecto"/"Efectos" no lista "Derribo a Corta Distancia" — solo llevan
-  "Efecto Shock y Llamarada · Crítico de Fusión · F. Auto (Esquiva N)", pese a que la
-  característica general de la categoría dice que TODAS las escopetas/ametralladoras
-  causan Derribo en esos rangos. No es un artefacto de extracción de texto, está así
-  en el propio render. Lectura más probable: las versiones de plasma usan esa misma
-  casilla para su efecto elemental en vez de sumar también Derribo (una pieza, un
-  efecto especial) — consistente en las dos categorías, así que parece intencional y
-  no un descuido puntual, pero sigue siendo lectura nuestra, no una frase explícita
-  del documento que lo diga.
+  familia). El Derribo en sí no lleva ese +1, son dos cosas separadas que coinciden
+  en el mismo tramo.
+  **Plasma SC/Plasma AAA, ambigüedad cerrada 2026-09-25 (el usuario):** confirmado
+  contra el render del PDF (páginas 18 y 23-24, no solo pdftotext, 2026-09-13) que
+  las versiones de plasma de escopeta y ametralladora son las únicas de sus
+  categorías cuya columna "Efecto"/"Efectos" no lista "Derribo a Corta Distancia"
+  con número — pese a eso, **sí llevan Derribo**, como el resto de su categoría; la
+  columna "Efecto" del PDF simplemente no lo repetía junto al efecto elemental. Sin
+  cifra propia en la fuente, se les asignó la dificultad de su par de mayor daño:
+  Plasma SC → 9 (par de Gong), Plasma AAA → 11 (par de Matanza).
 - `F. Auto (Esquiva N)`: **✅ IMPLEMENTAR (corregido 2026-09-12)**. Duda del usuario que
   destapó el error: se había marcado "ignorar" razonando solo "es la tirada de un
   tercero, no la resuelve la app" — cierto, pero eso no es motivo para no *enseñarla*.

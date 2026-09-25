@@ -57,6 +57,19 @@ function etiquetaTramo(tramo: TramoDistancia, alcance: ArmaFuego["alcance"]): st
 // del tipo de arma (con las excepciones de familia). Lo que module una
 // mejora instalada (mira telescópica y lo que llegue después) NO se funde
 // aquí — sale aparte, con su fuente, en bonosTramoDeMejoras.
+// Derribo a Corta Distancia y a Bocajarro (docs/equipo-efectos-especiales.md
+// §Armas de fuego): objetivo_tercero, el motor no lo resuelve, solo avisa —
+// mismo "texto informativo condicionado" que ya usa la opción de tramo para
+// otros casos (Visor Nocturno/Térmico sobre alerta_activa,
+// docs/modificadores-tiradas.md §8), no `arma.especial` (que se vería
+// siempre, sea cual sea el tramo elegido — el bug que reportó el barrido
+// motorMetadata-vs-prosa 2026-09-24).
+function notaDerribo(arma: ArmaFuego, tramo: TramoDistancia): string | undefined {
+  if (!arma.efectoDerribo) return undefined;
+  if (tramo !== "corta" && tramo !== "bocajarro") return undefined;
+  return `Derribo — el objetivo tira su propia salvación, dificultad ${arma.efectoDerribo}.`;
+}
+
 function condicionTramo(arma: ArmaFuego): CondicionTirada {
   const ajuste = ajusteTramoBase(arma.tipo);
   return {
@@ -67,6 +80,7 @@ function condicionTramo(arma: ArmaFuego): CondicionTirada {
       id: tramo,
       etiqueta: etiquetaTramo(tramo, arma.alcance),
       valor: ajuste[tramo],
+      nota: notaDerribo(arma, tramo),
     })),
     porDefecto: "media",
   };

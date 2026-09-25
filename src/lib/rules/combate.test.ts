@@ -23,6 +23,13 @@ function opcion(c: CondicionTirada | undefined, id: string) {
   return o.valor;
 }
 
+function opcionNota(c: CondicionTirada | undefined, id: string) {
+  assert.ok(c && c.tipo === "opcion", "no es una condición de opción");
+  const o = c.opciones.find((x) => x.id === id);
+  assert.ok(o, `no existe la opción ${id}`);
+  return o.nota;
+}
+
 describe("sin nada equipado", () => {
   test("no aparece ningún ataque, ni siquiera puñetazo o patada", () => {
     assert.deepEqual(accionesDeAtaque(defaultSheet()), []);
@@ -77,6 +84,40 @@ describe("arma de fuego equipada", () => {
     assert.equal(opcion(tramo, "corta"), 3);
     assert.equal(opcion(tramo, "media"), 0);
     assert.equal(opcion(tramo, "larga"), -2);
+  });
+
+  test("Derribo: nota condicionada a Corta/Bocajarro, no un texto siempre presente (Feritas)", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "escopeta_feritas" });
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Feritas")!;
+    const tramo = fila.condiciones?.find((c) => c.id === "tramo");
+    assert.match(opcionNota(tramo, "bocajarro")!, /Derribo.*dificultad 9/);
+    assert.match(opcionNota(tramo, "corta")!, /Derribo.*dificultad 9/);
+    assert.equal(opcionNota(tramo, "media"), undefined);
+    assert.equal(opcionNota(tramo, "larga"), undefined);
+    assert.equal(fila.nota, "Crítico de Aturdimiento (12)");
+  });
+
+  test("Plasma SG y Plasma AAA también llevan Derribo (decidido 2026-09-25, cierra la ambigüedad del PDF)", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "escopeta_plasma_sc" });
+    sheet = equipar(sheet, { instanciaId: "arma2", catalogoId: "ametralladora_plasma_aaa" });
+    const plasmaSg = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Plasma SG")!;
+    const plasmaAaa = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Plasma AAA")!;
+    assert.match(opcionNota(plasmaSg.condiciones?.find((c) => c.id === "tramo"), "corta")!, /Derribo.*dificultad 9/);
+    assert.match(
+      opcionNota(plasmaAaa.condiciones?.find((c) => c.id === "tramo"), "bocajarro")!,
+      /Derribo.*dificultad 11/,
+    );
+  });
+
+  test("un arma sin efectoDerribo no lleva nota de Derribo en ningún tramo (Plaga)", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_precision_plaga" });
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Plaga")!;
+    const tramo = fila.condiciones?.find((c) => c.id === "tramo");
+    assert.equal(opcionNota(tramo, "bocajarro"), undefined);
+    assert.equal(opcionNota(tramo, "corta"), undefined);
   });
 
   test("un arma con dos modos trae la condición de modo", () => {
