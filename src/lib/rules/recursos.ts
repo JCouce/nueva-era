@@ -196,13 +196,20 @@ export function comprarRecarga(
 }
 
 // Repara una pieza con durabilidad (hoy solo Escudos): gasta 1 unidad del
-// tier dado y restaura `actual = max` de un golpe (decisión del usuario,
-// 2026-09-25 — no hay tirada asociada todavía). Silencioso si no hay nada
+// tier dado y, con éxito, restaura `actual = max` de un golpe (no reparte
+// éxitos por nivel de daño como la prosa general de la VTF — Escudos son un
+// pool de PG, no categorías de daño; -4 a la dificultad SÍ se respeta, ver
+// dificultadReparar() en ReparaFabricaModal.tsx). Silencioso si no hay nada
 // que reparar o no llega el stock — mismo criterio que equipar(): quien
 // llama (la action) ya valida rareza suficiente con rarezaDePieza() +
 // rarezaMaterial() + rarezaPermitida() ANTES de invocar esto, igual que
 // equiparAction valida el tope de rareza antes de llamar a equipar().
-export function repararPieza(sheet: Sheet, instanciaId: string, tier: MaterialTier): Sheet {
+//
+// `exito` (corrección 2026-09-25, segunda revisión — Reparar se había
+// quedado sin dado tras corregir Fabricar): el material se gasta SIEMPRE,
+// salga lo que salga, mismo criterio que fabricar() — solo con éxito se
+// aplica la reparación.
+export function repararPieza(sheet: Sheet, instanciaId: string, tier: MaterialTier, exito: boolean): Sheet {
   const pieza = sheet.equipo.find((p) => p.instanciaId === instanciaId);
   const recurso = recursoDe(sheet, instanciaId);
   if (!pieza || !recurso) return sheet;
@@ -211,10 +218,12 @@ export function repararPieza(sheet: Sheet, instanciaId: string, tier: MaterialTi
   if (recurso.actual >= recurso.max) return sheet;
   if (sheet.materiales[tier] < 1) return sheet;
 
+  const sinMaterial: Sheet = { ...sheet, materiales: { ...sheet.materiales, [tier]: sheet.materiales[tier] - 1 } };
+  if (!exito) return sinMaterial;
+
   return {
-    ...sheet,
-    materiales: { ...sheet.materiales, [tier]: sheet.materiales[tier] - 1 },
-    recursos: sheet.recursos.map((r) => (r.instanciaId === instanciaId ? { ...r, actual: r.max } : r)),
+    ...sinMaterial,
+    recursos: sinMaterial.recursos.map((r) => (r.instanciaId === instanciaId ? { ...r, actual: r.max } : r)),
   };
 }
 

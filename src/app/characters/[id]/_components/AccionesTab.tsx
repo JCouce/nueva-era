@@ -213,11 +213,11 @@ function FilaTirada({
 
 // Reparar y Fabricar (docs/tareas.md, tarea 8): una fila más en el grupo
 // "Acciones", mismo lenguaje visual que FilaTirada (HudCard, título +
-// botón), pero sin dado — "Abrir" en vez de "Tirar" lleva al modal
-// combinado (ReparaFabricaModal.tsx). Antes eran dos huecos sueltos fuera
-// de la lista de acciones (una sección siempre visible + un botón aparte);
-// unificarlos aquí evita que la tirada fija "tecnica" (ahora solo Hackeo)
-// se quede huérfana de su propio Reparar/Fabricar.
+// botón) — "Abrir" en vez de "Tirar" lleva al modal combinado
+// (ReparaFabricaModal.tsx), esta fila en sí no tira. Antes eran dos huecos
+// sueltos fuera de la lista de acciones (una sección siempre visible + un
+// botón aparte); unificarlos aquí evita que la tirada fija "tecnica" (ahora
+// solo Hackeo) se quede huérfana de su propio Reparar/Fabricar.
 function FilaReparaFabrica({ onAbrir }: { onAbrir: () => void }) {
   return (
     <HudCard className="p-3">
@@ -227,7 +227,7 @@ function FilaReparaFabrica({ onAbrir }: { onAbrir: () => void }) {
             Reparar y Fabricar
           </span>
           <span className="mt-1 block font-mono text-[10px] uppercase text-muted">
-            Gasta Materiales, sin tirada
+            Tira dado al reparar o construir
           </span>
         </div>
         <button
@@ -251,6 +251,7 @@ export function AccionesTab({
   setMemoria,
   onReparar,
   onFabricar,
+  libre = false,
 }: {
   sheet: Sheet;
   // Fase 6b, 3.1b (D5: combate → ficha): los estados que el máster le tenga
@@ -273,10 +274,19 @@ export function AccionesTab({
   // Ausente en NpcAccionesPanel.tsx (combate en vivo): ese `sheet` es la foto
   // congelada de un Combatiente, sin characterId/npcId al que persistir un
   // gasto de materiales — la sección Reparación no tiene sentido ahí y no se
-  // pinta.
-  onReparar?: (instanciaId: string, tier: MaterialTier) => void;
-  // Mismo motivo que onReparar: ausente en el combate en vivo.
-  onFabricar?: (catalogoId: string, tier: MaterialTier) => void;
+  // pinta. `exito` (corrección 2026-09-25, segunda revisión): resultado de
+  // la tirada de Reparar ya resuelta en el cliente (ReparaFabricaModal.tsx)
+  // — NpcEditor.tsx (edición libre, sin tirada) ignora este tercer argumento.
+  onReparar?: (instanciaId: string, tier: MaterialTier, exito: boolean) => void;
+  // Mismo motivo que onReparar: ausente en el combate en vivo. `exito`
+  // (corrección 2026-09-25): resultado de la tirada de Fabricar ya resuelta
+  // en el cliente (FabricarSeccion.tsx) — NpcEditor.tsx (edición libre, sin
+  // tirada) ignora este tercer argumento, ver su propio commitFabricar.
+  onFabricar?: (catalogoId: string, tier: MaterialTier, exito: boolean) => void;
+  // NpcEditor.tsx (edición libre de máster): la tirada de Fabricar no aplica
+  // — FabricarSeccion la salta y llama a onFabricar directo con éxito fijo,
+  // mismo criterio que AtributosTab/HabilidadesTab con este mismo prop.
+  libre?: boolean;
 }) {
   const mods = [...modificadoresActivos(sheet), ...modificadoresDeEstados(estadosCombate)];
   const [reparaFabricaAbierta, setReparaFabricaAbierta] = useState(false);
@@ -516,8 +526,13 @@ export function AccionesTab({
       {reparaFabricaAbierta && onReparar && (
         <ReparaFabricaModal
           sheet={sheet}
+          mods={mods}
+          setHistorial={setHistorial}
+          memoria={memoria}
+          setMemoria={setMemoria}
           onReparar={onReparar}
           onFabricar={onFabricar}
+          libre={libre}
           onCerrar={() => setReparaFabricaAbierta(false)}
         />
       )}

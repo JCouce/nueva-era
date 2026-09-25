@@ -265,7 +265,9 @@ export async function comprarMaterialNpcAction(npcId: string, tier: MaterialTier
 
 // Fabricar: sin requisito de VTF ni tope de rareza (edición libre, mismo
 // criterio que equiparNpcAction/repararNpcAction) — solo hace falta que
-// haya stock suficiente del tier.
+// haya stock suficiente del tier. Tampoco tira dado (a diferencia del PJ,
+// fabricarAction): `exito: true` fijo, edición libre significa sin azar
+// tampoco, no solo sin tope de rareza.
 export async function fabricarNpcAction(
   npcId: string,
   catalogoId: string,
@@ -273,13 +275,14 @@ export async function fabricarNpcAction(
 ): Promise<NpcResult> {
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  const sheet = fabricar(ctx.sheet, catalogoId, tier);
+  const sheet = fabricar(ctx.sheet, catalogoId, tier, true);
   if (sheet === ctx.sheet) return { ok: false, error: "No se pudo fabricar (id inválido o sin materiales)." };
   return persist(npcId, sheet);
 }
 
 // Reparar: sin tope de rareza (edición libre, mismo criterio que
-// equiparNpcAction) — solo hace falta que haya stock del tier.
+// equiparNpcAction) — solo hace falta que haya stock del tier. Tampoco tira
+// dado, mismo criterio que fabricarNpcAction: `exito: true` fijo.
 export async function repararNpcAction(
   npcId: string,
   instanciaId: string,
@@ -287,7 +290,7 @@ export async function repararNpcAction(
 ): Promise<NpcResult> {
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  const sheet = repararPieza(ctx.sheet, instanciaId, tier);
+  const sheet = repararPieza(ctx.sheet, instanciaId, tier, true);
   if (sheet === ctx.sheet) return { ok: false, error: "No hay nada que reparar ahí (o no tienes materiales)." };
   return persist(npcId, sheet);
 }

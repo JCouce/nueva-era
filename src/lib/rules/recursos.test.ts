@@ -175,34 +175,42 @@ describe("repararPieza", () => {
     return s;
   }
 
-  test("gasta 1 unidad del tier y restaura actual = max", () => {
-    const s = repararPieza(conEscudoDanado(3), "s1", "sencillos");
+  test("con éxito, gasta 1 unidad del tier y restaura actual = max", () => {
+    const s = repararPieza(conEscudoDanado(3), "s1", "sencillos", true);
     assert.deepEqual(recursoDe(s, "s1"), { instanciaId: "s1", actual: 8, max: 8 });
     assert.equal(s.materiales.sencillos, 1);
   });
 
-  test("sin stock de ese tier no hace nada", () => {
+  // Corrección 2026-09-25 (segunda revisión): Reparar también exige tirada
+  // — el material se gasta igual si sale mal, pero no repara nada.
+  test("sin éxito, gasta el material igual pero no repara nada", () => {
+    const s = repararPieza(conEscudoDanado(3), "s1", "sencillos", false);
+    assert.deepEqual(recursoDe(s, "s1"), { instanciaId: "s1", actual: 3, max: 8 });
+    assert.equal(s.materiales.sencillos, 1);
+  });
+
+  test("sin stock de ese tier no hace nada, ni siquiera con éxito", () => {
     const s = conEscudoDanado(3);
-    const s2 = repararPieza(s, "s1", "avanzados"); // 0 avanzados
+    const s2 = repararPieza(s, "s1", "avanzados", true); // 0 avanzados
     assert.equal(s2, s);
   });
 
   test("una pieza ya al máximo no gasta nada", () => {
     const s = conEscudoDanado(8); // sin daño
-    const s2 = repararPieza(s, "s1", "sencillos");
+    const s2 = repararPieza(s, "s1", "sencillos", true);
     assert.equal(s2, s);
   });
 
   test("una instancia sin durabilidad (ni recurso) no hace nada", () => {
     let s = equipar(defaultSheet(), { instanciaId: "arm1", catalogoId: "armadura_ligera" });
     s = ajustarMaterial(s, "sencillos", 2);
-    const s2 = repararPieza(s, "arm1", "sencillos");
+    const s2 = repararPieza(s, "arm1", "sencillos", true);
     assert.equal(s2, s);
   });
 
   test("una instancia que no existe no hace nada", () => {
     const s = ajustarMaterial(defaultSheet(), "sencillos", 2);
-    const s2 = repararPieza(s, "no-existe", "sencillos");
+    const s2 = repararPieza(s, "no-existe", "sencillos", true);
     assert.equal(s2, s);
   });
 });

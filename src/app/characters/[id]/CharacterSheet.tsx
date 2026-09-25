@@ -324,11 +324,15 @@ export function CharacterSheet({
   };
   // Sin actualización optimista: la rareza suficiente y el stock se validan
   // en el servidor (mismo criterio que commitComprarMaterial/commitRecargar).
-  const commitReparar = (instanciaId: string, tier: MaterialTier) => {
-    runSave(() => repararAction(characterId, instanciaId, tier), setSheet);
+  // exito: mismo criterio que commitFabricar, ver el comentario de repararAction.
+  const commitReparar = (instanciaId: string, tier: MaterialTier, exito: boolean) => {
+    runSave(() => repararAction(characterId, instanciaId, tier, exito), setSheet);
   };
-  const commitFabricar = (catalogoId: string, tier: MaterialTier) => {
-    runSave(() => fabricarAction(characterId, catalogoId, tier), setSheet);
+  // exito llega ya resuelto por el cliente: la tirada de Fabricar (dado +
+  // dificultad) se juega en AccionModal, dentro de FabricarSeccion, antes de
+  // llamar aquí — ver el comentario de fabricarAction.
+  const commitFabricar = (catalogoId: string, tier: MaterialTier, exito: boolean) => {
+    runSave(() => fabricarAction(characterId, catalogoId, tier, exito), setSheet);
   };
 
   // ── Identidad (debounced, fire-and-forget). ──

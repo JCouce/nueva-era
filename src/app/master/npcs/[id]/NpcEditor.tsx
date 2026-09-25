@@ -235,12 +235,17 @@ export function NpcEditor({
     if (res.ok) setSheet(res.sheet);
     setStatus(res.ok ? "saved" : "error");
   };
+  // Sin `exito`: edición libre de NPC, sin tirada (ver el comentario de
+  // repararNpcAction) — mismo criterio que commitFabricar.
   const commitReparar = async (instanciaId: string, tier: MaterialTier) => {
     setStatus("saving");
     const res = await repararNpcAction(npcId, instanciaId, tier);
     if (res.ok) setSheet(res.sheet);
     setStatus(res.ok ? "saved" : "error");
   };
+  // Sin `exito`: edición libre de NPC, sin tirada (ver el comentario de
+  // fabricarNpcAction) — el tercer parámetro de `onFabricar` (AccionesTab,
+  // compartido con CharacterSheet.tsx) no aplica aquí, TS lo deja pasar.
   const commitFabricar = async (catalogoId: string, tier: MaterialTier) => {
     setStatus("saving");
     const res = await fabricarNpcAction(npcId, catalogoId, tier);
@@ -337,6 +342,7 @@ export function NpcEditor({
             setMemoria={setAccionesMemoria}
             onReparar={commitReparar}
             onFabricar={commitFabricar}
+            libre
           />
         </div>
       )}

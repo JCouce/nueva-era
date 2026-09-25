@@ -361,10 +361,15 @@ export async function comprarMaterialAction(
 // Fabricar), pero sí de rareza — mismo criterio que equiparAction con el
 // tope de rareza: se valida aquí, con rarezaPermitida(), ANTES de llamar a
 // la función pura, que ya no vuelve a comprobarlo (ver su comentario).
+//
+// `exito`: mismo criterio que fabricarAction — la tirada (Perspicacia +
+// habilidad técnica, -4 a la dificultad) se juega en el cliente (AccionModal,
+// dentro de ReparaFabricaModal.tsx) antes de llamar aquí.
 export async function repararAction(
   characterId: string,
   instanciaId: string,
   tier: MaterialTier,
+  exito: boolean,
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
@@ -379,7 +384,7 @@ export async function repararAction(
   }
   if (ctx.sheet.materiales[tier] < 1) return { ok: false, error: "No tienes materiales de ese tier." };
 
-  const sheet = repararPieza(ctx.sheet, instanciaId, tier);
+  const sheet = repararPieza(ctx.sheet, instanciaId, tier, exito);
   if (sheet === ctx.sheet) return { ok: false, error: "Esa pieza ya está al máximo de durabilidad." };
   return persist(characterId, sheet);
 }
@@ -389,10 +394,20 @@ export async function repararAction(
 // llamar a la función pura — mismo criterio que equiparAction/repararAction.
 // La UI solo manda el catalogoId, nunca coste ni rareza: se recalculan aquí
 // con el catálogo, igual que el resto de acciones de compra.
+//
+// `exito`: el cliente ya tiró el dado (mismo AccionModal que cualquier otra
+// tirada, ver FabricarSeccion.tsx) antes de llamar aquí — el servidor no
+// repite esa tirada, igual que no repite ninguna otra del motor (el azar de
+// TODAS las tiradas de la app es del cliente, no hay RNG de servidor en
+// ningún sitio; confiar en el cliente para el resultado no es un hueco nuevo
+// de esta feature). Lo que el servidor sigue validando es lo de siempre:
+// VTF equipada, rareza y stock — `exito` solo decide si, además de gastar el
+// material, se entrega la pieza.
 export async function fabricarAction(
   characterId: string,
   catalogoId: string,
   tier: MaterialTier,
+  exito: boolean,
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
@@ -409,7 +424,7 @@ export async function fabricarAction(
     return { ok: false, error: `Necesitas material de rareza ${cat.rareza} o superior.` };
   }
 
-  const sheet = fabricar(ctx.sheet, catalogoId, tier);
+  const sheet = fabricar(ctx.sheet, catalogoId, tier, exito);
   if (sheet === ctx.sheet) return { ok: false, error: "No tienes materiales suficientes de ese tier." };
   return persist(characterId, sheet);
 }

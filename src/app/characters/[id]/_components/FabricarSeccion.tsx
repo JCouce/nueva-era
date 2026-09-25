@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import {
   ARMADURAS,
   ARMAS,
@@ -10,9 +10,13 @@ import {
   ARMAMENTO_PESADO,
   MUNICION_GRANADA,
   MATERIAL_TIERS,
+  RAREZA_ORDEN,
   rarezaMaterial,
   precioMaterial,
   rarezaPermitida,
+  modificadorAccion,
+  resolverTirada,
+  bonoAlcance,
   type Armadura,
   type ArmaFuego,
   type ArmaMelee,
@@ -22,8 +26,13 @@ import {
   type Rareza,
   type Materiales,
   type MaterialTier,
+  type Accion,
+  type Sheet,
+  type ModificadorConFuente,
 } from "@/lib/rules";
 import { Acordeon } from "@/components/Acordeon";
+import { AccionModal } from "@/components/AccionModal";
+import { type Lanzamiento } from "@/components/ResultadoTirada";
 import {
   BadgeRareza,
   DetalleArmadura,
@@ -43,6 +52,24 @@ import { TIPOS_ARMA } from "./TiendaTab";
 // abajo, para que "Reparar" y "Fabricar" sean una sola acción — nada de
 // buscador de texto en móvil, un menú por categorías es más tocable con el
 // pulgar que una lista larga con scroll.
+//
+// Corrección de diseño 2026-09-25 (segunda pasada, tras revisión del
+// usuario): Construir SÍ exige tirada — docs/equipamiento.md:1078-1081,
+// Perspicacia + Tecnociencia o Biociencia, dificultad 7 +2 por rango de
+// rareza. El gasto de materiales sigue siendo automático (fabricar(),
+// rules/equipo.ts), pero ahora solo se entrega la pieza si la tirada sale
+// bien — el material se gasta SIEMPRE, decisión explícita del usuario
+// ("se gastan los materiales igual, falles o no"). La tirada reutiliza el
+// mismo AccionModal que cualquier otra (mismo dado, misma transición,
+// mismo desglose) montado aquí mismo, como overlay sobre este modal — NO se
+// enruta por el `modal` único de AccionesTab.tsx a propósito: hacerlo
+// obligaría a cerrar Reparar y Fabricar para tirar, perdiendo la categoría/
+// pieza que el jugador tenía abierta. Si reutilizamos algo de AccionesTab es
+// el propio historial/memoria (props `setHistorial`/`memoria`/`setMemoria`,
+// ya levantados en CharacterSheet.tsx) para que la tirada aparezca en
+// "Acciones recientes" igual que cualquier otra — no un historial paralelo.
+// "Gran calidad" (éxito crítico) queda sin mecanizar a propósito, pedido
+// explícito del usuario: primero esto, luego eso.
 const ARMAS_MELEE_FABRICABLES = ARMAS_MELEE.filter(
   (p) => !ARMAS_MELEE_KERZUL.includes(p) && p.coste !== null,
 );
@@ -68,6 +95,11 @@ const ETIQUETA_TIER: Record<MaterialTier, string> = {
   sofisticados: "Sofisticados",
   avanzados: "Avanzados",
 };
+
+// Pieza mínima que necesita esta sección — más campos de los que declara
+// `AccionFabricar` en su tipo de abajo, pero TS deja pasar el resto (los
+// llamadores reales traen Armadura/ArmaFuego/etc. completos).
+type PiezaFabricable = { id: string; label: string; rareza: Rareza; coste: number };
 
 function Tile({
   titulo,
@@ -113,14 +145,22 @@ function tierPorDefecto(rareza: Rareza): MaterialTier {
   return MATERIAL_TIERS[MATERIAL_TIERS.length - 1];
 }
 
+// Dificultad sugerida de la tirada de Fabricar (docs/equipamiento.md:1078-
+// 1081): base 7 para Común, +2 por cada rango de rareza superior. Editable a
+// mano en el propio AccionModal, igual que Radar/Escáner — esto es solo el
+// valor con el que se abre.
+function dificultadFabricar(rareza: Rareza): number {
+  return 7 + 2 * RAREZA_ORDEN.indexOf(rareza);
+}
+
 function AccionFabricar({
   pieza,
   materiales,
-  onFabricar,
+  onConstruir,
 }: {
-  pieza: { id: string; rareza: Rareza; coste: number };
+  pieza: PiezaFabricable;
   materiales: Materiales;
-  onFabricar: (catalogoId: string, tier: MaterialTier) => void;
+  onConstruir: (pieza: PiezaFabricable, tier: MaterialTier) => void;
 }) {
   const [tier, setTier] = useState<MaterialTier>(() => tierPorDefecto(pieza.rareza));
 
@@ -155,7 +195,7 @@ function AccionFabricar({
       </div>
       <button
         type="button"
-        onClick={() => onFabricar(pieza.id, tier)}
+        onClick={() => onConstruir(pieza, tier)}
         disabled={!cabeRareza || sinStock}
         className="clip-chamfer-sm mt-2 w-full border border-accent bg-accent py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted"
       >
@@ -177,35 +217,125 @@ function AccionFabricar({
 
 // `resumen` aparte de `p` (no leído de p.resumen): las granadas no tienen
 // ese campo, usan `areaEfecto` como resumen (mismo criterio que TiendaTab).
-function FilaFabricable<T extends { id: string; label: string; rareza: Rareza; coste: number }>({
+function FilaFabricable<T extends PiezaFabricable>({
   p,
   resumen,
   materiales,
-  onFabricar,
+  onConstruir,
   children,
 }: {
   p: T;
   resumen: string;
   materiales: Materiales;
-  onFabricar: (catalogoId: string, tier: MaterialTier) => void;
+  onConstruir: (pieza: PiezaFabricable, tier: MaterialTier) => void;
   children: React.ReactNode;
 }) {
   return (
     <Acordeon titulo={p.label} resumen={resumen} etiqueta={<BadgeRareza rareza={p.rareza} />}>
       {children}
-      <AccionFabricar pieza={p} materiales={materiales} onFabricar={onFabricar} />
+      <AccionFabricar pieza={p} materiales={materiales} onConstruir={onConstruir} />
     </Acordeon>
   );
 }
 
 export function FabricarSeccion({
-  materiales,
+  sheet,
+  mods,
+  setHistorial,
+  memoria,
+  setMemoria,
   onFabricar,
+  libre = false,
 }: {
-  materiales: Materiales;
-  onFabricar: (catalogoId: string, tier: MaterialTier) => void;
+  sheet: Sheet;
+  mods: ModificadorConFuente[];
+  setHistorial: Dispatch<SetStateAction<Lanzamiento[]>>;
+  memoria: Record<string, { dificultad: number | null; circunstancial: number }>;
+  setMemoria: Dispatch<
+    SetStateAction<Record<string, { dificultad: number | null; circunstancial: number }>>
+  >;
+  onFabricar: (catalogoId: string, tier: MaterialTier, exito: boolean) => void;
+  // NpcEditor.tsx (edición libre de máster): sin tirada, Construir gasta y
+  // entrega en el acto — mismo criterio que Reparar para NPCs.
+  libre?: boolean;
 }) {
   const [categoria, setCategoria] = useState<CategoriaId | null>(null);
+
+  // Tirada de Fabricar en curso: null mientras se navega el catálogo. Vive
+  // aquí, no en `modal` de AccionesTab.tsx — ver el comentario de cabecera.
+  const [rollOpen, setRollOpen] = useState<{
+    tirada: Accion;
+    catalogoId: string;
+    tier: MaterialTier;
+    modBase: number;
+    desgloseBase: { etiqueta: string; valor: number }[];
+    dificultadSugerida: number;
+  } | null>(null);
+  const [resultado, setResultado] = useState<Lanzamiento | null>(null);
+
+  const onConstruir = (pieza: PiezaFabricable, tier: MaterialTier) => {
+    if (libre) {
+      onFabricar(pieza.id, tier, true);
+      return;
+    }
+    const tirada: Accion = {
+      id: `fabricar_${pieza.id}`,
+      label: `Fabricar: ${pieza.label}`,
+      grupo: "Acciones",
+      aplicado: "perspicacia",
+      habilidad: "tecnociencia",
+      nota:
+        "Perspicacia + Tecnociencia, o Biociencia según lo que se fabrique. Dificultad 7 para " +
+        "lo común, +2 por cada rango de rareza superior. Éxito crítico: gran calidad (sin " +
+        "mecanizar todavía). El material se gasta salga lo que salga.",
+    };
+    const mod = modificadorAccion(sheet, tirada, false, mods, false);
+    setResultado(null);
+    setRollOpen({
+      tirada,
+      catalogoId: pieza.id,
+      tier,
+      modBase: mod.total,
+      desgloseBase: [
+        { etiqueta: "Perspicacia", valor: mod.aplicado },
+        { etiqueta: "Tecnociencia", valor: mod.habilidad ?? 0 },
+      ],
+      dificultadSugerida: dificultadFabricar(pieza.rareza),
+    });
+  };
+
+  const onTirar = ({
+    dado,
+    dificultad,
+    circunstancial,
+  }: {
+    dado: number;
+    dificultad: number | null;
+    circunstancial: number;
+  }) => {
+    if (!rollOpen) return;
+    const bono = bonoAlcance(mods, {
+      id: rollOpen.tirada.id,
+      grupo: rollOpen.tirada.grupo,
+      habilidad: rollOpen.tirada.habilidad,
+      modoElegido: null,
+    });
+    const r = resolverTirada({ dado, modificador: rollOpen.modBase + bono, circunstancial, dificultad });
+    const id = Date.now();
+    const lanzamiento: Lanzamiento = { ...r, id, label: rollOpen.tirada.label };
+    setHistorial((h) => [lanzamiento, ...h].slice(0, 6));
+    setMemoria((m) => ({ ...m, [rollOpen.tirada.id]: { dificultad, circunstancial } }));
+    setResultado(lanzamiento);
+    // r.exito es null solo si el jugador elige a propósito "sin dificultad"
+    // en el modal — sin comparación no hay fracaso que señalar, se trata
+    // como éxito (mismo comportamiento que antes de esta corrección).
+    onFabricar(rollOpen.catalogoId, rollOpen.tier, r.exito ?? true);
+  };
+
+  const cerrarRoll = () => {
+    setRollOpen(null);
+    setResultado(null);
+  };
 
   return (
     <div className="flex flex-col gap-2">
@@ -237,7 +367,7 @@ export function FabricarSeccion({
 
           {categoria === "armaduras" &&
             (ARMADURAS as Armadura[]).map((p) => (
-              <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
+              <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={sheet.materiales} onConstruir={onConstruir}>
                 <DetalleArmadura p={p} />
               </FilaFabricable>
             ))}
@@ -252,7 +382,7 @@ export function FabricarSeccion({
                     {`// ${titulo} · ${piezas.length}`}
                   </p>
                   {piezas.map((p) => (
-                    <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
+                    <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={sheet.materiales} onConstruir={onConstruir}>
                       <DetalleArma p={p} />
                     </FilaFabricable>
                   ))}
@@ -262,21 +392,21 @@ export function FabricarSeccion({
 
           {categoria === "melee" &&
             (ARMAS_MELEE_FABRICABLES as (ArmaMelee & { coste: number; rareza: Rareza })[]).map((p) => (
-              <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
+              <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={sheet.materiales} onConstruir={onConstruir}>
                 <DetalleArmaMelee p={p} />
               </FilaFabricable>
             ))}
 
           {categoria === "kerzul" &&
             (KERZUL_FABRICABLES as (ArmaMelee & { coste: number; rareza: Rareza })[]).map((p) => (
-              <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
+              <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={sheet.materiales} onConstruir={onConstruir}>
                 <DetalleArmaMelee p={p} />
               </FilaFabricable>
             ))}
 
           {categoria === "medicina" &&
             (FARMACOS as Consumible[]).map((p) => (
-              <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
+              <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={sheet.materiales} onConstruir={onConstruir}>
                 <DetalleConsumible p={p} />
               </FilaFabricable>
             ))}
@@ -287,7 +417,7 @@ export function FabricarSeccion({
                 {`// Armamento pesado · ${ARMAMENTO_PESADO.length}`}
               </p>
               {(ARMAMENTO_PESADO as ArmaPesada[]).map((p) => (
-                <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
+                <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={sheet.materiales} onConstruir={onConstruir}>
                   <DetalleArmaPesada p={p} />
                 </FilaFabricable>
               ))}
@@ -299,8 +429,8 @@ export function FabricarSeccion({
                   key={p.id}
                   p={p}
                   resumen={p.areaEfecto}
-                  materiales={materiales}
-                  onFabricar={onFabricar}
+                  materiales={sheet.materiales}
+                  onConstruir={onConstruir}
                 >
                   <DetalleGranada p={p} />
                 </FilaFabricable>
@@ -308,6 +438,24 @@ export function FabricarSeccion({
             </>
           )}
         </div>
+      )}
+
+      {rollOpen && (
+        <AccionModal
+          titulo={rollOpen.tirada.label}
+          nota={rollOpen.tirada.nota}
+          modBase={rollOpen.modBase}
+          desgloseBase={rollOpen.desgloseBase}
+          condiciones={[]}
+          mods={mods}
+          ctxBase={{ id: rollOpen.tirada.id, grupo: rollOpen.tirada.grupo, habilidad: rollOpen.tirada.habilidad }}
+          dificultadInicial={memoria[rollOpen.tirada.id]?.dificultad ?? rollOpen.dificultadSugerida}
+          circunstancialInicial={memoria[rollOpen.tirada.id]?.circunstancial ?? 0}
+          resultado={resultado}
+          onTirarDanio={() => {}}
+          onCerrar={cerrarRoll}
+          onTirar={onTirar}
+        />
       )}
     </div>
   );

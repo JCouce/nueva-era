@@ -626,6 +626,53 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
    - Etapas de construcción: 0) quitar Materiales de la Tienda, 1) pool de
      materiales + compra, 2) durabilidad de Escudos + reparar, 3) fabricar +
      gating VTF + UI en Acciones, 4) esta documentación. Commit por etapa.
+   - **Corrección 2026-09-25 (segunda revisión del usuario, tras la primera
+     versión sin dado): Fabricar SÍ exige tirada** — la primera pasada de la
+     etapa 3 la había dejado como acción sin dado igual que Reparar, pero
+     `docs/equipamiento.md:1078-1081` sí pide una: Perspicacia + Tecnociencia
+     o Biociencia, dificultad base 7 +2 por rango de rareza superior, éxito
+     crítico da "gran calidad" (sin mecanizar todavía, aparcado a propósito).
+     (Reparar se dejó sin tirada en esta primera pasada — corregido justo
+     debajo, tercera revisión.)
+     - **Dónde y cómo:** al pulsar "Construir" en `FabricarSeccion.tsx`
+       (dentro de Reparar y Fabricar, con pieza y tier ya elegidos) se abre
+       el mismo `AccionModal` que cualquier otra tirada de la app — misma
+       animación de dado, mismo desglose, mismo veredicto. Vive montado
+       localmente ahí (no en el `modal` único de AccionesTab.tsx) para que
+       cerrar el resultado devuelva al jugador a la categoría/pieza que tenía
+       abierta en el catálogo, en vez de mandarlo de vuelta a la pestaña.
+       Sí reutiliza `historial`/`memoria` (props ya levantadas en
+       CharacterSheet.tsx) para aparecer en "Acciones recientes" y recordar
+       la última dificultad, igual que cualquier tirada.
+     - **Qué pasa según el resultado (decisión del usuario):** el material
+       se gasta SIEMPRE, salga lo que salga. Con éxito, además, se entrega
+       la pieza (`fabricar()`, `rules/equipo.ts`, nuevo parámetro `exito`);
+       con fracaso, no. La tirada no bloquea el botón — no hay infraestructura
+       en el motor para que un resultado de tirada condicione una mutación de
+       ficha (mismo caso que disparar no gasta munición solo), y esto no la
+       inventa solo para esta feature.
+     - **NPCs (edición libre de máster) no tiran:** `libre` (prop nueva en
+       AccionesTab/ReparaFabricaModal/FabricarSeccion, mismo patrón que
+       `AtributosTab`/`HabilidadesTab`) salta la tirada — Construir gasta y
+       entrega en el acto, `fabricarNpcAction` sigue llamando a `fabricar()`
+       con `exito: true` fijo.
+     - Probado en vivo (QA-MOTOR-TEST: fracaso crítico con gasto de material
+       sin entrega, luego éxito con entrega; NPC de prueba: sin tirada,
+       entrega directa).
+   - **Corrección 2026-09-25 (tercera revisión, "tiene que ser igual que lo
+     otro"): Reparar también exige tirada.** Misma prosa de la VTF
+     (`docs/equipamiento.md:1095-1099`): Perspicacia + la habilidad técnica
+     aplicable, con **-4 a la dificultad** respecto a Fabricar (base 7 +2 por
+     rango, -4 por ser reparación — `dificultadReparar()`,
+     `ReparaFabricaModal.tsx`). No se reparte por "cada dos/cuatro éxitos"
+     como la prosa general de daño por categorías: los Escudos son un pool de
+     PG, no categorías, así que sigue siendo restaurar `actual = max` de un
+     golpe — solo que ahora condicionado al éxito de la tirada, igual que
+     Fabricar. Mismo patrón exacto: `AccionModal` montado localmente en
+     `ReparacionSeccion` (dentro de `ReparaFabricaModal.tsx`, no en el
+     `modal` único de AccionesTab), material gastado siempre, reparación solo
+     con éxito, NPCs (`libre`) sin tirada. `repararPieza()` (`recursos.ts`)
+     gana el mismo parámetro `exito` que `fabricar()`.
 
 ### Fase 5 — Poderes, dotes, aumentos, especies reales ⬜ (bloqueado por el diseñador)
 El diseñador (Murillo) aún no ha escrito estos documentos. No hay reglas que adelantar,

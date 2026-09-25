@@ -267,7 +267,16 @@ export function tieneVtf(sheet: Sheet): boolean {
 // Silencioso si no hay stock suficiente o la pieza no es fabricable — quien
 // llama (la action) ya valida VTF equipada y rareza con rarezaPermitida()
 // ANTES de esto, mismo criterio que repararPieza().
-export function fabricar(sheet: Sheet, catalogoId: string, tier: MaterialTier): Sheet {
+//
+// `exito` (corrección 2026-09-25, decisión del usuario): el intento de
+// fabricar SÍ exige una tirada (docs/equipamiento.md:1078-1081), a diferencia
+// del propio gasto, que sigue sin dado — quien llama ya resolvió esa tirada
+// en el cliente (mismo AccionModal que cualquier otra) y pasa el resultado
+// aquí. El material se gasta SIEMPRE, salga lo que salga: fabricar es un
+// intento arriesgado, no una compra con devolución. Solo con éxito se añade
+// la pieza a `sheet.equipo`. NPCs (fabricarNpcAction) siguen editando libre,
+// sin tirada — pasan `exito: true` siempre, ver esa action.
+export function fabricar(sheet: Sheet, catalogoId: string, tier: MaterialTier, exito: boolean): Sheet {
   const cat = piezaFabricablePorId(catalogoId);
   if (!cat) return sheet;
 
@@ -276,13 +285,13 @@ export function fabricar(sheet: Sheet, catalogoId: string, tier: MaterialTier): 
   const unidades = Math.ceil(cat.coste / precioUnidad);
   if (sheet.materiales[tier] < unidades) return sheet;
 
-  const equipado = equipar(sheet, { instanciaId: nuevaInstanciaId(), catalogoId });
-  if (equipado === sheet) return sheet;
-
-  return {
-    ...equipado,
-    materiales: { ...equipado.materiales, [tier]: equipado.materiales[tier] - unidades },
+  const sinMaterial: Sheet = {
+    ...sheet,
+    materiales: { ...sheet.materiales, [tier]: sheet.materiales[tier] - unidades },
   };
+  if (!exito) return sinMaterial;
+
+  return equipar(sinMaterial, { instanciaId: nuevaInstanciaId(), catalogoId });
 }
 
 // Quitar una armadura o un arma se lleva también lo que tuviera instalado

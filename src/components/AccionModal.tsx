@@ -209,7 +209,16 @@ export function AccionModal({
 }) {
   const [estado, setEstado] = useState<EstadoCondiciones>(() => estadoInicial(condiciones));
   const [dificultad, setDificultad] = useState(dificultadInicial);
-  const [dificultadCustom, setDificultadCustom] = useState("");
+  // Si `dificultadInicial` no coincide con ningún botón fijo (p.ej. el 3 de
+  // Reparar, base 7 -4), el número ya se usa bien al tirar (se guarda en
+  // `dificultad`, no aquí) pero sin esto no se veía en ningún sitio del
+  // modal antes de tirar — ni botón resaltado ni campo custom relleno.
+  // Corrección 2026-09-25, detectada al dar de alta la tirada de Reparar.
+  const [dificultadCustom, setDificultadCustom] = useState(() =>
+    dificultadInicial !== null && !DIFICULTADES.some((d) => d.valor === dificultadInicial)
+      ? String(dificultadInicial)
+      : "",
+  );
   const [circunstancial, setCircunstancial] = useState(circunstancialInicial);
   // El dado "rueda" (número aleatorio cambiando rápido) durante RODANDO_MS,
   // luego se congela en el valor REAL (`dadoAsentado`) durante ASENTADO_MS
