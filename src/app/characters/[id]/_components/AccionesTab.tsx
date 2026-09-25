@@ -20,11 +20,20 @@ import {
   consultaIndiceCondiciones,
   bonoAlcance,
   modoElegido,
+  equipoPorId,
+  capacidadDePieza,
+  rarezaPermitida,
+  MATERIAL_TIERS,
+  rarezaMaterial,
   type Accion,
   type Sheet,
   type EstadoCondiciones,
   type EstadoActivo,
   type ModificadorConFuente,
+  type MaterialTier,
+  type Materiales,
+  type RecursoInstancia,
+  type Rareza,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { AccionModal } from "@/components/AccionModal";
@@ -209,6 +218,104 @@ function FilaTirada({
   );
 }
 
+// Reparación (docs/tareas.md, tarea 8): hoy solo Escudos, vía
+// `defensa.puntosGolpe` (TipoRecarga "durabilidad", recursos.ts). Siempre
+// visible — a diferencia de Fabricar (Etapa 3), no exige tener la VTF
+// equipada. Solo lista piezas con daño de verdad (`actual < max`): una vez
+// reparada, desaparece de aquí hasta que vuelva a dañarse.
+function ReparacionPanel({
+  sheet,
+  onReparar,
+}: {
+  sheet: Sheet;
+  onReparar: (instanciaId: string, tier: MaterialTier) => void;
+}) {
+  const piezas = sheet.recursos.flatMap((recurso) => {
+    if (recurso.actual >= recurso.max) return [];
+    const pieza = sheet.equipo.find((p) => p.instanciaId === recurso.instanciaId);
+    const cat = pieza ? equipoPorId(pieza.catalogoId) : null;
+    if (!pieza || !cat) return [];
+    const cap = capacidadDePieza(pieza);
+    if (!cap || cap.tipo !== "durabilidad") return [];
+    const rareza = cat.familia === "armaMelee" ? cat.rareza : null;
+    return [{ instanciaId: pieza.instanciaId, titulo: cat.label, rareza, recurso }];
+  });
+
+  return (
+    <div className="flex flex-col gap-2">
+      <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
+        Reparación
+      </h2>
+      {piezas.length === 0 ? (
+        <HudCard className="border-dashed p-4 text-center">
+          <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
+            {"//SYSTEM · nada que reparar"}
+          </p>
+          <p className="mt-2 font-sans text-sm text-muted">
+            Un Escudo equipado aparece aquí en cuanto pierde puntos de golpe.
+          </p>
+        </HudCard>
+      ) : (
+        piezas.map((p) => (
+          <ReparacionCard
+            key={p.instanciaId}
+            titulo={p.titulo}
+            rareza={p.rareza}
+            recurso={p.recurso}
+            materiales={sheet.materiales}
+            onReparar={(tier) => onReparar(p.instanciaId, tier)}
+          />
+        ))
+      )}
+    </div>
+  );
+}
+
+function ReparacionCard({
+  titulo,
+  rareza,
+  recurso,
+  materiales,
+  onReparar,
+}: {
+  titulo: string;
+  rareza: Rareza | null;
+  recurso: RecursoInstancia;
+  materiales: Materiales;
+  onReparar: (tier: MaterialTier) => void;
+}) {
+  return (
+    <HudCard className="p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-display text-sm font-semibold uppercase text-foreground">{titulo}</p>
+        <p className="font-mono text-lg tabular-nums text-danger">
+          {recurso.actual}
+          <span className="text-sm text-muted">/{recurso.max} PG</span>
+        </p>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {MATERIAL_TIERS.map((tier) => {
+          const tope = rarezaMaterial(tier);
+          const cabe = tope !== null && rarezaPermitida(rareza, tope);
+          const stock = materiales[tier];
+          const disabled = !cabe || stock < 1;
+          return (
+            <button
+              key={tier}
+              type="button"
+              onClick={() => onReparar(tier)}
+              disabled={disabled}
+              className="clip-chamfer-sm border border-accent bg-accent px-2 py-1.5 font-mono text-[10px] uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted"
+            >
+              {tier} ({stock})
+            </button>
+          );
+        })}
+      </div>
+    </HudCard>
+  );
+}
+
 export function AccionesTab({
   sheet,
   estadosCombate = [],
@@ -216,6 +323,7 @@ export function AccionesTab({
   setHistorial,
   memoria,
   setMemoria,
+  onReparar,
 }: {
   sheet: Sheet;
   // Fase 6b, 3.1b (D5: combate → ficha): los estados que el máster le tenga
@@ -235,6 +343,11 @@ export function AccionesTab({
   setMemoria: Dispatch<
     SetStateAction<Record<string, { dificultad: number | null; circunstancial: number }>>
   >;
+  // Ausente en NpcAccionesPanel.tsx (combate en vivo): ese `sheet` es la foto
+  // congelada de un Combatiente, sin characterId/npcId al que persistir un
+  // gasto de materiales — la sección Reparación no tiene sentido ahí y no se
+  // pinta.
+  onReparar?: (instanciaId: string, tier: MaterialTier) => void;
 }) {
   const mods = [...modificadoresActivos(sheet), ...modificadoresDeEstados(estadosCombate)];
   const [modal, setModal] = useState<{
@@ -463,6 +576,8 @@ export function AccionesTab({
             ))}
         </div>
       ))}
+
+      {onReparar && <ReparacionPanel sheet={sheet} onReparar={onReparar} />}
 
       {modal && (
         <AccionModal

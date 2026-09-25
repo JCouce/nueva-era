@@ -55,6 +55,19 @@ export function RecursosTab({
   onAjustarMaterial: (tier: MaterialTier, delta: number) => void;
   onComprarMaterial: (tier: MaterialTier) => void;
 }) {
+  // Munición/batería aquí; durabilidad (Escudos) se gestiona solo en la
+  // pestaña Acciones (sección Reparación) — se repara con Materiales, no con
+  // créditos, así que no tiene sentido el botón "Cargador"/"Batería" de esta
+  // pestaña.
+  const recursosMunicionBateria = sheet.recursos.flatMap((recurso) => {
+    const pieza = sheet.equipo.find((p) => p.instanciaId === recurso.instanciaId);
+    const cat = pieza ? equipoPorId(pieza.catalogoId) : null;
+    if (!pieza || !cat) return [];
+    const cap = capacidadDePieza(pieza);
+    if (!cap || cap.tipo === "durabilidad") return [];
+    return [{ recurso, cat, cap }];
+  });
+
   return (
     <div className="flex flex-col gap-3">
       <p className="border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
@@ -78,7 +91,7 @@ export function RecursosTab({
         );
       })}
 
-      {sheet.recursos.length === 0 ? (
+      {recursosMunicionBateria.length === 0 ? (
         <HudCard className="mt-2 border-dashed p-5">
           <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
             {"//SYSTEM · recursos"}
@@ -94,13 +107,7 @@ export function RecursosTab({
           <p className="mt-2 border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
             {"//SYSTEM · recursos"}
           </p>
-          {sheet.recursos.map((recurso) => {
-            const pieza = sheet.equipo.find((p) => p.instanciaId === recurso.instanciaId);
-            const cat = pieza ? equipoPorId(pieza.catalogoId) : null;
-            if (!pieza || !cat) return null;
-            const cap = capacidadDePieza(pieza);
-            if (!cap) return null;
-
+          {recursosMunicionBateria.map(({ recurso, cat, cap }) => {
             const esStock = cap.tipo === "stock";
             const precio = esStock ? PRECIO_CARGADOR_BALAS : PRECIO_BATERIA_PORTATIL;
             const etiquetaRecarga = esStock ? "Cargador" : "Batería";

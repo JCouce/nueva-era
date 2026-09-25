@@ -23,6 +23,8 @@ import {
   comprarRecarga,
   ajustarMaterial,
   comprarMaterial,
+  repararPieza,
+  rarezaMaterial,
   type MaterialTier,
   type AtributoId,
   type HabilidadId,
@@ -350,6 +352,33 @@ export async function comprarMaterialAction(
   revalidatePath(`/characters/${characterId}`);
   revalidatePath("/master");
   return { ok: true, sheet: resultado.sheet, creditos };
+}
+
+// Reparar (docs/tareas.md, tarea 8): sin requisito de VTF (a diferencia de
+// Fabricar), pero sí de rareza — mismo criterio que equiparAction con el
+// tope de rareza: se valida aquí, con rarezaPermitida(), ANTES de llamar a
+// la función pura, que ya no vuelve a comprobarlo (ver su comentario).
+export async function repararAction(
+  characterId: string,
+  instanciaId: string,
+  tier: MaterialTier,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+
+  const pieza = ctx.sheet.equipo.find((p) => p.instanciaId === instanciaId);
+  if (!pieza) return { ok: false, error: "Esa pieza ya no está equipada." };
+
+  const rarezaPieza = rarezaDePieza(pieza);
+  const tope = rarezaMaterial(tier);
+  if (!tope || !rarezaPermitida(rarezaPieza, tope)) {
+    return { ok: false, error: `Necesitas material de rareza ${rarezaPieza ?? "?"} o superior.` };
+  }
+  if (ctx.sheet.materiales[tier] < 1) return { ok: false, error: "No tienes materiales de ese tier." };
+
+  const sheet = repararPieza(ctx.sheet, instanciaId, tier);
+  if (sheet === ctx.sheet) return { ok: false, error: "Esa pieza ya está al máximo de durabilidad." };
+  return persist(characterId, sheet);
 }
 
 // Devuelve atributos y habilidades a cero. La identidad se conserva.

@@ -18,7 +18,7 @@
 //     célula) y no cambia nunca. Recargar restaura el actual al máximo, sin
 //     más — como cargar un móvil, no como comprar cargadores de más.
 import { z } from "zod";
-import { equipoPorId, type Consumible } from "../catalog/equipo";
+import { equipoPorId, type Consumible, type Rareza } from "../catalog/equipo";
 import type { PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
 
@@ -66,6 +66,12 @@ export function precioMaterial(tier: MaterialTier): number {
   return catalogoDeMaterial(tier)?.coste ?? 0;
 }
 
+// Rareza máxima que permite fabricar/reparar un tier — ver comentario de
+// cabecera: coincide con la `rareza` propia del Consumible en el catálogo.
+export function rarezaMaterial(tier: MaterialTier): Rareza | null {
+  return catalogoDeMaterial(tier)?.rareza ?? null;
+}
+
 // Delta manual (+/-) sobre un tier, clamp ≥0 — mismo patrón que
 // ajustarRecurso(), pero sin `max` (el pool no tiene tope superior).
 export function ajustarMaterial(sheet: Sheet, tier: MaterialTier, delta: number): Sheet {
@@ -93,7 +99,11 @@ export const recursoSchema = z.object({
   max: z.number().int().min(0),
 });
 
-export type TipoRecarga = "stock" | "tope";
+// "durabilidad" (Escudos, `defensa.puntosGolpe` — docs/tareas.md tarea 8):
+// se repara con Materiales en vez de con créditos, así que NO pasa por
+// comprarRecarga() (ver su guardarraíl más abajo) — tiene su propia función,
+// repararPieza().
+export type TipoRecarga = "stock" | "tope" | "durabilidad";
 
 // Precios fijos, sin depender de la capacidad de la pieza (docs/sistema.md
 // S17/S18) — decisión explícita del usuario, sin base en `EQUIP`.
@@ -110,6 +120,10 @@ export function capacidadDePieza(pieza: PiezaEquipada): { max: number; tipo: Tip
   if (!cat) return null;
   if (cat.familia === "arma") return { max: cat.municion, tipo: "stock" };
   if (cat.familia === "subsistema" && cat.celula) return { max: cat.celula.cargas, tipo: "tope" };
+  // Escudos (los únicos armaMelee con `defensa`): su puntosGolpe es
+  // durabilidad de objeto, no del personaje — antes devolvía null a
+  // propósito (comentario de arriba), ahora tiene mecanismo (tarea 8).
+  if (cat.familia === "armaMelee" && cat.defensa) return { max: cat.defensa.puntosGolpe, tipo: "durabilidad" };
   return null;
 }
 
@@ -165,7 +179,9 @@ export function comprarRecarga(
   const recurso = recursoDe(sheet, instanciaId);
   if (!pieza || !recurso) return null;
   const cap = capacidadDePieza(pieza);
-  if (!cap) return null;
+  // "durabilidad" no se recarga con créditos, se repara con Materiales —
+  // ver repararPieza() más abajo.
+  if (!cap || cap.tipo === "durabilidad") return null;
 
   const nuevo: RecursoInstancia =
     cap.tipo === "stock"
@@ -176,6 +192,29 @@ export function comprarRecarga(
   return {
     sheet: { ...sheet, recursos: sheet.recursos.map((r) => (r.instanciaId === instanciaId ? nuevo : r)) },
     coste,
+  };
+}
+
+// Repara una pieza con durabilidad (hoy solo Escudos): gasta 1 unidad del
+// tier dado y restaura `actual = max` de un golpe (decisión del usuario,
+// 2026-09-25 — no hay tirada asociada todavía). Silencioso si no hay nada
+// que reparar o no llega el stock — mismo criterio que equipar(): quien
+// llama (la action) ya valida rareza suficiente con rarezaDePieza() +
+// rarezaMaterial() + rarezaPermitida() ANTES de invocar esto, igual que
+// equiparAction valida el tope de rareza antes de llamar a equipar().
+export function repararPieza(sheet: Sheet, instanciaId: string, tier: MaterialTier): Sheet {
+  const pieza = sheet.equipo.find((p) => p.instanciaId === instanciaId);
+  const recurso = recursoDe(sheet, instanciaId);
+  if (!pieza || !recurso) return sheet;
+  const cap = capacidadDePieza(pieza);
+  if (!cap || cap.tipo !== "durabilidad") return sheet;
+  if (recurso.actual >= recurso.max) return sheet;
+  if (sheet.materiales[tier] < 1) return sheet;
+
+  return {
+    ...sheet,
+    materiales: { ...sheet.materiales, [tier]: sheet.materiales[tier] - 1 },
+    recursos: sheet.recursos.map((r) => (r.instanciaId === instanciaId ? { ...r, actual: r.max } : r)),
   };
 }
 

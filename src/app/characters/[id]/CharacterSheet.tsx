@@ -15,6 +15,7 @@ import {
   comprarRecargaAction,
   ajustarMaterialAction,
   comprarMaterialAction,
+  repararAction,
   type SaveResult,
 } from "./actions";
 import {
@@ -320,6 +321,11 @@ export function CharacterSheet({
   const commitComprarMaterial = (tier: MaterialTier) => {
     runSave(() => comprarMaterialAction(characterId, tier), setSheet);
   };
+  // Sin actualización optimista: la rareza suficiente y el stock se validan
+  // en el servidor (mismo criterio que commitComprarMaterial/commitRecargar).
+  const commitReparar = (instanciaId: string, tier: MaterialTier) => {
+    runSave(() => repararAction(characterId, instanciaId, tier), setSheet);
+  };
 
   // ── Identidad (debounced, fire-and-forget). ──
   const scheduleIdentity = () => {
@@ -545,6 +551,7 @@ export function CharacterSheet({
           setHistorial={setAccionesHistorial}
           memoria={accionesMemoria}
           setMemoria={setAccionesMemoria}
+          onReparar={commitReparar}
         />
       )}
       {activeEfectivo === "tienda" && (

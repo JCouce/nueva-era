@@ -12,6 +12,8 @@ import {
   ajustarMaterial,
   comprarMaterial,
   precioMaterial,
+  rarezaMaterial,
+  repararPieza,
   PRECIO_CARGADOR_BALAS,
   PRECIO_BATERIA_PORTATIL,
 } from "./recursos";
@@ -34,6 +36,16 @@ describe("capacidadDePieza", () => {
 
   test("un subsistema sin célula (autorrecargable) no tiene recurso", () => {
     const cap = capacidadDePieza({ instanciaId: "e1", catalogoId: "escudo_deflector" });
+    assert.equal(cap, null);
+  });
+
+  test("un Escudo (armaMelee con defensa) es tipo durabilidad, con sus puntosGolpe como máximo", () => {
+    const cap = capacidadDePieza({ instanciaId: "s1", catalogoId: "escudo_rodela" });
+    assert.deepEqual(cap, { max: 8, tipo: "durabilidad" });
+  });
+
+  test("un arma melee sin defensa no tiene recurso", () => {
+    const cap = capacidadDePieza({ instanciaId: "m1", catalogoId: "espada_cuchillo_combate" });
     assert.equal(cap, null);
   });
 
@@ -145,8 +157,53 @@ describe("comprarRecarga", () => {
     assert.equal(comprarRecarga(s, "arm1"), null);
   });
 
+  test("un recurso tipo durabilidad (Escudo) devuelve null — se repara, no se recarga con créditos", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "s1", catalogoId: "escudo_rodela" });
+    assert.equal(comprarRecarga(s, "s1"), null);
+  });
+
   test("una instancia que no existe devuelve null", () => {
     assert.equal(comprarRecarga(defaultSheet(), "no-existe"), null);
+  });
+});
+
+describe("repararPieza", () => {
+  function conEscudoDanado(actual = 3) {
+    let s = equipar(defaultSheet(), { instanciaId: "s1", catalogoId: "escudo_rodela" }); // 8 PG
+    s = ajustarRecurso(s, "s1", actual - 8);
+    s = ajustarMaterial(s, "sencillos", 2);
+    return s;
+  }
+
+  test("gasta 1 unidad del tier y restaura actual = max", () => {
+    const s = repararPieza(conEscudoDanado(3), "s1", "sencillos");
+    assert.deepEqual(recursoDe(s, "s1"), { instanciaId: "s1", actual: 8, max: 8 });
+    assert.equal(s.materiales.sencillos, 1);
+  });
+
+  test("sin stock de ese tier no hace nada", () => {
+    const s = conEscudoDanado(3);
+    const s2 = repararPieza(s, "s1", "avanzados"); // 0 avanzados
+    assert.equal(s2, s);
+  });
+
+  test("una pieza ya al máximo no gasta nada", () => {
+    const s = conEscudoDanado(8); // sin daño
+    const s2 = repararPieza(s, "s1", "sencillos");
+    assert.equal(s2, s);
+  });
+
+  test("una instancia sin durabilidad (ni recurso) no hace nada", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "arm1", catalogoId: "armadura_ligera" });
+    s = ajustarMaterial(s, "sencillos", 2);
+    const s2 = repararPieza(s, "arm1", "sencillos");
+    assert.equal(s2, s);
+  });
+
+  test("una instancia que no existe no hace nada", () => {
+    const s = ajustarMaterial(defaultSheet(), "sencillos", 2);
+    const s2 = repararPieza(s, "no-existe", "sencillos");
+    assert.equal(s2, s);
   });
 });
 
@@ -155,6 +212,14 @@ describe("precioMaterial", () => {
     assert.equal(precioMaterial("sencillos"), 250);
     assert.equal(precioMaterial("sofisticados"), 500);
     assert.equal(precioMaterial("avanzados"), 750);
+  });
+});
+
+describe("rarezaMaterial", () => {
+  test("los 3 tiers cotizan la rareza máxima que permiten (= su propia rareza de catálogo)", () => {
+    assert.equal(rarezaMaterial("sencillos"), "Poco Habitual");
+    assert.equal(rarezaMaterial("sofisticados"), "Extraño");
+    assert.equal(rarezaMaterial("avanzados"), "Muy Extraño");
   });
 });
 

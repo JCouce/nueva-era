@@ -34,6 +34,7 @@ import {
   comprarRecargaNpcAction,
   ajustarMaterialNpcAction,
   comprarMaterialNpcAction,
+  repararNpcAction,
   eliminarNpcAction,
   type NpcResult,
 } from "../actions";
@@ -233,6 +234,12 @@ export function NpcEditor({
     if (res.ok) setSheet(res.sheet);
     setStatus(res.ok ? "saved" : "error");
   };
+  const commitReparar = async (instanciaId: string, tier: MaterialTier) => {
+    setStatus("saving");
+    const res = await repararNpcAction(npcId, instanciaId, tier);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
 
   // Sin confirm() — bloquea el hilo con un diálogo nativo, y el resto de la
   // app (deleteCharacter en characters/page.tsx) tampoco pide confirmación
@@ -321,6 +328,7 @@ export function NpcEditor({
             setHistorial={setAccionesHistorial}
             memoria={accionesMemoria}
             setMemoria={setAccionesMemoria}
+            onReparar={commitReparar}
           />
         </div>
       )}
