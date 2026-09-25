@@ -18,6 +18,8 @@ import {
   pesoEquipado,
   fabricar,
   tieneVtf,
+  nivelVtf,
+  dificultadFabricacion,
   type PiezaEquipada,
 } from "./equipo";
 import { ajustarMaterial } from "./recursos";
@@ -799,6 +801,48 @@ describe("tieneVtf", () => {
   test("con la VTF equipada (cualquier nivel), true", () => {
     const s = equipar(defaultSheet(), { instanciaId: "v1", catalogoId: "valija_tactica_fabricacion" });
     assert.equal(tieneVtf(s), true);
+  });
+});
+
+describe("nivelVtf", () => {
+  test("sin la VTF equipada, null", () => {
+    assert.equal(nivelVtf(defaultSheet()), null);
+  });
+
+  test("con la VTF equipada, su nivel", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "v1", catalogoId: "valija_tactica_fabricacion", nivel: 3 });
+    assert.equal(nivelVtf(s), 3);
+  });
+});
+
+describe("dificultadFabricacion", () => {
+  // Corrección 2026-09-25 (revisión del usuario): antes de esto, la
+  // dificultad sugerida ignoraba por completo el nivel de la VTF.
+  test("sin VTF, dificultad por rango tal cual (base 7 +2 por rango)", () => {
+    assert.equal(dificultadFabricacion("Común", null), 7);
+    assert.equal(dificultadFabricacion("Poco Habitual", null), 9);
+    assert.equal(dificultadFabricacion("Extraño", null), 11);
+    assert.equal(dificultadFabricacion("Muy Extraño", null), 13);
+  });
+
+  test("VTF nivel 1, igual que sin VTF (el beneficio empieza en nivel 2)", () => {
+    assert.equal(dificultadFabricacion("Poco Habitual", 1), 9);
+  });
+
+  test("VTF nivel 2+, Poco Habitual cuenta como Común — docs/equipamiento.md: " +
+    "'Fabrica objetos poco habituales con la dificultad de los comunes'", () => {
+    assert.equal(dificultadFabricacion("Poco Habitual", 2), 7);
+    assert.equal(dificultadFabricacion("Poco Habitual", 3), 7);
+    assert.equal(dificultadFabricacion("Poco Habitual", 4), 7);
+  });
+
+  test("VTF nivel 2+, Extraño y Muy Extraño NO bajan — el documento no lo dice", () => {
+    assert.equal(dificultadFabricacion("Extraño", 4), 11);
+    assert.equal(dificultadFabricacion("Muy Extraño", 4), 13);
+  });
+
+  test("Común con VTF de cualquier nivel sigue en 7 (no hay rango que bajar)", () => {
+    assert.equal(dificultadFabricacion("Común", 4), 7);
   });
 });
 

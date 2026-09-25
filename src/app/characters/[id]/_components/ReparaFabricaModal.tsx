@@ -6,9 +6,10 @@ import {
   capacidadDePieza,
   rarezaPermitida,
   MATERIAL_TIERS,
-  RAREZA_ORDEN,
   rarezaMaterial,
   tieneVtf,
+  nivelVtf,
+  dificultadFabricacion,
   modificadorAccion,
   resolverTirada,
   bonoAlcance,
@@ -40,8 +41,14 @@ import { type Lanzamiento } from "@/components/ResultadoTirada";
 // SIEMPRE, la reparación solo se aplica con éxito, y el `AccionModal` se
 // monta localmente aquí (no en el `modal` único de AccionesTab.tsx) para no
 // perder el sitio en el que estaba el jugador.
-function dificultadReparar(rareza: Rareza | null): number {
-  return 7 + 2 * RAREZA_ORDEN.indexOf(rareza ?? "Común") - 4;
+//
+// Corrección 2026-09-25 (tercera revisión, "¿aplicamos los niveles de la
+// VTF?"): dificultadFabricacion() (rules/equipo.ts) ya tiene en cuenta el
+// nivel de la VTF equipada (Poco Habitual cuenta como Común desde nivel 2)
+// — antes esta función usaba directamente RAREZA_ORDEN sin mirar la VTF
+// para nada, mismo fallo que tenía Fabricar.
+function dificultadReparar(rareza: Rareza | null, nivel: number | null): number {
+  return dificultadFabricacion(rareza ?? "Común", nivel) - 4;
 }
 
 function ReparacionCard({
@@ -163,7 +170,7 @@ function ReparacionSeccion({
         { etiqueta: "Perspicacia", valor: mod.aplicado },
         { etiqueta: "Tecnociencia", valor: mod.habilidad ?? 0 },
       ],
-      dificultadSugerida: dificultadReparar(rareza),
+      dificultadSugerida: dificultadReparar(rareza, nivelVtf(sheet)),
     });
   };
 

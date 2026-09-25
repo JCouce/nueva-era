@@ -10,13 +10,14 @@ import {
   ARMAMENTO_PESADO,
   MUNICION_GRANADA,
   MATERIAL_TIERS,
-  RAREZA_ORDEN,
   rarezaMaterial,
   precioMaterial,
   rarezaPermitida,
   modificadorAccion,
   resolverTirada,
   bonoAlcance,
+  nivelVtf,
+  dificultadFabricacion,
   type Armadura,
   type ArmaFuego,
   type ArmaMelee,
@@ -143,14 +144,6 @@ function tierPorDefecto(rareza: Rareza): MaterialTier {
     if (tope && rarezaPermitida(rareza, tope)) return tier;
   }
   return MATERIAL_TIERS[MATERIAL_TIERS.length - 1];
-}
-
-// Dificultad sugerida de la tirada de Fabricar (docs/equipamiento.md:1078-
-// 1081): base 7 para Común, +2 por cada rango de rareza superior. Editable a
-// mano en el propio AccionModal, igual que Radar/Escáner — esto es solo el
-// valor con el que se abre.
-function dificultadFabricar(rareza: Rareza): number {
-  return 7 + 2 * RAREZA_ORDEN.indexOf(rareza);
 }
 
 function AccionFabricar({
@@ -308,7 +301,7 @@ export function FabricarSeccion({
         { etiqueta: "Perspicacia", valor: mod.aplicado },
         { etiqueta: "Tecnociencia", valor: mod.habilidad ?? 0 },
       ],
-      dificultadSugerida: dificultadFabricar(pieza.rareza),
+      dificultadSugerida: dificultadFabricacion(pieza.rareza, nivelVtf(sheet)),
     });
   };
 

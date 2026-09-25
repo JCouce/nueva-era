@@ -684,6 +684,21 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      coincidía con ningún botón fijo (el 3 de Reparar Común, 7-4), el campo
      "custom" se quedaba vacío en vez de mostrar el número — la tirada ya lo
      usaba bien internamente, era solo un fallo de visualización.
+   - **Corrección 2026-09-25 (revisión del usuario, "¿aplicamos los niveles
+     de la VTF?"): la dificultad ignoraba el nivel de la VTF equipada.**
+     `tieneVtf()` era la única consulta a la VTF en todo el flujo — un
+     booleano, sin nivel. Pero `docs/equipamiento.md` liga la dificultad de
+     Fabricar (y por tanto la de Reparar, que es "la de fabricar, -4") al
+     nivel: desde la VTF nivel 2, "Fabrica objetos poco habituales con la
+     dificultad de los comunes" — SOLO Poco Habitual baja de rango, el
+     documento no dice nada de Extraño/Muy Extraño, así que esos rangos no
+     bajan ni con VTF nivel 4. El beneficio de nivel 2 persiste en 3 y 4 por
+     acumulación de niveles (S9). `nivelVtf(sheet)` y
+     `dificultadFabricacion(rareza, nivel)` (nuevas, `rules/equipo.ts`)
+     sustituyen el cálculo suelto que había en `FabricarSeccion.tsx`/
+     `ReparaFabricaModal.tsx`. Con tests (`equipo.test.ts`) y probado en vivo
+     (VTF nivel 2, Pico de Cuervo Poco Habitual: dificultad sugerida 7, antes
+     habría sido 9).
 
 ### Fase 5 — Poderes, dotes, aumentos, especies reales ⬜ (bloqueado por el diseñador)
 El diseñador (Murillo) aún no ha escrito estos documentos. No hay reglas que adelantar,

@@ -251,9 +251,38 @@ export function equipar(sheet: Sheet, pieza: PiezaEquipada): Sheet {
 
 // VTF equipada (cualquier nivel) — requisito de Fabricar (docs/tareas.md,
 // tarea 8), no de Reparar. La VTF no gatea rareza (herramientas.ts), solo
-// habilita el botón: por eso no hace falta mirar `nivel`.
+// habilita el botón: por eso no hace falta mirar `nivel` aquí — sí hace
+// falta para la dificultad, ver nivelVtf()/dificultadFabricacion() abajo.
 export function tieneVtf(sheet: Sheet): boolean {
   return sheet.equipo.some((p) => p.catalogoId === "valija_tactica_fabricacion");
+}
+
+// Nivel de la VTF equipada, o null si no hay ninguna — 0 no es un nivel real
+// (los niveles empiezan en 1), así que null no es ambiguo. Corrección
+// 2026-09-25 (revisión del usuario, "¿estamos aplicando los niveles de la
+// VTF?"): hasta ahora tieneVtf() era la ÚNICA consulta a la VTF en todo el
+// flujo de Fabricar/Reparar — el nivel se ignoraba por completo, aunque el
+// catálogo (herramientas.ts) sí liga la dificultad al nivel.
+export function nivelVtf(sheet: Sheet): number | null {
+  const pieza = sheet.equipo.find((p) => p.catalogoId === "valija_tactica_fabricacion");
+  return pieza?.nivel ?? null;
+}
+
+// Dificultad de Fabricar (docs/equipamiento.md:1078-1081): base 7 para
+// Común, +2 por cada rango de rareza superior. Desde la VTF nivel 2, "Fabrica
+// objetos poco habituales con la dificultad de los comunes" — SOLO Poco
+// Habitual (rango 1) baja a rango 0; el documento no dice nada de Extraño o
+// Muy Extraño, así que esos rangos no bajan aunque la VTF sea nivel 3 o 4.
+// Niveles 3/4 no vuelven a tocar esta dificultad (solo economía de acción y
+// recuperación de materia prima, ninguna de las dos mecanizada). El
+// beneficio de nivel 2 persiste en 3 y 4 por acumulación de niveles (S9,
+// nivelesHasta() arriba) — no hace falta mirar más que "nivelVtf >= 2".
+// Compartida con Reparar (ReparaFabricaModal.tsx): su dificultad es esta
+// misma, -4.
+export function dificultadFabricacion(rareza: Rareza, nivelVtf: number | null): number {
+  const rango = RAREZA_ORDEN.indexOf(rareza);
+  const rangoEfectivo = nivelVtf !== null && nivelVtf >= 2 && rango === 1 ? 0 : rango;
+  return 7 + 2 * rangoEfectivo;
 }
 
 // Fabricar: "comprar" pagando en Materiales en vez de en créditos — mismo
