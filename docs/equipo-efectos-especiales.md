@@ -735,8 +735,19 @@ de control.
     `condicionesDeMejoras`) y otro con `alcance: {tiradaId: "sigilo"}` (vive en la
     tirada fija "Sigilo" vía `condicionesActivas`), sin estado compartido entre ellos
     — mismo patrón de toggles independientes que Visor Nocturno/Térmico.
-  - Silenciador, Linterna, Bayoneta, Lanzagranadas Integrado: pendientes de esta misma
-    revisión, uno a uno.
+  - **Silenciador: ✅ construido 2026-09-25** — mismo patrón que Puntero Láser,
+    el aviso a la Alerta Activa del objetivo cuelga de la tirada de disparo
+    (`notaTirada`/`Accion.efectos`).
+  - **Linterna: no era un hueco, revisado 2026-09-25.** El propio catálogo ya
+    dice "sin dificultad ni acción asociada" — correctamente `narrativo`, sin
+    nada que mecanizar.
+  - **Lanzagranadas Integrado: ya estaba `construido`** (el -1 al ataque del
+    arma huésped + su propia tirada, `tiradaDeLanzagranadas`) — no era parte
+    real de esta lista de pendientes.
+  - **Bayoneta: ✅ construida 2026-09-25** — `tiradaGolpeBayoneta`/
+    `tiradaBloqueoBayoneta` (`combate.ts`), ver `docs/tareas.md` ítem 6.
+  - Con esto, la lista "Revisión pieza a pieza 2026-09-25" queda cerrada
+    entera — no queda ningún pendiente de esta tanda.
 - Láser de Largo Alcance / Rayo de Largo Alcance — alcances: **✔️ YA HECHO**, verificado
   contra el código a petición del usuario (2026-09-13): `equipo.ts` ya lleva
   `{ corta: 50, media: 1000, larga: 2000 }` y `{ corta: 50, media: 1200, larga: 2400 }`
