@@ -93,7 +93,10 @@ type CategoriaId = (typeof CATEGORIAS)[number]["id"];
 // pesada. 39 armas en una sola lista era mucho scroll para encontrar un
 // fusil de precisión — subdividir por tipo es lo mismo que ya hace Armas
 // Melee/Kerzul, pero dentro de una sola categoría en vez de dos tiles.
-const TIPOS_ARMA: { tipo: TipoArma; titulo: string }[] = [
+// Exportado: ConstruccionModal.tsx (Fabricar, docs/tareas.md tarea 8) lo
+// reutiliza para subdividir Armas de fuego igual que aquí, sin duplicar las
+// 6 etiquetas.
+export const TIPOS_ARMA: { tipo: TipoArma; titulo: string }[] = [
   { tipo: "pistola", titulo: "Pistolas" },
   { tipo: "escopeta", titulo: "Escopetas" },
   { tipo: "subfusil", titulo: "Subfusiles" },

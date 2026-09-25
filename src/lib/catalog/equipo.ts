@@ -193,3 +193,43 @@ const EQUIPO_POR_ID = new Map<string, Equipo>(EQUIPO.map((e) => [e.id, e]));
 export function equipoPorId(id: string): Equipo | null {
   return EQUIPO_POR_ID.get(id) ?? null;
 }
+
+// Fabricar (docs/tareas.md, tarea 8): mismo conjunto de familias "sueltas"
+// (coste y rareza fijos en la propia pieza, sin niveles ni host) que ya usan
+// costeDePieza()/rarezaDePieza() en lib/rules/equipo.ts — alcance v1,
+// deliberadamente sin instalables (mejoraEstandar/subsistema/mejoraArma/
+// movimiento, necesitan elegir host) ni Herramientas con nivel (VTF, Radar).
+// Se excluyen además los propios Materiales (fabricar materia prima con
+// materia prima no tiene sentido) y las armaMelee sin coste — Puñetazo,
+// Patada, Codazo o Rodillazo, "no se compran".
+// La intersección fuerza coste/rareza a no-nulos en los miembros de la unión
+// que los declaran opcionales (solo ArmaMelee: Puñetazo, Patada... ya
+// filtrados fuera en tiempo de ejecución, ver PIEZAS_FABRICABLES).
+export type PiezaFabricable = (Armadura | ArmaFuego | ArmaMelee | Consumible | ArmaPesada | MunicionGranada) & {
+  coste: number;
+  rareza: Rareza;
+};
+
+const FAMILIAS_FABRICABLES = new Set<Equipo["familia"]>([
+  "armadura",
+  "arma",
+  "armaMelee",
+  "consumible",
+  "armaPesada",
+  "granada",
+]);
+
+const IDS_MATERIALES = new Set(MATERIALES.map((m) => m.id));
+
+export const PIEZAS_FABRICABLES: PiezaFabricable[] = EQUIPO.filter(
+  (e): e is PiezaFabricable =>
+    FAMILIAS_FABRICABLES.has(e.familia) && !IDS_MATERIALES.has(e.id) && "coste" in e && e.coste !== null,
+);
+
+const PIEZAS_FABRICABLES_POR_ID = new Map<string, PiezaFabricable>(
+  PIEZAS_FABRICABLES.map((e) => [e.id, e]),
+);
+
+export function piezaFabricablePorId(id: string): PiezaFabricable | null {
+  return PIEZAS_FABRICABLES_POR_ID.get(id) ?? null;
+}

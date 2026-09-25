@@ -25,6 +25,7 @@ import {
   rarezaPermitida,
   MATERIAL_TIERS,
   rarezaMaterial,
+  tieneVtf,
   type Accion,
   type Sheet,
   type EstadoCondiciones,
@@ -37,6 +38,7 @@ import {
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { AccionModal } from "@/components/AccionModal";
+import { ConstruccionModal } from "./ConstruccionModal";
 import { type DanioInfo, type Lanzamiento } from "@/components/ResultadoTirada";
 
 function signo(n: number) {
@@ -324,6 +326,7 @@ export function AccionesTab({
   memoria,
   setMemoria,
   onReparar,
+  onFabricar,
 }: {
   sheet: Sheet;
   // Fase 6b, 3.1b (D5: combate → ficha): los estados que el máster le tenga
@@ -348,8 +351,11 @@ export function AccionesTab({
   // gasto de materiales — la sección Reparación no tiene sentido ahí y no se
   // pinta.
   onReparar?: (instanciaId: string, tier: MaterialTier) => void;
+  // Mismo motivo que onReparar: ausente en el combate en vivo.
+  onFabricar?: (catalogoId: string, tier: MaterialTier) => void;
 }) {
   const mods = [...modificadoresActivos(sheet), ...modificadoresDeEstados(estadosCombate)];
+  const [construccionAbierta, setConstruccionAbierta] = useState(false);
   const [modal, setModal] = useState<{
     tirada: Accion;
     modBase: number;
@@ -578,6 +584,31 @@ export function AccionesTab({
       ))}
 
       {onReparar && <ReparacionPanel sheet={sheet} onReparar={onReparar} />}
+
+      {/* Fabricar (docs/tareas.md, tarea 8): a diferencia de Reparación,
+          exige tener la VTF equipada — el botón ni se pinta sin ella. */}
+      {onFabricar && tieneVtf(sheet) && (
+        <div className="flex flex-col gap-2">
+          <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
+            Construcción
+          </h2>
+          <button
+            type="button"
+            onClick={() => setConstruccionAbierta(true)}
+            className="clip-chamfer-sm border border-accent bg-accent py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95"
+          >
+            Abrir catálogo de fabricación
+          </button>
+        </div>
+      )}
+
+      {construccionAbierta && onFabricar && (
+        <ConstruccionModal
+          materiales={sheet.materiales}
+          onFabricar={onFabricar}
+          onCerrar={() => setConstruccionAbierta(false)}
+        />
+      )}
 
       {modal && (
         <AccionModal

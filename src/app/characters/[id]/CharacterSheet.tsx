@@ -16,6 +16,7 @@ import {
   ajustarMaterialAction,
   comprarMaterialAction,
   repararAction,
+  fabricarAction,
   type SaveResult,
 } from "./actions";
 import {
@@ -326,6 +327,9 @@ export function CharacterSheet({
   const commitReparar = (instanciaId: string, tier: MaterialTier) => {
     runSave(() => repararAction(characterId, instanciaId, tier), setSheet);
   };
+  const commitFabricar = (catalogoId: string, tier: MaterialTier) => {
+    runSave(() => fabricarAction(characterId, catalogoId, tier), setSheet);
+  };
 
   // ── Identidad (debounced, fire-and-forget). ──
   const scheduleIdentity = () => {
@@ -552,6 +556,7 @@ export function CharacterSheet({
           memoria={accionesMemoria}
           setMemoria={setAccionesMemoria}
           onReparar={commitReparar}
+          onFabricar={commitFabricar}
         />
       )}
       {activeEfectivo === "tienda" && (

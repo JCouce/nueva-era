@@ -16,8 +16,11 @@ import {
   rarezaPermitida,
   pesoDePieza,
   pesoEquipado,
+  fabricar,
+  tieneVtf,
   type PiezaEquipada,
 } from "./equipo";
+import { ajustarMaterial } from "./recursos";
 
 // La Armadura Ligera del slice: 1 ranura de subsistema (ver
 // src/lib/catalog/equipo.ts). Los ids de instancia son deterministas aquí
@@ -785,5 +788,54 @@ describe("armaPesada y granada (Armamento Pesado, bloque 3 del catálogo pendien
     let s = equipar(defaultSheet(), { instanciaId: "cp1", catalogoId: "canon_plasma" });
     s = equipar(s, { instanciaId: "g1", catalogoId: "granada_plasma" });
     assert.deepEqual(modificadoresDeEquipo(s), []);
+  });
+});
+
+describe("tieneVtf", () => {
+  test("sin la VTF equipada, false", () => {
+    assert.equal(tieneVtf(defaultSheet()), false);
+  });
+
+  test("con la VTF equipada (cualquier nivel), true", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "v1", catalogoId: "valija_tactica_fabricacion" });
+    assert.equal(tieneVtf(s), true);
+  });
+});
+
+describe("fabricar", () => {
+  // Rodela: armaMelee, Común, coste 130. Materiales Sencillos: 250 cr/unidad
+  // (herramientas.ts) → ceil(130/250) = 1 unidad basta.
+  test("gasta las unidades créditos-equivalentes (redondeo al alza) y equipa la pieza", () => {
+    let s = ajustarMaterial(defaultSheet(), "sencillos", 2);
+    s = fabricar(s, "escudo_rodela", "sencillos");
+    assert.equal(s.materiales.sencillos, 1);
+    assert.ok(s.equipo.some((p) => p.catalogoId === "escudo_rodela"));
+  });
+
+  // Escudo de Metamaterial: coste 2000. Sofisticados: 500 cr/unidad →
+  // ceil(2000/500) = 4 unidades exactas.
+  test("una pieza más cara pide más unidades, sin redondear de más si cae justo", () => {
+    let s = ajustarMaterial(defaultSheet(), "sofisticados", 4);
+    s = fabricar(s, "escudo_metamaterial", "sofisticados");
+    assert.equal(s.materiales.sofisticados, 0);
+    assert.ok(s.equipo.some((p) => p.catalogoId === "escudo_metamaterial"));
+  });
+
+  test("sin stock suficiente no hace nada", () => {
+    const s = ajustarMaterial(defaultSheet(), "sencillos", 0);
+    const s2 = fabricar(s, "escudo_rodela", "sencillos");
+    assert.equal(s2, s);
+  });
+
+  test("una pieza no fabricable (mejora estándar) no hace nada", () => {
+    const s = ajustarMaterial(defaultSheet(), "sencillos", 100);
+    const s2 = fabricar(s, "camuflaje_trifasico", "sencillos");
+    assert.equal(s2, s);
+  });
+
+  test("un catalogoId que no existe no hace nada", () => {
+    const s = ajustarMaterial(defaultSheet(), "sencillos", 100);
+    const s2 = fabricar(s, "no-existe", "sencillos");
+    assert.equal(s2, s);
   });
 });

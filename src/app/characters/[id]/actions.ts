@@ -25,6 +25,9 @@ import {
   comprarMaterial,
   repararPieza,
   rarezaMaterial,
+  fabricar,
+  tieneVtf,
+  piezaFabricablePorId,
   type MaterialTier,
   type AtributoId,
   type HabilidadId,
@@ -378,6 +381,36 @@ export async function repararAction(
 
   const sheet = repararPieza(ctx.sheet, instanciaId, tier);
   if (sheet === ctx.sheet) return { ok: false, error: "Esa pieza ya está al máximo de durabilidad." };
+  return persist(characterId, sheet);
+}
+
+// Fabricar (docs/tareas.md, tarea 8): requiere la VTF equipada (a
+// diferencia de Reparar) y rareza suficiente, ambos validados aquí ANTES de
+// llamar a la función pura — mismo criterio que equiparAction/repararAction.
+// La UI solo manda el catalogoId, nunca coste ni rareza: se recalculan aquí
+// con el catálogo, igual que el resto de acciones de compra.
+export async function fabricarAction(
+  characterId: string,
+  catalogoId: string,
+  tier: MaterialTier,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+
+  if (!tieneVtf(ctx.sheet)) {
+    return { ok: false, error: "Necesitas la Valija Táctica de Fabricación equipada." };
+  }
+
+  const cat = piezaFabricablePorId(catalogoId);
+  if (!cat) return { ok: false, error: "Esa pieza no se puede fabricar." };
+
+  const tope = rarezaMaterial(tier);
+  if (!tope || !rarezaPermitida(cat.rareza, tope)) {
+    return { ok: false, error: `Necesitas material de rareza ${cat.rareza} o superior.` };
+  }
+
+  const sheet = fabricar(ctx.sheet, catalogoId, tier);
+  if (sheet === ctx.sheet) return { ok: false, error: "No tienes materiales suficientes de ese tier." };
   return persist(characterId, sheet);
 }
 

@@ -14,6 +14,7 @@
 import { z } from "zod";
 import {
   equipoPorId,
+  piezaFabricablePorId,
   RAREZA_ORDEN,
   type ArmaFuego,
   type Equipo,
@@ -23,7 +24,7 @@ import {
 import { alcanzaA, type ContextoAccion, type GrupoAccion, type Modificador, type ModificadorConFuente } from "./modificadores";
 import type { CondicionTirada } from "./condiciones";
 import type { HabilidadId } from "./habilidades";
-import { reconciliarRecursos } from "./recursos";
+import { reconciliarRecursos, precioMaterial, type MaterialTier } from "./recursos";
 import type { Sheet } from "./sheet";
 
 // Acumulación de niveles, supuesto S9 (docs/sistema.md): "un efecto que un
@@ -246,6 +247,42 @@ export function equipar(sheet: Sheet, pieza: PiezaEquipada): Sheet {
   }
 
   return reconciliarRecursos({ ...sheet, equipo: [...sheet.equipo, pieza] });
+}
+
+// VTF equipada (cualquier nivel) — requisito de Fabricar (docs/tareas.md,
+// tarea 8), no de Reparar. La VTF no gatea rareza (herramientas.ts), solo
+// habilita el botón: por eso no hace falta mirar `nivel`.
+export function tieneVtf(sheet: Sheet): boolean {
+  return sheet.equipo.some((p) => p.catalogoId === "valija_tactica_fabricacion");
+}
+
+// Fabricar: "comprar" pagando en Materiales en vez de en créditos — mismo
+// golpe que equipar(), salvo que la pieza no llega entera del cliente (solo
+// el catalogoId, decisión del usuario), así que el instanciaId se genera
+// aquí en vez de en la UI. El coste en unidades es créditos-equivalentes
+// (docs/equipamiento.md: "material suficiente para igualar el precio del
+// objeto"): la SUMA del valor de catálogo de las unidades gastadas cubre el
+// precio del objeto, no "1 unidad = 1 crédito". Redondeo al alza, mismo
+// criterio que el resto del sistema (+2 dificultad por rango de rareza).
+// Silencioso si no hay stock suficiente o la pieza no es fabricable — quien
+// llama (la action) ya valida VTF equipada y rareza con rarezaPermitida()
+// ANTES de esto, mismo criterio que repararPieza().
+export function fabricar(sheet: Sheet, catalogoId: string, tier: MaterialTier): Sheet {
+  const cat = piezaFabricablePorId(catalogoId);
+  if (!cat) return sheet;
+
+  const precioUnidad = precioMaterial(tier);
+  if (precioUnidad <= 0) return sheet;
+  const unidades = Math.ceil(cat.coste / precioUnidad);
+  if (sheet.materiales[tier] < unidades) return sheet;
+
+  const equipado = equipar(sheet, { instanciaId: nuevaInstanciaId(), catalogoId });
+  if (equipado === sheet) return sheet;
+
+  return {
+    ...equipado,
+    materiales: { ...equipado.materiales, [tier]: equipado.materiales[tier] - unidades },
+  };
 }
 
 // Quitar una armadura o un arma se lleva también lo que tuviera instalado

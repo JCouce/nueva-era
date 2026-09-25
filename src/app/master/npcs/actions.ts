@@ -28,6 +28,7 @@ import {
   ajustarMaterial,
   comprarMaterial,
   repararPieza,
+  fabricar,
   ATRIBUTO_MIN,
   ATRIBUTO_MAX,
   HABILIDAD_NO_ENTRENADA,
@@ -260,6 +261,21 @@ export async function comprarMaterialNpcAction(npcId: string, tier: MaterialTier
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(npcId, comprarMaterial(ctx.sheet, tier).sheet);
+}
+
+// Fabricar: sin requisito de VTF ni tope de rareza (edición libre, mismo
+// criterio que equiparNpcAction/repararNpcAction) — solo hace falta que
+// haya stock suficiente del tier.
+export async function fabricarNpcAction(
+  npcId: string,
+  catalogoId: string,
+  tier: MaterialTier,
+): Promise<NpcResult> {
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const sheet = fabricar(ctx.sheet, catalogoId, tier);
+  if (sheet === ctx.sheet) return { ok: false, error: "No se pudo fabricar (id inválido o sin materiales)." };
+  return persist(npcId, sheet);
 }
 
 // Reparar: sin tope de rareza (edición libre, mismo criterio que
