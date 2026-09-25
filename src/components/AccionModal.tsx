@@ -264,7 +264,7 @@ export function AccionModal({
   // ya se ha tirado de verdad en cuanto arranca (ver dispararTirada).
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
       onClick={rodando ? undefined : onCerrar}
     >
       <HudCard

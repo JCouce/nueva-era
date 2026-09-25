@@ -210,7 +210,7 @@ export function ConstruccionModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
       onClick={onCerrar}
     >
       <HudCard className="max-h-[85vh] w-full max-w-md overflow-y-auto p-4 sm:mx-4">
