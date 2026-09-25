@@ -185,6 +185,76 @@ describe("mejoras que afectan a la distancia", () => {
   });
 });
 
+describe("Accion.efectos (objetivo_tercero / tirada propia distinta, docs/sistema.md 25b revertida 2026-09-24)", () => {
+  test("Puntero Láser: el -2 sigilo es un efecto listado, no un toggle que se cuele en la tirada de ataque", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
+    sheet = equipar(sheet, {
+      instanciaId: "p1",
+      catalogoId: "puntero_laser",
+      nivel: 1,
+      instaladoEnId: "arma1",
+    });
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
+    // Solo queda el toggle del +1 al ataque — el de -2 sigilo (con alcance)
+    // ya no existe como condición, así que no puede colarse aquí.
+    assert.equal(fila.condiciones?.filter((c) => c.id.startsWith("activo")).length, 1);
+    assert.deepEqual(fila.efectos, [
+      { fuente: "Puntero Láser", texto: "Con el puntero activo: -2 a tu Sigilo (percepción visual)." },
+    ]);
+    assert.doesNotMatch(fila.nota ?? "", /Sigilo/);
+  });
+
+  test("Silenciador: el aviso a la Alerta Activa del objetivo cuelga de la tirada de disparo, no de nota", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
+    sheet = equipar(sheet, {
+      instanciaId: "s1",
+      catalogoId: "silenciador",
+      nivel: 1,
+      instaladoEnId: "arma1",
+    });
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
+    assert.deepEqual(fila.efectos, [
+      {
+        fuente: "Silenciador",
+        texto: "Ataque sorpresivo con silenciador: -2 (no el habitual) a la Alerta Activa de quien te detecta.",
+      },
+    ]);
+    assert.doesNotMatch(fila.nota ?? "", /Alerta Activa/);
+  });
+
+  test("Rayo Ligero: la propia arma también lista su efecto en Alerta Activa por separado de especial/nota", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "r1", catalogoId: "pistola_rayo_ligero" });
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Rayo Ligero")!;
+    assert.deepEqual(fila.efectos, [
+      { fuente: "Rayo Ligero", texto: "-6 a la Alerta Activa de quien te detecta (percepción visual)." },
+    ]);
+    assert.doesNotMatch(fila.nota ?? "", /Alerta Activa/);
+    assert.match(fila.nota ?? "", /Crítico de Shock/);
+  });
+
+  test("Sistema de Retroceso nv2: la subida de dificultad de Esquiva del objetivo cuelga de la tirada de disparo", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
+    sheet = equipar(sheet, {
+      instanciaId: "r1",
+      catalogoId: "sistema_retroceso",
+      nivel: 2,
+      instaladoEnId: "arma1",
+    });
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
+    assert.deepEqual(fila.efectos, [
+      {
+        fuente: "Sistema de Retroceso",
+        texto: "En modo automático: +1 a la dificultad de Esquiva de quien recibe el disparo.",
+      },
+    ]);
+    assert.doesNotMatch(fila.nota ?? "", /dificultad de Esquiva/);
+  });
+});
+
 describe("lanzagranadas integrado", () => {
   test("el -1 por el peso no toca el tramo: sale como su propia línea con fuente", () => {
     let sheet = defaultSheet();

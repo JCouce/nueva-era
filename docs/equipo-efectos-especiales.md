@@ -11,6 +11,17 @@ quien tira.
 que aparezca una regla genuinamente ambigua — la mayoría de esto ya está `FIRME` en
 `docs/equipamiento.md`, solo sin mecanizar.
 
+**Qué es esto exactamente, para no confundirlo con otros dos documentos
+parecidos:** este es el barrido **MANUAL**, verificado contra el **PDF
+original** (`docs/Equipamiento.pdf`, no solo el catálogo ya transcrito) y con
+el diseñador (Murillo) en el bucle — arrancado 2026-09-12, vivo mientras no se
+archive. Para retomarlo en una sesión nueva, usa `docs/prompt-equipo-efectos.md`
+(el "cómo seguir"; este archivo es el "qué se sabe"). Si una pieza aparece
+también en `docs/checklist-motor-vs-prosa-2026-09-24.md` (barrido automático,
+multi-agente, solo compara el catálogo contra sí mismo — no toca el PDF ni
+habla con Murillo), **este documento manda**: tiene mejor fuente y más
+contexto humano detrás.
+
 ## Cinco hallazgos, antes de la lista (2026-09-12, el 5º añadido 2026-09-21)
 
 Revisando pieza a pieza contra el código real (no solo contra el PDF) aparecieron

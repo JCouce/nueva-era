@@ -695,10 +695,23 @@ ataque**, a la reacción de detección de los observadores (Perspicacia + Explor
 — no a una tirada propia del atacante. Encaja con el flujo que ya describe `COMBATE`
 (§"Ataque furtivo y sorpresivo"). **Decisión de producto (2026-09-23, el usuario):**
 aunque es mecanizable como aviso `objetivo_tercero` colgado de la propia tirada de
-disparo, **no se construye** — saldría en casi toda arma de fuego del catálogo y
-sobrecargaría la UI de avisos por poco beneficio. Se queda como texto en la
-descripción del arma, sin aviso automático (`MotorMetadata` de las piezas afectadas
+disparo, ~~no se construye~~ — saldría en casi toda arma de fuego del catálogo y
+sobrecargaría la UI de avisos por poco beneficio. ~~Se queda como texto en la
+descripción del arma, sin aviso automático~~ (`MotorMetadata` de las piezas afectadas
 pasa de `bloqueado` a `pendiente`, `armasFuego.ts` + Silenciador en `mejorasArma.ts`).
+
+**Decisión revertida (2026-09-24, el usuario):** el "no se construye" del párrafo
+anterior nació de un caso concreto que se generalizó por error al redactar la regla
+— la objeción real no era "esto siempre sobrecarga la UI", era un malentendido en
+una conversación puntual. Se construye: cada pieza afectada cuelga el aviso
+`objetivo_tercero`/`nota_fija` de su propia tirada de disparo (`arma.especial` para
+armas de fuego, `NivelModulo.notaTirada` para mejoras de arma, ambos concatenados
+en `Accion.nota` — `notasDeMejoras()` y el join de `tiradaDeArmaFuego`, `combate.ts`).
+`MotorMetadata` de las piezas afectadas pasa de `pendiente`/`bloqueado` a
+`construido`: Rayo Ligero, Plasma SD, Plasma SG, Plasma SB, Plasma AR
+(`armasFuego.ts`), Silenciador y Sistema de Retroceso nv2 (`mejorasArma.ts`). Si en
+el futuro un aviso concreto resulta ser puro ruido (no este patrón entero), se
+retira caso a caso, no con una regla general.
 
 **Modelo propuesto por el usuario (2026-09-12), pendiente de validar con el
 diseñador, no implementar todavía:** el sigilo no se re-tira en cada instante —
@@ -760,6 +773,25 @@ lo anota a mano.
     día que existan poderes psiónicos (Fase 5) esto no obligue a un tipo de bono
     nuevo solo para un caso. Detectado por el usuario al revisar Derivación Psiónica
     (2026-09-22).
+34. **S.A.79: contradicción interna en la munición.** La prosa de `descripcion` dice
+    "tambor extraíble de 20 cartuchos"; el dato transcrito en el catálogo
+    (`escopeta_sa79.municion`) trae un número distinto. No hay forma de saber cuál es
+    el correcto sin volver a `docs/equipamiento.md` fila por fila o preguntar
+    directamente — puede ser un error de transcripción nuestro, no necesariamente del
+    documento fuente. Detectado en el barrido motorMetadata-vs-prosa (2026-09-24).
+35. **Exoesqueleto: ¿puede usarse sin armadura?** La prosa dice que sí; el código exige
+    `familia === "armadura"` para poder instalarlo (`equipo.ts`, comprobar la función
+    exacta de instalación). Puede ser un requisito de diseño real ("necesitas algo
+    donde anclarlo") transcrito mal como límite de código, o al revés. Detectado en
+    el barrido motorMetadata-vs-prosa (2026-09-24).
+36. **Plaga: "el mayor daño de plasma de su clase" — verificar la cifra.** La
+    descripción hace una afirmación comparativa (superlativo dentro de su categoría);
+    no se ha verificado que el número transcrito sea de verdad el más alto de todos
+    los fusiles de precisión de plasma del catálogo. Puede ser solo una comprobación
+    de datos (no hace falta preguntar a Murillo si los números ya están bien
+    transcritos en otro sitio), o puede hacer falta confirmar con él si el catálogo
+    entero de plasma está bien relativizado entre sí. Detectado en el barrido
+    motorMetadata-vs-prosa (2026-09-24).
 
 ---
 

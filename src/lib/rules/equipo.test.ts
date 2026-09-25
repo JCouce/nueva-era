@@ -534,18 +534,18 @@ describe("indiceDeCondiciones + consultaIndiceCondiciones ≡ condicionesActivas
     );
   });
 
-  test("una mejora de arma CON alcance (Puntero Láser, -2 sigilo) sí llega a otra tirada fija", () => {
-    // 2026-09-25: condicionesActivas() dejó de excluir mejoraArma — Puntero
-    // Láser es el primer caso real (junto a Mira Telescópica n2).
+  test("Puntero Láser ya no llega a Sigilo por aquí (2026-09-24: el -2 pasó a notaTirada, ver combate.test.ts)", () => {
+    // Antes (2026-09-25 en el comentario original, fecha ya obsoleta): el
+    // -2 sigilo era un toggle con alcance que condicionesActivas() recogía
+    // para la tirada de Sigilo. Se reclasificó a nota_fija (colgada de la
+    // propia tirada de disparo, no automatizada en otra tirada) tras el
+    // hallazgo de que ese mismo toggle se colaba también en el modal del
+    // arma — ver condicionesDeMejoras(), combate.ts. Puntero Láser vuelve a
+    // no tener ninguna condición con alcance, como Bípode.
     let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "fusil_asalto_impetus" });
     s = equipar(s, { instanciaId: "p1", catalogoId: "puntero_laser", nivel: 1, instaladoEnId: "a1" });
-    const cs = condicionesActivas(s, { id: "sigilo", grupo: "Acciones", habilidad: "sigilo", modoElegido: null });
-    assert.equal(cs.length, 1);
-    assert.equal(cs[0]?.id, "activo_sigilo");
-    // Su otro toggle (+1 ataque, sin alcance) no se cuela aquí ni en ninguna
-    // otra tirada por esta vía — sigue viviendo solo en condicionesDeMejoras.
     assert.deepEqual(
-      condicionesActivas(s, { id: "ataque_fuego_a1", grupo: "Ataques", habilidad: "combate_distancia", modoElegido: null }),
+      condicionesActivas(s, { id: "sigilo", grupo: "Acciones", habilidad: "sigilo", modoElegido: null }),
       [],
     );
   });

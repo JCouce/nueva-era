@@ -238,6 +238,29 @@ Plasmática): el motor no tiene forma de tocar la tirada de otro personaje, así
 que ese efecto se degrada a tipo "texto" — el máster hace de puente, como ya
 pasa con cualquier Crítico.
 
+**Dónde vive ese texto, cerrado 2026-09-24 (el usuario):** depende de si hay
+una tirada de PORTADOR a la que colgarlo — alguien tiene que tirar algo para
+que el aviso tenga sentido en ese momento.
+
+- **Con tirada de portador** (el disparo del arma que lleva la mejora): el
+  texto cuelga de esa tirada, vía `notaTirada`/`notaTercero` +
+  `Accion.efectos` — construido 2026-09-24 (Puntero Láser, Silenciador,
+  Sistema de Retroceso nv2, y la familia de armas con penalizador de sigilo
+  en `armasFuego.ts`; ver `combate.ts`, `notasDeMejoras()`/`notaTercero`).
+- **Sin tirada de portador** (piezas pasivas — un escudo, un camuflaje, un
+  compartimento oculto: nadie tira nada por llevarlos puestos): **no hace
+  falta nada en el motor.** El texto ya está en `descripcion`/`detalle` y ya
+  se ve en la propia card de Equipo/Tienda — ese es el sitio, definitivo, no
+  un hueco a rellenar. No reabrir esta rama para las piezas que caigan aquí
+  (los 5 escudos, Camuflaje Trifásico, y el efecto de detección de
+  Compartimento Oculto son los casos ya identificados, `docs/tareas.md`).
+
+Dos piezas de este mismo lote NO son "solo dónde vive el texto" — son
+mecanismos que faltan de verdad, siguen bloqueados y su solución vive en
+`docs/tareas.md`, no aquí: la tirada ad hoc "Esconder objeto" que necesita
+Compartimento Oculto para listar qué se puede ocultar, y el "colchón"/segunda
+vida de la Malla Plasmática (recurso de personaje que no existe hoy).
+
 El siguiente paso de verdad es un schema Zod que exija `MotorMetadata` en
 cada efecto de cada pieza del catálogo, y un test que lo corra sobre los
 catálogos enteros. Eso convierte "¿está esto regularizado?" en una pregunta

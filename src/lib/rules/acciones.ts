@@ -45,6 +45,15 @@ export type Accion = {
   // el Cuchillo de Combate) — a diferencia de `nota`, que se muestra siempre.
   // Se pinta en ResultadoTirada.tsx solo cuando `resultado.critico` es true.
   efectoCritico?: string;
+  // Efectos que NO se automatizan porque tocan una tirada distinta a esta —
+  // la de un tercero (objetivo_tercero, docs/motor.md) o una tirada propia
+  // pero distinta (Sigilo por el Puntero Láser). El motor no los aplica en
+  // ningún sitio: solo se listan aquí, con quién los produce, para que el
+  // jugador/máster los aplique a mano donde toque — decisión revisada
+  // 2026-09-24 (docs/sistema.md, pregunta 25b). Se pintan en
+  // ResultadoTirada.tsx tras resolver el daño, no en `nota` (que es
+  // información sobre ESTA tirada, no un aviso para otra).
+  efectos?: { fuente: string; texto: string }[];
   // Cuando una tirada depende de algo que el sistema aún no define, se declara
   // en vez de inventársela: la UI la muestra apagada con el motivo.
   bloqueada?: string;

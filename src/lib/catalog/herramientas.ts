@@ -291,9 +291,10 @@ const MOTOR_MATERIAL_RAREZA: MotorMetadata[] = [
   { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
 ];
 // Materiales Sofisticados/Avanzados además dan "+N a la tirada al reparar
-// con la valija" — una de las 9 tareas ya identificadas como listas para
-// construir (docs/barrido-motor-2026-09-22/barrido-melee-medicina-herramientas.md,
-// "patrón VTM"): hoy `modificadores: []`, sin construir todavía.
+// con la valija" — tarea ya identificada como lista para construir
+// (docs/tareas.md, "Equipo — mecanizar efectos especiales por pieza",
+// mismo patrón que ya usa la VTM): hoy `modificadores: []`, sin construir
+// todavía.
 const MOTOR_MATERIAL_REPARAR: MotorMetadata = {
   tipo: "numerico",
   afecta: { modo: "accion_existente", id: "tecnica" },

@@ -74,6 +74,15 @@ function condicionTramo(arma: ArmaFuego): CondicionTirada {
 
 // El resto de condiciones que traiga cualquier mejora instalada en esta
 // arma en concreto (bípode apoyado, y lo que llegue después).
+//
+// Excluye las que declaran `alcance`: esas viajan exclusivamente por
+// condicionesActivas() (equipo.ts) hacia la tirada fija a la que apuntan
+// (docs/modificadores-tiradas.md §8). Sin este filtro, una condición como
+// "activo_sigilo" del Puntero Láser (alcance: sigilo) se colaba también en
+// el modal de SU PROPIA arma de fuego — el jugador podía activarla ahí por
+// error y restar el -2 de sigilo al ataque, un efecto que la pieza nunca
+// prometió para esa tirada (hallazgo del barrido motorMetadata-vs-prosa,
+// 2026-09-24).
 function condicionesDeMejoras(sheet: Sheet, instanciaId: string): CondicionTirada[] {
   const condiciones: CondicionTirada[] = [];
   for (const pieza of sheet.equipo) {
@@ -81,9 +90,34 @@ function condicionesDeMejoras(sheet: Sheet, instanciaId: string): CondicionTirad
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat || cat.familia !== "mejoraArma") continue;
     const niveles = nivelesHasta(cat.niveles, pieza.nivel);
-    condiciones.push(...acumulaPorClave(niveles.map((n) => n.condiciones ?? []), (c) => c.id));
+    condiciones.push(
+      ...acumulaPorClave(niveles.map((n) => n.condiciones ?? []), (c) => c.id).filter((c) => !c.alcance),
+    );
   }
   return condiciones;
+}
+
+// Efectos (mecanismo nota_fija, docs/motor.md) de cualquier mejora instalada
+// en esta arma — el sitio donde "cuelga" un efecto que en realidad toca OTRA
+// tirada (objetivo_tercero: la Esquiva o la Alerta Activa de quien recibe el
+// disparo) o una tirada propia distinta (Sigilo): el motor no automatiza esa
+// otra tirada, así que se lista aquí, con la pieza que lo produce, para que
+// el jugador/máster lo aplique a mano (docs/sistema.md, pregunta 25b,
+// decisión revisada 2026-09-24; ver Accion.efectos, acciones.ts). Mismo
+// patrón que `notaTerceroDeArma` (línea de abajo), pero por nivel de mejora
+// en vez de por arma.
+function efectosDeMejoras(sheet: Sheet, instanciaId: string): { fuente: string; texto: string }[] {
+  const efectos: { fuente: string; texto: string }[] = [];
+  for (const pieza of sheet.equipo) {
+    if (pieza.instaladoEnId !== instanciaId || pieza.nivel === undefined) continue;
+    const cat = equipoPorId(pieza.catalogoId);
+    if (!cat || cat.familia !== "mejoraArma") continue;
+    const niveles = nivelesHasta(cat.niveles, pieza.nivel);
+    for (const n of niveles) {
+      if (n.notaTirada) efectos.push({ fuente: cat.label, texto: n.notaTirada });
+    }
+  }
+  return efectos;
 }
 
 // Bonos que dependen del tramo YA elegido (la mira telescópica solo ayuda a
@@ -173,6 +207,11 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
   const condiciones = [condicionTramo(arma), modo].filter((c): c is CondicionTirada => c !== null);
   condiciones.push(...condicionesDeMejoras(sheet, instanciaId));
 
+  const efectos = [
+    arma.notaTercero ? { fuente: arma.label, texto: arma.notaTercero } : null,
+    ...efectosDeMejoras(sheet, instanciaId),
+  ].filter((e): e is { fuente: string; texto: string } => e !== null);
+
   return {
     id: `ataque_fuego_${instanciaId}`,
     label: `Disparar con ${arma.label}`,
@@ -180,6 +219,7 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
     aplicado: "reflejos",
     habilidad: "combate_distancia",
     nota: [arma.especial, notaModoUnico].filter((n): n is string => !!n).join(" · ") || undefined,
+    efectos: efectos.length > 0 ? efectos : undefined,
     condiciones,
     ajustesFijos: ajustesFijosDeMejoras(sheet, instanciaId),
     bonosTramo: bonosTramoDeMejoras(sheet, instanciaId),

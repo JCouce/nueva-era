@@ -132,22 +132,17 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
             valorActivo: 1,
             valorInactivo: 0,
           },
-          // Toggle aparte (2026-09-25, condicionesActivas() ya admite
-          // mejoraArma): independiente del de arriba — mismo patrón que
-          // Visor Nocturno/Mira Telescópica, un toggle por tirada a la que
-          // llega, sin estado compartido entre ellos.
-          {
-            id: "activo_sigilo",
-            tipo: "toggle",
-            etiqueta: "Puntero activo",
-            alcance: { tipo: "tiradaId", id: "sigilo" },
-            valorActivo: -2,
-            valorInactivo: 0,
-          },
         ],
+        // Relabel 2026-09-24: el -2 al sigilo NO se automatiza como toggle en
+        // la tirada de Sigilo (esa versión, con alcance, se colaba también en
+        // el modal de ESTA arma — hallazgo del barrido motorMetadata-vs-prosa,
+        // ver combate.ts condicionesDeMejoras). El "no automatizamos tiradas
+        // de otras acciones" es la decisión general: el aviso se limita a
+        // colgar de la tirada que lo causa (docs/sistema.md, pregunta 25b).
+        notaTirada: "Con el puntero activo: -2 a tu Sigilo (percepción visual).",
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
       {
@@ -270,13 +265,16 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // Fija un penalizador a un valor concreto en vez de sumar un bono
         // propio: no encaja como modificador simple de "+N".
         modificadores: [],
-        // Pregunta 25b resuelta (Murillo, 2026-09-23): mismo caso que el
-        // sigilo de las armas de fuego (armasFuego.ts) — afecta a la
-        // reacción de detección de los observadores, no a una tirada propia.
-        // Decisión de producto: no avisarlo en la UI para no sobrecargarla
-        // (se repetiría en casi toda arma de fuego); se queda en texto.
+        // Pregunta 25b resuelta (Murillo, 2026-09-23): afecta a la reacción
+        // de detección de los observadores (objetivo_tercero, SIEMPRE tipo
+        // "texto" per docs/motor.md), no a una tirada propia. Decisión de
+        // producto revisada 2026-09-24: sí se avisa, colgado de la propia
+        // tirada de disparo (notasDeMejoras() en combate.ts) — la decisión
+        // original de 2026-09-23 (no construirlo por sobrecargar la UI) se
+        // revierte a petición del usuario.
+        notaTirada: "Ataque sorpresivo con silenciador: -2 (no el habitual) a la Alerta Activa de quien te detecta.",
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
     ],
@@ -320,9 +318,14 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // dificultad de esquiva es un efecto sobre la tirada de OTRO personaje
         // (el que esquiva), no del portador: se queda en texto.
         modificadores: [],
+        // Desbloqueado 2026-09-24: "sin tirada de portador donde colgar la
+        // nota" ya no aplica — notasDeMejoras() (combate.ts) cuelga esto de
+        // la propia tirada de disparo (la tirada de portador SÍ existe, era
+        // la tubería de notas la que faltaba, no la tirada).
+        notaTirada: "En modo automático: +1 a la dificultad de Esquiva de quien recibe el disparo.",
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "siempre_activo", estado: "construido" }, // heredado de nivel 1 (S9)
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "esquiva" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" }, // sube la esquiva de QUIEN te dispara, no una tirada propia
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "esquiva" }, mecanismo: "nota_fija", estado: "construido" }, // sube la esquiva de QUIEN te dispara, no una tirada propia
         ],
       },
     ],

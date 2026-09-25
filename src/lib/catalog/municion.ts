@@ -29,9 +29,9 @@ export const ALCANCE_ARROJADA = "Potencia × 10 m";
 // para el modo de esa tirada, pero su `nota` es un texto genérico fijo ("Área y
 // efecto según la granada elegida") que NO interpola el areaEfecto real de la
 // granada seleccionada — confirmado leyendo combate.ts, es la tarea pendiente
-// "nota Área/Esquiva/Efecto en Granadas" de docs/barrido-motor-2026-09-22/
-// barrido-armaduras-subsistemas-pesado.md. Por eso esas dos últimas entradas
-// van "pendiente", no "construido".
+// "Lanzagranadas — la nota no interpola la granada real" de docs/tareas.md
+// (sección "Equipo — mecanizar efectos especiales por pieza"). Por eso esas
+// dos últimas entradas van "pendiente", no "construido".
 const MOTOR_GRANADA: MotorMetadata[] = [
   { tipo: "accion", afecta: { modo: "accion_nueva", id: "lanzar_granada" }, mecanismo: "accion_equipo", estado: "construido" },
   { tipo: "numerico", afecta: { modo: "accion_existente", id: "lanzar_granada" }, mecanismo: "ajuste_fijo", estado: "construido" },

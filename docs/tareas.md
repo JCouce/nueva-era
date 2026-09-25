@@ -363,7 +363,234 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
    tipo de daño o el Mental es la única excepción confirmada (§7 de
    `sistema.md`). Detalle: `docs/equipo-efectos-especiales.md`, hallazgo #5.
 
-4. **El barrido pieza a pieza en sí sigue mereciendo terminarse** (quedan ma2/ma4
+   **Compartimento Oculto — falta una tirada ad hoc "Esconder objeto" (decisión
+   2026-09-24, el usuario).** Los dos niveles prometen ocultar un objeto
+   (pequeño en nv1, mediano en nv2) contra cacheos/escáneres — hoy solo es
+   texto en `descripcion`, sin ninguna acción que lo use. La tirada nueva
+   debe sacar una lista de las armas/objetos que el personaje lleva y que
+   encajan por tamaño en el compartimento — no está diseñada todavía, solo
+   decidido que hace falta. No confundir con el caso "sin tirada de portador"
+   de `docs/motor.md` (objetivo_tercero): esto es al revés, falta una tirada
+   PROPIA que hoy no existe.
+
+4. **Decisiones del barrido de 2026-09-24, tomadas en conversación — pendientes de
+   construir, ninguna con código todavía** (checklist de piezas concretas en
+   `docs/checklist-motor-vs-prosa-2026-09-24.md`, bórralo cuando todo esto esté cerrado):
+
+   - **"Acciones sin dado" — patrón de UX decidido, es la pieza de arquitectura
+     que `docs/motor.md` ya señalaba como pendiente ("Acciones sin dado").**
+     Igual que un botón "Tirar" abre el modal de una tirada normal, un botón
+     "Usar" abre el mismo tipo de modal pero sin dado — deja elegir lo que
+     haga falta (contra qué elemento, qué modo, etc.) y aplica el efecto
+     directo. Casos reales que lo necesitan: Movilidad Aérea "Máxima
+     potencia" (acción compleja, gasta cargas, dobla desplazamiento),
+     Malla Plasmática (sacrificar puntos del colchón por daño extra,
+     activarla en sí — gasta 1 carga, no tira nada), Derivación Psiónica
+     "Conversión Psiónica" (N cargas → 1 punto de fatiga), consumibles con
+     efecto real (Valija Táctica Médica, Estabilizadores Neurales — curar/
+     aplicar un estado). No implementar sin diseñar antes el "tipo hermano"
+     de `Accion` que mencionaba `docs/motor.md` — sigue siendo la primera
+     pieza de código nueva de verdad, no una migración de datos. **Nota
+     rescatada de `docs/barrido-motor-2026-09-22/barrido-armaduras-
+     subsistemas-pesado.md`:** Movilidad Aérea tiene un segundo hueco además
+     de "Máxima potencia" — mientras se está volando, otras tiradas cambian
+     (esquivar usa Tecnociencia en vez de Atletismo, -1 a ataques) y eso
+     depende de un estado "¿está volando ahora mismo?" que el motor no
+     rastrea en absoluto hoy — no es solo la acción sin dado, hace falta el
+     estado persistente detrás.
+   - **`arma.uso` (armas melee) se estructura — decidido, sin construir.**
+     Pasa de `string[]` suelto a algo que el motor pueda leer: empuñadura
+     (una mano / dos manos / variable, con efecto propio para cada modo
+     cuando es variable) + arrojadiza (se tira con sus propios modificadores).
+     Nombre del campo sin cerrar del todo — candidato: alinear con
+     `ArmaFuego.empleo` en vez de mantener el nombre `uso` distinto entre las
+     dos familias. Comprobado 2026-09-24: hoy NO existe ningún mecanismo de
+     "arrojar un arma melee" en la app (grep vacío) — el Cuchillo de Combate
+     ya está marcado "arrojadiza" en prosa sin ningún botón que lo use.
+   - **Mira Telescópica integrada en fusiles de precisión — decidido, pequeña
+     extensión de tubería.** Los 8 fusiles (Telum, Yivrem, K9K, Tshulok,
+     Láser/Rayo de Largo Alcance, Plasma SS, Plaga) necesitan el mismo
+     `ajusteTramo: {media:1, larga:1}` que ya tiene Mira Telescópica nv1,
+     pero `ArmaFuego` no tiene hoy campo `ajusteTramo` (solo `NivelModulo`) —
+     hay que añadirlo al tipo y sumarlo en `tiradaDeArmaFuego`
+     (`combate.ts`) junto a `bonosTramoDeMejoras()`. **Sin verificar (rescatado
+     de `docs/barrido-motor-2026-09-22/barrido-armas-fuego.md`):** falta
+     comprobar contra `docs/equipamiento.md` fila por fila si `mejorasAdmitidas`
+     de estos 8 fusiles YA descuenta la ranura de la mira integrada o no —
+     si no la descuenta, dar el bono sin tocar `mejorasAdmitidas` sería
+     regalarles una ranura de más.
+   - **Crítico parametrizable — decidido, para la Valija Táctica Médica
+     nivel 4.** `MARGEN_CRITICO = 6` (`acciones.ts`) es hoy una constante fija
+     sin override. VTM nv4 promete "cualquier éxito cuenta como crítico" para
+     tratamientos concretos (estados complejos, estabilización, síntesis) —
+     `resolverTirada()` necesita aceptar un margen de crítico distinto (o un
+     flag equivalente) activable por contexto, no cambiar la constante global.
+   - **Sin código, es comunicación de mesa — decidido para varios casos del
+     barrido.** Mismo criterio que "objetivo_tercero sin tirada de portador"
+     (`docs/motor.md`): si el efecto es un coste de acción o un dato que
+     nadie tira (desenfundar/recargar en acción compleja, duración en horas
+     de una batería), ya se ve en la card de Equipo/Tienda — no hace falta
+     construir nada. Aplica a: Escudos (levantar cuesta acción simple/
+     estándar), Lanzallamas Ligero y Lanzagranadas pesado (desenfundar/
+     recargar complejo), Soporte Vital (72h/24h de autonomía).
+   - **Visor Térmico nv1 — NO es un hueco, revisado 2026-09-24.** El toggle
+     "Modo térmico activo" (`mejorasEstandar.ts`) ya está a propósito con
+     `valorActivo: 0` — mismo caso que Visor Nocturno n2, el -3 depende de si
+     lo mirado está fuera del gradiente térmico, algo que el motor no puede
+     saber, así que se informa (nota) en vez de auto-aplicarse. El hallazgo
+     del barrido era un falso positivo. No tocar.
+   - **Polímero Anticorrosivo nv1 — no es pregunta nueva, ya está la 32.** El
+     "no susceptible a shock" que falta es el mismo hueco que la pregunta 32
+     de `docs/sistema.md` (shock/apagón sin definir) — espera a esa
+     respuesta, no duplicar la pregunta a Murillo.
+   - **Radar nv4 — decidido 2026-09-24, resuelto sin estado ni cálculo.** Nada
+     de trackear "quién está marcado" ni leer cobertura/camuflaje por código
+     (se descartó esa vía). Es un ad hoc como Proyector de Pulso ("Marcar
+     objetivo", acción custom que tira o no tira dados) más un texto fijo en
+     las tiradas de ataque — mismo patrón `nota_fija`/`Accion.efectos` de
+     hoy — tipo "-X de dificultad contra cobertura al objetivo marcado": el
+     jugador aplica el número a mano. Encaja en lo ya construido.
+   - **Disfraz Holográfico nv2 — decidido 2026-09-24: los dos efectos son
+     `narrativo`.** "Reduce el rediseño a 1 min" y "mitiga penalizaciones por
+     envergadura" (concepto que no existe en ningún otro sitio del sistema)
+     se quedan como texto informativo, mismo patrón que la VTF — solo falta
+     declarar bien el `motorMetadata`, no hay lógica que escribir.
+   - **Derivación Psiónica nv1 — decidido 2026-09-24: aparcado dentro de Fase
+     5, no es pregunta suelta.** El +1 que cubre tanto "retroceso" como
+     "desorientación" psiónica no tiene tirada para lo segundo porque la
+     psiónica en sí no está dada de alta todavía (bloqueada por el
+     diseñador, ver Fase 5 arriba) — normal que falten conceptos. Se resuelve
+     cuando llegue esa fase, no antes.
+   - **Estabilizadores Neurales — decidido 2026-09-24: se aborda junto con
+     VTM, no aparte.** Mismo bloqueo (acción sin dado) y de propina: los
+     consumibles/fármacos hoy no tienen NINGÚN mecanismo de "se gastan al
+     usarlos" (`recursos.ts` solo trackea arma/subsistema con célula) — hay
+     que construir también el gasto, no solo el efecto de curar "aturdido".
+   - **Munición en Tienda — tarea nueva, sin diseñar.** Hoy comprar munición es
+     un botón suelto en la pestaña Recursos. Hace falta una sección propia en
+     la Tienda, con algo como una unidad de cada tipo de munición por cada
+     tipo de arma compatible. Sin maquetar todavía.
+
+   **Malla Plasmática — falta el "colchón"/segunda vida (decisión 2026-09-24,
+   el usuario).** Los 4 niveles prometen un buffer de puntos de golpe que
+   absorbe daño y se regenera por turno, activo mientras el subsistema esté
+   encendido — no hay ningún recurso de personaje parecido hoy (`docs/motor.md`
+   ya lo señala: "buffer temporal sin nombre en capa 2 y media"). Se activa al
+   equiparse la pieza — básicamente una segunda barra de vida temporal. Sin
+   diseñar el mecanismo exacto (¿vive en `Combatiente` como PG/fatiga, o es un
+   recurso de instancia como munición?) — solo decidido que hay que
+   construirlo, no forzarlo dentro de PG.
+
+   **Sydiasi — arma pesada de arreglar, deliberadamente la última de la cola
+   (decisión 2026-09-24, el usuario).** Dos problemas propios, ninguno nuevo
+   de hoy — el barrido solo los reencontró:
+   - **Consumo de munición**: la prosa dice "consume 3 disparos" en modo
+     automático; `gastoDelModo()` (`recursos.ts`) le cobra el cargador
+     entero (20) por la regla genérica (sin F.Auto = 1, con F.Auto =
+     cargador completo) — **decisión consciente ya tomada** al construir
+     RECURSOS (ver más arriba, "Fuera de alcance de este primer pase").
+     Sin decidir todavía: ¿sigue mereciendo la pena la regla genérica, o la
+     Sydiasi pasa a ser el caso especial con consumo fijo de 3?
+   - **"A dos manos elimina el penalizador de retroceso"**: sin construir.
+     Ya analizado en `docs/equipo-efectos-especiales.md` (2026-09-12): un
+     toggle plano tipo Bípode no vale porque `condiciones.ts` no soporta
+     "este toggle solo cuenta si el modo elegido es F.Auto" — se aplicaría
+     también en modo Simple, donde no hay penalización que quitar. Sin
+     decidir: ¿parche ad hoc solo para esta pieza, o generalizar
+     `condiciones.ts` para toggles condicionados a otra condición (útil si
+     aparecen más casos)?
+
+5. **Rescatado 2026-09-24 de `docs/barrido-motor-2026-09-22/barrido-melee-medicina-
+   herramientas.md` antes de borrarlo** (ese archivo era clasificación estructural
+   puntual, ya cumplió su función — esto es lo único que no estaba ya en
+   `docs/equipo-efectos-especiales.md` ni en `docs/sistema.md`):
+   - **`defensa` de Escudos sin acción (Rodela, Escudo, sus dos versiones de
+     metamaterial, y Escudo de Kerzul — 5 piezas).** Distinto de la decisión de
+     hoy sobre "levantar escudo" (esa sí quedó resuelta sin código): esto es que
+     el `blindaje` propio del escudo no se suma a ningún cálculo, y sus
+     `puntosGolpe` no tienen ningún sitio donde restarles daño — el escudo no
+     puede "romperse" hoy aunque el dato ya existe. Sin construir.
+   - **Mangual — "ignora N de Cobertura física" en modo Estándar.** Modificador
+     numérico condicionado al modo, mecanizable con el mecanismo 1 de
+     `modificadores-tiradas.md` en cuanto se decida a qué tirada de "cobertura"
+     apunta — la cobertura en sí no tiene mecanismo en el motor todavía (mismo
+     hueco transversal que toca a Radar nv4 y a los Escudos).
+   - **Armas Mecánicas (Hoja Dentada, Guantelete de Pistón, Sierra Circular,
+     Martillo de Pistón, Ariete Percusivo — 5 piezas), acción Compleja.**
+     "Ignora 1 nivel de armadura" (bloqueado por el Hallazgo #5/pregunta 29,
+     igual que el resto de blindaje) y "Derribo (N)" — que aquí necesita un
+     estado `Derribo` que no existe en el catálogo de 23 estados
+     (`sistema-y-combate.md`), distinto del Derribo de escopetas del barrido de
+     hoy. Ariete Percusivo además: "doble daño contra estructuras" — no existe
+     concepto de "objetivo estructura" en el motor (todo objetivo es un
+     `Combatiente`), narrativo por ahora.
+   - **Retroceso entrópico (las 10 armas Kerzul).** Peor que "sin mecanizar": ni
+     siquiera se muestra en la UI — solo vive en un comentario de cabecera del
+     catálogo (`armasMelee.ts`). Necesitaría su propia acción/reacción
+     ("Salvación por retroceso entrópico") que hoy no genera ninguna fila en
+     Acciones para ninguna de las 10 piezas.
+   - **Xovromium — sin tirada fija de "manifestación psiónica".** Mismo
+     bloqueo que Derivación Psiónica (arriba): depende de que exista Fase 5
+     (Poderes). No urge.
+   - **Materiales Sofisticados/Avanzados — la más barata de arreglar de todo
+     el lote.** Prometen +2/+4 a la tirada fija `tecnica` ("Reparar/hackear/
+     fabricar"), mismo patrón exacto que ya resolvió la Valija Táctica Médica
+     (`{tipo:"tirada", alcance:{tiradaId:"tecnica"}, valor:N}`) — el único
+     fleco es que el bono depende de **poseer** el material, no de llevarlo
+     equipado (`sheet.equipo` hoy es "lo que llevas puesto"), lo que empalma
+     con la duda de `docs/motor.md` sobre si Materiales debería ser un
+     recurso "de stock" en vez de un `Consumible` simple.
+
+6. **Rescatado 2026-09-24 de `barrido-armaduras-subsistemas-pesado.md` y
+   `barrido-armas-fuego.md`** (mismo `docs/barrido-motor-2026-09-22/`, antes
+   de borrarlos — lo que no estaba ya en `equipo-efectos-especiales.md` ni en
+   `sistema.md`):
+   - **Bayoneta — lista para construirse, el motivo que la bloqueaba ya no
+     existe.** El comentario del catálogo decía "encaja mejor cuando exista
+     el tipo ArmaMelee (Fase E)" — `ArmaMelee` existe desde hace tiempo (39
+     piezas en `armasMelee.ts`). Falta generar una segunda `Tirada` (perfil
+     de cuchillo de combate) cuando el fusil/escopeta lleva la Bayoneta
+     instalada — mismo patrón que `tiradaDeLanzagranadas`. El hallazgo más
+     accionable de los tres archivos rescatados: no hace falta diseñar nada,
+     solo aplicar un patrón ya construido.
+   - **Funda Automática / Inyector Hipodérmico — "cambia el coste de una
+     acción" no encaja en ninguno de los cinco tipos de `docs/motor.md`.**
+     No es modificador de acción (no crea una acción nueva), no es numérico
+     (no hay número), no es habilitador (no activa/desactiva, cambia el
+     *coste* de algo que ya se puede hacer). El motor no tiene concepto de
+     "coste de acción"/economía de turnos en absoluto. Sexto caso sin
+     encajar limpio — a discutir, no forzarlo en los cinco existentes.
+   - **Proyector de Pulso — el gasto por modo no encaja en `gastoDelModo()`.**
+     Ese helper (RECURSOS) solo entiende dos casos: 1 bala, o cargador
+     completo con F.Auto. El Proyector tiene 4 modos con su propio gasto fijo
+     cada uno (Pulso 1, Pulso Cargado 4, Barrido 5, Aguijón 1) — no binario.
+     Hace falta generalizar el helper el día que se construya su tirada
+     (Hallazgo #1, ya conocido aparte).
+   - **Proyector de Pulso — "-5 al sigilo al disparar" es un tercer momento
+     de activación que ningún mecanismo cubre.** No es "siempre activo
+     mientras se lleva puesto" (mecanismo 4) ni "elegido por el jugador al
+     tirar" (mecanismo 1) — es consecuencia de **haber ejecutado la acción
+     de disparar ese turno**. Ni permanente ni a elección, sino "tras esta
+     acción concreta". Puede que haga falta un mecanismo nuevo cuando se
+     generalicen los mecanismos de entrega en `docs/modificadores-tiradas.md`.
+   - **Lanzagranadas (Integrado y pesado) — la nota no interpola la granada
+     real.** `tiradaDeLanzagranadas`/`tiradaDeArmamentoPesado` (`combate.ts`)
+     leen `danio`/`categoriaDanio` de la granada cargada, pero su `nota` es
+     texto genérico fijo ("Área y efecto según la granada elegida") — no
+     vuelca el `areaEfecto` real de la granada seleccionada, a diferencia de
+     `tiradaDeGranada` (lanzarla a mano), que sí lo hace. Por eso esas dos
+     entradas de `MOTOR_GRANADA` (`municion.ts`) van "pendiente", no
+     "construido". Ya identificado, listo para construir (mismo patrón que
+     ya usa `tiradaDeGranada`), no es duda de diseño.
+   - **Granada PEM — condición sobre el TIPO del objetivo ("solo afecta a
+     sistemas y sintéticos"), eje nuevo sin precedente.** No es "tirada de
+     tercero" (eso ya tiene hueco nombrado, objetivo_tercero) — es que el
+     efecto depende de **qué ES** el objetivo, no de quién tira ni de qué
+     tirada es. El motor no tiene ningún concepto de "tipo de objetivo" hoy
+     (sintético, orgánico o cualquier otro). Sin forzar en ningún tipo
+     existente.
+
+7. **El barrido pieza a pieza en sí sigue mereciendo terminarse** (quedan ma2/ma4
    de Mejoras en Armas de Fuego, Munición, Otras Armas a Distancia, Armas
    Modificadas) — barato (lectura + anotación), da el mapa completo. La mayoría de
    lo ya marcado `✅ IMPLEMENTAR` con texto informativo ya se puede construir de

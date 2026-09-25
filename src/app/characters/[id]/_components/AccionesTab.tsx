@@ -371,7 +371,10 @@ export function AccionesTab({
 
     const id = Date.now();
     setHistorial((h) =>
-      [{ ...r, id, label: tirada.label, danioInfo, efectoCritico: tirada.efectoCritico }, ...h].slice(0, 6),
+      [
+        { ...r, id, label: tirada.label, danioInfo, efectoCritico: tirada.efectoCritico, efectos: tirada.efectos },
+        ...h,
+      ].slice(0, 6),
     );
     setModal((m) => (m ? { ...m, resultadoId: id } : m));
   };

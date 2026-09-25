@@ -22,6 +22,11 @@ export type Lanzamiento = Resultado & {
   // combate.ts) — solo tiene sentido pintarlo si esta tirada acabó en crítico,
   // ver el bloque de daño más abajo.
   efectoCritico?: string;
+  // Efectos que tocan otra tirada (Accion.efectos, acciones.ts) — no se
+  // automatizan, se listan para que el jugador/máster los aplique a mano.
+  // Se pintan tras resolver el daño, no antes: es el momento en que el
+  // jugador ya sabe si el ataque impactó de verdad.
+  efectos?: { fuente: string; texto: string }[];
 };
 
 // Contenido de un resultado de tirada — dado, total, veredicto, daño. Lo
@@ -146,6 +151,27 @@ export function ContenidoResultado({
           ) : null}
         </div>
       )}
+
+      {/* Efectos que tocan otra tirada (Sigilo, la Esquiva/Alerta Activa de
+          un tercero...): el motor no los automatiza, así que se listan aquí
+          para que se apliquen a mano — docs/sistema.md, pregunta 25b. Solo
+          tras el daño resuelto: antes de eso el jugador todavía no sabe si
+          el ataque impactó de verdad. Si la Accion no tiene daño (no es un
+          ataque), se pintan sin esperar a nada. */}
+      {resultado.efectos &&
+        resultado.efectos.length > 0 &&
+        (!resultado.danioInfo || resultado.danioResuelto) && (
+          <div className="mt-3 border-t border-border pt-3">
+            <p className="font-mono text-[10px] uppercase tracking-wide text-muted">Efectos</p>
+            <ul className="mt-1 flex flex-col gap-1">
+              {resultado.efectos.map((e, i) => (
+                <li key={i} className="font-sans text-[11px] leading-relaxed text-foreground">
+                  <span className="font-semibold">{e.fuente}:</span> {e.texto}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
     </>
   );
 }

@@ -5,6 +5,13 @@
 > barrer `docs/equipamiento.md` **pieza a pieza, en conversación con el usuario**, para
 > decidir qué efecto especial de cada arma/pieza merece mecanizarse, cuál ya lo está,
 > y cuál es mejor dejar en texto. Se archiva cuando el barrido entero termine.
+>
+> **Este archivo es solo el "cómo retomar" — el "qué se sabe" vive en
+> `docs/equipo-efectos-especiales.md`.** Tampoco confundir con
+> `docs/checklist-motor-vs-prosa-2026-09-24.md` (auditoría automática distinta,
+> multi-agente, sin tocar el PDF ni hablar con Murillo — ver la cabecera de
+> `equipo-efectos-especiales.md` para cuál manda si las dos hablan de la misma
+> pieza).
 
 ## Qué es esto, en una frase
 
