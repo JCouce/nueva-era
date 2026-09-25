@@ -280,6 +280,50 @@ function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: strin
   };
 }
 
+// Bayoneta (mejoraArma, docs/tareas.md ítem 6): perfil de cuchillo de combate
+// propio cuando el fusil/escopeta que la lleva se usa cuerpo a cuerpo — mismo
+// patrón que tiradaDeLanzagranadas (una segunda Accion generada solo si la
+// mejora está instalada en ESTA instancia), no una condición de la tirada de
+// disparo. "El arma pasa a considerarse arma a dos manos mientras se usa como
+// bayoneta" (catálogo) pisa el Sutil/una mano del Cuchillo de Combate base
+// (armasMelee.ts, espada_cuchillo_combate): aplicado Potencia siempre, sin
+// aplicadoSutil ni Arrojadizo. Mismo daño (Fue+2, Letal) y mismo crítico
+// (Hemorragia 1d6 turnos) que ese cuchillo, y ataque+bloqueo van juntos como
+// en cualquier arma melee del catálogo — decisión 2026-09-25, el usuario.
+function tieneBayonetaInstalada(sheet: Sheet, instanciaId: string): boolean {
+  return sheet.equipo.some((p) => p.instaladoEnId === instanciaId && p.catalogoId === "bayoneta");
+}
+
+function tiradaGolpeBayoneta(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Accion | null {
+  if (!tieneBayonetaInstalada(sheet, instanciaId)) return null;
+  const fuerza = atributoEfectivo(sheet, "fuerza");
+  return {
+    id: `golpear_bayoneta_${instanciaId}`,
+    label: `Bayoneta (${arma.label})`,
+    grupo: "Ataques",
+    aplicado: "potencia",
+    habilidad: "combate_melee",
+    efectoCritico: "Hemorragia (1d6 turnos)",
+    ajustesFijos: [{ valor: -1, fuente: "Bayoneta" }],
+    ataque: {
+      modos: [{ id: "0", danio: fuerza + 2, formulaDanio: "Fue+2", categoriaDanio: "Letal" }],
+    },
+  };
+}
+
+function tiradaBloqueoBayoneta(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Accion | null {
+  if (!tieneBayonetaInstalada(sheet, instanciaId)) return null;
+  return {
+    id: `bloquear_bayoneta_${instanciaId}`,
+    label: `Bloquear con Bayoneta (${arma.label})`,
+    grupo: "Defensa",
+    aplicado: "potencia",
+    habilidad: "combate_melee",
+    nota: "Reacción gratuita e ilimitada, como Esquivar — activa mientras se lleva el arma.",
+    condiciones: [CONDICION_ATACANTES_ADICIONALES],
+  };
+}
+
 // Armamento pesado: una dificultad fija por arma (columna "Dif." de EQIP),
 // no varios modos entre los que elegir como en ArmaFuego/ArmaMelee — se
 // mecaniza como ajustesFijos (automático, sin condición) en vez de
@@ -633,7 +677,14 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
   arma: (sheet, pieza, cat) => {
     const arma = cat as ArmaFuego;
     const lanzagranadas = tiradaDeLanzagranadas(sheet, arma, pieza.instanciaId);
-    return [tiradaDeArmaFuego(sheet, arma, pieza.instanciaId), ...(lanzagranadas ? [lanzagranadas] : [])];
+    const golpeBayoneta = tiradaGolpeBayoneta(sheet, arma, pieza.instanciaId);
+    const bloqueoBayoneta = tiradaBloqueoBayoneta(sheet, arma, pieza.instanciaId);
+    return [
+      tiradaDeArmaFuego(sheet, arma, pieza.instanciaId),
+      ...(lanzagranadas ? [lanzagranadas] : []),
+      ...(golpeBayoneta ? [golpeBayoneta] : []),
+      ...(bloqueoBayoneta ? [bloqueoBayoneta] : []),
+    ];
   },
   armaMelee: (sheet, pieza, cat) => {
     const arma = cat as ArmaMelee;

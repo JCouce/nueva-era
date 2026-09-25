@@ -352,13 +352,17 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // manos), no un modificador sobre el personaje: encaja mejor cuando
         // exista el tipo ArmaMelee (Fase E) que como Modificador suelto.
         modificadores: [],
-        // El bloqueo original ("encaja mejor cuando exista ArmaMelee") está
-        // desfasado: ArmaMelee ya existe (39 piezas en armasMelee.ts). Es el
-        // hallazgo más accionable del barrido — falta generar una segunda
-        // Accion (perfil de cuchillo de combate), mismo patrón que
-        // tiradaDeLanzagranadas.
+        // Construido 2026-09-25: tiradaGolpeBayoneta/tiradaBloqueoBayoneta
+        // (combate.ts), mismo patrón que tiradaDeLanzagranadas (segunda
+        // Accion generada solo si la mejora está instalada en esa instancia
+        // de arma). Ataque+bloqueo van en la misma entrada "accion_equipo",
+        // igual que cualquier ArmaMelee del catálogo (armasMelee.ts nunca
+        // declara el bloqueo aparte). Hereda mismo daño Y crítico que el
+        // Cuchillo de Combate (Fue+2 Letal, Hemorragia 1d6 turnos) — decisión
+        // 2026-09-25, el usuario: "mismo daño" se lee como mismo perfil.
         motor: [
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "golpear_bayoneta" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "golpear_bayoneta" }, mecanismo: "accion_equipo", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "golpear_bayoneta" }, mecanismo: "nota_fija", estado: "construido" }, // efectoCritico: Hemorragia
         ],
       },
     ],

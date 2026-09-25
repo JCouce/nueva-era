@@ -545,14 +545,13 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
    `barrido-armas-fuego.md`** (mismo `docs/barrido-motor-2026-09-22/`, antes
    de borrarlos — lo que no estaba ya en `equipo-efectos-especiales.md` ni en
    `sistema.md`):
-   - **Bayoneta — lista para construirse, el motivo que la bloqueaba ya no
-     existe.** El comentario del catálogo decía "encaja mejor cuando exista
-     el tipo ArmaMelee (Fase E)" — `ArmaMelee` existe desde hace tiempo (39
-     piezas en `armasMelee.ts`). Falta generar una segunda `Tirada` (perfil
-     de cuchillo de combate) cuando el fusil/escopeta lleva la Bayoneta
-     instalada — mismo patrón que `tiradaDeLanzagranadas`. El hallazgo más
-     accionable de los tres archivos rescatados: no hace falta diseñar nada,
-     solo aplicar un patrón ya construido.
+   - **Bayoneta — ✅ IMPLEMENTADA 2026-09-25.** `tiradaGolpeBayoneta`/
+     `tiradaBloqueoBayoneta` (`combate.ts`), mismo patrón que
+     `tiradaDeLanzagranadas`: se generan solo si la mejora Bayoneta está
+     instalada en esa instancia del fusil/escopeta. Dos huecos que la prosa
+     no cerraba, decididos por el usuario: hereda el mismo crítico que el
+     Cuchillo de Combate (Hemorragia 1d6 turnos, no solo el daño) y lleva
+     Bloqueo, igual que cualquier arma melee del catálogo.
    - **Funda Automática / Inyector Hipodérmico — "cambia el coste de una
      acción" no encaja en ninguno de los cinco tipos de `docs/motor.md`.**
      No es modificador de acción (no crea una acción nueva), no es numérico

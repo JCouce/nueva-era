@@ -344,6 +344,34 @@ describe("lanzagranadas integrado", () => {
   });
 });
 
+describe("bayoneta", () => {
+  test("genera Golpear+Bloquear con el mismo daño y crítico que el Cuchillo de Combate", () => {
+    let sheet = ficha({ atributos: { fuerza: 4 } });
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
+    sheet = equipar(sheet, { instanciaId: "bay1", catalogoId: "bayoneta", nivel: 1, instaladoEnId: "arma1" });
+    const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Bayoneta (Impetus)")!;
+    assert.ok(golpe);
+    assert.equal(golpe.aplicado, "potencia");
+    assert.equal(golpe.aplicadoSutil, undefined);
+    assert.deepEqual(golpe.ajustesFijos, [{ valor: -1, fuente: "Bayoneta" }]);
+    assert.equal(golpe.ataque?.modos[0].danio, 6); // Fue(4) + 2
+    assert.equal(golpe.ataque?.modos[0].formulaDanio, "Fue+2");
+    assert.equal(golpe.ataque?.modos[0].categoriaDanio, "Letal");
+    assert.equal(golpe.efectoCritico, "Hemorragia (1d6 turnos)");
+
+    const bloqueo = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Bayoneta (Impetus)")!;
+    assert.ok(bloqueo);
+    assert.equal(bloqueo.grupo, "Defensa");
+  });
+
+  test("sin bayoneta instalada, no aparecen esas filas", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
+    const labels = accionesDeAtaque(sheet).map((t) => t.label);
+    assert.ok(!labels.some((l) => l.includes("Bayoneta")));
+  });
+});
+
 describe("arma melee equipada", () => {
   test("el daño se calcula solo desde la Fuerza del personaje (ya no 'a mano')", () => {
     let sheet = defaultSheet(); // Fuerza 0

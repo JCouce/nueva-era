@@ -45,7 +45,7 @@ temática con el detalle completo de cada pieza; esta lista es el orden real.
 
 **Tier 1 — código puro, cero decisiones pendientes:**
 1. ~~Derribo (4 armas de fuego, sección de abajo)~~ — ✅ hecho 2026-09-25 (9 armas, más Plasma SC/AAA tras cerrar la ambigüedad)
-2. Bayoneta (`docs/tareas.md`, ítem 6 — el bloqueo que tenía ya no existe)
+2. ~~Bayoneta (`docs/tareas.md`, ítem 6 — el bloqueo que tenía ya no existe)~~ — ✅ hecho 2026-09-25 (hereda crítico Hemorragia y lleva Bloqueo, decidido por el usuario — la prosa solo confirmaba daño y dificultad)
 3. Materiales Sofisticados/Avanzados (`docs/tareas.md`, ítem 5 — copia el patrón de la VTM)
 4. Lanzagranadas, interpolar `areaEfecto` real (`docs/tareas.md`, ítem 6 — copia el patrón de `tiradaDeGranada`)
 
