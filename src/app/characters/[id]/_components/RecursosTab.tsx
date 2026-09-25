@@ -55,10 +55,10 @@ export function RecursosTab({
   onAjustarMaterial: (tier: MaterialTier, delta: number) => void;
   onComprarMaterial: (tier: MaterialTier) => void;
 }) {
-  // Munición/batería aquí; durabilidad (Escudos) se gestiona solo en la
-  // pestaña Acciones (sección Reparación) — se repara con Materiales, no con
-  // créditos, así que no tiene sentido el botón "Cargador"/"Batería" de esta
-  // pestaña.
+  // Tres categorías, para que la lista no sea un totum revolutum: Materiales
+  // (pool de personaje, más abajo), munición/batería y durabilidad se
+  // separan aquí porque son conceptos distintos aunque compartan el mismo
+  // array (sheet.recursos) por debajo.
   const recursosMunicionBateria = sheet.recursos.flatMap((recurso) => {
     const pieza = sheet.equipo.find((p) => p.instanciaId === recurso.instanciaId);
     const cat = pieza ? equipoPorId(pieza.catalogoId) : null;
@@ -66,6 +66,20 @@ export function RecursosTab({
     const cap = capacidadDePieza(pieza);
     if (!cap || cap.tipo === "durabilidad") return [];
     return [{ recurso, cat, cap }];
+  });
+
+  // Durabilidad (hoy solo Escudos): el −/+ manual vive aquí, igual que
+  // munición/batería — para anotar daño recibido en combate (sin mecanismo
+  // automático todavía) o corregir a mano. Reparar GASTANDO Materiales sigue
+  // en Acciones (sección Reparación) — dos caminos para el mismo número,
+  // igual que munición ya tiene el −/+ manual Y el botón "Cargador" de pago.
+  const recursosDurabilidad = sheet.recursos.flatMap((recurso) => {
+    const pieza = sheet.equipo.find((p) => p.instanciaId === recurso.instanciaId);
+    const cat = pieza ? equipoPorId(pieza.catalogoId) : null;
+    if (!pieza || !cat) return [];
+    const cap = capacidadDePieza(pieza);
+    if (!cap || cap.tipo !== "durabilidad") return [];
+    return [{ recurso, cat }];
   });
 
   return (
@@ -94,7 +108,7 @@ export function RecursosTab({
       {recursosMunicionBateria.length === 0 ? (
         <HudCard className="mt-2 border-dashed p-5">
           <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
-            {"//SYSTEM · recursos"}
+            {"//SYSTEM · equipo · munición y batería"}
           </p>
           <p className="mt-2 font-sans text-sm leading-relaxed text-muted">
             No llevas equipado nada que gaste munición o batería. Un arma de fuego o un
@@ -105,7 +119,7 @@ export function RecursosTab({
       ) : (
         <>
           <p className="mt-2 border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
-            {"//SYSTEM · recursos"}
+            {"//SYSTEM · equipo · munición y batería"}
           </p>
           {recursosMunicionBateria.map(({ recurso, cat, cap }) => {
             const esStock = cap.tipo === "stock";
@@ -126,6 +140,32 @@ export function RecursosTab({
               />
             );
           })}
+        </>
+      )}
+
+      {recursosDurabilidad.length === 0 ? (
+        <HudCard className="mt-2 border-dashed p-5">
+          <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
+            {"//SYSTEM · equipo · durabilidad"}
+          </p>
+          <p className="mt-2 font-sans text-sm leading-relaxed text-muted">
+            No llevas equipado nada con durabilidad propia. Un Escudo aparece aquí solo con
+            equiparlo — para repararlo gastando Materiales, ve a Acciones.
+          </p>
+        </HudCard>
+      ) : (
+        <>
+          <p className="mt-2 border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+            {"//SYSTEM · equipo · durabilidad"}
+          </p>
+          {recursosDurabilidad.map(({ recurso, cat }) => (
+            <DurabilidadCard
+              key={recurso.instanciaId}
+              titulo={cat.label}
+              recurso={recurso}
+              onAjustar={(delta) => onAjustar(recurso.instanciaId, delta)}
+            />
+          ))}
         </>
       )}
     </div>
@@ -170,6 +210,39 @@ function MaterialCard({
           Comprar
           {precio !== null && <span className="ml-1 opacity-80">{precio} cr.</span>}
         </button>
+      </div>
+    </HudCard>
+  );
+}
+
+function DurabilidadCard({
+  titulo,
+  recurso,
+  onAjustar,
+}: {
+  titulo: string;
+  recurso: RecursoInstancia;
+  onAjustar: (delta: number) => void;
+}) {
+  const vacio = recurso.actual === 0;
+  return (
+    <HudCard className="p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-display text-sm font-semibold uppercase text-foreground">{titulo}</p>
+        <p
+          className={`font-mono text-lg tabular-nums ${vacio ? "text-danger" : "text-foreground"}`}
+        >
+          {recurso.actual}
+          <span className="text-sm text-muted">/{recurso.max} PG</span>
+        </p>
+      </div>
+      <div className="mt-2 flex items-center gap-1.5">
+        <BotonDelta onClick={() => onAjustar(-1)} disabled={recurso.actual <= 0}>
+          −
+        </BotonDelta>
+        <BotonDelta onClick={() => onAjustar(1)} disabled={recurso.actual >= recurso.max}>
+          +
+        </BotonDelta>
       </div>
     </HudCard>
   );
