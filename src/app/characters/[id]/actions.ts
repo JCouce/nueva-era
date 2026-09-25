@@ -21,6 +21,9 @@ import {
   piezaEquipadaSchema,
   ajustarRecurso,
   comprarRecarga,
+  ajustarMaterial,
+  comprarMaterial,
+  type MaterialTier,
   type AtributoId,
   type HabilidadId,
   type PiezaEquipada,
@@ -303,6 +306,40 @@ export async function comprarRecargaAction(
 
   const resultado = comprarRecarga(ctx.sheet, instanciaId);
   if (!resultado) return { ok: false, error: "No hay ningún recurso que recargar ahí." };
+  if (resultado.coste > ctx.creditos) return { ok: false, error: "No tienes créditos suficientes" };
+
+  const creditos = ctx.creditos - resultado.coste;
+  await prisma.character.update({
+    where: { id: characterId },
+    data: { stats: resultado.sheet, creditos },
+  });
+  revalidatePath(`/characters/${characterId}`);
+  revalidatePath("/master");
+  return { ok: true, sheet: resultado.sheet, creditos };
+}
+
+// Materiales (docs/tareas.md, tarea 8): mismo patrón que RECURSOS, pero
+// sobre el pool de personaje en vez de una instancia de equipo.
+export async function ajustarMaterialAction(
+  characterId: string,
+  tier: MaterialTier,
+  delta: number,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, ajustarMaterial(ctx.sheet, tier, delta));
+}
+
+// Precio recalculado en servidor, igual que comprarRecargaAction — no se
+// confía en lo que mande el cliente.
+export async function comprarMaterialAction(
+  characterId: string,
+  tier: MaterialTier,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+
+  const resultado = comprarMaterial(ctx.sheet, tier);
   if (resultado.coste > ctx.creditos) return { ok: false, error: "No tienes créditos suficientes" };
 
   const creditos = ctx.creditos - resultado.coste;

@@ -155,6 +155,20 @@ describe("v5 → v6: se añade RECURSOS", () => {
   });
 });
 
+describe("v6 → v7: se añade el pool de Materiales", () => {
+  test("una ficha sin campo materiales arranca a 0 en los 3 tiers", () => {
+    const { ficha } = migrar({ schemaVersion: 6, especieId: "humano" }, 7);
+    assert.deepEqual(ficha.materiales, { sencillos: 0, sofisticados: 0, avanzados: 0 });
+    assert.equal(ficha.schemaVersion, 7);
+  });
+
+  test("no toca el resto de la ficha", () => {
+    const { ficha } = migrar({ schemaVersion: 6, especieId: "arkoru", edad: 40 }, 7);
+    assert.equal(ficha.especieId, "arkoru");
+    assert.equal(ficha.edad, 40);
+  });
+});
+
 describe("parseSheet migra antes de normalizar", () => {
   test("una ficha v1 entra por la puerta y sale al día", () => {
     const s = parseSheet({ schemaVersion: 1, especie: "Arkorü", edad: 40 });

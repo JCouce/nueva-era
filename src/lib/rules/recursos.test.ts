@@ -9,6 +9,9 @@ import {
   ajustarRecurso,
   comprarRecarga,
   gastoDelModo,
+  ajustarMaterial,
+  comprarMaterial,
+  precioMaterial,
   PRECIO_CARGADOR_BALAS,
   PRECIO_BATERIA_PORTATIL,
 } from "./recursos";
@@ -144,6 +147,48 @@ describe("comprarRecarga", () => {
 
   test("una instancia que no existe devuelve null", () => {
     assert.equal(comprarRecarga(defaultSheet(), "no-existe"), null);
+  });
+});
+
+describe("precioMaterial", () => {
+  test("los 3 tiers cotizan el precio ya transcrito del catálogo", () => {
+    assert.equal(precioMaterial("sencillos"), 250);
+    assert.equal(precioMaterial("sofisticados"), 500);
+    assert.equal(precioMaterial("avanzados"), 750);
+  });
+});
+
+describe("ajustarMaterial", () => {
+  test("un delta negativo no baja de 0", () => {
+    const s = ajustarMaterial(defaultSheet(), "sencillos", -5);
+    assert.equal(s.materiales.sencillos, 0);
+  });
+
+  test("un delta positivo suma sin tope superior", () => {
+    let s = ajustarMaterial(defaultSheet(), "avanzados", 3);
+    s = ajustarMaterial(s, "avanzados", 10);
+    assert.equal(s.materiales.avanzados, 13);
+  });
+
+  test("no toca los otros tiers", () => {
+    const s = ajustarMaterial(defaultSheet(), "sofisticados", 2);
+    assert.equal(s.materiales.sencillos, 0);
+    assert.equal(s.materiales.avanzados, 0);
+  });
+});
+
+describe("comprarMaterial", () => {
+  test("suma 1 unidad al tier y devuelve su precio de catálogo", () => {
+    const res = comprarMaterial(defaultSheet(), "sofisticados");
+    assert.equal(res.sheet.materiales.sofisticados, 1);
+    assert.equal(res.coste, 500);
+  });
+
+  test("comprar dos veces acumula", () => {
+    let s = defaultSheet();
+    s = comprarMaterial(s, "sencillos").sheet;
+    s = comprarMaterial(s, "sencillos").sheet;
+    assert.equal(s.materiales.sencillos, 2);
   });
 });
 

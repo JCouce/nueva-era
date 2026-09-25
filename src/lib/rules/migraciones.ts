@@ -95,6 +95,20 @@ export const MIGRACIONES: Migracion[] = [
       "reconcilian, ver lib/rules/recursos.ts).",
     migrar: (ficha) => ({ ...ficha, recursos: Array.isArray(ficha.recursos) ? ficha.recursos : [] }),
   },
+  {
+    desde: 6,
+    hasta: 7,
+    descripcion:
+      "Se añade el pool de Materiales (Fabricar y Reparar, docs/tareas.md tarea 8): las " +
+      "fichas antiguas empiezan a 0 en los 3 tiers. Quien tuviera Materiales equipados como " +
+      "pieza suelta (el modelo viejo, un Consumible en sheet.equipo) los conserva ahí tal " +
+      "cual — no hay forma de saber cuántas unidades representaba una sola pieza equipada, " +
+      "así que no se convierte automáticamente al pool nuevo.",
+    migrar: (ficha) => ({
+      ...ficha,
+      materiales: { sencillos: 0, sofisticados: 0, avanzados: 0 },
+    }),
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le

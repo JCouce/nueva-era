@@ -25,6 +25,8 @@ import {
   piezaEquipadaSchema,
   ajustarRecurso,
   comprarRecarga,
+  ajustarMaterial,
+  comprarMaterial,
   ATRIBUTO_MIN,
   ATRIBUTO_MAX,
   HABILIDAD_NO_ENTRENADA,
@@ -32,6 +34,7 @@ import {
   type AtributoId,
   type HabilidadId,
   type PiezaEquipada,
+  type MaterialTier,
 } from "@/lib/rules";
 
 export type NpcResult = { ok: true; sheet: Sheet } | { ok: false; error: string };
@@ -239,4 +242,21 @@ export async function comprarRecargaNpcAction(npcId: string, instanciaId: string
   const resultado = comprarRecarga(ctx.sheet, instanciaId);
   if (!resultado) return { ok: false, error: "No hay ningún recurso que recargar ahí." };
   return persist(npcId, resultado.sheet);
+}
+
+// Materiales (docs/tareas.md, tarea 8): mismo criterio "libre" que RECURSOS.
+export async function ajustarMaterialNpcAction(
+  npcId: string,
+  tier: MaterialTier,
+  delta: number,
+): Promise<NpcResult> {
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(npcId, ajustarMaterial(ctx.sheet, tier, delta));
+}
+
+export async function comprarMaterialNpcAction(npcId: string, tier: MaterialTier): Promise<NpcResult> {
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(npcId, comprarMaterial(ctx.sheet, tier).sheet);
 }

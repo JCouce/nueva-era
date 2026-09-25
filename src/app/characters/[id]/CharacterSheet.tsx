@@ -13,6 +13,8 @@ import {
   setPrioridadAction,
   ajustarRecursoAction,
   comprarRecargaAction,
+  ajustarMaterialAction,
+  comprarMaterialAction,
   type SaveResult,
 } from "./actions";
 import {
@@ -28,6 +30,7 @@ import {
   desequipar,
   setPrioridad,
   ajustarRecurso,
+  ajustarMaterial,
   RECURSOS_POR_LETRA,
   describirEstadosActivos,
   type AtributoId,
@@ -35,6 +38,7 @@ import {
   type PiezaEquipada,
   type CategoriaPrioridad,
   type LetraPrioridad,
+  type MaterialTier,
 } from "@/lib/rules";
 import type { Sheet } from "@/lib/rules";
 import { ResumenTab } from "./_components/ResumenTab";
@@ -309,6 +313,13 @@ export function CharacterSheet({
   const commitRecargar = (instanciaId: string) => {
     runSave(() => comprarRecargaAction(characterId, instanciaId), setSheet);
   };
+  const commitAjustarMaterial = (tier: MaterialTier, delta: number) => {
+    setSheet((s) => ajustarMaterial(s, tier, delta));
+    runSave(() => ajustarMaterialAction(characterId, tier, delta), setSheet);
+  };
+  const commitComprarMaterial = (tier: MaterialTier) => {
+    runSave(() => comprarMaterialAction(characterId, tier), setSheet);
+  };
 
   // ── Identidad (debounced, fire-and-forget). ──
   const scheduleIdentity = () => {
@@ -553,6 +564,8 @@ export function CharacterSheet({
           creditos={creditos}
           onAjustar={commitAjustarRecurso}
           onRecargar={commitRecargar}
+          onAjustarMaterial={commitAjustarMaterial}
+          onComprarMaterial={commitComprarMaterial}
         />
       )}
       {activeEfectivo === "combate" && combate && (

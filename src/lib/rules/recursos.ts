@@ -18,9 +18,72 @@
 //     célula) y no cambia nunca. Recargar restaura el actual al máximo, sin
 //     más — como cargar un móvil, no como comprar cargadores de más.
 import { z } from "zod";
-import { equipoPorId } from "../catalog/equipo";
+import { equipoPorId, type Consumible } from "../catalog/equipo";
 import type { PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
+
+// Materiales (docs/tareas.md, tarea 8, "Fabricar y Reparar" — 2026-09-25):
+// pool de personaje con cantidad, NO una pieza equipable como antes (era un
+// `Consumible` suelto en sheet.equipo, sin cantidad — ver herramientas.ts).
+// Vive junto al resto de RECURSOS porque es lo mismo en espíritu: un stock
+// que se compra y se gasta en partida, no un dato de creación. Precio y
+// rareza de cada tier se leen del propio catálogo (MATERIALES en
+// catalog/herramientas.ts) en vez de duplicarlos aquí — coincide que la
+// `rareza` de cada Consumible ya es la rareza MÁXIMA que ese tier permite
+// fabricar/reparar (Sencillos → Poco Habitual, Sofisticados → Extraño,
+// Avanzados → Muy Extraño), así que no hace falta ninguna tabla aparte.
+export const MATERIAL_TIERS = ["sencillos", "sofisticados", "avanzados"] as const;
+export type MaterialTier = (typeof MATERIAL_TIERS)[number];
+
+const CATALOGO_ID_POR_TIER: Record<MaterialTier, string> = {
+  sencillos: "materiales_sencillos",
+  sofisticados: "materiales_sofisticados",
+  avanzados: "materiales_avanzados",
+};
+
+export type Materiales = Record<MaterialTier, number>;
+
+export const materialesSchema = z.object({
+  sencillos: z.number().int().min(0),
+  sofisticados: z.number().int().min(0),
+  avanzados: z.number().int().min(0),
+});
+
+export function defaultMateriales(): Materiales {
+  return { sencillos: 0, sofisticados: 0, avanzados: 0 };
+}
+
+// La entrada de catálogo de un tier — label/rareza/coste, para la UI y para
+// el resto de RECURSOS. null si el catálogo no lo reconoce (no debería
+// pasar, los 3 ids están fijos arriba).
+export function catalogoDeMaterial(tier: MaterialTier): Consumible | null {
+  const cat = equipoPorId(CATALOGO_ID_POR_TIER[tier]);
+  return cat && cat.familia === "consumible" ? cat : null;
+}
+
+// Precio de catálogo de una unidad de ese tier.
+export function precioMaterial(tier: MaterialTier): number {
+  return catalogoDeMaterial(tier)?.coste ?? 0;
+}
+
+// Delta manual (+/-) sobre un tier, clamp ≥0 — mismo patrón que
+// ajustarRecurso(), pero sin `max` (el pool no tiene tope superior).
+export function ajustarMaterial(sheet: Sheet, tier: MaterialTier, delta: number): Sheet {
+  if (!Number.isFinite(delta)) return sheet;
+  const actual = Math.max(0, sheet.materiales[tier] + Math.round(delta));
+  if (actual === sheet.materiales[tier]) return sheet;
+  return { ...sheet, materiales: { ...sheet.materiales, [tier]: actual } };
+}
+
+// "Comprar" 1 unidad de un tier al precio de catálogo — mismo patrón que
+// comprarRecarga(): el servidor recalcula el precio, nunca confía en el
+// cliente.
+export function comprarMaterial(sheet: Sheet, tier: MaterialTier): { sheet: Sheet; coste: number } {
+  return {
+    sheet: { ...sheet, materiales: { ...sheet.materiales, [tier]: sheet.materiales[tier] + 1 } },
+    coste: precioMaterial(tier),
+  };
+}
 
 export type RecursoInstancia = { instanciaId: string; actual: number; max: number };
 

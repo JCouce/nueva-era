@@ -16,7 +16,15 @@ import {
   MAX_ESPECIALIDADES,
 } from "./habilidades";
 import { piezaEquipadaSchema, type PiezaEquipada } from "./equipo";
-import { recursoSchema, reconciliarRecursos, type RecursoInstancia } from "./recursos";
+import {
+  recursoSchema,
+  reconciliarRecursos,
+  materialesSchema,
+  defaultMateriales,
+  MATERIAL_TIERS,
+  type RecursoInstancia,
+  type Materiales,
+} from "./recursos";
 import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./prioridad";
 
 // Versión del formato de ficha. Al subirla hay que añadir su migración en
@@ -27,7 +35,8 @@ import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./pri
 //   4 → creación por prioridad (HOJA2): prioridades, altura, peso
 //   5 → Exploración sustituye a Supervivencia (C4/C12 de docs/sistema.md)
 //   6 → se añade RECURSOS (cargas/munición gastadas y recargadas en partida)
-export const SCHEMA_VERSION = 6;
+//   7 → se añade el pool de Materiales (Fabricar/Reparar, docs/tareas.md tarea 8)
+export const SCHEMA_VERSION = 7;
 
 const atributoValue = z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX);
 
@@ -62,6 +71,7 @@ export const sheetSchema = z.object({
   prioridades: z.object(prioridadesShape),
   equipo: z.array(piezaEquipadaSchema).max(200),
   recursos: z.array(recursoSchema).max(200),
+  materiales: materialesSchema,
 });
 
 export type Sheet = z.infer<typeof sheetSchema>;
@@ -87,6 +97,7 @@ export function defaultSheet(): Sheet {
     prioridades: prioridadesVacias(),
     equipo: [],
     recursos: [],
+    materiales: defaultMateriales(),
   };
 }
 
@@ -159,6 +170,14 @@ export function parseSheet(raw: unknown): Sheet {
     .map((res) => res.data)
     .slice(0, 200);
 
+  // Cada tier se recorta por separado, mismo criterio que atributos: un
+  // valor corrupto o negativo cae a 0 en vez de tirar el pool entero.
+  const rMateriales = (r.materiales ?? {}) as Record<string, unknown>;
+  const materiales: Materiales = { ...defaultMateriales() };
+  for (const tier of MATERIAL_TIERS) {
+    materiales[tier] = clampInt(rMateriales[tier], 0, 999999, 0);
+  }
+
   const rPrioridades = (r.prioridades ?? {}) as Record<string, unknown>;
   const prioridades = { ...base.prioridades };
   for (const c of CATEGORIAS_PRIORIDAD) {
@@ -191,5 +210,6 @@ export function parseSheet(raw: unknown): Sheet {
     prioridades,
     equipo,
     recursos,
+    materiales,
   });
 }

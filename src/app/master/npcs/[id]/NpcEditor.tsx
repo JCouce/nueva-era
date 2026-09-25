@@ -12,6 +12,7 @@ import {
   type AtributoId,
   type HabilidadId,
   type PiezaEquipada,
+  type MaterialTier,
 } from "@/lib/rules";
 import { AtributosTab } from "@/app/characters/[id]/_components/AtributosTab";
 import { HabilidadesTab } from "@/app/characters/[id]/_components/HabilidadesTab";
@@ -31,6 +32,8 @@ import {
   desequiparNpcAction,
   ajustarRecursoNpcAction,
   comprarRecargaNpcAction,
+  ajustarMaterialNpcAction,
+  comprarMaterialNpcAction,
   eliminarNpcAction,
   type NpcResult,
 } from "../actions";
@@ -218,6 +221,18 @@ export function NpcEditor({
     if (res.ok) setSheet(res.sheet);
     setStatus(res.ok ? "saved" : "error");
   };
+  const commitAjustarMaterial = async (tier: MaterialTier, delta: number) => {
+    setStatus("saving");
+    const res = await ajustarMaterialNpcAction(npcId, tier, delta);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
+  const commitComprarMaterial = async (tier: MaterialTier) => {
+    setStatus("saving");
+    const res = await comprarMaterialNpcAction(npcId, tier);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
 
   // Sin confirm() — bloquea el hilo con un diálogo nativo, y el resto de la
   // app (deleteCharacter en characters/page.tsx) tampoco pide confirmación
@@ -311,7 +326,13 @@ export function NpcEditor({
       )}
       {active === "equipo" && <EquipoTab sheet={sheet} onDesequipar={commitDesequipar} />}
       {active === "recursos" && (
-        <RecursosTab sheet={sheet} onAjustar={commitAjustarRecurso} onRecargar={commitRecargar} />
+        <RecursosTab
+          sheet={sheet}
+          onAjustar={commitAjustarRecurso}
+          onRecargar={commitRecargar}
+          onAjustarMaterial={commitAjustarMaterial}
+          onComprarMaterial={commitComprarMaterial}
+        />
       )}
       {active === "tienda" && (
         <TiendaTab sheet={sheet} topeRareza={null} libre onEquipar={commitEquipar} />
