@@ -24,14 +24,27 @@ import type { MotorMetadata } from "../rules/motor";
 // docs/motor.md — patrones compartidos por varios niveles de este archivo,
 // para no repetir el mismo array literal en cada uno.
 
-// VTF: decisión de diseño ya cerrada (cabecera del archivo) — sin ningún
-// Modificador propio, a diferencia de la Valija Médica. Confirmado:
+// VTF: sin ningún Modificador propio, a diferencia de la Valija Médica —
 // "valija_tactica_fabricacion" no aparece en ETIQUETA_ACCION de
-// lib/rules/herramientas.ts, no genera tirada propia — la gatea como acción
-// sin dado (tieneVtf(), lib/rules/equipo.ts). Narrativo, sin conexión al
-// motor de tiradas, construido — no es un hueco.
+// lib/rules/herramientas.ts, no genera tirada propia. Pero SÍ es tipo 5
+// (habilitador, docs/motor.md): tieneVtf() (lib/rules/equipo.ts) gatea la
+// sección Fabricar de la acción sin dado "Reparar y Fabricar" — sin la VTF
+// equipada, esa sección ni se pinta, bloqueo duro. `afecta.id` no es un
+// tiradaId real: "Reparar y Fabricar" no vive en ACCIONES (no tira dado,
+// ver "Acciones sin dado" en motor.md, sigue sin arquitectura genérica) — es
+// el id informal de esa fila en AccionesTab.tsx/ReparaFabricaModal.tsx.
+// `mecanismo: "gate_instalacion"` es el más parecido de los que existen,
+// aunque ese mecanismo genérico para el tipo 5 sigue sin construirse de
+// verdad (motor.md) — esto es una comprobación puntual (`tieneVtf`), no esa
+// infraestructura; por eso `estado: "ad_hoc"`, no "construido" a secas.
 const MOTOR_VTF: MotorMetadata[] = [
-  { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+  {
+    tipo: "habilitador",
+    afecta: { modo: "accion_existente", id: "reparar_fabricar" },
+    mecanismo: "gate_instalacion",
+    arbitraje: "duro",
+    estado: "ad_hoc",
+  },
 ];
 
 export const VALIJA_TACTICA_FABRICACION: Herramienta = {
@@ -291,8 +304,11 @@ export const HERRAMIENTAS_UNICAS: Herramienta[] = [
 // "Fabricar y Reparar"): la rareza del material es la CAPACIDAD para
 // fabricar/reparar objetos de esa rareza, no un bono a una tirada existente.
 // Materiales deja de equiparse como pieza (ver MATERIALES más abajo) y pasa
-// a ser un recurso con cantidad; el efecto real vive en las acciones
-// Fabricar/Reparar de la pestaña Acciones, no aquí.
+// a ser un recurso con cantidad; `rareza`/`coste` los lee directo
+// rarezaMaterial()/precioMaterial() (recursos.ts) para las acciones
+// Fabricar/Reparar — igual que "Coste y rareza" ya queda fuera del modelo
+// de los cinco tipos en motor.md ("metadatos de creación/economía, no
+// efecto de la pieza"), `narrativo` aquí es eso, no "sin código que lo use".
 const MOTOR_MATERIAL_RAREZA: MotorMetadata[] = [
   { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
 ];

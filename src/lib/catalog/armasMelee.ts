@@ -378,11 +378,13 @@ export const ESCUDOS: ArmaMelee[] = [
       // defensa.blindaje: se sumaría a la absorción de daño del portador — bloqueado por el
       // mismo hueco que el blindaje de armadura (no existe cálculo de absorción, pregunta 29).
       { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
-      // defensa.puntosGolpe: el escudo como objeto destructible (se le puede restar daño hasta
-      // romperlo). No es el mismo hueco que pregunta 29 (esa es sobre el PG del PERSONAJE) — no
-      // existe ningún mecanismo de "objeto con sus propios PG" en el motor, en ningún sitio.
-      // Hallazgo nuevo, sin pregunta numerada que lo cubra — ver informe.
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+      // defensa.puntosGolpe: CONSTRUIDO 2026-09-25 (docs/tareas.md, tarea 8) — capacidadDePieza()
+      // (recursos.ts) lo reconoce como recurso tipo "durabilidad", reparable desde Acciones
+      // ("Reparar y Fabricar"). Mismo caso que celula.cargas de un Subsistema: una capacidad de
+      // RECURSOS que ese sistema lee directo del campo del catálogo, no un efecto de Accion — por
+      // eso no lleva su propia entrada MotorMetadata (motor.md, "Coste y rareza"/RECURSOS quedan
+      // fuera del modelo de los cinco tipos). No confundir con defensa.blindaje (sí bloqueado,
+      // justo arriba): son dos huecos distintos, ver la propia entrada de blindaje.
       // defensa.cobertura: regla FIRME (docs/sistema.md:271-273, "del 1 al 4 suma su valor a la
       // dificultad de ataques"), pero afecta a la tirada del ATACANTE, no a la del portador —
       // mismo patrón "objetivo_tercero" que Cobertura del Camuflaje Trifásico (motor.md, ya
@@ -414,7 +416,8 @@ export const ESCUDOS: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
       { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+      // defensa.puntosGolpe: sin entrada propia — capacidad de RECURSOS ("durabilidad"), mismo
+      // caso que la Rodela, ver su comentario completo más arriba.
       {
         tipo: "texto",
         afecta: { modo: "objetivo_tercero", id: "ataque_contra_portador_escudo" },
@@ -440,7 +443,8 @@ export const ESCUDOS: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
       { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+      // defensa.puntosGolpe: sin entrada propia — capacidad de RECURSOS ("durabilidad"), mismo
+      // caso que la Rodela, ver su comentario completo más arriba.
       {
         tipo: "texto",
         afecta: { modo: "objetivo_tercero", id: "ataque_contra_portador_escudo" },
@@ -466,7 +470,8 @@ export const ESCUDOS: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
       { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+      // defensa.puntosGolpe: sin entrada propia — capacidad de RECURSOS ("durabilidad"), mismo
+      // caso que la Rodela, ver su comentario completo más arriba.
       {
         tipo: "texto",
         afecta: { modo: "objetivo_tercero", id: "ataque_contra_portador_escudo" },
@@ -1313,7 +1318,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       },
       // Hereda la misma duda de defensa que los Escudos normales.
       { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+      // defensa.puntosGolpe: sin entrada propia — capacidad de RECURSOS ("durabilidad"), mismo
+      // caso que la Rodela, ver su comentario completo más arriba (ESCUDOS).
       {
         tipo: "texto",
         afecta: { modo: "objetivo_tercero", id: "ataque_contra_portador_escudo" },
