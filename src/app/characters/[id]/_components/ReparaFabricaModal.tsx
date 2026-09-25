@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type Dispatch, type SetStateAction } from "react";
+import { createPortal } from "react-dom";
 import {
   equipoPorId,
   capacidadDePieza,
@@ -236,24 +237,30 @@ function ReparacionSeccion({
         ))
       )}
 
-      {rollOpen && (
-        <AccionModal
-          titulo={rollOpen.tirada.label}
-          nota={rollOpen.tirada.nota}
-          modBase={rollOpen.modBase}
-          desgloseBase={rollOpen.desgloseBase}
-          condiciones={[]}
-          mods={mods}
-          ctxBase={{ id: rollOpen.tirada.id, grupo: rollOpen.tirada.grupo, habilidad: rollOpen.tirada.habilidad }}
-          dificultadInicial={memoria[rollOpen.tirada.id]?.dificultad ?? rollOpen.dificultadSugerida}
-          circunstancialInicial={memoria[rollOpen.tirada.id]?.circunstancial ?? 0}
-          resultado={resultado}
-          notaResultado={mensajeResultado ?? undefined}
-          onTirarDanio={() => {}}
-          onCerrar={cerrarRoll}
-          onTirar={onTirar}
-        />
-      )}
+      {/* createPortal: ver el comentario en FabricarSeccion.tsx — este
+          AccionModal también es descendiente del HudCard `overflow-y-auto`
+          de ReparaFabricaModal, mismo riesgo de que un navegador móvil trate
+          el `fixed` anidado como relativo al padre en vez de al viewport. */}
+      {rollOpen &&
+        createPortal(
+          <AccionModal
+            titulo={rollOpen.tirada.label}
+            nota={rollOpen.tirada.nota}
+            modBase={rollOpen.modBase}
+            desgloseBase={rollOpen.desgloseBase}
+            condiciones={[]}
+            mods={mods}
+            ctxBase={{ id: rollOpen.tirada.id, grupo: rollOpen.tirada.grupo, habilidad: rollOpen.tirada.habilidad }}
+            dificultadInicial={memoria[rollOpen.tirada.id]?.dificultad ?? rollOpen.dificultadSugerida}
+            circunstancialInicial={memoria[rollOpen.tirada.id]?.circunstancial ?? 0}
+            resultado={resultado}
+            notaResultado={mensajeResultado ?? undefined}
+            onTirarDanio={() => {}}
+            onCerrar={cerrarRoll}
+            onTirar={onTirar}
+          />,
+          document.body,
+        )}
     </div>
   );
 }
