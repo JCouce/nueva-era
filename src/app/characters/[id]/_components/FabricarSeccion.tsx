@@ -23,7 +23,6 @@ import {
   type Materiales,
   type MaterialTier,
 } from "@/lib/rules";
-import { HudCard } from "@/components/HudCard";
 import { Acordeon } from "@/components/Acordeon";
 import {
   BadgeRareza,
@@ -39,9 +38,11 @@ import { TIPOS_ARMA } from "./TiendaTab";
 // Fabricar (docs/tareas.md, tarea 8): mismo lenguaje visual que TiendaTab
 // (Tile → categoría → Acordeon con Detalle*), pero SOLO las familias sueltas
 // sin nivel (ver PIEZAS_FABRICABLES, catalog/equipo.ts) y pagando en
-// Materiales en vez de en créditos. Modal en vez de tab: pedido explícito
-// del usuario (2026-09-25) — nada de buscador de texto en móvil, un menú por
-// categorías es más tocable con el pulgar que una lista larga con scroll.
+// Materiales en vez de en créditos. Sección, no modal propio (2026-09-25,
+// segunda vuelta): vive DENTRO de ReparaFabricaModal.tsx, como panel de
+// abajo, para que "Reparar" y "Fabricar" sean una sola acción — nada de
+// buscador de texto en móvil, un menú por categorías es más tocable con el
+// pulgar que una lista larga con scroll.
 const ARMAS_MELEE_FABRICABLES = ARMAS_MELEE.filter(
   (p) => !ARMAS_MELEE_KERZUL.includes(p) && p.coste !== null,
 );
@@ -197,141 +198,117 @@ function FilaFabricable<T extends { id: string; label: string; rareza: Rareza; c
   );
 }
 
-export function ConstruccionModal({
+export function FabricarSeccion({
   materiales,
   onFabricar,
-  onCerrar,
 }: {
   materiales: Materiales;
   onFabricar: (catalogoId: string, tier: MaterialTier) => void;
-  onCerrar: () => void;
 }) {
   const [categoria, setCategoria] = useState<CategoriaId | null>(null);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
-      onClick={onCerrar}
-    >
-      <HudCard className="max-h-[85vh] w-full max-w-md overflow-y-auto p-4 sm:mx-4">
-        <div onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h2 className="font-display text-lg font-semibold uppercase leading-tight">
-                Construcción
-              </h2>
-              <p className="mt-0.5 font-mono text-[10px] uppercase text-muted">
-                {categoria ? CATEGORIAS.find((c) => c.id === categoria)!.titulo : "Elige una categoría"}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={onCerrar}
-              aria-label="Cerrar"
-              className="shrink-0 border border-border px-2 py-1 font-mono text-xs text-muted active:scale-95"
-            >
-              ✕
-            </button>
-          </div>
+    <div className="flex flex-col gap-2">
+      <h3 className="font-display text-sm font-semibold uppercase tracking-wide text-muted">
+        Fabricar
+      </h3>
 
-          {categoria === null ? (
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              {CATEGORIAS.map((c) => (
-                <Tile
-                  key={c.id}
-                  titulo={c.titulo}
-                  cantidad={c.cantidad}
-                  activo={false}
-                  onClick={() => setCategoria(c.id)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="mt-4 flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => setCategoria(null)}
-                className="mb-1 self-start font-mono text-[10px] uppercase tracking-wide text-muted active:scale-95"
-              >
-                {"‹ Categorías"}
-              </button>
+      {categoria === null ? (
+        <div className="grid grid-cols-2 gap-2">
+          {CATEGORIAS.map((c) => (
+            <Tile
+              key={c.id}
+              titulo={c.titulo}
+              cantidad={c.cantidad}
+              activo={false}
+              onClick={() => setCategoria(c.id)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setCategoria(null)}
+            className="mb-1 self-start font-mono text-[10px] uppercase tracking-wide text-muted active:scale-95"
+          >
+            {"‹ Categorías"}
+          </button>
 
-              {categoria === "armaduras" &&
-                (ARMADURAS as Armadura[]).map((p) => (
-                  <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
-                    <DetalleArmadura p={p} />
-                  </FilaFabricable>
-                ))}
+          {categoria === "armaduras" &&
+            (ARMADURAS as Armadura[]).map((p) => (
+              <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
+                <DetalleArmadura p={p} />
+              </FilaFabricable>
+            ))}
 
-              {categoria === "armasFuego" &&
-                TIPOS_ARMA.map(({ tipo, titulo }) => {
-                  const piezas = (ARMAS as ArmaFuego[]).filter((p) => p.tipo === tipo);
-                  if (piezas.length === 0) return null;
-                  return (
-                    <div key={tipo} className="flex flex-col gap-2">
-                      <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
-                        {`// ${titulo} · ${piezas.length}`}
-                      </p>
-                      {piezas.map((p) => (
-                        <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
-                          <DetalleArma p={p} />
-                        </FilaFabricable>
-                      ))}
-                    </div>
-                  );
-                })}
-
-              {categoria === "melee" &&
-                (ARMAS_MELEE_FABRICABLES as (ArmaMelee & { coste: number; rareza: Rareza })[]).map((p) => (
-                  <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
-                    <DetalleArmaMelee p={p} />
-                  </FilaFabricable>
-                ))}
-
-              {categoria === "kerzul" &&
-                (KERZUL_FABRICABLES as (ArmaMelee & { coste: number; rareza: Rareza })[]).map((p) => (
-                  <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
-                    <DetalleArmaMelee p={p} />
-                  </FilaFabricable>
-                ))}
-
-              {categoria === "medicina" &&
-                (FARMACOS as Consumible[]).map((p) => (
-                  <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
-                    <DetalleConsumible p={p} />
-                  </FilaFabricable>
-                ))}
-
-              {categoria === "pesado" && (
-                <>
+          {categoria === "armasFuego" &&
+            TIPOS_ARMA.map(({ tipo, titulo }) => {
+              const piezas = (ARMAS as ArmaFuego[]).filter((p) => p.tipo === tipo);
+              if (piezas.length === 0) return null;
+              return (
+                <div key={tipo} className="flex flex-col gap-2">
                   <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
-                    {`// Armamento pesado · ${ARMAMENTO_PESADO.length}`}
+                    {`// ${titulo} · ${piezas.length}`}
                   </p>
-                  {(ARMAMENTO_PESADO as ArmaPesada[]).map((p) => (
+                  {piezas.map((p) => (
                     <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
-                      <DetalleArmaPesada p={p} />
+                      <DetalleArma p={p} />
                     </FilaFabricable>
                   ))}
-                  <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
-                    {`// Munición y granadas · ${MUNICION_GRANADA.length}`}
-                  </p>
-                  {(MUNICION_GRANADA as MunicionGranada[]).map((p) => (
-                    <FilaFabricable
-                      key={p.id}
-                      p={p}
-                      resumen={p.areaEfecto}
-                      materiales={materiales}
-                      onFabricar={onFabricar}
-                    >
-                      <DetalleGranada p={p} />
-                    </FilaFabricable>
-                  ))}
-                </>
-              )}
-            </div>
+                </div>
+              );
+            })}
+
+          {categoria === "melee" &&
+            (ARMAS_MELEE_FABRICABLES as (ArmaMelee & { coste: number; rareza: Rareza })[]).map((p) => (
+              <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
+                <DetalleArmaMelee p={p} />
+              </FilaFabricable>
+            ))}
+
+          {categoria === "kerzul" &&
+            (KERZUL_FABRICABLES as (ArmaMelee & { coste: number; rareza: Rareza })[]).map((p) => (
+              <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
+                <DetalleArmaMelee p={p} />
+              </FilaFabricable>
+            ))}
+
+          {categoria === "medicina" &&
+            (FARMACOS as Consumible[]).map((p) => (
+              <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
+                <DetalleConsumible p={p} />
+              </FilaFabricable>
+            ))}
+
+          {categoria === "pesado" && (
+            <>
+              <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+                {`// Armamento pesado · ${ARMAMENTO_PESADO.length}`}
+              </p>
+              {(ARMAMENTO_PESADO as ArmaPesada[]).map((p) => (
+                <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={materiales} onFabricar={onFabricar}>
+                  <DetalleArmaPesada p={p} />
+                </FilaFabricable>
+              ))}
+              <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+                {`// Munición y granadas · ${MUNICION_GRANADA.length}`}
+              </p>
+              {(MUNICION_GRANADA as MunicionGranada[]).map((p) => (
+                <FilaFabricable
+                  key={p.id}
+                  p={p}
+                  resumen={p.areaEfecto}
+                  materiales={materiales}
+                  onFabricar={onFabricar}
+                >
+                  <DetalleGranada p={p} />
+                </FilaFabricable>
+              ))}
+            </>
           )}
         </div>
-      </HudCard>
+      )}
     </div>
   );
 }

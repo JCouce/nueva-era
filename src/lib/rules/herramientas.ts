@@ -6,8 +6,8 @@
 // de fuego (misma familia, mismo cálculo). Aquí no hay una fórmula común —
 // cada herramienta tiene su propia mecánica, así que se distingue por id de
 // catálogo, no por familia entera. La Valija Táctica de Fabricación no
-// genera tirada propia: no trae ningún bono numérico limpio que mecanizar
-// (ver catalog/herramientas.ts) — se usa la tirada fija "tecnica" tal cual.
+// genera tirada propia: su uso real es la acción sin dado "Reparar y
+// Fabricar" (ReparaFabricaModal.tsx, docs/tareas.md tarea 8), no una tirada.
 import { equipoPorId, type Equipo, type Herramienta } from "../catalog/equipo";
 import type { PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";

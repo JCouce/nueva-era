@@ -20,25 +20,16 @@ import {
   consultaIndiceCondiciones,
   bonoAlcance,
   modoElegido,
-  equipoPorId,
-  capacidadDePieza,
-  rarezaPermitida,
-  MATERIAL_TIERS,
-  rarezaMaterial,
-  tieneVtf,
   type Accion,
   type Sheet,
   type EstadoCondiciones,
   type EstadoActivo,
   type ModificadorConFuente,
   type MaterialTier,
-  type Materiales,
-  type RecursoInstancia,
-  type Rareza,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { AccionModal } from "@/components/AccionModal";
-import { ConstruccionModal } from "./ConstruccionModal";
+import { ReparaFabricaModal } from "./ReparaFabricaModal";
 import { type DanioInfo, type Lanzamiento } from "@/components/ResultadoTirada";
 
 function signo(n: number) {
@@ -220,99 +211,32 @@ function FilaTirada({
   );
 }
 
-// Reparación (docs/tareas.md, tarea 8): hoy solo Escudos, vía
-// `defensa.puntosGolpe` (TipoRecarga "durabilidad", recursos.ts). Siempre
-// visible — a diferencia de Fabricar (Etapa 3), no exige tener la VTF
-// equipada. Solo lista piezas con daño de verdad (`actual < max`): una vez
-// reparada, desaparece de aquí hasta que vuelva a dañarse.
-function ReparacionPanel({
-  sheet,
-  onReparar,
-}: {
-  sheet: Sheet;
-  onReparar: (instanciaId: string, tier: MaterialTier) => void;
-}) {
-  const piezas = sheet.recursos.flatMap((recurso) => {
-    if (recurso.actual >= recurso.max) return [];
-    const pieza = sheet.equipo.find((p) => p.instanciaId === recurso.instanciaId);
-    const cat = pieza ? equipoPorId(pieza.catalogoId) : null;
-    if (!pieza || !cat) return [];
-    const cap = capacidadDePieza(pieza);
-    if (!cap || cap.tipo !== "durabilidad") return [];
-    const rareza = cat.familia === "armaMelee" ? cat.rareza : null;
-    return [{ instanciaId: pieza.instanciaId, titulo: cat.label, rareza, recurso }];
-  });
-
-  return (
-    <div className="flex flex-col gap-2">
-      <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
-        Reparación
-      </h2>
-      {piezas.length === 0 ? (
-        <HudCard className="border-dashed p-4 text-center">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
-            {"//SYSTEM · nada que reparar"}
-          </p>
-          <p className="mt-2 font-sans text-sm text-muted">
-            Un Escudo equipado aparece aquí en cuanto pierde puntos de golpe.
-          </p>
-        </HudCard>
-      ) : (
-        piezas.map((p) => (
-          <ReparacionCard
-            key={p.instanciaId}
-            titulo={p.titulo}
-            rareza={p.rareza}
-            recurso={p.recurso}
-            materiales={sheet.materiales}
-            onReparar={(tier) => onReparar(p.instanciaId, tier)}
-          />
-        ))
-      )}
-    </div>
-  );
-}
-
-function ReparacionCard({
-  titulo,
-  rareza,
-  recurso,
-  materiales,
-  onReparar,
-}: {
-  titulo: string;
-  rareza: Rareza | null;
-  recurso: RecursoInstancia;
-  materiales: Materiales;
-  onReparar: (tier: MaterialTier) => void;
-}) {
+// Reparar y Fabricar (docs/tareas.md, tarea 8): una fila más en el grupo
+// "Acciones", mismo lenguaje visual que FilaTirada (HudCard, título +
+// botón), pero sin dado — "Abrir" en vez de "Tirar" lleva al modal
+// combinado (ReparaFabricaModal.tsx). Antes eran dos huecos sueltos fuera
+// de la lista de acciones (una sección siempre visible + un botón aparte);
+// unificarlos aquí evita que la tirada fija "tecnica" (ahora solo Hackeo)
+// se quede huérfana de su propio Reparar/Fabricar.
+function FilaReparaFabrica({ onAbrir }: { onAbrir: () => void }) {
   return (
     <HudCard className="p-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="font-display text-sm font-semibold uppercase text-foreground">{titulo}</p>
-        <p className="font-mono text-lg tabular-nums text-danger">
-          {recurso.actual}
-          <span className="text-sm text-muted">/{recurso.max} PG</span>
-        </p>
-      </div>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {MATERIAL_TIERS.map((tier) => {
-          const tope = rarezaMaterial(tier);
-          const cabe = tope !== null && rarezaPermitida(rareza, tope);
-          const stock = materiales[tier];
-          const disabled = !cabe || stock < 1;
-          return (
-            <button
-              key={tier}
-              type="button"
-              onClick={() => onReparar(tier)}
-              disabled={disabled}
-              className="clip-chamfer-sm border border-accent bg-accent px-2 py-1.5 font-mono text-[10px] uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted"
-            >
-              {tier} ({stock})
-            </button>
-          );
-        })}
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <span className="block font-display text-base font-semibold uppercase leading-tight">
+            Reparar y Fabricar
+          </span>
+          <span className="mt-1 block font-mono text-[10px] uppercase text-muted">
+            Gasta Materiales, sin tirada
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onAbrir}
+          className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95"
+        >
+          Abrir
+        </button>
       </div>
     </HudCard>
   );
@@ -355,7 +279,7 @@ export function AccionesTab({
   onFabricar?: (catalogoId: string, tier: MaterialTier) => void;
 }) {
   const mods = [...modificadoresActivos(sheet), ...modificadoresDeEstados(estadosCombate)];
-  const [construccionAbierta, setConstruccionAbierta] = useState(false);
+  const [reparaFabricaAbierta, setReparaFabricaAbierta] = useState(false);
   const [modal, setModal] = useState<{
     tirada: Accion;
     modBase: number;
@@ -580,33 +504,21 @@ export function AccionesTab({
             .map((t) => (
               <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
             ))}
+          {/* Reparar y Fabricar vive aquí, junto a Hackeo — no es una
+              tirada fija de ACCIONES (no tira dado), así que se añade a
+              mano en vez de venir del catálogo. */}
+          {grupo === "Acciones" && onReparar && (
+            <FilaReparaFabrica onAbrir={() => setReparaFabricaAbierta(true)} />
+          )}
         </div>
       ))}
 
-      {onReparar && <ReparacionPanel sheet={sheet} onReparar={onReparar} />}
-
-      {/* Fabricar (docs/tareas.md, tarea 8): a diferencia de Reparación,
-          exige tener la VTF equipada — el botón ni se pinta sin ella. */}
-      {onFabricar && tieneVtf(sheet) && (
-        <div className="flex flex-col gap-2">
-          <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
-            Construcción
-          </h2>
-          <button
-            type="button"
-            onClick={() => setConstruccionAbierta(true)}
-            className="clip-chamfer-sm border border-accent bg-accent py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95"
-          >
-            Abrir catálogo de fabricación
-          </button>
-        </div>
-      )}
-
-      {construccionAbierta && onFabricar && (
-        <ConstruccionModal
-          materiales={sheet.materiales}
+      {reparaFabricaAbierta && onReparar && (
+        <ReparaFabricaModal
+          sheet={sheet}
+          onReparar={onReparar}
           onFabricar={onFabricar}
-          onCerrar={() => setConstruccionAbierta(false)}
+          onCerrar={() => setReparaFabricaAbierta(false)}
         />
       )}
 

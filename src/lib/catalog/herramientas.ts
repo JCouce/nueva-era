@@ -16,19 +16,20 @@
 // ya hace `nota` en ACCIONES con "Gel sanador y estabilizar tienen
 // dificultad 4". La Valija Táctica de Fabricación tampoco trae ningún
 // número limpio (a diferencia de la Valija Médica, que sí daba "+N a las
-// tiradas de aplicación"): se equipa como referencia para la tirada fija
-// "tecnica", sin modificador.
+// tiradas de aplicación"): su uso real es la acción sin dado "Reparar y
+// Fabricar" (ReparaFabricaModal.tsx, docs/tareas.md tarea 8), sin modificador.
 import type { Herramienta, Consumible } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
 
 // docs/motor.md — patrones compartidos por varios niveles de este archivo,
 // para no repetir el mismo array literal en cada uno.
 
-// VTF: decisión de diseño ya cerrada (cabecera del archivo) — se equipa como
-// referencia para la tirada fija "tecnica" sin ningún Modificador propio, a
-// diferencia de la Valija Médica. Confirmado: "valija_tactica_fabricacion" no
-// aparece en ETIQUETA_ACCION de lib/rules/herramientas.ts, no genera tirada
-// propia. Narrativo, sin conexión, construido — no es un hueco.
+// VTF: decisión de diseño ya cerrada (cabecera del archivo) — sin ningún
+// Modificador propio, a diferencia de la Valija Médica. Confirmado:
+// "valija_tactica_fabricacion" no aparece en ETIQUETA_ACCION de
+// lib/rules/herramientas.ts, no genera tirada propia — la gatea como acción
+// sin dado (tieneVtf(), lib/rules/equipo.ts). Narrativo, sin conexión al
+// motor de tiradas, construido — no es un hueco.
 const MOTOR_VTF: MotorMetadata[] = [
   { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
 ];

@@ -203,13 +203,19 @@ export const ACCIONES: Accion[] = [
     habilidad: "biociencia",
     nota: "Con la especialidad de Medicina. Gel sanador y estabilizar tienen dificultad 4",
   },
+  // Reparar y Fabricar ya no viven aquí: tienen su propia acción sin dado
+  // (docs/tareas.md, tarea 8) en vez de una tirada de `tecnica` con
+  // dificultad tecleada a mano — ver ReparaFabricaModal.tsx. `tecnica`
+  // (Perspicacia + Tecnociencia) se queda solo para Hackeo, sin nota: la
+  // mecánica de hackear sigue sin resolver (docs/sistema.md, pregunta 16 —
+  // dualidad hackeo digital/psiónico), inventarse una dificultad aquí sería
+  // una regla que el documento no da.
   {
     id: "tecnica",
-    label: "Reparar / hackear / fabricar",
+    label: "Hackeo",
     grupo: "Acciones",
     aplicado: "perspicacia",
     habilidad: "tecnociencia",
-    nota: "Fabricar: dificultad 7 para lo común, +2 por cada rango de rareza",
   },
   {
     id: "social",
