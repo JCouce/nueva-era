@@ -58,6 +58,11 @@ export function ResourceRow({
   );
 }
 
+// Antes eran dos botones ±1 fijos — para Créditos, que se mueven en cientos o
+// miles (5000+ por una pieza de equipo), sumar de uno en uno no es viable.
+// Un solo campo (admite negativos, para restar sin un botón aparte) sustituye
+// a los dos botones — decisión del usuario 2026-09-26, prefirió esto a
+// atajos ±10/±100 o a editar el total directamente.
 function Stepper({
   characterId,
   label,
@@ -72,27 +77,21 @@ function Stepper({
   return (
     <div className="flex flex-1 items-center gap-2 font-mono text-xs">
       <span className="w-14 text-muted">{label}</span>
-      <form action={action}>
+      <span className="w-14 text-center">{value}</span>
+      <form action={action} className="flex items-center gap-1">
         <input type="hidden" name="id" value={characterId} />
-        <input type="hidden" name="delta" value="-1" />
+        <input
+          type="number"
+          name="delta"
+          placeholder="±cantidad"
+          aria-label={`Cantidad a sumar o restar de ${label}`}
+          className="clip-chamfer-sm h-6 w-20 border border-border bg-elevated px-1 text-center font-mono text-[11px] text-foreground placeholder:text-muted"
+        />
         <button
           type="submit"
-          className="h-6 w-6 border border-border text-muted transition hover:text-danger"
-          aria-label={`Restar ${label}`}
+          className="h-6 shrink-0 border border-border px-2 text-muted transition hover:text-accent"
         >
-          −
-        </button>
-      </form>
-      <span className="w-8 text-center">{value}</span>
-      <form action={action}>
-        <input type="hidden" name="id" value={characterId} />
-        <input type="hidden" name="delta" value="1" />
-        <button
-          type="submit"
-          className="h-6 w-6 border border-border text-muted transition hover:text-accent"
-          aria-label={`Sumar ${label}`}
-        >
-          +
+          Aplicar
         </button>
       </form>
     </div>
