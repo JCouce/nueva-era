@@ -459,10 +459,62 @@ para el colchón de Malla Plasmática, la pieza aparcada en el barrido de motor
   - **Fuera de esta pasada, sin cambios**: sacrificar puntos del colchón por daño
     melee, devolver daño al atacante, -8 a sigilo al activarse, neutralizar el
     Camuflaje Trifásico, y la detonación de pulso térmico en área — todo sigue
-    exactamente como estaba (`pendiente`/`bloqueado` en `motor[]`).
+    exactamente como estaba (`pendiente`/`bloqueado` en `motor[]`). **Los tres
+    primeros se construyeron al día siguiente, ver "Malla Plasmática — acciones
+    (sacrificio de colchón, detonación en área)" más abajo.**
 - 15 tests nuevos (`vitalidad.test.ts`, más casos en `sheet.test.ts`/
   `migraciones.test.ts`/`recursos.test.ts`), 546 en total, lint y `tsc --noEmit`
   limpios. Sin probar en navegador (extensión de Chrome no disponible en la sesión).
+
+### Malla Plasmática — acciones (sacrificio de colchón, detonación en área), 2026-09-28
+
+Pedido del usuario: "¿podemos incluir también las acciones de Malla Plasmática?" —
+de las 4 mecánicas que quedaron fuera de la pasada del 27 (ver entrada de arriba),
+esta tarea cierra 3; -8 a sigilo y neutralizar el Camuflaje Trifásico siguen sin
+construir, no entraron en el alcance confirmado.
+
+- **Sacrificar colchón por daño de plasma en golpe melee desarmado**
+  (Puñetazo/Patada, `pelea_punetazo`/`pelea_patada`): dos toggles nuevos en
+  `tiradaDeArmaMelee()` (`combate.ts`), generados solo si hay Malla Plasmática
+  equipada y el arma es una de esas dos — `condicionesSacrificioColchon(nivel)`.
+  Puramente informativos (`valorActivo`/`valorInactivo` a 0, mismo patrón que
+  Máxima Potencia en `movimiento.ts`): el motor no descuenta el colchón solo, la
+  nota explica cuánto sacrificar y el jugador lo ajusta a mano en Recursos, mismo
+  criterio que el resto de gasto de RECURSOS en toda la app. El crítico (shock/
+  llamarada/fusión, dificultad 6+nivel) va en la misma nota, no en una condición
+  aparte. Nivel 3+ suma un segundo toggle (4 puntos → +2 de plasma) como
+  ALTERNATIVA al primero, no algo que se sume encima — el motor no arbitra si el
+  jugador declara los dos a la vez, mismo criterio de confianza que el resto de
+  toggles independientes de la app.
+- **Detonación de pulso térmico en área (nivel 2+)**: cierra el Hallazgo #1 de
+  esta pieza, pero NO con una tirada de ataque propia como proponía el
+  comentario original (mismo molde que Proyector de Pulso) — con una "acción sin
+  dado" (`tiradaDetonacionPulsoTermico()`, `AccionDirecta`), porque nadie tira
+  nada: el colchón que el jugador decide sacrificar ES el daño (no hay fórmula
+  que calcular) y quien esté en el área esquiva con su Esquivar de siempre.
+  Mismo criterio que Radar nv4 "Marcar objetivo": informa con los números ya
+  calculados (área 6x6, o 10x10 desde nivel 4; esquiva 5+nivel; shock/llamarada
+  6+nivel), no muta la ficha. Primera entrada del grupo "Ataques" en
+  `accionesDirectasDeAtaque()` — antes solo tenía "Levantar [escudo]" en
+  Defensa; `AccionesTab.tsx` gana el bucket `ataqueDirecta` para pintarla junto
+  a los ataques con dado.
+- **"Devolver daño al atacante en melee" — revisado y cerrado sin código.**
+  Pedido explícito del usuario: "debería verse reflejado si corresponde".
+  `docs/motor.md` resuelve `objetivo_tercero` siempre como texto — con tirada de
+  portador donde colgarlo, o sin ella. Este efecto nunca modifica una tirada del
+  PORTADOR (modifica la del atacante, que el motor no puede tocar), así que cae
+  en la rama "no hace falta código, ya está en la descripción del catálogo" —
+  mismo criterio que Escudos/Lanzallamas/Soporte Vital (coste de acción,
+  comunicación de mesa). Reclasificado de `bloqueado` a `ad_hoc` en `motor[]`
+  de los 4 niveles, sin tocar código de combate.
+- **Fuera de alcance, a propósito**: -8 a sigilo al activarse y neutralizar el
+  Camuflaje Trifásico — este último necesita un mecanismo nuevo de verdad (una
+  pieza apagando el efecto de OTRA pieza distinta; `gate_instalacion` siempre ha
+  sido una pieza controlando su propia acción, nunca pieza-sobre-pieza). Ninguno
+  de los dos se tocó.
+- 8 tests nuevos (`combate.test.ts`), 554 en total, lint y `tsc --noEmit`
+  limpios. Sin probar en navegador (extensión de Chrome no disponible en toda
+  la sesión).
 
 ---
 

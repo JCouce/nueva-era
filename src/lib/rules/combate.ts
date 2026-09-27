@@ -452,6 +452,57 @@ function bonoFormulaFuerza(formula: string): number | null {
   return m[1] ? Number(m[1]) : 0;
 }
 
+// Malla Plasmática instalada, si la hay — helper compartido por el
+// sacrificio de colchón (melee) y la detonación de pulso térmico.
+function mallaPlasmaticaEquipada(sheet: Sheet): { instanciaId: string; nivel: number } | null {
+  for (const pieza of sheet.equipo) {
+    if (pieza.catalogoId === "malla_plasmatica" && pieza.nivel) {
+      return { instanciaId: pieza.instanciaId, nivel: pieza.nivel };
+    }
+  }
+  return null;
+}
+
+// Malla Plasmática — sacrificar colchón por daño de plasma en un "golpe
+// melee desarmado" (docs/tareas.md, 2026-09-28): Puñetazo/Patada son las
+// únicas dos piezas de PELEA (armasMelee.ts) que cuentan como desarmadas —
+// el resto de armas melee no, aunque también generen ataque_melee. Toggles
+// puramente informativos (valorActivo/valorInactivo 0), mismo patrón que
+// Máxima Potencia (movimiento.ts): el motor no descuenta el colchón solo,
+// se ajusta a mano en Recursos, igual que el resto de gasto de RECURSOS en
+// toda la app. El sacrificio mayor (nivel 3+) es una ALTERNATIVA al menor,
+// no algo que se sume encima — declarar solo uno de los dos, el motor no
+// arbitra si se combinan ambos, mismo criterio de confianza en el jugador
+// que el resto de toggles independientes.
+function condicionesSacrificioColchon(nivel: number): CondicionTirada[] {
+  const condiciones: CondicionTirada[] = [
+    {
+      id: "sacrificio_colchon_menor",
+      tipo: "toggle",
+      etiqueta: "Sacrificar 2 del colchón (+1 nivel de plasma)",
+      valorActivo: 0,
+      valorInactivo: 0,
+      nota:
+        "Suma 1 nivel de daño de plasma al golpe, aparte del daño normal. En crítico, puede " +
+        `causar shock, llamarada o fusión — dificultad de absorción ${6 + nivel}. Descuenta 2 ` +
+        "puntos del colchón a mano en Recursos.",
+    },
+  ];
+  if (nivel >= 3) {
+    condiciones.push({
+      id: "sacrificio_colchon_mayor",
+      tipo: "toggle",
+      etiqueta: "Sacrificar 4 del colchón (+2 nivel de plasma)",
+      valorActivo: 0,
+      valorInactivo: 0,
+      nota:
+        "Alternativa al sacrificio menor: +2 nivel de daño de plasma por 4 puntos del colchón. " +
+        "Descuéntalos a mano en Recursos.",
+    });
+  }
+  return condiciones;
+}
+
 function tiradaDeArmaMelee(sheet: Sheet, arma: ArmaMelee, instanciaId: string): Accion {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
   const modo = condicionModo(modosConId);
@@ -460,6 +511,8 @@ function tiradaDeArmaMelee(sheet: Sheet, arma: ArmaMelee, instanciaId: string): 
   // Solo se calcula si hace falta: el resto de armas (no Sutil) no necesita
   // el aplicado de Potencia para nada aquí.
   const potencia = esSutil ? aplicado(sheet, "potencia") : null;
+  const esDesarmado = arma.id === "pelea_punetazo" || arma.id === "pelea_patada";
+  const malla = esDesarmado ? mallaPlasmaticaEquipada(sheet) : null;
 
   // `arma.efectos` (Crítico de X, Ignora N de blindaje...) es hoy puramente
   // decorativo en el catálogo, pero al menos debe llegar como texto a la
@@ -481,7 +534,7 @@ function tiradaDeArmaMelee(sheet: Sheet, arma: ArmaMelee, instanciaId: string): 
     habilidad: "combate_melee",
     nota,
     efectoCritico: arma.efectoCritico,
-    condiciones: modo ? [modo] : [],
+    condiciones: [...(modo ? [modo] : []), ...(malla ? condicionesSacrificioColchon(malla.nivel) : [])],
     ataque: {
       modos: modosConId.map((m) => {
         const bono = bonoFormulaFuerza(m.formulaDanio);
@@ -816,6 +869,34 @@ export function accionesDeAtaque(sheet: Sheet): Accion[] {
   return tiradas;
 }
 
+// Malla Plasmática — detonación de pulso térmico (nivel 2+, docs/tareas.md
+// 2026-09-28, cierra el Hallazgo #1 de esta pieza). Sin tirada propia:
+// nadie rueda dado para esto — el colchón que el jugador decida sacrificar
+// ES el daño (no hay fórmula que calcular), y quien esté en el área esquiva
+// con su Esquivar de siempre. "Acción sin dado" en vez de una Accion nueva,
+// mismo criterio que Radar nv4 "Marcar objetivo": informa, no muta la
+// ficha — el colchón se descuenta a mano en Recursos, como el resto de
+// gasto de RECURSOS en toda la app. Área y dificultades escalan con el
+// nivel instalado; el área pasa a 10x10 solo en nivel 4 (S9: no se
+// re-declara en nivel 3, sigue siendo 6x6 hasta que nivel 4 la sustituye).
+function tiradaDetonacionPulsoTermico(sheet: Sheet, pieza: PiezaEquipada): AccionDirecta | null {
+  const nivel = pieza.nivel ?? 1;
+  if (nivel < 2) return null;
+  const recurso = recursoDe(sheet, pieza.instanciaId);
+  const area = nivel >= 4 ? "10x10" : "6x6";
+  return {
+    id: `detonacion_pulso_termico_${pieza.instanciaId}`,
+    label: "Detonar pulso térmico (Malla Plasmática)",
+    grupo: "Ataques",
+    confirmarLabel: "Detonar",
+    nota:
+      `Libera el colchón, todo o en parte: esos puntos son el daño de plasma en área ${area} ` +
+      `a tu alrededor. Esquiva dificultad ${5 + nivel} · Shock y Llamarada dificultad ${6 + nivel}` +
+      " · con fracaso crítico en la esquiva, además Fusión (misma dificultad). Descuenta el " +
+      `colchón sacrificado a mano en Recursos${recurso ? ` (tienes ${recurso.actual}/${recurso.max})` : ""}.`,
+  };
+}
+
 // "Levantar [escudo]" (docs/motor.md, "Acciones sin dado") — para LOS CINCO
 // escudos (cualquier armaMelee con `defensa`), no solo uno. Sin estado que
 // rastrear ni gasto de recurso: coste de acción y duración son comunicación
@@ -827,22 +908,29 @@ export function accionesDeAtaque(sheet: Sheet): Accion[] {
 // hardcodearse aparte — es la misma columna que ya usa el ataque del escudo
 // (docs/equipamiento.md:882-905): Rodela y su metamaterial son Simple, el
 // resto Estándar.
+//
+// Malla Plasmática (2026-09-28) se suma al mismo bucle, ver
+// tiradaDetonacionPulsoTermico() arriba.
 export function accionesDirectasDeAtaque(sheet: Sheet): AccionDirecta[] {
   const acciones: AccionDirecta[] = [];
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
-    if (cat?.familia !== "armaMelee" || !cat.defensa) continue;
-    const accionCoste = cat.modos[0]?.etiqueta ?? "Estándar";
-    acciones.push({
-      id: `levantar_escudo_${pieza.instanciaId}`,
-      label: `Levantar ${cat.label}`,
-      grupo: "Defensa",
-      nota:
-        `Acción ${accionCoste.toLowerCase()}. Cobertura Nivel ${cat.defensa.cobertura} y blindaje ` +
-        `${cat.defensa.blindaje} hasta tu próximo turno — no cuenta si te atacan por la espalda. ` +
-        `Marca "Escudo en alto" en Bloquear daño mientras siga levantado.`,
-      confirmarLabel: "Levantar",
-    });
+    if (cat?.familia === "armaMelee" && cat.defensa) {
+      const accionCoste = cat.modos[0]?.etiqueta ?? "Estándar";
+      acciones.push({
+        id: `levantar_escudo_${pieza.instanciaId}`,
+        label: `Levantar ${cat.label}`,
+        grupo: "Defensa",
+        nota:
+          `Acción ${accionCoste.toLowerCase()}. Cobertura Nivel ${cat.defensa.cobertura} y blindaje ` +
+          `${cat.defensa.blindaje} hasta tu próximo turno — no cuenta si te atacan por la espalda. ` +
+          `Marca "Escudo en alto" en Bloquear daño mientras siga levantado.`,
+        confirmarLabel: "Levantar",
+      });
+    } else if (cat?.familia === "subsistema" && pieza.catalogoId === "malla_plasmatica") {
+      const detonacion = tiradaDetonacionPulsoTermico(sheet, pieza);
+      if (detonacion) acciones.push(detonacion);
+    }
   }
   return acciones;
 }

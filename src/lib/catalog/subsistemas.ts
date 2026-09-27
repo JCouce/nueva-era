@@ -360,23 +360,31 @@ export const SUBSISTEMAS: Subsistema[] = [
         // que no le toca una entrada de MotorMetadata (ver `colchon` más
         // abajo y recursos.ts, capacidadDePieza()). "Regenera N por turno" y
         // el tiempo de reactivación tras destruirse siguen sin automatizar,
-        // comunicación de mesa. El resto (sacrificar puntos, devolver daño,
-        // sigilo, neutralizar camuflaje) sigue igual de sin construir.
+        // comunicación de mesa. Sigilo y neutralizar camuflaje siguen sin
+        // construir (docs/tareas.md, 2026-09-28: fuera de esta pasada).
         modificadores: [],
         colchon: 10,
         motor: [
-          // Sacrificar PG del colchón → +N daño de plasma en golpe melee: acción
-          // del jugador declarada antes de atacar, más cercano a eleccion_jugador
-          // que a nada más, aunque hoy no hay CondicionTirada real.
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          // Crítico melee con plasma (shock/llamarada/fusión condicional): mismo
-          // patrón que Visor Nocturno (toggle con nota), "ya propuesto, sin
-          // construir" según el barrido de motor — no es duda, es pendiente.
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          // Devuelve daño de plasma al atacante: tirada/daño de un TERCERO (quien
-          // golpea al portador), mismo problema estructural que Compartimento
-          // Oculto/Cobertura del Camuflaje.
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+          // ✅ Construido 2026-09-28 (docs/tareas.md): toggle informativo en
+          // Puñetazo/Patada (condicionesSacrificioColchon(), combate.ts) —
+          // valorActivo/valorInactivo 0, el motor no descuenta el colchón
+          // solo, se ajusta a mano en Recursos como el resto de RECURSOS.
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          // ✅ Construido junto al de arriba: el crítico (shock/llamarada/
+          // fusión, dificultad 6+nivel) va en la MISMA nota del toggle, no en
+          // una condición aparte.
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          // Devuelve daño de plasma al atacante: tirada/daño de un TERCERO
+          // (quien golpea al portador). Revisado 2026-09-28 (pedido del
+          // usuario): docs/motor.md resuelve objetivo_tercero SIEMPRE como
+          // texto — con tirada de portador donde colgarlo, o sin ella. Este
+          // caso no modifica ninguna tirada del portador (nunca la tuvo), así
+          // que cae en la rama "no hace falta código, ya está en la
+          // descripción" — mismo criterio que Escudos/Lanzallamas/Soporte
+          // Vital (coste de acción, comunicación de mesa). Se cierra como
+          // `ad_hoc`, no `bloqueado`: no falta ningún mecanismo, solo no
+          // había una tirada de ataque donde colgar la nota, y no hacía falta.
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
           // -8 al sigilo al activarse: numérico condicionado a "está activa", sin
           // CondicionTirada construida todavía.
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
@@ -401,15 +409,16 @@ export const SUBSISTEMAS: Subsistema[] = [
         modificadores: [],
         colchon: 12,
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
           { tipo: "habilitador", afecta: { modo: "accion_existente", id: "camuflaje_trifasico" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "pendiente" },
-          // Detonación de pulso térmico en área: necesita una tirada de ataque
-          // propia que no existe — amplía el Hallazgo #1 (igual que el
-          // Proyector de Pulso), no se re-abre la duda, solo se cita.
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "detonacion_pulso_termico" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "H1" },
+          // ✅ Construido 2026-09-28: "acción sin dado" (tiradaDetonacionPulsoTermico(),
+          // combate.ts), no la tirada de ataque propia que este comentario
+          // pedía — no hace falta rodar dado, el colchón sacrificado ES el
+          // daño y el objetivo esquiva con su Esquivar de siempre.
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "detonacion_pulso_termico" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
       },
       {
@@ -426,14 +435,14 @@ export const SUBSISTEMAS: Subsistema[] = [
         colchon: 14,
         // Mismos 6 efectos que nivel 2 (solo cambian números: colchón,
         // dificultades de crítico, coste del sacrificio) — nada nuevo que
-        // clasificar en este nivel.
+        // clasificar en este nivel. Todos construidos 2026-09-28, ver nivel 1.
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
           { tipo: "habilitador", afecta: { modo: "accion_existente", id: "camuflaje_trifasico" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "pendiente" },
-          { tipo: "accion", afecta: { modo: "accion_existente", id: "detonacion_pulso_termico" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "H1" },
+          { tipo: "accion", afecta: { modo: "accion_existente", id: "detonacion_pulso_termico" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
       },
       {
@@ -448,12 +457,12 @@ export const SUBSISTEMAS: Subsistema[] = [
         modificadores: [],
         colchon: 16,
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
           { tipo: "habilitador", afecta: { modo: "accion_existente", id: "camuflaje_trifasico" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "pendiente" },
-          { tipo: "accion", afecta: { modo: "accion_existente", id: "detonacion_pulso_termico" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "H1" },
+          { tipo: "accion", afecta: { modo: "accion_existente", id: "detonacion_pulso_termico" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
       },
     ],

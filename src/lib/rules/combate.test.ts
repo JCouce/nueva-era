@@ -60,6 +60,49 @@ describe("pelea (puñetazo, patada, codazo)", () => {
     assert.equal(opcion(modo, "0"), 0); // Simple
     assert.equal(opcion(modo, "1"), 0); // Estándar
   });
+
+  test("sin Malla Plasmática equipada, no hay toggle de sacrificio de colchón", () => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "p1", catalogoId: "pelea_punetazo" });
+    const [punetazo] = accionesDeAtaque(sheet);
+    assert.equal(punetazo.condiciones?.find((c) => c.id === "sacrificio_colchon_menor"), undefined);
+  });
+
+  // Subsistema: necesita host (armadura) para que equipar() no la descarte
+  // en silencio — mismo patrón que conProyectorPulso() más abajo.
+  function conMallaPlasmatica(sheet: Sheet, nivel: number) {
+    let s = equipar(sheet, { instanciaId: "a1", catalogoId: "armadura_pesada" });
+    s = equipar(s, { instanciaId: "mp1", catalogoId: "malla_plasmatica", nivel, instaladoEnId: "a1" });
+    return s;
+  }
+
+  test("con Malla Plasmática nivel 1, el puñetazo y la patada ganan el sacrificio menor (no el mayor)", () => {
+    let sheet = conMallaPlasmatica(defaultSheet(), 1);
+    sheet = equipar(sheet, { instanciaId: "p1", catalogoId: "pelea_punetazo" });
+    sheet = equipar(sheet, { instanciaId: "p2", catalogoId: "pelea_patada" });
+    const golpes = accionesDeAtaque(sheet).filter((t) => t.label.startsWith("Golpear"));
+    assert.equal(golpes.length, 2);
+    for (const golpe of golpes) {
+      const menor = golpe.condiciones?.find((c) => c.id === "sacrificio_colchon_menor");
+      assert.equal(menor?.tipo, "toggle", `${golpe.label} debería tener el sacrificio menor`);
+      if (menor?.tipo === "toggle") assert.match(menor.nota ?? "", /dificultad de absorción 7/);
+      assert.equal(golpe.condiciones?.find((c) => c.id === "sacrificio_colchon_mayor"), undefined);
+    }
+  });
+
+  test("con Malla Plasmática nivel 3+, se suma el sacrificio mayor", () => {
+    let sheet = conMallaPlasmatica(defaultSheet(), 3);
+    sheet = equipar(sheet, { instanciaId: "p1", catalogoId: "pelea_punetazo" });
+    const [punetazo] = accionesDeAtaque(sheet);
+    assert.ok(punetazo.condiciones?.find((c) => c.id === "sacrificio_colchon_menor"));
+    assert.ok(punetazo.condiciones?.find((c) => c.id === "sacrificio_colchon_mayor"));
+  });
+
+  test("un arma melee normal (no desarmada) no gana el sacrificio aunque haya Malla equipada", () => {
+    let sheet = conMallaPlasmatica(defaultSheet(), 1);
+    sheet = equipar(sheet, { instanciaId: "e1", catalogoId: "espada_cuchillo_combate" });
+    const golpe = accionesDeAtaque(sheet).find((t) => t.label.startsWith("Golpear"));
+    assert.equal(golpe?.condiciones?.find((c) => c.id === "sacrificio_colchon_menor"), undefined);
+  });
 });
 
 describe("arma de fuego equipada", () => {
@@ -949,5 +992,40 @@ describe("accionesDirectasDeAtaque", () => {
       acciones.map((a) => a.id).sort(),
       ["levantar_escudo_e1", "levantar_escudo_e2"].sort(),
     );
+  });
+
+  // Subsistema: necesita host (armadura) para que equipar() no la descarte
+  // en silencio.
+  function conMallaPlasmatica(nivel: number) {
+    let sheet = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "armadura_pesada" });
+    sheet = equipar(sheet, { instanciaId: "mp1", catalogoId: "malla_plasmatica", nivel, instaladoEnId: "a1" });
+    return sheet;
+  }
+
+  test("Malla Plasmática nivel 1 no genera detonación de pulso térmico", () => {
+    const sheet = conMallaPlasmatica(1);
+    assert.deepEqual(accionesDirectasDeAtaque(sheet), []);
+  });
+
+  test("Malla Plasmática nivel 2: detonación en área 6x6, dificultades con nivel 2", () => {
+    const sheet = conMallaPlasmatica(2);
+    const [accion] = accionesDirectasDeAtaque(sheet);
+    assert.equal(accion.label, "Detonar pulso térmico (Malla Plasmática)");
+    assert.equal(accion.grupo, "Ataques");
+    assert.match(accion.nota ?? "", /área 6x6/);
+    assert.match(accion.nota ?? "", /Esquiva dificultad 7/);
+    assert.match(accion.nota ?? "", /Shock y Llamarada dificultad 8/);
+  });
+
+  test("Malla Plasmática nivel 4: el área pasa a 10x10", () => {
+    const sheet = conMallaPlasmatica(4);
+    const [accion] = accionesDirectasDeAtaque(sheet);
+    assert.match(accion.nota ?? "", /área 10x10/);
+  });
+
+  test("la nota de la detonación refleja el colchón actual, no solo el máximo", () => {
+    const sheet = ajustarRecurso(conMallaPlasmatica(2), "mp1", -5); // 7/12
+    const [accion] = accionesDirectasDeAtaque(sheet);
+    assert.match(accion.nota ?? "", /tienes 7\/12/);
   });
 });

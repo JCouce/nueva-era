@@ -422,6 +422,7 @@ export function AccionesTab({
   // todo lo que venga de equipo vaya a la sección Ataques.
   const {
     ataques,
+    ataqueDirecta,
     defensaGenerada,
     defensaDirecta,
     herramientas,
@@ -429,6 +430,7 @@ export function AccionesTab({
     accionesGeneradas,
   } = useMemo(() => {
     const generadas = accionesDeAtaque(sheet).map(conCondicionesDeEquipo);
+    const directas = accionesDirectasDeAtaque(sheet);
     return {
       ataques: generadas.filter((t) => t.grupo === "Ataques"),
       defensaGenerada: generadas.filter((t) => t.grupo === "Defensa"),
@@ -437,7 +439,10 @@ export function AccionesTab({
       // condiciones de alcance (§8, modificadores-tiradas.md) todavía — nada
       // real las produce hoy, se añade el día que haga falta.
       herramientasDirectas: accionesDirectasDeHerramientas(sheet),
-      defensaDirecta: accionesDirectasDeAtaque(sheet).filter((a) => a.grupo === "Defensa"),
+      defensaDirecta: directas.filter((a) => a.grupo === "Defensa"),
+      // Detonación de pulso térmico (Malla Plasmática, 2026-09-28) — primera
+      // "acción sin dado" del grupo Ataques, antes solo tenía Defensa.
+      ataqueDirecta: directas.filter((a) => a.grupo === "Ataques"),
       // "Volar" (Movilidad Aérea) — mismo criterio que Bloqueo en Defensa:
       // generada por equipo, se mezcla en el grupo fijo "Acciones" en vez de
       // vivir en su propia sección.
@@ -613,6 +618,11 @@ export function AccionesTab({
         </h2>
         {ataques.map((t) => (
           <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
+        ))}
+        {/* Detonación de pulso térmico (Malla Plasmática) — generada por
+            accionesDirectasDeAtaque() (combate.ts), no tira dado. */}
+        {ataqueDirecta.map((a) => (
+          <FilaUsar key={a.id} accion={a} onAbrir={setModalDirecta} />
         ))}
       </div>
 
