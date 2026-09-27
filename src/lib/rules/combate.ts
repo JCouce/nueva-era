@@ -242,6 +242,7 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
     habilidad: "combate_distancia",
     nota: [arma.especial, notaModoUnico].filter((n): n is string => !!n).join(" · ") || undefined,
     efectos: efectos.length > 0 ? efectos : undefined,
+    recursoInstanciaId: instanciaId,
     condiciones,
     ajustesFijos: [...ajusteModoUnico, ...ajustesFijosDeMejoras(sheet, instanciaId)],
     bonosTramo: bonosTramoDeMejoras(sheet, instanciaId),
@@ -251,6 +252,7 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
         danio: m.danio,
         formulaDanio: null,
         categoriaDanio: m.categoriaDanio,
+        gasto: gastoDelModo(m.etiqueta, arma.municion),
       })),
     },
   };
@@ -678,12 +680,25 @@ function tiradaDeProyectorPulso(
     aplicado: "reflejos",
     habilidad,
     nota,
+    recursoInstanciaId: pieza.instanciaId,
     condiciones: [modo],
     ataque: {
       modos: [
-        { id: "pulso", danio: 8 + nivel, formulaDanio: null, categoriaDanio: "Grave" },
-        { id: "pulso_cargado", danio: 11 + nivel, formulaDanio: null, categoriaDanio: "Grave" },
-        { id: "barrido", danio: 10 + nivel, formulaDanio: null, categoriaDanio: "Grave" },
+        { id: "pulso", danio: 8 + nivel, formulaDanio: null, categoriaDanio: "Grave", gasto: GASTO_MODO_PULSO.pulso },
+        {
+          id: "pulso_cargado",
+          danio: 11 + nivel,
+          formulaDanio: null,
+          categoriaDanio: "Grave",
+          gasto: GASTO_MODO_PULSO.pulso_cargado,
+        },
+        {
+          id: "barrido",
+          danio: 10 + nivel,
+          formulaDanio: null,
+          categoriaDanio: "Grave",
+          gasto: GASTO_MODO_PULSO.barrido,
+        },
       ],
     },
   };
@@ -708,6 +723,7 @@ function tiradaGolpeAguijon(sheet: Sheet, pieza: PiezaEquipada): Accion {
     ]
       .filter((n): n is string => !!n)
       .join(" · "),
+    recursoInstanciaId: pieza.instanciaId,
     ataque: {
       modos: [
         {
@@ -715,6 +731,7 @@ function tiradaGolpeAguijon(sheet: Sheet, pieza: PiezaEquipada): Accion {
           danio: atributoEfectivo(sheet, "fuerza") + 2 + nivel,
           formulaDanio: `Fue+${2 + nivel}`,
           categoriaDanio: "Grave",
+          gasto: GASTO_MODO_PULSO.aguijon,
         },
       ],
     },

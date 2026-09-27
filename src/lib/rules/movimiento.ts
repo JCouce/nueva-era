@@ -26,6 +26,11 @@ function tiradaDeVolar(pieza: PiezaEquipada, cat: MejoraMovimiento): Accion | nu
       // más abajo y resolverVuelo()).
       valorActivo: 0,
       valorInactivo: 0,
+      // 1 carga normal, 2 en Máxima Potencia (docs/prompt-gasto-recursos.md,
+      // Fase 1) — "Volar" no tiene `ataque`, así que este toggle es la ÚNICA
+      // fuente de gasto de gastoTotal() para esta tirada.
+      gastoActivo: 2,
+      gastoInactivo: 1,
       nota: `Dobla el desplazamiento; en crítico, +${nivelInfo.bonusCriticoM ?? 0} m adicionales.`,
     },
   ];
@@ -37,6 +42,7 @@ function tiradaDeVolar(pieza: PiezaEquipada, cat: MejoraMovimiento): Accion | nu
     aplicado: "reflejos",
     habilidad: "tecnociencia",
     nota: nivelInfo.notaTirada,
+    recursoInstanciaId: pieza.instanciaId,
     condiciones,
     vuelo: { velocidadBase: nivelInfo.velocidadM, bonusCritico: nivelInfo.bonusCriticoM ?? 0 },
     ajustesFijos: nivelInfo.maniobrabilidad

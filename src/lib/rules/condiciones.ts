@@ -34,6 +34,12 @@ export type CondicionTirada = (
       valorInactivo?: number; // por defecto 0
       activaPorDefecto?: boolean;
       nota?: string;
+      // Gasto de sheet.recursos si el toggle está activo/inactivo al
+      // confirmar la tirada (docs/prompt-gasto-recursos.md, Fase 1) — mismo
+      // patrón que valorActivo/valorInactivo, pero para gastoTotal() en vez
+      // de valorCondiciones(). Por defecto 0 (ver gastoTotal, acciones.ts).
+      gastoActivo?: number;
+      gastoInactivo?: number;
     }
   | {
       id: string;

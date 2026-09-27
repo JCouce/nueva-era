@@ -8,7 +8,7 @@ import type { AplicadoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
 import { aplicado, valorEfectivo, modificadoresActivos } from "./derivados";
 import type { Sheet } from "./sheet";
-import type { CondicionTirada, BonoPorTramo } from "./condiciones";
+import type { CondicionTirada, BonoPorTramo, EstadoCondiciones } from "./condiciones";
 import type { GrupoAccion, ModificadorConFuente } from "./modificadores";
 
 export const CARAS_DADO = 12;
@@ -57,6 +57,12 @@ export type Accion = {
   // Cuando una tirada depende de algo que el sistema aún no define, se declara
   // en vez de inventársela: la UI la muestra apagada con el motivo.
   bloqueada?: string;
+  // Qué entrada de sheet.recursos gasta esta tirada al confirmarse
+  // (docs/prompt-gasto-recursos.md, Fase 1) — ausente si no consume ningún
+  // RECURSO (salvaciones, tiradas fijas, armas melee sin célula). No se
+  // deduce del `id` (parsear `algo_${instanciaId}` es frágil): lo rellena
+  // directamente el generador que ya conoce la instancia.
+  recursoInstanciaId?: string;
   // Controles del modal (ver condiciones.ts): tramo de distancia, apoyado con
   // bípode, atacantes adicionales... Las tiradas de ataque las llevan
   // calculadas al vuelo desde el equipo (ver combate.ts); las demás las
@@ -87,6 +93,12 @@ export type Accion = {
       danioSutil?: number | null;
       formulaDanio: string | null;
       categoriaDanio: string;
+      // Cuánto gasta este modo de sheet.recursos al confirmar la tirada
+      // (docs/prompt-gasto-recursos.md, Fase 1) — dato, no recalculado de la
+      // etiqueta en otro punto (gastoDelModo()/GASTO_MODO_PULSO en combate.ts
+      // ya lo calculan; aquí solo se guarda el resultado). Ausente en armas
+      // melee, que no consumen ningún RECURSO.
+      gasto?: number;
     }[];
   };
   // Solo "Volar" (Movilidad Aérea, lib/rules/movimiento.ts): payout en
@@ -378,6 +390,25 @@ export function resolverVuelo(
   if (margen < 0) return { metros: Math.floor(base / 2), descontrolado: false };
   const bonus = margen >= MARGEN_CRITICO && maximaPotencia ? vuelo.bonusCritico : 0;
   return { metros: base + bonus, descontrolado: false };
+}
+
+// Cuánto gasta confirmar esta tirada, en unidades de sheet.recursos
+// (docs/prompt-gasto-recursos.md, Fase 1) — espejo de valorCondiciones() pero
+// para gasto en vez de modificador: suma el gasto del modo elegido
+// (accion.ataque.modos, ausente en tiradas sin ataque como "Volar") más el de
+// cualquier toggle activo con gastoActivo/gastoInactivo (Máxima Potencia).
+// Vive aquí y no junto a valorCondiciones() (condiciones.ts) porque necesita
+// el Accion entero para leer `ataque` — condiciones.ts no conoce ese tipo.
+export function gastoTotal(accion: Accion, modoId: string | null, estado: EstadoCondiciones): number {
+  const modo = accion.ataque?.modos.find((m) => m.id === modoId);
+  const gastoModo = modo?.gasto ?? 0;
+  const gastoCondiciones = (accion.condiciones ?? []).reduce((total, c) => {
+    if (c.tipo !== "toggle") return total;
+    if (c.gastoActivo === undefined && c.gastoInactivo === undefined) return total;
+    const activo = Boolean(estado[c.id]);
+    return total + (activo ? (c.gastoActivo ?? 0) : (c.gastoInactivo ?? 0));
+  }, 0);
+  return gastoModo + gastoCondiciones;
 }
 
 // Dado honesto: getRandomValues con descarte del resto, para que las 12 caras

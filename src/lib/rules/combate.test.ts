@@ -234,6 +234,59 @@ describe("aviso de munición insuficiente (RECURSOS, docs/tareas.md)", () => {
   });
 });
 
+describe("gasto por modo (docs/prompt-gasto-recursos.md, Fase 1)", () => {
+  test("recursoInstanciaId apunta a la instancia del arma", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_mosquito" });
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Mosquito")!;
+    assert.equal(fila.recursoInstanciaId, "arma1");
+  });
+
+  test("un único modo (sin F. Auto) gasta 1 bala", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_mosquito" });
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Mosquito")!;
+    assert.equal(fila.ataque?.modos[0].gasto, 1);
+  });
+
+  test("F. Auto gasta el cargador entero, Simple sigue gastando 1", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_sydiasi" }); // 20 balas
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
+    assert.equal(fila.ataque?.modos[0].gasto, 1); // Simple
+    assert.equal(fila.ataque?.modos[1].gasto, 20); // Estándar (F. Auto)
+  });
+
+  function conProyectorPulso(nivel: number) {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "a1", catalogoId: "armadura_pesada" });
+    sheet = equipar(sheet, { instanciaId: "pp1", catalogoId: "proyector_pulso", nivel, instaladoEnId: "a1" });
+    return sheet;
+  }
+
+  test("Proyector de Pulso: cada modo gasta las cargas de GASTO_MODO_PULSO", () => {
+    const sheet = conProyectorPulso(1);
+    const fila = accionesDeAtaque(sheet).find((t) => t.label.startsWith("Disparar Proyector de Pulso"))!;
+    assert.equal(fila.recursoInstanciaId, "pp1");
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso")?.gasto, 1);
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso_cargado")?.gasto, 4);
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "barrido")?.gasto, 5);
+  });
+
+  test("Golpear con Proyector de Pulso (Aguijón) gasta 1 carga", () => {
+    const sheet = conProyectorPulso(1);
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Proyector de Pulso (Aguijón)")!;
+    assert.equal(fila.recursoInstanciaId, "pp1");
+    assert.equal(fila.ataque?.modos[0].gasto, 1);
+  });
+
+  test("Bloquear con Proyector de Pulso (Aguijón) es gratis: sin recursoInstanciaId", () => {
+    const sheet = conProyectorPulso(1);
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Proyector de Pulso (Aguijón)")!;
+    assert.equal(fila.recursoInstanciaId, undefined);
+  });
+});
+
 describe("mejoras que afectan a la distancia", () => {
   test("la mira telescópica nivel 1 no toca el tramo: sale como bono aparte, con su fuente", () => {
     let sheet = defaultSheet();

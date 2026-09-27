@@ -370,6 +370,7 @@ export function NpcEditor({
             setMemoria={setAccionesMemoria}
             onReparar={commitReparar}
             onFabricar={commitFabricar}
+            onGastarRecurso={commitAjustarRecurso}
             libre
           />
         </div>

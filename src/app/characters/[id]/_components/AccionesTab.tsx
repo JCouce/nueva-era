@@ -10,6 +10,7 @@ import {
   resolverTirada,
   resolverDanio,
   resolverVuelo,
+  gastoTotal,
   accionesDeAtaque,
   accionesDirectasDeAtaque,
   accionesDeHerramientas,
@@ -321,6 +322,7 @@ export function AccionesTab({
   setMemoria,
   onReparar,
   onFabricar,
+  onGastarRecurso,
   libre = false,
 }: {
   sheet: Sheet;
@@ -353,6 +355,12 @@ export function AccionesTab({
   // en el cliente (FabricarSeccion.tsx) — NpcEditor.tsx (edición libre, sin
   // tirada) ignora este tercer argumento, ver su propio commitFabricar.
   onFabricar?: (catalogoId: string, tier: MaterialTier, exito: boolean) => void;
+  // Gasto automático de RECURSOS al confirmar una tirada
+  // (docs/prompt-gasto-recursos.md, Fase 1) — mismo motivo que
+  // onReparar/onFabricar para estar ausente en NpcAccionesPanel.tsx (combate
+  // en vivo, `sheet` es la foto congelada de un Combatiente, sin
+  // characterId/npcId al que persistir el gasto).
+  onGastarRecurso?: (instanciaId: string, delta: number) => void;
   // NpcEditor.tsx (edición libre de máster): la tirada de Fabricar no aplica
   // — FabricarSeccion la salta y llama a onFabricar directo con éxito fijo,
   // mismo criterio que AtributosTab/HabilidadesTab con este mismo prop.
@@ -507,9 +515,14 @@ export function AccionesTab({
 
     setMemoria((m) => ({ ...m, [tirada.id]: { dificultad, circunstancial } }));
 
+    const modoId = tirada.ataque
+      ? typeof estadoCondiciones.modo === "string"
+        ? estadoCondiciones.modo
+        : tirada.ataque.modos[0].id
+      : null;
+
     let danioInfo: DanioInfo | null = null;
     if (tirada.ataque) {
-      const modoId = typeof estadoCondiciones.modo === "string" ? estadoCondiciones.modo : tirada.ataque.modos[0].id;
       const modo = tirada.ataque.modos.find((m) => m.id === modoId) ?? tirada.ataque.modos[0];
       const danioBase = sutilActivo ? (modo.danioSutil ?? modo.danio) : modo.danio;
       danioInfo = { base: danioBase, formulaDanio: modo.formulaDanio, categoriaDanio: modo.categoriaDanio };
@@ -522,6 +535,15 @@ export function AccionesTab({
       tirada.vuelo && r.margen !== null
         ? resolverVuelo(tirada.vuelo, r.margen, Boolean(estadoCondiciones.maxima_potencia))
         : undefined;
+
+    // Gasto automático de RECURSOS al confirmar (docs/prompt-gasto-recursos.md,
+    // Fase 1) — nunca bloquea el botón de tirar, se gasta lo que haya
+    // (ajustarRecurso ya clampa a [0, max]); en segundo plano, sin esperar al
+    // servidor para pintar el resultado del dado.
+    if (tirada.recursoInstanciaId) {
+      const gasto = gastoTotal(tirada, modoId, estadoCondiciones);
+      if (gasto > 0) onGastarRecurso?.(tirada.recursoInstanciaId, -gasto);
+    }
 
     const id = Date.now();
     setHistorial((h) =>

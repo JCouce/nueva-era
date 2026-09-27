@@ -47,6 +47,23 @@ describe("accionesDeMovimiento", () => {
     }
   });
 
+  test("recursoInstanciaId apunta a la instancia de Movilidad Aérea", () => {
+    const sheet = equiparMovilidadAerea(1);
+    const [accion] = accionesDeMovimiento(sheet);
+    assert.equal(accion.recursoInstanciaId, "m1");
+  });
+
+  test("Máxima Potencia gasta 2 cargas, normal gasta 1 (docs/prompt-gasto-recursos.md, Fase 1)", () => {
+    const sheet = equiparMovilidadAerea(1);
+    const [accion] = accionesDeMovimiento(sheet);
+    const toggle = accion.condiciones?.find((c) => c.id === "maxima_potencia");
+    assert.ok(toggle?.tipo === "toggle");
+    if (toggle?.tipo === "toggle") {
+      assert.equal(toggle.gastoInactivo, 1);
+      assert.equal(toggle.gastoActivo, 2);
+    }
+  });
+
   test("nivel 4: ajuste +4, vuelo con los números de ese nivel", () => {
     const sheet = equiparMovilidadAerea(4);
     const [accion] = accionesDeMovimiento(sheet);

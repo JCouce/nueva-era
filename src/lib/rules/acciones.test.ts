@@ -17,6 +17,8 @@ import {
   resolverTirada,
   resolverDanio,
   tirarD12,
+  gastoTotal,
+  type Accion,
 } from "./acciones";
 import { modificadoresDeEstados } from "./estados";
 
@@ -205,6 +207,88 @@ describe("tabla de dificultades", () => {
     const valores = DIFICULTADES.map((d) => d.valor);
     assert.deepEqual(valores, [2, 5, 7, 10, 13, 16]);
     assert.deepEqual(valores, [...valores].sort((a, b) => a - b));
+  });
+});
+
+describe("gastoTotal (docs/prompt-gasto-recursos.md, Fase 1)", () => {
+  const accionArma: Accion = {
+    id: "ataque_fuego_arma1",
+    label: "Disparar",
+    grupo: "Ataques",
+    aplicado: "reflejos",
+    habilidad: "combate_distancia",
+    recursoInstanciaId: "arma1",
+    ataque: {
+      modos: [
+        { id: "0", danio: 5, formulaDanio: null, categoriaDanio: "Letal", gasto: 1 },
+        { id: "1", danio: 7, formulaDanio: null, categoriaDanio: "Letal", gasto: 20 },
+      ],
+    },
+  };
+
+  test("sin ataque.modos ni condiciones con gasto, el gasto es 0", () => {
+    const accion: Accion = { id: "x", label: "x", grupo: "Acciones", aplicado: "reflejos", habilidad: null };
+    assert.equal(gastoTotal(accion, null, {}), 0);
+  });
+
+  test("toma el gasto del modo elegido por modoId", () => {
+    assert.equal(gastoTotal(accionArma, "0", {}), 1);
+    assert.equal(gastoTotal(accionArma, "1", {}), 20);
+  });
+
+  test("modoId que no existe en ataque.modos no revienta, gasta 0 de ese lado", () => {
+    assert.equal(gastoTotal(accionArma, "no-existe", {}), 0);
+  });
+
+  test("suma el gasto de un toggle activo/inactivo (Máxima Potencia)", () => {
+    const accion: Accion = {
+      id: "volar_m1",
+      label: "Volar",
+      grupo: "Acciones",
+      aplicado: "reflejos",
+      habilidad: "tecnociencia",
+      recursoInstanciaId: "m1",
+      condiciones: [
+        {
+          id: "maxima_potencia",
+          tipo: "toggle",
+          etiqueta: "Máxima Potencia",
+          valorActivo: 0,
+          valorInactivo: 0,
+          gastoActivo: 2,
+          gastoInactivo: 1,
+        },
+      ],
+    };
+    assert.equal(gastoTotal(accion, null, { maxima_potencia: false }), 1);
+    assert.equal(gastoTotal(accion, null, { maxima_potencia: true }), 2);
+  });
+
+  test("un toggle sin gastoActivo/gastoInactivo no aporta nada al gasto", () => {
+    const accion: Accion = {
+      ...accionArma,
+      condiciones: [
+        { id: "bipode", tipo: "toggle", etiqueta: "Bípode", valorActivo: 1, valorInactivo: 0 },
+      ],
+    };
+    assert.equal(gastoTotal(accion, "0", { bipode: true }), 1); // solo el modo, el toggle no suma gasto
+  });
+
+  test("gasto de modo + gasto de toggle activo se suman", () => {
+    const conToggle: Accion = {
+      ...accionArma,
+      condiciones: [
+        {
+          id: "recarga_rapida",
+          tipo: "toggle",
+          etiqueta: "Recarga rápida",
+          valorActivo: 0,
+          valorInactivo: 0,
+          gastoActivo: 1,
+        },
+      ],
+    };
+    assert.equal(gastoTotal(conToggle, "0", { recarga_rapida: true }), 2); // 1 del modo + 1 del toggle
   });
 });
 

@@ -583,6 +583,7 @@ export function CharacterSheet({
           setMemoria={setAccionesMemoria}
           onReparar={commitReparar}
           onFabricar={commitFabricar}
+          onGastarRecurso={commitAjustarRecurso}
         />
       )}
       {activeEfectivo === "tienda" && (

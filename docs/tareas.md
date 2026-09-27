@@ -11,7 +11,7 @@ está hecho" en cualquier otro documento del proyecto, para — va aquí, no all
 arquitectura — el modelo obligatorio para pasar cualquier elemento nuevo (equipo,
 razas, poderes, dotes, aumentos) de prosa a motor. Este archivo manda en el estado.
 
-**Última actualización:** 2026-09-27.
+**Última actualización:** 2026-09-28.
 
 ## Ahora mismo
 
@@ -20,6 +20,11 @@ foco. Fuentes vivas, cada una con su propio orden interno, sin que ninguna docum
 cuál va antes que la otra:
 - `docs/checklist-motor-vs-prosa-2026-09-24.md` — catálogo de equipo pieza a pieza, con
   su propio "Orden de construcción" por tiers.
+- `docs/prompt-gasto-recursos.md` — automatizar el gasto de RECURSOS (balas/cargas/
+  dosis) al confirmar una tirada en vez del +/- manual de hoy. **Fase 1 (armas de
+  fuego, Proyector de Pulso, Movilidad Aérea "Volar") hecha 2026-09-28** — pendiente
+  Fase 2 (fármacos, que primero necesita su propio pool de cantidad y su acción
+  "Usar", ninguna de las dos existe hoy).
 - "Preguntas al diseñador" (final de este documento) — lo que bloquea a Murillo.
 
 ---
