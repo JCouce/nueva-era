@@ -645,8 +645,12 @@ de control.
 - Exoesqueleto (+N Fuerza): **🔕 IGNORAR**, y ya documentado explícitamente así en el
   propio catálogo ("se queda sin mecanizar a propósito... hasta que aparezca un
   segundo caso que justifique generalizarlo").
-- Movilidad Aérea (dificultad de maniobra, velocidad, potencia máxima): **🔕 IGNORAR**
-  — todo depende de estar en "modo vuelo" activo, sin ese contexto en el motor.
+- Movilidad Aérea (dificultad de maniobra, velocidad, Máxima Potencia): **✅ hecho
+  2026-09-27** — la tirada "Volar" (`accionesDeMovimiento()`, `lib/rules/movimiento.ts`)
+  construida entera, con Máxima Potencia como toggle y payout real en metros
+  (`resolverVuelo()`). Lo que sigue **🔕 IGNORAR** es solo el -1 a ataques/esquivas con
+  Tecnociencia mientras se está en vuelo — eso sí depende de un estado "modo vuelo"
+  persistente que el motor no rastrea, ver `docs/tareas.md`.
 
 ### Armas de fuego (pistolas, escopetas, subfusiles, fusiles de asalto/precisión, ametralladoras)
 

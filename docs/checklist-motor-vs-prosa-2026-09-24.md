@@ -148,8 +148,10 @@ en `docs/tareas.md`.
 **Nivel 4 decidido 2026-09-24:** `resolverTirada()` necesita aceptar un
 margen de crítico distinto del fijo (`MARGEN_CRITICO = 6`) — detalle en
 `docs/tareas.md`. Niveles 1 y 3 (dificultades de síntesis/diagnóstico) siguen
-sin diseñar. Todo depende también de que exista la "acción sin dado" para
-consumibles/uso de VTM (mismo bloqueo que Movilidad Aérea, arriba).
+sin diseñar. **Corrección 2026-09-27**: no es el mismo bloqueo que tenía
+Movilidad Aérea (esa arquitectura ya existe, `AccionDirecta`/`UsarModal.tsx`)
+— lo que falta aquí es el gasto de consumibles al usarlos, que no existe en
+ningún sitio de RECURSOS todavía (ver Estabilizadores Neurales, más abajo).
 
 - [ ] Nivel 1 (`valija_tactica_medica#1`) — síntesis farmacéutica dif. base 7; +2 dif. por rango de rareza; revertir congelación (dif. 6)
 - [ ] Nivel 3 (`valija_tactica_medica#3`) — diagnóstico profundo (1 min) da +2

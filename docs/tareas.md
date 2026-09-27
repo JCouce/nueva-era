@@ -304,7 +304,9 @@ hermano?").
   existe en ningún catálogo de tiradas. Descubierto en esta sesión, no antes — el
   checklist ya intuía que Movilidad Aérea arrastraba más de una pieza (separaba
   "Máxima Potencia" del estado "¿está volando?"), pero no que ni siquiera el gasto de
-  carga tuviera dónde vivir.
+  carga tuviera dónde vivir. **✅ Ambos huecos cerrados el mismo día** — ver
+  "Movilidad Aérea — 'Volar' + RECURSOS", más abajo. Correctamente descartada como
+  `AccionDirecta` (nunca lo era), no como tarea sin hacer.
 - **Deja rastro en "Acciones recientes", pedido del usuario tras probarlo mentalmente
   (mismo día).** `Lanzamiento` (`ResultadoTirada.tsx`) gana un flag `sinDado?: boolean`
   — los campos de `Resultado` se rellenan a 0/null (nunca se leen), `FilaHistorial`
@@ -584,27 +586,24 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
    construir, ninguna con código todavía** (checklist de piezas concretas en
    `docs/checklist-motor-vs-prosa-2026-09-24.md`, bórralo cuando todo esto esté cerrado):
 
-   - **"Acciones sin dado" — patrón de UX decidido, es la pieza de arquitectura
-     que `docs/motor.md` ya señalaba como pendiente ("Acciones sin dado").**
-     Igual que un botón "Tirar" abre el modal de una tirada normal, un botón
-     "Usar" abre el mismo tipo de modal pero sin dado — deja elegir lo que
-     haga falta (contra qué elemento, qué modo, etc.) y aplica el efecto
-     directo. Casos reales que lo necesitan: Movilidad Aérea "Máxima
-     potencia" (acción compleja, gasta cargas, dobla desplazamiento),
-     Malla Plasmática (sacrificar puntos del colchón por daño extra,
-     activarla en sí — gasta 1 carga, no tira nada), Derivación Psiónica
-     "Conversión Psiónica" (N cargas → 1 punto de fatiga), consumibles con
-     efecto real (Valija Táctica Médica, Estabilizadores Neurales — curar/
-     aplicar un estado). No implementar sin diseñar antes el "tipo hermano"
-     de `Accion` que mencionaba `docs/motor.md` — sigue siendo la primera
-     pieza de código nueva de verdad, no una migración de datos. **Nota
-     rescatada de `docs/barrido-motor-2026-09-22/barrido-armaduras-
+   - **✅ "Acciones sin dado" — construida 2026-09-27** (`AccionDirecta`,
+     `acciones.ts` + `FilaUsar`/`UsarModal.tsx` — ver entrada propia en
+     "Hecho", más arriba). De la lista original de candidatos: **Movilidad
+     Aérea resultó NO necesitarla** — Máxima Potencia es un toggle dentro de
+     la tirada normal "Volar" (ya construida, ver su propia entrada en
+     "Hecho"), no una acción sin dado. Siguen pendientes, cada una con su
+     propio prerrequisito sin resolver: **Malla Plasmática** (sacrificar
+     puntos del colchón, activarla — bloqueada por el colchón sin diseñar),
+     **Derivación Psiónica** "Conversión Psiónica" (bloqueada por Fase 5), y
+     **consumibles con efecto real** (VTM, Estabilizadores Neurales —
+     bloqueados por el gasto de consumibles al usarlos, que tampoco existe).
+     **Nota rescatada de `docs/barrido-motor-2026-09-22/barrido-armaduras-
      subsistemas-pesado.md`:** Movilidad Aérea tiene un segundo hueco además
-     de "Máxima potencia" — mientras se está volando, otras tiradas cambian
-     (esquivar usa Tecnociencia en vez de Atletismo, -1 a ataques) y eso
-     depende de un estado "¿está volando ahora mismo?" que el motor no
-     rastrea en absoluto hoy — no es solo la acción sin dado, hace falta el
-     estado persistente detrás.
+     de "Máxima potencia" (ya construida) — mientras se está volando, otras
+     tiradas cambian (esquivar usa Tecnociencia en vez de Atletismo, -1 a
+     ataques) y eso depende de un estado "¿está volando ahora mismo?" que el
+     motor no rastrea en absoluto hoy — sigue sin construir, prerrequisito
+     aparte de "Volar" en sí.
    - **`arma.uso` (armas melee) se estructura — decidido, sin construir.**
      Pasa de `string[]` suelto a algo que el motor pueda leer: empuñadura
      (una mano / dos manos / variable, con efecto propio para cada modo
