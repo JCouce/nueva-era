@@ -30,6 +30,7 @@ import {
 import { HudCard } from "@/components/HudCard";
 import { AccionModal } from "@/components/AccionModal";
 import { ReparaFabricaModal } from "./ReparaFabricaModal";
+import { BloquearDanioModal } from "./BloquearDanioModal";
 import { type DanioInfo, type Lanzamiento } from "@/components/ResultadoTirada";
 
 function signo(n: number) {
@@ -242,6 +243,34 @@ function FilaReparaFabrica({ onAbrir }: { onAbrir: () => void }) {
   );
 }
 
+// "Bloquear daño" (Hallazgo #5, docs/tareas.md): calculador puro de blindaje,
+// sin dado — no necesita onXxx: a diferencia de Reparar/Fabricar, no muta la
+// ficha, solo lee sheet. Por eso no lleva ninguna prop de gating (siempre
+// visible, jugador y NPC).
+function FilaBloquearDanio({ onAbrir }: { onAbrir: () => void }) {
+  return (
+    <HudCard className="p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <span className="block font-display text-base font-semibold uppercase leading-tight">
+            Bloquear daño
+          </span>
+          <span className="mt-1 block font-mono text-[10px] uppercase text-muted">
+            Cuánto absorbe tu blindaje ahora mismo
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onAbrir}
+          className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95"
+        >
+          Abrir
+        </button>
+      </div>
+    </HudCard>
+  );
+}
+
 export function AccionesTab({
   sheet,
   estadosCombate = [],
@@ -290,6 +319,7 @@ export function AccionesTab({
 }) {
   const mods = [...modificadoresActivos(sheet), ...modificadoresDeEstados(estadosCombate)];
   const [reparaFabricaAbierta, setReparaFabricaAbierta] = useState(false);
+  const [bloquearDanioAbierta, setBloquearDanioAbierta] = useState(false);
   const [modal, setModal] = useState<{
     tirada: Accion;
     modBase: number;
@@ -514,6 +544,9 @@ export function AccionesTab({
             .map((t) => (
               <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
             ))}
+          {/* Bloquear daño vive junto a Defensa/esquiva — tampoco es una
+              tirada fija de ACCIONES (no tira dado, no muta la ficha). */}
+          {grupo === "Defensa" && <FilaBloquearDanio onAbrir={() => setBloquearDanioAbierta(true)} />}
           {/* Reparar y Fabricar vive aquí, junto a Hackeo — no es una
               tirada fija de ACCIONES (no tira dado), así que se añade a
               mano en vez de venir del catálogo. */}
@@ -522,6 +555,10 @@ export function AccionesTab({
           )}
         </div>
       ))}
+
+      {bloquearDanioAbierta && (
+        <BloquearDanioModal sheet={sheet} onCerrar={() => setBloquearDanioAbierta(false)} />
+      )}
 
       {reparaFabricaAbierta && onReparar && (
         <ReparaFabricaModal

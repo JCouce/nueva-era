@@ -234,8 +234,12 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         coste: 1000,
         detalle: ["El usuario puede usar la puntuación total de blindaje de su armadura contra daño de fuego."],
         modificadores: [],
+        // Distinto del +1 de Tejido Conductor nv2 (suma_derivado, ya construido):
+        // esto HABILITA que el blindaje de la armadura cuente contra Fuego (que por
+        // defecto es 0, supuesto S19) en vez de sumar un extra — sin construir
+        // todavía en blindajeContra() (lib/rules/blindaje.ts).
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "H5" },
+          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "pendiente" },
         ],
       },
       {
@@ -330,7 +334,14 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         ],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "H5" }, // ignora el primer nivel de daño eléctrico
+          // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: +1 de blindaje
+          // específico contra Eléctrico, vía bonoTejidoConductor() (lib/rules/blindaje.ts).
+          {
+            tipo: "numerico",
+            afecta: { modo: "accion_existente", id: "bloquear_danio" },
+            mecanismo: "suma_derivado",
+            estado: "construido",
+          },
         ],
       },
     ],

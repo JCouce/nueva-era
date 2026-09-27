@@ -71,8 +71,10 @@ está libre.
 `docs/tareas.md` ítem 6 para el detalle de cada uno): Funda Automática/
 Inyector Hipodérmico (coste de acción, sexto tipo sin encajar), Proyector de
 Pulso (gasto por modo + el "-5 sigilo tras disparar"), Granada PEM (tipo de
-objetivo), Escudos (blindaje/PG propio), Mangual (ignora cobertura), Kerzul
-(retroceso entrópico), Armas Mecánicas (Derribo(N) necesita estado nuevo).
+objetivo), Mangual (ignora cobertura), Kerzul (retroceso entrópico), Armas
+Mecánicas (Derribo(N) necesita estado nuevo). Escudos: PG/durabilidad y
+blindaje ya construidos (docs/tareas.md, tarea 8 y Hallazgo #5) — sale de
+este tier.
 
 **Sydiasi**: deliberadamente la última de todas — `docs/tareas.md` ítem 3, dos
 decisiones propias sin tomar.

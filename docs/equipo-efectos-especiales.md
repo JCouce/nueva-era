@@ -178,6 +178,12 @@ mejor tratarlas aparte:
    elemental vs. categoría): la absorción probablemente necesite razonar por tipo
    igual que las salvaciones del Hallazgo #3, no solo por categoría de gravedad.
 
+   **✅ Construido 2026-09-27** (`blindajeContra()`, `lib/rules/blindaje.ts`, más la
+   acción nueva "Bloquear daño" en Acciones → Defensa): resumen arriba, en el
+   checklist. Malla Plasmática se queda fuera a propósito (es un colchón/buffer, no
+   blindaje) y Mejora Ignífuga/Anticorrosivo/Tejido Conductor siguen sin construirse
+   ellas mismas — ver sus entradas más abajo.
+
 ## Cómo coger un item
 
 1. Búscalo en `docs/equipamiento.md` (fuente de verdad) y lee la regla completa, no
@@ -376,16 +382,22 @@ de control.
   Bloquea `arm2`, `me1`, `me5` del backlog.
 - ⬜ **Hallazgo #4** — Tipo elemental vs. categoría de daño mezclados en
   `categoriaDanio: string`; falta la tabla `TIPO_A_CATEGORIA`.
-- 🟡 **Hallazgo #5 — fórmula resuelta 2026-09-24, sin construir todavía** — `sistema.md`
-  pregunta 29/C11: **1 punto de blindaje absorbe 1 nivel (= 1 punto) de daño.** Sigue
-  sin existir el cálculo en el motor (`blindaje` no aparece en `src/lib/rules/`).
-  Desbloquea Mejora Ignífuga, Anticorrosivo nivel 2, Tejido Conductor nivel 2, y la
-  propuesta de tirada "Bloquear daño". **Confirmado 2026-09-24:** el "ignora el
-  primer nivel de daño X" de Ignífuga/Anticorrosivo/Tejido Conductor **suma** al
-  blindaje normal contra ese tipo (un +1 a blindaje específico de tipo), no lo
-  sustituye. Sigue abierto si la absorción base (sin esas mejoras) es plana para
-  cualquier tipo de daño o el Mental es la única excepción confirmada (§7 de
-  `sistema.md`) — conecta con el Hallazgo #4.
+- ✅ **Hallazgo #5 — construido 2026-09-27** — `sistema.md` pregunta 29/C11: **1 punto
+  de blindaje absorbe 1 nivel (= 1 punto) de daño.** `blindajeContra()`
+  (`lib/rules/blindaje.ts`) suma armadura + Escudo Deflector + escudo melee (solo si
+  está en alto) + **Tejido Conductor nivel 2** (+1 específico contra Eléctrico, la
+  única de las tres mejoras "elementales" con ese mecanismo — ver corrección abajo) y
+  alimenta la acción nueva "Bloquear daño" (Acciones → Defensa) — selector de tipo de
+  daño + daño recibido, sin dado, no muta la ficha. Mental y Fuego se quedan en 0
+  (supuesto S19, `sistema.md`): ninguna fuente de blindaje del catálogo menciona Fuego
+  como cubierto, es justo lo que Mejora Ignífuga nivel 1 reabriría (**sigue sin
+  construirse**: no suma un extra como Tejido Conductor, HABILITA que el blindaje de
+  la armadura cuente contra Fuego, mecanismo distinto). **Corrección 2026-09-27**:
+  Polímero Anticorrosivo nivel 2 NO tiene un "ignora el primer nivel" — una entrada
+  previa de este documento lo agrupaba con Ignífuga/Tejido Conductor por error; solo
+  cambia la categoría de daño (Hallazgo #4) y sube su salvación, ya construida aparte.
+  Tóxico SÍ cuenta como cualquier otro tipo — decisión del usuario (2026-09-27),
+  corrigiendo la duda que dejaba abierta esta misma entrada.
 - ⬜ **Tirada nueva "Ocultar objeto"** (§"Propuesta: tirada nueva") — pendiente de
   validar con el diseñador antes de construir (dificultades por categoría inventadas).
 - ⬜ **Sydiasi — caso ad hoc del retroceso a dos manos** (§"Casos sueltos, por arma") —
@@ -486,16 +498,23 @@ de control.
   a todo": hay al menos tres comportamientos distintos que unificar primero, y una
   dependencia real con una fase ya bloqueada por el diseñador.
 - **Mejora Ignífuga: nivel 1 (usar blindaje total contra fuego) y nivel 2 (fuego cuenta
-  como letal, +2 en vez de +1 contra llamarada): 🔕 IGNORAR hasta que se construya el
-  Hallazgo #5** (fórmula ya resuelta 2026-09-24: 1 blindaje = 1 nivel de daño; falta el
-  cálculo en código). No confundir con `resolverDanio`, que es daño por éxitos, no
-  reducción por blindaje. Se revisita junto con Polímero Anticorrosivo/Tejido Conductor
-  en cuanto se construya el Hallazgo #5.
-- Polímero Anticorrosivo / Tejido Conductor (+1/+2 contra un estado; "ignora el primer
-  nivel de daño X"): el "+1/+2" **❓ VERIFICAR** (mismo caso salv_fortaleza genérico de
-  arriba); el "ignora el primer nivel de daño" es un **+1 a blindaje específico de ese
-  tipo de daño (confirmado 2026-09-24)** — **🔕 IGNORAR hasta que se construya el
-  Hallazgo #5**, mismo motivo que Mejora Ignífuga.
+  como letal, +2 en vez de +1 contra llamarada): el Hallazgo #5 ya está construido
+  (`blindajeContra()`, 2026-09-27), pero Fuego se queda en 0 por defecto (supuesto
+  S19) — esta mejora es justo quien lo reabriría, y su mecanismo es distinto al de
+  Tejido Conductor: no suma un extra, HABILITA que el blindaje de la armadura cuente
+  contra Fuego. Sigue 🔕 IGNORAR, ahora por falta de esta pieza en concreto, no del
+  mecanismo genérico.** No confundir con `resolverDanio`, que es daño por éxitos, no
+  reducción por blindaje. El nivel 2 ("fuego cuenta como letal") es Hallazgo #4
+  (categoría de daño), no blindaje — sigue aparte.
+- **Corrección 2026-09-27**: Polímero Anticorrosivo nivel 2 **no** tiene un "ignora el
+  primer nivel de daño X" — solo Tejido Conductor lo trae (`docs/equipamiento.md:188`,
+  contra Eléctrico), y **ya está construido** (`bonoTejidoConductor()`,
+  `lib/rules/blindaje.ts`). Una entrada previa de este documento agrupaba a las tres
+  mejoras "elementales" bajo el mismo mecanismo por error.
+- Polímero Anticorrosivo (+1/+2 contra corrosión): el "+1/+2" **❓ VERIFICAR** (mismo
+  caso salv_fortaleza genérico de arriba, ya construido); el "daño corrosivo se
+  considera letal en vez de grave" del nivel 2 es Hallazgo #4 (categoría de daño), sin
+  ningún efecto de blindaje que construir aquí.
 - **Visor Nocturno / Visor Térmico — reabierto 2026-09-21, ✅ construido
   2026-09-23.**
   - `+3 contra ceguera` (Visor Nocturno n2): **✔️ YA HECHO** (`salv_ceguera_destello`,
@@ -587,19 +606,17 @@ de control.
     patrón que ya existe para PG/fatiga en combate (`ajustarRecurso`,
     `master/combate/actions.ts:323`), generalizado a cargas de equipo. No es un
     modificador de tirada, es una acción de recurso ligada al momento de tirar.
-- **Escudo Deflector — confirmado 2026-09-23 (pregunta del usuario): directo, sin
-  nada nuevo que decidir.** La "absorción de daño" **🔕 IGNORAR por ahora** — pero no
-  por falta de concepto genérico, es literalmente otro contribuyente más a la misma
-  fórmula que le falta al Hallazgo #5 (blindaje de armadura + esto). Se resuelve el
-  día que se diseñe el Hallazgo #5, no antes.
+- **Escudo Deflector — ✅ construido 2026-09-27, dentro del Hallazgo #5.** La
+  "absorción de daño" de sus 4 niveles suma a `blindajeContra()` (`blindaje.ts`) junto
+  al blindaje de la armadura.
 - **Malla Plasmática — desglosada del todo 2026-09-23 (pregunta del usuario: "¿es
   un recurso, ni siquiera entra en Tiradas?").** Tenía razón en parte, pero hay más
   piezas de las que parecía:
   - **El "colchón de PG" no es blindaje** — es un buffer separado con vida propia
     (10-16 PG según nivel, regenera N/turno, tiempo muerto si se destruye), distinto
-    de una resta plana de blindaje. **🔕 IGNORAR** sigue aplicando, pero como nuance
-    nueva para cuando se diseñe Hallazgo #5/RECURSOS: hay al menos dos formas de
-    "absorber daño" en el sistema, no solo una.
+    de la resta plana de blindaje que ya construyó el Hallazgo #5 (`blindaje.ts`).
+    **🔕 IGNORAR** sigue aplicando — sigue sin diseñar (`docs/tareas.md`, "buffer
+    temporal sin nombre en capa 2 y media"), no se mecaniza junto al escudo/armadura.
   - "Crítico melee con plasma liberado causa shock/llamarada/fusión (dificultad
     6-8+nivel)": **✅ IMPLEMENTAR**, sin cambios — `CondicionTirada` tipo `toggle`.
   - **El coste de esa opción (2 puntos del colchón, "se declara antes de la tirada
@@ -893,8 +910,9 @@ de control.
 ### Kerzul
 
 - Armas Melee de Kerzul: "Ignora N puntos de blindaje" — **auto-aplicar sigue 🔕
-  IGNORAR** (sin resta de blindaje por categoría en el motor, mismo motivo que Mejora
-  Ignífuga), **pero mostrarlo como texto en el Marcador es ✅ IMPLEMENTAR, y barato**
+  IGNORAR** (el Hallazgo #5 ya calcula el blindaje del defensor, `blindajeContra()`,
+  pero nada engancha el ataque del atacante a esa función para restarle N antes —
+  sin construir todavía), **pero mostrarlo como texto en el Marcador es ✅ IMPLEMENTAR, y barato**
   (2026-09-21, pregunta del usuario). "Crítico: Impacto Estructural (N)" **✅
   IMPLEMENTAR** como aviso igual — su efecto real (reducir blindaje del objetivo de
   forma permanente) sigue siendo "el máster lo anota a mano", coherente con "la app

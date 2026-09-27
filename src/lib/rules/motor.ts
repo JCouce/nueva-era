@@ -33,7 +33,13 @@ export const MECANISMOS_MOTOR = [
   // "cambiar qué aplicado alimenta una tirada", ese es el momento de fusionar los dos
   // mecanismos, no antes.
   "sustitucion_aplicado", // cambia qué AplicadoId alimenta una acción existente, a elección del jugador al tirar — no aditivo, no CondicionTirada
-
+  // Añadido el 2026-09-27 (blindaje, docs/sistema.md pregunta 29): un valor
+  // numérico de la pieza se suma a un derivado propio (blindajeContra(),
+  // lib/rules/blindaje.ts), consultado por una acción fija hardcodeada — sin
+  // CondicionTirada ni Modificador/alcance de por medio, a diferencia de
+  // "siempre_activo". No es "accion_equipo" porque no genera ninguna Accion
+  // nueva, solo alimenta un número que otra cosa ya fija lee.
+  "suma_derivado",
 ] as const;
 export type MecanismoMotor = (typeof MECANISMOS_MOTOR)[number];
 

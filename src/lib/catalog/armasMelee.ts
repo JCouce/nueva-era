@@ -375,16 +375,18 @@ export const ESCUDOS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      // defensa.blindaje: se sumaría a la absorción de daño del portador — bloqueado por el
-      // mismo hueco que el blindaje de armadura (no existe cálculo de absorción, pregunta 29).
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: defensa.blindaje
+      // alimenta blindajeContra() (lib/rules/blindaje.ts) SOLO si el escudo está
+      // en alto (toggle en "Bloquear daño") — docs/equipamiento.md:886, el
+      // beneficio depende de la acción de levantarlo, no de llevarlo encima.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // defensa.puntosGolpe: CONSTRUIDO 2026-09-25 (docs/tareas.md, tarea 8) — capacidadDePieza()
       // (recursos.ts) lo reconoce como recurso tipo "durabilidad", reparable desde Acciones
       // ("Reparar y Fabricar"). Mismo caso que celula.cargas de un Subsistema: una capacidad de
       // RECURSOS que ese sistema lee directo del campo del catálogo, no un efecto de Accion — por
       // eso no lleva su propia entrada MotorMetadata (motor.md, "Coste y rareza"/RECURSOS quedan
-      // fuera del modelo de los cinco tipos). No confundir con defensa.blindaje (sí bloqueado,
-      // justo arriba): son dos huecos distintos, ver la propia entrada de blindaje.
+      // fuera del modelo de los cinco tipos). No confundir con defensa.blindaje (sí construido,
+      // justo arriba): son dos cosas distintas, ver la propia entrada de blindaje.
       // defensa.cobertura: regla FIRME (docs/sistema.md:271-273, "del 1 al 4 suma su valor a la
       // dificultad de ataques"), pero afecta a la tirada del ATACANTE, no a la del portador —
       // mismo patrón "objetivo_tercero" que Cobertura del Camuflaje Trifásico (motor.md, ya
@@ -415,7 +417,11 @@ export const ESCUDOS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: defensa.blindaje
+      // alimenta blindajeContra() (lib/rules/blindaje.ts) SOLO si el escudo está
+      // en alto (toggle en "Bloquear daño") — docs/equipamiento.md:886, el
+      // beneficio depende de la acción de levantarlo, no de llevarlo encima.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // defensa.puntosGolpe: sin entrada propia — capacidad de RECURSOS ("durabilidad"), mismo
       // caso que la Rodela, ver su comentario completo más arriba.
       {
@@ -442,7 +448,11 @@ export const ESCUDOS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: defensa.blindaje
+      // alimenta blindajeContra() (lib/rules/blindaje.ts) SOLO si el escudo está
+      // en alto (toggle en "Bloquear daño") — docs/equipamiento.md:886, el
+      // beneficio depende de la acción de levantarlo, no de llevarlo encima.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // defensa.puntosGolpe: sin entrada propia — capacidad de RECURSOS ("durabilidad"), mismo
       // caso que la Rodela, ver su comentario completo más arriba.
       {
@@ -469,7 +479,11 @@ export const ESCUDOS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: defensa.blindaje
+      // alimenta blindajeContra() (lib/rules/blindaje.ts) SOLO si el escudo está
+      // en alto (toggle en "Bloquear daño") — docs/equipamiento.md:886, el
+      // beneficio depende de la acción de levantarlo, no de llevarlo encima.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // defensa.puntosGolpe: sin entrada propia — capacidad de RECURSOS ("durabilidad"), mismo
       // caso que la Rodela, ver su comentario completo más arriba.
       {
@@ -1316,8 +1330,11 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         mecanismo: "accion_equipo",
         estado: "pendiente",
       },
-      // Hereda la misma duda de defensa que los Escudos normales.
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: defensa.blindaje
+      // alimenta blindajeContra() (lib/rules/blindaje.ts) SOLO si el escudo está
+      // en alto (toggle en "Bloquear daño") — docs/equipamiento.md:886, el
+      // beneficio depende de la acción de levantarlo, no de llevarlo encima.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // defensa.puntosGolpe: sin entrada propia — capacidad de RECURSOS ("durabilidad"), mismo
       // caso que la Rodela, ver su comentario completo más arriba (ESCUDOS).
       {

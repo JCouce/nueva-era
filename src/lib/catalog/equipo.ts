@@ -114,6 +114,10 @@ export type NivelModulo = {
   // mecanizar — la dificultad que citan es la que el jugador teclea en el
   // modal, no un modificador; por eso no hay `modificadores` para esto.
   notaTirada?: string;
+  // Solo lo usa el Escudo Deflector: puntos de absorción de daño de ESE
+  // nivel (docs/sistema.md pregunta 29, blindaje.ts) — total del nivel, no
+  // acumulativo entre niveles (S9, ultimoQueDefine), igual que velocidadM.
+  absorcion?: number;
   motor?: MotorMetadata[]; // docs/motor.md — un MotorMetadata por efecto DE ESTE NIVEL
 };
 

@@ -53,7 +53,11 @@ export const ARMADURAS: Armadura[] = [
     coste: 100,
     modificadores: [],
     motor: [
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
+      // alimenta blindajeContra() (lib/rules/blindaje.ts), leído por "Bloquear
+      // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
+      // en 0 hasta que Mejora Ignífuga reabra el segundo.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
       // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
       // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
@@ -84,7 +88,11 @@ export const ARMADURAS: Armadura[] = [
       { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
     ],
     motor: [
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
+      // alimenta blindajeContra() (lib/rules/blindaje.ts), leído por "Bloquear
+      // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
+      // en 0 hasta que Mejora Ignífuga reabra el segundo.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
       // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
       // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
@@ -118,7 +126,11 @@ export const ARMADURAS: Armadura[] = [
       { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
     ],
     motor: [
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
+      // alimenta blindajeContra() (lib/rules/blindaje.ts), leído por "Bloquear
+      // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
+      // en 0 hasta que Mejora Ignífuga reabra el segundo.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
       // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
       // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
@@ -153,7 +165,11 @@ export const ARMADURAS: Armadura[] = [
       { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
     ],
     motor: [
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
+      // alimenta blindajeContra() (lib/rules/blindaje.ts), leído por "Bloquear
+      // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
+      // en 0 hasta que Mejora Ignífuga reabra el segundo.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
       // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
       // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
@@ -187,7 +203,11 @@ export const ARMADURAS: Armadura[] = [
       { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
     ],
     motor: [
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
+      // alimenta blindajeContra() (lib/rules/blindaje.ts), leído por "Bloquear
+      // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
+      // en 0 hasta que Mejora Ignífuga reabra el segundo.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
       // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
       // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
@@ -223,7 +243,11 @@ export const ARMADURAS: Armadura[] = [
       { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
     ],
     motor: [
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
+      // alimenta blindajeContra() (lib/rules/blindaje.ts), leído por "Bloquear
+      // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
+      // en 0 hasta que Mejora Ignífuga reabra el segundo.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
       // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
       // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
@@ -250,7 +274,11 @@ export const ARMADURAS: Armadura[] = [
     coste: 100000,
     modificadores: [],
     motor: [
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
+      // alimenta blindajeContra() (lib/rules/blindaje.ts), leído por "Bloquear
+      // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
+      // en 0 hasta que Mejora Ignífuga reabra el segundo.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
       // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
       // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
@@ -275,7 +303,11 @@ export const ARMADURAS: Armadura[] = [
     coste: 105000,
     modificadores: [],
     motor: [
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
+      // alimenta blindajeContra() (lib/rules/blindaje.ts), leído por "Bloquear
+      // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
+      // en 0 hasta que Mejora Ignífuga reabra el segundo.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
       // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
       // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
@@ -300,7 +332,11 @@ export const ARMADURAS: Armadura[] = [
     coste: 120000,
     modificadores: [],
     motor: [
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
+      // alimenta blindajeContra() (lib/rules/blindaje.ts), leído por "Bloquear
+      // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
+      // en 0 hasta que Mejora Ignífuga reabra el segundo.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
       // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
       // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
@@ -325,7 +361,11 @@ export const ARMADURAS: Armadura[] = [
     coste: 200000,
     modificadores: [],
     motor: [
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 29" },
+      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
+      // alimenta blindajeContra() (lib/rules/blindaje.ts), leído por "Bloquear
+      // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
+      // en 0 hasta que Mejora Ignífuga reabra el segundo.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
       // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
       // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.

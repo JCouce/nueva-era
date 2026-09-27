@@ -600,6 +600,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S16 | Al transcribir los 20 estados de combate (`catalog/estados.ts`, fuente `docs/sistema-y-combate.md` §"Efectos y estados"): cada grado (Fracaso crítico/Fracaso/Éxito/Éxito crítico, o nivel acumulado) se mecaniza como **autocontenido**, sin sumarse al texto base salvo que el documento diga explícitamente "además de lo anterior". Se convierte en `Modificador` un número que **reduce un atributo básico directamente** ("Fuerza y Aguante en 1") o es un **penalizador plano a "todas las tiradas"**, sin condición. Se queda solo en texto (`detalle`, sin mecanizar): penalizadores a "tiradas que usen" un atributo o aplicado concreto (no hay alcance para eso todavía — sería el siguiente hueco del motor de modificadores si algún día compensa cerrarlo), reducción de velocidad/carga (mismo motivo que la Carga Transportable, aparcada: es un porcentaje o un tope, no un delta), daño narrado (se aplica con la acción de PG de la consola de máster, no como modificador pasivo) y cualquier condición que dependa de que el narrador decida algo. | Los 20 estados mezclan, en la misma tabla, penalizadores planos (mecanizables ya) con penalizadores condicionados por atributo/aplicado/objetivo y con daño narrado — no hay una sola regla de transcripción que sirva para todo el bloque sin fijar antes qué se mecaniza y qué no. Reduce el riesgo de "inventar" un alcance de modificador que el motor no soporta solo para que un número "haga algo". |
 | S17 | Precio de la **batería portátil** (recarga a tope cualquier célula de Subsistema): **150 créditos**, fijo, sin depender de la capacidad de la célula. | `EQUIP` no la menciona — es un ítem nuevo para probar RECURSOS (`docs/tareas.md`, extensión de fase 6b). Decisión explícita del usuario (2026-09-22). |
 | S18 | Precio del **cargador de balas normales** (suma una carga de munición al stock de un arma de fuego): **50 créditos**, fijo, sin depender de la capacidad del cargador del arma. | Mismo origen que S17 — ítem nuevo para RECURSOS, sin base en `EQUIP`. Decisión explícita del usuario (2026-09-22). |
+| S19 | Blindaje (`blindajeContra()`, `lib/rules/blindaje.ts`): la absorción de 1:1 aplica a **cualquier tipo de daño salvo Mental y Fuego**, que se quedan en 0. Tóxico cuenta como cualquier otro tipo — el blindaje SÍ reduce el daño de un arma tóxica; lo que no toca es el estado de Enfermedad/Envenenamiento que dispare esa arma, que se resuelve aparte con su propia salvación. | Mental ya "omite armaduras" (§7, `FIRME`); Fuego no se menciona como cubierto en ninguna fuente de blindaje del catálogo (armadura, Escudo Deflector) — es justo lo que Mejora Ignífuga reabre, así que sin ella se asume 0. Decisión explícita del usuario (2026-09-27), pendiente de que Murillo confirme si hay más excepciones. |
 
 ## Conflictos detectados
 
@@ -732,12 +733,23 @@ lo anota a mano.
 26. ~~Cuando el sistema dice "Perspicacia + Medicina", ¿quiere decir Biociencia usando la especialidad Medicina? Lo mismo con Empatía, Manipulación y Bioquímica. Es lo que decide si la habilidad cuenta entera o a la mitad.~~ *(C8)* **Resuelta (Murillo, 2026-09-23):** sí — es una especialidad de Biociencia: "la escogida suma el total de puntos, la no escogida la mitad". Confirma el criterio general para cualquier caso de "Aplicado + nombre de especialidad" a secas en los documentos (Empatía, Manipulación y Bioquímica incluidas), sin cambio de comportamiento — así es como ya lo calcula el motor.
 27. ~~¿Cuántos metros mide una casilla?~~ **Resuelta (Murillo, 2026-09-23): 2 metros.** *(C9)*
 28. ~~Un "nivel de fatiga", ¿es un punto de fatiga o un estado (Fatigado/Exhausto)?~~ **Resuelta (Murillo, 2026-09-23): es lo mismo, un punto.** *(C10)*
-29. ~~El daño de un arma, ¿se resta 1:1 de los puntos de golpe tras el blindaje? Con armas de 7 a 20 y personajes de 6 a 16 puntos, un disparo corriente se lleva media vida.~~ *(C11)* — **Resuelta (Murillo, 2026-09-24): 1 punto de blindaje absorbe 1 nivel (= 1 punto) de daño.** Mismo uso de "nivel" que la pregunta 28 (fatiga): un nivel es un punto, no un estado. Lo que queda de tras la absorción se resta 1:1 de los puntos de golpe. Desbloquea Mejora Ignífuga, Polímero Anticorrosivo/Tejido Conductor nivel 2 y una futura tirada "Bloquear daño" — pendiente de construir en código, y de confirmar si la absorción es plana para cualquier tipo de daño o si el Mental (que ya "omite armaduras", §7) es la única excepción o hay más (el propio Hallazgo #5 apunta a que la estructura debe ser consciente de tipo de daño, no un blindaje plano único).
+29. ~~El daño de un arma, ¿se resta 1:1 de los puntos de golpe tras el blindaje? Con armas de 7 a 20 y personajes de 6 a 16 puntos, un disparo corriente se lleva media vida.~~ *(C11)* — **Resuelta (Murillo, 2026-09-24): 1 punto de blindaje absorbe 1 nivel (= 1 punto) de daño.** Mismo uso de "nivel" que la pregunta 28 (fatiga): un nivel es un punto, no un estado. Lo que queda de tras la absorción se resta 1:1 de los puntos de golpe. Desbloquea Mejora Ignífuga y Tejido Conductor nivel 2 (Polímero Anticorrosivo nivel 2 no tiene un efecto de blindaje equivalente, ver corrección abajo).
     **Sub-pregunta resuelta (Murillo, 2026-09-24):** el "ignora el primer nivel de daño
-    X" de Mejora Ignífuga/Polímero Anticorrosivo/Tejido Conductor **suma** al blindaje
-    normal contra ese tipo de daño (equivale a un +1 a blindaje específico de tipo), no
-    lo sustituye. Sigue abierto si la absorción base es plana para cualquier tipo o el
-    Mental es la única excepción.
+    X" de Tejido Conductor **suma** al blindaje normal contra ese tipo de daño
+    (equivale a un +1 a blindaje específico de tipo), no lo sustituye.
+    **Corrección 2026-09-27** (al construir el código): esta frase exacta solo la trae
+    Tejido Conductor nivel 2 (`docs/equipamiento.md:188`, contra Eléctrico) —
+    Anticorrosivo nivel 2 no tiene ningún "ignora el primer nivel", solo cambia la
+    categoría de daño (Hallazgo #4) y sube su salvación, ya construida aparte. Mejora
+    Ignífuga nivel 1 es un mecanismo distinto: no suma un extra, **habilita** que el
+    blindaje de la armadura cuente contra Fuego (que por defecto es 0, ver supuesto
+    S19) — una entrada previa de este documento los agrupaba a los tres por error.
+    **Construido en código 2026-09-27** (`blindajeContra()`, `lib/rules/blindaje.ts` +
+    la acción "Bloquear daño" en Acciones): el +1 de Tejido Conductor ya está
+    enganchado; Mejora Ignífuga sigue sin construirse (`pendiente` en su
+    `MotorMetadata`). La excepción de tipo (Mental/Fuego) se tomó como supuesto
+    S19, no como respuesta de Murillo — sigue abierto si hay más excepciones aparte de
+    Mental y Fuego.
 30. ~~**Cultura** y **Supervivencia** no aparecen en ninguna regla... ¿Es Supervivencia la habilidad madre de Exploración?~~ **Resuelta**: Supervivencia desaparece, la sustituye Exploración entera. Cultura se queda sin resolver — sigue sin uso conocido. *(C12)*
 31. ~~**"Bloqueo" no está definido en ningún sitio.**~~ **Resuelta (2026-09-24).**
     Bloqueo es "otra forma de defensa" (junto a Esquivar), activa con cualquier arma

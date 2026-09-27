@@ -214,6 +214,61 @@ ambigüedad que tenía Materiales). `SCHEMA_VERSION` 7→8.
   interpola el área real por tipo y colapsa a "sin selector" con un único tipo,
   fabricar con la VTF gasta materiales siempre y solo entrega con éxito.
 
+### Hallazgo #5 — absorción de daño por blindaje, 2026-09-27
+
+Fórmula resuelta por Murillo el 2026-09-24 (1 punto de blindaje = 1 nivel de daño),
+sin código hasta ahora — bloqueaba desde el 2026-09-21 (prioridad alta marcada por el
+usuario). Construido de una sentada tras aclarar en conversación una excepción que
+`sistema.md` dejaba abierta.
+
+- **`lib/rules/blindaje.ts` (nuevo)**: `blindajeContra(sheet, tipo, escudoEnAlto)` suma
+  armadura equipada + Escudo Deflector (absorción por nivel, campo `absorcion` nuevo en
+  `NivelModulo`, S9 vía `ultimoQueDefine`) + escudo melee **solo si `escudoEnAlto`**
+  (docs/equipamiento.md:886, "acción simple para levantarlo" — no hay estado
+  persistente que guardar, se declara en el momento). Mental y Fuego devuelven 0
+  siempre — supuesto S19 (`sistema.md`): ninguna fuente de blindaje del catálogo
+  menciona Fuego como cubierto (es justo lo que Mejora Ignífuga reabriría, todavía sin
+  construir). Tóxico cuenta como cualquier otro tipo (decisión del usuario,
+  corrigiendo un supuesto peor que se había barajado antes): el blindaje sí reduce el
+  daño de un arma tóxica, lo que se le escapa es el estado de Enfermedad/
+  Envenenamiento que dispare, resuelto aparte por su propia salvación.
+- **"Bloquear daño"** (Acciones → Defensa, `AccionesTab.tsx`/`BloquearDanioModal.tsx`
+  nuevo): selector de tipo de daño + toggle "Escudo en alto" (solo si hay uno
+  equipado) + contador de daño recibido → "Blindaje: N · Pasa: N". Es un calculador
+  puro, sin dado y sin mutar la ficha — no necesita el patrón de callback de
+  Reparar/Fabricar, ni ninguna prop nueva en `CharacterSheet`/`NpcEditor`/
+  `NpcAccionesPanel` (los tres montan `AccionesTab` igual, la fila sale gratis en
+  los tres sitios).
+- **`motor.ts`** gana el mecanismo `suma_derivado` (un valor numérico se suma a un
+  derivado propio fuera de Modificador/CondicionTirada) — las 10 armaduras, los 4
+  niveles del Escudo Deflector y los 5 escudos melee pasan de `bloqueado`/"pregunta
+  29" a `construido`.
+- **Tejido Conductor nivel 2, mismo día** (`bonoTejidoConductor()`, `blindaje.ts`):
+  "ignora el primer nivel de daño eléctrico" (`docs/equipamiento.md:188`) es un +1 de
+  blindaje específico contra Eléctrico que se SUMA al normal, no lo sustituye —
+  detectado como hueco por el usuario tras cerrar el resto. **Corrección de paso**: una
+  entrada previa de `docs/sistema.md`/`equipo-efectos-especiales.md` agrupaba este
+  mecanismo también con Mejora Ignífuga y Polímero Anticorrosivo por error — solo
+  Tejido Conductor lo trae; Anticorrosivo nivel 2 no tiene ningún "ignora el primer
+  nivel", solo cambia la categoría de daño (Hallazgo #4); Mejora Ignífuga nivel 1 es un
+  mecanismo distinto (habilita el blindaje de la armadura contra Fuego, no suma un
+  extra) y sigue sin construirse.
+- **Fuera de esta pasada, a propósito**: Mejora Ignífuga nivel 1 (habilitar blindaje
+  contra Fuego, mecanismo distinto al +1 de Tejido Conductor, sin construir); Malla
+  Plasmática (es un colchón/buffer, no blindaje, bloqueada aparte); el "Ignora N puntos
+  de blindaje" de las armas de Kerzul/Armas Mecánicas (efecto del ATACANTE, no del
+  defensor — sigue sin construirse, `blindajeContra()` no está enganchado a ninguna
+  tirada de ataque).
+- **Desglose, mismo día (pedido del usuario tras probarlo mentalmente): "Bloquear
+  daño" ya no muestra solo el total.** `desgloseBlindaje()` (`blindaje.ts`) es ahora la
+  fuente única de verdad — una línea por fuente (armadura, Escudo Deflector, Tejido
+  Conductor, escudo en alto), `blindajeContra()` pasa a ser la suma de esas líneas en
+  vez de duplicar la lógica. Mental/Fuego devuelven una línea explicativa a 0 en vez de
+  lista vacía. Mismo criterio "nada suma en silencio" que ya usa `AccionModal.tsx`.
+- 17 tests nuevos (`blindaje.test.ts`), 509 en total, lint y `tsc --noEmit` limpios.
+  Sin probar en navegador esta vez (extensión de Chrome no disponible en la sesión) —
+  pendiente de una pasada manual.
+
 ---
 
 ## Pendiente
@@ -397,16 +452,9 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      Conversión Psiónica (Derivación Psiónica) y previsiblemente poderes/dotes que
      gasten cargas o fatiga en Fase 5.
 
-   **Hallazgo #5 — absorción de daño por blindaje: fórmula resuelta 2026-09-24,
-   sin construir.** Murillo confirmó `sistema.md` pregunta 29/C11: **1 punto de
-   blindaje absorbe 1 nivel (= 1 punto) de daño**, y que "ignora el primer nivel
-   de daño X" (Ignífuga/Anticorrosivo/Tejido Conductor) **suma** a ese blindaje
-   para ese tipo (+1 específico, no lo sustituye). Ya no bloquea el diseño, falta
-   el cálculo en código (`blindaje` no aparece hoy en `src/lib/rules/`) —
-   desbloquea Mejora Ignífuga, Anticorrosivo n2, Tejido Conductor n2 y una
-   tirada "Bloquear daño". Abierto: si la absorción base es plana para cualquier
-   tipo de daño o el Mental es la única excepción confirmada (§7 de
-   `sistema.md`). Detalle: `docs/equipo-efectos-especiales.md`, hallazgo #5.
+   **✅ Hallazgo #5 — absorción de daño por blindaje, construido 2026-09-27** — ver
+   entrada propia en "Hecho" arriba. Sigue pendiente engancharlo a Mejora Ignífuga/
+   Anticorrosivo n2/Tejido Conductor n2 y al "Ignora N de blindaje" de Kerzul.
 
    **Compartimento Oculto — falta una tirada ad hoc "Esconder objeto" (decisión
    2026-09-24, el usuario).** Los dos niveles prometen ocultar un objeto
@@ -559,8 +607,9 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      hueco transversal que toca a Radar nv4 y a los Escudos).
    - **Armas Mecánicas (Hoja Dentada, Guantelete de Pistón, Sierra Circular,
      Martillo de Pistón, Ariete Percusivo — 5 piezas), acción Compleja.**
-     "Ignora 1 nivel de armadura" (bloqueado por el Hallazgo #5/pregunta 29,
-     igual que el resto de blindaje) y "Derribo (N)" — que aquí necesita un
+     "Ignora 1 nivel de armadura" (el Hallazgo #5 ya calcula el blindaje del
+     defensor, `blindajeContra()`, pero ninguna tirada de ataque está enganchada
+     a esa función para restarle nada todavía) y "Derribo (N)" — que aquí necesita un
      estado `Derribo` que no existe en el catálogo de 23 estados
      (`sistema-y-combate.md`), distinto del Derribo de escopetas del barrido de
      hoy. Ariete Percusivo además: "doble daño contra estructuras" — no existe
@@ -831,8 +880,8 @@ metros/casilla, nivel de fatiga, psiónica/hackeo, exoesqueleto, Proyector de Pu
 construido).
 
 **2026-09-24: absorción de daño por blindaje resuelta** (pregunta 29/`C11`, prioridad
-alta marcada por el usuario): 1 punto de blindaje = 1 nivel de daño. Ver Hallazgo #5
-arriba — falta construirla en código, pero ya no bloquea el diseño.
+alta marcada por el usuario): 1 punto de blindaje = 1 nivel de daño. **Construida en
+código el 2026-09-27** — ver Hallazgo #5 en "Hecho", arriba del todo.
 
 **Lo que sigue sin respuesta, y es lo que más bloquea:**
 

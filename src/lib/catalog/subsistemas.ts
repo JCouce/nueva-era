@@ -255,11 +255,17 @@ export const SUBSISTEMAS: Subsistema[] = [
         rareza: "Común",
         coste: 5000,
         detalle: ["Absorción de 1 punto de daño físico o energético mientras esté activo."],
-        // "Absorción de daño" no tiene un concepto equivalente en el motor hoy
-        // (ni derivado ni tirada): no se mecaniza, ver cabecera del fichero.
+        // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: absorcion
+        // alimenta blindajeContra() (blindaje.ts), leído por "Bloquear daño".
+        absorcion: 1,
         modificadores: [],
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "H5" },
+          {
+            tipo: "numerico",
+            afecta: { modo: "accion_existente", id: "bloquear_danio" },
+            mecanismo: "suma_derivado",
+            estado: "construido",
+          },
         ],
       },
       {
@@ -267,9 +273,15 @@ export const SUBSISTEMAS: Subsistema[] = [
         rareza: "Poco Habitual",
         coste: 30000,
         detalle: ["Absorción de 2 puntos."],
+        absorcion: 2,
         modificadores: [],
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "H5" },
+          {
+            tipo: "numerico",
+            afecta: { modo: "accion_existente", id: "bloquear_danio" },
+            mecanismo: "suma_derivado",
+            estado: "construido",
+          },
         ],
       },
       {
@@ -277,9 +289,15 @@ export const SUBSISTEMAS: Subsistema[] = [
         rareza: "Poco Habitual",
         coste: 60000,
         detalle: ["Absorción de 3 puntos."],
+        absorcion: 3,
         modificadores: [],
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "H5" },
+          {
+            tipo: "numerico",
+            afecta: { modo: "accion_existente", id: "bloquear_danio" },
+            mecanismo: "suma_derivado",
+            estado: "construido",
+          },
         ],
       },
       {
@@ -287,9 +305,15 @@ export const SUBSISTEMAS: Subsistema[] = [
         rareza: "Extraño",
         coste: 90000,
         detalle: ["Absorción de 4 puntos."],
+        absorcion: 4,
         modificadores: [],
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "H5" },
+          {
+            tipo: "numerico",
+            afecta: { modo: "accion_existente", id: "bloquear_danio" },
+            mecanismo: "suma_derivado",
+            estado: "construido",
+          },
         ],
       },
     ],
