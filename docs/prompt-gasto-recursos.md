@@ -1,9 +1,9 @@
 # Encargo: automatizar el gasto de RECURSOS al confirmar una tirada/acción
 
-> Prompt listo para pegar entero en una sesión nueva para retomar esto. Arrancado en
-> conversación el 2026-09-28. **Fase 1 hecha y commiteada el mismo día** (armas de
-> fuego, Proyector de Pulso, Movilidad Aérea "Volar" — ver "Fase 1 — hecho" más abajo).
-> Pendiente: Fase 2 (fármacos). **No es lo mismo que el resto de RECURSOS ya
+> Prompt listo para pegar entero en una sesión nueva por si hace falta retomar algo.
+> Arrancado en conversación el 2026-09-28. **Fase 1 y Fase 2 hechas y commiteadas el
+> mismo día** — ver "Fase 1 — hecho" y "Fase 2 — hecho" más abajo. Documento cerrado,
+> sin trabajo pendiente. **No es lo mismo que el resto de RECURSOS ya
 > construido** (balas, baterías, colchón de Malla Plasmática, Materiales, Granadas —
 > todo eso ya existe y funciona, `docs/tareas.md`): esto es la capa que falta encima,
 > que hace que gastar ese recurso deje de ser un +/- manual en Recursos y pase a
@@ -190,15 +190,41 @@ falta preguntarle al usuario esto pieza por pieza):
 - Gasto: al confirmar (con o sin dado), llamar a `ajustarFarmacoAction(characterId,
   catalogoId, -1)` en segundo plano — mismo criterio que la Fase 1.
 
-## Antes de escribir código
+### Fase 2 — hecho (2026-09-28)
 
-Confirma con el usuario, en dos o tres frases, la forma exacta de cada paso antes
-de tocar archivos — mismo criterio que el resto del proyecto
-(`no-codificar-sin-confirmar-tarea` en la memoria del asistente).
+Construida en dos pasos, tal como está descrita arriba, con una corrección real de
+diseño respecto al punto de la dificultad: **la dificultad conocida (7, 9, 6, 4...)
+vive como texto en `nota`, NUNCA en `ajustesFijos`.** `ajustesFijos` es un modificador
+que se SUMA al resultado de la tirada (el -2 fijo de un modo de disparo, por
+ejemplo) — no es el número objetivo que el jugador elige a mano en el modal
+(DIFICULTADES). Confirmado contra el precedente real del catálogo: la tirada fija
+`medicina` (ACCIONES, `acciones.ts`) ya documenta "Gel sanador y estabilizar tienen
+dificultad 4" como texto en `nota`, sin mecanizar el número. `ajustesFijos` solo se
+usa para el +5 REAL de Nano-Elixir (un bono a la propia tirada, no una dificultad).
+Agentes Hemostáticos (7 normal / 9 exanguinante) tampoco lleva selector interactivo:
+los dos valores van como texto en `nota`, mismo criterio.
 
-**Ya decidido (2026-09-28), no lo vuelvas a preguntar:**
-- Fase 1 y Fase 2 son dos tareas separadas, cada una con su propio commit — test
-  en verde al cerrar una antes de arrancar la otra, sin necesidad de parar a pedir
-  luz verde de nuevo entre medias (ya se dio para las dos).
-- Fármacos con tirada: grupo nuevo **"Fármacos"** en Acciones (no cuelgan de
-  "Herramientas") — extiende el union type `GrupoAccion` en `modificadores.ts`.
+Piezas nuevas: `Sheet.farmacos: Record<catalogoId, cantidad>` (SCHEMA_VERSION 10,
+migración 9→10 calcada de la de Granadas en la v8), `sumarFarmaco`/`comprarFarmaco`/
+`ajustarFarmaco` (`recursos.ts`), `comprarFarmacoAction`/`ajustarFarmacoAction` +
+`comprarFarmacoNpcAction`/`ajustarFarmacoNpcAction`, `GrupoAccion` gana `"Fármacos"`,
+`Accion.farmacoId?`/`AccionDirecta.farmacoId?` (gasta 1 dosis, incondicional),
+`rules/farmacos.ts` (`accionesDeFarmacos`/`accionesDirectasDeFarmacos`, Xovromium
+excluido a propósito), sección "Fármacos" nueva en `AccionesTab.tsx` con prop
+`onAjustarFarmaco`. TiendaTab: fármacos pasan de "Equipar" a "Comprar"
+(`AccionComprarGranada` renombrado a `AccionComprarConCantidad`, ahora también sirve
+a `Consumible`). EquipoTab pierde la sección de consumibles (ya no son piezas
+equipadas). RecursosTab gana sección "Fármacos" (reutiliza `GranadaCard` tal cual).
+Comentarios de `medicina.ts` corregidos (la decisión "el motor no lleva inventario"
+queda documentada como revertida, no borrada en silencio). Tests nuevos en
+`farmacos.test.ts`, `recursos.test.ts`, `sheet.test.ts`, `migraciones.test.ts`.
+593/593 en verde, typecheck y lint limpios.
+
+## Estado final
+
+Documento cerrado: Fase 1 y Fase 2 hechas, commiteadas por separado el 2026-09-28,
+sin ningún paso pendiente. Si el sistema añade un nuevo tipo de RECURSOS gastable en
+el futuro (otra célula, otro consumible de cantidad), el patrón a copiar es el de
+Fase 1 (`gastoTotal()`, `Accion.recursoInstanciaId`) si el gasto varía por modo/
+condición, o el de Fase 2 (`Accion.farmacoId`, gasto fijo de 1) si es siempre la
+misma cantidad por uso — no hace falta un tercer mecanismo genérico para eso.

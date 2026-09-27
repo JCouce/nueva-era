@@ -30,7 +30,8 @@ export type GrupoAccion =
   | "Salvaciones"
   | "Iniciativa"
   | "Acciones"
-  | "Herramientas";
+  | "Herramientas"
+  | "Fármacos";
 
 // A qué tirada(s) afecta un modificador de tipo "tirada". Cerrado a propósito
 // — ver docs/modificadores-tiradas.md antes de añadir un sexto caso:

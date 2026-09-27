@@ -32,6 +32,8 @@ import {
   generarNpcAleatorio,
   ajustarGranada,
   comprarGranada,
+  ajustarFarmaco,
+  comprarFarmaco,
   ajustarVida,
   ajustarFatiga,
   ATRIBUTO_MIN,
@@ -317,6 +319,26 @@ export async function comprarGranadaNpcAction(npcId: string, catalogoId: string)
   if ("error" in ctx) return { ok: false, error: ctx.error };
   const resultado = comprarGranada(ctx.sheet, catalogoId);
   if (!resultado) return { ok: false, error: "Granada inválida" };
+  return persist(npcId, resultado.sheet);
+}
+
+// Fármacos (docs/prompt-gasto-recursos.md, Fase 2): mismo criterio "libre"
+// que Granadas — sin créditos ni tope de rareza que comprobar.
+export async function ajustarFarmacoNpcAction(
+  npcId: string,
+  catalogoId: string,
+  delta: number,
+): Promise<NpcResult> {
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(npcId, ajustarFarmaco(ctx.sheet, catalogoId, delta));
+}
+
+export async function comprarFarmacoNpcAction(npcId: string, catalogoId: string): Promise<NpcResult> {
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const resultado = comprarFarmaco(ctx.sheet, catalogoId);
+  if (!resultado) return { ok: false, error: "Fármaco inválido" };
   return persist(npcId, resultado.sheet);
 }
 

@@ -7,7 +7,6 @@ import {
   type ArmaFuego,
   type ArmaMelee,
   type Herramienta,
-  type Consumible,
   type ArmaPesada,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
@@ -18,7 +17,6 @@ import {
   DetalleArma,
   DetalleArmaMelee,
   DetalleModulo,
-  DetalleConsumible,
   DetalleArmaPesada,
 } from "./equipo/PiezaDetalle";
 
@@ -118,9 +116,6 @@ export function EquipoTab({
   const herramientas = sheet.equipo.filter(
     (p) => equipoPorId(p.catalogoId)?.familia === "herramienta",
   );
-  const consumibles = sheet.equipo.filter(
-    (p) => equipoPorId(p.catalogoId)?.familia === "consumible",
-  );
   const armamentoPesado = sheet.equipo.filter(
     (p) => equipoPorId(p.catalogoId)?.familia === "armaPesada",
   );
@@ -204,26 +199,6 @@ export function EquipoTab({
             etiqueta={<BotonQuitar onClick={() => onDesequipar(a.instanciaId)} />}
           >
             <DetalleModulo p={cat} nivelActual={a.nivel} />
-          </Acordeon>
-        );
-      })}
-
-      {consumibles.map((a) => {
-        const cat = equipoPorId(a.catalogoId) as Consumible | null;
-        if (!cat || cat.familia !== "consumible") return null;
-        return (
-          <Acordeon
-            key={a.instanciaId}
-            titulo={cat.label}
-            resumen={cat.resumen}
-            etiqueta={
-              <div className="flex flex-col items-end gap-1">
-                <BadgeRareza rareza={cat.rareza} />
-                <BotonQuitar onClick={() => onDesequipar(a.instanciaId)} />
-              </div>
-            }
-          >
-            <DetalleConsumible p={cat} />
           </Acordeon>
         );
       })}

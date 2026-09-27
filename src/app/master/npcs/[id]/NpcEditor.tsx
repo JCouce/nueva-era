@@ -38,6 +38,8 @@ import {
   fabricarNpcAction,
   ajustarGranadaNpcAction,
   comprarGranadaNpcAction,
+  ajustarFarmacoNpcAction,
+  comprarFarmacoNpcAction,
   ajustarVidaNpcAction,
   ajustarFatigaNpcAction,
   eliminarNpcAction,
@@ -251,6 +253,18 @@ export function NpcEditor({
     if (res.ok) setSheet(res.sheet);
     setStatus(res.ok ? "saved" : "error");
   };
+  const commitAjustarFarmaco = async (catalogoId: string, delta: number) => {
+    setStatus("saving");
+    const res = await ajustarFarmacoNpcAction(npcId, catalogoId, delta);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
+  const commitComprarFarmaco = async (catalogoId: string) => {
+    setStatus("saving");
+    const res = await comprarFarmacoNpcAction(npcId, catalogoId);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
   const commitAjustarVida = async (delta: number) => {
     setStatus("saving");
     const res = await ajustarVidaNpcAction(npcId, delta);
@@ -371,6 +385,7 @@ export function NpcEditor({
             onReparar={commitReparar}
             onFabricar={commitFabricar}
             onGastarRecurso={commitAjustarRecurso}
+            onAjustarFarmaco={commitAjustarFarmaco}
             libre
           />
         </div>
@@ -384,6 +399,7 @@ export function NpcEditor({
           onAjustarMaterial={commitAjustarMaterial}
           onComprarMaterial={commitComprarMaterial}
           onAjustarGranada={commitAjustarGranada}
+          onAjustarFarmaco={commitAjustarFarmaco}
           onAjustarVida={commitAjustarVida}
           onAjustarFatiga={commitAjustarFatiga}
         />
@@ -395,6 +411,7 @@ export function NpcEditor({
           libre
           onEquipar={commitEquipar}
           onComprarGranada={commitComprarGranada}
+          onComprarFarmaco={commitComprarFarmaco}
         />
       )}
     </div>

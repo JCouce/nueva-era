@@ -24,12 +24,16 @@ import {
   MATERIAL_TIERS,
   granadasSchema,
   defaultGranadas,
+  farmacosSchema,
+  defaultFarmacos,
   type RecursoInstancia,
   type Materiales,
   type Granadas,
+  type Farmacos,
 } from "./recursos";
 import { reconciliarVida } from "./vitalidad";
 import { MUNICION_GRANADA } from "../catalog/municion";
+import { FARMACOS } from "../catalog/medicina";
 import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./prioridad";
 
 // Versión del formato de ficha. Al subirla hay que añadir su migración en
@@ -44,7 +48,10 @@ import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./pri
 //   8 → las granadas dejan de ser pieza equipada y pasan a recurso con cantidad
 //   9 → vida y fatiga pasan de número derivado y estático a recurso persistente
 //       (vidaActual/fatigaActual), pedido del usuario 2026-09-27
-export const SCHEMA_VERSION = 9;
+//   10 → los fármacos dejan de ser pieza equipada y pasan a recurso con
+//        cantidad, mismo criterio que las granadas en la v8
+//        (docs/prompt-gasto-recursos.md, Fase 2)
+export const SCHEMA_VERSION = 10;
 
 const atributoValue = z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX);
 
@@ -81,6 +88,7 @@ export const sheetSchema = z.object({
   recursos: z.array(recursoSchema).max(200),
   materiales: materialesSchema,
   granadas: granadasSchema,
+  farmacos: farmacosSchema,
   // Recurso persistente del propio personaje (vitalidad.ts), no de una
   // instancia de equipo — por eso vive suelto aquí y no dentro de `recursos`.
   // El centinela 999 (ver defaultSheet/parseSheet) se recorta al máximo real
@@ -114,6 +122,7 @@ export function defaultSheet(): Sheet {
     recursos: [],
     materiales: defaultMateriales(),
     granadas: defaultGranadas(),
+    farmacos: defaultFarmacos(),
     // Centinela: parseSheet lo recorta al máximo real (salud()) nada más
     // leer la ficha, así que una ficha nueva arranca a tope sin duplicar la
     // fórmula de vida/fatiga aquí.
@@ -213,6 +222,15 @@ export function parseSheet(raw: unknown): Sheet {
     if (cantidad > 0) granadas[g.id] = cantidad;
   }
 
+  // Mismo criterio exacto que granadas: solo se conserva un id real de
+  // FARMACOS con cantidad > 0.
+  const rFarmacos = (r.farmacos ?? {}) as Record<string, unknown>;
+  const farmacos: Farmacos = {};
+  for (const f of FARMACOS) {
+    const cantidad = clampInt(rFarmacos[f.id], 0, 999999, 0);
+    if (cantidad > 0) farmacos[f.id] = cantidad;
+  }
+
   const rPrioridades = (r.prioridades ?? {}) as Record<string, unknown>;
   const prioridades = { ...base.prioridades };
   for (const c of CATEGORIAS_PRIORIDAD) {
@@ -254,6 +272,7 @@ export function parseSheet(raw: unknown): Sheet {
       recursos,
       materiales,
       granadas,
+      farmacos,
       vidaActual: clampInt(r.vidaActual, 0, 999, 999),
       fatigaActual: clampInt(r.fatigaActual, 0, 999, 999),
     }),

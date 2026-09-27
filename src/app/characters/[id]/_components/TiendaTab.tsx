@@ -235,17 +235,17 @@ function BotonEquipar({
   );
 }
 
-// Armas, armaduras, armas melee y consumibles (fármacos) no necesitan dónde
-// instalarse: un botón y ya — salvo que no llegue el saldo o se pase de la
-// rareza que permite la letra de Recursos, entonces se bloquea igual que
-// AccionInstalable bloquea por falta de hueco.
+// Armas, armaduras y armas melee no necesitan dónde instalarse: un botón y ya
+// — salvo que no llegue el saldo o se pase de la rareza que permite la letra
+// de Recursos, entonces se bloquea igual que AccionInstalable bloquea por
+// falta de hueco.
 function AccionSimple({
   pieza,
   creditos,
   topeRareza,
   onEquipar,
 }: {
-  pieza: Armadura | ArmaFuego | ArmaMelee | Consumible | ArmaPesada;
+  pieza: Armadura | ArmaFuego | ArmaMelee | ArmaPesada;
   creditos: number;
   topeRareza: Rareza | null;
   onEquipar: (p: PiezaEquipada) => void;
@@ -276,18 +276,20 @@ function AccionSimple({
   );
 }
 
-// Granadas (docs/tareas.md, 2026-09-27): comprar SUMA 1 unidad al recurso en
-// vez de equipar — hermana de AccionSimple, no sustituto (esa sigue
-// sirviendo a armadura/arma/armaMelee/consumible/armaPesada). Muestra cuánto
-// se lleva ya de ese tipo para no comprar a ciegas.
-function AccionComprarGranada({
+// Granadas (docs/tareas.md, 2026-09-27) y Fármacos (docs/prompt-gasto-recursos.md,
+// Fase 2): comprar SUMA 1 unidad al recurso en vez de equipar — hermana de
+// AccionSimple, no sustituto (esa sigue sirviendo a armadura/arma/armaMelee/
+// armaPesada). Muestra cuánto se lleva ya de ese tipo para no comprar a
+// ciegas. Un solo componente para las dos: MunicionGranada y Consumible
+// comparten id/coste/rareza, que es todo lo que hace falta aquí.
+function AccionComprarConCantidad({
   pieza,
   cantidad,
   creditos,
   topeRareza,
   onComprar,
 }: {
-  pieza: MunicionGranada;
+  pieza: MunicionGranada | Consumible;
   cantidad: number;
   creditos: number;
   topeRareza: Rareza | null;
@@ -571,6 +573,7 @@ export function TiendaTab({
   libre = false,
   onEquipar,
   onComprarGranada,
+  onComprarFarmaco,
 }: {
   sheet: Sheet;
   creditos?: number;
@@ -578,6 +581,7 @@ export function TiendaTab({
   libre?: boolean;
   onEquipar: (p: PiezaEquipada) => void;
   onComprarGranada: (catalogoId: string) => void;
+  onComprarFarmaco: (catalogoId: string) => void;
 }) {
   const [categoria, setCategoria] = useState<CategoriaId>("armaduras");
   const [soloCompatible, setSoloCompatible] = useState(false);
@@ -797,7 +801,13 @@ export function TiendaTab({
                 }
               >
                 <DetalleConsumible p={p} />
-                <AccionSimple pieza={p} creditos={creditosEfectivos} topeRareza={topeRareza} onEquipar={onEquipar} />
+                <AccionComprarConCantidad
+                  pieza={p}
+                  cantidad={sheet.farmacos[p.id] ?? 0}
+                  creditos={creditosEfectivos}
+                  topeRareza={topeRareza}
+                  onComprar={onComprarFarmaco}
+                />
               </Acordeon>
             ))}
           </>
@@ -853,7 +863,7 @@ export function TiendaTab({
                 }
               >
                 <DetalleGranada p={p} />
-                <AccionComprarGranada
+                <AccionComprarConCantidad
                   pieza={p}
                   cantidad={sheet.granadas[p.id] ?? 0}
                   creditos={creditosEfectivos}

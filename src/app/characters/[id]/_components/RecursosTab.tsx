@@ -7,6 +7,7 @@ import {
   catalogoDeMaterial,
   precioMaterial,
   MUNICION_GRANADA,
+  FARMACOS,
   salud,
   type Sheet,
   type RecursoInstancia,
@@ -49,6 +50,7 @@ export function RecursosTab({
   onAjustarMaterial,
   onComprarMaterial,
   onAjustarGranada,
+  onAjustarFarmaco,
   onAjustarVida,
   onAjustarFatiga,
 }: {
@@ -61,6 +63,7 @@ export function RecursosTab({
   onAjustarMaterial: (tier: MaterialTier, delta: number) => void;
   onComprarMaterial: (tier: MaterialTier) => void;
   onAjustarGranada: (catalogoId: string, delta: number) => void;
+  onAjustarFarmaco: (catalogoId: string, delta: number) => void;
   onAjustarVida: (delta: number) => void;
   onAjustarFatiga: (delta: number) => void;
 }) {
@@ -71,6 +74,9 @@ export function RecursosTab({
   // propia se quedan en su sitio de siempre, no las 3 cifras genéricas de
   // Materiales). Orden de catálogo.
   const granadasEnStock = MUNICION_GRANADA.filter((g) => (sheet.granadas[g.id] ?? 0) > 0);
+  // Mismo criterio que granadas (docs/prompt-gasto-recursos.md, Fase 2):
+  // comprar vive en Tienda, aquí solo lo que ya se posee.
+  const farmacosEnStock = FARMACOS.filter((f) => (sheet.farmacos[f.id] ?? 0) > 0);
 
   // Tres categorías, para que la lista no sea un totum revolutum: Materiales
   // (pool de personaje, más abajo), munición/batería y durabilidad se
@@ -186,6 +192,31 @@ export function RecursosTab({
               titulo={g.label}
               cantidad={sheet.granadas[g.id] ?? 0}
               onAjustar={(delta) => onAjustarGranada(g.id, delta)}
+            />
+          ))}
+        </>
+      )}
+
+      {farmacosEnStock.length === 0 ? (
+        <HudCard className="mt-2 border-dashed p-5">
+          <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
+            {"//SYSTEM · fármacos"}
+          </p>
+          <p className="mt-2 font-sans text-sm leading-relaxed text-muted">
+            No llevas ningún fármaco — cómpralos en la Tienda.
+          </p>
+        </HudCard>
+      ) : (
+        <>
+          <p className="mt-2 border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+            {"//SYSTEM · fármacos"}
+          </p>
+          {farmacosEnStock.map((f) => (
+            <GranadaCard
+              key={f.id}
+              titulo={f.label}
+              cantidad={sheet.farmacos[f.id] ?? 0}
+              onAjustar={(delta) => onAjustarFarmaco(f.id, delta)}
             />
           ))}
         </>

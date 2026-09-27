@@ -16,6 +16,8 @@ import {
   accionesDeHerramientas,
   accionesDirectasDeHerramientas,
   accionesDeMovimiento,
+  accionesDeFarmacos,
+  accionesDirectasDeFarmacos,
   valorCondiciones,
   valorBonosTramo,
   modificadoresActivos,
@@ -323,6 +325,7 @@ export function AccionesTab({
   onReparar,
   onFabricar,
   onGastarRecurso,
+  onAjustarFarmaco,
   libre = false,
 }: {
   sheet: Sheet;
@@ -361,6 +364,10 @@ export function AccionesTab({
   // en vivo, `sheet` es la foto congelada de un Combatiente, sin
   // characterId/npcId al que persistir el gasto).
   onGastarRecurso?: (instanciaId: string, delta: number) => void;
+  // Gasto de 1 dosis de sheet.farmacos al confirmar "Usar [fármaco]"
+  // (docs/prompt-gasto-recursos.md, Fase 2) — mismo motivo de ausencia que
+  // onGastarRecurso en NpcAccionesPanel.tsx.
+  onAjustarFarmaco?: (catalogoId: string, delta: number) => void;
   // NpcEditor.tsx (edición libre de máster): la tirada de Fabricar no aplica
   // — FabricarSeccion la salta y llama a onFabricar directo con éxito fijo,
   // mismo criterio que AtributosTab/HabilidadesTab con este mismo prop.
@@ -435,6 +442,8 @@ export function AccionesTab({
     defensaDirecta,
     herramientas,
     herramientasDirectas,
+    farmacos,
+    farmacosDirectas,
     accionesGeneradas,
   } = useMemo(() => {
     const generadas = accionesDeAtaque(sheet).map(conCondicionesDeEquipo);
@@ -447,6 +456,10 @@ export function AccionesTab({
       // condiciones de alcance (§8, modificadores-tiradas.md) todavía — nada
       // real las produce hoy, se añade el día que haga falta.
       herramientasDirectas: accionesDirectasDeHerramientas(sheet),
+      // Fármacos (docs/prompt-gasto-recursos.md, Fase 2): leen sheet.farmacos,
+      // no sheet.equipo — mismo patrón que Herramientas por lo demás.
+      farmacos: accionesDeFarmacos(sheet).map(conCondicionesDeEquipo),
+      farmacosDirectas: accionesDirectasDeFarmacos(sheet),
       defensaDirecta: directas.filter((a) => a.grupo === "Defensa"),
       // Detonación de pulso térmico (Malla Plasmática, 2026-09-28) — primera
       // "acción sin dado" del grupo Ataques, antes solo tenía Defensa.
@@ -457,7 +470,7 @@ export function AccionesTab({
       accionesGeneradas: accionesDeMovimiento(sheet).map(conCondicionesDeEquipo),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sheet.equipo, sheet.recursos, indiceCondiciones]);
+  }, [sheet.equipo, sheet.recursos, sheet.farmacos, indiceCondiciones]);
 
   const abrir = (t: Accion, enEspecialidad: boolean, sutilActivo: boolean) => {
     const mod = modificadorAccion(sheet, t, enEspecialidad, mods, sutilActivo);
@@ -544,6 +557,10 @@ export function AccionesTab({
       const gasto = gastoTotal(tirada, modoId, estadoCondiciones);
       if (gasto > 0) onGastarRecurso?.(tirada.recursoInstanciaId, -gasto);
     }
+    // Fármacos (docs/prompt-gasto-recursos.md, Fase 2): 1 dosis por uso, sin
+    // excepciones — no depende de gastoTotal() (pool distinto, sheet.farmacos
+    // por catalogoId) ni del resultado de la tirada.
+    if (tirada.farmacoId) onAjustarFarmaco?.(tirada.farmacoId, -1);
 
     const id = Date.now();
     setHistorial((h) =>
@@ -578,6 +595,9 @@ export function AccionesTab({
   // lea (ver tonoResultado/textoExitos).
   const usarDirecta = () => {
     if (!modalDirecta) return;
+    // Fármacos sin tirada (docs/prompt-gasto-recursos.md, Fase 2): mismo
+    // criterio que en tirar(), 1 dosis al confirmar.
+    if (modalDirecta.farmacoId) onAjustarFarmaco?.(modalDirecta.farmacoId, -1);
     const id = Date.now();
     setHistorial((h) =>
       [
@@ -661,6 +681,23 @@ export function AccionesTab({
             <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
           ))}
           {herramientasDirectas.map((a) => (
+            <FilaUsar key={a.id} accion={a} onAbrir={setModalDirecta} />
+          ))}
+        </div>
+      )}
+
+      {/* Fármacos (docs/prompt-gasto-recursos.md, Fase 2): dinámica, generada
+          por sheet.farmacos, no por sheet.equipo (ver farmacos.ts) — mismo
+          criterio de "solo si hay algo que la use" que Herramientas. */}
+      {(farmacos.length > 0 || farmacosDirectas.length > 0) && (
+        <div className="flex flex-col gap-2">
+          <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
+            Fármacos
+          </h2>
+          {farmacos.map((t) => (
+            <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
+          ))}
+          {farmacosDirectas.map((a) => (
             <FilaUsar key={a.id} accion={a} onAbrir={setModalDirecta} />
           ))}
         </div>

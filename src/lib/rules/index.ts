@@ -21,6 +21,7 @@
 //   blindaje.ts        absorción de daño por blindaje (armadura, Escudo Deflector, escudo en alto)
 //   movimiento.ts      Movilidad Aérea equipada convertida en su propia tirada ("Volar")
 //   vitalidad.ts       vida/fatiga como recurso persistente de la ficha (vidaActual/fatigaActual)
+//   farmacos.ts        fármacos del pool (sheet.farmacos) convertidos en su propia acción "Usar"
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -43,6 +44,7 @@ export * from "./npcAleatorio";
 export * from "./blindaje";
 export * from "./movimiento";
 export * from "./vitalidad";
+export * from "./farmacos";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

@@ -9,6 +9,7 @@
 // SCHEMA_VERSION hay que añadir una entrada y su test.
 import { ESPECIES } from "../catalog/especies";
 import { MUNICION_GRANADA } from "../catalog/municion";
+import { FARMACOS } from "../catalog/medicina";
 
 export type Migracion = {
   desde: number;
@@ -144,6 +145,30 @@ export const MIGRACIONES: Migracion[] = [
       "(999) que parseSheet recorta de inmediato al máximo real de salud() — así una ficha " +
       "vieja arranca a tope sin duplicar aquí la fórmula de vida/fatiga.",
     migrar: (ficha) => ({ ...ficha, vidaActual: 999, fatigaActual: 999 }),
+  },
+  {
+    desde: 9,
+    hasta: 10,
+    descripcion:
+      "Los fármacos dejan de ser una pieza equipada (una instancia por compra) y pasan a un " +
+      "recurso con cantidad, igual que las granadas en la v8: cada instancia equipada de un " +
+      "fármaco concreto es inequívocamente 1 unidad de ese fármaco, así que se convierte " +
+      "automáticamente. Se agrupan por catalogoId y se retiran de sheet.equipo.",
+    migrar: (ficha) => {
+      const equipo = Array.isArray(ficha.equipo) ? ficha.equipo : [];
+      const idsFarmaco = new Set(FARMACOS.map((f) => f.id));
+      const farmacos: Record<string, number> = {};
+      const resto: unknown[] = [];
+      for (const p of equipo) {
+        const catalogoId = (p as { catalogoId?: unknown } | null)?.catalogoId;
+        if (typeof catalogoId === "string" && idsFarmaco.has(catalogoId)) {
+          farmacos[catalogoId] = (farmacos[catalogoId] ?? 0) + 1;
+        } else {
+          resto.push(p);
+        }
+      }
+      return { ...ficha, equipo: resto, farmacos };
+    },
   },
 ];
 

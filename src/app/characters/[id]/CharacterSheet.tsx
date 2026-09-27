@@ -19,6 +19,8 @@ import {
   fabricarAction,
   ajustarGranadaAction,
   comprarGranadaAction,
+  ajustarFarmacoAction,
+  comprarFarmacoAction,
   ajustarVidaAction,
   ajustarFatigaAction,
   type SaveResult,
@@ -38,6 +40,7 @@ import {
   ajustarRecurso,
   ajustarMaterial,
   ajustarGranada,
+  ajustarFarmaco,
   ajustarVida,
   ajustarFatiga,
   RECURSOS_POR_LETRA,
@@ -333,6 +336,10 @@ export function CharacterSheet({
     setSheet((s) => ajustarGranada(s, catalogoId, delta));
     runSave(() => ajustarGranadaAction(characterId, catalogoId, delta), setSheet);
   };
+  const commitAjustarFarmaco = (catalogoId: string, delta: number) => {
+    setSheet((s) => ajustarFarmaco(s, catalogoId, delta));
+    runSave(() => ajustarFarmacoAction(characterId, catalogoId, delta), setSheet);
+  };
   const commitAjustarVida = (delta: number) => {
     setSheet((s) => ajustarVida(s, delta));
     runSave(() => ajustarVidaAction(characterId, delta), setSheet);
@@ -343,6 +350,9 @@ export function CharacterSheet({
   };
   const commitComprarGranada = (catalogoId: string) => {
     runSave(() => comprarGranadaAction(characterId, catalogoId), setSheet);
+  };
+  const commitComprarFarmaco = (catalogoId: string) => {
+    runSave(() => comprarFarmacoAction(characterId, catalogoId), setSheet);
   };
   // Sin actualización optimista: la rareza suficiente y el stock se validan
   // en el servidor (mismo criterio que commitComprarMaterial/commitRecargar).
@@ -584,6 +594,7 @@ export function CharacterSheet({
           onReparar={commitReparar}
           onFabricar={commitFabricar}
           onGastarRecurso={commitAjustarRecurso}
+          onAjustarFarmaco={commitAjustarFarmaco}
         />
       )}
       {activeEfectivo === "tienda" && (
@@ -593,6 +604,7 @@ export function CharacterSheet({
           topeRareza={topeRareza}
           onEquipar={commitEquipar}
           onComprarGranada={commitComprarGranada}
+          onComprarFarmaco={commitComprarFarmaco}
         />
       )}
       {activeEfectivo === "equipo" && (
@@ -607,6 +619,7 @@ export function CharacterSheet({
           onAjustarMaterial={commitAjustarMaterial}
           onComprarMaterial={commitComprarMaterial}
           onAjustarGranada={commitAjustarGranada}
+          onAjustarFarmaco={commitAjustarFarmaco}
           onAjustarVida={commitAjustarVida}
           onAjustarFatiga={commitAjustarFatiga}
         />

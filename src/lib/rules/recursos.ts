@@ -20,6 +20,7 @@
 import { z } from "zod";
 import { equipoPorId, type Consumible, type Rareza } from "../catalog/equipo";
 import { MUNICION_GRANADA } from "../catalog/municion";
+import { FARMACOS } from "../catalog/medicina";
 import type { PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
 
@@ -138,6 +139,51 @@ export function ajustarGranada(sheet: Sheet, catalogoId: string, delta: number):
   if (actual === 0) delete granadas[catalogoId];
   else granadas[catalogoId] = actual;
   return { ...sheet, granadas };
+}
+
+// Fármacos (docs/prompt-gasto-recursos.md, Fase 2, 2026-09-28): mismo patrón
+// exacto que Granadas — dejan de ser una pieza equipada suelta (una
+// instancia por compra, sin cantidad) y pasan a un recurso con cantidad por
+// tipo, keys por catalogoId (los 10 de FARMACOS que no están bloqueados por
+// Fase 5, aunque Xovromium también se guarda si alguien lo tenía — la
+// migración no distingue, solo `parseSheet` filtra por catálogo real).
+export type Farmacos = Record<string, number>;
+
+export const farmacosSchema = z.record(z.string(), z.number().int().min(0));
+
+export function defaultFarmacos(): Farmacos {
+  return {};
+}
+
+// Helper puro compartido por comprarFarmaco() — mismo espíritu que
+// sumarGranada(), sin un segundo caso de uso (fabricar un fármaco) todavía.
+export function sumarFarmaco(sheet: Sheet, catalogoId: string, cantidad = 1): Sheet {
+  return {
+    ...sheet,
+    farmacos: { ...sheet.farmacos, [catalogoId]: (sheet.farmacos[catalogoId] ?? 0) + cantidad },
+  };
+}
+
+// "Comprar" 1 unidad al precio real de catálogo de ESE fármaco — mismo
+// criterio que comprarGranada: el servidor recalcula el precio, nunca confía
+// en el cliente. null si el catalogoId no es un fármaco real.
+export function comprarFarmaco(sheet: Sheet, catalogoId: string): { sheet: Sheet; coste: number } | null {
+  const farmaco = FARMACOS.find((f) => f.id === catalogoId);
+  if (!farmaco) return null;
+  return { sheet: sumarFarmaco(sheet, catalogoId), coste: farmaco.coste };
+}
+
+// Delta manual (+/-), clamp ≥0 — mismo patrón que ajustarGranada (borra la
+// clave al llegar a 0 en vez de dejarla a 0).
+export function ajustarFarmaco(sheet: Sheet, catalogoId: string, delta: number): Sheet {
+  if (!Number.isFinite(delta)) return sheet;
+  const previo = sheet.farmacos[catalogoId] ?? 0;
+  const actual = Math.max(0, previo + Math.round(delta));
+  if (actual === previo) return sheet;
+  const farmacos = { ...sheet.farmacos };
+  if (actual === 0) delete farmacos[catalogoId];
+  else farmacos[catalogoId] = actual;
+  return { ...sheet, farmacos };
 }
 
 export type RecursoInstancia = { instanciaId: string; actual: number; max: number };

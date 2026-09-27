@@ -128,6 +128,24 @@ describe("parseSheet aguanta cualquier cosa", () => {
     const s = parseSheet({ schemaVersion: SCHEMA_VERSION, especieId: "humano" });
     assert.deepEqual(s.granadas, {});
   });
+
+  test("fármacos: solo se conservan ids reales del catálogo, con cantidad > 0", () => {
+    const s = parseSheet({
+      schemaVersion: SCHEMA_VERSION,
+      farmacos: {
+        farmaco_analgesico: 3,
+        "no-existe": 5, // id que ya no está en el catálogo: se descarta
+        farmaco_calmante: 0, // cantidad 0: no se conserva la clave
+        farmaco_gel_sanador: -1, // negativo: recorta a 0, tampoco se conserva
+      },
+    });
+    assert.deepEqual(s.farmacos, { farmaco_analgesico: 3 });
+  });
+
+  test("sin campo farmacos en absoluto, arranca con el recurso vacío", () => {
+    const s = parseSheet({ schemaVersion: SCHEMA_VERSION, especieId: "humano" });
+    assert.deepEqual(s.farmacos, {});
+  });
 });
 
 describe("vidaActual/fatigaActual", () => {

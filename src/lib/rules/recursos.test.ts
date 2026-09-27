@@ -16,6 +16,8 @@ import {
   repararPieza,
   ajustarGranada,
   comprarGranada,
+  ajustarFarmaco,
+  comprarFarmaco,
   PRECIO_CARGADOR_BALAS,
   PRECIO_BATERIA_PORTATIL,
 } from "./recursos";
@@ -334,6 +336,60 @@ describe("ajustarGranada", () => {
     s = ajustarGranada(s, "granada_plasma", 1);
     assert.equal(s.granadas.granada_casera, 3);
     assert.equal(s.granadas.granada_plasma, 1);
+  });
+});
+
+describe("comprarFarmaco (docs/prompt-gasto-recursos.md, Fase 2)", () => {
+  test("suma 1 unidad al tipo y devuelve su precio de catálogo", () => {
+    const res = comprarFarmaco(defaultSheet(), "farmaco_analgesico");
+    assert.ok(res);
+    assert.equal(res!.sheet.farmacos.farmaco_analgesico, 1);
+    assert.equal(res!.coste, 5);
+  });
+
+  test("comprar dos veces acumula", () => {
+    let s = defaultSheet();
+    s = comprarFarmaco(s, "farmaco_analgesico")!.sheet;
+    s = comprarFarmaco(s, "farmaco_analgesico")!.sheet;
+    assert.equal(s.farmacos.farmaco_analgesico, 2);
+  });
+
+  test("no toca otros tipos", () => {
+    let s = comprarFarmaco(defaultSheet(), "farmaco_analgesico")!.sheet;
+    s = comprarFarmaco(s, "farmaco_calmante")!.sheet;
+    assert.equal(s.farmacos.farmaco_analgesico, 1);
+    assert.equal(s.farmacos.farmaco_calmante, 1);
+  });
+
+  test("un catalogoId que no es un fármaco real devuelve null", () => {
+    assert.equal(comprarFarmaco(defaultSheet(), "no-existe"), null);
+    assert.equal(comprarFarmaco(defaultSheet(), "granada_casera"), null);
+  });
+});
+
+describe("ajustarFarmaco", () => {
+  test("un delta positivo suma sin tope superior", () => {
+    const s = ajustarFarmaco(defaultSheet(), "farmaco_analgesico", 5);
+    assert.equal(s.farmacos.farmaco_analgesico, 5);
+  });
+
+  test("un delta negativo no baja de 0, y borra la clave al llegar a 0", () => {
+    let s = ajustarFarmaco(defaultSheet(), "farmaco_analgesico", 2);
+    s = ajustarFarmaco(s, "farmaco_analgesico", -5);
+    assert.equal(s.farmacos.farmaco_analgesico, undefined);
+    assert.deepEqual(s.farmacos, {});
+  });
+
+  test("sin cambio real (ya está a 0, delta negativo), devuelve la misma ficha", () => {
+    const s = defaultSheet();
+    assert.equal(ajustarFarmaco(s, "farmaco_analgesico", -1), s);
+  });
+
+  test("no toca otros tipos", () => {
+    let s = ajustarFarmaco(defaultSheet(), "farmaco_analgesico", 3);
+    s = ajustarFarmaco(s, "farmaco_calmante", 1);
+    assert.equal(s.farmacos.farmaco_analgesico, 3);
+    assert.equal(s.farmacos.farmaco_calmante, 1);
   });
 });
 

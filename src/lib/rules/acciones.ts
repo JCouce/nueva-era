@@ -63,6 +63,14 @@ export type Accion = {
   // deduce del `id` (parsear `algo_${instanciaId}` es frágil): lo rellena
   // directamente el generador que ya conoce la instancia.
   recursoInstanciaId?: string;
+  // Gasta 1 dosis de sheet.farmacos[farmacoId] al confirmar la tirada
+  // (docs/prompt-gasto-recursos.md, Fase 2) — "1 dosis por uso, sin
+  // excepciones", así que a diferencia de recursoInstanciaId/gastoTotal() no
+  // hace falta calcular ningún número: el gasto es siempre 1, incondicional
+  // al resultado. Pool distinto de sheet.recursos (por catalogoId, no por
+  // instancia de equipo), de ahí el campo aparte en vez de reusar
+  // recursoInstanciaId.
+  farmacoId?: string;
   // Controles del modal (ver condiciones.ts): tramo de distancia, apoyado con
   // bípode, atacantes adicionales... Las tiradas de ataque las llevan
   // calculadas al vuelo desde el equipo (ver combate.ts); las demás las
@@ -129,6 +137,9 @@ export type AccionDirecta = {
   // fila en sí siempre dice "Usar", este es el de dentro ("Marcar", "Activar"...).
   confirmarLabel?: string;
   bloqueada?: string;
+  // Mismo campo y mismo criterio que en Accion arriba: gasta 1 dosis al
+  // confirmar (los fármacos sin tirada, docs/prompt-gasto-recursos.md Fase 2).
+  farmacoId?: string;
 };
 
 // −1 acumulativo por cada atacante adicional en la ronda (sistema-y-combate.md).

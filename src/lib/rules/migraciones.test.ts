@@ -223,6 +223,51 @@ describe("v8 → v9: vida y fatiga pasan a recurso persistente", () => {
   });
 });
 
+describe("v9 → v10: los fármacos pasan de pieza equipada a recurso con cantidad", () => {
+  test("suma las instancias equipadas de fármaco al recurso, agrupadas por tipo", () => {
+    const { ficha } = migrar(
+      {
+        schemaVersion: 9,
+        especieId: "humano",
+        equipo: [
+          { instanciaId: "f1", catalogoId: "farmaco_analgesico" },
+          { instanciaId: "f2", catalogoId: "farmaco_analgesico" },
+          { instanciaId: "f3", catalogoId: "farmaco_calmante" },
+        ],
+      },
+      10,
+    );
+    assert.deepEqual(ficha.farmacos, { farmaco_analgesico: 2, farmaco_calmante: 1 });
+    assert.equal(ficha.schemaVersion, 10);
+  });
+
+  test("las retira de equipo, sin tocar el resto de piezas equipadas", () => {
+    const { ficha } = migrar(
+      {
+        schemaVersion: 9,
+        equipo: [
+          { instanciaId: "a1", catalogoId: "fusil_asalto_impetus" },
+          { instanciaId: "f1", catalogoId: "farmaco_analgesico" },
+        ],
+      },
+      10,
+    );
+    assert.deepEqual(ficha.equipo, [{ instanciaId: "a1", catalogoId: "fusil_asalto_impetus" }]);
+  });
+
+  test("una ficha sin ningún fármaco equipado arranca con el recurso vacío", () => {
+    const { ficha } = migrar({ schemaVersion: 9, especieId: "humano" }, 10);
+    assert.deepEqual(ficha.farmacos, {});
+    assert.equal(ficha.schemaVersion, 10);
+  });
+
+  test("no toca el resto de la ficha", () => {
+    const { ficha } = migrar({ schemaVersion: 9, especieId: "arkoru", edad: 40 }, 10);
+    assert.equal(ficha.especieId, "arkoru");
+    assert.equal(ficha.edad, 40);
+  });
+});
+
 describe("parseSheet migra antes de normalizar", () => {
   test("una ficha v1 entra por la puerta y sale al día", () => {
     const s = parseSheet({ schemaVersion: 1, especie: "Arkorü", edad: 40 });

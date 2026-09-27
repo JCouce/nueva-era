@@ -31,6 +31,9 @@ import {
   ajustarGranada,
   comprarGranada,
   MUNICION_GRANADA,
+  ajustarFarmaco,
+  comprarFarmaco,
+  FARMACOS,
   ajustarVida,
   ajustarFatiga,
   type MaterialTier,
@@ -423,6 +426,54 @@ export async function ajustarGranadaAction(
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(characterId, ajustarGranada(ctx.sheet, catalogoId, delta));
+}
+
+// Fármacos (docs/prompt-gasto-recursos.md, Fase 2): mismo patrón exacto que
+// Granadas — comprar suma 1 unidad al recurso, con el mismo tope de rareza
+// de creación y el mismo precio recalculado en servidor.
+export async function comprarFarmacoAction(
+  characterId: string,
+  catalogoId: string,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+
+  const farmaco = FARMACOS.find((f) => f.id === catalogoId);
+  if (!farmaco) return { ok: false, error: "Fármaco inválido" };
+
+  if (!ctx.aprobada && !ctx.esMaster) {
+    const letra = ctx.sheet.prioridades.recursos;
+    const tope = letra ? RECURSOS_POR_LETRA[letra].rareza : null;
+    if (tope && !rarezaPermitida(farmaco.rareza, tope)) {
+      return { ok: false, error: `Tu letra de Recursos no llega a ${farmaco.rareza}: tope ${tope}.` };
+    }
+  }
+
+  const resultado = comprarFarmaco(ctx.sheet, catalogoId);
+  if (!resultado) return { ok: false, error: "Fármaco inválido" };
+  if (resultado.coste > ctx.creditos) return { ok: false, error: "No tienes créditos suficientes" };
+
+  const creditos = ctx.creditos - resultado.coste;
+  await prisma.character.update({
+    where: { id: characterId },
+    data: { stats: resultado.sheet, creditos },
+  });
+  revalidatePath(`/characters/${characterId}`);
+  revalidatePath("/master");
+  return { ok: true, sheet: resultado.sheet, creditos };
+}
+
+// Gasto manual (+/-) sobre el recurso, sin coste en créditos — mismo patrón
+// que ajustarGranadaAction. También la usa AccionesTab.tsx (onGastarFarmaco)
+// para el gasto automático de 1 dosis al confirmar "Usar" (Fase 2, paso 2).
+export async function ajustarFarmacoAction(
+  characterId: string,
+  catalogoId: string,
+  delta: number,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, ajustarFarmaco(ctx.sheet, catalogoId, delta));
 }
 
 // Reparar (docs/tareas.md, tarea 8): sin requisito de VTF (a diferencia de

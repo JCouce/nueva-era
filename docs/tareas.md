@@ -22,9 +22,11 @@ cuál va antes que la otra:
   su propio "Orden de construcción" por tiers.
 - `docs/prompt-gasto-recursos.md` — automatizar el gasto de RECURSOS (balas/cargas/
   dosis) al confirmar una tirada en vez del +/- manual de hoy. **Fase 1 (armas de
-  fuego, Proyector de Pulso, Movilidad Aérea "Volar") hecha 2026-09-28** — pendiente
-  Fase 2 (fármacos, que primero necesita su propio pool de cantidad y su acción
-  "Usar", ninguna de las dos existe hoy).
+  fuego, Proyector de Pulso, Movilidad Aérea "Volar") y Fase 2 (fármacos) hechas
+  2026-09-28** — los fármacos dejan de ser pieza equipada y pasan a pool con
+  cantidad (`sheet.farmacos`, SCHEMA_VERSION 10), con su propia acción "Usar" en
+  Acciones (grupo nuevo "Fármacos", `rules/farmacos.ts`) que gasta 1 dosis al
+  confirmar. Documento cerrado, sin más fases pendientes.
 - "Preguntas al diseñador" (final de este documento) — lo que bloquea a Murillo.
 
 ---

@@ -8,14 +8,17 @@
 // tiradas de aplicación"), así que es un `Modificador` tipo "tirada" con
 // alcance a la tirada fija `medicina` ("Tratar heridas") — no hace falta
 // ninguna tirada nueva. Los fármacos, en cambio, NO llevan ningún
-// modificador, aunque el documento dé números limpios para alguno (el +5 de
-// Nano-Elixir, el "gran pureza" de una síntesis crítica): son bonos POR
-// DOSIS, de un solo uso, y el motor no lleva inventario ni consumo de
-// cargas — tratarlos como "mientras está equipado" daría un bono permanente
-// por poseer una sola dosis, que no es la regla. Se quedan en `detalle`
-// para que el jugador/narrador los aplique a mano al usar la dosis, mismo
-// criterio que ya sigue la nota de la propia tirada `medicina`
-// ("Gel sanador y estabilizar tienen dificultad 4").
+// `Modificador` de personaje entero, aunque el documento dé números limpios
+// para alguno (el +5 de Nano-Elixir, el "gran pureza" de una síntesis
+// crítica): son bonos POR DOSIS, de un solo uso — tratarlos como "mientras
+// está equipado" daría un bono permanente por poseer una sola dosis, que no
+// es la regla. Se quedan en `detalle` para que el jugador/narrador los
+// aplique a mano al usar la dosis, mismo criterio que ya sigue la nota de la
+// propia tirada `medicina` ("Gel sanador y estabilizar tienen dificultad 4").
+// El motor SÍ lleva inventario y consumo de dosis desde
+// docs/prompt-gasto-recursos.md (Fase 2, 2026-09-28) — decisión revertida:
+// ver `Farmacos` (rules/recursos.ts) y `rules/farmacos.ts` para la acción
+// "Usar" y el gasto de 1 dosis al confirmar.
 import type { Herramienta, Consumible } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
 
@@ -128,10 +131,11 @@ export const MEDICINA_UNICAS: Herramienta[] = [VALIJA_TACTICA_MEDICA];
 
 // docs/motor.md: decisión de diseño ya cerrada (ver cabecera del archivo),
 // no un hueco — un fármaco no lleva `modificadores` a propósito (bono POR
-// DOSIS de un solo uso, el motor no rastrea inventario) y su `detalle` no se
-// vuelca a ningún `Accion.nota` en ningún sitio del código (comprobado:
-// FARMACOS solo se usa en TiendaTab.tsx). Narrativo, sin conexión, construido
-// tal cual está — no "pendiente".
+// DOSIS de un solo uso, no un bono de personaje entero). Su `detalle` sigue
+// sin volcarse a ningún `Accion.nota` de forma automática: rules/farmacos.ts
+// lo cita como texto fijo en la nota de "Usar [fármaco]" (Fase 2), pero el
+// efecto en sí (cuánto cura, qué purga) sigue sin mecanizar. Narrativo, sin
+// conexión al cálculo, construido tal cual está — no "pendiente".
 //
 // Vale para 7 de los 10 — Analgésico, Ultra Estimulante y Xovromium sí traen
 // un número real en su `detalle` (no solo prosa), corregido 2026-09-24
@@ -313,8 +317,8 @@ export const FARMACOS: Consumible[] = [
       "reparan el deterioro celular por el torrente sanguíneo.",
     detalle: [
       "Funciona como el Gel Sanador Avanzado pero con +5 a la tirada de esa aplicación (bono de " +
-        "la dosis, no del personaje — se suma a mano al tirar, el motor no lleva inventario de " +
-        "dosis consumidas).",
+        "la dosis, no del personaje — ya viene sumado en la propia tirada de \"Usar Nano-Elixir\", " +
+        "no hay que aplicarlo a mano).",
       "No se apila con aumentos tecnológicos de nanomedicina. Bajo interferencia electromagnética " +
         "o sabotaje activo se degrada a Gel Sanador Avanzado convencional.",
     ],
