@@ -28,14 +28,17 @@ todo lo demás, en `docs/tareas.md`.
 |---|---|---|
 | `docs/sistema.md` | **La fuente de verdad de las reglas.** Estado por bloque, fuente de cada regla, supuestos numerados (S1-S8), conflictos (C4-C13) y 30 preguntas abiertas | Siempre que se implemente o se aclare una regla |
 | `docs/tareas.md` | **La fuente de verdad del estado.** Qué está hecho, qué falta, qué lo bloquea | Al cerrar o abrir cualquier tarea — es el único sitio donde se anota esto |
+| `docs/motor.md` | **Lectura obligatoria antes de dar de alta cualquier elemento nuevo** (equipo, especies, poderes, dotes, aumentos). El modelo `MotorMetadata`: las cinco preguntas que todo elemento nuevo tiene que responder al pasar de prosa a motor | Al cambiar la arquitectura de metadatos, o al aprender algo nuevo sobre cómo clasificar un efecto |
+| `docs/modificadores-tiradas.md` | Guía técnica de los cuatro mecanismos para enganchar un modificador nuevo a una tirada (`CondicionTirada`, `ajustesFijos`, `bonosTramo`, `Modificador` con `alcance`) | Antes de añadir un modificador nuevo a una tirada — léelo primero, evita reinventar uno de los cuatro |
 | `docs/fase-6b.md` | Hoja de ruta con subtareas del gestor de combate, para cogerlas una a una | Al coger o cerrar una subtarea. Se archiva (resumen a `docs/tareas.md`) cuando la fase entera cierre |
-| `docs/equipo-efectos-especiales.md` | Hoja de ruta pieza a pieza para mecanizar los efectos especiales del catálogo de equipo (críticos, efectos al impactar) | Al coger o cerrar una pieza/categoría |
+| `docs/equipo-efectos-especiales.md` | Hoja de ruta pieza a pieza para mecanizar los efectos especiales del catálogo de equipo (críticos, efectos al impactar) — barrido MANUAL, verificado contra el PDF original y con el diseñador. Si una pieza aparece también en el checklist de abajo, este manda | Al coger o cerrar una pieza/categoría |
 | `docs/prompt-equipo-efectos.md` | Encargo para retomar el repaso de efectos especiales en una sesión nueva — método, hallazgos ya cerrados, por dónde sigue | Al cerrar una tanda grande del repaso; se archiva cuando el barrido entero termine |
+| `docs/checklist-motor-vs-prosa-2026-09-24.md` | **Por dónde sigue el trabajo pieza a pieza del catálogo, hoy.** Resultado de una auditoría AUTOMÁTICA (multi-agente) que compara la prosa de cada pieza contra su código; trae su propio "Orden de construcción — empieza por aquí" con tiers. No confundir con `equipo-efectos-especiales.md` (manual, y el que manda en caso de discrepancia) | Al cerrar un ítem de la lista. Bórralo cuando todos los ítems estén marcados |
 | `docs/pruebas-integrales.md` | Checklist de pruebas manuales exhaustivas (no solo el camino feliz) para piezas de UI grandes | Al cerrar un bloque grande de UI, o al tocar código que ya tenga su sección aquí |
 | `docs/plan-app.md` | Por qué la arquitectura es como es (capas, versionado de ficha, sistema de modificadores) | Al cambiar una decisión de arquitectura, no de estado |
 | `docs/sistema-y-combate.md` | Transcripción del PDF de combate: dado, dificultades, salud, daño, 23 estados | Solo si llega una revisión del PDF |
 | `docs/equipamiento.md` | Transcripción del PDF de equipamiento: armaduras, armas, kerzul, medicina | Idem |
-| `docs/Creación de Personaje-1.txt` | La hoja original del diseñador | Nunca, es material fuente |
+| `docs/Creación de Personaje.odt` | La hoja original del diseñador | Nunca, es material fuente |
 | `src/lib/rules/` | El motor: atributos, habilidades, ficha, derivados, creación, tiradas, modificadores, migraciones | Con su test al lado |
 | `src/lib/catalog/` | Datos puros: especies y el catálogo de equipo entero | Al añadir contenido |
 | `CLAUDE.md` | Stack, comandos, arquitectura y gotchas del proyecto | Al cambiar estructura o comandos |

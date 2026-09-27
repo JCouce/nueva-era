@@ -165,6 +165,22 @@ describe("aviso de munición insuficiente (RECURSOS, docs/tareas.md)", () => {
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Mosquito")!;
     assert.match(fila.nota ?? "", /0\/7/);
   });
+
+  test("sin selector de modo, la dificultad del único modo no se pierde: llega como ajustesFijos", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_mosquito" }); // Simple, dificultad -2
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Mosquito")!;
+    assert.equal(fila.condiciones?.find((c) => c.id === "modo"), undefined);
+    assert.deepEqual(fila.ajustesFijos, [{ valor: -2, fuente: "Mosquito" }]);
+  });
+
+  test("con selector de modo, la dificultad sigue viviendo en la condición, no se duplica en ajustesFijos", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_sydiasi" }); // Simple + F. Auto
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
+    assert.notEqual(fila.condiciones?.find((c) => c.id === "modo"), undefined);
+    assert.deepEqual(fila.ajustesFijos, []);
+  });
 });
 
 describe("mejoras que afectan a la distancia", () => {

@@ -15,10 +15,12 @@ razas, poderes, dotes, aumentos) de prosa a motor. Este archivo manda en el esta
 
 ## Ahora mismo
 
-La partida empieza el 23 de septiembre de 2026. Lo imprescindible del día uno — crear
-personaje, saber a cuánto tiras, consultar el equipo — está hecho. Lo siguiente con más
-valor: cerrar el diseño de la fase 6b (combate en vivo) o llevarle al diseñador las
-preguntas abiertas de más impacto (ver el final de este documento).
+Sin valoración de prioridad aquí a propósito — se queda obsoleta en cuanto cambia el
+foco. Fuentes vivas, cada una con su propio orden interno, sin que ninguna documente
+cuál va antes que la otra:
+- `docs/checklist-motor-vs-prosa-2026-09-24.md` — catálogo de equipo pieza a pieza, con
+  su propio "Orden de construcción" por tiers.
+- "Preguntas al diseñador" (final de este documento) — lo que bloquea a Murillo.
 
 ---
 

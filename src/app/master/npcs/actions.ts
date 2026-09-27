@@ -29,6 +29,7 @@ import {
   comprarMaterial,
   repararPieza,
   fabricar,
+  generarNpcAleatorio,
   ATRIBUTO_MIN,
   ATRIBUTO_MAX,
   HABILIDAD_NO_ENTRENADA,
@@ -104,6 +105,24 @@ export async function clonarNpcAction(npcId: string, nuevoNombre: string): Promi
 // estas dos hablan FormData y navegan solas.
 export async function crearNpcFormAction(formData: FormData) {
   const res = await crearNpcAction(String(formData.get("nombre") ?? ""));
+  if (res.ok) redirect(`/master/npcs/${res.id}`);
+}
+
+// Generación al azar (lib/rules/npcAleatorio.ts): atributos, habilidades, un
+// arma con mejora y una armadura con mejora, todo sorteado — el máster solo
+// aprieta el botón. Mismo criterio "libre" que el resto del NPC: nada de
+// point-buy ni coste, un único create.
+export async function crearNpcAleatorioAction(): Promise<NpcCreadoResult> {
+  if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede crear NPCs." };
+
+  const { nombre, sheet } = generarNpcAleatorio();
+  const npc = await prisma.npcTemplate.create({ data: { nombre, stats: sheet } });
+  revalidateNpcs();
+  return { ok: true, id: npc.id };
+}
+
+export async function crearNpcAleatorioFormAction() {
+  const res = await crearNpcAleatorioAction();
   if (res.ok) redirect(`/master/npcs/${res.id}`);
 }
 

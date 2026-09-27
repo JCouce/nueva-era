@@ -226,6 +226,12 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
     ...efectosDeMejoras(sheet, instanciaId),
   ].filter((e): e is { fuente: string; texto: string } => e !== null);
 
+  // Sin selector de modo (un único modo, ver condicionModo): su `dificultad`
+  // no se pierde, solo cambia de mecanismo — pasa de condición elegible a
+  // ajuste fijo, mismo patrón que arma.dificultad en armamento pesado.
+  const ajusteModoUnico =
+    !modo && modosConId[0].dificultad !== 0 ? [{ valor: modosConId[0].dificultad, fuente: arma.label }] : [];
+
   return {
     id: `ataque_fuego_${instanciaId}`,
     label: `Disparar con ${arma.label}`,
@@ -235,7 +241,7 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
     nota: [arma.especial, notaModoUnico].filter((n): n is string => !!n).join(" · ") || undefined,
     efectos: efectos.length > 0 ? efectos : undefined,
     condiciones,
-    ajustesFijos: ajustesFijosDeMejoras(sheet, instanciaId),
+    ajustesFijos: [...ajusteModoUnico, ...ajustesFijosDeMejoras(sheet, instanciaId)],
     bonosTramo: bonosTramoDeMejoras(sheet, instanciaId),
     ataque: {
       modos: modosConId.map((m) => ({

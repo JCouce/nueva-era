@@ -17,6 +17,7 @@
 //   aprobacion.ts      guardarraíl de la ficha aprobada: solo comprar, nunca vender
 //   estados.ts         fase 6b — umbrales de salud/fatiga y catálogo de estados de combate
 //   npc.ts             fase 6b — "Poder" del catálogo de NPCs (métrica del usuario, no del sistema)
+//   npcAleatorio.ts    generación de NPC al azar (botón del catálogo de NPCs)
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -35,6 +36,7 @@ export * from "./aprobacion";
 export * from "./prioridad";
 export * from "./estados";
 export * from "./npc";
+export * from "./npcAleatorio";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

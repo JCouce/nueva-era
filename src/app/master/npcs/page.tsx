@@ -6,7 +6,7 @@ import { parseSheet, poder } from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
 import { HudCard } from "@/components/HudCard";
 import { MasterTabs } from "@/components/MasterTabs";
-import { crearNpcFormAction, eliminarNpcFormAction } from "./actions";
+import { crearNpcFormAction, crearNpcAleatorioFormAction, eliminarNpcFormAction } from "./actions";
 
 // Fase 6b, subtarea 5.1: catálogo de NPCs, la pieza de UI que faltaba del
 // rediseño del bloque 5 (backend cerrado en 5.0/5.0b, docs/fase-6b.md). Cards
@@ -51,6 +51,16 @@ export default async function NpcsPage() {
             className="animate-pulso-nucleo clip-chamfer flex shrink-0 items-center gap-2 bg-accent px-5 py-3.5 font-display text-base font-bold uppercase tracking-wide text-black active:scale-95"
           >
             <span className="text-xl leading-none">+</span> NPC
+          </button>
+        </form>
+
+        <form action={crearNpcAleatorioFormAction} className="mb-6">
+          <button
+            type="submit"
+            aria-label="Generar NPC aleatorio"
+            className="clip-chamfer flex w-full items-center justify-center gap-2 border border-border bg-surface px-5 py-3 font-display text-sm font-bold uppercase tracking-wide text-accent active:scale-95"
+          >
+            Generar NPC aleatorio
           </button>
         </form>
 
