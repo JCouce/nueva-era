@@ -18,6 +18,7 @@ import {
   accionesDeMovimiento,
   accionesDeFarmacos,
   accionesDirectasDeFarmacos,
+  recursoDe,
   valorCondiciones,
   valorBonosTramo,
   modificadoresActivos,
@@ -767,6 +768,10 @@ export function AccionesTab({
         <AccionModal
           titulo={modal.tirada.label}
           nota={modal.tirada.nota}
+          tirada={modal.tirada}
+          recursoActual={
+            modal.tirada.recursoInstanciaId ? recursoDe(sheet, modal.tirada.recursoInstanciaId) : undefined
+          }
           subtitulo={
             especialidadesActuales.length > 0
               ? `especialidad: ${especialidadesActuales.join(" / ")}`

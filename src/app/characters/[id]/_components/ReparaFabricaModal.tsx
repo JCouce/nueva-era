@@ -246,6 +246,7 @@ function ReparacionSeccion({
           <AccionModal
             titulo={rollOpen.tirada.label}
             nota={rollOpen.tirada.nota}
+            tirada={rollOpen.tirada}
             modBase={rollOpen.modBase}
             desgloseBase={rollOpen.desgloseBase}
             condiciones={[]}

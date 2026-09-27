@@ -18,6 +18,7 @@ import {
   resolverDanio,
   tirarD12,
   gastoTotal,
+  avisoInsuficiente,
   type Accion,
 } from "./acciones";
 import { modificadoresDeEstados } from "./estados";
@@ -289,6 +290,88 @@ describe("gastoTotal (docs/prompt-gasto-recursos.md, Fase 1)", () => {
       ],
     };
     assert.equal(gastoTotal(conToggle, "0", { recarga_rapida: true }), 2); // 1 del modo + 1 del toggle
+  });
+});
+
+describe("avisoInsuficiente (docs/prompt-gasto-recursos.md, feedback 2026-09-28)", () => {
+  const accionArma: Accion = {
+    id: "ataque_fuego_arma1",
+    label: "Disparar",
+    grupo: "Ataques",
+    aplicado: "reflejos",
+    habilidad: "combate_distancia",
+    recursoInstanciaId: "arma1",
+    ataque: {
+      modos: [
+        { id: "0", danio: 5, formulaDanio: null, categoriaDanio: "Letal", gasto: 1 },
+        { id: "1", danio: 7, formulaDanio: null, categoriaDanio: "Letal", gasto: 20 },
+      ],
+    },
+  };
+
+  test("sin recursoInstanciaId, nunca avisa aunque no haya recurso", () => {
+    const accion: Accion = { id: "x", label: "x", grupo: "Acciones", aplicado: "reflejos", habilidad: null };
+    assert.equal(avisoInsuficiente(accion, null, {}, { actual: 0, max: 0 }), undefined);
+  });
+
+  test("sin recurso rastreado (undefined), no avisa", () => {
+    assert.equal(avisoInsuficiente(accionArma, "0", {}, undefined), undefined);
+  });
+
+  test("si llega justo, no avisa", () => {
+    assert.equal(avisoInsuficiente(accionArma, "1", {}, { actual: 20, max: 20 }), undefined);
+  });
+
+  test("si no llega, avisa con actual/max, unidad por defecto 'balas' y el gasto", () => {
+    const aviso = avisoInsuficiente(accionArma, "1", {}, { actual: 5, max: 20 });
+    assert.match(aviso ?? "", /5\/20/);
+    assert.match(aviso ?? "", /balas/);
+    assert.match(aviso ?? "", /gasta 20/);
+  });
+
+  test("Simple (gasta 1) no avisa aunque F. Auto (gasta 20) sí", () => {
+    const recurso = { actual: 5, max: 20 };
+    assert.equal(avisoInsuficiente(accionArma, "0", {}, recurso), undefined);
+    assert.notEqual(avisoInsuficiente(accionArma, "1", {}, recurso), undefined);
+  });
+
+  test("reactivo al modo elegido: cambiar de modo cambia el aviso sin recalcular nada más", () => {
+    const recurso = { actual: 3, max: 10 };
+    assert.equal(avisoInsuficiente(accionArma, "0", {}, recurso), undefined);
+    assert.notEqual(avisoInsuficiente(accionArma, "1", {}, recurso), undefined);
+  });
+
+  test("respeta recursoUnidad cuando está declarada (cargas)", () => {
+    const accion: Accion = { ...accionArma, recursoUnidad: "cargas" };
+    const aviso = avisoInsuficiente(accion, "1", {}, { actual: 1, max: 20 });
+    assert.match(aviso ?? "", /cargas/);
+    assert.doesNotMatch(aviso ?? "", /balas/);
+  });
+
+  test("suma también el gasto de un toggle activo (Máxima Potencia) al decidir si avisa", () => {
+    const accion: Accion = {
+      id: "volar_m1",
+      label: "Volar",
+      grupo: "Acciones",
+      aplicado: "reflejos",
+      habilidad: "tecnociencia",
+      recursoInstanciaId: "m1",
+      recursoUnidad: "cargas",
+      condiciones: [
+        {
+          id: "maxima_potencia",
+          tipo: "toggle",
+          etiqueta: "Máxima Potencia",
+          valorActivo: 0,
+          valorInactivo: 0,
+          gastoActivo: 2,
+          gastoInactivo: 1,
+        },
+      ],
+    };
+    const recurso = { actual: 1, max: 5 };
+    assert.equal(avisoInsuficiente(accion, null, { maxima_potencia: false }, recurso), undefined);
+    assert.notEqual(avisoInsuficiente(accion, null, { maxima_potencia: true }, recurso), undefined);
   });
 });
 

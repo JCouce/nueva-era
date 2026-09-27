@@ -43,6 +43,7 @@ function tiradaDeVolar(pieza: PiezaEquipada, cat: MejoraMovimiento): Accion | nu
     habilidad: "tecnociencia",
     nota: nivelInfo.notaTirada,
     recursoInstanciaId: pieza.instanciaId,
+    recursoUnidad: "cargas",
     condiciones,
     vuelo: { velocidadBase: nivelInfo.velocidadM, bonusCritico: nivelInfo.bonusCriticoM ?? 0 },
     ajustesFijos: nivelInfo.maniobrabilidad

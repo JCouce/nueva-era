@@ -14,6 +14,8 @@ import {
   modoElegido,
   bonoAlcance,
   desgloseAlcance,
+  avisoInsuficiente,
+  type Accion,
   type CondicionTirada,
   type EstadoCondiciones,
   type BonoPorTramo,
@@ -35,6 +37,13 @@ const RODANDO_INTERVALO_MS = 70;
 // completa de resultado (UX 2026-09-23, pedido del usuario: "que se vea lo
 // que ha salido un poco más de tiempo" antes de saltar a la otra vista).
 const ASENTADO_MS = 900;
+
+// Debajo de "Tirar" y de "Tirar otra vez" (docs/prompt-gasto-recursos.md,
+// feedback del usuario 2026-09-28) — mismo sitio en los dos casos, para que
+// sea lo último que se lee justo antes de confirmar la tirada.
+function AvisoRecurso({ texto }: { texto: string }) {
+  return <p className="mt-2 font-sans text-[11px] leading-relaxed text-danger">{texto}</p>;
+}
 
 function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
@@ -159,6 +168,8 @@ export function AccionModal({
   titulo,
   subtitulo,
   nota,
+  tirada,
+  recursoActual,
   modBase,
   desgloseBase,
   condiciones,
@@ -184,6 +195,16 @@ export function AccionModal({
   // con resultado) — es información de la pieza, no del resultado de la
   // tirada.
   nota?: string;
+  // Solo para el aviso de "no te llega" (avisoInsuficiente, acciones.ts) —
+  // recomputado en cada render contra el `estado` en vivo del modal, así que
+  // cambiar de modo o de toggle aquí dentro lo actualiza al instante, a
+  // diferencia de antes (docs/prompt-gasto-recursos.md, feedback del usuario
+  // 2026-09-28: el aviso vivía embebido en `nota`/`opciones[].nota`, fijado
+  // al abrir el modal). `recursoActual` es una foto tomada al abrir (no
+  // cambia mientras el modal sigue abierto: el gasto solo se aplica al
+  // confirmar) — ausente si la tirada no gasta ningún RECURSO.
+  tirada: Accion;
+  recursoActual?: { actual: number; max: number };
   modBase: number;
   desgloseBase: { etiqueta: string; valor: number }[];
   condiciones: CondicionTirada[];
@@ -274,6 +295,16 @@ export function AccionModal({
   // resultado, así que esto sigue siendo válido en la pantalla final sin
   // necesidad de guardarlo aparte.
   const notas = notasCondiciones(condiciones, estado);
+  // Mismo cálculo de modoId que tirar() (AccionesTab.tsx): el id de
+  // `estado.modo` si hay selector, si no el único modo de `ataque.modos`.
+  // Reactivo a `estado` — cambiar de modo aquí recalcula el aviso al
+  // instante (ver comentario de `tirada`/`recursoActual` arriba de los props).
+  const modoId = tirada.ataque
+    ? typeof estado.modo === "string"
+      ? estado.modo
+      : tirada.ataque.modos[0].id
+    : null;
+  const avisoRecurso = avisoInsuficiente(tirada, modoId, estado, recursoActual);
 
   // Bloqueado mientras rueda el dado: 650ms es corto, mejor no dejar que un
   // tap accidental en el fondo o la ✕ corte la animación a medias — el dado
@@ -375,6 +406,7 @@ export function AccionModal({
                   Tirar otra vez
                 </button>
               </div>
+              {avisoRecurso && <AvisoRecurso texto={avisoRecurso} />}
             </div>
           )}
 
@@ -517,6 +549,7 @@ export function AccionModal({
               Tirar ({signo(totalPrevisto)})
             </button>
           )}
+          {!resultado && !rodando && avisoRecurso && <AvisoRecurso texto={avisoRecurso} />}
         </div>
       </HudCard>
     </div>

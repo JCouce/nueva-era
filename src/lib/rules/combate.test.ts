@@ -182,39 +182,32 @@ describe("arma de fuego equipada", () => {
   });
 });
 
-describe("aviso de munición insuficiente (RECURSOS, docs/tareas.md)", () => {
-  function opcionCompleta(c: CondicionTirada | undefined, id: string) {
-    assert.ok(c && c.tipo === "opcion", "no es una condición de opción");
-    const o = c.opciones.find((x) => x.id === id);
-    assert.ok(o, `no existe la opción ${id}`);
-    return o;
-  }
-
-  test("sin recurso rastreado (equipar auto-puebla) no hay ningún aviso al equipar", () => {
-    let sheet = defaultSheet();
-    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_sydiasi" }); // 20/20
-    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
-    const modo = fila.condiciones?.find((c) => c.id === "modo");
-    assert.equal(opcionCompleta(modo, "0").nota, undefined); // Simple, gasta 1
-    assert.equal(opcionCompleta(modo, "1").nota, undefined); // F. Auto, gasta 20 — justo llega
-  });
-
-  test("con menos balas que las que pide F. Auto, esa opción lleva nota — Simple no", () => {
+// El aviso de "no te llega" ya no vive en `nota`/`opciones[].nota` (docs/
+// prompt-gasto-recursos.md, feedback del usuario 2026-09-28: no se
+// recalculaba si el jugador cambiaba de modo dentro del propio modal) — es
+// avisoInsuficiente() (acciones.ts), reactivo al estado en vivo del modal.
+// Aquí solo queda comprobar que combate.ts ya NO ensucia esos campos con
+// texto de aviso — la lógica del aviso en sí se prueba en acciones.test.ts.
+describe("nota limpia de aviso de munición (RECURSOS) — el aviso vive en avisoInsuficiente()", () => {
+  test("con menos balas de las que pide F. Auto, ninguna opción lleva nota de aviso", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_sydiasi" });
     sheet = ajustarRecurso(sheet, "arma1", -15); // 5/20 — no llega a los 20 de F. Auto
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
     const modo = fila.condiciones?.find((c) => c.id === "modo");
-    assert.equal(opcionCompleta(modo, "0").nota, undefined);
-    assert.match(opcionCompleta(modo, "1").nota ?? "", /5\/20/);
+    assert.ok(modo?.tipo === "opcion");
+    if (modo?.tipo === "opcion") {
+      assert.equal(modo.opciones.find((o) => o.id === "0")?.nota, undefined);
+      assert.equal(modo.opciones.find((o) => o.id === "1")?.nota, undefined);
+    }
   });
 
-  test("un arma con un único modo (sin selector) lleva el aviso en la nota general", () => {
+  test("un arma con un único modo, sin balas, no lleva ningún aviso en su nota general", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_mosquito" }); // sin F. Auto
     sheet = ajustarRecurso(sheet, "arma1", -7); // 0/7
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Mosquito")!;
-    assert.match(fila.nota ?? "", /0\/7/);
+    assert.doesNotMatch(fila.nota ?? "", /balas/);
   });
 
   test("sin selector de modo, la dificultad del único modo no se pierde: llega como ajustesFijos", () => {

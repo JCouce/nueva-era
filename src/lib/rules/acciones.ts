@@ -63,6 +63,11 @@ export type Accion = {
   // deduce del `id` (parsear `algo_${instanciaId}` es frágil): lo rellena
   // directamente el generador que ya conoce la instancia.
   recursoInstanciaId?: string;
+  // Unidad del recurso de arriba, para el aviso de "no te llega" — "balas"
+  // por defecto (armas de fuego), "cargas" para lo que tiene célula
+  // (Proyector de Pulso, Movilidad Aérea). Solo tiene sentido junto a
+  // recursoInstanciaId.
+  recursoUnidad?: string;
   // Gasta 1 dosis de sheet.farmacos[farmacoId] al confirmar la tirada
   // (docs/prompt-gasto-recursos.md, Fase 2) — "1 dosis por uso, sin
   // excepciones", así que a diferencia de recursoInstanciaId/gastoTotal() no
@@ -420,6 +425,29 @@ export function gastoTotal(accion: Accion, modoId: string | null, estado: Estado
     return total + (activo ? (c.gastoActivo ?? 0) : (c.gastoInactivo ?? 0));
   }, 0);
   return gastoModo + gastoCondiciones;
+}
+
+// Aviso de "no te llega" (docs/tareas.md, RECURSOS) — informativo, no
+// bloquea la tirada (§8 de docs/modificadores-tiradas.md, "la app avisa, no
+// arbitra"). Antes vivía embebido a mano dentro de `nota`/`opciones[].nota`
+// en combate.ts, mezclado con texto decorativo y sin recalcularse si el
+// jugador cambiaba de modo dentro del propio modal (docs/prompt-gasto-recursos.md,
+// feedback del usuario 2026-09-28) — ahora es una función pura, reactiva al
+// `estado` en vivo del modal (AccionModal.tsx la llama en cada render), con
+// un único sitio donde se pinta en vez de repartido por dos o tres campos.
+// Sin `recurso` rastreado (arma equipada antes de que existiera RECURSOS) no
+// hay nada que avisar.
+export function avisoInsuficiente(
+  accion: Accion,
+  modoId: string | null,
+  estado: EstadoCondiciones,
+  recurso: { actual: number; max: number } | undefined,
+): string | undefined {
+  if (!accion.recursoInstanciaId || !recurso) return undefined;
+  const gasto = gastoTotal(accion, modoId, estado);
+  if (recurso.actual >= gasto) return undefined;
+  const unidad = accion.recursoUnidad ?? "balas";
+  return `Solo quedan ${recurso.actual}/${recurso.max} ${unidad} — esto gasta ${gasto}.`;
 }
 
 // Dado honesto: getRandomValues con descarte del resto, para que las 12 caras

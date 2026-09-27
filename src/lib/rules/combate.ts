@@ -184,41 +184,9 @@ function condicionModo(
   };
 }
 
-// Aviso de "no te llega" (docs/tareas.md, RECURSOS): solo se pinta cuando el
-// modo pedido gasta más de lo que queda — informativo, no bloquea la
-// tirada (§8 de docs/modificadores-tiradas.md, "la app avisa, no arbitra").
-// Sin `recurso` rastreado (arma equipada antes de que existiera RECURSOS, o
-// sin capacidadDePieza — no debería pasar con un arma, pero por si acaso) no
-// hay nada que avisar.
-function notaInsuficiente(
-  gasto: number,
-  recurso: { actual: number; max: number } | undefined,
-  unidad = "balas",
-): string | undefined {
-  if (!recurso || recurso.actual >= gasto) return undefined;
-  return `Solo quedan ${recurso.actual}/${recurso.max} ${unidad} — este modo gasta ${gasto}.`;
-}
-
 function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Accion {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
-  const recurso = recursoDe(sheet, instanciaId);
-  const modoBase = condicionModo(modosConId);
-  // Con selector de modo (dos o más): el aviso va como `nota` de la opción
-  // insuficiente, se ve en el modal en el momento de elegir. Con un único
-  // modo (no hay selector que pintar) va al `nota` general de la tirada.
-  const modo: CondicionTirada | null =
-    modoBase && modoBase.tipo === "opcion"
-      ? {
-          ...modoBase,
-          opciones: modoBase.opciones.map((o) => ({
-            ...o,
-            nota: notaInsuficiente(gastoDelModo(o.etiqueta, arma.municion), recurso),
-          })),
-        }
-      : modoBase;
-  const notaModoUnico = !modo
-    ? notaInsuficiente(gastoDelModo(modosConId[0].etiqueta, arma.municion), recurso)
-    : undefined;
+  const modo = condicionModo(modosConId);
 
   const condiciones = [condicionTramo(arma), modo].filter((c): c is CondicionTirada => c !== null);
   condiciones.push(...condicionesDeMejoras(sheet, instanciaId));
@@ -240,7 +208,7 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
     grupo: "Ataques",
     aplicado: "reflejos",
     habilidad: "combate_distancia",
-    nota: [arma.especial, notaModoUnico].filter((n): n is string => !!n).join(" · ") || undefined,
+    nota: arma.especial ?? undefined,
     efectos: efectos.length > 0 ? efectos : undefined,
     recursoInstanciaId: instanciaId,
     condiciones,
@@ -643,7 +611,6 @@ function tiradaDeProyectorPulso(
   habilidad: Extract<Accion["habilidad"], "combate_distancia" | "tecnociencia">,
 ): Accion {
   const nivel = pieza.nivel ?? 1;
-  const recurso = recursoDe(sheet, pieza.instanciaId);
   const modo: CondicionTirada = {
     id: "modo",
     tipo: "opcion",
@@ -652,12 +619,7 @@ function tiradaDeProyectorPulso(
       { id: "pulso", etiqueta: "Pulso", valor: -2 },
       { id: "pulso_cargado", etiqueta: "Pulso Cargado", valor: -2 },
       { id: "barrido", etiqueta: "Barrido", valor: -3 },
-    ].map((o) => ({
-      ...o,
-      nota: [DESCRIPCION_MODO_PULSO[o.id], notaInsuficiente(GASTO_MODO_PULSO[o.id], recurso, "cargas")]
-        .filter((n): n is string => !!n)
-        .join(" "),
-    })),
+    ].map((o) => ({ ...o, nota: DESCRIPCION_MODO_PULSO[o.id] })),
     porDefecto: "pulso",
   };
 
@@ -681,6 +643,7 @@ function tiradaDeProyectorPulso(
     habilidad,
     nota,
     recursoInstanciaId: pieza.instanciaId,
+    recursoUnidad: "cargas",
     condiciones: [modo],
     ataque: {
       modos: [
@@ -708,7 +671,6 @@ function tiradaDeProyectorPulso(
 // Melee, Sutil, mismo patrón Golpear+Bloquear que cualquier arma melee.
 function tiradaGolpeAguijon(sheet: Sheet, pieza: PiezaEquipada): Accion {
   const nivel = pieza.nivel ?? 1;
-  const recurso = recursoDe(sheet, pieza.instanciaId);
   return {
     id: `ataque_proyector_pulso_aguijon_${pieza.instanciaId}`,
     label: "Golpear con Proyector de Pulso (Aguijón)",
@@ -719,11 +681,9 @@ function tiradaGolpeAguijon(sheet: Sheet, pieza: PiezaEquipada): Accion {
       "Repliega el emisor a un pincho corto de energía y lo descarga a bocajarro, casi sin gesto — Sutil.",
       `Duración ${nivel} turno(s) · Efecto Shock (${4 + nivel}) · Crítico Hemorragia.`,
       ...variantesCriticoDesbloqueadas(nivel),
-      notaInsuficiente(GASTO_MODO_PULSO.aguijon, recurso, "cargas"),
-    ]
-      .filter((n): n is string => !!n)
-      .join(" · "),
+    ].join(" · "),
     recursoInstanciaId: pieza.instanciaId,
+    recursoUnidad: "cargas",
     ataque: {
       modos: [
         {
