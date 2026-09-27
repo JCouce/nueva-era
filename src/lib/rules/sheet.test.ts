@@ -130,6 +130,26 @@ describe("parseSheet aguanta cualquier cosa", () => {
   });
 });
 
+describe("vidaActual/fatigaActual", () => {
+  test("una ficha nueva arranca a tope (el centinela se recorta al máximo real)", () => {
+    const s = parseSheet({ schemaVersion: SCHEMA_VERSION });
+    assert.equal(s.vidaActual, 8); // salud() con atributos por defecto (todos 0)
+    assert.equal(s.fatigaActual, 8);
+  });
+
+  test("un actual ya gastado se conserva, no se pisa con el centinela", () => {
+    const s = parseSheet({ schemaVersion: SCHEMA_VERSION, vidaActual: 3, fatigaActual: 5 });
+    assert.equal(s.vidaActual, 3);
+    assert.equal(s.fatigaActual, 5);
+  });
+
+  test("valores fuera de rango se recortan igual que el resto de campos", () => {
+    const s = parseSheet({ schemaVersion: SCHEMA_VERSION, vidaActual: -5, fatigaActual: 9999 });
+    assert.equal(s.vidaActual, 0);
+    assert.equal(s.fatigaActual, 8); // recortado dos veces: al 999 del schema y luego al máximo real
+  });
+});
+
 describe("versión del esquema", () => {
   test("una ficha nueva nace con la versión actual", () => {
     assert.equal(defaultSheet().schemaVersion, SCHEMA_VERSION);

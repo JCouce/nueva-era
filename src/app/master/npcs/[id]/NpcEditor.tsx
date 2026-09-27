@@ -38,6 +38,8 @@ import {
   fabricarNpcAction,
   ajustarGranadaNpcAction,
   comprarGranadaNpcAction,
+  ajustarVidaNpcAction,
+  ajustarFatigaNpcAction,
   eliminarNpcAction,
   type NpcResult,
 } from "../actions";
@@ -249,6 +251,18 @@ export function NpcEditor({
     if (res.ok) setSheet(res.sheet);
     setStatus(res.ok ? "saved" : "error");
   };
+  const commitAjustarVida = async (delta: number) => {
+    setStatus("saving");
+    const res = await ajustarVidaNpcAction(npcId, delta);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
+  const commitAjustarFatiga = async (delta: number) => {
+    setStatus("saving");
+    const res = await ajustarFatigaNpcAction(npcId, delta);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
   // Sin `exito`: edición libre de NPC, sin tirada (ver el comentario de
   // repararNpcAction) — mismo criterio que commitFabricar.
   const commitReparar = async (instanciaId: string, tier: MaterialTier) => {
@@ -369,6 +383,8 @@ export function NpcEditor({
           onAjustarMaterial={commitAjustarMaterial}
           onComprarMaterial={commitComprarMaterial}
           onAjustarGranada={commitAjustarGranada}
+          onAjustarVida={commitAjustarVida}
+          onAjustarFatiga={commitAjustarFatiga}
         />
       )}
       {active === "tienda" && (

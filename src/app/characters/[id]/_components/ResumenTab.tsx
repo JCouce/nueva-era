@@ -23,12 +23,17 @@ const fieldInput =
 function Dato({
   label,
   value,
+  max,
   unidad,
   tono = "text-foreground",
   nota,
 }: {
   label: string;
   value: number;
+  // Presente para vida/fatiga: pinta "actual/max" en vez de un número suelto
+  // — el ajuste en sí vive en Recursos (docs/tareas.md, 2026-09-27), esto es
+  // solo el vistazo rápido.
+  max?: number;
   unidad?: string;
   tono?: string;
   // Paréntesis que explica de dónde sale un extra, p.ej. "+4 exoesqueleto".
@@ -40,6 +45,7 @@ function Dato({
       <span className="font-mono text-[11px] uppercase text-muted">{label}</span>
       <span className={`font-mono text-sm tabular-nums ${tono}`}>
         {value}
+        {max !== undefined && <span className="text-muted">/{max}</span>}
         {unidad && <span className="text-muted"> {unidad}</span>}
         {nota && ` (${nota})`}
       </span>
@@ -231,8 +237,8 @@ export function ResumenTab({
         <p className="mb-2 font-mono text-[11px] uppercase tracking-widest text-muted">
           {"//SYSTEM · estado"}
         </p>
-        <Dato label="Puntos de vida" value={vida} tono="text-danger" />
-        <Dato label="Puntos de fatiga" value={fatiga} tono="text-info" />
+        <Dato label="Puntos de vida" value={sheet.vidaActual} max={vida} tono="text-danger" />
+        <Dato label="Puntos de fatiga" value={sheet.fatigaActual} max={fatiga} tono="text-info" />
         <Dato label="Alerta" value={alertaPasiva} tono="text-accent" />
       </HudCard>
 

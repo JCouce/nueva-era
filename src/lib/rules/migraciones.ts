@@ -135,6 +135,16 @@ export const MIGRACIONES: Migracion[] = [
       return { ...ficha, equipo: resto, granadas };
     },
   },
+  {
+    desde: 8,
+    hasta: 9,
+    descripcion:
+      "Vida y fatiga pasan de un número derivado y estático a un recurso persistente " +
+      "(vidaActual/fatigaActual), pedido del usuario 2026-09-27: se guarda un centinela " +
+      "(999) que parseSheet recorta de inmediato al máximo real de salud() — así una ficha " +
+      "vieja arranca a tope sin duplicar aquí la fórmula de vida/fatiga.",
+    migrar: (ficha) => ({ ...ficha, vidaActual: 999, fatigaActual: 999 }),
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le

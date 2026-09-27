@@ -7,11 +7,13 @@ import {
   catalogoDeMaterial,
   precioMaterial,
   MUNICION_GRANADA,
+  salud,
   type Sheet,
   type RecursoInstancia,
   type MaterialTier,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
+import { BarraVital, type TonoVital } from "@/components/BarraVital";
 
 // RECURSOS (docs/tareas.md, fase 6b): una tarjeta por instancia de pieza
 // equipada que rastree un recurso (armas de fuego → balas, subsistemas con
@@ -47,6 +49,8 @@ export function RecursosTab({
   onAjustarMaterial,
   onComprarMaterial,
   onAjustarGranada,
+  onAjustarVida,
+  onAjustarFatiga,
 }: {
   sheet: Sheet;
   // Ausente para un NPC: edición libre, sin cartera de créditos que cobrar
@@ -57,7 +61,10 @@ export function RecursosTab({
   onAjustarMaterial: (tier: MaterialTier, delta: number) => void;
   onComprarMaterial: (tier: MaterialTier) => void;
   onAjustarGranada: (catalogoId: string, delta: number) => void;
+  onAjustarVida: (delta: number) => void;
+  onAjustarFatiga: (delta: number) => void;
 }) {
+  const { vida, fatiga } = salud(sheet);
   // Solo los tipos que ya se poseen (docs/tareas.md, 2026-09-27) — para
   // descubrir/comprar tipos nuevos ya está Tienda, que es donde se compran
   // (comprar NO vive aquí, a diferencia de Materiales: 14 piezas con ficha
@@ -92,9 +99,53 @@ export function RecursosTab({
     return [{ recurso, cat }];
   });
 
+  // Colchón (hoy solo Malla Plasmática, docs/tareas.md 2026-09-27): mismo
+  // shape/PG que durabilidad, pero es un buffer que se regenera con el
+  // tiempo (manual, sin turnos automatizados) en vez de repararse con
+  // Materiales — categoría propia para no mezclar los dos conceptos.
+  const recursosColchon = sheet.recursos.flatMap((recurso) => {
+    const pieza = sheet.equipo.find((p) => p.instanciaId === recurso.instanciaId);
+    const cat = pieza ? equipoPorId(pieza.catalogoId) : null;
+    if (!pieza || !cat) return [];
+    const cap = capacidadDePieza(pieza);
+    if (!cap || cap.tipo !== "colchon") return [];
+    return [{ recurso, cat }];
+  });
+
   return (
     <div className="flex flex-col gap-3">
       <p className="border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+        {"//SYSTEM · vida y fatiga"}
+      </p>
+      <EstadoCard
+        titulo="Vida"
+        actual={sheet.vidaActual}
+        max={vida}
+        tono="danger"
+        onAjustar={onAjustarVida}
+      />
+      {/* Escudo (colchón de Malla Plasmática) justo debajo de Vida, pedido
+          del usuario 2026-09-27 — mismo criterio que un HUD de videojuego:
+          vida y su escudo van juntos, fatiga es un recurso aparte. */}
+      {recursosColchon.map(({ recurso, cat }) => (
+        <EstadoCard
+          key={recurso.instanciaId}
+          titulo={cat.label}
+          actual={recurso.actual}
+          max={recurso.max}
+          tono="glitch"
+          onAjustar={(delta) => onAjustar(recurso.instanciaId, delta)}
+        />
+      ))}
+      <EstadoCard
+        titulo="Fatiga"
+        actual={sheet.fatigaActual}
+        max={fatiga}
+        tono="info"
+        onAjustar={onAjustarFatiga}
+      />
+
+      <p className="mt-2 border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
         {"//SYSTEM · materiales"}
       </p>
       {MATERIAL_TIERS.map((tier) => {
@@ -203,7 +254,38 @@ export function RecursosTab({
           ))}
         </>
       )}
+
     </div>
+  );
+}
+
+// Vida/Fatiga/colchón: la barra segmentada de BarraVital + el +/- manual de
+// siempre debajo. Las tres comparten esqueleto, solo cambian etiqueta/tono.
+function EstadoCard({
+  titulo,
+  actual,
+  max,
+  tono,
+  onAjustar,
+}: {
+  titulo: string;
+  actual: number;
+  max: number;
+  tono: TonoVital;
+  onAjustar: (delta: number) => void;
+}) {
+  return (
+    <HudCard className="p-3">
+      <BarraVital label={titulo} actual={actual} max={max} tono={tono} />
+      <div className="mt-2 flex items-center gap-1.5">
+        <BotonDelta onClick={() => onAjustar(-1)} disabled={actual <= 0}>
+          −
+        </BotonDelta>
+        <BotonDelta onClick={() => onAjustar(1)} disabled={actual >= max}>
+          +
+        </BotonDelta>
+      </div>
+    </HudCard>
   );
 }
 

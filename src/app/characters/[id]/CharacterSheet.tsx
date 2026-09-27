@@ -19,6 +19,8 @@ import {
   fabricarAction,
   ajustarGranadaAction,
   comprarGranadaAction,
+  ajustarVidaAction,
+  ajustarFatigaAction,
   type SaveResult,
 } from "./actions";
 import {
@@ -36,6 +38,8 @@ import {
   ajustarRecurso,
   ajustarMaterial,
   ajustarGranada,
+  ajustarVida,
+  ajustarFatiga,
   RECURSOS_POR_LETRA,
   describirEstadosActivos,
   type AtributoId,
@@ -329,6 +333,14 @@ export function CharacterSheet({
     setSheet((s) => ajustarGranada(s, catalogoId, delta));
     runSave(() => ajustarGranadaAction(characterId, catalogoId, delta), setSheet);
   };
+  const commitAjustarVida = (delta: number) => {
+    setSheet((s) => ajustarVida(s, delta));
+    runSave(() => ajustarVidaAction(characterId, delta), setSheet);
+  };
+  const commitAjustarFatiga = (delta: number) => {
+    setSheet((s) => ajustarFatiga(s, delta));
+    runSave(() => ajustarFatigaAction(characterId, delta), setSheet);
+  };
   const commitComprarGranada = (catalogoId: string) => {
     runSave(() => comprarGranadaAction(characterId, catalogoId), setSheet);
   };
@@ -594,6 +606,8 @@ export function CharacterSheet({
           onAjustarMaterial={commitAjustarMaterial}
           onComprarMaterial={commitComprarMaterial}
           onAjustarGranada={commitAjustarGranada}
+          onAjustarVida={commitAjustarVida}
+          onAjustarFatiga={commitAjustarFatiga}
         />
       )}
       {activeEfectivo === "combate" && combate && (

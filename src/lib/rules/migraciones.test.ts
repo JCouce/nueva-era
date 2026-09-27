@@ -214,6 +214,15 @@ describe("v7 → v8: las granadas pasan de pieza equipada a recurso con cantidad
   });
 });
 
+describe("v8 → v9: vida y fatiga pasan a recurso persistente", () => {
+  test("una ficha vieja arranca con el centinela (parseSheet lo recorta al máximo real)", () => {
+    const { ficha } = migrar({ schemaVersion: 8, especieId: "humano" }, 9);
+    assert.equal(ficha.vidaActual, 999);
+    assert.equal(ficha.fatigaActual, 999);
+    assert.equal(ficha.schemaVersion, 9);
+  });
+});
+
 describe("parseSheet migra antes de normalizar", () => {
   test("una ficha v1 entra por la puerta y sale al día", () => {
     const s = parseSheet({ schemaVersion: 1, especie: "Arkorü", edad: 40 });

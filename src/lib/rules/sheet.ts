@@ -28,6 +28,7 @@ import {
   type Materiales,
   type Granadas,
 } from "./recursos";
+import { reconciliarVida } from "./vitalidad";
 import { MUNICION_GRANADA } from "../catalog/municion";
 import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./prioridad";
 
@@ -41,7 +42,9 @@ import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./pri
 //   6 → se añade RECURSOS (cargas/munición gastadas y recargadas en partida)
 //   7 → se añade el pool de Materiales (Fabricar/Reparar, docs/tareas.md tarea 8)
 //   8 → las granadas dejan de ser pieza equipada y pasan a recurso con cantidad
-export const SCHEMA_VERSION = 8;
+//   9 → vida y fatiga pasan de número derivado y estático a recurso persistente
+//       (vidaActual/fatigaActual), pedido del usuario 2026-09-27
+export const SCHEMA_VERSION = 9;
 
 const atributoValue = z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX);
 
@@ -78,6 +81,12 @@ export const sheetSchema = z.object({
   recursos: z.array(recursoSchema).max(200),
   materiales: materialesSchema,
   granadas: granadasSchema,
+  // Recurso persistente del propio personaje (vitalidad.ts), no de una
+  // instancia de equipo — por eso vive suelto aquí y no dentro de `recursos`.
+  // El centinela 999 (ver defaultSheet/parseSheet) se recorta al máximo real
+  // de salud() en cuanto se puede calcular, sin duplicar aquí su fórmula.
+  vidaActual: z.number().int().min(0).max(999),
+  fatigaActual: z.number().int().min(0).max(999),
 });
 
 export type Sheet = z.infer<typeof sheetSchema>;
@@ -105,6 +114,11 @@ export function defaultSheet(): Sheet {
     recursos: [],
     materiales: defaultMateriales(),
     granadas: defaultGranadas(),
+    // Centinela: parseSheet lo recorta al máximo real (salud()) nada más
+    // leer la ficha, así que una ficha nueva arranca a tope sin duplicar la
+    // fórmula de vida/fatiga aquí.
+    vidaActual: 999,
+    fatigaActual: 999,
   };
 }
 
@@ -125,7 +139,11 @@ export function clampInt(
 // romper la página pero NO sustituye a una migración.
 export function parseSheet(raw: unknown): Sheet {
   const base = defaultSheet();
-  if (!raw || typeof raw !== "object") return base;
+  // Un array nunca es una ficha válida — sin este chequeo se colaba por el
+  // camino largo (typeof [] === "object") y acababa reconstruyendo una
+  // ficha por defecto "de verdad" (vidaActual/fatigaActual ya reconciliados
+  // a 8) en vez de la instantánea con centinela que da defaultSheet().
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return base;
   // Primero se lleva la ficha al formato actual; después se normaliza.
   const { ficha: r } = migrar(raw, SCHEMA_VERSION);
 
@@ -214,20 +232,30 @@ export function parseSheet(raw: unknown): Sheet {
   // invisible a RECURSOS hasta que alguien la desequipe y la vuelva a poner.
   // Idempotente y sin efectos destructivos: nunca toca una entrada que ya
   // existe, solo añade/quita para que coincida con sheet.equipo.
-  return reconciliarRecursos({
-    schemaVersion: clampInt(r.schemaVersion, 1, SCHEMA_VERSION, SCHEMA_VERSION),
-    edad: r.edad === null || r.edad === undefined ? null : clampInt(r.edad, 0, 999, 0),
-    altura: numeroOpcional(r.altura),
-    peso: numeroOpcional(r.peso),
-    especieId: typeof r.especieId === "string" ? r.especieId.slice(0, 40) : null,
-    trasfondo: typeof r.trasfondo === "string" ? r.trasfondo.slice(0, 2000) : "",
-    motivacion: typeof r.motivacion === "string" ? r.motivacion.slice(0, 500) : "",
-    atributos,
-    habilidades,
-    prioridades,
-    equipo,
-    recursos,
-    materiales,
-    granadas,
-  });
+  //
+  // reconciliarVida() después: recorta vidaActual/fatigaActual al máximo real
+  // (salud(), que depende de atributos/equipo/especie ya reconciliados) — el
+  // centinela 999 de una ficha nueva o recién migrada cae aquí a su tope de
+  // verdad, y una ficha vieja que perdiera un bono de vida no se queda con
+  // un `actual` por encima de su nuevo máximo.
+  return reconciliarVida(
+    reconciliarRecursos({
+      schemaVersion: clampInt(r.schemaVersion, 1, SCHEMA_VERSION, SCHEMA_VERSION),
+      edad: r.edad === null || r.edad === undefined ? null : clampInt(r.edad, 0, 999, 0),
+      altura: numeroOpcional(r.altura),
+      peso: numeroOpcional(r.peso),
+      especieId: typeof r.especieId === "string" ? r.especieId.slice(0, 40) : null,
+      trasfondo: typeof r.trasfondo === "string" ? r.trasfondo.slice(0, 2000) : "",
+      motivacion: typeof r.motivacion === "string" ? r.motivacion.slice(0, 500) : "",
+      atributos,
+      habilidades,
+      prioridades,
+      equipo,
+      recursos,
+      materiales,
+      granadas,
+      vidaActual: clampInt(r.vidaActual, 0, 999, 999),
+      fatigaActual: clampInt(r.fatigaActual, 0, 999, 999),
+    }),
+  );
 }

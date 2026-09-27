@@ -32,6 +32,8 @@ import {
   generarNpcAleatorio,
   ajustarGranada,
   comprarGranada,
+  ajustarVida,
+  ajustarFatiga,
   ATRIBUTO_MIN,
   ATRIBUTO_MAX,
   HABILIDAD_NO_ENTRENADA,
@@ -257,6 +259,20 @@ export async function ajustarRecursoNpcAction(
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(npcId, ajustarRecurso(ctx.sheet, instanciaId, delta));
+}
+
+// Vida y fatiga (docs/tareas.md, 2026-09-27): mismo criterio "libre" que el
+// resto de la ficha del NPC.
+export async function ajustarVidaNpcAction(npcId: string, delta: number): Promise<NpcResult> {
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(npcId, ajustarVida(ctx.sheet, delta));
+}
+
+export async function ajustarFatigaNpcAction(npcId: string, delta: number): Promise<NpcResult> {
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(npcId, ajustarFatiga(ctx.sheet, delta));
 }
 
 export async function comprarRecargaNpcAction(npcId: string, instanciaId: string): Promise<NpcResult> {

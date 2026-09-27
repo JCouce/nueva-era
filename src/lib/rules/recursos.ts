@@ -152,7 +152,14 @@ export const recursoSchema = z.object({
 // se repara con Materiales en vez de con créditos, así que NO pasa por
 // comprarRecarga() (ver su guardarraíl más abajo) — tiene su propia función,
 // repararPieza().
-export type TipoRecarga = "stock" | "tope" | "durabilidad";
+//
+// "colchon" (Malla Plasmática, docs/tareas.md 2026-09-27): buffer de puntos
+// de golpe por nivel de subsistema, con el mismo shape actual/max que el
+// resto de RECURSOS. No se recarga ni con créditos (comprarRecarga) ni con
+// Materiales (repararPieza) — el "regenera N por turno" y el tiempo de
+// reactivación tras destruirse siguen sin automatizar (comunicación de
+// mesa), el jugador ajusta el número a mano con el +/- de siempre.
+export type TipoRecarga = "stock" | "tope" | "durabilidad" | "colchon";
 
 // Precios fijos, sin depender de la capacidad de la pieza (docs/sistema.md
 // S17/S18) — decisión explícita del usuario, sin base en `EQUIP`.
@@ -168,6 +175,18 @@ export function capacidadDePieza(pieza: PiezaEquipada): { max: number; tipo: Tip
   const cat = equipoPorId(pieza.catalogoId);
   if (!cat) return null;
   if (cat.familia === "arma") return { max: cat.municion, tipo: "stock" };
+  // Malla Plasmática ANTES que el chequeo genérico de célula de abajo: la
+  // pieza tiene las dos cosas (célula de batería para activarse Y colchón de
+  // puntos de golpe), pero sheet.recursos solo guarda UN recurso por
+  // instancia (una fila por instanciaId) — no hay compuesto instancia+tipo
+  // todavía. Se prioriza el colchón (lo que pidió el usuario, 2026-09-27:
+  // "darle su propio espacio como recurso") sobre la batería de activación,
+  // que se queda sin trackear en RECURSOS hasta que exista multi-recurso por
+  // instancia — ver docs/tareas.md.
+  if (cat.familia === "subsistema" && cat.id === "malla_plasmatica") {
+    const nivelInfo = cat.niveles.find((n) => n.nivel === pieza.nivel);
+    if (nivelInfo?.colchon) return { max: nivelInfo.colchon, tipo: "colchon" };
+  }
   if (cat.familia === "subsistema" && cat.celula) return { max: cat.celula.cargas, tipo: "tope" };
   // Movilidad Aérea (construido 2026-09-27, docs/tareas.md) — mismo mecanismo
   // que un Subsistema con célula. El Exoesqueleto tiene el mismo campo en el
@@ -233,9 +252,10 @@ export function comprarRecarga(
   const recurso = recursoDe(sheet, instanciaId);
   if (!pieza || !recurso) return null;
   const cap = capacidadDePieza(pieza);
-  // "durabilidad" no se recarga con créditos, se repara con Materiales —
-  // ver repararPieza() más abajo.
-  if (!cap || cap.tipo === "durabilidad") return null;
+  // "durabilidad" no se recarga con créditos, se repara con Materiales — ver
+  // repararPieza() más abajo. "colchon" no se recarga de ningún modo
+  // automatizado, se ajusta a mano (ver TipoRecarga más arriba).
+  if (!cap || cap.tipo === "durabilidad" || cap.tipo === "colchon") return null;
 
   const nuevo: RecursoInstancia =
     cap.tipo === "stock"

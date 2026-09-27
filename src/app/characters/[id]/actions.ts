@@ -31,6 +31,8 @@ import {
   ajustarGranada,
   comprarGranada,
   MUNICION_GRANADA,
+  ajustarVida,
+  ajustarFatiga,
   type MaterialTier,
   type AtributoId,
   type HabilidadId,
@@ -300,6 +302,21 @@ export async function ajustarRecursoAction(
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(characterId, ajustarRecurso(ctx.sheet, instanciaId, delta));
+}
+
+// Vida y fatiga (docs/tareas.md, 2026-09-27): recurso persistente del propio
+// personaje, no de una instancia de equipo — mismo criterio "libre de
+// créditos" que ajustarRecursoAction, solo anota cuánto queda.
+export async function ajustarVidaAction(characterId: string, delta: number): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, ajustarVida(ctx.sheet, delta));
+}
+
+export async function ajustarFatigaAction(characterId: string, delta: number): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, ajustarFatiga(ctx.sheet, delta));
 }
 
 // "Recargar" (cargador de balas / batería portátil, S17/S18 de sistema.md):

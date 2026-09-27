@@ -118,6 +118,13 @@ export type NivelModulo = {
   // nivel (docs/sistema.md pregunta 29, blindaje.ts) — total del nivel, no
   // acumulativo entre niveles (S9, ultimoQueDefine), igual que velocidadM.
   absorcion?: number;
+  // Solo lo usa Malla Plasmática: el colchón de puntos de golpe de ESE
+  // nivel (docs/tareas.md, 2026-09-27) — a diferencia de `absorcion`, no es
+  // un bono fijo mientras se lleva puesto, es un buffer con actual/max que
+  // RECURSOS trackea (lib/rules/recursos.ts, capacidadDePieza(), tipo
+  // "colchon"); "regenera N por turno" y el tiempo de reactivación tras
+  // destruirse siguen sin automatizar, se ajusta a mano.
+  colchon?: number;
   // Solo lo usa Movilidad Aérea: "Dificultad de maniobrabilidad: -N" del
   // catálogo, modelado como ajuste fijo al MODIFICADOR de la tirada "Volar"
   // (matemáticamente idéntico a bajar N la dificultad — el motor no tiene

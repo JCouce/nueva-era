@@ -385,14 +385,97 @@ Simple + 1). Cero "acción sin dado" nueva aquí; solo una tirada normal + un re
 - 13 tests nuevos (`movimiento.test.ts`), 531 en total, lint y `tsc --noEmit` limpios.
   Sin probar en navegador (extensión de Chrome no disponible en la sesión).
 
+### Vida y fatiga pasan a recurso persistente + colchón de Malla Plasmática, 2026-09-27
+
+Pedido del usuario: "la vida solo se lleva en un número arriba perdido y solitario, no
+tiene la importancia que se debe" — hasta ahora `salud()` solo daba un máximo derivado,
+sin ningún `actual` que sobreviviera fuera de un combate en curso (el snapshot de
+`Combatiente` en Fase 6b se pierde al cerrar el combate). De paso, mismo tratamiento
+para el colchón de Malla Plasmática, la pieza aparcada en el barrido de motor
+("buffer temporal sin nombre en capa 2 y media").
+
+- **`Sheet.vidaActual`/`fatigaActual`** (nuevos, `SCHEMA_VERSION` 8→9): recurso
+  persistente del propio personaje, no de una instancia de equipo — por eso vive
+  suelto en la ficha y no dentro de `sheet.recursos`. Centinela 999 en
+  `defaultSheet()`/la migración 8→9: `parseSheet` lo recorta de inmediato al máximo
+  real de `salud()` (nuevo `lib/rules/vitalidad.ts`, `reconciliarVida()`), así que una
+  ficha nueva o migrada arranca a tope sin duplicar aquí la fórmula de vida/fatiga.
+  `ajustarVida()`/`ajustarFatiga()` (mismo patrón que `ajustarRecurso()`) con sus
+  server actions gemelas jugador (`ajustarVidaAction`/`ajustarFatigaAction`) y NPC
+  edición libre (`ajustarVidaNpcAction`/`ajustarFatigaNpcAction`).
+- **Alcance confirmado en conversación, explícitamente fuera de esta tarea**: el
+  snapshot `pgActual`/`pgMax`/`fatigaActual`/`fatigaMax` de `Combatiente` (Fase 6b) no
+  se toca — el combate en vivo sigue con su propia foto, esto es solo para fuera de
+  combate. Sigue siendo la dependencia de Fase 2 más abajo, sin cerrarla del todo.
+- **UI**: nueva sección "//SYSTEM · vida y fatiga" al principio de `RecursosTab.tsx`
+  (antes que Materiales), dos tarjetas con +/- manual (`EstadoCard`, mismo esqueleto
+  que `DurabilidadCard`). `ResumenTab.tsx` pasa de enseñar solo el máximo a
+  "actual/máximo" (`Dato` gana un prop `max` opcional) — el ajuste en sí vive en
+  Recursos, Resumen es solo el vistazo rápido.
+  - **Barras segmentadas, pedido del usuario el mismo día ("barras futuristas y
+    molonas para llevar la vida")**: `BarraVital` nuevo (`src/components/`) —
+    track oscuro + relleno con glow neón dividido en segmentos (mismo lenguaje
+    visual que `BarraProgreso`, pero por valor actual/max en vez de por tiempo),
+    tono por color de sistema (`danger`/`info`/`glitch` — Vida, Fatiga y el
+    colchón de Malla Plasmática, que pasa a llamarse "Escudo" en la sección de
+    Recursos). Por debajo del 25% el borde se pone rojo y parpadea
+    (`animate-pulse`) sin importar el tono, a 0 el relleno desaparece del todo.
+    `EstadoCard` (RecursosTab) monta la barra + el +/- de siempre debajo; la
+    sección de colchón deja de usar `DurabilidadCard` y pasa a `EstadoCard`
+    también, con tono `glitch`.
+    - **Fix el mismo día (detectado por el usuario a ojo): un segmento por
+      punto, no 10 fijos.** 10 segmentos fijos no cuadraban con un máximo de
+      8, 12, 14... — el relleno terminaba a mitad de un bloque en vez de
+      justo en su borde. `segmentos = max` (un punto = un segmento) garantiza
+      que el borde del relleno siempre coincide con una línea divisoria,
+      porque `actual` es siempre un entero — válido mientras los máximos de
+      este sistema sean números pequeños (8-16), sin capar por si algún día
+      no lo son.
+    - **Orden, pedido del usuario el mismo día: Escudo debajo de Vida, no al
+      final de la pestaña.** Mismo criterio que un HUD de videojuego (vida +
+      su escudo van juntos, fatiga es un recurso aparte) — el colchón de
+      Malla Plasmática se saca de su propia sección al final y se renderiza
+      entre la tarjeta de Vida y la de Fatiga, dentro de la misma cabecera
+      "vida y fatiga".
+    - Sin probar en navegador (extensión de Chrome no disponible en toda la
+      sesión) — pendiente de una pasada visual.
+- **Malla Plasmática — colchón como RECURSOS** (`docs/checklist-motor-vs-prosa-2026-09-24.md`
+  Tier 2, punto 8, resuelto en parte): `NivelModulo.colchon` nuevo (10/12/14/16 según
+  nivel, mismo patrón que `absorcion` del Escudo Deflector) + `capacidadDePieza()`
+  (`recursos.ts`) gana el tipo `"colchon"` — visible en Recursos solo con la pieza
+  equipada, ajuste manual +/-, sin recarga por compra ni por Materiales (regenera N
+  por turno y el tiempo de reactivación siguen sin automatizar, comunicación de mesa,
+  igual que el resto de "acciones sin dado" de la pieza). El motor[] `bloqueado`
+  ("buffer temporal sin nombre en capa 2 y media") se retira de los 4 niveles: el
+  colchón pasa a ser estructural, igual que la célula de batería, sin entrada de
+  MotorMetadata propia.
+  - **Trade-off aceptado, apuntado para más adelante**: Malla Plasmática también
+    tiene célula de batería (10 cargas, para activarse) — `sheet.recursos` solo
+    guarda un recurso por instancia equipada hoy, así que el colchón (lo pedido)
+    prioriza sobre la batería, que se queda sin trackear en RECURSOS hasta que exista
+    un compuesto instancia+tipo. No es una regresión de algo que estuviera
+    deliberadamente construido antes (era un efecto colateral del chequeo genérico de
+    célula), pero sí un hueco real a tener en cuenta si algún día se necesita.
+  - **Fuera de esta pasada, sin cambios**: sacrificar puntos del colchón por daño
+    melee, devolver daño al atacante, -8 a sigilo al activarse, neutralizar el
+    Camuflaje Trifásico, y la detonación de pulso térmico en área — todo sigue
+    exactamente como estaba (`pendiente`/`bloqueado` en `motor[]`).
+- 15 tests nuevos (`vitalidad.test.ts`, más casos en `sheet.test.ts`/
+  `migraciones.test.ts`/`recursos.test.ts`), 546 en total, lint y `tsc --noEmit`
+  limpios. Sin probar en navegador (extensión de Chrome no disponible en la sesión).
+
 ---
 
 ## Pendiente
 
-### Fase 2 — Ficha viva (PG y fatiga en partida) ⬜
-Ya no está bloqueada por la pregunta de si se lleva en vivo — se resolvió que sí. La
-implementación (daño por categoría, estados activos con penalizadores automáticos, gasto
-de fatiga, descanso) va dentro de la fase 6b, de la que es dependencia.
+### Fase 2 — Ficha viva (PG y fatiga en partida) ⬜ (parcial: fuera de combate, 2026-09-27)
+Ya no está bloqueada por la pregunta de si se lleva en vivo — se resolvió que sí. **Fuera
+de combate ya está**: `vidaActual`/`fatigaActual` persistidos en la ficha, con su propio
+espacio en Recursos (ver "Vida y fatiga pasan a recurso persistente..." en Hecho). Lo que
+falta sigue siendo dependencia de la fase 6b: daño por categoría, estados activos con
+penalizadores automáticos, gasto de fatiga, descanso — y decidir si el snapshot de
+`Combatiente` (que hoy sigue intacto y se pierde al cerrar el combate) se unifica alguna
+vez con este recurso persistente o se queda como una cosa aparte.
 
 ### Fase 6b — Panel de combate en vivo ⬜ (MVP funcional cerrado 2026-09-11, pausada)
 **Hoja de ruta con subtareas, para ir cogiéndolas una a una: `docs/fase-6b.md`.** No

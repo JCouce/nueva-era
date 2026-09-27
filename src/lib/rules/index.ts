@@ -20,6 +20,7 @@
 //   npcAleatorio.ts    generación de NPC al azar (botón del catálogo de NPCs)
 //   blindaje.ts        absorción de daño por blindaje (armadura, Escudo Deflector, escudo en alto)
 //   movimiento.ts      Movilidad Aérea equipada convertida en su propia tirada ("Volar")
+//   vitalidad.ts       vida/fatiga como recurso persistente de la ficha (vidaActual/fatigaActual)
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -41,6 +42,7 @@ export * from "./npc";
 export * from "./npcAleatorio";
 export * from "./blindaje";
 export * from "./movimiento";
+export * from "./vitalidad";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

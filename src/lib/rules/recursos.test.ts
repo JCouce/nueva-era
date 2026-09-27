@@ -60,6 +60,22 @@ describe("capacidadDePieza", () => {
     const cap = capacidadDePieza({ instanciaId: "arm1", catalogoId: "armadura_ligera" });
     assert.equal(cap, null);
   });
+
+  test("Malla Plasmática es tipo colchon, con el colchón de SU nivel como máximo", () => {
+    assert.deepEqual(
+      capacidadDePieza({ instanciaId: "mp1", catalogoId: "malla_plasmatica", nivel: 1 }),
+      { max: 10, tipo: "colchon" },
+    );
+    assert.deepEqual(
+      capacidadDePieza({ instanciaId: "mp1", catalogoId: "malla_plasmatica", nivel: 3 }),
+      { max: 14, tipo: "colchon" },
+    );
+  });
+
+  test("comprarRecarga no aplica a un colchón (sin recarga automatizada)", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "mp1", catalogoId: "malla_plasmatica", nivel: 4 });
+    assert.equal(comprarRecarga(s, "mp1"), null);
+  });
 });
 
 describe("reconciliarRecursos (vía equipar/desequipar)", () => {

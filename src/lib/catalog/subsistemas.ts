@@ -354,17 +354,17 @@ export const SUBSISTEMAS: Subsistema[] = [
           "Al activarse: -8 al sigilo (percepción visual) y neutraliza por completo el camuflaje " +
             "trifásico activo.",
         ],
-        // Todo aquí es condicional (se activa, se sacrifica, depende del ataque
-        // recibido) o un recurso propio (colchón de PG) sin equivalente en el
-        // motor: no se mecaniza.
+        // El colchón de PG en sí ya no está aquí: se resolvió como RECURSOS
+        // estructural (docs/tareas.md, 2026-09-27), mismo patrón que la
+        // célula/durabilidad — no pasa por Modificador ni CondicionTirada, así
+        // que no le toca una entrada de MotorMetadata (ver `colchon` más
+        // abajo y recursos.ts, capacidadDePieza()). "Regenera N por turno" y
+        // el tiempo de reactivación tras destruirse siguen sin automatizar,
+        // comunicación de mesa. El resto (sacrificar puntos, devolver daño,
+        // sigilo, neutralizar camuflaje) sigue igual de sin construir.
         modificadores: [],
+        colchon: 10,
         motor: [
-          // Colchón de PG: buffer temporal ligado a "estar activo", con su
-          // propia mini-máquina de estados (destruido → tiempo de
-          // reactivación). No es RECURSOS de instancia (no tiene actual/max
-          // recargable por compra) ni un derivado de personaje (PG/fatiga) —
-          // caso límite sin nombre todavía en capa 2 y media, ver informe final.
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "buffer temporal sin nombre en capa 2 y media" },
           // Sacrificar PG del colchón → +N daño de plasma en golpe melee: acción
           // del jugador declarada antes de atacar, más cercano a eleccion_jugador
           // que a nada más, aunque hoy no hay CondicionTirada real.
@@ -399,8 +399,8 @@ export const SUBSISTEMAS: Subsistema[] = [
             "(dificultad 6 + nivel); con fallo crítico en la esquiva, también fusión.",
         ],
         modificadores: [],
+        colchon: 12,
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "buffer temporal sin nombre en capa 2 y media" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
@@ -423,11 +423,11 @@ export const SUBSISTEMAS: Subsistema[] = [
           "Pueden gastarse 4 puntos del colchón para sumar 2 al daño adicional de plasma.",
         ],
         modificadores: [],
-        // Mismos 7 efectos que nivel 2 (solo cambian números: colchón,
+        colchon: 14,
+        // Mismos 6 efectos que nivel 2 (solo cambian números: colchón,
         // dificultades de crítico, coste del sacrificio) — nada nuevo que
         // clasificar en este nivel.
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "buffer temporal sin nombre en capa 2 y media" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
@@ -446,8 +446,8 @@ export const SUBSISTEMAS: Subsistema[] = [
           "La detonación de pulso térmico puede ampliarse a área 10x10.",
         ],
         modificadores: [],
+        colchon: 16,
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "buffer temporal sin nombre en capa 2 y media" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
