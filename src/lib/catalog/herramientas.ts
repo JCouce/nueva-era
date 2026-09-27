@@ -196,7 +196,13 @@ export const RADAR: Herramienta = {
       notaTirada:
         "Alcance habitual 1 km, distinguiendo tipos en todo el alcance; penetra coberturas " +
         "ligeras hasta 100 m.",
-      motor: MOTOR_RADAR,
+      // "Marcar objetivo" construido 2026-09-27 (docs/tareas.md, arquitectura
+      // "acción sin dado"): accionesDirectasDeHerramientas() (herramientas.ts),
+      // fila propia en Acciones → Herramientas, sin dado ni estado que rastrear.
+      motor: [
+        ...MOTOR_RADAR,
+        { tipo: "accion", afecta: { modo: "accion_nueva", id: "radar_marcar_objetivo" }, mecanismo: "accion_equipo", estado: "construido" },
+      ],
     },
   ],
 };

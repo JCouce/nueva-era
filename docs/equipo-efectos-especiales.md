@@ -426,7 +426,7 @@ de control.
 |---|---|
 | ✅ IMPLEMENTAR | Encaja limpio en el mecanismo genérico (o su variante por tramo). |
 | ✔️ YA HECHO | Ya tiene un `Modificador`/`CondicionTirada`/`ajusteTramo` cableado en el catálogo — confirmado leyendo el código, no solo el PDF. |
-| 🔕 IGNORAR | Depende de un concepto que el motor no modela (absorción, alcance, "ambiente tóxico", coste de acción) o de una tirada ajena al portador (la esquiva de un tercero, el cacheo de quien te registra) — mismo criterio que ya usa `equipo.ts` en su propia cabecera: forzarlo sería inventar una regla que el documento no da. |
+| 🔕 IGNORAR | Depende de un concepto que el motor no modela (alcance, "ambiente tóxico", coste de acción, o la absorción del ATACANTE reduciendo el blindaje del objetivo — la absorción del propio blindaje ya está modelada, ver Hallazgo #5) o de una tirada ajena al portador (la esquiva de un tercero, el cacheo de quien te registra) — mismo criterio que ya usa `equipo.ts` en su propia cabecera: forzarlo sería inventar una regla que el documento no da. |
 | ❓ VERIFICAR | Encontré algo que no cuadra del todo, o que necesita mirarse con más calma antes de decidir — no es ni "hecho" ni "para implementar" todavía. |
 
 ## Backlog — por categoría (mismo orden que `docs/equipamiento.md`)

@@ -254,7 +254,11 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         // independiente: no hay forma limpia de modelarlo sin acoplar ambas piezas.
         modificadores: [],
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "H5" }, // daño de fuego letal en vez de grave
+          // "Daño de fuego letal en vez de grave" es Hallazgo #4 (categoriaDanio
+          // mezcla tipo elemental y categoría de gravedad, sin tabla TIPO_A_CATEGORIA
+          // ni forma de sobrescribirla por condición) — NO Hallazgo #5/pregunta 29
+          // (blindaje), que ya está construido (blindajeContra(), lib/rules/blindaje.ts).
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "Hallazgo #4" },
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // mejora el bono de OTRA pieza (la armadura), sin forma de modelar el acoplamiento hoy
         ],
       },
@@ -295,7 +299,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         ],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "H5" }, // daño corrosivo letal en vez de grave
+          // Hallazgo #4 (categoriaDanio), no Hallazgo #5/blindaje — ver comentario
+          // completo junto a Mejora Ignífuga nivel 2, mismo caso exacto.
+          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "Hallazgo #4" },
         ],
       },
     ],

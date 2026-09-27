@@ -91,6 +91,27 @@ export type Accion = {
   };
 };
 
+// Hermano discriminado de Accion para lo que docs/motor.md llama "acciones
+// sin dado" — activar algo, declarar un gasto, sin resolución de d12 de por
+// medio (Radar nv4 "Marcar objetivo" es el primer caso real). Sin
+// aplicado/habilidad/dificultad/ataque a propósito: forzar ese tipo aquí
+// dejaría media docena de campos que no significan nada para esta forma.
+// `onUsar` vive en la UI (AccionesTab.tsx), no aquí: cada pieza resuelve su
+// propio efecto con su propio callback, mismo criterio que Reparar/Fabricar
+// (docs/tareas.md, tarea 8) — no hay un motor de efectos genérico todavía,
+// y no se inventa uno para un solo caso real.
+export type AccionDirecta = {
+  id: string;
+  label: string;
+  grupo: GrupoAccion;
+  nota?: string;
+  condiciones?: CondicionTirada[];
+  // Texto del botón que confirma dentro del modal — "Usar" por defecto; la
+  // fila en sí siempre dice "Usar", este es el de dentro ("Marcar", "Activar"...).
+  confirmarLabel?: string;
+  bloqueada?: string;
+};
+
 // −1 acumulativo por cada atacante adicional en la ronda (sistema-y-combate.md).
 // Un contador y no un toggle porque el penalizador escala con cuántos atacan,
 // no con un sí/no. Exportada porque combate.ts la reutiliza en "Bloquear con

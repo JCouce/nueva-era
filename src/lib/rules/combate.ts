@@ -17,7 +17,7 @@ import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condicione
 import { nivelesHasta, acumulaPorClave, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import type { MotorMetadata } from "./motor";
 import { recursoDe, gastoDelModo } from "./recursos";
-import { CONDICION_ATACANTES_ADICIONALES, type Accion } from "./acciones";
+import { CONDICION_ATACANTES_ADICIONALES, type Accion, type AccionDirecta } from "./acciones";
 import { atributoEfectivo, aplicado } from "./derivados";
 
 const TRAMOS: TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
@@ -814,4 +814,35 @@ export function accionesDeAtaque(sheet: Sheet): Accion[] {
   }
   tiradas.push(...accionesDeGranadas(sheet));
   return tiradas;
+}
+
+// "Levantar [escudo]" (docs/motor.md, "Acciones sin dado") — para LOS CINCO
+// escudos (cualquier armaMelee con `defensa`), no solo uno. Sin estado que
+// rastrear ni gasto de recurso: coste de acción y duración son comunicación
+// de mesa, como ya decidió el usuario (docs/tareas.md, "Escudos — falta la
+// acción de levantarlos") — esto no revierte esa decisión, solo le da un
+// sitio donde vivir en vez de quedarse solo en `descripcion`, y ahora deja
+// rastro en Acciones recientes (usarDirecta(), AccionesTab.tsx). El coste
+// ("Simple"/"Estándar") se lee de `cat.modos[0].etiqueta` en vez de
+// hardcodearse aparte — es la misma columna que ya usa el ataque del escudo
+// (docs/equipamiento.md:882-905): Rodela y su metamaterial son Simple, el
+// resto Estándar.
+export function accionesDirectasDeAtaque(sheet: Sheet): AccionDirecta[] {
+  const acciones: AccionDirecta[] = [];
+  for (const pieza of sheet.equipo) {
+    const cat = equipoPorId(pieza.catalogoId);
+    if (cat?.familia !== "armaMelee" || !cat.defensa) continue;
+    const accionCoste = cat.modos[0]?.etiqueta ?? "Estándar";
+    acciones.push({
+      id: `levantar_escudo_${pieza.instanciaId}`,
+      label: `Levantar ${cat.label}`,
+      grupo: "Defensa",
+      nota:
+        `Acción ${accionCoste.toLowerCase()}. Cobertura Nivel ${cat.defensa.cobertura} y blindaje ` +
+        `${cat.defensa.blindaje} hasta tu próximo turno — no cuenta si te atacan por la espalda. ` +
+        `Marca "Escudo en alto" en Bloquear daño mientras siga levantado.`,
+      confirmarLabel: "Levantar",
+    });
+  }
+  return acciones;
 }

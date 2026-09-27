@@ -380,6 +380,11 @@ export const ESCUDOS: ArmaMelee[] = [
       // en alto (toggle en "Bloquear daño") — docs/equipamiento.md:886, el
       // beneficio depende de la acción de levantarlo, no de llevarlo encima.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
+      // "Levantar [escudo]" construido 2026-09-27 (docs/motor.md, "Acciones sin
+      // dado"): accionesDirectasDeAtaque() (combate.ts), para los cinco escudos —
+      // sin estado que rastrear, solo recuerda coste de acción/cobertura/blindaje
+      // y deja rastro en Acciones recientes.
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "levantar_escudo" }, mecanismo: "accion_equipo", estado: "construido" },
       // defensa.puntosGolpe: CONSTRUIDO 2026-09-25 (docs/tareas.md, tarea 8) — capacidadDePieza()
       // (recursos.ts) lo reconoce como recurso tipo "durabilidad", reparable desde Acciones
       // ("Reparar y Fabricar"). Mismo caso que celula.cargas de un Subsistema: una capacidad de
@@ -422,6 +427,11 @@ export const ESCUDOS: ArmaMelee[] = [
       // en alto (toggle en "Bloquear daño") — docs/equipamiento.md:886, el
       // beneficio depende de la acción de levantarlo, no de llevarlo encima.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
+      // "Levantar [escudo]" construido 2026-09-27 (docs/motor.md, "Acciones sin
+      // dado"): accionesDirectasDeAtaque() (combate.ts), para los cinco escudos —
+      // sin estado que rastrear, solo recuerda coste de acción/cobertura/blindaje
+      // y deja rastro en Acciones recientes.
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "levantar_escudo" }, mecanismo: "accion_equipo", estado: "construido" },
       // defensa.puntosGolpe: sin entrada propia — capacidad de RECURSOS ("durabilidad"), mismo
       // caso que la Rodela, ver su comentario completo más arriba.
       {
@@ -453,6 +463,11 @@ export const ESCUDOS: ArmaMelee[] = [
       // en alto (toggle en "Bloquear daño") — docs/equipamiento.md:886, el
       // beneficio depende de la acción de levantarlo, no de llevarlo encima.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
+      // "Levantar [escudo]" construido 2026-09-27 (docs/motor.md, "Acciones sin
+      // dado"): accionesDirectasDeAtaque() (combate.ts), para los cinco escudos —
+      // sin estado que rastrear, solo recuerda coste de acción/cobertura/blindaje
+      // y deja rastro en Acciones recientes.
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "levantar_escudo" }, mecanismo: "accion_equipo", estado: "construido" },
       // defensa.puntosGolpe: sin entrada propia — capacidad de RECURSOS ("durabilidad"), mismo
       // caso que la Rodela, ver su comentario completo más arriba.
       {
@@ -484,6 +499,11 @@ export const ESCUDOS: ArmaMelee[] = [
       // en alto (toggle en "Bloquear daño") — docs/equipamiento.md:886, el
       // beneficio depende de la acción de levantarlo, no de llevarlo encima.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
+      // "Levantar [escudo]" construido 2026-09-27 (docs/motor.md, "Acciones sin
+      // dado"): accionesDirectasDeAtaque() (combate.ts), para los cinco escudos —
+      // sin estado que rastrear, solo recuerda coste de acción/cobertura/blindaje
+      // y deja rastro en Acciones recientes.
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "levantar_escudo" }, mecanismo: "accion_equipo", estado: "construido" },
       // defensa.puntosGolpe: sin entrada propia — capacidad de RECURSOS ("durabilidad"), mismo
       // caso que la Rodela, ver su comentario completo más arriba.
       {
@@ -707,14 +727,15 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       // "Hemorragia 1 turno · Crítico de Hemorragia Exanguinante" — funciona igual que el resto.
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      // "Acción Compleja: ignora 1 nivel de armadura" — bloqueado por el mismo hueco que
-      // blindaje de armadura (pregunta 29, no existe cálculo de absorción por niveles).
       {
         tipo: "numerico",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "eleccion_jugador",
-        estado: "bloqueado",
-        bloqueoPor: "pregunta 29",
+        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
+        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
+        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
+        // que no está construido; no es una pregunta de diseño sin responder.
+        estado: "pendiente",
       },
     ],
   },
@@ -789,8 +810,11 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
         tipo: "numerico",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "eleccion_jugador",
-        estado: "bloqueado",
-        bloqueoPor: "pregunta 29",
+        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
+        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
+        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
+        // que no está construido; no es una pregunta de diseño sin responder.
+        estado: "pendiente",
       },
     ],
   },
@@ -891,13 +915,15 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       // Solo "Hemorragia (1d8 turnos)" — Ignora blindaje e Impacto Estructural van aparte abajo.
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      // "Ignora N puntos de blindaje": bloqueado por el mismo hueco que blindaje de armadura.
       {
         tipo: "numerico",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "ajuste_fijo",
-        estado: "bloqueado",
-        bloqueoPor: "pregunta 29",
+        // "Ignora N puntos de blindaje". H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
+        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
+        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
+        // que no está construido; no es una pregunta de diseño sin responder.
+        estado: "pendiente",
       },
       // "Crítico: Impacto Estructural (N)": reduce el blindaje del objetivo de forma PERMANENTE —
       // no está en el catálogo de 23 estados (conflicto C13 de sistema.md).
@@ -943,8 +969,11 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "numerico",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "ajuste_fijo",
-        estado: "bloqueado",
-        bloqueoPor: "pregunta 29",
+        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
+        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
+        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
+        // que no está construido; no es una pregunta de diseño sin responder.
+        estado: "pendiente",
       },
       {
         tipo: "texto",
@@ -996,8 +1025,11 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "numerico",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "ajuste_fijo",
-        estado: "bloqueado",
-        bloqueoPor: "pregunta 29",
+        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
+        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
+        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
+        // que no está construido; no es una pregunta de diseño sin responder.
+        estado: "pendiente",
       },
       {
         tipo: "texto",
@@ -1045,8 +1077,11 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "numerico",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "ajuste_fijo",
-        estado: "bloqueado",
-        bloqueoPor: "pregunta 29",
+        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
+        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
+        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
+        // que no está construido; no es una pregunta de diseño sin responder.
+        estado: "pendiente",
       },
       {
         tipo: "texto",
@@ -1094,8 +1129,11 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "numerico",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "ajuste_fijo",
-        estado: "bloqueado",
-        bloqueoPor: "pregunta 29",
+        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
+        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
+        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
+        // que no está construido; no es una pregunta de diseño sin responder.
+        estado: "pendiente",
       },
       {
         tipo: "texto",
@@ -1136,8 +1174,11 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "numerico",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "ajuste_fijo",
-        estado: "bloqueado",
-        bloqueoPor: "pregunta 29",
+        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
+        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
+        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
+        // que no está construido; no es una pregunta de diseño sin responder.
+        estado: "pendiente",
       },
       {
         tipo: "texto",
@@ -1178,8 +1219,11 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "numerico",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "ajuste_fijo",
-        estado: "bloqueado",
-        bloqueoPor: "pregunta 29",
+        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
+        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
+        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
+        // que no está construido; no es una pregunta de diseño sin responder.
+        estado: "pendiente",
       },
       {
         tipo: "texto",
@@ -1227,8 +1271,11 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "numerico",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "ajuste_fijo",
-        estado: "bloqueado",
-        bloqueoPor: "pregunta 29",
+        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
+        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
+        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
+        // que no está construido; no es una pregunta de diseño sin responder.
+        estado: "pendiente",
       },
       {
         tipo: "texto",
@@ -1269,8 +1316,11 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "numerico",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "ajuste_fijo",
-        estado: "bloqueado",
-        bloqueoPor: "pregunta 29",
+        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
+        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
+        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
+        // que no está construido; no es una pregunta de diseño sin responder.
+        estado: "pendiente",
       },
       {
         tipo: "texto",
@@ -1314,8 +1364,11 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "numerico",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "ajuste_fijo",
-        estado: "bloqueado",
-        bloqueoPor: "pregunta 29",
+        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
+        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
+        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
+        // que no está construido; no es una pregunta de diseño sin responder.
+        estado: "pendiente",
       },
       {
         tipo: "texto",
@@ -1335,6 +1388,11 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       // en alto (toggle en "Bloquear daño") — docs/equipamiento.md:886, el
       // beneficio depende de la acción de levantarlo, no de llevarlo encima.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
+      // "Levantar [escudo]" construido 2026-09-27 (docs/motor.md, "Acciones sin
+      // dado"): accionesDirectasDeAtaque() (combate.ts), para los cinco escudos —
+      // sin estado que rastrear, solo recuerda coste de acción/cobertura/blindaje
+      // y deja rastro en Acciones recientes.
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "levantar_escudo" }, mecanismo: "accion_equipo", estado: "construido" },
       // defensa.puntosGolpe: sin entrada propia — capacidad de RECURSOS ("durabilidad"), mismo
       // caso que la Rodela, ver su comentario completo más arriba (ESCUDOS).
       {

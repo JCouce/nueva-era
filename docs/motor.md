@@ -279,9 +279,29 @@ misma lista.
 **Consecuencia acordada (2026-09-22): la pestaña "Tiradas" pasa a ser
 "Acciones"**, y su catálogo pasa a vivir en `acciones.ts` (no dentro de
 `tiradas.ts`), con una forma que sí sepa distinguir "esto tira" de "esto no
-tira". El cómo exacto (¿un campo que apaga la resolución del dado? ¿un tipo
-hermano?) sigue sin decidir — es la primera pieza de código nueva de verdad
-que hace falta construir, no una migración de datos.
+tira".
+
+**Decidido y construido 2026-09-27: tipo hermano, no un campo que apaga el
+dado.** `AccionDirecta` (`acciones.ts`) es independiente de `Accion` —
+`id`/`label`/`grupo`/`nota`/`condiciones`/`confirmarLabel`, sin
+`aplicado`/`habilidad`/`dificultad`/`ataque`, que no significan nada aquí. Se
+generan igual que las tiradas de equipo (un generador por familia, hoy
+`accionesDirectasDeHerramientas()` en `herramientas.ts`), se pintan con una
+fila `FilaUsar` (botón "Usar" en vez de "Tirar") y abren `UsarModal.tsx`
+(`components/`) — hermano ligero de `AccionModal.tsx`, mismo lenguaje visual,
+sin dificultad/circunstancial/desglose/rodar dado. El efecto de cada pieza se
+resuelve con su propio callback (`onUsar`, opcional) pasado desde fuera — no
+hay motor de efectos genérico, mismo criterio que Reparar/Fabricar (tarea 8):
+generalizar de más para un puñado de casos reales sería la abstracción
+prematura que este proyecto evita a propósito.
+
+**Primer caso real: Radar nivel 4, "Marcar objetivo".** Sin `onUsar` — no
+muta la ficha, solo informa (nota fija que el jugador aplica a mano) — así
+que valida la mitad "fila + modal + generación por equipo" sin necesitar
+resolver todavía la mitad "efecto que escribe en el sheet". Movilidad Aérea
+(gasta carga) y Malla Plasmática (colchón) son los siguientes candidatos,
+pero cada una arrastra su propio prerrequisito sin resolver — ver
+`docs/tareas.md`, no repetirlo aquí.
 
 **No confundir con el tipo 3 (Visor Nocturno).** Visor Nocturno no crea su
 propia acción — solo cuelga una nota sobre una acción que ya existe
@@ -463,6 +483,6 @@ qué mecanismo usar en cada caso.
 **De paso, el catálogo se dividió** (`catalog/equipo.ts`: 3222 → 190 líneas,
 6 familias a sus propios archivos, mismo patrón que ya usaban
 `armasMelee.ts`/`armamentoPesado.ts`/`municion.ts`) y se hizo el rename
-completo "Tiradas" → "Acciones" en código y UI — el nombre ya encaja con que
-la pestaña vaya a tener filas con y sin dado el día de mañana, aunque esa
-parte (Acciones sin dado, sección de arriba) sigue sin diseñarse.
+completo "Tiradas" → "Acciones" en código y UI — el nombre ya encajaba con que
+la pestaña fuera a tener filas con y sin dado el día de mañana; esa parte
+(Acciones sin dado, sección de arriba) se construyó el 2026-09-27.

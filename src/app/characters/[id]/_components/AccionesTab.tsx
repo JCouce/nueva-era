@@ -10,7 +10,9 @@ import {
   resolverTirada,
   resolverDanio,
   accionesDeAtaque,
+  accionesDirectasDeAtaque,
   accionesDeHerramientas,
+  accionesDirectasDeHerramientas,
   valorCondiciones,
   valorBonosTramo,
   modificadoresActivos,
@@ -21,6 +23,7 @@ import {
   bonoAlcance,
   modoElegido,
   type Accion,
+  type AccionDirecta,
   type Sheet,
   type EstadoCondiciones,
   type EstadoActivo,
@@ -29,6 +32,7 @@ import {
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { AccionModal } from "@/components/AccionModal";
+import { UsarModal } from "@/components/UsarModal";
 import { ReparaFabricaModal } from "./ReparaFabricaModal";
 import { BloquearDanioModal } from "./BloquearDanioModal";
 import { type DanioInfo, type Lanzamiento } from "@/components/ResultadoTirada";
@@ -46,14 +50,17 @@ function sumaAjustesFijos(tirada: Accion): number {
 // idioma que la vista completa: acento = éxito crítico, cian = éxito,
 // peligro = pifia (fracaso crítico), apagado = fracaso.
 function tonoResultado(h: Lanzamiento): string {
+  if (h.sinDado) return "text-info";
   if (h.exito === null) return "text-foreground";
   if (h.exito) return h.critico ? "text-accent" : "text-info";
   return h.critico ? "text-danger" : "text-muted";
 }
 
 // "3 éxitos" / "1 fracaso" / "2 fracasos" — o el total a secas si la tirada
-// no llevaba dificultad (no hay margen que contar).
+// no llevaba dificultad (no hay margen que contar). "usado", sin más, para
+// una AccionDirecta (sinDado) — no hay dado ni margen que resumir.
 function textoExitos(h: Lanzamiento): string {
+  if (h.sinDado) return "usado";
   if (h.margen === null) return `total ${h.total}`;
   const n = Math.abs(h.margen);
   return h.margen >= 0 ? `${n} éxito${n === 1 ? "" : "s"}` : `${n} fracaso${n === 1 ? "" : "s"}`;
@@ -271,6 +278,32 @@ function FilaBloquearDanio({ onAbrir }: { onAbrir: () => void }) {
   );
 }
 
+// Fila de una "acción sin dado" (docs/motor.md) — mismo lenguaje visual que
+// FilaTirada, botón "Usar" en vez de "Tirar" y sin desglose de aplicado ni
+// habilidad (no hay ninguno). Hoy solo la genera accionesDirectasDeHerramientas()
+// (Radar nv4 "Marcar objetivo"); cuando llegue una segunda familia con acción
+// sin dado propia, esta fila se reutiliza tal cual.
+function FilaUsar({ accion, onAbrir }: { accion: AccionDirecta; onAbrir: (a: AccionDirecta) => void }) {
+  return (
+    <HudCard className="p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <span className="block font-display text-base font-semibold uppercase leading-tight">
+            {accion.label}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => onAbrir(accion)}
+          className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95"
+        >
+          Usar
+        </button>
+      </div>
+    </HudCard>
+  );
+}
+
 export function AccionesTab({
   sheet,
   estadosCombate = [],
@@ -320,6 +353,7 @@ export function AccionesTab({
   const mods = [...modificadoresActivos(sheet), ...modificadoresDeEstados(estadosCombate)];
   const [reparaFabricaAbierta, setReparaFabricaAbierta] = useState(false);
   const [bloquearDanioAbierta, setBloquearDanioAbierta] = useState(false);
+  const [modalDirecta, setModalDirecta] = useState<AccionDirecta | null>(null);
   const [modal, setModal] = useState<{
     tirada: Accion;
     modBase: number;
@@ -378,12 +412,17 @@ export function AccionesTab({
   // se genera junto al Golpear de cada arma melee, trae filas con
   // `grupo: "Defensa"` también — se separan aquí por `grupo`, no se asume que
   // todo lo que venga de equipo vaya a la sección Ataques.
-  const { ataques, defensaGenerada, herramientas } = useMemo(() => {
+  const { ataques, defensaGenerada, defensaDirecta, herramientas, herramientasDirectas } = useMemo(() => {
     const generadas = accionesDeAtaque(sheet).map(conCondicionesDeEquipo);
     return {
       ataques: generadas.filter((t) => t.grupo === "Ataques"),
       defensaGenerada: generadas.filter((t) => t.grupo === "Defensa"),
       herramientas: accionesDeHerramientas(sheet).map(conCondicionesDeEquipo),
+      // Sin conCondicionesDeEquipo: las acciones sin dado no llevan
+      // condiciones de alcance (§8, modificadores-tiradas.md) todavía — nada
+      // real las produce hoy, se añade el día que haga falta.
+      herramientasDirectas: accionesDirectasDeHerramientas(sheet),
+      defensaDirecta: accionesDirectasDeAtaque(sheet).filter((a) => a.grupo === "Defensa"),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet.equipo, sheet.recursos, indiceCondiciones]);
@@ -471,6 +510,33 @@ export function AccionesTab({
     });
   };
 
+  // Deja rastro en "Acciones recientes" al confirmar una AccionDirecta —
+  // mismo hueco de 6 que las tiradas (`tirar()` arriba). Los campos de
+  // Resultado son relleno inerte: `sinDado` hace que FilaHistorial nunca los
+  // lea (ver tonoResultado/textoExitos).
+  const usarDirecta = () => {
+    if (!modalDirecta) return;
+    const id = Date.now();
+    setHistorial((h) =>
+      [
+        {
+          id,
+          label: modalDirecta.label,
+          dado: 0,
+          modificador: 0,
+          circunstancial: 0,
+          total: 0,
+          dificultad: null,
+          margen: null,
+          exito: null,
+          critico: false,
+          sinDado: true,
+        },
+        ...h,
+      ].slice(0, 6),
+    );
+  };
+
   const especialidadesActuales = modal?.tirada.habilidad
     ? sheet.habilidades[modal.tirada.habilidad].especialidades
     : [];
@@ -519,13 +585,16 @@ export function AccionesTab({
           catálogo fijo (ver herramientas.ts). Solo se pinta si hay algo que
           la use — a diferencia de Ataques, es opcional para la mayoría de
           personajes y no merece un hueco vacío permanente. */}
-      {herramientas.length > 0 && (
+      {(herramientas.length > 0 || herramientasDirectas.length > 0) && (
         <div className="flex flex-col gap-2">
           <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
             Herramientas
           </h2>
           {herramientas.map((t) => (
             <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
+          ))}
+          {herramientasDirectas.map((a) => (
+            <FilaUsar key={a.id} accion={a} onAbrir={setModalDirecta} />
           ))}
         </div>
       )}
@@ -544,6 +613,11 @@ export function AccionesTab({
             .map((t) => (
               <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
             ))}
+          {/* "Levantar [escudo]" — una fila por cada escudo equipado, generada
+              por accionesDirectasDeAtaque() (combate.ts), no por el catálogo
+              fijo de ACCIONES. */}
+          {grupo === "Defensa" &&
+            defensaDirecta.map((a) => <FilaUsar key={a.id} accion={a} onAbrir={setModalDirecta} />)}
           {/* Bloquear daño vive junto a Defensa/esquiva — tampoco es una
               tirada fija de ACCIONES (no tira dado, no muta la ficha). */}
           {grupo === "Defensa" && <FilaBloquearDanio onAbrir={() => setBloquearDanioAbierta(true)} />}
@@ -558,6 +632,17 @@ export function AccionesTab({
 
       {bloquearDanioAbierta && (
         <BloquearDanioModal sheet={sheet} onCerrar={() => setBloquearDanioAbierta(false)} />
+      )}
+
+      {modalDirecta && (
+        <UsarModal
+          titulo={modalDirecta.label}
+          nota={modalDirecta.nota}
+          condiciones={modalDirecta.condiciones}
+          confirmarLabel={modalDirecta.confirmarLabel}
+          onUsar={usarDirecta}
+          onCerrar={() => setModalDirecta(null)}
+        />
       )}
 
       {reparaFabricaAbierta && onReparar && (

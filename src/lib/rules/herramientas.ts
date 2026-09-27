@@ -11,7 +11,7 @@
 import { equipoPorId, type Equipo, type Herramienta } from "../catalog/equipo";
 import type { PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
-import type { Accion } from "./acciones";
+import type { Accion, AccionDirecta } from "./acciones";
 
 // Qué acción describe cada una, para el label de la fila ("Escanear con
 // Radar"). Los tres piden Perspicacia + Tecnociencia — pareja distinta de
@@ -54,4 +54,40 @@ export function accionesDeHerramientas(sheet: Sheet): Accion[] {
     if (tirada) tiradas.push(tirada);
   }
   return tiradas;
+}
+
+// Primer caso real de "acción sin dado" generada por equipo (docs/motor.md,
+// docs/tareas.md ítem 4): Radar nivel 4 desbloquea "Marcar objetivo" — S9
+// (nivelesHasta se queda corto aquí a propósito: no hay nada que acumular de
+// niveles 1-3, es una capacidad nueva que nace en el 4) — sin estado que
+// rastrear, sin gasto, solo un texto fijo que el jugador aplica a mano en la
+// siguiente tirada de ataque contra ese objetivo (decidido 2026-09-24, ver
+// docs/checklist-motor-vs-prosa-2026-09-24.md). Si aparece una segunda pieza
+// con acción sin dado propia, esto se generaliza a un lookup por catalogoId
+// igual que ETIQUETA_ACCION arriba — un solo caso real no lo justifica todavía.
+function accionDirectaDeHerramienta(pieza: PiezaEquipada, cat: Herramienta): AccionDirecta | null {
+  if (cat.id === "radar" && (pieza.nivel ?? 0) >= 4) {
+    return {
+      id: `radar_marcar_${pieza.instanciaId}`,
+      label: "Marcar objetivo",
+      grupo: "Herramientas",
+      nota:
+        "Acción simple. Mientras el objetivo marcado siga en alcance y a la vista, sufre -1 a sus " +
+        "defensas de cobertura y a sus bonificaciones de camuflaje — aplícalo a mano en la tirada " +
+        "de ataque contra él.",
+      confirmarLabel: "Marcar",
+    };
+  }
+  return null;
+}
+
+export function accionesDirectasDeHerramientas(sheet: Sheet): AccionDirecta[] {
+  const acciones: AccionDirecta[] = [];
+  for (const pieza of sheet.equipo) {
+    const cat: Equipo | null = equipoPorId(pieza.catalogoId);
+    if (cat?.familia !== "herramienta") continue;
+    const accion = accionDirectaDeHerramienta(pieza, cat);
+    if (accion) acciones.push(accion);
+  }
+  return acciones;
 }

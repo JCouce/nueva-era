@@ -40,7 +40,7 @@ function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
 }
 
-function ControlCondicion({
+export function ControlCondicion({
   condicion,
   estado,
   onCambiar,

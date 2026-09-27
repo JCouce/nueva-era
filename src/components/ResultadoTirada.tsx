@@ -27,6 +27,11 @@ export type Lanzamiento = Resultado & {
   // Se pintan tras resolver el daño, no antes: es el momento en que el
   // jugador ya sabe si el ataque impactó de verdad.
   efectos?: { fuente: string; texto: string }[];
+  // Marca un registro de una AccionDirecta (docs/motor.md, "Acciones sin
+  // dado") en vez de una tirada real — los campos de Resultado se rellenan a
+  // 0/null solo para que el tipo cierre (nunca se leen: FilaHistorial los
+  // ignora en cuanto ve este flag, ver AccionesTab.tsx).
+  sinDado?: boolean;
 };
 
 // Contenido de un resultado de tirada — dado, total, veredicto, daño. Lo

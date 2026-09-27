@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
 import { equipar } from "./equipo";
 import { ajustarRecurso, ajustarGranada } from "./recursos";
-import { accionesDeAtaque, generaAccionPropia } from "./combate";
+import { accionesDeAtaque, accionesDirectasDeAtaque, generaAccionPropia } from "./combate";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
 import { MUNICION_GRANADA } from "../catalog/municion";
@@ -904,5 +904,50 @@ describe("generaAccionPropia() — el filtro de T6", () => {
       },
     ]);
     assert.equal(generaAccionPropia(pieza), true);
+  });
+});
+
+describe("accionesDirectasDeAtaque", () => {
+  test("sin nada equipado, ninguna acción sin dado", () => {
+    assert.deepEqual(accionesDirectasDeAtaque(defaultSheet()), []);
+  });
+
+  test("un arma melee sin defensa (no es escudo) no genera nada", () => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "m1", catalogoId: "espada_cuchillo_combate" });
+    assert.deepEqual(accionesDirectasDeAtaque(sheet), []);
+  });
+
+  test("Rodela (acción Simple): 'Levantar Rodela', coste y cobertura/blindaje en la nota", () => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "e1", catalogoId: "escudo_rodela" });
+    const [accion] = accionesDirectasDeAtaque(sheet);
+    assert.equal(accion.label, "Levantar Rodela");
+    assert.equal(accion.grupo, "Defensa");
+    assert.match(accion.nota ?? "", /acción simple/i);
+    assert.match(accion.nota ?? "", /Cobertura Nivel 1/);
+    assert.match(accion.nota ?? "", /blindaje 4/);
+  });
+
+  test("Escudo (acción Estándar)", () => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "e1", catalogoId: "escudo_estandar" });
+    const [accion] = accionesDirectasDeAtaque(sheet);
+    assert.equal(accion.label, "Levantar Escudo");
+    assert.match(accion.nota ?? "", /acción estándar/i);
+  });
+
+  test("Escudo de Kerzul también genera su fila", () => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "e1", catalogoId: "kerzul_escudo" });
+    const [accion] = accionesDirectasDeAtaque(sheet);
+    assert.equal(accion.label, "Levantar Escudo de Kerzul");
+  });
+
+  test("dos escudos equipados a la vez generan dos filas independientes", () => {
+    let sheet = equipar(defaultSheet(), { instanciaId: "e1", catalogoId: "escudo_rodela" });
+    sheet = equipar(sheet, { instanciaId: "e2", catalogoId: "escudo_estandar" });
+    const acciones = accionesDirectasDeAtaque(sheet);
+    assert.equal(acciones.length, 2);
+    assert.deepEqual(
+      acciones.map((a) => a.id).sort(),
+      ["levantar_escudo_e1", "levantar_escudo_e2"].sort(),
+    );
   });
 });

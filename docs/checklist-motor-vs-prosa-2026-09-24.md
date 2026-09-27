@@ -49,14 +49,16 @@ temática con el detalle completo de cada pieza; esta lista es el orden real.
 3. Materiales Sofisticados/Avanzados (`docs/tareas.md`, ítem 5 — copia el patrón de la VTM)
 4. ~~Lanzagranadas, interpolar `areaEfecto` real~~ — ✅ hecho 2026-09-27 (`docs/tareas.md`, ítem 6)
 
-**Tier 2 — primero hace falta construir una pieza de arquitectura compartida
-("acciones sin dado" — botón "Usar" sin tirar dado, ver `docs/tareas.md` ítem
-4), luego se aplica a varios sitios a la vez:**
-5. El tipo "acción sin dado" en sí (diseñar antes de tocar nada de abajo)
-6. Movilidad Aérea — Máxima Potencia + el estado "¿está volando?" (`docs/tareas.md` ítem 4)
-7. VTM nivel 4 (crítico parametrizable) + Estabilizadores Neurales (`docs/tareas.md` ítems 4-5)
-8. Malla Plasmática — colchón, sacrificar puntos, activarse (`docs/tareas.md` ítem 4)
-9. Radar nv4 — "Marcar objetivo" + texto fijo en el ataque (`docs/tareas.md` ítem 4)
+**Tier 2 — la arquitectura compartida ya está construida (2026-09-27,
+`AccionDirecta`/`FilaUsar`/`UsarModal.tsx`, ver `docs/tareas.md`, "'Acciones sin
+dado' — arquitectura construida + primer caso real"). Lo que queda de aquí es
+enganchar cada pieza, y cada una arrastra su propio prerrequisito aparte de la
+arquitectura en sí:**
+5. ~~El tipo "acción sin dado" en sí~~ — ✅ hecho 2026-09-27 (`AccionDirecta`, `acciones.ts`)
+6. Movilidad Aérea — Máxima Potencia + el estado "¿está volando?". **Más grande de lo que parecía**: "Máxima Potencia" gasta 2 cargas de una célula de 10 que no existe en RECURSOS (`capacidadDePieza()` no contempla la familia `movimiento`), y "volar" en sí pide una tirada (Reflejos + Tecnociencia) que tampoco existe en ningún catálogo — dos prerrequisitos antes de tocar `AccionDirecta` siquiera.
+7. VTM nivel 4 (crítico parametrizable) + Estabilizadores Neurales (`docs/tareas.md` ítems 4-5) — bloqueado además por el gasto de consumibles al usarlos, que tampoco existe.
+8. Malla Plasmática — colchón, sacrificar puntos, activarse (`docs/tareas.md` ítem 4) — bloqueado por el "buffer temporal sin nombre en capa 2 y media", sin diseñar.
+9. ~~Radar nv4 — "Marcar objetivo"~~ — ✅ hecho 2026-09-27, piloto de la arquitectura de arriba (`accionesDirectasDeHerramientas()`, `herramientas.ts`). Sin `onUsar`: no muta la ficha, solo un texto fijo que el jugador aplica a mano.
 
 **Tier 3 — `arma.uso` estructurado (9 piezas melee, `docs/tareas.md` ítem 4):**
 10. Cerrar el nombre del campo (empuñadura/empleo/lo que se decida)
@@ -157,6 +159,7 @@ consumibles/uso de VTM (mismo bloqueo que Movilidad Aérea, arriba).
 ## Escudos — falta la acción de levantarlos (aparte del "objetivo_tercero" ya resuelto)
 
 - [x] Rodela (`escudo_rodela`) / Escudo estándar (`escudo_estandar`) — **decidido 2026-09-24: sin código.** Es coste de acción, comunicación de mesa como el resto de "objetivo_tercero sin tirada de portador" — ya está en `descripcion`.
+- [x] **Matiz 2026-09-27, no contradice lo de arriba**: aunque el coste de acción en sí sigue sin arbitrarse, "Levantar [escudo]" ganó su propia fila con `AccionDirecta` (los cinco escudos, `accionesDirectasDeAtaque()` en `combate.ts`) — un recordatorio con el coste/cobertura/blindaje que además deja rastro en Acciones recientes, en vez de vivir solo en `descripcion`. Ver `docs/tareas.md`.
 
 ## Sueltos, cada uno con causa propia — no agrupar
 
@@ -167,7 +170,7 @@ consumibles/uso de VTM (mismo bloqueo que Movilidad Aérea, arriba).
 - [ ] Exoesqueleto nv1 (`exoesqueleto#1`) — ¿puede usarse sin armadura? — **pregunta 35 en `docs/sistema.md`**
 - [x] Lanzallamas Ligero (`lanzallamas_ligero`) — **decidido 2026-09-24: sin código**, desenfundar/recargar es coste de acción, comunicación de mesa.
 - [ ] Derivación Psiónica nv1 (`derivacion_psionica#1`) — **decidido 2026-09-24: aparcado dentro de Fase 5.** La psiónica en sí no está dada de alta todavía (bloqueada por el diseñador, `docs/tareas.md`) — normal que falten conceptos como "desorientación". No es una pregunta suelta, cae dentro de ese bloqueo general. Pa'lante cuando llegue Fase 5.
-- [ ] Radar nv4 (`radar#4`) — **decidido 2026-09-24, mucho más simple de lo que parecía**: nada de estado persistente ni de leer cobertura/camuflaje por código. Es un ad hoc como Proyector de Pulso (acción custom, tira o no tira dados) para "Marcar objetivo", más un texto fijo (mismo patrón `nota_fija`/`Accion.efectos` de hoy) en las tiradas de ataque: "-X de dificultad contra cobertura al objetivo marcado" — el jugador elige la dificultad adecuada a mano, cero cálculo automático. Encaja en lo ya construido, no es arquitectura nueva.
+- [x] Radar nv4 (`radar#4`) — ✅ hecho 2026-09-27. Sin estado persistente ni lectura de cobertura/camuflaje por código, como estaba decidido: "Marcar objetivo" es una `AccionDirecta` (`accionesDirectasDeHerramientas()`, `herramientas.ts`) con un texto fijo en la nota — el jugador aplica el número a mano en su siguiente ataque.
 - [ ] Disfraz Holográfico nv2 (`disfraz_holografico#2`) — **decidido 2026-09-24: los dos efectos son `narrativo`, sin construir nada.** "Reduce el rediseño a 1 min" y "mitiga penalizaciones por envergadura" (concepto que no existe en ningún otro sitio del sistema) se quedan como texto informativo — mismo patrón que la VTF. Solo falta declarar bien el `motorMetadata`, no hay código que escribir.
 - [x] Lanzagranadas pesado (`lanzagranadas_pesado`) — **decidido 2026-09-24: sin código**, mismo criterio que Lanzallamas Ligero.
 - [x] Soporte Vital nv2 (`soporte_vital#2`) — **decidido 2026-09-24: sin código**, duración en horas es comunicación de mesa.

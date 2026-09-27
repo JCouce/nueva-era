@@ -269,6 +269,73 @@ usuario). Construido de una sentada tras aclarar en conversación una excepción
   Sin probar en navegador esta vez (extensión de Chrome no disponible en la sesión) —
   pendiente de una pasada manual.
 
+### "Acciones sin dado" — arquitectura construida + primer caso real, 2026-09-27
+
+Nace de una pregunta directa del usuario ("¿es mala práctica un componente bespoke
+por cada acción sin dado?") tras ver que Reparar/Fabricar y Bloquear daño ya repetían
+el mismo chasis de modal a mano. Con 3-4 casos reales a la vista (Movilidad Aérea,
+Malla Plasmática, Radar nv4, VTM nv4), tocaba generalizar lo mínimo — la pregunta que
+`docs/motor.md` dejó abierta desde 2026-09-22 ("¿un campo que apaga el dado o un tipo
+hermano?").
+
+- **`AccionDirecta`** (`acciones.ts`), tipo hermano discriminado de `Accion` — sin
+  `aplicado`/`habilidad`/`dificultad`/`ataque`. `id`/`label`/`grupo`/`nota`/
+  `condiciones`/`confirmarLabel`.
+- **`accionesDirectasDeHerramientas()`** (`herramientas.ts`), mismo patrón que
+  `accionesDeHerramientas()`: genera la fila sola al equipar la pieza, sin
+  condicional a mano en `AccionesTab.tsx`.
+- **`FilaUsar`** (`AccionesTab.tsx`) + **`UsarModal.tsx`** (nuevo, `components/`):
+  hermano ligero de `AccionModal.tsx` — mismo `HudCard`/backdrop, sin dificultad,
+  circunstancial, desglose ni rodar dado. Reutiliza `ControlCondicion` (exportada de
+  `AccionModal.tsx`, antes privada).
+- **Sin motor de efectos genérico** — cada pieza pasa su propio `onUsar` (opcional),
+  mismo criterio que `onReparar`/`onFabricar` (tarea 8). Generalizar el efecto en sí
+  para un puñado de casos habría sido la abstracción prematura que este proyecto evita
+  a propósito.
+- **Piloto: Radar nivel 4, "Marcar objetivo"** — sin `onUsar` (no muta la ficha, solo
+  informa un texto fijo que el jugador aplica a mano), así que valida "fila + modal +
+  generación por equipo" sin arrastrar todavía la mitad "efecto que escribe en el
+  sheet". `MotorMetadata` de Radar nivel 4 gana su propia entrada (antes solo tenía la
+  genérica de la herramienta entera).
+- **Descartado como piloto: Movilidad Aérea.** Al mirar el catálogo de verdad, "Máxima
+  Potencia" gasta 2 cargas de una célula de 10 que **no existe en RECURSOS** —
+  `capacidadDePieza()` (`recursos.ts`) no contempla la familia `movimiento` en
+  absoluto. Además, "volar" en sí pide una tirada (Reflejos + Tecnociencia) que no
+  existe en ningún catálogo de tiradas. Descubierto en esta sesión, no antes — el
+  checklist ya intuía que Movilidad Aérea arrastraba más de una pieza (separaba
+  "Máxima Potencia" del estado "¿está volando?"), pero no que ni siquiera el gasto de
+  carga tuviera dónde vivir.
+- **Deja rastro en "Acciones recientes", pedido del usuario tras probarlo mentalmente
+  (mismo día).** `Lanzamiento` (`ResultadoTirada.tsx`) gana un flag `sinDado?: boolean`
+  — los campos de `Resultado` se rellenan a 0/null (nunca se leen), `FilaHistorial`
+  (`tonoResultado`/`textoExitos`) los ignora en cuanto ve el flag y muestra "usado" en
+  vez de "N éxitos". `usarDirecta()` (`AccionesTab.tsx`) empuja la entrada al confirmar
+  cualquier `AccionDirecta`, mismo cupo de 6 que las tiradas — no hace falta que cada
+  pieza lo pida, es un comportamiento del propio `UsarModal`, no de los datos.
+- 3 tests nuevos (`herramientas.test.ts`), 512 en total, lint y `tsc --noEmit`
+  limpios. Sin probar en navegador (extensión de Chrome no disponible en la sesión).
+
+### "Levantar [escudo]", segundo caso real de "acción sin dado", mismo día
+
+Pedido explícito del usuario: "para todos los escudos", no solo uno — validó que la
+arquitectura generalizara de verdad al segundo caso, no solo al piloto.
+
+- **`accionesDirectasDeAtaque()`** (nueva, `combate.ts`): recorre `sheet.equipo`
+  buscando cualquier `armaMelee` con `defensa` (los cinco escudos: Rodela, Escudo,
+  sus variantes de metamaterial, Escudo de Kerzul) y genera "Levantar [nombre]" para
+  cada uno equipado — sin registro por familia nuevo, esta vez vive junto a
+  `accionesDeAtaque()` en el mismo archivo por ser la misma familia de equipo.
+- **El coste de acción (Simple/Estándar) se lee de `cat.modos[0].etiqueta`**, no se
+  hardcodea aparte — es la misma columna que ya usa el ataque del escudo
+  (`docs/equipamiento.md:882-905`).
+- **No revierte la decisión de 2026-09-24** ("sin código, comunicación de mesa"): el
+  coste de acción sigue sin arbitrarse ni rastrearse como estado. Lo nuevo es que
+  ahora hay un sitio en Acciones → Defensa que recuerda cobertura/blindaje/coste y
+  deja rastro en Acciones recientes al pulsar "Levantar" — antes solo vivía en
+  `descripcion`.
+- 6 tests nuevos (`combate.test.ts`), 518 en total, lint y `tsc --noEmit` limpios.
+  Sin probar en navegador (extensión de Chrome no disponible en la sesión).
+
 ---
 
 ## Pendiente
@@ -597,9 +664,9 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
    herramientas.md` antes de borrarlo** (ese archivo era clasificación estructural
    puntual, ya cumplió su función — esto es lo único que no estaba ya en
    `docs/equipo-efectos-especiales.md` ni en `docs/sistema.md`):
-   - **`defensa.puntosGolpe` de Escudos (durabilidad/roto) — en construcción
-     2026-09-25, ver tarea 8 más abajo.** `defensa.blindaje` sigue bloqueado
-     por la pregunta 29 (absorción de daño, sin relación con esto).
+   - **`defensa.puntosGolpe` de Escudos (durabilidad/roto) — construido 2026-09-25,
+     ver tarea 8 más abajo.** `defensa.blindaje` — construido 2026-09-27 dentro del
+     Hallazgo #5, ver su entrada en "Hecho".
    - **Mangual — "ignora N de Cobertura física" en modo Estándar.** Modificador
      numérico condicionado al modo, mecanizable con el mecanismo 1 de
      `modificadores-tiradas.md` en cuanto se decida a qué tirada de "cobertura"
