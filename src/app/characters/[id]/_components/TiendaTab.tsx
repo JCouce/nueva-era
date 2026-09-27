@@ -173,11 +173,19 @@ function BotonEquipar({
   disabled = false,
   className = "",
   children,
+  labelVinculando = "vinculando",
+  labelVinculado = "✓ Equipado",
 }: {
   onClick: () => void;
   disabled?: boolean;
   className?: string;
   children: ReactNode;
+  // Granadas reutilizan este mismo botón para "Comprar" (docs/tareas.md,
+  // 2026-09-27): no es un equipamiento en el sentido de las demás piezas de
+  // Tienda, así que el texto de las fases intermedias es parametrizable en
+  // vez de bifurcar el componente entero.
+  labelVinculando?: string;
+  labelVinculado?: string;
 }) {
   const [fase, setFase] = useState<"lista" | "vinculando" | "vinculado">("lista");
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -202,7 +210,7 @@ function BotonEquipar({
         className={`clip-chamfer-sm w-full border border-info bg-elevated px-3 py-2 text-center ${className}`}
       >
         <span className="font-mono text-[11px] uppercase tracking-widest text-info">
-          {"// vinculando"}
+          {`// ${labelVinculando}`}
           <span className="animate-pulse">_</span>
         </span>
         <BarraProgreso ms={VINCULANDO_MS} />
@@ -216,7 +224,7 @@ function BotonEquipar({
         disabled
         className={`clip-chamfer-sm w-full border border-accent bg-elevated py-2 font-display text-xs font-semibold uppercase tracking-wide text-accent shadow-glow-yellow ${className}`}
       >
-        ✓ Equipado
+        {labelVinculado}
       </button>
     );
   }
@@ -237,7 +245,7 @@ function AccionSimple({
   topeRareza,
   onEquipar,
 }: {
-  pieza: Armadura | ArmaFuego | ArmaMelee | Consumible | ArmaPesada | MunicionGranada;
+  pieza: Armadura | ArmaFuego | ArmaMelee | Consumible | ArmaPesada;
   creditos: number;
   topeRareza: Rareza | null;
   onEquipar: (p: PiezaEquipada) => void;
@@ -253,6 +261,51 @@ function AccionSimple({
         onClick={() => onEquipar({ instanciaId: nuevaInstanciaId(), catalogoId: pieza.id })}
       >
         Equipar
+      </BotonEquipar>
+      {sinRareza && (
+        <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
+          Tu letra de Recursos no llega a {pieza.rareza}: tope {topeRareza}.
+        </p>
+      )}
+      {sinFondos && (
+        <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
+          Te faltan {(coste - creditos).toLocaleString("es-ES")} créditos.
+        </p>
+      )}
+    </>
+  );
+}
+
+// Granadas (docs/tareas.md, 2026-09-27): comprar SUMA 1 unidad al recurso en
+// vez de equipar — hermana de AccionSimple, no sustituto (esa sigue
+// sirviendo a armadura/arma/armaMelee/consumible/armaPesada). Muestra cuánto
+// se lleva ya de ese tipo para no comprar a ciegas.
+function AccionComprarGranada({
+  pieza,
+  cantidad,
+  creditos,
+  topeRareza,
+  onComprar,
+}: {
+  pieza: MunicionGranada;
+  cantidad: number;
+  creditos: number;
+  topeRareza: Rareza | null;
+  onComprar: (catalogoId: string) => void;
+}) {
+  const coste = pieza.coste ?? 0;
+  const sinFondos = coste > creditos;
+  const sinRareza = topeRareza !== null && !rarezaPermitida(pieza.rareza, topeRareza);
+  return (
+    <>
+      <BotonEquipar
+        className="mt-3"
+        disabled={sinFondos || sinRareza}
+        onClick={() => onComprar(pieza.id)}
+        labelVinculando="comprando"
+        labelVinculado="✓ Comprada"
+      >
+        {cantidad > 0 ? `Comprar (llevas ${cantidad})` : "Comprar"}
       </BotonEquipar>
       {sinRareza && (
         <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
@@ -517,12 +570,14 @@ export function TiendaTab({
   // significaría nada real.
   libre = false,
   onEquipar,
+  onComprarGranada,
 }: {
   sheet: Sheet;
   creditos?: number;
   topeRareza: Rareza | null;
   libre?: boolean;
   onEquipar: (p: PiezaEquipada) => void;
+  onComprarGranada: (catalogoId: string) => void;
 }) {
   const [categoria, setCategoria] = useState<CategoriaId>("armaduras");
   const [soloCompatible, setSoloCompatible] = useState(false);
@@ -798,7 +853,13 @@ export function TiendaTab({
                 }
               >
                 <DetalleGranada p={p} />
-                <AccionSimple pieza={p} creditos={creditosEfectivos} topeRareza={topeRareza} onEquipar={onEquipar} />
+                <AccionComprarGranada
+                  pieza={p}
+                  cantidad={sheet.granadas[p.id] ?? 0}
+                  creditos={creditosEfectivos}
+                  topeRareza={topeRareza}
+                  onComprar={onComprarGranada}
+                />
               </Acordeon>
             ))}
           </>

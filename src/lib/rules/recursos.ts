@@ -19,6 +19,7 @@
 //     más — como cargar un móvil, no como comprar cargadores de más.
 import { z } from "zod";
 import { equipoPorId, type Consumible, type Rareza } from "../catalog/equipo";
+import { MUNICION_GRANADA } from "../catalog/municion";
 import type { PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
 
@@ -89,6 +90,54 @@ export function comprarMaterial(sheet: Sheet, tier: MaterialTier): { sheet: Shee
     sheet: { ...sheet, materiales: { ...sheet.materiales, [tier]: sheet.materiales[tier] + 1 } },
     coste: precioMaterial(tier),
   };
+}
+
+// Granadas (docs/tareas.md, 2026-09-27): dejan de ser una pieza equipada (una
+// instancia por compra, ajena a RECURSOS) y pasan a un recurso con cantidad
+// por tipo — mismo espíritu que Materiales, pero con un Record dinámico en
+// vez de 3 claves fijas, porque las claves son los 14 id de MUNICION_GRANADA
+// (y crecerán si el catálogo añade más). Solo se guardan claves con
+// cantidad > 0: evita 14 ceros permanentes en el Json, mismo criterio que
+// sheet.recursos (solo hay entrada para lo equipado).
+export type Granadas = Record<string, number>;
+
+export const granadasSchema = z.record(z.string(), z.number().int().min(0));
+
+export function defaultGranadas(): Granadas {
+  return {};
+}
+
+// Helper puro compartido por comprarGranada() y fabricar() (rules/equipo.ts,
+// fabricar una granada con la VTF): sumar N unidades de un tipo.
+export function sumarGranada(sheet: Sheet, catalogoId: string, cantidad = 1): Sheet {
+  return {
+    ...sheet,
+    granadas: { ...sheet.granadas, [catalogoId]: (sheet.granadas[catalogoId] ?? 0) + cantidad },
+  };
+}
+
+// "Comprar" 1 unidad al precio de catálogo de ESA granada — a diferencia de
+// Materiales (3 tiers a precio fijo), cada tipo tiene su propio coste. null
+// si el catalogoId no es una granada real — el servidor recalcula el precio,
+// nunca confía en el cliente (mismo criterio que comprarMaterial).
+export function comprarGranada(sheet: Sheet, catalogoId: string): { sheet: Sheet; coste: number } | null {
+  const granada = MUNICION_GRANADA.find((g) => g.id === catalogoId);
+  if (!granada) return null;
+  return { sheet: sumarGranada(sheet, catalogoId), coste: granada.coste };
+}
+
+// Delta manual (+/-), clamp ≥0 — mismo patrón que ajustarMaterial, salvo que
+// al llegar a 0 se borra la clave en vez de dejarla a 0 (mantiene el Record
+// mínimo, ver comentario de cabecera).
+export function ajustarGranada(sheet: Sheet, catalogoId: string, delta: number): Sheet {
+  if (!Number.isFinite(delta)) return sheet;
+  const previo = sheet.granadas[catalogoId] ?? 0;
+  const actual = Math.max(0, previo + Math.round(delta));
+  if (actual === previo) return sheet;
+  const granadas = { ...sheet.granadas };
+  if (actual === 0) delete granadas[catalogoId];
+  else granadas[catalogoId] = actual;
+  return { ...sheet, granadas };
 }
 
 export type RecursoInstancia = { instanciaId: string; actual: number; max: number };

@@ -30,6 +30,8 @@ import {
   repararPieza,
   fabricar,
   generarNpcAleatorio,
+  ajustarGranada,
+  comprarGranada,
   ATRIBUTO_MIN,
   ATRIBUTO_MAX,
   HABILIDAD_NO_ENTRENADA,
@@ -280,6 +282,26 @@ export async function comprarMaterialNpcAction(npcId: string, tier: MaterialTier
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(npcId, comprarMaterial(ctx.sheet, tier).sheet);
+}
+
+// Granadas (docs/tareas.md, 2026-09-27): mismo criterio "libre" que
+// RECURSOS/Materiales — sin créditos ni tope de rareza que comprobar.
+export async function ajustarGranadaNpcAction(
+  npcId: string,
+  catalogoId: string,
+  delta: number,
+): Promise<NpcResult> {
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(npcId, ajustarGranada(ctx.sheet, catalogoId, delta));
+}
+
+export async function comprarGranadaNpcAction(npcId: string, catalogoId: string): Promise<NpcResult> {
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const resultado = comprarGranada(ctx.sheet, catalogoId);
+  if (!resultado) return { ok: false, error: "Granada inválida" };
+  return persist(npcId, resultado.sheet);
 }
 
 // Fabricar: sin requisito de VTF ni tope de rareza (edición libre, mismo

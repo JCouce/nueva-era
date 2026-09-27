@@ -14,6 +14,8 @@ import {
   precioMaterial,
   rarezaMaterial,
   repararPieza,
+  ajustarGranada,
+  comprarGranada,
   PRECIO_CARGADOR_BALAS,
   PRECIO_BATERIA_PORTATIL,
 } from "./recursos";
@@ -262,6 +264,60 @@ describe("comprarMaterial", () => {
     s = comprarMaterial(s, "sencillos").sheet;
     s = comprarMaterial(s, "sencillos").sheet;
     assert.equal(s.materiales.sencillos, 2);
+  });
+});
+
+describe("comprarGranada", () => {
+  test("suma 1 unidad al tipo y devuelve su precio de catálogo", () => {
+    const res = comprarGranada(defaultSheet(), "granada_casera");
+    assert.ok(res);
+    assert.equal(res!.sheet.granadas.granada_casera, 1);
+    assert.equal(res!.coste, 20);
+  });
+
+  test("comprar dos veces acumula", () => {
+    let s = defaultSheet();
+    s = comprarGranada(s, "granada_casera")!.sheet;
+    s = comprarGranada(s, "granada_casera")!.sheet;
+    assert.equal(s.granadas.granada_casera, 2);
+  });
+
+  test("no toca otros tipos", () => {
+    let s = comprarGranada(defaultSheet(), "granada_casera")!.sheet;
+    s = comprarGranada(s, "granada_plasma")!.sheet;
+    assert.equal(s.granadas.granada_casera, 1);
+    assert.equal(s.granadas.granada_plasma, 1);
+  });
+
+  test("un catalogoId que no es una granada real devuelve null", () => {
+    assert.equal(comprarGranada(defaultSheet(), "no-existe"), null);
+    assert.equal(comprarGranada(defaultSheet(), "materiales_sencillos"), null);
+  });
+});
+
+describe("ajustarGranada", () => {
+  test("un delta positivo suma sin tope superior", () => {
+    const s = ajustarGranada(defaultSheet(), "granada_casera", 5);
+    assert.equal(s.granadas.granada_casera, 5);
+  });
+
+  test("un delta negativo no baja de 0, y borra la clave al llegar a 0", () => {
+    let s = ajustarGranada(defaultSheet(), "granada_casera", 2);
+    s = ajustarGranada(s, "granada_casera", -5);
+    assert.equal(s.granadas.granada_casera, undefined);
+    assert.deepEqual(s.granadas, {});
+  });
+
+  test("sin cambio real (ya está a 0, delta negativo), devuelve la misma ficha", () => {
+    const s = defaultSheet();
+    assert.equal(ajustarGranada(s, "granada_casera", -1), s);
+  });
+
+  test("no toca otros tipos", () => {
+    let s = ajustarGranada(defaultSheet(), "granada_casera", 3);
+    s = ajustarGranada(s, "granada_plasma", 1);
+    assert.equal(s.granadas.granada_casera, 3);
+    assert.equal(s.granadas.granada_plasma, 1);
   });
 });
 

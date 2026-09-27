@@ -25,19 +25,18 @@ export const ALCANCE_ARROJADA = "Potencia × 10 m";
 // areaEfecto...), nunca la clasificación. `tiradaDeGranada` (combate.ts) genera
 // la tirada "Lanzar X" y vuelca areaEfecto a su nota — construido. Cuando la
 // misma granada se carga en un Lanzagranadas (integrado o pesado),
-// `tiradaDeLanzagranadas`/`tiradaDeArmamentoPesado` SÍ leen danio/categoriaDanio
-// para el modo de esa tirada, pero su `nota` es un texto genérico fijo ("Área y
-// efecto según la granada elegida") que NO interpola el areaEfecto real de la
-// granada seleccionada — confirmado leyendo combate.ts, es la tarea pendiente
-// "Lanzagranadas — la nota no interpola la granada real" de docs/tareas.md
-// (sección "Equipo — mecanizar efectos especiales por pieza"). Por eso esas
-// dos últimas entradas van "pendiente", no "construido".
+// `tiradaDeLanzagranadas`/`tiradaDeArmamentoPesado` leen danio/categoriaDanio
+// para el modo de esa tirada, y desde 2026-09-27 también areaEfecto — vuelca
+// a la `nota` de la opción elegida en el selector "Modo de disparo"
+// (condicionModo, combate.ts), no a un texto fijo de la Accion: por eso el
+// mecanismo es eleccion_jugador, no nota_fija (el jugador elige qué granada
+// carga al tirar, y ESA nota es la que se pinta).
 const MOTOR_GRANADA: MotorMetadata[] = [
   { tipo: "accion", afecta: { modo: "accion_nueva", id: "lanzar_granada" }, mecanismo: "accion_equipo", estado: "construido" },
   { tipo: "numerico", afecta: { modo: "accion_existente", id: "lanzar_granada" }, mecanismo: "ajuste_fijo", estado: "construido" },
   { tipo: "texto", afecta: { modo: "accion_existente", id: "lanzar_granada" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-  { tipo: "texto", afecta: { modo: "accion_existente", id: "lanzagranadas_integrado" }, mecanismo: "nota_fija", estado: "pendiente" },
-  { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "nota_fija", estado: "pendiente" },
+  { tipo: "texto", afecta: { modo: "accion_existente", id: "lanzagranadas_integrado" }, mecanismo: "eleccion_jugador", estado: "construido" },
+  { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "eleccion_jugador", estado: "construido" },
 ];
 
 export type MunicionGranada = {

@@ -11,7 +11,7 @@ está hecho" en cualquier otro documento del proyecto, para — va aquí, no all
 arquitectura — el modelo obligatorio para pasar cualquier elemento nuevo (equipo,
 razas, poderes, dotes, aumentos) de prosa a motor. Este archivo manda en el estado.
 
-**Última actualización:** 2026-09-25.
+**Última actualización:** 2026-09-27.
 
 ## Ahora mismo
 
@@ -174,6 +174,46 @@ lógica genérica.
   §"Control de subtareas independientes" y en `sistema.md` (supuesto S9).
 - 416 tests, lint y `tsc --noEmit` limpios en todo lo anterior.
 
+### Granadas → recurso con cantidad, 2026-09-27
+
+Nace de un pedido concreto: el selector del Lanzagranadas Integrado/pesado listaba
+siempre las 14 granadas del catálogo, tuviera el jugador la que tuviera — y "Lanzar a
+mano" generaba una fila por INSTANCIA comprada, no por tipo. Solución: mismo patrón
+que Materiales (tarea 8) — granada deja de ser una pieza equipable y pasa a
+`sheet.granadas: Record<catalogoId, cantidad>`, con la diferencia de que aquí la
+migración de fichas viejas SÍ es automática (1 instancia equipada = 1 unidad, sin la
+ambigüedad que tenía Materiales). `SCHEMA_VERSION` 7→8.
+
+- **Motor**: `recursos.ts` (`comprarGranada`/`ajustarGranada`/`sumarGranada`),
+  migración 7→8 (`migraciones.ts`), `parseSheet` tolerante a ids de granada que ya no
+  existan. `fabricar()` (`equipo.ts`) gana la rama granada — fabricar una con la VTF
+  suma al recurso en vez de equipar. Limpiadas las ramas `familia === "granada"` que
+  quedaban muertas en `costeDePieza`/`rarezaDePieza`/`pesoDePieza` (se quedaron solo
+  donde siguen siendo necesarias por completitud de tipos).
+- **`combate.ts`**: `accionesDeGranadas()` nueva (una fila "Lanzar X" por tipo en
+  stock, no por `sheet.equipo`) — `tiradaDeGranada()` pierde el `instanciaId`.
+  `tiradaDeLanzagranadas`/`tiradaDeArmamentoPesado` filtran el selector a los tipos en
+  stock; sin ninguno, la fila entera se oculta (evita `ataque.modos: []`, que
+  reventaría `AccionesTab.tsx` al pulsar Tirar). `REGISTRO_DE_ATAQUE` pierde la
+  entrada `granada` (ya no es equipo-driven).
+- **Server actions, jugador y NPC en espejo**: `comprarGranadaAction`/
+  `ajustarGranadaAction` (`characters/[id]/actions.ts`, con el mismo tope de rareza
+  que `equiparAction`) y `comprarGranadaNpcAction`/`ajustarGranadaNpcAction`
+  (`master/npcs/actions.ts`, edición libre sin créditos ni tope).
+- **UI**: en Tienda el botón pasa de "Equipar" a "Comprar" (`AccionComprarGranada`,
+  hermana de `AccionSimple`; `BotonEquipar` gana labels parametrizables para "comprando/
+  ✓ Comprada"), muestra cuánto se lleva ya. Recursos gana la sección "Granadas" —solo
+  los tipos con cantidad > 0, card nueva `GranadaCard` (cantidad + −/+, sin botón
+  comprar, eso se queda en Tienda). Equipo pierde la sección entera (ya no hay
+  instancias que listar). `FabricarSeccion.tsx` no se tocó: `onFabricar()` ya era
+  agnóstico a la familia.
+- 20 tests nuevos (recursos/migraciones/sheet/equipo/combate), 492 en total, lint y
+  `tsc --noEmit` limpios. Probado en vivo con el personaje QA-MOTOR-TEST (jugador) y
+  el NPC "qwer" (edición libre): comprar en Tienda suma y cobra, aparece en Recursos y
+  ya no en Equipo, ajustar a 0 lo quita, el selector del Lanzagranadas Integrado
+  interpola el área real por tipo y colapsa a "sin selector" con un único tipo,
+  fabricar con la VTF gasta materiales siempre y solo entrega con éxito.
+
 ---
 
 ## Pendiente
@@ -290,9 +330,12 @@ moviendo la reconciliación también a `parseSheet()`, no solo a `equipar()`/
 `desequipar()`, para que cualquier ficha vieja se ponga al día en la primera lectura.
 
 **Fuera de alcance de este primer pase, a propósito:**
-- `ArmaPesada`, `ArmaMelee` y `MunicionGranada` no aportan recurso — solo
-  `ArmaFuego.municion` y `Subsistema.célula`. El Cañón de Plasma y el resto de
-  Armamento Pesado se quedan para una extensión futura si hace falta.
+- ~~`ArmaPesada`, `ArmaMelee` y `MunicionGranada` no aportan recurso — solo
+  `ArmaFuego.municion` y `Subsistema.célula`.~~ — **granada ya no aplica**, ver
+  "Granadas → recurso con cantidad, 2026-09-27" arriba: pasó a `sheet.granadas`, con
+  su propio par comprar/ajustar en vez de encajar en `capacidadDePieza()`. `ArmaPesada`
+  y `ArmaMelee` (el Cañón de Plasma y el resto de Armamento Pesado) se quedan para una
+  extensión futura si hace falta.
 - El gasto por modo usa la regla genérica confirmada en conversación (sin "F. Auto" =
   1, con "F. Auto" = `municion` fija), no el dato real por arma que da
   `equipamiento.md` en algunos casos — la Sydiasi, por ejemplo, documenta "consume 3
@@ -568,15 +611,17 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      de disparar ese turno**. Ni permanente ni a elección, sino "tras esta
      acción concreta". Puede que haga falta un mecanismo nuevo cuando se
      generalicen los mecanismos de entrega en `docs/modificadores-tiradas.md`.
-   - **Lanzagranadas (Integrado y pesado) — la nota no interpola la granada
-     real.** `tiradaDeLanzagranadas`/`tiradaDeArmamentoPesado` (`combate.ts`)
-     leen `danio`/`categoriaDanio` de la granada cargada, pero su `nota` es
-     texto genérico fijo ("Área y efecto según la granada elegida") — no
-     vuelca el `areaEfecto` real de la granada seleccionada, a diferencia de
-     `tiradaDeGranada` (lanzarla a mano), que sí lo hace. Por eso esas dos
-     entradas de `MOTOR_GRANADA` (`municion.ts`) van "pendiente", no
-     "construido". Ya identificado, listo para construir (mismo patrón que
-     ya usa `tiradaDeGranada`), no es duda de diseño.
+   - **✅ Lanzagranadas (Integrado y pesado), nota interpolada — hecho
+     2026-09-27.** `tiradaDeLanzagranadas`/`tiradaDeArmamentoPesado`
+     (`combate.ts`) ya no pintan el texto genérico fijo ("Área y efecto según
+     la granada elegida"): `condicionModo()` gana un `nota?` opcional por
+     modo, y cada granada del selector lleva su `areaEfecto` real como nota
+     de esa opción (mismo mecanismo del §8, opción con nota condicionada —
+     `OpcionCondicion.nota` ya lo soportaba, no hacía falta arquitectura
+     nueva). Las dos entradas de `MOTOR_GRANADA` (`municion.ts`) pasan de
+     `nota_fija`/"pendiente" a `eleccion_jugador`/"construido" — el mecanismo
+     cambia porque ahora depende de qué granada elige el jugador al tirar, no
+     es un texto siempre presente. Tests nuevos en `combate.test.ts`.
    - **Granada PEM — condición sobre el TIPO del objetivo ("solo afecta a
      sistemas y sintéticos"), eje nuevo sin precedente.** No es "tirada de
      tercero" (eso ya tiene hueco nombrado, objetivo_tercero) — es que el

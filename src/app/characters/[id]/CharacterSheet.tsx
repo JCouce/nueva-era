@@ -17,6 +17,8 @@ import {
   comprarMaterialAction,
   repararAction,
   fabricarAction,
+  ajustarGranadaAction,
+  comprarGranadaAction,
   type SaveResult,
 } from "./actions";
 import {
@@ -33,6 +35,7 @@ import {
   setPrioridad,
   ajustarRecurso,
   ajustarMaterial,
+  ajustarGranada,
   RECURSOS_POR_LETRA,
   describirEstadosActivos,
   type AtributoId,
@@ -322,6 +325,13 @@ export function CharacterSheet({
   const commitComprarMaterial = (tier: MaterialTier) => {
     runSave(() => comprarMaterialAction(characterId, tier), setSheet);
   };
+  const commitAjustarGranada = (catalogoId: string, delta: number) => {
+    setSheet((s) => ajustarGranada(s, catalogoId, delta));
+    runSave(() => ajustarGranadaAction(characterId, catalogoId, delta), setSheet);
+  };
+  const commitComprarGranada = (catalogoId: string) => {
+    runSave(() => comprarGranadaAction(characterId, catalogoId), setSheet);
+  };
   // Sin actualización optimista: la rareza suficiente y el stock se validan
   // en el servidor (mismo criterio que commitComprarMaterial/commitRecargar).
   // exito: mismo criterio que commitFabricar, ver el comentario de repararAction.
@@ -569,6 +579,7 @@ export function CharacterSheet({
           creditos={creditos}
           topeRareza={topeRareza}
           onEquipar={commitEquipar}
+          onComprarGranada={commitComprarGranada}
         />
       )}
       {activeEfectivo === "equipo" && (
@@ -582,6 +593,7 @@ export function CharacterSheet({
           onRecargar={commitRecargar}
           onAjustarMaterial={commitAjustarMaterial}
           onComprarMaterial={commitComprarMaterial}
+          onAjustarGranada={commitAjustarGranada}
         />
       )}
       {activeEfectivo === "combate" && combate && (

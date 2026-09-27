@@ -22,9 +22,13 @@ import {
   materialesSchema,
   defaultMateriales,
   MATERIAL_TIERS,
+  granadasSchema,
+  defaultGranadas,
   type RecursoInstancia,
   type Materiales,
+  type Granadas,
 } from "./recursos";
+import { MUNICION_GRANADA } from "../catalog/municion";
 import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./prioridad";
 
 // Versión del formato de ficha. Al subirla hay que añadir su migración en
@@ -36,7 +40,8 @@ import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./pri
 //   5 → Exploración sustituye a Supervivencia (C4/C12 de docs/sistema.md)
 //   6 → se añade RECURSOS (cargas/munición gastadas y recargadas en partida)
 //   7 → se añade el pool de Materiales (Fabricar/Reparar, docs/tareas.md tarea 8)
-export const SCHEMA_VERSION = 7;
+//   8 → las granadas dejan de ser pieza equipada y pasan a recurso con cantidad
+export const SCHEMA_VERSION = 8;
 
 const atributoValue = z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX);
 
@@ -72,6 +77,7 @@ export const sheetSchema = z.object({
   equipo: z.array(piezaEquipadaSchema).max(200),
   recursos: z.array(recursoSchema).max(200),
   materiales: materialesSchema,
+  granadas: granadasSchema,
 });
 
 export type Sheet = z.infer<typeof sheetSchema>;
@@ -98,6 +104,7 @@ export function defaultSheet(): Sheet {
     equipo: [],
     recursos: [],
     materiales: defaultMateriales(),
+    granadas: defaultGranadas(),
   };
 }
 
@@ -178,6 +185,16 @@ export function parseSheet(raw: unknown): Sheet {
     materiales[tier] = clampInt(rMateriales[tier], 0, 999999, 0);
   }
 
+  // Solo se conserva la clave si es un id real del catálogo (descarta
+  // granadas que ya no existan) y la cantidad es > 0 (mismo criterio que
+  // sheet.recursos: sin entrada para lo que no se tiene).
+  const rGranadas = (r.granadas ?? {}) as Record<string, unknown>;
+  const granadas: Granadas = {};
+  for (const g of MUNICION_GRANADA) {
+    const cantidad = clampInt(rGranadas[g.id], 0, 999999, 0);
+    if (cantidad > 0) granadas[g.id] = cantidad;
+  }
+
   const rPrioridades = (r.prioridades ?? {}) as Record<string, unknown>;
   const prioridades = { ...base.prioridades };
   for (const c of CATEGORIAS_PRIORIDAD) {
@@ -211,5 +228,6 @@ export function parseSheet(raw: unknown): Sheet {
     equipo,
     recursos,
     materiales,
+    granadas,
   });
 }

@@ -169,6 +169,51 @@ describe("v6 → v7: se añade el pool de Materiales", () => {
   });
 });
 
+describe("v7 → v8: las granadas pasan de pieza equipada a recurso con cantidad", () => {
+  test("suma las instancias equipadas de granada al recurso, agrupadas por tipo", () => {
+    const { ficha } = migrar(
+      {
+        schemaVersion: 7,
+        especieId: "humano",
+        equipo: [
+          { instanciaId: "g1", catalogoId: "granada_casera" },
+          { instanciaId: "g2", catalogoId: "granada_casera" },
+          { instanciaId: "g3", catalogoId: "granada_plasma" },
+        ],
+      },
+      8,
+    );
+    assert.deepEqual(ficha.granadas, { granada_casera: 2, granada_plasma: 1 });
+    assert.equal(ficha.schemaVersion, 8);
+  });
+
+  test("las retira de equipo, sin tocar el resto de piezas equipadas", () => {
+    const { ficha } = migrar(
+      {
+        schemaVersion: 7,
+        equipo: [
+          { instanciaId: "a1", catalogoId: "fusil_asalto_impetus" },
+          { instanciaId: "g1", catalogoId: "granada_casera" },
+        ],
+      },
+      8,
+    );
+    assert.deepEqual(ficha.equipo, [{ instanciaId: "a1", catalogoId: "fusil_asalto_impetus" }]);
+  });
+
+  test("una ficha sin ninguna granada equipada arranca con el recurso vacío", () => {
+    const { ficha } = migrar({ schemaVersion: 7, especieId: "humano" }, 8);
+    assert.deepEqual(ficha.granadas, {});
+    assert.equal(ficha.schemaVersion, 8);
+  });
+
+  test("no toca el resto de la ficha", () => {
+    const { ficha } = migrar({ schemaVersion: 7, especieId: "arkoru", edad: 40 }, 8);
+    assert.equal(ficha.especieId, "arkoru");
+    assert.equal(ficha.edad, 40);
+  });
+});
+
 describe("parseSheet migra antes de normalizar", () => {
   test("una ficha v1 entra por la puerta y sale al día", () => {
     const s = parseSheet({ schemaVersion: 1, especie: "Arkorü", edad: 40 });

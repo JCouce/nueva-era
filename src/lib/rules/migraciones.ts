@@ -8,6 +8,7 @@
 // Aquí se decide explícitamente qué pasa con cada cambio de formato. Al subir
 // SCHEMA_VERSION hay que añadir una entrada y su test.
 import { ESPECIES } from "../catalog/especies";
+import { MUNICION_GRANADA } from "../catalog/municion";
 
 export type Migracion = {
   desde: number;
@@ -108,6 +109,31 @@ export const MIGRACIONES: Migracion[] = [
       ...ficha,
       materiales: { sencillos: 0, sofisticados: 0, avanzados: 0 },
     }),
+  },
+  {
+    desde: 7,
+    hasta: 8,
+    descripcion:
+      "Las granadas dejan de ser una pieza equipada (una instancia por compra) y pasan a un " +
+      "recurso con cantidad, igual que Materiales — pero aquí SÍ se convierte automáticamente: " +
+      "a diferencia de Materiales (donde una pieza equipada no representaba un número de " +
+      "unidades conocido), aquí cada instancia equipada de un tipo concreto es inequívocamente " +
+      "1 unidad de esa granada. Se agrupan por catalogoId y se retiran de sheet.equipo.",
+    migrar: (ficha) => {
+      const equipo = Array.isArray(ficha.equipo) ? ficha.equipo : [];
+      const idsGranada = new Set(MUNICION_GRANADA.map((g) => g.id));
+      const granadas: Record<string, number> = {};
+      const resto: unknown[] = [];
+      for (const p of equipo) {
+        const catalogoId = (p as { catalogoId?: unknown } | null)?.catalogoId;
+        if (typeof catalogoId === "string" && idsGranada.has(catalogoId)) {
+          granadas[catalogoId] = (granadas[catalogoId] ?? 0) + 1;
+        } else {
+          resto.push(p);
+        }
+      }
+      return { ...ficha, equipo: resto, granadas };
+    },
   },
 ];
 

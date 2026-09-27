@@ -767,28 +767,26 @@ describe("herramienta y consumible (Medicina, docs/traspaso.md §6)", () => {
   });
 });
 
-describe("armaPesada y granada (Armamento Pesado, bloque 3 del catálogo pendiente)", () => {
-  test("se equipan sin host ni nivel, como un arma o un consumible", () => {
-    let s = equipar(defaultSheet(), { instanciaId: "lg1", catalogoId: "lanzallamas_ligero" });
-    s = equipar(s, { instanciaId: "g1", catalogoId: "granada_casera" });
-    assert.equal(s.equipo.length, 2);
+// Granada dejó de equiparse (docs/tareas.md, 2026-09-27: pasa a recurso con
+// cantidad, ver recursos.test.ts comprarGranada/ajustarGranada) — este
+// describe se queda solo con armaPesada.
+describe("armaPesada (Armamento Pesado, bloque 3 del catálogo pendiente)", () => {
+  test("se equipa sin host ni nivel, como un arma o un consumible", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "lg1", catalogoId: "lanzallamas_ligero" });
+    assert.equal(s.equipo.length, 1);
   });
 
-  test("costeDePieza y rarezaDePieza: cotizan plano, como un arma", () => {
+  test("costeDePieza y rarezaDePieza cotizan plano, como un arma", () => {
     assert.equal(costeDePieza({ instanciaId: "cp1", catalogoId: "canon_plasma" }), 210000);
     assert.equal(rarezaDePieza({ instanciaId: "cp1", catalogoId: "canon_plasma" }), "Muy Extraño");
-    assert.equal(costeDePieza({ instanciaId: "g1", catalogoId: "granada_plasma" }), 2000);
-    assert.equal(rarezaDePieza({ instanciaId: "g1", catalogoId: "granada_plasma" }), "Extraño");
   });
 
-  test("pesoDePieza: armaPesada suma su pesoKg, granada pesa 0 (columna 'I' sin determinar)", () => {
+  test("pesoDePieza suma su pesoKg", () => {
     assert.equal(pesoDePieza({ instanciaId: "cp1", catalogoId: "canon_plasma" }), 9);
-    assert.equal(pesoDePieza({ instanciaId: "g1", catalogoId: "granada_plasma" }), 0);
   });
 
-  test("modificadoresDeEquipo: ninguna de las dos aporta bono de personaje (su número va en la tirada, no aquí)", () => {
-    let s = equipar(defaultSheet(), { instanciaId: "cp1", catalogoId: "canon_plasma" });
-    s = equipar(s, { instanciaId: "g1", catalogoId: "granada_plasma" });
+  test("modificadoresDeEquipo: no aporta bono de personaje (su número va en la tirada, no aquí)", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "cp1", catalogoId: "canon_plasma" });
     assert.deepEqual(modificadoresDeEquipo(s), []);
   });
 });
@@ -890,5 +888,23 @@ describe("fabricar", () => {
     const s = ajustarMaterial(defaultSheet(), "sencillos", 100);
     const s2 = fabricar(s, "no-existe", "sencillos", true);
     assert.equal(s2, s);
+  });
+
+  // Granada Casera: coste 20. Sencillos: 250 cr/unidad → ceil(20/250) = 1.
+  // Fabricar una granada suma al recurso (docs/tareas.md, 2026-09-27), no
+  // equipa nada — mismo criterio de gasto que cualquier otra pieza.
+  test("una granada, con éxito, suma al recurso en vez de equipar", () => {
+    let s = ajustarMaterial(defaultSheet(), "sencillos", 1);
+    s = fabricar(s, "granada_casera", "sencillos", true);
+    assert.equal(s.materiales.sencillos, 0);
+    assert.equal(s.granadas.granada_casera, 1);
+    assert.deepEqual(s.equipo, []);
+  });
+
+  test("una granada, sin éxito, gasta el material igual pero no suma al recurso", () => {
+    let s = ajustarMaterial(defaultSheet(), "sencillos", 1);
+    s = fabricar(s, "granada_casera", "sencillos", false);
+    assert.equal(s.materiales.sencillos, 0);
+    assert.equal(s.granadas.granada_casera, undefined);
   });
 });

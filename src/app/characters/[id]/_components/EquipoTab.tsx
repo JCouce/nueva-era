@@ -9,7 +9,6 @@ import {
   type Herramienta,
   type Consumible,
   type ArmaPesada,
-  type MunicionGranada,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { Acordeon } from "@/components/Acordeon";
@@ -21,7 +20,6 @@ import {
   DetalleModulo,
   DetalleConsumible,
   DetalleArmaPesada,
-  DetalleGranada,
 } from "./equipo/PiezaDetalle";
 
 function BotonQuitar({ onClick }: { onClick: () => void }) {
@@ -126,7 +124,6 @@ export function EquipoTab({
   const armamentoPesado = sheet.equipo.filter(
     (p) => equipoPorId(p.catalogoId)?.familia === "armaPesada",
   );
-  const granadas = sheet.equipo.filter((p) => equipoPorId(p.catalogoId)?.familia === "granada");
 
   return (
     <div className="flex flex-col gap-3">
@@ -247,26 +244,6 @@ export function EquipoTab({
             }
           >
             <DetalleArmaPesada p={cat} />
-          </Acordeon>
-        );
-      })}
-
-      {granadas.map((a) => {
-        const cat = equipoPorId(a.catalogoId) as MunicionGranada | null;
-        if (!cat || cat.familia !== "granada") return null;
-        return (
-          <Acordeon
-            key={a.instanciaId}
-            titulo={cat.label}
-            resumen={cat.areaEfecto}
-            etiqueta={
-              <div className="flex flex-col items-end gap-1">
-                <BadgeRareza rareza={cat.rareza} />
-                <BotonQuitar onClick={() => onDesequipar(a.instanciaId)} />
-              </div>
-            }
-          >
-            <DetalleGranada p={cat} />
           </Acordeon>
         );
       })}

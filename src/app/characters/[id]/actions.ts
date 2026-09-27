@@ -28,6 +28,9 @@ import {
   fabricar,
   tieneVtf,
   piezaFabricablePorId,
+  ajustarGranada,
+  comprarGranada,
+  MUNICION_GRANADA,
   type MaterialTier,
   type AtributoId,
   type HabilidadId,
@@ -355,6 +358,54 @@ export async function comprarMaterialAction(
   revalidatePath(`/characters/${characterId}`);
   revalidatePath("/master");
   return { ok: true, sheet: resultado.sheet, creditos };
+}
+
+// Granadas (docs/tareas.md, 2026-09-27): comprar suma 1 unidad al recurso en
+// vez de equipar — mismo tope de rareza que equiparAction (solo en
+// creación, nunca al máster), precio recalculado en servidor con el
+// catálogo, igual que el resto de compras.
+export async function comprarGranadaAction(
+  characterId: string,
+  catalogoId: string,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+
+  const granada = MUNICION_GRANADA.find((g) => g.id === catalogoId);
+  if (!granada) return { ok: false, error: "Granada inválida" };
+
+  if (!ctx.aprobada && !ctx.esMaster) {
+    const letra = ctx.sheet.prioridades.recursos;
+    const tope = letra ? RECURSOS_POR_LETRA[letra].rareza : null;
+    if (tope && !rarezaPermitida(granada.rareza, tope)) {
+      return { ok: false, error: `Tu letra de Recursos no llega a ${granada.rareza}: tope ${tope}.` };
+    }
+  }
+
+  const resultado = comprarGranada(ctx.sheet, catalogoId);
+  if (!resultado) return { ok: false, error: "Granada inválida" };
+  if (resultado.coste > ctx.creditos) return { ok: false, error: "No tienes créditos suficientes" };
+
+  const creditos = ctx.creditos - resultado.coste;
+  await prisma.character.update({
+    where: { id: characterId },
+    data: { stats: resultado.sheet, creditos },
+  });
+  revalidatePath(`/characters/${characterId}`);
+  revalidatePath("/master");
+  return { ok: true, sheet: resultado.sheet, creditos };
+}
+
+// Gasto manual (+/-) sobre el recurso, sin coste en créditos — mismo patrón
+// que ajustarRecursoAction/ajustarMaterialAction.
+export async function ajustarGranadaAction(
+  characterId: string,
+  catalogoId: string,
+  delta: number,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, ajustarGranada(ctx.sheet, catalogoId, delta));
 }
 
 // Reparar (docs/tareas.md, tarea 8): sin requisito de VTF (a diferencia de

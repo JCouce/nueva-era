@@ -6,6 +6,7 @@ import {
   MATERIAL_TIERS,
   catalogoDeMaterial,
   precioMaterial,
+  MUNICION_GRANADA,
   type Sheet,
   type RecursoInstancia,
   type MaterialTier,
@@ -45,6 +46,7 @@ export function RecursosTab({
   onRecargar,
   onAjustarMaterial,
   onComprarMaterial,
+  onAjustarGranada,
 }: {
   sheet: Sheet;
   // Ausente para un NPC: edición libre, sin cartera de créditos que cobrar
@@ -54,7 +56,15 @@ export function RecursosTab({
   onRecargar: (instanciaId: string) => void;
   onAjustarMaterial: (tier: MaterialTier, delta: number) => void;
   onComprarMaterial: (tier: MaterialTier) => void;
+  onAjustarGranada: (catalogoId: string, delta: number) => void;
 }) {
+  // Solo los tipos que ya se poseen (docs/tareas.md, 2026-09-27) — para
+  // descubrir/comprar tipos nuevos ya está Tienda, que es donde se compran
+  // (comprar NO vive aquí, a diferencia de Materiales: 14 piezas con ficha
+  // propia se quedan en su sitio de siempre, no las 3 cifras genéricas de
+  // Materiales). Orden de catálogo.
+  const granadasEnStock = MUNICION_GRANADA.filter((g) => (sheet.granadas[g.id] ?? 0) > 0);
+
   // Tres categorías, para que la lista no sea un totum revolutum: Materiales
   // (pool de personaje, más abajo), munición/batería y durabilidad se
   // separan aquí porque son conceptos distintos aunque compartan el mismo
@@ -104,6 +114,31 @@ export function RecursosTab({
           />
         );
       })}
+
+      {granadasEnStock.length === 0 ? (
+        <HudCard className="mt-2 border-dashed p-5">
+          <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
+            {"//SYSTEM · granadas"}
+          </p>
+          <p className="mt-2 font-sans text-sm leading-relaxed text-muted">
+            No llevas ninguna granada — cómpralas en la Tienda.
+          </p>
+        </HudCard>
+      ) : (
+        <>
+          <p className="mt-2 border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+            {"//SYSTEM · granadas"}
+          </p>
+          {granadasEnStock.map((g) => (
+            <GranadaCard
+              key={g.id}
+              titulo={g.label}
+              cantidad={sheet.granadas[g.id] ?? 0}
+              onAjustar={(delta) => onAjustarGranada(g.id, delta)}
+            />
+          ))}
+        </>
+      )}
 
       {recursosMunicionBateria.length === 0 ? (
         <HudCard className="mt-2 border-dashed p-5">
@@ -243,6 +278,34 @@ function DurabilidadCard({
         <BotonDelta onClick={() => onAjustar(1)} disabled={recurso.actual >= recurso.max}>
           +
         </BotonDelta>
+      </div>
+    </HudCard>
+  );
+}
+
+// Granadas: solo cantidad + −/+ manual (gasto en partida) — sin botón
+// comprar, eso se queda en Tienda (docs/tareas.md, 2026-09-27). Mismo
+// esqueleto que DurabilidadCard, sin denominador "/max": aquí no hay tope.
+function GranadaCard({
+  titulo,
+  cantidad,
+  onAjustar,
+}: {
+  titulo: string;
+  cantidad: number;
+  onAjustar: (delta: number) => void;
+}) {
+  return (
+    <HudCard className="p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-display text-sm font-semibold uppercase text-foreground">{titulo}</p>
+        <p className="font-mono text-lg tabular-nums text-foreground">{cantidad}</p>
+      </div>
+      <div className="mt-2 flex items-center gap-1.5">
+        <BotonDelta onClick={() => onAjustar(-1)} disabled={cantidad <= 0}>
+          −
+        </BotonDelta>
+        <BotonDelta onClick={() => onAjustar(1)}>+</BotonDelta>
       </div>
     </HudCard>
   );

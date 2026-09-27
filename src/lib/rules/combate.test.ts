@@ -2,10 +2,11 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
 import { equipar } from "./equipo";
-import { ajustarRecurso } from "./recursos";
+import { ajustarRecurso, ajustarGranada } from "./recursos";
 import { accionesDeAtaque, generaAccionPropia } from "./combate";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
+import { MUNICION_GRANADA } from "../catalog/municion";
 import type { MotorMetadata } from "./motor";
 import { modificadorAccion } from "./acciones";
 import { aplicado } from "./derivados";
@@ -28,6 +29,13 @@ function opcionNota(c: CondicionTirada | undefined, id: string) {
   const o = c.opciones.find((x) => x.id === id);
   assert.ok(o, `no existe la opción ${id}`);
   return o.nota;
+}
+
+// Concede 1 unidad de cada tipo de granada del catálogo — para los tests de
+// Lanzagranadas que quieren ver el selector completo, sin depender de cuáles
+// concede cada test suelto.
+function conTodasLasGranadas(sheet: Sheet): Sheet {
+  return MUNICION_GRANADA.reduce((s, g) => ajustarGranada(s, g.id, 1), sheet);
 }
 
 describe("sin nada equipado", () => {
@@ -340,6 +348,7 @@ describe("lanzagranadas integrado", () => {
       nivel: 1,
       instaladoEnId: "arma1",
     });
+    sheet = conTodasLasGranadas(sheet);
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Lanzagranadas (Impetus)")!;
     assert.ok(fila);
     assert.equal(fila.bloqueada, undefined);
@@ -352,11 +361,60 @@ describe("lanzagranadas integrado", () => {
     assert.equal(fila.ataque?.modos.find((m) => m.id === "granada_aturdidora")?.categoriaDanio, "Efecto (sin daño directo)");
   });
 
+  test("la nota de cada granada interpola su areaEfecto real, no un texto genérico", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
+    sheet = equipar(sheet, {
+      instanciaId: "lanza1",
+      catalogoId: "lanzagranadas_integrado",
+      nivel: 1,
+      instaladoEnId: "arma1",
+    });
+    sheet = conTodasLasGranadas(sheet);
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Lanzagranadas (Impetus)")!;
+    const modo = fila.condiciones?.find((c) => c.id === "modo");
+    const plasma = MUNICION_GRANADA.find((m) => m.id === "granada_plasma")!;
+    assert.equal(opcionNota(modo, "granada_plasma"), plasma.areaEfecto);
+    assert.doesNotMatch(fila.nota ?? "", /según la granada elegida/i);
+  });
+
   test("sin lanzagranadas instalado, no aparece esa fila", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
     const labels = accionesDeAtaque(sheet).map((t) => t.label);
     assert.ok(!labels.some((l) => l.startsWith("Lanzagranadas")));
+  });
+
+  // docs/tareas.md, 2026-09-27: sin nada en RECURSOS, tampoco hay fila —
+  // aunque el lanzagranadas esté instalado, no hay nada que disparar.
+  test("con lanzagranadas instalado pero sin granadas en el inventario, no aparece esa fila", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
+    sheet = equipar(sheet, {
+      instanciaId: "lanza1",
+      catalogoId: "lanzagranadas_integrado",
+      nivel: 1,
+      instaladoEnId: "arma1",
+    });
+    const labels = accionesDeAtaque(sheet).map((t) => t.label);
+    assert.ok(!labels.some((l) => l.startsWith("Lanzagranadas")));
+  });
+
+  test("con un único tipo en el inventario, no hay selector de modo pero sí la tirada", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
+    sheet = equipar(sheet, {
+      instanciaId: "lanza1",
+      catalogoId: "lanzagranadas_integrado",
+      nivel: 1,
+      instaladoEnId: "arma1",
+    });
+    sheet = ajustarGranada(sheet, "granada_casera", 1);
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Lanzagranadas (Impetus)")!;
+    assert.ok(fila);
+    assert.equal(fila.condiciones?.find((c) => c.id === "modo"), undefined);
+    assert.equal(fila.ataque?.modos.length, 1);
+    assert.equal(fila.ataque?.modos[0].id, "granada_casera");
   });
 });
 
@@ -558,12 +616,25 @@ describe("armamento pesado equipado", () => {
   test("el Lanzagranadas pesado tiene el daño según la granada elegida, como el integrado", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "lg1", catalogoId: "lanzagranadas_pesado" });
+    sheet = conTodasLasGranadas(sheet);
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Lanzagranadas")!;
     assert.deepEqual(fila.ajustesFijos, [{ valor: -2, fuente: "Lanzagranadas" }]);
     const modo = fila.condiciones?.find((c) => c.id === "modo");
     assert.ok(modo && modo.tipo === "opcion");
     assert.equal(modo.opciones.length, 14);
     assert.equal(fila.ataque?.modos.find((m) => m.id === "granada_plasma")?.danio, 16);
+    const plasma = MUNICION_GRANADA.find((m) => m.id === "granada_plasma")!;
+    assert.equal(opcionNota(modo, "granada_plasma"), plasma.areaEfecto);
+    assert.doesNotMatch(fila.nota ?? "", /según la granada elegida/i);
+  });
+
+  // docs/tareas.md, 2026-09-27: mismo criterio que el Lanzagranadas
+  // Integrado — sin nada en RECURSOS, no hay nada que disparar.
+  test("el Lanzagranadas pesado sin granadas en el inventario no genera fila", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "lg1", catalogoId: "lanzagranadas_pesado" });
+    const labels = accionesDeAtaque(sheet).map((t) => t.label);
+    assert.ok(!labels.includes("Disparar con Lanzagranadas"));
   });
 });
 
@@ -685,10 +756,12 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
   });
 });
 
-describe("granada equipada", () => {
+// Granadas dejaron de equiparse (docs/tareas.md, 2026-09-27): una fila por
+// tipo en sheet.granadas con cantidad > 0, no por instancia comprada.
+describe("granada en RECURSOS", () => {
   test("genera 'Lanzar...' con Potencia + Atletismo y la dificultad de lanzarla a mano", () => {
     let sheet = defaultSheet();
-    sheet = equipar(sheet, { instanciaId: "g1", catalogoId: "granada_fragmentacion" });
+    sheet = ajustarGranada(sheet, "granada_fragmentacion", 1);
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Lanzar Granada de Fragmentación")!;
     assert.equal(fila.grupo, "Ataques");
     assert.equal(fila.aplicado, "potencia");
@@ -701,19 +774,35 @@ describe("granada equipada", () => {
 
   test("una granada de solo efecto (sin daño directo) lo indica en la categoría", () => {
     let sheet = defaultSheet();
-    sheet = equipar(sheet, { instanciaId: "g1", catalogoId: "granada_humo" });
+    sheet = ajustarGranada(sheet, "granada_humo", 1);
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Lanzar Granada de Humo")!;
     assert.equal(fila.ataque?.modos[0].categoriaDanio, "Efecto (sin daño directo)");
   });
 
-  test("dos granadas equipadas dan dos filas independientes", () => {
+  test("dos tipos en stock dan dos filas independientes, sin importar la cantidad", () => {
     let sheet = defaultSheet();
-    sheet = equipar(sheet, { instanciaId: "g1", catalogoId: "granada_casera" });
-    sheet = equipar(sheet, { instanciaId: "g2", catalogoId: "granada_plasma" });
+    sheet = ajustarGranada(sheet, "granada_casera", 3);
+    sheet = ajustarGranada(sheet, "granada_plasma", 1);
     const labels = accionesDeAtaque(sheet)
       .map((t) => t.label)
       .filter((l) => l.startsWith("Lanzar"));
     assert.deepEqual(labels, ["Lanzar Granada Casera", "Lanzar Granada de Plasma"]);
+  });
+
+  test("sin ninguna granada en stock, no aparece ninguna fila 'Lanzar...'", () => {
+    const labels = accionesDeAtaque(defaultSheet())
+      .map((t) => t.label)
+      .filter((l) => l.startsWith("Lanzar"));
+    assert.deepEqual(labels, []);
+  });
+
+  test("bajar la cantidad a 0 quita la fila", () => {
+    let sheet = defaultSheet();
+    sheet = ajustarGranada(sheet, "granada_casera", 1);
+    sheet = ajustarGranada(sheet, "granada_casera", -1);
+    assert.equal(sheet.granadas.granada_casera, undefined);
+    const labels = accionesDeAtaque(sheet).map((t) => t.label);
+    assert.ok(!labels.includes("Lanzar Granada Casera"));
   });
 });
 
@@ -724,9 +813,11 @@ describe("granada equipada", () => {
 // mejoraArma) necesitan un host válido para poder equiparse siquiera
 // (equipar() las rechaza sin uno, ver lib/rules/equipo.ts) y nunca llegan a
 // sheet.equipo sin él, así que no hace falta comprobarlas aparte — quedan
-// fuera por construcción, no por omisión de este test.
+// fuera por construcción, no por omisión de este test. "granada" tampoco
+// entra aquí desde 2026-09-27: dejó de ser sheet.equipo (recurso con
+// cantidad), su cobertura vive en el describe "granada en RECURSOS".
 describe("REGISTRO_DE_ATAQUE (combate.ts) cubre exactamente las familias esperadas", () => {
-  const FAMILIAS_QUE_GENERAN_ATAQUE: Equipo["familia"][] = ["arma", "armaMelee", "armaPesada", "granada"];
+  const FAMILIAS_QUE_GENERAN_ATAQUE: Equipo["familia"][] = ["arma", "armaMelee", "armaPesada"];
   const FAMILIAS_SIN_ATAQUE_SIN_HOST: Equipo["familia"][] = ["armadura", "herramienta", "consumible"];
 
   function primerIdDe(familia: Equipo["familia"]): string {

@@ -171,13 +171,15 @@ function ajustesFijosDeMejoras(sheet: Sheet, instanciaId: string): { valor: numb
   return ajustes;
 }
 
-function condicionModo(modos: { id: string; etiqueta: string; dificultad: number }[]): CondicionTirada | null {
+function condicionModo(
+  modos: { id: string; etiqueta: string; dificultad: number; nota?: string }[],
+): CondicionTirada | null {
   if (modos.length <= 1) return null;
   return {
     id: "modo",
     tipo: "opcion",
     etiqueta: "Modo de disparo",
-    opciones: modos.map((m) => ({ id: m.id, etiqueta: m.etiqueta, valor: m.dificultad })),
+    opciones: modos.map((m) => ({ id: m.id, etiqueta: m.etiqueta, valor: m.dificultad, nota: m.nota })),
     porDefecto: modos[0].id,
   };
 }
@@ -264,7 +266,17 @@ function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: strin
   );
   if (!tieneLanzagranadas) return null;
 
-  const modo = condicionModo(MUNICION_GRANADA.map((m) => ({ id: m.id, etiqueta: m.label, dificultad: 0 })));
+  // Solo lo que el personaje lleva en RECURSOS (docs/tareas.md, 2026-09-27),
+  // no las 14 del catálogo — sin ninguna, no hay nada que disparar: se
+  // oculta la fila entera (mismo criterio que "sin lanzagranadas instalado",
+  // arriba). Necesario además porque ataque.modos vacío reventaría al pulsar
+  // Tirar (AccionesTab.tsx hace modos[0].id sin guardia).
+  const granadasDisponibles = MUNICION_GRANADA.filter((m) => (sheet.granadas[m.id] ?? 0) > 0);
+  if (granadasDisponibles.length === 0) return null;
+
+  const modo = condicionModo(
+    granadasDisponibles.map((m) => ({ id: m.id, etiqueta: m.label, dificultad: 0, nota: m.areaEfecto })),
+  );
 
   return {
     id: `lanzagranadas_${instanciaId}`,
@@ -272,11 +284,11 @@ function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: strin
     grupo: "Ataques",
     aplicado: "reflejos",
     habilidad: "combate_distancia",
-    nota: "Acción estándar · cargador 1 · alcance 200 m. Área y efecto según la granada elegida (docs/equipamiento.md).",
+    nota: "Acción estándar · cargador 1 · alcance 200 m.",
     ajustesFijos: [{ valor: -2, fuente: "Lanzagranadas acoplado" }],
     condiciones: modo ? [modo] : [],
     ataque: {
-      modos: MUNICION_GRANADA.map((m) => ({
+      modos: granadasDisponibles.map((m) => ({
         id: m.id,
         danio: m.danio,
         formulaDanio: null,
@@ -337,25 +349,33 @@ function tiradaBloqueoBayoneta(sheet: Sheet, arma: ArmaFuego, instanciaId: strin
 // alcance no tiene tramos (un único número, o ninguno en el Lanzallamas): se
 // queda como texto informativo en `nota`, igual que el resto de "Otras
 // Armas a Distancia" — mismo criterio que Radar/Escáner (ver herramientas.ts).
-function tiradaDeArmamentoPesado(arma: ArmaPesada, instanciaId: string): Accion {
+function tiradaDeArmamentoPesado(sheet: Sheet, arma: ArmaPesada, instanciaId: string): Accion | null {
   const notaAlcance = arma.alcanceM !== null ? `Alcance ${arma.alcanceM} m. · ` : "";
 
   // Lanzagranadas (pesado): el daño depende de la granada cargada, igual
   // que el Lanzagranadas Integrado (mejora de arma) — aquí como arma
   // independiente con su propio cargador.
   if (arma.danio === null) {
-    const modo = condicionModo(MUNICION_GRANADA.map((m) => ({ id: m.id, etiqueta: m.label, dificultad: 0 })));
+    // Solo lo que hay en RECURSOS (docs/tareas.md, 2026-09-27) — sin
+    // ninguna, no hay nada que disparar: se oculta la fila entera, mismo
+    // criterio y mismo motivo técnico que tiradaDeLanzagranadas (arriba).
+    const granadasDisponibles = MUNICION_GRANADA.filter((m) => (sheet.granadas[m.id] ?? 0) > 0);
+    if (granadasDisponibles.length === 0) return null;
+
+    const modo = condicionModo(
+      granadasDisponibles.map((m) => ({ id: m.id, etiqueta: m.label, dificultad: 0, nota: m.areaEfecto })),
+    );
     return {
       id: `ataque_pesado_${instanciaId}`,
       label: `Disparar con ${arma.label}`,
       grupo: "Ataques",
       aplicado: "reflejos",
       habilidad: "combate_distancia",
-      nota: `${notaAlcance}Cargador ${arma.cargador}. ${arma.efectos}`,
+      nota: `${notaAlcance}Cargador ${arma.cargador}.`,
       ajustesFijos: [{ valor: arma.dificultad, fuente: arma.label }],
       condiciones: modo ? [modo] : [],
       ataque: {
-        modos: MUNICION_GRANADA.map((m) => ({
+        modos: granadasDisponibles.map((m) => ({
           id: m.id,
           danio: m.danio,
           formulaDanio: null,
@@ -390,9 +410,15 @@ function tiradaDeArmamentoPesado(arma: ArmaPesada, instanciaId: string): Accion 
 // es un lanzamiento, no un disparo), con la dificultad propia de lanzarla
 // (`dificultadArrojada`) como único ajuste fijo — automática, no hay nada
 // que el jugador elija al respecto.
-function tiradaDeGranada(granada: MunicionGranada, instanciaId: string): Accion {
+//
+// Una fila por TIPO que el personaje lleva en RECURSOS (docs/tareas.md,
+// 2026-09-27), no por instancia comprada — por eso no lleva instanciaId ni
+// pasa por REGISTRO_DE_ATAQUE (ese registro recorre sheet.equipo, y una
+// granada ya no vive ahí). accionesDeGranadas() es su único punto de
+// entrada, llamado aparte al final de accionesDeAtaque().
+function tiradaDeGranada(granada: MunicionGranada): Accion {
   return {
-    id: `lanzar_granada_${instanciaId}`,
+    id: `lanzar_granada_${granada.id}`,
     label: `Lanzar ${granada.label}`,
     grupo: "Ataques",
     aplicado: "potencia",
@@ -656,9 +682,11 @@ function tiradaBloqueoAguijon(pieza: PiezaEquipada): Accion {
 
 // Registro familia -> generador de acción (T5, docs/motor.md §Escalabilidad):
 // una función por familia con firma uniforme, en vez de un bucle hardcodeado
-// por familia repetido 4 veces sobre sheet.equipo. Dar de alta una familia
-// nueva en esta lista (armas de fuego/melee/pesadas, granadas) es añadir una
-// entrada aquí, no tocar accionesDeAtaque(). Cada wrapper es una cáscara fina
+// por familia repetido varias veces sobre sheet.equipo. Dar de alta una
+// familia nueva en esta lista (armas de fuego/melee/pesadas) es añadir una
+// entrada aquí, no tocar accionesDeAtaque(). "granada" NO vive aquí desde
+// 2026-09-27: dejó de ser sheet.equipo, ver accionesDeGranadas() más abajo.
+// Cada wrapper es una cáscara fina
 // sobre la función real (tiradaDeArmaFuego, tiradaDeArmaMelee...) — la lógica
 // de cada una no cambia, solo el mecanismo de despacho.
 //
@@ -696,8 +724,10 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
     const arma = cat as ArmaMelee;
     return [tiradaDeArmaMelee(sheet, arma, pieza.instanciaId), tiradaBloqueoDeArmaMelee(arma, pieza.instanciaId)];
   },
-  armaPesada: (_sheet, pieza, cat) => [tiradaDeArmamentoPesado(cat as ArmaPesada, pieza.instanciaId)],
-  granada: (_sheet, pieza, cat) => [tiradaDeGranada(cat as MunicionGranada, pieza.instanciaId)],
+  armaPesada: (sheet, pieza, cat) => {
+    const tirada = tiradaDeArmamentoPesado(sheet, cat as ArmaPesada, pieza.instanciaId);
+    return tirada ? [tirada] : [];
+  },
   // Único caso hoy: Proyector de Pulso (ver tiradaDeProyectorPulso arriba).
   // El resto de subsistemas no llega aquí — generaAccionPropia() ya los
   // filtra por catalogoId+nivel antes de invocar este generador. Si en el
@@ -720,8 +750,8 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
 // nunca lo sustituye. Sin él, una pieza cuya familia esté registrada pero
 // cuyo MotorMetadata todavía no declare su acción como "construido" (una
 // Bayoneta el día de mañana, por ejemplo) generaría igualmente su fila, solo
-// porque su familia sabe generar tiradas en general. Las 4 familias del
-// registro (arma/armaMelee/armaPesada/granada) tienen hoy el 100% de sus
+// porque su familia sabe generar tiradas en general. Las familias del
+// registro (arma/armaMelee/armaPesada) tienen hoy el 100% de sus
 // piezas con al menos una entrada { tipo: "accion", mecanismo:
 // "accion_equipo", estado: "construido" } para su acción principal —
 // confirmado tras el barrido y la auditoría del catálogo — así que este
@@ -732,7 +762,8 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
 // construida" basta, no hace falta que TODAS lo estén.
 //
 // "cat" es la unión Equipo; motor existe como campo directo en las familias
-// sin niveles (arma/armaMelee/armaPesada/granada) — el cast a `{ motor?: ... }`
+// sin niveles (arma/armaMelee/armaPesada, y granada vía accionesDeGranadas()
+// más abajo, que consulta generaAccionPropia() a mano) — el cast a `{ motor?: ... }`
 // es seguro aquí por el mismo motivo que el cast a la familia concreta dentro
 // de cada wrapper. Las familias CON niveles (subsistema, hoy solo el
 // Proyector de Pulso en este registro) llevan el `motor` colgado de cada
@@ -756,10 +787,21 @@ export function generaAccionPropia(cat: Equipo, nivel?: number): boolean {
 }
 
 // Todas las filas de la categoría "Ataques": una por arma de fuego, arma
-// melee, arma pesada o granada equipada — incluida Pelea (Puñetazo, Patada,
-// Codazo o Rodillazo), que ya no se añade sola: si el jugador la quiere en
-// Acciones, la equipa desde la Tienda como cualquier otra arma (aparece con
-// "no se compra" en vez de precio, pero es el mismo flujo).
+// melee o arma pesada equipada, más una por tipo de granada en RECURSOS —
+// incluida Pelea (Puñetazo, Patada, Codazo o Rodillazo), que ya no se añade
+// sola: si el jugador la quiere en Acciones, la equipa desde la Tienda como
+// cualquier otra arma (aparece con "no se compra" en vez de precio, pero es
+// el mismo flujo). Granada, a diferencia de las otras tres, no pasa por
+// REGISTRO_DE_ATAQUE (ese recorre sheet.equipo, y una granada ya no vive
+// ahí) — generaAccionPropia() se consulta aquí a mano, mismo gate de
+// MotorMetadata que antes, con el mismo orden que el catálogo en vez del de
+// inserción del Record.
+function accionesDeGranadas(sheet: Sheet): Accion[] {
+  return MUNICION_GRANADA.filter((g) => (sheet.granadas[g.id] ?? 0) > 0 && generaAccionPropia(g)).map((g) =>
+    tiradaDeGranada(g),
+  );
+}
+
 export function accionesDeAtaque(sheet: Sheet): Accion[] {
   const tiradas: Accion[] = [];
   for (const pieza of sheet.equipo) {
@@ -770,5 +812,6 @@ export function accionesDeAtaque(sheet: Sheet): Accion[] {
     if (!generaAccionPropia(cat, pieza.nivel)) continue;
     tiradas.push(...generador(sheet, pieza, cat));
   }
+  tiradas.push(...accionesDeGranadas(sheet));
   return tiradas;
 }

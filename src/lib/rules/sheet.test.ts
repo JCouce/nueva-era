@@ -110,6 +110,24 @@ describe("parseSheet aguanta cualquier cosa", () => {
     });
     assert.deepEqual(s.recursos, [{ instanciaId: "vieja", actual: 7, max: 7 }]);
   });
+
+  test("granadas: solo se conservan ids reales del catálogo, con cantidad > 0", () => {
+    const s = parseSheet({
+      schemaVersion: SCHEMA_VERSION,
+      granadas: {
+        granada_casera: 3,
+        "no-existe": 5, // id que ya no está en el catálogo: se descarta
+        granada_plasma: 0, // cantidad 0: no se conserva la clave
+        granada_humo: -1, // negativo: recorta a 0, tampoco se conserva
+      },
+    });
+    assert.deepEqual(s.granadas, { granada_casera: 3 });
+  });
+
+  test("sin campo granadas en absoluto, arranca con el recurso vacío", () => {
+    const s = parseSheet({ schemaVersion: SCHEMA_VERSION, especieId: "humano" });
+    assert.deepEqual(s.granadas, {});
+  });
 });
 
 describe("versión del esquema", () => {

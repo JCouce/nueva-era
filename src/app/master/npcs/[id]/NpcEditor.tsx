@@ -36,6 +36,8 @@ import {
   comprarMaterialNpcAction,
   repararNpcAction,
   fabricarNpcAction,
+  ajustarGranadaNpcAction,
+  comprarGranadaNpcAction,
   eliminarNpcAction,
   type NpcResult,
 } from "../actions";
@@ -235,6 +237,18 @@ export function NpcEditor({
     if (res.ok) setSheet(res.sheet);
     setStatus(res.ok ? "saved" : "error");
   };
+  const commitAjustarGranada = async (catalogoId: string, delta: number) => {
+    setStatus("saving");
+    const res = await ajustarGranadaNpcAction(npcId, catalogoId, delta);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
+  const commitComprarGranada = async (catalogoId: string) => {
+    setStatus("saving");
+    const res = await comprarGranadaNpcAction(npcId, catalogoId);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
   // Sin `exito`: edición libre de NPC, sin tirada (ver el comentario de
   // repararNpcAction) — mismo criterio que commitFabricar.
   const commitReparar = async (instanciaId: string, tier: MaterialTier) => {
@@ -354,10 +368,17 @@ export function NpcEditor({
           onRecargar={commitRecargar}
           onAjustarMaterial={commitAjustarMaterial}
           onComprarMaterial={commitComprarMaterial}
+          onAjustarGranada={commitAjustarGranada}
         />
       )}
       {active === "tienda" && (
-        <TiendaTab sheet={sheet} topeRareza={null} libre onEquipar={commitEquipar} />
+        <TiendaTab
+          sheet={sheet}
+          topeRareza={null}
+          libre
+          onEquipar={commitEquipar}
+          onComprarGranada={commitComprarGranada}
+        />
       )}
     </div>
   );
