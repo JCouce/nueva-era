@@ -99,18 +99,19 @@ describe("reconciliarRecursos (vía equipar/desequipar)", () => {
     assert.equal(s.recursos.length, 0);
   });
 
-  test("reconciliar no pisa un actual ya gastado ni un max ya crecido por compra", () => {
+  test("reconciliar no pisa un actual ya gastado tras recargar", () => {
     let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "pistola_mosquito" });
     s = ajustarRecurso(s, "a1", -3); // 4/7
-    const conCompra = comprarRecarga(s, "a1"); // 11/14
+    const conCompra = comprarRecarga(s, "a1"); // 7/7 — recarga, no crece el máximo
     assert.ok(conCompra);
     s = conCompra.sheet;
-    assert.deepEqual(recursoDe(s, "a1"), { instanciaId: "a1", actual: 11, max: 14 });
+    assert.deepEqual(recursoDe(s, "a1"), { instanciaId: "a1", actual: 7, max: 7 });
+    s = ajustarRecurso(s, "a1", -2); // 5/7, para que reconciliar tenga algo que no pisar
 
     // Reconciliar de nuevo (como hace equipar() en cualquier otra compra) no
-    // debe resetear ni actual ni max de esta instancia.
+    // debe resetear el actual de esta instancia.
     s = reconciliarRecursos(s);
-    assert.deepEqual(recursoDe(s, "a1"), { instanciaId: "a1", actual: 11, max: 14 });
+    assert.deepEqual(recursoDe(s, "a1"), { instanciaId: "a1", actual: 5, max: 7 });
   });
 
   test("dos armas iguales llevan cada una su propio total, independiente", () => {
@@ -146,13 +147,21 @@ describe("ajustarRecurso", () => {
 });
 
 describe("comprarRecarga", () => {
-  test("un recurso tipo stock (arma) suma la capacidad tanto a max como a actual", () => {
+  test("un recurso tipo stock (arma) solo restaura actual, el máximo no crece (2026-09-28: ya no compra cargador extra)", () => {
     let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "pistola_mosquito" });
     s = ajustarRecurso(s, "a1", -2); // 5/7
     const res = comprarRecarga(s, "a1");
     assert.ok(res);
-    assert.deepEqual(recursoDe(res.sheet, "a1"), { instanciaId: "a1", actual: 12, max: 14 });
+    assert.deepEqual(recursoDe(res.sheet, "a1"), { instanciaId: "a1", actual: 7, max: 7 });
     assert.equal(res.coste, PRECIO_CARGADOR_BALAS);
+  });
+
+  test("desde vacío, recarga rellena hasta el máximo de catálogo, no lo dobla", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "pistola_mosquito" });
+    s = ajustarRecurso(s, "a1", -7); // 0/7
+    const res = comprarRecarga(s, "a1");
+    assert.ok(res);
+    assert.deepEqual(recursoDe(res.sheet, "a1"), { instanciaId: "a1", actual: 7, max: 7 });
   });
 
   test("un recurso tipo tope (batería) solo restaura actual, el máximo no cambia", () => {
