@@ -147,7 +147,7 @@ describe("ajustarRecurso", () => {
 });
 
 describe("comprarRecarga", () => {
-  test("un recurso tipo stock (arma) solo restaura actual, el máximo no crece (2026-09-28: ya no compra cargador extra)", () => {
+  test("con el cargador a medias, solo rellena — el máximo no crece", () => {
     let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "pistola_mosquito" });
     s = ajustarRecurso(s, "a1", -2); // 5/7
     const res = comprarRecarga(s, "a1");
@@ -156,12 +156,35 @@ describe("comprarRecarga", () => {
     assert.equal(res.coste, PRECIO_CARGADOR_BALAS);
   });
 
-  test("desde vacío, recarga rellena hasta el máximo de catálogo, no lo dobla", () => {
+  test("desde vacío, rellena hasta el máximo de catálogo, no lo dobla", () => {
     let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "pistola_mosquito" });
     s = ajustarRecurso(s, "a1", -7); // 0/7
     const res = comprarRecarga(s, "a1");
     assert.ok(res);
     assert.deepEqual(recursoDe(res.sheet, "a1"), { instanciaId: "a1", actual: 7, max: 7 });
+  });
+
+  test("ya lleno (actual === max), comprar cargador SÍ suma una capacidad entera de repuesto (2026-09-28)", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "pistola_sydiasi" }); // 20/20
+    const res = comprarRecarga(s, "a1");
+    assert.ok(res);
+    assert.deepEqual(recursoDe(res.sheet, "a1"), { instanciaId: "a1", actual: 40, max: 40 });
+    assert.equal(res.coste, PRECIO_CARGADOR_BALAS);
+  });
+
+  test("comprar cargadores de sobra en cadena, siempre estando lleno, se acumula sin tope", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "pistola_mosquito" }); // 7/7
+    s = comprarRecarga(s, "a1")!.sheet; // 14/14
+    s = comprarRecarga(s, "a1")!.sheet; // 21/21
+    assert.deepEqual(recursoDe(s, "a1"), { instanciaId: "a1", actual: 21, max: 21 });
+  });
+
+  test("con el cargador de repuesto a medias (no lleno), la siguiente compra solo rellena, no crece más", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "pistola_mosquito" }); // 7/7
+    s = comprarRecarga(s, "a1")!.sheet; // 14/14 (ya lleno, crece)
+    s = ajustarRecurso(s, "a1", -6); // 8/14
+    s = comprarRecarga(s, "a1")!.sheet; // 14/14 (no lleno, solo rellena)
+    assert.deepEqual(recursoDe(s, "a1"), { instanciaId: "a1", actual: 14, max: 14 });
   });
 
   test("un recurso tipo tope (batería) solo restaura actual, el máximo no cambia", () => {

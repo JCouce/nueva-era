@@ -7,14 +7,22 @@
 // balas se rellenen solas al cerrar la consola — recursos necesita lo
 // contrario, persistir igual que el equipo.
 //
-// Un único comportamiento de recarga, "stock" (ArmaFuego.municion) y "tope"
-// (Subsistema.célula) por igual: recargar restaura el actual al máximo, sin
-// más — como cargar un móvil, no como comprar cargadores de más. Antes
-// "stock" sumaba una capacidad entera al máximo Y al actual en cada compra
-// (0/7 → 7/14 → 14/21...), simulando cargadores de sobra acumulándose; se
-// revirtió a petición del usuario 2026-09-28 (docs/tareas.md): "Recargar" es
-// rellenar el cargador que llevas puesto, no comprar uno nuevo con más
-// capacidad. El máximo de un arma ya no crece nunca por esta vía.
+// Dos comportamientos de recarga, corregidos en conversación el 2026-09-28
+// (docs/tareas.md tiene el historial completo — dos idas y venidas hasta
+// llegar aquí):
+//   "tope" (Subsistema.célula): el máximo es fijo (la capacidad de la
+//     célula) y no cambia nunca. Recargar restaura el actual al máximo, sin
+//     más — como cargar un móvil, no como comprar una célula de más.
+//   "stock" (ArmaFuego.municion): sin cargadores físicos que rastrear — se
+//     ignora cuál está puesto, igual que en mesa. Si el cargador puesto NO
+//     está lleno (actual < max), recargar solo lo rellena hasta el máximo
+//     actual — "rellena las balas que faltan", no compra un cargador nuevo
+//     de más capacidad. Si YA está lleno (actual === max, nada que rellenar),
+//     comprar "cargador" ahí SÍ suma una capacidad entera (`cap.max`, la
+//     base del catálogo) tanto a `max` como a `actual` — comprar un cargador
+//     de más para llevar de repuesto, sin tope superior (la Carga
+//     Transportable es el límite natural, aunque sus penalizadores siguen
+//     sin mecanizar). Precio fijo, igual en los dos casos de "stock".
 import { z } from "zod";
 import { equipoPorId, type Consumible, type Rareza } from "../catalog/equipo";
 import { MUNICION_GRANADA } from "../catalog/municion";
@@ -247,10 +255,11 @@ export function capacidadDePieza(pieza: PiezaEquipada): { max: number; tipo: Tip
 // Reconcilia sheet.recursos con sheet.equipo: añade una entrada a tope por
 // cada pieza equipada que aporte recurso y todavía no la tuviera, y quita
 // las que ya no están equipadas. Nunca toca `actual` ni `max` de una entrada
-// que ya existe — el gasto en partida (ajustarRecurso) tiene que sobrevivir
-// a esto, mismo cuidado que la reconciliación de atributos/habilidades
-// (CharacterSheet.tsx, 2026-09-22: no pisar un cambio más nuevo con una foto
-// vieja).
+// que ya existe — el stock de balas comprado de más (`max` por encima de la
+// capacidad de catálogo, tras comprar un cargador de repuesto estando ya
+// lleno) tiene que sobrevivir a esto igual que el propio gasto, mismo
+// cuidado que la reconciliación de atributos/habilidades (CharacterSheet.tsx,
+// 2026-09-22: no pisar un cambio más nuevo con una foto vieja).
 export function reconciliarRecursos(sheet: Sheet): Sheet {
   const existentes = new Map(sheet.recursos.map((r) => [r.instanciaId, r]));
   const recursos: RecursoInstancia[] = [];
@@ -300,10 +309,12 @@ export function comprarRecarga(
   // automatizado, se ajusta a mano (ver TipoRecarga más arriba).
   if (!cap || cap.tipo === "durabilidad" || cap.tipo === "colchon") return null;
 
-  // Mismo comportamiento para los dos tipos (ver comentario de cabecera):
-  // restaura el actual al máximo, el máximo nunca cambia. Solo el precio
-  // sigue distinguiendo cargador de batería.
-  const nuevo: RecursoInstancia = { ...recurso, actual: recurso.max };
+  // Ver comentario de cabecera: "tope" siempre restaura sin más; "stock"
+  // solo crece cuando no queda nada que rellenar (ya está a max).
+  const compraCargadorDeMas = cap.tipo === "stock" && recurso.actual >= recurso.max;
+  const nuevo: RecursoInstancia = compraCargadorDeMas
+    ? { ...recurso, actual: recurso.max + cap.max, max: recurso.max + cap.max }
+    : { ...recurso, actual: recurso.max };
   const coste = cap.tipo === "stock" ? PRECIO_CARGADOR_BALAS : PRECIO_BATERIA_PORTATIL;
 
   return {

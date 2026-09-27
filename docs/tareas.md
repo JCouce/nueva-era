@@ -578,16 +578,19 @@ personaje, cada uno atado a una instancia de equipo concreta.
   instancia de pieza equipada (dos armas iguales = dos totales independientes).
   Se auto-puebla al equipar una pieza con `célula` (Subsistema) o `municion`
   (ArmaFuego), y desaparece al desequiparla.
-- **Un único comportamiento de recarga para balas y batería** (revertido
-  2026-09-28, feedback del usuario tras probar la app — antes hubo dos
-  comportamientos distintos, ver historial de este documento):
+- **Dos comportamientos de recarga, afinados en dos rondas de feedback el
+  2026-09-28** (probado en vivo por el usuario, dos correcciones seguidas):
   1. **Balas** (`ArmaFuego.municion`): recurso tipo **stock**, sin cargadores
      individuales que rastrear (se ignora cuál está puesto, igual que en mesa) —
      un único total. Empieza en `actual = max = municion` al equipar el arma.
-     Comprar "cargador de balas normales" **restaura `actual` a `max`, sin más**
-     — recargar el cargador que llevas puesto, no comprar uno con más capacidad;
-     `max` no crece nunca. Precio fijo: **50 créditos**, válido para cualquier
-     arma (no depende de su capacidad).
+     Comprar "cargador de balas normales": si el cargador puesto NO está lleno,
+     **solo rellena** `actual` hasta el `max` actual (0/7 → 7/7, no 7/14 — "rellena
+     las balas que faltan", no compra un cargador nuevo de más capacidad). Si YA
+     está lleno (nada que rellenar), la compra **sí suma** una capacidad entera
+     (`municion` del catálogo) a `max` Y a `actual` — comprar un cargador de
+     repuesto (20/20 → 40/40), sin tope superior (la Carga Transportable es el
+     límite natural, aunque sus penalizadores siguen sin mecanizar). Precio fijo:
+     **50 créditos**, válido para cualquier arma (no depende de su capacidad).
   2. **Batería** (`Subsistema.célula`): recurso tipo **tope fijo** — el máximo es
      la capacidad de la célula y no cambia nunca. Comprar "batería portátil"
      **recarga** `actual` a `max`, sin más. Precio fijo: **150 créditos**.
