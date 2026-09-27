@@ -19,6 +19,7 @@
 //   npc.ts             fase 6b — "Poder" del catálogo de NPCs (métrica del usuario, no del sistema)
 //   npcAleatorio.ts    generación de NPC al azar (botón del catálogo de NPCs)
 //   blindaje.ts        absorción de daño por blindaje (armadura, Escudo Deflector, escudo en alto)
+//   movimiento.ts      Movilidad Aérea equipada convertida en su propia tirada ("Volar")
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -39,6 +40,7 @@ export * from "./estados";
 export * from "./npc";
 export * from "./npcAleatorio";
 export * from "./blindaje";
+export * from "./movimiento";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

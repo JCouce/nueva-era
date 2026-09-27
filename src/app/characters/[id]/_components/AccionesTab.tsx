@@ -9,10 +9,12 @@ import {
   modificadorAccion,
   resolverTirada,
   resolverDanio,
+  resolverVuelo,
   accionesDeAtaque,
   accionesDirectasDeAtaque,
   accionesDeHerramientas,
   accionesDirectasDeHerramientas,
+  accionesDeMovimiento,
   valorCondiciones,
   valorBonosTramo,
   modificadoresActivos,
@@ -81,6 +83,12 @@ function FilaHistorial({ h }: { h: Lanzamiento }) {
       <span className={`shrink-0 tabular-nums ${tonoResultado(h)}`}>
         {textoExitos(h)}
         {h.danioResuelto && <span className="text-danger"> · daño {h.danioResuelto.total}</span>}
+        {h.vueloResuelto && (
+          <span className="text-info">
+            {" · "}
+            {h.vueloResuelto.descontrolado ? "descontrolado" : `vuelas ${h.vueloResuelto.metros}m`}
+          </span>
+        )}
       </span>
     </div>
   );
@@ -412,7 +420,14 @@ export function AccionesTab({
   // se genera junto al Golpear de cada arma melee, trae filas con
   // `grupo: "Defensa"` también — se separan aquí por `grupo`, no se asume que
   // todo lo que venga de equipo vaya a la sección Ataques.
-  const { ataques, defensaGenerada, defensaDirecta, herramientas, herramientasDirectas } = useMemo(() => {
+  const {
+    ataques,
+    defensaGenerada,
+    defensaDirecta,
+    herramientas,
+    herramientasDirectas,
+    accionesGeneradas,
+  } = useMemo(() => {
     const generadas = accionesDeAtaque(sheet).map(conCondicionesDeEquipo);
     return {
       ataques: generadas.filter((t) => t.grupo === "Ataques"),
@@ -423,6 +438,10 @@ export function AccionesTab({
       // real las produce hoy, se añade el día que haga falta.
       herramientasDirectas: accionesDirectasDeHerramientas(sheet),
       defensaDirecta: accionesDirectasDeAtaque(sheet).filter((a) => a.grupo === "Defensa"),
+      // "Volar" (Movilidad Aérea) — mismo criterio que Bloqueo en Defensa:
+      // generada por equipo, se mezcla en el grupo fijo "Acciones" en vez de
+      // vivir en su propia sección.
+      accionesGeneradas: accionesDeMovimiento(sheet).map(conCondicionesDeEquipo),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet.equipo, sheet.recursos, indiceCondiciones]);
@@ -491,10 +510,26 @@ export function AccionesTab({
       danioInfo = { base: danioBase, formulaDanio: modo.formulaDanio, categoriaDanio: modo.categoriaDanio };
     }
 
+    // "Volar" (Movilidad Aérea): Máxima Potencia es el toggle
+    // "maxima_potencia" dentro de esta misma tirada, no una acción aparte —
+    // ver resolverVuelo() (acciones.ts) y movimiento.ts.
+    const vueloResuelto =
+      tirada.vuelo && r.margen !== null
+        ? resolverVuelo(tirada.vuelo, r.margen, Boolean(estadoCondiciones.maxima_potencia))
+        : undefined;
+
     const id = Date.now();
     setHistorial((h) =>
       [
-        { ...r, id, label: tirada.label, danioInfo, efectoCritico: tirada.efectoCritico, efectos: tirada.efectos },
+        {
+          ...r,
+          id,
+          label: tirada.label,
+          danioInfo,
+          efectoCritico: tirada.efectoCritico,
+          efectos: tirada.efectos,
+          vueloResuelto,
+        },
         ...h,
       ].slice(0, 6),
     );
@@ -608,8 +643,8 @@ export function AccionesTab({
             .map(conCondicionesDeEquipo)
             // Defensa/Esquiva (fija) primero, Bloquear-con-X (generado por
             // equipo) detrás — mismo orden que Ataques: lo fijo antes que lo
-            // que trae cada arma.
-            .concat(grupo === "Defensa" ? defensaGenerada : [])
+            // que trae cada arma. "Volar" entra igual dentro de "Acciones".
+            .concat(grupo === "Defensa" ? defensaGenerada : grupo === "Acciones" ? accionesGeneradas : [])
             .map((t) => (
               <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
             ))}

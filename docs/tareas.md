@@ -336,6 +336,53 @@ arquitectura generalizara de verdad al segundo caso, no solo al piloto.
 - 6 tests nuevos (`combate.test.ts`), 518 en total, lint y `tsc --noEmit` limpios.
   Sin probar en navegador (extensión de Chrome no disponible en la sesión).
 
+### Movilidad Aérea — "Volar" + RECURSOS, mismo día
+
+**Corrección de diseño en conversación, antes de escribir código**: el checklist traía
+esto clasificado como "tirada normal + acción sin dado + recurso conectados", pero al
+leer la prosa con calma ("Máxima potencia... **en crítico**, +25 m") quedó claro que
+"crítico" es un resultado de una tirada — Máxima Potencia no es una acción aparte, es
+**la misma tirada de Volar jugada a lo grande** (acción Compleja + 2 cargas en vez de
+Simple + 1). Cero "acción sin dado" nueva aquí; solo una tirada normal + un recurso.
+
+- **RECURSOS para la familia `movimiento`** — hasta ahora `capacidadDePieza()`
+  (`recursos.ts`) no la contemplaba en absoluto, pese a que tanto Movilidad Aérea como
+  Exoesqueleto mencionan una célula de 10 cargas en su propia `descripcion`. Se añadió
+  `MejoraMovimiento.celula` (mismo shape que `Subsistema.celula`) y se pobló **solo
+  para Movilidad Aérea** — Exoesqueleto se deja sin poblar a propósito: ninguna acción
+  consume su batería todavía (su bono de Fuerza sigue sin mecanizar por el carve-out
+  de exclusiones, ver `movimiento.ts`), poblarla sería un recurso fantasma en la
+  pestaña Recursos.
+- **`accionesDeMovimiento()`** (nuevo, `lib/rules/movimiento.ts`): genera "Volar"
+  (Reflejos + Tecnociencia, grupo Acciones) por cada Movilidad Aérea equipada. "Dificultad
+  de maniobrabilidad: -N" del catálogo se modela como **ajuste fijo al modificador**
+  (+3/+3/+3/+4 según nivel) — matemáticamente idéntico a bajar N la dificultad, y el
+  único mecanismo que el motor ya tiene para que un número de una pieza entre en la
+  cuenta de una tirada (`ajustesFijos`, mismo patrón que el -1 del Lanzagranadas
+  Integrado).
+- **Refinado el mismo día (pedido del usuario): Máxima Potencia se elige de verdad, y
+  el resultado da metros concretos, no una nota de texto.** Máxima Potencia es un
+  **toggle `CondicionTirada`** ("maxima_potencia") dentro de la propia tirada —
+  `valorActivo`/`valorInactivo` a 0 porque no toca el modificador, solo cambia el
+  payout — y `Accion.vuelo: { velocidadBase, bonusCritico }` (campo hermano de
+  `ataque`, mismo espíritu que `danio` pero en metros) alimenta **`resolverVuelo()`**
+  (`acciones.ts`, mismo patrón que `resolverDanio()`): éxito da la base (doblada con
+  Máxima Potencia), fallo dobla... la mitad de esa base, fracaso crítico devuelve
+  "descontrolado" sin metros fijos, y el bonus de crítico (25/35/50/70 según nivel,
+  campo nuevo `NivelModulo.bonusCriticoM`) solo aplica con Máxima Potencia activa. El
+  resultado ("Vuelas 100 m" / "Desplazamiento descontrolado") se pinta en
+  `ResultadoTirada.tsx` (`Lanzamiento.vueloResuelto`) y en el log compacto de Acciones
+  recientes, igual que ya hace el daño.
+- **Fuera de alcance, sin cambios**: el estado persistente "¿está volando?" y sus
+  penalizadores de combate (-1 a ataques, esquivas con Tecnociencia) — sigue siendo un
+  prerrequisito aparte, no esta tarea. La elección Velocidad/Maniobrabilidad de la
+  Progresión de nivel 3 tampoco se guarda (mismo criterio que ya tenía `velocidadM`) —
+  se menciona en la nota para que se aplique a mano. El gasto de cargas sigue sin
+  automatizarse (igual que munición/batería en todo RECURSOS): la nota dice cuánto
+  cuesta, el jugador ajusta el recurso a mano.
+- 13 tests nuevos (`movimiento.test.ts`), 531 en total, lint y `tsc --noEmit` limpios.
+  Sin probar en navegador (extensión de Chrome no disponible en la sesión).
+
 ---
 
 ## Pendiente

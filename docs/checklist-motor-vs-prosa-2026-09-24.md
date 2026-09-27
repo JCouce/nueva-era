@@ -55,7 +55,7 @@ dado' — arquitectura construida + primer caso real"). Lo que queda de aquí es
 enganchar cada pieza, y cada una arrastra su propio prerrequisito aparte de la
 arquitectura en sí:**
 5. ~~El tipo "acción sin dado" en sí~~ — ✅ hecho 2026-09-27 (`AccionDirecta`, `acciones.ts`)
-6. Movilidad Aérea — Máxima Potencia + el estado "¿está volando?". **Más grande de lo que parecía**: "Máxima Potencia" gasta 2 cargas de una célula de 10 que no existe en RECURSOS (`capacidadDePieza()` no contempla la familia `movimiento`), y "volar" en sí pide una tirada (Reflejos + Tecnociencia) que tampoco existe en ningún catálogo — dos prerrequisitos antes de tocar `AccionDirecta` siquiera.
+6. ~~Movilidad Aérea — Máxima Potencia~~ — ✅ hecho 2026-09-27. **Corregido en conversación: Máxima Potencia no es una `AccionDirecta`** — "en crítico, +25 m" es el resultado de una tirada, así que es la misma tirada "Volar" jugada a lo grande (acción Compleja + 2 cargas en vez de Simple + 1), no una acción sin dado aparte. `accionesDeMovimiento()` (`movimiento.ts`) + célula nueva en RECURSOS para la familia `movimiento` (`MejoraMovimiento.celula`, solo poblada para esta pieza). **El estado "¿está volando?"** (penalizadores de combate) sigue sin construir, prerrequisito aparte.
 7. VTM nivel 4 (crítico parametrizable) + Estabilizadores Neurales (`docs/tareas.md` ítems 4-5) — bloqueado además por el gasto de consumibles al usarlos, que tampoco existe.
 8. Malla Plasmática — colchón, sacrificar puntos, activarse (`docs/tareas.md` ítem 4) — bloqueado por el "buffer temporal sin nombre en capa 2 y media", sin diseñar.
 9. ~~Radar nv4 — "Marcar objetivo"~~ — ✅ hecho 2026-09-27, piloto de la arquitectura de arriba (`accionesDirectasDeHerramientas()`, `herramientas.ts`). Sin `onUsar`: no muta la ficha, solo un texto fijo que el jugador aplica a mano.
@@ -121,17 +121,17 @@ construir todavía.
 - [ ] Ariete Percusivo (`mecanica_ariete_percusivo`) — tiene alcance
 - [ ] Lanza Corta de Kerzul (`kerzul_lanza_corta`) — arrojadiza
 
-## Movilidad Aérea — "Máxima potencia" no existe en código
+## Movilidad Aérea — "Máxima potencia" — ✅ hecho 2026-09-27
 
-**Decidido 2026-09-24:** es una "acción sin dado" (botón "Usar" → modal de
-decisiones, sin tirar), la primera pieza de arquitectura nueva que pide
-`docs/motor.md`. No implementar sin diseñar antes ese tipo — ver
-`docs/tareas.md`.
+**Decisión de 2026-09-24 corregida en conversación**: no es una "acción sin dado" —
+"en crítico, +25 m" es un resultado de tirada, así que Máxima Potencia es la propia
+tirada "Volar" jugada a lo grande (Compleja + 2 cargas), no una acción aparte. Ver
+`docs/tareas.md`, "Movilidad Aérea — 'Volar' + RECURSOS", para el detalle completo.
 
-- [ ] Nivel 1 (`movilidad_aerea#1`) — consume 1 carga/acción; Máxima potencia dobla desplazamiento; crítico +25 m
-- [ ] Nivel 2 (`movilidad_aerea#2`) — Máxima potencia crítico +35 m
-- [ ] Nivel 3 (`movilidad_aerea#3`) — consume 1 carga/3 acciones; Máxima potencia crítico +50 m
-- [ ] Nivel 4 (`movilidad_aerea#4`) — Máxima potencia crítico +70 m (+80 con mejora de Velocidad)
+- [x] Nivel 1 (`movilidad_aerea#1`) — consume 1 carga/acción; Máxima potencia dobla desplazamiento; crítico +25 m
+- [x] Nivel 2 (`movilidad_aerea#2`) — Máxima potencia crítico +35 m
+- [x] Nivel 3 (`movilidad_aerea#3`) — consume 1 carga/3 acciones; Máxima potencia crítico +50 m
+- [x] Nivel 4 (`movilidad_aerea#4`) — Máxima potencia crítico +70 m (+80 con mejora de Velocidad, sin mecanizar — se menciona en la nota)
 
 ## Fusiles de precisión "con Mira Telescópica integrada"
 

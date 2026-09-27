@@ -169,6 +169,11 @@ export function capacidadDePieza(pieza: PiezaEquipada): { max: number; tipo: Tip
   if (!cat) return null;
   if (cat.familia === "arma") return { max: cat.municion, tipo: "stock" };
   if (cat.familia === "subsistema" && cat.celula) return { max: cat.celula.cargas, tipo: "tope" };
+  // Movilidad Aérea (construido 2026-09-27, docs/tareas.md) — mismo mecanismo
+  // que un Subsistema con célula. El Exoesqueleto tiene el mismo campo en el
+  // tipo pero no lo declara todavía (ninguna acción lo consume), así que no
+  // aparece aquí a menos que su catálogo también lo popule.
+  if (cat.familia === "movimiento" && cat.celula) return { max: cat.celula.cargas, tipo: "tope" };
   // Escudos (los únicos armaMelee con `defensa`): su puntosGolpe es
   // durabilidad de objeto, no del personaje — antes devolvía null a
   // propósito (comentario de arriba), ahora tiene mecanismo (tarea 8).

@@ -1,4 +1,4 @@
-import type { Resultado, ResultadoDanio } from "@/lib/rules";
+import type { Resultado, ResultadoDanio, ResultadoVuelo } from "@/lib/rules";
 
 function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
@@ -27,6 +27,10 @@ export type Lanzamiento = Resultado & {
   // Se pintan tras resolver el daño, no antes: es el momento en que el
   // jugador ya sabe si el ataque impactó de verdad.
   efectos?: { fuente: string; texto: string }[];
+  // Payout de "Volar" (Movilidad Aérea) — igual que danioResuelto pero en
+  // metros, y ya resuelto en el momento (no hay una segunda tirada "Tirar
+  // vuelo" como sí la hay para daño). Ver resolverVuelo(), acciones.ts.
+  vueloResuelto?: ResultadoVuelo;
   // Marca un registro de una AccionDirecta (docs/motor.md, "Acciones sin
   // dado") en vez de una tirada real — los campos de Resultado se rellenan a
   // 0/null solo para que el tipo cierre (nunca se leen: FilaHistorial los
@@ -154,6 +158,16 @@ export function ContenidoResultado({
               calcula a mano)
             </p>
           ) : null}
+        </div>
+      )}
+
+      {resultado.vueloResuelto && (
+        <div className="mt-3 border-t border-border pt-3">
+          <p className="font-mono text-xs uppercase text-info">
+            {resultado.vueloResuelto.descontrolado
+              ? "Desplazamiento descontrolado en dirección aleatoria"
+              : `Vuelas ${resultado.vueloResuelto.metros} m`}
+          </p>
         </div>
       )}
 

@@ -298,10 +298,26 @@ prematura que este proyecto evita a propósito.
 **Primer caso real: Radar nivel 4, "Marcar objetivo".** Sin `onUsar` — no
 muta la ficha, solo informa (nota fija que el jugador aplica a mano) — así
 que valida la mitad "fila + modal + generación por equipo" sin necesitar
-resolver todavía la mitad "efecto que escribe en el sheet". Movilidad Aérea
-(gasta carga) y Malla Plasmática (colchón) son los siguientes candidatos,
-pero cada una arrastra su propio prerrequisito sin resolver — ver
-`docs/tareas.md`, no repetirlo aquí.
+resolver todavía la mitad "efecto que escribe en el sheet". Segundo caso,
+mismo día: "Levantar [escudo]" (los cinco escudos), igual de ligero.
+
+**Movilidad Aérea resultó NO ser un tercer caso de `AccionDirecta`.** Al leer
+la prosa con calma ("Máxima potencia... **en crítico**, +25 m") quedó claro
+que Máxima Potencia no es una acción aparte — "crítico" es un resultado de
+tirada, así que es la propia tirada "Volar" jugada a lo grande (acción
+Compleja + 2 cargas en vez de Simple + 1), no un botón "Usar" independiente.
+Se construyó como una `Accion` normal (`accionesDeMovimiento()`,
+`lib/rules/movimiento.ts`), con Máxima Potencia como un toggle
+`CondicionTirada` (`valorActivo`/`valorInactivo` a 0 — no toca el
+modificador, solo el payout) y un campo nuevo `Accion.vuelo:
+{velocidadBase, bonusCritico}`, hermano de `ataque` pero en metros en vez de
+daño, resuelto por `resolverVuelo()` (mismo patrón que `resolverDanio()`) —
+más la célula de RECURSOS que le faltaba a la familia `movimiento`. Lección:
+antes de dar una pieza por "acción sin dado", comprobar si la prosa menciona
+"crítico"/"éxito"/"fallo" — si lo hace, hay una tirada de por medio y no es
+sin dado. Malla Plasmática sigue siendo candidata real (activar/sacrificar
+puntos del colchón no depende de ninguna tirada), pero arrastra su propio
+prerrequisito sin resolver — ver `docs/tareas.md`.
 
 **No confundir con el tipo 3 (Visor Nocturno).** Visor Nocturno no crea su
 propia acción — solo cuelga una nota sobre una acción que ya existe

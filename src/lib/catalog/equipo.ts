@@ -118,6 +118,17 @@ export type NivelModulo = {
   // nivel (docs/sistema.md pregunta 29, blindaje.ts) — total del nivel, no
   // acumulativo entre niveles (S9, ultimoQueDefine), igual que velocidadM.
   absorcion?: number;
+  // Solo lo usa Movilidad Aérea: "Dificultad de maniobrabilidad: -N" del
+  // catálogo, modelado como ajuste fijo al MODIFICADOR de la tirada "Volar"
+  // (matemáticamente idéntico a bajar N la dificultad — el motor no tiene
+  // concepto de "dificultad de base de una pieza", toda dificultad se elige
+  // a mano en el modal) — mismo criterio que ajusteAtaque, total del nivel.
+  maniobrabilidad?: number;
+  // Solo Movilidad Aérea: el bonus de distancia de Máxima Potencia si la
+  // tirada de Volar sale crítica ("+25 m" a nivel 1) — número real, lo
+  // consume resolverVuelo() (acciones.ts) para calcular los metros exactos,
+  // no un texto informativo.
+  bonusCriticoM?: number;
   motor?: MotorMetadata[]; // docs/motor.md — un MotorMetadata por efecto DE ESTE NIVEL
 };
 

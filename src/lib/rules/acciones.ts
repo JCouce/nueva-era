@@ -89,6 +89,13 @@ export type Accion = {
       categoriaDanio: string;
     }[];
   };
+  // Solo "Volar" (Movilidad Aérea, lib/rules/movimiento.ts): payout en
+  // metros en vez de daño — campo hermano de `ataque` porque esa UI ya
+  // asume categoriaDanio/"Tirar daño", que no aplica aquí (el resultado se
+  // conoce en el momento, no en una segunda tirada). Máxima Potencia no es
+  // un modo aparte (docs/tareas.md, "Movilidad Aérea"): es la condición
+  // toggle "maxima_potencia" en `condiciones`, ver resolverVuelo() abajo.
+  vuelo?: { velocidadBase: number; bonusCritico: number };
 };
 
 // Hermano discriminado de Accion para lo que docs/motor.md llama "acciones
@@ -351,6 +358,26 @@ export type ResultadoDanio = {
 export function resolverDanio(danioBase: number, margen: number, categoria: string): ResultadoDanio {
   const bonoExitos = margen > 0 ? Math.floor(margen / 2) : 0;
   return { base: danioBase, bonoExitos, total: danioBase + bonoExitos, categoria };
+}
+
+export type ResultadoVuelo = { metros: number | null; descontrolado: boolean };
+
+// Payout de "Volar" (Movilidad Aérea) a partir del margen ya resuelto —
+// mismo espíritu que resolverDanio(), pero en metros. Máxima Potencia dobla
+// la base y solo con ella el crítico suma el bonus (docs/equipamiento.md:
+// "Máxima potencia... en crítico, +N m" — el bonus es propiedad de Máxima
+// Potencia, no del vuelo normal). Fracaso crítico no tiene metros fijos:
+// "desplazamiento descontrolado en dirección aleatoria" se resuelve a mano.
+export function resolverVuelo(
+  vuelo: { velocidadBase: number; bonusCritico: number },
+  margen: number,
+  maximaPotencia: boolean,
+): ResultadoVuelo {
+  if (margen <= -MARGEN_CRITICO) return { metros: null, descontrolado: true };
+  const base = maximaPotencia ? vuelo.velocidadBase * 2 : vuelo.velocidadBase;
+  if (margen < 0) return { metros: Math.floor(base / 2), descontrolado: false };
+  const bonus = margen >= MARGEN_CRITICO && maximaPotencia ? vuelo.bonusCritico : 0;
+  return { metros: base + bonus, descontrolado: false };
 }
 
 // Dado honesto: getRandomValues con descarte del resto, para que las 12 caras
