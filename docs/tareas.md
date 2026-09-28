@@ -588,7 +588,25 @@ Categoría nueva **"Munición"** en la Tienda (`SeccionMunicion`, `TiendaTab.tsx
   mismo tipo en un arma, no va en armas de plasma. Coste según la rareza de la munición;
   Muy Extraño sin precio en EQUIP → 62.500 (supuesto S22).
 
-Fase 2 (usarla al disparar) sigue pendiente, ver "Munición Especial — fase 2".
+Fase 2 (usarla al disparar) hecha el mismo día, ver su entrada.
+
+### Munición Especial — fase 2: usarla al disparar, 2026-09-28
+
+El disparo de un arma con algún adaptador lleva un selector **"Munición"** (condición
+`municion`, `condicionMunicion()` en `combate.ts`): "Normal" por defecto más cada tipo
+habilitado en ESA arma, con su stock en la etiqueta. `Accion.municionesEspeciales` lleva
+los datos (stock, `ajusteDanio`, efecto) para que modal y `tirar()` usen los mismos.
+- **Daño**: `MunicionEspecial.ajusteDanio` se suma a la base (+1 incendiaria/
+  electrizante/criogénica/corrosiva, −1 perforante, 0 el resto) — el tipo ("+1 Fuego") se
+  queda como texto, sin partir el daño en dos categorías (decisión del usuario).
+- **Efecto**: nota de la opción elegida; sale en el modal y en el resultado. La
+  perforante ("ignora 2 de blindaje") es solo texto: el blindaje visto desde el atacante
+  no está construido.
+- **Gasto**: con munición especial el cargador no se toca; `gastoMunicionEspecial()`
+  descuenta del stock lo que el modo gastaría (F. Auto = capacidad del cargador,
+  decisión del usuario). `avisoInsuficiente()` avisa contra ese stock — avisa, no
+  bloquea, igual que con el cargador.
+- En el combate en vivo (`NpcAccionesPanel`) no hay gasto, igual que el resto de RECURSOS.
 
 ## Pendiente
 
@@ -1172,13 +1190,6 @@ informativo a **tiradas fijas** de `TIRADAS` (hoy solo funciona por arma concret
 problema completo en `docs/modificadores-tiradas.md` §8. Los modificadores numéricos
 ya están resueltos y son extensibles sin cambios (`modificadoresActivos`); lo que
 falta es específico de condiciones/texto, no de números. Sin diseñar, sin construir.
-
-### Munición Especial — fase 2 ⬜ (fase 1 hecha 2026-09-28)
-Comprar y llevar la munición ya funciona (ver su entrada en "Hecho"). Falta que el
-disparo la use: selector "Munición: normal / X" en la tirada de ataque del arma
-habilitada, que aplique su daño (+1 nivel de Fuego/Eléctrico/Frío/Corrosivo, −1 la
-perforante) y su efecto como texto, y gaste 1 proyectil del stock en vez del
-cargador. El `motor` de cada mejora ya lo declara `pendiente`.
 
 ### Armas Modificadas ⬜
 Electrificantes, Térmicas, de Plasma, de Nanofilamento. Su coste es un **multiplicador**

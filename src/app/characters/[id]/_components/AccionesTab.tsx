@@ -11,6 +11,8 @@ import {
   resolverDanio,
   resolverVuelo,
   gastoTotal,
+  gastoMunicionEspecial,
+  municionEspecialElegida,
   accionesDeAtaque,
   accionesDirectasDeAtaque,
   accionesDeHerramientas,
@@ -328,6 +330,7 @@ export function AccionesTab({
   onFabricar,
   onGastarRecurso,
   onAjustarFarmaco,
+  onAjustarMunicionEspecial,
   libre = false,
 }: {
   sheet: Sheet;
@@ -370,6 +373,9 @@ export function AccionesTab({
   // (docs/prompt-gasto-recursos.md, Fase 2) — mismo motivo de ausencia que
   // onGastarRecurso en NpcAccionesPanel.tsx.
   onAjustarFarmaco?: (catalogoId: string, delta: number) => void;
+  // Gasto de munición especial al disparar con ella (docs/tareas.md,
+  // "Munición Especial — fase 2") — mismo motivo de ausencia que los de arriba.
+  onAjustarMunicionEspecial?: (municionId: string, delta: number) => void;
   // NpcEditor.tsx (edición libre de máster): la tirada de Fabricar no aplica
   // — FabricarSeccion la salta y llama a onFabricar directo con éxito fijo,
   // mismo criterio que AtributosTab/HabilidadesTab con este mismo prop.
@@ -476,7 +482,7 @@ export function AccionesTab({
       accionesGeneradas: accionesDeMovimiento(sheet).map(conCondicionesDeEquipo),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sheet.equipo, sheet.recursos, sheet.farmacos, indiceCondiciones]);
+  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones]);
 
   const abrir = (t: Accion, enEspecialidad: boolean, sutilActivo: boolean) => {
     const mod = modificadorAccion(sheet, t, enEspecialidad, mods, sutilActivo);
@@ -549,7 +555,13 @@ export function AccionesTab({
     if (tirada.ataque) {
       const modo = tirada.ataque.modos.find((m) => m.id === modoId) ?? tirada.ataque.modos[0];
       const danioBase = sutilActivo ? (modo.danioSutil ?? modo.danio) : modo.danio;
-      danioInfo = { base: danioBase, formulaDanio: modo.formulaDanio, categoriaDanio: modo.categoriaDanio };
+      // Munición especial: +/- niveles de daño sobre la base (mínimo 0).
+      const ajusteMunicion = municionEspecialElegida(tirada, estadoCondiciones)?.ajusteDanio ?? 0;
+      danioInfo = {
+        base: danioBase === null ? null : Math.max(0, danioBase + ajusteMunicion),
+        formulaDanio: modo.formulaDanio,
+        categoriaDanio: modo.categoriaDanio,
+      };
     }
 
     // "Volar" (Movilidad Aérea): Máxima Potencia es el toggle
@@ -572,6 +584,8 @@ export function AccionesTab({
     // excepciones — no depende de gastoTotal() (pool distinto, sheet.farmacos
     // por catalogoId) ni del resultado de la tirada.
     if (tirada.farmacoId) onAjustarFarmaco?.(tirada.farmacoId, -1);
+    const gastoEspecial = gastoMunicionEspecial(tirada, modoId, estadoCondiciones);
+    if (gastoEspecial && gastoEspecial.cantidad > 0) onAjustarMunicionEspecial?.(gastoEspecial.id, -gastoEspecial.cantidad);
 
     const id = Date.now();
     setHistorial((h) =>

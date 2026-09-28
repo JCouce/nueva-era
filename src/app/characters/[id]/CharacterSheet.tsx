@@ -605,6 +605,7 @@ export function CharacterSheet({
           onFabricar={commitFabricar}
           onGastarRecurso={commitAjustarRecurso}
           onAjustarFarmaco={commitAjustarFarmaco}
+          onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
         />
       )}
       {activeEfectivo === "tienda" && (

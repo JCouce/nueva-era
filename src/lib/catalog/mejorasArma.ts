@@ -435,8 +435,11 @@ function mejoraMunicionEspecial(m: MunicionEspecial): MejoraDeArma {
         detalle: [`${m.label}: ${m.efecto}`],
         modificadores: [],
         motor: [
-          // Fase 2: elegir la munición al disparar, aplicar su daño/efecto y gastarla.
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          // Selector "Munición" en el disparo del arma (combate.ts, condicionMunicion):
+          // suma ajusteDanio al daño y gasta del stock en vez del cargador.
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          // El resto del efecto (estados, blindaje ignorado…) va como nota de la opción.
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "ad_hoc" },
         ],
       },
     ],

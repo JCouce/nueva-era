@@ -76,6 +76,14 @@ export type Accion = {
   // instancia de equipo), de ahí el campo aparte en vez de reusar
   // recursoInstanciaId.
   farmacoId?: string;
+  // Munición especial que esta arma puede disparar (adaptadores instalados en
+  // ESTA instancia), con el stock del momento — docs/tareas.md, "Munición
+  // Especial — fase 2". Acompaña a la condición "municion" (combate.ts): si
+  // el jugador elige una, el gasto del modo sale de sheet.municionEspecial en
+  // vez del cargador (ver gastoTotal/gastoMunicionEspecial) y su ajusteDanio
+  // se suma al daño. Aquí y no releído del sheet para que modal y tirar()
+  // trabajen con los mismos datos que la fila.
+  municionesEspeciales?: { id: string; label: string; stock: number; ajusteDanio: number; efecto: string }[];
   // Controles del modal (ver condiciones.ts): tramo de distancia, apoyado con
   // bípode, atacantes adicionales... Las tiradas de ataque las llevan
   // calculadas al vuelo desde el equipo (ver combate.ts); las demás las
@@ -431,9 +439,36 @@ export function resolverVuelo(
 // cualquier toggle activo con gastoActivo/gastoInactivo (Máxima Potencia).
 // Vive aquí y no junto a valorCondiciones() (condiciones.ts) porque necesita
 // el Accion entero para leer `ataque` — condiciones.ts no conoce ese tipo.
+// La munición especial elegida en el selector "municion", o null si se
+// dispara munición normal (o la tirada no tiene selector).
+export function municionEspecialElegida(
+  accion: Accion,
+  estado: EstadoCondiciones,
+): NonNullable<Accion["municionesEspeciales"]>[number] | null {
+  const id = estado.municion;
+  if (typeof id !== "string") return null;
+  return accion.municionesEspeciales?.find((m) => m.id === id) ?? null;
+}
+
+// Proyectiles especiales que gasta el disparo: lo mismo que el modo gastaría
+// del cargador (F. Auto = capacidad del cargador, decisión del usuario
+// 2026-09-28), pero del stock de ese tipo.
+export function gastoMunicionEspecial(
+  accion: Accion,
+  modoId: string | null,
+  estado: EstadoCondiciones,
+): { id: string; cantidad: number } | null {
+  const municion = municionEspecialElegida(accion, estado);
+  if (!municion) return null;
+  const modo = accion.ataque?.modos.find((m) => m.id === modoId);
+  return { id: municion.id, cantidad: modo?.gasto ?? 0 };
+}
+
+// Gasto sobre sheet.recursos (el cargador). Con munición especial elegida, el
+// modo no toca el cargador — ese gasto va por gastoMunicionEspecial().
 export function gastoTotal(accion: Accion, modoId: string | null, estado: EstadoCondiciones): number {
   const modo = accion.ataque?.modos.find((m) => m.id === modoId);
-  const gastoModo = modo?.gasto ?? 0;
+  const gastoModo = municionEspecialElegida(accion, estado) ? 0 : (modo?.gasto ?? 0);
   const gastoCondiciones = (accion.condiciones ?? []).reduce((total, c) => {
     if (c.tipo !== "toggle") return total;
     if (c.gastoActivo === undefined && c.gastoInactivo === undefined) return total;
@@ -459,6 +494,12 @@ export function avisoInsuficiente(
   estado: EstadoCondiciones,
   recurso: { actual: number; max: number } | undefined,
 ): string | undefined {
+  const especial = gastoMunicionEspecial(accion, modoId, estado);
+  if (especial) {
+    const municion = municionEspecialElegida(accion, estado)!;
+    if (municion.stock >= especial.cantidad) return undefined;
+    return `Solo quedan ${municion.stock} de ${municion.label.toLowerCase()} — esto gasta ${especial.cantidad}.`;
+  }
   if (!accion.recursoInstanciaId || !recurso) return undefined;
   const gasto = gastoTotal(accion, modoId, estado);
   if (recurso.actual >= gasto) return undefined;

@@ -12,7 +12,13 @@ import {
 } from "../catalog/equipo";
 import type { ArmaMelee } from "../catalog/armasMelee";
 import type { ArmaPesada } from "../catalog/armamentoPesado";
-import { MUNICION_GRANADA, ALCANCE_ARROJADA, type MunicionGranada } from "../catalog/municion";
+import {
+  MUNICION_GRANADA,
+  ALCANCE_ARROJADA,
+  municionEspecialPorId,
+  type MunicionGranada,
+} from "../catalog/municion";
+import { PREFIJO_MEJORA_MUNICION } from "../catalog/mejorasArma";
 import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condiciones";
 import { nivelesHasta, acumulaPorClave, ultimoQueDefine, sustituyeMiraIntegrada, type PiezaEquipada } from "./equipo";
 import type { MotorMetadata } from "./motor";
@@ -204,11 +210,47 @@ function condicionModo(
   };
 }
 
+// Munición especial (docs/tareas.md, "Munición Especial — fase 2"): los
+// tipos cuyo adaptador lleva ESTA arma, con el stock del momento. El
+// selector solo existe si hay al menos uno; "Normal" es siempre la opción
+// por defecto. Sin valor numérico en la tirada de ataque: la munición cambia
+// el daño y el gasto, no la dificultad.
+function municionesDeArma(sheet: Sheet, instanciaId: string): NonNullable<Accion["municionesEspeciales"]> {
+  return sheet.equipo.flatMap((p) => {
+    if (p.instaladoEnId !== instanciaId || !p.catalogoId.startsWith(PREFIJO_MEJORA_MUNICION)) return [];
+    const m = municionEspecialPorId(p.catalogoId.slice(PREFIJO_MEJORA_MUNICION.length));
+    if (!m) return [];
+    return [{ id: m.id, label: m.label, stock: sheet.municionEspecial[m.id] ?? 0, ajusteDanio: m.ajusteDanio, efecto: m.efecto }];
+  });
+}
+
+function condicionMunicion(municiones: NonNullable<Accion["municionesEspeciales"]>): CondicionTirada {
+  const signo = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+  return {
+    id: "municion",
+    tipo: "opcion",
+    etiqueta: "Munición",
+    opciones: [
+      { id: "normal", etiqueta: "Normal", valor: 0 },
+      ...municiones.map((m) => ({
+        id: m.id,
+        etiqueta: `${m.label.replace(/^Munición /, "")} (${m.stock})`,
+        valor: 0,
+        nota: `${m.ajusteDanio !== 0 ? `${signo(m.ajusteDanio)} daño. ` : ""}${m.efecto}`,
+      })),
+    ],
+    porDefecto: "normal",
+  };
+}
+
 function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Accion {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
   const modo = condicionModo(modosConId);
 
-  const condiciones = [condicionTramo(arma), modo].filter((c): c is CondicionTirada => c !== null);
+  const municiones = municionesDeArma(sheet, instanciaId);
+  const condiciones = [condicionTramo(arma), modo, municiones.length > 0 ? condicionMunicion(municiones) : null].filter(
+    (c): c is CondicionTirada => c !== null,
+  );
   condiciones.push(...condicionesDeMejoras(sheet, instanciaId));
 
   const efectos = [
@@ -231,6 +273,7 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
     nota: arma.especial ?? undefined,
     efectos: efectos.length > 0 ? efectos : undefined,
     recursoInstanciaId: instanciaId,
+    municionesEspeciales: municiones.length > 0 ? municiones : undefined,
     condiciones,
     ajustesFijos: [...ajusteModoUnico, ...ajustesFijosDeMejoras(sheet, instanciaId)],
     bonosTramo: bonosTramoDeMejoras(sheet, arma, instanciaId),

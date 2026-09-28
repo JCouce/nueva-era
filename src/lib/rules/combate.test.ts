@@ -2,13 +2,13 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
 import { equipar } from "./equipo";
-import { ajustarRecurso, ajustarGranada } from "./recursos";
+import { ajustarRecurso, ajustarGranada, ajustarMunicionEspecial } from "./recursos";
 import { accionesDeAtaque, accionesDirectasDeAtaque, generaAccionPropia } from "./combate";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
 import { MUNICION_GRANADA } from "../catalog/municion";
 import type { MotorMetadata } from "./motor";
-import { modificadorAccion } from "./acciones";
+import { modificadorAccion, gastoTotal, gastoMunicionEspecial, avisoInsuficiente } from "./acciones";
 import { aplicado } from "./derivados";
 
 // Ficha de trabajo: se parte de la de por defecto y se tocan atributos sueltos.
@@ -277,6 +277,58 @@ describe("gasto por modo (docs/prompt-gasto-recursos.md, Fase 1)", () => {
     const sheet = conProyectorPulso(1);
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Proyector de Pulso (Aguijón)")!;
     assert.equal(fila.recursoInstanciaId, undefined);
+  });
+});
+
+describe("munición especial en el disparo (fase 2)", () => {
+  // Sydiasi: Simple (1 bala) / Estándar F. Auto (20).
+  function conSydiasiIncendiaria(stock: number) {
+    let sheet = equipar(defaultSheet(), { instanciaId: "s1", catalogoId: "pistola_sydiasi" });
+    sheet = equipar(sheet, { instanciaId: "ad1", catalogoId: "municion_especial_incendiaria", nivel: 1, instaladoEnId: "s1" });
+    return ajustarMunicionEspecial(sheet, "incendiaria", stock);
+  }
+  const disparo = (sheet: Sheet) => accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
+
+  test("sin adaptador no hay selector de munición", () => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "s1", catalogoId: "pistola_sydiasi" });
+    assert.equal(disparo(sheet).condiciones?.some((c) => c.id === "municion"), false);
+    assert.equal(disparo(sheet).municionesEspeciales, undefined);
+  });
+
+  test("con adaptador: selector Normal + el tipo, con su stock y su efecto en la nota", () => {
+    const fila = disparo(conSydiasiIncendiaria(10));
+    const c = fila.condiciones?.find((x) => x.id === "municion");
+    assert.ok(c && c.tipo === "opcion");
+    assert.equal(c.porDefecto, "normal");
+    const inc = c.opciones.find((o) => o.id === "incendiaria")!;
+    assert.equal(inc.etiqueta, "Incendiaria (10)");
+    assert.equal(inc.valor, 0);
+    assert.match(inc.nota ?? "", /^\+1 daño\. .*Llamarada \(7\)/);
+    assert.deepEqual(fila.municionesEspeciales?.map((m) => [m.id, m.stock, m.ajusteDanio]), [["incendiaria", 10, 1]]);
+  });
+
+  test("munición normal: gasta del cargador, nada del stock especial", () => {
+    const fila = disparo(conSydiasiIncendiaria(10));
+    const estado = { municion: "normal", modo: "0" };
+    assert.equal(gastoTotal(fila, "0", estado), 1);
+    assert.equal(gastoMunicionEspecial(fila, "0", estado), null);
+  });
+
+  test("munición especial: el cargador no se toca, el modo gasta del stock (F. Auto = capacidad)", () => {
+    const fila = disparo(conSydiasiIncendiaria(30));
+    assert.equal(gastoTotal(fila, "0", { municion: "incendiaria" }), 0);
+    assert.deepEqual(gastoMunicionEspecial(fila, "0", { municion: "incendiaria" }), { id: "incendiaria", cantidad: 1 });
+    assert.deepEqual(gastoMunicionEspecial(fila, "1", { municion: "incendiaria" }), { id: "incendiaria", cantidad: 20 });
+  });
+
+  test("aviso si el stock especial no llega, contra el stock y no contra el cargador", () => {
+    const fila = disparo(conSydiasiIncendiaria(5));
+    const recurso = { actual: 20, max: 20 };
+    assert.equal(avisoInsuficiente(fila, "0", { municion: "incendiaria" }, recurso), undefined);
+    assert.match(
+      avisoInsuficiente(fila, "1", { municion: "incendiaria" }, recurso) ?? "",
+      /Solo quedan 5 de munición incendiaria — esto gasta 20/,
+    );
   });
 });
 

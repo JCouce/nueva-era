@@ -400,6 +400,7 @@ export function NpcEditor({
             onFabricar={commitFabricar}
             onGastarRecurso={commitAjustarRecurso}
             onAjustarFarmaco={commitAjustarFarmaco}
+            onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
             libre
           />
         </div>
