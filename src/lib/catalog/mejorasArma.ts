@@ -34,7 +34,8 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
     label: "Mira Telescópica",
     resumen: "+1 al ataque a media y larga distancia. Solo fusiles.",
     descripcion:
-      "Solo compatible con fusiles de asalto y fusiles de precisión.",
+      "Solo compatible con fusiles de asalto y fusiles de precisión. Los fusiles de precisión " +
+      "ya la llevan integrada de nivel 1: solo admiten nivel 2 o 3, que sustituye a la integrada.",
     compatibilidad: { tipo: "porTipoArma", tiposPermitidos: ["fusil_asalto", "fusil_precision"] },
     niveles: [
       {

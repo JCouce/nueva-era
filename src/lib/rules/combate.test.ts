@@ -281,6 +281,26 @@ describe("gasto por modo (docs/prompt-gasto-recursos.md, Fase 1)", () => {
 });
 
 describe("mejoras que afectan a la distancia", () => {
+  test("fusil de precisión: la mira integrada no suma bono aparte (ya está en la dificultad)", () => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "fusil_precision_telum" });
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Telum")!;
+    assert.deepEqual(fila.bonosTramo, []);
+  });
+
+  test("fusil de precisión con mira nv3: solo el +1 que supera a la integrada nv1", () => {
+    let sheet = equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "fusil_precision_telum" });
+    sheet = equipar(sheet, { instanciaId: "m1", catalogoId: "mira_telescopica", nivel: 3, instaladoEnId: "f1" });
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Telum")!;
+    assert.deepEqual(fila.bonosTramo, [{ fuente: "Mira Telescópica", porTramo: { media: 1, larga: 1 } }]);
+  });
+
+  test("fusil de precisión con mira nv2: sin bono de tramo extra (nv2 no mejora el +1)", () => {
+    let sheet = equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "fusil_precision_telum" });
+    sheet = equipar(sheet, { instanciaId: "m1", catalogoId: "mira_telescopica", nivel: 2, instaladoEnId: "f1" });
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Telum")!;
+    assert.deepEqual(fila.bonosTramo, []);
+  });
+
   test("la mira telescópica nivel 1 no toca el tramo: sale como bono aparte, con su fuente", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });

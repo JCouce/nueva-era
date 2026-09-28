@@ -43,6 +43,12 @@ export type ArmaFuego = {
   // necesita su propio recurso distinto (batería, no munición balística).
   tipoMunicion?: "energia";
   mejorasAdmitidas: number;
+  // Nivel de Mira Telescópica que el arma trae de serie (los 8 fusiles de
+  // precisión, nivel 1). EQUIP: "ya contabilizada en la dificultad de ataque y
+  // en las mejoras disponibles" — su bono ya está en `modos[].dificultad` y su
+  // ranura ya descontada de `mejorasAdmitidas`. Una mira instalada encima solo
+  // puede ser de nivel superior y sustituye a la integrada (equipo.ts).
+  miraIntegrada?: number;
   especial: string | null;
   // Efecto que toca la tirada de OTRO personaje (objetivo_tercero,
   // docs/motor.md) — p.ej. el penalizador a la Alerta Activa de quien
@@ -845,6 +851,7 @@ export const ARMAS: ArmaFuego[] = [
     alcance: { corta: 40, media: 500, larga: 1000 },
     municion: 5,
     mejorasAdmitidas: 2,
+    miraIntegrada: 1,
     especial: "Crítico de Aturdimiento (10)",
     pesoKg: 7.5,
     rareza: "Común",
@@ -871,6 +878,7 @@ export const ARMAS: ArmaFuego[] = [
     alcance: { corta: 50, media: 600, larga: 1200 },
     municion: 10,
     mejorasAdmitidas: 2,
+    miraIntegrada: 1,
     especial: "Crítico de Aturdimiento (10)",
     pesoKg: 6.5,
     rareza: "Común",
@@ -900,6 +908,7 @@ export const ARMAS: ArmaFuego[] = [
     alcance: { corta: 50, media: 700, larga: 1400 },
     municion: 15,
     mejorasAdmitidas: 3,
+    miraIntegrada: 1,
     especial: "Crítico de Aturdimiento (9) · F. Auto (Esquiva 9)",
     pesoKg: 6,
     rareza: "Poco Habitual",
@@ -927,6 +936,7 @@ export const ARMAS: ArmaFuego[] = [
     alcance: { corta: 50, media: 800, larga: 1600 },
     municion: 10,
     mejorasAdmitidas: 4,
+    miraIntegrada: 1,
     especial: "Crítico de Aturdimiento (12)",
     pesoKg: 14,
     rareza: "Extraño",
@@ -954,6 +964,7 @@ export const ARMAS: ArmaFuego[] = [
     municion: 60,
     tipoMunicion: "energia",
     mejorasAdmitidas: 3,
+    miraIntegrada: 1,
     especial: "Efecto Llamarada (6) · Crítico de Ceguera (10)",
     pesoKg: 6,
     rareza: "Extraño",
@@ -981,6 +992,7 @@ export const ARMAS: ArmaFuego[] = [
     municion: 30,
     tipoMunicion: "energia",
     mejorasAdmitidas: 3,
+    miraIntegrada: 1,
     especial: "Efecto Shock (6) · Crítico de Shock (11)",
     pesoKg: 7,
     rareza: "Muy Extraño",
@@ -1011,6 +1023,7 @@ export const ARMAS: ArmaFuego[] = [
     municion: 15,
     tipoMunicion: "energia",
     mejorasAdmitidas: 2,
+    miraIntegrada: 1,
     especial: "Efecto Shock y Llamarada (8) · Crítico de Fusión (12) · F. Auto (Esquiva 9)",
     pesoKg: 9,
     rareza: "Muy Extraño",
@@ -1038,6 +1051,7 @@ export const ARMAS: ArmaFuego[] = [
     alcance: { corta: 50, media: 1000, larga: 2000 },
     municion: 5,
     mejorasAdmitidas: 2,
+    miraIntegrada: 1,
     especial: "Efecto Shock y Llamarada (8) · Crítico de Fusión (14)",
     pesoKg: 19,
     rareza: "Singular",

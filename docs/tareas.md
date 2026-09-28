@@ -554,6 +554,22 @@ dificultad y el daño del modo Simple. Es `INFERIDO` (supuesto S20 de
 de lanzarla es comunicación de mesa, sin código. La ficha de Tienda/Equipo enseña
 "Empleo"/"Alcance" y chips Sutil/Arrojadiza.
 
+### Mira Telescópica integrada en fusiles de precisión, 2026-09-28
+
+El plan del checklist (clonar el `ajusteTramo` +1 media/larga de la Mira nv1 en los 8
+fusiles) se descartó al releer `docs/equipamiento.md:627`: la integrada está "ya
+contabilizada en la dificultad de ataque y en las mejoras disponibles" — su +1 ya está
+en el −2 de los fusiles (frente al −5/−4 de las armas vecinas) y su ranura ya
+descontada. Lo que faltaba era no dejar meter otra encima:
+- `ArmaFuego.miraIntegrada: 1` en los 8 fusiles de precisión (`armasFuego.ts`).
+- `validarInstalacion()` (`equipo.ts`) rechaza una Mira nv1 en esos fusiles ("ya lleva
+  integrada..."); nv2/nv3 sí entran y sustituyen a la integrada: no ocupan ranura
+  (`mejorasArmaInstaladas()`/`sustituyeMiraIntegrada()`).
+- `bonosTramoDeMejoras()` (`combate.ts`) resta el bono de la integrada: nv3 aporta +1,
+  nv2 nada extra (solo su visión nocturna/térmica).
+Decisión del usuario: bloquear solo el nivel 1. Ranura y resta del bono, supuesto S21
+de `docs/sistema.md`.
+
 ## Pendiente
 
 ### Fase 2 — Ficha viva (PG y fatiga en partida) ⬜ (parcial: fuera de combate, 2026-09-27)
@@ -789,8 +805,9 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      dos familias. Comprobado 2026-09-24: hoy NO existe ningún mecanismo de
      "arrojar un arma melee" en la app (grep vacío) — el Cuchillo de Combate
      ya está marcado "arrojadiza" en prosa sin ningún botón que lo use.
-   - **Mira Telescópica integrada en fusiles de precisión — decidido, pequeña
-     extensión de tubería.** Los 8 fusiles (Telum, Yivrem, K9K, Tshulok,
+   - **✅ Mira Telescópica integrada en fusiles de precisión — cerrado 2026-09-28,
+     con la decisión de abajo corregida** (no se añade `ajusteTramo`, ver su
+     entrada en "Hecho"). Texto original: Los 8 fusiles (Telum, Yivrem, K9K, Tshulok,
      Láser/Rayo de Largo Alcance, Plasma SS, Plaga) necesitan el mismo
      `ajusteTramo: {media:1, larga:1}` que ya tiene Mira Telescópica nv1,
      pero `ArmaFuego` no tiene hoy campo `ajusteTramo` (solo `NivelModulo`) —

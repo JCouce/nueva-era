@@ -6,6 +6,7 @@ import {
   desequipar,
   validarInstalacion,
   ranurasSubsistemaUsadas,
+  mejorasArmaInstaladas,
   modificadoresDeEquipo,
   condicionesActivas,
   indiceDeCondiciones,
@@ -24,6 +25,7 @@ import {
 } from "./equipo";
 import { ajustarMaterial } from "./recursos";
 import { valorCondiciones } from "./condiciones";
+import { EQUIPO } from "../catalog/equipo";
 
 // La Armadura Ligera del slice: 1 ranura de subsistema (ver
 // src/lib/catalog/equipo.ts). Los ids de instancia son deterministas aquí
@@ -177,6 +179,34 @@ describe("mejoras de arma", () => {
     const v = validarInstalacion(s, "mira_telescopica", "arma-1");
     assert.equal(v.ok, false);
     assert.match((v as { motivo: string }).motivo, /ya lleva/i);
+  });
+
+  describe("fusil de precisión con Mira Telescópica nv1 integrada", () => {
+    const conTelum = () => equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "fusil_precision_telum" });
+
+    test("los 8 fusiles de precisión, y solo ellos, llevan miraIntegrada 1", () => {
+      const conMira = EQUIPO.filter((e) => e.familia === "arma" && e.miraIntegrada !== undefined);
+      assert.equal(conMira.length, 8);
+      assert.ok(conMira.every((e) => e.familia === "arma" && e.tipo === "fusil_precision" && e.miraIntegrada === 1));
+    });
+
+    test("no admite otra Mira Telescópica de nivel 1", () => {
+      const v = validarInstalacion(conTelum(), "mira_telescopica", "f1", 1);
+      assert.equal(v.ok, false);
+      assert.match((v as { motivo: string }).motivo, /integrada/i);
+      const s = equipar(conTelum(), { instanciaId: "m1", catalogoId: "mira_telescopica", nivel: 1, instaladoEnId: "f1" });
+      assert.equal(s.equipo.length, 1);
+    });
+
+    test("sí admite nivel 2 y 3, que sustituyen a la integrada sin ocupar ranura", () => {
+      // Telum admite 2 mejoras: con la mira nv3 caben aún Puntero y Silenciador.
+      let s = equipar(conTelum(), { instanciaId: "m1", catalogoId: "mira_telescopica", nivel: 3, instaladoEnId: "f1" });
+      assert.equal(mejorasArmaInstaladas(s, "f1"), 0);
+      s = equipar(s, { instanciaId: "m2", catalogoId: "puntero_laser", nivel: 1, instaladoEnId: "f1" });
+      s = equipar(s, { instanciaId: "m3", catalogoId: "silenciador", nivel: 1, instaladoEnId: "f1" });
+      assert.equal(s.equipo.length, 4);
+      assert.equal(validarInstalacion(conTelum(), "mira_telescopica", "f1", 2).ok, true);
+    });
   });
 
   test("quitar el arma se lleva las mejoras instaladas dentro", () => {

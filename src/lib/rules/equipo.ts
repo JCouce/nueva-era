@@ -108,11 +108,22 @@ export function ranurasSubsistemaUsadas(sheet: Sheet, armaduraInstanciaId: strin
   }, 0);
 }
 
+// Una mira instalada sobre un arma con `miraIntegrada` sustituye a la de
+// serie, cuya ranura ya viene descontada de `mejorasAdmitidas` — no ocupa
+// una segunda.
+export function sustituyeMiraIntegrada(catalogoId: string, arma: ArmaFuego): boolean {
+  return catalogoId === "mira_telescopica" && arma.miraIntegrada !== undefined;
+}
+
 export function mejorasArmaInstaladas(sheet: Sheet, armaInstanciaId: string): number {
+  const host = sheet.equipo.find((p) => p.instanciaId === armaInstanciaId);
+  const hostCat = host ? equipoPorId(host.catalogoId) : null;
   return sheet.equipo.reduce((total, p) => {
     if (p.instaladoEnId !== armaInstanciaId) return total;
     const cat = equipoPorId(p.catalogoId);
-    return cat?.familia === "mejoraArma" ? total + 1 : total;
+    if (cat?.familia !== "mejoraArma") return total;
+    if (hostCat?.familia === "arma" && sustituyeMiraIntegrada(p.catalogoId, hostCat)) return total;
+    return total + 1;
   }, 0);
 }
 
@@ -185,6 +196,16 @@ export function validarInstalacion(
     }
     if (yaInstalado(sheet, catalogoId, instaladoEnId)) {
       return { ok: false, motivo: `${hostCat.label} ya lleva ${pieza.label} instalado.` };
+    }
+    if (sustituyeMiraIntegrada(catalogoId, hostCat)) {
+      const integrada = hostCat.miraIntegrada ?? 0;
+      if ((nivel ?? 1) <= integrada) {
+        return {
+          ok: false,
+          motivo: `${hostCat.label} ya lleva integrada la ${pieza.label} de nivel ${integrada}.`,
+        };
+      }
+      return { ok: true };
     }
     if (hostCat.mejorasAdmitidas === 0) {
       return { ok: false, motivo: `${hostCat.label} no admite mejoras.` };

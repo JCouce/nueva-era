@@ -135,15 +135,16 @@ tirada "Volar" jugada a lo grande (Compleja + 2 cargas), no una acción aparte. 
 - [x] Nivel 3 (`movilidad_aerea#3`) — consume 1 carga/3 acciones; Máxima potencia crítico +50 m
 - [x] Nivel 4 (`movilidad_aerea#4`) — Máxima potencia crítico +70 m (+80 con mejora de Velocidad, sin mecanizar — se menciona en la nota)
 
-## Fusiles de precisión "con Mira Telescópica integrada"
+## Fusiles de precisión "con Mira Telescópica integrada" — ✅ cerrado 2026-09-28
 
-**Decidido 2026-09-24:** clonar `ajusteTramo` de Mira Telescópica nv1 en cada
-fusil — pide añadir `ajusteTramo` a `ArmaFuego` (hoy solo lo tiene
-`NivelModulo`). Pequeña extensión de tubería, no arquitectura nueva. Detalle
-en `docs/tareas.md`.
-
-- [ ] Telum (`fusil_precision_telum`) — Mira Telescópica nv1 integrada de serie
-- [ ] Yivrem (`fusil_precision_yivrem`) — Mira Telescópica nv1 integrada
+**La decisión de 2026-09-24 (clonar `ajusteTramo` en cada fusil) era un error**:
+`docs/equipamiento.md:627` dice que la mira integrada está "ya contabilizada en
+la dificultad de ataque y en las mejoras disponibles" — el +1 ya está en el −2
+de los 8 fusiles y la ranura ya descontada de `mejorasAdmitidas`. Añadir
+`ajusteTramo` lo habría contado dos veces. Lo que se construyó es el
+guardarraíl: `ArmaFuego.miraIntegrada`, no se puede instalar otra mira nv1, y
+una nv2/nv3 sustituye a la integrada (supuesto S21 de `docs/sistema.md`).
+Detalle en `docs/tareas.md`.
 
 ## Valija Táctica Médica (VTM) — solo queda la síntesis farmacológica
 

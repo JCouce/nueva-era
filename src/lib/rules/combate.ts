@@ -14,7 +14,7 @@ import type { ArmaMelee } from "../catalog/armasMelee";
 import type { ArmaPesada } from "../catalog/armamentoPesado";
 import { MUNICION_GRANADA, ALCANCE_ARROJADA, type MunicionGranada } from "../catalog/municion";
 import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condiciones";
-import { nivelesHasta, acumulaPorClave, ultimoQueDefine, type PiezaEquipada } from "./equipo";
+import { nivelesHasta, acumulaPorClave, ultimoQueDefine, sustituyeMiraIntegrada, type PiezaEquipada } from "./equipo";
 import type { MotorMetadata } from "./motor";
 import { gastoDelModo } from "./recursos";
 import { CONDICION_ATACANTES_ADICIONALES, type Accion, type AccionDirecta } from "./acciones";
@@ -140,17 +140,37 @@ function efectosDeMejoras(sheet: Sheet, instanciaId: string): { fuente: string; 
 // Telescópica +1" en vez de subir el número de Distancia sin explicarlo.
 // `ajusteTramo` es un total por nivel (S9), no acumulable entre niveles: se
 // usa el del nivel más alto que lo define, no la suma de todos.
-function bonosTramoDeMejoras(sheet: Sheet, instanciaId: string): BonoPorTramo[] {
+//
+// Sobre un arma con Mira Telescópica integrada (fusiles de precisión), el
+// bono de la integrada ya está en la dificultad del arma: la mira instalada
+// solo aporta lo que supera a ese nivel (nivel 3 → +1, nivel 2 → nada).
+function bonosTramoDeMejoras(sheet: Sheet, arma: ArmaFuego, instanciaId: string): BonoPorTramo[] {
   const bonos: BonoPorTramo[] = [];
   for (const pieza of sheet.equipo) {
     if (pieza.instaladoEnId !== instanciaId || pieza.nivel === undefined) continue;
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat || cat.familia !== "mejoraArma") continue;
-    const niveles = nivelesHasta(cat.niveles, pieza.nivel);
-    const nivelConAjuste = ultimoQueDefine(niveles, "ajusteTramo");
-    if (nivelConAjuste?.ajusteTramo) bonos.push({ fuente: cat.label, porTramo: nivelConAjuste.ajusteTramo });
+    const ajuste = ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel), "ajusteTramo")?.ajusteTramo;
+    if (!ajuste) continue;
+    const yaIncluido = sustituyeMiraIntegrada(cat.id, arma)
+      ? ultimoQueDefine(nivelesHasta(cat.niveles, arma.miraIntegrada ?? 0), "ajusteTramo")?.ajusteTramo
+      : undefined;
+    const porTramo = restarAjusteTramo(ajuste, yaIncluido ?? {});
+    if (Object.keys(porTramo).length > 0) bonos.push({ fuente: cat.label, porTramo });
   }
   return bonos;
+}
+
+function restarAjusteTramo(
+  a: Partial<Record<TramoDistancia, number>>,
+  b: Partial<Record<TramoDistancia, number>>,
+): Partial<Record<TramoDistancia, number>> {
+  const out: Partial<Record<TramoDistancia, number>> = {};
+  for (const tramo of Object.keys(a) as TramoDistancia[]) {
+    const v = (a[tramo] ?? 0) - (b[tramo] ?? 0);
+    if (v !== 0) out[tramo] = v;
+  }
+  return out;
 }
 
 // Ajustes incondicionales de las mejoras instaladas en esta arma en
@@ -213,7 +233,7 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
     recursoInstanciaId: instanciaId,
     condiciones,
     ajustesFijos: [...ajusteModoUnico, ...ajustesFijosDeMejoras(sheet, instanciaId)],
-    bonosTramo: bonosTramoDeMejoras(sheet, instanciaId),
+    bonosTramo: bonosTramoDeMejoras(sheet, arma, instanciaId),
     ataque: {
       modos: modosConId.map((m) => ({
         id: m.id,
