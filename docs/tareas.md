@@ -876,7 +876,7 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      las tiradas de ataque — mismo patrón `nota_fija`/`Accion.efectos` de
      hoy — tipo "-X de dificultad contra cobertura al objetivo marcado": el
      jugador aplica el número a mano. Encaja en lo ya construido.
-   - **Disfraz Holográfico nv2 — decidido 2026-09-24: los dos efectos son
+   - **✅ Disfraz Holográfico nv2 — declarado 2026-09-28. Decidido 2026-09-24: los dos efectos son
      `narrativo`.** "Reduce el rediseño a 1 min" y "mitiga penalizaciones por
      envergadura" (concepto que no existe en ningún otro sitio del sistema)
      se quedan como texto informativo, mismo patrón que la VTF — solo falta

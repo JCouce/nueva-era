@@ -248,7 +248,14 @@ export const DISFRAZ_HOLOGRAFICO: Herramienta = {
       notaTirada:
         "Activar es acción simple. El resultado de la tirada marca la dificultad para ser " +
         "descubierto.",
-      motor: MOTOR_DISFRAZ,
+      // "Mitiga penalizaciones por envergadura" (concepto que no existe en ningún
+      // otro sitio del sistema) y "rediseño en 1 minuto" (tiempo, nadie lo tira):
+      // texto informativo en `detalle`, decisión 2026-09-24 — mismo patrón que la VTF.
+      motor: [
+        ...MOTOR_DISFRAZ,
+        { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+        { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+      ],
     },
   ],
 };
