@@ -1,8 +1,7 @@
 import {
   equipoPorId,
   capacidadDePieza,
-  PRECIO_CARGADOR_BALAS,
-  PRECIO_BATERIA_PORTATIL,
+  recargaDePieza,
   MATERIAL_TIERS,
   catalogoDeMaterial,
   precioMaterial,
@@ -99,9 +98,9 @@ export function RecursosTab({
     const pieza = sheet.equipo.find((p) => p.instanciaId === recurso.instanciaId);
     const cat = pieza ? equipoPorId(pieza.catalogoId) : null;
     if (!pieza || !cat) return [];
-    const cap = capacidadDePieza(pieza);
-    if (!cap || cap.tipo === "durabilidad") return [];
-    return [{ recurso, cat, cap }];
+    const recarga = recargaDePieza(pieza);
+    if (!recarga) return [];
+    return [{ recurso, cat, recarga }];
   });
 
   // Durabilidad (hoy solo Escudos): el −/+ manual vive aquí, igual que
@@ -251,10 +250,8 @@ export function RecursosTab({
           <p className="mt-2 border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
             {"//SYSTEM · equipo · munición y batería"}
           </p>
-          {recursosMunicionBateria.map(({ recurso, cat, cap }) => {
-            const esStock = cap.tipo === "stock";
-            const precio = esStock ? PRECIO_CARGADOR_BALAS : PRECIO_BATERIA_PORTATIL;
-            const etiquetaRecarga = esStock ? "Cargador" : "Batería";
+          {recursosMunicionBateria.map(({ recurso, cat, recarga }) => {
+            const { precio, etiqueta: etiquetaRecarga } = recarga;
             const sinFondos = creditos !== undefined && precio > creditos;
 
             return (

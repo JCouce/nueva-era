@@ -282,6 +282,7 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
     nota: arma.especial ?? undefined,
     efectos: efectos.length > 0 ? efectos : undefined,
     recursoInstanciaId: instanciaId,
+    recursoUnidad: arma.tipoMunicion === "energia" ? "cargas" : undefined,
     municionesEspeciales: municiones.length > 0 ? municiones : undefined,
     condiciones,
     ajustesFijos: [...ajusteModoUnico, ...ajustesFijosDeMejoras(sheet, instanciaId)],

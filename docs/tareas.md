@@ -618,6 +618,16 @@ objetivo · <fuente>" bajo el daño ya tirado. La ficha del arma lo enseña como
 propio. Pendiente cuando existan: las Armas Modificadas de Nanofilamento (mismo efecto,
 2-4 puntos, sin dar de alta).
 
+### Armas de energía se recargan con batería, 2026-09-28
+
+Láser, Plasma y Rayo (`tipoMunicion: "energia"`) se recargaban con "Cargador 50 cr."
+como cualquier arma balística. Ahora "Batería 150 cr." (decisión del usuario, S17
+ampliado), en Recursos y en la Tienda. `recargaDePieza()` (`recursos.ts`) es el único
+sitio que decide qué se compra y a qué precio — lo usan `comprarRecarga()`, RecursosTab
+y TiendaTab. El aviso de "no te llega" dice "cargas" en vez de "balas" para estas armas.
+De paso, el colchón de Malla Plasmática ya no aparece en la lista de munición/batería de
+Recursos (no se recarga con créditos, tiene su propia barra bajo Vida).
+
 ## Pendiente
 
 ### Fase 2 — Ficha viva (PG y fatiga en partida) ⬜ (parcial: fuera de combate, 2026-09-27)

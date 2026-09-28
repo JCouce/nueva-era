@@ -269,6 +269,22 @@ export type TipoRecarga = "stock" | "tope" | "durabilidad" | "colchon";
 export const PRECIO_CARGADOR_BALAS = 50; // S18
 export const PRECIO_BATERIA_PORTATIL = 150; // S17
 
+// Qué se compra para recargar una pieza y a qué precio: cargador de balas
+// para armas balísticas, batería portátil para lo que tiene célula ("tope") y
+// para las armas de energía (Láser/Plasma/Rayo, `tipoMunicion: "energia"`) —
+// estas mantienen el comportamiento "stock" de un arma, solo cambia qué se
+// compra y cuánto cuesta (decisión del usuario 2026-09-28). null si la pieza
+// no se recarga con créditos.
+export function recargaDePieza(pieza: PiezaEquipada): { etiqueta: "Cargador" | "Batería"; precio: number } | null {
+  const cap = capacidadDePieza(pieza);
+  if (!cap || cap.tipo === "durabilidad" || cap.tipo === "colchon") return null;
+  const cat = equipoPorId(pieza.catalogoId);
+  const esEnergia = cat?.familia === "arma" && cat.tipoMunicion === "energia";
+  return cap.tipo === "stock" && !esEnergia
+    ? { etiqueta: "Cargador", precio: PRECIO_CARGADOR_BALAS }
+    : { etiqueta: "Batería", precio: PRECIO_BATERIA_PORTATIL };
+}
+
 // Capacidad y comportamiento de recarga de una pieza equipada, o null si esa
 // pieza no aporta ningún recurso: familias fuera de alcance de este primer
 // pase (armaPesada, granada, armaMelee...) y Subsistemas sin `célula` (el
@@ -366,7 +382,7 @@ export function comprarRecarga(
   const nuevo: RecursoInstancia = compraCargadorDeMas
     ? { ...recurso, actual: recurso.max + cap.max, max: recurso.max + cap.max }
     : { ...recurso, actual: recurso.max };
-  const coste = cap.tipo === "stock" ? PRECIO_CARGADOR_BALAS : PRECIO_BATERIA_PORTATIL;
+  const coste = recargaDePieza(pieza)?.precio ?? PRECIO_BATERIA_PORTATIL;
 
   return {
     sheet: { ...sheet, recursos: sheet.recursos.map((r) => (r.instanciaId === instanciaId ? nuevo : r)) },

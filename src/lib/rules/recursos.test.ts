@@ -23,6 +23,7 @@ import {
   comprarFarmaco,
   PRECIO_CARGADOR_BALAS,
   PRECIO_BATERIA_PORTATIL,
+  recargaDePieza,
 } from "./recursos";
 
 // Mosquito: municion 7, sin F. Auto (tipo "stock").
@@ -150,6 +151,28 @@ describe("ajustarRecurso", () => {
 });
 
 describe("comprarRecarga", () => {
+  test("arma de energía: se recarga con batería (150), mismo comportamiento de stock", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "l1", catalogoId: "pistola_laser" });
+    assert.deepEqual(recargaDePieza({ instanciaId: "l1", catalogoId: "pistola_laser" }), {
+      etiqueta: "Batería",
+      precio: PRECIO_BATERIA_PORTATIL,
+    });
+    const max = recursoDe(s, "l1")!.max;
+    s = ajustarRecurso(s, "l1", -1);
+    const res = comprarRecarga(s, "l1")!;
+    assert.equal(res.coste, PRECIO_BATERIA_PORTATIL);
+    assert.deepEqual(recursoDe(res.sheet, "l1"), { instanciaId: "l1", actual: max, max });
+  });
+
+  test("arma balística: cargador (50); escudo y colchón no se recargan con créditos", () => {
+    assert.deepEqual(recargaDePieza({ instanciaId: "a1", catalogoId: "pistola_mosquito" }), {
+      etiqueta: "Cargador",
+      precio: PRECIO_CARGADOR_BALAS,
+    });
+    assert.equal(recargaDePieza({ instanciaId: "e1", catalogoId: "escudo_rodela" }), null);
+    assert.equal(recargaDePieza({ instanciaId: "m1", catalogoId: "malla_plasmatica", nivel: 1 }), null);
+  });
+
   test("con el cargador a medias, solo rellena — el máximo no crece", () => {
     let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "pistola_mosquito" });
     s = ajustarRecurso(s, "a1", -2); // 5/7

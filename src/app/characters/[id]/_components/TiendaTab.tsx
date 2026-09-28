@@ -22,7 +22,7 @@ import {
   MUNICION_ESPECIAL,
   MEJORAS_MUNICION_ESPECIAL,
   LOTE_MUNICION_ESPECIAL,
-  PRECIO_CARGADOR_BALAS,
+  recargaDePieza,
   armasHabilitadasPara,
   equipoPorId,
   validarInstalacion,
@@ -577,7 +577,7 @@ function ListaInstalable({
 }
 
 // Munición (docs/tareas.md, 2026-09-28): recargar las armas equipadas (el
-// mismo cargador que el botón de Recursos, que se queda como acceso directo)
+// mismo cargador/batería que el botón de Recursos, que se queda como acceso directo)
 // y munición especial. Cada tipo trae aquí mismo su mejora "Munición
 // Especial: X" para instalarla, porque sin ella no se puede comprar.
 function SeccionMunicion({
@@ -598,9 +598,9 @@ function SeccionMunicion({
   const armas = sheet.recursos.flatMap((recurso) => {
     const pieza = sheet.equipo.find((p) => p.instanciaId === recurso.instanciaId);
     const cat = pieza ? equipoPorId(pieza.catalogoId) : null;
-    return cat?.familia === "arma" ? [{ recurso, cat }] : [];
+    const recarga = pieza ? recargaDePieza(pieza) : null;
+    return cat?.familia === "arma" && recarga ? [{ recurso, cat, recarga }] : [];
   });
-  const sinFondosCargador = PRECIO_CARGADOR_BALAS > creditos;
 
   return (
     <>
@@ -610,7 +610,7 @@ function SeccionMunicion({
           No llevas ningún arma de fuego equipada.
         </p>
       ) : (
-        armas.map(({ recurso, cat }) => (
+        armas.map(({ recurso, cat, recarga }) => (
           <div
             key={recurso.instanciaId}
             className="clip-chamfer-sm flex items-center justify-between gap-2 border border-border bg-surface p-3"
@@ -624,11 +624,11 @@ function SeccionMunicion({
             <button
               type="button"
               onClick={() => onRecargar(recurso.instanciaId)}
-              disabled={sinFondosCargador}
+              disabled={recarga.precio > creditos}
               className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-1.5 font-mono text-[11px] uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted"
             >
-              Cargador
-              {Number.isFinite(creditos) && <span className="ml-1 opacity-80">{PRECIO_CARGADOR_BALAS} cr.</span>}
+              {recarga.etiqueta}
+              {Number.isFinite(creditos) && <span className="ml-1 opacity-80">{recarga.precio} cr.</span>}
             </button>
           </div>
         ))
