@@ -628,6 +628,15 @@ y TiendaTab. El aviso de "no te llega" dice "cargas" en vez de "balas" para esta
 De paso, el colchón de Malla Plasmática ya no aparece en la lista de munición/batería de
 Recursos (no se recarga con créditos, tiene su propia barra bajo Vida).
 
+### Mira Telescópica — bono de búsqueda como toggle, 2026-09-28
+
+"El mismo bonificador sirve para tiradas de búsqueda": toggle plano "Buscando con la mira
+telescópica" en **Buscar / Percibir** (`alerta_activa`), +1 con mira nivel 1-2 y +2 con
+nivel 3, sin condicionar a distancia (decisión del usuario). Un solo toggle aunque haya
+varias miras, del nivel más alto — `condicionBusquedaMiraDeFicha()` (`equipo.ts`) lo
+agrega en `condicionesActivas()` y en el índice, y cuenta también la mira integrada de
+los fusiles de precisión.
+
 ## Pendiente
 
 ### Fase 2 — Ficha viva (PG y fatiga en partida) ⬜ (parcial: fuera de combate, 2026-09-27)

@@ -720,7 +720,9 @@ de control.
   duplicar lo que `condicionesDeMejoras()` ya aporta sin condiciones: una mejora de
   arma nunca debe declarar `alcance` sobre su propia tiradaId. Test nuevo en
   `equipo.test.ts` que fija este comportamiento.
-  **Mira Telescópica niveles 1/3, sigue sin construir — ya no por arquitectura, por
+  **Mira Telescópica niveles 1/3 — ✅ resuelto 2026-09-28 como toggle plano** (+1/+2 en
+  "Buscar / Percibir", decisión del usuario; `condicionBusquedaMiraDeFicha()`,
+  `equipo.ts`). Histórico, **sigue sin construir — ya no por arquitectura, por
   diseño sin resolver:** el bono al **ataque** (media/larga distancia) sí está
   construido (`ajusteTramo`). El mismo bono a **percepción/búsqueda** (`alerta_activa`)
   no tiene dónde enganchar el "solo en media/larga distancia" — `alerta_activa` es una

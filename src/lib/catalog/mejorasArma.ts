@@ -1,4 +1,5 @@
 import type { NivelModulo, Rareza } from "./equipo";
+import type { CondicionTirada } from "../rules/condiciones";
 import type { TipoArma } from "./armasFuego";
 import { MUNICION_ESPECIAL, type MunicionEspecial } from "./municion";
 
@@ -26,6 +27,20 @@ export type MejoraDeArma = {
   niveles: NivelModulo[]; // los que no tienen nivel en EQUIP llevan un único nivel 1
 };
 
+export const ID_BUSQUEDA_MIRA = "mira_telescopica_busqueda";
+
+function condicionBusquedaMira(bono: number): CondicionTirada {
+  return {
+    id: ID_BUSQUEDA_MIRA,
+    tipo: "toggle",
+    etiqueta: "Buscando con la mira telescópica",
+    alcance: { tipo: "tiradaId", id: "alerta_activa" },
+    valorActivo: bono,
+    valorInactivo: 0,
+    nota: "Solo percepción visual a través de la mira.",
+  };
+}
+
 export const MEJORAS_ARMA: MejoraDeArma[] = [
   {
     familia: "mejoraArma",
@@ -49,17 +64,14 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // opción de tramo de la tirada de ataque, no es un +1 incondicional.
         modificadores: [],
         ajusteTramo: { media: 1, larga: 1 },
+        // "El mismo bonificador sirve para tiradas de búsqueda": toggle plano en
+        // Alerta Activa, sin distancia (decisión del usuario 2026-09-28). Una sola
+        // vez aunque haya varias miras — lo agrega condicionBusquedaMira()
+        // (equipo.ts), que también cubre la integrada de los fusiles de precisión.
+        condiciones: [condicionBusquedaMira(1)],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "bono_tramo", estado: "construido" },
-          // "El mismo bonificador sirve para tiradas de búsqueda" (alerta_activa):
-          // condicionesActivas() ya admite mejoraArma (2026-09-25), pero
-          // "alerta_activa" es una tirada fija sin ningún concepto de tramo/
-          // Distancia (eso solo existe en las tiradas de ataque, generado por
-          // condicionTramo() en combate.ts) — no hay a qué "media/larga
-          // distancia" enganchar el bono ahí. Diseño sin decidir, no
-          // arquitectura: ¿toggle plano sin condicionar a distancia, o
-          // Distancia nueva en alerta_activa solo para esto?
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "bono_tramo", estado: "bloqueado", bloqueoPor: "alerta_activa no tiene concepto de tramo/Distancia — falta decidir si se simplifica a toggle plano o se le añade Distancia solo para esto" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
       {
@@ -100,9 +112,11 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // Total explícito del nivel, no +1 adicional sobre el del nivel 1
         // (supuesto S9: solo aplica dentro de la MISMA pieza instalada).
         ajusteTramo: { media: 2, larga: 2 },
+        // Mismo id que el del nivel 1: lo sustituye (S9, acumulaPorClave).
+        condiciones: [condicionBusquedaMira(2)],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "bono_tramo", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "bono_tramo", estado: "bloqueado", bloqueoPor: "alerta_activa no tiene concepto de tramo/Distancia — falta decidir si se simplifica a toggle plano o se le añade Distancia solo para esto" }, // percepción visual, mismo bloqueo que nivel 1
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
     ],

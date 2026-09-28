@@ -21,6 +21,7 @@ import {
   type MejoraDeArma,
   type Rareza,
 } from "../catalog/equipo";
+import { ID_BUSQUEDA_MIRA } from "../catalog/mejorasArma";
 import { alcanzaA, type ContextoAccion, type GrupoAccion, type Modificador, type ModificadorConFuente } from "./modificadores";
 import type { CondicionTirada } from "./condiciones";
 import type { HabilidadId } from "./habilidades";
@@ -514,8 +515,29 @@ export function modificadoresDeEquipo(sheet: Sheet): ModificadorConFuente[] {
 // redundante con lo que condicionesDeMejoras ya aporta gratis. Convención, no
 // código que lo impida: una condición de mejoraArma con `alcance` debe
 // apuntar SIEMPRE a una tirada fija ajena a la del arma que la lleva.
+// Toggle de búsqueda de la Mira Telescópica (Alerta Activa): uno solo aunque
+// haya varias miras, del nivel más alto entre las instaladas y las integradas
+// de los fusiles de precisión — si cada mira aportara el suyo, compartirían
+// id en el modal y el bono se sumaría dos veces.
+export function condicionBusquedaMiraDeFicha(sheet: Sheet): CondicionTirada | null {
+  const mira = equipoPorId("mira_telescopica");
+  if (!mira || mira.familia !== "mejoraArma") return null;
+  let nivel = 0;
+  for (const pieza of sheet.equipo) {
+    if (pieza.catalogoId === "mira_telescopica" && pieza.instaladoEnId) nivel = Math.max(nivel, pieza.nivel ?? 0);
+    const cat = equipoPorId(pieza.catalogoId);
+    if (cat?.familia === "arma" && cat.miraIntegrada) nivel = Math.max(nivel, cat.miraIntegrada);
+  }
+  if (nivel === 0) return null;
+  const condiciones = acumulaPorClave(
+    nivelesHasta(mira.niveles, nivel).map((n) => n.condiciones ?? []),
+    (c) => c.id,
+  );
+  return condiciones.find((c) => c.id === ID_BUSQUEDA_MIRA) ?? null;
+}
+
 export function condicionesActivas(sheet: Sheet, ctx: ContextoAccion): CondicionTirada[] {
-  return sheet.equipo.flatMap((pieza): CondicionTirada[] => {
+  const porPieza = sheet.equipo.flatMap((pieza): CondicionTirada[] => {
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat) return [];
     if (
@@ -532,8 +554,10 @@ export function condicionesActivas(sheet: Sheet, ctx: ContextoAccion): Condicion
       niveles.map((n) => n.condiciones ?? []),
       (c) => c.id,
     );
-    return condiciones.filter((c) => c.alcance && alcanzaA(c.alcance, ctx));
+    return condiciones.filter((c) => c.id !== ID_BUSQUEDA_MIRA && c.alcance && alcanzaA(c.alcance, ctx));
   });
+  const busqueda = condicionBusquedaMiraDeFicha(sheet);
+  return busqueda?.alcance && alcanzaA(busqueda.alcance, ctx) ? [...porPieza, busqueda] : porPieza;
 }
 
 // Versión indexada de condicionesActivas(): construye UNA VEZ, con una sola
@@ -574,6 +598,16 @@ export function indiceDeCondiciones(sheet: Sheet): IndiceCondiciones {
   };
 
   let orden = 0;
+  const indexar = (condicion: CondicionTirada) => {
+    const alcance = condicion.alcance;
+    if (!alcance) return;
+    const entrada: CondicionIndexada = { condicion, orden: orden++ };
+    if (alcance.tipo === "tiradaId") agregaIndexada(indice.porTiradaId, alcance.id, entrada);
+    else if (alcance.tipo === "grupo") agregaIndexada(indice.porGrupo, alcance.grupo, entrada);
+    else if (alcance.tipo === "habilidad" && alcance.habilidad) agregaIndexada(indice.porHabilidad, alcance.habilidad, entrada);
+    else if (alcance.tipo === "todas") indice.todas.push(entrada);
+    // "modo" queda fuera del índice a propósito, ver comentario de arriba.
+  };
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat) continue;
@@ -593,16 +627,11 @@ export function indiceDeCondiciones(sheet: Sheet): IndiceCondiciones {
     );
 
     for (const condicion of condiciones) {
-      const alcance = condicion.alcance;
-      if (!alcance) continue;
-      const entrada: CondicionIndexada = { condicion, orden: orden++ };
-      if (alcance.tipo === "tiradaId") agregaIndexada(indice.porTiradaId, alcance.id, entrada);
-      else if (alcance.tipo === "grupo") agregaIndexada(indice.porGrupo, alcance.grupo, entrada);
-      else if (alcance.tipo === "habilidad" && alcance.habilidad) agregaIndexada(indice.porHabilidad, alcance.habilidad, entrada);
-      else if (alcance.tipo === "todas") indice.todas.push(entrada);
-      // "modo" queda fuera del índice a propósito, ver comentario de arriba.
+      if (condicion.id !== ID_BUSQUEDA_MIRA) indexar(condicion);
     }
   }
+  const busqueda = condicionBusquedaMiraDeFicha(sheet);
+  if (busqueda) indexar(busqueda);
 
   return indice;
 }

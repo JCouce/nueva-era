@@ -24,7 +24,7 @@ import {
   type PiezaEquipada,
 } from "./equipo";
 import { ajustarMaterial } from "./recursos";
-import { valorCondiciones } from "./condiciones";
+import { valorCondiciones, type CondicionTirada } from "./condiciones";
 import { EQUIPO } from "../catalog/equipo";
 
 // La Armadura Ligera del slice: 1 ranura de subsistema (ver
@@ -512,8 +512,46 @@ describe("condicionesActivas", () => {
     let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "fusil_asalto_impetus" });
     s = equipar(s, { instanciaId: "m1", catalogoId: "mira_telescopica", nivel: 3, instaladoEnId: "a1" });
     const cs = condicionesActivas(s, ctxAlertaActiva);
-    assert.equal(cs.length, 1);
-    assert.equal(cs[0]?.id, "mira_telescopica_n2_activo");
+    assert.deepEqual(
+      cs.map((c) => c.id),
+      ["mira_telescopica_n2_activo", "mira_telescopica_busqueda"],
+    );
+  });
+
+  describe("toggle de búsqueda de la Mira Telescópica", () => {
+    const busqueda = (sheet: ReturnType<typeof defaultSheet>) =>
+      condicionesActivas(sheet, ctxAlertaActiva).filter((c) => c.id === "mira_telescopica_busqueda");
+    const valor = (c: CondicionTirada | undefined) => (c?.tipo === "toggle" ? c.valorActivo : null);
+
+    test("mira nivel 1 en un fusil de asalto: +1", () => {
+      let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "fusil_asalto_impetus" });
+      s = equipar(s, { instanciaId: "m1", catalogoId: "mira_telescopica", nivel: 1, instaladoEnId: "a1" });
+      assert.equal(valor(busqueda(s)[0]), 1);
+    });
+
+    test("fusil de precisión sin mira instalada: la integrada ya da +1", () => {
+      const s = equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "fusil_precision_telum" });
+      assert.equal(busqueda(s).length, 1);
+      assert.equal(valor(busqueda(s)[0]), 1);
+    });
+
+    test("varias miras: un solo toggle, del nivel más alto (+2 con una de nivel 3)", () => {
+      let s = equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "fusil_precision_telum" });
+      s = equipar(s, { instanciaId: "a1", catalogoId: "fusil_asalto_impetus" });
+      s = equipar(s, { instanciaId: "m1", catalogoId: "mira_telescopica", nivel: 3, instaladoEnId: "a1" });
+      assert.equal(busqueda(s).length, 1);
+      assert.equal(valor(busqueda(s)[0]), 2);
+    });
+
+    test("sin ninguna mira, nada — y el índice devuelve lo mismo", () => {
+      const s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "fusil_asalto_impetus" });
+      assert.equal(busqueda(s).length, 0);
+      const conMira = equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "fusil_precision_telum" });
+      assert.deepEqual(
+        consultaIndiceCondiciones(indiceDeCondiciones(conMira), ctxAlertaActiva),
+        condicionesActivas(conMira, ctxAlertaActiva),
+      );
+    });
   });
 
   test("una tirada con otro id no recibe la condición del Visor Nocturno", () => {
