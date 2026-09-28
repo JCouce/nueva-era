@@ -181,9 +181,14 @@ export function DetalleArmaMelee({ p }: { p: ArmaMelee }) {
         ))}
       </div>
 
-      {p.uso.length > 0 && (
+      <dl className="mt-3 grid grid-cols-1 gap-x-4 font-mono text-[11px] sm:grid-cols-2">
+        <Stat label="Empleo" value={p.empleo} />
+        {p.alcance !== undefined && <Stat label="Alcance" value={String(p.alcance)} />}
+      </dl>
+
+      {(p.sutil || p.arrojadiza) && (
         <div className="mt-2 flex flex-wrap gap-1.5">
-          {p.uso.map((u) => (
+          {[p.sutil ? "Sutil" : null, p.arrojadiza ? "Arrojadiza" : null].filter((u) => u !== null).map((u) => (
             <span
               key={u}
               className="clip-chamfer-sm border border-border px-2 py-1 font-mono text-[10px] uppercase text-muted"

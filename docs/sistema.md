@@ -174,6 +174,7 @@ Actitud · Reflejos + Combate a Distancia.
 | Ocultarse | Reflejos + Sigilo | Ya en `acciones.ts` (`sigilo`) — no la tocó esta tanda, se incluye por consistencia con el resto de la tabla |
 | Saltar / Escalar / Nadar | Potencia + Atletismo | Ya en `acciones.ts` (`atletismo`, tirada genérica) — misma base que las 5 fórmulas de movimiento |
 | Tratar heridas | Perspicacia + Biociencia (especialidad Medicina si se tiene) | Ya en `acciones.ts` (`medicina`) + confirmado por Murillo en la pregunta 26 |
+| Lanzar un arma melee arrojadiza | Potencia + Atletismo, alcance Potencia × 10 m (igual que una granada) | `INFERIDO` — supuesto S20, ya en `combate.ts` (`tiradaLanzarArmaMelee`) |
 
 Murillo añade que "también entra en juego alguna dote" en varias de estas tiradas — sin
 efecto hoy, porque Dotes sigue sin catálogo (sección 9).
@@ -601,6 +602,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S17 | Precio de la **batería portátil** (recarga a tope cualquier célula de Subsistema): **150 créditos**, fijo, sin depender de la capacidad de la célula. | `EQUIP` no la menciona — es un ítem nuevo para probar RECURSOS (`docs/tareas.md`, extensión de fase 6b). Decisión explícita del usuario (2026-09-22). |
 | S18 | Precio del **cargador de balas normales** (suma una carga de munición al stock de un arma de fuego): **50 créditos**, fijo, sin depender de la capacidad del cargador del arma. | Mismo origen que S17 — ítem nuevo para RECURSOS, sin base en `EQUIP`. Decisión explícita del usuario (2026-09-22). |
 | S19 | Blindaje (`blindajeContra()`, `lib/rules/blindaje.ts`): la absorción de 1:1 aplica a **cualquier tipo de daño salvo Mental y Fuego**, que se quedan en 0. Tóxico cuenta como cualquier otro tipo — el blindaje SÍ reduce el daño de un arma tóxica; lo que no toca es el estado de Enfermedad/Envenenamiento que dispare esa arma, que se resuelve aparte con su propia salvación. | Mental ya "omite armaduras" (§7, `FIRME`); Fuego no se menciona como cubierto en ninguna fuente de blindaje del catálogo (armadura, Escudo Deflector) — es justo lo que Mejora Ignífuga reabre, así que sin ella se asume 0. Decisión explícita del usuario (2026-09-27), pendiente de que Murillo confirme si hay más excepciones. |
+| S20 | Lanzar un arma melee "Arrojadiza" (Lanza Corta, Cuchillo de Combate, Puñal y Lanza Corta de Kerzul) se resuelve **igual que lanzar una granada**: Potencia + Atletismo, alcance Potencia × 10 m (`ALCANCE_ARROJADA`), con la dificultad y el daño del primer modo del arma (el Simple). Sin estilo Sutil — es un lanzamiento, no un golpe. | `EQUIP` solo marca la etiqueta "Arrojadiza", sin par, alcance ni dificultad. Decisión explícita del usuario (2026-09-28): reutilizar la única regla de lanzamiento a mano que ya existe. Pendiente de que Murillo confirme. |
 
 ## Conflictos detectados
 

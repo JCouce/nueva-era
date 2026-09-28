@@ -56,13 +56,13 @@ enganchar cada pieza, y cada una arrastra su propio prerrequisito aparte de la
 arquitectura en sí:**
 5. ~~El tipo "acción sin dado" en sí~~ — ✅ hecho 2026-09-27 (`AccionDirecta`, `acciones.ts`)
 6. ~~Movilidad Aérea — Máxima Potencia~~ — ✅ hecho 2026-09-27. **Corregido en conversación: Máxima Potencia no es una `AccionDirecta`** — "en crítico, +25 m" es el resultado de una tirada, así que es la misma tirada "Volar" jugada a lo grande (acción Compleja + 2 cargas en vez de Simple + 1), no una acción sin dado aparte. `accionesDeMovimiento()` (`movimiento.ts`) + célula nueva en RECURSOS para la familia `movimiento` (`MejoraMovimiento.celula`, solo poblada para esta pieza). **El estado "¿está volando?"** (penalizadores de combate) sigue sin construir, prerrequisito aparte.
-7. VTM nivel 4 (crítico parametrizable) + Estabilizadores Neurales (`docs/tareas.md` ítems 4-5) — bloqueado además por el gasto de consumibles al usarlos, que tampoco existe.
+7. ~~VTM nivel 4 (crítico parametrizable) + Estabilizadores Neurales~~ — ✅ hecho 2026-09-28 (VTM nv3/nv4 en `medicina.ts`; Estabilizadores con la Fase 2 de fármacos). Solo queda la síntesis farmacológica (VTM nv1), ver su sección abajo.
 8. ~~Malla Plasmática — colchón, sacrificar puntos por daño melee, detonación de pulso térmico en área~~ — ✅ hecho 2026-09-27/28 (`docs/tareas.md`). "Devolver daño al atacante" se revisó y se cerró sin código (ya está en la descripción del catálogo, mismo criterio que otros "comunicación de mesa"). Quedan sin construir: -8 a sigilo al activarse y neutralizar el Camuflaje Trifásico (necesita un mecanismo pieza-sobre-otra-pieza que no existe todavía) — no era el alcance pedido.
 9. ~~Radar nv4 — "Marcar objetivo"~~ — ✅ hecho 2026-09-27, piloto de la arquitectura de arriba (`accionesDirectasDeHerramientas()`, `herramientas.ts`). Sin `onUsar`: no muta la ficha, solo un texto fijo que el jugador aplica a mano.
 
-**Tier 3 — `arma.uso` estructurado (9 piezas melee, `docs/tareas.md` ítem 4):**
-10. Cerrar el nombre del campo (empuñadura/empleo/lo que se decida)
-11. Aplicarlo a las 9 piezas de la sección de abajo
+**Tier 3 — ~~`arma.uso` estructurado~~ — ✅ hecho 2026-09-28:**
+10. ~~Cerrar el nombre del campo~~ — `empleo`, alineado con `ArmaFuego.empleo`
+11. ~~Aplicarlo a las piezas~~ — las 39 armas melee, más la tirada "Lanzar" de las 4 arrojadizas
 
 **Tier 4 — bloqueado por Murillo o por Fase 5, no tocar hasta respuesta**
 (preguntas 32/34/35/36 de `docs/sistema.md`; Derivación Psiónica y Xovromium,
@@ -105,21 +105,23 @@ completo y decisión sobre Plasma SC/Plasma AAA en
 - [x] Feritas, Gong, Graviter, Zotrex, Matanza, Electro TK — mismo fix, no estaban en la lista original de 4 pero tenían el mismo problema (`especial` prometía Derribo siempre, sin condicionar a tramo).
 - [x] Plasma AAA (`ametralladora_plasma_aaa`) — mismo caso ambiguo que Plasma SC, mismo resuelto: dificultad 11 (par de Matanza).
 
-## `arma.uso` (armas melee) es etiqueta muerta — el motor solo la lee para Sutil
+## `arma.uso` (armas melee) es etiqueta muerta — ✅ hecho 2026-09-28
 
-**Decidido 2026-09-24** (detalle en `docs/tareas.md`): se estructura en
-empuñadura (una mano/dos manos/variable con efecto propio) + arrojadiza. Sin
-construir todavía.
+**Hecho 2026-09-28**: `uso: string[]` desaparece de `ArmaMelee` y pasa a
+`empleo` ("una mano"/"dos manos", mismo nombre que `ArmaFuego`; Puñetazo = una
+mano) + `sutil` + `arrojadiza` + `alcance`. "Variable" no hacía falta: ninguna
+melee lo es. Las arrojadizas generan "Lanzar [arma]" (supuesto S20 de
+`docs/sistema.md`). Detalle en `docs/tareas.md`.
 
-- [ ] Maza de Armas (`corta_maza_armas`) — se empuña a una mano
-- [ ] Bastón de Combate (`asta_baston_combate`) — tiene alcance (Alcance 4)
-- [ ] Lanza Corta (`asta_lanza_corta`) — arrojadiza
-- [ ] Lanza Larga (`asta_lanza_larga`) — a dos manos
-- [ ] Hacha de Guerra (`asta_hacha_guerra`) — a dos manos
-- [ ] Alabarda (`asta_alabarda`) — a dos manos
-- [ ] Cuchillo de Combate (`espada_cuchillo_combate`) — a una mano + arrojadiza
-- [ ] Ariete Percusivo (`mecanica_ariete_percusivo`) — tiene alcance
-- [ ] Lanza Corta de Kerzul (`kerzul_lanza_corta`) — arrojadiza
+- [x] Maza de Armas (`corta_maza_armas`) — se empuña a una mano
+- [x] Bastón de Combate (`asta_baston_combate`) — tiene alcance (Alcance 4)
+- [x] Lanza Corta (`asta_lanza_corta`) — arrojadiza
+- [x] Lanza Larga (`asta_lanza_larga`) — a dos manos
+- [x] Hacha de Guerra (`asta_hacha_guerra`) — a dos manos
+- [x] Alabarda (`asta_alabarda`) — a dos manos
+- [x] Cuchillo de Combate (`espada_cuchillo_combate`) — a una mano + arrojadiza
+- [x] Ariete Percusivo (`mecanica_ariete_percusivo`) — tiene alcance
+- [x] Lanza Corta de Kerzul (`kerzul_lanza_corta`) — arrojadiza
 
 ## Movilidad Aérea — "Máxima potencia" — ✅ hecho 2026-09-27
 

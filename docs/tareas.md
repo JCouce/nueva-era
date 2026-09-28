@@ -533,6 +533,27 @@ construir, no entraron en el alcance confirmado.
 
 ---
 
+### `arma.uso` estructurado + "Lanzar" armas arrojadizas, 2026-09-28
+
+Tier 3 del checklist (`docs/checklist-motor-vs-prosa-2026-09-24.md`). `ArmaMelee.uso:
+string[]` mezclaba empuñadura, Sutil, Arrojadiza/Arrojadizo (escrito de las dos
+formas), Alcance y dos textos sueltos del Mangual, y el motor solo leía "Sutil".
+Ahora son campos tipados (`catalog/armasMelee.ts`):
+- `empleo: "una mano" | "dos manos"`, mismo nombre y valores que `ArmaFuego.empleo`
+  (decisión del usuario). El "Mano Libre" del Puñetazo se da por una mano. "Variable"
+  no hacía falta: ninguna melee lo es.
+- `sutil?`, `arrojadiza?`, `alcance?` (este último solo informativo).
+- Mangual: "Bloqueo -2" ya era `bloqueoAjuste`; "ignora 2 niveles de Cobertura" pasa a
+  `efectos`, así que ahora sí llega como texto a la tirada.
+
+Las 4 arrojadizas (Lanza Corta, Cuchillo de Combate, Puñal y Lanza Corta de Kerzul)
+generan una fila nueva "Lanzar [arma]" (`tiradaLanzarArmaMelee`, `combate.ts`): igual
+que lanzar una granada, Potencia + Atletismo, alcance Potencia × 10 m, con la
+dificultad y el daño del modo Simple. Es `INFERIDO` (supuesto S20 de
+`docs/sistema.md`) — EQUIP no da ninguna regla de lanzamiento. Recoger el arma después
+de lanzarla es comunicación de mesa, sin código. La ficha de Tienda/Equipo enseña
+"Empleo"/"Alcance" y chips Sutil/Arrojadiza.
+
 ## Pendiente
 
 ### Fase 2 — Ficha viva (PG y fatiga en partida) ⬜ (parcial: fuera de combate, 2026-09-27)
@@ -758,7 +779,8 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      ataques) y eso depende de un estado "¿está volando ahora mismo?" que el
      motor no rastrea en absoluto hoy — sigue sin construir, prerrequisito
      aparte de "Volar" en sí.
-   - **`arma.uso` (armas melee) se estructura — decidido, sin construir.**
+   - **✅ `arma.uso` (armas melee) se estructura — hecho 2026-09-28**, ver su
+     entrada en "Hecho". Texto original de la decisión:
      Pasa de `string[]` suelto a algo que el motor pueda leer: empuñadura
      (una mano / dos manos / variable, con efecto propio para cada modo
      cuando es variable) + arrojadiza (se tira con sus propios modificadores).

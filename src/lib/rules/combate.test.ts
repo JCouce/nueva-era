@@ -623,6 +623,46 @@ describe("estilo Sutil — toggle en vez de fila duplicada (docs/equipamiento.md
   });
 });
 
+describe("arma melee arrojadiza — Lanzar (INFERIDO, mismo par que una granada)", () => {
+  test("la Lanza Corta genera Lanzar con Potencia + Atletismo, dificultad y daño del modo Simple", () => {
+    let sheet = ficha({ atributos: { fuerza: 3 } });
+    sheet = equipar(sheet, { instanciaId: "lanza1", catalogoId: "asta_lanza_corta" });
+    const lanzar = accionesDeAtaque(sheet).find((t) => t.id === "lanzar_melee_lanza1")!;
+    assert.equal(lanzar.label, "Lanzar Lanza Corta");
+    assert.equal(lanzar.aplicado, "potencia");
+    assert.equal(lanzar.habilidad, "atletismo");
+    assert.equal(lanzar.aplicadoSutil, undefined);
+    assert.deepEqual(lanzar.ajustesFijos, [{ valor: -1, fuente: "Lanza Corta" }]);
+    assert.equal(lanzar.ataque?.modos.length, 1);
+    assert.equal(lanzar.ataque?.modos[0].danio, 5); // Fue(3) + 2
+    assert.match(lanzar.nota ?? "", /Alcance Potencia × 10 m/);
+    assert.match(lanzar.nota ?? "", /Hemorragia \(1d4 turnos\)/);
+  });
+
+  test("el Cuchillo de Combate (dificultad 0) no lleva ajuste fijo y conserva su efectoCritico", () => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "c1", catalogoId: "espada_cuchillo_combate" });
+    const lanzar = accionesDeAtaque(sheet).find((t) => t.id === "lanzar_melee_c1")!;
+    assert.deepEqual(lanzar.ajustesFijos, []);
+    assert.equal(lanzar.efectoCritico, "Hemorragia (1d6 turnos)");
+  });
+
+  test("un arma no arrojadiza no genera Lanzar", () => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "e1", catalogoId: "espada" });
+    assert.equal(accionesDeAtaque(sheet).some((t) => t.id.startsWith("lanzar_melee_")), false);
+  });
+
+  test("las 4 arrojadizas del catálogo, y solo ellas, declaran la acción lanzar_arma_melee en su motor", () => {
+    const arrojadizas = EQUIPO.filter((e) => e.familia === "armaMelee" && e.arrojadiza).map((e) => e.id).sort();
+    const conMotor = EQUIPO.filter(
+      (e) =>
+        "motor" in e &&
+        e.motor?.some((m: MotorMetadata) => m.afecta.modo === "accion_nueva" && m.afecta.id === "lanzar_arma_melee"),
+    ).map((e) => e.id).sort();
+    assert.deepEqual(arrojadizas, ["asta_lanza_corta", "espada_cuchillo_combate", "kerzul_lanza_corta", "kerzul_punal"]);
+    assert.deepEqual(conMotor, arrojadizas);
+  });
+});
+
 describe("efectoCritico (Feature 2, piloto Cuchillo de Combate)", () => {
   test("el Cuchillo de Combate propaga su efectoCritico a la Accion generada, fuera de 'nota'", () => {
     let sheet = defaultSheet();

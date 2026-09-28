@@ -275,7 +275,7 @@ function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: strin
 // disparo. "El arma pasa a considerarse arma a dos manos mientras se usa como
 // bayoneta" (catálogo) pisa el Sutil/una mano del Cuchillo de Combate base
 // (armasMelee.ts, espada_cuchillo_combate): aplicado Potencia siempre, sin
-// aplicadoSutil ni Arrojadizo. Mismo daño (Fue+2, Letal) y mismo crítico
+// aplicadoSutil ni arrojadiza. Mismo daño (Fue+2, Letal) y mismo crítico
 // (Hemorragia 1d6 turnos) que ese cuchillo, y ataque+bloqueo van juntos como
 // en cualquier arma melee del catálogo — decisión 2026-09-25, el usuario.
 function tieneBayonetaInstalada(sheet: Sheet, instanciaId: string): boolean {
@@ -477,7 +477,7 @@ function tiradaDeArmaMelee(sheet: Sheet, arma: ArmaMelee, instanciaId: string): 
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
   const modo = condicionModo(modosConId);
   const fuerza = atributoEfectivo(sheet, "fuerza");
-  const esSutil = arma.uso.includes("Sutil");
+  const esSutil = arma.sutil === true;
   // Solo se calcula si hace falta: el resto de armas (no Sutil) no necesita
   // el aplicado de Potencia para nada aquí.
   const potencia = esSutil ? aplicado(sheet, "potencia") : null;
@@ -538,11 +538,43 @@ function tiradaBloqueoDeArmaMelee(arma: ArmaMelee, instanciaId: string): Accion 
     label: `Bloquear con ${arma.label}`,
     grupo: "Defensa",
     aplicado: "potencia",
-    aplicadoSutil: arma.uso.includes("Sutil") ? "reflejos" : undefined,
+    aplicadoSutil: arma.sutil ? "reflejos" : undefined,
     habilidad: "combate_melee",
     nota: "Reacción gratuita e ilimitada, como Esquivar — activa mientras se lleva el arma.",
     condiciones: [CONDICION_ATACANTES_ADICIONALES],
     ajustesFijos: arma.bloqueoAjuste ? [{ valor: arma.bloqueoAjuste, fuente: arma.label }] : [],
+  };
+}
+
+// Arma melee arrojadiza (Lanza Corta, Cuchillo de Combate, Puñal y Lanza
+// Corta de Kerzul): mismo par y alcance que lanzar una granada (Potencia +
+// Atletismo, ALCANCE_ARROJADA) — INFERIDO, decisión 2026-09-28, el usuario;
+// EQUIP solo dice "Arrojadiza". Se lanza con el perfil del primer modo (el
+// Simple): su dificultad como ajuste fijo y su daño. Sin Sutil ni colchón de
+// Malla — un lanzamiento no es un golpe.
+function tiradaLanzarArmaMelee(sheet: Sheet, arma: ArmaMelee, instanciaId: string): Accion | null {
+  if (!arma.arrojadiza) return null;
+  const modo = arma.modos[0];
+  const bono = bonoFormulaFuerza(modo.formulaDanio);
+  return {
+    id: `lanzar_melee_${instanciaId}`,
+    label: `Lanzar ${arma.label}`,
+    grupo: "Ataques",
+    aplicado: "potencia",
+    habilidad: "atletismo",
+    nota: [`Alcance ${ALCANCE_ARROJADA}.`, arma.efectos].filter(Boolean).join(" · "),
+    efectoCritico: arma.efectoCritico,
+    ajustesFijos: modo.dificultad !== 0 ? [{ valor: modo.dificultad, fuente: arma.label }] : [],
+    ataque: {
+      modos: [
+        {
+          id: "0",
+          danio: bono === null ? null : atributoEfectivo(sheet, "fuerza") + bono,
+          formulaDanio: modo.formulaDanio,
+          categoriaDanio: modo.categoriaDanio,
+        },
+      ],
+    },
   };
 }
 
@@ -752,7 +784,12 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
   },
   armaMelee: (sheet, pieza, cat) => {
     const arma = cat as ArmaMelee;
-    return [tiradaDeArmaMelee(sheet, arma, pieza.instanciaId), tiradaBloqueoDeArmaMelee(arma, pieza.instanciaId)];
+    const lanzar = tiradaLanzarArmaMelee(sheet, arma, pieza.instanciaId);
+    return [
+      tiradaDeArmaMelee(sheet, arma, pieza.instanciaId),
+      ...(lanzar ? [lanzar] : []),
+      tiradaBloqueoDeArmaMelee(arma, pieza.instanciaId),
+    ];
   },
   armaPesada: (sheet, pieza, cat) => {
     const tirada = tiradaDeArmamentoPesado(sheet, cat as ArmaPesada, pieza.instanciaId);
