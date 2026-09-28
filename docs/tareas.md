@@ -792,6 +792,26 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      de fármacos (Gel Sanador, etc.) aunque la prosa también las mencione —
      alcance deliberadamente acotado a "medicina", ampliable luego si hace
      falta.
+   - **✅ Diagnóstico profundo — hecho 2026-09-28, VTM nivel 3.** "Dedicándole
+     1 minuto da +2" es un toggle nuevo en `medicina.ts` (`vtm_diagnostico_profundo`,
+     mismo `alcance: {tiradaId: "medicina"}` que el de arriba) — a diferencia
+     del crítico, este es un bono numérico normal (`valorActivo: 2`), así que
+     entra solo por `valorCondiciones()`/`desgloseCondiciones()`, sin tocar
+     `tirar()`. Se acumula con el selector de nivel 4 (S9, `acumulaPorClave`):
+     con la VTM en nivel 4 salen los dos controles en el modal.
+   - **⬜ Síntesis farmacológica (VTM nivel 1) — pendiente, apuntado para más
+     adelante, no confundir con "aparcado por bloqueo del diseñador".** Hoy no
+     existe NINGÚN mecanismo de "Fabricar un fármaco" en la app (comprobado:
+     grep vacío) — solo se compran ya hechos en la Tienda. La prosa promete
+     Perspicacia + Biociencia (Bioquímica), dificultad base 7 + 2 por rango de
+     rareza superior del compuesto, acción compleja, con "gran pureza" en
+     crítico. Antes de construirlo hay que decidir: ¿gasta el pool de
+     Materiales que ya existe (Fabricar/Reparar, tarea 8) o algo nuevo
+     ("cartuchos y componentes" que cita la prosa de nivel 1)?, y qué significa
+     "gran pureza" en la ficha (¿+1 de efectividad, doble duración — ninguno
+     de los dos se rastrea hoy?). Candidato natural: mismo patrón que
+     Fabricar/Reparar de Materiales, pero para `sheet.farmacos` en vez de
+     equipo.
    - **Sin código, es comunicación de mesa — decidido para varios casos del
      barrido.** Mismo criterio que "objetivo_tercero sin tirada de portador"
      (`docs/motor.md`): si el efecto es un coste de acción o un dato que

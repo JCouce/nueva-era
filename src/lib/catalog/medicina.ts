@@ -104,7 +104,32 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
           "la valija pasa a acción estándar.",
       ],
       modificadores: [{ tipo: "tirada", alcance: { tipo: "tiradaId", id: "medicina" }, valor: 2 }],
-      motor: MOTOR_BONO_APLICACION,
+      // Diagnóstico profundo (docs/checklist-motor-vs-prosa-2026-09-24.md):
+      // +2 declarado por el jugador, no un bono de personaje entero — mismo
+      // criterio que Visor Nocturno/Bípode (toggle con alcance a la tirada
+      // "medicina"), a diferencia de MOTOR_BONO_APLICACION (siempre activo
+      // por llevar la valija puesta). Numérico puro: entra solo por
+      // valorCondiciones()/desgloseCondiciones(), sin tocar tirar().
+      condiciones: [
+        {
+          id: "vtm_diagnostico_profundo",
+          tipo: "toggle",
+          etiqueta: "Diagnóstico profundo (1 minuto, VTM nv3)",
+          valorActivo: 2,
+          valorInactivo: 0,
+          nota: "Solo si dedicas 1 minuto completo a diagnosticar antes de tirar.",
+          alcance: { tipo: "tiradaId", id: "medicina" },
+        },
+      ],
+      motor: [
+        ...MOTOR_BONO_APLICACION,
+        {
+          tipo: "numerico",
+          afecta: { modo: "accion_existente", id: "medicina" },
+          mecanismo: "eleccion_jugador",
+          estado: "construido",
+        },
+      ],
     },
     {
       nivel: 4,

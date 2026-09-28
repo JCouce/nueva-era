@@ -23,6 +23,7 @@ import {
   type PiezaEquipada,
 } from "./equipo";
 import { ajustarMaterial } from "./recursos";
+import { valorCondiciones } from "./condiciones";
 
 // La Armadura Ligera del slice: 1 ranura de subsistema (ver
 // src/lib/catalog/equipo.ts). Los ids de instancia son deterministas aquí
@@ -771,21 +772,37 @@ describe("herramienta y consumible (Medicina, docs/traspaso.md §6)", () => {
   // mecanismo de alcance que Visor Nocturno, condicionesActivas() de arriba.
   const ctxMedicina = { id: "medicina", grupo: "Acciones" as const, habilidad: "biociencia" as const, modoElegido: null };
 
-  test("VTM nivel 4 aporta el selector 'vtm_tratamiento' a la tirada de medicina", () => {
+  test("VTM nivel 4 aporta el selector de crítico Y el toggle de diagnóstico (S9: se acumula desde nivel 3)", () => {
     const s = equipar(defaultSheet(), { instanciaId: "v1", catalogoId: "valija_tactica_medica", nivel: 4 });
     const cs = condicionesActivas(s, ctxMedicina);
     assert.deepEqual(
       cs.map((c) => c.id),
-      ["vtm_tratamiento"],
+      ["vtm_diagnostico_profundo", "vtm_tratamiento"],
     );
   });
 
-  test("VTM nivel 1-3 no aporta el selector todavía", () => {
+  test("VTM nivel 3 aporta el toggle de diagnóstico, pero no el selector de crítico (eso es nivel 4)", () => {
     const s = equipar(defaultSheet(), { instanciaId: "v1", catalogoId: "valija_tactica_medica", nivel: 3 });
+    const cs = condicionesActivas(s, ctxMedicina);
+    assert.deepEqual(
+      cs.map((c) => c.id),
+      ["vtm_diagnostico_profundo"],
+    );
+  });
+
+  test("VTM nivel 1-2 no aporta ninguna condición todavía", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "v1", catalogoId: "valija_tactica_medica", nivel: 2 });
     assert.deepEqual(condicionesActivas(s, ctxMedicina), []);
   });
 
-  test("el selector no aparece en ninguna otra tirada (alcance solo tiradaId 'medicina')", () => {
+  test("el toggle de diagnóstico suma +2 solo si está activo (valorCondiciones)", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "v1", catalogoId: "valija_tactica_medica", nivel: 3 });
+    const cs = condicionesActivas(s, ctxMedicina);
+    assert.equal(valorCondiciones(cs, { vtm_diagnostico_profundo: true }), 2);
+    assert.equal(valorCondiciones(cs, { vtm_diagnostico_profundo: false }), 0);
+  });
+
+  test("ninguna condición de la VTM aparece en otra tirada (alcance solo tiradaId 'medicina')", () => {
     const s = equipar(defaultSheet(), { instanciaId: "v1", catalogoId: "valija_tactica_medica", nivel: 4 });
     const otra = { id: "combate_melee", grupo: "Ataques" as const, habilidad: "combate_melee" as const, modoElegido: null };
     assert.deepEqual(condicionesActivas(s, otra), []);

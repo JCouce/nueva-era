@@ -46,7 +46,7 @@ temática con el detalle completo de cada pieza; esta lista es el orden real.
 **Tier 1 — código puro, cero decisiones pendientes:**
 1. ~~Derribo (4 armas de fuego, sección de abajo)~~ — ✅ hecho 2026-09-25 (9 armas, más Plasma SC/AAA tras cerrar la ambigüedad)
 2. ~~Bayoneta (`docs/tareas.md`, ítem 6 — el bloqueo que tenía ya no existe)~~ — ✅ hecho 2026-09-25 (hereda crítico Hemorragia y lleva Bloqueo, decidido por el usuario — la prosa solo confirmaba daño y dificultad)
-3. Materiales Sofisticados/Avanzados (`docs/tareas.md`, ítem 5 — copia el patrón de la VTM)
+3. ~~Materiales Sofisticados/Avanzados~~ — obsoleto, ya no aplica: el bono numérico se aparcó (decisión del usuario, 2026-09-25, "es un fallo de diseño") y quedó absorbido entero por la tarea 8 (Fabricar y Reparar, `docs/tareas.md`), construida y probada en vivo. No copia el patrón de la VTM, la sustituye.
 4. ~~Lanzagranadas, interpolar `areaEfecto` real~~ — ✅ hecho 2026-09-27 (`docs/tareas.md`, ítem 6)
 
 **Tier 2 — la arquitectura compartida ya está construida (2026-09-27,
@@ -143,20 +143,19 @@ en `docs/tareas.md`.
 - [ ] Telum (`fusil_precision_telum`) — Mira Telescópica nv1 integrada de serie
 - [ ] Yivrem (`fusil_precision_yivrem`) — Mira Telescópica nv1 integrada
 
-## Valija Táctica Médica (VTM) — necesita diseño (umbral de crítico + dificultad de síntesis)
+## Valija Táctica Médica (VTM) — solo queda la síntesis farmacológica
 
-**Nivel 4 decidido 2026-09-24:** `resolverTirada()` necesita aceptar un
-margen de crítico distinto del fijo (`MARGEN_CRITICO = 6`) — detalle en
-`docs/tareas.md`. Niveles 1 y 3 (dificultades de síntesis/diagnóstico) siguen
-sin diseñar. **Corrección 2026-09-27**: no es el mismo bloqueo que tenía
-Movilidad Aérea (esa arquitectura ya existe, `AccionDirecta`/`UsarModal.tsx`)
-— lo que falta aquí es el gasto de consumibles al usarlos, que no existe en
-ningún sitio de RECURSOS todavía (ver Estabilizadores Neurales, más abajo).
+**Actualizado 2026-09-28**: niveles 3 y 4 ya construidos (ver `docs/tareas.md`,
+entradas "Diagnóstico profundo" y "Crítico parametrizable") — los dos como
+`condiciones` con `alcance: {tiradaId: "medicina"}` en `medicina.ts`, sin
+arquitectura nueva. El bloqueo de "Estabilizadores Neurales" que citaba esta
+entrada (gasto de consumibles al usarlos) se cerró aparte, en la Fase 2 de
+fármacos (`docs/prompt-gasto-recursos.md`) — ya no depende de la VTM.
 
-- [ ] Nivel 1 (`valija_tactica_medica#1`) — síntesis farmacéutica dif. base 7; +2 dif. por rango de rareza; revertir congelación (dif. 6)
-- [ ] Nivel 3 (`valija_tactica_medica#3`) — diagnóstico profundo (1 min) da +2
-- [ ] Nivel 4 (`valija_tactica_medica#4`) — cualquier éxito cuenta como crítico (estados complejos, estabilización, síntesis) — **esto es el mismo hueco que "umbral de crítico variable", ver si conviene resolverlo junto al resto de VTM**
-- [ ] **Estabilizadores Neurales (`farmaco_estabilizadores_neurales`) — decidido 2026-09-24: se aborda junto con VTM**, no aparte (mismo bloqueo: acción sin dado + gasto de consumibles al usarlos, que tampoco existe hoy). Ver más abajo, ya no está en "Sueltos".
+- [x] Nivel 3 (`valija_tactica_medica#3`) — diagnóstico profundo (1 min) da +2 — ✅ hecho 2026-09-28
+- [x] Nivel 4 (`valija_tactica_medica#4`) — cualquier éxito cuenta como crítico — ✅ hecho 2026-09-28, selector "Herida normal / Estado complejo..."
+- [x] Estabilizadores Neurales (`farmaco_estabilizadores_neurales`) — ✅ hecho, Fase 2 de fármacos (gasto + tirada "Usar Estabilizadores Neurales")
+- [ ] Nivel 1 (`valija_tactica_medica#1`) — síntesis farmacéutica dif. base 7; +2 dif. por rango de rareza — **pendiente, necesita diseño real** (no existe "Fabricar fármaco" en la app; ver `docs/tareas.md` para las preguntas abiertas: qué gasta, qué significa "gran pureza"). Revertir congelación (dif. 6) NO es un hueco — ya se hace con la tirada "medicina" existente y una dificultad tecleada a mano.
 
 ## Escudos — falta la acción de levantarlos (aparte del "objetivo_tercero" ya resuelto)
 
