@@ -179,6 +179,31 @@ describe("resolución contra dificultad", () => {
   });
 });
 
+describe("margenCriticoExito (VTM nivel 4, docs/tareas.md 2026-09-28)", () => {
+  test("por defecto, sin el parámetro, se comporta como siempre (umbral 6)", () => {
+    const r = resolverTirada({ dado: 10, modificador: 2, dificultad: 7 }); // margen 5
+    assert.equal(r.critico, false);
+  });
+
+  test("con margenCriticoExito 0, cualquier éxito es crítico", () => {
+    const r = resolverTirada({ dado: 5, modificador: 2, dificultad: 7, margenCriticoExito: 0 }); // margen 0
+    assert.equal(r.exito, true);
+    assert.equal(r.critico, true);
+  });
+
+  test("con margenCriticoExito 0, un margen apenas por debajo (fracaso) no es crítico", () => {
+    const r = resolverTirada({ dado: 4, modificador: 2, dificultad: 7, margenCriticoExito: 0 }); // margen -1
+    assert.equal(r.exito, false);
+    assert.equal(r.critico, false);
+  });
+
+  test("el lado de pifia nunca cambia: sigue en MARGEN_CRITICO aunque baje el de éxito", () => {
+    const r = resolverTirada({ dado: 1, modificador: 0, dificultad: 7, margenCriticoExito: 0 }); // margen -6
+    assert.equal(r.exito, false);
+    assert.equal(r.critico, true); // -6, el umbral normal de pifia, no el de éxito
+  });
+});
+
 describe("daño por éxitos", () => {
   test("sin éxitos de sobra, solo el daño base", () => {
     const d = resolverDanio(10, 0, "Letal");

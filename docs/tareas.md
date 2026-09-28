@@ -779,12 +779,19 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      de estos 8 fusiles YA descuenta la ranura de la mira integrada o no —
      si no la descuenta, dar el bono sin tocar `mejorasAdmitidas` sería
      regalarles una ranura de más.
-   - **Crítico parametrizable — decidido, para la Valija Táctica Médica
-     nivel 4.** `MARGEN_CRITICO = 6` (`acciones.ts`) es hoy una constante fija
-     sin override. VTM nv4 promete "cualquier éxito cuenta como crítico" para
-     tratamientos concretos (estados complejos, estabilización, síntesis) —
-     `resolverTirada()` necesita aceptar un margen de crítico distinto (o un
-     flag equivalente) activable por contexto, no cambiar la constante global.
+   - **✅ Crítico parametrizable — hecho 2026-09-28, VTM nivel 4.**
+     `resolverTirada()` gana `margenCriticoExito` (por defecto `MARGEN_CRITICO`,
+     el lado de pifia nunca cambia). Cómo se activa: idea del usuario en
+     conversación — en vez de aplicarlo a ciegas a cualquier tirada de
+     Biociencia, la VTM nivel 4 añade un selector nuevo ("Herida normal" /
+     "Estado complejo, estabilización o síntesis") a la propia tirada "Tratar
+     heridas", mismo mecanismo de `alcance: {tiradaId: "medicina"}` que ya usa
+     Visor Nocturno (`medicina.ts`, `condiciones` del nivel 4) — cero
+     arquitectura nueva. Elegir "complejo" pasa `margenCriticoExito: 0` en
+     `tirar()` (`AccionesTab.tsx`). A propósito, no se extiende a las tiradas
+     de fármacos (Gel Sanador, etc.) aunque la prosa también las mencione —
+     alcance deliberadamente acotado a "medicina", ampliable luego si hace
+     falta.
    - **Sin código, es comunicación de mesa — decidido para varios casos del
      barrido.** Mismo criterio que "objetivo_tercero sin tirada de portador"
      (`docs/motor.md`): si el efecto es un coste de acción o un dato que

@@ -525,11 +525,16 @@ export function AccionesTab({
       ...ctxBase,
       modoElegido: modoElegido(tirada.condiciones ?? [], estadoCondiciones),
     });
+    // VTM nivel 4 ("Tratar heridas"): selector "vtm_tratamiento" (medicina.ts)
+    // — elegir "complejo" baja el umbral de crítico a 0 en el lado de éxito.
+    // Inocuo en cualquier otra tirada: ese id de condición solo existe aquí.
+    const margenCriticoExito = estadoCondiciones.vtm_tratamiento === "complejo" ? 0 : undefined;
     const r = resolverTirada({
       dado,
       modificador: modBase + bonoCondiciones + bonoTramo + bonoEquipoEspecie,
       circunstancial,
       dificultad,
+      margenCriticoExito,
     });
 
     setMemoria((m) => ({ ...m, [tirada.id]: { dificultad, circunstancial } }));

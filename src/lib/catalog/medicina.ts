@@ -119,7 +119,43 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
           "fármaco.",
       ],
       modificadores: [{ tipo: "tirada", alcance: { tipo: "tiradaId", id: "medicina" }, valor: 3 }],
-      motor: MOTOR_BONO_APLICACION,
+      // Crítico parametrizable (docs/tareas.md, 2026-09-28): el motor no
+      // puede distinguir por sí solo "herida normal" de "estado complejo/
+      // estabilización/síntesis" en la misma tirada "Tratar heridas" — se
+      // declara con un selector, mismo criterio que cualquier otra elección
+      // del jugador al tirar (modo de disparo, tramo...). Solo esta tirada
+      // (alcance tiradaId "medicina"), a propósito: no se extiende a las
+      // tiradas de fármacos aunque la prosa también las mencione — eso
+      // queda aparte si hace falta más adelante. resolverTirada() lee la
+      // opción elegida en AccionesTab.tsx (tirar()) para bajar el umbral de
+      // crítico a 0 en el lado de éxito.
+      condiciones: [
+        {
+          id: "vtm_tratamiento",
+          tipo: "opcion",
+          etiqueta: "Tipo de tratamiento (VTM nv4)",
+          opciones: [
+            { id: "normal", etiqueta: "Herida normal", valor: 0 },
+            {
+              id: "complejo",
+              etiqueta: "Estado complejo / estabilización / síntesis",
+              valor: 0,
+              nota: "Cualquier éxito en esta tirada cuenta como crítico.",
+            },
+          ],
+          porDefecto: "normal",
+          alcance: { tipo: "tiradaId", id: "medicina" },
+        },
+      ],
+      motor: [
+        ...MOTOR_BONO_APLICACION,
+        {
+          tipo: "numerico",
+          afecta: { modo: "accion_existente", id: "medicina" },
+          mecanismo: "eleccion_jugador",
+          estado: "construido",
+        },
+      ],
     },
   ],
 };

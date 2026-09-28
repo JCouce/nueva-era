@@ -765,6 +765,31 @@ describe("herramienta y consumible (Medicina, docs/traspaso.md §6)", () => {
     const s = equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "farmaco_nano_elixir" });
     assert.deepEqual(modificadoresDeEquipo(s), []);
   });
+
+  // Crítico parametrizable (docs/tareas.md, 2026-09-28): el selector solo
+  // aparece con la VTM en nivel 4, y solo en la tirada "medicina" — mismo
+  // mecanismo de alcance que Visor Nocturno, condicionesActivas() de arriba.
+  const ctxMedicina = { id: "medicina", grupo: "Acciones" as const, habilidad: "biociencia" as const, modoElegido: null };
+
+  test("VTM nivel 4 aporta el selector 'vtm_tratamiento' a la tirada de medicina", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "v1", catalogoId: "valija_tactica_medica", nivel: 4 });
+    const cs = condicionesActivas(s, ctxMedicina);
+    assert.deepEqual(
+      cs.map((c) => c.id),
+      ["vtm_tratamiento"],
+    );
+  });
+
+  test("VTM nivel 1-3 no aporta el selector todavía", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "v1", catalogoId: "valija_tactica_medica", nivel: 3 });
+    assert.deepEqual(condicionesActivas(s, ctxMedicina), []);
+  });
+
+  test("el selector no aparece en ninguna otra tirada (alcance solo tiradaId 'medicina')", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "v1", catalogoId: "valija_tactica_medica", nivel: 4 });
+    const otra = { id: "combate_melee", grupo: "Ataques" as const, habilidad: "combate_melee" as const, modoElegido: null };
+    assert.deepEqual(condicionesActivas(s, otra), []);
+  });
 });
 
 // Granada dejó de equiparse (docs/tareas.md, 2026-09-27: pasa a recurso con

@@ -345,11 +345,19 @@ export function resolverTirada({
   modificador,
   circunstancial = 0,
   dificultad = null,
+  margenCriticoExito = MARGEN_CRITICO,
 }: {
   dado: number;
   modificador: number;
   circunstancial?: number;
   dificultad?: number | null;
+  // Umbral de crítico por el lado de ÉXITO, distinto del general
+  // (MARGEN_CRITICO) — hoy solo lo usa la VTM nivel 4 ("Tratar heridas" con
+  // el selector "Estado complejo/estabilización/síntesis", medicina.ts +
+  // AccionesTab.tsx): 0 hace que cualquier éxito cuente como crítico. El
+  // lado de PIFIA nunca cambia, sigue siempre en MARGEN_CRITICO — la VTM no
+  // promete nada sobre fracasos.
+  margenCriticoExito?: number;
 }): Resultado {
   const total = dado + modificador + circunstancial;
   if (dificultad === null) {
@@ -373,8 +381,7 @@ export function resolverTirada({
     dificultad,
     margen,
     exito: margen >= 0,
-    // Crítico en los dos sentidos: superar por 6 o quedarse a 6 o más.
-    critico: Math.abs(margen) >= MARGEN_CRITICO,
+    critico: margen >= margenCriticoExito || margen <= -MARGEN_CRITICO,
   };
 }
 
