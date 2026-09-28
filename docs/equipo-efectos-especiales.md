@@ -376,8 +376,9 @@ de control.
 - ✅ **Hallazgo #1 (Proyector de Pulso), construido 2026-09-23.** Sigue pendiente la
   mitad de la ampliación: la "detonación de pulso térmico" de Malla Plasmática
   nivel 2, mismo problema, no cubierta en esta tanda.
-- ⬜ **Hallazgo #2** — Munición Especial y las 4 Armas Modificadas no existen en el
-  catálogo; hay que darlas de alta antes de mecanizar su efecto.
+- ⬜ **Hallazgo #2** — ~~Munición Especial~~ dada de alta 2026-09-28 (compra y stock;
+  su efecto al disparar es la fase 2, `docs/tareas.md`). Las 4 Armas Modificadas siguen
+  sin existir en el catálogo.
 - ⬜ **Hallazgo #3** — Salvaciones genéricas sin especificidad ("¿contra qué resistes?").
   Bloquea `arm2`, `me1`, `me5` del backlog.
 - ⬜ **Hallazgo #4** — Tipo elemental vs. categoría de daño mezclados en

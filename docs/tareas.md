@@ -570,6 +570,25 @@ descontada. Lo que faltaba era no dejar meter otra encima:
 Decisión del usuario: bloquear solo el nivel 1. Ranura y resta del bono, supuesto S21
 de `docs/sistema.md`.
 
+### Munición en Tienda + Munición Especial, fase 1, 2026-09-28
+
+Categoría nueva **"Munición"** en la Tienda (`SeccionMunicion`, `TiendaTab.tsx`):
+- **Recargar**: una fila por arma de fuego equipada con su botón "Cargador" (50 cr.),
+  la misma acción que el de Recursos, que se queda como acceso directo.
+- **Munición especial**: los 8 tipos de EQUIP (`MUNICION_ESPECIAL`,
+  `catalog/municion.ts`) — no son piezas equipables, van a un stock por tipo compartido
+  entre armas (`sheet.municionEspecial`, SCHEMA_VERSION 11, mismo patrón que granadas).
+  Se compran en lotes de 10 (`LOTE_MUNICION_ESPECIAL`, decisión del usuario) y el +/-
+  de Recursos ajusta sueltas.
+- **Mejora "Munición Especial: X"**: una `mejoraArma` por tipo
+  (`MEJORAS_MUNICION_ESPECIAL`, `mejorasArma.ts`), que se instala desde la propia card
+  de la munición. Sin ella no se puede comprar ese tipo (`armasHabilitadasPara()`,
+  `comprarMunicionEspecial()`, lo comprueba el servidor). Ocupa ranura, no se repite el
+  mismo tipo en un arma, no va en armas de plasma. Coste según la rareza de la munición;
+  Muy Extraño sin precio en EQUIP → 62.500 (supuesto S22).
+
+Fase 2 (usarla al disparar) sigue pendiente, ver "Munición Especial — fase 2".
+
 ## Pendiente
 
 ### Fase 2 — Ficha viva (PG y fatiga en partida) ⬜ (parcial: fuera de combate, 2026-09-27)
@@ -793,8 +812,8 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      de "Máxima potencia" (ya construida) — mientras se está volando, otras
      tiradas cambian (esquivar usa Tecnociencia en vez de Atletismo, -1 a
      ataques) y eso depende de un estado "¿está volando ahora mismo?" que el
-     motor no rastrea en absoluto hoy — sigue sin construir, prerrequisito
-     aparte de "Volar" en sí.
+     motor no rastrea en absoluto hoy. **Descartado 2026-09-28 (el usuario):
+     no hace falta que esté en la app** — se lleva en mesa.
    - **✅ `arma.uso` (armas melee) se estructura — hecho 2026-09-28**, ver su
      entrada en "Hecho". Texto original de la decisión:
      Pasa de `string[]` suelto a algo que el motor pueda leer: empuñadura
@@ -892,10 +911,8 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      consumibles/fármacos hoy no tienen NINGÚN mecanismo de "se gastan al
      usarlos" (`recursos.ts` solo trackea arma/subsistema con célula) — hay
      que construir también el gasto, no solo el efecto de curar "aturdido".
-   - **Munición en Tienda — tarea nueva, sin diseñar.** Hoy comprar munición es
-     un botón suelto en la pestaña Recursos. Hace falta una sección propia en
-     la Tienda, con algo como una unidad de cada tipo de munición por cada
-     tipo de arma compatible. Sin maquetar todavía.
+   - **✅ Munición en Tienda — hecho 2026-09-28**, ver "Munición en Tienda +
+     Munición Especial, fase 1" en "Hecho".
 
    **Malla Plasmática — falta el "colchón"/segunda vida (decisión 2026-09-24,
    el usuario).** Los 4 niveles prometen un buffer de puntos de golpe que
@@ -1155,12 +1172,12 @@ problema completo en `docs/modificadores-tiradas.md` §8. Los modificadores num�
 ya están resueltos y son extensibles sin cambios (`modificadoresActivos`); lo que
 falta es específico de condiciones/texto, no de números. Sin diseñar, sin construir.
 
-### Munición Especial ⬜
-Mejora de arma (perforante, incendiaria, tóxica, electrizante, criogénica, corrosiva,
-radiactiva, supresora). Su coste depende de qué munición cargues en el arma, y la munición
-en general sigue aparcada hasta que el diseñador conteste la pregunta 7 de economía
-(`docs/sistema.md`). Ver el comentario en `src/lib/catalog/equipo.ts` antes de
-`MEJORAS_ARMA`.
+### Munición Especial — fase 2 ⬜ (fase 1 hecha 2026-09-28)
+Comprar y llevar la munición ya funciona (ver su entrada en "Hecho"). Falta que el
+disparo la use: selector "Munición: normal / X" en la tirada de ataque del arma
+habilitada, que aplique su daño (+1 nivel de Fuego/Eléctrico/Frío/Corrosivo, −1 la
+perforante) y su efecto como texto, y gaste 1 proyectil del stock en vez del
+cargador. El `motor` de cada mejora ya lo declara `pendiente`.
 
 ### Armas Modificadas ⬜
 Electrificantes, Térmicas, de Plasma, de Nanofilamento. Su coste es un **multiplicador**

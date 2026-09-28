@@ -25,7 +25,8 @@
 //     sin mecanizar). Precio fijo, igual en los dos casos de "stock".
 import { z } from "zod";
 import { equipoPorId, type Consumible, type Rareza } from "../catalog/equipo";
-import { MUNICION_GRANADA } from "../catalog/municion";
+import { MUNICION_GRANADA, LOTE_MUNICION_ESPECIAL, municionEspecialPorId } from "../catalog/municion";
+import { PREFIJO_MEJORA_MUNICION } from "../catalog/mejorasArma";
 import { FARMACOS } from "../catalog/medicina";
 import type { PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
@@ -190,6 +191,56 @@ export function ajustarFarmaco(sheet: Sheet, catalogoId: string, delta: number):
   if (actual === 0) delete farmacos[catalogoId];
   else farmacos[catalogoId] = actual;
   return { ...sheet, farmacos };
+}
+
+// Munición especial (docs/tareas.md, 2026-09-28): stock de proyectiles por
+// tipo, compartido entre armas — mismo patrón que Granadas/Fármacos (Record
+// con solo las claves > 0). Se compra por lotes de LOTE_MUNICION_ESPECIAL y
+// solo si alguna arma equipada tiene instalada la mejora de ese tipo.
+export type MunicionEspecialStock = Record<string, number>;
+
+export const municionEspecialSchema = z.record(z.string(), z.number().int().min(0));
+
+export function defaultMunicionEspecial(): MunicionEspecialStock {
+  return {};
+}
+
+// Armas equipadas que llevan la mejora "Munición Especial: <tipo>".
+export function armasHabilitadasPara(sheet: Sheet, municionId: string): PiezaEquipada[] {
+  const mejoraId = `${PREFIJO_MEJORA_MUNICION}${municionId}`;
+  const hosts = new Set(
+    sheet.equipo.filter((p) => p.catalogoId === mejoraId && p.instaladoEnId).map((p) => p.instaladoEnId),
+  );
+  return sheet.equipo.filter((p) => hosts.has(p.instanciaId));
+}
+
+// Un lote al precio real de catálogo. null si el id no es una munición
+// especial real o ninguna arma equipada está habilitada para ella — el
+// servidor no confía en que la UI haya deshabilitado el botón.
+export function comprarMunicionEspecial(
+  sheet: Sheet,
+  municionId: string,
+): { sheet: Sheet; coste: number } | null {
+  const municion = municionEspecialPorId(municionId);
+  if (!municion || armasHabilitadasPara(sheet, municionId).length === 0) return null;
+  const previo = sheet.municionEspecial[municionId] ?? 0;
+  return {
+    sheet: { ...sheet, municionEspecial: { ...sheet.municionEspecial, [municionId]: previo + LOTE_MUNICION_ESPECIAL } },
+    coste: municion.costeProyectil * LOTE_MUNICION_ESPECIAL,
+  };
+}
+
+// Delta manual (+/-), clamp ≥0, borra la clave al llegar a 0 — mismo patrón
+// que ajustarGranada.
+export function ajustarMunicionEspecial(sheet: Sheet, municionId: string, delta: number): Sheet {
+  if (!Number.isFinite(delta)) return sheet;
+  const previo = sheet.municionEspecial[municionId] ?? 0;
+  const actual = Math.max(0, previo + Math.round(delta));
+  if (actual === previo) return sheet;
+  const municionEspecial = { ...sheet.municionEspecial };
+  if (actual === 0) delete municionEspecial[municionId];
+  else municionEspecial[municionId] = actual;
+  return { ...sheet, municionEspecial };
 }
 
 export type RecursoInstancia = { instanciaId: string; actual: number; max: number };

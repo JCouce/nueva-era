@@ -1,5 +1,6 @@
-import type { NivelModulo } from "./equipo";
+import type { NivelModulo, Rareza } from "./equipo";
 import type { TipoArma } from "./armasFuego";
+import { MUNICION_ESPECIAL, type MunicionEspecial } from "./municion";
 
 // ── Mejoras de arma ──────────────────────────────────────────────────
 // Fase C: la primera familia con COMPATIBILIDAD (no todo cabe en cualquier
@@ -8,10 +9,8 @@ import type { TipoArma } from "./armasFuego";
 // arma ("solo fusiles de asalto y de precisión") o por categoría de daño
 // ("las armas de plasma no pueden instalarla") — de ahí la unión.
 //
-// Se deja fuera **Munición Especial (mejora de arma)**: su coste depende de
-// qué munición elijas instalar, y munición entera está aparcada hasta
-// Murillo (ver docs/sistema.md pregunta 7). Añadirla es incoherente sin esa
-// pieza resuelta.
+// **Munición Especial** va al final: una mejora por tipo de munición
+// (MEJORAS_MUNICION_ESPECIAL), no una sola con un selector.
 export type CompatibilidadArma =
   | { tipo: "todas" }
   | { tipo: "porTipoArma"; tiposPermitidos: TipoArma[] }
@@ -399,3 +398,47 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
     ],
   },
 ];
+
+// Munición Especial (mejora de arma), 2026-09-28: habilita el arma para un
+// tipo de munición especial. EQUIP deja instalarla "repetidas veces para
+// distintos tipos" — una mejora por tipo encaja en el modelo de siempre
+// (yaInstalado() impide repetir el mismo tipo, cada una ocupa su ranura) sin
+// añadir a PiezaEquipada un campo de variante. Coste según la rareza de la
+// munición; EQUIP no da precio para Muy Extraño (radiactiva, supresora): se
+// sigue su progresión ×5, supuesto S22 de docs/sistema.md.
+const COSTE_MEJORA_MUNICION: Partial<Record<Rareza, number>> = {
+  Común: 500,
+  "Poco Habitual": 2500,
+  Extraño: 12500,
+  "Muy Extraño": 62500,
+};
+
+export const PREFIJO_MEJORA_MUNICION = "municion_especial_";
+
+function mejoraMunicionEspecial(m: MunicionEspecial): MejoraDeArma {
+  return {
+    familia: "mejoraArma",
+    id: `${PREFIJO_MEJORA_MUNICION}${m.id}`,
+    label: `Munición Especial: ${m.label.replace(/^Munición /, "")}`,
+    resumen: `Habilita el arma para disparar ${m.label.toLowerCase()}.`,
+    descripcion:
+      "Habilita el arma para usar este modelo de munición especial; sigue pudiendo usar munición " +
+      "convencional. Las armas de plasma no pueden instalarla.",
+    compatibilidad: { tipo: "excluyeCategoriaDanio", categoriasExcluidas: ["Plasma"] },
+    niveles: [
+      {
+        nivel: 1,
+        rareza: m.rareza,
+        coste: COSTE_MEJORA_MUNICION[m.rareza] ?? 0,
+        detalle: [`${m.label}: ${m.efecto}`],
+        modificadores: [],
+        motor: [
+          // Fase 2: elegir la munición al disparar, aplicar su daño/efecto y gastarla.
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+        ],
+      },
+    ],
+  };
+}
+
+export const MEJORAS_MUNICION_ESPECIAL: MejoraDeArma[] = MUNICION_ESPECIAL.map(mejoraMunicionEspecial);

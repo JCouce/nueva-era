@@ -241,3 +241,95 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
 export function municionGranadaPorId(id: string): MunicionGranada | null {
   return MUNICION_GRANADA.find((m) => m.id === id) ?? null;
 }
+
+// ── Munición especial ── docs/equipamiento.md, "Munición Especial". No es una
+// pieza equipable (fuera de EQUIPO): es un stock de proyectiles por tipo,
+// compartido entre armas (sheet.municionEspecial, recursos.ts), igual que las
+// granadas. Para comprarla, alguna arma equipada tiene que llevar instalada
+// la mejora "Munición Especial: <tipo>" (mejorasArma.ts). Fase 1 (2026-09-28):
+// comprar y ajustar a mano; aplicar su efecto al disparar es Fase 2.
+export type MunicionEspecial = {
+  id: string;
+  label: string;
+  rareza: Rareza;
+  costeProyectil: number;
+  efecto: string;
+};
+
+// Se compra por lotes: a 4 cr. la bala, de una en una no tiene sentido.
+// Decisión del usuario 2026-09-28; el +/- de Recursos ajusta sueltas.
+export const LOTE_MUNICION_ESPECIAL = 10;
+
+export const MUNICION_ESPECIAL: MunicionEspecial[] = [
+  {
+    id: "perforante",
+    label: "Munición Perforante",
+    rareza: "Común",
+    costeProyectil: 4,
+    efecto:
+      "Un nivel menos de daño, pero ignora los 2 primeros puntos de blindaje. Su crítico consume " +
+      "un punto de blindaje del objetivo en lugar del crítico habitual.",
+  },
+  {
+    id: "incendiaria",
+    label: "Munición Incendiaria",
+    rareza: "Poco Habitual",
+    costeProyectil: 6,
+    efecto: "+1 nivel de daño por Fuego y Llamarada (7); en crítico, Ceguera (10).",
+  },
+  {
+    id: "electrizante",
+    label: "Munición Electrizante",
+    rareza: "Poco Habitual",
+    costeProyectil: 8,
+    efecto: "+1 nivel de daño Eléctrico y Shock (7); en crítico, Shock (10).",
+  },
+  {
+    id: "toxica",
+    label: "Munición Tóxica",
+    rareza: "Extraño",
+    costeProyectil: 10,
+    efecto:
+      "Envenenamiento (7): al fallar, envenenado 1; con fallo crítico, envenenado 2. Superándola, " +
+      "-1 durante un turno a salvaciones contra lo mismo; con crítico, sin efecto. Si vuelve a " +
+      "recibir daño ya envenenado, relanza y puede agravarse un nivel.",
+  },
+  {
+    id: "criogenica",
+    label: "Munición Criogénica",
+    rareza: "Extraño",
+    costeProyectil: 10,
+    efecto: "+1 nivel de daño por Frío y Congelación (7).",
+  },
+  {
+    id: "corrosiva",
+    label: "Munición Corrosiva",
+    rareza: "Extraño",
+    costeProyectil: 10,
+    efecto: "+1 nivel de daño Corrosivo y Corrosión (7).",
+  },
+  {
+    id: "radiactiva",
+    label: "Munición Radiactiva",
+    rareza: "Muy Extraño",
+    costeProyectil: 20,
+    efecto:
+      "Envenenamiento (7): al fallar, enfermo 1; con fallo crítico, enfermo 2 y un nivel de daño " +
+      "agravado. Superándola, -1 durante un turno contra envenenamiento. Sin tratamiento médico " +
+      "relanza la salvación a los 10 turnos (basta un éxito). Afecta a sintéticos, con +2 a su salvación.",
+  },
+  {
+    id: "supresora",
+    label: "Munición Supresora",
+    rareza: "Muy Extraño",
+    costeProyectil: 150,
+    efecto:
+      "Daño normal y salvación contra la toxina (8) si recibe daño. Al fallar, un psiónico gasta el " +
+      "doble de fatiga y sufre -2 a su empleo durante 1 minuto; con fallo crítico, además un nivel de " +
+      "daño letal por punto de fatiga empleado. Superándola, -1 durante un turno contra la misma toxina.",
+  },
+];
+
+export function municionEspecialPorId(id: string): MunicionEspecial | null {
+  return MUNICION_ESPECIAL.find((m) => m.id === id) ?? null;
+}

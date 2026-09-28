@@ -170,6 +170,14 @@ export const MIGRACIONES: Migracion[] = [
       return { ...ficha, equipo: resto, farmacos };
     },
   },
+  {
+    desde: 10,
+    hasta: 11,
+    descripcion:
+      "Se añade el stock de munición especial (docs/tareas.md, 2026-09-28): las fichas " +
+      "antiguas empiezan sin ninguna.",
+    migrar: (ficha) => ({ ...ficha, municionEspecial: {} }),
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le

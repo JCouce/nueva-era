@@ -268,6 +268,20 @@ describe("v9 → v10: los fármacos pasan de pieza equipada a recurso con cantid
   });
 });
 
+describe("v10 → v11: se añade el stock de munición especial", () => {
+  test("una ficha v10 arranca sin munición especial y sin tocar el resto", () => {
+    const { ficha } = migrar({ schemaVersion: 10, especieId: "arkoru", farmacos: { farmaco_analgesico: 2 } }, 11);
+    assert.deepEqual(ficha.municionEspecial, {});
+    assert.deepEqual(ficha.farmacos, { farmaco_analgesico: 2 });
+    assert.equal(ficha.schemaVersion, 11);
+  });
+
+  test("parseSheet descarta tipos desconocidos y cantidades a 0", () => {
+    const s = parseSheet({ schemaVersion: 11, municionEspecial: { incendiaria: 10, inventada: 5, toxica: 0 } });
+    assert.deepEqual(s.municionEspecial, { incendiaria: 10 });
+  });
+});
+
 describe("parseSheet migra antes de normalizar", () => {
   test("una ficha v1 entra por la puerta y sale al día", () => {
     const s = parseSheet({ schemaVersion: 1, especie: "Arkorü", edad: 40 });

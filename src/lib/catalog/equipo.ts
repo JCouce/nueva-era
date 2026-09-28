@@ -47,7 +47,13 @@ import { ARMAS, type ArmaFuego, type ModoDisparo, type TipoArma } from "./armasF
 import { MEJORAS_ESTANDAR, type MejoraEstandar } from "./mejorasEstandar";
 import { SUBSISTEMAS, type Subsistema } from "./subsistemas";
 import { MOVIMIENTO, type MejoraMovimiento } from "./movimiento";
-import { MEJORAS_ARMA, type MejoraDeArma, type CompatibilidadArma } from "./mejorasArma";
+import {
+  MEJORAS_ARMA,
+  MEJORAS_MUNICION_ESPECIAL,
+  PREFIJO_MEJORA_MUNICION,
+  type MejoraDeArma,
+  type CompatibilidadArma,
+} from "./mejorasArma";
 
 // Reexports — ningún archivo externo necesita cambiar su import tras el split.
 export { ARMADURAS, type Armadura };
@@ -55,7 +61,7 @@ export { ARMAS, type ArmaFuego, type ModoDisparo, type TipoArma };
 export { MEJORAS_ESTANDAR, type MejoraEstandar };
 export { SUBSISTEMAS, type Subsistema };
 export { MOVIMIENTO, type MejoraMovimiento };
-export { MEJORAS_ARMA, type MejoraDeArma, type CompatibilidadArma };
+export { MEJORAS_ARMA, MEJORAS_MUNICION_ESPECIAL, PREFIJO_MEJORA_MUNICION, type MejoraDeArma, type CompatibilidadArma };
 
 export type Rareza = "Común" | "Poco Habitual" | "Extraño" | "Muy Extraño" | "Singular";
 
@@ -195,6 +201,7 @@ export const EQUIPO: Equipo[] = [
   ...SUBSISTEMAS,
   ...MOVIMIENTO,
   ...MEJORAS_ARMA,
+  ...MEJORAS_MUNICION_ESPECIAL,
   ...ARMAS_MELEE,
   VALIJA_TACTICA_MEDICA,
   ...FARMACOS,

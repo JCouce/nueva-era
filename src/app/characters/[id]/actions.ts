@@ -34,6 +34,9 @@ import {
   ajustarFarmaco,
   comprarFarmaco,
   FARMACOS,
+  comprarMunicionEspecial,
+  ajustarMunicionEspecial,
+  municionEspecialPorId,
   ajustarVida,
   ajustarFatiga,
   type MaterialTier,
@@ -474,6 +477,51 @@ export async function ajustarFarmacoAction(
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(characterId, ajustarFarmaco(ctx.sheet, catalogoId, delta));
+}
+
+// Munición especial (docs/tareas.md, 2026-09-28): un lote por compra, mismo
+// tope de rareza de creación y precio recalculado en servidor que Granadas.
+// comprarMunicionEspecial() ya rechaza si ningún arma está habilitada.
+export async function comprarMunicionEspecialAction(
+  characterId: string,
+  municionId: string,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+
+  const municion = municionEspecialPorId(municionId);
+  if (!municion) return { ok: false, error: "Munición inválida" };
+
+  if (!ctx.aprobada && !ctx.esMaster) {
+    const letra = ctx.sheet.prioridades.recursos;
+    const tope = letra ? RECURSOS_POR_LETRA[letra].rareza : null;
+    if (tope && !rarezaPermitida(municion.rareza, tope)) {
+      return { ok: false, error: `Tu letra de Recursos no llega a ${municion.rareza}: tope ${tope}.` };
+    }
+  }
+
+  const resultado = comprarMunicionEspecial(ctx.sheet, municionId);
+  if (!resultado) return { ok: false, error: `Ningún arma equipada admite ${municion.label.toLowerCase()}.` };
+  if (resultado.coste > ctx.creditos) return { ok: false, error: "No tienes créditos suficientes" };
+
+  const creditos = ctx.creditos - resultado.coste;
+  await prisma.character.update({
+    where: { id: characterId },
+    data: { stats: resultado.sheet, creditos },
+  });
+  revalidatePath(`/characters/${characterId}`);
+  revalidatePath("/master");
+  return { ok: true, sheet: resultado.sheet, creditos };
+}
+
+export async function ajustarMunicionEspecialAction(
+  characterId: string,
+  municionId: string,
+  delta: number,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, ajustarMunicionEspecial(ctx.sheet, municionId, delta));
 }
 
 // Reparar (docs/tareas.md, tarea 8): sin requisito de VTF (a diferencia de

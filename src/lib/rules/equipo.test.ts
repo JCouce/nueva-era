@@ -209,6 +209,36 @@ describe("mejoras de arma", () => {
     });
   });
 
+  describe("mejora Munición Especial", () => {
+    test("un arma admite varias de tipos distintos, cada una en su ranura, pero no el mismo tipo dos veces", () => {
+      let s = conFusilAsaltoPuesto(); // Impetus admite 3
+      s = equipar(s, { instanciaId: "m1", catalogoId: "municion_especial_incendiaria", nivel: 1, instaladoEnId: "arma-1" });
+      s = equipar(s, { instanciaId: "m2", catalogoId: "municion_especial_toxica", nivel: 1, instaladoEnId: "arma-1" });
+      assert.equal(mejorasArmaInstaladas(s, "arma-1"), 2);
+      const v = validarInstalacion(s, "municion_especial_incendiaria", "arma-1", 1);
+      assert.equal(v.ok, false);
+      assert.match((v as { motivo: string }).motivo, /ya lleva/i);
+    });
+
+    test("un arma de plasma no la admite", () => {
+      const s = equipar(defaultSheet(), { instanciaId: "p1", catalogoId: "pistola_plasma_sd" });
+      const v = validarInstalacion(s, "municion_especial_perforante", "p1", 1);
+      assert.equal(v.ok, false);
+      assert.match((v as { motivo: string }).motivo, /compatible/i);
+    });
+
+    test("cuesta según la rareza de la munición (Muy Extraño sigue el ×5, S22)", () => {
+      const coste = (id: string) => {
+        const cat = EQUIPO.find((e) => e.id === id);
+        return cat?.familia === "mejoraArma" ? cat.niveles[0].coste : null;
+      };
+      assert.equal(coste("municion_especial_perforante"), 500);
+      assert.equal(coste("municion_especial_incendiaria"), 2500);
+      assert.equal(coste("municion_especial_toxica"), 12500);
+      assert.equal(coste("municion_especial_supresora"), 62500);
+    });
+  });
+
   test("quitar el arma se lleva las mejoras instaladas dentro", () => {
     let s = conFusilAsaltoPuesto();
     s = equipar(s, { instanciaId: "m1", catalogoId: "mira_telescopica", nivel: 1, instaladoEnId: "arma-1" });

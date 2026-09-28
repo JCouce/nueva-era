@@ -7,6 +7,7 @@ import {
   catalogoDeMaterial,
   precioMaterial,
   MUNICION_GRANADA,
+  MUNICION_ESPECIAL,
   FARMACOS,
   salud,
   type Sheet,
@@ -51,6 +52,7 @@ export function RecursosTab({
   onComprarMaterial,
   onAjustarGranada,
   onAjustarFarmaco,
+  onAjustarMunicionEspecial,
   onAjustarVida,
   onAjustarFatiga,
 }: {
@@ -64,6 +66,7 @@ export function RecursosTab({
   onComprarMaterial: (tier: MaterialTier) => void;
   onAjustarGranada: (catalogoId: string, delta: number) => void;
   onAjustarFarmaco: (catalogoId: string, delta: number) => void;
+  onAjustarMunicionEspecial: (municionId: string, delta: number) => void;
   onAjustarVida: (delta: number) => void;
   onAjustarFatiga: (delta: number) => void;
 }) {
@@ -77,6 +80,8 @@ export function RecursosTab({
   // Mismo criterio que granadas (docs/prompt-gasto-recursos.md, Fase 2):
   // comprar vive en Tienda, aquí solo lo que ya se posee.
   const farmacosEnStock = FARMACOS.filter((f) => (sheet.farmacos[f.id] ?? 0) > 0);
+  // Munición especial: igual, comprar vive en Tienda (categoría Munición).
+  const municionEspecialEnStock = MUNICION_ESPECIAL.filter((m) => (sheet.municionEspecial[m.id] ?? 0) > 0);
 
   // Tres categorías, para que la lista no sea un totum revolutum: Materiales
   // (pool de personaje, más abajo), munición/batería y durabilidad se
@@ -257,6 +262,22 @@ export function RecursosTab({
               />
             );
           })}
+        </>
+      )}
+
+      {municionEspecialEnStock.length > 0 && (
+        <>
+          <p className="mt-2 border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+            {"//SYSTEM · munición especial"}
+          </p>
+          {municionEspecialEnStock.map((m) => (
+            <GranadaCard
+              key={m.id}
+              titulo={m.label}
+              cantidad={sheet.municionEspecial[m.id] ?? 0}
+              onAjustar={(delta) => onAjustarMunicionEspecial(m.id, delta)}
+            />
+          ))}
         </>
       )}
 

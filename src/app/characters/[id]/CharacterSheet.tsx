@@ -19,6 +19,8 @@ import {
   fabricarAction,
   ajustarGranadaAction,
   comprarGranadaAction,
+  comprarMunicionEspecialAction,
+  ajustarMunicionEspecialAction,
   ajustarFarmacoAction,
   comprarFarmacoAction,
   ajustarVidaAction,
@@ -40,6 +42,7 @@ import {
   ajustarRecurso,
   ajustarMaterial,
   ajustarGranada,
+  ajustarMunicionEspecial,
   ajustarFarmaco,
   ajustarVida,
   ajustarFatiga,
@@ -354,6 +357,13 @@ export function CharacterSheet({
   const commitComprarFarmaco = (catalogoId: string) => {
     runSave(() => comprarFarmacoAction(characterId, catalogoId), setSheet);
   };
+  const commitComprarMunicionEspecial = (municionId: string) => {
+    runSave(() => comprarMunicionEspecialAction(characterId, municionId), setSheet);
+  };
+  const commitAjustarMunicionEspecial = (municionId: string, delta: number) => {
+    setSheet((s) => ajustarMunicionEspecial(s, municionId, delta));
+    runSave(() => ajustarMunicionEspecialAction(characterId, municionId, delta), setSheet);
+  };
   // Sin actualización optimista: la rareza suficiente y el stock se validan
   // en el servidor (mismo criterio que commitComprarMaterial/commitRecargar).
   // exito: mismo criterio que commitFabricar, ver el comentario de repararAction.
@@ -605,6 +615,8 @@ export function CharacterSheet({
           onEquipar={commitEquipar}
           onComprarGranada={commitComprarGranada}
           onComprarFarmaco={commitComprarFarmaco}
+          onRecargar={commitRecargar}
+          onComprarMunicionEspecial={commitComprarMunicionEspecial}
         />
       )}
       {activeEfectivo === "equipo" && (
@@ -620,6 +632,7 @@ export function CharacterSheet({
           onComprarMaterial={commitComprarMaterial}
           onAjustarGranada={commitAjustarGranada}
           onAjustarFarmaco={commitAjustarFarmaco}
+          onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
           onAjustarVida={commitAjustarVida}
           onAjustarFatiga={commitAjustarFatiga}
         />

@@ -19,6 +19,11 @@ import {
   ESCANER_DETECTOR,
   ARMAMENTO_PESADO,
   MUNICION_GRANADA,
+  MUNICION_ESPECIAL,
+  MEJORAS_MUNICION_ESPECIAL,
+  LOTE_MUNICION_ESPECIAL,
+  PRECIO_CARGADOR_BALAS,
+  armasHabilitadasPara,
   equipoPorId,
   validarInstalacion,
   nuevaInstanciaId,
@@ -37,6 +42,7 @@ import {
   type Consumible,
   type ArmaPesada,
   type MunicionGranada,
+  type MunicionEspecial,
   type Rareza,
 } from "@/lib/rules";
 import { Acordeon } from "@/components/Acordeon";
@@ -85,6 +91,7 @@ const CATEGORIAS = [
     titulo: "Armamento Pesado",
     cantidad: ARMAMENTO_PESADO.length + MUNICION_GRANADA.length,
   },
+  { id: "municion", titulo: "Munición", cantidad: MUNICION_ESPECIAL.length },
 ] as const;
 
 type CategoriaId = (typeof CATEGORIAS)[number]["id"];
@@ -513,7 +520,14 @@ function relevanteAhora(
 const SIN_COMPATIBLES: Record<
   Exclude<
     CategoriaId,
-    "armaduras" | "armas" | "melee" | "kerzul" | "medicina" | "herramientas" | "armamentoPesado"
+    | "armaduras"
+    | "armas"
+    | "melee"
+    | "kerzul"
+    | "medicina"
+    | "herramientas"
+    | "armamentoPesado"
+    | "municion"
   >,
   string
 > = {
@@ -562,6 +576,152 @@ function ListaInstalable({
   );
 }
 
+// Munición (docs/tareas.md, 2026-09-28): recargar las armas equipadas (el
+// mismo cargador que el botón de Recursos, que se queda como acceso directo)
+// y munición especial. Cada tipo trae aquí mismo su mejora "Munición
+// Especial: X" para instalarla, porque sin ella no se puede comprar.
+function SeccionMunicion({
+  sheet,
+  creditos,
+  topeRareza,
+  onEquipar,
+  onRecargar,
+  onComprarMunicionEspecial,
+}: {
+  sheet: Sheet;
+  creditos: number;
+  topeRareza: Rareza | null;
+  onEquipar: (p: PiezaEquipada) => void;
+  onRecargar: (instanciaId: string) => void;
+  onComprarMunicionEspecial: (municionId: string) => void;
+}) {
+  const armas = sheet.recursos.flatMap((recurso) => {
+    const pieza = sheet.equipo.find((p) => p.instanciaId === recurso.instanciaId);
+    const cat = pieza ? equipoPorId(pieza.catalogoId) : null;
+    return cat?.familia === "arma" ? [{ recurso, cat }] : [];
+  });
+  const sinFondosCargador = PRECIO_CARGADOR_BALAS > creditos;
+
+  return (
+    <>
+      <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Recargar"}</p>
+      {armas.length === 0 ? (
+        <p className="font-sans text-[11px] leading-relaxed text-muted">
+          No llevas ningún arma de fuego equipada.
+        </p>
+      ) : (
+        armas.map(({ recurso, cat }) => (
+          <div
+            key={recurso.instanciaId}
+            className="clip-chamfer-sm flex items-center justify-between gap-2 border border-border bg-surface p-3"
+          >
+            <div className="min-w-0">
+              <p className="truncate font-display text-xs font-semibold uppercase text-foreground">{cat.label}</p>
+              <p className="font-mono text-[11px] tabular-nums text-muted">
+                {recurso.actual}/{recurso.max}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onRecargar(recurso.instanciaId)}
+              disabled={sinFondosCargador}
+              className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-1.5 font-mono text-[11px] uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted"
+            >
+              Cargador
+              {Number.isFinite(creditos) && <span className="ml-1 opacity-80">{PRECIO_CARGADOR_BALAS} cr.</span>}
+            </button>
+          </div>
+        ))
+      )}
+
+      <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+        {`// Munición especial · ${MUNICION_ESPECIAL.length}`}
+      </p>
+      {MUNICION_ESPECIAL.map((m, i) => (
+        <Acordeon
+          key={m.id}
+          titulo={m.label}
+          resumen={`Lote de ${LOTE_MUNICION_ESPECIAL} · ${m.costeProyectil} cr. por proyectil`}
+          etiqueta={
+            <div className="flex flex-col items-end gap-1">
+              <BadgeRareza rareza={m.rareza} />
+              <Precio coste={m.costeProyectil * LOTE_MUNICION_ESPECIAL} />
+            </div>
+          }
+        >
+          <DetalleMunicionEspecial
+            m={m}
+            sheet={sheet}
+            creditos={creditos}
+            topeRareza={topeRareza}
+            onComprar={onComprarMunicionEspecial}
+          />
+          <p className="mt-3 font-mono text-[10px] uppercase tracking-widest text-muted">
+            {`// Mejora de arma · ${MEJORAS_MUNICION_ESPECIAL[i].niveles[0].coste} cr.`}
+          </p>
+          <AccionInstalable
+            pieza={MEJORAS_MUNICION_ESPECIAL[i]}
+            sheet={sheet}
+            creditos={creditos}
+            topeRareza={topeRareza}
+            onEquipar={onEquipar}
+          />
+        </Acordeon>
+      ))}
+    </>
+  );
+}
+
+function DetalleMunicionEspecial({
+  m,
+  sheet,
+  creditos,
+  topeRareza,
+  onComprar,
+}: {
+  m: MunicionEspecial;
+  sheet: Sheet;
+  creditos: number;
+  topeRareza: Rareza | null;
+  onComprar: (municionId: string) => void;
+}) {
+  const habilitadas = armasHabilitadasPara(sheet, m.id);
+  const coste = m.costeProyectil * LOTE_MUNICION_ESPECIAL;
+  const sinFondos = coste > creditos;
+  const sinRareza = topeRareza !== null && !rarezaPermitida(m.rareza, topeRareza);
+  const cantidad = sheet.municionEspecial[m.id] ?? 0;
+  return (
+    <>
+      <p className="font-sans text-sm leading-relaxed text-muted">{m.efecto}</p>
+      <p className="mt-2 font-mono text-[11px] text-muted">
+        {habilitadas.length > 0
+          ? `Habilitada en: ${habilitadas.map((p) => equipoPorId(p.catalogoId)?.label).join(", ")}`
+          : "Ningún arma equipada la admite todavía: instálale la mejora de abajo."}
+      </p>
+      <BotonEquipar
+        className="mt-3"
+        disabled={habilitadas.length === 0 || sinFondos || sinRareza}
+        onClick={() => onComprar(m.id)}
+        labelVinculando="comprando"
+        labelVinculado="✓ Comprada"
+      >
+        {`Comprar ${LOTE_MUNICION_ESPECIAL}`}
+        {cantidad > 0 ? ` (llevas ${cantidad})` : ""}
+      </BotonEquipar>
+      {habilitadas.length > 0 && sinRareza && (
+        <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
+          Tu letra de Recursos no llega a {m.rareza}: tope {topeRareza}.
+        </p>
+      )}
+      {habilitadas.length > 0 && sinFondos && (
+        <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
+          Te faltan {(coste - creditos).toLocaleString("es-ES")} créditos.
+        </p>
+      )}
+    </>
+  );
+}
+
 export function TiendaTab({
   sheet,
   creditos,
@@ -574,6 +734,8 @@ export function TiendaTab({
   onEquipar,
   onComprarGranada,
   onComprarFarmaco,
+  onRecargar,
+  onComprarMunicionEspecial,
 }: {
   sheet: Sheet;
   creditos?: number;
@@ -582,6 +744,8 @@ export function TiendaTab({
   onEquipar: (p: PiezaEquipada) => void;
   onComprarGranada: (catalogoId: string) => void;
   onComprarFarmaco: (catalogoId: string) => void;
+  onRecargar: (instanciaId: string) => void;
+  onComprarMunicionEspecial: (municionId: string) => void;
 }) {
   const [categoria, setCategoria] = useState<CategoriaId>("armaduras");
   const [soloCompatible, setSoloCompatible] = useState(false);
@@ -873,6 +1037,17 @@ export function TiendaTab({
               </Acordeon>
             ))}
           </>
+        )}
+
+        {categoria === "municion" && (
+          <SeccionMunicion
+            sheet={sheet}
+            creditos={creditosEfectivos}
+            topeRareza={topeRareza}
+            onEquipar={onEquipar}
+            onRecargar={onRecargar}
+            onComprarMunicionEspecial={onComprarMunicionEspecial}
+          />
         )}
       </div>
     </div>

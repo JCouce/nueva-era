@@ -38,6 +38,8 @@ import {
   fabricarNpcAction,
   ajustarGranadaNpcAction,
   comprarGranadaNpcAction,
+  comprarMunicionEspecialNpcAction,
+  ajustarMunicionEspecialNpcAction,
   ajustarFarmacoNpcAction,
   comprarFarmacoNpcAction,
   ajustarVidaNpcAction,
@@ -253,6 +255,18 @@ export function NpcEditor({
     if (res.ok) setSheet(res.sheet);
     setStatus(res.ok ? "saved" : "error");
   };
+  const commitComprarMunicionEspecial = async (municionId: string) => {
+    setStatus("saving");
+    const res = await comprarMunicionEspecialNpcAction(npcId, municionId);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
+  const commitAjustarMunicionEspecial = async (municionId: string, delta: number) => {
+    setStatus("saving");
+    const res = await ajustarMunicionEspecialNpcAction(npcId, municionId, delta);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
   const commitAjustarFarmaco = async (catalogoId: string, delta: number) => {
     setStatus("saving");
     const res = await ajustarFarmacoNpcAction(npcId, catalogoId, delta);
@@ -400,6 +414,7 @@ export function NpcEditor({
           onComprarMaterial={commitComprarMaterial}
           onAjustarGranada={commitAjustarGranada}
           onAjustarFarmaco={commitAjustarFarmaco}
+          onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
           onAjustarVida={commitAjustarVida}
           onAjustarFatiga={commitAjustarFatiga}
         />
@@ -412,6 +427,8 @@ export function NpcEditor({
           onEquipar={commitEquipar}
           onComprarGranada={commitComprarGranada}
           onComprarFarmaco={commitComprarFarmaco}
+          onRecargar={commitRecargar}
+          onComprarMunicionEspecial={commitComprarMunicionEspecial}
         />
       )}
     </div>

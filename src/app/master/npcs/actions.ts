@@ -34,6 +34,8 @@ import {
   comprarGranada,
   ajustarFarmaco,
   comprarFarmaco,
+  ajustarMunicionEspecial,
+  comprarMunicionEspecial,
   ajustarVida,
   ajustarFatiga,
   ATRIBUTO_MIN,
@@ -319,6 +321,26 @@ export async function comprarGranadaNpcAction(npcId: string, catalogoId: string)
   if ("error" in ctx) return { ok: false, error: ctx.error };
   const resultado = comprarGranada(ctx.sheet, catalogoId);
   if (!resultado) return { ok: false, error: "Granada inválida" };
+  return persist(npcId, resultado.sheet);
+}
+
+// Munición especial: mismo criterio "libre" que Granadas — sin créditos ni
+// tope de rareza, pero sí exige un arma habilitada, como al jugador.
+export async function ajustarMunicionEspecialNpcAction(
+  npcId: string,
+  municionId: string,
+  delta: number,
+): Promise<NpcResult> {
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(npcId, ajustarMunicionEspecial(ctx.sheet, municionId, delta));
+}
+
+export async function comprarMunicionEspecialNpcAction(npcId: string, municionId: string): Promise<NpcResult> {
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const resultado = comprarMunicionEspecial(ctx.sheet, municionId);
+  if (!resultado) return { ok: false, error: "Ningún arma equipada admite esa munición." };
   return persist(npcId, resultado.sheet);
 }
 

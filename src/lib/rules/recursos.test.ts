@@ -16,6 +16,9 @@ import {
   repararPieza,
   ajustarGranada,
   comprarGranada,
+  comprarMunicionEspecial,
+  ajustarMunicionEspecial,
+  armasHabilitadasPara,
   ajustarFarmaco,
   comprarFarmaco,
   PRECIO_CARGADOR_BALAS,
@@ -434,5 +437,41 @@ describe("gastoDelModo", () => {
   test("un modo con F. Auto gasta fijo la capacidad del cargador del arma", () => {
     assert.equal(gastoDelModo("Estándar (F. Auto)", 20), 20);
     assert.equal(gastoDelModo("Compleja (F. Auto)", 100), 100);
+  });
+});
+
+describe("munición especial", () => {
+  const conFusilHabilitado = () => {
+    let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "fusil_asalto_impetus" });
+    s = equipar(s, { instanciaId: "m1", catalogoId: "municion_especial_incendiaria", nivel: 1, instaladoEnId: "a1" });
+    return s;
+  };
+
+  test("sin ninguna arma con la mejora de ese tipo, no se puede comprar", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "fusil_asalto_impetus" });
+    assert.equal(comprarMunicionEspecial(s, "incendiaria"), null);
+  });
+
+  test("con la mejora instalada, compra un lote de 10 al precio por proyectil", () => {
+    const res = comprarMunicionEspecial(conFusilHabilitado(), "incendiaria")!;
+    assert.equal(res.coste, 60); // 6 cr. × 10
+    assert.deepEqual(res.sheet.municionEspecial, { incendiaria: 10 });
+    assert.deepEqual(armasHabilitadasPara(res.sheet, "incendiaria").map((p) => p.instanciaId), ["a1"]);
+  });
+
+  test("la mejora de un tipo no habilita otro", () => {
+    assert.equal(comprarMunicionEspecial(conFusilHabilitado(), "toxica"), null);
+  });
+
+  test("id inexistente: null", () => {
+    assert.equal(comprarMunicionEspecial(conFusilHabilitado(), "inventada"), null);
+  });
+
+  test("ajustar resta sueltas y borra la clave al llegar a 0", () => {
+    let s = comprarMunicionEspecial(conFusilHabilitado(), "incendiaria")!.sheet;
+    s = ajustarMunicionEspecial(s, "incendiaria", -3);
+    assert.equal(s.municionEspecial.incendiaria, 7);
+    s = ajustarMunicionEspecial(s, "incendiaria", -99);
+    assert.deepEqual(s.municionEspecial, {});
   });
 });
