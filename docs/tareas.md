@@ -580,7 +580,8 @@ Categoría nueva **"Munición"** en la Tienda (`SeccionMunicion`, `TiendaTab.tsx
   entre armas (`sheet.municionEspecial`, SCHEMA_VERSION 11, mismo patrón que granadas).
   Se compran en lotes de 10 (`LOTE_MUNICION_ESPECIAL`, decisión del usuario) y el +/-
   de Recursos ajusta sueltas.
-- **Mejora "Munición Especial: X"**: una `mejoraArma` por tipo
+- **Mejora "Adaptador: munición X"** (EQUIP la llama "Munición Especial"; renombrada para
+  no confundirla con las balas, que se compran aparte): una `mejoraArma` por tipo
   (`MEJORAS_MUNICION_ESPECIAL`, `mejorasArma.ts`), que se instala desde la propia card
   de la munición. Sin ella no se puede comprar ese tipo (`armasHabilitadasPara()`,
   `comprarMunicionEspecial()`, lo comprueba el servidor). Ocupa ranura, no se repite el

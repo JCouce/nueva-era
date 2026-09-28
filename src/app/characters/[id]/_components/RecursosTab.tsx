@@ -8,6 +8,8 @@ import {
   precioMaterial,
   MUNICION_GRANADA,
   MUNICION_ESPECIAL,
+  LOTE_MUNICION_ESPECIAL,
+  armasHabilitadasPara,
   FARMACOS,
   salud,
   type Sheet,
@@ -53,6 +55,7 @@ export function RecursosTab({
   onAjustarGranada,
   onAjustarFarmaco,
   onAjustarMunicionEspecial,
+  onComprarMunicionEspecial,
   onAjustarVida,
   onAjustarFatiga,
 }: {
@@ -67,6 +70,7 @@ export function RecursosTab({
   onAjustarGranada: (catalogoId: string, delta: number) => void;
   onAjustarFarmaco: (catalogoId: string, delta: number) => void;
   onAjustarMunicionEspecial: (municionId: string, delta: number) => void;
+  onComprarMunicionEspecial: (municionId: string) => void;
   onAjustarVida: (delta: number) => void;
   onAjustarFatiga: (delta: number) => void;
 }) {
@@ -80,8 +84,12 @@ export function RecursosTab({
   // Mismo criterio que granadas (docs/prompt-gasto-recursos.md, Fase 2):
   // comprar vive en Tienda, aquí solo lo que ya se posee.
   const farmacosEnStock = FARMACOS.filter((f) => (sheet.farmacos[f.id] ?? 0) > 0);
-  // Munición especial: igual, comprar vive en Tienda (categoría Munición).
-  const municionEspecialEnStock = MUNICION_ESPECIAL.filter((m) => (sheet.municionEspecial[m.id] ?? 0) > 0);
+  // Munición especial: comprar vive en Tienda (categoría Munición). A
+  // diferencia de granadas, sale también a 0 si alguna arma tiene instalada
+  // la mejora de ese tipo — si no, instalar la mejora no deja rastro aquí.
+  const municionEspecialVisible = MUNICION_ESPECIAL.filter(
+    (m) => (sheet.municionEspecial[m.id] ?? 0) > 0 || armasHabilitadasPara(sheet, m.id).length > 0,
+  );
 
   // Tres categorías, para que la lista no sea un totum revolutum: Materiales
   // (pool de personaje, más abajo), munición/batería y durabilidad se
@@ -265,19 +273,31 @@ export function RecursosTab({
         </>
       )}
 
-      {municionEspecialEnStock.length > 0 && (
+      {municionEspecialVisible.length > 0 && (
         <>
           <p className="mt-2 border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
             {"//SYSTEM · munición especial"}
           </p>
-          {municionEspecialEnStock.map((m) => (
-            <GranadaCard
-              key={m.id}
-              titulo={m.label}
-              cantidad={sheet.municionEspecial[m.id] ?? 0}
-              onAjustar={(delta) => onAjustarMunicionEspecial(m.id, delta)}
-            />
-          ))}
+          {/* Como el cargador: comprar un lote también aquí, de acceso directo.
+              Sin adaptador en ningún arma no se puede (el servidor lo rechaza). */}
+          {municionEspecialVisible.map((m) => {
+            const precio = m.costeProyectil * LOTE_MUNICION_ESPECIAL;
+            return (
+              <MaterialCard
+                key={m.id}
+                titulo={m.label}
+                cantidad={sheet.municionEspecial[m.id] ?? 0}
+                etiquetaComprar={`Lote ${LOTE_MUNICION_ESPECIAL}`}
+                precio={creditos !== undefined ? precio : null}
+                sinFondos={
+                  armasHabilitadasPara(sheet, m.id).length === 0 ||
+                  (creditos !== undefined && precio > creditos)
+                }
+                onAjustar={(delta) => onAjustarMunicionEspecial(m.id, delta)}
+                onComprar={() => onComprarMunicionEspecial(m.id)}
+              />
+            );
+          })}
         </>
       )}
 
@@ -344,6 +364,7 @@ function EstadoCard({
 function MaterialCard({
   titulo,
   cantidad,
+  etiquetaComprar = "Comprar",
   precio,
   sinFondos,
   onAjustar,
@@ -351,8 +372,10 @@ function MaterialCard({
 }: {
   titulo: string;
   cantidad: number;
+  etiquetaComprar?: string;
   // null: NPC, edición libre, sin precio que enseñar.
   precio: number | null;
+  // También cubre "no se puede comprar" (munición especial sin adaptador).
   sinFondos: boolean;
   onAjustar: (delta: number) => void;
   onComprar: () => void;
@@ -376,7 +399,7 @@ function MaterialCard({
           disabled={sinFondos}
           className="clip-chamfer-sm border border-accent bg-accent px-3 py-1.5 font-mono text-[11px] uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted"
         >
-          Comprar
+          {etiquetaComprar}
           {precio !== null && <span className="ml-1 opacity-80">{precio} cr.</span>}
         </button>
       </div>

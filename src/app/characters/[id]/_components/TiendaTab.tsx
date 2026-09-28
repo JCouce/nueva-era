@@ -649,15 +649,13 @@ function SeccionMunicion({
             </div>
           }
         >
-          <DetalleMunicionEspecial
-            m={m}
-            sheet={sheet}
-            creditos={creditos}
-            topeRareza={topeRareza}
-            onComprar={onComprarMunicionEspecial}
-          />
+          <p className="font-sans text-sm leading-relaxed text-muted">{m.efecto}</p>
+          {/* Orden de uso: primero el adaptador en el arma, luego las balas. */}
           <p className="mt-3 font-mono text-[10px] uppercase tracking-widest text-muted">
-            {`// Mejora de arma · ${MEJORAS_MUNICION_ESPECIAL[i].niveles[0].coste} cr.`}
+            {`// 1 · Adaptador para el arma · ${MEJORAS_MUNICION_ESPECIAL[i].niveles[0].coste} cr.`}
+          </p>
+          <p className="mt-1 font-sans text-[11px] leading-relaxed text-muted">
+            Habilita el arma para esta munición. No incluye balas.
           </p>
           <AccionInstalable
             pieza={MEJORAS_MUNICION_ESPECIAL[i]}
@@ -665,6 +663,16 @@ function SeccionMunicion({
             creditos={creditos}
             topeRareza={topeRareza}
             onEquipar={onEquipar}
+          />
+          <p className="mt-4 font-mono text-[10px] uppercase tracking-widest text-muted">
+            {`// 2 · Munición · lote de ${LOTE_MUNICION_ESPECIAL}`}
+          </p>
+          <DetalleMunicionEspecial
+            m={m}
+            sheet={sheet}
+            creditos={creditos}
+            topeRareza={topeRareza}
+            onComprar={onComprarMunicionEspecial}
           />
         </Acordeon>
       ))}
@@ -692,14 +700,13 @@ function DetalleMunicionEspecial({
   const cantidad = sheet.municionEspecial[m.id] ?? 0;
   return (
     <>
-      <p className="font-sans text-sm leading-relaxed text-muted">{m.efecto}</p>
-      <p className="mt-2 font-mono text-[11px] text-muted">
+      <p className="mt-1 font-mono text-[11px] text-muted">
         {habilitadas.length > 0
           ? `Habilitada en: ${habilitadas.map((p) => equipoPorId(p.catalogoId)?.label).join(", ")}`
-          : "Ningún arma equipada la admite todavía: instálale la mejora de abajo."}
+          : "Ningún arma lleva el adaptador todavía: instálalo arriba."}
       </p>
       <BotonEquipar
-        className="mt-3"
+        className="mt-2"
         disabled={habilitadas.length === 0 || sinFondos || sinRareza}
         onClick={() => onComprar(m.id)}
         labelVinculando="comprando"

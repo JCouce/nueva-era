@@ -399,7 +399,7 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
   },
 ];
 
-// Munición Especial (mejora de arma), 2026-09-28: habilita el arma para un
+// Munición Especial (mejora de arma, "Adaptador" en la app), 2026-09-28: habilita el arma para un
 // tipo de munición especial. EQUIP deja instalarla "repetidas veces para
 // distintos tipos" — una mejora por tipo encaja en el modelo de siempre
 // (yaInstalado() impide repetir el mismo tipo, cada una ocupa su ranura) sin
@@ -419,8 +419,10 @@ function mejoraMunicionEspecial(m: MunicionEspecial): MejoraDeArma {
   return {
     familia: "mejoraArma",
     id: `${PREFIJO_MEJORA_MUNICION}${m.id}`,
-    label: `Munición Especial: ${m.label.replace(/^Munición /, "")}`,
-    resumen: `Habilita el arma para disparar ${m.label.toLowerCase()}.`,
+    // EQUIP la llama "Munición Especial (mejora de arma)"; "Adaptador" es
+    // nombre nuestro para no confundirla con la munición en sí (2026-09-28).
+    label: `Adaptador: ${m.label.toLowerCase()}`,
+    resumen: `Habilita el arma para disparar ${m.label.toLowerCase()}. No incluye balas.`,
     descripcion:
       "Habilita el arma para usar este modelo de munición especial; sigue pudiendo usar munición " +
       "convencional. Las armas de plasma no pueden instalarla.",

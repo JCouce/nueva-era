@@ -246,7 +246,7 @@ export function municionGranadaPorId(id: string): MunicionGranada | null {
 // pieza equipable (fuera de EQUIPO): es un stock de proyectiles por tipo,
 // compartido entre armas (sheet.municionEspecial, recursos.ts), igual que las
 // granadas. Para comprarla, alguna arma equipada tiene que llevar instalada
-// la mejora "Munición Especial: <tipo>" (mejorasArma.ts). Fase 1 (2026-09-28):
+// la mejora "Adaptador: munición <tipo>" (mejorasArma.ts). Fase 1 (2026-09-28):
 // comprar y ajustar a mano; aplicar su efecto al disparar es Fase 2.
 export type MunicionEspecial = {
   id: string;

@@ -415,6 +415,7 @@ export function NpcEditor({
           onAjustarGranada={commitAjustarGranada}
           onAjustarFarmaco={commitAjustarFarmaco}
           onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
+          onComprarMunicionEspecial={commitComprarMunicionEspecial}
           onAjustarVida={commitAjustarVida}
           onAjustarFatiga={commitAjustarFatiga}
         />

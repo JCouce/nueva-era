@@ -205,7 +205,7 @@ export function defaultMunicionEspecial(): MunicionEspecialStock {
   return {};
 }
 
-// Armas equipadas que llevan la mejora "Munición Especial: <tipo>".
+// Armas equipadas que llevan la mejora "Adaptador: munición <tipo>".
 export function armasHabilitadasPara(sheet: Sheet, municionId: string): PiezaEquipada[] {
   const mejoraId = `${PREFIJO_MEJORA_MUNICION}${municionId}`;
   const hosts = new Set(
