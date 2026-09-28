@@ -39,6 +39,7 @@ import {
 import { HudCard } from "@/components/HudCard";
 import { AccionModal } from "@/components/AccionModal";
 import { UsarModal } from "@/components/UsarModal";
+import { SacrificioRecursoModal } from "@/components/SacrificioRecursoModal";
 import { ReparaFabricaModal } from "./ReparaFabricaModal";
 import { BloquearDanioModal } from "./BloquearDanioModal";
 import { type DanioInfo, type Lanzamiento } from "@/components/ResultadoTirada";
@@ -378,6 +379,10 @@ export function AccionesTab({
   const [reparaFabricaAbierta, setReparaFabricaAbierta] = useState(false);
   const [bloquearDanioAbierta, setBloquearDanioAbierta] = useState(false);
   const [modalDirecta, setModalDirecta] = useState<AccionDirecta | null>(null);
+  // AccionDirecta con recursoInstanciaId (docs/tareas.md, 2026-09-28: "Detonar
+  // pulso térmico") necesita el modal con contador, no el genérico "Usar" a
+  // secas — ver abrirDirecta() más abajo.
+  const [sacrificioModal, setSacrificioModal] = useState<AccionDirecta | null>(null);
   const [modal, setModal] = useState<{
     tirada: Accion;
     modBase: number;
@@ -620,6 +625,43 @@ export function AccionesTab({
     );
   };
 
+  // Con recursoInstanciaId (Detonar pulso térmico): contador propio, no el
+  // genérico "Usar" a secas — ver el comentario de sacrificioModal arriba.
+  const abrirDirecta = (a: AccionDirecta) => {
+    if (a.recursoInstanciaId) setSacrificioModal(a);
+    else setModalDirecta(a);
+  };
+
+  // Confirmar SacrificioRecursoModal: gasta los puntos elegidos (nunca más
+  // de lo que había, el propio modal ya acota el contador) y deja el daño
+  // resultante en Acciones recientes vía danioResuelto — mismo campo que ya
+  // pinta FilaHistorial para el daño de un ataque normal (docs/tareas.md,
+  // 2026-09-28: antes el jugador calculaba esto a mano y lo restaba aparte).
+  const confirmarSacrificio = (puntos: number) => {
+    if (!sacrificioModal?.recursoInstanciaId || puntos <= 0) return;
+    onGastarRecurso?.(sacrificioModal.recursoInstanciaId, -puntos);
+    const id = Date.now();
+    setHistorial((h) =>
+      [
+        {
+          id,
+          label: sacrificioModal.label,
+          dado: 0,
+          modificador: 0,
+          circunstancial: 0,
+          total: 0,
+          dificultad: null,
+          margen: null,
+          exito: null,
+          critico: false,
+          sinDado: true,
+          danioResuelto: { base: puntos, bonoExitos: 0, total: puntos, categoria: sacrificioModal.categoriaDanio ?? "Daño" },
+        },
+        ...h,
+      ].slice(0, 6),
+    );
+  };
+
   const especialidadesActuales = modal?.tirada.habilidad
     ? sheet.habilidades[modal.tirada.habilidad].especialidades
     : [];
@@ -665,7 +707,7 @@ export function AccionesTab({
         {/* Detonación de pulso térmico (Malla Plasmática) — generada por
             accionesDirectasDeAtaque() (combate.ts), no tira dado. */}
         {ataqueDirecta.map((a) => (
-          <FilaUsar key={a.id} accion={a} onAbrir={setModalDirecta} />
+          <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} />
         ))}
       </div>
 
@@ -682,7 +724,7 @@ export function AccionesTab({
             <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
           ))}
           {herramientasDirectas.map((a) => (
-            <FilaUsar key={a.id} accion={a} onAbrir={setModalDirecta} />
+            <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} />
           ))}
         </div>
       )}
@@ -699,7 +741,7 @@ export function AccionesTab({
             <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
           ))}
           {farmacosDirectas.map((a) => (
-            <FilaUsar key={a.id} accion={a} onAbrir={setModalDirecta} />
+            <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} />
           ))}
         </div>
       )}
@@ -722,7 +764,7 @@ export function AccionesTab({
               por accionesDirectasDeAtaque() (combate.ts), no por el catálogo
               fijo de ACCIONES. */}
           {grupo === "Defensa" &&
-            defensaDirecta.map((a) => <FilaUsar key={a.id} accion={a} onAbrir={setModalDirecta} />)}
+            defensaDirecta.map((a) => <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} />)}
           {/* Bloquear daño vive junto a Defensa/esquiva — tampoco es una
               tirada fija de ACCIONES (no tira dado, no muta la ficha). */}
           {grupo === "Defensa" && <FilaBloquearDanio onAbrir={() => setBloquearDanioAbierta(true)} />}
@@ -749,6 +791,26 @@ export function AccionesTab({
           onCerrar={() => setModalDirecta(null)}
         />
       )}
+
+      {sacrificioModal?.recursoInstanciaId &&
+        (() => {
+          const recurso = recursoDe(sheet, sacrificioModal.recursoInstanciaId);
+          if (!recurso) return null;
+          const categoria = (sacrificioModal.categoriaDanio ?? "daño").toLowerCase();
+          return (
+            <SacrificioRecursoModal
+              titulo={sacrificioModal.label}
+              nota={sacrificioModal.nota}
+              recursoActual={recurso}
+              confirmarLabel={sacrificioModal.confirmarLabel}
+              previewTexto={(puntos) =>
+                puntos > 0 ? `→ ${puntos} de daño de ${categoria}.` : "Elige cuántos puntos sacrificar."
+              }
+              onConfirmar={confirmarSacrificio}
+              onCerrar={() => setSacrificioModal(null)}
+            />
+          );
+        })()}
 
       {reparaFabricaAbierta && onReparar && (
         <ReparaFabricaModal

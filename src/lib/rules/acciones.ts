@@ -145,6 +145,15 @@ export type AccionDirecta = {
   // Mismo campo y mismo criterio que en Accion arriba: gasta 1 dosis al
   // confirmar (los fármacos sin tirada, docs/prompt-gasto-recursos.md Fase 2).
   farmacoId?: string;
+  // Sacrifica una cantidad ELEGIDA por el jugador de sheet.recursos al
+  // confirmar (Malla Plasmática, "Detonar pulso térmico", 2026-09-28) — a
+  // diferencia de recursoInstanciaId en Accion (gasto fijo por modo/toggle) o
+  // farmacoId (siempre 1), aquí el número lo decide el jugador en el propio
+  // modal (SacrificioRecursoModal.tsx), acotado a lo que tenga disponible.
+  // `categoriaDanio` es la categoría de ESE daño para el registro en
+  // Acciones recientes (mismo campo que ya usa Accion.ataque.modos).
+  recursoInstanciaId?: string;
+  categoriaDanio?: string;
 };
 
 // −1 acumulativo por cada atacante adicional en la ronda (sistema-y-combate.md).

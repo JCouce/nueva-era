@@ -16,7 +16,7 @@ import { MUNICION_GRANADA, ALCANCE_ARROJADA, type MunicionGranada } from "../cat
 import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condiciones";
 import { nivelesHasta, acumulaPorClave, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import type { MotorMetadata } from "./motor";
-import { recursoDe, gastoDelModo } from "./recursos";
+import { gastoDelModo } from "./recursos";
 import { CONDICION_ATACANTES_ADICIONALES, type Accion, type AccionDirecta } from "./acciones";
 import { atributoEfectivo, aplicado } from "./derivados";
 
@@ -852,14 +852,15 @@ export function accionesDeAtaque(sheet: Sheet): Accion[] {
 // ES el daño (no hay fórmula que calcular), y quien esté en el área esquiva
 // con su Esquivar de siempre. "Acción sin dado" en vez de una Accion nueva,
 // mismo criterio que Radar nv4 "Marcar objetivo": informa, no muta la
-// ficha — el colchón se descuenta a mano en Recursos, como el resto de
-// gasto de RECURSOS en toda la app. Área y dificultades escalan con el
+// ficha — el jugador elige cuántos puntos sacrificar en el propio modal
+// (SacrificioRecursoModal.tsx, docs/tareas.md 2026-09-28: antes se
+// descontaban a mano en Recursos, ahora los gasta solo al confirmar, igual
+// que el resto de RECURSOS de la app). Área y dificultades escalan con el
 // nivel instalado; el área pasa a 10x10 solo en nivel 4 (S9: no se
 // re-declara en nivel 3, sigue siendo 6x6 hasta que nivel 4 la sustituye).
-function tiradaDetonacionPulsoTermico(sheet: Sheet, pieza: PiezaEquipada): AccionDirecta | null {
+function tiradaDetonacionPulsoTermico(pieza: PiezaEquipada): AccionDirecta | null {
   const nivel = pieza.nivel ?? 1;
   if (nivel < 2) return null;
-  const recurso = recursoDe(sheet, pieza.instanciaId);
   const area = nivel >= 4 ? "10x10" : "6x6";
   return {
     id: `detonacion_pulso_termico_${pieza.instanciaId}`,
@@ -869,8 +870,9 @@ function tiradaDetonacionPulsoTermico(sheet: Sheet, pieza: PiezaEquipada): Accio
     nota:
       `Libera el colchón, todo o en parte: esos puntos son el daño de plasma en área ${area} ` +
       `a tu alrededor. Esquiva dificultad ${5 + nivel} · Shock y Llamarada dificultad ${6 + nivel}` +
-      " · con fracaso crítico en la esquiva, además Fusión (misma dificultad). Descuenta el " +
-      `colchón sacrificado a mano en Recursos${recurso ? ` (tienes ${recurso.actual}/${recurso.max})` : ""}.`,
+      " · con fracaso crítico en la esquiva, además Fusión (misma dificultad).",
+    recursoInstanciaId: pieza.instanciaId,
+    categoriaDanio: "Plasma",
   };
 }
 
@@ -905,7 +907,7 @@ export function accionesDirectasDeAtaque(sheet: Sheet): AccionDirecta[] {
         confirmarLabel: "Levantar",
       });
     } else if (cat?.familia === "subsistema" && pieza.catalogoId === "malla_plasmatica") {
-      const detonacion = tiradaDetonacionPulsoTermico(sheet, pieza);
+      const detonacion = tiradaDetonacionPulsoTermico(pieza);
       if (detonacion) acciones.push(detonacion);
     }
   }

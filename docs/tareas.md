@@ -504,7 +504,15 @@ construir, no entraron en el alcance confirmado.
   6+nivel), no muta la ficha. Primera entrada del grupo "Ataques" en
   `accionesDirectasDeAtaque()` — antes solo tenía "Levantar [escudo]" en
   Defensa; `AccionesTab.tsx` gana el bucket `ataqueDirecta` para pintarla junto
-  a los ataques con dado.
+  a los ataques con dado. **Corregido el mismo día, feedback del usuario tras
+  probarla**: "informa, no muta la ficha" se queda corto — ahora el jugador
+  elige CUÁNTOS puntos sacrifica con un contador (`SacrificioRecursoModal.tsx`,
+  nuevo, hermano de UsarModal para acciones sin dado con cantidad variable), ve
+  el daño resultante antes de confirmar, y al confirmar se descuentan solos del
+  colchón (`AccionDirecta.recursoInstanciaId` + `categoriaDanio`, mismo
+  `onGastarRecurso` de la Fase 1 de RECURSOS) — ya no "a mano en Recursos". El
+  daño queda también en Acciones recientes vía `danioResuelto`, reutilizando el
+  mismo campo que un ataque normal.
 - **"Devolver daño al atacante en melee" — revisado y cerrado sin código.**
   Pedido explícito del usuario: "debería verse reflejado si corresponde".
   `docs/motor.md` resuelve `objetivo_tercero` siempre como texto — con tirada de

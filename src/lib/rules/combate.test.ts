@@ -1069,9 +1069,15 @@ describe("accionesDirectasDeAtaque", () => {
     assert.match(accion.nota ?? "", /área 10x10/);
   });
 
-  test("la nota de la detonación refleja el colchón actual, no solo el máximo", () => {
+  // El colchón actual/máximo ya no se lee de la nota (2026-09-28): el
+  // jugador lo elige en vivo en SacrificioRecursoModal.tsx, acotado a
+  // recursoDe(sheet, recursoInstanciaId) — de ahí que la Accion solo declare
+  // qué instancia gasta, no un número ya calculado.
+  test("recursoInstanciaId apunta a la instancia de Malla Plasmática, y la nota no lleva ningún número de colchón", () => {
     const sheet = ajustarRecurso(conMallaPlasmatica(2), "mp1", -5); // 7/12
     const [accion] = accionesDirectasDeAtaque(sheet);
-    assert.match(accion.nota ?? "", /tienes 7\/12/);
+    assert.equal(accion.recursoInstanciaId, "mp1");
+    assert.equal(accion.categoriaDanio, "Plasma");
+    assert.doesNotMatch(accion.nota ?? "", /\d+\/\d+/);
   });
 });
