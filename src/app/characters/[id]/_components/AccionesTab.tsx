@@ -556,11 +556,17 @@ export function AccionesTab({
       const modo = tirada.ataque.modos.find((m) => m.id === modoId) ?? tirada.ataque.modos[0];
       const danioBase = sutilActivo ? (modo.danioSutil ?? modo.danio) : modo.danio;
       // Munición especial: +/- niveles de daño sobre la base (mínimo 0).
-      const ajusteMunicion = municionEspecialElegida(tirada, estadoCondiciones)?.ajusteDanio ?? 0;
+      const municion = municionEspecialElegida(tirada, estadoCondiciones);
+      const ajusteMunicion = municion?.ajusteDanio ?? 0;
+      const ignoraBlindaje = [
+        ...(tirada.ignoraBlindaje ? [tirada.ignoraBlindaje] : []),
+        ...(municion?.ignoraBlindaje ? [{ valor: municion.ignoraBlindaje, fuente: municion.label }] : []),
+      ];
       danioInfo = {
         base: danioBase === null ? null : Math.max(0, danioBase + ajusteMunicion),
         formulaDanio: modo.formulaDanio,
         categoriaDanio: modo.categoriaDanio,
+        ignoraBlindaje: ignoraBlindaje.length > 0 ? ignoraBlindaje : undefined,
       };
     }
 

@@ -54,6 +54,10 @@ export type ArmaMelee = {
   // Genera la tirada "Lanzar" (combate.ts, tiradaLanzarArmaMelee).
   arrojadiza?: boolean;
   alcance?: number; // "Alcance 4" de EQUIP, solo informativo
+  // "Ignora N puntos de blindaje" (armas de Kerzul): aviso en el resultado del
+  // daño (ResultadoTirada.tsx) — el blindaje es del objetivo y la ficha del
+  // atacante no lo conoce, se resta a mano (usuario, 2026-09-28).
+  ignoraBlindaje?: number;
   modos: ModoAtaqueMelee[];
   efectos: string | null;
   // Piloto (Cuchillo de Combate, 2026-09-23): texto de crítico, separado de
@@ -929,7 +933,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     empleo: "una mano",
     arrojadiza: true,
     modos: [{ etiqueta: "Simple", dificultad: -1, formulaDanio: "Fue+4", categoriaDanio: "Letal" }],
-    efectos: "Ignora 2 puntos de blindaje · Hemorragia (1d8 turnos) · Crítico: Impacto Estructural (10)",
+    ignoraBlindaje: 2,
+    efectos: "Hemorragia (1d8 turnos) · Crítico: Impacto Estructural (10)",
     pesoKg: 2,
     rareza: "Singular",
     coste: 12000,
@@ -940,14 +945,12 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       // Solo "Hemorragia (1d8 turnos)" — Ignora blindaje e Impacto Estructural van aparte abajo.
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
       {
-        tipo: "numerico",
+        // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
+        // daño, se resta a mano del blindaje del objetivo (2026-09-28).
+        tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
-        mecanismo: "ajuste_fijo",
-        // "Ignora N puntos de blindaje". H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
-        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
-        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
-        // que no está construido; no es una pregunta de diseño sin responder.
-        estado: "pendiente",
+        mecanismo: "nota_fija",
+        estado: "construido",
       },
       // "Crítico: Impacto Estructural (N)": reduce el blindaje del objetivo de forma PERMANENTE —
       // no está en el catálogo de 23 estados (conflicto C13 de sistema.md).
@@ -980,7 +983,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       { etiqueta: "Estándar", dificultad: -2, formulaDanio: "Fue+6", categoriaDanio: "Letal" },
       { etiqueta: "Compleja", dificultad: -2, formulaDanio: "Fue+8", categoriaDanio: "Letal" },
     ],
-    efectos: "Ignora 4 puntos de blindaje · Hemorragia (1d12 turnos) · Crítico: Impacto Estructural (12)",
+    ignoraBlindaje: 4,
+    efectos: "Hemorragia (1d12 turnos) · Crítico: Impacto Estructural (12)",
     pesoKg: 6,
     rareza: "Singular",
     coste: 24000,
@@ -990,14 +994,12 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
       {
-        tipo: "numerico",
+        // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
+        // daño, se resta a mano del blindaje del objetivo (2026-09-28).
+        tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
-        mecanismo: "ajuste_fijo",
-        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
-        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
-        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
-        // que no está construido; no es una pregunta de diseño sin responder.
-        estado: "pendiente",
+        mecanismo: "nota_fija",
+        estado: "construido",
       },
       {
         tipo: "texto",
@@ -1025,8 +1027,9 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       { etiqueta: "Estándar", dificultad: -4, formulaDanio: "Fue+8", categoriaDanio: "Letal" },
       { etiqueta: "Compleja", dificultad: -4, formulaDanio: "Fue+11", categoriaDanio: "Letal" },
     ],
+    ignoraBlindaje: 8,
     efectos:
-      "Ignora 8 puntos de blindaje · Hemorragia Exanguinante · Derribo (12) · " +
+      "Hemorragia Exanguinante · Derribo (12) · " +
       "Crítico: Impacto Estructural (16)",
     pesoKg: 14,
     rareza: "Singular",
@@ -1046,14 +1049,12 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
       },
       {
-        tipo: "numerico",
+        // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
+        // daño, se resta a mano del blindaje del objetivo (2026-09-28).
+        tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
-        mecanismo: "ajuste_fijo",
-        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
-        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
-        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
-        // que no está construido; no es una pregunta de diseño sin responder.
-        estado: "pendiente",
+        mecanismo: "nota_fija",
+        estado: "construido",
       },
       {
         tipo: "texto",
@@ -1081,7 +1082,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       { etiqueta: "Estándar", dificultad: -2, formulaDanio: "Fue+6", categoriaDanio: "Letal" },
       { etiqueta: "Compleja", dificultad: -2, formulaDanio: "Fue+8", categoriaDanio: "Letal" },
     ],
-    efectos: "Ignora 2 puntos de blindaje · Derribo (11) · Aturdimiento (9) · Crítico: Impacto Estructural (10)",
+    ignoraBlindaje: 2,
+    efectos: "Derribo (11) · Aturdimiento (9) · Crítico: Impacto Estructural (10)",
     pesoKg: 9,
     rareza: "Singular",
     coste: 26000,
@@ -1098,14 +1100,12 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
       },
       {
-        tipo: "numerico",
+        // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
+        // daño, se resta a mano del blindaje del objetivo (2026-09-28).
+        tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
-        mecanismo: "ajuste_fijo",
-        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
-        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
-        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
-        // que no está construido; no es una pregunta de diseño sin responder.
-        estado: "pendiente",
+        mecanismo: "nota_fija",
+        estado: "construido",
       },
       {
         tipo: "texto",
@@ -1134,7 +1134,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       { etiqueta: "Estándar", dificultad: -1, formulaDanio: "Fue+5", categoriaDanio: "Letal" },
       { etiqueta: "Compleja", dificultad: -1, formulaDanio: "Fue+7", categoriaDanio: "Letal" },
     ],
-    efectos: "Ignora 2 puntos de blindaje · Derribo (11) · Aturdimiento (9) · Crítico: Impacto Estructural (11)",
+    ignoraBlindaje: 2,
+    efectos: "Derribo (11) · Aturdimiento (9) · Crítico: Impacto Estructural (11)",
     pesoKg: 7,
     rareza: "Singular",
     coste: 20000,
@@ -1151,14 +1152,12 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
       },
       {
-        tipo: "numerico",
+        // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
+        // daño, se resta a mano del blindaje del objetivo (2026-09-28).
+        tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
-        mecanismo: "ajuste_fijo",
-        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
-        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
-        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
-        // que no está construido; no es una pregunta de diseño sin responder.
-        estado: "pendiente",
+        mecanismo: "nota_fija",
+        estado: "construido",
       },
       {
         tipo: "texto",
@@ -1187,7 +1186,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       { etiqueta: "Simple", dificultad: -2, formulaDanio: "Fue+4", categoriaDanio: "Letal" },
       { etiqueta: "Estándar", dificultad: -2, formulaDanio: "Fue+6", categoriaDanio: "Letal" },
     ],
-    efectos: "Ignora 2 puntos de blindaje · Hemorragia (1d8 turnos) · Crítico: Impacto Estructural (10)",
+    ignoraBlindaje: 2,
+    efectos: "Hemorragia (1d8 turnos) · Crítico: Impacto Estructural (10)",
     pesoKg: 5,
     rareza: "Singular",
     coste: 18000,
@@ -1198,14 +1198,12 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
       {
-        tipo: "numerico",
+        // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
+        // daño, se resta a mano del blindaje del objetivo (2026-09-28).
+        tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
-        mecanismo: "ajuste_fijo",
-        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
-        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
-        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
-        // que no está construido; no es una pregunta de diseño sin responder.
-        estado: "pendiente",
+        mecanismo: "nota_fija",
+        estado: "construido",
       },
       {
         tipo: "texto",
@@ -1234,7 +1232,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       { etiqueta: "Simple", dificultad: -2, formulaDanio: "Fue+4", categoriaDanio: "Letal" },
       { etiqueta: "Estándar", dificultad: -2, formulaDanio: "Fue+6", categoriaDanio: "Letal" },
     ],
-    efectos: "Ignora 2 puntos de blindaje · Hemorragia (1d8 turnos) · Crítico: Impacto Estructural (10)",
+    ignoraBlindaje: 2,
+    efectos: "Hemorragia (1d8 turnos) · Crítico: Impacto Estructural (10)",
     pesoKg: 9,
     rareza: "Singular",
     coste: 22000,
@@ -1244,14 +1243,12 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
       {
-        tipo: "numerico",
+        // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
+        // daño, se resta a mano del blindaje del objetivo (2026-09-28).
+        tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
-        mecanismo: "ajuste_fijo",
-        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
-        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
-        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
-        // que no está construido; no es una pregunta de diseño sin responder.
-        estado: "pendiente",
+        mecanismo: "nota_fija",
+        estado: "construido",
       },
       {
         tipo: "texto",
@@ -1279,7 +1276,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       { etiqueta: "Estándar", dificultad: -4, formulaDanio: "Fue+8", categoriaDanio: "Letal" },
       { etiqueta: "Compleja", dificultad: -4, formulaDanio: "Fue+11", categoriaDanio: "Letal" },
     ],
-    efectos: "Ignora 4 puntos de blindaje · Derribo (14) · Aturdimiento (12) · Crítico: Impacto Estructural (16)",
+    ignoraBlindaje: 4,
+    efectos: "Derribo (14) · Aturdimiento (12) · Crítico: Impacto Estructural (16)",
     pesoKg: 18,
     rareza: "Singular",
     coste: 48000,
@@ -1296,14 +1294,12 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
       },
       {
-        tipo: "numerico",
+        // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
+        // daño, se resta a mano del blindaje del objetivo (2026-09-28).
+        tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
-        mecanismo: "ajuste_fijo",
-        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
-        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
-        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
-        // que no está construido; no es una pregunta de diseño sin responder.
-        estado: "pendiente",
+        mecanismo: "nota_fija",
+        estado: "construido",
       },
       {
         tipo: "texto",
@@ -1332,7 +1328,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       { etiqueta: "Estándar", dificultad: -3, formulaDanio: "Fue+6", categoriaDanio: "Letal" },
       { etiqueta: "Compleja", dificultad: -3, formulaDanio: "Fue+8", categoriaDanio: "Letal" },
     ],
-    efectos: "Ignora 4 puntos de blindaje · Hemorragia (1d12 turnos) · Crítico: Impacto Estructural (12)",
+    ignoraBlindaje: 4,
+    efectos: "Hemorragia (1d12 turnos) · Crítico: Impacto Estructural (12)",
     pesoKg: 12,
     rareza: "Singular",
     coste: 38000,
@@ -1342,14 +1339,12 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
       {
-        tipo: "numerico",
+        // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
+        // daño, se resta a mano del blindaje del objetivo (2026-09-28).
+        tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
-        mecanismo: "ajuste_fijo",
-        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
-        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
-        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
-        // que no está construido; no es una pregunta de diseño sin responder.
-        estado: "pendiente",
+        mecanismo: "nota_fija",
+        estado: "construido",
       },
       {
         tipo: "texto",
@@ -1374,7 +1369,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     descripcion: "Escudo de kerzul a una mano, con la misma resistencia extrema del material.",
     empleo: "una mano",
     modos: [{ etiqueta: "Estándar", dificultad: -2, formulaDanio: "Fue+4", categoriaDanio: "Letal" }],
-    efectos: "Ignora 2 puntos de blindaje · Derribo (11) · Aturdimiento (9) · Crítico: Impacto Estructural (12)",
+    ignoraBlindaje: 2,
+    efectos: "Derribo (11) · Aturdimiento (9) · Crítico: Impacto Estructural (12)",
     pesoKg: 4,
     rareza: "Singular",
     coste: 37000,
@@ -1390,14 +1386,12 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
       },
       {
-        tipo: "numerico",
+        // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
+        // daño, se resta a mano del blindaje del objetivo (2026-09-28).
+        tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
-        mecanismo: "ajuste_fijo",
-        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
-        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
-        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
-        // que no está construido; no es una pregunta de diseño sin responder.
-        estado: "pendiente",
+        mecanismo: "nota_fija",
+        estado: "construido",
       },
       {
         tipo: "texto",

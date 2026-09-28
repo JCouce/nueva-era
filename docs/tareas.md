@@ -263,9 +263,8 @@ usuario). Construido de una sentada tras aclarar en conversación una excepción
 - **Fuera de esta pasada, a propósito**: Mejora Ignífuga nivel 1 (habilitar blindaje
   contra Fuego, mecanismo distinto al +1 de Tejido Conductor, sin construir); Malla
   Plasmática (es un colchón/buffer, no blindaje, bloqueada aparte); el "Ignora N puntos
-  de blindaje" de las armas de Kerzul/Armas Mecánicas (efecto del ATACANTE, no del
-  defensor — sigue sin construirse, `blindajeContra()` no está enganchado a ninguna
-  tirada de ataque).
+  de blindaje" de las armas de Kerzul (efecto del ATACANTE, no del defensor) — **resuelto
+  2026-09-28 como aviso en el resultado del daño**, ver "Ignora blindaje" en Hecho.
 - **Desglose, mismo día (pedido del usuario tras probarlo mentalmente): "Bloquear
   daño" ya no muestra solo el total.** `desgloseBlindaje()` (`blindaje.ts`) es ahora la
   fuente única de verdad — una línea por fuente (armadura, Escudo Deflector, Tejido
@@ -607,6 +606,17 @@ los datos (stock, `ajusteDanio`, efecto) para que modal y `tirar()` usen los mis
   decisión del usuario). `avisoInsuficiente()` avisa contra ese stock — avisa, no
   bloquea, igual que con el cargador.
 - En el combate en vivo (`NpcAccionesPanel`) no hay gasto, igual que el resto de RECURSOS.
+
+### "Ignora N puntos de blindaje" — aviso en el resultado del daño, 2026-09-28
+
+Decisión del usuario: aviso, no resta automática — el blindaje es del objetivo y la
+ficha del atacante no lo conoce. Campo estructurado `ignoraBlindaje` en las 10 armas de
+Kerzul (`ArmaMelee`, sacado del texto de `efectos`) y en la munición perforante
+(`MunicionEspecial`). Viaja por `Accion.ignoraBlindaje` (Golpear y Lanzar) o por la
+munición elegida, y `ResultadoTirada.tsx` pinta "Ignora N puntos de blindaje del
+objetivo · <fuente>" bajo el daño ya tirado. La ficha del arma lo enseña como dato
+propio. Pendiente cuando existan: las Armas Modificadas de Nanofilamento (mismo efecto,
+2-4 puntos, sin dar de alta).
 
 ## Pendiente
 

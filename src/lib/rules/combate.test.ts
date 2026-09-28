@@ -280,6 +280,36 @@ describe("gasto por modo (docs/prompt-gasto-recursos.md, Fase 1)", () => {
   });
 });
 
+describe("ignora blindaje (aviso en el resultado del daño)", () => {
+  test("el Puñal de Kerzul lleva ignoraBlindaje en Golpear y en Lanzar, fuera de la nota", () => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "p1", catalogoId: "kerzul_punal" });
+    const acciones = accionesDeAtaque(sheet);
+    for (const id of ["ataque_melee_p1", "lanzar_melee_p1"]) {
+      const a = acciones.find((t) => t.id === id)!;
+      assert.deepEqual(a.ignoraBlindaje, { valor: 2, fuente: "Puñal de Kerzul" });
+      assert.doesNotMatch(a.nota ?? "", /Ignora/);
+    }
+  });
+
+  test("las 10 armas de Kerzul, y solo ellas, ignoran blindaje", () => {
+    const con = EQUIPO.filter((e) => e.familia === "armaMelee" && e.ignoraBlindaje !== undefined).map((e) => e.id);
+    assert.equal(con.length, 10);
+    assert.ok(con.every((id) => id.startsWith("kerzul_")));
+  });
+
+  test("un arma normal no lo lleva", () => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "e1", catalogoId: "espada" });
+    assert.equal(accionesDeAtaque(sheet).find((t) => t.id === "ataque_melee_e1")!.ignoraBlindaje, undefined);
+  });
+
+  test("la munición perforante lo trae en su entrada de municionesEspeciales", () => {
+    let sheet = equipar(defaultSheet(), { instanciaId: "s1", catalogoId: "pistola_sydiasi" });
+    sheet = equipar(sheet, { instanciaId: "ad1", catalogoId: "municion_especial_perforante", nivel: 1, instaladoEnId: "s1" });
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
+    assert.equal(fila.municionesEspeciales?.[0].ignoraBlindaje, 2);
+  });
+});
+
 describe("munición especial en el disparo (fase 2)", () => {
   // Sydiasi: Simple (1 bala) / Estándar F. Auto (20).
   function conSydiasiIncendiaria(stock: number) {

@@ -11,7 +11,14 @@ function signo(n: number) {
 // `formulaDanio` se conserva igual, ahora solo como referencia de dónde sale
 // el número. `base` solo queda null si una fórmula futura no sigue el
 // patrón "Fuerza"/"Fue" (+N) que hoy cubre el catálogo entero.
-export type DanioInfo = { base: number | null; formulaDanio: string | null; categoriaDanio: string };
+export type DanioInfo = {
+  base: number | null;
+  formulaDanio: string | null;
+  categoriaDanio: string;
+  // Arma o munición que ignora parte del blindaje del objetivo: se avisa junto
+  // al daño, el máster lo resta a mano (docs/tareas.md, 2026-09-28).
+  ignoraBlindaje?: { valor: number; fuente: string }[];
+};
 
 export type Lanzamiento = Resultado & {
   id: number;
@@ -158,6 +165,12 @@ export function ContenidoResultado({
               calcula a mano)
             </p>
           ) : null}
+          {resultado.danioResuelto &&
+            resultado.danioInfo.ignoraBlindaje?.map((b) => (
+              <p key={b.fuente} className="mt-1 font-mono text-[11px] uppercase text-accent">
+                Ignora {b.valor} puntos de blindaje del objetivo · {b.fuente}
+              </p>
+            ))}
         </div>
       )}
 

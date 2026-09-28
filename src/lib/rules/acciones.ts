@@ -83,7 +83,17 @@ export type Accion = {
   // vez del cargador (ver gastoTotal/gastoMunicionEspecial) y su ajusteDanio
   // se suma al daño. Aquí y no releído del sheet para que modal y tirar()
   // trabajen con los mismos datos que la fila.
-  municionesEspeciales?: { id: string; label: string; stock: number; ajusteDanio: number; efecto: string }[];
+  municionesEspeciales?: {
+    id: string;
+    label: string;
+    stock: number;
+    ajusteDanio: number;
+    ignoraBlindaje?: number;
+    efecto: string;
+  }[];
+  // "Ignora N puntos de blindaje" del arma (Kerzul): aviso en el resultado del
+  // daño, con su fuente — el blindaje es del objetivo, se resta a mano.
+  ignoraBlindaje?: { valor: number; fuente: string };
   // Controles del modal (ver condiciones.ts): tramo de distancia, apoyado con
   // bípode, atacantes adicionales... Las tiradas de ataque las llevan
   // calculadas al vuelo desde el equipo (ver combate.ts); las demás las

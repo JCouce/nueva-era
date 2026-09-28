@@ -184,6 +184,9 @@ export function DetalleArmaMelee({ p }: { p: ArmaMelee }) {
       <dl className="mt-3 grid grid-cols-1 gap-x-4 font-mono text-[11px] sm:grid-cols-2">
         <Stat label="Empleo" value={p.empleo} />
         {p.alcance !== undefined && <Stat label="Alcance" value={String(p.alcance)} />}
+        {p.ignoraBlindaje !== undefined && (
+          <Stat label="Ignora blindaje" value={`${p.ignoraBlindaje} puntos`} />
+        )}
       </dl>
 
       {(p.sutil || p.arrojadiza) && (

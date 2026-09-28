@@ -258,6 +258,8 @@ export type MunicionEspecial = {
   // = 1 punto (C11, docs/sistema.md). El tipo ("+1 Fuego") se queda en `efecto`:
   // se suma al total, sin partir el daño en dos categorías (usuario, 2026-09-28).
   ajusteDanio: number;
+  // Mismo aviso que ArmaMelee.ignoraBlindaje (solo la perforante).
+  ignoraBlindaje?: number;
   efecto: string;
 };
 
@@ -272,6 +274,7 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
     rareza: "Común",
     costeProyectil: 4,
     ajusteDanio: -1,
+    ignoraBlindaje: 2,
     efecto:
       "Un nivel menos de daño, pero ignora los 2 primeros puntos de blindaje. Su crítico consume " +
       "un punto de blindaje del objetivo en lugar del crítico habitual.",

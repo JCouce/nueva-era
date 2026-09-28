@@ -914,7 +914,8 @@ de control.
 
 ### Kerzul
 
-- Armas Melee de Kerzul: "Ignora N puntos de blindaje" — **auto-aplicar sigue 🔕
+- Armas Melee de Kerzul: "Ignora N puntos de blindaje" — **✅ aviso en el resultado del
+  daño desde 2026-09-28** (`ignoraBlindaje`, `docs/tareas.md`). Histórico: **auto-aplicar sigue 🔕
   IGNORAR** (el Hallazgo #5 ya calcula el blindaje del defensor, `blindajeContra()`,
   pero nada engancha el ataque del atacante a esa función para restarle N antes —
   sin construir todavía), **pero mostrarlo como texto en el Marcador es ✅ IMPLEMENTAR, y barato**

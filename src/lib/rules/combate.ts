@@ -220,7 +220,16 @@ function municionesDeArma(sheet: Sheet, instanciaId: string): NonNullable<Accion
     if (p.instaladoEnId !== instanciaId || !p.catalogoId.startsWith(PREFIJO_MEJORA_MUNICION)) return [];
     const m = municionEspecialPorId(p.catalogoId.slice(PREFIJO_MEJORA_MUNICION.length));
     if (!m) return [];
-    return [{ id: m.id, label: m.label, stock: sheet.municionEspecial[m.id] ?? 0, ajusteDanio: m.ajusteDanio, efecto: m.efecto }];
+    return [
+      {
+        id: m.id,
+        label: m.label,
+        stock: sheet.municionEspecial[m.id] ?? 0,
+        ajusteDanio: m.ajusteDanio,
+        ignoraBlindaje: m.ignoraBlindaje,
+        efecto: m.efecto,
+      },
+    ];
   });
 }
 
@@ -567,6 +576,7 @@ function tiradaDeArmaMelee(sheet: Sheet, arma: ArmaMelee, instanciaId: string): 
     habilidad: "combate_melee",
     nota,
     efectoCritico: arma.efectoCritico,
+    ignoraBlindaje: arma.ignoraBlindaje ? { valor: arma.ignoraBlindaje, fuente: arma.label } : undefined,
     condiciones: [...(modo ? [modo] : []), ...(malla ? condicionesSacrificioColchon(malla.nivel) : [])],
     ataque: {
       modos: modosConId.map((m) => {
@@ -627,6 +637,7 @@ function tiradaLanzarArmaMelee(sheet: Sheet, arma: ArmaMelee, instanciaId: strin
     habilidad: "atletismo",
     nota: [`Alcance ${ALCANCE_ARROJADA}.`, arma.efectos].filter(Boolean).join(" · "),
     efectoCritico: arma.efectoCritico,
+    ignoraBlindaje: arma.ignoraBlindaje ? { valor: arma.ignoraBlindaje, fuente: arma.label } : undefined,
     ajustesFijos: modo.dificultad !== 0 ? [{ valor: modo.dificultad, fuente: arma.label }] : [],
     ataque: {
       modos: [
