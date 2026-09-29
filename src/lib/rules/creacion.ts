@@ -156,12 +156,13 @@ export function removeEspecialidad(
   };
 }
 
-// Devuelve atributos y habilidades a cero. La identidad se conserva.
+// Devuelve atributos, habilidades y psiónica a cero. La identidad se conserva.
 export function resetBuild(sheet: Sheet): Sheet {
   const base = defaultSheet();
   return {
     ...sheet,
     atributos: base.atributos,
     habilidades: base.habilidades,
+    psionica: base.psionica,
   };
 }

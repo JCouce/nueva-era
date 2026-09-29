@@ -10,6 +10,7 @@ import { aplicado, valorEfectivo, modificadoresActivos } from "./derivados";
 import type { Sheet } from "./sheet";
 import type { CondicionTirada, BonoPorTramo, EstadoCondiciones } from "./condiciones";
 import type { GrupoAccion, ModificadorConFuente } from "./modificadores";
+import type { DetallePoder } from "./poderes";
 
 export const CARAS_DADO = 12;
 
@@ -54,6 +55,9 @@ export type Accion = {
   // ResultadoTirada.tsx tras resolver el daño, no en `nota` (que es
   // información sobre ESTA tirada, no un aviso para otra).
   efectos?: { fuente: string; texto: string }[];
+  // Solo poderes psiónicos (tiradaDePoder, poderes.ts): texto por grado del
+  // propio psiónico y lo que tira el objetivo, para el panel de resultado.
+  poder?: DetallePoder;
   // Cuando una tirada depende de algo que el sistema aún no define, se declara
   // en vez de inventársela: la UI la muestra apagada con el motivo.
   bloqueada?: string;

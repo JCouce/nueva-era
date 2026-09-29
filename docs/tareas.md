@@ -1209,6 +1209,31 @@ aparte: ids inexistentes que destapó la calibración en `MotorMetadata` de equi
 en Sistema de Retroceso, `salv_ceguera_destello` en Visor Nocturno, `camuflaje_trifasico`
 como acción en Malla Plasmática) y el sacrificio de colchón de la Malla marcado construido
 con toggle 0/0.
+**Piloto Singularidad (encargo `docs/prompt-construir-psionica.md`), 2026-09-29:** pasos 1-2
+hechos — tipos del modelo v2 en `src/lib/rules/psionica.ts`, catálogo en
+`src/lib/catalog/psionica.ts` (6 disciplinas para la compra, acciones solo de Singularidad;
+el +1 de Poderosa del borrador se cobraba dos veces, corregido), ficha v12 con
+`sheet.psionica`, compra en `PsionicaTab` (N×3 con el pool o XP, requisitos que bloquean
+subir y bajar). Especialidades Física/Informática/Biónica dadas de alta. Paso 3 hecho:
+evaluador `resolverPoder` (`src/lib/rules/poderes.ts`: cambia → `Valor` → suma → marcadores
+`{campo}` de los textos). Paso 4 hecho: `accionesDePsionica` (gate `accion_sin_equipo`
+construido, también en `fuentesDeCapa1` como familia "poder") y sección Psiónica en Acciones
+con el resumen al nivel poseído. Paso 5 hecho: "Usar" abre `AccionModal` con cabecera
+propia (`CabeceraPoder`: nivel empleado, forma, ficha resuelta, notas de antes de tirar); el
+poder se tira como `Accion` de grupo "Psiónica" (`tiradaDePoder`, especialidad automática) y
+"Tirar daño" usa el daño resuelto. Paso 6 hecho: `costeFatiga` (cadena en orden fijo,
+filtros por alcance/toggle, mínimo; `paga_con_recurso` sin construir, lanza error) y gasto
+al tirar vía `ajustarFatiga`, falle o no; sin fatiga suficiente Tirar se apaga
+(`bloqueoPorFatiga`). Fuentes externas (Munición Supresora, Xovromium, Derivación) y
+toggles de fatiga en el modal: tras el piloto. Paso 7 hecho: `Accion.poder` (texto propio
+por grado con respaldo del crítico al normal, `objetivoTira` con dificultad resuelta) pintado
+en `ContenidoResultado` — "El objetivo" plegado y siempre visible; notas de daño como
+`efectos`. Paso 8 hecho: sobrecarga (`cruzaSobrecarga` al cruzar a exhausto, salvación de
+Fortaleza tirada por la app contra 5 + nivel, daño letal no absorbible restado de la vida;
+la inconsciencia se avisa, la marca el máster). **Piloto cerrado.** Siguiente, disciplina a
+disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,
+Derivación), habilidad alternativa con selector, ventaja, Levitar, Duelo de Métrica, fatiga
+temporal (Proeza).
 Preguntas al diseñador: página pública `/preguntas` (tabla `Pregunta`, seed
 `scripts/seed-preguntas.mjs` desde `scripts/data/preguntas-psionica.json`, 42 preguntas);
 las decisiones del usuario siguen en artifacts y se vuelcan a `docs/sistema.md` §10.6. De paso la

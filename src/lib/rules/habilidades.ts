@@ -34,7 +34,7 @@ export const MAX_ESPECIALIDADES = 3;
 // todavía (docs/sistema.md, pregunta 3), así que son texto libre y esto solo
 // alimenta sugerencias en la UI.
 export const ESPECIALIDADES_CONOCIDAS: Partial<Record<HabilidadId, string[]>> = {
-  tecnociencia: ["Mecánica"],
+  tecnociencia: ["Mecánica", "Física", "Informática", "Biónica"],
   biociencia: ["Medicina", "Química", "Bioquímica"],
   actitud: ["Empatía", "Manipulación", "Liderazgo"],
   combate_melee: ["Pelea"],

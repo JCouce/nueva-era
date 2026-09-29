@@ -30,6 +30,22 @@ import {
   consultaIndiceCondiciones,
   bonoAlcance,
   modoElegido,
+  accionesDePsionica,
+  etiquetaEconomia,
+  textoValor,
+  resolverPoder,
+  tiradaDePoder,
+  enEspecialidadDePoder,
+  aplicados,
+  costeFatiga,
+  bloqueoPorFatiga,
+  cruzaSobrecarga,
+  dificultadSobrecarga,
+  danioSobrecarga,
+  gradoDeTirada,
+  salud,
+  tirarD12,
+  type PoderDisponible,
   type Accion,
   type AccionDirecta,
   type Sheet,
@@ -44,6 +60,8 @@ import { UsarModal } from "@/components/UsarModal";
 import { SacrificioRecursoModal } from "@/components/SacrificioRecursoModal";
 import { ReparaFabricaModal } from "./ReparaFabricaModal";
 import { BloquearDanioModal } from "./BloquearDanioModal";
+import { CabeceraPoder } from "./CabeceraPoder";
+import { SobrecargaPanel } from "./SobrecargaPanel";
 import { type DanioInfo, type Lanzamiento } from "@/components/ResultadoTirada";
 
 function signo(n: number) {
@@ -319,6 +337,36 @@ function FilaUsar({ accion, onAbrir }: { accion: AccionDirecta; onAbrir: (a: Acc
   );
 }
 
+// Poder psiónico: resumen al nivel poseído; "Usar" abre el modal de tirada con
+// la cabecera de nivel empleado y forma (CabeceraPoder).
+function FilaPoder({ poder, onAbrir }: { poder: PoderDisponible; onAbrir: (p: PoderDisponible) => void }) {
+  const p = poder.porDefecto;
+  const danio = p.resolucion.tipo === "ataque" ? p.resolucion.danio : null;
+  const datos = [
+    etiquetaEconomia(p.economia),
+    `${textoValor(p.fatiga)} fatiga`,
+    p.alcance !== null ? `${textoValor(p.alcance)} m` : null,
+    danio !== null ? `daño ${textoValor(danio)}` : null,
+  ].filter(Boolean);
+  return (
+    <HudCard className="p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <span className="block font-display text-base font-semibold uppercase leading-tight">{poder.accion.label}</span>
+          <p className="mt-1 font-mono text-[11px] text-muted">{datos.join(" · ")}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onAbrir(poder)}
+          className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95"
+        >
+          Usar
+        </button>
+      </div>
+    </HudCard>
+  );
+}
+
 export function AccionesTab({
   sheet,
   estadosCombate = [],
@@ -331,6 +379,8 @@ export function AccionesTab({
   onGastarRecurso,
   onAjustarFarmaco,
   onAjustarMunicionEspecial,
+  onGastarFatiga,
+  onAjustarVida,
   libre = false,
 }: {
   sheet: Sheet;
@@ -376,6 +426,11 @@ export function AccionesTab({
   // Gasto de munición especial al disparar con ella (docs/tareas.md,
   // "Munición Especial — fase 2") — mismo motivo de ausencia que los de arriba.
   onAjustarMunicionEspecial?: (municionId: string, delta: number) => void;
+  // Fatiga gastada al usar un poder psiónico (poderes.ts, costeFatiga) — ausente
+  // donde no se gasta (edición de NPC del máster).
+  onGastarFatiga?: (delta: number) => void;
+  // Daño de la sobrecarga psiónica, restado de la vida de la ficha.
+  onAjustarVida?: (delta: number) => void;
   // NpcEditor.tsx (edición libre de máster): la tirada de Fabricar no aplica
   // — FabricarSeccion la salta y llama a onFabricar directo con éxito fijo,
   // mismo criterio que AtributosTab/HabilidadesTab con este mismo prop.
@@ -484,6 +539,61 @@ export function AccionesTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones]);
 
+  const poderes = useMemo(() => accionesDePsionica(sheet), [sheet]);
+  const disciplinasConPoderes = [...new Set(poderes.map((p) => p.disciplina))];
+  // Poder cuyo modal está abierto, con las elecciones actuales. Cada cambio de
+  // nivel/forma vuelve a resolver el poder y reconstruye la tirada del modal.
+  const [poderAbierto, setPoderAbierto] = useState<{ poder: PoderDisponible; elecciones: Record<string, string> } | null>(null);
+  const resolverAbierto = (poder: PoderDisponible, elecciones: Record<string, string>) =>
+    resolverPoder(poder.accion, { nivelPoseido: poder.nivelPoseido, elecciones, aplicados: aplicados(sheet, mods) });
+  // Coste y bloqueo del poder abierto, contra la fatiga actual de la ficha (se
+  // recalcula solo tras cada gasto: "Tirar otra vez" se apaga si ya no llega).
+  const poderResuelto = poderAbierto ? resolverAbierto(poderAbierto.poder, poderAbierto.elecciones) : null;
+  const costePoder =
+    poderAbierto && poderResuelto && typeof poderResuelto.fatiga === "number"
+      ? costeFatiga(poderAbierto.poder.disciplina, poderAbierto.poder.accion.id, poderResuelto)
+      : null;
+  const bloqueoPoder =
+    poderAbierto && costePoder ? bloqueoPorFatiga(poderAbierto.poder.accion, costePoder.total, sheet.fatigaActual) : null;
+
+  // Sobrecarga del último uso de un poder (null si no cruzó el umbral): nivel
+  // para la dificultad/daño y la salvación ya tirada, si la hay.
+  const [sobrecarga, setSobrecarga] = useState<{
+    nivel: number;
+    salvacion: (Lanzamiento & { danio: number }) | null;
+  } | null>(null);
+
+  // `id` llega del click (el compilador de React no acepta Date.now() aquí).
+  const tirarSalvacionSobrecarga = (id: number) => {
+    if (!sobrecarga || sobrecarga.salvacion) return;
+    const salv = ACCIONES.find((a) => a.id === "salv_fortaleza")!;
+    const modificador =
+      modificadorAccion(sheet, salv, false, mods).total +
+      bonoAlcance(mods, { id: salv.id, grupo: salv.grupo, habilidad: salv.habilidad, modoElegido: null });
+    const dificultad = dificultadSobrecarga(sobrecarga.nivel);
+    const r = resolverTirada({ dado: tirarD12(), modificador, dificultad });
+    const danio = danioSobrecarga(sobrecarga.nivel, gradoDeTirada(r)!);
+    if (danio > 0) onAjustarVida?.(-danio);
+    const lanzamiento = {
+      ...r,
+      id,
+      label: "Sobrecarga: salvación de Fortaleza",
+      danio,
+      danioInfo: { base: danio, formulaDanio: null, categoriaDanio: "Letal no absorbible" },
+      danioResuelto: { base: danio, bonoExitos: 0, total: danio, categoria: "Letal no absorbible" },
+    };
+    setHistorial((h) => [lanzamiento, ...h].slice(0, 6));
+    setSobrecarga({ ...sobrecarga, salvacion: lanzamiento });
+  };
+
+  const abrirPoder = (poder: PoderDisponible, elecciones: Record<string, string> = {}) => {
+    const resuelto = resolverAbierto(poder, elecciones);
+    const t = resuelto && tiradaDePoder(poder.accion, resuelto);
+    if (!resuelto || !t) return;
+    abrir(t, enEspecialidadDePoder(sheet, resuelto), false);
+    setPoderAbierto({ poder, elecciones: resuelto.elecciones });
+  };
+
   const abrir = (t: Accion, enEspecialidad: boolean, sutilActivo: boolean) => {
     const mod = modificadorAccion(sheet, t, enEspecialidad, mods, sutilActivo);
     const aplicadoId = sutilActivo && t.aplicadoSutil ? t.aplicadoSutil : t.aplicado;
@@ -590,6 +700,13 @@ export function AccionesTab({
     // excepciones — no depende de gastoTotal() (pool distinto, sheet.farmacos
     // por catalogoId) ni del resultado de la tirada.
     if (tirada.farmacoId) onAjustarFarmaco?.(tirada.farmacoId, -1);
+    // Poder psiónico: la fatiga se paga al usarlo, falle o no; si el gasto cruza
+    // el umbral de exhausto, sobrecarga.
+    if (tirada.grupo === "Psiónica" && costePoder && poderResuelto) {
+      if (costePoder.total > 0) onGastarFatiga?.(-costePoder.total);
+      const cruza = cruzaSobrecarga(sheet.fatigaActual, sheet.fatigaActual - costePoder.total, salud(sheet).fatiga);
+      setSobrecarga(cruza && onGastarFatiga ? { nivel: poderResuelto.nivelEmpleado, salvacion: null } : null);
+    }
     const gastoEspecial = gastoMunicionEspecial(tirada, modoId, estadoCondiciones);
     if (gastoEspecial && gastoEspecial.cantidad > 0) onAjustarMunicionEspecial?.(gastoEspecial.id, -gastoEspecial.cantidad);
 
@@ -603,6 +720,7 @@ export function AccionesTab({
           danioInfo,
           efectoCritico: tirada.efectoCritico,
           efectos: tirada.efectos,
+          poder: tirada.poder,
           vueloResuelto,
         },
         ...h,
@@ -736,6 +854,28 @@ export function AccionesTab({
         ))}
       </div>
 
+      {/* Psiónica: generada por los niveles de disciplina (poderes.ts), solo si
+          hay algún poder — mismo criterio que Herramientas. */}
+      {poderes.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
+            Psiónica
+          </h2>
+          {disciplinasConPoderes.map((d) => (
+            <div key={d.id} className="flex flex-col gap-2">
+              <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">
+                {d.label} · nivel {poderes.find((p) => p.disciplina === d)!.nivelPoseido}
+              </h3>
+              {poderes
+                .filter((p) => p.disciplina === d)
+                .map((p) => (
+                  <FilaPoder key={p.accion.id} poder={p} onAbrir={abrirPoder} />
+                ))}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Como Ataques: dinámica, generada por lo que hay equipado, no del
           catálogo fijo (ver herramientas.ts). Solo se pinta si hay algo que
           la use — a diferencia de Ataques, es opcional para la mayoría de
@@ -864,6 +1004,34 @@ export function AccionesTab({
               ? `especialidad: ${especialidadesActuales.join(" / ")}`
               : undefined
           }
+          cabecera={
+            poderAbierto && modal.tirada.grupo === "Psiónica"
+              ? (() => {
+                  const resuelto = poderResuelto;
+                  return resuelto ? (
+                    <CabeceraPoder
+                      accion={poderAbierto.poder.accion}
+                      poder={resuelto}
+                      coste={costePoder}
+                      fatigaActual={sheet.fatigaActual}
+                      onElegir={(eje, opcion) =>
+                        abrirPoder(poderAbierto.poder, { ...poderAbierto.elecciones, [eje]: opcion })
+                      }
+                    />
+                  ) : null;
+                })()
+              : undefined
+          }
+          bloqueo={modal.tirada.grupo === "Psiónica" ? bloqueoPoder : null}
+          pieResultado={
+            modal.tirada.grupo === "Psiónica" && sobrecarga ? (
+              <SobrecargaPanel
+                dificultad={dificultadSobrecarga(sobrecarga.nivel)}
+                salvacion={sobrecarga.salvacion}
+                onTirar={tirarSalvacionSobrecarga}
+              />
+            ) : undefined
+          }
           modBase={modal.modBase}
           desgloseBase={modal.desgloseBase}
           condiciones={modal.tirada.condiciones ?? []}
@@ -874,7 +1042,11 @@ export function AccionesTab({
           circunstancialInicial={memoria[modal.tirada.id]?.circunstancial ?? 0}
           resultado={resultadoModal}
           onTirarDanio={tirarDanio}
-          onCerrar={() => setModal(null)}
+          onCerrar={() => {
+            setModal(null);
+            setPoderAbierto(null);
+            setSobrecarga(null);
+          }}
           onTirar={tirar}
         />
       )}

@@ -178,6 +178,14 @@ export const MIGRACIONES: Migracion[] = [
       "antiguas empiezan sin ninguna.",
     migrar: (ficha) => ({ ...ficha, municionEspecial: {} }),
   },
+  {
+    desde: 11,
+    hasta: 12,
+    descripcion:
+      "Se añaden los niveles de disciplina psiónica (docs/sistema.md §10.6): las fichas " +
+      "antiguas empiezan sin ninguna.",
+    migrar: (ficha) => ({ ...ficha, psionica: {} }),
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le

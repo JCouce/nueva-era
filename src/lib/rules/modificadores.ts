@@ -31,7 +31,10 @@ export type GrupoAccion =
   | "Iniciativa"
   | "Acciones"
   | "Herramientas"
-  | "Fármacos";
+  | "Fármacos"
+  // Poderes psiónicos (poderes.ts): el grupo al que apuntarán los modificadores
+  // externos de la psiónica (Xovromium, Munición Supresora...).
+  | "Psiónica";
 
 // A qué tirada(s) afecta un modificador de tipo "tirada". Cerrado a propósito
 // — ver docs/modificadores-tiradas.md antes de añadir un sexto caso:

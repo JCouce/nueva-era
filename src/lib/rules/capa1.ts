@@ -1,9 +1,8 @@
-// Punto de extensión para cuando lleguen más fuentes de capa 1 (Poderes,
-// Dotes, Ciberware, Fase 5 — docs/motor.md, "Escalabilidad para las fases
-// que vienen"). Hoy sheet.equipo es la única fuente real; esta función la
+// Punto de extensión para las fuentes de capa 1 (Poderes, Dotes, Ciberware,
+// Fase 5 — docs/motor.md, "Escalabilidad para las fases que vienen").
+// sheet.equipo fue la primera fuente; esta función la
 // envuelve en una forma agnóstica de familia sin cambiar nada de lo que ya
-// existe. El día que exista una segunda fuente, se suma aquí — nada más
-// debería necesitar tocarse fuera de este archivo.
+// existe. Segunda fuente: los poderes psiónicos (familia "poder").
 //
 // Forma mínima a propósito (YAGNI): solo los campos con un uso concreto hoy.
 // No migres combate.ts/condicionesActivas/etc. a usar esto todavía — eso es
@@ -12,12 +11,13 @@ import { equipoPorId, type Equipo } from "../catalog/equipo";
 import type { PiezaEquipada } from "./equipo";
 import type { MotorMetadata } from "./motor";
 import type { Sheet } from "./sheet";
+import { accionesDePsionica } from "./poderes";
 
 export type FuenteCapa1 = {
   instanciaId: string;
   catalogoId: string;
   nivel?: number;
-  familia: Equipo["familia"];
+  familia: Equipo["familia"] | "poder";
   motor: MotorMetadata[];
 };
 
@@ -44,6 +44,22 @@ function motorDePieza(cat: Equipo, nivel: number | undefined): MotorMetadata[] {
 }
 
 export function fuentesDeCapa1(sheet: Sheet): FuenteCapa1[] {
+  return [...fuentesDeEquipo(sheet), ...fuentesDePoderes(sheet)];
+}
+
+// Un poder no tiene instancia: su id de acción hace de instanciaId y de
+// catalogoId, y `nivel` es el poseído en la disciplina.
+function fuentesDePoderes(sheet: Sheet): FuenteCapa1[] {
+  return accionesDePsionica(sheet).map(({ accion, nivelPoseido }) => ({
+    instanciaId: accion.id,
+    catalogoId: accion.id,
+    nivel: nivelPoseido,
+    familia: "poder",
+    motor: accion.motor,
+  }));
+}
+
+function fuentesDeEquipo(sheet: Sheet): FuenteCapa1[] {
   return sheet.equipo.flatMap((pieza: PiezaEquipada): FuenteCapa1[] => {
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat) return [];

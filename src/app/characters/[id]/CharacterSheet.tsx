@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   setAtributoAction,
   setHabilidadAction,
+  setDisciplinaAction,
   addEspecialidadAction,
   removeEspecialidadAction,
   saveIdentityAction,
@@ -30,6 +31,7 @@ import {
 import {
   setAtributoValue,
   setHabilidadValue,
+  setDisciplinaValue,
   addEspecialidad,
   removeEspecialidad,
   puntosAtributosDisponibles,
@@ -50,6 +52,7 @@ import {
   describirEstadosActivos,
   type AtributoId,
   type HabilidadId,
+  type DisciplinaId,
   type PiezaEquipada,
   type CategoriaPrioridad,
   type LetraPrioridad,
@@ -292,6 +295,16 @@ export function CharacterSheet({
       () => setHabilidadAction(characterId, id, value),
       aprobada
         ? (servidor) => setSheet((actual) => ({ ...actual, habilidades: { ...actual.habilidades, [id]: servidor.habilidades[id] } }))
+        : undefined,
+    );
+  };
+  const commitDisciplina = (id: DisciplinaId, value: number) => {
+    setSheet((s) => setDisciplinaValue(s, id, value));
+    scheduleCommit(
+      `disciplina:${id}`,
+      () => setDisciplinaAction(characterId, id, value),
+      aprobada
+        ? (servidor) => setSheet((actual) => ({ ...actual, psionica: servidor.psionica }))
         : undefined,
     );
   };
@@ -592,7 +605,9 @@ export function CharacterSheet({
         />
       )}
       {activeEfectivo === "dotes" && <DotesTab sheet={sheet} />}
-      {activeEfectivo === "psionica" && <PsionicaTab sheet={sheet} />}
+      {activeEfectivo === "psionica" && (
+        <PsionicaTab sheet={sheet} aprobada={aprobada} xp={xp} onSet={commitDisciplina} />
+      )}
       {activeEfectivo === "acciones" && (
         <AccionesTab
           sheet={sheet}
@@ -606,6 +621,8 @@ export function CharacterSheet({
           onGastarRecurso={commitAjustarRecurso}
           onAjustarFarmaco={commitAjustarFarmaco}
           onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
+          onGastarFatiga={commitAjustarFatiga}
+          onAjustarVida={commitAjustarVida}
         />
       )}
       {activeEfectivo === "tienda" && (

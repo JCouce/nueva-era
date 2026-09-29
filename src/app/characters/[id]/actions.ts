@@ -54,6 +54,13 @@ import {
   HABILIDAD_MAX,
   type CategoriaPrioridad,
   type LetraPrioridad,
+  setDisciplinaValue,
+  setNivelDisciplina,
+  nivelDisciplina,
+  esDisciplinaId,
+  COSTE_FACTOR_PSIONICA,
+  DISCIPLINA_MAX,
+  type DisciplinaId,
 } from "@/lib/rules";
 
 export type SaveResult =
@@ -174,6 +181,39 @@ export async function setHabilidadAction(
       [habilidadId]: { ...ctx.sheet.habilidades[habilidadId], valor: objetivo },
     },
   };
+  const xp = ctx.xp - coste;
+  await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, xp } });
+  revalidatePath(`/characters/${characterId}`);
+  revalidatePath("/master");
+  return { ok: true, sheet, xp };
+}
+
+// Mismo esquema que atributos/habilidades: en creación, pool de la letra de
+// Psiónica; aprobada, solo subir y pagando XP. Los requisitos entre
+// disciplinas (psionica.ts) se aplican en los dos casos.
+export async function setDisciplinaAction(
+  characterId: string,
+  disciplinaId: DisciplinaId,
+  value: number,
+): Promise<SaveResult> {
+  if (!esDisciplinaId(disciplinaId)) return { ok: false, error: "Disciplina desconocida" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+
+  if (!ctx.aprobada) {
+    return persist(characterId, setDisciplinaValue(ctx.sheet, disciplinaId, value));
+  }
+
+  const actual = nivelDisciplina(ctx.sheet, disciplinaId);
+  const objetivo = Math.max(actual, Math.min(DISCIPLINA_MAX, Math.round(value)));
+  if (objetivo === actual) return { ok: true, sheet: ctx.sheet, xp: ctx.xp };
+
+  const sheet = setNivelDisciplina(ctx.sheet, disciplinaId, objetivo);
+  if (sheet === ctx.sheet) return { ok: false, error: "No cumples el requisito de la disciplina" };
+
+  const coste = costeSubidaXp(actual, objetivo, COSTE_FACTOR_PSIONICA);
+  if (coste > ctx.xp) return { ok: false, error: "No tienes XP suficiente" };
+
   const xp = ctx.xp - coste;
   await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, xp } });
   revalidatePath(`/characters/${characterId}`);

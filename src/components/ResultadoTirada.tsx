@@ -1,4 +1,12 @@
-import type { Resultado, ResultadoDanio, ResultadoVuelo } from "@/lib/rules";
+import {
+  gradoDeTirada,
+  textoDeGrado,
+  type DetallePoder,
+  type Grado,
+  type Resultado,
+  type ResultadoDanio,
+  type ResultadoVuelo,
+} from "@/lib/rules";
 
 function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
@@ -38,6 +46,8 @@ export type Lanzamiento = Resultado & {
   // metros, y ya resuelto en el momento (no hay una segunda tirada "Tirar
   // vuelo" como sí la hay para daño). Ver resolverVuelo(), acciones.ts.
   vueloResuelto?: ResultadoVuelo;
+  // Poder psiónico (Accion.poder): resultado propio por grado y lo que tira el objetivo.
+  poder?: DetallePoder;
   // Marca un registro de una AccionDirecta (docs/motor.md, "Acciones sin
   // dado") en vez de una tirada real — los campos de Resultado se rellenan a
   // 0/null solo para que el tipo cierre (nunca se leen: FilaHistorial los
@@ -135,6 +145,8 @@ export function ContenidoResultado({
         </p>
       </div>
 
+      {resultado.poder && <ResultadoPropio poder={resultado.poder} resultado={resultado} />}
+
       {resultado.danioInfo && (
         <div className="mt-3 border-t border-border pt-3">
           {resultado.danioResuelto ? (
@@ -204,6 +216,61 @@ export function ContenidoResultado({
             </ul>
           </div>
         )}
+
+      {resultado.poder && resultado.poder.objetivoTira.length > 0 && (
+        <ObjetivoTira tiradas={resultado.poder.objetivoTira} />
+      )}
     </>
+  );
+}
+
+const ETIQUETA_GRADO: Record<Grado, string> = {
+  critico: "Éxito crítico",
+  exito: "Éxito",
+  fracaso: "Fracaso",
+  fracasoCritico: "Fracaso crítico",
+};
+
+function ResultadoPropio({ poder, resultado }: { poder: DetallePoder; resultado: Lanzamiento }) {
+  const grado = gradoDeTirada(resultado);
+  const texto = grado && textoDeGrado(poder.resultados, grado);
+  if (!texto) return null;
+  return (
+    <p className="mt-3 border-l-2 border-accent pl-2 font-sans text-[12px] font-semibold leading-relaxed text-foreground">
+      {texto}
+    </p>
+  );
+}
+
+// Siempre visible (plegado): aunque falles, hay poderes que siguen obligando al
+// objetivo a tirar (Expansión se desvía y estalla igual). La app no tira por él.
+function ObjetivoTira({ tiradas }: { tiradas: DetallePoder["objetivoTira"] }) {
+  return (
+    <details className="mt-3 border-t border-border pt-3">
+      <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-widest text-muted">
+        El objetivo
+      </summary>
+      <ul className="mt-2 flex flex-col gap-2">
+        {tiradas.map((t, i) => (
+          <li key={i} className="font-sans text-[11px] leading-relaxed text-foreground">
+            <p>
+              {t.que}
+              {t.dificultad !== undefined && <span className="font-mono text-info"> · dificultad {t.dificultad}</span>}
+            </p>
+            {t.grados && (
+              <ul className="mt-1 flex flex-col gap-0.5 pl-2">
+                {(Object.keys(ETIQUETA_GRADO) as Grado[])
+                  .filter((g) => t.grados?.[g])
+                  .map((g) => (
+                    <li key={g} className="text-muted">
+                      <span className="font-mono uppercase">{ETIQUETA_GRADO[g]}:</span> {t.grados![g]}
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }

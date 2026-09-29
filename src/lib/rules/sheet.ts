@@ -38,6 +38,7 @@ import { reconciliarVida } from "./vitalidad";
 import { MUNICION_GRANADA, MUNICION_ESPECIAL } from "../catalog/municion";
 import { FARMACOS } from "../catalog/medicina";
 import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./prioridad";
+import { DISCIPLINA_IDS, type DisciplinaId } from "../catalog/psionica";
 
 // Versión del formato de ficha. Al subirla hay que añadir su migración en
 // migraciones.ts y el test que la cubre.
@@ -55,7 +56,8 @@ import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./pri
 //        cantidad, mismo criterio que las granadas en la v8
 //        (docs/prompt-gasto-recursos.md, Fase 2)
 //   11 → se añade el stock de munición especial (municionEspecial)
-export const SCHEMA_VERSION = 11;
+//   12 → se añaden los niveles de disciplina psiónica (psionica)
+export const SCHEMA_VERSION = 12;
 
 const atributoValue = z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX);
 
@@ -94,6 +96,8 @@ export const sheetSchema = z.object({
   granadas: granadasSchema,
   farmacos: farmacosSchema,
   municionEspecial: municionEspecialSchema,
+  // Solo disciplinas con nivel > 0, mismo criterio que granadas.
+  psionica: z.partialRecord(z.enum(DISCIPLINA_IDS), z.number().int().min(1).max(6)),
   // Recurso persistente del propio personaje (vitalidad.ts), no de una
   // instancia de equipo — por eso vive suelto aquí y no dentro de `recursos`.
   // El centinela 999 (ver defaultSheet/parseSheet) se recorta al máximo real
@@ -129,6 +133,7 @@ export function defaultSheet(): Sheet {
     granadas: defaultGranadas(),
     farmacos: defaultFarmacos(),
     municionEspecial: defaultMunicionEspecial(),
+    psionica: {},
     // Centinela: parseSheet lo recorta al máximo real (salud()) nada más
     // leer la ficha, así que una ficha nueva arranca a tope sin duplicar la
     // fórmula de vida/fatiga aquí.
@@ -245,6 +250,15 @@ export function parseSheet(raw: unknown): Sheet {
     if (cantidad > 0) municionEspecial[m.id] = cantidad;
   }
 
+  // Nivel 0 no se guarda; ids fuera del catálogo se descartan. Los requisitos
+  // entre disciplinas no se revalidan aquí: son gate de compra, no de lectura.
+  const rPsionica = (r.psionica ?? {}) as Record<string, unknown>;
+  const psionica: Partial<Record<DisciplinaId, number>> = {};
+  for (const id of DISCIPLINA_IDS) {
+    const nivel = clampInt(rPsionica[id], 0, 6, 0);
+    if (nivel > 0) psionica[id] = nivel;
+  }
+
   const rPrioridades = (r.prioridades ?? {}) as Record<string, unknown>;
   const prioridades = { ...base.prioridades };
   for (const c of CATEGORIAS_PRIORIDAD) {
@@ -288,6 +302,7 @@ export function parseSheet(raw: unknown): Sheet {
       granadas,
       farmacos,
       municionEspecial,
+      psionica,
       vidaActual: clampInt(r.vidaActual, 0, 999, 999),
       fatigaActual: clampInt(r.fatigaActual, 0, 999, 999),
     }),

@@ -22,6 +22,8 @@
 //   movimiento.ts      Movilidad Aérea equipada convertida en su propia tirada ("Volar")
 //   vitalidad.ts       vida/fatiga como recurso persistente de la ficha (vidaActual/fatigaActual)
 //   farmacos.ts        fármacos del pool (sheet.farmacos) convertidos en su propia acción "Usar"
+//   psionica.ts        forma de los poderes psiónicos y compra de disciplinas (N×3, requisitos)
+//   poderes.ts         evaluador: poder + nivel + opciones elegidas → valores concretos
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -45,6 +47,8 @@ export * from "./blindaje";
 export * from "./movimiento";
 export * from "./vitalidad";
 export * from "./farmacos";
+export * from "./psionica";
+export * from "./poderes";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";
@@ -53,3 +57,4 @@ export * from "../catalog/medicina";
 export * from "../catalog/herramientas";
 export * from "../catalog/armamentoPesado";
 export * from "../catalog/estados";
+export * from "../catalog/psionica";

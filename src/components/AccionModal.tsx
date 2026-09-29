@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   DIFICULTADES,
   CARAS_DADO,
@@ -168,6 +168,9 @@ export function AccionModal({
   titulo,
   subtitulo,
   nota,
+  cabecera,
+  bloqueo,
+  pieResultado,
   tirada,
   recursoActual,
   modBase,
@@ -195,6 +198,15 @@ export function AccionModal({
   // con resultado) — es información de la pieza, no del resultado de la
   // tirada.
   nota?: string;
+  // Controles propios de la tirada antes de las condiciones genéricas — hoy
+  // solo los poderes psiónicos (nivel empleado, forma y su ficha resuelta).
+  // Se oculta al tirar, como el resto de controles.
+  cabecera?: ReactNode;
+  // Motivo por el que no se puede tirar (poder sin fatiga suficiente): apaga
+  // Tirar y "Tirar otra vez" y se muestra junto al botón.
+  bloqueo?: string | null;
+  // Bloque extra bajo el resultado (sobrecarga psiónica).
+  pieResultado?: ReactNode;
   // Solo para el aviso de "no te llega" (avisoInsuficiente, acciones.ts) —
   // recomputado en cada render contra el `estado` en vivo del modal, así que
   // cambiar de modo o de toggle aquí dentro lo actualiza al instante, a
@@ -344,6 +356,8 @@ export function AccionModal({
             <p className="mt-2 font-sans text-[11px] leading-relaxed text-muted">{nota}</p>
           )}
 
+          {!resultado && !rodando && cabecera}
+
           {rodando && (
             <div className="mt-4 border-t border-border pt-3">
               <p
@@ -371,6 +385,7 @@ export function AccionModal({
           {resultado && !rodando && (
             <div className="mt-4 border-t border-border pt-3">
               <ContenidoResultado resultado={resultado} onTirarDanio={onTirarDanio} />
+              {pieResultado}
               {notaResultado && (
                 <p className="mt-3 border-l-2 border-accent pl-2 font-sans text-[12px] font-semibold leading-relaxed text-accent">
                   {notaResultado}
@@ -401,12 +416,14 @@ export function AccionModal({
                 <button
                   type="button"
                   onClick={dispararTirada}
-                  className="clip-chamfer-sm border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98]"
+                  disabled={Boolean(bloqueo)}
+                  className="clip-chamfer-sm border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98] disabled:border-border disabled:bg-elevated disabled:text-muted"
                 >
                   Tirar otra vez
                 </button>
               </div>
               {avisoRecurso && <AvisoRecurso texto={avisoRecurso} />}
+              {bloqueo && <AvisoRecurso texto={bloqueo} />}
             </div>
           )}
 
@@ -544,12 +561,14 @@ export function AccionModal({
             <button
               type="button"
               onClick={dispararTirada}
-              className="clip-chamfer-sm mt-3 w-full border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98]"
+              disabled={Boolean(bloqueo)}
+              className="clip-chamfer-sm mt-3 w-full border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98] disabled:border-border disabled:bg-elevated disabled:text-muted"
             >
               Tirar ({signo(totalPrevisto)})
             </button>
           )}
           {!resultado && !rodando && avisoRecurso && <AvisoRecurso texto={avisoRecurso} />}
+          {!resultado && !rodando && bloqueo && <AvisoRecurso texto={bloqueo} />}
         </div>
       </HudCard>
     </div>

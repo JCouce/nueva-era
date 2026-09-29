@@ -658,6 +658,12 @@ al preparar su modelado:
     +1 daño y +1 a esquiva y expulsión; Convergencia +2 daño).
   - Acciones y opciones de nivel no alcanzado: no aparecen en Acciones.
   - La app no cuenta acciones por turno: el tipo de acción es solo una etiqueta.
+- **Construcción (usuario, 2026-09-29):** al resolver un poder, las opciones elegidas
+  sustituyen lo que traen salvo las **notas, que se añaden** a las de la acción (la nota de
+  "Impulso Poderoso" no borra "ignora la cobertura ligera"). Los textos con "la mitad" de un
+  valor redondean hacia abajo, y también el daño de sobrecarga con éxito (nivel 3 → 1; nivel
+  1 → 0). Lo que tira el objetivo se muestra siempre tras tirar (plegado), no solo con éxito.
+  La inconsciencia por sobrecarga se avisa; el estado lo marca el máster en la consola.
 - **Máquinas sin ficha** (qué tira una IA/servidor que no es personaje para resistir un poder):
   pendiente de Murillo — es la pregunta 16.
 - Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de

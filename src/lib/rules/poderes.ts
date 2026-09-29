@@ -1,0 +1,476 @@
+// Evaluador de poderes psiónicos: una AccionPoder del catálogo + el nivel poseído
+// + las opciones elegidas → valores concretos. Puro: ni tira dados ni gasta
+// fatiga (la cadena de descuentos es aparte).
+//
+// Orden: opciones de cada eje en orden (su `cambia` SUSTITUYE, salvo las notas,
+// que se AÑADEN — si no, "Impulso Poderoso" borraría "ignora la cobertura
+// ligera") → fórmulas `Valor` a número → `suma` de las opciones → marcadores
+// `{campo}` de los textos.
+import type { AplicadoId } from "./atributos";
+import type { Sheet } from "./sheet";
+import type { Accion } from "./acciones";
+import { DISCIPLINAS, PSIONICA, type DisciplinaId } from "../catalog/psionica";
+import { umbralFatiga } from "./estados";
+import type {
+  AccionPoder,
+  BonoToggle,
+  Disciplina,
+  EjePoder,
+  Economia,
+  Grado,
+  ModificadorFatiga,
+  Nota,
+  Opcion,
+  ResolucionPoder,
+  Valor,
+} from "./psionica";
+
+// Lo que queda de un Valor tras evaluar: un número, o lo que la app no calcula
+// (referencias de dificultad que escribe el jugador, texto manual).
+export type ValorResuelto = number | Extract<Valor, { manual: string } | { ajusteMaster: true }>;
+
+export type ResolucionResuelta =
+  | { tipo: "sin_dado" }
+  | { tipo: "tirada"; aplicado: AplicadoId; habilidad: HabilidadDe; especialidad?: string; dificultad?: ValorResuelto; modificador?: number }
+  | { tipo: "enfrentada"; aplicado: AplicadoId; habilidad: HabilidadDe; especialidad?: string; modificador?: number }
+  | { tipo: "ataque"; aplicado: AplicadoId; habilidad: HabilidadDe; especialidad?: string; modificador?: number; danio: ValorResuelto; categoria: string };
+type HabilidadDe = Extract<ResolucionPoder, { tipo: "ataque" }>["habilidad"];
+
+export type PoderResuelto = {
+  id: string;
+  label: string;
+  nivelPoseido: number;
+  // Sin eje de nivel (poderes de coste fijo) cuenta el poseído, también para la sobrecarga.
+  nivelEmpleado: number;
+  elecciones: Record<string, string>; // eje → opción efectivamente aplicada
+  economia: Economia;
+  fatiga: ValorResuelto; // coste BASE, antes de la cadena de descuentos
+  alcance: ValorResuelto | null;
+  duracion: ValorResuelto | null;
+  objetivo: { tipo: NonNullable<AccionPoder["objetivo"]>["tipo"]; area?: ValorResuelto } | null;
+  desplazamiento: ValorResuelto | null;
+  resolucion: ResolucionResuelta;
+  objetivoTira: { que: string; dificultad?: ValorResuelto; grados?: Partial<Record<Grado, string>> }[];
+  resultados: Partial<
+    Record<
+      Grado,
+      {
+        texto: string;
+        estados: { estado: string; duracion: ValorResuelto; sobre: "objetivo" | "propio" }[];
+        danio?: { valor: ValorResuelto; categoria: string; sobre: "objetivo" | "propio" };
+      }
+    >
+  >;
+  danioPropio: { valor: ValorResuelto; categoria: string } | null;
+  multiplesObjetivos: { texto: string; fatigaPorObjetivo: ValorResuelto } | null;
+  notas: Nota[];
+  togglesPropios: BonoToggle[];
+  bonosEnOtrasTiradas: BonoToggle[];
+  movimientoOtorgado: { tipo: "levitar"; velocidad: ValorResuelto } | null;
+  manual: string[];
+};
+
+export type ContextoPoder = {
+  nivelPoseido: number;
+  elecciones?: Record<string, string>;
+  aplicados?: Partial<Record<AplicadoId, number>>; // para Valor.porAplicado
+};
+
+export function opcionesDisponibles(eje: EjePoder, nivelPoseido: number): Opcion[] {
+  return eje.opciones.filter((o) => (o.desdeNivel ?? 0) <= nivelPoseido);
+}
+
+// Elección efectiva de un eje: la pedida si está disponible; si no, el nivel
+// empleado más alto (= el poseído) o la primera opción.
+function opcionElegida(eje: EjePoder, nivelPoseido: number, pedida: string | undefined): Opcion | null {
+  const disponibles = opcionesDisponibles(eje, nivelPoseido);
+  if (disponibles.length === 0) return null;
+  return (
+    disponibles.find((o) => o.id === pedida) ??
+    (eje.tipo === "nivel_empleado" ? disponibles[disponibles.length - 1] : disponibles[0])
+  );
+}
+
+function nivelDeOpcion(o: Opcion): number {
+  const m = /^n(\d+)$/.exec(o.id);
+  if (!m) throw new Error(`Opción de nivel empleado con id no numérico: ${o.id}`);
+  return Number(m[1]);
+}
+
+// null = el personaje no tiene nivel suficiente para esta acción (no aparece).
+export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderResuelto | null {
+  const { nivelPoseido } = ctx;
+  if (nivelPoseido < accion.desdeNivel) return null;
+  if (accion.porObjetivo || accion.ajustesPorNivelPoseido.length > 0) {
+    throw new Error(`${accion.id}: porObjetivo/ajustesPorNivelPoseido aún sin soporte en el evaluador`);
+  }
+
+  // Copia de trabajo sin tipar fino: los `cambia` y `suma` son parches por ruta.
+  const w = structuredClone(accion) as unknown as Record<string, unknown>;
+  const elecciones: Record<string, string> = {};
+  const sumas: Record<string, number>[] = [];
+  let nivelEmpleado = nivelPoseido;
+
+  for (const eje of accion.ejes) {
+    const opcion = opcionElegida(eje, nivelPoseido, ctx.elecciones?.[eje.id]);
+    if (!opcion) continue;
+    elecciones[eje.id] = opcion.id;
+    if (eje.tipo === "nivel_empleado") nivelEmpleado = nivelDeOpcion(opcion);
+    for (const [campo, valor] of Object.entries(structuredClone(opcion.cambia))) {
+      if (campo === "notas") w.notas = [...(w.notas as Nota[]), ...(valor as Nota[])];
+      else if (campo === "resolucion") w.resolucion = { ...(w.resolucion as object), ...(valor as object) };
+      else w[campo] = valor;
+    }
+    if (opcion.suma) sumas.push(opcion.suma);
+  }
+
+  const evaluar = (v: unknown, donde: string): ValorResuelto => evaluarValor(v, donde, nivelEmpleado, ctx);
+  const opt = <T,>(v: T | null | undefined, f: (x: T) => ValorResuelto) => (v === null || v === undefined ? v : f(v));
+
+  if (w.economia === "tabla") throw new Error(`${accion.id}: economía "tabla" sin fila elegida`);
+  w.fatiga = evaluar(w.fatiga, "fatiga");
+  w.alcance = opt(w.alcance, (x) => evaluar(x, "alcance"));
+  w.duracion = opt(w.duracion, (x) => evaluar(x, "duracion"));
+  w.desplazamiento = opt(w.desplazamiento, (x) => evaluar(x, "desplazamiento"));
+  const objetivo = w.objetivo as Record<string, unknown> | null;
+  if (objetivo && "area" in objetivo) objetivo.area = evaluar(objetivo.area, "objetivo.area");
+  const res = w.resolucion as Record<string, unknown>;
+  if ("danio" in res) res.danio = evaluar(res.danio, "resolucion.danio");
+  if ("dificultad" in res) res.dificultad = evaluar(res.dificultad, "resolucion.dificultad");
+  for (const t of w.objetivoTira as Record<string, unknown>[]) {
+    if ("dificultad" in t) t.dificultad = evaluar(t.dificultad, "objetivoTira.dificultad");
+  }
+  for (const r of Object.values(w.resultados as Record<string, Record<string, unknown>>)) {
+    for (const e of r.estados as Record<string, unknown>[]) e.duracion = evaluar(e.duracion, "resultados.estados.duracion");
+    const d = r.danio as Record<string, unknown> | undefined;
+    if (d) d.valor = evaluar(d.valor, "resultados.danio");
+  }
+  const danioPropio = w.danioPropio as Record<string, unknown> | null;
+  if (danioPropio) danioPropio.valor = evaluar(danioPropio.valor, "danioPropio");
+  const multiples = w.multiplesObjetivos as Record<string, unknown> | null;
+  if (multiples) multiples.fatigaPorObjetivo = evaluar(multiples.fatigaPorObjetivo, "multiplesObjetivos");
+  const movimiento = w.movimientoOtorgado as Record<string, unknown> | null;
+  if (movimiento) movimiento.velocidad = evaluar(movimiento.velocidad, "movimientoOtorgado");
+
+  for (const suma of sumas) for (const [ruta, n] of Object.entries(suma)) sumarEnRuta(w, ruta.split("."), n, accion.id, ruta);
+
+  const marcadores: Record<string, unknown> = {
+    fatiga: w.fatiga,
+    alcance: w.alcance,
+    desplazamiento: w.desplazamiento,
+    danio: res.danio,
+    area: objetivo?.area,
+    nivel: nivelEmpleado,
+    nivelPoseido,
+  };
+  const rellenar = (s: string) => rellenarMarcadores(s, marcadores, accion.id);
+  for (const t of w.objetivoTira as Record<string, unknown>[]) {
+    t.que = rellenar(t.que as string);
+    const grados = t.grados as Record<string, string> | undefined;
+    if (grados) for (const g of Object.keys(grados)) grados[g] = rellenar(grados[g]);
+  }
+  for (const r of Object.values(w.resultados as Record<string, Record<string, unknown>>)) r.texto = rellenar(r.texto as string);
+  for (const n of w.notas as Nota[]) n.texto = rellenar(n.texto);
+
+  return {
+    id: accion.id,
+    label: accion.label,
+    nivelPoseido,
+    nivelEmpleado,
+    elecciones,
+    economia: w.economia as Economia,
+    fatiga: w.fatiga as ValorResuelto,
+    alcance: w.alcance as ValorResuelto | null,
+    duracion: w.duracion as ValorResuelto | null,
+    objetivo: w.objetivo as PoderResuelto["objetivo"],
+    desplazamiento: w.desplazamiento as ValorResuelto | null,
+    resolucion: w.resolucion as ResolucionResuelta,
+    objetivoTira: w.objetivoTira as PoderResuelto["objetivoTira"],
+    resultados: w.resultados as PoderResuelto["resultados"],
+    danioPropio: w.danioPropio as PoderResuelto["danioPropio"],
+    multiplesObjetivos: w.multiplesObjetivos as PoderResuelto["multiplesObjetivos"],
+    notas: w.notas as Nota[],
+    togglesPropios: accion.togglesPropios,
+    bonosEnOtrasTiradas: accion.bonosEnOtrasTiradas,
+    movimientoOtorgado: w.movimientoOtorgado as PoderResuelto["movimientoOtorgado"],
+    manual: accion.manual,
+  };
+}
+
+function evaluarValor(v: unknown, donde: string, nivelEmpleado: number, ctx: ContextoPoder): ValorResuelto {
+  if (v === "tabla") throw new Error(`"${donde}" sigue en "tabla": ninguna opción elegida lo fija`);
+  if (typeof v === "number") return v;
+  const o = v as Record<string, unknown>;
+  if ("manual" in o || "ajusteMaster" in o) return v as ValorResuelto;
+  const f = v as Extract<Valor, { base: number }>;
+  let total = f.base + (f.porNivel ?? 0) * nivelEmpleado + (f.porNivelPoseido ?? 0) * ctx.nivelPoseido;
+  if (f.porAplicado) total += f.porAplicado.valor * (ctx.aplicados?.[f.porAplicado.aplicado] ?? 0);
+  return total;
+}
+
+// "objetivoTira.*.dificultad" recorre el array y salta las entradas sin ese
+// campo (la esquiva de Convergencia no tiene dificultad); un índice concreto o
+// un campo que falta en ruta explícita es un error del catálogo.
+function sumarEnRuta(nodo: unknown, ruta: string[], n: number, accionId: string, rutaEntera: string, comodin = false): void {
+  const [cabeza, ...resto] = ruta;
+  if (cabeza === "*") {
+    if (!Array.isArray(nodo)) throw new Error(`${accionId}: "${rutaEntera}" no recorre un array`);
+    for (const x of nodo) sumarEnRuta(x, resto, n, accionId, rutaEntera, true);
+    return;
+  }
+  const obj = nodo as Record<string, unknown>;
+  if (!(cabeza in obj)) {
+    if (comodin) return;
+    throw new Error(`${accionId}: "${rutaEntera}" no existe`);
+  }
+  if (resto.length > 0) return sumarEnRuta(obj[cabeza], resto, n, accionId, rutaEntera, comodin);
+  if (typeof obj[cabeza] !== "number") throw new Error(`${accionId}: "${rutaEntera}" no es numérico, no se le puede sumar`);
+  obj[cabeza] = (obj[cabeza] as number) + n;
+}
+
+function rellenarMarcadores(texto: string, valores: Record<string, unknown>, accionId: string): string {
+  return texto.replace(/\{(\w+)(\/2)?\}/g, (_, campo: string, mitad?: string) => {
+    const v = valores[campo];
+    if (typeof v !== "number") throw new Error(`${accionId}: marcador {${campo}} sin valor numérico`);
+    return String(mitad ? Math.floor(v / 2) : v);
+  });
+}
+
+// ── Acciones de poder de una ficha ────────────────────────────────
+
+export type PoderDisponible = {
+  disciplina: Disciplina;
+  accion: AccionPoder;
+  nivelPoseido: number;
+  porDefecto: PoderResuelto; // nivel empleado = poseído, primera opción de cada eje
+};
+
+// Mismo gate que el equipo (generaAccionPropia en combate.ts): solo se genera
+// lo que declara en su MotorMetadata una acción accion_sin_equipo construida.
+export function generaAccionDePoder(accion: AccionPoder): boolean {
+  return accion.motor.some((m) => m.tipo === "accion" && m.mecanismo === "accion_sin_equipo" && m.estado === "construido");
+}
+
+export function accionesDePsionica(sheet: Sheet): PoderDisponible[] {
+  return DISCIPLINAS.flatMap((disciplina) => {
+    const nivelPoseido = sheet.psionica[disciplina.id as DisciplinaId] ?? 0;
+    if (nivelPoseido <= 0) return [];
+    return disciplina.acciones.flatMap((accion): PoderDisponible[] => {
+      if (!generaAccionDePoder(accion)) return [];
+      const porDefecto = resolverPoder(accion, { nivelPoseido });
+      return porDefecto ? [{ disciplina, accion, nivelPoseido, porDefecto }] : [];
+    });
+  });
+}
+
+const ETIQUETA_ECONOMIA: Record<Exclude<Economia, { tiempo: string }>, string> = {
+  gratuita: "Gratuita",
+  simple: "Simple",
+  estandar: "Estándar",
+  compleja: "Compleja",
+  reaccion: "Reacción",
+};
+
+export function etiquetaEconomia(e: Economia): string {
+  return typeof e === "string" ? ETIQUETA_ECONOMIA[e] : e.tiempo;
+}
+
+export function textoValor(v: ValorResuelto): string {
+  if (typeof v === "number") return String(v);
+  return "manual" in v ? v.manual : "a criterio del máster";
+}
+
+// ── Poder → tirada ────────────────────────────────────────────────
+// Un poder con dado se tira por el mismo camino que cualquier Accion (modal,
+// dificultad, desglose, daño). Sin dado no hay tirada: null.
+
+function capitalizar(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// Etiqueta con la forma elegida (si el eje de forma cambia algo) y el nivel empleado.
+export function etiquetaPoder(accion: AccionPoder, p: PoderResuelto): string {
+  const forma = accion.ejes
+    .filter((e) => e.tipo === "opcion")
+    .map((e) => e.opciones.find((o) => o.id === p.elecciones[e.id]))
+    .find((o) => o && Object.keys(o.cambia).length > 0);
+  return `${forma?.label ?? accion.label} (nivel ${p.nivelEmpleado})`;
+}
+
+// Lo que se enseña tras tirar un poder: el resultado propio por grado y lo que
+// tira el objetivo (solo texto; la app no tira por él).
+export type DetallePoder = {
+  resultados: Partial<Record<Grado, string>>;
+  objetivoTira: { que: string; dificultad?: string; grados?: Partial<Record<Grado, string>> }[];
+};
+
+export function gradoDeTirada(r: { exito: boolean | null; critico: boolean }): Grado | null {
+  if (r.exito === null) return null;
+  if (r.exito) return r.critico ? "critico" : "exito";
+  return r.critico ? "fracasoCritico" : "fracaso";
+}
+
+// Sin texto propio para un crítico, vale el del grado normal (los críticos no
+// tienen efecto extra si la prosa no lo dice).
+export function textoDeGrado(textos: Partial<Record<Grado, string>>, grado: Grado): string | null {
+  const respaldo: Partial<Record<Grado, Grado>> = { critico: "exito", fracasoCritico: "fracaso" };
+  return textos[grado] ?? (respaldo[grado] ? (textos[respaldo[grado]!] ?? null) : null);
+}
+
+export function tiradaDePoder(accion: AccionPoder, p: PoderResuelto): Accion | null {
+  const r = p.resolucion;
+  if (r.tipo === "sin_dado") return null;
+  const resultados: DetallePoder["resultados"] = {};
+  for (const [g, res] of Object.entries(p.resultados)) resultados[g as Grado] = res.texto;
+  const notasDanio = p.notas.filter((n) => n.lugar === "danio");
+  const tirada: Accion = {
+    id: accion.id,
+    label: etiquetaPoder(accion, p),
+    grupo: "Psiónica",
+    aplicado: r.aplicado,
+    // Habilidad alternativa ("biociencia o actitud"): el selector llega con la
+    // primera disciplina que la use; hasta entonces, la primera de la lista.
+    habilidad: Array.isArray(r.habilidad) ? r.habilidad[0] : r.habilidad,
+    poder: {
+      resultados,
+      objetivoTira: p.objetivoTira.map((t) => ({
+        que: t.que,
+        dificultad: t.dificultad === undefined ? undefined : textoValor(t.dificultad),
+        grados: t.grados,
+      })),
+    },
+    ...(notasDanio.length > 0 && { efectos: notasDanio.map((n) => ({ fuente: accion.label, texto: n.texto })) }),
+  };
+  if (r.tipo === "ataque") {
+    tirada.ataque = {
+      modos: [
+        {
+          id: "poder",
+          danio: typeof r.danio === "number" ? r.danio : null,
+          formulaDanio: typeof r.danio === "number" ? null : textoValor(r.danio),
+          categoriaDanio: capitalizar(r.categoria),
+        },
+      ],
+    };
+  }
+  return tirada;
+}
+
+// La especialidad de un poder (Física en Singularidad) se aplica sola si el
+// personaje la tiene en esa habilidad — no es una elección del jugador.
+export function enEspecialidadDePoder(sheet: Sheet, p: PoderResuelto): boolean {
+  const r = p.resolucion;
+  if (r.tipo === "sin_dado" || !r.especialidad) return false;
+  const habilidad = Array.isArray(r.habilidad) ? r.habilidad[0] : r.habilidad;
+  const buscada = r.especialidad.toLocaleLowerCase("es");
+  return sheet.habilidades[habilidad].especialidades.some((e) => e.toLocaleLowerCase("es") === buscada);
+}
+
+// ── Coste de fatiga: cadena semi-global ───────────────────────────
+// coste base → descuentos por nivel (suma) → ×2 Munición Supresora (multiplica)
+// → Xovromium (ignora_primero: −1) → mínimo (0 salvo que la prosa diga 1).
+// El pago con cargas (Derivación Psiónica) iría el último y aún no existe.
+
+const ORDEN_OP: Record<ModificadorFatiga["op"], number> = {
+  suma: 0,
+  multiplica: 1,
+  ignora_primero: 2,
+  minimo: 3,
+  paga_con_recurso: 4,
+};
+
+export type CosteFatiga = {
+  total: number;
+  desglose: { etiqueta: string; valor: string }[];
+};
+
+function aplicaModificador(
+  m: ModificadorFatiga,
+  disciplina: Disciplina,
+  accionId: string,
+  p: PoderResuelto,
+  toggles: ReadonlySet<string>,
+): boolean {
+  const a = m.alcance;
+  if (a.rama && a.rama !== disciplina.rama) return false;
+  if (a.disciplina && a.disciplina !== disciplina.id) return false;
+  if (a.accion && a.accion !== accionId) return false;
+  if (a.opcion && p.elecciones[a.opcion.eje] !== a.opcion.opcion) return false;
+  if (a.nivelEmpleadoMax !== undefined && p.nivelEmpleado > a.nivelEmpleadoMax) return false;
+  if (a.nivelEmpleadoMin !== undefined && p.nivelEmpleado < a.nivelEmpleadoMin) return false;
+  if (m.desdeNivelPoseido !== undefined && p.nivelPoseido < m.desdeNivelPoseido) return false;
+  if (m.condicion && !toggles.has(m.condicion.toggle)) return false;
+  return true;
+}
+
+// Coste que se descuenta de la ficha al usar el poder. `externos` = fuentes de
+// fuera de la disciplina (Munición Supresora, Xovromium...), que se enchufarán
+// después del piloto; `toggles` = condiciones que declara el jugador.
+export function costeFatiga(
+  disciplina: Disciplina,
+  accionId: string,
+  p: PoderResuelto,
+  opciones: { externos?: ModificadorFatiga[]; toggles?: ReadonlySet<string> } = {},
+): CosteFatiga {
+  if (typeof p.fatiga !== "number") {
+    throw new Error(`${accionId}: fatiga no numérica ("${textoValor(p.fatiga)}"), se paga a mano`);
+  }
+  const toggles = opciones.toggles ?? new Set<string>();
+  const mods = [...disciplina.modificadoresFatiga, ...(opciones.externos ?? [])]
+    .filter((m) => aplicaModificador(m, disciplina, accionId, p, toggles))
+    .sort((a, b) => ORDEN_OP[a.op] - ORDEN_OP[b.op]);
+
+  let total = p.fatiga;
+  let minimo = 0;
+  const desglose: CosteFatiga["desglose"] = [{ etiqueta: "Coste del poder", valor: String(p.fatiga) }];
+  for (const m of mods) {
+    if (m.op === "paga_con_recurso") throw new Error(`${m.fuente}: pago de fatiga con recurso aún sin construir`);
+    const n = typeof m.valor === "number" ? m.valor : NaN;
+    if (m.op === "suma") {
+      total += n;
+      desglose.push({ etiqueta: m.fuente, valor: n >= 0 ? `+${n}` : String(n) });
+    } else if (m.op === "multiplica") {
+      total *= n;
+      desglose.push({ etiqueta: m.fuente, valor: `×${n}` });
+    } else if (m.op === "ignora_primero") {
+      total -= 1;
+      desglose.push({ etiqueta: m.fuente, valor: "−1" });
+    } else {
+      minimo = Math.max(minimo, n);
+    }
+  }
+  const final = Math.max(minimo, total);
+  if (final !== total) desglose.push({ etiqueta: `Mínimo ${minimo}`, valor: `→ ${final}` });
+  return { total: final, desglose };
+}
+
+// null = puede pagarlo. Sin fatiga suficiente no se deja confirmar (salvo los
+// poderes con fatiga temporal, Proeza, que aún no existen).
+export function bloqueoPorFatiga(accion: AccionPoder, coste: number, fatigaActual: number): string | null {
+  if (accion.permiteFatigaTemporal || coste <= fatigaActual) return null;
+  return `Te faltan ${coste - fatigaActual} de fatiga (tienes ${fatigaActual}, cuesta ${coste}).`;
+}
+
+// ── Sobrecarga ────────────────────────────────────────────────────
+// Salta al CRUZAR el umbral de exhausto con un gasto psiónico (si ya estabas
+// exhausto no vuelve a saltar): inconsciencia automática y salvación de
+// Fortaleza 5 + nivel que solo decide el daño letal no absorbible.
+
+export function cruzaSobrecarga(fatigaAntes: number, fatigaDespues: number, fatigaMax: number): boolean {
+  return umbralFatiga(fatigaAntes, fatigaMax) !== "exhausto" && umbralFatiga(fatigaDespues, fatigaMax) === "exhausto";
+}
+
+// `nivel` = nivel empleado; en poderes sin eje de nivel, el poseído (que es lo
+// que PoderResuelto.nivelEmpleado ya trae en ese caso).
+export function dificultadSobrecarga(nivel: number): number {
+  const v = evaluarValor(PSIONICA.sobrecarga.salvacion.dificultad, "sobrecarga.dificultad", nivel, { nivelPoseido: nivel });
+  if (typeof v !== "number") throw new Error("Dificultad de sobrecarga no numérica");
+  return v;
+}
+
+// La mitad (éxito) redondea hacia abajo, como el resto de "la mitad" de la psiónica.
+export function danioSobrecarga(nivel: number, grado: Grado): number {
+  const v = evaluarValor(PSIONICA.sobrecarga.danio.valor, "sobrecarga.danio", nivel, { nivelPoseido: nivel });
+  if (typeof v !== "number") throw new Error("Daño de sobrecarga no numérico");
+  return Math.floor(v * PSIONICA.sobrecarga.multiplicadorPorGrado[grado]);
+}
