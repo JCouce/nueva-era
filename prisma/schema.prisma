@@ -172,6 +172,26 @@ model NpcTemplate {
   combatientes Combatiente[]
 }
 
+// Preguntas abiertas al diseñador (Murillo), respondidas desde /preguntas —
+// página pública a propósito (decisión del usuario 2026-09-29: sin login ni
+// código, "nos da igual que alguien entre"). El `id` lo fija el seed
+// (scripts/seed-preguntas.mjs) para poder re-sembrar sin duplicar ni pisar
+// respuestas; el contenido sale de cada tanda del workflow modelar-area.
+model Pregunta {
+  id           String    @id
+  area         String
+  grupo        String
+  orden        Int
+  texto        String
+  contexto     String?
+  respuesta    String    @default("")
+  respondidaAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([area, orden])
+}
+
 // --- Modelos del adapter de Auth.js (para Google OAuth futuro) ---
 
 model Account {

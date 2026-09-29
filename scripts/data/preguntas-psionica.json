@@ -1,0 +1,82 @@
+{
+  "area": "psionica",
+  "grupos": [
+    {
+      "grupo": "Resonancia",
+      "preguntas": [
+        "Nivel 1 de la tabla: «en alcance local se puede utilizar el poder de inducción». ¿Es un requisito para usar Inducción o un permiso extra?",
+        "Barreras semánticas o biológicas: ¿cómo influye el nivel de Resonancia en la prueba?",
+        "Códigos abiertos frente a encriptados (al resonar con máquinas): ¿qué cambia en la prueba?",
+        "Nivel 4: «combinar la alerta por resonancia con la normal, mejor tirada +2» y «ventaja en tiradas de Alerta». ¿Son lo mismo o se acumulan?",
+        "Sincronía, mensaje agresivo: ¿qué pasa si el psiónico falla o falla crítico? ¿Se puede usar contra sintéticos?",
+        "Sincronía, prueba de barrera idiomática: si falla, ¿el mensaje llega distorsionado o no llega?",
+        "Rastreo: «la duración es el doble / 10 veces más». ¿Sobre qué tiempo base? ¿Puede el objetivo resistirse?",
+        "Leer Mente: el objetivo que salva con crítico «tiene derecho a una tirada para averiguar que le han intentado leer la mente». ¿Qué tira y contra qué dificultad?",
+        "Alerta, forma activa: ¿qué tipo de acción es y cuánto dura?",
+        "Vínculo: «1 km² por punto de poder», ¿qué es un punto de poder? ¿A cuántos aliados se puede vincular y tienen que aceptar? ¿El +1 a salvaciones de voluntad lo recibe también el psiónico?"
+      ]
+    },
+    {
+      "grupo": "Inducción",
+      "preguntas": [
+        "Comando nivel 2 (orden como reacción para evitar un ataque): ¿cuesta 1 de fatiga y usa la misma prueba base?",
+        "Comando, acciones extremas: ¿qué salvación repite el objetivo?",
+        "Hipomanía: ¿se puede usar sobre aliados? Si es así, ¿los resultados se leen desde el objetivo o desde el psiónico?",
+        "Supresión: el nivel 2 dice «10 minutos por nivel» y el nivel 4 «30 minutos». ¿Cuál manda?",
+        "Supresión, el uso para dar +2 a una salvación: ¿también tira contra dificultad 10 y cuesta 1 de fatiga?",
+        "Estabilización nivel 4, «omite los penalizadores de daño y fatiga»: ¿durante cuánto tiempo?",
+        "Reconfiguración Mnemónica: ¿se resuelve con la prueba base de Inducción? «Acoplamiento prolongado»: ¿dura varios turnos o basta la acción compleja?"
+      ]
+    },
+    {
+      "grupo": "Hipercognición",
+      "preguntas": [
+        "¿Hipercognición tiene nivel 6? ¿Los −1 de dificultad de los niveles pares se acumulan (nivel 4 = −2)?",
+        "Sondeo No-Local: «mantener la visión cada turno gasta la misma fatiga» frente a «no pudiendo prolongarse más en el tiempo». ¿Cuál vale?",
+        "Sondeo No-Local: si el tramo local ya es acción estándar al llegar a nivel 3, ¿el nivel 5 lo baja más (a simple)?",
+        "Precognición: «tiradas defensivas», ¿incluye las salvaciones? ¿La burbuja se mueve con el psiónico? ¿Cuánto duran el −2 y la reacción perdida del fracaso crítico?"
+      ]
+    },
+    {
+      "grupo": "Traslación",
+      "preguntas": [
+        "Anclaje con varios objetivos: ¿la carga máxima es total o por objetivo? ¿Oponerse a un intento de escape le cuesta acción o fatiga al psiónico? El nivel 4 (anclaje como acción simple), ¿vale también con varios objetivos?",
+        "Trasladar: para seguir controlando al objetivo, ¿se repite Trasladar o Anclaje? ¿Tira algo el psiónico?",
+        "Proeza: ¿qué tirada la resuelve? ¿Se puede pasar del 200% de carga?",
+        "Sensor: «si la forma de lo percibido no es poco habitual» parece errata («es poco habitual»). ¿Qué habilidad se tira para identificar lo percibido?",
+        "Proyección: estampar un objeto sin apuntar a un blanco, ¿necesita la tirada de Puntería?"
+      ]
+    },
+    {
+      "grupo": "Contención",
+      "preguntas": [
+        "No hay texto para el nivel 2 personal. ¿Se puede emplear a nivel 2? ¿Con qué valores?",
+        "La fatiga por nivel queda 1 / 2 / 3 / 3 / 4 (niveles 1, 3, 4, 5, 6). ¿El 3 del nivel 5 es correcto?",
+        "¿Qué tipos de daño cubre la absorción? ¿Se suma a la armadura?",
+        "«Si se mantiene quieto ante un ataque, otorga 3 puntos de absorción»: ¿la absorción pasa a ese valor o se suma a la normal?",
+        "Ir contra el ataque: ¿consume la reacción? ¿Cuesta fatiga? ¿Qué tipo de daño recibe el atacante?",
+        "Sumarse a una contención ampliada de otro psiónico: ¿qué nivel mínimo hace falta y qué acción es?",
+        "¿Los aliados protegidos que no son psiónicos pueden ir contra el ataque? ¿Con qué coste?",
+        "«No se apila con otras contenciones psiónicas»: ¿tampoco con la contención personal del propio aliado?"
+      ]
+    },
+    {
+      "grupo": "Singularidad",
+      "preguntas": [
+        "Versión Poderosa: ¿cuesta +1 de fatiga plano o +1 por nivel empleado?",
+        "Impulso: ¿qué niveles de cobertura cuentan como «cobertura ligera»?",
+        "Expansión: ¿qué dificultad tiene acertar a la casilla? ¿El daño decae con la distancia al centro? ¿Afecta al psiónico y a sus aliados si están dentro del área?",
+        "Expansión Poderosa da +1 de daño y las otras versiones Poderosas +2. ¿Es errata?",
+        "Convergencia: ¿«armadura de plasma» es la Malla Plasmática? Si el objetivo no lleva armadura, ¿el fuego del fracaso es 0? ¿La pérdida de absorción del blindaje es permanente?",
+        "Convergencia: ¿el fracaso crítico del objetivo incluye también el fuego del fracaso? Si el objetivo saca crítico en su prueba, ¿recibe igualmente el daño base?"
+      ]
+    },
+    {
+      "grupo": "Sobrecarga (toda la psiónica)",
+      "preguntas": [
+        "«Tantos niveles de daño letal no absorbibles como el propio poder»: ¿el daño es igual al nivel empleado o a la fatiga gastada?",
+        "¿La inconsciencia al sobrepasar exhausto es automática aunque se supere la salvación de Fortaleza?"
+      ]
+    }
+  ]
+}

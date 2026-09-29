@@ -46,6 +46,7 @@ vacías porque el sistema aún no los define.
 | `npm run db:studio` | Prisma Studio. |
 | `npm run make-master -- <email>` | Asciende un usuario a MASTER. |
 | `npm run seed-npcs` | Crea/actualiza NPCs de ejemplo (`NpcTemplate`) — cómo crear uno, ver "NPCs" más abajo. |
+| `npm run seed-preguntas -- <json>` | Siembra/actualiza las preguntas al diseñador de `/preguntas` (página pública, sin login) desde `scripts/data/*.json`. Nunca pisa respuestas. En prod: `DATABASE_URL=<Neon> npm run seed-preguntas -- <json>`. |
 
 ## Arquitectura y archivos clave
 ```

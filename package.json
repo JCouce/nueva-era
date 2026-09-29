@@ -15,7 +15,8 @@
     "postinstall": "prisma generate",
     "make-master": "node scripts/make-master.mjs",
     "seed-npcs": "node scripts/seed-npcs.mjs",
-    "predev": "docker compose up -d --wait && prisma migrate deploy"
+    "predev": "docker compose up -d --wait && prisma migrate deploy",
+    "seed-preguntas": "node scripts/seed-preguntas.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

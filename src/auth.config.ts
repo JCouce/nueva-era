@@ -9,6 +9,8 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
+      // Pública a propósito: la rellena el diseñador sin cuenta (ver model Pregunta).
+      if (nextUrl.pathname.startsWith("/preguntas")) return true;
       const isOnLogin = nextUrl.pathname.startsWith("/login");
       if (isOnLogin) {
         if (isLoggedIn) {
