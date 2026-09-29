@@ -22,8 +22,11 @@ todo elemento nuevo tiene que responder antes de darse por transcrito.
 
 Hoy la ficha cubre identidad, atributos (6 básicos + 6 aplicados derivados),
 habilidades con especialidades, salud, movimiento y el catálogo de equipo entero
-(comprar, equipar, ranuras). Dotes, poderes psiónicos y aumentos siguen como tabs
-vacías porque el sistema aún no los define.
+(comprar, equipar, ranuras). Psiónica: las 6 disciplinas se compran (también en el editor
+de NPC) y los poderes de Singularidad se usan desde Acciones con su coste de fatiga y
+sobrecarga; el resto de disciplinas llega poder a poder (`docs/prompt-construir-psionica.md`,
+estado en `docs/tareas.md`). Dotes y aumentos siguen como tabs vacías porque el sistema aún
+no los define.
 
 ## Stack
 - **Next.js 16** — App Router, React Server Components + Server Actions. **Sin tRPC**:
@@ -66,7 +69,9 @@ src/
 │  │  ├─ condiciones.ts #   controles del modal de una tirada (toggle/opción/contador) y sus desgloses —
 │  │  │                 #   ver docs/modificadores-tiradas.md antes de añadir un modificador nuevo
 │  │  ├─ combate.ts     #   equipo → tiradas de ataque concretas (una por arma, con sus condiciones)
-│  │  └─ *.test.ts      #   ~170 tests. Al tocar una fórmula, se toca su test.
+│  │  ├─ psionica.ts    #   forma de los poderes (modelo v2) y compra de disciplinas (N×3, requisitos)
+│  │  ├─ poderes.ts     #   poder + nivel + opciones → valores, tirada, coste de fatiga y sobrecarga
+│  │  └─ *.test.ts      #   ~700 tests. Al tocar una fórmula, se toca su test.
 │  ├─ validation.ts     # Zod de entrada de la app (login, register, character). NO la ficha.
 │  └─ auth-helpers.ts   # requireUser() y canEditCharacter() — regla central de permisos.
 ├─ generated/prisma/    # Cliente Prisma generado (gitignored, lo crea `prisma generate`).

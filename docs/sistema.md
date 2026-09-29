@@ -664,6 +664,7 @@ al preparar su modelado:
   valor redondean hacia abajo, y también el daño de sobrecarga con éxito (nivel 3 → 1; nivel
   1 → 0). Lo que tira el objetivo se muestra siempre tras tirar (plegado), no solo con éxito.
   La inconsciencia por sobrecarga se avisa; el estado lo marca el máster en la consola.
+  Expansión fallada deja tirar daño (base, sin bono por éxitos): se desvía y estalla igual.
 - **Máquinas sin ficha** (qué tira una IA/servidor que no es personaje para resistir un poder):
   pendiente de Murillo — es la pregunta 16.
 - Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de

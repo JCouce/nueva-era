@@ -167,3 +167,20 @@ describe("v11 → v12: niveles de disciplina psiónica", () => {
     assert.deepEqual(s.psionica, { traslacion: 6, singularidad: 2 });
   });
 });
+
+describe("psiónica libre (NPC): setNivelDisciplina sin pool", () => {
+  test("sin letra ni pool se puede subir hasta 6 y bajar a 0", () => {
+    let s = setNivelDisciplina(defaultSheet(), "traslacion", 6);
+    assert.equal(nivelDisciplina(s, "traslacion"), 6);
+    s = setNivelDisciplina(s, "traslacion", 0);
+    assert.equal(nivelDisciplina(s, "traslacion"), 0);
+  });
+
+  test("mantiene los requisitos en las dos direcciones", () => {
+    let s = setNivelDisciplina(defaultSheet(), "singularidad", 3);
+    assert.equal(nivelDisciplina(s, "singularidad"), 0);
+    s = setNivelDisciplina(setNivelDisciplina(s, "traslacion", 2), "singularidad", 3);
+    assert.equal(nivelDisciplina(s, "singularidad"), 3);
+    assert.equal(nivelDisciplina(setNivelDisciplina(s, "traslacion", 1), "traslacion"), 2);
+  });
+});

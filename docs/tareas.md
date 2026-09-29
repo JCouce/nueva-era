@@ -1230,7 +1230,9 @@ por grado con respaldo del crítico al normal, `objetivoTira` con dificultad res
 en `ContenidoResultado` — "El objetivo" plegado y siempre visible; notas de daño como
 `efectos`. Paso 8 hecho: sobrecarga (`cruzaSobrecarga` al cruzar a exhausto, salvación de
 Fortaleza tirada por la app contra 5 + nivel, daño letal no absorbible restado de la vida;
-la inconsciencia se avisa, la marca el máster). **Piloto cerrado.** Siguiente, disciplina a
+la inconsciencia se avisa, la marca el máster). **Piloto cerrado.** Psiónica también en
+el editor de NPC (pestaña libre 0-6 con requisitos, `setDisciplinaNpcAction`); el generador
+aleatorio y la métrica "Poder" no la tienen, a propósito. Siguiente, disciplina a
 disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,
 Derivación), habilidad alternativa con selector, ventaja, Levitar, Duelo de Métrica, fatiga
 temporal (Proeza).

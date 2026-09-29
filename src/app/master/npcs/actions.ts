@@ -46,6 +46,9 @@ import {
   type HabilidadId,
   type PiezaEquipada,
   type MaterialTier,
+  setNivelDisciplina,
+  esDisciplinaId,
+  type DisciplinaId,
 } from "@/lib/rules";
 
 export type NpcResult = { ok: true; sheet: Sheet } | { ok: false; error: string };
@@ -199,6 +202,19 @@ export async function setAtributoNpcAction(
   if ("error" in ctx) return { ok: false, error: ctx.error };
   const v = clampInt(value, ATRIBUTO_MIN, ATRIBUTO_MAX, ctx.sheet.atributos[atributoId]);
   return persist(npcId, { ...ctx.sheet, atributos: { ...ctx.sheet.atributos, [atributoId]: v } });
+}
+
+// Psiónica libre: sin pool ni XP, 0-6 en las dos direcciones, pero con los
+// requisitos entre disciplinas (son regla del sistema, no de creación).
+export async function setDisciplinaNpcAction(
+  npcId: string,
+  disciplinaId: DisciplinaId,
+  value: number,
+): Promise<NpcResult> {
+  if (!esDisciplinaId(disciplinaId)) return { ok: false, error: "Disciplina desconocida" };
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(npcId, setNivelDisciplina(ctx.sheet, disciplinaId, value));
 }
 
 export async function setHabilidadNpcAction(

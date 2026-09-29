@@ -1,0 +1,205 @@
+# Pruebas de psiónica (piloto Singularidad)
+
+Recorrido manual de lo construido en el piloto: un flujo por cada acción de poder
+(Impulso, Expansión, Convergencia) y cuatro flujos comunes (compra, fatiga, sobrecarga y
+XP).
+
+Los números esperados valen para un personaje recién creado sin tocar: atributos a 0,
+sin especie, **8 de vida y 8 de fatiga**, y tirada de poder **−1** (Perspicacia +0,
+Tecnociencia sin entrenar −1).
+
+Marca `[x]` lo que pasa. Si algo falla, anota el texto exacto de lo que sale.
+
+## Preparación
+
+- Dev server en marcha y sesión de **máster**.
+- Crea un personaje llamado `QA-PSIONICA` en `/characters`.
+- En **Resumen**, pon la letra **A** en **Psiónica**. Son 18 puntos.
+- Haz primero el flujo A, que deja el personaje con **Traslación 2 y Singularidad 2**: el
+  resto de flujos parten de ahí.
+- **Antes de cada flujo de acción**, pon la fatiga a 8/8 con el **+** de Fatiga en
+  **Recursos**.
+
+Al terminar, borra `QA-PSIONICA` desde `/characters`.
+
+---
+
+## A. Compra de disciplinas (pestaña Psiónica)
+
+- [ ] **A.1 Requisito que bloquea la compra.** Mira la fila de Singularidad.
+  → Pone "requiere Traslación 2" en rojo y su **+** está apagado.
+- [ ] **A.2 Coste N×3.** Sube Traslación a 2.
+  → La cabecera marca `9 / 18 (letra A)`. El + de Singularidad se enciende.
+- [ ] **A.3 Compra con requisito cumplido.** Sube Singularidad a 1.
+  → Cabecera `6 / 18`.
+- [ ] **A.4 No bajar lo que otra disciplina necesita.** Mira Traslación.
+  → Pone "mínimo 2: otra disciplina la requiere" y su **−** está apagado.
+- [ ] **A.5 Sin puntos no se sube.** Mira el + de Traslación.
+  → Apagado: el siguiente nivel cuesta 9 y quedan 6.
+- [ ] **A.6 Aviso de disciplina sin poderes.** Mira la tarjeta de Traslación.
+  → Pone "Sus poderes aún no están en la app…".
+- [ ] **A.7 Nivel 2.** Sube Singularidad a 2.
+  → Cabecera `0 / 18`.
+- [ ] **A.8 Se guarda.** Recarga la página y vuelve a Psiónica.
+  → Traslación 2, Singularidad 2 y `0 / 18`.
+- [ ] **A.9 Sección Psiónica en Acciones.** Abre Acciones.
+  → Entre Ataques y Defensa sale **Psiónica**, con el subtítulo "Singularidad · nivel 2".
+  Debajo, tres filas. Cada una lleva `PSP 0 + Tecnociencia -1` y el total `-1`, el mismo
+  que el botón Tirar del modal, más este resumen:
+  - Impulso: `Estándar · 2 fatiga · 40 m · daño 11`
+  - Expansión: `Estándar · 2 fatiga · 40 m · daño 15`
+  - Convergencia: `Estándar · 2 fatiga · 30 m · daño 7`
+
+---
+
+## B. Impulso
+
+Pulsa **Usar** en Impulso.
+
+- [ ] **B.1 Por defecto: nivel poseído, forma normal.** Mira el modal.
+  → Título "Impulso (nivel 2)". Selector de nivel con **1** y **2**, marcado el 2. La
+  ficha dice: Acción Estándar, Fatiga 2, Alcance 40 m, Objetivo Único, Empuje 8 m, Daño 11
+  letal. Nota: "Ignora la cobertura ligera…". Fatiga tras usarlo `8 → 6`. Desglose total
+  −1.
+- [ ] **B.2 Poderoso.** Elige **Impulso Poderoso**.
+  → Título "Impulso Poderoso (nivel 2)". Acción Compleja, Fatiga 3, Empuje 16 m, Daño
+  13. La nota de la cobertura sigue, y aparece otra de "Impulso Poderoso: +1 de
+  fatiga…".
+- [ ] **B.3 Nivel 1 + Poderoso.** Elige nivel **1**.
+  → Fatiga 2, Alcance 20 m, Daño 12. El empuje **sigue en 16 m**: en Poderoso va por el
+  nivel poseído, no por el empleado.
+- [ ] **B.4 Nivel 1 normal.** Elige **Impulso**.
+  → Acción Estándar, Fatiga 1, Empuje 4 m, Daño 10.
+- [ ] **B.5 Tirada y resultado.** Vuelve a nivel 2, forma Impulso Poderoso, dificultad
+  **Muy fácil (2)**, y pulsa **Tirar** (repite con Tirar otra vez hasta sacar éxito).
+  → Éxito: "Impacta: daño cinético letal; el objetivo tira Fortaleza + Atletismo contra
+  el desplazamiento". Fracaso: "No impacta".
+- [ ] **B.6 Daño.** Con éxito, pulsa **Tirar daño**.
+  → "Daño: X letal (13 base + N por éxitos)", donde N es la mitad de los éxitos
+  redondeando hacia abajo. No sale bloque de Efectos.
+- [ ] **B.7 El objetivo.** Despliega **El objetivo**.
+  → "Reacción defensiva (Defensa / esquiva)…" y "Si es golpeado: Fortaleza + Atletismo…
+  · dificultad 11". Grados:
+  - Éxito crítico: "No le afecta"
+  - Éxito: "Se desplaza la mitad (8 m) hacia atrás"
+  - Fracaso: "Se desplaza 16 m hacia atrás y cae derribado"
+  - Fracaso crítico: 16 m, derribado y aturdido 1 turno
+- [ ] **B.8 Sin daño al fallar.** Cierra, reabre Impulso y tira con **Legendario (16)**.
+  → Fracaso: "No impacta" y **sin** botón de Tirar daño (solo Expansión daña al fallar).
+- [ ] **B.9 Historial.** Cierra el modal.
+  → En "Acciones recientes" sale "Impulso Poderoso (nivel 2)".
+
+---
+
+## C. Expansión
+
+Pon la fatiga a 8 y pulsa **Usar** en Expansión.
+
+- [ ] **C.1 Por defecto.** Mira el modal.
+  → Título "Expansión (nivel 2)". Acción Estándar, Fatiga 2, Alcance 40 m, Área 8 m, Daño
+  15 letal. Nota: "Afecta a todo lo que haya en el área, aliados y el propio psiónico
+  incluidos".
+- [ ] **C.2 Poderosa.** Elige **Expansión Poderosa**.
+  → Acción Compleja, Fatiga 3, Daño 16. Se añade la nota "Expansión Poderosa: +1 de
+  fatiga…".
+- [ ] **C.3 Nivel 1 + Poderosa.** Elige nivel **1**.
+  → Fatiga 2, Alcance 20 m, Área 6 m, Daño 15.
+- [ ] **C.4 El objetivo tira con Poderosa.** Deja nivel 2 y Expansión Poderosa. Tira con
+  dificultad **Muy fácil (2)** y despliega **El objetivo**.
+  → Esquiva con Reflejos + Atletismo "· dificultad 9". Expulsión "· dificultad 11", con
+  el fracaso "Empujado 4 m y cae derribado". Con Poderosa **suben las dos**.
+- [ ] **C.5 Resultado.** Mira el texto bajo el número.
+  → Éxito: "La singularidad estalla en la casilla elegida…". Fracaso: "Se desvía una
+  casilla por cada fallo antes de estallar…".
+- [ ] **C.6 Al fallar también hay objetivo y daño.** Cierra, reabre Expansión y tira con
+  **Legendario (16)**.
+  → Sale fracaso, y aun así aparece "El objetivo" y el botón "Tirar daño (16 letal
+  base)": la singularidad se desvía pero estalla igual. Al pulsarlo, "Daño: 16 letal",
+  sin bono por éxitos.
+- [ ] **C.7 Daño.** Tira hasta sacar éxito y pulsa **Tirar daño**.
+  → "Daño: X letal (16 base + N por éxitos)".
+
+---
+
+## D. Convergencia
+
+Pon la fatiga a 8 y pulsa **Usar** en Convergencia.
+
+- [ ] **D.1 Por defecto.** Mira el modal.
+  → Título "Convergencia (nivel 2)". Acción Estándar, Fatiga 2, Alcance 30 m, Objetivo
+  Único, Daño 7 letal. **Sin notas antes de tirar**: las de Convergencia van con el
+  daño.
+- [ ] **D.2 Poderosa.** Elige **Convergencia Poderosa**.
+  → Acción Compleja, Fatiga 3, Daño 9.
+- [ ] **D.3 Nivel 1 normal.** Elige nivel **1** y **Convergencia**.
+  → Fatiga 1, Alcance 15 m, Daño 6.
+- [ ] **D.4 Daño y efectos.** Vuelve a nivel 2, forma normal, dificultad **Muy fácil
+  (2)**. Tira hasta sacar éxito y pulsa **Tirar daño**.
+  → "Daño: X letal (7 base + N por éxitos)" y un bloque **Efectos** con cuatro líneas
+  "Convergencia: …": mitad de la absorción; Escudo Deflector y Malla Plasmática;
+  armaduras que reciben daño permanente; fuego que ignora la absorción.
+- [ ] **D.5 El objetivo.** Despliega **El objetivo**.
+  → "Esquiva con Reflejos + Atletismo" (sin dificultad) y "Si no esquiva: prueba de
+  Fortaleza… · dificultad 8", con sus cuatro grados (sin efecto / 1 de fuego / fuego y
+  llamarada / blindaje −4).
+- [ ] **D.6 Poderosa no cambia la dificultad del objetivo.** Repite con Convergencia
+  Poderosa.
+  → La prueba de Fortaleza sigue en dificultad 8; solo sube el daño.
+
+---
+
+## E. Gasto de fatiga y bloqueo
+
+Pon la fatiga a 8 y abre Impulso (nivel 2, forma normal).
+
+- [ ] **E.1 Se gasta aunque falle.** Tira con **Legendario (16)**.
+  → Sale fracaso, y aun así, al cerrar y mirar Recursos, la fatiga está en 6/8. Al
+  reabrir Impulso, "Fatiga tras usarlo" marca `6 → 4`.
+- [ ] **E.2 Bloqueo.** Usa **Tirar otra vez** hasta que la fatiga llegue a 0.
+  → Los botones de tirar se apagan con el aviso "Te faltan 2 de fatiga (tienes 0, cuesta
+  2)."
+- [ ] **E.3 Bloqueo tras recargar.** Recarga la página y abre Impulso.
+  → Sigue bloqueado, con la línea `0 → -2`. A nivel 1 también (`0 → -1`).
+
+## F. Sobrecarga
+
+Pon la fatiga a 8 y anota la vida (8/8). Abre Impulso (nivel 2, forma normal).
+
+- [ ] **F.1 Salta al cruzar a exhausto.** Tira cuatro veces: 8 → 6 → 4 → 2 → 0.
+  → Las tres primeras no muestran nada especial. En la cuarta, que pasa de 2 a 0 y cruza
+  el umbral de exhausto (por debajo de 2), sale el bloque rojo **Sobrecarga** con "quedas
+  inconsciente" y el botón "Tirar salvación de Fortaleza (dificultad 7)".
+- [ ] **F.2 Salvación y daño.** Pulsa el botón.
+  → Sale "Fortaleza: X vs 7 · grado" y el daño: crítico 0, éxito 1, fracaso 2, fracaso
+  crítico 4. En Recursos la vida baja justo eso. El historial muestra "Sobrecarga:
+  salvación de Fortaleza".
+- [ ] **F.3 No repite estando ya exhausto.** Deja la fatiga en 1 desde Recursos y usa
+  Impulso a nivel 1 (coste 1).
+  → No sale el bloque de Sobrecarga: ya estabas exhausto.
+
+## G. Ficha aprobada: subir con XP
+
+- [ ] **G.1 Aprobar y dar XP.** Pulsa **APROBAR**. En la cabecera, escribe 30 en XP y pulsa
+  **Aplicar**. **Recarga la página**: la pestaña de compra no se entera de la XP nueva
+  hasta recargar, que es un fallo conocido y no de la psiónica.
+  → En Psiónica la cabecera marca **XP 30** y todos los − están apagados.
+- [ ] **G.2 Compra con XP.** Sube Singularidad de 2 a 3.
+  → Cuesta 9 y la XP queda en 21.
+- [ ] **G.3 Otra disciplina.** Sube Resonancia a 1.
+  → Cuesta 3 y la XP queda en 18.
+- [ ] **G.4 Se guarda.** Recarga.
+  → XP 18, Singularidad 3, Resonancia 1, Traslación 2. En Acciones, el selector de nivel
+  de los tres poderes ofrece 1, 2 y 3.
+
+---
+
+## Fuera de estas pruebas
+
+No son fallos:
+
+- Las otras cinco disciplinas no tienen poderes todavía.
+- Xovromium, Munición Supresora y Derivación Psiónica no afectan aún ni a la tirada ni a
+  la fatiga.
+- La inconsciencia por sobrecarga no se aplica como estado; la marca el máster.
+- En combate, la consola del máster no refleja el gasto de fatiga de la ficha (decidido
+  así).

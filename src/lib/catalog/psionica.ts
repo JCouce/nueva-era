@@ -134,7 +134,8 @@ const EXPANSION: AccionPoder = {
   alcance: "tabla",
   objetivo: { tipo: "casilla", area: "tabla" },
   desplazamiento: null,
-  resolucion: ATAQUE_SINGULARIDAD,
+  // Fallar solo la desvía una casilla por fallo: estalla igual (Murillo, 2026-09-29).
+  resolucion: { ...ATAQUE_SINGULARIDAD, danioAlFallar: true },
   objetivoTira: [],
   ejes: [
     ejeNivelEmpleado((n) => ({

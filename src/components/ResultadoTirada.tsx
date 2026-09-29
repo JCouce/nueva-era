@@ -26,6 +26,8 @@ export type DanioInfo = {
   // Arma o munición que ignora parte del blindaje del objetivo: se avisa junto
   // al daño, el máster lo resta a mano (docs/tareas.md, 2026-09-28).
   ignoraBlindaje?: { valor: number; fuente: string }[];
+  // Se puede tirar daño también con fracaso (Accion.ataque.danioAlFallar).
+  alFallar?: boolean;
 };
 
 export type Lanzamiento = Resultado & {
@@ -97,7 +99,7 @@ export function ContenidoResultado({
     resultado.danioInfo?.base !== null &&
     resultado.danioInfo !== null &&
     resultado.danioInfo !== undefined &&
-    exito === true &&
+    (exito === true || (exito === false && resultado.danioInfo.alFallar === true)) &&
     margen !== null &&
     !resultado.danioResuelto;
 

@@ -33,7 +33,16 @@ export type ResolucionResuelta =
   | { tipo: "sin_dado" }
   | { tipo: "tirada"; aplicado: AplicadoId; habilidad: HabilidadDe; especialidad?: string; dificultad?: ValorResuelto; modificador?: number }
   | { tipo: "enfrentada"; aplicado: AplicadoId; habilidad: HabilidadDe; especialidad?: string; modificador?: number }
-  | { tipo: "ataque"; aplicado: AplicadoId; habilidad: HabilidadDe; especialidad?: string; modificador?: number; danio: ValorResuelto; categoria: string };
+  | {
+      tipo: "ataque";
+      aplicado: AplicadoId;
+      habilidad: HabilidadDe;
+      especialidad?: string;
+      modificador?: number;
+      danio: ValorResuelto;
+      categoria: string;
+      danioAlFallar?: boolean;
+    };
 type HabilidadDe = Extract<ResolucionPoder, { tipo: "ataque" }>["habilidad"];
 
 export type PoderResuelto = {
@@ -351,6 +360,7 @@ export function tiradaDePoder(accion: AccionPoder, p: PoderResuelto): Accion | n
           categoriaDanio: capitalizar(r.categoria),
         },
       ],
+      ...(r.danioAlFallar && { danioAlFallar: true }),
     };
   }
   return tirada;

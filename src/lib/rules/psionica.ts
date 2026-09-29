@@ -38,6 +38,9 @@ export type ResolucionPoder =
       modificador?: number;
       danio: Valor | "tabla";
       categoria: string;
+      // Hace daño aunque la tirada falle (Expansión: se desvía y estalla igual);
+      // al fallar, el daño base sin bono por éxitos.
+      danioAlFallar?: boolean;
     };
 
 // Los textos (grados, notas) pueden llevar marcadores `{campo}` o `{campo/2}` que

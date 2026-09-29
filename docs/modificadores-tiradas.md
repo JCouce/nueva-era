@@ -13,7 +13,7 @@ Un Poder puede conectar al motor de tres formas distintas — mira su
 | Si su `MotorMetadata` dice... | Vas a... |
 |---|---|
 | `tipo: "numerico"` o `tipo: "texto"`, `afecta.modo: "accion_existente"` | **Sigue leyendo este documento** — es justo lo que cubre: elegir uno de los cuatro mecanismos y declararlo. |
-| `tipo: "accion"`, `mecanismo: "accion_equipo"` (o `"accion_sin_equipo"`, todavía sin construir) | Este documento NO lo cubre. Es el patrón del registro `familia → generador` en `src/lib/rules/combate.ts` (T5/T6, `docs/motor.md` §Escalabilidad) — hoy sin guía propia escrita, lee ese código directamente antes de replicarlo. |
+| `tipo: "accion"`, `mecanismo: "accion_equipo"` (o `"accion_sin_equipo"`, construido para poderes psiónicos en `src/lib/rules/poderes.ts`) | Este documento NO lo cubre. Es el patrón del registro `familia → generador` en `src/lib/rules/combate.ts` (T5/T6, `docs/motor.md` §Escalabilidad) — hoy sin guía propia escrita, lee ese código directamente antes de replicarlo. |
 | Una "Acción sin dado" (declarar un gasto, activar algo sin tirar) | Ninguno de los dos documentos lo cubre — está sin diseñar. Ver la nota final de este documento ("Tiradas vs Acciones") antes de improvisar algo. |
 
 Si tu Poder hace VARIAS cosas a la vez (genera su propia tirada Y además da un

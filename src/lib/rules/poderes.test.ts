@@ -16,6 +16,7 @@ import {
   danioSobrecarga,
 } from "./poderes";
 import { defaultSheet, type Sheet } from "./sheet";
+import { resolverDanio } from "./acciones";
 import { fuentesDeCapa1 } from "./capa1";
 import { DISCIPLINAS, disciplinaPorId } from "../catalog/psionica";
 import type { AccionPoder, ModificadorFatiga } from "./psionica";
@@ -331,5 +332,17 @@ describe("sobrecarga", () => {
     );
     assert.equal(danioSobrecarga(1, "exito"), 0);
     assert.equal(danioSobrecarga(6, "exito"), 3);
+  });
+});
+
+describe("daño al fallar", () => {
+  test("solo Expansión permite tirar daño al fallar", () => {
+    assert.equal(tiradaDePoder(accion("expansion"), resolver("expansion", 2))!.ataque?.danioAlFallar, true);
+    assert.equal(tiradaDePoder(accion("impulso"), resolver("impulso", 2))!.ataque?.danioAlFallar, undefined);
+    assert.equal(tiradaDePoder(accion("convergencia"), resolver("convergencia", 2))!.ataque?.danioAlFallar, undefined);
+  });
+
+  test("al fallar, el daño es el base sin bono por éxitos", () => {
+    assert.deepEqual(resolverDanio(15, -3, "Letal"), { base: 15, bonoExitos: 0, total: 15, categoria: "Letal" });
   });
 });

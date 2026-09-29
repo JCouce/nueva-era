@@ -152,7 +152,7 @@ type Mecanismo =
   | "siempre_activo"     // Modificador tipo "tirada" con alcance, solo por llevarlo puesto
   | "ajuste_fijo"        // ajustesFijos
   | "bono_tramo"         // bonosTramo
-  | "accion_sin_equipo"  // genera su propia acción sin ser una pieza de equipo (poderes, dotes) — pendiente de construir
+  | "accion_sin_equipo"  // genera su propia acción sin ser una pieza de equipo (poderes, dotes) — construido para poderes psiónicos (accionesDePsionica, lib/rules/poderes.ts)
   | "gate_instalacion"   // bloquea/atenúa/avisa sobre una acción entera (el mecanismo que falta del tipo 5)
   | "accion_equipo"      // genera su propia acción SIENDO equipo — función hardcodeada por familia/id (combate.ts, lib/rules/herramientas.ts), ya construido, diseño permanente
   | "nota_fija"          // texto siempre presente, sin CondicionTirada de por medio, leído directo de un campo y volcado a Tirada.nota

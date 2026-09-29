@@ -135,6 +135,9 @@ export type Accion = {
       // melee, que no consumen ningún RECURSO.
       gasto?: number;
     }[];
+    // Poderes que dañan aunque fallen (Expansión, poderes.ts): "Tirar daño"
+    // también con fracaso, con el daño base sin bono por éxitos.
+    danioAlFallar?: boolean;
   };
   // Solo "Volar" (Movilidad Aérea, lib/rules/movimiento.ts): payout en
   // metros en vez de daño — campo hermano de `ataque` porque esa UI ya

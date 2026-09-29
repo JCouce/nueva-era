@@ -13,10 +13,13 @@ import {
   type HabilidadId,
   type PiezaEquipada,
   type MaterialTier,
+  setNivelDisciplina,
+  type DisciplinaId,
 } from "@/lib/rules";
 import { AtributosTab } from "@/app/characters/[id]/_components/AtributosTab";
 import { HabilidadesTab } from "@/app/characters/[id]/_components/HabilidadesTab";
 import { AccionesTab } from "@/app/characters/[id]/_components/AccionesTab";
+import { PsionicaTab } from "@/app/characters/[id]/_components/PsionicaTab";
 import type { Lanzamiento } from "@/components/ResultadoTirada";
 import { EquipoTab } from "@/app/characters/[id]/_components/EquipoTab";
 import { TiendaTab } from "@/app/characters/[id]/_components/TiendaTab";
@@ -46,6 +49,7 @@ import {
   ajustarFatigaNpcAction,
   eliminarNpcAction,
   type NpcResult,
+  setDisciplinaNpcAction,
 } from "../actions";
 
 // Fase 6b 5.1: espejo simplificado de CharacterSheet.tsx — reusa sus tabs de
@@ -66,6 +70,7 @@ const TABS = [
   { id: "identidad", label: "Identidad" },
   { id: "attrs", label: "Atributos" },
   { id: "skills", label: "Habilidades" },
+  { id: "psionica", label: "Psiónica" },
   { id: "acciones", label: "Acciones" },
   { id: "equipo", label: "Equipo" },
   { id: "recursos", label: "Recursos" },
@@ -189,6 +194,10 @@ export function NpcEditor({
     const v = clampInt(value, ATRIBUTO_MIN, ATRIBUTO_MAX, sheet.atributos[id]);
     setSheet((s) => ({ ...s, atributos: { ...s.atributos, [id]: v } }));
     scheduleCommit(`atributo:${id}`, () => setAtributoNpcAction(npcId, id, value));
+  };
+  const commitDisciplina = (id: DisciplinaId, value: number) => {
+    setSheet((s) => setNivelDisciplina(s, id, value));
+    scheduleCommit(`disciplina:${id}`, () => setDisciplinaNpcAction(npcId, id, value));
   };
   const commitHabilidad = (id: HabilidadId, value: number) => {
     const v = clampInt(value, HABILIDAD_NO_ENTRENADA, HABILIDAD_MAX, sheet.habilidades[id].valor);
@@ -379,6 +388,7 @@ export function NpcEditor({
           onRemoveEspecialidad={commitRemoveEspecialidad}
         />
       )}
+      {active === "psionica" && <PsionicaTab sheet={sheet} libre onSet={commitDisciplina} />}
       {active === "acciones" && (
         <div className="flex flex-col gap-3">
           {/* 5.6: preview en reposo, sin estados — una NpcTemplate no tiene
@@ -401,6 +411,8 @@ export function NpcEditor({
             onGastarRecurso={commitAjustarRecurso}
             onAjustarFarmaco={commitAjustarFarmaco}
             onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
+            onGastarFatiga={commitAjustarFatiga}
+            onAjustarVida={commitAjustarVida}
             libre
           />
         </div>

@@ -339,8 +339,24 @@ function FilaUsar({ accion, onAbrir }: { accion: AccionDirecta; onAbrir: (a: Acc
 
 // Poder psiónico: resumen al nivel poseído; "Usar" abre el modal de tirada con
 // la cabecera de nivel empleado y forma (CabeceraPoder).
-function FilaPoder({ poder, onAbrir }: { poder: PoderDisponible; onAbrir: (p: PoderDisponible) => void }) {
+function FilaPoder({
+  poder,
+  sheet,
+  mods,
+  onAbrir,
+}: {
+  poder: PoderDisponible;
+  sheet: Sheet;
+  mods: ModificadorConFuente[];
+  onAbrir: (p: PoderDisponible) => void;
+}) {
   const p = poder.porDefecto;
+  // A cuánto tira, igual que FilaTirada (null en poderes sin dado).
+  const tirada = tiradaDePoder(poder.accion, p);
+  const enEspecialidad = enEspecialidadDePoder(sheet, p);
+  const mod = tirada ? modificadorAccion(sheet, tirada, enEspecialidad, mods) : null;
+  const nombreAplicado = tirada ? APLICADOS.find((a) => a.id === tirada.aplicado)! : null;
+  const nombreHabilidad = tirada?.habilidad ? HABILIDADES.find((h) => h.id === tirada.habilidad)!.label : null;
   const danio = p.resolucion.tipo === "ataque" ? p.resolucion.danio : null;
   const datos = [
     etiquetaEconomia(p.economia),
@@ -353,8 +369,21 @@ function FilaPoder({ poder, onAbrir }: { poder: PoderDisponible; onAbrir: (p: Po
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <span className="block font-display text-base font-semibold uppercase leading-tight">{poder.accion.label}</span>
+          {mod && nombreAplicado && (
+            <span className="mt-1 block font-mono text-[10px] uppercase text-muted">
+              {nombreAplicado.abbr} {mod.aplicado}
+              {nombreHabilidad && (
+                <>
+                  {" + "}
+                  {nombreHabilidad}
+                  {enEspecialidad ? " (esp.)" : ""} {mod.habilidad}
+                </>
+              )}
+            </span>
+          )}
           <p className="mt-1 font-mono text-[11px] text-muted">{datos.join(" · ")}</p>
         </div>
+        {mod && <span className="font-mono text-2xl tabular-nums text-info">{signo(mod.total)}</span>}
         <button
           type="button"
           onClick={() => onAbrir(poder)}
@@ -677,6 +706,7 @@ export function AccionesTab({
         formulaDanio: modo.formulaDanio,
         categoriaDanio: modo.categoriaDanio,
         ignoraBlindaje: ignoraBlindaje.length > 0 ? ignoraBlindaje : undefined,
+        alFallar: tirada.ataque.danioAlFallar,
       };
     }
 
@@ -869,7 +899,7 @@ export function AccionesTab({
               {poderes
                 .filter((p) => p.disciplina === d)
                 .map((p) => (
-                  <FilaPoder key={p.accion.id} poder={p} onAbrir={abrirPoder} />
+                  <FilaPoder key={p.accion.id} poder={p} sheet={sheet} mods={mods} onAbrir={abrirPoder} />
                 ))}
             </div>
           ))}

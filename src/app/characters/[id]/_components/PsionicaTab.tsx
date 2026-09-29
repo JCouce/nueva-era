@@ -21,32 +21,37 @@ const RAMAS = [
 ] as const;
 
 // Compra de disciplinas: nivel N a N×3, mismo patrón que AtributosTab (pool de
-// la letra en creación, XP tras aprobar, solo subir). Los poderes se usan desde
-// Acciones; aquí solo se compra.
+// la letra en creación, XP tras aprobar, solo subir). En modo libre (editor de
+// NPC) no hay pool ni XP: 0-6 en las dos direcciones, requisitos incluidos.
+// Los poderes se usan desde Acciones; aquí solo se compra.
 export function PsionicaTab({
   sheet,
-  aprobada,
-  xp,
+  aprobada = false,
+  xp = 0,
+  libre = false,
   onSet,
 }: {
   sheet: Sheet;
-  aprobada: boolean;
-  xp: number;
+  aprobada?: boolean;
+  xp?: number;
+  libre?: boolean;
   onSet: (id: DisciplinaId, value: number) => void;
 }) {
   const letra = sheet.prioridades.psionica;
-  const disponible = aprobada ? xp : puntosPsionicaDisponibles(sheet);
+  const disponible = libre ? Infinity : aprobada ? xp : puntosPsionicaDisponibles(sheet);
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
-        <span className="uppercase tracking-wide text-muted">{aprobada ? "XP" : "Puntos"}</span>
-        <span className={`tabular-nums ${disponible < 0 ? "text-danger" : letra || aprobada ? "text-accent" : "text-muted"}`}>
-          {aprobada ? disponible : letra ? `${disponible} / ${presupuestoPsionica(sheet)} (letra ${letra})` : "sin letra"}
-        </span>
-      </div>
+      {!libre && (
+        <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
+          <span className="uppercase tracking-wide text-muted">{aprobada ? "XP" : "Puntos"}</span>
+          <span className={`tabular-nums ${disponible < 0 ? "text-danger" : letra || aprobada ? "text-accent" : "text-muted"}`}>
+            {aprobada ? disponible : letra ? `${disponible} / ${presupuestoPsionica(sheet)} (letra ${letra})` : "sin letra"}
+          </span>
+        </div>
+      )}
 
-      {!letra && !aprobada && (
+      {!libre && !letra && !aprobada && (
         <p className="font-mono text-[11px] leading-relaxed text-muted">
           Asigna una letra de prioridad a Psiónica en Resumen para saber cuántos puntos tienes aquí.
         </p>
@@ -83,9 +88,9 @@ export function PsionicaTab({
                   </div>
                   <Stepper
                     value={value}
-                    hint={value >= DISCIPLINA_MAX ? "MÁX" : `${costeSiguiente} ${aprobada ? "xp" : "pts"}`}
+                    hint={value >= DISCIPLINA_MAX ? "MÁX" : libre ? "" : `${costeSiguiente} ${aprobada ? "xp" : "pts"}`}
                     canBuy={requisitoOk && disponible >= costeSiguiente}
-                    atMin={aprobada || value <= suelo}
+                    atMin={(!libre && aprobada) || value <= suelo}
                     atMax={value >= DISCIPLINA_MAX}
                     onBuy={() => onSet(d.id, value + 1)}
                     onSell={() => onSet(d.id, value - 1)}
