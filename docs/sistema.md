@@ -681,6 +681,15 @@ al preparar su modelado:
     usarla. Esquivar con Física mientras levitas va a mano.
   - Duelo de Métrica: tirada enfrentada en toda ficha con Traslación; la dificultad es el
     total de quien te ancla. Casilla "soy 2 niveles superior" = coste 0.
+- **Construcción de Traslación, tanda 3: Proeza (usuario, 2026-09-30):**
+  - Ficha v13 con `fatigaTemporal`. Proeza paga la fila del nivel empleado (sin casillas
+    de carga) y lo que no llega va a fatiga temporal; es la única acción que no se bloquea
+    sin fatiga. Fatiga efectiva = actual − temporal: es la que cuenta para sobrecarga y
+    bloqueos. "Terminar escena" (Recursos) la devuelve a 0.
+  - El extra de +1 por cada 10 % de exceso se mete a mano en Fatiga temporal.
+  - Al 200 %: la app resta 1 de vida (daño mental sin absorción) al usarla y avisa de la
+    inconsciencia; la inconsciencia no se aplica como estado. Con fatiga efectiva ≤ 0 tras
+    cualquier poder, aviso de inconsciencia al terminar la acción.
   - Sensor: el radio (nivel × 2) va sin unidad, a criterio del máster, hasta que Murillo la
     diga. La carga máxima se enseña solo en las acciones que pagan la fila (Anclaje,
     Trasladar); no se comprueba, es dato.

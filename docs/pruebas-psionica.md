@@ -161,7 +161,7 @@ Perspicacia de un personaje sin tocar es 0 (25 kg × Perspicacia).
   - Proyección: `REF 0 + Tecnociencia -1 -2`, `Simple · 1 fatiga · 60 m · daño 7`, `-3`
   - Auto-proyección: `Estándar · 1 fatiga`
   - Sensor: `Estándar · 1 fatiga`
-  - (más Auto-anclaje, Levitar y Duelo de Métrica, ver H7)
+  - (más Auto-anclaje, Levitar y Duelo de Métrica, ver H7, y Proeza, ver H8)
 
 ### H1. Anclaje
 - [ ] **H1.1** Pulsa Usar.
@@ -221,6 +221,27 @@ Perspicacia de un personaje sin tocar es 0 (25 kg × Perspicacia).
   → Selector Reacción / Simple, la nota "Como dificultad, escribe el total de la tirada de
   quien te ancla…" y la casilla "Soy 2 niveles superior en Traslación": al marcarla,
   Fatiga 0.
+
+### H8. Proeza y fatiga temporal (Traslación 3)
+- [ ] **H8.1 Fila de Recursos.** En Recursos, bajo Fatiga.
+  → "Fatiga temporal (Proeza) 0" con − / + y "Terminar escena" (apagado a 0).
+- [ ] **H8.2 Sin bloqueo.** Deja la fatiga en 1/8 y abre Proeza (fila `POT 0 + Atletismo -1`,
+  `Compleja · 2 fatiga · 45 m`).
+  → Dificultad **Difícil 10** ya marcada, "Fatiga tras usarlo 1 → -1" y **Tirar habilitado**.
+  Selectores de Maniobra (Anclar / Trasladar a mitad) y Carga (Menos del 200 % / Llega al
+  200 %), sin casillas de carga.
+- [ ] **H8.3 Exceso a temporal.** Tira.
+  → Aviso "Te has quedado sin fatiga: quedas inconsciente al terminar la acción". En
+  Recursos: Fatiga 0/8, Fatiga temporal 1, "Fatiga efectiva: -1". En Resumen: "0/8 (1
+  temporal de Proeza · efectiva -1)".
+- [ ] **H8.4 Al 200 %.** Anota la vida, abre Proeza, elige "Llega al 200 %" y tira.
+  → Avisos "Recibes 1 de daño mental (ya restado)…" y la vida baja 1.
+- [ ] **H8.5 Terminar escena.** En Recursos, pulsa Terminar escena.
+  → Fatiga temporal vuelve a 0 (la fatiga normal no cambia).
+- [ ] **H8.6 Se guarda.** Recarga la página y vuelve a Recursos.
+  → Fatiga temporal 0, y la vida y la fatiga como las dejaste en H8.4.
+- [ ] **H8.7 NPC.** En el editor de un NPC con Traslación, pestaña Recursos.
+  → Sale la misma fila de Fatiga temporal con Terminar escena.
 
 ### H6. Niveles altos (NPC con Traslación 6)
 En `/master/npcs` crea un NPC, ponle **Traslación 6** en su pestaña Psiónica y ve a
@@ -287,8 +308,8 @@ Pon la fatiga a 8 y anota la vida (8/8). Abre Impulso (nivel 2, forma normal).
 
 No son fallos:
 
-- Resonancia, Inducción, Hipercognición y Contención no tienen poderes todavía. De
-  Traslación falta Proeza.
+- Resonancia, Inducción, Hipercognición y Contención no tienen poderes todavía. Traslación
+  está completa.
 - Xovromium, Munición Supresora y Derivación Psiónica no afectan aún ni a la tirada ni a
   la fatiga.
 - La inconsciencia por sobrecarga no se aplica como estado; la marca el máster.

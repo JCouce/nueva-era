@@ -50,6 +50,9 @@ import {
   eliminarNpcAction,
   type NpcResult,
   setDisciplinaNpcAction,
+  pagarFatigaNpcAction,
+  ajustarFatigaTemporalNpcAction,
+  terminarEscenaNpcAction,
 } from "../actions";
 
 // Fase 6b 5.1: espejo simplificado de CharacterSheet.tsx — reusa sus tabs de
@@ -300,6 +303,24 @@ export function NpcEditor({
     if (res.ok) setSheet(res.sheet);
     setStatus(res.ok ? "saved" : "error");
   };
+  const commitPagarFatiga = async (coste: number, permiteTemporal: boolean) => {
+    setStatus("saving");
+    const res = await pagarFatigaNpcAction(npcId, coste, permiteTemporal);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
+  const commitAjustarFatigaTemporal = async (delta: number) => {
+    setStatus("saving");
+    const res = await ajustarFatigaTemporalNpcAction(npcId, delta);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
+  const commitTerminarEscena = async () => {
+    setStatus("saving");
+    const res = await terminarEscenaNpcAction(npcId);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
   // Sin `exito`: edición libre de NPC, sin tirada (ver el comentario de
   // repararNpcAction) — mismo criterio que commitFabricar.
   const commitReparar = async (instanciaId: string, tier: MaterialTier) => {
@@ -411,7 +432,7 @@ export function NpcEditor({
             onGastarRecurso={commitAjustarRecurso}
             onAjustarFarmaco={commitAjustarFarmaco}
             onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
-            onGastarFatiga={commitAjustarFatiga}
+            onPagarFatiga={commitPagarFatiga}
             onAjustarVida={commitAjustarVida}
             libre
           />
@@ -431,6 +452,8 @@ export function NpcEditor({
           onComprarMunicionEspecial={commitComprarMunicionEspecial}
           onAjustarVida={commitAjustarVida}
           onAjustarFatiga={commitAjustarFatiga}
+          onAjustarFatigaTemporal={commitAjustarFatigaTemporal}
+          onTerminarEscena={commitTerminarEscena}
         />
       )}
       {active === "tienda" && (

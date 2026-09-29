@@ -615,6 +615,73 @@ const DUELO_METRICA: AccionPoder = {
   motor: motorDeAccion(DUELO_ID, { propias: true }),
 };
 
+// Proeza: manipular un único objetivo por encima de la carga máxima del nivel.
+// Paga la fila del nivel empleado (sin las casillas de carga: siempre va por
+// encima de la máxima) y es la única acción que puede gastar más fatiga de la que
+// se tiene: el exceso va a fatiga temporal (vitalidad.ts). El extra por % de
+// peso va a mano (usuario, 2026-09-28).
+const PROEZA: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: "psi_traslacion_proeza",
+  label: "Proeza",
+  desdeNivel: 1,
+  economia: "compleja",
+  fatiga: "tabla",
+  permiteFatigaTemporal: true,
+  alcance: "tabla",
+  objetivo: { tipo: "unico" },
+  desplazamiento: null,
+  resolucion: { tipo: "tirada", aplicado: "potencia", habilidad: "atletismo", dificultad: 10 },
+  objetivoTira: [],
+  ejes: [
+    ejeNivelEmpleado(() => ({})),
+    {
+      id: "maniobra",
+      label: "Maniobra",
+      tipo: "opcion",
+      opciones: [
+        { id: "anclar", label: "Anclar", cambia: {} },
+        {
+          id: "trasladar",
+          label: "Trasladar a mitad",
+          cambia: { notas: [{ texto: "Lo trasladas a la mitad de tu velocidad de Trasladar.", lugar: "tirada" }] },
+        },
+      ],
+    },
+    {
+      id: "limite",
+      label: "Carga",
+      tipo: "opcion",
+      opciones: [
+        { id: "bajo_200", label: "Menos del 200 %", cambia: {} },
+        {
+          id: "limite_200",
+          label: "Llega al 200 %",
+          cambia: {
+            danioPropio: { valor: 1, categoria: "mental" },
+            notas: [
+              {
+                texto: "Al 200 %: al terminar la acción caes inconsciente por sobrecarga neural y recibes 1 nivel de daño mental sin absorción (se resta al usarla).",
+                lugar: "tirada",
+              },
+            ],
+          },
+        },
+      ],
+    },
+  ],
+  resultados: {
+    exito: { texto: "Lo consigues: solo puedes anclarlo o trasladarlo a mitad de velocidad, nunca proyectarlo", estados: [] },
+    fracaso: { texto: "No consigues moverlo", estados: [] },
+  },
+  notas: [
+    { texto: "+1 de fatiga por cada 10 % de peso por encima de la carga máxima (mínimo +1): súmalo a mano en Fatiga temporal.", lugar: "tirada" },
+    { texto: "Cada turno que prolongues el control, vuelves a pagar ese extra.", lugar: "tirada" },
+    { texto: "Puedes gastar más fatiga de la que tienes: el exceso se apunta como fatiga temporal y se devuelve al terminar la escena.", lugar: "tirada" },
+  ],
+  motor: motorDeAccion("psi_traslacion_proeza", { propias: true }),
+};
+
 // Descuentos de la tabla: solo en las acciones que pagan la fila (no en
 // Proyección, Auto-proyección ni Sensor).
 const PAGAN_TABLA = [ANCLAJE_ID, TRASLADAR_ID, AUTO_ANCLAJE_ID];
@@ -682,7 +749,7 @@ const TRASLACION: Disciplina = {
   ],
   bonosEnOtrasTiradas: [],
   ventajas: [],
-  acciones: [ANCLAJE, AUTO_ANCLAJE, TRASLADAR, LEVITAR, PROYECCION, AUTO_PROYECCION, SENSOR, DUELO_METRICA],
+  acciones: [ANCLAJE, AUTO_ANCLAJE, TRASLADAR, LEVITAR, PROYECCION, AUTO_PROYECCION, PROEZA, SENSOR, DUELO_METRICA],
 };
 
 const SINGULARIDAD: Disciplina = {

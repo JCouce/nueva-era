@@ -41,3 +41,34 @@ export function ajustarFatiga(sheet: Sheet, delta: number): Sheet {
   if (fatigaActual === sheet.fatigaActual) return sheet;
   return { ...sheet, fatigaActual };
 }
+
+// ── Fatiga temporal (Proeza) ───────────────────────────────────────
+// Proeza es la única acción que puede gastar más fatiga de la que se tiene: lo
+// que no llega se apunta aparte como fatiga temporal. Cuenta para los umbrales
+// mientras dura la escena y se devuelve al terminarla (docs/sistema.md §10.6).
+
+export function fatigaEfectiva(sheet: Sheet): number {
+  return sheet.fatigaActual - sheet.fatigaTemporal;
+}
+
+// Paga `coste` de fatiga. Sin `permiteTemporal`, recorta en 0 como ajustarFatiga
+// (el bloqueo previo ya impide llegar aquí sin fatiga); con él, el exceso pasa a
+// fatiga temporal.
+export function pagarFatiga(sheet: Sheet, coste: number, permiteTemporal: boolean): Sheet {
+  if (!Number.isFinite(coste) || coste <= 0) return sheet;
+  const c = Math.round(coste);
+  const pagado = Math.min(c, sheet.fatigaActual);
+  const exceso = permiteTemporal ? c - pagado : 0;
+  return { ...sheet, fatigaActual: sheet.fatigaActual - pagado, fatigaTemporal: Math.min(999, sheet.fatigaTemporal + exceso) };
+}
+
+export function ajustarFatigaTemporal(sheet: Sheet, delta: number): Sheet {
+  if (!Number.isFinite(delta)) return sheet;
+  const fatigaTemporal = Math.max(0, Math.min(999, sheet.fatigaTemporal + Math.round(delta)));
+  return fatigaTemporal === sheet.fatigaTemporal ? sheet : { ...sheet, fatigaTemporal };
+}
+
+// "Al terminar la escena volverá al nivel de fatiga que le correspondiese".
+export function terminarEscena(sheet: Sheet): Sheet {
+  return sheet.fatigaTemporal === 0 ? sheet : { ...sheet, fatigaTemporal: 0 };
+}

@@ -26,6 +26,9 @@ import {
   comprarFarmacoAction,
   ajustarVidaAction,
   ajustarFatigaAction,
+  pagarFatigaAction,
+  ajustarFatigaTemporalAction,
+  terminarEscenaAction,
   type SaveResult,
 } from "./actions";
 import {
@@ -48,6 +51,9 @@ import {
   ajustarFarmaco,
   ajustarVida,
   ajustarFatiga,
+  pagarFatiga,
+  ajustarFatigaTemporal,
+  terminarEscena,
   RECURSOS_POR_LETRA,
   describirEstadosActivos,
   type AtributoId,
@@ -364,6 +370,18 @@ export function CharacterSheet({
     setSheet((s) => ajustarFatiga(s, delta));
     runSave(() => ajustarFatigaAction(characterId, delta), setSheet);
   };
+  const commitPagarFatiga = (coste: number, permiteTemporal: boolean) => {
+    setSheet((s) => pagarFatiga(s, coste, permiteTemporal));
+    runSave(() => pagarFatigaAction(characterId, coste, permiteTemporal), setSheet);
+  };
+  const commitAjustarFatigaTemporal = (delta: number) => {
+    setSheet((s) => ajustarFatigaTemporal(s, delta));
+    runSave(() => ajustarFatigaTemporalAction(characterId, delta), setSheet);
+  };
+  const commitTerminarEscena = () => {
+    setSheet((s) => terminarEscena(s));
+    runSave(() => terminarEscenaAction(characterId), setSheet);
+  };
   const commitComprarGranada = (catalogoId: string) => {
     runSave(() => comprarGranadaAction(characterId, catalogoId), setSheet);
   };
@@ -621,7 +639,7 @@ export function CharacterSheet({
           onGastarRecurso={commitAjustarRecurso}
           onAjustarFarmaco={commitAjustarFarmaco}
           onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
-          onGastarFatiga={commitAjustarFatiga}
+          onPagarFatiga={commitPagarFatiga}
           onAjustarVida={commitAjustarVida}
         />
       )}
@@ -654,6 +672,8 @@ export function CharacterSheet({
           onComprarMunicionEspecial={commitComprarMunicionEspecial}
           onAjustarVida={commitAjustarVida}
           onAjustarFatiga={commitAjustarFatiga}
+          onAjustarFatigaTemporal={commitAjustarFatigaTemporal}
+          onTerminarEscena={commitTerminarEscena}
         />
       )}
       {activeEfectivo === "combate" && combate && (

@@ -40,6 +40,7 @@ import {
   costeFatiga,
   bloqueoPorFatiga,
   togglesDeFatiga,
+  fatigaEfectiva,
   etiquetaPoder,
   cruzaSobrecarga,
   dificultadSobrecarga,
@@ -416,7 +417,7 @@ export function AccionesTab({
   onGastarRecurso,
   onAjustarFarmaco,
   onAjustarMunicionEspecial,
-  onGastarFatiga,
+  onPagarFatiga,
   onAjustarVida,
   libre = false,
 }: {
@@ -465,7 +466,9 @@ export function AccionesTab({
   onAjustarMunicionEspecial?: (municionId: string, delta: number) => void;
   // Fatiga gastada al usar un poder psiónico (poderes.ts, costeFatiga) — ausente
   // donde no se gasta (edición de NPC del máster).
-  onGastarFatiga?: (delta: number) => void;
+  // Con `permiteTemporal` (Proeza) el exceso sobre la fatiga que se tiene pasa
+  // a fatiga temporal (vitalidad.ts, pagarFatiga).
+  onPagarFatiga?: (coste: number, permiteTemporal: boolean) => void;
   // Daño de la sobrecarga psiónica, restado de la vida de la ficha.
   onAjustarVida?: (delta: number) => void;
   // NpcEditor.tsx (edición libre de máster): la tirada de Fabricar no aplica
@@ -628,10 +631,15 @@ export function AccionesTab({
         })
       : null;
   const bloqueoPoder =
-    poderAbierto && costePoder ? bloqueoPorFatiga(poderAbierto.poder.accion, costePoder.total, sheet.fatigaActual) : null;
+    poderAbierto && costePoder
+      ? bloqueoPorFatiga(poderAbierto.poder.accion, costePoder.total, Math.max(0, fatigaEfectiva(sheet)))
+      : null;
 
   // Sobrecarga del último uso de un poder (null si no cruzó el umbral): nivel
   // para la dificultad/daño y la salvación ya tirada, si la hay.
+  // Avisos del último uso de un poder (inconsciencia por quedarse sin fatiga,
+  // daño propio aplicado).
+  const [avisosPoder, setAvisosPoder] = useState<string[]>([]);
   const [sobrecarga, setSobrecarga] = useState<{
     nivel: number;
     salvacion: (Lanzamiento & { danio: number }) | null;
@@ -665,17 +673,32 @@ export function AccionesTab({
     if (!resuelto) return;
     const t = tiradaDePoder(poder.accion, resuelto);
     if (t) abrir(t, enEspecialidadDePoder(sheet, resuelto), false);
-    else setSobrecarga(null);
+    setSobrecarga(null);
+    setAvisosPoder([]);
     setPoderAbierto({ poder, elecciones: resuelto.elecciones, toggles, directo: !t, usado: null });
   };
 
   // Gasto de fatiga al usar un poder (con tirada o sin ella), falle o no; si el
   // gasto cruza el umbral de exhausto, sobrecarga.
+  // Umbrales y sobrecarga van contra la fatiga EFECTIVA (menos la temporal de
+  // Proeza). El daño propio del poder (Proeza al 200 %) se resta al usarlo.
   const pagarPoder = (): number => {
-    if (!costePoder || !poderResuelto) return 0;
-    if (costePoder.total > 0) onGastarFatiga?.(-costePoder.total);
-    const cruza = cruzaSobrecarga(sheet.fatigaActual, sheet.fatigaActual - costePoder.total, salud(sheet).fatiga);
-    setSobrecarga(cruza && onGastarFatiga ? { nivel: poderResuelto.nivelEmpleado, salvacion: null } : null);
+    if (!costePoder || !poderResuelto || !poderAbierto) return 0;
+    if (!onPagarFatiga) return costePoder.total;
+    if (costePoder.total > 0) onPagarFatiga(costePoder.total, poderAbierto.poder.accion.permiteFatigaTemporal);
+    const antes = fatigaEfectiva(sheet);
+    const despues = antes - costePoder.total;
+    const cruza = cruzaSobrecarga(antes, despues, salud(sheet).fatiga);
+    setSobrecarga(cruza ? { nivel: poderResuelto.nivelEmpleado, salvacion: null } : null);
+    const propio = poderResuelto.danioPropio;
+    if (propio && typeof propio.valor === "number" && propio.valor > 0) onAjustarVida?.(-propio.valor);
+    const avisos = [
+      ...(despues <= 0 && !cruza ? ["Te has quedado sin fatiga: quedas inconsciente al terminar la acción."] : []),
+      ...(propio && typeof propio.valor === "number" && propio.valor > 0
+        ? [`Recibes ${propio.valor} de daño ${propio.categoria} (ya restado) y quedas inconsciente al terminar la acción.`]
+        : []),
+    ];
+    setAvisosPoder(avisos);
     return costePoder.total;
   };
 
@@ -709,7 +732,26 @@ export function AccionesTab({
     setModal(null);
     setPoderAbierto(null);
     setSobrecarga(null);
+    setAvisosPoder([]);
   };
+
+  const piePoder =
+    avisosPoder.length > 0 || sobrecarga ? (
+      <>
+        {avisosPoder.map((a) => (
+          <p key={a} className="mt-3 border-l-2 border-danger pl-2 font-sans text-[12px] font-semibold leading-relaxed text-danger">
+            {a}
+          </p>
+        ))}
+        {sobrecarga && (
+          <SobrecargaPanel
+            dificultad={dificultadSobrecarga(sobrecarga.nivel)}
+            salvacion={sobrecarga.salvacion}
+            onTirar={tirarSalvacionSobrecarga}
+          />
+        )}
+      </>
+    ) : undefined;
 
   const cabeceraPoder =
     poderAbierto && poderResuelto ? (
@@ -717,7 +759,7 @@ export function AccionesTab({
         accion={poderAbierto.poder.accion}
         poder={poderResuelto}
         coste={costePoder}
-        fatigaActual={sheet.fatigaActual}
+        fatigaActual={fatigaEfectiva(sheet)}
         toggles={togglesDeFatiga(poderAbierto.poder.disciplina, poderAbierto.poder.accion.id, poderResuelto)}
         togglesActivos={poderAbierto.toggles}
         onElegir={(eje, opcion) =>
@@ -1109,15 +1151,7 @@ export function AccionesTab({
             dificultad: t.dificultad === undefined ? undefined : textoValor(t.dificultad),
             grados: t.grados,
           }))}
-          pie={
-            sobrecarga ? (
-              <SobrecargaPanel
-                dificultad={dificultadSobrecarga(sobrecarga.nivel)}
-                salvacion={sobrecarga.salvacion}
-                onTirar={tirarSalvacionSobrecarga}
-              />
-            ) : undefined
-          }
+          pie={piePoder}
           onUsar={() => usarPoderDirecto(Date.now())}
           onCerrar={cerrarPoder}
         />
@@ -1138,15 +1172,7 @@ export function AccionesTab({
           }
           cabecera={modal.tirada.grupo === "Psiónica" ? cabeceraPoder : undefined}
           bloqueo={modal.tirada.grupo === "Psiónica" ? bloqueoPoder : null}
-          pieResultado={
-            modal.tirada.grupo === "Psiónica" && sobrecarga ? (
-              <SobrecargaPanel
-                dificultad={dificultadSobrecarga(sobrecarga.nivel)}
-                salvacion={sobrecarga.salvacion}
-                onTirar={tirarSalvacionSobrecarga}
-              />
-            ) : undefined
-          }
+          pieResultado={modal.tirada.grupo === "Psiónica" ? piePoder : undefined}
           modBase={modal.modBase}
           desgloseBase={modal.desgloseBase}
           condiciones={modal.tirada.condiciones ?? []}

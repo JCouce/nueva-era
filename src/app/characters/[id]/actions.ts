@@ -61,6 +61,9 @@ import {
   COSTE_FACTOR_PSIONICA,
   DISCIPLINA_MAX,
   type DisciplinaId,
+  pagarFatiga,
+  ajustarFatigaTemporal,
+  terminarEscena,
 } from "@/lib/rules";
 
 export type SaveResult =
@@ -363,6 +366,30 @@ export async function ajustarFatigaAction(characterId: string, delta: number): P
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(characterId, ajustarFatiga(ctx.sheet, delta));
+}
+
+// Pago de fatiga de un poder psiónico; con `permiteTemporal` (Proeza) el exceso
+// sobre la fatiga que se tiene pasa a fatiga temporal.
+export async function pagarFatigaAction(
+  characterId: string,
+  coste: number,
+  permiteTemporal: boolean,
+): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, pagarFatiga(ctx.sheet, coste, permiteTemporal === true));
+}
+
+export async function ajustarFatigaTemporalAction(characterId: string, delta: number): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, ajustarFatigaTemporal(ctx.sheet, delta));
+}
+
+export async function terminarEscenaAction(characterId: string): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, terminarEscena(ctx.sheet));
 }
 
 // "Recargar" (cargador de balas / batería portátil, S17/S18 de sistema.md):

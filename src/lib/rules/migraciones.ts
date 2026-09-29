@@ -186,6 +186,14 @@ export const MIGRACIONES: Migracion[] = [
       "antiguas empiezan sin ninguna.",
     migrar: (ficha) => ({ ...ficha, psionica: {} }),
   },
+  {
+    desde: 12,
+    hasta: 13,
+    descripcion:
+      "Se añade la fatiga temporal de Proeza (docs/sistema.md §10.6): las fichas antiguas " +
+      "empiezan sin ninguna.",
+    migrar: (ficha) => ({ ...ficha, fatigaTemporal: 0 }),
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le

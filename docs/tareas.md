@@ -1241,7 +1241,12 @@ casillas de fatiga con grupos excluyentes (`togglesDeFatiga`), poderes sin tirad
 Tanda 2 hecha (2026-09-30): Levitar (movimiento en Resumen + acción por periodos vía
 `ajustesPorNivelPoseido`), Auto-anclaje (tabla, dificultad 6 sugerida con
 `Accion.dificultadSugerida`) y Duelo de Métrica (enfrentada, casilla de gratis). Siguiente:
-tanda 3 (Proeza con fatiga temporal). Siguiente, disciplina a
+tanda 3 (Proeza con fatiga temporal).
+Tanda 3 hecha (2026-09-30): Proeza, ficha v13 con `fatigaTemporal` (`pagarFatiga`,
+`fatigaEfectiva`, `terminarEscena` en `vitalidad.ts`), fila "Fatiga temporal" con Terminar
+escena en Recursos (también NPC), daño propio al 200 %. **Traslación completa.**
+**Hallazgo (sin arreglar):** los penalizadores por umbral de salud y fatiga
+(`modificadoresDeUmbrales`, −1/−3/−5 y −1/−2) existen pero nada los aplica a las tiradas. Siguiente, disciplina a
 disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,
 Derivación), habilidad alternativa con selector, ventaja, Levitar, Duelo de Métrica, fatiga
 temporal (Proeza).

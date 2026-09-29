@@ -49,6 +49,9 @@ import {
   setNivelDisciplina,
   esDisciplinaId,
   type DisciplinaId,
+  pagarFatiga,
+  ajustarFatigaTemporal,
+  terminarEscena,
 } from "@/lib/rules";
 
 export type NpcResult = { ok: true; sheet: Sheet } | { ok: false; error: string };
@@ -293,6 +296,24 @@ export async function ajustarFatigaNpcAction(npcId: string, delta: number): Prom
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(npcId, ajustarFatiga(ctx.sheet, delta));
+}
+
+export async function pagarFatigaNpcAction(npcId: string, coste: number, permiteTemporal: boolean): Promise<NpcResult> {
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(npcId, pagarFatiga(ctx.sheet, coste, permiteTemporal === true));
+}
+
+export async function ajustarFatigaTemporalNpcAction(npcId: string, delta: number): Promise<NpcResult> {
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(npcId, ajustarFatigaTemporal(ctx.sheet, delta));
+}
+
+export async function terminarEscenaNpcAction(npcId: string): Promise<NpcResult> {
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(npcId, terminarEscena(ctx.sheet));
 }
 
 export async function comprarRecargaNpcAction(npcId: string, instanciaId: string): Promise<NpcResult> {

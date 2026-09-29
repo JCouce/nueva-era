@@ -14,6 +14,7 @@ import {
   type Sheet,
   type RecursoInstancia,
   type MaterialTier,
+  fatigaEfectiva,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { BarraVital, type TonoVital } from "@/components/BarraVital";
@@ -57,6 +58,8 @@ export function RecursosTab({
   onComprarMunicionEspecial,
   onAjustarVida,
   onAjustarFatiga,
+  onAjustarFatigaTemporal,
+  onTerminarEscena,
 }: {
   sheet: Sheet;
   // Ausente para un NPC: edición libre, sin cartera de créditos que cobrar
@@ -72,6 +75,9 @@ export function RecursosTab({
   onComprarMunicionEspecial: (municionId: string) => void;
   onAjustarVida: (delta: number) => void;
   onAjustarFatiga: (delta: number) => void;
+  // Fatiga temporal de Proeza (vitalidad.ts). Ausentes donde no se lleva.
+  onAjustarFatigaTemporal?: (delta: number) => void;
+  onTerminarEscena?: () => void;
 }) {
   const { vida, fatiga } = salud(sheet);
   // Solo los tipos que ya se poseen (docs/tareas.md, 2026-09-27) — para
@@ -162,6 +168,16 @@ export function RecursosTab({
         tono="info"
         onAjustar={onAjustarFatiga}
       />
+      {onAjustarFatigaTemporal &&
+        onTerminarEscena &&
+        ((sheet.psionica.traslacion ?? 0) > 0 || sheet.fatigaTemporal > 0) && (
+          <FatigaTemporalCard
+            valor={sheet.fatigaTemporal}
+            efectiva={fatigaEfectiva(sheet)}
+            onAjustar={onAjustarFatigaTemporal}
+            onTerminarEscena={onTerminarEscena}
+          />
+        )}
 
       <p className="mt-2 border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
         {"//SYSTEM · materiales"}
@@ -353,6 +369,48 @@ function EstadoCard({
         <BotonDelta onClick={() => onAjustar(1)} disabled={actual >= max}>
           +
         </BotonDelta>
+      </div>
+    </HudCard>
+  );
+}
+
+// Fatiga gastada de más en una Proeza: cuenta para los umbrales hasta que
+// termina la escena. El extra por % de peso de la Proeza se mete aquí a mano.
+function FatigaTemporalCard({
+  valor,
+  efectiva,
+  onAjustar,
+  onTerminarEscena,
+}: {
+  valor: number;
+  efectiva: number;
+  onAjustar: (delta: number) => void;
+  onTerminarEscena: () => void;
+}) {
+  return (
+    <HudCard className="p-3">
+      <div className="flex items-baseline justify-between gap-2 font-mono text-xs">
+        <span className="uppercase tracking-wide text-muted">Fatiga temporal (Proeza)</span>
+        <span className={`tabular-nums ${valor > 0 ? "text-danger" : "text-muted"}`}>{valor}</span>
+      </div>
+      {valor > 0 && (
+        <p className="mt-1 font-mono text-[10px] uppercase text-muted">
+          Fatiga efectiva: <span className={efectiva <= 0 ? "text-danger" : "text-foreground"}>{efectiva}</span>
+        </p>
+      )}
+      <div className="mt-2 flex items-center gap-1.5">
+        <BotonDelta onClick={() => onAjustar(-1)} disabled={valor <= 0}>
+          −
+        </BotonDelta>
+        <BotonDelta onClick={() => onAjustar(1)}>+</BotonDelta>
+        <button
+          type="button"
+          onClick={onTerminarEscena}
+          disabled={valor <= 0}
+          className="clip-chamfer-sm ml-auto border border-accent px-3 py-1.5 font-display text-xs font-semibold uppercase tracking-wide text-accent active:scale-95 disabled:border-border disabled:text-muted"
+        >
+          Terminar escena
+        </button>
       </div>
     </HudCard>
   );

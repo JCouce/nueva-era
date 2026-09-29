@@ -18,7 +18,9 @@ import {
   etiquetaPoder,
   levitacion,
 } from "./poderes";
-import { defaultSheet, type Sheet } from "./sheet";
+import { defaultSheet, parseSheet, type Sheet } from "./sheet";
+import { migrar } from "./migraciones";
+import { pagarFatiga, fatigaEfectiva, ajustarFatigaTemporal, terminarEscena } from "./vitalidad";
 import { resolverDanio } from "./acciones";
 import { fuentesDeCapa1 } from "./capa1";
 import { DISCIPLINAS, disciplinaPorId } from "../catalog/psionica";
@@ -508,5 +510,64 @@ describe("Traslación, tanda 2", () => {
     );
     // la casilla del duelo no aparece en otras acciones
     assert.ok(!togglesDeFatiga(tras, "psi_traslacion_anclaje", res("anclaje", 6)!).some((x) => /niveles superior/.test(x.toggle)));
+  });
+});
+
+describe("Proeza y fatiga temporal", () => {
+  const tras = disciplinaPorId("traslacion");
+  const proeza = tras.acciones.find((a) => a.id === "psi_traslacion_proeza")!;
+  const res = (nivelPoseido: number, elecciones: Record<string, string> = {}) =>
+    resolverPoder(proeza, { nivelPoseido, elecciones, disciplina: tras, aplicados: { perspicacia: 1 } })!;
+  const ficha = (fatigaActual: number, fatigaTemporal = 0): Sheet => ({ ...defaultSheet(), fatigaActual, fatigaTemporal });
+
+  test("Proeza: Potencia + Atletismo dificultad 10, compleja, paga la fila, sin casillas de carga", () => {
+    const p = res(4, { nivel: "n4" });
+    const t = tiradaDePoder(proeza, p)!;
+    assert.equal(t.aplicado, "potencia");
+    assert.equal(t.habilidad, "atletismo");
+    assert.equal(t.dificultadSugerida, 10);
+    assert.equal(p.economia, "compleja");
+    assert.equal(p.fatiga, 3);
+    assert.deepEqual(togglesDeFatiga(tras, proeza.id, p), []);
+  });
+
+  test("Proeza no se bloquea sin fatiga; las demás sí", () => {
+    assert.equal(bloqueoPorFatiga(proeza, 3, 0), null);
+    assert.ok(bloqueoPorFatiga(tras.acciones.find((a) => a.id === "psi_traslacion_anclaje")!, 3, 0));
+  });
+
+  test("al 200 %: 1 de daño mental propio", () => {
+    assert.equal(res(2).danioPropio, null);
+    assert.deepEqual(res(2, { limite: "limite_200" }).danioPropio, { valor: 1, categoria: "mental" });
+  });
+
+  test("pagarFatiga: el exceso va a temporal solo si se permite", () => {
+    assert.deepEqual([pagarFatiga(ficha(5), 3, true)].map((s) => [s.fatigaActual, s.fatigaTemporal]), [[2, 0]]);
+    assert.deepEqual([pagarFatiga(ficha(2), 5, true)].map((s) => [s.fatigaActual, s.fatigaTemporal]), [[0, 3]]);
+    assert.deepEqual([pagarFatiga(ficha(2, 1), 4, true)].map((s) => [s.fatigaActual, s.fatigaTemporal]), [[0, 3]]);
+    assert.deepEqual([pagarFatiga(ficha(2), 5, false)].map((s) => [s.fatigaActual, s.fatigaTemporal]), [[0, 0]]);
+  });
+
+  test("fatiga efectiva, ajuste manual y terminar escena", () => {
+    assert.equal(fatigaEfectiva(ficha(0, 3)), -3);
+    assert.equal(fatigaEfectiva(ficha(6, 2)), 4);
+    assert.equal(ajustarFatigaTemporal(ficha(0, 1), -5).fatigaTemporal, 0);
+    assert.equal(ajustarFatigaTemporal(ficha(0, 1), 2).fatigaTemporal, 3);
+    assert.equal(terminarEscena(ficha(0, 4)).fatigaTemporal, 0);
+  });
+
+  test("la sobrecarga se calcula con la fatiga efectiva", () => {
+    // fatiga máx 8, actual 5 con 2 temporales → efectiva 3; gastar 2 cruza a exhausto (<2)
+    assert.equal(cruzaSobrecarga(fatigaEfectiva(ficha(5, 2)), fatigaEfectiva(ficha(5, 2)) - 2, 8), true);
+  });
+});
+
+describe("v12 → v13: fatiga temporal", () => {
+  test("una ficha v12 arranca sin fatiga temporal; parseSheet la recorta", () => {
+    const { ficha } = migrar({ schemaVersion: 12, psionica: { traslacion: 1 } }, 13);
+    assert.equal(ficha.fatigaTemporal, 0);
+    assert.deepEqual(ficha.psionica, { traslacion: 1 });
+    assert.equal(parseSheet({ schemaVersion: 13, fatigaTemporal: -4 }).fatigaTemporal, 0);
+    assert.equal(parseSheet({ schemaVersion: 13, fatigaTemporal: 3 }).fatigaTemporal, 3);
   });
 });

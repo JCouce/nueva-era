@@ -57,7 +57,8 @@ import { DISCIPLINA_IDS, type DisciplinaId } from "../catalog/psionica";
 //        (docs/prompt-gasto-recursos.md, Fase 2)
 //   11 → se añade el stock de munición especial (municionEspecial)
 //   12 → se añaden los niveles de disciplina psiónica (psionica)
-export const SCHEMA_VERSION = 12;
+//   13 → se añade la fatiga temporal de Proeza (fatigaTemporal)
+export const SCHEMA_VERSION = 13;
 
 const atributoValue = z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX);
 
@@ -104,6 +105,9 @@ export const sheetSchema = z.object({
   // de salud() en cuanto se puede calcular, sin duplicar aquí su fórmula.
   vidaActual: z.number().int().min(0).max(999),
   fatigaActual: z.number().int().min(0).max(999),
+  // Fatiga gastada de más en una Proeza (psiónica, Traslación): cuenta para los
+  // umbrales mientras dura la escena y se devuelve al terminarla (vitalidad.ts).
+  fatigaTemporal: z.number().int().min(0).max(999),
 });
 
 export type Sheet = z.infer<typeof sheetSchema>;
@@ -139,6 +143,7 @@ export function defaultSheet(): Sheet {
     // fórmula de vida/fatiga aquí.
     vidaActual: 999,
     fatigaActual: 999,
+    fatigaTemporal: 0,
   };
 }
 
@@ -305,6 +310,7 @@ export function parseSheet(raw: unknown): Sheet {
       psionica,
       vidaActual: clampInt(r.vidaActual, 0, 999, 999),
       fatigaActual: clampInt(r.fatigaActual, 0, 999, 999),
+      fatigaTemporal: clampInt(r.fatigaTemporal, 0, 999, 0),
     }),
   );
 }

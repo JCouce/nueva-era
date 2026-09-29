@@ -240,7 +240,13 @@ export function ResumenTab({
           {"//SYSTEM · estado"}
         </p>
         <Dato label="Puntos de vida" value={sheet.vidaActual} max={vida} tono="text-danger" />
-        <Dato label="Puntos de fatiga" value={sheet.fatigaActual} max={fatiga} tono="text-info" />
+        <Dato
+          label="Puntos de fatiga"
+          value={sheet.fatigaActual}
+          max={fatiga}
+          tono="text-info"
+          nota={sheet.fatigaTemporal > 0 ? `${sheet.fatigaTemporal} temporal de Proeza · efectiva ${sheet.fatigaActual - sheet.fatigaTemporal}` : undefined}
+        />
         <Dato label="Alerta" value={alertaPasiva} tono="text-accent" />
       </HudCard>
 
