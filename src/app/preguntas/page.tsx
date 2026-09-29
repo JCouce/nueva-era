@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { prisma } from "@/lib/db";
 import { PreguntasLista, type PreguntaVista } from "./PreguntasLista";
 
@@ -7,6 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default async function PreguntasPage() {
+  // Sin sesión ni cookies Next la prerenderizaría en el build (vacía y cacheada):
+  // las respuestas cambian en cada visita, así que se renderiza por petición.
+  await connection();
   const preguntas = await prisma.pregunta.findMany({ orderBy: [{ area: "asc" }, { orden: "asc" }] });
   const vista: PreguntaVista[] = preguntas.map((p) => ({
     id: p.id,
