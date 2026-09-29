@@ -479,6 +479,98 @@ el diseño para cuando llegue.
 **Sigue abierta, sin respuesta en esta tanda:** la pregunta 16 (¿la defensa de un sistema
 es un número fijo del objetivo o una tirada enfrentada?).
 
+### 10.6 Catálogo de poderes: reglas de uso `[FIRME · usuario 2026-09-28 + docs/psionica.md]`
+
+La prosa literal vive en `docs/psionica.md` (de `docs/Psiónica.pdf`). Decisiones del usuario
+al preparar su modelado:
+
+- **Coste**: cada disciplina (Resonancia, Inducción, Hipercongnición, Traslación, Contención,
+  Singularidad) se compra por separado, nivel N a N×3, igual que atributos (×2) y
+  habilidades (×1).
+- **Nivel empleado**: con nivel N en una disciplina se puede usar cualquier nivel ≤ N.
+- **Tabla de niveles de Resonancia**: su fatiga/acción/alcance es lo que dice la tabla para
+  el nivel empleado y **sustituye**, no acumula (nivel 2 cuesta 2, no 1 + 2).
+- **Sobrecarga** (pasar de exhausto → inconsciente + salvación de Fortaleza 5 + nivel, texto
+  de Métrica): aplica **también a Metasensoria**, y salta **al cruzar el umbral de exhausto
+  (<10% de la fatiga) con un gasto psiónico**. **No se puede gastar fatiga que no se tiene**;
+  0 de fatiga = inconsciente. Excepción, Proeza: ver "Fatiga temporal" abajo.
+- **Coste mínimo de fatiga de un poder = 0** (usuario, 2026-09-28): los descuentos pueden
+  dejarlo gratis, salvo que la prosa especifique "mínimo 1" (Traslación nv6), que entonces
+  manda.
+- **Gasto de fatiga semi-global**: el coste de fatiga de cualquier poder pasa por una sola
+  cadena de modificadores (descuentos por nivel poseído, ×2 de Munición Supresora, "ignora el
+  primer nivel" de Xovromium, conversión con cargas de Derivación Psiónica…), no se aplica
+  poder a poder.
+- **Porcentajes de alcance** (Derivación Psiónica n2, pregunta 33): valen tal cual; el alcance
+  es informativo (metros/km) y multiplicarlo no exige un tipo de bono nuevo.
+- **"Informática", "Física", "Mecánica", "Medicina", "Biónica"** son especialidades de
+  Tecnociencia/Biociencia (cierra la duda de "Informática" de 10.5).
+- **Efectos mantenidos se acumulan** (varios poderes activos a la vez).
+- **Estados nuevos** que nombra la psiónica (asustado, aterrorizado, confuso crítico,
+  indefenso, coma, asfixia…): se apuntan en la lista de estados y se parametrizan más
+  adelante; en la tirada basta mostrar el texto ("aplica miedo").
+- **Ventaja** (tirar 2 dados y quedarse el mejor; Alerta nivel 4): mecánica propia y
+  genérica, no un parche de Alerta.
+- **Efectos activos con duración sobre uno mismo** (bonos de Precognición, absorción y
+  −Agilidad de Contención…) y **concentración/mantenimiento**: se llevan **a mano**, fuera del
+  motor por ahora.
+- **Xovromium** (`docs/equipamiento.md:1338`, "+1 a las manifestaciones psiónicas"): toggle
+  de +1 en **toda tirada que resuelva un poder**, visible si el personaje tiene Xovromium en
+  recursos. Que siga apareciendo tras tomárselo (dosis gastada) es un problema conocido,
+  aparcado.
+- **"Psiónico entrenado"** (el que resiste con Voluntad + Biociencia en vez de Voluntad +
+  Actitud): cualquiera con **Biociencia ≥ 1** (entrenada).
+- **Fatiga temporal (Proeza) — confirmada por el usuario 2026-09-28.** Proeza
+  es la única acción que puede gastar más fatiga de la que se tiene. Ese extra se apunta
+  aparte como *fatiga temporal*: cuenta para los umbrales (fatigado/exhausto/inconsciente)
+  mientras dura, y al cerrar la escena se devuelve ("volverá al nivel de fatiga que le
+  correspondiese"). Si la fatiga efectiva llega a 0 o menos, inconsciente al terminar la
+  acción; al 200% de carga, además, el nivel de daño mental que ya dice la prosa.
+- **La app solo aplica lo de la ficha de quien tira.** Lo que le toca hacer al objetivo
+  (esquivar, resistir un empuje, salvar contra un estado, pruebas encadenadas) se muestra
+  como **texto con sus cuatro grados en el panel de resultado**, después de tirar; no se
+  estructura ni se tira por él.
+- **Dificultades**: la app no las calcula. El máster dice el número y el jugador lo escribe
+  (interferencias, distancia, objetivo conocido/desconocido van dentro de ese número). Como
+  mucho, botones de referencia (p.ej. conocido / vagamente conocido / desconocido) si caben.
+- **Fatiga condicional**: los descuentos/incrementos de fatiga pueden depender de la opción
+  elegida (forma ampliada ×2) o de una condición que declara el jugador con un toggle ("soy 2
+  niveles superior" en Duelo de Métrica, "carga < 10 kg").
+- **Avisos fijos** ("ignora cobertura ligera", "ignora escudo deflector"...): nota antes de
+  tirar si afecta al impacto, nota en el daño si afecta al daño. Lo que hay que saber antes
+  de actuar (Sincronía: "si no conoces al objetivo, primero Rastreo") va en la tirada.
+- **Cuestionario de modelado (usuario, 2026-09-28)** — 26 decisiones, principio común: la app
+  calcula lo que sale de la ficha propia; lo que depende de contar cosas en mesa va como
+  mensaje y se ajusta a mano.
+  - *Sale de la ficha, la app lo calcula/aplica*: daño mental propio del mensaje agresivo
+    (se resta al confirmar); habilidad alternativa ("biociencia o actitud") con selector
+    preseleccionando la más alta; tipo de acción final ya rebajado por nivel (Resonancia
+    nv2/4/6); "Alcance local" como opción de toda acción de Resonancia (reacción desde nv3);
+    ventaja automática también en "Buscar / percibir" con Resonancia 4+ (con UI que enseñe los
+    dos dados); toggle "Estabilización como reacción" +3/+4 en las salvaciones; penalizadores
+    propios fijos (Proyección −2 como dificultad de manejo de arma; toggle −4 fuera de alcance
+    local en Inducción nv5); carga máxima con Perspicacia aplicada; objetivo y área calculados
+    en Singularidad; dificultad del objetivo ya sumada al marcar "Poderoso"; sobrecarga: aviso +
+    salvación de Fortaleza calculada + daño según grado aplicado; fatiga temporal de Proeza como
+    contador en Recursos con "Terminar escena".
+  - *Levitación*: nuevo tipo de movimiento "Levitar" en la ficha, velocidad 10 × nivel m.
+  - *Grados de Inducción*: texto post-tirada traducido al punto de vista del psiónico (si gana
+    por 6+, se muestra el "fracaso crítico" del objetivo).
+  - *Mensaje + a mano*: objetivos múltiples (Comando nv3, Modulación nv4/nv6, Anclaje) — se
+    muestra el coste por objetivo y el jugador se descuenta la fatiga; Proeza: nota "+1 de
+    fatiga por cada 10% de peso extra", fatiga a mano; área/duración de Contención ampliada:
+    no se calcula, se mira en el manual.
+  - *Notas, no acciones*: Alertar por Vínculo, Confrontar (Contención), "requiere objetivo
+    anclado" (Trasladar/Proyección), Alerta pasiva exhausta (aviso, se puede tirar).
+  - *Acciones propias*: "Duelo de Métrica" como reacción en fichas con Traslación, con toggle
+    "soy 2 niveles superior". Auto-anclaje: siempre con tirada de Reflejos + Física.
+  - *Hipercongnición*: sus tramos (distancia, tiempo transcurrido) son una opción que fija
+    tiempo y fatiga; el nivel solo rebaja tiempos y dificultad.
+- **Máquinas sin ficha** (qué tira una IA/servidor que no es personaje para resistir un poder):
+  pendiente de Murillo — es la pregunta 16.
+- Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de
+  alcance, etc.) se han mandado a Murillo.
+
 ## 11. Aumentos `[PARCIAL · CONV-1]`
 
 **Aumentos = biónicos + genéticos.** Los **biónicos** son implantes de hardware; los
@@ -780,7 +872,7 @@ lo anota a mano.
     un evento distinto? Esa rama del estado `Shock` está deliberadamente sin construir
     porque depende de que existan sintéticos/aumentos en la ficha (Fase 5, bloqueada).
     Detectado por el usuario al revisar el Inyector Hipodérmico (2026-09-21).
-33. **Propuesta, no ambigüedad: Canal de Alta Resonancia (Derivación Psiónica nivel 2)
+33. ~~**Propuesta, no ambigüedad: Canal de Alta Resonancia (Derivación Psiónica nivel 2)
     da "+10% de alcance efectivo de los poderes" — sugerir a Murillo que sea un +N
     fijo en vez de un porcentaje.** Todo el resto del catálogo (armas, mejoras,
     subsistemas) usa bonos planos — un porcentaje sería el único caso de todo `EQUIP`
@@ -788,7 +880,7 @@ lo anota a mano.
     sitios. No es una regla dudosa, es una propuesta de simplificación para que el
     día que existan poderes psiónicos (Fase 5) esto no obligue a un tipo de bono
     nuevo solo para un caso. Detectado por el usuario al revisar Derivación Psiónica
-    (2026-09-22).
+    (2026-09-22).~~ **Cerrada (usuario, 2026-09-28): el porcentaje se queda** — el alcance de un poder es informativo y multiplicarlo no pide un bono nuevo (§10.6).
 34. **S.A.79: contradicción interna en la munición.** La prosa de `descripcion` dice
     "tambor extraíble de 20 cartuchos"; el dato transcrito en el catálogo
     (`escopeta_sa79.municion`) trae un número distinto. No hay forma de saber cuál es

@@ -23,6 +23,7 @@ sufijo que dice qué hace:
 | Workflow (`.claude/workflows/`) | Script de apoyo (aquí) | Qué hace |
 |---|---|---|
 | `auditoria-motor-metadata.js` | `auditoria-motor-metadata-extraer.ts` | Extrae el catálogo de equipo (`EQUIPO`) a JSON — eso es lo que se pasa como `args` al workflow. |
+| `modelar-area.js` | `modelar-area-extraer.ts` | Trocea la transcripción de un área (`docs/psionica.md`...) en lotes por disciplina e items por acción, con el contexto cerrado del motor (tipos, mecanismos, acciones). `--calibracion` vuelca piezas de equipo auditadas con su `MotorMetadata` real como referencia. |
 
 Un grep del nombre del workflow encuentra todo lo suyo, esté donde esté.
 

@@ -1194,7 +1194,23 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      (VTF nivel 2, Pico de Cuervo Poco Habitual: dificultad sugerida 7, antes
      habría sido 9).
 
-### Fase 5 — Poderes, dotes, aumentos, especies reales ⬜ (bloqueado por el diseñador)
+### Fase 5 — Poderes, dotes, aumentos, especies reales ⬜ (psiónica en modelado)
+
+**Psiónica — modelado hecho, sin construir (2026-09-28).** Prosa literal en
+`docs/psionica.md`; decisiones del usuario en `docs/sistema.md` §10.6. Workflow
+`.claude/workflows/modelar-area.js` (+ `scripts/workflows/modelar-area-extraer.ts`),
+calibrado dos veces contra equipo auditado, lanzado sobre las 22 acciones: salida en
+`docs/modelado-psionica.md` (cobertura 87%, checklist, campos, capas C01–C19, preguntas) y
+borrador de catálogo `docs/modelado-psionica.json`. Siguiente: decidir los campos nuevos
+propuestos (§3.2 del modelado) y separar qué preguntas son del usuario y cuáles de Murillo;
+luego piloto de construcción por el camino crítico C01 → C02 → C03 → C05/C08.
+Preguntas al diseñador: página pública `/preguntas` (tabla `Pregunta`, seed
+`scripts/seed-preguntas.mjs` desde `scripts/data/preguntas-psionica.json`, 42 preguntas);
+las decisiones del usuario siguen en artifacts y se vuelcan a `docs/sistema.md` §10.6. De paso la
+calibración destapó ids inexistentes en `MotorMetadata` de equipo (`esquiva` en Sistema de
+Retroceso, `salv_ceguera_destello` en Visor Nocturno, `camuflaje_trifasico` como acción en
+Malla Plasmática) y el sacrificio de colchón de la Malla marcado construido con toggle 0/0 —
+pendiente de repaso aparte.
 El diseñador (Murillo) aún no ha escrito estos documentos. No hay reglas que adelantar,
 pero sí se adelantó la arquitectura que las va a recibir (ver "El motor — MotorMetadata +
 arquitectura escalable" en Hecho): `fuentesDeCapa1` (`src/lib/rules/capa1.ts`) es el punto
