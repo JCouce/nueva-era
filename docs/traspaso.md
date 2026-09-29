@@ -43,6 +43,7 @@ todo lo demás, en `docs/tareas.md`.
 | `src/lib/rules/` | El motor: atributos, habilidades, ficha, derivados, creación, tiradas, modificadores, migraciones | Con su test al lado |
 | `src/lib/catalog/` | Datos puros: especies y el catálogo de equipo entero | Al añadir contenido |
 | `CLAUDE.md` | Stack, comandos, arquitectura y gotchas del proyecto | Al cambiar estructura o comandos |
+| `docs/prompt-construir-psionica.md` | **Encargo vivo para seguir con la psiónica**: estado del código, receta para dar de alta una disciplina, trampas y el siguiente paso | Al cerrar cada disciplina o tanda |
 | `docs/prompt-relevo.md` | Encargo para arrancar una sesión nueva: archivos clave, estado exacto, método de trabajo | Al cerrar una fase grande |
 | `docs/prompt-fase-6b.md` | Encargo específico para seguir con el gestor de combate — decisiones recientes que no están en ningún otro sitio | Mientras dure la fase 6b; se archiva (como `prompt-equipo.md`) cuando cierre entera |
 | `docs/prompt-equipo.md` | **Desfasado**: encargo para la fase de Equipo, que ya está construida (Tienda, Equipo, ranuras) | Histórico, no seguir como si fuera el siguiente paso |
