@@ -566,6 +566,98 @@ al preparar su modelado:
     "soy 2 niveles superior". Auto-anclaje: siempre con tirada de Reflejos + Física.
   - *Hipercongnición*: sus tramos (distancia, tiempo transcurrido) son una opción que fija
     tiempo y fatiga; el nivel solo rebaja tiempos y dificultad.
+- **Convenciones generales (usuario, cuestionario 2, 2026-09-29):**
+  - **"Nivel de poder" a secas = nivel POSEÍDO** en la disciplina (no el empleado). El
+    empleado solo cuando la prosa dice "nivel empleado" o la tabla lo fija por fila.
+  - Poder sin resultados por grado: éxito = funciona, fracaso = no funciona, críticos sin
+    efecto extra. La fatiga se paga aunque falle. Estado sin duración escrita = 1 turno.
+  - Descuentos de fatiga por nivel se acumulan hasta 0 (mínimo 1 solo si la prosa lo dice).
+  - Coste propio de una acción de Resonancia = uso cercano/local; si se elige un alcance de
+    la tabla, esa fila sustituye tipo de acción y fatiga. En Traslación, la acción que dice su
+    coste (Sensor, Proyección, Levitación) paga ese; la que dice "según carga y nivel" paga la
+    tabla; la regla general de Métrica (1 por nivel) solo si no hay nada más. Levitar cuesta
+    solo 1/minuto (10 min en nv4, 1 h en nv6), sin la fila de la tabla.
+  - Sin fatiga suficiente el botón no deja confirmar (salvo Proeza). La fatiga se descuenta
+    de la ficha, también en combate. Orden de la cadena: coste base → descuentos por nivel →
+    ×2 Munición Supresora → Xovromium −1 → mínimo → pago con cargas (Derivación Psiónica).
+  - Alerta psiónica pasiva: **tirada normal** (no un número pasivo).
+  - Resonancia nv2 "acciones de nivel 1" = las usadas a nivel empleado 1, incluido el local;
+    nv6 "duración a 1 minuto para nivel 4" = tiempo de acción de la tabla.
+  - Estabilización cuesta 1 de fatiga (como Supresión); su +3/+4 sustituye al +2.
+  - Biónica es especialidad de Tecnociencia.
+- **Respuestas de Murillo (web `/preguntas`, 2026-09-29):**
+  - *Resonancia*: alcance local con Inducción es un permiso extra. Barreras de lenguaje o
+    biología y códigos encriptados suben la dificultad (los encriptados pueden pedir varias
+    acciones). Mensaje agresivo: si no dice qué pasa al fallar, no pasa nada. Barrera
+    idiomática fallida: el mensaje llega pero no se entiende. Rastreo ×2/×10 multiplica el
+    tiempo de la fila de la tabla usada. Darse cuenta de Leer Mente: prueba libre según los
+    conocimientos del objetivo. Alerta activa: acción estándar (mejorará en niveles altos,
+    sin definir). Vínculo: el "punto de poder" es el nivel en Resonancia (nivel 5 = 5 km²);
+    tantos aliados como fatiga se tenga.
+  - *Inducción*: Comando nv2 cuesta 1 y usa la prueba base; en acciones extremas se repite la
+    salvación original (Voluntad + Biociencia o + Actitud). Hipomanía vale sobre aliados.
+    Supresión: nv2 = 10 min × nivel, nv4 = **30 min × nivel**; el uso +2 a salvación también
+    tira contra 10 y cuesta 1. Estabilización nv4 omite por completo los penalizadores de
+    daño y fatiga durante la misma duración. Reconfiguración: basta la acción compleja; cambios
+    profundos piden acción mantenida con concentración (incluso horas).
+  - *Hipercognición*: tiene nivel 6; −1 de dificultad en nv4 y −2 en nv6. **Errata en Sondeo:**
+    el éxito crítico debería durar turnos por nivel de poder y prolongarse gastando fatiga; el
+    éxito normal dura como máximo turnos por nivel, sin prolongar. El tramo local baja a simple
+    en nv5. Precognición: las salvaciones no cuentan como tiradas defensivas; el fracaso
+    crítico dura 1 turno.
+  - *Traslación*: la carga máxima de Anclaje es el total de todos los objetivos; oponerse al
+    escape no cuesta fatiga; anclaje colectivo pasa a acción estándar (nv4). Trasladar: una
+    tirada inicial y dura lo que dura; si el objetivo se resiste, enfrentadas; al acabar el
+    tiempo se paga fatiga y se mantiene sin nueva tirada de ataque. Proeza: Potencia +
+    Atletismo dificultad 10 ("si no recuerdo mal"). Sensor: la habilidad para identificar
+    depende del objetivo (Bio o Tecnociencia). Proyección sin blanco: tirada de ataque, pero
+    casi siempre se resuelve sin tirada salvo que sea determinante.
+  - *Contención*: nivel 2 personal = igual que nivel 1. La tabla de fatiga es la que es. La
+    absorción cubre todo daño menos el mental y no se puede reducir con efectos antiblindaje.
+    "Quieto" sustituye la absorción, no suma. Ir contra el ataque consume la reacción. Sumarse
+    a una ampliada ajena pide nivel 1 y fatiga; el foco sigue siendo el psiónico principal.
+    Los protegidos (psiónicos o no) pueden quedarse quietos, ir contra el ataque o esquivar,
+    con el coste de acción normal. Entre contenciones se usa la mejor, no se apilan.
+  - *Singularidad*: Poderosa cuesta +1 de fatiga plano. "Cobertura ligera" = follaje, neblina,
+    una caja de cartón (interpretación del máster). Expansión: con éxito cae en la casilla
+    elegida; cada fallo la desvía una casilla. Expansión Poderosa +1 no es errata (sube daño y
+    dificultad de esquiva). Convergencia: "armadura de plasma" = Malla Plasmática; la pérdida
+    de absorción es permanente; sin armadura el fuego del fracaso se queda en el primer nivel
+    ya recibido, con llamarada igualmente (el mínimo de fuego es 1).
+- **Lo que Murillo dejó a medias, decidido por el usuario (2026-09-29):**
+  - Hipomanía sobre un aliado dispuesto: no tira, se aplica directamente el Éxito.
+  - Alerta nivel 4: **toggle "+2 por Resonancia 4"** en las dos tiradas de alerta (Buscar /
+    percibir y la Alerta psiónica), además de la ventaja automática ya decidida.
+  - Ir contra el ataque (Contención): consume la reacción; el daño (nivel empleado) lo recibe
+    el objeto bloqueado — hoy la app no modela daño a objetos, llegará. Fatiga extra: la prosa
+    no la menciona, se asume ninguna.
+  - Expansión: el daño no decae aparte (la decadencia es el −4 por casilla al esquivar);
+    afecta a todo lo que haya en el área, aliados y el propio psiónico incluidos.
+  - Proeza: límite del 200% de la carga máxima del nivel (inconsciente + 1 daño mental al
+    llegar); se resuelve con Potencia + Atletismo dificultad 10.
+  - Sobrecarga: inconsciencia automática; la salvación de Fortaleza (5 + nivel empleado) solo
+    decide el daño letal no absorbible = nivel empleado (crítico 0, éxito la mitad, fracaso
+    todo, fracaso crítico el doble).
+- **Cierre del modelado (usuario, 2026-09-29):**
+  - **Regla general: si la prosa no lo dice, lo decide el máster en mesa.** Cubre los detalles
+    de segundo orden que salieron en el último modelado (grados exactos de un estado,
+    redondeos, a qué tiradas afecta un penalizador del objetivo…); se muestran como texto.
+  - "Quemar las sinapsis" al resonar con máquinas es ambientación, sin mecánica.
+  - Acción de Resonancia sin coste propio en alcance local (Rastreo): cuesta 1, como la fila 1.
+  - Sobrecarga en poderes que no eligen nivel (Comando, Supresión, Sensor, Levitar…): cuenta
+    el nivel poseído en la disciplina.
+  - Las rebajas de tipo de acción no bajan de simple (gratuita solo si la prosa lo dice).
+  - Hipercognición: −1 de dificultad en nivel 4 y −2 en nivel 6 (el 2 no rebaja).
+  - Traslación: carga < 10 kg cuesta 0 (el nv3 manda; el "mínimo 1" del nv6 solo limita su
+    propia rebaja); estos descuentos solo afectan a las acciones que pagan la tabla, no a
+    Proyección ni Levitar.
+  - Contención ampliada con colaboradores: el foco paga lo normal (sin ×2) y cada colaborador
+    1 por casilla que añade. La personal es acción simple en todos los niveles.
+  - Impulso Poderoso: empuje de 8 × nivel **poseído**. Las versiones Poderosas **suman** sobre
+    el nivel empleado elegido (+1 fatiga; Impulso +2 daño y +1 dificultad del empuje; Expansión
+    +1 daño y +1 a esquiva y expulsión; Convergencia +2 daño).
+  - Acciones y opciones de nivel no alcanzado: no aparecen en Acciones.
+  - La app no cuenta acciones por turno: el tipo de acción es solo una etiqueta.
 - **Máquinas sin ficha** (qué tira una IA/servidor que no es personaje para resistir un poder):
   pendiente de Murillo — es la pregunta 16.
 - Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de

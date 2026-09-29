@@ -1194,16 +1194,21 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      (VTF nivel 2, Pico de Cuervo Poco Habitual: dificultad sugerida 7, antes
      habría sido 9).
 
-### Fase 5 — Poderes, dotes, aumentos, especies reales ⬜ (psiónica en modelado)
+### Fase 5 — Poderes, dotes, aumentos, especies reales ⬜ (psiónica: modelo cerrado)
 
-**Psiónica — modelado hecho, sin construir (2026-09-28).** Prosa literal en
-`docs/psionica.md`; decisiones del usuario en `docs/sistema.md` §10.6. Workflow
-`.claude/workflows/modelar-area.js` (+ `scripts/workflows/modelar-area-extraer.ts`),
-calibrado dos veces contra equipo auditado, lanzado sobre las 22 acciones: salida en
-`docs/modelado-psionica.md` (cobertura 87%, checklist, campos, capas C01–C19, preguntas) y
-borrador de catálogo `docs/modelado-psionica.json`. Siguiente: decidir los campos nuevos
-propuestos (§3.2 del modelado) y separar qué preguntas son del usuario y cuáles de Murillo;
-luego piloto de construcción por el camino crítico C01 → C02 → C03 → C05/C08.
+**Psiónica — modelo cerrado, sin construir (2026-09-29).** Prosa literal en
+`docs/psionica.md`; todas las decisiones (usuario y Murillo) en `docs/sistema.md` §10.6.
+Workflow `.claude/workflows/modelar-area.js` (+ `scripts/workflows/modelar-area-extraer.ts`)
+relanzado con el modelo v2: `docs/modelado-psionica.md` (cobertura 98%, checklist, campos,
+capas C1–C14) y borrador de catálogo `docs/modelado-psionica.json` (raíz
+`CatalogoPsionica`, versiones Poderosas corregidas a mano con `Opcion.suma`). Lo que la
+prosa no dice lo decide el máster en mesa. Siguiente: construir por el camino crítico
+(generador de acciones de poder → selector de nivel/ejes + evaluador de Valor → gasto de
+fatiga con su cadena → resolución), con un piloto de una disciplina. Pendiente de repaso
+aparte: ids inexistentes que destapó la calibración en `MotorMetadata` de equipo (`esquiva`
+en Sistema de Retroceso, `salv_ceguera_destello` en Visor Nocturno, `camuflaje_trifasico`
+como acción en Malla Plasmática) y el sacrificio de colchón de la Malla marcado construido
+con toggle 0/0.
 Preguntas al diseñador: página pública `/preguntas` (tabla `Pregunta`, seed
 `scripts/seed-preguntas.mjs` desde `scripts/data/preguntas-psionica.json`, 42 preguntas);
 las decisiones del usuario siguen en artifacts y se vuelcan a `docs/sistema.md` §10.6. De paso la

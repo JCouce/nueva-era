@@ -553,7 +553,7 @@ const instruccionesDoc = calibracion
 7. Errores de fidelidad encontrados por el verificador y cómo se han aplicado.
 8. Preguntas para el diseñador, deduplicadas y agrupadas por disciplina, más las transversales.
 9. Avisos del proceso (lotes caídos, efectos sin verificar, incoherencias normalizadas), si los hay.
-ADEMÁS escribe ${salidaJson}: el borrador de catálogo, un array de Disciplina del MODELO OBJETIVO con sus acciones (propuesta de cada item, con cada MotorMetadata en "motor"), APLICANDO las correcciones de erroresFidelidad. JSON válido, sin comentarios.
+ADEMÁS escribe ${salidaJson}: el borrador de catálogo con la forma RAÍZ del MODELO OBJETIVO (si define una raíz, esa; si no, un array de Disciplina) con sus acciones (propuesta de cada item, con cada MotorMetadata en "motor"), APLICANDO las correcciones de erroresFidelidad. JSON válido, sin comentarios.
 Al terminar devuelve solo 5-8 líneas: rutas escritas, cobertura, nº de preguntas, las 3 capas y los 3 campos más usados.`
 
 const informe = await agent(

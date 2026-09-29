@@ -63,57 +63,86 @@ const OTRAS_PIEZAS_MOTOR = [
 // tubería leerá después — si un efecto de la prosa no cabe aquí, el workflow
 // propone un campo nuevo en vez de dejarlo como hueco suelto. Vive aquí (y no
 // como tipo en src/) hasta que el usuario lo apruebe con el resultado delante.
-const MODELO_PSIONICA = `// Borrador aprobado en forma por el usuario 2026-09-28 (docs/sistema.md §10.6).
+const MODELO_PSIONICA = `// v2, 2026-09-29: forma aprobada por el usuario + campos decididos en los cuestionarios
+// (docs/sistema.md §10.6). Principio: la app calcula lo que sale de la ficha de quien usa
+// el poder; lo que hace el objetivo es texto tras tirar; lo que se cuenta en mesa es mensaje.
 Valor = number
-      | { base: number; porNivel?: number; porUnidad?: { contador: string; valor: number } }  // porNivel = × nivel EMPLEADO
-      | { opciones: { label: string; valor: number }[]; ajusteMaster: true }                // "a discreción del narrador" con valores de referencia
-      | { manual: string }                                                                   // no parametrizable: texto para la mesa
+      | { base: number; porNivel?: number; porNivelPoseido?: number; porAplicado?: { aplicado: string; valor: number } }
+        // porNivel = × nivel. OJO: "nivel de poder" a secas = nivel POSEÍDO; empleado solo si la prosa dice "empleado" o lo fija una fila de tabla
+      | { opciones: { label: string; valor: number }[]; ajusteMaster: true }   // referencias; la dificultad la escribe el jugador
+      | { manual: string }                                                      // solo texto
 Economia = "gratuita" | "simple" | "estandar" | "compleja" | "reaccion" | { tiempo: string }
+Grado = "critico" | "exito" | "fracaso" | "fracasoCritico"
+
+CatalogoPsionica {                      // raíz del borrador JSON
+  sobrecarga: {                         // regla ÚNICA de toda la psiónica, la aplica la app
+    umbral: "exhausto"; inconsciencia: "automatica";
+    salvacion: { aplicado: "fortaleza"; dificultad: Valor };   // 5 + nivel empleado
+    danio: { valor: Valor; categoria: "letal"; absorbible: false };
+    multiplicadorPorGrado: Record<Grado, number>               // 0 / 0.5 / 1 / 2
+  }
+  disciplinas: Disciplina[]
+}
 
 Disciplina {
   id; label; rama: "metasensoria" | "metrica"
   requisito: { disciplina: string; nivel: number } | null
   porNivel: { nivel; fatiga?: Valor; economia?: Economia; alcance?: Valor; carga?: Valor; duracion?: Valor }[]  // tabla común; [] si no hay
-  reglas: { id; texto; aplica: "todas" | string[] }[]      // sobrecarga, interferencias (+2/+4/+6), prueba base de Inducción...
-  modificadoresFatiga: ModificadorFatiga[]                  // descuentos/incrementos que da TENER nivel N en esta disciplina
+  reglas: { id; texto; aplica: "todas" | string[] }[]
+  modificadoresFatiga: ModificadorFatiga[]      // descuentos/incrementos por TENER nivel N en la disciplina
+  modificadoresEconomia: { fuente; desdeNivelPoseido: number; alcance: { accion?: string; nivelEmpleado?: number }; op: "baja_un_paso" | "sustituye"; valor?: Economia }[]
+  bonosEnOtrasTiradas: BonoToggle[]             // p.ej. "+2 por Resonancia 4" en las dos alertas
+  ventajas: { desdeNivelPoseido: number; acciones: string[] }[]   // 2d12 automáticos en esas acciones (incl. acciones fijas como alerta_activa)
   acciones: AccionPoder[]
 }
 
 AccionPoder {
-  id                                   // "psi_<disciplina>_<accion>", será el id de la Accion generada
-  label; desdeNivel                    // nivel POSEÍDO mínimo para tenerla
-  economia: Economia | "tabla"         // "tabla" = fila porNivel del nivel empleado
-  fatiga: Valor | "tabla"              // coste BASE; los descuentos/incrementos van en ModificadorFatiga, no aquí
+  id                                   // "psi_<disciplina>_<accion>"
+  label; desdeNivel                    // nivel POSEÍDO mínimo
+  economia: Economia | "tabla"
+  fatiga: Valor | "tabla"              // coste BASE; descuentos solo como ModificadorFatiga
+  permiteFatigaTemporal: boolean       // solo Proeza: puede gastar más de la que tiene (se devuelve al terminar la escena)
   alcance: Valor | "tabla" | null
   duracion: Valor | null
+  objetivo: { tipo: "unico" | "casilla" | "varios" | "propio" | "aliado"; area?: Valor } | null
+  desplazamiento: Valor | null         // metros que mueve (Trasladar, Impulso...)
   resolucion: { tipo: "sin_dado" }
-            | { tipo: "tirada"; aplicado; habilidad; especialidad?: string; dificultad: Valor }
-            | { tipo: "enfrentada"; aplicado; habilidad; especialidad?: string }       // contra resistencia
-            | { tipo: "ataque"; aplicado; habilidad; especialidad?: string; dificultad?: Valor; danio: Valor; categoria: string }
-  porObjetivo?: { organico?: Partial<AccionPoder>; sintetico?: Partial<AccionPoder> }  // cuando la tirada cambia según el blanco
-  resistencia: { organico?: Par; psionicoEntrenado?: Par; sintetico?: Par; salvacion?: { aplicado; dificultad: Valor } } | null  // lo que tira el OBJETIVO (texto para él)
-  ejes: { id; label; tipo: "nivel_empleado" | "opcion" | "contador"; opciones: Opcion[] }[]
-  resultados: Partial<Record<"critico" | "exito" | "fracaso" | "fracasoCritico", Resultado>>
-  ventaja: { condicion: string } | null   // tirar 2d12 y quedarse el mejor (mecánica aparte)
-  ajustesPorNivelPoseido: { desdeNivel; sobre: string /* ruta: "economia", "ejes.nivel.opciones.2.fatiga"... */; op: "sustituye" | "suma" | "multiplica"; valor: Valor | Economia | string }[]
-  manual: string[]                        // lo que se lleva a mano POR DECISIÓN (efectos activos sobre uno mismo, concentración/mantenimiento)
+            | { tipo: "tirada"; aplicado; habilidad: string | string[]; especialidad?: string; dificultad?: Valor; modificador?: number }
+            | { tipo: "enfrentada"; aplicado; habilidad: string | string[]; especialidad?: string; modificador?: number }
+            | { tipo: "ataque"; aplicado; habilidad: string | string[]; especialidad?: string; modificador?: number; danio: Valor; categoria: string }
+            // habilidad como array = el jugador elige (selector con la más alta preseleccionada); modificador = penalizador fijo propio (Puntería −2)
+  porObjetivo?: { organico?: Partial<AccionPoder>; sintetico?: Partial<AccionPoder> }
+  objetivoTira: { que: string; dificultad?: Valor; grados?: Partial<Record<Grado, string>> }[]
+            // SOLO TEXTO tras tirar: resistencia, esquiva, empuje, salvaciones del objetivo (con sus cuatro grados si los hay)
+  ejes: { id; label; tipo: "nivel_empleado" | "opcion"; opciones: Opcion[] }[]
+  resultados: Partial<Record<Grado, Resultado>>   // SIEMPRE desde el punto de vista de quien tira (traduce los grados escritos desde el objetivo)
+  danioPropio: { valor: Valor; categoria: string } | null   // lo que se hace el propio psiónico al usarlo; la app lo resta al confirmar
+  multiplesObjetivos: { texto: string; fatigaPorObjetivo: Valor } | null   // MENSAJE; el jugador se descuenta la fatiga a mano
+  notas: { texto: string; lugar: "tirada" | "danio" }[]   // "tirada" = antes de tirar; "danio" = junto al daño
+  togglesPropios: BonoToggle[]          // penalizadores/bonos que marca el jugador en ESTA acción (−4 fuera de alcance local...)
+  bonosEnOtrasTiradas: BonoToggle[]     // lo que esta acción da en OTRAS tiradas propias (Estabilización +3/+4 en salvaciones)
+  movimientoOtorgado: { tipo: "levitar"; velocidad: Valor } | null
+  ajustesPorNivelPoseido: { desdeNivel; sobre: string; op: "sustituye" | "suma" | "multiplica"; valor: Valor | Economia | string }[]
+  manual: string[]                      // a mano POR DECISIÓN (efectos activos propios, concentración, área de Contención ampliada)
   motor: MotorMetadata[]
 }
-Par = { aplicado: string; habilidad: string; especialidad?: string }
-Opcion = { id; label; desdeNivel?: number; cambia: Partial<Pick<AccionPoder, "economia" | "fatiga" | "alcance" | "duracion" | "resolucion" | "resultados">> }
+Opcion = { id; label; desdeNivel?: number
+  cambia: Partial<Pick<AccionPoder, "economia" | "fatiga" | "alcance" | "duracion" | "resolucion" | "resultados" | "objetivoTira" | "notas" | "danioPropio" | "desplazamiento" | "objetivo">>  // SUSTITUYE
+  suma?: Record<string, number> }   // SUMA sobre lo ya resuelto por los otros ejes (ruta → +N), p.ej. versiones Poderosas
 Resultado = { texto: string; estados: { estado: string; duracion: Valor; sobre: "objetivo" | "propio" }[]; danio?: { valor: Valor; categoria: string; sobre: "objetivo" | "propio" } }
+BonoToggle = { etiqueta: string; alcance: string /* id de acción, grupo ("Salvaciones") o "alerta" */; valor: number; desdeNivelPoseido?: number }
 
-// Gasto de fatiga SEMI-GLOBAL (decisión usuario 2026-09-28): el coste final de cualquier
-// poder = fatiga base de la acción → cadena de ModificadorFatiga de TODAS las fuentes
-// (nivel poseído de la disciplina, equipo, fármacos, estados). Nunca se hornea el descuento en la acción.
+// Gasto de fatiga SEMI-GLOBAL: coste final = base → cadena de ModificadorFatiga de TODAS las fuentes,
+// en este orden: descuentos por nivel → ×2 Munición Supresora → Xovromium −1 → mínimo (0 salvo que la prosa diga 1) → pago con cargas.
 ModificadorFatiga = {
-  fuente: string                                   // "resonancia nv3", "municion_supresora", "xovromium"...
-  alcance: { rama?: string; disciplina?: string; accion?: string; nivelEmpleadoMax?: number; nivelEmpleadoMin?: number }
+  fuente: string
+  alcance: { rama?: string; disciplina?: string; accion?: string; opcion?: { eje: string; opcion: string }; nivelEmpleadoMax?: number; nivelEmpleadoMin?: number }
+  desdeNivelPoseido?: number
+  condicion?: { toggle: string }        // lo declara el jugador con un toggle ("soy 2 niveles superior", "carga < 10 kg")
   op: "suma" | "multiplica" | "minimo" | "ignora_primero" | "paga_con_recurso"
   valor: number | { recurso: string; porPunto: number }
 }
-// Grupo de acciones "Psiónica" con subgrupos rama/disciplina: es el alcance al que apuntan los
-// modificadores externos (toggle Xovromium +1, −2 de Munición Supresora...).`;
+// Grupo de acciones "Psiónica" con subgrupos rama/disciplina: alcance al que apuntan los modificadores externos.`;
 
 const DECISIONES_POR_AREA: Record<string, { seccion: string }> = {
   psionica: { seccion: "### 10.6" },
