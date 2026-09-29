@@ -58,7 +58,8 @@ objetivo, y resuelva la **sobrecarga**. Hecho para Singularidad y Traslación; f
   Duelo de Métrica.
 - Compra de las 6 disciplinas (pool N×3, XP tras aprobar, requisitos en las dos
   direcciones) en la ficha y en el **editor de NPC** (modo libre).
-- Sin poderes todavía: **Contención, Resonancia, Inducción, Hipercognición**.
+- **Contención** completa (Contención con sus tres formas y Colaborar).
+- Sin poderes todavía: **Resonancia, Inducción, Hipercognición**.
 
 **Dónde vive cada cosa**
 
@@ -113,22 +114,12 @@ objetivo, y resuelva la **sobrecarga**. Hecho para Singularidad y Traslación; f
 - Los penalizadores por umbral de salud/fatiga **no se aplican en ninguna tirada** (hallazgo
   sin arreglar, fuera de la psiónica): los umbrales solo sirven hoy para la sobrecarga.
 
-## 4b. Siguiente: Contención (plan ya planteado al usuario)
+## 4b. Siguiente: Resonancia
 
-Un único poder **sin tirada**, casi todo datos:
-- Tabla por nivel empleado (fatiga 1/1/2/3/3/4, absorción 1/1/2/3/4/5, absorción quieto
-  3/3/5/7/9/11, Agilidad −1/−1/−2/−2/−3/−3). Nivel 2 personal = nivel 1.
-- Duraciones que dependen de empleado **y** poseído (nivel 5 empleando nivel 1: 40 turnos;
-  nivel 6 empleando nivel 1 personal: gratis 1 hora, luego 1/hora y sin −Agilidad…): única
-  pieza de motor nueva, que un ajuste por nivel poseído se filtre por nivel empleado.
-- Campo genérico de datos extra en la ficha del modal (Absorción, Absorción quieto, Agilidad).
-- Forma: Personal (simple) / Ampliada (estándar, ×2 de fatiga, mantener = simple por turno,
-  reacción desde nivel 4) / Colaborar en la de otro (1 de fatiga por casilla).
-- Absorción y −Agilidad se aplican **a mano** (efectos activos sobre uno mismo); área y
-  duración de la ampliada, en el manual. Notas: quieto, ir contra el ataque (consume la
-  reacción), no se apila, cubre todo menos daño mental.
+Contención ya está hecha (plan cumplido tal cual). Lo siguiente es Resonancia; planteala al
+usuario antes de tocar código.
 
-Después: Resonancia (daño propio, ventaja, bonos en otras tiradas), Inducción (objetivo
+Resonancia trae daño propio (mensaje agresivo), ventaja (2d12) y bonos en otras tiradas. Después: Inducción (objetivo
 orgánico/sintético, elegir habilidad, varios objetivos), Hipercognición, y las fuentes
 externas (Xovromium, Munición Supresora, Derivación Psiónica).
 

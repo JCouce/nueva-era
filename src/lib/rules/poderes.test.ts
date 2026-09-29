@@ -571,3 +571,72 @@ describe("v12 → v13: fatiga temporal", () => {
     assert.equal(parseSheet({ schemaVersion: 13, fatigaTemporal: 3 }).fatigaTemporal, 3);
   });
 });
+
+describe("Contención", () => {
+  const cont = disciplinaPorId("contencion");
+  const acc = (id: string) => cont.acciones.find((a) => a.id === `psi_contencion_${id}`)!;
+  const res = (nivelPoseido: number, elecciones: Record<string, string> = {}) =>
+    resolverPoder(acc("contencion"), { nivelPoseido, elecciones, disciplina: cont })!;
+  const dato = (p: ReturnType<typeof res>, etiqueta: string) => p.datos.find((d) => d.etiqueta === etiqueta)?.valor;
+
+  test("tabla por nivel empleado: fatiga, absorción, quieto, contra el ataque, Agilidad", () => {
+    const p = res(4, { nivel: "n4" });
+    assert.equal(p.fatiga, 3);
+    assert.equal(dato(p, "Absorción"), 3);
+    assert.equal(dato(p, "Absorción quieto"), 7);
+    assert.equal(dato(p, "Contra el ataque"), 14);
+    assert.equal(dato(p, "Agilidad"), -2);
+    assert.equal(dato(p, "Daño al objeto"), 4);
+    assert.equal(p.economia, "simple");
+    assert.equal(p.duracion, 10);
+    // nivel 2 personal = nivel 1
+    const n2 = res(2, { nivel: "n2" });
+    assert.deepEqual([n2.fatiga, dato(n2, "Absorción"), dato(n2, "Absorción quieto")], [1, 1, 3]);
+    assert.equal(tiradaDePoder(acc("contencion"), p), null);
+  });
+
+  test("duración según empleado y poseído", () => {
+    assert.equal(res(2, { nivel: "n1" }).duracion, 10);
+    assert.equal(res(3, { nivel: "n1" }).duracion, 20);
+    assert.equal(res(4, { nivel: "n1" }).duracion, 30);
+    assert.equal(res(4, { nivel: "n3" }).duracion, 20);
+    assert.equal(res(5, { nivel: "n1" }).duracion, 40);
+    assert.equal(res(5, { nivel: "n4" }).duracion, 20);
+    assert.equal(res(6, { nivel: "n3" }).duracion, 40);
+    assert.equal(res(6, { nivel: "n6" }).duracion, 10);
+  });
+
+  test("nivel 6: nivel 1 personal gratis 1 hora y sin −Agilidad; rebajas de Agilidad", () => {
+    const p = res(6, { nivel: "n1" });
+    assert.equal(p.fatiga, 0);
+    assert.deepEqual(p.duracion, { manual: "1 hora gratis; después, 1 de fatiga por hora" });
+    assert.equal(dato(p, "Agilidad"), 0);
+    // ampliada a nivel 1 no es gratis ni dura 1 hora
+    const amp = res(6, { nivel: "n1", forma: "ampliada" });
+    assert.equal(amp.fatiga, 1);
+    assert.equal(amp.duracion, 40);
+    assert.deepEqual([3, 4, 5, 6].map((n) => dato(res(6, { nivel: `n${n}` }), "Agilidad")), [-1, -1, -2, -3]);
+  });
+
+  test("ampliada: desde nivel 2, estándar, ×2 de fatiga; como foco, sin ×2", () => {
+    assert.deepEqual(opcionesDisponibles(acc("contencion").ejes[1], 1).map((o) => o.id), ["personal"]);
+    const amp = res(3, { nivel: "n3", forma: "ampliada" });
+    assert.equal(amp.economia, "estandar");
+    assert.equal(costeFatiga(cont, "psi_contencion_contencion", amp).total, 4);
+    const foco = res(3, { nivel: "n3", forma: "foco" });
+    assert.equal(costeFatiga(cont, "psi_contencion_contencion", foco).total, 2);
+    assert.equal(costeFatiga(cont, "psi_contencion_contencion", res(3, { nivel: "n3" })).total, 2);
+  });
+
+  test("colaborar: 1 de fatiga, sin tirada, desde nivel 1", () => {
+    const p = resolverPoder(acc("colaborar"), { nivelPoseido: 1, disciplina: cont })!;
+    assert.equal(p.fatiga, 1);
+    assert.equal(tiradaDePoder(acc("colaborar"), p), null);
+  });
+});
+
+test("Contención ampliada protege a varios", () => {
+  const cont = disciplinaPorId("contencion");
+  const p = resolverPoder(cont.acciones[0], { nivelPoseido: 2, elecciones: { forma: "ampliada" }, disciplina: cont })!;
+  assert.equal(p.objetivo?.tipo, "varios");
+});

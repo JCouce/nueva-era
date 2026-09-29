@@ -54,6 +54,7 @@ export function CabeceraPoder({
   if (poder.desplazamiento !== null) datos.push(["Desplaz.", conUnidad(poder.desplazamiento, u.desplazamiento)]);
   if (poder.carga !== null) datos.push(["Carga máx.", conUnidad(typeof poder.carga === "number" ? Math.max(0, poder.carga) : poder.carga, "kg")]);
   if (danio !== null && poder.resolucion.tipo === "ataque") datos.push(["Daño", `${textoValor(danio)} ${poder.resolucion.categoria}`]);
+  for (const d of poder.datos) datos.push([d.etiqueta, textoValor(d.valor)]);
   const notas = poder.notas.filter((n) => n.lugar === "tirada");
 
   const alternar = (t: ToggleFatiga) => {

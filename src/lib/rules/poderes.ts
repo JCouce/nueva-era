@@ -74,6 +74,7 @@ export type PoderResuelto = {
   multiplesObjetivos: { texto: string; fatigaPorObjetivo?: ValorResuelto } | null;
   // Carga máxima de la fila de la disciplina (Traslación: fila × Perspicacia); null si no hay.
   carga: ValorResuelto | null;
+  datos: { etiqueta: string; valor: ValorResuelto }[];
   unidades: NonNullable<AccionPoder["unidades"]>;
   notas: Nota[];
   togglesPropios: BonoToggle[];
@@ -146,9 +147,18 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
   // nivel 6), en orden: el último que aplica gana en "sustituye".
   for (const a of accion.ajustesPorNivelPoseido) {
     if (nivelPoseido < a.desdeNivel) continue;
-    if (a.op === "sustituye") w[a.sobre] = structuredClone(a.valor);
-    else if (typeof w[a.sobre] === "number" && typeof a.valor === "number") {
-      w[a.sobre] = a.op === "suma" ? (w[a.sobre] as number) + a.valor : (w[a.sobre] as number) * a.valor;
+    if (a.nivelEmpleado !== undefined && a.nivelEmpleado !== nivelEmpleado) continue;
+    if (a.opcion && elecciones[a.opcion.eje] !== a.opcion.opcion) continue;
+    const ruta = a.sobre.split(".");
+    const padre = ruta.slice(0, -1).reduce<Record<string, unknown> | undefined>(
+      (n, k) => (n?.[k] as Record<string, unknown> | undefined),
+      w,
+    );
+    const campo = ruta[ruta.length - 1];
+    if (!padre || !(campo in padre)) throw new Error(`${accion.id}: ajuste sobre "${a.sobre}", que no existe`);
+    if (a.op === "sustituye") padre[campo] = structuredClone(a.valor);
+    else if (typeof padre[campo] === "number" && typeof a.valor === "number") {
+      padre[campo] = a.op === "suma" ? (padre[campo] as number) + a.valor : (padre[campo] as number) * a.valor;
     } else throw new Error(`${accion.id}: ajuste "${a.op}" sobre "${a.sobre}" no numérico`);
   }
 
@@ -196,6 +206,10 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
   // La carga máxima solo cuenta en las acciones que pagan la fila (Anclaje, Trasladar).
   const pagaTabla = accion.fatiga === "tabla" || accion.alcance === "tabla";
   const carga = pagaTabla && fila?.carga !== undefined ? evaluar(fila.carga, "carga") : null;
+  const datos = ((w.datos as { etiqueta: string; valor: unknown }[] | undefined) ?? []).map((d) => ({
+    etiqueta: d.etiqueta,
+    valor: evaluar(d.valor, `datos.${d.etiqueta}`),
+  }));
   const movimiento = w.movimientoOtorgado as Record<string, unknown> | null;
   if (movimiento) movimiento.velocidad = evaluar(movimiento.velocidad, "movimientoOtorgado");
 
@@ -238,6 +252,7 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
     danioPropio: w.danioPropio as PoderResuelto["danioPropio"],
     multiplesObjetivos: w.multiplesObjetivos as PoderResuelto["multiplesObjetivos"],
     carga,
+    datos,
     unidades: accion.unidades ?? {},
     notas: w.notas as Nota[],
     togglesPropios: accion.togglesPropios,

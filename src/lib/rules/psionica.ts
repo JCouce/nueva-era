@@ -87,7 +87,20 @@ export type AccionPoder = {
   togglesPropios: BonoToggle[];
   bonosEnOtrasTiradas: BonoToggle[];
   movimientoOtorgado: { tipo: "levitar"; velocidad: Valor } | null;
-  ajustesPorNivelPoseido: { desdeNivel: number; sobre: string; op: "sustituye" | "suma" | "multiplica"; valor: Valor | Economia | string }[];
+  // `sobre` admite ruta con puntos ("datos.2.valor"). `nivelEmpleado` y `opcion`
+  // lo restringen a un nivel empleado / una opción elegida (Contención: con nivel 6,
+  // emplear el nivel 1 personal es gratis).
+  ajustesPorNivelPoseido: {
+    desdeNivel: number;
+    nivelEmpleado?: number;
+    opcion?: { eje: string; opcion: string };
+    sobre: string;
+    op: "sustituye" | "suma" | "multiplica";
+    valor: Valor | Economia | string;
+  }[];
+  // Datos del poder que se enseñan tal cual en su ficha (Contención: absorción,
+  // −Agilidad…) y que el jugador aplica a mano.
+  datos?: { etiqueta: string; valor: Valor }[];
   manual: string[];
   // Unidades para mostrar; por defecto metros en alcance, área y desplazamiento.
   unidades?: { alcance?: string; area?: string; desplazamiento?: string; duracion?: string };
@@ -110,6 +123,7 @@ export type CambiosOpcion = Partial<
     | "desplazamiento"
     | "objetivo"
     | "multiplesObjetivos"
+    | "datos"
   >
 > & { resolucion?: Partial<ResolucionPoder> & { danio?: Valor } };
 

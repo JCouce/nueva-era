@@ -690,6 +690,15 @@ al preparar su modelado:
   - Al 200 %: la app resta 1 de vida (daño mental sin absorción) al usarla y avisa de la
     inconsciencia; la inconsciencia no se aplica como estado. Con fatiga efectiva ≤ 0 tras
     cualquier poder, aviso de inconsciencia al terminar la acción.
+- **Construcción de Contención (usuario, 2026-09-30):** un poder sin tirada con tabla por
+  nivel empleado (fatiga, absorción, absorción quieto, contra el ataque = 2 × quieto,
+  −Agilidad, daño al objeto = nivel empleado) que se enseña como datos y se aplica a mano.
+  Duraciones y rebajas de −Agilidad por nivel poseído según la prosa; con nivel 6, el nivel 1
+  personal es gratis la primera hora y sin −Agilidad *(supuesto: la Agilidad a 0 vale para
+  el nivel 1 en cualquier forma; el "gratis 1 hora", solo en la personal, como dice la
+  prosa)*. Formas: personal (simple), ampliada (estándar, ×2) y ampliada como foco con
+  colaboradores (sin ×2). Colaborar en la ampliada de otro es una acción aparte (1 de
+  fatiga, tipo de acción a criterio del máster: la prosa no lo dice).
   - Sensor: el radio (nivel × 2) va sin unidad, a criterio del máster, hasta que Murillo la
     diga. La carga máxima se enseña solo en las acciones que pagan la fila (Anclaje,
     Trasladar); no se comprueba, es dato.

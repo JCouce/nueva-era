@@ -752,6 +752,174 @@ const TRASLACION: Disciplina = {
   acciones: [ANCLAJE, AUTO_ANCLAJE, TRASLADAR, LEVITAR, PROYECCION, AUTO_PROYECCION, PROEZA, SENSOR, DUELO_METRICA],
 };
 
+// ── Contención ────────────────────────────────────────────────────
+// Un único poder sin tirada. La tabla va por nivel EMPLEADO (nivel 2 personal =
+// nivel 1); las duraciones largas y rebajas de −Agilidad dependen además del
+// POSEÍDO (ajustesPorNivelPoseido filtrados por nivel empleado). Absorción y
+// −Agilidad se aplican a mano; área de la ampliada, en el manual (usuario,
+// 2026-09-28/29).
+const CONTENCION_ID = "psi_contencion_contencion";
+const ABS = [1, 1, 2, 3, 4, 5];
+const QUIETO = [3, 3, 5, 7, 9, 11];
+const AGILIDAD = [-1, -1, -2, -2, -3, -3];
+const I_AGILIDAD = 3; // índice de "Agilidad" en `datos`
+
+const duracionPor = (desdeNivel: number, nivelEmpleado: number, turnos: number) =>
+  ({ desdeNivel, nivelEmpleado, sobre: "duracion", op: "sustituye", valor: turnos }) as const;
+const agilidadPor = (desdeNivel: number, nivelEmpleado: number, valor: number) =>
+  ({ desdeNivel, nivelEmpleado, sobre: `datos.${I_AGILIDAD}.valor`, op: "sustituye", valor }) as const;
+
+const CONTENCION: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: CONTENCION_ID,
+  label: "Contención",
+  desdeNivel: 1,
+  economia: "simple",
+  fatiga: "tabla",
+  alcance: null,
+  duracion: 10,
+  unidades: { duracion: "turnos" },
+  objetivo: { tipo: "propio" },
+  desplazamiento: null,
+  resolucion: { tipo: "sin_dado" },
+  objetivoTira: [],
+  ejes: [
+    ejeNivelEmpleado((n) => ({
+      fatiga: [1, 1, 2, 3, 3, 4][n - 1],
+      datos: [
+        { etiqueta: "Absorción", valor: ABS[n - 1] },
+        { etiqueta: "Absorción quieto", valor: QUIETO[n - 1] },
+        { etiqueta: "Contra el ataque", valor: 2 * QUIETO[n - 1] },
+        { etiqueta: "Agilidad", valor: AGILIDAD[n - 1] },
+        { etiqueta: "Daño al objeto", valor: n },
+      ],
+    })),
+    {
+      id: "forma",
+      label: "Forma",
+      tipo: "opcion",
+      opciones: [
+        { id: "personal", label: "Personal", cambia: {} },
+        {
+          id: "ampliada",
+          label: "Ampliada",
+          desdeNivel: 2,
+          cambia: {
+            economia: "estandar",
+            objetivo: { tipo: "varios" },
+            notas: [
+              {
+                texto: "Protege una casilla adyacente por nivel empleado (×2 o ×3 según tu nivel: mira el manual) y se mueve contigo; quien sale del área pierde la protección.",
+                lugar: "tirada",
+              },
+              { texto: "Mantenerla: concentración y una acción simple por turno (reacción desde tu nivel 4).", lugar: "tirada" },
+              { texto: "Los protegidos pueden quedarse quietos, ir contra el ataque o esquivar, con su coste normal.", lugar: "tirada" },
+              { texto: "Puedes retirar la protección a alguien como reacción o acción gratuita en tu turno.", lugar: "tirada" },
+            ],
+          },
+        },
+        {
+          id: "foco",
+          label: "Ampliada, soy el foco",
+          desdeNivel: 2,
+          cambia: {
+            economia: "estandar",
+            objetivo: { tipo: "varios" },
+            notas: [
+              {
+                texto: "Con colaboradores: pagas lo normal (sin ×2); cada colaborador paga 1 por la casilla que añade. Si uno cae inconsciente o sale del área, su casilla desaparece.",
+                lugar: "tirada",
+              },
+              { texto: "Mantenerla: concentración y una acción simple por turno (reacción desde tu nivel 4).", lugar: "tirada" },
+            ],
+          },
+        },
+      ],
+    },
+  ],
+  ajustesPorNivelPoseido: [
+    duracionPor(3, 1, 20),
+    duracionPor(4, 1, 30),
+    duracionPor(4, 3, 20),
+    duracionPor(5, 1, 40),
+    duracionPor(5, 3, 30),
+    duracionPor(5, 4, 20),
+    duracionPor(6, 3, 40),
+    duracionPor(6, 4, 30),
+    duracionPor(6, 5, 20),
+    // Nivel 6: el nivel 1 personal es gratis la primera hora y ya no quita Agilidad.
+    { desdeNivel: 6, nivelEmpleado: 1, opcion: { eje: "forma", opcion: "personal" }, sobre: "fatiga", op: "sustituye", valor: 0 },
+    {
+      desdeNivel: 6,
+      nivelEmpleado: 1,
+      opcion: { eje: "forma", opcion: "personal" },
+      sobre: "duracion",
+      op: "sustituye",
+      valor: { manual: "1 hora gratis; después, 1 de fatiga por hora" },
+    },
+    agilidadPor(6, 1, 0),
+    agilidadPor(6, 3, -1),
+    agilidadPor(6, 4, -1),
+    agilidadPor(6, 5, -2),
+  ],
+  resultados: {},
+  notas: [
+    { texto: "Absorción y −Agilidad duran lo que la contención: apúntalos a mano.", lugar: "tirada" },
+    { texto: "Quieto (sin esquivar): la absorción de quieto sustituye a la normal.", lugar: "tirada" },
+    {
+      texto: "Contra el ataque: con tu reacción doblas la absorción de quieto; el objeto bloqueado recibe daño igual al nivel empleado (letal si es un orgánico con golpe desarmado).",
+      lugar: "tirada",
+    },
+    { texto: "Cubre todo daño menos el mental y no se reduce con efectos antiblindaje.", lugar: "tirada" },
+    { texto: "No se apila con otras contenciones: se usa la mejor.", lugar: "tirada" },
+  ],
+  motor: motorDeAccion(CONTENCION_ID, { propias: true }),
+};
+
+// Sumarse a la contención ampliada de otro psiónico: no usa tu nivel ni tus datos
+// (el bonificador es el del foco), así que va como acción aparte.
+const COLABORAR: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: "psi_contencion_colaborar",
+  label: "Colaborar en una contención",
+  desdeNivel: 1,
+  economia: { tiempo: "a criterio del máster" },
+  fatiga: 1,
+  alcance: null,
+  objetivo: { tipo: "propio" },
+  desplazamiento: null,
+  resolucion: { tipo: "sin_dado" },
+  objetivoTira: [],
+  ejes: [],
+  resultados: {},
+  notas: [
+    { texto: "Amplías en una casilla la contención ampliada de otro psiónico (el foco); el bonificador es el suyo.", lugar: "tirada" },
+    { texto: "Si quedas inconsciente o sales del área, tu casilla desaparece.", lugar: "tirada" },
+  ],
+  motor: motorDeAccion("psi_contencion_colaborar", { propias: true }),
+};
+
+const CONTENCION_DISCIPLINA: Disciplina = {
+  id: "contencion",
+  label: "Contención",
+  rama: "metrica",
+  requisito: { disciplina: "traslacion", nivel: 1 },
+  porNivel: [],
+  reglas: [],
+  modificadoresFatiga: [
+    {
+      fuente: "Contención ampliada",
+      alcance: { accion: CONTENCION_ID, opcion: { eje: "forma", opcion: "ampliada" } },
+      op: "multiplica",
+      valor: 2,
+    },
+  ],
+  modificadoresEconomia: [],
+  bonosEnOtrasTiradas: [],
+  ventajas: [],
+  acciones: [CONTENCION, COLABORAR],
+};
+
 const SINGULARIDAD: Disciplina = {
   id: "singularidad",
   label: "Singularidad",
@@ -794,7 +962,7 @@ export const PSIONICA: CatalogoPsionica = {
     disciplinaVacia({ id: "induccion", label: "Inducción", rama: "metasensoria", requisito: { disciplina: "resonancia", nivel: 1 } }),
     disciplinaVacia({ id: "hipercognicion", label: "Hipercognición", rama: "metasensoria", requisito: { disciplina: "resonancia", nivel: 2 } }),
     TRASLACION,
-    disciplinaVacia({ id: "contencion", label: "Contención", rama: "metrica", requisito: { disciplina: "traslacion", nivel: 1 } }),
+    CONTENCION_DISCIPLINA,
     SINGULARIDAD,
   ],
 };

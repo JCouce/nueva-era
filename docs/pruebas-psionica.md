@@ -259,6 +259,31 @@ Borra el NPC al terminar.
 
 ---
 
+## I. Contención
+
+Personaje nuevo con la letra **A** en Psiónica, **Traslación 1** y **Contención 2** (12
+puntos). Fatiga a 8.
+
+- [ ] **I.1 Personal.** En Acciones › Contención · nivel 2, Usar en Contención.
+  → Sin dado. Selectores de nivel (1-2) y Forma (Personal / Ampliada / Ampliada, soy el
+  foco). Ficha: Acción Simple, Fatiga 1, Objetivo Tú, Duración 10 turnos, Absorción 1,
+  Absorción quieto 3, Contra el ataque 6, Agilidad -1, Daño al objeto 2, y cinco notas.
+- [ ] **I.2 Ampliada.** Elige Ampliada.
+  → Acción Estándar, Objetivo Varios, Fatiga 2 con el desglose "Contención ampliada ×2", y
+  cuatro notas más (área, mantenerla, protegidos, retirar protección).
+- [ ] **I.3 Foco.** Elige "Ampliada, soy el foco".
+  → Fatiga 1 (sin ×2) y la nota de colaboradores.
+- [ ] **I.4 Usar.** Nivel 1, Personal, Usar.
+  → "Usado · −1 fatiga".
+- [ ] **I.5 Colaborar.** Usar en "Colaborar en una contención".
+  → Acción "a criterio del máster", Fatiga 1 y dos notas.
+- [ ] **I.6 Niveles altos (NPC con Traslación 1 y Contención 6).**
+  → Nivel 1 Personal: Fatiga 0, Duración "1 hora gratis; después, 1 de fatiga por hora",
+  Agilidad 0. Nivel 1 Ampliada: Fatiga 2, Duración 40 turnos. Nivel 3: Duración 40,
+  Agilidad -1. Nivel 6: Duración 10, Agilidad -3.
+
+---
+
 ## E. Gasto de fatiga y bloqueo
 
 Pon la fatiga a 8 y abre Impulso (nivel 2, forma normal).
@@ -308,7 +333,7 @@ Pon la fatiga a 8 y anota la vida (8/8). Abre Impulso (nivel 2, forma normal).
 
 No son fallos:
 
-- Resonancia, Inducción, Hipercognición y Contención no tienen poderes todavía. Traslación
+- Resonancia, Inducción e Hipercognición no tienen poderes todavía. Traslación
   está completa.
 - Xovromium, Munición Supresora y Derivación Psiónica no afectan aún ni a la tirada ni a
   la fatiga.
