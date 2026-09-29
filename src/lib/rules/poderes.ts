@@ -71,7 +71,10 @@ export type PoderResuelto = {
     >
   >;
   danioPropio: { valor: ValorResuelto; categoria: string } | null;
-  multiplesObjetivos: { texto: string; fatigaPorObjetivo: ValorResuelto } | null;
+  multiplesObjetivos: { texto: string; fatigaPorObjetivo?: ValorResuelto } | null;
+  // Carga máxima de la fila de la disciplina (Traslación: fila × Perspicacia); null si no hay.
+  carga: ValorResuelto | null;
+  unidades: NonNullable<AccionPoder["unidades"]>;
   notas: Nota[];
   togglesPropios: BonoToggle[];
   bonosEnOtrasTiradas: BonoToggle[];
@@ -83,7 +86,12 @@ export type ContextoPoder = {
   nivelPoseido: number;
   elecciones?: Record<string, string>;
   aplicados?: Partial<Record<AplicadoId, number>>; // para Valor.porAplicado
+  // Para lo que la acción deja en "tabla" (fatiga, alcance… de la fila del nivel
+  // empleado) y las rebajas de tipo de acción por nivel poseído.
+  disciplina?: Disciplina;
 };
+
+const PASO_ECONOMIA: Partial<Record<Economia & string, Economia>> = { compleja: "estandar", estandar: "simple" };
 
 export function opcionesDisponibles(eje: EjePoder, nivelPoseido: number): Opcion[] {
   return eje.opciones.filter((o) => (o.desdeNivel ?? 0) <= nivelPoseido);
@@ -136,7 +144,24 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
   const evaluar = (v: unknown, donde: string): ValorResuelto => evaluarValor(v, donde, nivelEmpleado, ctx);
   const opt = <T,>(v: T | null | undefined, f: (x: T) => ValorResuelto) => (v === null || v === undefined ? v : f(v));
 
+  // "tabla" = la fila del nivel empleado en la tabla común de la disciplina.
+  const fila = ctx.disciplina?.porNivel.find((f) => f.nivel === nivelEmpleado);
+  for (const campo of ["fatiga", "alcance", "duracion", "economia"] as const) {
+    if (w[campo] === "tabla" && fila?.[campo] !== undefined) w[campo] = structuredClone(fila[campo]);
+  }
   if (w.economia === "tabla") throw new Error(`${accion.id}: economía "tabla" sin fila elegida`);
+  // Rebajas de tipo de acción por nivel poseído (nunca por debajo de simple).
+  for (const m of ctx.disciplina?.modificadoresEconomia ?? []) {
+    const a = m.alcance;
+    if (nivelPoseido < m.desdeNivelPoseido) continue;
+    if (a.accion && a.accion !== accion.id) continue;
+    if (a.nivelEmpleado !== undefined && a.nivelEmpleado !== nivelEmpleado) continue;
+    if (a.opcion && elecciones[a.opcion.eje] !== a.opcion.opcion) continue;
+    if (m.op === "sustituye" && m.valor) w.economia = m.valor;
+    else if (m.op === "baja_un_paso" && typeof w.economia === "string") {
+      w.economia = PASO_ECONOMIA[w.economia as Economia & string] ?? w.economia;
+    }
+  }
   w.fatiga = evaluar(w.fatiga, "fatiga");
   w.alcance = opt(w.alcance, (x) => evaluar(x, "alcance"));
   w.duracion = opt(w.duracion, (x) => evaluar(x, "duracion"));
@@ -157,7 +182,12 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
   const danioPropio = w.danioPropio as Record<string, unknown> | null;
   if (danioPropio) danioPropio.valor = evaluar(danioPropio.valor, "danioPropio");
   const multiples = w.multiplesObjetivos as Record<string, unknown> | null;
-  if (multiples) multiples.fatigaPorObjetivo = evaluar(multiples.fatigaPorObjetivo, "multiplesObjetivos");
+  if (multiples && multiples.fatigaPorObjetivo !== undefined) {
+    multiples.fatigaPorObjetivo = evaluar(multiples.fatigaPorObjetivo, "multiplesObjetivos");
+  }
+  // La carga máxima solo cuenta en las acciones que pagan la fila (Anclaje, Trasladar).
+  const pagaTabla = accion.fatiga === "tabla" || accion.alcance === "tabla";
+  const carga = pagaTabla && fila?.carga !== undefined ? evaluar(fila.carga, "carga") : null;
   const movimiento = w.movimientoOtorgado as Record<string, unknown> | null;
   if (movimiento) movimiento.velocidad = evaluar(movimiento.velocidad, "movimientoOtorgado");
 
@@ -169,6 +199,7 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
     desplazamiento: w.desplazamiento,
     danio: res.danio,
     area: objetivo?.area,
+    duracion: w.duracion,
     nivel: nivelEmpleado,
     nivelPoseido,
   };
@@ -198,6 +229,8 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
     resultados: w.resultados as PoderResuelto["resultados"],
     danioPropio: w.danioPropio as PoderResuelto["danioPropio"],
     multiplesObjetivos: w.multiplesObjetivos as PoderResuelto["multiplesObjetivos"],
+    carga,
+    unidades: accion.unidades ?? {},
     notas: w.notas as Nota[],
     togglesPropios: accion.togglesPropios,
     bonosEnOtrasTiradas: accion.bonosEnOtrasTiradas,
@@ -266,7 +299,7 @@ export function accionesDePsionica(sheet: Sheet): PoderDisponible[] {
     if (nivelPoseido <= 0) return [];
     return disciplina.acciones.flatMap((accion): PoderDisponible[] => {
       if (!generaAccionDePoder(accion)) return [];
-      const porDefecto = resolverPoder(accion, { nivelPoseido });
+      const porDefecto = resolverPoder(accion, { nivelPoseido, disciplina });
       return porDefecto ? [{ disciplina, accion, nivelPoseido, porDefecto }] : [];
     });
   });
@@ -299,8 +332,10 @@ function capitalizar(s: string): string {
 
 // Etiqueta con la forma elegida (si el eje de forma cambia algo) y el nivel empleado.
 export function etiquetaPoder(accion: AccionPoder, p: PoderResuelto): string {
+  // Solo el eje de forma ("modo": Impulso Poderoso…) cambia el nombre; los demás
+  // (objetivos, acción…) no.
   const forma = accion.ejes
-    .filter((e) => e.tipo === "opcion")
+    .filter((e) => e.id === "modo")
     .map((e) => e.opciones.find((o) => o.id === p.elecciones[e.id]))
     .find((o) => o && Object.keys(o.cambia).length > 0);
   return `${forma?.label ?? accion.label} (nivel ${p.nivelEmpleado})`;
@@ -349,6 +384,8 @@ export function tiradaDePoder(accion: AccionPoder, p: PoderResuelto): Accion | n
       })),
     },
     ...(notasDanio.length > 0 && { efectos: notasDanio.map((n) => ({ fuente: accion.label, texto: n.texto })) }),
+    // Penalizador propio fijo (Puntería −2 de Proyección): línea más del desglose.
+    ...(r.modificador && { ajustesFijos: [{ valor: r.modificador, fuente: `${accion.label} (propio)` }] }),
   };
   if (r.tipo === "ataque") {
     tirada.ataque = {
@@ -404,7 +441,7 @@ function aplicaModificador(
   const a = m.alcance;
   if (a.rama && a.rama !== disciplina.rama) return false;
   if (a.disciplina && a.disciplina !== disciplina.id) return false;
-  if (a.accion && a.accion !== accionId) return false;
+  if (a.accion && !(Array.isArray(a.accion) ? a.accion.includes(accionId) : a.accion === accionId)) return false;
   if (a.opcion && p.elecciones[a.opcion.eje] !== a.opcion.opcion) return false;
   if (a.nivelEmpleadoMax !== undefined && p.nivelEmpleado > a.nivelEmpleadoMax) return false;
   if (a.nivelEmpleadoMin !== undefined && p.nivelEmpleado < a.nivelEmpleadoMin) return false;
@@ -483,4 +520,19 @@ export function danioSobrecarga(nivel: number, grado: Grado): number {
   const v = evaluarValor(PSIONICA.sobrecarga.danio.valor, "sobrecarga.danio", nivel, { nivelPoseido: nivel });
   if (typeof v !== "number") throw new Error("Daño de sobrecarga no numérico");
   return Math.floor(v * PSIONICA.sobrecarga.multiplicadorPorGrado[grado]);
+}
+
+// Casillas de fatiga que el jugador puede marcar en este poder (condiciones de
+// los ModificadorFatiga que le aplican por disciplina, acción y nivel).
+export type ToggleFatiga = { toggle: string; grupo?: string };
+
+export function togglesDeFatiga(disciplina: Disciplina, accionId: string, p: PoderResuelto): ToggleFatiga[] {
+  const vistos = new Map<string, ToggleFatiga>();
+  for (const m of disciplina.modificadoresFatiga) {
+    if (!m.condicion) continue;
+    const todos = new Set([m.condicion.toggle]);
+    if (!aplicaModificador(m, disciplina, accionId, p, todos)) continue;
+    vistos.set(m.condicion.toggle, { toggle: m.condicion.toggle, grupo: m.condicion.grupo });
+  }
+  return [...vistos.values()];
 }

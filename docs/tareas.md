@@ -1232,7 +1232,14 @@ en `ContenidoResultado` — "El objetivo" plegado y siempre visible; notas de da
 Fortaleza tirada por la app contra 5 + nivel, daño letal no absorbible restado de la vida;
 la inconsciencia se avisa, la marca el máster). **Piloto cerrado.** Psiónica también en
 el editor de NPC (pestaña libre 0-6 con requisitos, `setDisciplinaNpcAction`); el generador
-aleatorio y la métrica "Poder" no la tienen, a propósito. Siguiente, disciplina a
+aleatorio y la métrica "Poder" no la tienen, a propósito.
+**Traslación, tanda 1 (2026-09-30):** Anclaje, Trasladar, Proyección, Auto-proyección y
+Sensor. Motor nuevo: filas de la tabla de la disciplina (`"tabla"` → `porNivel` del nivel
+empleado, carga máxima), rebajas de tipo de acción por nivel (`modificadoresEconomia`),
+casillas de fatiga con grupos excluyentes (`togglesDeFatiga`), poderes sin tirada
+(`UsarPoderModal`), mensaje de varios objetivos y penalizador propio como ajuste fijo.
+Siguiente: tanda 2 (Levitar, Auto-anclaje, Duelo de Métrica) y tanda 3 (Proeza con
+fatiga temporal). Siguiente, disciplina a
 disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,
 Derivación), habilidad alternativa con selector, ventaja, Levitar, Duelo de Métrica, fatiga
 temporal (Proeza).

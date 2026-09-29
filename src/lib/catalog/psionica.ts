@@ -268,6 +268,325 @@ function disciplinaVacia(d: Pick<Disciplina, "id" | "label" | "rama" | "requisit
   };
 }
 
+// ── Traslación ────────────────────────────────────────────────────
+// La fatiga de Anclaje y Trasladar no depende del movimiento sino de la carga o
+// el alcance: se paga la fila del nivel empleado de la tabla (porNivel). "Nivel
+// de poder" a secas (duraciones, velocidades, Proyección, Sensor) = poseído.
+
+const ANCLAJE_ID = "psi_traslacion_anclaje";
+const TRASLADAR_ID = "psi_traslacion_trasladar";
+
+const ANCLAJE: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: ANCLAJE_ID,
+  label: "Anclaje",
+  desdeNivel: 1,
+  economia: "estandar",
+  fatiga: "tabla",
+  alcance: "tabla",
+  duracion: { base: 0, porNivelPoseido: 1 },
+  unidades: { duracion: "turnos" },
+  objetivo: { tipo: "unico" },
+  desplazamiento: null,
+  // La prosa lo trata como ataque a distancia sin daño (usuario, 2026-09-30): el
+  // objetivo esquiva; lo enfrentado es luego el escape.
+  resolucion: { tipo: "tirada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "Física" },
+  objetivoTira: [
+    { que: "Esquiva con Reflejos + Atletismo contra el ataque a distancia" },
+    {
+      que: "Si queda anclado, para escapar: reacción o acción simple con Fortaleza + Atletismo, enfrentada a tu Perspicacia + Física (oponerte no te cuesta fatiga)",
+    },
+    {
+      que: "Si tiene Traslación, puede resistir con Duelo de Métrica: Perspicacia + Física enfrentada como reacción o acción simple, por 1 de fatiga (gratis si su Traslación es 2 niveles mayor que la tuya)",
+    },
+  ],
+  ejes: [
+    ejeNivelEmpleado(() => ({})),
+    {
+      id: "objetivos",
+      label: "Objetivos",
+      tipo: "opcion",
+      opciones: [
+        { id: "uno", label: "Uno", cambia: {} },
+        {
+          id: "varios",
+          label: "Varios a la vez",
+          cambia: {
+            economia: "compleja",
+            multiplesObjetivos: {
+              texto: "Todos dentro de tu alcance y de la carga máxima, contada como carga total.",
+            },
+          },
+        },
+        {
+          id: "anadir",
+          label: "Añadir uno más",
+          cambia: {
+            notas: [{ texto: "Añades un objetivo a los que ya mantienes anclados; mantener a varios cuesta una acción estándar por turno.", lugar: "tirada" }],
+          },
+        },
+      ],
+    },
+  ],
+  resultados: {
+    exito: {
+      texto: "Anclado: queda paralizado {duracion} turnos o hasta que se libere; solo puede hacer acciones mentales o intentar escapar",
+      estados: [],
+    },
+    fracaso: { texto: "No queda anclado", estados: [] },
+  },
+  notas: [
+    { texto: "Mantenerlo: una acción simple por turno (estándar si son varios) y −1 al resto de tus acciones por la concentración.", lugar: "tirada" },
+    { texto: "Pasada la duración, renovarlo es volver a usar Anclaje (acción estándar y su fatiga).", lugar: "tirada" },
+  ],
+  motor: motorDeAccion(ANCLAJE_ID, { propias: true, tercero: ["defensa", "salv_fortaleza"] }),
+};
+
+const TRASLADAR: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: TRASLADAR_ID,
+  label: "Trasladar",
+  desdeNivel: 1,
+  economia: "simple",
+  fatiga: "tabla",
+  alcance: "tabla",
+  objetivo: { tipo: "unico" },
+  desplazamiento: { base: 0, porNivelPoseido: 10 },
+  unidades: { desplazamiento: "m/turno" },
+  resolucion: { tipo: "sin_dado" },
+  objetivoTira: [],
+  ejes: [
+    ejeNivelEmpleado(() => ({})),
+    {
+      id: "objetivos",
+      label: "Objetivos",
+      tipo: "opcion",
+      opciones: [
+        { id: "uno", label: "Uno", cambia: {} },
+        {
+          id: "varios",
+          label: "Varios",
+          cambia: {
+            economia: "estandar",
+            multiplesObjetivos: { texto: "Todos en la misma dirección, hacia la casilla elegida." },
+          },
+        },
+      ],
+    },
+    {
+      id: "control",
+      label: "Al terminar",
+      tipo: "opcion",
+      opciones: [
+        { id: "soltar", label: "Soltar", cambia: {} },
+        {
+          id: "mantener",
+          label: "Mantener el control",
+          cambia: {
+            objetivoTira: [
+              { que: "Para liberarse: Fortaleza + Atletismo enfrentada a tu Perspicacia + Física, como reacción gratuita; si gana, queda libre" },
+            ],
+          },
+        },
+      ],
+    },
+  ],
+  resultados: {},
+  notas: [
+    { texto: "Requiere un objetivo ya anclado.", lugar: "tirada" },
+    { texto: "Se mueve por la ruta más directa hacia la casilla elegida; al terminar pierdes el control salvo que lo mantengas.", lugar: "tirada" },
+    { texto: "Si al terminar queda fuera de tu alcance, se libera solo.", lugar: "tirada" },
+  ],
+  motor: motorDeAccion(TRASLADAR_ID, { propias: true, tercero: ["salv_fortaleza"] }),
+};
+
+const PROYECCION: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: "psi_traslacion_proyeccion",
+  label: "Proyección",
+  desdeNivel: 1,
+  economia: "simple",
+  fatiga: 1,
+  alcance: { base: 0, porNivelPoseido: 20 },
+  objetivo: { tipo: "unico" },
+  desplazamiento: null,
+  resolucion: {
+    tipo: "ataque",
+    aplicado: "reflejos",
+    habilidad: "tecnociencia",
+    especialidad: "Física",
+    modificador: -2,
+    danio: { base: 4, porNivelPoseido: 1 },
+    categoria: "letal",
+  },
+  objetivoTira: [{ que: "Reacción defensiva (Defensa / esquiva) contra el ataque a distancia" }],
+  ejes: [
+    {
+      id: "economia",
+      label: "Acción",
+      tipo: "opcion",
+      opciones: [
+        { id: "simple", label: "Simple", cambia: {} },
+        { id: "reaccion", label: "Reacción", cambia: { economia: "reaccion" } },
+      ],
+    },
+  ],
+  resultados: {
+    exito: { texto: "Impacta con el objeto proyectado", estados: [] },
+    fracaso: { texto: "No impacta", estados: [] },
+  },
+  notas: [
+    { texto: "Requiere un objeto o criatura ya anclado; queda libre al final del trayecto.", lugar: "tirada" },
+    { texto: "Puntería: −2 ya incluido en la tirada.", lugar: "tirada" },
+    { texto: "Daño para objetos de hasta 100 kg; +1 por cada 200 kg adicionales (a mano).", lugar: "danio" },
+    { texto: "El objeto lanzado recibe el mismo daño que el blanco.", lugar: "danio" },
+    { texto: "Si también hay daño por caída, se usa el mayor, sin sumarlos.", lugar: "danio" },
+  ],
+  motor: motorDeAccion("psi_traslacion_proyeccion", { propias: true, tercero: ["defensa"] }),
+};
+
+// "Doblando su velocidad": la prosa no dice cuál (carrera o traslación). Pregunta
+// a Murillo en /preguntas (Traslación); mientras, a criterio del máster.
+const VELOCIDAD_AMBIGUA = (factor: string) =>
+  `Te mueves al ${factor} de tu velocidad (la prosa no dice cuál: carrera o traslación de 10 × nivel; a criterio del máster).`;
+
+// Auto-proyección va aparte de Proyección: no hay tirada ni objetivo, así que no
+// cabe como forma de un ataque.
+const AUTO_PROYECCION: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: "psi_traslacion_auto_proyeccion",
+  label: "Auto-proyección",
+  desdeNivel: 1,
+  economia: "estandar",
+  fatiga: 1,
+  alcance: null,
+  objetivo: { tipo: "propio" },
+  desplazamiento: null,
+  resolucion: { tipo: "sin_dado" },
+  objetivoTira: [],
+  ejes: [
+    {
+      id: "velocidad",
+      label: "Velocidad",
+      tipo: "opcion",
+      opciones: [
+        { id: "doble", label: "×2 (estándar)", cambia: { notas: [{ texto: VELOCIDAD_AMBIGUA("doble"), lugar: "tirada" }] } },
+        {
+          id: "cuadruple",
+          label: "×4 (compleja)",
+          cambia: { economia: "compleja", notas: [{ texto: VELOCIDAD_AMBIGUA("cuádruple"), lugar: "tirada" }] },
+        },
+      ],
+    },
+  ],
+  resultados: {},
+  notas: [{ texto: "Por la inercia, +1 a tus esquivas hasta el inicio de tu siguiente turno (a mano).", lugar: "tirada" }],
+  motor: motorDeAccion("psi_traslacion_auto_proyeccion", { propias: true }),
+};
+
+const SENSOR: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: "psi_traslacion_sensor",
+  label: "Sensor",
+  desdeNivel: 1,
+  economia: "estandar",
+  fatiga: 1,
+  alcance: null,
+  duracion: { base: 0, porNivelPoseido: 1 },
+  // La prosa da el radio (nivel × 2) sin unidad; enviado a Murillo.
+  unidades: { duracion: "turnos", area: "(radio, unidad a criterio del máster)" },
+  objetivo: { tipo: "propio", area: { base: 0, porNivelPoseido: 2 } },
+  desplazamiento: null,
+  resolucion: { tipo: "sin_dado" },
+  objetivoTira: [],
+  ejes: [
+    {
+      id: "economia",
+      label: "Acción",
+      tipo: "opcion",
+      opciones: [
+        { id: "estandar", label: "Estándar", cambia: {} },
+        { id: "simple", label: "Simple", desdeNivel: 5, cambia: { economia: "simple" } },
+        { id: "reaccion", label: "Reacción", desdeNivel: 5, cambia: { economia: "reaccion" } },
+      ],
+    },
+  ],
+  resultados: {},
+  notas: [
+    { texto: "Detectas vibraciones, densidades y formas ocultas en el radio, ignorando coberturas visuales y sigilo convencional.", lugar: "tirada" },
+    {
+      texto: "Puedes interactuar con lo que no ves (el mecanismo de una cerradura, cables tras un muro) con Perspicacia y la habilidad de cada caso (Mecánica, Informática, Medicina, Biónica).",
+      lugar: "tirada",
+    },
+    { texto: "Si lo percibido es poco habitual, identificarlo puede pedir una tirada de habilidad como acción gratuita.", lugar: "tirada" },
+    { texto: "Mientras dure, lo que percibes cuenta como objetivo válido para Traslación.", lugar: "tirada" },
+  ],
+  motor: motorDeAccion("psi_traslacion_sensor", { propias: true }),
+};
+
+// Descuentos de la tabla: solo en las acciones que pagan la fila (no en
+// Proyección, Auto-proyección ni Sensor).
+const PAGAN_TABLA = [ANCLAJE_ID, TRASLADAR_ID];
+
+const TRASLACION: Disciplina = {
+  id: "traslacion",
+  label: "Traslación",
+  rama: "metrica",
+  requisito: null,
+  porNivel: [1, 2, 3, 4, 5, 6].map((nivel) => ({
+    nivel,
+    alcance: 15 * nivel,
+    fatiga: [1, 2, 2, 3, 3, 4][nivel - 1],
+    carga: { base: 0, porAplicado: { aplicado: "perspicacia", valor: [25, 50, 125, 250, 375, 500][nivel - 1] } },
+  })),
+  reglas: [
+    {
+      id: "fatiga_por_carga_alcance",
+      texto: "La fatiga no depende del movimiento sino de la carga total o el alcance: se paga la fila del nivel empleado.",
+      aplica: PAGAN_TABLA,
+    },
+  ],
+  modificadoresFatiga: [
+    {
+      fuente: "Traslación 3: carga < 10 kg",
+      alcance: { accion: PAGAN_TABLA },
+      desdeNivelPoseido: 3,
+      condicion: { toggle: "Carga < 10 kg", grupo: "carga" },
+      op: "multiplica",
+      valor: 0,
+    },
+    {
+      fuente: "Traslación 6: carga por debajo de la máxima",
+      alcance: { accion: PAGAN_TABLA },
+      desdeNivelPoseido: 6,
+      condicion: { toggle: "Carga por debajo de la máxima del nivel", grupo: "carga" },
+      op: "suma",
+      valor: -1,
+    },
+    {
+      fuente: "Traslación 6: mínimo",
+      alcance: { accion: PAGAN_TABLA },
+      desdeNivelPoseido: 6,
+      condicion: { toggle: "Carga por debajo de la máxima del nivel", grupo: "carga" },
+      op: "minimo",
+      valor: 1,
+    },
+  ],
+  // Nivel 4: "Anclaje pasa a ser acción simple" — la de un objetivo; anclar a
+  // varios a la vez sigue siendo compleja.
+  modificadoresEconomia: [
+    {
+      fuente: "Traslación 4",
+      desdeNivelPoseido: 4,
+      alcance: { accion: ANCLAJE_ID, opcion: { eje: "objetivos", opcion: "uno" } },
+      op: "baja_un_paso",
+    },
+  ],
+  bonosEnOtrasTiradas: [],
+  ventajas: [],
+  acciones: [ANCLAJE, TRASLADAR, PROYECCION, AUTO_PROYECCION, SENSOR],
+};
+
 const SINGULARIDAD: Disciplina = {
   id: "singularidad",
   label: "Singularidad",
@@ -309,7 +628,7 @@ export const PSIONICA: CatalogoPsionica = {
     disciplinaVacia({ id: "resonancia", label: "Resonancia", rama: "metasensoria", requisito: null }),
     disciplinaVacia({ id: "induccion", label: "Inducción", rama: "metasensoria", requisito: { disciplina: "resonancia", nivel: 1 } }),
     disciplinaVacia({ id: "hipercognicion", label: "Hipercognición", rama: "metasensoria", requisito: { disciplina: "resonancia", nivel: 2 } }),
-    disciplinaVacia({ id: "traslacion", label: "Traslación", rama: "metrica", requisito: null }),
+    TRASLACION,
     disciplinaVacia({ id: "contencion", label: "Contención", rama: "metrica", requisito: { disciplina: "traslacion", nivel: 1 } }),
     SINGULARIDAD,
   ],

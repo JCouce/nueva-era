@@ -14,6 +14,8 @@ import {
   cruzaSobrecarga,
   dificultadSobrecarga,
   danioSobrecarga,
+  togglesDeFatiga,
+  etiquetaPoder,
 } from "./poderes";
 import { defaultSheet, type Sheet } from "./sheet";
 import { resolverDanio } from "./acciones";
@@ -111,7 +113,7 @@ describe("resolverPoder — Singularidad", () => {
             [{}],
           );
           for (const elecciones of combos) {
-            const p = resolverPoder(a, { nivelPoseido: poseido, elecciones })!;
+            const p = resolverPoder(a, { nivelPoseido: poseido, elecciones, disciplina: d })!;
             assert.doesNotMatch(JSON.stringify(p), /"tabla"|\{\w+(\/2)?\}/, `${a.id} ${JSON.stringify(elecciones)}`);
           }
         }
@@ -144,7 +146,9 @@ describe("accionesDePsionica", () => {
   });
 
   test("Singularidad 3: sus tres formas, resueltas a nivel 3", () => {
-    const poderes = accionesDePsionica(conNiveles({ traslacion: 2, singularidad: 3 }));
+    const poderes = accionesDePsionica(conNiveles({ traslacion: 2, singularidad: 3 })).filter(
+      (p) => p.disciplina.id === "singularidad",
+    );
     assert.deepEqual(
       poderes.map((p) => p.accion.id),
       ["psi_singularidad_impulso", "psi_singularidad_expansion", "psi_singularidad_convergencia"],
@@ -157,7 +161,9 @@ describe("accionesDePsionica", () => {
   });
 
   test("los poderes entran en fuentesDeCapa1 como familia 'poder'", () => {
-    const fuentes = fuentesDeCapa1(conNiveles({ traslacion: 2, singularidad: 1 }));
+    const fuentes = fuentesDeCapa1(conNiveles({ traslacion: 2, singularidad: 1 })).filter((f) =>
+      f.catalogoId.startsWith("psi_singularidad_"),
+    );
     assert.deepEqual(
       fuentes.map((f) => [f.familia, f.catalogoId, f.nivel]),
       [
@@ -345,4 +351,106 @@ describe("daño al fallar", () => {
   test("al fallar, el daño es el base sin bono por éxitos", () => {
     assert.deepEqual(resolverDanio(15, -3, "Letal"), { base: 15, bonoExitos: 0, total: 15, categoria: "Letal" });
   });
+});
+
+describe("Traslación", () => {
+  const tras = disciplinaPorId("traslacion");
+  const acc = (id: string) => tras.acciones.find((a) => a.id === `psi_traslacion_${id}`)!;
+  const res = (id: string, nivelPoseido: number, elecciones: Record<string, string> = {}, perspicacia = 2) =>
+    resolverPoder(acc(id), { nivelPoseido, elecciones, disciplina: tras, aplicados: { perspicacia } })!;
+
+  test("Anclaje paga la fila del nivel empleado: fatiga, alcance y carga", () => {
+    const p = res("anclaje", 4, { nivel: "n3" });
+    assert.equal(p.fatiga, 2);
+    assert.equal(p.alcance, 45);
+    assert.equal(p.carga, 125 * 2);
+    // la duración va por el nivel POSEÍDO
+    assert.equal(p.duracion, 4);
+    assert.match(p.resultados.exito!.texto, /paralizado 4 turnos/);
+  });
+
+  test("nivel 4: Anclaje de un objetivo pasa a simple; varios a la vez sigue compleja", () => {
+    assert.equal(res("anclaje", 3).economia, "estandar");
+    assert.equal(res("anclaje", 4).economia, "simple");
+    assert.equal(res("anclaje", 4, { objetivos: "varios" }).economia, "compleja");
+    assert.equal(res("anclaje", 4, { objetivos: "anadir" }).economia, "estandar");
+  });
+
+  test("Anclaje es tirada de Perspicacia + Tecnociencia sin daño", () => {
+    const t = tiradaDePoder(acc("anclaje"), res("anclaje", 1))!;
+    assert.equal(t.aplicado, "perspicacia");
+    assert.equal(t.habilidad, "tecnociencia");
+    assert.equal(t.ataque, undefined);
+    assert.equal(t.label, "Anclaje (nivel 1)");
+  });
+
+  test("casillas de carga: < 10 kg cuesta 0 desde nivel 3; por debajo de la máxima −1 con mínimo 1 en nivel 6", () => {
+    const coste = (nivel: number, toggle?: string) => {
+      const p = res("anclaje", nivel);
+      return costeFatiga(tras, "psi_traslacion_anclaje", p, { toggles: new Set(toggle ? [toggle] : []) }).total;
+    };
+    assert.deepEqual(togglesDeFatiga(tras, "psi_traslacion_anclaje", res("anclaje", 2)), []);
+    assert.equal(coste(3, "Carga < 10 kg"), 0);
+    assert.equal(coste(6), 4);
+    assert.equal(coste(6, "Carga por debajo de la máxima del nivel"), 3);
+    assert.deepEqual(
+      togglesDeFatiga(tras, "psi_traslacion_anclaje", res("anclaje", 6)).map((t) => t.toggle),
+      ["Carga < 10 kg", "Carga por debajo de la máxima del nivel"],
+    );
+    // nivel 6 empleando la fila 1 (coste 1): −1 se queda en el mínimo 1
+    const p1 = res("anclaje", 6, { nivel: "n1" });
+    assert.equal(costeFatiga(tras, "psi_traslacion_anclaje", p1, { toggles: new Set(["Carga por debajo de la máxima del nivel"]) }).total, 1);
+  });
+
+  test("los descuentos de carga no tocan a Proyección ni a Sensor", () => {
+    assert.deepEqual(togglesDeFatiga(tras, "psi_traslacion_proyeccion", res("proyeccion", 6)), []);
+    assert.deepEqual(togglesDeFatiga(tras, "psi_traslacion_sensor", res("sensor", 6)), []);
+  });
+
+  test("Trasladar: sin tirada, velocidad 10 × nivel poseído, simple o estándar con varios", () => {
+    const p = res("trasladar", 3, { nivel: "n1" });
+    assert.equal(tiradaDePoder(acc("trasladar"), p), null);
+    assert.equal(p.desplazamiento, 30);
+    assert.equal(p.fatiga, 1);
+    assert.equal(p.economia, "simple");
+    assert.equal(res("trasladar", 3, { objetivos: "varios" }).economia, "estandar");
+    assert.ok(res("trasladar", 3, { objetivos: "varios" }).multiplesObjetivos);
+    assert.equal(res("trasladar", 3, { control: "mantener" }).objetivoTira.length, 1);
+    assert.equal(etiquetaPoder(acc("trasladar"), res("trasladar", 3, { objetivos: "varios" })), "Trasladar (nivel 3)");
+  });
+
+  test("Proyección: Reflejos + Tecnociencia con −2 fijo, daño nivel + 4, alcance 20 × nivel", () => {
+    const p = res("proyeccion", 3);
+    const t = tiradaDePoder(acc("proyeccion"), p)!;
+    assert.equal(t.aplicado, "reflejos");
+    assert.deepEqual(t.ajustesFijos, [{ valor: -2, fuente: "Proyección (propio)" }]);
+    assert.equal(t.ataque?.modos[0].danio, 7);
+    assert.equal(p.alcance, 60);
+    assert.equal(p.fatiga, 1);
+    assert.equal(res("proyeccion", 3, { economia: "reaccion" }).economia, "reaccion");
+  });
+
+  test("Sensor: simple o reacción solo desde nivel 5; duración y radio por nivel poseído", () => {
+    assert.deepEqual(opcionesDisponibles(acc("sensor").ejes[0], 4).map((o) => o.id), ["estandar"]);
+    assert.deepEqual(opcionesDisponibles(acc("sensor").ejes[0], 5).map((o) => o.id), ["estandar", "simple", "reaccion"]);
+    const p = res("sensor", 5, { economia: "reaccion" });
+    assert.equal(p.economia, "reaccion");
+    assert.equal(p.duracion, 5);
+    assert.equal(p.objetivo?.area, 10);
+  });
+
+  test("Auto-proyección: sin tirada, 1 de fatiga, ×4 es compleja", () => {
+    assert.equal(tiradaDePoder(acc("auto_proyeccion"), res("auto_proyeccion", 1)), null);
+    assert.equal(res("auto_proyeccion", 1, { velocidad: "cuadruple" }).economia, "compleja");
+    assert.equal(res("auto_proyeccion", 1).fatiga, 1);
+  });
+});
+
+test("Traslación: la carga máxima solo sale en las acciones que pagan la tabla", () => {
+  const tras = disciplinaPorId("traslacion");
+  const r = (id: string) =>
+    resolverPoder(tras.acciones.find((a) => a.id === `psi_traslacion_${id}`)!, { nivelPoseido: 2, disciplina: tras, aplicados: { perspicacia: 1 } })!;
+  assert.equal(r("trasladar").carga, 50);
+  assert.equal(r("proyeccion").carga, null);
+  assert.equal(r("sensor").carga, null);
 });

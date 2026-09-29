@@ -148,6 +148,79 @@ Pon la fatiga a 8 y pulsa **Usar** en Convergencia.
 
 ---
 
+## H. Traslación (flujos H1–H5)
+
+Preparación propia: personaje nuevo con la letra **A** en Psiónica y **Traslación 3** (18
+puntos). Pon la fatiga a 8 antes de cada flujo. La carga máxima sale 0 kg porque la
+Perspicacia de un personaje sin tocar es 0 (25 kg × Perspicacia).
+
+- [ ] **H.0 Filas.** En Acciones, el subtítulo pone "Traslación · nivel 3" y salen estas
+  filas:
+  - Anclaje: `PSP 0 + Tecnociencia -1`, `Estándar · 2 fatiga · 45 m`, `-1`
+  - Trasladar: `Simple · 2 fatiga · 45 m`, sin número (no se tira)
+  - Proyección: `REF 0 + Tecnociencia -1 -2`, `Simple · 1 fatiga · 60 m · daño 7`, `-3`
+  - Auto-proyección: `Estándar · 1 fatiga`
+  - Sensor: `Estándar · 1 fatiga`
+
+### H1. Anclaje
+- [ ] **H1.1** Pulsa Usar.
+  → "Anclaje (nivel 3)": Acción Estándar, Fatiga 2, Alcance 45 m, Duración 3 turnos,
+  Carga máx. 0 kg. Hay selectores de nivel (1-3) y de objetivos (Uno / Varios a la vez /
+  Añadir uno más), y la casilla **Carga < 10 kg**.
+- [ ] **H1.2 Casilla de carga.** Márcala.
+  → Fatiga 0, con el desglose "Traslación 3: carga < 10 kg ×0" y `8 → 8`.
+- [ ] **H1.3 Varios a la vez.**
+  → Acción Compleja, y el mensaje "Varios objetivos: cada uno paga… descuéntalos en
+  Recursos".
+- [ ] **H1.4 Tirada.** Vuelve a Uno, desmarca la casilla y tira con **Muy fácil**.
+  → Éxito: "Anclado: queda paralizado 3 turnos o hasta que se libere…". "El objetivo"
+  lista la esquiva, el escape enfrentado y el Duelo de Métrica.
+
+### H2. Trasladar
+- [ ] **H2.1** Pulsa Usar.
+  → Modal **sin dado**: Acción Simple, Fatiga 2, Alcance 45 m, Desplaz. 30 m/turno, tres
+  notas (requiere objetivo anclado…).
+- [ ] **H2.2 Varios.**
+  → Acción Estándar y mensaje de varios objetivos.
+- [ ] **H2.3 Usar.** Elige "Mantener el control" y pulsa **Usar**.
+  → "Usado · −2 fatiga" y, en "El objetivo", "Para liberarse: Fortaleza + Atletismo…". El
+  historial muestra "Trasladar (nivel 3) · usado" y la fatiga baja a 6.
+
+### H3. Proyección
+- [ ] **H3.1** Pulsa Usar.
+  → Acción Simple, Fatiga 1, Alcance 60 m, Daño 7 letal. El desglose muestra `Proyección
+  (propio) -2` y total `-3`. El selector de Acción ofrece Simple / Reacción.
+- [ ] **H3.2 Daño.** Tira con Muy fácil hasta acertar y pulsa Tirar daño.
+  → En Efectos salen los avisos de peso (+1 por cada 200 kg), el daño del objeto lanzado y
+  la regla de caída.
+
+### H4. Auto-proyección
+- [ ] **H4.1** Pulsa Usar y elige **×4 (compleja)**.
+  → Acción Compleja, Fatiga 1, Objetivo "Tú", y las notas "Te mueves al cuádruple de tu
+  velocidad (la prosa no dice cuál…)" y
+  "+1 a tus esquivas… (a mano)". Al pulsar Usar gasta 1 de fatiga.
+
+### H5. Sensor
+- [ ] **H5.1** Pulsa Usar.
+  → Sin selector de acción (a nivel 3 solo hay Estándar). Área "6 (radio, unidad a criterio
+  del máster)", Duración 3 turnos y cuatro notas de efecto.
+
+### H6. Niveles altos (NPC con Traslación 6)
+En `/master/npcs` crea un NPC, ponle **Traslación 6** en su pestaña Psiónica y ve a
+Acciones.
+- [ ] **H6.1 Rebaja de nivel 4.** Abre Anclaje.
+  → Acción **Simple** con "Uno"; con "Varios a la vez", **Compleja**.
+- [ ] **H6.2 Casillas excluyentes.** Marca "Carga < 10 kg" y luego "Carga por debajo de la
+  máxima del nivel".
+  → Solo queda marcada la última. Fatiga 4 → 0 con la primera y 4 → 3 con la segunda. A
+  nivel 1 con la segunda, 1 (mínimo).
+- [ ] **H6.3 Sensor a nivel 5+.** Abre Sensor.
+  → El selector ofrece Estándar / Simple / Reacción.
+
+Borra el NPC al terminar.
+
+---
+
 ## E. Gasto de fatiga y bloqueo
 
 Pon la fatiga a 8 y abre Impulso (nivel 2, forma normal).
@@ -197,7 +270,8 @@ Pon la fatiga a 8 y anota la vida (8/8). Abre Impulso (nivel 2, forma normal).
 
 No son fallos:
 
-- Las otras cinco disciplinas no tienen poderes todavía.
+- Resonancia, Inducción, Hipercognición y Contención no tienen poderes todavía. De
+  Traslación faltan Levitar, Auto-anclaje, Duelo de Métrica y Proeza.
 - Xovromium, Munición Supresora y Derivación Psiónica no afectan aún ni a la tirada ni a
   la fatiga.
 - La inconsciencia por sobrecarga no se aplica como estado; la marca el máster.

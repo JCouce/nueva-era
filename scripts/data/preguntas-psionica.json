@@ -44,7 +44,8 @@
         "Trasladar: para seguir controlando al objetivo, ¿se repite Trasladar o Anclaje? ¿Tira algo el psiónico?",
         "Proeza: ¿qué tirada la resuelve? ¿Se puede pasar del 200% de carga?",
         "Sensor: «si la forma de lo percibido no es poco habitual» parece errata («es poco habitual»). ¿Qué habilidad se tira para identificar lo percibido?",
-        "Proyección: estampar un objeto sin apuntar a un blanco, ¿necesita la tirada de Puntería?"
+        "Proyección: estampar un objeto sin apuntar a un blanco, ¿necesita la tirada de Puntería?",
+        "Auto-proyección: «doblando su velocidad» (acción estándar) o «cuadruplicándola» (acción compleja), ¿qué velocidad es: la de carrera del personaje (16 + Potencia + Atletismo) o la de traslación (10 × nivel de poder, la misma a la que Trasladar mueve objetos y a la que se levita)?"
       ]
     },
     {

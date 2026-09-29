@@ -246,7 +246,7 @@ function ResultadoPropio({ poder, resultado }: { poder: DetallePoder; resultado:
 
 // Siempre visible (plegado): aunque falles, hay poderes que siguen obligando al
 // objetivo a tirar (Expansión se desvía y estalla igual). La app no tira por él.
-function ObjetivoTira({ tiradas }: { tiradas: DetallePoder["objetivoTira"] }) {
+export function ObjetivoTira({ tiradas }: { tiradas: DetallePoder["objetivoTira"] }) {
   return (
     <details className="mt-3 border-t border-border pt-3">
       <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-widest text-muted">

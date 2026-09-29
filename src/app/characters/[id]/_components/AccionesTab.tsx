@@ -39,6 +39,8 @@ import {
   aplicados,
   costeFatiga,
   bloqueoPorFatiga,
+  togglesDeFatiga,
+  etiquetaPoder,
   cruzaSobrecarga,
   dificultadSobrecarga,
   danioSobrecarga,
@@ -62,6 +64,7 @@ import { ReparaFabricaModal } from "./ReparaFabricaModal";
 import { BloquearDanioModal } from "./BloquearDanioModal";
 import { CabeceraPoder } from "./CabeceraPoder";
 import { SobrecargaPanel } from "./SobrecargaPanel";
+import { UsarPoderModal } from "./UsarPoderModal";
 import { type DanioInfo, type Lanzamiento } from "@/components/ResultadoTirada";
 
 function signo(n: number) {
@@ -379,11 +382,16 @@ function FilaPoder({
                   {enEspecialidad ? " (esp.)" : ""} {mod.habilidad}
                 </>
               )}
+              {(tirada?.ajustesFijos ?? []).map((a, i) => (
+                <span key={i}> {signo(a.valor)}</span>
+              ))}
             </span>
           )}
           <p className="mt-1 font-mono text-[11px] text-muted">{datos.join(" · ")}</p>
         </div>
-        {mod && <span className="font-mono text-2xl tabular-nums text-info">{signo(mod.total)}</span>}
+        {mod && tirada && (
+          <span className="font-mono text-2xl tabular-nums text-info">{signo(mod.total + sumaAjustesFijos(tirada))}</span>
+        )}
         <button
           type="button"
           onClick={() => onAbrir(poder)}
@@ -568,19 +576,56 @@ export function AccionesTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones]);
 
+  const abrir = (t: Accion, enEspecialidad: boolean, sutilActivo: boolean) => {
+    const mod = modificadorAccion(sheet, t, enEspecialidad, mods, sutilActivo);
+    const aplicadoId = sutilActivo && t.aplicadoSutil ? t.aplicadoSutil : t.aplicado;
+    const nombreAplicado = APLICADOS.find((a) => a.id === aplicadoId)!;
+    const nombreHabilidad = t.habilidad ? HABILIDADES.find((h) => h.id === t.habilidad)!.label : null;
+    const desgloseBase = [
+      { etiqueta: nombreAplicado.label, valor: mod.aplicado },
+      ...(nombreHabilidad
+        ? [{ etiqueta: `${nombreHabilidad}${enEspecialidad ? " (especialidad)" : ""}`, valor: mod.habilidad ?? 0 }]
+        : []),
+      ...(t.ajustesFijos ?? []).map((a) => ({ etiqueta: a.fuente, valor: a.valor })),
+    ];
+    setModal({
+      tirada: t,
+      modBase: mod.total + sumaAjustesFijos(t),
+      desgloseBase,
+      mods,
+      ctxBase: { id: t.id, grupo: t.grupo, habilidad: t.habilidad },
+      sutilActivo,
+      resultadoId: null,
+    });
+  };
+
   const poderes = useMemo(() => accionesDePsionica(sheet), [sheet]);
   const disciplinasConPoderes = [...new Set(poderes.map((p) => p.disciplina))];
-  // Poder cuyo modal está abierto, con las elecciones actuales. Cada cambio de
-  // nivel/forma vuelve a resolver el poder y reconstruye la tirada del modal.
-  const [poderAbierto, setPoderAbierto] = useState<{ poder: PoderDisponible; elecciones: Record<string, string> } | null>(null);
+  // Poder cuyo modal está abierto, con las elecciones y casillas de fatiga
+  // actuales. Cada cambio vuelve a resolver el poder y reconstruye la tirada del
+  // modal. `directo` = poder sin tirada (UsarPoderModal en vez de AccionModal).
+  const [poderAbierto, setPoderAbierto] = useState<{
+    poder: PoderDisponible;
+    elecciones: Record<string, string>;
+    toggles: string[];
+    directo: boolean;
+    usado: number | null; // fatiga pagada en el último uso sin tirada
+  } | null>(null);
   const resolverAbierto = (poder: PoderDisponible, elecciones: Record<string, string>) =>
-    resolverPoder(poder.accion, { nivelPoseido: poder.nivelPoseido, elecciones, aplicados: aplicados(sheet, mods) });
+    resolverPoder(poder.accion, {
+      nivelPoseido: poder.nivelPoseido,
+      elecciones,
+      aplicados: aplicados(sheet, mods),
+      disciplina: poder.disciplina,
+    });
   // Coste y bloqueo del poder abierto, contra la fatiga actual de la ficha (se
   // recalcula solo tras cada gasto: "Tirar otra vez" se apaga si ya no llega).
   const poderResuelto = poderAbierto ? resolverAbierto(poderAbierto.poder, poderAbierto.elecciones) : null;
   const costePoder =
     poderAbierto && poderResuelto && typeof poderResuelto.fatiga === "number"
-      ? costeFatiga(poderAbierto.poder.disciplina, poderAbierto.poder.accion.id, poderResuelto)
+      ? costeFatiga(poderAbierto.poder.disciplina, poderAbierto.poder.accion.id, poderResuelto, {
+          toggles: new Set(poderAbierto.toggles),
+        })
       : null;
   const bloqueoPoder =
     poderAbierto && costePoder ? bloqueoPorFatiga(poderAbierto.poder.accion, costePoder.total, sheet.fatigaActual) : null;
@@ -615,36 +660,73 @@ export function AccionesTab({
     setSobrecarga({ ...sobrecarga, salvacion: lanzamiento });
   };
 
-  const abrirPoder = (poder: PoderDisponible, elecciones: Record<string, string> = {}) => {
+  const abrirPoder = (poder: PoderDisponible, elecciones: Record<string, string> = {}, toggles: string[] = []) => {
     const resuelto = resolverAbierto(poder, elecciones);
-    const t = resuelto && tiradaDePoder(poder.accion, resuelto);
-    if (!resuelto || !t) return;
-    abrir(t, enEspecialidadDePoder(sheet, resuelto), false);
-    setPoderAbierto({ poder, elecciones: resuelto.elecciones });
+    if (!resuelto) return;
+    const t = tiradaDePoder(poder.accion, resuelto);
+    if (t) abrir(t, enEspecialidadDePoder(sheet, resuelto), false);
+    else setSobrecarga(null);
+    setPoderAbierto({ poder, elecciones: resuelto.elecciones, toggles, directo: !t, usado: null });
   };
 
-  const abrir = (t: Accion, enEspecialidad: boolean, sutilActivo: boolean) => {
-    const mod = modificadorAccion(sheet, t, enEspecialidad, mods, sutilActivo);
-    const aplicadoId = sutilActivo && t.aplicadoSutil ? t.aplicadoSutil : t.aplicado;
-    const nombreAplicado = APLICADOS.find((a) => a.id === aplicadoId)!;
-    const nombreHabilidad = t.habilidad ? HABILIDADES.find((h) => h.id === t.habilidad)!.label : null;
-    const desgloseBase = [
-      { etiqueta: nombreAplicado.label, valor: mod.aplicado },
-      ...(nombreHabilidad
-        ? [{ etiqueta: `${nombreHabilidad}${enEspecialidad ? " (especialidad)" : ""}`, valor: mod.habilidad ?? 0 }]
-        : []),
-      ...(t.ajustesFijos ?? []).map((a) => ({ etiqueta: a.fuente, valor: a.valor })),
-    ];
-    setModal({
-      tirada: t,
-      modBase: mod.total + sumaAjustesFijos(t),
-      desgloseBase,
-      mods,
-      ctxBase: { id: t.id, grupo: t.grupo, habilidad: t.habilidad },
-      sutilActivo,
-      resultadoId: null,
-    });
+  // Gasto de fatiga al usar un poder (con tirada o sin ella), falle o no; si el
+  // gasto cruza el umbral de exhausto, sobrecarga.
+  const pagarPoder = (): number => {
+    if (!costePoder || !poderResuelto) return 0;
+    if (costePoder.total > 0) onGastarFatiga?.(-costePoder.total);
+    const cruza = cruzaSobrecarga(sheet.fatigaActual, sheet.fatigaActual - costePoder.total, salud(sheet).fatiga);
+    setSobrecarga(cruza && onGastarFatiga ? { nivel: poderResuelto.nivelEmpleado, salvacion: null } : null);
+    return costePoder.total;
   };
+
+  // `id` llega del click, como en tirarSalvacionSobrecarga.
+  const usarPoderDirecto = (id: number) => {
+    if (!poderAbierto || !poderResuelto || bloqueoPoder) return;
+    const pagado = pagarPoder();
+    const label = etiquetaPoder(poderAbierto.poder.accion, poderResuelto);
+    setHistorial((h) =>
+      [
+        {
+          id,
+          label,
+          dado: 0,
+          modificador: 0,
+          circunstancial: 0,
+          total: 0,
+          dificultad: null,
+          margen: null,
+          exito: null,
+          critico: false,
+          sinDado: true,
+        },
+        ...h,
+      ].slice(0, 6),
+    );
+    setPoderAbierto({ ...poderAbierto, usado: pagado });
+  };
+
+  const cerrarPoder = () => {
+    setModal(null);
+    setPoderAbierto(null);
+    setSobrecarga(null);
+  };
+
+  const cabeceraPoder =
+    poderAbierto && poderResuelto ? (
+      <CabeceraPoder
+        accion={poderAbierto.poder.accion}
+        poder={poderResuelto}
+        coste={costePoder}
+        fatigaActual={sheet.fatigaActual}
+        toggles={togglesDeFatiga(poderAbierto.poder.disciplina, poderAbierto.poder.accion.id, poderResuelto)}
+        togglesActivos={poderAbierto.toggles}
+        onElegir={(eje, opcion) =>
+          abrirPoder(poderAbierto.poder, { ...poderAbierto.elecciones, [eje]: opcion }, poderAbierto.toggles)
+        }
+        onToggles={(toggles) => setPoderAbierto({ ...poderAbierto, toggles })}
+      />
+    ) : null;
+
 
   const tirar = ({
     dado,
@@ -730,13 +812,7 @@ export function AccionesTab({
     // excepciones — no depende de gastoTotal() (pool distinto, sheet.farmacos
     // por catalogoId) ni del resultado de la tirada.
     if (tirada.farmacoId) onAjustarFarmaco?.(tirada.farmacoId, -1);
-    // Poder psiónico: la fatiga se paga al usarlo, falle o no; si el gasto cruza
-    // el umbral de exhausto, sobrecarga.
-    if (tirada.grupo === "Psiónica" && costePoder && poderResuelto) {
-      if (costePoder.total > 0) onGastarFatiga?.(-costePoder.total);
-      const cruza = cruzaSobrecarga(sheet.fatigaActual, sheet.fatigaActual - costePoder.total, salud(sheet).fatiga);
-      setSobrecarga(cruza && onGastarFatiga ? { nivel: poderResuelto.nivelEmpleado, salvacion: null } : null);
-    }
+    if (tirada.grupo === "Psiónica") pagarPoder();
     const gastoEspecial = gastoMunicionEspecial(tirada, modoId, estadoCondiciones);
     if (gastoEspecial && gastoEspecial.cantidad > 0) onAjustarMunicionEspecial?.(gastoEspecial.id, -gastoEspecial.cantidad);
 
@@ -1021,6 +1097,32 @@ export function AccionesTab({
         />
       )}
 
+      {poderAbierto?.directo && poderResuelto && (
+        <UsarPoderModal
+          titulo={etiquetaPoder(poderAbierto.poder.accion, poderResuelto)}
+          cabecera={cabeceraPoder}
+          bloqueo={bloqueoPoder}
+          usado={poderAbierto.usado !== null}
+          costeUsado={poderAbierto.usado}
+          objetivoTira={poderResuelto.objetivoTira.map((t) => ({
+            que: t.que,
+            dificultad: t.dificultad === undefined ? undefined : textoValor(t.dificultad),
+            grados: t.grados,
+          }))}
+          pie={
+            sobrecarga ? (
+              <SobrecargaPanel
+                dificultad={dificultadSobrecarga(sobrecarga.nivel)}
+                salvacion={sobrecarga.salvacion}
+                onTirar={tirarSalvacionSobrecarga}
+              />
+            ) : undefined
+          }
+          onUsar={() => usarPoderDirecto(Date.now())}
+          onCerrar={cerrarPoder}
+        />
+      )}
+
       {modal && (
         <AccionModal
           titulo={modal.tirada.label}
@@ -1034,24 +1136,7 @@ export function AccionesTab({
               ? `especialidad: ${especialidadesActuales.join(" / ")}`
               : undefined
           }
-          cabecera={
-            poderAbierto && modal.tirada.grupo === "Psiónica"
-              ? (() => {
-                  const resuelto = poderResuelto;
-                  return resuelto ? (
-                    <CabeceraPoder
-                      accion={poderAbierto.poder.accion}
-                      poder={resuelto}
-                      coste={costePoder}
-                      fatigaActual={sheet.fatigaActual}
-                      onElegir={(eje, opcion) =>
-                        abrirPoder(poderAbierto.poder, { ...poderAbierto.elecciones, [eje]: opcion })
-                      }
-                    />
-                  ) : null;
-                })()
-              : undefined
-          }
+          cabecera={modal.tirada.grupo === "Psiónica" ? cabeceraPoder : undefined}
           bloqueo={modal.tirada.grupo === "Psiónica" ? bloqueoPoder : null}
           pieResultado={
             modal.tirada.grupo === "Psiónica" && sobrecarga ? (
@@ -1072,11 +1157,7 @@ export function AccionesTab({
           circunstancialInicial={memoria[modal.tirada.id]?.circunstancial ?? 0}
           resultado={resultadoModal}
           onTirarDanio={tirarDanio}
-          onCerrar={() => {
-            setModal(null);
-            setPoderAbierto(null);
-            setSobrecarga(null);
-          }}
+          onCerrar={cerrarPoder}
           onTirar={tirar}
         />
       )}

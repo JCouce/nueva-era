@@ -665,6 +665,17 @@ al preparar su modelado:
   1 → 0). Lo que tira el objetivo se muestra siempre tras tirar (plegado), no solo con éxito.
   La inconsciencia por sobrecarga se avisa; el estado lo marca el máster en la consola.
   Expansión fallada deja tirar daño (base, sin bono por éxitos): se desvía y estalla igual.
+- **Construcción de Traslación, tanda 1 (usuario, 2026-09-30):**
+  - Anclaje se tira como **ataque sin daño** (Perspicacia + Física, dificultad que escribe el
+    jugador); la esquiva, el escape enfrentado y el Duelo de Métrica del objetivo son texto.
+  - "Anclaje pasa a ser acción simple" (nivel 4) se aplica al anclaje de **un** objetivo;
+    anclar a varios a la vez sigue siendo compleja *(supuesto: la prosa no lo precisa)*.
+  - Auto-proyección es una acción aparte de Proyección (sin tirada ni objetivo). Qué
+    velocidad dobla o cuadruplica (carrera o traslación de 10 × nivel) no lo dice la prosa:
+    **preguntado a Murillo** en `/preguntas` (Traslación); mientras, a criterio del máster.
+  - Sensor: el radio (nivel × 2) va sin unidad, a criterio del máster, hasta que Murillo la
+    diga. La carga máxima se enseña solo en las acciones que pagan la fila (Anclaje,
+    Trasladar); no se comprueba, es dato.
 - **Máquinas sin ficha** (qué tira una IA/servidor que no es personaje para resistir un poder):
   pendiente de Murillo — es la pregunta 16.
 - Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de

@@ -80,20 +80,37 @@ export type AccionPoder = {
   ejes: EjePoder[];
   resultados: Partial<Record<Grado, ResultadoPoder>>; // desde el punto de vista de quien tira
   danioPropio: { valor: Valor; categoria: string } | null;
-  multiplesObjetivos: { texto: string; fatigaPorObjetivo: Valor } | null; // mensaje; fatiga a mano
+  // Mensaje; la fatiga de los objetivos extra se descuenta a mano. Sin
+  // fatigaPorObjetivo, cada uno paga lo mismo que el poder.
+  multiplesObjetivos: { texto: string; fatigaPorObjetivo?: Valor } | null;
   notas: Nota[];
   togglesPropios: BonoToggle[];
   bonosEnOtrasTiradas: BonoToggle[];
   movimientoOtorgado: { tipo: "levitar"; velocidad: Valor } | null;
   ajustesPorNivelPoseido: { desdeNivel: number; sobre: string; op: "sustituye" | "suma" | "multiplica"; valor: Valor | Economia | string }[];
   manual: string[];
+  // Unidades para mostrar; por defecto metros en alcance, área y desplazamiento.
+  unidades?: { alcance?: string; area?: string; desplazamiento?: string; duracion?: string };
   motor: MotorMetadata[];
 };
 
 // Lo que una opción puede sustituir. `resolucion` va parcial: una fila de nivel
 // solo fija el daño sin repetir aplicado/habilidad.
 export type CambiosOpcion = Partial<
-  Pick<AccionPoder, "economia" | "fatiga" | "alcance" | "duracion" | "resultados" | "objetivoTira" | "notas" | "danioPropio" | "desplazamiento" | "objetivo">
+  Pick<
+    AccionPoder,
+    | "economia"
+    | "fatiga"
+    | "alcance"
+    | "duracion"
+    | "resultados"
+    | "objetivoTira"
+    | "notas"
+    | "danioPropio"
+    | "desplazamiento"
+    | "objetivo"
+    | "multiplesObjetivos"
+  >
 > & { resolucion?: Partial<ResolucionPoder> & { danio?: Valor } };
 
 export type Opcion = {
@@ -114,13 +131,15 @@ export type ModificadorFatiga = {
   alcance: {
     rama?: Rama;
     disciplina?: DisciplinaId;
-    accion?: string;
+    accion?: string | string[];
     opcion?: { eje: string; opcion: string };
     nivelEmpleadoMax?: number;
     nivelEmpleadoMin?: number;
   };
   desdeNivelPoseido?: number;
-  condicion?: { toggle: string };
+  // Lo declara el jugador con una casilla. Casillas del mismo `grupo` se
+  // excluyen entre sí (la carga no puede ser a la vez < 10 kg y otra cosa).
+  condicion?: { toggle: string; grupo?: string };
   op: "suma" | "multiplica" | "minimo" | "ignora_primero" | "paga_con_recurso";
   valor: number | { recurso: string; porPunto: number };
 };
@@ -147,7 +166,7 @@ export type Disciplina = {
   modificadoresEconomia: {
     fuente: string;
     desdeNivelPoseido: number;
-    alcance: { accion?: string; nivelEmpleado?: number };
+    alcance: { accion?: string; nivelEmpleado?: number; opcion?: { eje: string; opcion: string } };
     op: "baja_un_paso" | "sustituye";
     valor?: Economia;
   }[];
