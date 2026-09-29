@@ -1153,7 +1153,7 @@ export function AccionesTab({
           bonosTramo={modal.tirada.bonosTramo ?? []}
           mods={modal.mods}
           ctxBase={modal.ctxBase}
-          dificultadInicial={memoria[modal.tirada.id]?.dificultad ?? 7}
+          dificultadInicial={memoria[modal.tirada.id]?.dificultad ?? modal.tirada.dificultadSugerida ?? 7}
           circunstancialInicial={memoria[modal.tirada.id]?.circunstancial ?? 0}
           resultado={resultadoModal}
           onTirarDanio={tirarDanio}

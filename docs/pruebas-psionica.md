@@ -161,6 +161,7 @@ Perspicacia de un personaje sin tocar es 0 (25 kg × Perspicacia).
   - Proyección: `REF 0 + Tecnociencia -1 -2`, `Simple · 1 fatiga · 60 m · daño 7`, `-3`
   - Auto-proyección: `Estándar · 1 fatiga`
   - Sensor: `Estándar · 1 fatiga`
+  - (más Auto-anclaje, Levitar y Duelo de Métrica, ver H7)
 
 ### H1. Anclaje
 - [ ] **H1.1** Pulsa Usar.
@@ -204,6 +205,22 @@ Perspicacia de un personaje sin tocar es 0 (25 kg × Perspicacia).
 - [ ] **H5.1** Pulsa Usar.
   → Sin selector de acción (a nivel 3 solo hay Estándar). Área "6 (radio, unidad a criterio
   del máster)", Duración 3 turnos y cuatro notas de efecto.
+
+### H7. Levitar, Auto-anclaje y Duelo de Métrica (Traslación 3)
+- [ ] **H7.1 Movimiento.** En Resumen, junto al resto de movimiento.
+  → "Levitar (Traslación 3) 30 m". Con Traslación 1 no aparece.
+- [ ] **H7.2 Levitar.** En Acciones, Usar en Levitar.
+  → Sin dado: Acción Simple, Fatiga 1, Duración "1 minuto", Desplaz. 30 m/turno, tres
+  notas. Al pulsar Usar, "Usado · −1 fatiga".
+- [ ] **H7.3 Auto-anclaje.** Fila: `REF 0 + Tecnociencia -1`, `Reacción · 2 fatiga`, `-1`.
+  Pulsa Usar.
+  → Selector de nivel 1-3, casilla "Carga < 10 kg", Carga máx. y la dificultad ya puesta
+  en **6** (campo custom).
+- [ ] **H7.4 Duelo de Métrica.** Fila: `PSP 0 + Tecnociencia -1`, `Reacción · 1 fatiga`,
+  `-1`. Pulsa Usar.
+  → Selector Reacción / Simple, la nota "Como dificultad, escribe el total de la tirada de
+  quien te ancla…" y la casilla "Soy 2 niveles superior en Traslación": al marcarla,
+  Fatiga 0.
 
 ### H6. Niveles altos (NPC con Traslación 6)
 En `/master/npcs` crea un NPC, ponle **Traslación 6** en su pestaña Psiónica y ve a
@@ -271,7 +288,7 @@ Pon la fatiga a 8 y anota la vida (8/8). Abre Impulso (nivel 2, forma normal).
 No son fallos:
 
 - Resonancia, Inducción, Hipercognición y Contención no tienen poderes todavía. De
-  Traslación faltan Levitar, Auto-anclaje, Duelo de Métrica y Proeza.
+  Traslación falta Proeza.
 - Xovromium, Munición Supresora y Derivación Psiónica no afectan aún ni a la tirada ni a
   la fatiga.
 - La inconsciencia por sobrecarga no se aplica como estado; la marca el máster.

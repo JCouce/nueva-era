@@ -524,9 +524,100 @@ const SENSOR: AccionPoder = {
   motor: motorDeAccion("psi_traslacion_sensor", { propias: true }),
 };
 
+// Levitación (Auto-traslación): 1 de fatiga por periodo, sin la fila de la
+// tabla ni sus descuentos (usuario, 2026-09-29). El periodo crece con el nivel
+// POSEÍDO: 1 minuto, 10 en nivel 4, 1 hora en nivel 6.
+const LEVITAR: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: "psi_traslacion_levitar",
+  label: "Levitar",
+  desdeNivel: 2,
+  economia: "simple",
+  fatiga: 1,
+  alcance: null,
+  duracion: { manual: "1 minuto" },
+  ajustesPorNivelPoseido: [
+    { desdeNivel: 4, sobre: "duracion", op: "sustituye", valor: { manual: "10 minutos" } },
+    { desdeNivel: 6, sobre: "duracion", op: "sustituye", valor: { manual: "1 hora" } },
+  ],
+  objetivo: { tipo: "propio" },
+  desplazamiento: { base: 0, porNivelPoseido: 10 },
+  unidades: { desplazamiento: "m/turno" },
+  movimientoOtorgado: { tipo: "levitar", velocidad: { base: 0, porNivelPoseido: 10 } },
+  resolucion: { tipo: "sin_dado" },
+  objetivoTira: [],
+  ejes: [],
+  resultados: {},
+  notas: [
+    { texto: "El punto de fatiga cubre la duración indicada; para seguir levitando, vuelve a pulsar Usar.", lugar: "tirada" },
+    { texto: "Cada turno, quieto o desplazándote, es una acción simple.", lugar: "tirada" },
+    { texto: "Mientras levitas, esquivas y maniobras con Física (a mano).", lugar: "tirada" },
+  ],
+  motor: motorDeAccion("psi_traslacion_levitar", { propias: true }),
+};
+
+// Auto-anclaje: siempre con tirada (usuario, 2026-09-28), dificultad 6. "El gasto
+// apropiado de fatiga" = la fila de la tabla, con tu propio peso como carga
+// (usuario, 2026-09-30).
+const AUTO_ANCLAJE_ID = "psi_traslacion_auto_anclaje";
+const AUTO_ANCLAJE: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: AUTO_ANCLAJE_ID,
+  label: "Auto-anclaje",
+  desdeNivel: 1,
+  economia: "reaccion",
+  fatiga: "tabla",
+  alcance: null,
+  objetivo: { tipo: "propio" },
+  desplazamiento: null,
+  resolucion: { tipo: "tirada", aplicado: "reflejos", habilidad: "tecnociencia", especialidad: "Física", dificultad: 6 },
+  objetivoTira: [],
+  ejes: [ejeNivelEmpleado(() => ({}))],
+  resultados: {
+    exito: { texto: "Te anclas: detienes la caída o te quedas fijo en el sitio", estados: [] },
+    fracaso: { texto: "No logras anclarte", estados: [] },
+  },
+  notas: [{ texto: "Tu propio peso, con lo que lleves encima, cuenta como la carga.", lugar: "tirada" }],
+  motor: motorDeAccion(AUTO_ANCLAJE_ID, { propias: true }),
+};
+
+// Duelo de Métrica: reacción de quien tiene Traslación contra un Anclaje. Cuesta
+// 1, gratis si su Traslación es 2 niveles mayor que la del atacante (casilla).
+const DUELO_ID = "psi_traslacion_duelo_metrica";
+const DUELO_METRICA: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: DUELO_ID,
+  label: "Duelo de Métrica",
+  desdeNivel: 1,
+  economia: "reaccion",
+  fatiga: 1,
+  alcance: null,
+  objetivo: { tipo: "propio" },
+  desplazamiento: null,
+  resolucion: { tipo: "enfrentada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "Física" },
+  objetivoTira: [],
+  ejes: [
+    {
+      id: "economia",
+      label: "Acción",
+      tipo: "opcion",
+      opciones: [
+        { id: "reaccion", label: "Reacción", cambia: {} },
+        { id: "simple", label: "Simple", cambia: { economia: "simple" } },
+      ],
+    },
+  ],
+  resultados: {
+    exito: { texto: "Resistes: el anclaje no te sujeta", estados: [] },
+    fracaso: { texto: "Quedas anclado", estados: [] },
+  },
+  notas: [{ texto: "Como dificultad, escribe el total de la tirada de quien te ancla (Perspicacia + Física).", lugar: "tirada" }],
+  motor: motorDeAccion(DUELO_ID, { propias: true }),
+};
+
 // Descuentos de la tabla: solo en las acciones que pagan la fila (no en
 // Proyección, Auto-proyección ni Sensor).
-const PAGAN_TABLA = [ANCLAJE_ID, TRASLADAR_ID];
+const PAGAN_TABLA = [ANCLAJE_ID, TRASLADAR_ID, AUTO_ANCLAJE_ID];
 
 const TRASLACION: Disciplina = {
   id: "traslacion",
@@ -547,6 +638,13 @@ const TRASLACION: Disciplina = {
     },
   ],
   modificadoresFatiga: [
+    {
+      fuente: "Duelo de Métrica: 2 niveles superior",
+      alcance: { accion: DUELO_ID },
+      condicion: { toggle: "Soy 2 niveles superior en Traslación" },
+      op: "multiplica",
+      valor: 0,
+    },
     {
       fuente: "Traslación 3: carga < 10 kg",
       alcance: { accion: PAGAN_TABLA },
@@ -584,7 +682,7 @@ const TRASLACION: Disciplina = {
   ],
   bonosEnOtrasTiradas: [],
   ventajas: [],
-  acciones: [ANCLAJE, TRASLADAR, PROYECCION, AUTO_PROYECCION, SENSOR],
+  acciones: [ANCLAJE, AUTO_ANCLAJE, TRASLADAR, LEVITAR, PROYECCION, AUTO_PROYECCION, SENSOR, DUELO_METRICA],
 };
 
 const SINGULARIDAD: Disciplina = {

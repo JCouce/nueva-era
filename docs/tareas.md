@@ -1238,8 +1238,10 @@ Sensor. Motor nuevo: filas de la tabla de la disciplina (`"tabla"` → `porNivel
 empleado, carga máxima), rebajas de tipo de acción por nivel (`modificadoresEconomia`),
 casillas de fatiga con grupos excluyentes (`togglesDeFatiga`), poderes sin tirada
 (`UsarPoderModal`), mensaje de varios objetivos y penalizador propio como ajuste fijo.
-Siguiente: tanda 2 (Levitar, Auto-anclaje, Duelo de Métrica) y tanda 3 (Proeza con
-fatiga temporal). Siguiente, disciplina a
+Tanda 2 hecha (2026-09-30): Levitar (movimiento en Resumen + acción por periodos vía
+`ajustesPorNivelPoseido`), Auto-anclaje (tabla, dificultad 6 sugerida con
+`Accion.dificultadSugerida`) y Duelo de Métrica (enfrentada, casilla de gratis). Siguiente:
+tanda 3 (Proeza con fatiga temporal). Siguiente, disciplina a
 disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,
 Derivación), habilidad alternativa con selector, ventaja, Levitar, Duelo de Métrica, fatiga
 temporal (Proeza).

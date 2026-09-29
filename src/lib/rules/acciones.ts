@@ -55,6 +55,9 @@ export type Accion = {
   // ResultadoTirada.tsx tras resolver el daño, no en `nota` (que es
   // información sobre ESTA tirada, no un aviso para otra).
   efectos?: { fuente: string; texto: string }[];
+  // Dificultad con la que se abre el modal si el jugador no ha escrito otra
+  // antes (Auto-anclaje: 6). Sin ella, 7.
+  dificultadSugerida?: number;
   // Solo poderes psiónicos (tiradaDePoder, poderes.ts): texto por grado del
   // propio psiónico y lo que tira el objetivo, para el panel de resultado.
   poder?: DetallePoder;

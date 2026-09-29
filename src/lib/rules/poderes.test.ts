@@ -16,6 +16,7 @@ import {
   danioSobrecarga,
   togglesDeFatiga,
   etiquetaPoder,
+  levitacion,
 } from "./poderes";
 import { defaultSheet, type Sheet } from "./sheet";
 import { resolverDanio } from "./acciones";
@@ -453,4 +454,59 @@ test("Traslación: la carga máxima solo sale en las acciones que pagan la tabla
   assert.equal(r("trasladar").carga, 50);
   assert.equal(r("proyeccion").carga, null);
   assert.equal(r("sensor").carga, null);
+});
+
+describe("Traslación, tanda 2", () => {
+  const tras = disciplinaPorId("traslacion");
+  const acc = (id: string) => tras.acciones.find((a) => a.id === `psi_traslacion_${id}`)!;
+  const res = (id: string, nivelPoseido: number, elecciones: Record<string, string> = {}) =>
+    resolverPoder(acc(id), { nivelPoseido, elecciones, disciplina: tras, aplicados: { perspicacia: 1 } });
+
+  test("Levitar: desde nivel 2, 1 de fatiga, 10 × nivel m, periodo por nivel poseído", () => {
+    assert.equal(res("levitar", 1), null);
+    const n2 = res("levitar", 2)!;
+    assert.equal(tiradaDePoder(acc("levitar"), n2), null);
+    assert.equal(n2.fatiga, 1);
+    assert.equal(n2.desplazamiento, 20);
+    assert.equal(n2.economia, "simple");
+    assert.deepEqual(n2.duracion, { manual: "1 minuto" });
+    assert.deepEqual(res("levitar", 4)!.duracion, { manual: "10 minutos" });
+    assert.deepEqual(res("levitar", 6)!.duracion, { manual: "1 hora" });
+    assert.equal(res("levitar", 6)!.carga, null);
+    assert.deepEqual(togglesDeFatiga(tras, "psi_traslacion_levitar", res("levitar", 6)!), []);
+  });
+
+  test("levitacion() en el movimiento de la ficha", () => {
+    assert.equal(levitacion(defaultSheet()), null);
+    assert.equal(levitacion({ ...defaultSheet(), psionica: { traslacion: 1 } }), null);
+    assert.deepEqual(levitacion({ ...defaultSheet(), psionica: { traslacion: 3 } }), { velocidadM: 30, nivel: 3 });
+  });
+
+  test("Auto-anclaje: reacción, Reflejos + Tecnociencia, dificultad 6 sugerida, paga la fila", () => {
+    const p = res("auto_anclaje", 3, { nivel: "n2" })!;
+    const t = tiradaDePoder(acc("auto_anclaje"), p)!;
+    assert.equal(t.aplicado, "reflejos");
+    assert.equal(t.dificultadSugerida, 6);
+    assert.equal(p.economia, "reaccion");
+    assert.equal(p.fatiga, 2);
+    assert.equal(p.carga, 50);
+    assert.equal(costeFatiga(tras, "psi_traslacion_auto_anclaje", p, { toggles: new Set(["Carga < 10 kg"]) }).total, 0);
+  });
+
+  test("Duelo de Métrica: enfrentada, 1 de fatiga, gratis con la casilla de 2 niveles", () => {
+    const p = res("duelo_metrica", 1)!;
+    const t = tiradaDePoder(acc("duelo_metrica"), p)!;
+    assert.equal(t.aplicado, "perspicacia");
+    assert.equal(t.dificultadSugerida, undefined);
+    assert.equal(p.economia, "reaccion");
+    assert.equal(res("duelo_metrica", 1, { economia: "simple" })!.economia, "simple");
+    assert.deepEqual(togglesDeFatiga(tras, "psi_traslacion_duelo_metrica", p).map((x) => x.toggle), ["Soy 2 niveles superior en Traslación"]);
+    assert.equal(costeFatiga(tras, "psi_traslacion_duelo_metrica", p).total, 1);
+    assert.equal(
+      costeFatiga(tras, "psi_traslacion_duelo_metrica", p, { toggles: new Set(["Soy 2 niveles superior en Traslación"]) }).total,
+      0,
+    );
+    // la casilla del duelo no aparece en otras acciones
+    assert.ok(!togglesDeFatiga(tras, "psi_traslacion_anclaje", res("anclaje", 6)!).some((x) => /niveles superior/.test(x.toggle)));
+  });
 });

@@ -3,6 +3,7 @@ import {
   alerta,
   movimiento,
   vuelo,
+  levitacion,
   cargaMaxima,
   pesoEquipado,
   modificadoresActivos,
@@ -82,6 +83,7 @@ export function ResumenTab({
   const alertaPasiva = alerta(sheet);
   const mov = movimiento(sheet);
   const vue = vuelo(sheet);
+  const lev = levitacion(sheet);
   const conExo = mov.bonoExoesqueleto > 0;
   const notaExo = conExo ? `+${mov.bonoExoesqueleto} exoesqueleto` : undefined;
   const limiteCarga = cargaMaxima(sheet);
@@ -288,6 +290,9 @@ export function ResumenTab({
             unidad="m"
             tono="text-info"
           />
+        )}
+        {lev && (
+          <Dato label={`Levitar (Traslación ${lev.nivel})`} value={lev.velocidadM} unidad="m" tono="text-info" />
         )}
       </HudCard>
 

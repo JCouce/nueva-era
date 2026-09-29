@@ -673,6 +673,14 @@ al preparar su modelado:
   - Auto-proyección es una acción aparte de Proyección (sin tirada ni objetivo). Qué
     velocidad dobla o cuadruplica (carrera o traslación de 10 × nivel) no lo dice la prosa:
     **preguntado a Murillo** en `/preguntas` (Traslación); mientras, a criterio del máster.
+- **Construcción de Traslación, tanda 2 (usuario, 2026-09-30):**
+  - Auto-anclaje: "el gasto apropiado de fatiga" = la fila de la tabla del nivel empleado,
+    con tu propio peso como carga (y sus casillas de carga). Reacción, dificultad 6.
+  - Levitar: movimiento en Resumen (10 × nivel poseído m) y acción sin tirada de 1 de
+    fatiga por periodo (1 min; 10 min desde nivel 4; 1 h en nivel 6); prolongar = volver a
+    usarla. Esquivar con Física mientras levitas va a mano.
+  - Duelo de Métrica: tirada enfrentada en toda ficha con Traslación; la dificultad es el
+    total de quien te ancla. Casilla "soy 2 niveles superior" = coste 0.
   - Sensor: el radio (nivel × 2) va sin unidad, a criterio del máster, hasta que Murillo la
     diga. La carga máxima se enseña solo en las acciones que pagan la fila (Anclaje,
     Trasladar); no se comprueba, es dato.

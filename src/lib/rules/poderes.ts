@@ -118,9 +118,7 @@ function nivelDeOpcion(o: Opcion): number {
 export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderResuelto | null {
   const { nivelPoseido } = ctx;
   if (nivelPoseido < accion.desdeNivel) return null;
-  if (accion.porObjetivo || accion.ajustesPorNivelPoseido.length > 0) {
-    throw new Error(`${accion.id}: porObjetivo/ajustesPorNivelPoseido aún sin soporte en el evaluador`);
-  }
+  if (accion.porObjetivo) throw new Error(`${accion.id}: porObjetivo aún sin soporte en el evaluador`);
 
   // Copia de trabajo sin tipar fino: los `cambia` y `suma` son parches por ruta.
   const w = structuredClone(accion) as unknown as Record<string, unknown>;
@@ -143,6 +141,16 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
 
   const evaluar = (v: unknown, donde: string): ValorResuelto => evaluarValor(v, donde, nivelEmpleado, ctx);
   const opt = <T,>(v: T | null | undefined, f: (x: T) => ValorResuelto) => (v === null || v === undefined ? v : f(v));
+
+  // Ajustes por nivel POSEÍDO (Levitar: 1 minuto por punto, 10 en nivel 4, 1 h en
+  // nivel 6), en orden: el último que aplica gana en "sustituye".
+  for (const a of accion.ajustesPorNivelPoseido) {
+    if (nivelPoseido < a.desdeNivel) continue;
+    if (a.op === "sustituye") w[a.sobre] = structuredClone(a.valor);
+    else if (typeof w[a.sobre] === "number" && typeof a.valor === "number") {
+      w[a.sobre] = a.op === "suma" ? (w[a.sobre] as number) + a.valor : (w[a.sobre] as number) * a.valor;
+    } else throw new Error(`${accion.id}: ajuste "${a.op}" sobre "${a.sobre}" no numérico`);
+  }
 
   // "tabla" = la fila del nivel empleado en la tabla común de la disciplina.
   const fila = ctx.disciplina?.porNivel.find((f) => f.nivel === nivelEmpleado);
@@ -384,6 +392,8 @@ export function tiradaDePoder(accion: AccionPoder, p: PoderResuelto): Accion | n
       })),
     },
     ...(notasDanio.length > 0 && { efectos: notasDanio.map((n) => ({ fuente: accion.label, texto: n.texto })) }),
+    // Dificultad fija del poder (Auto-anclaje 6): el modal la trae puesta.
+    ...(r.tipo === "tirada" && typeof r.dificultad === "number" && { dificultadSugerida: r.dificultad }),
     // Penalizador propio fijo (Puntería −2 de Proyección): línea más del desglose.
     ...(r.modificador && { ajustesFijos: [{ valor: r.modificador, fuente: `${accion.label} (propio)` }] }),
   };
@@ -535,4 +545,11 @@ export function togglesDeFatiga(disciplina: Disciplina, accionId: string, p: Pod
     vistos.set(m.condicion.toggle, { toggle: m.condicion.toggle, grupo: m.condicion.grupo });
   }
   return [...vistos.values()];
+}
+
+// Levitar como movimiento de la ficha: desde Traslación 2, a 10 × nivel poseído
+// metros (la misma velocidad a la que Trasladar mueve objetos).
+export function levitacion(sheet: Sheet): { velocidadM: number; nivel: number } | null {
+  const nivel = sheet.psionica.traslacion ?? 0;
+  return nivel >= 2 ? { velocidadM: 10 * nivel, nivel } : null;
 }
