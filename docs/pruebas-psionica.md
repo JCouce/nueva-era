@@ -1,8 +1,15 @@
-# Pruebas de psiónica (piloto Singularidad)
+# Pruebas de psiónica
 
-Recorrido manual de lo construido en el piloto: un flujo por cada acción de poder
-(Impulso, Expansión, Convergencia) y cuatro flujos comunes (compra, fatiga, sobrecarga y
-XP).
+Recorrido manual, paso a paso, de todo lo construido de la psiónica. Cada flujo dice cómo
+preparar el personaje y qué números deben salir.
+
+| Flujos | Qué | Personaje |
+|---|---|---|
+| A | Compra de disciplinas y sección Psiónica en Acciones | Traslación 2 + Singularidad 2 |
+| B, C, D | Singularidad: Impulso, Expansión, Convergencia | el de A |
+| E, F, G | Comunes: gasto de fatiga y bloqueo, sobrecarga, XP en ficha aprobada | el de A |
+| H1–H8 | Traslación (con NPC de nivel 6 en H6) | Traslación 3 |
+| I | Contención (con NPC de nivel 6 en I.6) | Traslación 1 + Contención 2 |
 
 Los números esperados valen para un personaje recién creado sin tocar: atributos a 0,
 sin especie, **8 de vida y 8 de fatiga**, y tirada de poder **−1** (Perspicacia +0,
@@ -15,12 +22,13 @@ Marca `[x]` lo que pasa. Si algo falla, anota el texto exacto de lo que sale.
 - Dev server en marcha y sesión de **máster**.
 - Crea un personaje llamado `QA-PSIONICA` en `/characters`.
 - En **Resumen**, pon la letra **A** en **Psiónica**. Son 18 puntos.
-- Haz primero el flujo A, que deja el personaje con **Traslación 2 y Singularidad 2**: el
-  resto de flujos parten de ahí.
+- Haz primero el flujo A, que deja el personaje con **Traslación 2 y Singularidad 2**: de
+  ahí parten B–G. H e I traen su propia preparación.
 - **Antes de cada flujo de acción**, pon la fatiga a 8/8 con el **+** de Fatiga en
   **Recursos**.
 
-Al terminar, borra `QA-PSIONICA` desde `/characters`.
+Al terminar, borra `QA-PSIONICA` desde `/characters` (y los NPC de prueba desde
+`/master/npcs`).
 
 ---
 
@@ -148,7 +156,56 @@ Pon la fatiga a 8 y pulsa **Usar** en Convergencia.
 
 ---
 
-## H. Traslación (flujos H1–H5)
+## E. Gasto de fatiga y bloqueo
+
+Pon la fatiga a 8 y abre Impulso (nivel 2, forma normal).
+
+- [ ] **E.1 Se gasta aunque falle.** Tira con **Legendario (16)**.
+  → Sale fracaso, y aun así, al cerrar y mirar Recursos, la fatiga está en 6/8. Al
+  reabrir Impulso, "Fatiga tras usarlo" marca `6 → 4`.
+- [ ] **E.2 Bloqueo.** Usa **Tirar otra vez** hasta que la fatiga llegue a 0.
+  → Los botones de tirar se apagan con el aviso "Te faltan 2 de fatiga (tienes 0, cuesta
+  2)."
+- [ ] **E.3 Bloqueo tras recargar.** Recarga la página y abre Impulso.
+  → Sigue bloqueado, con la línea `0 → -2`. A nivel 1 también (`0 → -1`).
+
+---
+
+## F. Sobrecarga
+
+Pon la fatiga a 8 y anota la vida (8/8). Abre Impulso (nivel 2, forma normal).
+
+- [ ] **F.1 Salta al cruzar a exhausto.** Tira cuatro veces: 8 → 6 → 4 → 2 → 0.
+  → Las tres primeras no muestran nada especial. En la cuarta, que pasa de 2 a 0 y cruza
+  el umbral de exhausto (por debajo de 2), sale el bloque rojo **Sobrecarga** con "quedas
+  inconsciente" y el botón "Tirar salvación de Fortaleza (dificultad 7)".
+- [ ] **F.2 Salvación y daño.** Pulsa el botón.
+  → Sale "Fortaleza: X vs 7 · grado" y el daño: crítico 0, éxito 1, fracaso 2, fracaso
+  crítico 4. En Recursos la vida baja justo eso. El historial muestra "Sobrecarga:
+  salvación de Fortaleza".
+- [ ] **F.3 No repite estando ya exhausto.** Deja la fatiga en 1 desde Recursos y usa
+  Impulso a nivel 1 (coste 1).
+  → No sale el bloque de Sobrecarga: ya estabas exhausto.
+
+---
+
+## G. Ficha aprobada: subir con XP
+
+- [ ] **G.1 Aprobar y dar XP.** Pulsa **APROBAR**. En la cabecera, escribe 30 en XP y pulsa
+  **Aplicar**. **Recarga la página**: la pestaña de compra no se entera de la XP nueva
+  hasta recargar, que es un fallo conocido y no de la psiónica.
+  → En Psiónica la cabecera marca **XP 30** y todos los − están apagados.
+- [ ] **G.2 Compra con XP.** Sube Singularidad de 2 a 3.
+  → Cuesta 9 y la XP queda en 21.
+- [ ] **G.3 Otra disciplina.** Sube Resonancia a 1.
+  → Cuesta 3 y la XP queda en 18.
+- [ ] **G.4 Se guarda.** Recarga.
+  → XP 18, Singularidad 3, Resonancia 1, Traslación 2. En Acciones, el selector de nivel
+  de los tres poderes ofrece 1, 2 y 3.
+
+---
+
+## H. Traslación (flujos H1–H8)
 
 Preparación propia: personaje nuevo con la letra **A** en Psiónica y **Traslación 3** (18
 puntos). Pon la fatiga a 8 antes de cada flujo. La carga máxima sale 0 kg porque la
@@ -206,6 +263,20 @@ Perspicacia de un personaje sin tocar es 0 (25 kg × Perspicacia).
   → Sin selector de acción (a nivel 3 solo hay Estándar). Área "6 (radio, unidad a criterio
   del máster)", Duración 3 turnos y cuatro notas de efecto.
 
+### H6. Niveles altos (NPC con Traslación 6)
+En `/master/npcs` crea un NPC, ponle **Traslación 6** en su pestaña Psiónica y ve a
+Acciones.
+- [ ] **H6.1 Rebaja de nivel 4.** Abre Anclaje.
+  → Acción **Simple** con "Uno"; con "Varios a la vez", **Compleja**.
+- [ ] **H6.2 Casillas excluyentes.** Marca "Carga < 10 kg" y luego "Carga por debajo de la
+  máxima del nivel".
+  → Solo queda marcada la última. Fatiga 4 → 0 con la primera y 4 → 3 con la segunda. A
+  nivel 1 con la segunda, 1 (mínimo).
+- [ ] **H6.3 Sensor a nivel 5+.** Abre Sensor.
+  → El selector ofrece Estándar / Simple / Reacción.
+
+Borra el NPC al terminar.
+
 ### H7. Levitar, Auto-anclaje y Duelo de Métrica (Traslación 3)
 - [ ] **H7.1 Movimiento.** En Resumen, junto al resto de movimiento.
   → "Levitar (Traslación 3) 30 m". Con Traslación 1 no aparece.
@@ -243,20 +314,6 @@ Perspicacia de un personaje sin tocar es 0 (25 kg × Perspicacia).
 - [ ] **H8.7 NPC.** En el editor de un NPC con Traslación, pestaña Recursos.
   → Sale la misma fila de Fatiga temporal con Terminar escena.
 
-### H6. Niveles altos (NPC con Traslación 6)
-En `/master/npcs` crea un NPC, ponle **Traslación 6** en su pestaña Psiónica y ve a
-Acciones.
-- [ ] **H6.1 Rebaja de nivel 4.** Abre Anclaje.
-  → Acción **Simple** con "Uno"; con "Varios a la vez", **Compleja**.
-- [ ] **H6.2 Casillas excluyentes.** Marca "Carga < 10 kg" y luego "Carga por debajo de la
-  máxima del nivel".
-  → Solo queda marcada la última. Fatiga 4 → 0 con la primera y 4 → 3 con la segunda. A
-  nivel 1 con la segunda, 1 (mínimo).
-- [ ] **H6.3 Sensor a nivel 5+.** Abre Sensor.
-  → El selector ofrece Estándar / Simple / Reacción.
-
-Borra el NPC al terminar.
-
 ---
 
 ## I. Contención
@@ -279,53 +336,8 @@ puntos). Fatiga a 8.
   → Acción "a criterio del máster", Fatiga 1 y dos notas.
 - [ ] **I.6 Niveles altos (NPC con Traslación 1 y Contención 6).**
   → Nivel 1 Personal: Fatiga 0, Duración "1 hora gratis; después, 1 de fatiga por hora",
-  Agilidad 0. Nivel 1 Ampliada: Fatiga 2, Duración 40 turnos. Nivel 3: Duración 40,
+  Agilidad 0. Nivel 1 Ampliada: Fatiga 2, Duración 40 turnos, Agilidad 0. Nivel 3: Duración 40,
   Agilidad -1. Nivel 6: Duración 10, Agilidad -3.
-
----
-
-## E. Gasto de fatiga y bloqueo
-
-Pon la fatiga a 8 y abre Impulso (nivel 2, forma normal).
-
-- [ ] **E.1 Se gasta aunque falle.** Tira con **Legendario (16)**.
-  → Sale fracaso, y aun así, al cerrar y mirar Recursos, la fatiga está en 6/8. Al
-  reabrir Impulso, "Fatiga tras usarlo" marca `6 → 4`.
-- [ ] **E.2 Bloqueo.** Usa **Tirar otra vez** hasta que la fatiga llegue a 0.
-  → Los botones de tirar se apagan con el aviso "Te faltan 2 de fatiga (tienes 0, cuesta
-  2)."
-- [ ] **E.3 Bloqueo tras recargar.** Recarga la página y abre Impulso.
-  → Sigue bloqueado, con la línea `0 → -2`. A nivel 1 también (`0 → -1`).
-
-## F. Sobrecarga
-
-Pon la fatiga a 8 y anota la vida (8/8). Abre Impulso (nivel 2, forma normal).
-
-- [ ] **F.1 Salta al cruzar a exhausto.** Tira cuatro veces: 8 → 6 → 4 → 2 → 0.
-  → Las tres primeras no muestran nada especial. En la cuarta, que pasa de 2 a 0 y cruza
-  el umbral de exhausto (por debajo de 2), sale el bloque rojo **Sobrecarga** con "quedas
-  inconsciente" y el botón "Tirar salvación de Fortaleza (dificultad 7)".
-- [ ] **F.2 Salvación y daño.** Pulsa el botón.
-  → Sale "Fortaleza: X vs 7 · grado" y el daño: crítico 0, éxito 1, fracaso 2, fracaso
-  crítico 4. En Recursos la vida baja justo eso. El historial muestra "Sobrecarga:
-  salvación de Fortaleza".
-- [ ] **F.3 No repite estando ya exhausto.** Deja la fatiga en 1 desde Recursos y usa
-  Impulso a nivel 1 (coste 1).
-  → No sale el bloque de Sobrecarga: ya estabas exhausto.
-
-## G. Ficha aprobada: subir con XP
-
-- [ ] **G.1 Aprobar y dar XP.** Pulsa **APROBAR**. En la cabecera, escribe 30 en XP y pulsa
-  **Aplicar**. **Recarga la página**: la pestaña de compra no se entera de la XP nueva
-  hasta recargar, que es un fallo conocido y no de la psiónica.
-  → En Psiónica la cabecera marca **XP 30** y todos los − están apagados.
-- [ ] **G.2 Compra con XP.** Sube Singularidad de 2 a 3.
-  → Cuesta 9 y la XP queda en 21.
-- [ ] **G.3 Otra disciplina.** Sube Resonancia a 1.
-  → Cuesta 3 y la XP queda en 18.
-- [ ] **G.4 Se guarda.** Recarga.
-  → XP 18, Singularidad 3, Resonancia 1, Traslación 2. En Acciones, el selector de nivel
-  de los tres poderes ofrece 1, 2 y 3.
 
 ---
 
