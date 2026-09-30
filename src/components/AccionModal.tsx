@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   DIFICULTADES,
   CARAS_DADO,
-  tirarD12,
+  tirarDado,
   estadoInicial,
   valorCondiciones,
   desgloseCondiciones,
@@ -242,6 +242,7 @@ export function AccionModal({
   onCerrar: () => void;
   onTirar: (args: {
     dado: number;
+    dados?: [number, number]; // con ventaja, los dos d12 (dado = el mejor)
     estadoCondiciones: EstadoCondiciones;
     dificultad: number | null;
     circunstancial: number;
@@ -268,12 +269,15 @@ export function AccionModal({
   // mismo, no en el padre) — solo se retrasa cuándo se revela y cómo.
   const [rodando, setRodando] = useState(false);
   const [dadoAsentado, setDadoAsentado] = useState(false);
-  const [numeroRodando, setNumeroRodando] = useState(1);
+  // Un número por dado: dos con ventaja, cada uno girando por su lado.
+  const [numerosRodando, setNumerosRodando] = useState<number[]>([1]);
+  // Índice del dado que vale una vez asentado (con ventaja, el mejor).
+  const [indiceMejor, setIndiceMejor] = useState(0);
 
   useEffect(() => {
     if (!rodando || dadoAsentado) return;
     const id = setInterval(
-      () => setNumeroRodando(1 + Math.floor(Math.random() * CARAS_DADO)),
+      () => setNumerosRodando((ns) => ns.map(() => 1 + Math.floor(Math.random() * CARAS_DADO))),
       RODANDO_INTERVALO_MS,
     );
     return () => clearInterval(id);
@@ -283,14 +287,17 @@ export function AccionModal({
     setEstado((e) => ({ ...e, [id]: valor }));
 
   const dispararTirada = () => {
-    const dado = tirarD12();
+    const { dado, dados } = tirarDado(Boolean(tirada.ventaja));
+    const reales = dados ?? [dado];
+    setNumerosRodando(reales.map(() => 1));
     setRodando(true);
     setDadoAsentado(false);
     setTimeout(() => {
-      setNumeroRodando(dado);
+      setNumerosRodando(reales);
+      setIndiceMejor(reales.indexOf(dado));
       setDadoAsentado(true);
       setTimeout(() => {
-        onTirar({ dado, estadoCondiciones: estado, dificultad, circunstancial });
+        onTirar({ dado, dados, estadoCondiciones: estado, dificultad, circunstancial });
         setRodando(false);
         setDadoAsentado(false);
       }, ASENTADO_MS);
@@ -368,17 +375,34 @@ export function AccionModal({
                 {dadoAsentado ? "// tirada" : "// tirando"}
                 {!dadoAsentado && <span className="animate-pulse">_</span>}
               </p>
-              <div className="mt-2 flex items-baseline gap-3">
-                <span
-                  className={`font-display text-5xl font-bold tabular-nums ${
-                    dadoAsentado ? "text-accent" : "text-info"
-                  }`}
-                >
-                  {numeroRodando}
-                </span>
-                <span className="font-mono text-xs text-muted">d{CARAS_DADO}</span>
+              <div className={`mt-2 grid gap-4 ${numerosRodando.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
+                {numerosRodando.map((n, i) => {
+                  const descartado = dadoAsentado && numerosRodando.length === 2 && i !== indiceMejor;
+                  return (
+                    <div key={i}>
+                      <div className="flex items-baseline gap-3">
+                        <span
+                          className={`font-display text-5xl font-bold tabular-nums ${
+                            descartado ? "text-muted line-through" : dadoAsentado ? "text-accent" : "text-info"
+                          }`}
+                        >
+                          {n}
+                        </span>
+                        <span className="font-mono text-xs text-muted">
+                          d{CARAS_DADO}
+                          {dadoAsentado && numerosRodando.length === 2 && (descartado ? " · descartado" : " · vale")}
+                        </span>
+                      </div>
+                      <BarraProgreso ms={RODANDO_MS} />
+                    </div>
+                  );
+                })}
               </div>
-              <BarraProgreso ms={RODANDO_MS} />
+              {tirada.ventaja && (
+                <p className="mt-2 font-mono text-[11px] uppercase text-muted">
+                  Ventaja ({tirada.ventaja}): 2d{CARAS_DADO}, te quedas el mejor
+                </p>
+              )}
             </div>
           )}
 
@@ -555,6 +579,12 @@ export function AccionModal({
                 </span>
               </div>
             </div>
+          )}
+
+          {!resultado && !rodando && tirada.ventaja && (
+            <p className="mt-3 border-l-2 border-info pl-2 font-mono text-[11px] uppercase text-info">
+              Ventaja ({tirada.ventaja}): tiras 2d{CARAS_DADO} y te quedas el mejor
+            </p>
           )}
 
           {!resultado && !rodando && (

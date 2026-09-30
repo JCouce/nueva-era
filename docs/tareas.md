@@ -1262,7 +1262,12 @@ Rastreo y Leer Mente. Motor nuevo, general: eje de alcance con opciones de nivel
 (`PoderResuelto.habilidadesAElegir`, selector en `CabeceraPoder`). La fila de un poder en
 Acciones enseña ya el coste descontado y la unidad del alcance; el modal se remonta al
 cambiar la dificultad fija (Rastreo 6/9/12); el aviso de daño propio ya no dice
-"inconsciente" salvo en la Proeza al 200 %. Siguiente: tanda 2 (Alerta y Vínculo).
+"inconsciente" salvo en la Proeza al 200 %.
+**Resonancia, tanda 2 (2026-09-30):** Alerta pasiva, Alerta activa (coste fijo) y Vínculo.
+Ventaja genérica: `Accion.ventaja` + `tirarDado` (dos d12, el mejor), enseñada en el modal
+mientras rueda y en el resultado; la activa `Disciplina.ventajas`. Las casillas de bono del
+propio poder (`togglesPropios`) llegan al modal como condiciones ("+2 por Resonancia 4").
+**Resonancia completa salvo la tanda 3** (ventaja y +2 también en "Buscar / percibir").
 **Hallazgo (sin arreglar):** los penalizadores por umbral de salud y fatiga
 (`modificadoresDeUmbrales`, −1/−3/−5 y −1/−2) existen pero nada los aplica a las tiradas. Siguiente, disciplina a
 disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,

@@ -61,7 +61,9 @@ objetivo, y resuelva la **sobrecarga**. Hecho para Singularidad y Traslación; f
 - **Contención** completa (Contención con sus tres formas y Colaborar).
 - **Resonancia, tanda 1** (Sincronía, Mensaje agresivo, Superar la barrera, Rastreo, Leer
   Mente), con el eje de alcance Local / fila de la tabla y la habilidad a elegir.
-- Sin poderes todavía: **Inducción, Hipercognición**. Resonancia: faltan Alerta y Vínculo.
+- **Resonancia, tanda 2** (Alerta pasiva, Alerta activa con coste fijo, Vínculo) y la
+  **ventaja** genérica (`Accion.ventaja`, `tirarDado`).
+- Sin poderes todavía: **Inducción, Hipercognición**. Resonancia: falta la tanda 3.
 
 **Dónde vive cada cosa**
 
@@ -156,7 +158,8 @@ Plan original:
 - Motor nuevo: habilidad a elegir (`habilidad` como array → selector con la más alta
   preseleccionada) y el rango de nivel en las rebajas.
 
-**Tanda 2: Alerta y Vínculo**
+**Tanda 2: Alerta y Vínculo — HECHA (2026-09-30).** Alerta activa con coste fijo, sin
+rebajas de la tabla (decisión del usuario). Plan original:
 - **Alerta pasiva:** tirada normal, Perspicacia + Biociencia/Tecnociencia, dif 6, alcance
   20 m × nivel poseído; si estás exhausto, aviso (se puede tirar). **Activa:** estándar, 1 de
   fatiga, 1 km², dif 8. Desde nivel 4: **ventaja** (2d12, el mejor, enseñando los dos dados:

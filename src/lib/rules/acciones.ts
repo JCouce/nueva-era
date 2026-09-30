@@ -62,6 +62,9 @@ export type Accion = {
   // Dificultad con la que se abre el modal si el jugador no ha escrito otra
   // antes (Auto-anclaje: 6). Sin ella, 7.
   dificultadSugerida?: number;
+  // Ventaja (Alerta con Resonancia 4): se tiran dos d12 y vale el mejor. El
+  // texto es la fuente, para enseñarla en el modal.
+  ventaja?: string;
   // Solo poderes psiónicos (tiradaDePoder, poderes.ts): texto por grado del
   // propio psiónico y lo que tira el objetivo, para el panel de resultado.
   poder?: DetallePoder;
@@ -529,6 +532,13 @@ export function avisoInsuficiente(
   if (recurso.actual >= gasto) return undefined;
   const unidad = accion.recursoUnidad ?? "balas";
   return `Solo quedan ${recurso.actual}/${recurso.max} ${unidad} — esto gasta ${gasto}.`;
+}
+
+// Con ventaja, dos dados y vale el mejor; `dados` guarda los dos para enseñarlos.
+export function tirarDado(ventaja: boolean, tirar: () => number = tirarD12): { dado: number; dados?: [number, number] } {
+  if (!ventaja) return { dado: tirar() };
+  const dados: [number, number] = [tirar(), tirar()];
+  return { dado: Math.max(...dados), dados };
 }
 
 // Dado honesto: getRandomValues con descarte del resto, para que las 12 caras

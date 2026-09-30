@@ -858,6 +858,7 @@ export function AccionesTab({
 
   const tirar = ({
     dado,
+    dados,
     estadoCondiciones,
     dificultad,
     circunstancial,
@@ -868,6 +869,7 @@ export function AccionesTab({
     // (UX 2026-09-23: dejar el número real fijo un momento antes de pasar
     // al resultado completo).
     dado: number;
+    dados?: [number, number];
     estadoCondiciones: EstadoCondiciones;
     dificultad: number | null;
     circunstancial: number;
@@ -951,6 +953,7 @@ export function AccionesTab({
           ...r,
           id,
           label: tirada.label,
+          dados,
           danioInfo,
           efectoCritico: tirada.efectoCritico,
           efectos: tirada.efectos,

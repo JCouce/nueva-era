@@ -22,7 +22,7 @@ import {
 import { defaultSheet, parseSheet, type Sheet } from "./sheet";
 import { migrar } from "./migraciones";
 import { pagarFatiga, fatigaEfectiva, ajustarFatigaTemporal, terminarEscena } from "./vitalidad";
-import { resolverDanio, ACCIONES, usarHabilidadAlternativa, modificadorAccion } from "./acciones";
+import { resolverDanio, ACCIONES, usarHabilidadAlternativa, modificadorAccion, tirarDado } from "./acciones";
 import { fuentesDeCapa1 } from "./capa1";
 import { DISCIPLINAS, disciplinaPorId } from "../catalog/psionica";
 import type { AccionPoder, ModificadorFatiga } from "./psionica";
@@ -860,7 +860,7 @@ describe("Resonancia — tanda 1", () => {
     assert.equal(p.resultados.fracaso!.texto, "El mensaje llega, pero no se entiende");
   });
 
-  test("Resonancia aparece en Acciones con sus cinco acciones", () => {
+  test("Resonancia aparece en Acciones con sus acciones", () => {
     const s = setNivelDisciplinaTest(defaultSheet(), 1);
     const ids = accionesDePsionica(s).filter((p) => p.disciplina.id === "resonancia").map((p) => p.accion.id);
     assert.deepEqual(ids, [
@@ -869,7 +869,73 @@ describe("Resonancia — tanda 1", () => {
       "psi_resonancia_superar_barrera",
       "psi_resonancia_rastreo",
       "psi_resonancia_leer_mente",
+      "psi_resonancia_alerta_pasiva",
+      "psi_resonancia_alerta_activa",
+      "psi_resonancia_vinculo",
     ]);
+  });
+});
+
+describe("Resonancia — tanda 2", () => {
+  const RES = disciplinaPorId("resonancia");
+  const accionR = (id: string) => RES.acciones.find((a) => a.id === `psi_resonancia_${id}`)!;
+  const resolverR = (id: string, nivelPoseido: number, elecciones: Record<string, string> = {}) =>
+    resolverPoder(accionR(id), { nivelPoseido, elecciones, disciplina: RES })!;
+  const coste = (id: string, p: ReturnType<typeof resolverR>) => costeFatiga(RES, `psi_resonancia_${id}`, p).total;
+
+  test("Alerta pasiva: Perspicacia + Biociencia dif 6, sin fatiga, 20 m × nivel poseído", () => {
+    const p = resolverR("alerta_pasiva", 3);
+    assert.deepEqual(p.resolucion, { tipo: "tirada", aplicado: "perspicacia", habilidad: "biociencia", dificultad: 6 });
+    assert.equal(coste("alerta_pasiva", p), 0);
+    assert.equal(p.alcance, 60);
+    assert.equal(tiradaDePoder(accionR("alerta_pasiva"), p)!.dificultadSugerida, 6);
+    const s = resolverR("alerta_pasiva", 1, { receptor: "sintetico" });
+    assert.equal(s.resolucion.tipo === "tirada" && s.resolucion.habilidad, "tecnociencia");
+  });
+
+  test("Alerta activa: estándar, 1 de fatiga, 1 km², dif 8, sin rebajas de la tabla en ningún nivel", () => {
+    for (let n = 1; n <= 6; n++) {
+      const p = resolverR("alerta_activa", n);
+      assert.equal(p.economia, "estandar", `nivel ${n}`);
+      assert.equal(coste("alerta_activa", p), 1, `nivel ${n}`);
+      assert.equal(p.alcance, 1);
+      assert.equal(p.resolucion.tipo === "tirada" && p.resolucion.dificultad, 8);
+    }
+  });
+
+  test("desde Resonancia 4: ventaja y casilla +2 en las dos Alertas", () => {
+    for (const id of ["alerta_pasiva", "alerta_activa"]) {
+      const n3 = tiradaDePoder(accionR(id), resolverR(id, 3))!;
+      assert.equal(n3.ventaja, undefined);
+      assert.equal(n3.condiciones, undefined);
+      const n4 = tiradaDePoder(accionR(id), resolverR(id, 4))!;
+      assert.equal(n4.ventaja, "Resonancia 4");
+      assert.equal(n4.condiciones!.length, 1);
+      const c = n4.condiciones![0];
+      assert.equal(c.tipo === "toggle" && c.valorActivo, 2);
+    }
+    assert.equal(resolverR("leer_mente", 6).ventaja, null);
+  });
+
+  test("tirarDado: con ventaja, dos dados y vale el mejor", () => {
+    const secuencia = [3, 9];
+    const r = tirarDado(true, () => secuencia.shift()!);
+    assert.deepEqual(r, { dado: 9, dados: [3, 9] });
+    assert.deepEqual(tirarDado(false, () => 5), { dado: 5 });
+  });
+
+  test("Vínculo: sin tirada, compleja (estándar desde 4), 1 por aliado, nivel km² y nivel minutos", () => {
+    const n3 = resolverR("vinculo", 3);
+    assert.equal(n3.resolucion.tipo, "sin_dado");
+    assert.equal(n3.economia, "compleja");
+    assert.equal(coste("vinculo", n3), 1);
+    assert.equal(n3.alcance, 3);
+    assert.equal(n3.duracion, 3);
+    assert.equal(n3.multiplesObjetivos?.fatigaPorObjetivo, 1);
+    assert.equal(resolverR("vinculo", 2).economia, "compleja");
+    const n4 = resolverR("vinculo", 4);
+    assert.equal(n4.economia, "estandar");
+    assert.equal(coste("vinculo", resolverR("vinculo", 6)), 1);
   });
 });
 

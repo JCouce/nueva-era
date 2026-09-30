@@ -728,6 +728,21 @@ al preparar su modelado:
   - Leer Mente: grados desde el psiónico — su fracaso (el objetivo salva) aún da 1 turno
     de lectura; su fracaso crítico (el objetivo saca crítico) no da nada y el objetivo nota
     la anomalía.
+- **Construcción de Resonancia, tanda 2 (usuario, 2026-09-30):** Alerta pasiva, Alerta
+  activa y Vínculo.
+  - Alerta pasiva y activa son dos acciones (cambian alcance y unidades). Pasiva: tirada
+    normal, dificultad 6, sin fatiga, 20 m × nivel poseído; estar exhausto es solo una nota.
+    Activa: estándar, 1 de fatiga, 1 km², dificultad 8.
+  - **La Alerta activa tiene coste fijo** (estándar y 1) y no pasa por las rebajas de la
+    tabla (Murillo: "mejorará en niveles altos, sin definir").
+  - Desde Resonancia 4, en las dos: **ventaja** (dos d12, vale el mejor; el modal y el
+    resultado enseñan los dos) y casilla "+2 por Resonancia 4". La ventaja es genérica
+    (`Accion.ventaja`, `tirarDado`), la da `Disciplina.ventajas`.
+  - Vínculo: sin tirada, compleja (estándar desde nivel 4), 1 de fatiga por aliado (mensaje
+    de varios objetivos), nivel poseído en km² y en minutos. +1 a Voluntad y alertar por el
+    vínculo, notas.
+  - *Supuesto:* contra amenazas sintéticas, la Alerta tira Tecnociencia con la especialidad
+    Informática, como Rastreo (la prosa solo dice "tecnociencia").
 - **Máquinas sin ficha** (qué tira una IA/servidor que no es personaje para resistir un poder):
   pendiente de Murillo — es la pregunta 16.
 - Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de

@@ -291,15 +291,21 @@ function ejeAlcanceResonancia(): EjePoder {
   };
 }
 
-const RECEPTOR_SINTETICO: EjePoder = {
+// Contra mentes sintéticas se resuena con Tecnociencia (Informática).
+const receptor = (label: string, plural = false): EjePoder => ({
   id: "receptor",
-  label: "Objetivo",
+  label,
   tipo: "opcion",
   opciones: [
-    { id: "organico", label: "Orgánico", cambia: {} },
-    { id: "sintetico", label: "Sintético", cambia: { resolucion: { habilidad: "tecnociencia", especialidad: "Informática" } } },
+    { id: "organico", label: plural ? "Orgánicas" : "Orgánico", cambia: {} },
+    {
+      id: "sintetico",
+      label: plural ? "Sintéticas" : "Sintético",
+      cambia: { resolucion: { habilidad: "tecnociencia", especialidad: "Informática" } },
+    },
   ],
-};
+});
+const RECEPTOR_SINTETICO = receptor("Objetivo");
 
 const NOTA_RASTREO_PRIMERO = { texto: "Si no conoces al objetivo, primero encuéntralo con Rastreo.", lugar: "tirada" } as const;
 
@@ -504,6 +510,104 @@ const LEER_MENTE: AccionPoder = {
   motor: motorDeAccion(LEER_MENTE_ID, { propias: true, tercero: ["salv_voluntad"] }),
 };
 
+// Alerta: dos acciones (pasiva y activa) porque cambian alcance y unidades. Coste
+// fijo, sin las rebajas de la tabla (Murillo: "mejorará en niveles altos, sin
+// definir"; usuario, 2026-09-30). Desde nivel 4, ventaja y la casilla de +2 por
+// combinarla con la alerta normal.
+const ALERTA_PASIVA_ID = "psi_resonancia_alerta_pasiva";
+const ALERTA_ACTIVA_ID = "psi_resonancia_alerta_activa";
+const MAS_2_RESONANCIA_4 = (alcance: string) => ({
+  etiqueta: "+2 por Resonancia 4 (combinada con tu alerta normal)",
+  alcance,
+  valor: 2,
+  desdeNivelPoseido: 4,
+});
+const RESULTADOS_ALERTA: AccionPoder["resultados"] = {
+  exito: {
+    texto: "Reconoces la amenaza y sabes más o menos dónde está mientras siga en tu alcance: puede atacarte por sorpresa, pero nunca te pilla desprevenido",
+    estados: [],
+  },
+  fracaso: { texto: "No percibes intenciones hostiles", estados: [] },
+};
+const OBJETIVO_TIRA_ALERTA = [
+  { que: "Si está prevenido contra este tipo de alerta, opone Voluntad + Actitud como si fuera su sigilo" },
+];
+const NOTAS_ALERTA = [
+  { texto: "Las zonas de interferencia suben la dificultad (+2, +4, +6).", lugar: "tirada" as const },
+  { texto: "Localizado, puede seguir oculto con sigilo normal, pero ya no te pilla desprevenido.", lugar: "tirada" as const },
+];
+
+const ALERTA_PASIVA: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: ALERTA_PASIVA_ID,
+  label: "Alerta pasiva",
+  desdeNivel: 1,
+  economia: { tiempo: "Pasiva" },
+  fatiga: 0,
+  alcance: { base: 0, porNivelPoseido: 20 },
+  objetivo: null,
+  desplazamiento: null,
+  resolucion: { tipo: "tirada", aplicado: "perspicacia", habilidad: "biociencia", dificultad: 6 },
+  objetivoTira: OBJETIVO_TIRA_ALERTA,
+  ejes: [receptor("Amenazas", true)],
+  resultados: RESULTADOS_ALERTA,
+  togglesPropios: [MAS_2_RESONANCIA_4(ALERTA_PASIVA_ID)],
+  notas: [
+    { texto: "Hace de tu alerta ordinaria: tírala cuando el máster pida percibir amenazas.", lugar: "tirada" },
+    { texto: "No funciona si estás exhausto (la app deja tirar: lo decide el máster).", lugar: "tirada" },
+    ...NOTAS_ALERTA,
+  ],
+  motor: motorDeAccion(ALERTA_PASIVA_ID, { propias: true, tercero: ["sigilo"] }),
+};
+
+const ALERTA_ACTIVA: AccionPoder = {
+  ...ALERTA_PASIVA,
+  id: ALERTA_ACTIVA_ID,
+  label: "Alerta activa",
+  economia: "estandar",
+  fatiga: 1,
+  alcance: 1,
+  unidades: { alcance: "km²" },
+  resolucion: { tipo: "tirada", aplicado: "perspicacia", habilidad: "biociencia", dificultad: 8 },
+  togglesPropios: [MAS_2_RESONANCIA_4(ALERTA_ACTIVA_ID)],
+  notas: [
+    { texto: "Amplía tu alerta a 1 km²; la dificultad 8 es para lo que queda fuera del alcance de la pasiva.", lugar: "tirada" },
+    ...NOTAS_ALERTA,
+  ],
+  motor: motorDeAccion(ALERTA_ACTIVA_ID, { propias: true, tercero: ["sigilo"] }),
+};
+
+// Vínculo: sin tirada. "Punto de poder" = nivel en Resonancia (nivel 5 = 5 km²) y
+// tantos aliados como fatiga se tenga (Murillo, 2026-09-29): 1 por aliado.
+const VINCULO_ID = "psi_resonancia_vinculo";
+const VINCULO: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: VINCULO_ID,
+  label: "Vínculo",
+  desdeNivel: 1,
+  economia: "compleja",
+  fatiga: 1,
+  alcance: { base: 0, porNivelPoseido: 1 },
+  duracion: { base: 0, porNivelPoseido: 1 },
+  unidades: { alcance: "km²", duracion: "minutos" },
+  objetivo: { tipo: "aliado" },
+  desplazamiento: null,
+  resolucion: { tipo: "sin_dado" },
+  objetivoTira: [],
+  ejes: [],
+  resultados: {},
+  multiplesObjetivos: { texto: "Tantos aliados como fatiga tengas.", fatigaPorObjetivo: 1 },
+  notas: [
+    { texto: "Los vinculados tienen +1 a las salvaciones de Voluntad mientras dure (a mano).", lugar: "tirada" },
+    { texto: "Se benefician de tu alerta pasiva contra las amenazas que los incluyan.", lugar: "tirada" },
+    {
+      texto: "Como reacción, quien encuentre a un objetivo escondido puede avisar por el vínculo: un ataque por sorpresa pasa a normal, o un aliado desprevenido pasa a sorprendido.",
+      lugar: "tirada",
+    },
+  ],
+  motor: motorDeAccion(VINCULO_ID, { propias: true }),
+};
+
 const RESONANCIA: Disciplina = {
   id: "resonancia",
   label: "Resonancia",
@@ -542,10 +646,11 @@ const RESONANCIA: Disciplina = {
     { fuente: "Resonancia 2", desdeNivelPoseido: 2, alcance: { nivelEmpleado: 1 }, op: "baja_un_paso" },
     { fuente: "Resonancia 4", desdeNivelPoseido: 4, alcance: { nivelEmpleado: 2 }, op: "sustituye", valor: "compleja" },
     { fuente: "Resonancia 6", desdeNivelPoseido: 6, alcance: { nivelEmpleado: 4 }, op: "sustituye", valor: { tiempo: "1 minuto" } },
+    { fuente: "Resonancia 4: Vínculo", desdeNivelPoseido: 4, alcance: { accion: VINCULO_ID }, op: "sustituye", valor: "estandar" },
   ],
   bonosEnOtrasTiradas: [],
-  ventajas: [],
-  acciones: [SINCRONIA, MENSAJE_AGRESIVO, SUPERAR_BARRERA, RASTREO, LEER_MENTE],
+  ventajas: [{ desdeNivelPoseido: 4, acciones: [ALERTA_PASIVA_ID, ALERTA_ACTIVA_ID] }],
+  acciones: [SINCRONIA, MENSAJE_AGRESIVO, SUPERAR_BARRERA, RASTREO, LEER_MENTE, ALERTA_PASIVA, ALERTA_ACTIVA, VINCULO],
 };
 
 // ── Traslación ────────────────────────────────────────────────────

@@ -11,6 +11,7 @@ preparar el personaje y qué números deben salir.
 | H1–H8 | Traslación (con NPC de nivel 6 en H6) | Traslación 3 |
 | I | Contención (con NPC de nivel 6 en I.6) | Traslación 1 + Contención 2 |
 | J | Resonancia, tanda 1 (con NPC de nivel 6 en J.6) | Resonancia 3 |
+| K | Resonancia, tanda 2: Alerta y Vínculo | Resonancia 3, y NPC con Resonancia 4 |
 
 Los números esperados valen para un personaje recién creado sin tocar: atributos a 0,
 sin especie, **8 de vida y 8 de fatiga**, y tirada de poder **−1** (Perspicacia +0,
@@ -20,7 +21,7 @@ Marca `[x]` lo que pasa. Si algo falla, anota el texto exacto de lo que sale.
 
 ## Preparación
 
-- Dev server en marcha y sesión de **máster**.
+- Dev server en marcha y sesión de **máster** (en local: usuario `master`, contraseña `master`).
 - Crea un personaje llamado `QA-PSIONICA` en `/characters`.
 - En **Resumen**, pon la letra **A** en **Psiónica**. Son 18 puntos.
 - Haz primero el flujo A, que deja el personaje con **Traslación 2 y Singularidad 2**: de
@@ -387,14 +388,34 @@ Para J.3, sube **Actitud** por encima de Biociencia.
   Fatiga **2** (4 − 1 − 1). Alcance 5: 10 minutos, 5. Alcance 6: 1 hora, 8. Rastreo
   desconocido con alcance 6: `10 horas`, Fatiga 12.
 
+## K. Resonancia, tanda 2: Alerta y Vínculo
+
+El personaje de J (Resonancia 3). Fatiga a 8. Para K.3, un NPC con **Resonancia 4**.
+
+- [ ] **K.1 Filas.** → Alerta pasiva `Pasiva · 0 fatiga · 60 m`; Alerta activa `Estándar ·
+  1 fatiga · 1 km²`; Vínculo `Compleja · 1 fatiga · 3 km²`.
+- [ ] **K.2 Alerta pasiva y activa (nivel 3).** Usar.
+  → Selector Amenazas (Orgánicas / Sintéticas, esta cambia a Tecnociencia). Dificultad
+  puesta a **6** (pasiva) y **8** (activa). Sin ventaja ni casilla de +2.
+- [ ] **K.3 Resonancia 4 (NPC).** Alerta activa.
+  → Casilla "+2 por Resonancia 4 (combinada con tu alerta normal)": al marcarla, el total
+  sube 2. Aviso "Ventaja (Resonancia 4): tiras 2d12 y te quedas el mejor". Al tirar, giran
+  **dos números, cada uno con su barra**; al asentarse, el mejor queda "d12 · vale" y el otro
+  tachado "d12 · descartado". El resultado enseña `2d12 <mejor> · <otro tachado>`. Fatiga 8 → 7.
+  Alerta activa sigue en Estándar y 1 también con Resonancia 6. Vínculo: `Estándar`, 4 km²,
+  4 minutos.
+- [ ] **K.4 Vínculo (nivel 3).** Usar.
+  → Sin dado. Objetivo Aliado, Duración 3 minutos, mensaje "Varios objetivos: cada uno paga
+  1 de fatiga…" y tres notas. Usar → "Usado · −1 fatiga".
+
 ---
 
 ## Fuera de estas pruebas
 
 No son fallos:
 
-- Resonancia solo tiene la tanda 1 (faltan Alerta y Vínculo); Inducción e Hipercognición
-  no tienen poderes todavía. Traslación
+- La ventaja y el +2 de Resonancia 4 aún no llegan a la tirada fija "Buscar / percibir"
+  (tanda 3). Inducción e Hipercognición no tienen poderes todavía. Traslación
   está completa.
 - Xovromium, Munición Supresora y Derivación Psiónica no afectan aún ni a la tirada ni a
   la fatiga.

@@ -33,6 +33,8 @@ export type DanioInfo = {
 export type Lanzamiento = Resultado & {
   id: number;
   label: string;
+  // Tirada con ventaja: los dos d12 (`dado` es el mejor).
+  dados?: [number, number];
   danioInfo?: DanioInfo | null;
   danioResuelto?: ResultadoDanio;
   // Texto de crítico de la Accion que generó esta tirada (Accion.efectoCritico,
@@ -122,7 +124,17 @@ export function ContenidoResultado({
         </div>
 
         <p className="text-right font-mono text-xs leading-relaxed text-muted">
-          d12 <span className="text-foreground">{resultado.dado}</span>
+          {resultado.dados ? (
+            <>
+              2d12 <span className="text-foreground">{resultado.dado}</span>
+              {" · "}
+              <span className="line-through">{Math.min(...resultado.dados)}</span>
+            </>
+          ) : (
+            <>
+              d12 <span className="text-foreground">{resultado.dado}</span>
+            </>
+          )}
           <br />
           {"mod "}
           <span className="text-foreground">{signo(resultado.modificador)}</span>

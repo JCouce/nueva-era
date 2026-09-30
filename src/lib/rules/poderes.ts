@@ -80,7 +80,9 @@ export type PoderResuelto = {
   exceso: ExcesoResuelto | null;
   unidades: NonNullable<AccionPoder["unidades"]>;
   notas: Nota[];
-  togglesPropios: BonoToggle[];
+  togglesPropios: BonoToggle[]; // ya filtrados por nivel poseído
+  // Fuente de la ventaja (dos d12, el mejor) si la disciplina la da a esta acción.
+  ventaja: string | null;
   bonosEnOtrasTiradas: BonoToggle[];
   movimientoOtorgado: { tipo: "levitar"; velocidad: ValorResuelto } | null;
   manual: string[];
@@ -290,6 +292,8 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
   for (const r of Object.values(w.resultados as Record<string, Record<string, unknown>>)) r.texto = rellenar(r.texto as string);
   for (const n of w.notas as Nota[]) n.texto = rellenar(n.texto);
 
+  const ventaja = ctx.disciplina?.ventajas.find((v) => v.acciones.includes(accion.id) && nivelPoseido >= v.desdeNivelPoseido);
+
   return {
     id: accion.id,
     label: accion.label,
@@ -313,7 +317,8 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
     exceso,
     unidades: accion.unidades ?? {},
     notas: w.notas as Nota[],
-    togglesPropios: accion.togglesPropios,
+    togglesPropios: accion.togglesPropios.filter((t) => (t.desdeNivelPoseido ?? 0) <= nivelPoseido),
+    ventaja: ventaja ? `${ctx.disciplina!.label} ${ventaja.desdeNivelPoseido}` : null,
     bonosEnOtrasTiradas: accion.bonosEnOtrasTiradas,
     movimientoOtorgado: w.movimientoOtorgado as PoderResuelto["movimientoOtorgado"],
     manual: accion.manual,
@@ -509,6 +514,16 @@ export function tiradaDePoder(accion: AccionPoder, p: PoderResuelto): Accion | n
     ...(r.tipo === "tirada" && typeof r.dificultad === "number" && { dificultadSugerida: r.dificultad }),
     // Penalizador propio fijo (Puntería −2 de Proyección): línea más del desglose.
     ...(r.modificador && { ajustesFijos: [{ valor: r.modificador, fuente: `${accion.label} (propio)` }] }),
+    ...(p.ventaja && { ventaja: p.ventaja }),
+    // Bonos que declara el jugador (Alerta: "+2 por Resonancia 4"): casillas del modal.
+    ...(p.togglesPropios.length > 0 && {
+      condiciones: p.togglesPropios.map((t, i) => ({
+        id: `poder_${i}`,
+        tipo: "toggle" as const,
+        etiqueta: t.etiqueta,
+        valorActivo: t.valor,
+      })),
+    }),
   };
   if (r.tipo === "ataque") {
     tirada.ataque = {
