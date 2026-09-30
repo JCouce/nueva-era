@@ -1271,6 +1271,10 @@ propio poder (`togglesPropios`) llegan al modal como condiciones ("+2 por Resona
 fija "Buscar / percibir". General: `conPsionicaEnTiradaFija` (`poderes.ts`) aplica a
 cualquier tirada fija las `Disciplina.ventajas` y `bonosEnOtrasTiradas` que la nombran,
 sumándose a las condiciones del equipo. **Resonancia completa.** Siguiente: Inducción.
+**Inducción, tanda 1 (2026-09-30):** base común (selector orgánico/sintético que cambia la
+prueba y lo que tira el objetivo, alcance 20 m × nivel, casilla −4 desde nivel 5 vía
+`togglesPropios`), Comando (con "Evitar un ataque" nv2 y varios objetivos nv3) y
+Reconfiguración Mnemónica (nv3). Sin motor nuevo. Siguiente: tanda 2 (Modulación).
 **Hallazgo (sin arreglar):** los penalizadores por umbral de salud y fatiga
 (`modificadoresDeUmbrales`, −1/−3/−5 y −1/−2) existen pero nada los aplica a las tiradas. Siguiente, disciplina a
 disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,

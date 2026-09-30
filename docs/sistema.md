@@ -748,6 +748,20 @@ al preparar su modelado:
   (combinada con tu alerta psiónica)". El "sin impedimentos" de la prosa no se comprueba:
   va escrito en el aviso de ventaja de las tres alertas y lo decide el máster.
   **Resonancia completa.**
+- **Construcción de Inducción, tanda 1 (usuario, 2026-09-30):** base común, Comando y
+  Reconfiguración Mnemónica.
+  - Toda acción con tirada es **enfrentada** con selector Orgánico (Expresión + Biociencia;
+    resiste Voluntad + Actitud o + Biociencia si es entrenado) / Sintético (Perspicacia +
+    Informática; resiste Perspicacia + Informática). Alcance 20 m × nivel poseído, con nota
+    de que se combina con el local de Resonancia. Desde nivel 5, casilla "Fuera del
+    alcance local de Resonancia (−4)".
+  - Grados escritos desde el psiónico: su crítico = el fracaso crítico del objetivo (Comando:
+    obedece 10 turnos); su fracaso crítico = el éxito crítico del objetivo.
+  - Comando: estándar, 1. Nivel 2, opción "Evitar un ataque" (reacción, 1, prueba base,
+    grados propios). Nivel 3, varios objetivos con el mensaje de siempre.
+  - Reconfiguración Mnemónica (nivel 3): compleja, 2; cambios profundos, nota.
+  - *Supuesto:* "un punto adicional por cada objetivo" (Comando nv3) se lee como el mensaje
+    de Traslación: se cobra el poder una vez y cada objetivo extra paga 1 a mano.
 - **Máquinas sin ficha** (qué tira una IA/servidor que no es personaje para resistir un poder):
   pendiente de Murillo — es la pregunta 16.
 - Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de

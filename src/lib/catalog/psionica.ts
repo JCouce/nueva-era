@@ -663,6 +663,177 @@ const RESONANCIA: Disciplina = {
   acciones: [SINCRONIA, MENSAJE_AGRESIVO, SUPERAR_BARRERA, RASTREO, LEER_MENTE, ALERTA_PASIVA, ALERTA_ACTIVA, VINCULO],
 };
 
+// ── Inducción ─────────────────────────────────────────────────────
+// Prueba base según el objetivo: orgánico Expresión + Biociencia, sintético
+// Perspicacia + Informática; siempre enfrentada, con los grados vistos desde el
+// psiónico (si gana por 6+, el "fracaso crítico" del objetivo). Alcance 20 m ×
+// nivel poseído, combinable con el alcance local de Resonancia; desde nivel 5,
+// fuera de ese alcance con −4 (casilla).
+
+const OBJETIVO_INDUCCION: EjePoder = {
+  id: "receptor",
+  label: "Objetivo",
+  tipo: "opcion",
+  opciones: [
+    { id: "organico", label: "Orgánico", cambia: {} },
+    {
+      id: "sintetico",
+      label: "Sintético",
+      cambia: {
+        resolucion: { aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "Informática" },
+        objetivoTira: [{ que: "Resiste con Perspicacia + Informática; escribe su total como dificultad" }],
+      },
+    },
+  ],
+};
+
+// Lo común a toda acción de Inducción con tirada; cada una pone coste, acción y grados.
+const BASE_INDUCCION = {
+  ...SIN_EXTRAS,
+  desdeNivel: 1,
+  alcance: { base: 0, porNivelPoseido: 20 },
+  objetivo: { tipo: "unico" },
+  desplazamiento: null,
+  resolucion: { tipo: "enfrentada", aplicado: "expresion", habilidad: "biociencia" },
+  objetivoTira: [
+    { que: "Resiste con Voluntad + Actitud (o Voluntad + Biociencia si es un psiónico entrenado); escribe su total como dificultad" },
+  ],
+} satisfies Partial<AccionPoder>;
+
+const NOTA_ALCANCE_INDUCCION = {
+  texto: "Puedes combinarlo con el alcance local de Resonancia (1 km²).",
+  lugar: "tirada",
+} as const;
+
+const fueraDeAlcanceLocal = (accion: string) => ({
+  etiqueta: "Fuera del alcance local de Resonancia (−4)",
+  alcance: accion,
+  valor: -4,
+  desdeNivelPoseido: 5,
+});
+
+const COMANDO_ID = "psi_induccion_comando";
+const COMANDO: AccionPoder = {
+  ...BASE_INDUCCION,
+  id: COMANDO_ID,
+  label: "Comando",
+  economia: "estandar",
+  fatiga: 1,
+  ejes: [
+    OBJETIVO_INDUCCION,
+    {
+      id: "uso",
+      label: "Uso",
+      tipo: "opcion",
+      opciones: [
+        { id: "orden", label: "Dar una orden", cambia: {} },
+        {
+          // Nivel 2: cuesta 1 y usa la prueba base (Murillo, 2026-09-29).
+          id: "evitar_ataque",
+          label: "Evitar un ataque",
+          desdeNivel: 2,
+          cambia: {
+            economia: "reaccion",
+            resultados: {
+              critico: { texto: "No puede hacer ningún ataque en todo el turno", estados: [] },
+              exito: { texto: "No hace ese ataque y lo pierde", estados: [] },
+              fracaso: { texto: "Ataca, pero con −2 a la tirada", estados: [] },
+              fracasoCritico: { texto: "Ataca sin impedimentos", estados: [] },
+            },
+            notas: [{ texto: "La orden solo puede servir para evitar una acción de ataque.", lugar: "tirada" }],
+          },
+        },
+      ],
+    },
+    {
+      id: "objetivos",
+      label: "Objetivos",
+      tipo: "opcion",
+      opciones: [
+        { id: "uno", label: "Uno", cambia: {} },
+        {
+          id: "varios",
+          label: "Varios",
+          desdeNivel: 3,
+          cambia: { multiplesObjetivos: { texto: "La orden tiene que ser idéntica para todos.", fatigaPorObjetivo: 1 } },
+        },
+      ],
+    },
+  ],
+  resultados: {
+    critico: { texto: "Actúa bajo tu orden durante los próximos 10 turnos", estados: [] },
+    exito: {
+      texto: "Intenta cumplir la orden en su siguiente turno. Al acabar recupera el control sin ser del todo consciente de la manipulación; pasado 1 minuto lo recuerda (con posible confusión), y un estímulo que lo evoque se lo hace comprender al instante",
+      estados: [],
+    },
+    fracaso: { texto: "Actúa libremente, pero con −2 a su siguiente tirada", estados: [] },
+    fracasoCritico: { texto: "Actúa con total libertad, sin impedimentos", estados: [] },
+  },
+  togglesPropios: [fueraDeAlcanceLocal(COMANDO_ID)],
+  notas: [
+    NOTA_ALCANCE_INDUCCION,
+    {
+      texto: "Acciones extremas: si la orden atenta contra su supervivencia o la de un aliado, cada vez que vaya a cumplirla repite su salvación con +2 (+4 en casos drásticos); con éxito no la hace, con éxito crítico se libera.",
+      lugar: "tirada",
+    },
+  ],
+  motor: motorDeAccion(COMANDO_ID, { propias: true, tercero: ["salv_voluntad"] }),
+};
+
+// "Basta la acción compleja; los cambios profundos piden acción mantenida con
+// concentración, incluso horas" (Murillo, 2026-09-29).
+const RECONFIGURACION_ID = "psi_induccion_reconfiguracion";
+const RECONFIGURACION: AccionPoder = {
+  ...BASE_INDUCCION,
+  id: RECONFIGURACION_ID,
+  label: "Reconfiguración Mnemónica",
+  desdeNivel: 3,
+  economia: "compleja",
+  fatiga: 2,
+  ejes: [OBJETIVO_INDUCCION],
+  resultados: {
+    critico: {
+      texto: "Reescritura parcial profunda: asume como verdaderos los recuerdos o datos falsos que implantas, de forma permanente o hasta recuperarlos con terapia o análisis técnico avanzado; puede cambiar notablemente su lealtad, cómo ve a un aliado o sus directrices básicas",
+      estados: [],
+    },
+    exito: {
+      texto: "Reescribes o emborronas un evento reciente (hasta 1 hora en orgánicos; los registros de las últimas 24 horas en sintéticos) y puedes implantar recuerdos falsos",
+      estados: [],
+    },
+    fracaso: {
+      texto: "Resiste la alteración profunda: solo nota una ligera desorientación y pierde el recuerdo del último minuto (con el estímulo adecuado, lo recupera)",
+      estados: [],
+    },
+    fracasoCritico: { texto: "Sin efecto", estados: [] },
+  },
+  togglesPropios: [fueraDeAlcanceLocal(RECONFIGURACION_ID)],
+  notas: [
+    NOTA_ALCANCE_INDUCCION,
+    { texto: "Los cambios profundos piden una acción mantenida con concentración, incluso de horas (a criterio del máster).", lugar: "tirada" },
+  ],
+  motor: motorDeAccion(RECONFIGURACION_ID, { propias: true, tercero: ["salv_voluntad"] }),
+};
+
+const INDUCCION: Disciplina = {
+  id: "induccion",
+  label: "Inducción",
+  rama: "metasensoria",
+  requisito: { disciplina: "resonancia", nivel: 1 },
+  porNivel: [],
+  reglas: [
+    {
+      id: "prueba_base",
+      texto: "Prueba base: orgánico Expresión + Biociencia, contra Voluntad + Actitud (o + Biociencia si es psiónico entrenado); sintético Perspicacia + Informática, contra Perspicacia + Informática.",
+      aplica: "todas",
+    },
+  ],
+  modificadoresFatiga: [],
+  modificadoresEconomia: [],
+  bonosEnOtrasTiradas: [],
+  ventajas: [],
+  acciones: [COMANDO, RECONFIGURACION],
+};
+
 // ── Traslación ────────────────────────────────────────────────────
 // La fatiga de Anclaje y Trasladar no depende del movimiento sino de la carga o
 // el alcance: se paga la fila del nivel empleado de la tabla (porNivel). "Nivel
@@ -1341,7 +1512,7 @@ export const PSIONICA: CatalogoPsionica = {
   },
   disciplinas: [
     RESONANCIA,
-    disciplinaVacia({ id: "induccion", label: "Inducción", rama: "metasensoria", requisito: { disciplina: "resonancia", nivel: 1 } }),
+    INDUCCION,
     disciplinaVacia({ id: "hipercognicion", label: "Hipercognición", rama: "metasensoria", requisito: { disciplina: "resonancia", nivel: 2 } }),
     TRASLACION,
     CONTENCION_DISCIPLINA,

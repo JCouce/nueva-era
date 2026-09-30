@@ -65,7 +65,10 @@ objetivo, y resuelva la **sobrecarga**. Hecho para Singularidad y Traslación; f
   **ventaja** genérica (`Accion.ventaja`, `tirarDado`).
 - **Resonancia completa**: tanda 3 hecha (ventaja y +2 en "Buscar / percibir" vía
   `conPsionicaEnTiradaFija`, sin mini-épica: el §8 de modificadores ya estaba resuelto).
-- Sin poderes todavía: **Inducción, Hipercognición**.
+- **Inducción, tanda 1**: Comando y Reconfiguración Mnemónica. Faltan Modulación (tanda 2)
+  y Supresión / Estabilización (tanda 3, con decisión: cómo cobra fatiga la casilla de
+  salvación).
+- Sin poderes todavía: **Hipercognición**.
 
 **Dónde vive cada cosa**
 

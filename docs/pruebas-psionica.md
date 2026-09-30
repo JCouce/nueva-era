@@ -12,6 +12,7 @@ preparar el personaje y qué números deben salir.
 | I | Contención (con NPC de nivel 6 en I.6) | Traslación 1 + Contención 2 |
 | J | Resonancia, tanda 1 (con NPC de nivel 6 en J.6) | Resonancia 3 |
 | K | Resonancia, tandas 2 y 3: Alerta, Vínculo y Buscar / percibir | Resonancia 3, y NPC con Resonancia 4 |
+| L | Inducción, tanda 1: Comando y Reconfiguración Mnemónica | NPC con Resonancia 1 + Inducción 5 |
 
 Los números esperados valen para un personaje recién creado sin tocar: atributos a 0,
 sin especie, **8 de vida y 8 de fatiga**, y tirada de poder **−1** (Perspicacia +0,
@@ -414,13 +415,31 @@ El personaje de J (Resonancia 3). Fatiga a 8. Para K.3, un NPC con **Resonancia 
   → Sin dado. Objetivo Aliado, Duración 3 minutos, mensaje "Varios objetivos: cada uno paga
   1 de fatiga…" y tres notas. Usar → "Usado · −1 fatiga".
 
+## L. Inducción, tanda 1
+
+NPC (o ficha editada) con **Resonancia 1** e **Inducción 5**. Fatiga a 8.
+
+- [ ] **L.1 Filas.** → Comando `Estándar · 1 fatiga · 100 m`; Reconfiguración Mnemónica
+  `Compleja · 2 fatiga · 100 m`. Con Inducción 2, Reconfiguración no aparece.
+- [ ] **L.2 Comando.** Usar.
+  → Selectores Objetivo (Orgánico / Sintético), Uso (Dar una orden / Evitar un ataque) y
+  Objetivos (Uno / Varios). Desglose Expresión + Biociencia; con Sintético, Perspicacia +
+  Tecnociencia. Casilla "Fuera del alcance local de Resonancia (−4)": total −1 → −5.
+- [ ] **L.3 Evitar un ataque + Varios.** → Acción `Reacción`, Fatiga 1 y el mensaje "cada uno
+  paga 1 de fatiga… La orden tiene que ser idéntica para todos".
+- [ ] **L.4 Tirar.** → Fatiga 8 → 7; el resultado va desde tu lado (con fracaso crítico en
+  Evitar un ataque: "Ataca sin impedimentos"; con crítico en una orden: "Actúa bajo tu orden
+  durante los próximos 10 turnos").
+- [ ] **L.5 Reconfiguración Mnemónica.** → Compleja, Fatiga 2, dos notas y la casilla −4.
+
 ---
 
 ## Fuera de estas pruebas
 
 No son fallos:
 
-- Inducción e Hipercognición no tienen poderes todavía. Traslación
+- Inducción solo tiene la tanda 1 (faltan Modulación, Supresión y Estabilización);
+  Hipercognición no tiene poderes todavía. Traslación
   está completa.
 - Xovromium, Munición Supresora y Derivación Psiónica no afectan aún ni a la tirada ni a
   la fatiga.

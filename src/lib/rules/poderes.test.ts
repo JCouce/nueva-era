@@ -965,6 +965,64 @@ describe("Resonancia — tanda 3: Buscar / percibir", () => {
   });
 });
 
+describe("Inducción — tanda 1", () => {
+  const IND = disciplinaPorId("induccion");
+  const accionI = (id: string) => IND.acciones.find((a) => a.id === `psi_induccion_${id}`)!;
+  const resolverI = (id: string, nivelPoseido: number, elecciones: Record<string, string> = {}) =>
+    resolverPoder(accionI(id), { nivelPoseido, elecciones, disciplina: IND });
+
+  test("Comando: enfrentada Expresión + Biociencia, estándar, 1 de fatiga, 20 m × nivel poseído", () => {
+    const p = resolverI("comando", 2)!;
+    assert.deepEqual(p.resolucion, { tipo: "enfrentada", aplicado: "expresion", habilidad: "biociencia" });
+    assert.equal(p.economia, "estandar");
+    assert.equal(costeFatiga(IND, "psi_induccion_comando", p).total, 1);
+    assert.equal(p.alcance, 40);
+    assert.match(p.objetivoTira[0].que, /Voluntad \+ Actitud/);
+  });
+
+  test("objetivo sintético: Perspicacia + Informática, y resiste con Perspicacia + Informática", () => {
+    const p = resolverI("comando", 1, { receptor: "sintetico" })!;
+    assert.deepEqual(p.resolucion, { tipo: "enfrentada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "Informática" });
+    assert.match(p.objetivoTira[0].que, /Perspicacia \+ Informática/);
+  });
+
+  test("grados desde el psiónico: su crítico = el objetivo obedece 10 turnos", () => {
+    const p = resolverI("comando", 1)!;
+    assert.match(p.resultados.critico!.texto, /10 turnos/);
+    assert.match(p.resultados.fracasoCritico!.texto, /total libertad/);
+  });
+
+  test("nivel 2: evitar un ataque como reacción, con sus propios grados", () => {
+    assert.deepEqual(opcionesDisponibles(accionI("comando").ejes[1], 1).map((o) => o.id), ["orden"]);
+    const p = resolverI("comando", 2, { uso: "evitar_ataque" })!;
+    assert.equal(p.economia, "reaccion");
+    assert.equal(costeFatiga(IND, "psi_induccion_comando", p).total, 1);
+    assert.equal(p.resultados.fracaso!.texto, "Ataca, pero con −2 a la tirada");
+  });
+
+  test("nivel 3: varios objetivos, 1 de fatiga por cada uno", () => {
+    assert.equal(resolverI("comando", 2, { objetivos: "varios" })!.multiplesObjetivos, null);
+    const p = resolverI("comando", 3, { objetivos: "varios" })!;
+    assert.equal(p.multiplesObjetivos?.fatigaPorObjetivo, 1);
+  });
+
+  test("nivel 5: casilla −4 fuera del alcance local", () => {
+    assert.equal(tiradaDePoder(accionI("comando"), resolverI("comando", 4)!)!.condiciones, undefined);
+    const c = tiradaDePoder(accionI("comando"), resolverI("comando", 5)!)!.condiciones!;
+    assert.equal(c.length, 1);
+    assert.equal(c[0].tipo === "toggle" && c[0].valorActivo, -4);
+  });
+
+  test("Reconfiguración Mnemónica: desde nivel 3, compleja, 2 de fatiga", () => {
+    assert.equal(resolverI("reconfiguracion", 2), null);
+    const p = resolverI("reconfiguracion", 3)!;
+    assert.equal(p.economia, "compleja");
+    assert.equal(costeFatiga(IND, "psi_induccion_reconfiguracion", p).total, 2);
+    assert.equal(p.resultados.fracasoCritico!.texto, "Sin efecto");
+    assert.equal(p.nivelEmpleado, 3); // sin eje de nivel: sobrecarga con el poseído
+  });
+});
+
 function setNivelDisciplinaTest(s: Sheet, nivel: number): Sheet {
   return { ...s, psionica: { ...s.psionica, resonancia: nivel } };
 }
