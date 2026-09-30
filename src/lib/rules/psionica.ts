@@ -180,6 +180,10 @@ export type ModificadorFatiga = {
   condicion?: { toggle: string; grupo?: string };
   op: "suma" | "multiplica" | "minimo" | "ignora_primero" | "paga_con_recurso";
   valor: number | { recurso: string; porPunto: number };
+  // Lo que la misma casilla hace además de tocar la fatiga: sumar a la tirada del
+  // poder (Xovromium +1, Munición Supresora −2) o hacer 1 de daño propio por punto
+  // de fatiga gastado (Supresora con fallo crítico).
+  ademas?: { tirada?: number; danioPorPunto?: string };
 };
 
 export type Rama = "metasensoria" | "metrica";

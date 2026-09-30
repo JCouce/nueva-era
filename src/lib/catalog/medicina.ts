@@ -414,13 +414,11 @@ export const FARMACOS: Consumible[] = [
     rareza: "Extraño",
     coste: 1000,
     modificadores: [],
-    // Corregido 2026-09-24 (auditoría): "+1 a las manifestaciones psiónicas"
-    // es un número real, no narrativo — pero "manifestaciones psiónicas" no
-    // existe como mecánica todavía (Fase 5, poderes psiónicos sin catálogo).
-    // Bloqueado por Fase 5, no "pendiente" — no es solo que falte construir
-    // el enganche, es que el propio objetivo no existe.
     motor: [
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "Fase 5" },
+      // La tirada de tomarlo es su fila en Fármacos; el efecto sobre los poderes,
+      // la casilla "Bajo Xovromium" (FUENTES_EXTERNAS_FATIGA, catalog/psionica.ts).
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "farmaco_farmaco_xovromium" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "psionica" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
 ];

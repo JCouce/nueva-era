@@ -69,8 +69,9 @@ objetivo, y resuelva la **sobrecarga**. Hecho para Singularidad y Traslación; f
   "nivel de poder" en sus efectos), Hipomanía a un aliado, Supresión y Estabilización (el
   bonificador de salvación en dos pasos: tirada y luego casilla gratis en la salvación).
 - **Hipercognición completa** (Sondeo con alcance según tu Resonancia, Precognición,
-  Retrocognición). **Las seis disciplinas están hechas**; falta la parte de fuentes externas
-  (Xovromium, Munición Supresora, Derivación Psiónica).
+  Retrocognición). **Las seis disciplinas están hechas.** Fuentes externas: Xovromium y Munición
+  Supresora hechas (casillas siempre visibles en todo poder); falta Derivación Psiónica
+  (contador de cargas elegido por el jugador).
 
 **Dónde vive cada cosa**
 

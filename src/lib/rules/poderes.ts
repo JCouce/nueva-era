@@ -701,9 +701,15 @@ export function danioSobrecarga(nivel: number, grado: Grado): number {
 // los ModificadorFatiga que le aplican por disciplina, acción y nivel).
 export type ToggleFatiga = { toggle: string; grupo?: string };
 
-export function togglesDeFatiga(disciplina: Disciplina, accionId: string, p: PoderResuelto): ToggleFatiga[] {
+// `externos`: casillas de fuera de la disciplina (FUENTES_EXTERNAS_FATIGA).
+export function togglesDeFatiga(
+  disciplina: Disciplina,
+  accionId: string,
+  p: PoderResuelto,
+  externos: ModificadorFatiga[] = [],
+): ToggleFatiga[] {
   const vistos = new Map<string, ToggleFatiga>();
-  for (const m of disciplina.modificadoresFatiga) {
+  for (const m of [...disciplina.modificadoresFatiga, ...externos]) {
     if (!m.condicion) continue;
     const todos = new Set([m.condicion.toggle]);
     if (!aplicaModificador(m, disciplina, accionId, p, todos)) continue;
@@ -742,6 +748,19 @@ export function conPsionicaEnTiradaFija(sheet: Sheet, t: Accion): Accion {
     ...t,
     ...(ventaja && { ventaja }),
     ...(condiciones.length > 0 && { condiciones: [...(t.condiciones ?? []), ...condiciones] }),
+  };
+}
+
+// Lo que las casillas marcadas hacen además de la fatiga: ajustes a la tirada del
+// poder (una línea del desglose por fuente) y daño propio por punto gastado.
+export function efectosDeCasillas(
+  mods: ModificadorFatiga[],
+  toggles: ReadonlySet<string>,
+): { ajustes: { valor: number; fuente: string }[]; danioPorPunto: string | null } {
+  const activos = mods.filter((m) => m.condicion && toggles.has(m.condicion.toggle));
+  return {
+    ajustes: activos.flatMap((m) => (m.ademas?.tirada ? [{ valor: m.ademas.tirada, fuente: m.fuente }] : [])),
+    danioPorPunto: activos.find((m) => m.ademas?.danioPorPunto)?.ademas?.danioPorPunto ?? null,
   };
 }
 

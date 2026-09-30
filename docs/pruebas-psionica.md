@@ -14,6 +14,7 @@ preparar el personaje y qué números deben salir.
 | K | Resonancia, tandas 2 y 3: Alerta, Vínculo y Buscar / percibir | Resonancia 3, y NPC con Resonancia 4 |
 | L | Inducción: Comando, Reconfiguración, Modulación, Supresión y Estabilización | NPC con Resonancia 1 + Inducción 5 (6 en L.8, 4 en L.10-L.12) |
 | M | Hipercognición: Sondeo, Retrocognición y Precognición | NPC con Resonancia 3 + Hipercognición 5 |
+| N | Fuentes externas: Xovromium y Munición Supresora | el de A (Singularidad 2) + 1 Xovromium |
 
 Los números esperados valen para un personaje recién creado sin tocar: atributos a 0,
 sin especie, **8 de vida y 8 de fatiga**, y tirada de poder **−1** (Perspicacia +0,
@@ -471,14 +472,27 @@ NPC (o ficha editada) con **Resonancia 3** e **Hipercognición 5**. Fatiga a 8.
 - [ ] **M.5 Precognición.** → Estándar, Fatiga 1, Área 50 m de radio, Duración 5 turnos,
   Dificultad 8.
 
+## N. Fuentes externas: Xovromium y Munición Supresora
+
+El personaje de A (Traslación 2, Singularidad 2), con 1 Xovromium comprado. Vida y fatiga a 8.
+
+- [ ] **N.1 Casillas.** Usar en Impulso (nivel 2, fatiga 2). → Tres casillas: "Bajo
+  Xovromium", "Afectado por Munición Supresora", "Supresora, fallo crítico".
+- [ ] **N.2 Xovromium.** Márcala → desglose de fatiga "Xovromium −1" (8 → 7) y línea
+  "Xovromium +1" en el desglose de la tirada.
+- [ ] **N.3 Supresora, fallo crítico.** Quita Xovromium y marca esta → "×2" (8 → 4), línea −2
+  en la tirada. Marcar la otra de Supresora desmarca esta. Al tirar: aviso "Munición
+  Supresora: recibes 4 de daño letal (ya restado)"; vida 8 → 4 y fatiga 8 → 4.
+- [ ] **N.4 Fila de Xovromium.** Fármacos › Usar Xovromium: Voluntad + Biociencia (o
+  Actitud si es más alta), dificultad 6 puesta; al tirar gasta la dosis.
+
 ---
 
 ## Fuera de estas pruebas
 
 No son fallos:
 
-- Las fuentes externas de la cadena de fatiga (Xovromium, Munición Supresora, Derivación
-  Psiónica) aún no están. Traslación
+- Derivación Psiónica (pagar fatiga con cargas) aún no está. Traslación
   está completa.
 - Xovromium, Munición Supresora y Derivación Psiónica no afectan aún ni a la tirada ni a
   la fatiga.

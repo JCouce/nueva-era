@@ -15,13 +15,8 @@
 import { FARMACOS } from "../catalog/medicina";
 import type { Sheet } from "./sheet";
 import type { Accion, AccionDirecta } from "./acciones";
-
-// Xovromium queda fuera a propósito: su +1 a "manifestaciones psiónicas"
-// está bloqueado por Fase 5 (poderes psiónicos sin catálogo todavía, ya
-// marcado `bloqueado` en su `motor[]`, medicina.ts) — no genera fila aunque
-// el jugador lo lleve comprado. No generalices esto a un escaneo de
-// `motor[]`: es la única excepción real, no un patrón que vaya a repetirse.
-const EXCLUIDOS = new Set(["farmaco_xovromium"]);
+import type { AplicadoId } from "./atributos";
+import type { HabilidadId } from "./habilidades";
 
 // Los tres que no llevan tirada (docs/checklist-motor-vs-prosa-2026-09-24.md
 // / prompt-gasto-recursos.md): el nota explica el efecto, "Usar" solo gasta
@@ -37,7 +32,28 @@ const SIN_TIRADA = new Set(["farmaco_analgesico", "farmaco_antipatogeno", "farma
 // — confundir los dos infla el resultado, no fija la dificultad.
 // `ajustesFijos` aquí es SOLO para el +5 real de Nano-Elixir (bono de la
 // dosis a la propia tirada, no una dificultad).
-const CON_TIRADA: Record<string, { nota: string; ajustesFijos?: { valor: number; fuente: string }[] }> = {
+// Por defecto Perspicacia + Biociencia; `habilidades` con dos = la más alta de la
+// ficha ("Biociencia o Actitud").
+const CON_TIRADA: Record<
+  string,
+  {
+    nota: string;
+    ajustesFijos?: { valor: number; fuente: string }[];
+    aplicado?: AplicadoId;
+    habilidades?: HabilidadId[];
+    dificultad?: number;
+  }
+> = {
+  // Su efecto sobre los poderes es la casilla "Bajo Xovromium" del modal del
+  // poder (FUENTES_EXTERNAS_FATIGA, catalog/psionica.ts).
+  farmaco_xovromium: {
+    nota:
+      "Voluntad + Biociencia o Actitud (la más alta), dificultad 6. Con éxito, 1 hora: marca «Bajo Xovromium» en tus poderes (+1 a la tirada y −1 de fatiga). " +
+      "Si falla, pierdes la dosis, 1 de fatiga y −1 en tiradas mentales 15 minutos. Al acabar el efecto, 2 de fatiga y −2 mentales durante la hora siguiente (a mano).",
+    aplicado: "voluntad",
+    habilidades: ["biociencia", "actitud"],
+    dificultad: 6,
+  },
   farmaco_hemostaticos: {
     nota: "Perspicacia + Biociencia (Medicina). Dificultad 7 normal, 9 en hemorragia exanguinante.",
   },
@@ -62,19 +78,22 @@ const CON_TIRADA: Record<string, { nota: string; ajustesFijos?: { valor: number;
 export function accionesDeFarmacos(sheet: Sheet): Accion[] {
   const acciones: Accion[] = [];
   for (const f of FARMACOS) {
-    if (EXCLUIDOS.has(f.id)) continue;
     const cantidad = sheet.farmacos[f.id] ?? 0;
     if (cantidad <= 0) continue;
     const con = CON_TIRADA[f.id];
     if (!con) continue;
+    const habilidad = (con.habilidades ?? ["biociencia"]).reduce((mejor, h) =>
+      sheet.habilidades[h].valor > sheet.habilidades[mejor].valor ? h : mejor,
+    );
     acciones.push({
       id: `farmaco_${f.id}`,
       label: `Usar ${f.label}`,
       grupo: "Fármacos",
-      aplicado: "perspicacia",
-      habilidad: "biociencia",
+      aplicado: con.aplicado ?? "perspicacia",
+      habilidad,
       nota: `${con.nota} Quedan ${cantidad}.`,
       ajustesFijos: con.ajustesFijos,
+      ...(con.dificultad !== undefined && { dificultadSugerida: con.dificultad }),
       farmacoId: f.id,
     });
   }
@@ -84,7 +103,6 @@ export function accionesDeFarmacos(sheet: Sheet): Accion[] {
 export function accionesDirectasDeFarmacos(sheet: Sheet): AccionDirecta[] {
   const acciones: AccionDirecta[] = [];
   for (const f of FARMACOS) {
-    if (EXCLUIDOS.has(f.id)) continue;
     const cantidad = sheet.farmacos[f.id] ?? 0;
     if (cantidad <= 0) continue;
     if (!SIN_TIRADA.has(f.id)) continue;

@@ -74,11 +74,17 @@ describe("cantidad 0 o ausente", () => {
   });
 });
 
-describe("Xovromium — excluido a propósito (bloqueado por Fase 5)", () => {
-  test("aunque el jugador lo lleve comprado, no genera ninguna fila", () => {
+describe("Xovromium", () => {
+  test("fila con tirada de Voluntad + la más alta de Biociencia o Actitud, dificultad 6", () => {
     const sheet = conFarmaco("farmaco_xovromium", 3);
-    assert.deepEqual(accionesDeFarmacos(sheet), []);
+    const [fila] = accionesDeFarmacos(sheet);
+    assert.equal(fila.aplicado, "voluntad");
+    assert.equal(fila.habilidad, "biociencia");
+    assert.equal(fila.dificultadSugerida, 6);
+    assert.equal(fila.farmacoId, "farmaco_xovromium");
     assert.deepEqual(accionesDirectasDeFarmacos(sheet), []);
+    const conActitud: Sheet = { ...sheet, habilidades: { ...sheet.habilidades, actitud: { valor: 2, especialidades: [] } } };
+    assert.equal(accionesDeFarmacos(conActitud)[0].habilidad, "actitud");
   });
 });
 

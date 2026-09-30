@@ -35,6 +35,8 @@ import {
   textoValor,
   resolverPoder,
   valoresHabilidad,
+  efectosDeCasillas,
+  FUENTES_EXTERNAS_FATIGA,
   tiradaDePoder,
   enEspecialidadDePoder,
   aplicados,
@@ -664,6 +666,7 @@ export function AccionesTab({
   const costePoder =
     poderAbierto && poderResuelto && typeof poderResuelto.fatiga === "number"
       ? costeFatiga(poderAbierto.poder.disciplina, poderAbierto.poder.accion.id, poderResuelto, {
+          externos: FUENTES_EXTERNAS_FATIGA,
           toggles: new Set(poderAbierto.toggles),
         })
       : null;
@@ -714,7 +717,10 @@ export function AccionesTab({
   ) => {
     const resuelto = resolverAbierto(poder, elecciones, pesoKg);
     if (!resuelto) return;
-    const t = tiradaDePoder(poder.accion, resuelto);
+    const base = tiradaDePoder(poder.accion, resuelto);
+    // Casillas externas marcadas (Xovromium +1, Supresora −2): líneas del desglose.
+    const { ajustes } = efectosDeCasillas(FUENTES_EXTERNAS_FATIGA, new Set(toggles));
+    const t = base && ajustes.length > 0 ? { ...base, ajustesFijos: [...(base.ajustesFijos ?? []), ...ajustes] } : base;
     if (t) abrir(t, enEspecialidadDePoder(sheet, resuelto), false);
     setSobrecarga(null);
     setAvisosPoder([]);
@@ -739,8 +745,12 @@ export function AccionesTab({
     else if (conDanioPropio) setSobrecarga(null);
     const propio = conDanioPropio ? poderResuelto.danioPropio : null;
     if (propio && typeof propio.valor === "number" && propio.valor > 0) onAjustarVida?.(-propio.valor);
+    // Supresora con fallo crítico: 1 de daño por punto de fatiga gastado.
+    const porPunto = efectosDeCasillas(FUENTES_EXTERNAS_FATIGA, new Set(poderAbierto.toggles)).danioPorPunto;
+    if (porPunto && coste > 0) onAjustarVida?.(-coste);
     const avisos = [
       ...(despues <= 0 && !cruza ? ["Te has quedado sin fatiga: quedas inconsciente al terminar la acción."] : []),
+      ...(porPunto && coste > 0 ? [`Munición Supresora: recibes ${coste} de daño ${porPunto} (ya restado).`] : []),
       ...(propio && typeof propio.valor === "number" && propio.valor > 0
         ? [
             `Recibes ${propio.valor} de daño ${propio.categoria} (ya restado)${
@@ -846,12 +856,17 @@ export function AccionesTab({
         poder={poderResuelto}
         coste={costePoder}
         fatigaActual={fatigaEfectiva(sheet)}
-        toggles={togglesDeFatiga(poderAbierto.poder.disciplina, poderAbierto.poder.accion.id, poderResuelto)}
+        toggles={togglesDeFatiga(
+          poderAbierto.poder.disciplina,
+          poderAbierto.poder.accion.id,
+          poderResuelto,
+          FUENTES_EXTERNAS_FATIGA,
+        )}
         togglesActivos={poderAbierto.toggles}
         onElegir={(eje, opcion) =>
           abrirPoder(poderAbierto.poder, { ...poderAbierto.elecciones, [eje]: opcion }, poderAbierto.toggles, poderAbierto.pesoKg)
         }
-        onToggles={(toggles) => setPoderAbierto({ ...poderAbierto, toggles })}
+        onToggles={(toggles) => abrirPoder(poderAbierto.poder, poderAbierto.elecciones, toggles, poderAbierto.pesoKg)}
         pesoKg={poderAbierto.pesoKg}
         onPeso={(kg) => abrirPoder(poderAbierto.poder, poderAbierto.elecciones, poderAbierto.toggles, kg)}
       />

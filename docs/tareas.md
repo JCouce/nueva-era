@@ -1288,6 +1288,11 @@ tramos con `hastaNivelPoseido`). **Inducción completa.** Siguiente: Hipercognic
 `ContextoPoder.niveles`) y daño propio por grado (`DetallePoder.danioPropio`, se resta al
 tirar). **Las seis disciplinas completas.** Queda de la psiónica: las fuentes externas de
 la cadena de fatiga (Xovromium, Munición Supresora, Derivación Psiónica).
+**Fuentes externas, tanda 1 (2026-09-30):** casillas "Bajo Xovromium", "Afectado por
+Munición Supresora" y "Supresora, fallo crítico" en todo poder (`FUENTES_EXTERNAS_FATIGA`,
+`ModificadorFatiga.ademas` para el efecto en la tirada y el daño por punto,
+`efectosDeCasillas`); fila de Xovromium en Fármacos. Siguiente: tanda 2 (Derivación
+Psiónica, pagar con cargas).
 **Hallazgo (sin arreglar):** los penalizadores por umbral de salud y fatiga
 (`modificadoresDeUmbrales`, −1/−3/−5 y −1/−2) existen pero nada los aplica a las tiradas. Siguiente, disciplina a
 disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,

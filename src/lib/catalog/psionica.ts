@@ -4,7 +4,16 @@
 //
 // Las 6 disciplinas con sus acciones.
 import type { MotorMetadata } from "../rules/motor";
-import type { AccionPoder, CambiosOpcion, CatalogoPsionica, Disciplina, Economia, EjePoder, Opcion } from "../rules/psionica";
+import type {
+  AccionPoder,
+  CambiosOpcion,
+  CatalogoPsionica,
+  Disciplina,
+  Economia,
+  EjePoder,
+  ModificadorFatiga,
+  Opcion,
+} from "../rules/psionica";
 
 export const DISCIPLINA_IDS = ["resonancia", "induccion", "hipercognicion", "traslacion", "contencion", "singularidad"] as const;
 export type DisciplinaId = (typeof DISCIPLINA_IDS)[number];
@@ -2123,6 +2132,38 @@ const SINGULARIDAD: Disciplina = {
   ventajas: [],
   acciones: [IMPULSO, EXPANSION, CONVERGENCIA],
 };
+
+// Fuentes de fuera de las disciplinas que tocan la fatiga de cualquier poder, como
+// casillas que declara el jugador (usuario, 2026-09-30: siempre visibles, la app
+// no sabe si te has tomado la dosis o te han disparado). Xovromium: +1 a la tirada
+// e ignora el primer punto. Munición Supresora: ×2 y −2; con fallo crítico, además
+// 1 de daño letal por punto de fatiga gastado.
+export const FUENTES_EXTERNAS_FATIGA: ModificadorFatiga[] = [
+  {
+    fuente: "Xovromium",
+    alcance: {},
+    condicion: { toggle: "Bajo Xovromium" },
+    op: "ignora_primero",
+    valor: 1,
+    ademas: { tirada: 1 },
+  },
+  {
+    fuente: "Munición Supresora",
+    alcance: {},
+    condicion: { toggle: "Afectado por Munición Supresora", grupo: "supresora" },
+    op: "multiplica",
+    valor: 2,
+    ademas: { tirada: -2 },
+  },
+  {
+    fuente: "Munición Supresora (fallo crítico)",
+    alcance: {},
+    condicion: { toggle: "Supresora, fallo crítico", grupo: "supresora" },
+    op: "multiplica",
+    valor: 2,
+    ademas: { tirada: -2, danioPorPunto: "letal" },
+  },
+];
 
 export const PSIONICA: CatalogoPsionica = {
   sobrecarga: {

@@ -19,13 +19,14 @@ import {
   levitacion,
   conEsquivaLevitando,
   conPsionicaEnTiradaFija,
+  efectosDeCasillas,
 } from "./poderes";
 import { defaultSheet, parseSheet, type Sheet } from "./sheet";
 import { migrar } from "./migraciones";
 import { pagarFatiga, fatigaEfectiva, ajustarFatigaTemporal, terminarEscena } from "./vitalidad";
 import { resolverDanio, ACCIONES, usarHabilidadAlternativa, modificadorAccion, tirarDado } from "./acciones";
 import { fuentesDeCapa1 } from "./capa1";
-import { DISCIPLINAS, disciplinaPorId } from "../catalog/psionica";
+import { DISCIPLINAS, disciplinaPorId, FUENTES_EXTERNAS_FATIGA } from "../catalog/psionica";
 import type { AccionPoder, ModificadorFatiga } from "./psionica";
 
 const accion = (id: string) => disciplinaPorId("singularidad").acciones.find((a) => a.id === `psi_singularidad_${id}`)!;
@@ -1214,6 +1215,37 @@ describe("Hipercognición", () => {
     assert.equal(p.duracion, 3);
     assert.equal(p.objetivo?.area, 30);
     assert.deepEqual(tiradaDePoder(accionH("precognicion"), p)!.poder!.danioPropio, { fracasoCritico: { valor: 1, categoria: "mental" } });
+  });
+});
+
+describe("fuentes externas: Xovromium y Munición Supresora", () => {
+  const SING = disciplinaPorId("singularidad");
+  const impulso = SING.acciones.find((a) => a.id === "psi_singularidad_impulso")!;
+  const p = resolverPoder(impulso, { nivelPoseido: 3, disciplina: SING })!;
+  const coste = (...toggles: string[]) =>
+    costeFatiga(SING, impulso.id, p, { externos: FUENTES_EXTERNAS_FATIGA, toggles: new Set(toggles) }).total;
+
+  test("las tres casillas salen en cualquier poder; las de Supresora se excluyen entre sí", () => {
+    const t = togglesDeFatiga(SING, impulso.id, p, FUENTES_EXTERNAS_FATIGA);
+    assert.deepEqual(t.map((x) => x.toggle), ["Bajo Xovromium", "Afectado por Munición Supresora", "Supresora, fallo crítico"]);
+    assert.equal(t[1].grupo, t[2].grupo);
+  });
+
+  test("cadena: ×2 Supresora antes del −1 de Xovromium", () => {
+    assert.equal(coste(), 3);
+    assert.equal(coste("Bajo Xovromium"), 2);
+    assert.equal(coste("Afectado por Munición Supresora"), 6);
+    assert.equal(coste("Afectado por Munición Supresora", "Bajo Xovromium"), 5);
+  });
+
+  test("efectos sobre la tirada y daño por punto", () => {
+    assert.deepEqual(efectosDeCasillas(FUENTES_EXTERNAS_FATIGA, new Set(["Bajo Xovromium"])), {
+      ajustes: [{ valor: 1, fuente: "Xovromium" }],
+      danioPorPunto: null,
+    });
+    const fc = efectosDeCasillas(FUENTES_EXTERNAS_FATIGA, new Set(["Supresora, fallo crítico"]));
+    assert.deepEqual(fc.ajustes, [{ valor: -2, fuente: "Munición Supresora (fallo crítico)" }]);
+    assert.equal(fc.danioPorPunto, "letal");
   });
 });
 

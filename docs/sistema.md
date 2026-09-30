@@ -515,9 +515,9 @@ al preparar su modelado:
   −Agilidad de Contención…) y **concentración/mantenimiento**: se llevan **a mano**, fuera del
   motor por ahora.
 - **Xovromium** (`docs/equipamiento.md:1338`, "+1 a las manifestaciones psiónicas"): toggle
-  de +1 en **toda tirada que resuelva un poder**, visible si el personaje tiene Xovromium en
-  recursos. Que siga apareciendo tras tomárselo (dosis gastada) es un problema conocido,
-  aparcado.
+  de +1 en **toda tirada que resuelva un poder**. ~~Visible si el personaje tiene Xovromium
+  en recursos~~ — **sustituido 2026-09-30: siempre visible** (ver "Fuentes externas, tanda
+  1" abajo).
 - **"Psiónico entrenado"** (el que resiste con Voluntad + Biociencia en vez de Voluntad +
   Actitud): cualquiera con **Biociencia ≥ 1** (entrenada).
 - **Fatiga temporal (Proeza) — confirmada por el usuario 2026-09-28.** Proeza
@@ -814,6 +814,18 @@ al preparar su modelado:
   - *Supuesto:* el −1/−2 por nivel par vale solo para Sondeo y Retrocognición (donde lo pone
     la prosa), no para Precognición.
   - **Las seis disciplinas, completas.**
+- **Fuentes externas, tanda 1: Xovromium y Munición Supresora (usuario, 2026-09-30):**
+  - Casillas en el modal de **todo** poder, **siempre visibles** (la app no sabe si te has
+    tomado la dosis o te han disparado; sustituye al "visible si tiene Xovromium en
+    recursos", que fallaba con la última dosis):
+    - "Bajo Xovromium": +1 a la tirada del poder y −1 a la fatiga (ignora el primero).
+    - "Afectado por Munición Supresora": ×2 fatiga y −2 a la tirada.
+    - "Supresora, fallo crítico": lo mismo y 1 de daño letal por punto de fatiga gastado,
+      que la app resta. Las dos de Supresora se excluyen.
+  - Orden de la cadena como estaba decidido: ×2 antes del −1 (nivel 3 → 3; Supresora 6;
+    con las dos, 5).
+  - Xovromium tiene fila en Fármacos: Voluntad + la más alta de Biociencia o Actitud,
+    dificultad 6, gasta la dosis. Los efectos de fallar o de acabarse, a mano.
 - **Máquinas sin ficha** (qué tira una IA/servidor que no es personaje para resistir un poder):
   pendiente de Murillo — es la pregunta 16.
 - Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de
