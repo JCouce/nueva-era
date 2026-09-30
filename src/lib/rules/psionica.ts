@@ -43,7 +43,7 @@ export type ResolucionPoder =
       danioAlFallar?: boolean;
     };
 
-// Los textos (grados, notas) pueden llevar marcadores `{campo}` o `{campo/2}` que
+// Los textos (grados, notas) pueden llevar marcadores `{campo}`, `{campo/2}` o `{campo*2}` que
 // el evaluador rellena con el valor ya resuelto: así una opción que cambia el
 // desplazamiento (Impulso Poderoso) no deja los metros del texto desfasados.
 export type TiradaObjetivo = { que: string; dificultad?: Valor; grados?: Partial<Record<Grado, string>> };

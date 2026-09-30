@@ -390,10 +390,10 @@ function sumarEnRuta(nodo: unknown, ruta: string[], n: number, accionId: string,
 }
 
 function rellenarMarcadores(texto: string, valores: Record<string, unknown>, accionId: string): string {
-  return texto.replace(/\{(\w+)(\/2)?\}/g, (_, campo: string, mitad?: string) => {
+  return texto.replace(/\{(\w+)(\/2|\*2)?\}/g, (_, campo: string, op?: string) => {
     const v = valores[campo];
     if (typeof v !== "number") throw new Error(`${accionId}: marcador {${campo}} sin valor numérico`);
-    return String(mitad ? Math.floor(v / 2) : v);
+    return String(op === "/2" ? Math.floor(v / 2) : op === "*2" ? v * 2 : v);
   });
 }
 

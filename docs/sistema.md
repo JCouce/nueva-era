@@ -762,6 +762,22 @@ al preparar su modelado:
   - Reconfiguración Mnemónica (nivel 3): compleja, 2; cambios profundos, nota.
   - *Supuesto:* "un punto adicional por cada objetivo" (Comando nv3) se lee como el mensaje
     de Traslación: se cobra el poder una vez y cada objetivo extra paga 1 a mano.
+- **Construcción de Inducción, tanda 2: Modulación (usuario, 2026-09-30):**
+  - **En la Modulación, "nivel de poder" = nivel EMPLEADO** (duraciones y dificultades de
+    sus efectos). Excepción a la regla general "a secas = poseído": la acción cobra 1 de
+    fatiga por nivel empleado y, con el poseído, emplear más no serviría de nada. Qué
+    efectos hay (Delirio y Manía en nivel 3, Cautiverio en nivel 5) va por nivel poseído
+    ("adquiere"). Vale también para "Hipomanía a un aliado".
+  - Selector de efecto con los ocho estados; los sintéticos (Latencia, Cisma Lógico) tiran
+    Perspicacia + Informática. Grados desde el psiónico; las salvaciones del objetivo que
+    salen de un crítico (paro cardíaco 5 + nivel, asfixia 6 + nivel, bucle de Cisma 6 +
+    nivel) se enseñan con su dificultad ya calculada.
+  - Compleja, estándar desde nivel 2; con varios objetivos (nivel 4) sigue compleja ("como
+    parte de una acción compleja"). Nivel 6: hasta 6 víctimas sin fatiga extra, en el
+    mensaje.
+  - Hipomanía sin críticos en la prosa: el crítico del psiónico usa el "50 % y −4" que la
+    prosa mete en el fracaso del objetivo; su fracaso crítico, el texto de su fracaso.
+    Sobre un aliado dispuesto, acción aparte sin tirada que aplica el éxito.
 - **Máquinas sin ficha** (qué tira una IA/servidor que no es personaje para resistir un poder):
   pendiente de Murillo — es la pregunta 16.
 - Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de

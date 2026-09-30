@@ -12,7 +12,7 @@ preparar el personaje y qué números deben salir.
 | I | Contención (con NPC de nivel 6 en I.6) | Traslación 1 + Contención 2 |
 | J | Resonancia, tanda 1 (con NPC de nivel 6 en J.6) | Resonancia 3 |
 | K | Resonancia, tandas 2 y 3: Alerta, Vínculo y Buscar / percibir | Resonancia 3, y NPC con Resonancia 4 |
-| L | Inducción, tanda 1: Comando y Reconfiguración Mnemónica | NPC con Resonancia 1 + Inducción 5 |
+| L | Inducción, tandas 1 y 2: Comando, Reconfiguración y Modulación | NPC con Resonancia 1 + Inducción 5 (6 en L.8) |
 
 Los números esperados valen para un personaje recién creado sin tocar: atributos a 0,
 sin especie, **8 de vida y 8 de fatiga**, y tirada de poder **−1** (Perspicacia +0,
@@ -431,6 +431,17 @@ NPC (o ficha editada) con **Resonancia 1** e **Inducción 5**. Fatiga a 8.
   Evitar un ataque: "Ataca sin impedimentos"; con crítico en una orden: "Actúa bajo tu orden
   durante los próximos 10 turnos").
 - [ ] **L.5 Reconfiguración Mnemónica.** → Compleja, Fatiga 2, dos notas y la casilla −4.
+- [ ] **L.6 Modulación.** Usar.
+  → Título "Sopor (nivel 5)", Acción `Estándar`, Fatiga **5** (1 por nivel empleado). Ocho
+  efectos (Cautiverio incluido con Inducción 5). Nivel 3 + Delirio: título "Delirio (nivel
+  3)", Fatiga 3; con tu crítico "Confuso crítico y con miedo **6** turnos…".
+- [ ] **L.7 Efectos.** Miedo, nivel 2: "El objetivo" trae la salvación de Fortaleza
+  dificultad **7**. Cisma Lógico: desglose Perspicacia + Tecnociencia y dificultad del
+  bucle 6 + nivel.
+- [ ] **L.8 Varios (Inducción 6).** → Acción `Compleja` y el mensaje "…hasta 6 víctimas no
+  pagan fatiga extra".
+- [ ] **L.9 Hipomanía a un aliado.** Nivel 2 → sin dado, Estándar, Fatiga 2, nota "durante 2
+  turnos…"; Usar → "Usado · −2 fatiga".
 
 ---
 
@@ -438,7 +449,7 @@ NPC (o ficha editada) con **Resonancia 1** e **Inducción 5**. Fatiga a 8.
 
 No son fallos:
 
-- Inducción solo tiene la tanda 1 (faltan Modulación, Supresión y Estabilización);
+- Inducción: faltan Supresión y Estabilización;
   Hipercognición no tiene poderes todavía. Traslación
   está completa.
 - Xovromium, Munición Supresora y Derivación Psiónica no afectan aún ni a la tirada ni a

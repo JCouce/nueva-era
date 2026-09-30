@@ -119,7 +119,7 @@ describe("resolverPoder — Singularidad", () => {
           );
           for (const elecciones of combos) {
             const p = resolverPoder(a, { nivelPoseido: poseido, elecciones, disciplina: d })!;
-            assert.doesNotMatch(JSON.stringify(p), /"tabla"|\{\w+(\/2)?\}/, `${a.id} ${JSON.stringify(elecciones)}`);
+            assert.doesNotMatch(JSON.stringify(p), /"tabla"|\{\w+(\/2|\*2)?\}/, `${a.id} ${JSON.stringify(elecciones)}`);
           }
         }
   });
@@ -1020,6 +1020,68 @@ describe("Inducción — tanda 1", () => {
     assert.equal(costeFatiga(IND, "psi_induccion_reconfiguracion", p).total, 2);
     assert.equal(p.resultados.fracasoCritico!.texto, "Sin efecto");
     assert.equal(p.nivelEmpleado, 3); // sin eje de nivel: sobrecarga con el poseído
+  });
+});
+
+describe("Inducción — tanda 2: Modulación", () => {
+  const IND = disciplinaPorId("induccion");
+  const accionI = (id: string) => IND.acciones.find((a) => a.id === `psi_induccion_${id}`)!;
+  const resolverI = (id: string, nivelPoseido: number, elecciones: Record<string, string> = {}) =>
+    resolverPoder(accionI(id), { nivelPoseido, elecciones, disciplina: IND })!;
+  const coste = (id: string, p: ReturnType<typeof resolverI>) => costeFatiga(IND, `psi_induccion_${id}`, p).total;
+
+  test("1 de fatiga por nivel empleado; compleja, estándar desde nivel 2", () => {
+    const n1 = resolverI("modulacion", 1);
+    assert.equal(n1.economia, "compleja");
+    assert.equal(coste("modulacion", n1), 1);
+    const p = resolverI("modulacion", 4, { nivel: "n3" });
+    assert.equal(p.economia, "estandar");
+    assert.equal(coste("modulacion", p), 3);
+  });
+
+  test("los efectos usan el nivel EMPLEADO en duraciones y dificultades", () => {
+    const miedo = resolverI("modulacion", 5, { nivel: "n2", modo: "miedo" });
+    assert.equal(miedo.resultados.exito!.texto, "Aterrorizado el próximo turno y asustado 2 turnos");
+    assert.equal(miedo.objetivoTira[1].dificultad, 7);
+    const delirio = resolverI("modulacion", 4, { nivel: "n3", modo: "delirio" });
+    assert.match(delirio.resultados.critico!.texto, /con miedo 6 turnos/);
+    assert.equal(etiquetaPoder(accionI("modulacion"), delirio), "Delirio (nivel 3)");
+  });
+
+  test("efectos disponibles por nivel poseído", () => {
+    const eje = accionI("modulacion").ejes[1];
+    assert.deepEqual(opcionesDisponibles(eje, 1).map((o) => o.id), ["sopor", "miedo", "hipomania", "latencia", "cisma"]);
+    assert.ok(opcionesDisponibles(eje, 3).some((o) => o.id === "mania"));
+    assert.ok(!opcionesDisponibles(eje, 4).some((o) => o.id === "cautiverio"));
+    assert.ok(opcionesDisponibles(eje, 5).some((o) => o.id === "cautiverio"));
+  });
+
+  test("efectos sintéticos: Perspicacia + Informática", () => {
+    const p = resolverI("modulacion", 2, { modo: "cisma", nivel: "n2" });
+    assert.deepEqual(p.resolucion, { tipo: "enfrentada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "Informática" });
+    assert.equal(p.objetivoTira[1].dificultad, 8); // 6 + nivel empleado
+  });
+
+  test("Hipomanía sin críticos: el fracaso crítico del psiónico usa el texto del fracaso", () => {
+    const p = resolverI("modulacion", 3, { modo: "hipomania", nivel: "n3" });
+    const t = tiradaDePoder(accionI("modulacion"), p)!;
+    assert.equal(textoDeGrado(t.poder!.resultados, "fracasoCritico"), "−1 a sus penalizadores por fatiga y +1 a salvaciones de Fortaleza durante 3 turnos");
+  });
+
+  test("varios objetivos desde nivel 4, siempre compleja; en nivel 6, hasta 6 sin fatiga extra", () => {
+    assert.equal(resolverI("modulacion", 3, { objetivos: "varios" }).multiplesObjetivos, null);
+    const n4 = resolverI("modulacion", 4, { objetivos: "varios" });
+    assert.equal(n4.economia, "compleja");
+    assert.equal(n4.multiplesObjetivos?.fatigaPorObjetivo, 1);
+    assert.match(resolverI("modulacion", 6, { objetivos: "varios" }).multiplesObjetivos!.texto, /hasta 6 víctimas/);
+  });
+
+  test("Hipomanía a un aliado: sin tirada, nivel empleado en coste y turnos", () => {
+    const p = resolverI("hipomania_aliado", 3, { nivel: "n2" });
+    assert.equal(p.resolucion.tipo, "sin_dado");
+    assert.equal(coste("hipomania_aliado", p), 2);
+    assert.equal(p.economia, "estandar");
+    assert.match(p.notas[0].texto, /durante 2 turnos/);
   });
 });
 

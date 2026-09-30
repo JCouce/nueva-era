@@ -814,6 +814,210 @@ const RECONFIGURACION: AccionPoder = {
   motor: motorDeAccion(RECONFIGURACION_ID, { propias: true, tercero: ["salv_voluntad"] }),
 };
 
+// Modulación: 1 de fatiga por nivel empleado, y en sus efectos "nivel de poder" =
+// nivel EMPLEADO (excepción a la regla general, usuario 2026-09-30: si no, emplear
+// más no serviría de nada). Qué efectos hay depende del nivel POSEÍDO ("adquiere").
+// Grados desde el psiónico: su crítico = el fracaso crítico del objetivo.
+const MODULACION_ID = "psi_induccion_modulacion";
+const HIPOMANIA_ALIADO_ID = "psi_induccion_hipomania_aliado";
+
+const RESISTE_ORGANICO = BASE_INDUCCION.objetivoTira[0];
+const RESISTE_SINTETICO = { que: "Resiste con Perspicacia + Informática; escribe su total como dificultad" };
+const SINTETICO: CambiosOpcion["resolucion"] = { aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "Informática" };
+const SIN_EFECTO = { texto: "Sin efecto", estados: [] };
+const grados = (critico: string, exito: string, fracaso: string): AccionPoder["resultados"] => ({
+  critico: { texto: critico, estados: [] },
+  exito: { texto: exito, estados: [] },
+  fracaso: { texto: fracaso, estados: [] },
+  fracasoCritico: SIN_EFECTO,
+});
+
+const EFECTOS_MODULACION: Opcion[] = [
+  {
+    id: "sopor",
+    label: "Sopor",
+    cambia: {
+      resultados: grados(
+        "Cae inconsciente. Despertarlo pide una acción física (zarandearlo, acción estándar), recibir daño o un estímulo potente; al volver en sí queda exhausto y confuso 1 turno y fatigado {nivel} turnos. Si nadie lo despierta, duerme hasta recuperarse u 8 horas. Si ya estaba exhausto, entra en coma",
+        "Exhausto hasta el final de su próximo turno y fatigado 1d4 turnos",
+        "Fatigado hasta el final de su próximo turno (exhausto si ya estaba fatigado; inconsciente si ya estaba exhausto)",
+      ),
+    },
+  },
+  {
+    id: "miedo",
+    label: "Miedo",
+    cambia: {
+      resultados: grados(
+        "Paro cardíaco: tira Fortaleza para evitarlo. Si la supera, aterrorizado el próximo turno, asustado {nivel} turnos y confuso 1 turno; si falla, cae inconsciente y muere en 10 minutos si nadie lo estabiliza con primeros auxilios",
+        "Aterrorizado el próximo turno y asustado {nivel} turnos",
+        "Asustado hasta el final de su próximo turno (aterrorizado si ya lo estaba)",
+      ),
+      objetivoTira: [
+        RESISTE_ORGANICO,
+        { que: "Con tu crítico, salvación de Fortaleza contra el paro cardíaco", dificultad: { base: 5, porNivel: 1 } },
+      ],
+      notas: [{ texto: "Elige hacia qué dirige el miedo: tú, un objeto, un acceso o un aliado.", lugar: "tirada" }],
+    },
+  },
+  {
+    // Sin críticos en la prosa: el "fracaso crítico" del objetivo va dentro de su
+    // fracaso (50 % y −4); su éxito crítico, sin texto, es como su éxito.
+    id: "hipomania",
+    label: "Hipomanía",
+    cambia: {
+      resultados: {
+        critico: {
+          texto: "1 turno con −1 a sus penalizadores por fatiga y +1 a salvaciones de Fortaleza, pero −4 en tiradas contra efectos emocionales y 50 % de fallo automático en acciones de concentración",
+          estados: [],
+        },
+        exito: {
+          texto: "1 turno con −1 a sus penalizadores por fatiga y +1 a salvaciones de Fortaleza, pero −2 en tiradas contra efectos emocionales y 20 % de fallo automático en acciones de concentración",
+          estados: [],
+        },
+        fracaso: { texto: "−1 a sus penalizadores por fatiga y +1 a salvaciones de Fortaleza durante {nivel} turnos", estados: [] },
+      },
+      objetivoTira: [{ que: `${RESISTE_ORGANICO.que}. Si ya sufre estrés o excitación emocional, −1 a esta salvación` }],
+    },
+  },
+  {
+    id: "delirio",
+    label: "Delirio",
+    desdeNivel: 3,
+    cambia: {
+      resultados: grados(
+        "Confuso crítico y con miedo {nivel*2} turnos: ve a todos como enemigos y, si no queda aterrorizado en su turno, ataca al más cercano. Pierde 1 de fatiga por turno",
+        "Confusión y miedo durante {nivel} turnos",
+        "Confusión y miedo hasta el final de su próximo turno",
+      ),
+    },
+  },
+  {
+    id: "mania",
+    label: "Manía",
+    desdeNivel: 3,
+    cambia: {
+      resultados: grados(
+        "Se abalanza furioso contra el blanco más cercano, ignorando órdenes complejas, {nivel*2} turnos; no puede esquivar ni bloquear y pierde 1 de fatiga por turno",
+        "Se abalanza furioso contra el blanco más cercano, ignorando órdenes complejas, {nivel} turnos; no puede esquivar ni bloquear",
+        "Pico de agresividad en su próximo turno: +1 al daño cuerpo a cuerpo, −2 a acciones defensivas y a salvaciones de Voluntad",
+      ),
+    },
+  },
+  {
+    id: "cautiverio",
+    label: "Cautiverio",
+    desdeNivel: 5,
+    cambia: {
+      resultados: grados(
+        "No puede hacer nada que implique movimiento durante {nivel*2} turnos y sufre un conato de fallo respiratorio: tira Fortaleza para evitar la asfixia",
+        "−4 a Fuerza y Agilidad y movimiento básico de una casilla durante {nivel} turnos",
+        "−1 a Fuerza o Agilidad y velocidad básica de 4 m hasta el final de su siguiente turno",
+      ),
+      objetivoTira: [
+        RESISTE_ORGANICO,
+        { que: "Con tu crítico, salvación de Fortaleza contra la asfixia", dificultad: { base: 6, porNivel: 1 } },
+      ],
+    },
+  },
+  {
+    id: "latencia",
+    label: "Latencia (sintético)",
+    cambia: {
+      resolucion: SINTETICO,
+      resultados: grados(
+        "Apagado de emergencia. Reactivarlo pide manipular su panel de arranque (acción compleja); al reiniciar, 1 turno como con tu éxito y después −1 operativo durante {nivel} turnos",
+        "−2 a acciones físicas y de procesamiento; el primer turno solo puede hacer una acción simple o estándar y pierde la reacción; después, −1 durante {nivel} turnos",
+        "−2 a acciones físicas y de procesamiento hasta el final de su próximo turno",
+      ),
+      objetivoTira: [RESISTE_SINTETICO],
+    },
+  },
+  {
+    id: "cisma",
+    label: "Cisma Lógico (sintético)",
+    cambia: {
+      resolucion: SINTETICO,
+      resultados: grados(
+        "Bloqueo total: paralizado e indefenso {nivel} turnos. Cada turno puede tirar para salir del bucle; si lo consigue, o al acabarse el tiempo, pasa un turno como con tu éxito",
+        "Descoordinado 1 turno: −6 a la iniciativa, mitad de velocidad y solo una acción simple o estándar por turno",
+        "−6 a la iniciativa y sin acciones complejas en su turno",
+      ),
+      objetivoTira: [
+        RESISTE_SINTETICO,
+        { que: "Con tu crítico, cada turno: Perspicacia + Informática para salir del bloqueo", dificultad: { base: 6, porNivel: 1 } },
+      ],
+    },
+  },
+];
+
+const MODULACION: AccionPoder = {
+  ...BASE_INDUCCION,
+  id: MODULACION_ID,
+  label: "Modulación",
+  economia: "compleja",
+  fatiga: { base: 0, porNivel: 1 },
+  ejes: [
+    ejeNivelEmpleado(() => ({})),
+    // "modo": la opción da nombre a la tirada ("Sopor (nivel 3)").
+    { id: "modo", label: "Efecto", tipo: "opcion", opciones: EFECTOS_MODULACION },
+    {
+      id: "objetivos",
+      label: "Objetivos",
+      tipo: "opcion",
+      opciones: [
+        { id: "uno", label: "Uno", cambia: {} },
+        {
+          // "Como parte de una acción compleja", aunque ya tenga la rebaja a estándar.
+          id: "varios",
+          label: "Varios",
+          desdeNivel: 4,
+          cambia: { economia: "compleja", multiplesObjetivos: { texto: "El mismo estado para todos.", fatigaPorObjetivo: 1 } },
+        },
+      ],
+    },
+  ],
+  ajustesPorNivelPoseido: [
+    {
+      desdeNivel: 6,
+      opcion: { eje: "objetivos", opcion: "varios" },
+      sobre: "multiplesObjetivos.texto",
+      op: "sustituye",
+      valor: "El mismo estado para todos. Con Inducción 6, hasta 6 víctimas no pagan fatiga extra: solo las que pasen de ahí.",
+    },
+  ],
+  resultados: {},
+  togglesPropios: [fueraDeAlcanceLocal(MODULACION_ID)],
+  notas: [
+    NOTA_ALCANCE_INDUCCION,
+    { texto: "El objetivo tiene que poder percibir tu presencia de algún modo (o recibir tu enlace de red).", lugar: "tirada" },
+  ],
+  motor: motorDeAccion(MODULACION_ID, { propias: true, tercero: ["salv_voluntad"] }),
+};
+
+// Hipomanía sobre un aliado dispuesto: no tira, se aplica el éxito (usuario,
+// 2026-09-29) — el de la prosa, que es el fracaso desde el lado del psiónico.
+const HIPOMANIA_ALIADO: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: HIPOMANIA_ALIADO_ID,
+  label: "Hipomanía a un aliado",
+  desdeNivel: 1,
+  economia: "compleja",
+  fatiga: { base: 0, porNivel: 1 },
+  alcance: { base: 0, porNivelPoseido: 20 },
+  objetivo: { tipo: "aliado" },
+  desplazamiento: null,
+  resolucion: { tipo: "sin_dado" },
+  objetivoTira: [],
+  ejes: [ejeNivelEmpleado(() => ({}))],
+  resultados: {},
+  notas: [
+    { texto: "Aliado dispuesto, sin tirada: durante {nivel} turnos, −1 a sus penalizadores por fatiga y +1 a sus salvaciones de Fortaleza.", lugar: "tirada" },
+    NOTA_ALCANCE_INDUCCION,
+  ],
+  motor: motorDeAccion(HIPOMANIA_ALIADO_ID, { propias: true }),
+};
+
 const INDUCCION: Disciplina = {
   id: "induccion",
   label: "Inducción",
@@ -828,10 +1032,20 @@ const INDUCCION: Disciplina = {
     },
   ],
   modificadoresFatiga: [],
-  modificadoresEconomia: [],
+  // Nivel 2: Modulación como estándar (la de un objetivo; varios sigue compleja).
+  modificadoresEconomia: [
+    {
+      fuente: "Inducción 2",
+      desdeNivelPoseido: 2,
+      alcance: { accion: MODULACION_ID, opcion: { eje: "objetivos", opcion: "uno" } },
+      op: "sustituye",
+      valor: "estandar",
+    },
+    { fuente: "Inducción 2", desdeNivelPoseido: 2, alcance: { accion: HIPOMANIA_ALIADO_ID }, op: "sustituye", valor: "estandar" },
+  ],
   bonosEnOtrasTiradas: [],
   ventajas: [],
-  acciones: [COMANDO, RECONFIGURACION],
+  acciones: [COMANDO, MODULACION, HIPOMANIA_ALIADO, RECONFIGURACION],
 };
 
 // ── Traslación ────────────────────────────────────────────────────
