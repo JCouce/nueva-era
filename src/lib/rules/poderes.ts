@@ -10,6 +10,7 @@ import type { AplicadoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
 import type { Sheet } from "./sheet";
 import type { Accion } from "./acciones";
+import type { CondicionTirada } from "./condiciones";
 import { DISCIPLINAS, PSIONICA, type DisciplinaId } from "../catalog/psionica";
 import { umbralFatiga } from "./estados";
 import type {
@@ -318,7 +319,7 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
     unidades: accion.unidades ?? {},
     notas: w.notas as Nota[],
     togglesPropios: accion.togglesPropios.filter((t) => (t.desdeNivelPoseido ?? 0) <= nivelPoseido),
-    ventaja: ventaja ? `${ctx.disciplina!.label} ${ventaja.desdeNivelPoseido}` : null,
+    ventaja: ventaja ? etiquetaVentaja(ctx.disciplina!, ventaja) : null,
     bonosEnOtrasTiradas: accion.bonosEnOtrasTiradas,
     movimientoOtorgado: w.movimientoOtorgado as PoderResuelto["movimientoOtorgado"],
     manual: accion.manual,
@@ -676,6 +677,35 @@ export function togglesDeFatiga(disciplina: Disciplina, accionId: string, p: Pod
     vistos.set(m.condicion.toggle, { toggle: m.condicion.toggle, grupo: m.condicion.grupo });
   }
   return [...vistos.values()];
+}
+
+function etiquetaVentaja(d: Disciplina, v: Disciplina["ventajas"][number]): string {
+  return `${d.label} ${v.desdeNivelPoseido}${v.condicion ? `, ${v.condicion}` : ""}`;
+}
+
+// Lo que la psiónica de la ficha añade a una tirada fija (Buscar / percibir con
+// Resonancia 4: ventaja y la casilla de +2): `Disciplina.ventajas` y
+// `bonosEnOtrasTiradas` cuyo alcance es el id o el grupo de la tirada.
+export function conPsionicaEnTiradaFija(sheet: Sheet, t: Accion): Accion {
+  let ventaja = t.ventaja;
+  const condiciones: CondicionTirada[] = [];
+  for (const d of DISCIPLINAS) {
+    const nivel = sheet.psionica[d.id as DisciplinaId] ?? 0;
+    if (nivel <= 0) continue;
+    const v = d.ventajas.find((x) => x.acciones.includes(t.id) && nivel >= x.desdeNivelPoseido);
+    if (v && !ventaja) ventaja = etiquetaVentaja(d, v);
+    d.bonosEnOtrasTiradas.forEach((b, i) => {
+      if ((b.alcance === t.id || b.alcance === t.grupo) && nivel >= (b.desdeNivelPoseido ?? 0)) {
+        condiciones.push({ id: `psi_${d.id}_${i}`, tipo: "toggle", etiqueta: b.etiqueta, valorActivo: b.valor });
+      }
+    });
+  }
+  if (ventaja === t.ventaja && condiciones.length === 0) return t;
+  return {
+    ...t,
+    ...(ventaja && { ventaja }),
+    ...(condiciones.length > 0 && { condiciones: [...(t.condiciones ?? []), ...condiciones] }),
+  };
 }
 
 // Levitar como movimiento de la ficha: desde Traslación 2, a 10 × nivel poseído

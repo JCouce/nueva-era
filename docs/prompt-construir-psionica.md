@@ -63,7 +63,9 @@ objetivo, y resuelva la **sobrecarga**. Hecho para Singularidad y Traslación; f
   Mente), con el eje de alcance Local / fila de la tabla y la habilidad a elegir.
 - **Resonancia, tanda 2** (Alerta pasiva, Alerta activa con coste fijo, Vínculo) y la
   **ventaja** genérica (`Accion.ventaja`, `tirarDado`).
-- Sin poderes todavía: **Inducción, Hipercognición**. Resonancia: falta la tanda 3.
+- **Resonancia completa**: tanda 3 hecha (ventaja y +2 en "Buscar / percibir" vía
+  `conPsionicaEnTiradaFija`, sin mini-épica: el §8 de modificadores ya estaba resuelto).
+- Sin poderes todavía: **Inducción, Hipercognición**.
 
 **Dónde vive cada cosa**
 
@@ -168,7 +170,7 @@ rebajas de la tabla (decisión del usuario). Plan original:
   poseído, alcance nivel km². +1 a salvaciones de Voluntad de los vinculados = a mano;
   "alertar por vínculo" = nota; tantos aliados como fatiga se tenga.
 
-**Tanda 3 (aparte, mini-épica):** la ventaja y el "+2 por Resonancia 4" también en la
+**Tanda 3 — HECHA (2026-09-30), no hizo falta mini-épica.** Plan original: la ventaja y el "+2 por Resonancia 4" también en la
 tirada fija "Buscar / percibir". Choca con el problema ya anotado de que las tiradas fijas
 no admiten condiciones que vengan de fuera (`docs/modificadores-tiradas.md` §8,
 `docs/tareas.md` "Segunda dependencia"). Plantéala como pieza propia.

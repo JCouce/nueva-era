@@ -44,6 +44,7 @@ import {
   fatigaEfectiva,
   usarHabilidadAlternativa,
   conEsquivaLevitando,
+  conPsionicaEnTiradaFija,
   etiquetaPoder,
   cruzaSobrecarga,
   dificultadSobrecarga,
@@ -1155,7 +1156,7 @@ export function AccionesTab({
           </h2>
           {ACCIONES.filter((t) => t.grupo === grupo)
             .map(conCondicionesDeEquipo)
-            .map((t) => conEsquivaLevitando(sheet, t))
+            .map((t) => conPsionicaEnTiradaFija(sheet, conEsquivaLevitando(sheet, t)))
             // Defensa/Esquiva (fija) primero, Bloquear-con-X (generado por
             // equipo) detrás — mismo orden que Ataques: lo fijo antes que lo
             // que trae cada arma. "Volar" entra igual dentro de "Acciones".

@@ -203,7 +203,9 @@ export type Disciplina = {
     valor?: Economia;
   }[];
   bonosEnOtrasTiradas: BonoToggle[];
-  ventajas: { desdeNivelPoseido: number; acciones: string[] }[];
+  // `acciones`: ids de acciones de poder o de tiradas fijas ("alerta_activa").
+  // `condicion`: lo que la app no comprueba y se enseña junto al aviso.
+  ventajas: { desdeNivelPoseido: number; acciones: string[]; condicion?: string }[];
   acciones: AccionPoder[];
 };
 

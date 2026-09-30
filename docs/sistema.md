@@ -743,6 +743,11 @@ al preparar su modelado:
     vínculo, notas.
   - *Supuesto:* contra amenazas sintéticas, la Alerta tira Tecnociencia con la especialidad
     Informática, como Rastreo (la prosa solo dice "tecnociencia").
+- **Construcción de Resonancia, tanda 3 (usuario, 2026-09-30):** con Resonancia 4+, la
+  tirada fija "Buscar / percibir" gana la ventaja y la casilla "+2 por Resonancia 4
+  (combinada con tu alerta psiónica)". El "sin impedimentos" de la prosa no se comprueba:
+  va escrito en el aviso de ventaja de las tres alertas y lo decide el máster.
+  **Resonancia completa.**
 - **Máquinas sin ficha** (qué tira una IA/servidor que no es personaje para resistir un poder):
   pendiente de Murillo — es la pregunta 16.
 - Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de

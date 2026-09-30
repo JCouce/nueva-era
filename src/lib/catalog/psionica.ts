@@ -648,8 +648,18 @@ const RESONANCIA: Disciplina = {
     { fuente: "Resonancia 6", desdeNivelPoseido: 6, alcance: { nivelEmpleado: 4 }, op: "sustituye", valor: { tiempo: "1 minuto" } },
     { fuente: "Resonancia 4: Vínculo", desdeNivelPoseido: 4, alcance: { accion: VINCULO_ID }, op: "sustituye", valor: "estandar" },
   ],
-  bonosEnOtrasTiradas: [],
-  ventajas: [{ desdeNivelPoseido: 4, acciones: [ALERTA_PASIVA_ID, ALERTA_ACTIVA_ID] }],
+  // Nivel 4: ventaja en toda tirada de alerta, también la normal ("Buscar /
+  // percibir"), y +2 al combinarla con la alerta psiónica (usuario, 2026-09-29).
+  bonosEnOtrasTiradas: [
+    { etiqueta: "+2 por Resonancia 4 (combinada con tu alerta psiónica)", alcance: "alerta_activa", valor: 2, desdeNivelPoseido: 4 },
+  ],
+  ventajas: [
+    {
+      desdeNivelPoseido: 4,
+      acciones: [ALERTA_PASIVA_ID, ALERTA_ACTIVA_ID, "alerta_activa"],
+      condicion: "si puedes usar Resonancia sin impedimentos",
+    },
+  ],
   acciones: [SINCRONIA, MENSAJE_AGRESIVO, SUPERAR_BARRERA, RASTREO, LEER_MENTE, ALERTA_PASIVA, ALERTA_ACTIVA, VINCULO],
 };
 

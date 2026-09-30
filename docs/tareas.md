@@ -1267,7 +1267,10 @@ cambiar la dificultad fija (Rastreo 6/9/12); el aviso de daño propio ya no dice
 Ventaja genérica: `Accion.ventaja` + `tirarDado` (dos d12, el mejor), enseñada en el modal
 mientras rueda y en el resultado; la activa `Disciplina.ventajas`. Las casillas de bono del
 propio poder (`togglesPropios`) llegan al modal como condiciones ("+2 por Resonancia 4").
-**Resonancia completa salvo la tanda 3** (ventaja y +2 también en "Buscar / percibir").
+**Resonancia, tanda 3 (2026-09-30):** ventaja y "+2 por Resonancia 4" también en la tirada
+fija "Buscar / percibir". General: `conPsionicaEnTiradaFija` (`poderes.ts`) aplica a
+cualquier tirada fija las `Disciplina.ventajas` y `bonosEnOtrasTiradas` que la nombran,
+sumándose a las condiciones del equipo. **Resonancia completa.** Siguiente: Inducción.
 **Hallazgo (sin arreglar):** los penalizadores por umbral de salud y fatiga
 (`modificadoresDeUmbrales`, −1/−3/−5 y −1/−2) existen pero nada los aplica a las tiradas. Siguiente, disciplina a
 disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,
@@ -1301,9 +1304,9 @@ Soporte Vital/Anticorrosivo/Tejido Conductor — `docs/equipo-efectos-especiales
 de tratarla como mini épica propia):** antes de construir dotes/poderes/aumentos,
 conviene resolver cómo llegan `CondicionTirada` (opciones seleccionables) y texto
 informativo a **tiradas fijas** de `TIRADAS` (hoy solo funciona por arma concreta) —
-problema completo en `docs/modificadores-tiradas.md` §8. Los modificadores numéricos
-ya están resueltos y son extensibles sin cambios (`modificadoresActivos`); lo que
-falta es específico de condiciones/texto, no de números. Sin diseñar, sin construir.
+problema completo en `docs/modificadores-tiradas.md` §8. **Resuelta:** el §8 se construyó
+el 2026-09-23 (condiciones con `alcance` desde el equipo) y la psiónica entra por
+`conPsionicaEnTiradaFija` (2026-09-30).
 
 ### Armas Modificadas ⬜
 Electrificantes, Térmicas, de Plasma, de Nanofilamento. Su coste es un **multiplicador**

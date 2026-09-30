@@ -11,7 +11,7 @@ preparar el personaje y qué números deben salir.
 | H1–H8 | Traslación (con NPC de nivel 6 en H6) | Traslación 3 |
 | I | Contención (con NPC de nivel 6 en I.6) | Traslación 1 + Contención 2 |
 | J | Resonancia, tanda 1 (con NPC de nivel 6 en J.6) | Resonancia 3 |
-| K | Resonancia, tanda 2: Alerta y Vínculo | Resonancia 3, y NPC con Resonancia 4 |
+| K | Resonancia, tandas 2 y 3: Alerta, Vínculo y Buscar / percibir | Resonancia 3, y NPC con Resonancia 4 |
 
 Los números esperados valen para un personaje recién creado sin tocar: atributos a 0,
 sin especie, **8 de vida y 8 de fatiga**, y tirada de poder **−1** (Perspicacia +0,
@@ -404,6 +404,12 @@ El personaje de J (Resonancia 3). Fatiga a 8. Para K.3, un NPC con **Resonancia 
   tachado "d12 · descartado". El resultado enseña `2d12 <mejor> · <otro tachado>`. Fatiga 8 → 7.
   Alerta activa sigue en Estándar y 1 también con Resonancia 6. Vínculo: `Estándar`, 4 km²,
   4 minutos.
+- [ ] **K.5 Buscar / percibir (NPC con Resonancia 4).** Tirar en Acciones › Buscar /
+  percibir.
+  → Casilla "+2 por Resonancia 4 (combinada con tu alerta psiónica)" (total −1 → +1 al
+  marcarla) y el aviso "Ventaja (Resonancia 4, si puedes usar Resonancia sin impedimentos)".
+  Giran dos dados y el resultado enseña `2d12 <mejor> · <otro>`. Con Resonancia 3, la tirada
+  no cambia.
 - [ ] **K.4 Vínculo (nivel 3).** Usar.
   → Sin dado. Objetivo Aliado, Duración 3 minutos, mensaje "Varios objetivos: cada uno paga
   1 de fatiga…" y tres notas. Usar → "Usado · −1 fatiga".
@@ -414,8 +420,7 @@ El personaje de J (Resonancia 3). Fatiga a 8. Para K.3, un NPC con **Resonancia 
 
 No son fallos:
 
-- La ventaja y el +2 de Resonancia 4 aún no llegan a la tirada fija "Buscar / percibir"
-  (tanda 3). Inducción e Hipercognición no tienen poderes todavía. Traslación
+- Inducción e Hipercognición no tienen poderes todavía. Traslación
   está completa.
 - Xovromium, Munición Supresora y Derivación Psiónica no afectan aún ni a la tirada ni a
   la fatiga.

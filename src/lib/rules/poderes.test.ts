@@ -18,6 +18,7 @@ import {
   etiquetaPoder,
   levitacion,
   conEsquivaLevitando,
+  conPsionicaEnTiradaFija,
 } from "./poderes";
 import { defaultSheet, parseSheet, type Sheet } from "./sheet";
 import { migrar } from "./migraciones";
@@ -909,7 +910,7 @@ describe("Resonancia — tanda 2", () => {
       assert.equal(n3.ventaja, undefined);
       assert.equal(n3.condiciones, undefined);
       const n4 = tiradaDePoder(accionR(id), resolverR(id, 4))!;
-      assert.equal(n4.ventaja, "Resonancia 4");
+      assert.equal(n4.ventaja, "Resonancia 4, si puedes usar Resonancia sin impedimentos");
       assert.equal(n4.condiciones!.length, 1);
       const c = n4.condiciones![0];
       assert.equal(c.tipo === "toggle" && c.valorActivo, 2);
@@ -936,6 +937,31 @@ describe("Resonancia — tanda 2", () => {
     const n4 = resolverR("vinculo", 4);
     assert.equal(n4.economia, "estandar");
     assert.equal(coste("vinculo", resolverR("vinculo", 6)), 1);
+  });
+});
+
+describe("Resonancia — tanda 3: Buscar / percibir", () => {
+  const buscar = ACCIONES.find((a) => a.id === "alerta_activa")!;
+  const conResonancia = (nivel: number) => ({ ...defaultSheet(), psionica: { resonancia: nivel } }) as Sheet;
+
+  test("sin Resonancia 4, la tirada fija no cambia", () => {
+    assert.equal(conPsionicaEnTiradaFija(defaultSheet(), buscar), buscar);
+    assert.equal(conPsionicaEnTiradaFija(conResonancia(3), buscar), buscar);
+  });
+
+  test("con Resonancia 4: ventaja y casilla de +2, sin perder las condiciones que ya traía", () => {
+    const visor = { id: "visor", tipo: "toggle" as const, etiqueta: "Visor", valorActivo: 0 };
+    const t = conPsionicaEnTiradaFija(conResonancia(4), { ...buscar, condiciones: [visor] });
+    assert.equal(t.ventaja, "Resonancia 4, si puedes usar Resonancia sin impedimentos");
+    assert.equal(t.condiciones!.length, 2);
+    assert.deepEqual(t.condiciones![0], visor);
+    const mas2 = t.condiciones![1];
+    assert.equal(mas2.tipo === "toggle" && mas2.valorActivo, 2);
+  });
+
+  test("solo afecta a su tirada", () => {
+    const sigilo = ACCIONES.find((a) => a.id === "sigilo")!;
+    assert.equal(conPsionicaEnTiradaFija(conResonancia(6), sigilo), sigilo);
   });
 });
 
