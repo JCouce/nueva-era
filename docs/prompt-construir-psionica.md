@@ -65,10 +65,9 @@ objetivo, y resuelva la **sobrecarga**. Hecho para Singularidad y Traslación; f
   **ventaja** genérica (`Accion.ventaja`, `tirarDado`).
 - **Resonancia completa**: tanda 3 hecha (ventaja y +2 en "Buscar / percibir" vía
   `conPsionicaEnTiradaFija`, sin mini-épica: el §8 de modificadores ya estaba resuelto).
-- **Inducción, tandas 1 y 2**: Comando, Reconfiguración Mnemónica, Modulación (nivel
-  empleado = "nivel de poder" en sus efectos) e Hipomanía a un aliado. Faltan Supresión /
-  Estabilización (tanda 3, con decisión: cómo cobra fatiga la casilla de
-  salvación).
+- **Inducción completa**: Comando, Reconfiguración Mnemónica, Modulación (nivel empleado =
+  "nivel de poder" en sus efectos), Hipomanía a un aliado, Supresión y Estabilización (el
+  bonificador de salvación en dos pasos: tirada y luego casilla gratis en la salvación).
 - Sin poderes todavía: **Hipercognición**.
 
 **Dónde vive cada cosa**

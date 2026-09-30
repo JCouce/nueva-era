@@ -12,7 +12,7 @@ preparar el personaje y qué números deben salir.
 | I | Contención (con NPC de nivel 6 en I.6) | Traslación 1 + Contención 2 |
 | J | Resonancia, tanda 1 (con NPC de nivel 6 en J.6) | Resonancia 3 |
 | K | Resonancia, tandas 2 y 3: Alerta, Vínculo y Buscar / percibir | Resonancia 3, y NPC con Resonancia 4 |
-| L | Inducción, tandas 1 y 2: Comando, Reconfiguración y Modulación | NPC con Resonancia 1 + Inducción 5 (6 en L.8) |
+| L | Inducción: Comando, Reconfiguración, Modulación, Supresión y Estabilización | NPC con Resonancia 1 + Inducción 5 (6 en L.8, 4 en L.10-L.12) |
 
 Los números esperados valen para un personaje recién creado sin tocar: atributos a 0,
 sin especie, **8 de vida y 8 de fatiga**, y tirada de poder **−1** (Perspicacia +0,
@@ -442,6 +442,15 @@ NPC (o ficha editada) con **Resonancia 1** e **Inducción 5**. Fatiga a 8.
   pagan fatiga extra".
 - [ ] **L.9 Hipomanía a un aliado.** Nivel 2 → sin dado, Estándar, Fatiga 2, nota "durante 2
   turnos…"; Usar → "Usado · −2 fatiga".
+- [ ] **L.10 Supresión (Inducción 4).** → Compleja, Fatiga 1, Dificultad 10 marcada,
+  Duración **120 minutos** (30 × 4). "Liberar del todo": Duración "este turno". "+2 a una
+  salvación": sin duración.
+- [ ] **L.11 Estabilización (Inducción 4).** → Reacción (o Simple), Fatiga 1, Dificultad 6,
+  Objetivo Tú. Uso "Bonificador a una salvación" y Tirar: con éxito, "+3 a tu salvación:
+  márcalo en la casilla «+3 por Estabilización»". Fatiga 8 → 7.
+- [ ] **L.12 La casilla en la salvación.** Salvación de Voluntad → casilla "+3 por
+  Estabilización (si la superaste)"; al marcarla, total +0 → +3. Con Inducción 1-3 es +2;
+  con 6, +4; sin Inducción, no aparece.
 
 ---
 
@@ -449,8 +458,7 @@ NPC (o ficha editada) con **Resonancia 1** e **Inducción 5**. Fatiga a 8.
 
 No son fallos:
 
-- Inducción: faltan Supresión y Estabilización;
-  Hipercognición no tiene poderes todavía. Traslación
+- Hipercognición no tiene poderes todavía. Traslación
   está completa.
 - Xovromium, Munición Supresora y Derivación Psiónica no afectan aún ni a la tirada ni a
   la fatiga.

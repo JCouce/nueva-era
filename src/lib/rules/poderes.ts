@@ -318,7 +318,7 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
     exceso,
     unidades: accion.unidades ?? {},
     notas: w.notas as Nota[],
-    togglesPropios: accion.togglesPropios.filter((t) => (t.desdeNivelPoseido ?? 0) <= nivelPoseido),
+    togglesPropios: accion.togglesPropios.filter((t) => enTramo(t, nivelPoseido)),
     ventaja: ventaja ? etiquetaVentaja(ctx.disciplina!, ventaja) : null,
     bonosEnOtrasTiradas: accion.bonosEnOtrasTiradas,
     movimientoOtorgado: w.movimientoOtorgado as PoderResuelto["movimientoOtorgado"],
@@ -679,6 +679,10 @@ export function togglesDeFatiga(disciplina: Disciplina, accionId: string, p: Pod
   return [...vistos.values()];
 }
 
+function enTramo(b: BonoToggle, nivel: number): boolean {
+  return nivel >= (b.desdeNivelPoseido ?? 0) && nivel <= (b.hastaNivelPoseido ?? Infinity);
+}
+
 function etiquetaVentaja(d: Disciplina, v: Disciplina["ventajas"][number]): string {
   return `${d.label} ${v.desdeNivelPoseido}${v.condicion ? `, ${v.condicion}` : ""}`;
 }
@@ -695,7 +699,7 @@ export function conPsionicaEnTiradaFija(sheet: Sheet, t: Accion): Accion {
     const v = d.ventajas.find((x) => x.acciones.includes(t.id) && nivel >= x.desdeNivelPoseido);
     if (v && !ventaja) ventaja = etiquetaVentaja(d, v);
     d.bonosEnOtrasTiradas.forEach((b, i) => {
-      if ((b.alcance === t.id || b.alcance === t.grupo) && nivel >= (b.desdeNivelPoseido ?? 0)) {
+      if ((b.alcance === t.id || b.alcance === t.grupo) && enTramo(b, nivel)) {
         condiciones.push({ id: `psi_${d.id}_${i}`, tipo: "toggle", etiqueta: b.etiqueta, valorActivo: b.valor });
       }
     });

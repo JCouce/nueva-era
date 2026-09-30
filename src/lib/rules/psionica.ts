@@ -56,9 +56,12 @@ export type ResultadoPoder = {
 
 export type BonoToggle = {
   etiqueta: string;
-  alcance: string; // id de acción, grupo ("Salvaciones") o "alerta"
+  alcance: string; // id de acción o grupo ("Salvaciones")
   valor: number;
+  // Tramo de nivel poseído en que vale (Estabilización: +2 hasta 3, +3 en 4-5, +4
+  // en 6), para que los tramos no se sumen entre sí.
   desdeNivelPoseido?: number;
+  hastaNivelPoseido?: number;
 };
 
 export type Nota = { texto: string; lugar: "tirada" | "danio" };

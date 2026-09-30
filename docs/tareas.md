@@ -1277,7 +1277,11 @@ prueba y lo que tira el objetivo, alcance 20 m × nivel, casilla −4 desde nive
 Reconfiguración Mnemónica (nv3). Sin motor nuevo.
 **Inducción, tanda 2 (2026-09-30):** Modulación (ocho efectos, nivel empleado en coste y
 efectos, estándar nv2, varios objetivos nv4/nv6) e Hipomanía a un aliado (sin tirada).
-Motor: marcador `{campo*2}` en los textos. Siguiente: tanda 3 (Supresión y Estabilización).
+Motor: marcador `{campo*2}` en los textos.
+**Inducción, tanda 3 (2026-09-30):** Supresión (tres usos, duración por nivel poseído) y
+Estabilización (sobre uno mismo). El bonificador de salvación va en dos pasos: se tira
+Estabilización y luego se marca la casilla de la salvación (`bonosEnOtrasTiradas` por
+tramos con `hastaNivelPoseido`). **Inducción completa.** Siguiente: Hipercognición.
 **Hallazgo (sin arreglar):** los penalizadores por umbral de salud y fatiga
 (`modificadoresDeUmbrales`, −1/−3/−5 y −1/−2) existen pero nada los aplica a las tiradas. Siguiente, disciplina a
 disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,

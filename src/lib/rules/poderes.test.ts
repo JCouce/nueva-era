@@ -1085,6 +1085,69 @@ describe("Inducción — tanda 2: Modulación", () => {
   });
 });
 
+describe("Inducción — tanda 3: Supresión y Estabilización", () => {
+  const IND = disciplinaPorId("induccion");
+  const accionI = (id: string) => IND.acciones.find((a) => a.id === `psi_induccion_${id}`)!;
+  const resolverI = (id: string, nivelPoseido: number, elecciones: Record<string, string> = {}) =>
+    resolverPoder(accionI(id), { nivelPoseido, elecciones, disciplina: IND })!;
+
+  test("Supresión: tirada normal contra 10, compleja, 1 de fatiga", () => {
+    const p = resolverI("supresion", 1);
+    assert.deepEqual(p.resolucion, { tipo: "tirada", aplicado: "expresion", habilidad: "biociencia", dificultad: 10 });
+    assert.equal(p.economia, "compleja");
+    assert.equal(costeFatiga(IND, "psi_induccion_supresion", p).total, 1);
+    assert.deepEqual(p.objetivoTira, []);
+    const s = resolverI("supresion", 1, { receptor: "sintetico" });
+    assert.equal(s.resolucion.tipo === "tirada" && s.resolucion.habilidad, "tecnociencia");
+  });
+
+  test("Supresión: 1 minuto; 10 × nivel desde el 2; 30 × nivel desde el 4", () => {
+    assert.deepEqual(resolverI("supresion", 1).duracion, { manual: "1 minuto" });
+    assert.equal(resolverI("supresion", 3).duracion, 30);
+    assert.equal(resolverI("supresion", 5).duracion, 150);
+    assert.equal(resolverI("supresion", 5, { uso: "salvacion" }).duracion, null);
+  });
+
+  test("Supresión: liberar del todo desde nivel 2", () => {
+    const eje = accionI("supresion").ejes[1];
+    assert.ok(!opcionesDisponibles(eje, 1).some((o) => o.id === "liberar"));
+    const p = resolverI("supresion", 2, { uso: "liberar" });
+    assert.deepEqual(p.duracion, { manual: "este turno" });
+    assert.match(p.resultados.exito!.texto, /libre de todos los penalizadores/);
+  });
+
+  test("Estabilización: reacción o simple, dificultad 6, 1 de fatiga", () => {
+    const p = resolverI("estabilizacion", 1);
+    assert.equal(p.economia, "reaccion");
+    assert.equal(resolverI("estabilizacion", 1, { economia: "simple" }).economia, "simple");
+    assert.equal(p.resolucion.tipo === "tirada" && p.resolucion.dificultad, 6);
+    assert.equal(costeFatiga(IND, "psi_induccion_estabilizacion", p).total, 1);
+  });
+
+  test("Estabilización: duraciones y textos por nivel poseído", () => {
+    assert.deepEqual(resolverI("estabilizacion", 2).duracion, { manual: "10 minutos" });
+    const n4 = resolverI("estabilizacion", 4);
+    assert.deepEqual(n4.duracion, { manual: "30 minutos" });
+    assert.match(n4.resultados.exito!.texto, /omites por completo los de daño y fatiga/);
+    assert.match(resolverI("estabilizacion", 6).resultados.critico!.texto, /Eliminas por completo/);
+    assert.match(resolverI("estabilizacion", 5, { uso: "salvacion" }).resultados.exito!.texto, /^\+3/);
+    assert.match(resolverI("estabilizacion", 6, { uso: "salvacion" }).resultados.exito!.texto, /^\+4/);
+  });
+
+  test("casilla en las salvaciones con el valor del tramo, sin sumarse", () => {
+    const salv = ACCIONES.find((a) => a.id === "salv_voluntad")!;
+    const casilla = (nivel: number) => {
+      const t = conPsionicaEnTiradaFija({ ...defaultSheet(), psionica: { resonancia: 1, induccion: nivel } } as Sheet, salv);
+      return (t.condiciones ?? []).map((c) => (c.tipo === "toggle" ? c.valorActivo : null));
+    };
+    assert.deepEqual(casilla(1), [2]);
+    assert.deepEqual(casilla(3), [2]);
+    assert.deepEqual(casilla(4), [3]);
+    assert.deepEqual(casilla(6), [4]);
+    assert.equal(conPsionicaEnTiradaFija(defaultSheet(), salv), salv);
+  });
+});
+
 function setNivelDisciplinaTest(s: Sheet, nivel: number): Sheet {
   return { ...s, psionica: { ...s.psionica, resonancia: nivel } };
 }

@@ -778,6 +778,22 @@ al preparar su modelado:
   - Hipomanía sin críticos en la prosa: el crítico del psiónico usa el "50 % y −4" que la
     prosa mete en el fracaso del objetivo; su fracaso crítico, el texto de su fracaso.
     Sobre un aliado dispuesto, acción aparte sin tirada que aplica el éxito.
+- **Construcción de Inducción, tanda 3: Supresión y Estabilización (usuario, 2026-09-30):**
+  - Supresión: tirada normal (no enfrentada) de la prueba base contra 10, compleja, 1.
+    Usos: reducir penalizadores (−1, crítico −2; 1 minuto, 10 × nivel poseído minutos
+    desde el 2, 30 × nivel desde el 4), +2 a una salvación del objetivo, y liberar del todo
+    (nivel 2, este turno).
+  - Estabilización: sobre uno mismo, Expresión + Biociencia contra 6, reacción o simple,
+    1. Mitigar: 1 minuto, 10 minutos (nivel 2), 30 minutos (nivel 4) — sin "× nivel", como
+    la prosa —; nivel 4 omite además los penalizadores de daño y fatiga; nivel 6 los elimina
+    por completo.
+  - **El bonificador a la salvación va en dos pasos**: se tira Estabilización (paga la
+    fatiga y la sobrecarga) y, si sale, en las tres salvaciones fijas se marca la casilla
+    "+N por Estabilización (si la superaste)", que no cobra nada: +2 hasta nivel 3, +3 en
+    4-5, +4 en 6 (`BonoToggle.hastaNivelPoseido`, sin sumarse).
+  - Los penalizadores de estado se aplican a mano (y los de umbral de salud y fatiga siguen
+    sin aplicarse en ninguna tirada).
+  - **Inducción completa.**
 - **Máquinas sin ficha** (qué tira una IA/servidor que no es personaje para resistir un poder):
   pendiente de Murillo — es la pregunta 16.
 - Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de

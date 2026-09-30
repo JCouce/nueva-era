@@ -1018,6 +1018,201 @@ const HIPOMANIA_ALIADO: AccionPoder = {
   motor: motorDeAccion(HIPOMANIA_ALIADO_ID, { propias: true }),
 };
 
+// Supresión: tirada normal de la prueba base contra 10 (no enfrentada: suele ir
+// sobre un aliado). La duración del alivio depende del nivel poseído: 1 minuto;
+// 10 × nivel minutos desde el 2; 30 × nivel desde el 4 (Murillo, 2026-09-29).
+const SUPRESION_ID = "psi_induccion_supresion";
+const ESTABILIZACION_ID = "psi_induccion_estabilizacion";
+
+const OBJETIVO_SUPRESION: EjePoder = {
+  id: "receptor",
+  label: "Objetivo",
+  tipo: "opcion",
+  opciones: [
+    { id: "organico", label: "Orgánico", cambia: {} },
+    { id: "sintetico", label: "Sintético", cambia: { resolucion: SINTETICO } },
+  ],
+};
+
+const SUPRESION: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: SUPRESION_ID,
+  label: "Supresión",
+  desdeNivel: 1,
+  economia: "compleja",
+  fatiga: 1,
+  alcance: { base: 0, porNivelPoseido: 20 },
+  duracion: { manual: "1 minuto" },
+  unidades: { duracion: "minutos" },
+  objetivo: { tipo: "unico" },
+  desplazamiento: null,
+  resolucion: { tipo: "tirada", aplicado: "expresion", habilidad: "biociencia", dificultad: 10 },
+  objetivoTira: [],
+  ejes: [
+    OBJETIVO_SUPRESION,
+    {
+      id: "uso",
+      label: "Uso",
+      tipo: "opcion",
+      opciones: [
+        { id: "reducir", label: "Reducir penalizadores", cambia: {} },
+        {
+          id: "salvacion",
+          label: "+2 a una salvación",
+          cambia: {
+            duracion: null,
+            resultados: {
+              exito: { texto: "+2 a su salvación para frenar el empeoramiento de la afección o del fallo técnico", estados: [] },
+              fracaso: { texto: "Sin efecto", estados: [] },
+            },
+          },
+        },
+        {
+          id: "liberar",
+          label: "Liberar del todo",
+          desdeNivel: 2,
+          cambia: {
+            duracion: { manual: "este turno" },
+            resultados: {
+              exito: {
+                texto: "Queda libre de todos los penalizadores por efectos durante este turno; al acabarlo, los recupera todos",
+                estados: [],
+              },
+              fracaso: { texto: "Sin efecto", estados: [] },
+            },
+          },
+        },
+      ],
+    },
+  ],
+  ajustesPorNivelPoseido: [
+    { desdeNivel: 2, opcion: { eje: "uso", opcion: "reducir" }, sobre: "duracion", op: "sustituye", valor: { base: 0, porNivelPoseido: 10 } },
+    { desdeNivel: 4, opcion: { eje: "uso", opcion: "reducir" }, sobre: "duracion", op: "sustituye", valor: { base: 0, porNivelPoseido: 30 } },
+  ],
+  resultados: {
+    critico: { texto: "Reduce en 2 sus penalizadores por estados mientras dure", estados: [] },
+    exito: { texto: "Reduce en 1 sus penalizadores por estados mientras dure", estados: [] },
+    fracaso: { texto: "Sin efecto", estados: [] },
+  },
+  togglesPropios: [fueraDeAlcanceLocal(SUPRESION_ID)],
+  notas: [
+    { texto: "Sobre los circuitos del dolor de un orgánico o los búferes de diagnóstico de un sintético. Los penalizadores, a mano.", lugar: "tirada" },
+    NOTA_ALCANCE_INDUCCION,
+  ],
+  motor: motorDeAccion(SUPRESION_ID, { propias: true }),
+};
+
+// Estabilización: la Supresión sobre uno mismo, dificultad 6, 1 de fatiga
+// (usuario, 2026-09-29). Duraciones tal cual la prosa (10 y 30 minutos, sin "×
+// nivel"). El bonificador a la salvación va en dos pasos (usuario, 2026-09-30): se
+// tira esta acción y, si sale, se marca la casilla de las salvaciones
+// (`bonosEnOtrasTiradas` de la disciplina), que no cobra nada.
+const ESTABILIZACION: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: ESTABILIZACION_ID,
+  label: "Estabilización",
+  desdeNivel: 1,
+  economia: "reaccion",
+  fatiga: 1,
+  alcance: null,
+  duracion: { manual: "1 minuto" },
+  objetivo: { tipo: "propio" },
+  desplazamiento: null,
+  resolucion: { tipo: "tirada", aplicado: "expresion", habilidad: "biociencia", dificultad: 6 },
+  objetivoTira: [],
+  ejes: [
+    {
+      id: "economia",
+      label: "Acción",
+      tipo: "opcion",
+      opciones: [
+        { id: "reaccion", label: "Reacción", cambia: {} },
+        { id: "simple", label: "Simple", cambia: { economia: "simple" } },
+      ],
+    },
+    {
+      id: "uso",
+      label: "Uso",
+      tipo: "opcion",
+      opciones: [
+        { id: "mitigar", label: "Mitigar penalizadores", cambia: {} },
+        {
+          id: "salvacion",
+          label: "Bonificador a una salvación",
+          cambia: {
+            duracion: null,
+            resultados: {
+              exito: { texto: "+2 a tu salvación: márcalo en la casilla «+2 por Estabilización» de la salvación", estados: [] },
+              fracaso: { texto: "Sin bonificador", estados: [] },
+            },
+          },
+        },
+      ],
+    },
+  ],
+  ajustesPorNivelPoseido: [
+    { desdeNivel: 2, opcion: { eje: "uso", opcion: "mitigar" }, sobre: "duracion", op: "sustituye", valor: { manual: "10 minutos" } },
+    { desdeNivel: 4, opcion: { eje: "uso", opcion: "mitigar" }, sobre: "duracion", op: "sustituye", valor: { manual: "30 minutos" } },
+    {
+      desdeNivel: 4,
+      opcion: { eje: "uso", opcion: "mitigar" },
+      sobre: "resultados.exito.texto",
+      op: "sustituye",
+      valor: "Reduces en 1 tus penalizadores por estados mientras dure y omites por completo los de daño y fatiga",
+    },
+    {
+      desdeNivel: 4,
+      opcion: { eje: "uso", opcion: "mitigar" },
+      sobre: "resultados.critico.texto",
+      op: "sustituye",
+      valor: "Reduces en 2 tus penalizadores por estados mientras dure y omites por completo los de daño y fatiga",
+    },
+    {
+      desdeNivel: 6,
+      opcion: { eje: "uso", opcion: "mitigar" },
+      sobre: "resultados.exito.texto",
+      op: "sustituye",
+      valor: "Eliminas por completo tus penalizadores por estados mientras dure (no los que llegues a sufrir después) y omites los de daño y fatiga",
+    },
+    {
+      desdeNivel: 6,
+      opcion: { eje: "uso", opcion: "mitigar" },
+      sobre: "resultados.critico.texto",
+      op: "sustituye",
+      valor: "Eliminas por completo tus penalizadores por estados mientras dure (no los que llegues a sufrir después) y omites los de daño y fatiga",
+    },
+    {
+      desdeNivel: 4,
+      opcion: { eje: "uso", opcion: "salvacion" },
+      sobre: "resultados.exito.texto",
+      op: "sustituye",
+      valor: "+3 a tu salvación: márcalo en la casilla «+3 por Estabilización» de la salvación",
+    },
+    {
+      desdeNivel: 6,
+      opcion: { eje: "uso", opcion: "salvacion" },
+      sobre: "resultados.exito.texto",
+      op: "sustituye",
+      valor: "+4 a tu salvación: márcalo en la casilla «+4 por Estabilización» de la salvación",
+    },
+  ],
+  resultados: {
+    critico: { texto: "Reduces en 2 tus penalizadores por estados mientras dure", estados: [] },
+    exito: { texto: "Reduces en 1 tus penalizadores por estados mientras dure", estados: [] },
+    fracaso: { texto: "Sin efecto", estados: [] },
+  },
+  notas: [{ texto: "Los penalizadores de estado, a mano.", lugar: "tirada" }],
+  motor: motorDeAccion(ESTABILIZACION_ID, { propias: true }),
+};
+
+const estabilizacionEnSalvacion = (valor: number, desde: number, hasta?: number) => ({
+  etiqueta: `+${valor} por Estabilización (si la superaste)`,
+  alcance: "Salvaciones",
+  valor,
+  desdeNivelPoseido: desde,
+  hastaNivelPoseido: hasta,
+});
+
 const INDUCCION: Disciplina = {
   id: "induccion",
   label: "Inducción",
@@ -1043,9 +1238,13 @@ const INDUCCION: Disciplina = {
     },
     { fuente: "Inducción 2", desdeNivelPoseido: 2, alcance: { accion: HIPOMANIA_ALIADO_ID }, op: "sustituye", valor: "estandar" },
   ],
-  bonosEnOtrasTiradas: [],
+  bonosEnOtrasTiradas: [
+    estabilizacionEnSalvacion(2, 1, 3),
+    estabilizacionEnSalvacion(3, 4, 5),
+    estabilizacionEnSalvacion(4, 6),
+  ],
   ventajas: [],
-  acciones: [COMANDO, MODULACION, HIPOMANIA_ALIADO, RECONFIGURACION],
+  acciones: [COMANDO, MODULACION, HIPOMANIA_ALIADO, RECONFIGURACION, SUPRESION, ESTABILIZACION],
 };
 
 // ── Traslación ────────────────────────────────────────────────────
