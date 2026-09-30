@@ -10,6 +10,7 @@ import {
   puntosPsionicaDisponibles,
   sueloPorRequisitos,
   type DisciplinaId,
+  textoPuntos,
 } from "@/lib/rules";
 import type { Sheet } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
@@ -46,7 +47,7 @@ export function PsionicaTab({
         <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
           <span className="uppercase tracking-wide text-muted">{aprobada ? "XP" : "Puntos"}</span>
           <span className={`tabular-nums ${disponible < 0 ? "text-danger" : letra || aprobada ? "text-accent" : "text-muted"}`}>
-            {aprobada ? disponible : letra ? `${disponible} / ${presupuestoPsionica(sheet)} (letra ${letra})` : "sin letra"}
+            {aprobada ? disponible : letra ? `${textoPuntos(disponible)} / ${textoPuntos(presupuestoPsionica(sheet))} (letra ${letra})` : "sin letra"}
           </span>
         </div>
       )}

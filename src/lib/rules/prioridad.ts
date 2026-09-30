@@ -14,8 +14,16 @@ export const CATEGORIAS_PRIORIDAD = [
 ] as const;
 export type CategoriaPrioridad = (typeof CATEGORIAS_PRIORIDAD)[number];
 
-export const LETRAS_PRIORIDAD = ["A", "B", "C", "D", "E"] as const;
+// "S+": letra de PRUEBAS (usuario, 2026-09-30, temporal): puntos ilimitados y
+// se puede repetir en todas las categorías. Se quitará.
+export const LETRAS_PRIORIDAD = ["A", "B", "C", "D", "E", "S+"] as const;
 export type LetraPrioridad = (typeof LETRAS_PRIORIDAD)[number];
+export const LETRA_PRUEBAS = "S+" satisfies LetraPrioridad;
+
+// Presupuestos ilimitados (S+) se pintan como ∞.
+export function textoPuntos(n: number): string {
+  return Number.isFinite(n) ? String(n) : "∞";
+}
 
 // Letra elegida por el jugador para cada categoría. null = todavía sin asignar.
 export type Prioridades = Record<CategoriaPrioridad, LetraPrioridad | null>;
@@ -30,6 +38,7 @@ export const PUNTOS_ATRIBUTOS_POR_LETRA: Record<LetraPrioridad, number> = {
   C: 12,
   D: 10,
   E: 8,
+  "S+": Infinity,
 };
 
 export const PUNTOS_HABILIDADES_POR_LETRA: Record<LetraPrioridad, number> = {
@@ -38,6 +47,7 @@ export const PUNTOS_HABILIDADES_POR_LETRA: Record<LetraPrioridad, number> = {
   C: 12,
   D: 9,
   E: 6,
+  "S+": Infinity,
 };
 
 export const PUNTOS_PSIONICA_POR_LETRA: Record<LetraPrioridad, number> = {
@@ -46,6 +56,7 @@ export const PUNTOS_PSIONICA_POR_LETRA: Record<LetraPrioridad, number> = {
   C: 9,
   D: 3,
   E: 0,
+  "S+": Infinity,
 };
 
 // S12: HOJA2 solo rellena la casilla E (0 puntos); A-D no aparecen en el documento.
@@ -53,6 +64,7 @@ export const PUNTOS_PSIONICA_POR_LETRA: Record<LetraPrioridad, number> = {
 // tiene pool propio fuera de E. No se inventa un número para las que faltan.
 export const PUNTOS_DOTES_POR_LETRA: Partial<Record<LetraPrioridad, number>> = {
   E: 0,
+  "S+": Infinity,
 };
 
 // La rareza es el tope de lo que se puede equipar en creación (Tienda con
@@ -65,6 +77,8 @@ export const RECURSOS_POR_LETRA: Record<LetraPrioridad, { creditos: number; rare
   C: { creditos: 27000, rareza: "Poco Habitual" },
   D: { creditos: 13000, rareza: "Poco Habitual" },
   E: { creditos: 1500, rareza: "Común" },
+  // Los créditos son un entero en la base: "ilimitado" = mil millones.
+  "S+": { creditos: 1_000_000_000, rareza: "Singular" },
 };
 
 // Coste por nivel (docs/sistema.md, "Coste y progresión"): coste marginal = nivel ×
@@ -85,6 +99,7 @@ export function costeTotal(valor: number, factor: number): number {
   return factor * ((valor * (valor + 1)) / 2);
 }
 
+// Incluye S+ tantas veces como se repita (el reparto completo cuenta categorías).
 export function letrasUsadas(prioridades: Prioridades): LetraPrioridad[] {
   return CATEGORIAS_PRIORIDAD.map((c) => prioridades[c]).filter(
     (l): l is LetraPrioridad => l !== null,
@@ -97,7 +112,7 @@ export function letrasDisponibles(
 ): LetraPrioridad[] {
   const usadas = new Set(letrasUsadas(prioridades));
   const actual = prioridades[categoria];
-  return LETRAS_PRIORIDAD.filter((l) => l === actual || !usadas.has(l));
+  return LETRAS_PRIORIDAD.filter((l) => l === actual || l === LETRA_PRUEBAS || !usadas.has(l));
 }
 
 export function repartoCompleto(prioridades: Prioridades): boolean {
@@ -112,7 +127,7 @@ export function setLetra(
   // Si la letra ya la tenía otra categoría, se la quita — un reparto válido nunca
   // repite letra, así que asignarla aquí implica soltarla de donde estuviera.
   const limpio: Prioridades = { ...prioridades };
-  if (letra !== null) {
+  if (letra !== null && letra !== LETRA_PRUEBAS) {
     for (const c of CATEGORIAS_PRIORIDAD) {
       if (c !== categoria && limpio[c] === letra) limpio[c] = null;
     }

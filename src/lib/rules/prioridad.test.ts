@@ -9,13 +9,23 @@ import {
   costeMarginal,
   costeTotal,
   CATEGORIAS_PRIORIDAD,
+  PUNTOS_ATRIBUTOS_POR_LETRA,
 } from "./prioridad";
 
 describe("reparto de letras", () => {
-  test("vacío: las 5 letras están disponibles en cualquier categoría", () => {
+  test("vacío: todas las letras están disponibles en cualquier categoría", () => {
     const p = prioridadesVacias();
-    assert.deepEqual(letrasDisponibles(p, "atributos"), ["A", "B", "C", "D", "E"]);
+    assert.deepEqual(letrasDisponibles(p, "atributos"), ["A", "B", "C", "D", "E", "S+"]);
     assert.equal(repartoCompleto(p), false);
+  });
+
+  test("S+ (pruebas) se repite en todas las categorías y completa el reparto", () => {
+    let p = prioridadesVacias();
+    for (const c of CATEGORIAS_PRIORIDAD) p = setLetra(p, c, "S+");
+    assert.ok(CATEGORIAS_PRIORIDAD.every((c) => p[c] === "S+"));
+    assert.ok(letrasDisponibles(p, "atributos").includes("S+"));
+    assert.equal(repartoCompleto(p), true);
+    assert.equal(PUNTOS_ATRIBUTOS_POR_LETRA["S+"], Infinity);
   });
 
   test("asignar una letra la quita de las demás categorías", () => {

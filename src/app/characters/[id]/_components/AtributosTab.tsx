@@ -10,6 +10,7 @@ import {
   costeMarginal,
   COSTE_FACTOR_ATRIBUTO,
   type AtributoId,
+  textoPuntos,
 } from "@/lib/rules";
 import type { Sheet } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
@@ -56,7 +57,7 @@ export function AtributosTab({
         <div className="mb-1 flex items-center justify-between border-y border-border py-2 font-mono text-xs">
           <span className="uppercase tracking-wide text-muted">{aprobada ? "XP" : "Puntos"}</span>
           <span className={`tabular-nums ${disponible < 0 ? "text-danger" : "text-accent"}`}>
-            {disponible}
+            {textoPuntos(disponible)}
           </span>
         </div>
       )}

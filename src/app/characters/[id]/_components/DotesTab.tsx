@@ -1,4 +1,4 @@
-import { PUNTOS_DOTES_POR_LETRA } from "@/lib/rules";
+import { PUNTOS_DOTES_POR_LETRA, textoPuntos } from "@/lib/rules";
 import type { Sheet } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 
@@ -18,7 +18,7 @@ export function DotesTab({ sheet }: { sheet: Sheet }) {
             ? "sin letra"
             : puntos === undefined
               ? `letra ${letra}: pendiente de confirmar`
-              : `${puntos} pts (letra ${letra})`}
+              : `${textoPuntos(puntos)} pts (letra ${letra})`}
         </span>
       </div>
 
