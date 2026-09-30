@@ -153,14 +153,13 @@ export const SUBSISTEMAS: Subsistema[] = [
             "retroceso o la desorientación por el uso prolongado de disciplinas psiónicas.",
         ],
         modificadores: [
-          // Los poderes psiónicos están PENDIENTE en sistema.md: no hay tirada
-          // de resistir retroceso psiónico todavía. El id queda como marcador
-          // para cuando exista — no se aplica a nada mientras tanto.
+          // La prosa psiónica no tiene tirada de "retroceso" ni "desorientación"
+          // genérica: el id queda como marcador, no se aplica a nada.
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_retroceso_psionico" }, valor: 1 },
         ],
         motor: [
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "conversion_psionica" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "Acciones sin dado" }, // Conversión Psiónica: acción sin dado, motor.md ya la cita como ejemplo del hueco
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // Estabilizador Neuronal Básico
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Conversión Psiónica: contador "Pagar con cargas" en el modal de todo poder (derivacionDeFicha, poderes.ts)
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "la prosa psiónica no tiene tirada de retroceso a la que sumar" }, // Estabilizador Neuronal Básico
         ],
       },
       {
@@ -177,8 +176,8 @@ export const SUBSISTEMAS: Subsistema[] = [
         // desbloquee. El +10% de alcance no tiene número fijo que mecanizar.
         modificadores: [],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "conversion_psionica" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "Acciones sin dado" }, // cambia la eficiencia (3 cargas), la acción ya se declaró en nivel 1
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // Estabilizador Neuronal, heredado (S9)
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "eleccion_jugador", estado: "construido" }, // cambia la eficiencia (3 cargas), la acción ya se declaró en nivel 1
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "la prosa psiónica no tiene tirada de retroceso a la que sumar" }, // Estabilizador Neuronal, heredado (S9)
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 33" }, // Canal de Alta Resonancia, +10% sin número fijo que mecanizar
         ],
       },
@@ -193,17 +192,23 @@ export const SUBSISTEMAS: Subsistema[] = [
         ],
         // Solo lo NUEVO de este nivel — resistir_retroceso_psionico (nivel 1)
         // y el +10% de alcance (nivel 2, sin número) ya llegan acumulados.
-        modificadores: [
-          // Los poderes psiónicos están PENDIENTE en sistema.md: no hay tirada
-          // de resistir metasensoría todavía. El id queda como marcador para
-          // cuando exista — no se aplica a nada mientras tanto.
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_metasensoria" }, valor: 1 },
+        modificadores: [],
+        // Resistir un poder de metasensoría es una salvación: casilla en las tres
+        // (el jugador la marca cuando la salvación es contra metasensoría).
+        condiciones: [
+          {
+            id: "derivacion_blindaje_psicoreactivo",
+            tipo: "toggle",
+            etiqueta: "Contra metasensoría: Blindaje Psico-Reactivo +1",
+            alcance: { tipo: "grupo", grupo: "Salvaciones" },
+            valorActivo: 1,
+          },
         ],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "conversion_psionica" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "Acciones sin dado" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // heredado de nivel 1 (S9)
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "la prosa psiónica no tiene tirada de retroceso a la que sumar" }, // heredado de nivel 1 (S9)
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 33" }, // Canal de Alta Resonancia, heredado
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_metasensoria" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // Blindaje Psico-Reactivo
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "Salvaciones" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Blindaje Psico-Reactivo
         ],
       },
       {
@@ -218,17 +223,16 @@ export const SUBSISTEMAS: Subsistema[] = [
         // Solo lo NUEVO de este nivel — resistir_retroceso_psionico (n1) y
         // resistir_metasensoria (n3) ya llegan acumulados.
         modificadores: [
-          // Los poderes psiónicos están PENDIENTE en sistema.md: no hay tirada
-          // de poder psiónico genérico todavía. El id queda como marcador para
-          // cuando exista — no se aplica a nada mientras tanto.
+          // Rebaja penalizadores por fatiga, que aún no se aplican en ninguna
+          // tirada: el id queda como marcador, no se aplica a nada.
           { tipo: "tirada", alcance: { tipo: "tiradaId", id: "poder_psionico" }, valor: 1 },
         ],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "conversion_psionica" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "Acciones sin dado" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // heredado de nivel 1 (S9)
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "la prosa psiónica no tiene tirada de retroceso a la que sumar" }, // heredado de nivel 1 (S9)
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 33" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_metasensoria" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // heredado de nivel 3 (S9)
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "poder_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "Fase 5" }, // Simbiosis Sináptica Total
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "Salvaciones" }, mecanismo: "eleccion_jugador", estado: "construido" }, // heredado de nivel 3 (S9)
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "poder_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "los penalizadores por umbral de fatiga aún no se aplican en ninguna tirada" }, // Simbiosis Sináptica Total
         ],
       },
     ],

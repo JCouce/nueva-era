@@ -826,6 +826,18 @@ al preparar su modelado:
     con las dos, 5).
   - Xovromium tiene fila en Fármacos: Voluntad + la más alta de Biociencia o Actitud,
     dificultad 6, gasta la dosis. Los efectos de fallar o de acabarse, a mano.
+- **Fuentes externas, tanda 2: Derivación Psiónica (usuario, 2026-09-30):**
+  - Contador **"Pagar con cargas"** en el modal de todo poder si la ficha tiene el
+    subsistema: el jugador elige cuántos puntos paga con cargas (empieza en 0), a 4/3/2/1
+    cargas por punto según el nivel; tope = lo que dan sus cargas y el coste. Es el último
+    paso de la cadena; la sobrecarga cuenta solo la fatiga de verdad. Con varias
+    instaladas, la de mejor conversión.
+  - Nivel 3 (Blindaje Psico-Reactivo): casilla "Contra metasensoría +1" en las tres
+    salvaciones.
+  - Niveles 1, 2 y 4, sin mecánica: la prosa psiónica no tiene tirada de "retroceso" (n1);
+    el +10 % de alcance es informativo (n2); rebajar penalizadores por fatiga (n4) espera a
+    que esos penalizadores se apliquen.
+  - **Psiónica completa**, salvo lo que depende de los penalizadores por umbral.
 - **Máquinas sin ficha** (qué tira una IA/servidor que no es personaje para resistir un poder):
   pendiente de Murillo — es la pregunta 16.
 - Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de

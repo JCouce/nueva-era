@@ -37,6 +37,9 @@ import {
   valoresHabilidad,
   efectosDeCasillas,
   FUENTES_EXTERNAS_FATIGA,
+  derivacionDeFicha,
+  pagoConCargas,
+  maxPuntosConCargas,
   tiradaDePoder,
   enEspecialidadDePoder,
   aplicados,
@@ -663,13 +666,18 @@ export function AccionesTab({
   const poderResuelto = poderAbierto
     ? resolverAbierto(poderAbierto.poder, poderAbierto.elecciones, poderAbierto.pesoKg)
     : null;
-  const costePoder =
+  const costeSinCargas =
     poderAbierto && poderResuelto && typeof poderResuelto.fatiga === "number"
       ? costeFatiga(poderAbierto.poder.disciplina, poderAbierto.poder.accion.id, poderResuelto, {
           externos: FUENTES_EXTERNAS_FATIGA,
           toggles: new Set(poderAbierto.toggles),
         })
       : null;
+  // Derivación Psiónica: puntos pagados con cargas, último paso de la cadena.
+  const [puntosCargas, setPuntosCargas] = useState(0);
+  const derivacion = derivacionDeFicha(sheet);
+  const pagoCargas = costeSinCargas && derivacion ? pagoConCargas(costeSinCargas, derivacion, puntosCargas) : null;
+  const costePoder = pagoCargas?.coste ?? costeSinCargas;
   const bloqueoPoder =
     poderResuelto?.exceso?.bloqueo ??
     (poderAbierto && costePoder
@@ -736,6 +744,10 @@ export function AccionesTab({
     if (!costePoder || !poderResuelto || !poderAbierto) return 0;
     if (!onPagarFatiga) return coste;
     if (coste > 0) onPagarFatiga(coste, poderAbierto.poder.accion.permiteFatigaTemporal);
+    // Las cargas solo en el uso normal (prolongar una Proeza cobra solo el extra).
+    if (conDanioPropio && derivacion && pagoCargas && pagoCargas.cargas > 0) {
+      onGastarRecurso?.(derivacion.instanciaId, -pagoCargas.cargas);
+    }
     const antes = fatigaEfectiva(sheet);
     const despues = antes - coste;
     const cruza = cruzaSobrecarga(antes, despues, salud(sheet).fatiga);
@@ -817,6 +829,7 @@ export function AccionesTab({
   const cerrarPoder = () => {
     setModal(null);
     setPoderAbierto(null);
+    setPuntosCargas(0);
     setSobrecarga(null);
     setAvisosPoder([]);
   };
@@ -867,6 +880,18 @@ export function AccionesTab({
           abrirPoder(poderAbierto.poder, { ...poderAbierto.elecciones, [eje]: opcion }, poderAbierto.toggles, poderAbierto.pesoKg)
         }
         onToggles={(toggles) => abrirPoder(poderAbierto.poder, poderAbierto.elecciones, toggles, poderAbierto.pesoKg)}
+        cargas={
+          derivacion && costeSinCargas
+            ? {
+                nivel: derivacion.nivel,
+                disponibles: derivacion.cargas,
+                porPunto: derivacion.cargasPorPunto,
+                puntos: pagoCargas?.puntos ?? 0,
+                max: maxPuntosConCargas(costeSinCargas.total, derivacion),
+                onCambiar: setPuntosCargas,
+              }
+            : undefined
+        }
         pesoKg={poderAbierto.pesoKg}
         onPeso={(kg) => abrirPoder(poderAbierto.poder, poderAbierto.elecciones, poderAbierto.toggles, kg)}
       />

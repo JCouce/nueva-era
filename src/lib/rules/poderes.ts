@@ -13,6 +13,7 @@ import type { Accion } from "./acciones";
 import type { CondicionTirada } from "./condiciones";
 import { DISCIPLINAS, PSIONICA, type DisciplinaId } from "../catalog/psionica";
 import { umbralFatiga } from "./estados";
+import { recursoDe } from "./recursos";
 import type {
   AccionPoder,
   BonoToggle,
@@ -761,6 +762,50 @@ export function efectosDeCasillas(
   return {
     ajustes: activos.flatMap((m) => (m.ademas?.tirada ? [{ valor: m.ademas.tirada, fuente: m.fuente }] : [])),
     danioPorPunto: activos.find((m) => m.ademas?.danioPorPunto)?.ademas?.danioPorPunto ?? null,
+  };
+}
+
+// ── Derivación Psiónica: pagar fatiga con cargas ─────────────────────
+// Último paso de la cadena. Cargas de la célula por punto de fatiga según el nivel
+// del subsistema (docs/equipamiento.md: 4, 3, 2, 1). Cuántos puntos se pagan así lo
+// elige el jugador (usuario, 2026-09-30), hasta lo que dan sus cargas y el coste.
+const CARGAS_POR_PUNTO_DERIVACION = [4, 3, 2, 1];
+
+export type Derivacion = { instanciaId: string; nivel: number; cargasPorPunto: number; cargas: number };
+
+// Con varias instaladas, la de mejor conversión.
+export function derivacionDeFicha(sheet: Sheet): Derivacion | null {
+  const todas = sheet.equipo.flatMap((p): Derivacion[] =>
+    p.catalogoId === "derivacion_psionica" && p.nivel
+      ? [
+          {
+            instanciaId: p.instanciaId,
+            nivel: p.nivel,
+            cargasPorPunto: CARGAS_POR_PUNTO_DERIVACION[p.nivel - 1],
+            cargas: recursoDe(sheet, p.instanciaId)?.actual ?? 0,
+          },
+        ]
+      : [],
+  );
+  return todas.sort((a, b) => a.cargasPorPunto - b.cargasPorPunto)[0] ?? null;
+}
+
+export function maxPuntosConCargas(coste: number, d: Derivacion): number {
+  return Math.max(0, Math.min(coste, Math.floor(d.cargas / d.cargasPorPunto)));
+}
+
+export function pagoConCargas(
+  coste: CosteFatiga,
+  d: Derivacion,
+  puntos: number,
+): { coste: CosteFatiga; puntos: number; cargas: number } {
+  const p = Math.min(Math.max(0, Math.round(puntos)), maxPuntosConCargas(coste.total, d));
+  if (p === 0) return { coste, puntos: 0, cargas: 0 };
+  const cargas = p * d.cargasPorPunto;
+  return {
+    coste: { total: coste.total - p, desglose: [...coste.desglose, { etiqueta: `Derivación Psiónica (${cargas} cargas)`, valor: `−${p}` }] },
+    puntos: p,
+    cargas,
   };
 }
 

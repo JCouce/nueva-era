@@ -14,7 +14,7 @@ preparar el personaje y qué números deben salir.
 | K | Resonancia, tandas 2 y 3: Alerta, Vínculo y Buscar / percibir | Resonancia 3, y NPC con Resonancia 4 |
 | L | Inducción: Comando, Reconfiguración, Modulación, Supresión y Estabilización | NPC con Resonancia 1 + Inducción 5 (6 en L.8, 4 en L.10-L.12) |
 | M | Hipercognición: Sondeo, Retrocognición y Precognición | NPC con Resonancia 3 + Hipercognición 5 |
-| N | Fuentes externas: Xovromium y Munición Supresora | el de A (Singularidad 2) + 1 Xovromium |
+| N | Fuentes externas: Xovromium, Munición Supresora y Derivación Psiónica | el de A (Singularidad 2) + 1 Xovromium; Derivación nivel 3 en N.5-N.6 |
 
 Los números esperados valen para un personaje recién creado sin tocar: atributos a 0,
 sin especie, **8 de vida y 8 de fatiga**, y tirada de poder **−1** (Perspicacia +0,
@@ -485,6 +485,12 @@ El personaje de A (Traslación 2, Singularidad 2), con 1 Xovromium comprado. Vid
   Supresora: recibes 4 de daño letal (ya restado)"; vida 8 → 4 y fatiga 8 → 4.
 - [ ] **N.4 Fila de Xovromium.** Fármacos › Usar Xovromium: Voluntad + Biociencia (o
   Actitud si es más alta), dificultad 6 puesta; al tirar gasta la dosis.
+- [ ] **N.5 Derivación Psiónica (nivel 3, 10 cargas).** Usar en Impulso (nivel 2). → Contador
+  "Pagar con cargas (Derivación 3)", "2 cargas por punto · tienes 10". Con 1: Fatiga 1,
+  desglose "Derivación Psiónica (2 cargas) −1", 8 → 7. Con 2: Fatiga 0, 8 → 8, y el **+** se
+  apaga. Al tirar: la fatiga no baja y las cargas pasan de 10 a 6.
+- [ ] **N.6 Blindaje Psico-Reactivo.** Salvación de Voluntad → casilla "Contra
+  metasensoría: Blindaje Psico-Reactivo +1". Con Derivación nivel 2, no aparece.
 
 ---
 
@@ -492,7 +498,8 @@ El personaje de A (Traslación 2, Singularidad 2), con 1 Xovromium comprado. Vid
 
 No son fallos:
 
-- Derivación Psiónica (pagar fatiga con cargas) aún no está. Traslación
+- Los penalizadores por umbral de salud y fatiga no se aplican en ninguna tirada (y con
+  ellos, la Derivación nivel 4 y la parte de "mitigar" de la Estabilización). Traslación
   está completa.
 - Xovromium, Munición Supresora y Derivación Psiónica no afectan aún ni a la tirada ni a
   la fatiga.

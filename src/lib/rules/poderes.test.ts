@@ -20,7 +20,11 @@ import {
   conEsquivaLevitando,
   conPsionicaEnTiradaFija,
   efectosDeCasillas,
+  derivacionDeFicha,
+  maxPuntosConCargas,
+  pagoConCargas,
 } from "./poderes";
+import { condicionesActivas } from "./equipo";
 import { defaultSheet, parseSheet, type Sheet } from "./sheet";
 import { migrar } from "./migraciones";
 import { pagarFatiga, fatigaEfectiva, ajustarFatigaTemporal, terminarEscena } from "./vitalidad";
@@ -1246,6 +1250,49 @@ describe("fuentes externas: Xovromium y Munición Supresora", () => {
     const fc = efectosDeCasillas(FUENTES_EXTERNAS_FATIGA, new Set(["Supresora, fallo crítico"]));
     assert.deepEqual(fc.ajustes, [{ valor: -2, fuente: "Munición Supresora (fallo crítico)" }]);
     assert.equal(fc.danioPorPunto, "letal");
+  });
+});
+
+describe("fuentes externas: Derivación Psiónica", () => {
+  const conDerivacion = (nivel: number, cargas: number): Sheet => ({
+    ...defaultSheet(),
+    equipo: [{ instanciaId: "der1", catalogoId: "derivacion_psionica", nivel }],
+    recursos: [{ instanciaId: "der1", actual: cargas, max: 10 }],
+  });
+  const coste = (total: number) => ({ total, desglose: [{ etiqueta: "Coste del poder", valor: String(total) }] });
+
+  test("sin subsistema, nada", () => {
+    assert.equal(derivacionDeFicha(defaultSheet()), null);
+  });
+
+  test("cargas por punto según el nivel: 4, 3, 2, 1", () => {
+    assert.deepEqual([1, 2, 3, 4].map((n) => derivacionDeFicha(conDerivacion(n, 10))!.cargasPorPunto), [4, 3, 2, 1]);
+  });
+
+  test("el tope es lo que dan las cargas y el coste", () => {
+    const d = derivacionDeFicha(conDerivacion(2, 10))!; // 3 cargas por punto → 3 puntos
+    assert.equal(maxPuntosConCargas(5, d), 3);
+    assert.equal(maxPuntosConCargas(2, d), 2);
+    assert.equal(maxPuntosConCargas(5, derivacionDeFicha(conDerivacion(1, 3))!), 0);
+  });
+
+  test("pagar con cargas baja la fatiga y dice cuántas cargas gasta", () => {
+    const d = derivacionDeFicha(conDerivacion(2, 10))!;
+    const r = pagoConCargas(coste(4), d, 2);
+    assert.equal(r.coste.total, 2);
+    assert.equal(r.cargas, 6);
+    assert.deepEqual(r.coste.desglose.at(-1), { etiqueta: "Derivación Psiónica (6 cargas)", valor: "−2" });
+    assert.equal(pagoConCargas(coste(4), d, 9).puntos, 3); // se recorta al tope
+    assert.equal(pagoConCargas(coste(4), d, 0).coste.total, 4);
+  });
+
+  test("nivel 3: casilla +1 contra metasensoría en las salvaciones", () => {
+    const salv = ACCIONES.find((a) => a.id === "salv_voluntad")!;
+    const ctx = { id: salv.id, grupo: salv.grupo, habilidad: salv.habilidad, modoElegido: null };
+    assert.deepEqual(condicionesActivas(conDerivacion(2, 10), ctx), []);
+    const [c] = condicionesActivas(conDerivacion(3, 10), ctx);
+    assert.equal(c.tipo === "toggle" && c.valorActivo, 1);
+    assert.equal(condicionesActivas(conDerivacion(4, 10), ctx).length, 1);
   });
 });
 

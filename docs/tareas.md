@@ -1291,8 +1291,12 @@ la cadena de fatiga (Xovromium, Munición Supresora, Derivación Psiónica).
 **Fuentes externas, tanda 1 (2026-09-30):** casillas "Bajo Xovromium", "Afectado por
 Munición Supresora" y "Supresora, fallo crítico" en todo poder (`FUENTES_EXTERNAS_FATIGA`,
 `ModificadorFatiga.ademas` para el efecto en la tirada y el daño por punto,
-`efectosDeCasillas`); fila de Xovromium en Fármacos. Siguiente: tanda 2 (Derivación
-Psiónica, pagar con cargas).
+`efectosDeCasillas`); fila de Xovromium en Fármacos.
+**Fuentes externas, tanda 2 (2026-09-30):** Derivación Psiónica — contador "Pagar con
+cargas" en el modal del poder (`derivacionDeFicha`, `pagoConCargas`, `maxPuntosConCargas`
+en `poderes.ts`; gasta con `onGastarRecurso`) y casilla de nivel 3 en las salvaciones
+(condición de equipo con alcance de grupo). **Fase 5, psiónica: completa.** Pendiente
+relacionado: los penalizadores por umbral de salud y fatiga siguen sin aplicarse.
 **Hallazgo (sin arreglar):** los penalizadores por umbral de salud y fatiga
 (`modificadoresDeUmbrales`, −1/−3/−5 y −1/−2) existen pero nada los aplica a las tiradas. Siguiente, disciplina a
 disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,

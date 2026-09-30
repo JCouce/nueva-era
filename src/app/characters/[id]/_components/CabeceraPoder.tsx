@@ -29,6 +29,7 @@ export function CabeceraPoder({
   togglesActivos,
   onElegir,
   onToggles,
+  cargas,
   pesoKg,
   onPeso,
 }: {
@@ -40,6 +41,15 @@ export function CabeceraPoder({
   togglesActivos: string[];
   onElegir: (eje: string, opcion: string) => void;
   onToggles: (toggles: string[]) => void;
+  // Derivación Psiónica instalada: puntos de fatiga que se pagan con cargas.
+  cargas?: {
+    nivel: number;
+    disponibles: number;
+    porPunto: number;
+    puntos: number;
+    max: number;
+    onCambiar: (puntos: number) => void;
+  };
   // Proeza: peso del objetivo (excesoDeCarga).
   pesoKg?: number;
   onPeso?: (kg: number | undefined) => void;
@@ -176,6 +186,39 @@ export function CabeceraPoder({
               {poder.exceso.enLimite && <span className="text-danger"> · en el límite</span>}
             </p>
           )}
+        </div>
+      )}
+
+      {cargas && (
+        <div>
+          <div className="flex items-center justify-between gap-2 font-mono text-[11px] uppercase text-muted">
+            <span>Pagar con cargas (Derivación {cargas.nivel})</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                aria-label="Un punto menos con cargas"
+                disabled={cargas.puntos <= 0}
+                onClick={() => cargas.onCambiar(cargas.puntos - 1)}
+                className="clip-chamfer-sm border border-border px-2 py-1 text-foreground disabled:text-muted/50"
+              >
+                −
+              </button>
+              <span className="w-6 text-center tabular-nums text-foreground">{cargas.puntos}</span>
+              <button
+                type="button"
+                aria-label="Un punto más con cargas"
+                disabled={cargas.puntos >= cargas.max}
+                onClick={() => cargas.onCambiar(cargas.puntos + 1)}
+                className="clip-chamfer-sm border border-border px-2 py-1 text-foreground disabled:text-muted/50"
+              >
+                +
+              </button>
+            </div>
+          </div>
+          <p className="mt-1 font-mono text-[11px] text-muted">
+            {cargas.porPunto} {cargas.porPunto === 1 ? "carga" : "cargas"} por punto · tienes {cargas.disponibles}
+            {cargas.puntos > 0 && <span className="text-foreground"> · gastas {cargas.puntos * cargas.porPunto}</span>}
+          </p>
         </div>
       )}
 
