@@ -568,3 +568,10 @@ export function levitacion(sheet: Sheet): { velocidadM: number; nivel: number } 
   const nivel = sheet.psionica.traslacion ?? 0;
   return nivel >= 2 ? { velocidadM: 10 * nivel, nivel } : null;
 }
+
+// Mientras levita, el psiónico esquiva con Física (Traslación, Auto-traslación):
+// la esquiva fija gana la casilla "Levitando: Física" si la ficha puede levitar.
+export function conEsquivaLevitando(sheet: Sheet, t: Accion): Accion {
+  if (t.id !== "defensa" || !levitacion(sheet)) return t;
+  return { ...t, habilidadAlternativa: { habilidad: "tecnociencia", especialidad: "Física", etiqueta: "Levitando: Física" } };
+}

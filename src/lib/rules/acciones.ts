@@ -55,6 +55,10 @@ export type Accion = {
   // ResultadoTirada.tsx tras resolver el daño, no en `nota` (que es
   // información sobre ESTA tirada, no un aviso para otra).
   efectos?: { fuente: string; texto: string }[];
+  // Habilidad que el jugador puede usar en su lugar con una casilla de la fila
+  // (Levitar: esquivar con Física). Mismo patrón que `aplicadoSutil`, pero sobre
+  // la habilidad; la especialidad se resuelve sola (ver usarHabilidadAlternativa).
+  habilidadAlternativa?: { habilidad: HabilidadId; especialidad: string; etiqueta: string };
   // Dificultad con la que se abre el modal si el jugador no ha escrito otra
   // antes (Auto-anclaje: 6). Sin ella, 7.
   dificultadSugerida?: number;
@@ -538,4 +542,14 @@ export function tirarD12(): number {
     n = buf[0];
   } while (n >= limite);
   return (n % CARAS_DADO) + 1;
+}
+
+// La tirada con la habilidad alternativa ya puesta y si cuenta como especialidad
+// (entera con ella, la mitad sin ella: la regla general de especialidades).
+export function usarHabilidadAlternativa(sheet: Sheet, t: Accion): { tirada: Accion; enEspecialidad: boolean } | null {
+  const alt = t.habilidadAlternativa;
+  if (!alt) return null;
+  const buscada = alt.especialidad.toLocaleLowerCase("es");
+  const enEspecialidad = sheet.habilidades[alt.habilidad].especialidades.some((e) => e.toLocaleLowerCase("es") === buscada);
+  return { tirada: { ...t, habilidad: alt.habilidad, label: `${t.label} (${alt.especialidad})` }, enEspecialidad };
 }

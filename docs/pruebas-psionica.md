@@ -282,7 +282,8 @@ Borra el NPC al terminar.
   → "Levitar (Traslación 3) 30 m". Con Traslación 1 no aparece.
 - [ ] **H7.2 Levitar.** En Acciones, Usar en Levitar.
   → Sin dado: Acción Simple, Fatiga 1, Duración "1 minuto", Desplaz. 30 m/turno, tres
-  notas. Al pulsar Usar, "Usado · −1 fatiga".
+  notas (la última remite a la casilla "Levitando: Física" de la esquiva). Al pulsar Usar,
+  "Usado · −1 fatiga".
 - [ ] **H7.3 Auto-anclaje.** Fila: `REF 0 + Tecnociencia -1`, `Reacción · 2 fatiga`, `-1`.
   Pulsa Usar.
   → Selector de nivel 1-3, casilla "Carga < 10 kg", Carga máx. y la dificultad ya puesta
@@ -292,6 +293,12 @@ Borra el NPC al terminar.
   → Selector Reacción / Simple, la nota "Como dificultad, escribe el total de la tirada de
   quien te ancla…" y la casilla "Soy 2 niveles superior en Traslación": al marcarla,
   Fatiga 0.
+
+- [ ] **H7.5 Esquiva levitando.** En Defensa / esquiva, marca "Levitando: Física".
+  → La fila pasa de `REF 0 + Atletismo -1` a `REF 0 + Tecnociencia (Física, mitad) N`, con
+  N la mitad de tu Tecnociencia redondeando hacia arriba (entera y sin "mitad" si tienes la
+  especialidad Física); el modal se titula "Defensa / esquiva (Física)" y el desglose usa
+  Tecnociencia. Con Traslación 1 la casilla no aparece.
 
 ### H8. Proeza y fatiga temporal (Traslación 3)
 - [ ] **H8.1 Fila de Recursos.** En Recursos, bajo Fatiga.

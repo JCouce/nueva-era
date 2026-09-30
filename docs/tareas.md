@@ -1248,6 +1248,9 @@ escena en Recursos (también NPC), daño propio al 200 %. **Traslación completa
 **Contención hecha (2026-09-30):** poder sin tirada con datos en la ficha del modal
 (`AccionPoder.datos`) y ajustes por nivel poseído filtrados por nivel empleado y opción;
 acción aparte para colaborar. Siguiente: Resonancia.
+**Esquiva levitando (2026-09-30):** casilla "Levitando: Física" en Defensa / esquiva para
+fichas con Traslación 2+ (`Accion.habilidadAlternativa`, `usarHabilidadAlternativa`,
+`conEsquivaLevitando`); mismo patrón que Sutil pero sobre la habilidad.
 **Hallazgo (sin arreglar):** los penalizadores por umbral de salud y fatiga
 (`modificadoresDeUmbrales`, −1/−3/−5 y −1/−2) existen pero nada los aplica a las tiradas. Siguiente, disciplina a
 disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,

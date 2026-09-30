@@ -678,7 +678,10 @@ al preparar su modelado:
     con tu propio peso como carga (y sus casillas de carga). Reacción, dificultad 6.
   - Levitar: movimiento en Resumen (10 × nivel poseído m) y acción sin tirada de 1 de
     fatiga por periodo (1 min; 10 min desde nivel 4; 1 h en nivel 6); prolongar = volver a
-    usarla. Esquivar con Física mientras levitas va a mano.
+    usarla. Mientras levitas, la Defensa / esquiva tiene la casilla **"Levitando: Física"**
+    (fichas con Traslación 2+): cambia Atletismo por Tecnociencia, entera con la
+    especialidad Física y la mitad sin ella (regla general de especialidades) (usuario,
+    2026-09-30).
   - Duelo de Métrica: tirada enfrentada en toda ficha con Traslación; la dificultad es el
     total de quien te ancla. Casilla "soy 2 niveles superior" = coste 0.
 - **Construcción de Traslación, tanda 3: Proeza (usuario, 2026-09-30):**

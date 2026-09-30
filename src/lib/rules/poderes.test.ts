@@ -17,11 +17,12 @@ import {
   togglesDeFatiga,
   etiquetaPoder,
   levitacion,
+  conEsquivaLevitando,
 } from "./poderes";
 import { defaultSheet, parseSheet, type Sheet } from "./sheet";
 import { migrar } from "./migraciones";
 import { pagarFatiga, fatigaEfectiva, ajustarFatigaTemporal, terminarEscena } from "./vitalidad";
-import { resolverDanio } from "./acciones";
+import { resolverDanio, ACCIONES, usarHabilidadAlternativa, modificadorAccion } from "./acciones";
 import { fuentesDeCapa1 } from "./capa1";
 import { DISCIPLINAS, disciplinaPorId } from "../catalog/psionica";
 import type { AccionPoder, ModificadorFatiga } from "./psionica";
@@ -639,4 +640,41 @@ test("Contención ampliada protege a varios", () => {
   const cont = disciplinaPorId("contencion");
   const p = resolverPoder(cont.acciones[0], { nivelPoseido: 2, elecciones: { forma: "ampliada" }, disciplina: cont })!;
   assert.equal(p.objetivo?.tipo, "varios");
+});
+
+describe("Esquiva levitando con Física", () => {
+  const esquiva = ACCIONES.find((a) => a.id === "defensa")!;
+  const ficha = (traslacion: number, tecno: number, especialidades: string[] = []): Sheet => {
+    const s = defaultSheet();
+    return {
+      ...s,
+      psionica: traslacion > 0 ? { traslacion } : {},
+      habilidades: { ...s.habilidades, tecnociencia: { valor: tecno, especialidades } },
+    };
+  };
+
+  test("solo con Traslación 2+ aparece la casilla", () => {
+    assert.equal(conEsquivaLevitando(ficha(1, 4), esquiva).habilidadAlternativa, undefined);
+    assert.deepEqual(conEsquivaLevitando(ficha(2, 4), esquiva).habilidadAlternativa, {
+      habilidad: "tecnociencia",
+      especialidad: "Física",
+      etiqueta: "Levitando: Física",
+    });
+    // otras tiradas no
+    const salv = ACCIONES.find((a) => a.id === "salv_fortaleza")!;
+    assert.equal(conEsquivaLevitando(ficha(3, 4), salv).habilidadAlternativa, undefined);
+  });
+
+  test("con Física usa Tecnociencia entera; sin ella, la mitad", () => {
+    const con = ficha(2, 4, ["Física"]);
+    const sin = ficha(2, 4);
+    const altCon = usarHabilidadAlternativa(con, conEsquivaLevitando(con, esquiva))!;
+    const altSin = usarHabilidadAlternativa(sin, conEsquivaLevitando(sin, esquiva))!;
+    assert.equal(altCon.tirada.habilidad, "tecnociencia");
+    assert.equal(altCon.enEspecialidad, true);
+    assert.equal(altSin.enEspecialidad, false);
+    assert.equal(modificadorAccion(con, altCon.tirada, altCon.enEspecialidad).habilidad, 4);
+    assert.equal(modificadorAccion(sin, altSin.tirada, altSin.enEspecialidad).habilidad, 2);
+    assert.equal(altCon.tirada.label, "Defensa / esquiva (Física)");
+  });
 });

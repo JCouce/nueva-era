@@ -41,6 +41,8 @@ import {
   bloqueoPorFatiga,
   togglesDeFatiga,
   fatigaEfectiva,
+  usarHabilidadAlternativa,
+  conEsquivaLevitando,
   etiquetaPoder,
   cruzaSobrecarga,
   dificultadSobrecarga,
@@ -145,14 +147,22 @@ function FilaTirada({
       : false,
   );
 
-  const especialidades = tirada.habilidad
+  // Habilidad alternativa (Levitando: Física): con la casilla marcada la fila y
+  // el modal trabajan con la tirada cambiada y la especialidad ya resuelta.
+  const [alternativaActiva, setAlternativaActiva] = useState(false);
+  const alternativa = alternativaActiva ? usarHabilidadAlternativa(sheet, tirada) : null;
+  const efectiva = alternativa?.tirada ?? tirada;
+  const enEspEfectiva = alternativa ? alternativa.enEspecialidad : enEspecialidad;
+
+  const especialidades = !alternativa && tirada.habilidad
     ? sheet.habilidades[tirada.habilidad].especialidades
     : [];
-  const mod = modificadorAccion(sheet, tirada, enEspecialidad, mods, sutilActivo);
+  const mod = modificadorAccion(sheet, efectiva, enEspEfectiva, mods, sutilActivo);
   const aplicadoActivoId = sutilActivo && tirada.aplicadoSutil ? tirada.aplicadoSutil : tirada.aplicado;
   const nombreAplicado = APLICADOS.find((a) => a.id === aplicadoActivoId)!;
-  const nombreHabilidad = tirada.habilidad
-    ? HABILIDADES.find((h) => h.id === tirada.habilidad)!.label
+  const nombreHabilidad = efectiva.habilidad
+    ? HABILIDADES.find((h) => h.id === efectiva.habilidad)!.label +
+      (alternativa ? ` (${tirada.habilidadAlternativa!.especialidad}${enEspEfectiva ? "" : ", mitad"})` : "")
     : null;
 
   if (tirada.bloqueada) {
@@ -200,7 +210,7 @@ function FilaTirada({
 
         <button
           type="button"
-          onClick={() => onAbrir(tirada, enEspecialidad, sutilActivo)}
+          onClick={() => onAbrir(efectiva, enEspEfectiva, sutilActivo)}
           className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95"
         >
           Tirar
@@ -223,6 +233,22 @@ function FilaTirada({
           >
             {sutilActivo ? "✓ " : ""}
             Sutil
+          </button>
+        </div>
+      )}
+
+      {tirada.habilidadAlternativa && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            aria-pressed={alternativaActiva}
+            onClick={() => setAlternativaActiva((v) => !v)}
+            className={`clip-chamfer-sm border px-2 py-1 font-mono text-[10px] uppercase active:scale-95 ${
+              alternativaActiva ? "border-info text-info" : "border-border text-muted"
+            }`}
+          >
+            {alternativaActiva ? "✓ " : ""}
+            {tirada.habilidadAlternativa.etiqueta}
           </button>
         </div>
       )}
@@ -1066,6 +1092,7 @@ export function AccionesTab({
           </h2>
           {ACCIONES.filter((t) => t.grupo === grupo)
             .map(conCondicionesDeEquipo)
+            .map((t) => conEsquivaLevitando(sheet, t))
             // Defensa/Esquiva (fija) primero, Bloquear-con-X (generado por
             // equipo) detrás — mismo orden que Ataques: lo fijo antes que lo
             // que trae cada arma. "Volar" entra igual dentro de "Acciones".

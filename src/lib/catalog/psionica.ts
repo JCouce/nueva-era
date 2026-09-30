@@ -551,7 +551,7 @@ const LEVITAR: AccionPoder = {
   notas: [
     { texto: "El punto de fatiga cubre la duración indicada; para seguir levitando, vuelve a pulsar Usar.", lugar: "tirada" },
     { texto: "Cada turno, quieto o desplazándote, es una acción simple.", lugar: "tirada" },
-    { texto: "Mientras levitas, esquivas y maniobras con Física (a mano).", lugar: "tirada" },
+    { texto: "Mientras levitas, esquivas con Física: marca \"Levitando: Física\" en Defensa / esquiva. Las maniobras, a mano.", lugar: "tirada" },
   ],
   motor: motorDeAccion("psi_traslacion_levitar", { propias: true }),
 };
