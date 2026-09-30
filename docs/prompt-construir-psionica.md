@@ -114,14 +114,59 @@ objetivo, y resuelva la **sobrecarga**. Hecho para Singularidad y Traslación; f
 - Los penalizadores por umbral de salud/fatiga **no se aplican en ninguna tirada** (hallazgo
   sin arreglar, fuera de la psiónica): los umbrales solo sirven hoy para la sobrecarga.
 
-## 4b. Siguiente: Resonancia
+## 4b. Siguiente: Resonancia (plan planteado, pendiente de luz verde)
 
-Contención ya está hecha (plan cumplido tal cual). Lo siguiente es Resonancia; planteala al
-usuario antes de tocar código.
+Plan presentado al usuario el 2026-09-30; lo dejó para el siguiente agente. **Vuelve a
+planteárselo en 3-5 líneas y espera luz verde antes de tocar código.** Todo sale de §10.6 y
+de las respuestas de Murillo: no hay decisiones nuevas pendientes. Si al transcribir sale un
+hueco, apúntalo como supuesto en §10.6 y avisa. Prosa: `docs/psionica.md`, "### Resonancia".
 
-Resonancia trae daño propio (mensaje agresivo), ventaja (2d12) y bonos en otras tiradas. Después: Inducción (objetivo
-orgánico/sintético, elegir habilidad, varios objetivos), Hipercognición, y las fuentes
-externas (Xovromium, Munición Supresora, Derivación Psiónica).
+**Tanda 1: tabla de alcance, Sincronía, Rastreo y Leer Mente**
+- Todo poder lleva un eje de alcance: **Local** (coste propio del poder) o una **fila de la
+  tabla** (10 km² … 1.000.000 km²); la fila sustituye tipo de acción/tiempo y fatiga (nivel
+  4 = 10 minutos, 4 de fatiga). En local, desde nivel 3, puede usarse como reacción. Local
+  sin coste propio (Rastreo) cuesta 1, como la fila 1.
+- Rebajas y descuentos (se acumulan hasta 0; las rebajas de acción no bajan de simple):
+  nivel 2, lo usado a nivel 1 (incluido el local) baja un paso; nivel 3, −1 a niveles 1-2;
+  nivel 4, el nivel 2 pasa de 1 minuto a compleja; nivel 5, −1 a niveles 3-4; nivel 6, −1 a
+  niveles 4-5 y el nivel 4 dura 1 minuto (tiempo de la tabla). `modificadoresFatiga` ya
+  filtra por `nivelEmpleadoMin/Max`; `modificadoresEconomia` solo por nivel exacto: añadir
+  rango. El tiempo va como `Economia` `{ tiempo }`.
+- **Sincronía:** simple = gratuita; compleja = estándar y 1 de fatiga; **mensaje agresivo**
+  = compleja, 1 × nivel empleado, Expresión + (Biociencia **o** Actitud) con selector que
+  preselecciona la más alta, `danioPropio` 1 mental (se resta al usarlo), grados: crítico =
+  confusión N turnos + N daño mental; éxito = confusión 1 turno; fallo = nada. Acción aparte
+  **Superar la barrera** (idioma/biología): Expresión + Biociencia (Informática contra
+  sintéticos), referencias 4/7/10 como nota; fallida = llega pero no se entiende. Nota "si
+  no conoces al objetivo, primero Rastreo".
+- **Rastreo:** Perspicacia + Biociencia, o Tecnociencia (Informática) contra sintéticos
+  (eje orgánico/sintético que `cambia` la resolución); eje de objetivo: conocido (dif 6),
+  vagamente (9, tiempo ×2, +1 fatiga), desconocido (12, tiempo ×10, +4 fatiga); el ×2/×10
+  multiplica el tiempo de la fila elegida. Interferencias +2/+4/+6 como nota.
+- **Leer Mente:** enfrentada Perspicacia + Biociencia contra Voluntad + Actitud, estándar,
+  1 de fatiga. Grados desde el psiónico (como Inducción): crítico = 1 minuto sin mantener;
+  éxito = 10 turnos, mantener con reacción o simple, +2 en enfrentadas contra él; fracaso =
+  1 turno; fracaso crítico = nada y el objetivo nota la anomalía.
+- Motor nuevo: habilidad a elegir (`habilidad` como array → selector con la más alta
+  preseleccionada) y el rango de nivel en las rebajas.
+
+**Tanda 2: Alerta y Vínculo**
+- **Alerta pasiva:** tirada normal, Perspicacia + Biociencia/Tecnociencia, dif 6, alcance
+  20 m × nivel poseído; si estás exhausto, aviso (se puede tirar). **Activa:** estándar, 1 de
+  fatiga, 1 km², dif 8. Desde nivel 4: **ventaja** (2d12, el mejor, enseñando los dos dados:
+  mecánica nueva y genérica en modal y resultado) y casilla **"+2 por Resonancia 4"**.
+- **Vínculo:** sin tirada, compleja (estándar desde nivel 4), 1 de fatiga, 1 minuto × nivel
+  poseído, alcance nivel km². +1 a salvaciones de Voluntad de los vinculados = a mano;
+  "alertar por vínculo" = nota; tantos aliados como fatiga se tenga.
+
+**Tanda 3 (aparte, mini-épica):** la ventaja y el "+2 por Resonancia 4" también en la
+tirada fija "Buscar / percibir". Choca con el problema ya anotado de que las tiradas fijas
+no admiten condiciones que vengan de fuera (`docs/modificadores-tiradas.md` §8,
+`docs/tareas.md` "Segunda dependencia"). Plantéala como pieza propia.
+
+Después de Resonancia: Inducción (objetivo orgánico/sintético, elegir habilidad, varios
+objetivos), Hipercognición, y las fuentes externas (Xovromium, Munición Supresora,
+Derivación Psiónica).
 
 **Pendiente fuera de la psiónica** (no lo arregles sin que lo pida): penalizadores por
 umbral sin aplicar; la XP que da el máster no llega a las pestañas de compra hasta recargar
