@@ -80,6 +80,7 @@ objetivo, y resuelva la **sobrecarga**. Hecho para Singularidad y Traslación; f
 |---|---|
 | `src/lib/rules/psionica.ts` | Tipos del modelo v2 (`AccionPoder`, `Opcion`, `ModificadorFatiga`…) y compra de disciplinas |
 | `src/lib/catalog/psionica.ts` | El catálogo: disciplinas, tablas `porNivel`, modificadores y acciones. Helpers `ejeNivelEmpleado`, `motorDeAccion`, `SIN_EXTRAS` |
+| `src/lib/rules/usoPoder.ts` | **Usar un poder, sin UI**: `prepararPoder` (lo que pinta el modal: coste final, casillas, cargas, bloqueo, tirada), `usarPoder` (fatiga, cargas, vida, sobrecarga y avisos al usarlo o prolongar) y `efectosDelResultado` (daño propio por grado). `AccionesTab` solo aplica; una regla de ESLint le prohíbe importar las funciones de coste/sobrecarga |
 | `src/lib/rules/poderes.ts` | `resolverPoder` (opciones → ajustes por nivel poseído → `"tabla"` → rebajas de economía → `Valor` → `suma` → marcadores `{campo}`), `accionesDePsionica`, `tiradaDePoder`, `costeFatiga` (cadena), `togglesDeFatiga`, `bloqueoPorFatiga`, sobrecarga, `levitacion` |
 | `src/lib/rules/vitalidad.ts` | `pagarFatiga`, `fatigaEfectiva`, `terminarEscena` (fatiga temporal, ficha v13) |
 | `src/app/characters/[id]/_components/` | `CabeceraPoder` (selectores, casillas, ficha del poder), `UsarPoderModal` (poderes sin tirada), `SobrecargaPanel`, `PsionicaTab`; la sección Psiónica y el pago en `AccionesTab` |

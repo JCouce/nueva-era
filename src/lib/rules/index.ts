@@ -49,6 +49,7 @@ export * from "./vitalidad";
 export * from "./farmacos";
 export * from "./psionica";
 export * from "./poderes";
+export * from "./usoPoder";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

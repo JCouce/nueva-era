@@ -71,6 +71,8 @@ src/
 │  │  ├─ combate.ts     #   equipo → tiradas de ataque concretas (una por arma, con sus condiciones)
 │  │  ├─ psionica.ts    #   forma de los poderes (modelo v2) y compra de disciplinas (N×3, requisitos)
 │  │  ├─ poderes.ts     #   poder + nivel + opciones → valores, tirada, coste de fatiga y sobrecarga
+│  │  ├─ usoPoder.ts    #   usar un poder sin UI: prepararPoder / usarPoder / efectosDelResultado.
+│  │  │                 #   Las pantallas solo aplican lo que devuelve (regla de lint lo vigila)
 │  │  └─ *.test.ts      #   ~700 tests. Al tocar una fórmula, se toca su test.
 │  ├─ validation.ts     # Zod de entrada de la app (login, register, character). NO la ficha.
 │  └─ auth-helpers.ts   # requireUser() y canEditCharacter() — regla central de permisos.

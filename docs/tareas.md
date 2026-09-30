@@ -1295,7 +1295,14 @@ Munición Supresora" y "Supresora, fallo crítico" en todo poder (`FUENTES_EXTER
 **Fuentes externas, tanda 2 (2026-09-30):** Derivación Psiónica — contador "Pagar con
 cargas" en el modal del poder (`derivacionDeFicha`, `pagoConCargas`, `maxPuntosConCargas`
 en `poderes.ts`; gasta con `onGastarRecurso`) y casilla de nivel 3 en las salvaciones
-(condición de equipo con alcance de grupo). **Fase 5, psiónica: completa.** Pendiente
+(condición de equipo con alcance de grupo). **Fase 5, psiónica: completa.**
+**Refactor: usar un poder sin UI (2026-09-30).** `src/lib/rules/usoPoder.ts` con
+`prepararPoder` / `usarPoder` / `efectosDelResultado` y sus tests de caracterización; la
+lógica de coste, cargas, sobrecarga, daño propio y avisos sale de `AccionesTab` (−90
+líneas), que solo aplica. Regla de ESLint (`no-restricted-imports`) que impide a
+`src/app` y `src/components` importar las funciones de coste/sobrecarga. Cambio de
+comportamiento único: el máximo de fatiga de la sobrecarga ya cuenta los estados de
+combate (antes solo los aplicados los contaban). Pendiente
 relacionado: los penalizadores por umbral de salud y fatiga siguen sin aplicarse.
 **Hallazgo (sin arreglar):** los penalizadores por umbral de salud y fatiga
 (`modificadoresDeUmbrales`, −1/−3/−5 y −1/−2) existen pero nada los aplica a las tiradas. Siguiente, disciplina a
