@@ -619,7 +619,7 @@ const DUELO_METRICA: AccionPoder = {
 // Paga la fila del nivel empleado (sin las casillas de carga: siempre va por
 // encima de la máxima) y es la única acción que puede gastar más fatiga de la que
 // se tiene: el exceso va a fatiga temporal (vitalidad.ts). El extra por % de
-// peso va a mano (usuario, 2026-09-28).
+// peso sale del peso que escribe el jugador (excesoDeCarga).
 const PROEZA: AccionPoder = {
   ...SIN_EXTRAS,
   id: "psi_traslacion_proeza",
@@ -648,35 +648,22 @@ const PROEZA: AccionPoder = {
         },
       ],
     },
-    {
-      id: "limite",
-      label: "Carga",
-      tipo: "opcion",
-      opciones: [
-        { id: "bajo_200", label: "Menos del 200 %", cambia: {} },
-        {
-          id: "limite_200",
-          label: "Llega al 200 %",
-          cambia: {
-            danioPropio: { valor: 1, categoria: "mental" },
-            notas: [
-              {
-                texto: "Al 200 %: al terminar la acción caes inconsciente por sobrecarga neural y recibes 1 nivel de daño mental sin absorción (se resta al usarla).",
-                lugar: "tirada",
-              },
-            ],
-          },
-        },
-      ],
-    },
   ],
   resultados: {
     exito: { texto: "Lo consigues: solo puedes anclarlo o trasladarlo a mitad de velocidad, nunca proyectarlo", estados: [] },
     fracaso: { texto: "No consigues moverlo", estados: [] },
   },
+  // "+1 nivel de fatiga por cada 10 % de peso extra (mínimo +1)"; límite del 200 % de
+  // la carga máxima (usuario, 2026-09-30: por cada 10 % completo; por encima del
+  // 200 %, no se puede).
+  excesoDeCarga: {
+    fatigaPorCada10: 1,
+    minimo: 1,
+    limitePorcentaje: 200,
+    danioAlLimite: { valor: 1, categoria: "mental" },
+  },
   notas: [
-    { texto: "+1 de fatiga por cada 10 % de peso por encima de la carga máxima (mínimo +1): súmalo a mano en Fatiga temporal.", lugar: "tirada" },
-    { texto: "Cada turno que prolongues el control, vuelves a pagar ese extra.", lugar: "tirada" },
+    { texto: "Cada turno que prolongues el control, pulsa «Prolongar un turno» tras tirar: vuelves a pagar el extra por exceso de carga.", lugar: "tirada" },
     { texto: "Puedes gastar más fatiga de la que tienes: el exceso se apunta como fatiga temporal y se devuelve al terminar la escena.", lugar: "tirada" },
   ],
   motor: motorDeAccion("psi_traslacion_proeza", { propias: true }),

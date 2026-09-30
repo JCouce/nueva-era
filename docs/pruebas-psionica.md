@@ -301,24 +301,33 @@ Borra el NPC al terminar.
   Tecnociencia. Con Traslación 1 la casilla no aparece.
 
 ### H8. Proeza y fatiga temporal (Traslación 3)
+Preparación propia: personaje nuevo con letra **A** en Psiónica y **B** en Atributos,
+**Inteligencia 1 y Percepción 1** (Perspicacia 1) y **Traslación 3**: carga máxima 125 kg.
+Fatiga a 8.
 - [ ] **H8.1 Fila de Recursos.** En Recursos, bajo Fatiga.
-  → "Fatiga temporal (Proeza) 0" con − / + y "Terminar escena" (apagado a 0).
-- [ ] **H8.2 Sin bloqueo.** Deja la fatiga en 1/8 y abre Proeza (fila `POT 0 + Atletismo -1`,
-  `Compleja · 2 fatiga · 45 m`).
-  → Dificultad **Difícil 10** ya marcada, "Fatiga tras usarlo 1 → -1" y **Tirar habilitado**.
-  Selectores de Maniobra (Anclar / Trasladar a mitad) y Carga (Menos del 200 % / Llega al
-  200 %), sin casillas de carga.
-- [ ] **H8.3 Exceso a temporal.** Tira.
-  → Aviso "Te has quedado sin fatiga: quedas inconsciente al terminar la acción". En
-  Recursos: Fatiga 0/8, Fatiga temporal 1, "Fatiga efectiva: -1". En Resumen: "0/8 (1
-  temporal de Proeza · efectiva -1)".
-- [ ] **H8.4 Al 200 %.** Anota la vida, abre Proeza, elige "Llega al 200 %" y tira.
-  → Avisos "Recibes 1 de daño mental (ya restado)…" y la vida baja 1.
-- [ ] **H8.5 Terminar escena.** En Recursos, pulsa Terminar escena.
-  → Fatiga temporal vuelve a 0 (la fatiga normal no cambia).
-- [ ] **H8.6 Se guarda.** Recarga la página y vuelve a Recursos.
-  → Fatiga temporal 0, y la vida y la fatiga como las dejaste en H8.4.
-- [ ] **H8.7 NPC.** En el editor de un NPC con Traslación, pestaña Recursos.
+  → "Fatiga temporal (Proeza) 0" con − / + y "Terminar escena".
+- [ ] **H8.2 Sin peso.** Abre Proeza (fila `POT 0 + Atletismo -1`, `Compleja · 2 fatiga ·
+  45 m`).
+  → Campo "Peso del objetivo (kg)" vacío, Carga máx. 125 kg, dificultad **Difícil 10**
+  marcada, y Tirar apagado con "Escribe el peso del objetivo.". Sin selector de 200 %.
+- [ ] **H8.3 Bloqueos por peso.** Escribe 100 y luego 300.
+  → 100: "No pasa de tu carga máxima: no hace falta Proeza…". 300: "Supera el límite del
+  200 % de tu carga máxima.". Tirar apagado en los dos.
+- [ ] **H8.4 Exceso.** Escribe 200.
+  → "160 % de tu carga (125 kg) → +6 de fatiga", Fatiga 8, desglose "Coste del poder 2 ·
+  Exceso de carga (160 % de tu carga) +6", `8 → 0`, Tirar habilitado.
+- [ ] **H8.5 Tirar y prolongar.** Tira.
+  → Sale el panel de Sobrecarga (8 → 0 cruza a exhausto) y el botón "Prolongar un turno
+  (−6 fatiga)". Púlsalo: el panel de Sobrecarga **sigue** y aparece "Te has quedado sin
+  fatiga…". En Recursos: Fatiga 0/8, Fatiga temporal 6, efectiva −6. En Resumen: "0/8 (6
+  temporal de Proeza · efectiva -6)".
+- [ ] **H8.6 Al 200 %.** Terminar escena, fatiga a 8, anota la vida. Proeza con peso 250.
+  → "200 % de tu carga (125 kg) → +10 de fatiga · en el límite", nota "Llegas al 200 %…" y
+  `8 → -4`. Al tirar: "Recibes 1 de daño mental (ya restado)…" y la vida baja 1. Prolongar
+  cobra otros 10 sin volver a restar vida: Fatiga temporal 14.
+- [ ] **H8.7 Terminar escena y recargar.** Pulsa Terminar escena y recarga.
+  → Fatiga temporal 0 tras recargar (con un valor distinto de 0, también se conserva).
+- [ ] **H8.8 NPC.** En el editor de un NPC con Traslación, pestaña Recursos.
   → Sale la misma fila de Fatiga temporal con Terminar escena.
 
 ---

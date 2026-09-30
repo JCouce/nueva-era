@@ -75,6 +75,7 @@ export type PoderResuelto = {
   // Carga máxima de la fila de la disciplina (Traslación: fila × Perspicacia); null si no hay.
   carga: ValorResuelto | null;
   datos: { etiqueta: string; valor: ValorResuelto }[];
+  exceso: ExcesoResuelto | null;
   unidades: NonNullable<AccionPoder["unidades"]>;
   notas: Nota[];
   togglesPropios: BonoToggle[];
@@ -90,6 +91,16 @@ export type ContextoPoder = {
   // Para lo que la acción deja en "tabla" (fatiga, alcance… de la fila del nivel
   // empleado) y las rebajas de tipo de acción por nivel poseído.
   disciplina?: Disciplina;
+  pesoKg?: number; // Proeza: peso del objetivo (excesoDeCarga)
+};
+
+export type ExcesoResuelto = {
+  pesoKg: number | null;
+  cargaMax: number;
+  porcentajeCarga: number | null; // peso / carga máxima, en %
+  extra: number; // fatiga extra ya sumada a `fatiga`
+  enLimite: boolean;
+  bloqueo: string | null; // por qué no se puede tirar con este peso
 };
 
 const PASO_ECONOMIA: Partial<Record<Economia & string, Economia>> = { compleja: "estandar", estandar: "simple" };
@@ -212,6 +223,21 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
   }));
   const movimiento = w.movimientoOtorgado as Record<string, unknown> | null;
   if (movimiento) movimiento.velocidad = evaluar(movimiento.velocidad, "movimientoOtorgado");
+  const exceso = accion.excesoDeCarga
+    ? resolverExceso(accion.excesoDeCarga, typeof carga === "number" ? Math.max(0, carga) : 0, ctx.pesoKg)
+    : null;
+  if (exceso && typeof w.fatiga === "number") w.fatiga = (w.fatiga as number) + exceso.extra;
+  if (exceso?.enLimite && accion.excesoDeCarga) {
+    const d = accion.excesoDeCarga.danioAlLimite;
+    w.danioPropio = { ...d };
+    w.notas = [
+      ...(w.notas as Nota[]),
+      {
+        texto: `Llegas al ${accion.excesoDeCarga.limitePorcentaje} %: al terminar la acción caes inconsciente por sobrecarga neural y recibes ${d.valor} de daño ${d.categoria} sin absorción (se resta al usarla).`,
+        lugar: "tirada" as const,
+      },
+    ];
+  }
 
   for (const suma of sumas) for (const [ruta, n] of Object.entries(suma)) sumarEnRuta(w, ruta.split("."), n, accion.id, ruta);
 
@@ -253,6 +279,7 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
     multiplesObjetivos: w.multiplesObjetivos as PoderResuelto["multiplesObjetivos"],
     carga,
     datos,
+    exceso,
     unidades: accion.unidades ?? {},
     notas: w.notas as Nota[],
     togglesPropios: accion.togglesPropios,
@@ -260,6 +287,30 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
     movimientoOtorgado: w.movimientoOtorgado as PoderResuelto["movimientoOtorgado"],
     manual: accion.manual,
   };
+}
+
+function resolverExceso(
+  regla: NonNullable<AccionPoder["excesoDeCarga"]>,
+  cargaMax: number,
+  pesoKg: number | undefined,
+): ExcesoResuelto {
+  const base = { cargaMax, pesoKg: pesoKg ?? null, porcentajeCarga: null, extra: 0, enLimite: false };
+  if (pesoKg === undefined || !Number.isFinite(pesoKg) || pesoKg <= 0) {
+    return { ...base, pesoKg: null, bloqueo: "Escribe el peso del objetivo." };
+  }
+  if (cargaMax <= 0) return { ...base, bloqueo: "Tu carga máxima es 0 kg: no puedes hacer una Proeza." };
+  const porcentajeCarga = Math.round((pesoKg / cargaMax) * 100);
+  if (pesoKg <= cargaMax) {
+    return { ...base, porcentajeCarga, bloqueo: "No pasa de tu carga máxima: no hace falta Proeza, usa Anclaje o Trasladar." };
+  }
+  // Comparaciones en enteros para no depender de decimales (250 kg × 200 % = 500 kg).
+  if (pesoKg * 100 > regla.limitePorcentaje * cargaMax) {
+    return { ...base, porcentajeCarga, bloqueo: `Supera el límite del ${regla.limitePorcentaje} % de tu carga máxima.` };
+  }
+  // +N por cada 10 % COMPLETO de exceso sobre la carga máxima, con mínimo.
+  const decenas = Math.floor(((pesoKg - cargaMax) * 10) / cargaMax);
+  const extra = Math.max(regla.minimo, decenas * regla.fatigaPorCada10);
+  return { ...base, porcentajeCarga, extra, enLimite: pesoKg * 100 >= regla.limitePorcentaje * cargaMax, bloqueo: null };
 }
 
 function evaluarValor(v: unknown, donde: string, nivelEmpleado: number, ctx: ContextoPoder): ValorResuelto {
@@ -494,7 +545,11 @@ export function costeFatiga(
 
   let total = p.fatiga;
   let minimo = 0;
-  const desglose: CosteFatiga["desglose"] = [{ etiqueta: "Coste del poder", valor: String(p.fatiga) }];
+  const extra = p.exceso?.extra ?? 0;
+  const desglose: CosteFatiga["desglose"] = [{ etiqueta: "Coste del poder", valor: String(p.fatiga - extra) }];
+  if (extra > 0 && p.exceso) {
+    desglose.push({ etiqueta: `Exceso de carga (${p.exceso.porcentajeCarga} % de tu carga)`, valor: `+${extra}` });
+  }
   for (const m of mods) {
     if (m.op === "paga_con_recurso") throw new Error(`${m.fuente}: pago de fatiga con recurso aún sin construir`);
     const n = typeof m.valor === "number" ? m.valor : NaN;

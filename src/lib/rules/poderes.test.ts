@@ -537,9 +537,41 @@ describe("Proeza y fatiga temporal", () => {
     assert.ok(bloqueoPorFatiga(tras.acciones.find((a) => a.id === "psi_traslacion_anclaje")!, 3, 0));
   });
 
-  test("al 200 %: 1 de daño mental propio", () => {
-    assert.equal(res(2).danioPropio, null);
-    assert.deepEqual(res(2, { limite: "limite_200" }).danioPropio, { valor: 1, categoria: "mental" });
+  test("peso del objetivo: +1 por cada 10 % completo de exceso, mínimo 1", () => {
+    // Traslación 3, Perspicacia 1 → carga máxima 125 kg; fila 3 = 2 de fatiga
+    const r = (pesoKg?: number) =>
+      resolverPoder(proeza, { nivelPoseido: 3, disciplina: tras, aplicados: { perspicacia: 1 }, pesoKg })!;
+    assert.equal(r(200).exceso?.extra, 6); // 60 % de exceso
+    assert.equal(r(200).fatiga, 2 + 6);
+    assert.equal(r(200).exceso?.porcentajeCarga, 160);
+    assert.equal(r(130).exceso?.extra, 1); // 4 % → mínimo 1
+    assert.equal(r(145).exceso?.extra, 1); // 16 % → 1 (por cada 10 % completo)
+    assert.equal(r(156.25).exceso?.extra, 2); // 25 %
+    const p = r(200);
+    const c = costeFatiga(tras, proeza.id, p);
+    assert.equal(c.total, 8);
+    assert.deepEqual(c.desglose.map((l) => l.valor), ["2", "+6"]);
+  });
+
+  test("bloqueos: sin peso, sin pasar de la carga, por encima del 200 %, carga 0", () => {
+    const r = (pesoKg: number | undefined, perspicacia = 1) =>
+      resolverPoder(proeza, { nivelPoseido: 3, disciplina: tras, aplicados: { perspicacia }, pesoKg })!.exceso!;
+    assert.match(r(undefined).bloqueo!, /Escribe el peso/);
+    assert.match(r(125).bloqueo!, /no hace falta Proeza/);
+    assert.match(r(251).bloqueo!, /Supera el límite del 200 %/);
+    assert.match(r(10, 0).bloqueo!, /carga máxima es 0 kg/);
+    assert.equal(r(126).bloqueo, null);
+  });
+
+  test("al 200 % justo: en el límite, +10 de extra y 1 de daño mental propio", () => {
+    const p = resolverPoder(proeza, { nivelPoseido: 3, disciplina: tras, aplicados: { perspicacia: 1 }, pesoKg: 250 })!;
+    assert.equal(p.exceso?.enLimite, true);
+    assert.equal(p.exceso?.extra, 10);
+    assert.deepEqual(p.danioPropio, { valor: 1, categoria: "mental" });
+    assert.ok(p.notas.some((n) => /Llegas al 200 %/.test(n.texto)));
+    const bajo = resolverPoder(proeza, { nivelPoseido: 3, disciplina: tras, aplicados: { perspicacia: 1 }, pesoKg: 249 })!;
+    assert.equal(bajo.exceso?.enLimite, false);
+    assert.equal(bajo.danioPropio, null);
   });
 
   test("pagarFatiga: el exceso va a temporal solo si se permite", () => {

@@ -689,9 +689,14 @@ al preparar su modelado:
     de carga) y lo que no llega va a fatiga temporal; es la única acción que no se bloquea
     sin fatiga. Fatiga efectiva = actual − temporal: es la que cuenta para sobrecarga y
     bloqueos. "Terminar escena" (Recursos) la devuelve a 0.
-  - El extra de +1 por cada 10 % de exceso se mete a mano en Fatiga temporal.
-  - Al 200 %: la app resta 1 de vida (daño mental sin absorción) al usarla y avisa de la
-    inconsciencia; la inconsciencia no se aplica como estado. Con fatiga efectiva ≤ 0 tras
+  - **Peso del objetivo (usuario, 2026-09-30, sustituye al extra "a mano"):** el jugador
+    escribe el peso y la app calcula el extra: **+1 por cada 10 % completo** de exceso sobre
+    la carga máxima de la fila, mínimo +1, cobrado junto a la fila (primero de la fatiga
+    normal, el resto a temporal). Sin peso, sin pasar de la carga máxima o **por encima del
+    200 %**, no deja tirar (con carga máxima 0, nunca). "Prolongar un turno" tras tirar
+    vuelve a cobrar solo el extra.
+  - Al llegar al 200 % justo: la app resta 1 de vida (daño mental sin absorción) al usarla y
+    avisa de la inconsciencia; la inconsciencia no se aplica como estado. Con fatiga efectiva ≤ 0 tras
     cualquier poder, aviso de inconsciencia al terminar la acción.
 - **Construcción de Contención (usuario, 2026-09-30):** un poder sin tirada con tabla por
   nivel empleado (fatiga, absorción, absorción quieto, contra el ataque = 2 × quieto,

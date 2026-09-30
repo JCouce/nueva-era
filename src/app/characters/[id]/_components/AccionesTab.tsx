@@ -639,17 +639,21 @@ export function AccionesTab({
     toggles: string[];
     directo: boolean;
     usado: number | null; // fatiga pagada en el último uso sin tirada
+    pesoKg?: number; // Proeza
   } | null>(null);
-  const resolverAbierto = (poder: PoderDisponible, elecciones: Record<string, string>) =>
+  const resolverAbierto = (poder: PoderDisponible, elecciones: Record<string, string>, pesoKg?: number) =>
     resolverPoder(poder.accion, {
       nivelPoseido: poder.nivelPoseido,
       elecciones,
       aplicados: aplicados(sheet, mods),
       disciplina: poder.disciplina,
+      pesoKg,
     });
   // Coste y bloqueo del poder abierto, contra la fatiga actual de la ficha (se
   // recalcula solo tras cada gasto: "Tirar otra vez" se apaga si ya no llega).
-  const poderResuelto = poderAbierto ? resolverAbierto(poderAbierto.poder, poderAbierto.elecciones) : null;
+  const poderResuelto = poderAbierto
+    ? resolverAbierto(poderAbierto.poder, poderAbierto.elecciones, poderAbierto.pesoKg)
+    : null;
   const costePoder =
     poderAbierto && poderResuelto && typeof poderResuelto.fatiga === "number"
       ? costeFatiga(poderAbierto.poder.disciplina, poderAbierto.poder.accion.id, poderResuelto, {
@@ -657,9 +661,10 @@ export function AccionesTab({
         })
       : null;
   const bloqueoPoder =
-    poderAbierto && costePoder
+    poderResuelto?.exceso?.bloqueo ??
+    (poderAbierto && costePoder
       ? bloqueoPorFatiga(poderAbierto.poder.accion, costePoder.total, Math.max(0, fatigaEfectiva(sheet)))
-      : null;
+      : null);
 
   // Sobrecarga del último uso de un poder (null si no cruzó el umbral): nivel
   // para la dificultad/daño y la salvación ya tirada, si la hay.
@@ -694,29 +699,38 @@ export function AccionesTab({
     setSobrecarga({ ...sobrecarga, salvacion: lanzamiento });
   };
 
-  const abrirPoder = (poder: PoderDisponible, elecciones: Record<string, string> = {}, toggles: string[] = []) => {
-    const resuelto = resolverAbierto(poder, elecciones);
+  const abrirPoder = (
+    poder: PoderDisponible,
+    elecciones: Record<string, string> = {},
+    toggles: string[] = [],
+    pesoKg?: number,
+  ) => {
+    const resuelto = resolverAbierto(poder, elecciones, pesoKg);
     if (!resuelto) return;
     const t = tiradaDePoder(poder.accion, resuelto);
     if (t) abrir(t, enEspecialidadDePoder(sheet, resuelto), false);
     setSobrecarga(null);
     setAvisosPoder([]);
-    setPoderAbierto({ poder, elecciones: resuelto.elecciones, toggles, directo: !t, usado: null });
+    setPoderAbierto({ poder, elecciones: resuelto.elecciones, toggles, directo: !t, usado: null, pesoKg });
   };
 
   // Gasto de fatiga al usar un poder (con tirada o sin ella), falle o no; si el
   // gasto cruza el umbral de exhausto, sobrecarga.
   // Umbrales y sobrecarga van contra la fatiga EFECTIVA (menos la temporal de
   // Proeza). El daño propio del poder (Proeza al 200 %) se resta al usarlo.
-  const pagarPoder = (): number => {
+  // `coste` distinto del del poder: prolongar una Proeza (solo el extra).
+  const pagarPoder = (coste = costePoder?.total ?? 0, conDanioPropio = true): number => {
     if (!costePoder || !poderResuelto || !poderAbierto) return 0;
-    if (!onPagarFatiga) return costePoder.total;
-    if (costePoder.total > 0) onPagarFatiga(costePoder.total, poderAbierto.poder.accion.permiteFatigaTemporal);
+    if (!onPagarFatiga) return coste;
+    if (coste > 0) onPagarFatiga(coste, poderAbierto.poder.accion.permiteFatigaTemporal);
     const antes = fatigaEfectiva(sheet);
-    const despues = antes - costePoder.total;
+    const despues = antes - coste;
     const cruza = cruzaSobrecarga(antes, despues, salud(sheet).fatiga);
-    setSobrecarga(cruza ? { nivel: poderResuelto.nivelEmpleado, salvacion: null } : null);
-    const propio = poderResuelto.danioPropio;
+    // Un uso nuevo reinicia la sobrecarga; prolongar (conDanioPropio = false) solo
+    // la añade si cruza, sin borrar una salvación que aún esté pendiente.
+    if (cruza) setSobrecarga({ nivel: poderResuelto.nivelEmpleado, salvacion: null });
+    else if (conDanioPropio) setSobrecarga(null);
+    const propio = conDanioPropio ? poderResuelto.danioPropio : null;
     if (propio && typeof propio.valor === "number" && propio.valor > 0) onAjustarVida?.(-propio.valor);
     const avisos = [
       ...(despues <= 0 && !cruza ? ["Te has quedado sin fatiga: quedas inconsciente al terminar la acción."] : []),
@@ -725,7 +739,32 @@ export function AccionesTab({
         : []),
     ];
     setAvisosPoder(avisos);
-    return costePoder.total;
+    return coste;
+  };
+
+  // Proeza: cada turno que se prolonga el control se vuelve a pagar el extra.
+  const prolongarProeza = (id: number) => {
+    const extra = poderResuelto?.exceso?.extra ?? 0;
+    if (extra <= 0 || !poderAbierto) return;
+    pagarPoder(extra, false);
+    setHistorial((h) =>
+      [
+        {
+          id,
+          label: `${poderAbierto.poder.accion.label}: prolongar un turno (−${extra} fatiga)`,
+          dado: 0,
+          modificador: 0,
+          circunstancial: 0,
+          total: 0,
+          dificultad: null,
+          margen: null,
+          exito: null,
+          critico: false,
+          sinDado: true,
+        },
+        ...h,
+      ].slice(0, 6),
+    );
   };
 
   // `id` llega del click, como en tirarSalvacionSobrecarga.
@@ -761,9 +800,19 @@ export function AccionesTab({
     setAvisosPoder([]);
   };
 
+  const extraProeza = poderResuelto?.exceso?.extra ?? 0;
   const piePoder =
-    avisosPoder.length > 0 || sobrecarga ? (
+    avisosPoder.length > 0 || sobrecarga || extraProeza > 0 ? (
       <>
+        {extraProeza > 0 && (
+          <button
+            type="button"
+            onClick={() => prolongarProeza(Date.now())}
+            className="clip-chamfer-sm mt-3 w-full border border-accent py-2 font-display text-xs font-semibold uppercase tracking-wide text-accent active:scale-[0.98]"
+          >
+            Prolongar un turno (−{extraProeza} fatiga)
+          </button>
+        )}
         {avisosPoder.map((a) => (
           <p key={a} className="mt-3 border-l-2 border-danger pl-2 font-sans text-[12px] font-semibold leading-relaxed text-danger">
             {a}
@@ -789,9 +838,11 @@ export function AccionesTab({
         toggles={togglesDeFatiga(poderAbierto.poder.disciplina, poderAbierto.poder.accion.id, poderResuelto)}
         togglesActivos={poderAbierto.toggles}
         onElegir={(eje, opcion) =>
-          abrirPoder(poderAbierto.poder, { ...poderAbierto.elecciones, [eje]: opcion }, poderAbierto.toggles)
+          abrirPoder(poderAbierto.poder, { ...poderAbierto.elecciones, [eje]: opcion }, poderAbierto.toggles, poderAbierto.pesoKg)
         }
         onToggles={(toggles) => setPoderAbierto({ ...poderAbierto, toggles })}
+        pesoKg={poderAbierto.pesoKg}
+        onPeso={(kg) => abrirPoder(poderAbierto.poder, poderAbierto.elecciones, poderAbierto.toggles, kg)}
       />
     ) : null;
 

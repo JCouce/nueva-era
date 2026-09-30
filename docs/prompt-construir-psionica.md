@@ -55,7 +55,7 @@ objetivo, y resuelva la **sobrecarga**. Hecho para Singularidad y Traslación; f
 - **Singularidad** completa (Impulso, Expansión, Convergencia).
 - **Traslación** completa: Anclaje, Auto-anclaje, Trasladar, Levitar (también como
   movimiento en Resumen), Proyección, Auto-proyección, Proeza (fatiga temporal), Sensor y
-  Duelo de Métrica.
+  Duelo de Métrica. La Proeza pide el peso del objetivo y calcula sola el extra de fatiga.
 - Compra de las 6 disciplinas (pool N×3, XP tras aprobar, requisitos en las dos
   direcciones) en la ficha y en el **editor de NPC** (modo libre).
 - **Contención** completa (Contención con sus tres formas y Colaborar).

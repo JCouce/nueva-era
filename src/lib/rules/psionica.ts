@@ -98,6 +98,16 @@ export type AccionPoder = {
     op: "sustituye" | "suma" | "multiplica";
     valor: Valor | Economia | string;
   }[];
+  // Proeza: la fatiga extra sale del peso del objetivo que escribe el jugador
+  // frente a la carga máxima de la fila (+N por cada 10 % completo de exceso,
+  // mínimo `minimo`); al llegar a `limitePorcentaje` de la carga se aplica
+  // `danioAlLimite`, y por encima no se puede.
+  excesoDeCarga?: {
+    fatigaPorCada10: number;
+    minimo: number;
+    limitePorcentaje: number;
+    danioAlLimite: { valor: number; categoria: string };
+  };
   // Datos del poder que se enseñan tal cual en su ficha (Contención: absorción,
   // −Agilidad…) y que el jugador aplica a mano.
   datos?: { etiqueta: string; valor: Valor }[];

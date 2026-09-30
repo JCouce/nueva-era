@@ -1251,6 +1251,10 @@ acción aparte para colaborar. Siguiente: Resonancia.
 **Esquiva levitando (2026-09-30):** casilla "Levitando: Física" en Defensa / esquiva para
 fichas con Traslación 2+ (`Accion.habilidadAlternativa`, `usarHabilidadAlternativa`,
 `conEsquivaLevitando`); mismo patrón que Sutil pero sobre la habilidad.
+**Proeza con peso (2026-09-30):** campo "Peso del objetivo (kg)" en el modal
+(`AccionPoder.excesoDeCarga`, `ExcesoResuelto` en `poderes.ts`): extra por cada 10 %
+completo, bloqueos (sin peso / no pasa de la carga / >200 % / carga 0), 200 % automático y
+botón "Prolongar un turno" (no borra una sobrecarga pendiente).
 **Hallazgo (sin arreglar):** los penalizadores por umbral de salud y fatiga
 (`modificadoresDeUmbrales`, −1/−3/−5 y −1/−2) existen pero nada los aplica a las tiradas. Siguiente, disciplina a
 disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,

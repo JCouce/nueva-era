@@ -28,6 +28,8 @@ export function CabeceraPoder({
   togglesActivos,
   onElegir,
   onToggles,
+  pesoKg,
+  onPeso,
 }: {
   accion: AccionPoder;
   poder: PoderResuelto;
@@ -37,6 +39,9 @@ export function CabeceraPoder({
   togglesActivos: string[];
   onElegir: (eje: string, opcion: string) => void;
   onToggles: (toggles: string[]) => void;
+  // Proeza: peso del objetivo (excesoDeCarga).
+  pesoKg?: number;
+  onPeso?: (kg: number | undefined) => void;
 }) {
   const u = poder.unidades;
   const conUnidad = (v: Parameters<typeof textoValor>[0], unidad = "m") =>
@@ -113,6 +118,29 @@ export function CabeceraPoder({
               </button>
             );
           })}
+        </div>
+      )}
+
+      {accion.excesoDeCarga && onPeso && (
+        <div>
+          <label className="flex items-center justify-between gap-2 font-mono text-[11px] uppercase text-muted">
+            Peso del objetivo (kg)
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              aria-label="Peso del objetivo en kg"
+              value={pesoKg ?? ""}
+              onChange={(e) => onPeso(e.target.value === "" ? undefined : Number(e.target.value))}
+              className="clip-chamfer-sm w-24 border border-border bg-elevated px-2 py-1.5 text-right font-mono text-sm text-foreground"
+            />
+          </label>
+          {poder.exceso && !poder.exceso.bloqueo && (
+            <p className="mt-1 font-mono text-[11px] text-foreground">
+              {poder.exceso.porcentajeCarga} % de tu carga ({poder.exceso.cargaMax} kg) → +{poder.exceso.extra} de fatiga
+              {poder.exceso.enLimite && <span className="text-danger"> · en el límite</span>}
+            </p>
+          )}
         </div>
       )}
 
