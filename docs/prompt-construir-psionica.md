@@ -59,7 +59,9 @@ objetivo, y resuelva la **sobrecarga**. Hecho para Singularidad y Traslación; f
 - Compra de las 6 disciplinas (pool N×3, XP tras aprobar, requisitos en las dos
   direcciones) en la ficha y en el **editor de NPC** (modo libre).
 - **Contención** completa (Contención con sus tres formas y Colaborar).
-- Sin poderes todavía: **Resonancia, Inducción, Hipercognición**.
+- **Resonancia, tanda 1** (Sincronía, Mensaje agresivo, Superar la barrera, Rastreo, Leer
+  Mente), con el eje de alcance Local / fila de la tabla y la habilidad a elegir.
+- Sin poderes todavía: **Inducción, Hipercognición**. Resonancia: faltan Alerta y Vínculo.
 
 **Dónde vive cada cosa**
 
@@ -121,7 +123,11 @@ planteárselo en 3-5 líneas y espera luz verde antes de tocar código.** Todo s
 de las respuestas de Murillo: no hay decisiones nuevas pendientes. Si al transcribir sale un
 hueco, apúntalo como supuesto en §10.6 y avisa. Prosa: `docs/psionica.md`, "### Resonancia".
 
-**Tanda 1: tabla de alcance, Sincronía, Rastreo y Leer Mente**
+**Tanda 1: tabla de alcance, Sincronía, Rastreo y Leer Mente — HECHA (2026-09-30).** No
+hizo falta el rango de nivel en `modificadoresEconomia` (todas las rebajas son de un nivel
+exacto); sí `Opcion.nivel`, `EjePoder.porDefecto`, `Opcion.multiplicaTiempo` y la
+habilidad a elegir. Detalle y supuestos en §10.6 ("Construcción de Resonancia, tanda 1").
+Plan original:
 - Todo poder lleva un eje de alcance: **Local** (coste propio del poder) o una **fila de la
   tabla** (10 km² … 1.000.000 km²); la fila sustituye tipo de acción/tiempo y fatiga (nivel
   4 = 10 minutos, 4 de fatiga). En local, desde nivel 3, puede usarse como reacción. Local

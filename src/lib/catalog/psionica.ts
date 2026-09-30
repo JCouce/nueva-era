@@ -2,8 +2,8 @@
 // borrador del que sale: docs/modelado-psionica.json (no se importa en runtime,
 // es un borrador — esto es la transcripción revisada y tipada).
 //
-// Piloto: están las 6 disciplinas (las necesita la compra), pero solo Singularidad
-// tiene acciones. El resto entra disciplina a disciplina.
+// Están las 6 disciplinas (las necesita la compra); las acciones entran
+// disciplina a disciplina.
 import type { MotorMetadata } from "../rules/motor";
 import type { AccionPoder, CambiosOpcion, CatalogoPsionica, Disciplina, EjePoder, Opcion } from "../rules/psionica";
 
@@ -267,6 +267,286 @@ function disciplinaVacia(d: Pick<Disciplina, "id" | "label" | "rama" | "requisit
     acciones: [],
   };
 }
+
+// ── Resonancia ────────────────────────────────────────────────────
+// Todo poder elige alcance: Local (su coste propio, 1 km², cuenta como nivel
+// empleado 1) o una fila de la tabla, que SUSTITUYE tipo de acción, fatiga y
+// alcance (usuario, 2026-09-29). Desde nivel 3, el local puede usarse como
+// reacción. Las rebajas por nivel poseído van en la disciplina.
+
+// Va DESPUÉS de los ejes que fijan el coste local (el mensaje de Sincronía): una
+// fila de la tabla tiene que poder pisarlo.
+function ejeAlcanceResonancia(): EjePoder {
+  const fila: CambiosOpcion = { economia: "tabla", fatiga: "tabla", alcance: "tabla" };
+  return {
+    id: "nivel",
+    label: "Alcance (nivel empleado)",
+    tipo: "nivel_empleado",
+    porDefecto: "local",
+    opciones: [
+      { id: "local", label: "Local", nivel: 1, cambia: {} },
+      { id: "local_reaccion", label: "Local, reacción", nivel: 1, desdeNivel: 3, cambia: { economia: "reaccion" } },
+      ...NIVELES.map((n): Opcion => ({ id: `n${n}`, label: `Nivel ${n}`, desdeNivel: n, cambia: fila })),
+    ],
+  };
+}
+
+const RECEPTOR_SINTETICO: EjePoder = {
+  id: "receptor",
+  label: "Objetivo",
+  tipo: "opcion",
+  opciones: [
+    { id: "organico", label: "Orgánico", cambia: {} },
+    { id: "sintetico", label: "Sintético", cambia: { resolucion: { habilidad: "tecnociencia", especialidad: "Informática" } } },
+  ],
+};
+
+const NOTA_RASTREO_PRIMERO = { texto: "Si no conoces al objetivo, primero encuéntralo con Rastreo.", lugar: "tirada" } as const;
+
+const SINCRONIA_ID = "psi_resonancia_sincronia";
+const SINCRONIA: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: SINCRONIA_ID,
+  label: "Sincronía",
+  desdeNivel: 1,
+  economia: "gratuita",
+  fatiga: 0,
+  alcance: 1,
+  unidades: { alcance: "km²" },
+  objetivo: { tipo: "unico" },
+  desplazamiento: null,
+  resolucion: { tipo: "sin_dado" },
+  objetivoTira: [],
+  ejes: [
+    {
+      id: "mensaje",
+      label: "Mensaje",
+      tipo: "opcion",
+      opciones: [
+        { id: "simple", label: "Datos simples", cambia: {} },
+        { id: "complejo", label: "Datos complejos", cambia: { economia: "estandar", fatiga: 1 } },
+      ],
+    },
+    ejeAlcanceResonancia(),
+  ],
+  resultados: {},
+  notas: [
+    NOTA_RASTREO_PRIMERO,
+    {
+      texto: "Datos simples: una conversación o imágenes en tiempo real. Datos complejos: mucho contenido que el objetivo tardará en asimilar.",
+      lugar: "tirada",
+    },
+    { texto: "Con barrera de idioma o de biología, tira «Superar la barrera».", lugar: "tirada" },
+    {
+      texto: "Por la Sincronía se pueden hacer acciones sociales (Actitud); una barrera de comunicación notable sube su dificultad.",
+      lugar: "tirada",
+    },
+  ],
+  motor: motorDeAccion(SINCRONIA_ID, { propias: true }),
+};
+
+// Mensaje agresivo: forma de ataque de la Sincronía, acción aparte porque tira
+// y la Sincronía normal no. "1 de fatiga por nivel empleado": en local (nivel 1)
+// es 1; con una fila, la fila sustituye.
+const MENSAJE_AGRESIVO_ID = "psi_resonancia_mensaje_agresivo";
+const MENSAJE_AGRESIVO: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: MENSAJE_AGRESIVO_ID,
+  label: "Mensaje agresivo",
+  desdeNivel: 1,
+  economia: "compleja",
+  fatiga: 1,
+  alcance: 1,
+  unidades: { alcance: "km²" },
+  objetivo: { tipo: "unico" },
+  desplazamiento: null,
+  resolucion: { tipo: "enfrentada", aplicado: "expresion", habilidad: ["biociencia", "actitud"] },
+  danioPropio: { valor: 1, categoria: "mental" },
+  objetivoTira: [
+    {
+      que: "Salvación de Voluntad + Actitud (o + Biociencia si es un psiónico entrenado); escribe su total como dificultad",
+    },
+  ],
+  ejes: [ejeAlcanceResonancia()],
+  // Al fallar no pasa nada (Murillo, 2026-09-29).
+  resultados: {
+    critico: { texto: "Confusión tantos turnos como nivel empleado ({nivel}) y {nivel} de daño mental", estados: [] },
+    exito: { texto: "Confusión durante 1 turno", estados: [] },
+    fracaso: { texto: "Sin efecto", estados: [] },
+  },
+  notas: [NOTA_RASTREO_PRIMERO, { texto: "Recibes 1 de daño mental al lanzarlo (se resta al usarlo).", lugar: "tirada" }],
+  motor: motorDeAccion(MENSAJE_AGRESIVO_ID, { propias: true, tercero: ["salv_voluntad"] }),
+};
+
+// La prueba para que el mensaje se entienda pese a la barrera de idioma o de
+// biología: va con la Sincronía, sin coste propio.
+const SUPERAR_BARRERA_ID = "psi_resonancia_superar_barrera";
+const SUPERAR_BARRERA: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: SUPERAR_BARRERA_ID,
+  label: "Superar la barrera",
+  desdeNivel: 1,
+  economia: { tiempo: "con la Sincronía" },
+  fatiga: 0,
+  alcance: null,
+  objetivo: null,
+  desplazamiento: null,
+  resolucion: { tipo: "tirada", aplicado: "expresion", habilidad: "biociencia" },
+  objetivoTira: [],
+  ejes: [RECEPTOR_SINTETICO],
+  // Fallida: el mensaje llega pero no se entiende (Murillo, 2026-09-29).
+  resultados: {
+    exito: { texto: "El mensaje se entiende pese a la barrera", estados: [] },
+    fracaso: { texto: "El mensaje llega, pero no se entiende", estados: [] },
+  },
+  notas: [
+    {
+      texto: "Dificultad a criterio del máster. Referencias: 4 una sincronía sencilla, 7 conceptos o emociones extrañas, 10 un paquete complejo y extraño.",
+      lugar: "tirada",
+    },
+    { texto: "Los códigos encriptados suben la dificultad y pueden pedir varias acciones.", lugar: "tirada" },
+  ],
+  motor: motorDeAccion(SUPERAR_BARRERA_ID, { propias: true }),
+};
+
+// Sin coste propio en local: cuesta 1, como la fila 1 (usuario, 2026-09-29), con
+// la acción estándar del alcance local de la tabla.
+const RASTREO_ID = "psi_resonancia_rastreo";
+const RASTREO: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: RASTREO_ID,
+  label: "Rastreo",
+  desdeNivel: 1,
+  economia: "estandar",
+  fatiga: 1,
+  alcance: 1,
+  unidades: { alcance: "km²" },
+  objetivo: { tipo: "unico" },
+  desplazamiento: null,
+  resolucion: { tipo: "tirada", aplicado: "perspicacia", habilidad: "biociencia", dificultad: 6 },
+  objetivoTira: [],
+  ejes: [
+    ejeAlcanceResonancia(),
+    RECEPTOR_SINTETICO,
+    {
+      id: "conocimiento",
+      label: "Lo conoces",
+      tipo: "opcion",
+      opciones: [
+        { id: "conocido", label: "Conocido", cambia: {} },
+        // ×2 / ×10 multiplica el tiempo de la fila usada (Murillo, 2026-09-29).
+        { id: "vago", label: "Vagamente", cambia: { resolucion: { dificultad: 9 } }, suma: { fatiga: 1 }, multiplicaTiempo: 2 },
+        {
+          id: "desconocido",
+          label: "Desconocido",
+          cambia: {
+            resolucion: { dificultad: 12 },
+            notas: [{ texto: "No se rastrea a un individuo concreto: se hace un barrido.", lugar: "tirada" }],
+          },
+          suma: { fatiga: 4 },
+          multiplicaTiempo: 10,
+        },
+      ],
+    },
+  ],
+  resultados: {
+    exito: { texto: "Localizas al objetivo (o a los objetivos)", estados: [] },
+    fracaso: { texto: "No lo localizas", estados: [] },
+  },
+  notas: [
+    {
+      texto: "Zonas de interferencia suben la dificultad: apantallamiento electromagnético +2, instalación militar blindada +4, búnker con supresión cuántica +6. Algunas son infranqueables.",
+      lugar: "tirada",
+    },
+  ],
+  motor: motorDeAccion(RASTREO_ID, { propias: true }),
+};
+
+// Enfrentada: los grados van desde el punto de vista del psiónico (su fracaso =
+// el objetivo salva con éxito, que aún deja 1 turno de lectura).
+const LEER_MENTE_ID = "psi_resonancia_leer_mente";
+const LEER_MENTE: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: LEER_MENTE_ID,
+  label: "Leer Mente",
+  desdeNivel: 1,
+  economia: "estandar",
+  fatiga: 1,
+  alcance: 1,
+  unidades: { alcance: "km²" },
+  objetivo: { tipo: "unico" },
+  desplazamiento: null,
+  resolucion: { tipo: "enfrentada", aplicado: "perspicacia", habilidad: "biociencia" },
+  objetivoTira: [{ que: "Resiste con Voluntad + Actitud; escribe su total como dificultad" }],
+  ejes: [ejeAlcanceResonancia()],
+  resultados: {
+    critico: {
+      texto: "Lees sus pensamientos más vívidos y superficiales durante 1 minuto (10 turnos) sin gastar acción para mantenerlo, y +2 en tus tiradas enfrentadas contra él",
+      estados: [],
+    },
+    exito: {
+      texto: "Lees sus pensamientos más vívidos y superficiales durante 10 turnos (1 minuto); mantenerlo cuesta una reacción o una acción simple cada turno. +2 en tus tiradas enfrentadas contra él",
+      estados: [],
+    },
+    fracaso: { texto: "Lo lees solo durante 1 turno (con el +2 en enfrentadas contra él ese turno)", estados: [] },
+    fracasoCritico: {
+      texto: "No lees nada y percibe la anomalía: puede hacer una prueba libre, según sus conocimientos, para darse cuenta de que le han intentado leer la mente",
+      estados: [],
+    },
+  },
+  notas: [
+    { texto: "El objetivo tiene que estar localizado; si no, primero Rastreo.", lugar: "tirada" },
+    {
+      texto: "En interacciones sociales puede valer +2 a Empatía, Manipulación o Negociación, o resolverse narrativamente (a criterio del máster).",
+      lugar: "tirada",
+    },
+  ],
+  motor: motorDeAccion(LEER_MENTE_ID, { propias: true, tercero: ["salv_voluntad"] }),
+};
+
+const RESONANCIA: Disciplina = {
+  id: "resonancia",
+  label: "Resonancia",
+  rama: "metasensoria",
+  requisito: null,
+  porNivel: [
+    { nivel: 1, alcance: 10, economia: "compleja", fatiga: 1 },
+    { nivel: 2, alcance: 100, economia: { tiempo: "1 minuto" }, fatiga: 2 },
+    { nivel: 3, alcance: 2000, economia: { tiempo: "1 minuto" }, fatiga: 3 },
+    { nivel: 4, alcance: 10000, economia: { tiempo: "10 minutos" }, fatiga: 4 },
+    { nivel: 5, alcance: 200000, economia: { tiempo: "10 minutos" }, fatiga: 6 },
+    { nivel: 6, alcance: 1000000, economia: { tiempo: "1 hora" }, fatiga: 8 },
+  ],
+  reglas: [
+    {
+      id: "tabla_sustituye",
+      texto: "El coste propio de cada acción es el del alcance local (1 km², nivel empleado 1); una fila de la tabla sustituye tipo de acción, fatiga y alcance.",
+      aplica: "todas",
+    },
+    { id: "local_induccion", texto: "En alcance local se puede usar Inducción.", aplica: "todas" },
+    {
+      id: "barreras",
+      texto: "Barreras de lenguaje o de biología y códigos encriptados suben la dificultad (la dice el máster).",
+      aplica: "todas",
+    },
+  ],
+  // Se acumulan hasta 0 (nivel 4 con Resonancia 6: 4 − 1 − 1 = 2).
+  modificadoresFatiga: [
+    { fuente: "Resonancia 3: niveles 1-2", alcance: { nivelEmpleadoMax: 2 }, desdeNivelPoseido: 3, op: "suma", valor: -1 },
+    { fuente: "Resonancia 5: niveles 3-4", alcance: { nivelEmpleadoMin: 3, nivelEmpleadoMax: 4 }, desdeNivelPoseido: 5, op: "suma", valor: -1 },
+    { fuente: "Resonancia 6: niveles 4-5", alcance: { nivelEmpleadoMin: 4, nivelEmpleadoMax: 5 }, desdeNivelPoseido: 6, op: "suma", valor: -1 },
+  ],
+  // Nivel 2: lo usado a nivel 1, incluido el local, baja un paso; nivel 4: el
+  // nivel 2 pasa de 1 minuto a compleja; nivel 6: el nivel 4 dura 1 minuto.
+  modificadoresEconomia: [
+    { fuente: "Resonancia 2", desdeNivelPoseido: 2, alcance: { nivelEmpleado: 1 }, op: "baja_un_paso" },
+    { fuente: "Resonancia 4", desdeNivelPoseido: 4, alcance: { nivelEmpleado: 2 }, op: "sustituye", valor: "compleja" },
+    { fuente: "Resonancia 6", desdeNivelPoseido: 6, alcance: { nivelEmpleado: 4 }, op: "sustituye", valor: { tiempo: "1 minuto" } },
+  ],
+  bonosEnOtrasTiradas: [],
+  ventajas: [],
+  acciones: [SINCRONIA, MENSAJE_AGRESIVO, SUPERAR_BARRERA, RASTREO, LEER_MENTE],
+};
 
 // ── Traslación ────────────────────────────────────────────────────
 // La fatiga de Anclaje y Trasladar no depende del movimiento sino de la carga o
@@ -945,7 +1225,7 @@ export const PSIONICA: CatalogoPsionica = {
     multiplicadorPorGrado: { critico: 0, exito: 0.5, fracaso: 1, fracasoCritico: 2 },
   },
   disciplinas: [
-    disciplinaVacia({ id: "resonancia", label: "Resonancia", rama: "metasensoria", requisito: null }),
+    RESONANCIA,
     disciplinaVacia({ id: "induccion", label: "Inducción", rama: "metasensoria", requisito: { disciplina: "resonancia", nivel: 1 } }),
     disciplinaVacia({ id: "hipercognicion", label: "Hipercognición", rama: "metasensoria", requisito: { disciplina: "resonancia", nivel: 2 } }),
     TRASLACION,

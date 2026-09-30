@@ -10,6 +10,7 @@ preparar el personaje y qué números deben salir.
 | E, F, G | Comunes: gasto de fatiga y bloqueo, sobrecarga, XP en ficha aprobada | el de A |
 | H1–H8 | Traslación (con NPC de nivel 6 en H6) | Traslación 3 |
 | I | Contención (con NPC de nivel 6 en I.6) | Traslación 1 + Contención 2 |
+| J | Resonancia, tanda 1 (con NPC de nivel 6 en J.6) | Resonancia 3 |
 
 Los números esperados valen para un personaje recién creado sin tocar: atributos a 0,
 sin especie, **8 de vida y 8 de fatiga**, y tirada de poder **−1** (Perspicacia +0,
@@ -355,13 +356,45 @@ puntos). Fatiga a 8.
   Agilidad 0. Nivel 1 Ampliada: Fatiga 2, Duración 40 turnos, Agilidad 0. Nivel 3: Duración 40,
   Agilidad -1. Nivel 6: Duración 10, Agilidad -3.
 
+## J. Resonancia, tanda 1
+
+Personaje nuevo con la letra **A** en Psiónica y **Resonancia 3** (18 puntos). Fatiga a 8.
+Para J.3, sube **Actitud** por encima de Biociencia.
+
+- [ ] **J.1 Filas en Acciones.** Sección Resonancia · nivel 3.
+  → Sincronía `Gratuita · 0 fatiga · 1 km²`; Mensaje agresivo `Estándar · 0 fatiga · 1 km²`
+  (compleja rebajada por nivel 2; 1 − 1 por nivel 3); Superar la barrera `con la Sincronía ·
+  0 fatiga`; Rastreo y Leer Mente `Simple · 0 fatiga · 1 km²`.
+- [ ] **J.2 Rastreo.** Usar en Rastreo.
+  → Alcance con `Local` marcado, `Local, reacción` y 1-3. Dificultad puesta a **6**;
+  Vagamente → **9**; Desconocido → **12** y la nota "Tarda 10 veces lo normal (10 × acción
+  simple)". Con Desconocido y alcance 3: Acción `10 minutos`, Fatiga **7** (3 + 4). Con
+  Vagamente y alcance 2: `2 minutos`, Fatiga **2** (2 + 1 − 1). Sintético: el desglose
+  cambia Biociencia por **Tecnociencia**.
+- [ ] **J.3 Mensaje agresivo.** Usar.
+  → Selector Habilidad con **Actitud** marcada (la más alta); pulsar Biociencia cambia el
+  desglose. Tirar: la vida baja **1**, fatiga igual (coste 0) y el aviso "Recibes 1 de daño
+  mental (ya restado)." — sin "inconsciente". Con éxito crítico: "Confusión tantos turnos
+  como nivel empleado (1) y 1 de daño mental".
+- [ ] **J.4 Leer Mente.** Alcance 3 y Tirar.
+  → Acción `1 minuto`, fatiga **8 → 5**. Con fracaso: "Lo lees solo durante 1 turno (con el
+  +2 en enfrentadas contra él ese turno)".
+- [ ] **J.5 Sincronía.** Datos complejos + Local, reacción.
+  → Acción `Reacción`, Fatiga 0. Con alcance 2: `1 minuto`, Fatiga **1** (2 − 1); Usar →
+  "Usado · −1 fatiga".
+- [ ] **J.6 Niveles altos (NPC con Resonancia 6).** Leer Mente.
+  → Alcance 1: `Estándar`, Fatiga 0. Alcance 2: `Compleja`, 1. Alcance 4: `1 minuto`,
+  Fatiga **2** (4 − 1 − 1). Alcance 5: 10 minutos, 5. Alcance 6: 1 hora, 8. Rastreo
+  desconocido con alcance 6: `10 horas`, Fatiga 12.
+
 ---
 
 ## Fuera de estas pruebas
 
 No son fallos:
 
-- Resonancia, Inducción e Hipercognición no tienen poderes todavía. Traslación
+- Resonancia solo tiene la tanda 1 (faltan Alerta y Vínculo); Inducción e Hipercognición
+  no tienen poderes todavía. Traslación
   está completa.
 - Xovromium, Munición Supresora y Derivación Psiónica no afectan aún ni a la tirada ni a
   la fatiga.

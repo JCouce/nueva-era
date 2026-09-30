@@ -141,12 +141,20 @@ export type Opcion = {
   id: string;
   label: string;
   desdeNivel?: number;
+  // Nivel empleado que fija una opción de eje de nivel cuyo id no es `nN`
+  // (Resonancia: el alcance Local cuenta como nivel 1).
+  nivel?: number;
   cambia: CambiosOpcion; // SUSTITUYE
   // SUMA sobre lo ya resuelto por los otros ejes (ruta → +N); `*` recorre un array.
   suma?: Record<string, number>;
+  // Multiplica el tiempo de la acción ya resuelta (Rastreo: ×2 vagamente
+  // conocido, ×10 desconocido, sobre el tiempo de la fila usada).
+  multiplicaTiempo?: number;
 };
 
-export type EjePoder = { id: string; label: string; tipo: "nivel_empleado" | "opcion"; opciones: Opcion[] };
+// `porDefecto`: opción elegida si no se pide otra (sin él, el nivel empleado más
+// alto o la primera opción).
+export type EjePoder = { id: string; label: string; tipo: "nivel_empleado" | "opcion"; opciones: Opcion[]; porDefecto?: string };
 
 // Cadena semi-global de fatiga (orden fijo): descuentos por nivel → ×2 Munición
 // Supresora → Xovromium −1 → mínimo (0 salvo que la prosa diga 1) → pago con cargas.

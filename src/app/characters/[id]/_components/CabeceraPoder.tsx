@@ -1,4 +1,5 @@
 import {
+  HABILIDADES,
   etiquetaEconomia,
   opcionesDisponibles,
   textoValor,
@@ -74,30 +75,64 @@ export function CabeceraPoder({
       {accion.ejes.map((eje) => {
         const opciones = opcionesDisponibles(eje, poder.nivelPoseido);
         if (opciones.length < 2) return null;
+        const boton = (id: string, texto: string) => {
+          const activa = poder.elecciones[eje.id] === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={activa}
+              onClick={() => onElegir(eje.id, id)}
+              className={`clip-chamfer-sm border px-1 py-2 font-mono text-[11px] uppercase active:scale-95 ${
+                activa ? "border-accent text-accent" : "border-border text-muted"
+              }`}
+            >
+              {texto}
+            </button>
+          );
+        };
+        // En un eje de nivel, las opciones con nombre propio (Local) van en su
+        // fila; los niveles, como números.
+        const nombradas = eje.tipo === "nivel_empleado" ? opciones.filter((o) => o.nivel !== undefined) : [];
+        const filas = eje.tipo === "nivel_empleado" ? opciones.filter((o) => o.nivel === undefined) : opciones;
         return (
           <div key={eje.id}>
             <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{`// ${eje.label}`}</p>
-            <div className={`mt-2 grid gap-1 ${eje.tipo === "nivel_empleado" ? "grid-cols-6" : opciones.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
-              {opciones.map((o) => {
-                const activa = poder.elecciones[eje.id] === o.id;
-                return (
-                  <button
-                    key={o.id}
-                    type="button"
-                    aria-pressed={activa}
-                    onClick={() => onElegir(eje.id, o.id)}
-                    className={`clip-chamfer-sm border px-1 py-2 font-mono text-[11px] uppercase active:scale-95 ${
-                      activa ? "border-accent text-accent" : "border-border text-muted"
-                    }`}
-                  >
-                    {eje.tipo === "nivel_empleado" ? o.id.slice(1) : o.label}
-                  </button>
-                );
-              })}
+            {nombradas.length > 0 && (
+              <div className={`mt-2 grid gap-1 ${nombradas.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+                {nombradas.map((o) => boton(o.id, o.label))}
+              </div>
+            )}
+            <div className={`mt-2 grid gap-1 ${eje.tipo === "nivel_empleado" ? "grid-cols-6" : filas.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+              {filas.map((o) => boton(o.id, eje.tipo === "nivel_empleado" ? o.id.slice(1) : o.label))}
             </div>
           </div>
         );
       })}
+
+      {poder.habilidadesAElegir && (
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Habilidad"}</p>
+          <div className="mt-2 grid grid-cols-2 gap-1">
+            {poder.habilidadesAElegir.map((h) => {
+              const activa = poder.resolucion.tipo !== "sin_dado" && poder.resolucion.habilidad === h;
+              return (
+                <button
+                  key={h}
+                  type="button"
+                  aria-pressed={activa}
+                  onClick={() => onElegir("habilidad", h)}
+                  className={`clip-chamfer-sm border px-1 py-2 font-mono text-[11px] uppercase active:scale-95 ${
+                    activa ? "border-accent text-accent" : "border-border text-muted"
+                  }`}
+                >
+                  {HABILIDADES.find((x) => x.id === h)?.label ?? h}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {toggles.length > 0 && (
         <div className="flex flex-col gap-1">

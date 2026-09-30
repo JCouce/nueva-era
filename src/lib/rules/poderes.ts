@@ -7,6 +7,7 @@
 // ligera") → fórmulas `Valor` a número → `suma` de las opciones → marcadores
 // `{campo}` de los textos.
 import type { AplicadoId } from "./atributos";
+import type { HabilidadId } from "./habilidades";
 import type { Sheet } from "./sheet";
 import type { Accion } from "./acciones";
 import { DISCIPLINAS, PSIONICA, type DisciplinaId } from "../catalog/psionica";
@@ -21,7 +22,6 @@ import type {
   ModificadorFatiga,
   Nota,
   Opcion,
-  ResolucionPoder,
   Valor,
 } from "./psionica";
 
@@ -31,19 +31,18 @@ export type ValorResuelto = number | Extract<Valor, { manual: string } | { ajust
 
 export type ResolucionResuelta =
   | { tipo: "sin_dado" }
-  | { tipo: "tirada"; aplicado: AplicadoId; habilidad: HabilidadDe; especialidad?: string; dificultad?: ValorResuelto; modificador?: number }
-  | { tipo: "enfrentada"; aplicado: AplicadoId; habilidad: HabilidadDe; especialidad?: string; modificador?: number }
+  | { tipo: "tirada"; aplicado: AplicadoId; habilidad: HabilidadId; especialidad?: string; dificultad?: ValorResuelto; modificador?: number }
+  | { tipo: "enfrentada"; aplicado: AplicadoId; habilidad: HabilidadId; especialidad?: string; modificador?: number }
   | {
       tipo: "ataque";
       aplicado: AplicadoId;
-      habilidad: HabilidadDe;
+      habilidad: HabilidadId;
       especialidad?: string;
       modificador?: number;
       danio: ValorResuelto;
       categoria: string;
       danioAlFallar?: boolean;
     };
-type HabilidadDe = Extract<ResolucionPoder, { tipo: "ataque" }>["habilidad"];
 
 export type PoderResuelto = {
   id: string;
@@ -59,6 +58,9 @@ export type PoderResuelto = {
   objetivo: { tipo: NonNullable<AccionPoder["objetivo"]>["tipo"]; area?: ValorResuelto } | null;
   desplazamiento: ValorResuelto | null;
   resolucion: ResolucionResuelta;
+  // Habilidad alternativa ("Biociencia o Actitud"): entre cuáles elige el jugador;
+  // la elegida va en `resolucion.habilidad` y en `elecciones.habilidad`.
+  habilidadesAElegir: HabilidadId[] | null;
   objetivoTira: { que: string; dificultad?: ValorResuelto; grados?: Partial<Record<Grado, string>> }[];
   resultados: Partial<
     Record<
@@ -88,6 +90,9 @@ export type ContextoPoder = {
   nivelPoseido: number;
   elecciones?: Record<string, string>;
   aplicados?: Partial<Record<AplicadoId, number>>; // para Valor.porAplicado
+  // Valores de habilidad de la ficha: preseleccionan la más alta cuando la
+  // tirada deja elegir habilidad.
+  habilidades?: Partial<Record<HabilidadId, number>>;
   // Para lo que la acción deja en "tabla" (fatiga, alcance… de la fila del nivel
   // empleado) y las rebajas de tipo de acción por nivel poseído.
   disciplina?: Disciplina;
@@ -116,11 +121,13 @@ function opcionElegida(eje: EjePoder, nivelPoseido: number, pedida: string | und
   if (disponibles.length === 0) return null;
   return (
     disponibles.find((o) => o.id === pedida) ??
+    disponibles.find((o) => o.id === eje.porDefecto) ??
     (eje.tipo === "nivel_empleado" ? disponibles[disponibles.length - 1] : disponibles[0])
   );
 }
 
 function nivelDeOpcion(o: Opcion): number {
+  if (o.nivel !== undefined) return o.nivel;
   const m = /^n(\d+)$/.exec(o.id);
   if (!m) throw new Error(`Opción de nivel empleado con id no numérico: ${o.id}`);
   return Number(m[1]);
@@ -136,6 +143,7 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
   const w = structuredClone(accion) as unknown as Record<string, unknown>;
   const elecciones: Record<string, string> = {};
   const sumas: Record<string, number>[] = [];
+  let multiplicaTiempo = 1;
   let nivelEmpleado = nivelPoseido;
 
   for (const eje of accion.ejes) {
@@ -149,6 +157,20 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
       else w[campo] = valor;
     }
     if (opcion.suma) sumas.push(opcion.suma);
+    if (opcion.multiplicaTiempo) multiplicaTiempo *= opcion.multiplicaTiempo;
+  }
+
+  // Habilidad a elegir: la pedida si está en la lista; si no, la más alta de la
+  // ficha (empate o sin ficha: la primera).
+  const res = w.resolucion as Record<string, unknown>;
+  let habilidadesAElegir: HabilidadId[] | null = null;
+  if (Array.isArray(res.habilidad)) {
+    const lista = res.habilidad as HabilidadId[];
+    const pedida = lista.find((h) => h === ctx.elecciones?.habilidad);
+    const valor = (h: HabilidadId) => ctx.habilidades?.[h] ?? 0;
+    res.habilidad = pedida ?? lista.reduce((mejor, h) => (valor(h) > valor(mejor) ? h : mejor));
+    elecciones.habilidad = res.habilidad as HabilidadId;
+    habilidadesAElegir = lista;
   }
 
   const evaluar = (v: unknown, donde: string): ValorResuelto => evaluarValor(v, donde, nivelEmpleado, ctx);
@@ -191,13 +213,21 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
       w.economia = PASO_ECONOMIA[w.economia as Economia & string] ?? w.economia;
     }
   }
+  if (multiplicaTiempo !== 1) {
+    const e = w.economia as Economia;
+    if (typeof e === "string") {
+      w.notas = [
+        ...(w.notas as Nota[]),
+        { texto: `Tarda ${multiplicaTiempo} veces lo normal (${multiplicaTiempo} × acción ${etiquetaEconomia(e).toLocaleLowerCase("es")}).`, lugar: "tirada" as const },
+      ];
+    } else w.economia = { tiempo: multiplicarTiempo(e.tiempo, multiplicaTiempo, accion.id) };
+  }
   w.fatiga = evaluar(w.fatiga, "fatiga");
   w.alcance = opt(w.alcance, (x) => evaluar(x, "alcance"));
   w.duracion = opt(w.duracion, (x) => evaluar(x, "duracion"));
   w.desplazamiento = opt(w.desplazamiento, (x) => evaluar(x, "desplazamiento"));
   const objetivo = w.objetivo as Record<string, unknown> | null;
   if (objetivo && "area" in objetivo) objetivo.area = evaluar(objetivo.area, "objetivo.area");
-  const res = w.resolucion as Record<string, unknown>;
   if ("danio" in res) res.danio = evaluar(res.danio, "resolucion.danio");
   if ("dificultad" in res) res.dificultad = evaluar(res.dificultad, "resolucion.dificultad");
   for (const t of w.objetivoTira as Record<string, unknown>[]) {
@@ -273,6 +303,7 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
     objetivo: w.objetivo as PoderResuelto["objetivo"],
     desplazamiento: w.desplazamiento as ValorResuelto | null,
     resolucion: w.resolucion as ResolucionResuelta,
+    habilidadesAElegir,
     objetivoTira: w.objetivoTira as PoderResuelto["objetivoTira"],
     resultados: w.resultados as PoderResuelto["resultados"],
     danioPropio: w.danioPropio as PoderResuelto["danioPropio"],
@@ -287,6 +318,14 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
     movimientoOtorgado: w.movimientoOtorgado as PoderResuelto["movimientoOtorgado"],
     manual: accion.manual,
   };
+}
+
+// "1 minuto" × 10 → "10 minutos". Solo tiempos de la forma "<número> <unidad>".
+function multiplicarTiempo(tiempo: string, n: number, accionId: string): string {
+  const m = /^(\d+) (\S+?)s?$/.exec(tiempo);
+  if (!m) throw new Error(`${accionId}: no sé multiplicar el tiempo "${tiempo}"`);
+  const total = Number(m[1]) * n;
+  return `${total} ${m[2]}${total === 1 ? "" : "s"}`;
 }
 
 function resolverExceso(
@@ -367,13 +406,17 @@ export function generaAccionDePoder(accion: AccionPoder): boolean {
   return accion.motor.some((m) => m.tipo === "accion" && m.mecanismo === "accion_sin_equipo" && m.estado === "construido");
 }
 
+export function valoresHabilidad(sheet: Sheet): Partial<Record<HabilidadId, number>> {
+  return Object.fromEntries(Object.entries(sheet.habilidades).map(([id, h]) => [id, h.valor]));
+}
+
 export function accionesDePsionica(sheet: Sheet): PoderDisponible[] {
   return DISCIPLINAS.flatMap((disciplina) => {
     const nivelPoseido = sheet.psionica[disciplina.id as DisciplinaId] ?? 0;
     if (nivelPoseido <= 0) return [];
     return disciplina.acciones.flatMap((accion): PoderDisponible[] => {
       if (!generaAccionDePoder(accion)) return [];
-      const porDefecto = resolverPoder(accion, { nivelPoseido, disciplina });
+      const porDefecto = resolverPoder(accion, { nivelPoseido, disciplina, habilidades: valoresHabilidad(sheet) });
       return porDefecto ? [{ disciplina, accion, nivelPoseido, porDefecto }] : [];
     });
   });
@@ -412,7 +455,13 @@ export function etiquetaPoder(accion: AccionPoder, p: PoderResuelto): string {
     .filter((e) => e.id === "modo")
     .map((e) => e.opciones.find((o) => o.id === p.elecciones[e.id]))
     .find((o) => o && Object.keys(o.cambia).length > 0);
-  return `${forma?.label ?? accion.label} (nivel ${p.nivelEmpleado})`;
+  // Una opción de nivel con nombre propio (el alcance Local de Resonancia) se
+  // enseña por su nombre en vez del número.
+  const conNombre = accion.ejes
+    .filter((e) => e.tipo === "nivel_empleado")
+    .map((e) => e.opciones.find((o) => o.id === p.elecciones[e.id]))
+    .find((o) => o?.nivel !== undefined);
+  return `${forma?.label ?? accion.label} (${conNombre ? conNombre.label.toLocaleLowerCase("es") : `nivel ${p.nivelEmpleado}`})`;
 }
 
 // Lo que se enseña tras tirar un poder: el resultado propio por grado y lo que
@@ -446,9 +495,7 @@ export function tiradaDePoder(accion: AccionPoder, p: PoderResuelto): Accion | n
     label: etiquetaPoder(accion, p),
     grupo: "Psiónica",
     aplicado: r.aplicado,
-    // Habilidad alternativa ("biociencia o actitud"): el selector llega con la
-    // primera disciplina que la use; hasta entonces, la primera de la lista.
-    habilidad: Array.isArray(r.habilidad) ? r.habilidad[0] : r.habilidad,
+    habilidad: r.habilidad,
     poder: {
       resultados,
       objetivoTira: p.objetivoTira.map((t) => ({
@@ -484,9 +531,8 @@ export function tiradaDePoder(accion: AccionPoder, p: PoderResuelto): Accion | n
 export function enEspecialidadDePoder(sheet: Sheet, p: PoderResuelto): boolean {
   const r = p.resolucion;
   if (r.tipo === "sin_dado" || !r.especialidad) return false;
-  const habilidad = Array.isArray(r.habilidad) ? r.habilidad[0] : r.habilidad;
   const buscada = r.especialidad.toLocaleLowerCase("es");
-  return sheet.habilidades[habilidad].especialidades.some((e) => e.toLocaleLowerCase("es") === buscada);
+  return sheet.habilidades[r.habilidad].especialidades.some((e) => e.toLocaleLowerCase("es") === buscada);
 }
 
 // ── Coste de fatiga: cadena semi-global ───────────────────────────

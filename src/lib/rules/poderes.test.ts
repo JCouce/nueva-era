@@ -710,3 +710,169 @@ describe("Esquiva levitando con Física", () => {
     assert.equal(altCon.tirada.label, "Defensa / esquiva (Física)");
   });
 });
+
+describe("Resonancia — tanda 1", () => {
+  const RES = disciplinaPorId("resonancia");
+  const accionR = (id: string) => RES.acciones.find((a) => a.id === `psi_resonancia_${id}`)!;
+  const resolverR = (
+    id: string,
+    nivelPoseido: number,
+    elecciones: Record<string, string> = {},
+    habilidades?: Partial<Record<"biociencia" | "actitud", number>>,
+  ) => resolverPoder(accionR(id), { nivelPoseido, elecciones, disciplina: RES, habilidades })!;
+  const coste = (id: string, p: ReturnType<typeof resolverR>) => costeFatiga(RES, `psi_resonancia_${id}`, p).total;
+
+  test("por defecto, alcance local: coste propio, 1 km² y nivel empleado 1", () => {
+    const p = resolverR("sincronia", 4);
+    assert.equal(p.elecciones.nivel, "local");
+    assert.equal(p.nivelEmpleado, 1);
+    assert.equal(p.alcance, 1);
+    assert.equal(p.economia, "gratuita");
+    assert.equal(coste("sincronia", p), 0);
+    assert.equal(etiquetaPoder(accionR("sincronia"), p), "Sincronía (local)");
+  });
+
+  test("una fila de la tabla sustituye acción, fatiga y alcance", () => {
+    const p = resolverR("sincronia", 3, { mensaje: "complejo", nivel: "n3" });
+    assert.deepEqual(p.economia, { tiempo: "1 minuto" });
+    assert.equal(p.fatiga, 3);
+    assert.equal(p.alcance, 2000);
+    assert.equal(etiquetaPoder(accionR("sincronia"), p), "Sincronía (nivel 3)");
+  });
+
+  test("datos complejos en local: estándar y 1; Resonancia 2 lo baja a simple, Resonancia 3 a 0", () => {
+    const n1 = resolverR("sincronia", 1, { mensaje: "complejo" });
+    assert.equal(n1.economia, "estandar");
+    assert.equal(coste("sincronia", n1), 1);
+    assert.equal(resolverR("sincronia", 2, { mensaje: "complejo" }).economia, "simple");
+    assert.equal(coste("sincronia", resolverR("sincronia", 3, { mensaje: "complejo" })), 0);
+  });
+
+  test("local como reacción solo desde nivel 3", () => {
+    assert.equal(resolverR("leer_mente", 2, { nivel: "local_reaccion" }).economia, "simple"); // no disponible: local
+    const p = resolverR("leer_mente", 3, { nivel: "local_reaccion" });
+    assert.equal(p.economia, "reaccion");
+    assert.equal(p.nivelEmpleado, 1);
+    assert.equal(etiquetaPoder(accionR("leer_mente"), p), "Leer Mente (local, reacción)");
+  });
+
+  test("rebajas de la tabla por nivel poseído", () => {
+    // nv2: la fila 1 (compleja) baja a estándar.
+    assert.equal(resolverR("leer_mente", 2, { nivel: "n1" }).economia, "estandar");
+    // nv4: la fila 2 pasa de 1 minuto a compleja.
+    assert.deepEqual(resolverR("leer_mente", 3, { nivel: "n2" }).economia, { tiempo: "1 minuto" });
+    assert.equal(resolverR("leer_mente", 4, { nivel: "n2" }).economia, "compleja");
+    // nv6: la fila 4 dura 1 minuto.
+    assert.deepEqual(resolverR("leer_mente", 5, { nivel: "n4" }).economia, { tiempo: "10 minutos" });
+    assert.deepEqual(resolverR("leer_mente", 6, { nivel: "n4" }).economia, { tiempo: "1 minuto" });
+  });
+
+  test("descuentos de fatiga por nivel poseído, acumulados", () => {
+    const c = (poseido: number, nivel: string) => coste("leer_mente", resolverR("leer_mente", poseido, { nivel }));
+    assert.equal(c(2, "n2"), 2);
+    assert.equal(c(3, "n2"), 1); // nv3: −1 a niveles 1-2
+    assert.equal(c(3, "n1"), 0);
+    assert.equal(c(5, "n3"), 2); // nv5: −1 a niveles 3-4
+    assert.equal(c(5, "n5"), 6);
+    assert.equal(c(6, "n4"), 2); // 4 − 1 (nv5) − 1 (nv6)
+    assert.equal(c(6, "n5"), 5);
+    assert.equal(c(6, "n6"), 8);
+  });
+
+  test("Rastreo: local cuesta 1 y estándar, dificultad 6 con Biociencia", () => {
+    const p = resolverR("rastreo", 1);
+    assert.equal(p.economia, "estandar");
+    assert.equal(coste("rastreo", p), 1);
+    assert.deepEqual(p.resolucion, { tipo: "tirada", aplicado: "perspicacia", habilidad: "biociencia", dificultad: 6 });
+    assert.equal(tiradaDePoder(accionR("rastreo"), p)!.dificultadSugerida, 6);
+  });
+
+  test("Rastreo vagamente conocido: dificultad 9, +1 de fatiga y el tiempo de la fila ×2", () => {
+    const p = resolverR("rastreo", 2, { nivel: "n2", conocimiento: "vago" });
+    assert.equal(p.resolucion.tipo === "tirada" && p.resolucion.dificultad, 9);
+    assert.deepEqual(p.economia, { tiempo: "2 minutos" });
+    assert.equal(coste("rastreo", p), 3);
+  });
+
+  test("Rastreo desconocido: dificultad 12, +4 de fatiga y ×10 (1 hora → 10 horas)", () => {
+    const p = resolverR("rastreo", 6, { nivel: "n6", conocimiento: "desconocido" });
+    assert.equal(p.resolucion.tipo === "tirada" && p.resolucion.dificultad, 12);
+    assert.deepEqual(p.economia, { tiempo: "10 horas" });
+    assert.equal(coste("rastreo", p), 12);
+    assert.deepEqual(resolverR("rastreo", 4, { nivel: "n4", conocimiento: "desconocido" }).economia, { tiempo: "100 minutos" });
+  });
+
+  test("Rastreo en local con ×2: el tiempo va como nota (una acción no se multiplica)", () => {
+    const p = resolverR("rastreo", 1, { conocimiento: "vago" });
+    assert.equal(p.economia, "estandar");
+    assert.ok(p.notas.some((n) => n.texto.includes("Tarda 2 veces lo normal (2 × acción estándar)")));
+    assert.equal(coste("rastreo", p), 2);
+  });
+
+  test("objetivo sintético: Tecnociencia (Informática)", () => {
+    const p = resolverR("rastreo", 1, { receptor: "sintetico" });
+    assert.equal(p.resolucion.tipo !== "sin_dado" && p.resolucion.habilidad, "tecnociencia");
+    let s = defaultSheet();
+    s = { ...s, habilidades: { ...s.habilidades, tecnociencia: { valor: 2, especialidades: ["Informática"] } } };
+    assert.equal(enEspecialidadDePoder(s, p), true);
+    const b = resolverR("superar_barrera", 1, { receptor: "sintetico" });
+    assert.equal(b.resolucion.tipo !== "sin_dado" && b.resolucion.habilidad, "tecnociencia");
+  });
+
+  test("Mensaje agresivo: preselecciona la habilidad más alta y deja elegir la otra", () => {
+    const alta = resolverR("mensaje_agresivo", 1, {}, { biociencia: 1, actitud: 3 });
+    assert.deepEqual(alta.habilidadesAElegir, ["biociencia", "actitud"]);
+    assert.equal(alta.resolucion.tipo === "enfrentada" && alta.resolucion.habilidad, "actitud");
+    assert.equal(alta.elecciones.habilidad, "actitud");
+    const pedida = resolverR("mensaje_agresivo", 1, { habilidad: "biociencia" }, { biociencia: 1, actitud: 3 });
+    assert.equal(pedida.resolucion.tipo === "enfrentada" && pedida.resolucion.habilidad, "biociencia");
+    assert.equal(tiradaDePoder(accionR("mensaje_agresivo"), pedida)!.habilidad, "biociencia");
+    // Sin ficha (empate): la primera.
+    const sin = resolverR("mensaje_agresivo", 1);
+    assert.equal(sin.resolucion.tipo === "enfrentada" && sin.resolucion.habilidad, "biociencia");
+  });
+
+  test("Mensaje agresivo: compleja, 1 de fatiga en local, 1 de daño mental propio, grados por nivel empleado", () => {
+    const p = resolverR("mensaje_agresivo", 1);
+    assert.equal(p.economia, "compleja");
+    assert.equal(coste("mensaje_agresivo", p), 1);
+    assert.deepEqual(p.danioPropio, { valor: 1, categoria: "mental" });
+    assert.equal(resolverR("mensaje_agresivo", 2).economia, "estandar");
+    const n3 = resolverR("mensaje_agresivo", 3, { nivel: "n3" });
+    assert.equal(n3.resultados.critico!.texto, "Confusión tantos turnos como nivel empleado (3) y 3 de daño mental");
+    assert.equal(n3.resultados.exito!.texto, "Confusión durante 1 turno");
+    assert.equal(textoDeGrado(tiradaDePoder(accionR("mensaje_agresivo"), n3)!.poder!.resultados, "fracasoCritico"), "Sin efecto");
+  });
+
+  test("Leer Mente: enfrentada Perspicacia + Biociencia, estándar, 1 de fatiga y cuatro grados", () => {
+    const p = resolverR("leer_mente", 1);
+    assert.deepEqual(p.resolucion, { tipo: "enfrentada", aplicado: "perspicacia", habilidad: "biociencia" });
+    assert.equal(p.economia, "estandar");
+    assert.equal(coste("leer_mente", p), 1);
+    assert.deepEqual(Object.keys(p.resultados).sort(), ["critico", "exito", "fracaso", "fracasoCritico"]);
+    assert.match(p.resultados.fracaso!.texto, /1 turno/);
+  });
+
+  test("Superar la barrera: sin coste, va con la Sincronía", () => {
+    const p = resolverR("superar_barrera", 1);
+    assert.equal(coste("superar_barrera", p), 0);
+    assert.deepEqual(p.economia, { tiempo: "con la Sincronía" });
+    assert.equal(p.resultados.fracaso!.texto, "El mensaje llega, pero no se entiende");
+  });
+
+  test("Resonancia aparece en Acciones con sus cinco acciones", () => {
+    const s = setNivelDisciplinaTest(defaultSheet(), 1);
+    const ids = accionesDePsionica(s).filter((p) => p.disciplina.id === "resonancia").map((p) => p.accion.id);
+    assert.deepEqual(ids, [
+      "psi_resonancia_sincronia",
+      "psi_resonancia_mensaje_agresivo",
+      "psi_resonancia_superar_barrera",
+      "psi_resonancia_rastreo",
+      "psi_resonancia_leer_mente",
+    ]);
+  });
+});
+
+function setNivelDisciplinaTest(s: Sheet, nivel: number): Sheet {
+  return { ...s, psionica: { ...s.psionica, resonancia: nivel } };
+}

@@ -43,15 +43,18 @@ describe("catálogo de psiónica", () => {
     for (const d of DISCIPLINAS) for (const a of d.acciones) assert.ok(a.id.startsWith(`psi_${d.id}_`), a.id);
   });
 
+  // Las opciones con `nivel` propio (el alcance Local de Resonancia) van aparte.
   test("cada eje de nivel empleado ofrece los niveles 1-6, cada uno desde su propio nivel", () => {
     for (const d of DISCIPLINAS)
       for (const a of d.acciones)
         for (const eje of a.ejes.filter((e) => e.tipo === "nivel_empleado")) {
+          const filas = eje.opciones.filter((o) => o.nivel === undefined);
           assert.deepEqual(
-            eje.opciones.map((o) => o.desdeNivel),
-            [1, 2, 3, 4, 5, 6],
+            filas.map((o) => [o.id, o.desdeNivel]),
+            [1, 2, 3, 4, 5, 6].map((n) => [`n${n}`, n]),
             `${a.id}.${eje.id}`,
           );
+          for (const o of eje.opciones) if (o.nivel !== undefined) assert.ok(o.nivel >= 1 && o.nivel <= 6, `${a.id}.${o.id}`);
         }
   });
 

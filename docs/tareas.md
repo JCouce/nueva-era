@@ -1255,10 +1255,18 @@ fichas con Traslación 2+ (`Accion.habilidadAlternativa`, `usarHabilidadAlternat
 (`AccionPoder.excesoDeCarga`, `ExcesoResuelto` en `poderes.ts`): extra por cada 10 %
 completo, bloqueos (sin peso / no pasa de la carga / >200 % / carga 0), 200 % automático y
 botón "Prolongar un turno" (no borra una sobrecarga pendiente).
+**Resonancia, tanda 1 (2026-09-30):** Sincronía, Mensaje agresivo, Superar la barrera,
+Rastreo y Leer Mente. Motor nuevo, general: eje de alcance con opciones de nivel con nombre
+(`Opcion.nivel`, `EjePoder.porDefecto`: Local = nivel 1), multiplicador de tiempo de la fila
+(`Opcion.multiplicaTiempo`), habilidad a elegir con la más alta preseleccionada
+(`PoderResuelto.habilidadesAElegir`, selector en `CabeceraPoder`). La fila de un poder en
+Acciones enseña ya el coste descontado y la unidad del alcance; el modal se remonta al
+cambiar la dificultad fija (Rastreo 6/9/12); el aviso de daño propio ya no dice
+"inconsciente" salvo en la Proeza al 200 %. Siguiente: tanda 2 (Alerta y Vínculo).
 **Hallazgo (sin arreglar):** los penalizadores por umbral de salud y fatiga
 (`modificadoresDeUmbrales`, −1/−3/−5 y −1/−2) existen pero nada los aplica a las tiradas. Siguiente, disciplina a
 disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,
-Derivación), habilidad alternativa con selector, ventaja, Levitar, Duelo de Métrica, fatiga
+Derivación), ventaja, Levitar, Duelo de Métrica, fatiga
 temporal (Proeza).
 Preguntas al diseñador: página pública `/preguntas` (tabla `Pregunta`, seed
 `scripts/seed-preguntas.mjs` desde `scripts/data/preguntas-psionica.json`, 42 preguntas);

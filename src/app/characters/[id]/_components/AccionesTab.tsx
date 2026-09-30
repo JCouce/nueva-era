@@ -34,6 +34,7 @@ import {
   etiquetaEconomia,
   textoValor,
   resolverPoder,
+  valoresHabilidad,
   tiradaDePoder,
   enEspecialidadDePoder,
   aplicados,
@@ -388,10 +389,13 @@ function FilaPoder({
   const nombreAplicado = tirada ? APLICADOS.find((a) => a.id === tirada.aplicado)! : null;
   const nombreHabilidad = tirada?.habilidad ? HABILIDADES.find((h) => h.id === tirada.habilidad)!.label : null;
   const danio = p.resolucion.tipo === "ataque" ? p.resolucion.danio : null;
+  // Coste ya pasado por los descuentos por nivel (sin casillas marcadas).
+  const fatiga =
+    typeof p.fatiga === "number" ? costeFatiga(poder.disciplina, poder.accion.id, p).total : textoValor(p.fatiga);
   const datos = [
     etiquetaEconomia(p.economia),
-    `${textoValor(p.fatiga)} fatiga`,
-    p.alcance !== null ? `${textoValor(p.alcance)} m` : null,
+    `${fatiga} fatiga`,
+    p.alcance !== null ? `${textoValor(p.alcance)} ${p.unidades.alcance ?? "m"}` : null,
     danio !== null ? `daño ${textoValor(danio)}` : null,
   ].filter(Boolean);
   return (
@@ -646,6 +650,7 @@ export function AccionesTab({
       nivelPoseido: poder.nivelPoseido,
       elecciones,
       aplicados: aplicados(sheet, mods),
+      habilidades: valoresHabilidad(sheet),
       disciplina: poder.disciplina,
       pesoKg,
     });
@@ -735,7 +740,11 @@ export function AccionesTab({
     const avisos = [
       ...(despues <= 0 && !cruza ? ["Te has quedado sin fatiga: quedas inconsciente al terminar la acción."] : []),
       ...(propio && typeof propio.valor === "number" && propio.valor > 0
-        ? [`Recibes ${propio.valor} de daño ${propio.categoria} (ya restado) y quedas inconsciente al terminar la acción.`]
+        ? [
+            `Recibes ${propio.valor} de daño ${propio.categoria} (ya restado)${
+              poderResuelto.exceso?.enLimite ? " y quedas inconsciente al terminar la acción" : ""
+            }.`,
+          ]
         : []),
     ];
     setAvisosPoder(avisos);
@@ -1237,6 +1246,9 @@ export function AccionesTab({
 
       {modal && (
         <AccionModal
+          // Una opción de poder que cambia la dificultad fija (Rastreo: conocido 6,
+          // desconocido 12) remonta el modal para que la traiga puesta.
+          key={`${modal.tirada.id}:${modal.tirada.dificultadSugerida ?? ""}`}
           titulo={modal.tirada.label}
           nota={modal.tirada.nota}
           tirada={modal.tirada}

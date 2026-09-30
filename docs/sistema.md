@@ -710,6 +710,24 @@ al preparar su modelado:
   - Sensor: el radio (nivel × 2) va sin unidad, a criterio del máster, hasta que Murillo la
     diga. La carga máxima se enseña solo en las acciones que pagan la fila (Anclaje,
     Trasladar); no se comprueba, es dato.
+- **Construcción de Resonancia, tanda 1 (usuario, 2026-09-30):** Sincronía, Mensaje
+  agresivo, Superar la barrera, Rastreo y Leer Mente.
+  - Toda acción con alcance elige **Local** (su coste propio, 1 km², cuenta como nivel
+    empleado 1; es la opción por defecto), **Local, reacción** (desde nivel 3) o una fila
+    1-6 de la tabla, que sustituye tipo de acción, fatiga y alcance. Rebajas por nivel
+    poseído tal cual la tabla (nv2 baja un paso lo usado a nivel 1; nv3 −1 a niveles 1-2;
+    nv4 nivel 2 = compleja; nv5 −1 a niveles 3-4; nv6 −1 a niveles 4-5 y nivel 4 = 1 minuto).
+  - Mensaje agresivo y Superar la barrera son **acciones aparte** de la Sincronía (tiran;
+    la Sincronía no). Mensaje agresivo: habilidad Biociencia o Actitud con selector que
+    preselecciona la más alta; 1 de daño mental propio que se resta al tirar.
+  - *Supuestos (la prosa no lo precisa):* Superar la barrera no tiene coste ni acción
+    propia (va con la Sincronía). Rastreo en local es acción estándar (la de "Alcance
+    local" de la tabla) y 1 de fatiga. El "Local, reacción" vale también para el Mensaje
+    agresivo (la prosa dice "sincronía"). El ×2/×10 de Rastreo sobre una acción (local o
+    fila 1) no se convierte en tiempo: sale como nota "tarda N veces lo normal".
+  - Leer Mente: grados desde el psiónico — su fracaso (el objetivo salva) aún da 1 turno
+    de lectura; su fracaso crítico (el objetivo saca crítico) no da nada y el objetivo nota
+    la anomalía.
 - **Máquinas sin ficha** (qué tira una IA/servidor que no es personaje para resistir un poder):
   pendiente de Murillo — es la pregunta 16.
 - Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de
