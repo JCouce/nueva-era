@@ -1282,6 +1282,12 @@ Motor: marcador `{campo*2}` en los textos.
 Estabilización (sobre uno mismo). El bonificador de salvación va en dos pasos: se tira
 Estabilización y luego se marca la casilla de la salvación (`bonosEnOtrasTiradas` por
 tramos con `hastaNivelPoseido`). **Inducción completa.** Siguiente: Hipercognición.
+**Hipercognición (2026-09-30):** Sondeo No-Local, Precognición y Retrocognición. Motor:
+`baja_un_paso` entiende tiempos (1 hora → 10 minutos → 1 minuto → compleja…),
+`Valor.alcanceDe` (alcance de la fila de otra disciplina a su nivel en la ficha,
+`ContextoPoder.niveles`) y daño propio por grado (`DetallePoder.danioPropio`, se resta al
+tirar). **Las seis disciplinas completas.** Queda de la psiónica: las fuentes externas de
+la cadena de fatiga (Xovromium, Munición Supresora, Derivación Psiónica).
 **Hallazgo (sin arreglar):** los penalizadores por umbral de salud y fatiga
 (`modificadoresDeUmbrales`, −1/−3/−5 y −1/−2) existen pero nada los aplica a las tiradas. Siguiente, disciplina a
 disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,

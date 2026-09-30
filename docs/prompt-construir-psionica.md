@@ -68,7 +68,9 @@ objetivo, y resuelva la **sobrecarga**. Hecho para Singularidad y Traslación; f
 - **Inducción completa**: Comando, Reconfiguración Mnemónica, Modulación (nivel empleado =
   "nivel de poder" en sus efectos), Hipomanía a un aliado, Supresión y Estabilización (el
   bonificador de salvación en dos pasos: tirada y luego casilla gratis en la salvación).
-- Sin poderes todavía: **Hipercognición**.
+- **Hipercognición completa** (Sondeo con alcance según tu Resonancia, Precognición,
+  Retrocognición). **Las seis disciplinas están hechas**; falta la parte de fuentes externas
+  (Xovromium, Munición Supresora, Derivación Psiónica).
 
 **Dónde vive cada cosa**
 

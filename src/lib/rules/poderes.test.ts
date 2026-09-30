@@ -1148,6 +1148,75 @@ describe("Inducción — tanda 3: Supresión y Estabilización", () => {
   });
 });
 
+describe("Hipercognición", () => {
+  const HIP = disciplinaPorId("hipercognicion");
+  const accionH = (id: string) => HIP.acciones.find((a) => a.id === `psi_hipercognicion_${id}`)!;
+  const resolverH = (id: string, nivelPoseido: number, elecciones: Record<string, string> = {}, resonancia = 2) =>
+    resolverPoder(accionH(id), { nivelPoseido, elecciones, disciplina: HIP, niveles: { resonancia, hipercognicion: nivelPoseido } })!;
+  const dif = (p: ReturnType<typeof resolverH>) => (p.resolucion.tipo === "tirada" ? p.resolucion.dificultad : undefined);
+
+  test("Sondeo: Perspicacia + Física; el tramo fija tiempo, fatiga y dificultad", () => {
+    const local = resolverH("sondeo", 1);
+    assert.deepEqual(local.resolucion, { tipo: "tirada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "Física", dificultad: 6 });
+    assert.equal(local.economia, "compleja");
+    assert.equal(local.fatiga, 1);
+    const max = resolverH("sondeo", 1, { distancia: "maximo" });
+    assert.deepEqual(max.economia, { tiempo: "1 hora" });
+    assert.equal(max.fatiga, 4);
+    assert.equal(dif(max), 12);
+  });
+
+  test("Sondeo: alcance de los tramos con tu Resonancia", () => {
+    assert.equal(resolverH("sondeo", 1, { distancia: "cuarto" }, 3).alcance, 500);
+    assert.equal(resolverH("sondeo", 1, { distancia: "mitad" }, 3).alcance, 1000);
+    assert.equal(resolverH("sondeo", 1, { distancia: "maximo" }, 3).alcance, 2000);
+    assert.equal(resolverH("sondeo", 1).alcance, 1);
+  });
+
+  test("interferencia suma y el nivel rebaja la dificultad (−1 en 4, −2 en 6)", () => {
+    assert.equal(dif(resolverH("sondeo", 1, { distancia: "mitad", interferencia: "i4" })), 14);
+    assert.equal(dif(resolverH("sondeo", 2, { distancia: "mitad" })), 10);
+    assert.equal(dif(resolverH("sondeo", 4, { distancia: "mitad" })), 9);
+    assert.equal(dif(resolverH("sondeo", 6, { distancia: "mitad", interferencia: "i2" })), 10);
+  });
+
+  test("niveles 3 y 5: un paso de tiempo cada uno, el local llega a simple", () => {
+    assert.deepEqual(resolverH("sondeo", 3, { distancia: "maximo" }).economia, { tiempo: "10 minutos" });
+    assert.deepEqual(resolverH("sondeo", 5, { distancia: "maximo" }).economia, { tiempo: "1 minuto" });
+    assert.equal(resolverH("sondeo", 5, { distancia: "cuarto" }).economia, "estandar");
+    assert.equal(resolverH("sondeo", 3).economia, "estandar");
+    assert.equal(resolverH("sondeo", 5).economia, "simple");
+  });
+
+  test("Sondeo: dura nivel turnos; desde el 3, 1 minuto", () => {
+    assert.equal(resolverH("sondeo", 2).duracion, 2);
+    assert.deepEqual(resolverH("sondeo", 3).duracion, { manual: "1 minuto (10 turnos)" });
+  });
+
+  test("Sondeo: el fracaso crítico resta 1 de daño mental por punto de fatiga", () => {
+    const t = tiradaDePoder(accionH("sondeo"), resolverH("sondeo", 1, { distancia: "mitad" }))!;
+    assert.deepEqual(t.poder!.danioPropio, { fracasoCritico: { valor: 2, categoria: "mental" } });
+    assert.match(t.poder!.resultados.fracasoCritico!, /recibes 2 de daño mental/);
+  });
+
+  test("Retrocognición: tramos por tiempo transcurrido y burbuja de 10 m × nivel", () => {
+    const p = resolverH("retrocognicion", 2, { tiempo: "semana", interferencia: "i2" });
+    assert.equal(dif(p), 14);
+    assert.equal(p.fatiga, 2);
+    assert.deepEqual(p.economia, { tiempo: "10 minutos" });
+    assert.equal(p.objetivo?.area, 20);
+  });
+
+  test("Precognición: estándar, 1, dificultad 8; fracaso crítico con 1 de daño propio", () => {
+    const p = resolverH("precognicion", 3);
+    assert.equal(p.economia, "estandar");
+    assert.equal(dif(p), 8);
+    assert.equal(p.duracion, 3);
+    assert.equal(p.objetivo?.area, 30);
+    assert.deepEqual(tiradaDePoder(accionH("precognicion"), p)!.poder!.danioPropio, { fracasoCritico: { valor: 1, categoria: "mental" } });
+  });
+});
+
 function setNivelDisciplinaTest(s: Sheet, nivel: number): Sheet {
   return { ...s, psionica: { ...s.psionica, resonancia: nivel } };
 }

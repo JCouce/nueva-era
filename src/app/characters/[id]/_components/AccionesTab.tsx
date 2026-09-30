@@ -652,6 +652,7 @@ export function AccionesTab({
       elecciones,
       aplicados: aplicados(sheet, mods),
       habilidades: valoresHabilidad(sheet),
+      niveles: sheet.psionica,
       disciplina: poder.disciplina,
       pesoKg,
     });
@@ -943,7 +944,16 @@ export function AccionesTab({
     // excepciones — no depende de gastoTotal() (pool distinto, sheet.farmacos
     // por catalogoId) ni del resultado de la tirada.
     if (tirada.farmacoId) onAjustarFarmaco?.(tirada.farmacoId, -1);
-    if (tirada.grupo === "Psiónica") pagarPoder();
+    if (tirada.grupo === "Psiónica") {
+      pagarPoder();
+      // Daño propio que depende del resultado (fracaso crítico del Sondeo).
+      const grado = gradoDeTirada(r);
+      const propio = grado ? tirada.poder?.danioPropio?.[grado] : undefined;
+      if (propio) {
+        onAjustarVida?.(-propio.valor);
+        setAvisosPoder((a) => [...a, `Recibes ${propio.valor} de daño ${propio.categoria} (ya restado).`]);
+      }
+    }
     const gastoEspecial = gastoMunicionEspecial(tirada, modoId, estadoCondiciones);
     if (gastoEspecial && gastoEspecial.cantidad > 0) onAjustarMunicionEspecial?.(gastoEspecial.id, -gastoEspecial.cantidad);
 

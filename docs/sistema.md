@@ -794,6 +794,26 @@ al preparar su modelado:
   - Los penalizadores de estado se aplican a mano (y los de umbral de salud y fatiga siguen
     sin aplicarse en ninguna tirada).
   - **Inducción completa.**
+- **Construcción de Hipercognición (usuario, 2026-09-30):** Sondeo No-Local, Precognición
+  y Retrocognición, todas con Perspicacia + Tecnociencia (Física). "Nivel de poder" =
+  poseído.
+  - Sondeo y Retrocognición: el tramo (distancia / tiempo transcurrido) fija tiempo,
+    fatiga y **dificultad sugerida = el valor bajo del rango** (6, 8, 10, 12 / 6, 9, 12,
+    15); la interferencia (+0/+2/+4/+6) es un selector que se suma. Nivel 4: −1; nivel 6:
+    −2. Niveles 3 y 5: un paso de tiempo cada uno (1 hora → 10 minutos → 1 minuto →
+    compleja → estándar → simple).
+  - **Alcance de los tramos del Sondeo calculado con el nivel de Resonancia de la ficha**
+    (¼, ½ y todo el alcance de su fila; local 1 km²).
+  - **Duración del Sondeo:** nivel turnos (errata de Murillo); **desde nivel 3, 1 minuto**
+    (la línea de nivel 3 alarga la duración). Solo el crítico se prolonga, pagando la misma
+    fatiga cada turno a mano.
+  - El **daño propio que depende del resultado** lo resta la app al tirar: fracaso crítico
+    del Sondeo (1 de daño mental por punto de fatiga) y de Precognición (1).
+  - Precognición: estándar, 1, dificultad 8, burbuja de 10 m × nivel, nivel turnos. Los
+    bonos, a mano. Las salvaciones no cuentan como defensivas.
+  - *Supuesto:* el −1/−2 por nivel par vale solo para Sondeo y Retrocognición (donde lo pone
+    la prosa), no para Precognición.
+  - **Las seis disciplinas, completas.**
 - **Máquinas sin ficha** (qué tira una IA/servidor que no es personaje para resistir un poder):
   pendiente de Murillo — es la pregunta 16.
 - Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de

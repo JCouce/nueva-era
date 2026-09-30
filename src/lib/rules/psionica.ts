@@ -19,6 +19,9 @@ export type Valor =
   | number
   | { base: number; porNivel?: number; porNivelPoseido?: number; porAplicado?: { aplicado: AplicadoId; valor: number } }
   | { opciones: { label: string; valor: number }[]; ajusteMaster: true } // referencias; la dificultad la escribe el jugador
+  // Fracción del alcance de la fila de OTRA disciplina, a su nivel en la ficha
+  // (Sondeo: ¼ del alcance de tu Resonancia).
+  | { alcanceDe: DisciplinaId; fraccion: number }
   | { manual: string }; // solo texto
 
 export type Economia = "gratuita" | "simple" | "estandar" | "compleja" | "reaccion" | { tiempo: string };

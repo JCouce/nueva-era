@@ -96,6 +96,8 @@ export type ContextoPoder = {
   // Valores de habilidad de la ficha: preseleccionan la más alta cuando la
   // tirada deja elegir habilidad.
   habilidades?: Partial<Record<HabilidadId, number>>;
+  // Niveles de la ficha en todas las disciplinas (Valor.alcanceDe).
+  niveles?: Partial<Record<DisciplinaId, number>>;
   // Para lo que la acción deja en "tabla" (fatiga, alcance… de la fila del nivel
   // empleado) y las rebajas de tipo de acción por nivel poseído.
   disciplina?: Disciplina;
@@ -111,7 +113,18 @@ export type ExcesoResuelto = {
   bloqueo: string | null; // por qué no se puede tirar con este peso
 };
 
+// Un paso menos: tiempos largos → compleja → estándar → simple (nunca por debajo).
 const PASO_ECONOMIA: Partial<Record<Economia & string, Economia>> = { compleja: "estandar", estandar: "simple" };
+const PASO_TIEMPO: Record<string, Economia> = {
+  "1 hora": { tiempo: "10 minutos" },
+  "10 minutos": { tiempo: "1 minuto" },
+  "1 minuto": "compleja",
+};
+
+function bajarUnPaso(e: Economia): Economia {
+  if (typeof e === "string") return PASO_ECONOMIA[e] ?? e;
+  return PASO_TIEMPO[e.tiempo] ?? e;
+}
 
 export function opcionesDisponibles(eje: EjePoder, nivelPoseido: number): Opcion[] {
   return eje.opciones.filter((o) => (o.desdeNivel ?? 0) <= nivelPoseido);
@@ -212,9 +225,7 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
     if (a.nivelEmpleado !== undefined && a.nivelEmpleado !== nivelEmpleado) continue;
     if (a.opcion && elecciones[a.opcion.eje] !== a.opcion.opcion) continue;
     if (m.op === "sustituye" && m.valor) w.economia = m.valor;
-    else if (m.op === "baja_un_paso" && typeof w.economia === "string") {
-      w.economia = PASO_ECONOMIA[w.economia as Economia & string] ?? w.economia;
-    }
+    else if (m.op === "baja_un_paso") w.economia = bajarUnPaso(w.economia as Economia);
   }
   if (multiplicaTiempo !== 1) {
     const e = w.economia as Economia;
@@ -363,6 +374,13 @@ function evaluarValor(v: unknown, donde: string, nivelEmpleado: number, ctx: Con
   if (typeof v === "number") return v;
   const o = v as Record<string, unknown>;
   if ("manual" in o || "ajusteMaster" in o) return v as ValorResuelto;
+  if ("alcanceDe" in o) {
+    const { alcanceDe, fraccion } = v as Extract<Valor, { alcanceDe: DisciplinaId }>;
+    const nivel = ctx.niveles?.[alcanceDe] ?? 0;
+    const fila = DISCIPLINAS.find((d) => d.id === alcanceDe)?.porNivel.find((f) => f.nivel === nivel);
+    if (typeof fila?.alcance !== "number") return 0;
+    return fila.alcance * fraccion;
+  }
   const f = v as Extract<Valor, { base: number }>;
   let total = f.base + (f.porNivel ?? 0) * nivelEmpleado + (f.porNivelPoseido ?? 0) * ctx.nivelPoseido;
   if (f.porAplicado) total += f.porAplicado.valor * (ctx.aplicados?.[f.porAplicado.aplicado] ?? 0);
@@ -422,7 +440,12 @@ export function accionesDePsionica(sheet: Sheet): PoderDisponible[] {
     if (nivelPoseido <= 0) return [];
     return disciplina.acciones.flatMap((accion): PoderDisponible[] => {
       if (!generaAccionDePoder(accion)) return [];
-      const porDefecto = resolverPoder(accion, { nivelPoseido, disciplina, habilidades: valoresHabilidad(sheet) });
+      const porDefecto = resolverPoder(accion, {
+        nivelPoseido,
+        disciplina,
+        habilidades: valoresHabilidad(sheet),
+        niveles: sheet.psionica,
+      });
       return porDefecto ? [{ disciplina, accion, nivelPoseido, porDefecto }] : [];
     });
   });
@@ -474,6 +497,9 @@ export function etiquetaPoder(accion: AccionPoder, p: PoderResuelto): string {
 // tira el objetivo (solo texto; la app no tira por él).
 export type DetallePoder = {
   resultados: Partial<Record<Grado, string>>;
+  // Daño que el psiónico se hace a sí mismo según el grado (fracaso crítico del
+  // Sondeo): se resta de la vida al resolver la tirada.
+  danioPropio?: Partial<Record<Grado, { valor: number; categoria: string }>>;
   objetivoTira: { que: string; dificultad?: string; grados?: Partial<Record<Grado, string>> }[];
 };
 
@@ -494,7 +520,13 @@ export function tiradaDePoder(accion: AccionPoder, p: PoderResuelto): Accion | n
   const r = p.resolucion;
   if (r.tipo === "sin_dado") return null;
   const resultados: DetallePoder["resultados"] = {};
-  for (const [g, res] of Object.entries(p.resultados)) resultados[g as Grado] = res.texto;
+  const danioPropio: NonNullable<DetallePoder["danioPropio"]> = {};
+  for (const [g, res] of Object.entries(p.resultados)) {
+    resultados[g as Grado] = res.texto;
+    if (res.danio?.sobre === "propio" && typeof res.danio.valor === "number" && res.danio.valor > 0) {
+      danioPropio[g as Grado] = { valor: res.danio.valor, categoria: res.danio.categoria };
+    }
+  }
   const notasDanio = p.notas.filter((n) => n.lugar === "danio");
   const tirada: Accion = {
     id: accion.id,
@@ -504,6 +536,7 @@ export function tiradaDePoder(accion: AccionPoder, p: PoderResuelto): Accion | n
     habilidad: r.habilidad,
     poder: {
       resultados,
+      ...(Object.keys(danioPropio).length > 0 && { danioPropio }),
       objetivoTira: p.objetivoTira.map((t) => ({
         que: t.que,
         dificultad: t.dificultad === undefined ? undefined : textoValor(t.dificultad),

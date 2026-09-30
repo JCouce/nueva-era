@@ -13,6 +13,7 @@ preparar el personaje y qué números deben salir.
 | J | Resonancia, tanda 1 (con NPC de nivel 6 en J.6) | Resonancia 3 |
 | K | Resonancia, tandas 2 y 3: Alerta, Vínculo y Buscar / percibir | Resonancia 3, y NPC con Resonancia 4 |
 | L | Inducción: Comando, Reconfiguración, Modulación, Supresión y Estabilización | NPC con Resonancia 1 + Inducción 5 (6 en L.8, 4 en L.10-L.12) |
+| M | Hipercognición: Sondeo, Retrocognición y Precognición | NPC con Resonancia 3 + Hipercognición 5 |
 
 Los números esperados valen para un personaje recién creado sin tocar: atributos a 0,
 sin especie, **8 de vida y 8 de fatiga**, y tirada de poder **−1** (Perspicacia +0,
@@ -452,13 +453,32 @@ NPC (o ficha editada) con **Resonancia 1** e **Inducción 5**. Fatiga a 8.
   Estabilización (si la superaste)"; al marcarla, total +0 → +3. Con Inducción 1-3 es +2;
   con 6, +4; sin Inducción, no aparece.
 
+## M. Hipercognición
+
+NPC (o ficha editada) con **Resonancia 3** e **Hipercognición 5**. Fatiga a 8.
+
+- [ ] **M.1 Filas.** → Sondeo No-Local `Simple · 1 fatiga · 1 km²`; Precognición `Estándar ·
+  1 fatiga`; Retrocognición `Simple · 1 fatiga`.
+- [ ] **M.2 Sondeo, tramos.** Local: Simple, Fatiga 1, Duración "1 minuto (10 turnos)",
+  Dificultad 5 marcada (6 − 1). "¼ de tu Resonancia": Estándar, Alcance **500 km²**,
+  Dificultad 7. "Todo tu alcance" + "Militar +4": Acción `1 minuto`, Fatiga 4, Alcance
+  **2000 km²**, Dificultad **15** (12 + 4 − 1).
+- [ ] **M.3 Fracaso crítico.** Local con Legendario (16) y Tirar: con fracaso crítico, el
+  texto "Desorientación dimensional…" y el aviso "Recibes 1 de daño mental (ya restado)";
+  la vida baja 1 y la fatiga 1.
+- [ ] **M.4 Retrocognición.** "Hasta 1 semana": Compleja (10 minutos rebajado dos pasos),
+  Fatiga 2, Área 50 m de radio, Dificultad **11** (12 − 1).
+- [ ] **M.5 Precognición.** → Estándar, Fatiga 1, Área 50 m de radio, Duración 5 turnos,
+  Dificultad 8.
+
 ---
 
 ## Fuera de estas pruebas
 
 No son fallos:
 
-- Hipercognición no tiene poderes todavía. Traslación
+- Las fuentes externas de la cadena de fatiga (Xovromium, Munición Supresora, Derivación
+  Psiónica) aún no están. Traslación
   está completa.
 - Xovromium, Munición Supresora y Derivación Psiónica no afectan aún ni a la tirada ni a
   la fatiga.

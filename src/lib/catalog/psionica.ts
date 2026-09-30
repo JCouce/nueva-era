@@ -2,10 +2,9 @@
 // borrador del que sale: docs/modelado-psionica.json (no se importa en runtime,
 // es un borrador — esto es la transcripción revisada y tipada).
 //
-// Están las 6 disciplinas (las necesita la compra); las acciones entran
-// disciplina a disciplina.
+// Las 6 disciplinas con sus acciones.
 import type { MotorMetadata } from "../rules/motor";
-import type { AccionPoder, CambiosOpcion, CatalogoPsionica, Disciplina, EjePoder, Opcion } from "../rules/psionica";
+import type { AccionPoder, CambiosOpcion, CatalogoPsionica, Disciplina, Economia, EjePoder, Opcion } from "../rules/psionica";
 
 export const DISCIPLINA_IDS = ["resonancia", "induccion", "hipercognicion", "traslacion", "contencion", "singularidad"] as const;
 export type DisciplinaId = (typeof DISCIPLINA_IDS)[number];
@@ -253,20 +252,6 @@ const CONVERGENCIA: AccionPoder = {
   ],
   motor: motorDeAccion("psi_singularidad_convergencia", { propias: true, tercero: ["defensa", "salv_fortaleza"] }),
 };
-
-// Solo lo que la compra necesita; tablas, reglas y acciones llegan con cada disciplina.
-function disciplinaVacia(d: Pick<Disciplina, "id" | "label" | "rama" | "requisito">): Disciplina {
-  return {
-    ...d,
-    porNivel: [],
-    reglas: [],
-    modificadoresFatiga: [],
-    modificadoresEconomia: [],
-    bonosEnOtrasTiradas: [],
-    ventajas: [],
-    acciones: [],
-  };
-}
 
 // ── Resonancia ────────────────────────────────────────────────────
 // Todo poder elige alcance: Local (su coste propio, 1 km², cuenta como nivel
@@ -1247,6 +1232,231 @@ const INDUCCION: Disciplina = {
   acciones: [COMANDO, MODULACION, HIPOMANIA_ALIADO, RECONFIGURACION, SUPRESION, ESTABILIZACION],
 };
 
+// ── Hipercognición ────────────────────────────────────────────────
+// Perspicacia + Tecnociencia (Física). Sondeo y Retrocognición: el tramo
+// (distancia / tiempo transcurrido) fija tiempo, fatiga y dificultad sugerida (el
+// valor bajo del rango; usuario, 2026-09-30); la interferencia se suma. El nivel
+// poseído solo rebaja: −1 de dificultad en nivel 4 y −2 en nivel 6 (Murillo: el 2
+// no rebaja) y un paso de tiempo en los niveles 3 y 5. "Nivel de poder" = poseído.
+const SONDEO_ID = "psi_hipercognicion_sondeo";
+const RETROCOGNICION_ID = "psi_hipercognicion_retrocognicion";
+const PRECOGNICION_ID = "psi_hipercognicion_precognicion";
+
+const TIRADA_HIPERCOGNICION = { tipo: "tirada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "Física" } as const;
+
+const ejeInterferencia = (etiquetas: [string, string, string, string]): EjePoder => ({
+  id: "interferencia",
+  label: "Interferencia",
+  tipo: "opcion",
+  opciones: etiquetas.map((label, i): Opcion => ({
+    id: `i${i * 2}`,
+    label,
+    cambia: {},
+    ...(i > 0 && { suma: { "resolucion.dificultad": i * 2 } }),
+  })),
+});
+
+const REBAJA_DIFICULTAD_HIPERCOGNICION: AccionPoder["ajustesPorNivelPoseido"] = [
+  { desdeNivel: 4, sobre: "resolucion.dificultad", op: "suma", valor: -1 },
+  { desdeNivel: 6, sobre: "resolucion.dificultad", op: "suma", valor: -1 },
+];
+
+// Fracaso crítico del Sondeo: 1 de daño mental por punto de fatiga empleado; cada
+// tramo pone el suyo.
+const resultadosSondeo = (fatiga: number): AccionPoder["resultados"] => ({
+  critico: {
+    texto: "Información perfecta y nítida (audio, visual, térmico) mientras dure, ignorando coberturas o interferencias ópticas de baja intensidad. Puedes prolongarla pagando la misma fatiga cada turno, sin volver a tirar (a mano en Recursos)",
+    estados: [],
+  },
+  exito: {
+    texto: "Imagen general precisa (distribución de enemigos, accesos, elementos clave) mientras dure, sin poder prolongarla; con un leve desfase de segundos y parpadeos que pueden alterar el orden de lo que ves",
+    estados: [],
+  },
+  fracaso: { texto: "No consigues ver nada y puedes quedar aturdido: salvación de Fortaleza contra 8", estados: [] },
+  fracasoCritico: {
+    texto: `Desorientación dimensional: recibes ${fatiga} de daño mental y salvación de Fortaleza contra la dificultad de la prueba o quedas aturdido`,
+    estados: [],
+    danio: { valor: fatiga, categoria: "mental", sobre: "propio" },
+  },
+});
+
+const tramoSondeo = (
+  id: string,
+  label: string,
+  dificultad: number,
+  economia: Economia,
+  fatiga: number,
+  fraccion: number,
+): Opcion => ({
+  id,
+  label,
+  cambia: {
+    economia,
+    fatiga,
+    alcance: { alcanceDe: "resonancia", fraccion },
+    resolucion: { dificultad },
+    resultados: resultadosSondeo(fatiga),
+  },
+});
+
+// Duración (errata de Murillo): nivel turnos; desde nivel 3, 1 minuto (usuario,
+// 2026-09-30: la línea de nivel 3 alarga la duración). Solo el crítico se prolonga.
+const SONDEO: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: SONDEO_ID,
+  label: "Sondeo No-Local",
+  desdeNivel: 1,
+  economia: "compleja",
+  fatiga: 1,
+  alcance: 1,
+  duracion: { base: 0, porNivelPoseido: 1 },
+  unidades: { alcance: "km²", duracion: "turnos" },
+  objetivo: null,
+  desplazamiento: null,
+  resolucion: { ...TIRADA_HIPERCOGNICION, dificultad: 6 },
+  objetivoTira: [],
+  ejes: [
+    {
+      id: "distancia",
+      label: "Distancia",
+      tipo: "opcion",
+      opciones: [
+        { id: "local", label: "Local de Resonancia", cambia: {} },
+        tramoSondeo("cuarto", "¼ de tu Resonancia", 8, { tiempo: "1 minuto" }, 1, 0.25),
+        tramoSondeo("mitad", "½ de tu Resonancia", 10, { tiempo: "10 minutos" }, 2, 0.5),
+        tramoSondeo("maximo", "Todo tu alcance", 12, { tiempo: "1 hora" }, 4, 1),
+      ],
+    },
+    ejeInterferencia(["Abierto o civil", "Apantallado +2", "Militar +4", "Supresión cuántica +6"]),
+  ],
+  ajustesPorNivelPoseido: [
+    ...REBAJA_DIFICULTAD_HIPERCOGNICION,
+    { desdeNivel: 3, sobre: "duracion", op: "sustituye", valor: { manual: "1 minuto (10 turnos)" } },
+  ],
+  resultados: resultadosSondeo(1),
+  notas: [
+    { texto: "Requiere concentración. Dificultad sugerida: el valor bajo del tramo (6-7, 8-9, 10-11, 12+); súbela si el máster dice más.", lugar: "tirada" },
+    { texto: "La supresión cuántica activa puede dejar el objetivo bloqueado sin una brecha previa.", lugar: "tirada" },
+  ],
+  motor: motorDeAccion(SONDEO_ID, { propias: true }),
+};
+
+const tramoRetro = (id: string, label: string, dificultad: number, economia: Economia, fatiga: number): Opcion => ({
+  id,
+  label,
+  cambia: { economia, fatiga, resolucion: { dificultad } },
+});
+
+const RETROCOGNICION: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: RETROCOGNICION_ID,
+  label: "Retrocognición",
+  desdeNivel: 1,
+  economia: "compleja",
+  fatiga: 1,
+  alcance: null,
+  unidades: { area: "m de radio" },
+  objetivo: { tipo: "propio", area: { base: 0, porNivelPoseido: 10 } },
+  desplazamiento: null,
+  resolucion: { ...TIRADA_HIPERCOGNICION, dificultad: 6 },
+  objetivoTira: [],
+  ejes: [
+    {
+      id: "tiempo",
+      label: "Tiempo transcurrido",
+      tipo: "opcion",
+      opciones: [
+        { id: "hora", label: "Menos de 1 hora", cambia: {} },
+        tramoRetro("dia", "Últimas 24 horas", 9, { tiempo: "1 minuto" }, 1),
+        tramoRetro("semana", "Hasta 1 semana", 12, { tiempo: "10 minutos" }, 2),
+        tramoRetro("mas", "Más de una semana", 15, { tiempo: "1 hora" }, 4),
+      ],
+    },
+    ejeInterferencia(["Sellado", "Tránsito +2", "Alterado +4", "Arrasado +6"]),
+  ],
+  ajustesPorNivelPoseido: REBAJA_DIFICULTAD_HIPERCOGNICION,
+  resultados: {
+    critico: {
+      texto: "El eco llega con máxima precisión: puedes pausar, rebobinar y examinar la secuencia fotograma a fotograma, con identidades, palabras exactas, códigos y detalles nítidos",
+      estados: [],
+    },
+    exito: {
+      texto: "Ves el flujo principal de lo que pasó (quiénes estuvieron, hacia dónde fueron, las acciones clave), con lagunas o estática en detalles y audio",
+      estados: [],
+    },
+    fracaso: { texto: "Eco difuso: poca información útil y un leve mareo; salvación de Voluntad contra 6 o quedas aturdido", estados: [] },
+    fracasoCritico: { texto: "Contaminación mnemónica: tomas por cierta una superposición errónea de datos y quedas aturdido 1 turno", estados: [] },
+  },
+  notas: [
+    { texto: "Solo lo que pasó dentro de la burbuja. Dificultad sugerida: el valor bajo del tramo (6-8, 9-11, 12-14, 15+).", lugar: "tirada" },
+    { texto: "Con el escenario arrasado, el rastro puede estar disipado del todo (a criterio del máster).", lugar: "tirada" },
+  ],
+  motor: motorDeAccion(RETROCOGNICION_ID, { propias: true }),
+};
+
+// Precognición: los bonos son un efecto activo sobre uno mismo, a mano. Las
+// salvaciones no cuentan como tiradas defensivas; el fracaso crítico dura 1 turno
+// (Murillo, 2026-09-29).
+const PRECOGNICION: AccionPoder = {
+  ...SIN_EXTRAS,
+  id: PRECOGNICION_ID,
+  label: "Precognición",
+  desdeNivel: 1,
+  economia: "estandar",
+  fatiga: 1,
+  alcance: null,
+  duracion: { base: 0, porNivelPoseido: 1 },
+  unidades: { area: "m de radio", duracion: "turnos" },
+  objetivo: { tipo: "propio", area: { base: 0, porNivelPoseido: 10 } },
+  desplazamiento: null,
+  resolucion: { ...TIRADA_HIPERCOGNICION, dificultad: 8 },
+  objetivoTira: [],
+  ejes: [],
+  resultados: {
+    critico: {
+      texto: "+3 en tiradas defensivas contra ataques hechos dentro de la burbuja y en ofensivas contra objetivos dentro; +2 fuera. Ignoras el primer nivel de cobertura (salvo total) y tienes una segunda reacción por turno",
+      estados: [],
+    },
+    exito: { texto: "+2 en tiradas defensivas y ofensivas dentro de la burbuja; +1 fuera", estados: [] },
+    fracaso: { texto: "Dudas entre futuros: −1 en tus acciones defensivas y ofensivas el siguiente turno", estados: [] },
+    fracasoCritico: {
+      texto: "Parálisis por exceso de futuros durante 1 turno: −2 en defensivas y ofensivas, sin reacción y a mitad de velocidad. Al acabar el turno recibes 1 de daño mental y tiras Voluntad contra 8 o quedas confuso",
+      estados: [],
+      danio: { valor: 1, categoria: "mental", sobre: "propio" },
+    },
+  },
+  notas: [
+    { texto: "Los bonos los llevas a mano mientras dure. Las salvaciones no cuentan como tiradas defensivas.", lugar: "tirada" },
+    { texto: "Interferencias físicas o electromagnéticas masivas suben la dificultad (la dice el máster).", lugar: "tirada" },
+  ],
+  motor: motorDeAccion(PRECOGNICION_ID, { propias: true }),
+};
+
+const HIPERCOGNICION: Disciplina = {
+  id: "hipercognicion",
+  label: "Hipercognición",
+  rama: "metasensoria",
+  requisito: { disciplina: "resonancia", nivel: 2 },
+  porNivel: [],
+  reglas: [
+    {
+      id: "tramos",
+      texto: "En Sondeo y Retrocognición el tramo fija tiempo, fatiga y dificultad; el nivel solo rebaja tiempos y dificultad.",
+      aplica: [SONDEO_ID, RETROCOGNICION_ID],
+    },
+  ],
+  modificadoresFatiga: [],
+  // Niveles 3 y 5: un paso de tiempo cada uno (1 hora → 10 minutos → 1 minuto →
+  // compleja → estándar → simple; Murillo: el local llega a simple en el 5).
+  modificadoresEconomia: [SONDEO_ID, RETROCOGNICION_ID].flatMap((accion) => [
+    { fuente: "Hipercognición 3", desdeNivelPoseido: 3, alcance: { accion }, op: "baja_un_paso" as const },
+    { fuente: "Hipercognición 5", desdeNivelPoseido: 5, alcance: { accion }, op: "baja_un_paso" as const },
+  ]),
+  bonosEnOtrasTiradas: [],
+  ventajas: [],
+  acciones: [SONDEO, PRECOGNICION, RETROCOGNICION],
+};
+
 // ── Traslación ────────────────────────────────────────────────────
 // La fatiga de Anclaje y Trasladar no depende del movimiento sino de la carga o
 // el alcance: se paga la fila del nivel empleado de la tabla (porNivel). "Nivel
@@ -1926,7 +2136,7 @@ export const PSIONICA: CatalogoPsionica = {
   disciplinas: [
     RESONANCIA,
     INDUCCION,
-    disciplinaVacia({ id: "hipercognicion", label: "Hipercognición", rama: "metasensoria", requisito: { disciplina: "resonancia", nivel: 2 } }),
+    HIPERCOGNICION,
     TRASLACION,
     CONTENCION_DISCIPLINA,
     SINGULARIDAD,
