@@ -10,7 +10,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser, canAdjustCombatiente } from "@/lib/auth-helpers";
-import { parseSheet, salud, estadoPorId, descontarDuracion, type EstadoActivo } from "@/lib/rules";
+import { parseSheet, resolverFicha, estadoPorId, descontarDuracion, type EstadoActivo } from "@/lib/rules";
 
 export type CombateResult = { ok: true } | { ok: false; error: string };
 
@@ -106,7 +106,8 @@ export async function agregarJugadorAction(
 
   // Foto del máximo actual (ver el comentario de Combatiente en
   // schema.prisma) — se copia aquí, no se vuelve a leer del Character.
-  const { vida, fatiga } = salud(parseSheet(character.stats));
+  // En reposo: al entrar en el combate todavía no tiene estados.
+  const { vida, fatiga } = resolverFicha(parseSheet(character.stats), { estadosCombate: [] }).salud;
 
   await prisma.combatiente.create({
     data: {
@@ -141,7 +142,7 @@ export async function agregarNpcDeCatalogoAction(
   if (!npc) return { ok: false, error: "No existe ese NPC." };
 
   const sheet = parseSheet(npc.stats);
-  const { vida, fatiga } = salud(sheet);
+  const { vida, fatiga } = resolverFicha(sheet, { estadosCombate: [] }).salud;
 
   await prisma.combatiente.create({
     data: {

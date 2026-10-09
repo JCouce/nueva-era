@@ -25,6 +25,7 @@
 //   psionica.ts        forma de los poderes psiónicos y compra de disciplinas (N×3, requisitos)
 //   poderes.ts         evaluador: poder + nivel + opciones elegidas → valores concretos
 //   especie.ts         especie + casta + linaje → efectos; elegir especie (validación y reset)
+//   fichaResuelta.ts   resolverFicha: modificadores y derivados de una ficha en una pasada
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -52,6 +53,7 @@ export * from "./psionica";
 export * from "./poderes";
 export * from "./usoPoder";
 export * from "./especie";
+export * from "./fichaResuelta";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

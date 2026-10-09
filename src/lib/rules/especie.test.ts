@@ -1,7 +1,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, parseSheet, SCHEMA_VERSION, type Sheet } from "./sheet";
-import { atributosEfectivos, desgloseAtributo, salud } from "./derivados";
+import { atributosEfectivos, desgloseAtributo, modificadoresActivos, salud } from "./derivados";
 import { especieDeFicha, elegirEspecie, hayQuePerder, type ContextoEleccion } from "./especie";
 import { setAtributoValue, setPrioridad } from "./creacion";
 import { migrar } from "./migraciones";
@@ -21,7 +21,7 @@ const CEROS: Record<AtributoId, number> = {
   inteligencia: 0,
   caracter: 0,
 };
-const efectivos = (s: Sheet) => atributosEfectivos(s);
+const efectivos = (s: Sheet) => atributosEfectivos(s, modificadoresActivos(s));
 const con = (cambios: Partial<Record<AtributoId, number>>) => ({ ...CEROS, ...cambios });
 
 describe("especieDeFicha: atributos de cada especie (sistema.md §14.4)", () => {
@@ -89,7 +89,7 @@ describe("especieDeFicha: noble de cada linaje (casta + linaje se suman)", () =>
 
   test("el desglose nombra casta y casa por separado", () => {
     const s = { ...ficha("manduk", { casta: "noble", linaje: "elion" }), atributos: { ...CEROS, caracter: 1 } };
-    assert.deepEqual(desgloseAtributo(s, "caracter"), {
+    assert.deepEqual(desgloseAtributo(s, "caracter", modificadoresActivos(s)), {
       total: 3,
       fuentes: [
         { etiqueta: "Base", valor: 1 },
@@ -101,7 +101,8 @@ describe("especieDeFicha: noble de cada linaje (casta + linaje se suman)", () =>
 
   test("el bono llega a la salud: Ílkrem Fuerza +1 sube Fortaleza", () => {
     // Fortaleza = ceil((1 + 0)/2) = 1 → vida 9.
-    assert.equal(salud(ficha("manduk", { casta: "noble", linaje: "ilkrem" })).vida, 9);
+    const ilkrem = ficha("manduk", { casta: "noble", linaje: "ilkrem" });
+    assert.equal(salud(ilkrem, modificadoresActivos(ilkrem)).vida, 9);
   });
 
   test("un linaje sin casta noble no cuenta (opción vieja en la ficha)", () => {
@@ -298,7 +299,7 @@ describe("ficha v14: especieOpciones", () => {
   test("una ficha vieja de Arkorü se lee con los números nuevos", () => {
     const s = parseSheet({ schemaVersion: 13, especieId: "arkoru", atributos: { fuerza: 1 } });
     assert.deepEqual(s.especieOpciones, {});
-    assert.equal(atributosEfectivos(s).fuerza, 3);
+    assert.equal(atributosEfectivos(s, modificadoresActivos(s)).fuerza, 3);
   });
 
   test("parseSheet conserva opciones válidas", () => {

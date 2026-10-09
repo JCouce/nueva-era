@@ -4,15 +4,12 @@ import {
   ATRIBUTO_MIN,
   ATRIBUTO_MAX_CREACION,
   ATRIBUTO_MAX,
-  modificadoresActivos,
-  desgloseAtributo,
-  desgloseAplicado,
   costeMarginal,
   COSTE_FACTOR_ATRIBUTO,
   type AtributoId,
   textoPuntos,
 } from "@/lib/rules";
-import type { Sheet } from "@/lib/rules";
+import type { FichaResuelta } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { Desglose } from "@/components/Desglose";
 import { Stepper } from "./Stepper";
@@ -25,14 +22,14 @@ import { Stepper } from "./Stepper";
 const CASILLAS = ATRIBUTO_MAX;
 
 export function AtributosTab({
-  sheet,
+  ficha,
   puntosDisponibles,
   aprobada,
   xp,
   libre = false,
   onSet,
 }: {
-  sheet: Sheet;
+  ficha: FichaResuelta;
   // No aplican en modo libre (edición de NPC, fase 6b 5.1: el máster no
   // tiene pool que gastar ni XP que llevar — clampa directo contra los
   // límites del sistema, en las dos direcciones). Opcionales para no
@@ -43,9 +40,7 @@ export function AtributosTab({
   libre?: boolean;
   onSet: (id: AtributoId, value: number) => void;
 }) {
-  // Se calculan una vez y se pasan hacia abajo: evita recalcular la especie
-  // por cada atributo y cada aplicado del render.
-  const mods = modificadoresActivos(sheet);
+  const sheet = ficha.ficha;
   // Tras aprobar (o en modo libre), el techo pasa a ser el del sistema, no
   // el de creación — mismo coste por nivel, otra cuenta.
   const tope = libre || aprobada ? ATRIBUTO_MAX : ATRIBUTO_MAX_CREACION;
@@ -64,7 +59,7 @@ export function AtributosTab({
 
       {ATRIBUTOS.map((a) => {
         const value = sheet.atributos[a.id];
-        const desglose = desgloseAtributo(sheet, a.id, mods);
+        const desglose = ficha.desgloses.atributos[a.id];
         const tieneModificadores = desglose.fuentes.length > 1;
         // Coste marginal del siguiente punto: triangular, Nivel × 2
         // (docs/sistema.md, "Coste y progresión") — no es fijo ni es el
@@ -140,7 +135,7 @@ export function AtributosTab({
           const de = a.de.map(
             (b) => ATRIBUTOS.find((x) => x.id === b)!.abbr,
           );
-          const desglose = desgloseAplicado(sheet, a.id, mods);
+          const desglose = ficha.desgloses.aplicados[a.id];
           return (
             <HudCard key={a.id} className="p-3">
               <div className="flex items-baseline justify-between gap-2">

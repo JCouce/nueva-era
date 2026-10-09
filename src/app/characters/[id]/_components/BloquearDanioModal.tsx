@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { desgloseBlindaje, tieneEscudoMelee, TIPOS_DANIO, type Sheet, type TipoDanio } from "@/lib/rules";
+import { desgloseBlindaje, TIPOS_DANIO, type FichaResuelta, type TipoDanio } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 
 function signo(n: number) {
@@ -28,13 +28,13 @@ function LineaBlindaje({ etiqueta, valor }: { etiqueta: string; valor: number })
 // daño + cuánto recibes, y ves cuánto absorbe el blindaje ahora mismo. Por
 // eso no necesita el patrón de ReparaFabricaModal.tsx (tirada + callback de
 // efecto): aquí no hay tirada ni mutación, solo lectura de desgloseBlindaje().
-export function BloquearDanioModal({ sheet, onCerrar }: { sheet: Sheet; onCerrar: () => void }) {
+export function BloquearDanioModal({ ficha, onCerrar }: { ficha: FichaResuelta; onCerrar: () => void }) {
   const [tipo, setTipo] = useState<TipoDanio>("cinetico");
   const [escudoEnAlto, setEscudoEnAlto] = useState(false);
   const [danioRecibido, setDanioRecibido] = useState(0);
 
-  const conEscudo = tieneEscudoMelee(sheet);
-  const desglose = desgloseBlindaje(sheet, tipo, conEscudo && escudoEnAlto);
+  const conEscudo = ficha.blindaje.tieneEscudoMelee;
+  const desglose = desgloseBlindaje(ficha.ficha, tipo, conEscudo && escudoEnAlto);
   const blindaje = desglose.reduce((total, l) => total + l.valor, 0);
   const pasa = Math.max(0, danioRecibido - blindaje);
 

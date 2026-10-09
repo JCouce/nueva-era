@@ -51,29 +51,29 @@ describe("catálogo de especies", () => {
 describe("los modificadores de especie llegan a los números", () => {
   test("sin especie no hay modificadores", () => {
     assert.deepEqual(modificadoresActivos(conEspecie(null)), []);
-    assert.equal(atributoEfectivo(conEspecie(null), "aguante"), 0);
+    assert.equal(atributoEfectivo(conEspecie(null), "aguante", modificadoresActivos(conEspecie(null))), 0);
   });
 
   test("el humano no cambia nada", () => {
     const s = conEspecie("humano");
-    assert.equal(atributoEfectivo(s, "aguante"), 0);
-    assert.deepEqual(salud(s), salud(conEspecie(null)));
+    assert.equal(atributoEfectivo(s, "aguante", modificadoresActivos(s)), 0);
+    assert.deepEqual(salud(s, modificadoresActivos(s)), salud(conEspecie(null), modificadoresActivos(conEspecie(null))));
   });
 
   test("el arköru sube Fuerza y baja Agilidad", () => {
     const s = conEspecie("arkoru");
-    assert.equal(atributoEfectivo(s, "fuerza"), 2);
-    assert.equal(atributoEfectivo(s, "agilidad"), -1);
+    assert.equal(atributoEfectivo(s, "fuerza", modificadoresActivos(s)), 2);
+    assert.equal(atributoEfectivo(s, "agilidad", modificadoresActivos(s)), -1);
   });
 
   test("el bono de atributo arrastra a los aplicados y a la salud", () => {
     const s = conEspecie("arkoru");
     // Fuerza +2 entra en Fortaleza (fue+agu): ceil(2/2) = 1.
-    assert.equal(aplicado(s, "fortaleza"), 1);
-    assert.equal(salud(s).vida, 9); // 8 + 1
+    assert.equal(aplicado(s, "fortaleza", modificadoresActivos(s)), 1);
+    assert.equal(salud(s, modificadoresActivos(s)).vida, 9); // 8 + 1
     // Voluntad (agu+car) no la toca: la fatiga se queda igual.
-    assert.equal(aplicado(s, "voluntad"), 0);
-    assert.equal(salud(s).fatiga, 8);
+    assert.equal(aplicado(s, "voluntad", modificadoresActivos(s)), 0);
+    assert.equal(salud(s, modificadoresActivos(s)).fatiga, 8);
   });
 
   test("un bono de habilidad se suma al valor efectivo, también sin entrenar", () => {
@@ -104,7 +104,7 @@ describe("los modificadores NO tocan el point-buy", () => {
     );
     // Pero el valor en juego sí sube.
     assert.equal(conArkoru.atributos.fuerza, 2);
-    assert.equal(atributoEfectivo(conArkoru, "fuerza"), 4);
+    assert.equal(atributoEfectivo(conArkoru, "fuerza", modificadoresActivos(conArkoru)), 4);
   });
 });
 
@@ -196,15 +196,16 @@ describe("alcance de un modificador de tirada", () => {
 
 describe("el movimiento recoge los bonos de Atletismo", () => {
   test("un bono de habilidad mueve la base de las fórmulas", () => {
-    const base = movimiento(conEspecie(null));
-    const conBono = movimiento({
+    const base = movimiento(conEspecie(null), modificadoresActivos(conEspecie(null)));
+    const fichaConBono: Sheet = {
       ...conEspecie(null),
       // Simula el efecto de +1 en atletismo comprándolo, para comparar escalas.
       habilidades: {
         ...defaultSheet().habilidades,
         atletismo: { valor: 1, especialidades: [] },
       },
-    });
+    };
+    const conBono = movimiento(fichaConBono, modificadoresActivos(fichaConBono));
     assert.ok(conBono.carrera > base.carrera);
   });
 });

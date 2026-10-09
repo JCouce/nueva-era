@@ -654,6 +654,10 @@ vez con este recurso persistente o se queda como una cosa aparte.
 **Hoja de ruta con subtareas, para ir cogiéndolas una a una: `docs/fase-6b.md`.** No
 dupliques su detalle aquí — actualiza ese archivo al cerrar cada pieza y, cuando la fase
 entera esté hecha, esta entrada pasa a ✅ con un resumen de dos líneas.
+**En duda (usuario, 2026-10-09):** no convence el modo combate en general; no se extiende
+hasta replantearlo. Caso conocido sin decidir: desde E1b (especies) todas las pestañas
+ven los estados de combate, así que si un estado baja la vida/fatiga máxima por debajo de
+la actual se ve "11/9" (lo guardado no se recorta).
 
 El camino completo funciona de punta a punta: crear/editar NPCs con ficha en un
 catálogo propio, montar un combate, meter jugadores y NPCs, llevar la cola de turnos e
@@ -1368,15 +1372,21 @@ de comportamiento), **E1c** servidor + UI + fuera provisionales.
       **reset** de todo salvo Resumen + créditos a la letra; `hayQuePerder` para el aviso
       *(E1a: los créditos los fija `setEspecieAction` cuando `reseteada` es true)*
 - [ ] `setEspecieAction` (sale de `saveIdentityAction`): aplica el reset en el servidor
-- [ ] `resolverFicha` calculada una vez en `CharacterSheet`; fuera los
+- [x] `resolverFicha` calculada una vez en `CharacterSheet`; fuera los
       `mods = modificadoresActivos(sheet)` por defecto; ESLint en componentes
+      *(E1b: `rules/fichaResuelta.ts` + `hooks/useFichaResuelta.ts`; con los estados de
+      combate dentro, Resumen/Atributos/Recursos y la cabecera ven ya los mismos números
+      que Acciones. Quedan `TODO(revisar)`: daño de armas en reposo en `combate.ts` (M1),
+      clamp de vida/fatiga sin estados en `vitalidad.ts`, chips de la tarjeta de especie)*
+- [ ] Resumen: la tarjeta de especie lista hoy todos los modificadores (equipo y, desde E1b, estados); que liste solo los de especie, casta y linaje
 - [ ] UI: selector de especie/casta/linaje el primero en Resumen; aviso "se reseteará la
       ficha" solo si hay algo que perder
 - [x] `ESPECIES` entra en `motor.test.ts` (MotorMetadata por rasgo)
 - [ ] NPC: selector de especie/casta/linaje en la pestaña Identidad de `NpcEditor` (hoy
       solo nombre y nota)
-- [ ] NPC: `resolverFicha` también en `NpcEditor`, vía un hook compartido con
+- [x] NPC: `resolverFicha` también en `NpcEditor`, vía un hook compartido con
       `CharacterSheet` (`useFichaResuelta`), para que el NPC no se quede con el cálculo viejo
+      *(E1b; también `NpcAccionesPanel` de la consola de combate)*
 - [x] NPC: `elegirEspecie` en modo libre: sin reset, sin bloqueo por aprobación, sin tocar
       créditos (los NPC no tienen esa columna)
 
@@ -1404,7 +1414,8 @@ ficha una vez, ya con costes de casta, descuentos y derivados)
 - [ ] `montarTirada`: total + desglose + márgenes de crítico/pifia
 - [ ] Penalizadores por umbral de salud y fatiga dentro (`modificadoresDeUmbrales`)
 - [ ] Sacar de `AccionesTab` la suma del modal y el crítico de la VTM
-- [ ] Índice de casillas sin el memo parcial `[sheet.equipo]` + `eslint-disable`
+- [x] Índice de casillas sin el memo parcial `[sheet.equipo]` + `eslint-disable` (hecho en E1b: sale de `resolverFicha`)
+- [ ] El daño de armas melee/bayoneta y el aplicado Sutil salen aún de la ficha en reposo (`combate.ts`, `TODO(revisar)`): con un estado que baje Fuerza, la tirada lo refleja y el daño no
 
 **E4 — Bonos a tiradas**
 - [ ] Casillas de especie: +2 radiación (Riux), temperatura / filtración / derribo y −1

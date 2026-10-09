@@ -24,9 +24,15 @@ import { nivelesHasta, acumulaPorClave, ultimoQueDefine, sustituyeMiraIntegrada,
 import type { MotorMetadata } from "./motor";
 import { gastoDelModo } from "./recursos";
 import { CONDICION_ATACANTES_ADICIONALES, type Accion, type AccionDirecta } from "./acciones";
-import { atributoEfectivo, aplicado } from "./derivados";
+import { atributoEfectivo, aplicado, modificadoresActivos } from "./derivados";
 
 const TRAMOS: TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
+
+// TODO(revisar) E1b: el daño y el aplicado Sutil de las armas salen de la ficha en
+// reposo (especie + equipo, sin estados de combate), igual que antes de resolverFicha,
+// cuando aplicado()/atributoEfectivo() tomaban ese valor por defecto. Pasarles la
+// FichaResuelta (con estados) cambiaría números: se decide con montarTirada (M1).
+const enReposo = (sheet: Sheet) => modificadoresActivos(sheet);
 
 // Modificador de distancia base, igual para toda arma de fuego (ver
 // sistema-y-combate.md), con las dos excepciones de familia que documenta
@@ -357,7 +363,7 @@ function tieneBayonetaInstalada(sheet: Sheet, instanciaId: string): boolean {
 
 function tiradaGolpeBayoneta(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Accion | null {
   if (!tieneBayonetaInstalada(sheet, instanciaId)) return null;
-  const fuerza = atributoEfectivo(sheet, "fuerza");
+  const fuerza = atributoEfectivo(sheet, "fuerza", enReposo(sheet));
   return {
     id: `golpear_bayoneta_${instanciaId}`,
     label: `Bayoneta (${arma.label})`,
@@ -549,11 +555,11 @@ function condicionesSacrificioColchon(nivel: number): CondicionTirada[] {
 function tiradaDeArmaMelee(sheet: Sheet, arma: ArmaMelee, instanciaId: string): Accion {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
   const modo = condicionModo(modosConId);
-  const fuerza = atributoEfectivo(sheet, "fuerza");
+  const fuerza = atributoEfectivo(sheet, "fuerza", enReposo(sheet));
   const esSutil = arma.sutil === true;
   // Solo se calcula si hace falta: el resto de armas (no Sutil) no necesita
   // el aplicado de Potencia para nada aquí.
-  const potencia = esSutil ? aplicado(sheet, "potencia") : null;
+  const potencia = esSutil ? aplicado(sheet, "potencia", enReposo(sheet)) : null;
   const esDesarmado = arma.id === "pelea_punetazo" || arma.id === "pelea_patada";
   const malla = esDesarmado ? mallaPlasmaticaEquipada(sheet) : null;
 
@@ -644,7 +650,7 @@ function tiradaLanzarArmaMelee(sheet: Sheet, arma: ArmaMelee, instanciaId: strin
       modos: [
         {
           id: "0",
-          danio: bono === null ? null : atributoEfectivo(sheet, "fuerza") + bono,
+          danio: bono === null ? null : atributoEfectivo(sheet, "fuerza", enReposo(sheet)) + bono,
           formulaDanio: modo.formulaDanio,
           categoriaDanio: modo.categoriaDanio,
         },
@@ -795,7 +801,7 @@ function tiradaGolpeAguijon(sheet: Sheet, pieza: PiezaEquipada): Accion {
       modos: [
         {
           id: "0",
-          danio: atributoEfectivo(sheet, "fuerza") + 2 + nivel,
+          danio: atributoEfectivo(sheet, "fuerza", enReposo(sheet)) + 2 + nivel,
           formulaDanio: `Fue+${2 + nivel}`,
           categoriaDanio: "Grave",
           gasto: GASTO_MODO_PULSO.aguijon,

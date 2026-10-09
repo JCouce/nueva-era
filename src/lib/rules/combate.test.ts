@@ -9,7 +9,7 @@ import { EQUIPO, type Equipo } from "../catalog/equipo";
 import { MUNICION_GRANADA } from "../catalog/municion";
 import type { MotorMetadata } from "./motor";
 import { modificadorAccion, gastoTotal, gastoMunicionEspecial, avisoInsuficiente } from "./acciones";
-import { aplicado } from "./derivados";
+import { aplicado, modificadoresActivos } from "./derivados";
 
 // Ficha de trabajo: se parte de la de por defecto y se tocan atributos sueltos.
 function ficha(patch: { atributos?: Partial<Sheet["atributos"]> }): Sheet {
@@ -707,21 +707,21 @@ describe("estilo Sutil — toggle en vez de fila duplicada (docs/equipamiento.md
     let sheet = ficha({ atributos: { fuerza: 2, agilidad: 0, percepcion: 4 } }); // potencia=1, reflejos=2
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada_ligera" });
     const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Espada Ligera")!;
-    const normal = modificadorAccion(sheet, golpe, false, undefined, false);
-    const sutil = modificadorAccion(sheet, golpe, false, undefined, true);
-    assert.equal(normal.aplicado, aplicado(sheet, "potencia"));
-    assert.equal(sutil.aplicado, aplicado(sheet, "reflejos"));
+    const normal = modificadorAccion(sheet, golpe, false, modificadoresActivos(sheet), false);
+    const sutil = modificadorAccion(sheet, golpe, false, modificadoresActivos(sheet), true);
+    assert.equal(normal.aplicado, aplicado(sheet, "potencia", modificadoresActivos(sheet)));
+    assert.equal(sutil.aplicado, aplicado(sheet, "reflejos", modificadoresActivos(sheet)));
     assert.equal(normal.habilidad, sutil.habilidad);
   });
 
   test("preselección: con más Potencia que Reflejos, el estilo normal gana el bonificador de ataque", () => {
     const sheet = ficha({ atributos: { fuerza: 4, agilidad: 0, percepcion: -1 } }); // potencia=2, reflejos=0
-    assert.ok(aplicado(sheet, "potencia") > aplicado(sheet, "reflejos"));
+    assert.ok(aplicado(sheet, "potencia", modificadoresActivos(sheet)) > aplicado(sheet, "reflejos", modificadoresActivos(sheet)));
   });
 
   test("preselección: con más Reflejos que Potencia, el estilo Sutil gana el bonificador de ataque", () => {
     const sheet = ficha({ atributos: { fuerza: -1, agilidad: 4, percepcion: 4 } }); // potencia=2, reflejos=4
-    assert.ok(aplicado(sheet, "reflejos") > aplicado(sheet, "potencia"));
+    assert.ok(aplicado(sheet, "reflejos", modificadoresActivos(sheet)) > aplicado(sheet, "potencia", modificadoresActivos(sheet)));
   });
 });
 

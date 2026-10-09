@@ -1,7 +1,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet } from "./sheet";
-import { salud } from "./derivados";
+import { modificadoresActivos, salud } from "./derivados";
 import { reconciliarVida, ajustarVida, ajustarFatiga } from "./vitalidad";
 
 // defaultSheet(): todos los atributos a 0 → salud() = { vida: 8, fatiga: 8 }.
@@ -9,7 +9,7 @@ import { reconciliarVida, ajustarVida, ajustarFatiga } from "./vitalidad";
 describe("reconciliarVida", () => {
   test("una ficha nueva (centinela 999) se recorta al máximo real de salud()", () => {
     const s = reconciliarVida(defaultSheet());
-    const { vida, fatiga } = salud(s);
+    const { vida, fatiga } = salud(s, modificadoresActivos(s));
     assert.equal(s.vidaActual, vida);
     assert.equal(s.fatigaActual, fatiga);
   });

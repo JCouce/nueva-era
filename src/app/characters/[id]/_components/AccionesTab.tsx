@@ -23,10 +23,6 @@ import {
   recursoDe,
   valorCondiciones,
   valorBonosTramo,
-  modificadoresActivos,
-  aplicado,
-  modificadoresDeEstados,
-  indiceDeCondiciones,
   consultaIndiceCondiciones,
   bonoAlcance,
   modoElegido,
@@ -52,7 +48,7 @@ import {
   type AccionDirecta,
   type Sheet,
   type EstadoCondiciones,
-  type EstadoActivo,
+  type FichaResuelta,
   type ModificadorConFuente,
   type MaterialTier,
 } from "@/lib/rules";
@@ -124,15 +120,15 @@ function FilaHistorial({ h }: { h: Lanzamiento }) {
 
 function FilaTirada({
   tirada,
-  sheet,
-  mods,
+  ficha,
   onAbrir,
 }: {
   tirada: Accion;
-  sheet: Sheet;
-  mods: ModificadorConFuente[];
+  ficha: FichaResuelta;
   onAbrir: (t: Accion, enEspecialidad: boolean, sutilActivo: boolean) => void;
 }) {
+  const sheet = ficha.ficha;
+  const mods = ficha.modificadores;
   const [enEspecialidad, setEnEspecialidad] = useState(false);
   // Sutil (Feature 1, docs/equipamiento.md:848-850): pre-seleccionado por el
   // aplicado que dé más bonificador de ATAQUE, no de daño — es la parte que
@@ -140,7 +136,7 @@ function FilaTirada({
   // montar la fila.
   const [sutilActivo, setSutilActivo] = useState(() =>
     tirada.aplicadoSutil
-      ? aplicado(sheet, tirada.aplicadoSutil, mods) > aplicado(sheet, tirada.aplicado, mods)
+      ? ficha.aplicados[tirada.aplicadoSutil] > ficha.aplicados[tirada.aplicado]
       : false,
   );
 
@@ -433,8 +429,7 @@ function FilaPoder({
 }
 
 export function AccionesTab({
-  sheet,
-  estadosCombate = [],
+  ficha,
   historial,
   setHistorial,
   memoria,
@@ -448,13 +443,11 @@ export function AccionesTab({
   onAjustarVida,
   libre = false,
 }: {
-  sheet: Sheet;
-  // Fase 6b, 3.1b (D5: combate → ficha): los estados que el máster le tenga
-  // puestos ahora mismo en el Combate EN_CURSO, si el jugador está metido en
-  // uno — vacío si no hay combate o no está dentro. Se combinan con los
-  // modificadores "en reposo" de la ficha antes de que nada se calcule, así
-  // que fila y modal ven exactamente los mismos números.
-  estadosCombate?: EstadoActivo[];
+  // La ficha ya resuelta (useFichaResuelta). Fase 6b, 3.1b (D5: combate → ficha):
+  // lleva dentro los estados que el máster le tenga puestos ahora mismo en el
+  // Combate EN_CURSO, si el jugador está metido en uno, así que fila y modal ven
+  // exactamente los mismos números.
+  ficha: FichaResuelta;
   // Viven en CharacterSheet, no aquí — sobreviven a cambiar de tab (ver el
   // comentario junto a su useState en CharacterSheet.tsx). Última
   // dificultad/circunstancial por tirada, no un valor global: un
@@ -503,7 +496,8 @@ export function AccionesTab({
   // mismo criterio que AtributosTab/HabilidadesTab con este mismo prop.
   libre?: boolean;
 }) {
-  const mods = [...modificadoresActivos(sheet), ...modificadoresDeEstados(estadosCombate)];
+  const sheet = ficha.ficha;
+  const mods = ficha.modificadores;
   const [reparaFabricaAbierta, setReparaFabricaAbierta] = useState(false);
   const [bloquearDanioAbierta, setBloquearDanioAbierta] = useState(false);
   const [modalDirecta, setModalDirecta] = useState<AccionDirecta | null>(null);
@@ -540,20 +534,9 @@ export function AccionesTab({
   // "Escalabilidad para las fases que vienen"). El índice se construye una
   // sola vez aquí y cada tirada solo consulta (T2).
   //
-  // T3: todo esto se recalculaba en CADA render del componente, sea cual sea
-  // la causa — incluidos cambios de atributos/habilidades que no tocan el
-  // equipo para nada, porque `sheet` cambia de referencia entera en
-  // CharacterSheet.tsx con cualquier setSheet(...) (spread). indiceDeCondiciones()
-  // solo lee sheet.equipo (verificado, ningún otro campo) — se memoiza aparte
-  // porque también la usa la lista de tiradas fijas más abajo, no solo
-  // ataques/herramientas.
-  // Deps a propósito: solo sheet.equipo importa aquí, no sheet entero (ver
-  // comentario de arriba).
-  const indiceCondiciones = useMemo(
-    () => indiceDeCondiciones(sheet),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sheet.equipo],
-  );
+  // El índice sale de la FichaResuelta: se calcula una vez por cambio de ficha, sin
+  // deps parciales (propuesta-especies §3.1, punto 4).
+  const indiceCondiciones = ficha.indiceCondiciones;
   const conCondicionesDeEquipo = (t: Accion): Accion => {
     const extra = consultaIndiceCondiciones(indiceCondiciones, { id: t.id, grupo: t.grupo, habilidad: t.habilidad, modoElegido: null });
     return extra.length > 0 ? { ...t, condiciones: [...(t.condiciones ?? []), ...extra] } : t;
@@ -1045,7 +1028,7 @@ export function AccionesTab({
           Ataques
         </h2>
         {ataques.map((t) => (
-          <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
+          <FilaTirada key={t.id} tirada={t} ficha={ficha} onAbrir={abrir} />
         ))}
         {/* Detonación de pulso térmico (Malla Plasmática) — generada por
             accionesDirectasDeAtaque() (combate.ts), no tira dado. */}
@@ -1086,7 +1069,7 @@ export function AccionesTab({
             Herramientas
           </h2>
           {herramientas.map((t) => (
-            <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
+            <FilaTirada key={t.id} tirada={t} ficha={ficha} onAbrir={abrir} />
           ))}
           {herramientasDirectas.map((a) => (
             <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} />
@@ -1103,7 +1086,7 @@ export function AccionesTab({
             Fármacos
           </h2>
           {farmacos.map((t) => (
-            <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
+            <FilaTirada key={t.id} tirada={t} ficha={ficha} onAbrir={abrir} />
           ))}
           {farmacosDirectas.map((a) => (
             <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} />
@@ -1124,7 +1107,7 @@ export function AccionesTab({
             // que trae cada arma. "Volar" entra igual dentro de "Acciones".
             .concat(grupo === "Defensa" ? defensaGenerada : grupo === "Acciones" ? accionesGeneradas : [])
             .map((t) => (
-              <FilaTirada key={t.id} tirada={t} sheet={sheet} mods={mods} onAbrir={abrir} />
+              <FilaTirada key={t.id} tirada={t} ficha={ficha} onAbrir={abrir} />
             ))}
           {/* "Levantar [escudo]" — una fila por cada escudo equipado, generada
               por accionesDirectasDeAtaque() (combate.ts), no por el catálogo
@@ -1144,7 +1127,7 @@ export function AccionesTab({
       ))}
 
       {bloquearDanioAbierta && (
-        <BloquearDanioModal sheet={sheet} onCerrar={() => setBloquearDanioAbierta(false)} />
+        <BloquearDanioModal ficha={ficha} onCerrar={() => setBloquearDanioAbierta(false)} />
       )}
 
       {modalDirecta && (

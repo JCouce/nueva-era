@@ -10,8 +10,7 @@ import {
   LOTE_MUNICION_ESPECIAL,
   armasHabilitadasPara,
   FARMACOS,
-  salud,
-  type Sheet,
+  type FichaResuelta,
   type RecursoInstancia,
   type MaterialTier,
   fatigaEfectiva,
@@ -46,7 +45,7 @@ function BotonDelta({
 }
 
 export function RecursosTab({
-  sheet,
+  ficha,
   creditos,
   onAjustar,
   onRecargar,
@@ -61,7 +60,7 @@ export function RecursosTab({
   onAjustarFatigaTemporal,
   onTerminarEscena,
 }: {
-  sheet: Sheet;
+  ficha: FichaResuelta;
   // Ausente para un NPC: edición libre, sin cartera de créditos que cobrar
   // al recargar/comprar — mismo criterio que EquipoTab.
   creditos?: number;
@@ -79,7 +78,11 @@ export function RecursosTab({
   onAjustarFatigaTemporal?: (delta: number) => void;
   onTerminarEscena?: () => void;
 }) {
-  const { vida, fatiga } = salud(sheet);
+  const sheet = ficha.ficha;
+  // TODO(revisar) E1b: en combate, este máximo lleva los estados (FichaResuelta) y el
+  // clamp de ajustarVida/ajustarFatiga (vitalidad.ts, también en el servidor) no:
+  // puede verse "actual > máximo" con un estado que baje Fortaleza/Voluntad.
+  const { vida, fatiga } = ficha.salud;
   // Solo los tipos que ya se poseen (docs/tareas.md, 2026-09-27) — para
   // descubrir/comprar tipos nuevos ya está Tienda, que es donde se compran
   // (comprar NO vive aquí, a diferencia de Materiales: 14 piezas con ficha

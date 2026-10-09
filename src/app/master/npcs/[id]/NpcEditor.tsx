@@ -24,6 +24,7 @@ import type { Lanzamiento } from "@/components/ResultadoTirada";
 import { EquipoTab } from "@/app/characters/[id]/_components/EquipoTab";
 import { TiendaTab } from "@/app/characters/[id]/_components/TiendaTab";
 import { RecursosTab } from "@/app/characters/[id]/_components/RecursosTab";
+import { useFichaResuelta, SIN_ESTADOS } from "@/hooks/useFichaResuelta";
 import {
   renombrarNpcAction,
   setNotaNpcAction,
@@ -118,6 +119,8 @@ export function NpcEditor({
   const router = useRouter();
   const [active, setActive] = useState<TabId>("identidad");
   const [sheet, setSheet] = useState<Sheet>(initialSheet);
+  // Sin estados: una NpcTemplate no tiene dónde guardarlos (ver la pestaña Acciones).
+  const ficha = useFichaResuelta(sheet, SIN_ESTADOS);
   const [nombre, setNombre] = useState(initialNombre);
   const [nota, setNota] = useState(initialNota);
   const [status, setStatus] = useState<SaveStatus>("idle");
@@ -398,7 +401,7 @@ export function NpcEditor({
         </div>
       )}
       {active === "attrs" && (
-        <AtributosTab sheet={sheet} libre onSet={commitAtributo} />
+        <AtributosTab ficha={ficha} libre onSet={commitAtributo} />
       )}
       {active === "skills" && (
         <HabilidadesTab
@@ -422,7 +425,7 @@ export function NpcEditor({
             combate real (fase 6b, subtarea 5.5).
           </p>
           <AccionesTab
-            sheet={sheet}
+            ficha={ficha}
             historial={accionesHistorial}
             setHistorial={setAccionesHistorial}
             memoria={accionesMemoria}
@@ -441,7 +444,7 @@ export function NpcEditor({
       {active === "equipo" && <EquipoTab sheet={sheet} onDesequipar={commitDesequipar} />}
       {active === "recursos" && (
         <RecursosTab
-          sheet={sheet}
+          ficha={ficha}
           onAjustar={commitAjustarRecurso}
           onRecargar={commitRecargar}
           onAjustarMaterial={commitAjustarMaterial}

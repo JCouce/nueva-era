@@ -73,11 +73,15 @@ src/
 │  │  ├─ poderes.ts     #   poder + nivel + opciones → valores, tirada, coste de fatiga y sobrecarga
 │  │  ├─ usoPoder.ts    #   usar un poder sin UI: prepararPoder / usarPoder / efectosDelResultado.
 │  │  │                 #   Las pantallas solo aplican lo que devuelve (regla de lint lo vigila)
+│  │  ├─ especie.ts     #   especieDeFicha / elegirEspecie (reset al cambiar) / hayQuePerder
+│  │  ├─ fichaResuelta.ts # resolverFicha: modificadores + derivados + índice de casillas en una pasada.
+│  │  │                 #   La UI no llama a derivados sueltos: usa useFichaResuelta (ESLint lo vigila)
 │  │  └─ *.test.ts      #   ~700 tests. Al tocar una fórmula, se toca su test.
 │  ├─ validation.ts     # Zod de entrada de la app (login, register, character). NO la ficha.
 │  └─ auth-helpers.ts   # requireUser() y canEditCharacter() — regla central de permisos.
 ├─ generated/prisma/    # Cliente Prisma generado (gitignored, lo crea `prisma generate`).
 ├─ components/AppHeader.tsx
+├─ hooks/useFichaResuelta.ts  # la ficha resuelta una vez por cambio (CharacterSheet, NpcEditor)
 └─ app/
    ├─ page.tsx                       # redirige a /characters
    ├─ login/                         # page + LoginForm (cliente) + actions (login/register)

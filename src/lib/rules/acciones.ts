@@ -6,7 +6,7 @@
 // azar lo pone quien llama (ver `tirarD12`).
 import type { AplicadoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
-import { aplicado, valorEfectivo, modificadoresActivos } from "./derivados";
+import { aplicado, valorEfectivo } from "./derivados";
 import type { Sheet } from "./sheet";
 import type { CondicionTirada, BonoPorTramo, EstadoCondiciones } from "./condiciones";
 import type { GrupoAccion, ModificadorConFuente } from "./modificadores";
@@ -332,9 +332,9 @@ export const ACCIONES: Accion[] = [
 export const GRUPOS_ACCION = ["Defensa", "Salvaciones", "Iniciativa", "Acciones"] as const;
 
 // Modificador fijo de una tirada: lo que se suma al dado antes de nada más.
-// `mods` opcional (fase 6b bloque 3.1b): quien alimenta AccionesTab puede
-// sumarle aquí los modificadores de tipo "atributo"/"habilidad" que traigan
-// los estados de combate activos del jugador (p. ej. Parálisis restando
+// `mods` obligatorio: los de la FichaResuelta (especie, equipo y estados de
+// combate, fase 6b bloque 3.1b) — así entran aquí los de tipo "atributo"/
+// "habilidad" que traigan los estados de combate activos del jugador (p. ej. Parálisis restando
 // Fuerza/Agilidad directamente) — sin esto, la ficha derivaría siempre de la
 // ficha "en reposo", ignorando el combate en curso. Los de tipo "tirada"
 // (el -1/-3/-5 "a todas" de los umbrales, el -2 a Defensa de Aturdido...) no
@@ -343,8 +343,8 @@ export const GRUPOS_ACCION = ["Defensa", "Salvaciones", "Iniciativa", "Acciones"
 export function modificadorAccion(
   sheet: Sheet,
   tirada: Accion,
-  enEspecialidad = false,
-  mods: ModificadorConFuente[] = modificadoresActivos(sheet),
+  enEspecialidad: boolean,
+  mods: ModificadorConFuente[],
   // Estilo Sutil elegido (ver `Accion.aplicadoSutil`): la habilidad no cambia
   // en ningún caso, solo qué aplicado se usa para calcular el ataque.
   sutilActivo = false,

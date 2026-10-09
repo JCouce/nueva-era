@@ -1,19 +1,14 @@
 import {
-  salud,
-  alerta,
-  movimiento,
   vuelo,
   levitacion,
-  cargaMaxima,
   pesoEquipado,
-  modificadoresActivos,
   especiePorId,
   ESPECIES,
   ATRIBUTOS,
   HABILIDADES,
   ACCIONES,
 } from "@/lib/rules";
-import type { Sheet, CategoriaPrioridad, LetraPrioridad } from "@/lib/rules";
+import type { FichaResuelta, CategoriaPrioridad, LetraPrioridad } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { PrioridadCard } from "./PrioridadCard";
 
@@ -56,7 +51,7 @@ function Dato({
 
 export function ResumenTab({
   name,
-  sheet,
+  ficha,
   aprobada,
   onName,
   onEdad,
@@ -68,7 +63,7 @@ export function ResumenTab({
   onPrioridad,
 }: {
   name: string;
-  sheet: Sheet;
+  ficha: FichaResuelta;
   aprobada: boolean;
   onName: (v: string) => void;
   onEdad: (v: number | null) => void;
@@ -79,14 +74,15 @@ export function ResumenTab({
   onMotivacion: (v: string) => void;
   onPrioridad: (categoria: CategoriaPrioridad, letra: LetraPrioridad | null) => void;
 }) {
-  const { vida, fatiga } = salud(sheet);
-  const alertaPasiva = alerta(sheet);
-  const mov = movimiento(sheet);
+  const sheet = ficha.ficha;
+  const { vida, fatiga } = ficha.salud;
+  const alertaPasiva = ficha.alerta;
+  const mov = ficha.movimiento;
   const vue = vuelo(sheet);
   const lev = levitacion(sheet);
   const conExo = mov.bonoExoesqueleto > 0;
   const notaExo = conExo ? `+${mov.bonoExoesqueleto} exoesqueleto` : undefined;
-  const limiteCarga = cargaMaxima(sheet);
+  const limiteCarga = ficha.cargaMaxima;
   const pesoArmas = pesoEquipado(sheet);
 
   return (
@@ -187,7 +183,10 @@ export function ResumenTab({
       {(() => {
         const especie = especiePorId(sheet.especieId);
         if (!especie) return null;
-        const mods = modificadoresActivos(sheet);
+        // TODO(revisar) E1b: lista todos los modificadores de la ficha (también equipo
+        // y, en combate, estados) bajo la tarjeta de la especie, como antes listaba los
+        // de modificadoresActivos. ¿Solo ficha.especie.modificadores? Se decide en E1c.
+        const mods = ficha.modificadores;
         const etiqueta = (m: (typeof mods)[number]) => {
           if (m.tipo === "atributo")
             return ATRIBUTOS.find((a) => a.id === m.id)!.label;

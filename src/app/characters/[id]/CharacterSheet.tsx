@@ -39,7 +39,6 @@ import {
   removeEspecialidad,
   puntosAtributosDisponibles,
   puntosHabilidadesDisponibles,
-  salud,
   especiePorId,
   equipar,
   desequipar,
@@ -82,6 +81,7 @@ import type { Lanzamiento } from "@/components/ResultadoTirada";
 // poderes: mismo helper, otra clave).
 const AUTOSAVE_DEBOUNCE_MS = 500;
 import { usePollingCombate } from "@/hooks/usePollingCombate";
+import { useFichaResuelta, SIN_ESTADOS } from "@/hooks/useFichaResuelta";
 
 // Tres grupos, no una lista plana: la ficha en sí (fila 1), lo que el
 // personaje hace o lleva (fila 2, izquierda) y el catálogo — que no es del
@@ -457,13 +457,17 @@ export function CharacterSheet({
 
   const puntosAttr = puntosAtributosDisponibles(sheet);
   const puntosSkill = puntosHabilidadesDisponibles(sheet);
-  const { vida, fatiga } = salud(sheet);
 
   // Fase 6b bloque 3: mi fila en el combate activo, si la hay. `combate` ya
   // viene null desde el servidor si este personaje no está metido dentro
   // (page.tsx) — esto solo busca cuál de las filas es la mía para resaltar
   // turno/estados en la tira compacta.
   const miCombatiente = combate?.combatientes.find((c) => c.characterId === characterId) ?? null;
+  // La ficha resuelta una vez (propuesta-especies §3.1) y la misma para todas las
+  // pestañas: con los estados de combate dentro, Resumen y Acciones ven los mismos
+  // números.
+  const ficha = useFichaResuelta(sheet, miCombatiente?.estados ?? SIN_ESTADOS);
+  const { vida, fatiga } = ficha.salud;
   const esMiTurno = !!(miCombatiente && combate!.combatientes[combate!.turnoIndex]?.id === miCombatiente.id);
   const misEstadosActivos = miCombatiente ? describirEstadosActivos(miCombatiente.estados) : [];
 
@@ -590,7 +594,7 @@ export function CharacterSheet({
       {activeEfectivo === "resumen" && (
         <ResumenTab
           name={name}
-          sheet={sheet}
+          ficha={ficha}
           aprobada={aprobada}
           onName={onName}
           onEdad={onEdad}
@@ -604,7 +608,7 @@ export function CharacterSheet({
       )}
       {activeEfectivo === "attrs" && (
         <AtributosTab
-          sheet={sheet}
+          ficha={ficha}
           puntosDisponibles={puntosAttr}
           aprobada={aprobada}
           xp={xp}
@@ -628,8 +632,7 @@ export function CharacterSheet({
       )}
       {activeEfectivo === "acciones" && (
         <AccionesTab
-          sheet={sheet}
-          estadosCombate={miCombatiente?.estados ?? []}
+          ficha={ficha}
           historial={accionesHistorial}
           setHistorial={setAccionesHistorial}
           memoria={accionesMemoria}
@@ -660,7 +663,7 @@ export function CharacterSheet({
       )}
       {activeEfectivo === "recursos" && (
         <RecursosTab
-          sheet={sheet}
+          ficha={ficha}
           creditos={creditos}
           onAjustar={commitAjustarRecurso}
           onRecargar={commitRecargar}

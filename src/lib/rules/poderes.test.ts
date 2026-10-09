@@ -30,6 +30,7 @@ import { migrar } from "./migraciones";
 import { pagarFatiga, fatigaEfectiva, ajustarFatigaTemporal, terminarEscena } from "./vitalidad";
 import { resolverDanio, ACCIONES, usarHabilidadAlternativa, modificadorAccion, tirarDado } from "./acciones";
 import { fuentesDeCapa1 } from "./capa1";
+import { modificadoresActivos } from "./derivados";
 import { DISCIPLINAS, disciplinaPorId, FUENTES_EXTERNAS_FATIGA } from "../catalog/psionica";
 import type { AccionPoder, ModificadorFatiga } from "./psionica";
 
@@ -711,8 +712,8 @@ describe("Esquiva levitando con Física", () => {
     assert.equal(altCon.tirada.habilidad, "tecnociencia");
     assert.equal(altCon.enEspecialidad, true);
     assert.equal(altSin.enEspecialidad, false);
-    assert.equal(modificadorAccion(con, altCon.tirada, altCon.enEspecialidad).habilidad, 4);
-    assert.equal(modificadorAccion(sin, altSin.tirada, altSin.enEspecialidad).habilidad, 2);
+    assert.equal(modificadorAccion(con, altCon.tirada, altCon.enEspecialidad, modificadoresActivos(con)).habilidad, 4);
+    assert.equal(modificadorAccion(sin, altSin.tirada, altSin.enEspecialidad, modificadoresActivos(sin)).habilidad, 2);
     assert.equal(altCon.tirada.label, "Defensa / esquiva (Física)");
   });
 });

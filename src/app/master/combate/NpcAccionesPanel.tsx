@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Sheet, EstadoActivo } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { AccionesTab } from "@/app/characters/[id]/_components/AccionesTab";
+import { useFichaResuelta } from "@/hooks/useFichaResuelta";
 import type { Lanzamiento } from "@/components/ResultadoTirada";
 
 // Fase 6b, subtarea 5.5 (el motivo original de todo el rediseño del bloque
@@ -27,6 +28,7 @@ export function NpcAccionesPanel({
   estadosCombate: EstadoActivo[];
   onCerrar: () => void;
 }) {
+  const ficha = useFichaResuelta(sheet, estadosCombate);
   // Panel bajo demanda: se desmonta al cerrar (onCerrar, en el padre), así
   // que este estado ya nacía fresco en cada apertura incluso cuando vivía
   // dentro de AccionesTab — el historial subió de nivel (2026-09-24, para que
@@ -59,8 +61,7 @@ export function NpcAccionesPanel({
           </div>
           <div className="mt-3">
             <AccionesTab
-              sheet={sheet}
-              estadosCombate={estadosCombate}
+              ficha={ficha}
               historial={historial}
               setHistorial={setHistorial}
               memoria={memoria}

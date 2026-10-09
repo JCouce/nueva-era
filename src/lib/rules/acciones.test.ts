@@ -22,6 +22,7 @@ import {
   type Accion,
 } from "./acciones";
 import { modificadoresDeEstados } from "./estados";
+import { modificadoresActivos } from "./derivados";
 
 function buscar(id: string) {
   const t = ACCIONES.find((x) => x.id === id);
@@ -68,21 +69,21 @@ describe("modificador de una tirada", () => {
   };
 
   test("suma el aplicado y la habilidad", () => {
-    const m = modificadorAccion(ficha(), buscar("iniciativa_arma"), true);
+    const m = modificadorAccion(ficha(), buscar("iniciativa_arma"), true, modificadoresActivos(ficha()));
     assert.equal(m.aplicado, 2);
     assert.equal(m.habilidad, 3);
     assert.equal(m.total, 5);
   });
 
   test("fuera de especialidad la habilidad cuenta la mitad", () => {
-    const m = modificadorAccion(ficha(), buscar("iniciativa_arma"), false);
+    const m = modificadorAccion(ficha(), buscar("iniciativa_arma"), false, modificadoresActivos(ficha()));
     assert.equal(m.habilidad, 2); // ceil(3/2)
     assert.equal(m.total, 4);
   });
 
   test("una habilidad sin entrenar resta 1", () => {
     const s = setAtributoValue(conPresupuesto(), "agilidad", 2); // reflejos ceil((2+0)/2)=1
-    const m = modificadorAccion(s, buscar("sigilo"), false);
+    const m = modificadorAccion(s, buscar("sigilo"), false, modificadoresActivos(s));
     assert.equal(m.habilidad, -1);
     assert.equal(m.total, 0);
   });
@@ -91,7 +92,7 @@ describe("modificador de una tirada", () => {
     let s = conPresupuesto();
     s = setAtributoValue(s, "fuerza", 3);
     s = setAtributoValue(s, "aguante", 2); // fortaleza = ceil((3+2)/2) = 3
-    const m = modificadorAccion(s, buscar("salv_fortaleza"));
+    const m = modificadorAccion(s, buscar("salv_fortaleza"), false, modificadoresActivos(s));
     assert.equal(m.habilidad, null);
     assert.equal(m.total, 3);
   });
@@ -99,8 +100,8 @@ describe("modificador de una tirada", () => {
   test("la especialidad declarada se refleja en el modificador", () => {
     let s = setHabilidadValue(conPresupuesto(), "biociencia", 2);
     s = addEspecialidad(s, "biociencia", "Medicina");
-    const dentro = modificadorAccion(s, buscar("medicina"), true);
-    const fuera = modificadorAccion(s, buscar("medicina"), false);
+    const dentro = modificadorAccion(s, buscar("medicina"), true, modificadoresActivos(s));
+    const fuera = modificadorAccion(s, buscar("medicina"), false, modificadoresActivos(s));
     assert.equal(dentro.habilidad, 2);
     assert.equal(fuera.habilidad, 1); // ceil(2/2)
   });
@@ -113,7 +114,7 @@ describe("modificador de una tirada", () => {
     let s = conPresupuesto();
     s = setAtributoValue(s, "fuerza", 2);
     s = setAtributoValue(s, "agilidad", 1); // potencia = ceil((2+1)/2) = 2
-    const sinEstado = modificadorAccion(s, buscar("atletismo"), false);
+    const sinEstado = modificadorAccion(s, buscar("atletismo"), false, modificadoresActivos(s));
     assert.equal(sinEstado.aplicado, 2);
 
     const mods = modificadoresDeEstados([

@@ -19,8 +19,10 @@ import { modificadoresDeEquipo } from "./equipo";
 import type { Sheet } from "./sheet";
 
 // Los modificadores activos de una ficha: especie (con casta y linaje) y equipo por ahora; cuando
-// existan dotes, aumentos y estados, se añaden aquí y todo lo demás sigue
-// funcionando sin tocarse.
+// existan dotes y aumentos, se añaden aquí y todo lo demás sigue funcionando sin
+// tocarse. Las pantallas no lo llaman: leen FichaResuelta.modificadores
+// (fichaResuelta.ts), que además lleva los estados de combate. Los derivados de abajo
+// reciben `mods` siempre explícito: sin valor por defecto, ningún recálculo escondido.
 export function modificadoresActivos(sheet: Sheet): ModificadorConFuente[] {
   const deEspecie = especieDeFicha(sheet)?.modificadores ?? [];
   return [...deEspecie, ...modificadoresDeEquipo(sheet)];
@@ -35,14 +37,14 @@ export type Fuente = { etiqueta: string; valor: number };
 export function atributoEfectivo(
   sheet: Sheet,
   id: AtributoId,
-  mods = modificadoresActivos(sheet),
+  mods: ModificadorConFuente[],
 ): number {
   return sheet.atributos[id] + bonoAtributo(mods, id);
 }
 
 export function atributosEfectivos(
   sheet: Sheet,
-  mods = modificadoresActivos(sheet),
+  mods: ModificadorConFuente[],
 ): Record<AtributoId, number> {
   return Object.fromEntries(
     ATRIBUTOS.map((a) => [a.id, sheet.atributos[a.id] + bonoAtributo(mods, a.id)]),
@@ -57,7 +59,7 @@ export function atributosEfectivos(
 export function desgloseAtributo(
   sheet: Sheet,
   id: AtributoId,
-  mods = modificadoresActivos(sheet),
+  mods: ModificadorConFuente[],
 ): { total: number; fuentes: Fuente[] } {
   const fuentes: Fuente[] = [
     { etiqueta: "Base", valor: sheet.atributos[id] },
@@ -80,7 +82,7 @@ function media(a: number, b: number): number {
 export function aplicado(
   sheet: Sheet,
   id: AplicadoId,
-  mods = modificadoresActivos(sheet),
+  mods: ModificadorConFuente[],
 ): number {
   const def = APLICADOS.find((a) => a.id === id)!;
   return media(
@@ -97,7 +99,7 @@ export function aplicado(
 export function desgloseAplicado(
   sheet: Sheet,
   id: AplicadoId,
-  mods = modificadoresActivos(sheet),
+  mods: ModificadorConFuente[],
 ): { total: number; fuentes: Fuente[] } {
   const def = APLICADOS.find((a) => a.id === id)!;
   const fuentes: Fuente[] = def.de.map((atrId) => ({
@@ -109,7 +111,7 @@ export function desgloseAplicado(
 
 export function aplicados(
   sheet: Sheet,
-  mods = modificadoresActivos(sheet),
+  mods: ModificadorConFuente[],
 ): Record<AplicadoId, number> {
   const efectivos = atributosEfectivos(sheet, mods);
   return Object.fromEntries(
@@ -119,7 +121,7 @@ export function aplicados(
 
 export function salud(
   sheet: Sheet,
-  mods = modificadoresActivos(sheet),
+  mods: ModificadorConFuente[],
 ): { vida: number; fatiga: number } {
   return {
     vida: 8 + aplicado(sheet, "fortaleza", mods) + bonoDerivado(mods, "vida"),
@@ -132,7 +134,7 @@ export function salud(
 // estaba entre las 10 habilidades hasta que sustituyó a Supervivencia).
 // Se usa el valor entero de la habilidad, no la mitad fuera de especialidad:
 // es tu estado de alerta permanente, no una tirada declarada en un contexto.
-export function alerta(sheet: Sheet, mods = modificadoresActivos(sheet)): number {
+export function alerta(sheet: Sheet, mods: ModificadorConFuente[]): number {
   return (
     6 +
     aplicado(sheet, "perspicacia", mods) +
@@ -164,7 +166,7 @@ function bonoFuerzaExoesqueleto(sheet: Sheet): number {
 // fórmulas saldrían en negativo, así que se cortan en 0 — salvo el salto
 // vertical, que Murillo fija en un mínimo de 15 cm (resuelve la pregunta 6
 // de docs/sistema.md, antes supuesto S6).
-export function movimiento(sheet: Sheet, mods = modificadoresActivos(sheet)) {
+export function movimiento(sheet: Sheet, mods: ModificadorConFuente[]) {
   const bonoExoesqueleto = bonoFuerzaExoesqueleto(sheet);
   const base =
     aplicado(sheet, "potencia", mods) +
@@ -194,7 +196,7 @@ export function movimiento(sheet: Sheet, mods = modificadoresActivos(sheet)) {
 // también: EQUIP lo cita para "carga transportable Y proezas de fuerza", las
 // dos cosas — hasta ahora solo se aplicaba a movimiento() (las proezas, por
 // S10), cerrando el hueco.
-export function cargaMaxima(sheet: Sheet, mods = modificadoresActivos(sheet)): number {
+export function cargaMaxima(sheet: Sheet, mods: ModificadorConFuente[]): number {
   const fuerza = atributoEfectivo(sheet, "fuerza", mods) + bonoFuerzaExoesqueleto(sheet);
   if (fuerza > 0) return fuerza * 20;
   if (fuerza === 0) return 15;
@@ -225,7 +227,7 @@ export function valorEfectivo(
   sheet: Sheet,
   id: HabilidadId,
   enEspecialidad: boolean,
-  mods = modificadoresActivos(sheet),
+  mods: ModificadorConFuente[],
 ): number {
   const { valor } = sheet.habilidades[id];
   const bono = bonoHabilidad(mods, id);
