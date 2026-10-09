@@ -261,7 +261,7 @@ entre cuándo se elige y dónde se guarda.
 **Descuentos psiónicos** (Arianyi, Maolher)
 - Resonancia del arianyi **(decidido, M5)**: es un **+1 adicional**, igual que el +2 de
   Fuerza del Arköru, no un nivel 1 regalado. Nivel efectivo = comprado + 1; el jugador
-  compra al coste normal desde el primer nivel (comprar 1 cuesta 3 y juega con 2). Puede
+  compra desde el primer nivel, con el descuento de M4 (comprar 1 cuesta 2 y juega con 2). Puede
   superar el máximo de 6. Vale con cualquier letra de Psiónica, incluida la E, y cuenta
   como requisito de Inducción e Hipercognición. Hace falta un modificador nuevo de tipo
   *disciplina* (hoy los modificadores tocan atributo, derivado, habilidad o tirada), y los
@@ -486,7 +486,7 @@ sugerida por defecto: puede dar regresiones).
 | M17 | Elión: "Humor" y "Negociación", ¿son especialidades de Actitud? | Las especialidades son texto libre: aplicar a cualquier tirada hecha con una especialidad que se llame Empatía, Humor o Negociación |
 | M18 | Irota: fármacos "a la mitad", ¿redondeo? | Hacia abajo, mínimo 1 |
 | M19 | Riux/Siervo: "media ración"; en las reglas una comida recupera 1 de fatiga. ¿Qué es media ración? | Solo texto |
-| M20 | Nombre: "Arkör" (título), "arköru" (prosa) o "Arkorü" (app, equipamiento) | "Arkör" para la especie; se conserva el id `arkoru` |
+| M20 | Nombre: "Arkör" (título), "arköru" (prosa) o "Arkorü" (app, equipamiento) | "Arköru" (usuario, §5b); se conserva el id `arkoru` |
 | M21 | Peso "40-60 kg + 10 kg × Fuerza": ¿Fuerza comprada o con especie? ¿Es obligatorio? | Con especie; solo se muestra como referencia, no se valida |
 | M22 | Axadren: "éxito crítico en alerta contra enemigos ocultos". La Alerta pasiva no tira dado. ¿Es la Alerta activa, Buscar/percibir o las dos? | Las dos |
 | M23 | Arkör, Salto Vertical 18 × (Pot + Atl): ¿sigue valiendo el mínimo de 15 cm de la fórmula general? | Sí, mínimo 15 cm |
@@ -500,7 +500,7 @@ sugerida por defecto: puede dar regresiones).
 |---|---|
 | M1, M2, modelo | El bono de especie es **totalmente adicional** y puede superar cualquier límite: el tope de 4 en creación y el techo de 6 miran solo lo comprado. Coste de atributos el de siempre (×2 por nivel): un Arköru que compra Fuerza 4 paga 20 y juega con 6 |
 | M3 | Dos bolsas para el humano; los aumentos tiran primero de la suya (§2.2, Créditos iniciales) |
-| M5 | Resonancia +1 adicional, no nivel regalado (§2.2, Descuentos psiónicos) |
+| M5 | Resonancia +1 adicional, no nivel regalado; el descuento de M4 también vale: comprar Resonancia 1 cuesta 2 y juega con 2 (§2.2, Descuentos psiónicos) |
 | M13, M17, M22 | Las condiciones van como **casilla en la tirada** ("¿es contra miedo?", "¿enemigo oculto?", "¿es Empatía / Humor / Negociación?") que **solo aparece para la especie y casa que la tiene** (Noble, Elión, Axadren). Encaja en `montarTirada`: la especie es una fuente de casillas más |
 | M20 | Nombre en la app: "Arköru" |
 | Orden | Especies núcleo (E0-E3) → montaje único con umbrales (M1) → bonos a tiradas (E4-E5) |

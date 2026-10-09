@@ -1352,8 +1352,8 @@ construir → tests → navegador → documentar. Dudas nuevas que salgan: caso 
 construye la sugerida por defecto.
 
 **E0 — Documentar**
-- [ ] `docs/especies.md`: transcripción fiel del PDF, erratas *(sic)*
-- [ ] `docs/sistema.md` §14 de `PENDIENTE` a `PARCIAL`, con las decisiones M1-M24
+- [x] `docs/especies.md`: transcripción fiel del PDF, erratas *(sic)*
+- [x] `docs/sistema.md` §14 de `PENDIENTE` a `PARCIAL`, con las decisiones M1-M24
 
 **E1 — Núcleo** (propuesta §2.2, §3, §3.1)
 - [ ] Catálogo `especies.ts`: Humanos, Riux, Arianyi, Arköru, Manduk (4 castas, 6 linajes):

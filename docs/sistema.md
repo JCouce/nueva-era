@@ -14,6 +14,7 @@ cambie, se edita aquí y se anota qué lo tumbó.
 | `[FIRME]` | Escrito por el diseñador y sin ambigüedad | Sí |
 | `[INFERIDO]` | Deducido de otro documento, no confirmado | Sí, marcando el supuesto |
 | `[PROPUESTA]` | Idea nuestra a validar | No hasta confirmar |
+| `[PARCIAL]` | Sección con partes `FIRME`/`INFERIDO` y partes sin cerrar o sin mecanizar; cada bloque lleva su propio estado | Sí, bloque a bloque |
 | `[PENDIENTE]` | Título sin contenido | No |
 | `[CONFLICTO]` | Dos fuentes se contradicen | No hasta resolver |
 
@@ -26,6 +27,7 @@ cambie, se edita aquí y se anota qué lo tumbó.
 | `COMBATE` | `docs/sistema-y-combate.md` (transcrito de `Sistema y Combate.pdf`) | 2026-08-28 |
 | `EQUIP` | `docs/equipamiento.md` (transcrito de `Equipamiento.pdf`) | 2026-08-31 |
 | `CONV-1` | Conversación con Murillo (diseñador) — aumentos, psiónica cuántica | 2026-08-26 |
+| `ESP` | `docs/especies.md` (transcrito de `Especies.pdf`) — las 5 especies, castas y linajes Manduk | 2026-09-26 |
 | `CONV-n` | Conversaciones con el diseñador (se anotan abajo según lleguen) | — |
 
 **`HOJA2` sustituye a `HOJA` allí donde se contradicen** (creación por prioridad en vez de
@@ -924,18 +926,223 @@ ver "Coste y progresión", sección 2) y confirma que rige tanto creación como 
 Sigue sin decir **de dónde sale la XP** (por sesión, por hito, por encuentro) ni si hay
 techo real más allá del 6 de atributos/habilidades.
 
-## 14. Especies `[PENDIENTE — en camino]`
+## 14. Especies `[PARCIAL · ESP + usuario 2026-10-09]`
 
-`HOJA` incluye el campo. `EQUIP` menciona **arianyi**, **arkorü**, humanos y una
-**confederación** al describir fabricantes de armas. Se desconoce si dan modificadores.
+Prosa literal en `docs/especies.md` (de `docs/Especies.pdf`); análisis y plan en
+`docs/propuesta-especies.md`. Las dudas de lectura (M1-M24) las resolvió el usuario el
+2026-10-09; ninguna queda para Murillo. Se citan como "usuario, Mn".
 
-**Es el próximo documento que envía el diseñador** (`CONV-1`).
+**Por qué `PARCIAL`:** la bolsa de aumentos de los Humanos no se puede gastar (no hay
+aumentos, sección 11) y la regeneración de Ílkrem y el descanso no tienen dónde vivir en la
+app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 
-> **En la app hay dos especies de andamio** (`src/lib/catalog/especies.ts`): Humano, sin
-> modificadores, y Arkorü, con números **inventados por nosotros** para poder construir y probar el
-> motor de modificadores. La ficha las marca como provisionales a la vista del jugador. Cuando
-> llegue el documento real, sustituir las especies es añadir entradas al catálogo: no hay código
-> que tocar.
+> **Estado en la app:** hasta la tanda E1 siguen las dos especies de andamio
+> (`src/lib/catalog/especies.ts`: Humano sin modificadores y Arkorü con números inventados,
+> marcadas como provisionales). Se sustituyen por las de esta sección; orden de construcción
+> E1 → E2 → E3 → M1 → E4 → E5 en `docs/tareas.md`, "Especies reales".
+
+### 14.1 Lista y elección `[FIRME · ESP + usuario M10, M20]`
+
+| Especie | id | Opciones |
+|---|---|---|
+| Humanos | `humano` | — |
+| Riux | `riux` | — |
+| Arianyi | `arianyi` | — |
+| Arköru | `arkoru` | — |
+| Manduk | `manduk` | **Casta** obligatoria: Noble, Sabio, Guerrero, Siervo. **Linaje** solo si es Noble, y obligatorio (M10): Ílkrem, Zimethroni, Irota, Maolher, Axadren, Elión |
+
+- **Nombre:** el PDF titula "Arkör" y en la prosa dice "arköru"; en la app, **"Arköru"**, id
+  `arkoru` (usuario, M20).
+- Los efectos de casta y linaje **se suman** (Noble Ílkrem = Carácter +1 y Fuerza +1).
+
+### 14.2 Modelo: se guarda la elección, los efectos se derivan `[FIRME · usuario 2026-10-09, M1, M2, M24]`
+
+- La ficha guarda solo la **elección**: especie + casta + linaje. Atributos, movimiento,
+  carga, blindaje, costes y bonos de especie se **recalculan** en cada render desde el
+  catálogo; nunca se escriben en la ficha.
+- **Los bonos de especie son totalmente adicionales** y pueden superar cualquier límite
+  (M1, M2):
+  - el **tope de 4 en creación** y el **techo de 6** miran solo lo **comprado**;
+  - el total (comprado + especie) puede pasar de 6;
+  - el **coste de atributos no cambia** (N × 2 por nivel, sobre lo comprado). Ejemplo: un
+    Arköru que compra Fuerza 4 paga 20 y juega con 6.
+- **Sin suelo extra** para el total (M24): un Riux que compra Fuerza −1 juega con −2. Carga y
+  movimiento ya cortan en 0.
+- **Congelada al aprobar:** el jugador no puede cambiar especie, casta ni linaje en una
+  ficha aprobada (lo rechaza el servidor). El máster sí.
+- **El catálogo mueve las fichas aprobadas** (decisión consciente): si cambia un número de
+  especie en el catálogo, cambian todas las fichas de esa especie, aprobadas incluidas, sin
+  migración. Cada cambio de números se avisa al máster antes del deploy.
+
+### 14.3 Cambiar de especie: reset de ficha `[FIRME · usuario 2026-10-09]`
+
+- En **borrador**, cambiar especie, casta o linaje **resetea la ficha entera salvo lo de la
+  pestaña Resumen**. Motivo: lo comprado gracias a la especie (descuentos de casta,
+  Resonancia +1, kerzul sin rareza, bolsa de aumentos) no se puede deshacer pieza a pieza.
+  - Se conserva: nombre, edad, altura, peso, trasfondo, motivación, letras de prioridad y la
+    nueva elección de especie.
+  - Vuelve al valor por defecto: atributos, habilidades y especialidades, psiónica, equipo,
+    recursos, materiales, granadas, fármacos y munición.
+  - Vida y fatiga actuales, al máximo.
+  - Créditos (`Character.creditos`), al valor de la letra de Recursos.
+- **Aviso solo si hay algo que perder** (la ficha difiere de la por defecto fuera de Resumen,
+  o los créditos no son los de la letra). Texto fijo: *"Cambiar de especie reseteará la ficha
+  (todo salvo el Resumen). ¿Seguir?"*. Si no hay nada que perder, el cambio es directo.
+- El reset lo aplica el **servidor**, no la pantalla.
+- **NPC del máster: no aplica.** El editor de NPC es modo libre: sin reset, sin bloqueo por
+  aprobación, sin créditos. Le llega todo lo derivado (atributos, movimiento, carga,
+  armadura natural, Resonancia +1, bonos a tiradas); no le aplica lo de creación (costes por
+  casta, descuentos psiónicos, kerzul sin rareza, bolsa de aumentos). Un NPC ya metido en un
+  combate guarda su foto: cambiarle la especie después no toca ese combate.
+- Al desplegar E1, **todas las fichas de producción** pasan por este mismo reset (backup de
+  Neon y confirmación explícita del usuario ese día).
+
+### 14.4 Atributos `[FIRME · ESP]`
+
+| Especie / opción | Modificadores |
+|---|---|
+| Humanos | — |
+| Riux | Agilidad +1, Aguante +1, Inteligencia +1, Carácter −1, Fuerza −1 |
+| Arianyi | Agilidad +1, Percepción +1, Fuerza −1 |
+| Arköru | Fuerza +2, Agilidad −1 |
+| Manduk Noble | Carácter +1 |
+| Manduk Sabio | Inteligencia +1, Percepción +1, Fuerza −1, Aguante −1, Carácter −1 |
+| Manduk Guerrero | Fuerza +1, Agilidad +1, Aguante +1, Carácter −1, Inteligencia −1 |
+| Manduk Siervo | Aguante +1 *(PDF: "Agaunte", sic)*, Percepción +1, Carácter −1, Inteligencia −1 |
+| Linaje (solo Noble) | Ílkrem Fuerza +1 · Zimethroni Agilidad +1 · Irota Aguante +1 · Maolher Inteligencia +1 · Axadren Percepción +1 · Elión Carácter +1 |
+
+### 14.5 Peso y altura de referencia `[FIRME · ESP + usuario M21]`
+
+| Especie / casta | Peso | Altura |
+|---|---|---|
+| Humanos | — | — |
+| Riux | 40-60 kg + 10 kg × Fuerza | 170-220 cm |
+| Arianyi | 30-55 kg + 10 kg × Fuerza | 140-190 cm |
+| Arköru | 80-120 kg + 15 kg × Fuerza | 180-230 cm |
+| Manduk Noble | 50-70 kg + 10 kg × Fuerza | 170-200 cm |
+| Manduk Sabio | 40-60 kg + 10 kg × Fuerza | 165-185 cm |
+| Manduk Guerrero | 70-110 kg + 15 kg × Fuerza | 180-220 cm |
+| Manduk Siervo | 40-60 kg + 10 kg × Fuerza | 140-165 cm |
+
+- Fuerza **con** especie (M21). Solo **referencia** junto a los campos libres de Identidad;
+  no se valida.
+
+### 14.6 Creación y progresión `[FIRME · ESP + usuario M3, M4, M5, M9, M11]`
+
+**Coste de habilidad por casta** (M11: rige igual en creación y con XP)
+
+| Casta | −1 por nivel (mínimo 1) | +1 por nivel |
+|---|---|---|
+| Noble | Actitud | — |
+| Sabio | Biociencia, Cultura, Tecnociencia | Atletismo, Combate Melee, Combate a Distancia |
+| Guerrero | Atletismo, Combate a Distancia, Combate Melee | Biociencia, Cultura, Tecnociencia |
+| Siervo | — | — |
+
+- Nivel N cuesta `max(1, N − 1)` o `N + 1` en lugar de N (sección 2.5).
+
+**Psiónica**
+- **Arianyi, Resonancia +1 adicional** (M5, decisión que cambia la propuesta): no es un
+  nivel regalado, es un +1 sobre lo comprado, igual que el +2 de Fuerza del Arköru.
+  - Nivel efectivo = comprado + 1; puede superar el máximo de 6.
+  - Vale con cualquier letra de Psiónica, incluida la E.
+  - Cuenta como requisito de Inducción e Hipercognición (los requisitos miran el nivel
+    efectivo).
+- **Arianyi, −1 al coste del nivel 1** de cada disciplina (M4): el nivel 1 cuesta 2 en vez de
+  3. Solo la compra, no la fatiga al usar. **Vale también para Resonancia** (usuario,
+  2026-10-09): comprar Resonancia 1 cuesta 2 y juega con 2.
+- **Maolher, −1 al coste de cada nivel** de cualquier disciplina, en creación y con XP (M11):
+  nivel N cuesta N × 3 − 1.
+
+**Humanos, bolsa de aumentos** (M3) — *sin mecanizar: no hay aumentos*
+- 60.000 créditos aparte, **solo para aumentos**. No toca `Character.creditos`.
+- Un aumento se paga **primero con la bolsa**; si no llega, lo que falte sale de los
+  créditos normales.
+- Lo que quede en la bolsa al aprobar se pierde.
+- Hasta que existan los aumentos, la ficha solo la muestra como dato.
+
+**Arköru, acceso al kerzul** (M9)
+- Una sola pieza de kerzul del catálogo (cualquiera, Escudo incluido) **sin tope de rareza**,
+  solo en creación (ficha en borrador). Todo el kerzul es Singular, por encima de cualquier
+  letra de Recursos: es la única vía de un jugador.
+- **Paga el precio** con sus créditos.
+- La pieza queda marcada como "vía especie"; el reset de 14.3 se la lleva con el equipo.
+
+### 14.7 Movimiento, carga y blindaje `[FIRME · ESP + usuario M6, M7, M14, M23]`
+
+| Fórmula | General (sección 5) | Arköru | Arianyi | Zimethroni (Noble) |
+|---|---|---|---|---|
+| Carrera | 16 + (Pot + Atl) m | igual | igual | +4 m |
+| Salto vertical | 15 × (Pot + Atl) cm, mínimo 15 | 18 × (Pot + Atl) cm, mínimo 15 (M23) | igual | +200 cm (M14) |
+| Salto horizontal | 100 + (Pot + Atl) × 20 cm | 100 + (Pot + Atl) × 25 cm | igual | +200 cm (M14) |
+| Escalada | 4 + (Pot + Atl)/2 m | 8 + (Pot + Atl)/2 m | igual | +2 m |
+| Nado | 4 + (Pot + Atl)/2 m | 2 + (Pot + Atl)/2 m | 8 + (Pot + Atl)/2 m, **sustituye** (M6) | +2 m |
+
+- **Arköru, carga +20 %:** multiplica la carga sin penalizador de la sección 5.5 (× 1,2), no
+  es un +N.
+- **Arköru, armadura natural 1:** línea propia en el blindaje, **se suma** a la armadura
+  puesta; no vale contra Fuego ni Mental (M7, mismo criterio que S19).
+
+### 14.8 Tiradas
+
+**Bonos y casillas** `[FIRME · ESP; en qué tirada cae: INFERIDO · propuesta §1/§4 + usuario M8, M13, M17, M22]`
+
+Las condiciones van como **casilla en la tirada** que solo aparece si la ficha tiene ese
+rasgo (usuario, §5b de la propuesta). Dependen del punto único de montaje (tanda M1).
+
+| Rasgo | Efecto | Dónde |
+|---|---|---|
+| Riux, Piel Irisada | +2 contra radiación astral o ambiental | Casilla en Salvación de Fortaleza |
+| Arköru, Inamovibles | +2 para evitar derribos | Casilla en "Saltar, escalar, levantarse" / salvación contra derribo |
+| Arköru, Adaptación Térmica | +2 contra efectos de temperatura | Casilla en Salvación de Fortaleza |
+| Arköru, Sistemas Filtradores | +2 contra efectos de filtración en el aire | Casilla en Salvación de Fortaleza |
+| Arköru, visión | −1 en ataques a distancia | Fijo en Combate a Distancia; **no** en granadas ni armas arrojadizas (M8) |
+| Arköru, visión | −1 en percepción visual | Casilla en Buscar/percibir; **no** en Alerta pasiva (M8) |
+| Arköru, Matriz Biometálica | Crítico desarmado → daño letal | Texto en el ataque de Pelea |
+| Arianyi, Empatía Biológica | +2 a la tirada pertinente; tocando o muy cerca; requiere concentración; en combate, acción compleja | Casilla en Buscar/percibir (nervios, mentiras) y Tratar heridas (metabolismo). **No** en Convencer/mentir: esa es la tirada del que miente |
+
+**Éxito → crítico y fallo → fallo crítico** `[FIRME · ESP + usuario M13, M17, M22]`
+
+| Rasgo | Efecto | Dónde |
+|---|---|---|
+| Manduk Noble | Éxito cuenta como crítico contra intimidación y miedo | Casilla "¿es contra miedo?" en Salvación de Voluntad (M13) |
+| Irota | Éxito cuenta como crítico en salvaciones contra toxinas, venenos y enfermedades | Casilla en la **Salvación de Fortaleza**, visible solo para Irota (usuario, 2026-10-09) |
+| Axadren | Éxito cuenta como crítico en alerta contra enemigos ocultos | Casilla "¿enemigo oculto?" en Alerta activa y Buscar/percibir (M22). La Alerta pasiva no tira dado |
+| Elión | Éxito cuenta como crítico contra efectos sugestivos | Casilla en la **Salvación de Voluntad**, visible solo para Elión (usuario, 2026-10-09) |
+| Elión | Fallo cuenta como fallo crítico en Empatía, Humor o Negociación | Casilla "¿es Empatía / Humor / Negociación?": cualquier tirada hecha con una especialidad que se llame así, sea cual sea la habilidad (M17; especialidades en texto libre, S5) |
+
+**Penalizadores por umbral** `[FIRME · ESP + usuario M12]`
+- **Guerrero:** heridas un punto menos por tramo: −1/−3/−5 → 0/−2/−4.
+- **Siervo:** fatiga un punto menos por tramo: −1/−2 → 0/−1.
+- Depende de que los umbrales de la sección 7 se apliquen a las tiradas, que hoy no pasa
+  (tanda M1).
+
+### 14.9 Efectos en otras áreas `[FIRME · ESP + usuario M16, M18]`
+
+- **Maolher, peaje neurológico:** al usar un poder que consuma fatiga, salvación de
+  Fortaleza, dificultad 5 + nivel empleado.
+  - Éxito: nada. Fracaso: 1 nivel de daño **no letal** por punto de fatiga. Fracaso
+    crítico: 1 nivel de daño **letal** por punto de fatiga.
+  - Se tira siempre que se pague fatiga, aunque el poder falle; el blindaje no lo absorbe
+    (M16, como la sobrecarga de la sección 10.6).
+- **Irota, fármacos y drogas a la mitad:** duración, modificadores y efectos sobre vida o
+  fatiga, tanto beneficiosos como perjudiciales. Redondeo hacia abajo, mínimo 1 (M18).
+- **Arianyi, Visión UV e infrarroja:** ve calor y huellas químicas o eléctricas; cuesta 1
+  punto de fatiga por hora. Acción sin dado ("activar visión"); el gasto por hora, a mano.
+- **Axadren, visión infrarroja:** la misma percepción; el PDF no le pone coste.
+
+### 14.10 Sin mecanizar: texto en la ficha `[FIRME · ESP + usuario M15, M19]`
+
+| Rasgo | Texto | Por qué no se mecaniza |
+|---|---|---|
+| Humanos, gastar la bolsa | Ver 14.6 | No hay aumentos |
+| Ílkrem, regeneración | 1 nivel no letal por turno, 1 letal por minuto (10 turnos), 1 grave por hora; fatigado, el doble de lento; exhausto, nada | La app no lleva el paso del tiempo |
+| Ílkrem, falla metabólica | Daño de plasma o fuego → Fortaleza (dificultad 9) contra aturdimiento | Depende de "estados bien definidos" |
+| Axadren, deslumbramiento | Explosión de plasma, destello intenso o PEM → ceguera (dificultad 9); otras cegueras similares, dificultad +3 | Ídem |
+| Zimethroni, hiperactividad | Atacado físicamente mientras se mueve: +1 daño por cada 4 niveles recibidos (M15) | Ídem |
+| Zimethroni, tras esquivar | Esquiva con éxito → 1 casilla gratis, una vez por turno | Nota en Defensa |
+| Riux, Ciclo Cerrado | Media ración para la misma fatiga; Descanso Largo de 4 h; 4 Descansos Breves al día en vez de 2 | No hay descanso en la app; "media ración", solo texto (M19) |
+| Siervo | Media ración; Descanso Largo de 6 h | Ídem |
+| Riux, Estasis · Arianyi, apnea doble | Narrativo | Sin número / sin regla de apnea |
 
 ---
 
@@ -951,9 +1158,9 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S2 | Una habilidad **no puede valer 0**: o está sin entrenar (−1) o vale 1 como mínimo. | `HOJA` solo contempla "no entrenada = −1" y valores entrenados. El 0 no aparece. |
 | S3 | Al entrenar, la **primera especialidad va incluida**; a partir de la segunda cuesta 1 punto. | `HOJA` dice que al entrenar "se debe escoger una especialidad" y que "una segunda especialidad tiene de coste 1 punto". |
 | S4 | Tope de **3 especialidades** por habilidad. | **Murillo (2026-09-23) confirma que las reglas no ponen tope, solo el coste en experiencia.** Se mantiene el 3 igualmente, como límite de interfaz deliberado (decisión del usuario, 2026-09-23: la diferencia es menor, no compensa tocarlo ahora) — ya no es un hueco de regla, es UX. |
-| S5 | Las especialidades son **texto libre**. | No existe catálogo todavía. Cuando llegue, se cambia a lista cerrada. |
-| ~~S6~~ | ~~El movimiento no baja de 0.~~ **Superado (Murillo, 2026-09-23):** el salto vertical tiene mínimo **15 cm**, no 0; el resto de fórmulas de movimiento sigue cortándose en 0 (no preguntado, no respondido). | Se queda aquí tachado como rastro — igual que S1. |
-| S7 | En creación el tope es **4** tanto en atributos como en habilidades; 6 es el techo del sistema, alcanzable en partida con puntos que reparte el máster. | `HOJA2` sube el "4/5" y "3/5" de `HOJA` a "4/6" en los dos, unificando el máximo de creación. La partición 4-creación/6-techo la confirma el usuario (2026-09-10); falta que Murillo la valide con una fórmula de progresión concreta. |
+| S5 | Las especialidades son **texto libre**. | No existe catálogo todavía. Cuando llegue, se cambia a lista cerrada. **Lo usa §14.8** (usuario, M17, 2026-10-09): el fallo crítico de Elión se aplica a cualquier especialidad que se llame Empatía, Humor o Negociación; con lista cerrada habría que revisarlo. |
+| ~~S6~~ | ~~El movimiento no baja de 0.~~ **Superado (Murillo, 2026-09-23):** el salto vertical tiene mínimo **15 cm**, no 0; el resto de fórmulas de movimiento sigue cortándose en 0 (no preguntado, no respondido). El mínimo de 15 cm vale también para el salto vertical del Arköru (usuario, M23, §14.7). | Se queda aquí tachado como rastro — igual que S1. |
+| S7 | En creación el tope es **4** tanto en atributos como en habilidades; 6 es el techo del sistema, alcanzable en partida con puntos que reparte el máster. | `HOJA2` sube el "4/5" y "3/5" de `HOJA` a "4/6" en los dos, unificando el máximo de creación. La partición 4-creación/6-techo la confirma el usuario (2026-09-10); falta que Murillo la valide con una fórmula de progresión concreta. **Especies (usuario, M1-M2, 2026-10-09):** el 4 y el 6 miran solo lo comprado; el bono de especie va aparte y el total puede superarlos (§14.2). |
 | S8 | El **valor de Atletismo** que entra en las fórmulas de movimiento es el valor puro, sin aplicar la mitad por estar fuera de especialidad. | Las fórmulas de `HOJA` dicen "Potencia + Atletismo" a secas. |
 | S9 | En un módulo con niveles (mejora estándar o subsistema de `EQUIP`), un efecto que un nivel introduce y los superiores no repiten ni anulan se **acumula**: el nivel N conserva lo desbloqueado en 1..N-1. Cuando el documento da un total explícito para ese nivel ("mejora la bonificación a +2"), se usa ese total tal cual, sin sumarlo al de niveles inferiores. **Implementado de verdad 2026-09-25** (antes solo estaba escrito aquí: el código leía únicamente el bloque del nivel exacto, `niveles.find(n => n.nivel === pieza.nivel)`, y perdía todo lo de 1..N-1 que el nivel actual no repitiera — bug real, detectado en Mira Telescópica/Visor Nocturno, que hasta entonces se parcheaba a mano copiando el efecto en cada nivel superior). `nivelesHasta()`/`acumulaPorClave()`/`ultimoQueDefine()` en `lib/rules/equipo.ts` lo resuelven de forma genérica; los parches a mano ya no hacen falta y se han quitado (Soporte Vital, Sistema de Retroceso, Estabilizador Neuronal). | `EQUIP` describe cada nivel como una mejora sobre el anterior, nunca como un reemplazo (p. ej. Soporte Vital nivel 1 da Resistencia Térmica y los niveles 2-3 no la repiten, pero tampoco dicen que se pierda). Asumir que se pierde algo al subir de nivel sería más raro que asumir que se mantiene. |
 | S10 | El bono de Fuerza del Exoesqueleto, que `EQUIP` duplica para "carga transportable y proezas de fuerza", se aplica **x2 a las 5 fórmulas de movimiento** (Carrera, Salto Vertical, Salto Horizontal, Escalada, Nado) **y a la Carga Transportable** (sección 5.5, `cargaMaxima()`) — la cita completa de `EQUIP`, ya cerrada del todo (2026-09-11: hasta ahora solo se aplicaba a movimiento). No toca la Fuerza general ni Fortaleza/Vida, que siguen sin mecanizar. | `EQUIP` no dice explícitamente qué cuenta como "proeza de fuerza"; las 5 fórmulas salen de Potencia + Atletismo, la misma base física, así que tratarlas todas igual es lo más consistente. Pendiente de confirmar con Murillo. |
@@ -965,7 +1172,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S16 | Al transcribir los 20 estados de combate (`catalog/estados.ts`, fuente `docs/sistema-y-combate.md` §"Efectos y estados"): cada grado (Fracaso crítico/Fracaso/Éxito/Éxito crítico, o nivel acumulado) se mecaniza como **autocontenido**, sin sumarse al texto base salvo que el documento diga explícitamente "además de lo anterior". Se convierte en `Modificador` un número que **reduce un atributo básico directamente** ("Fuerza y Aguante en 1") o es un **penalizador plano a "todas las tiradas"**, sin condición. Se queda solo en texto (`detalle`, sin mecanizar): penalizadores a "tiradas que usen" un atributo o aplicado concreto (no hay alcance para eso todavía — sería el siguiente hueco del motor de modificadores si algún día compensa cerrarlo), reducción de velocidad/carga (mismo motivo que la Carga Transportable, aparcada: es un porcentaje o un tope, no un delta), daño narrado (se aplica con la acción de PG de la consola de máster, no como modificador pasivo) y cualquier condición que dependa de que el narrador decida algo. | Los 20 estados mezclan, en la misma tabla, penalizadores planos (mecanizables ya) con penalizadores condicionados por atributo/aplicado/objetivo y con daño narrado — no hay una sola regla de transcripción que sirva para todo el bloque sin fijar antes qué se mecaniza y qué no. Reduce el riesgo de "inventar" un alcance de modificador que el motor no soporta solo para que un número "haga algo". |
 | S17 | Precio de la **batería portátil** (recarga a tope cualquier célula de Subsistema): **150 créditos**, fijo, sin depender de la capacidad de la célula. **Ampliado 2026-09-28:** las armas de energía (Láser/Plasma/Rayo, `tipoMunicion: "energia"`) también se recargan con batería a 150, no con el cargador de 50 (S18) — mismo comportamiento de stock que cualquier arma, solo cambia qué se compra (`recargaDePieza()`, `recursos.ts`). | `EQUIP` no la menciona — es un ítem nuevo para probar RECURSOS (`docs/tareas.md`, extensión de fase 6b). Decisión explícita del usuario (2026-09-22). |
 | S18 | Precio del **cargador de balas normales** (suma una carga de munición al stock de un arma de fuego): **50 créditos**, fijo, sin depender de la capacidad del cargador del arma. | Mismo origen que S17 — ítem nuevo para RECURSOS, sin base en `EQUIP`. Decisión explícita del usuario (2026-09-22). |
-| S19 | Blindaje (`blindajeContra()`, `lib/rules/blindaje.ts`): la absorción de 1:1 aplica a **cualquier tipo de daño salvo Mental y Fuego**, que se quedan en 0. Tóxico cuenta como cualquier otro tipo — el blindaje SÍ reduce el daño de un arma tóxica; lo que no toca es el estado de Enfermedad/Envenenamiento que dispare esa arma, que se resuelve aparte con su propia salvación. | Mental ya "omite armaduras" (§7, `FIRME`); Fuego no se menciona como cubierto en ninguna fuente de blindaje del catálogo (armadura, Escudo Deflector) — es justo lo que Mejora Ignífuga reabre, así que sin ella se asume 0. Decisión explícita del usuario (2026-09-27), pendiente de que Murillo confirme si hay más excepciones. |
+| S19 | Blindaje (`blindajeContra()`, `lib/rules/blindaje.ts`): la absorción de 1:1 aplica a **cualquier tipo de daño salvo Mental y Fuego**, que se quedan en 0. Tóxico cuenta como cualquier otro tipo — el blindaje SÍ reduce el daño de un arma tóxica; lo que no toca es el estado de Enfermedad/Envenenamiento que dispare esa arma, que se resuelve aparte con su propia salvación. | Mental ya "omite armaduras" (§7, `FIRME`); Fuego no se menciona como cubierto en ninguna fuente de blindaje del catálogo (armadura, Escudo Deflector) — es justo lo que Mejora Ignífuga reabre, así que sin ella se asume 0. Decisión explícita del usuario (2026-09-27), pendiente de que Murillo confirme si hay más excepciones. La armadura natural del Arköru sigue el mismo criterio (usuario, M7, §14.7). |
 | S20 | Lanzar un arma melee "Arrojadiza" (Lanza Corta, Cuchillo de Combate, Puñal y Lanza Corta de Kerzul) se resuelve **igual que lanzar una granada**: Potencia + Atletismo, alcance Potencia × 10 m (`ALCANCE_ARROJADA`), con la dificultad y el daño del primer modo del arma (el Simple). Sin estilo Sutil — es un lanzamiento, no un golpe. | `EQUIP` solo marca la etiqueta "Arrojadiza", sin par, alcance ni dificultad. Decisión explícita del usuario (2026-09-28): reutilizar la única regla de lanzamiento a mano que ya existe. Pendiente de que Murillo confirme. |
 | S21 | En un fusil de precisión (Mira Telescópica nv1 integrada, `ArmaFuego.miraIntegrada`), no se puede instalar otra mira de nivel 1; una de **nivel 2 o 3 sustituye a la integrada**: no ocupa ranura de mejora y solo aporta el bono de tramo que supera al de la integrada (nv3 → +1 en media/larga; nv2 → nada extra, solo su visión nocturna/térmica). | `EQUIP` dice que la integrada está "ya contabilizada en la dificultad de ataque y en las mejoras disponibles", y no dice qué pasa al mejorarla. Bloquear solo el nivel 1 es decisión del usuario (2026-09-28); lo de la ranura y la resta del bono es la lectura que evita contar dos veces lo que ya está en la dificultad. Pendiente de que Murillo confirme. |
 | S22 | La mejora **Munición Especial** se da de alta como una mejora de arma **por tipo de munición**, y cada una **ocupa una ranura** de `mejorasAdmitidas`. Para munición **Muy Extraña** (radiactiva, supresora) cuesta **62.500** créditos. | `EQUIP` dice que se puede instalar "repetidas veces para distintos tipos", pero no si cada una ocupa ranura; y su tabla de precios solo llega a Extraño (500 / 2.500 / 12.500, ×5 por rango): se sigue la misma progresión. Decisión del usuario (2026-09-28), pendiente de que Murillo confirme. |
@@ -1034,7 +1241,7 @@ sospecha que también contra eléctrico, 2026-09-12)? Pendiente de confirmar con
 10. ~~Psiónica: ¿los poderes se compran con los 10 puntos de creación, con otro pool, o vienen dados por especie/dote?~~ **Resuelta por `HOJA2`:** pool propio, ligado a la letra de prioridad. Sigue sin catálogo de poderes.
 11. ~~Aumentos: ¿hay un tope de capacidad de lo que un cuerpo aguanta instalado? ¿Biónicos y genéticos comparten ese tope o van por separado? ¿Instalarse de más tiene consecuencia?~~ **En proceso (usuario, 2026-09-10):** el diseñador ya lo está preparando — se retoma cuando llegue el documento.
 12. ~~Progresión post-creación: ¿XP, hitos, puntos por sesión?~~ **Resuelta por `HOJA2`:** hay XP, y el coste por nivel es el mismo que en creación (Nivel × factor según categoría) — ver "Coste y progresión", sección 2.
-13. ~~Especies: lista y qué modifican.~~ **En proceso (usuario, 2026-09-10):** confirmado, ya en camino.
+13. ~~Especies: lista y qué modifican.~~ **En proceso (usuario, 2026-09-10):** confirmado, ya en camino. **Resuelta por `ESP`** (2026-10-09): ver sección 14. Sus dudas de lectura (M1-M24) las cerró el usuario; no queda ninguna para Murillo.
 
 **Sobre la dualidad hackeo digital / cuántico** (`CONV-1`, `CONV-2`)
 14. ~~Si mente y máquina comparten naturaleza (ondas, superposición, probabilidad), ¿la intrusión psiónica y la digital usan **la misma mecánica** con distinto vector, o son dos subsistemas separados?~~ **Resuelta, ver sección 10.5.**
@@ -1182,6 +1389,7 @@ dónde y qué tumbó a qué.
 
 | Ref | Fecha | Qué aportó | Qué cambió |
 |---|---|---|---|
+| `ESP` | 2026-10-09 | `docs/Especies.pdf` (9 págs, creado el 2026-09-26), transcrito en `docs/especies.md`: Humanos, Riux, Arianyi, Arkör y Manduk (4 castas, 6 linajes nobles), con atributos, peso, altura y rasgos. Mismo día, el usuario resuelve las 24 dudas de lectura (M1-M24, `docs/propuesta-especies.md` §5 y §5b). | Sección 14 pasa de `[PENDIENTE]` a `[PARCIAL]`. Resuelve la pregunta 13. Anota S5, S6, S7 y S19. |
 | `CONV-4` | 2026-09-10 | `docs/Creación de Personaje.odt` (`HOJA2`), revisión de la hoja de creación: sistema de prioridad (A-E entre Atributos/Habilidades/Dotes/Psiónica/Recursos), Aplicados como media en vez de suma, techo de creación 4/6 unificado, otras constantes de movimiento, coste por nivel (Nivel×factor) para creación y progresión, carga transportable completa, Altura y Peso en identidad. Por WhatsApp, Murillo confirma que las 5 letras de prioridad se usan **una vez cada una, sin repetir** ("Es igual que shadowrun"). | Resuelve las preguntas 5, 7 (parcial), 10, 12 y 26. Tumba el supuesto S1 (coste lineal de habilidades) y actualiza S7 (4/6 en vez de 4/5 y 3/5). Añade S11 (redondeo de Aplicados hacia arriba, decisión del usuario) y S12 (Dotes sin presupuesto en A-D, solo pendiente confirmar). Deja pendiente si el pool de Dotes A-D existe y no se transcribió. **Con este alcance, el motor de creación implementado hoy queda desactualizado en varios puntos — ver `docs/traspaso.md` para el plan de qué tocar.** |
 | `CONV-3` | 2026-09-03 | Dos PDFs: **Sistema y Combate** (28 ago, 12 págs) y **Equipamiento** revisado (31 ago, 49 págs frente a las 43 anteriores). | Secciones 6 y 7 pasan de `[INFERIDO]` a `[FIRME]`: ya se conoce el dado (1d12), la tabla de dificultades, los críticos, las acciones por turno, los umbrales de herida y fatiga, las categorías de daño y 20 estados. Resuelve la pregunta 21; abre C4-C7 y las preguntas 22-25. En equipamiento: cambian **todas** las tablas de armas, aparece el efecto **fusión**, las **distancias de disparo** con modificadores y 12 secciones nuevas (armas de Kerzul, otras armas a distancia, medicina y farmacia). |
 | `CONV-2` | 2026-08-26 | Documento de arquitectura cuántica y psiónica: principio rector (cuántica y psiónica comparten naturaleza — ondas, superposición, probabilidad — y no necesitan traductores), entorno de cúbits que colapsan ante estímulo externo, psiónica como campo neuro-eléctrico que actúa sobre materia/energía/información, y los tres ejes de interacción (entrelazamiento neural, navegación por probabilidad, resonancia y resistencia). | Nueva sección 10 completa. Cierra el *por qué* de la dualidad de hackeo; abre las preguntas 13-18 sobre su mecánica. La ciberseguridad deja de ser "muro con nivel" y pasa a ser duelo de estabilidad mental. |
