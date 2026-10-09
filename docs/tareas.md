@@ -28,6 +28,8 @@ cuál va antes que la otra:
   Acciones (grupo nuevo "Fármacos", `rules/farmacos.ts`) que gasta 1 dosis al
   confirmar. Documento cerrado, sin más fases pendientes.
 - "Preguntas al diseñador" (final de este documento) — lo que bloquea a Murillo.
+- "Especies reales" (en Pendiente) — plan por tandas E0-E5 + M1 con checklist, cerrado
+  2026-10-09 (`docs/propuesta-especies.md`).
 
 ---
 
@@ -1340,6 +1342,85 @@ informativo a **tiradas fijas** de `TIRADAS` (hoy solo funciona por arma concret
 problema completo en `docs/modificadores-tiradas.md` §8. **Resuelta:** el §8 se construyó
 el 2026-09-23 (condiciones con `alcance` desde el equipo) y la psiónica entra por
 `conPsionicaEnTiradaFija` (2026-09-30).
+
+### Especies reales ⬜ (plan cerrado 2026-10-09, sin empezar)
+
+Plan y porqués en `docs/propuesta-especies.md` (decisiones del usuario en §5b, ninguna
+pendiente de Murillo); flujo en `docs/diagrama-especies.png`. Fuente: `docs/Especies.pdf`.
+Orden decidido: E0 → E1 → E2 → E3 → M1 → E4 → E5. Cada tanda: plantear → luz verde →
+construir → tests → navegador → documentar. Dudas nuevas que salgan: caso a caso, no se
+construye la sugerida por defecto.
+
+**E0 — Documentar**
+- [ ] `docs/especies.md`: transcripción fiel del PDF, erratas *(sic)*
+- [ ] `docs/sistema.md` §14 de `PENDIENTE` a `PARCIAL`, con las decisiones M1-M24
+
+**E1 — Núcleo** (propuesta §2.2, §3, §3.1)
+- [ ] Catálogo `especies.ts`: Humanos, Riux, Arianyi, Arköru, Manduk (4 castas, 6 linajes):
+      atributos, narrativo, peso/altura de referencia. Fuera las provisionales
+- [ ] Ficha v14: `especieOpciones` (casta, linaje) + migración
+- [ ] `rules/especie.ts`: `especieDeFicha` (especie + casta + linaje → efectos)
+- [ ] `elegirEspecie`: linaje solo para nobles, bloqueada si aprobada (salvo máster),
+      **reset** de todo salvo Resumen + créditos a la letra; `hayQuePerder` para el aviso
+- [ ] `setEspecieAction` (sale de `saveIdentityAction`): aplica el reset en el servidor
+- [ ] `resolverFicha` calculada una vez en `CharacterSheet`; fuera los
+      `mods = modificadoresActivos(sheet)` por defecto; ESLint en componentes
+- [ ] UI: selector de especie/casta/linaje el primero en Resumen; aviso "se reseteará la
+      ficha" solo si hay algo que perder
+- [ ] `ESPECIES` entra en `motor.test.ts` (MotorMetadata por rasgo)
+- [ ] NPC: selector de especie/casta/linaje en la pestaña Identidad de `NpcEditor` (hoy
+      solo nombre y nota)
+- [ ] NPC: `resolverFicha` también en `NpcEditor`, vía un hook compartido con
+      `CharacterSheet` (`useFichaResuelta`), para que el NPC no se quede con el cálculo viejo
+- [ ] NPC: `elegirEspecie` en modo libre: sin reset, sin bloqueo por aprobación, sin tocar
+      créditos (los NPC no tienen esa columna)
+- [ ] Deploy: backup de Neon → **confirmación del usuario ese día** → reset general de las
+      fichas de prod → push
+
+**E2 — Creación**
+- [ ] Coste de habilidad por casta, en creación y XP (`costeSubidaXp` sale a `rules/progresion.ts`)
+- [ ] Modificador nuevo de tipo *disciplina*: Resonancia +1 del arianyi (adicional, puede
+      pasar de 6, cuenta como requisito; requisitos contra el nivel efectivo)
+- [ ] Descuentos psiónicos: nivel 1 a coste 2 (arianyi), −1 por nivel (Maolher), creación y XP
+- [ ] Bolsa de 60.000 del humano visible como "pendiente de aumentos"
+- [ ] Kerzul del Arköru sin rareza: una pieza, marca `viaEspecie`, solo en borrador
+
+**E3 — Derivados**
+- [ ] Movimiento: fórmulas del Arköru (salto vertical con mínimo 15 cm), nado del Arianyi,
+      +4 m carrera y +2 m salto/nado/escalada de Zimethroni
+- [ ] Carga +20 % (Arköru)
+- [ ] Armadura natural 1 en `desgloseBlindaje` (se suma; no contra fuego ni mental)
+
+**M1 — Montaje único de tiradas** (propuesta §3.1; cierra el hallazgo de umbrales de arriba)
+- [ ] Tests de caracterización de cada lista de Acciones antes de mover nada
+- [ ] `montarTirada`: total + desglose + márgenes de crítico/pifia
+- [ ] Penalizadores por umbral de salud y fatiga dentro (`modificadoresDeUmbrales`)
+- [ ] Sacar de `AccionesTab` la suma del modal y el crítico de la VTM
+- [ ] Índice de casillas sin el memo parcial `[sheet.equipo]` + `eslint-disable`
+
+**E4 — Bonos a tiradas**
+- [ ] Casillas de especie: +2 radiación (Riux), temperatura / filtración / derribo y −1
+      visual (Arköru), Empatía Biológica en Buscar/percibir y Tratar heridas (Arianyi)
+- [ ] −1 a distancia del Arköru (solo Combate a Distancia)
+- [ ] Toggles "éxito → crítico" visibles solo para su casa: Noble (miedo, Voluntad), Irota
+      (toxinas), Axadren (enemigo oculto: Alerta activa y Buscar), Elión (sugestión)
+- [ ] "Fallo → fallo crítico" de Elión (especialidad Empatía / Humor / Negociación)
+- [ ] −1 a los tramos de heridas (Guerrero) y fatiga (Siervo)
+- [ ] Textos: crítico desarmado letal (Arköru), casilla gratis tras esquivar y daño extra
+      (Zimethroni), aturdimiento (Ílkrem), ceguera (Axadren)
+
+**E5 — Otras áreas**
+- [ ] Peaje de Maolher en `usoPoder.ts` (Fortaleza 5 + nivel; no lo absorbe el blindaje)
+- [ ] Irota: fármacos a la mitad (redondeo abajo, mínimo 1)
+- [ ] Visión UV/IR (Arianyi) e infrarroja (Axadren) como acción sin dado
+
+**Bloqueado**
+- Gastar la bolsa de aumentos (dos bolsas, la de aumentos primero): espera a los aumentos
+- Regeneración de Ílkrem, descanso y raciones (Riux, Siervo): la app no lleva el tiempo
+
+**Aparte, detectado en la revisión**
+- [ ] `setPrioridadAction` sobrescribe `Character.creditos` al cambiar la letra de
+      Recursos sin restar lo gastado en la Tienda (el reset de especie solo lo tapa en ese caso)
 
 ### Armas Modificadas ⬜
 Electrificantes, Térmicas, de Plasma, de Nanofilamento. Su coste es un **multiplicador**
