@@ -12,6 +12,7 @@ import {
 } from "./equipo";
 import { ARMAMENTO_PESADO } from "./armamentoPesado";
 import { MUNICION_GRANADA } from "./municion";
+import { ESPECIES, type Rasgo } from "./especies";
 
 // Las 5 familias que envuelven `niveles: NivelModulo[]` — los efectos reales
 // (modificadores, condiciones, notaTirada) viven por nivel, no en la pieza
@@ -59,11 +60,6 @@ function recorre(nombre: string, piezas: readonly Equipo[], errores: string[]) {
   }
 }
 
-// Deliberadamente fuera de este barrido: catalog/especies.ts. motor.md
-// diseñó MotorMetadata pensando en equipo — especies es además scaffolding
-// provisional a la espera del documento de Fase 5 (ver su cabecera), así
-// que ni siquiera está claro que el schema le valga tal cual. Se evalúa
-// aparte el día que haga falta, no se fuerza aquí.
 const MAX_ERRORES_EN_MENSAJE = 60;
 
 test("cada efecto de cada pieza del catálogo de equipo declara su MotorMetadata completo", () => {
@@ -80,4 +76,27 @@ test("cada efecto de cada pieza del catálogo de equipo declara su MotorMetadata
   ].join("\n");
 
   assert.equal(errores.length, 0, mensaje);
+});
+
+// Especies (docs/sistema.md §14): cada rasgo de especie, casta y linaje declara
+// su MotorMetadata. Excepción: los rasgos de creación (costes, bolsa de aumentos)
+// quedan fuera del modelo (motor.md, "Lo que queda fuera del modelo") y deben
+// llegar con `motor` vacío, para que nadie les cuelgue uno a medias.
+test("cada rasgo de especie, casta y linaje declara su MotorMetadata completo", () => {
+  const errores: string[] = [];
+  const revisa = (etiqueta: string, rasgos: Rasgo[]) => {
+    for (const r of rasgos) {
+      if (r.creacion) {
+        if (r.motor.length > 0) errores.push(`${etiqueta}/${r.id}: rasgo de creación con "motor"`);
+      } else {
+        validaMotor(`${etiqueta}/${r.id}`, r.motor, errores);
+      }
+    }
+  };
+  for (const e of ESPECIES) {
+    revisa(e.id, e.rasgos);
+    for (const c of e.castas ?? []) revisa(`${e.id}/${c.id}`, c.rasgos);
+    for (const l of e.linajes?.opciones ?? []) revisa(`${e.id}/${l.id}`, l.rasgos);
+  }
+  assert.equal(errores.length, 0, errores.join("\n"));
 });

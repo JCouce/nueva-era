@@ -408,9 +408,11 @@ como transcrita de verdad:
 El barrido está cerrado: `src/lib/rules/motor.ts` (tipo + schema Zod) y
 `src/lib/catalog/motor.test.ts` (recorre el catálogo entero de equipo,
 exige `MotorMetadata` completo en cada efecto) llevan las 550 entradas de
-las 215 piezas/niveles del catálogo de equipo, en verde. `ESPECIES` queda
-fuera a propósito (scaffolding provisional, ver su cabecera) — el día que
-se aborde de verdad, evaluar primero si el modelo le vale tal cual.
+las 215 piezas/niveles del catálogo de equipo, en verde. `ESPECIES` entra
+en el test desde E1a (2026-10-09), con MotorMetadata por rasgo de especie,
+casta y linaje; los rasgos de coste de creación (castas, descuentos
+psiónicos, bolsa de aumentos) van con `creacion: true` y `motor: []`,
+porque coste y rareza quedan fuera de este modelo.
 
 Una auditoría adversarial posterior (agente fresco, releyendo la fuente
 desde cero, sin mirar primero lo declarado) encontró un puñado de errores

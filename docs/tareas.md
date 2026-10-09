@@ -1356,26 +1356,29 @@ construye la sugerida por defecto.
 - [x] `docs/sistema.md` §14 de `PENDIENTE` a `PARCIAL`, con las decisiones M1-M24
 
 **E1 — Núcleo** (propuesta §2.2, §3, §3.1)
-- [ ] Catálogo `especies.ts`: Humanos, Riux, Arianyi, Arköru, Manduk (4 castas, 6 linajes):
-      atributos, narrativo, peso/altura de referencia. Fuera las provisionales
-- [ ] Ficha v14: `especieOpciones` (casta, linaje) + migración
-- [ ] `rules/especie.ts`: `especieDeFicha` (especie + casta + linaje → efectos)
-- [ ] `elegirEspecie`: linaje solo para nobles, bloqueada si aprobada (salvo máster),
+Se construye en tres pasadas con revisión y commit entre cada una: **E1a** modelo y reglas
+puras (catálogo, ficha v14, `rules/especie.ts`), **E1b** `resolverFicha` (refactor sin cambio
+de comportamiento), **E1c** servidor + UI + fuera provisionales.
+- [x] Catálogo `especies.ts`: Humanos, Riux, Arianyi, Arköru, Manduk (4 castas, 6 linajes):
+      atributos, narrativo, peso/altura de referencia. Fuera las provisionales *(E1a; queda
+      el campo `provisional?` sin usar hasta quitar el aviso de `ResumenTab` en E1c)*
+- [x] Ficha v14: `especieOpciones` (casta, linaje) + migración
+- [x] `rules/especie.ts`: `especieDeFicha` (especie + casta + linaje → efectos)
+- [x] `elegirEspecie`: linaje solo para nobles, bloqueada si aprobada (salvo máster),
       **reset** de todo salvo Resumen + créditos a la letra; `hayQuePerder` para el aviso
+      *(E1a: los créditos los fija `setEspecieAction` cuando `reseteada` es true)*
 - [ ] `setEspecieAction` (sale de `saveIdentityAction`): aplica el reset en el servidor
 - [ ] `resolverFicha` calculada una vez en `CharacterSheet`; fuera los
       `mods = modificadoresActivos(sheet)` por defecto; ESLint en componentes
 - [ ] UI: selector de especie/casta/linaje el primero en Resumen; aviso "se reseteará la
       ficha" solo si hay algo que perder
-- [ ] `ESPECIES` entra en `motor.test.ts` (MotorMetadata por rasgo)
+- [x] `ESPECIES` entra en `motor.test.ts` (MotorMetadata por rasgo)
 - [ ] NPC: selector de especie/casta/linaje en la pestaña Identidad de `NpcEditor` (hoy
       solo nombre y nota)
 - [ ] NPC: `resolverFicha` también en `NpcEditor`, vía un hook compartido con
       `CharacterSheet` (`useFichaResuelta`), para que el NPC no se quede con el cálculo viejo
-- [ ] NPC: `elegirEspecie` en modo libre: sin reset, sin bloqueo por aprobación, sin tocar
+- [x] NPC: `elegirEspecie` en modo libre: sin reset, sin bloqueo por aprobación, sin tocar
       créditos (los NPC no tienen esa columna)
-- [ ] Deploy: backup de Neon → **confirmación del usuario ese día** → reset general de las
-      fichas de prod → push
 
 **E2 — Creación**
 - [ ] Coste de habilidad por casta, en creación y XP (`costeSubidaXp` sale a `rules/progresion.ts`)
@@ -1390,6 +1393,11 @@ construye la sugerida por defecto.
       +4 m carrera y +2 m salto/nado/escalada de Zimethroni
 - [ ] Carga +20 % (Arköru)
 - [ ] Armadura natural 1 en `desgloseBlindaje` (se suma; no contra fuego ni mental)
+
+**Deploy de especies** (tras E3, decidido 2026-10-09: un solo reset y cada jugador crea su
+ficha una vez, ya con costes de casta, descuentos y derivados)
+- [ ] Backup de Neon → **confirmación del usuario ese día** → reset general de las fichas de
+      prod → push
 
 **M1 — Montaje único de tiradas** (propuesta §3.1; cierra el hallazgo de umbrales de arriba)
 - [ ] Tests de caracterización de cada lista de Acciones antes de mover nada

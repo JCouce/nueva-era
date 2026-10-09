@@ -194,6 +194,15 @@ export const MIGRACIONES: Migracion[] = [
       "empiezan sin ninguna.",
     migrar: (ficha) => ({ ...ficha, fatigaTemporal: 0 }),
   },
+  {
+    desde: 13,
+    hasta: 14,
+    descripcion:
+      "Se añaden las opciones de especie (casta y linaje, docs/sistema.md §14.1): las fichas " +
+      "antiguas empiezan sin ninguna. Las especies provisionales conservan su id (humano, " +
+      "arkoru); sus números pasan a ser los del documento real, sin migrar nada (§14.2).",
+    migrar: (ficha) => ({ ...ficha, especieOpciones: {} }),
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le

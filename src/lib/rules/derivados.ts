@@ -13,23 +13,16 @@ import {
   bonoHabilidad,
   type ModificadorConFuente,
 } from "./modificadores";
-import { especiePorId } from "../catalog/especies";
+import { especieDeFicha } from "./especie";
 import { equipoPorId } from "../catalog/equipo";
 import { modificadoresDeEquipo } from "./equipo";
 import type { Sheet } from "./sheet";
 
-// Los modificadores activos de una ficha: especie y equipo por ahora; cuando
+// Los modificadores activos de una ficha: especie (con casta y linaje) y equipo por ahora; cuando
 // existan dotes, aumentos y estados, se añaden aquí y todo lo demás sigue
 // funcionando sin tocarse.
 export function modificadoresActivos(sheet: Sheet): ModificadorConFuente[] {
-  const especie = especiePorId(sheet.especieId);
-  const deEspecie: ModificadorConFuente[] = especie
-    ? especie.modificadores.map((m) => ({
-        ...m,
-        origen: "especie" as const,
-        fuente: especie.label,
-      }))
-    : [];
+  const deEspecie = especieDeFicha(sheet)?.modificadores ?? [];
   return [...deEspecie, ...modificadoresDeEquipo(sheet)];
 }
 

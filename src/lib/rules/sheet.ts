@@ -39,6 +39,7 @@ import { MUNICION_GRANADA, MUNICION_ESPECIAL } from "../catalog/municion";
 import { FARMACOS } from "../catalog/medicina";
 import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./prioridad";
 import { DISCIPLINA_IDS, type DisciplinaId } from "../catalog/psionica";
+import { normalizarOpciones } from "../catalog/especies";
 
 // Versión del formato de ficha. Al subirla hay que añadir su migración en
 // migraciones.ts y el test que la cubre.
@@ -58,7 +59,8 @@ import { DISCIPLINA_IDS, type DisciplinaId } from "../catalog/psionica";
 //   11 → se añade el stock de munición especial (municionEspecial)
 //   12 → se añaden los niveles de disciplina psiónica (psionica)
 //   13 → se añade la fatiga temporal de Proeza (fatigaTemporal)
-export const SCHEMA_VERSION = 13;
+//   14 → se añaden las opciones de especie (especieOpciones: casta y linaje)
+export const SCHEMA_VERSION = 14;
 
 const atributoValue = z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX);
 
@@ -86,6 +88,13 @@ export const sheetSchema = z.object({
   altura: z.number().int().min(0).max(999).nullable(),
   peso: z.number().int().min(0).max(999).nullable(),
   especieId: z.string().max(40).nullable(),
+  // Casta y linaje (docs/sistema.md §14.1). Solo la elección; sus efectos se
+  // derivan del catálogo (rules/especie.ts). parseSheet descarta lo que no
+  // encaje con la especie.
+  especieOpciones: z.object({
+    casta: z.string().max(40).optional(),
+    linaje: z.string().max(40).optional(),
+  }),
   trasfondo: z.string().max(2000),
   motivacion: z.string().max(500),
   atributos: z.object(atributosShape),
@@ -119,6 +128,7 @@ export function defaultSheet(): Sheet {
     altura: null,
     peso: null,
     especieId: null,
+    especieOpciones: {},
     trasfondo: "",
     motivacion: "",
     atributos: Object.fromEntries(
@@ -289,13 +299,16 @@ export function parseSheet(raw: unknown): Sheet {
   // centinela 999 de una ficha nueva o recién migrada cae aquí a su tope de
   // verdad, y una ficha vieja que perdiera un bono de vida no se queda con
   // un `actual` por encima de su nuevo máximo.
+  const especieId = typeof r.especieId === "string" ? r.especieId.slice(0, 40) : null;
+
   return reconciliarVida(
     reconciliarRecursos({
       schemaVersion: clampInt(r.schemaVersion, 1, SCHEMA_VERSION, SCHEMA_VERSION),
       edad: r.edad === null || r.edad === undefined ? null : clampInt(r.edad, 0, 999, 0),
       altura: numeroOpcional(r.altura),
       peso: numeroOpcional(r.peso),
-      especieId: typeof r.especieId === "string" ? r.especieId.slice(0, 40) : null,
+      especieId,
+      especieOpciones: normalizarOpciones(especieId, r.especieOpciones),
       trasfondo: typeof r.trasfondo === "string" ? r.trasfondo.slice(0, 2000) : "",
       motivacion: typeof r.motivacion === "string" ? r.motivacion.slice(0, 500) : "",
       atributos,

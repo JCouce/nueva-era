@@ -40,10 +40,11 @@ describe("catálogo de especies", () => {
     assert.deepEqual(modificadoresActivos(conEspecie("dragon")), []);
   });
 
-  test("mientras sean provisionales, quedan marcadas", () => {
-    for (const e of ESPECIES) {
-      assert.equal(typeof e.provisional, "boolean");
-    }
+  test("están las cinco especies de docs/sistema.md §14.1", () => {
+    assert.deepEqual(
+      ESPECIES.map((e) => e.id),
+      ["humano", "riux", "arianyi", "arkoru", "manduk"],
+    );
   });
 });
 
@@ -59,33 +60,32 @@ describe("los modificadores de especie llegan a los números", () => {
     assert.deepEqual(salud(s), salud(conEspecie(null)));
   });
 
-  test("el arkorü sube Aguante y baja Carácter", () => {
+  test("el arköru sube Fuerza y baja Agilidad", () => {
     const s = conEspecie("arkoru");
-    assert.equal(atributoEfectivo(s, "aguante"), 1);
-    assert.equal(atributoEfectivo(s, "caracter"), -1);
+    assert.equal(atributoEfectivo(s, "fuerza"), 2);
+    assert.equal(atributoEfectivo(s, "agilidad"), -1);
   });
 
   test("el bono de atributo arrastra a los aplicados y a la salud", () => {
     const s = conEspecie("arkoru");
-    // Aguante +1 entra en Fortaleza (fue+agu) y en Voluntad (agu+car).
+    // Fuerza +2 entra en Fortaleza (fue+agu): ceil(2/2) = 1.
     assert.equal(aplicado(s, "fortaleza"), 1);
     assert.equal(salud(s).vida, 9); // 8 + 1
-    // Voluntad = aguante +1 y carácter -1 → 0, la fatiga se queda igual.
+    // Voluntad (agu+car) no la toca: la fatiga se queda igual.
     assert.equal(aplicado(s, "voluntad"), 0);
     assert.equal(salud(s).fatiga, 8);
   });
 
-  test("el bono de habilidad se suma al valor efectivo", () => {
-    let s = setPrioridad(conEspecie("arkoru"), "habilidades", "A");
+  test("un bono de habilidad se suma al valor efectivo, también sin entrenar", () => {
+    // Ninguna especie real da habilidad: se prueba con un modificador suelto.
+    let s = setPrioridad(defaultSheet(), "habilidades", "A");
     s = setHabilidadValue(s, "tecnociencia", 2);
-    // 2 entero + 1 de especie dentro de especialidad; ceil(2/2)=1 +1 fuera.
-    assert.equal(valorEfectivo(s, "tecnociencia", true), 3);
-    assert.equal(valorEfectivo(s, "tecnociencia", false), 2);
-  });
-
-  test("también se suma a una habilidad sin entrenar", () => {
-    const s = conEspecie("arkoru");
-    assert.equal(valorEfectivo(s, "tecnociencia", false), 0); // -1 + 1
+    const mods: ModificadorConFuente[] = [
+      { tipo: "habilidad", id: "tecnociencia", valor: 1, origen: "especie", fuente: "X" },
+    ];
+    assert.equal(valorEfectivo(s, "tecnociencia", true, mods), 3);
+    assert.equal(valorEfectivo(s, "tecnociencia", false, mods), 2);
+    assert.equal(valorEfectivo(defaultSheet(), "tecnociencia", false, mods), 0); // -1 + 1
   });
 });
 
@@ -93,7 +93,7 @@ describe("los modificadores NO tocan el point-buy", () => {
   test("el bono de especie no gasta ni regala puntos de creación", () => {
     const sinEspecie = setAtributoValue(
       setPrioridad(defaultSheet(), "atributos", "A"),
-      "aguante",
+      "fuerza",
       2,
     );
     const conArkoru = { ...sinEspecie, especieId: "arkoru" };
@@ -103,8 +103,8 @@ describe("los modificadores NO tocan el point-buy", () => {
       "el pool se calcula sobre lo comprado, no sobre lo efectivo",
     );
     // Pero el valor en juego sí sube.
-    assert.equal(conArkoru.atributos.aguante, 2);
-    assert.equal(atributoEfectivo(conArkoru, "aguante"), 3);
+    assert.equal(conArkoru.atributos.fuerza, 2);
+    assert.equal(atributoEfectivo(conArkoru, "fuerza"), 4);
   });
 });
 

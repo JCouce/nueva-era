@@ -24,6 +24,7 @@
 //   farmacos.ts        fármacos del pool (sheet.farmacos) convertidos en su propia acción "Usar"
 //   psionica.ts        forma de los poderes psiónicos y compra de disciplinas (N×3, requisitos)
 //   poderes.ts         evaluador: poder + nivel + opciones elegidas → valores concretos
+//   especie.ts         especie + casta + linaje → efectos; elegir especie (validación y reset)
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -50,6 +51,7 @@ export * from "./farmacos";
 export * from "./psionica";
 export * from "./poderes";
 export * from "./usoPoder";
+export * from "./especie";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

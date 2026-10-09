@@ -64,20 +64,20 @@ describe("desglose de un atributo", () => {
   });
 
   test("con especie, cada modificador aparece como su propia fuente", () => {
-    // Arkorü: +1 aguante, -1 carácter (ver src/lib/catalog/especies.ts)
-    const s = ficha({ atributos: { aguante: 2 }, especieId: "arkoru" });
-    assert.deepEqual(desgloseAtributo(s, "aguante"), {
-      total: 3,
+    // Arköru: Fuerza +2, Agilidad -1 (docs/sistema.md §14.4)
+    const s = ficha({ atributos: { fuerza: 2 }, especieId: "arkoru" });
+    assert.deepEqual(desgloseAtributo(s, "fuerza"), {
+      total: 4,
       fuentes: [
         { etiqueta: "Base", valor: 2 },
-        { etiqueta: "Arkorü", valor: 1 },
+        { etiqueta: "Arköru", valor: 2 },
       ],
     });
   });
 
   test("un atributo que la especie no toca no arrastra fuentes de más", () => {
-    const s = ficha({ atributos: { fuerza: 2 }, especieId: "arkoru" });
-    assert.deepEqual(desgloseAtributo(s, "fuerza"), {
+    const s = ficha({ atributos: { aguante: 2 }, especieId: "arkoru" });
+    assert.deepEqual(desgloseAtributo(s, "aguante"), {
       total: 2,
       fuentes: [{ etiqueta: "Base", valor: 2 }],
     });
@@ -86,13 +86,13 @@ describe("desglose de un atributo", () => {
 
 describe("desglose de un aplicado", () => {
   test("total es la media de los dos básicos efectivos, ya con sus modificadores dentro", () => {
-    const s = ficha({ atributos: { fuerza: 3, aguante: 2 }, especieId: "arkoru" });
-    // Fortaleza = media(Fuerza, Aguante); Aguante ya lleva el +1 de Arkorü
+    const s = ficha({ atributos: { fuerza: 1, aguante: 2 }, especieId: "arkoru" });
+    // Fortaleza = media(Fuerza, Aguante); Fuerza ya lleva el +2 de Arköru
     assert.deepEqual(desgloseAplicado(s, "fortaleza"), {
-      total: 3, // ceil((3+3)/2)
+      total: 3, // ceil((3+2)/2)
       fuentes: [
         { etiqueta: "Fuerza", valor: 3 },
-        { etiqueta: "Aguante", valor: 3 },
+        { etiqueta: "Aguante", valor: 2 },
       ],
     });
   });
