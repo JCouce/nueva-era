@@ -1347,7 +1347,7 @@ problema completo en `docs/modificadores-tiradas.md` §8. **Resuelta:** el §8 s
 el 2026-09-23 (condiciones con `alcance` desde el equipo) y la psiónica entra por
 `conPsionicaEnTiradaFija` (2026-09-30).
 
-### Especies reales ⬜ (plan cerrado 2026-10-09, sin empezar)
+### Especies reales ⬜ (plan cerrado 2026-10-09; E0 y E1 hechas)
 
 Plan y porqués en `docs/propuesta-especies.md` (decisiones del usuario en §5b, ninguna
 pendiente de Murillo); flujo en `docs/diagrama-especies.png`. Fuente: `docs/Especies.pdf`.
@@ -1364,26 +1364,34 @@ Se construye en tres pasadas con revisión y commit entre cada una: **E1a** mode
 puras (catálogo, ficha v14, `rules/especie.ts`), **E1b** `resolverFicha` (refactor sin cambio
 de comportamiento), **E1c** servidor + UI + fuera provisionales.
 - [x] Catálogo `especies.ts`: Humanos, Riux, Arianyi, Arköru, Manduk (4 castas, 6 linajes):
-      atributos, narrativo, peso/altura de referencia. Fuera las provisionales *(E1a; queda
-      el campo `provisional?` sin usar hasta quitar el aviso de `ResumenTab` en E1c)*
+      atributos, narrativo, peso/altura de referencia. Fuera las provisionales *(E1a; el
+      campo `provisional?` y su aviso en `ResumenTab`, fuera en E1c)*
 - [x] Ficha v14: `especieOpciones` (casta, linaje) + migración
 - [x] `rules/especie.ts`: `especieDeFicha` (especie + casta + linaje → efectos)
 - [x] `elegirEspecie`: linaje solo para nobles, bloqueada si aprobada (salvo máster),
       **reset** de todo salvo Resumen + créditos a la letra; `hayQuePerder` para el aviso
       *(E1a: los créditos los fija `setEspecieAction` cuando `reseteada` es true)*
-- [ ] `setEspecieAction` (sale de `saveIdentityAction`): aplica el reset en el servidor
+- [x] `setEspecieAction` (sale de `saveIdentityAction`): aplica el reset en el servidor
+      *(E1c: Zod `eleccionEspecieSchema`; con reset fija `Character.creditos` con
+      `creditosDeLaLetra`; `saveIdentityAction` ya no toca `especieId`)*
 - [x] `resolverFicha` calculada una vez en `CharacterSheet`; fuera los
       `mods = modificadoresActivos(sheet)` por defecto; ESLint en componentes
       *(E1b: `rules/fichaResuelta.ts` + `hooks/useFichaResuelta.ts`; con los estados de
       combate dentro, Resumen/Atributos/Recursos y la cabecera ven ya los mismos números
       que Acciones. Quedan `TODO(revisar)`: daño de armas en reposo en `combate.ts` (M1),
       clamp de vida/fatiga sin estados en `vitalidad.ts`, chips de la tarjeta de especie)*
-- [ ] Resumen: la tarjeta de especie lista hoy todos los modificadores (equipo y, desde E1b, estados); que liste solo los de especie, casta y linaje
-- [ ] UI: selector de especie/casta/linaje el primero en Resumen; aviso "se reseteará la
+- [x] Resumen: la tarjeta de especie lista hoy todos los modificadores (equipo y, desde E1b, estados); que liste solo los de especie, casta y linaje
+      *(E1c: lee `ficha.especie`, capa a capa; chips para los modificadores, texto para el
+      resto de rasgos)*
+- [x] UI: selector de especie/casta/linaje el primero en Resumen; aviso "se reseteará la
       ficha" solo si hay algo que perder
+      *(E1c: `_components/EspecieSelector.tsx`, borrador local hasta que la elección esté
+      completa; aviso con `UsarModal` vía `hayQueAvisar`; aprobada y no máster,
+      deshabilitado con el motivo; rango de peso/altura bajo esos campos con
+      `rangoReferencia`. ESLint: `elegirEspecie` vetada en componentes)*
 - [x] `ESPECIES` entra en `motor.test.ts` (MotorMetadata por rasgo)
-- [ ] NPC: selector de especie/casta/linaje en la pestaña Identidad de `NpcEditor` (hoy
-      solo nombre y nota)
+- [x] NPC: selector de especie/casta/linaje en la pestaña Identidad de `NpcEditor` (hoy
+      solo nombre y nota) *(E1c: mismo `EspecieSelector`, sin aviso; `setEspecieNpcAction`)*
 - [x] NPC: `resolverFicha` también en `NpcEditor`, vía un hook compartido con
       `CharacterSheet` (`useFichaResuelta`), para que el NPC no se quede con el cálculo viejo
       *(E1b; también `NpcAccionesPanel` de la consola de combate)*
@@ -1440,6 +1448,16 @@ ficha una vez, ya con costes de casta, descuentos y derivados)
 **Aparte, detectado en la revisión**
 - [ ] `setPrioridadAction` sobrescribe `Character.creditos` al cambiar la letra de
       Recursos sin restar lo gastado en la Tienda (el reset de especie solo lo tapa en ese caso)
+
+### Componente `Modal` común ⬜ (propuesta del usuario, 2026-10-13)
+Hoy 7 modales montan cada uno su propio fondo `fixed inset-0` (UsarModal, AccionModal,
+BloquearDanioModal, UsarPoderModal, ReparaFabricaModal, SacrificioRecursoModal y el de
+`NpcAccionesPanel`) y solo 3 sitios pasan por `createPortal`. Un modal `fixed` dentro de
+una tarjeta queda atrapado debajo del resto de la página: pasó en Fabricar (2026-09-25) y
+en el selector de especie (2026-10-13). Propuesta: un componente base en
+`src/components/Modal.tsx` que siempre hace portal a `document.body`, pone el fondo y cierra
+al pulsar fuera y con Escape; los 7 pasan a usarlo y solo aportan su contenido. Sin hook
+`useModal` (solo ahorraría un `useState`).
 
 ### Armas Modificadas ⬜
 Electrificantes, Térmicas, de Plasma, de Nanofilamento. Su coste es un **multiplicador**

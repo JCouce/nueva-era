@@ -8,6 +8,7 @@ import {
   addEspecialidadAction,
   removeEspecialidadAction,
   saveIdentityAction,
+  setEspecieAction,
   resetBuildAction,
   equiparAction,
   desequiparAction,
@@ -62,6 +63,7 @@ import {
   type CategoriaPrioridad,
   type LetraPrioridad,
   type MaterialTier,
+  type EleccionEspecie,
 } from "@/lib/rules";
 import type { Sheet } from "@/lib/rules";
 import { ResumenTab } from "./_components/ResumenTab";
@@ -418,7 +420,6 @@ export function CharacterSheet({
           edad: sheetRef.current.edad,
           altura: sheetRef.current.altura,
           peso: sheetRef.current.peso,
-          especieId: sheetRef.current.especieId,
           trasfondo: sheetRef.current.trasfondo,
           motivacion: sheetRef.current.motivacion,
         }),
@@ -442,9 +443,10 @@ export function CharacterSheet({
     setSheet((s) => ({ ...s, peso: v === null ? null : clampInt(v, 0, 999) }));
     scheduleIdentity();
   };
-  const onEspecie = (v: string | null) => {
-    setSheet((s) => ({ ...s, especieId: v }));
-    scheduleIdentity();
+  // Sin estado optimista: el reset de §14.3 lo aplica el servidor (elegirEspecie no
+  // se usa en pantalla). Se reconcilia con la ficha y los créditos que devuelve.
+  const onEspecie = (eleccion: EleccionEspecie) => {
+    runSave(() => setEspecieAction(characterId, eleccion), setSheet);
   };
   const onTrasfondo = (v: string) => {
     setSheet((s) => ({ ...s, trasfondo: v }));
@@ -596,6 +598,8 @@ export function CharacterSheet({
           name={name}
           ficha={ficha}
           aprobada={aprobada}
+          esMaster={esMaster}
+          creditos={creditos}
           onName={onName}
           onEdad={onEdad}
           onAltura={onAltura}

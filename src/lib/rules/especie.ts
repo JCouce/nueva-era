@@ -5,6 +5,10 @@
 //                   el reset de §14.3. La pantalla y el servidor solo aplican lo
 //                   que devuelve.
 //   hayQuePerder    decide si hay que avisar antes de cambiar
+//   hayQueAvisar    lo mismo con el contexto: solo avisa si el cambio resetearía
+//   eleccionCompleta / eleccionDeFicha / eleccionesIguales
+//                   el borrador del selector: no se llama a la action a medias
+//   rangoReferencia peso y altura de referencia con la Fuerza con especie (§14.5)
 //
 // Mismo patrón que usoPoder.ts: entrada explícita, nada se lee de fuera salvo el
 // catálogo, y el resultado se aplica tal cual.
@@ -18,6 +22,7 @@ import {
   type Rasgo,
 } from "../catalog/especies";
 import type { ModificadorConFuente } from "./modificadores";
+import { creditosDeLaLetra } from "./prioridad";
 import { defaultSheet, type Sheet } from "./sheet";
 
 export type RasgoConFuente = Rasgo & { fuente: string };
@@ -124,6 +129,13 @@ function resetear(sheet: Sheet, especieId: string | null, opciones: EspecieOpcio
   };
 }
 
+// Por qué no se puede cambiar la especie, o null si se puede. La pantalla lo pinta
+// junto al selector deshabilitado; elegirEspecie devuelve el mismo texto.
+export function bloqueoDeEspecie(ctx: ContextoEleccion): string | null {
+  if (ctx.libre || !ctx.aprobada || ctx.esMaster) return null;
+  return "La ficha está aprobada: la especie ya no se puede cambiar";
+}
+
 export function elegirEspecie(sheet: Sheet, eleccion: EleccionEspecie, ctx: ContextoEleccion): ResultadoEleccion {
   const valida = validarEleccion(eleccion);
   if ("error" in valida) return valida;
@@ -131,9 +143,8 @@ export function elegirEspecie(sheet: Sheet, eleccion: EleccionEspecie, ctx: Cont
 
   if (mismaEleccion(sheet, especieId, opciones)) return { sheet, reseteada: false };
   if (ctx.libre) return { sheet: { ...sheet, especieId, especieOpciones: opciones }, reseteada: false };
-  if (ctx.aprobada && !ctx.esMaster) {
-    return { error: "La ficha está aprobada: la especie ya no se puede cambiar" };
-  }
+  const bloqueo = bloqueoDeEspecie(ctx);
+  if (bloqueo) return { error: bloqueo };
   // §14.3: el reset es solo "en borrador". El máster cambiando
   // la especie de una ficha aprobada se queda sin reset (lo reversible): conserva
   // todo lo comprado (validado por el usuario, 2026-10-09).
@@ -157,4 +168,61 @@ export function hayQuePerder(sheet: Sheet, creditos: number, creditosDeLaLetra: 
   if (creditos !== creditosDeLaLetra) return true;
   const sinVida = (s: Sheet) => ({ ...s, vidaActual: 0, fatigaActual: 0, schemaVersion: 0 });
   return !iguales(sinVida(resetear(sheet, sheet.especieId, sheet.especieOpciones)), sinVida(sheet));
+}
+
+// hayQuePerder, pero solo cuando el cambio de verdad resetea (en borrador y fuera
+// del modo libre): el máster con la ficha aprobada cambia sin reset, y el NPC nunca
+// resetea. Créditos de la letra: los de RECURSOS_POR_LETRA, como al elegir la letra.
+export function hayQueAvisar(sheet: Sheet, creditos: number, ctx: ContextoEleccion): boolean {
+  if (ctx.libre || ctx.aprobada) return false;
+  return hayQuePerder(sheet, creditos, creditosDeLaLetra(sheet.prioridades));
+}
+
+// --- Borrador del selector -------------------------------------------------
+
+export function eleccionDeFicha(sheet: Pick<Sheet, "especieId" | "especieOpciones">): EleccionEspecie {
+  return {
+    especieId: sheet.especieId,
+    casta: sheet.especieOpciones.casta ?? null,
+    linaje: sheet.especieOpciones.linaje ?? null,
+  };
+}
+
+// ¿Se puede mandar ya? Las mismas reglas que elegirEspecie: casta obligatoria si la
+// especie tiene castas, linaje obligatorio con la casta que lo admite.
+export function eleccionCompleta(eleccion: EleccionEspecie): boolean {
+  return !("error" in validarEleccion(eleccion));
+}
+
+export function eleccionesIguales(a: EleccionEspecie, b: EleccionEspecie): boolean {
+  return (
+    a.especieId === b.especieId &&
+    (a.casta ?? null) === (b.casta ?? null) &&
+    (a.linaje ?? null) === (b.linaje ?? null)
+  );
+}
+
+// --- Peso y altura de referencia (§14.5) -----------------------------------
+
+export type RangoReferencia = {
+  fuente: string; // de quién es la referencia: la casta si la trae, si no la especie
+  pesoKg: { min: number; max: number };
+  alturaCm: { min: number; max: number };
+};
+
+// Peso = min-max + porFuerza × Fuerza con especie (M21): la comprada más lo que
+// suma la especie, sin equipo ni estados. Solo referencia, no se valida. El peso no
+// baja de 0 (un Riux con Fuerza −2 restaría 20 kg al mínimo, no más).
+export function rangoReferencia(especie: EspecieResuelta | null, fuerzaComprada: number): RangoReferencia | null {
+  if (!especie?.referencia) return null;
+  const { pesoKg, alturaCm } = especie.referencia;
+  const fuerza =
+    fuerzaComprada +
+    especie.modificadores.reduce((t, m) => (m.tipo === "atributo" && m.id === "fuerza" ? t + m.valor : t), 0);
+  const extra = pesoKg.porFuerza * fuerza;
+  return {
+    fuente: especie.casta?.referencia ? especie.casta.fuente : especie.especie.label,
+    pesoKg: { min: Math.max(0, pesoKg.min + extra), max: Math.max(0, pesoKg.max + extra) },
+    alturaCm: { min: alturaCm.min, max: alturaCm.max },
+  };
 }

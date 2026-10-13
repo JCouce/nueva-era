@@ -2,15 +2,24 @@ import {
   vuelo,
   levitacion,
   pesoEquipado,
-  especiePorId,
-  ESPECIES,
+  bloqueoDeEspecie,
+  hayQueAvisar,
+  eleccionDeFicha,
+  rangoReferencia,
   ATRIBUTOS,
   HABILIDADES,
   ACCIONES,
 } from "@/lib/rules";
-import type { FichaResuelta, CategoriaPrioridad, LetraPrioridad } from "@/lib/rules";
+import type {
+  FichaResuelta,
+  CategoriaPrioridad,
+  LetraPrioridad,
+  EleccionEspecie,
+  Modificador,
+} from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { PrioridadCard } from "./PrioridadCard";
+import { EspecieSelector } from "./EspecieSelector";
 
 const fieldLabel = "font-mono text-[10px] uppercase tracking-widest text-muted";
 const fieldInput =
@@ -49,10 +58,24 @@ function Dato({
   );
 }
 
+function etiquetaModificador(m: Modificador): string {
+  if (m.tipo === "atributo") return ATRIBUTOS.find((a) => a.id === m.id)!.label;
+  if (m.tipo === "habilidad") return HABILIDADES.find((h) => h.id === m.id)!.label;
+  if (m.tipo === "derivado") return m.id;
+  const a = m.alcance;
+  if (a.tipo === "tiradaId") return ACCIONES.find((t) => t.id === a.id)?.label ?? a.id;
+  if (a.tipo === "grupo") return a.grupo;
+  if (a.tipo === "habilidad") return HABILIDADES.find((h) => h.id === a.habilidad)!.label;
+  if (a.tipo === "todas") return "Todas las tiradas";
+  return `Modo ${a.contieneEtiqueta}`;
+}
+
 export function ResumenTab({
   name,
   ficha,
   aprobada,
+  esMaster,
+  creditos,
   onName,
   onEdad,
   onAltura,
@@ -65,11 +88,13 @@ export function ResumenTab({
   name: string;
   ficha: FichaResuelta;
   aprobada: boolean;
+  esMaster: boolean;
+  creditos: number;
   onName: (v: string) => void;
   onEdad: (v: number | null) => void;
   onAltura: (v: number | null) => void;
   onPeso: (v: number | null) => void;
-  onEspecie: (v: string | null) => void;
+  onEspecie: (eleccion: EleccionEspecie) => void;
   onTrasfondo: (v: string) => void;
   onMotivacion: (v: string) => void;
   onPrioridad: (categoria: CategoriaPrioridad, letra: LetraPrioridad | null) => void;
@@ -84,9 +109,27 @@ export function ResumenTab({
   const notaExo = conExo ? `+${mov.bonoExoesqueleto} exoesqueleto` : undefined;
   const limiteCarga = ficha.cargaMaxima;
   const pesoArmas = pesoEquipado(sheet);
+  const ctxEspecie = { aprobada, esMaster, libre: false };
+  const eleccion = eleccionDeFicha(sheet);
+  const rango = rangoReferencia(ficha.especie, sheet.atributos.fuerza);
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Lo primero que se decide (propuesta-especies §2.2): en borrador, cambiarla
+          resetea todo lo demás. */}
+      <HudCard className="p-4">
+        <p className="mb-3 font-mono text-[11px] uppercase tracking-widest text-muted">
+          {"//SYSTEM · especie"}
+        </p>
+        <EspecieSelector
+          key={`${eleccion.especieId}|${eleccion.casta}|${eleccion.linaje}`}
+          guardada={eleccion}
+          bloqueo={bloqueoDeEspecie(ctxEspecie)}
+          avisar={hayQueAvisar(sheet, creditos, ctxEspecie)}
+          onElegir={onEspecie}
+        />
+      </HudCard>
+
       {/* Solo tiene sentido mientras se construye la ficha. Una vez aprobada
           las letras quedan fijadas en los pools ya gastados — enseñar el
           selector solo invitaría a tocar algo que ya no se puede cambiar. */}
@@ -145,26 +188,14 @@ export function ResumenTab({
                 className={`${fieldInput} text-lg tabular-nums text-foreground`}
               />
             </label>
-            <div className="flex flex-1 flex-col gap-1">
-              <span className={fieldLabel}>{"// Especie"}</span>
-              <div className="flex flex-wrap gap-1">
-                {ESPECIES.map((e) => (
-                  <button
-                    key={e.id}
-                    type="button"
-                    onClick={() => onEspecie(sheet.especieId === e.id ? null : e.id)}
-                    className={`clip-chamfer-sm border px-2 py-2 font-display text-xs font-semibold uppercase tracking-wide active:scale-95 ${
-                      sheet.especieId === e.id
-                        ? "border-info text-info"
-                        : "border-border text-muted"
-                    }`}
-                  >
-                    {e.label}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
+          {/* Solo referencia (§14.5): los campos siguen libres. */}
+          {rango && (
+            <p className="font-mono text-[10px] leading-relaxed text-muted">
+              Referencia {rango.fuente}: {rango.alturaCm.min}-{rango.alturaCm.max} cm ·{" "}
+              {rango.pesoKg.min}-{rango.pesoKg.max} kg
+            </p>
+          )}
           <label className="flex flex-col gap-1">
             <span className={fieldLabel}>{"// Motivación"}</span>
             <input
@@ -179,59 +210,51 @@ export function ResumenTab({
         </div>
       </HudCard>
 
-      {/* Qué aporta la especie, con su procedencia a la vista */}
-      {(() => {
-        const especie = especiePorId(sheet.especieId);
-        if (!especie) return null;
-        // TODO(revisar) E1b: lista todos los modificadores de la ficha (también equipo
-        // y, en combate, estados) bajo la tarjeta de la especie, como antes listaba los
-        // de modificadoresActivos. ¿Solo ficha.especie.modificadores? Se decide en E1c.
-        const mods = ficha.modificadores;
-        const etiqueta = (m: (typeof mods)[number]) => {
-          if (m.tipo === "atributo")
-            return ATRIBUTOS.find((a) => a.id === m.id)!.label;
-          if (m.tipo === "habilidad")
-            return HABILIDADES.find((h) => h.id === m.id)!.label;
-          if (m.tipo === "derivado") return m.id;
-          const a = m.alcance;
-          if (a.tipo === "tiradaId") return ACCIONES.find((t) => t.id === a.id)?.label ?? a.id;
-          if (a.tipo === "grupo") return a.grupo;
-          if (a.tipo === "habilidad") return HABILIDADES.find((h) => h.id === a.habilidad)!.label;
-          if (a.tipo === "todas") return "Todas las tiradas";
-          return `Modo ${a.contieneEtiqueta}`;
-        };
-        return (
-          <HudCard className="p-4">
-            <p className="mb-2 font-mono text-[11px] uppercase tracking-widest text-muted">
-              {"//SYSTEM · "}
-              {especie.label}
-            </p>
-            <p className="font-sans text-sm leading-relaxed text-muted">
-              {especie.descripcion}
-            </p>
-            {mods.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {mods.map((m, i) => (
-                  <span
-                    key={i}
-                    className={`clip-chamfer-sm border px-2 py-1 font-mono text-[10px] uppercase ${
-                      m.valor >= 0 ? "border-info text-info" : "border-danger text-danger"
-                    }`}
-                  >
-                    {m.valor >= 0 ? `+${m.valor}` : m.valor} {etiqueta(m)}
-                  </span>
+      {/* Qué aporta la especie, capa a capa (especie, casta, linaje): solo lo suyo,
+          sin equipo ni estados. Los rasgos con modificadores van como chips; el
+          resto, con su texto. */}
+      {ficha.especie && (
+        <HudCard className="p-4">
+          <p className="mb-2 font-mono text-[11px] uppercase tracking-widest text-muted">
+            {"//SYSTEM · "}
+            {ficha.especie.especie.label}
+            {ficha.especie.casta && ` · ${ficha.especie.casta.label}`}
+            {ficha.especie.linaje && ` · ${ficha.especie.linaje.label}`}
+          </p>
+          <p className="font-sans text-sm leading-relaxed text-muted">
+            {ficha.especie.especie.descripcion}
+          </p>
+          {[...new Set(ficha.especie.rasgos.map((r) => r.fuente))].map((fuente) => {
+            const rasgos = ficha.especie!.rasgos.filter((r) => r.fuente === fuente);
+            const mods = rasgos.flatMap((r) => r.modificadores ?? []);
+            const textos = rasgos.filter((r) => !r.modificadores?.length);
+            return (
+              <div key={fuente} className="mt-3 border-t border-border pt-2">
+                <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{fuente}</p>
+                {mods.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {mods.map((m, i) => (
+                      <span
+                        key={i}
+                        className={`clip-chamfer-sm border px-2 py-1 font-mono text-[10px] uppercase ${
+                          m.valor >= 0 ? "border-info text-info" : "border-danger text-danger"
+                        }`}
+                      >
+                        {m.valor >= 0 ? `+${m.valor}` : m.valor} {etiquetaModificador(m)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {textos.map((r) => (
+                  <p key={r.id} className="mt-1.5 font-sans text-xs leading-relaxed text-muted">
+                    <span className="font-semibold text-foreground">{r.label}.</span> {r.texto}
+                  </p>
                 ))}
               </div>
-            )}
-            {especie.provisional && (
-              <p className="mt-3 border-t border-border pt-2 font-mono text-[10px] leading-relaxed text-danger">
-                Especie provisional: el diseñador aún no ha enviado el documento,
-                así que estos modificadores son de andamio y cambiarán.
-              </p>
-            )}
-          </HudCard>
-        );
-      })()}
+            );
+          })}
+        </HudCard>
+      )}
 
       {/* Derivados: nada de esto se edita, todo sale de atributos y habilidades */}
       <HudCard className="p-4">

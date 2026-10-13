@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
-import { characterCreateSchema } from "@/lib/validation";
+import { characterCreateSchema, eleccionEspecieSchema } from "@/lib/validation";
 import {
   type Sheet,
   parseSheet,
@@ -64,6 +64,10 @@ import {
   pagarFatiga,
   ajustarFatigaTemporal,
   terminarEscena,
+  elegirEspecie,
+  creditosDeLaLetra,
+  reconciliarVida,
+  type EleccionEspecie,
 } from "@/lib/rules";
 
 export type SaveResult =
@@ -672,6 +676,39 @@ export async function resetBuildAction(characterId: string): Promise<SaveResult>
   return persist(characterId, resetBuild(ctx.sheet));
 }
 
+// Especie, casta y linaje (docs/sistema.md §14.2-14.3). Única vía para cambiarlos:
+// saveIdentityAction ya no los toca. elegirEspecie valida la combinación, rechaza el
+// cambio del jugador en una ficha aprobada y, en borrador, resetea todo salvo el
+// Resumen; con reset, los créditos vuelven a los de la letra de Recursos (mismo
+// valor que fija setPrioridadAction). El reset lo aplica siempre el servidor, haya
+// avisado la pantalla o no.
+export async function setEspecieAction(
+  characterId: string,
+  eleccion: EleccionEspecie,
+): Promise<SaveResult> {
+  const parsed = eleccionEspecieSchema.safeParse(eleccion);
+  if (!parsed.success) return { ok: false, error: "Elección de especie inválida" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+
+  const res = elegirEspecie(ctx.sheet, parsed.data, {
+    aprobada: ctx.aprobada,
+    esMaster: ctx.esMaster,
+    libre: false,
+  });
+  if ("error" in res) return { ok: false, error: res.error };
+  // El reset deja vida y fatiga en el centinela 999 y una especie nueva puede bajar el
+  // máximo: se recortan aquí, no al releer, para que la pantalla no vea "999/9".
+  const sheet = reconciliarVida(res.sheet);
+  if (!res.reseteada) return persist(characterId, sheet);
+
+  const creditos = creditosDeLaLetra(sheet.prioridades);
+  await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, creditos } });
+  revalidatePath(`/characters/${characterId}`);
+  revalidatePath("/master");
+  return { ok: true, sheet, creditos };
+}
+
 export async function saveIdentityAction(
   characterId: string,
   patch: {
@@ -679,7 +716,6 @@ export async function saveIdentityAction(
     edad: number | null;
     altura: number | null;
     peso: number | null;
-    especieId: string | null;
     trasfondo: string;
     motivacion: string;
   },
@@ -699,7 +735,6 @@ export async function saveIdentityAction(
       edad: numeroOpcional(patch.edad),
       altura: numeroOpcional(patch.altura),
       peso: numeroOpcional(patch.peso),
-      especieId: patch.especieId ? String(patch.especieId).slice(0, 40) : null,
       trasfondo: String(patch.trasfondo ?? "").slice(0, 2000),
       motivacion: String(patch.motivacion ?? "").slice(0, 500),
     },

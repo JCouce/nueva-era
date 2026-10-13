@@ -16,6 +16,11 @@ const eslintConfig = defineConfig([
   // cliente y páginas RSC; una RSC que necesite un derivado usa resolverFicha) y los
   // hooks. Quedan fuera los .ts de servidor (actions.ts), que calculan con la ficha
   // recién leída de la base y no tienen pantalla que desincronizar.
+  //
+  // Y la especie (sistema.md §14.3): elegirEspecie aplica el reset y solo la llaman
+  // las server actions. La pantalla decide con las funciones del borrador
+  // (eleccionCompleta, eleccionesIguales, hayQueAvisar, bloqueoDeEspecie) y lee lo
+  // resuelto en ficha.especie; especieDeFicha ya está vetada arriba.
   {
     files: ["src/app/**/*.tsx", "src/components/**/*.tsx", "src/hooks/**/*.{ts,tsx}"],
     rules: {
@@ -62,6 +67,12 @@ const eslintConfig = defineConfig([
                 "tieneEscudoMelee",
               ],
               message: "Usa resolverFicha / useFichaResuelta (src/lib/rules/fichaResuelta.ts): lee la FichaResuelta.",
+            },
+            {
+              name: "@/lib/rules",
+              importNames: ["elegirEspecie"],
+              message:
+                "La especie solo cambia en el servidor (setEspecieAction / setEspecieNpcAction): la pantalla usa eleccionCompleta / hayQueAvisar / bloqueoDeEspecie.",
             },
           ],
         },

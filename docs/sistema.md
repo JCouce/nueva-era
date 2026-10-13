@@ -936,10 +936,9 @@ Prosa literal en `docs/especies.md` (de `docs/Especies.pdf`); análisis y plan e
 aumentos, sección 11) y la regeneración de Ílkrem y el descanso no tienen dónde vivir en la
 app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 
-> **Estado en la app:** hasta la tanda E1 siguen las dos especies de andamio
-> (`src/lib/catalog/especies.ts`: Humano sin modificadores y Arkorü con números inventados,
-> marcadas como provisionales). Se sustituyen por las de esta sección; orden de construcción
-> E1 → E2 → E3 → M1 → E4 → E5 en `docs/tareas.md`, "Especies reales".
+> **Estado en la app:** E1 construida (falta el reset de las fichas de producción el día del deploy, ver 14.3): catálogo real (`src/lib/catalog/especies.ts`), elección
+> con reset en el servidor (`setEspecieAction`), selector en Resumen y en el editor de NPC.
+> Quedan E2 → E3 → M1 → E4 → E5 en `docs/tareas.md`, "Especies reales".
 
 ### 14.1 Lista y elección `[FIRME · ESP + usuario M10, M20]`
 

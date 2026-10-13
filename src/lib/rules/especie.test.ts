@@ -2,7 +2,18 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, parseSheet, SCHEMA_VERSION, type Sheet } from "./sheet";
 import { atributosEfectivos, desgloseAtributo, modificadoresActivos, salud } from "./derivados";
-import { especieDeFicha, elegirEspecie, hayQuePerder, type ContextoEleccion } from "./especie";
+import {
+  especieDeFicha,
+  elegirEspecie,
+  hayQuePerder,
+  hayQueAvisar,
+  bloqueoDeEspecie,
+  eleccionCompleta,
+  eleccionDeFicha,
+  eleccionesIguales,
+  rangoReferencia,
+  type ContextoEleccion,
+} from "./especie";
 import { setAtributoValue, setPrioridad } from "./creacion";
 import { migrar } from "./migraciones";
 import type { AtributoId } from "./atributos";
@@ -284,6 +295,84 @@ describe("hayQuePerder", () => {
     assert.equal(hayQuePerder(fichaLlena(), 41000, 41000), true);
     assert.equal(hayQuePerder({ ...defaultSheet(), psionica: { resonancia: 1 } }, 0, 0), true);
     assert.equal(hayQuePerder({ ...defaultSheet(), fatigaTemporal: 1 }, 0, 0), true);
+  });
+});
+
+describe("hayQueAvisar: solo si el cambio resetea", () => {
+  const conCompra = { ...setPrioridad(defaultSheet(), "recursos", "B"), psionica: { resonancia: 1 } };
+  test("borrador con algo que perder: avisa", () => {
+    assert.equal(hayQueAvisar(conCompra, 41000, { aprobada: false, esMaster: false, libre: false }), true);
+  });
+  test("borrador sin nada que perder: directo", () => {
+    const s = setPrioridad(defaultSheet(), "recursos", "B");
+    assert.equal(hayQueAvisar(s, 41000, { aprobada: false, esMaster: false, libre: false }), false);
+  });
+  test("créditos distintos de los de la letra: avisa", () => {
+    const s = setPrioridad(defaultSheet(), "recursos", "B");
+    assert.equal(hayQueAvisar(s, 40000, { aprobada: false, esMaster: false, libre: false }), true);
+    // Sin letra, la letra da 0.
+    assert.equal(hayQueAvisar(defaultSheet(), 10, { aprobada: false, esMaster: false, libre: false }), true);
+  });
+  test("aprobada (máster) o libre (NPC): no resetea, no avisa", () => {
+    assert.equal(hayQueAvisar(conCompra, 0, { aprobada: true, esMaster: true, libre: false }), false);
+    assert.equal(hayQueAvisar(conCompra, 0, { aprobada: false, esMaster: true, libre: true }), false);
+  });
+});
+
+describe("bloqueoDeEspecie", () => {
+  test("solo bloquea al jugador con la ficha aprobada", () => {
+    assert.equal(bloqueoDeEspecie({ aprobada: false, esMaster: false, libre: false }), null);
+    assert.equal(bloqueoDeEspecie({ aprobada: true, esMaster: true, libre: false }), null);
+    assert.equal(bloqueoDeEspecie({ aprobada: true, esMaster: false, libre: true }), null);
+    const motivo = bloqueoDeEspecie({ aprobada: true, esMaster: false, libre: false });
+    assert.ok(motivo);
+    const r = elegirEspecie(defaultSheet(), { especieId: "riux" }, { aprobada: true, esMaster: false, libre: false });
+    assert.deepEqual(r, { error: motivo });
+  });
+});
+
+describe("borrador del selector", () => {
+  test("eleccionCompleta: casta y linaje obligatorios donde tocan", () => {
+    assert.equal(eleccionCompleta({ especieId: null }), true);
+    assert.equal(eleccionCompleta({ especieId: "riux" }), true);
+    assert.equal(eleccionCompleta({ especieId: "manduk" }), false);
+    assert.equal(eleccionCompleta({ especieId: "manduk", casta: "sabio" }), true);
+    assert.equal(eleccionCompleta({ especieId: "manduk", casta: "noble" }), false);
+    assert.equal(eleccionCompleta({ especieId: "manduk", casta: "noble", linaje: "irota" }), true);
+    assert.equal(eleccionCompleta({ especieId: "dragon" }), false);
+  });
+  test("eleccionDeFicha y eleccionesIguales (null y ausente valen lo mismo)", () => {
+    const e = eleccionDeFicha(ficha("manduk", { casta: "noble", linaje: "elion" }));
+    assert.deepEqual(e, { especieId: "manduk", casta: "noble", linaje: "elion" });
+    assert.deepEqual(eleccionDeFicha(ficha("riux")), { especieId: "riux", casta: null, linaje: null });
+    assert.equal(eleccionesIguales({ especieId: "riux" }, { especieId: "riux", casta: null, linaje: null }), true);
+    assert.equal(eleccionesIguales(e, { ...e, linaje: "irota" }), false);
+  });
+});
+
+describe("rangoReferencia (sistema.md §14.5)", () => {
+  test("sin especie o Humanos: nada", () => {
+    assert.equal(rangoReferencia(especieDeFicha(ficha(null)), 0), null);
+    assert.equal(rangoReferencia(especieDeFicha(ficha("humano")), 3), null);
+  });
+  test("Manduk sin casta: nada; con casta, la de la casta", () => {
+    assert.equal(rangoReferencia(especieDeFicha(ficha("manduk")), 0), null);
+    // Guerrero: 70-110 + 15 × Fuerza, 180-220. Fuerza 2 comprada + 1 de casta = 3.
+    assert.deepEqual(rangoReferencia(especieDeFicha(ficha("manduk", { casta: "guerrero" })), 2), {
+      fuente: "Manduk · Guerrero",
+      pesoKg: { min: 115, max: 155 },
+      alturaCm: { min: 180, max: 220 },
+    });
+  });
+  test("Arköru: Fuerza con especie (comprada 1 + 2)", () => {
+    // 80-120 + 15 × 3
+    const r = rangoReferencia(especieDeFicha(ficha("arkoru")), 1);
+    assert.deepEqual(r?.pesoKg, { min: 125, max: 165 });
+    assert.equal(r?.fuente, "Arköru");
+  });
+  test("Riux con Fuerza negativa: resta, sin bajar de 0", () => {
+    // 40-60 + 10 × (−1 − 1)
+    assert.deepEqual(rangoReferencia(especieDeFicha(ficha("riux")), -1)?.pesoKg, { min: 20, max: 40 });
   });
 });
 

@@ -10,6 +10,7 @@ import {
   costeTotal,
   CATEGORIAS_PRIORIDAD,
   PUNTOS_ATRIBUTOS_POR_LETRA,
+  creditosDeLaLetra,
 } from "./prioridad";
 
 describe("reparto de letras", () => {
@@ -76,5 +77,14 @@ describe("coste por nivel (docs/sistema.md, Coste y progresión)", () => {
   test("valor 0 o negativo no cuesta nada", () => {
     assert.equal(costeTotal(0, 2), 0);
     assert.equal(costeTotal(-1, 2), 0);
+  });
+});
+
+describe("creditosDeLaLetra", () => {
+  test("sin letra de Recursos, 0; con letra, los de la tabla", () => {
+    const p = prioridadesVacias();
+    assert.equal(creditosDeLaLetra(p), 0);
+    assert.equal(creditosDeLaLetra(setLetra(p, "recursos", "B")), 41000);
+    assert.equal(creditosDeLaLetra(setLetra(p, "atributos", "A")), 0);
   });
 });

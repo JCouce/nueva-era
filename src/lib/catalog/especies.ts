@@ -53,8 +53,6 @@ export type Especie = {
   castas?: OpcionEspecie[];
   // Linaje: solo con esa casta, y entonces obligatorio (M10).
   linajes?: { casta: string; opciones: OpcionEspecie[] };
-  // TODO(revisar): solo lo lee el aviso de ResumenTab; se quita en E1c junto con él.
-  provisional?: boolean;
 };
 
 export type EspecieOpciones = { casta?: string; linaje?: string };

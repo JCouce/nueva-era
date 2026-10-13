@@ -81,6 +81,12 @@ export const RECURSOS_POR_LETRA: Record<LetraPrioridad, { creditos: number; rare
   "S+": { creditos: 1_000_000_000, rareza: "Singular" },
 };
 
+// Créditos que da la letra de Recursos (0 sin letra): lo que fija Character.creditos
+// al elegir la letra y al resetear la ficha por cambio de especie (§14.3).
+export function creditosDeLaLetra(prioridades: Prioridades): number {
+  return prioridades.recursos ? RECURSOS_POR_LETRA[prioridades.recursos].creditos : 0;
+}
+
 // Coste por nivel (docs/sistema.md, "Coste y progresión"): coste marginal = nivel ×
 // factor. Rige tanto la compra en creación como subir de nivel después con XP.
 export const COSTE_FACTOR_ATRIBUTO = 2;

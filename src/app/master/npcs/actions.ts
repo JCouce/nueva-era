@@ -13,6 +13,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
+import { eleccionEspecieSchema } from "@/lib/validation";
 import {
   type Sheet,
   defaultSheet,
@@ -52,6 +53,9 @@ import {
   pagarFatiga,
   ajustarFatigaTemporal,
   terminarEscena,
+  elegirEspecie,
+  reconciliarVida,
+  type EleccionEspecie,
 } from "@/lib/rules";
 
 export type NpcResult = { ok: true; sheet: Sheet } | { ok: false; error: string };
@@ -177,6 +181,21 @@ export async function setNotaNpcAction(npcId: string, nota: string): Promise<Npc
   });
   revalidateNpcs();
   return { ok: true, sheet: parseSheet(npc.stats) };
+}
+
+// Especie en modo libre (docs/sistema.md §14.3): sin reset, sin bloqueo por
+// aprobación y sin créditos (NpcTemplate no tiene esa columna). Sí valida la
+// combinación (casta y linaje donde tocan). Un NPC ya metido en un combate guarda
+// su foto: esto no toca ese combate.
+export async function setEspecieNpcAction(npcId: string, eleccion: EleccionEspecie): Promise<NpcResult> {
+  const parsed = eleccionEspecieSchema.safeParse(eleccion);
+  if (!parsed.success) return { ok: false, error: "Elección de especie inválida" };
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const res = elegirEspecie(ctx.sheet, parsed.data, { aprobada: false, esMaster: true, libre: true });
+  if ("error" in res) return { ok: false, error: res.error };
+  // Una especie nueva puede bajar el máximo de vida/fatiga: se recorta aquí (setEspecieAction).
+  return persist(npcId, reconciliarVida(res.sheet));
 }
 
 // --- Atributos / habilidades / equipo: directo, sin point-buy ni coste ---

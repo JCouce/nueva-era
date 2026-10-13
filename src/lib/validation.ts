@@ -16,3 +16,12 @@ export const registerSchema = loginSchema.extend({
 export const characterCreateSchema = z.object({
   name: z.string().trim().min(1, "Pon un nombre").max(80),
 });
+
+// Elección de especie (setEspecieAction y su espejo de NPC). Solo la forma: que la
+// combinación exista y esté completa lo decide elegirEspecie con el catálogo.
+const idCatalogo = z.string().max(40);
+export const eleccionEspecieSchema = z.object({
+  especieId: idCatalogo.nullable(),
+  casta: idCatalogo.nullable().optional(),
+  linaje: idCatalogo.nullable().optional(),
+});

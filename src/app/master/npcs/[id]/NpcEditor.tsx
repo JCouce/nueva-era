@@ -15,6 +15,8 @@ import {
   type MaterialTier,
   setNivelDisciplina,
   type DisciplinaId,
+  type EleccionEspecie,
+  eleccionDeFicha,
 } from "@/lib/rules";
 import { AtributosTab } from "@/app/characters/[id]/_components/AtributosTab";
 import { HabilidadesTab } from "@/app/characters/[id]/_components/HabilidadesTab";
@@ -24,6 +26,7 @@ import type { Lanzamiento } from "@/components/ResultadoTirada";
 import { EquipoTab } from "@/app/characters/[id]/_components/EquipoTab";
 import { TiendaTab } from "@/app/characters/[id]/_components/TiendaTab";
 import { RecursosTab } from "@/app/characters/[id]/_components/RecursosTab";
+import { EspecieSelector } from "@/app/characters/[id]/_components/EspecieSelector";
 import { useFichaResuelta, SIN_ESTADOS } from "@/hooks/useFichaResuelta";
 import {
   renombrarNpcAction,
@@ -54,6 +57,7 @@ import {
   pagarFatigaNpcAction,
   ajustarFatigaTemporalNpcAction,
   terminarEscenaNpcAction,
+  setEspecieNpcAction,
 } from "../actions";
 
 // Fase 6b 5.1: espejo simplificado de CharacterSheet.tsx — reusa sus tabs de
@@ -342,6 +346,12 @@ export function NpcEditor({
     setStatus(res.ok ? "saved" : "error");
   };
 
+  // Modo libre (§14.3): sin reset ni aviso; el servidor solo valida la combinación.
+  const commitEspecie = (eleccion: EleccionEspecie) => {
+    runSave(() => setEspecieNpcAction(npcId, eleccion), setSheet);
+  };
+  const eleccion = eleccionDeFicha(sheet);
+
   // Sin confirm() — bloquea el hilo con un diálogo nativo, y el resto de la
   // app (deleteCharacter en characters/page.tsx) tampoco pide confirmación
   // para borrar: mismo criterio aquí.
@@ -379,6 +389,13 @@ export function NpcEditor({
               className="clip-chamfer-sm border border-border bg-night px-3 py-2 font-mono outline-none focus:border-accent"
             />
           </label>
+          <EspecieSelector
+            key={`${eleccion.especieId}|${eleccion.casta}|${eleccion.linaje}`}
+            guardada={eleccion}
+            bloqueo={null}
+            avisar={false}
+            onElegir={commitEspecie}
+          />
           <label className="flex flex-col gap-1">
             <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
               Nota (libre, visible solo para el máster)
