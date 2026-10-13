@@ -5,6 +5,7 @@ import { atributosEfectivos, desgloseAtributo, modificadoresActivos, salud } fro
 import {
   especieDeFicha,
   elegirEspecie,
+  resetearFicha,
   hayQuePerder,
   hayQueAvisar,
   bloqueoDeEspecie,
@@ -642,5 +643,28 @@ describe("Acceso al Kerzul: puedeEquiparSinRareza", () => {
       equipo: [{ instanciaId: "k1", catalogoId: "kerzul_maza", viaEspecie: true }],
     });
     assert.equal(s.equipo[0].viaEspecie, true);
+  });
+});
+
+describe("resetearFicha (reset general del deploy)", () => {
+  test("conserva Personaje y la especie elegida; vacía lo demás", () => {
+    const s: Sheet = {
+      ...defaultSheet(),
+      edad: 30,
+      altura: 190,
+      peso: 90,
+      motivacion: "algo",
+      trasfondo: "historia",
+      prioridades: { ...defaultSheet().prioridades, recursos: "A" },
+      especieId: "manduk",
+      especieOpciones: { casta: "noble", linaje: "ilkrem" },
+      atributos: { ...defaultSheet().atributos, fuerza: 3 },
+    };
+    const r = resetearFicha(s);
+    assert.equal(r.atributos.fuerza, 0);
+    assert.deepEqual(
+      [r.edad, r.altura, r.peso, r.motivacion, r.trasfondo, r.prioridades.recursos, r.especieId, r.especieOpciones],
+      [30, 190, 90, "algo", "historia", "A", "manduk", { casta: "noble", linaje: "ilkrem" }],
+    );
   });
 });

@@ -141,6 +141,12 @@ function resetear(sheet: Sheet, especieId: string | null, opciones: EspecieOpcio
   };
 }
 
+// Reset general de las fichas de producción al desplegar especies (§14.3): el mismo
+// reset que al cambiar de especie, conservando la elección que ya tenga la ficha.
+export function resetearFicha(sheet: Sheet): Sheet {
+  return resetear(sheet, sheet.especieId, sheet.especieOpciones);
+}
+
 // Por qué no se puede cambiar la especie, o null si se puede. La pantalla lo pinta
 // junto al selector deshabilitado; elegirEspecie devuelve el mismo texto.
 export function bloqueoDeEspecie(ctx: ContextoEleccion): string | null {
