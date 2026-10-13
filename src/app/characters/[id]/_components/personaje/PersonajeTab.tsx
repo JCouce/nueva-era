@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import type { ReactNode } from "react";
 import {
   pasosPersonaje,
   subPestanaInicial,
+  faltaParaEnviar,
+  avisosParaEnviar,
   type CategoriaPrioridad,
   type EleccionEspecie,
   type EstadoPaso,
@@ -16,6 +19,7 @@ import { PrioridadCard } from "../PrioridadCard";
 import { OrigenPanel } from "./OrigenPanel";
 import { IdentidadPanel } from "./IdentidadPanel";
 import { EstadoPanel } from "./EstadoPanel";
+import { BarraEnvio } from "../RevisionFicha";
 
 const NOMBRE: Record<PasoPersonajeId, string> = {
   origen: "Origen",
@@ -52,6 +56,8 @@ export function PersonajeTab({
   onTrasfondo,
   onMotivacion,
   onPrioridad,
+  soloLectura,
+  envio,
 }: {
   name: string;
   ficha: FichaResuelta;
@@ -66,6 +72,11 @@ export function PersonajeTab({
   onTrasfondo: (v: string) => void;
   onMotivacion: (v: string) => void;
   onPrioridad: (categoria: CategoriaPrioridad, letra: LetraPrioridad | null) => void;
+  // En revisión (jugador): los paneles van deshabilitados, pero las sub-pestañas no,
+  // para poder leer cada paso. Por eso el fieldset vive aquí y no en CharacterSheet.
+  soloLectura: boolean;
+  // null: sin barra de envío (no es el dueño, o la ficha no está en creación).
+  envio: { characterId: string; reviewNote: string | null; esperarGuardados: () => Promise<unknown> } | null;
 }) {
   const sheet = ficha.ficha;
   const pasos = pasosPersonaje({ sheet, nombre: name, aprobada });
@@ -103,23 +114,44 @@ export function PersonajeTab({
         })}
       </nav>
 
-      {activa === "origen" && (
-        <OrigenPanel ficha={ficha} aprobada={aprobada} esMaster={esMaster} creditos={creditos} onEspecie={onEspecie} />
-      )}
-      {activa === "prioridades" && <PrioridadCard prioridades={sheet.prioridades} onSet={onPrioridad} />}
-      {activa === "identidad" && (
-        <IdentidadPanel
-          name={name}
-          ficha={ficha}
-          onName={onName}
-          onEdad={onEdad}
-          onAltura={onAltura}
-          onPeso={onPeso}
-          onMotivacion={onMotivacion}
-          onTrasfondo={onTrasfondo}
+      <PanelFieldset disabled={soloLectura}>
+        {activa === "origen" && (
+          <OrigenPanel ficha={ficha} aprobada={aprobada} esMaster={esMaster} creditos={creditos} soloLectura={soloLectura} onEspecie={onEspecie} />
+        )}
+        {activa === "prioridades" && <PrioridadCard prioridades={sheet.prioridades} onSet={onPrioridad} />}
+        {activa === "identidad" && (
+          <IdentidadPanel
+            name={name}
+            ficha={ficha}
+            onName={onName}
+            onEdad={onEdad}
+            onAltura={onAltura}
+            onPeso={onPeso}
+            onMotivacion={onMotivacion}
+            onTrasfondo={onTrasfondo}
+          />
+        )}
+        {activa === "estado" && <EstadoPanel ficha={ficha} />}
+      </PanelFieldset>
+
+      {envio && (
+        <BarraEnvio
+          characterId={envio.characterId}
+          falta={faltaParaEnviar(pasos)}
+          avisos={avisosParaEnviar(sheet)}
+          reviewNote={envio.reviewNote}
+          esperarGuardados={envio.esperarGuardados}
         />
       )}
-      {activa === "estado" && <EstadoPanel ficha={ficha} />}
     </div>
+  );
+}
+
+// fieldset sin los estilos del navegador (borde, padding, min-width: min-content).
+export function PanelFieldset({ disabled, children }: { disabled: boolean; children: ReactNode }) {
+  return (
+    <fieldset disabled={disabled} className="m-0 flex min-w-0 flex-col gap-4 border-0 p-0">
+      {children}
+    </fieldset>
   );
 }

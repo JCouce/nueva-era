@@ -55,6 +55,8 @@ import {
   terminarEscena,
   RECURSOS_POR_LETRA,
   describirEstadosActivos,
+  fichaSoloLectura,
+  type EstadoFicha,
   type AtributoId,
   type HabilidadId,
   type DisciplinaId,
@@ -65,7 +67,9 @@ import {
   type EleccionEspecie,
 } from "@/lib/rules";
 import type { Sheet } from "@/lib/rules";
-import { PersonajeTab } from "./_components/personaje/PersonajeTab";
+import { PersonajeTab, PanelFieldset } from "./_components/personaje/PersonajeTab";
+import { AvisoEnRevision } from "./_components/RevisionFicha";
+import { EstadoFichaChip } from "@/components/EstadoFichaChip";
 import { AtributosTab } from "./_components/AtributosTab";
 import { HabilidadesTab } from "./_components/HabilidadesTab";
 import { DotesTab } from "./_components/DotesTab";
@@ -148,21 +152,30 @@ export function CharacterSheet({
   initialXp,
   initialCreditos,
   esMaster,
+  esDueno,
+  submittedAt,
+  reviewNote,
   combate,
 }: {
   characterId: string;
   initialName: string;
   initialSheet: Sheet;
-  characterStatus: "DRAFT" | "APPROVED";
+  characterStatus: EstadoFicha;
   initialXp: number;
   initialCreditos: number;
   esMaster: boolean;
+  // Envío a revisión: el máster dueño de una ficha la envía y la retira como un jugador.
+  esDueno: boolean;
+  submittedAt: string | null;
+  reviewNote: string | null;
   // null si no hay Combate EN_CURSO, o si lo hay pero este personaje no
   // tiene fila dentro (fase 6b bloque 3) — en los dos casos, nada de
   // combate se enseña en la ficha.
   combate: CombateView | null;
 }) {
   const aprobada = characterStatus === "APPROVED";
+  // En revisión, el jugador solo lee (el máster puede editar): la regla, en revision.ts.
+  const soloLectura = fichaSoloLectura({ estado: characterStatus, esMaster });
   const [active, setActive] = useState<TabId>("personaje");
   const [sheet, setSheet] = useState<Sheet>(initialSheet);
   const [name, setName] = useState(initialName);
@@ -483,9 +496,12 @@ export function CharacterSheet({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-display text-3xl font-bold uppercase tracking-wide">
-        {name || "Sin nombre"}
-      </h1>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <h1 className="font-display text-3xl font-bold uppercase tracking-wide">
+          {name || "Sin nombre"}
+        </h1>
+        <EstadoFichaChip estado={characterStatus} />
+      </div>
 
       {/* HUD fino: estado de solo lectura (la edición está en cada tab) */}
       <div className="flex items-center gap-3 border-y border-border py-2 font-mono text-sm">
@@ -596,6 +612,10 @@ export function CharacterSheet({
         </div>
       </div>
 
+      {characterStatus === "IN_REVIEW" && esDueno && (
+        <AvisoEnRevision characterId={characterId} submittedAt={submittedAt} puedeRetirar={esDueno} />
+      )}
+
       {activeEfectivo === "personaje" && (
         <PersonajeTab
           name={name}
@@ -611,95 +631,106 @@ export function CharacterSheet({
           onTrasfondo={onTrasfondo}
           onMotivacion={onMotivacion}
           onPrioridad={commitPrioridad}
+          soloLectura={soloLectura}
+          envio={
+            esDueno && characterStatus === "DRAFT"
+              ? { characterId, reviewNote, esperarGuardados: () => queue.current }
+              : null
+          }
         />
       )}
-      {activeEfectivo === "attrs" && (
-        <AtributosTab
-          ficha={ficha}
-          puntosDisponibles={puntosAttr}
-          aprobada={aprobada}
-          xp={xp}
-          onSet={commitAtributo}
-        />
-      )}
-      {activeEfectivo === "skills" && (
-        <HabilidadesTab
-          sheet={sheet}
-          puntosDisponibles={puntosSkill}
-          aprobada={aprobada}
-          xp={xp}
-          onSet={commitHabilidad}
-          onAddEspecialidad={commitAddEspecialidad}
-          onRemoveEspecialidad={commitRemoveEspecialidad}
-        />
-      )}
-      {activeEfectivo === "dotes" && <DotesTab sheet={sheet} />}
-      {activeEfectivo === "psionica" && (
-        <PsionicaTab sheet={sheet} aprobada={aprobada} xp={xp} onSet={commitDisciplina} />
-      )}
-      {activeEfectivo === "acciones" && (
-        <AccionesTab
-          ficha={ficha}
-          historial={accionesHistorial}
-          setHistorial={setAccionesHistorial}
-          memoria={accionesMemoria}
-          setMemoria={setAccionesMemoria}
-          onReparar={commitReparar}
-          onFabricar={commitFabricar}
-          onGastarRecurso={commitAjustarRecurso}
-          onAjustarFarmaco={commitAjustarFarmaco}
-          onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
-          onPagarFatiga={commitPagarFatiga}
-          onAjustarVida={commitAjustarVida}
-        />
-      )}
-      {activeEfectivo === "tienda" && (
-        <TiendaTab
-          sheet={sheet}
-          creditos={creditos}
-          topeRareza={topeRareza}
-          onEquipar={commitEquipar}
-          onComprarGranada={commitComprarGranada}
-          onComprarFarmaco={commitComprarFarmaco}
-          onRecargar={commitRecargar}
-          onComprarMunicionEspecial={commitComprarMunicionEspecial}
-        />
-      )}
-      {activeEfectivo === "equipo" && (
-        <EquipoTab sheet={sheet} creditos={creditos} onDesequipar={commitDesequipar} />
-      )}
-      {activeEfectivo === "recursos" && (
-        <RecursosTab
-          ficha={ficha}
-          creditos={creditos}
-          onAjustar={commitAjustarRecurso}
-          onRecargar={commitRecargar}
-          onAjustarMaterial={commitAjustarMaterial}
-          onComprarMaterial={commitComprarMaterial}
-          onAjustarGranada={commitAjustarGranada}
-          onAjustarFarmaco={commitAjustarFarmaco}
-          onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
-          onComprarMunicionEspecial={commitComprarMunicionEspecial}
-          onAjustarVida={commitAjustarVida}
-          onAjustarFatiga={commitAjustarFatiga}
-          onAjustarFatigaTemporal={commitAjustarFatigaTemporal}
-          onTerminarEscena={commitTerminarEscena}
-        />
-      )}
-      {activeEfectivo === "combate" && combate && (
-        <CombateTab combate={combate} miCombatienteId={miCombatiente?.id ?? null} />
-      )}
+      {/* Personaje lleva su propio fieldset (sus sub-pestañas siguen navegables). */}
+      {activeEfectivo !== "personaje" && (
+        <PanelFieldset disabled={soloLectura}>
+          {activeEfectivo === "attrs" && (
+            <AtributosTab
+              ficha={ficha}
+              puntosDisponibles={puntosAttr}
+              aprobada={aprobada}
+              xp={xp}
+              onSet={commitAtributo}
+            />
+          )}
+          {activeEfectivo === "skills" && (
+            <HabilidadesTab
+              sheet={sheet}
+              puntosDisponibles={puntosSkill}
+              aprobada={aprobada}
+              xp={xp}
+              onSet={commitHabilidad}
+              onAddEspecialidad={commitAddEspecialidad}
+              onRemoveEspecialidad={commitRemoveEspecialidad}
+            />
+          )}
+          {activeEfectivo === "dotes" && <DotesTab sheet={sheet} />}
+          {activeEfectivo === "psionica" && (
+            <PsionicaTab sheet={sheet} aprobada={aprobada} xp={xp} onSet={commitDisciplina} />
+          )}
+          {activeEfectivo === "acciones" && (
+            <AccionesTab
+              ficha={ficha}
+              historial={accionesHistorial}
+              setHistorial={setAccionesHistorial}
+              memoria={accionesMemoria}
+              setMemoria={setAccionesMemoria}
+              onReparar={commitReparar}
+              onFabricar={commitFabricar}
+              onGastarRecurso={commitAjustarRecurso}
+              onAjustarFarmaco={commitAjustarFarmaco}
+              onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
+              onPagarFatiga={commitPagarFatiga}
+              onAjustarVida={commitAjustarVida}
+            />
+          )}
+          {activeEfectivo === "tienda" && (
+            <TiendaTab
+              sheet={sheet}
+              creditos={creditos}
+              topeRareza={topeRareza}
+              onEquipar={commitEquipar}
+              onComprarGranada={commitComprarGranada}
+              onComprarFarmaco={commitComprarFarmaco}
+              onRecargar={commitRecargar}
+              onComprarMunicionEspecial={commitComprarMunicionEspecial}
+            />
+          )}
+          {activeEfectivo === "equipo" && (
+            <EquipoTab sheet={sheet} creditos={creditos} onDesequipar={commitDesequipar} />
+          )}
+          {activeEfectivo === "recursos" && (
+            <RecursosTab
+              ficha={ficha}
+              creditos={creditos}
+              onAjustar={commitAjustarRecurso}
+              onRecargar={commitRecargar}
+              onAjustarMaterial={commitAjustarMaterial}
+              onComprarMaterial={commitComprarMaterial}
+              onAjustarGranada={commitAjustarGranada}
+              onAjustarFarmaco={commitAjustarFarmaco}
+              onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
+              onComprarMunicionEspecial={commitComprarMunicionEspecial}
+              onAjustarVida={commitAjustarVida}
+              onAjustarFatiga={commitAjustarFatiga}
+              onAjustarFatigaTemporal={commitAjustarFatigaTemporal}
+              onTerminarEscena={commitTerminarEscena}
+            />
+          )}
+          {activeEfectivo === "combate" && combate && (
+            <CombateTab combate={combate} miCombatienteId={miCombatiente?.id ?? null} />
+          )}
 
-      {/* Resetear es vender todo de golpe: no tiene sentido, y el servidor
-          lo rechaza, en cuanto la ficha está aprobada. */}
-      {!aprobada && (activeEfectivo === "attrs" || activeEfectivo === "skills") && (
-        <button
-          type="button"
-          onClick={reset}
-          className="clip-chamfer-sm mt-2 self-start border border-danger px-3 py-1.5 font-mono text-[11px] uppercase tracking-wide text-danger active:scale-95"
-        >
-          ⟲ Reset build
-        </button>
+          {/* Resetear es vender todo de golpe: no tiene sentido, y el servidor
+              lo rechaza, en cuanto la ficha está aprobada. */}
+          {!aprobada && (activeEfectivo === "attrs" || activeEfectivo === "skills") && (
+            <button
+              type="button"
+              onClick={reset}
+              className="clip-chamfer-sm mt-2 self-start border border-danger px-3 py-1.5 font-mono text-[11px] uppercase tracking-wide text-danger active:scale-95"
+            >
+              ⟲ Reset build
+            </button>
+          )}
+        </PanelFieldset>
       )}
     </div>
   );

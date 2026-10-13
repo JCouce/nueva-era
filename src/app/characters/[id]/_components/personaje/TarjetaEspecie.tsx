@@ -71,12 +71,27 @@ export function TarjetaEspecie({
   const [abierta, setAbierta] = useState(false);
   const { atributos, rasgos } = resumenRasgos(especie.rasgos);
   const ocultos = rasgos.length - VISIBLES;
+  // Toda la tarjeta elige: en móvil es más alta que la pantalla y la barra de envío
+  // fija tapaba el botón de abajo.
+  const elegir = onElegir && !seleccionada ? onElegir : undefined;
 
   return (
     <article
+      role={elegir ? "button" : undefined}
+      tabIndex={elegir ? 0 : undefined}
+      aria-label={elegir ? `Elegir ${especie.label}` : undefined}
+      onClick={elegir}
+      onKeyDown={
+        elegir &&
+        ((e) => {
+          if (e.target !== e.currentTarget || (e.key !== "Enter" && e.key !== " ")) return;
+          e.preventDefault();
+          elegir();
+        })
+      }
       className={`clip-chamfer flex h-full flex-col border bg-surface ${
         seleccionada ? "!border-accent shadow-glow-yellow" : "border-border"
-      }`}
+      } ${elegir ? "cursor-pointer active:scale-[0.99]" : ""}`}
     >
       <div className="relative">
         <ArteEspecie especieId={especie.id} className="aspect-[4/3] w-full" />
@@ -105,7 +120,10 @@ export function TarjetaEspecie({
             {ocultos > 0 && (
               <button
                 type="button"
-                onClick={() => setAbierta((v) => !v)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setAbierta((v) => !v);
+                }}
                 className="self-start py-1 font-mono text-[11px] uppercase tracking-wide text-info"
               >
                 {abierta ? "− ver menos" : `+ ver ${ocultos} rasgo${ocultos === 1 ? "" : "s"} más`}
@@ -127,7 +145,11 @@ export function TarjetaEspecie({
             ) : (
               <button
                 type="button"
-                onClick={onElegir}
+                tabIndex={-1}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onElegir();
+                }}
                 className="clip-chamfer-sm w-full border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98]"
               >
                 Elegir {especie.label}

@@ -1451,7 +1451,7 @@ ficha una vez, ya con costes de casta, descuentos y derivados)
 - [ ] `setPrioridadAction` sobrescribe `Character.creditos` al cambiar la letra de
       Recursos sin restar lo gastado en la Tienda (el reset de especie solo lo tapa en ese caso)
 
-### Pestaña Personaje (rediseño del Resumen) + envío a revisión ⬜ (decidido 2026-10-13; rediseño hecho y verificado en navegador 2026-10-13; envío a revisión sin empezar)
+### Pestaña Personaje (rediseño del Resumen) + envío a revisión ⬜ (decidido 2026-10-13; rediseño hecho y verificado en navegador 2026-10-13; envío a revisión construido 2026-10-13, falta verificarlo en navegador y la migración en el deploy de especies)
 Maqueta navegable con todo lo decidido: https://claude.ai/artifact/1cA8wJzudPge1PnLF9q55H
 (decisiones 1-7 al final de la maqueta, todas con la opción sugerida). No depende de
 especies E2-E5; va antes o justo después de E2. Plantear la forma en código antes de
@@ -1489,15 +1489,28 @@ construir (dos pasadas: rediseño, luego revisión).
       muestra especie · casta · casa)*
 
 **Envío a revisión** (decisiones 5-7)
-- [ ] Estados de la ficha: **En creación → En revisión → En juego** (`CharacterStatus`
+- [x] Estados de la ficha: **En creación → En revisión → En juego** (`CharacterStatus`
       gana `IN_REVIEW`; migración + campo de nota del máster y fecha de envío). Chip de
       estado en la cabecera
-- [ ] Jugador: barra fija abajo con lo que falta (de los "pendiente") y botón **"Enviar a
+      *(migración `envio_revision`: `submittedAt` y `reviewNote`. Transiciones y quién
+      puede cada una en `transicionRevision` (`lib/rules/revision.ts`, con test); el chip
+      es `components/EstadoFichaChip.tsx`, en la cabecera de la ficha, la tarjeta del
+      máster y la lista de personajes)*
+- [x] Jugador: barra fija abajo con lo que falta (de los "pendiente") y botón **"Enviar a
       revisión"**, activo solo con todo hecho. En revisión la ficha es **solo lectura** y
       puede **retirarla** para seguir editando
-- [ ] Máster: **Aprobar** o **Devolver** con nota **opcional**; la nota se ve en la ficha
+      *(bloquea `faltaParaEnviar`; `avisosParaEnviar` avisa de puntos sin gastar sin
+      bloquear. El servidor revalida con la ficha y el nombre de la base. Solo lectura:
+      `loadEditable` rechaza todo autosave y la ficha va en `<fieldset disabled>`
+      (las sub-pestañas de Personaje siguen navegables). **El máster sí puede editar una
+      ficha en revisión** (decisión del usuario, lo más barato): se cambia en
+      `fichaSoloLectura` (`revision.ts`), que usan servidor y pantalla)*
+- [x] Máster: **Aprobar** o **Devolver** con nota **opcional**; la nota se ve en la ficha
       del jugador al volver a creación. El máster puede **aprobar sin revisión**, como hoy
-- [ ] Panel del máster: fichas "En revisión" arriba, con contador
+      *(en la tarjeta de máster de arriba de la ficha y en el panel, `StatusControl`;
+      `devolverAction` guarda la nota (máx. 500), que se borra al reenviar o aprobar)*
+- [x] Panel del máster: fichas "En revisión" arriba, con contador
+      *(secciones En revisión / En creación / En juego)*
 - [ ] La migración va en el mismo deploy que especies (el del reset general tras E3)
 
 ### Componente `Modal` común ⬜ (propuesta del usuario, 2026-10-13)

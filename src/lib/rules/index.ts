@@ -27,6 +27,7 @@
 //   especie.ts         especie + casta + linaje → efectos; elegir especie (validación y reset)
 //   fichaResuelta.ts   resolverFicha: modificadores y derivados de una ficha en una pasada
 //   personaje.ts       pestaña Personaje: pasos (hecho/pendiente), etiquetas de rasgos, identidad por defecto
+//   revision.ts        envío a revisión: transiciones de estado, solo lectura, faltas y avisos
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -55,6 +56,7 @@ export * from "./poderes";
 export * from "./usoPoder";
 export * from "./especie";
 export * from "./personaje";
+export * from "./revision";
 export * from "./fichaResuelta";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";

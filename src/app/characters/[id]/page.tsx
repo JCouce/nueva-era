@@ -5,6 +5,7 @@ import { parseSheet, type EstadoActivo } from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
 import { HudCard } from "@/components/HudCard";
 import { StatusControl, ResourceRow } from "@/app/master/MasterControls";
+import { EstadoFichaChip } from "@/components/EstadoFichaChip";
 import { CharacterSheet } from "./CharacterSheet";
 
 export default async function CharacterPage({
@@ -51,10 +52,8 @@ export default async function CharacterPage({
       <main className="mx-auto w-full max-w-md flex-1 px-4 py-5">
         {user.role === "MASTER" && (
           <HudCard className="mb-4 flex flex-col gap-3 px-4 py-3">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs uppercase tracking-wide text-muted">
-                {character.status === "DRAFT" ? "Borrador" : "Aprobada"}
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <EstadoFichaChip estado={character.status} />
               <StatusControl characterId={character.id} status={character.status} />
             </div>
             <ResourceRow
@@ -72,6 +71,9 @@ export default async function CharacterPage({
           initialXp={character.xp}
           initialCreditos={character.creditos}
           esMaster={user.role === "MASTER"}
+          esDueno={character.ownerId === user.id}
+          submittedAt={character.submittedAt?.toISOString() ?? null}
+          reviewNote={character.reviewNote}
           combate={enCombate ? combate : null}
         />
       </main>

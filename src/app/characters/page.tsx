@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
 import { AppHeader } from "@/components/AppHeader";
 import { HudCard } from "@/components/HudCard";
+import { EstadoFichaChip } from "@/components/EstadoFichaChip";
 import { createCharacter, deleteCharacter } from "./actions";
 
 export default async function CharactersPage() {
@@ -27,10 +28,11 @@ export default async function CharactersPage() {
           {characters.map((c) => (
             <li key={c.id}>
               <HudCard className="flex items-center gap-2 px-4 py-3">
-                <Link href={`/characters/${c.id}`} className="flex-1">
+                <Link href={`/characters/${c.id}`} className="min-w-0 flex-1">
                   <span className="font-display text-base font-medium uppercase tracking-wide">
                     {c.name}
                   </span>
+                  <EstadoFichaChip estado={c.status} className="ml-2 align-middle" />
                   {isMaster && (
                     <span className="block font-mono text-xs text-muted">
                       {c.owner.name ?? c.owner.email}

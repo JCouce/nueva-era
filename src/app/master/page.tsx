@@ -15,9 +15,26 @@ export default async function MasterPage() {
     orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
     include: { owner: { select: { name: true, email: true } } },
   });
+  type Fila = (typeof characters)[number];
 
-  const pendientes = characters.filter((c) => c.status === "DRAFT");
-  const aprobadas = characters.filter((c) => c.status === "APPROVED");
+  // En revisión arriba del todo: es lo que espera al máster.
+  const secciones: { titulo: string; vacio: string; fichas: Fila[] }[] = [
+    {
+      titulo: "En revisión",
+      vacio: "Ninguna ficha esperando revisión.",
+      fichas: characters.filter((c) => c.status === "IN_REVIEW"),
+    },
+    {
+      titulo: "En creación",
+      vacio: "Ninguna ficha en creación.",
+      fichas: characters.filter((c) => c.status === "DRAFT"),
+    },
+    {
+      titulo: "En juego",
+      vacio: "Aún no hay fichas aprobadas.",
+      fichas: characters.filter((c) => c.status === "APPROVED"),
+    },
+  ];
 
   return (
     <>
@@ -28,63 +45,38 @@ export default async function MasterPage() {
         </h1>
         <MasterTabs />
 
-        <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted">
-          Pendientes de aprobar ({pendientes.length})
-        </h2>
-        <ul className="mb-6 flex flex-col gap-2">
-          {pendientes.map((c) => (
-            <li key={c.id}>
-              <HudCard className="flex flex-col gap-3 px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <Link href={`/characters/${c.id}`} className="flex-1">
-                    <span className="font-display text-base font-medium uppercase tracking-wide">
-                      {c.name}
-                    </span>
-                    <span className="block font-mono text-xs text-muted">
-                      {c.owner.name ?? c.owner.email}
-                    </span>
-                  </Link>
-                  <StatusControl characterId={c.id} status={c.status} />
-                </div>
-                <ResourceRow characterId={c.id} xp={c.xp} creditos={c.creditos} />
-              </HudCard>
-            </li>
-          ))}
-          {pendientes.length === 0 && (
-            <li className="clip-chamfer border border-dashed border-border px-4 py-8 text-center font-mono text-sm text-muted">
-              No hay fichas esperando aprobación.
-            </li>
-          )}
-        </ul>
-
-        <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted">
-          Aprobadas ({aprobadas.length})
-        </h2>
-        <ul className="flex flex-col gap-2">
-          {aprobadas.map((c) => (
-            <li key={c.id}>
-              <HudCard className="flex flex-col gap-3 px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <Link href={`/characters/${c.id}`} className="flex-1">
-                    <span className="font-display text-base font-medium uppercase tracking-wide">
-                      {c.name}
-                    </span>
-                    <span className="block font-mono text-xs text-muted">
-                      {c.owner.name ?? c.owner.email}
-                    </span>
-                  </Link>
-                  <StatusControl characterId={c.id} status={c.status} />
-                </div>
-                <ResourceRow characterId={c.id} xp={c.xp} creditos={c.creditos} />
-              </HudCard>
-            </li>
-          ))}
-          {aprobadas.length === 0 && (
-            <li className="clip-chamfer border border-dashed border-border px-4 py-8 text-center font-mono text-sm text-muted">
-              Aún no hay fichas aprobadas.
-            </li>
-          )}
-        </ul>
+        {secciones.map((s) => (
+          <section key={s.titulo} className="mb-6">
+            <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted">
+              {s.titulo} ({s.fichas.length})
+            </h2>
+            <ul className="flex flex-col gap-2">
+              {s.fichas.map((c) => (
+                <li key={c.id}>
+                  <HudCard className="flex flex-col gap-3 px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link href={`/characters/${c.id}`} className="flex-1">
+                        <span className="font-display text-base font-medium uppercase tracking-wide">
+                          {c.name}
+                        </span>
+                        <span className="block font-mono text-xs text-muted">
+                          {c.owner.name ?? c.owner.email}
+                        </span>
+                      </Link>
+                      <StatusControl characterId={c.id} status={c.status} />
+                    </div>
+                    <ResourceRow characterId={c.id} xp={c.xp} creditos={c.creditos} />
+                  </HudCard>
+                </li>
+              ))}
+              {s.fichas.length === 0 && (
+                <li className="clip-chamfer border border-dashed border-border px-4 py-8 text-center font-mono text-sm text-muted">
+                  {s.vacio}
+                </li>
+              )}
+            </ul>
+          </section>
+        ))}
       </main>
     </>
   );

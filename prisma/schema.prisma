@@ -12,8 +12,11 @@ enum Role {
   MASTER
 }
 
+// DRAFT (en creación) → IN_REVIEW (enviada al máster) → APPROVED (en juego).
+// Las transiciones válidas viven en lib/rules/revision.ts.
 enum CharacterStatus {
   DRAFT
+  IN_REVIEW
   APPROVED
 }
 
@@ -45,6 +48,10 @@ model Character {
   stats            Json            @default("{}")
   status           CharacterStatus @default(DRAFT)
   approvedAt       DateTime?
+  // Cuándo la envió el jugador a revisión ("enviada hace X"). null fuera de IN_REVIEW.
+  submittedAt      DateTime?
+  // Nota del máster al devolverla a creación; se borra al reenviar o aprobar.
+  reviewNote       String?
   // Foto de atributos/habilidades en el momento de aprobar (aprobacion.ts).
   // null = nunca aprobada, o aprobada antes de que existiera este campo.
   approvedSnapshot Json?

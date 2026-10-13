@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
-import { characterCreateSchema, eleccionEspecieSchema } from "@/lib/validation";
+import { characterCreateSchema, characterIdSchema, eleccionEspecieSchema } from "@/lib/validation";
 import {
   type Sheet,
   parseSheet,
@@ -68,6 +68,10 @@ import {
   creditosDeLaLetra,
   reconciliarVida,
   type EleccionEspecie,
+  fichaSoloLectura,
+  transicionRevision,
+  faltaParaEnviar,
+  pasosPersonaje,
 } from "@/lib/rules";
 
 export type SaveResult =
@@ -98,6 +102,11 @@ async function loadEditable(characterId: string): Promise<Editable | { error: st
   if (!character) return { error: "Personaje no encontrado" };
   if (!canEditCharacter(user, character)) {
     return { error: "No tienes permiso para editar esta ficha" };
+  }
+  // Envío a revisión: el jugador no edita mientras el máster la revisa; el máster sí
+  // (la regla vive en fichaSoloLectura, revision.ts).
+  if (fichaSoloLectura({ estado: character.status, esMaster: user.role === "MASTER" })) {
+    return { error: "La ficha está en revisión: retírala para seguir editando" };
   }
   return {
     sheet: parseSheet(character.stats),
@@ -745,4 +754,59 @@ export async function saveIdentityAction(
 function clampInt(n: number, min: number, max: number): number {
   if (!Number.isFinite(n)) return min;
   return Math.max(min, Math.min(max, Math.round(n)));
+}
+
+// --- Envío a revisión (docs/tareas.md, "Envío a revisión") ----------------------
+// No pasan por loadEditable: retirar es justo lo que hace un jugador con la ficha en
+// solo lectura. El permiso es el mismo (canEditCharacter) más la transición.
+
+export type RevisionResult = { ok: true } | { ok: false; error: string };
+
+async function cambiarEstadoRevision(
+  rawId: string,
+  accion: "enviar" | "retirar",
+): Promise<RevisionResult> {
+  const parsed = characterIdSchema.safeParse(rawId);
+  if (!parsed.success) return { ok: false, error: "Ficha inválida" };
+  const characterId = parsed.data;
+
+  const user = await requireUser();
+  const character = await prisma.character.findUnique({ where: { id: characterId } });
+  if (!character) return { ok: false, error: "Personaje no encontrado" };
+  if (!canEditCharacter(user, character)) return { ok: false, error: "No tienes permiso para editar esta ficha" };
+
+  const res = transicionRevision({
+    estado: character.status,
+    accion,
+    esMaster: user.role === "MASTER",
+    esDueno: character.ownerId === user.id,
+  });
+  if ("error" in res) return { ok: false, error: res.error };
+
+  if (accion === "enviar") {
+    // Con el nombre y la ficha de la base, no con lo que diga la pantalla.
+    const pasos = pasosPersonaje({ sheet: parseSheet(character.stats), nombre: character.name, aprobada: false });
+    const falta = faltaParaEnviar(pasos);
+    if (falta.length) return { ok: false, error: `Falta: ${falta.join(", ")}` };
+  }
+
+  await prisma.character.update({
+    where: { id: characterId },
+    data:
+      accion === "enviar"
+        ? { status: res.estado, submittedAt: new Date(), reviewNote: null }
+        : { status: res.estado, submittedAt: null },
+  });
+  revalidatePath("/master");
+  revalidatePath("/characters");
+  revalidatePath(`/characters/${characterId}`);
+  return { ok: true };
+}
+
+export async function enviarARevisionAction(characterId: string): Promise<RevisionResult> {
+  return cambiarEstadoRevision(characterId, "enviar");
+}
+
+export async function retirarRevisionAction(characterId: string): Promise<RevisionResult> {
+  return cambiarEstadoRevision(characterId, "retirar");
 }

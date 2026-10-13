@@ -173,7 +173,9 @@ dar créditos de una ficha que aún no puede comprar nada.
 **El punto de partida cambia el enfoque de toda la fase.** `canEditCharacter()` ya deja al
 `MASTER` editar cualquier ficha, y `/characters` ya le lista todas. No hace falta ningún
 mecanismo de "enviar" la ficha al máster (ni foto, ni export): vive en la misma base de datos
-y él ya tiene lectura y escritura totales, hoy. Tampoco hace falta un modelo `Campaign`
+y él ya tiene lectura y escritura totales, hoy. (Desde 2026-10-13 sí hay un "enviar a
+revisión", pero es solo un estado más, `IN_REVIEW`, sobre la misma fila: ver
+`lib/rules/revision.ts`.) Tampoco hace falta un modelo `Campaign`
 mientras solo haya una mesa — se añade el día que haga falta una segunda, no antes. Y añadir
 equipo a la ficha de un jugador **ya funciona** sin código nuevo, porque `stats.equipo` cae
 dentro del mismo permiso.

@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import { requireUser } from "@/lib/auth-helpers";
-import { parseSheet, snapshotFromSheet } from "@/lib/rules";
+import { parseSheet, snapshotFromSheet, transicionRevision } from "@/lib/rules";
+import { characterIdSchema, notaRevisionSchema } from "@/lib/validation";
 
 // Aprobar/revertir es cosa del máster, no del dueño de la ficha — a diferencia
 // de canEditCharacter(), aquí el dueño NO vale.
@@ -22,39 +23,71 @@ function revalidateCharacterViews(id: string) {
   revalidatePath(`/characters/${id}`);
 }
 
+// Las tres pasan por transicionRevision (revision.ts): aprobar vale desde creación o
+// desde revisión; devolver solo desde revisión; revertir solo desde en juego.
+async function cargarParaRevision(formData: FormData, accion: "aprobar" | "devolver" | "revertir") {
+  const user = await requireMaster();
+  if (!user) return null;
+  const parsed = characterIdSchema.safeParse(formData.get("id") ?? "");
+  if (!parsed.success) return null;
+  const character = await prisma.character.findUnique({
+    where: { id: parsed.data },
+    select: { id: true, status: true, ownerId: true, stats: true },
+  });
+  if (!character) return null;
+  const res = transicionRevision({
+    estado: character.status,
+    accion,
+    esMaster: true,
+    esDueno: character.ownerId === user.id,
+  });
+  return "error" in res ? null : { character, estado: res.estado };
+}
+
 export async function approveCharacterAction(formData: FormData) {
-  if (!(await requireMaster())) return;
-  const id = String(formData.get("id") ?? "");
-  if (!id) return;
+  const ctx = await cargarParaRevision(formData, "aprobar");
+  if (!ctx) return;
 
   // Congela el suelo de Atributos/Habilidades en el momento exacto de
   // aprobar — de ahí en adelante solo se puede subir (aprobacion.ts).
-  const character = await prisma.character.findUnique({
-    where: { id },
-    select: { stats: true },
-  });
-  if (!character) return;
-  const snapshot = snapshotFromSheet(parseSheet(character.stats));
-
+  const snapshot = snapshotFromSheet(parseSheet(ctx.character.stats));
   await prisma.character.update({
-    where: { id },
-    data: { status: "APPROVED", approvedAt: new Date(), approvedSnapshot: snapshot },
+    where: { id: ctx.character.id },
+    data: {
+      status: ctx.estado,
+      approvedAt: new Date(),
+      approvedSnapshot: snapshot,
+      submittedAt: null,
+      reviewNote: null,
+    },
   });
-  revalidateCharacterViews(id);
+  revalidateCharacterViews(ctx.character.id);
+}
+
+// Devuelve a creación una ficha en revisión, con nota opcional para el jugador.
+export async function devolverAction(formData: FormData) {
+  const nota = notaRevisionSchema.safeParse(formData.get("nota") ?? "");
+  if (!nota.success) return;
+  const ctx = await cargarParaRevision(formData, "devolver");
+  if (!ctx) return;
+  await prisma.character.update({
+    where: { id: ctx.character.id },
+    data: { status: ctx.estado, submittedAt: null, reviewNote: nota.data },
+  });
+  revalidateCharacterViews(ctx.character.id);
 }
 
 export async function revertToDraftAction(formData: FormData) {
-  if (!(await requireMaster())) return;
-  const id = String(formData.get("id") ?? "");
-  if (!id) return;
+  const ctx = await cargarParaRevision(formData, "revertir");
+  if (!ctx) return;
 
   // Suelta el snapshot: mientras esté en DRAFT no hay guardarraíl, y si se
   // vuelve a aprobar se congela uno nuevo con los valores de ese momento.
   await prisma.character.update({
-    where: { id },
-    data: { status: "DRAFT", approvedAt: null, approvedSnapshot: Prisma.DbNull },
+    where: { id: ctx.character.id },
+    data: { status: ctx.estado, approvedAt: null, approvedSnapshot: Prisma.DbNull },
   });
-  revalidateCharacterViews(id);
+  revalidateCharacterViews(ctx.character.id);
 }
 
 // xp y créditos son recursos que solo concede el máster — por eso viven aquí y

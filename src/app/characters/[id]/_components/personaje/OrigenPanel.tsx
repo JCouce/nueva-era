@@ -130,18 +130,22 @@ export function OrigenPanel({
   aprobada,
   esMaster,
   creditos,
+  soloLectura,
   onEspecie,
 }: {
   ficha: FichaResuelta;
   aprobada: boolean;
   esMaster: boolean;
   creditos: number;
+  // Ficha en revisión (fichaSoloLectura): el fieldset no desactiva el click de las
+  // tarjetas, así que el carrusel ni se monta.
+  soloLectura: boolean;
   onEspecie: (eleccion: EleccionEspecie) => void;
 }) {
   const sheet = ficha.ficha;
   const ctx = { aprobada, esMaster, libre: false };
   const guardada = eleccionDeFicha(sheet);
-  const bloqueo = bloqueoDeEspecie(ctx);
+  const bloqueo = soloLectura ? "La ficha está en revisión" : bloqueoDeEspecie(ctx);
   if (bloqueo) return <OrigenFijado guardada={guardada} bloqueo={bloqueo} />;
   return (
     <Carrusel
