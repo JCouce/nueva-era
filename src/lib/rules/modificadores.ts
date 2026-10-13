@@ -15,9 +15,26 @@ export const DERIVADOS_MODIFICABLES = [
   "fatiga",
   "alerta",
   "carrera",
+  "saltoVertical",
+  "saltoHorizontal",
+  "escalada",
+  "nado",
   "carga",
 ] as const;
 export type DerivadoId = (typeof DERIVADOS_MODIFICABLES)[number];
+
+// Cómo se lee cada derivado en un chip o en un desglose.
+export const ETIQUETA_DERIVADO: Record<DerivadoId, string> = {
+  vida: "Vida",
+  fatiga: "Fatiga",
+  alerta: "Alerta",
+  carrera: "Carrera",
+  saltoVertical: "Salto vertical",
+  saltoHorizontal: "Salto horizontal",
+  escalada: "Escalada",
+  nado: "Nado",
+  carga: "Carga",
+};
 
 // Los grupos de la pestaña Acciones. Vive aquí (y no en acciones.ts, donde se
 // usa) para que Modificador pueda dirigir un bono a un grupo entero sin que

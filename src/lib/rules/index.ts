@@ -5,6 +5,7 @@
 //   habilidades.ts las 10 habilidades y las reglas de especialidad
 //   sheet.ts       forma de la ficha, validación Zod y lectura tolerante
 //   derivados.ts   lo que se calcula y nunca se guarda
+//   formulaMovimiento.ts  constantes del movimiento general, que una especie puede cambiar
 //   creacion.ts    point-buy: costes, pools y operaciones sobre la ficha
 //   tiradas.ts     catálogo de acciones, dificultades y resolución del d12
 //   modificadores.ts  cómo especies, dotes, aumentos, equipo y estados alteran números
@@ -34,6 +35,7 @@ export * from "./atributos";
 export * from "./habilidades";
 export * from "./sheet";
 export * from "./derivados";
+export * from "./formulaMovimiento";
 export * from "./creacion";
 export * from "./acciones";
 export * from "./modificadores";

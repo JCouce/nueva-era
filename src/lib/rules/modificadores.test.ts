@@ -1,5 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
+import { FORMULA_MOVIMIENTO_GENERAL } from "./formulaMovimiento";
 import { defaultSheet, type Sheet } from "./sheet";
 import {
   setAtributoValue,
@@ -197,7 +198,7 @@ describe("alcance de un modificador de tirada", () => {
 
 describe("el movimiento recoge los bonos de Atletismo", () => {
   test("un bono de habilidad mueve la base de las fórmulas", () => {
-    const base = movimiento(conEspecie(null), modificadoresActivos(conEspecie(null)));
+    const base = movimiento(conEspecie(null), modificadoresActivos(conEspecie(null)), FORMULA_MOVIMIENTO_GENERAL);
     const fichaConBono: Sheet = {
       ...conEspecie(null),
       // Simula el efecto de +1 en atletismo comprándolo, para comparar escalas.
@@ -206,7 +207,7 @@ describe("el movimiento recoge los bonos de Atletismo", () => {
         atletismo: { valor: 1, especialidades: [] },
       },
     };
-    const conBono = movimiento(fichaConBono, modificadoresActivos(fichaConBono));
+    const conBono = movimiento(fichaConBono, modificadoresActivos(fichaConBono), FORMULA_MOVIMIENTO_GENERAL);
     assert.ok(conBono.carrera > base.carrera);
   });
 });

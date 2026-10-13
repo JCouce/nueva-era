@@ -6,7 +6,7 @@
 // Mismo patrón que usoPoder.ts: entrada explícita, nada se lee de fuera salvo el
 // catálogo. Los estados de combate no están en la ficha, por eso entran aparte.
 import { APLICADOS, ATRIBUTOS, type AplicadoId, type AtributoId } from "./atributos";
-import { tieneEscudoMelee } from "./blindaje";
+import { tieneEscudoMelee, type ArmaduraNatural } from "./blindaje";
 import {
   alerta,
   aplicados,
@@ -18,7 +18,18 @@ import {
   salud,
   type Fuente,
 } from "./derivados";
-import { ajustesDeCoste, bolsaDeAumentos, especieDeFicha, excepcionesRareza, type EspecieResuelta } from "./especie";
+import {
+  ajustesDeCoste,
+  armaduraNaturalDeEspecie,
+  bolsaDeAumentos,
+  especieDeFicha,
+  excepcionesRareza,
+  formulaMovimientoDeEspecie,
+  multiplicadorCargaDeEspecie,
+  type EspecieResuelta,
+  type FormulaMovimientoResuelta,
+  type MultiplicadorCarga,
+} from "./especie";
 import { bonosDeDisciplina, nivelesDePsionica, type PsionicaResuelta } from "./psionica";
 import type { ExcepcionRareza } from "../catalog/especies";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
@@ -45,9 +56,14 @@ export type FichaResuelta = {
   alerta: number;
   movimiento: ReturnType<typeof movimiento>;
   cargaMaxima: number;
+  // Lo que la especie cambia de fórmula (§14.7), con su fuente: lo usan movimiento,
+  // cargaMaxima y las notas de Estado (notasDeEstado). Derivado: también al NPC.
+  formulaMovimiento: FormulaMovimientoResuelta;
+  multiplicadorCarga: MultiplicadorCarga;
   // Lo de blindaje que no depende de la tirada; el desglose contra un tipo de daño
-  // (desgloseBlindaje) lo pide el modal con lo que elige el jugador.
-  blindaje: { tieneEscudoMelee: boolean };
+  // (desgloseBlindaje) lo pide el modal con lo que elige el jugador, pasándole
+  // la armadura natural de aquí.
+  blindaje: { tieneEscudoMelee: boolean; armaduraNatural: ArmaduraNatural };
   // Casillas con alcance del equipo, indexadas una vez (consultaIndiceCondiciones).
   indiceCondiciones: IndiceCondiciones;
   // Creación y progresión (§14.6): el ajuste de coste que reciben los puntos, la
@@ -71,6 +87,8 @@ export type OpcionesFicha = { estadosCombate: EstadoActivo[]; libre?: boolean };
 
 export function resolverFicha(sheet: Sheet, { estadosCombate, libre = false }: OpcionesFicha): FichaResuelta {
   const especie = especieDeFicha(sheet);
+  const formulaMovimiento = formulaMovimientoDeEspecie(especie);
+  const multiplicadorCarga = multiplicadorCargaDeEspecie(especie);
   // = [...modificadoresActivos(sheet), ...estados], sin volver a resolver la especie.
   const modificadores: ModificadorConFuente[] = [
     ...(especie?.modificadores ?? []),
@@ -93,13 +111,62 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, libre = false }: O
     },
     salud: salud(sheet, modificadores),
     alerta: alerta(sheet, modificadores),
-    movimiento: movimiento(sheet, modificadores),
-    cargaMaxima: cargaMaxima(sheet, modificadores),
-    blindaje: { tieneEscudoMelee: tieneEscudoMelee(sheet) },
+    movimiento: movimiento(sheet, modificadores, formulaMovimiento.formula),
+    cargaMaxima: cargaMaxima(sheet, modificadores, multiplicadorCarga.valor),
+    formulaMovimiento,
+    multiplicadorCarga,
+    blindaje: { tieneEscudoMelee: tieneEscudoMelee(sheet), armaduraNatural: armaduraNaturalDeEspecie(especie) },
     indiceCondiciones: indiceDeCondiciones(sheet),
     ajusteCoste: libre ? AJUSTE_NEUTRO : ajustesDeCoste(especie),
     bolsaAumentos: libre ? null : bolsaDeAumentos(especie),
     excepcionesRareza: libre ? [] : excepcionesRareza(especie),
     psionica: nivelesDePsionica(sheet, bonosDeDisciplina(modificadores)),
   };
+}
+
+// --- Notas de Personaje → Estado ------------------------------------------------
+
+export type CampoEstado = "carrera" | "saltoVertical" | "saltoHorizontal" | "escalada" | "nado" | "carga";
+export type NotasEstado = Record<CampoEstado, string | undefined>;
+
+const CAMPOS_MOVIMIENTO = ["carrera", "saltoVertical", "saltoHorizontal", "escalada", "nado"] as const;
+
+const CAMPO_DE_FORMULA: Record<keyof FormulaMovimientoResuelta["formula"], CampoEstado> = {
+  saltoVerticalPorPunto: "saltoVertical",
+  saltoHorizontalPorPunto: "saltoHorizontal",
+  escaladaBase: "escalada",
+  nadoBase: "nado",
+};
+
+// De dónde sale que un derivado no sea el general, en una nota corta junto al valor:
+// "+4 exoesqueleto", "fórmula · Arköru", "+200 · Casa de Zimethroni", "×1,2 · Arköru".
+// Varias, separadas por coma. undefined si el valor sale de la fórmula general.
+export function notasDeEstado(ficha: FichaResuelta): NotasEstado {
+  const notas: Record<CampoEstado, string[]> = {
+    carrera: [],
+    saltoVertical: [],
+    saltoHorizontal: [],
+    escalada: [],
+    nado: [],
+    carga: [],
+  };
+  const exo = ficha.movimiento.bonoExoesqueleto;
+  if (exo > 0) for (const c of CAMPOS_MOVIMIENTO) notas[c].push(`+${exo} exoesqueleto`);
+  for (const [k, fuente] of Object.entries(ficha.formulaMovimiento.fuentes) as [keyof typeof CAMPO_DE_FORMULA, string][]) {
+    notas[CAMPO_DE_FORMULA[k]].push(`fórmula · ${fuente}`);
+  }
+  for (const m of ficha.especie?.modificadores ?? []) {
+    // Solo movimiento: el Modificador "carga" no lo suma cargaMaxima (deuda aparte,
+    // docs/tareas.md), así que no se anuncia.
+    if (m.tipo !== "derivado") continue;
+    const campo = CAMPOS_MOVIMIENTO.find((c) => c === m.id);
+    if (!campo) continue;
+    notas[campo].push(`${m.valor >= 0 ? "+" : ""}${m.valor} · ${m.fuente}`);
+  }
+  const { valor, fuente } = ficha.multiplicadorCarga;
+  if (valor !== 1) notas.carga.push(`×${String(valor).replace(".", ",")}${fuente ? ` · ${fuente}` : ""}`);
+
+  return Object.fromEntries(
+    Object.entries(notas).map(([c, n]) => [c, n.length ? n.join(", ") : undefined]),
+  ) as NotasEstado;
 }

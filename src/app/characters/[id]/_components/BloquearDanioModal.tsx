@@ -34,7 +34,7 @@ export function BloquearDanioModal({ ficha, onCerrar }: { ficha: FichaResuelta; 
   const [danioRecibido, setDanioRecibido] = useState(0);
 
   const conEscudo = ficha.blindaje.tieneEscudoMelee;
-  const desglose = desgloseBlindaje(ficha.ficha, tipo, conEscudo && escudoEnAlto);
+  const desglose = desgloseBlindaje(ficha.ficha, tipo, conEscudo && escudoEnAlto, ficha.blindaje.armaduraNatural);
   const blindaje = desglose.reduce((total, l) => total + l.valor, 0);
   const pasa = Math.max(0, danioRecibido - blindaje);
 

@@ -13,6 +13,9 @@
 //                   creacion.ts, psionica.ts y progresion.ts
 //   bolsaDeAumentos los créditos aparte para aumentos (Humanos), o null
 //   excepcionesRareza las piezas que la especie compra sin tope de rareza (kerzul)
+//   formulaMovimientoDeEspecie / multiplicadorCargaDeEspecie / armaduraNaturalDeEspecie
+//                   los derivados que cambian de fórmula con la especie (§14.7),
+//                   con la fuente de cada cambio para las notas de Estado
 //
 // Mismo patrón que usoPoder.ts: entrada explícita, nada se lee de fuera salvo el
 // catálogo, y el resultado se aplica tal cual.
@@ -30,6 +33,8 @@ import type { ModificadorConFuente } from "./modificadores";
 import { creditosDeLaLetra } from "./prioridad";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
 import { defaultSheet, type Sheet } from "./sheet";
+import { FORMULA_MOVIMIENTO_GENERAL, type FormulaMovimiento } from "./formulaMovimiento";
+import { SIN_ARMADURA_NATURAL, type ArmaduraNatural } from "./blindaje";
 import type { HabilidadId } from "./habilidades";
 
 export type RasgoConFuente = Rasgo & { fuente: string };
@@ -279,4 +284,53 @@ export function bolsaDeAumentos(especie: EspecieResuelta | null): number | null 
 // puedeEquiparSinRareza (equipo.ts), que recibe esto ya resuelto.
 export function excepcionesRareza(especie: EspecieResuelta | null): ExcepcionRareza[] {
   return (especie?.rasgos ?? []).flatMap((r) => (r.excepcionRareza ? [r.excepcionRareza] : []));
+}
+
+// --- Derivados (§14.7) --------------------------------------------------------
+
+export type FormulaMovimientoResuelta = {
+  formula: FormulaMovimiento;
+  // Quién cambió cada constante respecto a la general (la fuente del rasgo).
+  fuentes: Partial<Record<keyof FormulaMovimiento, string>>;
+};
+export const FORMULA_MOVIMIENTO_NEUTRA: FormulaMovimientoResuelta = { formula: FORMULA_MOVIMIENTO_GENERAL, fuentes: {} };
+
+export type MultiplicadorCarga = { valor: number; fuente: string | null };
+export const MULTIPLICADOR_CARGA_NEUTRO: MultiplicadorCarga = { valor: 1, fuente: null };
+
+// Las constantes de movimiento que trae la especie sustituyen a las generales; si
+// dos capas tocaran la misma, gana la última (especie → casta → linaje).
+export function formulaMovimientoDeEspecie(especie: EspecieResuelta | null): FormulaMovimientoResuelta {
+  const conFormula = (especie?.rasgos ?? []).filter((r) => r.formulaMovimiento);
+  if (!conFormula.length) return FORMULA_MOVIMIENTO_NEUTRA;
+  const formula = { ...FORMULA_MOVIMIENTO_GENERAL };
+  const fuentes: FormulaMovimientoResuelta["fuentes"] = {};
+  for (const r of conFormula) {
+    for (const [k, v] of Object.entries(r.formulaMovimiento!) as [keyof FormulaMovimiento, number | undefined][]) {
+      if (v === undefined) continue;
+      formula[k] = v;
+      fuentes[k] = r.fuente;
+    }
+  }
+  return { formula, fuentes };
+}
+
+// Arköru × 1,2. Si llegaran dos, se multiplican.
+export function multiplicadorCargaDeEspecie(especie: EspecieResuelta | null): MultiplicadorCarga {
+  const con = (especie?.rasgos ?? []).filter((r) => r.multiplicadorCarga !== undefined);
+  if (!con.length) return MULTIPLICADOR_CARGA_NEUTRO;
+  return {
+    valor: con.reduce((t, r) => t * r.multiplicadorCarga!, 1),
+    fuente: [...new Set(con.map((r) => r.fuente))].join(", "),
+  };
+}
+
+// Arköru 1 (Matriz Biometálica). Si llegaran dos, se suman.
+export function armaduraNaturalDeEspecie(especie: EspecieResuelta | null): ArmaduraNatural {
+  const con = (especie?.rasgos ?? []).filter((r) => r.armaduraNatural !== undefined);
+  if (!con.length) return SIN_ARMADURA_NATURAL;
+  return {
+    valor: con.reduce((t, r) => t + r.armaduraNatural!, 0),
+    fuente: [...new Set(con.map((r) => r.fuente))].join(", "),
+  };
 }

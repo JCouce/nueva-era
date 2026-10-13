@@ -4,6 +4,7 @@
 // exactamente lo mismo. Si uno de estos números cambia, es un bug, no un ajuste.
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
+import { FORMULA_MOVIMIENTO_GENERAL } from "./formulaMovimiento";
 import { defaultSheet, type Sheet } from "./sheet";
 import { equipar, consultaIndiceCondiciones } from "./equipo";
 import type { ContextoAccion } from "./modificadores";
@@ -72,6 +73,10 @@ type Esperado = {
   fortaleza: { total: number; fuentes: { etiqueta: string; valor: number }[] };
   escudo: boolean;
   condiciones: string[][];
+  // E3 (§14.7): lo que resolverFicha da de más con la fórmula de especie. La
+  // caracterización de arriba (derivados con el neutro) no cambia; resolverFicha sí,
+  // a propósito.
+  e3?: { movimiento: typeof MOV_BASE; carga: number };
 };
 
 const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperado: Esperado }[] = [
@@ -109,6 +114,8 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
       fortaleza: { total: 3, fuentes: [{ etiqueta: "Fuerza", valor: 4 }, { etiqueta: "Aguante", valor: 1 }] },
       escudo: false,
       condiciones: [[], []],
+      // base 4: 18 × 4, 100 + 4 × 25, 8 + 2, 2 + 2; carga 80 × 1,2
+      e3: { movimiento: { ...MOV_BASE, saltoVertical: 72, saltoHorizontal: 200, escalada: 10, nado: 4 }, carga: 96 },
     },
   },
   {
@@ -163,6 +170,8 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
       fortaleza: { total: 1, fuentes: [{ etiqueta: "Fuerza", valor: 1 }, { etiqueta: "Aguante", valor: 1 }] },
       escudo: false,
       condiciones: [[], []],
+      // Movimiento Acuático, base 4: nado 8 + 2
+      e3: { movimiento: { ...MOV_BASE, nado: 10 }, carga: 20 },
     },
   },
   {
@@ -189,6 +198,11 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
       fortaleza: { total: 1, fuentes: [{ etiqueta: "Fuerza", valor: 2 }, { etiqueta: "Aguante", valor: -1 }] },
       escudo: true,
       condiciones: CONDICIONES_EQUIPO,
+      // base 7: 18 × 7, 100 + 7 × 25, 8 + 3, 2 + 3; carga 120 × 1,2
+      e3: {
+        movimiento: { bonoExoesqueleto: 4, carrera: 23, saltoVertical: 126, saltoHorizontal: 275, escalada: 11, nado: 5 },
+        carga: 144,
+      },
     },
   },
 ];
@@ -196,6 +210,12 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
 // La misma ficha con estados, tal y como la enseñaba Resumen (sin estados). Con la
 // FichaResuelta única, Resumen pasa a ver los de arriba: cambio intencionado (§3.1, 3).
 const RESUMEN_SIN_ESTADOS = { salud: { vida: 11, fatiga: 8 }, movimiento: MOV_EXO, carga: 160, alerta: 10 };
+// Lo mismo con E3 (Arköru, base 8): 18 × 8, 100 + 8 × 25, 8 + 4, 2 + 4; carga 160 × 1,2.
+const RESUMEN_SIN_ESTADOS_E3 = {
+  ...RESUMEN_SIN_ESTADOS,
+  movimiento: { ...MOV_EXO, saltoVertical: 144, saltoHorizontal: 300, escalada: 12, nado: 6 },
+  carga: 192,
+};
 
 describe("caracterización: los derivados de hoy con los modificadores montados a mano", () => {
   for (const { nombre, sheet, estados, esperado } of MUESTRAS) {
@@ -206,8 +226,8 @@ describe("caracterización: los derivados de hoy con los modificadores montados 
       assert.deepEqual(aplicados(sheet, mods), esperado.aplicados);
       assert.deepEqual(salud(sheet, mods), esperado.salud);
       assert.equal(alerta(sheet, mods), esperado.alerta);
-      assert.deepEqual(movimiento(sheet, mods), esperado.movimiento);
-      assert.equal(cargaMaxima(sheet, mods), esperado.carga);
+      assert.deepEqual(movimiento(sheet, mods, FORMULA_MOVIMIENTO_GENERAL), esperado.movimiento);
+      assert.equal(cargaMaxima(sheet, mods, 1), esperado.carga);
       assert.deepEqual(desgloseAtributo(sheet, "fuerza", mods), esperado.fuerza);
       assert.deepEqual(desgloseAplicado(sheet, "fortaleza", mods), esperado.fortaleza);
     });
@@ -217,7 +237,7 @@ describe("caracterización: los derivados de hoy con los modificadores montados 
     const sheet = MUESTRAS.at(-1)!.sheet;
     const mods = modificadoresActivos(sheet);
     assert.deepEqual(
-      { salud: salud(sheet, mods), movimiento: movimiento(sheet, mods), carga: cargaMaxima(sheet, mods), alerta: alerta(sheet, mods) },
+      { salud: salud(sheet, mods), movimiento: movimiento(sheet, mods, FORMULA_MOVIMIENTO_GENERAL), carga: cargaMaxima(sheet, mods, 1), alerta: alerta(sheet, mods) },
       RESUMEN_SIN_ESTADOS,
     );
   });
@@ -235,8 +255,8 @@ describe("resolverFicha da exactamente lo mismo", () => {
       assert.deepEqual(r.aplicados, esperado.aplicados);
       assert.deepEqual(r.salud, esperado.salud);
       assert.equal(r.alerta, esperado.alerta);
-      assert.deepEqual(r.movimiento, esperado.movimiento);
-      assert.equal(r.cargaMaxima, esperado.carga);
+      assert.deepEqual(r.movimiento, (esperado.e3 ?? esperado).movimiento);
+      assert.equal(r.cargaMaxima, (esperado.e3 ?? esperado).carga);
       assert.deepEqual(r.desgloses.atributos.fuerza, esperado.fuerza);
       assert.deepEqual(r.desgloses.aplicados.fortaleza, esperado.fortaleza);
       assert.equal(r.blindaje.tieneEscudoMelee, esperado.escudo);
@@ -251,7 +271,7 @@ describe("resolverFicha da exactamente lo mismo", () => {
     const r = resolverFicha(MUESTRAS.at(-1)!.sheet, { estadosCombate: [] });
     assert.deepEqual(
       { salud: r.salud, movimiento: r.movimiento, carga: r.cargaMaxima, alerta: r.alerta },
-      RESUMEN_SIN_ESTADOS,
+      RESUMEN_SIN_ESTADOS_E3,
     );
   });
 

@@ -72,18 +72,36 @@ function bonoTejidoConductor(sheet: Sheet, tipo: TipoDanio): number {
 
 export type LineaBlindaje = { etiqueta: string; valor: number };
 
+// Armadura natural de especie (Arköru 1, Matriz Biometálica, §14.7), ya resuelta en
+// la FichaResuelta: se suma a la armadura puesta y, como ella, no cuenta contra
+// Fuego ni Mental (M7, S19). `fuente` es de dónde sale, para su línea del desglose.
+export type ArmaduraNatural = { valor: number; fuente: string | null };
+export const SIN_ARMADURA_NATURAL: ArmaduraNatural = { valor: 0, fuente: null };
+
 // Desglose de qué aporta cada fuente contra `tipo` — fuente única de verdad
 // para blindajeContra() (la suma de estas líneas) y para "Bloquear daño"
 // (que las pinta una a una: "nada suma en silencio", mismo criterio que
 // AccionModal.tsx). Mental/Fuego devuelven una única línea a 0 explicando por
 // qué, en vez de una lista vacía sin más.
-export function desgloseBlindaje(sheet: Sheet, tipo: TipoDanio, escudoEnAlto: boolean): LineaBlindaje[] {
+export function desgloseBlindaje(
+  sheet: Sheet,
+  tipo: TipoDanio,
+  escudoEnAlto: boolean,
+  armaduraNatural: ArmaduraNatural,
+): LineaBlindaje[] {
   if (tipo === "mental") return [{ etiqueta: "Mental omite blindaje", valor: 0 }];
   if (tipo === "fuego") return [{ etiqueta: "Fuego (falta Mejora Ignífuga)", valor: 0 }];
 
   const lineas: LineaBlindaje[] = [];
   const armadura = armaduraEquipada(sheet);
   if (armadura) lineas.push({ etiqueta: armadura.label, valor: armadura.blindaje });
+
+  if (armaduraNatural.valor > 0) {
+    lineas.push({
+      etiqueta: armaduraNatural.fuente ? `Armadura natural · ${armaduraNatural.fuente}` : "Armadura natural",
+      valor: armaduraNatural.valor,
+    });
+  }
 
   const deflector = absorcionEscudoDeflector(sheet);
   if (deflector > 0) lineas.push({ etiqueta: "Escudo Deflector", valor: deflector });
@@ -104,6 +122,11 @@ export function desgloseBlindaje(sheet: Sheet, tipo: TipoDanio, escudoEnAlto: bo
 // levantarlo") — no hay estado persistente de "escudo levantado" que guardar
 // en la ficha, es una elección de este cálculo en concreto, igual que
 // "atacantes adicionales" en Defensa.
-export function blindajeContra(sheet: Sheet, tipo: TipoDanio, escudoEnAlto: boolean): number {
-  return desgloseBlindaje(sheet, tipo, escudoEnAlto).reduce((total, l) => total + l.valor, 0);
+export function blindajeContra(
+  sheet: Sheet,
+  tipo: TipoDanio,
+  escudoEnAlto: boolean,
+  armaduraNatural: ArmaduraNatural,
+): number {
+  return desgloseBlindaje(sheet, tipo, escudoEnAlto, armaduraNatural).reduce((total, l) => total + l.valor, 0);
 }

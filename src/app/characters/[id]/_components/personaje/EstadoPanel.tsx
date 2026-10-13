@@ -1,6 +1,6 @@
 "use client";
 
-import { vuelo, levitacion, pesoEquipado, type FichaResuelta } from "@/lib/rules";
+import { vuelo, levitacion, notasDeEstado, pesoEquipado, type FichaResuelta } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 
 // Vistazo rápido: el ajuste de vida y fatiga vive en Recursos (docs/tareas.md, 2026-09-27).
@@ -49,7 +49,8 @@ function Dato({
   valor: number;
   unidad?: string;
   tono?: string;
-  // De dónde sale un extra, p.ej. "+4 exoesqueleto": mismo tono que el valor.
+  // De dónde sale que no sea el general, p.ej. "+4 exoesqueleto" o "fórmula · Arköru":
+  // mismo tono que el valor.
   nota?: string;
 }) {
   return (
@@ -71,9 +72,8 @@ export function EstadoPanel({ ficha }: { ficha: FichaResuelta }) {
   const mov = ficha.movimiento;
   const vue = vuelo(sheet);
   const lev = levitacion(ficha.psionica.paraEfectos);
-  const conExo = mov.bonoExoesqueleto > 0;
-  const notaExo = conExo ? `+${mov.bonoExoesqueleto} exoesqueleto` : undefined;
-  const tonoMov = conExo ? "text-info" : "text-foreground";
+  const notas = notasDeEstado(ficha);
+  const tono = (nota: string | undefined) => (nota ? "text-info" : "text-foreground");
   const limiteCarga = ficha.cargaMaxima;
   const pesoArmas = pesoEquipado(sheet);
 
@@ -104,13 +104,14 @@ export function EstadoPanel({ ficha }: { ficha: FichaResuelta }) {
             label="Carga (armas)"
             valor={pesoArmas}
             unidad={`/ ${limiteCarga} kg`}
-            tono={pesoArmas > limiteCarga ? "text-danger" : "text-foreground"}
+            tono={pesoArmas > limiteCarga ? "text-danger" : tono(notas.carga)}
+            nota={notas.carga}
           />
-          <Dato label="Carrera" valor={mov.carrera} unidad="m" tono={tonoMov} nota={notaExo} />
-          <Dato label="Salto vertical" valor={mov.saltoVertical} unidad="cm" tono={tonoMov} nota={notaExo} />
-          <Dato label="Salto horizontal" valor={mov.saltoHorizontal} unidad="cm" tono={tonoMov} nota={notaExo} />
-          <Dato label="Escalada" valor={mov.escalada} unidad="m" tono={tonoMov} nota={notaExo} />
-          <Dato label="Nado" valor={mov.nado} unidad="m" tono={tonoMov} nota={notaExo} />
+          <Dato label="Carrera" valor={mov.carrera} unidad="m" tono={tono(notas.carrera)} nota={notas.carrera} />
+          <Dato label="Salto vertical" valor={mov.saltoVertical} unidad="cm" tono={tono(notas.saltoVertical)} nota={notas.saltoVertical} />
+          <Dato label="Salto horizontal" valor={mov.saltoHorizontal} unidad="cm" tono={tono(notas.saltoHorizontal)} nota={notas.saltoHorizontal} />
+          <Dato label="Escalada" valor={mov.escalada} unidad="m" tono={tono(notas.escalada)} nota={notas.escalada} />
+          <Dato label="Nado" valor={mov.nado} unidad="m" tono={tono(notas.nado)} nota={notas.nado} />
           {vue && <Dato label={`Vuelo (mov. aérea ${vue.nivel})`} valor={vue.velocidadM} unidad="m" tono="text-info" />}
           {lev && <Dato label={`Levitar (Traslación ${lev.nivel})`} valor={lev.velocidadM} unidad="m" tono="text-info" />}
         </div>

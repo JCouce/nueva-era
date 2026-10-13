@@ -14,6 +14,7 @@ import {
   type ModificadorConFuente,
 } from "./modificadores";
 import { especieDeFicha } from "./especie";
+import type { FormulaMovimiento } from "./formulaMovimiento";
 import { equipoPorId } from "../catalog/equipo";
 import { modificadoresDeEquipo } from "./equipo";
 import type { Sheet } from "./sheet";
@@ -166,7 +167,14 @@ function bonoFuerzaExoesqueleto(sheet: Sheet): number {
 // fórmulas saldrían en negativo, así que se cortan en 0 — salvo el salto
 // vertical, que Murillo fija en un mínimo de 15 cm (resuelve la pregunta 6
 // de docs/sistema.md, antes supuesto S6).
-export function movimiento(sheet: Sheet, mods: ModificadorConFuente[]) {
+//
+// `formula`: las constantes que cambia la especie (Arköru, Arianyi, §14.7), ya
+// resueltas en la FichaResuelta; FORMULA_MOVIMIENTO_GENERAL sin especie. Los +N
+// de especie (Zimethroni) llegan como Modificador "derivado" y se suman DESPUÉS
+// del mínimo o del corte en 0 (decisión del usuario 2026-10-13: salto vertical
+// con base 0 = 15 + 200). La carrera los suma dentro del corte, como antes de E3:
+// con 16 + base no se llega a cortar en ninguna ficha posible.
+export function movimiento(sheet: Sheet, mods: ModificadorConFuente[], formula: FormulaMovimiento) {
   const bonoExoesqueleto = bonoFuerzaExoesqueleto(sheet);
   const base =
     aplicado(sheet, "potencia", mods) +
@@ -179,10 +187,10 @@ export function movimiento(sheet: Sheet, mods: ModificadorConFuente[]) {
     // la ficha lo usa para señalarlo (ver personaje/EstadoPanel).
     bonoExoesqueleto,
     carrera: noNegativo(16 + base + bonoDerivado(mods, "carrera")), // metros
-    saltoVertical: Math.max(15, 15 * base), // centímetros, mínimo 15
-    saltoHorizontal: noNegativo(100 + base * 20), // centímetros
-    escalada: noNegativo(4 + Math.floor(base / 2)), // metros
-    nado: noNegativo(4 + Math.floor(base / 2)), // metros
+    saltoVertical: Math.max(15, formula.saltoVerticalPorPunto * base) + bonoDerivado(mods, "saltoVertical"), // cm
+    saltoHorizontal: noNegativo(100 + base * formula.saltoHorizontalPorPunto) + bonoDerivado(mods, "saltoHorizontal"), // cm
+    escalada: noNegativo(formula.escaladaBase + Math.floor(base / 2)) + bonoDerivado(mods, "escalada"), // metros
+    nado: noNegativo(formula.nadoBase + Math.floor(base / 2)) + bonoDerivado(mods, "nado"), // metros
   };
 }
 
@@ -196,13 +204,16 @@ export function movimiento(sheet: Sheet, mods: ModificadorConFuente[]) {
 // también: EQUIP lo cita para "carga transportable Y proezas de fuerza", las
 // dos cosas — hasta ahora solo se aplicaba a movimiento() (las proezas, por
 // S10), cerrando el hueco.
-export function cargaMaxima(sheet: Sheet, mods: ModificadorConFuente[]): number {
+// `multiplicador`: el de especie sobre el total (Arköru × 1,2, §14.7), ya resuelto
+// en la FichaResuelta; 1 sin especie. Con × 1,2 todos los tramos dan entero
+// (Fuerza × 24, 18, 12, 6, 0), así que no se redondea.
+export function cargaMaxima(sheet: Sheet, mods: ModificadorConFuente[], multiplicador: number): number {
   const fuerza = atributoEfectivo(sheet, "fuerza", mods) + bonoFuerzaExoesqueleto(sheet);
-  if (fuerza > 0) return fuerza * 20;
-  if (fuerza === 0) return 15;
+  if (fuerza > 0) return fuerza * 20 * multiplicador;
+  if (fuerza === 0) return 15 * multiplicador;
   // Suelo en 0, mismo criterio que S6 para el movimiento: el documento no
   // dice qué pasa si esta cuenta también se va a negativo.
-  return Math.max(0, 15 + fuerza * 5);
+  return Math.max(0, 15 + fuerza * 5) * multiplicador;
 }
 
 // Vuelo: solo existe si hay Movilidad Aérea equipada. A diferencia del resto

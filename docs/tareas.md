@@ -1349,7 +1349,7 @@ problema completo en `docs/modificadores-tiradas.md` §8. **Resuelta:** el §8 s
 el 2026-09-23 (condiciones con `alcance` desde el equipo) y la psiónica entra por
 `conPsionicaEnTiradaFija` (2026-09-30).
 
-### Especies reales ⬜ (plan cerrado 2026-10-09; E0, E1 y E2 hechas)
+### Especies reales ⬜ (plan cerrado 2026-10-09; E0, E1, E2 y E3 hechas)
 
 Plan y porqués en `docs/propuesta-especies.md` (decisiones del usuario en §5b, ninguna
 pendiente de Murillo); flujo en `docs/diagrama-especies.png`. Fuente: `docs/Especies.pdf`.
@@ -1427,10 +1427,16 @@ especie". `viaEspecie` sube `SCHEMA_VERSION` con paso de migración y test, como
       `equiparAction` (marca en servidor) y la Tienda; ficha v15)*
 
 **E3 — Derivados**
-- [ ] Movimiento: fórmulas del Arköru (salto vertical con mínimo 15 cm), nado del Arianyi,
+- [x] Movimiento: fórmulas del Arköru (salto vertical con mínimo 15 cm), nado del Arianyi,
       +4 m carrera y +2 m salto/nado/escalada de Zimethroni
-- [ ] Carga +20 % (Arköru)
-- [ ] Armadura natural 1 en `desgloseBlindaje` (se suma; no contra fuego ni mental)
+      *(`formulaMovimiento` en el rasgo → `FichaResuelta.formulaMovimiento` → `movimiento(…,
+      formula)`; Zimethroni con `Modificador` "derivado", sumado después del mínimo: base 0 =
+      215 cm. Notas en Estado con `notasDeEstado`)*
+- [x] Carga +20 % (Arköru)
+      *(`multiplicadorCarga` → `cargaMaxima(…, multiplicador)`; Fuerza 0 = 18 kg, nota "×1,2 · Arköru")*
+- [x] Armadura natural 1 en `desgloseBlindaje` (se suma; no contra fuego ni mental)
+      *(`armaduraNatural` en Matriz Biometálica → `FichaResuelta.blindaje.armaduraNatural`;
+      Bloquear daño la lee de ahí. El crítico desarmado, E4)*
 
 **Deploy de especies** (tras E3, decidido 2026-10-09: un solo reset y cada jugador crea su
 ficha una vez, ya con costes de casta, descuentos y derivados)
@@ -1466,6 +1472,9 @@ ficha una vez, ya con costes de casta, descuentos y derivados)
 - Regeneración de Ílkrem, descanso y raciones (Riux, Siervo): la app no lleva el tiempo
 
 **Aparte, detectado en la revisión**
+- [ ] El modificador `{ tipo: "derivado", id: "carga" }` existe en `DERIVADOS_MODIFICABLES`
+      pero `cargaMaxima` (`derivados.ts`) no lo suma. Hoy ninguna pieza lo usa; el día que
+      alguna lo traiga, no tendría efecto (detectado al plantear E3, 2026-10-13)
 - [ ] `setPrioridadAction` sobrescribe `Character.creditos` al cambiar la letra de
       Recursos sin restar lo gastado en la Tienda (el reset de especie solo lo tapa en ese caso)
 

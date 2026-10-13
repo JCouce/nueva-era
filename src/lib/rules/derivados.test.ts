@@ -1,5 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
+import { FORMULA_MOVIMIENTO_GENERAL } from "./formulaMovimiento";
 import { defaultSheet, type Sheet } from "./sheet";
 import {
   aplicado,
@@ -137,7 +138,7 @@ describe("movimiento (HOJA2: constantes nuevas)", () => {
     // Potencia 0 y Atletismo sin entrenar (-1) dan base -1: las fórmulas
     // saldrían negativas y se cortan en 0, salvo el salto vertical, con
     // mínimo 15 (Murillo, pregunta 6 de docs/sistema.md).
-    const m = movimiento(defaultSheet(), modificadoresActivos(defaultSheet()));
+    const m = movimiento(defaultSheet(), modificadoresActivos(defaultSheet()), FORMULA_MOVIMIENTO_GENERAL);
     assert.equal(m.saltoVertical, 15);
     assert.equal(m.carrera, 15); // 16 - 1
     for (const v of Object.values(m)) assert.ok(v >= 0, "ningún valor es negativo");
@@ -148,7 +149,7 @@ describe("movimiento (HOJA2: constantes nuevas)", () => {
       atributos: { fuerza: 4, agilidad: 4 }, // potencia = ceil((4+4)/2) = 4
       habilidades: { atletismo: { valor: 4, especialidades: [] } },
     });
-    const m = movimiento(s, modificadoresActivos(s)); // base = 4 + 4 = 8
+    const m = movimiento(s, modificadoresActivos(s), FORMULA_MOVIMIENTO_GENERAL); // base = 4 + 4 = 8
     assert.equal(m.carrera, 24); // 16 + 8
     assert.equal(m.saltoVertical, 120); // 15 * 8
     assert.equal(m.saltoHorizontal, 260); // 100 + 8*20
@@ -161,7 +162,7 @@ describe("movimiento (HOJA2: constantes nuevas)", () => {
       atributos: { fuerza: 1, agilidad: 2 }, // potencia = ceil((1+2)/2) = 2
       habilidades: { atletismo: { valor: 1, especialidades: [] } },
     });
-    assert.equal(movimiento(s, modificadoresActivos(s)).escalada, 5); // 4 + floor(3/2)
+    assert.equal(movimiento(s, modificadoresActivos(s), FORMULA_MOVIMIENTO_GENERAL).escalada, 5); // 4 + floor(3/2)
   });
 
   test("el exoesqueleto duplica su bono en las 5 fórmulas (supuesto S10)", () => {
@@ -177,7 +178,7 @@ describe("movimiento (HOJA2: constantes nuevas)", () => {
       nivel: 2,
       instaladoEnId: "a1",
     });
-    const m = movimiento(s, modificadoresActivos(s)); // base = 3 (potencia) + 4 (2×nivel 2) + 3 (atletismo) = 10
+    const m = movimiento(s, modificadoresActivos(s), FORMULA_MOVIMIENTO_GENERAL); // base = 3 (potencia) + 4 (2×nivel 2) + 3 (atletismo) = 10
     assert.equal(m.carrera, 26); // 16 + 10
     assert.equal(m.saltoVertical, 150); // 15 * 10
     assert.equal(m.saltoHorizontal, 300); // 100 + 10*20
@@ -198,23 +199,23 @@ describe("movimiento (HOJA2: constantes nuevas)", () => {
       atributos: { fuerza: 3, agilidad: 2 },
       habilidades: { atletismo: { valor: 3, especialidades: [] } },
     });
-    assert.equal(movimiento(s, modificadoresActivos(s)).carrera, 22); // 16 + 6 (potencia 3 + atletismo 3)
+    assert.equal(movimiento(s, modificadoresActivos(s), FORMULA_MOVIMIENTO_GENERAL).carrera, 22); // 16 + 6 (potencia 3 + atletismo 3)
   });
 });
 
 describe("cargaMaxima (docs/sistema.md §5.5)", () => {
   test("Fuerza 0 son 15 kg, no 0 (caso especial)", () => {
-    assert.equal(cargaMaxima(defaultSheet(), modificadoresActivos(defaultSheet())), 15);
+    assert.equal(cargaMaxima(defaultSheet(), modificadoresActivos(defaultSheet()), 1), 15);
   });
 
   test("Fuerza positiva es Fuerza × 20", () => {
     const s = ficha({ atributos: { fuerza: 3 } });
-    assert.equal(cargaMaxima(s, modificadoresActivos(s)), 60);
+    assert.equal(cargaMaxima(s, modificadoresActivos(s), 1), 60);
   });
 
   test("Fuerza negativa resta 5 por punto por debajo de 0", () => {
     const s = ficha({ atributos: { fuerza: -1 } });
-    assert.equal(cargaMaxima(s, modificadoresActivos(s)), 10);
+    assert.equal(cargaMaxima(s, modificadoresActivos(s), 1), 10);
   });
 
   test("el exoesqueleto duplica su bono también aquí (cierra el hueco de S10)", () => {
@@ -228,7 +229,7 @@ describe("cargaMaxima (docs/sistema.md §5.5)", () => {
       nivel: 2,
       instaladoEnId: "a1",
     });
-    assert.equal(cargaMaxima(s, modificadoresActivos(s)), (3 + 4) * 20); // 140
+    assert.equal(cargaMaxima(s, modificadoresActivos(s), 1), (3 + 4) * 20); // 140
 
     // El bono no se filtra a la Fuerza que se ve en Atributos.
     assert.deepEqual(desgloseAtributo(s, "fuerza", modificadoresActivos(s)), {

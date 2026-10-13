@@ -70,7 +70,9 @@ const ETIQUETA_UMBRAL: Record<Exclude<UmbralSalud, "normal"> | Exclude<UmbralFat
 // cubre esto: "velocidad a la mitad" y "carga -25%/-50%" no son deltas
 // planas (son un porcentaje sobre un valor ya calculado) y no encajan en
 // Modificador — quedan para 0.2b, con un mecanismo propio en
-// movimiento()/cargaMaxima() (derivados.ts).
+// movimiento()/cargaMaxima() (derivados.ts). Ojo: cargaMaxima ya recibe un
+// multiplicador (el de especie, §14.7) resuelto en la FichaResuelta; un "−25 %"
+// de estado tendría que componerse con él ahí, no sustituirlo.
 export function modificadoresDeUmbrales(
   pgActual: number,
   pgMax: number,

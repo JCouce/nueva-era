@@ -6,13 +6,15 @@
 // antes del deploy.
 //
 // Cada rasgo declara su MotorMetadata (docs/motor.md). Los que se construyen en
-// tandas posteriores (E2 creación, E3 derivados, M1/E4 tiradas, E5 otras áreas)
+// tandas posteriores (M1/E4 tiradas, E5 otras áreas)
 // ya están aquí con su clasificación y `estado` pendiente/bloqueado; sus datos
 // operativos (constantes de movimiento, casillas…) se añaden al rasgo cuando la
 // tanda que los consume los necesite, no antes. Los de creación (costes, bolsa)
-// ya están (E2a), y la Resonancia +1 y el kerzul también (E2b).
+// ya están (E2a), la Resonancia +1 y el kerzul (E2b), y movimiento, carga y
+// armadura natural (E3).
 import type { Modificador } from "../rules/modificadores";
 import type { MotorMetadata } from "../rules/motor";
+import type { FormulaMovimiento } from "../rules/formulaMovimiento";
 import { ATRIBUTOS, type AtributoId } from "../rules/atributos";
 import type { HabilidadId } from "../rules/habilidades";
 import type { MaterialPieza } from "./equipo";
@@ -41,6 +43,13 @@ export type Rasgo = {
   // Piezas de ese material sin tope de rareza, en creación (Acceso al Kerzul, M9).
   // Lo lee excepcionesRareza (rules/especie.ts) → puedeEquiparSinRareza (rules/equipo.ts).
   excepcionRareza?: ExcepcionRareza;
+  // Derivados que cambian de fórmula con la especie (§14.7). Los resuelve especie.ts
+  // (formulaMovimientoDeEspecie, multiplicadorCargaDeEspecie, armaduraNaturalDeEspecie)
+  // una vez en la FichaResuelta. Lo que se SUMA a un derivado (Zimethroni) no va
+  // aquí: es un Modificador "derivado".
+  formulaMovimiento?: Partial<FormulaMovimiento>; // sustituye esas constantes de la general
+  multiplicadorCarga?: number; // sobre el total de la carga sin penalizador (§5.5)
+  armaduraNatural?: number; // línea propia en el blindaje, sumada a la armadura puesta
   motor: MotorMetadata[];
 };
 
@@ -113,14 +122,17 @@ const casilla = (id: string): MotorMetadata => ({
   bloqueoPor: "M1 (montarTirada: casillas de especie)",
 });
 
-// Fórmula de un derivado (movimiento, carga) que no toca ninguna acción todavía.
-const derivadoPendiente = (tanda: string): MotorMetadata => ({
+// Fórmula de un derivado (movimiento, carga): se ve en Personaje → Estado, pero no
+// la lee ninguna acción (motor.md, "Derivados estáticos"), así que no tiene
+// mecanismo. suma_derivado no encaja: exige una acción fija que consulte el número
+// (como Bloquear daño con el blindaje), y el movimiento y la carga no los consulta
+// ninguna. El día que los penalizadores de carga toquen tiradas, se reclasifica.
+const derivadoEstatico: MotorMetadata = {
   tipo: "numerico",
   afecta: { modo: "ninguna" },
   mecanismo: null,
-  estado: "pendiente",
-  bloqueoPor: tanda,
-});
+  estado: "construido",
+};
 
 const narrativo: MotorMetadata = { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" };
 
@@ -286,7 +298,14 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         id: "movimiento",
         label: "Hiperactivo",
         texto: "+4 m de carrera; +200 cm de salto vertical y horizontal; +2 m de nado y escalada.",
-        motor: [derivadoPendiente("E3 (movimiento por especie)")],
+        modificadores: [
+          { tipo: "derivado", id: "carrera", valor: 4 },
+          { tipo: "derivado", id: "saltoVertical", valor: 200 },
+          { tipo: "derivado", id: "saltoHorizontal", valor: 200 },
+          { tipo: "derivado", id: "nado", valor: 2 },
+          { tipo: "derivado", id: "escalada", valor: 2 },
+        ],
+        motor: [derivadoEstatico],
       },
       {
         id: "tras_esquivar",
@@ -488,7 +507,8 @@ export const ESPECIES: Especie[] = [
         id: "movimiento_acuatico",
         label: "Movimiento Acuático",
         texto: "Nado: 8 + (Potencia + Atletismo)/2 m, sustituye al general.",
-        motor: [derivadoPendiente("E3 (movimiento por especie)")],
+        formulaMovimiento: { nadoBase: 8 },
+        motor: [derivadoEstatico],
       },
       {
         id: "apnea",
@@ -511,13 +531,15 @@ export const ESPECIES: Especie[] = [
         label: "Movilidad",
         texto:
           "Salto vertical 18 × (Pot + Atl) cm (mínimo 15); horizontal 100 + (Pot + Atl) × 25 cm; escalada 8 + (Pot + Atl)/2 m; nado 2 + (Pot + Atl)/2 m.",
-        motor: [derivadoPendiente("E3 (movimiento por especie)")],
+        formulaMovimiento: { saltoVerticalPorPunto: 18, saltoHorizontalPorPunto: 25, escaladaBase: 8, nadoBase: 2 },
+        motor: [derivadoEstatico],
       },
       {
         id: "carga",
         label: "Capacidad de Carga",
         texto: "Carga total × 1,2.",
-        motor: [derivadoPendiente("E3 (carga por especie)")],
+        multiplicadorCarga: 1.2,
+        motor: [derivadoEstatico],
       },
       {
         id: "inamovibles",
@@ -529,8 +551,11 @@ export const ESPECIES: Especie[] = [
         id: "matriz_biometalica",
         label: "Matriz Biometálica",
         texto: "Armadura natural 1, se suma a la puesta (no contra Fuego ni Mental). Crítico desarmado: daño letal.",
+        armaduraNatural: 1,
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "pendiente" },
+          // Mismo mecanismo que el blindaje de una armadura: alimenta desgloseBlindaje,
+          // que lee Bloquear daño.
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "pendiente" },
         ],
       },

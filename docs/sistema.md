@@ -941,7 +941,9 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 > compacto en el editor de NPC.
 > **E2 construida:** coste de habilidad por casta, descuentos psiónicos (Arianyi, Maolher),
 > bolsa de aumentos visible (E2a), Resonancia +1 del Arianyi y acceso al kerzul del Arköru
-> (E2b), todo en 14.6. Quedan E3 → M1 → E4 → E5 en `docs/tareas.md`, "Especies reales".
+> (E2b), todo en 14.6.
+> **E3 construida:** movimiento, carga y armadura natural por especie (14.7). Quedan M1 → E4 →
+> E5 en `docs/tareas.md`, "Especies reales".
 
 ### 14.1 Lista y elección `[FIRME · ESP + usuario M10, M20]`
 
@@ -1123,6 +1125,29 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
   es un +N.
 - **Arköru, armadura natural 1:** línea propia en el blindaje, **se suma** a la armadura
   puesta; no vale contra Fuego ni Mental (M7, mismo criterio que S19).
+- **Zimethroni, orden del +N** (decisión del usuario 2026-10-13): los +N se suman **después**
+  del mínimo y del corte en 0. Salto vertical = `max(15, 15 × base) + 200`: con base 0 o
+  negativa, 215 cm. Escalada, nado y salto horizontal igual (`max(0, …) + N`). La carrera
+  suma su +4 dentro del corte, como antes de E3: con 16 + base no se llega a cortar.
+
+*En la app (E3), todo mecanizado; se resuelve una vez en la `FichaResuelta` y le llega
+también al NPC en modo libre (14.3):*
+- **Fórmula de movimiento** (Arköru, Arianyi): `formulaMovimiento` en el rasgo (solo las
+  constantes que cambian: `saltoVerticalPorPunto`, `saltoHorizontalPorPunto`, `escaladaBase`,
+  `nadoBase`) → `formulaMovimientoDeEspecie` (`rules/especie.ts`) la completa con
+  `FORMULA_MOVIMIENTO_GENERAL` (15/20/4/4, `rules/formulaMovimiento.ts`) → `movimiento(sheet,
+  mods, formula)`. La base (Potencia + Atletismo + exoesqueleto) no cambia.
+- **+N de Zimethroni**: `Modificador` `{ tipo: "derivado" }` en el rasgo Hiperactivo;
+  `DERIVADOS_MODIFICABLES` gana `saltoVertical`, `saltoHorizontal`, `escalada` y `nado`.
+- **Carga**: `multiplicadorCarga: 1.2` en el rasgo → `cargaMaxima(sheet, mods,
+  multiplicador)`, sobre el total de 5.5 con el exoesqueleto dentro. Los tres tramos dan
+  entero (Fuerza × 24, 18, 12, 6), sin redondeo.
+- **Armadura natural**: `armaduraNatural: 1` en Matriz Biometálica →
+  `FichaResuelta.blindaje.armaduraNatural` → `desgloseBlindaje(…, armaduraNatural)`, línea
+  "Armadura natural · Arköru" en Bloquear daño. El crítico desarmado letal sigue pendiente (E4).
+- **Notas en Personaje → Estado** (`notasDeEstado`, `rules/fichaResuelta.ts`): junto al
+  valor, de dónde sale que no sea el general: "fórmula · Arköru", "+200 · Casa de
+  Zimethroni", "×1,2 · Arköru"; conviven con la del exoesqueleto.
 
 ### 14.8 Tiradas
 

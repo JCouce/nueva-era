@@ -1,4 +1,4 @@
-import { ATRIBUTOS, HABILIDADES, ACCIONES, ALCANCE_ARROJADA, disciplinaPorId } from "@/lib/rules";
+import { ATRIBUTOS, HABILIDADES, ACCIONES, ALCANCE_ARROJADA, disciplinaPorId, ETIQUETA_DERIVADO } from "@/lib/rules";
 import type {
   Armadura,
   ArmaFuego,
@@ -49,7 +49,7 @@ function signo(n: number) {
 function etiquetaModificador(m: Modificador): string {
   if (m.tipo === "atributo") return ATRIBUTOS.find((a) => a.id === m.id)!.label;
   if (m.tipo === "habilidad") return HABILIDADES.find((h) => h.id === m.id)!.label;
-  if (m.tipo === "derivado") return m.id;
+  if (m.tipo === "derivado") return ETIQUETA_DERIVADO[m.id];
   if (m.tipo === "disciplina") return disciplinaPorId(m.id).label;
   const a = m.alcance;
   if (a.tipo === "tiradaId") return ACCIONES.find((t) => t.id === a.id)?.label ?? a.id;
