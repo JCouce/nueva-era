@@ -8,11 +8,13 @@
 // Cada rasgo declara su MotorMetadata (docs/motor.md). Los que se construyen en
 // tandas posteriores (E2 creación, E3 derivados, M1/E4 tiradas, E5 otras áreas)
 // ya están aquí con su clasificación y `estado` pendiente/bloqueado; sus datos
-// operativos (costes, constantes de movimiento, casillas…) se añaden al rasgo
-// cuando la tanda que los consume los necesite, no antes.
+// operativos (constantes de movimiento, casillas…) se añaden al rasgo cuando la
+// tanda que los consume los necesite, no antes. Los de creación (costes, bolsa)
+// ya están: E2a.
 import type { Modificador } from "../rules/modificadores";
 import type { MotorMetadata } from "../rules/motor";
 import { ATRIBUTOS, type AtributoId } from "../rules/atributos";
+import type { HabilidadId } from "../rules/habilidades";
 
 // Peso/altura de referencia (§14.5): solo se enseña junto a los campos libres de
 // Identidad, no se valida. Peso = min-max + porFuerza × Fuerza con especie (M21).
@@ -31,7 +33,20 @@ export type Rasgo = {
   // ninguno de los cinco tipos, así que estos rasgos no llevan MotorMetadata.
   // TODO(revisar): confirmar con el usuario que es así y no un tipo nuevo.
   creacion?: true;
+  // Datos de los rasgos de creación (§14.6). Los lee ajustesDeCoste / bolsaDeAumentos
+  // (rules/especie.ts); el resto del motor no los mira.
+  costes?: CostesRasgo;
+  bolsaAumentos?: number; // créditos aparte, solo para aumentos (Humanos, M3)
   motor: MotorMetadata[];
+};
+
+// `etiqueta`: palabra corta para la pista junto al coste ("−1 casta").
+export type CostesRasgo = {
+  etiqueta: string;
+  // −1 (mínimo 1) o +1 al coste de cada nivel de esa habilidad, creación y XP (M11).
+  habilidades?: Partial<Record<HabilidadId, -1 | 1>>;
+  psionicaNivel1?: number; // coste del nivel 1 de cada disciplina, en vez de 3 (M4)
+  psionicaPorNivel?: number; // se suma al coste de cada nivel de cualquier disciplina (M11)
 };
 
 // Casta o linaje: se suman a la especie (§14.1, Noble Ílkrem = Carácter +1 y Fuerza +1).
@@ -128,11 +143,12 @@ const ref = (pMin: number, pMax: number, porFuerza: number, aMin: number, aMax: 
 
 // --- Manduk: castas y linajes ---------------------------------------------
 
-const costeCasta = (texto: string): Rasgo => ({
+const costeCasta = (texto: string, habilidades: Partial<Record<HabilidadId, -1 | 1>>): Rasgo => ({
   id: "coste_habilidad",
   label: "Coste de habilidades",
   texto,
   creacion: true,
+  costes: { etiqueta: "casta", habilidades },
   motor: [],
 });
 
@@ -150,7 +166,7 @@ const CASTAS_MANDUK: OpcionEspecie[] = [
         texto: "Un éxito cuenta como crítico en tiradas contra intimidación y miedo (casilla en Salvación de Voluntad).",
         motor: [casilla("salv_voluntad")],
       },
-      costeCasta("Actitud cuesta 1 menos por nivel (mínimo 1)."),
+      costeCasta("Actitud cuesta 1 menos por nivel (mínimo 1).", { actitud: -1 }),
     ],
   },
   {
@@ -162,6 +178,7 @@ const CASTAS_MANDUK: OpcionEspecie[] = [
       atributos({ inteligencia: 1, percepcion: 1, fuerza: -1, aguante: -1, caracter: -1 }),
       costeCasta(
         "Biociencia, Cultura y Tecnociencia cuestan 1 menos por nivel (mínimo 1); Atletismo, Combate Melee y Combate a Distancia, 1 más.",
+        { biociencia: -1, cultura: -1, tecnociencia: -1, atletismo: 1, combate_melee: 1, combate_distancia: 1 },
       ),
     ],
   },
@@ -188,6 +205,7 @@ const CASTAS_MANDUK: OpcionEspecie[] = [
       },
       costeCasta(
         "Atletismo, Combate a Distancia y Combate Melee cuestan 1 menos por nivel (mínimo 1); Biociencia, Cultura y Tecnociencia, 1 más.",
+        { atletismo: -1, combate_distancia: -1, combate_melee: -1, biociencia: 1, cultura: 1, tecnociencia: 1 },
       ),
     ],
   },
@@ -312,6 +330,7 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         label: "Acceso psiónico",
         texto: "Cada nivel de cualquier disciplina cuesta 1 menos (N × 3 − 1), en creación y con XP.",
         creacion: true,
+        costes: { etiqueta: "Maolher", psionicaPorNivel: -1 },
         motor: [],
       },
       {
@@ -388,6 +407,7 @@ export const ESPECIES: Especie[] = [
         texto:
           "60.000 créditos aparte, solo para aumentos; se gastan antes que los créditos normales y lo que sobre al aprobar se pierde.",
         creacion: true,
+        bolsaAumentos: 60_000,
         motor: [],
       },
     ],
@@ -441,6 +461,7 @@ export const ESPECIES: Especie[] = [
         label: "Evolución Psiónica (coste)",
         texto: "El nivel 1 de cada disciplina, Resonancia incluida, cuesta 2 en vez de 3.",
         creacion: true,
+        costes: { etiqueta: "arianyi", psionicaNivel1: 2 },
         motor: [],
       },
       {

@@ -11,6 +11,11 @@ export const SIN_ESTADOS: EstadoActivo[] = [];
 // CharacterSheet, NpcEditor y el panel de acciones de un NPC en combate. Deps sobre la
 // ficha entera, sin parciales: cuesta ~1 ms y así nada se queda con un cálculo viejo
 // (p. ej. el índice de casillas al cambiar de especie).
-export function useFichaResuelta(sheet: Sheet, estadosCombate: EstadoActivo[]): FichaResuelta {
-  return useMemo(() => resolverFicha(sheet, { estadosCombate }), [sheet, estadosCombate]);
+// `libre`: editor de NPC (sin costes de creación ni bolsa de aumentos, §14.3).
+export function useFichaResuelta(
+  sheet: Sheet,
+  estadosCombate: EstadoActivo[],
+  { libre = false }: { libre?: boolean } = {},
+): FichaResuelta {
+  return useMemo(() => resolverFicha(sheet, { estadosCombate, libre }), [sheet, estadosCombate, libre]);
 }

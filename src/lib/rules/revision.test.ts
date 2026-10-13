@@ -13,6 +13,7 @@ import {
   type AccionRevision,
   type EstadoFicha,
 } from "./revision";
+import { AJUSTE_NEUTRO } from "./progresion";
 
 const conPrioridades = (prioridades: Prioridades, especieId: string | null = "humano"): Sheet => ({
   ...defaultSheet(),
@@ -108,7 +109,7 @@ describe("faltaParaEnviar", () => {
 describe("avisosParaEnviar", () => {
   test("nada gastado: avisa de los tres pools con presupuesto", () => {
     const sheet = conPrioridades({ atributos: "E", habilidades: "D", dotes: "C", psionica: "B", recursos: "A" });
-    assert.deepEqual(avisosParaEnviar(sheet), [
+    assert.deepEqual(avisosParaEnviar(sheet, AJUSTE_NEUTRO), [
       "Te quedan 8 puntos de atributos sin gastar",
       "Te quedan 9 puntos de habilidades sin gastar",
       "Te quedan 12 puntos de psiónica sin gastar",
@@ -120,22 +121,22 @@ describe("avisosParaEnviar", () => {
     sheet = setAtributoValue(sheet, "fuerza", 2); // 6
     sheet = setAtributoValue(sheet, "agilidad", 1); // 2 → 8 de 10
     sheet = setAtributoValue(sheet, "aguante", 1); // 2 → 10
-    sheet = setHabilidadValue(sheet, "atletismo", 3); // 6 de 6
-    assert.deepEqual(avisosParaEnviar(sheet), []);
+    sheet = setHabilidadValue(sheet, "atletismo", 3, AJUSTE_NEUTRO); // 6 de 6
+    assert.deepEqual(avisosParaEnviar(sheet, AJUSTE_NEUTRO), []);
   });
 
   test("singular con 1 punto", () => {
     let sheet = conPrioridades({ atributos: "E", habilidades: "E", dotes: "C", psionica: "E", recursos: "A" });
-    sheet = setHabilidadValue(sheet, "atletismo", 2); // 3 de 6
-    sheet = setHabilidadValue(sheet, "actitud", 2); // 6
+    sheet = setHabilidadValue(sheet, "atletismo", 2, AJUSTE_NEUTRO); // 3 de 6
+    sheet = setHabilidadValue(sheet, "actitud", 2, AJUSTE_NEUTRO); // 6
     sheet = setAtributoValue(sheet, "fuerza", 2); // 6 de 8
     sheet = setAtributoValue(sheet, "caracter", -1); // devuelve 1 → 5 de 8, quedan 3
     sheet = setAtributoValue(sheet, "agilidad", 1); // 7 de 8, queda 1
-    assert.deepEqual(avisosParaEnviar(sheet), ["Te queda 1 punto de atributos sin gastar"]);
+    assert.deepEqual(avisosParaEnviar(sheet, AJUSTE_NEUTRO), ["Te queda 1 punto de atributos sin gastar"]);
   });
 
   test("S+ (presupuesto infinito, pruebas): no avisa de infinito sin gastar", () => {
     const sheet = conPrioridades({ atributos: "S+", habilidades: "S+", dotes: "S+", psionica: "S+", recursos: "S+" });
-    assert.deepEqual(avisosParaEnviar(sheet), []);
+    assert.deepEqual(avisosParaEnviar(sheet, AJUSTE_NEUTRO), []);
   });
 });

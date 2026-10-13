@@ -18,7 +18,8 @@ import {
   salud,
   type Fuente,
 } from "./derivados";
-import { especieDeFicha, type EspecieResuelta } from "./especie";
+import { ajustesDeCoste, bolsaDeAumentos, especieDeFicha, type EspecieResuelta } from "./especie";
+import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
 import { indiceDeCondiciones, modificadoresDeEquipo, type IndiceCondiciones } from "./equipo";
 import { modificadoresDeEstados, type EstadoActivo } from "./estados";
 import type { ModificadorConFuente } from "./modificadores";
@@ -47,11 +48,18 @@ export type FichaResuelta = {
   blindaje: { tieneEscudoMelee: boolean };
   // Casillas con alcance del equipo, indexadas una vez (consultaIndiceCondiciones).
   indiceCondiciones: IndiceCondiciones;
+  // Creación y progresión (§14.6): el ajuste de coste que reciben los puntos, la
+  // compra y el coste del siguiente nivel, y la bolsa de aumentos (null si la
+  // especie no la trae). En modo libre (NPC, §14.3), neutros.
+  ajusteCoste: AjusteCoste;
+  bolsaAumentos: number | null;
 };
 
-export type OpcionesFicha = { estadosCombate: EstadoActivo[] };
+// `libre`: editor de NPC del máster. Le llega todo lo derivado de la especie, pero
+// no lo de creación (costes por casta, descuentos psiónicos, bolsa de aumentos).
+export type OpcionesFicha = { estadosCombate: EstadoActivo[]; libre?: boolean };
 
-export function resolverFicha(sheet: Sheet, { estadosCombate }: OpcionesFicha): FichaResuelta {
+export function resolverFicha(sheet: Sheet, { estadosCombate, libre = false }: OpcionesFicha): FichaResuelta {
   const especie = especieDeFicha(sheet);
   // = [...modificadoresActivos(sheet), ...estados], sin volver a resolver la especie.
   const modificadores: ModificadorConFuente[] = [
@@ -79,5 +87,7 @@ export function resolverFicha(sheet: Sheet, { estadosCombate }: OpcionesFicha): 
     cargaMaxima: cargaMaxima(sheet, modificadores),
     blindaje: { tieneEscudoMelee: tieneEscudoMelee(sheet) },
     indiceCondiciones: indiceDeCondiciones(sheet),
+    ajusteCoste: libre ? AJUSTE_NEUTRO : ajustesDeCoste(especie),
+    bolsaAumentos: libre ? null : bolsaDeAumentos(especie),
   };
 }

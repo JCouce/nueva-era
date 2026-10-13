@@ -138,7 +138,7 @@ export function PersonajeTab({
         <BarraEnvio
           characterId={envio.characterId}
           falta={faltaParaEnviar(pasos)}
-          avisos={avisosParaEnviar(sheet)}
+          avisos={avisosParaEnviar(sheet, ficha.ajusteCoste)}
           reviewNote={envio.reviewNote}
           esperarGuardados={envio.esperarGuardados}
         />

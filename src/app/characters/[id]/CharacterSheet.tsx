@@ -309,7 +309,7 @@ export function CharacterSheet({
     );
   };
   const commitHabilidad = (id: HabilidadId, value: number) => {
-    setSheet((s) => setHabilidadValue(s, id, value));
+    setSheet((s) => setHabilidadValue(s, id, value, ficha.ajusteCoste));
     scheduleCommit(
       `habilidad:${id}`,
       () => setHabilidadAction(characterId, id, value),
@@ -319,7 +319,7 @@ export function CharacterSheet({
     );
   };
   const commitDisciplina = (id: DisciplinaId, value: number) => {
-    setSheet((s) => setDisciplinaValue(s, id, value));
+    setSheet((s) => setDisciplinaValue(s, id, value, ficha.ajusteCoste));
     scheduleCommit(
       `disciplina:${id}`,
       () => setDisciplinaAction(characterId, id, value),
@@ -329,7 +329,7 @@ export function CharacterSheet({
     );
   };
   const commitAddEspecialidad = (id: HabilidadId, nombre: string) => {
-    setSheet((s) => addEspecialidad(s, id, nombre));
+    setSheet((s) => addEspecialidad(s, id, nombre, ficha.ajusteCoste));
     runSave(() => addEspecialidadAction(characterId, id, nombre));
   };
   const commitRemoveEspecialidad = (id: HabilidadId, nombre: string) => {
@@ -469,8 +469,6 @@ export function CharacterSheet({
     scheduleIdentity();
   };
 
-  const puntosAttr = puntosAtributosDisponibles(sheet);
-  const puntosSkill = puntosHabilidadesDisponibles(sheet);
 
   // Fase 6b bloque 3: mi fila en el combate activo, si la hay. `combate` ya
   // viene null desde el servidor si este personaje no está metido dentro
@@ -481,6 +479,9 @@ export function CharacterSheet({
   // pestañas: con los estados de combate dentro, Personaje y Acciones ven los mismos
   // números.
   const ficha = useFichaResuelta(sheet, miCombatiente?.estados ?? SIN_ESTADOS);
+  const puntosAttr = puntosAtributosDisponibles(sheet);
+  // Con el ajuste de coste de la especie (§14.6), el mismo que aplica el servidor.
+  const puntosSkill = puntosHabilidadesDisponibles(sheet, ficha.ajusteCoste);
   const { vida, fatiga } = ficha.salud;
   const esMiTurno = !!(miCombatiente && combate!.combatientes[combate!.turnoIndex]?.id === miCombatiente.id);
   const misEstadosActivos = miCombatiente ? describirEstadosActivos(miCombatiente.estados) : [];
@@ -653,7 +654,7 @@ export function CharacterSheet({
           )}
           {activeEfectivo === "skills" && (
             <HabilidadesTab
-              sheet={sheet}
+              ficha={ficha}
               puntosDisponibles={puntosSkill}
               aprobada={aprobada}
               xp={xp}
@@ -664,7 +665,7 @@ export function CharacterSheet({
           )}
           {activeEfectivo === "dotes" && <DotesTab sheet={sheet} />}
           {activeEfectivo === "psionica" && (
-            <PsionicaTab sheet={sheet} aprobada={aprobada} xp={xp} onSet={commitDisciplina} />
+            <PsionicaTab ficha={ficha} aprobada={aprobada} xp={xp} onSet={commitDisciplina} />
           )}
           {activeEfectivo === "acciones" && (
             <AccionesTab
@@ -687,6 +688,7 @@ export function CharacterSheet({
               sheet={sheet}
               creditos={creditos}
               topeRareza={topeRareza}
+              bolsaAumentos={ficha.bolsaAumentos}
               onEquipar={commitEquipar}
               onComprarGranada={commitComprarGranada}
               onComprarFarmaco={commitComprarFarmaco}

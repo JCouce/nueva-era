@@ -15,6 +15,7 @@ import {
 } from "./psionica";
 import { resetBuild } from "./creacion";
 import { DISCIPLINAS, DISCIPLINA_IDS, PSIONICA, disciplinaPorId } from "../catalog/psionica";
+import { AJUSTE_NEUTRO } from "./progresion";
 
 function conLetra(letra: Sheet["prioridades"]["psionica"]): Sheet {
   const s = defaultSheet();
@@ -108,40 +109,40 @@ describe("catálogo de psiónica", () => {
 
 describe("compra de disciplinas", () => {
   test("coste triangular N×3: nivel 2 cuesta 3+6", () => {
-    const s = setDisciplinaValue(setDisciplinaValue(conLetra("A"), "traslacion", 1), "traslacion", 2);
+    const s = setDisciplinaValue(setDisciplinaValue(conLetra("A"), "traslacion", 1, AJUSTE_NEUTRO), "traslacion", 2, AJUSTE_NEUTRO);
     assert.equal(nivelDisciplina(s, "traslacion"), 2);
-    assert.equal(puntosPsionicaGastados(s), 9);
-    assert.equal(puntosPsionicaDisponibles(s), 18 - 9);
+    assert.equal(puntosPsionicaGastados(s, AJUSTE_NEUTRO), 9);
+    assert.equal(puntosPsionicaDisponibles(s, AJUSTE_NEUTRO), 18 - 9);
   });
 
   test("sin pool no se compra", () => {
-    const s = setDisciplinaValue(conLetra(null), "traslacion", 1);
+    const s = setDisciplinaValue(conLetra(null), "traslacion", 1, AJUSTE_NEUTRO);
     assert.equal(nivelDisciplina(s, "traslacion"), 0);
   });
 
   test("letra A llega a nivel 3 en una disciplina pero no a 4", () => {
     let s = conLetra("A");
-    for (const n of [1, 2, 3, 4]) s = setDisciplinaValue(s, "resonancia", n);
+    for (const n of [1, 2, 3, 4]) s = setDisciplinaValue(s, "resonancia", n, AJUSTE_NEUTRO);
     assert.equal(nivelDisciplina(s, "resonancia"), 3);
   });
 
   test("requisito: Singularidad no se compra sin Traslación 2", () => {
-    let s = setDisciplinaValue(conLetra("A"), "singularidad", 1);
+    let s = setDisciplinaValue(conLetra("A"), "singularidad", 1, AJUSTE_NEUTRO);
     assert.equal(nivelDisciplina(s, "singularidad"), 0);
-    s = setDisciplinaValue(setDisciplinaValue(s, "traslacion", 1), "traslacion", 2);
-    s = setDisciplinaValue(s, "singularidad", 1);
+    s = setDisciplinaValue(setDisciplinaValue(s, "traslacion", 1, AJUSTE_NEUTRO), "traslacion", 2, AJUSTE_NEUTRO);
+    s = setDisciplinaValue(s, "singularidad", 1, AJUSTE_NEUTRO);
     assert.equal(nivelDisciplina(s, "singularidad"), 1);
-    assert.equal(puntosPsionicaDisponibles(s), 18 - 9 - 3);
+    assert.equal(puntosPsionicaDisponibles(s, AJUSTE_NEUTRO), 18 - 9 - 3);
   });
 
   test("no se baja una disciplina por debajo de lo que otra comprada requiere", () => {
-    let s = setDisciplinaValue(setDisciplinaValue(conLetra("A"), "traslacion", 1), "traslacion", 2);
-    s = setDisciplinaValue(s, "singularidad", 1);
+    let s = setDisciplinaValue(setDisciplinaValue(conLetra("A"), "traslacion", 1, AJUSTE_NEUTRO), "traslacion", 2, AJUSTE_NEUTRO);
+    s = setDisciplinaValue(s, "singularidad", 1, AJUSTE_NEUTRO);
     assert.equal(sueloPorRequisitos(s, "traslacion"), 2);
-    assert.equal(nivelDisciplina(setDisciplinaValue(s, "traslacion", 1), "traslacion"), 2);
+    assert.equal(nivelDisciplina(setDisciplinaValue(s, "traslacion", 1, AJUSTE_NEUTRO), "traslacion"), 2);
     // Quitando antes Singularidad, ya se puede bajar
-    s = setDisciplinaValue(s, "singularidad", 0);
-    assert.equal(nivelDisciplina(setDisciplinaValue(s, "traslacion", 1), "traslacion"), 1);
+    s = setDisciplinaValue(s, "singularidad", 0, AJUSTE_NEUTRO);
+    assert.equal(nivelDisciplina(setDisciplinaValue(s, "traslacion", 1, AJUSTE_NEUTRO), "traslacion"), 1);
   });
 
   test("nivel 0 no deja clave en la ficha; tope del sistema 6", () => {
@@ -152,7 +153,7 @@ describe("compra de disciplinas", () => {
   });
 
   test("resetBuild vacía la psiónica", () => {
-    const s = setDisciplinaValue(conLetra("A"), "traslacion", 1);
+    const s = setDisciplinaValue(conLetra("A"), "traslacion", 1, AJUSTE_NEUTRO);
     assert.deepEqual(resetBuild(s).psionica, {});
   });
 });

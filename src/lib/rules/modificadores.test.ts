@@ -24,6 +24,7 @@ import {
   type ContextoAccion,
 } from "./modificadores";
 import { ESPECIES, especiePorId } from "../catalog/especies";
+import { AJUSTE_NEUTRO } from "./progresion";
 
 const conEspecie = (id: string | null): Sheet => ({ ...defaultSheet(), especieId: id });
 
@@ -79,7 +80,7 @@ describe("los modificadores de especie llegan a los números", () => {
   test("un bono de habilidad se suma al valor efectivo, también sin entrenar", () => {
     // Ninguna especie real da habilidad: se prueba con un modificador suelto.
     let s = setPrioridad(defaultSheet(), "habilidades", "A");
-    s = setHabilidadValue(s, "tecnociencia", 2);
+    s = setHabilidadValue(s, "tecnociencia", 2, AJUSTE_NEUTRO);
     const mods: ModificadorConFuente[] = [
       { tipo: "habilidad", id: "tecnociencia", valor: 1, origen: "especie", fuente: "X" },
     ];

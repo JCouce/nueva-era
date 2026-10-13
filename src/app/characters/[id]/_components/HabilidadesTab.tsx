@@ -9,12 +9,11 @@ import {
   HABILIDAD_MAX,
   MAX_ESPECIALIDADES,
   COSTE_ESPECIALIDAD_EXTRA,
-  costeMarginal,
-  COSTE_FACTOR_HABILIDAD,
+  costeSiguienteNivel,
+  type FichaResuelta,
   type HabilidadId,
   textoPuntos,
 } from "@/lib/rules";
-import type { Sheet } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { Stepper } from "./Stepper";
 
@@ -100,7 +99,7 @@ function Especialidades({
 }
 
 export function HabilidadesTab({
-  sheet,
+  ficha,
   puntosDisponibles,
   aprobada,
   xp,
@@ -109,7 +108,7 @@ export function HabilidadesTab({
   onAddEspecialidad,
   onRemoveEspecialidad,
 }: {
-  sheet: Sheet;
+  ficha: FichaResuelta;
   // No aplican en modo libre (edición de NPC, fase 6b 5.1) — ver AtributosTab.
   puntosDisponibles?: number;
   aprobada?: boolean;
@@ -119,6 +118,7 @@ export function HabilidadesTab({
   onAddEspecialidad: (id: HabilidadId, nombre: string) => void;
   onRemoveEspecialidad: (id: HabilidadId, nombre: string) => void;
 }) {
+  const sheet = ficha.ficha;
   const tope = libre || aprobada ? HABILIDAD_MAX : HABILIDAD_MAX_CREACION;
   const disponible = libre ? Infinity : aprobada ? xp! : puntosDisponibles!;
 
@@ -141,10 +141,13 @@ export function HabilidadesTab({
       {HABILIDADES.map((h) => {
         const { valor, especialidades } = sheet.habilidades[h.id];
         const entrenada = valor >= HABILIDAD_MIN_ENTRENADA;
-        const siguiente = entrenada ? valor + 1 : HABILIDAD_MIN_ENTRENADA;
-        // Coste marginal del siguiente punto: triangular, Nivel × 1 — no es
-        // fijo en 1, crece con el nivel (docs/sistema.md, "Coste y progresión").
-        const costeSiguiente = costeMarginal(siguiente, COSTE_FACTOR_HABILIDAD);
+        // Coste del siguiente punto: Nivel × 1, con el ajuste de casta si lo hay
+        // (docs/sistema.md §2.5 y §14.6). Puntos en creación, XP aprobada.
+        const {
+          nivel: siguiente,
+          coste: costeSiguiente,
+          pista,
+        } = costeSiguienteNivel({ tipo: "habilidad", id: h.id }, valor, ficha.ajusteCoste);
         const fuera = entrenada ? Math.ceil(valor / 2) : HABILIDAD_NO_ENTRENADA;
 
         return (
@@ -157,6 +160,11 @@ export function HabilidadesTab({
                 <span className="mt-1 block font-mono text-[10px] uppercase text-muted">
                   {entrenada ? `fuera de especialidad ${fuera}` : "no entrenada"}
                 </span>
+                {pista && !libre && valor < tope && (
+                  <span className="mt-1 block font-mono text-[10px] uppercase text-info">
+                    {pista}
+                  </span>
+                )}
               </div>
               <Stepper
                 value={valor}

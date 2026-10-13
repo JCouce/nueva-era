@@ -7,7 +7,8 @@ import type { AplicadoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
 import type { MotorMetadata } from "./motor";
 import { clampInt, type Sheet } from "./sheet";
-import { costeTotal, COSTE_FACTOR_PSIONICA, PUNTOS_PSIONICA_POR_LETRA } from "./prioridad";
+import { PUNTOS_PSIONICA_POR_LETRA } from "./prioridad";
+import { costeNivelDisciplina, type AjusteCoste } from "./progresion";
 import { DISCIPLINAS, disciplinaPorId, type DisciplinaId } from "../catalog/psionica";
 
 // ── Forma de los datos ─────────────────────────────────────────────
@@ -231,7 +232,7 @@ export type CatalogoPsionica = {
 };
 
 // ── Compra de disciplinas ──────────────────────────────────────────
-// Nivel N cuesta N×3 (triangular, como atributos ×2 y habilidades ×1). Sin tope
+// Nivel N cuesta N×3 salvo ajuste de especie (progresion.ts) (triangular, como atributos ×2 y habilidades ×1). Sin tope
 // propio de creación: con la letra A (18 pts) ya no se pasa de 3 en una sola.
 
 export const DISCIPLINA_MAX = 6;
@@ -245,12 +246,19 @@ export function presupuestoPsionica(sheet: Sheet): number {
   return letra ? PUNTOS_PSIONICA_POR_LETRA[letra] : 0;
 }
 
-export function puntosPsionicaGastados(sheet: Sheet): number {
-  return DISCIPLINAS.reduce((total, d) => total + costeTotal(nivelDisciplina(sheet, d.id), COSTE_FACTOR_PSIONICA), 0);
+// Con los descuentos de especie (§14.6: Arianyi, Maolher) ya resueltos en `ajuste`.
+export function costeDisciplina(nivel: number, ajuste: AjusteCoste): number {
+  let total = 0;
+  for (let n = 1; n <= nivel; n++) total += costeNivelDisciplina(n, ajuste);
+  return total;
 }
 
-export function puntosPsionicaDisponibles(sheet: Sheet): number {
-  return presupuestoPsionica(sheet) - puntosPsionicaGastados(sheet);
+export function puntosPsionicaGastados(sheet: Sheet, ajuste: AjusteCoste): number {
+  return DISCIPLINAS.reduce((total, d) => total + costeDisciplina(nivelDisciplina(sheet, d.id), ajuste), 0);
+}
+
+export function puntosPsionicaDisponibles(sheet: Sheet, ajuste: AjusteCoste): number {
+  return presupuestoPsionica(sheet) - puntosPsionicaGastados(sheet, ajuste);
 }
 
 export function cumpleRequisito(sheet: Sheet, id: DisciplinaId): boolean {
@@ -281,7 +289,12 @@ export function setNivelDisciplina(sheet: Sheet, id: DisciplinaId, value: number
   return { ...sheet, psionica };
 }
 
-export function setDisciplinaValue(sheet: Sheet, id: DisciplinaId, value: number): Sheet {
+export function setDisciplinaValue(
+  sheet: Sheet,
+  id: DisciplinaId,
+  value: number,
+  ajuste: AjusteCoste,
+): Sheet {
   const next = setNivelDisciplina(sheet, id, value);
-  return puntosPsionicaDisponibles(next) < 0 ? sheet : next;
+  return puntosPsionicaDisponibles(next, ajuste) < 0 ? sheet : next;
 }

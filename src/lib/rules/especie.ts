@@ -9,6 +9,9 @@
 //   eleccionCompleta / faltaEnEleccion / eleccionDeFicha / eleccionesIguales
 //                   el borrador del selector: no se llama a la action a medias
 //   rangoReferencia peso y altura de referencia con la Fuerza con especie (§14.5)
+//   ajustesDeCoste  los rasgos de coste (§14.6) → el AjusteCoste que reciben
+//                   creacion.ts, psionica.ts y progresion.ts
+//   bolsaDeAumentos los créditos aparte para aumentos (Humanos), o null
 //
 // Mismo patrón que usoPoder.ts: entrada explícita, nada se lee de fuera salvo el
 // catálogo, y el resultado se aplica tal cual.
@@ -23,7 +26,9 @@ import {
 } from "../catalog/especies";
 import type { ModificadorConFuente } from "./modificadores";
 import { creditosDeLaLetra } from "./prioridad";
+import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
 import { defaultSheet, type Sheet } from "./sheet";
+import type { HabilidadId } from "./habilidades";
 
 export type RasgoConFuente = Rasgo & { fuente: string };
 
@@ -238,4 +243,32 @@ export function rangoReferencia(especie: EspecieResuelta | null, fuerzaComprada:
     pesoKg: { min: Math.max(0, pesoKg.min + extra), max: Math.max(0, pesoKg.max + extra) },
     alturaCm: { min: alturaCm.min, max: alturaCm.max },
   };
+}
+
+// --- Creación y progresión (§14.6) ------------------------------------------
+
+// Junta los `costes` de los rasgos de especie, casta y linaje. La especie no se
+// guarda en el ajuste: las funciones de coste lo reciben ya resuelto y no miran el
+// catálogo. Sin especie, o con una sin rasgos de coste, AJUSTE_NEUTRO.
+export function ajustesDeCoste(especie: EspecieResuelta | null): AjusteCoste {
+  if (!especie) return AJUSTE_NEUTRO;
+  const ajuste: AjusteCoste = { habilidades: {}, psionicaNivel1: null, psionicaPorNivel: null };
+  let tocado = false;
+  for (const { costes } of especie.rasgos) {
+    if (!costes) continue;
+    tocado = true;
+    const { etiqueta } = costes;
+    for (const [id, delta] of Object.entries(costes.habilidades ?? {}) as [HabilidadId, -1 | 1][]) {
+      ajuste.habilidades[id] = { delta, etiqueta };
+    }
+    if (costes.psionicaNivel1 !== undefined) ajuste.psionicaNivel1 = { coste: costes.psionicaNivel1, etiqueta };
+    if (costes.psionicaPorNivel !== undefined) ajuste.psionicaPorNivel = { delta: costes.psionicaPorNivel, etiqueta };
+  }
+  return tocado ? ajuste : AJUSTE_NEUTRO;
+}
+
+// Bolsa de aumentos (M3): hoy solo se enseña, no se gasta (no hay aumentos).
+export function bolsaDeAumentos(especie: EspecieResuelta | null): number | null {
+  const bolsas = (especie?.rasgos ?? []).flatMap((r) => (r.bolsaAumentos === undefined ? [] : [r.bolsaAumentos]));
+  return bolsas.length ? bolsas.reduce((a, b) => a + b, 0) : null;
 }

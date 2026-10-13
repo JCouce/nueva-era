@@ -47,9 +47,7 @@ import {
   parseSnapshot,
   setPrioridad,
   RECURSOS_POR_LETRA,
-  costeMarginal,
-  COSTE_FACTOR_ATRIBUTO,
-  COSTE_FACTOR_HABILIDAD,
+  costeSubidaXp,
   ATRIBUTO_MAX,
   HABILIDAD_MAX,
   type CategoriaPrioridad,
@@ -58,7 +56,6 @@ import {
   setNivelDisciplina,
   nivelDisciplina,
   esDisciplinaId,
-  COSTE_FACTOR_PSIONICA,
   DISCIPLINA_MAX,
   type DisciplinaId,
   pagarFatiga,
@@ -72,6 +69,9 @@ import {
   transicionRevision,
   faltaParaEnviar,
   pasosPersonaje,
+  especieDeFicha,
+  ajustesDeCoste,
+  type AjusteCoste,
 } from "@/lib/rules";
 
 export type SaveResult =
@@ -80,6 +80,9 @@ export type SaveResult =
 
 type Editable = {
   sheet: Sheet;
+  // Ajuste de coste de la especie (§14.6), resuelto aquí con la ficha de la base:
+  // el mismo que calcula resolverFicha en la pantalla.
+  ajuste: AjusteCoste;
   aprobada: boolean;
   snapshot: AprobacionSnapshot | null;
   xp: number;
@@ -108,22 +111,16 @@ async function loadEditable(characterId: string): Promise<Editable | { error: st
   if (fichaSoloLectura({ estado: character.status, esMaster: user.role === "MASTER" })) {
     return { error: "La ficha está en revisión: retírala para seguir editando" };
   }
+  const sheet = parseSheet(character.stats);
   return {
-    sheet: parseSheet(character.stats),
+    sheet,
+    ajuste: ajustesDeCoste(especieDeFicha(sheet)),
     aprobada: character.status === "APPROVED",
     snapshot: parseSnapshot(character.approvedSnapshot),
     xp: character.xp,
     creditos: character.creditos,
     esMaster: user.role === "MASTER",
   };
-}
-
-// Coste total en XP para subir de `desde` a `hasta` (ambos inclusive del
-// lado alto), sumando el coste marginal de cada nivel intermedio.
-function costeSubidaXp(desde: number, hasta: number, factor: number): number {
-  let total = 0;
-  for (let nivel = desde + 1; nivel <= hasta; nivel++) total += costeMarginal(nivel, factor);
-  return total;
 }
 
 async function persist(
@@ -160,7 +157,7 @@ export async function setAtributoAction(
   const objetivo = Math.max(actual, Math.min(ATRIBUTO_MAX, Math.round(value)));
   if (objetivo === actual) return { ok: true, sheet: ctx.sheet, xp: ctx.xp };
 
-  const coste = costeSubidaXp(actual, objetivo, COSTE_FACTOR_ATRIBUTO);
+  const coste = costeSubidaXp({ tipo: "atributo" }, actual, objetivo, ctx.ajuste);
   if (coste > ctx.xp) return { ok: false, error: "No tienes XP suficiente" };
 
   const sheet: Sheet = { ...ctx.sheet, atributos: { ...ctx.sheet.atributos, [atributoId]: objetivo } };
@@ -180,14 +177,14 @@ export async function setHabilidadAction(
   if ("error" in ctx) return { ok: false, error: ctx.error };
 
   if (!ctx.aprobada) {
-    return persist(characterId, setHabilidadValue(ctx.sheet, habilidadId, value));
+    return persist(characterId, setHabilidadValue(ctx.sheet, habilidadId, value, ctx.ajuste));
   }
 
   const actual = ctx.sheet.habilidades[habilidadId].valor;
   const objetivo = Math.max(actual, Math.min(HABILIDAD_MAX, Math.round(value)));
   if (objetivo === actual) return { ok: true, sheet: ctx.sheet, xp: ctx.xp };
 
-  const coste = costeSubidaXp(actual, objetivo, COSTE_FACTOR_HABILIDAD);
+  const coste = costeSubidaXp({ tipo: "habilidad", id: habilidadId }, actual, objetivo, ctx.ajuste);
   if (coste > ctx.xp) return { ok: false, error: "No tienes XP suficiente" };
 
   const sheet: Sheet = {
@@ -217,7 +214,7 @@ export async function setDisciplinaAction(
   if ("error" in ctx) return { ok: false, error: ctx.error };
 
   if (!ctx.aprobada) {
-    return persist(characterId, setDisciplinaValue(ctx.sheet, disciplinaId, value));
+    return persist(characterId, setDisciplinaValue(ctx.sheet, disciplinaId, value, ctx.ajuste));
   }
 
   const actual = nivelDisciplina(ctx.sheet, disciplinaId);
@@ -227,7 +224,7 @@ export async function setDisciplinaAction(
   const sheet = setNivelDisciplina(ctx.sheet, disciplinaId, objetivo);
   if (sheet === ctx.sheet) return { ok: false, error: "No cumples el requisito de la disciplina" };
 
-  const coste = costeSubidaXp(actual, objetivo, COSTE_FACTOR_PSIONICA);
+  const coste = costeSubidaXp({ tipo: "disciplina", id: disciplinaId }, actual, objetivo, ctx.ajuste);
   if (coste > ctx.xp) return { ok: false, error: "No tienes XP suficiente" };
 
   const xp = ctx.xp - coste;
@@ -280,7 +277,7 @@ export async function addEspecialidadAction(
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, addEspecialidad(ctx.sheet, habilidadId, nombre));
+  return persist(characterId, addEspecialidad(ctx.sheet, habilidadId, nombre, ctx.ajuste));
 }
 
 export async function removeEspecialidadAction(

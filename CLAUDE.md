@@ -65,6 +65,7 @@ src/
 │  │  ├─ sheet.ts       #   forma de la ficha, Zod, SCHEMA_VERSION y parseSheet tolerante
 │  │  ├─ derivados.ts   #   lo que se calcula y nunca se guarda (aplicados, salud, movimiento)
 │  │  ├─ creacion.ts    #   point-buy: costes, pools y operaciones puras sobre la ficha
+│  │  ├─ progresion.ts  #   coste por nivel con el ajuste de especie (AjusteCoste, obligatorio) y subida con XP
 │  │  ├─ tiradas.ts     #   catálogo de tiradas fijas, resolución del d12, daño por éxitos
 │  │  ├─ condiciones.ts #   controles del modal de una tirada (toggle/opción/contador) y sus desgloses —
 │  │  │                 #   ver docs/modificadores-tiradas.md antes de añadir un modificador nuevo

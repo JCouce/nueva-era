@@ -28,7 +28,7 @@ export function NpcAccionesPanel({
   estadosCombate: EstadoActivo[];
   onCerrar: () => void;
 }) {
-  const ficha = useFichaResuelta(sheet, estadosCombate);
+  const ficha = useFichaResuelta(sheet, estadosCombate, { libre: true });
   // Panel bajo demanda: se desmonta al cerrar (onCerrar, en el padre), así
   // que este estado ya nacía fresco en cada apertura incluso cuando vivía
   // dentro de AccionesTab — el historial subió de nivel (2026-09-24, para que

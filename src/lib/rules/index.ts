@@ -28,6 +28,7 @@
 //   fichaResuelta.ts   resolverFicha: modificadores y derivados de una ficha en una pasada
 //   personaje.ts       pestaña Personaje: pasos (hecho/pendiente), etiquetas de rasgos, identidad por defecto
 //   revision.ts        envío a revisión: transiciones de estado, solo lectura, faltas y avisos
+//   progresion.ts      coste por nivel con ajuste de especie, subida con XP y coste del siguiente nivel
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -58,6 +59,7 @@ export * from "./especie";
 export * from "./personaje";
 export * from "./revision";
 export * from "./fichaResuelta";
+export * from "./progresion";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

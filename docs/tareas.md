@@ -1400,12 +1400,23 @@ de comportamiento), **E1c** servidor + UI + fuera provisionales.
 - [x] NPC: `elegirEspecie` en modo libre: sin reset, sin bloqueo por aprobación, sin tocar
       créditos (los NPC no tienen esa columna)
 
-**E2 — Creación**
-- [ ] Coste de habilidad por casta, en creación y XP (`costeSubidaXp` sale a `rules/progresion.ts`)
+**E2 — Creación** (2026-10-13: en dos pasadas. **E2a**: coste de habilidad por casta,
+descuentos psiónicos y bolsa visible. **E2b**: Resonancia +1 y kerzul. Decisiones para E2b:
+Resonancia efectiva = comprado + 1 **siempre**, también con 0 comprado (Arianyi con letra E
+juega con Resonancia 1); un 7 cuenta para requisitos y los efectos usan la fila del 6, con
+test. Nivel efectivo desde la `FichaResuelta` en poderes, requisitos, `PsionicaTab` y
+`RecursosTab` (hoy lee `sheet.psionica`). Kerzul: función pura en `rules/` (tipo
+`puedeEquiparSinRareza`) que usan `equiparAction` y la Tienda para la etiqueta "vía
+especie". `viaEspecie` sube `SCHEMA_VERSION` con paso de migración y test, como E1a)
+- [x] Coste de habilidad por casta, en creación y XP (`costeSubidaXp` sale a `rules/progresion.ts`)
+      *(E2a: `costes` en el rasgo del catálogo → `ajustesDeCoste` → `FichaResuelta.ajusteCoste`;
+      especialidades sin ajuste; pista "−1 casta" junto al coste)*
 - [ ] Modificador nuevo de tipo *disciplina*: Resonancia +1 del arianyi (adicional, puede
       pasar de 6, cuenta como requisito; requisitos contra el nivel efectivo)
-- [ ] Descuentos psiónicos: nivel 1 a coste 2 (arianyi), −1 por nivel (Maolher), creación y XP
-- [ ] Bolsa de 60.000 del humano visible como "pendiente de aumentos"
+- [x] Descuentos psiónicos: nivel 1 a coste 2 (arianyi), −1 por nivel (Maolher), creación y XP
+      *(E2a: mismo `AjusteCoste`; Resonancia incluida; NPC neutro vía `resolverFicha({ libre })`)*
+- [x] Bolsa de 60.000 del humano visible como "pendiente de aumentos"
+      *(E2a: `bolsaAumentos` en el rasgo → `FichaResuelta.bolsaAumentos`; línea en Tienda y Recursos)*
 - [ ] Kerzul del Arköru sin rareza: una pieza, marca `viaEspecie`, solo en borrador
 
 **E3 — Derivados**

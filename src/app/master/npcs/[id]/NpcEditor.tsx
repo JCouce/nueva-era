@@ -124,7 +124,7 @@ export function NpcEditor({
   const [active, setActive] = useState<TabId>("identidad");
   const [sheet, setSheet] = useState<Sheet>(initialSheet);
   // Sin estados: una NpcTemplate no tiene dónde guardarlos (ver la pestaña Acciones).
-  const ficha = useFichaResuelta(sheet, SIN_ESTADOS);
+  const ficha = useFichaResuelta(sheet, SIN_ESTADOS, { libre: true });
   const [nombre, setNombre] = useState(initialNombre);
   const [nota, setNota] = useState(initialNota);
   const [status, setStatus] = useState<SaveStatus>("idle");
@@ -422,14 +422,14 @@ export function NpcEditor({
       )}
       {active === "skills" && (
         <HabilidadesTab
-          sheet={sheet}
+          ficha={ficha}
           libre
           onSet={commitHabilidad}
           onAddEspecialidad={commitAddEspecialidad}
           onRemoveEspecialidad={commitRemoveEspecialidad}
         />
       )}
-      {active === "psionica" && <PsionicaTab sheet={sheet} libre onSet={commitDisciplina} />}
+      {active === "psionica" && <PsionicaTab ficha={ficha} libre onSet={commitDisciplina} />}
       {active === "acciones" && (
         <div className="flex flex-col gap-3">
           {/* 5.6: preview en reposo, sin estados — una NpcTemplate no tiene

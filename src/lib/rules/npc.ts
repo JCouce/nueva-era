@@ -17,6 +17,7 @@
 import { ATRIBUTOS } from "./atributos";
 import { HABILIDADES } from "./habilidades";
 import { costeAtributo, costeHabilidad } from "./creacion";
+import { AJUSTE_NEUTRO } from "./progresion";
 import { costeDePieza } from "./equipo";
 import type { Sheet } from "./sheet";
 
@@ -36,7 +37,8 @@ export function experienciaInvertida(sheet: Sheet): number {
   );
   const deHabilidades = HABILIDADES.reduce((total, h) => {
     const { valor, especialidades } = sheet.habilidades[h.id];
-    return total + Math.max(0, costeHabilidad(valor, especialidades.length));
+    // NPC: sin ajuste de casta (§14.3, los costes de creación no le aplican).
+    return total + Math.max(0, costeHabilidad(valor, especialidades.length, AJUSTE_NEUTRO.habilidades[h.id]));
   }, 0);
   return deAtributos + deHabilidades;
 }

@@ -14,12 +14,13 @@ import {
   aplicarSueloAtributo,
   aplicarSueloHabilidad,
 } from "./aprobacion";
+import { AJUSTE_NEUTRO } from "./progresion";
 
 describe("snapshot de aprobación", () => {
   test("congela los valores actuales de atributos y habilidades", () => {
     let s = conPresupuesto();
     s = setAtributoValue(s, "fuerza", 3);
-    s = setHabilidadValue(s, "sigilo", 2);
+    s = setHabilidadValue(s, "sigilo", 2, AJUSTE_NEUTRO);
     const snap = snapshotFromSheet(s);
     assert.equal(snap.atributos.fuerza, 3);
     assert.equal(snap.habilidades.sigilo, 2);
@@ -61,7 +62,7 @@ describe("aplicarSueloAtributo / aplicarSueloHabilidad", () => {
 
   test("mismo comportamiento para habilidades", () => {
     let s = conPresupuesto();
-    s = setHabilidadValue(s, "sigilo", 2);
+    s = setHabilidadValue(s, "sigilo", 2, AJUSTE_NEUTRO);
     const snap = snapshotFromSheet(s);
     assert.equal(aplicarSueloHabilidad(-1, "sigilo", snap), 2);
     assert.equal(aplicarSueloHabilidad(3, "sigilo", snap), 3);

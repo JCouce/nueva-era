@@ -1,8 +1,7 @@
 import {
   DISCIPLINAS,
   DISCIPLINA_MAX,
-  COSTE_FACTOR_PSIONICA,
-  costeMarginal,
+  costeSiguienteNivel,
   cumpleRequisito,
   disciplinaPorId,
   nivelDisciplina,
@@ -10,9 +9,9 @@ import {
   puntosPsionicaDisponibles,
   sueloPorRequisitos,
   type DisciplinaId,
+  type FichaResuelta,
   textoPuntos,
 } from "@/lib/rules";
-import type { Sheet } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { Stepper } from "./Stepper";
 
@@ -21,25 +20,27 @@ const RAMAS = [
   { id: "metrica", label: "Métrica" },
 ] as const;
 
-// Compra de disciplinas: nivel N a N×3, mismo patrón que AtributosTab (pool de
+// Compra de disciplinas: nivel N a N×3 (con los descuentos de especie de §14.6
+// ya resueltos en la FichaResuelta), mismo patrón que AtributosTab (pool de
 // la letra en creación, XP tras aprobar, solo subir). En modo libre (editor de
 // NPC) no hay pool ni XP: 0-6 en las dos direcciones, requisitos incluidos.
 // Los poderes se usan desde Acciones; aquí solo se compra.
 export function PsionicaTab({
-  sheet,
+  ficha,
   aprobada = false,
   xp = 0,
   libre = false,
   onSet,
 }: {
-  sheet: Sheet;
+  ficha: FichaResuelta;
   aprobada?: boolean;
   xp?: number;
   libre?: boolean;
   onSet: (id: DisciplinaId, value: number) => void;
 }) {
+  const sheet = ficha.ficha;
   const letra = sheet.prioridades.psionica;
-  const disponible = libre ? Infinity : aprobada ? xp : puntosPsionicaDisponibles(sheet);
+  const disponible = libre ? Infinity : aprobada ? xp : puntosPsionicaDisponibles(sheet, ficha.ajusteCoste);
 
   return (
     <div className="flex flex-col gap-2">
@@ -65,7 +66,11 @@ export function PsionicaTab({
           </h2>
           {DISCIPLINAS.filter((d) => d.rama === rama.id).map((d) => {
             const value = nivelDisciplina(sheet, d.id);
-            const costeSiguiente = costeMarginal(value + 1, COSTE_FACTOR_PSIONICA);
+            const { coste: costeSiguiente, pista } = costeSiguienteNivel(
+              { tipo: "disciplina", id: d.id },
+              value,
+              ficha.ajusteCoste,
+            );
             const requisitoOk = cumpleRequisito(sheet, d.id);
             const suelo = sueloPorRequisitos(sheet, d.id);
             const req = d.requisito;
@@ -79,6 +84,11 @@ export function PsionicaTab({
                     {req && (
                       <span className={`mt-1 block font-mono text-[10px] uppercase ${requisitoOk ? "text-muted" : "text-danger"}`}>
                         requiere {disciplinaPorId(req.disciplina).label} {req.nivel}
+                      </span>
+                    )}
+                    {pista && !libre && value < DISCIPLINA_MAX && (
+                      <span className="mt-1 block font-mono text-[10px] uppercase text-info">
+                        {pista}
                       </span>
                     )}
                     {suelo > 0 && value <= suelo && (

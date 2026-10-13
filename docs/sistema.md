@@ -939,7 +939,9 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 > **Estado en la app:** E1 construida (falta el reset de las fichas de producción el día del deploy, ver 14.3): catálogo real (`src/lib/catalog/especies.ts`), elección
 > con reset en el servidor (`setEspecieAction`), carrusel en Personaje → Origen y selector
 > compacto en el editor de NPC.
-> Quedan E2 → E3 → M1 → E4 → E5 en `docs/tareas.md`, "Especies reales".
+> **E2a construida:** coste de habilidad por casta, descuentos psiónicos (Arianyi, Maolher)
+> y bolsa de aumentos visible (14.6). Quedan E2b (Resonancia +1, kerzul) → E3 → M1 → E4 → E5
+> en `docs/tareas.md`, "Especies reales".
 
 ### 14.1 Lista y elección `[FIRME · ESP + usuario M10, M20]`
 
@@ -1045,6 +1047,13 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 | Siervo | — | — |
 
 - Nivel N cuesta `max(1, N − 1)` o `N + 1` en lugar de N (sección 2.5).
+- **Especialidades sin ajuste** (decisión del usuario, 2026-10-13): el ajuste es por punto
+  de habilidad. La primera especialidad sigue incluida y cada una a partir de la segunda
+  cuesta 1, con cualquier casta.
+- *En la app (E2a):* el rasgo de casta lleva `costes.habilidades`; `ajustesDeCoste`
+  (`rules/especie.ts`) lo junta en un `AjusteCoste` que reciben `creacion.ts` y
+  `progresion.ts` (`costeSubidaXp`, `costeSiguienteNivel`). Ejemplo con test: Sabio con
+  Tecnociencia 4 paga 1+1+2+3 = 7 en vez de 10.
 
 **Psiónica**
 - **Arianyi, Resonancia +1 adicional** (M5, decisión que cambia la propuesta): no es un
@@ -1058,13 +1067,19 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
   2026-10-09): comprar Resonancia 1 cuesta 2 y juega con 2.
 - **Maolher, −1 al coste de cada nivel** de cualquier disciplina, en creación y con XP (M11):
   nivel N cuesta N × 3 − 1.
+- *En la app (E2a):* los dos descuentos de coste están mecanizados (`costes.psionicaNivel1`
+  y `costes.psionicaPorNivel` en el rasgo → `AjusteCoste` → `psionica.ts` y
+  `progresion.ts`). La Resonancia +1 es E2b, todavía sin construir.
+- *NPC:* `resolverFicha(sheet, { libre: true })` deja el ajuste neutro y sin bolsa (14.3).
 
-**Humanos, bolsa de aumentos** (M3) — *sin mecanizar: no hay aumentos*
+**Humanos, bolsa de aumentos** (M3) — *visible, sin gastar: no hay aumentos*
 - 60.000 créditos aparte, **solo para aumentos**. No toca `Character.creditos`.
 - Un aumento se paga **primero con la bolsa**; si no llega, lo que falte sale de los
   créditos normales.
 - Lo que quede en la bolsa al aprobar se pierde.
-- Hasta que existan los aumentos, la ficha solo la muestra como dato.
+- Hasta que existan los aumentos, la ficha solo la muestra como dato. *En la app (E2a):*
+  `bolsaAumentos` en el rasgo del humano → `FichaResuelta.bolsaAumentos`; línea "Bolsa de
+  aumentos 60.000 · pendiente de aumentos" en la cabecera de la Tienda y en Recursos.
 
 **Arköru, acceso al kerzul** (M9)
 - Una sola pieza de kerzul del catálogo (cualquiera, Escudo incluido) **sin tope de rareza**,

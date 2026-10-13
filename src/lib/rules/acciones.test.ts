@@ -23,6 +23,7 @@ import {
 } from "./acciones";
 import { modificadoresDeEstados } from "./estados";
 import { modificadoresActivos } from "./derivados";
+import { AJUSTE_NEUTRO } from "./progresion";
 
 function buscar(id: string) {
   const t = ACCIONES.find((x) => x.id === id);
@@ -64,7 +65,7 @@ describe("modificador de una tirada", () => {
     let s = conPresupuesto();
     s = setAtributoValue(s, "agilidad", 2);
     s = setAtributoValue(s, "percepcion", 2); // reflejos = ceil((2+2)/2) = 2
-    s = setHabilidadValue(s, "combate_distancia", 3);
+    s = setHabilidadValue(s, "combate_distancia", 3, AJUSTE_NEUTRO);
     return s;
   };
 
@@ -98,8 +99,8 @@ describe("modificador de una tirada", () => {
   });
 
   test("la especialidad declarada se refleja en el modificador", () => {
-    let s = setHabilidadValue(conPresupuesto(), "biociencia", 2);
-    s = addEspecialidad(s, "biociencia", "Medicina");
+    let s = setHabilidadValue(conPresupuesto(), "biociencia", 2, AJUSTE_NEUTRO);
+    s = addEspecialidad(s, "biociencia", "Medicina", AJUSTE_NEUTRO);
     const dentro = modificadorAccion(s, buscar("medicina"), true, modificadoresActivos(s));
     const fuera = modificadorAccion(s, buscar("medicina"), false, modificadoresActivos(s));
     assert.equal(dentro.habilidad, 2);

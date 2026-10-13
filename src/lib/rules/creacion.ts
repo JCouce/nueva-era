@@ -18,10 +18,10 @@ import {
   PUNTOS_ATRIBUTOS_POR_LETRA,
   PUNTOS_HABILIDADES_POR_LETRA,
   COSTE_FACTOR_ATRIBUTO,
-  COSTE_FACTOR_HABILIDAD,
   type CategoriaPrioridad,
   type LetraPrioridad,
 } from "./prioridad";
+import { costeNivelHabilidad, type AjusteCoste, type AjusteHabilidad } from "./progresion";
 
 // Wrapper a nivel de ficha: setLetra (prioridad.ts) opera sobre el objeto
 // Prioridades solo; esto lo engancha a la Sheet completa, que es lo que
@@ -62,21 +62,25 @@ export function puntosAtributosDisponibles(sheet: Sheet): number {
   return presupuestoAtributos(sheet) - puntosAtributosGastados(sheet);
 }
 
-// Coste de una habilidad: triangular (Nivel × 1). La primera especialidad va
-// incluida al entrenar; a partir de la segunda cuesta 1 punto cada una.
-export function costeHabilidad(valor: number, especialidades: number): number {
+// Coste de una habilidad: triangular (Nivel × 1), con el ajuste de casta por nivel
+// si lo hay (§14.6). La primera especialidad va incluida al entrenar; a partir de
+// la segunda cuesta 1 punto cada una, sin ajuste de casta (decisión del usuario:
+// el ajuste es por punto de habilidad).
+export function costeHabilidad(valor: number, especialidades: number, ajuste: AjusteHabilidad | undefined): number {
   if (valor < HABILIDAD_MIN_ENTRENADA) return 0;
-  return costeTotal(valor, COSTE_FACTOR_HABILIDAD) + Math.max(0, especialidades - 1) * COSTE_ESPECIALIDAD_EXTRA;
+  let total = 0;
+  for (let nivel = 1; nivel <= valor; nivel++) total += costeNivelHabilidad(nivel, ajuste);
+  return total + Math.max(0, especialidades - 1) * COSTE_ESPECIALIDAD_EXTRA;
 }
 
-export function puntosHabilidadesGastados(sheet: Sheet): number {
+export function puntosHabilidadesGastados(sheet: Sheet, ajuste: AjusteCoste): number {
   return HABILIDADES.reduce((total, h) => {
     const { valor, especialidades } = sheet.habilidades[h.id];
-    return total + costeHabilidad(valor, especialidades.length);
+    return total + costeHabilidad(valor, especialidades.length, ajuste.habilidades[h.id]);
   }, 0);
 }
-export function puntosHabilidadesDisponibles(sheet: Sheet): number {
-  return presupuestoHabilidades(sheet) - puntosHabilidadesGastados(sheet);
+export function puntosHabilidadesDisponibles(sheet: Sheet, ajuste: AjusteCoste): number {
+  return presupuestoHabilidades(sheet) - puntosHabilidadesGastados(sheet, ajuste);
 }
 
 // ── Operaciones ────────────────────────────────────────────────────
@@ -97,6 +101,7 @@ export function setHabilidadValue(
   sheet: Sheet,
   id: HabilidadId,
   value: number,
+  ajuste: AjusteCoste,
 ): Sheet {
   const actual = sheet.habilidades[id];
   const v = clampInt(
@@ -112,13 +117,14 @@ export function setHabilidadValue(
     ...sheet,
     habilidades: { ...sheet.habilidades, [id]: { valor, especialidades } },
   };
-  return puntosHabilidadesDisponibles(next) < 0 ? sheet : next;
+  return puntosHabilidadesDisponibles(next, ajuste) < 0 ? sheet : next;
 }
 
 export function addEspecialidad(
   sheet: Sheet,
   id: HabilidadId,
   nombre: string,
+  ajuste: AjusteCoste,
 ): Sheet {
   const actual = sheet.habilidades[id];
   if (actual.valor < HABILIDAD_MIN_ENTRENADA) return sheet; // sin entrenar, no hay especialidad
@@ -135,7 +141,7 @@ export function addEspecialidad(
       [id]: { ...actual, especialidades: [...actual.especialidades, limpio] },
     },
   };
-  return puntosHabilidadesDisponibles(next) < 0 ? sheet : next;
+  return puntosHabilidadesDisponibles(next, ajuste) < 0 ? sheet : next;
 }
 
 export function removeEspecialidad(

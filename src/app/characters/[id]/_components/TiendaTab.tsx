@@ -46,6 +46,7 @@ import {
   type Rareza,
 } from "@/lib/rules";
 import { Acordeon } from "@/components/Acordeon";
+import { BolsaAumentos } from "./BolsaAumentos";
 import {
   BadgeRareza,
   DetalleArmadura,
@@ -738,6 +739,7 @@ export function TiendaTab({
   // sale siempre "asequible" y se oculta el número de créditos, que aquí no
   // significaría nada real.
   libre = false,
+  bolsaAumentos = null,
   onEquipar,
   onComprarGranada,
   onComprarFarmaco,
@@ -748,6 +750,8 @@ export function TiendaTab({
   creditos?: number;
   topeRareza: Rareza | null;
   libre?: boolean;
+  // De la FichaResuelta (§14.6): null si la especie no la trae.
+  bolsaAumentos?: number | null;
   onEquipar: (p: PiezaEquipada) => void;
   onComprarGranada: (catalogoId: string) => void;
   onComprarFarmaco: (catalogoId: string) => void;
@@ -774,6 +778,7 @@ export function TiendaTab({
               Tope de rareza en creación: <span className="text-foreground">{topeRareza}</span>
             </p>
           )}
+          {!libre && bolsaAumentos !== null && <BolsaAumentos creditos={bolsaAumentos} />}
         </div>
         {libre ? (
           <p className="font-mono text-[10px] uppercase tracking-widest text-info">Edición libre</p>

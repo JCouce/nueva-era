@@ -20,6 +20,7 @@ import {
   parseSheet,
   clampInt,
   addEspecialidad,
+  AJUSTE_NEUTRO,
   removeEspecialidad,
   equipar,
   desequipar,
@@ -261,7 +262,8 @@ export async function addEspecialidadNpcAction(
 ): Promise<NpcResult> {
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(npcId, addEspecialidad(ctx.sheet, habilidadId, nombre));
+  // NPC: sin ajuste de casta (§14.3).
+  return persist(npcId, addEspecialidad(ctx.sheet, habilidadId, nombre, AJUSTE_NEUTRO));
 }
 
 export async function removeEspecialidadNpcAction(

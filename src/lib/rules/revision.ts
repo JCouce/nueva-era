@@ -8,6 +8,7 @@
 import { puntosAtributosDisponibles, puntosHabilidadesDisponibles } from "./creacion";
 import { puntosPsionicaDisponibles } from "./psionica";
 import type { PasoPersonaje } from "./personaje";
+import type { AjusteCoste } from "./progresion";
 import type { Sheet } from "./sheet";
 
 // Mismos valores que el enum CharacterStatus de prisma/schema.prisma.
@@ -70,11 +71,11 @@ const quedan = (n: number) => (n === 1 ? "Te queda 1 punto" : `Te quedan ${n} pu
 
 // Puntos de creación sin gastar: se avisa, pero se puede enviar igual (decisión del
 // usuario). Con S+ (pruebas, presupuesto infinito) no hay nada que avisar.
-export function avisosParaEnviar(sheet: Sheet): string[] {
+export function avisosParaEnviar(sheet: Sheet, ajuste: AjusteCoste): string[] {
   const pools: [string, number][] = [
     ["atributos", puntosAtributosDisponibles(sheet)],
-    ["habilidades", puntosHabilidadesDisponibles(sheet)],
-    ["psiónica", puntosPsionicaDisponibles(sheet)],
+    ["habilidades", puntosHabilidadesDisponibles(sheet, ajuste)],
+    ["psiónica", puntosPsionicaDisponibles(sheet, ajuste)],
   ];
   return pools.flatMap(([nombre, n]) =>
     Number.isFinite(n) && n > 0 ? [`${quedan(n)} de ${nombre} sin gastar`] : [],
