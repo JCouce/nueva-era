@@ -936,7 +936,7 @@ Prosa literal en `docs/especies.md` (de `docs/Especies.pdf`); análisis y plan e
 aumentos, sección 11) y la regeneración de Ílkrem y el descanso no tienen dónde vivir en la
 app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 
-> **Estado en la app:** E1 construida (falta el reset de las fichas de producción el día del deploy, ver 14.3): catálogo real (`src/lib/catalog/especies.ts`), elección
+> **Estado en la app:** E1 construida y desplegada (2026-10-13, sin reset general, ver 14.3): catálogo real (`src/lib/catalog/especies.ts`), elección
 > con reset en el servidor (`setEspecieAction`), carrusel en Personaje → Origen y selector
 > compacto en el editor de NPC.
 > **E2 construida:** coste de habilidad por casta, descuentos psiónicos (Arianyi, Maolher),
@@ -998,8 +998,11 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
   armadura natural, Resonancia +1, bonos a tiradas); no le aplica lo de creación (costes por
   casta, descuentos psiónicos, kerzul sin rareza, bolsa de aumentos). Un NPC ya metido en un
   combate guarda su foto: cambiarle la especie después no toca ese combate.
-- Al desplegar E1, **todas las fichas de producción** pasan por este mismo reset (backup de
-  Neon y confirmación explícita del usuario ese día).
+- **Sin reset general al desplegar** (decisión del usuario, 2026-10-13; sustituye a la de
+  2026-10-09): las fichas viejas se migran al leerlas. Las que están en creación pasan por
+  este reset cuando el jugador elige especie (con aviso si hay algo que perder); a las
+  aprobadas cuya especie provisional ya no existe se la pone el máster, sin reset. El
+  script del reset general sigue en `scripts/reset-fichas-especies.ts`.
 
 ### 14.4 Atributos `[FIRME · ESP]`
 

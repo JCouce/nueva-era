@@ -1440,8 +1440,11 @@ especie". `viaEspecie` sube `SCHEMA_VERSION` con paso de migración y test, como
 
 **Deploy de especies** (tras E3, decidido 2026-10-09: un solo reset y cada jugador crea su
 ficha una vez, ya con costes de casta, descuentos y derivados)
-- [ ] Backup de Neon → **confirmación del usuario ese día** → reset general de las fichas de
-      prod → push
+- [x] Desplegado el 2026-10-13 (push `7193cf9`, migraciones de `IN_REVIEW` y ficha v15
+      aplicadas en Neon). **Sin backup y sin reset general** (decisión del usuario ese día):
+      el código migra las fichas viejas al leerlas; las fichas en creación se resetean solas
+      al elegir especie (§14.3) y a las aprobadas sin especie se la pone el máster, sin reset.
+      Queda `scripts/reset-fichas-especies.ts` por si un día hace falta
 
 **M1 — Montaje único de tiradas** (propuesta §3.1; cierra el hallazgo de umbrales de arriba)
 - [ ] Tests de caracterización de cada lista de Acciones antes de mover nada
@@ -1538,7 +1541,7 @@ construir (dos pasadas: rediseño, luego revisión).
       `devolverAction` guarda la nota (máx. 500), que se borra al reenviar o aprobar)*
 - [x] Panel del máster: fichas "En revisión" arriba, con contador
       *(secciones En revisión / En creación / En juego)*
-- [ ] La migración va en el mismo deploy que especies (el del reset general tras E3)
+- [x] La migración va en el mismo deploy que especies *(desplegada el 2026-10-13, push `7193cf9`)*
 
 ### Componente `Modal` común ⬜ (propuesta del usuario, 2026-10-13)
 Hoy 7 modales montan cada uno su propio fondo `fixed inset-0` (UsarModal, AccionModal,
