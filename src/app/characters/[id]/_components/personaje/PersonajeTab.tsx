@@ -28,15 +28,16 @@ const NOMBRE: Record<PasoPersonajeId, string> = {
   estado: "Estado",
 };
 
-function marca(paso: PasoPersonaje): { texto: string; clase: string } {
+function marca(paso: PasoPersonaje): { texto: string; clase: string } | null {
   const porEstado: Record<Exclude<EstadoPaso, null>, { texto: string; clase: string }> = {
     hecho: { texto: "✓ hecho", clase: "text-neon-green" },
     pendiente: { texto: "● pendiente", clase: "text-accent" },
     fijado: { texto: "fijado", clase: "text-muted" },
   };
   if (paso.estado) return porEstado[paso.estado];
-  // Sin marca: Estado siempre; Identidad en una ficha aprobada (sigue editable).
-  return paso.id === "estado" ? { texto: "en juego", clase: "text-muted" } : { texto: "editable", clase: "text-muted" };
+  // Estado no es un paso de creación: sin texto (antes "en juego", que chocaba con el
+  // chip de ficha aprobada). Identidad en una ficha aprobada sigue editable.
+  return paso.id === "estado" ? null : { texto: "editable", clase: "text-muted" };
 }
 
 // La pestaña Personaje: los pasos de creación en orden (Origen → Prioridades →
@@ -108,7 +109,7 @@ export function PersonajeTab({
               >
                 {NOMBRE[p.id]}
               </span>
-              <span className={`font-mono text-[9px] uppercase tracking-wide ${m.clase}`}>{m.texto}</span>
+              {m && <span className={`font-mono text-[9px] uppercase tracking-wide ${m.clase}`}>{m.texto}</span>}
             </button>
           );
         })}
