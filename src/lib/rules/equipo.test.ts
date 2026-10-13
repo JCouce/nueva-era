@@ -548,7 +548,7 @@ describe("condicionesActivas", () => {
       assert.equal(busqueda(s).length, 0);
       const conMira = equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "fusil_precision_telum" });
       assert.deepEqual(
-        consultaIndiceCondiciones(indiceDeCondiciones(conMira), ctxAlertaActiva),
+        consultaIndiceCondiciones(indiceDeCondiciones(conMira, []), ctxAlertaActiva),
         condicionesActivas(conMira, ctxAlertaActiva),
       );
     });
@@ -582,7 +582,7 @@ describe("indiceDeCondiciones + consultaIndiceCondiciones ≡ condicionesActivas
   const ctxAlertaActiva = { id: "alerta_activa", grupo: "Acciones" as const, habilidad: "exploracion" as const, modoElegido: null };
 
   function equivalente(s: ReturnType<typeof defaultSheet>, ctx: Parameters<typeof condicionesActivas>[1]) {
-    assert.deepEqual(consultaIndiceCondiciones(indiceDeCondiciones(s), ctx), condicionesActivas(s, ctx));
+    assert.deepEqual(consultaIndiceCondiciones(indiceDeCondiciones(s, []), ctx), condicionesActivas(s, ctx));
   }
 
   test("ficha sin nada equipado", () => {
@@ -601,7 +601,7 @@ describe("indiceDeCondiciones + consultaIndiceCondiciones ≡ condicionesActivas
     s = equipar(s, { instanciaId: "vn1", catalogoId: "visor_nocturno", nivel: 2, instaladoEnId: "armadura-1" });
     s = equipar(s, { instanciaId: "vt1", catalogoId: "visor_termico", nivel: 1, instaladoEnId: "armadura-1" });
     const directo = condicionesActivas(s, ctxAlertaActiva);
-    const indexado = consultaIndiceCondiciones(indiceDeCondiciones(s), ctxAlertaActiva);
+    const indexado = consultaIndiceCondiciones(indiceDeCondiciones(s, []), ctxAlertaActiva);
     assert.deepEqual(indexado, directo);
     assert.deepEqual(
       directo.map((c) => c.id),

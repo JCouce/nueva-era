@@ -6,13 +6,13 @@
 // antes del deploy.
 //
 // Cada rasgo declara su MotorMetadata (docs/motor.md). Los que se construyen en
-// tandas posteriores (M1/E4 tiradas, E5 otras áreas)
-// ya están aquí con su clasificación y `estado` pendiente/bloqueado; sus datos
-// operativos (constantes de movimiento, casillas…) se añaden al rasgo cuando la
-// tanda que los consume los necesite, no antes. Los de creación (costes, bolsa)
-// ya están (E2a), la Resonancia +1 y el kerzul (E2b), y movimiento, carga y
-// armadura natural (E3).
+// tandas posteriores (E5 otras áreas) ya están aquí con su clasificación y `estado`
+// pendiente/bloqueado; sus datos operativos se añaden al rasgo cuando la tanda que
+// los consume los necesite, no antes. Los de creación (costes, bolsa) ya están
+// (E2a), la Resonancia +1 y el kerzul (E2b), movimiento, carga y armadura natural
+// (E3), y las casillas, bonos, textos y umbrales de las tiradas (E4).
 import type { Modificador } from "../rules/modificadores";
+import type { CondicionTirada } from "../rules/condiciones";
 import type { MotorMetadata } from "../rules/motor";
 import type { FormulaMovimiento } from "../rules/formulaMovimiento";
 import { ATRIBUTOS, type AtributoId } from "../rules/atributos";
@@ -50,8 +50,27 @@ export type Rasgo = {
   formulaMovimiento?: Partial<FormulaMovimiento>; // sustituye esas constantes de la general
   multiplicadorCarga?: number; // sobre el total de la carga sin penalizador (§5.5)
   armaduraNatural?: number; // línea propia en el blindaje, sumada a la armadura puesta
+  // Tiradas (§14.8, E4). Los resuelve especie.ts una vez en la FichaResuelta:
+  // casillasDeEspecie (al mismo índice que las del equipo), textosDeEspecie (nota fija
+  // en la tirada) y ajusteUmbralesDeEspecie (modificadoresDeUmbrales). Un bono fijo a
+  // una tirada no va aquí: es un Modificador "tirada" con alcance.
+  casillas?: CasillaRasgo[];
+  textos?: TextoRasgo[];
+  // Puntos menos de penalizador en cada tramo de heridas o de fatiga (§7; M12).
+  ajusteUmbrales?: { salud?: number; fatiga?: number };
   motor: MotorMetadata[];
 };
+
+// Casilla en el modal de la tirada, visible solo con el rasgo. `acciones`: ids de las
+// tiradas fijas de ACCIONES (acciones.ts) donde aparece; un test comprueba que existen.
+// El id y el alcance de la condición los pone casillasDeEspecie.
+export type CasillaRasgo = { acciones: string[]; condicion: CondicionTirada };
+
+// Dónde cuelga un texto sin mecanizar: una tirada fija por id, o los ataques
+// desarmados (Puñetazo y Patada, Accion.desarmado en combate.ts). `soloEnCritico`: va
+// al texto de crítico de la tirada (Accion.efectoCritico), no a su nota.
+export type DestinoTexto = { tipo: "tiradaId"; id: string } | { tipo: "desarmado" };
+export type TextoRasgo = { en: DestinoTexto[]; texto: string; soloEnCritico?: true };
 
 // `etiqueta`: palabra corta para la pista junto al coste ("−1 casta").
 export type CostesRasgo = {
@@ -112,15 +131,34 @@ function atributos(valores: Partial<Record<AtributoId, number>>): Rasgo {
   };
 }
 
-// Casilla en una tirada que solo aparece si la ficha tiene el rasgo (§14.8):
-// depende del punto único de montaje.
+// Casilla en una tirada que solo aparece si la ficha tiene el rasgo (§14.8): la
+// declara `casillas` y la suma montarTirada como cualquier casilla del equipo.
 const casilla = (id: string): MotorMetadata => ({
   tipo: "numerico",
   afecta: { modo: "accion_existente", id },
   mecanismo: "eleccion_jugador",
-  estado: "bloqueado",
-  bloqueoPor: "M1 (montarTirada: casillas de especie)",
+  estado: "construido",
 });
+
+// Texto fijo en una tirada, solo con el rasgo (§14.10): lo declara `textos`.
+const textoEn = (id: string): MotorMetadata => ({
+  tipo: "texto",
+  afecta: { modo: "accion_existente", id },
+  mecanismo: "nota_fija",
+  estado: "construido",
+});
+
+// "Éxito → crítico" (§14.8): casilla sin número que baja el margen de crítico a 0.
+const exitoCritico = (id: string, etiqueta: string): CondicionTirada => ({
+  id,
+  tipo: "toggle",
+  etiqueta,
+  valorActivo: 0,
+  margenCriticoExito: 0,
+  nota: "Si sale éxito, cuenta como crítico.",
+});
+
+const tiradaFija = (id: string): DestinoTexto => ({ tipo: "tiradaId", id });
 
 // Fórmula de un derivado (movimiento, carga): se ve en Personaje → Estado, pero no
 // la lee ninguna acción (motor.md, "Derivados estáticos"), así que no tiene
@@ -182,6 +220,7 @@ const CASTAS_MANDUK: OpcionEspecie[] = [
         id: "contra_miedo",
         label: "Contra el miedo",
         texto: "Un éxito cuenta como crítico en tiradas contra intimidación y miedo (casilla en Salvación de Voluntad).",
+        casillas: [{ acciones: ["salv_voluntad"], condicion: exitoCritico("miedo", "¿Es contra miedo o intimidación?") }],
         motor: [casilla("salv_voluntad")],
       },
       costeCasta("Actitud cuesta 1 menos por nivel (mínimo 1).", { actitud: -1 }),
@@ -211,15 +250,8 @@ const CASTAS_MANDUK: OpcionEspecie[] = [
         id: "umbral_heridas",
         label: "Curtido",
         texto: "Los penalizadores por heridas son un punto menores: −1/−3/−5 pasan a 0/−2/−4.",
-        motor: [
-          {
-            tipo: "numerico",
-            afecta: { modo: "accion_existente", id: "todas" },
-            mecanismo: "siempre_activo",
-            estado: "bloqueado",
-            bloqueoPor: "M1 (los umbrales de salud no se aplican a las tiradas)",
-          },
-        ],
+        ajusteUmbrales: { salud: 1 },
+        motor: [{ tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "siempre_activo", estado: "construido" }],
       },
       costeCasta(
         "Atletismo, Combate a Distancia y Combate Melee cuestan 1 menos por nivel (mínimo 1); Biociencia, Cultura y Tecnociencia, 1 más.",
@@ -238,15 +270,8 @@ const CASTAS_MANDUK: OpcionEspecie[] = [
         id: "umbral_fatiga",
         label: "Incansable",
         texto: "Los penalizadores por fatiga son un punto menores: −1/−2 pasan a 0/−1.",
-        motor: [
-          {
-            tipo: "numerico",
-            afecta: { modo: "accion_existente", id: "todas" },
-            mecanismo: "siempre_activo",
-            estado: "bloqueado",
-            bloqueoPor: "M1 (los umbrales de fatiga no se aplican a las tiradas)",
-          },
-        ],
+        ajusteUmbrales: { fatiga: 1 },
+        motor: [{ tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "siempre_activo", estado: "construido" }],
       },
       {
         id: "frugal",
@@ -284,7 +309,10 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         id: "falla_metabolica",
         label: "Falla metabólica",
         texto: "Al recibir daño de plasma o fuego, Fortaleza (dificultad 9) contra aturdimiento.",
-        motor: [textoBloqueado("salv_fortaleza", ESTADOS_DEFINIDOS)],
+        // Mecanizarlo (tirada propia contra aturdimiento) depende de "estados bien
+        // definidos" (§14.10); hasta entonces, nota en la Salvación de Fortaleza.
+        textos: [{ en: [tiradaFija("salv_fortaleza")], texto: "Al recibir daño de plasma o fuego, dificultad 9 contra aturdimiento." }],
+        motor: [textoEn("salv_fortaleza")],
       },
     ],
   },
@@ -311,13 +339,19 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         id: "tras_esquivar",
         label: "Tras esquivar",
         texto: "Una esquiva con éxito permite moverse una casilla como acción gratuita, una vez por turno.",
-        motor: [{ tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "nota_fija", estado: "pendiente" }],
+        textos: [{ en: [tiradaFija("defensa")], texto: "Con éxito, una casilla de movimiento gratis (una vez por turno)." }],
+        motor: [textoEn("defensa")],
       },
       {
         id: "hiperactividad",
         label: "Tensión ósea",
         texto: "Si recibe un ataque físico mientras se mueve, +1 al daño recibido por cada 4 niveles.",
-        motor: [textoBloqueado("bloquear_danio", ESTADOS_DEFINIDOS)],
+        // TODO(revisar): es daño RECIBIDO, así que se cuelga de Defensa (la tirada al
+        // ser atacado). El encargo de E4 decía "Defensa y ataque": no hay ataque propio
+        // al que le toque, y Bloquear daño (donde de verdad se cuenta el daño) es un
+        // modal sin nota de especie. Mecanizarlo sigue esperando a §14.10.
+        textos: [{ en: [tiradaFija("defensa")], texto: "Atacado físicamente mientras se mueve: +1 al daño recibido por cada 4 niveles." }],
+        motor: [textoEn("defensa")],
       },
     ],
   },
@@ -331,6 +365,7 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         id: "contra_toxinas",
         label: "Inmunidad",
         texto: "Un éxito cuenta como crítico en salvaciones contra toxinas, venenos y enfermedades (casilla en Salvación de Fortaleza).",
+        casillas: [{ acciones: ["salv_fortaleza"], condicion: exitoCritico("toxinas", "¿Contra toxinas, venenos o enfermedad?") }],
         motor: [casilla("salv_fortaleza")],
       },
       {
@@ -383,6 +418,8 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         id: "contra_ocultos",
         label: "Ojo avizor",
         texto: "Un éxito cuenta como crítico en alerta contra enemigos ocultos (casilla en Buscar / percibir).",
+        // Buscar / percibir es la Alerta activa (M22); la pasiva no tira dado.
+        casillas: [{ acciones: ["alerta_activa"], condicion: exitoCritico("oculto", "¿Enemigo oculto?") }],
         motor: [casilla("alerta_activa")],
       },
       {
@@ -390,6 +427,9 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         label: "Deslumbramiento",
         texto:
           "Explosión de plasma, destello intenso o PEM: ceguera (dificultad 9); otras cegueras similares, dificultad +3.",
+        // TODO(revisar): sin texto en ninguna tirada (E4). No hay salvación contra
+        // ceguera: §Ceguera de sistema-y-combate.md no dice qué atributo la resiste
+        // (mismo hueco que el visor de mejorasEstandar.ts, salv_ceguera_destello).
         motor: [textoBloqueado("salv_ceguera_destello", ESTADOS_DEFINIDOS)],
       },
     ],
@@ -404,13 +444,26 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         id: "contra_sugestion",
         label: "Voluntad férrea",
         texto: "Un éxito cuenta como crítico contra efectos sugestivos (casilla en Salvación de Voluntad).",
+        casillas: [{ acciones: ["salv_voluntad"], condicion: exitoCritico("sugestion", "¿Contra un efecto sugestivo?") }],
         motor: [casilla("salv_voluntad")],
       },
       {
         id: "rigidez_narcisista",
         label: "Rigidez narcisista",
         texto: "Un fallo en Empatía, Humor o Negociación es fallo crítico (cualquier tirada con una especialidad de ese nombre).",
-        motor: [casilla("todas")],
+        // Fuera de E4 (decisión del usuario, 2026-10-13). Forma decidida para cuando
+        // las especialidades sean lista cerrada: al tirar se elige QUÉ especialidad se
+        // usa, y con una de esas tres el margen de fallo crítico baja solo, sin casilla
+        // (eleccion_jugador: lo dispara la especialidad elegida al tirar).
+        motor: [
+          {
+            tipo: "numerico",
+            afecta: { modo: "accion_existente", id: "todas" },
+            mecanismo: "eleccion_jugador",
+            estado: "bloqueado",
+            bloqueoPor: "pregunta 3 de sistema.md (especialidades en lista cerrada, S5)",
+          },
+        ],
       },
     ],
   },
@@ -455,6 +508,12 @@ export const ESPECIES: Especie[] = [
         id: "piel_irisada",
         label: "Piel Irisada",
         texto: "+2 para resistir la radiación astral o ambiental (casilla en Salvación de Fortaleza).",
+        casillas: [
+          {
+            acciones: ["salv_fortaleza"],
+            condicion: { id: "radiacion", tipo: "toggle", etiqueta: "¿Contra radiación astral o ambiental?", valorActivo: 2 },
+          },
+        ],
         motor: [casilla("salv_fortaleza")],
       },
       {
@@ -501,6 +560,19 @@ export const ESPECIES: Especie[] = [
         label: "Empatía Biológica",
         texto:
           "+2 a la tirada pertinente tocando o muy cerca; requiere concentración, en combate es acción compleja (casilla en Buscar / percibir y Tratar heridas).",
+        // No en Convencer / mentir: esa es la tirada del que miente (§14.8).
+        casillas: [
+          {
+            acciones: ["alerta_activa", "medicina"],
+            condicion: {
+              id: "empatia",
+              tipo: "toggle",
+              etiqueta: "¿Tocando o muy cerca? (nervios, mentiras, metabolismo)",
+              valorActivo: 2,
+              nota: "Requiere concentración; en combate, acción compleja.",
+            },
+          },
+        ],
         motor: [casilla("alerta_activa"), casilla("medicina")],
       },
       {
@@ -545,6 +617,12 @@ export const ESPECIES: Especie[] = [
         id: "inamovibles",
         label: "Inamovibles",
         texto: "+2 para evitar derribos (casilla en Saltar, escalar, levantarse).",
+        // TODO(revisar): solo en "Saltar, escalar, levantarse". El derribo de las armas
+        // (notaDerribo, combate.ts) pide "su propia salvación" sin decir cuál; si se
+        // define, la casilla va también ahí.
+        casillas: [
+          { acciones: ["atletismo"], condicion: { id: "derribo", tipo: "toggle", etiqueta: "¿Para evitar un derribo?", valorActivo: 2 } },
+        ],
         motor: [casilla("atletismo")],
       },
       {
@@ -552,19 +630,34 @@ export const ESPECIES: Especie[] = [
         label: "Matriz Biometálica",
         texto: "Armadura natural 1, se suma a la puesta (no contra Fuego ni Mental). Crítico desarmado: daño letal.",
         armaduraNatural: 1,
+        // TODO(revisar): "desarmado" es Puñetazo y Patada, la misma lectura que el
+        // sacrificio de la Malla Plasmática (combate.ts); Codazo o Rodillazo se queda
+        // fuera.
+        textos: [{ en: [{ tipo: "desarmado" }], texto: "Daño letal.", soloEnCritico: true }],
         motor: [
           // Mismo mecanismo que el blindaje de una armadura: alimenta desgloseBlindaje,
           // que lee Bloquear daño.
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "pendiente" },
+          textoEn("ataque_melee"),
         ],
       },
       {
         id: "percepcion_sensorial",
         label: "Percepción sensorial",
         texto: "−1 en ataques a distancia (no granadas ni arrojadizas) y en percepción visual (no en Alerta pasiva).",
+        // Fijo en los ataques de Combate a Distancia: lanzar granadas y armas
+        // arrojadizas va con Atletismo, así que se quedan fuera solas (M8). Los
+        // lanzagranadas sí lo llevan: disparan con Combate a Distancia. Iniciativa
+        // desenfundando usa la misma habilidad pero no es un ataque: no lo lleva.
+        modificadores: [
+          { tipo: "tirada", alcance: { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combate_distancia" }, valor: -1 },
+        ],
+        // Percepción visual: Buscar / percibir es la Alerta activa; la pasiva no tira (M8).
+        casillas: [
+          { acciones: ["alerta_activa"], condicion: { id: "visual", tipo: "toggle", etiqueta: "¿Es percepción visual?", valorActivo: -1 } },
+        ],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "siempre_activo", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "siempre_activo", estado: "construido" },
           casilla("alerta_activa"),
         ],
       },
@@ -572,12 +665,24 @@ export const ESPECIES: Especie[] = [
         id: "adaptacion_termica",
         label: "Adaptación Térmica",
         texto: "+2 contra efectos de temperatura (casilla en Salvación de Fortaleza).",
+        casillas: [
+          {
+            acciones: ["salv_fortaleza"],
+            condicion: { id: "temperatura", tipo: "toggle", etiqueta: "¿Contra efectos de temperatura?", valorActivo: 2 },
+          },
+        ],
         motor: [casilla("salv_fortaleza")],
       },
       {
         id: "sistemas_filtradores",
         label: "Sistemas Filtradores",
         texto: "+2 contra efectos de filtración en el aire (casilla en Salvación de Fortaleza).",
+        casillas: [
+          {
+            acciones: ["salv_fortaleza"],
+            condicion: { id: "filtracion", tipo: "toggle", etiqueta: "¿Contra filtración en el aire?", valorActivo: 2 },
+          },
+        ],
         motor: [casilla("salv_fortaleza")],
       },
       {

@@ -24,7 +24,9 @@ const eslintConfig = defineConfig([
   // especie (§14.6) también: la pantalla lee ficha.ajusteCoste / ficha.bolsaAumentos
   // y el coste del siguiente nivel sale de costeSiguienteNivel. Los niveles de
   // disciplina (comprado/efectivo/paraEfectos, requisitos rotos) y las excepciones de
-  // rareza, de ficha.psionica / ficha.excepcionesRareza.
+  // rareza, de ficha.psionica / ficha.excepcionesRareza. Lo que la especie pone en las
+  // tiradas (§14.8): casillas y textos los añade conExtrasDeFicha; los umbrales ya
+  // vienen en ficha.modificadores.
   //
   // Y las tiradas (M1, docs/modificadores-tiradas.md "Montaje"): total, desglose y
   // márgenes de crítico salen de montarTirada / tirarMontada (rules/montaje.ts). La
@@ -79,6 +81,11 @@ const eslintConfig = defineConfig([
                 "formulaMovimientoDeEspecie",
                 "multiplicadorCargaDeEspecie",
                 "armaduraNaturalDeEspecie",
+                "casillasDeEspecie",
+                "textosDeEspecie",
+                "ajusteUmbralesDeEspecie",
+                "modificadoresDeUmbrales",
+                "consultaIndiceCondiciones",
                 "bonosDeDisciplina",
                 "nivelesDePsionica",
                 "nivelEfectivo",

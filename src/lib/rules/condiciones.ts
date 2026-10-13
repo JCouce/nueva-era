@@ -24,9 +24,10 @@ import type { AlcanceModificador } from "./modificadores";
 // Independiente de `valorActivo`/`valor`: una condición puede llevar las dos
 // cosas, solo el número, o solo la nota (con valor 0).
 //
-// `margenCriticoExito`: con la opción elegida, un éxito es crítico a partir de este
-// margen en vez del general (VTM nv4 "complejo": 0, cualquier éxito). Lo lee
-// montarTirada (montaje.ts).
+// `margenCriticoExito`: con la opción elegida (o el toggle activo), un éxito es
+// crítico a partir de este margen en vez del general (VTM nv4 "complejo" y los
+// "éxito → crítico" de especie, §14.8: 0, cualquier éxito). Lo lee montarTirada
+// (montaje.ts); con varios activos gana el más bajo.
 export type OpcionCondicion = { id: string; etiqueta: string; valor: number; nota?: string; margenCriticoExito?: number };
 
 export type CondicionTirada = (
@@ -38,6 +39,7 @@ export type CondicionTirada = (
       valorInactivo?: number; // por defecto 0
       activaPorDefecto?: boolean;
       nota?: string;
+      margenCriticoExito?: number;
       // Gasto de sheet.recursos si el toggle está activo/inactivo al
       // confirmar la tirada (docs/prompt-gasto-recursos.md, Fase 1) — mismo
       // patrón que valorActivo/valorInactivo, pero para gastoTotal() en vez

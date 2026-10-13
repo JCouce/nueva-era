@@ -156,6 +156,7 @@ type AlcanceModificador =
   | { tipo: "tiradaId"; id: string }                 // una tirada fija, por su id ("salv_fortaleza")
   | { tipo: "grupo"; grupo: GrupoAccion }             // todas las de un grupo (Salvaciones, Acciones...)
   | { tipo: "habilidad"; habilidad: HabilidadId }     // cualquier tirada que use esa habilidad
+  | { tipo: "grupoHabilidad"; grupo: GrupoAccion; habilidad: HabilidadId } // las de ese grupo con esa habilidad
   | { tipo: "modo"; contieneEtiqueta: string }        // solo si el modo elegido la contiene ("F. Auto")
   | { tipo: "todas" };                                // cualquier tirada, sin excepción
 ```
@@ -177,6 +178,13 @@ declararlo en el catálogo con el alcance correcto.
   entero — usarlo mal sobre-aplica el bono).
 - `habilidad` → para algo que ayude en cualquier tirada de esa habilidad,
   sea cual sea el arma o el contexto.
+- `grupoHabilidad` → cuando la regla dice "ataques con X": las tiradas de
+  ese grupo que usen esa habilidad, y ninguna otra. Caso real: el −1 a
+  distancia del Arköru (grupo `Ataques` + Combate a Distancia), que con
+  `habilidad` a secas caía también en "Iniciativa (desenfundando)", que usa
+  Combate a Distancia pero no es un ataque. En el índice de casillas va con
+  las de su habilidad y la consulta descarta las de otro grupo
+  (`consultaIndiceCondiciones`, `equipo.ts`).
 - `modo` → solo tiene sentido en una tirada de ataque con condición "modo"
   (el Sistema de Retroceso, que solo ayuda en F. Auto). **Limitación
   conocida:** no distingue por tipo de arma — el documento dice que en
@@ -582,10 +590,12 @@ Qué devuelve y dónde entra cada mecanismo:
 | `margenes` | `{ criticoExito, criticoFallo }`, por defecto `MARGEN_CRITICO` (6) |
 | `notas`, `modoElegido` | `notasCondiciones` y la etiqueta del modo elegido (para el alcance `modo`) |
 
-**Los márgenes son dato de la opción, no código de pantalla.** `OpcionCondicion` lleva
-`margenCriticoExito?`; `montarTirada` lo toma de cualquier opción elegida. La VTM nv4
-(`medicina.ts`, condición `vtm_tratamiento`) declara `margenCriticoExito: 0` en
-"complejo" y cualquier éxito pasa a crítico; antes era un `if` por id en `AccionesTab`.
+**Los márgenes son dato de la casilla, no código de pantalla.** `OpcionCondicion` y el
+`toggle` llevan `margenCriticoExito?`; `montarTirada` lo toma de cualquier opción elegida o
+toggle activo, y con varios gana el más bajo. La VTM nv4 (`medicina.ts`, condición
+`vtm_tratamiento`) declara `margenCriticoExito: 0` en "complejo" y cualquier éxito pasa a
+crítico; antes era un `if` por id en `AccionesTab`. Los "éxito → crítico" de especie (E4)
+son toggles sin número con el mismo `margenCriticoExito: 0`.
 
 Quién lo usa: `FilaTirada` y `FilaPoder` (`modificador`; la de poder vía
 `PoderPreparado.montada`, que `prepararPoder` monta con `eleccionSinTocar`),
@@ -609,3 +619,22 @@ vida/fatiga con la que se calculan es una entrada explícita de `resolverFicha`
 un NPC en la consola). El daño melee/bayoneta/Sutil (`accionesDeAtaque(sheet, mods)`)
 también sale de esos modificadores, con especie y estados.
 
+## 11. Lo que pone la especie en una tirada (E4)
+
+*(2026-10-13, `docs/sistema.md` §14.8 y §14.10.)* La especie no inventa mecanismo: usa los
+mismos, con el dato en el rasgo (`catalog/especies.ts`) y resuelto una vez en la
+`FichaResuelta` (`rules/especie.ts`).
+
+| Dato del rasgo | Mecanismo | Llega por |
+|---|---|---|
+| `modificadores` (tipo `"tirada"`) | 4, alcance | `FichaResuelta.modificadores` → `bonoAlcance`, como el equipo (el −1 a distancia del Arköru, alcance `grupoHabilidad`) |
+| `casillas: { acciones, condicion }[]` | 1, `CondicionTirada` | `casillasDeEspecie` → **el mismo índice que el equipo** (`indiceDeCondiciones(sheet, deOtrasFuentes)`), con alcance `tiradaId` por cada acción. Id `especie_<rasgo>_<casilla>`, etiqueta con el rasgo detrás |
+| `ajusteUmbrales: { salud?, fatiga? }` | 4, alcance `todas` | `FichaResuelta.ajusteUmbrales` → parámetro obligatorio de `modificadoresDeUmbrales` (sin especie, `SIN_AJUSTE_UMBRALES`) |
+| `textos: { en, texto, soloEnCritico? }[]` | `nota_fija` | `FichaResuelta.textosTirada` → `conExtrasDeFicha` los suma a `Accion.nota` (o a `efectoCritico`). Destino: una tirada fija por id o los ataques desarmados (`Accion.desarmado`) |
+
+**`conExtrasDeFicha(ficha, tirada)`** (`fichaResuelta.ts`) es lo que antes era el
+`conCondicionesDeEquipo` de `AccionesTab`: casillas del índice (equipo y especie) y textos de
+especie, para cualquier tirada (fija o generada). La pantalla solo lo llama; ESLint veta en
+componentes `consultaIndiceCondiciones`, `casillasDeEspecie`, `textosDeEspecie`,
+`ajusteUmbralesDeEspecie` y `modificadoresDeUmbrales`. Ni un `if (especie === …)`: un
+rasgo nuevo con casilla es solo dato.

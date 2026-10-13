@@ -1350,7 +1350,7 @@ problema completo en `docs/modificadores-tiradas.md` §8. **Resuelta:** el §8 s
 el 2026-09-23 (condiciones con `alcance` desde el equipo) y la psiónica entra por
 `conPsionicaEnTiradaFija` (2026-09-30).
 
-### Especies reales ⬜ (plan cerrado 2026-10-09; E0, E1, E2 y E3 hechas)
+### Especies reales ⬜ (plan cerrado 2026-10-09; E0, E1, E2, E3, M1 y E4 hechas)
 
 Plan y porqués en `docs/propuesta-especies.md` (decisiones del usuario en §5b, ninguna
 pendiente de Murillo); flujo en `docs/diagrama-especies.png`. Fuente: `docs/Especies.pdf`.
@@ -1470,16 +1470,33 @@ no `base`); con dos opciones que bajen el margen de crítico gana el más bajo, 
       NPC siguen entrando enteros, salen de una plantilla)*
 - [x] El daño de armas melee/bayoneta y el aplicado Sutil salen aún de la ficha en reposo (`combate.ts`, `TODO(revisar)`): con un estado que baje Fuerza, la tirada lo refleja y el daño no *(M1b, 2026-10-13: `accionesDeAtaque(sheet, mods)` con los modificadores de la `FichaResuelta`; también lanzar arma melee y el Aguijón. **Cambia números visibles, avisar a la mesa al desplegar:** el daño melee y el de Sutil reflejan los estados de combate que bajan Fuerza (Enfermedad…); la especie ya contaba)*
 
-**E4 — Bonos a tiradas**
-- [ ] Casillas de especie: +2 radiación (Riux), temperatura / filtración / derribo y −1
-      visual (Arköru), Empatía Biológica en Buscar/percibir y Tratar heridas (Arianyi)
-- [ ] −1 a distancia del Arköru (solo Combate a Distancia)
-- [ ] Toggles "éxito → crítico" visibles solo para su casa: Noble (miedo, Voluntad), Irota
-      (toxinas), Axadren (enemigo oculto: Alerta activa y Buscar), Elión (sugestión)
-- [ ] "Fallo → fallo crítico" de Elión (especialidad Empatía / Humor / Negociación)
-- [ ] −1 a los tramos de heridas (Guerrero) y fatiga (Siervo)
-- [ ] Textos: crítico desarmado letal (Arköru), casilla gratis tras esquivar y daño extra
-      (Zimethroni), aturdimiento (Ílkrem), ceguera (Axadren)
+**E4 — Bonos a tiradas** (2026-10-13; falta verificarlo en navegador)
+- [x] ~~Casillas de especie: +2 radiación (Riux), temperatura / filtración / derribo y −1
+      visual (Arköru), Empatía Biológica en Buscar/percibir y Tratar heridas (Arianyi)~~
+      *(dato `casillas` en el rasgo → `casillasDeEspecie` → mismo índice que el equipo; solo
+      con el rasgo, también al NPC libre. −1 visual en Buscar/percibir = Alerta activa, no en
+      la pasiva. `TODO(revisar)`: no hay salvación contra derribo donde poner la de Inamovibles)*
+- [x] ~~−1 a distancia del Arköru (solo Combate a Distancia)~~ *(`Modificador` de tirada con
+      alcance nuevo `grupoHabilidad` (Ataques + Combate a Distancia): granadas y arrojadizas
+      van con Atletismo y quedan fuera solas, e Iniciativa desenfundando también)*
+- [x] ~~Toggles "éxito → crítico" visibles solo para su casa: Noble (miedo, Voluntad), Irota
+      (toxinas), Axadren (enemigo oculto: Alerta activa y Buscar), Elión (sugestión)~~
+      *(toggle sin número con `margenCriticoExito: 0`, campo nuevo también en toggles; gana el
+      margen más bajo)*
+- [ ] "Fallo → fallo crítico" de Elión (especialidad Empatía / Humor / Negociación):
+      **bloqueado** por la pregunta 3 (especialidades en lista cerrada, S5), fuera de E4
+      (decisión del usuario, 2026-10-13). Forma decidida: especialidades por id; al tirar se
+      elige **qué** especialidad se usa (no solo sí/no) y, con una de esas tres, el fallo
+      crítico se aplica solo, sin casilla. MotorMetadata `bloqueado`
+- [x] ~~−1 a los tramos de heridas (Guerrero) y fatiga (Siervo)~~ *(`ajusteUmbrales` en el
+      rasgo → `FichaResuelta.ajusteUmbrales` → parámetro obligatorio de
+      `modificadoresDeUmbrales`; un tramo en 0 no da línea. Solo el −N: velocidad y carga igual)*
+- [x] ~~Textos: crítico desarmado letal (Arköru), casilla gratis tras esquivar y daño extra
+      (Zimethroni), aturdimiento (Ílkrem), ceguera (Axadren)~~ *(`textos` en el rasgo →
+      `conExtrasDeFicha`: Arköru en el crítico de toda la Pelea (Codazo o Rodillazo incluido, y la Malla Plasmática igual); Zimethroni, los dos en
+      Defensa; Ílkrem en la Salvación de Fortaleza. `TODO(revisar)`: la ceguera del Axadren
+      sin sitio, no hay salvación contra ceguera; la "Tensión ósea" del Zimethroni es daño
+      recibido y va a Defensa)*
 
 **E5 — Otras áreas**
 - [ ] Peaje de Maolher en `usoPoder.ts` (Fortaleza 5 + nivel; no lo absorbe el blindaje)

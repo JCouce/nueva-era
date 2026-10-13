@@ -65,6 +65,34 @@ const ETIQUETA_UMBRAL: Record<Exclude<UmbralSalud, "normal"> | Exclude<UmbralFat
   exhausto: "Exhausto",
 };
 
+// Un tramo menos de penalizador por recurso (Guerrero heridas, Siervo fatiga, §14.8):
+// `valor` puntos menos en cada tramo, con la fuente para el desglose. Lo resuelve la
+// especie (ajusteUmbralesDeEspecie) y llega por parámetro obligatorio; sin especie,
+// SIN_AJUSTE_UMBRALES. Solo toca el −N de las tiradas: la velocidad y la carga del
+// mismo umbral no cambian (movimientoPorUmbrales no lo recibe).
+// TODO(revisar): §14.8 dice "reducen en 1 los penalizadores"; se lee como el −N a
+// todo (M12), no como la media velocidad ni la carga de §7.
+export type AjusteUmbral = { valor: number; fuente: string };
+export type AjusteUmbrales = { salud: AjusteUmbral | null; fatiga: AjusteUmbral | null };
+export const SIN_AJUSTE_UMBRALES: AjusteUmbrales = { salud: null, fatiga: null };
+
+function modificadorDeUmbral(
+  penalizador: number,
+  etiqueta: string,
+  ajuste: AjusteUmbral | null,
+): ModificadorConFuente | null {
+  const valor = Math.min(0, penalizador + (ajuste?.valor ?? 0));
+  // Un tramo que el ajuste deja en 0 no da línea en el desglose.
+  if (valor === 0) return null;
+  return {
+    tipo: "tirada",
+    alcance: { tipo: "todas" },
+    valor,
+    origen: "estado",
+    fuente: ajuste ? `${etiqueta} (${ajuste.fuente})` : etiqueta,
+  };
+}
+
 // El "-1/-3/-5 a todo" de PG y el "-1/-2 a todo" de fatiga (docs/sistema.md
 // §7), listos para sumarse al resto de modificadores de la ficha: resolverFicha los
 // mete en FichaResuelta.modificadores (M1b), así llegan a montarTirada y a
@@ -75,29 +103,20 @@ export function modificadoresDeUmbrales(
   pgMax: number,
   fatigaActual: number,
   fatigaMax: number,
+  ajuste: AjusteUmbrales,
 ): ModificadorConFuente[] {
   const mods: ModificadorConFuente[] = [];
 
   const salud = umbralSalud(pgActual, pgMax);
   if (salud !== "normal") {
-    mods.push({
-      tipo: "tirada",
-      alcance: { tipo: "todas" },
-      valor: PENALIZADOR_SALUD[salud],
-      origen: "estado",
-      fuente: ETIQUETA_UMBRAL[salud],
-    });
+    const m = modificadorDeUmbral(PENALIZADOR_SALUD[salud], ETIQUETA_UMBRAL[salud], ajuste.salud);
+    if (m) mods.push(m);
   }
 
   const fatiga = umbralFatiga(fatigaActual, fatigaMax);
   if (fatiga !== "normal") {
-    mods.push({
-      tipo: "tirada",
-      alcance: { tipo: "todas" },
-      valor: PENALIZADOR_FATIGA[fatiga],
-      origen: "estado",
-      fuente: ETIQUETA_UMBRAL[fatiga],
-    });
+    const m = modificadorDeUmbral(PENALIZADOR_FATIGA[fatiga], ETIQUETA_UMBRAL[fatiga], ajuste.fatiga);
+    if (m) mods.push(m);
   }
 
   return mods;

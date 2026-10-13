@@ -58,6 +58,8 @@ const CTX_ALERTA: ContextoAccion = { id: "alerta_activa", grupo: "Acciones", hab
 const CTX_SALV_FORTALEZA: ContextoAccion = { id: "salv_fortaleza", grupo: "Salvaciones", habilidad: null, modoElegido: null };
 const CONDICIONES_EQUIPO = [["visor_nocturno_n1_activo", "visor_nocturno_n2_activo", "mira_telescopica_busqueda"], []];
 
+const CASILLAS_FORTALEZA_ARKORU = ["especie_adaptacion_termica_temperatura", "especie_sistemas_filtradores_filtracion"];
+
 const MOV_BASE = { bonoExoesqueleto: 0, carrera: 20, saltoVertical: 60, saltoHorizontal: 180, escalada: 6, nado: 6 };
 const MOV_EXO = { bonoExoesqueleto: 4, carrera: 24, saltoVertical: 120, saltoHorizontal: 260, escalada: 8, nado: 8 };
 
@@ -77,6 +79,8 @@ type Esperado = {
   // caracterización de arriba (derivados con el neutro) no cambia; resolverFicha sí,
   // a propósito.
   e3?: { movimiento: typeof MOV_BASE; carga: number };
+  // E4 (§14.8): las casillas de especie entran en el mismo índice que las del equipo.
+  e4?: { condiciones: string[][] };
 };
 
 const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperado: Esperado }[] = [
@@ -103,7 +107,7 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
     sheet: { ...base(), especieId: "arkoru" },
     estados: [],
     esperado: {
-      nMods: 2,
+      nMods: 3, // atributos + −1 a distancia (E4)
       atributos: { fuerza: 4, agilidad: 0, aguante: 1, percepcion: 0, inteligencia: 1, caracter: -1 },
       aplicados: { fortaleza: 3, potencia: 2, reflejos: 0, voluntad: 0, perspicacia: 1, expresion: 0 },
       salud: { vida: 11, fatiga: 8 },
@@ -116,6 +120,7 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
       condiciones: [[], []],
       // base 4: 18 × 4, 100 + 4 × 25, 8 + 2, 2 + 2; carga 80 × 1,2
       e3: { movimiento: { ...MOV_BASE, saltoVertical: 72, saltoHorizontal: 200, escalada: 10, nado: 4 }, carga: 96 },
+      e4: { condiciones: [["especie_percepcion_sensorial_visual"], CASILLAS_FORTALEZA_ARKORU] },
     },
   },
   {
@@ -172,6 +177,7 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
       condiciones: [[], []],
       // Movimiento Acuático, base 4: nado 8 + 2
       e3: { movimiento: { ...MOV_BASE, nado: 10 }, carga: 20 },
+      e4: { condiciones: [["especie_empatia_biologica_empatia"], []] },
     },
   },
   {
@@ -180,7 +186,7 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
     sheet: conEquipo({ ...base(), especieId: "arkoru" }),
     estados: ENFERMO_Y_ATURDIDO,
     esperado: {
-      nMods: 10,
+      nMods: 11, // E4: +1, el −1 a distancia del Arköru
       atributos: { fuerza: 2, agilidad: 0, aguante: -1, percepcion: 0, inteligencia: 1, caracter: -1 },
       aplicados: { fortaleza: 1, potencia: 1, reflejos: 0, voluntad: -1, perspicacia: 1, expresion: 0 },
       salud: { vida: 9, fatiga: 7 },
@@ -202,6 +208,12 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
       e3: {
         movimiento: { bonoExoesqueleto: 4, carrera: 23, saltoVertical: 126, saltoHorizontal: 275, escalada: 11, nado: 5 },
         carga: 144,
+      },
+      e4: {
+        condiciones: [
+          [...CONDICIONES_EQUIPO[0], "especie_percepcion_sensorial_visual"],
+          CASILLAS_FORTALEZA_ARKORU,
+        ],
       },
     },
   },
@@ -262,7 +274,7 @@ describe("resolverFicha da exactamente lo mismo", () => {
       assert.equal(r.blindaje.tieneEscudoMelee, esperado.escudo);
       assert.deepEqual(
         [CTX_ALERTA, CTX_SALV_FORTALEZA].map((ctx) => consultaIndiceCondiciones(r.indiceCondiciones, ctx).map((c) => c.id)),
-        esperado.condiciones,
+        esperado.e4?.condiciones ?? esperado.condiciones,
       );
     });
   }

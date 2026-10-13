@@ -22,25 +22,30 @@ import {
 } from "./derivados";
 import {
   ajustesDeCoste,
+  ajusteUmbralesDeEspecie,
   armaduraNaturalDeEspecie,
   bolsaDeAumentos,
+  casillasDeEspecie,
   especieDeFicha,
   excepcionesRareza,
   formulaMovimientoDeEspecie,
   multiplicadorCargaDeEspecie,
+  textosDeEspecie,
   type EspecieResuelta,
+  type TextoEnTirada,
   type FormulaMovimientoResuelta,
   type MultiplicadorCarga,
 } from "./especie";
 import { bonosDeDisciplina, nivelesDePsionica, type PsionicaResuelta } from "./psionica";
 import type { ExcepcionRareza } from "../catalog/especies";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
-import { indiceDeCondiciones, modificadoresDeEquipo, type IndiceCondiciones } from "./equipo";
+import { consultaIndiceCondiciones, indiceDeCondiciones, modificadoresDeEquipo, type IndiceCondiciones } from "./equipo";
 import {
   modificadoresDeEstados,
   modificadoresDeUmbrales,
   movimientoPorUmbrales,
   umbralFatiga,
+  type AjusteUmbrales,
   umbralSalud,
   type EstadoActivo,
   type MovimientoPorUmbral,
@@ -51,6 +56,7 @@ import { levitacion } from "./poderes";
 import { fatigaEfectiva } from "./vitalidad";
 import type { ModificadorConFuente } from "./modificadores";
 import type { Sheet } from "./sheet";
+import type { Accion } from "./acciones";
 
 export type DesgloseDerivado = { total: number; fuentes: Fuente[] };
 
@@ -71,6 +77,9 @@ export type FichaResuelta = {
   // Umbrales de §7 con la vida/fatiga de `vitalidad` (fatiga efectiva) y lo que hacen
   // a velocidad y carga, ya aplicado en movimiento, vuelo, levitación y cargaMaxima.
   umbrales: { salud: UmbralSalud; fatiga: UmbralFatiga; movimiento: MovimientoPorUmbral };
+  // Un tramo menos de penalizador por especie (Guerrero, Siervo; §14.8), ya aplicado en
+  // los modificadores de umbral de arriba. Derivado: también al NPC.
+  ajusteUmbrales: AjusteUmbrales;
   movimiento: ReturnType<typeof movimiento>;
   // null si la ficha no vuela (Movilidad Aérea) o no levita (Traslación 2+).
   vuelo: ReturnType<typeof vuelo>;
@@ -84,8 +93,12 @@ export type FichaResuelta = {
   // (desgloseBlindaje) lo pide el modal con lo que elige el jugador, pasándole
   // la armadura natural de aquí.
   blindaje: { tieneEscudoMelee: boolean; armaduraNatural: ArmaduraNatural };
-  // Casillas con alcance del equipo, indexadas una vez (consultaIndiceCondiciones).
+  // Casillas con alcance del equipo y de la especie (§14.8), indexadas una vez
+  // (consultaIndiceCondiciones). Las de especie son derivadas: también al NPC.
   indiceCondiciones: IndiceCondiciones;
+  // Textos sin mecanizar de la especie (§14.10) que cuelgan de una tirada: los pone
+  // conExtrasDeFicha en su nota o en su texto de crítico.
+  textosTirada: TextoEnTirada[];
   // Creación y progresión (§14.6): el ajuste de coste que reciben los puntos, la
   // compra y el coste del siguiente nivel, y la bolsa de aumentos (null si la
   // especie no la trae). En modo libre (NPC, §14.3), neutros.
@@ -143,7 +156,8 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
     fatiga: umbralFatiga(v.fatiga, v.fatigaMax),
   };
   const porUmbral = movimientoPorUmbrales(umbrales.salud, umbrales.fatiga);
-  const modificadores = [...sinUmbrales, ...modificadoresDeUmbrales(v.pg, v.pgMax, v.fatiga, v.fatigaMax)];
+  const ajusteUmbrales = ajusteUmbralesDeEspecie(especie);
+  const modificadores = [...sinUmbrales, ...modificadoresDeUmbrales(v.pg, v.pgMax, v.fatiga, v.fatigaMax, ajusteUmbrales)];
 
   // Media velocidad: carrera, vuelo y levitación; saltos, escalada y nado no (S26).
   const velocidad = (m: number) => (porUmbral.mediaVelocidad.length > 0 ? Math.floor(m / 2) : m);
@@ -170,6 +184,7 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
     salud: maximos,
     alerta: alerta(sheet, modificadores),
     umbrales: { ...umbrales, movimiento: porUmbral },
+    ajusteUmbrales,
     movimiento: { ...mov, carrera: velocidad(mov.carrera) },
     vuelo: vue && { ...vue, velocidadM: velocidad(vue.velocidadM) },
     levitacion: lev && { ...lev, velocidadM: velocidad(lev.velocidadM) },
@@ -177,11 +192,35 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
     formulaMovimiento,
     multiplicadorCarga,
     blindaje: { tieneEscudoMelee: tieneEscudoMelee(sheet), armaduraNatural: armaduraNaturalDeEspecie(especie) },
-    indiceCondiciones: indiceDeCondiciones(sheet),
+    indiceCondiciones: indiceDeCondiciones(sheet, casillasDeEspecie(especie)),
+    textosTirada: textosDeEspecie(especie),
     ajusteCoste: libre ? AJUSTE_NEUTRO : ajustesDeCoste(especie),
     bolsaAumentos: libre ? null : bolsaDeAumentos(especie),
     excepcionesRareza: libre ? [] : excepcionesRareza(especie),
     psionica,
+  };
+}
+
+// --- Lo que la ficha añade a una tirada antes de montarla ------------------------
+
+// Las casillas con alcance (equipo y especie, del índice) y los textos de especie de
+// esta tirada, sea fija de ACCIONES o generada (ataques, herramientas, Volar…). Ni la
+// tirada ni la pantalla saben de dónde vienen. `modoElegido: null`: la tirada aún no se
+// ha abierto, así que una casilla con alcance "modo" no tiene nada que casar (ver
+// indiceDeCondiciones). Sin nada que añadir, devuelve la misma tirada.
+export function conExtrasDeFicha(ficha: Pick<FichaResuelta, "indiceCondiciones" | "textosTirada">, t: Accion): Accion {
+  const extra = consultaIndiceCondiciones(ficha.indiceCondiciones, { id: t.id, grupo: t.grupo, habilidad: t.habilidad, modoElegido: null });
+  const textos = ficha.textosTirada.filter((x) => (x.en.tipo === "desarmado" ? t.desarmado === true : x.en.id === t.id));
+  if (extra.length === 0 && textos.length === 0) return t;
+  const lineas = (critico: boolean) => textos.filter((x) => x.soloEnCritico === critico).map((x) => `${x.texto} (${x.fuente})`);
+  const enNota = lineas(false);
+  const enCritico = lineas(true);
+  const junta = (actual: string | undefined, nuevas: string[]) => [actual, ...nuevas].filter(Boolean).join(" · ");
+  return {
+    ...t,
+    ...(extra.length > 0 && { condiciones: [...(t.condiciones ?? []), ...extra] }),
+    ...(enNota.length > 0 && { nota: junta(t.nota, enNota) }),
+    ...(enCritico.length > 0 && { efectoCritico: junta(t.efectoCritico, enCritico) }),
   };
 }
 

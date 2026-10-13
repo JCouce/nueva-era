@@ -4,6 +4,7 @@ import {
   umbralSalud,
   umbralFatiga,
   modificadoresDeUmbrales,
+  SIN_AJUSTE_UMBRALES,
   modificadoresDeEstados,
   describirEstadosActivos,
   descontarDuracion,
@@ -59,11 +60,11 @@ describe("casos borde", () => {
 
 describe("modificadoresDeUmbrales (S14: no se acumulan dentro del mismo recurso)", () => {
   test("a full PG y fatiga, no hay penalizador", () => {
-    assert.deepEqual(modificadoresDeUmbrales(20, 20, 20, 20), []);
+    assert.deepEqual(modificadoresDeUmbrales(20, 20, 20, 20, SIN_AJUSTE_UMBRALES), []);
   });
 
   test("malherido da solo su -3, no se suma al -1 de herido", () => {
-    const mods = modificadoresDeUmbrales(4, 20, 20, 20);
+    const mods = modificadoresDeUmbrales(4, 20, 20, 20, SIN_AJUSTE_UMBRALES);
     assert.equal(mods.length, 1);
     assert.deepEqual(mods[0], {
       tipo: "tirada",
@@ -75,7 +76,7 @@ describe("modificadoresDeUmbrales (S14: no se acumulan dentro del mismo recurso)
   });
 
   test("PG y fatiga son independientes: herido + fatigado suman sus dos penalizadores", () => {
-    const mods = modificadoresDeUmbrales(9, 20, 4, 20);
+    const mods = modificadoresDeUmbrales(9, 20, 4, 20, SIN_AJUSTE_UMBRALES);
     assert.equal(mods.length, 2);
     assert.ok(mods.find((m) => m.fuente === "Herido" && m.valor === -1));
     assert.ok(mods.find((m) => m.fuente === "Fatigado" && m.valor === -1));

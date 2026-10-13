@@ -69,15 +69,16 @@ export type TiradaMontada = {
   modoElegido: string | null;
 };
 
-// Márgenes que bajan las opciones elegidas (VTM nv4 "complejo": cualquier éxito es
-// crítico). TODO(revisar): con dos fuentes activas a la vez se queda el margen más bajo;
-// hoy solo existe la VTM, decidirlo cuando llegue la segunda (E4: "éxito → crítico").
+// Márgenes que bajan las casillas marcadas: la opción elegida (VTM nv4 "complejo") o el
+// toggle activo ("éxito → crítico" de especie, §14.8). Con varias a la vez gana el
+// margen más bajo (decidido en M1a, confirmado en E4).
 function margenesDeCondiciones(condiciones: CondicionTirada[], estado: EstadoCondiciones): TiradaMontada["margenes"] {
   let criticoExito = MARGEN_CRITICO;
   for (const c of condiciones) {
-    if (c.tipo !== "opcion") continue;
-    const elegida = c.opciones.find((o) => o.id === estado[c.id]);
-    if (elegida?.margenCriticoExito !== undefined) criticoExito = Math.min(criticoExito, elegida.margenCriticoExito);
+    let margen: number | undefined;
+    if (c.tipo === "opcion") margen = c.opciones.find((o) => o.id === estado[c.id])?.margenCriticoExito;
+    else if (c.tipo === "toggle" && Boolean(estado[c.id])) margen = c.margenCriticoExito;
+    if (margen !== undefined) criticoExito = Math.min(criticoExito, margen);
   }
   return { criticoExito, criticoFallo: MARGEN_CRITICO };
 }

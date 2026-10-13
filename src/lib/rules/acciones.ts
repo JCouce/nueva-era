@@ -46,6 +46,9 @@ export type Accion = {
   // el Cuchillo de Combate) — a diferencia de `nota`, que se muestra siempre.
   // Se pinta en ResultadoTirada.tsx solo cuando `resultado.critico` es true.
   efectoCritico?: string;
+  // Golpe a mano vacía (Puñetazo, Patada; combate.ts): a estos ataques llegan los
+  // textos de especie con destino "desarmado" (crítico letal del Arköru, §14.8).
+  desarmado?: true;
   // Efectos que NO se automatizan porque tocan una tirada distinta a esta —
   // la de un tercero (objetivo_tercero, docs/motor.md) o una tirada propia
   // pero distinta (Sigilo por el Puntero Láser). El motor no los aplica en
@@ -388,9 +391,9 @@ export function resolverTirada({
   circunstancial?: number;
   dificultad?: number | null;
   // Umbrales de crítico distintos del general (MARGEN_CRITICO). Los decide
-  // montarTirada (montaje.ts) a partir de las opciones elegidas: hoy solo la VTM
-  // nivel 4 ("complejo", medicina.ts) baja el de éxito a 0, y ninguna toca el de
-  // fallo.
+  // montarTirada (montaje.ts) a partir de las casillas marcadas: la VTM nivel 4
+  // ("complejo", medicina.ts) y los "éxito → crítico" de especie bajan el de éxito
+  // a 0; ninguna toca el de fallo.
   margenCriticoExito?: number;
   margenCriticoFallo?: number;
 }): Resultado {

@@ -16,6 +16,10 @@
 //   formulaMovimientoDeEspecie / multiplicadorCargaDeEspecie / armaduraNaturalDeEspecie
 //                   los derivados que cambian de fórmula con la especie (§14.7),
 //                   con la fuente de cada cambio para las notas de Estado
+//   casillasDeEspecie / textosDeEspecie / ajusteUmbralesDeEspecie
+//                   lo que la especie pone en las tiradas (§14.8, E4): casillas al
+//                   mismo índice que las del equipo, notas fijas y el tramo menos de
+//                   penalizador por umbral
 //
 // Mismo patrón que usoPoder.ts: entrada explícita, nada se lee de fuera salvo el
 // catálogo, y el resultado se aplica tal cual.
@@ -36,6 +40,9 @@ import { defaultSheet, type Sheet } from "./sheet";
 import { FORMULA_MOVIMIENTO_GENERAL, type FormulaMovimiento } from "./formulaMovimiento";
 import { SIN_ARMADURA_NATURAL, type ArmaduraNatural } from "./blindaje";
 import type { HabilidadId } from "./habilidades";
+import type { CondicionTirada } from "./condiciones";
+import { SIN_AJUSTE_UMBRALES, type AjusteUmbral, type AjusteUmbrales } from "./estados";
+import type { DestinoTexto } from "../catalog/especies";
 
 export type RasgoConFuente = Rasgo & { fuente: string };
 
@@ -339,4 +346,50 @@ export function armaduraNaturalDeEspecie(especie: EspecieResuelta | null): Armad
     valor: con.reduce((t, r) => t + r.armaduraNatural!, 0),
     fuente: [...new Set(con.map((r) => r.fuente))].join(", "),
   };
+}
+
+// --- Tiradas (§14.8) -------------------------------------------------------------
+
+// Las casillas de los rasgos, una por tirada fija con alcance tiradaId: entran en el
+// mismo índice que las del equipo (indiceDeCondiciones), así que montarTirada las suma
+// sin saber de dónde vienen. El id lleva el rasgo delante para no chocar con otra
+// casilla de la misma tirada; la etiqueta, el rasgo detrás para el desglose.
+export function casillasDeEspecie(especie: EspecieResuelta | null): CondicionTirada[] {
+  return (especie?.rasgos ?? []).flatMap((r) =>
+    (r.casillas ?? []).flatMap(({ acciones, condicion }) =>
+      acciones.map((id) => ({
+        ...condicion,
+        id: `especie_${r.id}_${condicion.id}`,
+        etiqueta: `${condicion.etiqueta} (${r.label})`,
+        alcance: { tipo: "tiradaId" as const, id },
+      })),
+    ),
+  );
+}
+
+export type TextoEnTirada = { en: DestinoTexto; texto: string; fuente: string; soloEnCritico: boolean };
+
+// Los textos sin mecanizar (§14.10), uno por destino, con "rasgo · capa" de fuente.
+export function textosDeEspecie(especie: EspecieResuelta | null): TextoEnTirada[] {
+  return (especie?.rasgos ?? []).flatMap((r) =>
+    (r.textos ?? []).flatMap((t) =>
+      t.en.map((en) => ({ en, texto: t.texto, fuente: `${r.label} · ${r.fuente}`, soloEnCritico: t.soloEnCritico ?? false })),
+    ),
+  );
+}
+
+// Guerrero (heridas) y Siervo (fatiga): puntos menos en cada tramo. Si dos capas
+// tocaran el mismo recurso, se suman.
+export function ajusteUmbralesDeEspecie(especie: EspecieResuelta | null): AjusteUmbrales {
+  const ajuste = (recurso: "salud" | "fatiga"): AjusteUmbral | null => {
+    const con = (especie?.rasgos ?? []).filter((r) => r.ajusteUmbrales?.[recurso] !== undefined);
+    if (!con.length) return null;
+    return {
+      valor: con.reduce((t, r) => t + r.ajusteUmbrales![recurso]!, 0),
+      fuente: [...new Set(con.map((r) => r.fuente))].join(", "),
+    };
+  };
+  const salud = ajuste("salud");
+  const fatiga = ajuste("fatiga");
+  return salud || fatiga ? { salud, fatiga } : SIN_AJUSTE_UMBRALES;
 }

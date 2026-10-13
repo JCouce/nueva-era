@@ -670,7 +670,9 @@ function agregaIndexada<K>(mapa: Map<K, CondicionIndexada[]>, clave: K, entrada:
   else mapa.set(clave, [entrada]);
 }
 
-export function indiceDeCondiciones(sheet: Sheet): IndiceCondiciones {
+// `deOtrasFuentes`: casillas con alcance que no salen del equipo (las de la especie,
+// casillasDeEspecie, §14.8), indexadas detrás de las del equipo. Las pasa resolverFicha.
+export function indiceDeCondiciones(sheet: Sheet, deOtrasFuentes: CondicionTirada[]): IndiceCondiciones {
   const indice: IndiceCondiciones = {
     porTiradaId: new Map(),
     porGrupo: new Map(),
@@ -686,6 +688,8 @@ export function indiceDeCondiciones(sheet: Sheet): IndiceCondiciones {
     if (alcance.tipo === "tiradaId") agregaIndexada(indice.porTiradaId, alcance.id, entrada);
     else if (alcance.tipo === "grupo") agregaIndexada(indice.porGrupo, alcance.grupo, entrada);
     else if (alcance.tipo === "habilidad" && alcance.habilidad) agregaIndexada(indice.porHabilidad, alcance.habilidad, entrada);
+    // grupoHabilidad va con las de su habilidad; la consulta descarta las de otro grupo.
+    else if (alcance.tipo === "grupoHabilidad") agregaIndexada(indice.porHabilidad, alcance.habilidad, entrada);
     else if (alcance.tipo === "todas") indice.todas.push(entrada);
     // "modo" queda fuera del índice a propósito, ver comentario de arriba.
   };
@@ -713,6 +717,7 @@ export function indiceDeCondiciones(sheet: Sheet): IndiceCondiciones {
   }
   const busqueda = condicionBusquedaMiraDeFicha(sheet);
   if (busqueda) indexar(busqueda);
+  for (const condicion of deOtrasFuentes) indexar(condicion);
 
   return indice;
 }
@@ -721,7 +726,9 @@ export function consultaIndiceCondiciones(indice: IndiceCondiciones, ctx: Contex
   const candidatas: CondicionIndexada[] = [
     ...(indice.porTiradaId.get(ctx.id) ?? []),
     ...(indice.porGrupo.get(ctx.grupo) ?? []),
-    ...(ctx.habilidad ? (indice.porHabilidad.get(ctx.habilidad) ?? []) : []),
+    ...(ctx.habilidad ? (indice.porHabilidad.get(ctx.habilidad) ?? []) : []).filter(
+      (c) => c.condicion.alcance?.tipo !== "grupoHabilidad" || c.condicion.alcance.grupo === ctx.grupo,
+    ),
     ...indice.todas,
   ];
   return candidatas.sort((a, b) => a.orden - b.orden).map((c) => c.condicion);

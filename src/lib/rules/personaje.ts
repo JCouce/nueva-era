@@ -82,7 +82,7 @@ const MECANISMOS_SIEMPRE: MecanismoMotor[] = ["siempre_activo", "suma_derivado"]
 //
 // TODO(revisar): quedan como TEXTO, por regla, rasgos cuya prosa sí habla de una
 // tirada pero que el catálogo clasifica como nota_fija (Falla metabólica,
-// Deslumbramiento, Tensión ósea, Tras esquivar) o como acción nueva (Peaje
+// Deslumbramiento, Tensión ósea, Tras esquivar; desde E4, nota en la tirada) o como acción nueva (Peaje
 // neurológico, Visión UV e Infrarroja). Metabolismo resistente sale TIRADA
 // (ajuste_fijo sobre usar_farmaco) aunque no es una tirada propiamente. Ver
 // personaje.test.ts.

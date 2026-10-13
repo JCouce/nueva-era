@@ -64,6 +64,9 @@ export type GrupoAccion =
 //               condiciones, más precisos.
 //   grupo     → todas las tiradas de un grupo (Salvaciones, Acciones...).
 //   habilidad → cualquier tirada que use esa habilidad, sea cual sea.
+//   grupoHabilidad → las tiradas de ese grupo que usen esa habilidad ("ataques
+//               con Combate a Distancia": el −1 del Arköru, que no debe tocar
+//               Iniciativa desenfundando, que también usa esa habilidad).
 //   modo      → solo si el modo de disparo/golpe elegido contiene ese texto
 //               ("F. Auto"). Exige que la tirada tenga condición "modo".
 //   todas     → cualquier tirada, sin excepción. Para los "-1/-3/-5 a todo"
@@ -76,6 +79,7 @@ export type AlcanceModificador =
   | { tipo: "tiradaId"; id: string }
   | { tipo: "grupo"; grupo: GrupoAccion }
   | { tipo: "habilidad"; habilidad: HabilidadId }
+  | { tipo: "grupoHabilidad"; grupo: GrupoAccion; habilidad: HabilidadId }
   | { tipo: "modo"; contieneEtiqueta: string }
   | { tipo: "todas" };
 
@@ -162,6 +166,7 @@ export function alcanzaA(alcance: AlcanceModificador, ctx: ContextoAccion): bool
   if (alcance.tipo === "tiradaId") return alcance.id === ctx.id;
   if (alcance.tipo === "grupo") return alcance.grupo === ctx.grupo;
   if (alcance.tipo === "habilidad") return alcance.habilidad === ctx.habilidad;
+  if (alcance.tipo === "grupoHabilidad") return alcance.grupo === ctx.grupo && alcance.habilidad === ctx.habilidad;
   return ctx.modoElegido !== null && ctx.modoElegido.includes(alcance.contieneEtiqueta);
 }
 

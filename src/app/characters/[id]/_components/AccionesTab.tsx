@@ -23,7 +23,7 @@ import {
   accionesDeFarmacos,
   accionesDirectasDeFarmacos,
   recursoDe,
-  consultaIndiceCondiciones,
+  conExtrasDeFicha,
   accionesDePsionica,
   textoNivelEnAcciones,
   etiquetaEconomia,
@@ -519,34 +519,20 @@ export function AccionesTab({
     resultadoId: number | null;
   } | null>(null);
 
-  // Mezcla las condiciones de alcance (Visor Nocturno y lo que venga después,
-  // ver docs/modificadores-tiradas.md §8) en CUALQUIER tirada — de ataque,
-  // de herramienta o fija de ACCIONES — sin que ninguna de las tres sepa que
-  // eso existe. `modoElegido: null` aquí a propósito: en este punto la tirada
-  // ni siquiera se ha abierto, así que una condición con alcance "modo" no
-  // tiene nada que matchear todavía (no tiene sentido de origen de todos
-  // modos, ver indiceDeCondiciones en equipo.ts).
-  //
-  // Antes esto llamaba a condicionesActivas(sheet, ctx) una vez POR TIRADA,
-  // repitiendo una pasada completa de sheet.equipo cada vez (docs/motor.md,
-  // "Escalabilidad para las fases que vienen"). El índice se construye una
-  // sola vez aquí y cada tirada solo consulta (T2).
-  //
-  // El índice sale de la FichaResuelta: se calcula una vez por cambio de ficha, sin
-  // deps parciales (propuesta-especies §3.1, punto 4).
+  // Casillas con alcance (equipo y especie) y textos de especie en CUALQUIER tirada —
+  // de ataque, de herramienta o fija de ACCIONES — sin que ninguna sepa que existen:
+  // conExtrasDeFicha (fichaResuelta.ts) consulta el índice y los textos de la
+  // FichaResuelta, calculados una vez por cambio de ficha (docs/modificadores-tiradas.md §8).
   const indiceCondiciones = ficha.indiceCondiciones;
-  const conCondicionesDeEquipo = (t: Accion): Accion => {
-    const extra = consultaIndiceCondiciones(indiceCondiciones, { id: t.id, grupo: t.grupo, habilidad: t.habilidad, modoElegido: null });
-    return extra.length > 0 ? { ...t, condiciones: [...(t.condiciones ?? []), ...extra] } : t;
-  };
+  const conExtras = (t: Accion): Accion => conExtrasDeFicha(ficha, t);
 
   // Igual que arriba: accionesDeAtaque()/accionesDeHerramientas() solo leen
   // sheet.equipo, salvo tiradaDeArmaFuego (dentro de accionesDeAtaque), que
   // además lee sheet.recursos vía recursoDe() para el aviso de munición
   // insuficiente — sin esa segunda dependencia, gastar/recargar munición no
   // invalidaría el aviso. `mods` (FichaResuelta): el daño melee/Sutil sale de la
-  // ficha con estados y especie (M1b). conCondicionesDeEquipo no entra en las deps: su
-  // comportamiento depende solo de indiceCondiciones, que ya está.
+  // ficha con estados y especie (M1b). conExtras no entra en las deps: su
+  // comportamiento depende solo de indiceCondiciones y textosTirada, que ya están.
   // accionesDeAtaque() ya no es solo "Ataques": desde que Bloqueo (pregunta 31)
   // se genera junto al Golpear de cada arma melee, trae filas con
   // `grupo: "Defensa"` también — se separan aquí por `grupo`, no se asume que
@@ -562,19 +548,19 @@ export function AccionesTab({
     farmacosDirectas,
     accionesGeneradas,
   } = useMemo(() => {
-    const generadas = accionesDeAtaque(sheet, mods).map(conCondicionesDeEquipo);
+    const generadas = accionesDeAtaque(sheet, mods).map(conExtras);
     const directas = accionesDirectasDeAtaque(sheet);
     return {
       ataques: generadas.filter((t) => t.grupo === "Ataques"),
       defensaGenerada: generadas.filter((t) => t.grupo === "Defensa"),
-      herramientas: accionesDeHerramientas(sheet).map(conCondicionesDeEquipo),
-      // Sin conCondicionesDeEquipo: las acciones sin dado no llevan
+      herramientas: accionesDeHerramientas(sheet).map(conExtras),
+      // Sin conExtras: las acciones sin dado no llevan
       // condiciones de alcance (§8, modificadores-tiradas.md) todavía — nada
       // real las produce hoy, se añade el día que haga falta.
       herramientasDirectas: accionesDirectasDeHerramientas(sheet),
       // Fármacos (docs/prompt-gasto-recursos.md, Fase 2): leen sheet.farmacos,
       // no sheet.equipo — mismo patrón que Herramientas por lo demás.
-      farmacos: accionesDeFarmacos(sheet).map(conCondicionesDeEquipo),
+      farmacos: accionesDeFarmacos(sheet).map(conExtras),
       farmacosDirectas: accionesDirectasDeFarmacos(sheet),
       defensaDirecta: directas.filter((a) => a.grupo === "Defensa"),
       // Detonación de pulso térmico (Malla Plasmática, 2026-09-28) — primera
@@ -583,10 +569,10 @@ export function AccionesTab({
       // "Volar" (Movilidad Aérea) — mismo criterio que Bloqueo en Defensa:
       // generada por equipo, se mezcla en el grupo fijo "Acciones" en vez de
       // vivir en su propia sección.
-      accionesGeneradas: accionesDeMovimiento(sheet).map(conCondicionesDeEquipo),
+      accionesGeneradas: accionesDeMovimiento(sheet).map(conExtras),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, mods]);
+  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, ficha.textosTirada, mods]);
 
   const abrir = (t: Accion, enEspecialidad: boolean, sutil: boolean) => {
     setModal({ tirada: t, ficha, eleccion: { enEspecialidad, sutil }, resultadoId: null });
@@ -1066,7 +1052,7 @@ export function AccionesTab({
             {grupo}
           </h2>
           {ACCIONES.filter((t) => t.grupo === grupo)
-            .map(conCondicionesDeEquipo)
+            .map(conExtras)
             .map((t) => conPsionicaEnTiradaFija(niveles, conEsquivaLevitando(niveles, t)))
             // Defensa/Esquiva (fija) primero, Bloquear-con-X (generado por
             // equipo) detrás — mismo orden que Ataques: lo fijo antes que lo

@@ -963,8 +963,11 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 > **E2 construida:** coste de habilidad por casta, descuentos psiónicos (Arianyi, Maolher),
 > bolsa de aumentos visible (E2a), Resonancia +1 del Arianyi y acceso al kerzul del Arköru
 > (E2b), todo en 14.6.
-> **E3 construida:** movimiento, carga y armadura natural por especie (14.7). Quedan M1 → E4 →
-> E5 en `docs/tareas.md`, "Especies reales".
+> **E3 construida:** movimiento, carga y armadura natural por especie (14.7).
+> **E4 construida** (2026-10-13): casillas, −1 a distancia del Arköru, "éxito → crítico",
+> un tramo menos de penalizador (Guerrero, Siervo) y los textos en su tirada (14.8, 14.10).
+> El fallo → fallo crítico de Elión queda **bloqueado** por la pregunta 3. Queda E5 en
+> `docs/tareas.md`, "Especies reales".
 
 ### 14.1 Lista y elección `[FIRME · ESP + usuario M10, M20]`
 
@@ -1178,17 +1181,17 @@ también al NPC en modo libre (14.3):*
 **Bonos y casillas** `[FIRME · ESP; en qué tirada cae: INFERIDO · propuesta §1/§4 + usuario M8, M13, M17, M22]`
 
 Las condiciones van como **casilla en la tirada** que solo aparece si la ficha tiene ese
-rasgo (usuario, §5b de la propuesta). Dependen del punto único de montaje (tanda M1).
+rasgo (usuario, §5b de la propuesta).
 
 | Rasgo | Efecto | Dónde |
 |---|---|---|
 | Riux, Piel Irisada | +2 contra radiación astral o ambiental | Casilla en Salvación de Fortaleza |
-| Arköru, Inamovibles | +2 para evitar derribos | Casilla en "Saltar, escalar, levantarse" / salvación contra derribo |
+| Arköru, Inamovibles | +2 para evitar derribos | Casilla en "Saltar, escalar, levantarse". No hay salvación contra derribo (el de las armas pide "su propia salvación" sin decir cuál): `TODO(revisar)` |
 | Arköru, Adaptación Térmica | +2 contra efectos de temperatura | Casilla en Salvación de Fortaleza |
 | Arköru, Sistemas Filtradores | +2 contra efectos de filtración en el aire | Casilla en Salvación de Fortaleza |
-| Arköru, visión | −1 en ataques a distancia | Fijo en Combate a Distancia; **no** en granadas ni armas arrojadizas (M8) |
-| Arköru, visión | −1 en percepción visual | Casilla en Buscar/percibir; **no** en Alerta pasiva (M8) |
-| Arköru, Matriz Biometálica | Crítico desarmado → daño letal | Texto en el ataque de Pelea |
+| Arköru, visión | −1 en ataques a distancia | Fijo en toda tirada de Combate a Distancia (armas de fuego, pesadas, lanzagranadas, Proyector de Pulso a distancia); **no** en granadas ni armas arrojadizas, que se lanzan con Atletismo (M8). Ver la nota de Iniciativa abajo |
+| Arköru, visión | −1 en percepción visual | Casilla en Buscar/percibir, que es la Alerta activa; **no** en Alerta pasiva, que no tira (M8) |
+| Arköru, Matriz Biometálica | Crítico desarmado → daño letal | Texto de crítico en toda la Pelea: Puñetazo, Patada y Codazo o Rodillazo ("ataque desarmado" sin excepciones, usuario 2026-10-13; la Malla Plasmática también) |
 | Arianyi, Empatía Biológica | +2 a la tirada pertinente; tocando o muy cerca; requiere concentración; en combate, acción compleja | Casilla en Buscar/percibir (nervios, mentiras) y Tratar heridas (metabolismo). **No** en Convencer/mentir: esa es la tirada del que miente |
 
 **Éxito → crítico y fallo → fallo crítico** `[FIRME · ESP + usuario M13, M17, M22]`
@@ -1199,13 +1202,29 @@ rasgo (usuario, §5b de la propuesta). Dependen del punto único de montaje (tan
 | Irota | Éxito cuenta como crítico en salvaciones contra toxinas, venenos y enfermedades | Casilla en la **Salvación de Fortaleza**, visible solo para Irota (usuario, 2026-10-09) |
 | Axadren | Éxito cuenta como crítico en alerta contra enemigos ocultos | Casilla "¿enemigo oculto?" en Alerta activa y Buscar/percibir (M22). La Alerta pasiva no tira dado |
 | Elión | Éxito cuenta como crítico contra efectos sugestivos | Casilla en la **Salvación de Voluntad**, visible solo para Elión (usuario, 2026-10-09) |
-| Elión | Fallo cuenta como fallo crítico en Empatía, Humor o Negociación | Casilla "¿es Empatía / Humor / Negociación?": cualquier tirada hecha con una especialidad que se llame así, sea cual sea la habilidad (M17; especialidades en texto libre, S5) |
+| Elión | Fallo cuenta como fallo crítico en Empatía, Humor o Negociación | **Bloqueado** por la pregunta 3 (especialidades en lista cerrada, S5). Forma decidida (usuario, 2026-10-13): con especialidades por id, al tirar se elige **qué** especialidad se usa (no solo sí/no), y con Empatía, Humor o Negociación el fallo crítico se aplica solo, sin casilla. Sustituye a la casilla de M17 |
 
 **Penalizadores por umbral** `[FIRME · ESP + usuario M12]`
 - **Guerrero:** heridas un punto menos por tramo: −1/−3/−5 → 0/−2/−4.
 - **Siervo:** fatiga un punto menos por tramo: −1/−2 → 0/−1.
-- Depende de que los umbrales de la sección 7 se apliquen a las tiradas, que hoy no pasa
-  (tanda M1).
+- Solo el −N a todo de la sección 7: la media velocidad y la reducción de carga del mismo
+  umbral no cambian (`TODO(revisar)` en `estados.ts`).
+
+*En la app (E4, 2026-10-13):*
+- **Casillas**: dato `casillas` del rasgo (tiradas fijas por id + la `CondicionTirada`);
+  `casillasDeEspecie` las mete en el **mismo índice** que las del equipo
+  (`FichaResuelta.indiceCondiciones`), así que salen solo con el rasgo y `montarTirada` las
+  suma sin código propio. También al NPC en modo libre (son derivadas, 14.3).
+- **"Éxito → crítico"**: casilla sin número con `margenCriticoExito: 0` (el mismo dato que
+  la VTM "complejo"); con dos márgenes activos gana el más bajo.
+- **−1 a distancia**: `Modificador` de tirada con alcance `grupoHabilidad` (grupo
+  `Ataques` + Combate a Distancia), decisión del usuario 2026-10-13: no llega a "Iniciativa
+  (desenfundando)", que usa la misma habilidad pero no es un ataque.
+- **Umbrales**: dato `ajusteUmbrales` del rasgo → `FichaResuelta.ajusteUmbrales` →
+  parámetro obligatorio de `modificadoresDeUmbrales`. Un tramo que queda en 0 no da línea;
+  los demás salen como "Malherido (Manduk · Guerrero) −2".
+- **Textos** (14.10): dato `textos` del rasgo → `FichaResuelta.textosTirada`;
+  `conExtrasDeFicha` los añade a la nota de la tirada (o a su texto de crítico).
 
 ### 14.9 Efectos en otras áreas `[FIRME · ESP + usuario M16, M18]`
 
@@ -1227,10 +1246,10 @@ rasgo (usuario, §5b de la propuesta). Dependen del punto único de montaje (tan
 |---|---|---|
 | Humanos, gastar la bolsa | Ver 14.6 | No hay aumentos |
 | Ílkrem, regeneración | 1 nivel no letal por turno, 1 letal por minuto (10 turnos), 1 grave por hora; fatigado, el doble de lento; exhausto, nada | La app no lleva el paso del tiempo |
-| Ílkrem, falla metabólica | Daño de plasma o fuego → Fortaleza (dificultad 9) contra aturdimiento | Depende de "estados bien definidos" |
-| Axadren, deslumbramiento | Explosión de plasma, destello intenso o PEM → ceguera (dificultad 9); otras cegueras similares, dificultad +3 | Ídem |
-| Zimethroni, hiperactividad | Atacado físicamente mientras se mueve: +1 daño por cada 4 niveles recibidos (M15) | Ídem |
-| Zimethroni, tras esquivar | Esquiva con éxito → 1 casilla gratis, una vez por turno | Nota en Defensa |
+| Ílkrem, falla metabólica | Daño de plasma o fuego → Fortaleza (dificultad 9) contra aturdimiento | Depende de "estados bien definidos". Nota en la Salvación de Fortaleza (E4) |
+| Axadren, deslumbramiento | Explosión de plasma, destello intenso o PEM → ceguera (dificultad 9); otras cegueras similares, dificultad +3 | Ídem. Sin nota: no hay salvación contra ceguera (§Ceguera no dice qué atributo la resiste), `TODO(revisar)` |
+| Zimethroni, hiperactividad | Atacado físicamente mientras se mueve: +1 daño por cada 4 niveles recibidos (M15) | Ídem. Nota en Defensa (E4; `TODO(revisar)`: es daño recibido, Bloquear daño no lleva notas) |
+| Zimethroni, tras esquivar | Esquiva con éxito → 1 casilla gratis, una vez por turno | Nota en Defensa (E4) |
 | Riux, Ciclo Cerrado | Media ración para la misma fatiga; Descanso Largo de 4 h; 4 Descansos Breves al día en vez de 2 | No hay descanso en la app; "media ración", solo texto (M19) |
 | Siervo | Media ración; Descanso Largo de 6 h | Ídem |
 | Riux, Estasis · Arianyi, apnea doble | Narrativo | Sin número / sin regla de apnea |
@@ -1249,7 +1268,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S2 | Una habilidad **no puede valer 0**: o está sin entrenar (−1) o vale 1 como mínimo. | `HOJA` solo contempla "no entrenada = −1" y valores entrenados. El 0 no aparece. |
 | S3 | Al entrenar, la **primera especialidad va incluida**; a partir de la segunda cuesta 1 punto. | `HOJA` dice que al entrenar "se debe escoger una especialidad" y que "una segunda especialidad tiene de coste 1 punto". |
 | S4 | Tope de **3 especialidades** por habilidad. | **Murillo (2026-09-23) confirma que las reglas no ponen tope, solo el coste en experiencia.** Se mantiene el 3 igualmente, como límite de interfaz deliberado (decisión del usuario, 2026-09-23: la diferencia es menor, no compensa tocarlo ahora) — ya no es un hueco de regla, es UX. |
-| S5 | Las especialidades son **texto libre**. | No existe catálogo todavía. Cuando llegue, se cambia a lista cerrada. **Lo usa §14.8** (usuario, M17, 2026-10-09): el fallo crítico de Elión se aplica a cualquier especialidad que se llame Empatía, Humor o Negociación; con lista cerrada habría que revisarlo. |
+| S5 | Las especialidades son **texto libre**. | No existe catálogo todavía. Cuando llegue, se cambia a lista cerrada. **Lo espera §14.8**: el fallo crítico de Elión (Empatía, Humor o Negociación) queda bloqueado hasta la lista cerrada (usuario, 2026-10-13, sustituye a M17). |
 | ~~S6~~ | ~~El movimiento no baja de 0.~~ **Superado (Murillo, 2026-09-23):** el salto vertical tiene mínimo **15 cm**, no 0; el resto de fórmulas de movimiento sigue cortándose en 0 (no preguntado, no respondido). El mínimo de 15 cm vale también para el salto vertical del Arköru (usuario, M23, §14.7). | Se queda aquí tachado como rastro — igual que S1. |
 | S7 | En creación el tope es **4** tanto en atributos como en habilidades; 6 es el techo del sistema, alcanzable en partida con puntos que reparte el máster. | `HOJA2` sube el "4/5" y "3/5" de `HOJA` a "4/6" en los dos, unificando el máximo de creación. La partición 4-creación/6-techo la confirma el usuario (2026-09-10); falta que Murillo la valide con una fórmula de progresión concreta. **Especies (usuario, M1-M2, 2026-10-09):** el 4 y el 6 miran solo lo comprado; el bono de especie va aparte y el total puede superarlos (§14.2). |
 | S8 | El **valor de Atletismo** que entra en las fórmulas de movimiento es el valor puro, sin aplicar la mitad por estar fuera de especialidad. | Las fórmulas de `HOJA` dicen "Potencia + Atletismo" a secas. |

@@ -11,7 +11,7 @@ import {
   type Equipo,
   type TipoArma,
 } from "../catalog/equipo";
-import type { ArmaMelee } from "../catalog/armasMelee";
+import { PELEA, type ArmaMelee } from "../catalog/armasMelee";
 import type { ArmaPesada } from "../catalog/armamentoPesado";
 import {
   MUNICION_GRANADA,
@@ -512,9 +512,9 @@ function mallaPlasmaticaEquipada(sheet: Sheet): { instanciaId: string; nivel: nu
 }
 
 // Malla Plasmática — sacrificar colchón por daño de plasma en un "golpe
-// melee desarmado" (docs/tareas.md, 2026-09-28): Puñetazo/Patada son las
-// únicas dos piezas de PELEA (armasMelee.ts) que cuentan como desarmadas —
-// el resto de armas melee no, aunque también generen ataque_melee. Toggles
+// melee desarmado" (docs/tareas.md, 2026-09-28): toda la PELEA (armasMelee.ts)
+// cuenta como desarmada, Codazo o Rodillazo incluido (2026-10-13) — el resto de
+// armas melee no, aunque también generen ataque_melee. Toggles
 // puramente informativos (valorActivo/valorInactivo 0), mismo patrón que
 // Máxima Potencia (movimiento.ts): el motor no descuenta el colchón solo,
 // se ajusta a mano en Recursos, igual que el resto de gasto de RECURSOS en
@@ -559,7 +559,9 @@ function tiradaDeArmaMelee(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
   // Solo se calcula si hace falta: el resto de armas (no Sutil) no necesita
   // el aplicado de Potencia para nada aquí.
   const potencia = esSutil ? aplicado(sheet, "potencia", mods) : null;
-  const esDesarmado = arma.id === "pelea_punetazo" || arma.id === "pelea_patada";
+  // Toda la Pelea es golpe a mano vacía (Puñetazo, Patada, Codazo o Rodillazo): el
+  // "ataque desarmado" del PDF no hace excepciones (usuario, 2026-10-13).
+  const esDesarmado = PELEA.some((p) => p.id === arma.id);
   const malla = esDesarmado ? mallaPlasmaticaEquipada(sheet) : null;
 
   // `arma.efectos` (Crítico de X, Ignora N de blindaje...) es hoy puramente
@@ -582,6 +584,7 @@ function tiradaDeArmaMelee(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
     habilidad: "combate_melee",
     nota,
     efectoCritico: arma.efectoCritico,
+    ...(esDesarmado && { desarmado: true as const }),
     ignoraBlindaje: arma.ignoraBlindaje ? { valor: arma.ignoraBlindaje, fuente: arma.label } : undefined,
     condiciones: [...(modo ? [modo] : []), ...(malla ? condicionesSacrificioColchon(malla.nivel) : [])],
     ataque: {

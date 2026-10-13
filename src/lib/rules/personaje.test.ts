@@ -142,10 +142,10 @@ const ESPERADAS: Record<string, EtiquetaRasgo> = {
   "manduk.siervo/umbral_fatiga": "siempre",
   "manduk.siervo/frugal": "siempre",
   "manduk.ilkrem/regeneracion": "siempre",
-  "manduk.ilkrem/falla_metabolica": "texto", // TODO(revisar): la prosa pide una salvación de Fortaleza; el catálogo la tiene como nota_fija
+  "manduk.ilkrem/falla_metabolica": "texto", // TODO(revisar): la prosa pide una salvación de Fortaleza; el catálogo la tiene como nota_fija (en Salvación de Fortaleza, E4)
   "manduk.zimethroni/movimiento": "siempre",
   "manduk.zimethroni/tras_esquivar": "texto", // TODO(revisar): nota_fija en Defensa
-  "manduk.zimethroni/hiperactividad": "texto", // TODO(revisar): nota_fija en Bloquear daño
+  "manduk.zimethroni/hiperactividad": "texto", // TODO(revisar): nota_fija en Defensa (E4)
   "manduk.irota/contra_toxinas": "tirada",
   "manduk.irota/farmacos_mitad": "tirada", // TODO(revisar): ajuste_fijo sobre usar_farmaco; por prosa es más SIEMPRE que TIRADA
   "manduk.maolher/coste_psionico": "creacion",
