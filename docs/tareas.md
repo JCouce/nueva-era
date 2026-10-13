@@ -1451,26 +1451,40 @@ ficha una vez, ya con costes de casta, descuentos y derivados)
 - [ ] `setPrioridadAction` sobrescribe `Character.creditos` al cambiar la letra de
       Recursos sin restar lo gastado en la Tienda (el reset de especie solo lo tapa en ese caso)
 
-### Pestaña Personaje (rediseño del Resumen) + envío a revisión ⬜ (decidido 2026-10-13, sin empezar)
+### Pestaña Personaje (rediseño del Resumen) + envío a revisión ⬜ (decidido 2026-10-13; rediseño hecho 2026-10-13, sin commit ni verificar en navegador; envío a revisión sin empezar)
 Maqueta navegable con todo lo decidido: https://claude.ai/artifact/1cA8wJzudPge1PnLF9q55H
 (decisiones 1-7 al final de la maqueta, todas con la opción sugerida). No depende de
 especies E2-E5; va antes o justo después de E2. Plantear la forma en código antes de
 construir (dos pasadas: rediseño, luego revisión).
 
 **Rediseño** (decisiones 1-4)
-- [ ] La pestaña "Resumen" pasa a llamarse **"Personaje"**
-- [ ] Sub-pestañas en el orden de creación: **Origen → Prioridades → Identidad → Estado**,
+- [x] La pestaña "Resumen" pasa a llamarse **"Personaje"** *(id `personaje`;
+      `ResumenTab` borrado, ahora `_components/personaje/PersonajeTab.tsx`. Aviso de reset:
+      "todo salvo Personaje")*
+- [x] Sub-pestañas en el orden de creación: **Origen → Prioridades → Identidad → Estado**,
       cada una con "✓ hecho" / "● pendiente". Al entrar: en creación, el primer paso
       pendiente; en juego, Estado. En juego, Prioridades desaparece y Origen es solo lectura
-- [ ] Origen: carrusel de tarjetas grandes por especie (arte, descripción, chips de
+      *(reglas en `lib/rules/personaje.ts`: `pasosPersonaje` con `falta` por paso, pensado
+      para la barra de envío, y `subPestanaInicial`. Identidad solo exige nombre. Con todo
+      hecho abre en Identidad. Aprobada: Origen "fijado", Identidad "editable")*
+- [x] Origen: carrusel de tarjetas grandes por especie (arte, descripción, chips de
       atributos, 3 rasgos clave + "ver más", botón "Elegir"; aviso "Elegir otra especie
       resetea la ficha" en la tarjeta si hay algo que perder; el modal se mantiene).
       Manduk: debajo, casta (4 tarjetas) y, si es noble, casa (6). Rasgos etiquetados
       CREACIÓN / SIEMPRE / TIRADA / TEXTO (sale de `MotorMetadata` / `creacion`)
-- [ ] Arte fase 1: emblema geométrico y color por especie hechos con código; la tarjeta
+      *(`etiquetaRasgo` + test con los 39 rasgos del catálogo; 8 quedan con
+      `TODO(revisar)` porque la etiqueta por regla no casa del todo con su prosa. El
+      borrador y el modal salen a `useEleccionEspecie`, que comparte con el selector
+      compacto del NPC, sin cambios de comportamiento ahí. Aprobada y jugador: solo su
+      tarjeta, sin botón)*
+- [x] Arte fase 1: emblema geométrico y color por especie hechos con código; la tarjeta
       acepta una imagen opcional (`public/especies/`) para cuando haya ilustraciones
-- [ ] Identidad: nombre, edad, altura, peso con barra del rango de la especie, motivación
+      *(`personaje/arteEspecies.tsx`: colores por especie, casta y casa; `imagen` vacío en
+      todas)*
+- [x] Identidad: nombre, edad, altura, peso con barra del rango de la especie, motivación
       y trasfondo juntos. Estado: vida/fatiga en barras, alerta, movimiento, carga
+      *(altura y peso por defecto = punto medio del rango, sin guardarse: supuesto S23,
+      sistema.md §14.5)*
 
 **Envío a revisión** (decisiones 5-7)
 - [ ] Estados de la ficha: **En creación → En revisión → En juego** (`CharacterStatus`

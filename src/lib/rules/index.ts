@@ -26,6 +26,7 @@
 //   poderes.ts         evaluador: poder + nivel + opciones elegidas → valores concretos
 //   especie.ts         especie + casta + linaje → efectos; elegir especie (validación y reset)
 //   fichaResuelta.ts   resolverFicha: modificadores y derivados de una ficha en una pasada
+//   personaje.ts       pestaña Personaje: pasos (hecho/pendiente), etiquetas de rasgos, identidad por defecto
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -53,6 +54,7 @@ export * from "./psionica";
 export * from "./poderes";
 export * from "./usoPoder";
 export * from "./especie";
+export * from "./personaje";
 export * from "./fichaResuelta";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";

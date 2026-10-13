@@ -92,7 +92,7 @@ No pierdas tiempo buscando esto como si fuera un bug del bloque 2:
   en combate, la sección muestra "Ya están todos en combate." (visto al añadir a los dos
   durante esta misma sesión), así que al menos la rama contraria está verificada.
 - [x] **PG del jugador coincide con su ficha real.** Al añadirlo, "PG X/X" debe coincidir
-  con la vida calculada en su propia ficha (`/characters/<id>`, pestaña Resumen) — no un
+  con la vida calculada en su propia ficha (`/characters/<id>`, pestaña Personaje → Estado) — no un
   número inventado ni desfasado.
   "gordo" en combate: PG 10/10, Fatiga 9/9. Su ficha (`/characters/cmtvdieth0006z1yug9ombd7s`,
   Resumen): Puntos de vida 10, Puntos de fatiga 9. Coincide exacto.

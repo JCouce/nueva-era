@@ -453,7 +453,7 @@ export function pesoDePieza(pieza: PiezaEquipada): number {
 }
 
 // Suma de lo que SÍ se sabe pesar (ver pesoDePieza) de todo lo equipado. No
-// es "el peso total real" — la interfaz avisa de qué falta (ResumenTab).
+// es "el peso total real" — la interfaz avisa de qué falta (personaje/EstadoPanel).
 export function pesoEquipado(sheet: Sheet): number {
   return sheet.equipo.reduce((total, p) => total + pesoDePieza(p), 0);
 }

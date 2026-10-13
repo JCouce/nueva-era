@@ -137,7 +137,7 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
           // resolverVuelo()), no un segundo tipo "acción sin dado".
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "volar" }, mecanismo: "accion_equipo", estado: "construido" },
           // velocidadM: derivado ya construido (lib/rules/derivados.ts::vuelo,
-          // mostrado en ResumenTab) — Capa 1 → Derivado, además de alimentar
+          // mostrado en personaje/EstadoPanel) — Capa 1 → Derivado, además de alimentar
           // ahora la nota de "Volar".
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           // Dificultad de maniobrabilidad: modelada como ajuste fijo al

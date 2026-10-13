@@ -24,7 +24,7 @@ export function DotesTab({ sheet }: { sheet: Sheet }) {
 
       {!letra && (
         <p className="font-mono text-[11px] leading-relaxed text-muted">
-          Asigna una letra de prioridad a Dotes en Resumen.
+          Asigna una letra de prioridad a Dotes en Personaje → Prioridades.
         </p>
       )}
 

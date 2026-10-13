@@ -45,8 +45,7 @@ function signo(n: number) {
 
 // Traduce un modificador crudo del catálogo a texto legible. Solo hay
 // "tirada" en el slice, pero se cubre el resto para cuando lleguen aumentos
-// que sí toquen un atributo o un derivado directamente — mismo criterio que
-// el desglose de especie en ResumenTab.
+// que sí toquen un atributo o un derivado directamente.
 function etiquetaModificador(m: Modificador): string {
   if (m.tipo === "atributo") return ATRIBUTOS.find((a) => a.id === m.id)!.label;
   if (m.tipo === "habilidad") return HABILIDADES.find((h) => h.id === m.id)!.label;

@@ -54,7 +54,7 @@ export function PsionicaTab({
 
       {!libre && !letra && !aprobada && (
         <p className="font-mono text-[11px] leading-relaxed text-muted">
-          Asigna una letra de prioridad a Psiónica en Resumen para saber cuántos puntos tienes aquí.
+          Asigna una letra de prioridad a Psiónica en Personaje → Prioridades para saber cuántos puntos tienes aquí.
         </p>
       )}
 

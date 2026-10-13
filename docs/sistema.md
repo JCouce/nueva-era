@@ -251,7 +251,7 @@ permite que el narrador fije una "fuerza efectiva necesaria" para un obstáculo 
 vez de calcular el peso exacto siempre.
 
 > **Implementación (2026-09-11), primer pase:** `cargaMaxima()` en `lib/rules/derivados.ts`
-> calcula el límite sin penalizador y se muestra en Resumen junto al peso equipado
+> calcula el límite sin penalizador y se muestra en Personaje → Estado junto al peso equipado
 > conocido (`pesoEquipado()`, `lib/rules/equipo.ts`). Los tramos de penalizador (por
 > encima del límite, doble, cuádruple) y la Proeza de Fuerza **no** están mecanizados
 > todavía — son mecánica de tirada/estado, fase aparte.
@@ -678,7 +678,7 @@ al preparar su modelado:
 - **Construcción de Traslación, tanda 2 (usuario, 2026-09-30):**
   - Auto-anclaje: "el gasto apropiado de fatiga" = la fila de la tabla del nivel empleado,
     con tu propio peso como carga (y sus casillas de carga). Reacción, dificultad 6.
-  - Levitar: movimiento en Resumen (10 × nivel poseído m) y acción sin tirada de 1 de
+  - Levitar: movimiento en Personaje → Estado (10 × nivel poseído m) y acción sin tirada de 1 de
     fatiga por periodo (1 min; 10 min desde nivel 4; 1 h en nivel 6); prolongar = volver a
     usarla. Mientras levitas, la Defensa / esquiva tiene la casilla **"Levitando: Física"**
     (fichas con Traslación 2+): cambia Atletismo por Tecnociencia, entera con la
@@ -937,7 +937,8 @@ aumentos, sección 11) y la regeneración de Ílkrem y el descanso no tienen dó
 app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 
 > **Estado en la app:** E1 construida (falta el reset de las fichas de producción el día del deploy, ver 14.3): catálogo real (`src/lib/catalog/especies.ts`), elección
-> con reset en el servidor (`setEspecieAction`), selector en Resumen y en el editor de NPC.
+> con reset en el servidor (`setEspecieAction`), carrusel en Personaje → Origen y selector
+> compacto en el editor de NPC.
 > Quedan E2 → E3 → M1 → E4 → E5 en `docs/tareas.md`, "Especies reales".
 
 ### 14.1 Lista y elección `[FIRME · ESP + usuario M10, M20]`
@@ -976,7 +977,7 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 ### 14.3 Cambiar de especie: reset de ficha `[FIRME · usuario 2026-10-09]`
 
 - En **borrador**, cambiar especie, casta o linaje **resetea la ficha entera salvo lo de la
-  pestaña Resumen**. Motivo: lo comprado gracias a la especie (descuentos de casta,
+  pestaña Personaje**. Motivo: lo comprado gracias a la especie (descuentos de casta,
   Resonancia +1, kerzul sin rareza, bolsa de aumentos) no se puede deshacer pieza a pieza.
   - Se conserva: nombre, edad, altura, peso, trasfondo, motivación, letras de prioridad y la
     nueva elección de especie.
@@ -984,9 +985,9 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
     recursos, materiales, granadas, fármacos y munición.
   - Vida y fatiga actuales, al máximo.
   - Créditos (`Character.creditos`), al valor de la letra de Recursos.
-- **Aviso solo si hay algo que perder** (la ficha difiere de la por defecto fuera de Resumen,
+- **Aviso solo si hay algo que perder** (la ficha difiere de la por defecto fuera de Personaje,
   o los créditos no son los de la letra). Texto fijo: *"Cambiar de especie reseteará la ficha
-  (todo salvo el Resumen). ¿Seguir?"*. Si no hay nada que perder, el cambio es directo.
+  (todo salvo Personaje). ¿Seguir?"*. Si no hay nada que perder, el cambio es directo.
 - El reset lo aplica el **servidor**, no la pantalla.
 - **NPC del máster: no aplica.** El editor de NPC es modo libre: sin reset, sin bloqueo por
   aprobación, sin créditos. Le llega todo lo derivado (atributos, movimiento, carga,
@@ -1025,6 +1026,12 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 
 - Fuerza **con** especie (M21). Solo **referencia** junto a los campos libres de Identidad;
   no se valida.
+- **Valor por defecto** (supuesto S23, decisión del usuario 2026-10-13): altura y peso vienen
+  rellenos con el **punto medio redondeado** del rango (`identidadPorDefecto`,
+  `lib/rules/personaje.ts`); sin rango (Humanos, Manduk sin casta), vacíos. El por defecto
+  **no se guarda**: mientras `altura`/`peso` sean `null` la ficha lo enseña (atenuado), así
+  sigue a la especie y a la Fuerza; en cuanto el jugador escribe, se guarda lo suyo, y si
+  borra el campo vuelve a `null` y al por defecto.
 
 ### 14.6 Creación y progresión `[FIRME · ESP + usuario M3, M4, M5, M9, M11]`
 
@@ -1175,6 +1182,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S20 | Lanzar un arma melee "Arrojadiza" (Lanza Corta, Cuchillo de Combate, Puñal y Lanza Corta de Kerzul) se resuelve **igual que lanzar una granada**: Potencia + Atletismo, alcance Potencia × 10 m (`ALCANCE_ARROJADA`), con la dificultad y el daño del primer modo del arma (el Simple). Sin estilo Sutil — es un lanzamiento, no un golpe. | `EQUIP` solo marca la etiqueta "Arrojadiza", sin par, alcance ni dificultad. Decisión explícita del usuario (2026-09-28): reutilizar la única regla de lanzamiento a mano que ya existe. Pendiente de que Murillo confirme. |
 | S21 | En un fusil de precisión (Mira Telescópica nv1 integrada, `ArmaFuego.miraIntegrada`), no se puede instalar otra mira de nivel 1; una de **nivel 2 o 3 sustituye a la integrada**: no ocupa ranura de mejora y solo aporta el bono de tramo que supera al de la integrada (nv3 → +1 en media/larga; nv2 → nada extra, solo su visión nocturna/térmica). | `EQUIP` dice que la integrada está "ya contabilizada en la dificultad de ataque y en las mejoras disponibles", y no dice qué pasa al mejorarla. Bloquear solo el nivel 1 es decisión del usuario (2026-09-28); lo de la ranura y la resta del bono es la lectura que evita contar dos veces lo que ya está en la dificultad. Pendiente de que Murillo confirme. |
 | S22 | La mejora **Munición Especial** se da de alta como una mejora de arma **por tipo de munición**, y cada una **ocupa una ranura** de `mejorasAdmitidas`. Para munición **Muy Extraña** (radiactiva, supresora) cuesta **62.500** créditos. | `EQUIP` dice que se puede instalar "repetidas veces para distintos tipos", pero no si cada una ocupa ranura; y su tabla de precios solo llega a Extraño (500 / 2.500 / 12.500, ×5 por rango): se sigue la misma progresión. Decisión del usuario (2026-09-28), pendiente de que Murillo confirme. |
+| S23 | Altura y peso por defecto = **punto medio redondeado** del rango de referencia de la especie (§14.5), sin guardarse en la ficha. | El documento solo da rangos; el usuario (2026-10-13) quiere los campos rellenos de entrada sin que el jugador tenga que mirar la tabla. |
 
 ## Conflictos detectados
 

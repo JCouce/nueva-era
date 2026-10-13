@@ -26,7 +26,7 @@ Marca `[x]` lo que pasa. Si algo falla, anota el texto exacto de lo que sale.
 
 - Dev server en marcha y sesión de **máster** (en local: usuario `master`, contraseña `master`).
 - Crea un personaje llamado `QA-PSIONICA` en `/characters`.
-- En **Resumen**, pon la letra **A** en **Psiónica**. Son 18 puntos.
+- En **Personaje → Prioridades**, pon la letra **A** en **Psiónica**. Son 18 puntos.
 - Haz primero el flujo A, que deja el personaje con **Traslación 2 y Singularidad 2**: de
   ahí parten B–G. H e I traen su propia preparación.
 - **Antes de cada flujo de acción**, pon la fatiga a 8/8 con el **+** de Fatiga en
@@ -283,7 +283,7 @@ Acciones.
 Borra el NPC al terminar.
 
 ### H7. Levitar, Auto-anclaje y Duelo de Métrica (Traslación 3)
-- [ ] **H7.1 Movimiento.** En Resumen, junto al resto de movimiento.
+- [ ] **H7.1 Movimiento.** En Personaje → Estado, junto al resto de movimiento.
   → "Levitar (Traslación 3) 30 m". Con Traslación 1 no aparece.
 - [ ] **H7.2 Levitar.** En Acciones, Usar en Levitar.
   → Sin dado: Acción Simple, Fatiga 1, Duración "1 minuto", Desplaz. 30 m/turno, tres
@@ -324,8 +324,8 @@ Fatiga a 8.
 - [ ] **H8.5 Tirar y prolongar.** Tira.
   → Sale el panel de Sobrecarga (8 → 0 cruza a exhausto) y el botón "Prolongar un turno
   (−6 fatiga)". Púlsalo: el panel de Sobrecarga **sigue** y aparece "Te has quedado sin
-  fatiga…". En Recursos: Fatiga 0/8, Fatiga temporal 6, efectiva −6. En Resumen: "0/8 (6
-  temporal de Proeza · efectiva -6)".
+  fatiga…". En Recursos: Fatiga 0/8, Fatiga temporal 6, efectiva −6. En Personaje → Estado: "0/8" y
+  debajo "6 temporal de Proeza · efectiva -6".
 - [ ] **H8.6 Al 200 %.** Terminar escena, fatiga a 8, anota la vida. Proeza con peso 250.
   → "200 % de tu carga (125 kg) → +10 de fatiga · en el límite", nota "Llegas al 200 %…" y
   `8 → -4`. Al tirar: "Recibes 1 de daño mental (ya restado)…" y la vida baja 1. Prolongar

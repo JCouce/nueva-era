@@ -46,7 +46,7 @@ evitan que repitas descubrimientos que ya están hechos.
 | `src/lib/rules/creacion.ts` / `sheet.ts` / `derivados.ts` | Point-buy, forma de la ficha + migraciones, y todo lo que se calcula pero nunca se guarda (aplicados, salud, movimiento). |
 | `src/app/characters/[id]/actions.ts` | Todas las server actions de la ficha: autosave, permisos, y desde hace poco también la progresión con XP. Es el sitio con más lógica de negocio fuera del motor puro. |
 | `src/app/characters/[id]/CharacterSheet.tsx` | El componente cliente que orquesta toda la ficha: estado, autosave con cola, reconciliación optimista con el servidor. |
-| `src/app/characters/[id]/_components/` | Un componente por tab (`AtributosTab`, `HabilidadesTab`, `ResumenTab`, `PrioridadCard`, `DotesTab`, `PsionicaTab`, `TiendaTab`, `EquipoTab`, `TiradasTab`). |
+| `src/app/characters/[id]/_components/` | Un componente por tab (`AtributosTab`, `HabilidadesTab`, `personaje/` (PersonajeTab: Origen, Prioridades, Identidad, Estado), `PrioridadCard`, `DotesTab`, `PsionicaTab`, `TiendaTab`, `EquipoTab`, `TiradasTab`). |
 | `src/app/master/` | Panel del máster: `page.tsx` (la cola), `actions.ts` (aprobar/revertir/xp/créditos/prioridades), `MasterControls.tsx` (piezas compartidas con la tira que aparece dentro de la ficha). |
 | `prisma/schema.prisma` | `Character.stats` (Json, la ficha entera) + `status`/`approvedAt`/`approvedSnapshot`/`xp`/`creditos` como columnas propias — deliberado, ver por qué en `docs/traspaso.md` §9. |
 

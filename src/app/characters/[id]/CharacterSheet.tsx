@@ -66,7 +66,7 @@ import {
   type EleccionEspecie,
 } from "@/lib/rules";
 import type { Sheet } from "@/lib/rules";
-import { ResumenTab } from "./_components/ResumenTab";
+import { PersonajeTab } from "./_components/personaje/PersonajeTab";
 import { AtributosTab } from "./_components/AtributosTab";
 import { HabilidadesTab } from "./_components/HabilidadesTab";
 import { DotesTab } from "./_components/DotesTab";
@@ -90,7 +90,7 @@ import { useFichaResuelta, SIN_ESTADOS } from "@/hooks/useFichaResuelta";
 // personaje, es la dirección del juego consultando o repartiendo equipo —
 // separado a la derecha en esa misma fila.
 const TABS_FICHA = [
-  { id: "resumen", label: "Resumen" },
+  { id: "personaje", label: "Personaje" },
   { id: "attrs", label: "Atributos" },
   { id: "skills", label: "Habilidades" },
   { id: "dotes", label: "Dotes" },
@@ -164,7 +164,7 @@ export function CharacterSheet({
   combate: CombateView | null;
 }) {
   const aprobada = characterStatus === "APPROVED";
-  const [active, setActive] = useState<TabId>("resumen");
+  const [active, setActive] = useState<TabId>("personaje");
   const [sheet, setSheet] = useState<Sheet>(initialSheet);
   const [name, setName] = useState(initialName);
   const [xp, setXp] = useState(initialXp);
@@ -201,9 +201,9 @@ export function CharacterSheet({
   // Derivado durante el render, no sincronizado en un efecto (ver "you
   // might not need an effect" de React): si `combate` desaparece entre una
   // carga y otra de esta página (el combate terminó) con `active` todavía
-  // en "combate", cae a "resumen" en vez de dejar la ficha en blanco — el
+  // en "combate", cae a "personaje" en vez de dejar la ficha en blanco — el
   // switch de abajo no renderiza nada para "combate" sin `combate`.
-  const activeEfectivo: TabId = active === "combate" && !combate ? "resumen" : active;
+  const activeEfectivo: TabId = active === "combate" && !combate ? "personaje" : active;
 
   // Refs con el último valor, para leerlos dentro de los saves con debounce.
   // Se sincronizan en efecto, no en render: escribirlas durante el render
@@ -466,7 +466,7 @@ export function CharacterSheet({
   // turno/estados en la tira compacta.
   const miCombatiente = combate?.combatientes.find((c) => c.characterId === characterId) ?? null;
   // La ficha resuelta una vez (propuesta-especies §3.1) y la misma para todas las
-  // pestañas: con los estados de combate dentro, Resumen y Acciones ven los mismos
+  // pestañas: con los estados de combate dentro, Personaje y Acciones ven los mismos
   // números.
   const ficha = useFichaResuelta(sheet, miCombatiente?.estados ?? SIN_ESTADOS);
   const { vida, fatiga } = ficha.salud;
@@ -593,8 +593,8 @@ export function CharacterSheet({
         </div>
       </div>
 
-      {activeEfectivo === "resumen" && (
-        <ResumenTab
+      {activeEfectivo === "personaje" && (
+        <PersonajeTab
           name={name}
           ficha={ficha}
           aprobada={aprobada}

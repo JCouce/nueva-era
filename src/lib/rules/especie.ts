@@ -6,7 +6,7 @@
 //                   que devuelve.
 //   hayQuePerder    decide si hay que avisar antes de cambiar
 //   hayQueAvisar    lo mismo con el contexto: solo avisa si el cambio resetearía
-//   eleccionCompleta / eleccionDeFicha / eleccionesIguales
+//   eleccionCompleta / faltaEnEleccion / eleccionDeFicha / eleccionesIguales
 //                   el borrador del selector: no se llama a la action a medias
 //   rangoReferencia peso y altura de referencia con la Fuerza con especie (§14.5)
 //
@@ -112,7 +112,7 @@ const mismaEleccion = (sheet: Sheet, especieId: string | null, opciones: Especie
   sheet.especieOpciones.casta === opciones.casta &&
   sheet.especieOpciones.linaje === opciones.linaje;
 
-// Lo que sobrevive al reset (§14.3): la pestaña Resumen. El nombre vive en
+// Lo que sobrevive al reset (§14.3): la pestaña Personaje. El nombre vive en
 // Character.name, fuera de la ficha. Lo demás vuelve a defaultSheet(), con vida
 // y fatiga actuales en el centinela de máximo (parseSheet lo recorta).
 function resetear(sheet: Sheet, especieId: string | null, opciones: EspecieOpciones): Sheet {
@@ -192,6 +192,19 @@ export function eleccionDeFicha(sheet: Pick<Sheet, "especieId" | "especieOpcione
 // especie tiene castas, linaje obligatorio con la casta que lo admite.
 export function eleccionCompleta(eleccion: EleccionEspecie): boolean {
   return !("error" in validarEleccion(eleccion));
+}
+
+// Qué le falta a una elección para poder mandarse, o null si está completa ("casa"
+// es como ve el jugador el linaje). Mismo orden que validarEleccion; con una
+// especie, casta o linaje desconocidos devuelve null y lo rechaza elegirEspecie
+// (aquí solo se guía al jugador).
+export function faltaEnEleccion(eleccion: EleccionEspecie): "Elige especie" | "Elige casta" | "Elige casa" | null {
+  const especie = especiePorId(eleccion.especieId);
+  if (!especie) return eleccion.especieId === null ? "Elige especie" : null;
+  if (!especie.castas) return null;
+  if (!eleccion.casta) return "Elige casta";
+  if (especie.linajes?.casta === eleccion.casta && !eleccion.linaje) return "Elige casa";
+  return null;
 }
 
 export function eleccionesIguales(a: EleccionEspecie, b: EleccionEspecie): boolean {

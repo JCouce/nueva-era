@@ -176,7 +176,7 @@ export function movimiento(sheet: Sheet, mods: ModificadorConFuente[]) {
   const noNegativo = (n: number) => Math.max(0, n);
   return {
     // >0 si un exoesqueleto está afectando a las cinco fórmulas de abajo —
-    // la ficha lo usa para señalarlo (ver ResumenTab).
+    // la ficha lo usa para señalarlo (ver personaje/EstadoPanel).
     bonoExoesqueleto,
     carrera: noNegativo(16 + base + bonoDerivado(mods, "carrera")), // metros
     saltoVertical: Math.max(15, 15 * base), // centímetros, mínimo 15

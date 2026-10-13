@@ -168,7 +168,7 @@ describe("elegirEspecie: validación", () => {
   });
 });
 
-// Una ficha con de todo: lo de Resumen y lo que se va con el reset.
+// Una ficha con de todo: lo de Personaje y lo que se va con el reset.
 function fichaLlena(): Sheet {
   let s = setPrioridad(setPrioridad(defaultSheet(), "atributos", "A"), "recursos", "B");
   s = setAtributoValue(s, "fuerza", 2);
@@ -190,7 +190,7 @@ function fichaLlena(): Sheet {
 }
 
 describe("elegirEspecie: reset al cambiar (sistema.md §14.3)", () => {
-  test("conserva Resumen y la nueva elección; el resto vuelve a por defecto", () => {
+  test("conserva Personaje y la nueva elección; el resto vuelve a por defecto", () => {
     const antes = fichaLlena();
     const r = elegirEspecie(antes, { especieId: "manduk", casta: "noble", linaje: "ilkrem" }, BORRADOR);
     assert.ok(!("error" in r));
@@ -278,7 +278,7 @@ describe("hayQuePerder", () => {
     assert.equal(hayQuePerder(parseSheet(defaultSheet()), 0, 0), false);
   });
 
-  test("solo Resumen relleno: nada que perder", () => {
+  test("solo Personaje relleno: nada que perder", () => {
     const s = { ...setPrioridad(defaultSheet(), "recursos", "B"), edad: 30, trasfondo: "x", especieId: "riux" };
     assert.equal(hayQuePerder(s, 41000, 41000), false);
   });

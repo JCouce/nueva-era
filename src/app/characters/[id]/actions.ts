@@ -679,7 +679,7 @@ export async function resetBuildAction(characterId: string): Promise<SaveResult>
 // Especie, casta y linaje (docs/sistema.md §14.2-14.3). Única vía para cambiarlos:
 // saveIdentityAction ya no los toca. elegirEspecie valida la combinación, rechaza el
 // cambio del jugador en una ficha aprobada y, en borrador, resetea todo salvo el
-// Resumen; con reset, los créditos vuelven a los de la letra de Recursos (mismo
+// Personaje; con reset, los créditos vuelven a los de la letra de Recursos (mismo
 // valor que fija setPrioridadAction). El reset lo aplica siempre el servidor, haya
 // avisado la pantalla o no.
 export async function setEspecieAction(

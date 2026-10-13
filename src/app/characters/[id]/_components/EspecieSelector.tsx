@@ -1,18 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import {
-  ESPECIES,
-  especiePorId,
-  eleccionCompleta,
-  eleccionesIguales,
-  type EleccionEspecie,
-} from "@/lib/rules";
-import { UsarModal } from "@/components/UsarModal";
-
-// Texto fijo de docs/sistema.md §14.3.
-const AVISO_RESET = "Cambiar de especie reseteará la ficha (todo salvo el Resumen). ¿Seguir?";
+import { ESPECIES, especiePorId, type EleccionEspecie } from "@/lib/rules";
+import { useEleccionEspecie } from "./useEleccionEspecie";
 
 const fieldLabel = "font-mono text-[10px] uppercase tracking-widest text-muted";
 
@@ -41,12 +30,9 @@ function Opcion({
   );
 }
 
-// Especie → casta → linaje (§14.1). Ficha de jugador (ResumenTab) y NPC (NpcEditor).
-// Mantiene un borrador local y solo llama a `onElegir` con una elección completa
-// (elegirEspecie exige casta y, para noble, linaje) y distinta de la guardada. Con
-// `avisar`, pide confirmación antes. El padre lo monta con `key` = elección
-// guardada, así que cuando el servidor devuelve la ficha nueva el borrador se
-// reinicia solo.
+// Selector compacto de especie → casta → linaje (§14.1), el del editor de NPC. La
+// lógica del borrador y la confirmación vive en useEleccionEspecie (la comparte el
+// carrusel de Origen). El padre lo monta con `key` = elección guardada.
 export function EspecieSelector({
   guardada,
   bloqueo,
@@ -60,40 +46,11 @@ export function EspecieSelector({
   avisar: boolean;
   onElegir: (eleccion: EleccionEspecie) => void;
 }) {
-  const [borrador, setBorrador] = useState<EleccionEspecie>(guardada);
-  const [pendiente, setPendiente] = useState<EleccionEspecie | null>(null);
-  // UsarModal llama a onUsar y luego a onCerrar: esto distingue confirmar de cancelar.
-  const confirmado = useRef(false);
+  const { borrador, falta, onEspecie, onCasta, onLinaje, modal } = useEleccionEspecie({ guardada, avisar, onElegir });
 
   const especie = especiePorId(borrador.especieId);
   const conLinaje = !!especie?.linajes && especie.linajes.casta === borrador.casta;
   const deshabilitado = bloqueo !== null;
-
-  const intentar = (nueva: EleccionEspecie) => {
-    setBorrador(nueva);
-    if (!eleccionCompleta(nueva) || eleccionesIguales(nueva, guardada)) return;
-    if (avisar) setPendiente(nueva);
-    else onElegir(nueva);
-  };
-
-  // Volver a la especie (o casta) guardada recupera lo que había debajo.
-  const onEspecie = (id: string) => {
-    if (borrador.especieId === id) return intentar({ especieId: null });
-    intentar(id === guardada.especieId ? guardada : { especieId: id });
-  };
-  const onCasta = (id: string) => {
-    const mismaGuardada = borrador.especieId === guardada.especieId && id === guardada.casta;
-    intentar(mismaGuardada ? guardada : { especieId: borrador.especieId, casta: id });
-  };
-  const onLinaje = (id: string) => intentar({ ...borrador, linaje: id });
-
-  const falta = !especie?.castas
-    ? null
-    : !borrador.casta
-      ? "Elige casta para aplicar el cambio."
-      : conLinaje && !borrador.linaje
-        ? "Elige linaje para aplicar el cambio."
-        : null;
 
   return (
     <div className="flex flex-col gap-3">
@@ -149,27 +106,7 @@ export function EspecieSelector({
       {bloqueo && <p className="font-mono text-[10px] leading-relaxed text-muted">{bloqueo}.</p>}
       {!bloqueo && falta && <p className="font-mono text-[10px] leading-relaxed text-accent">{falta}</p>}
 
-      {/* createPortal: dentro del HudCard de Resumen el modal `fixed` quedaba atrapado
-          debajo del resto de la página (mismo problema y misma salida que en
-          FabricarSeccion.tsx). */}
-      {pendiente &&
-        createPortal(
-          <UsarModal
-            titulo="Cambiar de especie"
-            nota={AVISO_RESET}
-            confirmarLabel="Seguir"
-            onUsar={() => {
-              confirmado.current = true;
-              onElegir(pendiente);
-            }}
-            onCerrar={() => {
-              if (!confirmado.current) setBorrador(guardada);
-              confirmado.current = false;
-              setPendiente(null);
-            }}
-          />,
-          document.body,
-        )}
+      {modal}
     </div>
   );
 }
