@@ -17,6 +17,7 @@ import {
   type DisciplinaId,
   type EleccionEspecie,
   eleccionDeFicha,
+  VITALIDAD_DE_FICHA,
 } from "@/lib/rules";
 import { AtributosTab } from "@/app/characters/[id]/_components/AtributosTab";
 import { HabilidadesTab } from "@/app/characters/[id]/_components/HabilidadesTab";
@@ -124,7 +125,7 @@ export function NpcEditor({
   const [active, setActive] = useState<TabId>("identidad");
   const [sheet, setSheet] = useState<Sheet>(initialSheet);
   // Sin estados: una NpcTemplate no tiene dónde guardarlos (ver la pestaña Acciones).
-  const ficha = useFichaResuelta(sheet, SIN_ESTADOS, { libre: true });
+  const ficha = useFichaResuelta(sheet, SIN_ESTADOS, VITALIDAD_DE_FICHA, { libre: true });
   const [nombre, setNombre] = useState(initialNombre);
   const [nota, setNota] = useState(initialNota);
   const [status, setStatus] = useState<SaveStatus>("idle");

@@ -2,7 +2,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet } from "./sheet";
 import { modificadoresActivos, salud } from "./derivados";
-import { reconciliarVida, ajustarVida, ajustarFatiga } from "./vitalidad";
+import { reconciliarVida, ajustarVida, ajustarFatiga, vitalidadAlEntrarEnCombate } from "./vitalidad";
 
 // defaultSheet(): todos los atributos a 0 → salud() = { vida: 8, fatiga: 8 }.
 
@@ -64,5 +64,16 @@ describe("ajustarFatiga", () => {
     assert.equal(ajustarFatiga(s, -10).fatigaActual, 0);
     assert.equal(ajustarFatiga(s, 10).fatigaActual, 8);
     assert.equal(ajustarFatiga(s, -2).fatigaActual, 6);
+  });
+});
+
+describe("vitalidadAlEntrarEnCombate", () => {
+  test("el jugador entra con su vida y fatiga de la ficha, no a tope", () => {
+    const s = { ...defaultSheet(), vidaActual: 3, fatigaActual: 5 };
+    assert.deepEqual(vitalidadAlEntrarEnCombate(s, { vida: 8, fatiga: 8 }), { pgActual: 3, fatigaActual: 5 });
+  });
+  test("recortado a [0, máximo]", () => {
+    const s = { ...defaultSheet(), vidaActual: 999, fatigaActual: -2 };
+    assert.deepEqual(vitalidadAlEntrarEnCombate(s, { vida: 8, fatiga: 8 }), { pgActual: 8, fatigaActual: 0 });
   });
 });

@@ -77,3 +77,17 @@ export function ajustarFatigaTemporal(sheet: Sheet, delta: number): Sheet {
 export function terminarEscena(sheet: Sheet): Sheet {
   return sheet.fatigaTemporal === 0 ? sheet : { ...sheet, fatigaTemporal: 0 };
 }
+
+// Foto con la que un jugador entra en un combate: su vida y fatiga actuales de la
+// ficha, no el máximo. Con los umbrales sacados del combatiente (M1b), entrar a tope
+// le quitaría a un herido sus penalizadores. Los NPC salen de una plantilla y entran
+// enteros.
+export function vitalidadAlEntrarEnCombate(
+  sheet: Sheet,
+  max: { vida: number; fatiga: number },
+): { pgActual: number; fatigaActual: number } {
+  return {
+    pgActual: Math.max(0, Math.min(sheet.vidaActual, max.vida)),
+    fatigaActual: Math.max(0, Math.min(sheet.fatigaActual, max.fatiga)),
+  };
+}

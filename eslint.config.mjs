@@ -83,6 +83,8 @@ const eslintConfig = defineConfig([
                 "nivelesDePsionica",
                 "nivelEfectivo",
                 "requisitosRotos",
+                "vuelo",
+                "levitacion",
               ],
               message: "Usa resolverFicha / useFichaResuelta (src/lib/rules/fichaResuelta.ts): lee la FichaResuelta.",
             },

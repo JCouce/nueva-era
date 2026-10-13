@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import type { Sheet, EstadoActivo } from "@/lib/rules";
+import { useMemo, useState } from "react";
+import type { Sheet, EstadoActivo, VitalidadActual } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { AccionesTab } from "@/app/characters/[id]/_components/AccionesTab";
 import { useFichaResuelta } from "@/hooks/useFichaResuelta";
@@ -21,14 +21,28 @@ export function NpcAccionesPanel({
   nombre,
   sheet,
   estadosCombate,
+  pgActual,
+  pgMax,
+  fatigaActual,
+  fatigaMax,
   onCerrar,
 }: {
   nombre: string;
   sheet: Sheet;
   estadosCombate: EstadoActivo[];
+  // La vida/fatiga de su fila en el combate, no la de la plantilla: de ella salen los
+  // umbrales de §7 (Herido −1…).
+  pgActual: number;
+  pgMax: number;
+  fatigaActual: number;
+  fatigaMax: number;
   onCerrar: () => void;
 }) {
-  const ficha = useFichaResuelta(sheet, estadosCombate, { libre: true });
+  const vitalidad = useMemo<VitalidadActual>(
+    () => ({ origen: "combate", pgActual, pgMax, fatigaActual, fatigaMax }),
+    [pgActual, pgMax, fatigaActual, fatigaMax],
+  );
+  const ficha = useFichaResuelta(sheet, estadosCombate, vitalidad, { libre: true });
   // Panel bajo demanda: se desmonta al cerrar (onCerrar, en el padre), así
   // que este estado ya nacía fresco en cada apertura incluso cuando vivía
   // dentro de AccionesTab — el historial subió de nivel (2026-09-24, para que

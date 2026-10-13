@@ -561,7 +561,9 @@ como nivel N en X". **No** para "+N a las tiradas de los poderes de X" (eso es u
 ```ts
 montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: EleccionTirada): TiradaMontada
 tirarMontada(montada: TiradaMontada, dado: number, dificultad: number | null): Resultado
-// EleccionTirada = { enEspecialidad, sutil, estadoCondiciones, circunstancial }; SIN_ELECCION para las filas
+eleccionSinTocar(tirada: Accion, enEspecialidad: boolean, sutil?: boolean): EleccionTirada
+// EleccionTirada = { enEspecialidad, sutil, estadoCondiciones, circunstancial }
+// eleccionSinTocar: las casillas en su estado inicial (estadoInicial), sin circunstancial
 ```
 
 `FichaParaTirada` es `Pick<FichaResuelta, "ficha" | "modificadores">`: la pantalla pasa la
@@ -573,8 +575,8 @@ Qué devuelve y dónde entra cada mecanismo:
 |---|---|
 | `aplicado`, `habilidad` | `modificadorAccion` (con Sutil y especialidad de la elección) |
 | `ajustesFijos` | los de la tirada, tal cual |
-| `base` | aplicado + habilidad + ajustes fijos: **lo que enseña la fila** antes de abrir el modal |
-| `modificador` | base + `Modificador` con alcance + `CondicionTirada` + `bonosTramo` (el `modificador` del `Resultado`) |
+| `base` | aplicado + habilidad + ajustes fijos |
+| `modificador` | base + `Modificador` con alcance (umbrales de §7 incluidos) + `CondicionTirada` + `bonosTramo` (el `modificador` del `Resultado`). Montada con `eleccionSinTocar`, **lo que enseña la fila**: el mismo número que el modal recién abierto (M1b) |
 | `total` | modificador + circunstancial: el "Tirar (+N)" del modal |
 | `desglose` | una línea por fuente, en este orden: aplicado, habilidad, ajustes fijos, alcance, casillas, tramos, circunstancial (si ≠ 0) |
 | `margenes` | `{ criticoExito, criticoFallo }`, por defecto `MARGEN_CRITICO` (6) |
@@ -585,7 +587,8 @@ Qué devuelve y dónde entra cada mecanismo:
 (`medicina.ts`, condición `vtm_tratamiento`) declara `margenCriticoExito: 0` en
 "complejo" y cualquier éxito pasa a crítico; antes era un `if` por id en `AccionesTab`.
 
-Quién lo usa: `FilaTirada` y `FilaPoder` (`base`, vía `PoderPreparado.montada`),
+Quién lo usa: `FilaTirada` y `FilaPoder` (`modificador`; la de poder vía
+`PoderPreparado.montada`, que `prepararPoder` monta con `eleccionSinTocar`),
 `AccionModal` (total, desglose y notas en vivo; entrega la montada al tirar), `tirar`, la
 salvación de sobrecarga y las tiradas de Fabricar/Reparar (`tirarMontada`). ESLint veta en
 componentes `modificadorAccion`, `bonoAlcance`, `desgloseAlcance`, `resolverTirada`,
@@ -593,6 +596,16 @@ componentes `modificadorAccion`, `bonoAlcance`, `desgloseAlcance`, `resolverTira
 
 Tests: `montaje-caracterizacion.test.ts` fija lo que montaba cada sitio de la UI antes de
 `montarTirada` (réplicas citando archivo:línea) y comprueba que da lo mismo. **Si un
-número de ahí cambia, es un bug.** Los umbrales de salud/fatiga y el daño melee/Sutil
-desde la ficha resuelta son M1b (`docs/tareas.md`).
+número de ahí cambia, es un bug.** Sus fichas están enteras de vida y fatiga, así que M1b
+no movió ninguno: lo que M1b cambia a propósito vive en `umbrales.test.ts`.
+
+**Umbrales de salud y fatiga (M1b, 2026-10-13).** El "−1/−3/−5 a todo" y "−1/−2 a todo"
+de §7 no los suma nadie a mano: `resolverFicha` los añade al final de
+`FichaResuelta.modificadores` (`modificadoresDeUmbrales`, alcance `todas`, fuente
+"Herido", "Exhausto"…), así que entran por el mismo `bonoAlcance`/`desgloseAlcance` que
+cualquier otro `Modificador` de tirada, en todas las tiradas y en `prepararPoder`. La
+vida/fatiga con la que se calculan es una entrada explícita de `resolverFicha`
+(`vitalidad`: la de la ficha fuera de combate; la del `Combatiente` dentro, también para
+un NPC en la consola). El daño melee/bayoneta/Sutil (`accionesDeAtaque(sheet, mods)`)
+también sale de esos modificadores, con especie y estados.
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   setAtributoAction,
   setHabilidadAction,
@@ -65,6 +65,8 @@ import {
   type LetraPrioridad,
   type MaterialTier,
   type EleccionEspecie,
+  type VitalidadActual,
+  VITALIDAD_DE_FICHA,
 } from "@/lib/rules";
 import type { Sheet } from "@/lib/rules";
 import { PersonajeTab, PanelFieldset } from "./_components/personaje/PersonajeTab";
@@ -478,7 +480,22 @@ export function CharacterSheet({
   // La ficha resuelta una vez (propuesta-especies §3.1) y la misma para todas las
   // pestañas: con los estados de combate dentro, Personaje y Acciones ven los mismos
   // números.
-  const ficha = useFichaResuelta(sheet, miCombatiente?.estados ?? SIN_ESTADOS);
+  // Umbrales de §7: en combate, con la vida/fatiga de mi fila (la foto del combate);
+  // fuera, con la de la ficha.
+  const vitalidad = useMemo<VitalidadActual>(
+    () =>
+      miCombatiente
+        ? {
+            origen: "combate",
+            pgActual: miCombatiente.pgActual,
+            pgMax: miCombatiente.pgMax,
+            fatigaActual: miCombatiente.fatigaActual,
+            fatigaMax: miCombatiente.fatigaMax,
+          }
+        : VITALIDAD_DE_FICHA,
+    [miCombatiente],
+  );
+  const ficha = useFichaResuelta(sheet, miCombatiente?.estados ?? SIN_ESTADOS, vitalidad);
   const puntosAttr = puntosAtributosDisponibles(sheet);
   // Con el ajuste de coste de la especie (§14.6), el mismo que aplica el servidor.
   const puntosSkill = puntosHabilidadesDisponibles(sheet, ficha.ajusteCoste);

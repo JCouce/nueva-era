@@ -45,6 +45,9 @@ function tiradaDeVolar(pieza: PiezaEquipada, cat: MejoraMovimiento): Accion | nu
     recursoInstanciaId: pieza.instanciaId,
     recursoUnidad: "cargas",
     condiciones,
+    // TODO(revisar): la "media velocidad" de Malherido/Exhausto (§7, S26) ya parte el
+    // vuelo de Personaje → Estado (FichaResuelta.vuelo), pero no los metros de esta
+    // tirada: accionesDeMovimiento no recibe la ficha resuelta. Pendiente en tareas.md.
     vuelo: { velocidadBase: nivelInfo.velocidadM, bonusCritico: nivelInfo.bonusCriticoM ?? 0 },
     ajustesFijos: nivelInfo.maniobrabilidad
       ? [{ valor: nivelInfo.maniobrabilidad, fuente: `Maniobrabilidad (${cat.label})` }]

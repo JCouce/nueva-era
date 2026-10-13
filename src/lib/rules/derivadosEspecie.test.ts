@@ -14,7 +14,7 @@ import {
   multiplicadorCargaDeEspecie,
   MULTIPLICADOR_CARGA_NEUTRO,
 } from "./especie";
-import { notasDeEstado, resolverFicha } from "./fichaResuelta";
+import { notasDeEstado, resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 
 // Fuerza variable, Agilidad 2, Atletismo 2; con Armadura Pesada y, si `exo`,
 // Exoesqueleto 2 (+4 a la base del movimiento y a la Fuerza de la carga).
@@ -91,7 +91,7 @@ describe("caracterización: movimiento, carga y blindaje sin efectos de especie"
 // --- E3 ---------------------------------------------------------------------
 
 const ZIME = { casta: "noble", linaje: "zimethroni" };
-const resuelta = (s: Sheet, libre = false) => resolverFicha(s, { estadosCombate: [], libre });
+const resuelta = (s: Sheet, libre = false) => resolverFicha(s, { vitalidad: VITALIDAD_DE_FICHA, estadosCombate: [], libre });
 
 describe("resolución de especie (especie.ts)", () => {
   test("sin especie y especies sin efectos aquí: neutros", () => {
@@ -234,7 +234,7 @@ describe("NPC en modo libre: le llegan los derivados de especie (§14.3)", () =>
 });
 
 describe("notas de Personaje → Estado", () => {
-  const NADA = { carrera: undefined, saltoVertical: undefined, saltoHorizontal: undefined, escalada: undefined, nado: undefined, carga: undefined };
+  const NADA = { carrera: undefined, saltoVertical: undefined, saltoHorizontal: undefined, escalada: undefined, nado: undefined, vuelo: undefined, levitacion: undefined, carga: undefined };
 
   test("sin especie ni exoesqueleto, ninguna; Riux y Humanos tampoco", () => {
     for (const especieId of [null, "riux", "humano"]) assert.deepEqual(notasDeEstado(resuelta(ficha(especieId, 0, false))), NADA);

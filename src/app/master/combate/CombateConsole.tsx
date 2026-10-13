@@ -89,6 +89,11 @@ export function CombateConsole({
   // jugador desde su ficha) puede cambiarlo sin que esta pantalla se
   // entere hasta el próximo refresh manual — esto lo hace solo.
   usePollingCombate(combate !== null);
+  // La fila viva (tras el polling o un ajuste de PG), no la que se abrió: de su vida,
+  // fatiga y estados salen las tiradas del panel.
+  const npcAbierto = tiradasDe
+    ? (combate?.combatientes.find((c) => c.id === tiradasDe.id) ?? tiradasDe)
+    : null;
   // Un input sin control de React por combatiente (subtarea 2.4): con la
   // cola llena, un estado controlado por fila fuerza un re-render de toda
   // la lista en cada tecla. Se lee del DOM al aplicar y se limpia a mano.
@@ -311,11 +316,15 @@ export function CombateConsole({
 
       {error && <p className="font-mono text-xs text-danger">{error}</p>}
 
-      {tiradasDe && tiradasDe.sheet && (
+      {npcAbierto && npcAbierto.sheet && (
         <NpcAccionesPanel
-          nombre={tiradasDe.nombre}
-          sheet={tiradasDe.sheet}
-          estadosCombate={tiradasDe.estados}
+          nombre={npcAbierto.nombre}
+          sheet={npcAbierto.sheet}
+          estadosCombate={npcAbierto.estados}
+          pgActual={npcAbierto.pgActual}
+          pgMax={npcAbierto.pgMax}
+          fatigaActual={npcAbierto.fatigaActual}
+          fatigaMax={npcAbierto.fatigaMax}
           onCerrar={() => setTiradasDe(null)}
         />
       )}

@@ -3,13 +3,16 @@ import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
 import { equipar } from "./equipo";
 import { ajustarRecurso, ajustarGranada, ajustarMunicionEspecial } from "./recursos";
-import { accionesDeAtaque, accionesDirectasDeAtaque, generaAccionPropia } from "./combate";
+import { accionesDeAtaque as accionesDeAtaqueCon, accionesDirectasDeAtaque, generaAccionPropia } from "./combate";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
 import { MUNICION_GRANADA } from "../catalog/municion";
 import type { MotorMetadata } from "./motor";
 import { modificadorAccion, gastoTotal, gastoMunicionEspecial, avisoInsuficiente } from "./acciones";
 import { aplicado, modificadoresActivos } from "./derivados";
+
+// En reposo (especie + equipo): estos tests no llevan estados de combate.
+const accionesDeAtaque = (s: Sheet) => accionesDeAtaqueCon(s, modificadoresActivos(s));
 
 // Ficha de trabajo: se parte de la de por defecto y se tocan atributos sueltos.
 function ficha(patch: { atributos?: Partial<Sheet["atributos"]> }): Sheet {

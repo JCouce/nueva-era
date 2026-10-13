@@ -19,7 +19,7 @@ import {
 import { bonoAlcance, desgloseAlcance, type ContextoAccion } from "./modificadores";
 import { accionesDeAtaque } from "./combate";
 import { consultaIndiceCondiciones, equipar } from "./equipo";
-import { resolverFicha, type FichaResuelta } from "./fichaResuelta";
+import { resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
 import type { EstadoActivo } from "./estados";
 import { accionesDePsionica, conEsquivaLevitando, conPsionicaEnTiradaFija } from "./poderes";
 import { prepararPoder, SELECCION_PODER_VACIA, type SeleccionPoder } from "./usoPoder";
@@ -70,14 +70,16 @@ const ENFERMO_Y_ATURDIDO: EstadoActivo[] = [
   { estadoId: "aturdido", gradoId: "fracaso", rondasRestantes: 1 },
 ];
 
-const SIN_ESPECIE = resolverFicha(base(), { estadosCombate: [] });
-const EQUIPADA = resolverFicha(conEquipo(base()), { estadosCombate: [] });
+const SIN_ESPECIE = resolverFicha(base(), { vitalidad: VITALIDAD_DE_FICHA, estadosCombate: [] });
+const EQUIPADA = resolverFicha(conEquipo(base()), { vitalidad: VITALIDAD_DE_FICHA, estadosCombate: [] });
 // Especie con atributos (Zimethroni, Agilidad +1) + estados de combate (Enfermedad baja
 // atributos; Aturdido −2 a Defensa con alcance de grupo).
 const ESPECIE_Y_ESTADOS = resolverFicha({ ...conEquipo(base()), especieId: "zimethroni" }, {
+  vitalidad: VITALIDAD_DE_FICHA,
   estadosCombate: ENFERMO_Y_ATURDIDO,
 });
 const PSIONICA = resolverFicha({ ...base(), psionica: { traslacion: 2, singularidad: 2 }, fatigaActual: 8, fatigaTemporal: 0 }, {
+  vitalidad: VITALIDAD_DE_FICHA,
   estadosCombate: ENFERMO_Y_ATURDIDO,
 });
 
@@ -94,7 +96,7 @@ function fija(f: FichaResuelta, id: string): Accion {
   return conPsionicaEnTiradaFija(niveles, conEsquivaLevitando(niveles, t));
 }
 function ataque(f: FichaResuelta, label: string): Accion {
-  return conCondicionesDeEquipo(f, accionesDeAtaque(f.ficha).find((t) => t.label === label)!);
+  return conCondicionesDeEquipo(f, accionesDeAtaque(f.ficha, f.modificadores).find((t) => t.label === label)!);
 }
 
 // AccionesTab.tsx:73-75

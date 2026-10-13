@@ -1,6 +1,6 @@
 "use client";
 
-import { vuelo, levitacion, notasDeEstado, pesoEquipado, type FichaResuelta } from "@/lib/rules";
+import { notasDeEstado, pesoEquipado, type FichaResuelta } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 
 // Vistazo rápido: el ajuste de vida y fatiga vive en Recursos (docs/tareas.md, 2026-09-27).
@@ -70,8 +70,8 @@ export function EstadoPanel({ ficha }: { ficha: FichaResuelta }) {
   const sheet = ficha.ficha;
   const { vida, fatiga } = ficha.salud;
   const mov = ficha.movimiento;
-  const vue = vuelo(sheet);
-  const lev = levitacion(ficha.psionica.paraEfectos);
+  const vue = ficha.vuelo;
+  const lev = ficha.levitacion;
   const notas = notasDeEstado(ficha);
   const tono = (nota: string | undefined) => (nota ? "text-info" : "text-foreground");
   const limiteCarga = ficha.cargaMaxima;
@@ -112,8 +112,8 @@ export function EstadoPanel({ ficha }: { ficha: FichaResuelta }) {
           <Dato label="Salto horizontal" valor={mov.saltoHorizontal} unidad="cm" tono={tono(notas.saltoHorizontal)} nota={notas.saltoHorizontal} />
           <Dato label="Escalada" valor={mov.escalada} unidad="m" tono={tono(notas.escalada)} nota={notas.escalada} />
           <Dato label="Nado" valor={mov.nado} unidad="m" tono={tono(notas.nado)} nota={notas.nado} />
-          {vue && <Dato label={`Vuelo (mov. aérea ${vue.nivel})`} valor={vue.velocidadM} unidad="m" tono="text-info" />}
-          {lev && <Dato label={`Levitar (Traslación ${lev.nivel})`} valor={lev.velocidadM} unidad="m" tono="text-info" />}
+          {vue && <Dato label={`Vuelo (mov. aérea ${vue.nivel})`} valor={vue.velocidadM} unidad="m" tono="text-info" nota={notas.vuelo} />}
+          {lev && <Dato label={`Levitar (Traslación ${lev.nivel})`} valor={lev.velocidadM} unidad="m" tono="text-info" nota={notas.levitacion} />}
         </div>
         <p className="font-mono text-[10px] leading-relaxed text-muted">
           Carga: peso equipado frente al límite sin penalizador. Armaduras y módulos no traen peso en el

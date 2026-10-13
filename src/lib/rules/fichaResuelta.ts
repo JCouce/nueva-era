@@ -4,7 +4,8 @@
 // llaman a modificadoresActivos ni a los derivados sueltos (regla de ESLint).
 //
 // Mismo patrón que usoPoder.ts: entrada explícita, nada se lee de fuera salvo el
-// catálogo. Los estados de combate no están en la ficha, por eso entran aparte.
+// catálogo. Los estados de combate y la vida/fatiga de un combate no están en la
+// ficha, por eso entran aparte.
 import { APLICADOS, ATRIBUTOS, type AplicadoId, type AtributoId } from "./atributos";
 import { tieneEscudoMelee, type ArmaduraNatural } from "./blindaje";
 import {
@@ -16,6 +17,7 @@ import {
   desgloseAtributo,
   movimiento,
   salud,
+  vuelo,
   type Fuente,
 } from "./derivados";
 import {
@@ -34,7 +36,19 @@ import { bonosDeDisciplina, nivelesDePsionica, type PsionicaResuelta } from "./p
 import type { ExcepcionRareza } from "../catalog/especies";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
 import { indiceDeCondiciones, modificadoresDeEquipo, type IndiceCondiciones } from "./equipo";
-import { modificadoresDeEstados, type EstadoActivo } from "./estados";
+import {
+  modificadoresDeEstados,
+  modificadoresDeUmbrales,
+  movimientoPorUmbrales,
+  umbralFatiga,
+  umbralSalud,
+  type EstadoActivo,
+  type MovimientoPorUmbral,
+  type UmbralFatiga,
+  type UmbralSalud,
+} from "./estados";
+import { levitacion } from "./poderes";
+import { fatigaEfectiva } from "./vitalidad";
 import type { ModificadorConFuente } from "./modificadores";
 import type { Sheet } from "./sheet";
 
@@ -43,8 +57,8 @@ export type DesgloseDerivado = { total: number; fuentes: Fuente[] };
 export type FichaResuelta = {
   ficha: Sheet;
   especie: EspecieResuelta | null;
-  // Especie, equipo y estados de combate, en ese orden (el de modificadoresActivos
-  // más los estados detrás, como los sumaba Acciones).
+  // Especie, equipo, estados de combate y umbrales de salud/fatiga (§7), en ese orden
+  // (el de modificadoresActivos más los estados detrás, como los sumaba Acciones).
   modificadores: ModificadorConFuente[];
   atributos: Record<AtributoId, number>;
   aplicados: Record<AplicadoId, number>;
@@ -54,7 +68,13 @@ export type FichaResuelta = {
   };
   salud: { vida: number; fatiga: number };
   alerta: number;
+  // Umbrales de §7 con la vida/fatiga de `vitalidad` (fatiga efectiva) y lo que hacen
+  // a velocidad y carga, ya aplicado en movimiento, vuelo, levitación y cargaMaxima.
+  umbrales: { salud: UmbralSalud; fatiga: UmbralFatiga; movimiento: MovimientoPorUmbral };
   movimiento: ReturnType<typeof movimiento>;
+  // null si la ficha no vuela (Movilidad Aérea) o no levita (Traslación 2+).
+  vuelo: ReturnType<typeof vuelo>;
+  levitacion: ReturnType<typeof levitacion>;
   cargaMaxima: number;
   // Lo que la especie cambia de fórmula (§14.7), con su fuente: lo usan movimiento,
   // cargaMaxima y las notas de Estado (notasDeEstado). Derivado: también al NPC.
@@ -83,18 +103,56 @@ export type FichaResuelta = {
 // `libre`: editor de NPC del máster. Le llega todo lo derivado de la especie (también
 // la Resonancia +1), pero no lo de creación (costes por casta, descuentos psiónicos,
 // bolsa de aumentos, kerzul sin rareza).
-export type OpcionesFicha = { estadosCombate: EstadoActivo[]; libre?: boolean };
+export type OpcionesFicha = { estadosCombate: EstadoActivo[]; vitalidad: VitalidadActual; libre?: boolean };
 
-export function resolverFicha(sheet: Sheet, { estadosCombate, libre = false }: OpcionesFicha): FichaResuelta {
+// De dónde salen la vida y la fatiga para los umbrales (§7). Fuera de combate, las de
+// la ficha (vidaActual/fatigaActual) contra los máximos que resuelve esta misma
+// pasada. En un combate, la foto del Combatiente (pgActual/pgMax...), también para el
+// NPC de la consola: la de su fila, no la de su plantilla. Lo decide quien llama.
+export type VitalidadActual =
+  | { origen: "ficha" }
+  | { origen: "combate"; pgActual: number; pgMax: number; fatigaActual: number; fatigaMax: number };
+
+export const VITALIDAD_DE_FICHA: VitalidadActual = { origen: "ficha" };
+
+// La reducción de §7 sobre un valor ya calculado (con la especie dentro), hacia abajo.
+// TODO(revisar): S28 y S29 de docs/sistema.md (redondeo y orden con la especie).
+const reducir = (valor: number, fraccion: number) => Math.floor(valor * (1 - fraccion));
+
+export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre = false }: OpcionesFicha): FichaResuelta {
   const especie = especieDeFicha(sheet);
   const formulaMovimiento = formulaMovimientoDeEspecie(especie);
   const multiplicadorCarga = multiplicadorCargaDeEspecie(especie);
   // = [...modificadoresActivos(sheet), ...estados], sin volver a resolver la especie.
-  const modificadores: ModificadorConFuente[] = [
+  const sinUmbrales: ModificadorConFuente[] = [
     ...(especie?.modificadores ?? []),
     ...modificadoresDeEquipo(sheet),
     ...modificadoresDeEstados(estadosCombate),
   ];
+  // Los umbrales solo dan modificadores de tirada: no tocan los máximos de salud.
+  const maximos = salud(sheet, sinUmbrales);
+  // La temporal de Proeza cuenta para el umbral mientras dura la escena (sheet.ts).
+  // TODO(revisar): en combate se resta de la fatiga del combatiente, porque Combatiente
+  // no lleva temporal propia y Proeza la apunta en la ficha.
+  const v =
+    vitalidad.origen === "combate"
+      ? { pg: vitalidad.pgActual, pgMax: vitalidad.pgMax, fatiga: vitalidad.fatigaActual - sheet.fatigaTemporal, fatigaMax: vitalidad.fatigaMax }
+      : { pg: sheet.vidaActual, pgMax: maximos.vida, fatiga: fatigaEfectiva(sheet), fatigaMax: maximos.fatiga };
+  const umbrales = {
+    salud: umbralSalud(v.pg, v.pgMax),
+    fatiga: umbralFatiga(v.fatiga, v.fatigaMax),
+  };
+  const porUmbral = movimientoPorUmbrales(umbrales.salud, umbrales.fatiga);
+  const modificadores = [...sinUmbrales, ...modificadoresDeUmbrales(v.pg, v.pgMax, v.fatiga, v.fatigaMax)];
+
+  // Media velocidad: carrera, vuelo y levitación; saltos, escalada y nado no (S26).
+  const velocidad = (m: number) => (porUmbral.mediaVelocidad.length > 0 ? Math.floor(m / 2) : m);
+  const mov = movimiento(sheet, modificadores, formulaMovimiento.formula);
+  const vue = vuelo(sheet);
+  const psionica = nivelesDePsionica(sheet, bonosDeDisciplina(modificadores));
+  const lev = levitacion(psionica.paraEfectos);
+  const carga = cargaMaxima(sheet, modificadores, multiplicadorCarga.valor);
+
   return {
     ficha: sheet,
     especie,
@@ -109,10 +167,13 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, libre = false }: O
         APLICADOS.map((a) => [a.id, desgloseAplicado(sheet, a.id, modificadores)]),
       ) as Record<AplicadoId, DesgloseDerivado>,
     },
-    salud: salud(sheet, modificadores),
+    salud: maximos,
     alerta: alerta(sheet, modificadores),
-    movimiento: movimiento(sheet, modificadores, formulaMovimiento.formula),
-    cargaMaxima: cargaMaxima(sheet, modificadores, multiplicadorCarga.valor),
+    umbrales: { ...umbrales, movimiento: porUmbral },
+    movimiento: { ...mov, carrera: velocidad(mov.carrera) },
+    vuelo: vue && { ...vue, velocidadM: velocidad(vue.velocidadM) },
+    levitacion: lev && { ...lev, velocidadM: velocidad(lev.velocidadM) },
+    cargaMaxima: porUmbral.reduccionCarga ? reducir(carga, porUmbral.reduccionCarga.fraccion) : carga,
     formulaMovimiento,
     multiplicadorCarga,
     blindaje: { tieneEscudoMelee: tieneEscudoMelee(sheet), armaduraNatural: armaduraNaturalDeEspecie(especie) },
@@ -120,16 +181,27 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, libre = false }: O
     ajusteCoste: libre ? AJUSTE_NEUTRO : ajustesDeCoste(especie),
     bolsaAumentos: libre ? null : bolsaDeAumentos(especie),
     excepcionesRareza: libre ? [] : excepcionesRareza(especie),
-    psionica: nivelesDePsionica(sheet, bonosDeDisciplina(modificadores)),
+    psionica,
   };
 }
 
 // --- Notas de Personaje → Estado ------------------------------------------------
 
-export type CampoEstado = "carrera" | "saltoVertical" | "saltoHorizontal" | "escalada" | "nado" | "carga";
+export type CampoEstado =
+  | "carrera"
+  | "saltoVertical"
+  | "saltoHorizontal"
+  | "escalada"
+  | "nado"
+  | "vuelo"
+  | "levitacion"
+  | "carga";
 export type NotasEstado = Record<CampoEstado, string | undefined>;
 
 const CAMPOS_MOVIMIENTO = ["carrera", "saltoVertical", "saltoHorizontal", "escalada", "nado"] as const;
+
+// Los que frena la "media velocidad" de §7 (S26).
+const CAMPOS_VELOCIDAD = ["carrera", "vuelo", "levitacion"] as const;
 
 const CAMPO_DE_FORMULA: Record<keyof FormulaMovimientoResuelta["formula"], CampoEstado> = {
   saltoVerticalPorPunto: "saltoVertical",
@@ -139,7 +211,9 @@ const CAMPO_DE_FORMULA: Record<keyof FormulaMovimientoResuelta["formula"], Campo
 };
 
 // De dónde sale que un derivado no sea el general, en una nota corta junto al valor:
-// "+4 exoesqueleto", "fórmula · Arköru", "+200 · Casa de Zimethroni", "×1,2 · Arköru".
+// "+4 exoesqueleto", "fórmula · Arköru", "+200 · Casa de Zimethroni", "×1,2 · Arköru",
+// y los umbrales de §7: "media velocidad · Malherido", "−25 % · Exhausto", "una casilla
+// por turno · Moribundo" (esta última solo como texto, sin tocar el número).
 // Varias, separadas por coma. undefined si el valor sale de la fórmula general.
 export function notasDeEstado(ficha: FichaResuelta): NotasEstado {
   const notas: Record<CampoEstado, string[]> = {
@@ -148,6 +222,8 @@ export function notasDeEstado(ficha: FichaResuelta): NotasEstado {
     saltoHorizontal: [],
     escalada: [],
     nado: [],
+    vuelo: [],
+    levitacion: [],
     carga: [],
   };
   const exo = ficha.movimiento.bonoExoesqueleto;
@@ -165,6 +241,13 @@ export function notasDeEstado(ficha: FichaResuelta): NotasEstado {
   }
   const { valor, fuente } = ficha.multiplicadorCarga;
   if (valor !== 1) notas.carga.push(`×${String(valor).replace(".", ",")}${fuente ? ` · ${fuente}` : ""}`);
+
+  const { mediaVelocidad, unaCasillaPorTurno, reduccionCarga } = ficha.umbrales.movimiento;
+  for (const c of CAMPOS_VELOCIDAD) {
+    if (mediaVelocidad.length > 0) notas[c].push(`media velocidad · ${mediaVelocidad.join(" y ")}`);
+    if (unaCasillaPorTurno) notas[c].push(`una casilla por turno · ${unaCasillaPorTurno}`);
+  }
+  if (reduccionCarga) notas.carga.push(`−${reduccionCarga.fraccion * 100} % · ${reduccionCarga.fuentes.join(" y ")}`);
 
   return Object.fromEntries(
     Object.entries(notas).map(([c, n]) => [c, n.length ? n.join(", ") : undefined]),

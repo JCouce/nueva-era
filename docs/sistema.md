@@ -328,6 +328,27 @@ imponen penalizadores por umbral:
 - **Descanso**: 8 horas para un descanso completo; 5 comidas de 1 punto de fatiga y 2
   descansos breves de 2 puntos a lo largo del día.
 
+*En la app (M1b, 2026-10-13), la tabla de umbrales entera se aplica sola, en la
+`FichaResuelta` (`resolverFicha`, `rules/fichaResuelta.ts`):*
+- **−N a todo**: `modificadoresDeUmbrales` (`rules/estados.ts`) entra en
+  `FichaResuelta.modificadores` como `Modificador` de tirada con alcance `todas`. Llega a
+  todas las tiradas (montarTirada, poderes con `prepararPoder`, salvación de sobrecarga,
+  Fabricar/Reparar) con su línea en el desglose ("Herido −1"). Bandas excluyentes por
+  recurso (S14), mínimo de Moribundo/Exhausto según S15.
+- **De dónde sale la vida/fatiga**: entrada explícita de `resolverFicha` (`vitalidad`).
+  Fuera de combate, la de la ficha (`vidaActual`, y la fatiga **efectiva**: menos la
+  temporal de Proeza) contra sus máximos. En un combate en curso, la foto del
+  `Combatiente` (`pgActual/pgMax`, `fatigaActual/fatigaMax`): para el jugador, su fila
+  (`CharacterSheet`, `miCombatiente`); para el NPC de la consola, la de su fila, no la de
+  su plantilla (`NpcAccionesPanel`). La temporal de la ficha también se resta en combate.
+- **Media velocidad y carga** (`movimientoPorUmbrales`, `estados.ts`): carrera, vuelo y
+  levitación a la mitad; carga −25 % o −50 %. Supuestos S26-S29. Notas en Personaje →
+  Estado: "media velocidad · Malherido", "−25 % · Exhausto", "una casilla por turno ·
+  Moribundo".
+- **Sin mecanizar**: "una casilla por turno" de Moribundo (solo la nota; el número de
+  carrera no cambia) y la media velocidad en los metros de la tirada de Volar (solo se
+  parte el vuelo de Estado; pendiente en `docs/tareas.md`).
+
 ## 8. Economía `[PARCIAL · EQUIP + HOJA2]`
 
 - Moneda: **créditos**.
@@ -1249,6 +1270,10 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S23 | Altura y peso por defecto = **punto medio redondeado** del rango de referencia de la especie (§14.5), sin guardarse en la ficha. | El documento solo da rangos; el usuario (2026-10-13) quiere los campos rellenos de entrada sin que el jugador tenga que mirar la tabla. |
 | S24 | Un nivel efectivo de disciplina por encima de 6 (Resonancia comprada 6 + 1 del Arianyi = 7) **cuenta como 7 para los requisitos** y para cualquier "desde nivel X", pero **los efectos usan la fila del 6** (tablas por nivel y fórmulas "× nivel": Alerta pasiva da 120 m con 6 y con 7). §14.6. | `ESP` dice que el +1 "puede superar el máximo", pero las tablas de `docs/psionica.md` acaban en el 6 y no hay fila 7 que leer. Decisión del usuario (2026-10-13), con test (`especie.test.ts`). Pendiente de que Murillo diga si un 7 debe hacer algo más. |
 | S25 | **Requisito roto**: si el máster cambia la especie de una ficha aprobada (sin reset) o la de un NPC (modo libre), puede quedar una disciplina con su requisito sin cumplir (ex-Arianyi con Inducción y Resonancia comprada 0). **No se borra nada**: Psiónica la marca como "requisito no cumplido" (`requisitosRotos`, `psionica.ts`); se puede bajar pero no subir. En Acciones sus poderes **se ven bloqueados**, con el motivo ("Requiere Resonancia 1"), y no aplican efectos pasivos ni ventajas (`bloqueoPorRequisito`, `poderes.ts`). §14.6. | El reset de §14.3 no aplica en esos dos casos, y borrar lo comprado sería destruir datos del máster. Verlo bloqueado (ni usable ni escondido) le enseña al máster qué ha roto. Decisión del usuario (2026-10-13). |
+| S26 | La **media velocidad** de Malherido y Exhausto (§7) parte a la mitad la **carrera, el vuelo (Movilidad Aérea) y la levitación (Traslación)**. Saltos, escalada y nado no cambian. `TODO(revisar)` en `fichaResuelta.ts` y `estados.ts`. | §7 dice "media velocidad" sin decir qué movimientos son "velocidad". Leído como desplazamiento por turno; los saltos y la escalada/nado son distancias de una acción, no una velocidad. Propuesta por defecto implementada en M1b (2026-10-13), pendiente de Murillo (pregunta 37). |
+| S27 | **Malherido y Exhausto a la vez no se acumulan**: la velocidad se divide entre 2 una sola vez, y de las reducciones de carga se aplica **la mayor**, no la suma (Malherido + Exhausto = −25 %; Moribundo + Exhausto = −50 %). Moribundo + Exhausto sí da media velocidad (la de Exhausto). | Misma lectura que S14 llevada al otro eje: sumar dos "media velocidad" (un cuarto) o −25 % −25 % no lo dice ninguna fila de la tabla. Propuesta por defecto implementada en M1b (2026-10-13), pendiente de Murillo (pregunta 38). |
+| S28 | Las reducciones de §7 **redondean hacia abajo** (carrera 21 → 10; carga 45 × 0,75 → 33). | El documento no da redondeo. Hacia abajo es lo conservador para un penalizador. Propuesta por defecto implementada en M1b (2026-10-13), pendiente de Murillo (pregunta 39). |
+| S29 | La reducción de carga de §7 va **al final, sobre la carga ya multiplicada por la especie** (Arköru: Fuerza 4 → 96 kg, Malherido → 72, Moribundo → 48). | Los dos son porcentajes sobre el mismo número: el orden solo cambia el redondeo, pero hay que fijarlo. Propuesta por defecto implementada en M1b (2026-10-13), pendiente de Murillo (pregunta 40). |
 
 ## Conflictos detectados
 
@@ -1452,6 +1477,15 @@ lo anota a mano.
     transcritos en otro sitio), o puede hacer falta confirmar con él si el catálogo
     entero de plasma está bien relativizado entre sí. Detectado en el barrido
     motorMetadata-vs-prosa (2026-09-24).
+
+**Umbrales de salud y fatiga (§7), abiertas al mecanizarlos en M1b (2026-10-13)**
+37. **"Media velocidad": ¿a qué movimientos?** Hoy carrera, vuelo y levitación; saltos,
+    escalada y nado no. ¿Es así, o afecta a todo el movimiento? *(S26)*
+38. **Malherido y Exhausto a la vez**: ¿se acumulan (un cuarto de velocidad, −50 % de
+    carga) o se aplica solo el peor? Hoy, el peor. *(S27)*
+39. **Redondeo de la mitad y de los porcentajes**: hoy hacia abajo. *(S28)*
+40. **Arköru (carga +20 %) malherido**: ¿el −25 % va sobre la carga ya con el +20 %, o se
+    restan los porcentajes entre sí (+20 −25 = −5 %)? Hoy, sobre la carga ya multiplicada. *(S29)*
 
 ---
 

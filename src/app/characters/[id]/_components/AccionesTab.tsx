@@ -9,6 +9,7 @@ import {
   montarTirada,
   tirarMontada,
   SIN_ELECCION,
+  eleccionSinTocar,
   resolverDanio,
   resolverVuelo,
   gastoTotal,
@@ -147,7 +148,7 @@ function FilaTirada({
   const especialidades = !alternativa && tirada.habilidad
     ? sheet.habilidades[tirada.habilidad].especialidades
     : [];
-  const montada = montarTirada(ficha, efectiva, { ...SIN_ELECCION, enEspecialidad: enEspEfectiva, sutil: sutilActivo });
+  const montada = montarTirada(ficha, efectiva, eleccionSinTocar(efectiva, enEspEfectiva, sutilActivo));
   const nombreAplicado = APLICADOS.find((a) => a.id === montada.aplicado.id)!;
   const nombreHabilidad = efectiva.habilidad
     ? HABILIDADES.find((h) => h.id === efectiva.habilidad)!.label +
@@ -193,12 +194,10 @@ function FilaTirada({
           </span>
         </div>
 
-        {/* TODO(revisar): la fila enseña la base (aplicado + habilidad + ajustes
-            fijos), sin los modificadores de alcance que el modal sí suma (el +1 del
-            traje a las salvaciones, el −2 de Aturdido a Defensa…). Así era antes de
-            montarTirada; decidir si la fila debe enseñar montada.modificador. */}
+        {/* El modificador completo (alcance, umbrales, casillas en su estado inicial):
+            el mismo número que el modal recién abierto. */}
         <span className="font-mono text-2xl tabular-nums text-info">
-          {signo(montada.base)}
+          {signo(montada.modificador)}
         </span>
 
         <button
@@ -415,7 +414,7 @@ function FilaPoder({
           <p className="mt-1 font-mono text-[11px] text-muted">{datos.join(" · ")}</p>
           {poder.bloqueo && <p className="mt-1 font-mono text-[11px] text-danger">{poder.bloqueo}</p>}
         </div>
-        {montada && <span className="font-mono text-2xl tabular-nums text-info">{signo(montada.base)}</span>}
+        {montada && <span className="font-mono text-2xl tabular-nums text-info">{signo(montada.modificador)}</span>}
         <button
           type="button"
           disabled={!!poder.bloqueo}
@@ -545,7 +544,8 @@ export function AccionesTab({
   // sheet.equipo, salvo tiradaDeArmaFuego (dentro de accionesDeAtaque), que
   // además lee sheet.recursos vía recursoDe() para el aviso de munición
   // insuficiente — sin esa segunda dependencia, gastar/recargar munición no
-  // invalidaría el aviso. conCondicionesDeEquipo no entra en las deps: su
+  // invalidaría el aviso. `mods` (FichaResuelta): el daño melee/Sutil sale de la
+  // ficha con estados y especie (M1b). conCondicionesDeEquipo no entra en las deps: su
   // comportamiento depende solo de indiceCondiciones, que ya está.
   // accionesDeAtaque() ya no es solo "Ataques": desde que Bloqueo (pregunta 31)
   // se genera junto al Golpear de cada arma melee, trae filas con
@@ -562,7 +562,7 @@ export function AccionesTab({
     farmacosDirectas,
     accionesGeneradas,
   } = useMemo(() => {
-    const generadas = accionesDeAtaque(sheet).map(conCondicionesDeEquipo);
+    const generadas = accionesDeAtaque(sheet, mods).map(conCondicionesDeEquipo);
     const directas = accionesDirectasDeAtaque(sheet);
     return {
       ataques: generadas.filter((t) => t.grupo === "Ataques"),
@@ -586,7 +586,7 @@ export function AccionesTab({
       accionesGeneradas: accionesDeMovimiento(sheet).map(conCondicionesDeEquipo),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones]);
+  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, mods]);
 
   const abrir = (t: Accion, enEspecialidad: boolean, sutil: boolean) => {
     setModal({ tirada: t, ficha, eleccion: { enEspecialidad, sutil }, resultadoId: null });

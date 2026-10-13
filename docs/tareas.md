@@ -1310,10 +1310,11 @@ lógica de coste, cargas, sobrecarga, daño propio y avisos sale de `AccionesTab
 líneas), que solo aplica. Regla de ESLint (`no-restricted-imports`) que impide a
 `src/app` y `src/components` importar las funciones de coste/sobrecarga. Cambio de
 comportamiento único: el máximo de fatiga de la sobrecarga ya cuenta los estados de
-combate (antes solo los aplicados los contaban). Pendiente
-relacionado: los penalizadores por umbral de salud y fatiga siguen sin aplicarse.
-**Hallazgo (sin arreglar):** los penalizadores por umbral de salud y fatiga
-(`modificadoresDeUmbrales`, −1/−3/−5 y −1/−2) existen pero nada los aplica a las tiradas. Siguiente, disciplina a
+combate (antes solo los aplicados los contaban). ~~Pendiente
+relacionado: los penalizadores por umbral de salud y fatiga siguen sin aplicarse.~~ *(Hecho en M1b.)*
+~~**Hallazgo (sin arreglar):** los penalizadores por umbral de salud y fatiga
+(`modificadoresDeUmbrales`, −1/−3/−5 y −1/−2) existen pero nada los aplica a las tiradas.~~
+*Cerrado en M1b (2026-10-13): entran como modificadores de la `FichaResuelta`.* Siguiente, disciplina a
 disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,
 Derivación), ventaja, Levitar, Duelo de Métrica, fatiga
 temporal (Proeza).
@@ -1459,10 +1460,15 @@ M1a: en M1b la fila de Acciones enseña el modificador completo sin casillas (`m
 no `base`); con dos opciones que bajen el margen de crítico gana el más bajo, se revisa en E4)
 - [x] Tests de caracterización de cada lista de Acciones antes de mover nada *(M1a: `montaje-caracterizacion.test.ts`, los 8 sitios + `prepararPoder`; ningún esperado cambió al migrar)*
 - [x] `montarTirada`: total + desglose + márgenes de crítico/pifia *(M1a: `rules/montaje.ts`, con `tirarMontada`; ESLint veta las sumas sueltas en componentes)*
-- [ ] Penalizadores por umbral de salud y fatiga dentro (`modificadoresDeUmbrales`)
+- [x] Penalizadores por umbral de salud y fatiga dentro (`modificadoresDeUmbrales`) *(M1b, 2026-10-13: modificadores de la `FichaResuelta` con alcance `todas`, con su línea en el desglose; vida/fatiga del combatiente en combate (jugador y NPC de la consola), de la ficha fuera; fatiga efectiva con la temporal de Proeza. Tabla entera de §7: media velocidad (carrera, vuelo, levitación) y −25 %/−50 % de carga, con nota en Estado; supuestos S26-S29. La fila de Acciones enseña el modificador completo, como el modal sin tocar. **Cambian números visibles, avisar a la mesa al desplegar:** los personajes heridos o cansados tiran peor (también los poderes y las salvaciones), y en Malherido/Exhausto/Moribundo bajan la velocidad y la carga; además la fila de Acciones ya no enseña solo atributo + habilidad, sino el total que se va a tirar (traje, estados, modo de disparo por defecto…))*
+- [ ] Media velocidad en los metros de la tirada de Volar (Movilidad Aérea): Estado ya enseña el vuelo a la mitad, pero `accionesDeMovimiento` no recibe la ficha resuelta (`TODO(revisar)` en `rules/movimiento.ts`). "Una casilla por turno" de Moribundo sigue solo como nota
 - [x] Sacar de `AccionesTab` la suma del modal y el crítico de la VTM *(M1a: la VTM "complejo" lleva `margenCriticoExito: 0` como dato de la opción)*
 - [x] Índice de casillas sin el memo parcial `[sheet.equipo]` + `eslint-disable` (hecho en E1b: sale de `resolverFicha`)
-- [ ] El daño de armas melee/bayoneta y el aplicado Sutil salen aún de la ficha en reposo (`combate.ts`, `TODO(revisar)`): con un estado que baje Fuerza, la tirada lo refleja y el daño no
+- [x] Al entrar en combate el jugador arrancaba con la vida y la fatiga máximas, no con las
+      de su ficha: con los umbrales sacados del combatiente, un herido perdía sus
+      penalizadores *(M1b, 2026-10-13: `vitalidadAlEntrarEnCombate` en `vitalidad.ts`; los
+      NPC siguen entrando enteros, salen de una plantilla)*
+- [x] El daño de armas melee/bayoneta y el aplicado Sutil salen aún de la ficha en reposo (`combate.ts`, `TODO(revisar)`): con un estado que baje Fuerza, la tirada lo refleja y el daño no *(M1b, 2026-10-13: `accionesDeAtaque(sheet, mods)` con los modificadores de la `FichaResuelta`; también lanzar arma melee y el Aguijón. **Cambia números visibles, avisar a la mesa al desplegar:** el daño melee y el de Sutil reflejan los estados de combate que bajan Fuerza (Enfermedad…); la especie ya contaba)*
 
 **E4 — Bonos a tiradas**
 - [ ] Casillas de especie: +2 radiación (Riux), temperatura / filtración / derribo y −1
@@ -1552,6 +1558,17 @@ construir (dos pasadas: rediseño, luego revisión).
 - [x] Panel del máster: fichas "En revisión" arriba, con contador
       *(secciones En revisión / En creación / En juego)*
 - [x] La migración va en el mismo deploy que especies *(desplegada el 2026-10-13, push `7193cf9`)*
+
+### Estados en la sub-pestaña Estado ⬜ (idea del usuario, 2026-10-13, sin decidir)
+Enseñar en Personaje → Estado los estados del personaje como tarjetas, con nombre y efectos.
+Dos formas planteadas, ninguna elegida:
+- **A. Solo enseñarlos**: una tarjeta por estado activo del combate en curso (nombre, rondas
+  restantes, efectos de `describirEstadosActivos`) y los umbrales de §7 (Herido, Exhausto…)
+  como una tarjeta más con su −N, velocidad y carga. Fuera de combate solo salen los
+  umbrales. Poco trabajo, sin tocar el modelo.
+- **B. Anotarlos también fuera de combate**: el jugador o el máster añaden/quitan estados
+  desde Estado y se guardan en la ficha. Campo nuevo con migración y decidir su duración
+  fuera de combate, que el sistema no define.
 
 ### Componente `Modal` común ⬜ (propuesta del usuario, 2026-10-13)
 Hoy 7 modales montan cada uno su propio fondo `fixed inset-0` (UsarModal, AccionModal,

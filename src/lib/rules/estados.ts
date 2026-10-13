@@ -66,13 +66,10 @@ const ETIQUETA_UMBRAL: Record<Exclude<UmbralSalud, "normal"> | Exclude<UmbralFat
 };
 
 // El "-1/-3/-5 a todo" de PG y el "-1/-2 a todo" de fatiga (docs/sistema.md
-// §7), listos para sumarse al resto de modificadores de la ficha. Lo que NO
-// cubre esto: "velocidad a la mitad" y "carga -25%/-50%" no son deltas
-// planas (son un porcentaje sobre un valor ya calculado) y no encajan en
-// Modificador — quedan para 0.2b, con un mecanismo propio en
-// movimiento()/cargaMaxima() (derivados.ts). Ojo: cargaMaxima ya recibe un
-// multiplicador (el de especie, §14.7) resuelto en la FichaResuelta; un "−25 %"
-// de estado tendría que componerse con él ahí, no sustituirlo.
+// §7), listos para sumarse al resto de modificadores de la ficha: resolverFicha los
+// mete en FichaResuelta.modificadores (M1b), así llegan a montarTirada y a
+// prepararPoder sin que nadie más los sume. La velocidad y la carga del mismo
+// umbral, que no son deltas, van aparte: movimientoPorUmbrales, abajo.
 export function modificadoresDeUmbrales(
   pgActual: number,
   pgMax: number,
@@ -104,6 +101,40 @@ export function modificadoresDeUmbrales(
   }
 
   return mods;
+}
+
+// El resto de la tabla de §7: "media velocidad" (Malherido, Exhausto), "una casilla
+// por turno" (Moribundo, solo como nota) y "−25 %/−50 % de carga". Lo aplica
+// resolverFicha sobre el movimiento y la carga ya calculados.
+// TODO(revisar): supuestos S26-S29 de docs/sistema.md (a qué movimientos afecta,
+// cómo se combinan Malherido y Exhausto, redondeo, orden con la especie).
+export type MovimientoPorUmbral = {
+  // Fuentes que dan media velocidad ("Malherido", "Exhausto"); vacío si ninguna.
+  // Varias no se acumulan: la velocidad se divide entre 2 una sola vez (S27).
+  mediaVelocidad: string[];
+  unaCasillaPorTurno: string | null;
+  // La mayor reducción de carga, no la suma (S27), con las fuentes que la dan.
+  reduccionCarga: { fraccion: number; fuentes: string[] } | null;
+};
+
+const MEDIA_VELOCIDAD = new Set<string>(["malherido", "exhausto"]);
+const REDUCCION_CARGA: Partial<Record<Exclude<UmbralSalud, "normal"> | Exclude<UmbralFatiga, "normal">, number>> = {
+  malherido: 0.25,
+  moribundo: 0.5,
+  exhausto: 0.25,
+};
+
+export function movimientoPorUmbrales(salud: UmbralSalud, fatiga: UmbralFatiga): MovimientoPorUmbral {
+  const activos = [salud, fatiga].filter((u): u is Exclude<UmbralSalud | UmbralFatiga, "normal"> => u !== "normal");
+  const fraccion = Math.max(0, ...activos.map((u) => REDUCCION_CARGA[u] ?? 0));
+  return {
+    mediaVelocidad: activos.filter((u) => MEDIA_VELOCIDAD.has(u)).map((u) => ETIQUETA_UMBRAL[u]),
+    unaCasillaPorTurno: salud === "moribundo" ? ETIQUETA_UMBRAL.moribundo : null,
+    reduccionCarga:
+      fraccion > 0
+        ? { fraccion, fuentes: activos.filter((u) => REDUCCION_CARGA[u] === fraccion).map((u) => ETIQUETA_UMBRAL[u]) }
+        : null,
+  };
 }
 
 // Un estado del catálogo (0.3) puesto en un combatiente concreto: qué grado

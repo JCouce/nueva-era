@@ -16,7 +16,7 @@ import {
   excepcionesRareza,
   type ContextoEleccion,
 } from "./especie";
-import { resolverFicha } from "./fichaResuelta";
+import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import { accionesDePsionica } from "./poderes";
 import {
   cumpleRequisito,
@@ -440,7 +440,7 @@ describe("ficha v14: especieOpciones", () => {
 
 // --- E2b: Resonancia +1 del Arianyi (§14.6) ----------------------------------
 
-const resuelta = (s: Sheet, libre = false) => resolverFicha(s, { estadosCombate: [], libre });
+const resuelta = (s: Sheet, libre = false) => resolverFicha(s, { vitalidad: VITALIDAD_DE_FICHA, estadosCombate: [], libre });
 const conPsionica = (s: Sheet, psionica: Sheet["psionica"], letra: Sheet["prioridades"]["psionica"] = null): Sheet => ({
   ...s,
   psionica,

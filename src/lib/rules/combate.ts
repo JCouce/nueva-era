@@ -4,6 +4,7 @@
 // tiradas (ver docs/traspaso.md §6, punto 4).
 //
 import type { Sheet } from "./sheet";
+import type { ModificadorConFuente } from "./modificadores";
 import {
   equipoPorId,
   type ArmaFuego,
@@ -24,15 +25,13 @@ import { nivelesHasta, acumulaPorClave, ultimoQueDefine, sustituyeMiraIntegrada,
 import type { MotorMetadata } from "./motor";
 import { gastoDelModo } from "./recursos";
 import { CONDICION_ATACANTES_ADICIONALES, type Accion, type AccionDirecta } from "./acciones";
-import { atributoEfectivo, aplicado, modificadoresActivos } from "./derivados";
+import { atributoEfectivo, aplicado } from "./derivados";
 
 const TRAMOS: TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
 
-// TODO(revisar) E1b: el daño y el aplicado Sutil de las armas salen de la ficha en
-// reposo (especie + equipo, sin estados de combate), igual que antes de resolverFicha,
-// cuando aplicado()/atributoEfectivo() tomaban ese valor por defecto. Pasarles la
-// FichaResuelta (con estados) cambiaría números: se decide con montarTirada (M1).
-const enReposo = (sheet: Sheet) => modificadoresActivos(sheet);
+// El daño de las armas que salen de Fuerza (melee, bayoneta, lanzar, Aguijón) y el
+// del estilo Sutil (Potencia) usan los modificadores de la FichaResuelta, con
+// especie y estados de combate (M1b): un estado que baje Fuerza baja también el daño.
 
 // Modificador de distancia base, igual para toda arma de fuego (ver
 // sistema-y-combate.md), con las dos excepciones de familia que documenta
@@ -361,9 +360,9 @@ function tieneBayonetaInstalada(sheet: Sheet, instanciaId: string): boolean {
   return sheet.equipo.some((p) => p.instaladoEnId === instanciaId && p.catalogoId === "bayoneta");
 }
 
-function tiradaGolpeBayoneta(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Accion | null {
+function tiradaGolpeBayoneta(sheet: Sheet, mods: ModificadorConFuente[], arma: ArmaFuego, instanciaId: string): Accion | null {
   if (!tieneBayonetaInstalada(sheet, instanciaId)) return null;
-  const fuerza = atributoEfectivo(sheet, "fuerza", enReposo(sheet));
+  const fuerza = atributoEfectivo(sheet, "fuerza", mods);
   return {
     id: `golpear_bayoneta_${instanciaId}`,
     label: `Bayoneta (${arma.label})`,
@@ -552,14 +551,14 @@ function condicionesSacrificioColchon(nivel: number): CondicionTirada[] {
   return condiciones;
 }
 
-function tiradaDeArmaMelee(sheet: Sheet, arma: ArmaMelee, instanciaId: string): Accion {
+function tiradaDeArmaMelee(sheet: Sheet, mods: ModificadorConFuente[], arma: ArmaMelee, instanciaId: string): Accion {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
   const modo = condicionModo(modosConId);
-  const fuerza = atributoEfectivo(sheet, "fuerza", enReposo(sheet));
+  const fuerza = atributoEfectivo(sheet, "fuerza", mods);
   const esSutil = arma.sutil === true;
   // Solo se calcula si hace falta: el resto de armas (no Sutil) no necesita
   // el aplicado de Potencia para nada aquí.
-  const potencia = esSutil ? aplicado(sheet, "potencia", enReposo(sheet)) : null;
+  const potencia = esSutil ? aplicado(sheet, "potencia", mods) : null;
   const esDesarmado = arma.id === "pelea_punetazo" || arma.id === "pelea_patada";
   const malla = esDesarmado ? mallaPlasmaticaEquipada(sheet) : null;
 
@@ -632,7 +631,7 @@ function tiradaBloqueoDeArmaMelee(arma: ArmaMelee, instanciaId: string): Accion 
 // EQUIP solo dice "Arrojadiza". Se lanza con el perfil del primer modo (el
 // Simple): su dificultad como ajuste fijo y su daño. Sin Sutil ni colchón de
 // Malla — un lanzamiento no es un golpe.
-function tiradaLanzarArmaMelee(sheet: Sheet, arma: ArmaMelee, instanciaId: string): Accion | null {
+function tiradaLanzarArmaMelee(sheet: Sheet, mods: ModificadorConFuente[], arma: ArmaMelee, instanciaId: string): Accion | null {
   if (!arma.arrojadiza) return null;
   const modo = arma.modos[0];
   const bono = bonoFormulaFuerza(modo.formulaDanio);
@@ -650,7 +649,7 @@ function tiradaLanzarArmaMelee(sheet: Sheet, arma: ArmaMelee, instanciaId: strin
       modos: [
         {
           id: "0",
-          danio: bono === null ? null : atributoEfectivo(sheet, "fuerza", enReposo(sheet)) + bono,
+          danio: bono === null ? null : atributoEfectivo(sheet, "fuerza", mods) + bono,
           formulaDanio: modo.formulaDanio,
           categoriaDanio: modo.categoriaDanio,
         },
@@ -782,7 +781,7 @@ function tiradaDeProyectorPulso(
 
 // Aguijón, separado del resto de modos (ver comentario de arriba): Combate
 // Melee, Sutil, mismo patrón Golpear+Bloquear que cualquier arma melee.
-function tiradaGolpeAguijon(sheet: Sheet, pieza: PiezaEquipada): Accion {
+function tiradaGolpeAguijon(sheet: Sheet, mods: ModificadorConFuente[], pieza: PiezaEquipada): Accion {
   const nivel = pieza.nivel ?? 1;
   return {
     id: `ataque_proyector_pulso_aguijon_${pieza.instanciaId}`,
@@ -801,7 +800,7 @@ function tiradaGolpeAguijon(sheet: Sheet, pieza: PiezaEquipada): Accion {
       modos: [
         {
           id: "0",
-          danio: atributoEfectivo(sheet, "fuerza", enReposo(sheet)) + 2 + nivel,
+          danio: atributoEfectivo(sheet, "fuerza", mods) + 2 + nivel,
           formulaDanio: `Fue+${2 + nivel}`,
           categoriaDanio: "Grave",
           gasto: GASTO_MODO_PULSO.aguijon,
@@ -848,13 +847,13 @@ function tiradaBloqueoAguijon(pieza: PiezaEquipada): Accion {
 // duplicándolas en la pestaña. accionesDeHerramientas() se adaptó al mismo
 // patrón de generador por pieza (ver herramientas.ts), pero vive en su
 // propio registro/función, no en este.
-type GeneradorDeAtaque = (sheet: Sheet, pieza: PiezaEquipada, cat: Equipo) => Accion[];
+type GeneradorDeAtaque = (sheet: Sheet, pieza: PiezaEquipada, cat: Equipo, mods: ModificadorConFuente[]) => Accion[];
 
 const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> = {
-  arma: (sheet, pieza, cat) => {
+  arma: (sheet, pieza, cat, mods) => {
     const arma = cat as ArmaFuego;
     const lanzagranadas = tiradaDeLanzagranadas(sheet, arma, pieza.instanciaId);
-    const golpeBayoneta = tiradaGolpeBayoneta(sheet, arma, pieza.instanciaId);
+    const golpeBayoneta = tiradaGolpeBayoneta(sheet, mods, arma, pieza.instanciaId);
     const bloqueoBayoneta = tiradaBloqueoBayoneta(sheet, arma, pieza.instanciaId);
     return [
       tiradaDeArmaFuego(sheet, arma, pieza.instanciaId),
@@ -863,11 +862,11 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
       ...(bloqueoBayoneta ? [bloqueoBayoneta] : []),
     ];
   },
-  armaMelee: (sheet, pieza, cat) => {
+  armaMelee: (sheet, pieza, cat, mods) => {
     const arma = cat as ArmaMelee;
-    const lanzar = tiradaLanzarArmaMelee(sheet, arma, pieza.instanciaId);
+    const lanzar = tiradaLanzarArmaMelee(sheet, mods, arma, pieza.instanciaId);
     return [
-      tiradaDeArmaMelee(sheet, arma, pieza.instanciaId),
+      tiradaDeArmaMelee(sheet, mods, arma, pieza.instanciaId),
       ...(lanzar ? [lanzar] : []),
       tiradaBloqueoDeArmaMelee(arma, pieza.instanciaId),
     ];
@@ -882,12 +881,12 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
   // futuro otro subsistema construye su propia acción (la Malla Plasmática
   // es la siguiente candidata, ver Hallazgo #1 ampliado), este `if` necesita
   // una rama nueva, no una reescritura.
-  subsistema: (sheet, pieza) => {
+  subsistema: (sheet, pieza, _cat, mods) => {
     if (pieza.catalogoId !== "proyector_pulso") return [];
     return [
       tiradaDeProyectorPulso(sheet, pieza, "combate_distancia"),
       tiradaDeProyectorPulso(sheet, pieza, "tecnociencia"),
-      tiradaGolpeAguijon(sheet, pieza),
+      tiradaGolpeAguijon(sheet, mods, pieza),
       tiradaBloqueoAguijon(pieza),
     ];
   },
@@ -950,7 +949,9 @@ function accionesDeGranadas(sheet: Sheet): Accion[] {
   );
 }
 
-export function accionesDeAtaque(sheet: Sheet): Accion[] {
+// `mods`: los de la FichaResuelta (especie, equipo, estados de combate), para el daño
+// que sale de Fuerza o de Potencia.
+export function accionesDeAtaque(sheet: Sheet, mods: ModificadorConFuente[]): Accion[] {
   const tiradas: Accion[] = [];
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
@@ -958,7 +959,7 @@ export function accionesDeAtaque(sheet: Sheet): Accion[] {
     const generador = REGISTRO_DE_ATAQUE[cat.familia];
     if (!generador) continue;
     if (!generaAccionPropia(cat, pieza.nivel)) continue;
-    tiradas.push(...generador(sheet, pieza, cat));
+    tiradas.push(...generador(sheet, pieza, cat, mods));
   }
   tiradas.push(...accionesDeGranadas(sheet));
   return tiradas;

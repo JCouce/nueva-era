@@ -13,6 +13,7 @@ import { HABILIDADES, type HabilidadId } from "./habilidades";
 import {
   desgloseBonosTramo,
   desgloseCondiciones,
+  estadoInicial,
   modoElegido,
   notasCondiciones,
   valorBonosTramo,
@@ -38,16 +39,24 @@ export type EleccionTirada = {
 
 export const SIN_ELECCION: EleccionTirada = { enEspecialidad: false, sutil: false, estadoCondiciones: {}, circunstancial: 0 };
 
+// La tirada tal como abre el modal, sin tocar nada: las casillas en su estado inicial
+// y sin circunstancial. Con esto monta la fila, y su `modificador` es el mismo número
+// que el modal recién abierto (M1b).
+export function eleccionSinTocar(tirada: Accion, enEspecialidad: boolean, sutil = false): EleccionTirada {
+  return { enEspecialidad, sutil, estadoCondiciones: estadoInicial(tirada.condiciones ?? []), circunstancial: 0 };
+}
+
 export type LineaDesglose = { etiqueta: string; valor: number };
 
 export type TiradaMontada = {
   aplicado: { id: AplicadoId; valor: number };
   habilidad: { id: HabilidadId; valor: number } | null;
   ajustesFijos: { valor: number; fuente: string }[];
-  // Aplicado + habilidad + ajustes fijos: lo que enseña la fila antes de abrir el modal.
+  // Aplicado + habilidad + ajustes fijos.
   base: number;
-  // base + modificadores de alcance + casillas + bonos por tramo (sin circunstancial):
-  // el `modificador` del Resultado.
+  // base + modificadores de alcance (también los umbrales de §7) + casillas + bonos por
+  // tramo (sin circunstancial): el `modificador` del Resultado. Montada con
+  // eleccionSinTocar, es lo que enseña la fila.
   modificador: number;
   circunstancial: number;
   total: number;

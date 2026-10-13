@@ -10,7 +10,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser, canAdjustCombatiente } from "@/lib/auth-helpers";
-import { parseSheet, resolverFicha, estadoPorId, descontarDuracion, type EstadoActivo } from "@/lib/rules";
+import { parseSheet, resolverFicha, VITALIDAD_DE_FICHA, vitalidadAlEntrarEnCombate, estadoPorId, descontarDuracion, type EstadoActivo } from "@/lib/rules";
 
 export type CombateResult = { ok: true } | { ok: false; error: string };
 
@@ -104,19 +104,21 @@ export async function agregarJugadorAction(
   });
   if (!character) return { ok: false, error: "No existe ese personaje." };
 
-  // Foto del máximo actual (ver el comentario de Combatiente en
-  // schema.prisma) — se copia aquí, no se vuelve a leer del Character.
+  // Foto del máximo y de la vida/fatiga actuales (ver el comentario de Combatiente
+  // en schema.prisma) — se copia aquí, no se vuelve a leer del Character.
   // En reposo: al entrar en el combate todavía no tiene estados.
-  const { vida, fatiga } = resolverFicha(parseSheet(character.stats), { estadosCombate: [] }).salud;
+  const sheet = parseSheet(character.stats);
+  const { vida, fatiga } = resolverFicha(sheet, { estadosCombate: [], vitalidad: VITALIDAD_DE_FICHA }).salud;
+  const { pgActual, fatigaActual } = vitalidadAlEntrarEnCombate(sheet, { vida, fatiga });
 
   await prisma.combatiente.create({
     data: {
       combateId,
       characterId,
       nombre: character.name,
-      pgActual: vida,
+      pgActual,
       pgMax: vida,
-      fatigaActual: fatiga,
+      fatigaActual,
       fatigaMax: fatiga,
       orden: await ordenSiguiente(combateId),
     },
@@ -142,7 +144,7 @@ export async function agregarNpcDeCatalogoAction(
   if (!npc) return { ok: false, error: "No existe ese NPC." };
 
   const sheet = parseSheet(npc.stats);
-  const { vida, fatiga } = resolverFicha(sheet, { estadosCombate: [] }).salud;
+  const { vida, fatiga } = resolverFicha(sheet, { estadosCombate: [], vitalidad: VITALIDAD_DE_FICHA }).salud;
 
   await prisma.combatiente.create({
     data: {
