@@ -31,9 +31,11 @@ import {
   prepararPoder,
   usarPoder,
   efectosDelResultado,
+  tirarPeaje,
   SELECCION_PODER_VACIA,
   type SeleccionPoder,
   type EfectosDeUso,
+  type PeajeDeUso,
   usarHabilidadAlternativa,
   conEsquivaLevitando,
   conPsionicaEnTiradaFija,
@@ -63,6 +65,7 @@ import { ReparaFabricaModal } from "./ReparaFabricaModal";
 import { BloquearDanioModal } from "./BloquearDanioModal";
 import { CabeceraPoder } from "./CabeceraPoder";
 import { SobrecargaPanel } from "./SobrecargaPanel";
+import { PeajePanel } from "./PeajePanel";
 import { UsarPoderModal } from "./UsarPoderModal";
 import { type DanioInfo, type Lanzamiento } from "@/components/ResultadoTirada";
 
@@ -560,8 +563,9 @@ export function AccionesTab({
       herramientasDirectas: accionesDirectasDeHerramientas(sheet),
       // Fármacos (docs/prompt-gasto-recursos.md, Fase 2): leen sheet.farmacos,
       // no sheet.equipo — mismo patrón que Herramientas por lo demás.
-      farmacos: accionesDeFarmacos(sheet).map(conExtras),
-      farmacosDirectas: accionesDirectasDeFarmacos(sheet),
+      // Con las notas de especie (Irota, §14.9) de la FichaResuelta.
+      farmacos: accionesDeFarmacos(sheet, ficha.notasFarmacos).map(conExtras),
+      farmacosDirectas: accionesDirectasDeFarmacos(sheet, ficha.notasFarmacos),
       defensaDirecta: directas.filter((a) => a.grupo === "Defensa"),
       // Detonación de pulso térmico (Malla Plasmática, 2026-09-28) — primera
       // "acción sin dado" del grupo Ataques, antes solo tenía Defensa.
@@ -572,7 +576,7 @@ export function AccionesTab({
       accionesGeneradas: accionesDeMovimiento(sheet).map(conExtras),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, ficha.textosTirada, mods]);
+  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, ficha.textosTirada, ficha.notasFarmacos, mods]);
 
   const abrir = (t: Accion, enEspecialidad: boolean, sutil: boolean) => {
     setModal({ tirada: t, ficha, eleccion: { enEspecialidad, sutil }, resultadoId: null });
@@ -606,6 +610,29 @@ export function AccionesTab({
     nivel: number;
     salvacion: (Lanzamiento & { danio: number }) | null;
   } | null>(null);
+  // Peajes neurológicos (Maolher, §14.9) del último uso y de cada turno prolongado de
+  // Proeza, cada uno con su salvación. Se pintan después de la sobrecarga.
+  const [peajes, setPeajes] = useState<
+    { peaje: PeajeDeUso; salvacion: (Lanzamiento & { aviso: string | null }) | null }[]
+  >([]);
+
+  const tirarSalvacionPeaje = (i: number, id: number) => {
+    const actual = peajes[i];
+    if (!actual || actual.salvacion) return;
+    const t = tirarPeaje(ficha, actual.peaje, tirarD12());
+    if (t.danio > 0) onAjustarVida?.(-t.danio);
+    const lanzamiento = {
+      ...t.resultado,
+      id,
+      label: "Peaje neurológico: salvación de Fortaleza",
+      aviso: t.aviso,
+      ...(t.categoria && {
+        danioResuelto: { base: t.danio, bonoExitos: 0, total: t.danio, categoria: t.categoria },
+      }),
+    };
+    setHistorial((h) => [lanzamiento, ...h].slice(0, 6));
+    setPeajes((ps) => ps.map((x, j) => (j === i ? { ...x, salvacion: lanzamiento } : x)));
+  };
 
   // `id` llega del click (el compilador de React no acepta Date.now() aquí).
   const tirarSalvacionSobrecarga = (id: number) => {
@@ -633,12 +660,18 @@ export function AccionesTab({
     if (!p) return;
     if (p.tirada) abrir(p.tirada, p.enEspecialidad, false);
     setSobrecarga(null);
+    setPeajes([]);
     setAvisosPoder([]);
     setPoderAbierto({ poder, seleccion: p.seleccion, directo: !p.tirada, usado: null });
   };
 
   // Aplica a la ficha lo que devuelve usarPoder. Devuelve la fatiga pagada.
-  const aplicarUso = (e: EfectosDeUso): number => {
+  // El peaje sale también sin onPagarFatiga (NPC en la consola): no depende de la
+  // fatiga que quede, solo de lo que cuesta el uso. Un uso nuevo borra los anteriores;
+  // prolongar Proeza añade el suyo sin perder uno aún sin tirar.
+  const aplicarUso = (e: EfectosDeUso, modo: "uso" | "prolongar"): number => {
+    const nuevo = e.peaje ? [{ peaje: e.peaje, salvacion: null }] : [];
+    setPeajes((ps) => (modo === "uso" ? nuevo : [...ps, ...nuevo]));
     if (!onPagarFatiga) return e.fatiga.pagar;
     if (e.fatiga.pagar > 0) onPagarFatiga(e.fatiga.pagar, e.fatiga.temporal);
     if (e.cargas) onGastarRecurso?.(e.cargas.instanciaId, -e.cargas.gastar);
@@ -652,7 +685,7 @@ export function AccionesTab({
   // Uso del poder (con tirada o sin ella), falle o no; "prolongar" = otro turno
   // de Proeza. Sin fatiga numérica se paga a mano: no se aplica nada.
   const pagarPoder = (modo: "uso" | "prolongar" = "uso"): number =>
-    preparado?.coste ? aplicarUso(usarPoder(sheet, mods, preparado, modo)) : 0;
+    preparado?.coste ? aplicarUso(usarPoder(ficha, preparado, modo), modo) : 0;
 
   const registroSinDado = (id: number, label: string) =>
     setHistorial((h) =>
@@ -694,12 +727,13 @@ export function AccionesTab({
     setModal(null);
     setPoderAbierto(null);
     setSobrecarga(null);
+    setPeajes([]);
     setAvisosPoder([]);
   };
 
   const extraProeza = preparado?.extraProrroga ?? 0;
   const piePoder =
-    avisosPoder.length > 0 || sobrecarga || extraProeza > 0 ? (
+    avisosPoder.length > 0 || sobrecarga || peajes.length > 0 || extraProeza > 0 ? (
       <>
         {extraProeza > 0 && (
           <button
@@ -722,6 +756,15 @@ export function AccionesTab({
             onTirar={tirarSalvacionSobrecarga}
           />
         )}
+        {peajes.map((x, i) => (
+          <PeajePanel
+            key={i}
+            dificultad={x.peaje.dificultad}
+            salvacion={x.salvacion}
+            restado={!!onAjustarVida}
+            onTirar={(id) => tirarSalvacionPeaje(i, id)}
+          />
+        ))}
       </>
     ) : undefined;
 
@@ -882,6 +925,9 @@ export function AccionesTab({
     // Fármacos sin tirada (docs/prompt-gasto-recursos.md, Fase 2): mismo
     // criterio que en tirar(), 1 dosis al confirmar.
     if (modalDirecta.farmacoId) onAjustarFarmaco?.(modalDirecta.farmacoId, -1);
+    // Activar la visión del Arianyi (§14.9): la primera hora, por el camino de la fatiga
+    // de los poderes; sin onPagarFatiga (consola), a mano.
+    if (modalDirecta.costeFatiga) onPagarFatiga?.(modalDirecta.costeFatiga, false);
     const id = Date.now();
     setHistorial((h) =>
       [
@@ -1069,6 +1115,9 @@ export function AccionesTab({
           {/* Bloquear daño vive junto a Defensa/esquiva — tampoco es una
               tirada fija de ACCIONES (no tira dado, no muta la ficha). */}
           {grupo === "Defensa" && <FilaBloquearDanio onAbrir={() => setBloquearDanioAbierta(true)} />}
+          {/* Acciones sin dado de la especie (activar la visión, §14.9): de la FichaResuelta. */}
+          {grupo === "Acciones" &&
+            ficha.accionesEspecie.map((a) => <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} />)}
           {/* Reparar y Fabricar vive aquí, junto a Hackeo — no es una
               tirada fija de ACCIONES (no tira dado), así que se añade a
               mano en vez de venir del catálogo. */}

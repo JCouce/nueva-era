@@ -1,20 +1,30 @@
 // Usar un poder psiónico, sin UI: lo que el modal enseña antes de usarlo
 // (prepararPoder) y lo que hay que aplicar a la ficha al usarlo (usarPoder) o
-// al conocer el resultado de la tirada (efectosDelResultado). La pantalla solo
+// al conocer el resultado de la tirada (efectosDelResultado), y el peaje neurológico
+// del Maolher que deja ese uso (tirarPeaje). La pantalla solo
 // pinta y aplica: no decide ninguna regla.
 //
 // Todo entra explícito: la ficha, los modificadores ya montados (equipo,
 // especie, estados de combate…, que no están todos en la ficha) y lo que el
 // jugador ha elegido en el modal. Nada se lee de fuera.
-import type { Accion } from "./acciones";
+import { ACCIONES, type Accion, type Resultado } from "./acciones";
 import { aplicados, salud } from "./derivados";
 import type { ModificadorConFuente } from "./modificadores";
-import { eleccionSinTocar, montarTirada, type TiradaMontada } from "./montaje";
+import {
+  eleccionSinTocar,
+  montarTirada,
+  SIN_ELECCION,
+  tirarMontada,
+  type FichaParaTirada,
+  type TiradaMontada,
+} from "./montaje";
+import type { FichaResuelta } from "./fichaResuelta";
 import {
   bloqueoPorFatiga,
   costeFatiga,
   cruzaSobrecarga,
   derivacionDeFicha,
+  gradoDeTirada,
   efectosDeCasillas,
   enEspecialidadDePoder,
   maxPuntosConCargas,
@@ -135,23 +145,28 @@ export function prepararPoder({ ficha, modificadores, niveles, poder, seleccion 
 // para no perder una salvación aún sin tirar).
 export type CambioSobrecarga = { tipo: "salta"; nivel: number } | { tipo: "reiniciar" } | { tipo: "mantener" };
 
+// Peaje neurológico (Maolher, §14.9) de este uso: salvación de Fortaleza contra
+// `dificultad`; `puntos` = fatiga pagada, que es el daño si falla.
+export type PeajeDeUso = { dificultad: number; puntos: number };
+
 export type EfectosDeUso = {
   fatiga: { pagar: number; temporal: boolean };
   cargas: { instanciaId: string; gastar: number } | null;
   vida: number; // a restar
   sobrecarga: CambioSobrecarga;
+  // null sin el rasgo o sin fatiga pagada. Va después de la sobrecarga.
+  peaje: PeajeDeUso | null;
   avisos: string[];
 };
+
+// Lo de la ficha resuelta que hace falta para usar un poder.
+export type FichaParaUso = Pick<FichaResuelta, "ficha" | "modificadores" | "peajeNeurologico">;
 
 // Gasto al usar un poder (con tirada o sin ella), falle o no. "prolongar" = otro
 // turno de Proeza: cobra solo el extra, sin cargas ni daño propio del uso.
 // Umbrales y sobrecarga van contra la fatiga EFECTIVA.
-export function usarPoder(
-  ficha: Sheet,
-  modificadores: ModificadorConFuente[],
-  p: PoderPreparado,
-  modo: "uso" | "prolongar" = "uso",
-): EfectosDeUso {
+export function usarPoder(f: FichaParaUso, p: PoderPreparado, modo: "uso" | "prolongar" = "uso"): EfectosDeUso {
+  const { ficha, modificadores } = f;
   const uso = modo === "uso";
   const pagar = uso ? (p.coste?.total ?? 0) : p.extraProrroga;
   const antes = fatigaEfectiva(ficha);
@@ -186,8 +201,47 @@ export function usarPoder(
       : uso
         ? { tipo: "reiniciar" }
         : { tipo: "mantener" },
+    peaje: peajeDeUso(f, p, pagar),
     avisos,
   };
+}
+
+// §14.9: se tira siempre que se pague fatiga, aunque el poder falle. `pagar` ya va sin
+// lo que pagan las cargas de Derivación (si todo va con cargas, no hay peaje) y con la
+// parte que Proeza manda a fatiga temporal (también es fatiga pagada). Prolongar
+// Proeza paga peaje por su extra, con el mismo nivel empleado (usuario, E5).
+// TODO(revisar): un poder con fatiga no numérica (se paga a mano) no llega aquí
+// (AccionesTab no llama a usarPoder sin coste): el peaje de ese gasto, también a mano.
+function peajeDeUso(f: FichaParaUso, p: PoderPreparado, pagar: number): PeajeDeUso | null {
+  if (!f.peajeNeurologico || pagar <= 0) return null;
+  return { dificultad: f.peajeNeurologico.dificultadBase + p.resuelto.nivelEmpleado, puntos: pagar };
+}
+
+// La salvación del peaje: la Salvación de Fortaleza montada como una normal (umbrales,
+// estados… de la ficha), sin casillas marcadas. Sin blindaje: el daño no se absorbe (M16).
+export function montarPeaje(ficha: FichaParaTirada): TiradaMontada {
+  const salv = ACCIONES.find((a) => a.id === "salv_fortaleza")!;
+  return montarTirada(ficha, salv, SIN_ELECCION);
+}
+
+export type ResultadoPeaje = {
+  resultado: Resultado;
+  danio: number; // a restar de la vida
+  categoria: "no letal" | "letal" | null;
+  aviso: string | null;
+};
+
+// Éxito (o crítico): nada. Fracaso: un nivel no letal por punto de fatiga pagado.
+// Fracaso crítico: los mismos, letales.
+export function danioDePeaje(puntos: number, grado: Grado): Omit<ResultadoPeaje, "resultado"> {
+  if (grado === "exito" || grado === "critico" || puntos <= 0) return { danio: 0, categoria: null, aviso: null };
+  const categoria = grado === "fracasoCritico" ? "letal" : "no letal";
+  return { danio: puntos, categoria, aviso: `Peaje neurológico: recibes ${puntos} de daño ${categoria}.` };
+}
+
+export function tirarPeaje(ficha: FichaParaTirada, peaje: PeajeDeUso, dado: number): ResultadoPeaje {
+  const resultado = tirarMontada(montarPeaje(ficha), dado, peaje.dificultad);
+  return { resultado, ...danioDePeaje(peaje.puntos, gradoDeTirada(resultado)!) };
 }
 
 // Tras tirar: el daño propio que depende del grado (fracaso crítico del Sondeo

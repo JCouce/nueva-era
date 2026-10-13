@@ -13,6 +13,8 @@ const niv = (s: Sheet) => nivelesDePsionica(s, SIN_BONOS_DISCIPLINA).paraEfectos
 
 const ficha = (cambios: Partial<Sheet>): Sheet => ({ ...defaultSheet(), fatigaActual: 8, fatigaTemporal: 0, ...cambios });
 const SINGULARIDAD_2 = { traslacion: 2, singularidad: 2 };
+// Sin especie: sin peaje neurológico.
+const fr = (f: Sheet, modificadores: ModificadorConFuente[] = []) => ({ ficha: f, modificadores, peajeNeurologico: null });
 const sel = (s: Partial<SeleccionPoder> = {}): SeleccionPoder => ({ elecciones: {}, casillas: [], puntosCargas: 0, ...s });
 
 function preparar(f: Sheet, accionId: string, s: Partial<SeleccionPoder> = {}, modificadores: ModificadorConFuente[] = []) {
@@ -65,8 +67,8 @@ describe("prepararPoder", () => {
 describe("usarPoder", () => {
   test("uso normal: paga la fatiga y reinicia la sobrecarga pendiente", () => {
     const f = ficha({ psionica: SINGULARIDAD_2 });
-    const e = usarPoder(f, [], preparar(f, "psi_singularidad_impulso"));
-    assert.deepEqual(e, { fatiga: { pagar: 2, temporal: false }, cargas: null, vida: 0, sobrecarga: { tipo: "reiniciar" }, avisos: [] });
+    const e = usarPoder(fr(f), preparar(f, "psi_singularidad_impulso"));
+    assert.deepEqual(e, { fatiga: { pagar: 2, temporal: false }, cargas: null, vida: 0, sobrecarga: { tipo: "reiniciar" }, peaje: null, avisos: [] });
   });
 
   test("Supresora con fallo crítico y Derivación: ×2, paga 2 con cargas y 2 de daño por lo que sí paga", () => {
@@ -78,7 +80,7 @@ describe("usarPoder", () => {
     const p = preparar(f, "psi_singularidad_impulso", { casillas: ["Supresora, fallo crítico"], puntosCargas: 2 });
     assert.equal(p.coste?.total, 2);
     assert.deepEqual(p.cargas && { puntos: p.cargas.puntos, gastar: p.cargas.gastar, max: p.cargas.max }, { puntos: 2, gastar: 4, max: 4 });
-    const e = usarPoder(f, [], p);
+    const e = usarPoder(fr(f), p);
     assert.deepEqual(e.fatiga, { pagar: 2, temporal: false });
     assert.deepEqual(e.cargas, { instanciaId: "der1", gastar: 4 });
     assert.equal(e.vida, 2);
@@ -87,7 +89,7 @@ describe("usarPoder", () => {
 
   test("sobrecarga: salta al cruzar el umbral de exhausto", () => {
     const f = ficha({ psionica: SINGULARIDAD_2, fatigaActual: 3 });
-    const e = usarPoder(f, [], preparar(f, "psi_singularidad_impulso"));
+    const e = usarPoder(fr(f), preparar(f, "psi_singularidad_impulso"));
     assert.deepEqual(e.sobrecarga, { tipo: "salta", nivel: 2 });
     assert.deepEqual(e.avisos, []);
   });
@@ -95,7 +97,7 @@ describe("usarPoder", () => {
   test("ya exhausto y a 0: aviso de inconsciencia, sin sobrecarga nueva", () => {
     const f = ficha({ psionica: SINGULARIDAD_2, fatigaActual: 1 });
     const p = preparar(f, "psi_singularidad_impulso", { elecciones: { nivel: "n1" } });
-    const e = usarPoder(f, [], p);
+    const e = usarPoder(fr(f), p);
     assert.deepEqual(e.sobrecarga, { tipo: "reiniciar" });
     assert.deepEqual(e.avisos, ["Te has quedado sin fatiga: quedas inconsciente al terminar la acción."]);
   });
@@ -103,10 +105,10 @@ describe("usarPoder", () => {
   test("el máximo de fatiga de la sobrecarga usa los modificadores (estados incluidos)", () => {
     const f = ficha({ psionica: SINGULARIDAD_2 });
     const p = preparar(f, "psi_singularidad_impulso");
-    assert.deepEqual(usarPoder(f, [], p).sobrecarga, { tipo: "reiniciar" });
+    assert.deepEqual(usarPoder(fr(f), p).sobrecarga, { tipo: "reiniciar" });
     // Fatiga máxima 80: el umbral de exhausto sube a 8, y pasar de 8 a 6 lo cruza.
     const estado: ModificadorConFuente[] = [{ tipo: "derivado", id: "fatiga", valor: 72, origen: "estado", fuente: "Prueba" }];
-    assert.deepEqual(usarPoder(f, estado, p).sobrecarga, { tipo: "salta", nivel: 2 });
+    assert.deepEqual(usarPoder(fr(f, estado), p).sobrecarga, { tipo: "salta", nivel: 2 });
   });
 
   describe("Proeza", () => {
@@ -116,25 +118,25 @@ describe("usarPoder", () => {
     test("paga la fila más el extra, a fatiga temporal si no llega", () => {
       const p = preparar(f, "psi_traslacion_proeza", { elecciones: { nivel: "n1" }, pesoKg: 30 });
       assert.equal(p.extraProrroga, 2); // 120 %
-      const e = usarPoder(f, [], p);
+      const e = usarPoder(fr(f), p);
       assert.deepEqual(e.fatiga, { pagar: 3, temporal: true });
     });
 
     test("prolongar cobra solo el extra, sin cargas ni daño propio, y no borra una sobrecarga pendiente", () => {
       const p = preparar(f, "psi_traslacion_proeza", { elecciones: { nivel: "n1" }, pesoKg: 30 });
-      const e = usarPoder(f, [], p, "prolongar");
+      const e = usarPoder(fr(f), p, "prolongar");
       assert.equal(e.fatiga.pagar, p.extraProrroga);
       assert.equal(e.vida, 0);
       assert.equal(e.cargas, null);
       assert.deepEqual(e.sobrecarga, { tipo: "mantener" });
       // Si prolongar sí cruza el umbral, salta (al 200 % el extra es 10).
       const limite = preparar(f, "psi_traslacion_proeza", { elecciones: { nivel: "n1" }, pesoKg: 50 });
-      assert.deepEqual(usarPoder(f, [], limite, "prolongar").sobrecarga, { tipo: "salta", nivel: 1 });
+      assert.deepEqual(usarPoder(fr(f), limite, "prolongar").sobrecarga, { tipo: "salta", nivel: 1 });
     });
 
     test("al 200 %: 1 de daño mental y aviso de inconsciencia", () => {
       const p = preparar(f, "psi_traslacion_proeza", { elecciones: { nivel: "n1" }, pesoKg: 50 });
-      const e = usarPoder(f, [], p);
+      const e = usarPoder(fr(f), p);
       assert.equal(e.vida, 1);
       assert.ok(e.avisos.some((a) => a === "Recibes 1 de daño mental (ya restado) y quedas inconsciente al terminar la acción."));
     });

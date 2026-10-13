@@ -631,6 +631,9 @@ mismos, con el dato en el rasgo (`catalog/especies.ts`) y resuelto una vez en la
 | `casillas: { acciones, condicion }[]` | 1, `CondicionTirada` | `casillasDeEspecie` → **el mismo índice que el equipo** (`indiceDeCondiciones(sheet, deOtrasFuentes)`), con alcance `tiradaId` por cada acción. Id `especie_<rasgo>_<casilla>`, etiqueta con el rasgo detrás |
 | `ajusteUmbrales: { salud?, fatiga? }` | 4, alcance `todas` | `FichaResuelta.ajusteUmbrales` → parámetro obligatorio de `modificadoresDeUmbrales` (sin especie, `SIN_AJUSTE_UMBRALES`) |
 | `textos: { en, texto, soloEnCritico? }[]` | `nota_fija` | `FichaResuelta.textosTirada` → `conExtrasDeFicha` los suma a `Accion.nota` (o a `efectoCritico`). Destino: una tirada fija por id o los ataques desarmados (`Accion.desarmado`) |
+| `notaFarmacos` (E5) | `nota_fija` | `FichaResuelta.notasFarmacos` → parámetro obligatorio de `accionesDeFarmacos` / `accionesDirectasDeFarmacos`, al final de la nota de cada fila (Irota) |
+| `peajeNeurologico` (E5) | ninguno: tirada propia | `FichaResuelta.peajeNeurologico` → `usarPoder` devuelve el `peaje`; la tirada es la Salvación de Fortaleza montada con `montarTirada` (`montarPeaje` / `tirarPeaje`, `usoPoder.ts`) |
+| `accionSinDado` (E5) | acción sin dado | `FichaResuelta.accionesEspecie` (`AccionDirecta`, con `costeFatiga` opcional) → fila "Usar" en Acciones |
 
 **`conExtrasDeFicha(ficha, tirada)`** (`fichaResuelta.ts`) es lo que antes era el
 `conCondicionesDeEquipo` de `AccionesTab`: casillas del índice (equipo y especie) y textos de

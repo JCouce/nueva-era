@@ -2139,6 +2139,8 @@ const SINGULARIDAD: Disciplina = {
 // e ignora el primer punto. Munición Supresora: ×2 y −2; con fallo crítico, además
 // 1 de daño letal por punto de fatiga gastado.
 export const FUENTES_EXTERNAS_FATIGA: ModificadorFatiga[] = [
+  // Irota (fármacos a la mitad, hacia abajo, mínimo 1; sistema.md §14.9): la mitad de 1
+  // con mínimo 1 sigue siendo 1, así que el +1 y el −1 no cambian para él.
   {
     fuente: "Xovromium",
     alcance: {},

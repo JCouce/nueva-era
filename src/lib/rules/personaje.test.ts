@@ -147,7 +147,7 @@ const ESPERADAS: Record<string, EtiquetaRasgo> = {
   "manduk.zimethroni/tras_esquivar": "texto", // TODO(revisar): nota_fija en Defensa
   "manduk.zimethroni/hiperactividad": "texto", // TODO(revisar): nota_fija en Defensa (E4)
   "manduk.irota/contra_toxinas": "tirada",
-  "manduk.irota/farmacos_mitad": "tirada", // TODO(revisar): ajuste_fijo sobre usar_farmaco; por prosa es más SIEMPRE que TIRADA
+  "manduk.irota/farmacos_mitad": "texto", // E5: nota fija en las filas de fármaco (la app no mecaniza sus efectos)
   "manduk.maolher/coste_psionico": "creacion",
   "manduk.maolher/peaje_neurologico": "texto", // TODO(revisar): acción nueva con tirada de Fortaleza propia
   "manduk.axadren/vision_infrarroja": "texto",

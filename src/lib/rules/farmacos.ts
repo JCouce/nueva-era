@@ -75,7 +75,11 @@ const CON_TIRADA: Record<
   },
 };
 
-export function accionesDeFarmacos(sheet: Sheet): Accion[] {
+// `notasEspecie`: FichaResuelta.notasFarmacos (Irota, efectos a la mitad, §14.9), al
+// final de la nota de cada fila. Solo texto, como el resto del efecto.
+const conNotas = (nota: string, notasEspecie: string[]) => [nota, ...notasEspecie].join(" ");
+
+export function accionesDeFarmacos(sheet: Sheet, notasEspecie: string[]): Accion[] {
   const acciones: Accion[] = [];
   for (const f of FARMACOS) {
     const cantidad = sheet.farmacos[f.id] ?? 0;
@@ -91,7 +95,7 @@ export function accionesDeFarmacos(sheet: Sheet): Accion[] {
       grupo: "Fármacos",
       aplicado: con.aplicado ?? "perspicacia",
       habilidad,
-      nota: `${con.nota} Quedan ${cantidad}.`,
+      nota: conNotas(`${con.nota} Quedan ${cantidad}.`, notasEspecie),
       ajustesFijos: con.ajustesFijos,
       ...(con.dificultad !== undefined && { dificultadSugerida: con.dificultad }),
       farmacoId: f.id,
@@ -100,7 +104,7 @@ export function accionesDeFarmacos(sheet: Sheet): Accion[] {
   return acciones;
 }
 
-export function accionesDirectasDeFarmacos(sheet: Sheet): AccionDirecta[] {
+export function accionesDirectasDeFarmacos(sheet: Sheet, notasEspecie: string[]): AccionDirecta[] {
   const acciones: AccionDirecta[] = [];
   for (const f of FARMACOS) {
     const cantidad = sheet.farmacos[f.id] ?? 0;
@@ -110,7 +114,7 @@ export function accionesDirectasDeFarmacos(sheet: Sheet): AccionDirecta[] {
       id: `farmaco_${f.id}`,
       label: `Usar ${f.label}`,
       grupo: "Fármacos",
-      nota: `${f.resumen} Quedan ${cantidad}.`,
+      nota: conNotas(`${f.resumen} Quedan ${cantidad}.`, notasEspecie),
       confirmarLabel: "Usar",
       farmacoId: f.id,
     });

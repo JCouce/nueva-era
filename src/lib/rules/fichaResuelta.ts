@@ -31,7 +31,11 @@ import {
   formulaMovimientoDeEspecie,
   multiplicadorCargaDeEspecie,
   textosDeEspecie,
+  peajeNeurologicoDeEspecie,
+  notasFarmacosDeEspecie,
+  accionesSinDadoDeEspecie,
   type EspecieResuelta,
+  type PeajeNeurologico,
   type TextoEnTirada,
   type FormulaMovimientoResuelta,
   type MultiplicadorCarga,
@@ -56,7 +60,7 @@ import { levitacion } from "./poderes";
 import { fatigaEfectiva } from "./vitalidad";
 import type { ModificadorConFuente } from "./modificadores";
 import type { Sheet } from "./sheet";
-import type { Accion } from "./acciones";
+import type { Accion, AccionDirecta } from "./acciones";
 
 export type DesgloseDerivado = { total: number; fuentes: Fuente[] };
 
@@ -111,6 +115,12 @@ export type FichaResuelta = {
   // puede pasar de 6) y paraEfectos (tope 6), y los requisitos rotos. Derivado: le
   // llega también al NPC. Poderes y bonos por nivel leen `paraEfectos`.
   psionica: PsionicaResuelta;
+  // Otras áreas (§14.9, E5), derivadas: también al NPC. El peaje al pagar fatiga por un
+  // poder (lo lee usarPoder; null sin el rasgo), las notas fijas de las filas de
+  // fármaco y las acciones sin dado del rasgo (activar la visión).
+  peajeNeurologico: PeajeNeurologico | null;
+  notasFarmacos: string[];
+  accionesEspecie: AccionDirecta[];
 };
 
 // `libre`: editor de NPC del máster. Le llega todo lo derivado de la especie (también
@@ -198,6 +208,9 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
     bolsaAumentos: libre ? null : bolsaDeAumentos(especie),
     excepcionesRareza: libre ? [] : excepcionesRareza(especie),
     psionica,
+    peajeNeurologico: peajeNeurologicoDeEspecie(especie),
+    notasFarmacos: notasFarmacosDeEspecie(especie),
+    accionesEspecie: accionesSinDadoDeEspecie(especie),
   };
 }
 

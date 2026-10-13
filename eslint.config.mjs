@@ -26,7 +26,8 @@ const eslintConfig = defineConfig([
   // disciplina (comprado/efectivo/paraEfectos, requisitos rotos) y las excepciones de
   // rareza, de ficha.psionica / ficha.excepcionesRareza. Lo que la especie pone en las
   // tiradas (§14.8): casillas y textos los añade conExtrasDeFicha; los umbrales ya
-  // vienen en ficha.modificadores.
+  // vienen en ficha.modificadores. Y lo de otras áreas (§14.9): ficha.peajeNeurologico
+  // (lo lee usarPoder), ficha.notasFarmacos y ficha.accionesEspecie.
   //
   // Y las tiradas (M1, docs/modificadores-tiradas.md "Montaje"): total, desglose y
   // márgenes de crítico salen de montarTirada / tirarMontada (rules/montaje.ts). La
@@ -84,6 +85,9 @@ const eslintConfig = defineConfig([
                 "casillasDeEspecie",
                 "textosDeEspecie",
                 "ajusteUmbralesDeEspecie",
+                "peajeNeurologicoDeEspecie",
+                "notasFarmacosDeEspecie",
+                "accionesSinDadoDeEspecie",
                 "modificadoresDeUmbrales",
                 "consultaIndiceCondiciones",
                 "bonosDeDisciplina",

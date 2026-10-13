@@ -20,6 +20,9 @@
 //                   lo que la especie pone en las tiradas (§14.8, E4): casillas al
 //                   mismo índice que las del equipo, notas fijas y el tramo menos de
 //                   penalizador por umbral
+//   peajeNeurologicoDeEspecie / notasFarmacosDeEspecie / accionesSinDadoDeEspecie
+//                   otras áreas (§14.9, E5): el peaje al usar un poder (lo lee
+//                   usarPoder), la nota fija de los fármacos y las acciones sin dado
 //
 // Mismo patrón que usoPoder.ts: entrada explícita, nada se lee de fuera salvo el
 // catálogo, y el resultado se aplica tal cual.
@@ -43,6 +46,7 @@ import type { HabilidadId } from "./habilidades";
 import type { CondicionTirada } from "./condiciones";
 import { SIN_AJUSTE_UMBRALES, type AjusteUmbral, type AjusteUmbrales } from "./estados";
 import type { DestinoTexto } from "../catalog/especies";
+import type { AccionDirecta } from "./acciones";
 
 export type RasgoConFuente = Rasgo & { fuente: string };
 
@@ -392,4 +396,39 @@ export function ajusteUmbralesDeEspecie(especie: EspecieResuelta | null): Ajuste
   const salud = ajuste("salud");
   const fatiga = ajuste("fatiga");
   return salud || fatiga ? { salud, fatiga } : SIN_AJUSTE_UMBRALES;
+}
+
+// --- Otras áreas (§14.9, E5) -----------------------------------------------------
+
+// Peaje neurológico (Maolher): salvación de Fortaleza, dificultad base + nivel
+// empleado, al pagar fatiga por un poder. Lo calcula usarPoder; null sin el rasgo.
+export type PeajeNeurologico = { dificultadBase: number; fuente: string };
+
+export function peajeNeurologicoDeEspecie(especie: EspecieResuelta | null): PeajeNeurologico | null {
+  const r = (especie?.rasgos ?? []).find((x) => x.peajeNeurologico);
+  return r ? { dificultadBase: r.peajeNeurologico!.dificultadBase, fuente: r.fuente } : null;
+}
+
+// Notas fijas en las filas de fármaco (Irota, efectos a la mitad): la app no
+// mecaniza los efectos de los fármacos, así que la regla va como texto.
+export function notasFarmacosDeEspecie(especie: EspecieResuelta | null): string[] {
+  return (especie?.rasgos ?? []).flatMap((r) => (r.notaFarmacos ? [r.notaFarmacos] : []));
+}
+
+// Acciones sin dado del rasgo (activar la visión), en el grupo "Acciones".
+export function accionesSinDadoDeEspecie(especie: EspecieResuelta | null): AccionDirecta[] {
+  return (especie?.rasgos ?? []).flatMap((r): AccionDirecta[] =>
+    r.accionSinDado
+      ? [
+          {
+            id: `especie_${r.id}`,
+            label: r.accionSinDado.label,
+            grupo: "Acciones",
+            nota: r.accionSinDado.nota,
+            confirmarLabel: "Activar",
+            ...(r.accionSinDado.costeFatiga !== undefined && { costeFatiga: r.accionSinDado.costeFatiga }),
+          },
+        ]
+      : [],
+  );
 }

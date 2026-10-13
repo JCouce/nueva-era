@@ -966,8 +966,11 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 > **E3 construida:** movimiento, carga y armadura natural por especie (14.7).
 > **E4 construida** (2026-10-13): casillas, −1 a distancia del Arköru, "éxito → crítico",
 > un tramo menos de penalizador (Guerrero, Siervo) y los textos en su tirada (14.8, 14.10).
-> El fallo → fallo crítico de Elión queda **bloqueado** por la pregunta 3. Queda E5 en
-> `docs/tareas.md`, "Especies reales".
+> El fallo → fallo crítico de Elión queda **bloqueado** por la pregunta 3.
+> **E5 construida** (2026-10-13): peaje neurológico del Maolher, nota de fármacos del Irota
+> y "Activar visión" del Arianyi y del Axadren (14.9). Con E5 queda construido todo lo
+> construible de especies; lo que falta está bloqueado (bolsa de aumentos, descanso y
+> regeneración, fallo crítico de Elión, salvaciones contra ceguera y derribo).
 
 ### 14.1 Lista y elección `[FIRME · ESP + usuario M10, M20]`
 
@@ -1239,6 +1242,31 @@ rasgo (usuario, §5b de la propuesta).
 - **Arianyi, Visión UV e infrarroja:** ve calor y huellas químicas o eléctricas; cuesta 1
   punto de fatiga por hora. Acción sin dado ("activar visión"); el gasto por hora, a mano.
 - **Axadren, visión infrarroja:** la misma percepción; el PDF no le pone coste.
+
+*En la app (E5, 2026-10-13):*
+- **Peaje**: dato `peajeNeurologico: { dificultadBase: 5 }` en el rasgo →
+  `FichaResuelta.peajeNeurologico` → `usarPoder` devuelve `peaje: { dificultad, puntos }`
+  (`rules/usoPoder.ts`). En Acciones, un panel "Peaje neurológico · Salvación de Fortaleza,
+  dificultad X" con botón Tirar, **debajo del de sobrecarga** si saltan los dos. La tirada es
+  la Salvación de Fortaleza montada con `montarTirada` (umbrales, estados…) y resuelta con
+  `tirarMontada`; `danioDePeaje` decide el daño, que se resta de la vida como el resto de
+  daño propio de los poderes, sin blindaje. También al NPC (es efecto): en la consola de
+  combate sale el panel, pero el daño lo resta el máster. Tres decisiones del usuario:
+  - **Solo cuenta la fatiga pagada**: lo que pagan las cargas de Derivación Psiónica no
+    (todo con cargas = sin peaje). La parte que Proeza manda a fatiga temporal sí cuenta.
+  - **Prolongar un turno de Proeza paga peaje** por los puntos de ese extra, con el nivel
+    empleado del poder. Cada peaje lleva su panel.
+  - Un poder con fatiga no numérica (se paga a mano) no genera peaje: también a mano
+    (`TODO(revisar)` en `usoPoder.ts`).
+- **Irota**: la app no mecaniza los efectos de los fármacos, así que va como **nota fija**
+  (dato `notaFarmacos` → `FichaResuelta.notasFarmacos` → `accionesDeFarmacos` /
+  `accionesDirectasDeFarmacos`) en cada fila de fármaco y en su tirada. La casilla "Bajo
+  Xovromium" de los poderes no cambia: la mitad de 1 con mínimo 1 sigue siendo 1 (+1 a la
+  tirada, −1 de fatiga).
+- **Visión**: dato `accionSinDado` → `FichaResuelta.accionesEspecie` → fila "Activar visión"
+  en el grupo Acciones, con la nota de qué ve. Arianyi: al confirmar se cobra **1 punto de
+  fatiga, la primera hora** (por el mismo `onPagarFatiga` que los poderes); las horas
+  siguientes, a mano (lo dice la nota; la app no lleva el tiempo). Axadren: sin coste.
 
 ### 14.10 Sin mecanizar: texto en la ficha `[FIRME · ESP + usuario M15, M19]`
 

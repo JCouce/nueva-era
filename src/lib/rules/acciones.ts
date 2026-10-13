@@ -192,6 +192,9 @@ export type AccionDirecta = {
   // Acciones recientes (mismo campo que ya usa Accion.ataque.modos).
   recursoInstanciaId?: string;
   categoriaDanio?: string;
+  // Fatiga que se cobra al confirmar (visión del Arianyi, §14.9), por el mismo camino
+  // que la de un poder (onPagarFatiga → pagarFatiga, vitalidad.ts).
+  costeFatiga?: number;
 };
 
 // −1 acumulativo por cada atacante adicional en la ronda (sistema-y-combate.md).

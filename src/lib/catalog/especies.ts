@@ -6,11 +6,12 @@
 // antes del deploy.
 //
 // Cada rasgo declara su MotorMetadata (docs/motor.md). Los que se construyen en
-// tandas posteriores (E5 otras áreas) ya están aquí con su clasificación y `estado`
-// pendiente/bloqueado; sus datos operativos se añaden al rasgo cuando la tanda que
-// los consume los necesite, no antes. Los de creación (costes, bolsa) ya están
-// (E2a), la Resonancia +1 y el kerzul (E2b), movimiento, carga y armadura natural
-// (E3), y las casillas, bonos, textos y umbrales de las tiradas (E4).
+// tandas posteriores ya están aquí con su clasificación y `estado` pendiente/bloqueado;
+// sus datos operativos se añaden al rasgo cuando la tanda que los consume los
+// necesite, no antes. Los de creación (costes, bolsa) ya están (E2a), la Resonancia
+// +1 y el kerzul (E2b), movimiento, carga y armadura natural (E3), las casillas,
+// bonos, textos y umbrales de las tiradas (E4), y el peaje del Maolher, la nota de
+// fármacos del Irota y la visión (E5).
 import type { Modificador } from "../rules/modificadores";
 import type { CondicionTirada } from "../rules/condiciones";
 import type { MotorMetadata } from "../rules/motor";
@@ -58,8 +59,18 @@ export type Rasgo = {
   textos?: TextoRasgo[];
   // Puntos menos de penalizador en cada tramo de heridas o de fatiga (§7; M12).
   ajusteUmbrales?: { salud?: number; fatiga?: number };
+  // Otras áreas (§14.9, E5). Los resuelve especie.ts una vez en la FichaResuelta:
+  // peajeNeurologicoDeEspecie (lo lee usarPoder), notasFarmacosDeEspecie (nota fija en
+  // las filas de fármaco) y accionesSinDadoDeEspecie (fila "Usar" en Acciones).
+  peajeNeurologico?: { dificultadBase: number }; // salvación de Fortaleza base + nivel empleado
+  notaFarmacos?: string;
+  accionSinDado?: AccionSinDadoRasgo;
   motor: MotorMetadata[];
 };
+
+// Acción sin dado que da el rasgo (activar la visión). `costeFatiga`: lo que se cobra al
+// confirmar, por el mismo camino que la fatiga de un poder.
+export type AccionSinDadoRasgo = { label: string; nota: string; costeFatiga?: number };
 
 // Casilla en el modal de la tirada, visible solo con el rasgo. `acciones`: ids de las
 // tiradas fijas de ACCIONES (acciones.ts) donde aparece; un test comprueba que existen.
@@ -156,6 +167,14 @@ const exitoCritico = (id: string, etiqueta: string): CondicionTirada => ({
   valorActivo: 0,
   margenCriticoExito: 0,
   nota: "Si sale éxito, cuenta como crítico.",
+});
+
+// Acción propia del rasgo, sin equipo (peaje del Maolher, activar la visión; §14.9).
+const accionDeEspecie = (id: string): MotorMetadata => ({
+  tipo: "accion",
+  afecta: { modo: "accion_nueva", id },
+  mecanismo: "accion_sin_equipo",
+  estado: "construido",
 });
 
 const tiradaFija = (id: string): DestinoTexto => ({ tipo: "tiradaId", id });
@@ -373,9 +392,10 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         label: "Metabolismo resistente",
         texto:
           "Fármacos y drogas, a la mitad: duración, modificadores y efectos sobre vida o fatiga (hacia abajo, mínimo 1).",
-        // TODO(revisar): reducir a la mitad no es un +N; ningún mecanismo encaja
-        // del todo. Se decide al construirlo en E5 (farmacos.ts).
-        motor: [{ tipo: "numerico", afecta: { modo: "accion_existente", id: "usar_farmaco" }, mecanismo: "ajuste_fijo", estado: "pendiente" }],
+        // La app no mecaniza los efectos de los fármacos (farmacos.ts): la mitad va como
+        // nota fija en cada fila de fármaco (decisión del usuario, E5).
+        notaFarmacos: "Irota: efectos a la mitad (duración, modificadores, vida y fatiga), hacia abajo, mínimo 1.",
+        motor: [textoEn("usar_farmaco")],
       },
     ],
   },
@@ -398,7 +418,10 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         label: "Peaje neurológico",
         texto:
           "Al usar un poder que consuma fatiga, Fortaleza (dificultad 5 + nivel): fracaso, 1 nivel no letal por punto de fatiga; fracaso crítico, letal. No lo absorbe el blindaje.",
-        motor: [{ tipo: "accion", afecta: { modo: "accion_nueva", id: "peaje_maolher" }, mecanismo: "accion_sin_equipo", estado: "pendiente" }],
+        peajeNeurologico: { dificultadBase: 5 },
+        // Genera su propia tirada (salvación de Fortaleza tras usar el poder, como la
+        // sobrecarga), no modifica la del poder: acción nueva sin equipo.
+        motor: [accionDeEspecie("peaje_maolher")],
       },
     ],
   },
@@ -412,7 +435,9 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         id: "vision_infrarroja",
         label: "Visión infrarroja",
         texto: "Ve el calor y las huellas químicas o eléctricas.",
-        motor: [{ tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "pendiente" }],
+        // El PDF no le pone coste (a diferencia del Arianyi).
+        accionSinDado: { label: "Activar visión", nota: "Visión infrarroja: ves el calor y las huellas químicas o eléctricas." },
+        motor: [accionDeEspecie("activar_vision")],
       },
       {
         id: "contra_ocultos",
@@ -553,7 +578,15 @@ export const ESPECIES: Especie[] = [
         id: "vision_uv_ir",
         label: "Visión UV e Infrarroja",
         texto: "Ve el calor y las huellas químicas o eléctricas; cuesta 1 punto de fatiga por hora.",
-        motor: [{ tipo: "accion", afecta: { modo: "accion_nueva", id: "activar_vision" }, mecanismo: "accion_sin_equipo", estado: "pendiente" }],
+        // Se cobra la primera hora al activarla; las siguientes, a mano (la app no lleva
+        // el paso del tiempo).
+        accionSinDado: {
+          label: "Activar visión",
+          nota:
+            "Visión UV e infrarroja: ves el calor y las huellas químicas o eléctricas (lees el estado de una máquina o el rastro de una persona). Activarla cobra 1 punto de fatiga, la primera hora; cada hora más, 1 punto a mano.",
+          costeFatiga: 1,
+        },
+        motor: [accionDeEspecie("activar_vision")],
       },
       {
         id: "empatia_biologica",

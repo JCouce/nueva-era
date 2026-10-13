@@ -1350,7 +1350,7 @@ problema completo en `docs/modificadores-tiradas.md` §8. **Resuelta:** el §8 s
 el 2026-09-23 (condiciones con `alcance` desde el equipo) y la psiónica entra por
 `conPsionicaEnTiradaFija` (2026-09-30).
 
-### Especies reales ⬜ (plan cerrado 2026-10-09; E0, E1, E2, E3, M1 y E4 hechas)
+### Especies reales ⬜ (plan cerrado 2026-10-09; E0-E5 y M1 hechas: todo lo construible de especies está construido, queda lo bloqueado)
 
 Plan y porqués en `docs/propuesta-especies.md` (decisiones del usuario en §5b, ninguna
 pendiente de Murillo); flujo en `docs/diagrama-especies.png`. Fuente: `docs/Especies.pdf`.
@@ -1470,7 +1470,7 @@ no `base`); con dos opciones que bajen el margen de crítico gana el más bajo, 
       NPC siguen entrando enteros, salen de una plantilla)*
 - [x] El daño de armas melee/bayoneta y el aplicado Sutil salen aún de la ficha en reposo (`combate.ts`, `TODO(revisar)`): con un estado que baje Fuerza, la tirada lo refleja y el daño no *(M1b, 2026-10-13: `accionesDeAtaque(sheet, mods)` con los modificadores de la `FichaResuelta`; también lanzar arma melee y el Aguijón. **Cambia números visibles, avisar a la mesa al desplegar:** el daño melee y el de Sutil reflejan los estados de combate que bajan Fuerza (Enfermedad…); la especie ya contaba)*
 
-**E4 — Bonos a tiradas** (2026-10-13; falta verificarlo en navegador)
+**E4 — Bonos a tiradas** (2026-10-13)
 - [x] ~~Casillas de especie: +2 radiación (Riux), temperatura / filtración / derribo y −1
       visual (Arköru), Empatía Biológica en Buscar/percibir y Tratar heridas (Arianyi)~~
       *(dato `casillas` en el rasgo → `casillasDeEspecie` → mismo índice que el equipo; solo
@@ -1498,10 +1498,19 @@ no `base`); con dos opciones que bajen el margen de crítico gana el más bajo, 
       sin sitio, no hay salvación contra ceguera; la "Tensión ósea" del Zimethroni es daño
       recibido y va a Defensa)*
 
-**E5 — Otras áreas**
-- [ ] Peaje de Maolher en `usoPoder.ts` (Fortaleza 5 + nivel; no lo absorbe el blindaje)
-- [ ] Irota: fármacos a la mitad (redondeo abajo, mínimo 1)
-- [ ] Visión UV/IR (Arianyi) e infrarroja (Axadren) como acción sin dado
+**E5 — Otras áreas** (2026-10-13; falta verificarlo en navegador)
+- [x] ~~Peaje de Maolher en `usoPoder.ts` (Fortaleza 5 + nivel; no lo absorbe el blindaje)~~
+      *(`peajeNeurologico` en el rasgo → `FichaResuelta.peajeNeurologico` → `usarPoder`
+      devuelve `peaje: { dificultad, puntos }`; `tirarPeaje` / `danioDePeaje` en
+      `usoPoder.ts`. Solo la fatiga pagada (no las cargas de Derivación; la temporal de
+      Proeza sí); prolongar Proeza paga el suyo. Panel `PeajePanel` debajo del de
+      sobrecarga; también al NPC de la consola, que lo resta a mano)*
+- [x] ~~Irota: fármacos a la mitad (redondeo abajo, mínimo 1)~~ *(nota fija: `notaFarmacos`
+      → `FichaResuelta.notasFarmacos` → filas de fármaco. "Bajo Xovromium" sigue en +1)*
+- [x] ~~Visión UV/IR (Arianyi) e infrarroja (Axadren) como acción sin dado~~
+      *(`accionSinDado` → `FichaResuelta.accionesEspecie` → "Activar visión" en Acciones;
+      Arianyi cobra 1 de fatiga, la primera hora, con `onPagarFatiga`; las siguientes, a
+      mano. Axadren, sin coste)*
 
 **Bloqueado**
 - Gastar la bolsa de aumentos (dos bolsas, la de aumentos primero): espera a los aumentos
