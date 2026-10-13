@@ -30,6 +30,8 @@ cuál va antes que la otra:
 - "Preguntas al diseñador" (final de este documento) — lo que bloquea a Murillo.
 - "Especies reales" (en Pendiente) — plan por tandas E0-E5 + M1 con checklist, cerrado
   2026-10-09 (`docs/propuesta-especies.md`).
+- "Pestaña Personaje + envío a revisión" (en Pendiente) — decidido 2026-10-13 con maqueta;
+  va antes o justo después de especies E2.
 
 ---
 
@@ -1448,6 +1450,39 @@ ficha una vez, ya con costes de casta, descuentos y derivados)
 **Aparte, detectado en la revisión**
 - [ ] `setPrioridadAction` sobrescribe `Character.creditos` al cambiar la letra de
       Recursos sin restar lo gastado en la Tienda (el reset de especie solo lo tapa en ese caso)
+
+### Pestaña Personaje (rediseño del Resumen) + envío a revisión ⬜ (decidido 2026-10-13, sin empezar)
+Maqueta navegable con todo lo decidido: https://claude.ai/artifact/1cA8wJzudPge1PnLF9q55H
+(decisiones 1-7 al final de la maqueta, todas con la opción sugerida). No depende de
+especies E2-E5; va antes o justo después de E2. Plantear la forma en código antes de
+construir (dos pasadas: rediseño, luego revisión).
+
+**Rediseño** (decisiones 1-4)
+- [ ] La pestaña "Resumen" pasa a llamarse **"Personaje"**
+- [ ] Sub-pestañas en el orden de creación: **Origen → Prioridades → Identidad → Estado**,
+      cada una con "✓ hecho" / "● pendiente". Al entrar: en creación, el primer paso
+      pendiente; en juego, Estado. En juego, Prioridades desaparece y Origen es solo lectura
+- [ ] Origen: carrusel de tarjetas grandes por especie (arte, descripción, chips de
+      atributos, 3 rasgos clave + "ver más", botón "Elegir"; aviso "Elegir otra especie
+      resetea la ficha" en la tarjeta si hay algo que perder; el modal se mantiene).
+      Manduk: debajo, casta (4 tarjetas) y, si es noble, casa (6). Rasgos etiquetados
+      CREACIÓN / SIEMPRE / TIRADA / TEXTO (sale de `MotorMetadata` / `creacion`)
+- [ ] Arte fase 1: emblema geométrico y color por especie hechos con código; la tarjeta
+      acepta una imagen opcional (`public/especies/`) para cuando haya ilustraciones
+- [ ] Identidad: nombre, edad, altura, peso con barra del rango de la especie, motivación
+      y trasfondo juntos. Estado: vida/fatiga en barras, alerta, movimiento, carga
+
+**Envío a revisión** (decisiones 5-7)
+- [ ] Estados de la ficha: **En creación → En revisión → En juego** (`CharacterStatus`
+      gana `IN_REVIEW`; migración + campo de nota del máster y fecha de envío). Chip de
+      estado en la cabecera
+- [ ] Jugador: barra fija abajo con lo que falta (de los "pendiente") y botón **"Enviar a
+      revisión"**, activo solo con todo hecho. En revisión la ficha es **solo lectura** y
+      puede **retirarla** para seguir editando
+- [ ] Máster: **Aprobar** o **Devolver** con nota **opcional**; la nota se ve en la ficha
+      del jugador al volver a creación. El máster puede **aprobar sin revisión**, como hoy
+- [ ] Panel del máster: fichas "En revisión" arriba, con contador
+- [ ] La migración va en el mismo deploy que especies (el del reset general tras E3)
 
 ### Componente `Modal` común ⬜ (propuesta del usuario, 2026-10-13)
 Hoy 7 modales montan cada uno su propio fondo `fixed inset-0` (UsarModal, AccionModal,
