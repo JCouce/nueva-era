@@ -1,17 +1,20 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { defaultSheet } from "./sheet";
+import { defaultSheet, type Sheet } from "./sheet";
 import { equipar } from "./equipo";
 import { fuentesDeCapa1 } from "./capa1";
+import { nivelesDePsionica, SIN_BONOS_DISCIPLINA } from "./psionica";
+const niv = (s: Sheet) => nivelesDePsionica(s, SIN_BONOS_DISCIPLINA).paraEfectos;
+
 
 describe("fuentesDeCapa1", () => {
   test("una ficha sin equipo no aporta ninguna fuente", () => {
-    assert.deepEqual(fuentesDeCapa1(defaultSheet()), []);
+    assert.deepEqual(fuentesDeCapa1(defaultSheet(), niv(defaultSheet())), []);
   });
 
   test("cada pieza equipada aporta una entrada, con su familia y su motor", () => {
     const sheet = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "pistola_mosquito" });
-    const fuentes = fuentesDeCapa1(sheet);
+    const fuentes = fuentesDeCapa1(sheet, niv(sheet));
     assert.equal(fuentes.length, 1);
     assert.equal(fuentes[0].instanciaId, "a1");
     assert.equal(fuentes[0].catalogoId, "pistola_mosquito");
@@ -28,7 +31,7 @@ describe("fuentesDeCapa1", () => {
       nivel: 1,
       instaladoEnId: "arm1",
     });
-    const fuente = fuentesDeCapa1(conMejora).find((f) => f.instanciaId === "m1");
+    const fuente = fuentesDeCapa1(conMejora, niv(conMejora)).find((f) => f.instanciaId === "m1");
     assert.ok(fuente);
     assert.equal(fuente!.familia, "mejoraEstandar");
     assert.ok(Array.isArray(fuente!.motor));
@@ -36,6 +39,6 @@ describe("fuentesDeCapa1", () => {
 
   test("una pieza equipada que no existe en el catálogo se ignora, no revienta", () => {
     const sheet = equipar(defaultSheet(), { instanciaId: "x1", catalogoId: "no_existe" });
-    assert.deepEqual(fuentesDeCapa1(sheet), []);
+    assert.deepEqual(fuentesDeCapa1(sheet, niv(sheet)), []);
   });
 });

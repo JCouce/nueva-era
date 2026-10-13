@@ -16,6 +16,7 @@ import { puntosPsionicaDisponibles, puntosPsionicaGastados, setDisciplinaValue }
 import { costeSubidaXp } from "./progresion";
 import { avisosParaEnviar } from "./revision";
 import { AJUSTE_NEUTRO } from "./progresion";
+import { SIN_BONOS_DISCIPLINA } from "./psionica";
 
 const base = (especieId: string | null): Sheet => {
   let s: Sheet = { ...defaultSheet(), especieId };
@@ -34,9 +35,9 @@ const conHabilidades = (s: Sheet) => {
 };
 
 const conPsionica = (s: Sheet) => {
-  s = setDisciplinaValue(s, "traslacion", 1, AJUSTE_NEUTRO);
-  s = setDisciplinaValue(s, "traslacion", 2, AJUSTE_NEUTRO); // 9
-  s = setDisciplinaValue(s, "resonancia", 1, AJUSTE_NEUTRO); // 3
+  s = setDisciplinaValue(s, "traslacion", 1, AJUSTE_NEUTRO, SIN_BONOS_DISCIPLINA);
+  s = setDisciplinaValue(s, "traslacion", 2, AJUSTE_NEUTRO, SIN_BONOS_DISCIPLINA); // 9
+  s = setDisciplinaValue(s, "resonancia", 1, AJUSTE_NEUTRO, SIN_BONOS_DISCIPLINA); // 3
   return s;
 };
 
@@ -54,7 +55,7 @@ for (const [nombre, especieId] of [["sin especie", null], ["Riux", "riux"]] as c
       assert.equal(puntosPsionicaGastados(s, AJUSTE_NEUTRO), 12);
       assert.equal(puntosPsionicaDisponibles(s, AJUSTE_NEUTRO), 0);
       // No cabe un punto más
-      assert.equal(setDisciplinaValue(s, "resonancia", 2, AJUSTE_NEUTRO), s);
+      assert.equal(setDisciplinaValue(s, "resonancia", 2, AJUSTE_NEUTRO, SIN_BONOS_DISCIPLINA), s);
     });
 
     test("avisos al enviar: 7 de habilidades sin gastar", () => {

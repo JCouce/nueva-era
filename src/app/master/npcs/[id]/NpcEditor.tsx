@@ -206,7 +206,7 @@ export function NpcEditor({
     scheduleCommit(`atributo:${id}`, () => setAtributoNpcAction(npcId, id, value));
   };
   const commitDisciplina = (id: DisciplinaId, value: number) => {
-    setSheet((s) => setNivelDisciplina(s, id, value));
+    setSheet((s) => setNivelDisciplina(s, id, value, ficha.psionica.bonos));
     scheduleCommit(`disciplina:${id}`, () => setDisciplinaNpcAction(npcId, id, value));
   };
   const commitHabilidad = (id: HabilidadId, value: number) => {

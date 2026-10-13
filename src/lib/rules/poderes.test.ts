@@ -4,6 +4,7 @@ import {
   resolverPoder,
   opcionesDisponibles,
   accionesDePsionica,
+  bloqueoPorRequisito,
   generaAccionDePoder,
   tiradaDePoder,
   enEspecialidadDePoder,
@@ -33,6 +34,9 @@ import { fuentesDeCapa1 } from "./capa1";
 import { modificadoresActivos } from "./derivados";
 import { DISCIPLINAS, disciplinaPorId, FUENTES_EXTERNAS_FATIGA } from "../catalog/psionica";
 import type { AccionPoder, ModificadorFatiga } from "./psionica";
+import { nivelesDePsionica, textoNivelEnAcciones, SIN_BONOS_DISCIPLINA } from "./psionica";
+const niv = (s: Sheet) => nivelesDePsionica(s, SIN_BONOS_DISCIPLINA).paraEfectos;
+
 
 const accion = (id: string) => disciplinaPorId("singularidad").acciones.find((a) => a.id === `psi_singularidad_${id}`)!;
 const resolver = (id: string, nivelPoseido: number, elecciones: Record<string, string> = {}) =>
@@ -153,11 +157,11 @@ describe("accionesDePsionica", () => {
   const conNiveles = (psionica: Sheet["psionica"]): Sheet => ({ ...defaultSheet(), psionica });
 
   test("sin niveles no hay poderes", () => {
-    assert.deepEqual(accionesDePsionica(defaultSheet()), []);
+    assert.deepEqual(accionesDePsionica(defaultSheet(), niv(defaultSheet())), []);
   });
 
   test("Singularidad 3: sus tres formas, resueltas a nivel 3", () => {
-    const poderes = accionesDePsionica(conNiveles({ traslacion: 2, singularidad: 3 })).filter(
+    const poderes = accionesDePsionica(conNiveles({ traslacion: 2, singularidad: 3 }), niv(conNiveles({ traslacion: 2, singularidad: 3 }))).filter(
       (p) => p.disciplina.id === "singularidad",
     );
     assert.deepEqual(
@@ -172,7 +176,7 @@ describe("accionesDePsionica", () => {
   });
 
   test("los poderes entran en fuentesDeCapa1 como familia 'poder'", () => {
-    const fuentes = fuentesDeCapa1(conNiveles({ traslacion: 2, singularidad: 1 })).filter((f) =>
+    const fuentes = fuentesDeCapa1(conNiveles({ traslacion: 2, singularidad: 1 }), niv(conNiveles({ traslacion: 2, singularidad: 1 }))).filter((f) =>
       f.catalogoId.startsWith("psi_singularidad_"),
     );
     assert.deepEqual(
@@ -487,9 +491,9 @@ describe("Traslación, tanda 2", () => {
   });
 
   test("levitacion() en el movimiento de la ficha", () => {
-    assert.equal(levitacion(defaultSheet()), null);
-    assert.equal(levitacion({ ...defaultSheet(), psionica: { traslacion: 1 } }), null);
-    assert.deepEqual(levitacion({ ...defaultSheet(), psionica: { traslacion: 3 } }), { velocidadM: 30, nivel: 3 });
+    assert.equal(levitacion(niv(defaultSheet())), null);
+    assert.equal(levitacion(niv({ ...defaultSheet(), psionica: { traslacion: 1 } })), null);
+    assert.deepEqual(levitacion(niv({ ...defaultSheet(), psionica: { traslacion: 3 } })), { velocidadM: 30, nivel: 3 });
   });
 
   test("Auto-anclaje: reacción, Reflejos + Tecnociencia, dificultad 6 sugerida, paga la fila", () => {
@@ -693,22 +697,22 @@ describe("Esquiva levitando con Física", () => {
   };
 
   test("solo con Traslación 2+ aparece la casilla", () => {
-    assert.equal(conEsquivaLevitando(ficha(1, 4), esquiva).habilidadAlternativa, undefined);
-    assert.deepEqual(conEsquivaLevitando(ficha(2, 4), esquiva).habilidadAlternativa, {
+    assert.equal(conEsquivaLevitando(niv(ficha(1, 4)), esquiva).habilidadAlternativa, undefined);
+    assert.deepEqual(conEsquivaLevitando(niv(ficha(2, 4)), esquiva).habilidadAlternativa, {
       habilidad: "tecnociencia",
       especialidad: "Física",
       etiqueta: "Levitando: Física",
     });
     // otras tiradas no
     const salv = ACCIONES.find((a) => a.id === "salv_fortaleza")!;
-    assert.equal(conEsquivaLevitando(ficha(3, 4), salv).habilidadAlternativa, undefined);
+    assert.equal(conEsquivaLevitando(niv(ficha(3, 4)), salv).habilidadAlternativa, undefined);
   });
 
   test("con Física usa Tecnociencia entera; sin ella, la mitad", () => {
     const con = ficha(2, 4, ["Física"]);
     const sin = ficha(2, 4);
-    const altCon = usarHabilidadAlternativa(con, conEsquivaLevitando(con, esquiva))!;
-    const altSin = usarHabilidadAlternativa(sin, conEsquivaLevitando(sin, esquiva))!;
+    const altCon = usarHabilidadAlternativa(con, conEsquivaLevitando(niv(con), esquiva))!;
+    const altSin = usarHabilidadAlternativa(sin, conEsquivaLevitando(niv(sin), esquiva))!;
     assert.equal(altCon.tirada.habilidad, "tecnociencia");
     assert.equal(altCon.enEspecialidad, true);
     assert.equal(altSin.enEspecialidad, false);
@@ -869,7 +873,7 @@ describe("Resonancia — tanda 1", () => {
 
   test("Resonancia aparece en Acciones con sus acciones", () => {
     const s = setNivelDisciplinaTest(defaultSheet(), 1);
-    const ids = accionesDePsionica(s).filter((p) => p.disciplina.id === "resonancia").map((p) => p.accion.id);
+    const ids = accionesDePsionica(s, niv(s)).filter((p) => p.disciplina.id === "resonancia").map((p) => p.accion.id);
     assert.deepEqual(ids, [
       "psi_resonancia_sincronia",
       "psi_resonancia_mensaje_agresivo",
@@ -951,13 +955,13 @@ describe("Resonancia — tanda 3: Buscar / percibir", () => {
   const conResonancia = (nivel: number) => ({ ...defaultSheet(), psionica: { resonancia: nivel } }) as Sheet;
 
   test("sin Resonancia 4, la tirada fija no cambia", () => {
-    assert.equal(conPsionicaEnTiradaFija(defaultSheet(), buscar), buscar);
-    assert.equal(conPsionicaEnTiradaFija(conResonancia(3), buscar), buscar);
+    assert.equal(conPsionicaEnTiradaFija(niv(defaultSheet()), buscar), buscar);
+    assert.equal(conPsionicaEnTiradaFija(niv(conResonancia(3)), buscar), buscar);
   });
 
   test("con Resonancia 4: ventaja y casilla de +2, sin perder las condiciones que ya traía", () => {
     const visor = { id: "visor", tipo: "toggle" as const, etiqueta: "Visor", valorActivo: 0 };
-    const t = conPsionicaEnTiradaFija(conResonancia(4), { ...buscar, condiciones: [visor] });
+    const t = conPsionicaEnTiradaFija(niv(conResonancia(4)), { ...buscar, condiciones: [visor] });
     assert.equal(t.ventaja, "Resonancia 4, si puedes usar Resonancia sin impedimentos");
     assert.equal(t.condiciones!.length, 2);
     assert.deepEqual(t.condiciones![0], visor);
@@ -967,7 +971,7 @@ describe("Resonancia — tanda 3: Buscar / percibir", () => {
 
   test("solo afecta a su tirada", () => {
     const sigilo = ACCIONES.find((a) => a.id === "sigilo")!;
-    assert.equal(conPsionicaEnTiradaFija(conResonancia(6), sigilo), sigilo);
+    assert.equal(conPsionicaEnTiradaFija(niv(conResonancia(6)), sigilo), sigilo);
   });
 });
 
@@ -1143,14 +1147,14 @@ describe("Inducción — tanda 3: Supresión y Estabilización", () => {
   test("casilla en las salvaciones con el valor del tramo, sin sumarse", () => {
     const salv = ACCIONES.find((a) => a.id === "salv_voluntad")!;
     const casilla = (nivel: number) => {
-      const t = conPsionicaEnTiradaFija({ ...defaultSheet(), psionica: { resonancia: 1, induccion: nivel } } as Sheet, salv);
+      const t = conPsionicaEnTiradaFija(niv({ ...defaultSheet(), psionica: { resonancia: 1, induccion: nivel } } as Sheet), salv);
       return (t.condiciones ?? []).map((c) => (c.tipo === "toggle" ? c.valorActivo : null));
     };
     assert.deepEqual(casilla(1), [2]);
     assert.deepEqual(casilla(3), [2]);
     assert.deepEqual(casilla(4), [3]);
     assert.deepEqual(casilla(6), [4]);
-    assert.equal(conPsionicaEnTiradaFija(defaultSheet(), salv), salv);
+    assert.equal(conPsionicaEnTiradaFija(niv(defaultSheet()), salv), salv);
   });
 });
 
@@ -1300,3 +1304,33 @@ describe("fuentes externas: Derivación Psiónica", () => {
 function setNivelDisciplinaTest(s: Sheet, nivel: number): Sheet {
   return { ...s, psionica: { ...s.psionica, resonancia: nivel } };
 }
+
+describe("requisito roto (S25): se ve, bloqueado y sin efectos", () => {
+  // Ex-Arianyi tras cambiar de especie sin reset: Inducción comprada, Resonancia 0.
+  const roto: Sheet = { ...defaultSheet(), psionica: { induccion: 1 } };
+
+  test("bloqueoPorRequisito da el motivo; con el requisito cumplido, null", () => {
+    assert.equal(bloqueoPorRequisito(disciplinaPorId("induccion"), niv(roto)), "Requiere Resonancia 1");
+    const sano: Sheet = { ...defaultSheet(), psionica: { resonancia: 1, induccion: 1 } };
+    assert.equal(bloqueoPorRequisito(disciplinaPorId("induccion"), niv(sano)), null);
+    assert.equal(bloqueoPorRequisito(disciplinaPorId("resonancia"), niv(roto)), null);
+  });
+
+  test("los poderes de la disciplina salen en Acciones con el bloqueo", () => {
+    const poderes = accionesDePsionica(roto, niv(roto)).filter((p) => p.disciplina.id === "induccion");
+    assert.ok(poderes.length > 0);
+    for (const p of poderes) assert.equal(p.bloqueo, "Requiere Resonancia 1");
+  });
+
+  test("sin efectos pasivos: capa 1 no recoge sus poderes", () => {
+    const ids = new Set(accionesDePsionica(roto, niv(roto)).map((p) => p.accion.id));
+    assert.ok(fuentesDeCapa1(roto, niv(roto)).every((f) => !ids.has(f.catalogoId)));
+  });
+});
+
+describe("textoNivelEnAcciones (S24)", () => {
+  test("con un 7 dice los dos niveles; hasta 6, solo uno", () => {
+    assert.equal(textoNivelEnAcciones({ comprado: 6, bono: 1, efectivo: 7, paraEfectos: 6 }), "nivel 7 · efectos de nivel 6");
+    assert.equal(textoNivelEnAcciones({ comprado: 1, bono: 1, efectivo: 2, paraEfectos: 2 }), "nivel 2");
+  });
+});

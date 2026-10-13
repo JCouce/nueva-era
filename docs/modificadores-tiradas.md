@@ -512,3 +512,43 @@ Sigue sin existir una forma de representar una Acción sin dado: `Accion`
 siempre. Conversión Psiónica, el activar/sacrificar de Malla Plasmática, y el
 gasto de RECURSOS siguen sin poder vivir en esta lista — el rename deja el
 nombre ya preparado para el día que se diseñe esto, no lo adelanta.
+
+## 9. `Modificador` tipo `"disciplina"`: sube un nivel, no toca ninguna tirada
+
+*(2026-10-13, especies E2b: Resonancia +1 del Arianyi, `docs/sistema.md` §14.6.)*
+
+```ts
+{ tipo: "disciplina"; id: DisciplinaId; valor: number }
+```
+
+**Qué es.** Un bono al **nivel** de una disciplina psiónica. No es un bono a una tirada:
+no pasa por `bonoAlcance`/`desgloseAlcance` ni aparece en el desglose del modal. Lo que
+cambia es el nivel con el que la ficha juega esa disciplina, y de ahí cuelga todo lo
+demás (qué poderes salen en Acciones, su fila de la tabla, los "desde nivel X", los bonos
+por nivel en tiradas fijas, Levitar…).
+
+**Cómo se resuelve.** `resolverFicha` suma los modificadores de este tipo
+(`bonosDeDisciplina`, `psionica.ts`) y expone por disciplina, en
+`FichaResuelta.psionica.disciplinas[id]`:
+
+| Campo | Qué es | Quién lo mira |
+|---|---|---|
+| `comprado` | lo que guarda la ficha (`sheet.psionica`) | coste, tope de 6, XP: la compra |
+| `bono` | la suma de los modificadores `"disciplina"` | la pista "2 (1 + 1 especie)" (`textoNivelDisciplina`) |
+| `efectivo` | comprado + bono, **también con 0 comprado**; puede pasar de 6 | requisitos entre disciplinas (`cumpleRequisito`, `sueloPorRequisitos`, `setNivelDisciplina`, `requisitosRotos`) |
+| `paraEfectos` | `min(efectivo, 6)` | todo lo que resuelve un poder o un bono por nivel |
+
+`FichaResuelta.psionica.paraEfectos` es el mapa de `paraEfectos` que reciben
+`accionesDePsionica`, `conPsionicaEnTiradaFija`, `levitacion`/`conEsquivaLevitando`,
+`prepararPoder` (`niveles`) y `fuentesDeCapa1`. Ninguno lee `sheet.psionica` por su cuenta:
+un 7 cumple cualquier "desde nivel X" y usa la fila del 6 de las tablas. La sobrecarga
+usa el nivel empleado del poder, que ya no pasa del poseído (≤ 6).
+
+Los requisitos reciben los bonos por **parámetro obligatorio** (`BonosDisciplina`; en
+tests, `SIN_BONOS_DISCIPLINA`), mismo patrón que `AjusteCoste`: en pantalla salen de
+`ficha.psionica.bonos`, en el servidor de `bonosDeDisciplina(modificadoresActivos(sheet))`.
+
+**Cuándo usarlo.** Cuando un rasgo, dote o aumento diga "+N a la disciplina X" o "cuenta
+como nivel N en X". **No** para "+N a las tiradas de los poderes de X" (eso es un
+`Modificador` `"tirada"` con alcance `grupo: "Psiónica"`, §5) ni para descuentos de coste
+(eso es `AjusteCoste`, `progresion.ts`).

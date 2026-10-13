@@ -28,6 +28,9 @@ import {
   validarInstalacion,
   nuevaInstanciaId,
   rarezaPermitida,
+  topeRarezaDeCompra,
+  type ContextoExcepcionRareza,
+  type TopeRarezaCompra,
   type Sheet,
   type PiezaEquipada,
   type Armadura,
@@ -246,21 +249,22 @@ function BotonEquipar({
 // Armas, armaduras y armas melee no necesitan dónde instalarse: un botón y ya
 // — salvo que no llegue el saldo o se pase de la rareza que permite la letra
 // de Recursos, entonces se bloquea igual que AccionInstalable bloquea por
-// falta de hueco.
+// falta de hueco. `compra` (topeRarezaDeCompra) ya trae la excepción de especie
+// (kerzul del Arköru): "vía especie" en vez de bloqueada, o el motivo.
 function AccionSimple({
   pieza,
   creditos,
-  topeRareza,
+  compra,
   onEquipar,
 }: {
   pieza: Armadura | ArmaFuego | ArmaMelee | ArmaPesada;
   creditos: number;
-  topeRareza: Rareza | null;
+  compra: TopeRarezaCompra;
   onEquipar: (p: PiezaEquipada) => void;
 }) {
   const coste = pieza.coste ?? 0;
   const sinFondos = coste > creditos;
-  const sinRareza = topeRareza !== null && !rarezaPermitida(pieza.rareza, topeRareza);
+  const sinRareza = compra.tipo === "bloqueada";
   return (
     <>
       <BotonEquipar
@@ -270,10 +274,13 @@ function AccionSimple({
       >
         Equipar
       </BotonEquipar>
-      {sinRareza && (
-        <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
-          Tu letra de Recursos no llega a {pieza.rareza}: tope {topeRareza}.
+      {compra.tipo === "viaEspecie" && (
+        <p className="mt-1 font-mono text-[10px] uppercase tracking-wide text-info">
+          Vía especie: sin tope de rareza
         </p>
+      )}
+      {compra.tipo === "bloqueada" && (
+        <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">{compra.motivo}</p>
       )}
       {sinFondos && (
         <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
@@ -740,6 +747,7 @@ export function TiendaTab({
   // significaría nada real.
   libre = false,
   bolsaAumentos = null,
+  excepcionRareza = null,
   onEquipar,
   onComprarGranada,
   onComprarFarmaco,
@@ -752,6 +760,8 @@ export function TiendaTab({
   libre?: boolean;
   // De la FichaResuelta (§14.6): null si la especie no la trae.
   bolsaAumentos?: number | null;
+  // Excepción de rareza por especie (kerzul del Arköru, §14.6); null en el NPC.
+  excepcionRareza?: ContextoExcepcionRareza | null;
   onEquipar: (p: PiezaEquipada) => void;
   onComprarGranada: (catalogoId: string) => void;
   onComprarFarmaco: (catalogoId: string) => void;
@@ -761,6 +771,8 @@ export function TiendaTab({
   const [categoria, setCategoria] = useState<CategoriaId>("armaduras");
   const [soloCompatible, setSoloCompatible] = useState(false);
   const creditosEfectivos = libre ? Number.POSITIVE_INFINITY : creditos!;
+  const compraDe = (p: Armadura | ArmaFuego | ArmaMelee | ArmaPesada) =>
+    topeRarezaDeCompra(sheet, p.id, p.rareza, topeRareza, excepcionRareza);
 
   const filtrar = <T extends MejoraEstandar | Subsistema | MejoraDeArma | MejoraMovimiento>(
     piezas: readonly T[],
@@ -833,7 +845,7 @@ export function TiendaTab({
               }
             >
               <DetalleArmadura p={p} />
-              <AccionSimple pieza={p} creditos={creditosEfectivos} topeRareza={topeRareza} onEquipar={onEquipar} />
+              <AccionSimple pieza={p} creditos={creditosEfectivos} compra={compraDe(p)} onEquipar={onEquipar} />
             </Acordeon>
           ))}
 
@@ -859,7 +871,7 @@ export function TiendaTab({
                     }
                   >
                     <DetalleArma p={p} />
-                    <AccionSimple pieza={p} creditos={creditosEfectivos} topeRareza={topeRareza} onEquipar={onEquipar} />
+                    <AccionSimple pieza={p} creditos={creditosEfectivos} compra={compraDe(p)} onEquipar={onEquipar} />
                   </Acordeon>
                 ))}
               </div>
@@ -924,7 +936,7 @@ export function TiendaTab({
               }
             >
               <DetalleArmaMelee p={p} />
-              <AccionSimple pieza={p} creditos={creditosEfectivos} topeRareza={topeRareza} onEquipar={onEquipar} />
+              <AccionSimple pieza={p} creditos={creditosEfectivos} compra={compraDe(p)} onEquipar={onEquipar} />
             </Acordeon>
           ))}
 
@@ -942,7 +954,7 @@ export function TiendaTab({
               }
             >
               <DetalleArmaMelee p={p} />
-              <AccionSimple pieza={p} creditos={creditosEfectivos} topeRareza={topeRareza} onEquipar={onEquipar} />
+              <AccionSimple pieza={p} creditos={creditosEfectivos} compra={compraDe(p)} onEquipar={onEquipar} />
             </Acordeon>
           ))}
 
@@ -1020,7 +1032,7 @@ export function TiendaTab({
                 }
               >
                 <DetalleArmaPesada p={p} />
-                <AccionSimple pieza={p} creditos={creditosEfectivos} topeRareza={topeRareza} onEquipar={onEquipar} />
+                <AccionSimple pieza={p} creditos={creditosEfectivos} compra={compraDe(p)} onEquipar={onEquipar} />
               </Acordeon>
             ))}
             <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">

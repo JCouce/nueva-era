@@ -31,7 +31,7 @@
 // no un objeto propio, con la misma forma de problema que Munición Especial
 // en armas de fuego (ver catalog/equipo.ts). Añadirlas pide decidir cómo se
 // modela "coste = precio de otra pieza × N" antes de tocar el catálogo.
-import type { Rareza } from "./equipo";
+import type { MaterialPieza, Rareza } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
 
 export type ModoAtaqueMelee = {
@@ -69,6 +69,7 @@ export type ArmaMelee = {
   pesoKg: number | null;
   rareza: Rareza | null;
   coste: number | null;
+  material?: MaterialPieza;
   // Solo Escudos: cobertura y blindaje propios mientras se sostiene en alto.
   defensa: { cobertura: number; blindaje: number; puntosGolpe: number } | null;
   // Bloqueo (pregunta 31, resuelta 2026-09-24): toda arma melee genera su
@@ -927,6 +928,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
   {
     familia: "armaMelee",
     id: "kerzul_punal",
+    material: "kerzul",
     label: "Puñal de Kerzul",
     resumen: "Daga de kerzul, arrojadiza, ignora blindaje.",
     descripcion: "Daga de kerzul a una mano; toda su energía cinética atraviesa la defensa del objetivo.",
@@ -975,6 +977,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
   {
     familia: "armaMelee",
     id: "kerzul_espada_hacha_pico",
+    material: "kerzul",
     label: "Espada, Hacha o Pico de Guerra de Kerzul",
     resumen: "Arma de filo de kerzul a una mano; el modo Compleja arriesga retroceso entrópico.",
     descripcion: "Arma de filo de kerzul a una mano.",
@@ -1019,6 +1022,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
   {
     familia: "armaMelee",
     id: "kerzul_espadon_hacha_armas",
+    material: "kerzul",
     label: "Espadón o Hacha de Armas de Kerzul",
     resumen: "Arma de filo de kerzul a dos manos, la más devastadora de la familia.",
     descripcion: "Arma de filo de kerzul a dos manos, de gran tamaño.",
@@ -1074,6 +1078,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
   {
     familia: "armaMelee",
     id: "kerzul_maza",
+    material: "kerzul",
     label: "Maza de Kerzul",
     resumen: "Maza de kerzul a una mano: derriba y aturde además de herir.",
     descripcion: "Maza de kerzul a una mano, contundente.",
@@ -1125,6 +1130,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
   {
     familia: "armaMelee",
     id: "kerzul_baston_combate",
+    material: "kerzul",
     label: "Bastón de Combate de Kerzul",
     resumen: "Bastón de kerzul a dos manos con alcance; derriba y aturde.",
     descripcion: "Bastón de kerzul a dos manos, con alcance.",
@@ -1177,6 +1183,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
   {
     familia: "armaMelee",
     id: "kerzul_lanza_corta",
+    material: "kerzul",
     label: "Lanza Corta de Kerzul",
     resumen: "Lanza de kerzul a una mano, arrojadiza.",
     descripcion: "Lanza de kerzul a una mano, arrojadiza.",
@@ -1223,6 +1230,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
   {
     familia: "armaMelee",
     id: "kerzul_lanza_larga",
+    material: "kerzul",
     label: "Lanza Larga de Kerzul",
     resumen: "Lanza de kerzul a dos manos, con alcance.",
     descripcion: "Lanza de kerzul a dos manos, con alcance.",
@@ -1268,6 +1276,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
   {
     familia: "armaMelee",
     id: "kerzul_martillo_enastado",
+    material: "kerzul",
     label: "Martillo Enastado de Kerzul",
     resumen: "Martillo de kerzul a dos manos, el que más derriba y aturde.",
     descripcion: "Martillo de kerzul a dos manos, de gran tamaño.",
@@ -1319,6 +1328,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
   {
     familia: "armaMelee",
     id: "kerzul_alabarda",
+    material: "kerzul",
     label: "Alabarda de Kerzul",
     resumen: "Alabarda de kerzul a dos manos, con alcance.",
     descripcion: "Alabarda de kerzul a dos manos, con alcance y filo pesado.",
@@ -1364,6 +1374,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
   {
     familia: "armaMelee",
     id: "kerzul_escudo",
+    material: "kerzul",
     label: "Escudo de Kerzul",
     resumen: "El único escudo de kerzul: blindaje y aguante muy por encima de los convencionales.",
     descripcion: "Escudo de kerzul a una mano, con la misma resistencia extrema del material.",

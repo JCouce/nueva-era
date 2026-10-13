@@ -939,9 +939,9 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 > **Estado en la app:** E1 construida (falta el reset de las fichas de producción el día del deploy, ver 14.3): catálogo real (`src/lib/catalog/especies.ts`), elección
 > con reset en el servidor (`setEspecieAction`), carrusel en Personaje → Origen y selector
 > compacto en el editor de NPC.
-> **E2a construida:** coste de habilidad por casta, descuentos psiónicos (Arianyi, Maolher)
-> y bolsa de aumentos visible (14.6). Quedan E2b (Resonancia +1, kerzul) → E3 → M1 → E4 → E5
-> en `docs/tareas.md`, "Especies reales".
+> **E2 construida:** coste de habilidad por casta, descuentos psiónicos (Arianyi, Maolher),
+> bolsa de aumentos visible (E2a), Resonancia +1 del Arianyi y acceso al kerzul del Arköru
+> (E2b), todo en 14.6. Quedan E3 → M1 → E4 → E5 en `docs/tareas.md`, "Especies reales".
 
 ### 14.1 Lista y elección `[FIRME · ESP + usuario M10, M20]`
 
@@ -1069,7 +1069,18 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
   nivel N cuesta N × 3 − 1.
 - *En la app (E2a):* los dos descuentos de coste están mecanizados (`costes.psionicaNivel1`
   y `costes.psionicaPorNivel` en el rasgo → `AjusteCoste` → `psionica.ts` y
-  `progresion.ts`). La Resonancia +1 es E2b, todavía sin construir.
+  `progresion.ts`).
+- *En la app (E2b):* la Resonancia +1 es un `Modificador` de tipo `"disciplina"` en el rasgo
+  Evolución Psiónica (`docs/modificadores-tiradas.md` §9). `resolverFicha` da por disciplina
+  `comprado` / `efectivo` (comprado + bono, también con 0 comprado) / `paraEfectos`
+  (`min(efectivo, 6)`) en `FichaResuelta.psionica`. Compra, tope de 6 y XP miran lo comprado;
+  los requisitos, el efectivo; poderes, bonos por nivel en tiradas fijas, Levitar y Recursos,
+  `paraEfectos` (**un 7 cumple requisitos y usa la fila del 6**, supuesto S24). Psiónica
+  enseña "2 (1 + 1 especie)" con el stepper sobre lo comprado.
+- **Requisito roto** (supuesto S25): el máster con la ficha aprobada o el NPC cambian de
+  especie sin reset; si una disciplina queda con el requisito sin cumplir, no se borra
+  nada y Psiónica la marca "requisito no cumplido"; en Acciones sus poderes salen
+  bloqueados con el motivo. Con un 7, la cabecera dice "nivel 7 · efectos de nivel 6".
 - *NPC:* `resolverFicha(sheet, { libre: true })` deja el ajuste neutro y sin bolsa (14.3).
 
 **Humanos, bolsa de aumentos** (M3) — *visible, sin gastar: no hay aumentos*
@@ -1087,6 +1098,16 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
   letra de Recursos: es la única vía de un jugador.
 - **Paga el precio** con sus créditos.
 - La pieza queda marcada como "vía especie"; el reset de 14.3 se la lleva con el equipo.
+- *En la app (E2b):* el rasgo lleva `excepcionRareza: { material: "kerzul", maxPiezas: 1 }`
+  y cada pieza de kerzul del catálogo `material: "kerzul"` (las 10, Escudo incluido).
+  `puedeEquiparSinRareza` (`rules/equipo.ts`) decide la excepción: ficha **En creación**
+  (`DRAFT`; en revisión es solo lectura), quien compra es el **jugador** (el máster no tiene
+  tope, así que si equipa él no se marca ni gasta el hueco), la especie trae la excepción, la
+  pieza es de ese material y no hay ya `maxPiezas` piezas `viaEspecie`. `equiparAction` la
+  aplica vía `topeRarezaDeCompra` y el **servidor** pone `viaEspecie: true` (nunca la acepta
+  del cliente). Quitar la pieza libera el hueco. La Tienda pinta "vía especie" o el motivo
+  ("Ya tienes tu pieza de kerzul vía especie"); Equipo marca la pieza. Ficha v15 (la marca es
+  opcional, la migración no mueve nada). El NPC no la recibe (es de creación, §14.3).
 
 ### 14.7 Movimiento, carga y blindaje `[FIRME · ESP + usuario M6, M7, M14, M23]`
 
@@ -1198,6 +1219,8 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S21 | En un fusil de precisión (Mira Telescópica nv1 integrada, `ArmaFuego.miraIntegrada`), no se puede instalar otra mira de nivel 1; una de **nivel 2 o 3 sustituye a la integrada**: no ocupa ranura de mejora y solo aporta el bono de tramo que supera al de la integrada (nv3 → +1 en media/larga; nv2 → nada extra, solo su visión nocturna/térmica). | `EQUIP` dice que la integrada está "ya contabilizada en la dificultad de ataque y en las mejoras disponibles", y no dice qué pasa al mejorarla. Bloquear solo el nivel 1 es decisión del usuario (2026-09-28); lo de la ranura y la resta del bono es la lectura que evita contar dos veces lo que ya está en la dificultad. Pendiente de que Murillo confirme. |
 | S22 | La mejora **Munición Especial** se da de alta como una mejora de arma **por tipo de munición**, y cada una **ocupa una ranura** de `mejorasAdmitidas`. Para munición **Muy Extraña** (radiactiva, supresora) cuesta **62.500** créditos. | `EQUIP` dice que se puede instalar "repetidas veces para distintos tipos", pero no si cada una ocupa ranura; y su tabla de precios solo llega a Extraño (500 / 2.500 / 12.500, ×5 por rango): se sigue la misma progresión. Decisión del usuario (2026-09-28), pendiente de que Murillo confirme. |
 | S23 | Altura y peso por defecto = **punto medio redondeado** del rango de referencia de la especie (§14.5), sin guardarse en la ficha. | El documento solo da rangos; el usuario (2026-10-13) quiere los campos rellenos de entrada sin que el jugador tenga que mirar la tabla. |
+| S24 | Un nivel efectivo de disciplina por encima de 6 (Resonancia comprada 6 + 1 del Arianyi = 7) **cuenta como 7 para los requisitos** y para cualquier "desde nivel X", pero **los efectos usan la fila del 6** (tablas por nivel y fórmulas "× nivel": Alerta pasiva da 120 m con 6 y con 7). §14.6. | `ESP` dice que el +1 "puede superar el máximo", pero las tablas de `docs/psionica.md` acaban en el 6 y no hay fila 7 que leer. Decisión del usuario (2026-10-13), con test (`especie.test.ts`). Pendiente de que Murillo diga si un 7 debe hacer algo más. |
+| S25 | **Requisito roto**: si el máster cambia la especie de una ficha aprobada (sin reset) o la de un NPC (modo libre), puede quedar una disciplina con su requisito sin cumplir (ex-Arianyi con Inducción y Resonancia comprada 0). **No se borra nada**: Psiónica la marca como "requisito no cumplido" (`requisitosRotos`, `psionica.ts`); se puede bajar pero no subir. En Acciones sus poderes **se ven bloqueados**, con el motivo ("Requiere Resonancia 1"), y no aplican efectos pasivos ni ventajas (`bloqueoPorRequisito`, `poderes.ts`). §14.6. | El reset de §14.3 no aplica en esos dos casos, y borrar lo comprado sería destruir datos del máster. Verlo bloqueado (ni usable ni escondido) le enseña al máster qué ha roto. Decisión del usuario (2026-10-13). |
 
 ## Conflictos detectados
 

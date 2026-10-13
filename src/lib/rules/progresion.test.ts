@@ -12,6 +12,7 @@ import { experienciaInvertida } from "./npc";
 import { avisosParaEnviar } from "./revision";
 import { DISCIPLINAS } from "../catalog/psionica";
 import { ESPECIES } from "../catalog/especies";
+import { SIN_BONOS_DISCIPLINA } from "./psionica";
 
 const ficha = (especieId: string | null, casta?: string, linaje?: string): Sheet => ({
   ...defaultSheet(),
@@ -112,7 +113,7 @@ describe("descuentos psiónicos", () => {
   });
 
   test("Arianyi con letra D (3): Resonancia 1 gasta 2, no 3", () => {
-    const s = setDisciplinaValue(setPrioridad(ficha("arianyi"), "psionica", "D"), "resonancia", 1, ARIANYI);
+    const s = setDisciplinaValue(setPrioridad(ficha("arianyi"), "psionica", "D"), "resonancia", 1, ARIANYI, SIN_BONOS_DISCIPLINA);
     assert.equal(nivelDisciplina(s, "resonancia"), 1);
     assert.equal(puntosPsionicaGastados(s, ARIANYI), 2);
     assert.equal(puntosPsionicaGastados(s, AJUSTE_NEUTRO), 3);
@@ -123,10 +124,10 @@ describe("descuentos psiónicos", () => {
     assert.equal(costeDisciplina(3, MAOLHER), 2 + 5 + 8);
     assert.equal(costeSubidaXp({ tipo: "disciplina", id: "traslacion" }, 2, 4, MAOLHER), 8 + 11);
     const s = setDisciplinaValue(
-      setDisciplinaValue(setPrioridad(ficha("manduk", "noble", "maolher"), "psionica", "C"), "traslacion", 1, MAOLHER),
+      setDisciplinaValue(setPrioridad(ficha("manduk", "noble", "maolher"), "psionica", "C"), "traslacion", 1, MAOLHER, SIN_BONOS_DISCIPLINA),
       "traslacion",
       2,
-      MAOLHER,
+      MAOLHER, SIN_BONOS_DISCIPLINA,
     );
     assert.equal(puntosPsionicaGastados(s, MAOLHER), 7);
   });

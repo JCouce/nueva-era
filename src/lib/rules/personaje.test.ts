@@ -133,7 +133,7 @@ const ESPERADAS: Record<string, EtiquetaRasgo> = {
   "arkoru/percepcion_sensorial": "tirada",
   "arkoru/adaptacion_termica": "tirada",
   "arkoru/sistemas_filtradores": "tirada",
-  "arkoru/acceso_kerzul": "texto", // TODO(revisar): por prosa es de creación ("solo en creación"), pero no lleva `creacion`
+  "arkoru/acceso_kerzul": "creacion",
   "manduk.noble/contra_miedo": "tirada",
   "manduk.noble/coste_habilidad": "creacion",
   "manduk.sabio/coste_habilidad": "creacion",

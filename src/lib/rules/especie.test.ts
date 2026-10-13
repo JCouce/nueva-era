@@ -12,8 +12,30 @@ import {
   eleccionDeFicha,
   eleccionesIguales,
   rangoReferencia,
+  excepcionesRareza,
   type ContextoEleccion,
 } from "./especie";
+import { resolverFicha } from "./fichaResuelta";
+import { accionesDePsionica } from "./poderes";
+import {
+  cumpleRequisito,
+  nivelDisciplina,
+  requisitosRotos,
+  setDisciplinaValue,
+  setNivelDisciplina,
+  SIN_BONOS_DISCIPLINA,
+  sueloPorRequisitos,
+  textoNivelDisciplina,
+} from "./psionica";
+import { AJUSTE_NEUTRO } from "./progresion";
+import {
+  desequipar,
+  equipar,
+  materialDePieza,
+  piezaEquipadaEntradaSchema,
+  puedeEquiparSinRareza,
+  topeRarezaDeCompra,
+} from "./equipo";
 import { setAtributoValue, setPrioridad } from "./creacion";
 import { migrar } from "./migraciones";
 import type { AtributoId } from "./atributos";
@@ -382,7 +404,6 @@ describe("ficha v14: especieOpciones", () => {
     assert.equal(f.schemaVersion, 14);
     assert.deepEqual(f.especieOpciones, {});
     assert.equal(f.especieId, "arkoru");
-    assert.equal(SCHEMA_VERSION, 14);
   });
 
   test("una ficha vieja de Arkorü se lee con los números nuevos", () => {
@@ -413,5 +434,213 @@ describe("ficha v14: especieOpciones", () => {
       const s = parseSheet({ schemaVersion: 14, especieId, especieOpciones });
       assert.deepEqual(s.especieOpciones, esperado, JSON.stringify({ especieId, especieOpciones }));
     }
+  });
+});
+
+// --- E2b: Resonancia +1 del Arianyi (§14.6) ----------------------------------
+
+const resuelta = (s: Sheet, libre = false) => resolverFicha(s, { estadosCombate: [], libre });
+const conPsionica = (s: Sheet, psionica: Sheet["psionica"], letra: Sheet["prioridades"]["psionica"] = null): Sheet => ({
+  ...s,
+  psionica,
+  prioridades: { ...s.prioridades, psionica: letra },
+});
+
+describe("Resonancia +1 del Arianyi: nivel efectivo (sistema.md §14.6)", () => {
+  test("con 0 comprado (letra E) juega con Resonancia 1 y cumple el requisito de Inducción 1", () => {
+    const s = conPsionica(ficha("arianyi"), {}, "E");
+    const r = resuelta(s);
+    assert.deepEqual(r.psionica.disciplinas.resonancia, { comprado: 0, bono: 1, efectivo: 1, paraEfectos: 1 });
+    assert.equal(r.psionica.paraEfectos.resonancia, 1);
+    assert.equal(cumpleRequisito(s, "induccion", r.psionica.bonos), true);
+    assert.equal(cumpleRequisito(s, "induccion", SIN_BONOS_DISCIPLINA), false);
+    // Sin puntos no compra nada, pero ya tiene los poderes de Resonancia 1.
+    assert.ok(accionesDePsionica(s, r.psionica.paraEfectos).some((p) => p.disciplina.id === "resonancia"));
+  });
+
+  test("Inducción se compra con Resonancia comprada 0 gracias al +1", () => {
+    const s = conPsionica(ficha("arianyi"), {}, "C");
+    const r = resuelta(s);
+    const conInduccion = setDisciplinaValue(s, "induccion", 1, r.ajusteCoste, r.psionica.bonos);
+    assert.deepEqual(conInduccion.psionica, { induccion: 1 });
+    assert.equal(setDisciplinaValue(s, "induccion", 1, AJUSTE_NEUTRO, SIN_BONOS_DISCIPLINA), s);
+  });
+
+  test("comprado 6 → efectivo 7: cumple requisitos y los efectos usan la fila del 6", () => {
+    const arianyi = conPsionica(ficha("arianyi"), { resonancia: 6 });
+    const humano = conPsionica(ficha("humano"), { resonancia: 6 });
+    const ra = resuelta(arianyi);
+    assert.deepEqual(ra.psionica.disciplinas.resonancia, { comprado: 6, bono: 1, efectivo: 7, paraEfectos: 6 });
+    assert.equal(cumpleRequisito(arianyi, "hipercognicion", ra.psionica.bonos), true);
+
+    const poderes7 = accionesDePsionica(arianyi, ra.psionica.paraEfectos).filter((p) => p.disciplina.id === "resonancia");
+    const poderes6 = accionesDePsionica(humano, resuelta(humano).psionica.paraEfectos).filter(
+      (p) => p.disciplina.id === "resonancia",
+    );
+    assert.ok(poderes7.length > 0);
+    assert.deepEqual(
+      poderes7.map((p) => p.porDefecto),
+      poderes6.map((p) => p.porDefecto),
+    );
+    // Alerta pasiva: alcance 20 × nivel poseído → 120 con el 6 y con el 7, no 140.
+    assert.ok(poderes7.every((p) => p.nivelPoseido === 6));
+    const alerta = (ps: typeof poderes7) => ps.find((p) => p.accion.id === "psi_resonancia_alerta_pasiva")!.porDefecto.alcance;
+    assert.equal(alerta(poderes7), 120);
+    assert.equal(alerta(poderes6), 120);
+  });
+
+  test("la compra (tope de 6) sigue mirando lo comprado", () => {
+    const s = conPsionica(ficha("arianyi"), { resonancia: 6 });
+    const { bonos } = resuelta(s).psionica;
+    assert.equal(nivelDisciplina(setNivelDisciplina(s, "resonancia", 7, bonos), "resonancia"), 6);
+  });
+
+  test("sin especie, el nivel efectivo es el comprado", () => {
+    const r = resuelta(conPsionica(ficha(null), { resonancia: 2, induccion: 1 }));
+    assert.deepEqual(r.psionica.disciplinas.resonancia, { comprado: 2, bono: 0, efectivo: 2, paraEfectos: 2 });
+    assert.deepEqual(r.psionica.bonos, {});
+    assert.deepEqual(r.psionica.requisitosRotos, []);
+  });
+
+  test("bajar Resonancia comprada de 1 a 0 con Inducción comprada vale: el efectivo queda en 1", () => {
+    const s = conPsionica(ficha("arianyi"), { resonancia: 1, induccion: 1 });
+    const { bonos } = resuelta(s).psionica;
+    assert.equal(sueloPorRequisitos(s, "resonancia", bonos), 0);
+    assert.deepEqual(setNivelDisciplina(s, "resonancia", 0, bonos).psionica, { induccion: 1 });
+    // Sin el +1, el suelo es 1 y no deja bajar.
+    const humano = conPsionica(ficha("humano"), { resonancia: 1, induccion: 1 });
+    assert.equal(sueloPorRequisitos(humano, "resonancia", SIN_BONOS_DISCIPLINA), 1);
+    assert.equal(setNivelDisciplina(humano, "resonancia", 0, SIN_BONOS_DISCIPLINA), humano);
+  });
+
+  test("NPC en modo libre: también le llega el +1 (es derivado)", () => {
+    const r = resuelta(conPsionica(ficha("arianyi"), {}), true);
+    assert.equal(r.psionica.disciplinas.resonancia.efectivo, 1);
+  });
+
+  test("textoNivelDisciplina: '2 (1 + 1 especie)' con bono, el nivel a secas sin él", () => {
+    const r = resuelta(conPsionica(ficha("arianyi"), { resonancia: 1 }));
+    assert.equal(textoNivelDisciplina(r.psionica.disciplinas.resonancia, r.modificadores, "resonancia"), "2 (1 + 1 especie)");
+    assert.equal(textoNivelDisciplina(r.psionica.disciplinas.induccion, r.modificadores, "induccion"), "0");
+  });
+});
+
+describe("requisito roto tras cambiar de especie sin reset", () => {
+  const exArianyi = conPsionica(ficha("arianyi"), { induccion: 2 });
+
+  test("el máster con la ficha aprobada pasa de Arianyi a Humano: no se borra nada, se marca", () => {
+    const r = elegirEspecie(exArianyi, { especieId: "humano" }, { aprobada: true, esMaster: true, libre: false });
+    assert.ok(!("error" in r));
+    assert.equal(r.reseteada, false);
+    assert.deepEqual(r.sheet.psionica, { induccion: 2 });
+    assert.deepEqual(resuelta(r.sheet).psionica.requisitosRotos, ["induccion"]);
+    assert.deepEqual(requisitosRotos(r.sheet, SIN_BONOS_DISCIPLINA), ["induccion"]);
+  });
+
+  test("NPC en modo libre: lo mismo", () => {
+    const r = elegirEspecie(exArianyi, { especieId: "riux" }, { aprobada: false, esMaster: true, libre: true });
+    assert.ok(!("error" in r));
+    assert.deepEqual(resuelta(r.sheet, true).psionica.requisitosRotos, ["induccion"]);
+  });
+
+  test("siendo Arianyi no hay nada roto; con el requisito roto se puede bajar pero no subir", () => {
+    assert.deepEqual(resuelta(exArianyi).psionica.requisitosRotos, []);
+    const humano = { ...exArianyi, especieId: "humano" };
+    assert.deepEqual(setNivelDisciplina(humano, "induccion", 1, SIN_BONOS_DISCIPLINA).psionica, { induccion: 1 });
+    assert.equal(setNivelDisciplina(humano, "induccion", 3, SIN_BONOS_DISCIPLINA), humano);
+  });
+});
+
+// --- E2b: Acceso al Kerzul del Arköru (§14.6) --------------------------------
+
+const KERZUL_IDS = [
+  "kerzul_punal",
+  "kerzul_espada_hacha_pico",
+  "kerzul_espadon_hacha_armas",
+  "kerzul_maza",
+  "kerzul_baston_combate",
+  "kerzul_lanza_corta",
+  "kerzul_lanza_larga",
+  "kerzul_martillo_enastado",
+  "kerzul_alabarda",
+  "kerzul_escudo",
+];
+
+describe("Acceso al Kerzul: puedeEquiparSinRareza", () => {
+  const arkoru = ficha("arkoru");
+  const excepciones = excepcionesRareza(especieDeFicha(arkoru));
+  const ctx = { estado: "DRAFT", esMaster: false, excepciones } as const;
+
+  test("el material sale del catálogo: las 10 piezas de kerzul, escudo incluido, y nada más", () => {
+    for (const id of KERZUL_IDS) assert.equal(materialDePieza(id), "kerzul", id);
+    assert.equal(materialDePieza("espada_cuchillo_combate"), null);
+    assert.equal(materialDePieza("no_existe"), null);
+    assert.deepEqual(excepciones, [{ material: "kerzul", maxPiezas: 1 }]);
+    assert.deepEqual(excepcionesRareza(especieDeFicha(ficha("humano"))), []);
+  });
+
+  test("Arköru, en creación, jugador, pieza de kerzul y hueco libre: permitida", () => {
+    assert.deepEqual(puedeEquiparSinRareza(arkoru, "kerzul_escudo", ctx), { permitida: true, material: "kerzul" });
+  });
+
+  test("los demás casos dan el motivo", () => {
+    const motivo = (r: ReturnType<typeof puedeEquiparSinRareza>) => (r.permitida ? null : r.motivo);
+    assert.equal(motivo(puedeEquiparSinRareza(arkoru, "kerzul_maza", { ...ctx, estado: "IN_REVIEW" })), "Solo en creación");
+    assert.equal(motivo(puedeEquiparSinRareza(arkoru, "kerzul_maza", { ...ctx, estado: "APPROVED" })), "Solo en creación");
+    assert.equal(
+      motivo(puedeEquiparSinRareza(arkoru, "kerzul_maza", { ...ctx, esMaster: true })),
+      "El máster no tiene tope de rareza",
+    );
+    assert.equal(
+      motivo(puedeEquiparSinRareza(arkoru, "kerzul_maza", { ...ctx, excepciones: [] })),
+      "Tu especie no tiene acceso a esta pieza sin rareza",
+    );
+    assert.equal(
+      motivo(puedeEquiparSinRareza(arkoru, "espada_cuchillo_combate", ctx)),
+      "Tu especie no tiene acceso a esta pieza sin rareza",
+    );
+  });
+
+  test("una sola pieza vía especie; quitarla libera el hueco", () => {
+    const conUna = equipar(arkoru, { instanciaId: "k1", catalogoId: "kerzul_punal", viaEspecie: true });
+    assert.deepEqual(puedeEquiparSinRareza(conUna, "kerzul_escudo", ctx), {
+      permitida: false,
+      agotada: true,
+      motivo: "Ya tienes tu pieza de kerzul vía especie",
+    });
+    // Una pieza de kerzul sin la marca (la equipó el máster) no gasta el hueco.
+    const delMaster = equipar(arkoru, { instanciaId: "k2", catalogoId: "kerzul_punal" });
+    assert.equal(puedeEquiparSinRareza(delMaster, "kerzul_escudo", ctx).permitida, true);
+    assert.equal(puedeEquiparSinRareza(desequipar(conUna, "k1"), "kerzul_escudo", ctx).permitida, true);
+  });
+
+  test("topeRarezaDeCompra: vía especie si el tope bloquea, el motivo si no hay hueco", () => {
+    assert.deepEqual(topeRarezaDeCompra(arkoru, "kerzul_maza", "Singular", "Muy Extraño", ctx), { tipo: "viaEspecie" });
+    assert.deepEqual(topeRarezaDeCompra(arkoru, "kerzul_maza", "Singular", null, ctx), { tipo: "permitida" });
+    assert.deepEqual(topeRarezaDeCompra(ficha("humano"), "kerzul_maza", "Singular", "Común", null), {
+      tipo: "bloqueada",
+      motivo: "Tu letra de Recursos no llega a Singular: tope Común.",
+    });
+    const conUna = equipar(arkoru, { instanciaId: "k1", catalogoId: "kerzul_punal", viaEspecie: true });
+    assert.deepEqual(topeRarezaDeCompra(conUna, "kerzul_maza", "Singular", "Común", ctx), {
+      tipo: "bloqueada",
+      motivo: "Ya tienes tu pieza de kerzul vía especie",
+    });
+  });
+
+  test("el NPC (modo libre) no recibe la excepción: es de creación", () => {
+    assert.deepEqual(resuelta(arkoru, true).excepcionesRareza, []);
+    assert.deepEqual(resuelta(arkoru).excepcionesRareza, excepciones);
+  });
+
+  test("viaEspecie no se acepta del cliente y sí sobrevive en la ficha", () => {
+    const entrada = piezaEquipadaEntradaSchema.parse({ instanciaId: "k1", catalogoId: "kerzul_maza", viaEspecie: true });
+    assert.deepEqual(entrada, { instanciaId: "k1", catalogoId: "kerzul_maza" });
+    const s = parseSheet({
+      schemaVersion: SCHEMA_VERSION,
+      especieId: "arkoru",
+      equipo: [{ instanciaId: "k1", catalogoId: "kerzul_maza", viaEspecie: true }],
+    });
+    assert.equal(s.equipo[0].viaEspecie, true);
   });
 });

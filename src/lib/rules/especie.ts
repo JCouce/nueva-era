@@ -12,6 +12,7 @@
 //   ajustesDeCoste  los rasgos de coste (§14.6) → el AjusteCoste que reciben
 //                   creacion.ts, psionica.ts y progresion.ts
 //   bolsaDeAumentos los créditos aparte para aumentos (Humanos), o null
+//   excepcionesRareza las piezas que la especie compra sin tope de rareza (kerzul)
 //
 // Mismo patrón que usoPoder.ts: entrada explícita, nada se lee de fuera salvo el
 // catálogo, y el resultado se aplica tal cual.
@@ -20,6 +21,7 @@ import {
   normalizarOpciones,
   type Especie,
   type EspecieOpciones,
+  type ExcepcionRareza,
   type OpcionEspecie,
   type ReferenciaFisica,
   type Rasgo,
@@ -271,4 +273,10 @@ export function ajustesDeCoste(especie: EspecieResuelta | null): AjusteCoste {
 export function bolsaDeAumentos(especie: EspecieResuelta | null): number | null {
   const bolsas = (especie?.rasgos ?? []).flatMap((r) => (r.bolsaAumentos === undefined ? [] : [r.bolsaAumentos]));
   return bolsas.length ? bolsas.reduce((a, b) => a + b, 0) : null;
+}
+
+// Acceso al Kerzul (M9): la excepción de rareza que trae la especie. La aplica
+// puedeEquiparSinRareza (equipo.ts), que recibe esto ya resuelto.
+export function excepcionesRareza(especie: EspecieResuelta | null): ExcepcionRareza[] {
+  return (especie?.rasgos ?? []).flatMap((r) => (r.excepcionRareza ? [r.excepcionRareza] : []));
 }

@@ -60,7 +60,8 @@ import { normalizarOpciones } from "../catalog/especies";
 //   12 → se añaden los niveles de disciplina psiónica (psionica)
 //   13 → se añade la fatiga temporal de Proeza (fatigaTemporal)
 //   14 → se añaden las opciones de especie (especieOpciones: casta y linaje)
-export const SCHEMA_VERSION = 14;
+//   15 → las piezas equipadas admiten `viaEspecie` (kerzul del Arköru)
+export const SCHEMA_VERSION = 15;
 
 const atributoValue = z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX);
 

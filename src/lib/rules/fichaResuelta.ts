@@ -18,7 +18,9 @@ import {
   salud,
   type Fuente,
 } from "./derivados";
-import { ajustesDeCoste, bolsaDeAumentos, especieDeFicha, type EspecieResuelta } from "./especie";
+import { ajustesDeCoste, bolsaDeAumentos, especieDeFicha, excepcionesRareza, type EspecieResuelta } from "./especie";
+import { bonosDeDisciplina, nivelesDePsionica, type PsionicaResuelta } from "./psionica";
+import type { ExcepcionRareza } from "../catalog/especies";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
 import { indiceDeCondiciones, modificadoresDeEquipo, type IndiceCondiciones } from "./equipo";
 import { modificadoresDeEstados, type EstadoActivo } from "./estados";
@@ -53,10 +55,18 @@ export type FichaResuelta = {
   // especie no la trae). En modo libre (NPC, §14.3), neutros.
   ajusteCoste: AjusteCoste;
   bolsaAumentos: number | null;
+  // Piezas sin tope de rareza por especie (kerzul del Arköru, §14.6): las recibe
+  // puedeEquiparSinRareza. Es de creación: vacío en modo libre.
+  excepcionesRareza: ExcepcionRareza[];
+  // Niveles de disciplina (§14.6): comprado, efectivo (con Resonancia +1 de especie,
+  // puede pasar de 6) y paraEfectos (tope 6), y los requisitos rotos. Derivado: le
+  // llega también al NPC. Poderes y bonos por nivel leen `paraEfectos`.
+  psionica: PsionicaResuelta;
 };
 
-// `libre`: editor de NPC del máster. Le llega todo lo derivado de la especie, pero
-// no lo de creación (costes por casta, descuentos psiónicos, bolsa de aumentos).
+// `libre`: editor de NPC del máster. Le llega todo lo derivado de la especie (también
+// la Resonancia +1), pero no lo de creación (costes por casta, descuentos psiónicos,
+// bolsa de aumentos, kerzul sin rareza).
 export type OpcionesFicha = { estadosCombate: EstadoActivo[]; libre?: boolean };
 
 export function resolverFicha(sheet: Sheet, { estadosCombate, libre = false }: OpcionesFicha): FichaResuelta {
@@ -89,5 +99,7 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, libre = false }: O
     indiceCondiciones: indiceDeCondiciones(sheet),
     ajusteCoste: libre ? AJUSTE_NEUTRO : ajustesDeCoste(especie),
     bolsaAumentos: libre ? null : bolsaDeAumentos(especie),
+    excepcionesRareza: libre ? [] : excepcionesRareza(especie),
+    psionica: nivelesDePsionica(sheet, bonosDeDisciplina(modificadores)),
   };
 }

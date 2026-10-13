@@ -9,6 +9,7 @@ import type { MotorMetadata } from "./motor";
 import { clampInt, type Sheet } from "./sheet";
 import { PUNTOS_PSIONICA_POR_LETRA } from "./prioridad";
 import { costeNivelDisciplina, type AjusteCoste } from "./progresion";
+import { bonoDisciplina, type ModificadorConFuente } from "./modificadores";
 import { DISCIPLINAS, disciplinaPorId, type DisciplinaId } from "../catalog/psionica";
 
 // ── Forma de los datos ─────────────────────────────────────────────
@@ -261,28 +262,126 @@ export function puntosPsionicaDisponibles(sheet: Sheet, ajuste: AjusteCoste): nu
   return presupuestoPsionica(sheet) - puntosPsionicaGastados(sheet, ajuste);
 }
 
-export function cumpleRequisito(sheet: Sheet, id: DisciplinaId): boolean {
-  const { requisito } = disciplinaPorId(id);
-  return !requisito || nivelDisciplina(sheet, requisito.disciplina) >= requisito.nivel;
+// ── Nivel efectivo (§14.6) ─────────────────────────────────────────
+// Comprado = lo que guarda la ficha (y lo único que miran el coste, el tope de 6 y
+// la XP). Efectivo = comprado + modificadores de tipo "disciplina" (Resonancia +1
+// del Arianyi), también con 0 comprado, y puede pasar de 6: es el que miran los
+// requisitos. Para efectos (poderes, bonos por nivel) se usa `paraEfectos`, el
+// efectivo recortado a 6: un 7 cumple cualquier "desde nivel X" y usa la fila del 6.
+//
+// Los bonos llegan siempre por parámetro, ya resueltos (FichaResuelta.psionica.bonos
+// en pantalla; bonosDeDisciplina(modificadoresActivos(sheet)) en el servidor), mismo
+// patrón que AjusteCoste: aquí no se lee la especie.
+
+export type BonosDisciplina = Partial<Record<DisciplinaId, number>>;
+export const SIN_BONOS_DISCIPLINA: BonosDisciplina = {};
+
+export function bonosDeDisciplina(mods: ModificadorConFuente[]): BonosDisciplina {
+  const bonos: BonosDisciplina = {};
+  for (const d of DISCIPLINAS) {
+    const b = bonoDisciplina(mods, d.id);
+    if (b !== 0) bonos[d.id] = b;
+  }
+  return bonos;
 }
 
-// Nivel mínimo al que se puede bajar `id` sin dejar colgada una disciplina que la
-// tiene de requisito (bajar Traslación a 1 con Singularidad comprada se bloquea).
-export function sueloPorRequisitos(sheet: Sheet, id: DisciplinaId): number {
-  return DISCIPLINAS.reduce(
-    (suelo, d) =>
-      d.requisito?.disciplina === id && nivelDisciplina(sheet, d.id) > 0 ? Math.max(suelo, d.requisito.nivel) : suelo,
-    0,
+export type NivelDisciplinaResuelto = { comprado: number; bono: number; efectivo: number; paraEfectos: number };
+
+// Niveles para efectos de todas las disciplinas: lo que reciben los poderes.
+export type NivelesPsionica = Record<DisciplinaId, number>;
+
+export type PsionicaResuelta = {
+  disciplinas: Record<DisciplinaId, NivelDisciplinaResuelto>;
+  paraEfectos: NivelesPsionica;
+  bonos: BonosDisciplina;
+  // Disciplinas con nivel y el requisito sin cumplir (cambio de especie sin reset).
+  requisitosRotos: DisciplinaId[];
+};
+
+export function nivelEfectivo(sheet: Sheet, id: DisciplinaId, bonos: BonosDisciplina): number {
+  return Math.max(0, nivelDisciplina(sheet, id) + (bonos[id] ?? 0));
+}
+
+export function nivelesDePsionica(sheet: Sheet, bonos: BonosDisciplina): PsionicaResuelta {
+  const disciplinas = {} as Record<DisciplinaId, NivelDisciplinaResuelto>;
+  const paraEfectos = {} as NivelesPsionica;
+  for (const d of DISCIPLINAS) {
+    const efectivo = nivelEfectivo(sheet, d.id, bonos);
+    const nivel = {
+      comprado: nivelDisciplina(sheet, d.id),
+      bono: bonos[d.id] ?? 0,
+      efectivo,
+      paraEfectos: Math.min(efectivo, DISCIPLINA_MAX),
+    };
+    disciplinas[d.id] = nivel;
+    paraEfectos[d.id] = nivel.paraEfectos;
+  }
+  return { disciplinas, paraEfectos, bonos, requisitosRotos: requisitosRotos(sheet, bonos) };
+}
+
+// "2 (1 + 1 especie)" con bono; el nivel a secas sin él. Una línea por origen del
+// modificador (especie, equipo…), para la ficha.
+// Cabecera de la disciplina en Acciones. Con un 7 (Resonancia +1 sobre 6) los efectos
+// usan la fila del 6 (S24): se dicen los dos para que no parezca un error frente al
+// 7 de la pestaña Psiónica.
+export function textoNivelEnAcciones(nivel: NivelDisciplinaResuelto): string {
+  return nivel.paraEfectos < nivel.efectivo
+    ? `nivel ${nivel.efectivo} · efectos de nivel ${nivel.paraEfectos}`
+    : `nivel ${nivel.efectivo}`;
+}
+
+export function textoNivelDisciplina(
+  nivel: NivelDisciplinaResuelto,
+  mods: ModificadorConFuente[],
+  id: DisciplinaId,
+): string {
+  if (nivel.bono === 0) return String(nivel.efectivo);
+  const porOrigen = new Map<string, number>();
+  for (const m of mods) {
+    if (m.tipo === "disciplina" && m.id === id) porOrigen.set(m.origen, (porOrigen.get(m.origen) ?? 0) + m.valor);
+  }
+  const partes = [...porOrigen.entries()].map(([origen, v]) => `${v >= 0 ? "+ " : "− "}${Math.abs(v)} ${origen}`);
+  return `${nivel.efectivo} (${nivel.comprado} ${partes.join(" ")})`;
+}
+
+export function cumpleRequisito(sheet: Sheet, id: DisciplinaId, bonos: BonosDisciplina): boolean {
+  const { requisito } = disciplinaPorId(id);
+  return !requisito || nivelEfectivo(sheet, requisito.disciplina, bonos) >= requisito.nivel;
+}
+
+// Requisito roto (decisión del usuario, 2026-10-13): el máster con la ficha aprobada
+// o un NPC cambian de especie sin reset, y puede quedar p. ej. Inducción comprada con
+// la Resonancia efectiva a 0 (ex-Arianyi). No se borra nada: Psiónica la marca, y
+// en Acciones sus poderes salen bloqueados y sin efectos (bloqueoPorRequisito,
+// poderes.ts), para que el máster vea qué ha roto.
+export function requisitosRotos(sheet: Sheet, bonos: BonosDisciplina): DisciplinaId[] {
+  return DISCIPLINAS.filter((d) => nivelEfectivo(sheet, d.id, bonos) > 0 && !cumpleRequisito(sheet, d.id, bonos)).map(
+    (d) => d.id,
   );
 }
 
-// Fija el nivel respetando requisitos en los dos sentidos. No mira el pool: eso lo
-// añade la compra de creación; la subida con XP (ficha aprobada) cobra aparte.
-export function setNivelDisciplina(sheet: Sheet, id: DisciplinaId, value: number): Sheet {
+// Nivel COMPRADO mínimo al que se puede bajar `id` sin dejar colgada una disciplina
+// que la tiene de requisito (bajar Traslación a 1 con Singularidad comprada se
+// bloquea). El requisito mira el efectivo: con Resonancia +1 de especie, la
+// Resonancia comprada puede bajar a 0 con Inducción 1 comprada.
+export function sueloPorRequisitos(sheet: Sheet, id: DisciplinaId, bonos: BonosDisciplina): number {
+  const necesario = DISCIPLINAS.reduce(
+    (suelo, d) =>
+      d.requisito?.disciplina === id && nivelEfectivo(sheet, d.id, bonos) > 0 ? Math.max(suelo, d.requisito.nivel) : suelo,
+    0,
+  );
+  return Math.max(0, necesario - (bonos[id] ?? 0));
+}
+
+// Fija el nivel comprado respetando requisitos en los dos sentidos. No mira el pool:
+// eso lo añade la compra de creación; la subida con XP (ficha aprobada) cobra aparte.
+// Con el requisito roto (ver requisitosRotos) se puede bajar, no subir (decisión del
+// usuario, 2026-10-13).
+export function setNivelDisciplina(sheet: Sheet, id: DisciplinaId, value: number, bonos: BonosDisciplina): Sheet {
   const actual = nivelDisciplina(sheet, id);
   const v = clampInt(value, 0, DISCIPLINA_MAX, actual);
-  if (v > 0 && !cumpleRequisito(sheet, id)) return sheet;
-  if (v < sueloPorRequisitos(sheet, id)) return sheet;
+  if (v > actual && !cumpleRequisito(sheet, id, bonos)) return sheet;
+  if (v < actual && v < sueloPorRequisitos(sheet, id, bonos)) return sheet;
   const psionica = { ...sheet.psionica };
   if (v > 0) psionica[id] = v;
   else delete psionica[id];
@@ -294,7 +393,8 @@ export function setDisciplinaValue(
   id: DisciplinaId,
   value: number,
   ajuste: AjusteCoste,
+  bonos: BonosDisciplina,
 ): Sheet {
-  const next = setNivelDisciplina(sheet, id, value);
+  const next = setNivelDisciplina(sheet, id, value, bonos);
   return puntosPsionicaDisponibles(next, ajuste) < 0 ? sheet : next;
 }

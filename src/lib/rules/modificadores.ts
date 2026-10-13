@@ -7,6 +7,7 @@
 // aumentos reales, serán datos nuevos en el catálogo, no código nuevo.
 import type { AtributoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
+import type { DisciplinaId } from "../catalog/psionica";
 
 // Valores derivados que algo puede modificar directamente.
 export const DERIVADOS_MODIFICABLES = [
@@ -65,7 +66,11 @@ export type Modificador =
   | { tipo: "atributo"; id: AtributoId; valor: number }
   | { tipo: "derivado"; id: DerivadoId; valor: number }
   | { tipo: "habilidad"; id: HabilidadId; valor: number }
-  | { tipo: "tirada"; alcance: AlcanceModificador; valor: number };
+  | { tipo: "tirada"; alcance: AlcanceModificador; valor: number }
+  // Nivel de una disciplina psiónica (Resonancia +1 del Arianyi, §14.6). No toca
+  // ninguna tirada: sube el nivel efectivo, que es el que miran requisitos y
+  // poderes (psionica.ts: nivelesDePsionica). Ver docs/modificadores-tiradas.md §9.
+  | { tipo: "disciplina"; id: DisciplinaId; valor: number };
 
 export type OrigenModificador =
   | "especie"
@@ -107,6 +112,16 @@ export function bonoHabilidad(
 ): number {
   return mods.reduce(
     (t, m) => (m.tipo === "habilidad" && m.id === id ? t + m.valor : t),
+    0,
+  );
+}
+
+export function bonoDisciplina(
+  mods: ModificadorConFuente[],
+  id: DisciplinaId,
+): number {
+  return mods.reduce(
+    (t, m) => (m.tipo === "disciplina" && m.id === id ? t + m.valor : t),
     0,
   );
 }

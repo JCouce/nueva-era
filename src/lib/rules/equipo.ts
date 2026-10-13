@@ -18,9 +18,12 @@ import {
   RAREZA_ORDEN,
   type ArmaFuego,
   type Equipo,
+  type MaterialPieza,
   type MejoraDeArma,
   type Rareza,
 } from "../catalog/equipo";
+import type { ExcepcionRareza } from "../catalog/especies";
+import type { EstadoFicha } from "./revision";
 import { ID_BUSQUEDA_MIRA } from "../catalog/mejorasArma";
 import { alcanzaA, type ContextoAccion, type GrupoAccion, type Modificador, type ModificadorConFuente } from "./modificadores";
 import type { CondicionTirada } from "./condiciones";
@@ -85,6 +88,9 @@ export type PiezaEquipada = {
   // Mejoras estándar y subsistemas: instanciaId de la armadura que los aloja.
   // Mejoras de arma: instanciaId del arma que las lleva.
   instaladoEnId?: string;
+  // Comprada saltándose el tope de rareza por una excepción de especie (kerzul del
+  // Arköru, §14.6). Solo la pone el servidor (puedeEquiparSinRareza en equiparAction).
+  viaEspecie?: true;
 };
 
 export const piezaEquipadaSchema = z.object({
@@ -92,7 +98,12 @@ export const piezaEquipadaSchema = z.object({
   catalogoId: z.string().min(1).max(60),
   nivel: z.number().int().min(1).max(4).optional(),
   instaladoEnId: z.string().min(1).max(60).optional(),
+  viaEspecie: z.literal(true).optional(),
 });
+
+// Lo que se acepta del cliente al equipar: `viaEspecie` no, lo decide el servidor
+// (zod descarta la clave si llega).
+export const piezaEquipadaEntradaSchema = piezaEquipadaSchema.omit({ viaEspecie: true });
 
 // Generador de ids, separado de las funciones puras de más abajo para que
 // sigan siendo testeables sin azar de por medio — mismo criterio que
@@ -427,6 +438,76 @@ export function rarezaDePieza(pieza: PiezaEquipada): Rareza | null {
 export function rarezaPermitida(rareza: Rareza | null, tope: Rareza): boolean {
   if (rareza === null) return true;
   return RAREZA_ORDEN.indexOf(rareza) <= RAREZA_ORDEN.indexOf(tope);
+}
+
+// Material especial de la pieza según el catálogo (hoy solo el kerzul), o null.
+export function materialDePieza(catalogoId: string): MaterialPieza | null {
+  const cat = equipoPorId(catalogoId);
+  return cat?.familia === "armaMelee" ? (cat.material ?? null) : null;
+}
+
+// ¿Esta compra se salta el tope de rareza por una excepción de especie (Acceso al
+// Kerzul, §14.6)? Solo se consulta cuando el tope bloquearía; si sale `permitida`,
+// el servidor marca la pieza con `viaEspecie`. `agotada`: todo encaja salvo que el
+// hueco ya está ocupado (la Tienda enseña el motivo en vez del de rareza).
+export type ContextoExcepcionRareza = {
+  estado: EstadoFicha;
+  // Quien compra, no el dueño: el máster no tiene tope, así que nunca gasta el hueco.
+  esMaster: boolean;
+  // De la especie (excepcionesRareza en especie.ts; FichaResuelta.excepcionesRareza).
+  excepciones: ExcepcionRareza[];
+};
+
+export type ResultadoExcepcionRareza =
+  | { permitida: true; material: MaterialPieza }
+  | { permitida: false; agotada: boolean; motivo: string };
+
+export function puedeEquiparSinRareza(
+  sheet: Pick<Sheet, "equipo">,
+  catalogoId: string,
+  ctx: ContextoExcepcionRareza,
+): ResultadoExcepcionRareza {
+  const no = (motivo: string, agotada = false): ResultadoExcepcionRareza => ({ permitida: false, agotada, motivo });
+  if (ctx.esMaster) return no("El máster no tiene tope de rareza");
+  if (ctx.estado !== "DRAFT") return no("Solo en creación");
+  const material = materialDePieza(catalogoId);
+  const excepcion = material ? ctx.excepciones.find((e) => e.material === material) : undefined;
+  if (!material || !excepcion) return no("Tu especie no tiene acceso a esta pieza sin rareza");
+  const usadas = sheet.equipo.filter((p) => p.viaEspecie && materialDePieza(p.catalogoId) === material).length;
+  if (usadas >= excepcion.maxPiezas) {
+    return no(
+      excepcion.maxPiezas === 1
+        ? `Ya tienes tu pieza de ${material} vía especie`
+        : `Ya tienes tus ${excepcion.maxPiezas} piezas de ${material} vía especie`,
+      true,
+    );
+  }
+  return { permitida: true, material };
+}
+
+// El tope de rareza de una compra, con la excepción de especie ya aplicada: lo usan
+// equiparAction (que marca `viaEspecie`) y la Tienda (que pinta "vía especie" o el
+// motivo). `tope` null = no hay tope (aprobada, máster, sin letra, NPC); `ctx` null =
+// sin excepción posible.
+export type TopeRarezaCompra =
+  | { tipo: "permitida" }
+  | { tipo: "viaEspecie" }
+  | { tipo: "bloqueada"; motivo: string };
+
+export function topeRarezaDeCompra(
+  sheet: Pick<Sheet, "equipo">,
+  catalogoId: string,
+  rareza: Rareza | null,
+  tope: Rareza | null,
+  ctx: ContextoExcepcionRareza | null,
+): TopeRarezaCompra {
+  if (!tope || rarezaPermitida(rareza, tope)) return { tipo: "permitida" };
+  const excepcion = ctx ? puedeEquiparSinRareza(sheet, catalogoId, ctx) : null;
+  if (excepcion?.permitida) return { tipo: "viaEspecie" };
+  return {
+    tipo: "bloqueada",
+    motivo: excepcion?.agotada ? excepcion.motivo : `Tu letra de Recursos no llega a ${rareza}: tope ${tope}.`,
+  };
 }
 
 // Peso de una pieza equipada, para Carga Transportable (docs/sistema.md

@@ -203,6 +203,15 @@ export const MIGRACIONES: Migracion[] = [
       "arkoru); sus números pasan a ser los del documento real, sin migrar nada (§14.2).",
     migrar: (ficha) => ({ ...ficha, especieOpciones: {} }),
   },
+  {
+    desde: 14,
+    hasta: 15,
+    descripcion:
+      "Las piezas equipadas admiten la marca `viaEspecie` (kerzul del Arköru sin tope de " +
+      "rareza, docs/sistema.md §14.6). Es opcional: ninguna pieza existente la lleva, así " +
+      "que no se mueve nada.",
+    migrar: (ficha) => ({ ...ficha }),
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le

@@ -11,7 +11,7 @@ import type { HabilidadId } from "./habilidades";
 import type { Sheet } from "./sheet";
 import type { Accion } from "./acciones";
 import type { CondicionTirada } from "./condiciones";
-import { DISCIPLINAS, PSIONICA, type DisciplinaId } from "../catalog/psionica";
+import { DISCIPLINAS, PSIONICA, disciplinaPorId, type DisciplinaId } from "../catalog/psionica";
 import { umbralFatiga } from "./estados";
 import { recursoDe } from "./recursos";
 import type {
@@ -23,6 +23,7 @@ import type {
   Grado,
   ModificadorFatiga,
   Nota,
+  NivelesPsionica,
   Opcion,
   Valor,
 } from "./psionica";
@@ -423,7 +424,18 @@ export type PoderDisponible = {
   accion: AccionPoder;
   nivelPoseido: number;
   porDefecto: PoderResuelto; // nivel empleado = poseído, primera opción de cada eje
+  // Requisito de la disciplina sin cumplir (bloqueoPorRequisito): se ve, no se usa.
+  bloqueo: string | null;
 };
+
+// Requisito sin cumplir: solo pasa cuando el máster cambia de especie sin reset (S25).
+// La disciplina se ve, pero bloqueada y sin efectos, con el motivo. `niveles` es
+// paraEfectos (tope 6): los requisitos piden 1 o 2, así que da lo mismo que el efectivo.
+export function bloqueoPorRequisito(disciplina: Disciplina, niveles: NivelesPsionica): string | null {
+  const r = disciplina.requisito;
+  if (!r || (niveles[r.disciplina] ?? 0) >= r.nivel) return null;
+  return `Requiere ${disciplinaPorId(r.disciplina).label} ${r.nivel}`;
+}
 
 // Mismo gate que el equipo (generaAccionPropia en combate.ts): solo se genera
 // lo que declara en su MotorMetadata una acción accion_sin_equipo construida.
@@ -435,9 +447,12 @@ export function valoresHabilidad(sheet: Sheet): Partial<Record<HabilidadId, numb
   return Object.fromEntries(Object.entries(sheet.habilidades).map(([id, h]) => [id, h.valor]));
 }
 
-export function accionesDePsionica(sheet: Sheet): PoderDisponible[] {
+// `niveles`: los niveles para efectos de la FichaResuelta (psionica.paraEfectos), con
+// la Resonancia +1 de especie ya sumada y recortados a 6. El nivel poseído de cada
+// poder sale de ahí, no de sheet.psionica.
+export function accionesDePsionica(sheet: Sheet, niveles: NivelesPsionica): PoderDisponible[] {
   return DISCIPLINAS.flatMap((disciplina) => {
-    const nivelPoseido = sheet.psionica[disciplina.id as DisciplinaId] ?? 0;
+    const nivelPoseido = niveles[disciplina.id as DisciplinaId] ?? 0;
     if (nivelPoseido <= 0) return [];
     return disciplina.acciones.flatMap((accion): PoderDisponible[] => {
       if (!generaAccionDePoder(accion)) return [];
@@ -445,9 +460,11 @@ export function accionesDePsionica(sheet: Sheet): PoderDisponible[] {
         nivelPoseido,
         disciplina,
         habilidades: valoresHabilidad(sheet),
-        niveles: sheet.psionica,
+        niveles,
       });
-      return porDefecto ? [{ disciplina, accion, nivelPoseido, porDefecto }] : [];
+      return porDefecto
+        ? [{ disciplina, accion, nivelPoseido, porDefecto, bloqueo: bloqueoPorRequisito(disciplina, niveles) }]
+        : [];
     });
   });
 }
@@ -730,12 +747,12 @@ function etiquetaVentaja(d: Disciplina, v: Disciplina["ventajas"][number]): stri
 // Lo que la psiónica de la ficha añade a una tirada fija (Buscar / percibir con
 // Resonancia 4: ventaja y la casilla de +2): `Disciplina.ventajas` y
 // `bonosEnOtrasTiradas` cuyo alcance es el id o el grupo de la tirada.
-export function conPsionicaEnTiradaFija(sheet: Sheet, t: Accion): Accion {
+export function conPsionicaEnTiradaFija(niveles: NivelesPsionica, t: Accion): Accion {
   let ventaja = t.ventaja;
   const condiciones: CondicionTirada[] = [];
   for (const d of DISCIPLINAS) {
-    const nivel = sheet.psionica[d.id as DisciplinaId] ?? 0;
-    if (nivel <= 0) continue;
+    const nivel = niveles[d.id as DisciplinaId] ?? 0;
+    if (nivel <= 0 || bloqueoPorRequisito(d, niveles)) continue;
     const v = d.ventajas.find((x) => x.acciones.includes(t.id) && nivel >= x.desdeNivelPoseido);
     if (v && !ventaja) ventaja = etiquetaVentaja(d, v);
     d.bonosEnOtrasTiradas.forEach((b, i) => {
@@ -811,14 +828,14 @@ export function pagoConCargas(
 
 // Levitar como movimiento de la ficha: desde Traslación 2, a 10 × nivel poseído
 // metros (la misma velocidad a la que Trasladar mueve objetos).
-export function levitacion(sheet: Sheet): { velocidadM: number; nivel: number } | null {
-  const nivel = sheet.psionica.traslacion ?? 0;
+export function levitacion(niveles: NivelesPsionica): { velocidadM: number; nivel: number } | null {
+  const nivel = niveles.traslacion ?? 0;
   return nivel >= 2 ? { velocidadM: 10 * nivel, nivel } : null;
 }
 
 // Mientras levita, el psiónico esquiva con Física (Traslación, Auto-traslación):
 // la esquiva fija gana la casilla "Levitando: Física" si la ficha puede levitar.
-export function conEsquivaLevitando(sheet: Sheet, t: Accion): Accion {
-  if (t.id !== "defensa" || !levitacion(sheet)) return t;
+export function conEsquivaLevitando(niveles: NivelesPsionica, t: Accion): Accion {
+  if (t.id !== "defensa" || !levitacion(niveles)) return t;
   return { ...t, habilidadAlternativa: { habilidad: "tecnociencia", especialidad: "Física", etiqueta: "Levitando: Física" } };
 }

@@ -152,7 +152,7 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
     sheet: { ...base(), especieId: "arianyi", psionica: { singularidad: 3, resonancia: 2 } },
     estados: [],
     esperado: {
-      nMods: 3,
+      nMods: 4, // 3 de atributos + Resonancia +1 (E2b: no toca ningún derivado de aquí)
       atributos: { fuerza: 1, agilidad: 2, aguante: 1, percepcion: 1, inteligencia: 1, caracter: -1 },
       aplicados: { fortaleza: 1, potencia: 2, reflejos: 2, voluntad: 0, perspicacia: 1, expresion: 0 },
       salud: { vida: 9, fatiga: 8 },

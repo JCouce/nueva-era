@@ -183,6 +183,9 @@ export function EquipoTab({
             resumen={cat.resumen}
             etiqueta={<BotonQuitar onClick={() => onDesequipar(a.instanciaId)} />}
           >
+            {a.viaEspecie && (
+              <p className="mb-2 font-mono text-[10px] uppercase tracking-wide text-info">Vía especie</p>
+            )}
             <DetalleArmaMelee p={cat} />
           </Acordeon>
         );

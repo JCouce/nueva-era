@@ -10,11 +10,12 @@
 // ya están aquí con su clasificación y `estado` pendiente/bloqueado; sus datos
 // operativos (constantes de movimiento, casillas…) se añaden al rasgo cuando la
 // tanda que los consume los necesite, no antes. Los de creación (costes, bolsa)
-// ya están: E2a.
+// ya están (E2a), y la Resonancia +1 y el kerzul también (E2b).
 import type { Modificador } from "../rules/modificadores";
 import type { MotorMetadata } from "../rules/motor";
 import { ATRIBUTOS, type AtributoId } from "../rules/atributos";
 import type { HabilidadId } from "../rules/habilidades";
+import type { MaterialPieza } from "./equipo";
 
 // Peso/altura de referencia (§14.5): solo se enseña junto a los campos libres de
 // Identidad, no se valida. Peso = min-max + porFuerza × Fuerza con especie (M21).
@@ -37,6 +38,9 @@ export type Rasgo = {
   // (rules/especie.ts); el resto del motor no los mira.
   costes?: CostesRasgo;
   bolsaAumentos?: number; // créditos aparte, solo para aumentos (Humanos, M3)
+  // Piezas de ese material sin tope de rareza, en creación (Acceso al Kerzul, M9).
+  // Lo lee excepcionesRareza (rules/especie.ts) → puedeEquiparSinRareza (rules/equipo.ts).
+  excepcionRareza?: ExcepcionRareza;
   motor: MotorMetadata[];
 };
 
@@ -48,6 +52,8 @@ export type CostesRasgo = {
   psionicaNivel1?: number; // coste del nivel 1 de cada disciplina, en vez de 3 (M4)
   psionicaPorNivel?: number; // se suma al coste de cada nivel de cualquier disciplina (M11)
 };
+
+export type ExcepcionRareza = { material: MaterialPieza; maxPiezas: number };
 
 // Casta o linaje: se suman a la especie (§14.1, Noble Ílkrem = Carácter +1 y Fuerza +1).
 export type OpcionEspecie = {
@@ -452,8 +458,9 @@ export const ESPECIES: Especie[] = [
         id: "resonancia_extra",
         label: "Evolución Psiónica",
         texto: "Resonancia +1 sobre lo comprado (puede pasar de 6 y cuenta como requisito).",
+        modificadores: [{ tipo: "disciplina", id: "resonancia", valor: 1 }],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "suma_derivado", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "suma_derivado", estado: "construido" },
         ],
       },
       {
@@ -552,15 +559,9 @@ export const ESPECIES: Especie[] = [
         id: "acceso_kerzul",
         label: "Acceso al Kerzul",
         texto: "Una pieza de kerzul sin tope de rareza, solo en creación; paga su precio.",
-        motor: [
-          {
-            tipo: "habilitador",
-            afecta: { modo: "accion_existente", id: "equipar_pieza" },
-            mecanismo: "gate_instalacion",
-            arbitraje: "duro",
-            estado: "pendiente",
-          },
-        ],
+        creacion: true,
+        excepcionRareza: { material: "kerzul", maxPiezas: 1 },
+        motor: [],
       },
     ],
   },

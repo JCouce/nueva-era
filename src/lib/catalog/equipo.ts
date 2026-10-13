@@ -65,6 +65,10 @@ export { MEJORAS_ARMA, MEJORAS_MUNICION_ESPECIAL, PREFIJO_MEJORA_MUNICION, type 
 
 export type Rareza = "Común" | "Poco Habitual" | "Extraño" | "Muy Extraño" | "Singular";
 
+// Material especial de una pieza: lo que mira una excepción de rareza por especie
+// (Acceso al Kerzul del Arköru, §14.6). Hoy solo las 10 piezas de kerzul.
+export type MaterialPieza = "kerzul";
+
 // De más a menos accesible: el índice es el rango que usa rarezaPermitida()
 // (lib/rules/equipo.ts) para comparar contra el tope de la letra de Recursos.
 export const RAREZA_ORDEN: readonly Rareza[] = [

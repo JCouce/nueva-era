@@ -22,7 +22,9 @@ const eslintConfig = defineConfig([
   // (eleccionCompleta, eleccionesIguales, hayQueAvisar, bloqueoDeEspecie) y lee lo
   // resuelto en ficha.especie; especieDeFicha ya está vetada arriba. Los costes de
   // especie (§14.6) también: la pantalla lee ficha.ajusteCoste / ficha.bolsaAumentos
-  // y el coste del siguiente nivel sale de costeSiguienteNivel.
+  // y el coste del siguiente nivel sale de costeSiguienteNivel. Los niveles de
+  // disciplina (comprado/efectivo/paraEfectos, requisitos rotos) y las excepciones de
+  // rareza, de ficha.psionica / ficha.excepcionesRareza.
   {
     files: ["src/app/**/*.tsx", "src/components/**/*.tsx", "src/hooks/**/*.{ts,tsx}"],
     rules: {
@@ -69,6 +71,11 @@ const eslintConfig = defineConfig([
                 "tieneEscudoMelee",
                 "ajustesDeCoste",
                 "bolsaDeAumentos",
+                "excepcionesRareza",
+                "bonosDeDisciplina",
+                "nivelesDePsionica",
+                "nivelEfectivo",
+                "requisitosRotos",
               ],
               message: "Usa resolverFicha / useFichaResuelta (src/lib/rules/fichaResuelta.ts): lee la FichaResuelta.",
             },

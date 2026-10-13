@@ -4,6 +4,9 @@ import { prepararPoder, usarPoder, efectosDelResultado, type SeleccionPoder } fr
 import { accionesDePsionica } from "./poderes";
 import { defaultSheet, type Sheet } from "./sheet";
 import type { ModificadorConFuente } from "./modificadores";
+import { nivelesDePsionica, SIN_BONOS_DISCIPLINA } from "./psionica";
+const niv = (s: Sheet) => nivelesDePsionica(s, SIN_BONOS_DISCIPLINA).paraEfectos;
+
 
 // Los números de estos casos son los que ya daba la app antes de sacar esta
 // lógica de AccionesTab (docs/pruebas-psionica.md, flujos H8, M y N).
@@ -13,8 +16,8 @@ const SINGULARIDAD_2 = { traslacion: 2, singularidad: 2 };
 const sel = (s: Partial<SeleccionPoder> = {}): SeleccionPoder => ({ elecciones: {}, casillas: [], puntosCargas: 0, ...s });
 
 function preparar(f: Sheet, accionId: string, s: Partial<SeleccionPoder> = {}, modificadores: ModificadorConFuente[] = []) {
-  const poder = accionesDePsionica(f).find((p) => p.accion.id === accionId)!;
-  return prepararPoder({ ficha: f, modificadores, poder, seleccion: sel(s) })!;
+  const poder = accionesDePsionica(f, niv(f)).find((p) => p.accion.id === accionId)!;
+  return prepararPoder({ ficha: f, modificadores, niveles: niv(f), poder, seleccion: sel(s) })!;
 }
 
 describe("prepararPoder", () => {
@@ -149,5 +152,14 @@ describe("efectosDelResultado", () => {
   test("otros grados o sin grado: nada", () => {
     assert.deepEqual(efectosDelResultado(p, "fracaso"), { vida: 0, avisos: [] });
     assert.deepEqual(efectosDelResultado(p, null), { vida: 0, avisos: [] });
+  });
+});
+
+describe("prepararPoder con requisito roto (S25)", () => {
+  test("el bloqueo del requisito manda sobre la fatiga", () => {
+    const f = ficha({ psionica: { induccion: 1 } });
+    const poder = accionesDePsionica(f, niv(f)).find((p) => p.disciplina.id === "induccion")!;
+    const p = prepararPoder({ ficha: f, modificadores: [], niveles: niv(f), poder, seleccion: sel() })!;
+    assert.equal(p.bloqueo, "Requiere Resonancia 1");
   });
 });

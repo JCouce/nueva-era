@@ -4,10 +4,10 @@ import {
   costeSiguienteNivel,
   cumpleRequisito,
   disciplinaPorId,
-  nivelDisciplina,
   presupuestoPsionica,
   puntosPsionicaDisponibles,
   sueloPorRequisitos,
+  textoNivelDisciplina,
   type DisciplinaId,
   type FichaResuelta,
   textoPuntos,
@@ -24,7 +24,9 @@ const RAMAS = [
 // ya resueltos en la FichaResuelta), mismo patrón que AtributosTab (pool de
 // la letra en creación, XP tras aprobar, solo subir). En modo libre (editor de
 // NPC) no hay pool ni XP: 0-6 en las dos direcciones, requisitos incluidos.
-// Los poderes se usan desde Acciones; aquí solo se compra.
+// Los poderes se usan desde Acciones; aquí solo se compra. El stepper va sobre lo
+// comprado; el nivel efectivo (con la Resonancia +1 de especie) y los requisitos
+// rotos salen de ficha.psionica.
 export function PsionicaTab({
   ficha,
   aprobada = false,
@@ -65,14 +67,17 @@ export function PsionicaTab({
             {rama.label}
           </h2>
           {DISCIPLINAS.filter((d) => d.rama === rama.id).map((d) => {
-            const value = nivelDisciplina(sheet, d.id);
+            const nivel = ficha.psionica.disciplinas[d.id];
+            const value = nivel.comprado;
+            const bonos = ficha.psionica.bonos;
             const { coste: costeSiguiente, pista } = costeSiguienteNivel(
               { tipo: "disciplina", id: d.id },
               value,
               ficha.ajusteCoste,
             );
-            const requisitoOk = cumpleRequisito(sheet, d.id);
-            const suelo = sueloPorRequisitos(sheet, d.id);
+            const requisitoOk = cumpleRequisito(sheet, d.id, bonos);
+            const requisitoRoto = ficha.psionica.requisitosRotos.includes(d.id);
+            const suelo = sueloPorRequisitos(sheet, d.id, bonos);
             const req = d.requisito;
             return (
               <HudCard key={d.id} className={`p-3 ${requisitoOk ? "" : "opacity-60"}`}>
@@ -81,9 +86,15 @@ export function PsionicaTab({
                     <span className="block truncate font-display text-base font-semibold uppercase leading-none">
                       {d.label}
                     </span>
+                    {nivel.bono !== 0 && (
+                      <span className="mt-1 block font-mono text-[10px] uppercase text-info">
+                        nivel {textoNivelDisciplina(nivel, ficha.modificadores, d.id)}
+                      </span>
+                    )}
                     {req && (
                       <span className={`mt-1 block font-mono text-[10px] uppercase ${requisitoOk ? "text-muted" : "text-danger"}`}>
-                        requiere {disciplinaPorId(req.disciplina).label} {req.nivel}
+                        {requisitoRoto ? "requisito no cumplido: " : "requiere "}
+                        {disciplinaPorId(req.disciplina).label} {req.nivel}
                       </span>
                     )}
                     {pista && !libre && value < DISCIPLINA_MAX && (
@@ -107,7 +118,7 @@ export function PsionicaTab({
                     onSell={() => onSet(d.id, value - 1)}
                   />
                 </div>
-                {d.acciones.length === 0 && value > 0 && (
+                {d.acciones.length === 0 && nivel.efectivo > 0 && (
                   <p className="mt-2 font-mono text-[10px] leading-relaxed text-muted">
                     Sus poderes aún no están en la app; llegan disciplina a disciplina.
                   </p>

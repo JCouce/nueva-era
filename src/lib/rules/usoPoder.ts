@@ -28,7 +28,7 @@ import {
   type PoderResuelto,
   type ToggleFatiga,
 } from "./poderes";
-import type { Grado } from "./psionica";
+import type { Grado, NivelesPsionica } from "./psionica";
 import type { Sheet } from "./sheet";
 import { fatigaEfectiva } from "./vitalidad";
 import { FUENTES_EXTERNAS_FATIGA } from "../catalog/psionica";
@@ -45,6 +45,8 @@ export const SELECCION_PODER_VACIA: SeleccionPoder = { elecciones: {}, casillas:
 export type EntradaPoder = {
   ficha: Sheet;
   modificadores: ModificadorConFuente[];
+  // FichaResuelta.psionica.paraEfectos (Resonancia +1 de especie incluida, tope 6).
+  niveles: NivelesPsionica;
   poder: PoderDisponible;
   seleccion: SeleccionPoder;
 };
@@ -68,13 +70,13 @@ export type PoderPreparado = {
 };
 
 // null = el personaje no llega al nivel de la acción.
-export function prepararPoder({ ficha, modificadores, poder, seleccion }: EntradaPoder): PoderPreparado | null {
+export function prepararPoder({ ficha, modificadores, niveles, poder, seleccion }: EntradaPoder): PoderPreparado | null {
   const resuelto = resolverPoder(poder.accion, {
     nivelPoseido: poder.nivelPoseido,
     elecciones: seleccion.elecciones,
     aplicados: aplicados(ficha, modificadores),
     habilidades: valoresHabilidad(ficha),
-    niveles: ficha.psionica,
+    niveles,
     disciplina: poder.disciplina,
     pesoKg: seleccion.pesoKg,
   });
@@ -90,7 +92,9 @@ export function prepararPoder({ ficha, modificadores, poder, seleccion }: Entrad
   const coste = pago?.coste ?? sinCargas;
   const fatigaActual = fatigaEfectiva(ficha);
   const bloqueo =
-    resuelto.exceso?.bloqueo ?? (coste ? bloqueoPorFatiga(poder.accion, coste.total, Math.max(0, fatigaActual)) : null);
+    poder.bloqueo ??
+    resuelto.exceso?.bloqueo ??
+    (coste ? bloqueoPorFatiga(poder.accion, coste.total, Math.max(0, fatigaActual)) : null);
 
   // Casillas externas marcadas (Xovromium +1, Supresora −2): líneas del desglose.
   const base = tiradaDePoder(poder.accion, resuelto);

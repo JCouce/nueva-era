@@ -319,7 +319,7 @@ export function CharacterSheet({
     );
   };
   const commitDisciplina = (id: DisciplinaId, value: number) => {
-    setSheet((s) => setDisciplinaValue(s, id, value, ficha.ajusteCoste));
+    setSheet((s) => setDisciplinaValue(s, id, value, ficha.ajusteCoste, ficha.psionica.bonos));
     scheduleCommit(
       `disciplina:${id}`,
       () => setDisciplinaAction(characterId, id, value),
@@ -689,6 +689,7 @@ export function CharacterSheet({
               creditos={creditos}
               topeRareza={topeRareza}
               bolsaAumentos={ficha.bolsaAumentos}
+              excepcionRareza={{ estado: characterStatus, esMaster, excepciones: ficha.excepcionesRareza }}
               onEquipar={commitEquipar}
               onComprarGranada={commitComprarGranada}
               onComprarFarmaco={commitComprarFarmaco}

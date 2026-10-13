@@ -27,6 +27,7 @@ import {
   bonoAlcance,
   modoElegido,
   accionesDePsionica,
+  textoNivelEnAcciones,
   etiquetaEconomia,
   textoValor,
   prepararPoder,
@@ -49,6 +50,8 @@ import {
   type Sheet,
   type EstadoCondiciones,
   type FichaResuelta,
+  type NivelesPsionica,
+  type DisciplinaId,
   type ModificadorConFuente,
   type MaterialTier,
 } from "@/lib/rules";
@@ -366,15 +369,17 @@ function FilaPoder({
   poder,
   sheet,
   mods,
+  niveles,
   onAbrir,
 }: {
   poder: PoderDisponible;
   sheet: Sheet;
   mods: ModificadorConFuente[];
+  niveles: NivelesPsionica;
   onAbrir: (p: PoderDisponible) => void;
 }) {
   // Mismo cálculo que el modal (usoPoder.ts), sin nada elegido todavía.
-  const preparado = prepararPoder({ ficha: sheet, modificadores: mods, poder, seleccion: SELECCION_PODER_VACIA });
+  const preparado = prepararPoder({ ficha: sheet, modificadores: mods, niveles, poder, seleccion: SELECCION_PODER_VACIA });
   if (!preparado) return null;
   const p = preparado.resuelto;
   // A cuánto tira, igual que FilaTirada (null en poderes sin dado).
@@ -412,14 +417,16 @@ function FilaPoder({
             </span>
           )}
           <p className="mt-1 font-mono text-[11px] text-muted">{datos.join(" · ")}</p>
+          {poder.bloqueo && <p className="mt-1 font-mono text-[11px] text-danger">{poder.bloqueo}</p>}
         </div>
         {mod && tirada && (
           <span className="font-mono text-2xl tabular-nums text-info">{signo(mod.total + sumaAjustesFijos(tirada))}</span>
         )}
         <button
           type="button"
+          disabled={!!poder.bloqueo}
           onClick={() => onAbrir(poder)}
-          className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95"
+          className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted disabled:active:scale-100"
         >
           Usar
         </button>
@@ -612,7 +619,8 @@ export function AccionesTab({
     });
   };
 
-  const poderes = useMemo(() => accionesDePsionica(sheet), [sheet]);
+  const niveles = ficha.psionica.paraEfectos;
+  const poderes = useMemo(() => accionesDePsionica(sheet, niveles), [sheet, niveles]);
   const disciplinasConPoderes = [...new Set(poderes.map((p) => p.disciplina))];
   // Poder cuyo modal está abierto y lo que el jugador ha elegido en él. Las
   // reglas (coste, bloqueo, tirada, efectos de usarlo) salen de usoPoder.ts:
@@ -627,7 +635,7 @@ export function AccionesTab({
   // Se recalcula en cada render contra la ficha actual: "Tirar otra vez" se
   // apaga si ya no llega la fatiga.
   const preparado = poderAbierto
-    ? prepararPoder({ ficha: sheet, modificadores: mods, poder: poderAbierto.poder, seleccion: poderAbierto.seleccion })
+    ? prepararPoder({ ficha: sheet, modificadores: mods, niveles, poder: poderAbierto.poder, seleccion: poderAbierto.seleccion })
     : null;
 
   // Sobrecarga del último uso de un poder (null si no cruzó el umbral): nivel
@@ -665,7 +673,7 @@ export function AccionesTab({
 
   // Abre (o reabre, al cambiar una elección) el modal del poder.
   const abrirPoder = (poder: PoderDisponible, seleccion: SeleccionPoder = SELECCION_PODER_VACIA) => {
-    const p = prepararPoder({ ficha: sheet, modificadores: mods, poder, seleccion });
+    const p = prepararPoder({ ficha: sheet, modificadores: mods, niveles, poder, seleccion });
     if (!p) return;
     if (p.tirada) abrir(p.tirada, p.enEspecialidad, false);
     setSobrecarga(null);
@@ -1047,12 +1055,12 @@ export function AccionesTab({
           {disciplinasConPoderes.map((d) => (
             <div key={d.id} className="flex flex-col gap-2">
               <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">
-                {d.label} · nivel {poderes.find((p) => p.disciplina === d)!.nivelPoseido}
+                {d.label} · {textoNivelEnAcciones(ficha.psionica.disciplinas[d.id as DisciplinaId])}
               </h3>
               {poderes
                 .filter((p) => p.disciplina === d)
                 .map((p) => (
-                  <FilaPoder key={p.accion.id} poder={p} sheet={sheet} mods={mods} onAbrir={abrirPoder} />
+                  <FilaPoder key={p.accion.id} poder={p} sheet={sheet} mods={mods} niveles={niveles} onAbrir={abrirPoder} />
                 ))}
             </div>
           ))}
@@ -1101,7 +1109,7 @@ export function AccionesTab({
           </h2>
           {ACCIONES.filter((t) => t.grupo === grupo)
             .map(conCondicionesDeEquipo)
-            .map((t) => conPsionicaEnTiradaFija(sheet, conEsquivaLevitando(sheet, t)))
+            .map((t) => conPsionicaEnTiradaFija(niveles, conEsquivaLevitando(niveles, t)))
             // Defensa/Esquiva (fija) primero, Bloquear-con-X (generado por
             // equipo) detrás — mismo orden que Ataques: lo fijo antes que lo
             // que trae cada arma. "Volar" entra igual dentro de "Acciones".

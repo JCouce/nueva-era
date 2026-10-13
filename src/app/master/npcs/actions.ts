@@ -21,10 +21,12 @@ import {
   clampInt,
   addEspecialidad,
   AJUSTE_NEUTRO,
+  bonosDeDisciplina,
+  modificadoresActivos,
   removeEspecialidad,
   equipar,
   desequipar,
-  piezaEquipadaSchema,
+  piezaEquipadaEntradaSchema,
   ajustarRecurso,
   comprarRecarga,
   ajustarMaterial,
@@ -228,7 +230,8 @@ export async function setAtributoNpcAction(
 }
 
 // Psiónica libre: sin pool ni XP, 0-6 en las dos direcciones, pero con los
-// requisitos entre disciplinas (son regla del sistema, no de creación).
+// requisitos entre disciplinas (son regla del sistema, no de creación), contra el
+// nivel efectivo: la Resonancia +1 de especie es derivada y también le llega (§14.3).
 export async function setDisciplinaNpcAction(
   npcId: string,
   disciplinaId: DisciplinaId,
@@ -237,7 +240,8 @@ export async function setDisciplinaNpcAction(
   if (!esDisciplinaId(disciplinaId)) return { ok: false, error: "Disciplina desconocida" };
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(npcId, setNivelDisciplina(ctx.sheet, disciplinaId, value));
+  const bonos = bonosDeDisciplina(modificadoresActivos(ctx.sheet));
+  return persist(npcId, setNivelDisciplina(ctx.sheet, disciplinaId, value, bonos));
 }
 
 export async function setHabilidadNpcAction(
@@ -277,7 +281,8 @@ export async function removeEspecialidadNpcAction(
 }
 
 export async function equiparNpcAction(npcId: string, pieza: PiezaEquipada): Promise<NpcResult> {
-  const parsed = piezaEquipadaSchema.safeParse(pieza);
+  // Sin `viaEspecie`: el NPC no tiene tope de rareza ni excepción que marcar (§14.3).
+  const parsed = piezaEquipadaEntradaSchema.safeParse(pieza);
   if (!parsed.success) return { ok: false, error: "Pieza de equipo inválida" };
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };

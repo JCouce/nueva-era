@@ -70,7 +70,7 @@ export function EstadoPanel({ ficha }: { ficha: FichaResuelta }) {
   const { vida, fatiga } = ficha.salud;
   const mov = ficha.movimiento;
   const vue = vuelo(sheet);
-  const lev = levitacion(sheet);
+  const lev = levitacion(ficha.psionica.paraEfectos);
   const conExo = mov.bonoExoesqueleto > 0;
   const notaExo = conExo ? `+${mov.bonoExoesqueleto} exoesqueleto` : undefined;
   const tonoMov = conExo ? "text-info" : "text-foreground";

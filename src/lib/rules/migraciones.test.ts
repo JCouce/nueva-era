@@ -282,6 +282,29 @@ describe("v10 → v11: se añade el stock de munición especial", () => {
   });
 });
 
+describe("v14 → v15: viaEspecie en las piezas equipadas", () => {
+  test("no mueve nada: ninguna pieza existente lleva la marca", () => {
+    const equipo = [{ instanciaId: "a1", catalogoId: "kerzul_maza" }];
+    const { ficha, aplicadas } = migrar({ schemaVersion: 14, especieId: "arkoru", equipo }, 15);
+    assert.equal(ficha.schemaVersion, 15);
+    assert.equal(aplicadas.length, 1);
+    assert.deepEqual(ficha.equipo, equipo);
+    assert.equal(parseSheet(ficha).equipo[0].viaEspecie, undefined);
+  });
+
+  test("parseSheet conserva la marca; una pieza con la marca mal formada se descarta entera, como cualquier pieza inválida", () => {
+    const s = parseSheet({
+      schemaVersion: 15,
+      equipo: [
+        { instanciaId: "a1", catalogoId: "kerzul_maza", viaEspecie: true },
+        { instanciaId: "a2", catalogoId: "kerzul_punal", viaEspecie: "si" },
+      ],
+    });
+    assert.equal(s.equipo[0].viaEspecie, true);
+    assert.equal(s.equipo.length, 1);
+  });
+});
+
 describe("parseSheet migra antes de normalizar", () => {
   test("una ficha v1 entra por la puerta y sale al día", () => {
     const s = parseSheet({ schemaVersion: 1, especie: "Arkorü", edad: 40 });

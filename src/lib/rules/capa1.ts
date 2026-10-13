@@ -12,6 +12,7 @@ import type { PiezaEquipada } from "./equipo";
 import type { MotorMetadata } from "./motor";
 import type { Sheet } from "./sheet";
 import { accionesDePsionica } from "./poderes";
+import type { NivelesPsionica } from "./psionica";
 
 export type FuenteCapa1 = {
   instanciaId: string;
@@ -43,14 +44,17 @@ function motorDePieza(cat: Equipo, nivel: number | undefined): MotorMetadata[] {
   return cat.motor ?? [];
 }
 
-export function fuentesDeCapa1(sheet: Sheet): FuenteCapa1[] {
-  return [...fuentesDeEquipo(sheet), ...fuentesDePoderes(sheet)];
+// `niveles`: FichaResuelta.psionica.paraEfectos.
+export function fuentesDeCapa1(sheet: Sheet, niveles: NivelesPsionica): FuenteCapa1[] {
+  return [...fuentesDeEquipo(sheet), ...fuentesDePoderes(sheet, niveles)];
 }
 
 // Un poder no tiene instancia: su id de acción hace de instanciaId y de
 // catalogoId, y `nivel` es el poseído en la disciplina.
-function fuentesDePoderes(sheet: Sheet): FuenteCapa1[] {
-  return accionesDePsionica(sheet).map(({ accion, nivelPoseido }) => ({
+function fuentesDePoderes(sheet: Sheet, niveles: NivelesPsionica): FuenteCapa1[] {
+  return accionesDePsionica(sheet, niveles)
+    .filter((p) => !p.bloqueo)
+    .map(({ accion, nivelPoseido }) => ({
     instanciaId: accion.id,
     catalogoId: accion.id,
     nivel: nivelPoseido,

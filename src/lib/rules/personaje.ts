@@ -83,9 +83,9 @@ const MECANISMOS_SIEMPRE: MecanismoMotor[] = ["siempre_activo", "suma_derivado"]
 // TODO(revisar): quedan como TEXTO, por regla, rasgos cuya prosa sí habla de una
 // tirada pero que el catálogo clasifica como nota_fija (Falla metabólica,
 // Deslumbramiento, Tensión ósea, Tras esquivar) o como acción nueva (Peaje
-// neurológico, Visión UV e Infrarroja), y Acceso al Kerzul (gate de creación, sin
-// `creacion: true`). Metabolismo resistente sale TIRADA (ajuste_fijo sobre
-// usar_farmaco) aunque no es una tirada propiamente. Ver personaje.test.ts.
+// neurológico, Visión UV e Infrarroja). Metabolismo resistente sale TIRADA
+// (ajuste_fijo sobre usar_farmaco) aunque no es una tirada propiamente. Ver
+// personaje.test.ts.
 export function etiquetaRasgo(rasgo: Pick<Rasgo, "creacion" | "motor">): EtiquetaRasgo {
   if (rasgo.creacion) return "creacion";
   const { motor } = rasgo;

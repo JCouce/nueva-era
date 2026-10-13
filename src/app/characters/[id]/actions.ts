@@ -18,7 +18,13 @@ import {
   costeDeRetirar,
   rarezaDePieza,
   rarezaPermitida,
-  piezaEquipadaSchema,
+  piezaEquipadaEntradaSchema,
+  topeRarezaDeCompra,
+  excepcionesRareza,
+  bonosDeDisciplina,
+  modificadoresActivos,
+  type BonosDisciplina,
+  type EstadoFicha,
   ajustarRecurso,
   comprarRecarga,
   ajustarMaterial,
@@ -83,6 +89,10 @@ type Editable = {
   // Ajuste de coste de la especie (§14.6), resuelto aquí con la ficha de la base:
   // el mismo que calcula resolverFicha en la pantalla.
   ajuste: AjusteCoste;
+  // Bonos de nivel de disciplina (Resonancia +1, §14.6): los requisitos miran el
+  // nivel efectivo. Los mismos que FichaResuelta.psionica.bonos.
+  bonosDisciplina: BonosDisciplina;
+  estado: EstadoFicha;
   aprobada: boolean;
   snapshot: AprobacionSnapshot | null;
   xp: number;
@@ -115,6 +125,8 @@ async function loadEditable(characterId: string): Promise<Editable | { error: st
   return {
     sheet,
     ajuste: ajustesDeCoste(especieDeFicha(sheet)),
+    bonosDisciplina: bonosDeDisciplina(modificadoresActivos(sheet)),
+    estado: character.status,
     aprobada: character.status === "APPROVED",
     snapshot: parseSnapshot(character.approvedSnapshot),
     xp: character.xp,
@@ -214,14 +226,14 @@ export async function setDisciplinaAction(
   if ("error" in ctx) return { ok: false, error: ctx.error };
 
   if (!ctx.aprobada) {
-    return persist(characterId, setDisciplinaValue(ctx.sheet, disciplinaId, value, ctx.ajuste));
+    return persist(characterId, setDisciplinaValue(ctx.sheet, disciplinaId, value, ctx.ajuste, ctx.bonosDisciplina));
   }
 
   const actual = nivelDisciplina(ctx.sheet, disciplinaId);
   const objetivo = Math.max(actual, Math.min(DISCIPLINA_MAX, Math.round(value)));
   if (objetivo === actual) return { ok: true, sheet: ctx.sheet, xp: ctx.xp };
 
-  const sheet = setNivelDisciplina(ctx.sheet, disciplinaId, objetivo);
+  const sheet = setNivelDisciplina(ctx.sheet, disciplinaId, objetivo, ctx.bonosDisciplina);
   if (sheet === ctx.sheet) return { ok: false, error: "No cumples el requisito de la disciplina" };
 
   const coste = costeSubidaXp({ tipo: "disciplina", id: disciplinaId }, actual, objetivo, ctx.ajuste);
@@ -300,28 +312,35 @@ export async function equiparAction(
   pieza: PiezaEquipada,
 ): Promise<SaveResult> {
   // El shape llega del cliente sin garantías: se valida aquí, no solo se confía
-  // en que `equipar` recorte lo que no reconoce.
-  const parsed = piezaEquipadaSchema.safeParse(pieza);
+  // en que `equipar` recorte lo que no reconoce. `viaEspecie` no se acepta del
+  // cliente: lo pone el servidor abajo.
+  const parsed = piezaEquipadaEntradaSchema.safeParse(pieza);
   if (!parsed.success) return { ok: false, error: "Pieza de equipo inválida" };
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
+  let nueva: PiezaEquipada = parsed.data;
 
   // Tope de rareza por letra de Recursos (docs/sistema.md §2): solo en
   // creación, nunca al máster (decisión del usuario, 2026-09-11) — aprobada
   // o editando el máster, cualquier rareza pasa siempre que llegue el saldo.
+  // Excepción de especie (kerzul del Arköru, §14.6): la decide
+  // puedeEquiparSinRareza y la pieza queda marcada `viaEspecie`; se paga igual.
   if (!ctx.aprobada && !ctx.esMaster) {
     const letra = ctx.sheet.prioridades.recursos;
     const tope = letra ? RECURSOS_POR_LETRA[letra].rareza : null;
-    const rareza = rarezaDePieza(parsed.data);
-    if (tope && !rarezaPermitida(rareza, tope)) {
-      return { ok: false, error: `Tu letra de Recursos no llega a ${rareza}: tope ${tope}.` };
-    }
+    const compra = topeRarezaDeCompra(ctx.sheet, nueva.catalogoId, rarezaDePieza(nueva), tope, {
+      estado: ctx.estado,
+      esMaster: ctx.esMaster,
+      excepciones: excepcionesRareza(especieDeFicha(ctx.sheet)),
+    });
+    if (compra.tipo === "bloqueada") return { ok: false, error: compra.motivo };
+    if (compra.tipo === "viaEspecie") nueva = { ...nueva, viaEspecie: true };
   }
 
-  const coste = costeDePieza(parsed.data);
+  const coste = costeDePieza(nueva);
   if (coste > ctx.creditos) return { ok: false, error: "No tienes créditos suficientes" };
 
-  const sheet = equipar(ctx.sheet, parsed.data);
+  const sheet = equipar(ctx.sheet, nueva);
   if (sheet === ctx.sheet) return { ok: false, error: "Pieza de equipo inválida" };
 
   const creditos = ctx.creditos - coste;

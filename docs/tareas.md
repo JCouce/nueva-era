@@ -1349,7 +1349,7 @@ problema completo en `docs/modificadores-tiradas.md` §8. **Resuelta:** el §8 s
 el 2026-09-23 (condiciones con `alcance` desde el equipo) y la psiónica entra por
 `conPsionicaEnTiradaFija` (2026-09-30).
 
-### Especies reales ⬜ (plan cerrado 2026-10-09; E0 y E1 hechas)
+### Especies reales ⬜ (plan cerrado 2026-10-09; E0, E1 y E2 hechas)
 
 Plan y porqués en `docs/propuesta-especies.md` (decisiones del usuario en §5b, ninguna
 pendiente de Murillo); flujo en `docs/diagrama-especies.png`. Fuente: `docs/Especies.pdf`.
@@ -1411,13 +1411,20 @@ especie". `viaEspecie` sube `SCHEMA_VERSION` con paso de migración y test, como
 - [x] Coste de habilidad por casta, en creación y XP (`costeSubidaXp` sale a `rules/progresion.ts`)
       *(E2a: `costes` en el rasgo del catálogo → `ajustesDeCoste` → `FichaResuelta.ajusteCoste`;
       especialidades sin ajuste; pista "−1 casta" junto al coste)*
-- [ ] Modificador nuevo de tipo *disciplina*: Resonancia +1 del arianyi (adicional, puede
+- [x] Modificador nuevo de tipo *disciplina*: Resonancia +1 del arianyi (adicional, puede
       pasar de 6, cuenta como requisito; requisitos contra el nivel efectivo)
+      *(E2b: `{ tipo: "disciplina" }` en el rasgo → `FichaResuelta.psionica` con comprado /
+      efectivo / paraEfectos; requisitos por parámetro `BonosDisciplina`; poderes, tiradas
+      fijas, Levitar y Recursos leen `paraEfectos` (7 → fila del 6, S24); requisito roto
+      marcado, S25, con `TODO(revisar)` sobre los poderes)*
 - [x] Descuentos psiónicos: nivel 1 a coste 2 (arianyi), −1 por nivel (Maolher), creación y XP
       *(E2a: mismo `AjusteCoste`; Resonancia incluida; NPC neutro vía `resolverFicha({ libre })`)*
 - [x] Bolsa de 60.000 del humano visible como "pendiente de aumentos"
       *(E2a: `bolsaAumentos` en el rasgo → `FichaResuelta.bolsaAumentos`; línea en Tienda y Recursos)*
-- [ ] Kerzul del Arköru sin rareza: una pieza, marca `viaEspecie`, solo en borrador
+- [x] Kerzul del Arköru sin rareza: una pieza, marca `viaEspecie`, solo en borrador
+      *(E2b: `excepcionRareza` en el rasgo y `material: "kerzul"` en las 10 piezas →
+      `puedeEquiparSinRareza` / `topeRarezaDeCompra` en `rules/equipo.ts`, que usan
+      `equiparAction` (marca en servidor) y la Tienda; ficha v15)*
 
 **E3 — Derivados**
 - [ ] Movimiento: fórmulas del Arköru (salto vertical con mínimo 15 cm), nado del Arianyi,

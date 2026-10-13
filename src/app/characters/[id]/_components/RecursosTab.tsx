@@ -175,7 +175,7 @@ export function RecursosTab({
       />
       {onAjustarFatigaTemporal &&
         onTerminarEscena &&
-        ((sheet.psionica.traslacion ?? 0) > 0 || sheet.fatigaTemporal > 0) && (
+        (ficha.psionica.paraEfectos.traslacion > 0 || sheet.fatigaTemporal > 0) && (
           <FatigaTemporalCard
             valor={sheet.fatigaTemporal}
             efectiva={fatigaEfectiva(sheet)}
