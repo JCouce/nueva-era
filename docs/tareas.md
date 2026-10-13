@@ -1447,10 +1447,20 @@ ficha una vez, ya con costes de casta, descuentos y derivados)
       Queda `scripts/reset-fichas-especies.ts` por si un día hace falta
 
 **M1 — Montaje único de tiradas** (propuesta §3.1; cierra el hallazgo de umbrales de arriba)
-- [ ] Tests de caracterización de cada lista de Acciones antes de mover nada
-- [ ] `montarTirada`: total + desglose + márgenes de crítico/pifia
+(2026-10-13: en dos pasadas. **M1a**: `montarTirada` en un solo sitio, sin cambiar ningún
+número (caracterización de los 8 sitios de la UI y de la tirada de `prepararPoder`, la VTM
+"complejo" pasa a dato). **M1b**, cambios de comportamiento: umbrales de salud y fatiga
+dentro, vía los modificadores de la `FichaResuelta`, con la vida/fatiga **del combatiente**
+en un combate en curso y **de la ficha** fuera; fatiga **efectiva** (la temporal de Proeza
+cuenta para los umbrales mientras dura la escena, como dice `sheet.ts`). Test de que un
+personaje herido que usa un poder tira con −1: de eso dependen Estabilización, Derivación
+nv4 e Hipomanía. Y el daño melee/bayoneta/Sutil desde la ficha resuelta. Decidido tras
+M1a: en M1b la fila de Acciones enseña el modificador completo sin casillas (`modificador`,
+no `base`); con dos opciones que bajen el margen de crítico gana el más bajo, se revisa en E4)
+- [x] Tests de caracterización de cada lista de Acciones antes de mover nada *(M1a: `montaje-caracterizacion.test.ts`, los 8 sitios + `prepararPoder`; ningún esperado cambió al migrar)*
+- [x] `montarTirada`: total + desglose + márgenes de crítico/pifia *(M1a: `rules/montaje.ts`, con `tirarMontada`; ESLint veta las sumas sueltas en componentes)*
 - [ ] Penalizadores por umbral de salud y fatiga dentro (`modificadoresDeUmbrales`)
-- [ ] Sacar de `AccionesTab` la suma del modal y el crítico de la VTM
+- [x] Sacar de `AccionesTab` la suma del modal y el crítico de la VTM *(M1a: la VTM "complejo" lleva `margenCriticoExito: 0` como dato de la opción)*
 - [x] Índice de casillas sin el memo parcial `[sheet.equipo]` + `eslint-disable` (hecho en E1b: sale de `resolverFicha`)
 - [ ] El daño de armas melee/bayoneta y el aplicado Sutil salen aún de la ficha en reposo (`combate.ts`, `TODO(revisar)`): con un estado que baje Fuerza, la tirada lo refleja y el daño no
 

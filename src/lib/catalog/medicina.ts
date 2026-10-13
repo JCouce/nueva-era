@@ -151,9 +151,8 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
       // del jugador al tirar (modo de disparo, tramo...). Solo esta tirada
       // (alcance tiradaId "medicina"), a propósito: no se extiende a las
       // tiradas de fármacos aunque la prosa también las mencione — eso
-      // queda aparte si hace falta más adelante. resolverTirada() lee la
-      // opción elegida en AccionesTab.tsx (tirar()) para bajar el umbral de
-      // crítico a 0 en el lado de éxito.
+      // queda aparte si hace falta más adelante. El umbral va como dato de la
+      // opción (`margenCriticoExito: 0`) y lo aplica montarTirada (montaje.ts).
       condiciones: [
         {
           id: "vtm_tratamiento",
@@ -166,6 +165,7 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
               etiqueta: "Estado complejo / estabilización / síntesis",
               valor: 0,
               nota: "Cualquier éxito en esta tirada cuenta como crítico.",
+              margenCriticoExito: 0,
             },
           ],
           porDefecto: "normal",

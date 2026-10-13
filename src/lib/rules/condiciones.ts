@@ -23,7 +23,11 @@ import type { AlcanceModificador } from "./modificadores";
 // §8, "texto informativo condicionado": Visor Nocturno, Mangual, Kerzul...).
 // Independiente de `valorActivo`/`valor`: una condición puede llevar las dos
 // cosas, solo el número, o solo la nota (con valor 0).
-export type OpcionCondicion = { id: string; etiqueta: string; valor: number; nota?: string };
+//
+// `margenCriticoExito`: con la opción elegida, un éxito es crítico a partir de este
+// margen en vez del general (VTM nv4 "complejo": 0, cualquier éxito). Lo lee
+// montarTirada (montaje.ts).
+export type OpcionCondicion = { id: string; etiqueta: string; valor: number; nota?: string; margenCriticoExito?: number };
 
 export type CondicionTirada = (
   | {

@@ -25,6 +25,10 @@ const eslintConfig = defineConfig([
   // y el coste del siguiente nivel sale de costeSiguienteNivel. Los niveles de
   // disciplina (comprado/efectivo/paraEfectos, requisitos rotos) y las excepciones de
   // rareza, de ficha.psionica / ficha.excepcionesRareza.
+  //
+  // Y las tiradas (M1, docs/modificadores-tiradas.md "Montaje"): total, desglose y
+  // márgenes de crítico salen de montarTirada / tirarMontada (rules/montaje.ts). La
+  // pantalla no suma aplicado, habilidad, casillas, tramos ni alcance por su cuenta.
   {
     files: ["src/app/**/*.tsx", "src/components/**/*.tsx", "src/hooks/**/*.{ts,tsx}"],
     rules: {
@@ -81,6 +85,20 @@ const eslintConfig = defineConfig([
                 "requisitosRotos",
               ],
               message: "Usa resolverFicha / useFichaResuelta (src/lib/rules/fichaResuelta.ts): lee la FichaResuelta.",
+            },
+            {
+              name: "@/lib/rules",
+              importNames: [
+                "modificadorAccion",
+                "bonoAlcance",
+                "desgloseAlcance",
+                "resolverTirada",
+                "valorCondiciones",
+                "valorBonosTramo",
+                "desgloseCondiciones",
+                "desgloseBonosTramo",
+              ],
+              message: "Usa montarTirada / tirarMontada (src/lib/rules/montaje.ts).",
             },
             {
               name: "@/lib/rules",

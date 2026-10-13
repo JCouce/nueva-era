@@ -6,8 +6,9 @@ import {
   GRUPOS_ACCION,
   APLICADOS,
   HABILIDADES,
-  modificadorAccion,
-  resolverTirada,
+  montarTirada,
+  tirarMontada,
+  SIN_ELECCION,
   resolverDanio,
   resolverVuelo,
   gastoTotal,
@@ -21,11 +22,7 @@ import {
   accionesDeFarmacos,
   accionesDirectasDeFarmacos,
   recursoDe,
-  valorCondiciones,
-  valorBonosTramo,
   consultaIndiceCondiciones,
-  bonoAlcance,
-  modoElegido,
   accionesDePsionica,
   textoNivelEnAcciones,
   etiquetaEconomia,
@@ -49,7 +46,9 @@ import {
   type AccionDirecta,
   type Sheet,
   type EstadoCondiciones,
+  type EleccionTirada,
   type FichaResuelta,
+  type TiradaMontada,
   type NivelesPsionica,
   type DisciplinaId,
   type ModificadorConFuente,
@@ -68,10 +67,6 @@ import { type DanioInfo, type Lanzamiento } from "@/components/ResultadoTirada";
 
 function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
-}
-
-function sumaAjustesFijos(tirada: Accion): number {
-  return (tirada.ajustesFijos ?? []).reduce((t, a) => t + a.valor, 0);
 }
 
 // Color por resultado — mismas 4 categorías que ya usa ContenidoResultado
@@ -131,7 +126,6 @@ function FilaTirada({
   onAbrir: (t: Accion, enEspecialidad: boolean, sutilActivo: boolean) => void;
 }) {
   const sheet = ficha.ficha;
-  const mods = ficha.modificadores;
   const [enEspecialidad, setEnEspecialidad] = useState(false);
   // Sutil (Feature 1, docs/equipamiento.md:848-850): pre-seleccionado por el
   // aplicado que dé más bonificador de ATAQUE, no de daño — es la parte que
@@ -153,9 +147,8 @@ function FilaTirada({
   const especialidades = !alternativa && tirada.habilidad
     ? sheet.habilidades[tirada.habilidad].especialidades
     : [];
-  const mod = modificadorAccion(sheet, efectiva, enEspEfectiva, mods, sutilActivo);
-  const aplicadoActivoId = sutilActivo && tirada.aplicadoSutil ? tirada.aplicadoSutil : tirada.aplicado;
-  const nombreAplicado = APLICADOS.find((a) => a.id === aplicadoActivoId)!;
+  const montada = montarTirada(ficha, efectiva, { ...SIN_ELECCION, enEspecialidad: enEspEfectiva, sutil: sutilActivo });
+  const nombreAplicado = APLICADOS.find((a) => a.id === montada.aplicado.id)!;
   const nombreHabilidad = efectiva.habilidad
     ? HABILIDADES.find((h) => h.id === efectiva.habilidad)!.label +
       (alternativa ? ` (${tirada.habilidadAlternativa!.especialidad}${enEspEfectiva ? "" : ", mitad"})` : "")
@@ -187,21 +180,25 @@ function FilaTirada({
             {tirada.label}
           </span>
           <span className="mt-1 block font-mono text-[10px] uppercase text-muted">
-            {nombreAplicado.abbr} {mod.aplicado}
+            {nombreAplicado.abbr} {montada.aplicado.valor}
             {nombreHabilidad && (
               <>
                 {" + "}
-                {nombreHabilidad} {mod.habilidad}
+                {nombreHabilidad} {montada.habilidad?.valor}
               </>
             )}
-            {(tirada.ajustesFijos ?? []).map((a, i) => (
+            {montada.ajustesFijos.map((a, i) => (
               <span key={i}> {signo(a.valor)}</span>
             ))}
           </span>
         </div>
 
+        {/* TODO(revisar): la fila enseña la base (aplicado + habilidad + ajustes
+            fijos), sin los modificadores de alcance que el modal sí suma (el +1 del
+            traje a las salvaciones, el −2 de Aturdido a Defensa…). Así era antes de
+            montarTirada; decidir si la fila debe enseñar montada.modificador. */}
         <span className="font-mono text-2xl tabular-nums text-info">
-          {signo(mod.total + sumaAjustesFijos(tirada))}
+          {signo(montada.base)}
         </span>
 
         <button
@@ -383,9 +380,8 @@ function FilaPoder({
   if (!preparado) return null;
   const p = preparado.resuelto;
   // A cuánto tira, igual que FilaTirada (null en poderes sin dado).
-  const { tirada, enEspecialidad } = preparado;
-  const mod = tirada ? modificadorAccion(sheet, tirada, enEspecialidad, mods) : null;
-  const nombreAplicado = tirada ? APLICADOS.find((a) => a.id === tirada.aplicado)! : null;
+  const { tirada, enEspecialidad, montada } = preparado;
+  const nombreAplicado = montada ? APLICADOS.find((a) => a.id === montada.aplicado.id)! : null;
   const nombreHabilidad = tirada?.habilidad ? HABILIDADES.find((h) => h.id === tirada.habilidad)!.label : null;
   const danio = p.resolucion.tipo === "ataque" ? p.resolucion.danio : null;
   // Coste ya pasado por los descuentos por nivel (sin casillas marcadas).
@@ -401,17 +397,17 @@ function FilaPoder({
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <span className="block font-display text-base font-semibold uppercase leading-tight">{poder.accion.label}</span>
-          {mod && nombreAplicado && (
+          {montada && nombreAplicado && (
             <span className="mt-1 block font-mono text-[10px] uppercase text-muted">
-              {nombreAplicado.abbr} {mod.aplicado}
+              {nombreAplicado.abbr} {montada.aplicado.valor}
               {nombreHabilidad && (
                 <>
                   {" + "}
                   {nombreHabilidad}
-                  {enEspecialidad ? " (esp.)" : ""} {mod.habilidad}
+                  {enEspecialidad ? " (esp.)" : ""} {montada.habilidad?.valor}
                 </>
               )}
-              {(tirada?.ajustesFijos ?? []).map((a, i) => (
+              {montada.ajustesFijos.map((a, i) => (
                 <span key={i}> {signo(a.valor)}</span>
               ))}
             </span>
@@ -419,9 +415,7 @@ function FilaPoder({
           <p className="mt-1 font-mono text-[11px] text-muted">{datos.join(" · ")}</p>
           {poder.bloqueo && <p className="mt-1 font-mono text-[11px] text-danger">{poder.bloqueo}</p>}
         </div>
-        {mod && tirada && (
-          <span className="font-mono text-2xl tabular-nums text-info">{signo(mod.total + sumaAjustesFijos(tirada))}</span>
-        )}
+        {montada && <span className="font-mono text-2xl tabular-nums text-info">{signo(montada.base)}</span>}
         <button
           type="button"
           disabled={!!poder.bloqueo}
@@ -514,13 +508,11 @@ export function AccionesTab({
   const [sacrificioModal, setSacrificioModal] = useState<AccionDirecta | null>(null);
   const [modal, setModal] = useState<{
     tirada: Accion;
-    modBase: number;
-    desgloseBase: { etiqueta: string; valor: number }[];
-    mods: ModificadorConFuente[];
-    ctxBase: { id: string; grupo: Accion["grupo"]; habilidad: Accion["habilidad"] };
-    // Estilo Sutil elegido en la fila antes de abrir el modal (Feature 1) —
-    // `tirar()` lo necesita para saber si usar `modo.danio` o `modo.danioSutil`.
-    sutilActivo: boolean;
+    // La ficha al abrir el modal: el total se monta contra ella mientras está abierto.
+    ficha: FichaResuelta;
+    // Especialidad y estilo Sutil elegidos en la fila antes de abrir el modal
+    // (Feature 1) — `tirar()` mira `sutil` para usar `modo.danio` o `modo.danioSutil`.
+    eleccion: Pick<EleccionTirada, "enEspecialidad" | "sutil">;
     // null mientras se eligen condiciones/dificultad; el id del Lanzamiento
     // recién creado en cuanto se pulsa Tirar — el modal pasa a mostrar el
     // resultado in-place en vez de cerrarse (UX corregida 2026-09-23: cerrar
@@ -596,27 +588,8 @@ export function AccionesTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones]);
 
-  const abrir = (t: Accion, enEspecialidad: boolean, sutilActivo: boolean) => {
-    const mod = modificadorAccion(sheet, t, enEspecialidad, mods, sutilActivo);
-    const aplicadoId = sutilActivo && t.aplicadoSutil ? t.aplicadoSutil : t.aplicado;
-    const nombreAplicado = APLICADOS.find((a) => a.id === aplicadoId)!;
-    const nombreHabilidad = t.habilidad ? HABILIDADES.find((h) => h.id === t.habilidad)!.label : null;
-    const desgloseBase = [
-      { etiqueta: nombreAplicado.label, valor: mod.aplicado },
-      ...(nombreHabilidad
-        ? [{ etiqueta: `${nombreHabilidad}${enEspecialidad ? " (especialidad)" : ""}`, valor: mod.habilidad ?? 0 }]
-        : []),
-      ...(t.ajustesFijos ?? []).map((a) => ({ etiqueta: a.fuente, valor: a.valor })),
-    ];
-    setModal({
-      tirada: t,
-      modBase: mod.total + sumaAjustesFijos(t),
-      desgloseBase,
-      mods,
-      ctxBase: { id: t.id, grupo: t.grupo, habilidad: t.habilidad },
-      sutilActivo,
-      resultadoId: null,
-    });
+  const abrir = (t: Accion, enEspecialidad: boolean, sutil: boolean) => {
+    setModal({ tirada: t, ficha, eleccion: { enEspecialidad, sutil }, resultadoId: null });
   };
 
   const niveles = ficha.psionica.paraEfectos;
@@ -652,11 +625,8 @@ export function AccionesTab({
   const tirarSalvacionSobrecarga = (id: number) => {
     if (!sobrecarga || sobrecarga.salvacion) return;
     const salv = ACCIONES.find((a) => a.id === "salv_fortaleza")!;
-    const modificador =
-      modificadorAccion(sheet, salv, false, mods).total +
-      bonoAlcance(mods, { id: salv.id, grupo: salv.grupo, habilidad: salv.habilidad, modoElegido: null });
     const dificultad = dificultadSobrecarga(sobrecarga.nivel);
-    const r = resolverTirada({ dado: tirarD12(), modificador, dificultad });
+    const r = tirarMontada(montarTirada(ficha, salv, SIN_ELECCION), tirarD12(), dificultad);
     const danio = danioSobrecarga(sobrecarga.nivel, gradoDeTirada(r)!);
     if (danio > 0) onAjustarVida?.(-danio);
     const lanzamiento = {
@@ -807,6 +777,7 @@ export function AccionesTab({
   const tirar = ({
     dado,
     dados,
+    montada,
     estadoCondiciones,
     dificultad,
     circunstancial,
@@ -818,29 +789,16 @@ export function AccionesTab({
     // al resultado completo).
     dado: number;
     dados?: [number, number];
+    montada: TiradaMontada;
     estadoCondiciones: EstadoCondiciones;
     dificultad: number | null;
     circunstancial: number;
   }) => {
     if (!modal) return;
-    const { tirada, modBase, mods, ctxBase, sutilActivo } = modal;
-    const bonoCondiciones = valorCondiciones(tirada.condiciones ?? [], estadoCondiciones);
-    const bonoTramo = valorBonosTramo(tirada.bonosTramo ?? [], estadoCondiciones);
-    const bonoEquipoEspecie = bonoAlcance(mods, {
-      ...ctxBase,
-      modoElegido: modoElegido(tirada.condiciones ?? [], estadoCondiciones),
-    });
-    // VTM nivel 4 ("Tratar heridas"): selector "vtm_tratamiento" (medicina.ts)
-    // — elegir "complejo" baja el umbral de crítico a 0 en el lado de éxito.
-    // Inocuo en cualquier otra tirada: ese id de condición solo existe aquí.
-    const margenCriticoExito = estadoCondiciones.vtm_tratamiento === "complejo" ? 0 : undefined;
-    const r = resolverTirada({
-      dado,
-      modificador: modBase + bonoCondiciones + bonoTramo + bonoEquipoEspecie,
-      circunstancial,
-      dificultad,
-      margenCriticoExito,
-    });
+    const { tirada } = modal;
+    const sutilActivo = modal.eleccion.sutil;
+    // Total y márgenes de crítico (la VTM "complejo" incluida) vienen montados.
+    const r = tirarMontada(montada, dado, dificultad);
 
     setMemoria((m) => ({ ...m, [tirada.id]: { dificultad, circunstancial } }));
 
@@ -1171,8 +1129,7 @@ export function AccionesTab({
 
       {reparaFabricaAbierta && onReparar && (
         <ReparaFabricaModal
-          sheet={sheet}
-          mods={mods}
+          ficha={ficha}
           setHistorial={setHistorial}
           memoria={memoria}
           setMemoria={setMemoria}
@@ -1220,12 +1177,8 @@ export function AccionesTab({
           cabecera={modal.tirada.grupo === "Psiónica" ? cabeceraPoder : undefined}
           bloqueo={modal.tirada.grupo === "Psiónica" ? (preparado?.bloqueo ?? null) : null}
           pieResultado={modal.tirada.grupo === "Psiónica" ? piePoder : undefined}
-          modBase={modal.modBase}
-          desgloseBase={modal.desgloseBase}
-          condiciones={modal.tirada.condiciones ?? []}
-          bonosTramo={modal.tirada.bonosTramo ?? []}
-          mods={modal.mods}
-          ctxBase={modal.ctxBase}
+          ficha={modal.ficha}
+          eleccion={modal.eleccion}
           dificultadInicial={memoria[modal.tirada.id]?.dificultad ?? modal.tirada.dificultadSugerida ?? 7}
           circunstancialInicial={memoria[modal.tirada.id]?.circunstancial ?? 0}
           resultado={resultadoModal}

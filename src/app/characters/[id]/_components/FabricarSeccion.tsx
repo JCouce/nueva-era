@@ -14,9 +14,7 @@ import {
   rarezaMaterial,
   precioMaterial,
   rarezaPermitida,
-  modificadorAccion,
-  resolverTirada,
-  bonoAlcance,
+  tirarMontada,
   nivelVtf,
   dificultadFabricacion,
   type Armadura,
@@ -29,8 +27,8 @@ import {
   type Materiales,
   type MaterialTier,
   type Accion,
-  type Sheet,
-  type ModificadorConFuente,
+  type FichaResuelta,
+  type TiradaMontada,
 } from "@/lib/rules";
 import { Acordeon } from "@/components/Acordeon";
 import { AccionModal } from "@/components/AccionModal";
@@ -233,16 +231,14 @@ function FilaFabricable<T extends PiezaFabricable>({
 }
 
 export function FabricarSeccion({
-  sheet,
-  mods,
+  ficha,
   setHistorial,
   memoria,
   setMemoria,
   onFabricar,
   libre = false,
 }: {
-  sheet: Sheet;
-  mods: ModificadorConFuente[];
+  ficha: FichaResuelta;
   setHistorial: Dispatch<SetStateAction<Lanzamiento[]>>;
   memoria: Record<string, { dificultad: number | null; circunstancial: number }>;
   setMemoria: Dispatch<
@@ -253,6 +249,7 @@ export function FabricarSeccion({
   // entrega en el acto — mismo criterio que Reparar para NPCs.
   libre?: boolean;
 }) {
+  const sheet = ficha.ficha;
   const [categoria, setCategoria] = useState<CategoriaId | null>(null);
 
   // Tirada de Fabricar en curso: null mientras se navega el catálogo. Vive
@@ -262,8 +259,6 @@ export function FabricarSeccion({
     piezaLabel: string;
     catalogoId: string;
     tier: MaterialTier;
-    modBase: number;
-    desgloseBase: { etiqueta: string; valor: number }[];
     dificultadSugerida: number;
   } | null>(null);
   const [resultado, setResultado] = useState<Lanzamiento | null>(null);
@@ -289,7 +284,6 @@ export function FabricarSeccion({
         "lo común, +2 por cada rango de rareza superior. Éxito crítico: gran calidad (sin " +
         "mecanizar todavía). El material se gasta salga lo que salga.",
     };
-    const mod = modificadorAccion(sheet, tirada, false, mods, false);
     setResultado(null);
     setMensajeResultado(null);
     setRollOpen({
@@ -297,32 +291,23 @@ export function FabricarSeccion({
       piezaLabel: pieza.label,
       catalogoId: pieza.id,
       tier,
-      modBase: mod.total,
-      desgloseBase: [
-        { etiqueta: "Perspicacia", valor: mod.aplicado },
-        { etiqueta: "Tecnociencia", valor: mod.habilidad ?? 0 },
-      ],
       dificultadSugerida: dificultadFabricacion(pieza.rareza, nivelVtf(sheet)),
     });
   };
 
   const onTirar = ({
     dado,
+    montada,
     dificultad,
     circunstancial,
   }: {
     dado: number;
+    montada: TiradaMontada;
     dificultad: number | null;
     circunstancial: number;
   }) => {
     if (!rollOpen) return;
-    const bono = bonoAlcance(mods, {
-      id: rollOpen.tirada.id,
-      grupo: rollOpen.tirada.grupo,
-      habilidad: rollOpen.tirada.habilidad,
-      modoElegido: null,
-    });
-    const r = resolverTirada({ dado, modificador: rollOpen.modBase + bono, circunstancial, dificultad });
+    const r = tirarMontada(montada, dado, dificultad);
     const id = Date.now();
     const lanzamiento: Lanzamiento = { ...r, id, label: rollOpen.tirada.label };
     setHistorial((h) => [lanzamiento, ...h].slice(0, 6));
@@ -464,11 +449,8 @@ export function FabricarSeccion({
             titulo={rollOpen.tirada.label}
             nota={rollOpen.tirada.nota}
             tirada={rollOpen.tirada}
-            modBase={rollOpen.modBase}
-            desgloseBase={rollOpen.desgloseBase}
-            condiciones={[]}
-            mods={mods}
-            ctxBase={{ id: rollOpen.tirada.id, grupo: rollOpen.tirada.grupo, habilidad: rollOpen.tirada.habilidad }}
+            ficha={ficha}
+            eleccion={{ enEspecialidad: false, sutil: false }}
             dificultadInicial={memoria[rollOpen.tirada.id]?.dificultad ?? rollOpen.dificultadSugerida}
             circunstancialInicial={memoria[rollOpen.tirada.id]?.circunstancial ?? 0}
             resultado={resultado}

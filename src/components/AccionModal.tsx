@@ -6,21 +6,14 @@ import {
   CARAS_DADO,
   tirarDado,
   estadoInicial,
-  valorCondiciones,
-  desgloseCondiciones,
-  notasCondiciones,
-  valorBonosTramo,
-  desgloseBonosTramo,
-  modoElegido,
-  bonoAlcance,
-  desgloseAlcance,
+  montarTirada,
   avisoInsuficiente,
   type Accion,
   type CondicionTirada,
+  type EleccionTirada,
   type EstadoCondiciones,
-  type BonoPorTramo,
-  type ModificadorConFuente,
-  type ContextoAccion,
+  type FichaParaTirada,
+  type TiradaMontada,
 } from "@/lib/rules";
 import { HudCard } from "./HudCard";
 import { BarraProgreso } from "./BarraProgreso";
@@ -173,12 +166,8 @@ export function AccionModal({
   pieResultado,
   tirada,
   recursoActual,
-  modBase,
-  desgloseBase,
-  condiciones,
-  bonosTramo,
-  mods,
-  ctxBase,
+  ficha,
+  eleccion,
   dificultadInicial,
   circunstancialInicial,
   resultado,
@@ -217,15 +206,11 @@ export function AccionModal({
   // confirmar) — ausente si la tirada no gasta ningún RECURSO.
   tirada: Accion;
   recursoActual?: { actual: number; max: number };
-  modBase: number;
-  desgloseBase: { etiqueta: string; valor: number }[];
-  condiciones: CondicionTirada[];
-  bonosTramo?: BonoPorTramo[];
-  // Modificadores de especie/equipo con alcance (salvaciones del traje, el
-  // Sistema de Retroceso...) y lo que hace falta de esta tirada para
-  // resolverlos — ver docs/modificadores-tiradas.md.
-  mods: ModificadorConFuente[];
-  ctxBase: Omit<ContextoAccion, "modoElegido">;
+  // Total, desglose, notas y márgenes salen de montarTirada con la ficha y lo
+  // elegido en la fila (especialidad, Sutil); el modal solo añade sus casillas y
+  // el circunstancial. Ver docs/modificadores-tiradas.md, "Montaje".
+  ficha: FichaParaTirada;
+  eleccion: Pick<EleccionTirada, "enEspecialidad" | "sutil">;
   dificultadInicial: number | null;
   circunstancialInicial: number;
   // Presente en cuanto se pulsa Tirar: el modal deja de pintar los controles
@@ -243,11 +228,14 @@ export function AccionModal({
   onTirar: (args: {
     dado: number;
     dados?: [number, number]; // con ventaja, los dos d12 (dado = el mejor)
+    // La tirada montada con lo elegido al pulsar Tirar: se resuelve con tirarMontada.
+    montada: TiradaMontada;
     estadoCondiciones: EstadoCondiciones;
     dificultad: number | null;
     circunstancial: number;
   }) => void;
 }) {
+  const condiciones: CondicionTirada[] = tirada.condiciones ?? [];
   const [estado, setEstado] = useState<EstadoCondiciones>(() => estadoInicial(condiciones));
   const [dificultad, setDificultad] = useState(dificultadInicial);
   // Si `dificultadInicial` no coincide con ningún botón fijo (p.ej. el 3 de
@@ -297,23 +285,20 @@ export function AccionModal({
       setIndiceMejor(reales.indexOf(dado));
       setDadoAsentado(true);
       setTimeout(() => {
-        onTirar({ dado, dados, estadoCondiciones: estado, dificultad, circunstancial });
+        onTirar({ dado, dados, montada, estadoCondiciones: estado, dificultad, circunstancial });
         setRodando(false);
         setDadoAsentado(false);
       }, ASENTADO_MS);
     }, RODANDO_MS);
   };
 
-  const totalCondiciones = valorCondiciones(condiciones, estado);
-  const totalBonosTramo = valorBonosTramo(bonosTramo ?? [], estado);
-  const ctx: ContextoAccion = { ...ctxBase, modoElegido: modoElegido(condiciones, estado) };
-  const totalAlcance = bonoAlcance(mods, ctx);
-  const totalPrevisto = modBase + totalCondiciones + totalBonosTramo + totalAlcance + circunstancial;
+  const montada = montarTirada(ficha, tirada, { ...eleccion, estadoCondiciones: estado, circunstancial });
+  const totalPrevisto = montada.total;
   // Textos de las opciones activas (Visor Nocturno y demás "texto
   // informativo" del §8) — `estado` no cambia entre elegir y ver el
   // resultado, así que esto sigue siendo válido en la pantalla final sin
   // necesidad de guardarlo aparte.
-  const notas = notasCondiciones(condiciones, estado);
+  const notas = montada.notas;
   // Mismo cálculo de modoId que tirar() (AccionesTab.tsx): el id de
   // `estado.modo` si hay selector, si no el único modo de `ataque.modos`.
   // Reactivo a `estado` — cambiar de modo aquí recalcula el aviso al
@@ -557,21 +542,9 @@ export function AccionModal({
               <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
                 {"// Desglose"}
               </p>
-              {desgloseBase.map((f, i) => (
-                <LineaDesglose key={`base-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
+              {montada.desglose.map((f, i) => (
+                <LineaDesglose key={i} etiqueta={f.etiqueta} valor={f.valor} />
               ))}
-              {desgloseAlcance(mods, ctx).map((f, i) => (
-                <LineaDesglose key={`alcance-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
-              ))}
-              {desgloseCondiciones(condiciones, estado).map((f, i) => (
-                <LineaDesglose key={`cond-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
-              ))}
-              {desgloseBonosTramo(bonosTramo ?? [], estado).map((f, i) => (
-                <LineaDesglose key={`tramo-${i}`} etiqueta={f.etiqueta} valor={f.valor} />
-              ))}
-              {circunstancial !== 0 && (
-                <LineaDesglose etiqueta="Modificador circunstancial" valor={circunstancial} />
-              )}
               <div className="mt-1 flex items-baseline justify-between border-t border-border pt-1.5">
                 <span className="font-mono text-xs uppercase text-foreground">Total</span>
                 <span className="font-mono text-lg font-bold tabular-nums text-accent">

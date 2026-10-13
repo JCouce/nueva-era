@@ -76,9 +76,9 @@ cuatro mecanismos:
 | **`bonosTramo`** | Un número que se suma solo, pero que depende de qué tramo de distancia ya eligió el jugador | El +1 de la Mira Telescópica a media/larga distancia | `NivelModulo.ajusteTramo` en el catálogo |
 | **`Modificador` tipo `"tirada"`** (alcance) | Un bono de personaje entero, no ligado a un arma o pieza concreta: una tirada fija por su id, un grupo entero, cualquier tirada de una habilidad, o solo cuando cierto modo está elegido | El +1 a Salvación de Fortaleza del Traje Ultra Ligero | `modificadores` del catálogo (especie o equipo), campo `alcance` |
 
-Los cuatro se pintan en el mismo sitio: el bloque **"// Desglose"** de
-`AccionModal` (`src/components/AccionModal.tsx`), una línea por cada uno,
-con su fuente. Nunca se funden en silencio dentro de otro número — si lo
+Los cuatro se suman en un solo sitio, `montarTirada` (§10), y se pintan en el
+bloque **"// Desglose"** de `AccionModal` (`src/components/AccionModal.tsx`), una
+línea por cada uno, con su fuente. Nunca se funden en silencio dentro de otro número — si lo
 están, es un bug (ya nos pasó dos veces con el lanzagranadas y la mira, y
 las dos veces el arreglo fue separar la línea, no esconder el número).
 
@@ -163,9 +163,9 @@ type AlcanceModificador =
 `bonoAlcance()`/`desgloseAlcance()` (mismo fichero) resuelven cuál le toca a
 una tirada dada, con un `ContextoAccion` que la UI arma sola (id, grupo,
 habilidad de la tirada, y el modo que esté elegido ahora mismo en el modal,
-si lo tiene). `AccionesTab` pasa `modificadoresActivos(sheet)` al modal junto
-a la tirada; el modal hace el resto — no hay que tocar nada por cada
-modificador nuevo, solo declararlo en el catálogo con el alcance correcto.
+si lo tiene). Los resuelve `montarTirada` (§10) con los modificadores de la
+`FichaResuelta` — no hay que tocar nada por cada modificador nuevo, solo
+declararlo en el catálogo con el alcance correcto.
 
 **Cuál elegir:**
 - `tiradaId` → para salvaciones y otras tiradas fijas de `ACCIONES` (no sirve
@@ -552,3 +552,47 @@ tests, `SIN_BONOS_DISCIPLINA`), mismo patrón que `AjusteCoste`: en pantalla sal
 como nivel N en X". **No** para "+N a las tiradas de los poderes de X" (eso es un
 `Modificador` `"tirada"` con alcance `grupo: "Psiónica"`, §5) ni para descuentos de coste
 (eso es `AjusteCoste`, `progresion.ts`).
+
+## 10. Montaje: `montarTirada`
+
+*(2026-10-13, M1a — propuesta-especies §3.1.)* **El único sitio que suma una tirada.**
+`src/lib/rules/montaje.ts`:
+
+```ts
+montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: EleccionTirada): TiradaMontada
+tirarMontada(montada: TiradaMontada, dado: number, dificultad: number | null): Resultado
+// EleccionTirada = { enEspecialidad, sutil, estadoCondiciones, circunstancial }; SIN_ELECCION para las filas
+```
+
+`FichaParaTirada` es `Pick<FichaResuelta, "ficha" | "modificadores">`: la pantalla pasa la
+`FichaResuelta`; `prepararPoder` arma el par con lo que recibe.
+
+Qué devuelve y dónde entra cada mecanismo:
+
+| Campo | Qué es |
+|---|---|
+| `aplicado`, `habilidad` | `modificadorAccion` (con Sutil y especialidad de la elección) |
+| `ajustesFijos` | los de la tirada, tal cual |
+| `base` | aplicado + habilidad + ajustes fijos: **lo que enseña la fila** antes de abrir el modal |
+| `modificador` | base + `Modificador` con alcance + `CondicionTirada` + `bonosTramo` (el `modificador` del `Resultado`) |
+| `total` | modificador + circunstancial: el "Tirar (+N)" del modal |
+| `desglose` | una línea por fuente, en este orden: aplicado, habilidad, ajustes fijos, alcance, casillas, tramos, circunstancial (si ≠ 0) |
+| `margenes` | `{ criticoExito, criticoFallo }`, por defecto `MARGEN_CRITICO` (6) |
+| `notas`, `modoElegido` | `notasCondiciones` y la etiqueta del modo elegido (para el alcance `modo`) |
+
+**Los márgenes son dato de la opción, no código de pantalla.** `OpcionCondicion` lleva
+`margenCriticoExito?`; `montarTirada` lo toma de cualquier opción elegida. La VTM nv4
+(`medicina.ts`, condición `vtm_tratamiento`) declara `margenCriticoExito: 0` en
+"complejo" y cualquier éxito pasa a crítico; antes era un `if` por id en `AccionesTab`.
+
+Quién lo usa: `FilaTirada` y `FilaPoder` (`base`, vía `PoderPreparado.montada`),
+`AccionModal` (total, desglose y notas en vivo; entrega la montada al tirar), `tirar`, la
+salvación de sobrecarga y las tiradas de Fabricar/Reparar (`tirarMontada`). ESLint veta en
+componentes `modificadorAccion`, `bonoAlcance`, `desgloseAlcance`, `resolverTirada`,
+`valorCondiciones`, `valorBonosTramo`, `desgloseCondiciones` y `desgloseBonosTramo`.
+
+Tests: `montaje-caracterizacion.test.ts` fija lo que montaba cada sitio de la UI antes de
+`montarTirada` (réplicas citando archivo:línea) y comprueba que da lo mismo. **Si un
+número de ahí cambia, es un bug.** Los umbrales de salud/fatiga y el daño melee/Sutil
+desde la ficha resuelta son M1b (`docs/tareas.md`).
+

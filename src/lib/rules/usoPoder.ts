@@ -9,6 +9,7 @@
 import type { Accion } from "./acciones";
 import { aplicados, salud } from "./derivados";
 import type { ModificadorConFuente } from "./modificadores";
+import { montarTirada, SIN_ELECCION, type TiradaMontada } from "./montaje";
 import {
   bloqueoPorFatiga,
   costeFatiga,
@@ -66,6 +67,8 @@ export type PoderPreparado = {
   // si el poder no tira.
   tirada: Accion | null;
   enEspecialidad: boolean;
+  // La tirada montada sin nada elegido en el modal (lo que enseña la fila); null si no tira.
+  montada: TiradaMontada | null;
   extraProrroga: number; // Proeza: lo que cuesta prolongar un turno
 };
 
@@ -100,6 +103,7 @@ export function prepararPoder({ ficha, modificadores, niveles, poder, seleccion 
   const base = tiradaDePoder(poder.accion, resuelto);
   const { ajustes } = efectosDeCasillas(FUENTES_EXTERNAS_FATIGA, marcadas);
   const tirada = base && ajustes.length > 0 ? { ...base, ajustesFijos: [...(base.ajustesFijos ?? []), ...ajustes] } : base;
+  const enEspecialidad = enEspecialidadDePoder(ficha, resuelto);
 
   return {
     poder,
@@ -119,7 +123,8 @@ export function prepararPoder({ ficha, modificadores, niveles, poder, seleccion 
     bloqueo,
     fatigaActual,
     tirada,
-    enEspecialidad: enEspecialidadDePoder(ficha, resuelto),
+    enEspecialidad,
+    montada: tirada ? montarTirada({ ficha, modificadores }, tirada, { ...SIN_ELECCION, enEspecialidad }) : null,
     extraProrroga: resuelto.exceso?.extra ?? 0,
   };
 }

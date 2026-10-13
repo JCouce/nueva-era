@@ -11,16 +11,14 @@ import {
   tieneVtf,
   nivelVtf,
   dificultadFabricacion,
-  modificadorAccion,
-  resolverTirada,
-  bonoAlcance,
-  type Sheet,
+  tirarMontada,
+  type FichaResuelta,
+  type TiradaMontada,
   type MaterialTier,
   type Materiales,
   type RecursoInstancia,
   type Rareza,
   type Accion,
-  type ModificadorConFuente,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { AccionModal } from "@/components/AccionModal";
@@ -98,16 +96,14 @@ function ReparacionCard({
 }
 
 function ReparacionSeccion({
-  sheet,
-  mods,
+  ficha,
   setHistorial,
   memoria,
   setMemoria,
   onReparar,
   libre,
 }: {
-  sheet: Sheet;
-  mods: ModificadorConFuente[];
+  ficha: FichaResuelta;
   setHistorial: Dispatch<SetStateAction<Lanzamiento[]>>;
   memoria: Record<string, { dificultad: number | null; circunstancial: number }>;
   setMemoria: Dispatch<
@@ -116,6 +112,7 @@ function ReparacionSeccion({
   onReparar: (instanciaId: string, tier: MaterialTier, exito: boolean) => void;
   libre: boolean;
 }) {
+  const sheet = ficha.ficha;
   const piezas = sheet.recursos.flatMap((recurso) => {
     if (recurso.actual >= recurso.max) return [];
     const pieza = sheet.equipo.find((p) => p.instanciaId === recurso.instanciaId);
@@ -133,8 +130,6 @@ function ReparacionSeccion({
     piezaLabel: string;
     instanciaId: string;
     tier: MaterialTier;
-    modBase: number;
-    desgloseBase: { etiqueta: string; valor: number }[];
     dificultadSugerida: number;
   } | null>(null);
   const [resultado, setResultado] = useState<Lanzamiento | null>(null);
@@ -158,7 +153,6 @@ function ReparacionSeccion({
         "+2 por cada rango de rareza superior, -4 por ser reparación. El material se gasta salga " +
         "lo que salga.",
     };
-    const mod = modificadorAccion(sheet, tirada, false, mods, false);
     setResultado(null);
     setMensajeResultado(null);
     setRollOpen({
@@ -166,32 +160,23 @@ function ReparacionSeccion({
       piezaLabel: titulo,
       instanciaId,
       tier,
-      modBase: mod.total,
-      desgloseBase: [
-        { etiqueta: "Perspicacia", valor: mod.aplicado },
-        { etiqueta: "Tecnociencia", valor: mod.habilidad ?? 0 },
-      ],
       dificultadSugerida: dificultadReparar(rareza, nivelVtf(sheet)),
     });
   };
 
   const onTirar = ({
     dado,
+    montada,
     dificultad,
     circunstancial,
   }: {
     dado: number;
+    montada: TiradaMontada;
     dificultad: number | null;
     circunstancial: number;
   }) => {
     if (!rollOpen) return;
-    const bono = bonoAlcance(mods, {
-      id: rollOpen.tirada.id,
-      grupo: rollOpen.tirada.grupo,
-      habilidad: rollOpen.tirada.habilidad,
-      modoElegido: null,
-    });
-    const r = resolverTirada({ dado, modificador: rollOpen.modBase + bono, circunstancial, dificultad });
+    const r = tirarMontada(montada, dado, dificultad);
     const id = Date.now();
     const lanzamiento: Lanzamiento = { ...r, id, label: rollOpen.tirada.label };
     setHistorial((h) => [lanzamiento, ...h].slice(0, 6));
@@ -247,11 +232,8 @@ function ReparacionSeccion({
             titulo={rollOpen.tirada.label}
             nota={rollOpen.tirada.nota}
             tirada={rollOpen.tirada}
-            modBase={rollOpen.modBase}
-            desgloseBase={rollOpen.desgloseBase}
-            condiciones={[]}
-            mods={mods}
-            ctxBase={{ id: rollOpen.tirada.id, grupo: rollOpen.tirada.grupo, habilidad: rollOpen.tirada.habilidad }}
+            ficha={ficha}
+            eleccion={{ enEspecialidad: false, sutil: false }}
             dificultadInicial={memoria[rollOpen.tirada.id]?.dificultad ?? rollOpen.dificultadSugerida}
             circunstancialInicial={memoria[rollOpen.tirada.id]?.circunstancial ?? 0}
             resultado={resultado}
@@ -267,8 +249,7 @@ function ReparacionSeccion({
 }
 
 export function ReparaFabricaModal({
-  sheet,
-  mods,
+  ficha,
   setHistorial,
   memoria,
   setMemoria,
@@ -277,13 +258,11 @@ export function ReparaFabricaModal({
   libre = false,
   onCerrar,
 }: {
-  sheet: Sheet;
-  // Compartidos por Reparar y Fabricar (las dos tiradas de este modal) — se
-  // pasan porque AccionesTab ya los tenía calculados/levantados, sin
-  // recomputarlos aquí. Solo se ESCRIBE en el historial (setHistorial) —
-  // leerlo (para el log de arriba) es cosa de AccionesTab, este modal no lo
-  // pinta.
-  mods: ModificadorConFuente[];
+  // La ficha resuelta de AccionesTab: las tiradas de Reparar y Fabricar se montan
+  // contra ella (montarTirada, dentro de AccionModal). Solo se ESCRIBE en el
+  // historial (setHistorial) — leerlo (para el log de arriba) es cosa de
+  // AccionesTab, este modal no lo pinta.
+  ficha: FichaResuelta;
   setHistorial: Dispatch<SetStateAction<Lanzamiento[]>>;
   memoria: Record<string, { dificultad: number | null; circunstancial: number }>;
   setMemoria: Dispatch<
@@ -294,6 +273,7 @@ export function ReparaFabricaModal({
   libre?: boolean;
   onCerrar: () => void;
 }) {
+  const sheet = ficha.ficha;
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
@@ -317,8 +297,7 @@ export function ReparaFabricaModal({
 
           <div className="mt-4 flex flex-col gap-4">
             <ReparacionSeccion
-              sheet={sheet}
-              mods={mods}
+              ficha={ficha}
               setHistorial={setHistorial}
               memoria={memoria}
               setMemoria={setMemoria}
@@ -329,8 +308,7 @@ export function ReparaFabricaModal({
             {onFabricar && tieneVtf(sheet) && (
               <div className="border-t border-border pt-4">
                 <FabricarSeccion
-                  sheet={sheet}
-                  mods={mods}
+                  ficha={ficha}
                   setHistorial={setHistorial}
                   memoria={memoria}
                   setMemoria={setMemoria}

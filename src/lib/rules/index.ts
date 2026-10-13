@@ -7,7 +7,8 @@
 //   derivados.ts   lo que se calcula y nunca se guarda
 //   formulaMovimiento.ts  constantes del movimiento general, que una especie puede cambiar
 //   creacion.ts    point-buy: costes, pools y operaciones sobre la ficha
-//   tiradas.ts     catálogo de acciones, dificultades y resolución del d12
+//   acciones.ts    catálogo de acciones, dificultades y resolución del d12
+//   montaje.ts     montarTirada: total, desglose y márgenes de crítico de cualquier tirada
 //   modificadores.ts  cómo especies, dotes, aumentos, equipo y estados alteran números
 //   migraciones.ts    qué pasa con las fichas cuando cambia el formato
 //   equipo.ts         qué lleva puesto un personaje: validación de ranuras y sus modificadores
@@ -38,6 +39,7 @@ export * from "./derivados";
 export * from "./formulaMovimiento";
 export * from "./creacion";
 export * from "./acciones";
+export * from "./montaje";
 export * from "./modificadores";
 export * from "./migraciones";
 export * from "./equipo";
