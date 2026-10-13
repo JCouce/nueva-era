@@ -1451,7 +1451,7 @@ ficha una vez, ya con costes de casta, descuentos y derivados)
 - [ ] `setPrioridadAction` sobrescribe `Character.creditos` al cambiar la letra de
       Recursos sin restar lo gastado en la Tienda (el reset de especie solo lo tapa en ese caso)
 
-### Pestaña Personaje (rediseño del Resumen) + envío a revisión ⬜ (decidido 2026-10-13; rediseño hecho 2026-10-13, sin commit ni verificar en navegador; envío a revisión sin empezar)
+### Pestaña Personaje (rediseño del Resumen) + envío a revisión ⬜ (decidido 2026-10-13; rediseño hecho y verificado en navegador 2026-10-13; envío a revisión sin empezar)
 Maqueta navegable con todo lo decidido: https://claude.ai/artifact/1cA8wJzudPge1PnLF9q55H
 (decisiones 1-7 al final de la maqueta, todas con la opción sugerida). No depende de
 especies E2-E5; va antes o justo después de E2. Plantear la forma en código antes de
@@ -1484,7 +1484,9 @@ construir (dos pasadas: rediseño, luego revisión).
 - [x] Identidad: nombre, edad, altura, peso con barra del rango de la especie, motivación
       y trasfondo juntos. Estado: vida/fatiga en barras, alerta, movimiento, carga
       *(altura y peso por defecto = punto medio del rango, sin guardarse: supuesto S23,
-      sistema.md §14.5)*
+      sistema.md §14.5. Se eligen arrastrando la propia barra del rango, con "↺ por
+      defecto"; sin rango (Humanos), campos de texto numérico. La cabecera de la ficha
+      muestra especie · casta · casa)*
 
 **Envío a revisión** (decisiones 5-7)
 - [ ] Estados de la ficha: **En creación → En revisión → En juego** (`CharacterStatus`

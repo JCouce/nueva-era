@@ -40,7 +40,6 @@ import {
   removeEspecialidad,
   puntosAtributosDisponibles,
   puntosHabilidadesDisponibles,
-  especiePorId,
   equipar,
   desequipar,
   setPrioridad,
@@ -491,7 +490,11 @@ export function CharacterSheet({
       {/* HUD fino: estado de solo lectura (la edición está en cada tab) */}
       <div className="flex items-center gap-3 border-y border-border py-2 font-mono text-sm">
         <span className="uppercase tracking-wide text-muted">
-          {especiePorId(sheet.especieId)?.label ?? "sin especie"}
+          {ficha.especie
+            ? [ficha.especie.especie, ficha.especie.casta, ficha.especie.linaje]
+                .flatMap((o) => (o ? [o.label] : []))
+                .join(" · ")
+            : "sin especie"}
         </span>
         <span className="ml-auto tabular-nums text-danger">
           {vida}
