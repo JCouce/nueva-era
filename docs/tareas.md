@@ -1372,7 +1372,8 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
 - [x] Capas decididas (7 se construyen, 5 texto): `sistema.md` §9.3.
 - [x] Preguntas cribadas (160 → 9) y respondidas: `sistema.md` §9.5.
 - [x] Campos nuevos y supuestos del redactor decididos → `MODELO_DOTES` v2 (`sistema.md` §9.3).
-- [ ] Candidatas a UX (`modelado-dotes.md` §5) → "Revisión de candidatas a UX".
+- [x] Candidatas a UX decididas (`sistema.md` §9.3): solo Reflejos Felinos y grupo extra de
+  acción (Traicionero en Iniciativa); usos por turno → épica del panel de combate.
 - [ ] Ajustar el borrador `docs/modelado-dotes.json` a v2 (primera tanda de código).
 - [ ] Código, en su tanda: Ataque de oportunidad desaparece sin la dote también en
   Finta/Presa/Desarme/Flanqueo; Biónica pasa a Biociencia (validación de requisitos).
@@ -1384,7 +1385,7 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
 - [ ] Integrar el catálogo completo de especialidades de `docs/fuente/habilidades.md` en
   `sistema.md` §3 y en el código (lo necesitan los requisitos).
 
-### Revisión de candidatas a UX ⬜ (tras modelar dotes)
+### Revisión de candidatas a UX ✅ (dotes, 2026-10-15: `sistema.md` §9.3; repetir en cada área nueva)
 
 Al modelar, lo que la app podría explicar con UX en vez de prosa se etiqueta "candidata a
 UX" (`docs/motor.md`). Cuando acabe el modelado de dotes: juntarlas por patrón (p.ej. "N

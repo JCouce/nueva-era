@@ -446,6 +446,18 @@ aplicar o recalcular se aplica en la ficha; lo demás queda como texto.**
   adverso; `capa_pendiente` se descarta (esos efectos se modelan como efecto real). El
   borrador `docs/modelado-dotes.json` se ajusta a v2 en la primera tanda de código.
 
+- **UX propia** (UX de Dotes, usuario 2026-10-15; candidatas en `docs/modelado-dotes.md` §5).
+  **Se construye**: *Reflejos Felinos* resta uno al contador de atacantes adicionales en la
+  esquiva (mínimo 0), y las acciones de dote pueden declarar un grupo extra donde aparecer
+  (*Traicionero* también en Iniciativa). **Todo lo demás, con casillas y texto**: usos por
+  turno (13 dotes) → épica "Panel de combate: qué aporta"; contadores por escena, aliado u
+  objetivo → texto (*Finta*: casilla «finta repetida»); acciones con disparador → siempre en
+  la lista, disparador en la nota; *Especialidad Médica* una casilla por pareja comprada,
+  *Bioma Predilecto* casilla «en mi bioma» por tirada, ataque doble y de oportunidad como
+  texto; dos pasos (*Golpe Entorpecedor*, *Táctica de Flanqueo*) → el jugador marca la
+  casilla del ataque siguiente; *Combinación* → casilla −1 en el ataque, −1 a defensas como
+  texto.
+
 ### 9.4 Fichas y NPCs `[FIRME · usuario 2026-10-14]`
 - **Fichas ya aprobadas**: no reciben los puntos de dotes de su letra; compran dotes con
   experiencia.
