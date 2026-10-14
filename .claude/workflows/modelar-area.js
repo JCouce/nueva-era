@@ -85,6 +85,9 @@ export const meta = {
 
 const { area, fuente, salida, salidaJson, contexto, lotes } = args
 const modelo = contexto.modelo ?? null
+// Instrucciones por área (las pone el extractor); sin ellas, las de psiónica.
+const nivelesArea = contexto.nivelesExplicados ?? null
+const propuestaLoteNula = 'propuestaLote' in contexto && contexto.propuestaLote === null
 const DESTINOS = ['parametro', 'resultado_texto', 'manual', 'pregunta', 'narrativo']
 const CONTEXTO_AREA = modelo ? `MODELO OBJETIVO (la entrada de catálogo que debes rellenar; es la especificación de lo que la app leerá después):
 ${modelo}
@@ -308,7 +311,7 @@ const porLote = await pipeline(
 Un efecto = una afirmación con consecuencia de juego (coste, tipo de acción, tirada, dificultad, alcance, duración, bono/penalizador, estado infligido, resultado por grado, requisito, restricción). Una frase puede tener varios: sepáralos. Cada resultado de un grado (éxito crítico / éxito / fracaso / fracaso crítico) con número o estado es su propio efecto. Frases de sabor sin consecuencia también van, marcadas tal cual (luego se clasificarán narrativas).
 NO interpretes, NO resumas números, NO añadas lo que la prosa no dice, NO decidas cómo se construiría. Cita cifras literales. Pero no trocees de más: dificultad + estado + condición que forman UNA misma consecuencia ("en crítico causa shock y llamarada (dificultad 6 + nivel)") son un solo efecto; y la misma regla repetida en dos frases es un solo efecto. Al revés, si una frase afecta a dos tiradas distintas (ataque Y percepción), son dos efectos, uno por tirada.
 
-${NIVELES_EXPLICADOS}
+${nivelesArea ?? NIVELES_EXPLICADOS}
 Para cada efecto rellena: nivel (el N al que aparece o desde el que rige; null si ninguno) y eje.
 
 REGLAS COMUNES DEL LOTE (van en "comunes", no en ningún item):
@@ -332,21 +335,21 @@ Numera "n" desde 1 dentro de cada item y dentro de comunes.`,
     return agent(
       `Clasifica contra el motor de la app los efectos de un área nueva ("${area}"), lote "${lote.label}" (${lote.rama}). No escribes código: propones el modelo.
 
-Antes de clasificar LEE: docs/motor.md (entero: los cinco tipos, mecanismos, MotorMetadata, "Acciones sin dado", recursos, checklist), docs/modificadores-tiradas.md, src/lib/rules/motor.ts y src/lib/rules/acciones.ts. Consulta docs/sistema.md §6, §7 y §10 para reglas de resolución, fatiga, estados y psiónica. Si dudas de si algo existe, búscalo en src/lib/rules — no lo supongas.
+Antes de clasificar LEE: docs/motor.md (entero: los cinco tipos, mecanismos, MotorMetadata, "Acciones sin dado", recursos, checklist), docs/modificadores-tiradas.md, src/lib/rules/motor.ts y src/lib/rules/acciones.ts. Consulta docs/sistema.md ${contexto.seccionesSistema ?? '§6, §7 y §10'} para reglas de resolución, fatiga, estados y psiónica. Si dudas de si algo existe, búscalo en src/lib/rules — no lo supongas.
 
 ${CONTEXTO_MOTOR}
 
-${NIVELES_EXPLICADOS}
+${nivelesArea ?? NIVELES_EXPLICADOS}
 
 ${CONTEXTO_AREA}
 
 PARA CADA ITEM devuelve:
-1. propuesta: ${modelo ? `la entrada AccionPoder del MODELO OBJETIVO, rellena con los valores literales de la prosa (Valor con porNivel cuando escala con el nivel empleado; "tabla" cuando lo fija la tabla común; ejes con una opción por variante elegible — nivel empleado, modo de uso, estado inducido, forma personal/ampliada... declarados por separado, sin multiplicarlos; ajustesPorNivelPoseido para lo que cambia por TENER nivel N; descuentos/incrementos de fatiga como ModificadorFatiga en la disciplina, nunca horneados en la acción). Si algo no cabe en ningún campo, NO lo fuerces: déjalo fuera de la propuesta y márcalo en su efecto con campoNuevo.` : 'null (esta ejecución no tiene modelo objetivo).'}
-2. efectos: CADA claim del item clasificado. "claim" = su id EXACTO tal como aparece entre corchetes abajo, SIN los corchetes (p.ej. "${lote.items[0]?.id}#1"). opcion = id de la opción a la que pertenece, o null. Responde las dos preguntas de motor.md: a qué acción afecta (afectaModo/afectaId: accion_existente con un id REAL de la lista o de un patrón de familia; accion_nueva con un id propuesto "${area}_<accion>"; objetivo_tercero cuando toca la tirada de otro — SIEMPRE tipo "texto"; ninguna con mecanismo null) y cuál de los cinco tipos es. mecanismo: uno de la lista cerrada SOLO si hoy entrega ese efecto tal cual (accion_sin_equipo no está construido: si lo usas, es porque ese es el mecanismo previsto — dilo en justificacion); si no hay ninguno, "hueco" y una frase en "hueco" de QUÉ falta (genérica, reutilizable: "gasto de fatiga al confirmar una acción", "estado con duración infligido a un objetivo"...). Tipo habilitador exige arbitraje (duro/blando/pendiente, nunca asumido: si la prosa no lo decide, "pendiente"). estado y bloqueoPor según las convenciones. destino: ${modelo ? `"parametro" (+ ruta en la propuesta, p.ej. "resultados.fracaso.estados", "ejes.nivel.opciones.3.fatiga", "disciplina.porNivel.2.alcance") si la tubería lo leerá de un campo; "resultado_texto" si solo se muestra como texto al resolver ("aplica miedo"); "manual" si una DECISIÓN del usuario lo deja a mano (efectos activos sobre uno mismo, concentración); "pregunta" solo si falta una regla (y va también en preguntas); "narrativo" si es sabor. Si no cabe en ningún campo del modelo: destino "parametro", ruta null y campoNuevo con el campo que propondrías ("nombre: forma — por qué").` : '"narrativo" o "parametro", sin ruta (no hay modelo).'}
+1. propuesta: ${modelo ? (contexto.propuestaItem ?? `la entrada AccionPoder del MODELO OBJETIVO, rellena con los valores literales de la prosa (Valor con porNivel cuando escala con el nivel empleado; "tabla" cuando lo fija la tabla común; ejes con una opción por variante elegible — nivel empleado, modo de uso, estado inducido, forma personal/ampliada... declarados por separado, sin multiplicarlos; ajustesPorNivelPoseido para lo que cambia por TENER nivel N; descuentos/incrementos de fatiga como ModificadorFatiga en la disciplina, nunca horneados en la acción). Si algo no cabe en ningún campo, NO lo fuerces: déjalo fuera de la propuesta y márcalo en su efecto con campoNuevo.`) : 'null (esta ejecución no tiene modelo objetivo).'}
+2. efectos: CADA claim del item clasificado. "claim" = su id EXACTO tal como aparece entre corchetes abajo, SIN los corchetes (p.ej. "${lote.items[0]?.id}#1"). opcion = id de la opción a la que pertenece, o null. Responde las dos preguntas de motor.md: a qué acción afecta (afectaModo/afectaId: accion_existente con un id REAL de la lista o de un patrón de familia; accion_nueva con un id propuesto "${area}_<accion>"; objetivo_tercero cuando toca la tirada de otro — SIEMPRE tipo "texto"; ninguna con mecanismo null) y cuál de los cinco tipos es. mecanismo: uno de la lista cerrada SOLO si hoy entrega ese efecto tal cual (accion_sin_equipo está construido para poderes psiónicos y rasgos de especie: úsalo cuando el efecto es una acción propia que no es equipo; lo que esa acción necesite y no exista —contadores de uso, requisitos...— va como "hueco" aparte); si no hay ninguno, "hueco" y una frase en "hueco" de QUÉ falta (genérica, reutilizable: "gasto de fatiga al confirmar una acción", "estado con duración infligido a un objetivo"...). Tipo habilitador exige arbitraje (duro/blando/pendiente, nunca asumido: si la prosa no lo decide, "pendiente"). estado y bloqueoPor según las convenciones. destino: ${modelo ? `"parametro" (+ ruta en la propuesta, p.ej. "resultados.fracaso.estados", "ejes.nivel.opciones.3.fatiga", "disciplina.porNivel.2.alcance") si la tubería lo leerá de un campo; "resultado_texto" si solo se muestra como texto al resolver ("aplica miedo"); "manual" si una DECISIÓN del usuario lo deja a mano (efectos activos sobre uno mismo, concentración); "pregunta" solo si falta una regla (y va también en preguntas); "narrativo" si es sabor. Si no cabe en ningún campo del modelo: destino "parametro", ruta null y campoNuevo con el campo que propondrías ("nombre: forma — por qué").` : '"narrativo" o "parametro", sin ruta (no hay modelo).'}
 
 ${REGLAS_CONVENCION}
 3. preguntas: ambigüedades o huecos de la prosa para el diseñador (erratas que cambian una regla, grados de resultado ausentes, contradicciones con sistema.md).
-Clasifica también cada claim de comunes en "comunes" y sus preguntas en preguntasComunes.${modelo ? ` Y devuelve en "disciplina" la entrada Disciplina del modelo SIN el array acciones (requisito, porNivel, reglas, modificadoresFatiga) — las rutas de sus efectos empiezan por "disciplina.".` : ' "disciplina": null.'}
+Clasifica también cada claim de comunes en "comunes" y sus preguntas en preguntasComunes.${modelo && !propuestaLoteNula ? ` Y devuelve en "disciplina" la entrada Disciplina del modelo SIN el array acciones (requisito, porNivel, reglas, modificadoresFatiga) — las rutas de sus efectos empiezan por "disciplina.".` : ' "disciplina": null.'}
 
 REGLAS COMUNES DEL LOTE:
 ${comunes.map(fmt).join('\n') || '  (ninguna)'}
@@ -412,7 +415,7 @@ log(`${efectos.length} efectos clasificados; ${cubiertos.length} "ya cubiertos" 
 const verificaciones = (await parallel(tandas.filter(t => t.length).map(tanda => () => agent(
   `Eres el verificador adversarial de una propuesta de modelado del área "${area}". Dos trabajos, sobre los lotes de abajo:
 
-A) FIDELIDAD${modelo ? '' : ' (esta ejecución no tiene modelo: devuelve erroresFidelidad vacío)'}: compara cada propuesta (disciplina y acciones) contra la prosa ORIGINAL, línea a línea. Busca números distintos, niveles mal asignados, "sustituye" leído como "suma" o al revés, porNivel que debería ser "tabla", opciones inventadas u omitidas, resultados por grado que falten, requisitos, costes de fatiga horneados en la acción en vez de ModificadorFatiga. Aplica las DECISIONES DEL USUARIO del contexto (son firmes). Por cada fallo: item, ruta, problema, corrección concreta. No reportes estilo ni preferencias.
+A) FIDELIDAD${modelo ? '' : ' (esta ejecución no tiene modelo: devuelve erroresFidelidad vacío)'}: compara cada propuesta (disciplina y acciones) contra la prosa ORIGINAL, línea a línea. Busca ${contexto.fidelidad ?? 'números distintos, niveles mal asignados, "sustituye" leído como "suma" o al revés, porNivel que debería ser "tabla", opciones inventadas u omitidas, resultados por grado que falten, requisitos, costes de fatiga horneados en la acción en vez de ModificadorFatiga.'} Aplica las DECISIONES DEL USUARIO del contexto (son firmes). Por cada fallo: item, ruta, problema, corrección concreta. No reportes estilo ni preferencias.
 
 B) YA CUBIERTOS: intenta REFUTAR cada clasificación "lo entrega un mecanismo existente". Lee docs/motor.md y docs/modificadores-tiradas.md, y verifica en src/lib/rules (motor.ts, acciones.ts, condiciones.ts, modificadores.ts, equipo.ts, combate.ts, estados.ts, vitalidad.ts...) que:
 - el afectaId existe de verdad (id fijo de acciones.ts o patrón de familia real) si es accion_existente;
@@ -486,10 +489,9 @@ const usoCampos = {}
 for (const e of efectosFinales) if (e.destino === 'parametro' && e.ruta) (usoCampos[rutaGenerica(e.ruta)] ??= new Set()).add(e.item)
 
 // ── Fase 4: agrupar huecos en capas (barrera: necesita todos) ────────────
-const huecos = efectosFinales.filter(e => e.mecanismo === 'hueco' || (e.mecanismo === 'accion_sin_equipo'))
+const huecos = efectosFinales.filter(e => e.mecanismo === 'hueco')
 const agrupado = await agent(
-  `Agrupa en CAPAS NUEVAS del motor los huecos detectados al modelar el área "${area}". Una capa = una pieza de motor que habría que construir una vez y que desbloquea muchos efectos (p.ej. "tirada de manifestación de un poder", "gasto de fatiga al confirmar", "selector de nivel empleado que cambia coste/alcance", "estado con duración infligido a un objetivo", "concentración/mantenimiento de un efecto activo"). Junta huecos que piden LO MISMO aunque estén redactados distinto; separa los que solo se parecen de nombre. Incluye los efectos con mecanismo accion_sin_equipo (mecanismo previsto pero no construido).
-
+  `Agrupa en CAPAS NUEVAS del motor los huecos detectados al modelar el área "${area}". Una capa = una pieza de motor que habría que construir una vez y que desbloquea muchos efectos (p.ej. "tirada de manifestación de un poder", "gasto de fatiga al confirmar", "selector de nivel empleado que cambia coste/alcance", "estado con duración infligido a un objetivo", "concentración/mantenimiento de un efecto activo"). Junta huecos que piden LO MISMO aunque estén redactados distinto; separa los que solo se parecen de nombre.
 Lee docs/motor.md y src/lib/rules para decidir, en "ampliaA", si la capa es la ampliación de algo que ya existe (CondicionTirada, AccionDirecta, EstadoActivo, fatiga en vitalidad.ts...) o algo "nuevo". dependeDe = ids de otras capas que necesita antes. Cada capa lista los items (ids) y los claims que desbloquea. No inventes capas sin huecos que las respalden. Si varias capas dependen de una decisión del diseñador, ponla en preguntasTransversales.
 
 ${modelo ? `Además, dos listas sobre el MODELO OBJETIVO:
@@ -506,7 +508,7 @@ CAMPOS NUEVOS PROPUESTOS:
 ${efectosFinales.filter(e => e.campoNuevo).map(e => `- [${e.claim}] "${e.texto}" → ${e.campoNuevo}`).join('\n') || '(ninguno)'}` : 'Esta ejecución no tiene modelo objetivo: devuelve camposModelo y camposNuevos vacíos.'}
 
 HUECOS (${huecos.length}):
-${huecos.map(e => `- [${e.claim}] item ${e.item}: "${e.texto}" → ${e.mecanismo === 'hueco' ? 'falta: ' + e.hueco : 'accion_sin_equipo'}${e.verificacion === 'corregido' ? ' (tras verificación)' : ''}`).join('\n')}`,
+${huecos.map(e => `- [${e.claim}] item ${e.item}: "${e.texto}" → falta: ${e.hueco}${e.verificacion === 'corregido' ? ' (tras verificación)' : ''}`).join('\n')}`,
   { phase: 'Agrupar', label: 'agrupar-capas', schema: AGRUPAR_SCHEMA }
 )
 
@@ -543,7 +545,7 @@ const instruccionesDoc = calibracion
 - Por item: qué efectos de la referencia reprodujo la propuesta (tipo + afecta + mecanismo), cuáles falló o se inventó, y si el estado construido/pendiente encaja con mecanismo vs hueco.
 - Tasa global de acierto en tipo, en afecta y en mecanismo.
 - Patrones de error y qué cambiarías en los prompts de extraer/clasificar/verificar para corregirlos.`
-  : `Escribe el documento ${salida} (créalo con Write; si existe, sobrescríbelo) en español, esquemático (subtítulos, tablas, bullets; nada de párrafos largos). Estructura:
+  : `Escribe el documento ${salida} (créalo con Write; si existe, sobrescríbelo) en español, esquemático (subtítulos, tablas, bullets; nada de párrafos largos). Estructura${contexto.notaRedaccion ? ` (${contexto.notaRedaccion})` : ''}:
 1. Cabecera: qué es (salida del workflow modelar-area sobre ${fuente}), que es propuesta sin construir y que docs/sistema.md manda.
 2. COBERTURA (lo primero que mira el usuario): % global y tabla por item (efectos, % cubierto, nº por destino). Lista de lo que impide el 100%: efectos a "pregunta" y efectos con campoNuevo sin consolidar.
 3. Checklist del modelo: por cada disciplina y acción, ✓/✗ de cada campo del MODELO OBJETIVO (relleno / no aplica / falta), para que el usuario compruebe que no falta nada.

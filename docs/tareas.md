@@ -38,6 +38,8 @@ cuál va antes que la otra:
   `docs/sistema.md`; Aumentos, Dotes, Puntos Heróicos y Neos Plouton son áreas sin
   código. Primer adelanto (Creación): Vida/Fatiga base 8 → 10, Dotes con presupuesto
   por prioridad, topes de creación movidos.
+- "Dotes" (Fase 5, en Pendiente) — transcripción y decisiones cerradas 2026-10-14
+  (`docs/dotes.md`, `docs/sistema.md` §9); siguiente, modelar con `modelar-area`.
 
 ---
 
@@ -1355,6 +1357,58 @@ informativo a **tiradas fijas** de `TIRADAS` (hoy solo funciona por arma concret
 problema completo en `docs/modificadores-tiradas.md` §8. **Resuelta:** el §8 se construyó
 el 2026-09-23 (condiciones con `alcance` desde el equipo) y la psiónica entra por
 `conPsionicaEnTiradaFija` (2026-09-30).
+
+### Dotes ⬜ (transcritas y decididas 2026-10-14, sin modelar)
+
+Encargo y pasos: `docs/prompt-dotes.md`. Fuente literal: `docs/dotes.md` (105 dotes).
+Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
+- [x] Transcripción fiel `docs/dotes.md`.
+- [x] `sistema.md` §9 con pool, requisitos, maniobras solo con dote y qué es texto.
+- [x] `accion_sin_equipo` marcado como construido en el extractor y el workflow.
+- [x] `MODELO_DOTES` aprobado (2026-10-15) y extractor/workflow adaptados por área
+  (`trocearDotes`, lotes de 12).
+- [x] `modelar-area` lanzado → `docs/modelado-dotes.md` + `.json` (96 % de 631 efectos,
+  12 capas, 154 preguntas).
+- [x] Capas decididas (7 se construyen, 5 texto): `sistema.md` §9.3.
+- [x] Preguntas cribadas (160 → 9) y respondidas: `sistema.md` §9.5.
+- [x] Campos nuevos y supuestos del redactor decididos → `MODELO_DOTES` v2 (`sistema.md` §9.3).
+- [ ] Candidatas a UX (`modelado-dotes.md` §5) → "Revisión de candidatas a UX".
+- [ ] Ajustar el borrador `docs/modelado-dotes.json` a v2 (primera tanda de código).
+- [ ] Código, en su tanda: Ataque de oportunidad desaparece sin la dote también en
+  Finta/Presa/Desarme/Flanqueo; Biónica pasa a Biociencia (validación de requisitos).
+- [ ] `docs/propuesta-dotes.md` y plan por tandas.
+- [ ] Código, en su tanda: `PUNTOS_DOTES_POR_LETRA` (`prioridad.ts`) a A 18 · B 15 · C 12 ·
+  D 9 · E 6, sin dar puntos a fichas ya aprobadas.
+- [ ] Código, en su tanda: Bloqueo, Combate Sutil y Ataque de oportunidad pasan a exigir
+  su dote (hoy Bloquear y el interruptor Sutil están para todos).
+- [ ] Integrar el catálogo completo de especialidades de `docs/fuente/habilidades.md` en
+  `sistema.md` §3 y en el código (lo necesitan los requisitos).
+
+### Revisión de candidatas a UX ⬜ (tras modelar dotes)
+
+Al modelar, lo que la app podría explicar con UX en vez de prosa se etiqueta "candidata a
+UX" (`docs/motor.md`). Cuando acabe el modelado de dotes: juntarlas por patrón (p.ej. "N
+usos por turno" → varios botones de tirar, como el contador de atacantes de Esquivar) y
+decidir una UX por patrón, no una por dote. Equilibrio: no desviarse especificando UX caso
+a caso.
+
+### Panel de combate: qué aporta ⬜ (épica para debatir, usuario 2026-10-14)
+
+Pregunta de fondo: la app calcula tiradas y explica consecuencias; ¿qué da el panel de
+combate que no dé ya la ficha? Ligado a la duda de Fase 6b ("no convence el modo combate").
+O se va con todo o se quita lo de combate.
+- **Aplicación automática de estados** desde el panel del máster, sin bloquear fichas ni
+  turnos con polling. La de más valor por esfuerzo.
+- **Organización**: turno actual e iniciativa (poco valor: lo dice el máster); **registro de
+  acciones por turno** (interesante, proyecto aparte): un array de acciones con sus datos,
+  arbitrado con las acciones por turno de `sistema.md` §6 (2 simples · 1 estándar · 1
+  compleja · 1 reacción).
+- **Arquitectura**: sincronizar turnos sin servidor en tiempo real da mala UX (polling).
+  Alternativa: solo cliente con botón "nuevo turno" (patrón de "Terminar escena"); sirve a
+  jugadores y másters novatos. Si el piloto demuestra uso, se plantea tiempo real (push).
+- **Idea futura**: simulador de combates con un LLM decidiendo las acciones de cada
+  personaje según lo que hicieron los anteriores en la iniciativa. Requisito común con el
+  registro: acciones como datos (por eso las dotes guardan su coste en acciones).
 
 ### Especies reales ⬜ (plan cerrado 2026-10-09; E0-E5 y M1 hechas: todo lo construible de especies está construido, queda lo bloqueado)
 

@@ -34,7 +34,7 @@ const DESCRIPCION_MECANISMO: Record<MecanismoMotor, string> = {
   siempre_activo: "Modificador tipo 'tirada' con alcance (tiradaId/grupo/habilidad/modo), activo solo por llevar la pieza",
   ajuste_fijo: "ajustesFijos: número que se suma solo a una acción, sin elección",
   bono_tramo: "bonosTramo: número que depende de otra elección ya hecha (tramo de distancia...)",
-  accion_sin_equipo: "genera su propia acción SIN ser equipo (poderes, dotes) — NO CONSTRUIDO, es el hueco natural de un poder",
+  accion_sin_equipo: "genera su propia acción SIN ser equipo (poderes, dotes, rasgos de especie) — construido: accionesDePsionica (poderes.ts) y rasgos de especie (especie.ts). Lo propio del área que no cubra (contadores de uso, requisitos...) va como hueco aparte",
   gate_instalacion: "bloquea/atenúa/avisa sobre una acción entera (tipo 5)",
   accion_equipo: "genera su propia acción SIENDO equipo, vía generador por familia (combate.ts, herramientas.ts) — no aplica a poderes",
   nota_fija: "texto siempre presente volcado a Accion.nota, sin CondicionTirada",
@@ -144,8 +144,109 @@ ModificadorFatiga = {
 }
 // Grupo de acciones "Psiónica" con subgrupos rama/disciplina: alcance al que apuntan los modificadores externos.`;
 
+const MODELO_DOTES = `// v2, 2026-10-15: v1 + campos nuevos aceptados tras el primer modelado (docs/sistema.md §9.3).
+// Decisiones en docs/sistema.md §9.
+// Principio: lo que la app puede aplicar o recalcular se aplica en la ficha; lo demás es
+// texto con su motivo (y su condición, para mostrarlo solo cuando toca).
+// UN EFECTO = UNA CONSECUENCIA SOBRE UN ALCANCE: "+2 con escopetas y +1 con espadas" son
+// dos efectos bono; una nota que solo aplica en una situación lleva su condicion.
+CatalogoDotes { dotes: Dote[] }                 // raíz del borrador JSON
+
+Dote {
+  id                                  // "dote_<slug>"
+  label; grupo: string                // id de habilidad de la sección (## de la fuente); Psiónica → "tecnociencia"
+  subgrupo?: string                   // "psionica"
+  coste: number
+  requisitos: Requisito[]             // todos (Y)
+  eleccion: { id; label; opciones: string[] | "especialidades_arma"; abierta?: true } | null   // se elige al comprar; abierta = las opciones son ejemplos
+  repetible: boolean                  // Especialidad Médica: sí, con otra elección
+  sustituye: string | null            // id de la dote básica que esta mejorada deja sin efecto (vale la mejor, no se suman)
+  visible: boolean                    // false si la fuente no trae efecto (Olfato de Investigador)
+  efectos: Efecto[]
+  limite: Limite | Limite[]           // límites de la dote sin acción propia (DATO)
+  candidataUX: string | null          // patrón de UX que la app podría ganar en vez de prosa ("N usos por turno"…); se decide después, por patrón
+  motor: MotorMetadata[]              // uno por efecto
+}
+
+Requisito =
+  | { tipo: "atributo" | "aplicado"; id; min }
+  | { tipo: "habilidad"; id; min }
+  | { tipo: "especialidad"; habilidad; id; min }
+  | { tipo: "disciplina"; id: string | "cualquiera"; min }   // "nivel en una habilidad psiónica N" → "cualquiera"
+  | { tipo: "psionico" }                                      // "psiónica de origen biológico": por especie o implante
+  | { tipo: "dote"; id }
+  | { tipo: "uno_de"; opciones: Requisito[] }                 // "Empatía 1 o Liderazgo 1"
+  // todos miran el valor con el que se juega (especie incluida)
+
+Alcance = string        // id de acción | "grupo:<g>" | "habilidad:<h>" | "especialidad:<e>" | "familia:<f>" (ataque_melee, bloquear…)
+Valor   = number
+        | { base: number; siMin?: { tipo: "atributo" | "habilidad"; id: string; min: number; valor: number } }
+        | { porNivelEmpleado: number; porCadaNiveles?: { cada: number; minimo: number } }   // solo dotes psiónicas
+        | { manual: string }
+Economia = "gratuita" | "simple" | "estandar" | "compleja" | "reaccion" | { tiempo: string }
+Limite  = { veces: number; por: "turno" | "escena" | "dia" | "objetivo" | "aliado" | "pista" } | null   // DATO: hoy solo se muestra, la app no lo cuenta
+Grado   = "critico" | "exito" | "fracaso" | "fracasoCritico"
+Condicion = string | null           // null = siempre; string = interruptor que el jugador marca al tirar (o cuándo se muestra un texto)
+// Campos comunes opcionales de todo Efecto con alcance:
+//   requisitoAlcance?: Requisito      — esa rama solo vale si se cumple (melee con Combate Melee N, distancia con Combate a Distancia N)
+//   condicionFicha?: "no_fatigado"   — la app lo apaga sola según la ficha, sin interruptor
+//   filtroArma?: { empleo?: "una mano" | "dos manos"; tipoDanio?: string[] }   — tipoDanio exige marcar antes el catálogo
+
+Efecto =
+  | { tipo: "bono"; alcance: Alcance; valor: Valor; condicion: Condicion; sobre?: "tirada" | "danio"; tramo?: string; soloEspecialidad?: boolean }
+  | { tipo: "cambia_par"; alcance: Alcance; aplicado?: string; habilidad?: string; especialidad?: string; condicion: Condicion }  // "perspicacia en lugar de expresión"
+  | { tipo: "margen_critico"; alcance: Alcance; valor: number; condicion: Condicion }       // crítico con 5 éxitos en vez de 6 (CondicionTirada.margenCriticoExito)
+  | { tipo: "sube_grado"; alcance: Alcance; de: Grado; a: Grado; condicion: Condicion }    // CAPA NUEVA aprobada: "el fracaso como éxito"
+  | { tipo: "ventaja"; alcance: Alcance; condicion: Condicion; coste?: { fatiga: number } } // dos d12, vale el mejor
+  | { tipo: "exito_extra"; alcance: Alcance; exitos: number; condicion: Condicion }        // si ya acierta, +N éxitos; no convierte fallos (Salto Evasivo)
+  | { tipo: "danio_por_exitos"; alcance: Alcance; condicion: Condicion }                    // quita el tope de daño básico (Derribo Brutal)
+  | { tipo: "categoria_danio"; alcance: Alcance; a: string; condicion: Condicion }          // No Letal → Letal (Golpe Mejorado con Escudo)
+  | { tipo: "economia"; alcance: Alcance; economia: Economia | Economia[]; limite?: Limite | Limite[]; condicion: Condicion }   // DATO: cambia el coste en acciones de otra acción
+  | { tipo: "habilita"; accion: Alcance }                                                     // CAPA NUEVA aprobada: sin la dote la acción no aparece (Bloqueo, Sutil, Arrollar, Ataque de oportunidad)
+  | { tipo: "accion"; accion: AccionDote }                                                    // acción propia (accion_sin_equipo)
+  | { tipo: "poder"; accion: object }                                                         // AccionPoder del modelo de psiónica + disciplinaNivel (tope del empleado), economia: Economia[], danioExtra (solo se muestra)
+  | { tipo: "texto"; lugar: Alcance | "ficha"; texto: string; condicion: Condicion; grados?: Grado[];   // grados = solo tras ese resultado
+      porque: "tablero" | "turno" | "tercero" | "area_sin_construir" | "sin_regla" | "narrativo" }
+      // tablero = casillas/alcance/tamaño/altura (nunca habrá grid); turno = acciones por turno y límites de uso;
+      // tercero = lo que le pasa a otro personaje; area_sin_construir = aumentos/biónica/fabricación;
+      // sin_regla = falta regla del diseñador (sobreesfuerzo); narrativo = sabor
+
+AccionDote {
+  id; label
+  economia: Economia | Economia[]     // varias = el jugador elige ("acción simple o reacción"); DATO, se muestra
+  limite: Limite | Limite[]
+  resolucion: { tipo: "sin_dado" }
+            | { tipo: "tirada"; aplicado; habilidad; especialidad?: string | string[]; dificultad?: Valor }
+            | { tipo: "enfrentada"; aplicado; habilidad; especialidad?: string | string[] }
+            | { tipo: "ataque"; aplicado; habilidad; especialidad?: string | string[]; modificador?: number }
+            // especialidad como array = vale la que tenga el personaje ("empatía o liderazgo")
+  objetivoTira: { que: string; grados?: Partial<Record<Grado, string>> }[]   // SOLO TEXTO tras tirar
+  resultados: Partial<Record<Grado, { texto: string }>>                      // desde el punto de vista de quien tira
+  notas: { texto: string; condicion: Condicion }[]
+}`;
+
+const MODELOS: Record<string, string> = { psionica: MODELO_PSIONICA, dotes: MODELO_DOTES };
+
+// Instrucciones por área que el workflow usa en vez de las de psiónica (que son
+// las de por defecto dentro de modelar-area.js).
+const INSTRUCCIONES_POR_AREA: Record<string, Record<string, string | null>> = {
+  dotes: {
+    nivelesExplicados:
+      "Las dotes no tienen niveles de poder: nivel null y eje sin_nivel en todos los efectos, salvo las dotes psiónicas que hablan de 'nivel de poder empleado' (Impacto Métrico, Sobrecarga Métrica, Onda Residual), que siguen las reglas de nivel empleado de psiónica.",
+    seccionesSistema: "§6 (resolución y acciones por turno), §7 (estados), §9 (dotes: decisiones firmes) y §10 (psiónica)",
+    propuestaItem:
+      "la entrada Dote del MODELO OBJETIVO, rellena con los valores literales de la prosa y la línea de requisitos/coste del item. Un efecto por consecuencia y alcance (parte los compuestos). Lo que la app no puede aplicar ni recalcular va como Efecto texto con su porque y su condicion. Economía y límite de uso se rellenan siempre como DATO aunque hoy solo se muestren. Marca candidataUX cuando la prosa describa algo que la app podría explicar con UX en vez de texto (usos por turno, contadores). Si algo no cabe en ningún campo, NO lo fuerces: déjalo fuera y márcalo en su efecto con campoNuevo.",
+    propuestaLote: null,
+    fidelidad:
+      "costes y números distintos, requisitos mal clasificados (atributo/aplicado/habilidad/especialidad/disciplina/dote) o con otro mínimo, 'o' convertido en 'y', efectos compuestos sin partir, condiciones perdidas, economía o límite de uso omitidos, sustituye mal puesto, grados de resultado que falten, cosas recalculables mandadas a texto o texto (tablero, turnos, terceros) mandado a mecánica",
+    notaRedaccion:
+      "En dotes cada lote es un grupo de la fuente (habilidad) y cada item una Dote: donde la estructura diga 'disciplina' lee 'grupo'. No hay matriz de nivel. El JSON raíz es CatalogoDotes. Añade una sección con las candidatas a UX agrupadas por patrón y otra con los textos agrupados por 'porque'.",
+  },
+};
+
 const DECISIONES_POR_AREA: Record<string, { seccion: string }> = {
   psionica: { seccion: "### 10.6" },
+  dotes: { seccion: "## 9. Dotes" },
 };
 
 const CONSUMIDORES_POR_AREA: Record<string, string[]> = {
@@ -171,7 +272,8 @@ function seccion(md: string, encabezado: string): string[] {
 function contexto(area: string) {
   const decisiones = DECISIONES_POR_AREA[area];
   return {
-    modelo: area === "psionica" ? MODELO_PSIONICA : null,
+    modelo: MODELOS[area] ?? null,
+    ...(INSTRUCCIONES_POR_AREA[area] ?? {}),
     decisiones: decisiones ? seccion(readFileSync("docs/sistema.md", "utf8"), decisiones.seccion) : [],
     consumidoresExternos: CONSUMIDORES_POR_AREA[area] ?? [],
     tipos: TIPOS_MODIFICADOR.map((t) => ({ id: t, descripcion: DESCRIPCION_TIPO[t] })),
@@ -314,6 +416,43 @@ function trocearArea(md: string): Lote[] {
   return lotes;
 }
 
+// docs/dotes.md: `##` grupo (habilidad), `###` dote. Cada dote es un item; el lote
+// es el grupo, partido en trozos de MAX_DOTES_POR_LOTE para que un agente no cargue con
+// las 32 de Combate Melee. Las notas de transcripción no son prosa del diseñador.
+const MAX_DOTES_POR_LOTE = 12;
+function trocearDotes(md: string): Lote[] {
+  const grupos: { titulo: string; dotes: { titulo: string; lineas: string[] }[] }[] = [];
+  let dote: { titulo: string; lineas: string[] } | null = null;
+  for (const linea of md.split("\n")) {
+    const h2 = /^## (.+)$/.exec(linea);
+    if (h2) {
+      dote = null;
+      grupos.push({ titulo: h2[1].trim(), dotes: [] });
+      continue;
+    }
+    const h3 = /^### (.+)$/.exec(linea);
+    if (h3 && grupos.length) {
+      dote = { titulo: h3[1].trim(), lineas: [] };
+      grupos[grupos.length - 1].dotes.push(dote);
+      continue;
+    }
+    dote?.lineas.push(linea);
+  }
+  const lotes: Lote[] = [];
+  for (const g of grupos.filter((g) => g.dotes.length && !/^Notas de transcripci/.test(g.titulo))) {
+    const trozos = Math.ceil(g.dotes.length / MAX_DOTES_POR_LOTE);
+    for (let t = 0; t < trozos; t++) {
+      const id = slug(g.titulo) + (trozos > 1 ? `_${t + 1}` : "");
+      const label = g.titulo + (trozos > 1 ? ` (${t + 1}/${trozos})` : "");
+      const items = g.dotes
+        .slice(t * MAX_DOTES_POR_LOTE, (t + 1) * MAX_DOTES_POR_LOTE)
+        .map((d) => ({ id: `${id}.${slug(d.titulo)}`, label: d.titulo, rama: g.titulo, disciplina: g.titulo, prosa: bloques(d.lineas) }));
+      lotes.push({ id, label, rama: g.titulo, reglasComunes: [], items });
+    }
+  }
+  return lotes;
+}
+
 // Piezas ya auditadas (2026-09-24/25) que cubren mecanismos variados y, sobre
 // todo, piezas con niveles — el mismo eje "qué cambia al subir de nivel" que
 // tienen los poderes.
@@ -359,7 +498,8 @@ if (!entrada || !salida) {
 
 const calibracion = entrada === "--calibracion";
 const area = calibracion ? "calibracion" : basename(entrada, ".md");
-const lotes = calibracion ? [loteCalibracion()] : trocearArea(readFileSync(entrada, "utf8"));
+const md = calibracion ? "" : readFileSync(entrada, "utf8");
+const lotes = calibracion ? [loteCalibracion()] : area === "dotes" ? trocearDotes(md) : trocearArea(md);
 const args = {
   area,
   fuente: calibracion ? "catálogo de equipo (src/lib/catalog)" : entrada,

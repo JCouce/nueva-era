@@ -28,6 +28,8 @@ cambie, se edita aquí y se anota qué lo tumbó.
 | `EQUIP` | `docs/equipamiento.md` (transcrito de `Equipamiento.pdf`) | 2026-08-31 |
 | `CONV-1` | Conversación con Murillo (diseñador) — aumentos, psiónica cuántica | 2026-08-26 |
 | `ESP` | `docs/especies.md` (transcrito de `Especies.pdf`) — las 5 especies, castas y linajes Manduk | 2026-09-26 |
+| `HOJA3` | `docs/fuente/creacion-de-personaje.md` (sync de Drive) — revisión de `HOJA2`: pool de Dotes A-E, Vida/Fatiga base 10 | 2026-10-14 |
+| `DOTES` | `docs/fuente/dotes.md` (sync de Drive), transcrito en `docs/dotes.md` — 105 dotes | 2026-10-14 |
 | `CONV-n` | Conversaciones con el diseñador (se anotan abajo según lleguen) | — |
 
 **`HOJA2` sustituye a `HOJA` allí donde se contradicen** (creación por prioridad en vez de
@@ -65,22 +67,20 @@ Shadowrun. Hay **5 categorías** — Atributos, Habilidades, Dotes, Psiónica, R
 
 | Letra | Atributos | Habilidades | Dotes | Psiónica | Recursos |
 |---|---|---|---|---|---|
-| A | 18 pts | 18 pts | — | 18 pts | 66.000 créditos · Rareza Muy Extraño |
-| B | 14 pts | 15 pts | — | 12 pts | 41.000 créditos · Rareza Extraño |
-| C | 12 pts | 12 pts | — | 9 pts | 27.000 créditos · Rareza Poco Habitual |
-| D | 10 pts | 9 pts | — | 3 pts | 13.000 créditos · Rareza Poco Habitual |
-| E | 8 pts | 6 pts | 0 | 0 pts | 1.500 créditos · Rareza Común |
+| A | 18 pts | 18 pts | 18 pts | 18 pts | 66.000 créditos · Rareza Muy Extraño |
+| B | 14 pts | 15 pts | 15 pts | 12 pts | 41.000 créditos · Rareza Extraño |
+| C | 12 pts | 12 pts | 12 pts | 9 pts | 27.000 créditos · Rareza Poco Habitual |
+| D | 10 pts | 9 pts | 9 pts | 3 pts | 13.000 créditos · Rareza Poco Habitual |
+| E | 8 pts | 6 pts | 6 pts | 0 pts | 1.500 créditos · Rareza Común |
 
 **Confirmado por Murillo el 2026-09-10 (`CONV-4`): cada letra se usa una sola vez, una por
 categoría — hay que repartir las 5 entre las 5, sin repetir ninguna.** Es la decisión de
 build: dónde pones la A y dónde la E define el personaje.
 
-- **Dotes** solo tiene número en la fila E (0); el resto de casillas no aparecen en
-  `HOJA2` tal cual — *pendiente de confirmar si faltan por transcribir o si Dotes no tiene
-  pool propio en A-D*.
-- Dotes y Psiónica ganan presupuesto pero **siguen sin catálogo**: no hay lista de dotes
-  ni de poderes psiónicos todavía (ver secciones 9 y 10). El presupuesto se puede declarar
-  en la ficha; gastarlo no, hasta que llegue el catálogo.
+- **Dotes**: columna completa desde `HOJA3` (2026-10-14); antes solo se conocía la E (0,
+  supuesto S12, ya tumbado). El código (`PUNTOS_DOTES_POR_LETRA`) sigue con la tabla
+  vieja hasta su tanda. Catálogo y reglas de compra: sección 9.
+- Psiónica: pool y catálogo en la sección 10.
 - Resuelve la pregunta 10 (¿la psiónica tiene pool propio?) y responde a la pregunta 7 en
   la parte de "cuánto dinero inicial" (ver sección 8, Economía).
 - **La "Rareza X" de la columna Recursos es un tope de equipable, no solo flavor.**
@@ -361,13 +361,141 @@ imponen penalizadores por umbral:
   (sección 2). De 1.500 créditos/Común (letra E) a 66.000 créditos/Muy Extraño (letra A).
   Sigue sin confirmar si los créditos son la **única** moneda.
 
-## 9. Dotes `[PARCIAL · HOJA2]`
+## 9. Dotes `[FIRME · DOTES + HOJA3 + usuario 2026-10-14]`
 
-`HOJA` tenía el título sin contenido. `HOJA2` le da presupuesto de creación (0 puntos en
-la letra E; el resto de casillas de la tabla de prioridad no aparecen en el documento,
-*pendiente de confirmar si faltan por transcribir*), pero sigue sin decir **qué son las
-dotes, cuántas se eligen ni qué compra cada punto** — no hay catálogo. Se puede declarar
-el pool en la ficha; gastarlo no, hasta que llegue.
+Fuente: `docs/fuente/dotes.md` (foto de Drive), transcrita fiel en `docs/dotes.md`. Encargo
+y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo anterior
+(regla del usuario); solo se pregunta ante duda real.
+
+### 9.1 Qué es una dote `[FIRME · DOTES]`
+- **105 dotes** con nombre, **coste** en puntos, **requisitos** y efecto en prosa,
+  ordenadas bajo la habilidad a la que pertenecen: Actitud 16 · Atletismo 22 · Biociencia 9 ·
+  Combate Melee 32 · Combate a Distancia 9 · Exploración 6 · Sigilo 3 · Tecnociencia 8 (todas
+  en el subgrupo **Psiónica**). Cultura e Interpretación, sin dotes todavía.
+- El grupo solo ordena: no es requisito (*Mata Gigantes*, en Combate Melee, pide Táctica).
+- **Pool de creación** por letra: A 18 · B 15 · C 12 · D 9 · E 6 (`HOJA3`). Lo que sobra al
+  aprobar la ficha **se pierde**.
+- **Con experiencia** se compran pagando el mismo número que su coste.
+- **Requisitos**: atributo, aplicado, habilidad, especialidad, disciplina psiónica o dote
+  previa. Miran el valor **con el que se juega, especie incluida**. "Nivel en una habilidad
+  psiónica N" se cumple con **cualquier disciplina** a N o más. "Psiónica de origen
+  biológico" equivale a **tener psiónica**, por especie o por implante (el Implante de
+  Resonancia Métrica activará el mismo requisito cuando exista).
+- **Versiones mejoradas**: se compran sin la básica si sus requisitos no la piden (se lee
+  el documento tal cual; el usuario lo confirma con Murillo). Si se tienen las dos, **vale
+  la mejor**, no se suman (*Movimiento Sigiloso* −2 y *Mejorado* −4 → −4).
+- **Dotes con elección dentro** (*Especialidad Médica*, *Crítico Mejorado*, *Bioma
+  Predilecto*): se elige al comprar y queda guardado. *Especialidad Médica* se puede comprar
+  varias veces, con otra pareja de afecciones cada vez.
+
+### 9.2 Maniobras que solo existen con su dote `[FIRME · DOTES + usuario 2026-10-14]`
+- **Bloqueo**: sin la dote la acción "Bloquear con X" **no aparece**. Con ella se mantiene lo
+  de la pregunta 31 y se añaden las casillas que hagan falta (desarmado frente a armado,
+  −3). Tamaño y contraataque, como texto.
+- **Combate Sutil**: usar Reflejos con armas sutiles exige la dote; sin ella se ataca con
+  Potencia (hoy es un interruptor para todos).
+- **Arrollar** y **Ataque de oportunidad**: solo con la dote.
+
+### 9.3 Qué aplica la app y qué es texto `[FIRME · usuario 2026-10-14]`
+Regla general (ver `docs/motor.md`, "Lo que queda fuera del modelo"): **lo que la app puede
+aplicar o recalcular se aplica en la ficha; lo demás queda como texto.**
+- **Texto para siempre**: casillas, alcance, tamaño, altura. No habrá tablero.
+- **Texto hoy**: acciones por turno (reacción, gratuita…) y todos los **límites de uso** (por
+  escena, por día, por objetivo). El coste en acciones y el límite se guardan como dato en
+  el catálogo aunque solo se muestren, para el día que exista registro de acciones
+  (`docs/tareas.md`, "Panel de combate: qué aporta").
+- **Efectos sobre otros personajes**: texto que lee el jugador.
+- **Cambios de resultado** (*Velocista*, *Equilibrista*, *Gran Puntería*: fracaso → éxito,
+  éxito → crítico; *Crítico Mejorado*: crítico con 5): **los aplica la app** al tirar, con
+  su línea en el desglose.
+- ***Impacto Métrico* y *Sobrecarga Métrica***: se usan con la ventana de los poderes
+  (nivel empleado, fatiga, efectos por resultado).
+- **Dotes de áreas sin construir** (aumentos genéticos, biónica): se pueden comprar ya; su
+  efecto es texto hasta que exista el área.
+- ***Olfato de Investigador*** no tiene efecto en la fuente: no aparece hasta que Murillo lo
+  escriba.
+- **Sobreesfuerzo** (*Potencia/Maestría/Gran Maestría Psiónica*, *Saber es Poder*): la
+  regla solo existe para el implante (`docs/fuente/aumentos.md`). Las cuatro dotes quedan
+  como texto hasta que Murillo la escriba para los psiónicos de nacimiento. Su efecto es
+  general (todos los poderes del nivel indicado), no de una disciplina.
+
+- **Capas de motor nuevas** (Capas de Dotes, usuario 2026-10-15; detalle en
+  `docs/modelado-dotes.md` §4). **Se construyen**: `sube_grado` (fracaso → éxito),
+  ventaja con casilla (*Ojo Clínico*, *Bioma Predilecto*), valor de bono según la ficha
+  (*Presencia Imponente* +2 con Fuerza ≥ 5, *Imitación* +3 con Interpretación ≥ 3), crítico
+  con 5 fijo (*Crítico Mejorado*), casillas que tocan el daño (*Golpe Fatigante*, *Derribo
+  Brutal*), fatiga cobrada por casilla (*Ojo Clínico*) y **éxito extra** (*Salto Evasivo*:
+  con la casilla "esquivando un área", si la esquiva acierta suma +1 éxito; +2 en la
+  Mejorada; no convierte un fallo en acierto). **Quedan como texto**: gasto de materiales
+  (*Optimización Biotecnológica*, *Potenciar Veneno*), nota con metros calculados
+  (*Arrollar*), cambiar la opción de terreno (*Bioma Predilecto*: +3 si el terreno es
+  adverso), poder sobre el ataque de un arma (*Impacto Métrico*: la app cobra la fatiga y
+  enseña el daño extra) y el +Fuerza temporal (*Sobrecarga Métrica*).
+
+- **Golpe Mejorado con Escudo**: se construye, casilla «Golpe letal» en el ataque con escudo
+  que cambia el daño a letal (va con las casillas que tocan el daño).
+
+- **Modelo de catálogo** (`MODELO_DOTES` v2 en `scripts/workflows/modelar-area-extraer.ts`,
+  usuario 2026-10-15): se aceptan los campos que piden las capas aprobadas y las lecturas de
+  §9.5 (economía y límites múltiples como dato, requisito por rama, texto por grado, umbral de
+  atributo o habilidad, éxito extra, apagado por fatiga, efectos sobre el daño, categoría de
+  daño, filtro de arma, tope del nivel empleado, especialidad «o», bono por tramo, elección
+  abierta). Se descartan los de las capas que quedan como texto. Supuestos del redactor de
+  `docs/modelado-dotes.md` §11: Equilibrista y el «éxito → crítico» de Velocista van por margen
+  de crítico; Sobrecarga Métrica sin descuentos de Traslación; Bioma Predilecto +3 en rastreo
+  adverso; `capa_pendiente` se descarta (esos efectos se modelan como efecto real). El
+  borrador `docs/modelado-dotes.json` se ajusta a v2 en la primera tanda de código.
+
+### 9.4 Fichas y NPCs `[FIRME · usuario 2026-10-14]`
+- **Fichas ya aprobadas**: no reciben los puntos de dotes de su letra; compran dotes con
+  experiencia.
+- **NPCs**: el máster les pone dotes a mano, sin requisitos ni coste.
+
+### 9.5 Lecturas de la prosa `[FIRME · usuario 2026-10-15, Preguntas de Dotes]`
+De las 160 preguntas del modelado (`docs/modelado-dotes.md` §9) quedaron 9; el resto lo
+resolvían §9.1-9.4, `docs/fuente/habilidades.md`, `docs/fuente/sistema.md` (Miedo, Asfixia)
+o eran texto. Decidido:
+- **Requisito de especialidad con número** («Humor 2»): la habilidad a 2 o más **y** tener
+  elegida esa especialidad.
+- **Cambio de resultado** (*Balanceo*, *Velocista*…): solo el fracaso normal pasa a éxito;
+  el fracaso crítico se queda.
+- ***Imitación***: casilla «Imitando a alguien» en Convencer / mentir.
+- ***Especialidad Médica***, «hemorragia y herida»: solo el estado Heridas, no toda cura.
+- **Sin *Combate Sutil* no hay modo sutil**: tirada con Potencia y daño con Fuerza, también
+  el Aguijón del Proyector de Pulso.
+- ***Combinación Rápida***: ataque a ataque (el sutil no lleva −1); el −1 a defensas solo se
+  va si los tres fueron sutiles.
+- **Ataque de oportunidad**: sin la dote **nadie** lo hace, en ningún caso (tampoco por
+  Finta, Presa, Desarme o Táctica de Flanqueo).
+- ***Arrollar***: a las criaturas solo daño en crítico, el básico del Derribo; a los
+  obstáculos, el daño normal.
+- ***Potenciar Veneno***: «nivel de la toxina» es el nivel de objeto (1-4) del equipo.
+- **Lecturas tomadas por obvias** (validadas sin veto): *Apoyo* vínculo fuerte = casilla de
+  ventaja; *Humor Negro* repite contra la misma dificultad; *Humor de Afrontamiento* y
+  *Llamada a las Armas* solo a aliados; *Enredar* +2 con casilla; *Imitación* +3 mira
+  Interpretación entera; *Reflejos Felinos* −1 al contador de atacantes solo en esquiva;
+  *Salto Ofensivo* mantiene el +2 de dificultad y "a distancia" incluye lanzar; *Zafarse* =
+  liberarse como reacción estando Atrapado; *Especialidad Médica* solo en tiradas de quien
+  trata; *Ojo Clínico* casilla en Medicina y la fatiga solo paga la ventaja; *Autocuidados*
+  "no fatigado" = ni Fatigado ni Exhausto y "emocional" lo marca el jugador; *Potenciar
+  Veneno* fracaso crítico = fracaso; "reduce la dificultad en 1" = +1; *Arrollar*
+  Potencia + Combate Melee, una tirada; *Combinación* −1 solo a esquiva y bloqueo; *Crítico
+  Mejorado* no repetible y no vale al lanzar; *Derribo Brutal* casilla; *Finta* −2 fijo y
+  *Maestro de Fintas* lo quita tras finta con éxito; *Golpe Fatigante* siempre −1 al daño
+  (mínimo 0), puñetazo y patada son contundentes; *Asalto Sigiloso* = Sigilo normal; *Golpe
+  Entorpecedor* la debilidad vale un ataque; *Asesino*, *Desenfundado Rápido*, *Golpe
+  Entorpecedor*: cada rama exige su requisito; *Táctica de Flanqueo* +3 melee o distancia;
+  *Dominio Elevado* vale en maniobras; *Gran Puntería* = acción Apuntar; *Precisión
+  Imperturbable* Apuntar gratis pero se tira; *Tirador Avanzado* "de especialidad" = con una
+  especialidad que se tenga; *Bioma Predilecto* subsistencia siempre en su bioma,
+  iniciativa solo en combate, lista abierta, no repetible; *Descartar Teoría* repite con
+  −2; *Saber es Poder* no pide psiónica; vector descendente daño letal que se suma; nivel
+  empleado con tope en Singularidad/Traslación y la fatiga se paga aunque falle; "volado" =
+  voleo; la ventaja no se acumula.
+
+### 9.6 Pendiente de Murillo
+Efecto de *Olfato de Investigador*; regla del sobreesfuerzo biológico; mejoradas sin la
+básica (lo pregunta el usuario). No se siembran en `/preguntas` por ahora.
 
 ## 10. Psiónica y arquitectura cuántica `[PARCIAL · CONV-1 + CONV-2 + EQUIP + HOJA2]`
 
@@ -607,7 +735,8 @@ al preparar su modelado:
   - Resonancia nv2 "acciones de nivel 1" = las usadas a nivel empleado 1, incluido el local;
     nv6 "duración a 1 minuto para nivel 4" = tiempo de acción de la tabla.
   - Estabilización cuesta 1 de fatiga (como Supresión); su +3/+4 sustituye al +2.
-  - Biónica es especialidad de Tecnociencia.
+  - ~~Biónica es especialidad de Tecnociencia.~~ **Tumbado por `docs/fuente/habilidades.md`
+    (2026-10-14): Biónica es especialidad de Biociencia** (también en `DOTES`).
 - **Respuestas de Murillo (web `/preguntas`, 2026-09-29):**
   - *Resonancia*: alcance local con Inducción es un permiso extra. Barreras de lenguaje o
     biología y códigos encriptados suben la dificultad (los encriptados pueden pedir varias
@@ -1303,7 +1432,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S9 | En un módulo con niveles (mejora estándar o subsistema de `EQUIP`), un efecto que un nivel introduce y los superiores no repiten ni anulan se **acumula**: el nivel N conserva lo desbloqueado en 1..N-1. Cuando el documento da un total explícito para ese nivel ("mejora la bonificación a +2"), se usa ese total tal cual, sin sumarlo al de niveles inferiores. **Implementado de verdad 2026-09-25** (antes solo estaba escrito aquí: el código leía únicamente el bloque del nivel exacto, `niveles.find(n => n.nivel === pieza.nivel)`, y perdía todo lo de 1..N-1 que el nivel actual no repitiera — bug real, detectado en Mira Telescópica/Visor Nocturno, que hasta entonces se parcheaba a mano copiando el efecto en cada nivel superior). `nivelesHasta()`/`acumulaPorClave()`/`ultimoQueDefine()` en `lib/rules/equipo.ts` lo resuelven de forma genérica; los parches a mano ya no hacen falta y se han quitado (Soporte Vital, Sistema de Retroceso, Estabilizador Neuronal). | `EQUIP` describe cada nivel como una mejora sobre el anterior, nunca como un reemplazo (p. ej. Soporte Vital nivel 1 da Resistencia Térmica y los niveles 2-3 no la repiten, pero tampoco dicen que se pierda). Asumir que se pierde algo al subir de nivel sería más raro que asumir que se mantiene. |
 | S10 | El bono de Fuerza del Exoesqueleto, que `EQUIP` duplica para "carga transportable y proezas de fuerza", se aplica **x2 a las 5 fórmulas de movimiento** (Carrera, Salto Vertical, Salto Horizontal, Escalada, Nado) **y a la Carga Transportable** (sección 5.5, `cargaMaxima()`) — la cita completa de `EQUIP`, ya cerrada del todo (2026-09-11: hasta ahora solo se aplicaba a movimiento). No toca la Fuerza general ni Fortaleza/Vida, que siguen sin mecanizar. | `EQUIP` no dice explícitamente qué cuenta como "proeza de fuerza"; las 5 fórmulas salen de Potencia + Atletismo, la misma base física, así que tratarlas todas igual es lo más consistente. Pendiente de confirmar con Murillo. |
 | S11 | El redondeo de los Aplicados (media de dos básicos) es **hacia arriba**. | Decisión explícita del usuario (2026-09-10): mismo criterio que ya usa el motor para especialidades fuera de especialidad (`Math.ceil`), por consistencia con lo que ya existía. `HOJA2` no especifica el redondeo. |
-| S12 | Dotes no tiene presupuesto de creación en las letras A-D, solo **0 en la letra E**. | `HOJA2` solo rellena esa casilla de la tabla de prioridad; las demás están vacías. Puede ser que falten por transcribir — pendiente de confirmar con Murillo antes de construir nada sobre esto. |
+| S12 | ~~Dotes no tiene presupuesto de creación en las letras A-D, solo **0 en la letra E**.~~ **Tumbado por `HOJA3` (2026-10-14):** A 18 · B 15 · C 12 · D 9 · E 6. | `HOJA2` solo rellenaba la casilla E; el documento nuevo trae la columna entera. |
 | S13 | Espada Ligera, Espada y Montante (`catalog/armasMelee.ts`) son **Común**. | `EQUIP` deja esas tres celdas de rareza en blanco (a diferencia de Pelea, que también tiene el coste en blanco: aquí sí hay coste, 100-150 cr.). Decisión del usuario (2026-09-11): Común encaja con ese rango de precio, igual que el resto de piezas Común del catálogo. |
 | S14 | Los umbrales de un mismo recurso **no se acumulan**: solo el más profundo alcanzado aporta su penalizador (Malherido sustituye a Herido, no se suma). PG y fatiga sí son independientes entre sí — Herido (PG) y Fatigado (fatiga) a la vez sí suman sus dos penalizadores. | `SISTEMA` (`docs/sistema-y-combate.md` §"Puntos de salud") da los umbrales como tres/dos filas de una tabla, sin decir si se combinan. Sumar -1-3-5 en Moribundo (-9 a todo) sería más severo que cualquier otra regla del sistema; tratar los tramos como bandas excluyentes es la lectura estándar en este tipo de tablas y la que no exige inventar un techo nuevo. |
 | S15 | El "(mínimo 1)" de Moribundo y Exhausto (`docs/sistema.md` §7) se implementa como: el umbral de esa banda es `max(2, PGmáx × 0.1)`, comparado con `<`. Así un personaje con PG máximos bajos entra en Moribundo en cuanto le queda 1 punto, en vez de que la banda quede vacía por redondeo (con PGmáx=8, el 10% son 0,8, que sin el mínimo nunca se cruza antes de llegar a 0, que ya es "inconsciente", un estado distinto). Herido, Malherido y Fatigado no llevan ese "mínimo" en el documento, así que no se les aplica. | El documento fija el mínimo en puntos absolutos ("mínimo 1") pero no dice cómo combinarlo con el corte porcentual cuando ambos compiten. Es una decisión de redondeo, no de regla del juego — pendiente de que Murillo confirme si el criterio es este u otro. |
@@ -1382,7 +1511,7 @@ plano). ¿Lo conservan igual que la base, lo pierden, o ganan alguno adicional (
 sospecha que también contra eléctrico, 2026-09-12)? Pendiente de confirmar con el diseñador.
 
 **Diseño pendiente**
-9. ~~Dotes: `HOJA2` da presupuesto (0 en la letra E, el resto sin rellenar), pero sigue sin decir qué son, cuántas se eligen ni qué compra cada punto.~~ **En proceso (usuario, 2026-09-10):** el diseñador ya lo está preparando, no hace falta insistir — se retoma cuando llegue el documento.
+9. ~~Dotes: `HOJA2` da presupuesto (0 en la letra E, el resto sin rellenar), pero sigue sin decir qué son, cuántas se eligen ni qué compra cada punto.~~ **Resuelta (2026-10-14):** llegó el documento de Dotes (`DOTES`) y el pool completo (`HOJA3`); ver sección 9.
 10. ~~Psiónica: ¿los poderes se compran con los 10 puntos de creación, con otro pool, o vienen dados por especie/dote?~~ **Resuelta por `HOJA2`:** pool propio, ligado a la letra de prioridad. Sigue sin catálogo de poderes.
 11. ~~Aumentos: ¿hay un tope de capacidad de lo que un cuerpo aguanta instalado? ¿Biónicos y genéticos comparten ese tope o van por separado? ¿Instalarse de más tiene consecuencia?~~ **En proceso (usuario, 2026-09-10):** el diseñador ya lo está preparando — se retoma cuando llegue el documento.
 12. ~~Progresión post-creación: ¿XP, hitos, puntos por sesión?~~ **Resuelta por `HOJA2`:** hay XP, y el coste por nivel es el mismo que en creación (Nivel × factor según categoría) — ver "Coste y progresión", sección 2.

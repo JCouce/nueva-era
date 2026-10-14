@@ -353,6 +353,13 @@ tres recursos de personaje. No se prioriza hasta que haga falta de verdad.
   no alimenten ningún derivado): modificador narrativo por definición, no
   hay nada que mecanizar salvo que el diseñador dé una regla concreta que los
   use.
+- **El tablero** (casillas, alcance, tamaño, altura): la app no tendrá nunca un grid —
+  queda fuera por definición del proyecto (usuario, 2026-10-14). Regla general: **lo que la
+  app puede aplicar o recalcular se aplica en la ficha; lo demás es texto** (tipo 3 o 4).
+  Un efecto que solo depende del tablero no es un hueco a construir. Distinto es lo que la
+  app *podría* ganar con UX en vez de prosa (p.ej. "N usos por turno" como varios botones,
+  igual que el contador de atacantes adicionales de Esquivar): eso se etiqueta **candidata
+  a UX** al modelar y se decide por patrón, no pieza a pieza (`docs/tareas.md`).
 - **El "Poder" del NPC** (`lib/rules/npc.ts`): una métrica de bookkeeping
   solo para el máster — no la ve el jugador, no alimenta ninguna acción.
   Utilidad del máster, prima hermana de Recursos/Tienda pero fuera del ciclo
