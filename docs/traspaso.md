@@ -40,6 +40,7 @@ todo lo demás, en `docs/tareas.md`.
 | `docs/sistema-y-combate.md` | Transcripción del PDF de combate: dado, dificultades, salud, daño, 23 estados | Solo si llega una revisión del PDF |
 | `docs/equipamiento.md` | Transcripción del PDF de equipamiento: armaduras, armas, kerzul, medicina | Idem |
 | `docs/Creación de Personaje.odt` | La hoja original del diseñador | Nunca, es material fuente |
+| `docs/fuente/` | **Foto de los documentos del diseñador en Drive**, generada por `npm run sync-drive`. Material fuente, no fuente de verdad: lo que vale para el código es `docs/sistema.md` | Nunca a mano. Cómo se usa y qué hacer tras un sync con cambios: `docs/drive-sync.md` |
 | `src/lib/rules/` | El motor: atributos, habilidades, ficha, derivados, creación, tiradas, modificadores, migraciones | Con su test al lado |
 | `src/lib/catalog/` | Datos puros: especies y el catálogo de equipo entero | Al añadir contenido |
 | `CLAUDE.md` | Stack, comandos, arquitectura y gotchas del proyecto | Al cambiar estructura o comandos |

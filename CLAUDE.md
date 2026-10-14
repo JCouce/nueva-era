@@ -49,6 +49,7 @@ no los define.
 | `npm run db:studio` | Prisma Studio. |
 | `npm run make-master -- <email>` | Asciende un usuario a MASTER. |
 | `npm run seed-npcs` | Crea/actualiza NPCs de ejemplo (`NpcTemplate`) — cómo crear uno, ver "NPCs" más abajo. |
+| `npm run sync-drive` | Baja los documentos del diseñador de Drive a `docs/fuente/` (Markdown) y enseña qué ha cambiado desde la última foto commiteada. Nunca commitea. Requiere `brew install pandoc`. Qué hacer después: `docs/drive-sync.md`. |
 | `npm run seed-preguntas -- <json>` | Siembra/actualiza las preguntas al diseñador de `/preguntas` (página pública, sin login) desde `scripts/data/*.json`. Nunca pisa respuestas. En prod: `DATABASE_URL=<Neon> npm run seed-preguntas -- <json>`. |
 
 ## Arquitectura y archivos clave

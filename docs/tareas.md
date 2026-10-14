@@ -32,6 +32,12 @@ cuál va antes que la otra:
   2026-10-09 (`docs/propuesta-especies.md`).
 - "Pestaña Personaje + envío a revisión" (en Pendiente) — decidido 2026-10-13 con maqueta;
   va antes o justo después de especies E2.
+- Sync con Drive (`npm run sync-drive`, `docs/drive-sync.md`) — montado 2026-10-14 con la
+  primera foto en `docs/fuente/`. **Pendiente: reconciliar la línea base** área por área
+  (Creación de Personaje, Sistema, Equipamiento, Especies, Psiónica, Habilidades) contra
+  `docs/sistema.md`; Aumentos, Dotes, Puntos Heróicos y Neos Plouton son áreas sin
+  código. Primer adelanto (Creación): Vida/Fatiga base 8 → 10, Dotes con presupuesto
+  por prioridad, topes de creación movidos.
 
 ---
 
