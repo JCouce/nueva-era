@@ -111,7 +111,11 @@ const comunes = {
   requisitoAlcance: requisitoSimpleSchema.optional(),
   condicionFicha: z.literal("no_fatigado").optional(),
   filtroArma: z
-    .strictObject({ empleo: z.enum(["una mano", "dos manos"]).optional(), tipoDanio: z.array(z.string().min(1)).optional() })
+    .strictObject({
+      empleo: z.enum(["una mano", "dos manos"]).optional(),
+      tipoDanio: z.array(z.string().min(1)).optional(),
+      desarmado: z.literal(true).optional(),
+    })
     .optional(),
   borrador: z.number().int().min(0),
 };

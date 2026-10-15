@@ -133,7 +133,8 @@ function FilaTirada({
 }) {
   const sheet = ficha.ficha;
   const [enEspecialidad, setEnEspecialidad] = useState(false);
-  // Sutil (Feature 1, docs/equipamiento.md:848-850): pre-seleccionado por el
+  // Sutil (Feature 1, docs/equipamiento.md:848-850; solo con la dote Combate Sutil,
+  // D2b-2: sin ella la tirada no trae aplicadoSutil y no hay interruptor): pre-seleccionado por el
   // aplicado que dé más bonificador de ATAQUE, no de daño — es la parte que
   // decide si conviene tirar. Lazy initializer: solo se calcula una vez, al
   // montar la fila.
@@ -569,7 +570,8 @@ export function AccionesTab({
     farmacosDirectas,
     accionesGeneradas,
   } = useMemo(() => {
-    const generadas = accionesDeAtaque(sheet, mods).map(conExtras);
+    // Bloquear y Sutil solo con su dote (D2b-2): los permisos salen de la FichaResuelta.
+    const generadas = accionesDeAtaque(sheet, mods, ficha.extrasDotes.permisos).map(conExtras);
     // Textos de dote en "Levantar [escudo]" (D2b-1), a su nota.
     const directas = accionesDirectasDeAtaque(sheet).map((d) => conExtrasDirectaDeFicha(ficha, d));
     return {

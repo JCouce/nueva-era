@@ -52,7 +52,7 @@ const base = (): Sheet => {
 // Traje Ultra Ligero (+1 a las salvaciones de Fortaleza y Reflejos, alcance tiradaId),
 // Visor Nocturno (casilla con alcance en Buscar), fusil con Lanzagranadas (ajuste fijo
 // −1), Mira nv1 (bono por tramo) y Sistema de Retroceso (alcance modo F. Auto), la VTM
-// nv4 (opción "complejo" en Tratar heridas) y el puñetazo (Sutil).
+// nv4 (opción "complejo" en Tratar heridas) y el puñetazo (Sutil, con la dote Combate Sutil).
 const conEquipo = (s: Sheet): Sheet => {
   s = equipar(s, { instanciaId: "arm", catalogoId: "traje_ultra_ligero" });
   s = equipar(s, { instanciaId: "vn", catalogoId: "visor_nocturno", nivel: 2, instaladoEnId: "arm" });
@@ -62,7 +62,9 @@ const conEquipo = (s: Sheet): Sheet => {
   s = equipar(s, { instanciaId: "sr", catalogoId: "sistema_retroceso", nivel: 1, instaladoEnId: "fa" });
   s = equipar(s, { instanciaId: "vtm", catalogoId: "valija_tactica_medica", nivel: 4 });
   s = equipar(s, { instanciaId: "pu", catalogoId: "pelea_punetazo" });
-  return s;
+  // El estilo Sutil solo existe con Combate Sutil (D2b-2); base() ya cumple su requisito
+  // (Agilidad 1, Combate Melee 2). La dote no toca ningún otro número.
+  return { ...s, dotes: [{ id: "dote_combate_sutil" }] };
 };
 
 const ENFERMO_Y_ATURDIDO: EstadoActivo[] = [
@@ -96,7 +98,7 @@ function fija(f: FichaResuelta, id: string): Accion {
   return conPsionicaEnTiradaFija(niveles, conEsquivaLevitando(niveles, t));
 }
 function ataque(f: FichaResuelta, label: string): Accion {
-  return conCondicionesDeEquipo(f, accionesDeAtaque(f.ficha, f.modificadores).find((t) => t.label === label)!);
+  return conCondicionesDeEquipo(f, accionesDeAtaque(f.ficha, f.modificadores, f.extrasDotes.permisos).find((t) => t.label === label)!);
 }
 
 // AccionesTab.tsx:73-75

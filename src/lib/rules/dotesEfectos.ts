@@ -15,11 +15,14 @@
 //   bonosTramo  bono por tramo de distancia (Tirador de Larga Distancia y su Avanzado, este
 //               solo en especialidad; vale el mejor de los dos)
 //   criticos    crítico fijo en los ataques de la especialidad elegida (Crítico Mejorado)
+//   permisos    (D2b-2) lo que solo existe con dote en las tiradas de arma: las familias
+//               habilitadas (Bloqueo → bloquear_melee) y dónde cabe el estilo Sutil (Combate
+//               Sutil → ataque_melee y bloquear_melee). Lo lee combate.ts al generar filas.
 //
 //   dotesActivas     las compradas que dan efecto: sin requisito roto y sin las que
 //                    sustituye una mejorada que también se tiene ("vale la mejor")
-//   efectosDeDotes   → { casillas, modificadores, textos, bonosTramo, criticos }
-//   casillasDeDotes / textosDeDotes / modificadoresDeDotes   atajos sobre una ficha
+//   efectosDeDotes   → { casillas, modificadores, textos, bonosTramo, criticos, permisos }
+//   casillasDeDotes / textosDeDotes / modificadoresDeDotes / permisosDeDotes   atajos sobre una ficha
 import { ATRIBUTOS } from "./atributos";
 import { HABILIDADES } from "./habilidades";
 import {
@@ -36,7 +39,7 @@ import { DOTES } from "../catalog/dotes";
 import { especialidadPorId, type EspecialidadId } from "../catalog/especialidades";
 import type { DoteCatalogo, EfectoDote } from "../catalog/dotesTipos";
 import type { BonoPorTramo, CondicionTirada, OpcionCondicion, TramoDistancia } from "./condiciones";
-import type { AlcanceModificador, ModificadorConFuente } from "./modificadores";
+import type { AlcanceModificador, FamiliaArma, ModificadorConFuente } from "./modificadores";
 import type { TextoEnTirada } from "./especie";
 import type { Sheet } from "./sheet";
 
@@ -76,6 +79,13 @@ export type BonoTramoDeDote = { alcance: AlcanceModificador; bono: BonoPorTramo 
 // Crítico fijo (Crítico Mejorado): `margen` éxitos en los ataques con arma de esa especialidad.
 export type CriticoDeDote = { especialidad: EspecialidadId; margen: number; fuente: string };
 
+// Lo que habilitan las dotes en las tiradas generadas por arma (D2b-2, §9.2). Sin dote no
+// hay permiso: ni el NPC del máster (modo libre) se lo salta, solo deja de mirar requisitos.
+//   familias  las de FAMILIAS_SOLO_CON_DOTE que alguna dote activa habilita (Bloqueo)
+//   sutil     familias donde un arma Sutil puede tirar con Reflejos (Combate Sutil)
+export type PermisosDeDotes = { familias: readonly FamiliaArma[]; sutil: readonly FamiliaArma[] };
+export const SIN_PERMISOS_DE_DOTES: PermisosDeDotes = { familias: [], sutil: [] };
+
 export type EfectosDeDotes = {
   // Casillas con alcance, al mismo índice que las del equipo y la especie.
   casillas: CondicionTirada[];
@@ -84,17 +94,26 @@ export type EfectosDeDotes = {
   textos: TextoEnTirada[];
   bonosTramo: BonoTramoDeDote[];
   criticos: CriticoDeDote[];
+  permisos: PermisosDeDotes;
 };
 
-export const SIN_EFECTOS_DE_DOTES: EfectosDeDotes = { casillas: [], modificadores: [], textos: [], bonosTramo: [], criticos: [] };
+export const SIN_EFECTOS_DE_DOTES: EfectosDeDotes = {
+  casillas: [],
+  modificadores: [],
+  textos: [],
+  bonosTramo: [],
+  criticos: [],
+  permisos: SIN_PERMISOS_DE_DOTES,
+};
 
 const TRAMOS: readonly TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
 
 // El alcance del efecto: el del destino y, si la dote filtra el arma por empleo
 // (Desenfundado Rápido: a una mano), ese empleo en el alcance de familia.
-function alcanceDe(destino: AlcanceModificador, e: { filtroArma?: { empleo?: "una mano" | "dos manos" } }): AlcanceModificador {
-  const empleo = e.filtroArma?.empleo;
-  return empleo && destino.tipo === "familiaArma" ? { ...destino, empleo } : destino;
+function alcanceDe(destino: AlcanceModificador, e: { filtroArma?: { empleo?: "una mano" | "dos manos"; desarmado?: true } }): AlcanceModificador {
+  const f = e.filtroArma;
+  if (!f || destino.tipo !== "familiaArma") return destino;
+  return { ...destino, ...(f.empleo && { empleo: f.empleo }), ...(f.desarmado && { desarmado: true as const }) };
 }
 
 // "Vale la mejor" entre bonos por tramo que no se suman (`noAcumulaCon`, en cualquiera de
@@ -144,6 +163,8 @@ export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresR
   const textos: TextoEnTirada[] = [];
   const bonosTramo: BonoTramoDeDote[] = [];
   const criticos: CriticoDeDote[] = [];
+  const familias = new Set<FamiliaArma>();
+  const sutil = new Set<FamiliaArma>();
   const compradas = activas.map((a) => a.compra);
 
   for (const activa of activas) {
@@ -165,6 +186,20 @@ export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresR
         if (DESTINOS_DOTES[e.alcance]?.tipo !== "especialidadArmaElegida" || !esp) return;
         if (valores && !especialidadArmaPropia(dote, esp.id, valores, compradas)) return;
         criticos.push({ especialidad: esp.id, margen: e.valor, fuente });
+        return;
+      }
+      // Habilitador (Bloqueo): la familia aparece. Arbitraje duro (§9.2): sin él, no existe.
+      if (e.tipo === "habilita") {
+        const destino = DESTINOS_DOTES[e.accion];
+        if (destino?.tipo === "tirada" && destino.alcance.tipo === "familiaArma") familias.add(destino.alcance.familia);
+        return;
+      }
+      // Estilo Sutil (Combate Sutil): el generador solo construye el cambio a Reflejos sobre
+      // una familia de arma, que es lo que hace el interruptor Sutil de siempre.
+      if (e.tipo === "cambia_par") {
+        const destino = DESTINOS_DOTES[e.alcance];
+        if (destino?.tipo === "tirada" && destino.alcance.tipo === "familiaArma" && e.aplicado === "reflejos")
+          sutil.add(destino.alcance.familia);
         return;
       }
       if (e.tipo === "bono") {
@@ -243,7 +278,7 @@ export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresR
       }
     });
   }
-  return { casillas, modificadores, textos, bonosTramo, criticos };
+  return { casillas, modificadores, textos, bonosTramo, criticos, permisos: { familias: [...familias], sutil: [...sutil] } };
 }
 
 // Atajos con los requisitos de la propia ficha (sin especie resuelta aparte).
@@ -254,3 +289,4 @@ const deFicha = (sheet: Sheet) => {
 export const casillasDeDotes = (sheet: Sheet): CondicionTirada[] => deFicha(sheet).casillas;
 export const textosDeDotes = (sheet: Sheet): TextoEnTirada[] => deFicha(sheet).textos;
 export const modificadoresDeDotes = (sheet: Sheet): ModificadorConFuente[] => deFicha(sheet).modificadores;
+export const permisosDeDotes = (sheet: Sheet): PermisosDeDotes => deFicha(sheet).permisos;

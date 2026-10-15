@@ -3245,6 +3245,9 @@ export const DOTES: readonly DoteCatalogo[] = [
         "alcance": "familia:bloquear_melee",
         "valor": -3,
         "condicion": "Desarmado frente a atacante armado",
+        "filtroArma": {
+          "desarmado": true
+        },
         "borrador": 7
       },
       {
@@ -3253,6 +3256,9 @@ export const DOTES: readonly DoteCatalogo[] = [
         "texto": "Si tu ataque natural o desarmado hace daño letal no cuentas como desarmado: no marques la casilla.",
         "condicion": "Desarmado frente a atacante armado",
         "porque": "tercero",
+        "filtroArma": {
+          "desarmado": true
+        },
         "borrador": 8
       }
     ],
@@ -3267,8 +3273,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         },
         "mecanismo": "gate_instalacion",
         "arbitraje": "duro",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -3277,8 +3282,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:bloquear_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -3287,8 +3291,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:bloquear_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -3297,8 +3300,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:bloquear_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -3307,8 +3309,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:bloquear_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -3317,8 +3318,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:bloquear_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -3327,8 +3327,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:bloquear_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -3337,8 +3336,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:bloquear_melee"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -3347,8 +3345,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:bloquear_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "estado": "construido"
       }
     ]
   },
@@ -3401,8 +3398,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:bloquear_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "estado": "construido"
       }
     ]
   },
@@ -3455,8 +3451,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:bloquear_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "estado": "construido"
       }
     ]
   },
@@ -3508,8 +3503,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "sustitucion_aplicado",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -3518,8 +3512,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:bloquear_melee"
         },
         "mecanismo": "sustitucion_aplicado",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "estado": "construido"
       }
     ]
   },
@@ -3578,7 +3571,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         },
         "mecanismo": "accion_sin_equipo",
         "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "bloqueoPor": "D2c"
       }
     ]
   },
@@ -3629,7 +3622,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         },
         "mecanismo": "nota_fija",
         "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "bloqueoPor": "D2c"
       }
     ]
   },
@@ -3680,7 +3673,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         },
         "mecanismo": "nota_fija",
         "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "bloqueoPor": "D2c"
       }
     ]
   },
@@ -3731,7 +3724,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         },
         "mecanismo": "nota_fija",
         "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "bloqueoPor": "D2c"
       }
     ]
   },
@@ -3833,7 +3826,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         },
         "mecanismo": "accion_sin_equipo",
         "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "bloqueoPor": "D2c"
       }
     ]
   },
@@ -4109,8 +4102,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:bloquear_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "estado": "construido"
       }
     ]
   },
@@ -4193,8 +4185,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:bloquear_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-2"
+        "estado": "construido"
       }
     ]
   },
@@ -7463,10 +7454,10 @@ export const DOTES: readonly DoteCatalogo[] = [
 
 // Recuento por tanda (lo escribe el generador):
 //   188 efectos (185 en el borrador)
-//   construidos: 41
-//   texto: 67
+//   construidos: 45
+//   texto: 78
 //   pendientes D2b-1: 0
-//   pendientes D2b-2: 20
-//   pendientes D2c: 33
+//   pendientes D2b-2: 0
+//   pendientes D2c: 38
 //   pendientes D2d: 17
 //   pendientes tiradas-fijas: 10

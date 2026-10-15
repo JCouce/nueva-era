@@ -10,9 +10,25 @@ import { MUNICION_GRANADA } from "../catalog/municion";
 import type { MotorMetadata } from "./motor";
 import { modificadorAccion, gastoTotal, gastoMunicionEspecial, avisoInsuficiente } from "./acciones";
 import { aplicado, modificadoresActivos } from "./derivados";
+import { permisosDeDotes } from "./dotesEfectos";
 
-// En reposo (especie + equipo): estos tests no llevan estados de combate.
-const accionesDeAtaque = (s: Sheet) => accionesDeAtaqueCon(s, modificadoresActivos(s));
+// En reposo (especie + equipo): estos tests no llevan estados de combate. Los permisos de
+// dotes (Bloquear, Sutil; D2b-2) salen de las dotes de la propia ficha, con sus requisitos.
+const accionesDeAtaque = (s: Sheet) => accionesDeAtaqueCon(s, modificadoresActivos(s), permisosDeDotes(s));
+
+// D2b-2: Bloquear solo con la dote Bloqueo y el estilo Sutil solo con Combate Sutil. Añade la
+// dote y sube lo justo para cumplir su requisito (Combate Melee 1; Combate Sutil, también
+// Agilidad 1), sin tocar nada más de la ficha.
+type DoteDeArma = "dote_bloqueo" | "dote_combate_sutil";
+function conDotes(s: Sheet, ...ids: DoteDeArma[]): Sheet {
+  const cm = s.habilidades.combate_melee;
+  return {
+    ...s,
+    atributos: ids.includes("dote_combate_sutil") ? { ...s.atributos, agilidad: Math.max(s.atributos.agilidad, 1) } : s.atributos,
+    habilidades: { ...s.habilidades, combate_melee: { ...cm, valor: Math.max(cm.valor, 1) } },
+    dotes: [...s.dotes, ...ids.map((id) => ({ id }))],
+  };
+}
 
 // Ficha de trabajo: se parte de la de por defecto y se tocan atributos sueltos.
 function ficha(patch: { atributos?: Partial<Sheet["atributos"]> }): Sheet {
@@ -49,7 +65,7 @@ describe("sin nada equipado", () => {
 
 describe("pelea (puñetazo, patada, codazo)", () => {
   test("solo aparece si el jugador la equipa, como cualquier otra arma", () => {
-    let sheet = defaultSheet();
+    let sheet = conDotes(defaultSheet(), "dote_bloqueo");
     sheet = equipar(sheet, { instanciaId: "p1", catalogoId: "pelea_punetazo" });
     const labels = accionesDeAtaque(sheet).map((t) => t.label);
     assert.deepEqual(labels, ["Golpear con Puñetazo", "Bloquear con Puñetazo"]);
@@ -277,7 +293,7 @@ describe("gasto por modo (docs/prompt-gasto-recursos.md, Fase 1)", () => {
   });
 
   test("Bloquear con Proyector de Pulso (Aguijón) es gratis: sin recursoInstanciaId", () => {
-    const sheet = conProyectorPulso(1);
+    const sheet = conDotes(conProyectorPulso(1), "dote_bloqueo");
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Proyector de Pulso (Aguijón)")!;
     assert.equal(fila.recursoInstanciaId, undefined);
   });
@@ -614,7 +630,7 @@ describe("lanzagranadas integrado", () => {
 
 describe("bayoneta", () => {
   test("genera Golpear+Bloquear con el mismo daño y crítico que el Cuchillo de Combate", () => {
-    let sheet = ficha({ atributos: { fuerza: 4 } });
+    let sheet = conDotes(ficha({ atributos: { fuerza: 4 } }), "dote_bloqueo");
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
     sheet = equipar(sheet, { instanciaId: "bay1", catalogoId: "bayoneta", nivel: 1, instaladoEnId: "arma1" });
     const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Bayoneta (Impetus)")!;
@@ -689,7 +705,7 @@ describe("arma melee equipada", () => {
 
 describe("estilo Sutil — toggle en vez de fila duplicada (docs/equipamiento.md:848-850)", () => {
   test("un arma Sutil expone aplicadoSutil (Reflejos) y danioSutil (base Potencia) por modo", () => {
-    let sheet = ficha({ atributos: { fuerza: 4, agilidad: 2 } }); // potencia = media(4,2) = 3
+    let sheet = conDotes(ficha({ atributos: { fuerza: 4, agilidad: 2 } }), "dote_combate_sutil"); // potencia = media(4,2) = 3
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada_ligera" });
     const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Espada Ligera")!;
     assert.equal(golpe.aplicado, "potencia");
@@ -699,7 +715,7 @@ describe("estilo Sutil — toggle en vez de fila duplicada (docs/equipamiento.md
   });
 
   test("un arma no Sutil no lleva aplicadoSutil ni danioSutil", () => {
-    let sheet = defaultSheet();
+    let sheet = conDotes(defaultSheet(), "dote_combate_sutil");
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada" });
     const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Espada")!;
     assert.equal(golpe.aplicadoSutil, undefined);
@@ -707,7 +723,8 @@ describe("estilo Sutil — toggle en vez de fila duplicada (docs/equipamiento.md
   });
 
   test("modificadorAccion: el toggle sutilActivo cambia el aplicado usado, la habilidad no cambia", () => {
-    let sheet = ficha({ atributos: { fuerza: 2, agilidad: 0, percepcion: 4 } }); // potencia=1, reflejos=2
+    // Combate Sutil sube Agilidad a 1 (su requisito): potencia < reflejos igualmente.
+    let sheet = conDotes(ficha({ atributos: { fuerza: 2, agilidad: 0, percepcion: 4 } }), "dote_combate_sutil");
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada_ligera" });
     const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Espada Ligera")!;
     const normal = modificadorAccion(sheet, golpe, false, modificadoresActivos(sheet), false);
@@ -787,7 +804,7 @@ describe("efectoCritico (Feature 2, piloto Cuchillo de Combate)", () => {
 
 describe("Bloqueo (otra forma de defensa, pregunta 31 resuelta)", () => {
   test("toda arma melee equipada genera también su 'Bloquear con...'", () => {
-    let sheet = defaultSheet();
+    let sheet = conDotes(defaultSheet(), "dote_bloqueo");
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada" });
     const bloqueo = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Espada")!;
     assert.ok(bloqueo);
@@ -799,7 +816,7 @@ describe("Bloqueo (otra forma de defensa, pregunta 31 resuelta)", () => {
   });
 
   test("con un arma Sutil, el Bloqueo expone Reflejos como opción, sin asumirlo (elección del jugador)", () => {
-    let sheet = defaultSheet();
+    let sheet = conDotes(defaultSheet(), "dote_bloqueo", "dote_combate_sutil");
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada_ligera" });
     const bloqueo = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Espada Ligera")!;
     assert.equal(bloqueo.aplicado, "potencia");
@@ -808,19 +825,75 @@ describe("Bloqueo (otra forma de defensa, pregunta 31 resuelta)", () => {
   });
 
   test("el Mangual trae su propio -2 al Bloqueo", () => {
-    let sheet = defaultSheet();
+    let sheet = conDotes(defaultSheet(), "dote_bloqueo");
     sheet = equipar(sheet, { instanciaId: "mangual1", catalogoId: "flagelo_mangual" });
     const bloqueo = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Mangual")!;
     assert.deepEqual(bloqueo.ajustesFijos, [{ valor: -2, fuente: "Mangual" }]);
   });
 
   test("mismo penalizador por atacante adicional que Esquivar", () => {
-    let sheet = defaultSheet();
+    let sheet = conDotes(defaultSheet(), "dote_bloqueo");
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada" });
     const bloqueo = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Espada")!;
     const contador = bloqueo.condiciones?.find((c) => c.id === "atacantes_adicionales");
     assert.ok(contador && contador.tipo === "contador");
     assert.equal(contador.valorPorUnidad, -1);
+  });
+});
+
+describe("D2b-2: Bloquear y el estilo Sutil solo con su dote (§9.2, §9.5)", () => {
+  function armado(s: Sheet): Sheet {
+    s = equipar(s, { instanciaId: "el", catalogoId: "espada_ligera" });
+    s = equipar(s, { instanciaId: "fa", catalogoId: "fusil_asalto_impetus" });
+    s = equipar(s, { instanciaId: "bay", catalogoId: "bayoneta", nivel: 1, instaladoEnId: "fa" });
+    s = equipar(s, { instanciaId: "arm", catalogoId: "armadura_pesada" });
+    return equipar(s, { instanciaId: "pp", catalogoId: "proyector_pulso", nivel: 2, instaladoEnId: "arm" });
+  }
+  const BASE = ficha({ atributos: { fuerza: 3, agilidad: 2, percepcion: 2 } });
+  const bloqueos = (s: Sheet) => accionesDeAtaque(s).filter((t) => t.label.startsWith("Bloquear"));
+  const fila = (s: Sheet, label: string) => accionesDeAtaque(s).find((t) => t.label === label)!;
+  const AGUIJON = "Golpear con Proyector de Pulso (Aguijón)";
+  const BLOQUEO_AGUIJON = "Bloquear con Proyector de Pulso (Aguijón)";
+
+  test("sin Bloqueo no hay ningún «Bloquear con X» (arma melee, Bayoneta ni Aguijón); los golpes siguen", () => {
+    const s = armado(conDotes(BASE, "dote_combate_sutil"));
+    assert.deepEqual(bloqueos(s), []);
+    assert.ok(accionesDeAtaque(s).every((t) => t.grupo !== "Defensa"));
+    for (const l of ["Golpear con Espada Ligera", "Bayoneta (Impetus)", AGUIJON]) assert.ok(fila(s, l), l);
+  });
+
+  test("con Bloqueo salen los tres", () => {
+    const labels = bloqueos(armado(conDotes(BASE, "dote_bloqueo"))).map((t) => t.label).sort();
+    assert.deepEqual(labels, ["Bloquear con Bayoneta (Impetus)", "Bloquear con Espada Ligera", BLOQUEO_AGUIJON].sort());
+  });
+
+  test("sin Combate Sutil, un arma Sutil no trae interruptor: Potencia al tirar y Fuerza al daño", () => {
+    const s = armado(conDotes(BASE, "dote_bloqueo"));
+    const golpe = fila(s, "Golpear con Espada Ligera");
+    assert.equal(golpe.aplicado, "potencia");
+    assert.equal(golpe.aplicadoSutil, undefined);
+    assert.equal(golpe.ataque?.modos[0].danioSutil, undefined);
+    assert.equal(golpe.ataque?.modos[0].danio, 5); // Fue(3) + 2
+    assert.equal(fila(s, "Bloquear con Espada Ligera").aplicadoSutil, undefined);
+  });
+
+  test("sin Combate Sutil, el Aguijón golpea y bloquea con Potencia; el daño (Fuerza) no cambia", () => {
+    const sin = armado(conDotes(BASE, "dote_bloqueo"));
+    const con = armado(conDotes(BASE, "dote_bloqueo", "dote_combate_sutil"));
+    assert.deepEqual([fila(sin, AGUIJON).aplicado, fila(sin, AGUIJON).habilidad], ["potencia", "combate_melee"]);
+    assert.equal(fila(sin, BLOQUEO_AGUIJON).aplicado, "potencia");
+    assert.equal(fila(con, AGUIJON).aplicado, "reflejos");
+    assert.equal(fila(con, BLOQUEO_AGUIJON).aplicado, "reflejos");
+    assert.equal(fila(sin, AGUIJON).ataque?.modos[0].danio, 7); // Fue(3) + 2 + nivel 2
+    assert.equal(fila(con, AGUIJON).ataque?.modos[0].danio, 7);
+  });
+
+  test("con el requisito roto (Combate Melee sin entrenar), igual que sin la dote", () => {
+    const roto = armado({ ...BASE, dotes: [{ id: "dote_bloqueo" }, { id: "dote_combate_sutil" }] });
+    assert.ok(roto.habilidades.combate_melee.valor < 1);
+    assert.deepEqual(bloqueos(roto), []);
+    assert.equal(fila(roto, "Golpear con Espada Ligera").aplicadoSutil, undefined);
+    assert.equal(fila(roto, AGUIJON).aplicado, "potencia");
   });
 });
 
@@ -886,7 +959,7 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
   }
 
   test("genera cuatro filas: dos a distancia (por habilidad) y dos con Aguijón (melee)", () => {
-    const sheet = conProyectorPulso(1);
+    const sheet = conDotes(conProyectorPulso(1), "dote_bloqueo");
     const labels = accionesDeAtaque(sheet)
       .map((t) => t.label)
       .filter((l) => l.includes("Proyector de Pulso"));
@@ -911,7 +984,7 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
   });
 
   test("Aguijón (golpear y bloquear) es Reflejos + Combate Melee, no Combate a Distancia/Tecnociencia", () => {
-    const sheet = conProyectorPulso(1);
+    const sheet = conDotes(conProyectorPulso(1), "dote_bloqueo", "dote_combate_sutil");
     const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Proyector de Pulso (Aguijón)")!;
     const bloqueo = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Proyector de Pulso (Aguijón)")!;
     assert.deepEqual([golpe.aplicado, golpe.habilidad], ["reflejos", "combate_melee"]);

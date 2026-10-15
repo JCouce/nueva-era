@@ -39,8 +39,9 @@ cuál va antes que la otra:
   código. Primer adelanto (Creación): Vida/Fatiga base 8 → 10, Dotes con presupuesto
   por prioridad, topes de creación movidos.
 - "Dotes" (Fase 5, en Pendiente) — D1 (compra), D2a (casillas, bonos fijos y textos), la
-  tanda ESP (catálogo de especialidades por id) y D2b-1 (efectos en las tiradas de arma)
-  hechas; siguen D2b-2, D2c y D2d, con su recuento de pendientes.
+  tanda ESP (catálogo de especialidades por id), D2b-1 (efectos en las tiradas de arma) y
+  D2b-2 (Bloquear y Sutil solo con su dote) hechas; siguen D2c y D2d, con su recuento de
+  pendientes. **Antes del próximo `git push`: mandar al grupo el aviso de D2b-2.**
 
 ---
 
@@ -1405,9 +1406,10 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
     (casillas al índice, bonos fijos como Modificador "dote", textos en `textosTirada`),
     `fuentesDeCapa1` con familia "dote". Supuestos S34-S38 (`sistema.md`).
   - **Recuento por tanda** (lo imprime `npm run gen-dotes` y va al pie de `dotes.ts`):
-    construidos 41 · texto 67 · pendientes D2b-1 0 · D2b-2 20 · D2c 33 · D2d 17 ·
+    construidos 45 · texto 78 · pendientes D2b-1 0 · D2b-2 0 · D2c 38 · D2d 17 ·
     tiradas-fijas 10 (estos dependen de la tarea "Tiradas fijas que faltan", más abajo).
-    Tras D2a era: construidos 20 · texto 38 · D2b-1 50.
+    Tras D2a era: construidos 20 · texto 38 · D2b-1 50. Tras D2b-1: construidos 41 · texto
+    67 · D2b-2 20 · D2c 33.
     **Una tanda se cierra cuando sus pendientes llegan a 0.**
   - Plan de tandas:
     - [x] **D2a** — casillas, bonos fijos y textos en tiradas que ya existen.
@@ -1435,13 +1437,39 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
         van marcados "ya cubierto como texto, no auditar"). 11 huecos ya reconocidos, todos
         pendientes de D2c, D2d o tiradas-fijas. Siguientes tandas: misma receta, y antes de
         lanzar, nº de agentes y coste al usuario.
-    - [ ] **D2b-2** — habilita: Bloqueo, Combate Sutil (también el Aguijón del Proyector de
-      Pulso), Ataque de oportunidad y Arrollar. **Quita cosas que hoy usa todo el mundo
-      (Bloquear y el interruptor Sutil): avisar en mesa antes de desplegar y revisar los
-      tests de combate que cambien.**
+    - [x] **D2b-2 (2026-10-16, probada en navegador)** — habilitadores de
+      Bloqueo y Combate Sutil. 20 → 0 pendientes (4 construidos, 11 textos; 5 movidos a D2c).
+      - Revisión: la casilla «Desarmado frente a atacante armado» (−3) y su excepción solo
+        salen al bloquear desarmado (Pelea), no con un arma (`filtroArma.desarmado`).
+      - **Bloquear solo con Bloqueo** (§9.2, arbitraje duro): sin la dote no sale ninguna
+        "Bloquear con X" (armas melee, Bayoneta, Aguijón). `FAMILIAS_SOLO_CON_DOTE`
+        (`dotesDestinos.ts`) + `permisos` de `efectosDeDotes` → `FichaResuelta.extrasDotes`
+        → `accionesDeAtaque(sheet, mods, permisos)` (`combate.ts`, parámetro obligatorio).
+        Con la dote: especialidad del arma (S40), casilla «Desarmado frente a atacante
+        armado» −3 con su texto de excepción, textos de Bloqueo (crítico/contraataque, solo
+        melee, tamaño, daño al bloquear) y de Contraataque Rápido, Maestro en Contraataque,
+        Combinación y Combinación Rápida.
+      - **Sutil solo con Combate Sutil** (§9.5): sin la dote no hay `aplicadoSutil` ni
+        `danioSutil` (ni interruptor en la fila): Potencia y daño con Fuerza. El Aguijón,
+        Reflejos con la dote y Potencia sin ella (golpe y bloqueo; daño Fue+2+nivel en los
+        dos casos).
+      - Requisito roto ⇒ sin efecto (S34); NPC (modo libre) sin excepción: sin dotes no
+        bloquea ni va en sutil (S50). `seed-npcs` no se ve afectado (sus NPC no llevan
+        equipo); ningún test de NPC dependía de Bloquear ni de Sutil.
+      - Ataque de oportunidad y Arrollar (y los textos de Poderoso/Múltiple/Maestro
+        Oportunista) pasan a **D2c**: no existían en la app, no había nada que quitar.
+      - [ ] **Antes del `git push`: mandar el aviso al grupo** (quita a todos algo que hoy
+        usan):
+      > Aviso de reglas: desde hoy **Bloquear** y el estilo **Sutil** (Reflejos con armas
+      > sutiles, el Aguijón del Proyector de Pulso incluido) solo salen en la ficha si tenéis su
+      > dote: **Bloqueo** y **Combate Sutil**. Si los usabais, compradlas en la pestaña Dotes (con
+      > XP si la ficha ya está aprobada); sin Combate Sutil se tira con Potencia y el daño va con
+      > Fuerza. Los NPC tampoco bloquean ni van en sutil de momento.
     - [ ] **D2c** — acciones de dote (`accion`, poderes de dote), alcances/lugares
       `dotes_*`, Reflejos Felinos sobre el contador de atacantes, grupo extra de
       Traicionero en Iniciativa; textos de dote en las tiradas de poder (Onda Residual).
+      Desde D2b-2 también Ataque de oportunidad (con los textos de Poderoso, Múltiple y
+      Maestro Oportunista) y Arrollar: solo existen con su dote (§9.2).
     - [ ] **D2d** — capas: sube_grado, ventaja con casilla, éxito extra, valor por umbral de
       ficha, casillas que tocan el daño/categoría letal, fatiga por casilla, margen crítico
       y la capa nueva de cambio de par (`sistema.md` §9.3). **El bono por umbral de
@@ -1460,8 +1488,14 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
 - [ ] Código, en su tanda: Ataque de oportunidad desaparece sin la dote también en
   Finta/Presa/Desarme/Flanqueo.
 - [ ] `docs/propuesta-dotes.md` y plan por tandas.
-- [ ] Código, en su tanda: Bloqueo, Combate Sutil y Ataque de oportunidad pasan a exigir
-  su dote (hoy Bloquear y el interruptor Sutil están para todos).
+- [x] Código, en su tanda: Bloqueo y Combate Sutil pasan a exigir su dote (D2b-2). Ataque
+  de oportunidad, con D2c (no existe todavía en la app).
+- [ ] **Dotes para los NPC** (abierta en D2b-2): que el máster pueda poner dotes a un NPC
+  (`NpcTemplate`) desde `/master/npcs`, sin requisitos ni coste (§9.4). D1 dejó a los NPC
+  fuera y desde D2b-2 Bloquear y el estilo Sutil solo existen con su dote, así que hoy
+  **ningún NPC bloquea ni va en sutil**. El motor ya lo soporta (modo libre: las dotes de
+  `stats.dotes` dan efecto sin mirar requisitos; test en `dotesEfectos.test.ts`); falta la
+  UI y la server action del editor de NPC.
 - [x] **Tanda ESP (2026-10-15, sin commit ni prueba en navegador): integrar el catálogo
   completo de especialidades** de `docs/fuente/habilidades.md` en `sistema.md` §3 y en el
   código. Va **antes de D2b-1** (el crítico fijo de Crítico Mejorado y las casillas de los

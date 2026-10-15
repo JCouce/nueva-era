@@ -92,7 +92,7 @@ describe("M1b: umbrales de salud y fatiga en montarTirada", () => {
     s = equipar(s, { instanciaId: "pu", catalogoId: "pelea_punetazo" });
     const f = resolver(s);
     const defensa = ACCIONES.find((a) => a.id === "defensa")!;
-    const punetazo = accionesDeAtaque(f.ficha, f.modificadores).find((t) => t.label === "Golpear con Puñetazo")!;
+    const punetazo = accionesDeAtaque(f.ficha, f.modificadores, f.extrasDotes.permisos).find((t) => t.label === "Golpear con Puñetazo")!;
     for (const t of [defensa, punetazo]) assert.ok(montar(f, t).desglose.some((l) => l.etiqueta === "Herido" && l.valor === -1));
   });
 });
@@ -188,7 +188,7 @@ describe("M1b: la fila enseña el modificador completo, igual que el modal sin t
 
   test("fusil con modo y tramo por defecto: la fila suma las casillas en su estado inicial", () => {
     const f = resolver(equipar(ficha(), { instanciaId: "fa", catalogoId: "fusil_asalto_impetus" }));
-    const t = accionesDeAtaque(f.ficha, f.modificadores).find((a) => a.label === "Disparar con Impetus")!;
+    const t = accionesDeAtaque(f.ficha, f.modificadores, f.extrasDotes.permisos).find((a) => a.label === "Disparar con Impetus")!;
     const fila = montarTirada(f, t, eleccionSinTocar(t, false));
     const modal = montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: estadoInicial(t.condiciones ?? []) });
     assert.equal(fila.modificador, modal.total);
@@ -306,11 +306,20 @@ describe("M1b: notas de Personaje → Estado por umbral", () => {
 describe("M1b: daño melee, bayoneta y Sutil desde la ficha resuelta", () => {
   // Enfermedad nivel 2: Fuerza −2 (y −1 a todo). Fuerza 2 → 0; Potencia media(2,2)=2 → media(0,2)=1.
   const ENFERMO: EstadoActivo[] = [{ estadoId: "enfermedad", gradoId: "nivel_2", rondasRestantes: null }];
-  let s = equipar(ficha(), { instanciaId: "pu", catalogoId: "pelea_punetazo" });
+  // Con Combate Sutil (y Combate Melee 1, su requisito): sin la dote no hay daño Sutil (D2b-2).
+  const base = ficha();
+  let s = equipar(
+    {
+      ...base,
+      habilidades: { ...base.habilidades, combate_melee: { valor: 1, especialidades: [] } },
+      dotes: [{ id: "dote_combate_sutil" }],
+    },
+    { instanciaId: "pu", catalogoId: "pelea_punetazo" },
+  );
   s = equipar(s, { instanciaId: "el", catalogoId: "espada_ligera" });
   s = equipar(s, { instanciaId: "fa", catalogoId: "fusil_asalto_impetus" });
   s = equipar(s, { instanciaId: "bay", catalogoId: "bayoneta", instaladoEnId: "fa" });
-  const ataques = (f: FichaResuelta) => accionesDeAtaque(f.ficha, f.modificadores);
+  const ataques = (f: FichaResuelta) => accionesDeAtaque(f.ficha, f.modificadores, f.extrasDotes.permisos);
   const danio = (f: FichaResuelta, label: string) => ataques(f).find((t) => t.label === label)!.ataque!.modos[0];
 
   test("puñetazo (Fuerza): 2 en reposo, 0 con un estado que baja Fuerza 2", () => {

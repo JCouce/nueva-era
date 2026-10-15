@@ -42,7 +42,7 @@ import {
 } from "./especie";
 import { bonosDeDisciplina, nivelesDePsionica, type PsionicaResuelta } from "./psionica";
 import { valoresDeRequisito, type ValoresRequisito } from "./dotes";
-import { dotesActivas, efectosDeDotes, type BonoTramoDeDote, type CriticoDeDote } from "./dotesEfectos";
+import { dotesActivas, efectosDeDotes, type BonoTramoDeDote, type CriticoDeDote, type PermisosDeDotes } from "./dotesEfectos";
 import type { ExcepcionRareza } from "../catalog/especies";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
 import { consultaIndiceCondiciones, indiceDeCondiciones, modificadoresDeEquipo, type IndiceCondiciones } from "./equipo";
@@ -109,7 +109,10 @@ export type FichaResuelta = {
   textosTirada: TextoEnTirada[];
   // Lo de las dotes que no es casilla ni texto (D2b-1): bonos por tramo de distancia con
   // su alcance y críticos fijos por especialidad de arma. También los pone conExtrasDeFicha.
-  extrasDotes: { bonosTramo: BonoTramoDeDote[]; criticos: CriticoDeDote[] };
+  // `permisos` (D2b-2): Bloquear y el estilo Sutil, que solo existen con su dote; se los
+  // pasa quien genera las filas de arma (accionesDeAtaque). En modo libre igual: sin dote,
+  // tampoco el NPC.
+  extrasDotes: { bonosTramo: BonoTramoDeDote[]; criticos: CriticoDeDote[]; permisos: PermisosDeDotes };
   // Creación y progresión (§14.6): el ajuste de coste que reciben los puntos, la
   // compra y el coste del siguiente nivel, y la bolsa de aumentos (null si la
   // especie no la trae). En modo libre (NPC, §14.3), neutros.
@@ -220,7 +223,7 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
     blindaje: { tieneEscudoMelee: tieneEscudoMelee(sheet), armaduraNatural: armaduraNaturalDeEspecie(especie) },
     indiceCondiciones: indiceDeCondiciones(sheet, [...casillasDeEspecie(especie), ...dotes.casillas]),
     textosTirada: [...textosDeEspecie(especie), ...dotes.textos],
-    extrasDotes: { bonosTramo: dotes.bonosTramo, criticos: dotes.criticos },
+    extrasDotes: { bonosTramo: dotes.bonosTramo, criticos: dotes.criticos, permisos: dotes.permisos },
     ajusteCoste: libre ? AJUSTE_NEUTRO : ajustesDeCoste(especie),
     bolsaAumentos: libre ? null : bolsaDeAumentos(especie),
     excepcionesRareza: libre ? [] : excepcionesRareza(especie),
@@ -243,13 +246,14 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
 // devuelve la misma tirada.
 const FAMILIAS_CON_CRITICO_FIJO: readonly FamiliaArma[] = ["ataque_melee", "ataque_fuego", "ataque_pesado"];
 
-const contextoDe = (t: Pick<Accion, "id" | "grupo" | "familiaArma" | "empleoArma"> & { habilidad: Accion["habilidad"] }): ContextoAccion => ({
+const contextoDe = (t: Pick<Accion, "id" | "grupo" | "familiaArma" | "empleoArma" | "desarmado"> & { habilidad: Accion["habilidad"] }): ContextoAccion => ({
   id: t.id,
   grupo: t.grupo,
   habilidad: t.habilidad,
   modoElegido: null,
   ...(t.familiaArma && { familiaArma: t.familiaArma }),
   ...(t.empleoArma && { empleoArma: t.empleoArma }),
+  ...(t.desarmado && { desarmado: true }),
 });
 
 function textosDe(textos: TextoEnTirada[], ctx: ContextoAccion, desarmado: boolean): TextoEnTirada[] {

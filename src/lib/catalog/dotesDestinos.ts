@@ -26,6 +26,11 @@ import { etiquetaEspecialidad } from "./especialidades";
 export const TANDAS_DOTES = ["D2b-1", "D2b-2", "D2c", "D2d", "tiradas-fijas"] as const;
 export type TandaDote = (typeof TANDAS_DOTES)[number];
 
+// Familias de tirada de arma que solo existen con una dote que las habilite (§9.2,
+// arbitraje duro: sin la dote la fila no aparece). combate.ts quita sus filas si ninguna
+// dote activa las habilita; el generador solo construye un `habilita` sobre estas.
+export const FAMILIAS_SOLO_CON_DOTE: readonly FamiliaArma[] = ["bloquear_melee"];
+
 export type DestinoDote =
   | { tipo: "tirada"; alcance: AlcanceModificador; textos: string[]; especialidad?: string }
   | { tipo: "ficha" }
@@ -105,9 +110,13 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   // Crítico Mejorado: la especialidad de arma elegida al comprar.
   "especialidad:<elegida>": { tipo: "especialidadArmaElegida" },
 
-  // ── Habilitadas por dote (D2b-2: quita a todos lo que hoy tienen gratis) ──
-  "familia:bloquear_melee": tanda("D2b-2", "«Bloquear con X» solo con la dote Bloqueo (§9.2)"),
-  dotes_ataque_de_oportunidad: tanda("D2b-2", "el ataque de oportunidad solo existe con su dote (§9.2)"),
+  // ── Habilitadas por dote (D2b-2) ──
+  // «Bloquear con X» solo existe con la dote Bloqueo (§9.2, FAMILIAS_SOLO_CON_DOTE): su
+  // habilitador, su casilla y sus textos van a las tiradas de bloqueo.
+  "familia:bloquear_melee": familia("bloquear_melee"),
+  // Ataque de oportunidad: la acción de dote no existe todavía (pasa a D2c con Arrollar,
+  // decisión del usuario en D2b-2); sus textos esperan a la acción.
+  dotes_ataque_de_oportunidad: tanda("D2c", "el ataque de oportunidad es una acción de dote que aún no existe (§9.2)"),
 
   // ── Acciones propias de dote ──
   dotes_apoyo: tanda("D2c", "acción de dote Apoyo"),

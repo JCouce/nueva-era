@@ -425,6 +425,10 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
   Potencia (hoy es un interruptor para todos).
 - **Arrollar** y **Ataque de oportunidad**: solo con la dote.
 
+*En la app (D2b-2, 2026-10-16):* Bloqueo y Combate Sutil **construidos** (detalle al final
+de §9.3). Arrollar y Ataque de oportunidad no existían en la app: van con las acciones de
+dote (D2c).
+
 ### 9.3 Qué aplica la app y qué es texto `[FIRME · usuario 2026-10-14]`
 Regla general (ver `docs/motor.md`, "Lo que queda fuera del modelo"): **lo que la app puede
 aplicar o recalcular se aplica en la ficha; lo demás queda como texto.**
@@ -524,6 +528,19 @@ aplicar o recalcular se aplica en la ficha; lo demás queda como texto.**
 - ***Crítico Mejorado***: crítico con 5 éxitos, fijo y sin casilla, en los ataques con armas
   de la especialidad elegida (ni al lanzar ni al bloquear); su línea sale en las notas del
   resultado (S48).
+
+*En la app (D2b-2, 2026-10-16): maniobras que solo existen con su dote (§9.2).*
+- ***Bloqueo***: habilitador con arbitraje duro. Sin la dote no sale ninguna "Bloquear con X"
+  (armas melee, Bayoneta, Aguijón del Proyector de Pulso). Con ella, como antes (especialidad
+  del arma, S40) más la casilla «Desarmado frente a atacante armado» (−3), con su excepción
+  (ataque natural o desarmado letal) como texto, y los textos de *Bloqueo* (solo contra melee,
+  tamaño, daño al bloquear; contraataque en el crítico), *Contraataque Rápido*, *Maestro en
+  Contraataque*, *Combinación* y *Combinación Rápida*.
+- ***Combate Sutil***: sin la dote no hay estilo Sutil en golpes ni bloqueos melee (ni
+  interruptor en la fila): se tira con Potencia y el daño va con Fuerza. El Aguijón, con
+  Potencia sin la dote y Reflejos con ella (S51).
+- Requisito no cumplido ⇒ como sin la dote (S34). El NPC del máster no se salta el gate (S50).
+- Supuestos de la tanda: S50-S52.
 
 ### 9.4 Fichas y NPCs `[FIRME · usuario 2026-10-14]`
 - **Fichas ya aprobadas**: no reciben los puntos de dotes de su letra; compran dotes con
@@ -1551,6 +1568,9 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S47 | ***Tirador de Larga Distancia* y su *Avanzado*: vale la mejor en cada ataque**, no la dote entera: en especialidad +2 (no +3), fuera de especialidad +1 (la básica), no 0. "De especialidad" = el ataque va en especialidad (`enEspecialidadEfectiva`; el disparo de Tecnociencia del Proyector, con el selector). | "Vale la mejor" (§9.1) leído por tirada: quitar la básica entera dejaría peor al que tiene las dos fuera de especialidad. D2b-1. **Confirmado por el usuario (2026-10-16)**: fuera de especialidad solo aplica la básica (−2 + 1 = −1). |
 | S48 | ***Crítico Mejorado* solo en ataques** (golpe melee, disparo, armamento pesado) cuya especialidad de arma es la elegida: ni al lanzar el arma (§9.5) ni al bloquear con ella (la prosa dice "ataques"). En juego deja de valer si la ficha ya no tiene esa especialidad en la rama que cumple. La línea va en las notas del resultado ("Crítico con 5 éxitos en vez de 6"), no en el desglose numérico. | D2b-1; el desglose solo lleva números. |
 | S49 | **Filtro "a una mano" también en *Apresar y Apuñalar*** ("llevando un arma de una sola mano"), además de *Desenfundado Rápido* (decisión del usuario). Sin empleo conocido (Proyector de Pulso) el filtro no casa. | Su texto solo tiene sentido en armas a una mano. D2b-1. |
+| S50 | **El NPC del máster no se salta el gate de Bloqueo y Combate Sutil.** El modo libre solo deja de mirar requisitos: sin la dote en su ficha, el NPC no bloquea ni va en sutil. Como D1 dejó a los NPC sin dotes, hoy **ningún NPC bloquea ni va en sutil** hasta la tarea "Dotes para los NPC" (`docs/tareas.md`). | Decisión del usuario (D2b-2); §9.4 dice que el máster les pone dotes a mano. |
+| S51 | **El Aguijón con *Combate Sutil* sigue como estaba**: Reflejos fijo, sin interruptor, daño de Fuerza (Fue+2+nivel). Sin la dote, Potencia (golpe y bloqueo) con el mismo daño. Las armas Sutil normales, en cambio, dejan elegir y sacan el daño Sutil de Potencia. `TODO(revisar)` en `combate.ts`. | Decisión del usuario (D2b-2: "con la dote, como hoy"). |
+| S52 | **El texto de *Combinación Rápida* ("en modo sutil, sin el −1 a tus defensas") sale aunque la ficha no tenga *Combate Sutil*** (no es requisito de la dote). Es texto: no se mecaniza ni se oculta. | Conservador: la dote no pide Combate Sutil y el texto no suma nada. D2b-2. |
 
 ## Conflictos detectados
 

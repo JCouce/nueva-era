@@ -153,7 +153,7 @@ describe("E4: Arköru, −1 fijo en Combate a Distancia (no granadas ni arrojadi
   s = equipar(s, { instanciaId: "lc", catalogoId: "asta_lanza_corta" });
   s = { ...s, granadas: { granada_fragmentacion: 1 } };
   const linea = (f: FichaResuelta, pref: string) => {
-    const t = conExtrasDeFicha(f, accionesDeAtaque(f.ficha, f.modificadores).find((a) => a.id.startsWith(pref))!);
+    const t = conExtrasDeFicha(f, accionesDeAtaque(f.ficha, f.modificadores, f.extrasDotes.permisos).find((a) => a.id.startsWith(pref))!);
     return montarTirada(f, t, eleccionSinTocar(t, false)).desglose.find((l) => l.etiqueta === "Arköru" && l.valor === -1);
   };
 
@@ -279,7 +279,7 @@ describe("E4: textos sin mecanizar, solo con su rasgo", () => {
     s = equipar(s, { instanciaId: "pa", catalogoId: "pelea_patada" });
     s = equipar(s, { instanciaId: "co", catalogoId: "pelea_codazo_rodillazo" });
     s = equipar(s, { instanciaId: "el", catalogoId: "espada_ligera" });
-    const ataques = (f: FichaResuelta) => accionesDeAtaque(f.ficha, f.modificadores).map((t) => conExtrasDeFicha(f, t));
+    const ataques = (f: FichaResuelta) => accionesDeAtaque(f.ficha, f.modificadores, f.extrasDotes.permisos).map((t) => conExtrasDeFicha(f, t));
     const critico = (f: FichaResuelta, label: string) => ataques(f).find((t) => t.label === label)!.efectoCritico;
     const f = resolver(s);
     assert.equal(critico(f, "Golpear con Puñetazo"), "Daño letal. (Matriz Biometálica · Arköru)");

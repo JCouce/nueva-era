@@ -109,7 +109,9 @@ export type AlcanceModificador =
   | { tipo: "habilidad"; habilidad: HabilidadId }
   | { tipo: "grupoHabilidad"; grupo: GrupoAccion; habilidad: HabilidadId }
   | { tipo: "modo"; contieneEtiqueta: string }
-  | { tipo: "familiaArma"; familia: FamiliaArma; empleo?: EmpleoArma }
+  // `desarmado`: solo en las tiradas de arma desarmada (Pelea), p.ej. la casilla de Bloqueo
+  // "desarmado frente a atacante armado".
+  | { tipo: "familiaArma"; familia: FamiliaArma; empleo?: EmpleoArma; desarmado?: true }
   | { tipo: "todas" };
 
 export type Modificador =
@@ -189,6 +191,7 @@ export type ContextoAccion = {
   modoElegido: string | null;
   familiaArma?: FamiliaArma;
   empleoArma?: EmpleoArma;
+  desarmado?: boolean;
 };
 
 // Exportada para condicionesActivas() (equipo.ts) — mismo criterio de alcance
@@ -201,7 +204,11 @@ export function alcanzaA(alcance: AlcanceModificador, ctx: ContextoAccion): bool
   if (alcance.tipo === "grupoHabilidad") return alcance.grupo === ctx.grupo && alcance.habilidad === ctx.habilidad;
   // Sin empleo conocido (Proyector de Pulso, que va en la armadura), un filtro de empleo no casa.
   if (alcance.tipo === "familiaArma")
-    return alcance.familia === ctx.familiaArma && (alcance.empleo === undefined || alcance.empleo === ctx.empleoArma);
+    return (
+      alcance.familia === ctx.familiaArma &&
+      (alcance.empleo === undefined || alcance.empleo === ctx.empleoArma) &&
+      (!alcance.desarmado || ctx.desarmado === true)
+    );
   return ctx.modoElegido !== null && ctx.modoElegido.includes(alcance.contieneEtiqueta);
 }
 

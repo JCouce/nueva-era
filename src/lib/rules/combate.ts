@@ -27,6 +27,8 @@ import { gastoDelModo } from "./recursos";
 import { CONDICION_ATACANTES_ADICIONALES, type Accion, type AccionDirecta } from "./acciones";
 import { atributoEfectivo, aplicado } from "./derivados";
 import { ESPECIALIDAD_ARMA, ESPECIALIDAD_ATAQUE_ESPECIAL, ESPECIALIDAD_LANZAR } from "../catalog/especialidadesArma";
+import { FAMILIAS_SOLO_CON_DOTE } from "../catalog/dotesDestinos";
+import type { PermisosDeDotes } from "./dotesEfectos";
 
 const TRAMOS: TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
 
@@ -364,7 +366,8 @@ function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: strin
 // (armasMelee.ts, espada_cuchillo_combate): aplicado Potencia siempre, sin
 // aplicadoSutil ni arrojadiza. Mismo daño (Fue+2, Letal) y mismo crítico
 // (Hemorragia 1d6 turnos) que ese cuchillo, y ataque+bloqueo van juntos como
-// en cualquier arma melee del catálogo — decisión 2026-09-25, el usuario.
+// en cualquier arma melee del catálogo — decisión 2026-09-25, el usuario. El
+// bloqueo, como todos, solo con la dote Bloqueo (D2b-2, lo filtra accionesDeAtaque).
 function tieneBayonetaInstalada(sheet: Sheet, instanciaId: string): boolean {
   return sheet.equipo.some((p) => p.instaladoEnId === instanciaId && p.catalogoId === "bayoneta");
 }
@@ -576,11 +579,19 @@ function condicionesSacrificioColchon(nivel: number): CondicionTirada[] {
   return condiciones;
 }
 
-function tiradaDeArmaMelee(sheet: Sheet, mods: ModificadorConFuente[], arma: ArmaMelee, instanciaId: string): Accion {
+// `sutilPermitido`: la ficha tiene Combate Sutil (D2b-2, §9.5). Sin la dote, un arma Sutil
+// se usa como cualquier otra: Potencia al tirar y Fuerza al daño, sin interruptor.
+function tiradaDeArmaMelee(
+  sheet: Sheet,
+  mods: ModificadorConFuente[],
+  arma: ArmaMelee,
+  instanciaId: string,
+  sutilPermitido: boolean,
+): Accion {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
   const modo = condicionModo(modosConId);
   const fuerza = atributoEfectivo(sheet, "fuerza", mods);
-  const esSutil = arma.sutil === true;
+  const esSutil = arma.sutil === true && sutilPermitido;
   // Solo se calcula si hace falta: el resto de armas (no Sutil) no necesita
   // el aplicado de Potencia para nada aquí.
   const potencia = esSutil ? aplicado(sheet, "potencia", mods) : null;
@@ -632,7 +643,7 @@ function tiradaDeArmaMelee(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
 
 // Bloqueo (pregunta 31, resuelta 2026-09-24): "otra forma de defensa" además
 // de Esquivar (defensa/atletismo en ACCIONES), activa con cualquier arma
-// melee equipada — mismo par que su propio ataque (Potencia + Combate Melee,
+// melee equipada si la ficha tiene la dote Bloqueo (D2b-2, §9.2) — mismo par que su propio ataque (Potencia + Combate Melee,
 // o Reflejos + Combate Melee si el arma es Sutil) y mismo penalizador por
 // atacante adicional que Esquivar. `arma.bloqueoAjuste` es el ajuste propio
 // de una pieza concreta sobre ESTE bloqueo (hoy solo el Mangual, -2) — no
@@ -645,18 +656,23 @@ function tiradaDeArmaMelee(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
 //
 // Especialidad: la del arma, como el ataque, sin selector en la fila (S40, cambiado por el
 // usuario: los bloqueos también usan la especialidad del arma; construido en D2b-1).
-function tiradaBloqueoDeArmaMelee(arma: ArmaMelee, instanciaId: string): Accion {
+//
+// D2b-2 (§9.2): la fila solo existe con la dote Bloqueo (lo filtra accionesDeAtaque, por
+// familia) y el Sutil solo con Combate Sutil (`sutilPermitido`).
+function tiradaBloqueoDeArmaMelee(arma: ArmaMelee, instanciaId: string, sutilPermitido: boolean): Accion {
   return {
     id: `bloquear_melee_${instanciaId}`,
     label: `Bloquear con ${arma.label}`,
     grupo: "Defensa",
     aplicado: "potencia",
-    aplicadoSutil: arma.sutil ? "reflejos" : undefined,
+    aplicadoSutil: arma.sutil && sutilPermitido ? "reflejos" : undefined,
     habilidad: "combate_melee",
     especialidadArma: ESPECIALIDAD_ARMA[arma.id],
     familiaArma: "bloquear_melee",
     empleoArma: arma.empleo,
     nota: "Reacción gratuita e ilimitada, como Esquivar — activa mientras se lleva el arma.",
+    // Bloquear con Pelea es bloquear desarmado (casilla de Bloqueo "desarmado frente a armado").
+    ...(PELEA.some((p) => p.id === arma.id) && { desarmado: true as const }),
     condiciones: [CONDICION_ATACANTES_ADICIONALES],
     ajustesFijos: arma.bloqueoAjuste ? [{ valor: arma.bloqueoAjuste, fuente: arma.label }] : [],
   };
@@ -828,13 +844,20 @@ function tiradaDeProyectorPulso(
 
 // Aguijón, separado del resto de modos (ver comentario de arriba): Combate
 // Melee, Sutil, mismo patrón Golpear+Bloquear que cualquier arma melee.
-function tiradaGolpeAguijon(sheet: Sheet, mods: ModificadorConFuente[], pieza: PiezaEquipada): Accion {
+//
+// D2b-2 (§9.5: "sin Combate Sutil no hay modo sutil, también el Aguijón"): con la dote, como
+// siempre, Reflejos fijo; sin ella, Potencia. El daño sale de Fuerza en los dos casos (era
+// así antes de la tanda: Fue+2+nivel).
+// TODO(revisar): con la dote el Aguijón sigue siendo Reflejos fijo, sin interruptor y con el
+// daño de Fuerza; las armas Sutil normales ofrecen elegir y sacan el daño Sutil de Potencia.
+// Se dejó como estaba (decisión del usuario: "con la dote, como hoy").
+function tiradaGolpeAguijon(sheet: Sheet, mods: ModificadorConFuente[], pieza: PiezaEquipada, sutil: boolean): Accion {
   const nivel = pieza.nivel ?? 1;
   return {
     id: `ataque_proyector_pulso_aguijon_${pieza.instanciaId}`,
     label: "Golpear con Proyector de Pulso (Aguijón)",
     grupo: "Ataques",
-    aplicado: "reflejos", // Sutil
+    aplicado: sutil ? "reflejos" : "potencia",
     habilidad: "combate_melee",
     especialidadArma: ESPECIALIDAD_ATAQUE_ESPECIAL.proyector_pulso_aguijon,
     familiaArma: "ataque_melee", // sin empleo, como el disparo
@@ -859,12 +882,13 @@ function tiradaGolpeAguijon(sheet: Sheet, mods: ModificadorConFuente[], pieza: P
   };
 }
 
-function tiradaBloqueoAguijon(pieza: PiezaEquipada): Accion {
+// Solo con Bloqueo (lo filtra accionesDeAtaque); Reflejos solo con Combate Sutil, como el golpe.
+function tiradaBloqueoAguijon(pieza: PiezaEquipada, sutil: boolean): Accion {
   return {
     id: `bloquear_proyector_pulso_aguijon_${pieza.instanciaId}`,
     label: "Bloquear con Proyector de Pulso (Aguijón)",
     grupo: "Defensa",
-    aplicado: "reflejos", // Sutil
+    aplicado: sutil ? "reflejos" : "potencia",
     habilidad: "combate_melee",
     especialidadArma: ESPECIALIDAD_ATAQUE_ESPECIAL.proyector_pulso_aguijon,
     familiaArma: "bloquear_melee",
@@ -898,7 +922,13 @@ function tiradaBloqueoAguijon(pieza: PiezaEquipada): Accion {
 // duplicándolas en la pestaña. accionesDeHerramientas() se adaptó al mismo
 // patrón de generador por pieza (ver herramientas.ts), pero vive en su
 // propio registro/función, no en este.
-type GeneradorDeAtaque = (sheet: Sheet, pieza: PiezaEquipada, cat: Equipo, mods: ModificadorConFuente[]) => Accion[];
+type GeneradorDeAtaque = (
+  sheet: Sheet,
+  pieza: PiezaEquipada,
+  cat: Equipo,
+  mods: ModificadorConFuente[],
+  permisos: PermisosDeDotes,
+) => Accion[];
 
 const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> = {
   arma: (sheet, pieza, cat, mods) => {
@@ -913,13 +943,13 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
       ...(bloqueoBayoneta ? [bloqueoBayoneta] : []),
     ];
   },
-  armaMelee: (sheet, pieza, cat, mods) => {
+  armaMelee: (sheet, pieza, cat, mods, permisos) => {
     const arma = cat as ArmaMelee;
     const lanzar = tiradaLanzarArmaMelee(sheet, mods, arma, pieza.instanciaId);
     return [
-      tiradaDeArmaMelee(sheet, mods, arma, pieza.instanciaId),
+      tiradaDeArmaMelee(sheet, mods, arma, pieza.instanciaId, permisos.sutil.includes("ataque_melee")),
       ...(lanzar ? [lanzar] : []),
-      tiradaBloqueoDeArmaMelee(arma, pieza.instanciaId),
+      tiradaBloqueoDeArmaMelee(arma, pieza.instanciaId, permisos.sutil.includes("bloquear_melee")),
     ];
   },
   armaPesada: (sheet, pieza, cat) => {
@@ -932,13 +962,13 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
   // futuro otro subsistema construye su propia acción (la Malla Plasmática
   // es la siguiente candidata, ver Hallazgo #1 ampliado), este `if` necesita
   // una rama nueva, no una reescritura.
-  subsistema: (sheet, pieza, _cat, mods) => {
+  subsistema: (sheet, pieza, _cat, mods, permisos) => {
     if (pieza.catalogoId !== "proyector_pulso") return [];
     return [
       tiradaDeProyectorPulso(sheet, pieza, "combate_distancia"),
       tiradaDeProyectorPulso(sheet, pieza, "tecnociencia"),
-      tiradaGolpeAguijon(sheet, mods, pieza),
-      tiradaBloqueoAguijon(pieza),
+      tiradaGolpeAguijon(sheet, mods, pieza, permisos.sutil.includes("ataque_melee")),
+      tiradaBloqueoAguijon(pieza, permisos.sutil.includes("bloquear_melee")),
     ];
   },
 };
@@ -1001,8 +1031,11 @@ function accionesDeGranadas(sheet: Sheet): Accion[] {
 }
 
 // `mods`: los de la FichaResuelta (especie, equipo, estados de combate), para el daño
-// que sale de Fuerza o de Potencia.
-export function accionesDeAtaque(sheet: Sheet, mods: ModificadorConFuente[]): Accion[] {
+// que sale de Fuerza o de Potencia. `permisos`: los de las dotes (FichaResuelta.extrasDotes,
+// D2b-2): una familia de FAMILIAS_SOLO_CON_DOTE (Bloquear con X, también Bayoneta y Aguijón)
+// solo sale si una dote activa la habilita (§9.2, arbitraje duro), y el estilo Sutil solo
+// con Combate Sutil. Obligatorio a propósito: sin él no hay forma de saber qué se ve.
+export function accionesDeAtaque(sheet: Sheet, mods: ModificadorConFuente[], permisos: PermisosDeDotes): Accion[] {
   const tiradas: Accion[] = [];
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
@@ -1010,10 +1043,12 @@ export function accionesDeAtaque(sheet: Sheet, mods: ModificadorConFuente[]): Ac
     const generador = REGISTRO_DE_ATAQUE[cat.familia];
     if (!generador) continue;
     if (!generaAccionPropia(cat, pieza.nivel)) continue;
-    tiradas.push(...generador(sheet, pieza, cat, mods));
+    tiradas.push(...generador(sheet, pieza, cat, mods, permisos));
   }
   tiradas.push(...accionesDeGranadas(sheet));
-  return tiradas;
+  return tiradas.filter(
+    (t) => !t.familiaArma || !FAMILIAS_SOLO_CON_DOTE.includes(t.familiaArma) || permisos.familias.includes(t.familiaArma),
+  );
 }
 
 // Malla Plasmática — detonación de pulso térmico (nivel 2+, docs/tareas.md

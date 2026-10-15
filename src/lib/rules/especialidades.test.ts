@@ -7,6 +7,7 @@ import { equipar } from "./equipo";
 import { ajustarGranada } from "./recursos";
 import { accionesDeAtaque } from "./combate";
 import { modificadoresActivos } from "./derivados";
+import { permisosDeDotes } from "./dotesEfectos";
 import { eleccionSinTocar, montarTirada } from "./montaje";
 import { HABILIDADES } from "./habilidades";
 import type { Accion } from "./acciones";
@@ -76,14 +77,14 @@ function todosLosAtaques(): Accion[] {
   const conGranadas = (s: Sheet) => MUNICION_GRANADA.reduce((x, g) => ajustarGranada(x, g.id, 1), s);
   for (const arma of [...ARMAS, ...ARMAS_MELEE, ...ARMAMENTO_PESADO]) {
     const s = conGranadas(equipar(defaultSheet(), { instanciaId: "x", catalogoId: arma.id }));
-    filas.push(...accionesDeAtaque(s, modificadoresActivos(s)));
+    filas.push(...accionesDeAtaque(s, modificadoresActivos(s), permisosDeDotes(s)));
   }
   let s = equipar(defaultSheet(), { instanciaId: "f", catalogoId: "fusil_asalto_impetus" });
   s = equipar(s, { instanciaId: "b", catalogoId: "bayoneta", nivel: 1, instaladoEnId: "f" });
   s = conGranadas(equipar(s, { instanciaId: "l", catalogoId: "lanzagranadas_integrado", nivel: 1, instaladoEnId: "f" }));
   s = equipar(s, { instanciaId: "a", catalogoId: "armadura_pesada" });
   s = equipar(s, { instanciaId: "pp", catalogoId: "proyector_pulso", nivel: 1, instaladoEnId: "a" });
-  filas.push(...accionesDeAtaque(s, modificadoresActivos(s)));
+  filas.push(...accionesDeAtaque(s, modificadoresActivos(s), permisosDeDotes(s)));
   return filas;
 }
 
@@ -129,7 +130,7 @@ describe("ataque con arma: en especialidad sola, sin selector", () => {
     );
   };
   const montar = (s: Sheet, elegido: boolean) => {
-    const t = accionesDeAtaque(s, modificadoresActivos(s)).find((x) => x.id === "ataque_melee_e")!;
+    const t = accionesDeAtaque(s, modificadoresActivos(s), permisosDeDotes(s)).find((x) => x.id === "ataque_melee_e")!;
     return montarTirada({ ficha: s, modificadores: modificadoresActivos(s) }, t, eleccionSinTocar(t, elegido));
   };
 
@@ -150,7 +151,7 @@ describe("ataque con arma: en especialidad sola, sin selector", () => {
   test("lanzar una granada usa Lanzamiento (Atletismo)", () => {
     let s = defaultSheet();
     s = ajustarGranada({ ...s, habilidades: { ...s.habilidades, atletismo: { valor: 3, especialidades: ["lanzamiento"] } } }, MUNICION_GRANADA[0].id, 1);
-    const t = accionesDeAtaque(s, modificadoresActivos(s)).find((x) => x.id.startsWith("lanzar_granada_"))!;
+    const t = accionesDeAtaque(s, modificadoresActivos(s), permisosDeDotes(s)).find((x) => x.id.startsWith("lanzar_granada_"))!;
     const m = montarTirada({ ficha: s, modificadores: modificadoresActivos(s) }, t, eleccionSinTocar(t, false));
     assert.equal(m.habilidad?.valor, 3);
   });

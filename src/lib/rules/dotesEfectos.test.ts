@@ -7,7 +7,7 @@ import { HABILIDADES } from "./habilidades";
 import { resolverFicha, conExtrasDeFicha, conExtrasDirectaDeFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
 import { montarTirada, eleccionSinTocar, tirarMontada } from "./montaje";
 import { motorMetadataSchema, erroresDeMotorMetadata } from "./motor";
-import { dotesActivas, casillasDeDotes, textosDeDotes, modificadoresDeDotes } from "./dotesEfectos";
+import { dotesActivas, casillasDeDotes, textosDeDotes, modificadoresDeDotes, permisosDeDotes } from "./dotesEfectos";
 import { valoresRequisitoDeFicha } from "./dotes";
 import { fuentesDeCapa1 } from "./capa1";
 import { nivelesDePsionica, SIN_BONOS_DISCIPLINA } from "./psionica";
@@ -267,16 +267,26 @@ const ctxDe = (t: { id: string; grupo: GrupoAccion; habilidad?: Accion["habilida
 
 // Cada fila que la ficha puede generar con el catálogo entero: cada arma sola (con todas
 // las granadas en Recursos), más Bayoneta, Lanzagranadas Integrado y Proyector de Pulso.
+// Con Bloqueo y Combate Sutil (D2b-2), para que salgan también los bloqueos.
+function fichaConBloqueo(): Sheet {
+  const d = defaultSheet();
+  return {
+    ...d,
+    atributos: { ...d.atributos, agilidad: 1 },
+    habilidades: { ...d.habilidades, combate_melee: { valor: 1, especialidades: [] } },
+    dotes: [{ id: "dote_bloqueo" }, { id: "dote_combate_sutil" }],
+  };
+}
 function todasLasFilasDeArma(): { acciones: Accion[]; directas: ReturnType<typeof accionesDirectasDeAtaque> } {
   const acciones: Accion[] = [];
   const directas: ReturnType<typeof accionesDirectasDeAtaque> = [];
   const conGranadas = (s: Sheet) => MUNICION_GRANADA.reduce((x, g) => ajustarGranada(x, g.id, 1), s);
   const sumar = (s: Sheet) => {
-    acciones.push(...accionesDeAtaque(s, []));
+    acciones.push(...accionesDeAtaque(s, [], permisosDeDotes(s)));
     directas.push(...accionesDirectasDeAtaque(s));
   };
-  for (const arma of [...ARMAS, ...ARMAS_MELEE, ...ARMAMENTO_PESADO]) sumar(conGranadas(equipar(defaultSheet(), { instanciaId: "x", catalogoId: arma.id })));
-  let s = equipar(defaultSheet(), { instanciaId: "f", catalogoId: "fusil_asalto_impetus" });
+  for (const arma of [...ARMAS, ...ARMAS_MELEE, ...ARMAMENTO_PESADO]) sumar(conGranadas(equipar(fichaConBloqueo(), { instanciaId: "x", catalogoId: arma.id })));
+  let s = equipar(fichaConBloqueo(), { instanciaId: "f", catalogoId: "fusil_asalto_impetus" });
   s = equipar(s, { instanciaId: "b", catalogoId: "bayoneta", nivel: 1, instaladoEnId: "f" });
   s = conGranadas(equipar(s, { instanciaId: "l", catalogoId: "lanzagranadas_integrado", nivel: 1, instaladoEnId: "f" }));
   s = equipar(s, { instanciaId: "a", catalogoId: "armadura_pesada" });
@@ -336,12 +346,12 @@ function fichaCombate(dotes: DoteComprada[], { cm = 5, cd = 5, esp = [] as Espec
   return { ...base, habilidades: { ...base.habilidades, combate_melee: de("combate_melee", cm), combate_distancia: de("combate_distancia", cd) } };
 }
 const armado = (s: Sheet, ...ids: string[]) => ids.reduce((x, id, i) => equipar(x, { instanciaId: `a${i}`, catalogoId: id }), s);
-const filasDe = (f: FichaResuelta) => accionesDeAtaque(f.ficha, f.modificadores).map((t) => conExtrasDeFicha(f, t));
+const filasDe = (f: FichaResuelta) => accionesDeAtaque(f.ficha, f.modificadores, f.extrasDotes.permisos).map((t) => conExtrasDeFicha(f, t));
 const fila = (f: FichaResuelta, prefijo: string) => filasDe(f).find((t) => t.id.startsWith(prefijo))!;
 
 describe("efectos de dotes en las tiradas de arma (D2b-1)", () => {
   test("Dominio Elevado: casilla +1 en los golpes melee, no en los disparos ni al lanzar", () => {
-    const f = resolver(armado(fichaCombate([{ id: "dote_dominio_elevado" }]), "espada_cuchillo_combate", "pistola_mosquito"));
+    const f = resolver(armado(fichaCombate([{ id: "dote_dominio_elevado" }, { id: "dote_bloqueo" }]), "espada_cuchillo_combate", "pistola_mosquito"));
     const golpe = fila(f, "ataque_melee_");
     const c = golpe.condiciones?.find((x) => x.id.startsWith("dote_dominio_elevado"));
     assert.ok(c && c.tipo === "toggle" && c.valorActivo === 1);
@@ -437,7 +447,7 @@ describe("efectos de dotes en las tiradas de arma (D2b-1)", () => {
   describe("Crítico Mejorado: crítico con 5, fijo y sin casilla, en su especialidad", () => {
     const f = resolver(
       armado(
-        fichaCombate([{ id: "dote_critico_mejorado", eleccion: "espadas_y_dagas" }], { esp: ["espadas_y_dagas", "armas_de_fuego_cortas"] }),
+        fichaCombate([{ id: "dote_critico_mejorado", eleccion: "espadas_y_dagas" }, { id: "dote_bloqueo" }], { esp: ["espadas_y_dagas", "armas_de_fuego_cortas"] }),
         "espada_cuchillo_combate",
         "pistola_mosquito",
       ),
@@ -467,7 +477,7 @@ describe("efectos de dotes en las tiradas de arma (D2b-1)", () => {
 
 describe("bloqueos con la especialidad del arma (S40, D2b-1)", () => {
   const bloqueo = (esp: EspecialidadId[], prefijo: string, ...ids: string[]) => {
-    let s = fichaCombate([], { cm: 4, esp });
+    let s = fichaCombate([{ id: "dote_bloqueo" }], { cm: 4, esp }); // sin Bloqueo no hay fila (D2b-2)
     s = armado(s, ...ids);
     const f = resolver(s);
     const t = filasDe(f).find((x) => x.id.startsWith(prefijo))!;
@@ -485,5 +495,82 @@ describe("bloqueos con la especialidad del arma (S40, D2b-1)", () => {
     const { acciones } = todasLasFilasDeArma();
     for (const p of ["bloquear_bayoneta_", "bloquear_proyector_pulso_aguijon_", "bloquear_melee_"])
       for (const t of acciones.filter((x) => x.id.startsWith(p))) assert.ok(t.especialidadArma, t.id);
+  });
+});
+
+describe("D2b-2: Bloqueo y Combate Sutil habilitan sus filas (§9.2)", () => {
+  const bloquear = (f: FichaResuelta) => filasDe(f).find((t) => t.id.startsWith("bloquear_melee_"));
+
+  test("los permisos salen de las dotes activas: Bloqueo habilita bloquear_melee; Combate Sutil, el Sutil en golpes y bloqueos", () => {
+    assert.deepEqual(resolver(fichaCombate([])).extrasDotes.permisos, { familias: [], sutil: [] });
+    const f = resolver(fichaCombate([{ id: "dote_bloqueo" }, { id: "dote_combate_sutil" }]));
+    assert.deepEqual(f.extrasDotes.permisos.familias, ["bloquear_melee"]);
+    assert.deepEqual([...f.extrasDotes.permisos.sutil].sort(), ["ataque_melee", "bloquear_melee"]);
+  });
+
+  test("requisito roto (S34): con las dotes marcadas pero sin Combate Melee, ni Bloquear ni Sutil", () => {
+    const f = resolver(armado(fichaCombate([{ id: "dote_bloqueo" }, { id: "dote_combate_sutil" }], { cm: 0 }), "espada_ligera"));
+    assert.deepEqual(f.extrasDotes.permisos, { familias: [], sutil: [] });
+    assert.equal(bloquear(f), undefined);
+    assert.equal(fila(f, "ataque_melee_").aplicadoSutil, undefined);
+  });
+
+  test("NPC (modo libre) sin dotes: tampoco bloquea ni tiene Sutil", () => {
+    const f = resolver(armado(fichaCombate([]), "espada_ligera"), true);
+    assert.equal(bloquear(f), undefined);
+    assert.equal(fila(f, "ataque_melee_").aplicadoSutil, undefined);
+  });
+
+  test("NPC (modo libre) con la dote puesta a mano: bloquea aunque no cumpla el requisito (§9.4)", () => {
+    const f = resolver(armado(fichaCombate([{ id: "dote_bloqueo" }], { cm: 0 }), "espada"), true);
+    assert.ok(bloquear(f));
+  });
+
+  test("con un arma, Bloquear no lleva la casilla «Desarmado frente a atacante armado» ni su excepción", () => {
+    const t = bloquear(resolver(armado(fichaCombate([{ id: "dote_bloqueo" }]), "espada")))!;
+    assert.ok(!(t.condiciones ?? []).some((x) => x.id.startsWith("dote_bloqueo")));
+    assert.doesNotMatch(t.nota ?? "", /Desarmado frente a atacante armado/);
+    assert.match(t.nota ?? "", /Solo vale contra ataques melee\. \(Bloqueo\)/);
+  });
+
+  test("bloqueando desarmado (Pelea), la fila lleva la casilla «Desarmado frente a atacante armado» (−3) y los textos de Bloqueo", () => {
+    const f = resolver(armado(fichaCombate([{ id: "dote_bloqueo" }]), "pelea_punetazo"));
+    const t = bloquear(f)!;
+    const c = t.condiciones?.find((x) => x.id.startsWith("dote_bloqueo"));
+    assert.ok(c && c.tipo === "toggle" && c.valorActivo === -3);
+    assert.match(c.etiqueta, /^Desarmado frente a atacante armado \(Bloqueo\)$/);
+    assert.match(t.nota ?? "", /Solo vale contra ataques melee\. \(Bloqueo\)/);
+    assert.match(t.nota ?? "", /Atacante más grande: −2 por cada tamaño de diferencia\. \(Bloqueo\)/);
+    assert.match(t.nota ?? "", /Desarmado frente a atacante armado: Si tu ataque natural o desarmado hace daño letal/);
+    assert.match(t.efectoCritico ?? "", /puedes contraatacarle como reacción\. \(Bloqueo\)/);
+    // Marcar la casilla resta 3 al total.
+    const sin = montarTirada(f, t, eleccionSinTocar(t, false));
+    const con = montarTirada(f, t, { ...eleccionSinTocar(t, false), estadoCondiciones: { ...eleccionSinTocar(t, false).estadoCondiciones, [c.id]: true } });
+    assert.equal(con.modificador - sin.modificador, -3);
+    // Solo en Bloquear: ni en el golpe ni en la esquiva.
+    assert.ok(!(fila(f, "ataque_melee_").condiciones ?? []).some((x) => x.id.startsWith("dote_bloqueo")));
+    assert.doesNotMatch(fila(f, "ataque_melee_").nota ?? "", /Bloqueo/);
+  });
+
+  test("Contraataque Rápido y Maestro en Contraataque: texto de crítico en Bloquear", () => {
+    const rapido = bloquear(resolver(armado(fichaCombate([{ id: "dote_bloqueo" }, { id: "dote_contraataque_rapido" }]), "espada")))!;
+    assert.match(rapido.efectoCritico ?? "", /acción gratuita en vez de reacción, una vez por turno\. \(Contraataque Rápido\)/);
+    // Maestro pide Contraataque Rápido (y Combate Melee 6) y lo sustituye: vale la mejor (§9.1).
+    const maestro = bloquear(
+      resolver(armado(fichaCombate([{ id: "dote_bloqueo" }, { id: "dote_contraataque_rapido" }, { id: "dote_maestro_en_contraataque" }], { cm: 6 }), "espada")),
+    )!;
+    assert.match(maestro.efectoCritico ?? "", /sin límite por turno\. \(Maestro en Contraataque\)/);
+    assert.doesNotMatch(maestro.efectoCritico ?? "", /Contraataque Rápido/);
+  });
+
+  test("Combinación y Combinación Rápida: su texto también en Bloquear", () => {
+    const t = bloquear(resolver(armado(fichaCombate([{ id: "dote_bloqueo" }, { id: "dote_combinacion" }, { id: "dote_combinacion_rapida" }]), "espada")))!;
+    assert.match(t.nota ?? "", /Si este turno has usado Combinación: −1 a tus acciones defensivas.*\(Combinación\)/);
+    assert.match(t.nota ?? "", /Combinación en modo sutil: sin el −1 a tus acciones defensivas\. \(Combinación Rápida\)/);
+  });
+
+  test("sin Bloqueo, los textos de bloqueo de otras dotes no tienen dónde ir (no hay fila)", () => {
+    const f = resolver(armado(fichaCombate([{ id: "dote_contraataque_rapido" }, { id: "dote_combinacion" }]), "espada"));
+    assert.equal(bloquear(f), undefined);
   });
 });

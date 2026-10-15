@@ -80,7 +80,9 @@
 //     existe (casilla, bono fijo, bono por tramo o nota de rules/dotesEfectos.ts; también
 //     las tiradas de una familia de arma, D2b-1), texto de la tarjeta (`lugar: "ficha"`,
 //     ya visible en la prosa de la dote), o el crítico fijo de la especialidad elegida
-//     (Crítico Mejorado). Falla si algo construido no se sabe aplicar: casilla en
+//     (Crítico Mejorado). En D2b-2, también el habilitador de una familia de
+//     FAMILIAS_SOLO_CON_DOTE (Bloqueo) y el cambio a Reflejos en una familia de arma
+//     (Combate Sutil, el estilo Sutil). Falla si algo construido no se sabe aplicar: casilla en
 //     «Levantar escudo» (sin dado), filtro de tipo de daño, solo en especialidad sin tramo.
 //   - tipo/afecta/mecanismo salen del tipo de efecto (función clasificar()).
 //
@@ -100,6 +102,7 @@ import { doteCatalogoSchema, type DoteCatalogo, type RequisitoDote } from "../sr
 import {
   DESTINOS_DOTES,
   EXCEPCIONES_TANDA,
+  FAMILIAS_SOLO_CON_DOTE,
   OPCIONES_DE_TRAMO,
   TANDAS_DOTES,
   type TandaDote,
@@ -273,6 +276,23 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
   // acierta suma +1 éxito; +2 en la Mejorada)". El borrador lo traía como texto sin_regla.
   "dote_salto_evasivo#0": { tipo: "exito_extra", alcance: "defensa", exitos: 1, condicion: "Esquivando un área" },
   "dote_salto_evasivo_mejorado#0": { tipo: "exito_extra", alcance: "defensa", exitos: 2, condicion: "Esquivando un área" },
+  // Bloqueo: "desarmado frente a atacante armado" (−3) y su excepción solo al bloquear
+  // desarmado (Pelea), no con un arma (revisión de D2b-2, 2026-10-16).
+  "dote_bloqueo#7": {
+    tipo: "bono",
+    alcance: "familia:bloquear_melee",
+    valor: -3,
+    condicion: "Desarmado frente a atacante armado",
+    filtroArma: { desarmado: true },
+  },
+  "dote_bloqueo#8": {
+    tipo: "texto",
+    lugar: "familia:bloquear_melee",
+    texto: "Si tu ataque natural o desarmado hace daño letal no cuentas como desarmado: no marques la casilla.",
+    condicion: "Desarmado frente a atacante armado",
+    porque: "tercero",
+    filtroArma: { desarmado: true },
+  },
   // §9.3 "Combinación → casilla −1 en el ataque, −1 a defensas como texto" (el borrador lo
   // traía como casilla). En Esquiva ya (tirada fija); en Bloquear, con su tanda (la
   // tirada la genera el arma).
@@ -292,6 +312,8 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
       porque: "turno",
     },
   ],
+  // TODO(revisar): S52, el texto sale aunque la ficha no tenga Combate Sutil (no es requisito
+  // de la dote); es texto y no se oculta.
   "dote_combinacion_rapida#1": [
     {
       tipo: "texto",
@@ -450,22 +472,23 @@ const esFamilia = (a: unknown) => typeof a === "string" && a.startsWith("familia
 // La tanda que pide el propio tipo de efecto, aunque su destino exista (§9.3 y encargo D2a).
 function tandaDelTipo(e: Efecto): TandaDote | null {
   switch (e.tipo) {
-    case "accion": {
-      const accionId = (e.accion as { id: string }).id;
-      // Arrollar y Ataque de oportunidad: solo con su dote (§9.2) → habilita.
-      return accionId === "dotes_arrollar" || accionId === "dotes_ataque_de_oportunidad" ? "D2b-2" : "D2c";
-    }
+    case "accion":
+      // También Arrollar y Ataque de oportunidad (§9.2: solo con su dote): no existen en la
+      // app y van con el resto de acciones de dote (decisión del usuario en D2b-2).
+      return "D2c";
     case "poder":
       // TODO(revisar): Impacto Métrico y Sobrecarga Métrica van con las acciones de dote
       // (D2c), aunque Impacto Métrico necesita además el daño modificable (D2d).
       return "D2c";
     case "habilita":
-      return "D2b-2";
+      // Bloqueo (D2b-2): se construye si su familia está en FAMILIAS_SOLO_CON_DOTE (abajo).
+      return null;
     case "cambia_par":
-      // Combate Sutil (§9.2, ataques y bloqueos melee) es el habilita de Sutil. Los demás
-      // (Negociación Analítica, Cazador Cazado, Vigilancia Táctica) son la capa "cambio de
-      // par" de D2d (sistema.md §9.3); si su tirada no existe, gana "tiradas-fijas".
-      return esFamilia(e.alcance) ? "D2b-2" : "D2d";
+      // Combate Sutil (§9.2, ataques y bloqueos melee) es el habilitador de Sutil, construido
+      // en D2b-2. Los demás (Negociación Analítica, Cazador Cazado, Vigilancia Táctica) son la
+      // capa "cambio de par" de D2d (sistema.md §9.3); si su tirada no existe, gana
+      // "tiradas-fijas".
+      return esFamilia(e.alcance) ? null : "D2d";
     case "margen_critico":
       // Crítico Mejorado (crítico fijo con su especialidad de arma) se construye en D2b-1;
       // el resto de márgenes, capa de D2d.
@@ -500,17 +523,26 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
   const estado = tanda ? { estado: "pendiente" as const, bloqueoPor: tanda } : { estado: "construido" as const };
 
   if (!tanda) {
-    // Lo único que D2a sabe construir: bonos numéricos y textos sobre una tirada que
-    // existe, y textos de tarjeta.
+    // Lo que se sabe construir: bonos numéricos y textos sobre una tirada que existe,
+    // textos de tarjeta, el crítico de la especialidad elegida (D2b-1), y en D2b-2 el
+    // habilitador de una familia que solo existe con dote (Bloqueo) y el estilo Sutil
+    // (cambio a Reflejos en una familia de arma, Combate Sutil).
+    const alcanceDestino = destino?.tipo === "tirada" ? destino.alcance : null;
+    const familiaDestino = alcanceDestino?.tipo === "familiaArma" ? alcanceDestino.familia : null;
     const construible =
       (e.tipo === "bono" && destino?.tipo === "tirada") ||
       (e.tipo === "texto" && (destino?.tipo === "tirada" || destino?.tipo === "ficha")) ||
-      (e.tipo === "margen_critico" && destino?.tipo === "especialidadArmaElegida");
+      (e.tipo === "margen_critico" && destino?.tipo === "especialidadArmaElegida") ||
+      (e.tipo === "habilita" && familiaDestino !== null && FAMILIAS_SOLO_CON_DOTE.includes(familiaDestino)) ||
+      (e.tipo === "cambia_par" &&
+        familiaDestino !== null &&
+        e.aplicado === "reflejos" &&
+        e.habilidad === undefined &&
+        e.especialidad === undefined);
     if (!construible) {
-      falla(id, `efecto ${e.borrador} (${String(e.tipo)}): sin tanda y sin forma de construirlo en D2a/D2b-1`);
+      falla(id, `efecto ${e.borrador} (${String(e.tipo)}): sin tanda y sin forma de construirlo (D2a, D2b-1, D2b-2)`);
       return null;
     }
-    const alcanceDestino = destino?.tipo === "tirada" ? destino.alcance : null;
     if (e.tipo !== "texto" && alcanceDestino?.tipo === "familiaArma" && alcanceDestino.familia === "levantar_escudo")
       falla(id, `efecto ${e.borrador}: «Levantar escudo» no tiene dado, solo admite textos`);
     const filtro = e.filtroArma as { tipoDanio?: unknown } | undefined;
