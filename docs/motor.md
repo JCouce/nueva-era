@@ -210,7 +210,7 @@ valores calculados (que habría sido construir infraestructura para una
 muestra de tamaño uno). Si aparece un segundo caso real — un poder, una
 dote — que necesite "cambiar qué aplicado alimenta una tirada", ese es el
 momento de fusionar los dos mecanismos; hasta entonces, `sustitucion_aplicado`
-se queda tal cual, sin generalizar. (D2b-2, 2026-10-16: la dote *Combate Sutil* no es
+se queda tal cual, sin generalizar. (D2b-2, 2026-10-15: la dote *Combate Sutil* no es
 ese segundo caso, es el permiso para usar este mismo interruptor: sin ella
 `combate.ts` no pone `aplicadoSutil`. El habilitador de *Bloqueo* es el primer tipo 5
 construido con arbitraje "duro": `FAMILIAS_SOLO_CON_DOTE`, `catalog/dotesDestinos.ts`.)

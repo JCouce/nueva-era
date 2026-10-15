@@ -169,7 +169,7 @@ for (const dote of familia === "equipo" ? [] : DOTES) {
   const lineas = [
     // Con --sin-texto los textos no se auditan, pero el auditor tiene que verlos: si no,
     // un efecto que la app ya da como texto (−1 a defensas de Combinación) sale como
-    // "falta en código" (falsos positivos de la auditoría D2a + D2b-1, 2026-10-16).
+    // "falta en código" (falsos positivos de la auditoría D2a + D2b-1, 2026-10-15).
     ...textos.map((t) => `${sinTexto ? "[ya cubierto como texto, no auditar] " : ""}${destinoTexto(t)}${t.soloEnCritico ? " (crítico)" : ""}: ${t.texto}`),
     ...criticos.map((c) => `crítico fijo en los ataques con la especialidad elegida (${c.especialidad} de ejemplo): con ${c.margen} éxitos`),
     ...dote.efectos.flatMap((e) =>

@@ -31,7 +31,7 @@ import { etiquetaEspecialidad } from "./especialidades";
 // última para que gane a la tanda del tipo (un cambio de par sobre una tirada que no
 // existe espera a la tirada, no a D2d).
 // "D2c-2" (poderes de dote: Impacto Métrico, Sobrecarga Métrica, y los textos de dote en las
-// tiradas de poder) se partió de D2c el 2026-10-16: va detrás de las acciones de dote (D2c).
+// tiradas de poder) se partió de D2c el 2026-10-15: va detrás de las acciones de dote (D2c).
 // Cerrada (0 pendientes) desde D2c-2; se queda en la lista como las demás tandas cerradas.
 // "D2d" (casillas que hacen algo más que sumar: ventaja, fracaso → éxito, crítico, otro
 // aplicado, daño, bono con umbral y la maniobra Derribo), cerrada también.

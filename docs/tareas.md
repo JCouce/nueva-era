@@ -11,38 +11,27 @@ está hecho" en cualquier otro documento del proyecto, para — va aquí, no all
 arquitectura — el modelo obligatorio para pasar cualquier elemento nuevo (equipo,
 razas, poderes, dotes, aumentos) de prosa a motor. Este archivo manda en el estado.
 
-**Última actualización:** 2026-09-28.
+**Última actualización:** 2026-10-15.
 
 ## Ahora mismo
 
 Sin valoración de prioridad aquí a propósito — se queda obsoleta en cuanto cambia el
-foco. Fuentes vivas, cada una con su propio orden interno, sin que ninguna documente
-cuál va antes que la otra:
-- `docs/checklist-motor-vs-prosa-2026-09-24.md` — catálogo de equipo pieza a pieza, con
-  su propio "Orden de construcción" por tiers.
-- `docs/prompt-gasto-recursos.md` — automatizar el gasto de RECURSOS (balas/cargas/
-  dosis) al confirmar una tirada en vez del +/- manual de hoy. **Fase 1 (armas de
-  fuego, Proyector de Pulso, Movilidad Aérea "Volar") y Fase 2 (fármacos) hechas
-  2026-09-28** — los fármacos dejan de ser pieza equipada y pasan a pool con
-  cantidad (`sheet.farmacos`, SCHEMA_VERSION 10), con su propia acción "Usar" en
-  Acciones (grupo nuevo "Fármacos", `rules/farmacos.ts`) que gasta 1 dosis al
-  confirmar. Documento cerrado, sin más fases pendientes.
+foco. Frentes abiertos, cada uno con su sección en Pendiente:
+- **Dotes**: D1–D2d y las dotes de NPC hechas; quedan la especialidad elegida en la tirada
+  y las tiradas fijas que faltan (10 efectos con `bloqueoPor: "tiradas-fijas"`).
+- **Aumentos** y **Puntos Heroicos**: sin empezar, con la prosa ya en `docs/fuente/`.
+  *Neos Plouton* (`docs/fuente/neos-plouton.md`) es la aventura que juega la mesa, no un
+  área de reglas que construir.
+- **Equipo**: lo construible está hecho; lo que queda espera a Murillo o es diseño
+  pequeño (ver su sección).
+- **Panel de combate**: épica para debatir qué aporta; Fase 6b pausada mientras.
+- **Estados en la sub-pestaña Estado**: idea aceptada, se abordará más adelante.
+- Sync con Drive (`npm run sync-drive`, `docs/drive-sync.md`) — primera foto 2026-10-14 en
+  `docs/fuente/`. **Pendiente: reconciliar la línea base** área por área (Creación de
+  Personaje, Sistema, Equipamiento, Especies, Psiónica, Habilidades) contra
+  `docs/sistema.md`. Primer adelanto (Creación): Vida/Fatiga base 8 → 10, Dotes con
+  presupuesto por prioridad, topes de creación movidos.
 - "Preguntas al diseñador" (final de este documento) — lo que bloquea a Murillo.
-- "Especies reales" (en Pendiente) — plan por tandas E0-E5 + M1 con checklist, cerrado
-  2026-10-09 (`docs/propuesta-especies.md`).
-- "Pestaña Personaje + envío a revisión" (en Pendiente) — decidido 2026-10-13 con maqueta;
-  va antes o justo después de especies E2.
-- Sync con Drive (`npm run sync-drive`, `docs/drive-sync.md`) — montado 2026-10-14 con la
-  primera foto en `docs/fuente/`. **Pendiente: reconciliar la línea base** área por área
-  (Creación de Personaje, Sistema, Equipamiento, Especies, Psiónica, Habilidades) contra
-  `docs/sistema.md`; Aumentos, Dotes, Puntos Heróicos y Neos Plouton son áreas sin
-  código. Primer adelanto (Creación): Vida/Fatiga base 8 → 10, Dotes con presupuesto
-  por prioridad, topes de creación movidos.
-- "Dotes" (Fase 5, en Pendiente) — D1 (compra), D2a (casillas, bonos fijos y textos), la
-  tanda ESP (catálogo de especialidades por id), D2b-1 (efectos en las tiradas de arma) y
-  D2b-2 (Bloquear y Sutil solo con su dote), D2c-1 (acciones de dote), D2c-2 (poderes de
-  dote), dotes para los NPC y D2d (casillas que hacen algo más que sumar) hechas; quedan los
-  10 pendientes de "tiradas-fijas".
 
 ---
 
@@ -652,16 +641,182 @@ varias miras, del nivel más alto — `condicionBusquedaMiraDeFicha()` (`equipo.
 agrega en `condicionesActivas()` y en el índice, y cuenta también la mira integrada de
 los fusiles de precisión.
 
-## Pendiente
+### Psiónica ✅ (modelo 2026-09-29; construida entera 2026-09-30)
+Las seis disciplinas, las fuentes externas de la cadena de fatiga (Xovromium, Munición
+Supresora, Derivación Psiónica) y psiónica en NPC. Pruebas manuales:
+`docs/pruebas-psionica.md`. Historial de construcción:
 
-### Fase 2 — Ficha viva (PG y fatiga en partida) ⬜ (parcial: fuera de combate, 2026-09-27)
-Ya no está bloqueada por la pregunta de si se lleva en vivo — se resolvió que sí. **Fuera
-de combate ya está**: `vidaActual`/`fatigaActual` persistidos en la ficha, con su propio
-espacio en Recursos (ver "Vida y fatiga pasan a recurso persistente..." en Hecho). Lo que
-falta sigue siendo dependencia de la fase 6b: daño por categoría, estados activos con
-penalizadores automáticos, gasto de fatiga, descanso — y decidir si el snapshot de
-`Combatiente` (que hoy sigue intacto y se pierde al cerrar el combate) se unifica alguna
-vez con este recurso persistente o se queda como una cosa aparte.
+**Modelo cerrado el 2026-09-29.** Prosa literal en
+`docs/psionica.md`; todas las decisiones (usuario y Murillo) en `docs/sistema.md` §10.6.
+Workflow `.claude/workflows/modelar-area.js` (+ `scripts/workflows/modelar-area-extraer.ts`)
+relanzado con el modelo v2: `docs/modelado-psionica.md` (cobertura 98%, checklist, campos,
+capas C1–C14) y borrador de catálogo `docs/modelado-psionica.json` (raíz
+`CatalogoPsionica`, versiones Poderosas corregidas a mano con `Opcion.suma`). Lo que la
+prosa no dice lo decide el máster en mesa. **Piloto Singularidad (encargo `docs/prompt-construir-psionica.md`), 2026-09-29:** pasos 1-2
+hechos — tipos del modelo v2 en `src/lib/rules/psionica.ts`, catálogo en
+`src/lib/catalog/psionica.ts` (6 disciplinas para la compra, acciones solo de Singularidad;
+el +1 de Poderosa del borrador se cobraba dos veces, corregido), ficha v12 con
+`sheet.psionica`, compra en `PsionicaTab` (N×3 con el pool o XP, requisitos que bloquean
+subir y bajar). Especialidades Física/Informática/Biónica dadas de alta. Paso 3 hecho:
+evaluador `resolverPoder` (`src/lib/rules/poderes.ts`: cambia → `Valor` → suma → marcadores
+`{campo}` de los textos). Paso 4 hecho: `accionesDePsionica` (gate `accion_sin_equipo`
+construido, también en `fuentesDeCapa1` como familia "poder") y sección Psiónica en Acciones
+con el resumen al nivel poseído. Paso 5 hecho: "Usar" abre `AccionModal` con cabecera
+propia (`CabeceraPoder`: nivel empleado, forma, ficha resuelta, notas de antes de tirar); el
+poder se tira como `Accion` de grupo "Psiónica" (`tiradaDePoder`, especialidad automática) y
+"Tirar daño" usa el daño resuelto. Paso 6 hecho: `costeFatiga` (cadena en orden fijo,
+filtros por alcance/toggle, mínimo; `paga_con_recurso` sin construir, lanza error) y gasto
+al tirar vía `ajustarFatiga`, falle o no; sin fatiga suficiente Tirar se apaga
+(`bloqueoPorFatiga`). Fuentes externas (Munición Supresora, Xovromium, Derivación) y
+toggles de fatiga en el modal: tras el piloto. Paso 7 hecho: `Accion.poder` (texto propio
+por grado con respaldo del crítico al normal, `objetivoTira` con dificultad resuelta) pintado
+en `ContenidoResultado` — "El objetivo" plegado y siempre visible; notas de daño como
+`efectos`. Paso 8 hecho: sobrecarga (`cruzaSobrecarga` al cruzar a exhausto, salvación de
+Fortaleza tirada por la app contra 5 + nivel, daño letal no absorbible restado de la vida;
+la inconsciencia se avisa, la marca el máster). **Piloto cerrado.** Psiónica también en
+el editor de NPC (pestaña libre 0-6 con requisitos, `setDisciplinaNpcAction`); el generador
+aleatorio y la métrica "Poder" no la tienen, a propósito.
+**Traslación, tanda 1 (2026-09-30):** Anclaje, Trasladar, Proyección, Auto-proyección y
+Sensor. Motor nuevo: filas de la tabla de la disciplina (`"tabla"` → `porNivel` del nivel
+empleado, carga máxima), rebajas de tipo de acción por nivel (`modificadoresEconomia`),
+casillas de fatiga con grupos excluyentes (`togglesDeFatiga`), poderes sin tirada
+(`UsarPoderModal`), mensaje de varios objetivos y penalizador propio como ajuste fijo.
+Tanda 2 hecha (2026-09-30): Levitar (movimiento en Resumen + acción por periodos vía
+`ajustesPorNivelPoseido`), Auto-anclaje (tabla, dificultad 6 sugerida con
+`Accion.dificultadSugerida`) y Duelo de Métrica (enfrentada, casilla de gratis). Siguiente:
+tanda 3 (Proeza con fatiga temporal).
+Tanda 3 hecha (2026-09-30): Proeza, ficha v13 con `fatigaTemporal` (`pagarFatiga`,
+`fatigaEfectiva`, `terminarEscena` en `vitalidad.ts`), fila "Fatiga temporal" con Terminar
+escena en Recursos (también NPC), daño propio al 200 %. **Traslación completa.**
+**Contención hecha (2026-09-30):** poder sin tirada con datos en la ficha del modal
+(`AccionPoder.datos`) y ajustes por nivel poseído filtrados por nivel empleado y opción;
+acción aparte para colaborar. Siguiente: Resonancia.
+**Esquiva levitando (2026-09-30):** casilla "Levitando: Física" en Defensa / esquiva para
+fichas con Traslación 2+ (`Accion.habilidadAlternativa`, `usarHabilidadAlternativa`,
+`conEsquivaLevitando`); mismo patrón que Sutil pero sobre la habilidad.
+**Proeza con peso (2026-09-30):** campo "Peso del objetivo (kg)" en el modal
+(`AccionPoder.excesoDeCarga`, `ExcesoResuelto` en `poderes.ts`): extra por cada 10 %
+completo, bloqueos (sin peso / no pasa de la carga / >200 % / carga 0), 200 % automático y
+botón "Prolongar un turno" (no borra una sobrecarga pendiente).
+**Resonancia, tanda 1 (2026-09-30):** Sincronía, Mensaje agresivo, Superar la barrera,
+Rastreo y Leer Mente. Motor nuevo, general: eje de alcance con opciones de nivel con nombre
+(`Opcion.nivel`, `EjePoder.porDefecto`: Local = nivel 1), multiplicador de tiempo de la fila
+(`Opcion.multiplicaTiempo`), habilidad a elegir con la más alta preseleccionada
+(`PoderResuelto.habilidadesAElegir`, selector en `CabeceraPoder`). La fila de un poder en
+Acciones enseña ya el coste descontado y la unidad del alcance; el modal se remonta al
+cambiar la dificultad fija (Rastreo 6/9/12); el aviso de daño propio ya no dice
+"inconsciente" salvo en la Proeza al 200 %.
+**Resonancia, tanda 2 (2026-09-30):** Alerta pasiva, Alerta activa (coste fijo) y Vínculo.
+Ventaja genérica: `Accion.ventaja` + `tirarDado` (dos d12, el mejor), enseñada en el modal
+mientras rueda y en el resultado; la activa `Disciplina.ventajas`. Las casillas de bono del
+propio poder (`togglesPropios`) llegan al modal como condiciones ("+2 por Resonancia 4").
+**Resonancia, tanda 3 (2026-09-30):** ventaja y "+2 por Resonancia 4" también en la tirada
+fija "Buscar / percibir". General: `conPsionicaEnTiradaFija` (`poderes.ts`) aplica a
+cualquier tirada fija las `Disciplina.ventajas` y `bonosEnOtrasTiradas` que la nombran,
+sumándose a las condiciones del equipo. **Resonancia completa.** Siguiente: Inducción.
+**Inducción, tanda 1 (2026-09-30):** base común (selector orgánico/sintético que cambia la
+prueba y lo que tira el objetivo, alcance 20 m × nivel, casilla −4 desde nivel 5 vía
+`togglesPropios`), Comando (con "Evitar un ataque" nv2 y varios objetivos nv3) y
+Reconfiguración Mnemónica (nv3). Sin motor nuevo.
+**Inducción, tanda 2 (2026-09-30):** Modulación (ocho efectos, nivel empleado en coste y
+efectos, estándar nv2, varios objetivos nv4/nv6) e Hipomanía a un aliado (sin tirada).
+Motor: marcador `{campo*2}` en los textos.
+**Inducción, tanda 3 (2026-09-30):** Supresión (tres usos, duración por nivel poseído) y
+Estabilización (sobre uno mismo). El bonificador de salvación va en dos pasos: se tira
+Estabilización y luego se marca la casilla de la salvación (`bonosEnOtrasTiradas` por
+tramos con `hastaNivelPoseido`). **Inducción completa.** Siguiente: Hipercognición.
+**Hipercognición (2026-09-30):** Sondeo No-Local, Precognición y Retrocognición. Motor:
+`baja_un_paso` entiende tiempos (1 hora → 10 minutos → 1 minuto → compleja…),
+`Valor.alcanceDe` (alcance de la fila de otra disciplina a su nivel en la ficha,
+`ContextoPoder.niveles`) y daño propio por grado (`DetallePoder.danioPropio`, se resta al
+tirar). **Las seis disciplinas completas.** Queda de la psiónica: las fuentes externas de
+la cadena de fatiga (Xovromium, Munición Supresora, Derivación Psiónica).
+**Fuentes externas, tanda 1 (2026-09-30):** casillas "Bajo Xovromium", "Afectado por
+Munición Supresora" y "Supresora, fallo crítico" en todo poder (`FUENTES_EXTERNAS_FATIGA`,
+`ModificadorFatiga.ademas` para el efecto en la tirada y el daño por punto,
+`efectosDeCasillas`); fila de Xovromium en Fármacos.
+**Fuentes externas, tanda 2 (2026-09-30):** Derivación Psiónica — contador "Pagar con
+cargas" en el modal del poder (`derivacionDeFicha`, `pagoConCargas`, `maxPuntosConCargas`
+en `poderes.ts`; gasta con `onGastarRecurso`) y casilla de nivel 3 en las salvaciones
+(condición de equipo con alcance de grupo). **Fase 5, psiónica: completa.**
+**Refactor: usar un poder sin UI (2026-09-30).** `src/lib/rules/usoPoder.ts` con
+`prepararPoder` / `usarPoder` / `efectosDelResultado` y sus tests de caracterización; la
+lógica de coste, cargas, sobrecarga, daño propio y avisos sale de `AccionesTab` (−90
+líneas), que solo aplica. Regla de ESLint (`no-restricted-imports`) que impide a
+`src/app` y `src/components` importar las funciones de coste/sobrecarga. Cambio de
+comportamiento único: el máximo de fatiga de la sobrecarga ya cuenta los estados de
+combate (antes solo los aplicados los contaban). ~~Pendiente
+relacionado: los penalizadores por umbral de salud y fatiga siguen sin aplicarse.~~ *(Hecho en M1b.)*
+~~**Hallazgo (sin arreglar):** los penalizadores por umbral de salud y fatiga
+(`modificadoresDeUmbrales`, −1/−3/−5 y −1/−2) existen pero nada los aplica a las tiradas.~~
+*Cerrado en M1b (2026-10-13): entran como modificadores de la `FichaResuelta`.*
+Preguntas al diseñador: página pública `/preguntas` (tabla `Pregunta`, seed
+`scripts/seed-preguntas.mjs` desde `scripts/data/preguntas-psionica.json`, 42 preguntas);
+las decisiones del usuario siguen en artifacts y se vuelcan a `docs/sistema.md` §10.6.
+
+### Pestaña Personaje (rediseño del Resumen) + envío a revisión ✅ (construida 2026-10-13; envío a revisión probado y aprobado por el usuario 2026-10-15)
+Maqueta navegable con todo lo decidido: https://claude.ai/artifact/1cA8wJzudPge1PnLF9q55H
+(decisiones 1-7 al final de la maqueta, todas con la opción sugerida). No depende de
+especies E2-E5; va antes o justo después de E2. Plantear la forma en código antes de
+construir (dos pasadas: rediseño, luego revisión).
+
+**Rediseño** (decisiones 1-4)
+- [x] La pestaña "Resumen" pasa a llamarse **"Personaje"** *(id `personaje`;
+      `ResumenTab` borrado, ahora `_components/personaje/PersonajeTab.tsx`. Aviso de reset:
+      "todo salvo Personaje")*
+- [x] Sub-pestañas en el orden de creación: **Origen → Prioridades → Identidad → Estado**,
+      cada una con "✓ hecho" / "● pendiente". Al entrar: en creación, el primer paso
+      pendiente; en juego, Estado. En juego, Prioridades desaparece y Origen es solo lectura
+      *(reglas en `lib/rules/personaje.ts`: `pasosPersonaje` con `falta` por paso, pensado
+      para la barra de envío, y `subPestanaInicial`. Identidad solo exige nombre. Con todo
+      hecho abre en Identidad. Aprobada: Origen "fijado", Identidad "editable")*
+- [x] Origen: carrusel de tarjetas grandes por especie (arte, descripción, chips de
+      atributos, 3 rasgos clave + "ver más", botón "Elegir"; aviso "Elegir otra especie
+      resetea la ficha" en la tarjeta si hay algo que perder; el modal se mantiene).
+      Manduk: debajo, casta (4 tarjetas) y, si es noble, casa (6). Rasgos etiquetados
+      CREACIÓN / SIEMPRE / TIRADA / TEXTO (sale de `MotorMetadata` / `creacion`)
+      *(`etiquetaRasgo` + test con los 39 rasgos del catálogo; 8 quedan con
+      `TODO(revisar)` porque la etiqueta por regla no casa del todo con su prosa. El
+      borrador y el modal salen a `useEleccionEspecie`, que comparte con el selector
+      compacto del NPC, sin cambios de comportamiento ahí. Aprobada y jugador: solo su
+      tarjeta, sin botón)*
+- [x] Arte fase 1: emblema geométrico y color por especie hechos con código; la tarjeta
+      acepta una imagen opcional (`public/especies/`) para cuando haya ilustraciones
+      *(`personaje/arteEspecies.tsx`: colores por especie, casta y casa; `imagen` vacío en
+      todas)*
+- [x] Identidad: nombre, edad, altura, peso con barra del rango de la especie, motivación
+      y trasfondo juntos. Estado: vida/fatiga en barras, alerta, movimiento, carga
+      *(altura y peso por defecto = punto medio del rango, sin guardarse: supuesto S23,
+      sistema.md §14.5. Se eligen arrastrando la propia barra del rango, con "↺ por
+      defecto"; sin rango (Humanos), campos de texto numérico. La cabecera de la ficha
+      muestra especie · casta · casa)*
+
+**Envío a revisión** (decisiones 5-7)
+- [x] Estados de la ficha: **En creación → En revisión → En juego** (`CharacterStatus`
+      gana `IN_REVIEW`; migración + campo de nota del máster y fecha de envío). Chip de
+      estado en la cabecera
+      *(migración `envio_revision`: `submittedAt` y `reviewNote`. Transiciones y quién
+      puede cada una en `transicionRevision` (`lib/rules/revision.ts`, con test); el chip
+      es `components/EstadoFichaChip.tsx`, en la cabecera de la ficha, la tarjeta del
+      máster y la lista de personajes)*
+- [x] Jugador: barra fija abajo con lo que falta (de los "pendiente") y botón **"Enviar a
+      revisión"**, activo solo con todo hecho. En revisión la ficha es **solo lectura** y
+      puede **retirarla** para seguir editando
+      *(bloquea `faltaParaEnviar`, también con un pool en negativo (`excesosDePuntos`,
+      S72); `avisosParaEnviar` avisa de puntos sin gastar sin bloquear. El servidor revalida con la ficha y el nombre de la base. Solo lectura:
+      `loadEditable` rechaza todo autosave y la ficha va en `<fieldset disabled>`
+      (las sub-pestañas de Personaje siguen navegables). **El máster sí puede editar una
+      ficha en revisión** (decisión del usuario, lo más barato): se cambia en
+      `fichaSoloLectura` (`revision.ts`), que usan servidor y pantalla)*
+- [x] Máster: **Aprobar** o **Devolver** con nota **opcional**; la nota se ve en la ficha
+      del jugador al volver a creación. El máster puede **aprobar sin revisión**, como hoy
+      *(en la tarjeta de máster de arriba de la ficha y en el panel, `StatusControl`;
+      `devolverAction` guarda la nota (máx. 500), que se borra al reenviar o aprobar)*
+- [x] Panel del máster: fichas "En revisión" arriba, con contador
+      *(secciones En revisión / En creación / En juego)*
+- [x] La migración va en el mismo deploy que especies *(desplegada el 2026-10-13, push `7193cf9`)*
+
+## Pendiente
 
 ### Fase 6b — Panel de combate en vivo ⬜ (MVP funcional cerrado 2026-09-11, pausada)
 **Hoja de ruta con subtareas, para ir cogiéndolas una a una: `docs/fase-6b.md`.** No
@@ -796,7 +951,23 @@ moviendo la reconciliación también a `parseSheet()`, no solo a `equipar()`/
   ficha (`master/npcs/[id]`), abierta aparte, no desde la fila del combatiente. La
   consola de combate no se tocó en absoluto en esta tarea.
 
-### Equipo — mecanizar efectos especiales por pieza ⬜ (arrancada 2026-09-11)
+### Equipo — efectos especiales por pieza ⬜ (casi cerrado; lo construible, hecho)
+**Estado 2026-10-15.** "Efectos especiales" = lo que el texto de cada pieza promete más
+allá de sus números (críticos, avisos, acciones propias); la tarea era que la app los
+aplique o los avise al tirar. Lo construible está hecho. Queda abierto
+(`docs/checklist-motor-vs-prosa-2026-09-24.md`, ítems sin marcar):
+- **Esperando a Murillo:** Armaduras Avanzadas y el +1 de salvación (8d), shock/apagón en
+  Tejido Conductor, Polímero Anticorrosivo y compañía (32), munición de la S.A.79 (34),
+  Exoesqueleto sin armadura (35), daño de la Plaga (36).
+- **Diseño pequeño propio:** Síntesis farmacológica (VTM nv1: no existe "Fabricar
+  fármaco") y la Sydiasi (consumo fijo de 3, última de la cola a propósito).
+- **Repaso sin hacer:** ids de `MotorMetadata` que no existen (`esquiva` en Sistema de
+  Retroceso, `salv_ceguera_destello` en Visor Nocturno, `camuflaje_trifasico` como acción
+  en Malla Plasmática) y el sacrificio de colchón de la Malla marcado construido con
+  toggle 0/0 — detectado en la calibración de psiónica, sin comprobar si sigue.
+
+Historial:
+
 **Hoja de ruta pieza a pieza: `docs/equipo-efectos-especiales.md`.** El catálogo de
 equipo (fase 3) transcribió fielmente el texto de cada pieza, pero columnas como
 "Crítico de Fusión (11)" son hoy decorativas — no mueven ningún número ni avisan de
@@ -1213,155 +1384,25 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      (VTF nivel 2, Pico de Cuervo Poco Habitual: dificultad sugerida 7, antes
      habría sido 9).
 
-### Fase 5 — Poderes, dotes, aumentos, especies reales ⬜ (psiónica: modelo cerrado)
+### Aumentos ⬜ (sin empezar)
+No hay nada construido. Prosa del diseñador en `docs/fuente/aumentos.md`. Mismo camino que
+psiónica y dotes: transcripción, `modelar-area` y el análisis de `docs/motor.md` antes de
+dar de alta nada. Enganches que ya esperan:
+- La bolsa de 60.000 del humano (E2a, `FichaResuelta.bolsaAumentos`) se ve en Tienda y
+  Recursos pero no se gasta (ver "Especies reales").
+- **Dependencia detectada (2026-09-21, repaso de efectos especiales de equipo):** el
+  estado `Shock` (`src/lib/catalog/estados.ts:670-678`) ya prevé una rama para
+  "equipamiento o armadura tecnológica" (resistencia = Estructura, no Fortaleza),
+  explícitamente sin mecanizar hoy porque no hay sintéticos ni aumentos en la ficha.
+  Al arrancar aumentos, revisar esto junto con la pregunta 32 de `sistema.md`
+  ("susceptible a shock"/"apagón" sin definir, detectado en Inyector Hipodérmico/
+  Soporte Vital/Anticorrosivo/Tejido Conductor — `docs/equipo-efectos-especiales.md`
+  §Mejoras Estándar) — es la misma pieza de motor vista desde dos tareas distintas.
 
-**Psiónica — modelo cerrado, sin construir (2026-09-29).** Prosa literal en
-`docs/psionica.md`; todas las decisiones (usuario y Murillo) en `docs/sistema.md` §10.6.
-Workflow `.claude/workflows/modelar-area.js` (+ `scripts/workflows/modelar-area-extraer.ts`)
-relanzado con el modelo v2: `docs/modelado-psionica.md` (cobertura 98%, checklist, campos,
-capas C1–C14) y borrador de catálogo `docs/modelado-psionica.json` (raíz
-`CatalogoPsionica`, versiones Poderosas corregidas a mano con `Opcion.suma`). Lo que la
-prosa no dice lo decide el máster en mesa. Siguiente: construir por el camino crítico
-(generador de acciones de poder → selector de nivel/ejes + evaluador de Valor → gasto de
-fatiga con su cadena → resolución), con un piloto de una disciplina. Pendiente de repaso
-aparte: ids inexistentes que destapó la calibración en `MotorMetadata` de equipo (`esquiva`
-en Sistema de Retroceso, `salv_ceguera_destello` en Visor Nocturno, `camuflaje_trifasico`
-como acción en Malla Plasmática) y el sacrificio de colchón de la Malla marcado construido
-con toggle 0/0.
-**Piloto Singularidad (encargo `docs/prompt-construir-psionica.md`), 2026-09-29:** pasos 1-2
-hechos — tipos del modelo v2 en `src/lib/rules/psionica.ts`, catálogo en
-`src/lib/catalog/psionica.ts` (6 disciplinas para la compra, acciones solo de Singularidad;
-el +1 de Poderosa del borrador se cobraba dos veces, corregido), ficha v12 con
-`sheet.psionica`, compra en `PsionicaTab` (N×3 con el pool o XP, requisitos que bloquean
-subir y bajar). Especialidades Física/Informática/Biónica dadas de alta. Paso 3 hecho:
-evaluador `resolverPoder` (`src/lib/rules/poderes.ts`: cambia → `Valor` → suma → marcadores
-`{campo}` de los textos). Paso 4 hecho: `accionesDePsionica` (gate `accion_sin_equipo`
-construido, también en `fuentesDeCapa1` como familia "poder") y sección Psiónica en Acciones
-con el resumen al nivel poseído. Paso 5 hecho: "Usar" abre `AccionModal` con cabecera
-propia (`CabeceraPoder`: nivel empleado, forma, ficha resuelta, notas de antes de tirar); el
-poder se tira como `Accion` de grupo "Psiónica" (`tiradaDePoder`, especialidad automática) y
-"Tirar daño" usa el daño resuelto. Paso 6 hecho: `costeFatiga` (cadena en orden fijo,
-filtros por alcance/toggle, mínimo; `paga_con_recurso` sin construir, lanza error) y gasto
-al tirar vía `ajustarFatiga`, falle o no; sin fatiga suficiente Tirar se apaga
-(`bloqueoPorFatiga`). Fuentes externas (Munición Supresora, Xovromium, Derivación) y
-toggles de fatiga en el modal: tras el piloto. Paso 7 hecho: `Accion.poder` (texto propio
-por grado con respaldo del crítico al normal, `objetivoTira` con dificultad resuelta) pintado
-en `ContenidoResultado` — "El objetivo" plegado y siempre visible; notas de daño como
-`efectos`. Paso 8 hecho: sobrecarga (`cruzaSobrecarga` al cruzar a exhausto, salvación de
-Fortaleza tirada por la app contra 5 + nivel, daño letal no absorbible restado de la vida;
-la inconsciencia se avisa, la marca el máster). **Piloto cerrado.** Psiónica también en
-el editor de NPC (pestaña libre 0-6 con requisitos, `setDisciplinaNpcAction`); el generador
-aleatorio y la métrica "Poder" no la tienen, a propósito.
-**Traslación, tanda 1 (2026-09-30):** Anclaje, Trasladar, Proyección, Auto-proyección y
-Sensor. Motor nuevo: filas de la tabla de la disciplina (`"tabla"` → `porNivel` del nivel
-empleado, carga máxima), rebajas de tipo de acción por nivel (`modificadoresEconomia`),
-casillas de fatiga con grupos excluyentes (`togglesDeFatiga`), poderes sin tirada
-(`UsarPoderModal`), mensaje de varios objetivos y penalizador propio como ajuste fijo.
-Tanda 2 hecha (2026-09-30): Levitar (movimiento en Resumen + acción por periodos vía
-`ajustesPorNivelPoseido`), Auto-anclaje (tabla, dificultad 6 sugerida con
-`Accion.dificultadSugerida`) y Duelo de Métrica (enfrentada, casilla de gratis). Siguiente:
-tanda 3 (Proeza con fatiga temporal).
-Tanda 3 hecha (2026-09-30): Proeza, ficha v13 con `fatigaTemporal` (`pagarFatiga`,
-`fatigaEfectiva`, `terminarEscena` en `vitalidad.ts`), fila "Fatiga temporal" con Terminar
-escena en Recursos (también NPC), daño propio al 200 %. **Traslación completa.**
-**Contención hecha (2026-09-30):** poder sin tirada con datos en la ficha del modal
-(`AccionPoder.datos`) y ajustes por nivel poseído filtrados por nivel empleado y opción;
-acción aparte para colaborar. Siguiente: Resonancia.
-**Esquiva levitando (2026-09-30):** casilla "Levitando: Física" en Defensa / esquiva para
-fichas con Traslación 2+ (`Accion.habilidadAlternativa`, `usarHabilidadAlternativa`,
-`conEsquivaLevitando`); mismo patrón que Sutil pero sobre la habilidad.
-**Proeza con peso (2026-09-30):** campo "Peso del objetivo (kg)" en el modal
-(`AccionPoder.excesoDeCarga`, `ExcesoResuelto` en `poderes.ts`): extra por cada 10 %
-completo, bloqueos (sin peso / no pasa de la carga / >200 % / carga 0), 200 % automático y
-botón "Prolongar un turno" (no borra una sobrecarga pendiente).
-**Resonancia, tanda 1 (2026-09-30):** Sincronía, Mensaje agresivo, Superar la barrera,
-Rastreo y Leer Mente. Motor nuevo, general: eje de alcance con opciones de nivel con nombre
-(`Opcion.nivel`, `EjePoder.porDefecto`: Local = nivel 1), multiplicador de tiempo de la fila
-(`Opcion.multiplicaTiempo`), habilidad a elegir con la más alta preseleccionada
-(`PoderResuelto.habilidadesAElegir`, selector en `CabeceraPoder`). La fila de un poder en
-Acciones enseña ya el coste descontado y la unidad del alcance; el modal se remonta al
-cambiar la dificultad fija (Rastreo 6/9/12); el aviso de daño propio ya no dice
-"inconsciente" salvo en la Proeza al 200 %.
-**Resonancia, tanda 2 (2026-09-30):** Alerta pasiva, Alerta activa (coste fijo) y Vínculo.
-Ventaja genérica: `Accion.ventaja` + `tirarDado` (dos d12, el mejor), enseñada en el modal
-mientras rueda y en el resultado; la activa `Disciplina.ventajas`. Las casillas de bono del
-propio poder (`togglesPropios`) llegan al modal como condiciones ("+2 por Resonancia 4").
-**Resonancia, tanda 3 (2026-09-30):** ventaja y "+2 por Resonancia 4" también en la tirada
-fija "Buscar / percibir". General: `conPsionicaEnTiradaFija` (`poderes.ts`) aplica a
-cualquier tirada fija las `Disciplina.ventajas` y `bonosEnOtrasTiradas` que la nombran,
-sumándose a las condiciones del equipo. **Resonancia completa.** Siguiente: Inducción.
-**Inducción, tanda 1 (2026-09-30):** base común (selector orgánico/sintético que cambia la
-prueba y lo que tira el objetivo, alcance 20 m × nivel, casilla −4 desde nivel 5 vía
-`togglesPropios`), Comando (con "Evitar un ataque" nv2 y varios objetivos nv3) y
-Reconfiguración Mnemónica (nv3). Sin motor nuevo.
-**Inducción, tanda 2 (2026-09-30):** Modulación (ocho efectos, nivel empleado en coste y
-efectos, estándar nv2, varios objetivos nv4/nv6) e Hipomanía a un aliado (sin tirada).
-Motor: marcador `{campo*2}` en los textos.
-**Inducción, tanda 3 (2026-09-30):** Supresión (tres usos, duración por nivel poseído) y
-Estabilización (sobre uno mismo). El bonificador de salvación va en dos pasos: se tira
-Estabilización y luego se marca la casilla de la salvación (`bonosEnOtrasTiradas` por
-tramos con `hastaNivelPoseido`). **Inducción completa.** Siguiente: Hipercognición.
-**Hipercognición (2026-09-30):** Sondeo No-Local, Precognición y Retrocognición. Motor:
-`baja_un_paso` entiende tiempos (1 hora → 10 minutos → 1 minuto → compleja…),
-`Valor.alcanceDe` (alcance de la fila de otra disciplina a su nivel en la ficha,
-`ContextoPoder.niveles`) y daño propio por grado (`DetallePoder.danioPropio`, se resta al
-tirar). **Las seis disciplinas completas.** Queda de la psiónica: las fuentes externas de
-la cadena de fatiga (Xovromium, Munición Supresora, Derivación Psiónica).
-**Fuentes externas, tanda 1 (2026-09-30):** casillas "Bajo Xovromium", "Afectado por
-Munición Supresora" y "Supresora, fallo crítico" en todo poder (`FUENTES_EXTERNAS_FATIGA`,
-`ModificadorFatiga.ademas` para el efecto en la tirada y el daño por punto,
-`efectosDeCasillas`); fila de Xovromium en Fármacos.
-**Fuentes externas, tanda 2 (2026-09-30):** Derivación Psiónica — contador "Pagar con
-cargas" en el modal del poder (`derivacionDeFicha`, `pagoConCargas`, `maxPuntosConCargas`
-en `poderes.ts`; gasta con `onGastarRecurso`) y casilla de nivel 3 en las salvaciones
-(condición de equipo con alcance de grupo). **Fase 5, psiónica: completa.**
-**Refactor: usar un poder sin UI (2026-09-30).** `src/lib/rules/usoPoder.ts` con
-`prepararPoder` / `usarPoder` / `efectosDelResultado` y sus tests de caracterización; la
-lógica de coste, cargas, sobrecarga, daño propio y avisos sale de `AccionesTab` (−90
-líneas), que solo aplica. Regla de ESLint (`no-restricted-imports`) que impide a
-`src/app` y `src/components` importar las funciones de coste/sobrecarga. Cambio de
-comportamiento único: el máximo de fatiga de la sobrecarga ya cuenta los estados de
-combate (antes solo los aplicados los contaban). ~~Pendiente
-relacionado: los penalizadores por umbral de salud y fatiga siguen sin aplicarse.~~ *(Hecho en M1b.)*
-~~**Hallazgo (sin arreglar):** los penalizadores por umbral de salud y fatiga
-(`modificadoresDeUmbrales`, −1/−3/−5 y −1/−2) existen pero nada los aplica a las tiradas.~~
-*Cerrado en M1b (2026-10-13): entran como modificadores de la `FichaResuelta`.* Siguiente, disciplina a
-disciplina: resto de disciplinas, toggles externos (Xovromium, Munición Supresora,
-Derivación), ventaja, Levitar, Duelo de Métrica, fatiga
-temporal (Proeza).
-Preguntas al diseñador: página pública `/preguntas` (tabla `Pregunta`, seed
-`scripts/seed-preguntas.mjs` desde `scripts/data/preguntas-psionica.json`, 42 preguntas);
-las decisiones del usuario siguen en artifacts y se vuelcan a `docs/sistema.md` §10.6. De paso la
-calibración destapó ids inexistentes en `MotorMetadata` de equipo (`esquiva` en Sistema de
-Retroceso, `salv_ceguera_destello` en Visor Nocturno, `camuflaje_trifasico` como acción en
-Malla Plasmática) y el sacrificio de colchón de la Malla marcado construido con toggle 0/0 —
-pendiente de repaso aparte.
-El diseñador (Murillo) aún no ha escrito estos documentos. No hay reglas que adelantar,
-pero sí se adelantó la arquitectura que las va a recibir (ver "El motor — MotorMetadata +
-arquitectura escalable" en Hecho): `fuentesDeCapa1` (`src/lib/rules/capa1.ts`) es el punto
-de extensión ya construido para cuando exista una segunda fuente de capa 1, y el registro
-`familia → generador` de `combate.ts` ya consulta `MotorMetadata.mecanismo` en vez de
-tener familias hardcodeadas — dar de alta Poderes/Dotes/Ciberware el día que lleguen es,
-en teoría, sumarlos a `fuentesDeCapa1` + registrar su generador, no rediseñar el proceso.
+### Puntos Heroicos ⬜ (sin empezar)
+No hay nada construido. Prosa del diseñador en `docs/fuente/puntos-heroicos.md`.
 
-**Dependencia detectada (2026-09-21, repaso de efectos especiales de equipo):** el
-estado `Shock` (`src/lib/catalog/estados.ts:670-678`) ya prevé una rama para
-"equipamiento o armadura tecnológica" (resistencia = Estructura, no Fortaleza),
-explícitamente sin mecanizar hoy porque no hay sintéticos ni aumentos en la ficha.
-En cuanto arranque la Fase 5, revisar esto junto con la pregunta 32 de `sistema.md`
-("susceptible a shock"/"apagón" sin definir, detectado en Inyector Hipodérmico/
-Soporte Vital/Anticorrosivo/Tejido Conductor — `docs/equipo-efectos-especiales.md`
-§Mejoras Estándar) — es la misma pieza de motor vista desde dos tareas distintas.
-
-**Segunda dependencia, más grande (2026-09-21, mismo repaso — propuesta del usuario
-de tratarla como mini épica propia):** antes de construir dotes/poderes/aumentos,
-conviene resolver cómo llegan `CondicionTirada` (opciones seleccionables) y texto
-informativo a **tiradas fijas** de `TIRADAS` (hoy solo funciona por arma concreta) —
-problema completo en `docs/modificadores-tiradas.md` §8. **Resuelta:** el §8 se construyó
-el 2026-09-23 (condiciones con `alcance` desde el equipo) y la psiónica entra por
-`conPsionicaEnTiradaFija` (2026-09-30).
-
-### Dotes ⬜ (transcritas y decididas 2026-10-14; D1 hecha 2026-10-15: dotes en la ficha; D2a construida 2026-10-15: casillas, bonos fijos y textos; D2b-1 construida 2026-10-16, sin commit: tiradas de arma)
+### Dotes ⬜ (D1–D2d y dotes de NPC hechas, 2026-10-15; quedan la especialidad en la tirada y las tiradas fijas)
 
 Encargo y pasos: `docs/prompt-dotes.md`. Fuente literal: `docs/dotes.md` (105 dotes).
 Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
@@ -1416,7 +1457,7 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
     **Una tanda se cierra cuando sus pendientes llegan a 0.**
   - Plan de tandas:
     - [x] **D2a** — casillas, bonos fijos y textos en tiradas que ya existen.
-    - [x] **D2b-1 (2026-10-16, probada en navegador)** — casillas/textos de
+    - [x] **D2b-1 (2026-10-15, probada en navegador)** — casillas/textos de
       dote en los ataques con arma (alcances `familia:*`, Levantar escudo) y el crítico fijo
       de Crítico Mejorado. 50 → 0 pendientes.
       - Familia de arma como dato: `Accion.familiaArma` / `empleoArma` (también en
@@ -1431,7 +1472,7 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
         ataques; ni lanzar ni bloquear), en `FichaResuelta.extrasDotes` → `conExtrasDeFicha`.
       - Bloqueos con la especialidad del arma, sin selector (S40 construido). Armas de fuego
         por empleo (S44 construido). Supuestos S45-S49 (`sistema.md`).
-      - [x] **Auditoría de D2a + D2b-1** (2026-10-16): modo por lotes del workflow
+      - [x] **Auditoría de D2a + D2b-1** (2026-10-15): modo por lotes del workflow
         (`{ items, lote: 4 }`, envoltorio lanzado con `scriptPath`) y extractor
         `--familia dote --estado construido --sin-texto`: 25 dotes, 9 agentes, ~370K
         tokens. **0 hallazgos reales**: los 3 "confirmados" (−1 a defensas de Combinación,
@@ -1440,7 +1481,7 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
         van marcados "ya cubierto como texto, no auditar"). 11 huecos ya reconocidos, todos
         pendientes de D2c, D2d o tiradas-fijas. Siguientes tandas: misma receta, y antes de
         lanzar, nº de agentes y coste al usuario.
-    - [x] **D2b-2 (2026-10-16, probada en navegador)** — habilitadores de
+    - [x] **D2b-2 (2026-10-15, probada en navegador)** — habilitadores de
       Bloqueo y Combate Sutil. 20 → 0 pendientes (4 construidos, 11 textos; 5 movidos a D2c).
       - Revisión: la casilla «Desarmado frente a atacante armado» (−3) y su excepción solo
         salen al bloquear desarmado (Pelea), no con un arma (`filtroArma.desarmado`).
@@ -1468,7 +1509,7 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
       > dote: **Bloqueo** y **Combate Sutil**. Si los usabais, compradlas en la pestaña Dotes (con
       > XP si la ficha ya está aprobada); sin Combate Sutil se tira con Potencia y el daño va con
       > Fuerza. Los NPC también: el máster les pone las dotes en su editor.
-    - [x] **D2c-1 (2026-10-16, probada en navegador)** — acciones de dote.
+    - [x] **D2c-1 (2026-10-15, probada en navegador)** — acciones de dote.
       D2c 38 → 0 (30 construidos/textos; los 8 de poderes pasan a D2c-2).
       - Sección **Dotes** en Acciones: `accionesDeDotes` (`rules/dotesAcciones.ts`) →
         `FichaResuelta.accionesDotes` → `AccionesTab.tsx` (FilaTirada / FilaUsar; ESLint
@@ -1487,10 +1528,10 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
         (`CondicionTirada` contador `descuento`, `extrasDotes.descuentos`; S55). No toca
         Bloquear.
       - Tests: `rules/dotesAcciones.test.ts`.
-      - [x] Probado en navegador (2026-10-16): Apoyo (entera con Empatía o Liderazgo), Finta repetida,
+      - [x] Probado en navegador (2026-10-15): Apoyo (entera con Empatía o Liderazgo), Finta repetida,
         Traicionero en Iniciativa, Reflejos Felinos con 2 atacantes, Paso Atrás que
         desaparece al quitar Paso Defensivo.
-    - [x] **D2c-2 (2026-10-16, probada en navegador)** — poderes de dote y textos
+    - [x] **D2c-2 (2026-10-15, probada en navegador)** — poderes de dote y textos
       de dote en los poderes. 8 → 0 pendientes (2 construidos, 6 textos).
       - `poderesDeDotes` (`rules/dotesPoderes.ts`) → `FichaResuelta.poderesDotes` → sección
         **Dotes** de Acciones con `FilaPoder` y la ventana de los poderes (ESLint prohíbe
@@ -1508,7 +1549,7 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
       - La tanda "D2c-2" se queda en `TANDAS_DOTES` con 0, como las demás cerradas.
       - Tests: `rules/dotesPoderes.test.ts`.
       - [x] Probado en navegador (flujo O de `docs/pruebas-psionica.md`).
-    - [x] **D2d (sin commit ni prueba en navegador)** — casillas que hacen algo
+    - [x] **D2d (2026-10-15, probada en navegador)** — casillas que hacen algo
       más que sumar. 17 → 0 pendientes (16 construidos, 1 texto de tarjeta).
       - `CondicionTirada` toggle con `ventaja`, `subeGrado`, `aplicado`, `costeFatiga` y
         `danio` (`condiciones.ts`); `montarTirada` los junta (`TiradaMontada.ventaja`,
@@ -1552,8 +1593,8 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
   (D1-D2d).
 - [x] Código, en su tanda: Bloqueo y Combate Sutil pasan a exigir su dote (D2b-2). Ataque
   de oportunidad, con D2c (no existe todavía en la app).
-- [x] **Dotes para los NPC** (abierta en D2b-2; construida 2026-10-16, sin commit ni prueba
-  en navegador): el máster pone dotes a un NPC (`NpcTemplate`) desde `/master/npcs/[id]`,
+- [x] **Dotes para los NPC** (abierta en D2b-2; construida y commiteada
+  2026-10-15): el máster pone dotes a un NPC (`NpcTemplate`) desde `/master/npcs/[id]`,
   sin requisitos ni coste (§9.4).
   - Reglas (`rules/dotes.ts`): `CONTEXTO_LIBRE` en `comprarDote`/`motivoNoComprable` y
     `quitarDote`/`motivoNoQuitable`. Libre = sin requisitos, sin pool ni XP (`costeXp` 0) y
@@ -1631,6 +1672,10 @@ O se va con todo o se quita lo de combate.
   personaje según lo que hicieron los anteriores en la iniciativa. Requisito común con el
   registro: acciones como datos (por eso las dotes guardan su coste en acciones).
 
+- **Snapshot de `Combatiente`** (rescatado de la vieja Fase 2 "Ficha viva", cerrada el
+  2026-10-15: la ficha ya es viva — cada cosa afecta a su tirada y las tiradas emiten
+  consecuencias): el combate copia vida y fatiga en un snapshot que se pierde al cerrarlo.
+  Decidir si se unifica con `vidaActual`/`fatigaActual` o se queda aparte.
 ### Especies reales ⬜ (plan cerrado 2026-10-09; E0-E5 y M1 hechas: todo lo construible de especies está construido, queda lo bloqueado)
 
 Plan y porqués en `docs/propuesta-especies.md` (decisiones del usuario en §5b, ninguna
@@ -1805,69 +1850,7 @@ no `base`); con dos opciones que bajen el margen de crítico gana el más bajo, 
 - [ ] `setPrioridadAction` sobrescribe `Character.creditos` al cambiar la letra de
       Recursos sin restar lo gastado en la Tienda (el reset de especie solo lo tapa en ese caso)
 
-### Pestaña Personaje (rediseño del Resumen) + envío a revisión ⬜ (decidido 2026-10-13; rediseño hecho y verificado en navegador 2026-10-13; envío a revisión construido 2026-10-13, falta verificarlo en navegador y la migración en el deploy de especies)
-Maqueta navegable con todo lo decidido: https://claude.ai/artifact/1cA8wJzudPge1PnLF9q55H
-(decisiones 1-7 al final de la maqueta, todas con la opción sugerida). No depende de
-especies E2-E5; va antes o justo después de E2. Plantear la forma en código antes de
-construir (dos pasadas: rediseño, luego revisión).
-
-**Rediseño** (decisiones 1-4)
-- [x] La pestaña "Resumen" pasa a llamarse **"Personaje"** *(id `personaje`;
-      `ResumenTab` borrado, ahora `_components/personaje/PersonajeTab.tsx`. Aviso de reset:
-      "todo salvo Personaje")*
-- [x] Sub-pestañas en el orden de creación: **Origen → Prioridades → Identidad → Estado**,
-      cada una con "✓ hecho" / "● pendiente". Al entrar: en creación, el primer paso
-      pendiente; en juego, Estado. En juego, Prioridades desaparece y Origen es solo lectura
-      *(reglas en `lib/rules/personaje.ts`: `pasosPersonaje` con `falta` por paso, pensado
-      para la barra de envío, y `subPestanaInicial`. Identidad solo exige nombre. Con todo
-      hecho abre en Identidad. Aprobada: Origen "fijado", Identidad "editable")*
-- [x] Origen: carrusel de tarjetas grandes por especie (arte, descripción, chips de
-      atributos, 3 rasgos clave + "ver más", botón "Elegir"; aviso "Elegir otra especie
-      resetea la ficha" en la tarjeta si hay algo que perder; el modal se mantiene).
-      Manduk: debajo, casta (4 tarjetas) y, si es noble, casa (6). Rasgos etiquetados
-      CREACIÓN / SIEMPRE / TIRADA / TEXTO (sale de `MotorMetadata` / `creacion`)
-      *(`etiquetaRasgo` + test con los 39 rasgos del catálogo; 8 quedan con
-      `TODO(revisar)` porque la etiqueta por regla no casa del todo con su prosa. El
-      borrador y el modal salen a `useEleccionEspecie`, que comparte con el selector
-      compacto del NPC, sin cambios de comportamiento ahí. Aprobada y jugador: solo su
-      tarjeta, sin botón)*
-- [x] Arte fase 1: emblema geométrico y color por especie hechos con código; la tarjeta
-      acepta una imagen opcional (`public/especies/`) para cuando haya ilustraciones
-      *(`personaje/arteEspecies.tsx`: colores por especie, casta y casa; `imagen` vacío en
-      todas)*
-- [x] Identidad: nombre, edad, altura, peso con barra del rango de la especie, motivación
-      y trasfondo juntos. Estado: vida/fatiga en barras, alerta, movimiento, carga
-      *(altura y peso por defecto = punto medio del rango, sin guardarse: supuesto S23,
-      sistema.md §14.5. Se eligen arrastrando la propia barra del rango, con "↺ por
-      defecto"; sin rango (Humanos), campos de texto numérico. La cabecera de la ficha
-      muestra especie · casta · casa)*
-
-**Envío a revisión** (decisiones 5-7)
-- [x] Estados de la ficha: **En creación → En revisión → En juego** (`CharacterStatus`
-      gana `IN_REVIEW`; migración + campo de nota del máster y fecha de envío). Chip de
-      estado en la cabecera
-      *(migración `envio_revision`: `submittedAt` y `reviewNote`. Transiciones y quién
-      puede cada una en `transicionRevision` (`lib/rules/revision.ts`, con test); el chip
-      es `components/EstadoFichaChip.tsx`, en la cabecera de la ficha, la tarjeta del
-      máster y la lista de personajes)*
-- [x] Jugador: barra fija abajo con lo que falta (de los "pendiente") y botón **"Enviar a
-      revisión"**, activo solo con todo hecho. En revisión la ficha es **solo lectura** y
-      puede **retirarla** para seguir editando
-      *(bloquea `faltaParaEnviar`, también con un pool en negativo (`excesosDePuntos`,
-      S72); `avisosParaEnviar` avisa de puntos sin gastar sin bloquear. El servidor revalida con la ficha y el nombre de la base. Solo lectura:
-      `loadEditable` rechaza todo autosave y la ficha va en `<fieldset disabled>`
-      (las sub-pestañas de Personaje siguen navegables). **El máster sí puede editar una
-      ficha en revisión** (decisión del usuario, lo más barato): se cambia en
-      `fichaSoloLectura` (`revision.ts`), que usan servidor y pantalla)*
-- [x] Máster: **Aprobar** o **Devolver** con nota **opcional**; la nota se ve en la ficha
-      del jugador al volver a creación. El máster puede **aprobar sin revisión**, como hoy
-      *(en la tarjeta de máster de arriba de la ficha y en el panel, `StatusControl`;
-      `devolverAction` guarda la nota (máx. 500), que se borra al reenviar o aprobar)*
-- [x] Panel del máster: fichas "En revisión" arriba, con contador
-      *(secciones En revisión / En creación / En juego)*
-- [x] La migración va en el mismo deploy que especies *(desplegada el 2026-10-13, push `7193cf9`)*
-
-### Estados en la sub-pestaña Estado ⬜ (idea del usuario, 2026-10-13, sin decidir)
+### Estados en la sub-pestaña Estado ⬜ (idea del usuario, 2026-10-13; aceptada 2026-10-15, se aborda más adelante)
 Enseñar en Personaje → Estado los estados del personaje como tarjetas, con nombre y efectos.
 Dos formas planteadas, ninguna elegida:
 - **A. Solo enseñarlos**: una tarjeta por estado activo del combate en curso (nombre, rondas
@@ -1950,8 +1933,8 @@ código el 2026-09-27** — ver Hallazgo #5 en "Hecho", arriba del todo.
 3. **Defensa de un sistema, fija o enfrentada** (pregunta 16, hackeo/psiónica): sin
    efecto en la app todavía (Fase 5 sigue bloqueada por el diseñador), pero cierra el
    diseño de esa sección en cuanto llegue.
-4. **Especies, poderes, dotes y aumentos**: fases enteras esperando a que el diseñador las
-   escriba.
+4. ~~**Especies, poderes, dotes y aumentos**: fases enteras esperando a que el diseñador las
+   escriba.~~ *(Ya están todas en Drive; especies, psiónica y dotes construidas.)*
 5. **Agarre Rápido y Mirada Desafiante** (dotes, D2c-1, S59): la prosa no dice con qué
    tirada se resuelven; la app usa la que propuso el borrador del modelado, con
    `TODO(revisar)` en `scripts/generar-catalogo-dotes.ts`. Preguntar a Murillo qué tirada

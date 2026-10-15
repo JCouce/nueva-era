@@ -318,7 +318,7 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
   "dote_salto_evasivo#0": { tipo: "bono", alcance: "defensa", valor: 1, condicion: "Esquivando un área" },
   "dote_salto_evasivo_mejorado#0": { tipo: "bono", alcance: "defensa", valor: 2, condicion: "Esquivando un área" },
   // Bloqueo: "desarmado frente a atacante armado" (−3) y su excepción solo al bloquear
-  // desarmado (Pelea), no con un arma (revisión de D2b-2, 2026-10-16).
+  // desarmado (Pelea), no con un arma (revisión de D2b-2, 2026-10-15).
   "dote_bloqueo#7": {
     tipo: "bono",
     alcance: "familia:bloquear_melee",
