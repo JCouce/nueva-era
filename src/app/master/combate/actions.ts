@@ -144,7 +144,9 @@ export async function agregarNpcDeCatalogoAction(
   if (!npc) return { ok: false, error: "No existe ese NPC." };
 
   const sheet = parseSheet(npc.stats);
-  const { vida, fatiga } = resolverFicha(sheet, { estadosCombate: [], vitalidad: VITALIDAD_DE_FICHA }).salud;
+  // Modo libre, como lo resuelven el editor y NpcAccionesPanel: las dotes del NPC cuentan
+  // sin mirar requisitos (§9.4) también en sus máximos.
+  const { vida, fatiga } = resolverFicha(sheet, { estadosCombate: [], vitalidad: VITALIDAD_DE_FICHA, libre: true }).salud;
 
   await prisma.combatiente.create({
     data: {

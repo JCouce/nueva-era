@@ -40,9 +40,8 @@ cuál va antes que la otra:
   por prioridad, topes de creación movidos.
 - "Dotes" (Fase 5, en Pendiente) — D1 (compra), D2a (casillas, bonos fijos y textos), la
   tanda ESP (catálogo de especialidades por id), D2b-1 (efectos en las tiradas de arma) y
-  D2b-2 (Bloquear y Sutil solo con su dote) hechas, D2c-1 (acciones de dote) hecha y D2c-2
-  (poderes de dote) construida sin commit; sigue D2d, con su recuento de pendientes.
-  **Antes del próximo `git push`: mandar al grupo el aviso de D2b-2.**
+  D2b-2 (Bloquear y Sutil solo con su dote), D2c-1 (acciones de dote), D2c-2 (poderes de
+  dote) y dotes para los NPC hechas; sigue D2d, con su recuento de pendientes.
 
 ---
 
@@ -1398,7 +1397,7 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
   `NOMBRES_ESPECIALIDAD_DOTES`; el generador valida los ids del borrador)*
 - [x] Ajustar el borrador `docs/modelado-dotes.json` a v2 en los campos de efectos: lo hace
   el generador en D2a (normalización documentada en el script; el `.json` no se toca).
-- [x] **D2a (2026-10-15, sin commit ni prueba en navegador): casillas, bonos fijos y textos
+- [x] **D2a (2026-10-15, probada en navegador): casillas, bonos fijos y textos
   de dote en tiradas que ya existen.**
   - Catálogo con los 188 efectos (185 del borrador: el bono con umbral de Presencia
     Imponente se parte en dos, y el texto de defensas de Combinación y de Combinación
@@ -1415,7 +1414,7 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
     **Una tanda se cierra cuando sus pendientes llegan a 0.**
   - Plan de tandas:
     - [x] **D2a** — casillas, bonos fijos y textos en tiradas que ya existen.
-    - [x] **D2b-1 (2026-10-16, sin commit ni prueba en navegador)** — casillas/textos de
+    - [x] **D2b-1 (2026-10-16, probada en navegador)** — casillas/textos de
       dote en los ataques con arma (alcances `familia:*`, Levantar escudo) y el crítico fijo
       de Crítico Mejorado. 50 → 0 pendientes.
       - Familia de arma como dato: `Accion.familiaArma` / `empleoArma` (también en
@@ -1460,14 +1459,14 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
         equipo); ningún test de NPC dependía de Bloquear ni de Sutil.
       - Ataque de oportunidad y Arrollar (y los textos de Poderoso/Múltiple/Maestro
         Oportunista) pasan a **D2c**: no existían en la app, no había nada que quitar.
-      - [ ] **Antes del `git push`: mandar el aviso al grupo** (quita a todos algo que hoy
-        usan):
+      - [x] Aviso al grupo: lo gestiona el usuario por su cuenta (no bloquea el push). Texto
+        sugerido (quita a todos algo que hoy usan):
       > Aviso de reglas: desde hoy **Bloquear** y el estilo **Sutil** (Reflejos con armas
       > sutiles, el Aguijón del Proyector de Pulso incluido) solo salen en la ficha si tenéis su
       > dote: **Bloqueo** y **Combate Sutil**. Si los usabais, compradlas en la pestaña Dotes (con
       > XP si la ficha ya está aprobada); sin Combate Sutil se tira con Potencia y el daño va con
-      > Fuerza. Los NPC tampoco bloquean ni van en sutil de momento.
-    - [x] **D2c-1 (2026-10-16, sin commit ni prueba en navegador)** — acciones de dote.
+      > Fuerza. Los NPC también: el máster les pone las dotes en su editor.
+    - [x] **D2c-1 (2026-10-16, probada en navegador)** — acciones de dote.
       D2c 38 → 0 (30 construidos/textos; los 8 de poderes pasan a D2c-2).
       - Sección **Dotes** en Acciones: `accionesDeDotes` (`rules/dotesAcciones.ts`) →
         `FichaResuelta.accionesDotes` → `AccionesTab.tsx` (FilaTirada / FilaUsar; ESLint
@@ -1489,7 +1488,7 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
       - [ ] Probar en navegador: Apoyo (entera con Empatía o Liderazgo), Finta repetida,
         Traicionero en Iniciativa, Reflejos Felinos con 2 atacantes, Paso Atrás que
         desaparece al quitar Paso Defensivo.
-    - [x] **D2c-2 (2026-10-16, sin commit ni prueba en navegador)** — poderes de dote y textos
+    - [x] **D2c-2 (2026-10-16, probada en navegador)** — poderes de dote y textos
       de dote en los poderes. 8 → 0 pendientes (2 construidos, 6 textos).
       - `poderesDeDotes` (`rules/dotesPoderes.ts`) → `FichaResuelta.poderesDotes` → sección
         **Dotes** de Acciones con `FilaPoder` y la ventana de los poderes (ESLint prohíbe
@@ -1527,13 +1526,24 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
 - [ ] `docs/propuesta-dotes.md` y plan por tandas.
 - [x] Código, en su tanda: Bloqueo y Combate Sutil pasan a exigir su dote (D2b-2). Ataque
   de oportunidad, con D2c (no existe todavía en la app).
-- [ ] **Dotes para los NPC** (abierta en D2b-2): que el máster pueda poner dotes a un NPC
-  (`NpcTemplate`) desde `/master/npcs`, sin requisitos ni coste (§9.4). D1 dejó a los NPC
-  fuera y desde D2b-2 Bloquear y el estilo Sutil solo existen con su dote, así que hoy
-  **ningún NPC bloquea ni va en sutil**. El motor ya lo soporta (modo libre: las dotes de
-  `stats.dotes` dan efecto sin mirar requisitos; test en `dotesEfectos.test.ts`); falta la
-  UI y la server action del editor de NPC.
-- [x] **Tanda ESP (2026-10-15, sin commit ni prueba en navegador): integrar el catálogo
+- [x] **Dotes para los NPC** (abierta en D2b-2; construida 2026-10-16, sin commit ni prueba
+  en navegador): el máster pone dotes a un NPC (`NpcTemplate`) desde `/master/npcs/[id]`,
+  sin requisitos ni coste (§9.4).
+  - Reglas (`rules/dotes.ts`): `CONTEXTO_LIBRE` en `comprarDote`/`motivoNoComprable` y
+    `quitarDote`/`motivoNoQuitable`. Libre = sin requisitos, sin pool ni XP (`costeXp` 0) y
+    quitar siempre (también si es requisito de otra). Igual que en personaje: dote visible
+    (Olfato de Investigador fuera), elección obligatoria (cerrada/abierta) y repetibles.
+    *Crítico Mejorado* en libre: las especialidades de arma que tenga el NPC, en cualquier
+    habilidad (`opcionesDeEleccion` con `v` null; `TODO(revisar)` si se abre a todas).
+  - Server actions `ponerDoteNpcAction`/`quitarDoteNpcAction` (`master/npcs/actions.ts`),
+    Zod con `doteCompradaSchema`, solo máster, guardan en `stats.dotes`.
+  - UI: pestaña "Dotes" en `NpcEditor.tsx`, `DotesTab` con `libre` (sin saldo ni coste,
+    requisitos ✓/✗ solo de referencia, sin marca de requisito roto, botón "Poner").
+  - Combate: el `Combatiente` congela `stats` (dotes incluidas) y `NpcAccionesPanel` resuelve
+    en libre; `agregarNpcDeCatalogoAction` calcula ahora la salud de la foto también en libre.
+  - Tests: modo libre en `dotes.test.ts`; integración (Bloquear con Espada, `aplicadoSutil`)
+    en `dotesEfectos.test.ts`.
+- [x] **Tanda ESP (2026-10-15, probada en navegador): integrar el catálogo
   completo de especialidades** de `docs/fuente/habilidades.md` en `sistema.md` §3 y en el
   código. Va **antes de D2b-1** (el crítico fijo de Crítico Mejorado y las casillas de los
   ataques con arma ya la necesitan).

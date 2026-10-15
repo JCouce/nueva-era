@@ -11,7 +11,8 @@
 //                                                 falta para enviar a revisión
 //
 // El máster compra con las mismas reglas que el jugador (decisión del usuario, D1):
-// aquí no hay rama de máster. Los NPC no tienen dotes en D1.
+// aquí no hay rama de máster. El NPC del máster (modo libre, §9.4) sí tiene la suya:
+// CONTEXTO_LIBRE en comprar y quitar — sin requisitos, sin coste, quitar siempre.
 import { APLICADOS, ATRIBUTOS, type AplicadoId, type AtributoId } from "./atributos";
 import { HABILIDADES, type HabilidadId } from "./habilidades";
 import { aplicados, atributosEfectivos } from "./derivados";
@@ -162,7 +163,10 @@ export function puntosDotesDisponibles(sheet: Sheet): number {
 // ── Comprar ───────────────────────────────────────────────────────────
 
 // `aprobada`: compra con XP (`xp` disponible); si no, con el pool de la letra.
-export type ContextoCompraDote = { valores: ValoresRequisito; aprobada: boolean; xp: number };
+// `libre`: NPC del máster (§9.4): sin requisitos, sin pool ni XP. Sí valen la dote
+// visible, la elección y lo de repetible, igual que en personaje.
+export type ContextoCompraDote = { valores: ValoresRequisito; aprobada: boolean; xp: number } | { libre: true };
+export const CONTEXTO_LIBRE = { libre: true } as const;
 
 function entradaNormalizada(dote: DoteCatalogo, eleccion: string | undefined): DoteComprada | null {
   const el = eleccionValida(dote, eleccion);
@@ -180,9 +184,15 @@ export function motivoNoComprable(sheet: Sheet, entrada: DoteComprada, ctx: Cont
   if (!nueva) return `Elige ${dote.eleccion?.label.toLowerCase() ?? "una opción"}`;
   if (!dote.repetible && sheet.dotes.some((d) => d.id === dote.id)) return "Ya tienes esta dote";
   if (dote.repetible && sheet.dotes.some((d) => mismaDote(d, nueva))) return "Ya la tienes con esa elección";
-  if (dote.eleccion?.opciones === "especialidades_arma" && nueva.eleccion && !especialidadArmaPropia(dote, nueva.eleccion, ctx.valores, sheet.dotes)) {
-    return "Elige una especialidad de arma que tengas, en la habilidad con la que cumples el requisito";
+  if (dote.eleccion?.opciones === "especialidades_arma" && nueva.eleccion) {
+    const valores = "libre" in ctx ? null : ctx.valores;
+    if (!especialidadArmaElegible(dote, nueva.eleccion, sheet, valores)) {
+      return valores
+        ? "Elige una especialidad de arma que tengas, en la habilidad con la que cumples el requisito"
+        : "Elige una especialidad de arma que tenga el NPC";
+    }
   }
+  if ("libre" in ctx) return null;
   const faltan = estadoRequisitos(dote, ctx.valores, sheet.dotes).filter((r) => !r.cumple);
   if (faltan.length) return `No cumples: ${faltan.map((r) => r.texto).join(", ")}`;
   if (ctx.aprobada) return ctx.xp >= dote.coste ? null : "No tienes XP suficiente";
@@ -207,19 +217,29 @@ export function especialidadArmaPropia(
   return deHabilidad.length === 0 || deHabilidad.some((r) => cumpleSimple(r, v, compradas));
 }
 
+// `v` null = modo libre (NPC, §9.4): sin requisito de habilidad, basta con que la ficha
+// tenga la especialidad ("una de sus especializaciones en armas").
+// TODO(revisar): en libre se sigue exigiendo que el NPC tenga la especialidad (lo
+// conservador); si el máster quiere ponerla sin tenerla, aquí se abre a todo ESPECIALIDADES_ARMA.
+function especialidadArmaElegible(dote: DoteCatalogo, id: string, sheet: Sheet, v: ValoresRequisito | null): boolean {
+  if (v) return especialidadArmaPropia(dote, id, v, sheet.dotes);
+  const esp = especialidadPorId(id);
+  return !!esp && sheet.habilidades[esp.habilidad].especialidades.includes(esp.id);
+}
+
 // Las especialidades de arma que la ficha puede elegir (Crítico Mejorado), en el orden del catálogo.
 function especialidadesArmaElegibles(
   dote: DoteCatalogo,
-  v: ValoresRequisito,
-  compradas: readonly DoteComprada[],
+  sheet: Sheet,
+  v: ValoresRequisito | null,
 ): { valor: string; etiqueta: string }[] {
-  return ESPECIALIDADES_ARMA.filter((e) => especialidadArmaPropia(dote, e.id, v, compradas)).map((e) => ({
+  return ESPECIALIDADES_ARMA.filter((e) => especialidadArmaElegible(dote, e.id, sheet, v)).map((e) => ({
     valor: e.id,
     etiqueta: e.label,
   }));
 }
 
-// `costeXp`: lo que hay que descontar de la XP (0 en creación, que gasta pool).
+// `costeXp`: lo que hay que descontar de la XP (0 en creación, que gasta pool, y en libre).
 export function comprarDote(
   sheet: Sheet,
   entrada: DoteComprada,
@@ -229,13 +249,14 @@ export function comprarDote(
   if (motivo) return { ok: false, error: motivo };
   const dote = dotePorId(entrada.id)!;
   const nueva = entradaNormalizada(dote, entrada.eleccion)!;
-  return { ok: true, sheet: { ...sheet, dotes: [...sheet.dotes, nueva] }, costeXp: ctx.aprobada ? dote.coste : 0 };
+  return { ok: true, sheet: { ...sheet, dotes: [...sheet.dotes, nueva] }, costeXp: "libre" in ctx || !ctx.aprobada ? 0 : dote.coste };
 }
 
 // ── Quitar ────────────────────────────────────────────────────────────
 
-// `foto`: las dotes de la foto de aprobación (aprobacion.ts), null sin foto.
-export type ContextoQuitarDote = { aprobada: boolean; foto: readonly DoteComprada[] | null };
+// `foto`: las dotes de la foto de aprobación (aprobacion.ts), null sin foto. En libre
+// (NPC, §9.4) se quita siempre, aunque sea requisito de otra.
+export type ContextoQuitarDote = { aprobada: boolean; foto: readonly DoteComprada[] | null } | { libre: true };
 
 // ¿Dejaría `r` de cumplirse si desaparece la dote `id` (y quedan `quedan`)?
 function dependeDe(r: RequisitoDote, id: string, quedan: readonly DoteComprada[]): boolean {
@@ -250,6 +271,7 @@ function dependeDe(r: RequisitoDote, id: string, quedan: readonly DoteComprada[]
 export function motivoNoQuitable(sheet: Sheet, entrada: DoteComprada, ctx: ContextoQuitarDote): string | null {
   const i = sheet.dotes.findIndex((d) => mismaDote(d, entrada));
   if (i < 0) return "No tienes esa dote";
+  if ("libre" in ctx) return null;
   // Solo comprar, nunca vender (aprobacion.ts).
   if (ctx.aprobada) {
     if (ctx.foto?.some((d) => mismaDote(d, entrada))) return "Está en la foto de aprobación: solo se compra, no se vende";
@@ -320,18 +342,18 @@ export function etiquetaDote(dote: DoteCatalogo, eleccion: string | undefined): 
 // elegidas de una repetible, fuera). Si no: input de texto libre con `opciones` de
 // sugerencia (Bioma Predilecto: los ejemplos de la fuente). Crítico Mejorado: cerrada,
 // con las especialidades de arma que la ficha tiene en la habilidad con la que cumple
-// el requisito (`v`: ficha.requisitosDotes).
+// el requisito (`v`: ficha.requisitosDotes); `v` null = modo libre (NPC): las que tenga.
 export function opcionesDeEleccion(
   dote: DoteCatalogo,
   sheet: Sheet,
-  v: ValoresRequisito,
+  v: ValoresRequisito | null,
 ): { cerrada: boolean; opciones: { valor: string; etiqueta: string }[] } | null {
   const el = dote.eleccion;
   if (!el) return null;
   if (el.opciones === "especialidades_arma") {
     return {
       cerrada: true,
-      opciones: especialidadesArmaElegibles(dote, v, sheet.dotes).filter(
+      opciones: especialidadesArmaElegibles(dote, sheet, v).filter(
         (o) => !sheet.dotes.some((d) => mismaDote(d, { id: dote.id, eleccion: o.valor })),
       ),
     };

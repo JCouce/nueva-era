@@ -25,6 +25,7 @@ import {
   textoRequisitoDote,
   valoresRequisitoDeFicha,
   type ContextoCompraDote,
+  CONTEXTO_LIBRE,
 } from "./dotes";
 import { dotePorId, normalizarDotes } from "./dotesCompradas";
 import { DOTES } from "../catalog/dotes";
@@ -411,5 +412,77 @@ describe("Crítico Mejorado: especialidad de arma de lista cerrada", () => {
     assert.match(motivoNoComprable(s, { id: dote.id, eleccion: "flagelos" }, ctx) ?? "", /especialidad de arma que tengas/);
     assert.match(motivoNoComprable(s, { id: dote.id, eleccion: "armas_pesadas" }, ctx) ?? "", /especialidad de arma que tengas/);
     assert.equal(motivoNoComprable(s, { id: dote.id, eleccion: "pelea" }, ctx), null);
+  });
+});
+
+// ── Modo libre: NPC del máster (§9.4) ──────────────────────────────────
+
+describe("modo libre (NPC del máster, §9.4)", () => {
+  // Un NPC: sin letra de Dotes, sin XP, y sin Combate Melee (no cumpliría Bloqueo).
+  const npc = () => defaultSheet();
+  const poner = (s: Sheet, id: string, eleccion?: string): Sheet => compra(s, id, eleccion, CONTEXTO_LIBRE);
+
+  test("pone una dote sin cumplir requisitos, sin letra ni XP, y no cuesta nada", () => {
+    const s = npc();
+    assert.equal(s.prioridades.dotes, null);
+    assert.equal(cumple(s, "dote_bloqueo"), false);
+    const r = comprarDote(s, { id: "dote_bloqueo" }, CONTEXTO_LIBRE);
+    assert.ok(r.ok);
+    assert.deepEqual(r.ok && r.sheet.dotes, [{ id: "dote_bloqueo" }]);
+    assert.equal(r.ok && r.costeXp, 0);
+    // Una dote con otra dote de requisito, sin tenerla.
+    assert.deepEqual(poner(s, "dote_contraataque_rapido").dotes, [{ id: "dote_contraataque_rapido" }]);
+  });
+
+  test("Olfato de Investigador tampoco se pone", () => {
+    assert.match(motivoNoComprable(npc(), { id: "dote_olfato_de_investigador" }, CONTEXTO_LIBRE) ?? "", /no se puede comprar/);
+    assert.equal(motivoNoComprable(npc(), { id: "dote_inventada" }, CONTEXTO_LIBRE), "Dote desconocida");
+  });
+
+  test("elección obligatoria igual que en personaje: cerrada, abierta y repetible", () => {
+    let s = npc();
+    assert.match(motivoNoComprable(s, { id: "dote_especialidad_medica" }, CONTEXTO_LIBRE) ?? "", /^Elige/);
+    assert.match(motivoNoComprable(s, { id: "dote_especialidad_medica", eleccion: "inventada" }, CONTEXTO_LIBRE) ?? "", /^Elige/);
+    s = poner(s, "dote_especialidad_medica", "ceguera_sordera");
+    s = poner(s, "dote_especialidad_medica", "hemorragia_herida");
+    assert.equal(
+      motivoNoComprable(s, { id: "dote_especialidad_medica", eleccion: "ceguera_sordera" }, CONTEXTO_LIBRE),
+      "Ya la tienes con esa elección",
+    );
+    assert.match(motivoNoComprable(s, { id: "dote_bioma_predilecto" }, CONTEXTO_LIBRE) ?? "", /^Elige/);
+    s = poner(s, "dote_bioma_predilecto", "  Pantano tóxico ");
+    assert.deepEqual(s.dotes.at(-1), { id: "dote_bioma_predilecto", eleccion: "Pantano tóxico" });
+    // No repetible: una vez.
+    s = poner(s, "dote_bloqueo");
+    assert.equal(motivoNoComprable(s, { id: "dote_bloqueo" }, CONTEXTO_LIBRE), "Ya tienes esta dote");
+  });
+
+  test("Crítico Mejorado: las especialidades de arma que tenga, sin mirar la habilidad del requisito", () => {
+    const dote = dotePorId("dote_critico_mejorado")!;
+    // Combate a Distancia a 1: en personaje Armas Pesadas no saldría (pide 3).
+    const s = conHabilidad(conHabilidad(npc(), "combate_melee", 0, ["pelea"]), "combate_distancia", 1, ["armas_pesadas"]);
+    const op = opcionesDeEleccion(dote, s, null)!;
+    assert.equal(op.cerrada, true);
+    assert.deepEqual(op.opciones.map((o) => o.valor).sort(), ["armas_pesadas", "pelea"]);
+    assert.equal(motivoNoComprable(s, { id: dote.id, eleccion: "armas_pesadas" }, CONTEXTO_LIBRE), null);
+    assert.match(motivoNoComprable(s, { id: dote.id, eleccion: "flagelos" }, CONTEXTO_LIBRE) ?? "", /que tenga el NPC/);
+  });
+
+  test("quitar siempre: también si es requisito de otra", () => {
+    let s = poner(poner(npc(), "dote_bloqueo"), "dote_contraataque_rapido");
+    assert.equal(motivoNoQuitable(s, { id: "dote_bloqueo" }, CONTEXTO_LIBRE), null);
+    const r = quitarDote(s, { id: "dote_bloqueo" }, CONTEXTO_LIBRE);
+    assert.ok(r.ok);
+    s = r.ok ? r.sheet : s;
+    assert.deepEqual(s.dotes, [{ id: "dote_contraataque_rapido" }]);
+    assert.equal(motivoNoQuitable(s, { id: "dote_bloqueo" }, CONTEXTO_LIBRE), "No tienes esa dote");
+  });
+
+  test("quitar una copia de una repetible por su elección", () => {
+    let s = poner(poner(npc(), "dote_especialidad_medica", "ceguera_sordera"), "dote_especialidad_medica", "hemorragia_herida");
+    const r = quitarDote(s, { id: "dote_especialidad_medica", eleccion: "ceguera_sordera" }, CONTEXTO_LIBRE);
+    assert.ok(r.ok);
+    s = r.ok ? r.sheet : s;
+    assert.deepEqual(s.dotes, [{ id: "dote_especialidad_medica", eleccion: "hemorragia_herida" }]);
   });
 });

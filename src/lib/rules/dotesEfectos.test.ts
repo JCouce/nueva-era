@@ -8,7 +8,7 @@ import { resolverFicha, conExtrasDeFicha, conExtrasDirectaDeFicha, VITALIDAD_DE_
 import { montarTirada, eleccionSinTocar, tirarMontada } from "./montaje";
 import { motorMetadataSchema, erroresDeMotorMetadata } from "./motor";
 import { dotesActivas, casillasDeDotes, textosDeDotes, modificadoresDeDotes, permisosDeDotes } from "./dotesEfectos";
-import { valoresRequisitoDeFicha } from "./dotes";
+import { valoresRequisitoDeFicha, comprarDote, CONTEXTO_LIBRE } from "./dotes";
 import { fuentesDeCapa1 } from "./capa1";
 import { nivelesDePsionica, SIN_BONOS_DISCIPLINA } from "./psionica";
 import { alcanzaA, FAMILIAS_ARMA, type AlcanceModificador, type ContextoAccion, type GrupoAccion } from "./modificadores";
@@ -529,6 +529,31 @@ describe("D2b-2: Bloqueo y Combate Sutil habilitan sus filas (§9.2)", () => {
     const f = resolver(armado(fichaCombate([]), "espada_ligera"), true);
     assert.equal(bloquear(f), undefined);
     assert.equal(fila(f, "ataque_melee_").aplicadoSutil, undefined);
+  });
+
+  // Lo que hace el editor de NPC: ponerDoteNpcAction = comprarDote con CONTEXTO_LIBRE, y la
+  // FichaResuelta en libre (editor y panel de combate).
+  const npcCon = (s: Sheet, ...ids: string[]): Sheet =>
+    ids.reduce((x, id) => {
+      const r = comprarDote(x, { id }, CONTEXTO_LIBRE);
+      assert.ok(r.ok, r.ok ? "" : r.error);
+      return r.sheet;
+    }, s);
+
+  test("NPC puesto desde el editor (libre): con espada y Bloqueo tiene «Bloquear con Espada»; sin Bloqueo no", () => {
+    const base = armado(fichaCombate([], { cm: 0 }), "espada");
+    assert.equal(bloquear(resolver(base, true)), undefined);
+    const f = resolver(npcCon(base, "dote_bloqueo"), true);
+    const t = bloquear(f);
+    assert.ok(t);
+    assert.match(t.label, /^Bloquear con Espada/);
+  });
+
+  test("NPC puesto desde el editor (libre): con Combate Sutil y un arma sutil tiene aplicadoSutil", () => {
+    const base = armado(fichaCombate([], { cm: 0 }), "espada_ligera");
+    assert.equal(fila(resolver(base, true), "ataque_melee_").aplicadoSutil, undefined);
+    const f = resolver(npcCon(base, "dote_combate_sutil"), true);
+    assert.ok(fila(f, "ataque_melee_").aplicadoSutil);
   });
 
   test("NPC (modo libre) con la dote puesta a mano: bloquea aunque no cumpla el requisito (§9.4)", () => {

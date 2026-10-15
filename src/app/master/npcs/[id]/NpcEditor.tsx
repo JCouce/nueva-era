@@ -18,11 +18,16 @@ import {
   type EleccionEspecie,
   eleccionDeFicha,
   VITALIDAD_DE_FICHA,
+  comprarDote,
+  quitarDote,
+  CONTEXTO_LIBRE,
+  type DoteComprada,
 } from "@/lib/rules";
 import { AtributosTab } from "@/app/characters/[id]/_components/AtributosTab";
 import { HabilidadesTab } from "@/app/characters/[id]/_components/HabilidadesTab";
 import { AccionesTab } from "@/app/characters/[id]/_components/AccionesTab";
 import { PsionicaTab } from "@/app/characters/[id]/_components/PsionicaTab";
+import { DotesTab } from "@/app/characters/[id]/_components/DotesTab";
 import type { Lanzamiento } from "@/components/ResultadoTirada";
 import { EquipoTab } from "@/app/characters/[id]/_components/EquipoTab";
 import { TiendaTab } from "@/app/characters/[id]/_components/TiendaTab";
@@ -59,6 +64,8 @@ import {
   ajustarFatigaTemporalNpcAction,
   terminarEscenaNpcAction,
   setEspecieNpcAction,
+  ponerDoteNpcAction,
+  quitarDoteNpcAction,
 } from "../actions";
 
 // Fase 6b 5.1: espejo simplificado de CharacterSheet.tsx — reusa sus tabs de
@@ -80,6 +87,7 @@ const TABS = [
   { id: "attrs", label: "Atributos" },
   { id: "skills", label: "Habilidades" },
   { id: "psionica", label: "Psiónica" },
+  { id: "dotes", label: "Dotes" },
   { id: "acciones", label: "Acciones" },
   { id: "equipo", label: "Equipo" },
   { id: "recursos", label: "Recursos" },
@@ -129,6 +137,7 @@ export function NpcEditor({
   const [nombre, setNombre] = useState(initialNombre);
   const [nota, setNota] = useState(initialNota);
   const [status, setStatus] = useState<SaveStatus>("idle");
+  const [errorDotes, setErrorDotes] = useState<string | null>(null);
   // Mismo motivo que en CharacterSheet.tsx (2026-09-24): AccionesTab se
   // desmonta al cambiar de tab, así que su historial sube aquí para
   // sobrevivir al ir y volver a "Acciones" mientras se edita el NPC.
@@ -347,6 +356,26 @@ export function NpcEditor({
     setStatus(res.ok ? "saved" : "error");
   };
 
+  // Dotes en modo libre (§9.4): misma función que el servidor para el motivo al
+  // momento; el sheet, el que devuelve el servidor (viaje directo, como equipar).
+  const commitDote = async (
+    entrada: DoteComprada,
+    local: typeof comprarDote | typeof quitarDote,
+    action: typeof ponerDoteNpcAction,
+  ) => {
+    const previa = local(sheet, entrada, CONTEXTO_LIBRE);
+    if (!previa.ok) {
+      setErrorDotes(previa.error);
+      return;
+    }
+    setErrorDotes(null);
+    setStatus("saving");
+    const res = await action(npcId, entrada);
+    if (res.ok) setSheet(res.sheet);
+    else setErrorDotes(res.error);
+    setStatus(res.ok ? "saved" : "error");
+  };
+
   // Modo libre (§14.3): sin reset ni aviso; el servidor solo valida la combinación.
   const commitEspecie = (eleccion: EleccionEspecie) => {
     runSave(() => setEspecieNpcAction(npcId, eleccion), setSheet);
@@ -431,6 +460,15 @@ export function NpcEditor({
         />
       )}
       {active === "psionica" && <PsionicaTab ficha={ficha} libre onSet={commitDisciplina} />}
+      {active === "dotes" && (
+        <DotesTab
+          ficha={ficha}
+          libre
+          error={errorDotes}
+          onComprar={(entrada) => commitDote(entrada, comprarDote, ponerDoteNpcAction)}
+          onQuitar={(entrada) => commitDote(entrada, quitarDote, quitarDoteNpcAction)}
+        />
+      )}
       {active === "acciones" && (
         <div className="flex flex-col gap-3">
           {/* 5.6: preview en reposo, sin estados — una NpcTemplate no tiene

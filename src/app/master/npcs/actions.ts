@@ -59,6 +59,10 @@ import {
   elegirEspecie,
   reconciliarVida,
   type EleccionEspecie,
+  doteCompradaSchema,
+  comprarDote,
+  quitarDote,
+  CONTEXTO_LIBRE,
 } from "@/lib/rules";
 
 export type NpcResult = { ok: true; sheet: Sheet } | { ok: false; error: string };
@@ -199,6 +203,30 @@ export async function setEspecieNpcAction(npcId: string, eleccion: EleccionEspec
   if ("error" in res) return { ok: false, error: res.error };
   // Una especie nueva puede bajar el máximo de vida/fatiga: se recorta aquí (setEspecieAction).
   return persist(npcId, reconciliarVida(res.sheet));
+}
+
+// Dotes en modo libre (docs/sistema.md §9.4): el máster las pone y quita a mano, sin
+// requisitos ni coste. Solo se valida que la dote exista y sea visible, la elección y
+// lo de repetible (comprarDote con CONTEXTO_LIBRE); quitar, siempre. Un NPC ya metido
+// en un combate guarda su foto: esto no toca ese combate.
+export async function ponerDoteNpcAction(npcId: string, entrada: unknown): Promise<NpcResult> {
+  const parsed = doteCompradaSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Dote inválida" };
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const res = comprarDote(ctx.sheet, parsed.data, CONTEXTO_LIBRE);
+  if (!res.ok) return { ok: false, error: res.error };
+  return persist(npcId, res.sheet);
+}
+
+export async function quitarDoteNpcAction(npcId: string, entrada: unknown): Promise<NpcResult> {
+  const parsed = doteCompradaSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Dote inválida" };
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const res = quitarDote(ctx.sheet, parsed.data, CONTEXTO_LIBRE);
+  if (!res.ok) return { ok: false, error: res.error };
+  return persist(npcId, res.sheet);
 }
 
 // --- Atributos / habilidades / equipo: directo, sin point-buy ni coste ---
