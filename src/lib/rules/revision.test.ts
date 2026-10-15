@@ -1,7 +1,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
-import { setAtributoValue, setHabilidadValue } from "./creacion";
+import { setAtributoValue, setHabilidadValue, setPrioridad } from "./creacion";
 import { pasosPersonaje } from "./personaje";
 import type { Prioridades } from "./prioridad";
 import {
@@ -9,6 +9,7 @@ import {
   fichaSoloLectura,
   faltaParaEnviar,
   avisosParaEnviar,
+  excesosDePuntos,
   ESTADOS_FICHA,
   type AccionRevision,
   type EstadoFicha,
@@ -92,17 +93,17 @@ describe("fichaSoloLectura", () => {
 describe("faltaParaEnviar", () => {
   test("ficha vacía: especie, prioridades y nombre, en ese orden", () => {
     const pasos = pasosPersonaje({ sheet: defaultSheet(), nombre: " ", aprobada: false });
-    assert.deepEqual(faltaParaEnviar(pasos, []), ["Elige especie", "Reparte las 5 letras de prioridad", "Ponle nombre"]);
+    assert.deepEqual(faltaParaEnviar(pasos, [], []), ["Elige especie", "Reparte las 5 letras de prioridad", "Ponle nombre"]);
   });
 
   test("Manduk sin casta con todo lo demás hecho: solo la casta", () => {
     const sheet = conPrioridades({ atributos: "A", habilidades: "B", dotes: "C", psionica: "D", recursos: "E" }, "manduk");
-    assert.deepEqual(faltaParaEnviar(pasosPersonaje({ sheet, nombre: "Krag", aprobada: false }), []), ["Elige casta"]);
+    assert.deepEqual(faltaParaEnviar(pasosPersonaje({ sheet, nombre: "Krag", aprobada: false }), [], []), ["Elige casta"]);
   });
 
   test("humano con reparto y nombre: nada", () => {
     const sheet = conPrioridades({ atributos: "A", habilidades: "B", dotes: "C", psionica: "D", recursos: "E" });
-    assert.deepEqual(faltaParaEnviar(pasosPersonaje({ sheet, nombre: "Ana", aprobada: false }), []), []);
+    assert.deepEqual(faltaParaEnviar(pasosPersonaje({ sheet, nombre: "Ana", aprobada: false }), [], []), []);
   });
 });
 
@@ -144,5 +145,30 @@ describe("avisosParaEnviar", () => {
   test("S+ (presupuesto infinito, pruebas): no avisa de infinito sin gastar", () => {
     const sheet = conPrioridades({ atributos: "S+", habilidades: "S+", dotes: "S+", psionica: "S+", recursos: "S+" });
     assert.deepEqual(avisosParaEnviar(sheet, AJUSTE_NEUTRO), []);
+  });
+});
+
+describe("excesosDePuntos", () => {
+  test("bajar la letra tras gastar deja el pool en negativo y bloquea el envío", () => {
+    let sheet = conPrioridades({ atributos: "A", habilidades: "B", dotes: "C", psionica: "D", recursos: "E" });
+    sheet = setAtributoValue(sheet, "fuerza", 3); // 12
+    sheet = setPrioridad(sheet, "atributos", "E"); // 8: 4 de más; "E" se la quita a recursos
+    assert.deepEqual(excesosDePuntos(sheet, AJUSTE_NEUTRO), ["Te has pasado 4 puntos en atributos"]);
+    const pasos = pasosPersonaje({ sheet, nombre: "Ana", aprobada: false });
+    assert.ok(faltaParaEnviar(pasos, [], excesosDePuntos(sheet, AJUSTE_NEUTRO)).includes("Te has pasado 4 puntos en atributos"));
+    assert.ok(!avisosParaEnviar(sheet, AJUSTE_NEUTRO).some((a) => a.includes("atributos")));
+  });
+
+  test("la letra robada por otra categoría deja la suya a 0", () => {
+    let sheet = conPrioridades({ atributos: "A", habilidades: "B", dotes: "C", psionica: "D", recursos: "E" });
+    sheet = setHabilidadValue(sheet, "atletismo", 1, AJUSTE_NEUTRO); // 1
+    sheet = setPrioridad(sheet, "recursos", "B"); // habilidades sin letra → presupuesto 0
+    assert.deepEqual(excesosDePuntos(sheet, AJUSTE_NEUTRO), ["Te has pasado 1 punto en habilidades"]);
+  });
+
+  test("saldo justo o sobrante: nada", () => {
+    let sheet = conPrioridades({ atributos: "D", habilidades: "E", dotes: "C", psionica: "E", recursos: "A" });
+    sheet = setAtributoValue(sheet, "fuerza", 2); // 6 de 10
+    assert.deepEqual(excesosDePuntos(sheet, AJUSTE_NEUTRO), []);
   });
 });

@@ -313,7 +313,7 @@ describe("requisito que deja de cumplirse", () => {
     assert.deepEqual(rotas.map((r) => [r.label, r.faltan]), [["Bloqueo", ["Combate Melee 1"]]]);
     const faltas = faltasDeDotes(s, valoresRequisitoDeFicha(s));
     assert.deepEqual(faltas, ["Requisito no cumplido en la dote Bloqueo"]);
-    assert.deepEqual(faltaParaEnviar([], faltas), faltas);
+    assert.deepEqual(faltaParaEnviar([], faltas, []), faltas);
   });
 
   test("lo mismo leyendo de la ficha resuelta (pantalla)", () => {

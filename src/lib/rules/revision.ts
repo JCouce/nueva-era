@@ -3,8 +3,9 @@
 //
 //   transicionRevision   quién puede mover la ficha de un estado a otro
 //   fichaSoloLectura     si quien mira la ficha en revisión puede editarla
-//   faltaParaEnviar      lo que bloquea el envío (los `falta` de pasosPersonaje y las
-//                        dotes con requisito no cumplido, faltasDeDotes en dotes.ts)
+//   faltaParaEnviar      lo que bloquea el envío (los `falta` de pasosPersonaje, las
+//                        dotes con requisito no cumplido, faltasDeDotes en dotes.ts, y
+//                        los pools en negativo, excesosDePuntos)
 //   avisosParaEnviar     lo que se avisa pero no bloquea (puntos sin gastar)
 import { puntosAtributosDisponibles, puntosHabilidadesDisponibles } from "./creacion";
 import { puntosPsionicaDisponibles } from "./psionica";
@@ -65,25 +66,34 @@ export function fichaSoloLectura({ estado, esMaster }: { estado: EstadoFicha; es
   return estado === "IN_REVIEW" && !esMaster;
 }
 
-// `faltasDotes`: faltasDeDotes(sheet, valores) — obligatorio para que ningún sitio
-// que decide el envío se olvide de las dotes con requisito no cumplido (D1).
-export function faltaParaEnviar(pasos: PasoPersonaje[], faltasDotes: string[]): string[] {
-  return [...pasos.flatMap((p) => p.falta), ...faltasDotes];
+// `faltasDotes`: faltasDeDotes(sheet, valores); `excesos`: excesosDePuntos(sheet, ajuste).
+// Obligatorios para que ningún sitio que decide el envío se olvide de ellos.
+export function faltaParaEnviar(pasos: PasoPersonaje[], faltasDotes: string[], excesos: string[]): string[] {
+  return [...pasos.flatMap((p) => p.falta), ...faltasDotes, ...excesos];
 }
 
-const quedan = (n: number) => (n === 1 ? "Te queda 1 punto" : `Te quedan ${n} puntos`);
+const poolsDeCreacion = (sheet: Sheet, ajuste: AjusteCoste): [string, number][] => [
+  ["atributos", puntosAtributosDisponibles(sheet)],
+  ["habilidades", puntosHabilidadesDisponibles(sheet, ajuste)],
+  ["psiónica", puntosPsionicaDisponibles(sheet, ajuste)],
+  ["dotes", puntosDotesDisponibles(sheet)],
+];
+
+const puntos = (n: number) => (n === 1 ? "1 punto" : `${n} puntos`);
+
+// Pool en negativo: se gastó con una letra y luego se bajó (o se la robó otra categoría,
+// setLetra). No se impide el cambio de letra, para poder reordenar (S72); bloquea el envío.
+export function excesosDePuntos(sheet: Sheet, ajuste: AjusteCoste): string[] {
+  return poolsDeCreacion(sheet, ajuste).flatMap(([nombre, n]) =>
+    n < 0 ? [`Te has pasado ${puntos(-n)} en ${nombre}`] : [],
+  );
+}
 
 // Puntos de creación sin gastar: se avisa, pero se puede enviar igual (decisión del
-// usuario). Con S+ (pruebas, presupuesto infinito) no hay nada que avisar.
+// usuario). Lo que sobra de dotes al aprobar se pierde (§9.1). Con S+ (pruebas,
+// presupuesto infinito) no hay nada que avisar.
 export function avisosParaEnviar(sheet: Sheet, ajuste: AjusteCoste): string[] {
-  const pools: [string, number][] = [
-    ["atributos", puntosAtributosDisponibles(sheet)],
-    ["habilidades", puntosHabilidadesDisponibles(sheet, ajuste)],
-    ["psiónica", puntosPsionicaDisponibles(sheet, ajuste)],
-    // Lo que sobra de dotes al aprobar se pierde (§9.1): por eso se avisa.
-    ["dotes", puntosDotesDisponibles(sheet)],
-  ];
-  return pools.flatMap(([nombre, n]) =>
-    Number.isFinite(n) && n > 0 ? [`${quedan(n)} de ${nombre} sin gastar`] : [],
+  return poolsDeCreacion(sheet, ajuste).flatMap(([nombre, n]) =>
+    Number.isFinite(n) && n > 0 ? [`${n === 1 ? "Te queda" : "Te quedan"} ${puntos(n)} de ${nombre} sin gastar`] : [],
   );
 }

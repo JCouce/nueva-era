@@ -6,6 +6,7 @@ import {
   pasosPersonaje,
   subPestanaInicial,
   faltaParaEnviar,
+  excesosDePuntos,
   faltasDeDotes,
   avisosParaEnviar,
   type CategoriaPrioridad,
@@ -139,7 +140,11 @@ export function PersonajeTab({
       {envio && (
         <BarraEnvio
           characterId={envio.characterId}
-          falta={faltaParaEnviar(pasos, faltasDeDotes(sheet, ficha.requisitosDotes))}
+          falta={faltaParaEnviar(
+            pasos,
+            faltasDeDotes(sheet, ficha.requisitosDotes),
+            excesosDePuntos(sheet, ficha.ajusteCoste),
+          )}
           avisos={avisosParaEnviar(sheet, ficha.ajusteCoste)}
           reviewNote={envio.reviewNote}
           esperarGuardados={envio.esperarGuardados}

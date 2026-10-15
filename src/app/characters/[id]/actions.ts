@@ -80,6 +80,7 @@ import {
   fichaSoloLectura,
   transicionRevision,
   faltaParaEnviar,
+  excesosDePuntos,
   pasosPersonaje,
   especieDeFicha,
   ajustesDeCoste,
@@ -864,7 +865,11 @@ async function cambiarEstadoRevision(
     // Con el nombre y la ficha de la base, no con lo que diga la pantalla.
     const sheet = parseSheet(character.stats);
     const pasos = pasosPersonaje({ sheet, nombre: character.name, aprobada: false });
-    const falta = faltaParaEnviar(pasos, faltasDeDotes(sheet, valoresRequisitoDeFicha(sheet)));
+    const falta = faltaParaEnviar(
+      pasos,
+      faltasDeDotes(sheet, valoresRequisitoDeFicha(sheet)),
+      excesosDePuntos(sheet, ajustesDeCoste(especieDeFicha(sheet))),
+    );
     if (falta.length) return { ok: false, error: `Falta: ${falta.join(", ")}` };
   }
 

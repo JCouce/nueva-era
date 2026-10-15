@@ -1487,7 +1487,7 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
         (`CondicionTirada` contador `descuento`, `extrasDotes.descuentos`; S55). No toca
         Bloquear.
       - Tests: `rules/dotesAcciones.test.ts`.
-      - [ ] Probar en navegador: Apoyo (entera con Empatía o Liderazgo), Finta repetida,
+      - [x] Probado en navegador (2026-10-16): Apoyo (entera con Empatía o Liderazgo), Finta repetida,
         Traicionero en Iniciativa, Reflejos Felinos con 2 atacantes, Paso Atrás que
         desaparece al quitar Paso Defensivo.
     - [x] **D2c-2 (2026-10-16, probada en navegador)** — poderes de dote y textos
@@ -1507,7 +1507,7 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
         `dotesDestinos.ts` (`dotes_impacto_metrico`, `psi_singularidad_expansion`).
       - La tanda "D2c-2" se queda en `TANDAS_DOTES` con 0, como las demás cerradas.
       - Tests: `rules/dotesPoderes.test.ts`.
-      - [ ] Probar en navegador (flujo O de `docs/pruebas-psionica.md`).
+      - [x] Probado en navegador (flujo O de `docs/pruebas-psionica.md`).
     - [x] **D2d (sin commit ni prueba en navegador)** — casillas que hacen algo
       más que sumar. 17 → 0 pendientes (16 construidos, 1 texto de tarjeta).
       - `CondicionTirada` toggle con `ventaja`, `subeGrado`, `aplicado`, `costeFatiga` y
@@ -1531,20 +1531,25 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
         solo con Derribo Mejorado o Brutal: −2 y daño básico, Brutal sin −2 y «Derribo con
         acción estándar» que devuelve el bono por éxitos.
       - Supuestos S66-S71 (`sistema.md`). Tests: `rules/dotesD2d.test.ts`.
-      - [ ] Probar en navegador (casos en el informe de la tanda).
+      - [x] Probado en navegador (casos en el informe de la tanda).
 - [x] D1 probada en navegador (2026-10-15): compra con pool, XP en aprobada, quitar con
   dependientes, requisito roto marcado, Especialidad Médica repetida sin repetir pareja,
   Crítico Mejorado y Bioma Predilecto con texto libre, rechazo del servidor deshaciendo
   la compra, cambio de especie vaciando dotes. Sin probar en navegador (solo test): el
   bloqueo del envío a revisión, que solo ve el dueño (falta un usuario jugador local).
-- [ ] **Saldo negativo al bajar la letra (fallo anterior a D1, no solo de dotes):** si
-  después de gastar se baja la letra de una categoría (`setPrioridad`, `creacion.ts`), el
-  pool se queda en negativo ("-3 / 6") y no bloquea nada: ni el cambio de letra ni el
-  envío a revisión. Pasa igual con Atributos, Habilidades y Psiónica. Decidir si se impide
-  el cambio de letra o si el saldo negativo es una falta que bloquea el envío.
-- [ ] Código, en su tanda: Ataque de oportunidad desaparece sin la dote también en
-  Finta/Presa/Desarme/Flanqueo.
-- [ ] `docs/propuesta-dotes.md` y plan por tandas.
+- [x] **Saldo negativo al bajar la letra (fallo anterior a D1, no solo de dotes;
+  arreglado 2026-10-15):** si después de gastar se bajaba la letra de una categoría (o se
+  la quitaba otra, `setLetra`), el pool se quedaba en negativo ("-3 / 6") sin bloquear
+  nada. Ahora el cambio de letra se sigue permitiendo (para poder reordenar) y el saldo
+  negativo es una **falta que bloquea el envío** ("Te has pasado 4 puntos en atributos"):
+  `excesosDePuntos` (`revision.ts`), argumento obligatorio de `faltaParaEnviar`, en
+  servidor y pantalla; vale para Atributos, Habilidades, Psiónica y Dotes (S72). Tests en
+  `revision.test.ts`; probado en navegador.
+- [x] ~~Código, en su tanda: Ataque de oportunidad desaparece sin la dote también en
+  Finta/Presa/Desarme/Flanqueo.~~ Obsoleta: esas maniobras no existen en la app; si
+  llegan, que lo recojan en su tanda.
+- [x] ~~`docs/propuesta-dotes.md` y plan por tandas.~~ Obsoleta: el plan ya se ejecutó
+  (D1-D2d).
 - [x] Código, en su tanda: Bloqueo y Combate Sutil pasan a exigir su dote (D2b-2). Ataque
   de oportunidad, con D2c (no existe todavía en la app).
 - [x] **Dotes para los NPC** (abierta en D2b-2; construida 2026-10-16, sin commit ni prueba
@@ -1848,8 +1853,8 @@ construir (dos pasadas: rediseño, luego revisión).
 - [x] Jugador: barra fija abajo con lo que falta (de los "pendiente") y botón **"Enviar a
       revisión"**, activo solo con todo hecho. En revisión la ficha es **solo lectura** y
       puede **retirarla** para seguir editando
-      *(bloquea `faltaParaEnviar`; `avisosParaEnviar` avisa de puntos sin gastar sin
-      bloquear. El servidor revalida con la ficha y el nombre de la base. Solo lectura:
+      *(bloquea `faltaParaEnviar`, también con un pool en negativo (`excesosDePuntos`,
+      S72); `avisosParaEnviar` avisa de puntos sin gastar sin bloquear. El servidor revalida con la ficha y el nombre de la base. Solo lectura:
       `loadEditable` rechaza todo autosave y la ficha va en `<fieldset disabled>`
       (las sub-pestañas de Personaje siguen navegables). **El máster sí puede editar una
       ficha en revisión** (decisión del usuario, lo más barato): se cambia en
