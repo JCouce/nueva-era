@@ -20,6 +20,7 @@ import { ARMAS_MELEE } from "../catalog/armasMelee";
 import { ARMAMENTO_PESADO } from "../catalog/armamentoPesado";
 import { MUNICION_GRANADA } from "../catalog/municion";
 import { DOTES } from "../catalog/dotes";
+import { DISCIPLINAS } from "../catalog/psionica";
 import { especialidadPorId, type EspecialidadId } from "../catalog/especialidades";
 import { DESTINOS_DOTES, EXCEPCIONES_TANDA, TANDAS_DOTES, type TandaDote } from "../catalog/dotesDestinos";
 import type { DoteComprada } from "./dotesCompradas";
@@ -105,6 +106,15 @@ describe("catálogo de dotes: efectos (D2a)", () => {
       if (destino.textos.length === 0 && destino.alcance.tipo !== "familiaArma") errores.push(`${clave}: sin tiradas para los textos`);
     }
     assert.deepEqual(errores, []);
+  });
+
+  test("todo destino de poder es una acción de psiónica o un poder de dote (D2c-2)", () => {
+    const poderes = new Set([
+      ...DISCIPLINAS.flatMap((d) => d.acciones.map((a) => a.id)),
+      ...DOTES.flatMap((d) => d.efectos.flatMap((e) => (e.tipo === "poder" ? [e.accion.id] : []))),
+    ]);
+    for (const [clave, destino] of Object.entries(DESTINOS_DOTES))
+      if (destino.tipo === "poder") assert.ok(poderes.has(destino.id), `${clave}: ${destino.id}`);
   });
 
   test("las excepciones de tanda apuntan a efectos que existen", () => {

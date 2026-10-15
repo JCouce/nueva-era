@@ -21,6 +21,8 @@
 //   descuentos  (D2c-1) contador de la tirada que cuenta unidades de menos (Reflejos Felinos:
 //               un atacante adicional menos en la esquiva). Lo pone conExtrasDeFicha.
 // Las acciones propias de dote (y lo que otras dotes les añaden) van aparte: dotesAcciones.ts.
+// Los poderes de dote, en dotesPoderes.ts; los textos de dote sobre un poder (D2c-2, destino
+// "poder") van a `textos` por el id de su acción y los pone prepararPoder (usoPoder.ts).
 //
 //   dotesActivas     las compradas que dan efecto: sin requisito roto y sin las que
 //                    sustituye una mejorada que también se tiene ("vale la mejor")
@@ -284,9 +286,14 @@ export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresR
       }
       if (e.tipo === "texto") {
         const destino = DESTINOS_DOTES[e.lugar];
-        if (destino?.tipo !== "tirada") return; // "ficha": vive en la tarjeta de la dote
         const texto = e.condicion ? `${e.condicion}: ${e.texto}` : e.texto;
         const soloEnCritico = e.grados?.includes("critico") ?? false;
+        // Poder (D2c-2): por el id de su acción; lo recoge prepararPoder (usoPoder.ts).
+        if (destino?.tipo === "poder") {
+          textos.push({ en: { tipo: "tiradaId", id: destino.id }, texto, fuente, soloEnCritico });
+          return;
+        }
+        if (destino?.tipo !== "tirada") return; // "ficha": vive en la tarjeta de la dote
         const alcance = alcanceDe(destino.alcance, e);
         if (alcance.tipo === "familiaArma") textos.push({ en: alcance, texto, fuente, soloEnCritico });
         else for (const id of destino.textos) textos.push({ en: { tipo: "tiradaId", id }, texto, fuente, soloEnCritico });

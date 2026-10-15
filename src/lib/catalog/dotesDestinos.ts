@@ -18,6 +18,10 @@
 //   accionDote → una acción propia de dote (D2c-1): sus textos van a la nota de la acción y
 //            sus bonos a la casilla de opción de la acción (rules/dotesAcciones.ts). Solo
 //            sale si la acción sale (la dote que la da está activa).
+//   poder  → un poder, psiónico o de dote (D2c-2), por el id de su acción: solo textos, que
+//            prepararPoder (rules/usoPoder.ts) pone en la nota o el crítico de la tirada del
+//            poder, o en las notas de su ventana si no tira. Casillas y bonos no se saben
+//            poner aquí (el poder no pasa por el índice de condiciones): el generador los rechaza.
 //   tanda  → el destino aún no existe: el efecto queda pendiente de esa tanda.
 import type { AlcanceModificador, FamiliaArma } from "../rules/modificadores";
 import { etiquetaEspecialidad } from "./especialidades";
@@ -28,6 +32,7 @@ import { etiquetaEspecialidad } from "./especialidades";
 // existe espera a la tirada, no a D2d).
 // "D2c-2" (poderes de dote: Impacto Métrico, Sobrecarga Métrica, y los textos de dote en las
 // tiradas de poder) se partió de D2c el 2026-10-16: va detrás de las acciones de dote (D2c).
+// Cerrada (0 pendientes) desde D2c-2; se queda en la lista como las demás tandas cerradas.
 export const TANDAS_DOTES = ["D2b-1", "D2b-2", "D2c", "D2c-2", "D2d", "tiradas-fijas"] as const;
 export type TandaDote = (typeof TANDAS_DOTES)[number];
 
@@ -41,6 +46,7 @@ export type DestinoDote =
   | { tipo: "ficha" }
   | { tipo: "especialidadArmaElegida" }
   | { tipo: "accionDote" }
+  | { tipo: "poder"; id: string }
   | { tipo: "tanda"; tanda: TandaDote; motivo: string };
 
 const tirada = (id: string, especialidad?: string): DestinoDote => ({
@@ -131,12 +137,12 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   dotes_violencia_aterradora: { tipo: "accionDote" },
   // Finta: casilla «Finta repetida» (§9.3), con la opción de Maestro de Fintas.
   dotes_finta: { tipo: "accionDote" },
-  // Poderes de dote: D2c-2.
-  dotes_impacto_metrico: tanda("D2c-2", "poder de dote Impacto Métrico"),
-  // TODO(revisar): la tirada del poder existe (Expansión, Singularidad), pero el poder se
-  // monta en prepararPoder, que no recibe los textos de la ficha; se cablea con los
-  // poderes de dote.
-  psi_singularidad_expansion: tanda("D2c-2", "los textos de dote no llegan todavía a las tiradas de poder"),
+
+  // ── Poderes (D2c-2): textos de dote en la ventana o la tirada de un poder ──
+  // Impacto Métrico Relámpago → el poder de dote Impacto Métrico (rules/dotesPoderes.ts).
+  dotes_impacto_metrico: { tipo: "poder", id: "dotes_impacto_metrico" },
+  // Onda Residual → Expansión (Singularidad).
+  psi_singularidad_expansion: { tipo: "poder", id: "psi_singularidad_expansion" },
 
   // ── Tiradas que no existen: definidas en docs/fuente/habilidades.md, pendientes de la
   // tarea "Tiradas fijas que faltan según habilidades.md" (docs/tareas.md) ──

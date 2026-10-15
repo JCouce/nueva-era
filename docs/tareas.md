@@ -40,8 +40,8 @@ cuál va antes que la otra:
   por prioridad, topes de creación movidos.
 - "Dotes" (Fase 5, en Pendiente) — D1 (compra), D2a (casillas, bonos fijos y textos), la
   tanda ESP (catálogo de especialidades por id), D2b-1 (efectos en las tiradas de arma) y
-  D2b-2 (Bloquear y Sutil solo con su dote) hechas, y D2c-1 (acciones de dote) construida
-  sin commit; siguen D2c-2 (poderes de dote) y D2d, con su recuento de pendientes.
+  D2b-2 (Bloquear y Sutil solo con su dote) hechas, D2c-1 (acciones de dote) hecha y D2c-2
+  (poderes de dote) construida sin commit; sigue D2d, con su recuento de pendientes.
   **Antes del próximo `git push`: mandar al grupo el aviso de D2b-2.**
 
 ---
@@ -1407,10 +1407,11 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
     (casillas al índice, bonos fijos como Modificador "dote", textos en `textosTirada`),
     `fuentesDeCapa1` con familia "dote". Supuestos S34-S38 (`sistema.md`).
   - **Recuento por tanda** (lo imprime `npm run gen-dotes` y va al pie de `dotes.ts`):
-    construidos 72 · texto 81 · pendientes D2b-1 0 · D2b-2 0 · D2c 0 · D2c-2 8 · D2d 17 ·
+    construidos 74 · texto 87 · pendientes D2b-1 0 · D2b-2 0 · D2c 0 · D2c-2 0 · D2d 17 ·
     tiradas-fijas 10 (estos dependen de la tarea "Tiradas fijas que faltan", más abajo).
     Tras D2a era: construidos 20 · texto 38 · D2b-1 50. Tras D2b-1: construidos 41 · texto
-    67 · D2b-2 20 · D2c 33. Tras D2b-2: construidos 45 · texto 78 · D2c 38.
+    67 · D2b-2 20 · D2c 33. Tras D2b-2: construidos 45 · texto 78 · D2c 38. Tras D2c-1:
+    construidos 72 · texto 81 · D2c-2 8.
     **Una tanda se cierra cuando sus pendientes llegan a 0.**
   - Plan de tandas:
     - [x] **D2a** — casillas, bonos fijos y textos en tiradas que ya existen.
@@ -1488,9 +1489,24 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
       - [ ] Probar en navegador: Apoyo (entera con Empatía o Liderazgo), Finta repetida,
         Traicionero en Iniciativa, Reflejos Felinos con 2 atacantes, Paso Atrás que
         desaparece al quitar Paso Defensivo.
-    - [ ] **D2c-2** — poderes de dote (*Impacto Métrico*, *Sobrecarga Métrica*: ventana de
-      los poderes, §9.3) y textos de dote en las tiradas de poder (*Onda Residual* en
-      Expansión, *Impacto Métrico Relámpago*). 8 pendientes.
+    - [x] **D2c-2 (2026-10-16, sin commit ni prueba en navegador)** — poderes de dote y textos
+      de dote en los poderes. 8 → 0 pendientes (2 construidos, 6 textos).
+      - `poderesDeDotes` (`rules/dotesPoderes.ts`) → `FichaResuelta.poderesDotes` → sección
+        **Dotes** de Acciones con `FilaPoder` y la ventana de los poderes (ESLint prohíbe
+        llamar a `poderesDeDotes` desde la UI). Nivel poseído = el de su disciplina
+        (`psionica.paraEfectos`); requisito roto o sin disciplina, no sale.
+      - El generador normaliza la AccionPoder del borrador (`normalizarPoder`,
+        `AJUSTES_PODER`) y la valida resolviéndola con `poderes.ts` en todos los niveles y
+        opciones. `Valor.porCadaNiveles` nuevo (daño de Sobrecarga, compresión de Impacto).
+      - *Impacto Métrico* sin dado (S60): cobra la fatiga y enseña el daño extra; el ataque,
+        aparte. *Sobrecarga Métrica* con tirada y daño propio por resultado (S63).
+      - `prepararPoder` recibe `textos` (`FichaResuelta.textosTirada`) y pone los del poder en
+        la nota/crítico de su tirada o en las notas de su ventana (S64). Helper común con
+        `conExtrasDeFicha`: `rules/textosTirada.ts`. Destino nuevo "poder" en
+        `dotesDestinos.ts` (`dotes_impacto_metrico`, `psi_singularidad_expansion`).
+      - La tanda "D2c-2" se queda en `TANDAS_DOTES` con 0, como las demás cerradas.
+      - Tests: `rules/dotesPoderes.test.ts`.
+      - [ ] Probar en navegador (flujo O de `docs/pruebas-psionica.md`).
     - [ ] **D2d** — capas: sube_grado, ventaja con casilla, éxito extra, valor por umbral de
       ficha, casillas que tocan el daño/categoría letal, fatiga por casilla, margen crítico
       y la capa nueva de cambio de par (`sistema.md` §9.3). **El bono por umbral de

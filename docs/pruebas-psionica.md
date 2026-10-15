@@ -494,6 +494,32 @@ El personaje de A (Traslación 2, Singularidad 2), con 1 Xovromium comprado. Vid
 
 ---
 
+## O. Poderes de dote (D2c-2)
+
+Ficha con Traslación 2 y Singularidad 3, Combate Melee 3, Voluntad aplicada ≥ 2, Biociencia
+con la especialidad Medicina, y las dotes *Impacto Métrico*, *Impacto Métrico Relámpago*,
+*Sobrecarga Métrica* y *Onda Residual*. Fatiga llena.
+
+- [ ] **O.1 Sección Dotes.** Acciones › Dotes: filas *Impacto Métrico* ("Compleja · 3
+  fatiga", sin total de tirada) y *Sobrecarga Métrica* (Per + Biociencia (esp.), "Simple · 2
+  fatiga"), con botón Usar.
+- [ ] **O.2 Impacto Métrico.** Usar → ventana sin dado: nivel empleado 1-3 y vector (cuatro
+  opciones). Nivel 3: Fatiga 3, "Daño extra (letal) 5", desplazamiento 12 m; primera nota
+  "tira el ataque aparte, en Ataques…", y la de *Impacto Métrico Relámpago* ("…acción
+  estándar… (Impacto Métrico Relámpago)"). Vector descendente: además "Daño por compresión
+  (letal, se suma) 1". Usar → fatiga −3, y lo que tira el objetivo (dificultad 11; 12 en
+  descendente).
+- [ ] **O.3 Sobrecarga Métrica.** Usar → modal de tirada con la cabecera de poder: nivel 1-2,
+  dificultad 7 puesta (nivel 2), "Fuerza durante la sobrecarga 4", notas "acción simple o
+  reacción" y "aplícalo a mano". Al tirar: fatiga −2; con éxito, aviso de 1 de daño no letal y
+  vida −1; con fracaso, 2 letal.
+- [ ] **O.4 Onda Residual.** Psiónica › Singularidad › Expansión → la nota del modal trae los
+  cinco textos "(Onda Residual)". Quita la dote: desaparecen.
+- [ ] **O.5 Requisito roto.** Baja Singularidad a 1 (o quita Combate Melee) → *Impacto
+  Métrico* desaparece de Dotes (la dote sale marcada en la pestaña Dotes).
+
+---
+
 ## Fuera de estas pruebas
 
 No son fallos:

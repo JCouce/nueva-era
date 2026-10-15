@@ -388,16 +388,18 @@ function FilaPoder({
   sheet,
   mods,
   niveles,
+  textos,
   onAbrir,
 }: {
   poder: PoderDisponible;
   sheet: Sheet;
   mods: ModificadorConFuente[];
   niveles: NivelesPsionica;
+  textos: FichaResuelta["textosTirada"];
   onAbrir: (p: PoderDisponible) => void;
 }) {
   // Mismo cálculo que el modal (usoPoder.ts), sin nada elegido todavía.
-  const preparado = prepararPoder({ ficha: sheet, modificadores: mods, niveles, poder, seleccion: SELECCION_PODER_VACIA });
+  const preparado = prepararPoder({ ficha: sheet, modificadores: mods, niveles, poder, seleccion: SELECCION_PODER_VACIA, textos });
   if (!preparado) return null;
   const p = preparado.resuelto;
   // A cuánto tira, igual que FilaTirada (null en poderes sin dado).
@@ -631,7 +633,14 @@ export function AccionesTab({
   // Se recalcula en cada render contra la ficha actual: "Tirar otra vez" se
   // apaga si ya no llega la fatiga.
   const preparado = poderAbierto
-    ? prepararPoder({ ficha: sheet, modificadores: mods, niveles, poder: poderAbierto.poder, seleccion: poderAbierto.seleccion })
+    ? prepararPoder({
+        ficha: sheet,
+        modificadores: mods,
+        niveles,
+        poder: poderAbierto.poder,
+        seleccion: poderAbierto.seleccion,
+        textos: ficha.textosTirada,
+      })
     : null;
 
   // Sobrecarga del último uso de un poder (null si no cruzó el umbral): nivel
@@ -689,7 +698,7 @@ export function AccionesTab({
 
   // Abre (o reabre, al cambiar una elección) el modal del poder.
   const abrirPoder = (poder: PoderDisponible, seleccion: SeleccionPoder = SELECCION_PODER_VACIA) => {
-    const p = prepararPoder({ ficha: sheet, modificadores: mods, niveles, poder, seleccion });
+    const p = prepararPoder({ ficha: sheet, modificadores: mods, niveles, poder, seleccion, textos: ficha.textosTirada });
     if (!p) return;
     if (p.tirada) abrir(p.tirada, p.enEspecialidad, false);
     setSobrecarga(null);
@@ -1087,7 +1096,15 @@ export function AccionesTab({
               {poderes
                 .filter((p) => p.disciplina === d)
                 .map((p) => (
-                  <FilaPoder key={p.accion.id} poder={p} sheet={sheet} mods={mods} niveles={niveles} onAbrir={abrirPoder} />
+                  <FilaPoder
+                    key={p.accion.id}
+                    poder={p}
+                    sheet={sheet}
+                    mods={mods}
+                    niveles={niveles}
+                    textos={ficha.textosTirada}
+                    onAbrir={abrirPoder}
+                  />
                 ))}
             </div>
           ))}
@@ -1170,12 +1187,25 @@ export function AccionesTab({
       ))}
 
       {/* Dotes (D2c-1): las acciones propias de las dotes activas, de la FichaResuelta
-          (dotesAcciones.ts). Sin ninguna, no hay sección. Al final, tras Acciones. */}
-      {(dotesTiradas.length > 0 || dotesDirectas.length > 0) && (
+          (dotesAcciones.ts). Sin ninguna, no hay sección. Al final, tras Acciones.
+          Los poderes de dote (D2c-2, dotesPoderes.ts) van primero, con la misma fila y la
+          misma ventana que los de Psiónica. */}
+      {(dotesTiradas.length > 0 || dotesDirectas.length > 0 || ficha.poderesDotes.length > 0) && (
         <div className="flex flex-col gap-2">
           <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
             Dotes
           </h2>
+          {ficha.poderesDotes.map((p) => (
+            <FilaPoder
+              key={p.accion.id}
+              poder={p}
+              sheet={sheet}
+              mods={mods}
+              niveles={niveles}
+              textos={ficha.textosTirada}
+              onAbrir={abrirPoder}
+            />
+          ))}
           {dotesTiradas.map((t) => (
             <FilaTirada key={t.id} tirada={t} ficha={ficha} onAbrir={abrir} />
           ))}

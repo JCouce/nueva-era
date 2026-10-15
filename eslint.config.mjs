@@ -30,7 +30,8 @@ const eslintConfig = defineConfig([
   // (lo lee usarPoder), ficha.notasFarmacos y ficha.accionesEspecie. Los valores de
   // los requisitos de dotes (§9.1), de ficha.requisitosDotes. Lo que las dotes ponen en
   // las tiradas (§9.3, D2a): casillas y textos los añade conExtrasDeFicha; los bonos
-  // fijos ya vienen en ficha.modificadores.
+  // fijos ya vienen en ficha.modificadores. Las acciones y los poderes de dote (D2c), de
+  // ficha.accionesDotes y ficha.poderesDotes.
   //
   // Y las tiradas (M1, docs/modificadores-tiradas.md "Montaje"): total, desglose y
   // márgenes de crítico salen de montarTirada / tirarMontada (rules/montaje.ts). La
@@ -107,6 +108,7 @@ const eslintConfig = defineConfig([
                 "textosDeDotes",
                 "modificadoresDeDotes",
                 "accionesDeDotes",
+                "poderesDeDotes",
               ],
               message: "Usa resolverFicha / useFichaResuelta (src/lib/rules/fichaResuelta.ts): lee la FichaResuelta.",
             },

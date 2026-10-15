@@ -9,7 +9,8 @@
 import { z } from "zod";
 import { ATRIBUTOS, APLICADOS } from "../rules/atributos";
 import { HABILIDADES } from "../rules/habilidades";
-import { DISCIPLINA_IDS } from "./psionica";
+import { DISCIPLINA_IDS, type DisciplinaId } from "./psionica";
+import type { AccionPoder } from "../rules/psionica";
 import { ESPECIALIDAD_IDS } from "./especialidades";
 import { motorMetadataSchema } from "../rules/motor";
 
@@ -210,11 +211,31 @@ export const efectoDoteSchema = z.discriminatedUnion("tipo", [
     borrador: comunes.borrador,
   }),
   z.strictObject({ tipo: z.literal("accion"), accion: accionDoteSchema, borrador: comunes.borrador }),
-  // AccionPoder del modelo de psiónica (+ disciplinaNivel, sobreArma…): forma abierta
-  // a propósito hasta su tanda (D2c-2), que la validará contra poderes.ts.
+  // Poder de dote (D2c-2): una AccionPoder del modelo de psiónica (rules/psionica.ts) más la
+  // disciplina cuyo nivel usa (`disciplinaNivel`). El generador la normaliza desde el borrador
+  // (eje de nivel expandido, daño extra a `datos`, ataque sobre arma a texto…) y la valida
+  // resolviéndola con poderes.ts en todos los niveles y opciones; aquí solo se fijan los campos
+  // que lee rules/dotesPoderes.ts. El tipo fino es AccionPoderDote.
   z.strictObject({
     tipo: z.literal("poder"),
-    accion: z.looseObject({ id: z.string().regex(/^dotes_[a-z0-9_]+$/), label: z.string().min(1) }),
+    accion: z.looseObject({
+      id: z.string().regex(/^dotes_[a-z0-9_]+$/),
+      label: z.string().min(1),
+      desdeNivel: nivel,
+      disciplinaNivel: z.enum(DISCIPLINA_IDS),
+      economia: economiaUna,
+      resolucion: z.looseObject({ tipo: z.enum(["sin_dado", "tirada", "enfrentada", "ataque"]) }),
+      ejes: z.array(
+        z.looseObject({
+          id: z.string().min(1),
+          tipo: z.enum(["nivel_empleado", "opcion"]),
+          opciones: z.array(z.looseObject({ id: z.string().min(1) })).min(1),
+        }),
+      ),
+      notas: z.array(z.strictObject({ texto: z.string().min(1), lugar: z.enum(["tirada", "danio"]) })),
+      manual: z.array(z.string()).max(0),
+      motor: z.array(motorMetadataSchema).min(1),
+    }),
     borrador: comunes.borrador,
   }),
   z.strictObject({
@@ -258,3 +279,5 @@ export type EfectoDote = z.infer<typeof efectoDoteSchema>;
 export type AccionDote = z.infer<typeof accionDoteSchema>;
 export type ValorDote = z.infer<typeof valor>;
 export type DoteCatalogo = z.infer<typeof doteCatalogoSchema>;
+// La forma que deja el generador en un efecto "poder" (validada con poderes.ts al generar).
+export type AccionPoderDote = AccionPoder & { disciplinaNivel: DisciplinaId };

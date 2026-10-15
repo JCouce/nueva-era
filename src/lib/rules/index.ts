@@ -35,6 +35,7 @@
 //   dotes.ts           dotes: pool, requisitos, compra (pool o XP), venta y requisito no cumplido (D1)
 //   dotesEfectos.ts    lo que las dotes ponen en las tiradas: casillas, bonos fijos y textos (D2a)
 //   dotesAcciones.ts   acciones propias de dote (sección Dotes de Acciones, D2c-1)
+//   dotesPoderes.ts    poderes de dote (Impacto/Sobrecarga Métrica) como PoderDisponible (D2c-2)
 //   dotesCompradas.ts  sheet.dotes: forma y lectura tolerante
 
 export * from "./atributos";
@@ -73,6 +74,7 @@ export * from "./dotes";
 export * from "./dotesCompradas";
 export * from "./dotesEfectos";
 export * from "./dotesAcciones";
+export * from "./dotesPoderes";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

@@ -387,6 +387,7 @@ function evaluarValor(v: unknown, donde: string, nivelEmpleado: number, ctx: Con
   const f = v as Extract<Valor, { base: number }>;
   let total = f.base + (f.porNivel ?? 0) * nivelEmpleado + (f.porNivelPoseido ?? 0) * ctx.nivelPoseido;
   if (f.porAplicado) total += f.porAplicado.valor * (ctx.aplicados?.[f.porAplicado.aplicado] ?? 0);
+  if (f.porCadaNiveles) total += Math.max(f.porCadaNiveles.minimo, Math.floor(nivelEmpleado / f.porCadaNiveles.cada));
   return total;
 }
 

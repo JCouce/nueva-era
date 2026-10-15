@@ -41,13 +41,10 @@ describe("catálogo: recuento de D2c (D2c-1)", () => {
   const pendientes = (tanda: string) =>
     DOTES.reduce((n, d) => n + d.motor.filter((m) => m.estado === "pendiente" && m.bloqueoPor === tanda).length, 0);
 
-  test("D2c cerrada; D2c-2 son los poderes de dote y sus textos", () => {
-    assert.ok(TANDAS_DOTES.includes("D2c-2"));
+  // D2c-2 (poderes de dote y sus textos), en dotesPoderes.test.ts.
+  test("D2c cerrada", () => {
+    assert.ok(TANDAS_DOTES.includes("D2c"));
     assert.equal(pendientes("D2c"), 0);
-    // Impacto Métrico, Sobrecarga Métrica, Impacto Métrico Relámpago y los 5 textos de Onda Residual.
-    assert.equal(pendientes("D2c-2"), 8);
-    const ids = new Set(DOTES.filter((d) => d.motor.some((m) => m.bloqueoPor === "D2c-2")).map((d) => d.id));
-    assert.deepEqual([...ids].sort(), ["dote_impacto_metrico", "dote_impacto_metrico_relampago", "dote_onda_residual", "dote_sobrecarga_metrica"]);
   });
 
   test("toda acción de dote está construida", () => {

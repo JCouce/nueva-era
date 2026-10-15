@@ -562,6 +562,23 @@ aplicar o recalcular se aplica en la ficha; lo demás queda como texto.**
   textos de *Onda Residual* e *Impacto Métrico Relámpago* en las tiradas de poder.
 - Supuestos de la tanda: S53-S59.
 
+*En la app (D2c-2, 2026-10-16): poderes de dote y textos de dote en los poderes.*
+- **Poderes de dote** (`rules/dotesPoderes.ts`, `FichaResuelta.poderesDotes`): *Impacto
+  Métrico* (Singularidad) y *Sobrecarga Métrica* (Traslación) son poderes normales al nivel
+  de su disciplina (el mismo que usan los poderes), en la sección "Dotes" de Acciones con la
+  misma fila y la misma ventana que los de Psiónica: nivel empleado, 1 de fatiga por nivel
+  empleado, casillas externas, sobrecarga y peaje como cualquier poder. Requisito roto ⇒ no
+  sale (S34); sin la disciplina, tampoco. Sin las reglas propias de la disciplina (S61).
+- ***Impacto Métrico*** no tira en la app (S60): la ventana cobra la fatiga y enseña el daño
+  extra (2 + nivel empleado, letal) y, con el vector descendente, la compresión (S62).
+- ***Sobrecarga Métrica***: tirada Perspicacia + Biociencia (Medicina), dificultad 5 + nivel
+  empleado; el daño propio por resultado se resta solo; el +Fuerza es dato y texto (S63).
+- **Textos de dote en un poder** (destino "poder", por el id de su acción): `prepararPoder`
+  recibe los textos de la ficha y pone los de ese poder en la nota o el crítico de su tirada;
+  si no tira, en las notas de su ventana (S64). *Onda Residual* → Expansión; *Impacto
+  Métrico Relámpago* → Impacto Métrico.
+- Supuestos de la tanda: S60-S64.
+
 ### 9.4 Fichas y NPCs `[FIRME · usuario 2026-10-14]`
 - **Fichas ya aprobadas**: no reciben los puntos de dotes de su letra; compran dotes con
   experiencia.
@@ -1598,6 +1615,11 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S57 | **«Finta repetida» es una casilla de opción**: No (0) · contra el mismo enemigo (−2, *Finta*) · y con *Maestro de Fintas*, contra un enemigo ya engañado (0). El jugador elige una: así "vale la mejor" sin sumar casillas. | §9.3 y §9.5 ("Maestro de Fintas lo quita tras finta con éxito"); D2c-1. |
 | S58 | **Texto de crítico que empieza por "Además"** (*Humor Negro*, *Alentar*, *Llamada a las Armas*) se enseña tras el del éxito: el crítico incluye el efecto del éxito. Sin texto de crítico vale el del éxito; sin el de fracaso crítico, el del fracaso (como los poderes). | Lectura de la prosa ("además"); D2c-1. |
 | S59 | ***Agarre Rápido*, *Zafarse* y *Mirada Desafiante* llevan tirada aunque la prosa solo da la economía**: Reflejos + Atletismo (Escalada), Potencia + Atletismo (Escapismo; "potencia o fortaleza + atletismo" de Atrapado, `fuente/sistema.md`) y Expresión + Actitud (Intimidación), con la dificultad a criterio del máster. Es lo que traía el borrador; no se toca por no ser un error evidente. `TODO(revisar)` en `generar-catalogo-dotes.ts`. | Pendiente de Murillo (D2c-1). **Usuario (2026-10-16)**: vale; *Zafarse* se apoya en la regla de Atrapado; *Agarre Rápido* y *Mirada Desafiante*, pregunta pendiente a Murillo (`docs/tareas.md`, "Preguntas al diseñador"). |
+| S60 | ***Impacto Métrico* no tira en la app.** Es un poder sobre el ataque de un arma (§9.3: texto): la ventana del poder (nivel empleado, vector) cobra la fatiga al pulsar "Usar", aunque el ataque falle (§9.5), y enseña el daño extra; la tirada de ataque (Potencia + Combate Melee, con el arma o el golpe de Pelea) la hace el jugador aparte, en Ataques, y lo dice la primera nota. Lo que pasa si impacta o falla, el tamaño y lo que tira el objetivo van como notas y texto tras usarlo. Se convierte en el generador (`normalizarPoder`, `scripts/generar-catalogo-dotes.ts`). | Decisión del usuario (D2c-2) sobre §9.3. |
+| S61 | **Los poderes de dote no reciben las reglas propias de su disciplina**: ni descuentos de fatiga, ni rebajas de tipo de acción, ni ventajas (son de los poderes de la disciplina). Sí las casillas externas (*Xovromium*, *Munición Supresora*), la *Derivación Psiónica*, la sobrecarga y el peaje neurológico, que son de cualquier gasto psiónico. Hoy no cambia ningún número (las reglas de Singularidad y Traslación van por id de acción). `TODO(revisar)` en `dotesPoderes.ts`. | Supuesto del modelado aceptado en §9.3 ("Sobrecarga Métrica sin descuentos de Traslación"), extendido a *Impacto Métrico*. |
+| S62 | ***Impacto Métrico*, vector descendente**: la compresión es un dato aparte ("Daño por compresión (letal, se suma)", 1 por cada dos niveles empleados, mínimo 1) junto al daño extra, y +1 a la dificultad del objetivo. El borrador quitaba el desplazamiento en este vector, pero la tirada del objetivo que vuela lo usa ("se desplaza 4 m × nivel"): se deja, y una nota dice que los metros solo cuentan si volaba. `TODO(revisar)` en `generar-catalogo-dotes.ts` (`AJUSTES_PODER`). | Prosa del vector descendente; §9.5 ("daño letal que se suma"). |
+| S63 | ***Sobrecarga Métrica***: "acción simple o reacción" se enseña como simple, con una nota que dice que también va como reacción. El +Fuerza (2 + nivel empleado, 1 turno) es un dato de la ventana y una nota "aplícalo a mano" (§9.3: texto). El daño propio por resultado se resta solo: éxito 1 no letal por cada dos niveles empleados (mínimo 1), fracaso 1 letal por nivel, fracaso crítico igual más la hemorragia (1d8 turnos) como texto. | Prosa de la dote; `Valor.porCadaNiveles` nuevo en `rules/psionica.ts`. |
+| S64 | **Texto de dote en un poder sin tirada** (*Impacto Métrico Relámpago*): va a las notas de la ventana del poder, junto a las suyas; sin dado no hay crítico que separar, así que un texto de crítico saldría también ahí (hoy no hay ninguno). Con tirada, como en cualquier otra: nota o texto de crítico. | Conservador (D2c-2), mismo criterio que las acciones sin dado (`conExtrasDirectaDeFicha`). |
 
 ## Conflictos detectados
 

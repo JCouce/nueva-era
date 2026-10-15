@@ -41,6 +41,8 @@ import {
 } from "./poderes";
 import type { Grado, NivelesPsionica } from "./psionica";
 import type { Sheet } from "./sheet";
+import type { TextoEnTirada } from "./especie";
+import { conTextosEnTirada, contextoDe, textosDe, textosSinDado } from "./textosTirada";
 import { fatigaEfectiva } from "./vitalidad";
 import { FUENTES_EXTERNAS_FATIGA } from "../catalog/psionica";
 
@@ -60,6 +62,10 @@ export type EntradaPoder = {
   niveles: NivelesPsionica;
   poder: PoderDisponible;
   seleccion: SeleccionPoder;
+  // Los textos de la ficha que cuelgan de tiradas (FichaResuelta.textosTirada, ya calculados):
+  // aquí se eligen los de este poder (por el id de su acción) y van a la nota o al crítico de su
+  // tirada, o a sus notas si no tira (D2c-2: Onda Residual en Expansión). La UI solo los pasa.
+  textos?: TextoEnTirada[];
 };
 
 export type PoderPreparado = {
@@ -84,8 +90,8 @@ export type PoderPreparado = {
 };
 
 // null = el personaje no llega al nivel de la acción.
-export function prepararPoder({ ficha, modificadores, niveles, poder, seleccion }: EntradaPoder): PoderPreparado | null {
-  const resuelto = resolverPoder(poder.accion, {
+export function prepararPoder({ ficha, modificadores, niveles, poder, seleccion, textos = [] }: EntradaPoder): PoderPreparado | null {
+  const sinTextos = resolverPoder(poder.accion, {
     nivelPoseido: poder.nivelPoseido,
     elecciones: seleccion.elecciones,
     aplicados: aplicados(ficha, modificadores),
@@ -94,12 +100,12 @@ export function prepararPoder({ ficha, modificadores, niveles, poder, seleccion 
     disciplina: poder.disciplina,
     pesoKg: seleccion.pesoKg,
   });
-  if (!resuelto) return null;
+  if (!sinTextos) return null;
   const marcadas = new Set(seleccion.casillas);
 
   const sinCargas =
-    typeof resuelto.fatiga === "number"
-      ? costeFatiga(poder.disciplina, poder.accion.id, resuelto, { externos: FUENTES_EXTERNAS_FATIGA, toggles: marcadas })
+    typeof sinTextos.fatiga === "number"
+      ? costeFatiga(poder.disciplina, poder.accion.id, sinTextos, { externos: FUENTES_EXTERNAS_FATIGA, toggles: marcadas })
       : null;
   const derivacion = derivacionDeFicha(ficha);
   const pago = sinCargas && derivacion ? pagoConCargas(sinCargas, derivacion, seleccion.puntosCargas) : null;
@@ -107,13 +113,21 @@ export function prepararPoder({ ficha, modificadores, niveles, poder, seleccion 
   const fatigaActual = fatigaEfectiva(ficha);
   const bloqueo =
     poder.bloqueo ??
-    resuelto.exceso?.bloqueo ??
+    sinTextos.exceso?.bloqueo ??
     (coste ? bloqueoPorFatiga(poder.accion, coste.total, Math.max(0, fatigaActual)) : null);
 
   // Casillas externas marcadas (Xovromium +1, Supresora −2): líneas del desglose.
-  const base = tiradaDePoder(poder.accion, resuelto);
+  const base = tiradaDePoder(poder.accion, sinTextos);
   const { ajustes } = efectosDeCasillas(FUENTES_EXTERNAS_FATIGA, marcadas);
-  const tirada = base && ajustes.length > 0 ? { ...base, ajustesFijos: [...(base.ajustesFijos ?? []), ...ajustes] } : base;
+  const conAjustes = base && ajustes.length > 0 ? { ...base, ajustesFijos: [...(base.ajustesFijos ?? []), ...ajustes] } : base;
+  // Textos de la ficha para este poder: a su tirada como en cualquier otra (conExtrasDeFicha);
+  // sin tirada, a las notas de la ventana (CabeceraPoder), sin distinguir el crítico.
+  const propios = textosDe(textos, contextoDe({ id: poder.accion.id, grupo: "Psiónica", habilidad: null }), false);
+  const tirada = conAjustes && conTextosEnTirada(conAjustes, propios);
+  const resuelto: PoderResuelto =
+    !conAjustes && propios.length > 0
+      ? { ...sinTextos, notas: [...sinTextos.notas, ...textosSinDado(propios).map((texto) => ({ texto, lugar: "tirada" as const }))] }
+      : sinTextos;
   const enEspecialidad = enEspecialidadDePoder(ficha, resuelto);
 
   return {

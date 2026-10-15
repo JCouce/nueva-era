@@ -63,6 +63,9 @@
 // una nota por índice, añadir notas o poner el grupo extra. Una acción de la tabla que no esté
 // en el borrador, falla.
 //
+// Normalización de poderes de dote (D2c-2, normalizarPoder y AJUSTES_PODER de abajo): de la
+// AccionPoder del borrador a la que resuelve poderes.ts; detalle junto al código.
+//
 // Normalización de efectos sobre tiradas de arma (D2b-1):
 //   - Requisito por rama (§9.5: "Asesino, Desenfundado Rápido, Golpe Entorpecedor: cada
 //     rama exige su requisito"). El borrador no trae `requisitoAlcance`; se deduce del
@@ -88,7 +91,8 @@
 //     ya visible en la prosa de la dote), o el crítico fijo de la especialidad elegida
 //     (Crítico Mejorado). En D2b-2, también el habilitador de una familia de
 //     FAMILIAS_SOLO_CON_DOTE (Bloqueo) y el cambio a Reflejos en una familia de arma
-//     (Combate Sutil, el estilo Sutil). Falla si algo construido no se sabe aplicar: casilla en
+//     (Combate Sutil, el estilo Sutil). En D2c-2, los poderes de dote y los textos con destino
+//     "poder" (Onda Residual en Expansión). Falla si algo construido no se sabe aplicar: casilla en
 //     «Levantar escudo» (sin dado), filtro de tipo de daño, solo en especialidad sin tramo.
 //   - tipo/afecta/mecanismo salen del tipo de efecto (función clasificar()).
 //
@@ -114,6 +118,10 @@ import {
   type TandaDote,
 } from "../src/lib/catalog/dotesDestinos";
 import { HABILIDADES } from "../src/lib/rules/habilidades";
+import { APLICADOS } from "../src/lib/rules/atributos";
+import { resolverPoder } from "../src/lib/rules/poderes";
+import type { AccionPoder } from "../src/lib/rules/psionica";
+import { DISCIPLINAS } from "../src/lib/catalog/psionica";
 import { especialidadPorId } from "../src/lib/catalog/especialidades";
 import { erroresDeMotorMetadata, type MotorMetadata } from "../src/lib/rules/motor";
 
@@ -432,6 +440,161 @@ function ajustarAccion(id: string, e: Efecto): Efecto {
   };
 }
 
+// Normalización de los poderes de dote (D2c-2): el borrador trae una AccionPoder del modelo de
+// psiónica con extensiones que poderes.ts no conoce. Se traducen, en este orden:
+//   - Economía con varias opciones (["simple", "reaccion"]) → la primera, y la lista en una nota.
+//   - Eje de nivel empleado con `opciones` en texto ("n1..n6 hasta el nivel de X") → n1..n6,
+//     cada una desde su nivel poseído (como ejeNivelEmpleado en catalog/psionica.ts).
+//   - `resolucion.danioExtra` → un dato del poder ("Daño extra (letal)"), por nivel empleado.
+//   - `danioExtraVector` de una opción (Impacto Métrico descendente) → un dato más en esa
+//     opción ("Daño por compresión"), con Valor.porCadaNiveles; §9.5: letal y se suma.
+//   - `resolucion.sobreArma` (poder sobre el ataque de un arma) → sin dado: §9.3 lo deja como
+//     texto ("la app cobra la fatiga y enseña el daño extra"). La tirada de ataque y lo que pasa
+//     si impacta o falla van a las notas; el jugador tira el ataque aparte, en Ataques.
+//   - Categoría de daño "no_letal" → "no letal" (la que usan los avisos de daño propio).
+//   - `manual` → notas de la ventana (CabeceraPoder no pinta `manual`).
+//   - `motor`: una acción construida (la tanda la decide el efecto de la dote, no la acción).
+// Y los retoques por poder de AJUSTES_PODER, cada uno con su porqué. Después se resuelve el
+// poder con poderes.ts en todos los niveles y opciones: si algo revienta, falla.
+const NIVELES_PODER = [1, 2, 3, 4, 5, 6] as const;
+const AJUSTES_PODER: Readonly<Record<string, (a: Record<string, unknown>) => void>> = {
+  // TODO(revisar): el borrador pone `desplazamiento: null` en el vector descendente, pero la
+  // tirada del objetivo que vuela usa {desplazamiento} ("si lo supera con éxito se desplaza 4 m ×
+  // nivel empleado", prosa del vector descendente) y reventaba al rellenar. Se deja el
+  // desplazamiento y la nota del vector dice que sobre firme no se desplaza.
+  dotes_impacto_metrico: (a) => {
+    const vector = (a.ejes as { id: string; opciones: { id: string; cambia: Record<string, unknown> }[] }[]).find((e) => e.id === "vector");
+    const desc = vector?.opciones.find((o) => o.id === "descendente");
+    if (!desc || !("desplazamiento" in desc.cambia)) throw new Error("sin vector descendente con desplazamiento");
+    delete desc.cambia.desplazamiento;
+    desc.cambia.notas = [
+      ...((desc.cambia.notas as unknown[]) ?? []),
+      { texto: "Descendente: los metros de las tiradas del objetivo solo cuentan si estaba volando.", lugar: "tirada" },
+    ];
+  },
+};
+const ajustesPoderUsados = new Set<string>();
+
+const ETIQUETA_ECONOMIA_PODER: Record<string, string> = {
+  gratuita: "acción gratuita",
+  simple: "acción simple",
+  estandar: "acción estándar",
+  compleja: "acción compleja",
+  reaccion: "reacción",
+};
+const nombreAplicado = (id: unknown) => APLICADOS.find((x) => x.id === id)?.label ?? String(id);
+const nombreHabilidad = (id: unknown) => HABILIDADES.find((x) => x.id === id)?.label ?? String(id);
+
+function normalizarPoder(id: string, e: Efecto): Efecto {
+  if (e.tipo !== "poder") return e;
+  const a = structuredClone(e.accion) as Record<string, unknown> & { id: string };
+  const notas = [...((a.notas as { texto: string; lugar: string }[]) ?? [])];
+  const datos = [...((a.datos as { etiqueta: string; valor: unknown }[]) ?? [])];
+
+  if (Array.isArray(a.economia)) {
+    const lista = a.economia as string[];
+    notas.push({ texto: `Se usa como ${lista.map((x) => ETIQUETA_ECONOMIA_PODER[x] ?? x).join(" o ")}.`, lugar: "tirada" });
+    a.economia = lista[0];
+  }
+
+  const ejes = (a.ejes as Record<string, unknown>[]) ?? [];
+  for (const eje of ejes) {
+    if (eje.tipo === "nivel_empleado" && typeof eje.opciones === "string") {
+      if (!/^n1\.\.n6\b/.test(eje.opciones)) falla(id, `poder ${a.id}: eje de nivel "${eje.opciones}" que no sé expandir`);
+      eje.opciones = NIVELES_PODER.map((n) => ({ id: `n${n}`, label: `Nivel ${n}`, desdeNivel: n, cambia: {} }));
+    }
+  }
+
+  const res = a.resolucion as Record<string, unknown>;
+  const extra = res.danioExtra as { valor: unknown; categoria: string } | undefined;
+  if (extra) {
+    datos.push({ etiqueta: `Daño extra (${extra.categoria})`, valor: extra.valor });
+    delete res.danioExtra;
+  }
+  for (const eje of ejes) {
+    for (const o of (Array.isArray(eje.opciones) ? eje.opciones : []) as Record<string, unknown>[]) {
+      const v = o.danioExtraVector as { porCadaNiveles: number; minimo: number } | undefined;
+      if (!v) continue;
+      const cambia = (o.cambia ?? {}) as Record<string, unknown>;
+      // `cambia` sustituye los datos: van los de la acción más el suyo.
+      cambia.datos = [
+        ...datos,
+        { etiqueta: "Daño por compresión (letal, se suma)", valor: { base: 0, porCadaNiveles: { cada: v.porCadaNiveles, minimo: v.minimo } } },
+      ];
+      o.cambia = cambia;
+      delete o.danioExtraVector;
+    }
+  }
+
+  if (res.sobreArma !== undefined) {
+    const especialidad = res.especialidad ? ` (${String(res.especialidad)})` : "";
+    notas.unshift({
+      texto: `Va sobre un ataque cuerpo a cuerpo: tira el ataque aparte, en Ataques, con el arma o el golpe de Pelea (${nombreAplicado(res.aplicado)} + ${nombreHabilidad(res.habilidad)}${especialidad}). Aquí solo se cobra la fatiga, que se paga aunque falle.`,
+      lugar: "tirada",
+    });
+    const resultados = (a.resultados ?? {}) as Record<string, { texto: string }>;
+    // Ya empiezan por "Impacta" / "No impacta".
+    for (const g of ["exito", "fracaso"]) if (resultados[g]) notas.push({ texto: `${resultados[g].texto}.`, lugar: "tirada" });
+    a.resolucion = { tipo: "sin_dado" };
+  }
+
+  const categoria = (d: Record<string, unknown> | null | undefined) => {
+    if (d && d.categoria === "no_letal") d.categoria = "no letal";
+  };
+  for (const r of Object.values((a.resultados ?? {}) as Record<string, Record<string, unknown>>)) categoria(r.danio as Record<string, unknown>);
+  categoria(a.danioPropio as Record<string, unknown> | null);
+
+  for (const m of (a.manual as string[]) ?? []) notas.push({ texto: m, lugar: "tirada" });
+  a.manual = [];
+  a.notas = notas;
+  a.datos = datos;
+  a.motor = [{ tipo: "accion", afecta: { modo: "accion_nueva", id: a.id }, mecanismo: "accion_sin_equipo", estado: "construido" }];
+
+  const ajuste = AJUSTES_PODER[a.id];
+  if (ajuste) {
+    try {
+      ajuste(a);
+      ajustesPoderUsados.add(a.id);
+      avisos.push(`  ${id}: poder ${a.id} ajustado (AJUSTES_PODER)`);
+    } catch (err) {
+      falla(id, `AJUSTES_PODER ${a.id}: ${(err as Error).message}`);
+    }
+  }
+  validarPoder(id, a as unknown as AccionPoder);
+  return { ...e, accion: a };
+}
+
+// Resuelve el poder en cada nivel poseído, con cada nivel empleado y cada opción de los demás
+// ejes, como lo haría la ventana del poder: lo que reviente aquí reventaría en la ficha.
+function validarPoder(id: string, accion: AccionPoder) {
+  const disciplina = DISCIPLINAS.find((d) => d.id === (accion as { disciplinaNivel?: string }).disciplinaNivel);
+  if (!disciplina) {
+    falla(id, `poder ${accion.id}: disciplinaNivel desconocida`);
+    return;
+  }
+  for (const nivelPoseido of NIVELES_PODER) {
+    const combinaciones: Record<string, string>[] = [{}];
+    for (const eje of accion.ejes) {
+      if (!Array.isArray(eje.opciones)) {
+        falla(id, `poder ${accion.id}: eje ${eje.id} sin opciones`);
+        return;
+      }
+      const copia = [...combinaciones];
+      combinaciones.length = 0;
+      for (const c of copia) for (const o of eje.opciones) combinaciones.push({ ...c, [eje.id]: o.id });
+    }
+    for (const elecciones of combinaciones) {
+      try {
+        const r = resolverPoder(accion, { nivelPoseido, elecciones, disciplina });
+        if (r && typeof r.fatiga !== "number") falla(id, `poder ${accion.id}: fatiga no numérica`);
+      } catch (err) {
+        falla(id, `poder ${accion.id} (nivel ${nivelPoseido}, ${JSON.stringify(elecciones)}): ${(err as Error).message}`);
+        return;
+      }
+    }
+  }
+}
+
 // Requisito por rama: qué habilidad de "Combate Melee N o Combate a Distancia M" exige cada
 // familia de arma (ver cabecera). Lanzar y Levantar escudo no están: si una dote del patrón
 // los toca, el generador falla y se decide a mano.
@@ -504,7 +667,7 @@ function normalizarEfectos(id: string, efectos: unknown): Efecto[] {
       for (const c of [conversion].flat()) salida.push({ ...c, borrador });
       return;
     }
-    const e: Efecto = ajustarAccion(id, { ...(crudo as Record<string, unknown>), borrador });
+    const e: Efecto = normalizarPoder(id, ajustarAccion(id, { ...(crudo as Record<string, unknown>), borrador }));
     if (e.tipo === "texto" && e.porque === "capa_pendiente") {
       falla(id, `efecto ${borrador}: texto "capa_pendiente" sin conversión en CONVERSIONES`);
       return;
@@ -557,9 +720,9 @@ function tandaDelTipo(e: Efecto): TandaDote | null {
       // Reflejos Felinos (D2c-1): descuento en el contador de atacantes de la esquiva.
       return null;
     case "poder":
-      // TODO(revisar): Impacto Métrico y Sobrecarga Métrica van con los poderes de dote
-      // (D2c-2), aunque Impacto Métrico necesita además el daño modificable (D2d).
-      return "D2c-2";
+      // Poderes de dote (D2c-2): rules/dotesPoderes.ts. Impacto Métrico va sin dado (§9.3: el
+      // ataque del arma se tira aparte y la app solo cobra la fatiga y enseña el daño extra).
+      return null;
     case "habilita":
       // Bloqueo (D2b-2): se construye si su familia está en FAMILIAS_SOLO_CON_DOTE (abajo).
       return null;
@@ -611,6 +774,9 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
     const familiaDestino = alcanceDestino?.tipo === "familiaArma" ? alcanceDestino.familia : null;
     const construible =
       e.tipo === "accion" ||
+      e.tipo === "poder" ||
+      // Sobre un poder (D2c-2): solo textos, a la nota/crítico de su tirada o a su ventana.
+      (e.tipo === "texto" && destino?.tipo === "poder") ||
       (e.tipo === "bono" && destino?.tipo === "tirada") ||
       // Sobre una acción de dote (D2c-1): bono con casilla (Finta repetida) y textos a su nota.
       (e.tipo === "bono" && destino?.tipo === "accionDote" && typeof e.valor === "number" && typeof e.condicion === "string") ||
@@ -625,7 +791,7 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
         e.habilidad === undefined &&
         e.especialidad === undefined);
     if (!construible) {
-      falla(id, `efecto ${e.borrador} (${String(e.tipo)}): sin tanda y sin forma de construirlo (D2a, D2b-1, D2b-2, D2c-1)`);
+      falla(id, `efecto ${e.borrador} (${String(e.tipo)}): sin tanda y sin forma de construirlo (D2a, D2b-1, D2b-2, D2c-1, D2c-2)`);
       return null;
     }
     if (e.tipo !== "texto" && alcanceDestino?.tipo === "familiaArma" && alcanceDestino.familia === "levantar_escudo")
@@ -795,6 +961,14 @@ const accionesDeCatalogo = new Set(dotes.flatMap((d) => d.efectos.flatMap((e) =>
 for (const [clave, destino] of Object.entries(DESTINOS_DOTES))
   if (destino.tipo === "accionDote" && !accionesDeCatalogo.has(clave)) falla("(destinos)", `accionDote "${clave}" sin acción en el catálogo`);
 for (const a of Object.keys(AJUSTES_ACCION)) if (!ajustesUsados.has(a)) falla("(AJUSTES_ACCION)", `"${a}" no es una acción del borrador`);
+for (const a of Object.keys(AJUSTES_PODER)) if (!ajustesPoderUsados.has(a)) falla("(AJUSTES_PODER)", `"${a}" no es un poder del borrador`);
+// Destino "poder" (D2c-2): el id es una acción de psiónica o un poder de dote del catálogo.
+const poderesConocidos = new Set([
+  ...DISCIPLINAS.flatMap((d) => d.acciones.map((a) => a.id)),
+  ...dotes.flatMap((d) => d.efectos.flatMap((e) => (e.tipo === "poder" ? [e.accion.id] : []))),
+]);
+for (const [clave, destino] of Object.entries(DESTINOS_DOTES))
+  if (destino.tipo === "poder" && !poderesConocidos.has(destino.id)) falla("(destinos)", `poder "${destino.id}" (${clave}) que no existe`);
 if (lista.length !== TOTAL_ESPERADO) falla("(catálogo)", `el borrador trae ${lista.length} dotes, se esperaban ${TOTAL_ESPERADO}`);
 if (md.size !== TOTAL_ESPERADO) falla("(catálogo)", `docs/dotes.md trae ${md.size} dotes, se esperaban ${TOTAL_ESPERADO}`);
 

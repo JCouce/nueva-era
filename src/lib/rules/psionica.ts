@@ -17,10 +17,17 @@ import { DISCIPLINAS, disciplinaPorId, type DisciplinaId } from "../catalog/psio
 
 // porNivel = × nivel EMPLEADO; porNivelPoseido = × nivel POSEÍDO. "Nivel de poder"
 // a secas en la prosa es el poseído; el empleado solo si la prosa lo dice o lo
-// fija una fila de tabla.
+// fija una fila de tabla. porCadaNiveles = 1 por cada `cada` niveles EMPLEADOS, hacia
+// abajo y con mínimo (Sobrecarga Métrica: "1 por cada dos niveles empleados, mínimo 1").
 export type Valor =
   | number
-  | { base: number; porNivel?: number; porNivelPoseido?: number; porAplicado?: { aplicado: AplicadoId; valor: number } }
+  | {
+      base: number;
+      porNivel?: number;
+      porNivelPoseido?: number;
+      porAplicado?: { aplicado: AplicadoId; valor: number };
+      porCadaNiveles?: { cada: number; minimo: number };
+    }
   | { opciones: { label: string; valor: number }[]; ajusteMaster: true } // referencias; la dificultad la escribe el jugador
   // Fracción del alcance de la fila de OTRA disciplina, a su nivel en la ficha
   // (Sondeo: ¼ del alcance de tu Resonancia).

@@ -6965,8 +6965,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "psi_singularidad_expansion"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c-2"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -6975,8 +6974,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "psi_singularidad_expansion"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c-2"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -6985,8 +6983,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "psi_singularidad_expansion"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c-2"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -6995,8 +6992,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "psi_singularidad_expansion"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c-2"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -7005,8 +7001,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "psi_singularidad_expansion"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c-2"
+        "estado": "construido"
       }
     ]
   },
@@ -7042,75 +7037,55 @@ export const DOTES: readonly DoteCatalogo[] = [
           "desdeNivel": 1,
           "disciplinaNivel": "singularidad",
           "economia": "compleja",
-          "fatiga": {
-            "base": 0,
-            "porNivel": 1
-          },
-          "permiteFatigaTemporal": false,
-          "alcance": null,
-          "duracion": null,
-          "objetivo": {
-            "tipo": "unico"
-          },
-          "desplazamiento": {
-            "base": 0,
-            "porNivel": 4
-          },
           "resolucion": {
-            "tipo": "ataque",
-            "aplicado": "potencia",
-            "habilidad": "combate_melee",
-            "sobreArma": "familia:ataque_melee",
-            "danio": {
-              "manual": "daño del arma o del golpe de Pelea elegido"
-            },
-            "categoria": "del arma",
-            "danioExtra": {
-              "valor": {
-                "base": 2,
-                "porNivel": 1
-              },
-              "categoria": "letal"
-            }
+            "tipo": "sin_dado"
           },
-          "objetivoTira": [
-            {
-              "que": "Si es golpeado: Fortaleza + Atletismo para evitar el desplazamiento (+2 por cada categoría de tamaño que supere al atacante)",
-              "dificultad": {
-                "base": 8,
-                "porNivel": 1
-              },
-              "grados": {
-                "critico": "No se desplaza",
-                "exito": "Se desplaza {desplazamiento/2} m",
-                "fracaso": "Se desplaza {desplazamiento} m y cae derribado",
-                "fracasoCritico": "Se desplaza {desplazamiento} m, cae derribado y queda aturdido 1 turno"
-              }
-            },
-            {
-              "que": "Si estaba volando: tirada para mantenerse en vuelo y evitar la precipitación",
-              "dificultad": {
-                "base": 8,
-                "porNivel": 1
-              },
-              "grados": {
-                "critico": "Recupera el control y solo se desplaza una casilla",
-                "exito": "Se desplaza 4 m × nivel empleado ({desplazamiento} m)",
-                "fracaso": "Se precipita y debe emplear una reacción para no seguir cayendo",
-                "fracasoCritico": "Se precipita sin posibilidad de reconducir el vuelo"
-              }
-            }
-          ],
           "ejes": [
             {
               "id": "nivel",
-              "label": "Nivel empleado",
               "tipo": "nivel_empleado",
-              "opciones": "n1..n6 hasta el nivel de Singularidad"
+              "opciones": [
+                {
+                  "id": "n1",
+                  "label": "Nivel 1",
+                  "desdeNivel": 1,
+                  "cambia": {}
+                },
+                {
+                  "id": "n2",
+                  "label": "Nivel 2",
+                  "desdeNivel": 2,
+                  "cambia": {}
+                },
+                {
+                  "id": "n3",
+                  "label": "Nivel 3",
+                  "desdeNivel": 3,
+                  "cambia": {}
+                },
+                {
+                  "id": "n4",
+                  "label": "Nivel 4",
+                  "desdeNivel": 4,
+                  "cambia": {}
+                },
+                {
+                  "id": "n5",
+                  "label": "Nivel 5",
+                  "desdeNivel": 5,
+                  "cambia": {}
+                },
+                {
+                  "id": "n6",
+                  "label": "Nivel 6",
+                  "desdeNivel": 6,
+                  "cambia": {}
+                }
+              ],
+              "label": "Nivel empleado"
             },
             {
               "id": "vector",
-              "label": "Vector del golpe",
               "tipo": "opcion",
               "opciones": [
                 {
@@ -7153,23 +7128,118 @@ export const DOTES: readonly DoteCatalogo[] = [
                   "id": "descendente",
                   "label": "Descendente (voleo, hachazo cenital, golpe descendente)",
                   "cambia": {
-                    "desplazamiento": null,
                     "notas": [
                       {
                         "texto": "Sobre firme: no se desplaza; compresión vertical con daño adicional y +1 a la dificultad para evitar el efecto.",
                         "lugar": "tirada"
+                      },
+                      {
+                        "texto": "Descendente: los metros de las tiradas del objetivo solo cuentan si estaba volando.",
+                        "lugar": "tirada"
+                      }
+                    ],
+                    "datos": [
+                      {
+                        "etiqueta": "Daño extra (letal)",
+                        "valor": {
+                          "base": 2,
+                          "porNivel": 1
+                        }
+                      },
+                      {
+                        "etiqueta": "Daño por compresión (letal, se suma)",
+                        "valor": {
+                          "base": 0,
+                          "porCadaNiveles": {
+                            "cada": 2,
+                            "minimo": 1
+                          }
+                        }
                       }
                     ]
                   },
                   "suma": {
                     "objetivoTira.0.dificultad": 1
-                  },
-                  "danioExtraVector": {
-                    "porCadaNiveles": 2,
-                    "minimo": 1
                   }
                 }
-              ]
+              ],
+              "label": "Vector del golpe"
+            }
+          ],
+          "notas": [
+            {
+              "texto": "Va sobre un ataque cuerpo a cuerpo: tira el ataque aparte, en Ataques, con el arma o el golpe de Pelea (Potencia + Combate Melee). Aquí solo se cobra la fatiga, que se paga aunque falle.",
+              "lugar": "tirada"
+            },
+            {
+              "texto": "Tamaño: el desplazamiento (horizontal y vertical) se divide entre dos por cada categoría de tamaño que el objetivo supere al atacante.",
+              "lugar": "tirada"
+            },
+            {
+              "texto": "Objetivo inmenso, fuera de la escala de tamaños: solo recibe el daño adicional.",
+              "lugar": "tirada"
+            },
+            {
+              "texto": "Impacta: daño del arma + daño letal adicional; el objetivo es desplazado según el vector y puede caer derribado.",
+              "lugar": "tirada"
+            },
+            {
+              "texto": "No impacta (la fatiga se paga igual).",
+              "lugar": "tirada"
+            }
+          ],
+          "manual": [],
+          "motor": [
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "dotes_impacto_metrico"
+              },
+              "mecanismo": "accion_sin_equipo",
+              "estado": "construido"
+            }
+          ],
+          "fatiga": {
+            "base": 0,
+            "porNivel": 1
+          },
+          "permiteFatigaTemporal": false,
+          "alcance": null,
+          "duracion": null,
+          "objetivo": {
+            "tipo": "unico"
+          },
+          "desplazamiento": {
+            "base": 0,
+            "porNivel": 4
+          },
+          "objetivoTira": [
+            {
+              "que": "Si es golpeado: Fortaleza + Atletismo para evitar el desplazamiento (+2 por cada categoría de tamaño que supere al atacante)",
+              "dificultad": {
+                "base": 8,
+                "porNivel": 1
+              },
+              "grados": {
+                "critico": "No se desplaza",
+                "exito": "Se desplaza {desplazamiento/2} m",
+                "fracaso": "Se desplaza {desplazamiento} m y cae derribado",
+                "fracasoCritico": "Se desplaza {desplazamiento} m, cae derribado y queda aturdido 1 turno"
+              }
+            },
+            {
+              "que": "Si estaba volando: tirada para mantenerse en vuelo y evitar la precipitación",
+              "dificultad": {
+                "base": 8,
+                "porNivel": 1
+              },
+              "grados": {
+                "critico": "Recupera el control y solo se desplaza una casilla",
+                "exito": "Se desplaza 4 m × nivel empleado ({desplazamiento} m)",
+                "fracaso": "Se precipita y debe emplear una reacción para no seguir cayendo",
+                "fracasoCritico": "Se precipita sin posibilidad de reconducir el vuelo"
+              }
             }
           ],
           "resultados": {
@@ -7184,21 +7254,19 @@ export const DOTES: readonly DoteCatalogo[] = [
           },
           "danioPropio": null,
           "multiplesObjetivos": null,
-          "notas": [
-            {
-              "texto": "Tamaño: el desplazamiento (horizontal y vertical) se divide entre dos por cada categoría de tamaño que el objetivo supere al atacante.",
-              "lugar": "tirada"
-            },
-            {
-              "texto": "Objetivo inmenso, fuera de la escala de tamaños: solo recibe el daño adicional.",
-              "lugar": "tirada"
-            }
-          ],
           "togglesPropios": [],
           "bonosEnOtrasTiradas": [],
           "movimientoOtorgado": null,
           "ajustesPorNivelPoseido": [],
-          "manual": []
+          "datos": [
+            {
+              "etiqueta": "Daño extra (letal)",
+              "valor": {
+                "base": 2,
+                "porNivel": 1
+              }
+            }
+          ]
         },
         "borrador": 0
       }
@@ -7213,8 +7281,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_impacto_metrico"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c-2"
+        "estado": "construido"
       }
     ]
   },
@@ -7260,8 +7327,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_impacto_metrico"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c-2"
+        "estado": "construido"
       }
     ]
   },
@@ -7302,9 +7368,87 @@ export const DOTES: readonly DoteCatalogo[] = [
           "label": "Sobrecarga Métrica",
           "desdeNivel": 1,
           "disciplinaNivel": "traslacion",
-          "economia": [
-            "simple",
-            "reaccion"
+          "economia": "simple",
+          "resolucion": {
+            "tipo": "tirada",
+            "aplicado": "perspicacia",
+            "habilidad": "biociencia",
+            "especialidad": "medicina",
+            "dificultad": {
+              "base": 5,
+              "porNivel": 1
+            }
+          },
+          "ejes": [
+            {
+              "id": "nivel",
+              "tipo": "nivel_empleado",
+              "opciones": [
+                {
+                  "id": "n1",
+                  "label": "Nivel 1",
+                  "desdeNivel": 1,
+                  "cambia": {}
+                },
+                {
+                  "id": "n2",
+                  "label": "Nivel 2",
+                  "desdeNivel": 2,
+                  "cambia": {}
+                },
+                {
+                  "id": "n3",
+                  "label": "Nivel 3",
+                  "desdeNivel": 3,
+                  "cambia": {}
+                },
+                {
+                  "id": "n4",
+                  "label": "Nivel 4",
+                  "desdeNivel": 4,
+                  "cambia": {}
+                },
+                {
+                  "id": "n5",
+                  "label": "Nivel 5",
+                  "desdeNivel": 5,
+                  "cambia": {}
+                },
+                {
+                  "id": "n6",
+                  "label": "Nivel 6",
+                  "desdeNivel": 6,
+                  "cambia": {}
+                }
+              ],
+              "label": "Nivel empleado"
+            }
+          ],
+          "notas": [
+            {
+              "texto": "La prueba de Perspicacia + Medicina se hace a la vez que se activa la sobrecarga.",
+              "lugar": "tirada"
+            },
+            {
+              "texto": "Se usa como acción simple o reacción.",
+              "lugar": "tirada"
+            },
+            {
+              "texto": "Durante 1 turno, tu Fuerza sube 2 + nivel empleado: aplícalo a mano.",
+              "lugar": "tirada"
+            }
+          ],
+          "manual": [],
+          "motor": [
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "dotes_sobrecarga_metrica"
+              },
+              "mecanismo": "accion_sin_equipo",
+              "estado": "construido"
+            }
           ],
           "fatiga": {
             "base": 0,
@@ -7319,25 +7463,7 @@ export const DOTES: readonly DoteCatalogo[] = [
             "tipo": "propio"
           },
           "desplazamiento": null,
-          "resolucion": {
-            "tipo": "tirada",
-            "aplicado": "perspicacia",
-            "habilidad": "biociencia",
-            "especialidad": "medicina",
-            "dificultad": {
-              "base": 5,
-              "porNivel": 1
-            }
-          },
           "objetivoTira": [],
-          "ejes": [
-            {
-              "id": "nivel",
-              "label": "Nivel empleado",
-              "tipo": "nivel_empleado",
-              "opciones": "n1..n6 hasta el nivel de Traslación"
-            }
-          ],
           "resultados": {
             "critico": {
               "texto": "Soportas la tensión sin ningún daño",
@@ -7354,7 +7480,7 @@ export const DOTES: readonly DoteCatalogo[] = [
                     "minimo": 1
                   }
                 },
-                "categoria": "no_letal",
+                "categoria": "no letal",
                 "sobre": "propio"
               }
             },
@@ -7393,12 +7519,6 @@ export const DOTES: readonly DoteCatalogo[] = [
           },
           "danioPropio": null,
           "multiplesObjetivos": null,
-          "notas": [
-            {
-              "texto": "La prueba de Perspicacia + Medicina se hace a la vez que se activa la sobrecarga.",
-              "lugar": "tirada"
-            }
-          ],
           "togglesPropios": [],
           "bonosEnOtrasTiradas": [],
           "movimientoOtorgado": null,
@@ -7411,9 +7531,6 @@ export const DOTES: readonly DoteCatalogo[] = [
                 "porNivel": 1
               }
             }
-          ],
-          "manual": [
-            "Durante 1 turno, tu Fuerza sube 2 + nivel empleado: aplícalo a mano."
           ]
         },
         "borrador": 0
@@ -7429,8 +7546,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_sobrecarga_metrica"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c-2"
+        "estado": "construido"
       }
     ]
   }
@@ -7438,11 +7554,11 @@ export const DOTES: readonly DoteCatalogo[] = [
 
 // Recuento por tanda (lo escribe el generador):
 //   188 efectos (185 en el borrador)
-//   construidos: 72
-//   texto: 81
+//   construidos: 74
+//   texto: 87
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0
-//   pendientes D2c-2: 8
+//   pendientes D2c-2: 0
 //   pendientes D2d: 17
 //   pendientes tiradas-fijas: 10
