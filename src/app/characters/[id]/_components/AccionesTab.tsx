@@ -7,6 +7,7 @@ import {
   APLICADOS,
   HABILIDADES,
   montarTirada,
+  categoriaConAjuste,
   tirarMontada,
   SIN_ELECCION,
   eleccionSinTocar,
@@ -893,9 +894,11 @@ export function AccionesTab({
       danioInfo = {
         base: danioBase === null ? null : Math.max(0, danioBase + ajusteMunicion),
         formulaDanio: modo.formulaDanio,
-        categoriaDanio: modo.categoriaDanio,
+        // Casillas que tocan el daño (D2d): la categoría ya cambiada, el resto al tirarlo.
+        categoriaDanio: categoriaConAjuste(modo.categoriaDanio, montada.danio),
         ignoraBlindaje: ignoraBlindaje.length > 0 ? ignoraBlindaje : undefined,
         alFallar: tirada.ataque.danioAlFallar,
+        ajuste: montada.danio,
       };
     }
 
@@ -919,6 +922,8 @@ export function AccionesTab({
     // excepciones — no depende de gastoTotal() (pool distinto, sheet.farmacos
     // por catalogoId) ni del resultado de la tirada.
     if (tirada.farmacoId) onAjustarFarmaco?.(tirada.farmacoId, -1);
+    // Fatiga de una casilla marcada (Ojo Clínico: la ventaja cuesta 1), sin temporal.
+    if (montada.costeFatiga > 0) onPagarFatiga?.(montada.costeFatiga, false);
     if (tirada.grupo === "Psiónica" && preparado) {
       pagarPoder();
       // Daño propio que depende del resultado (fracaso crítico del Sondeo).
@@ -953,7 +958,7 @@ export function AccionesTab({
     setHistorial((h) => {
       const [ultimo, ...resto] = h;
       if (!ultimo?.danioInfo || ultimo.danioInfo.base === null || ultimo.margen === null) return h;
-      const danioResuelto = resolverDanio(ultimo.danioInfo.base, ultimo.margen, ultimo.danioInfo.categoriaDanio);
+      const danioResuelto = resolverDanio(ultimo.danioInfo.base, ultimo.margen, ultimo.danioInfo.categoriaDanio, ultimo.danioInfo.ajuste);
       return [{ ...ultimo, danioResuelto }, ...resto];
     });
   };

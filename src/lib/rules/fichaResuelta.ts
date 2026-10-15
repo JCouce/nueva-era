@@ -182,7 +182,8 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
   // en modo libre (NPC del máster) sin mirar requisitos (§9.4).
   const valoresDotes = libre ? null : requisitosDotes;
   const activas = dotesActivas(sheet, valoresDotes);
-  const dotes = efectosDeDotes(activas, valoresDotes);
+  // Los bonos con umbral (D2d) miran la ficha con la especie también en el NPC.
+  const dotes = efectosDeDotes(activas, valoresDotes, requisitosDotes);
   // = [...modificadoresActivos(sheet), ...estados], sin volver a resolver la especie.
   const sinUmbrales: ModificadorConFuente[] = [
     ...(especie?.modificadores ?? []),

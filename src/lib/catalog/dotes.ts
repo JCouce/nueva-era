@@ -84,10 +84,6 @@ export const DOTES: readonly DoteCatalogo[] = [
             {
               "texto": "Una vez por aliado y escena.",
               "condicion": null
-            },
-            {
-              "texto": "Si el vínculo de afecto con el aliado es fuerte, tienes ventaja (aplícala a mano mientras no exista la casilla de ventaja).",
-              "condicion": null
             }
           ]
         },
@@ -119,8 +115,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_apoyo"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
+        "estado": "construido"
       }
     ]
   },
@@ -472,13 +467,6 @@ export const DOTES: readonly DoteCatalogo[] = [
       {
         "tipo": "bono",
         "alcance": "especialidad:intimidacion",
-        "valor": 1,
-        "condicion": "¿Tu físico influye en la amenaza?",
-        "borrador": 0
-      },
-      {
-        "tipo": "bono",
-        "alcance": "especialidad:intimidacion",
         "valor": {
           "base": 1,
           "siMin": {
@@ -503,16 +491,6 @@ export const DOTES: readonly DoteCatalogo[] = [
         },
         "mecanismo": "eleccion_jugador",
         "estado": "construido"
-      },
-      {
-        "tipo": "numerico",
-        "afecta": {
-          "modo": "accion_existente",
-          "id": "especialidad:intimidacion"
-        },
-        "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
       }
     ]
   },
@@ -652,10 +630,6 @@ export const DOTES: readonly DoteCatalogo[] = [
             {
               "texto": "Solo en escena de combate.",
               "condicion": null
-            },
-            {
-              "texto": "Si el ataque que la desencadena fue crítico, tienes ventaja (aplícala a mano mientras no exista la casilla de ventaja).",
-              "condicion": null
             }
           ]
         },
@@ -687,8 +661,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_violencia_aterradora"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
+        "estado": "construido"
       }
     ]
   },
@@ -1117,13 +1090,6 @@ export const DOTES: readonly DoteCatalogo[] = [
       {
         "tipo": "bono",
         "alcance": "imitar",
-        "valor": 2,
-        "condicion": "Imitando a otra persona",
-        "borrador": 0
-      },
-      {
-        "tipo": "bono",
-        "alcance": "imitar",
         "valor": {
           "base": 2,
           "siMin": {
@@ -1134,6 +1100,14 @@ export const DOTES: readonly DoteCatalogo[] = [
           }
         },
         "condicion": "Imitando a otra persona",
+        "borrador": 0
+      },
+      {
+        "tipo": "texto",
+        "lugar": "ficha",
+        "texto": "Con Interpretación 3 o más el bono es +3: la casilla «Imitando a otra persona» ya lo pone.",
+        "condicion": null,
+        "porque": "sin_regla",
         "borrador": 1
       }
     ],
@@ -1150,14 +1124,12 @@ export const DOTES: readonly DoteCatalogo[] = [
         "estado": "construido"
       },
       {
-        "tipo": "numerico",
+        "tipo": "texto",
         "afecta": {
-          "modo": "accion_existente",
-          "id": "imitar"
+          "modo": "ninguna"
         },
-        "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
+        "mecanismo": null,
+        "estado": "construido"
       }
     ]
   },
@@ -1203,8 +1175,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "social"
         },
         "mecanismo": "sustitucion_aplicado",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
+        "estado": "construido"
       }
     ]
   },
@@ -1437,8 +1408,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "atletismo"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -1493,8 +1463,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "atletismo"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
+        "estado": "construido"
       }
     ]
   },
@@ -1553,8 +1522,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "atletismo"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
+        "estado": "construido"
       }
     ]
   },
@@ -1871,9 +1839,9 @@ export const DOTES: readonly DoteCatalogo[] = [
     "texto": "El primer éxito en una tirada de esquiva para evitar un área contabiliza doble.",
     "efectos": [
       {
-        "tipo": "exito_extra",
+        "tipo": "bono",
         "alcance": "defensa",
-        "exitos": 1,
+        "valor": 1,
         "condicion": "Esquivando un área",
         "borrador": 0
       }
@@ -1888,8 +1856,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "defensa"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
+        "estado": "construido"
       }
     ]
   },
@@ -1924,9 +1891,9 @@ export const DOTES: readonly DoteCatalogo[] = [
     "texto": "El primer éxito en una tirada de esquiva para evitar un área contabiliza triple.",
     "efectos": [
       {
-        "tipo": "exito_extra",
+        "tipo": "bono",
         "alcance": "defensa",
-        "exitos": 2,
+        "valor": 2,
         "condicion": "Esquivando un área",
         "borrador": 0
       }
@@ -1941,8 +1908,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "defensa"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
+        "estado": "construido"
       }
     ]
   },
@@ -2626,8 +2592,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "medicina"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
+        "estado": "construido"
       }
     ]
   },
@@ -2675,8 +2640,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "medicina"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
+        "estado": "construido"
       }
     ]
   },
@@ -4252,6 +4216,12 @@ export const DOTES: readonly DoteCatalogo[] = [
     "texto": "Al efectuar un derribo con éxito el objetivo pierde 1 punto de fatiga, en caso de que fracase criticamente *(sic)* su salvación además pasa a estar aturdido hasta el final de su próximo turno.",
     "efectos": [
       {
+        "tipo": "maniobra",
+        "maniobra": "derribo",
+        "alcance": "familia:ataque_melee",
+        "borrador": 0
+      },
+      {
         "tipo": "texto",
         "lugar": "familia:ataque_melee",
         "texto": "Derribo con éxito: el objetivo pierde 1 punto de fatiga.",
@@ -4271,6 +4241,16 @@ export const DOTES: readonly DoteCatalogo[] = [
     "limite": null,
     "candidataUX": null,
     "motor": [
+      {
+        "tipo": "habilitador",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "familia:ataque_melee"
+        },
+        "mecanismo": "eleccion_jugador",
+        "arbitraje": "duro",
+        "estado": "construido"
+      },
       {
         "tipo": "texto",
         "afecta": {
@@ -4319,10 +4299,10 @@ export const DOTES: readonly DoteCatalogo[] = [
     "texto": "El aumento de dificultad para derribo causando daño se anula, si se utiliza una acción estandar *(sic)* para derribar el daño el *(sic)* se resuelve como un ataque normal con el posible aumento por la acumulación de éxitos.",
     "efectos": [
       {
-        "tipo": "bono",
+        "tipo": "maniobra",
+        "maniobra": "derribo",
         "alcance": "familia:ataque_melee",
-        "valor": 2,
-        "condicion": "Derribo causando daño",
+        "sinPenalizador": true,
         "borrador": 0
       },
       {
@@ -4351,8 +4331,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
+        "estado": "construido"
       }
     ]
   },
@@ -4555,7 +4534,10 @@ export const DOTES: readonly DoteCatalogo[] = [
         "tipo": "categoria_danio",
         "alcance": "familia:ataque_melee",
         "a": "letal",
-        "condicion": "Golpe letal con escudo",
+        "condicion": "Golpe letal",
+        "filtroArma": {
+          "especialidad": "escudos"
+        },
         "borrador": 0
       }
     ],
@@ -4569,8 +4551,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
+        "estado": "construido"
       }
     ]
   },
@@ -4880,6 +4861,12 @@ export const DOTES: readonly DoteCatalogo[] = [
         "texto": "Si el golpe tiene éxito, el rival tira una salvación de Fortaleza + Atletismo enfrentada al resultado de tu ataque. Éxito: sin efecto. Fracaso: pierde 1 punto de fatiga. Fracaso crítico: pierde 1 punto de fatiga y durante su siguiente turno sufre asfixia grado 1.",
         "condicion": "Golpe fatigante",
         "porque": "tercero",
+        "filtroArma": {
+          "empleo": "dos manos",
+          "tipoDanio": [
+            "contundente"
+          ]
+        },
         "borrador": 1
       }
     ],
@@ -4893,8 +4880,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -6259,8 +6245,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "grupo:Iniciativa"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -6269,8 +6254,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "subsistencia"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2d"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -7554,11 +7538,11 @@ export const DOTES: readonly DoteCatalogo[] = [
 
 // Recuento por tanda (lo escribe el generador):
 //   188 efectos (185 en el borrador)
-//   construidos: 74
-//   texto: 87
+//   construidos: 90
+//   texto: 88
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0
 //   pendientes D2c-2: 0
-//   pendientes D2d: 17
+//   pendientes D2d: 0
 //   pendientes tiradas-fijas: 10

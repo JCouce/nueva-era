@@ -17,6 +17,8 @@
 //               de la dote dueña de la acción es la base; la de otra dote se suma a la base
 //               (Maestro de Fintas +2 sobre el −2 de Finta = sin penalizador): vale la mejor
 //               porque el jugador elige una sola opción.
+//   ventaja con casilla (D2d) → un toggle por efecto: marcado, dos d12 y vale el mejor (Apoyo
+//               con vínculo fuerte, Violencia Aterradora tras un crítico).
 //
 // Requisito roto (S34) y "vale la mejor" entre básica y mejorada los resuelve dotesActivas:
 // aquí solo llegan las activas.
@@ -90,6 +92,7 @@ type Bono = { doteId: string; fuente: string; condicion: string; valor: number }
 function anadidosPorAccion(activas: readonly DoteActiva[]) {
   const textos = new Map<string, string[]>();
   const bonos = new Map<string, Bono[]>();
+  const ventajas = new Map<string, CondicionTirada[]>();
   for (const { dote } of activas) {
     dote.efectos.forEach((e, i) => {
       if (dote.motor[i]?.estado !== "construido") return;
@@ -101,9 +104,20 @@ function anadidosPorAccion(activas: readonly DoteActiva[]) {
         const b = { doteId: dote.id, fuente: dote.label, condicion: e.condicion, valor: e.valor };
         bonos.set(e.alcance, [...(bonos.get(e.alcance) ?? []), b]);
       }
+      if (e.tipo === "ventaja" && DESTINOS_DOTES[e.alcance]?.tipo === "accionDote") {
+        const c: CondicionTirada = {
+          id: `${e.alcance}_ventaja_${dote.id}`,
+          tipo: "toggle",
+          etiqueta: `${e.condicion ?? "Con ventaja"} (${dote.label})`,
+          valorActivo: 0,
+          ventaja: true,
+          ...(e.coste && { costeFatiga: e.coste.fatiga }),
+        };
+        ventajas.set(e.alcance, [...(ventajas.get(e.alcance) ?? []), c]);
+      }
     });
   }
-  return { textos, bonos };
+  return { textos, bonos, ventajas };
 }
 
 // Nombre corto de la casilla por acción; sin entrada, la condición de la base.
@@ -154,7 +168,10 @@ function construir(
     };
   }
 
-  const casilla = casillaDeBonos(accion, dote, anadidos.bonos.get(accion.id));
+  const casillas = [
+    ...[casillaDeBonos(accion, dote, anadidos.bonos.get(accion.id))].filter((c) => c !== null),
+    ...(anadidos.ventajas.get(accion.id) ?? []),
+  ];
   const detalle: DetallePoder = { resultados: resultadosDe(accion), objetivoTira: accion.objetivoTira };
   const especialidades = r.especialidad === undefined ? [] : [r.especialidad].flat();
   return {
@@ -168,7 +185,7 @@ function construir(
       ...(especialidades.length > 0 && { especialidadesAccion: especialidades }),
       ...(dificultad.sugerida !== undefined && { dificultadSugerida: dificultad.sugerida }),
       ...(r.tipo === "ataque" && r.modificador !== undefined && { ajustesFijos: [{ valor: r.modificador, fuente: accion.label }] }),
-      ...(casilla && { condiciones: [casilla] }),
+      ...(casillas.length > 0 && { condiciones: casillas }),
       poder: detalle,
     },
   };

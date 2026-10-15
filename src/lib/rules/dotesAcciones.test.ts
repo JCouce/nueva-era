@@ -148,8 +148,12 @@ describe("especialidad en las acciones de dote", () => {
     assert.deepEqual(m.especialidadArma, { id: "empatia", label: "Empatía o Liderazgo", tiene: false });
   });
 
-  test("Apoyo: la ventaja por vínculo fuerte, como texto en la nota", () => {
-    assert.match(apoyo(["empatia"]).t.nota ?? "", /vínculo de afecto con el aliado es fuerte, tienes ventaja/);
+  test("Apoyo: la ventaja por vínculo fuerte es una casilla (D2d), ya no texto en la nota", () => {
+    const { t } = apoyo(["empatia"]);
+    assert.doesNotMatch(t.nota ?? "", /aplícala a mano/);
+    const c = t.condiciones?.find((x) => x.tipo === "toggle" && x.ventaja);
+    assert.ok(c && c.tipo === "toggle");
+    assert.match(c.etiqueta, /vínculo de afecto.*\(Apoyo\)/);
   });
 
   test("Traicionero: Expresión + Actitud en Manipulación; el rival tira Perspicacia + Empatía", () => {

@@ -33,6 +33,8 @@ import { etiquetaEspecialidad } from "./especialidades";
 // "D2c-2" (poderes de dote: Impacto Métrico, Sobrecarga Métrica, y los textos de dote en las
 // tiradas de poder) se partió de D2c el 2026-10-16: va detrás de las acciones de dote (D2c).
 // Cerrada (0 pendientes) desde D2c-2; se queda en la lista como las demás tandas cerradas.
+// "D2d" (casillas que hacen algo más que sumar: ventaja, fracaso → éxito, crítico, otro
+// aplicado, daño, bono con umbral y la maniobra Derribo), cerrada también.
 export const TANDAS_DOTES = ["D2b-1", "D2b-2", "D2c", "D2c-2", "D2d", "tiradas-fijas"] as const;
 export type TandaDote = (typeof TANDAS_DOTES)[number];
 
@@ -105,7 +107,7 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
     especialidad: etiquetaEspecialidad("investigacion"),
   },
   rastreo: { tipo: "tirada", alcance: exploracionEnAcciones, textos: ["alerta_activa"], especialidad: "Rastreo" },
-  // Hoy solo lo usa una ventaja (D2d), así que no pinta nada todavía.
+  // Hoy solo lo usa la ventaja de Bioma Predilecto (D2d), casilla «Subsistencia: …».
   subsistencia: { tipo: "tirada", alcance: exploracionEnAcciones, textos: ["alerta_activa"], especialidad: "Subsistencia" },
 
   // ── Texto que solo vive en la tarjeta de la dote ──
@@ -131,8 +133,7 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   dotes_ataque_de_oportunidad: { tipo: "accionDote" },
 
   // ── Acciones propias de dote (D2c-1, rules/dotesAcciones.ts) ──
-  // Apoyo y Violencia Aterradora: solo los usa la ventaja con casilla (D2d), que sigue pendiente
-  // por su tipo; mientras, la ventaja va como texto en la nota de la acción.
+  // Apoyo y Violencia Aterradora: solo los usa la ventaja con casilla (D2d, dotesAcciones.ts).
   dotes_apoyo: { tipo: "accionDote" },
   dotes_violencia_aterradora: { tipo: "accionDote" },
   // Finta: casilla «Finta repetida» (§9.3), con la opción de Maestro de Fintas.

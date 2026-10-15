@@ -193,18 +193,21 @@ describe("efectos de dotes en las tiradas (D2a)", () => {
     assert.equal(t.nota, tirada("defensa").nota);
   });
 
-  test("Presencia Imponente: casilla +1 en Actitud con Intimidación y el aviso del umbral", () => {
+  test("Presencia Imponente: una casilla en Actitud con Intimidación, con el valor según la Fuerza (D2d)", () => {
+    // fichaCapaz: Fuerza 5 → +2, y la etiqueta lo dice.
     const f = resolver(fichaCapaz([{ id: "dote_presencia_imponente" }]));
     for (const id of ["social", "iniciativa_distraccion"]) {
-      const c = conExtras(f, id).condiciones?.find((x) => x.id.startsWith("dote_presencia_imponente"));
-      assert.ok(c && c.tipo === "toggle", id);
-      assert.equal(c.valorActivo, 1);
+      const cs = (conExtras(f, id).condiciones ?? []).filter((x) => x.id.startsWith("dote_presencia_imponente"));
+      assert.equal(cs.length, 1, id);
+      const c = cs[0];
+      assert.ok(c.tipo === "toggle", id);
+      assert.equal(c.valorActivo, 2);
       assert.match(c.etiqueta, /Intimidación/);
-      assert.match(c.etiqueta, /\+2 con Fuerza ≥ 5, súmalo a mano/);
+      assert.match(c.etiqueta, /Fuerza ≥ 5/);
+      assert.doesNotMatch(c.etiqueta, /súmalo a mano/);
     }
-    // La parte del umbral sigue pendiente de D2d.
     const dote = DOTES.find((d) => d.id === "dote_presencia_imponente")!;
-    assert.ok(dote.motor.some((m) => m.estado === "pendiente" && m.bloqueoPor === "D2d"));
+    assert.ok(dote.motor.every((m) => m.estado === "construido"));
   });
 
   test("texto en la nota de la tirada (Asalto Sigiloso en Sigilo)", () => {

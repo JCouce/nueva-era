@@ -13,6 +13,7 @@
 //   contador → un número entre un mínimo y un máximo ("atacantes adicionales esta ronda")
 //
 import type { AlcanceModificador } from "./modificadores";
+import { APLICADOS, type AplicadoId } from "./atributos";
 
 // Vive aparte de modificadores.ts a propósito: un ModificadorConFuente es
 // permanente mientras se lleve algo puesto; una CondicionTirada es una
@@ -46,6 +47,19 @@ export type CondicionTirada = (
       // de valorCondiciones(). Por defecto 0 (ver gastoTotal, acciones.ts).
       gastoActivo?: number;
       gastoInactivo?: number;
+      // Lo que hace la casilla marcada además de sumar (dotes, D2d). Los junta montarTirada
+      // (montaje.ts); la tirada y el daño los aplican tirarMontada y resolverDanio.
+      //   ventaja      se tiran dos d12 y vale el mejor (Ojo Clínico, Apoyo…); no se acumula
+      //   subeGrado    un fracaso (no el crítico) cuenta como éxito (Balanceo, §9.5)
+      //   aplicado     la tirada usa este aplicado (Negociación Analítica: Perspicacia)
+      //   costeFatiga  puntos de fatiga que se pagan al tirar con ella marcada (Ojo Clínico)
+      //   danio        cambios al daño del ataque (Golpe Fatigante, Golpe Mejorado con Escudo,
+      //                Derribo)
+      ventaja?: true;
+      subeGrado?: true;
+      aplicado?: AplicadoId;
+      costeFatiga?: number;
+      danio?: EfectoDanioCasilla;
     }
   | {
       id: string;
@@ -76,6 +90,33 @@ export type CondicionTirada = (
   // condicionesActivas). docs/modificadores-tiradas.md §8.
   alcance?: AlcanceModificador;
 };
+
+// Cambios al daño de una casilla marcada:
+//   ajuste         se suma al total del daño (mínimo 0): Golpe Fatigante −1
+//   categoria      el daño pasa a esta categoría: Golpe Mejorado con Escudo, "Letal"
+//   sinBonoExitos  sin el +1 por cada dos éxitos (Derribo: daño máximo el básico)
+//   conBonoExitos  lo devuelve aunque otra casilla lo quite (Derribo Brutal, acción estándar)
+export type EfectoDanioCasilla = { ajuste?: number; categoria?: string; sinBonoExitos?: true; conBonoExitos?: true };
+
+// Lo que enseña el control de la casilla a la derecha: el número si suma algo, y si no lo
+// que hace ("ventaja", "fallo → éxito"…). Pura, para que el modal no decida nada.
+export function resumenCasilla(c: Extract<CondicionTirada, { tipo: "toggle" }>, activo: boolean): string {
+  const valor = activo ? c.valorActivo : (c.valorInactivo ?? 0);
+  const signo = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
+  const partes: string[] = [];
+  if (valor !== 0 || (!c.ventaja && !c.subeGrado && !c.aplicado && c.margenCriticoExito === undefined && !c.danio))
+    partes.push(signo(valor));
+  if (c.ventaja) partes.push("ventaja");
+  if (c.subeGrado) partes.push("fallo → éxito");
+  if (c.aplicado) partes.push(APLICADOS.find((a) => a.id === c.aplicado)?.label ?? c.aplicado);
+  if (c.margenCriticoExito !== undefined) partes.push(c.margenCriticoExito === 0 ? "éxito = crítico" : `crítico con ${c.margenCriticoExito}`);
+  if (c.danio?.ajuste) partes.push(`${signo(c.danio.ajuste)} daño`);
+  if (c.danio?.categoria) partes.push(c.danio.categoria.toLowerCase());
+  if (c.danio?.sinBonoExitos) partes.push("daño básico");
+  if (c.danio?.conBonoExitos) partes.push("daño con éxitos");
+  if (c.costeFatiga) partes.push(`−${c.costeFatiga} fatiga`);
+  return partes.join(" · ");
+}
 
 export type TramoDistancia = "bocajarro" | "corta" | "media" | "larga";
 

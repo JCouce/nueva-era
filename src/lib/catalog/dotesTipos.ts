@@ -111,11 +111,15 @@ const valor = z.union([
 const comunes = {
   requisitoAlcance: requisitoSimpleSchema.optional(),
   condicionFicha: z.literal("no_fatigado").optional(),
+  // Filtro de arma de los efectos sobre familias de arma. Con `empleo` y `tipoDanio` a la vez
+  // vale cualquiera de los dos (Golpe Fatigante: "daño contundente o arma a dos manos");
+  // `especialidad`: solo armas de esa especialidad (Golpe Mejorado con Escudo, D2d).
   filtroArma: z
     .strictObject({
       empleo: z.enum(["una mano", "dos manos"]).optional(),
-      tipoDanio: z.array(z.string().min(1)).optional(),
+      tipoDanio: z.array(z.literal("contundente")).min(1).optional(),
       desarmado: z.literal(true).optional(),
+      especialidad: idEspecialidad.optional(),
     })
     .optional(),
   borrador: z.number().int().min(0),
@@ -208,6 +212,16 @@ export const efectoDoteSchema = z.discriminatedUnion("tipo", [
     alcance,
     contador: z.literal("atacantes_adicionales"),
     unidades: z.number().int().min(1),
+    borrador: comunes.borrador,
+  }),
+  // Maniobra de habilidades.md que solo existe con dote (D2d): «Derribo» en los golpes melee
+  // para quien tenga Derribo Mejorado o Derribo Brutal. `sinPenalizador`: sin el −2 (Brutal).
+  // La casilla la monta rules/dotesEfectos.ts (casillaDeManiobra). Lo pone el generador.
+  z.strictObject({
+    tipo: z.literal("maniobra"),
+    maniobra: z.literal("derribo"),
+    alcance,
+    sinPenalizador: z.literal(true).optional(),
     borrador: comunes.borrador,
   }),
   z.strictObject({ tipo: z.literal("accion"), accion: accionDoteSchema, borrador: comunes.borrador }),

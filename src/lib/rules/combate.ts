@@ -624,6 +624,7 @@ function tiradaDeArmaMelee(
     nota,
     efectoCritico: arma.efectoCritico,
     ...(esDesarmado && { desarmado: true as const }),
+    ...(arma.contundente && { contundente: true as const }),
     ignoraBlindaje: arma.ignoraBlindaje ? { valor: arma.ignoraBlindaje, fuente: arma.label } : undefined,
     condiciones: [...(modo ? [modo] : []), ...(malla ? condicionesSacrificioColchon(malla.nivel) : [])],
     ataque: {

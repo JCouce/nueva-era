@@ -8,6 +8,7 @@ import {
   estadoInicial,
   montarTirada,
   avisoInsuficiente,
+  resumenCasilla,
   type Accion,
   type CondicionTirada,
   type EleccionTirada,
@@ -65,9 +66,7 @@ export function ControlCondicion({
         >
           {activo ? "✓ " : ""}
           {condicion.etiqueta}
-          <span className="float-right tabular-nums">
-            {signo(activo ? condicion.valorActivo : (condicion.valorInactivo ?? 0))}
-          </span>
+          <span className="float-right tabular-nums">{resumenCasilla(condicion, activo)}</span>
         </button>
         {activo && condicion.nota && (
           <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">{condicion.nota}</p>
@@ -275,7 +274,7 @@ export function AccionModal({
     setEstado((e) => ({ ...e, [id]: valor }));
 
   const dispararTirada = () => {
-    const { dado, dados } = tirarDado(Boolean(tirada.ventaja));
+    const { dado, dados } = tirarDado(Boolean(montada.ventaja));
     const reales = dados ?? [dado];
     setNumerosRodando(reales.map(() => 1));
     setRodando(true);
@@ -383,9 +382,9 @@ export function AccionModal({
                   );
                 })}
               </div>
-              {tirada.ventaja && (
+              {montada.ventaja && (
                 <p className="mt-2 font-mono text-[11px] uppercase text-muted">
-                  Ventaja ({tirada.ventaja}): 2d{CARAS_DADO}, te quedas el mejor
+                  Ventaja ({montada.ventaja}): 2d{CARAS_DADO}, te quedas el mejor
                 </p>
               )}
             </div>
@@ -554,9 +553,9 @@ export function AccionModal({
             </div>
           )}
 
-          {!resultado && !rodando && tirada.ventaja && (
+          {!resultado && !rodando && montada.ventaja && (
             <p className="mt-3 border-l-2 border-info pl-2 font-mono text-[11px] uppercase text-info">
-              Ventaja ({tirada.ventaja}): tiras 2d{CARAS_DADO} y te quedas el mejor
+              Ventaja ({montada.ventaja}): tiras 2d{CARAS_DADO} y te quedas el mejor
             </p>
           )}
 

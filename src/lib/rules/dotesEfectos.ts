@@ -20,6 +20,14 @@
 //               Sutil → ataque_melee y bloquear_melee). Lo lee combate.ts al generar filas.
 //   descuentos  (D2c-1) contador de la tirada que cuenta unidades de menos (Reflejos Felinos:
 //               un atacante adicional menos en la esquiva). Lo pone conExtrasDeFicha.
+//
+// Casillas de D2d: los efectos de una dote con el mismo destino y la misma condición van a UNA
+// casilla, que junta lo que hace cada uno (condiciones.ts, toggle): bono (con el valor según la
+// ficha si trae umbral: Presencia Imponente +2 con Fuerza ≥ 5), ventaja (y su fatiga: Ojo
+// Clínico), fracaso → éxito (Balanceo), crítico más fácil (Equilibrista, Especialidad Médica),
+// otro aplicado (Negociación Analítica) y lo que toca el daño (Golpe Fatigante −1, golpe letal
+// con escudo, «Derribo con acción estándar»). La maniobra Derribo (Derribo Mejorado y Brutal)
+// es una casilla propia en los golpes melee (casillaDeManiobra).
 // Las acciones propias de dote (y lo que otras dotes les añaden) van aparte: dotesAcciones.ts.
 // Los poderes de dote, en dotesPoderes.ts; los textos de dote sobre un poder (D2c-2, destino
 // "poder") van a `textos` por el id de su acción y los pone prepararPoder (usoPoder.ts).
@@ -42,8 +50,8 @@ import { dotePorId, mismaDote, normalizarNombre, type DoteComprada } from "./dot
 import { DESTINOS_DOTES, OPCIONES_DE_TRAMO } from "../catalog/dotesDestinos";
 import { DOTES } from "../catalog/dotes";
 import { especialidadPorId, type EspecialidadId } from "../catalog/especialidades";
-import type { DoteCatalogo, EfectoDote } from "../catalog/dotesTipos";
-import type { BonoPorTramo, CondicionTirada, OpcionCondicion, TramoDistancia } from "./condiciones";
+import type { DoteCatalogo, EfectoDote, ValorDote } from "../catalog/dotesTipos";
+import type { BonoPorTramo, CondicionTirada, EfectoDanioCasilla, OpcionCondicion, TramoDistancia } from "./condiciones";
 import type { AlcanceModificador, FamiliaArma, ModificadorConFuente } from "./modificadores";
 import type { TextoEnTirada } from "./especie";
 import type { Sheet } from "./sheet";
@@ -119,11 +127,19 @@ export const SIN_EFECTOS_DE_DOTES: EfectosDeDotes = {
 const TRAMOS: readonly TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
 
 // El alcance del efecto: el del destino y, si la dote filtra el arma por empleo
-// (Desenfundado Rápido: a una mano), ese empleo en el alcance de familia.
-function alcanceDe(destino: AlcanceModificador, e: { filtroArma?: { empleo?: "una mano" | "dos manos"; desarmado?: true } }): AlcanceModificador {
+// (Desenfundado Rápido: a una mano), tipo de daño (Golpe Fatigante: contundente o a dos manos)
+// o especialidad (Golpe Mejorado con Escudo: Escudos), ese filtro en el alcance de familia.
+type FiltroArma = NonNullable<Extract<EfectoDote, { tipo: "bono" }>["filtroArma"]>;
+function alcanceDe(destino: AlcanceModificador, e: { filtroArma?: FiltroArma }): AlcanceModificador {
   const f = e.filtroArma;
   if (!f || destino.tipo !== "familiaArma") return destino;
-  return { ...destino, ...(f.empleo && { empleo: f.empleo }), ...(f.desarmado && { desarmado: true as const }) };
+  return {
+    ...destino,
+    ...(f.empleo && { empleo: f.empleo }),
+    ...(f.desarmado && { desarmado: true as const }),
+    ...(f.tipoDanio?.includes("contundente") && { contundente: true as const }),
+    ...(f.especialidad && { especialidad: f.especialidad }),
+  };
 }
 
 // "Vale la mejor" entre bonos por tramo que no se suman (`noAcumulaCon`, en cualquiera de
@@ -153,20 +169,62 @@ function claveDe({ dote, compra }: DoteActiva): string {
 const etiquetaUmbral = (s: { tipo: "atributo" | "habilidad"; id: string }) =>
   (s.tipo === "atributo" ? ATRIBUTOS : HABILIDADES).find((x) => x.id === s.id)?.label ?? s.id;
 
-// La parte del umbral que todavía no aplica la app (D2d, valor por umbral de ficha):
-// el bono hermano con `siMin` del mismo alcance y casilla, para avisar en la etiqueta.
-function avisoUmbral(dote: DoteCatalogo, e: Extract<EfectoDote, { tipo: "bono" }>): string {
-  const hermano = dote.efectos.find(
-    (o): o is Extract<EfectoDote, { tipo: "bono" }> =>
-      o.tipo === "bono" && o.alcance === e.alcance && o.condicion === e.condicion && typeof o.valor === "object" && "siMin" in o.valor,
-  );
-  if (!hermano || typeof hermano.valor !== "object" || !("siMin" in hermano.valor) || !hermano.valor.siMin) return "";
-  const s = hermano.valor.siMin;
-  return `; +${s.valor} con ${etiquetaUmbral(s)} ≥ ${s.min}, súmalo a mano`;
+// Valor de un bono según la ficha (D2d, valor por umbral): con el umbral cumplido, el suyo, y
+// la etiqueta lo dice ("Fuerza ≥ 5"). Mira los valores de juego con la especie (los de los
+// requisitos), entera la habilidad. Sin ficha que mirar, la base. Por nivel empleado o manual
+// no es un número: null (no sale).
+function valorDeBono(v: ValorDote, ficha: ValoresRequisito | null): { valor: number; umbral?: string } | null {
+  if (typeof v === "number") return { valor: v };
+  if (!("base" in v)) return null;
+  const s = v.siMin;
+  if (!s || !ficha) return { valor: v.base };
+  const tiene = s.tipo === "atributo" ? ficha.atributos[s.id] : ficha.habilidades[s.id];
+  return tiene >= s.min ? { valor: s.valor, umbral: `${etiquetaUmbral(s)} ≥ ${s.min}` } : { valor: v.base };
+}
+
+type Toggle = Extract<CondicionTirada, { tipo: "toggle" }>;
+
+// "letal" → "Letal", como las categorías del catálogo de armas.
+const categoriaLegible = (c: string) => c.charAt(0).toUpperCase() + c.slice(1);
+
+// La maniobra Derribo (docs/fuente/habilidades.md, Combate Melee), solo con una dote de derribo
+// (decisión del usuario, D2d): −2 al ataque y, si acierta, el daño básico sin el bono por éxitos;
+// la resistencia del rival, en la nota. Con Derribo Brutal sin el −2 (su «Derribo con acción
+// estándar» devuelve el bono por éxitos, en su propia casilla).
+// TODO(revisar): "por cada tamaño de diferencia ±2 al ataque" y "puede no causar daño, sin −2"
+// van en la nota, a mano (circunstancial).
+function casillaDeManiobra(maniobras: { fuente: string; sinPenalizador: boolean }[]): Toggle {
+  const sinPenalizador = maniobras.find((m) => m.sinPenalizador);
+  const fuentes = [...new Set(maniobras.map((m) => m.fuente))];
+  const nota = [
+    "Si aciertas, el daño es el básico, sin el bono por éxitos.",
+    "El objetivo resiste con Potencia + Atletismo o Combate Melee: necesita tantos éxitos o más como los de tu ataque (antes de restar los de su defensa), o cae derribado en su casilla o en una adyacente libre, a tu elección. Con fracaso crítico pierde además 1 punto de fatiga.",
+    sinPenalizador
+      ? null
+      : "Si eliges no hacer daño, no hay −2: compénsalo con +2 en el circunstancial y no tires daño.",
+    "Tamaño: +2 al ataque por cada categoría superior y −2 por cada inferior (en el circunstancial).",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return {
+    id: "maniobra_derribo",
+    tipo: "toggle",
+    etiqueta: `Derribo (${fuentes.join(", ")}${sinPenalizador ? `; sin −2: ${sinPenalizador.fuente}` : ""})`,
+    valorActivo: sinPenalizador ? 0 : -2,
+    nota,
+    danio: { sinBonoExitos: true },
+    alcance: { tipo: "familiaArma", familia: "ataque_melee" },
+  };
 }
 
 // `valores`: los de los requisitos, para el requisito por rama (null = NPC, sin mirar).
-export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresRequisito | null): EfectosDeDotes {
+// `ficha`: los valores de juego de la ficha (especie incluida) para los bonos con umbral (D2d);
+// también al NPC, que no mira requisitos pero sí su Fuerza. Sin ellos, el de los requisitos.
+export function efectosDeDotes(
+  activas: readonly DoteActiva[],
+  valores: ValoresRequisito | null,
+  ficha: ValoresRequisito | null = valores,
+): EfectosDeDotes {
   if (activas.length === 0) return SIN_EFECTOS_DE_DOTES;
   const casillas: CondicionTirada[] = [];
   const modificadores: ModificadorConFuente[] = [];
@@ -177,6 +235,7 @@ export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresR
   const familias = new Set<FamiliaArma>();
   const sutil = new Set<FamiliaArma>();
   const compradas = activas.map((a) => a.compra);
+  const maniobras: { fuente: string; sinPenalizador: boolean }[] = [];
 
   for (const activa of activas) {
     const { dote, compra } = activa;
@@ -185,11 +244,41 @@ export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresR
     // Bonos por opción de una condición que la tirada no tiene: una casilla de opción por
     // grupo (movimiento_oculto), con una opción por bono.
     const porTramo = new Map<string, { casilla: Extract<CondicionTirada, { tipo: "opcion" }> }>();
+    // Una casilla por destino y condición (D2d): la crea el primer efecto y los demás le suman lo suyo.
+    const porCondicion = new Map<string, Toggle>();
+    const casillaPara = (
+      e: { alcance: string; condicion: string | null; filtroArma?: FiltroArma },
+      i: number,
+      umbral?: string,
+    ): Toggle | null => {
+      const destino = DESTINOS_DOTES[e.alcance];
+      if (destino?.tipo !== "tirada") return null;
+      const alcance = alcanceDe(destino.alcance, e);
+      const condicion = e.condicion ?? "tirando con la especialidad";
+      const llave = `${JSON.stringify(alcance)}|${condicion}`;
+      let c = porCondicion.get(llave);
+      if (!c) {
+        const texto = destino.especialidad ? `${destino.especialidad}: ${condicion}` : condicion;
+        c = { id: `${clave}_${i}`, tipo: "toggle", etiqueta: `${texto} (${fuente}${umbral ? `, ${umbral}` : ""})`, valorActivo: 0, alcance };
+        porCondicion.set(llave, c);
+        casillas.push(c);
+      }
+      return c;
+    };
+    const conDanio = (c: Toggle, d: EfectoDanioCasilla) => {
+      c.danio = { ...c.danio, ...d, ...(d.ajuste !== undefined && { ajuste: (c.danio?.ajuste ?? 0) + d.ajuste }) };
+    };
 
     dote.efectos.forEach((e, i) => {
       if (dote.motor[i]?.estado !== "construido") return;
       // Requisito por rama: el efecto de la rama que la ficha no cumple no sale (§9.5).
       if ("requisitoAlcance" in e && e.requisitoAlcance && valores && !cumpleRequisitoDote(e.requisitoAlcance, valores, compradas)) return;
+      if (e.tipo === "margen_critico" && DESTINOS_DOTES[e.alcance]?.tipo === "tirada") {
+        // Equilibrista (0: cualquier éxito es crítico) y Especialidad Médica (5), con casilla.
+        const c = casillaPara(e, i);
+        if (c) c.margenCriticoExito = Math.min(c.margenCriticoExito ?? e.valor, e.valor);
+        return;
+      }
       if (e.tipo === "margen_critico") {
         // Crítico Mejorado: la especialidad elegida al comprar, mientras siga siendo propia y
         // de la rama que cumple (S43; NPC sin mirar).
@@ -207,6 +296,39 @@ export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresR
       }
       // Estilo Sutil (Combate Sutil): el generador solo construye el cambio a Reflejos sobre
       // una familia de arma, que es lo que hace el interruptor Sutil de siempre.
+      // Otro aplicado con casilla (Negociación Analítica: Perspicacia en vez de Expresión).
+      if (e.tipo === "cambia_par" && DESTINOS_DOTES[e.alcance]?.tipo === "tirada" && !e.alcance.startsWith("familia:")) {
+        const c = e.aplicado && !e.habilidad && !e.especialidad ? casillaPara(e, i) : null;
+        if (c) c.aplicado = e.aplicado;
+        return;
+      }
+      if (e.tipo === "ventaja") {
+        const c = casillaPara(e, i);
+        if (!c) return;
+        c.ventaja = true;
+        if (e.coste) c.costeFatiga = (c.costeFatiga ?? 0) + e.coste.fatiga;
+        return;
+      }
+      if (e.tipo === "sube_grado") {
+        // Solo fracaso → éxito (el generador no construye otro).
+        const c = e.de === "fracaso" && e.a === "exito" ? casillaPara(e, i) : null;
+        if (c) c.subeGrado = true;
+        return;
+      }
+      if (e.tipo === "categoria_danio") {
+        const c = casillaPara(e, i);
+        if (c) conDanio(c, { categoria: categoriaLegible(e.a) });
+        return;
+      }
+      if (e.tipo === "danio_por_exitos") {
+        const c = casillaPara(e, i);
+        if (c) conDanio(c, { conBonoExitos: true });
+        return;
+      }
+      if (e.tipo === "maniobra") {
+        maniobras.push({ fuente, sinPenalizador: e.sinPenalizador === true });
+        return;
+      }
       if (e.tipo === "cambia_par") {
         const destino = DESTINOS_DOTES[e.alcance];
         if (destino?.tipo === "tirada" && destino.alcance.tipo === "familiaArma" && e.aplicado === "reflejos")
@@ -219,9 +341,17 @@ export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresR
         if (destino?.tipo === "tirada") descuentos.push({ alcance: destino.alcance, contador: e.contador, unidades: e.unidades, fuente });
         return;
       }
+      if (e.tipo === "bono" && e.sobre === "danio") {
+        // Golpe Fatigante: −1 al daño con su casilla (y su filtro de arma).
+        const c = typeof e.valor === "number" && e.condicion ? casillaPara(e, i) : null;
+        if (c) conDanio(c, { ajuste: e.valor as number });
+        return;
+      }
       if (e.tipo === "bono") {
         const destino = DESTINOS_DOTES[e.alcance];
-        if (destino?.tipo !== "tirada" || typeof e.valor !== "number") return;
+        const resuelto = valorDeBono(e.valor, ficha);
+        if (destino?.tipo !== "tirada" || !resuelto) return;
+        const valorBono = resuelto.valor;
         const alcance = alcanceDe(destino.alcance, e);
         if (e.tramo) {
           const [grupo, opcion] = e.tramo.split(":");
@@ -233,7 +363,7 @@ export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresR
               alcance,
               bono: {
                 fuente,
-                porTramo: { [opcion]: e.valor },
+                porTramo: { [opcion]: valorBono },
                 ...(e.soloEspecialidad && { soloEnEspecialidad: true as const }),
                 ...(excluyente && { excluyente }),
               },
@@ -257,7 +387,7 @@ export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresR
             porTramo.set(grupo, g);
             casillas.push(g.casilla);
           }
-          const op: OpcionCondicion = { id: opcion, etiqueta: def.opciones[opcion] ?? opcion, valor: e.valor };
+          const op: OpcionCondicion = { id: opcion, etiqueta: def.opciones[opcion] ?? opcion, valor: valorBono };
           g.casilla.opciones.push(op);
           // La etiqueta dice cuánto compensa: "reduce 2" o "reduce hasta 4" si varía por opción.
           const valores = g.casilla.opciones.slice(1).map((o) => o.valor);
@@ -268,20 +398,13 @@ export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresR
         }
         // Siempre activo y sin especialidad: bono fijo, sale en el desglose con la dote.
         if (e.condicion === null && !destino.especialidad) {
-          modificadores.push({ tipo: "tirada", alcance, valor: e.valor, origen: "dote", fuente });
+          modificadores.push({ tipo: "tirada", alcance, valor: valorBono, origen: "dote", fuente });
           return;
         }
         // Casilla. Con especialidad, aunque el bono sea siempre activo: la tirada no sabe
         // con cuál vas, así que la marca el jugador (decisión del usuario, D2a).
-        const condicion = e.condicion ?? "tirando con la especialidad";
-        const texto = destino.especialidad ? `${destino.especialidad}: ${condicion}` : condicion;
-        casillas.push({
-          id: `${clave}_${i}`,
-          tipo: "toggle",
-          etiqueta: `${texto} (${fuente}${avisoUmbral(dote, e)})`,
-          valorActivo: e.valor,
-          alcance,
-        });
+        const c = casillaPara(e, i, resuelto.umbral);
+        if (c) c.valorActivo += valorBono;
         return;
       }
       if (e.tipo === "texto") {
@@ -300,6 +423,7 @@ export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresR
       }
     });
   }
+  if (maniobras.length > 0) casillas.push(casillaDeManiobra(maniobras));
   return {
     casillas,
     modificadores,

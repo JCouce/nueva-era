@@ -50,6 +50,9 @@ export type Accion = {
   // Golpe a mano vacía (Puñetazo, Patada; combate.ts): a estos ataques llegan los
   // textos de especie con destino "desarmado" (crítico letal del Arköru, §14.8).
   desarmado?: true;
+  // Arma de daño contundente (ArmaMelee.contundente): la mira el filtro de arma de las dotes
+  // (Golpe Fatigante, D2d).
+  contundente?: true;
   // Efectos que NO se automatizan porque tocan una tirada distinta a esta —
   // la de un tercero (objetivo_tercero, docs/motor.md) o una tirada propia
   // pero distinta (Sigilo por el Puntero Láser). El motor no los aplica en
@@ -398,6 +401,9 @@ export type Resultado = {
   margen: number | null;
   exito: boolean | null;
   critico: boolean;
+  // Un fracaso que cuenta como éxito por una casilla marcada (Balanceo, D2d): lo pone
+  // tirarMontada (montaje.ts), con el margen que sacó de verdad; el margen pasa a 0.
+  cambioGrado?: { fuente: string; margenOriginal: number };
 };
 
 // Un éxito se consigue igualando la dificultad. El crítico llega al superarla
@@ -452,6 +458,20 @@ export type ResultadoDanio = {
   bonoExitos: number;
   total: number;
   categoria: string;
+  // Lo que cambiaron las casillas del ataque (D2d), con su fuente, para enseñarlo junto al
+  // daño. Ausentes si ninguna lo tocó.
+  ajustes?: { valor: number; fuente: string }[];
+  sinBonoExitos?: string;
+  categoriaPor?: string;
+};
+
+// Cambios al daño de las casillas marcadas en el ataque, ya juntados por montarTirada
+// (montaje.ts, TiradaMontada.danio): se guardan con la tirada y se aplican al tirar daño.
+export type AjusteDanio = {
+  ajustes: { valor: number; fuente: string }[];
+  categoria: { a: string; fuente: string } | null;
+  // Fuente de la casilla que deja el daño en el básico (Derribo), si sigue en pie.
+  sinBonoExitos: string | null;
 };
 
 // Fuente: sistema-y-combate.md — "por cada dos éxitos acumulados en la
@@ -461,9 +481,27 @@ export type ResultadoDanio = {
 // existe. Un margen negativo (fracaso) no debería llegar aquí — la UI solo
 // ofrece "tirar daño" tras un ataque con éxito — pero por si acaso no resta
 // daño, se queda en la base.
-export function resolverDanio(danioBase: number, margen: number, categoria: string): ResultadoDanio {
-  const bonoExitos = margen > 0 ? Math.floor(margen / 2) : 0;
-  return { base: danioBase, bonoExitos, total: danioBase + bonoExitos, categoria };
+//
+// La categoría con la que se anuncia el daño antes de tirarlo (golpe letal con escudo).
+export const categoriaConAjuste = (categoria: string, ajuste?: AjusteDanio): string => ajuste?.categoria?.a ?? categoria;
+//
+// `ajuste` (D2d): las casillas del ataque. Sin bono por éxitos (Derribo), los ajustes al
+// total con mínimo 0 (Golpe Fatigante −1) y la categoría que cambie (golpe letal con escudo).
+export function resolverDanio(danioBase: number, margen: number, categoria: string, ajuste?: AjusteDanio): ResultadoDanio {
+  const bono = margen > 0 ? Math.floor(margen / 2) : 0;
+  if (!ajuste || (ajuste.ajustes.length === 0 && !ajuste.categoria && !ajuste.sinBonoExitos))
+    return { base: danioBase, bonoExitos: bono, total: danioBase + bono, categoria };
+  const bonoExitos = ajuste.sinBonoExitos ? 0 : bono;
+  const suma = ajuste.ajustes.reduce((t, a) => t + a.valor, 0);
+  return {
+    base: danioBase,
+    bonoExitos,
+    total: Math.max(0, danioBase + bonoExitos + suma),
+    categoria: ajuste.categoria?.a ?? categoria,
+    ...(ajuste.ajustes.length > 0 && { ajustes: ajuste.ajustes }),
+    ...(ajuste.sinBonoExitos && { sinBonoExitos: ajuste.sinBonoExitos }),
+    ...(ajuste.categoria && { categoriaPor: ajuste.categoria.fuente }),
+  };
 }
 
 export type ResultadoVuelo = { metros: number | null; descontrolado: boolean };

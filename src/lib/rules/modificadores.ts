@@ -8,6 +8,7 @@
 import type { AtributoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
 import type { DisciplinaId } from "../catalog/psionica";
+import type { EspecialidadId } from "../catalog/especialidades";
 
 // Valores derivados que algo puede modificar directamente.
 export const DERIVADOS_MODIFICABLES = [
@@ -112,8 +113,18 @@ export type AlcanceModificador =
   | { tipo: "grupoHabilidad"; grupo: GrupoAccion; habilidad: HabilidadId }
   | { tipo: "modo"; contieneEtiqueta: string }
   // `desarmado`: solo en las tiradas de arma desarmada (Pelea), p.ej. la casilla de Bloqueo
-  // "desarmado frente a atacante armado".
-  | { tipo: "familiaArma"; familia: FamiliaArma; empleo?: EmpleoArma; desarmado?: true }
+  // "desarmado frente a atacante armado". `contundente` (D2d): solo armas de daño
+  // contundente; con `empleo` a la vez vale cualquiera de los dos (Golpe Fatigante:
+  // "daño contundente o arma a dos manos"). `especialidad` (D2d): solo armas de esa
+  // especialidad (Golpe Mejorado con Escudo: Escudos).
+  | {
+      tipo: "familiaArma";
+      familia: FamiliaArma;
+      empleo?: EmpleoArma;
+      desarmado?: true;
+      contundente?: true;
+      especialidad?: EspecialidadId;
+    }
   | { tipo: "todas" };
 
 export type Modificador =
@@ -194,6 +205,8 @@ export type ContextoAccion = {
   familiaArma?: FamiliaArma;
   empleoArma?: EmpleoArma;
   desarmado?: boolean;
+  contundente?: boolean;
+  especialidadArma?: EspecialidadId;
 };
 
 // Exportada para condicionesActivas() (equipo.ts) — mismo criterio de alcance
@@ -205,12 +218,18 @@ export function alcanzaA(alcance: AlcanceModificador, ctx: ContextoAccion): bool
   if (alcance.tipo === "habilidad") return alcance.habilidad === ctx.habilidad;
   if (alcance.tipo === "grupoHabilidad") return alcance.grupo === ctx.grupo && alcance.habilidad === ctx.habilidad;
   // Sin empleo conocido (Proyector de Pulso, que va en la armadura), un filtro de empleo no casa.
-  if (alcance.tipo === "familiaArma")
+  if (alcance.tipo === "familiaArma") {
+    // Empleo y contundente: basta uno de los dos (si solo hay uno, ese).
+    const porEmpleo = alcance.empleo !== undefined && alcance.empleo === ctx.empleoArma;
+    const porContundente = alcance.contundente === true && ctx.contundente === true;
+    const arma = (alcance.empleo === undefined && !alcance.contundente) || porEmpleo || porContundente;
     return (
       alcance.familia === ctx.familiaArma &&
-      (alcance.empleo === undefined || alcance.empleo === ctx.empleoArma) &&
-      (!alcance.desarmado || ctx.desarmado === true)
+      arma &&
+      (!alcance.desarmado || ctx.desarmado === true) &&
+      (alcance.especialidad === undefined || alcance.especialidad === ctx.especialidadArma)
     );
+  }
   return ctx.modoElegido !== null && ctx.modoElegido.includes(alcance.contieneEtiqueta);
 }
 

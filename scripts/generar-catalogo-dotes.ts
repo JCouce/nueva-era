@@ -41,10 +41,8 @@
 //     modelado, desalineado con `efectos` en 48 dotes). Se regenera aquí ("Clasificación").
 //   - Valor `{ base, siAtributoMin: { atributo, min, valor } }` → `{ base, siMin: { tipo:
 //     "atributo", id, min, valor } }` (Valor.siMin de v2).
-//   - Bono con umbral de ficha (`siMin`): se parte en dos. A = el mismo bono con
-//     `valor: base` (la casilla que D2a ya puede poner) y B = el bono entero con su
-//     `siMin` (pendiente de D2d, capa valor_por_umbral_ficha). Cuando D2d exista, la
-//     casilla de A desaparece y la pone B (Presencia Imponente, decisión del usuario).
+//   - Bono con umbral de ficha (`siMin`): un solo efecto; rules/dotesEfectos.ts resuelve el
+//     valor con la ficha al montar la casilla (D2d; hasta D2d se partía en dos, S38).
 //   - `condicion` "<condición>:<opción>" (con " + en especialidad" opcional) →
 //     `tramo: "<condición>:<opción>"`, `condicion: null` (y `soloEspecialidad: true`).
 //     "tramo:larga" es la condición de distancia de los disparos; "movimiento_oculto:*"
@@ -55,7 +53,9 @@
 //     real): cada uno se convierte con la tabla CONVERSIONES de abajo. Uno sin
 //     conversión, falla.
 //   - CONVERSIONES también lleva Salto Evasivo y su Mejorado: el borrador los trae como
-//     texto "sin_regla", pero §9.3 aprueba la capa éxito extra para ellos.
+//     texto "sin_regla"; desde D2d son una casilla +1/+2 (decisión del usuario: bono normal,
+//     aunque convierta un fallo justo en acierto), y la maniobra Derribo (Derribo Mejorado y
+//     Brutal, efecto "maniobra").
 //
 // Normalización de acciones de dote (D2c-1, AJUSTES_ACCION de abajo): retoques a la AccionDote
 // del borrador decididos con el usuario o leídos de la prosa (docs/dotes.md); cada uno con su
@@ -82,7 +82,7 @@
 //     añade `filtroArma` a sus efectos de familia de arma.
 //
 // Clasificación (MotorMetadata de cada efecto; docs/motor.md):
-//   - Tanda = la más tardía (D2b-1 < D2b-2 < D2c < D2c-2 < D2d) entre la del destino (tabla de
+//   - Tanda = la más tardía (D2b-1 < D2b-2 < D2c < D2c-2 < D2d < tiradas-fijas) entre la del destino (tabla de
 //     destinos: "tanda") y la del tipo de efecto (TANDA_DEL_TIPO); EXCEPCIONES_TANDA
 //     (dotesDestinos.ts) manda sobre las dos. Con tanda → `pendiente`, `bloqueoPor`.
 //   - Sin tanda → `construido`: bono con valor numérico o texto, sobre una tirada que
@@ -92,8 +92,10 @@
 //     (Crítico Mejorado). En D2b-2, también el habilitador de una familia de
 //     FAMILIAS_SOLO_CON_DOTE (Bloqueo) y el cambio a Reflejos en una familia de arma
 //     (Combate Sutil, el estilo Sutil). En D2c-2, los poderes de dote y los textos con destino
-//     "poder" (Onda Residual en Expansión). Falla si algo construido no se sabe aplicar: casilla en
-//     «Levantar escudo» (sin dado), filtro de tipo de daño, solo en especialidad sin tramo.
+//     "poder" (Onda Residual en Expansión). En D2d, las casillas que hacen algo más que sumar
+//     (ventaja, fracaso → éxito, margen de crítico, otro aplicado, daño, bono con umbral) y la
+//     maniobra Derribo. Falla si algo construido no se sabe aplicar: casilla en «Levantar
+//     escudo» (sin dado), filtro de arma fuera de una familia, solo en especialidad sin tramo.
 //   - tipo/afecta/mecanismo salen del tipo de efecto (función clasificar()).
 //
 // Cruce (regla documentada): en docs/dotes.md cada requisito ocupa UNA línea de
@@ -260,21 +262,45 @@ const CONDICION_CRITICO = new Set(["critico", "Éxito crítico en la esquiva"]);
 // ("<id de dote>#<índice en el borrador>" → efecto v2, sin `borrador`).
 // Un array parte el efecto en varios (mismo `borrador`), p.ej. un texto en dos destinos.
 const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unknown>[]> = {
-  // capa_pendiente: Imitación +3 con Interpretación ≥ 3 (valor por umbral de ficha).
-  "dote_imitacion#1": {
+  // Imitación +2, +3 con Interpretación ≥ 3 (valor por umbral de ficha, D2d): una sola casilla
+  // con el valor que toque (S38 resuelto). El texto capa_pendiente del umbral pasa a la tarjeta.
+  "dote_imitacion#0": {
     tipo: "bono",
     alcance: "imitar",
     valor: { base: 2, siMin: { tipo: "habilidad", id: "interpretacion", min: 3, valor: 3 } },
     condicion: "Imitando a otra persona",
   },
+  "dote_imitacion#1": {
+    tipo: "texto",
+    lugar: "ficha",
+    texto: "Con Interpretación 3 o más el bono es +3: la casilla «Imitando a otra persona» ya lo pone.",
+    condicion: null,
+    porque: "sin_regla",
+  },
+  // Maniobra Derribo (habilidades.md, Combate Melee) solo con dote de derribo (decisión del
+  // usuario, D2d): Derribo Mejorado pone la casilla «Derribo» (−2, daño básico) además de su texto.
+  "dote_derribo_mejorado#0": [
+    { tipo: "maniobra", maniobra: "derribo", alcance: "familia:ataque_melee" },
+    {
+      tipo: "texto",
+      lugar: "familia:ataque_melee",
+      texto: "Derribo con éxito: el objetivo pierde 1 punto de fatiga.",
+      condicion: "Derribo",
+      porque: "tercero",
+    },
+  ],
+  // Derribo Brutal: "el aumento de dificultad para derribo causando daño se anula" → la casilla
+  // «Derribo» sin −2 (antes, una casilla +2 que lo compensaba).
+  "dote_derribo_brutal#0": { tipo: "maniobra", maniobra: "derribo", alcance: "familia:ataque_melee", sinPenalizador: true },
   // capa_pendiente: Derribo con acción estándar sin el tope de daño básico.
   "dote_derribo_brutal#1": { tipo: "danio_por_exitos", alcance: "familia:ataque_melee", condicion: "Derribo con acción estándar" },
   // capa_pendiente: golpe con escudo letal en vez de no letal (§9.3, va con las casillas del daño).
+  // Solo con armas de la especialidad Escudos (FILTROS_ARMA).
   "dote_golpe_mejorado_con_escudo#0": {
     tipo: "categoria_danio",
     alcance: "familia:ataque_melee",
     a: "letal",
-    condicion: "Golpe letal con escudo",
+    condicion: "Golpe letal",
   },
   // capa_pendiente: −1 al daño del golpe fatigante (§9.5: siempre −1, mínimo 0; puñetazo y
   // patada son contundentes), solo con daño contundente o arma a dos manos.
@@ -286,10 +312,11 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
     sobre: "danio",
     filtroArma: { tipoDanio: ["contundente"], empleo: "dos manos" },
   },
-  // §9.3 "éxito extra (Salto Evasivo: con la casilla «esquivando un área», si la esquiva
-  // acierta suma +1 éxito; +2 en la Mejorada)". El borrador lo traía como texto sin_regla.
-  "dote_salto_evasivo#0": { tipo: "exito_extra", alcance: "defensa", exitos: 1, condicion: "Esquivando un área" },
-  "dote_salto_evasivo_mejorado#0": { tipo: "exito_extra", alcance: "defensa", exitos: 2, condicion: "Esquivando un área" },
+  // Salto Evasivo: casilla «Esquivando un área» +1 (Mejorado +2, que sustituye a la básica: vale
+  // la mejor). Decisión del usuario (D2d): bono normal, aunque convierta un fallo justo en
+  // acierto (antes, §9.3: éxito extra que no convertía). El borrador lo traía como texto sin_regla.
+  "dote_salto_evasivo#0": { tipo: "bono", alcance: "defensa", valor: 1, condicion: "Esquivando un área" },
+  "dote_salto_evasivo_mejorado#0": { tipo: "bono", alcance: "defensa", valor: 2, condicion: "Esquivando un área" },
   // Bloqueo: "desarmado frente a atacante armado" (−3) y su excepción solo al bloquear
   // desarmado (Pelea), no con un arma (revisión de D2b-2, 2026-10-16).
   "dote_bloqueo#7": {
@@ -380,21 +407,15 @@ type AjusteAccion = {
   notasExtra?: { texto: string; condicion: string | null }[];
   grupoExtra?: "Defensa" | "Salvaciones" | "Iniciativa" | "Acciones";
 };
-const VENTAJA_COMO_TEXTO = "aplícala a mano mientras no exista la casilla de ventaja";
 const AJUSTES_ACCION: Readonly<Record<string, AjusteAccion>> = {
   // Prosa: "expresión + empatía o liderazgo". El borrador no traía la especialidad en la
   // resolución (decisión del usuario, D2c-1): va en especialidad con cualquiera de las dos.
-  // La ventaja por vínculo fuerte es la capa ventaja-con-casilla (D2d): mientras, texto.
+  // La ventaja por vínculo fuerte es una casilla de la acción (D2d, dotesAcciones.ts).
   dotes_apoyo: {
     resolucion: { especialidad: ["empatia", "liderazgo"] },
     notas: { 1: { texto: "Con Empatía o Liderazgo: va en especialidad con cualquiera de las dos.", condicion: null } },
-    notasExtra: [{ texto: `Si el vínculo de afecto con el aliado es fuerte, tienes ventaja (${VENTAJA_COMO_TEXTO}).`, condicion: null }],
   },
-  // Prosa: "Si el ataque que desencadena la acción es un golpe crítico, ... ventaja". Igual que
-  // Apoyo: la ventaja es D2d; mientras, texto en la nota.
-  dotes_violencia_aterradora: {
-    notasExtra: [{ texto: `Si el ataque que la desencadena fue crítico, tienes ventaja (${VENTAJA_COMO_TEXTO}).`, condicion: null }],
-  },
+  // Violencia Aterradora: la ventaja tras un crítico también es casilla (D2d), sin ajuste.
   // Prosa: "tirada de ataque con el atributo de potencia", sin habilidad. Decisión del usuario
   // (D2c-1, supuesto S53): Combate Melee, en especialidad Pelea (el requisito de la dote).
   dotes_arrollar: { resolucion: { especialidad: "pelea" } },
@@ -609,10 +630,15 @@ const RAMA_DE_FAMILIA: Readonly<Record<string, "combate_melee" | "combate_distan
 //   Desenfundado Rápido: "La dote sirve para armas que se puedan utilizar a una mano".
 //   Apresar y Apuñalar: "llevando un arma de una sola mano se gana una reacción para
 //     atacar con esta" (el texto solo tiene sentido en armas a una mano).
-// El tipo de daño (Golpe Fatigante) no se aplica todavía: va con D2d.
-const FILTROS_ARMA: Readonly<Record<string, { empleo: "una mano" | "dos manos" }>> = {
+//   Golpe Fatigante (D2d): "un ataque que provoque daño contundente o con un arma a dos manos"
+//     (empleo y tipo de daño: vale cualquiera de los dos), también para su texto.
+//   Golpe Mejorado con Escudo (D2d): "al golpear con el escudo" → especialidad Escudos.
+type FiltroArmaDote = { empleo?: "una mano" | "dos manos"; tipoDanio?: "contundente"[]; especialidad?: string };
+const FILTROS_ARMA: Readonly<Record<string, FiltroArmaDote>> = {
   dote_desenfundado_rapido: { empleo: "una mano" },
   dote_apresar_y_apunalar: { empleo: "una mano" },
+  dote_golpe_fatigante: { tipoDanio: ["contundente"], empleo: "dos manos" },
+  dote_golpe_mejorado_con_escudo: { especialidad: "escudos" },
 };
 
 const claveDeEfecto = (e: Efecto) =>
@@ -691,17 +717,7 @@ function normalizarEfectos(id: string, efectos: unknown): Efecto[] {
     }
     salida.push(e);
   });
-  // Bono con umbral → A (valor base, ya construible) + B (umbral entero, D2d).
-  return salida.flatMap((e) => {
-    const v = e.valor as { base?: number; siMin?: unknown } | undefined;
-    if (e.tipo === "bono" && v && typeof v === "object" && v.siMin !== undefined && typeof v.base === "number") {
-      const yaTieneBase = salida.some(
-        (o) => o !== e && o.tipo === "bono" && o.alcance === e.alcance && o.condicion === e.condicion && typeof o.valor === "number",
-      );
-      return yaTieneBase ? [e] : [{ ...e, valor: v.base }, e];
-    }
-    return [e];
-  });
+  return salida;
 }
 
 // ── Efectos: clasificación ────────────────────────────────────────────────
@@ -727,27 +743,22 @@ function tandaDelTipo(e: Efecto): TandaDote | null {
       // Bloqueo (D2b-2): se construye si su familia está en FAMILIAS_SOLO_CON_DOTE (abajo).
       return null;
     case "cambia_par":
-      // Combate Sutil (§9.2, ataques y bloqueos melee) es el habilitador de Sutil, construido
-      // en D2b-2. Los demás (Negociación Analítica, Cazador Cazado, Vigilancia Táctica) son la
-      // capa "cambio de par" de D2d (sistema.md §9.3); si su tirada no existe, gana
-      // "tiradas-fijas".
-      return esFamilia(e.alcance) ? null : "D2d";
     case "margen_critico":
-      // Crítico Mejorado (crítico fijo con su especialidad de arma) se construye en D2b-1;
-      // el resto de márgenes, capa de D2d.
-      return e.alcance === "especialidad:<elegida>" ? null : "D2d";
     case "sube_grado":
     case "ventaja":
     case "exito_extra":
     case "danio_por_exitos":
     case "categoria_danio":
-      return "D2d";
+    case "maniobra":
+      // D2d (cerrada): Combate Sutil desde D2b-2, Crítico Mejorado desde D2b-1; el resto, casillas
+      // de D2d. Un cambio de par sobre una tirada que no existe espera a "tiradas-fijas" (destino).
+      return null;
     case "economia":
       // TODO(revisar): ningún efecto del borrador lo usa hoy; coste en acciones = texto
       // hasta el registro de acciones (§9.3). Se supone con las acciones de dote.
       return "D2c";
     case "bono":
-      if (e.sobre === "danio" || typeof e.valor !== "number") return "D2d";
+      // Daño (Golpe Fatigante) y valor por umbral de ficha: D2d, construidos.
       return null;
     default:
       return null;
@@ -789,16 +800,40 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
         familiaDestino !== null &&
         e.aplicado === "reflejos" &&
         e.habilidad === undefined &&
-        e.especialidad === undefined);
+        e.especialidad === undefined) ||
+      // D2d: casillas sobre una tirada que existe (rules/dotesEfectos.ts), con condición.
+      (destino?.tipo === "tirada" &&
+        typeof e.condicion === "string" &&
+        (e.tipo === "ventaja" ||
+          (e.tipo === "sube_grado" && e.de === "fracaso" && e.a === "exito") ||
+          (e.tipo === "margen_critico" && familiaDestino === null) ||
+          (e.tipo === "cambia_par" &&
+            familiaDestino === null &&
+            e.aplicado !== undefined &&
+            e.habilidad === undefined &&
+            e.especialidad === undefined))) ||
+      // Daño con casilla (D2d): solo en golpes de arma.
+      (familiaDestino !== null &&
+        typeof e.condicion === "string" &&
+        (e.tipo === "danio_por_exitos" || e.tipo === "categoria_danio" || (e.tipo === "bono" && e.sobre === "danio"))) ||
+      // Ventaja con casilla en una acción de dote (Apoyo, Violencia Aterradora; dotesAcciones.ts).
+      (e.tipo === "ventaja" && destino?.tipo === "accionDote" && typeof e.condicion === "string") ||
+      // Maniobra Derribo (D2d): casilla propia en los golpes melee.
+      (e.tipo === "maniobra" && familiaDestino === "ataque_melee");
     if (!construible) {
-      falla(id, `efecto ${e.borrador} (${String(e.tipo)}): sin tanda y sin forma de construirlo (D2a, D2b-1, D2b-2, D2c-1, D2c-2)`);
+      falla(id, `efecto ${e.borrador} (${String(e.tipo)}): sin tanda y sin forma de construirlo (D2a, D2b-1, D2b-2, D2c-1, D2c-2, D2d)`);
       return null;
     }
     if (e.tipo !== "texto" && alcanceDestino?.tipo === "familiaArma" && alcanceDestino.familia === "levantar_escudo")
       falla(id, `efecto ${e.borrador}: «Levantar escudo» no tiene dado, solo admite textos`);
-    const filtro = e.filtroArma as { tipoDanio?: unknown } | undefined;
-    if (filtro && (filtro.tipoDanio !== undefined || alcanceDestino?.tipo !== "familiaArma"))
-      falla(id, `efecto ${e.borrador}: filtro de arma que no se sabe aplicar (solo empleo, en familias de arma)`);
+    const filtro = e.filtroArma as object | undefined;
+    if (filtro && alcanceDestino?.tipo !== "familiaArma")
+      falla(id, `efecto ${e.borrador}: filtro de arma fuera de una familia de arma`);
+    const v = e.valor as { porNivelEmpleado?: unknown; manual?: unknown } | undefined;
+    if (e.tipo === "bono" && v && typeof v === "object" && ("porNivelEmpleado" in v || "manual" in v))
+      falla(id, `efecto ${e.borrador}: bono sin valor numérico ni umbral de ficha`);
+    if (e.tipo === "bono" && e.sobre === "danio" && (typeof e.condicion !== "string" || alcanceDestino?.tipo !== "familiaArma"))
+      falla(id, `efecto ${e.borrador}: bono al daño sin casilla o fuera de una familia de arma`);
     if (e.soloEspecialidad && !String(e.tramo ?? "").startsWith("tramo:"))
       falla(id, `efecto ${e.borrador}: "solo en especialidad" sin bono por tramo de distancia`);
     const grados = e.grados as string[] | undefined;
@@ -853,6 +888,17 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
         arbitraje: "duro",
         ...estado,
       };
+    case "maniobra":
+      // Sin dote de derribo la casilla no existe (habilitador, duro); Brutal le quita el −2.
+      return e.sinPenalizador
+        ? { tipo: "numerico", afecta: { modo: "accion_existente", id: clave! }, mecanismo: "eleccion_jugador", ...estado }
+        : {
+            tipo: "habilitador",
+            afecta: { modo: "accion_existente", id: clave! },
+            mecanismo: "eleccion_jugador",
+            arbitraje: "duro",
+            ...estado,
+          };
     case "accion":
     case "poder":
       return {

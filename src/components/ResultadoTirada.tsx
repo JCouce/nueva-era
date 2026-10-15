@@ -1,5 +1,6 @@
 import {
   gradoDeTirada,
+  type AjusteDanio,
   textoDeGrado,
   type DetallePoder,
   type Grado,
@@ -28,6 +29,9 @@ export type DanioInfo = {
   ignoraBlindaje?: { valor: number; fuente: string }[];
   // Se puede tirar daño también con fracaso (Accion.ataque.danioAlFallar).
   alFallar?: boolean;
+  // Casillas del ataque que tocan el daño (D2d: Golpe Fatigante, golpe letal, Derribo): se
+  // aplican al tirarlo (resolverDanio).
+  ajuste?: AjusteDanio;
 };
 
 export type Lanzamiento = Resultado & {
@@ -159,6 +163,12 @@ export function ContenidoResultado({
         </p>
       </div>
 
+      {resultado.cambioGrado && (
+        <p className="mt-2 font-mono text-[11px] uppercase text-info">
+          Fracaso ({Math.abs(resultado.cambioGrado.margenOriginal)}) → éxito · {resultado.cambioGrado.fuente}
+        </p>
+      )}
+
       {resultado.poder && <ResultadoPropio poder={resultado.poder} resultado={resultado} />}
 
       {/* Con daño, el texto de crítico va pegado al daño (abajo). */}
@@ -182,7 +192,27 @@ export function ContenidoResultado({
                 <span className="text-accent"> · {resultado.efectoCritico}</span>
               )}
             </p>
-          ) : puedeTirarDanio ? (
+          ) : null}
+          {resultado.danioResuelto && (
+            <>
+              {resultado.danioResuelto.sinBonoExitos && (
+                <p className="mt-1 font-mono text-[11px] uppercase text-muted">
+                  Sin bono por éxitos · {resultado.danioResuelto.sinBonoExitos}
+                </p>
+              )}
+              {resultado.danioResuelto.ajustes?.map((a) => (
+                <p key={a.fuente} className="mt-1 font-mono text-[11px] uppercase text-muted">
+                  {signo(a.valor)} al daño · {a.fuente}
+                </p>
+              ))}
+              {resultado.danioResuelto.categoriaPor && (
+                <p className="mt-1 font-mono text-[11px] uppercase text-muted">
+                  {resultado.danioResuelto.categoria} · {resultado.danioResuelto.categoriaPor}
+                </p>
+              )}
+            </>
+          )}
+          {resultado.danioResuelto ? null : puedeTirarDanio ? (
             <button
               type="button"
               onClick={onTirarDanio}

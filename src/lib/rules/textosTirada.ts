@@ -9,7 +9,9 @@ import { alcanzaA, type ContextoAccion } from "./modificadores";
 // `modoElegido: null`: la tirada aún no se ha abierto, así que una casilla con alcance "modo" no
 // tiene nada que casar (ver indiceDeCondiciones).
 export const contextoDe = (
-  t: Pick<Accion, "id" | "grupo" | "familiaArma" | "empleoArma" | "desarmado"> & { habilidad: Accion["habilidad"] },
+  t: Pick<Accion, "id" | "grupo" | "familiaArma" | "empleoArma" | "desarmado" | "contundente" | "especialidadArma"> & {
+    habilidad: Accion["habilidad"];
+  },
 ): ContextoAccion => ({
   id: t.id,
   grupo: t.grupo,
@@ -18,6 +20,8 @@ export const contextoDe = (
   ...(t.familiaArma && { familiaArma: t.familiaArma }),
   ...(t.empleoArma && { empleoArma: t.empleoArma }),
   ...(t.desarmado && { desarmado: true }),
+  ...(t.contundente && { contundente: true }),
+  ...(t.especialidadArma && { especialidadArma: t.especialidadArma }),
 });
 
 export function textosDe(textos: TextoEnTirada[], ctx: ContextoAccion, desarmado: boolean): TextoEnTirada[] {

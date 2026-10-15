@@ -50,6 +50,12 @@ export type ArmaMelee = {
   // Mismo nombre y valores que ArmaFuego.empleo. El Puñetazo ("Mano Libre"
   // en EQUIP) se da por "una mano" — decisión 2026-09-28, el usuario.
   empleo: "una mano" | "dos manos";
+  // Daño contundente (D2d, filtro de arma de Golpe Fatigante: "daño contundente o arma a dos
+  // manos"). La fuente no trae tipo de daño por arma: se marca por lo que dice su resumen o
+  // descripción (maza, martillo, porra, impacto) más los golpes a mano vacía (§9.5: puñetazo y
+  // patada son contundentes) y los escudos. TODO(revisar): Mangual y Cadena Armada (flagelos;
+  // equipamiento.md separa "contundentes" de "flexibles") quedan fuera.
+  contundente?: true;
   sutil?: boolean;
   // Genera la tirada "Lanzar" (combate.ts, tiradaLanzarArmaMelee).
   arrojadiza?: boolean;
@@ -90,6 +96,7 @@ export const PELEA: ArmaMelee[] = [
     resumen: "El ataque más básico: a mano vacía, gratis, siempre disponible.",
     descripcion: "Golpe a mano vacía. No letal, disponible sin comprar nada.",
     empleo: "una mano",
+    contundente: true,
     sutil: true,
     modos: [
       { etiqueta: "Simple", dificultad: 0, formulaDanio: "Fuerza", categoriaDanio: "No Letal" },
@@ -114,6 +121,7 @@ export const PELEA: ArmaMelee[] = [
     resumen: "Golpe a mano vacía con más alcance que el puñetazo, algo menos preciso.",
     descripcion: "Golpe a mano vacía. No letal, disponible sin comprar nada.",
     empleo: "una mano",
+    contundente: true,
     sutil: true,
     modos: [
       { etiqueta: "Simple", dificultad: -1, formulaDanio: "Fuerza", categoriaDanio: "No Letal" },
@@ -138,6 +146,7 @@ export const PELEA: ArmaMelee[] = [
     resumen: "Golpe a mano vacía a corta distancia, un único modo de ataque.",
     descripcion: "Golpe a mano vacía. No letal, disponible sin comprar nada.",
     empleo: "una mano",
+    contundente: true,
     sutil: true,
     modos: [
       { etiqueta: "Simple", dificultad: -1, formulaDanio: "Fuerza", categoriaDanio: "No Letal" },
@@ -164,6 +173,7 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     resumen: "Arma corta no letal, la más barata de su familia.",
     descripcion: "Arma corta a una mano, pensada para reducir sin matar.",
     empleo: "una mano",
+    contundente: true,
     modos: [{ etiqueta: "Simple", dificultad: 0, formulaDanio: "Fue+2", categoriaDanio: "No Letal" }],
     efectos: "Crítico de Aturdimiento (7)",
     pesoKg: 0, // insignificante (I)
@@ -182,6 +192,7 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     resumen: "Arma corta contundente y letal, sencilla de conseguir.",
     descripcion: "Arma corta a una mano, de impacto letal.",
     empleo: "una mano",
+    contundente: true,
     modos: [{ etiqueta: "Simple", dificultad: -1, formulaDanio: "Fue+2", categoriaDanio: "Letal" }],
     efectos: "Crítico de Aturdimiento (8)",
     pesoKg: 0, // insignificante (I)
@@ -240,6 +251,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
     resumen: "Arma de asta no letal, con alcance extra y dos manos.",
     descripcion: "Arma a dos manos con alcance, pensada para reducir sin matar.",
     empleo: "dos manos",
+    contundente: true,
     alcance: 4,
     modos: [
       { etiqueta: "Simple", dificultad: 0, formulaDanio: "Fue+1", categoriaDanio: "No Letal" },
@@ -334,6 +346,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
     resumen: "Arma de asta pesada a dos manos, contundente.",
     descripcion: "Arma de asta a dos manos, de impacto pesado.",
     empleo: "dos manos",
+    contundente: true,
     modos: [
       { etiqueta: "Simple", dificultad: -2, formulaDanio: "Fue+4", categoriaDanio: "Letal" },
       { etiqueta: "Estándar", dificultad: -2, formulaDanio: "Fue+6", categoriaDanio: "Letal" },
@@ -387,6 +400,7 @@ export const ESCUDOS: ArmaMelee[] = [
       "Puede llevarse sujeta al antebrazo sin obstaculizar el uso de la mano; solo exige levantarla " +
       "(acción simple) para buscar cobertura. No se aplica si atacan por la espalda.",
     empleo: "una mano",
+    contundente: true,
     modos: [{ etiqueta: "Simple", dificultad: 0, formulaDanio: "Fue+2", categoriaDanio: "No Letal" }],
     efectos: "Crítico de Aturdimiento (8)",
     pesoKg: 1,
@@ -434,6 +448,7 @@ export const ESCUDOS: ArmaMelee[] = [
       "Requiere una acción estándar para levantarlo; a diferencia de la rodela, siempre ocupa la " +
       "mano. No se aplica si atacan por la espalda.",
     empleo: "una mano",
+    contundente: true,
     modos: [{ etiqueta: "Estándar", dificultad: 0, formulaDanio: "Fue+2", categoriaDanio: "No Letal" }],
     efectos: "Crítico de Aturdimiento (8)",
     pesoKg: 2,
@@ -470,6 +485,7 @@ export const ESCUDOS: ArmaMelee[] = [
     resumen: "Versión de metamateriales de la rodela: mismo tamaño, mucho más resistente.",
     descripcion: "Rodela de materiales avanzados: mismo manejo, blindaje y aguante muy superiores.",
     empleo: "una mano",
+    contundente: true,
     modos: [{ etiqueta: "Simple", dificultad: 0, formulaDanio: "Fue+2", categoriaDanio: "No Letal" }],
     efectos: "Crítico de Aturdimiento (8)",
     pesoKg: 0, // insignificante (I)
@@ -506,6 +522,7 @@ export const ESCUDOS: ArmaMelee[] = [
     resumen: "Versión de metamateriales del escudo: mucho más blindaje y aguante.",
     descripcion: "Escudo de materiales avanzados: blindaje y aguante muy superiores al estándar.",
     empleo: "una mano",
+    contundente: true,
     modos: [{ etiqueta: "Estándar", dificultad: 0, formulaDanio: "Fue+2", categoriaDanio: "No Letal" }],
     efectos: "Crítico de Aturdimiento (8)",
     pesoKg: 1,
@@ -772,6 +789,7 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
     resumen: "Puño motorizado a una mano; en modo compleja derriba.",
     descripcion: "Guantelete de impacto motorizado, a una mano.",
     empleo: "una mano",
+    contundente: true,
     modos: [
       { etiqueta: "Estándar", dificultad: -2, formulaDanio: "Fue+3", categoriaDanio: "Letal" },
       { etiqueta: "Compleja", dificultad: -2, formulaDanio: "Fue+6", categoriaDanio: "Letal" },
@@ -851,6 +869,7 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
     resumen: "Martillo motorizado a dos manos; en modo compleja derriba.",
     descripcion: "Martillo de impacto motorizado, a dos manos.",
     empleo: "dos manos",
+    contundente: true,
     modos: [
       { etiqueta: "Estándar", dificultad: -3, formulaDanio: "Fue+6", categoriaDanio: "Letal" },
       { etiqueta: "Compleja", dificultad: -3, formulaDanio: "Fue+8", categoriaDanio: "Letal" },
@@ -880,6 +899,7 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
     resumen: "El arma mecánica más pesada: derriba y hace el doble contra estructuras.",
     descripcion: "Ariete motorizado a dos manos, con alcance.",
     empleo: "dos manos",
+    contundente: true,
     alcance: 4,
     modos: [
       { etiqueta: "Estándar", dificultad: -3, formulaDanio: "Fue+5", categoriaDanio: "Letal" },
@@ -1083,6 +1103,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     resumen: "Maza de kerzul a una mano: derriba y aturde además de herir.",
     descripcion: "Maza de kerzul a una mano, contundente.",
     empleo: "una mano",
+    contundente: true,
     modos: [
       { etiqueta: "Estándar", dificultad: -2, formulaDanio: "Fue+6", categoriaDanio: "Letal" },
       { etiqueta: "Compleja", dificultad: -2, formulaDanio: "Fue+8", categoriaDanio: "Letal" },
@@ -1135,6 +1156,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     resumen: "Bastón de kerzul a dos manos con alcance; derriba y aturde.",
     descripcion: "Bastón de kerzul a dos manos, con alcance.",
     empleo: "dos manos",
+    contundente: true,
     alcance: 4,
     modos: [
       { etiqueta: "Estándar", dificultad: -1, formulaDanio: "Fue+5", categoriaDanio: "Letal" },
@@ -1281,6 +1303,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     resumen: "Martillo de kerzul a dos manos, el que más derriba y aturde.",
     descripcion: "Martillo de kerzul a dos manos, de gran tamaño.",
     empleo: "dos manos",
+    contundente: true,
     modos: [
       { etiqueta: "Estándar", dificultad: -4, formulaDanio: "Fue+8", categoriaDanio: "Letal" },
       { etiqueta: "Compleja", dificultad: -4, formulaDanio: "Fue+11", categoriaDanio: "Letal" },
@@ -1379,6 +1402,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     resumen: "El único escudo de kerzul: blindaje y aguante muy por encima de los convencionales.",
     descripcion: "Escudo de kerzul a una mano, con la misma resistencia extrema del material.",
     empleo: "una mano",
+    contundente: true,
     modos: [{ etiqueta: "Estándar", dificultad: -2, formulaDanio: "Fue+4", categoriaDanio: "Letal" }],
     ignoraBlindaje: 2,
     efectos: "Derribo (11) · Aturdimiento (9) · Crítico: Impacto Estructural (12)",

@@ -41,7 +41,8 @@ cuál va antes que la otra:
 - "Dotes" (Fase 5, en Pendiente) — D1 (compra), D2a (casillas, bonos fijos y textos), la
   tanda ESP (catálogo de especialidades por id), D2b-1 (efectos en las tiradas de arma) y
   D2b-2 (Bloquear y Sutil solo con su dote), D2c-1 (acciones de dote), D2c-2 (poderes de
-  dote) y dotes para los NPC hechas; sigue D2d, con su recuento de pendientes.
+  dote), dotes para los NPC y D2d (casillas que hacen algo más que sumar) hechas; quedan los
+  10 pendientes de "tiradas-fijas".
 
 ---
 
@@ -1406,8 +1407,9 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
     (casillas al índice, bonos fijos como Modificador "dote", textos en `textosTirada`),
     `fuentesDeCapa1` con familia "dote". Supuestos S34-S38 (`sistema.md`).
   - **Recuento por tanda** (lo imprime `npm run gen-dotes` y va al pie de `dotes.ts`):
-    construidos 74 · texto 87 · pendientes D2b-1 0 · D2b-2 0 · D2c 0 · D2c-2 0 · D2d 17 ·
+    construidos 90 · texto 88 · pendientes D2b-1 0 · D2b-2 0 · D2c 0 · D2c-2 0 · D2d 0 ·
     tiradas-fijas 10 (estos dependen de la tarea "Tiradas fijas que faltan", más abajo).
+    Antes de D2d: construidos 74 · texto 87 · D2d 17.
     Tras D2a era: construidos 20 · texto 38 · D2b-1 50. Tras D2b-1: construidos 41 · texto
     67 · D2b-2 20 · D2c 33. Tras D2b-2: construidos 45 · texto 78 · D2c 38. Tras D2c-1:
     construidos 72 · texto 81 · D2c-2 8.
@@ -1506,11 +1508,30 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
       - La tanda "D2c-2" se queda en `TANDAS_DOTES` con 0, como las demás cerradas.
       - Tests: `rules/dotesPoderes.test.ts`.
       - [ ] Probar en navegador (flujo O de `docs/pruebas-psionica.md`).
-    - [ ] **D2d** — capas: sube_grado, ventaja con casilla, éxito extra, valor por umbral de
-      ficha, casillas que tocan el daño/categoría letal, fatiga por casilla, margen crítico
-      y la capa nueva de cambio de par (`sistema.md` §9.3). **El bono por umbral de
-      Presencia Imponente depende de la casilla de especialidad de D2a**: cuando D2d lo
-      construya, esa casilla deja de sumar +1 fijo y pasa a +1/+2 según la Fuerza.
+    - [x] **D2d (sin commit ni prueba en navegador)** — casillas que hacen algo
+      más que sumar. 17 → 0 pendientes (16 construidos, 1 texto de tarjeta).
+      - `CondicionTirada` toggle con `ventaja`, `subeGrado`, `aplicado`, `costeFatiga` y
+        `danio` (`condiciones.ts`); `montarTirada` los junta (`TiradaMontada.ventaja`,
+        `subeGrado`, `danio`, `costeFatiga`), `tirarMontada` aplica el fracaso → éxito
+        (`Resultado.cambioGrado`) y `resolverDanio(base, margen, categoria, ajuste)` el daño.
+        El modal tira con `montada.ventaja`; `resumenCasilla` dice qué hace cada casilla.
+      - Una casilla por dote, destino y condición (`dotesEfectos.ts`): Especialidad Médica
+        +1 y crítico con 5 en la misma; Equilibrista (éxito = crítico); Balanceo y Como Pez
+        en el Agua (fracaso → éxito); Ojo Clínico (ventaja, −1 fatiga al tirar); Bioma
+        Predilecto (ventaja en Iniciativa y Subsistencia); Salto Evasivo +1 / Mejorado +2
+        (bono normal, decisión del usuario); Negociación Analítica (Perspicacia en vez de
+        Expresión en Convencer / mentir).
+      - Valor por umbral de ficha: Presencia Imponente +1/+2 (Fuerza ≥ 5) e Imitación +2/+3
+        (Interpretación ≥ 3) en una sola casilla con el valor resuelto (S38 resuelto).
+      - Ventaja en acciones de dote (Apoyo, Violencia Aterradora): casilla en la acción
+        (`dotesAcciones.ts`); fuera las notas de "aplícala a mano".
+      - Daño: Golpe Fatigante −1 (mínimo 0) solo con contundentes o a dos manos
+        (`ArmaMelee.contundente`, filtro `contundente` en `familiaArma`); «Golpe letal» con
+        armas de Escudos (filtro `especialidad`); maniobra **Derribo** (efecto `maniobra`)
+        solo con Derribo Mejorado o Brutal: −2 y daño básico, Brutal sin −2 y «Derribo con
+        acción estándar» que devuelve el bono por éxitos.
+      - Supuestos S66-S71 (`sistema.md`). Tests: `rules/dotesD2d.test.ts`.
+      - [ ] Probar en navegador (casos en el informe de la tanda).
 - [x] D1 probada en navegador (2026-10-15): compra con pool, XP en aprobada, quitar con
   dependientes, requisito roto marcado, Especialidad Médica repetida sin repetir pareja,
   Crítico Mejorado y Bioma Predilecto con texto libre, rechazo del servidor deshaciendo
