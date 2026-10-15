@@ -7,6 +7,7 @@ import {
   setDisciplinaAction,
   addEspecialidadAction,
   removeEspecialidadAction,
+  descartarAvisoEspecialidadesAction,
   saveIdentityAction,
   setEspecieAction,
   resetBuildAction,
@@ -40,6 +41,7 @@ import {
   setDisciplinaValue,
   addEspecialidad,
   removeEspecialidad,
+  descartarAvisoEspecialidades,
   puntosAtributosDisponibles,
   puntosHabilidadesDisponibles,
   equipar,
@@ -384,13 +386,17 @@ export function CharacterSheet({
       },
     );
   };
-  const commitAddEspecialidad = (id: HabilidadId, nombre: string) => {
-    setSheet((s) => addEspecialidad(s, id, nombre, ficha.ajusteCoste));
-    runSave(() => addEspecialidadAction(characterId, id, nombre));
+  const commitAddEspecialidad = (id: HabilidadId, especialidad: string) => {
+    setSheet((s) => addEspecialidad(s, id, especialidad, ficha.ajusteCoste));
+    runSave(() => addEspecialidadAction(characterId, id, especialidad));
   };
-  const commitRemoveEspecialidad = (id: HabilidadId, nombre: string) => {
-    setSheet((s) => removeEspecialidad(s, id, nombre));
-    runSave(() => removeEspecialidadAction(characterId, id, nombre));
+  const commitRemoveEspecialidad = (id: HabilidadId, especialidad: string) => {
+    setSheet((s) => removeEspecialidad(s, id, especialidad));
+    runSave(() => removeEspecialidadAction(characterId, id, especialidad));
+  };
+  const commitDescartarAviso = () => {
+    setSheet((s) => descartarAvisoEspecialidades(s));
+    runSave(() => descartarAvisoEspecialidadesAction(characterId));
   };
   const reset = () => {
     runSave(() => resetBuildAction(characterId), setSheet);
@@ -732,6 +738,7 @@ export function CharacterSheet({
               onSet={commitHabilidad}
               onAddEspecialidad={commitAddEspecialidad}
               onRemoveEspecialidad={commitRemoveEspecialidad}
+              onDescartarAviso={commitDescartarAviso}
             />
           )}
           {activeEfectivo === "dotes" && (

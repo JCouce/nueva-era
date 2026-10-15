@@ -13,7 +13,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
-import { eleccionEspecieSchema } from "@/lib/validation";
+import { eleccionEspecieSchema, especialidadDeHabilidadSchema } from "@/lib/validation";
 import {
   type Sheet,
   defaultSheet,
@@ -262,22 +262,26 @@ export async function setHabilidadNpcAction(
 export async function addEspecialidadNpcAction(
   npcId: string,
   habilidadId: HabilidadId,
-  nombre: string,
+  especialidadId: string,
 ): Promise<NpcResult> {
+  const parsed = especialidadDeHabilidadSchema.safeParse({ habilidadId, especialidadId });
+  if (!parsed.success) return { ok: false, error: "Especialidad inválida para esa habilidad" };
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   // NPC: sin ajuste de casta (§14.3).
-  return persist(npcId, addEspecialidad(ctx.sheet, habilidadId, nombre, AJUSTE_NEUTRO));
+  return persist(npcId, addEspecialidad(ctx.sheet, parsed.data.habilidadId, parsed.data.especialidadId, AJUSTE_NEUTRO));
 }
 
 export async function removeEspecialidadNpcAction(
   npcId: string,
   habilidadId: HabilidadId,
-  nombre: string,
+  especialidadId: string,
 ): Promise<NpcResult> {
+  const parsed = especialidadDeHabilidadSchema.safeParse({ habilidadId, especialidadId });
+  if (!parsed.success) return { ok: false, error: "Especialidad inválida para esa habilidad" };
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(npcId, removeEspecialidad(ctx.sheet, habilidadId, nombre));
+  return persist(npcId, removeEspecialidad(ctx.sheet, parsed.data.habilidadId, parsed.data.especialidadId));
 }
 
 export async function equiparNpcAction(npcId: string, pieza: PiezaEquipada): Promise<NpcResult> {

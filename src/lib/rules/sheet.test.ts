@@ -45,18 +45,31 @@ describe("parseSheet aguanta cualquier cosa", () => {
 
   test("una habilidad sin entrenar no conserva especialidades", () => {
     const s = parseSheet({
-      habilidades: { sigilo: { valor: -1, especialidades: ["Urbano"] } },
+      habilidades: { cultura: { valor: -1, especialidades: ["historia"] } },
     });
+    assert.deepEqual(s.habilidades.cultura.especialidades, []);
+  });
+
+  test("solo ids de esa habilidad, sin repetir y hasta el tope", () => {
+    const s = parseSheet({
+      schemaVersion: SCHEMA_VERSION,
+      habilidades: {
+        atletismo: {
+          valor: 2,
+          especialidades: ["  ", "Carrera", "fisica", "carrera", "nado", "nado", "salto", "escalada", 7, null],
+        },
+        // Sin lista en la fuente: no admite ninguna.
+        sigilo: { valor: 2, especialidades: ["historia"] },
+      },
+    });
+    assert.deepEqual(s.habilidades.atletismo.especialidades, ["carrera", "nado", "salto"]);
     assert.deepEqual(s.habilidades.sigilo.especialidades, []);
   });
 
-  test("se descartan las especialidades vacías y se recorta el exceso", () => {
-    const s = parseSheet({
-      habilidades: {
-        sigilo: { valor: 2, especialidades: ["  ", "A", "B", "C", "D", 7, null] },
-      },
-    });
-    assert.deepEqual(s.habilidades.sigilo.especialidades, ["A", "B", "C"]);
+  test("el aviso de especialidades no reconocidas se conserva recortado", () => {
+    const s = parseSheet({ schemaVersion: SCHEMA_VERSION, avisoEspecialidades: ["Sigilo: Urbano", 7, "  ", "x".repeat(300)] });
+    assert.deepEqual(s.avisoEspecialidades, ["Sigilo: Urbano", "x".repeat(120)]);
+    assert.deepEqual(parseSheet({ schemaVersion: SCHEMA_VERSION }).avisoEspecialidades, []);
   });
 
   test("el texto largo se trunca en lugar de reventar la validación", () => {

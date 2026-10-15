@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { defaultSheet, parseSheet, type Sheet } from "./sheet";
 import { migrar } from "./migraciones";
 import { motorMetadataSchema, erroresDeMotorMetadata } from "./motor";
-import { ESPECIALIDADES_CONOCIDAS } from "./habilidades";
+import { especialidadPorId } from "../catalog/especialidades";
 import {
   DISCIPLINA_MAX,
   nivelDisciplina,
@@ -103,8 +103,10 @@ describe("catálogo de psiónica", () => {
     assert.deepEqual(PSIONICA.sobrecarga.multiplicadorPorGrado, { critico: 0, exito: 0.5, fracaso: 1, fracasoCritico: 2 });
   });
 
-  test("Física, Informática y Biónica son especialidades de Tecnociencia", () => {
-    for (const e of ["Física", "Informática", "Biónica"]) assert.ok(ESPECIALIDADES_CONOCIDAS.tecnociencia?.includes(e), e);
+  test("Física e Informática son de Tecnociencia; Biónica, de Biociencia", () => {
+    assert.equal(especialidadPorId("fisica")?.habilidad, "tecnociencia");
+    assert.equal(especialidadPorId("informatica")?.habilidad, "tecnociencia");
+    assert.equal(especialidadPorId("bionica")?.habilidad, "biociencia");
   });
 });
 

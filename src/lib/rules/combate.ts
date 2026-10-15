@@ -26,6 +26,7 @@ import type { MotorMetadata } from "./motor";
 import { gastoDelModo } from "./recursos";
 import { CONDICION_ATACANTES_ADICIONALES, type Accion, type AccionDirecta } from "./acciones";
 import { atributoEfectivo, aplicado } from "./derivados";
+import { ESPECIALIDAD_ARMA, ESPECIALIDAD_ATAQUE_ESPECIAL, ESPECIALIDAD_LANZAR } from "../catalog/especialidadesArma";
 
 const TRAMOS: TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
 
@@ -284,6 +285,7 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
     grupo: "Ataques",
     aplicado: "reflejos",
     habilidad: "combate_distancia",
+    especialidadArma: ESPECIALIDAD_ARMA[arma.id],
     nota: arma.especial ?? undefined,
     efectos: efectos.length > 0 ? efectos : undefined,
     recursoInstanciaId: instanciaId,
@@ -332,6 +334,7 @@ function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: strin
     grupo: "Ataques",
     aplicado: "reflejos",
     habilidad: "combate_distancia",
+    especialidadArma: ESPECIALIDAD_ATAQUE_ESPECIAL.lanzagranadas_integrado,
     nota: "Acción estándar · cargador 1 · alcance 200 m.",
     ajustesFijos: [{ valor: -2, fuente: "Lanzagranadas acoplado" }],
     condiciones: modo ? [modo] : [],
@@ -369,6 +372,7 @@ function tiradaGolpeBayoneta(sheet: Sheet, mods: ModificadorConFuente[], arma: A
     grupo: "Ataques",
     aplicado: "potencia",
     habilidad: "combate_melee",
+    especialidadArma: ESPECIALIDAD_ATAQUE_ESPECIAL.bayoneta,
     efectoCritico: "Hemorragia (1d6 turnos)",
     ajustesFijos: [{ valor: -1, fuente: "Bayoneta" }],
     ataque: {
@@ -419,6 +423,7 @@ function tiradaDeArmamentoPesado(sheet: Sheet, arma: ArmaPesada, instanciaId: st
       grupo: "Ataques",
       aplicado: "reflejos",
       habilidad: "combate_distancia",
+      especialidadArma: ESPECIALIDAD_ARMA[arma.id],
       nota: `${notaAlcance}Cargador ${arma.cargador}.`,
       ajustesFijos: [{ valor: arma.dificultad, fuente: arma.label }],
       condiciones: modo ? [modo] : [],
@@ -439,6 +444,7 @@ function tiradaDeArmamentoPesado(sheet: Sheet, arma: ArmaPesada, instanciaId: st
     grupo: "Ataques",
     aplicado: "reflejos",
     habilidad: "combate_distancia",
+    especialidadArma: ESPECIALIDAD_ARMA[arma.id],
     nota: `${notaAlcance}${arma.efectos}`,
     ajustesFijos: [{ valor: arma.dificultad, fuente: arma.label }],
     ataque: {
@@ -471,6 +477,7 @@ function tiradaDeGranada(granada: MunicionGranada): Accion {
     grupo: "Ataques",
     aplicado: "potencia",
     habilidad: "atletismo",
+    especialidadArma: ESPECIALIDAD_LANZAR,
     nota: `${granada.areaEfecto} · Alcance ${ALCANCE_ARROJADA}.`,
     ajustesFijos: [{ valor: granada.dificultadArrojada, fuente: granada.label }],
     ataque: {
@@ -582,6 +589,7 @@ function tiradaDeArmaMelee(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
     // no cambia en ningún caso, solo el aplicado.
     aplicadoSutil: esSutil ? "reflejos" : undefined,
     habilidad: "combate_melee",
+    especialidadArma: ESPECIALIDAD_ARMA[arma.id],
     nota,
     efectoCritico: arma.efectoCritico,
     ...(esDesarmado && { desarmado: true as const }),
@@ -614,6 +622,9 @@ function tiradaDeArmaMelee(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
 // elegir bloquear "a lo bruto" con un arma Sutil) — mismo toggle que el
 // ataque, `aplicado: "potencia"` por defecto y `aplicadoSutil: "reflejos"`
 // como opción si el arma lo admite.
+// TODO(revisar): el bloqueo no lleva `especialidadArma` (tanda ESP: solo ataques), así que
+// sigue con el selector de especialidad de la fila; si bloquear con un arma también usa su
+// especialidad, se le pone ESPECIALIDAD_ARMA[arma.id] como al ataque.
 function tiradaBloqueoDeArmaMelee(arma: ArmaMelee, instanciaId: string): Accion {
   return {
     id: `bloquear_melee_${instanciaId}`,
@@ -644,6 +655,7 @@ function tiradaLanzarArmaMelee(sheet: Sheet, mods: ModificadorConFuente[], arma:
     grupo: "Ataques",
     aplicado: "potencia",
     habilidad: "atletismo",
+    especialidadArma: ESPECIALIDAD_LANZAR,
     nota: [`Alcance ${ALCANCE_ARROJADA}.`, arma.efectos].filter(Boolean).join(" · "),
     efectoCritico: arma.efectoCritico,
     ignoraBlindaje: arma.ignoraBlindaje ? { valor: arma.ignoraBlindaje, fuente: arma.label } : undefined,
@@ -756,6 +768,9 @@ function tiradaDeProyectorPulso(
     grupo: "Ataques",
     aplicado: "reflejos",
     habilidad,
+    // TODO(revisar): con Tecnociencia el disparo no tiene especialidad de arma (ninguna de
+    // Tecnociencia encaja): esa fila sigue con el selector de especialidad de siempre.
+    especialidadArma: habilidad === "combate_distancia" ? ESPECIALIDAD_ATAQUE_ESPECIAL.proyector_pulso_disparo : undefined,
     nota,
     recursoInstanciaId: pieza.instanciaId,
     recursoUnidad: "cargas",
@@ -792,6 +807,7 @@ function tiradaGolpeAguijon(sheet: Sheet, mods: ModificadorConFuente[], pieza: P
     grupo: "Ataques",
     aplicado: "reflejos", // Sutil
     habilidad: "combate_melee",
+    especialidadArma: ESPECIALIDAD_ATAQUE_ESPECIAL.proyector_pulso_aguijon,
     nota: [
       "Repliega el emisor a un pincho corto de energía y lo descarga a bocajarro, casi sin gesto — Sutil.",
       `Duración ${nivel} turno(s) · Efecto Shock (${4 + nivel}) · Crítico Hemorragia.`,

@@ -7436,35 +7436,6 @@ export const DOTES: readonly DoteCatalogo[] = [
   }
 ];
 
-// Nombre legible de las especialidades citadas en requisitos (id → nombre de dotes.md).
-// TODO(revisar): provisional hasta el catálogo de especialidades (docs/tareas.md, "Dotes").
-export const NOMBRES_ESPECIALIDAD_DOTES: Readonly<Record<string, string>> = {
-  "acrobacias": "Acrobacias",
-  "bionica": "Biónica",
-  "bioquimica": "Bioquímica",
-  "biotecnologia": "Biotecnología",
-  "carrera": "Carrera",
-  "empatia": "Empatía",
-  "equilibrio": "Equilibrio",
-  "escalada": "Escalada",
-  "escapismo": "Escapismo",
-  "escudos": "Escudos",
-  "humor": "Humor",
-  "ingenieria_genetica": "Ingeniería Genética",
-  "intimidacion": "Intimidación",
-  "investigacion": "Investigación",
-  "lanzamiento": "Lanzamiento",
-  "liderazgo": "Liderazgo",
-  "manipulacion": "Manipulación",
-  "medicina": "Medicina",
-  "nado": "Nado",
-  "negociacion": "Negociación",
-  "pelea": "Pelea",
-  "salto": "Salto",
-  "supervivencia": "Supervivencia",
-  "tactica": "Táctica"
-};
-
 // Recuento por tanda (lo escribe el generador):
 //   188 efectos (185 en el borrador)
 //   construidos: 20

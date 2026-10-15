@@ -203,7 +203,7 @@ function fichaLlena(): Sheet {
     peso: 140,
     trasfondo: "Forjador",
     motivacion: "Venganza",
-    habilidades: { ...s.habilidades, atletismo: { valor: 2, especialidades: ["Trepar"] } },
+    habilidades: { ...s.habilidades, atletismo: { valor: 2, especialidades: ["escalada"] } },
     psionica: { resonancia: 2 },
     materiales: { sencillos: 3, sofisticados: 0, avanzados: 0 },
     vidaActual: 4,

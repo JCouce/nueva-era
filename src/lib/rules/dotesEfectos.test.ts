@@ -12,7 +12,8 @@ import { valoresRequisitoDeFicha } from "./dotes";
 import { fuentesDeCapa1 } from "./capa1";
 import { nivelesDePsionica, SIN_BONOS_DISCIPLINA } from "./psionica";
 import type { AlcanceModificador, GrupoAccion } from "./modificadores";
-import { DOTES, NOMBRES_ESPECIALIDAD_DOTES } from "../catalog/dotes";
+import { DOTES } from "../catalog/dotes";
+import type { EspecialidadId } from "../catalog/especialidades";
 import { DESTINOS_DOTES, EXCEPCIONES_TANDA, TANDAS_DOTES, type TandaDote } from "../catalog/dotesDestinos";
 import type { DoteComprada } from "./dotesCompradas";
 
@@ -111,10 +112,10 @@ describe("catálogo de dotes: efectos (D2a)", () => {
 // habilidades a 5, con todas las especialidades que piden los requisitos.
 function fichaCapaz(dotes: DoteComprada[]): Sheet {
   const base = defaultSheet();
-  const especialidades: Record<string, string[]> = {};
+  const especialidades: Record<string, EspecialidadId[]> = {};
   for (const d of DOTES)
     for (const r of d.requisitos.flatMap((x) => (x.tipo === "uno_de" ? x.opciones : [x])))
-      if (r.tipo === "especialidad") (especialidades[r.habilidad] ??= []).push(NOMBRES_ESPECIALIDAD_DOTES[r.id] ?? r.id);
+      if (r.tipo === "especialidad") (especialidades[r.habilidad] ??= []).push(r.id);
   return {
     ...base,
     atributos: Object.fromEntries(Object.keys(base.atributos).map((k) => [k, 5])) as Sheet["atributos"],

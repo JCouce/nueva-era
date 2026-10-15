@@ -133,7 +133,18 @@ habilidades. Se sustituye la habilidad entera, no se añade como especialidad de
   - Una **segunda especialidad** dentro de la misma habilidad cuesta **1 punto**.
 
 > **Implementación:** una habilidad deja de ser un entero y pasa a ser
-> `{ valor: number, especialidades: string[] }`.
+> `{ valor: number, especialidades: EspecialidadId[] }` (ids del catálogo de abajo;
+> `SCHEMA_VERSION` 17, tanda ESP 2026-10-15).
+
+- **Habilidad sin lista de especialidades** (Interpretación, Sigilo): no admite ninguna y se
+  tira siempre con el valor entero (supuesto S39). La regla "al entrenar se escoge una
+  especialidad" no se exige en ningún sitio (ni pasos de personaje ni envío a revisión): la
+  primera especialidad va incluida (S3), pero elegirla no bloquea nada.
+- **Ataques con arma: la especialidad la pone el arma** (tanda ESP, decisión del usuario). Cada
+  arma tiene la suya (`src/lib/catalog/especialidadesArma.ts`, revisable a mano); si la ficha
+  la tiene en la habilidad con la que ataca, la tirada va entera sin tocar nada, y si no, a
+  la mitad. La fila del ataque no ofrece selector. El resto de tiradas (bloqueos incluidos,
+  S40) siguen con el selector sí/no de la fila.
 
 ## 2.5 / 3.5 Coste y progresión `[FIRME · HOJA2]`
 
@@ -189,19 +200,36 @@ Potencia (por defecto) o Reflejos+Potencia-para-daño (`aplicadoSutil`/`danioSut
 (`sustitucion_aplicado`, ver `docs/motor.md`) porque no pasa por `CondicionTirada` — su
 valor depende de la ficha (Potencia - Fuerza), no es un número fijo del catálogo.
 
-### Catálogo de especialidades `[PARCIAL]`
+### Catálogo de especialidades `[FIRME · docs/fuente/habilidades.md + usuario 2026-10-15]`
 
-Ninguna fuente lo lista, pero entre `EQUIP` y `COMBATE` ya aparecen citadas de pasada:
+Lista cerrada, sacada de la línea "Especialidades:" de cada habilidad en
+`docs/fuente/habilidades.md`. En código: `src/lib/catalog/especialidades.ts` (`{ id, label,
+habilidad }`, ids estables en snake_case sin tildes; añadir una es una fila). 42 en total.
 
-| Habilidad | Especialidades vistas | Dónde |
-|---|---|---|
-| Tecnociencia | Mecánica | `EQUIP` |
-| Biociencia | Química, Bioquímica, Medicina | `EQUIP`, `COMBATE` |
-| Actitud | Empatía, Manipulación, Liderazgo | `COMBATE` |
-| Combate Melee | Pelea | `COMBATE` |
-| ¿? | **Exploración** (ver conflicto C4), Equilibrio | `COMBATE` |
+| Habilidad | Especialidades (id) |
+|---|---|
+| Actitud (6) | Empatía `empatia`, Humor `humor`, Intimidación `intimidacion`, Liderazgo `liderazgo`, Manipulación `manipulacion`, Negociación `negociacion` |
+| Atletismo (8) | Acrobacias, Carrera, Equilibrio, Escalada, Escapismo, Lanzamiento, Nado, Salto (`salto`: la fuente lista "Salto" y describe Horizontal y Vertical) |
+| Biociencia (5) | Biónica `bionica`, Bioquímica `bioquimica`, Biotecnología `biotecnologia`, Ingeniería Genética `ingenieria_genetica`, Medicina `medicina` |
+| Combate Melee (6) | Armas Cortas `armas_cortas`, Armas de Asta `armas_de_asta`, Escudos `escudos`, Espadas y Dagas `espadas_y_dagas`, Flagelos `flagelos`, Pelea `pelea` |
+| Combate a Distancia (5) | Armas Arrojadizas `armas_arrojadizas`, Armas Elásticas `armas_elasticas`, Armas de Fuego Cortas `armas_de_fuego_cortas`, Armas de Fuego Largas `armas_de_fuego_largas` (la fuente dice "Larga" *(sic)*), Armas Pesadas `armas_pesadas` |
+| Cultura (4) | Economía `economia`, Historia `historia`, Lingüística `linguistica`, Sociedad `sociedad` |
+| Exploración (3) | Investigación `investigacion`, Táctica `tactica`, Supervivencia `supervivencia` |
+| Tecnociencia (5) | Astrografía `astrografia`, Física `fisica`, Informática `informatica`, Mecánica `mecanica`, Química `quimica` |
+| Interpretación, Sigilo | — (la fuente no trae lista: no admiten especialidades, S39) |
 
-Falta el catálogo completo de las 10 habilidades.
+Rastreo, Subsistencia y Trato con Animales son **acciones** de Supervivencia, no
+especialidades. Química es de Tecnociencia y Biónica de Biociencia (la fuente manda sobre lo
+citado de pasada en `EQUIP`).
+
+**Especialidad por arma** (`especialidadesArma.ts`): cada grupo de Combate Melee del catálogo
+de equipo va a la especialidad de su nombre; pistolas a Armas de Fuego Cortas; escopetas,
+subfusiles, fusiles y ametralladoras a Largas; armamento pesado a Armas Pesadas; lanzar (arma
+arrojadiza o granada, Potencia + Atletismo) a Lanzamiento. Las dudosas llevan
+`TODO(revisar)` en la tabla (Armas Mecánicas, Kerzul mixtas, subfusiles, ametralladoras,
+Bayoneta, Lanzagranadas integrado, Proyector de Pulso). Un test obliga a que toda fila de
+ataque con arma tenga una especialidad de la habilidad con la que ataca (salvo el disparo del
+Proyector de Pulso con Tecnociencia, sin especialidad a propósito).
 
 ## 4. Salud `[FIRME · HOJA]`
 
@@ -688,7 +716,8 @@ al preparar su modelado:
 - **Porcentajes de alcance** (Derivación Psiónica n2, pregunta 33): valen tal cual; el alcance
   es informativo (metros/km) y multiplicarlo no exige un tipo de bono nuevo.
 - **"Informática", "Física", "Mecánica", "Medicina", "Biónica"** son especialidades de
-  Tecnociencia/Biociencia (cierra la duda de "Informática" de 10.5).
+  Tecnociencia/Biociencia (cierra la duda de "Informática" de 10.5). En el catálogo de poderes
+  van por id (`fisica`, `informatica`; tanda ESP).
 - **Efectos mantenidos se acumulan** (varios poderes activos a la vez).
 - **Estados nuevos** que nombra la psiónica (asustado, aterrorizado, confuso crítico,
   indefenso, coma, asfixia…): se apuntan en la lista de estados y se parametrizan más
@@ -1128,7 +1157,8 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 > **E3 construida:** movimiento, carga y armadura natural por especie (14.7).
 > **E4 construida** (2026-10-13): casillas, −1 a distancia del Arköru, "éxito → crítico",
 > un tramo menos de penalizador (Guerrero, Siervo) y los textos en su tirada (14.8, 14.10).
-> El fallo → fallo crítico de Elión queda **bloqueado** por la pregunta 3.
+> El fallo → fallo crítico de Elión queda **bloqueado** por la pregunta 3 (desde la tanda ESP,
+> por la tarea "La tirada sabe qué especialidad se usa": la lista cerrada ya existe).
 > **E5 construida** (2026-10-13): peaje neurológico del Maolher, nota de fármacos del Irota
 > y "Activar visión" del Arianyi y del Axadren (14.9). Con E5 queda construido todo lo
 > construible de especies; lo que falta está bloqueado (bolsa de aumentos, descanso y
@@ -1367,7 +1397,7 @@ rasgo (usuario, §5b de la propuesta).
 | Irota | Éxito cuenta como crítico en salvaciones contra toxinas, venenos y enfermedades | Casilla en la **Salvación de Fortaleza**, visible solo para Irota (usuario, 2026-10-09) |
 | Axadren | Éxito cuenta como crítico en alerta contra enemigos ocultos | Casilla "¿enemigo oculto?" en Alerta activa y Buscar/percibir (M22). La Alerta pasiva no tira dado |
 | Elión | Éxito cuenta como crítico contra efectos sugestivos | Casilla en la **Salvación de Voluntad**, visible solo para Elión (usuario, 2026-10-09) |
-| Elión | Fallo cuenta como fallo crítico en Empatía, Humor o Negociación | **Bloqueado** por la pregunta 3 (especialidades en lista cerrada, S5). Forma decidida (usuario, 2026-10-13): con especialidades por id, al tirar se elige **qué** especialidad se usa (no solo sí/no), y con Empatía, Humor o Negociación el fallo crítico se aplica solo, sin casilla. Sustituye a la casilla de M17 |
+| Elión | Fallo cuenta como fallo crítico en Empatía, Humor o Negociación | **Bloqueado** por la tarea "La tirada sabe qué especialidad se usa" (`docs/tareas.md`): la lista cerrada ya existe (tanda ESP, S5 cerrado), pero la tirada solo sabe sí/no. Forma decidida (usuario, 2026-10-13): con especialidades por id, al tirar se elige **qué** especialidad se usa (no solo sí/no), y con Empatía, Humor o Negociación el fallo crítico se aplica solo, sin casilla. Sustituye a la casilla de M17 |
 
 **Penalizadores por umbral** `[FIRME · ESP + usuario M12]`
 - **Guerrero:** heridas un punto menos por tramo: −1/−3/−5 → 0/−2/−4.
@@ -1458,7 +1488,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S2 | Una habilidad **no puede valer 0**: o está sin entrenar (−1) o vale 1 como mínimo. | `HOJA` solo contempla "no entrenada = −1" y valores entrenados. El 0 no aparece. |
 | S3 | Al entrenar, la **primera especialidad va incluida**; a partir de la segunda cuesta 1 punto. | `HOJA` dice que al entrenar "se debe escoger una especialidad" y que "una segunda especialidad tiene de coste 1 punto". |
 | S4 | Tope de **3 especialidades** por habilidad. | **Murillo (2026-09-23) confirma que las reglas no ponen tope, solo el coste en experiencia.** Se mantiene el 3 igualmente, como límite de interfaz deliberado (decisión del usuario, 2026-09-23: la diferencia es menor, no compensa tocarlo ahora) — ya no es un hueco de regla, es UX. |
-| S5 | Las especialidades son **texto libre**. | No existe catálogo todavía. Cuando llegue, se cambia a lista cerrada. **Lo espera §14.8**: el fallo crítico de Elión (Empatía, Humor o Negociación) queda bloqueado hasta la lista cerrada (usuario, 2026-10-13, sustituye a M17). |
+| ~~S5~~ | ~~Las especialidades son **texto libre**.~~ **Cerrado (tanda ESP, 2026-10-15):** lista cerrada por id desde `docs/fuente/habilidades.md` (§3, `catalog/especialidades.ts`). | El fallo crítico de Elión (§14.8) sigue bloqueado, ahora por la tarea "La tirada sabe qué especialidad se usa". |
 | ~~S6~~ | ~~El movimiento no baja de 0.~~ **Superado (Murillo, 2026-09-23):** el salto vertical tiene mínimo **15 cm**, no 0; el resto de fórmulas de movimiento sigue cortándose en 0 (no preguntado, no respondido). El mínimo de 15 cm vale también para el salto vertical del Arköru (usuario, M23, §14.7). | Se queda aquí tachado como rastro — igual que S1. |
 | S7 | En creación el tope es **4** tanto en atributos como en habilidades; 6 es el techo del sistema, alcanzable en partida con puntos que reparte el máster. | `HOJA2` sube el "4/5" y "3/5" de `HOJA` a "4/6" en los dos, unificando el máximo de creación. La partición 4-creación/6-techo la confirma el usuario (2026-09-10); falta que Murillo la valide con una fórmula de progresión concreta. **Especies (usuario, M1-M2, 2026-10-09):** el 4 y el 6 miran solo lo comprado; el bono de especie va aparte y el total puede superarlos (§14.2). |
 | S8 | El **valor de Atletismo** que entra en las fórmulas de movimiento es el valor puro, sin aplicar la mitad por estar fuera de especialidad. | Las fórmulas de `HOJA` dicen "Potencia + Atletismo" a secas. |
@@ -1484,14 +1514,20 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S28 | Las reducciones de §7 **redondean hacia abajo** (carrera 21 → 10; carga 45 × 0,75 → 33). | El documento no da redondeo. Hacia abajo es lo conservador para un penalizador. Propuesta por defecto implementada en M1b (2026-10-13), pendiente de Murillo (pregunta 39). |
 | S29 | La reducción de carga de §7 va **al final, sobre la carga ya multiplicada por la especie** (Arköru: Fuerza 4 → 96 kg, Malherido → 72, Moribundo → 48). | Los dos son porcentajes sobre el mismo número: el orden solo cambia el redondeo, pero hay que fijarlo. Propuesta por defecto implementada en M1b (2026-10-13), pendiente de Murillo (pregunta 40). |
 | S30 | Los **requisitos de dote** (§9.1, "especie incluida") miran atributos, aplicados, habilidades y disciplinas **con los modificadores de especie solamente**: ni equipo ni estados de combate ni umbrales de salud/fatiga. La habilidad cuenta entera (no la mitad fuera de especialidad) más el bono de especie; la disciplina, su nivel efectivo (Resonancia +1 del Arianyi incluida); "psiónica de origen biológico" = alguna disciplina efectiva > 0 (hueco para el implante en `psionicaPorImplante`, `dotes.ts`). `TODO(revisar)` en `dotes.ts`. | Lectura literal de §9.1: un requisito no debería romperse por quitarse una pieza o por estar herido. Tanda D1 (2026-10-15), pendiente de que el usuario confirme si el equipo debe contar. |
-| S31 | **Especialidad en requisitos de dote**: se compara por **nombre normalizado** (minúsculas, sin tildes, espacios y "_" equivalentes) entre el texto libre de la ficha y el id del requisito ("Ingeniería Genética" ↔ `ingenieria_genetica`), y solo dentro de la habilidad del requisito. | Las especialidades son texto libre (`habilidades.ts`) hasta que llegue su catálogo (`docs/tareas.md`, "Dotes"); entonces esto se sustituye. Tanda D1 (2026-10-15). |
+| ~~S31~~ | ~~Especialidad en requisitos de dote por nombre normalizado.~~ **Cerrado (tanda ESP, 2026-10-15):** los requisitos comparan **ids** del catálogo; el generador de dotes falla si un id del borrador no es una especialidad de la habilidad del requisito (tabla de equivalencias en el script, hoy vacía). Los nombres legibles salen del catálogo (adiós a `NOMBRES_ESPECIALIDAD_DOTES`). | — |
 | S32 | **Ficha aprobada: ninguna dote se vende**, ni las de la foto de aprobación ni las compradas después con XP (mismo criterio que atributos, habilidades y disciplinas aprobados, que solo suben). La foto (`approvedSnapshot.dotes`, opcional para no invalidar las fotos viejas) dice cuáles venían de creación. `TODO(revisar)` en `dotes.ts` (`motivoNoQuitable`). | El usuario fijó "una dote de la foto no se quita"; para las compradas con XP no dijo nada, y quitarlas sin devolver XP pierde XP y devolviéndola es vender. Lo conservador: nada. Tanda D1 (2026-10-15). |
 | S33 | **Lectura tolerante de `sheet.dotes`**: una entrada sin la elección que su dote exige, o con una fuera de la lista cerrada, **se descarta entera** (no se queda la dote sin elección); una elección abierta se recorta a 60 caracteres; a una dote sin elección se le quita la que traiga. | "Descartar elecciones que no encajan" (encargo D1) leído como descartar la compra: una *Especialidad Médica* sin pareja no significa nada. Ninguna ficha tiene dotes todavía, así que no se pierde nada real. Tanda D1 (2026-10-15). |
 | S34 | **Dote con requisito no cumplido: sin efecto.** Mientras una dote lleve la marca de D1 ("requisito no cumplido"), no pone casillas, bonos ni textos (`dotesActivas`, `rules/dotesEfectos.ts`), y no cuenta en `fuentesDeCapa1`. Sin cascada: una dote cuyo requisito es otra dote marcada sigue valiendo (la marca tampoco la propaga). Una mejorada marcada no sustituye a la básica. NPC del máster (modo libre): no se miran requisitos (§9.4). | Lo conservador: que una dote que ya no se cumple no siga sumando. Igual que la psiónica con requisito roto (S25). Tanda D2a (2026-10-15), pendiente de que el usuario lo confirme. |
-| S35 | **Bono de especialidad = casilla en la habilidad.** La tirada solo sabe si vas en especialidad, no en cuál: un bono con alcance de especialidad va como casilla en la habilidad (o habilidad + grupo), con la especialidad en la etiqueta, y la marca el jugador si tira con ella. También si el borrador lo da como siempre activo. *Presencia Imponente*: casilla +1 en las tiradas de Actitud ("Convencer / mentir" e "Iniciativa (distrayendo)"), con "+2 con Fuerza ≥ 5, súmalo a mano" en la etiqueta. | Decisión del usuario (D2a, 2026-10-15). Se sustituye cuando la tirada sepa qué especialidad se usa (S5 / pregunta 3). |
+| S35 | **Bono de especialidad = casilla en la habilidad.** *(Sigue en pie tras ESP: se sustituye con la tarea "La tirada sabe qué especialidad se usa".)* La tirada solo sabe si vas en especialidad, no en cuál: un bono con alcance de especialidad va como casilla en la habilidad (o habilidad + grupo), con la especialidad en la etiqueta, y la marca el jugador si tira con ella. También si el borrador lo da como siempre activo. *Presencia Imponente*: casilla +1 en las tiradas de Actitud ("Convencer / mentir" e "Iniciativa (distrayendo)"), con "+2 con Fuerza ≥ 5, súmalo a mano" en la etiqueta. | Decisión del usuario (D2a, 2026-10-15). Se sustituye cuando la tirada sepa qué especialidad se usa (S5 / pregunta 3). |
 | S36 | **Rastreo, Subsistencia e Investigación van a "Buscar / percibir".** No tienen tirada propia; sus casillas (*Rastreo al Paso*, *Bioma Predilecto*, *Descartar Teoría*) van a la única tirada de Exploración del grupo Acciones (mismo aplicado y habilidad), con la acción en la etiqueta, y sus textos a su nota. No a "Iniciativa (habitual)". Es un apaño: se mueven a su tirada cuando exista (tarea "Tiradas fijas que faltan según habilidades.md"). | Mismo criterio que S35 a falta de tirada propia. Tanda D2a (2026-10-15); aceptado como apaño por el usuario (2026-10-16). |
 | S37 | ***Movimiento Sigiloso*: casilla de opción sin el penalizador.** La dote pone en Sigilo una casilla "moviéndote oculto" con lo que reduce en cada ritmo (mitad, total, esprint), pero la tirada de Sigilo de la app no lleva el penalizador por moverse oculto (−2/−4/−8, `docs/fuente/habilidades.md`): ese sigue a mano. La etiqueta dice cuánto compensa ("Moviéndome oculto: reduce 2 (Movimiento Sigiloso)", "reduce hasta 4" en la Mejorada). *Movimiento Sigiloso Constante* ("sin penalizador") no es un número fijo: texto en Sigilo, sin casilla. | Añadir el penalizador a Sigilo sería una regla nueva fuera de la tanda. Tanda D2a (2026-10-15); etiqueta y Constante, usuario 2026-10-16. |
 | S38 | **Bono con umbral de ficha, partido.** *Presencia Imponente* (+2 con Fuerza ≥ 5) e *Imitación* (+3 con Interpretación ≥ 3): D2a pone la casilla con el valor base y el aviso del umbral en la etiqueta; la parte del umbral es otro efecto, pendiente de D2d (valor por umbral de ficha), que al construirse sustituye a la casilla base. | Decisión del usuario (D2a, 2026-10-15) para Presencia Imponente; Imitación por el mismo patrón. |
+| S39 | **Habilidad sin lista de especialidades (Interpretación, Sigilo): siempre entera.** No admite especialidades y la tirada usa el valor entero, no la mitad (`valorEfectivo`, `derivados.ts`). `TODO(revisar)`. | La regla de §3 es "en la escogida, entera; en el resto, la mitad": sin lista no hay "resto". Con la mitad, nadie podría tirar Sigilo entero nunca. Tanda ESP (2026-10-15), pendiente de confirmar. **Confirmado por el usuario (Especialidades ESP, 2026-10-16)**; nota suya: probablemente falten especialidades por decidir en la fuente y se corrija más adelante. |
+| S40 | **La especialidad automática del arma solo va en los ataques**, no en "Bloquear con X" (tampoco el bloqueo de la Bayoneta ni el del Aguijón): el bloqueo sigue con el selector de la fila. `TODO(revisar)` en `combate.ts`. | El encargo decía "ataques con arma". Si el bloqueo también usa la del arma, es una línea por bloqueo. Tanda ESP (2026-10-15). **Cambia (usuario, Especialidades ESP, 2026-10-16): los bloqueos también usan la especialidad del arma**, como los ataques; se construye con D2b-1. |
+| S41 | **Lanzar (arma melee arrojadiza o granada) usa Lanzamiento (Atletismo)**, no Armas Arrojadizas (Combate a Distancia), porque la tirada es Potencia + Atletismo (INFERIDO 2026-09-28). `TODO(revisar)` en `especialidadesArma.ts`. | La especialidad tiene que ser de la habilidad con la que se tira. Tanda ESP (2026-10-15). **Confirmado por el usuario (Especialidades ESP, 2026-10-16).** |
+| S42 | **Migración v17**: cada texto de especialidad se casa por nombre normalizado (sin tildes ni mayúsculas, sin la "s" final de cada palabra) con una especialidad de **su** habilidad; lo que no casa se quita y se guarda en `avisoEspecialidades` (la pestaña Habilidades lo enseña con un botón para descartarlo). La elección de *Crítico Mejorado* se casa igual con una especialidad de arma; si no casa, la dote se quita (y va al aviso). | Decisión del usuario (ESP): no hay fichas activas, no se inventan equivalencias (Biónica en Tecnociencia o Química en Biociencia van al aviso). |
+| S43 | ***Crítico Mejorado*: lista cerrada de especialidades de arma** (todas las de Combate Melee y a Distancia, Pelea y Escudos incluidas), y solo las que la ficha tiene **en la habilidad con la que cumple el requisito** (≥ 3). `TODO(revisar)` si Pelea o Escudos no cuentan como "especializaciones en armas". | Prosa: "una de sus especializaciones en armas para la habilidad con la que cumpla el requisito". Tanda ESP (2026-10-15). **Confirmado por el usuario (Especialidades ESP, 2026-10-16): Pelea y Escudos cuentan.** |
+| S44 | **Armas de fuego por empleo**: a una mano, Armas de Fuego Cortas; a dos manos, Largas; ametralladoras, Largas (no Pesadas). Armas Mecánicas, Kerzul mixtas (Espadas y Dagas), Bayoneta, lanzagranadas integrado y Proyector de Pulso: como los dejó la tanda ESP (`especialidadesArma.ts`). | Usuario, Especialidades ESP (2026-10-16). Hoy la regla da lo mismo que la tabla (los subfusiles son a dos manos); se construye como regla con D2b-1 para armas futuras. |
 
 ## Conflictos detectados
 
@@ -1518,11 +1554,9 @@ Agrupadas para soltarlas en tandas. Se tachan según lleguen respuestas.
 **Sobre la ficha ya implementada** (cada una valida o tumba un supuesto)
 1. ~~"Máxima puntuación 4/5" y "3/5"~~ **`HOJA2` los sube a "4/6" en los dos** (antes eran distintos entre sí). ~~Sigue abierto si el 4 es de creación y el 6 techo del sistema, o el 6 se alcanza de otra forma.~~ **Resuelta (usuario, 2026-09-10):** el 4 es el tope de creación; el 6 se alcanza en partida, con puntos adicionales que el máster reparte durante la aventura. *(S7)*
 2. ~~¿Los atributos aplicados tienen tope propio, o son libremente la suma?~~ **Resuelta (usuario, 2026-09-10):** es una media, no una suma — ya implementado así (ver S11). No hay tope propio aparte del redondeo.
-3. Catálogo de especialidades de cada una de las 10 habilidades. *(S5)* — **Parcialmente
-respondida (Murillo, 2026-09-23): "existe el catálogo de las especialidades: están
-descritas pero no desarrolladas."** Confirma que hay un catálogo en camino, pero no
-entrega la lista — sigue sin haber nada concreto que transcribir. Sin cambio de producto,
-`S5` sigue en pie.
+3. ~~Catálogo de especialidades de cada una de las 10 habilidades. *(S5)*~~ **Resuelta
+(`docs/fuente/habilidades.md`, integrado en la tanda ESP, 2026-10-15):** lista cerrada en §3;
+Interpretación y Sigilo no traen lista (S39). Cierra S5 y S31.
 4. ~~¿Cuántas especialidades puede tener una habilidad como máximo?~~ **Resuelta
 (Murillo, 2026-09-23): sin límite, siempre que se pague la experiencia pertinente** ("que
 no es demasiada"). **Decisión de producto (2026-09-23, el usuario): se deja el tope de 3

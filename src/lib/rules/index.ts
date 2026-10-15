@@ -2,7 +2,8 @@
 // "@/lib/rules"; el reparto interno en módulos es un detalle de organización.
 //
 //   atributos.ts   los 6 básicos y los 6 aplicados, con sus límites
-//   habilidades.ts las 10 habilidades y las reglas de especialidad
+//   habilidades.ts las 10 habilidades y las reglas de especialidad (catálogo de
+//                  especialidades: catalog/especialidades.ts; por arma: especialidadesArma.ts)
 //   sheet.ts       forma de la ficha, validación Zod y lectura tolerante
 //   derivados.ts   lo que se calcula y nunca se guarda
 //   formulaMovimiento.ts  constantes del movimiento general, que una especie puede cambiar
@@ -81,3 +82,4 @@ export * from "../catalog/estados";
 export * from "../catalog/psionica";
 export * from "../catalog/dotes";
 export * from "../catalog/dotesTipos";
+export * from "../catalog/especialidades";

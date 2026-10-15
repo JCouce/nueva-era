@@ -30,12 +30,4 @@ export const HABILIDAD_MAX = 6; // HOJA2: techo del sistema sube de 5 a 6
 export const COSTE_ESPECIALIDAD_EXTRA = 1; // la primera va incluida al entrenar
 export const MAX_ESPECIALIDADES = 3;
 
-// Especialidades citadas de pasada en los documentos; no hay catálogo cerrado
-// todavía (docs/sistema.md, pregunta 3), así que son texto libre y esto solo
-// alimenta sugerencias en la UI.
-export const ESPECIALIDADES_CONOCIDAS: Partial<Record<HabilidadId, string[]>> = {
-  tecnociencia: ["Mecánica", "Física", "Informática", "Biónica"],
-  biociencia: ["Medicina", "Química", "Bioquímica"],
-  actitud: ["Empatía", "Manipulación", "Liderazgo"],
-  combate_melee: ["Pelea"],
-};
+// Catálogo de especialidades por habilidad (lista cerrada, ids): catalog/especialidades.ts.

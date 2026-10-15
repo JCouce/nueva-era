@@ -82,11 +82,11 @@ describe("E4: datos del catálogo", () => {
     }
   });
 
-  test("Elión, fallo → fallo crítico: bloqueado por la pregunta 3, sin casilla", () => {
+  test("Elión, fallo → fallo crítico: bloqueado hasta que la tirada sepa qué especialidad se usa, sin casilla", () => {
     const elion = ESPECIES.find((e) => e.id === "manduk")!.linajes!.opciones.find((l) => l.id === "elion")!;
     const rigidez = elion.rasgos.find((r) => r.id === "rigidez_narcisista")!;
     assert.equal(rigidez.casillas, undefined);
-    assert.ok(rigidez.motor.every((m) => m.estado === "bloqueado" && m.bloqueoPor?.includes("pregunta 3")));
+    assert.ok(rigidez.motor.every((m) => m.estado === "bloqueado" && m.bloqueoPor?.includes("La tirada sabe qué especialidad se usa")));
   });
 });
 

@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
-import { characterCreateSchema, characterIdSchema, eleccionEspecieSchema } from "@/lib/validation";
+import {
+  characterCreateSchema,
+  characterIdSchema,
+  eleccionEspecieSchema,
+  especialidadDeHabilidadSchema,
+} from "@/lib/validation";
 import {
   type Sheet,
   parseSheet,
@@ -11,6 +16,7 @@ import {
   setHabilidadValue,
   addEspecialidad,
   removeEspecialidad,
+  descartarAvisoEspecialidades,
   resetBuild,
   equipar,
   desequipar,
@@ -329,21 +335,32 @@ export async function setPrioridadAction(
 export async function addEspecialidadAction(
   characterId: string,
   habilidadId: HabilidadId,
-  nombre: string,
+  especialidadId: string,
 ): Promise<SaveResult> {
+  const parsed = especialidadDeHabilidadSchema.safeParse({ habilidadId, especialidadId });
+  if (!parsed.success) return { ok: false, error: "Especialidad inválida para esa habilidad" };
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, addEspecialidad(ctx.sheet, habilidadId, nombre, ctx.ajuste));
+  return persist(characterId, addEspecialidad(ctx.sheet, parsed.data.habilidadId, parsed.data.especialidadId, ctx.ajuste));
 }
 
 export async function removeEspecialidadAction(
   characterId: string,
   habilidadId: HabilidadId,
-  nombre: string,
+  especialidadId: string,
 ): Promise<SaveResult> {
+  const parsed = especialidadDeHabilidadSchema.safeParse({ habilidadId, especialidadId });
+  if (!parsed.success) return { ok: false, error: "Especialidad inválida para esa habilidad" };
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, removeEspecialidad(ctx.sheet, habilidadId, nombre));
+  return persist(characterId, removeEspecialidad(ctx.sheet, parsed.data.habilidadId, parsed.data.especialidadId));
+}
+
+// Fuera el aviso de especialidades no reconocidas por la migración v17.
+export async function descartarAvisoEspecialidadesAction(characterId: string): Promise<SaveResult> {
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, descartarAvisoEspecialidades(ctx.sheet));
 }
 
 // Comprar = equipar: no hay inventario aparte (ver lib/rules/equipo.ts), así

@@ -8,10 +8,14 @@
 //            motor); los textos, a las tiradas fijas de `textos` (DestinoTexto solo
 //            admite id). `especialidad`: la tirada solo sabe si vas en especialidad, no
 //            en cuál (decisión del usuario, D2a), así que el efecto va como casilla en
-//            la habilidad con la especialidad en la etiqueta, y la marca el jugador.
+//            la habilidad con la especialidad en la etiqueta, y la marca el jugador. Es
+//            texto de etiqueta (el nombre del catálogo de especialidades, o el de la
+//            acción en Rastreo/Subsistencia); se sustituye cuando la tirada sepa qué
+//            especialidad se usa (docs/tareas.md, "La tirada sabe qué especialidad se usa").
 //   ficha  → texto que solo vive en la tarjeta de la dote (no hay tirada a la que colgarlo).
 //   tanda  → el destino aún no existe: el efecto queda pendiente de esa tanda.
 import type { AlcanceModificador } from "../rules/modificadores";
+import { etiquetaEspecialidad } from "./especialidades";
 
 // "tiradas-fijas" no es una tanda de dotes sino la tarea de docs/tareas.md "Tiradas fijas
 // que faltan según habilidades.md": sin esas tiradas no hay dónde colgar el efecto. Va la
@@ -67,7 +71,7 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
     tipo: "tirada",
     alcance: { tipo: "habilidad", habilidad: "actitud" },
     textos: ["social", "iniciativa_distraccion"],
-    especialidad: "Intimidación",
+    especialidad: etiquetaEspecialidad("intimidacion"),
   },
   // Apaño (supuesto S36): Investigación, Rastreo y Subsistencia no tienen tirada propia y
   // van a "Buscar / percibir", la única de Exploración en Acciones, con la especialidad
@@ -76,7 +80,7 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
     tipo: "tirada",
     alcance: exploracionEnAcciones,
     textos: ["alerta_activa"],
-    especialidad: "Investigación",
+    especialidad: etiquetaEspecialidad("investigacion"),
   },
   rastreo: { tipo: "tirada", alcance: exploracionEnAcciones, textos: ["alerta_activa"], especialidad: "Rastreo" },
   // Hoy solo lo usa una ventaja (D2d), así que no pinta nada todavía.

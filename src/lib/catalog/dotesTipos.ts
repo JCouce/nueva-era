@@ -10,6 +10,7 @@ import { z } from "zod";
 import { ATRIBUTOS, APLICADOS } from "../rules/atributos";
 import { HABILIDADES } from "../rules/habilidades";
 import { DISCIPLINA_IDS } from "./psionica";
+import { ESPECIALIDAD_IDS } from "./especialidades";
 import { motorMetadataSchema } from "../rules/motor";
 
 const ids = <T extends readonly { id: string }[]>(lista: T) =>
@@ -19,9 +20,9 @@ const atributoId = z.enum(ids(ATRIBUTOS));
 const aplicadoId = z.enum(ids(APLICADOS));
 const habilidadId = z.enum(ids(HABILIDADES));
 const nivel = z.number().int().min(1).max(6);
-// Las especialidades aún no tienen catálogo (sistema.md §3, [PARCIAL]): el id es el
-// nombre en minúsculas, sin tildes y con "_" (empatia, ingenieria_genetica).
-const idEspecialidad = z.string().regex(/^[a-z][a-z_]*$/);
+// Id del catálogo de especialidades (catalog/especialidades.ts). Que sea de la habilidad
+// del requisito lo comprueba el generador (scripts/generar-catalogo-dotes.ts).
+const idEspecialidad = z.enum(ESPECIALIDAD_IDS);
 export const ID_DOTE = /^dote_[a-z0-9_]+$/;
 
 const requisitoSimpleSchema = z.discriminatedUnion("tipo", [
@@ -45,7 +46,8 @@ export const requisitoDoteSchema = z.union([
 // Elección al comprar (§9.1). `opciones` cerrada = ids de una lista fija, con su
 // etiqueta legible en `etiquetas` (la pone el generador); `abierta` = las opciones
 // son ejemplos y vale texto libre (Bioma Predilecto); "especialidades_arma" = una
-// especialidad de arma del personaje, texto libre (Crítico Mejorado).
+// especialidad de arma que tenga el personaje, lista cerrada de ids que se resuelve con
+// la ficha (ESPECIALIDADES_ARMA, rules/dotes.ts opcionesDeEleccion; Crítico Mejorado).
 export const eleccionDoteSchema = z.union([
   z.strictObject({
     id: z.string().min(1),

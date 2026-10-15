@@ -29,6 +29,7 @@ import { condicionesActivas } from "./equipo";
 import { defaultSheet, parseSheet, type Sheet } from "./sheet";
 import { migrar } from "./migraciones";
 import { pagarFatiga, fatigaEfectiva, ajustarFatigaTemporal, terminarEscena } from "./vitalidad";
+import type { EspecialidadId } from "../catalog/especialidades";
 import { resolverDanio, ACCIONES, usarHabilidadAlternativa, modificadorAccion, tirarDado } from "./acciones";
 import { fuentesDeCapa1 } from "./capa1";
 import { modificadoresActivos } from "./derivados";
@@ -219,7 +220,7 @@ describe("tiradaDePoder", () => {
   test("la especialidad Física se aplica sola si el personaje la tiene", () => {
     const p = resolver("impulso", 1);
     const sin = defaultSheet();
-    const con: Sheet = { ...sin, habilidades: { ...sin.habilidades, tecnociencia: { valor: 2, especialidades: ["física"] } } };
+    const con: Sheet = { ...sin, habilidades: { ...sin.habilidades, tecnociencia: { valor: 2, especialidades: ["fisica"] } } };
     assert.equal(enEspecialidadDePoder(sin, p), false);
     assert.equal(enEspecialidadDePoder(con, p), true);
   });
@@ -687,7 +688,7 @@ test("Contención ampliada protege a varios", () => {
 
 describe("Esquiva levitando con Física", () => {
   const esquiva = ACCIONES.find((a) => a.id === "defensa")!;
-  const ficha = (traslacion: number, tecno: number, especialidades: string[] = []): Sheet => {
+  const ficha = (traslacion: number, tecno: number, especialidades: EspecialidadId[] = []): Sheet => {
     const s = defaultSheet();
     return {
       ...s,
@@ -700,7 +701,7 @@ describe("Esquiva levitando con Física", () => {
     assert.equal(conEsquivaLevitando(niv(ficha(1, 4)), esquiva).habilidadAlternativa, undefined);
     assert.deepEqual(conEsquivaLevitando(niv(ficha(2, 4)), esquiva).habilidadAlternativa, {
       habilidad: "tecnociencia",
-      especialidad: "Física",
+      especialidad: "fisica",
       etiqueta: "Levitando: Física",
     });
     // otras tiradas no
@@ -709,7 +710,7 @@ describe("Esquiva levitando con Física", () => {
   });
 
   test("con Física usa Tecnociencia entera; sin ella, la mitad", () => {
-    const con = ficha(2, 4, ["Física"]);
+    const con = ficha(2, 4, ["fisica"]);
     const sin = ficha(2, 4);
     const altCon = usarHabilidadAlternativa(con, conEsquivaLevitando(niv(con), esquiva))!;
     const altSin = usarHabilidadAlternativa(sin, conEsquivaLevitando(niv(sin), esquiva))!;
@@ -824,7 +825,7 @@ describe("Resonancia — tanda 1", () => {
     const p = resolverR("rastreo", 1, { receptor: "sintetico" });
     assert.equal(p.resolucion.tipo !== "sin_dado" && p.resolucion.habilidad, "tecnociencia");
     let s = defaultSheet();
-    s = { ...s, habilidades: { ...s.habilidades, tecnociencia: { valor: 2, especialidades: ["Informática"] } } };
+    s = { ...s, habilidades: { ...s.habilidades, tecnociencia: { valor: 2, especialidades: ["informatica"] } } };
     assert.equal(enEspecialidadDePoder(s, p), true);
     const b = resolverR("superar_barrera", 1, { receptor: "sintetico" });
     assert.equal(b.resolucion.tipo !== "sin_dado" && b.resolucion.habilidad, "tecnociencia");
@@ -992,7 +993,7 @@ describe("Inducción — tanda 1", () => {
 
   test("objetivo sintético: Perspicacia + Informática, y resiste con Perspicacia + Informática", () => {
     const p = resolverI("comando", 1, { receptor: "sintetico" })!;
-    assert.deepEqual(p.resolucion, { tipo: "enfrentada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "Informática" });
+    assert.deepEqual(p.resolucion, { tipo: "enfrentada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "informatica" });
     assert.match(p.objetivoTira[0].que, /Perspicacia \+ Informática/);
   });
 
@@ -1068,7 +1069,7 @@ describe("Inducción — tanda 2: Modulación", () => {
 
   test("efectos sintéticos: Perspicacia + Informática", () => {
     const p = resolverI("modulacion", 2, { modo: "cisma", nivel: "n2" });
-    assert.deepEqual(p.resolucion, { tipo: "enfrentada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "Informática" });
+    assert.deepEqual(p.resolucion, { tipo: "enfrentada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "informatica" });
     assert.equal(p.objetivoTira[1].dificultad, 8); // 6 + nivel empleado
   });
 
@@ -1167,7 +1168,7 @@ describe("Hipercognición", () => {
 
   test("Sondeo: Perspicacia + Física; el tramo fija tiempo, fatiga y dificultad", () => {
     const local = resolverH("sondeo", 1);
-    assert.deepEqual(local.resolucion, { tipo: "tirada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "Física", dificultad: 6 });
+    assert.deepEqual(local.resolucion, { tipo: "tirada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "fisica", dificultad: 6 });
     assert.equal(local.economia, "compleja");
     assert.equal(local.fatiga, 1);
     const max = resolverH("sondeo", 1, { distancia: "maximo" });

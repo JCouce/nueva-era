@@ -9,7 +9,6 @@ import { faltaParaEnviar } from "./revision";
 import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import { PUNTOS_DOTES_POR_LETRA } from "./prioridad";
 import {
-  claveEspecialidad,
   comprarDote,
   cumpleRequisitoDote,
   dotesConRequisitoRoto,
@@ -20,13 +19,16 @@ import {
   presupuestoDotes,
   puntosDotesDisponibles,
   puntosDotesGastados,
+  opcionesDeEleccion,
   quitarDote,
   SECCIONES_DOTES,
+  textoRequisitoDote,
   valoresRequisitoDeFicha,
   type ContextoCompraDote,
 } from "./dotes";
 import { dotePorId, normalizarDotes } from "./dotesCompradas";
 import { DOTES } from "../catalog/dotes";
+import type { EspecialidadId } from "../catalog/especialidades";
 
 // ── Fichas de prueba ───────────────────────────────────────────────────
 
@@ -34,7 +36,7 @@ function ficha(cambios: Partial<Sheet> = {}): Sheet {
   return { ...setPrioridad(defaultSheet(), "dotes", "A"), ...cambios };
 }
 
-function conHabilidad(s: Sheet, id: keyof Sheet["habilidades"], valor: number, especialidades: string[] = []): Sheet {
+function conHabilidad(s: Sheet, id: keyof Sheet["habilidades"], valor: number, especialidades: EspecialidadId[] = []): Sheet {
   return { ...s, habilidades: { ...s.habilidades, [id]: { valor, especialidades } } };
 }
 
@@ -67,7 +69,7 @@ describe("catálogo generado", () => {
     assert.equal(dotePorId("dote_olfato_de_investigador")!.visible, false);
     assert.ok(!SECCIONES_DOTES.some((s) => s.dotes.some((d) => d.id === "dote_olfato_de_investigador")));
     assert.equal(SECCIONES_DOTES.reduce((t, s) => t + s.dotes.length, 0), 104);
-    let s = conHabilidad(ficha(), "exploracion", 4, ["Investigación"]);
+    let s = conHabilidad(ficha(), "exploracion", 4, ["investigacion"]);
     s = conAtributos(s, { inteligencia: 2, percepcion: 2 });
     assert.match(motivoNoComprable(s, { id: "dote_olfato_de_investigador" }, creacion(s)) ?? "", /no tiene efecto/);
   });
@@ -105,31 +107,34 @@ describe("requisitos", () => {
     assert.equal(cumple(conHabilidad(ficha(), "atletismo", 1), "dote_paso_defensivo"), true);
   });
 
-  test("especialidad: habilidad a N y la especialidad, por nombre normalizado", () => {
+  test("especialidad: habilidad a N y la especialidad, por id del catálogo", () => {
     // Burla: Humor 1 (Actitud).
     assert.equal(cumple(conHabilidad(ficha(), "actitud", 3), "dote_burla"), false, "sin la especialidad");
-    assert.equal(cumple(conHabilidad(ficha(), "actitud", 1, [" HUMOR "]), "dote_burla"), true);
+    assert.equal(cumple(conHabilidad(ficha(), "actitud", 1, ["humor"]), "dote_burla"), true);
     // Humor Negro: Humor 2 — la habilidad a 1 no llega aunque tenga la especialidad.
-    assert.equal(cumple(conHabilidad(ficha(), "actitud", 1, ["Humor"]), "dote_humor_negro"), false);
-    // Tildes y espacios: "Ingeniería Genética" ↔ ingenieria_genetica.
-    assert.equal(claveEspecialidad("Ingeniería  Genética"), "ingenieria_genetica");
-    assert.equal(cumple(conHabilidad(ficha(), "biociencia", 3, ["ingenieria genetica"]), "dote_genio_genetista"), true);
+    assert.equal(cumple(conHabilidad(ficha(), "actitud", 1, ["humor"]), "dote_humor_negro"), false);
+    assert.equal(cumple(conHabilidad(ficha(), "biociencia", 3, ["ingenieria_genetica"]), "dote_genio_genetista"), true);
     // La especialidad tiene que estar en SU habilidad.
-    assert.equal(cumple(conHabilidad(ficha(), "tecnociencia", 3, ["Biónica"]), "dote_artesano_bionico"), false);
-    assert.equal(cumple(conHabilidad(ficha(), "biociencia", 3, ["Biónica"]), "dote_artesano_bionico"), true);
+    assert.equal(cumple(conHabilidad(ficha(), "tecnociencia", 3, ["bionica"]), "dote_artesano_bionico"), false);
+    assert.equal(cumple(conHabilidad(ficha(), "biociencia", 3, ["bionica"]), "dote_artesano_bionico"), true);
+  });
+
+  test("el texto del requisito usa el nombre del catálogo de especialidades", () => {
+    const req = requisitos("dote_genio_genetista").find((r) => r.tipo === "especialidad")!;
+    assert.match(textoRequisitoDote(req), /^Ingeniería Genética \d \(Biociencia\)$/);
   });
 
   test("uno_de: basta una de las opciones", () => {
     // Apoyo: Empatía 1 o Liderazgo 1.
     assert.equal(cumple(ficha(), "dote_apoyo"), false);
-    assert.equal(cumple(conHabilidad(ficha(), "actitud", 1, ["Liderazgo"]), "dote_apoyo"), true);
-    assert.equal(cumple(conHabilidad(ficha(), "actitud", 1, ["Empatía"]), "dote_apoyo"), true);
+    assert.equal(cumple(conHabilidad(ficha(), "actitud", 1, ["liderazgo"]), "dote_apoyo"), true);
+    assert.equal(cumple(conHabilidad(ficha(), "actitud", 1, ["empatia"]), "dote_apoyo"), true);
     // Crítico Mejorado: Combate Melee 3 o Combate a Distancia 3.
     assert.equal(cumple(conHabilidad(ficha(), "combate_distancia", 3), "dote_critico_mejorado"), true);
   });
 
   test("dote previa", () => {
-    let s = conAtributos(conHabilidad(ficha(), "actitud", 3, ["Intimidación"]), { caracter: 1 });
+    let s = conAtributos(conHabilidad(ficha(), "actitud", 3, ["intimidacion"]), { caracter: 1 });
     assert.equal(cumple(s, "dote_violencia_aterradora", 2), false);
     s = compra(s, "dote_mirada_desafiante");
     assert.equal(cumple(s, "dote_violencia_aterradora", 2), true);
@@ -195,7 +200,7 @@ describe("pool por letra", () => {
 // ── Repetible y elección ───────────────────────────────────────────────
 
 describe("elección y repetible", () => {
-  const medico = () => conAtributos(conHabilidad(ficha(), "biociencia", 2, ["Medicina"]), { inteligencia: 1 });
+  const medico = () => conAtributos(conHabilidad(ficha(), "biociencia", 2, ["medicina"]), { inteligencia: 1 });
 
   test("Especialidad Médica: varias veces con elección distinta, nunca dos con la misma", () => {
     let s = medico();
@@ -217,7 +222,7 @@ describe("elección y repetible", () => {
   });
 
   test("elección abierta: texto libre recortado (Bioma Predilecto)", () => {
-    let s = conHabilidad(ficha(), "exploracion", 3, ["Supervivencia"]);
+    let s = conHabilidad(ficha(), "exploracion", 3, ["supervivencia"]);
     s = compra(s, "dote_bioma_predilecto", "  Pantano tóxico ");
     assert.deepEqual(s.dotes, [{ id: "dote_bioma_predilecto", eleccion: "Pantano tóxico" }]);
   });
@@ -287,7 +292,7 @@ describe("quitar en creación", () => {
   });
 
   test("una copia de una repetible se quita por su elección", () => {
-    let s = conAtributos(conHabilidad(ficha(), "biociencia", 2, ["Medicina"]), { inteligencia: 1 });
+    let s = conAtributos(conHabilidad(ficha(), "biociencia", 2, ["medicina"]), { inteligencia: 1 });
     s = compra(s, "dote_especialidad_medica", "ceguera_sordera");
     s = compra(s, "dote_especialidad_medica", "hemorragia_herida");
     const r = quitarDote(s, { id: "dote_especialidad_medica", eleccion: "ceguera_sordera" }, { aprobada: false, foto: null });
@@ -337,7 +342,9 @@ describe("sheet.dotes", () => {
       { id: "dote_especialidad_medica", eleccion: "ceguera_sordera" }, // misma elección
       { id: "dote_especialidad_medica", eleccion: "hemorragia_herida" },
       { id: "dote_bioma_predilecto", eleccion: "x".repeat(200) }, // abierta: se recorta
-      { id: "dote_critico_mejorado", eleccion: "Espadas" }, // especialidad de arma: libre
+      { id: "dote_critico_mejorado", eleccion: "Espadas" }, // especialidad de arma: id del catálogo
+      { id: "dote_critico_mejorado", eleccion: "medicina" }, // id, pero no de arma
+      { id: "dote_critico_mejorado", eleccion: "espadas_y_dagas" },
       { id: "dote_paso_defensivo", eleccion: "sobra" }, // sin elección en el catálogo
     ]);
     assert.deepEqual(dotes, [
@@ -345,7 +352,7 @@ describe("sheet.dotes", () => {
       { id: "dote_especialidad_medica", eleccion: "ceguera_sordera" },
       { id: "dote_especialidad_medica", eleccion: "hemorragia_herida" },
       { id: "dote_bioma_predilecto", eleccion: "x".repeat(60) },
-      { id: "dote_critico_mejorado", eleccion: "Espadas" },
+      { id: "dote_critico_mejorado", eleccion: "espadas_y_dagas" },
       { id: "dote_paso_defensivo" },
     ]);
     assert.deepEqual(parseSheet({ schemaVersion: SCHEMA_VERSION, dotes: "no es un array" }).dotes, []);
@@ -379,5 +386,30 @@ describe("sheet.dotes", () => {
     assert.deepEqual(parseSnapshot(snap), snap);
     const vieja = { atributos: snap.atributos, habilidades: snap.habilidades };
     assert.deepEqual(parseSnapshot(vieja), vieja);
+  });
+});
+
+describe("Crítico Mejorado: especialidad de arma de lista cerrada", () => {
+  const dote = dotePorId("dote_critico_mejorado")!;
+  const conDos = () =>
+    conHabilidad(conHabilidad(ficha(), "combate_melee", 3, ["espadas_y_dagas", "pelea"]), "combate_distancia", 1, ["armas_pesadas"]);
+
+  test("ofrece solo las especialidades de arma que tiene, en la habilidad que cumple el requisito", () => {
+    const s = conDos();
+    const op = opcionesDeEleccion(dote, s, valoresRequisitoDeFicha(s))!;
+    assert.equal(op.cerrada, true);
+    // Armas Pesadas no: Combate a Distancia está a 1 y el requisito pide 3.
+    assert.deepEqual(op.opciones, [
+      { valor: "espadas_y_dagas", etiqueta: "Espadas y Dagas" },
+      { valor: "pelea", etiqueta: "Pelea" },
+    ]);
+  });
+
+  test("comprar con una que no tiene o de una habilidad que no cumple, no", () => {
+    const s = setPrioridad(conDos(), "dotes", "A");
+    const ctx = creacion(s);
+    assert.match(motivoNoComprable(s, { id: dote.id, eleccion: "flagelos" }, ctx) ?? "", /especialidad de arma que tengas/);
+    assert.match(motivoNoComprable(s, { id: dote.id, eleccion: "armas_pesadas" }, ctx) ?? "", /especialidad de arma que tengas/);
+    assert.equal(motivoNoComprable(s, { id: dote.id, eleccion: "pelea" }, ctx), null);
   });
 });

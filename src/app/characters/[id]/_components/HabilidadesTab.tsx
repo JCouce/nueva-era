@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   HABILIDADES,
   HABILIDAD_NO_ENTRENADA,
@@ -13,52 +12,59 @@ import {
   type FichaResuelta,
   type HabilidadId,
   textoPuntos,
+  especialidadesDe,
+  etiquetaEspecialidad,
+  admiteEspecialidades,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { Stepper } from "./Stepper";
 
+// Especialidades de una habilidad: lista cerrada del catálogo (catalog/especialidades.ts),
+// sin texto libre. Una habilidad sin lista en la fuente no admite ninguna.
 function Especialidades({
   id,
-  nombres,
+  elegidas,
   puntosDisponibles,
   onAdd,
   onRemove,
 }: {
   id: HabilidadId;
-  nombres: string[];
+  elegidas: string[];
   puntosDisponibles: number;
-  onAdd: (id: HabilidadId, nombre: string) => void;
-  onRemove: (id: HabilidadId, nombre: string) => void;
+  onAdd: (id: HabilidadId, especialidad: string) => void;
+  onRemove: (id: HabilidadId, especialidad: string) => void;
 }) {
-  const [abierto, setAbierto] = useState(false);
-  const [texto, setTexto] = useState("");
+  const lista = especialidadesDe(id);
+  const libres = lista.filter((e) => !elegidas.includes(e.id));
 
   // La primera especialidad va incluida al entrenar; las siguientes cuestan punto.
-  const cuesta = nombres.length >= 1;
+  const cuesta = elegidas.length >= 1;
   const puedeAnadir =
-    nombres.length < MAX_ESPECIALIDADES &&
+    libres.length > 0 &&
+    elegidas.length < MAX_ESPECIALIDADES &&
     (!cuesta || puntosDisponibles >= COSTE_ESPECIALIDAD_EXTRA);
 
-  const confirmar = () => {
-    const limpio = texto.trim();
-    if (limpio) onAdd(id, limpio);
-    setTexto("");
-    setAbierto(false);
-  };
+  if (lista.length === 0) {
+    return (
+      <p className="mt-2 font-mono text-[10px] uppercase text-muted">
+        sin especialidades en la fuente: tiras con el valor entero
+      </p>
+    );
+  }
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1.5">
-      {nombres.map((n, i) => (
+      {elegidas.map((e, i) => (
         <span
-          key={n}
+          key={e}
           className="clip-chamfer-sm flex items-center gap-1 border border-info px-2 py-1 font-mono text-[10px] uppercase text-info"
         >
-          {n}
+          {etiquetaEspecialidad(e)}
           {i > 0 && <span className="text-muted">1pt</span>}
           <button
             type="button"
-            onClick={() => onRemove(id, n)}
-            aria-label={`Quitar ${n}`}
+            onClick={() => onRemove(id, e)}
+            aria-label={`Quitar ${etiquetaEspecialidad(e)}`}
             className="text-muted active:scale-95"
           >
             ×
@@ -66,33 +72,22 @@ function Especialidades({
         </span>
       ))}
 
-      {abierto ? (
-        <input
-          autoFocus
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-          onBlur={confirmar}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") confirmar();
-            if (e.key === "Escape") {
-              setTexto("");
-              setAbierto(false);
-            }
+      {puedeAnadir && (
+        <select
+          value=""
+          onChange={(ev) => {
+            if (ev.target.value) onAdd(id, ev.target.value);
           }}
-          maxLength={40}
-          placeholder="especialidad"
-          className="w-32 border border-border bg-elevated px-2 py-1 font-mono text-[11px] text-foreground outline-none focus:border-accent"
-        />
-      ) : (
-        puedeAnadir && (
-          <button
-            type="button"
-            onClick={() => setAbierto(true)}
-            className="clip-chamfer-sm border border-border px-2 py-1 font-mono text-[10px] uppercase text-muted active:scale-95"
-          >
-            + especialidad{cuesta ? " (1pt)" : ""}
-          </button>
-        )
+          aria-label="Añadir especialidad"
+          className="clip-chamfer-sm border border-border bg-elevated px-2 py-1 font-mono text-[10px] uppercase text-muted outline-none focus:border-accent"
+        >
+          <option value="">+ especialidad{cuesta ? " (1pt)" : ""}</option>
+          {libres.map((e) => (
+            <option key={e.id} value={e.id}>
+              {e.label}
+            </option>
+          ))}
+        </select>
       )}
     </div>
   );
@@ -107,6 +102,7 @@ export function HabilidadesTab({
   onSet,
   onAddEspecialidad,
   onRemoveEspecialidad,
+  onDescartarAviso,
 }: {
   ficha: FichaResuelta;
   // No aplican en modo libre (edición de NPC, fase 6b 5.1) — ver AtributosTab.
@@ -115,8 +111,10 @@ export function HabilidadesTab({
   xp?: number;
   libre?: boolean;
   onSet: (id: HabilidadId, value: number) => void;
-  onAddEspecialidad: (id: HabilidadId, nombre: string) => void;
-  onRemoveEspecialidad: (id: HabilidadId, nombre: string) => void;
+  onAddEspecialidad: (id: HabilidadId, especialidad: string) => void;
+  onRemoveEspecialidad: (id: HabilidadId, especialidad: string) => void;
+  // Sin él (NPC) el aviso de especialidades no reconocidas se ve pero no se descarta.
+  onDescartarAviso?: () => void;
 }) {
   const sheet = ficha.ficha;
   const tope = libre || aprobada ? HABILIDAD_MAX : HABILIDAD_MAX_CREACION;
@@ -131,6 +129,24 @@ export function HabilidadesTab({
             {textoPuntos(disponible)}
           </span>
         </div>
+      )}
+
+      {sheet.avisoEspecialidades.length > 0 && (
+        <HudCard className="!border-danger p-3">
+          <p className="font-mono text-[11px] leading-relaxed text-danger">
+            Especialidades no reconocidas: {sheet.avisoEspecialidades.join(" · ")} — elige la buena
+            de la lista de su habilidad.
+          </p>
+          {onDescartarAviso && (
+            <button
+              type="button"
+              onClick={onDescartarAviso}
+              className="clip-chamfer-sm mt-2 border border-border px-2 py-1 font-mono text-[10px] uppercase text-muted active:scale-95"
+            >
+              Entendido, quitar aviso
+            </button>
+          )}
+        </HudCard>
       )}
 
       <p className="font-mono text-[11px] leading-relaxed text-muted">
@@ -148,6 +164,7 @@ export function HabilidadesTab({
           coste: costeSiguiente,
           pista,
         } = costeSiguienteNivel({ tipo: "habilidad", id: h.id }, valor, ficha.ajusteCoste);
+        const conLista = admiteEspecialidades(h.id);
         const fuera = entrenada ? Math.ceil(valor / 2) : HABILIDAD_NO_ENTRENADA;
 
         return (
@@ -158,7 +175,7 @@ export function HabilidadesTab({
                   {h.label}
                 </span>
                 <span className="mt-1 block font-mono text-[10px] uppercase text-muted">
-                  {entrenada ? `fuera de especialidad ${fuera}` : "no entrenada"}
+                  {!entrenada ? "no entrenada" : conLista ? `fuera de especialidad ${fuera}` : `siempre ${valor}`}
                 </span>
                 {pista && !libre && valor < tope && (
                   <span className="mt-1 block font-mono text-[10px] uppercase text-info">
@@ -182,7 +199,7 @@ export function HabilidadesTab({
             {entrenada && (
               <Especialidades
                 id={h.id}
-                nombres={especialidades}
+                elegidas={especialidades}
                 // Mismo valor que recibía antes de "libre" (el pool de
                 // creación tal cual, sin tocar el criterio existente del
                 // resto de la ficha) — solo se sustituye por Infinity en

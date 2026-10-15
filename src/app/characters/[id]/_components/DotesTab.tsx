@@ -169,7 +169,7 @@ function TarjetaDote({
   const [eleccion, setEleccion] = useState("");
   const requisitos = estadoRequisitos(dote, ficha.requisitosDotes, sheet.dotes);
   const cumpleTodo = requisitos.every((r) => r.cumple);
-  const opciones = opcionesDeEleccion(dote, sheet);
+  const opciones = opcionesDeEleccion(dote, sheet, ficha.requisitosDotes);
   const yaLaTiene = !dote.repetible && sheet.dotes.some((d) => d.id === dote.id);
   const motivo = comprable(dote.eleccion ? eleccion : undefined);
   const sustituye = dote.sustituye ? dotePorId(dote.sustituye)?.label : null;

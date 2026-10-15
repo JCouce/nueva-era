@@ -39,7 +39,8 @@ cuál va antes que la otra:
   código. Primer adelanto (Creación): Vida/Fatiga base 8 → 10, Dotes con presupuesto
   por prioridad, topes de creación movidos.
 - "Dotes" (Fase 5, en Pendiente) — D1 (compra) y D2a (casillas, bonos fijos y textos)
-  hechas; siguen D2b-1, D2b-2, D2c y D2d, con su recuento de pendientes.
+  hechas; la tanda ESP (catálogo de especialidades por id) hecha como paso previo a D2b-1;
+  siguen D2b-1, D2b-2, D2c y D2d, con su recuento de pendientes.
 
 ---
 
@@ -1390,10 +1391,9 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
   - Pestaña Dotes (`DotesTab.tsx`) y `comprarDoteAction` / `quitarDoteAction`.
   - Fuera de D1: efectos/capas, `fuentesDeCapa1` (hecho en D2a), Bloquear/Sutil/ataque de
     oportunidad con su dote, NPC (`NpcTemplate` no recibe dotes), catálogo de especialidades.
-- [ ] **Especialidades en requisitos, provisional (S31):** hoy se comparan por nombre
-  normalizado (texto libre de la ficha ↔ id del requisito, `claveEspecialidad` en
-  `dotes.ts`) y los nombres legibles salen de `NOMBRES_ESPECIALIDAD_DOTES` (generado).
-  Se sustituye cuando llegue el catálogo de especialidades (tarea de abajo).
+- [x] ~~**Especialidades en requisitos, provisional (S31)**~~ *(tanda ESP, 2026-10-15: los
+  requisitos comparan ids del catálogo; fuera `claveEspecialidad` y
+  `NOMBRES_ESPECIALIDAD_DOTES`; el generador valida los ids del borrador)*
 - [x] Ajustar el borrador `docs/modelado-dotes.json` a v2 en los campos de efectos: lo hace
   el generador en D2a (normalización documentada en el script; el `.json` no se toca).
 - [x] **D2a (2026-10-15, sin commit ni prueba en navegador): casillas, bonos fijos y textos
@@ -1442,8 +1442,32 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
 - [ ] `docs/propuesta-dotes.md` y plan por tandas.
 - [ ] Código, en su tanda: Bloqueo, Combate Sutil y Ataque de oportunidad pasan a exigir
   su dote (hoy Bloquear y el interruptor Sutil están para todos).
-- [ ] Integrar el catálogo completo de especialidades de `docs/fuente/habilidades.md` en
-  `sistema.md` §3 y en el código (lo necesitan los requisitos).
+- [x] **Tanda ESP (2026-10-15, sin commit ni prueba en navegador): integrar el catálogo
+  completo de especialidades** de `docs/fuente/habilidades.md` en `sistema.md` §3 y en el
+  código. Va **antes de D2b-1** (el crítico fijo de Crítico Mejorado y las casillas de los
+  ataques con arma ya la necesitan).
+  - `src/lib/catalog/especialidades.ts` (42, por id; Interpretación y Sigilo sin lista,
+    siempre enteras: S39). Ficha con ids (`SCHEMA_VERSION` 17): la migración casa por
+    nombre y lo que no casa va a `avisoEspecialidades`, que la pestaña Habilidades enseña
+    con un botón para descartarlo (S42). Selector de lista cerrada en Habilidades; server
+    actions con Zod (`especialidadDeHabilidadSchema`).
+  - Especialidad por arma (`src/lib/catalog/especialidadesArma.ts`, con test de
+    cobertura): los ataques con arma van en especialidad solos si la ficha tiene la del
+    arma, y si no, a la mitad (`enEspecialidadEfectiva`, `montaje.ts`); sin selector en esa
+    fila. Bloqueos con el selector de siempre (S40); lanzar usa Lanzamiento (S41).
+  - Dotes: requisitos por id (S31 cerrado), Crítico Mejorado con lista cerrada de
+    especialidades de arma que la ficha tiene (S43), poderes psiónicos y "Levitando:
+    Física" por id.
+  - Pendiente de revisar a mano: los `TODO(revisar)` de `especialidadesArma.ts` (asignaciones
+    dudosas) y S39-S43.
+- [ ] **La tirada sabe qué especialidad se usa** (sale de ESP, sin construir): hoy la fila
+  de una tirada que no es ataque con arma solo dice sí/no (`EleccionTirada.enEspecialidad`).
+  Cambiarlo por un selector de **cuál** de las especialidades de la ficha en esa habilidad
+  (o ninguna), que llegue a `montarTirada`. Desbloquea el "fallo → fallo crítico" de Elión
+  (`rigidez_narcisista` en `especies.ts`, `bloqueoPor` apunta aquí: con Empatía, Humor o
+  Negociación el margen baja solo) y permite que las casillas de especialidad de las dotes
+  (S35: Presencia Imponente, Intimidación, Investigación…) se apliquen solas en vez de
+  marcarlas el jugador.
 - [ ] **Tiradas fijas que faltan según `docs/fuente/habilidades.md`**: Apuntar, discernir
   mentiras (Perspicacia + Empatía), Carrera (Reflejos + Atletismo) y resistir una
   distracción; y tiradas propias de Investigación, Rastreo y Subsistencia, que hoy van de
@@ -1612,7 +1636,8 @@ no `base`); con dos opciones que bajen el margen de crítico gana el más bajo, 
       *(toggle sin número con `margenCriticoExito: 0`, campo nuevo también en toggles; gana el
       margen más bajo)*
 - [ ] "Fallo → fallo crítico" de Elión (especialidad Empatía / Humor / Negociación):
-      **bloqueado** por la pregunta 3 (especialidades en lista cerrada, S5), fuera de E4
+      **bloqueado** por la tarea "La tirada sabe qué especialidad se usa" (Dotes; la lista
+      cerrada ya existe desde la tanda ESP, antes era la pregunta 3 / S5), fuera de E4
       (decisión del usuario, 2026-10-13). Forma decidida: especialidades por id; al tirar se
       elige **qué** especialidad se usa (no solo sí/no) y, con una de esas tres, el fallo
       crítico se aplica solo, sin casilla. MotorMetadata `bloqueado`

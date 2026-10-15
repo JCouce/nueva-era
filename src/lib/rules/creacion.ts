@@ -12,6 +12,7 @@ import {
   type HabilidadId,
 } from "./habilidades";
 import { clampInt, defaultSheet, type Sheet } from "./sheet";
+import { esEspecialidadDe } from "../catalog/especialidades";
 import {
   costeTotal,
   setLetra,
@@ -120,25 +121,24 @@ export function setHabilidadValue(
   return puntosHabilidadesDisponibles(next, ajuste) < 0 ? sheet : next;
 }
 
+// `especialidad`: id del catálogo (catalog/especialidades.ts) de ESA habilidad. Lo que no
+// sea de su lista se ignora: una habilidad sin lista (Interpretación, Sigilo) no admite ninguna.
 export function addEspecialidad(
   sheet: Sheet,
   id: HabilidadId,
-  nombre: string,
+  especialidad: string,
   ajuste: AjusteCoste,
 ): Sheet {
   const actual = sheet.habilidades[id];
   if (actual.valor < HABILIDAD_MIN_ENTRENADA) return sheet; // sin entrenar, no hay especialidad
-  const limpio = nombre.trim().slice(0, 40);
-  if (!limpio) return sheet;
+  if (!esEspecialidadDe(id, especialidad)) return sheet;
   if (actual.especialidades.length >= MAX_ESPECIALIDADES) return sheet;
-  if (actual.especialidades.some((e) => e.toLowerCase() === limpio.toLowerCase())) {
-    return sheet;
-  }
+  if (actual.especialidades.includes(especialidad)) return sheet;
   const next: Sheet = {
     ...sheet,
     habilidades: {
       ...sheet.habilidades,
-      [id]: { ...actual, especialidades: [...actual.especialidades, limpio] },
+      [id]: { ...actual, especialidades: [...actual.especialidades, especialidad] },
     },
   };
   return puntosHabilidadesDisponibles(next, ajuste) < 0 ? sheet : next;
@@ -147,7 +147,7 @@ export function addEspecialidad(
 export function removeEspecialidad(
   sheet: Sheet,
   id: HabilidadId,
-  nombre: string,
+  especialidad: string,
 ): Sheet {
   const actual = sheet.habilidades[id];
   return {
@@ -156,10 +156,15 @@ export function removeEspecialidad(
       ...sheet.habilidades,
       [id]: {
         ...actual,
-        especialidades: actual.especialidades.filter((e) => e !== nombre),
+        especialidades: actual.especialidades.filter((e) => e !== especialidad),
       },
     },
   };
+}
+
+// El jugador ya ha visto los textos que la migración v17 no supo casar: fuera el aviso.
+export function descartarAvisoEspecialidades(sheet: Sheet): Sheet {
+  return { ...sheet, avisoEspecialidades: [] };
 }
 
 // Devuelve atributos, habilidades y psiónica a cero. La identidad se conserva.

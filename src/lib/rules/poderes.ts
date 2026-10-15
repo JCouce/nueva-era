@@ -8,8 +8,9 @@
 // `{campo}` de los textos.
 import type { AplicadoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
+import type { EspecialidadId } from "../catalog/especialidades";
 import type { Sheet } from "./sheet";
-import type { Accion } from "./acciones";
+import { tieneEspecialidad, type Accion } from "./acciones";
 import type { CondicionTirada } from "./condiciones";
 import { DISCIPLINAS, PSIONICA, disciplinaPorId, type DisciplinaId } from "../catalog/psionica";
 import { umbralFatiga } from "./estados";
@@ -34,13 +35,13 @@ export type ValorResuelto = number | Extract<Valor, { manual: string } | { ajust
 
 export type ResolucionResuelta =
   | { tipo: "sin_dado" }
-  | { tipo: "tirada"; aplicado: AplicadoId; habilidad: HabilidadId; especialidad?: string; dificultad?: ValorResuelto; modificador?: number }
-  | { tipo: "enfrentada"; aplicado: AplicadoId; habilidad: HabilidadId; especialidad?: string; modificador?: number }
+  | { tipo: "tirada"; aplicado: AplicadoId; habilidad: HabilidadId; especialidad?: EspecialidadId; dificultad?: ValorResuelto; modificador?: number }
+  | { tipo: "enfrentada"; aplicado: AplicadoId; habilidad: HabilidadId; especialidad?: EspecialidadId; modificador?: number }
   | {
       tipo: "ataque";
       aplicado: AplicadoId;
       habilidad: HabilidadId;
-      especialidad?: string;
+      especialidad?: EspecialidadId;
       modificador?: number;
       danio: ValorResuelto;
       categoria: string;
@@ -598,8 +599,7 @@ export function tiradaDePoder(accion: AccionPoder, p: PoderResuelto): Accion | n
 export function enEspecialidadDePoder(sheet: Sheet, p: PoderResuelto): boolean {
   const r = p.resolucion;
   if (r.tipo === "sin_dado" || !r.especialidad) return false;
-  const buscada = r.especialidad.toLocaleLowerCase("es");
-  return sheet.habilidades[r.habilidad].especialidades.some((e) => e.toLocaleLowerCase("es") === buscada);
+  return tieneEspecialidad(sheet, r.habilidad, r.especialidad);
 }
 
 // ── Coste de fatiga: cadena semi-global ───────────────────────────
@@ -837,5 +837,5 @@ export function levitacion(niveles: NivelesPsionica): { velocidadM: number; nive
 // la esquiva fija gana la casilla "Levitando: Física" si la ficha puede levitar.
 export function conEsquivaLevitando(niveles: NivelesPsionica, t: Accion): Accion {
   if (t.id !== "defensa" || !levitacion(niveles)) return t;
-  return { ...t, habilidadAlternativa: { habilidad: "tecnociencia", especialidad: "Física", etiqueta: "Levitando: Física" } };
+  return { ...t, habilidadAlternativa: { habilidad: "tecnociencia", especialidad: "fisica", etiqueta: "Levitando: Física" } };
 }

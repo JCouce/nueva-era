@@ -22,6 +22,11 @@
 // Normalización v1 → v2 de compra (solo transformaciones mecánicas):
 //   - Biónica es especialidad de Biociencia (docs/tareas.md, "Dotes"): un requisito
 //     de especialidad "bionica" con otra habilidad pasa a "biociencia" (se avisa).
+//   - Especialidades: todo id de especialidad del borrador (requisitos, resolución de
+//     acciones de dote, cambio de par) tiene que ser un id del catálogo
+//     (src/lib/catalog/especialidades.ts) y, si trae habilidad, de esa habilidad; si no,
+//     falla. Si el borrador usa otro id, se traduce con EQUIVALENCIAS_ESPECIALIDAD (hoy
+//     vacía: los 24 ids del borrador ya son los del catálogo).
 //   - Elección de lista cerrada: se añade `etiquetas` (id → texto legible) desde la
 //     tabla ETIQUETAS_OPCION de aquí abajo, copiada de la prosa de la dote. Si una
 //     opción no tiene etiqueta, falla.
@@ -82,6 +87,7 @@ import {
   type TandaDote,
 } from "../src/lib/catalog/dotesDestinos";
 import { HABILIDADES } from "../src/lib/rules/habilidades";
+import { especialidadPorId } from "../src/lib/catalog/especialidades";
 import { erroresDeMotorMetadata, type MotorMetadata } from "../src/lib/rules/motor";
 
 const RAIZ = new URL("..", import.meta.url);
@@ -175,11 +181,19 @@ function leerTranscripcion(md: string): Map<string, SeccionMd> {
 const md = leerTranscripcion(readFileSync(TRANSCRIPCION, "utf8"));
 
 // ── 2-3. Normalizar y validar ─────────────────────────────────────────────
+// Id de especialidad del borrador → id del catálogo, cuando no coinciden. Vacía a día de
+// hoy (tanda ESP, 2026-10-15): se añade una fila si el borrador cambia de nombre a una.
+const EQUIVALENCIAS_ESPECIALIDAD: Readonly<Record<string, string>> = {};
+
 function normalizarRequisito(id: string, r: unknown): unknown {
   if (!r || typeof r !== "object") return r;
-  const req = r as Record<string, unknown>;
+  let req = r as Record<string, unknown>;
   if (req.tipo === "uno_de" && Array.isArray(req.opciones)) {
     return { ...req, opciones: req.opciones.map((o) => normalizarRequisito(id, o)) };
+  }
+  if (req.tipo === "especialidad" && typeof req.id === "string" && EQUIVALENCIAS_ESPECIALIDAD[req.id]) {
+    avisos.push(`  ${id}: especialidad "${req.id}" → "${EQUIVALENCIAS_ESPECIALIDAD[req.id]}"`);
+    req = { ...req, id: EQUIVALENCIAS_ESPECIALIDAD[req.id] };
   }
   if (req.tipo === "especialidad" && req.id === "bionica" && req.habilidad !== "biociencia") {
     avisos.push(`  ${id}: Biónica estaba en ${String(req.habilidad)} → biociencia`);
@@ -548,6 +562,21 @@ for (const d of dotes) {
   for (const r of planos(d.requisitos)) {
     if (r.tipo === "dote" && !porId.has(r.id)) falla(d.id, `requisito de dote previa inexistente: ${r.id}`);
     if (r.tipo === "dote" && r.id === d.id) falla(d.id, "se tiene de requisito a sí misma");
+    if (r.tipo === "especialidad" && especialidadPorId(r.id)?.habilidad !== r.habilidad)
+      falla(d.id, `requisito de especialidad "${r.id}" que no es de ${r.habilidad} en el catálogo de especialidades`);
+  }
+  // Especialidades en efectos: resolución de acciones de dote y cambio de par.
+  for (const e of d.efectos) {
+    const pares: { habilidad?: string; especialidad?: string | string[] }[] = [];
+    if (e.tipo === "accion") pares.push(e.accion.resolucion as { habilidad?: string; especialidad?: string | string[] });
+    if (e.tipo === "cambia_par") pares.push(e);
+    for (const p of pares) {
+      for (const esp of [p.especialidad ?? []].flat()) {
+        const cat = especialidadPorId(esp);
+        if (!cat) falla(d.id, `especialidad "${esp}" que no está en el catálogo de especialidades`);
+        else if (p.habilidad && cat.habilidad !== p.habilidad) falla(d.id, `especialidad "${esp}" que no es de ${p.habilidad}`);
+      }
+    }
   }
   if (d.repetible && !d.eleccion) falla(d.id, "repetible sin elección: no habría forma de distinguir las copias");
   if (d.motor.length !== d.efectos.length) falla(d.id, `${d.motor.length} MotorMetadata para ${d.efectos.length} efectos`);
@@ -601,11 +630,11 @@ for (const d of dotes) {
   if (problemas.length) discrepancias.push(`  ${d.id}: ${problemas.join("; ")}`);
 }
 
-// Nombre legible de cada especialidad citada en requisitos, sacado de las propias
-// líneas de docs/dotes.md ("Empatía 1 o Liderazgo 1 · especialidad (Actitud)"): se
-// parte por " o ", se quita el número (y el punto suelto, "Medicina 1.") y se casa
-// con el id del borrador por nombre normalizado. Toda especialidad del borrador
-// tiene que salir de aquí; si no, falla.
+// Cruce de nombres: cada especialidad citada en requisitos tiene que aparecer con el
+// nombre de su catálogo en las líneas de docs/dotes.md ("Empatía 1 o Liderazgo 1 ·
+// especialidad (Actitud)"): se parte por " o ", se quita el número (y el punto suelto,
+// "Medicina 1.") y se casa con el id por nombre normalizado. Si no, falla. Los nombres
+// legibles salen del catálogo de especialidades, no de aquí.
 const claveEspecialidad = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim().replace(/[\s_-]+/g, "_");
 const nombresMd = new Map<string, string>();
@@ -619,13 +648,14 @@ for (const s of md.values()) {
     }
   }
 }
-const especialidades: Record<string, string> = {};
 for (const d of dotes) {
   for (const r of planos(d.requisitos)) {
     if (r.tipo !== "especialidad") continue;
     const nombre = nombresMd.get(r.id);
-    if (nombre) especialidades[r.id] = nombre;
-    else discrepancias.push(`  ${d.id}: la especialidad "${r.id}" no aparece con ese nombre en dotes.md`);
+    const cat = especialidadPorId(r.id);
+    if (!nombre) discrepancias.push(`  ${d.id}: la especialidad "${r.id}" no aparece con ese nombre en dotes.md`);
+    else if (cat && claveEspecialidad(cat.label) !== claveEspecialidad(nombre))
+      discrepancias.push(`  ${d.id}: "${nombre}" en dotes.md, "${cat.label}" en el catálogo de especialidades`);
   }
 }
 
@@ -668,12 +698,7 @@ const cabecera = `// GENERADO por scripts/generar-catalogo-dotes.ts (npm run gen
 import type { DoteCatalogo } from "./dotesTipos";
 
 export const DOTES: readonly DoteCatalogo[] = `;
-const especialidadesOrdenadas = Object.fromEntries(Object.entries(especialidades).sort(([a], [b]) => a.localeCompare(b)));
 const pie = `
-// Nombre legible de las especialidades citadas en requisitos (id → nombre de dotes.md).
-// TODO(revisar): provisional hasta el catálogo de especialidades (docs/tareas.md, "Dotes").
-export const NOMBRES_ESPECIALIDAD_DOTES: Readonly<Record<string, string>> = ${JSON.stringify(especialidadesOrdenadas, null, 2)};
-
 // Recuento por tanda (lo escribe el generador):
 ${lineasRecuento.map((l) => `//   ${l}`).join("\n")}
 `;

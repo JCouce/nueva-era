@@ -11,6 +11,7 @@ import type { Sheet } from "./sheet";
 import type { CondicionTirada, BonoPorTramo, EstadoCondiciones } from "./condiciones";
 import type { GrupoAccion, ModificadorConFuente } from "./modificadores";
 import type { DetallePoder } from "./poderes";
+import { etiquetaEspecialidad, type EspecialidadId } from "../catalog/especialidades";
 
 export const CARAS_DADO = 12;
 
@@ -61,7 +62,11 @@ export type Accion = {
   // Habilidad que el jugador puede usar en su lugar con una casilla de la fila
   // (Levitar: esquivar con Física). Mismo patrón que `aplicadoSutil`, pero sobre
   // la habilidad; la especialidad se resuelve sola (ver usarHabilidadAlternativa).
-  habilidadAlternativa?: { habilidad: HabilidadId; especialidad: string; etiqueta: string };
+  habilidadAlternativa?: { habilidad: HabilidadId; especialidad: EspecialidadId; etiqueta: string };
+  // Ataque con arma (combate.ts, catalog/especialidadesArma.ts): la especialidad del arma.
+  // La tirada va en especialidad sola si la ficha la tiene en `habilidad`, y si no, a la
+  // mitad: la fila no ofrece selector (montaje.ts, enEspecialidadEfectiva).
+  especialidadArma?: EspecialidadId;
   // Dificultad con la que se abre el modal si el jugador no ha escrito otra
   // antes (Auto-anclaje: 6). Sin ella, 7.
   dificultadSugerida?: number;
@@ -560,12 +565,19 @@ export function tirarD12(): number {
   return (n % CARAS_DADO) + 1;
 }
 
+// ¿Tiene la ficha esa especialidad (id) en esa habilidad?
+export function tieneEspecialidad(sheet: Sheet, habilidad: HabilidadId, especialidad: EspecialidadId): boolean {
+  return sheet.habilidades[habilidad].especialidades.includes(especialidad);
+}
+
 // La tirada con la habilidad alternativa ya puesta y si cuenta como especialidad
 // (entera con ella, la mitad sin ella: la regla general de especialidades).
 export function usarHabilidadAlternativa(sheet: Sheet, t: Accion): { tirada: Accion; enEspecialidad: boolean } | null {
   const alt = t.habilidadAlternativa;
   if (!alt) return null;
-  const buscada = alt.especialidad.toLocaleLowerCase("es");
-  const enEspecialidad = sheet.habilidades[alt.habilidad].especialidades.some((e) => e.toLocaleLowerCase("es") === buscada);
-  return { tirada: { ...t, habilidad: alt.habilidad, label: `${t.label} (${alt.especialidad})` }, enEspecialidad };
+  const enEspecialidad = tieneEspecialidad(sheet, alt.habilidad, alt.especialidad);
+  return {
+    tirada: { ...t, habilidad: alt.habilidad, label: `${t.label} (${etiquetaEspecialidad(alt.especialidad)})` },
+    enEspecialidad,
+  };
 }

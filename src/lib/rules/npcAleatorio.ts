@@ -27,6 +27,7 @@ import {
   type HabilidadId,
 } from "./habilidades";
 import { defaultSheet, type Sheet } from "./sheet";
+import type { EspecialidadId } from "../catalog/especialidades";
 import { equipar, nuevaInstanciaId } from "./equipo";
 import { ARMAS, ARMADURAS, MEJORAS_ARMA, MEJORAS_ESTANDAR } from "../catalog/equipo";
 
@@ -169,7 +170,7 @@ export function aplicarBuildNpcAleatorio(build: BuildNpcAleatorio): Sheet {
     ...defaultSheet(),
     atributos: { ...build.atributos },
     habilidades: Object.fromEntries(
-      HABILIDADES.map((h) => [h.id, { valor: build.habilidades[h.id], especialidades: [] as string[] }]),
+      HABILIDADES.map((h) => [h.id, { valor: build.habilidades[h.id], especialidades: [] as EspecialidadId[] }]),
     ) as Sheet["habilidades"],
   };
 

@@ -7,7 +7,9 @@
 // mecanismos (condiciones.ts, modificadores.ts); acciones.ts se queda con el catálogo
 // y la resolución del d12, que no saben de fichas. Ver docs/modificadores-tiradas.md,
 // "Montaje: montarTirada".
-import { MARGEN_CRITICO, modificadorAccion, resolverTirada, type Accion, type Resultado } from "./acciones";
+import { MARGEN_CRITICO, modificadorAccion, resolverTirada, tieneEspecialidad, type Accion, type Resultado } from "./acciones";
+import { etiquetaEspecialidad } from "../catalog/especialidades";
+import type { Sheet } from "./sheet";
 import { APLICADOS, type AplicadoId } from "./atributos";
 import { HABILIDADES, type HabilidadId } from "./habilidades";
 import {
@@ -39,6 +41,14 @@ export type EleccionTirada = {
 
 export const SIN_ELECCION: EleccionTirada = { enEspecialidad: false, sutil: false, estadoCondiciones: {}, circunstancial: 0 };
 
+// Si la tirada va en especialidad. Un ataque con arma (`especialidadArma`) lo sabe solo: en
+// especialidad si la ficha tiene la del arma, y si no, a la mitad; lo que se eligiera en la
+// fila no cuenta. El resto de tiradas, lo que eligió el jugador.
+export function enEspecialidadEfectiva(sheet: Sheet, tirada: Accion, elegido: boolean): boolean {
+  if (tirada.especialidadArma && tirada.habilidad) return tieneEspecialidad(sheet, tirada.habilidad, tirada.especialidadArma);
+  return elegido;
+}
+
 // La tirada tal como abre el modal, sin tocar nada: las casillas en su estado inicial
 // y sin circunstancial. Con esto monta la fila, y su `modificador` es el mismo número
 // que el modal recién abierto (M1b).
@@ -51,6 +61,11 @@ export type LineaDesglose = { etiqueta: string; valor: number };
 export type TiradaMontada = {
   aplicado: { id: AplicadoId; valor: number };
   habilidad: { id: HabilidadId; valor: number } | null;
+  // Si al final va en especialidad (enEspecialidadEfectiva).
+  enEspecialidad: boolean;
+  // Ataque con arma: su especialidad y si la ficha la tiene, para que la fila lo enseñe en
+  // vez del selector.
+  especialidadArma: { id: string; label: string; tiene: boolean } | null;
   ajustesFijos: { valor: number; fuente: string }[];
   // Aplicado + habilidad + ajustes fijos.
   base: number;
@@ -84,7 +99,8 @@ function margenesDeCondiciones(condiciones: CondicionTirada[], estado: EstadoCon
 }
 
 export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: EleccionTirada): TiradaMontada {
-  const { enEspecialidad, sutil, estadoCondiciones: estado, circunstancial } = eleccion;
+  const { sutil, estadoCondiciones: estado, circunstancial } = eleccion;
+  const enEspecialidad = enEspecialidadEfectiva(ficha.ficha, tirada, eleccion.enEspecialidad);
   const condiciones = tirada.condiciones ?? [];
   const bonosTramo = tirada.bonosTramo ?? [];
   const ajustesFijos = tirada.ajustesFijos ?? [];
@@ -114,6 +130,11 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
   return {
     aplicado: { id: aplicadoId, valor: mod.aplicado },
     habilidad: tirada.habilidad ? { id: tirada.habilidad, valor: mod.habilidad ?? 0 } : null,
+    enEspecialidad,
+    especialidadArma:
+      tirada.especialidadArma && tirada.habilidad
+        ? { id: tirada.especialidadArma, label: etiquetaEspecialidad(tirada.especialidadArma), tiene: enEspecialidad }
+        : null,
     ajustesFijos,
     base,
     modificador,

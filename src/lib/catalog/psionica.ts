@@ -62,7 +62,7 @@ const ATAQUE_SINGULARIDAD = {
   tipo: "ataque",
   aplicado: "perspicacia",
   habilidad: "tecnociencia",
-  especialidad: "Física",
+  especialidad: "fisica",
   danio: "tabla",
   categoria: "letal",
 } as const;
@@ -295,7 +295,7 @@ const receptor = (label: string, plural = false): EjePoder => ({
     {
       id: "sintetico",
       label: plural ? "Sintéticas" : "Sintético",
-      cambia: { resolucion: { habilidad: "tecnociencia", especialidad: "Informática" } },
+      cambia: { resolucion: { habilidad: "tecnociencia", especialidad: "informatica" } },
     },
   ],
 });
@@ -674,7 +674,7 @@ const OBJETIVO_INDUCCION: EjePoder = {
       id: "sintetico",
       label: "Sintético",
       cambia: {
-        resolucion: { aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "Informática" },
+        resolucion: { aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "informatica" },
         objetivoTira: [{ que: "Resiste con Perspicacia + Informática; escribe su total como dificultad" }],
       },
     },
@@ -817,7 +817,7 @@ const HIPOMANIA_ALIADO_ID = "psi_induccion_hipomania_aliado";
 
 const RESISTE_ORGANICO = BASE_INDUCCION.objetivoTira[0];
 const RESISTE_SINTETICO = { que: "Resiste con Perspicacia + Informática; escribe su total como dificultad" };
-const SINTETICO: CambiosOpcion["resolucion"] = { aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "Informática" };
+const SINTETICO: CambiosOpcion["resolucion"] = { aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "informatica" };
 const SIN_EFECTO = { texto: "Sin efecto", estados: [] };
 const grados = (critico: string, exito: string, fracaso: string): AccionPoder["resultados"] => ({
   critico: { texto: critico, estados: [] },
@@ -1251,7 +1251,7 @@ const SONDEO_ID = "psi_hipercognicion_sondeo";
 const RETROCOGNICION_ID = "psi_hipercognicion_retrocognicion";
 const PRECOGNICION_ID = "psi_hipercognicion_precognicion";
 
-const TIRADA_HIPERCOGNICION = { tipo: "tirada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "Física" } as const;
+const TIRADA_HIPERCOGNICION = { tipo: "tirada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "fisica" } as const;
 
 const ejeInterferencia = (etiquetas: [string, string, string, string]): EjePoder => ({
   id: "interferencia",
@@ -1488,7 +1488,7 @@ const ANCLAJE: AccionPoder = {
   desplazamiento: null,
   // La prosa lo trata como ataque a distancia sin daño (usuario, 2026-09-30): el
   // objetivo esquiva; lo enfrentado es luego el escape.
-  resolucion: { tipo: "tirada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "Física" },
+  resolucion: { tipo: "tirada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "fisica" },
   objetivoTira: [
     { que: "Esquiva con Reflejos + Atletismo contra el ataque a distancia" },
     {
@@ -1612,7 +1612,7 @@ const PROYECCION: AccionPoder = {
     tipo: "ataque",
     aplicado: "reflejos",
     habilidad: "tecnociencia",
-    especialidad: "Física",
+    especialidad: "fisica",
     modificador: -2,
     danio: { base: 4, porNivelPoseido: 1 },
     categoria: "letal",
@@ -1768,7 +1768,7 @@ const AUTO_ANCLAJE: AccionPoder = {
   alcance: null,
   objetivo: { tipo: "propio" },
   desplazamiento: null,
-  resolucion: { tipo: "tirada", aplicado: "reflejos", habilidad: "tecnociencia", especialidad: "Física", dificultad: 6 },
+  resolucion: { tipo: "tirada", aplicado: "reflejos", habilidad: "tecnociencia", especialidad: "fisica", dificultad: 6 },
   objetivoTira: [],
   ejes: [ejeNivelEmpleado(() => ({}))],
   resultados: {
@@ -1792,7 +1792,7 @@ const DUELO_METRICA: AccionPoder = {
   alcance: null,
   objetivo: { tipo: "propio" },
   desplazamiento: null,
-  resolucion: { tipo: "enfrentada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "Física" },
+  resolucion: { tipo: "enfrentada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "fisica" },
   objetivoTira: [],
   ejes: [
     {

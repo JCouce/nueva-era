@@ -5,6 +5,7 @@
 // tirar; lo que se cuenta en mesa es mensaje.
 import type { AplicadoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
+import type { EspecialidadId } from "../catalog/especialidades";
 import type { MotorMetadata } from "./motor";
 import { clampInt, type Sheet } from "./sheet";
 import { PUNTOS_PSIONICA_POR_LETRA } from "./prioridad";
@@ -33,13 +34,13 @@ export type Grado = (typeof GRADOS)[number];
 
 export type ResolucionPoder =
   | { tipo: "sin_dado" }
-  | { tipo: "tirada"; aplicado: AplicadoId; habilidad: HabilidadId | HabilidadId[]; especialidad?: string; dificultad?: Valor; modificador?: number }
-  | { tipo: "enfrentada"; aplicado: AplicadoId; habilidad: HabilidadId | HabilidadId[]; especialidad?: string; modificador?: number }
+  | { tipo: "tirada"; aplicado: AplicadoId; habilidad: HabilidadId | HabilidadId[]; especialidad?: EspecialidadId; dificultad?: Valor; modificador?: number }
+  | { tipo: "enfrentada"; aplicado: AplicadoId; habilidad: HabilidadId | HabilidadId[]; especialidad?: EspecialidadId; modificador?: number }
   | {
       tipo: "ataque";
       aplicado: AplicadoId;
       habilidad: HabilidadId | HabilidadId[];
-      especialidad?: string;
+      especialidad?: EspecialidadId;
       modificador?: number;
       danio: Valor | "tabla";
       categoria: string;

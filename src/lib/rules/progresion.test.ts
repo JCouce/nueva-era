@@ -94,7 +94,7 @@ describe("coste de habilidad por casta (M11)", () => {
     assert.equal(puntosHabilidadesGastados(conCasta, SABIO), 7);
     assert.equal(setHabilidadValue(s, "tecnociencia", 4, AJUSTE_NEUTRO), s);
     // La 2ª especialidad cuesta 1, sin ajuste: 7 + 1 de 9
-    const conEsp = addEspecialidad(addEspecialidad(conCasta, "tecnociencia", "Mecánica", SABIO), "tecnociencia", "Física", SABIO);
+    const conEsp = addEspecialidad(addEspecialidad(conCasta, "tecnociencia", "mecanica", SABIO), "tecnociencia", "fisica", SABIO);
     assert.equal(puntosHabilidadesGastados(conEsp, SABIO), 8);
     assert.deepEqual(avisosParaEnviar(conEsp, SABIO).filter((x) => x.includes("habilidades")), [
       "Te queda 1 punto de habilidades sin gastar",

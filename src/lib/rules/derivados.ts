@@ -18,6 +18,7 @@ import type { FormulaMovimiento } from "./formulaMovimiento";
 import { equipoPorId } from "../catalog/equipo";
 import { modificadoresDeEquipo } from "./equipo";
 import type { Sheet } from "./sheet";
+import { admiteEspecialidades } from "../catalog/especialidades";
 
 // Los modificadores activos de una ficha: especie (con casta y linaje) y equipo por ahora; cuando
 // existan dotes y aumentos, se añaden aquí y todo lo demás sigue funcionando sin
@@ -234,6 +235,10 @@ export function vuelo(sheet: Sheet): { velocidadM: number; nivel: number } | nul
 // Valor efectivo de una habilidad: total en su especialidad, la mitad hacia
 // arriba fuera de ella. Sin entrenar es -1 siempre, aunque los modificadores
 // externos sí se suman encima.
+//
+// Una habilidad sin especialidades en la fuente (Interpretación, Sigilo) va siempre
+// entera: no hay "resto" fuera de especialidad (supuesto S39, docs/sistema.md).
+// S39, confirmado por el usuario; si el diseñador quiere la mitad, fuera esta rama.
 export function valorEfectivo(
   sheet: Sheet,
   id: HabilidadId,
@@ -243,5 +248,6 @@ export function valorEfectivo(
   const { valor } = sheet.habilidades[id];
   const bono = bonoHabilidad(mods, id);
   if (valor < HABILIDAD_MIN_ENTRENADA) return HABILIDAD_NO_ENTRENADA + bono;
-  return (enEspecialidad ? valor : Math.ceil(valor / 2)) + bono;
+  const entera = enEspecialidad || !admiteEspecialidades(id);
+  return (entera ? valor : Math.ceil(valor / 2)) + bono;
 }

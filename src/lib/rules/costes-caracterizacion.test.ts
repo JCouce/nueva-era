@@ -27,8 +27,8 @@ const base = (especieId: string | null): Sheet => {
 
 const conHabilidades = (s: Sheet) => {
   for (const n of [1, 2, 3]) s = setHabilidadValue(s, "atletismo", n, AJUSTE_NEUTRO); // 6
-  s = addEspecialidad(s, "atletismo", "Carrera", AJUSTE_NEUTRO); // gratis
-  s = addEspecialidad(s, "atletismo", "Salto", AJUSTE_NEUTRO); // +1
+  s = addEspecialidad(s, "atletismo", "carrera", AJUSTE_NEUTRO); // gratis
+  s = addEspecialidad(s, "atletismo", "salto", AJUSTE_NEUTRO); // +1
   s = setHabilidadValue(s, "tecnociencia", 2, AJUSTE_NEUTRO); // 3
   s = setHabilidadValue(s, "actitud", 1, AJUSTE_NEUTRO); // 1
   return s;

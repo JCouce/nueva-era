@@ -10,6 +10,8 @@
 import { ESPECIES } from "../catalog/especies";
 import { MUNICION_GRANADA } from "../catalog/municion";
 import { FARMACOS } from "../catalog/medicina";
+import { ESPECIALIDADES_ARMA, claveNombreEspecialidad, especialidadPorNombre } from "../catalog/especialidades";
+import { HABILIDADES } from "./habilidades";
 
 export type Migracion = {
   desde: number;
@@ -219,6 +221,53 @@ export const MIGRACIONES: Migracion[] = [
       "Se añaden las dotes compradas (docs/sistema.md §9.1): las fichas antiguas empiezan " +
       "sin ninguna. Las ya aprobadas no reciben el pool de su letra: compran con XP (§9.4).",
     migrar: (ficha) => ({ ...ficha, dotes: [] }),
+  },
+  {
+    desde: 16,
+    hasta: 17,
+    descripcion:
+      "Las especialidades pasan de texto libre a ids del catálogo (catalog/especialidades.ts, " +
+      "docs/sistema.md §3): cada texto se casa por nombre normalizado (sin tildes ni " +
+      "mayúsculas, singular/plural) con una especialidad de ESA habilidad. Lo que no casa se " +
+      "quita de la habilidad y se guarda en avisoEspecialidades para que el jugador elija la " +
+      "buena. La elección de Crítico Mejorado (texto libre) se casa igual con una especialidad " +
+      "de arma; si no casa, la dote se descarta y también queda en el aviso.",
+    migrar: (ficha) => {
+      const avisos: string[] = [];
+      const rHabilidades = (ficha.habilidades ?? {}) as Record<string, unknown>;
+      const habilidades: Record<string, unknown> = { ...rHabilidades };
+      for (const h of HABILIDADES) {
+        const entry = rHabilidades[h.id];
+        if (!entry || typeof entry !== "object") continue;
+        const textos = (entry as { especialidades?: unknown }).especialidades;
+        if (!Array.isArray(textos)) continue;
+        const ids: string[] = [];
+        for (const t of textos) {
+          if (typeof t !== "string" || !t.trim()) continue;
+          const esp = especialidadPorNombre(h.id, t);
+          if (esp) {
+            if (!ids.includes(esp.id)) ids.push(esp.id);
+          } else avisos.push(`${h.label}: ${t.trim()}`);
+        }
+        habilidades[h.id] = { ...(entry as object), especialidades: ids };
+      }
+
+      const dotes = Array.isArray(ficha.dotes)
+        ? ficha.dotes.flatMap((d) => {
+            const { id, eleccion } = (d ?? {}) as { id?: unknown; eleccion?: unknown };
+            if (id !== "dote_critico_mejorado" || typeof eleccion !== "string") return [d];
+            const clave = claveNombreEspecialidad(eleccion);
+            const esp = ESPECIALIDADES_ARMA.find(
+              (e) => claveNombreEspecialidad(e.label) === clave || claveNombreEspecialidad(e.id) === clave,
+            );
+            if (esp) return [{ ...(d as object), eleccion: esp.id }];
+            avisos.push(`Crítico Mejorado: ${eleccion.trim()} (dote quitada)`);
+            return [];
+          })
+        : ficha.dotes;
+
+      return { ...ficha, habilidades, dotes, avisoEspecialidades: avisos };
+    },
   },
 ];
 

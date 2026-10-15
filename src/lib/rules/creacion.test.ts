@@ -107,49 +107,59 @@ describe("pool de habilidades: misma idea, factor × 1", () => {
   });
 
   test("dejar de entrenar borra las especialidades y libera el pool entero", () => {
-    let s = setHabilidadValue(conLetraHabilidades("D"), "sigilo", 2, AJUSTE_NEUTRO);
-    s = addEspecialidad(s, "sigilo", "Urbano", AJUSTE_NEUTRO);
-    s = setHabilidadValue(s, "sigilo", -1, AJUSTE_NEUTRO);
-    assert.deepEqual(s.habilidades.sigilo.especialidades, []);
+    let s = setHabilidadValue(conLetraHabilidades("D"), "cultura", 2, AJUSTE_NEUTRO);
+    s = addEspecialidad(s, "cultura", "historia", AJUSTE_NEUTRO);
+    s = setHabilidadValue(s, "cultura", -1, AJUSTE_NEUTRO);
+    assert.deepEqual(s.habilidades.cultura.especialidades, []);
     assert.equal(puntosHabilidadesDisponibles(s, AJUSTE_NEUTRO), PUNTOS_HABILIDADES_POR_LETRA.D);
   });
 });
 
 describe("especialidades", () => {
   test("no se pueden añadir a una habilidad sin entrenar", () => {
-    const s = addEspecialidad(conLetraHabilidades("A"), "cultura", "Historia", AJUSTE_NEUTRO);
+    const s = addEspecialidad(conLetraHabilidades("A"), "cultura", "historia", AJUSTE_NEUTRO);
     assert.deepEqual(s.habilidades.cultura.especialidades, []);
   });
 
-  test("no se duplican, ignorando mayúsculas", () => {
+  test("no se duplican", () => {
     let s = setHabilidadValue(conLetraHabilidades("A"), "biociencia", 2, AJUSTE_NEUTRO);
-    s = addEspecialidad(s, "biociencia", "Medicina", AJUSTE_NEUTRO);
     s = addEspecialidad(s, "biociencia", "medicina", AJUSTE_NEUTRO);
-    assert.deepEqual(s.habilidades.biociencia.especialidades, ["Medicina"]);
+    s = addEspecialidad(s, "biociencia", "medicina", AJUSTE_NEUTRO);
+    assert.deepEqual(s.habilidades.biociencia.especialidades, ["medicina"]);
+  });
+
+  test("solo ids del catálogo de esa habilidad; sin lista (Sigilo), ninguna", () => {
+    let s = setHabilidadValue(conLetraHabilidades("A"), "biociencia", 2, AJUSTE_NEUTRO);
+    s = setHabilidadValue(s, "sigilo", 2, AJUSTE_NEUTRO);
+    s = addEspecialidad(s, "biociencia", "Medicina", AJUSTE_NEUTRO); // nombre, no id
+    s = addEspecialidad(s, "biociencia", "fisica", AJUSTE_NEUTRO); // de Tecnociencia
+    s = addEspecialidad(s, "sigilo", "historia", AJUSTE_NEUTRO);
+    assert.deepEqual(s.habilidades.biociencia.especialidades, []);
+    assert.deepEqual(s.habilidades.sigilo.especialidades, []);
   });
 
   test("se rechazan si no quedan puntos para pagarlas", () => {
     let s = conLetraHabilidades("E"); // 6 pts: presupuesto ajustado a propósito
     s = setHabilidadValue(s, "atletismo", 1, AJUSTE_NEUTRO); // -1
-    s = setHabilidadValue(s, "sigilo", 1, AJUSTE_NEUTRO); // -1
+    s = setHabilidadValue(s, "actitud", 1, AJUSTE_NEUTRO); // -1
     s = setHabilidadValue(s, "cultura", 1, AJUSTE_NEUTRO); // -1 → 3 disponibles
-    s = addEspecialidad(s, "atletismo", "Carrera", AJUSTE_NEUTRO); // gratis, la primera
-    s = addEspecialidad(s, "sigilo", "Urbano", AJUSTE_NEUTRO); // gratis
-    s = addEspecialidad(s, "cultura", "Historia", AJUSTE_NEUTRO); // gratis → siguen 3 disponibles
-    s = addEspecialidad(s, "atletismo", "Salto", AJUSTE_NEUTRO); // -1 → 2
-    s = addEspecialidad(s, "sigilo", "Sombras", AJUSTE_NEUTRO); // -1 → 1
-    s = addEspecialidad(s, "cultura", "Geografía", AJUSTE_NEUTRO); // -1 → 0, entra justa
+    s = addEspecialidad(s, "atletismo", "carrera", AJUSTE_NEUTRO); // gratis, la primera
+    s = addEspecialidad(s, "actitud", "humor", AJUSTE_NEUTRO); // gratis
+    s = addEspecialidad(s, "cultura", "historia", AJUSTE_NEUTRO); // gratis → siguen 3 disponibles
+    s = addEspecialidad(s, "atletismo", "salto", AJUSTE_NEUTRO); // -1 → 2
+    s = addEspecialidad(s, "actitud", "empatia", AJUSTE_NEUTRO); // -1 → 1
+    s = addEspecialidad(s, "cultura", "sociedad", AJUSTE_NEUTRO); // -1 → 0, entra justa
     assert.equal(puntosHabilidadesDisponibles(s, AJUSTE_NEUTRO), 0);
-    s = addEspecialidad(s, "atletismo", "Trepa", AJUSTE_NEUTRO); // ya no cabe
-    assert.deepEqual(s.habilidades.atletismo.especialidades, ["Carrera", "Salto"]);
+    s = addEspecialidad(s, "atletismo", "escalada", AJUSTE_NEUTRO); // ya no cabe
+    assert.deepEqual(s.habilidades.atletismo.especialidades, ["carrera", "salto"]);
   });
 
   test("quitar una especialidad devuelve su punto", () => {
     let s = setHabilidadValue(conLetraHabilidades("D"), "biociencia", 2, AJUSTE_NEUTRO); // cuesta 3
-    s = addEspecialidad(s, "biociencia", "Medicina", AJUSTE_NEUTRO); // gratis
-    s = addEspecialidad(s, "biociencia", "Química", AJUSTE_NEUTRO); // -1
+    s = addEspecialidad(s, "biociencia", "medicina", AJUSTE_NEUTRO); // gratis
+    s = addEspecialidad(s, "biociencia", "bioquimica", AJUSTE_NEUTRO); // -1
     assert.equal(puntosHabilidadesDisponibles(s, AJUSTE_NEUTRO), PUNTOS_HABILIDADES_POR_LETRA.D - 4);
-    s = removeEspecialidad(s, "biociencia", "Química");
+    s = removeEspecialidad(s, "biociencia", "bioquimica");
     assert.equal(puntosHabilidadesDisponibles(s, AJUSTE_NEUTRO), PUNTOS_HABILIDADES_POR_LETRA.D - 3);
   });
 });

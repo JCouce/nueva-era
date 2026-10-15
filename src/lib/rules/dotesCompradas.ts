@@ -4,6 +4,7 @@
 import { z } from "zod";
 import { DOTES } from "../catalog/dotes";
 import type { DoteCatalogo } from "../catalog/dotesTipos";
+import { ESPECIALIDADES_ARMA } from "../catalog/especialidades";
 
 export const ELECCION_MAX = 60;
 export const MAX_DOTES = 200;
@@ -32,12 +33,14 @@ export function normalizarNombre(texto: string): string {
 }
 
 // La elección ya validada contra la dote, o null si no encaja. Lista cerrada: uno
-// de sus ids. Abierta o especialidad de arma: texto libre recortado.
+// de sus ids. Especialidad de arma: un id de ESPECIALIDADES_ARMA (que la ficha la tenga
+// es gate de compra, dotes.ts). Abierta: texto libre recortado.
 export function eleccionValida(dote: DoteCatalogo, eleccion: string | undefined): string | null | undefined {
   if (!dote.eleccion) return undefined; // la dote no pide elección: se ignora lo que venga
   const texto = typeof eleccion === "string" ? eleccion.trim().slice(0, ELECCION_MAX) : "";
   if (!texto) return null;
   const { opciones } = dote.eleccion;
+  if (opciones === "especialidades_arma") return ESPECIALIDADES_ARMA.some((e) => e.id === texto) ? texto : null;
   if (Array.isArray(opciones) && !("abierta" in dote.eleccion && dote.eleccion.abierta)) {
     return opciones.includes(texto) ? texto : null;
   }

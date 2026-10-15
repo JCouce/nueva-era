@@ -259,13 +259,19 @@ describe("vuelo", () => {
 
 describe("valor efectivo de una habilidad", () => {
   test("dentro de la especialidad se usa el valor entero", () => {
-    const s = ficha({ habilidades: { sigilo: { valor: 3, especialidades: ["Urbano"] } } });
-    assert.equal(valorEfectivo(s, "sigilo", true, modificadoresActivos(s)), 3);
+    const s = ficha({ habilidades: { cultura: { valor: 3, especialidades: ["historia"] } } });
+    assert.equal(valorEfectivo(s, "cultura", true, modificadoresActivos(s)), 3);
   });
 
   test("fuera de la especialidad, la mitad redondeando hacia arriba", () => {
-    const s = ficha({ habilidades: { sigilo: { valor: 3, especialidades: ["Urbano"] } } });
-    assert.equal(valorEfectivo(s, "sigilo", false, modificadoresActivos(s)), 2); // ceil(3/2)
+    const s = ficha({ habilidades: { cultura: { valor: 3, especialidades: ["historia"] } } });
+    assert.equal(valorEfectivo(s, "cultura", false, modificadoresActivos(s)), 2); // ceil(3/2)
+  });
+
+  test("S39: una habilidad sin especialidades en la fuente (Sigilo) va siempre entera", () => {
+    const s = ficha({ habilidades: { sigilo: { valor: 3, especialidades: [] } } });
+    assert.equal(valorEfectivo(s, "sigilo", false, modificadoresActivos(s)), 3);
+    assert.equal(valorEfectivo(s, "interpretacion", false, modificadoresActivos(s)), -1);
   });
 
   test("sin entrenar siempre es -1, esté donde esté", () => {

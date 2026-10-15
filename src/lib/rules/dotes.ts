@@ -20,31 +20,24 @@ import { bonosDeDisciplina, nivelEfectivo } from "./psionica";
 import { especieDeFicha } from "./especie";
 import { PUNTOS_DOTES_POR_LETRA } from "./prioridad";
 import type { Sheet } from "./sheet";
-import { dotePorId, eleccionValida, mismaDote, normalizarNombre, type DoteComprada } from "./dotesCompradas";
-import { DOTES, NOMBRES_ESPECIALIDAD_DOTES } from "../catalog/dotes";
+import { dotePorId, eleccionValida, mismaDote, type DoteComprada } from "./dotesCompradas";
+import { DOTES } from "../catalog/dotes";
+import { ESPECIALIDADES_ARMA, especialidadPorId, etiquetaEspecialidad, type EspecialidadId } from "../catalog/especialidades";
 import { DISCIPLINA_IDS, disciplinaPorId, type DisciplinaId } from "../catalog/psionica";
 import type { DoteCatalogo, RequisitoDote, RequisitoDoteSimple } from "../catalog/dotesTipos";
 
 // ── Valores con los que se juega ──────────────────────────────────────
 
 // Lo que miran los requisitos (§9.1: "el valor con el que se juega, especie
-// incluida"). Las especialidades van como clave normalizada (claveEspecialidad).
+// incluida"). Las especialidades, por id del catálogo (catalog/especialidades.ts).
 export type ValoresRequisito = {
   atributos: Record<AtributoId, number>;
   aplicados: Record<AplicadoId, number>;
   habilidades: Record<HabilidadId, number>;
-  especialidades: Record<HabilidadId, string[]>;
+  especialidades: Record<HabilidadId, EspecialidadId[]>;
   disciplinas: Record<DisciplinaId, number>;
   psionico: boolean;
 };
-
-// "Empatía" ↔ "empatia", "Ingeniería Genética" ↔ "ingenieria_genetica".
-// TODO(revisar): comparación por nombre normalizado mientras las especialidades sean
-// texto libre (habilidades.ts). Se sustituye cuando llegue el catálogo de
-// especialidades (docs/tareas.md, "Dotes").
-export function claveEspecialidad(nombre: string): string {
-  return normalizarNombre(nombre).replace(/[\s_-]+/g, "_");
-}
 
 // Hueco para la psiónica por implante (§9.1): el Implante de Resonancia Métrica
 // activará el requisito "psiónica de origen biológico" cuando exista el área de
@@ -73,8 +66,8 @@ export function valoresDeRequisito(sheet: Sheet, mods: ModificadorConFuente[]): 
       HABILIDADES.map((h) => [h.id, sheet.habilidades[h.id].valor + bonoHabilidad(mods, h.id)]),
     ) as Record<HabilidadId, number>,
     especialidades: Object.fromEntries(
-      HABILIDADES.map((h) => [h.id, sheet.habilidades[h.id].especialidades.map(claveEspecialidad)]),
-    ) as Record<HabilidadId, string[]>,
+      HABILIDADES.map((h) => [h.id, [...sheet.habilidades[h.id].especialidades]]),
+    ) as Record<HabilidadId, EspecialidadId[]>,
     disciplinas,
     psionico: Object.values(disciplinas).some((n) => n > 0) || psionicaPorImplante(sheet),
   };
@@ -97,7 +90,7 @@ function cumpleSimple(r: RequisitoDoteSimple, v: ValoresRequisito, compradas: re
       return v.habilidades[r.id] >= r.min;
     // §9.5: "Humor 2" = la habilidad a 2 o más Y tener elegida esa especialidad.
     case "especialidad":
-      return v.habilidades[r.habilidad] >= r.min && v.especialidades[r.habilidad].includes(claveEspecialidad(r.id));
+      return v.habilidades[r.habilidad] >= r.min && v.especialidades[r.habilidad].includes(r.id);
     // "Nivel en una habilidad psiónica N": cualquier disciplina a N o más (§9.1).
     case "disciplina":
       return r.id === "cualquiera"
@@ -126,7 +119,7 @@ function textoSimple(r: RequisitoDoteSimple): string {
     case "habilidad":
       return `${etiquetaDe(HABILIDADES, r.id)} ${r.min}`;
     case "especialidad":
-      return `${NOMBRES_ESPECIALIDAD_DOTES[r.id] ?? r.id} ${r.min} (${etiquetaDe(HABILIDADES, r.habilidad)})`;
+      return `${etiquetaEspecialidad(r.id)} ${r.min} (${etiquetaDe(HABILIDADES, r.habilidad)})`;
     case "disciplina":
       return `${r.id === "cualquiera" ? "Cualquier disciplina" : disciplinaPorId(r.id).label} ${r.min}`;
     case "psionico":
@@ -187,11 +180,43 @@ export function motivoNoComprable(sheet: Sheet, entrada: DoteComprada, ctx: Cont
   if (!nueva) return `Elige ${dote.eleccion?.label.toLowerCase() ?? "una opción"}`;
   if (!dote.repetible && sheet.dotes.some((d) => d.id === dote.id)) return "Ya tienes esta dote";
   if (dote.repetible && sheet.dotes.some((d) => mismaDote(d, nueva))) return "Ya la tienes con esa elección";
+  if (dote.eleccion?.opciones === "especialidades_arma" && nueva.eleccion && !especialidadArmaPropia(dote, nueva.eleccion, ctx.valores, sheet.dotes)) {
+    return "Elige una especialidad de arma que tengas, en la habilidad con la que cumples el requisito";
+  }
   const faltan = estadoRequisitos(dote, ctx.valores, sheet.dotes).filter((r) => !r.cumple);
   if (faltan.length) return `No cumples: ${faltan.map((r) => r.texto).join(", ")}`;
   if (ctx.aprobada) return ctx.xp >= dote.coste ? null : "No tienes XP suficiente";
   if (!sheet.prioridades.dotes) return "Asigna una letra de prioridad a Dotes";
   return puntosDotesDisponibles(sheet) >= dote.coste ? null : "No te quedan puntos de dotes";
+}
+
+// Crítico Mejorado: "una de sus especializaciones en armas para la habilidad con la que
+// cumpla el requisito" (docs/dotes.md). La ficha tiene que tener esa especialidad y cumplir
+// el requisito de habilidad de la dote en la habilidad de la especialidad.
+function especialidadArmaPropia(
+  dote: DoteCatalogo,
+  id: string,
+  v: ValoresRequisito,
+  compradas: readonly DoteComprada[],
+): boolean {
+  const esp = especialidadPorId(id);
+  if (!esp || !v.especialidades[esp.habilidad].includes(esp.id)) return false;
+  const deHabilidad = dote.requisitos
+    .flatMap((r) => (r.tipo === "uno_de" ? r.opciones : [r]))
+    .filter((r) => r.tipo === "habilidad" && r.id === esp.habilidad);
+  return deHabilidad.length === 0 || deHabilidad.some((r) => cumpleSimple(r, v, compradas));
+}
+
+// Las especialidades de arma que la ficha puede elegir (Crítico Mejorado), en el orden del catálogo.
+function especialidadesArmaElegibles(
+  dote: DoteCatalogo,
+  v: ValoresRequisito,
+  compradas: readonly DoteComprada[],
+): { valor: string; etiqueta: string }[] {
+  return ESPECIALIDADES_ARMA.filter((e) => especialidadArmaPropia(dote, e.id, v, compradas)).map((e) => ({
+    valor: e.id,
+    etiqueta: e.label,
+  }));
 }
 
 // `costeXp`: lo que hay que descontar de la XP (0 en creación, que gasta pool).
@@ -281,6 +306,7 @@ export function faltasDeDotes(sheet: Sheet, v: ValoresRequisito): string[] {
 export function etiquetaEleccion(dote: DoteCatalogo, eleccion: string | undefined): string | null {
   if (!eleccion || !dote.eleccion) return null;
   const { eleccion: el } = dote;
+  if (el.opciones === "especialidades_arma") return etiquetaEspecialidad(eleccion);
   return ("etiquetas" in el && el.etiquetas?.[eleccion]) || eleccion;
 }
 
@@ -292,17 +318,23 @@ export function etiquetaDote(dote: DoteCatalogo, eleccion: string | undefined): 
 
 // Lo que pinta el selector de elección. `cerrada`: select con estas opciones (las ya
 // elegidas de una repetible, fuera). Si no: input de texto libre con `opciones` de
-// sugerencia (Bioma Predilecto: los ejemplos de la fuente; Crítico Mejorado: las
-// especialidades de Combate Melee y a Distancia del personaje).
+// sugerencia (Bioma Predilecto: los ejemplos de la fuente). Crítico Mejorado: cerrada,
+// con las especialidades de arma que la ficha tiene en la habilidad con la que cumple
+// el requisito (`v`: ficha.requisitosDotes).
 export function opcionesDeEleccion(
   dote: DoteCatalogo,
   sheet: Sheet,
+  v: ValoresRequisito,
 ): { cerrada: boolean; opciones: { valor: string; etiqueta: string }[] } | null {
   const el = dote.eleccion;
   if (!el) return null;
   if (el.opciones === "especialidades_arma") {
-    const nombres = [...sheet.habilidades.combate_melee.especialidades, ...sheet.habilidades.combate_distancia.especialidades];
-    return { cerrada: false, opciones: [...new Set(nombres)].map((n) => ({ valor: n, etiqueta: n })) };
+    return {
+      cerrada: true,
+      opciones: especialidadesArmaElegibles(dote, v, sheet.dotes).filter(
+        (o) => !sheet.dotes.some((d) => mismaDote(d, { id: dote.id, eleccion: o.valor })),
+      ),
+    };
   }
   if ("abierta" in el && el.abierta) return { cerrada: false, opciones: el.opciones.map((o) => ({ valor: o, etiqueta: o })) };
   return {

@@ -1,6 +1,8 @@
 // Validación de entrada de la app (no del sistema de juego). Los esquemas de la
 // ficha viven en "@/lib/rules" porque dependen de las reglas.
 import { z } from "zod";
+import { HABILIDADES, type HabilidadId } from "./rules/habilidades";
+import { esEspecialidadDe } from "./catalog/especialidades";
 
 // Login flexible para el grupo: acepta usuario simple (no hace falta email) y
 // contraseñas cortas. El campo se llama `email` porque mapea a User.email.
@@ -34,3 +36,16 @@ export const eleccionEspecieSchema = z.object({
   casta: idCatalogo.nullable().optional(),
   linaje: idCatalogo.nullable().optional(),
 });
+
+// Especialidad que se añade o se quita (addEspecialidadAction y su espejo de NPC): la
+// habilidad tiene que existir y la especialidad ser un id de SU lista
+// (catalog/especialidades.ts). Una habilidad sin lista no admite ninguna.
+export const especialidadDeHabilidadSchema = z
+  .object({
+    habilidadId: z.enum(HABILIDADES.map((h) => h.id) as [HabilidadId, ...HabilidadId[]]),
+    especialidadId: z.string().max(40),
+  })
+  .refine((v) => esEspecialidadDe(v.habilidadId, v.especialidadId), {
+    message: "Esa especialidad no es de esta habilidad",
+    path: ["especialidadId"],
+  });

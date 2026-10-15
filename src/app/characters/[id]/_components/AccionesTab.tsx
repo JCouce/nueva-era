@@ -37,6 +37,7 @@ import {
   type EfectosDeUso,
   type PeajeDeUso,
   usarHabilidadAlternativa,
+  etiquetaEspecialidad,
   conEsquivaLevitando,
   conPsionicaEnTiradaFija,
   etiquetaPoder,
@@ -148,14 +149,18 @@ function FilaTirada({
   const efectiva = alternativa?.tirada ?? tirada;
   const enEspEfectiva = alternativa ? alternativa.enEspecialidad : enEspecialidad;
 
-  const especialidades = !alternativa && tirada.habilidad
+  // Un ataque con arma no ofrece selector: su especialidad la decide la propia tirada
+  // (montada.especialidadArma).
+  const especialidades = !alternativa && !tirada.especialidadArma && tirada.habilidad
     ? sheet.habilidades[tirada.habilidad].especialidades
     : [];
   const montada = montarTirada(ficha, efectiva, eleccionSinTocar(efectiva, enEspEfectiva, sutilActivo));
   const nombreAplicado = APLICADOS.find((a) => a.id === montada.aplicado.id)!;
   const nombreHabilidad = efectiva.habilidad
     ? HABILIDADES.find((h) => h.id === efectiva.habilidad)!.label +
-      (alternativa ? ` (${tirada.habilidadAlternativa!.especialidad}${enEspEfectiva ? "" : ", mitad"})` : "")
+      (alternativa
+        ? ` (${etiquetaEspecialidad(tirada.habilidadAlternativa!.especialidad)}${enEspEfectiva ? "" : ", mitad"})`
+        : "")
     : null;
 
   if (tirada.bloqueada) {
@@ -205,7 +210,7 @@ function FilaTirada({
 
         <button
           type="button"
-          onClick={() => onAbrir(efectiva, enEspEfectiva, sutilActivo)}
+          onClick={() => onAbrir(efectiva, montada.enEspecialidad, sutilActivo)}
           className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95"
         >
           Tirar
@@ -263,9 +268,21 @@ function FilaTirada({
             }`}
           >
             {enEspecialidad ? "✓ " : ""}
-            {especialidades.join(" / ")}
+            {especialidades.map(etiquetaEspecialidad).join(" / ")}
           </button>
         </div>
+      )}
+
+      {montada.especialidadArma && (
+        <p
+          className={`mt-2 font-mono text-[10px] uppercase ${
+            montada.especialidadArma.tiene ? "text-info" : "text-muted"
+          }`}
+        >
+          {montada.especialidadArma.tiene
+            ? `✓ especialidad: ${montada.especialidadArma.label}`
+            : `sin ${montada.especialidadArma.label}: la mitad`}
+        </p>
       )}
 
       {tirada.nota && (
@@ -986,9 +1003,11 @@ export function AccionesTab({
     );
   };
 
-  const especialidadesActuales = modal?.tirada.habilidad
-    ? sheet.habilidades[modal.tirada.habilidad].especialidades
-    : [];
+  const especialidadesActuales = modal?.tirada.especialidadArma
+    ? [modal.tirada.especialidadArma]
+    : modal?.tirada.habilidad
+      ? sheet.habilidades[modal.tirada.habilidad].especialidades
+      : [];
   // El resultado vive en `historial` (tirarDanio lo actualiza ahí), no
   // duplicado en el propio `modal` — se busca por id para que las dos vistas
   // (Marcador arriba, AccionModal) lean siempre el mismo objeto.
@@ -1206,7 +1225,7 @@ export function AccionesTab({
           }
           subtitulo={
             especialidadesActuales.length > 0
-              ? `especialidad: ${especialidadesActuales.join(" / ")}`
+              ? `especialidad${modal.tirada.especialidadArma ? " del arma" : ""}: ${especialidadesActuales.map(etiquetaEspecialidad).join(" / ")}`
               : undefined
           }
           cabecera={modal.tirada.grupo === "Psiónica" ? cabeceraPoder : undefined}

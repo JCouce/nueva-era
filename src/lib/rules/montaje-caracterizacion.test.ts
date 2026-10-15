@@ -40,10 +40,10 @@ const base = (): Sheet => {
     habilidades: {
       ...s.habilidades,
       atletismo: { ...s.habilidades.atletismo, valor: 3 },
-      exploracion: { valor: 3, especialidades: ["Rastreo"] },
+      exploracion: { valor: 3, especialidades: ["supervivencia"] },
       combate_distancia: { ...s.habilidades.combate_distancia, valor: 2 },
       combate_melee: { ...s.habilidades.combate_melee, valor: 2 },
-      biociencia: { valor: 4, especialidades: ["Medicina"] },
+      biociencia: { valor: 4, especialidades: ["medicina"] },
       tecnociencia: { ...s.habilidades.tecnociencia, valor: 2 },
     },
   };

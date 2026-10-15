@@ -41,6 +41,7 @@ import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./pri
 import { DISCIPLINA_IDS, type DisciplinaId } from "../catalog/psionica";
 import { normalizarOpciones } from "../catalog/especies";
 import { doteCompradaSchema, normalizarDotes, MAX_DOTES } from "./dotesCompradas";
+import { ESPECIALIDAD_IDS, esEspecialidadDe, type EspecialidadId } from "../catalog/especialidades";
 
 // Versión del formato de ficha. Al subirla hay que añadir su migración en
 // migraciones.ts y el test que la cubre.
@@ -63,13 +64,18 @@ import { doteCompradaSchema, normalizarDotes, MAX_DOTES } from "./dotesCompradas
 //   14 → se añaden las opciones de especie (especieOpciones: casta y linaje)
 //   15 → las piezas equipadas admiten `viaEspecie` (kerzul del Arköru)
 //   16 → se añaden las dotes compradas (dotes)
-export const SCHEMA_VERSION = 16;
+//   17 → las especialidades pasan de texto libre a ids del catálogo
+//        (catalog/especialidades.ts); lo que no casa va a avisoEspecialidades
+export const SCHEMA_VERSION = 17;
+
+export const MAX_AVISOS_ESPECIALIDADES = 40;
 
 const atributoValue = z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX);
 
 const habilidadValue = z.object({
   valor: z.number().int().min(HABILIDAD_NO_ENTRENADA).max(HABILIDAD_MAX),
-  especialidades: z.array(z.string().trim().min(1).max(40)).max(MAX_ESPECIALIDADES),
+  // Ids de catalog/especialidades.ts, siempre de esta misma habilidad (parseSheet).
+  especialidades: z.array(z.enum(ESPECIALIDAD_IDS)).max(MAX_ESPECIALIDADES),
 });
 
 const atributosShape = Object.fromEntries(
@@ -114,6 +120,9 @@ export const sheetSchema = z.object({
   // Dotes compradas (docs/sistema.md §9.1), con su elección si la piden. Lo
   // gastado, los requisitos y la marca de requisito no cumplido se derivan (dotes.ts).
   dotes: z.array(doteCompradaSchema).max(MAX_DOTES),
+  // Textos que la migración a ids (v17) no supo casar con el catálogo ("Atletismo: Trepar"):
+  // la pestaña Habilidades los enseña para que el jugador elija la buena, y él los descarta.
+  avisoEspecialidades: z.array(z.string().max(120)).max(MAX_AVISOS_ESPECIALIDADES),
   // Recurso persistente del propio personaje (vitalidad.ts), no de una
   // instancia de equipo — por eso vive suelto aquí y no dentro de `recursos`.
   // El centinela 999 (ver defaultSheet/parseSheet) se recorta al máximo real
@@ -143,7 +152,7 @@ export function defaultSheet(): Sheet {
     habilidades: Object.fromEntries(
       HABILIDADES.map((h) => [
         h.id,
-        { valor: HABILIDAD_NO_ENTRENADA, especialidades: [] as string[] },
+        { valor: HABILIDAD_NO_ENTRENADA, especialidades: [] as EspecialidadId[] },
       ]),
     ) as Sheet["habilidades"],
     prioridades: prioridadesVacias(),
@@ -155,6 +164,7 @@ export function defaultSheet(): Sheet {
     municionEspecial: defaultMunicionEspecial(),
     psionica: {},
     dotes: [],
+    avisoEspecialidades: [],
     // Centinela: parseSheet lo recorta al máximo real (salud()) nada más
     // leer la ficha, así que una ficha nueva arranca a tope sin duplicar la
     // fórmula de vida/fatiga aquí.
@@ -205,12 +215,13 @@ export function parseSheet(raw: unknown): Sheet {
       HABILIDAD_MAX,
       HABILIDAD_NO_ENTRENADA,
     );
+    // Solo ids del catálogo de ESTA habilidad, sin repetir y hasta el tope.
     const especialidades = Array.isArray(entry.especialidades)
-      ? entry.especialidades
-          .filter((e): e is string => typeof e === "string")
-          .map((e) => e.trim().slice(0, 40))
-          .filter((e) => e.length > 0)
-          .slice(0, MAX_ESPECIALIDADES)
+      ? [
+          ...new Set(
+            entry.especialidades.filter((e): e is EspecialidadId => typeof e === "string" && esEspecialidadDe(h.id, e)),
+          ),
+        ].slice(0, MAX_ESPECIALIDADES)
       : [];
     // Sin entrenar no hay especialidad que valga.
     habilidades[h.id] =
@@ -329,6 +340,12 @@ export function parseSheet(raw: unknown): Sheet {
       municionEspecial,
       psionica,
       dotes: normalizarDotes(r.dotes),
+      avisoEspecialidades: Array.isArray(r.avisoEspecialidades)
+        ? r.avisoEspecialidades
+            .filter((t): t is string => typeof t === "string" && t.trim().length > 0)
+            .map((t) => t.trim().slice(0, 120))
+            .slice(0, MAX_AVISOS_ESPECIALIDADES)
+        : [],
       vidaActual: clampInt(r.vidaActual, 0, 999, 999),
       fatigaActual: clampInt(r.fatigaActual, 0, 999, 999),
       fatigaTemporal: clampInt(r.fatigaTemporal, 0, 999, 0),

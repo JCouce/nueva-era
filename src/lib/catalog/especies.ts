@@ -476,9 +476,10 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         id: "rigidez_narcisista",
         label: "Rigidez narcisista",
         texto: "Un fallo en Empatía, Humor o Negociación es fallo crítico (cualquier tirada con una especialidad de ese nombre).",
-        // Fuera de E4 (decisión del usuario, 2026-10-13). Forma decidida para cuando
-        // las especialidades sean lista cerrada: al tirar se elige QUÉ especialidad se
-        // usa, y con una de esas tres el margen de fallo crítico baja solo, sin casilla
+        // Fuera de E4 (decisión del usuario, 2026-10-13). Las especialidades ya son lista
+        // cerrada (tanda ESP); falta que la tirada sepa QUÉ especialidad se usa (hoy
+        // `enEspecialidad` es sí/no). Con eso, y una de estas tres (empatia, humor,
+        // negociacion), el margen de fallo crítico baja solo, sin casilla
         // (eleccion_jugador: lo dispara la especialidad elegida al tirar).
         motor: [
           {
@@ -486,7 +487,7 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
             afecta: { modo: "accion_existente", id: "todas" },
             mecanismo: "eleccion_jugador",
             estado: "bloqueado",
-            bloqueoPor: "pregunta 3 de sistema.md (especialidades en lista cerrada, S5)",
+            bloqueoPor: "docs/tareas.md, «La tirada sabe qué especialidad se usa»",
           },
         ],
       },
