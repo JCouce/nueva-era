@@ -205,14 +205,16 @@ function ajustesFijosDeMejoras(sheet: Sheet, instanciaId: string): { valor: numb
   return ajustes;
 }
 
+// `etiqueta`: "Modo de disparo" en armas de fuego; los golpes melee pasan "Modo de ataque".
 function condicionModo(
   modos: { id: string; etiqueta: string; dificultad: number; nota?: string }[],
+  etiqueta = "Modo de disparo",
 ): CondicionTirada | null {
   if (modos.length <= 1) return null;
   return {
     id: "modo",
     tipo: "opcion",
-    etiqueta: "Modo de disparo",
+    etiqueta,
     opciones: modos.map((m) => ({ id: m.id, etiqueta: m.etiqueta, valor: m.dificultad, nota: m.nota })),
     porDefecto: modos[0].id,
   };
@@ -589,7 +591,7 @@ function tiradaDeArmaMelee(
   sutilPermitido: boolean,
 ): Accion {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
-  const modo = condicionModo(modosConId);
+  const modo = condicionModo(modosConId, "Modo de ataque");
   const fuerza = atributoEfectivo(sheet, "fuerza", mods);
   const esSutil = arma.sutil === true && sutilPermitido;
   // Solo se calcula si hace falta: el resto de armas (no Sutil) no necesita

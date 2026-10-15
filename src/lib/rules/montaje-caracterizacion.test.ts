@@ -541,7 +541,7 @@ const ESPERADO: Record<string, unknown> = {
         desglose: [
           { etiqueta: "Potencia", valor: 2 },
           { etiqueta: "Combate Melee", valor: 1 },
-          { etiqueta: "Modo de disparo: Simple", valor: 0 },
+          { etiqueta: "Modo de ataque: Simple", valor: 0 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
@@ -558,7 +558,7 @@ const ESPERADO: Record<string, unknown> = {
         desglose: [
           { etiqueta: "Reflejos", valor: 1 },
           { etiqueta: "Combate Melee", valor: 1 },
-          { etiqueta: "Modo de disparo: Simple", valor: 0 },
+          { etiqueta: "Modo de ataque: Simple", valor: 0 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
@@ -667,7 +667,7 @@ const ESPERADO: Record<string, unknown> = {
           { etiqueta: "Reflejos", valor: 1 },
           { etiqueta: "Combate Melee", valor: 1 },
           { etiqueta: "Enfermedad", valor: -1 },
-          { etiqueta: "Modo de disparo: Simple", valor: 0 },
+          { etiqueta: "Modo de ataque: Simple", valor: 0 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
