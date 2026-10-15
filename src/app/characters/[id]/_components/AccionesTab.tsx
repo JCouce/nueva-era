@@ -151,9 +151,9 @@ function FilaTirada({
   const efectiva = alternativa?.tirada ?? tirada;
   const enEspEfectiva = alternativa ? alternativa.enEspecialidad : enEspecialidad;
 
-  // Un ataque con arma no ofrece selector: su especialidad la decide la propia tirada
-  // (montada.especialidadArma).
-  const especialidades = !alternativa && !tirada.especialidadArma && tirada.habilidad
+  // Un ataque con arma (o una acción de dote con especialidad) no ofrece selector: su
+  // especialidad la decide la propia tirada (montada.especialidadArma).
+  const especialidades = !alternativa && !tirada.especialidadArma && !tirada.especialidadesAccion && tirada.habilidad
     ? sheet.habilidades[tirada.habilidad].especialidades
     : [];
   const montada = montarTirada(ficha, efectiva, eleccionSinTocar(efectiva, enEspEfectiva, sutilActivo));
@@ -599,6 +599,18 @@ export function AccionesTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, ficha.textosTirada, ficha.extrasDotes, ficha.notasFarmacos, mods]);
 
+  // Acciones de dote (D2c-1): las de la sección Dotes y las copias en otro grupo fijo.
+  const { dotesTiradas, dotesEnGrupos, dotesDirectas, directasDotesEnGrupos } = useMemo(() => {
+    const tiradas = ficha.accionesDotes.tiradas.map((t) => conExtrasDeFicha(ficha, t));
+    const directas = ficha.accionesDotes.directas.map((d) => conExtrasDirectaDeFicha(ficha, d));
+    return {
+      dotesTiradas: tiradas.filter((t) => t.grupo === "Dotes"),
+      dotesEnGrupos: tiradas.filter((t) => t.grupo !== "Dotes"),
+      dotesDirectas: directas.filter((d) => d.grupo === "Dotes"),
+      directasDotesEnGrupos: directas.filter((d) => d.grupo !== "Dotes"),
+    };
+  }, [ficha]);
+
   const abrir = (t: Accion, enEspecialidad: boolean, sutil: boolean) => {
     setModal({ tirada: t, ficha, eleccion: { enEspecialidad, sutil }, resultadoId: null });
   };
@@ -1009,7 +1021,9 @@ export function AccionesTab({
 
   const especialidadesActuales = modal?.tirada.especialidadArma
     ? [modal.tirada.especialidadArma]
-    : modal?.tirada.habilidad
+    : modal?.tirada.especialidadesAccion
+      ? [...modal.tirada.especialidadesAccion]
+      : modal?.tirada.habilidad
       ? sheet.habilidades[modal.tirada.habilidad].especialidades
       : [];
   // El resultado vive en `historial` (tirarDanio lo actualiza ahí), no
@@ -1127,6 +1141,8 @@ export function AccionesTab({
             // equipo) detrás — mismo orden que Ataques: lo fijo antes que lo
             // que trae cada arma. "Volar" entra igual dentro de "Acciones".
             .concat(grupo === "Defensa" ? defensaGenerada : grupo === "Acciones" ? accionesGeneradas : [])
+            // Acciones de dote con este grupo extra (Traicionero en Iniciativa, §9.3).
+            .concat(dotesEnGrupos.filter((t) => t.grupo === grupo))
             .map((t) => (
               <FilaTirada key={t.id} tirada={t} ficha={ficha} onAbrir={abrir} />
             ))}
@@ -1135,6 +1151,9 @@ export function AccionesTab({
               fijo de ACCIONES. */}
           {grupo === "Defensa" &&
             defensaDirecta.map((a) => <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} />)}
+          {directasDotesEnGrupos
+            .filter((a) => a.grupo === grupo)
+            .map((a) => <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} />)}
           {/* Bloquear daño vive junto a Defensa/esquiva — tampoco es una
               tirada fija de ACCIONES (no tira dado, no muta la ficha). */}
           {grupo === "Defensa" && <FilaBloquearDanio onAbrir={() => setBloquearDanioAbierta(true)} />}
@@ -1149,6 +1168,22 @@ export function AccionesTab({
           )}
         </div>
       ))}
+
+      {/* Dotes (D2c-1): las acciones propias de las dotes activas, de la FichaResuelta
+          (dotesAcciones.ts). Sin ninguna, no hay sección. Al final, tras Acciones. */}
+      {(dotesTiradas.length > 0 || dotesDirectas.length > 0) && (
+        <div className="flex flex-col gap-2">
+          <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
+            Dotes
+          </h2>
+          {dotesTiradas.map((t) => (
+            <FilaTirada key={t.id} tirada={t} ficha={ficha} onAbrir={abrir} />
+          ))}
+          {dotesDirectas.map((a) => (
+            <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} />
+          ))}
+        </div>
+      )}
 
       {bloquearDanioAbierta && (
         <BloquearDanioModal ficha={ficha} onCerrar={() => setBloquearDanioAbierta(false)} />

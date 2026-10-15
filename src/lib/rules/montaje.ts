@@ -8,7 +8,7 @@
 // y la resolución del d12, que no saben de fichas. Ver docs/modificadores-tiradas.md,
 // "Montaje: montarTirada".
 import { MARGEN_CRITICO, modificadorAccion, resolverTirada, tieneEspecialidad, type Accion, type Resultado } from "./acciones";
-import { etiquetaEspecialidad } from "../catalog/especialidades";
+import { etiquetaEspecialidad, type EspecialidadId } from "../catalog/especialidades";
 import type { Sheet } from "./sheet";
 import { APLICADOS, type AplicadoId } from "./atributos";
 import { HABILIDADES, type HabilidadId } from "./habilidades";
@@ -44,11 +44,16 @@ export const SIN_ELECCION: EleccionTirada = { enEspecialidad: false, sutil: fals
 
 // Si la tirada va en especialidad. Un ataque con arma (`especialidadArma`) lo sabe solo: en
 // especialidad si la ficha tiene la del arma, y si no, a la mitad; lo que se eligiera en la
-// fila no cuenta. El resto de tiradas, lo que eligió el jugador.
+// fila no cuenta. Igual una acción de dote con especialidad (`especialidadesAccion`), con
+// cualquiera de las suyas. El resto de tiradas, lo que eligió el jugador.
 export function enEspecialidadEfectiva(sheet: Sheet, tirada: Accion, elegido: boolean): boolean {
-  if (tirada.especialidadArma && tirada.habilidad) return tieneEspecialidad(sheet, tirada.habilidad, tirada.especialidadArma);
+  const fijas = especialidadesFijas(tirada);
+  if (fijas.length > 0 && tirada.habilidad) return fijas.some((e) => tieneEspecialidad(sheet, tirada.habilidad!, e));
   return elegido;
 }
+
+const especialidadesFijas = (t: Accion): readonly EspecialidadId[] =>
+  t.especialidadArma ? [t.especialidadArma] : (t.especialidadesAccion ?? []);
 
 // La tirada tal como abre el modal, sin tocar nada: las casillas en su estado inicial
 // y sin circunstancial. Con esto monta la fila, y su `modificador` es el mismo número
@@ -64,8 +69,9 @@ export type TiradaMontada = {
   habilidad: { id: HabilidadId; valor: number } | null;
   // Si al final va en especialidad (enEspecialidadEfectiva).
   enEspecialidad: boolean;
-  // Ataque con arma: su especialidad y si la ficha la tiene, para que la fila lo enseñe en
-  // vez del selector.
+  // Ataque con arma (o acción de dote con especialidad): su especialidad y si la ficha la
+  // tiene, para que la fila lo enseñe en vez del selector. Con varias (Apoyo), la que se
+  // tenga; sin ninguna, todas ("Empatía o Liderazgo").
   especialidadArma: { id: string; label: string; tiene: boolean } | null;
   ajustesFijos: { valor: number; fuente: string }[];
   // Aplicado + habilidad + ajustes fijos.
@@ -145,10 +151,7 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     aplicado: { id: aplicadoId, valor: mod.aplicado },
     habilidad: tirada.habilidad ? { id: tirada.habilidad, valor: mod.habilidad ?? 0 } : null,
     enEspecialidad,
-    especialidadArma:
-      tirada.especialidadArma && tirada.habilidad
-        ? { id: tirada.especialidadArma, label: etiquetaEspecialidad(tirada.especialidadArma), tiene: enEspecialidad }
-        : null,
+    especialidadArma: especialidadFijaMontada(ficha.ficha, tirada, enEspecialidad),
     ajustesFijos,
     base,
     modificador,
@@ -165,6 +168,15 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     ],
     modoElegido: modo,
   };
+}
+
+function especialidadFijaMontada(sheet: Sheet, tirada: Accion, tiene: boolean): TiradaMontada["especialidadArma"] {
+  const fijas = especialidadesFijas(tirada);
+  const habilidad = tirada.habilidad;
+  if (fijas.length === 0 || !habilidad) return null;
+  const propias = fijas.filter((e) => tieneEspecialidad(sheet, habilidad, e));
+  const mostradas = propias.length > 0 ? propias : fijas;
+  return { id: mostradas[0], label: mostradas.map(etiquetaEspecialidad).join(propias.length > 0 ? " / " : " o "), tiene };
 }
 
 // La tirada ya montada contra el dado y la dificultad, con sus márgenes.

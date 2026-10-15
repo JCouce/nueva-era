@@ -57,6 +57,12 @@
 //   - CONVERSIONES también lleva Salto Evasivo y su Mejorado: el borrador los trae como
 //     texto "sin_regla", pero §9.3 aprueba la capa éxito extra para ellos.
 //
+// Normalización de acciones de dote (D2c-1, AJUSTES_ACCION de abajo): retoques a la AccionDote
+// del borrador decididos con el usuario o leídos de la prosa (docs/dotes.md); cada uno con su
+// porqué al lado. Pueden cambiar campos de la resolución (añadir la especialidad), sustituir
+// una nota por índice, añadir notas o poner el grupo extra. Una acción de la tabla que no esté
+// en el borrador, falla.
+//
 // Normalización de efectos sobre tiradas de arma (D2b-1):
 //   - Requisito por rama (§9.5: "Asesino, Desenfundado Rápido, Golpe Entorpecedor: cada
 //     rama exige su requisito"). El borrador no trae `requisitoAlcance`; se deduce del
@@ -73,7 +79,7 @@
 //     añade `filtroArma` a sus efectos de familia de arma.
 //
 // Clasificación (MotorMetadata de cada efecto; docs/motor.md):
-//   - Tanda = la más tardía (D2b-1 < D2b-2 < D2c < D2d) entre la del destino (tabla de
+//   - Tanda = la más tardía (D2b-1 < D2b-2 < D2c < D2c-2 < D2d) entre la del destino (tabla de
 //     destinos: "tanda") y la del tipo de efecto (TANDA_DEL_TIPO); EXCEPCIONES_TANDA
 //     (dotesDestinos.ts) manda sobre las dos. Con tanda → `pendiente`, `bloqueoPor`.
 //   - Sin tanda → `construido`: bono con valor numérico o texto, sobre una tirada que
@@ -330,6 +336,9 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
       porque: "turno",
     },
   ],
+  // §9.3 UX propia: Reflejos Felinos resta un atacante al contador de atacantes adicionales de
+  // la esquiva (mínimo 0), no una casilla +1 (el borrador lo traía como bono con condición).
+  "dote_reflejos_felinos#0": { tipo: "descuento_contador", alcance: "defensa", contador: "atacantes_adicionales", unidades: 1 },
   // "Se mueve en sigilo sin penalizador": la Sigilo de la app no lleva el penalizador por
   // moverse oculto, así que no hay número que compensar (el borrador inventaba +2/+4/+8).
   // Texto en Sigilo; las otras dos velocidades, en la tarjeta.
@@ -356,6 +365,73 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
   },
 };
 
+// Retoques a las acciones de dote del borrador (D2c-1; ver cabecera). Por id de acción.
+type AjusteAccion = {
+  resolucion?: Record<string, unknown>;
+  notas?: Record<number, { texto: string; condicion: string | null }>;
+  notasExtra?: { texto: string; condicion: string | null }[];
+  grupoExtra?: "Defensa" | "Salvaciones" | "Iniciativa" | "Acciones";
+};
+const VENTAJA_COMO_TEXTO = "aplícala a mano mientras no exista la casilla de ventaja";
+const AJUSTES_ACCION: Readonly<Record<string, AjusteAccion>> = {
+  // Prosa: "expresión + empatía o liderazgo". El borrador no traía la especialidad en la
+  // resolución (decisión del usuario, D2c-1): va en especialidad con cualquiera de las dos.
+  // La ventaja por vínculo fuerte es la capa ventaja-con-casilla (D2d): mientras, texto.
+  dotes_apoyo: {
+    resolucion: { especialidad: ["empatia", "liderazgo"] },
+    notas: { 1: { texto: "Con Empatía o Liderazgo: va en especialidad con cualquiera de las dos.", condicion: null } },
+    notasExtra: [{ texto: `Si el vínculo de afecto con el aliado es fuerte, tienes ventaja (${VENTAJA_COMO_TEXTO}).`, condicion: null }],
+  },
+  // Prosa: "Si el ataque que desencadena la acción es un golpe crítico, ... ventaja". Igual que
+  // Apoyo: la ventaja es D2d; mientras, texto en la nota.
+  dotes_violencia_aterradora: {
+    notasExtra: [{ texto: `Si el ataque que la desencadena fue crítico, tienes ventaja (${VENTAJA_COMO_TEXTO}).`, condicion: null }],
+  },
+  // Prosa: "tirada de ataque con el atributo de potencia", sin habilidad. Decisión del usuario
+  // (D2c-1, supuesto S53): Combate Melee, en especialidad Pelea (el requisito de la dote).
+  dotes_arrollar: { resolucion: { especialidad: "pelea" } },
+  // §9.3: "pudiendo usarse como tirada de iniciativa" → también en Iniciativa.
+  dotes_traicionero: { grupoExtra: "Iniciativa" },
+  // §9.3: el −1 a defensas es texto (ya está en Esquiva y en Bloquear), no una casilla: la
+  // nota del borrador mandaba marcar «Combinación este turno», que no existe.
+  dotes_combinacion: {
+    notas: {
+      2: { texto: "Hasta el comienzo de tu siguiente turno, −1 en acciones defensivas (lo recuerda la nota de Esquiva y de Bloquear).", condicion: null },
+    },
+  },
+};
+// TODO(revisar): Agarre Rápido y Mirada Desafiante (pregunta a Murillo, tareas.md; Zafarse
+// confirmado por el usuario: regla de Atrapado). Las tres: la prosa da la economía pero no
+// la tirada; el borrador supone Reflejos + Atletismo (Escalada), Potencia + Atletismo
+// (Escapismo; docs/fuente/sistema.md, Atrapado) y Expresión + Actitud (Intimidación), con la
+// dificultad a criterio del máster. Se dejan así (no es un error evidente) hasta que Murillo
+// lo aclare.
+const ajustesUsados = new Set<string>();
+
+function ajustarAccion(id: string, e: Efecto): Efecto {
+  if (e.tipo !== "accion") return e;
+  const accion = e.accion as Record<string, unknown> & { id: string; resolucion: Record<string, unknown>; notas: unknown[] };
+  const ajuste = AJUSTES_ACCION[accion.id];
+  if (!ajuste) return e;
+  ajustesUsados.add(accion.id);
+  const notas = [...accion.notas];
+  for (const [i, nota] of Object.entries(ajuste.notas ?? {})) {
+    if (notas[Number(i)] === undefined) falla(id, `AJUSTES_ACCION ${accion.id}: no hay nota ${i}`);
+    notas[Number(i)] = nota;
+  }
+  notas.push(...(ajuste.notasExtra ?? []));
+  avisos.push(`  ${id}: acción ${accion.id} ajustada (${Object.keys(ajuste).join(", ")})`);
+  return {
+    ...e,
+    accion: {
+      ...accion,
+      resolucion: { ...accion.resolucion, ...ajuste.resolucion },
+      notas,
+      ...(ajuste.grupoExtra && { grupoExtra: ajuste.grupoExtra }),
+    },
+  };
+}
+
 // Requisito por rama: qué habilidad de "Combate Melee N o Combate a Distancia M" exige cada
 // familia de arma (ver cabecera). Lanzar y Levantar escudo no están: si una dote del patrón
 // los toca, el generador falla y se decide a mano.
@@ -376,7 +452,8 @@ const FILTROS_ARMA: Readonly<Record<string, { empleo: "una mano" | "dos manos" }
   dote_apresar_y_apunalar: { empleo: "una mano" },
 };
 
-const claveDeEfecto = (e: Efecto) => (e.tipo === "texto" ? e.lugar : e.tipo === "habilita" ? e.accion : e.alcance) as string | undefined;
+const claveDeEfecto = (e: Efecto) =>
+  (e.tipo === "texto" ? e.lugar : e.tipo === "habilita" ? e.accion : e.tipo === "accion" ? undefined : e.alcance) as string | undefined;
 
 function aplicarRamaYFiltro(id: string, requisitos: unknown, efectos: Efecto[]): Efecto[] {
   const reqs = Array.isArray(requisitos) ? (requisitos as RequisitoDote[]) : [];
@@ -427,7 +504,7 @@ function normalizarEfectos(id: string, efectos: unknown): Efecto[] {
       for (const c of [conversion].flat()) salida.push({ ...c, borrador });
       return;
     }
-    const e: Efecto = { ...(crudo as Record<string, unknown>), borrador };
+    const e: Efecto = ajustarAccion(id, { ...(crudo as Record<string, unknown>), borrador });
     if (e.tipo === "texto" && e.porque === "capa_pendiente") {
       falla(id, `efecto ${borrador}: texto "capa_pendiente" sin conversión en CONVERSIONES`);
       return;
@@ -473,13 +550,16 @@ const esFamilia = (a: unknown) => typeof a === "string" && a.startsWith("familia
 function tandaDelTipo(e: Efecto): TandaDote | null {
   switch (e.tipo) {
     case "accion":
-      // También Arrollar y Ataque de oportunidad (§9.2: solo con su dote): no existen en la
-      // app y van con el resto de acciones de dote (decisión del usuario en D2b-2).
-      return "D2c";
+      // Acciones de dote (D2c-1), también Arrollar y Ataque de oportunidad (§9.2: solo con su
+      // dote): rules/dotesAcciones.ts.
+      return null;
+    case "descuento_contador":
+      // Reflejos Felinos (D2c-1): descuento en el contador de atacantes de la esquiva.
+      return null;
     case "poder":
-      // TODO(revisar): Impacto Métrico y Sobrecarga Métrica van con las acciones de dote
-      // (D2c), aunque Impacto Métrico necesita además el daño modificable (D2d).
-      return "D2c";
+      // TODO(revisar): Impacto Métrico y Sobrecarga Métrica van con los poderes de dote
+      // (D2c-2), aunque Impacto Métrico necesita además el daño modificable (D2d).
+      return "D2c-2";
     case "habilita":
       // Bloqueo (D2b-2): se construye si su familia está en FAMILIAS_SOLO_CON_DOTE (abajo).
       return null;
@@ -530,7 +610,12 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
     const alcanceDestino = destino?.tipo === "tirada" ? destino.alcance : null;
     const familiaDestino = alcanceDestino?.tipo === "familiaArma" ? alcanceDestino.familia : null;
     const construible =
+      e.tipo === "accion" ||
       (e.tipo === "bono" && destino?.tipo === "tirada") ||
+      // Sobre una acción de dote (D2c-1): bono con casilla (Finta repetida) y textos a su nota.
+      (e.tipo === "bono" && destino?.tipo === "accionDote" && typeof e.valor === "number" && typeof e.condicion === "string") ||
+      (e.tipo === "texto" && destino?.tipo === "accionDote" && !e.grados) ||
+      (e.tipo === "descuento_contador" && alcanceDestino?.tipo === "tiradaId") ||
       (e.tipo === "texto" && (destino?.tipo === "tirada" || destino?.tipo === "ficha")) ||
       (e.tipo === "margen_critico" && destino?.tipo === "especialidadArmaElegida") ||
       (e.tipo === "habilita" && familiaDestino !== null && FAMILIAS_SOLO_CON_DOTE.includes(familiaDestino)) ||
@@ -540,7 +625,7 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
         e.habilidad === undefined &&
         e.especialidad === undefined);
     if (!construible) {
-      falla(id, `efecto ${e.borrador} (${String(e.tipo)}): sin tanda y sin forma de construirlo (D2a, D2b-1, D2b-2)`);
+      falla(id, `efecto ${e.borrador} (${String(e.tipo)}): sin tanda y sin forma de construirlo (D2a, D2b-1, D2b-2, D2c-1)`);
       return null;
     }
     if (e.tipo !== "texto" && alcanceDestino?.tipo === "familiaArma" && alcanceDestino.familia === "levantar_escudo")
@@ -581,6 +666,9 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
     }
     case "cambia_par":
       return { tipo: "numerico", afecta: { modo: "accion_existente", id: clave! }, mecanismo: "sustitucion_aplicado", ...estado };
+    case "descuento_contador":
+      // Cambia lo que vale el contador que pone el jugador al tirar.
+      return { tipo: "numerico", afecta: { modo: "accion_existente", id: clave! }, mecanismo: "eleccion_jugador", ...estado };
     case "margen_critico":
     case "sube_grado":
     case "ventaja":
@@ -702,6 +790,11 @@ for (const d of dotes) {
     for (const e of erroresDeMotorMetadata(m)) falla(d.id, `motor ${n}: ${e}`);
   });
 }
+// Destino "accionDote": la acción tiene que existir en el catálogo (D2c-1).
+const accionesDeCatalogo = new Set(dotes.flatMap((d) => d.efectos.flatMap((e) => (e.tipo === "accion" ? [e.accion.id] : []))));
+for (const [clave, destino] of Object.entries(DESTINOS_DOTES))
+  if (destino.tipo === "accionDote" && !accionesDeCatalogo.has(clave)) falla("(destinos)", `accionDote "${clave}" sin acción en el catálogo`);
+for (const a of Object.keys(AJUSTES_ACCION)) if (!ajustesUsados.has(a)) falla("(AJUSTES_ACCION)", `"${a}" no es una acción del borrador`);
 if (lista.length !== TOTAL_ESPERADO) falla("(catálogo)", `el borrador trae ${lista.length} dotes, se esperaban ${TOTAL_ESPERADO}`);
 if (md.size !== TOTAL_ESPERADO) falla("(catálogo)", `docs/dotes.md trae ${md.size} dotes, se esperaban ${TOTAL_ESPERADO}`);
 

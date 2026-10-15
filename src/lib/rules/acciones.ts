@@ -67,6 +67,10 @@ export type Accion = {
   // La tirada va en especialidad sola si la ficha la tiene en `habilidad`, y si no, a la
   // mitad: la fila no ofrece selector (montaje.ts, enEspecialidadEfectiva).
   especialidadArma?: EspecialidadId;
+  // Lo mismo para las acciones de dote cuya resolución trae especialidad (D2c-1,
+  // dotesAcciones.ts): en especialidad sola si la ficha tiene cualquiera de estas (Apoyo:
+  // Empatía o Liderazgo), y si no, a la mitad; sin selector en la fila.
+  especialidadesAccion?: readonly EspecialidadId[];
   // Tirada generada por arma (combate.ts): su familia y el empleo del arma, que miran las
   // casillas, bonos y textos de dote con alcance "familia:<f>" (D2b-1). Sin empleo: arma
   // que no se empuña (Proyector de Pulso).
@@ -82,8 +86,8 @@ export type Accion = {
   // Ventaja (Alerta con Resonancia 4): se tiran dos d12 y vale el mejor. El
   // texto es la fuente, para enseñarla en el modal.
   ventaja?: string;
-  // Solo poderes psiónicos (tiradaDePoder, poderes.ts): texto por grado del
-  // propio psiónico y lo que tira el objetivo, para el panel de resultado.
+  // Poderes psiónicos (tiradaDePoder, poderes.ts) y acciones de dote (dotesAcciones.ts):
+  // texto por grado propio y lo que tira el objetivo, para el panel de resultado.
   poder?: DetallePoder;
   // Cuando una tirada depende de algo que el sistema aún no define, se declara
   // en vez de inventársela: la UI la muestra apagada con el motivo.

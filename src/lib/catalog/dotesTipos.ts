@@ -153,6 +153,9 @@ export const accionDoteSchema = z.strictObject({
   objetivoTira: z.array(z.strictObject({ que: z.string().min(1), grados: z.partialRecord(grado, z.string().min(1)).optional() })),
   resultados: z.partialRecord(grado, z.strictObject({ texto: z.string().min(1) })),
   notas: z.array(z.strictObject({ texto: z.string().min(1), condicion })),
+  // Grupo fijo de Acciones donde la acción sale además de la sección Dotes (§9.3, UX propia:
+  // Traicionero «pudiendo usarse como tirada de iniciativa»). Lo pone el generador.
+  grupoExtra: z.enum(["Defensa", "Salvaciones", "Iniciativa", "Acciones"]).optional(),
 });
 
 export const PORQUES_TEXTO = ["tablero", "turno", "tercero", "area_sin_construir", "sin_regla", "narrativo"] as const;
@@ -196,9 +199,19 @@ export const efectoDoteSchema = z.discriminatedUnion("tipo", [
   z.strictObject({ tipo: z.literal("categoria_danio"), alcance, a: z.string().min(1), condicion, ...comunes }),
   z.strictObject({ tipo: z.literal("economia"), alcance, economia, limite: limite.optional(), condicion, ...comunes }),
   z.strictObject({ tipo: z.literal("habilita"), accion: alcance, borrador: comunes.borrador }),
+  // Cuenta `unidades` menos en un contador de la tirada, sin bajar de su mínimo (§9.3, UX
+  // propia: Reflejos Felinos, un atacante adicional menos en la esquiva). Lo pone el
+  // generador (CONVERSIONES); hoy solo el de atacantes adicionales.
+  z.strictObject({
+    tipo: z.literal("descuento_contador"),
+    alcance,
+    contador: z.literal("atacantes_adicionales"),
+    unidades: z.number().int().min(1),
+    borrador: comunes.borrador,
+  }),
   z.strictObject({ tipo: z.literal("accion"), accion: accionDoteSchema, borrador: comunes.borrador }),
   // AccionPoder del modelo de psiónica (+ disciplinaNivel, sobreArma…): forma abierta
-  // a propósito hasta su tanda (D2c), que la validará contra poderes.ts.
+  // a propósito hasta su tanda (D2c-2), que la validará contra poderes.ts.
   z.strictObject({
     tipo: z.literal("poder"),
     accion: z.looseObject({ id: z.string().regex(/^dotes_[a-z0-9_]+$/), label: z.string().min(1) }),

@@ -57,6 +57,10 @@ export const DOTES: readonly DoteCatalogo[] = [
             "tipo": "tirada",
             "aplicado": "expresion",
             "habilidad": "actitud",
+            "especialidad": [
+              "empatia",
+              "liderazgo"
+            ],
             "dificultad": 7
           },
           "objetivoTira": [],
@@ -74,11 +78,15 @@ export const DOTES: readonly DoteCatalogo[] = [
               "condicion": null
             },
             {
-              "texto": "Con la especialidad Empatía o Liderazgo (la que tengas).",
+              "texto": "Con Empatía o Liderazgo: va en especialidad con cualquiera de las dos.",
               "condicion": null
             },
             {
               "texto": "Una vez por aliado y escena.",
+              "condicion": null
+            },
+            {
+              "texto": "Si el vínculo de afecto con el aliado es fuerte, tienes ventaja (aplícala a mano mientras no exista la casilla de ventaja).",
               "condicion": null
             }
           ]
@@ -102,8 +110,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_apoyo"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -198,8 +205,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_burla"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -276,8 +282,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_humor_negro"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -358,8 +363,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_humor_de_afrontamiento"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -432,8 +436,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_mirada_desafiante"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -583,8 +586,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_grito_de_guerra"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -650,6 +652,10 @@ export const DOTES: readonly DoteCatalogo[] = [
             {
               "texto": "Solo en escena de combate.",
               "condicion": null
+            },
+            {
+              "texto": "Si el ataque que la desencadena fue crítico, tienes ventaja (aplícala a mano mientras no exista la casilla de ventaja).",
+              "condicion": null
             }
           ]
         },
@@ -672,8 +678,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_violencia_aterradora"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -757,8 +762,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_alentar"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -833,8 +837,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_llamada_a_las_armas"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -909,8 +912,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_accion_inspiradora"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -1063,7 +1065,8 @@ export const DOTES: readonly DoteCatalogo[] = [
               "texto": "Puede usarse como tirada de iniciativa.",
               "condicion": null
             }
-          ]
+          ],
+          "grupoExtra": "Iniciativa"
         },
         "borrador": 0
       }
@@ -1078,8 +1081,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_traicionero"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -1341,8 +1343,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_paso_atras"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -1370,10 +1371,10 @@ export const DOTES: readonly DoteCatalogo[] = [
     "texto": "Reduce el penalizador por acciones defensivas acumuladas en 1 pero solo en tiradas de **esquiva**.",
     "efectos": [
       {
-        "tipo": "bono",
+        "tipo": "descuento_contador",
         "alcance": "defensa",
-        "valor": 1,
-        "condicion": "Con penalizador por acciones defensivas acumuladas (atacantes adicionales ≥ 1)",
+        "contador": "atacantes_adicionales",
+        "unidades": 1,
         "borrador": 0
       }
     ],
@@ -1387,8 +1388,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "defensa"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -2288,8 +2288,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_agarre_rapido"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -2477,8 +2476,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_salida_explosiva"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -2551,8 +2549,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_zafarse"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -2829,8 +2826,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_optimizar_soporte_vital"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -2912,8 +2908,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_potenciar_veneno"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -3570,8 +3565,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_ataque_de_oportunidad"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -3621,8 +3615,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_ataque_de_oportunidad"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -3672,8 +3665,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_ataque_de_oportunidad"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -3723,8 +3715,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_ataque_de_oportunidad"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -3762,7 +3753,8 @@ export const DOTES: readonly DoteCatalogo[] = [
           "resolucion": {
             "tipo": "ataque",
             "aplicado": "potencia",
-            "habilidad": "combate_melee"
+            "habilidad": "combate_melee",
+            "especialidad": "pelea"
           },
           "objetivoTira": [
             {
@@ -3825,8 +3817,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_arrollar"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -4033,7 +4024,7 @@ export const DOTES: readonly DoteCatalogo[] = [
               "condicion": null
             },
             {
-              "texto": "Hasta el comienzo de tu siguiente turno, −1 en acciones defensivas (marca «Combinación este turno»).",
+              "texto": "Hasta el comienzo de tu siguiente turno, −1 en acciones defensivas (lo recuerda la nota de Esquiva y de Bloquear).",
               "condicion": null
             }
           ]
@@ -4074,8 +4065,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_combinacion"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -4785,8 +4775,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_finta"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -4795,8 +4784,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_finta"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -4850,8 +4838,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_finta"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -5247,8 +5234,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_reconocer_debilidad"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -5398,8 +5384,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_tactica_de_flanqueo"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -6111,8 +6096,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_encontrar_el_angulo"
         },
         "mecanismo": "accion_sin_equipo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "estado": "construido"
       }
     ]
   },
@@ -6982,7 +6966,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         },
         "mecanismo": "nota_fija",
         "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "bloqueoPor": "D2c-2"
       },
       {
         "tipo": "texto",
@@ -6992,7 +6976,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         },
         "mecanismo": "nota_fija",
         "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "bloqueoPor": "D2c-2"
       },
       {
         "tipo": "texto",
@@ -7002,7 +6986,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         },
         "mecanismo": "nota_fija",
         "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "bloqueoPor": "D2c-2"
       },
       {
         "tipo": "texto",
@@ -7012,7 +6996,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         },
         "mecanismo": "nota_fija",
         "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "bloqueoPor": "D2c-2"
       },
       {
         "tipo": "texto",
@@ -7022,7 +7006,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         },
         "mecanismo": "nota_fija",
         "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "bloqueoPor": "D2c-2"
       }
     ]
   },
@@ -7230,7 +7214,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         },
         "mecanismo": "accion_sin_equipo",
         "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "bloqueoPor": "D2c-2"
       }
     ]
   },
@@ -7277,7 +7261,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         },
         "mecanismo": "nota_fija",
         "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "bloqueoPor": "D2c-2"
       }
     ]
   },
@@ -7446,7 +7430,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         },
         "mecanismo": "accion_sin_equipo",
         "estado": "pendiente",
-        "bloqueoPor": "D2c"
+        "bloqueoPor": "D2c-2"
       }
     ]
   }
@@ -7454,10 +7438,11 @@ export const DOTES: readonly DoteCatalogo[] = [
 
 // Recuento por tanda (lo escribe el generador):
 //   188 efectos (185 en el borrador)
-//   construidos: 45
-//   texto: 78
+//   construidos: 72
+//   texto: 81
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
-//   pendientes D2c: 38
+//   pendientes D2c: 0
+//   pendientes D2c-2: 8
 //   pendientes D2d: 17
 //   pendientes tiradas-fijas: 10

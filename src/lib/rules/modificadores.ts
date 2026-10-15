@@ -52,7 +52,9 @@ export type GrupoAccion =
   | "Fármacos"
   // Poderes psiónicos (poderes.ts): el grupo al que apuntarán los modificadores
   // externos de la psiónica (Xovromium, Munición Supresora...).
-  | "Psiónica";
+  | "Psiónica"
+  // Acciones propias de dote (dotesAcciones.ts, D2c-1).
+  | "Dotes";
 
 // Familia de un ataque, bloqueo o "Levantar escudo" generado por arma (combate.ts): la
 // pone el generador al crear la Accion, no se deduce del id. Es lo que miran las dotes

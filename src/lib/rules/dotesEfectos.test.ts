@@ -47,7 +47,7 @@ describe("catálogo de dotes: efectos (D2a)", () => {
     assert.deepEqual(errores, []);
   });
 
-  test("cada efecto está construido, es texto o está pendiente de una tanda D2b-1/D2b-2/D2c/D2d", () => {
+  test("cada efecto está construido, es texto o está pendiente de una tanda D2b-1/D2b-2/D2c/D2c-2/D2d", () => {
     const errores: string[] = [];
     for (const d of DOTES) {
       if (d.motor.length !== d.efectos.length) errores.push(`${d.id}: ${d.motor.length} motor para ${d.efectos.length} efectos`);

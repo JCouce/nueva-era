@@ -18,10 +18,13 @@
 //   permisos    (D2b-2) lo que solo existe con dote en las tiradas de arma: las familias
 //               habilitadas (Bloqueo → bloquear_melee) y dónde cabe el estilo Sutil (Combate
 //               Sutil → ataque_melee y bloquear_melee). Lo lee combate.ts al generar filas.
+//   descuentos  (D2c-1) contador de la tirada que cuenta unidades de menos (Reflejos Felinos:
+//               un atacante adicional menos en la esquiva). Lo pone conExtrasDeFicha.
+// Las acciones propias de dote (y lo que otras dotes les añaden) van aparte: dotesAcciones.ts.
 //
 //   dotesActivas     las compradas que dan efecto: sin requisito roto y sin las que
 //                    sustituye una mejorada que también se tiene ("vale la mejor")
-//   efectosDeDotes   → { casillas, modificadores, textos, bonosTramo, criticos, permisos }
+//   efectosDeDotes   → { casillas, modificadores, textos, bonosTramo, criticos, permisos, descuentos }
 //   casillasDeDotes / textosDeDotes / modificadoresDeDotes / permisosDeDotes   atajos sobre una ficha
 import { ATRIBUTOS } from "./atributos";
 import { HABILIDADES } from "./habilidades";
@@ -86,6 +89,9 @@ export type CriticoDeDote = { especialidad: EspecialidadId; margen: number; fuen
 export type PermisosDeDotes = { familias: readonly FamiliaArma[]; sutil: readonly FamiliaArma[] };
 export const SIN_PERMISOS_DE_DOTES: PermisosDeDotes = { familias: [], sutil: [] };
 
+// Descuento en un contador de la tirada (Reflejos Felinos): `contador` es el id de la condición.
+export type DescuentoDeDote = { alcance: AlcanceModificador; contador: string; unidades: number; fuente: string };
+
 export type EfectosDeDotes = {
   // Casillas con alcance, al mismo índice que las del equipo y la especie.
   casillas: CondicionTirada[];
@@ -95,6 +101,7 @@ export type EfectosDeDotes = {
   bonosTramo: BonoTramoDeDote[];
   criticos: CriticoDeDote[];
   permisos: PermisosDeDotes;
+  descuentos: DescuentoDeDote[];
 };
 
 export const SIN_EFECTOS_DE_DOTES: EfectosDeDotes = {
@@ -104,6 +111,7 @@ export const SIN_EFECTOS_DE_DOTES: EfectosDeDotes = {
   bonosTramo: [],
   criticos: [],
   permisos: SIN_PERMISOS_DE_DOTES,
+  descuentos: [],
 };
 
 const TRAMOS: readonly TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
@@ -163,6 +171,7 @@ export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresR
   const textos: TextoEnTirada[] = [];
   const bonosTramo: BonoTramoDeDote[] = [];
   const criticos: CriticoDeDote[] = [];
+  const descuentos: DescuentoDeDote[] = [];
   const familias = new Set<FamiliaArma>();
   const sutil = new Set<FamiliaArma>();
   const compradas = activas.map((a) => a.compra);
@@ -200,6 +209,12 @@ export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresR
         const destino = DESTINOS_DOTES[e.alcance];
         if (destino?.tipo === "tirada" && destino.alcance.tipo === "familiaArma" && e.aplicado === "reflejos")
           sutil.add(destino.alcance.familia);
+        return;
+      }
+      // Reflejos Felinos (D2c-1): el contador de su tirada cuenta unidades de menos.
+      if (e.tipo === "descuento_contador") {
+        const destino = DESTINOS_DOTES[e.alcance];
+        if (destino?.tipo === "tirada") descuentos.push({ alcance: destino.alcance, contador: e.contador, unidades: e.unidades, fuente });
         return;
       }
       if (e.tipo === "bono") {
@@ -278,7 +293,15 @@ export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresR
       }
     });
   }
-  return { casillas, modificadores, textos, bonosTramo, criticos, permisos: { familias: [...familias], sutil: [...sutil] } };
+  return {
+    casillas,
+    modificadores,
+    textos,
+    bonosTramo,
+    criticos,
+    permisos: { familias: [...familias], sutil: [...sutil] },
+    descuentos,
+  };
 }
 
 // Atajos con los requisitos de la propia ficha (sin especie resuelta aparte).

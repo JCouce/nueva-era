@@ -15,6 +15,9 @@
 //   ficha  → texto que solo vive en la tarjeta de la dote (no hay tirada a la que colgarlo).
 //   especialidadArmaElegida → los ataques con arma de la especialidad elegida al comprar
 //            (Crítico Mejorado: crítico fijo, sin casilla; rules/dotesEfectos.ts).
+//   accionDote → una acción propia de dote (D2c-1): sus textos van a la nota de la acción y
+//            sus bonos a la casilla de opción de la acción (rules/dotesAcciones.ts). Solo
+//            sale si la acción sale (la dote que la da está activa).
 //   tanda  → el destino aún no existe: el efecto queda pendiente de esa tanda.
 import type { AlcanceModificador, FamiliaArma } from "../rules/modificadores";
 import { etiquetaEspecialidad } from "./especialidades";
@@ -23,7 +26,9 @@ import { etiquetaEspecialidad } from "./especialidades";
 // que faltan según habilidades.md": sin esas tiradas no hay dónde colgar el efecto. Va la
 // última para que gane a la tanda del tipo (un cambio de par sobre una tirada que no
 // existe espera a la tirada, no a D2d).
-export const TANDAS_DOTES = ["D2b-1", "D2b-2", "D2c", "D2d", "tiradas-fijas"] as const;
+// "D2c-2" (poderes de dote: Impacto Métrico, Sobrecarga Métrica, y los textos de dote en las
+// tiradas de poder) se partió de D2c el 2026-10-16: va detrás de las acciones de dote (D2c).
+export const TANDAS_DOTES = ["D2b-1", "D2b-2", "D2c", "D2c-2", "D2d", "tiradas-fijas"] as const;
 export type TandaDote = (typeof TANDAS_DOTES)[number];
 
 // Familias de tirada de arma que solo existen con una dote que las habilite (§9.2,
@@ -35,6 +40,7 @@ export type DestinoDote =
   | { tipo: "tirada"; alcance: AlcanceModificador; textos: string[]; especialidad?: string }
   | { tipo: "ficha" }
   | { tipo: "especialidadArmaElegida" }
+  | { tipo: "accionDote" }
   | { tipo: "tanda"; tanda: TandaDote; motivo: string };
 
 const tirada = (id: string, especialidad?: string): DestinoDote => ({
@@ -114,19 +120,23 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   // «Bloquear con X» solo existe con la dote Bloqueo (§9.2, FAMILIAS_SOLO_CON_DOTE): su
   // habilitador, su casilla y sus textos van a las tiradas de bloqueo.
   "familia:bloquear_melee": familia("bloquear_melee"),
-  // Ataque de oportunidad: la acción de dote no existe todavía (pasa a D2c con Arrollar,
-  // decisión del usuario en D2b-2); sus textos esperan a la acción.
-  dotes_ataque_de_oportunidad: tanda("D2c", "el ataque de oportunidad es una acción de dote que aún no existe (§9.2)"),
+  // Ataque de oportunidad (§9.2, solo con la dote): acción de dote desde D2c-1; los textos de
+  // Poderoso, Múltiple y Maestro Oportunista van a su nota.
+  dotes_ataque_de_oportunidad: { tipo: "accionDote" },
 
-  // ── Acciones propias de dote ──
-  dotes_apoyo: tanda("D2c", "acción de dote Apoyo"),
-  dotes_violencia_aterradora: tanda("D2c", "acción de dote Violencia Aterradora"),
-  dotes_finta: tanda("D2c", "acción de dote Finta"),
-  dotes_impacto_metrico: tanda("D2c", "poder de dote Impacto Métrico"),
+  // ── Acciones propias de dote (D2c-1, rules/dotesAcciones.ts) ──
+  // Apoyo y Violencia Aterradora: solo los usa la ventaja con casilla (D2d), que sigue pendiente
+  // por su tipo; mientras, la ventaja va como texto en la nota de la acción.
+  dotes_apoyo: { tipo: "accionDote" },
+  dotes_violencia_aterradora: { tipo: "accionDote" },
+  // Finta: casilla «Finta repetida» (§9.3), con la opción de Maestro de Fintas.
+  dotes_finta: { tipo: "accionDote" },
+  // Poderes de dote: D2c-2.
+  dotes_impacto_metrico: tanda("D2c-2", "poder de dote Impacto Métrico"),
   // TODO(revisar): la tirada del poder existe (Expansión, Singularidad), pero el poder se
   // monta en prepararPoder, que no recibe los textos de la ficha; se cablea con los
   // poderes de dote.
-  psi_singularidad_expansion: tanda("D2c", "los textos de dote no llegan todavía a las tiradas de poder"),
+  psi_singularidad_expansion: tanda("D2c-2", "los textos de dote no llegan todavía a las tiradas de poder"),
 
   // ── Tiradas que no existen: definidas en docs/fuente/habilidades.md, pendientes de la
   // tarea "Tiradas fijas que faltan según habilidades.md" (docs/tareas.md) ──
@@ -153,8 +163,6 @@ export const OPCIONES_DE_TRAMO: Readonly<
 };
 
 // Excepciones por efecto ("<id de dote>#<índice en el borrador>"): su destino existe,
-// pero la decisión del usuario lo deja para otra tanda.
-export const EXCEPCIONES_TANDA: Readonly<Record<string, { tanda: TandaDote; motivo: string }>> = {
-  // §9.3: Reflejos Felinos resta uno al contador de atacantes adicionales (UX propia).
-  "dote_reflejos_felinos#0": { tanda: "D2c", motivo: "Reflejos Felinos actúa sobre el contador de atacantes, no como casilla" },
-};
+// pero la decisión del usuario lo deja para otra tanda. Vacía desde D2c-1 (Reflejos Felinos,
+// la única, se construyó como descuento en el contador de atacantes).
+export const EXCEPCIONES_TANDA: Readonly<Record<string, { tanda: TandaDote; motivo: string }>> = {};

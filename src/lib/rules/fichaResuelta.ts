@@ -42,7 +42,15 @@ import {
 } from "./especie";
 import { bonosDeDisciplina, nivelesDePsionica, type PsionicaResuelta } from "./psionica";
 import { valoresDeRequisito, type ValoresRequisito } from "./dotes";
-import { dotesActivas, efectosDeDotes, type BonoTramoDeDote, type CriticoDeDote, type PermisosDeDotes } from "./dotesEfectos";
+import {
+  dotesActivas,
+  efectosDeDotes,
+  type BonoTramoDeDote,
+  type CriticoDeDote,
+  type DescuentoDeDote,
+  type PermisosDeDotes,
+} from "./dotesEfectos";
+import { accionesDeDotes, type AccionesDeDotes } from "./dotesAcciones";
 import type { ExcepcionRareza } from "../catalog/especies";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
 import { consultaIndiceCondiciones, indiceDeCondiciones, modificadoresDeEquipo, type IndiceCondiciones } from "./equipo";
@@ -63,6 +71,7 @@ import { fatigaEfectiva } from "./vitalidad";
 import { alcanzaA, type ContextoAccion, type FamiliaArma, type ModificadorConFuente } from "./modificadores";
 import type { Sheet } from "./sheet";
 import type { Accion, AccionDirecta } from "./acciones";
+import type { CondicionTirada } from "./condiciones";
 
 export type DesgloseDerivado = { total: number; fuentes: Fuente[] };
 
@@ -111,8 +120,11 @@ export type FichaResuelta = {
   // su alcance y críticos fijos por especialidad de arma. También los pone conExtrasDeFicha.
   // `permisos` (D2b-2): Bloquear y el estilo Sutil, que solo existen con su dote; se los
   // pasa quien genera las filas de arma (accionesDeAtaque). En modo libre igual: sin dote,
-  // tampoco el NPC.
-  extrasDotes: { bonosTramo: BonoTramoDeDote[]; criticos: CriticoDeDote[]; permisos: PermisosDeDotes };
+  // tampoco el NPC. `descuentos` (D2c-1): contadores que cuentan de menos (Reflejos Felinos).
+  extrasDotes: { bonosTramo: BonoTramoDeDote[]; criticos: CriticoDeDote[]; permisos: PermisosDeDotes; descuentos: DescuentoDeDote[] };
+  // Acciones propias de dote (D2c-1, dotesAcciones.ts): la sección "Dotes" de Acciones y las
+  // copias en su grupo extra. Sin las de requisito roto (S34); el NPC, sin mirar requisitos.
+  accionesDotes: AccionesDeDotes;
   // Creación y progresión (§14.6): el ajuste de coste que reciben los puntos, la
   // compra y el coste del siguiente nivel, y la bolsa de aumentos (null si la
   // especie no la trae). En modo libre (NPC, §14.3), neutros.
@@ -163,7 +175,8 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
   // Lo que ponen las dotes en las tiradas (§9.3, D2a). Sin las de requisito roto (S34);
   // en modo libre (NPC del máster) sin mirar requisitos (§9.4).
   const valoresDotes = libre ? null : requisitosDotes;
-  const dotes = efectosDeDotes(dotesActivas(sheet, valoresDotes), valoresDotes);
+  const activas = dotesActivas(sheet, valoresDotes);
+  const dotes = efectosDeDotes(activas, valoresDotes);
   // = [...modificadoresActivos(sheet), ...estados], sin volver a resolver la especie.
   const sinUmbrales: ModificadorConFuente[] = [
     ...(especie?.modificadores ?? []),
@@ -223,7 +236,8 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
     blindaje: { tieneEscudoMelee: tieneEscudoMelee(sheet), armaduraNatural: armaduraNaturalDeEspecie(especie) },
     indiceCondiciones: indiceDeCondiciones(sheet, [...casillasDeEspecie(especie), ...dotes.casillas]),
     textosTirada: [...textosDeEspecie(especie), ...dotes.textos],
-    extrasDotes: { bonosTramo: dotes.bonosTramo, criticos: dotes.criticos, permisos: dotes.permisos },
+    extrasDotes: { bonosTramo: dotes.bonosTramo, criticos: dotes.criticos, permisos: dotes.permisos, descuentos: dotes.descuentos },
+    accionesDotes: accionesDeDotes(activas),
     ajusteCoste: libre ? AJUSTE_NEUTRO : ajustesDeCoste(especie),
     bolsaAumentos: libre ? null : bolsaDeAumentos(especie),
     excepcionesRareza: libre ? [] : excepcionesRareza(especie),
@@ -277,17 +291,33 @@ export function conExtrasDeFicha(
         .filter((c) => c.especialidad === t.especialidadArma)
         .reduce<CriticoDeDote | null>((mejor, c) => (!mejor || c.margen < mejor.margen ? c : mejor), null)
     : null;
-  if (extra.length === 0 && textos.length === 0 && bonosTramo.length === 0 && !critico) return t;
+  const descuentos = ficha.extrasDotes.descuentos.filter((d) => alcanzaA(d.alcance, ctx));
+  if (extra.length === 0 && textos.length === 0 && bonosTramo.length === 0 && !critico && descuentos.length === 0) return t;
   const enNota = conFuente(textos, false);
   const enCritico = conFuente(textos, true);
+  const condiciones = conDescuentos([...(t.condiciones ?? []), ...extra], descuentos);
   return {
     ...t,
-    ...(extra.length > 0 && { condiciones: [...(t.condiciones ?? []), ...extra] }),
+    ...((extra.length > 0 || descuentos.length > 0) && { condiciones }),
     ...(enNota.length > 0 && { nota: junta(t.nota, enNota) }),
     ...(enCritico.length > 0 && { efectoCritico: junta(t.efectoCritico, enCritico) }),
     ...(bonosTramo.length > 0 && { bonosTramo: [...(t.bonosTramo ?? []), ...bonosTramo] }),
     ...(critico && { criticoFijo: { margen: critico.margen, fuente: critico.fuente } }),
   };
+}
+
+// Reflejos Felinos: el contador de la tirada cuenta unidades de menos (varios se suman).
+function conDescuentos(condiciones: CondicionTirada[], descuentos: DescuentoDeDote[]): CondicionTirada[] {
+  if (descuentos.length === 0) return condiciones;
+  return condiciones.map((c) => {
+    if (c.tipo !== "contador") return c;
+    const propios = descuentos.filter((d) => d.contador === c.id);
+    if (propios.length === 0) return c;
+    return {
+      ...c,
+      descuento: { unidades: propios.reduce((t, d) => t + d.unidades, 0), fuente: propios.map((d) => d.fuente).join(", ") },
+    };
+  });
 }
 
 // Lo mismo para una acción sin dado ("Levantar [escudo]"): solo textos, todos a su nota

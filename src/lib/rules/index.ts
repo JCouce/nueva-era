@@ -34,6 +34,7 @@
 //   progresion.ts      coste por nivel con ajuste de especie, subida con XP y coste del siguiente nivel
 //   dotes.ts           dotes: pool, requisitos, compra (pool o XP), venta y requisito no cumplido (D1)
 //   dotesEfectos.ts    lo que las dotes ponen en las tiradas: casillas, bonos fijos y textos (D2a)
+//   dotesAcciones.ts   acciones propias de dote (sección Dotes de Acciones, D2c-1)
 //   dotesCompradas.ts  sheet.dotes: forma y lectura tolerante
 
 export * from "./atributos";
@@ -71,6 +72,7 @@ export * from "./progresion";
 export * from "./dotes";
 export * from "./dotesCompradas";
 export * from "./dotesEfectos";
+export * from "./dotesAcciones";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

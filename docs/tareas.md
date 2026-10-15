@@ -40,8 +40,9 @@ cuál va antes que la otra:
   por prioridad, topes de creación movidos.
 - "Dotes" (Fase 5, en Pendiente) — D1 (compra), D2a (casillas, bonos fijos y textos), la
   tanda ESP (catálogo de especialidades por id), D2b-1 (efectos en las tiradas de arma) y
-  D2b-2 (Bloquear y Sutil solo con su dote) hechas; siguen D2c y D2d, con su recuento de
-  pendientes. **Antes del próximo `git push`: mandar al grupo el aviso de D2b-2.**
+  D2b-2 (Bloquear y Sutil solo con su dote) hechas, y D2c-1 (acciones de dote) construida
+  sin commit; siguen D2c-2 (poderes de dote) y D2d, con su recuento de pendientes.
+  **Antes del próximo `git push`: mandar al grupo el aviso de D2b-2.**
 
 ---
 
@@ -1406,10 +1407,10 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
     (casillas al índice, bonos fijos como Modificador "dote", textos en `textosTirada`),
     `fuentesDeCapa1` con familia "dote". Supuestos S34-S38 (`sistema.md`).
   - **Recuento por tanda** (lo imprime `npm run gen-dotes` y va al pie de `dotes.ts`):
-    construidos 45 · texto 78 · pendientes D2b-1 0 · D2b-2 0 · D2c 38 · D2d 17 ·
+    construidos 72 · texto 81 · pendientes D2b-1 0 · D2b-2 0 · D2c 0 · D2c-2 8 · D2d 17 ·
     tiradas-fijas 10 (estos dependen de la tarea "Tiradas fijas que faltan", más abajo).
     Tras D2a era: construidos 20 · texto 38 · D2b-1 50. Tras D2b-1: construidos 41 · texto
-    67 · D2b-2 20 · D2c 33.
+    67 · D2b-2 20 · D2c 33. Tras D2b-2: construidos 45 · texto 78 · D2c 38.
     **Una tanda se cierra cuando sus pendientes llegan a 0.**
   - Plan de tandas:
     - [x] **D2a** — casillas, bonos fijos y textos en tiradas que ya existen.
@@ -1465,11 +1466,31 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
       > dote: **Bloqueo** y **Combate Sutil**. Si los usabais, compradlas en la pestaña Dotes (con
       > XP si la ficha ya está aprobada); sin Combate Sutil se tira con Potencia y el daño va con
       > Fuerza. Los NPC tampoco bloquean ni van en sutil de momento.
-    - [ ] **D2c** — acciones de dote (`accion`, poderes de dote), alcances/lugares
-      `dotes_*`, Reflejos Felinos sobre el contador de atacantes, grupo extra de
-      Traicionero en Iniciativa; textos de dote en las tiradas de poder (Onda Residual).
-      Desde D2b-2 también Ataque de oportunidad (con los textos de Poderoso, Múltiple y
-      Maestro Oportunista) y Arrollar: solo existen con su dote (§9.2).
+    - [x] **D2c-1 (2026-10-16, sin commit ni prueba en navegador)** — acciones de dote.
+      D2c 38 → 0 (30 construidos/textos; los 8 de poderes pasan a D2c-2).
+      - Sección **Dotes** en Acciones: `accionesDeDotes` (`rules/dotesAcciones.ts`) →
+        `FichaResuelta.accionesDotes` → `AccionesTab.tsx` (FilaTirada / FilaUsar; ESLint
+        prohíbe llamar a `accionesDeDotes` desde la UI). 24 acciones: tirada y enfrentada con
+        texto por grado y lo que tira el rival (`Accion.poder`); sin dado con su nota.
+        Economía, límites, dificultad a criterio y materiales, texto.
+      - Especialidad de la resolución sin selector (`Accion.especialidadesAccion`,
+        `enEspecialidadEfectiva`): Apoyo con Empatía o Liderazgo, Traicionero en
+        Manipulación, Arrollar en Pelea (S53, S54).
+      - Ajustes al borrador en el generador (`AJUSTES_ACCION`): especialidad de Apoyo y de
+        Arrollar, ventaja de Apoyo y de Violencia Aterradora como texto, grupo extra de
+        Traicionero (Iniciativa, S56), nota de Combinación sin la casilla inexistente.
+      - Textos de Ataque de Oportunidad Poderoso/Múltiple/Maestro Oportunista en su acción;
+        casilla «Finta repetida» con la opción de Maestro de Fintas (S57).
+      - Reflejos Felinos: descuento en el contador de atacantes de la esquiva
+        (`CondicionTirada` contador `descuento`, `extrasDotes.descuentos`; S55). No toca
+        Bloquear.
+      - Tests: `rules/dotesAcciones.test.ts`.
+      - [ ] Probar en navegador: Apoyo (entera con Empatía o Liderazgo), Finta repetida,
+        Traicionero en Iniciativa, Reflejos Felinos con 2 atacantes, Paso Atrás que
+        desaparece al quitar Paso Defensivo.
+    - [ ] **D2c-2** — poderes de dote (*Impacto Métrico*, *Sobrecarga Métrica*: ventana de
+      los poderes, §9.3) y textos de dote en las tiradas de poder (*Onda Residual* en
+      Expansión, *Impacto Métrico Relámpago*). 8 pendientes.
     - [ ] **D2d** — capas: sube_grado, ventaja con casilla, éxito extra, valor por umbral de
       ficha, casillas que tocan el daño/categoría letal, fatiga por casilla, margen crítico
       y la capa nueva de cambio de par (`sistema.md` §9.3). **El bono por umbral de
@@ -1879,3 +1900,8 @@ código el 2026-09-27** — ver Hallazgo #5 en "Hecho", arriba del todo.
    diseño de esa sección en cuanto llegue.
 4. **Especies, poderes, dotes y aumentos**: fases enteras esperando a que el diseñador las
    escriba.
+5. **Agarre Rápido y Mirada Desafiante** (dotes, D2c-1, S59): la prosa no dice con qué
+   tirada se resuelven; la app usa la que propuso el borrador del modelado, con
+   `TODO(revisar)` en `scripts/generar-catalogo-dotes.ts`. Preguntar a Murillo qué tirada
+   (aplicado + habilidad, dificultad) piden. *Zafarse* no entra: se apoya en la regla de
+   Atrapado.

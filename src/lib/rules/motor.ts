@@ -16,7 +16,7 @@ export const MECANISMOS_MOTOR = [
   "siempre_activo", // Modificador tipo "tirada" con alcance, solo por llevarlo puesto
   "ajuste_fijo", // ajustesFijos
   "bono_tramo", // bonosTramo
-  "accion_sin_equipo", // genera su propia acción sin ser una pieza de equipo (poderes, dotes) — construido para poderes psiónicos (accionesDePsionica en poderes.ts) y rasgos de especie (peaje del Maolher y activar la visión, E5: especie.ts)
+  "accion_sin_equipo", // genera su propia acción sin ser una pieza de equipo (poderes, dotes) — construido para poderes psiónicos (accionesDePsionica en poderes.ts), rasgos de especie (peaje del Maolher y activar la visión, E5: especie.ts) y acciones de dote (accionesDeDotes en dotesAcciones.ts, D2c-1)
   "gate_instalacion", // bloquea/atenúa/avisa sobre una acción entera (tipo 5)
   // Los dos de abajo se añadieron el 2026-09-23 al rellenar MotorMetadata:
   // motor.md solo documentaba "hace falta generalizar" para el tipo 1 no-equipo

@@ -62,6 +62,9 @@ export type CondicionTirada = (
       min: number;
       max: number;
       porDefecto: number;
+      // Cuenta `unidades` menos, sin bajar de `min` (Reflejos Felinos: un atacante adicional
+      // menos en la esquiva, §9.3). Lo pone conExtrasDeFicha; sale en la etiqueta del desglose.
+      descuento?: { unidades: number; fuente: string };
     }
 ) & {
   // Sin `alcance`: la condición solo se pinta en la tirada del arma/mejora
@@ -105,9 +108,14 @@ export function valorCondiciones(
       const elegida = c.opciones.find((o) => o.id === estado[c.id]);
       return total + (elegida?.valor ?? 0);
     }
-    const n = typeof estado[c.id] === "number" ? (estado[c.id] as number) : c.porDefecto;
-    return total + n * c.valorPorUnidad;
+    return total + unidadesContador(c, estado) * c.valorPorUnidad;
   }, 0);
+}
+
+// Lo que cuenta un contador: lo marcado menos su descuento, sin bajar de su mínimo.
+function unidadesContador(c: Extract<CondicionTirada, { tipo: "contador" }>, estado: EstadoCondiciones): number {
+  const n = typeof estado[c.id] === "number" ? (estado[c.id] as number) : c.porDefecto;
+  return c.descuento ? Math.max(c.min, n - c.descuento.unidades) : n;
 }
 
 // Una línea por condición, con el valor que aporta AHORA MISMO según el
@@ -130,7 +138,9 @@ export function desgloseCondiciones(
       return { etiqueta: `${c.etiqueta}: ${elegida?.etiqueta ?? "—"}`, valor: elegida?.valor ?? 0 };
     }
     const n = typeof estado[c.id] === "number" ? (estado[c.id] as number) : c.porDefecto;
-    return { etiqueta: `${c.etiqueta} ×${n}`, valor: n * c.valorPorUnidad };
+    const d = c.descuento;
+    const conDescuento = d && n > c.min ? ` (${d.unidades === 1 ? "uno" : d.unidades} menos: ${d.fuente})` : "";
+    return { etiqueta: `${c.etiqueta} ×${n}${conDescuento}`, valor: unidadesContador(c, estado) * c.valorPorUnidad };
   });
 }
 

@@ -426,8 +426,8 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
 - **Arrollar** y **Ataque de oportunidad**: solo con la dote.
 
 *En la app (D2b-2, 2026-10-16):* Bloqueo y Combate Sutil **construidos** (detalle al final
-de §9.3). Arrollar y Ataque de oportunidad no existían en la app: van con las acciones de
-dote (D2c).
+de §9.3). Arrollar y Ataque de oportunidad no existían en la app: **construidos en D2c-1**
+como acciones de dote (solo salen con la dote).
 
 ### 9.3 Qué aplica la app y qué es texto `[FIRME · usuario 2026-10-14]`
 Regla general (ver `docs/motor.md`, "Lo que queda fuera del modelo"): **lo que la app puede
@@ -541,6 +541,26 @@ aplicar o recalcular se aplica en la ficha; lo demás queda como texto.**
   Potencia sin la dote y Reflejos con ella (S51).
 - Requisito no cumplido ⇒ como sin la dote (S34). El NPC del máster no se salta el gate (S50).
 - Supuestos de la tanda: S50-S52.
+
+*En la app (D2c-1, 2026-10-16): acciones propias de dote.*
+- **Sección "Dotes" en Acciones** (`rules/dotesAcciones.ts`, `FichaResuelta.accionesDotes`):
+  cada acción de una dote activa sale como fila; sin dotes con acción no hay sección, y con
+  el requisito roto la acción no sale (S34). Tirada y enfrentada → fila de tirada con el texto
+  por grado y lo que tira el rival en el resultado; sin dado → "Usar" con su nota (*Paso
+  Atrás*, *Salida Explosiva*, *Ataque de oportunidad*, *Combinación*). Economía, límites,
+  dificultad a criterio y gasto de materiales: texto en la nota.
+- **Especialidad** en la resolución → la fila va en especialidad sola (S54). ***Arrollar***,
+  tirada de ataque Potencia + Combate Melee en Pelea (S53). ***Traicionero*** sale también en
+  Iniciativa (S56).
+- **Lo que otras dotes ponen en una acción de dote**: los textos de *Ataque de Oportunidad
+  Poderoso*, *Múltiple* y *Maestro Oportunista* en la nota del ataque de oportunidad (con
+  Maestro, el de Múltiple no sale: vale la mejor); la casilla «Finta repetida» (S57).
+- ***Reflejos Felinos***: un atacante menos en la esquiva (S55).
+- ***Combinación***: sin casillas nuevas (el −1 ya está en los golpes melee y el −1 a defensas
+  en la nota de Esquiva y Bloquear).
+- Quedan para **D2c-2**: *Impacto Métrico*, *Sobrecarga Métrica* (poderes de dote) y los
+  textos de *Onda Residual* e *Impacto Métrico Relámpago* en las tiradas de poder.
+- Supuestos de la tanda: S53-S59.
 
 ### 9.4 Fichas y NPCs `[FIRME · usuario 2026-10-14]`
 - **Fichas ya aprobadas**: no reciben los puntos de dotes de su letra; compran dotes con
@@ -1571,6 +1591,13 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S50 | **El NPC del máster no se salta el gate de Bloqueo y Combate Sutil.** El modo libre solo deja de mirar requisitos: sin la dote en su ficha, el NPC no bloquea ni va en sutil. Como D1 dejó a los NPC sin dotes, hoy **ningún NPC bloquea ni va en sutil** hasta la tarea "Dotes para los NPC" (`docs/tareas.md`). | Decisión del usuario (D2b-2); §9.4 dice que el máster les pone dotes a mano. |
 | S51 | **El Aguijón con *Combate Sutil* sigue como estaba**: Reflejos fijo, sin interruptor, daño de Fuerza (Fue+2+nivel). Sin la dote, Potencia (golpe y bloqueo) con el mismo daño. Las armas Sutil normales, en cambio, dejan elegir y sacan el daño Sutil de Potencia. `TODO(revisar)` en `combate.ts`. | Decisión del usuario (D2b-2: "con la dote, como hoy"). |
 | S52 | **El texto de *Combinación Rápida* ("en modo sutil, sin el −1 a tus defensas") sale aunque la ficha no tenga *Combate Sutil*** (no es requisito de la dote). Es texto: no se mecaniza ni se oculta. | Conservador: la dote no pide Combate Sutil y el texto no suma nada. D2b-2. |
+| S53 | ***Arrollar*: Potencia + Combate Melee, en especialidad Pelea** (entera con Pelea, la mitad sin ella). La prosa dice "tirada de ataque con el atributo de potencia" y no nombra la habilidad; se toma Combate Melee/Pelea (Pelea es su requisito). Sin arma ni daño: el total es la dificultad de los objetivos; los metros, como texto en la nota. No lleva familia de arma, así que no le llegan las casillas de los golpes melee (Combinación, Dominio Elevado…). | Decisión del usuario (D2c-1). |
+| S54 | **Acción de dote con especialidad: va en especialidad sola.** Si la resolución trae especialidad (una o varias), la tirada va entera si la ficha tiene cualquiera de ellas y a la mitad si no, sin selector (como los ataques con la especialidad del arma). ***Apoyo***: "expresión + empatía o liderazgo" → Empatía o Liderazgo, con cualquiera de las dos va en especialidad. Su ventaja por vínculo fuerte (y la de *Violencia Aterradora* tras un crítico) va como texto en la nota hasta la ventaja con casilla (D2d). | Decisión del usuario (D2c-1); el borrador no traía la especialidad de Apoyo (conversión en el generador). |
+| S55 | ***Reflejos Felinos*: un atacante adicional menos en el contador de la esquiva**, nunca por debajo de 0: con 1 atacante 0, con 2 −1, con 3 −2. No toca *Bloquear* (usa el mismo contador). Sale en la etiqueta de la línea del desglose ("×2 (uno menos: Reflejos Felinos)"). | §9.3 UX propia y §9.5; decisión del usuario (D2c-1). |
+| S56 | ***Traicionero* en Iniciativa es una tirada de iniciativa**: la copia del grupo Iniciativa recibe los bonos con alcance de grupo Iniciativa (*Vigilancia Táctica* +2); la de la sección Dotes, no. Los textos de dote de Iniciativa siguen yendo a las tres tiradas fijas. `TODO(revisar)` en `dotesAcciones.ts`. | Conservador sobre "pudiendo usarse como tirada de iniciativa" (D2c-1). |
+| S57 | **«Finta repetida» es una casilla de opción**: No (0) · contra el mismo enemigo (−2, *Finta*) · y con *Maestro de Fintas*, contra un enemigo ya engañado (0). El jugador elige una: así "vale la mejor" sin sumar casillas. | §9.3 y §9.5 ("Maestro de Fintas lo quita tras finta con éxito"); D2c-1. |
+| S58 | **Texto de crítico que empieza por "Además"** (*Humor Negro*, *Alentar*, *Llamada a las Armas*) se enseña tras el del éxito: el crítico incluye el efecto del éxito. Sin texto de crítico vale el del éxito; sin el de fracaso crítico, el del fracaso (como los poderes). | Lectura de la prosa ("además"); D2c-1. |
+| S59 | ***Agarre Rápido*, *Zafarse* y *Mirada Desafiante* llevan tirada aunque la prosa solo da la economía**: Reflejos + Atletismo (Escalada), Potencia + Atletismo (Escapismo; "potencia o fortaleza + atletismo" de Atrapado, `fuente/sistema.md`) y Expresión + Actitud (Intimidación), con la dificultad a criterio del máster. Es lo que traía el borrador; no se toca por no ser un error evidente. `TODO(revisar)` en `generar-catalogo-dotes.ts`. | Pendiente de Murillo (D2c-1). **Usuario (2026-10-16)**: vale; *Zafarse* se apoya en la regla de Atrapado; *Agarre Rápido* y *Mirada Desafiante*, pregunta pendiente a Murillo (`docs/tareas.md`, "Preguntas al diseñador"). |
 
 ## Conflictos detectados
 

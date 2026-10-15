@@ -106,6 +106,7 @@ const eslintConfig = defineConfig([
                 "casillasDeDotes",
                 "textosDeDotes",
                 "modificadoresDeDotes",
+                "accionesDeDotes",
               ],
               message: "Usa resolverFicha / useFichaResuelta (src/lib/rules/fichaResuelta.ts): lee la FichaResuelta.",
             },
