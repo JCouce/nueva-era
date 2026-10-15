@@ -30,6 +30,8 @@ import {
   pagarFatigaAction,
   ajustarFatigaTemporalAction,
   terminarEscenaAction,
+  comprarDoteAction,
+  quitarDoteAction,
   type SaveResult,
 } from "./actions";
 import {
@@ -67,6 +69,9 @@ import {
   type EleccionEspecie,
   type VitalidadActual,
   VITALIDAD_DE_FICHA,
+  comprarDote,
+  quitarDote,
+  type DoteComprada,
 } from "@/lib/rules";
 import type { Sheet } from "@/lib/rules";
 import { PersonajeTab, PanelFieldset } from "./_components/personaje/PersonajeTab";
@@ -157,6 +162,7 @@ export function CharacterSheet({
   esDueno,
   submittedAt,
   reviewNote,
+  dotesDeLaFoto,
   combate,
 }: {
   characterId: string;
@@ -170,6 +176,9 @@ export function CharacterSheet({
   esDueno: boolean;
   submittedAt: string | null;
   reviewNote: string | null;
+  // Dotes de la foto de aprobación (null sin foto): solo para explicar por qué no se
+  // puede quitar una dote en ficha aprobada. El servidor la relee de la base.
+  dotesDeLaFoto: DoteComprada[] | null;
   // null si no hay Combate EN_CURSO, o si lo hay pero este personaje no
   // tiene fila dentro (fase 6b bloque 3) — en los dos casos, nada de
   // combate se enseña en la ficha.
@@ -184,6 +193,9 @@ export function CharacterSheet({
   const [xp, setXp] = useState(initialXp);
   const [creditos, setCreditos] = useState(initialCreditos);
   const [status, setStatus] = useState<SaveStatus>("idle");
+  // Último rechazo del servidor en Dotes, con su motivo (la pantalla ya filtra con
+  // las mismas reglas, así que solo salta si la ficha cambió por otro lado).
+  const [errorDotes, setErrorDotes] = useState<string | null>(null);
   // Historial de tiradas y memoria de dificultad/circunstancial por tirada:
   // vive aquí, no dentro de AccionesTab, para que sobreviva a cambiar de tab
   // (antes se perdía porque AccionesTab se desmonta entero al cambiar de tab
@@ -239,7 +251,7 @@ export function CharacterSheet({
   const pendingTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   const runSave = useCallback(
-    (fn: () => Promise<SaveResult>, onOk?: (s: Sheet) => void) => {
+    (fn: () => Promise<SaveResult>, onOk?: (s: Sheet) => void, onError?: (error: string) => void) => {
       setStatus("saving");
       queue.current = queue.current
         .then(() => fn())
@@ -253,7 +265,10 @@ export function CharacterSheet({
               if (res.xp !== undefined) setXp(res.xp);
               if (res.creditos !== undefined) setCreditos(res.creditos);
               setStatus("saved");
-            } else setStatus("error");
+            } else {
+              onError?.(res.error);
+              setStatus("error");
+            }
           },
           () => setStatus("error"),
         );
@@ -328,6 +343,45 @@ export function CharacterSheet({
       aprobada
         ? (servidor) => setSheet((actual) => ({ ...actual, psionica: servidor.psionica }))
         : undefined,
+    );
+  };
+  // Dotes: optimista con las mismas funciones que el servidor y reconciliando solo
+  // `dotes` (no el sheet entero, ver el bug de 2026-09-24 arriba). La XP la trae
+  // runSave. Si el servidor rechaza, se deshace lo optimista y se enseña su motivo.
+  const commitComprarDote = (entrada: DoteComprada) => {
+    const res = comprarDote(sheet, entrada, { valores: ficha.requisitosDotes, aprobada, xp });
+    if (!res.ok) {
+      setErrorDotes(res.error);
+      return;
+    }
+    setErrorDotes(null);
+    const antes = sheet.dotes;
+    setSheet((s) => ({ ...s, dotes: res.sheet.dotes }));
+    runSave(
+      () => comprarDoteAction(characterId, entrada),
+      (servidor) => setSheet((actual) => ({ ...actual, dotes: servidor.dotes })),
+      (error) => {
+        setErrorDotes(error);
+        setSheet((actual) => ({ ...actual, dotes: antes }));
+      },
+    );
+  };
+  const commitQuitarDote = (entrada: DoteComprada) => {
+    const res = quitarDote(sheet, entrada, { aprobada, foto: dotesDeLaFoto });
+    if (!res.ok) {
+      setErrorDotes(res.error);
+      return;
+    }
+    setErrorDotes(null);
+    const antes = sheet.dotes;
+    setSheet((s) => ({ ...s, dotes: res.sheet.dotes }));
+    runSave(
+      () => quitarDoteAction(characterId, entrada),
+      (servidor) => setSheet((actual) => ({ ...actual, dotes: servidor.dotes })),
+      (error) => {
+        setErrorDotes(error);
+        setSheet((actual) => ({ ...actual, dotes: antes }));
+      },
     );
   };
   const commitAddEspecialidad = (id: HabilidadId, nombre: string) => {
@@ -680,7 +734,17 @@ export function CharacterSheet({
               onRemoveEspecialidad={commitRemoveEspecialidad}
             />
           )}
-          {activeEfectivo === "dotes" && <DotesTab sheet={sheet} />}
+          {activeEfectivo === "dotes" && (
+            <DotesTab
+              ficha={ficha}
+              aprobada={aprobada}
+              xp={xp}
+              foto={dotesDeLaFoto}
+              error={errorDotes}
+              onComprar={commitComprarDote}
+              onQuitar={commitQuitarDote}
+            />
+          )}
           {activeEfectivo === "psionica" && (
             <PsionicaTab ficha={ficha} aprobada={aprobada} xp={xp} onSet={commitDisciplina} />
           )}

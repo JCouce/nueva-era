@@ -40,6 +40,7 @@ import { FARMACOS } from "../catalog/medicina";
 import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./prioridad";
 import { DISCIPLINA_IDS, type DisciplinaId } from "../catalog/psionica";
 import { normalizarOpciones } from "../catalog/especies";
+import { doteCompradaSchema, normalizarDotes, MAX_DOTES } from "./dotesCompradas";
 
 // Versión del formato de ficha. Al subirla hay que añadir su migración en
 // migraciones.ts y el test que la cubre.
@@ -61,7 +62,8 @@ import { normalizarOpciones } from "../catalog/especies";
 //   13 → se añade la fatiga temporal de Proeza (fatigaTemporal)
 //   14 → se añaden las opciones de especie (especieOpciones: casta y linaje)
 //   15 → las piezas equipadas admiten `viaEspecie` (kerzul del Arköru)
-export const SCHEMA_VERSION = 15;
+//   16 → se añaden las dotes compradas (dotes)
+export const SCHEMA_VERSION = 16;
 
 const atributoValue = z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX);
 
@@ -109,6 +111,9 @@ export const sheetSchema = z.object({
   municionEspecial: municionEspecialSchema,
   // Solo disciplinas con nivel > 0, mismo criterio que granadas.
   psionica: z.partialRecord(z.enum(DISCIPLINA_IDS), z.number().int().min(1).max(6)),
+  // Dotes compradas (docs/sistema.md §9.1), con su elección si la piden. Lo
+  // gastado, los requisitos y la marca de requisito no cumplido se derivan (dotes.ts).
+  dotes: z.array(doteCompradaSchema).max(MAX_DOTES),
   // Recurso persistente del propio personaje (vitalidad.ts), no de una
   // instancia de equipo — por eso vive suelto aquí y no dentro de `recursos`.
   // El centinela 999 (ver defaultSheet/parseSheet) se recorta al máximo real
@@ -149,6 +154,7 @@ export function defaultSheet(): Sheet {
     farmacos: defaultFarmacos(),
     municionEspecial: defaultMunicionEspecial(),
     psionica: {},
+    dotes: [],
     // Centinela: parseSheet lo recorta al máximo real (salud()) nada más
     // leer la ficha, así que una ficha nueva arranca a tope sin duplicar la
     // fórmula de vida/fatiga aquí.
@@ -322,6 +328,7 @@ export function parseSheet(raw: unknown): Sheet {
       farmacos,
       municionEspecial,
       psionica,
+      dotes: normalizarDotes(r.dotes),
       vidaActual: clampInt(r.vidaActual, 0, 999, 999),
       fatigaActual: clampInt(r.fatigaActual, 0, 999, 999),
       fatigaTemporal: clampInt(r.fatigaTemporal, 0, 999, 0),

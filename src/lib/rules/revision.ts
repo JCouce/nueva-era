@@ -3,10 +3,12 @@
 //
 //   transicionRevision   quién puede mover la ficha de un estado a otro
 //   fichaSoloLectura     si quien mira la ficha en revisión puede editarla
-//   faltaParaEnviar      lo que bloquea el envío (los `falta` de pasosPersonaje)
+//   faltaParaEnviar      lo que bloquea el envío (los `falta` de pasosPersonaje y las
+//                        dotes con requisito no cumplido, faltasDeDotes en dotes.ts)
 //   avisosParaEnviar     lo que se avisa pero no bloquea (puntos sin gastar)
 import { puntosAtributosDisponibles, puntosHabilidadesDisponibles } from "./creacion";
 import { puntosPsionicaDisponibles } from "./psionica";
+import { puntosDotesDisponibles } from "./dotes";
 import type { PasoPersonaje } from "./personaje";
 import type { AjusteCoste } from "./progresion";
 import type { Sheet } from "./sheet";
@@ -63,8 +65,10 @@ export function fichaSoloLectura({ estado, esMaster }: { estado: EstadoFicha; es
   return estado === "IN_REVIEW" && !esMaster;
 }
 
-export function faltaParaEnviar(pasos: PasoPersonaje[]): string[] {
-  return pasos.flatMap((p) => p.falta);
+// `faltasDotes`: faltasDeDotes(sheet, valores) — obligatorio para que ningún sitio
+// que decide el envío se olvide de las dotes con requisito no cumplido (D1).
+export function faltaParaEnviar(pasos: PasoPersonaje[], faltasDotes: string[]): string[] {
+  return [...pasos.flatMap((p) => p.falta), ...faltasDotes];
 }
 
 const quedan = (n: number) => (n === 1 ? "Te queda 1 punto" : `Te quedan ${n} puntos`);
@@ -76,6 +80,8 @@ export function avisosParaEnviar(sheet: Sheet, ajuste: AjusteCoste): string[] {
     ["atributos", puntosAtributosDisponibles(sheet)],
     ["habilidades", puntosHabilidadesDisponibles(sheet, ajuste)],
     ["psiónica", puntosPsionicaDisponibles(sheet, ajuste)],
+    // Lo que sobra de dotes al aprobar se pierde (§9.1): por eso se avisa.
+    ["dotes", puntosDotesDisponibles(sheet)],
   ];
   return pools.flatMap(([nombre, n]) =>
     Number.isFinite(n) && n > 0 ? [`${quedan(n)} de ${nombre} sin gastar`] : [],

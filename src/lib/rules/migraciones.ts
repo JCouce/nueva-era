@@ -212,6 +212,14 @@ export const MIGRACIONES: Migracion[] = [
       "que no se mueve nada.",
     migrar: (ficha) => ({ ...ficha }),
   },
+  {
+    desde: 15,
+    hasta: 16,
+    descripcion:
+      "Se añaden las dotes compradas (docs/sistema.md §9.1): las fichas antiguas empiezan " +
+      "sin ninguna. Las ya aprobadas no reciben el pool de su letra: compran con XP (§9.4).",
+    migrar: (ficha) => ({ ...ficha, dotes: [] }),
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le

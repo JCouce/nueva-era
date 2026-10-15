@@ -59,11 +59,15 @@ export const PUNTOS_PSIONICA_POR_LETRA: Record<LetraPrioridad, number> = {
   "S+": Infinity,
 };
 
-// S12: HOJA2 solo rellena la casilla E (0 puntos); A-D no aparecen en el documento.
-// Pendiente de confirmar con el diseñador si faltan por transcribir o si Dotes no
-// tiene pool propio fuera de E. No se inventa un número para las que faltan.
-export const PUNTOS_DOTES_POR_LETRA: Partial<Record<LetraPrioridad, number>> = {
-  E: 0,
+// HOJA3 (2026-10-14, docs/sistema.md §2 y §9.1) trae la columna entera y tumba S12
+// (solo se conocía la E, a 0). Fichas ya aprobadas no reciben estos puntos: compran
+// con XP (§9.4). Lo que sobra al aprobar se pierde.
+export const PUNTOS_DOTES_POR_LETRA: Record<LetraPrioridad, number> = {
+  A: 18,
+  B: 15,
+  C: 12,
+  D: 9,
+  E: 6,
   "S+": Infinity,
 };
 

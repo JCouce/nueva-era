@@ -1358,7 +1358,7 @@ problema completo en `docs/modificadores-tiradas.md` §8. **Resuelta:** el §8 s
 el 2026-09-23 (condiciones con `alcance` desde el equipo) y la psiónica entra por
 `conPsionicaEnTiradaFija` (2026-09-30).
 
-### Dotes ⬜ (transcritas y decididas 2026-10-14, sin modelar)
+### Dotes ⬜ (transcritas y decididas 2026-10-14; D1 hecha 2026-10-15: dotes en la ficha, sin efectos)
 
 Encargo y pasos: `docs/prompt-dotes.md`. Fuente literal: `docs/dotes.md` (105 dotes).
 Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
@@ -1374,12 +1374,41 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
 - [x] Campos nuevos y supuestos del redactor decididos → `MODELO_DOTES` v2 (`sistema.md` §9.3).
 - [x] Candidatas a UX decididas (`sistema.md` §9.3): solo Reflejos Felinos y grupo extra de
   acción (Traicionero en Iniciativa); usos por turno → épica del panel de combate.
-- [ ] Ajustar el borrador `docs/modelado-dotes.json` a v2 (primera tanda de código).
+- [x] **D1 (2026-10-15): dotes en la ficha, sin efectos.**
+  - Catálogo generado: `npm run gen-dotes` (`scripts/generar-catalogo-dotes.ts`) lee el
+    borrador, valida contra el schema de compra de v2 (`src/lib/catalog/dotesTipos.ts`),
+    normaliza v1 → v2 (Biónica en Biociencia, etiquetas de la lista cerrada, prosa de
+    `docs/dotes.md`), cruza requisitos/coste/grupo con la transcripción y escribe
+    `src/lib/catalog/dotes.ts` (105). El borrador `.json` no se ha tocado: la
+    normalización vive en el script.
+  - `sheet.dotes` (`SCHEMA_VERSION` 16), lectura tolerante, reset de especie, foto de
+    aprobación con `dotes` opcional.
+  - `rules/dotes.ts`: `PUNTOS_DOTES_POR_LETRA` A 18 · B 15 · C 12 · D 9 · E 6; pool en
+    creación, XP tras aprobar (sin pool); el máster con las mismas reglas; requisitos con
+    especie (S30); requisito roto = marca + falta para enviar a revisión; no se quita una
+    dote que es requisito de otra; aprobada no se vende ninguna (S32).
+  - Pestaña Dotes (`DotesTab.tsx`) y `comprarDoteAction` / `quitarDoteAction`.
+  - Fuera de D1: efectos/capas, `fuentesDeCapa1`, Bloquear/Sutil/ataque de oportunidad
+    con su dote, NPC (`NpcTemplate` no recibe dotes), catálogo de especialidades.
+- [ ] **Especialidades en requisitos, provisional (S31):** hoy se comparan por nombre
+  normalizado (texto libre de la ficha ↔ id del requisito, `claveEspecialidad` en
+  `dotes.ts`) y los nombres legibles salen de `NOMBRES_ESPECIALIDAD_DOTES` (generado).
+  Se sustituye cuando llegue el catálogo de especialidades (tarea de abajo).
+- [ ] Ajustar el borrador `docs/modelado-dotes.json` a v2 en los campos de efectos (los de
+  compra ya los normaliza el generador), en la primera tanda de efectos.
+- [x] D1 probada en navegador (2026-10-15): compra con pool, XP en aprobada, quitar con
+  dependientes, requisito roto marcado, Especialidad Médica repetida sin repetir pareja,
+  Crítico Mejorado y Bioma Predilecto con texto libre, rechazo del servidor deshaciendo
+  la compra, cambio de especie vaciando dotes. Sin probar en navegador (solo test): el
+  bloqueo del envío a revisión, que solo ve el dueño (falta un usuario jugador local).
+- [ ] **Saldo negativo al bajar la letra (fallo anterior a D1, no solo de dotes):** si
+  después de gastar se baja la letra de una categoría (`setPrioridad`, `creacion.ts`), el
+  pool se queda en negativo ("-3 / 6") y no bloquea nada: ni el cambio de letra ni el
+  envío a revisión. Pasa igual con Atributos, Habilidades y Psiónica. Decidir si se impide
+  el cambio de letra o si el saldo negativo es una falta que bloquea el envío.
 - [ ] Código, en su tanda: Ataque de oportunidad desaparece sin la dote también en
-  Finta/Presa/Desarme/Flanqueo; Biónica pasa a Biociencia (validación de requisitos).
+  Finta/Presa/Desarme/Flanqueo.
 - [ ] `docs/propuesta-dotes.md` y plan por tandas.
-- [ ] Código, en su tanda: `PUNTOS_DOTES_POR_LETRA` (`prioridad.ts`) a A 18 · B 15 · C 12 ·
-  D 9 · E 6, sin dar puntos a fichas ya aprobadas.
 - [ ] Código, en su tanda: Bloqueo, Combate Sutil y Ataque de oportunidad pasan a exigir
   su dote (hoy Bloquear y el interruptor Sutil están para todos).
 - [ ] Integrar el catálogo completo de especialidades de `docs/fuente/habilidades.md` en

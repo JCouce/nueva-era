@@ -25,8 +25,7 @@ const ETIQUETAS: Record<CategoriaPrioridad, string> = {
 };
 
 // Qué desbloquea cada letra en cada categoría, para pintarlo bajo los
-// botones. Dotes A-D no tiene número en HOJA2 todavía (S12) — se declara
-// "pendiente" en vez de inventar una cifra.
+// botones.
 function resumenLetra(categoria: CategoriaPrioridad, letra: LetraPrioridad): string {
   switch (categoria) {
     case "atributos":
@@ -35,10 +34,8 @@ function resumenLetra(categoria: CategoriaPrioridad, letra: LetraPrioridad): str
       return `${textoPuntos(PUNTOS_HABILIDADES_POR_LETRA[letra])} pts`;
     case "psionica":
       return `${textoPuntos(PUNTOS_PSIONICA_POR_LETRA[letra])} pts`;
-    case "dotes": {
-      const pts = PUNTOS_DOTES_POR_LETRA[letra];
-      return pts === undefined ? "pendiente" : `${textoPuntos(pts)} pts`;
-    }
+    case "dotes":
+      return `${textoPuntos(PUNTOS_DOTES_POR_LETRA[letra])} pts`;
     case "recursos": {
       const r = RECURSOS_POR_LETRA[letra];
       return letra === LETRA_PRUEBAS ? "∞ créd" : `${r.creditos.toLocaleString("es-ES")} créd`;

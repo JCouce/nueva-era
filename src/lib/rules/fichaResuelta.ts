@@ -41,6 +41,7 @@ import {
   type MultiplicadorCarga,
 } from "./especie";
 import { bonosDeDisciplina, nivelesDePsionica, type PsionicaResuelta } from "./psionica";
+import { valoresDeRequisito, type ValoresRequisito } from "./dotes";
 import type { ExcepcionRareza } from "../catalog/especies";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
 import { consultaIndiceCondiciones, indiceDeCondiciones, modificadoresDeEquipo, type IndiceCondiciones } from "./equipo";
@@ -115,6 +116,9 @@ export type FichaResuelta = {
   // puede pasar de 6) y paraEfectos (tope 6), y los requisitos rotos. Derivado: le
   // llega también al NPC. Poderes y bonos por nivel leen `paraEfectos`.
   psionica: PsionicaResuelta;
+  // Los valores que miran los requisitos de dotes (§9.1, dotes.ts): con la especie,
+  // sin equipo ni estados de combate. Los lee la pestaña Dotes y faltasDeDotes.
+  requisitosDotes: ValoresRequisito;
   // Otras áreas (§14.9, E5), derivadas: también al NPC. El peaje al pagar fatiga por un
   // poder (lo lee usarPoder; null sin el rasgo), las notas fijas de las filas de
   // fármaco y las acciones sin dado del rasgo (activar la visión).
@@ -208,6 +212,7 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
     bolsaAumentos: libre ? null : bolsaDeAumentos(especie),
     excepcionesRareza: libre ? [] : excepcionesRareza(especie),
     psionica,
+    requisitosDotes: valoresDeRequisito(sheet, especie?.modificadores ?? []),
     peajeNeurologico: peajeNeurologicoDeEspecie(especie),
     notasFarmacos: notasFarmacosDeEspecie(especie),
     accionesEspecie: accionesSinDadoDeEspecie(especie),

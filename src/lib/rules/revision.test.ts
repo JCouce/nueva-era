@@ -92,27 +92,31 @@ describe("fichaSoloLectura", () => {
 describe("faltaParaEnviar", () => {
   test("ficha vacía: especie, prioridades y nombre, en ese orden", () => {
     const pasos = pasosPersonaje({ sheet: defaultSheet(), nombre: " ", aprobada: false });
-    assert.deepEqual(faltaParaEnviar(pasos), ["Elige especie", "Reparte las 5 letras de prioridad", "Ponle nombre"]);
+    assert.deepEqual(faltaParaEnviar(pasos, []), ["Elige especie", "Reparte las 5 letras de prioridad", "Ponle nombre"]);
   });
 
   test("Manduk sin casta con todo lo demás hecho: solo la casta", () => {
     const sheet = conPrioridades({ atributos: "A", habilidades: "B", dotes: "C", psionica: "D", recursos: "E" }, "manduk");
-    assert.deepEqual(faltaParaEnviar(pasosPersonaje({ sheet, nombre: "Krag", aprobada: false })), ["Elige casta"]);
+    assert.deepEqual(faltaParaEnviar(pasosPersonaje({ sheet, nombre: "Krag", aprobada: false }), []), ["Elige casta"]);
   });
 
   test("humano con reparto y nombre: nada", () => {
     const sheet = conPrioridades({ atributos: "A", habilidades: "B", dotes: "C", psionica: "D", recursos: "E" });
-    assert.deepEqual(faltaParaEnviar(pasosPersonaje({ sheet, nombre: "Ana", aprobada: false })), []);
+    assert.deepEqual(faltaParaEnviar(pasosPersonaje({ sheet, nombre: "Ana", aprobada: false }), []), []);
   });
 });
 
+// El pool de la letra C entero (6 + 6): solo cuenta el coste, no los requisitos.
+const TODAS_LAS_DOTES_DE_C = [{ id: "dote_accion_inspiradora" }, { id: "dote_autocuidados" }];
+
 describe("avisosParaEnviar", () => {
-  test("nada gastado: avisa de los tres pools con presupuesto", () => {
+  test("nada gastado: avisa de los cuatro pools con presupuesto", () => {
     const sheet = conPrioridades({ atributos: "E", habilidades: "D", dotes: "C", psionica: "B", recursos: "A" });
     assert.deepEqual(avisosParaEnviar(sheet, AJUSTE_NEUTRO), [
       "Te quedan 8 puntos de atributos sin gastar",
       "Te quedan 9 puntos de habilidades sin gastar",
       "Te quedan 12 puntos de psiónica sin gastar",
+      "Te quedan 12 puntos de dotes sin gastar",
     ]);
   });
 
@@ -122,6 +126,7 @@ describe("avisosParaEnviar", () => {
     sheet = setAtributoValue(sheet, "agilidad", 1); // 2 → 8 de 10
     sheet = setAtributoValue(sheet, "aguante", 1); // 2 → 10
     sheet = setHabilidadValue(sheet, "atletismo", 3, AJUSTE_NEUTRO); // 6 de 6
+    sheet = { ...sheet, dotes: TODAS_LAS_DOTES_DE_C }; // 12 de 12
     assert.deepEqual(avisosParaEnviar(sheet, AJUSTE_NEUTRO), []);
   });
 
@@ -132,6 +137,7 @@ describe("avisosParaEnviar", () => {
     sheet = setAtributoValue(sheet, "fuerza", 2); // 6 de 8
     sheet = setAtributoValue(sheet, "caracter", -1); // devuelve 1 → 5 de 8, quedan 3
     sheet = setAtributoValue(sheet, "agilidad", 1); // 7 de 8, queda 1
+    sheet = { ...sheet, dotes: TODAS_LAS_DOTES_DE_C };
     assert.deepEqual(avisosParaEnviar(sheet, AJUSTE_NEUTRO), ["Te queda 1 punto de atributos sin gastar"]);
   });
 

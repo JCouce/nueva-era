@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
-import { parseSheet, type EstadoActivo } from "@/lib/rules";
+import { parseSheet, parseSnapshot, type EstadoActivo } from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
 import { HudCard } from "@/components/HudCard";
 import { StatusControl, ResourceRow } from "@/app/master/MasterControls";
@@ -74,6 +74,7 @@ export default async function CharacterPage({
           esDueno={character.ownerId === user.id}
           submittedAt={character.submittedAt?.toISOString() ?? null}
           reviewNote={character.reviewNote}
+          dotesDeLaFoto={parseSnapshot(character.approvedSnapshot)?.dotes ?? null}
           combate={enCombate ? combate : null}
         />
       </main>

@@ -15,6 +15,7 @@ import { z } from "zod";
 import { ATRIBUTOS, ATRIBUTO_MIN, ATRIBUTO_MAX, type AtributoId } from "./atributos";
 import { HABILIDADES, HABILIDAD_NO_ENTRENADA, HABILIDAD_MAX, type HabilidadId } from "./habilidades";
 import type { Sheet } from "./sheet";
+import { doteCompradaSchema } from "./dotesCompradas";
 
 const atributosFloorShape = Object.fromEntries(
   ATRIBUTOS.map((a) => [a.id, z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX)]),
@@ -27,9 +28,14 @@ const habilidadesFloorShape = Object.fromEntries(
   ]),
 ) as Record<HabilidadId, z.ZodNumber>;
 
+// `dotes` es opcional a propósito: las fotos guardadas antes de las dotes (D1) no
+// lo traen, y si fuera obligatorio dejarían de validar y esas fichas perderían el
+// suelo entero (parseSnapshot → null). Con la ficha aprobada ninguna dote se vende
+// (dotes.ts, motivoNoQuitable); la foto dice cuáles venían de creación.
 const snapshotSchema = z.object({
   atributos: z.object(atributosFloorShape),
   habilidades: z.object(habilidadesFloorShape),
+  dotes: z.array(doteCompradaSchema).optional(),
 });
 
 export type AprobacionSnapshot = z.infer<typeof snapshotSchema>;
@@ -41,6 +47,7 @@ export function snapshotFromSheet(sheet: Sheet): AprobacionSnapshot {
     habilidades: Object.fromEntries(
       HABILIDADES.map((h) => [h.id, sheet.habilidades[h.id].valor]),
     ) as Record<HabilidadId, number>,
+    dotes: sheet.dotes.map((d) => ({ ...d })),
   };
 }
 

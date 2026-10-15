@@ -31,6 +31,8 @@
 //   personaje.ts       pestaña Personaje: pasos (hecho/pendiente), etiquetas de rasgos, identidad por defecto
 //   revision.ts        envío a revisión: transiciones de estado, solo lectura, faltas y avisos
 //   progresion.ts      coste por nivel con ajuste de especie, subida con XP y coste del siguiente nivel
+//   dotes.ts           dotes: pool, requisitos, compra (pool o XP), venta y requisito no cumplido (D1, sin efectos)
+//   dotesCompradas.ts  sheet.dotes: forma y lectura tolerante
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -64,6 +66,8 @@ export * from "./personaje";
 export * from "./revision";
 export * from "./fichaResuelta";
 export * from "./progresion";
+export * from "./dotes";
+export * from "./dotesCompradas";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";
@@ -73,3 +77,5 @@ export * from "../catalog/herramientas";
 export * from "../catalog/armamentoPesado";
 export * from "../catalog/estados";
 export * from "../catalog/psionica";
+export * from "../catalog/dotes";
+export * from "../catalog/dotesTipos";

@@ -17,7 +17,8 @@
     "seed-npcs": "node scripts/seed-npcs.mjs",
     "predev": "docker compose up -d --wait && prisma migrate deploy",
     "seed-preguntas": "node scripts/seed-preguntas.mjs",
-    "sync-drive": "node scripts/sync-drive.mjs"
+    "sync-drive": "node scripts/sync-drive.mjs",
+    "gen-dotes": "node --import ./scripts/test-resolver.mjs scripts/generar-catalogo-dotes.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

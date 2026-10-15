@@ -78,6 +78,11 @@ import {
   especieDeFicha,
   ajustesDeCoste,
   type AjusteCoste,
+  comprarDote,
+  quitarDote,
+  faltasDeDotes,
+  valoresRequisitoDeFicha,
+  doteCompradaSchema,
 } from "@/lib/rules";
 
 export type SaveResult =
@@ -244,6 +249,45 @@ export async function setDisciplinaAction(
   revalidatePath(`/characters/${characterId}`);
   revalidatePath("/master");
   return { ok: true, sheet, xp };
+}
+
+// Dotes (docs/sistema.md §9.1, tanda D1, sin efectos). Mismo esquema que las
+// disciplinas: en creación gasta el pool de la letra de Dotes; aprobada, cuesta XP
+// (el mismo número que su coste). Requisitos con los valores de juego (especie
+// incluida) y el pool/XP se comprueban aquí con la ficha de la base, nunca con lo
+// que diga la pantalla. El máster compra con las mismas reglas (decisión del usuario).
+export async function comprarDoteAction(characterId: string, entrada: unknown): Promise<SaveResult> {
+  const parsed = doteCompradaSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Dote inválida" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+
+  const res = comprarDote(ctx.sheet, parsed.data, {
+    valores: valoresRequisitoDeFicha(ctx.sheet),
+    aprobada: ctx.aprobada,
+    xp: ctx.xp,
+  });
+  if (!res.ok) return { ok: false, error: res.error };
+  if (!ctx.aprobada) return persist(characterId, res.sheet);
+
+  const xp = ctx.xp - res.costeXp;
+  await prisma.character.update({ where: { id: characterId }, data: { stats: res.sheet, xp } });
+  revalidatePath(`/characters/${characterId}`);
+  revalidatePath("/master");
+  return { ok: true, sheet: res.sheet, xp };
+}
+
+// Solo en creación, y nunca una dote que es requisito de otra comprada. Aprobada no
+// se vende ninguna (la foto de aprobación dice cuáles venían de creación).
+export async function quitarDoteAction(characterId: string, entrada: unknown): Promise<SaveResult> {
+  const parsed = doteCompradaSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Dote inválida" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+
+  const res = quitarDote(ctx.sheet, parsed.data, { aprobada: ctx.aprobada, foto: ctx.snapshot?.dotes ?? null });
+  if (!res.ok) return { ok: false, error: res.error };
+  return persist(characterId, res.sheet);
 }
 
 // Reparto de letras (creación por prioridad, docs/sistema.md §2). Congelado
@@ -801,8 +845,9 @@ async function cambiarEstadoRevision(
 
   if (accion === "enviar") {
     // Con el nombre y la ficha de la base, no con lo que diga la pantalla.
-    const pasos = pasosPersonaje({ sheet: parseSheet(character.stats), nombre: character.name, aprobada: false });
-    const falta = faltaParaEnviar(pasos);
+    const sheet = parseSheet(character.stats);
+    const pasos = pasosPersonaje({ sheet, nombre: character.name, aprobada: false });
+    const falta = faltaParaEnviar(pasos, faltasDeDotes(sheet, valoresRequisitoDeFicha(sheet)));
     if (falta.length) return { ok: false, error: `Falta: ${falta.join(", ")}` };
   }
 
