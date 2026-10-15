@@ -7,7 +7,7 @@
 //
 // Uso: node --import ./scripts/test-resolver.mjs scripts/workflows/auditoria-motor-metadata-extraer.ts \
 //        [salida.json] [--familia equipo|dote|todo] [--estado construido|pendiente] [--tanda D2a|D2b-1|D2b-2|D2c|D2d]
-//        [--en-tirada]
+//        [--en-tirada] [--sin-texto]
 //
 //   --familia  qué catálogo recorre (por defecto "todo": equipo + dotes).
 //   --estado / --tanda  solo dotes: se queda con las dotes que tengan al menos un
@@ -17,6 +17,11 @@
 //              a una tirada (afecta.modo distinto de "ninguna"): fuera las dotes cuyo único
 //              efecto construido es texto de la tarjeta. Auditoría de D2a + D2b-1:
 //              `--familia dote --estado construido --en-tirada`.
+//   --sin-texto  solo dotes: el efecto que casa tiene que sumar números o poner casillas
+//              (tipo distinto de texto/narrativo); los textos de tirada siguen en
+//              `notaTirada` marcados "ya cubierto como texto, no auditar" (sin ellos el
+//              auditor los da por ausentes) y se quitan sus MotorMetadata y efectos. Auditoría barata de una tanda: `--familia dote --estado construido
+//              --sin-texto`.
 //
 // Dotes (D2a): `detalle` = la prosa de docs/dotes.md; `modificadores`/`condiciones`/
 // `notaTirada` = lo que la app pone de verdad en las tiradas, sacado de
@@ -78,6 +83,8 @@ const familia = opcion("familia") ?? "todo";
 const estado = opcion("estado");
 const tanda = opcion("tanda");
 const enTirada = argv.includes("--en-tirada");
+const sinTexto = argv.includes("--sin-texto");
+const esTexto = (m: { tipo: string }) => m.tipo === "texto" || m.tipo === "narrativo";
 if (!["equipo", "dote", "todo"].includes(familia)) throw new Error(`--familia ${familia}: equipo | dote | todo`);
 if (estado && !["construido", "pendiente"].includes(estado)) throw new Error(`--estado ${estado}: construido | pendiente`);
 if (tanda && tanda !== "D2a" && !(TANDAS_DOTES as readonly string[]).includes(tanda))
@@ -146,7 +153,8 @@ for (const dote of familia === "equipo" ? [] : DOTES) {
     (m) =>
       (!estado || m.estado === estado) &&
       (!tanda || (tanda === "D2a" ? m.estado === "construido" : m.estado === "pendiente" && m.bloqueoPor === tanda)) &&
-      (!enTirada || m.afecta.modo !== "ninguna"),
+      (!enTirada || m.afecta.modo !== "ninguna") &&
+      (!sinTexto || !esTexto(m)),
   );
   if (!casa || dote.efectos.length === 0) {
     dotesFuera++;
@@ -159,10 +167,13 @@ for (const dote of familia === "equipo" ? [] : DOTES) {
   const destinoTexto = (t: (typeof textos)[number]) =>
     t.en.tipo === "tiradaId" ? t.en.id : t.en.tipo === "familiaArma" ? `familia:${t.en.familia}${t.en.empleo ? ` (arma a ${t.en.empleo})` : ""}` : t.en.tipo;
   const lineas = [
-    ...textos.map((t) => `${destinoTexto(t)}${t.soloEnCritico ? " (crítico)" : ""}: ${t.texto}`),
+    // Con --sin-texto los textos no se auditan, pero el auditor tiene que verlos: si no,
+    // un efecto que la app ya da como texto (−1 a defensas de Combinación) sale como
+    // "falta en código" (falsos positivos de la auditoría D2a + D2b-1, 2026-10-16).
+    ...textos.map((t) => `${sinTexto ? "[ya cubierto como texto, no auditar] " : ""}${destinoTexto(t)}${t.soloEnCritico ? " (crítico)" : ""}: ${t.texto}`),
     ...criticos.map((c) => `crítico fijo en los ataques con la especialidad elegida (${c.especialidad} de ejemplo): con ${c.margen} éxitos`),
     ...dote.efectos.flatMap((e) =>
-      "requisitoAlcance" in e && e.requisitoAlcance
+      "requisitoAlcance" in e && e.requisitoAlcance && !(sinTexto && e.tipo === "texto")
         ? [`requisito por rama: el efecto ${e.borrador} (${e.tipo === "texto" ? e.lugar : "alcance" in e ? e.alcance : "?"}) solo con ${textoRequisitoDote(e.requisitoAlcance)}`]
         : [],
     ),
@@ -178,8 +189,9 @@ for (const dote of familia === "equipo" ? [] : DOTES) {
     ajusteAtaque: null,
     condiciones: casillas.length ? casillas : null,
     notaTirada: lineas.length ? lineas.join(" | ") : null,
-    motor: dote.motor,
-    efectos: dote.efectos,
+    // Con --sin-texto, MotorMetadata y efectos en paralelo (mismo índice) sin los de texto.
+    motor: sinTexto ? dote.motor.filter((m) => !esTexto(m)) : dote.motor,
+    efectos: sinTexto ? dote.efectos.filter((_, i) => !esTexto(dote.motor[i])) : dote.efectos,
   });
 }
 
@@ -187,7 +199,7 @@ const sinMotor = items.filter((i) => i.motor.length === 0);
 const salida = argv[0] && !argv[0].startsWith("--") ? argv[0] : "catalogo-motor.json";
 writeFileSync(salida, JSON.stringify(items, null, 2));
 
-console.log(`Filtro: familia ${familia}${estado ? `, estado ${estado}` : ""}${tanda ? `, tanda ${tanda}` : ""}.`);
+console.log(`Filtro: familia ${familia}${estado ? `, estado ${estado}` : ""}${tanda ? `, tanda ${tanda}` : ""}${enTirada ? ", en tirada" : ""}${sinTexto ? ", sin texto" : ""}.`);
 console.log(`EQUIPO: ${familia === "dote" ? 0 : EQUIPO.length} piezas recorridas. DOTES: ${familia === "equipo" ? 0 : DOTES.length - dotesFuera} de ${DOTES.length} dentro del filtro.`);
 console.log(`${items.length} items de auditoría extraídos (piezas planas + niveles).`);
 console.log(`${sinMotor.length} sin "motor" definido: ${sinMotor.map((i) => `${i.piezaId}${i.nivel ? "#" + i.nivel : ""}`).join(", ") || "(ninguno)"}`);

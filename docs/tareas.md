@@ -1426,10 +1426,15 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
         ataques; ni lanzar ni bloquear), en `FichaResuelta.extrasDotes` → `conExtrasDeFicha`.
       - Bloqueos con la especialidad del arma, sin selector (S40 construido). Armas de fuego
         por empleo (S44 construido). Supuestos S45-S49 (`sistema.md`).
-      - [ ] **Auditoría de D2a + D2b-1** (`auditoria-motor-metadata`), solo sobre las dotes
-        con al menos un efecto construido que vaya a una tirada (fuera las de solo texto de
-        tarjeta y las de solo pendientes): `--familia dote --estado construido --en-tirada`
-        (45 dotes). Antes de lanzarla, dar al usuario el nº de agentes y el coste.
+      - [x] **Auditoría de D2a + D2b-1** (2026-10-16): modo por lotes del workflow
+        (`{ items, lote: 4 }`, envoltorio lanzado con `scriptPath`) y extractor
+        `--familia dote --estado construido --sin-texto`: 25 dotes, 9 agentes, ~370K
+        tokens. **0 hallazgos reales**: los 3 "confirmados" (−1 a defensas de Combinación,
+        entorpecimiento de Golpe Entorpecedor, −2 a la salvación de Dominio Elevado) eran
+        textos ya construidos que `--sin-texto` ocultaba al auditor; corregido (los textos
+        van marcados "ya cubierto como texto, no auditar"). 11 huecos ya reconocidos, todos
+        pendientes de D2c, D2d o tiradas-fijas. Siguientes tandas: misma receta, y antes de
+        lanzar, nº de agentes y coste al usuario.
     - [ ] **D2b-2** — habilita: Bloqueo, Combate Sutil (también el Aguijón del Proyector de
       Pulso), Ataque de oportunidad y Arrollar. **Quita cosas que hoy usa todo el mundo
       (Bloquear y el interruptor Sutil): avisar en mesa antes de desplegar y revisar los

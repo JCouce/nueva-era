@@ -29,6 +29,15 @@
 //    la app pone de verdad en las tiradas (casillas, bonos fijos, notas).
 // 2. Lanza este workflow con Workflow({ name: 'auditoria-motor-metadata',
 //    args: <el JSON del paso 1, como valor, NO como string> }).
+//    MODO POR LOTES (dotes, 2026-10-16): args = { items: <el JSON>, lote: N }. Un
+//    agente compara N items de una vez (prosa + código en la misma pasada) y otro
+//    verifica todas las discrepancias del lote: ~2 agentes por lote en vez de
+//    2 por item + 1 por discrepancia. Pensado para catálogos con poca prosa por
+//    item (dotes, 4-5 por lote); el equipo sigue con la lista suelta (modo de
+//    siempre). Para no meter el JSON en el contexto principal, genera con node un
+//    envoltorio con los args incrustados que llame a
+//    `workflow({ scriptPath: '<repo>/.claude/workflows/auditoria-motor-metadata.js' }, ARGS)`
+//    y lánzalo con `scriptPath` (mismo truco que modelar-area).
 // 3. El resultado trae dos listas: `confirmadas` (hallazgos reales, ya
 //    verificados adversarialmente) y `gapsConocidos` (discrepancias que el
 //    propio dato ya reconoce vía `estado: pendiente/bloqueado/ad_hoc` — no
@@ -82,7 +91,8 @@ export const meta = {
   ],
 }
 
-const items = args
+const porLotes = args && !Array.isArray(args) && Array.isArray(args.items)
+const items = porLotes ? args.items : args
 
 const CLAIM_SCHEMA = {
   type: 'object',
@@ -139,6 +149,99 @@ function extraerClaimsDeCodigo(item) {
   }
   if (item.notaTirada) claims.push(`notaTirada: ${item.notaTirada}`)
   return claims
+}
+
+
+if (porLotes) {
+  const N = Math.max(1, args.lote | 0 || 4)
+  const lotes = []
+  for (let i = 0; i < items.length; i += N) lotes.push(items.slice(i, i + N))
+  log(`${items.length} items en ${lotes.length} lotes de ${N}`)
+
+  const LOTE_SCHEMA = {
+    type: 'object',
+    properties: {
+      items: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: { piezaId: { type: 'string' }, discrepancias: DIFF_SCHEMA.properties.discrepancias },
+          required: ['piezaId', 'discrepancias'],
+        },
+      },
+    },
+    required: ['items'],
+  }
+  const VEREDICTOS_SCHEMA = {
+    type: 'object',
+    properties: {
+      veredictos: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: { n: { type: 'integer' }, real: { type: 'boolean' }, razon: { type: 'string' } },
+          required: ['n', 'real'],
+        },
+      },
+    },
+    required: ['veredictos'],
+  }
+  const ficha = item => `### ${item.piezaLabel} (${item.piezaId})
+PROSA:
+${item.detalle.map((d, i) => `${i + 1}. ${d}`).join('\n')}
+CÓDIGO (lo que la app entrega de verdad; fuente de verdad):
+${extraerClaimsDeCodigo(item).map((c, i) => `${i + 1}. ${c}`).join('\n') || '(nada)'}
+motorMetadata (estado "construido" = se supone hecho; "pendiente"/"bloqueado"/"ad_hoc" = hueco ya reconocido):
+${JSON.stringify(item.motor)}`
+  const NO_REPO = 'Todo lo que necesitas está en este mensaje: NO leas archivos del repositorio ni lances búsquedas.'
+
+  const porLote = await pipeline(
+    lotes,
+    (lote, _, i) => agent(
+      `Auditoría prosa-vs-código de ${lote.length} elementos de un juego de rol. ${NO_REPO}
+Para CADA elemento: saca de la prosa los efectos prometidos (sin interpretar de más) y compáralos con el CÓDIGO.
+- Efecto de la prosa sin código correspondiente: "gap_conocido" si alguna entrada de motorMetadata con estado distinto de "construido" lo cubre razonablemente; si no, "falta_en_codigo".
+- "sobra_en_codigo": el código hace algo que la prosa no dice. "valor_distinto": mismo efecto, número distinto.
+- Lo que la prosa dice y es texto/narrativo (no suma números ni pone casillas) NO es discrepancia: esta auditoría solo mira números, casillas, críticos, tramos y requisitos por rama.
+No inventes discrepancias: si un elemento cuadra, devuelve su array vacío. Devuelve una entrada por elemento, con su piezaId.
+
+${lote.map(ficha).join('\n\n')}`,
+      { phase: 'Comparar', label: `lote ${i + 1}/${lotes.length}`, schema: LOTE_SCHEMA }
+    ).then(r => ({ lote, res: r?.items ?? [] })),
+    ({ lote, res }, _, i) => {
+      const cand = res.flatMap(r => (r.discrepancias ?? []).filter(d => d.tipo !== 'gap_conocido').map(d => ({ piezaId: r.piezaId, d })))
+      const gaps = res.flatMap(r => (r.discrepancias ?? []).filter(d => d.tipo === 'gap_conocido').map(d => ({ piezaId: r.piezaId, d })))
+      if (!cand.length) return { lote, confirmadas: [], gaps }
+      return agent(
+        `Intenta REFUTAR cada una de estas discrepancias entre prosa y código. ${NO_REPO}
+Si tienes duda razonable, real=false (por defecto, no es un fallo real salvo evidencia clara). Devuelve un veredicto por número.
+
+DISCREPANCIAS:
+${cand.map((c, n) => `${n}. [${c.piezaId}] [${c.d.tipo}] ${c.d.explicacion}`).join('\n')}
+
+ELEMENTOS:
+${lote.filter(it => cand.some(c => c.piezaId === it.piezaId)).map(ficha).join('\n\n')}`,
+        { phase: 'Verificar discrepancias', label: `verificar lote ${i + 1}/${lotes.length}`, schema: VEREDICTOS_SCHEMA }
+      ).then(v => ({
+        lote,
+        gaps,
+        confirmadas: cand.filter((_, n) => (v?.veredictos ?? []).some(x => x.n === n && x.real)),
+      }))
+    }
+  )
+  const ok = porLote.filter(Boolean)
+  const porId = id => items.find(it => it.piezaId === id)
+  const agrupa = lista => Object.values(lista.reduce((acc, { piezaId, d }) => {
+    (acc[piezaId] ??= { item: porId(piezaId) ?? { piezaId }, discrepancias: [] }).discrepancias.push(d)
+    return acc
+  }, {}))
+  const perdidos = lotes.length - ok.length
+  if (perdidos) log(`${perdidos} lotes sin resultado (agente caído): no auditados`)
+  return {
+    confirmadas: agrupa(ok.flatMap(r => r.confirmadas)),
+    gapsConocidos: ok.flatMap(r => r.gaps).map(({ piezaId, d }) => ({ item: { piezaId }, discrepancia: d })),
+    lotesSinResultado: perdidos,
+  }
 }
 
 const results = await pipeline(
