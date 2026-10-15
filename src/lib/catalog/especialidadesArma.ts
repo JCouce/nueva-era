@@ -7,8 +7,17 @@
 // La especialidad es de la habilidad de ESA tirada: un arma melee arrojadiza golpea con su
 // especialidad de Combate Melee y se lanza con Lanzamiento (Atletismo, ver ESPECIALIDAD_LANZAR).
 import type { EspecialidadId } from "./especialidades";
+import { ARMAS, type ArmaFuego } from "./armasFuego";
+
+// Armas de fuego por empleo (S44, usuario): a una mano, Armas de Fuego Cortas; a dos manos
+// (subfusiles incluidos), Largas. Las ametralladoras están en Armas de Fuego, no en
+// Armamento Pesado: Largas también, por su empleo. Melee y pesado siguen por tabla.
+export function especialidadArmaFuego(arma: Pick<ArmaFuego, "empleo">): EspecialidadId {
+  return arma.empleo === "una mano" ? "armas_de_fuego_cortas" : "armas_de_fuego_largas";
+}
 
 // Armas del catálogo (armasMelee.ts, armasFuego.ts, armamentoPesado.ts): id → especialidad.
+// Las de fuego salen de su empleo (especialidadArmaFuego); el resto, a mano.
 export const ESPECIALIDAD_ARMA: Readonly<Record<string, EspecialidadId>> = {
   // ── Combate Melee: grupos del catálogo que se llaman como su especialidad ──
   pelea_punetazo: "pelea",
@@ -58,49 +67,9 @@ export const ESPECIALIDAD_ARMA: Readonly<Record<string, EspecialidadId>> = {
   kerzul_alabarda: "armas_de_asta",
   kerzul_escudo: "escudos",
 
-  // ── Combate a Distancia: pistolas, cortas; el resto de armas de fuego, largas ──
-  pistola_mosquito: "armas_de_fuego_cortas",
-  pistola_bellum: "armas_de_fuego_cortas",
-  pistola_dragon: "armas_de_fuego_cortas",
-  pistola_sydiasi: "armas_de_fuego_cortas",
-  pistola_norgul: "armas_de_fuego_cortas",
-  pistola_laser: "armas_de_fuego_cortas",
-  pistola_rayo_ligero: "armas_de_fuego_cortas",
-  pistola_plasma_sd: "armas_de_fuego_cortas",
-  escopeta_feritas: "armas_de_fuego_largas",
-  escopeta_azra: "armas_de_fuego_largas",
-  escopeta_sa79: "armas_de_fuego_largas",
-  escopeta_gong: "armas_de_fuego_largas",
-  escopeta_plasma_sc: "armas_de_fuego_largas",
-  // TODO(revisar): subfusiles como largas (el catálogo los da a dos manos); podrían ser cortas.
-  subfusil_nova: "armas_de_fuego_largas",
-  subfusil_vrekoy: "armas_de_fuego_largas",
-  subfusil_fas300: "armas_de_fuego_largas",
-  subfusil_victoria: "armas_de_fuego_largas",
-  subfusil_plasma_sb: "armas_de_fuego_largas",
-  fusil_asalto_impetus: "armas_de_fuego_largas",
-  fusil_asalto_davray: "armas_de_fuego_largas",
-  fusil_asalto_b12: "armas_de_fuego_largas",
-  fusil_asalto_laser: "armas_de_fuego_largas",
-  fusil_asalto_yojimbo: "armas_de_fuego_largas",
-  fusil_asalto_rayo_particulas: "armas_de_fuego_largas",
-  fusil_asalto_plasma_sa: "armas_de_fuego_largas",
-  fusil_precision_telum: "armas_de_fuego_largas",
-  fusil_precision_yivrem: "armas_de_fuego_largas",
-  fusil_precision_k9k: "armas_de_fuego_largas",
-  fusil_precision_tshulok: "armas_de_fuego_largas",
-  fusil_precision_laser_largo_alcance: "armas_de_fuego_largas",
-  fusil_precision_rayo_largo_alcance: "armas_de_fuego_largas",
-  fusil_precision_plasma_ss: "armas_de_fuego_largas",
-  fusil_precision_plaga: "armas_de_fuego_largas",
-  // TODO(revisar): ametralladoras como largas (el catálogo las pone en Armas de Fuego, no en
-  // Armamento Pesado); podrían ser Armas Pesadas.
-  ametralladora_asina: "armas_de_fuego_largas",
-  ametralladora_graviter: "armas_de_fuego_largas",
-  ametralladora_zotrex: "armas_de_fuego_largas",
-  ametralladora_matanza: "armas_de_fuego_largas",
-  ametralladora_electro_tk: "armas_de_fuego_largas",
-  ametralladora_plasma_aaa: "armas_de_fuego_largas",
+  // ── Combate a Distancia: las armas de fuego van por empleo (especialidadArmaFuego) ──
+  ...Object.fromEntries(ARMAS.map((a) => [a.id, especialidadArmaFuego(a)])),
+
   // Armamento pesado
   lanzallamas_ligero: "armas_pesadas",
   lanzacohetes_rt: "armas_pesadas",

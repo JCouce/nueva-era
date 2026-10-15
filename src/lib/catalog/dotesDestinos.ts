@@ -5,16 +5,18 @@
 // comprueba que cada destino resuelve a una tirada, grupo o habilidad que existe.
 //
 //   tirada → casillas y bonos van con `alcance` (AlcanceModificador, el mismo del
-//            motor); los textos, a las tiradas fijas de `textos` (DestinoTexto solo
-//            admite id). `especialidad`: la tirada solo sabe si vas en especialidad, no
+//            motor); los textos, a las tiradas fijas de `textos`, o, si el alcance es de
+//            familia de arma (D2b-1), a las tiradas de esa familia (`textos` vacío). `especialidad`: la tirada solo sabe si vas en especialidad, no
 //            en cuál (decisión del usuario, D2a), así que el efecto va como casilla en
 //            la habilidad con la especialidad en la etiqueta, y la marca el jugador. Es
 //            texto de etiqueta (el nombre del catálogo de especialidades, o el de la
 //            acción en Rastreo/Subsistencia); se sustituye cuando la tirada sepa qué
 //            especialidad se usa (docs/tareas.md, "La tirada sabe qué especialidad se usa").
 //   ficha  → texto que solo vive en la tarjeta de la dote (no hay tirada a la que colgarlo).
+//   especialidadArmaElegida → los ataques con arma de la especialidad elegida al comprar
+//            (Crítico Mejorado: crítico fijo, sin casilla; rules/dotesEfectos.ts).
 //   tanda  → el destino aún no existe: el efecto queda pendiente de esa tanda.
-import type { AlcanceModificador } from "../rules/modificadores";
+import type { AlcanceModificador, FamiliaArma } from "../rules/modificadores";
 import { etiquetaEspecialidad } from "./especialidades";
 
 // "tiradas-fijas" no es una tanda de dotes sino la tarea de docs/tareas.md "Tiradas fijas
@@ -27,6 +29,7 @@ export type TandaDote = (typeof TANDAS_DOTES)[number];
 export type DestinoDote =
   | { tipo: "tirada"; alcance: AlcanceModificador; textos: string[]; especialidad?: string }
   | { tipo: "ficha" }
+  | { tipo: "especialidadArmaElegida" }
   | { tipo: "tanda"; tanda: TandaDote; motivo: string };
 
 const tirada = (id: string, especialidad?: string): DestinoDote => ({
@@ -36,6 +39,8 @@ const tirada = (id: string, especialidad?: string): DestinoDote => ({
   ...(especialidad && { especialidad }),
 });
 const tanda = (t: TandaDote, motivo: string): DestinoDote => ({ tipo: "tanda", tanda: t, motivo });
+// Tiradas generadas por arma de una familia (Accion.familiaArma, combate.ts).
+const familia = (f: FamiliaArma): DestinoDote => ({ tipo: "tirada", alcance: { tipo: "familiaArma", familia: f }, textos: [] });
 
 // Las tiradas de Exploración del grupo Acciones (hoy solo "Buscar / percibir"). Sin
 // "Iniciativa (habitual)", que también usa Exploración pero no es rastrear ni investigar.
@@ -89,15 +94,16 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   // ── Texto que solo vive en la tarjeta de la dote ──
   ficha: { tipo: "ficha" },
 
-  // ── Ataques con arma: generados por instancia, las casillas de dote aún no llegan ──
-  "familia:ataque_melee": tanda("D2b-1", "casillas/textos de dote en los ataques melee (id por instancia)"),
-  "familia:ataque_fuego": tanda("D2b-1", "casillas/textos de dote en los disparos (id por instancia)"),
-  "familia:ataque_pesado": tanda("D2b-1", "casillas de dote en el armamento pesado (id por instancia)"),
-  "familia:lanzar_melee": tanda("D2b-1", "casillas/textos de dote al lanzar un arma melee arrojadiza"),
-  "familia:lanzar_granada": tanda("D2b-1", "casillas/textos de dote al lanzar una granada"),
-  "familia:levantar_escudo": tanda("D2b-1", "textos de dote en «Levantar [escudo]» (acción sin dado por instancia)"),
+  // ── Tiradas generadas por arma (D2b-1): por su familia, puesta al crearlas ──
+  "familia:ataque_melee": familia("ataque_melee"),
+  "familia:ataque_fuego": familia("ataque_fuego"),
+  "familia:ataque_pesado": familia("ataque_pesado"),
+  "familia:lanzar_melee": familia("lanzar_melee"),
+  "familia:lanzar_granada": familia("lanzar_granada"),
+  // Acción sin dado: solo textos, a su nota (el generador rechaza casillas aquí).
+  "familia:levantar_escudo": familia("levantar_escudo"),
   // Crítico Mejorado: la especialidad de arma elegida al comprar.
-  "especialidad:<elegida>": tanda("D2b-1", "crítico fijo con las armas de la especialidad elegida"),
+  "especialidad:<elegida>": { tipo: "especialidadArmaElegida" },
 
   // ── Habilitadas por dote (D2b-2: quita a todos lo que hoy tienen gratis) ──
   "familia:bloquear_melee": tanda("D2b-2", "«Bloquear con X» solo con la dote Bloqueo (§9.2)"),

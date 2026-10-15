@@ -38,9 +38,9 @@ cuál va antes que la otra:
   `docs/sistema.md`; Aumentos, Dotes, Puntos Heróicos y Neos Plouton son áreas sin
   código. Primer adelanto (Creación): Vida/Fatiga base 8 → 10, Dotes con presupuesto
   por prioridad, topes de creación movidos.
-- "Dotes" (Fase 5, en Pendiente) — D1 (compra) y D2a (casillas, bonos fijos y textos)
-  hechas; la tanda ESP (catálogo de especialidades por id) hecha como paso previo a D2b-1;
-  siguen D2b-1, D2b-2, D2c y D2d, con su recuento de pendientes.
+- "Dotes" (Fase 5, en Pendiente) — D1 (compra), D2a (casillas, bonos fijos y textos), la
+  tanda ESP (catálogo de especialidades por id) y D2b-1 (efectos en las tiradas de arma)
+  hechas; siguen D2b-2, D2c y D2d, con su recuento de pendientes.
 
 ---
 
@@ -1359,7 +1359,7 @@ problema completo en `docs/modificadores-tiradas.md` §8. **Resuelta:** el §8 s
 el 2026-09-23 (condiciones con `alcance` desde el equipo) y la psiónica entra por
 `conPsionicaEnTiradaFija` (2026-09-30).
 
-### Dotes ⬜ (transcritas y decididas 2026-10-14; D1 hecha 2026-10-15: dotes en la ficha; D2a construida 2026-10-15, sin commit: casillas, bonos fijos y textos)
+### Dotes ⬜ (transcritas y decididas 2026-10-14; D1 hecha 2026-10-15: dotes en la ficha; D2a construida 2026-10-15: casillas, bonos fijos y textos; D2b-1 construida 2026-10-16, sin commit: tiradas de arma)
 
 Encargo y pasos: `docs/prompt-dotes.md`. Fuente literal: `docs/dotes.md` (105 dotes).
 Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
@@ -1405,16 +1405,31 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
     (casillas al índice, bonos fijos como Modificador "dote", textos en `textosTirada`),
     `fuentesDeCapa1` con familia "dote". Supuestos S34-S38 (`sistema.md`).
   - **Recuento por tanda** (lo imprime `npm run gen-dotes` y va al pie de `dotes.ts`):
-    construidos 20 · texto 38 · pendientes D2b-1 50 · D2b-2 20 · D2c 33 · D2d 17 ·
+    construidos 41 · texto 67 · pendientes D2b-1 0 · D2b-2 20 · D2c 33 · D2d 17 ·
     tiradas-fijas 10 (estos dependen de la tarea "Tiradas fijas que faltan", más abajo).
+    Tras D2a era: construidos 20 · texto 38 · D2b-1 50.
     **Una tanda se cierra cuando sus pendientes llegan a 0.**
   - Plan de tandas:
     - [x] **D2a** — casillas, bonos fijos y textos en tiradas que ya existen.
-    - [ ] **D2b-1** — casillas/textos de dote en los ataques con arma (alcances `familia:*`,
-      Levantar escudo) y el crítico fijo de Crítico Mejorado.
-      **Al cerrarla: auditoría de D2a + D2b-1** (`auditoria-motor-metadata`), solo sobre las
-      dotes con al menos un efecto construido (fuera las de solo texto de tarjeta y las de
-      solo pendientes). Antes de lanzarla, dar al usuario el nº de agentes y el coste.
+    - [x] **D2b-1 (2026-10-16, sin commit ni prueba en navegador)** — casillas/textos de
+      dote en los ataques con arma (alcances `familia:*`, Levantar escudo) y el crítico fijo
+      de Crítico Mejorado. 50 → 0 pendientes.
+      - Familia de arma como dato: `Accion.familiaArma` / `empleoArma` (también en
+        `AccionDirecta`, Levantar escudo), puestos en `combate.ts` donde se crea cada
+        tirada; `AlcanceModificador` `familiaArma` (con empleo opcional), indexado en
+        `indiceDeCondiciones` y consultado con `ContextoAccion`; `DestinoTexto` de familia.
+        Test: cada tirada de arma del catálogo casa con exactamente una familia.
+      - Requisito por rama (Asesino, Desenfundado Rápido, Golpe Entorpecedor) deducido en el
+        generador; filtro de arma a una mano (Desenfundado Rápido, Apresar y Apuñalar).
+      - Bono por tramo de dote (Tirador de Larga Distancia +1 en larga; Avanzado +2 solo en
+        especialidad; con las dos, vale la mejor) y crítico fijo de Crítico Mejorado (solo
+        ataques; ni lanzar ni bloquear), en `FichaResuelta.extrasDotes` → `conExtrasDeFicha`.
+      - Bloqueos con la especialidad del arma, sin selector (S40 construido). Armas de fuego
+        por empleo (S44 construido). Supuestos S45-S49 (`sistema.md`).
+      - [ ] **Auditoría de D2a + D2b-1** (`auditoria-motor-metadata`), solo sobre las dotes
+        con al menos un efecto construido que vaya a una tirada (fuera las de solo texto de
+        tarjeta y las de solo pendientes): `--familia dote --estado construido --en-tirada`
+        (45 dotes). Antes de lanzarla, dar al usuario el nº de agentes y el coste.
     - [ ] **D2b-2** — habilita: Bloqueo, Combate Sutil (también el Aguijón del Proyector de
       Pulso), Ataque de oportunidad y Arrollar. **Quita cosas que hoy usa todo el mundo
       (Bloquear y el interruptor Sutil): avisar en mesa antes de desplegar y revisar los
@@ -1454,12 +1469,14 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
   - Especialidad por arma (`src/lib/catalog/especialidadesArma.ts`, con test de
     cobertura): los ataques con arma van en especialidad solos si la ficha tiene la del
     arma, y si no, a la mitad (`enEspecialidadEfectiva`, `montaje.ts`); sin selector en esa
-    fila. Bloqueos con el selector de siempre (S40); lanzar usa Lanzamiento (S41).
+    fila. Bloqueos con el selector de siempre (S40; desde D2b-1, también con la del arma);
+    lanzar usa Lanzamiento (S41).
   - Dotes: requisitos por id (S31 cerrado), Crítico Mejorado con lista cerrada de
     especialidades de arma que la ficha tiene (S43), poderes psiónicos y "Levitando:
     Física" por id.
   - Pendiente de revisar a mano: los `TODO(revisar)` de `especialidadesArma.ts` (asignaciones
-    dudosas) y S39-S43.
+    dudosas) y S39-S43. *(Cerrado: S39-S44 confirmados por el usuario; los TODO de
+    subfusiles y ametralladoras se fueron con las armas de fuego por empleo, D2b-1.)*
 - [ ] **La tirada sabe qué especialidad se usa** (sale de ESP, sin construir): hoy la fila
   de una tirada que no es ataque con arma solo dice sí/no (`EleccionTirada.enEspecialidad`).
   Cambiarlo por un selector de **cuál** de las especialidades de la ficha en esa habilidad

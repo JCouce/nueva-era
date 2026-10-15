@@ -193,7 +193,7 @@ export function motivoNoComprable(sheet: Sheet, entrada: DoteComprada, ctx: Cont
 // Crítico Mejorado: "una de sus especializaciones en armas para la habilidad con la que
 // cumpla el requisito" (docs/dotes.md). La ficha tiene que tener esa especialidad y cumplir
 // el requisito de habilidad de la dote en la habilidad de la especialidad.
-function especialidadArmaPropia(
+export function especialidadArmaPropia(
   dote: DoteCatalogo,
   id: string,
   v: ValoresRequisito,

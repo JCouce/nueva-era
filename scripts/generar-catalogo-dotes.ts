@@ -57,13 +57,31 @@
 //   - CONVERSIONES también lleva Salto Evasivo y su Mejorado: el borrador los trae como
 //     texto "sin_regla", pero §9.3 aprueba la capa éxito extra para ellos.
 //
+// Normalización de efectos sobre tiradas de arma (D2b-1):
+//   - Requisito por rama (§9.5: "Asesino, Desenfundado Rápido, Golpe Entorpecedor: cada
+//     rama exige su requisito"). El borrador no trae `requisitoAlcance`; se deduce del
+//     requisito de compra. Patrón: la dote tiene un requisito uno_de cuyas opciones son
+//     exactamente "Combate Melee N" y "Combate a Distancia M" (habilidad). Entonces cada
+//     efecto con alcance/lugar de familia de arma recibe `requisitoAlcance` = la opción de
+//     su rama (RAMA_DE_FAMILIA: melee → Combate Melee N; disparo y pesado → Combate a
+//     Distancia M), y solo sale en las tiradas de la rama que el personaje cumple
+//     (rules/dotesEfectos.ts, con los valores de requisito). Una familia sin rama en la
+//     tabla (lanzar, levantar escudo) falla: se decide a mano. Encajan hoy: Asesino,
+//     Desenfundado Rápido y Golpe Entorpecedor (Crítico Mejorado también tiene el patrón,
+//     pero su efecto va a la especialidad elegida, que ya se valida por rama al comprar).
+//   - Filtro de arma (FILTROS_ARMA): la prosa limita la dote a armas de un empleo; se
+//     añade `filtroArma` a sus efectos de familia de arma.
+//
 // Clasificación (MotorMetadata de cada efecto; docs/motor.md):
 //   - Tanda = la más tardía (D2b-1 < D2b-2 < D2c < D2d) entre la del destino (tabla de
 //     destinos: "tanda") y la del tipo de efecto (TANDA_DEL_TIPO); EXCEPCIONES_TANDA
 //     (dotesDestinos.ts) manda sobre las dos. Con tanda → `pendiente`, `bloqueoPor`.
 //   - Sin tanda → `construido`: bono con valor numérico o texto, sobre una tirada que
-//     existe (casilla, bono fijo o nota de rules/dotesEfectos.ts), o texto de la
-//     tarjeta (`lugar: "ficha"`, ya visible en la prosa de la dote).
+//     existe (casilla, bono fijo, bono por tramo o nota de rules/dotesEfectos.ts; también
+//     las tiradas de una familia de arma, D2b-1), texto de la tarjeta (`lugar: "ficha"`,
+//     ya visible en la prosa de la dote), o el crítico fijo de la especialidad elegida
+//     (Crítico Mejorado). Falla si algo construido no se sabe aplicar: casilla en
+//     «Levantar escudo» (sin dado), filtro de tipo de daño, solo en especialidad sin tramo.
 //   - tipo/afecta/mecanismo salen del tipo de efecto (función clasificar()).
 //
 // Cruce (regla documentada): en docs/dotes.md cada requisito ocupa UNA línea de
@@ -316,6 +334,61 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
   },
 };
 
+// Requisito por rama: qué habilidad de "Combate Melee N o Combate a Distancia M" exige cada
+// familia de arma (ver cabecera). Lanzar y Levantar escudo no están: si una dote del patrón
+// los toca, el generador falla y se decide a mano.
+const RAMA_DE_FAMILIA: Readonly<Record<string, "combate_melee" | "combate_distancia">> = {
+  "familia:ataque_melee": "combate_melee",
+  "familia:bloquear_melee": "combate_melee",
+  "familia:ataque_fuego": "combate_distancia",
+  "familia:ataque_pesado": "combate_distancia",
+};
+
+// Filtro de arma por dote, de su prosa (docs/dotes.md):
+//   Desenfundado Rápido: "La dote sirve para armas que se puedan utilizar a una mano".
+//   Apresar y Apuñalar: "llevando un arma de una sola mano se gana una reacción para
+//     atacar con esta" (el texto solo tiene sentido en armas a una mano).
+// El tipo de daño (Golpe Fatigante) no se aplica todavía: va con D2d.
+const FILTROS_ARMA: Readonly<Record<string, { empleo: "una mano" | "dos manos" }>> = {
+  dote_desenfundado_rapido: { empleo: "una mano" },
+  dote_apresar_y_apunalar: { empleo: "una mano" },
+};
+
+const claveDeEfecto = (e: Efecto) => (e.tipo === "texto" ? e.lugar : e.tipo === "habilita" ? e.accion : e.alcance) as string | undefined;
+
+function aplicarRamaYFiltro(id: string, requisitos: unknown, efectos: Efecto[]): Efecto[] {
+  const reqs = Array.isArray(requisitos) ? (requisitos as RequisitoDote[]) : [];
+  const rama = reqs.find(
+    (r): r is Extract<RequisitoDote, { tipo: "uno_de" }> =>
+      r.tipo === "uno_de" &&
+      r.opciones.length === 2 &&
+      r.opciones.every((o) => o.tipo === "habilidad") &&
+      ["combate_melee", "combate_distancia"].every((h) => r.opciones.some((o) => o.tipo === "habilidad" && o.id === h)),
+  );
+  const filtro = FILTROS_ARMA[id];
+  if (!rama && !filtro) return efectos;
+  let conRama = 0;
+  const salida = efectos.map((e) => {
+    const clave = claveDeEfecto(e);
+    if (!esFamilia(clave)) return e;
+    let nuevo: Efecto = filtro ? { ...e, filtroArma: { ...(e.filtroArma as object | undefined), ...filtro } } : e;
+    if (rama && e.requisitoAlcance === undefined) {
+      const habilidad = RAMA_DE_FAMILIA[clave!];
+      const opcion = rama.opciones.find((o) => o.tipo === "habilidad" && o.id === habilidad);
+      if (!opcion) {
+        falla(id, `efecto ${e.borrador}: requisito por rama sin rama para "${clave}" (RAMA_DE_FAMILIA)`);
+        return e;
+      }
+      nuevo = { ...nuevo, requisitoAlcance: opcion };
+      conRama++;
+    }
+    return nuevo;
+  });
+  if (conRama) avisos.push(`  ${id}: requisito por rama en ${conRama} efectos`);
+  if (filtro) avisos.push(`  ${id}: filtro de arma ${JSON.stringify(filtro)}`);
+  return salida;
+}
+
 function normalizarEfectos(id: string, efectos: unknown): Efecto[] {
   if (!Array.isArray(efectos)) {
     falla(id, "`efectos` no es un array");
@@ -394,9 +467,9 @@ function tandaDelTipo(e: Efecto): TandaDote | null {
       // par" de D2d (sistema.md §9.3); si su tirada no existe, gana "tiradas-fijas".
       return esFamilia(e.alcance) ? "D2b-2" : "D2d";
     case "margen_critico":
-      // Crítico Mejorado (crítico fijo con su especialidad de arma) → D2b-1; el resto de
-      // márgenes, capa de D2d.
-      return esFamilia(e.alcance) || e.alcance === "especialidad:<elegida>" ? "D2b-1" : "D2d";
+      // Crítico Mejorado (crítico fijo con su especialidad de arma) se construye en D2b-1;
+      // el resto de márgenes, capa de D2d.
+      return e.alcance === "especialidad:<elegida>" ? null : "D2d";
     case "sube_grado":
     case "ventaja":
     case "exito_extra":
@@ -416,7 +489,7 @@ function tandaDelTipo(e: Efecto): TandaDote | null {
 }
 
 function clasificar(id: string, e: Efecto): MotorMetadata | null {
-  const clave = (e.tipo === "texto" ? e.lugar : e.tipo === "habilita" ? e.accion : e.alcance) as string | undefined;
+  const clave = claveDeEfecto(e);
   const destino = clave === undefined ? undefined : DESTINOS_DOTES[clave];
   if (clave !== undefined && !destino) {
     falla(id, `efecto ${e.borrador} (${String(e.tipo)}): alcance/lugar "${clave}" sin entrada en DESTINOS_DOTES (dotesDestinos.ts)`);
@@ -431,11 +504,20 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
     // existe, y textos de tarjeta.
     const construible =
       (e.tipo === "bono" && destino?.tipo === "tirada") ||
-      (e.tipo === "texto" && (destino?.tipo === "tirada" || destino?.tipo === "ficha"));
+      (e.tipo === "texto" && (destino?.tipo === "tirada" || destino?.tipo === "ficha")) ||
+      (e.tipo === "margen_critico" && destino?.tipo === "especialidadArmaElegida");
     if (!construible) {
-      falla(id, `efecto ${e.borrador} (${String(e.tipo)}): sin tanda y sin forma de construirlo en D2a`);
+      falla(id, `efecto ${e.borrador} (${String(e.tipo)}): sin tanda y sin forma de construirlo en D2a/D2b-1`);
       return null;
     }
+    const alcanceDestino = destino?.tipo === "tirada" ? destino.alcance : null;
+    if (e.tipo !== "texto" && alcanceDestino?.tipo === "familiaArma" && alcanceDestino.familia === "levantar_escudo")
+      falla(id, `efecto ${e.borrador}: «Levantar escudo» no tiene dado, solo admite textos`);
+    const filtro = e.filtroArma as { tipoDanio?: unknown } | undefined;
+    if (filtro && (filtro.tipoDanio !== undefined || alcanceDestino?.tipo !== "familiaArma"))
+      falla(id, `efecto ${e.borrador}: filtro de arma que no se sabe aplicar (solo empleo, en familias de arma)`);
+    if (e.soloEspecialidad && !String(e.tramo ?? "").startsWith("tramo:"))
+      falla(id, `efecto ${e.borrador}: "solo en especialidad" sin bono por tramo de distancia`);
     const grados = e.grados as string[] | undefined;
     if (e.tipo === "texto" && grados && (grados.length !== 1 || grados[0] !== "critico")) {
       falla(id, `efecto ${e.borrador}: texto con grados ${JSON.stringify(grados)}: solo se sabe pintar el crítico`);
@@ -526,7 +608,11 @@ for (const [i, entrada] of lista.entries()) {
     visible: d.visible,
     texto: seccion?.texto ?? "",
   };
-  const efectos = normalizarEfectos(id, d.efectos);
+  const efectos = aplicarRamaYFiltro(
+    id,
+    Array.isArray(d.requisitos) ? d.requisitos.map((r) => normalizarRequisito(id, r)) : d.requisitos,
+    normalizarEfectos(id, d.efectos),
+  );
   const motor = efectos.map((e) => clasificar(id, e));
   const completa = {
     ...compra,

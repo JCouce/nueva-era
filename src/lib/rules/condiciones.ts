@@ -164,10 +164,33 @@ export function notasCondiciones(
 // jugador ya haya elegido arriba. Cada uno lleva su fuente (la pieza que lo
 // trae) para que, a diferencia de antes, no se funda en silencio dentro del
 // valor de la opción de tramo.
-export type BonoPorTramo = { fuente: string; porTramo: Partial<Record<TramoDistancia, number>> };
+//
+// `soloEnEspecialidad`: solo cuenta si la tirada va en especialidad (Tirador de Larga
+// Distancia Avanzado). `excluyente`: entre los bonos con la misma clave solo vale el mejor
+// en el tramo elegido, no se suman (la básica y la Avanzada). Los resuelve
+// bonosTramoAplicables, que es lo que suma y pinta montarTirada.
+export type BonoPorTramo = {
+  fuente: string;
+  porTramo: Partial<Record<TramoDistancia, number>>;
+  soloEnEspecialidad?: true;
+  excluyente?: string;
+};
 
 function tramoElegido(estado: EstadoCondiciones): TramoDistancia | null {
   return typeof estado.tramo === "string" ? (estado.tramo as TramoDistancia) : null;
+}
+
+export function bonosTramoAplicables(bonos: BonoPorTramo[], estado: EstadoCondiciones, enEspecialidad: boolean): BonoPorTramo[] {
+  const tramo = tramoElegido(estado);
+  const valor = (b: BonoPorTramo) => (tramo ? (b.porTramo[tramo] ?? 0) : 0);
+  const validos = bonos.filter((b) => !b.soloEnEspecialidad || enEspecialidad);
+  const mejor = new Map<string, BonoPorTramo>();
+  for (const b of validos) {
+    if (!b.excluyente) continue;
+    const actual = mejor.get(b.excluyente);
+    if (!actual || valor(b) > valor(actual)) mejor.set(b.excluyente, b);
+  }
+  return validos.filter((b) => !b.excluyente || mejor.get(b.excluyente) === b);
 }
 
 export function valorBonosTramo(bonos: BonoPorTramo[], estado: EstadoCondiciones): number {

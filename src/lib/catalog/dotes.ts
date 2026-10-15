@@ -1603,8 +1603,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -1613,8 +1612,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -1765,8 +1763,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:lanzar_granada"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -1775,8 +1772,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:lanzar_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -1831,8 +1827,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:lanzar_granada"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -1841,8 +1836,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:lanzar_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -2182,8 +2176,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -2192,8 +2185,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_fuego"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -2202,8 +2194,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:lanzar_melee"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -2212,8 +2203,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:lanzar_granada"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -2222,8 +2212,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_pesado"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -3872,6 +3861,9 @@ export const DOTES: readonly DoteCatalogo[] = [
         "texto": "Tras una presa con éxito, si llevas esta arma de una mano, ganas una reacción para atacar con ella.",
         "condicion": null,
         "porque": "turno",
+        "filtroArma": {
+          "empleo": "una mano"
+        },
         "borrador": 0
       }
     ],
@@ -3885,8 +3877,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -3942,8 +3933,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -3952,8 +3942,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -3962,8 +3951,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -4008,8 +3996,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -4104,8 +4091,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -4189,8 +4175,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -4263,8 +4248,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "especialidad:<elegida>"
         },
         "mecanismo": "siempre_activo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -4313,8 +4297,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -4323,8 +4306,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -4379,8 +4361,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -4428,6 +4409,14 @@ export const DOTES: readonly DoteCatalogo[] = [
         "texto": "Armas a una mano: puedes desenfundar y hacer un ataque simple en la misma acción.",
         "condicion": null,
         "porque": "turno",
+        "requisitoAlcance": {
+          "tipo": "habilidad",
+          "id": "combate_melee",
+          "min": 1
+        },
+        "filtroArma": {
+          "empleo": "una mano"
+        },
         "borrador": 0
       },
       {
@@ -4436,6 +4425,14 @@ export const DOTES: readonly DoteCatalogo[] = [
         "texto": "Armas a una mano: puedes desenfundar y hacer un ataque simple en la misma acción.",
         "condicion": null,
         "porque": "turno",
+        "requisitoAlcance": {
+          "tipo": "habilidad",
+          "id": "combate_distancia",
+          "min": 1
+        },
+        "filtroArma": {
+          "empleo": "una mano"
+        },
         "borrador": 1
       },
       {
@@ -4444,6 +4441,14 @@ export const DOTES: readonly DoteCatalogo[] = [
         "texto": "Si es tu primer ataque contra este objetivo y actúas antes que él, está sorprendido contra este ataque.",
         "condicion": "Desenfundando, primer ataque y actúas antes",
         "porque": "tercero",
+        "requisitoAlcance": {
+          "tipo": "habilidad",
+          "id": "combate_melee",
+          "min": 1
+        },
+        "filtroArma": {
+          "empleo": "una mano"
+        },
         "borrador": 2
       },
       {
@@ -4452,6 +4457,14 @@ export const DOTES: readonly DoteCatalogo[] = [
         "texto": "Si es tu primer disparo contra este objetivo y actúas antes que él, está sorprendido contra este ataque.",
         "condicion": "Desenfundando, primer disparo y actúas antes",
         "porque": "tercero",
+        "requisitoAlcance": {
+          "tipo": "habilidad",
+          "id": "combate_distancia",
+          "min": 1
+        },
+        "filtroArma": {
+          "empleo": "una mano"
+        },
         "borrador": 3
       }
     ],
@@ -4465,8 +4478,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -4475,8 +4487,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_fuego"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -4485,8 +4496,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -4495,8 +4505,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_fuego"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -4538,8 +4547,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:levantar_escudo"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -4623,8 +4631,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:levantar_escudo"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -4666,8 +4673,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:levantar_escudo"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -4919,8 +4925,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -5009,6 +5014,11 @@ export const DOTES: readonly DoteCatalogo[] = [
         "texto": "Si atacas a un objetivo sorprendido o desprevenido, tus ataques siguientes mantienen la condición de sorpresa. Solo con Combate Melee 2.",
         "condicion": "Objetivo sorprendido o desprevenido",
         "porque": "tercero",
+        "requisitoAlcance": {
+          "tipo": "habilidad",
+          "id": "combate_melee",
+          "min": 2
+        },
         "borrador": 0
       },
       {
@@ -5017,6 +5027,11 @@ export const DOTES: readonly DoteCatalogo[] = [
         "texto": "Si atacas a un objetivo sorprendido o desprevenido, tus ataques siguientes mantienen la condición de sorpresa. Solo con Combate a Distancia 2.",
         "condicion": "Objetivo sorprendido o desprevenido",
         "porque": "tercero",
+        "requisitoAlcance": {
+          "tipo": "habilidad",
+          "id": "combate_distancia",
+          "min": 2
+        },
         "borrador": 1
       }
     ],
@@ -5030,8 +5045,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -5040,8 +5054,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_fuego"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -5093,8 +5106,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -5164,6 +5176,11 @@ export const DOTES: readonly DoteCatalogo[] = [
         "alcance": "familia:ataque_melee",
         "valor": -2,
         "condicion": "Golpe entorpecedor (debilidad reconocida)",
+        "requisitoAlcance": {
+          "tipo": "habilidad",
+          "id": "combate_melee",
+          "min": 1
+        },
         "borrador": 1
       },
       {
@@ -5171,6 +5188,11 @@ export const DOTES: readonly DoteCatalogo[] = [
         "alcance": "familia:ataque_fuego",
         "valor": -2,
         "condicion": "Golpe entorpecedor (debilidad reconocida)",
+        "requisitoAlcance": {
+          "tipo": "habilidad",
+          "id": "combate_distancia",
+          "min": 1
+        },
         "borrador": 2
       },
       {
@@ -5178,6 +5200,11 @@ export const DOTES: readonly DoteCatalogo[] = [
         "alcance": "familia:ataque_melee",
         "valor": 2,
         "condicion": "Debilidad reconocida con crítico",
+        "requisitoAlcance": {
+          "tipo": "habilidad",
+          "id": "combate_melee",
+          "min": 1
+        },
         "borrador": 3
       },
       {
@@ -5185,6 +5212,11 @@ export const DOTES: readonly DoteCatalogo[] = [
         "alcance": "familia:ataque_fuego",
         "valor": 2,
         "condicion": "Debilidad reconocida con crítico",
+        "requisitoAlcance": {
+          "tipo": "habilidad",
+          "id": "combate_distancia",
+          "min": 1
+        },
         "borrador": 4
       },
       {
@@ -5193,6 +5225,11 @@ export const DOTES: readonly DoteCatalogo[] = [
         "texto": "Si el ataque tiene éxito, el objetivo queda entorpecido 1d4 turnos; con crítico, entorpecido en su grado crítico durante 1d4 turnos.",
         "condicion": "Golpe entorpecedor (debilidad reconocida)",
         "porque": "tercero",
+        "requisitoAlcance": {
+          "tipo": "habilidad",
+          "id": "combate_melee",
+          "min": 1
+        },
         "borrador": 5
       },
       {
@@ -5201,6 +5238,11 @@ export const DOTES: readonly DoteCatalogo[] = [
         "texto": "Si el ataque tiene éxito, el objetivo queda entorpecido 1d4 turnos; con crítico, entorpecido en su grado crítico durante 1d4 turnos.",
         "condicion": "Golpe entorpecedor (debilidad reconocida)",
         "porque": "tercero",
+        "requisitoAlcance": {
+          "tipo": "habilidad",
+          "id": "combate_distancia",
+          "min": 1
+        },
         "borrador": 6
       }
     ],
@@ -5224,8 +5266,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -5234,8 +5275,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_fuego"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -5244,8 +5284,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -5254,8 +5293,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_fuego"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -5264,8 +5302,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -5274,8 +5311,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_fuego"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -5381,8 +5417,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -5391,8 +5426,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_fuego"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -5401,8 +5435,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -5456,8 +5489,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -5466,8 +5498,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_melee"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -5556,8 +5587,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_fuego"
         },
         "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -5566,8 +5596,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_fuego"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -5847,8 +5876,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_fuego"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -5857,8 +5885,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_fuego"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -5904,8 +5931,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_fuego"
         },
         "mecanismo": "bono_tramo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -5955,8 +5981,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "familia:ataque_fuego"
         },
         "mecanismo": "bono_tramo",
-        "estado": "pendiente",
-        "bloqueoPor": "D2b-1"
+        "estado": "construido"
       }
     ]
   },
@@ -7438,9 +7463,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 
 // Recuento por tanda (lo escribe el generador):
 //   188 efectos (185 en el borrador)
-//   construidos: 20
-//   texto: 38
-//   pendientes D2b-1: 50
+//   construidos: 41
+//   texto: 67
+//   pendientes D2b-1: 0
 //   pendientes D2b-2: 20
 //   pendientes D2c: 33
 //   pendientes D2d: 17

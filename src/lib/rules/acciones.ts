@@ -9,7 +9,7 @@ import type { HabilidadId } from "./habilidades";
 import { aplicado, valorEfectivo } from "./derivados";
 import type { Sheet } from "./sheet";
 import type { CondicionTirada, BonoPorTramo, EstadoCondiciones } from "./condiciones";
-import type { GrupoAccion, ModificadorConFuente } from "./modificadores";
+import type { EmpleoArma, FamiliaArma, GrupoAccion, ModificadorConFuente } from "./modificadores";
 import type { DetallePoder } from "./poderes";
 import { etiquetaEspecialidad, type EspecialidadId } from "../catalog/especialidades";
 
@@ -67,6 +67,15 @@ export type Accion = {
   // La tirada va en especialidad sola si la ficha la tiene en `habilidad`, y si no, a la
   // mitad: la fila no ofrece selector (montaje.ts, enEspecialidadEfectiva).
   especialidadArma?: EspecialidadId;
+  // Tirada generada por arma (combate.ts): su familia y el empleo del arma, que miran las
+  // casillas, bonos y textos de dote con alcance "familia:<f>" (D2b-1). Sin empleo: arma
+  // que no se empuña (Proyector de Pulso).
+  familiaArma?: FamiliaArma;
+  empleoArma?: EmpleoArma;
+  // Crítico con menos éxitos, fijo y sin casilla (Crítico Mejorado: 5 en vez de 6). Lo pone
+  // conExtrasDeFicha (fichaResuelta.ts); montarTirada lo junta con los márgenes de las
+  // casillas (gana el más bajo) y lo enseña en las notas del resultado.
+  criticoFijo?: { margen: number; fuente: string };
   // Dificultad con la que se abre el modal si el jugador no ha escrito otra
   // antes (Auto-anclaje: 6). Sin ella, 7.
   dificultadSugerida?: number;
@@ -179,6 +188,9 @@ export type AccionDirecta = {
   id: string;
   label: string;
   grupo: GrupoAccion;
+  // Como en Accion ("Levantar [escudo]": levantar_escudo), para los textos de dote.
+  familiaArma?: FamiliaArma;
+  empleoArma?: EmpleoArma;
   nota?: string;
   condiciones?: CondicionTirada[];
   // Texto del botón que confirma dentro del modal — "Usar" por defecto; la

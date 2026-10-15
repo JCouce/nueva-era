@@ -4,16 +4,23 @@ import { readFileSync } from "node:fs";
 import { defaultSheet, type Sheet } from "./sheet";
 import { ACCIONES, GRUPOS_ACCION, type Accion } from "./acciones";
 import { HABILIDADES } from "./habilidades";
-import { resolverFicha, conExtrasDeFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
-import { montarTirada, eleccionSinTocar } from "./montaje";
+import { resolverFicha, conExtrasDeFicha, conExtrasDirectaDeFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
+import { montarTirada, eleccionSinTocar, tirarMontada } from "./montaje";
 import { motorMetadataSchema, erroresDeMotorMetadata } from "./motor";
 import { dotesActivas, casillasDeDotes, textosDeDotes, modificadoresDeDotes } from "./dotesEfectos";
 import { valoresRequisitoDeFicha } from "./dotes";
 import { fuentesDeCapa1 } from "./capa1";
 import { nivelesDePsionica, SIN_BONOS_DISCIPLINA } from "./psionica";
-import type { AlcanceModificador, GrupoAccion } from "./modificadores";
+import { alcanzaA, FAMILIAS_ARMA, type AlcanceModificador, type ContextoAccion, type GrupoAccion } from "./modificadores";
+import { equipar } from "./equipo";
+import { ajustarGranada } from "./recursos";
+import { accionesDeAtaque, accionesDirectasDeAtaque } from "./combate";
+import { ARMAS } from "../catalog/armasFuego";
+import { ARMAS_MELEE } from "../catalog/armasMelee";
+import { ARMAMENTO_PESADO } from "../catalog/armamentoPesado";
+import { MUNICION_GRANADA } from "../catalog/municion";
 import { DOTES } from "../catalog/dotes";
-import type { EspecialidadId } from "../catalog/especialidades";
+import { especialidadPorId, type EspecialidadId } from "../catalog/especialidades";
 import { DESTINOS_DOTES, EXCEPCIONES_TANDA, TANDAS_DOTES, type TandaDote } from "../catalog/dotesDestinos";
 import type { DoteComprada } from "./dotesCompradas";
 
@@ -83,6 +90,8 @@ describe("catálogo de dotes: efectos (D2a)", () => {
           return habilidades.has(a.habilidad) && ACCIONES.some((t) => t.habilidad === a.habilidad);
         case "grupoHabilidad":
           return ACCIONES.some((t) => t.grupo === a.grupo && t.habilidad === a.habilidad);
+        case "familiaArma":
+          return FAMILIAS_ARMA.includes(a.familia);
         default:
           return false;
       }
@@ -92,7 +101,8 @@ describe("catálogo de dotes: efectos (D2a)", () => {
       if (destino.tipo !== "tirada") continue;
       if (!resuelve(destino.alcance)) errores.push(`${clave}: alcance ${JSON.stringify(destino.alcance)} no existe`);
       for (const id of destino.textos) if (!tiradas.has(id)) errores.push(`${clave}: texto a "${id}", que no existe`);
-      if (destino.textos.length === 0) errores.push(`${clave}: sin tiradas para los textos`);
+      // Las de familia de arma llevan los textos por familia, no por id.
+      if (destino.textos.length === 0 && destino.alcance.tipo !== "familiaArma") errores.push(`${clave}: sin tiradas para los textos`);
     }
     assert.deepEqual(errores, []);
   });
@@ -241,5 +251,239 @@ describe("efectos de dotes en las tiradas (D2a)", () => {
     const fuentes = fuentesDeCapa1(s, nivelesDePsionica(s, SIN_BONOS_DISCIPLINA).paraEfectos).filter((x) => x.familia === "dote");
     assert.deepEqual(fuentes.map((x) => x.instanciaId).sort(), ["dote_especialidad_medica:ceguera_sordera", "dote_vigilancia_tactica"]);
     assert.ok(fuentes.every((x) => x.motor.length > 0));
+  });
+});
+
+// ── D2b-1: tiradas generadas por arma ─────────────────────────────────────
+
+const ctxDe = (t: { id: string; grupo: GrupoAccion; habilidad?: Accion["habilidad"]; familiaArma?: Accion["familiaArma"]; empleoArma?: Accion["empleoArma"] }): ContextoAccion => ({
+  id: t.id,
+  grupo: t.grupo,
+  habilidad: t.habilidad ?? null,
+  modoElegido: null,
+  familiaArma: t.familiaArma,
+  empleoArma: t.empleoArma,
+});
+
+// Cada fila que la ficha puede generar con el catálogo entero: cada arma sola (con todas
+// las granadas en Recursos), más Bayoneta, Lanzagranadas Integrado y Proyector de Pulso.
+function todasLasFilasDeArma(): { acciones: Accion[]; directas: ReturnType<typeof accionesDirectasDeAtaque> } {
+  const acciones: Accion[] = [];
+  const directas: ReturnType<typeof accionesDirectasDeAtaque> = [];
+  const conGranadas = (s: Sheet) => MUNICION_GRANADA.reduce((x, g) => ajustarGranada(x, g.id, 1), s);
+  const sumar = (s: Sheet) => {
+    acciones.push(...accionesDeAtaque(s, []));
+    directas.push(...accionesDirectasDeAtaque(s));
+  };
+  for (const arma of [...ARMAS, ...ARMAS_MELEE, ...ARMAMENTO_PESADO]) sumar(conGranadas(equipar(defaultSheet(), { instanciaId: "x", catalogoId: arma.id })));
+  let s = equipar(defaultSheet(), { instanciaId: "f", catalogoId: "fusil_asalto_impetus" });
+  s = equipar(s, { instanciaId: "b", catalogoId: "bayoneta", nivel: 1, instaladoEnId: "f" });
+  s = conGranadas(equipar(s, { instanciaId: "l", catalogoId: "lanzagranadas_integrado", nivel: 1, instaladoEnId: "f" }));
+  s = equipar(s, { instanciaId: "a", catalogoId: "armadura_pesada" });
+  s = equipar(s, { instanciaId: "pp", catalogoId: "proyector_pulso", nivel: 1, instaladoEnId: "a" });
+  sumar(s);
+  return { acciones, directas };
+}
+
+describe("familia de arma (D2b-1): cada tirada generada por arma, en exactamente una", () => {
+  const { acciones, directas } = todasLasFilasDeArma();
+  const familias = (t: Parameters<typeof ctxDe>[0]) => FAMILIAS_ARMA.filter((f) => alcanzaA({ tipo: "familiaArma", familia: f }, ctxDe(t)));
+
+  test("todo ataque, lanzamiento y bloqueo del catálogo casa con una sola familia", () => {
+    assert.ok(acciones.length > 100);
+    const errores = acciones.filter((t) => familias(t).length !== 1).map((t) => `${t.id}: ${familias(t).join(", ") || "ninguna"}`);
+    assert.deepEqual(errores, []);
+    // Las siete salen en algún sitio.
+    const vistas = new Set([...acciones, ...directas].flatMap((t) => (t.familiaArma ? [t.familiaArma] : [])));
+    assert.deepEqual([...vistas].sort(), [...FAMILIAS_ARMA].sort());
+  });
+
+  test("los bloqueos son bloquear_melee y nada más del grupo Defensa", () => {
+    for (const t of acciones) assert.equal(t.grupo === "Defensa", t.familiaArma === "bloquear_melee", t.id);
+  });
+
+  test("Levantar escudo: levantar_escudo; la detonación de la Malla no es de arma", () => {
+    const escudos = directas.filter((d) => d.label.startsWith("Levantar "));
+    assert.equal(escudos.length, ARMAS_MELEE.filter((a) => a.defensa).length);
+    for (const d of escudos) assert.deepEqual(familias(d), ["levantar_escudo"], d.id);
+    for (const d of directas.filter((x) => !x.label.startsWith("Levantar "))) assert.deepEqual(familias(d), [], d.id);
+  });
+
+  test("Proyector de Pulso por su tipo, Bayoneta melee, lanzagranadas integrado pesado", () => {
+    const de = (prefijo: string) => acciones.filter((t) => t.id.startsWith(prefijo)).map((t) => t.familiaArma);
+    assert.deepEqual(de("ataque_proyector_pulso_aguijon_"), ["ataque_melee"]);
+    assert.deepEqual(de("bloquear_proyector_pulso_aguijon_"), ["bloquear_melee"]);
+    assert.deepEqual(de("ataque_proyector_pulso_combate_distancia_"), ["ataque_fuego"]);
+    assert.deepEqual(de("ataque_proyector_pulso_tecnociencia_"), ["ataque_fuego"]);
+    assert.deepEqual(de("golpear_bayoneta_"), ["ataque_melee"]);
+    assert.deepEqual(de("bloquear_bayoneta_"), ["bloquear_melee"]);
+    assert.deepEqual(de("lanzagranadas_"), ["ataque_pesado"]);
+  });
+
+  test("todo arma empuñada lleva su empleo (sin empleo solo el Proyector de Pulso)", () => {
+    const sin = acciones.filter((t) => !t.empleoArma).map((t) => t.id);
+    assert.ok(sin.every((id) => id.includes("proyector_pulso")), sin.join(", "));
+  });
+});
+
+// Ficha de combate: Combate Melee y a Distancia a `cm`/`cd`, con especialidades a elegir.
+function fichaCombate(dotes: DoteComprada[], { cm = 5, cd = 5, esp = [] as EspecialidadId[] } = {}): Sheet {
+  const base = fichaCapaz(dotes);
+  const de = (h: "combate_melee" | "combate_distancia", valor: number) => ({
+    valor,
+    especialidades: [...new Set([...base.habilidades[h].especialidades, ...esp.filter((e) => especialidadPorId(e)?.habilidad === h)])],
+  });
+  return { ...base, habilidades: { ...base.habilidades, combate_melee: de("combate_melee", cm), combate_distancia: de("combate_distancia", cd) } };
+}
+const armado = (s: Sheet, ...ids: string[]) => ids.reduce((x, id, i) => equipar(x, { instanciaId: `a${i}`, catalogoId: id }), s);
+const filasDe = (f: FichaResuelta) => accionesDeAtaque(f.ficha, f.modificadores).map((t) => conExtrasDeFicha(f, t));
+const fila = (f: FichaResuelta, prefijo: string) => filasDe(f).find((t) => t.id.startsWith(prefijo))!;
+
+describe("efectos de dotes en las tiradas de arma (D2b-1)", () => {
+  test("Dominio Elevado: casilla +1 en los golpes melee, no en los disparos ni al lanzar", () => {
+    const f = resolver(armado(fichaCombate([{ id: "dote_dominio_elevado" }]), "espada_cuchillo_combate", "pistola_mosquito"));
+    const golpe = fila(f, "ataque_melee_");
+    const c = golpe.condiciones?.find((x) => x.id.startsWith("dote_dominio_elevado"));
+    assert.ok(c && c.tipo === "toggle" && c.valorActivo === 1);
+    assert.match(golpe.nota ?? "", /salvación para mantener el equilibrio.*\(Dominio Elevado\)/);
+    for (const p of ["ataque_fuego_", "lanzar_melee_", "bloquear_melee_"])
+      assert.ok(!(fila(f, p).condiciones ?? []).some((x) => x.id.startsWith("dote_dominio_elevado")), p);
+  });
+
+  test("casilla marcada en un ataque suma al total (Combinación −1)", () => {
+    const f = resolver(armado(fichaCombate([{ id: "dote_combinacion" }]), "espada"));
+    const t = fila(f, "ataque_melee_");
+    const c = t.condiciones!.find((x) => x.id.startsWith("dote_combinacion"))!;
+    const sin = montarTirada(f, t, eleccionSinTocar(t, false));
+    const con = montarTirada(f, t, { ...eleccionSinTocar(t, false), estadoCondiciones: { ...eleccionSinTocar(t, false).estadoCondiciones, [c.id]: true } });
+    assert.equal(con.modificador - sin.modificador, -1);
+  });
+
+  test("Levantar escudo: los textos de dote van a su nota", () => {
+    const s = armado(fichaCombate([{ id: "dote_defensa_con_escudo_rapida" }]), "escudo_rodela");
+    const f = resolver(s);
+    const [levantar] = accionesDirectasDeAtaque(s).map((d) => conExtrasDirectaDeFicha(f, d));
+    assert.match(levantar.nota ?? "", /con una reacción en vez de una acción simple\. \(Defensa con Escudo Rápida\)/);
+  });
+
+  test("requisito por rama (Asesino): solo en la rama que la ficha cumple", () => {
+    const dotes = [{ id: "dote_asesino" }];
+    const soloMelee = resolver(armado(fichaCombate(dotes, { cm: 2, cd: 0 }), "espada", "pistola_mosquito"));
+    assert.match(fila(soloMelee, "ataque_melee_").nota ?? "", /\(Asesino\)/);
+    assert.doesNotMatch(fila(soloMelee, "ataque_fuego_").nota ?? "", /Asesino/);
+    const soloDistancia = resolver(armado(fichaCombate(dotes, { cm: 0, cd: 2 }), "espada", "pistola_mosquito"));
+    assert.doesNotMatch(fila(soloDistancia, "ataque_melee_").nota ?? "", /Asesino/);
+    assert.match(fila(soloDistancia, "ataque_fuego_").nota ?? "", /\(Asesino\)/);
+    // NPC del máster: sin mirar requisitos, las dos ramas.
+    const npc = resolver(armado(fichaCombate(dotes, { cm: 0, cd: 2 }), "espada"), true);
+    assert.match(fila(npc, "ataque_melee_").nota ?? "", /\(Asesino\)/);
+  });
+
+  test("requisito por rama (Golpe Entorpecedor): las casillas, solo en la rama que cumple", () => {
+    const f = resolver(armado(fichaCombate([{ id: "dote_golpe_entorpecedor" }], { cm: 1, cd: 0 }), "espada", "pistola_mosquito"));
+    assert.ok(fila(f, "ataque_melee_").condiciones?.some((c) => c.id.startsWith("dote_golpe_entorpecedor")));
+    assert.ok(!(fila(f, "ataque_fuego_").condiciones ?? []).some((c) => c.id.startsWith("dote_golpe_entorpecedor")));
+  });
+
+  test("filtro de arma (Desenfundado Rápido): solo en armas a una mano", () => {
+    const f = resolver(armado(fichaCombate([{ id: "dote_desenfundado_rapido" }]), "pistola_mosquito", "fusil_asalto_impetus", "espada", "espada_montante"));
+    const notas = filasDe(f).filter((t) => t.grupo === "Ataques" && !t.id.startsWith("lanzar_")).map((t) => [t.empleoArma, /Desenfundado Rápido/.test(t.nota ?? "")]);
+    assert.ok(notas.length >= 4);
+    for (const [empleo, tiene] of notas) assert.equal(tiene, empleo === "una mano", String(empleo));
+  });
+
+  describe("Tirador de Larga Distancia y su Avanzado (bono por tramo)", () => {
+    const enLarga = (f: FichaResuelta, t: Accion) =>
+      montarTirada(f, t, { ...eleccionSinTocar(t, false), estadoCondiciones: { ...eleccionSinTocar(t, false).estadoCondiciones, tramo: "larga" } });
+    const sinDotes = (esp: EspecialidadId[]) => {
+      const f = resolver(armado(fichaCombate([], { esp }), "fusil_asalto_impetus"));
+      return enLarga(f, fila(f, "ataque_fuego_")).modificador;
+    };
+    const conDotes = (dotes: DoteComprada[], esp: EspecialidadId[]) => {
+      const f = resolver(armado(fichaCombate(dotes, { esp }), "fusil_asalto_impetus"));
+      const m = enLarga(f, fila(f, "ataque_fuego_"));
+      return { delta: m.modificador - sinDotes(esp), desglose: m.desglose };
+    };
+    const conLargas: EspecialidadId[] = ["armas_de_fuego_largas"];
+
+    test("básica: +1 en larga, vaya o no en especialidad; nada en media", () => {
+      assert.equal(conDotes([{ id: "dote_tirador_de_larga_distancia" }], []).delta, 1);
+      assert.equal(conDotes([{ id: "dote_tirador_de_larga_distancia" }], conLargas).delta, 1);
+      const f = resolver(armado(fichaCombate([{ id: "dote_tirador_de_larga_distancia" }]), "fusil_asalto_impetus"));
+      const t = fila(f, "ataque_fuego_");
+      const media = montarTirada(f, t, eleccionSinTocar(t, false));
+      assert.ok(!media.desglose.some((l) => l.etiqueta === "Tirador de Larga Distancia" && l.valor !== 0));
+    });
+
+    test("Avanzado: +2 (sin penalizador) solo si el ataque va en especialidad", () => {
+      const con = conDotes([{ id: "dote_tirador_de_larga_distancia_avanzado" }], conLargas);
+      assert.equal(con.delta, 2);
+      assert.ok(con.desglose.some((l) => l.etiqueta === "Tirador de Larga Distancia Avanzado" && l.valor === 2));
+      assert.equal(conDotes([{ id: "dote_tirador_de_larga_distancia_avanzado" }], []).delta, 0);
+    });
+
+    test("con las dos vale la mejor: +2 en especialidad, +1 fuera; nunca +3", () => {
+      const dos = [{ id: "dote_tirador_de_larga_distancia" }, { id: "dote_tirador_de_larga_distancia_avanzado" }];
+      assert.equal(conDotes(dos, conLargas).delta, 2);
+      assert.equal(conDotes(dos, []).delta, 1);
+    });
+
+    test("no llega a los golpes melee", () => {
+      const f = resolver(armado(fichaCombate([{ id: "dote_tirador_de_larga_distancia" }]), "espada"));
+      assert.equal(fila(f, "ataque_melee_").bonosTramo, undefined);
+    });
+  });
+
+  describe("Crítico Mejorado: crítico con 5, fijo y sin casilla, en su especialidad", () => {
+    const f = resolver(
+      armado(
+        fichaCombate([{ id: "dote_critico_mejorado", eleccion: "espadas_y_dagas" }], { esp: ["espadas_y_dagas", "armas_de_fuego_cortas"] }),
+        "espada_cuchillo_combate",
+        "pistola_mosquito",
+      ),
+    );
+    const montar = (t: Accion) => montarTirada(f, t, eleccionSinTocar(t, false));
+
+    test("en el golpe con un arma de la especialidad: margen 5, con su línea en las notas", () => {
+      const t = fila(f, "ataque_melee_");
+      assert.deepEqual(t.criticoFijo, { margen: 5, fuente: "Crítico Mejorado: Espadas y Dagas" });
+      assert.ok(!(t.condiciones ?? []).some((c) => c.id.startsWith("dote_critico")));
+      const m = montar(t);
+      assert.equal(m.margenes.criticoExito, 5);
+      assert.deepEqual(m.notas[0], { etiqueta: "Crítico Mejorado: Espadas y Dagas", nota: "Crítico con 5 éxitos en vez de 6." });
+      const r = tirarMontada(m, 1, 1 + m.modificador - 5);
+      assert.equal(r.critico, true);
+    });
+
+    test("no en otra especialidad, ni al lanzar el arma, ni al bloquear con ella", () => {
+      for (const p of ["ataque_fuego_", "lanzar_melee_", "bloquear_melee_"]) {
+        const t = fila(f, p);
+        assert.equal(t.criticoFijo, undefined, p);
+        assert.equal(montar(t).margenes.criticoExito, 6, p);
+      }
+    });
+  });
+});
+
+describe("bloqueos con la especialidad del arma (S40, D2b-1)", () => {
+  const bloqueo = (esp: EspecialidadId[], prefijo: string, ...ids: string[]) => {
+    let s = fichaCombate([], { cm: 4, esp });
+    s = armado(s, ...ids);
+    const f = resolver(s);
+    const t = filasDe(f).find((x) => x.id.startsWith(prefijo))!;
+    return montarTirada(f, t, eleccionSinTocar(t, true));
+  };
+
+  test("Bloquear con X: con la especialidad del arma, entero; sin ella, la mitad (aunque la fila dijera que sí)", () => {
+    assert.equal(bloqueo(["espadas_y_dagas"], "bloquear_melee_", "espada").habilidad?.valor, 4);
+    const sin = bloqueo([], "bloquear_melee_", "espada");
+    assert.equal(sin.habilidad?.valor, 2);
+    assert.deepEqual(sin.especialidadArma, { id: "espadas_y_dagas", label: "Espadas y Dagas", tiene: false });
+  });
+
+  test("Bayoneta y Aguijón también llevan la especialidad de su arma", () => {
+    const { acciones } = todasLasFilasDeArma();
+    for (const p of ["bloquear_bayoneta_", "bloquear_proyector_pulso_aguijon_", "bloquear_melee_"])
+      for (const t of acciones.filter((x) => x.id.startsWith(p))) assert.ok(t.especialidadArma, t.id);
   });
 });

@@ -207,6 +207,9 @@ export const efectoDoteSchema = z.discriminatedUnion("tipo", [
     condicion,
     grados: z.array(grado).min(1).optional(), // solo tras ese resultado (efectoCritico si es "critico")
     porque: z.enum(PORQUES_TEXTO),
+    // Como en los efectos con alcance: requisito por rama y filtro de arma (D2b-1).
+    requisitoAlcance: comunes.requisitoAlcance,
+    filtroArma: comunes.filtroArma,
     borrador: comunes.borrador,
   }),
 ]);

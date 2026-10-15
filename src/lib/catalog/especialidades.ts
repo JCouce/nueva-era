@@ -93,8 +93,8 @@ export function etiquetaEspecialidad(id: string): string {
 }
 
 // Las especialidades "de arma" (Crítico Mejorado, docs/dotes.md): todas las de Combate
-// Melee y Combate a Distancia. Pelea cuenta (arma desarmada) y Escudos también (golpean).
-// Confirmado (S43): Escudos y Pelea cuentan. Antes: si Escudos o Pelea no deben contar como "especialización en armas".
+// Melee y Combate a Distancia. Pelea cuenta (arma desarmada) y Escudos también (golpean):
+// confirmado por el usuario (S43).
 export const ESPECIALIDADES_ARMA: readonly Especialidad[] = ESPECIALIDADES.filter(
   (e) => e.habilidad === "combate_melee" || e.habilidad === "combate_distancia",
 );

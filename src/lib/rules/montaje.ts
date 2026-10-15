@@ -13,6 +13,7 @@ import type { Sheet } from "./sheet";
 import { APLICADOS, type AplicadoId } from "./atributos";
 import { HABILIDADES, type HabilidadId } from "./habilidades";
 import {
+  bonosTramoAplicables,
   desgloseBonosTramo,
   desgloseCondiciones,
   estadoInicial,
@@ -98,11 +99,17 @@ function margenesDeCondiciones(condiciones: CondicionTirada[], estado: EstadoCon
   return { criticoExito, criticoFallo: MARGEN_CRITICO };
 }
 
+// El crítico fijo de la tirada (Crítico Mejorado), sin casilla: gana el margen más bajo.
+function conCriticoFijo(margenes: TiradaMontada["margenes"], fijo: Accion["criticoFijo"]): TiradaMontada["margenes"] {
+  return fijo ? { ...margenes, criticoExito: Math.min(margenes.criticoExito, fijo.margen) } : margenes;
+}
+
 export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: EleccionTirada): TiradaMontada {
   const { sutil, estadoCondiciones: estado, circunstancial } = eleccion;
   const enEspecialidad = enEspecialidadEfectiva(ficha.ficha, tirada, eleccion.enEspecialidad);
   const condiciones = tirada.condiciones ?? [];
-  const bonosTramo = tirada.bonosTramo ?? [];
+  // Sin los que piden especialidad si no se va en ella, y el mejor de los que no se suman.
+  const bonosTramo = bonosTramoAplicables(tirada.bonosTramo ?? [], estado, enEspecialidad);
   const ajustesFijos = tirada.ajustesFijos ?? [];
 
   const mod = modificadorAccion(ficha.ficha, tirada, enEspecialidad, ficha.modificadores, sutil);
@@ -110,7 +117,14 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
   const base = mod.total + ajustesFijos.reduce((t, a) => t + a.valor, 0);
 
   const modo = modoElegido(condiciones, estado);
-  const ctx: ContextoAccion = { id: tirada.id, grupo: tirada.grupo, habilidad: tirada.habilidad, modoElegido: modo };
+  const ctx: ContextoAccion = {
+    id: tirada.id,
+    grupo: tirada.grupo,
+    habilidad: tirada.habilidad,
+    modoElegido: modo,
+    ...(tirada.familiaArma && { familiaArma: tirada.familiaArma }),
+    ...(tirada.empleoArma && { empleoArma: tirada.empleoArma }),
+  };
   const modificador =
     base + bonoAlcance(ficha.modificadores, ctx) + valorCondiciones(condiciones, estado) + valorBonosTramo(bonosTramo, estado);
 
@@ -141,8 +155,14 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     circunstancial,
     total: modificador + circunstancial,
     desglose,
-    margenes: margenesDeCondiciones(condiciones, estado),
-    notas: notasCondiciones(condiciones, estado),
+    margenes: conCriticoFijo(margenesDeCondiciones(condiciones, estado), tirada.criticoFijo),
+    // El crítico fijo (Crítico Mejorado) va primero, con su línea, en las notas del resultado.
+    notas: [
+      ...(tirada.criticoFijo
+        ? [{ etiqueta: tirada.criticoFijo.fuente, nota: `Crítico con ${tirada.criticoFijo.margen} éxitos en vez de ${MARGEN_CRITICO}.` }]
+        : []),
+      ...notasCondiciones(condiciones, estado),
+    ],
     modoElegido: modo,
   };
 }

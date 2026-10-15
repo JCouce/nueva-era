@@ -7,19 +7,28 @@
 //
 // Uso: node --import ./scripts/test-resolver.mjs scripts/workflows/auditoria-motor-metadata-extraer.ts \
 //        [salida.json] [--familia equipo|dote|todo] [--estado construido|pendiente] [--tanda D2a|D2b-1|D2b-2|D2c|D2d]
+//        [--en-tirada]
 //
 //   --familia  qué catálogo recorre (por defecto "todo": equipo + dotes).
 //   --estado / --tanda  solo dotes: se queda con las dotes que tengan al menos un
 //              efecto en ese estado / tanda. "D2a" = los efectos construidos. El item
 //              lleva el MotorMetadata entero de la dote (contexto para el auditor).
+//   --en-tirada  solo dotes: además, el efecto que casa con --estado/--tanda tiene que ir
+//              a una tirada (afecta.modo distinto de "ninguna"): fuera las dotes cuyo único
+//              efecto construido es texto de la tarjeta. Auditoría de D2a + D2b-1:
+//              `--familia dote --estado construido --en-tirada`.
 //
 // Dotes (D2a): `detalle` = la prosa de docs/dotes.md; `modificadores`/`condiciones`/
 // `notaTirada` = lo que la app pone de verdad en las tiradas, sacado de
 // rules/dotesEfectos.ts con una ficha que solo tiene esa dote (sin mirar requisitos;
 // con elección, la primera opción); `efectos` = todos los efectos del catálogo.
+// D2b-1: los bonos por tramo van en `ajusteTramo` (con su alcance); el crítico fijo
+// (Crítico Mejorado) y el requisito por rama de cada efecto, como líneas de `notaTirada`.
 import { writeFileSync } from "node:fs";
 import { DOTES } from "../../src/lib/catalog/dotes";
 import { TANDAS_DOTES } from "../../src/lib/catalog/dotesDestinos";
+import { ESPECIALIDADES_ARMA } from "../../src/lib/catalog/especialidades";
+import { textoRequisitoDote } from "../../src/lib/rules/dotes";
 import { dotesActivas, efectosDeDotes } from "../../src/lib/rules/dotesEfectos";
 import { defaultSheet } from "../../src/lib/rules/sheet";
 import {
@@ -68,6 +77,7 @@ const opcion = (nombre: string) => {
 const familia = opcion("familia") ?? "todo";
 const estado = opcion("estado");
 const tanda = opcion("tanda");
+const enTirada = argv.includes("--en-tirada");
 if (!["equipo", "dote", "todo"].includes(familia)) throw new Error(`--familia ${familia}: equipo | dote | todo`);
 if (estado && !["construido", "pendiente"].includes(estado)) throw new Error(`--estado ${estado}: construido | pendiente`);
 if (tanda && tanda !== "D2a" && !(TANDAS_DOTES as readonly string[]).includes(tanda))
@@ -135,16 +145,28 @@ for (const dote of familia === "equipo" ? [] : DOTES) {
   const casa = dote.motor.some(
     (m) =>
       (!estado || m.estado === estado) &&
-      (!tanda || (tanda === "D2a" ? m.estado === "construido" : m.estado === "pendiente" && m.bloqueoPor === tanda)),
+      (!tanda || (tanda === "D2a" ? m.estado === "construido" : m.estado === "pendiente" && m.bloqueoPor === tanda)) &&
+      (!enTirada || m.afecta.modo !== "ninguna"),
   );
   if (!casa || dote.efectos.length === 0) {
     dotesFuera++;
     continue;
   }
   const el = dote.eleccion;
-  const eleccion = !el ? undefined : el.opciones === "especialidades_arma" ? "<especialidad de arma>" : el.opciones[0];
+  const eleccion = !el ? undefined : el.opciones === "especialidades_arma" ? ESPECIALIDADES_ARMA[0].id : el.opciones[0];
   const sheet = { ...defaultSheet(), dotes: [{ id: dote.id, ...(eleccion && { eleccion }) }] };
-  const { casillas, modificadores, textos } = efectosDeDotes(dotesActivas(sheet, null));
+  const { casillas, modificadores, textos, bonosTramo, criticos } = efectosDeDotes(dotesActivas(sheet, null), null);
+  const destinoTexto = (t: (typeof textos)[number]) =>
+    t.en.tipo === "tiradaId" ? t.en.id : t.en.tipo === "familiaArma" ? `familia:${t.en.familia}${t.en.empleo ? ` (arma a ${t.en.empleo})` : ""}` : t.en.tipo;
+  const lineas = [
+    ...textos.map((t) => `${destinoTexto(t)}${t.soloEnCritico ? " (crítico)" : ""}: ${t.texto}`),
+    ...criticos.map((c) => `crítico fijo en los ataques con la especialidad elegida (${c.especialidad} de ejemplo): con ${c.margen} éxitos`),
+    ...dote.efectos.flatMap((e) =>
+      "requisitoAlcance" in e && e.requisitoAlcance
+        ? [`requisito por rama: el efecto ${e.borrador} (${e.tipo === "texto" ? e.lugar : "alcance" in e ? e.alcance : "?"}) solo con ${textoRequisitoDote(e.requisitoAlcance)}`]
+        : [],
+    ),
+  ];
   items.push({
     piezaId: dote.id,
     piezaLabel: dote.label,
@@ -152,12 +174,10 @@ for (const dote of familia === "equipo" ? [] : DOTES) {
     nivel: null,
     detalle: [dote.texto],
     modificadores,
-    ajusteTramo: null,
+    ajusteTramo: bonosTramo.length ? bonosTramo : null,
     ajusteAtaque: null,
     condiciones: casillas.length ? casillas : null,
-    notaTirada: textos.length
-      ? textos.map((t) => `${t.en.tipo === "tiradaId" ? t.en.id : t.en.tipo}${t.soloEnCritico ? " (crítico)" : ""}: ${t.texto}`).join(" | ")
-      : null,
+    notaTirada: lineas.length ? lineas.join(" | ") : null,
     motor: dote.motor,
     efectos: dote.efectos,
   });

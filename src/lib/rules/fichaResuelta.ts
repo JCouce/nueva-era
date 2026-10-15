@@ -42,7 +42,7 @@ import {
 } from "./especie";
 import { bonosDeDisciplina, nivelesDePsionica, type PsionicaResuelta } from "./psionica";
 import { valoresDeRequisito, type ValoresRequisito } from "./dotes";
-import { dotesActivas, efectosDeDotes } from "./dotesEfectos";
+import { dotesActivas, efectosDeDotes, type BonoTramoDeDote, type CriticoDeDote } from "./dotesEfectos";
 import type { ExcepcionRareza } from "../catalog/especies";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
 import { consultaIndiceCondiciones, indiceDeCondiciones, modificadoresDeEquipo, type IndiceCondiciones } from "./equipo";
@@ -60,7 +60,7 @@ import {
 } from "./estados";
 import { levitacion } from "./poderes";
 import { fatigaEfectiva } from "./vitalidad";
-import type { ModificadorConFuente } from "./modificadores";
+import { alcanzaA, type ContextoAccion, type FamiliaArma, type ModificadorConFuente } from "./modificadores";
 import type { Sheet } from "./sheet";
 import type { Accion, AccionDirecta } from "./acciones";
 
@@ -107,6 +107,9 @@ export type FichaResuelta = {
   // Textos sin mecanizar de la especie (§14.10) y de las dotes (§9.3) que cuelgan de una
   // tirada: los pone conExtrasDeFicha en su nota o en su texto de crítico.
   textosTirada: TextoEnTirada[];
+  // Lo de las dotes que no es casilla ni texto (D2b-1): bonos por tramo de distancia con
+  // su alcance y críticos fijos por especialidad de arma. También los pone conExtrasDeFicha.
+  extrasDotes: { bonosTramo: BonoTramoDeDote[]; criticos: CriticoDeDote[] };
   // Creación y progresión (§14.6): el ajuste de coste que reciben los puntos, la
   // compra y el coste del siguiente nivel, y la bolsa de aumentos (null si la
   // especie no la trae). En modo libre (NPC, §14.3), neutros.
@@ -156,7 +159,8 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
   const requisitosDotes = valoresDeRequisito(sheet, especie?.modificadores ?? []);
   // Lo que ponen las dotes en las tiradas (§9.3, D2a). Sin las de requisito roto (S34);
   // en modo libre (NPC del máster) sin mirar requisitos (§9.4).
-  const dotes = efectosDeDotes(dotesActivas(sheet, libre ? null : requisitosDotes));
+  const valoresDotes = libre ? null : requisitosDotes;
+  const dotes = efectosDeDotes(dotesActivas(sheet, valoresDotes), valoresDotes);
   // = [...modificadoresActivos(sheet), ...estados], sin volver a resolver la especie.
   const sinUmbrales: ModificadorConFuente[] = [
     ...(especie?.modificadores ?? []),
@@ -216,6 +220,7 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
     blindaje: { tieneEscudoMelee: tieneEscudoMelee(sheet), armaduraNatural: armaduraNaturalDeEspecie(especie) },
     indiceCondiciones: indiceDeCondiciones(sheet, [...casillasDeEspecie(especie), ...dotes.casillas]),
     textosTirada: [...textosDeEspecie(especie), ...dotes.textos],
+    extrasDotes: { bonosTramo: dotes.bonosTramo, criticos: dotes.criticos },
     ajusteCoste: libre ? AJUSTE_NEUTRO : ajustesDeCoste(especie),
     bolsaAumentos: libre ? null : bolsaDeAumentos(especie),
     excepcionesRareza: libre ? [] : excepcionesRareza(especie),
@@ -233,21 +238,60 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
 // y dotes de esta tirada, sea fija de ACCIONES o generada (ataques, herramientas, Volar…). Ni la
 // tirada ni la pantalla saben de dónde vienen. `modoElegido: null`: la tirada aún no se
 // ha abierto, así que una casilla con alcance "modo" no tiene nada que casar (ver
-// indiceDeCondiciones). Sin nada que añadir, devuelve la misma tirada.
-export function conExtrasDeFicha(ficha: Pick<FichaResuelta, "indiceCondiciones" | "textosTirada">, t: Accion): Accion {
-  const extra = consultaIndiceCondiciones(ficha.indiceCondiciones, { id: t.id, grupo: t.grupo, habilidad: t.habilidad, modoElegido: null });
-  const textos = ficha.textosTirada.filter((x) => (x.en.tipo === "desarmado" ? t.desarmado === true : x.en.id === t.id));
-  if (extra.length === 0 && textos.length === 0) return t;
-  const lineas = (critico: boolean) => textos.filter((x) => x.soloEnCritico === critico).map((x) => `${x.texto} (${x.fuente})`);
-  const enNota = lineas(false);
-  const enCritico = lineas(true);
-  const junta = (actual: string | undefined, nuevas: string[]) => [actual, ...nuevas].filter(Boolean).join(" · ");
+// indiceDeCondiciones). De las dotes, además, los bonos por tramo y el crítico fijo de
+// Crítico Mejorado (solo en ataques: ni al lanzar ni al bloquear). Sin nada que añadir,
+// devuelve la misma tirada.
+const FAMILIAS_CON_CRITICO_FIJO: readonly FamiliaArma[] = ["ataque_melee", "ataque_fuego", "ataque_pesado"];
+
+const contextoDe = (t: Pick<Accion, "id" | "grupo" | "familiaArma" | "empleoArma"> & { habilidad: Accion["habilidad"] }): ContextoAccion => ({
+  id: t.id,
+  grupo: t.grupo,
+  habilidad: t.habilidad,
+  modoElegido: null,
+  ...(t.familiaArma && { familiaArma: t.familiaArma }),
+  ...(t.empleoArma && { empleoArma: t.empleoArma }),
+});
+
+function textosDe(textos: TextoEnTirada[], ctx: ContextoAccion, desarmado: boolean): TextoEnTirada[] {
+  return textos.filter((x) => (x.en.tipo === "desarmado" ? desarmado : x.en.tipo === "familiaArma" ? alcanzaA(x.en, ctx) : x.en.id === ctx.id));
+}
+
+const conFuente = (textos: TextoEnTirada[], critico: boolean) =>
+  textos.filter((x) => x.soloEnCritico === critico).map((x) => `${x.texto} (${x.fuente})`);
+const junta = (actual: string | undefined, nuevas: string[]) => [actual, ...nuevas].filter(Boolean).join(" · ");
+
+export function conExtrasDeFicha(
+  ficha: Pick<FichaResuelta, "indiceCondiciones" | "textosTirada" | "extrasDotes">,
+  t: Accion,
+): Accion {
+  const ctx = contextoDe(t);
+  const extra = consultaIndiceCondiciones(ficha.indiceCondiciones, ctx);
+  const textos = textosDe(ficha.textosTirada, ctx, t.desarmado === true);
+  const bonosTramo = ficha.extrasDotes.bonosTramo.filter((b) => alcanzaA(b.alcance, ctx)).map((b) => b.bono);
+  const critico = t.familiaArma && FAMILIAS_CON_CRITICO_FIJO.includes(t.familiaArma) && t.especialidadArma
+    ? ficha.extrasDotes.criticos
+        .filter((c) => c.especialidad === t.especialidadArma)
+        .reduce<CriticoDeDote | null>((mejor, c) => (!mejor || c.margen < mejor.margen ? c : mejor), null)
+    : null;
+  if (extra.length === 0 && textos.length === 0 && bonosTramo.length === 0 && !critico) return t;
+  const enNota = conFuente(textos, false);
+  const enCritico = conFuente(textos, true);
   return {
     ...t,
     ...(extra.length > 0 && { condiciones: [...(t.condiciones ?? []), ...extra] }),
     ...(enNota.length > 0 && { nota: junta(t.nota, enNota) }),
     ...(enCritico.length > 0 && { efectoCritico: junta(t.efectoCritico, enCritico) }),
+    ...(bonosTramo.length > 0 && { bonosTramo: [...(t.bonosTramo ?? []), ...bonosTramo] }),
+    ...(critico && { criticoFijo: { margen: critico.margen, fuente: critico.fuente } }),
   };
+}
+
+// Lo mismo para una acción sin dado ("Levantar [escudo]"): solo textos, todos a su nota
+// (no hay crítico). Sin nada que añadir, devuelve la misma acción.
+export function conExtrasDirectaDeFicha(ficha: Pick<FichaResuelta, "textosTirada">, d: AccionDirecta): AccionDirecta {
+  const textos = textosDe(ficha.textosTirada, contextoDe({ ...d, habilidad: null }), false);
+  if (textos.length === 0) return d;
+  return { ...d, nota: junta(d.nota, [...conFuente(textos, false), ...conFuente(textos, true)]) };
 }
 
 // --- Notas de Personaje → Estado ------------------------------------------------

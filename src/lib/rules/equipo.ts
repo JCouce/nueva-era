@@ -25,7 +25,7 @@ import {
 import type { ExcepcionRareza } from "../catalog/especies";
 import type { EstadoFicha } from "./revision";
 import { ID_BUSQUEDA_MIRA } from "../catalog/mejorasArma";
-import { alcanzaA, type ContextoAccion, type GrupoAccion, type Modificador, type ModificadorConFuente } from "./modificadores";
+import { alcanzaA, type ContextoAccion, type FamiliaArma, type GrupoAccion, type Modificador, type ModificadorConFuente } from "./modificadores";
 import type { CondicionTirada } from "./condiciones";
 import type { HabilidadId } from "./habilidades";
 import { reconciliarRecursos, precioMaterial, sumarGranada, type MaterialTier } from "./recursos";
@@ -661,6 +661,8 @@ export type IndiceCondiciones = {
   porTiradaId: Map<string, CondicionIndexada[]>;
   porGrupo: Map<GrupoAccion, CondicionIndexada[]>;
   porHabilidad: Map<HabilidadId, CondicionIndexada[]>;
+  // Tiradas generadas por arma (dotes, D2b-1): por familia; el empleo lo filtra la consulta.
+  porFamiliaArma: Map<FamiliaArma, CondicionIndexada[]>;
   todas: CondicionIndexada[];
 };
 
@@ -671,12 +673,14 @@ function agregaIndexada<K>(mapa: Map<K, CondicionIndexada[]>, clave: K, entrada:
 }
 
 // `deOtrasFuentes`: casillas con alcance que no salen del equipo (las de la especie,
-// casillasDeEspecie, §14.8), indexadas detrás de las del equipo. Las pasa resolverFicha.
+// casillasDeEspecie, §14.8, y las de dotes, §9.3), indexadas detrás de las del equipo.
+// Las pasa resolverFicha.
 export function indiceDeCondiciones(sheet: Sheet, deOtrasFuentes: CondicionTirada[]): IndiceCondiciones {
   const indice: IndiceCondiciones = {
     porTiradaId: new Map(),
     porGrupo: new Map(),
     porHabilidad: new Map(),
+    porFamiliaArma: new Map(),
     todas: [],
   };
 
@@ -690,6 +694,7 @@ export function indiceDeCondiciones(sheet: Sheet, deOtrasFuentes: CondicionTirad
     else if (alcance.tipo === "habilidad" && alcance.habilidad) agregaIndexada(indice.porHabilidad, alcance.habilidad, entrada);
     // grupoHabilidad va con las de su habilidad; la consulta descarta las de otro grupo.
     else if (alcance.tipo === "grupoHabilidad") agregaIndexada(indice.porHabilidad, alcance.habilidad, entrada);
+    else if (alcance.tipo === "familiaArma") agregaIndexada(indice.porFamiliaArma, alcance.familia, entrada);
     else if (alcance.tipo === "todas") indice.todas.push(entrada);
     // "modo" queda fuera del índice a propósito, ver comentario de arriba.
   };
@@ -728,6 +733,9 @@ export function consultaIndiceCondiciones(indice: IndiceCondiciones, ctx: Contex
     ...(indice.porGrupo.get(ctx.grupo) ?? []),
     ...(ctx.habilidad ? (indice.porHabilidad.get(ctx.habilidad) ?? []) : []).filter(
       (c) => c.condicion.alcance?.tipo !== "grupoHabilidad" || c.condicion.alcance.grupo === ctx.grupo,
+    ),
+    ...(ctx.familiaArma ? (indice.porFamiliaArma.get(ctx.familiaArma) ?? []) : []).filter(
+      (c) => c.condicion.alcance !== undefined && alcanzaA(c.condicion.alcance, ctx),
     ),
     ...indice.todas,
   ];

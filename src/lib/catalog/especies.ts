@@ -12,7 +12,7 @@
 // +1 y el kerzul (E2b), movimiento, carga y armadura natural (E3), las casillas,
 // bonos, textos y umbrales de las tiradas (E4), y el peaje del Maolher, la nota de
 // fármacos del Irota y la visión (E5).
-import type { Modificador } from "../rules/modificadores";
+import type { AlcanceModificador, Modificador } from "../rules/modificadores";
 import type { CondicionTirada } from "../rules/condiciones";
 import type { MotorMetadata } from "../rules/motor";
 import type { FormulaMovimiento } from "../rules/formulaMovimiento";
@@ -77,10 +77,15 @@ export type AccionSinDadoRasgo = { label: string; nota: string; costeFatiga?: nu
 // El id y el alcance de la condición los pone casillasDeEspecie.
 export type CasillaRasgo = { acciones: string[]; condicion: CondicionTirada };
 
-// Dónde cuelga un texto sin mecanizar: una tirada fija por id, o los ataques
-// desarmados (Puñetazo y Patada, Accion.desarmado en combate.ts). `soloEnCritico`: va
-// al texto de crítico de la tirada (Accion.efectoCritico), no a su nota.
-export type DestinoTexto = { tipo: "tiradaId"; id: string } | { tipo: "desarmado" };
+// Dónde cuelga un texto sin mecanizar: una tirada fija por id, los ataques
+// desarmados (Puñetazo y Patada, Accion.desarmado en combate.ts) o las tiradas de una
+// familia de arma, con su empleo si lo filtra (textos de dote, D2b-1; mismo alcance que
+// AlcanceModificador "familiaArma"). `soloEnCritico`: va al texto de crítico de la tirada
+// (Accion.efectoCritico), no a su nota.
+export type DestinoTexto =
+  | { tipo: "tiradaId"; id: string }
+  | { tipo: "desarmado" }
+  | Extract<AlcanceModificador, { tipo: "familiaArma" }>;
 export type TextoRasgo = { en: DestinoTexto[]; texto: string; soloEnCritico?: true };
 
 // `etiqueta`: palabra corta para la pista junto al coste ("−1 casta").

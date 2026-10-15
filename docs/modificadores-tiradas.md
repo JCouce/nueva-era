@@ -158,6 +158,7 @@ type AlcanceModificador =
   | { tipo: "habilidad"; habilidad: HabilidadId }     // cualquier tirada que use esa habilidad
   | { tipo: "grupoHabilidad"; grupo: GrupoAccion; habilidad: HabilidadId } // las de ese grupo con esa habilidad
   | { tipo: "modo"; contieneEtiqueta: string }        // solo si el modo elegido la contiene ("F. Auto")
+  | { tipo: "familiaArma"; familia: FamiliaArma; empleo?: EmpleoArma } // tiradas de arma de esa familia (D2b-1)
   | { tipo: "todas" };                                // cualquier tirada, sin excepción
 ```
 
@@ -190,6 +191,10 @@ declararlo en el catálogo con el alcance correcto.
   conocida:** no distingue por tipo de arma — el documento dice que en
   ametralladoras el Sistema de Retroceso ayuda en *cualquier* modo, y este
   alcance no lo captura (ver el comentario en su entrada del catálogo).
+- `familiaArma` → las tiradas generadas por arma de una familia (`Accion.familiaArma`, la
+  pone `combate.ts`: ataque melee, disparo, pesado, lanzar, bloquear, levantar escudo), y
+  con `empleo` solo las de un arma a una/dos manos. Lo usan las dotes (D2b-1). En el
+  índice de casillas va por familia; el empleo lo filtra la consulta.
 - `todas` → para un penalizador de personaje entero, sin excepción: los
   "-1/-3/-5 a todo" de los umbrales de salud/fatiga (`docs/sistema.md` §7) y
   los estados de la fase 6b que golpean cualquier acción por igual. Úsalo

@@ -24,6 +24,7 @@ import {
   accionesDirectasDeFarmacos,
   recursoDe,
   conExtrasDeFicha,
+  conExtrasDirectaDeFicha,
   accionesDePsionica,
   textoNivelEnAcciones,
   etiquetaEconomia,
@@ -569,7 +570,8 @@ export function AccionesTab({
     accionesGeneradas,
   } = useMemo(() => {
     const generadas = accionesDeAtaque(sheet, mods).map(conExtras);
-    const directas = accionesDirectasDeAtaque(sheet);
+    // Textos de dote en "Levantar [escudo]" (D2b-1), a su nota.
+    const directas = accionesDirectasDeAtaque(sheet).map((d) => conExtrasDirectaDeFicha(ficha, d));
     return {
       ataques: generadas.filter((t) => t.grupo === "Ataques"),
       defensaGenerada: generadas.filter((t) => t.grupo === "Defensa"),
@@ -593,7 +595,7 @@ export function AccionesTab({
       accionesGeneradas: accionesDeMovimiento(sheet).map(conExtras),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, ficha.textosTirada, ficha.notasFarmacos, mods]);
+  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, ficha.textosTirada, ficha.extrasDotes, ficha.notasFarmacos, mods]);
 
   const abrir = (t: Accion, enEspecialidad: boolean, sutil: boolean) => {
     setModal({ tirada: t, ficha, eleccion: { enEspecialidad, sutil }, resultadoId: null });

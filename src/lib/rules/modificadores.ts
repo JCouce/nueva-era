@@ -54,6 +54,32 @@ export type GrupoAccion =
   // externos de la psiónica (Xovromium, Munición Supresora...).
   | "Psiónica";
 
+// Familia de un ataque, bloqueo o "Levantar escudo" generado por arma (combate.ts): la
+// pone el generador al crear la Accion, no se deduce del id. Es lo que miran las dotes
+// con alcance "familia:<f>" (D2b-1, docs/sistema.md §9.3). Una sola por tirada.
+//   ataque_melee     golpe con arma melee, Bayoneta y Aguijón del Proyector de Pulso
+//   ataque_fuego     disparo con arma de fuego y disparo del Proyector de Pulso (también
+//                    el de Tecnociencia)
+//   ataque_pesado    armamento pesado y lanzagranadas integrado
+//   lanzar_melee     lanzar un arma melee arrojadiza
+//   lanzar_granada   lanzar una granada a mano
+//   bloquear_melee   "Bloquear con X" (melee, Bayoneta, Aguijón)
+//   levantar_escudo  "Levantar [escudo]", acción sin dado
+export const FAMILIAS_ARMA = [
+  "ataque_melee",
+  "ataque_fuego",
+  "ataque_pesado",
+  "lanzar_melee",
+  "lanzar_granada",
+  "bloquear_melee",
+  "levantar_escudo",
+] as const;
+export type FamiliaArma = (typeof FAMILIAS_ARMA)[number];
+
+// Empleo del arma de la tirada (mismo campo que ArmaFuego/ArmaMelee.empleo): lo miran
+// los filtros de arma de las dotes (Desenfundado Rápido: "armas a una mano").
+export type EmpleoArma = "una mano" | "dos manos";
+
 // A qué tirada(s) afecta un modificador de tipo "tirada". Cerrado a propósito
 // — ver docs/modificadores-tiradas.md antes de añadir un sexto caso:
 //
@@ -69,6 +95,8 @@ export type GrupoAccion =
 //               Iniciativa desenfundando, que también usa esa habilidad).
 //   modo      → solo si el modo de disparo/golpe elegido contiene ese texto
 //               ("F. Auto"). Exige que la tirada tenga condición "modo".
+//   familiaArma → las tiradas generadas por arma de esa familia (FAMILIAS_ARMA), y con
+//               `empleo`, solo las de un arma de ese empleo. Lo usan las dotes (D2b-1).
 //   todas     → cualquier tirada, sin excepción. Para los "-1/-3/-5 a todo"
 //               de los umbrales de salud/fatiga (docs/sistema.md §7) y los
 //               estados que penalizan toda acción por igual — no hay forma
@@ -81,6 +109,7 @@ export type AlcanceModificador =
   | { tipo: "habilidad"; habilidad: HabilidadId }
   | { tipo: "grupoHabilidad"; grupo: GrupoAccion; habilidad: HabilidadId }
   | { tipo: "modo"; contieneEtiqueta: string }
+  | { tipo: "familiaArma"; familia: FamiliaArma; empleo?: EmpleoArma }
   | { tipo: "todas" };
 
 export type Modificador =
@@ -152,11 +181,14 @@ export function bonoDisciplina(
 // arma: `id`/`grupo`/`habilidad` salen de la propia Accion; `modoElegido` es
 // la etiqueta de la opción de la condición "modo" que esté seleccionada
 // ahora mismo en el modal (o null si no hay tal condición o no aplica).
+// `familiaArma`/`empleoArma`: los de la Accion, si la genera un arma (ausentes en el resto).
 export type ContextoAccion = {
   id: string;
   grupo: GrupoAccion;
   habilidad: HabilidadId | null;
   modoElegido: string | null;
+  familiaArma?: FamiliaArma;
+  empleoArma?: EmpleoArma;
 };
 
 // Exportada para condicionesActivas() (equipo.ts) — mismo criterio de alcance
@@ -167,6 +199,9 @@ export function alcanzaA(alcance: AlcanceModificador, ctx: ContextoAccion): bool
   if (alcance.tipo === "grupo") return alcance.grupo === ctx.grupo;
   if (alcance.tipo === "habilidad") return alcance.habilidad === ctx.habilidad;
   if (alcance.tipo === "grupoHabilidad") return alcance.grupo === ctx.grupo && alcance.habilidad === ctx.habilidad;
+  // Sin empleo conocido (Proyector de Pulso, que va en la armadura), un filtro de empleo no casa.
+  if (alcance.tipo === "familiaArma")
+    return alcance.familia === ctx.familiaArma && (alcance.empleo === undefined || alcance.empleo === ctx.empleoArma);
   return ctx.modoElegido !== null && ctx.modoElegido.includes(alcance.contieneEtiqueta);
 }
 

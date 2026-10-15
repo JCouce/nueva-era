@@ -8,18 +8,35 @@
 // generador decide qué es eso, contra catalog/dotesDestinos.ts): un efecto pendiente de
 // otra tanda no hace nada aquí aunque su destino exista.
 //
+// Tiradas generadas por arma (D2b-1): el alcance "familia:<f>" pasa a AlcanceModificador
+// "familiaArma" (con el empleo si la dote filtra el arma), las casillas van al mismo índice
+// y los textos con destino de familia. Un efecto con requisito por rama (Asesino…) solo sale
+// si la ficha cumple el de su rama. Aparte, lo que no es casilla ni texto:
+//   bonosTramo  bono por tramo de distancia (Tirador de Larga Distancia y su Avanzado, este
+//               solo en especialidad; vale el mejor de los dos)
+//   criticos    crítico fijo en los ataques de la especialidad elegida (Crítico Mejorado)
+//
 //   dotesActivas     las compradas que dan efecto: sin requisito roto y sin las que
 //                    sustituye una mejorada que también se tiene ("vale la mejor")
-//   efectosDeDotes   → { casillas, modificadores, textos }
+//   efectosDeDotes   → { casillas, modificadores, textos, bonosTramo, criticos }
 //   casillasDeDotes / textosDeDotes / modificadoresDeDotes   atajos sobre una ficha
 import { ATRIBUTOS } from "./atributos";
 import { HABILIDADES } from "./habilidades";
-import { dotesConRequisitoRoto, etiquetaEleccion, valoresRequisitoDeFicha, type ValoresRequisito } from "./dotes";
+import {
+  cumpleRequisitoDote,
+  dotesConRequisitoRoto,
+  especialidadArmaPropia,
+  etiquetaEleccion,
+  valoresRequisitoDeFicha,
+  type ValoresRequisito,
+} from "./dotes";
 import { dotePorId, mismaDote, normalizarNombre, type DoteComprada } from "./dotesCompradas";
 import { DESTINOS_DOTES, OPCIONES_DE_TRAMO } from "../catalog/dotesDestinos";
+import { DOTES } from "../catalog/dotes";
+import { especialidadPorId, type EspecialidadId } from "../catalog/especialidades";
 import type { DoteCatalogo, EfectoDote } from "../catalog/dotesTipos";
-import type { CondicionTirada, OpcionCondicion } from "./condiciones";
-import type { ModificadorConFuente } from "./modificadores";
+import type { BonoPorTramo, CondicionTirada, OpcionCondicion, TramoDistancia } from "./condiciones";
+import type { AlcanceModificador, ModificadorConFuente } from "./modificadores";
 import type { TextoEnTirada } from "./especie";
 import type { Sheet } from "./sheet";
 
@@ -53,15 +70,43 @@ export function dotesActivas(sheet: Sheet, valores: ValoresRequisito | null): Do
   return compradas.filter(({ dote }) => !sustituidas.has(dote.id));
 }
 
+// Bono por tramo de distancia de una dote, con el alcance de las tiradas que lo reciben
+// (conExtrasDeFicha lo añade a su `bonosTramo`).
+export type BonoTramoDeDote = { alcance: AlcanceModificador; bono: BonoPorTramo };
+// Crítico fijo (Crítico Mejorado): `margen` éxitos en los ataques con arma de esa especialidad.
+export type CriticoDeDote = { especialidad: EspecialidadId; margen: number; fuente: string };
+
 export type EfectosDeDotes = {
   // Casillas con alcance, al mismo índice que las del equipo y la especie.
   casillas: CondicionTirada[];
   // Bonos siempre activos (sin casilla): Modificador de tirada con origen "dote".
   modificadores: ModificadorConFuente[];
   textos: TextoEnTirada[];
+  bonosTramo: BonoTramoDeDote[];
+  criticos: CriticoDeDote[];
 };
 
-export const SIN_EFECTOS_DE_DOTES: EfectosDeDotes = { casillas: [], modificadores: [], textos: [] };
+export const SIN_EFECTOS_DE_DOTES: EfectosDeDotes = { casillas: [], modificadores: [], textos: [], bonosTramo: [], criticos: [] };
+
+const TRAMOS: readonly TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
+
+// El alcance del efecto: el del destino y, si la dote filtra el arma por empleo
+// (Desenfundado Rápido: a una mano), ese empleo en el alcance de familia.
+function alcanceDe(destino: AlcanceModificador, e: { filtroArma?: { empleo?: "una mano" | "dos manos" } }): AlcanceModificador {
+  const empleo = e.filtroArma?.empleo;
+  return empleo && destino.tipo === "familiaArma" ? { ...destino, empleo } : destino;
+}
+
+// "Vale la mejor" entre bonos por tramo que no se suman (`noAcumulaCon`, en cualquiera de
+// los dos sentidos): misma clave para la dote y las que excluye, en ese alcance y tramo.
+function claveExcluyente(dote: DoteCatalogo, e: Extract<EfectoDote, { tipo: "bono" }>): string | undefined {
+  const otras = new Set(e.noAcumulaCon ?? []);
+  for (const d of DOTES)
+    for (const o of d.efectos)
+      if (o.tipo === "bono" && o.alcance === e.alcance && o.tramo === e.tramo && o.noAcumulaCon?.includes(dote.id)) otras.add(d.id);
+  if (otras.size === 0) return undefined;
+  return [dote.id, ...otras].sort().join("|");
+}
 
 // "Especialidad Médica: Ceguera y sordera"; sin elección, el nombre a secas.
 function nombreDe({ dote, compra }: DoteActiva): string {
@@ -91,14 +136,18 @@ function avisoUmbral(dote: DoteCatalogo, e: Extract<EfectoDote, { tipo: "bono" }
   return `; +${s.valor} con ${etiquetaUmbral(s)} ≥ ${s.min}, súmalo a mano`;
 }
 
-export function efectosDeDotes(activas: readonly DoteActiva[]): EfectosDeDotes {
+// `valores`: los de los requisitos, para el requisito por rama (null = NPC, sin mirar).
+export function efectosDeDotes(activas: readonly DoteActiva[], valores: ValoresRequisito | null): EfectosDeDotes {
   if (activas.length === 0) return SIN_EFECTOS_DE_DOTES;
   const casillas: CondicionTirada[] = [];
   const modificadores: ModificadorConFuente[] = [];
   const textos: TextoEnTirada[] = [];
+  const bonosTramo: BonoTramoDeDote[] = [];
+  const criticos: CriticoDeDote[] = [];
+  const compradas = activas.map((a) => a.compra);
 
   for (const activa of activas) {
-    const { dote } = activa;
+    const { dote, compra } = activa;
     const fuente = nombreDe(activa);
     const clave = claveDe(activa);
     // Bonos por opción de una condición que la tirada no tiene: una casilla de opción por
@@ -107,11 +156,38 @@ export function efectosDeDotes(activas: readonly DoteActiva[]): EfectosDeDotes {
 
     dote.efectos.forEach((e, i) => {
       if (dote.motor[i]?.estado !== "construido") return;
+      // Requisito por rama: el efecto de la rama que la ficha no cumple no sale (§9.5).
+      if ("requisitoAlcance" in e && e.requisitoAlcance && valores && !cumpleRequisitoDote(e.requisitoAlcance, valores, compradas)) return;
+      if (e.tipo === "margen_critico") {
+        // Crítico Mejorado: la especialidad elegida al comprar, mientras siga siendo propia y
+        // de la rama que cumple (S43; NPC sin mirar).
+        const esp = compra.eleccion ? especialidadPorId(compra.eleccion) : undefined;
+        if (DESTINOS_DOTES[e.alcance]?.tipo !== "especialidadArmaElegida" || !esp) return;
+        if (valores && !especialidadArmaPropia(dote, esp.id, valores, compradas)) return;
+        criticos.push({ especialidad: esp.id, margen: e.valor, fuente });
+        return;
+      }
       if (e.tipo === "bono") {
         const destino = DESTINOS_DOTES[e.alcance];
         if (destino?.tipo !== "tirada" || typeof e.valor !== "number") return;
+        const alcance = alcanceDe(destino.alcance, e);
         if (e.tramo) {
           const [grupo, opcion] = e.tramo.split(":");
+          // Tramo de distancia de los disparos: bono por tramo, no casilla.
+          if (grupo === "tramo") {
+            if (!TRAMOS.includes(opcion as TramoDistancia)) return;
+            const excluyente = claveExcluyente(dote, e);
+            bonosTramo.push({
+              alcance,
+              bono: {
+                fuente,
+                porTramo: { [opcion]: e.valor },
+                ...(e.soloEspecialidad && { soloEnEspecialidad: true as const }),
+                ...(excluyente && { excluyente }),
+              },
+            });
+            return;
+          }
           const def = OPCIONES_DE_TRAMO[grupo];
           if (!def) return;
           let g = porTramo.get(grupo);
@@ -123,7 +199,7 @@ export function efectosDeDotes(activas: readonly DoteActiva[]): EfectosDeDotes {
                 etiqueta: `${def.etiqueta} (${fuente})`,
                 opciones: [{ id: "ninguna", etiqueta: def.ninguna, valor: 0 }],
                 porDefecto: "ninguna",
-                alcance: destino.alcance,
+                alcance,
               },
             };
             porTramo.set(grupo, g);
@@ -140,7 +216,7 @@ export function efectosDeDotes(activas: readonly DoteActiva[]): EfectosDeDotes {
         }
         // Siempre activo y sin especialidad: bono fijo, sale en el desglose con la dote.
         if (e.condicion === null && !destino.especialidad) {
-          modificadores.push({ tipo: "tirada", alcance: destino.alcance, valor: e.valor, origen: "dote", fuente });
+          modificadores.push({ tipo: "tirada", alcance, valor: e.valor, origen: "dote", fuente });
           return;
         }
         // Casilla. Con especialidad, aunque el bono sea siempre activo: la tirada no sabe
@@ -152,7 +228,7 @@ export function efectosDeDotes(activas: readonly DoteActiva[]): EfectosDeDotes {
           tipo: "toggle",
           etiqueta: `${texto} (${fuente}${avisoUmbral(dote, e)})`,
           valorActivo: e.valor,
-          alcance: destino.alcance,
+          alcance,
         });
         return;
       }
@@ -161,15 +237,20 @@ export function efectosDeDotes(activas: readonly DoteActiva[]): EfectosDeDotes {
         if (destino?.tipo !== "tirada") return; // "ficha": vive en la tarjeta de la dote
         const texto = e.condicion ? `${e.condicion}: ${e.texto}` : e.texto;
         const soloEnCritico = e.grados?.includes("critico") ?? false;
-        for (const id of destino.textos) textos.push({ en: { tipo: "tiradaId", id }, texto, fuente, soloEnCritico });
+        const alcance = alcanceDe(destino.alcance, e);
+        if (alcance.tipo === "familiaArma") textos.push({ en: alcance, texto, fuente, soloEnCritico });
+        else for (const id of destino.textos) textos.push({ en: { tipo: "tiradaId", id }, texto, fuente, soloEnCritico });
       }
     });
   }
-  return { casillas, modificadores, textos };
+  return { casillas, modificadores, textos, bonosTramo, criticos };
 }
 
 // Atajos con los requisitos de la propia ficha (sin especie resuelta aparte).
-const deFicha = (sheet: Sheet) => efectosDeDotes(dotesActivas(sheet, valoresRequisitoDeFicha(sheet)));
+const deFicha = (sheet: Sheet) => {
+  const valores = valoresRequisitoDeFicha(sheet);
+  return efectosDeDotes(dotesActivas(sheet, valores), valores);
+};
 export const casillasDeDotes = (sheet: Sheet): CondicionTirada[] => deFicha(sheet).casillas;
 export const textosDeDotes = (sheet: Sheet): TextoEnTirada[] => deFicha(sheet).textos;
 export const modificadoresDeDotes = (sheet: Sheet): ModificadorConFuente[] => deFicha(sheet).modificadores;

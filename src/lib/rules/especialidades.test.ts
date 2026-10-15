@@ -19,7 +19,7 @@ import {
   especialidadesDe,
   type EspecialidadId,
 } from "../catalog/especialidades";
-import { ESPECIALIDAD_ARMA } from "../catalog/especialidadesArma";
+import { ESPECIALIDAD_ARMA, especialidadArmaFuego } from "../catalog/especialidadesArma";
 import { ARMAS } from "../catalog/armasFuego";
 import { ARMAS_MELEE } from "../catalog/armasMelee";
 import { ARMAMENTO_PESADO } from "../catalog/armamentoPesado";
@@ -91,6 +91,15 @@ describe("especialidad de cada arma (catalog/especialidadesArma.ts)", () => {
   test("la tabla cubre exactamente las armas del catálogo", () => {
     const ids = [...ARMAS, ...ARMAS_MELEE, ...ARMAMENTO_PESADO].map((a) => a.id).sort();
     assert.deepEqual(Object.keys(ESPECIALIDAD_ARMA).sort(), ids);
+  });
+
+  test("armas de fuego por empleo (S44): da lo mismo que la tabla de ESP (pistolas cortas, el resto largas)", () => {
+    for (const a of ARMAS) {
+      assert.equal(ESPECIALIDAD_ARMA[a.id], a.tipo === "pistola" ? "armas_de_fuego_cortas" : "armas_de_fuego_largas", a.id);
+      assert.equal(ESPECIALIDAD_ARMA[a.id], especialidadArmaFuego(a), a.id);
+    }
+    // Subfusiles a dos manos y ametralladoras: largas.
+    assert.ok(ARMAS.filter((a) => a.tipo === "subfusil" || a.tipo === "ametralladora").every((a) => a.empleo === "dos manos"));
   });
 
   test("toda fila de ataque con arma lleva una especialidad de la habilidad con la que ataca", () => {

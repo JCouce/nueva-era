@@ -57,6 +57,7 @@ function etiquetaModificador(m: Modificador): string {
   if (a.tipo === "habilidad") return HABILIDADES.find((h) => h.id === a.habilidad)!.label;
   if (a.tipo === "grupoHabilidad") return `${a.grupo} con ${HABILIDADES.find((h) => h.id === a.habilidad)!.label}`;
   if (a.tipo === "todas") return "Todas las tiradas";
+  if (a.tipo === "familiaArma") return `Ataques (${a.familia.replace("_", " ")})${a.empleo ? `, arma a ${a.empleo}` : ""}`;
   return `Modo ${a.contieneEtiqueta}`;
 }
 

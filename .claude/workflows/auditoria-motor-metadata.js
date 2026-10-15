@@ -23,7 +23,8 @@
 //      node --import ./scripts/test-resolver.mjs \
 //        scripts/workflows/auditoria-motor-metadata-extraer.ts /ruta/de/salida.json
 //    Filtra con `--familia equipo|dote|todo` y, para dotes, `--estado` /
-//    `--tanda D2a|D2b-1|D2b-2|D2c|D2d` (D2a = efectos construidos). Las dotes
+//    `--tanda D2a|D2b-1|D2b-2|D2c|D2d` (D2a = efectos construidos), y
+//    `--en-tirada` para dejar fuera las de solo texto de tarjeta. Las dotes
 //    llevan `familia: "dote"`, la prosa de docs/dotes.md en `detalle` y lo que
 //    la app pone de verdad en las tiradas (casillas, bonos fijos, notas).
 // 2. Lanza este workflow con Workflow({ name: 'auditoria-motor-metadata',

@@ -140,11 +140,12 @@ habilidades. Se sustituye la habilidad entera, no se añade como especialidad de
   tira siempre con el valor entero (supuesto S39). La regla "al entrenar se escoge una
   especialidad" no se exige en ningún sitio (ni pasos de personaje ni envío a revisión): la
   primera especialidad va incluida (S3), pero elegirla no bloquea nada.
-- **Ataques con arma: la especialidad la pone el arma** (tanda ESP, decisión del usuario). Cada
-  arma tiene la suya (`src/lib/catalog/especialidadesArma.ts`, revisable a mano); si la ficha
-  la tiene en la habilidad con la que ataca, la tirada va entera sin tocar nada, y si no, a
-  la mitad. La fila del ataque no ofrece selector. El resto de tiradas (bloqueos incluidos,
-  S40) siguen con el selector sí/no de la fila.
+- **Ataques y bloqueos con arma: la especialidad la pone el arma** (tanda ESP, decisión del
+  usuario; los bloqueos desde D2b-1, S40). Cada arma tiene la suya
+  (`src/lib/catalog/especialidadesArma.ts`: melee y pesado por tabla, armas de fuego por su
+  empleo, S44); si la ficha la tiene en la habilidad con la que tira, la tirada va entera
+  sin tocar nada, y si no, a la mitad. Esas filas no ofrecen selector. El resto de tiradas
+  siguen con el selector sí/no de la fila.
 
 ## 2.5 / 3.5 Coste y progresión `[FIRME · HOJA2]`
 
@@ -506,6 +507,23 @@ aplicar o recalcular se aplica en la ficha; lo demás queda como texto.**
 - **Vale la mejor**: con la básica y la mejorada, solo da efecto la mejorada (también en
   cadena: *Movimiento Sigiloso Constante* → *Mejorado* → básica).
 - Supuestos de la tanda: S34-S38.
+
+*En la app (D2b-1, 2026-10-16): tiradas generadas por arma.*
+- Cada ataque, lanzamiento, bloqueo y "Levantar [escudo]" lleva su **familia de arma** como
+  dato (`Accion.familiaArma`, `combate.ts`), y el empleo de su arma: ataque melee, disparo,
+  armamento pesado, lanzar arma melee, lanzar granada, bloquear melee, levantar escudo (S45).
+  Las dotes con alcance `familia:<f>` ponen ahí sus casillas y textos; en "Levantar
+  [escudo]", que no tiene dado, solo textos en su nota.
+- **Requisito por rama** (§9.5: Asesino, Desenfundado Rápido, Golpe Entorpecedor): el efecto
+  de cada rama solo sale si la ficha cumple el requisito de esa rama (S46).
+- **Filtro de arma**: *Desenfundado Rápido* (y *Apresar y Apuñalar*) solo en armas a una
+  mano (S49).
+- **Bono por tramo**: *Tirador de Larga Distancia* +1 en larga; *Avanzado* +2 en larga solo
+  si el ataque va en especialidad (anula el −2); con las dos, vale la mejor en cada ataque
+  (S47).
+- ***Crítico Mejorado***: crítico con 5 éxitos, fijo y sin casilla, en los ataques con armas
+  de la especialidad elegida (ni al lanzar ni al bloquear); su línea sale en las notas del
+  resultado (S48).
 
 ### 9.4 Fichas y NPCs `[FIRME · usuario 2026-10-14]`
 - **Fichas ya aprobadas**: no reciben los puntos de dotes de su letra; compran dotes con
@@ -1523,11 +1541,16 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S37 | ***Movimiento Sigiloso*: casilla de opción sin el penalizador.** La dote pone en Sigilo una casilla "moviéndote oculto" con lo que reduce en cada ritmo (mitad, total, esprint), pero la tirada de Sigilo de la app no lleva el penalizador por moverse oculto (−2/−4/−8, `docs/fuente/habilidades.md`): ese sigue a mano. La etiqueta dice cuánto compensa ("Moviéndome oculto: reduce 2 (Movimiento Sigiloso)", "reduce hasta 4" en la Mejorada). *Movimiento Sigiloso Constante* ("sin penalizador") no es un número fijo: texto en Sigilo, sin casilla. | Añadir el penalizador a Sigilo sería una regla nueva fuera de la tanda. Tanda D2a (2026-10-15); etiqueta y Constante, usuario 2026-10-16. |
 | S38 | **Bono con umbral de ficha, partido.** *Presencia Imponente* (+2 con Fuerza ≥ 5) e *Imitación* (+3 con Interpretación ≥ 3): D2a pone la casilla con el valor base y el aviso del umbral en la etiqueta; la parte del umbral es otro efecto, pendiente de D2d (valor por umbral de ficha), que al construirse sustituye a la casilla base. | Decisión del usuario (D2a, 2026-10-15) para Presencia Imponente; Imitación por el mismo patrón. |
 | S39 | **Habilidad sin lista de especialidades (Interpretación, Sigilo): siempre entera.** No admite especialidades y la tirada usa el valor entero, no la mitad (`valorEfectivo`, `derivados.ts`). `TODO(revisar)`. | La regla de §3 es "en la escogida, entera; en el resto, la mitad": sin lista no hay "resto". Con la mitad, nadie podría tirar Sigilo entero nunca. Tanda ESP (2026-10-15), pendiente de confirmar. **Confirmado por el usuario (Especialidades ESP, 2026-10-16)**; nota suya: probablemente falten especialidades por decidir en la fuente y se corrija más adelante. |
-| S40 | **La especialidad automática del arma solo va en los ataques**, no en "Bloquear con X" (tampoco el bloqueo de la Bayoneta ni el del Aguijón): el bloqueo sigue con el selector de la fila. `TODO(revisar)` en `combate.ts`. | El encargo decía "ataques con arma". Si el bloqueo también usa la del arma, es una línea por bloqueo. Tanda ESP (2026-10-15). **Cambia (usuario, Especialidades ESP, 2026-10-16): los bloqueos también usan la especialidad del arma**, como los ataques; se construye con D2b-1. |
+| S40 | ~~**La especialidad automática del arma solo va en los ataques**~~ **Construido el cambio (D2b-1, 2026-10-16): "Bloquear con X" (melee, Bayoneta, Aguijón) va con la especialidad de su arma, sin selector.** Antes:, no en "Bloquear con X" (tampoco el bloqueo de la Bayoneta ni el del Aguijón): el bloqueo sigue con el selector de la fila. `TODO(revisar)` en `combate.ts`. | El encargo decía "ataques con arma". Si el bloqueo también usa la del arma, es una línea por bloqueo. Tanda ESP (2026-10-15). **Cambia (usuario, Especialidades ESP, 2026-10-16): los bloqueos también usan la especialidad del arma**, como los ataques; se construye con D2b-1. |
 | S41 | **Lanzar (arma melee arrojadiza o granada) usa Lanzamiento (Atletismo)**, no Armas Arrojadizas (Combate a Distancia), porque la tirada es Potencia + Atletismo (INFERIDO 2026-09-28). `TODO(revisar)` en `especialidadesArma.ts`. | La especialidad tiene que ser de la habilidad con la que se tira. Tanda ESP (2026-10-15). **Confirmado por el usuario (Especialidades ESP, 2026-10-16).** |
 | S42 | **Migración v17**: cada texto de especialidad se casa por nombre normalizado (sin tildes ni mayúsculas, sin la "s" final de cada palabra) con una especialidad de **su** habilidad; lo que no casa se quita y se guarda en `avisoEspecialidades` (la pestaña Habilidades lo enseña con un botón para descartarlo). La elección de *Crítico Mejorado* se casa igual con una especialidad de arma; si no casa, la dote se quita (y va al aviso). | Decisión del usuario (ESP): no hay fichas activas, no se inventan equivalencias (Biónica en Tecnociencia o Química en Biociencia van al aviso). |
 | S43 | ***Crítico Mejorado*: lista cerrada de especialidades de arma** (todas las de Combate Melee y a Distancia, Pelea y Escudos incluidas), y solo las que la ficha tiene **en la habilidad con la que cumple el requisito** (≥ 3). `TODO(revisar)` si Pelea o Escudos no cuentan como "especializaciones en armas". | Prosa: "una de sus especializaciones en armas para la habilidad con la que cumpla el requisito". Tanda ESP (2026-10-15). **Confirmado por el usuario (Especialidades ESP, 2026-10-16): Pelea y Escudos cuentan.** |
-| S44 | **Armas de fuego por empleo**: a una mano, Armas de Fuego Cortas; a dos manos, Largas; ametralladoras, Largas (no Pesadas). Armas Mecánicas, Kerzul mixtas (Espadas y Dagas), Bayoneta, lanzagranadas integrado y Proyector de Pulso: como los dejó la tanda ESP (`especialidadesArma.ts`). | Usuario, Especialidades ESP (2026-10-16). Hoy la regla da lo mismo que la tabla (los subfusiles son a dos manos); se construye como regla con D2b-1 para armas futuras. |
+| S44 | **Armas de fuego por empleo**: a una mano, Armas de Fuego Cortas; a dos manos, Largas; ametralladoras, Largas (no Pesadas). Armas Mecánicas, Kerzul mixtas (Espadas y Dagas), Bayoneta, lanzagranadas integrado y Proyector de Pulso: como los dejó la tanda ESP (`especialidadesArma.ts`). | Usuario, Especialidades ESP (2026-10-16). Hoy la regla da lo mismo que la tabla (los subfusiles son a dos manos); se construye como regla con D2b-1 para armas futuras. **Construido (D2b-1, 2026-10-16)**: `especialidadArmaFuego` en `especialidadesArma.ts`, con test de equivalencia. |
+| S45 | **Familia y empleo de cada tirada de arma.** Bayoneta: golpe melee y bloqueo melee, a dos manos. Proyector de Pulso por su tipo: Aguijón ataque melee (su bloqueo, bloquear melee), disparo (Combate a Distancia y Tecnociencia) disparo; **sin empleo** (va en la armadura), así que un filtro de empleo no lo alcanza. **Lanzagranadas integrado: armamento pesado**, como su especialidad (S44), con el empleo del arma que lo lleva. Armamento pesado a dos manos ("Empleo a dos manos" del catálogo). Granada lanzada: a una mano. `TODO(revisar)` en `combate.ts` (lanzagranadas integrado, empleo del Proyector). | Familias del encargo D2b-1 (usuario); lo no dicho, por la especialidad ya decidida o la descripción del catálogo. **Confirmado por el usuario (2026-10-16)**: lanzagranadas integrado como armamento pesado; Proyector de Pulso sin empleo (va en la armadura y "permite disparar sin desenfundar", `docs/equipamiento.md`), así que no le alcanzan las dotes "a una mano". |
+| S46 | **Requisito por rama deducido.** Si una dote pide "Combate Melee N o Combate a Distancia M", sus efectos sobre golpes y bloqueos melee exigen Combate Melee ≥ N, y los de disparos y armamento pesado Combate a Distancia ≥ M (valores de juego, especie incluida, como la compra); el NPC del máster no mira requisitos. Lanzar y Levantar escudo no tienen rama: si una dote del patrón los tocara, el generador falla. Encajan: *Asesino*, *Desenfundado Rápido*, *Golpe Entorpecedor* (y *Crítico Mejorado*, cuya especialidad ya se elige en la rama que cumple; en juego se vuelve a comprobar). | §9.5 "cada rama exige su requisito"; el borrador no traía `requisitoAlcance` (decisión del usuario, D2b-1). |
+| S47 | ***Tirador de Larga Distancia* y su *Avanzado*: vale la mejor en cada ataque**, no la dote entera: en especialidad +2 (no +3), fuera de especialidad +1 (la básica), no 0. "De especialidad" = el ataque va en especialidad (`enEspecialidadEfectiva`; el disparo de Tecnociencia del Proyector, con el selector). | "Vale la mejor" (§9.1) leído por tirada: quitar la básica entera dejaría peor al que tiene las dos fuera de especialidad. D2b-1. **Confirmado por el usuario (2026-10-16)**: fuera de especialidad solo aplica la básica (−2 + 1 = −1). |
+| S48 | ***Crítico Mejorado* solo en ataques** (golpe melee, disparo, armamento pesado) cuya especialidad de arma es la elegida: ni al lanzar el arma (§9.5) ni al bloquear con ella (la prosa dice "ataques"). En juego deja de valer si la ficha ya no tiene esa especialidad en la rama que cumple. La línea va en las notas del resultado ("Crítico con 5 éxitos en vez de 6"), no en el desglose numérico. | D2b-1; el desglose solo lleva números. |
+| S49 | **Filtro "a una mano" también en *Apresar y Apuñalar*** ("llevando un arma de una sola mano"), además de *Desenfundado Rápido* (decisión del usuario). Sin empleo conocido (Proyector de Pulso) el filtro no casa. | Su texto solo tiene sentido en armas a una mano. D2b-1. |
 
 ## Conflictos detectados
 
