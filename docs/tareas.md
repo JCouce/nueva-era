@@ -38,8 +38,8 @@ cuál va antes que la otra:
   `docs/sistema.md`; Aumentos, Dotes, Puntos Heróicos y Neos Plouton son áreas sin
   código. Primer adelanto (Creación): Vida/Fatiga base 8 → 10, Dotes con presupuesto
   por prioridad, topes de creación movidos.
-- "Dotes" (Fase 5, en Pendiente) — transcripción y decisiones cerradas 2026-10-14
-  (`docs/dotes.md`, `docs/sistema.md` §9); siguiente, modelar con `modelar-area`.
+- "Dotes" (Fase 5, en Pendiente) — D1 (compra) y D2a (casillas, bonos fijos y textos)
+  hechas; siguen D2b-1, D2b-2, D2c y D2d, con su recuento de pendientes.
 
 ---
 
@@ -1358,7 +1358,7 @@ problema completo en `docs/modificadores-tiradas.md` §8. **Resuelta:** el §8 s
 el 2026-09-23 (condiciones con `alcance` desde el equipo) y la psiónica entra por
 `conPsionicaEnTiradaFija` (2026-09-30).
 
-### Dotes ⬜ (transcritas y decididas 2026-10-14; D1 hecha 2026-10-15: dotes en la ficha, sin efectos)
+### Dotes ⬜ (transcritas y decididas 2026-10-14; D1 hecha 2026-10-15: dotes en la ficha; D2a construida 2026-10-15, sin commit: casillas, bonos fijos y textos)
 
 Encargo y pasos: `docs/prompt-dotes.md`. Fuente literal: `docs/dotes.md` (105 dotes).
 Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
@@ -1388,14 +1388,45 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
     especie (S30); requisito roto = marca + falta para enviar a revisión; no se quita una
     dote que es requisito de otra; aprobada no se vende ninguna (S32).
   - Pestaña Dotes (`DotesTab.tsx`) y `comprarDoteAction` / `quitarDoteAction`.
-  - Fuera de D1: efectos/capas, `fuentesDeCapa1`, Bloquear/Sutil/ataque de oportunidad
-    con su dote, NPC (`NpcTemplate` no recibe dotes), catálogo de especialidades.
+  - Fuera de D1: efectos/capas, `fuentesDeCapa1` (hecho en D2a), Bloquear/Sutil/ataque de
+    oportunidad con su dote, NPC (`NpcTemplate` no recibe dotes), catálogo de especialidades.
 - [ ] **Especialidades en requisitos, provisional (S31):** hoy se comparan por nombre
   normalizado (texto libre de la ficha ↔ id del requisito, `claveEspecialidad` en
   `dotes.ts`) y los nombres legibles salen de `NOMBRES_ESPECIALIDAD_DOTES` (generado).
   Se sustituye cuando llegue el catálogo de especialidades (tarea de abajo).
-- [ ] Ajustar el borrador `docs/modelado-dotes.json` a v2 en los campos de efectos (los de
-  compra ya los normaliza el generador), en la primera tanda de efectos.
+- [x] Ajustar el borrador `docs/modelado-dotes.json` a v2 en los campos de efectos: lo hace
+  el generador en D2a (normalización documentada en el script; el `.json` no se toca).
+- [x] **D2a (2026-10-15, sin commit ni prueba en navegador): casillas, bonos fijos y textos
+  de dote en tiradas que ya existen.**
+  - Catálogo con los 188 efectos (185 del borrador: el bono con umbral de Presencia
+    Imponente se parte en dos, y el texto de defensas de Combinación y de Combinación
+    Rápida en Esquiva + Bloquear) normalizados a v2 y cada uno con su MotorMetadata; tabla de
+    destinos en `src/lib/catalog/dotesDestinos.ts`; reglas en `rules/dotesEfectos.ts`
+    (casillas al índice, bonos fijos como Modificador "dote", textos en `textosTirada`),
+    `fuentesDeCapa1` con familia "dote". Supuestos S34-S38 (`sistema.md`).
+  - **Recuento por tanda** (lo imprime `npm run gen-dotes` y va al pie de `dotes.ts`):
+    construidos 20 · texto 38 · pendientes D2b-1 50 · D2b-2 20 · D2c 33 · D2d 17 ·
+    tiradas-fijas 10 (estos dependen de la tarea "Tiradas fijas que faltan", más abajo).
+    **Una tanda se cierra cuando sus pendientes llegan a 0.**
+  - Plan de tandas:
+    - [x] **D2a** — casillas, bonos fijos y textos en tiradas que ya existen.
+    - [ ] **D2b-1** — casillas/textos de dote en los ataques con arma (alcances `familia:*`,
+      Levantar escudo) y el crítico fijo de Crítico Mejorado.
+      **Al cerrarla: auditoría de D2a + D2b-1** (`auditoria-motor-metadata`), solo sobre las
+      dotes con al menos un efecto construido (fuera las de solo texto de tarjeta y las de
+      solo pendientes). Antes de lanzarla, dar al usuario el nº de agentes y el coste.
+    - [ ] **D2b-2** — habilita: Bloqueo, Combate Sutil (también el Aguijón del Proyector de
+      Pulso), Ataque de oportunidad y Arrollar. **Quita cosas que hoy usa todo el mundo
+      (Bloquear y el interruptor Sutil): avisar en mesa antes de desplegar y revisar los
+      tests de combate que cambien.**
+    - [ ] **D2c** — acciones de dote (`accion`, poderes de dote), alcances/lugares
+      `dotes_*`, Reflejos Felinos sobre el contador de atacantes, grupo extra de
+      Traicionero en Iniciativa; textos de dote en las tiradas de poder (Onda Residual).
+    - [ ] **D2d** — capas: sube_grado, ventaja con casilla, éxito extra, valor por umbral de
+      ficha, casillas que tocan el daño/categoría letal, fatiga por casilla, margen crítico
+      y la capa nueva de cambio de par (`sistema.md` §9.3). **El bono por umbral de
+      Presencia Imponente depende de la casilla de especialidad de D2a**: cuando D2d lo
+      construya, esa casilla deja de sumar +1 fijo y pasa a +1/+2 según la Fuerza.
 - [x] D1 probada en navegador (2026-10-15): compra con pool, XP en aprobada, quitar con
   dependientes, requisito roto marcado, Especialidad Médica repetida sin repetir pareja,
   Crítico Mejorado y Bioma Predilecto con texto libre, rechazo del servidor deshaciendo
@@ -1413,6 +1444,13 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
   su dote (hoy Bloquear y el interruptor Sutil están para todos).
 - [ ] Integrar el catálogo completo de especialidades de `docs/fuente/habilidades.md` en
   `sistema.md` §3 y en el código (lo necesitan los requisitos).
+- [ ] **Tiradas fijas que faltan según `docs/fuente/habilidades.md`**: Apuntar, discernir
+  mentiras (Perspicacia + Empatía), Carrera (Reflejos + Atletismo) y resistir una
+  distracción; y tiradas propias de Investigación, Rastreo y Subsistencia, que hoy van de
+  apaño a "Buscar / percibir" (S36). Los efectos de dote que esperan por ellas llevan
+  `bloqueoPor: "tiradas-fijas"` (10 hoy, entre ellos el cambio de par de *Vigilancia
+  Táctica*); la tarea se cierra cuando llegan a 0. Va junto a la integración de
+  especialidades.
 
 ### Revisión de candidatas a UX ✅ (dotes, 2026-10-15: `sistema.md` §9.3; repetir en cada área nueva)
 

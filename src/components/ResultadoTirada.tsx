@@ -161,6 +161,11 @@ export function ContenidoResultado({
 
       {resultado.poder && <ResultadoPropio poder={resultado.poder} resultado={resultado} />}
 
+      {/* Con daño, el texto de crítico va pegado al daño (abajo). */}
+      {!resultado.danioInfo && resultado.critico && resultado.efectoCritico && (
+        <p className="mt-3 border-t border-border pt-3 font-mono text-xs text-accent">{resultado.efectoCritico}</p>
+      )}
+
       {resultado.danioInfo && (
         <div className="mt-3 border-t border-border pt-3">
           {resultado.danioResuelto ? (

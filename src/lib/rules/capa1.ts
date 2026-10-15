@@ -2,7 +2,8 @@
 // Fase 5 — docs/motor.md, "Escalabilidad para las fases que vienen").
 // sheet.equipo fue la primera fuente; esta función la
 // envuelve en una forma agnóstica de familia sin cambiar nada de lo que ya
-// existe. Segunda fuente: los poderes psiónicos (familia "poder").
+// existe. Segunda fuente: los poderes psiónicos (familia "poder"). Tercera: las dotes
+// que dan efecto (familia "dote", D2a: sin requisito roto y sin las sustituidas).
 //
 // Forma mínima a propósito (YAGNI): solo los campos con un uso concreto hoy.
 // No migres combate.ts/condicionesActivas/etc. a usar esto todavía — eso es
@@ -13,12 +14,14 @@ import type { MotorMetadata } from "./motor";
 import type { Sheet } from "./sheet";
 import { accionesDePsionica } from "./poderes";
 import type { NivelesPsionica } from "./psionica";
+import { valoresRequisitoDeFicha } from "./dotes";
+import { dotesActivas } from "./dotesEfectos";
 
 export type FuenteCapa1 = {
   instanciaId: string;
   catalogoId: string;
   nivel?: number;
-  familia: Equipo["familia"] | "poder";
+  familia: Equipo["familia"] | "poder" | "dote";
   motor: MotorMetadata[];
 };
 
@@ -46,7 +49,18 @@ function motorDePieza(cat: Equipo, nivel: number | undefined): MotorMetadata[] {
 
 // `niveles`: FichaResuelta.psionica.paraEfectos.
 export function fuentesDeCapa1(sheet: Sheet, niveles: NivelesPsionica): FuenteCapa1[] {
-  return [...fuentesDeEquipo(sheet), ...fuentesDePoderes(sheet, niveles)];
+  return [...fuentesDeEquipo(sheet), ...fuentesDePoderes(sheet, niveles), ...fuentesDeDotes(sheet)];
+}
+
+// Una dote no tiene instancia: su id (con la elección si es repetible) hace de
+// instanciaId. Requisitos con la especie de la ficha, como al comprar.
+function fuentesDeDotes(sheet: Sheet): FuenteCapa1[] {
+  return dotesActivas(sheet, valoresRequisitoDeFicha(sheet)).map(({ dote, compra }) => ({
+    instanciaId: dote.repetible && compra.eleccion ? `${dote.id}:${compra.eleccion}` : dote.id,
+    catalogoId: dote.id,
+    familia: "dote",
+    motor: dote.motor,
+  }));
 }
 
 // Un poder no tiene instancia: su id de acción hace de instanciaId y de

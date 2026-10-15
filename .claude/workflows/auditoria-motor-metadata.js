@@ -22,8 +22,10 @@
 //    script para el motivo):
 //      node --import ./scripts/test-resolver.mjs \
 //        scripts/workflows/auditoria-motor-metadata-extraer.ts /ruta/de/salida.json
-//    Filtra por familia si quieres auditar solo un trozo (jq, o edita el
-//    script para acotar `EQUIPO` antes de recorrerlo).
+//    Filtra con `--familia equipo|dote|todo` y, para dotes, `--estado` /
+//    `--tanda D2a|D2b-1|D2b-2|D2c|D2d` (D2a = efectos construidos). Las dotes
+//    llevan `familia: "dote"`, la prosa de docs/dotes.md en `detalle` y lo que
+//    la app pone de verdad en las tiradas (casillas, bonos fijos, notas).
 // 2. Lanza este workflow con Workflow({ name: 'auditoria-motor-metadata',
 //    args: <el JSON del paso 1, como valor, NO como string> }).
 // 3. El resultado trae dos listas: `confirmadas` (hallazgos reales, ya
@@ -129,7 +131,10 @@ function extraerClaimsDeCodigo(item) {
   if (item.ajusteTramo) claims.push(`ajusteTramo: ${JSON.stringify(item.ajusteTramo)}`)
   if (item.ajusteAtaque != null) claims.push(`ajusteAtaque: ${item.ajusteAtaque}`)
   for (const c of item.condiciones ?? []) {
-    claims.push(`condicion "${c.etiqueta ?? c.id}": activo=${c.valorActivo} inactivo=${c.valorInactivo}${c.alcance ? ' alcance=' + JSON.stringify(c.alcance) : ''}`)
+    const valor = c.tipo === 'opcion'
+      ? `opciones=${JSON.stringify((c.opciones ?? []).map(o => [o.etiqueta, o.valor]))}`
+      : `activo=${c.valorActivo} inactivo=${c.valorInactivo}`
+    claims.push(`condicion "${c.etiqueta ?? c.id}": ${valor}${c.alcance ? ' alcance=' + JSON.stringify(c.alcance) : ''}`)
   }
   if (item.notaTirada) claims.push(`notaTirada: ${item.notaTirada}`)
   return claims
@@ -138,7 +143,7 @@ function extraerClaimsDeCodigo(item) {
 const results = await pipeline(
   items,
   item => agent(
-    `Traduce esta descripción en prosa de una pieza de equipo de rol a una lista de efectos prometidos, uno por claim. Una frase puede contener más de un efecto -- sepáralos. No interpretes de más, no añadas nada que la prosa no diga.
+    `Traduce esta descripción en prosa de una pieza de equipo (o una dote) de un juego de rol a una lista de efectos prometidos, uno por claim. Una frase puede contener más de un efecto -- sepáralos. No interpretes de más, no añadas nada que la prosa no diga.
 Pieza "${item.piezaLabel}" (${item.piezaId}) nivel ${item.nivel}:
 ${item.detalle.map((d, i) => `${i + 1}. ${d}`).join('\n')}`,
     { phase: 'Extraer prosa', label: `prosa:${item.piezaId}#${item.nivel}`, schema: CLAIM_SCHEMA }

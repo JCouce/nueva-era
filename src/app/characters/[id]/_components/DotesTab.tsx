@@ -68,7 +68,7 @@ export function DotesTab({
       <p className="font-mono text-[10px] leading-relaxed text-muted">
         {aprobada
           ? "Ficha en juego: las dotes se compran con XP, al mismo coste, y ya no se venden."
-          : "Lo que sobre del pool al aprobar la ficha se pierde. Los efectos de las dotes todavía no se aplican en las tiradas: por ahora son texto."}
+          : "Lo que sobre del pool al aprobar la ficha se pierde. Algunas dotes ya ponen casillas, bonos o notas en Acciones; el resto, de momento, es texto."}
       </p>
       {error && <p className="font-mono text-[11px] uppercase tracking-wide text-danger">{error}</p>}
 

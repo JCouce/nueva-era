@@ -1,23 +1,25 @@
 // Genera src/lib/catalog/dotes.ts a partir del borrador docs/modelado-dotes.json
-// (campos de compra) y de la transcripción literal docs/dotes.md (la prosa).
+// (compra y efectos) y de la transcripción literal docs/dotes.md (la prosa).
 //
 // Uso: npm run gen-dotes
 //   (= node --import ./scripts/test-resolver.mjs scripts/generar-catalogo-dotes.ts)
 //
 // Qué hace, en orden, y por qué falla:
 //   1. Lee el borrador y comprueba que cada dote solo trae claves de MODELO_DOTES v2.
-//   2. Se queda con los campos de compra y aplica la normalización v1 → v2 (abajo,
-//      "Normalización"). Nada más se toca.
-//   3. Valida cada dote contra doteCatalogoSchema (src/lib/catalog/dotesTipos.ts) y
-//      falla con un mensaje por dote si algo no encaja.
-//   4. Comprueba referencias (sustituye, requisito de dote previa), ids y nombres
+//   2. Aplica la normalización v1 → v2 de compra y de efectos (abajo, "Normalización").
+//   3. Clasifica cada efecto (MotorMetadata, abajo "Clasificación") contra la tabla de
+//      destinos src/lib/catalog/dotesDestinos.ts. Un alcance/lugar que no esté en la
+//      tabla, falla.
+//   4. Valida cada dote contra doteCatalogoSchema (src/lib/catalog/dotesTipos.ts) y
+//      falla con un mensaje por dote/efecto si algo no encaja.
+//   5. Comprueba referencias (sustituye, requisito de dote previa), ids y nombres
 //      únicos, y que salen exactamente 105.
-//   5. Cruce barato contra deriva con docs/dotes.md (abajo, "Cruce"). Si no cuadra,
+//   6. Cruce barato contra deriva con docs/dotes.md (abajo, "Cruce"). Si no cuadra,
 //      lista las dotes que fallan y NO escribe: una discrepancia real se decide a
 //      mano en el borrador, no aquí.
-//   6. Escribe el catálogo.
+//   7. Escribe el catálogo, con el recuento por tanda al final (también por consola).
 //
-// Normalización v1 → v2 (solo transformaciones mecánicas):
+// Normalización v1 → v2 de compra (solo transformaciones mecánicas):
 //   - Biónica es especialidad de Biociencia (docs/tareas.md, "Dotes"): un requisito
 //     de especialidad "bionica" con otra habilidad pasa a "biociencia" (se avisa).
 //   - Elección de lista cerrada: se añade `etiquetas` (id → texto legible) desde la
@@ -25,8 +27,39 @@
 //     opción no tiene etiqueta, falla.
 //   - `texto`: el bloque "**Efecto:**" de docs/dotes.md (markdown tal cual, con sus
 //     *(sic)*), casado por nombre exacto de la dote. Si un nombre no casa, falla.
-//   - `subgrupo` ausente se omite; el resto de claves de v2 (efectos, limite,
-//     candidataUX, motor) se ignoran: son de las tandas de efectos.
+//   - `subgrupo` ausente se omite. `limite` ausente → null (ninguna dote del borrador
+//     trae límite propio fuera de su acción).
+//
+// Normalización v1 → v2 de efectos (D2a). Cada efecto lleva `borrador` = su índice en
+// el borrador, para que el test de recuento case uno a uno aunque se parta o convierta:
+//   - `motor` del borrador se DESCARTA: viene del v1 (regenerado desde los claims del
+//     modelado, desalineado con `efectos` en 48 dotes). Se regenera aquí ("Clasificación").
+//   - Valor `{ base, siAtributoMin: { atributo, min, valor } }` → `{ base, siMin: { tipo:
+//     "atributo", id, min, valor } }` (Valor.siMin de v2).
+//   - Bono con umbral de ficha (`siMin`): se parte en dos. A = el mismo bono con
+//     `valor: base` (la casilla que D2a ya puede poner) y B = el bono entero con su
+//     `siMin` (pendiente de D2d, capa valor_por_umbral_ficha). Cuando D2d exista, la
+//     casilla de A desaparece y la pone B (Presencia Imponente, decisión del usuario).
+//   - `condicion` "<condición>:<opción>" (con " + en especialidad" opcional) →
+//     `tramo: "<condición>:<opción>"`, `condicion: null` (y `soloEspecialidad: true`).
+//     "tramo:larga" es la condición de distancia de los disparos; "movimiento_oculto:*"
+//     no existe en la tirada y la pone la dote (OPCIONES_DE_TRAMO, dotesDestinos.ts).
+//   - Texto cuya `condicion` es el crítico de la propia tirada (CONDICION_CRITICO) →
+//     `grados: ["critico"]`, `condicion: null`.
+//   - `porque: "capa_pendiente"` se descarta (§9.3: esos efectos se modelan como efecto
+//     real): cada uno se convierte con la tabla CONVERSIONES de abajo. Uno sin
+//     conversión, falla.
+//   - CONVERSIONES también lleva Salto Evasivo y su Mejorado: el borrador los trae como
+//     texto "sin_regla", pero §9.3 aprueba la capa éxito extra para ellos.
+//
+// Clasificación (MotorMetadata de cada efecto; docs/motor.md):
+//   - Tanda = la más tardía (D2b-1 < D2b-2 < D2c < D2d) entre la del destino (tabla de
+//     destinos: "tanda") y la del tipo de efecto (TANDA_DEL_TIPO); EXCEPCIONES_TANDA
+//     (dotesDestinos.ts) manda sobre las dos. Con tanda → `pendiente`, `bloqueoPor`.
+//   - Sin tanda → `construido`: bono con valor numérico o texto, sobre una tirada que
+//     existe (casilla, bono fijo o nota de rules/dotesEfectos.ts), o texto de la
+//     tarjeta (`lugar: "ficha"`, ya visible en la prosa de la dote).
+//   - tipo/afecta/mecanismo salen del tipo de efecto (función clasificar()).
 //
 // Cruce (regla documentada): en docs/dotes.md cada requisito ocupa UNA línea de
 // la lista "**Requisitos:**", y un "X o Y" (uno_de) también ocupa una sola. Así que,
@@ -41,7 +74,15 @@
 //   - el grupo (## de la transcripción; "Tecnociencia · Psiónica" = tecnociencia + subgrupo psionica).
 import { readFileSync, writeFileSync } from "node:fs";
 import { doteCatalogoSchema, type DoteCatalogo, type RequisitoDote } from "../src/lib/catalog/dotesTipos";
+import {
+  DESTINOS_DOTES,
+  EXCEPCIONES_TANDA,
+  OPCIONES_DE_TRAMO,
+  TANDAS_DOTES,
+  type TandaDote,
+} from "../src/lib/catalog/dotesDestinos";
 import { HABILIDADES } from "../src/lib/rules/habilidades";
+import { erroresDeMotorMetadata, type MotorMetadata } from "../src/lib/rules/motor";
 
 const RAIZ = new URL("..", import.meta.url);
 const BORRADOR = new URL("docs/modelado-dotes.json", RAIZ);
@@ -160,6 +201,290 @@ function normalizarEleccion(id: string, e: unknown): unknown {
   return { ...el, etiquetas };
 }
 
+// ── Efectos: normalización ────────────────────────────────────────────────
+type Efecto = Record<string, unknown> & { tipo?: unknown; borrador: number };
+
+// Condiciones de texto que son el crítico de la propia tirada del lugar.
+const CONDICION_CRITICO = new Set(["critico", "Éxito crítico en la esquiva"]);
+
+// Efectos que el borrador trae como texto y §9.3 manda modelar como efecto real
+// ("<id de dote>#<índice en el borrador>" → efecto v2, sin `borrador`).
+// Un array parte el efecto en varios (mismo `borrador`), p.ej. un texto en dos destinos.
+const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unknown>[]> = {
+  // capa_pendiente: Imitación +3 con Interpretación ≥ 3 (valor por umbral de ficha).
+  "dote_imitacion#1": {
+    tipo: "bono",
+    alcance: "imitar",
+    valor: { base: 2, siMin: { tipo: "habilidad", id: "interpretacion", min: 3, valor: 3 } },
+    condicion: "Imitando a otra persona",
+  },
+  // capa_pendiente: Derribo con acción estándar sin el tope de daño básico.
+  "dote_derribo_brutal#1": { tipo: "danio_por_exitos", alcance: "familia:ataque_melee", condicion: "Derribo con acción estándar" },
+  // capa_pendiente: golpe con escudo letal en vez de no letal (§9.3, va con las casillas del daño).
+  "dote_golpe_mejorado_con_escudo#0": {
+    tipo: "categoria_danio",
+    alcance: "familia:ataque_melee",
+    a: "letal",
+    condicion: "Golpe letal con escudo",
+  },
+  // capa_pendiente: −1 al daño del golpe fatigante (§9.5: siempre −1, mínimo 0; puñetazo y
+  // patada son contundentes), solo con daño contundente o arma a dos manos.
+  "dote_golpe_fatigante#0": {
+    tipo: "bono",
+    alcance: "familia:ataque_melee",
+    valor: -1,
+    condicion: "Golpe fatigante",
+    sobre: "danio",
+    filtroArma: { tipoDanio: ["contundente"], empleo: "dos manos" },
+  },
+  // §9.3 "éxito extra (Salto Evasivo: con la casilla «esquivando un área», si la esquiva
+  // acierta suma +1 éxito; +2 en la Mejorada)". El borrador lo traía como texto sin_regla.
+  "dote_salto_evasivo#0": { tipo: "exito_extra", alcance: "defensa", exitos: 1, condicion: "Esquivando un área" },
+  "dote_salto_evasivo_mejorado#0": { tipo: "exito_extra", alcance: "defensa", exitos: 2, condicion: "Esquivando un área" },
+  // §9.3 "Combinación → casilla −1 en el ataque, −1 a defensas como texto" (el borrador lo
+  // traía como casilla). En Esquiva ya (tirada fija); en Bloquear, con su tanda (la
+  // tirada la genera el arma).
+  "dote_combinacion#2": [
+    {
+      tipo: "texto",
+      lugar: "grupo:Defensa",
+      texto: "Si este turno has usado Combinación: −1 a tus acciones defensivas hasta el comienzo de tu siguiente turno.",
+      condicion: null,
+      porque: "turno",
+    },
+    {
+      tipo: "texto",
+      lugar: "familia:bloquear_melee",
+      texto: "Si este turno has usado Combinación: −1 a tus acciones defensivas hasta el comienzo de tu siguiente turno.",
+      condicion: null,
+      porque: "turno",
+    },
+  ],
+  "dote_combinacion_rapida#1": [
+    {
+      tipo: "texto",
+      lugar: "grupo:Defensa",
+      texto: "Combinación en modo sutil: sin el −1 a tus acciones defensivas.",
+      condicion: null,
+      porque: "turno",
+    },
+    {
+      tipo: "texto",
+      lugar: "familia:bloquear_melee",
+      texto: "Combinación en modo sutil: sin el −1 a tus acciones defensivas.",
+      condicion: null,
+      porque: "turno",
+    },
+  ],
+  // "Se mueve en sigilo sin penalizador": la Sigilo de la app no lleva el penalizador por
+  // moverse oculto, así que no hay número que compensar (el borrador inventaba +2/+4/+8).
+  // Texto en Sigilo; las otras dos velocidades, en la tarjeta.
+  "dote_movimiento_sigiloso_constante#0": {
+    tipo: "texto",
+    lugar: "sigilo",
+    texto: "Moviéndote oculto no tienes penalizador, vayas a la velocidad que vayas: no lo restes.",
+    condicion: null,
+    porque: "sin_regla",
+  },
+  "dote_movimiento_sigiloso_constante#1": {
+    tipo: "texto",
+    lugar: "ficha",
+    texto: "A velocidad total, sin penalizador por moverte oculto.",
+    condicion: null,
+    porque: "sin_regla",
+  },
+  "dote_movimiento_sigiloso_constante#2": {
+    tipo: "texto",
+    lugar: "ficha",
+    texto: "Esprintando, sin penalizador por moverte oculto.",
+    condicion: null,
+    porque: "sin_regla",
+  },
+};
+
+function normalizarEfectos(id: string, efectos: unknown): Efecto[] {
+  if (!Array.isArray(efectos)) {
+    falla(id, "`efectos` no es un array");
+    return [];
+  }
+  const salida: Efecto[] = [];
+  efectos.forEach((crudo, borrador) => {
+    if (!crudo || typeof crudo !== "object") {
+      falla(id, `efecto ${borrador}: no es un objeto`);
+      return;
+    }
+    const conversion = CONVERSIONES[`${id}#${borrador}`];
+    if (conversion) {
+      for (const c of [conversion].flat()) salida.push({ ...c, borrador });
+      return;
+    }
+    const e: Efecto = { ...(crudo as Record<string, unknown>), borrador };
+    if (e.tipo === "texto" && e.porque === "capa_pendiente") {
+      falla(id, `efecto ${borrador}: texto "capa_pendiente" sin conversión en CONVERSIONES`);
+      return;
+    }
+    if (e.tipo === "texto" && typeof e.condicion === "string" && CONDICION_CRITICO.has(e.condicion)) {
+      e.grados = ["critico"];
+      e.condicion = null;
+    }
+    if (e.tipo === "bono" && typeof e.condicion === "string") {
+      const m = e.condicion.match(/^([a-z_]+):([a-z_]+)( \+ en especialidad)?$/);
+      if (m) {
+        e.tramo = `${m[1]}:${m[2]}`;
+        e.condicion = null;
+        if (m[3]) e.soloEspecialidad = true;
+      }
+    }
+    const v = e.valor as Record<string, unknown> | undefined;
+    if (e.tipo === "bono" && v && typeof v === "object" && "siAtributoMin" in v) {
+      const s = v.siAtributoMin as { atributo: string; min: number; valor: number };
+      e.valor = { base: v.base, siMin: { tipo: "atributo", id: s.atributo, min: s.min, valor: s.valor } };
+    }
+    salida.push(e);
+  });
+  // Bono con umbral → A (valor base, ya construible) + B (umbral entero, D2d).
+  return salida.flatMap((e) => {
+    const v = e.valor as { base?: number; siMin?: unknown } | undefined;
+    if (e.tipo === "bono" && v && typeof v === "object" && v.siMin !== undefined && typeof v.base === "number") {
+      const yaTieneBase = salida.some(
+        (o) => o !== e && o.tipo === "bono" && o.alcance === e.alcance && o.condicion === e.condicion && typeof o.valor === "number",
+      );
+      return yaTieneBase ? [e] : [{ ...e, valor: v.base }, e];
+    }
+    return [e];
+  });
+}
+
+// ── Efectos: clasificación ────────────────────────────────────────────────
+const ordenTanda = (t: TandaDote | null) => (t === null ? -1 : TANDAS_DOTES.indexOf(t));
+const masTardia = (a: TandaDote | null, b: TandaDote | null) => (ordenTanda(a) >= ordenTanda(b) ? a : b);
+const esFamilia = (a: unknown) => typeof a === "string" && a.startsWith("familia:");
+
+// La tanda que pide el propio tipo de efecto, aunque su destino exista (§9.3 y encargo D2a).
+function tandaDelTipo(e: Efecto): TandaDote | null {
+  switch (e.tipo) {
+    case "accion": {
+      const accionId = (e.accion as { id: string }).id;
+      // Arrollar y Ataque de oportunidad: solo con su dote (§9.2) → habilita.
+      return accionId === "dotes_arrollar" || accionId === "dotes_ataque_de_oportunidad" ? "D2b-2" : "D2c";
+    }
+    case "poder":
+      // TODO(revisar): Impacto Métrico y Sobrecarga Métrica van con las acciones de dote
+      // (D2c), aunque Impacto Métrico necesita además el daño modificable (D2d).
+      return "D2c";
+    case "habilita":
+      return "D2b-2";
+    case "cambia_par":
+      // Combate Sutil (§9.2, ataques y bloqueos melee) es el habilita de Sutil. Los demás
+      // (Negociación Analítica, Cazador Cazado, Vigilancia Táctica) son la capa "cambio de
+      // par" de D2d (sistema.md §9.3); si su tirada no existe, gana "tiradas-fijas".
+      return esFamilia(e.alcance) ? "D2b-2" : "D2d";
+    case "margen_critico":
+      // Crítico Mejorado (crítico fijo con su especialidad de arma) → D2b-1; el resto de
+      // márgenes, capa de D2d.
+      return esFamilia(e.alcance) || e.alcance === "especialidad:<elegida>" ? "D2b-1" : "D2d";
+    case "sube_grado":
+    case "ventaja":
+    case "exito_extra":
+    case "danio_por_exitos":
+    case "categoria_danio":
+      return "D2d";
+    case "economia":
+      // TODO(revisar): ningún efecto del borrador lo usa hoy; coste en acciones = texto
+      // hasta el registro de acciones (§9.3). Se supone con las acciones de dote.
+      return "D2c";
+    case "bono":
+      if (e.sobre === "danio" || typeof e.valor !== "number") return "D2d";
+      return null;
+    default:
+      return null;
+  }
+}
+
+function clasificar(id: string, e: Efecto): MotorMetadata | null {
+  const clave = (e.tipo === "texto" ? e.lugar : e.tipo === "habilita" ? e.accion : e.alcance) as string | undefined;
+  const destino = clave === undefined ? undefined : DESTINOS_DOTES[clave];
+  if (clave !== undefined && !destino) {
+    falla(id, `efecto ${e.borrador} (${String(e.tipo)}): alcance/lugar "${clave}" sin entrada en DESTINOS_DOTES (dotesDestinos.ts)`);
+    return null;
+  }
+  const excepcion = EXCEPCIONES_TANDA[`${id}#${e.borrador}`];
+  const tanda = excepcion?.tanda ?? masTardia(destino?.tipo === "tanda" ? destino.tanda : null, tandaDelTipo(e));
+  const estado = tanda ? { estado: "pendiente" as const, bloqueoPor: tanda } : { estado: "construido" as const };
+
+  if (!tanda) {
+    // Lo único que D2a sabe construir: bonos numéricos y textos sobre una tirada que
+    // existe, y textos de tarjeta.
+    const construible =
+      (e.tipo === "bono" && destino?.tipo === "tirada") ||
+      (e.tipo === "texto" && (destino?.tipo === "tirada" || destino?.tipo === "ficha"));
+    if (!construible) {
+      falla(id, `efecto ${e.borrador} (${String(e.tipo)}): sin tanda y sin forma de construirlo en D2a`);
+      return null;
+    }
+    const grados = e.grados as string[] | undefined;
+    if (e.tipo === "texto" && grados && (grados.length !== 1 || grados[0] !== "critico")) {
+      falla(id, `efecto ${e.borrador}: texto con grados ${JSON.stringify(grados)}: solo se sabe pintar el crítico`);
+    }
+    const tramo = e.tramo as string | undefined;
+    if (tramo && !tramo.startsWith("tramo:") && !OPCIONES_DE_TRAMO[tramo.split(":")[0]]) {
+      falla(id, `efecto ${e.borrador}: tramo "${tramo}" sin OPCIONES_DE_TRAMO`);
+    }
+  }
+
+  const mecanismoCasilla = e.condicion === null || e.condicion === undefined ? "siempre_activo" : "eleccion_jugador";
+  switch (e.tipo) {
+    case "texto": {
+      const narrativo = e.porque === "narrativo";
+      if (clave === "ficha") return { tipo: narrativo ? "narrativo" : "texto", afecta: { modo: "ninguna" }, mecanismo: null, ...estado };
+      const afecta = e.porque === "tercero" ? { modo: "objetivo_tercero" as const, id: clave! } : { modo: "accion_existente" as const, id: clave! };
+      return { tipo: narrativo ? "narrativo" : "texto", afecta, mecanismo: "nota_fija", ...estado };
+    }
+    case "bono": {
+      const tramo = e.tramo as string | undefined;
+      // Casilla aunque sea siempre activo si va a una especialidad (la marca el jugador).
+      const enEspecialidad = destino?.tipo === "tirada" && destino.especialidad !== undefined;
+      const mecanismo = tramo?.startsWith("tramo:")
+        ? "bono_tramo"
+        : tramo || enEspecialidad
+          ? "eleccion_jugador"
+          : mecanismoCasilla;
+      return { tipo: "numerico", afecta: { modo: "accion_existente", id: clave! }, mecanismo, ...estado };
+    }
+    case "cambia_par":
+      return { tipo: "numerico", afecta: { modo: "accion_existente", id: clave! }, mecanismo: "sustitucion_aplicado", ...estado };
+    case "margen_critico":
+    case "sube_grado":
+    case "ventaja":
+    case "exito_extra":
+    case "danio_por_exitos":
+    case "categoria_danio":
+      return { tipo: "numerico", afecta: { modo: "accion_existente", id: clave! }, mecanismo: mecanismoCasilla, ...estado };
+    case "economia":
+      return { tipo: "texto", afecta: { modo: "accion_existente", id: clave! }, mecanismo: "nota_fija", ...estado };
+    case "habilita":
+      // §9.2: sin la dote la acción "no aparece" → arbitraje duro.
+      return {
+        tipo: "habilitador",
+        afecta: { modo: "accion_existente", id: clave! },
+        mecanismo: "gate_instalacion",
+        arbitraje: "duro",
+        ...estado,
+      };
+    case "accion":
+    case "poder":
+      return {
+        tipo: "accion",
+        afecta: { modo: "accion_nueva", id: (e.accion as { id: string }).id },
+        mecanismo: "accion_sin_equipo",
+        ...estado,
+      };
+    default:
+      falla(id, `efecto ${e.borrador}: tipo desconocido ${JSON.stringify(e.tipo)}`);
+      return null;
+  }
+}
+
 const dotes: DoteCatalogo[] = [];
 for (const [i, entrada] of lista.entries()) {
   if (!entrada || typeof entrada !== "object" || Array.isArray(entrada)) {
@@ -187,9 +512,22 @@ for (const [i, entrada] of lista.entries()) {
     visible: d.visible,
     texto: seccion?.texto ?? "",
   };
-  const res = doteCatalogoSchema.safeParse(compra);
+  const efectos = normalizarEfectos(id, d.efectos);
+  const motor = efectos.map((e) => clasificar(id, e));
+  const completa = {
+    ...compra,
+    efectos,
+    limite: d.limite ?? null,
+    candidataUX: d.candidataUX ?? null,
+    motor,
+  };
+  const res = doteCatalogoSchema.safeParse(completa);
   if (!res.success) {
-    for (const issue of res.error.issues) falla(id, `${issue.path.join(".") || "(raíz)"}: ${issue.message}`);
+    for (const issue of res.error.issues) {
+      const [campo, n] = issue.path;
+      const donde = (campo === "efectos" || campo === "motor") && typeof n === "number" ? ` (efecto ${n}, borrador #${efectos[n]?.borrador})` : "";
+      falla(id, `${issue.path.join(".") || "(raíz)"}${donde}: ${issue.message}`);
+    }
     continue;
   }
   dotes.push(res.data);
@@ -212,6 +550,10 @@ for (const d of dotes) {
     if (r.tipo === "dote" && r.id === d.id) falla(d.id, "se tiene de requisito a sí misma");
   }
   if (d.repetible && !d.eleccion) falla(d.id, "repetible sin elección: no habría forma de distinguir las copias");
+  if (d.motor.length !== d.efectos.length) falla(d.id, `${d.motor.length} MotorMetadata para ${d.efectos.length} efectos`);
+  d.motor.forEach((m, n) => {
+    for (const e of erroresDeMotorMetadata(m)) falla(d.id, `motor ${n}: ${e}`);
+  });
 }
 if (lista.length !== TOTAL_ESPERADO) falla("(catálogo)", `el borrador trae ${lista.length} dotes, se esperaban ${TOTAL_ESPERADO}`);
 if (md.size !== TOTAL_ESPERADO) falla("(catálogo)", `docs/dotes.md trae ${md.size} dotes, se esperaban ${TOTAL_ESPERADO}`);
@@ -298,10 +640,31 @@ if (discrepancias.length) {
   process.exit(1);
 }
 
-// ── 6. Escribir ───────────────────────────────────────────────────────────
+// ── 7. Recuento por tanda y escribir ─────────────────────────────────────
+// construido = efecto numérico que la app aplica; texto = texto o narrativo construido
+// (nota en una tirada o en la tarjeta); pendiente = por tanda (bloqueoPor). Una tanda se
+// cierra cuando sus pendientes llegan a 0 (docs/tareas.md, "Dotes").
+const recuento = { construido: 0, texto: 0, pendiente: Object.fromEntries(TANDAS_DOTES.map((t) => [t, 0])) as Record<TandaDote, number> };
+for (const d of dotes) {
+  for (const m of d.motor) {
+    if (m.estado === "construido") {
+      if (m.tipo === "texto" || m.tipo === "narrativo") recuento.texto++;
+      else recuento.construido++;
+    } else recuento.pendiente[m.bloqueoPor as TandaDote]++;
+  }
+}
+const totalEfectos = dotes.reduce((t, d) => t + d.efectos.length, 0);
+const lineasRecuento = [
+  `${totalEfectos} efectos (${lista.reduce((t: number, d: { efectos?: unknown[] }) => t + (d.efectos?.length ?? 0), 0)} en el borrador)`,
+  `construidos: ${recuento.construido}`,
+  `texto: ${recuento.texto}`,
+  ...TANDAS_DOTES.map((t) => `pendientes ${t}: ${recuento.pendiente[t]}`),
+];
+
 const cabecera = `// GENERADO por scripts/generar-catalogo-dotes.ts (npm run gen-dotes). No editar a mano:
-// se cambia el borrador (docs/modelado-dotes.json) o la transcripción (docs/dotes.md) y
-// se regenera. Solo los campos de compra (docs/sistema.md §9.1); los efectos, en sus tandas.
+// se cambia el borrador (docs/modelado-dotes.json), la transcripción (docs/dotes.md) o la
+// tabla de destinos (dotesDestinos.ts) y se regenera. Compra (docs/sistema.md §9.1) y
+// efectos con su MotorMetadata (§9.3); qué se aplica ya, rules/dotesEfectos.ts.
 import type { DoteCatalogo } from "./dotesTipos";
 
 export const DOTES: readonly DoteCatalogo[] = `;
@@ -310,6 +673,10 @@ const pie = `
 // Nombre legible de las especialidades citadas en requisitos (id → nombre de dotes.md).
 // TODO(revisar): provisional hasta el catálogo de especialidades (docs/tareas.md, "Dotes").
 export const NOMBRES_ESPECIALIDAD_DOTES: Readonly<Record<string, string>> = ${JSON.stringify(especialidadesOrdenadas, null, 2)};
+
+// Recuento por tanda (lo escribe el generador):
+${lineasRecuento.map((l) => `//   ${l}`).join("\n")}
 `;
 writeFileSync(SALIDA, `${cabecera}${JSON.stringify(dotes, null, 2)};\n${pie}`);
 console.log(`${dotes.length} dotes escritas en src/lib/catalog/dotes.ts; cruce con docs/dotes.md sin discrepancias.`);
+console.log(`Recuento por tanda:\n${lineasRecuento.map((l) => `  ${l}`).join("\n")}`);

@@ -428,9 +428,16 @@ aplicar o recalcular se aplica en la ficha; lo demás queda como texto.**
   con la casilla "esquivando un área", si la esquiva acierta suma +1 éxito; +2 en la
   Mejorada; no convierte un fallo en acierto). **Quedan como texto**: gasto de materiales
   (*Optimización Biotecnológica*, *Potenciar Veneno*), nota con metros calculados
-  (*Arrollar*), cambiar la opción de terreno (*Bioma Predilecto*: +3 si el terreno es
-  adverso), poder sobre el ataque de un arma (*Impacto Métrico*: la app cobra la fatiga y
-  enseña el daño extra) y el +Fuerza temporal (*Sobrecarga Métrica*).
+  (*Arrollar*), la capa que cambiaría la opción de terreno de otra casilla (*Bioma
+  Predilecto*; su +3 al rastrear en terreno adverso **sí se aplica**, como casilla: supuesto
+  del redactor aceptado), poder sobre el ataque de un arma (*Impacto Métrico*: la app cobra
+  la fatiga y enseña el daño extra) y el +Fuerza temporal (*Sobrecarga Métrica*).
+- **Capa nueva: cambio de par** (usuario 2026-10-16, D2d): una dote cambia el aplicado y la
+  habilidad con los que se tira (*Negociación Analítica*, *Cazador Cazado*, la segunda parte
+  de *Vigilancia Táctica*: Perspicacia + Táctica en lugar de Empatía). No estaba entre las
+  capas aprobadas; Combate Sutil no es esta capa (va con su habilitador, D2b-2). Si la
+  tirada destino no existe todavía, espera a la tarea "Tiradas fijas que faltan según
+  habilidades.md" (`docs/tareas.md`).
 
 - **Golpe Mejorado con Escudo**: se construye, casilla «Golpe letal» en el ataque con escudo
   que cambia el daño a letal (va con las casillas que tocan el daño).
@@ -457,6 +464,20 @@ aplicar o recalcular se aplica en la ficha; lo demás queda como texto.**
   texto; dos pasos (*Golpe Entorpecedor*, *Táctica de Flanqueo*) → el jugador marca la
   casilla del ataque siguiente; *Combinación* → casilla −1 en el ataque, −1 a defensas como
   texto.
+
+*En la app (D2a, 2026-10-15):*
+- Los 185 efectos del borrador (105 dotes) están en el catálogo (`npm run gen-dotes`), cada uno con su
+  MotorMetadata; destino de cada alcance en `catalog/dotesDestinos.ts`. Lo que no es de D2a
+  queda `pendiente` con su tanda (D2b-1, D2b-2, D2c, D2d; plan en `docs/tareas.md`, "Dotes").
+- **Casillas**: los bonos con condición van como casilla en la tirada, al mismo índice que
+  las de equipo y especie (`rules/dotesEfectos.ts`). Con elección, una por compra
+  (*Especialidad Médica*, una por pareja). **Bonos fijos** (*Vigilancia Táctica* +2 en
+  Iniciativa): Modificador de tirada con origen "dote", sale en el desglose con la dote.
+  **Textos**: nota de la tirada, o texto de crítico si son del crítico (*Paso Defensivo*);
+  los de "ficha" solo en la tarjeta de la dote.
+- **Vale la mejor**: con la básica y la mejorada, solo da efecto la mejorada (también en
+  cadena: *Movimiento Sigiloso Constante* → *Mejorado* → básica).
+- Supuestos de la tanda: S34-S38.
 
 ### 9.4 Fichas y NPCs `[FIRME · usuario 2026-10-14]`
 - **Fichas ya aprobadas**: no reciben los puntos de dotes de su letra; compran dotes con
@@ -1466,6 +1487,11 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S31 | **Especialidad en requisitos de dote**: se compara por **nombre normalizado** (minúsculas, sin tildes, espacios y "_" equivalentes) entre el texto libre de la ficha y el id del requisito ("Ingeniería Genética" ↔ `ingenieria_genetica`), y solo dentro de la habilidad del requisito. | Las especialidades son texto libre (`habilidades.ts`) hasta que llegue su catálogo (`docs/tareas.md`, "Dotes"); entonces esto se sustituye. Tanda D1 (2026-10-15). |
 | S32 | **Ficha aprobada: ninguna dote se vende**, ni las de la foto de aprobación ni las compradas después con XP (mismo criterio que atributos, habilidades y disciplinas aprobados, que solo suben). La foto (`approvedSnapshot.dotes`, opcional para no invalidar las fotos viejas) dice cuáles venían de creación. `TODO(revisar)` en `dotes.ts` (`motivoNoQuitable`). | El usuario fijó "una dote de la foto no se quita"; para las compradas con XP no dijo nada, y quitarlas sin devolver XP pierde XP y devolviéndola es vender. Lo conservador: nada. Tanda D1 (2026-10-15). |
 | S33 | **Lectura tolerante de `sheet.dotes`**: una entrada sin la elección que su dote exige, o con una fuera de la lista cerrada, **se descarta entera** (no se queda la dote sin elección); una elección abierta se recorta a 60 caracteres; a una dote sin elección se le quita la que traiga. | "Descartar elecciones que no encajan" (encargo D1) leído como descartar la compra: una *Especialidad Médica* sin pareja no significa nada. Ninguna ficha tiene dotes todavía, así que no se pierde nada real. Tanda D1 (2026-10-15). |
+| S34 | **Dote con requisito no cumplido: sin efecto.** Mientras una dote lleve la marca de D1 ("requisito no cumplido"), no pone casillas, bonos ni textos (`dotesActivas`, `rules/dotesEfectos.ts`), y no cuenta en `fuentesDeCapa1`. Sin cascada: una dote cuyo requisito es otra dote marcada sigue valiendo (la marca tampoco la propaga). Una mejorada marcada no sustituye a la básica. NPC del máster (modo libre): no se miran requisitos (§9.4). | Lo conservador: que una dote que ya no se cumple no siga sumando. Igual que la psiónica con requisito roto (S25). Tanda D2a (2026-10-15), pendiente de que el usuario lo confirme. |
+| S35 | **Bono de especialidad = casilla en la habilidad.** La tirada solo sabe si vas en especialidad, no en cuál: un bono con alcance de especialidad va como casilla en la habilidad (o habilidad + grupo), con la especialidad en la etiqueta, y la marca el jugador si tira con ella. También si el borrador lo da como siempre activo. *Presencia Imponente*: casilla +1 en las tiradas de Actitud ("Convencer / mentir" e "Iniciativa (distrayendo)"), con "+2 con Fuerza ≥ 5, súmalo a mano" en la etiqueta. | Decisión del usuario (D2a, 2026-10-15). Se sustituye cuando la tirada sepa qué especialidad se usa (S5 / pregunta 3). |
+| S36 | **Rastreo, Subsistencia e Investigación van a "Buscar / percibir".** No tienen tirada propia; sus casillas (*Rastreo al Paso*, *Bioma Predilecto*, *Descartar Teoría*) van a la única tirada de Exploración del grupo Acciones (mismo aplicado y habilidad), con la acción en la etiqueta, y sus textos a su nota. No a "Iniciativa (habitual)". Es un apaño: se mueven a su tirada cuando exista (tarea "Tiradas fijas que faltan según habilidades.md"). | Mismo criterio que S35 a falta de tirada propia. Tanda D2a (2026-10-15); aceptado como apaño por el usuario (2026-10-16). |
+| S37 | ***Movimiento Sigiloso*: casilla de opción sin el penalizador.** La dote pone en Sigilo una casilla "moviéndote oculto" con lo que reduce en cada ritmo (mitad, total, esprint), pero la tirada de Sigilo de la app no lleva el penalizador por moverse oculto (−2/−4/−8, `docs/fuente/habilidades.md`): ese sigue a mano. La etiqueta dice cuánto compensa ("Moviéndome oculto: reduce 2 (Movimiento Sigiloso)", "reduce hasta 4" en la Mejorada). *Movimiento Sigiloso Constante* ("sin penalizador") no es un número fijo: texto en Sigilo, sin casilla. | Añadir el penalizador a Sigilo sería una regla nueva fuera de la tanda. Tanda D2a (2026-10-15); etiqueta y Constante, usuario 2026-10-16. |
+| S38 | **Bono con umbral de ficha, partido.** *Presencia Imponente* (+2 con Fuerza ≥ 5) e *Imitación* (+3 con Interpretación ≥ 3): D2a pone la casilla con el valor base y el aviso del umbral en la etiqueta; la parte del umbral es otro efecto, pendiente de D2d (valor por umbral de ficha), que al construirse sustituye a la casilla base. | Decisión del usuario (D2a, 2026-10-15) para Presencia Imponente; Imitación por el mismo patrón. |
 
 ## Conflictos detectados
 

@@ -5,8 +5,23 @@
 // propio comentario con el cómo-se-usa y las mejores prácticas completas)
 // vía `args`. Solo lectura del catálogo, no muta nada.
 //
-// Uso: node --import ./scripts/test-resolver.mjs scripts/workflows/auditoria-motor-metadata-extraer.ts [salida.json]
+// Uso: node --import ./scripts/test-resolver.mjs scripts/workflows/auditoria-motor-metadata-extraer.ts \
+//        [salida.json] [--familia equipo|dote|todo] [--estado construido|pendiente] [--tanda D2a|D2b-1|D2b-2|D2c|D2d]
+//
+//   --familia  qué catálogo recorre (por defecto "todo": equipo + dotes).
+//   --estado / --tanda  solo dotes: se queda con las dotes que tengan al menos un
+//              efecto en ese estado / tanda. "D2a" = los efectos construidos. El item
+//              lleva el MotorMetadata entero de la dote (contexto para el auditor).
+//
+// Dotes (D2a): `detalle` = la prosa de docs/dotes.md; `modificadores`/`condiciones`/
+// `notaTirada` = lo que la app pone de verdad en las tiradas, sacado de
+// rules/dotesEfectos.ts con una ficha que solo tiene esa dote (sin mirar requisitos;
+// con elección, la primera opción); `efectos` = todos los efectos del catálogo.
 import { writeFileSync } from "node:fs";
+import { DOTES } from "../../src/lib/catalog/dotes";
+import { TANDAS_DOTES } from "../../src/lib/catalog/dotesDestinos";
+import { dotesActivas, efectosDeDotes } from "../../src/lib/rules/dotesEfectos";
+import { defaultSheet } from "../../src/lib/rules/sheet";
 import {
   EQUIPO,
   type Equipo,
@@ -42,12 +57,26 @@ type ItemAuditoria = {
   condiciones: unknown;
   notaTirada: unknown;
   motor: unknown[];
+  efectos?: unknown[];
 };
+
+const argv = process.argv.slice(2);
+const opcion = (nombre: string) => {
+  const i = argv.indexOf(`--${nombre}`);
+  return i >= 0 ? argv[i + 1] : undefined;
+};
+const familia = opcion("familia") ?? "todo";
+const estado = opcion("estado");
+const tanda = opcion("tanda");
+if (!["equipo", "dote", "todo"].includes(familia)) throw new Error(`--familia ${familia}: equipo | dote | todo`);
+if (estado && !["construido", "pendiente"].includes(estado)) throw new Error(`--estado ${estado}: construido | pendiente`);
+if (tanda && tanda !== "D2a" && !(TANDAS_DOTES as readonly string[]).includes(tanda))
+  throw new Error(`--tanda ${tanda}: D2a | ${TANDAS_DOTES.join(" | ")}`);
 
 const items: ItemAuditoria[] = [];
 const excluidas: string[] = [];
 
-for (const pieza of EQUIPO) {
+for (const pieza of familia === "dote" ? [] : EQUIPO) {
   if (tieneNiveles(pieza)) {
     for (const nivel of pieza.niveles) {
       items.push({
@@ -100,11 +129,46 @@ for (const pieza of EQUIPO) {
   });
 }
 
+// ── Dotes ──────────────────────────────────────────────────────────────
+let dotesFuera = 0;
+for (const dote of familia === "equipo" ? [] : DOTES) {
+  const casa = dote.motor.some(
+    (m) =>
+      (!estado || m.estado === estado) &&
+      (!tanda || (tanda === "D2a" ? m.estado === "construido" : m.estado === "pendiente" && m.bloqueoPor === tanda)),
+  );
+  if (!casa || dote.efectos.length === 0) {
+    dotesFuera++;
+    continue;
+  }
+  const el = dote.eleccion;
+  const eleccion = !el ? undefined : el.opciones === "especialidades_arma" ? "<especialidad de arma>" : el.opciones[0];
+  const sheet = { ...defaultSheet(), dotes: [{ id: dote.id, ...(eleccion && { eleccion }) }] };
+  const { casillas, modificadores, textos } = efectosDeDotes(dotesActivas(sheet, null));
+  items.push({
+    piezaId: dote.id,
+    piezaLabel: dote.label,
+    familia: "dote",
+    nivel: null,
+    detalle: [dote.texto],
+    modificadores,
+    ajusteTramo: null,
+    ajusteAtaque: null,
+    condiciones: casillas.length ? casillas : null,
+    notaTirada: textos.length
+      ? textos.map((t) => `${t.en.tipo === "tiradaId" ? t.en.id : t.en.tipo}${t.soloEnCritico ? " (crítico)" : ""}: ${t.texto}`).join(" | ")
+      : null,
+    motor: dote.motor,
+    efectos: dote.efectos,
+  });
+}
+
 const sinMotor = items.filter((i) => i.motor.length === 0);
-const salida = process.argv[2] ?? "catalogo-motor.json";
+const salida = argv[0] && !argv[0].startsWith("--") ? argv[0] : "catalogo-motor.json";
 writeFileSync(salida, JSON.stringify(items, null, 2));
 
-console.log(`EQUIPO: ${EQUIPO.length} piezas totales.`);
+console.log(`Filtro: familia ${familia}${estado ? `, estado ${estado}` : ""}${tanda ? `, tanda ${tanda}` : ""}.`);
+console.log(`EQUIPO: ${familia === "dote" ? 0 : EQUIPO.length} piezas recorridas. DOTES: ${familia === "equipo" ? 0 : DOTES.length - dotesFuera} de ${DOTES.length} dentro del filtro.`);
 console.log(`${items.length} items de auditoría extraídos (piezas planas + niveles).`);
 console.log(`${sinMotor.length} sin "motor" definido: ${sinMotor.map((i) => `${i.piezaId}${i.nivel ? "#" + i.nivel : ""}`).join(", ") || "(ninguno)"}`);
 console.log(`${excluidas.length} piezas excluidas del alcance:`);

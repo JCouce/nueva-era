@@ -42,6 +42,7 @@ import {
 } from "./especie";
 import { bonosDeDisciplina, nivelesDePsionica, type PsionicaResuelta } from "./psionica";
 import { valoresDeRequisito, type ValoresRequisito } from "./dotes";
+import { dotesActivas, efectosDeDotes } from "./dotesEfectos";
 import type { ExcepcionRareza } from "../catalog/especies";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
 import { consultaIndiceCondiciones, indiceDeCondiciones, modificadoresDeEquipo, type IndiceCondiciones } from "./equipo";
@@ -68,8 +69,9 @@ export type DesgloseDerivado = { total: number; fuentes: Fuente[] };
 export type FichaResuelta = {
   ficha: Sheet;
   especie: EspecieResuelta | null;
-  // Especie, equipo, estados de combate y umbrales de salud/fatiga (§7), en ese orden
-  // (el de modificadoresActivos más los estados detrás, como los sumaba Acciones).
+  // Especie, dotes (bonos fijos a tiradas, §9.3), equipo, estados de combate y umbrales de
+  // salud/fatiga (§7), en ese orden (el de modificadoresActivos más los estados detrás,
+  // como los sumaba Acciones).
   modificadores: ModificadorConFuente[];
   atributos: Record<AtributoId, number>;
   aplicados: Record<AplicadoId, number>;
@@ -98,11 +100,12 @@ export type FichaResuelta = {
   // (desgloseBlindaje) lo pide el modal con lo que elige el jugador, pasándole
   // la armadura natural de aquí.
   blindaje: { tieneEscudoMelee: boolean; armaduraNatural: ArmaduraNatural };
-  // Casillas con alcance del equipo y de la especie (§14.8), indexadas una vez
-  // (consultaIndiceCondiciones). Las de especie son derivadas: también al NPC.
+  // Casillas con alcance del equipo, de la especie (§14.8) y de las dotes (§9.3),
+  // indexadas una vez (consultaIndiceCondiciones). Las de especie y dotes son derivadas:
+  // también al NPC.
   indiceCondiciones: IndiceCondiciones;
-  // Textos sin mecanizar de la especie (§14.10) que cuelgan de una tirada: los pone
-  // conExtrasDeFicha en su nota o en su texto de crítico.
+  // Textos sin mecanizar de la especie (§14.10) y de las dotes (§9.3) que cuelgan de una
+  // tirada: los pone conExtrasDeFicha en su nota o en su texto de crítico.
   textosTirada: TextoEnTirada[];
   // Creación y progresión (§14.6): el ajuste de coste que reciben los puntos, la
   // compra y el coste del siguiente nivel, y la bolsa de aumentos (null si la
@@ -150,9 +153,14 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
   const especie = especieDeFicha(sheet);
   const formulaMovimiento = formulaMovimientoDeEspecie(especie);
   const multiplicadorCarga = multiplicadorCargaDeEspecie(especie);
+  const requisitosDotes = valoresDeRequisito(sheet, especie?.modificadores ?? []);
+  // Lo que ponen las dotes en las tiradas (§9.3, D2a). Sin las de requisito roto (S34);
+  // en modo libre (NPC del máster) sin mirar requisitos (§9.4).
+  const dotes = efectosDeDotes(dotesActivas(sheet, libre ? null : requisitosDotes));
   // = [...modificadoresActivos(sheet), ...estados], sin volver a resolver la especie.
   const sinUmbrales: ModificadorConFuente[] = [
     ...(especie?.modificadores ?? []),
+    ...dotes.modificadores,
     ...modificadoresDeEquipo(sheet),
     ...modificadoresDeEstados(estadosCombate),
   ];
@@ -206,13 +214,13 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
     formulaMovimiento,
     multiplicadorCarga,
     blindaje: { tieneEscudoMelee: tieneEscudoMelee(sheet), armaduraNatural: armaduraNaturalDeEspecie(especie) },
-    indiceCondiciones: indiceDeCondiciones(sheet, casillasDeEspecie(especie)),
-    textosTirada: textosDeEspecie(especie),
+    indiceCondiciones: indiceDeCondiciones(sheet, [...casillasDeEspecie(especie), ...dotes.casillas]),
+    textosTirada: [...textosDeEspecie(especie), ...dotes.textos],
     ajusteCoste: libre ? AJUSTE_NEUTRO : ajustesDeCoste(especie),
     bolsaAumentos: libre ? null : bolsaDeAumentos(especie),
     excepcionesRareza: libre ? [] : excepcionesRareza(especie),
     psionica,
-    requisitosDotes: valoresDeRequisito(sheet, especie?.modificadores ?? []),
+    requisitosDotes,
     peajeNeurologico: peajeNeurologicoDeEspecie(especie),
     notasFarmacos: notasFarmacosDeEspecie(especie),
     accionesEspecie: accionesSinDadoDeEspecie(especie),
@@ -221,8 +229,8 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
 
 // --- Lo que la ficha añade a una tirada antes de montarla ------------------------
 
-// Las casillas con alcance (equipo y especie, del índice) y los textos de especie de
-// esta tirada, sea fija de ACCIONES o generada (ataques, herramientas, Volar…). Ni la
+// Las casillas con alcance (equipo, especie y dotes, del índice) y los textos de especie
+// y dotes de esta tirada, sea fija de ACCIONES o generada (ataques, herramientas, Volar…). Ni la
 // tirada ni la pantalla saben de dónde vienen. `modoElegido: null`: la tirada aún no se
 // ha abierto, así que una casilla con alcance "modo" no tiene nada que casar (ver
 // indiceDeCondiciones). Sin nada que añadir, devuelve la misma tirada.
