@@ -30,7 +30,7 @@ function ficha(dotes: DoteComprada[], esp?: Partial<Record<string, EspecialidadI
   };
 }
 
-const resolver = (s: Sheet, libre = false) => resolverFicha(s, { estadosCombate: [], vitalidad: VITALIDAD_DE_FICHA, libre });
+const resolver = (s: Sheet, libre = false) => resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA, libre });
 const tirada = (f: FichaResuelta, id: string): Accion | undefined => f.accionesDotes.tiradas.find((t) => t.id === id);
 const montar = (f: FichaResuelta, t: Accion, estado: EleccionTirada["estadoCondiciones"] = {}) => {
   const e = eleccionSinTocar(t, false);

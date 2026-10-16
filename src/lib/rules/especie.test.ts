@@ -440,7 +440,7 @@ describe("ficha v14: especieOpciones", () => {
 
 // --- E2b: Resonancia +1 del Arianyi (§14.6) ----------------------------------
 
-const resuelta = (s: Sheet, libre = false) => resolverFicha(s, { vitalidad: VITALIDAD_DE_FICHA, estadosCombate: [], libre });
+const resuelta = (s: Sheet, libre = false) => resolverFicha(s, { vitalidad: VITALIDAD_DE_FICHA, estados: [], libre });
 const conPsionica = (s: Sheet, psionica: Sheet["psionica"], letra: Sheet["prioridades"]["psionica"] = null): Sheet => ({
   ...s,
   psionica,

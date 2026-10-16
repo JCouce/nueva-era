@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
-import { parseSheet, parseSnapshot, type EstadoActivo } from "@/lib/rules";
+import { parseSheet, parseSnapshot, leerEstados, estadosDeCombatiente } from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
 import { HudCard } from "@/components/HudCard";
 import { StatusControl, ResourceRow } from "@/app/master/MasterControls";
@@ -21,21 +21,28 @@ export default async function CharacterPage({
   if (!character || !canEditCharacter(user, character)) notFound();
 
   const sheet = parseSheet(character.stats);
+  // Aparte de `sheet` (que la ficha guarda en useState): así el polling los refresca.
+  const estados = leerEstados(character.estados);
 
   // Fase 6b bloque 3 (D5: combate → ficha, nunca al revés): si el personaje
   // está metido en el Combate EN_CURSO actual, la ficha se lo enseña — tira
-  // compacta siempre visible + tab "Combate" con la cola completa. Mismo
-  // patrón de cast tolerante que master/combate/page.tsx: `estados` es Json
-  // escrito solo por las server actions de ese módulo.
+  // compacta siempre visible + tab "Combate" con la cola completa. Los estados de
+  // cada fila, como en master/combate/page.tsx (estadosDeCombatiente): los de su
+  // ficha para un jugador, los de su fila para un NPC.
   const combateRaw = await prisma.combate.findFirst({
     where: { estado: "EN_CURSO" },
-    include: { combatientes: { orderBy: { orden: "asc" } } },
+    include: {
+      combatientes: {
+        orderBy: { orden: "asc" },
+        include: { character: { select: { estados: true } } },
+      },
+    },
   });
   const combate = combateRaw && {
     ...combateRaw,
-    combatientes: combateRaw.combatientes.map((c) => ({
+    combatientes: combateRaw.combatientes.map(({ character, ...c }) => ({
       ...c,
-      estados: c.estados as unknown as EstadoActivo[],
+      estados: estadosDeCombatiente({ ...c, character }),
     })),
   };
   // Si el personaje no tiene fila en este combate, no hay "su combate" que
@@ -75,6 +82,8 @@ export default async function CharacterPage({
           submittedAt={character.submittedAt?.toISOString() ?? null}
           reviewNote={character.reviewNote}
           dotesDeLaFoto={parseSnapshot(character.approvedSnapshot)?.dotes ?? null}
+          estados={estados}
+          vidaGuardada={{ vida: sheet.vidaActual, fatiga: sheet.fatigaActual }}
           combate={enCombate ? combate : null}
         />
       </main>

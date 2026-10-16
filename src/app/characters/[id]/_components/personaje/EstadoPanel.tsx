@@ -1,6 +1,6 @@
 "use client";
 
-import { notasDeEstado, pesoEquipado, type FichaResuelta } from "@/lib/rules";
+import { describirEstadosActivos, notasDeEstado, pesoEquipado, type DuracionEstado, type FichaResuelta } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 
 // Vistazo rápido: el ajuste de vida y fatiga vive en Recursos (docs/tareas.md, 2026-09-27).
@@ -65,6 +65,44 @@ function Dato({
   );
 }
 
+function textoDuracion(d: DuracionEstado): string {
+  switch (d.tipo) {
+    case "rondas":
+      return d.rondas === 1 ? "1 ronda" : `${d.rondas} rondas`;
+    case "escena":
+      return "hasta el fin de la escena";
+    case "hastaQuitarlo":
+      return "hasta que el máster lo quite";
+  }
+}
+
+// Los estados que ha puesto el máster: solo lectura, el jugador no se los quita.
+function Estados({ ficha }: { ficha: FichaResuelta }) {
+  const activos = describirEstadosActivos(ficha.estados);
+  return (
+    <HudCard className="flex flex-col gap-3 p-4">
+      <p className="font-mono text-[11px] uppercase tracking-widest text-muted">{"//SYSTEM · estados"}</p>
+      {activos.length === 0 ? (
+        <p className="font-mono text-xs text-muted">Sin estados activos.</p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {activos.map((a) => (
+            <li key={a.estadoId} className="clip-chamfer-sm flex flex-col gap-1 border border-accent bg-night px-3 py-2">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                <span className="font-display text-sm font-semibold uppercase tracking-wide text-accent">{a.label}</span>
+                <span className="font-mono text-[10px] uppercase tracking-wide text-muted">{textoDuracion(a.duracion)}</span>
+              </div>
+              {a.detalle.length > 0 && (
+                <p className="font-mono text-[11px] leading-relaxed text-foreground">{a.detalle.join(" ")}</p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </HudCard>
+  );
+}
+
 // Lo derivado: nada de esto se edita, todo sale de atributos, habilidades y equipo.
 export function EstadoPanel({ ficha }: { ficha: FichaResuelta }) {
   const sheet = ficha.ficha;
@@ -94,6 +132,8 @@ export function EstadoPanel({ ficha }: { ficha: FichaResuelta }) {
           }
         />
       </HudCard>
+
+      <Estados ficha={ficha} />
 
       <HudCard className="flex flex-col gap-3 p-4">
         <p className="font-mono text-[11px] uppercase tracking-widest text-muted">{"//SYSTEM · datos"}</p>

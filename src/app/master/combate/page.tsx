@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
 import { AppHeader } from "@/components/AppHeader";
 import { MasterTabs } from "@/components/MasterTabs";
-import { parseSheet, poder, type EstadoActivo } from "@/lib/rules";
+import { parseSheet, poder, estadosDeCombatiente } from "@/lib/rules";
 import { CombateConsole } from "./CombateConsole";
 
 // Fase 6b (docs/fase-6b.md), subtarea 2.1: la consola de combate en sí. Solo
@@ -19,13 +19,16 @@ export default async function CombatePage() {
 
   const combateRaw = await prisma.combate.findFirst({
     where: { estado: { in: ["PREPARANDO", "EN_CURSO"] } },
-    include: { combatientes: { orderBy: { orden: "asc" } } },
+    include: {
+      combatientes: {
+        orderBy: { orden: "asc" },
+        include: { character: { select: { estados: true } } },
+      },
+    },
   });
 
-  // `estados` es Json en la base (lib/rules/estados.ts, EstadoActivo[]) —
-  // lo escriben solo las server actions de este mismo módulo, nunca el
-  // cliente, así que un cast basta aquí. Si algún día algo más lo escribe,
-  // esto necesita el mismo tratamiento tolerante que parseSheet.
+  // `estados`: los de la ficha para un jugador (Character.estados, E1a), los de su
+  // fila para un NPC, con el lector tolerante (estadosDeCombatiente).
   // `sheet` sí pasa por `parseSheet` (subtarea 5.5): es la foto congelada al
   // añadir el NPC (5.0), pero sigue siendo Json guardado hace tiempo —
   // mismo tratamiento tolerante que la ficha de un Character, no un cast a
@@ -33,9 +36,9 @@ export default async function CombatePage() {
   // Sheet en vivo desde su propia ficha).
   const combate = combateRaw && {
     ...combateRaw,
-    combatientes: combateRaw.combatientes.map((c) => ({
+    combatientes: combateRaw.combatientes.map(({ character, ...c }) => ({
       ...c,
-      estados: c.estados as unknown as EstadoActivo[],
+      estados: estadosDeCombatiente({ ...c, character }),
       sheet: c.sheet ? parseSheet(c.sheet) : null,
     })),
   };

@@ -27,7 +27,7 @@ function ficha(patch: Partial<Sheet> = {}): Sheet {
 }
 
 const resolver = (s: Sheet, vitalidad: VitalidadActual = VITALIDAD_DE_FICHA, libre = false) =>
-  resolverFicha(s, { estadosCombate: [], vitalidad, libre });
+  resolverFicha(s, { estados: [], vitalidad, libre });
 
 const ESPECIE: Record<string, Partial<Sheet>> = {
   riux: { especieId: "riux" },

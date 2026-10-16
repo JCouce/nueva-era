@@ -26,7 +26,7 @@ function ficha(dotes: DoteComprada[], psionica: Sheet["psionica"]): Sheet {
   };
 }
 
-const resolver = (s: Sheet, libre = false) => resolverFicha(s, { estadosCombate: [], vitalidad: VITALIDAD_DE_FICHA, libre });
+const resolver = (s: Sheet, libre = false) => resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA, libre });
 const IMPACTO = { id: "dote_impacto_metrico" };
 const RELAMPAGO = { id: "dote_impacto_metrico_relampago" };
 const SOBRECARGA = { id: "dote_sobrecarga_metrica" };

@@ -318,7 +318,7 @@ describe("requisito que deja de cumplirse", () => {
 
   test("lo mismo leyendo de la ficha resuelta (pantalla)", () => {
     const s = conHabilidad(compra(conHabilidad(ficha(), "combate_melee", 1), "dote_bloqueo"), "combate_melee", -1);
-    const resuelta = resolverFicha(s, { estadosCombate: [], vitalidad: VITALIDAD_DE_FICHA });
+    const resuelta = resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
     assert.deepEqual(faltasDeDotes(s, resuelta.requisitosDotes), faltasDeDotes(s, valoresRequisitoDeFicha(s)));
   });
 

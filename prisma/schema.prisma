@@ -37,6 +37,7 @@ model User {
   characters    Character[]
   accounts      Account[]
   sessions      Session[]
+  registros     RegistroMaster[]
   createdAt     DateTime    @default(now())
 }
 
@@ -57,6 +58,11 @@ model Character {
   approvedSnapshot Json?
   xp               Int             @default(0)
   creditos         Int             @default(0)
+  // Estados que le ha puesto el máster (EstadoActivo[], lib/rules/estadosFicha.ts).
+  // Columna propia y no dentro de `stats` por lo mismo que xp/creditos: el autosave
+  // del jugador reescribe `stats` entero y pisaría lo del máster. También en combate:
+  // el Combatiente de un jugador no usa su `estados`.
+  estados          Json            @default("[]")
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
   combatientes     Combatiente[]
@@ -105,7 +111,8 @@ model Combate {
 // sesión, el combate en curso no debe moverse solo bajo los pies de nadie.
 // `estados` guarda EstadoActivo[] (lib/rules/estados.ts) como Json — mismo
 // criterio que Character.stats: es la forma más barata de iterar mientras
-// el catálogo de estados siga cambiando.
+// el catálogo de estados siga cambiando. Solo cuenta para un NPC: los de un
+// jugador viven en Character.estados (E1a); lo que quede aquí de un jugador se ignora.
 model Combatiente {
   id            String       @id @default(cuid())
   combateId     String
@@ -177,6 +184,26 @@ model NpcTemplate {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   combatientes Combatiente[]
+}
+
+// Registro del máster con deshacer (E1b, docs/tareas.md "Centro de mando del máster"):
+// una fila por acción, aunque afecte a varios personajes. `tipo` es texto y no enum
+// para que los que vengan ("fin_escena"…) no pidan migración; los válidos y la forma
+// de `datos` (lo necesario para deshacer: antes/después por personaje, vida y fatiga
+// restadas) viven en lib/rules/registro.ts. `characterIds` sin relación: un personaje
+// borrado deja su entrada (se lista sin nombre y deshacer se lo salta).
+model RegistroMaster {
+  id           String    @id @default(cuid())
+  createdAt    DateTime  @default(now())
+  userId       String?
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  tipo         String
+  characterIds String[]
+  datos        Json
+  motivo       String?
+  deshechoAt   DateTime?
+
+  @@index([createdAt])
 }
 
 // Preguntas abiertas al diseñador (Murillo), respondidas desde /preguntas —

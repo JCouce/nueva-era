@@ -1,11 +1,11 @@
 // La ficha resuelta, sin UI (propuesta-especies §3.1): una sola pasada que monta los
-// modificadores (especie + equipo + estados de combate) y todo lo que cuelga de ellos.
+// modificadores (especie + equipo + estados) y todo lo que cuelga de ellos.
 // Las pantallas la calculan una vez por cambio (useFichaResuelta) y leen de aquí; no
 // llaman a modificadoresActivos ni a los derivados sueltos (regla de ESLint).
 //
 // Mismo patrón que usoPoder.ts: entrada explícita, nada se lee de fuera salvo el
-// catálogo. Los estados de combate y la vida/fatiga de un combate no están en la
-// ficha, por eso entran aparte.
+// catálogo. Los estados (columna propia, los pone el máster) y la vida/fatiga de un
+// combate no están en la ficha, por eso entran aparte.
 import { APLICADOS, ATRIBUTOS, type AplicadoId, type AtributoId } from "./atributos";
 import { tieneEscudoMelee, type ArmaduraNatural } from "./blindaje";
 import {
@@ -80,7 +80,12 @@ export type DesgloseDerivado = { total: number; fuentes: Fuente[] };
 export type FichaResuelta = {
   ficha: Sheet;
   especie: EspecieResuelta | null;
-  // Especie, dotes (bonos fijos a tiradas, §9.3), equipo, estados de combate y umbrales de
+  // Los estados que lleva puestos (los de OpcionesFicha), para pintarlos.
+  estados: EstadoActivo[];
+  // Piezas que no funcionan ahora mismo, por instanciaId, con el motivo. Hueco para el
+  // Shock (S73: la pieza afectada pierde su bono) y los aumentos; vacío hasta entonces.
+  piezasInutilizadas: ReadonlyMap<string, string>;
+  // Especie, dotes (bonos fijos a tiradas, §9.3), equipo, estados y umbrales de
   // salud/fatiga (§7), en ese orden (el de modificadoresActivos más los estados detrás,
   // como los sumaba Acciones).
   modificadores: ModificadorConFuente[];
@@ -157,7 +162,9 @@ export type FichaResuelta = {
 // `libre`: editor de NPC del máster. Le llega todo lo derivado de la especie (también
 // la Resonancia +1), pero no lo de creación (costes por casta, descuentos psiónicos,
 // bolsa de aumentos, kerzul sin rareza).
-export type OpcionesFicha = { estadosCombate: EstadoActivo[]; vitalidad: VitalidadActual; libre?: boolean };
+// `estados`: los del personaje (Character.estados, también en combate) o los de la fila
+// del NPC; mueven también la vida y la fatiga máximas.
+export type OpcionesFicha = { estados: EstadoActivo[]; vitalidad: VitalidadActual; libre?: boolean };
 
 // De dónde salen la vida y la fatiga para los umbrales (§7). Fuera de combate, las de
 // la ficha (vidaActual/fatigaActual) contra los máximos que resuelve esta misma
@@ -173,7 +180,9 @@ export const VITALIDAD_DE_FICHA: VitalidadActual = { origen: "ficha" };
 // TODO(revisar): S28 y S29 de docs/sistema.md (redondeo y orden con la especie).
 const reducir = (valor: number, fraccion: number) => Math.floor(valor * (1 - fraccion));
 
-export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre = false }: OpcionesFicha): FichaResuelta {
+const SIN_PIEZAS_INUTILIZADAS: ReadonlyMap<string, string> = new Map();
+
+export function resolverFicha(sheet: Sheet, { estados, vitalidad, libre = false }: OpcionesFicha): FichaResuelta {
   const especie = especieDeFicha(sheet);
   const formulaMovimiento = formulaMovimientoDeEspecie(especie);
   const multiplicadorCarga = multiplicadorCargaDeEspecie(especie);
@@ -189,7 +198,7 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
     ...(especie?.modificadores ?? []),
     ...dotes.modificadores,
     ...modificadoresDeEquipo(sheet),
-    ...modificadoresDeEstados(estadosCombate),
+    ...modificadoresDeEstados(estados),
   ];
   // Los umbrales solo dan modificadores de tirada: no tocan los máximos de salud.
   const maximos = salud(sheet, sinUmbrales);
@@ -219,6 +228,8 @@ export function resolverFicha(sheet: Sheet, { estadosCombate, vitalidad, libre =
   return {
     ficha: sheet,
     especie,
+    estados,
+    piezasInutilizadas: SIN_PIEZAS_INUTILIZADAS,
     modificadores,
     atributos: atributosEfectivos(sheet, modificadores),
     aplicados: aplicados(sheet, modificadores),

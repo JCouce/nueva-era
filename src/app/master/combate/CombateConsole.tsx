@@ -493,6 +493,7 @@ function CombatienteRow({
                 <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide">
                   <span>{a.label}</span>
                   {a.rondasRestantes !== null && <span>· {a.rondasRestantes}r</span>}
+                  {a.duracion.tipo === "escena" && <span>· escena</span>}
                   <button
                     type="button"
                     disabled={pending}

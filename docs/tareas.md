@@ -25,13 +25,16 @@ foco. Frentes abiertos, cada uno con su sección en Pendiente:
 - **Equipo**: lo construible está hecho; lo que queda espera a Murillo o es diseño
   pequeño (ver su sección).
 - **Panel de combate**: épica para debatir qué aporta; Fase 6b pausada mientras.
-- **Estados en la sub-pestaña Estado**: idea aceptada, se abordará más adelante.
+- **Centro de mando del máster + estados en la ficha (E1)**: decidido con maqueta, va antes
+  que aumentos.
 - Sync con Drive (`npm run sync-drive`, `docs/drive-sync.md`) — primera foto 2026-10-14 en
   `docs/fuente/`. **Pendiente: reconciliar la línea base** área por área (Creación de
   Personaje, Sistema, Equipamiento, Especies, Psiónica, Habilidades) contra
   `docs/sistema.md`. Primer adelanto (Creación): Vida/Fatiga base 8 → 10, Dotes con
   presupuesto por prioridad, topes de creación movidos.
 - "Preguntas al diseñador" (final de este documento) — lo que bloquea a Murillo.
+- **Automatizar el mantenimiento** (épica en Pendiente, sin forma todavía): pensar qué del ciclo Drive → sistema →
+  motor → auditoría puede ir solo y dónde entran los evals.
 
 ---
 
@@ -817,6 +820,26 @@ construir (dos pasadas: rediseño, luego revisión).
 - [x] La migración va en el mismo deploy que especies *(desplegada el 2026-10-13, push `7193cf9`)*
 
 ## Pendiente
+
+### Automatizar el mantenimiento de Nueva Era ⬜ (épica, para pensar antes de construir; 2026-10-16)
+**Idea (usuario):** no montar evals por montarlos sobre un archivo cualquiera, sino pensar cómo automatizar el
+mantenimiento del proyecto. Los evals entran donde ayuden a eso: medir si un cambio en el harness mejora o empeora
+algo que se repite. Sin forma decidida todavía: primero hay que hablarlo.
+
+**Para la conversación (datos que ya hay):**
+- Lo que más se toca del harness desde septiembre: `CLAUDE.md` (16 commits), `docs/prompt-construir-psionica.md`
+  (16), `.claude/workflows/auditoria-motor-metadata.js` y su extractor, y `.claude/workflows/modelar-area.js`.
+- Mantenimiento que hoy es manual y recurrente: sync con Drive y reconciliar la línea base contra `docs/sistema.md`,
+  pasar la prosa nueva a motor (`modelar-area`) y auditar la transcripción (`auditoria-motor-metadata`), refrescar
+  `gapsConocidos` tras arreglar, y mantener este archivo y los prompts de relevo al día.
+- Ya hay etiquetas para medir: la referencia auditada de las calibraciones de `modelar-area` y los ~45 hallazgos
+  confirmados de las auditorías. Sirven de golden set para un eval de fidelidad prosa→motor con un juez calibrado.
+- Datos de los 12 runs de workflows (agentes, tokens, duración, resultados) y sus lecciones:
+  `~/Documents/jcouce/knowledge` (topic `multi-agent-workflows`, experimento `nuevaera-workflows`).
+
+**Preguntas abiertas:** qué partes del ciclo Drive → `docs/fuente/` → `docs/sistema.md` → motor → auditoría se
+pueden encadenar solas y dónde tiene que decidir una persona; cada cuánto correrlo; cómo detectar regresiones al
+tocar `CLAUDE.md` o un workflow; y cuánto cuesta en tokens una pasada completa.
 
 ### Fase 6b — Panel de combate en vivo ⬜ (MVP funcional cerrado 2026-09-11, pausada)
 **Hoja de ruta con subtareas, para ir cogiéndolas una a una: `docs/fase-6b.md`.** No
@@ -1850,16 +1873,77 @@ no `base`); con dos opciones que bajen el margen de crítico gana el más bajo, 
 - [ ] `setPrioridadAction` sobrescribe `Character.creditos` al cambiar la letra de
       Recursos sin restar lo gastado en la Tienda (el reset de especie solo lo tapa en ese caso)
 
-### Estados en la sub-pestaña Estado ⬜ (idea del usuario, 2026-10-13; aceptada 2026-10-15, se aborda más adelante)
-Enseñar en Personaje → Estado los estados del personaje como tarjetas, con nombre y efectos.
-Dos formas planteadas, ninguna elegida:
-- **A. Solo enseñarlos**: una tarjeta por estado activo del combate en curso (nombre, rondas
-  restantes, efectos de `describirEstadosActivos`) y los umbrales de §7 (Herido, Exhausto…)
-  como una tarjeta más con su −N, velocidad y carga. Fuera de combate solo salen los
-  umbrales. Poco trabajo, sin tocar el modelo.
-- **B. Anotarlos también fuera de combate**: el jugador o el máster añaden/quitan estados
-  desde Estado y se guardan en la ficha. Campo nuevo con migración y decidir su duración
-  fuera de combate, que el sistema no define.
+### Centro de mando del máster + estados en la ficha (E1) ⬜ (decidido 2026-10-16)
+Maqueta aprobada por el usuario (salvo el degradado púrpura de la cabecera, ya quitado):
+https://claude.ai/artifact/1JWfab9ijSgaC4mCYNTKs9 — escritorio y móvil, Mesa y Combate.
+Sustituye a la idea "Estados en la sub-pestaña Estado" (forma B: los estados se guardan).
+Va **antes de aumentos**: los aumentos necesitan estados con duración (Neuroprótesis,
+Control Anímico) y el hueco de piezas inutilizadas para el Shock (S73).
+
+**Decisiones (usuario, 2026-10-16):**
+- Primero el objetivo (uno o varios), luego la acción. Pestañas: Estados y Recompensas
+  (xp y créditos). Botín e Historia llegarán como pestañas nuevas del mismo marco; no se
+  enseñan hasta existir.
+- **El mismo componente** en la Mesa y dentro del combate (objetivos = la cola, NPC
+  incluidos; a un NPC solo se le ponen estados).
+- Rebranding completo: los controles de xp/créditos de hoy (`MasterControls.tsx`) no se
+  traen tal cual, se rediseñan.
+- Registro con **deshacer**; si ya no se puede (créditos gastados, estado terminado), avisa
+  en vez de dejar la ficha en negativo.
+- Contador de rondas grande y "molón" junto a "Siguiente turno" (ronda, turno de quién,
+  tiempo del turno, vuelta en segmentos, celebración al cerrar la vuelta, Espacio para pasar;
+  sin animaciones con reducir movimiento). Terminar combate enseña resumen; el combate nuevo
+  empieza en ronda 1.
+- El jugador **no** se quita estados: solo los ve. "Terminar escena" del máster limpia los
+  estados de escena de todos. Los estados mueven la vida máxima también fuera de combate; la
+  vida actual no se recorta.
+- Duración: N rondas (bajan con el turno) · fin de escena · hasta quitarlo. Un grado que baja
+  solo o un estado que arrastra otro (Shock → Parálisis) se hacen a mano.
+
+**Hallazgos de la revisión adversarial (2026-10-16) que fijan la forma:**
+- Estados en **columna propia** `Character.estados` (Json), escrita solo por el máster, como
+  `xp`/`creditos` (`traspaso.md` §9): el autosave del jugador reescribe `stats` entero sin
+  transacción y pisaría lo del máster.
+- **Un solo sitio** para los estados de un jugador, también en combate: hoy la ficha ya recibe
+  los de su `Combatiente` (`CharacterSheet.tsx:558`) y se sumarían dos veces.
+  `Combatiente.estados` queda para los NPC.
+- La ficha guarda `sheet` en `useState`: los estados llegan como **prop aparte** (como
+  `combate`) para que el polling los refresque.
+- `aplicarEstadoAction` hoy no valida con Zod: las acciones nuevas sí.
+
+**Pasadas** (cada una se plantea y se confirma antes de construirla):
+- [x] **E1a — estados en la ficha (modelo y servidor):** columna + migración, lector tolerante,
+  acciones aplicar/quitar a varios objetivos, avanzar turno descuenta en la ficha, ficha del
+  jugador con los estados como prop y tarjetas en Personaje → Estado, hueco
+  `piezasInutilizadas` vacío en `FichaResuelta`, tests.
+  *(2026-10-16) Columna `Character.estados` (migración `estados_ficha`); `EstadoActivo` gana
+  `finDeEscena?` y `DuracionEstado` (rondas · escena · hasta quitarlo). Motor en
+  `rules/estadosFicha.ts`: `leerEstados` (tolerante), `ponerEstado`/`quitarEstado`,
+  `estadosTrasTurno`, `estadosDeCombatiente` (jugador → su ficha; NPC → su fila).
+  Acciones `aplicarEstadoAPersonajesAction`/`quitarEstadoDePersonajeAction` en
+  `app/master/actions.ts` (Zod en `validation.ts`, escritura en `lib/estadosPersonaje.ts`);
+  la consola de combate escribe en la ficha para jugadores y "Siguiente turno" descuenta ahí.
+  La ficha recibe `estados` como prop; tarjetas en Personaje → Estado; `FichaResuelta` gana
+  `estados` y `piezasInutilizadas` (vacío). Supuesto S74. La consola aún no ofrece "fin de
+  escena" (llega con el componente compartido, E1c-E1d).*
+  *(2026-10-16, vida perdida, S75) Poner un estado que baja el máximo resta lo mismo a la vida
+  y fatiga actuales (ficha y foto de combate) y no se devuelve al quitarlo; la foto recalcula
+  `pgMax`/`fatigaMax` en cada cambio de estados, también en "Siguiente turno". Motor en
+  `rules/vidaPorEstados.ts`; la ficha copia `vidaGuardada` (prop fresca) a `sheet`.*
+- [x] **E1b — registro con deshacer:** tabla nueva, xp/créditos/estados/fin de escena registran,
+  deshacer con avisos de conflicto.
+  *(2026-10-16) Modelo `RegistroMaster` (migración `registro_master`): tipo en texto, ids de
+  personajes, `datos` con antes/después y vida restada, motivo, `deshechoAt`. Registran
+  `adjustXp/CreditosAction`, las nuevas `darXpAction`/`darCreditosAction` (varios + motivo) y
+  poner/quitar estado (Mesa y consola, solo jugadores). `deshacerRegistroAction` en
+  transacción; criterios de "ya no se puede" en `rules/registro.ts`; `listarRegistro(n)` en
+  `lib/registroMaster.ts` para E1c. "Fin de escena" registrará cuando exista (E1c).*
+- [ ] **E1c — centro de mando, Mesa:** pantalla nueva de escritorio y móvil (Estados,
+  Recompensas, Registro, Terminar escena) con el componente compartido.
+- [ ] **E1d — combate:** el componente compartido en la consola y el contador de rondas.
+  Incluye: las rondas de los estados bajan **al cerrar la vuelta**, no con cada turno de
+  cualquiera como hasta ahora (`descontarDuracion` en `avanzarTurnoAction`; decisión del
+  usuario, 2026-10-16).
 
 ### Componente `Modal` común ⬜ (propuesta del usuario, 2026-10-13)
 Hoy 7 modales montan cada uno su propio fondo `fixed inset-0` (UsarModal, AccionModal,
@@ -1870,6 +1954,16 @@ en el selector de especie (2026-10-13). Propuesta: un componente base en
 `src/components/Modal.tsx` que siempre hace portal a `document.body`, pone el fondo y cierra
 al pulsar fuera y con Escape; los 7 pasan a usarlo y solo aportan su contenido. Sin hook
 `useModal` (solo ahorraría un `useState`).
+
+### Polling ligero: "¿hay algo nuevo?" ⬜ (idea, 2026-10-16)
+Hoy `usePollingCombate` hace `router.refresh()` cada 15 s (4 s en combate): vuelve a
+renderizar la página entera en el servidor, con todas sus consultas a Prisma, aunque no
+haya cambiado nada. Alternativa: un endpoint mínimo que devuelva una versión (p. ej. el
+`updatedAt` de la ficha y del combate, o un contador) y refrescar solo si cambia. Con ~10
+jugadores no hace falta todavía; se plantea si el polling empieza a pesar, o al meter los
+estados que escribe el máster (que van a necesitar refresco también fuera de combate).
+Ojo con Neon: mientras alguien tenga la ficha abierta en primer plano, la base no se
+suspende, con polling pesado o ligero.
 
 ### Armas Modificadas ⬜
 Electrificantes, Térmicas, de Plasma, de Nanofilamento. Su coste es un **multiplicador**

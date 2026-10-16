@@ -146,7 +146,7 @@ function fichaCapaz(dotes: DoteComprada[]): Sheet {
   };
 }
 
-const resolver = (s: Sheet, libre = false) => resolverFicha(s, { estadosCombate: [], vitalidad: VITALIDAD_DE_FICHA, libre });
+const resolver = (s: Sheet, libre = false) => resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA, libre });
 const tirada = (id: string): Accion => ACCIONES.find((a) => a.id === id)!;
 const conExtras = (f: FichaResuelta, id: string) => conExtrasDeFicha(f, tirada(id));
 const idsDeCasillas = (t: Accion) => (t.condiciones ?? []).map((c) => c.id);

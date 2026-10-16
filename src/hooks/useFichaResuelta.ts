@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { resolverFicha, type EstadoActivo, type FichaResuelta, type Sheet, type VitalidadActual } from "@/lib/rules";
 
-// Sin combate. Constante de módulo para que la referencia no cambie en cada render
+// Sin estados. Constante de módulo para que la referencia no cambie en cada render
 // (un `[]` literal invalidaría el useMemo de abajo siempre).
 export const SIN_ESTADOS: EstadoActivo[] = [];
 
@@ -16,12 +16,12 @@ export const SIN_ESTADOS: EstadoActivo[] = [];
 // `libre`: editor de NPC (sin costes de creación ni bolsa de aumentos, §14.3).
 export function useFichaResuelta(
   sheet: Sheet,
-  estadosCombate: EstadoActivo[],
+  estados: EstadoActivo[],
   vitalidad: VitalidadActual,
   { libre = false }: { libre?: boolean } = {},
 ): FichaResuelta {
   return useMemo(
-    () => resolverFicha(sheet, { estadosCombate, vitalidad, libre }),
-    [sheet, estadosCombate, vitalidad, libre],
+    () => resolverFicha(sheet, { estados, vitalidad, libre }),
+    [sheet, estados, vitalidad, libre],
   );
 }

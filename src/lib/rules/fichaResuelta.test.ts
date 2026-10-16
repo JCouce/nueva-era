@@ -258,7 +258,7 @@ describe("caracterización: los derivados de hoy con los modificadores montados 
 describe("resolverFicha da exactamente lo mismo", () => {
   for (const { nombre, sheet, estados, esperado } of MUESTRAS) {
     test(nombre, () => {
-      const r = resolverFicha(sheet, { vitalidad: VITALIDAD_DE_FICHA, estadosCombate: estados });
+      const r = resolverFicha(sheet, { vitalidad: VITALIDAD_DE_FICHA, estados });
       assert.equal(r.ficha, sheet);
       assert.deepEqual(r.especie, especieDeFicha(sheet));
       assert.deepEqual(r.modificadores, [...modificadoresActivos(sheet), ...modificadoresDeEstados(estados)]);
@@ -280,7 +280,7 @@ describe("resolverFicha da exactamente lo mismo", () => {
   }
 
   test("sin estados de combate, la ficha en reposo (lo que veía Resumen)", () => {
-    const r = resolverFicha(MUESTRAS.at(-1)!.sheet, { vitalidad: VITALIDAD_DE_FICHA, estadosCombate: [] });
+    const r = resolverFicha(MUESTRAS.at(-1)!.sheet, { vitalidad: VITALIDAD_DE_FICHA, estados: [] });
     assert.deepEqual(
       { salud: r.salud, movimiento: r.movimiento, carga: r.cargaMaxima, alerta: r.alerta },
       RESUMEN_SIN_ESTADOS_E3,
@@ -288,7 +288,7 @@ describe("resolverFicha da exactamente lo mismo", () => {
   });
 
   test("los desgloses cubren los 12 atributos y cuadran con los totales", () => {
-    const r = resolverFicha(MUESTRAS.at(-1)!.sheet, { vitalidad: VITALIDAD_DE_FICHA, estadosCombate: ENFERMO_Y_ATURDIDO });
+    const r = resolverFicha(MUESTRAS.at(-1)!.sheet, { vitalidad: VITALIDAD_DE_FICHA, estados: ENFERMO_Y_ATURDIDO });
     for (const [id, d] of Object.entries(r.desgloses.atributos)) {
       assert.equal(d.total, r.atributos[id as keyof typeof r.atributos]);
     }

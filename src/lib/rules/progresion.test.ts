@@ -199,18 +199,18 @@ describe("costeSiguienteNivel: coste y pista", () => {
 
 describe("FichaResuelta: ajuste y bolsa", () => {
   test("el jugador recibe el ajuste de su especie", () => {
-    assert.deepEqual(resolverFicha(ficha("manduk", "sabio"), { vitalidad: VITALIDAD_DE_FICHA, estadosCombate: [] }).ajusteCoste, SABIO);
+    assert.deepEqual(resolverFicha(ficha("manduk", "sabio"), { vitalidad: VITALIDAD_DE_FICHA, estados: [] }).ajusteCoste, SABIO);
   });
 
   test("NPC (libre): ajuste neutro y sin bolsa, aunque la especie los traiga", () => {
     const sabio = { ...ficha("manduk", "sabio"), habilidades: { ...defaultSheet().habilidades, tecnociencia: { valor: 4, especialidades: [] } } };
-    assert.deepEqual(resolverFicha(sabio, { vitalidad: VITALIDAD_DE_FICHA, estadosCombate: [], libre: true }).ajusteCoste, AJUSTE_NEUTRO);
-    assert.equal(resolverFicha(ficha("humano"), { vitalidad: VITALIDAD_DE_FICHA, estadosCombate: [], libre: true }).bolsaAumentos, null);
+    assert.deepEqual(resolverFicha(sabio, { vitalidad: VITALIDAD_DE_FICHA, estados: [], libre: true }).ajusteCoste, AJUSTE_NEUTRO);
+    assert.equal(resolverFicha(ficha("humano"), { vitalidad: VITALIDAD_DE_FICHA, estados: [], libre: true }).bolsaAumentos, null);
     assert.equal(experienciaInvertida(sabio), 10); // "Poder" del NPC, sin descuento de casta
   });
 
   test("bolsa de 60.000 solo para Humanos", () => {
-    assert.equal(resolverFicha(ficha("humano"), { vitalidad: VITALIDAD_DE_FICHA, estadosCombate: [] }).bolsaAumentos, 60_000);
+    assert.equal(resolverFicha(ficha("humano"), { vitalidad: VITALIDAD_DE_FICHA, estados: [] }).bolsaAumentos, 60_000);
     assert.equal(bolsaDeAumentos(null), null);
     for (const e of ESPECIES.filter((x) => x.id !== "humano")) {
       const opciones = e.castas ? e.castas.map((c) => ficha(e.id, c.id, e.linajes?.casta === c.id ? e.linajes.opciones[0].id : undefined)) : [ficha(e.id)];

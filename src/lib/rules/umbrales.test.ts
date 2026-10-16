@@ -32,7 +32,7 @@ function ficha(patch: Partial<Sheet> = {}): Sheet {
 }
 
 const resolver = (s: Sheet, vitalidad: VitalidadActual = VITALIDAD_DE_FICHA, estadosCombate: EstadoActivo[] = []) =>
-  resolverFicha(s, { estadosCombate, vitalidad });
+  resolverFicha(s, { estados: estadosCombate, vitalidad });
 
 const enCombate = (pgActual: number, fatigaActual: number): VitalidadActual => ({
   origen: "combate",
@@ -133,11 +133,11 @@ describe("M1b: en combate manda la vida/fatiga del combatiente, fuera la de la f
 
   test("NPC en la consola (modo libre): la vida de su fila, no la de la plantilla", () => {
     const plantilla = ficha(); // entera
-    const enFila = resolverFicha(plantilla, { estadosCombate: [], vitalidad: enCombate(2, 10), libre: true });
+    const enFila = resolverFicha(plantilla, { estados: [], vitalidad: enCombate(2, 10), libre: true });
     assert.equal(enFila.umbrales.salud, "malherido");
     assert.deepEqual(lineasUmbral(enFila), [{ etiqueta: "Malherido", valor: -3 }]);
     // Y al revés: plantilla malherida, fila entera → nada.
-    const fila = resolverFicha(ficha({ vidaActual: 2 }), { estadosCombate: [], vitalidad: enCombate(10, 10), libre: true });
+    const fila = resolverFicha(ficha({ vidaActual: 2 }), { estados: [], vitalidad: enCombate(10, 10), libre: true });
     assert.deepEqual(lineasUmbral(fila), []);
   });
 

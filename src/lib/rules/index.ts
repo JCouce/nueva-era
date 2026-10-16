@@ -37,6 +37,8 @@
 //   dotesAcciones.ts   acciones propias de dote (sección Dotes de Acciones, D2c-1)
 //   dotesPoderes.ts    poderes de dote (Impacto/Sobrecarga Métrica) como PoderDisponible (D2c-2)
 //   dotesCompradas.ts  sheet.dotes: forma y lectura tolerante
+//   vidaPorEstados.ts  vida/fatiga que se pierden al bajar el máximo por un estado (S75)
+//   registro.ts        registro del máster: qué se guarda de cada acción y cómo se deshace (E1b)
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -56,6 +58,7 @@ export * from "./herramientas";
 export * from "./aprobacion";
 export * from "./prioridad";
 export * from "./estados";
+export * from "./estadosFicha";
 export * from "./npc";
 export * from "./npcAleatorio";
 export * from "./blindaje";
@@ -75,6 +78,8 @@ export * from "./dotesCompradas";
 export * from "./dotesEfectos";
 export * from "./dotesAcciones";
 export * from "./dotesPoderes";
+export * from "./vidaPorEstados";
+export * from "./registro";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

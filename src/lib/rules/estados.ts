@@ -167,7 +167,34 @@ export type EstadoActivo = {
   // catalog/estados.ts); un número que descuenta el bloque 2 al avanzar
   // turno.
   rondasRestantes: number | null;
+  // Solo con rondasRestantes null: se va al terminar la escena ("Terminar escena" del
+  // máster, E1c) en vez de quedarse hasta que lo quiten. Opcional para que lo ya
+  // guardado en Combatiente.estados siga valiendo tal cual.
+  finDeEscena?: true;
 };
+
+// Las tres duraciones que elige el máster (docs/tareas.md, E1). Es la vista de
+// EstadoActivo para pintar y validar; lo guardado sigue siendo EstadoActivo.
+export type DuracionEstado =
+  | { tipo: "rondas"; rondas: number }
+  | { tipo: "escena" }
+  | { tipo: "hastaQuitarlo" };
+
+export function duracionDe(activo: EstadoActivo): DuracionEstado {
+  if (activo.rondasRestantes !== null) return { tipo: "rondas", rondas: activo.rondasRestantes };
+  return activo.finDeEscena ? { tipo: "escena" } : { tipo: "hastaQuitarlo" };
+}
+
+export function estadoActivoCon(estadoId: string, gradoId: string, duracion: DuracionEstado): EstadoActivo {
+  switch (duracion.tipo) {
+    case "rondas":
+      return { estadoId, gradoId, rondasRestantes: duracion.rondas };
+    case "escena":
+      return { estadoId, gradoId, rondasRestantes: null, finDeEscena: true };
+    case "hastaQuitarlo":
+      return { estadoId, gradoId, rondasRestantes: null };
+  }
+}
 
 // Traduce los estados que el máster ha aplicado a un combatiente en
 // ModificadorConFuente[] — calcado de modificadoresDeEquipo()
@@ -196,6 +223,7 @@ export function modificadoresDeEstados(activos: EstadoActivo[]): ModificadorConF
 // propio id en vez de reventar, mismo criterio que modificadoresDeEstados().
 export type EstadoActivoDescrito = EstadoActivo & {
   label: string;
+  duracion: DuracionEstado;
   // Frases del catálogo ya unidas para pintar directo — array vacío si el
   // grado no trae detalle o no se encontró en el catálogo.
   detalle: string[];
@@ -207,6 +235,7 @@ export function describirEstadosActivos(activos: EstadoActivo[]): EstadoActivoDe
     const grado = estado?.grados.find((g) => g.id === ea.gradoId);
     return {
       ...ea,
+      duracion: duracionDe(ea),
       // El número de grados de ESTE estado, no de un desplegable ajeno que
       // pueda estar mostrando otro estado a medio elegir.
       label:

@@ -74,6 +74,7 @@ import {
   comprarDote,
   quitarDote,
   type DoteComprada,
+  type EstadoActivo,
 } from "@/lib/rules";
 import type { Sheet } from "@/lib/rules";
 import { PersonajeTab, PanelFieldset } from "./_components/personaje/PersonajeTab";
@@ -95,7 +96,7 @@ import type { Lanzamiento } from "@/components/ResultadoTirada";
 // poderes: mismo helper, otra clave).
 const AUTOSAVE_DEBOUNCE_MS = 500;
 import { usePollingCombate } from "@/hooks/usePollingCombate";
-import { useFichaResuelta, SIN_ESTADOS } from "@/hooks/useFichaResuelta";
+import { useFichaResuelta } from "@/hooks/useFichaResuelta";
 
 // Tres grupos, no una lista plana: la ficha en sí (fila 1), lo que el
 // personaje hace o lleva (fila 2, izquierda) y el catálogo — que no es del
@@ -165,6 +166,8 @@ export function CharacterSheet({
   submittedAt,
   reviewNote,
   dotesDeLaFoto,
+  estados,
+  vidaGuardada,
   combate,
 }: {
   characterId: string;
@@ -181,6 +184,12 @@ export function CharacterSheet({
   // Dotes de la foto de aprobación (null sin foto): solo para explicar por qué no se
   // puede quitar una dote en ficha aprobada. El servidor la relee de la base.
   dotesDeLaFoto: DoteComprada[] | null;
+  // Los que le ha puesto el máster (Character.estados), dentro o fuera de combate. Prop
+  // aparte y no en `sheet`, que vive en useState: así los trae frescos el polling.
+  estados: EstadoActivo[];
+  // vidaActual/fatigaActual tal como están en la base, frescas en cada refresco: el
+  // máster las baja al poner un estado (S75) sin pasar por esta pantalla.
+  vidaGuardada: { vida: number; fatiga: number };
   // null si no hay Combate EN_CURSO, o si lo hay pero este personaje no
   // tiene fila dentro (fase 6b bloque 3) — en los dos casos, nada de
   // combate se enseña en la ficha.
@@ -194,6 +203,15 @@ export function CharacterSheet({
   const [name, setName] = useState(initialName);
   const [xp, setXp] = useState(initialXp);
   const [creditos, setCreditos] = useState(initialCreditos);
+  // Si la vida/fatiga de la base cambió desde la última vez que se vio, se copian a
+  // `sheet` solo esos dos campos, sin pisar lo demás que se esté editando. Ajuste
+  // durante el render al cambiar una prop (patrón de React), no un efecto. Un -1 del
+  // propio jugador también llega por aquí, con el valor que ya tenía en pantalla.
+  const [vidaVista, setVidaVista] = useState(vidaGuardada);
+  if (vidaVista.vida !== vidaGuardada.vida || vidaVista.fatiga !== vidaGuardada.fatiga) {
+    setVidaVista(vidaGuardada);
+    setSheet((s) => ({ ...s, vidaActual: vidaGuardada.vida, fatigaActual: vidaGuardada.fatiga }));
+  }
   const [status, setStatus] = useState<SaveStatus>("idle");
   // Último rechazo del servidor en Dotes, con su motivo (la pantalla ya filtra con
   // las mismas reglas, así que solo salta si la ficha cambió por otro lado).
@@ -223,7 +241,8 @@ export function CharacterSheet({
   // Seguro para el resto del estado de este componente:
   // `sheet`/`name`/`xp`/`creditos` viven en useState ya montado, así que un
   // refresh no los pisa — solo trae fresco lo que se lee directo de props
-  // en cada render, que es `combate`.
+  // en cada render, que son `combate` y `estados`, y la vida/fatiga de
+  // `vidaGuardada`, que se copia a `sheet` (arriba).
   usePollingCombate(true, combate !== null ? 4000 : 15000);
 
   // Derivado durante el render, no sincronizado en un efecto (ver "you
@@ -538,8 +557,9 @@ export function CharacterSheet({
   // turno/estados en la tira compacta.
   const miCombatiente = combate?.combatientes.find((c) => c.characterId === characterId) ?? null;
   // La ficha resuelta una vez (propuesta-especies §3.1) y la misma para todas las
-  // pestañas: con los estados de combate dentro, Personaje y Acciones ven los mismos
-  // números.
+  // pestañas: con los estados dentro, Personaje y Acciones ven los mismos números. Los
+  // estados, siempre los de la ficha: en combate no se suman los de mi fila
+  // (estadosDeCombatiente ya me los da iguales en `combate`).
   // Umbrales de §7: en combate, con la vida/fatiga de mi fila (la foto del combate);
   // fuera, con la de la ficha.
   const vitalidad = useMemo<VitalidadActual>(
@@ -555,13 +575,13 @@ export function CharacterSheet({
         : VITALIDAD_DE_FICHA,
     [miCombatiente],
   );
-  const ficha = useFichaResuelta(sheet, miCombatiente?.estados ?? SIN_ESTADOS, vitalidad);
+  const ficha = useFichaResuelta(sheet, estados, vitalidad);
   const puntosAttr = puntosAtributosDisponibles(sheet);
   // Con el ajuste de coste de la especie (§14.6), el mismo que aplica el servidor.
   const puntosSkill = puntosHabilidadesDisponibles(sheet, ficha.ajusteCoste);
   const { vida, fatiga } = ficha.salud;
   const esMiTurno = !!(miCombatiente && combate!.combatientes[combate!.turnoIndex]?.id === miCombatiente.id);
-  const misEstadosActivos = miCombatiente ? describirEstadosActivos(miCombatiente.estados) : [];
+  const misEstadosActivos = miCombatiente ? describirEstadosActivos(estados) : [];
 
   // Tope de rareza de la letra de Recursos (docs/sistema.md §2): solo en
   // creación, nunca al máster — aprobada la ficha, o editando el máster,
@@ -633,6 +653,7 @@ export function CharacterSheet({
                   <span className="uppercase tracking-wide text-accent">
                     {a.label}
                     {a.rondasRestantes !== null && ` · ${a.rondasRestantes}r`}
+                    {a.duracion.tipo === "escena" && " · escena"}
                   </span>
                   {/* Detalle visible de verdad, no en un `title` — mismo
                       arreglo que CombateConsole.tsx. */}

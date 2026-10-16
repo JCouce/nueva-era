@@ -91,7 +91,7 @@ describe("caracterización: movimiento, carga y blindaje sin efectos de especie"
 // --- E3 ---------------------------------------------------------------------
 
 const ZIME = { casta: "noble", linaje: "zimethroni" };
-const resuelta = (s: Sheet, libre = false) => resolverFicha(s, { vitalidad: VITALIDAD_DE_FICHA, estadosCombate: [], libre });
+const resuelta = (s: Sheet, libre = false) => resolverFicha(s, { vitalidad: VITALIDAD_DE_FICHA, estados: [], libre });
 
 describe("resolución de especie (especie.ts)", () => {
   test("sin especie y especies sin efectos aquí: neutros", () => {

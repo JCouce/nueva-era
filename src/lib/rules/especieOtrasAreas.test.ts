@@ -25,7 +25,7 @@ const MAOLHER: Partial<Sheet> = { especieId: "manduk", especieOpciones: { casta:
 const IROTA: Partial<Sheet> = { especieId: "manduk", especieOpciones: { casta: "noble", linaje: "irota" } };
 const AXADREN: Partial<Sheet> = { especieId: "manduk", especieOpciones: { casta: "noble", linaje: "axadren" } };
 
-const resolver = (s: Sheet, libre = false) => resolverFicha(s, { estadosCombate: [], vitalidad: VITALIDAD_DE_FICHA, libre });
+const resolver = (s: Sheet, libre = false) => resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA, libre });
 
 function preparar(f: FichaResuelta, accionId: string, seleccion: Partial<SeleccionPoder> = {}) {
   const poder = accionesDePsionica(f.ficha, f.psionica.paraEfectos).find((p) => p.accion.id === accionId)!;

@@ -72,17 +72,17 @@ const ENFERMO_Y_ATURDIDO: EstadoActivo[] = [
   { estadoId: "aturdido", gradoId: "fracaso", rondasRestantes: 1 },
 ];
 
-const SIN_ESPECIE = resolverFicha(base(), { vitalidad: VITALIDAD_DE_FICHA, estadosCombate: [] });
-const EQUIPADA = resolverFicha(conEquipo(base()), { vitalidad: VITALIDAD_DE_FICHA, estadosCombate: [] });
+const SIN_ESPECIE = resolverFicha(base(), { vitalidad: VITALIDAD_DE_FICHA, estados: [] });
+const EQUIPADA = resolverFicha(conEquipo(base()), { vitalidad: VITALIDAD_DE_FICHA, estados: [] });
 // Especie con atributos (Zimethroni, Agilidad +1) + estados de combate (Enfermedad baja
 // atributos; Aturdido −2 a Defensa con alcance de grupo).
 const ESPECIE_Y_ESTADOS = resolverFicha({ ...conEquipo(base()), especieId: "zimethroni" }, {
   vitalidad: VITALIDAD_DE_FICHA,
-  estadosCombate: ENFERMO_Y_ATURDIDO,
+  estados: ENFERMO_Y_ATURDIDO,
 });
 const PSIONICA = resolverFicha({ ...base(), psionica: { traslacion: 2, singularidad: 2 }, fatigaActual: 8, fatigaTemporal: 0 }, {
   vitalidad: VITALIDAD_DE_FICHA,
-  estadosCombate: ENFERMO_Y_ATURDIDO,
+  estados: ENFERMO_Y_ATURDIDO,
 });
 
 // --- Réplicas del código de antes (AccionesTab.tsx, AccionModal.tsx, Fabricar/Reparar) --

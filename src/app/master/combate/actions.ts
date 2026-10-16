@@ -10,7 +10,21 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser, canAdjustCombatiente } from "@/lib/auth-helpers";
-import { parseSheet, resolverFicha, VITALIDAD_DE_FICHA, vitalidadAlEntrarEnCombate, estadoPorId, descontarDuracion, type EstadoActivo } from "@/lib/rules";
+import {
+  parseSheet,
+  resolverFicha,
+  VITALIDAD_DE_FICHA,
+  vitalidadAlEntrarEnCombate,
+  leerEstados,
+  ponerEstado,
+  quitarEstado,
+  estadoActivoCon,
+  estadosTrasTurno,
+  vidaTrasCambioDeEstados,
+  type DuracionEstado,
+} from "@/lib/rules";
+import { estadoAAplicarSchema, quitarEstadoSchema } from "@/lib/validation";
+import { cambiarEstadosDePersonajes, revalidarEstados } from "@/lib/estadosPersonaje";
 
 export type CombateResult = { ok: true } | { ok: false; error: string };
 
@@ -100,15 +114,17 @@ export async function agregarJugadorAction(
 
   const character = await prisma.character.findUnique({
     where: { id: characterId },
-    select: { name: true, stats: true },
+    select: { name: true, stats: true, estados: true },
   });
   if (!character) return { ok: false, error: "No existe ese personaje." };
 
   // Foto del máximo y de la vida/fatiga actuales (ver el comentario de Combatiente
   // en schema.prisma) — se copia aquí, no se vuelve a leer del Character.
-  // En reposo: al entrar en el combate todavía no tiene estados.
+  // Con los estados que ya lleve en la ficha: el máximo que ve el jugador al entrar.
+  // Un estado puesto o quitado ya dentro del combate recalcula este máximo
+  // (cambiarEstadosDePersonajes, S75).
   const sheet = parseSheet(character.stats);
-  const { vida, fatiga } = resolverFicha(sheet, { estadosCombate: [], vitalidad: VITALIDAD_DE_FICHA }).salud;
+  const { vida, fatiga } = resolverFicha(sheet, { estados: leerEstados(character.estados), vitalidad: VITALIDAD_DE_FICHA }).salud;
   const { pgActual, fatigaActual } = vitalidadAlEntrarEnCombate(sheet, { vida, fatiga });
 
   await prisma.combatiente.create({
@@ -146,7 +162,7 @@ export async function agregarNpcDeCatalogoAction(
   const sheet = parseSheet(npc.stats);
   // Modo libre, como lo resuelven el editor y NpcAccionesPanel: las dotes del NPC cuentan
   // sin mirar requisitos (§9.4) también en sus máximos.
-  const { vida, fatiga } = resolverFicha(sheet, { estadosCombate: [], vitalidad: VITALIDAD_DE_FICHA, libre: true }).salud;
+  const { vida, fatiga } = resolverFicha(sheet, { estados: [], vitalidad: VITALIDAD_DE_FICHA, libre: true }).salud;
 
   await prisma.combatiente.create({
     data: {
@@ -197,15 +213,34 @@ export async function avanzarTurnoAction(combateId: string): Promise<CombateResu
   const siguiente = combate.turnoIndex + 1;
   const daLaVuelta = siguiente >= combate.combatientes.length;
 
-  // Solo escribe las filas que de verdad tenían algo que descontar — la
-  // mayoría de combatientes no llevan estados puestos, no hace falta
-  // tocarlas. Ojo: "tenía algo antes" es la condición correcta, no "cambió
-  // de tamaño" — una duración que baja de 3 a 2 rondas sigue siendo un
-  // cambio real aunque el array no pierda ninguna entrada.
+  // Solo escribe las filas que de verdad tenían algo que descontar
+  // (estadosTrasTurno). Los NPC, en su fila; los jugadores, en su ficha
+  // (Character.estados, E1a): lo que quede en el Combatiente de un jugador se ignora.
   const actualizaciones = combate.combatientes.flatMap((c) => {
-    const originales = c.estados as unknown as EstadoActivo[];
-    if (originales.length === 0) return [];
-    return [{ id: c.id, estados: descontarDuracion(originales) }];
+    if (c.characterId !== null) return [];
+    const estados = estadosTrasTurno(c.estados);
+    return estados ? [{ id: c.id, estados }] : [];
+  });
+  const idsJugadores = [
+    ...new Set(combate.combatientes.flatMap((c) => (c.characterId !== null ? [c.characterId] : []))),
+  ];
+  const jugadores = await prisma.character.findMany({
+    where: { id: { in: idsJugadores } },
+    select: { id: true, estados: true, stats: true },
+  });
+  // Al caerse un estado por rondas, su foto recalcula el máximo (sube) sin tocar la
+  // vida actual; vidaTrasCambioDeEstados solo restaría si el máximo bajara (S75).
+  const actualizacionesJugadores = jugadores.flatMap((j) => {
+    const estados = estadosTrasTurno(j.estados);
+    if (!estados) return [];
+    const sheet = parseSheet(j.stats);
+    const vida = vidaTrasCambioDeEstados(
+      sheet,
+      leerEstados(j.estados),
+      estados,
+      combate.combatientes.filter((c) => c.characterId === j.id),
+    );
+    return [{ id: j.id, estados, stats: vida.sheet === sheet ? undefined : vida.sheet, fotos: vida.combatientes }];
   });
 
   await prisma.$transaction([
@@ -219,8 +254,23 @@ export async function avanzarTurnoAction(combateId: string): Promise<CombateResu
     ...actualizaciones.map((c) =>
       prisma.combatiente.update({ where: { id: c.id }, data: { estados: c.estados } }),
     ),
+    ...actualizacionesJugadores.map((j) =>
+      prisma.character.update({
+        where: { id: j.id },
+        data: j.stats ? { estados: j.estados, stats: j.stats } : { estados: j.estados },
+      }),
+    ),
+    ...actualizacionesJugadores.flatMap((j) =>
+      j.fotos.map((c) =>
+        prisma.combatiente.update({
+          where: { id: c.id },
+          data: { pgActual: c.pgActual, pgMax: c.pgMax, fatigaActual: c.fatigaActual, fatigaMax: c.fatigaMax },
+        }),
+      ),
+    ),
   ]);
   revalidateCombate();
+  if (actualizacionesJugadores.length > 0) revalidarEstados(actualizacionesJugadores.map((j) => j.id));
   return { ok: true };
 }
 
@@ -359,36 +409,42 @@ export async function ajustarFatigaAction(combatienteId: string, delta: number):
 
 // --- Estados ---
 
-// Un combatiente solo lleva un grado de cada estado a la vez (mismo
-// criterio que modificadoresDeEstados(), lib/rules/estados.ts): aplicar de
-// nuevo un estado que ya tenía puesto sustituye el grado, no lo acumula.
+// Un combatiente solo lleva un grado de cada estado a la vez (ponerEstado):
+// aplicar de nuevo un estado que ya tenía puesto sustituye el grado, no lo
+// acumula. Un jugador lo lleva en su ficha (Character.estados, E1a), el mismo
+// sitio que fuera de combate, con su vida (S75) y su entrada en el registro del
+// máster (E1b); un NPC, en su fila y sin registro. `rondasRestantes` null = hasta
+// quitarlo (la consola no ofrece aún "fin de escena", E1d).
 export async function aplicarEstadoAction(
   combatienteId: string,
   estadoId: string,
   gradoId: string,
   rondasRestantes: number | null,
 ): Promise<CombateResult> {
-  if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede aplicar un estado." };
+  const user = await requireMaster();
+  if (!user) return { ok: false, error: "Solo el máster puede aplicar un estado." };
 
-  const estado = estadoPorId(estadoId);
-  const grado = estado?.grados.find((g) => g.id === gradoId);
-  if (!estado || !grado) return { ok: false, error: "Ese estado o grado no existe en el catálogo." };
+  const duracion: DuracionEstado =
+    rondasRestantes === null ? { tipo: "hastaQuitarlo" } : { tipo: "rondas", rondas: rondasRestantes };
+  const parsed = estadoAAplicarSchema.safeParse({ estadoId, gradoId, duracion });
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Estado inválido." };
+  const nuevo = estadoActivoCon(parsed.data.estadoId, parsed.data.gradoId, parsed.data.duracion);
 
   const combatiente = await prisma.combatiente.findUnique({
     where: { id: combatienteId },
-    select: { estados: true },
+    select: { estados: true, characterId: true },
   });
   if (!combatiente) return { ok: false, error: "No existe ese combatiente." };
 
-  // `estados` es Json escrito solo por estas dos acciones, nunca por el
-  // cliente — un cast basta; si algún día un formulario lo postea directo,
-  // esto necesita el mismo tratamiento tolerante que parseSheet.
-  const activos = (combatiente.estados as unknown as EstadoActivo[]).filter(
-    (e) => e.estadoId !== estadoId,
-  );
-  activos.push({ estadoId, gradoId, rondasRestantes });
-
-  await prisma.combatiente.update({ where: { id: combatienteId }, data: { estados: activos } });
+  if (combatiente.characterId !== null) {
+    const hecho = await cambiarEstadosDePersonajes([combatiente.characterId], { tipo: "poner", estado: nuevo }, { userId: user.id });
+    if (!hecho) return { ok: false, error: "No existe el personaje de ese combatiente." };
+  } else {
+    await prisma.combatiente.update({
+      where: { id: combatienteId },
+      data: { estados: ponerEstado(leerEstados(combatiente.estados), nuevo) },
+    });
+  }
   revalidateCombate();
   return { ok: true };
 }
@@ -397,18 +453,30 @@ export async function quitarEstadoAction(
   combatienteId: string,
   estadoId: string,
 ): Promise<CombateResult> {
-  if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede quitar un estado." };
+  const user = await requireMaster();
+  if (!user) return { ok: false, error: "Solo el máster puede quitar un estado." };
+  const parsed = quitarEstadoSchema.safeParse({ id: combatienteId, estadoId });
+  if (!parsed.success) return { ok: false, error: "Entrada inválida." };
 
   const combatiente = await prisma.combatiente.findUnique({
-    where: { id: combatienteId },
-    select: { estados: true },
+    where: { id: parsed.data.id },
+    select: { estados: true, characterId: true },
   });
   if (!combatiente) return { ok: false, error: "No existe ese combatiente." };
 
-  const activos = (combatiente.estados as unknown as EstadoActivo[]).filter(
-    (e) => e.estadoId !== estadoId,
-  );
-  await prisma.combatiente.update({ where: { id: combatienteId }, data: { estados: activos } });
+  if (combatiente.characterId !== null) {
+    const hecho = await cambiarEstadosDePersonajes(
+      [combatiente.characterId],
+      { tipo: "quitar", estadoId: parsed.data.estadoId },
+      { userId: user.id },
+    );
+    if (!hecho) return { ok: false, error: "No existe el personaje de ese combatiente." };
+  } else {
+    await prisma.combatiente.update({
+      where: { id: parsed.data.id },
+      data: { estados: quitarEstado(leerEstados(combatiente.estados), parsed.data.estadoId) },
+    });
+  }
   revalidateCombate();
   return { ok: true };
 }
