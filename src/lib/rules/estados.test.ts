@@ -175,7 +175,7 @@ describe("describirEstadosActivos (fase 6b bloque 3: label/detalle para pintar, 
   });
 });
 
-describe("descontarDuracion (subtarea 2.6: un turno que pasa descuenta rondas solo)", () => {
+describe("descontarDuracion (E1d: al cerrar la vuelta descuenta una ronda a cada estado)", () => {
   test("una duración de 1 baja a 0 y desaparece — no se queda en 0 mudo", () => {
     assert.deepEqual(descontarDuracion([{ estadoId: "aturdido", gradoId: "exito", rondasRestantes: 1 }]), []);
   });

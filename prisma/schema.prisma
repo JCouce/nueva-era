@@ -27,18 +27,18 @@ enum EstadoCombate {
 }
 
 model User {
-  id            String      @id @default(cuid())
-  email         String      @unique
+  id            String           @id @default(cuid())
+  email         String           @unique
   name          String?
   passwordHash  String? // bcrypt; null cuando el user entra solo por Google
-  role          Role        @default(PLAYER)
+  role          Role             @default(PLAYER)
   image         String?
   emailVerified DateTime?
   characters    Character[]
   accounts      Account[]
   sessions      Session[]
   registros     RegistroMaster[]
-  createdAt     DateTime    @default(now())
+  createdAt     DateTime         @default(now())
 }
 
 model Character {
@@ -193,15 +193,18 @@ model NpcTemplate {
 // restadas) viven en lib/rules/registro.ts. `characterIds` sin relación: un personaje
 // borrado deja su entrada (se lista sin nombre y deshacer se lo salta).
 model RegistroMaster {
-  id           String    @id @default(cuid())
-  createdAt    DateTime  @default(now())
-  userId       String?
-  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  tipo         String
-  characterIds String[]
-  datos        Json
-  motivo       String?
-  deshechoAt   DateTime?
+  id             String    @id @default(cuid())
+  createdAt      DateTime  @default(now())
+  userId         String?
+  user           User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  tipo           String
+  characterIds   String[]
+  // Filas de combate que toca la entrada (pestaña Vida: fotos de jugador y NPC). Columna
+  // propia, como characterIds, para poder buscar por ellas sin abrir `datos`.
+  combatienteIds String[]  @default([])
+  datos          Json
+  motivo         String?
+  deshechoAt     DateTime?
 
   @@index([createdAt])
 }

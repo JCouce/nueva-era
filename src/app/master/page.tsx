@@ -8,6 +8,8 @@ import {
   parseSheet,
   resolverFicha,
   textoEntradaRegistro,
+  topesEnReposo,
+  vidaEnMesa,
   VITALIDAD_DE_FICHA,
 } from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
@@ -34,14 +36,25 @@ export default async function MesaPage() {
 }
 
 async function cargarMesa() {
-  // En juego = aprobados, los mismos que limpia "Terminar escena".
+  // En juego = aprobados, los mismos que limpia "Limpiar estados".
   const filas = await prisma.character.findMany({
     where: { status: "APPROVED" },
     orderBy: { name: "asc" },
     select: { id: true, name: true, stats: true, estados: true, xp: true, creditos: true },
   });
-  // TODO(revisar): la vida y la fatiga son las de la ficha; con un combate abierto el
-  // jugador lleva además su foto (Combatiente), que la Mesa no enseña.
+  // Con un combate en curso, quien esté en la cola enseña la vida de su foto (E1d).
+  const fotos = await prisma.combatiente.findMany({
+    where: { characterId: { in: filas.map((f) => f.id) }, combate: { estado: "EN_CURSO" } },
+    select: {
+      characterId: true,
+      orden: true,
+      derrotado: true,
+      pgActual: true,
+      pgMax: true,
+      fatigaActual: true,
+      fatigaMax: true,
+    },
+  });
   const jugadores: JugadorMesa[] = filas.map((f) => {
     const sheet = parseSheet(f.stats);
     const estados = leerEstados(f.estados);
@@ -49,14 +62,26 @@ async function cargarMesa() {
     const especie = ficha.especie
       ? [ficha.especie.especie.label, ficha.especie.casta?.label].filter(Boolean).join(" · ")
       : null;
+    const mostrada = vidaEnMesa(
+      {
+        vida: { actual: sheet.vidaActual, max: ficha.salud.vida },
+        fatiga: { actual: sheet.fatigaActual, max: ficha.salud.fatiga },
+      },
+      fotos.filter((c) => c.characterId === f.id),
+    );
+    // Hasta dónde cura la pestaña Vida: la foto, a su máximo; la ficha, al de reposo (S74).
+    const tope = mostrada.deCombate
+      ? { vida: mostrada.vida.max, fatiga: mostrada.fatiga.max }
+      : topesEnReposo(sheet);
     return {
       id: f.id,
       nombre: f.name,
       especie,
       xp: f.xp,
       creditos: f.creditos,
-      vida: { actual: sheet.vidaActual, max: ficha.salud.vida },
-      fatiga: { actual: sheet.fatigaActual, max: ficha.salud.fatiga },
+      vida: { ...mostrada.vida, tope: tope.vida },
+      fatiga: { ...mostrada.fatiga, tope: tope.fatiga },
+      deCombate: mostrada.deCombate,
       estados: describirEstadosActivos(estados),
     };
   });

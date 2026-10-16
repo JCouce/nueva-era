@@ -106,5 +106,47 @@ export const quitarEstadoAPersonajesSchema = z.object({
   motivo: motivoSchema,
 });
 
-// Terminar escena (E1c): sin objetivo (son todos los personajes en juego), motivo opcional.
-export const terminarEscenaSchema = z.object({ motivo: motivoSchema });
+// Limpiar estados: de la Mesa (todos los personajes en juego) o del combate abierto (su
+// cola, NPC incluidos). Motivo opcional.
+export const limpiarEstadosSchema = z.object({ ambito: z.enum(["mesa", "combate"]), motivo: motivoSchema });
+
+// Estados desde la consola de combate (E1d): objetivos = filas de la cola (Combatiente),
+// jugadores y NPC mezclados.
+const variosCombatientesSchema = z
+  .array(z.string().trim().min(1).max(40))
+  .min(1, "Elige al menos a uno de la cola.")
+  .max(100);
+
+export const aplicarEstadoEnCombateSchema = z.object({
+  combatienteIds: variosCombatientesSchema,
+  estado: estadoAAplicarSchema,
+  motivo: motivoSchema,
+});
+
+export const quitarEstadoEnCombateSchema = z.object({
+  combatienteIds: variosCombatientesSchema,
+  estadoId: idCatalogo,
+  motivo: motivoSchema,
+});
+
+// Pestaña Vida del centro de mando: el signo de `cantidad` lo pone el modo (daño
+// negativo, curación positiva), nunca lo teclea el máster.
+const recursoVitalSchema = z.enum(["vida", "fatiga"]);
+const cantidadVidaSchema = z
+  .number()
+  .int("Tiene que ser un número entero.")
+  .min(-999)
+  .max(999)
+  .refine((n) => n !== 0, "La cantidad no puede ser 0.");
+
+export const ajustarVidaAPersonajesSchema = z.object({
+  characterIds: variosPersonajesSchema,
+  recurso: recursoVitalSchema,
+  cantidad: cantidadVidaSchema,
+});
+
+export const ajustarVidaEnCombateSchema = z.object({
+  combatienteIds: variosCombatientesSchema,
+  recurso: recursoVitalSchema,
+  cantidad: cantidadVidaSchema,
+});

@@ -28,17 +28,22 @@ const gradoInicial = (e: Estado) => (e.grados.some((g) => g.id === "fracaso") ? 
 // Pestaña Estados del panel de mando: buscador, rejilla del catálogo y la configuración
 // del elegido (grado, duración, efecto). En escritorio la configuración va debajo de la
 // rejilla; en móvil, tocar un estado abre la hoja inferior (CSS: los dos montados,
-// cada uno escondido en su breakpoint).
+// cada uno escondido en su breakpoint). `enLinea`: la configuración siempre debajo y
+// nunca la hoja propia, para cuando el panel ya va dentro de una (combate en móvil, E1d).
 export function PanelEstados({
   objetivos,
   acciones,
   onAviso,
   onQuitarObjetivo,
+  enLinea = false,
+  onAplicado,
 }: {
   objetivos: ObjetivoMando[];
   acciones: AccionesMando;
   onAviso: (a: Omit<AvisoMando, "id">) => void;
   onQuitarObjetivo: (id: string) => void;
+  enLinea?: boolean;
+  onAplicado?: () => void;
 }) {
   const [busqueda, setBusqueda] = useState("");
   const [estadoId, setEstadoId] = useState<string | null>(null);
@@ -60,7 +65,7 @@ export function PanelEstados({
     setGradoId(g);
     proponerDuracion(e, g);
     setError(null);
-    setHoja(true);
+    if (!enLinea) setHoja(true);
   };
   // Si el documento da una duración por defecto para el grado, se propone en rondas.
   const proponerDuracion = (e: Estado, g: string) => {
@@ -88,6 +93,7 @@ export function PanelEstados({
       );
       if (!r.ok) return setError(r.error);
       setHoja(false);
+      onAplicado?.();
       onAviso({ mensaje: `${estado.label} a ${nombres}`, registroId: r.registroId, tono: "ok" });
     });
   };
@@ -98,6 +104,7 @@ export function PanelEstados({
       const r = await acciones.quitarEstado(conEste.map((o) => o.id), estado.id);
       if (!r.ok) return setError(r.error);
       setHoja(false);
+      onAplicado?.();
       const quien = listaLegible(conEste.map((o) => nombreCorto(o.nombre)));
       onAviso({ mensaje: `Quitado ${estado.label} a ${quien}`, registroId: r.registroId, tono: "ok" });
     });
@@ -193,8 +200,8 @@ export function PanelEstados({
         {lista.length === 0 && <p className="col-span-full text-muted">Ningún estado se llama así.</p>}
       </div>
 
-      {/* Escritorio: configuración en línea. */}
-      <div className="hidden lg:block">
+      {/* Escritorio (o `enLinea`): configuración debajo de la rejilla. */}
+      <div className={enLinea ? "" : "hidden lg:block"}>
         {configuracion ? (
           <div className="grid gap-4 border border-border bg-surface p-4">
             {configuracion}
@@ -205,7 +212,7 @@ export function PanelEstados({
                     A <b className="text-foreground">{nombres}</b>
                   </>
                 ) : (
-                  "Sin objetivo: elige a quién en la lista."
+                  `Sin objetivo: elige a quién en la ${enLinea ? "cola" : "lista"}.`
                 )}
               </span>
               <div className="flex flex-wrap gap-2">

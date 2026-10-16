@@ -1,4 +1,4 @@
-import type { DuracionEstado, EstadoActivoDescrito, RecursoMaster } from "@/lib/rules";
+import type { DuracionEstado, EstadoActivoDescrito, RecursoMaster, RecursoVital, VitalDeObjetivo } from "@/lib/rules";
 
 // Un objetivo del panel de mando: un jugador en la Mesa; en el combate (E1d) también
 // un NPC de la cola, que solo admite estados (xp y créditos null).
@@ -9,6 +9,10 @@ export type ObjetivoMando = {
   xp: number | null;
   creditos: number | null;
   estados: EstadoActivoDescrito[];
+  // Lo que ajusta la pestaña Vida: la ficha en la Mesa (o la foto si está en un combate
+  // en curso), la foto en el combate. `tope`: hasta dónde cura (VitalDeObjetivo).
+  vida: VitalDeObjetivo;
+  fatiga: VitalDeObjetivo;
 };
 
 export type ResultadoMando = { ok: true; registroId: string | null } | { ok: false; error: string };
@@ -21,6 +25,8 @@ export type AccionesMando = {
   aplicarEstado: (ids: string[], estado: EstadoAAplicar) => Promise<ResultadoMando>;
   quitarEstado: (ids: string[], estadoId: string) => Promise<ResultadoMando>;
   darRecurso: (recurso: RecursoMaster, ids: string[], cantidad: number, motivo?: string) => Promise<ResultadoMando>;
+  // `delta` con signo: negativo = daño.
+  ajustarVida: (recurso: RecursoVital, ids: string[], delta: number) => Promise<ResultadoMando>;
 };
 
 // El aviso (toast) que sale tras cada acción, con "Deshacer" si dejó entrada.

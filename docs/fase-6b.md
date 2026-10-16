@@ -293,6 +293,7 @@ para el máster, sin intentar simularlo.
   estados del catálogo no dan una por defecto) no se toca. `avanzarTurnoAction` (1.3) la
   aplica a todos los combatientes en la misma transacción que mueve el turno — "un turno
   que pasa" descuenta para cualquiera, no solo para quien tiene el estado puesto.
+  *(Superado en E1d, S77: ahora solo descuenta al cerrar la vuelta.)*
   **Bug propio corregido antes de escribir el test:** el primer filtro de qué filas
   escribir comparaba longitudes de array ("¿se cayó algún estado?") en vez de "¿había
   algo que descontar?" — con eso, una duración que baja de 3 a 2 rondas (sigue en la

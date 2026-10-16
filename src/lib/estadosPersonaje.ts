@@ -5,9 +5,12 @@ import type { Prisma } from "@/generated/prisma/client";
 import {
   aplicarOperacionEstado,
   datosParaGuardar,
+  estadosDeNpcTras,
+  idsDeRegistro,
   leerEstados,
   parseSheet,
-  quitarEstadosDeEscena,
+  quitarEstadosDe,
+  sinEstados,
   type CambioEstadoPersonaje,
   type DatosRegistro,
   type OperacionEstado,
@@ -25,7 +28,7 @@ export async function registrar(tx: Prisma.TransactionClient, autoria: Autoria, 
     data: {
       userId: autoria.userId,
       tipo: datos.tipo,
-      characterIds: [...new Set(datos.cambios.map((c) => c.characterId))],
+      ...idsDeRegistro(datos),
       datos: datosParaGuardar(datos),
       motivo: autoria.motivo || null,
     },
@@ -89,18 +92,16 @@ export async function cambiarEstadosDePersonajes(
   return hecho;
 }
 
-// "Terminar escena" (E1c): quita a todos los personajes en juego los estados que duran
-// hasta el fin de escena, en una transacción y con una sola entrada `fin_escena` en el
-// registro. Quitar no resta vida (S75); las fotos de combate abiertas recalculan su
-// máximo como al quitar uno a mano.
-// TODO(revisar): solo los personajes en juego (APPROVED), como la Mesa; los NPC de un
-// combate abierto con estados de escena no se tocan (llega con E1d).
-export async function terminarEscenaDeJugadores(
+// "Limpiar estados": quita TODOS los estados a los personajes indicados, en una
+// transacción y con una sola entrada `limpiar_estados` en el registro. Quitar no resta vida
+// (S75); las fotos de combate abiertas recalculan su máximo como al quitar uno a mano.
+export async function limpiarEstadosDeJugadores(
+  donde: Prisma.CharacterWhereInput,
   autoria: Autoria,
 ): Promise<{ registroId: string | null; characterIds: string[] }> {
   const res = await prisma.$transaction(async (tx) => {
     const filas = await tx.character.findMany({
-      where: { status: "APPROVED" },
+      where: donde,
       select: { id: true, stats: true, estados: true },
     });
     const ids = filas.map((f) => f.id);
@@ -113,7 +114,7 @@ export async function terminarEscenaDeJugadores(
     const tocados: string[] = [];
     for (const f of filas) {
       const sheet = parseSheet(f.stats);
-      const r = quitarEstadosDeEscena(
+      const r = quitarEstadosDe(
         { id: f.id, sheet, estados: leerEstados(f.estados) },
         fotos.filter((c) => c.characterId === f.id),
       );
@@ -131,11 +132,48 @@ export async function terminarEscenaDeJugadores(
       cambios.push(...r.cambios);
       tocados.push(f.id);
     }
-    const registroId = cambios.length > 0 ? await registrar(tx, autoria, { tipo: "fin_escena", cambios }) : null;
+    const registroId = cambios.length > 0 ? await registrar(tx, autoria, { tipo: "limpiar_estados", cambios }) : null;
     return { registroId, characterIds: tocados };
   });
   if (res.characterIds.length > 0) revalidarEstados(res.characterIds);
   return res;
+}
+
+// Estados de NPC (E1d): en su fila de combate (Combatiente.estados), sin vida que restar
+// ni registro. Devuelve cuántas filas cambió. Las filas de jugador se ignoran: sus
+// estados van por cambiarEstadosDePersonajes.
+export async function cambiarEstadosDeNpcs(combatienteIds: string[], op: OperacionEstado): Promise<number> {
+  const filas = await prisma.combatiente.findMany({
+    where: { id: { in: [...new Set(combatienteIds)] }, characterId: null },
+    select: { id: true, estados: true },
+  });
+  const cambios = filas.flatMap((f) => {
+    const estados = estadosDeNpcTras(f.estados, op);
+    return estados ? [{ id: f.id, estados }] : [];
+  });
+  if (cambios.length > 0) {
+    await prisma.$transaction(cambios.map((c) => prisma.combatiente.update({ where: { id: c.id }, data: { estados: c.estados } })));
+    revalidatePath("/master/combate");
+  }
+  return cambios.length;
+}
+
+// "Limpiar estados" sobre los NPC del combate abierto: les quita todos, sin registro (no
+// se deshace). Devuelve cuántos tenían alguno.
+export async function limpiarEstadosDeNpcs(): Promise<number> {
+  const filas = await prisma.combatiente.findMany({
+    where: { characterId: null, combate: COMBATE_ABIERTO },
+    select: { id: true, estados: true },
+  });
+  const cambios = filas.flatMap((f) => {
+    const estados = sinEstados(f.estados);
+    return estados ? [{ id: f.id, estados }] : [];
+  });
+  if (cambios.length > 0) {
+    await prisma.$transaction(cambios.map((c) => prisma.combatiente.update({ where: { id: c.id }, data: { estados: c.estados } })));
+    revalidatePath("/master/combate");
+  }
+  return cambios.length;
 }
 
 // La ficha de cada uno, la consola de combate y el panel del máster.

@@ -47,6 +47,8 @@ describe("textoEntradaRegistro", () => {
     assert.equal(textoEntradaRegistro("estado_quitar", quitar, PJS), "Quitado Aturdido (Fracaso) a Tarsis");
     const fin = { tipo: "fin_escena" as const, cambios: [cambioEstado("k", ATURDIDO, null), cambioEstado("k", ATURDIDO, null), cambioEstado("t", ATURDIDO, null)] };
     assert.equal(textoEntradaRegistro("fin_escena", fin, PJS), "Fin de escena: limpiados los estados de Kira y Tarsis");
+    const limpiar = { ...fin, tipo: "limpiar_estados" as const };
+    assert.equal(textoEntradaRegistro("limpiar_estados", limpiar, PJS), "Estados limpiados: Kira y Tarsis");
   });
 
   test("xp y créditos, con signo y miles; un personaje borrado", () => {
@@ -60,6 +62,21 @@ describe("textoEntradaRegistro", () => {
 
   test("datos que no se entienden", () => {
     assert.match(textoEntradaRegistro("xp", null, PJS), /formato antiguo/);
+  });
+
+  test("vida: jugador con nombre corto, NPC con el entero", () => {
+    const cambios = [
+      { objetivo: "ficha" as const, id: "j", nombre: "Javi Pérez", npc: false, antes: 6, despues: 3 },
+      { objetivo: "combatiente" as const, id: "g", nombre: "Guardia corporativo", npc: true, antes: 9, despues: 6 },
+    ];
+    assert.equal(
+      textoEntradaRegistro("vida", { tipo: "vida", recurso: "vida", delta: -3, cambios }, []),
+      "−3 vida a Javi y Guardia corporativo",
+    );
+    assert.equal(
+      textoEntradaRegistro("vida", { tipo: "vida", recurso: "fatiga", delta: 2, cambios: cambios.slice(0, 1) }, []),
+      "+2 fatiga a Javi",
+    );
   });
 });
 

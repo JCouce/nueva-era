@@ -12,19 +12,29 @@
 //     clase de duración (las rondas pueden haber bajado). Si se quitó o se cayó por
 //     rondas, o lo cambió otra acción, no.
 //   - Quitar un estado: no tiene que haber vuelto a ponerse.
-//   - Fin de escena (E1c): como quitar, para cada estado de escena que limpió; si uno
+//   - Limpiar estados (y el viejo fin de escena): como quitar, para cada estado que limpió; si uno
 //     solo ha vuelto a ponerse, no se devuelve ninguno.
 //   - En los de estado, además: si una entrada posterior sin deshacer toca ese
 //     mismo estado de ese personaje, no (hay que deshacer antes la posterior).
 //   - Un personaje borrado se salta: no queda nada suyo que devolver.
+//   - Vida/fatiga (pestaña Vida del máster, tipo "vida"): se vuelve al "antes" de cada
+//     objetivo (ficha o foto de combate, jugador o NPC), recortado a su tope de hoy. No
+//     se puede si el valor actual ya no es el "después" registrado: alguien lo ha
+//     movido después (el jugador, otra acción, un estado que restó) y hay que deshacer
+//     antes lo posterior; tampoco se toca a nadie más de la entrada. Un objetivo que ya
+//     no existe (personaje borrado, combatiente de un combate cerrado o quitado) se
+//     salta. Solo mira el valor, no las entradas posteriores: si lo posterior ya lo
+//     devolvió al mismo número, se deja deshacer.
 import { z } from "zod";
 import { leerEstados, ponerEstado, quitarEstado } from "./estadosFicha";
 import type { EstadoActivo } from "./estados";
 import { devolverVida, maximosConEstados, type CambioEstadoPersonaje, type ParVida } from "./vidaPorEstados";
 import type { Sheet } from "./sheet";
+import { vidaTrasAjuste } from "./vitalidad";
+import type { RecursoVital } from "./ajusteVida";
 
 // Los que vengan se añaden aquí con su forma.
-export const TIPOS_REGISTRO = ["xp", "creditos", "estado_poner", "estado_quitar", "fin_escena"] as const;
+export const TIPOS_REGISTRO = ["xp", "creditos", "estado_poner", "estado_quitar", "fin_escena", "limpiar_estados", "vida"] as const;
 export type TipoRegistro = (typeof TIPOS_REGISTRO)[number];
 export type RecursoMaster = "xp" | "creditos";
 
@@ -32,16 +42,38 @@ export type CambioRecurso = { characterId: string; antes: number; despues: numbe
 
 // Un miembro por tipo (y no `tipo: "xp" | "creditos"`) para que TS estreche bien.
 export type DatosRecurso = { tipo: "xp"; cambios: CambioRecurso[] } | { tipo: "creditos"; cambios: CambioRecurso[] };
-// fin_escena: un cambio por estado de escena quitado (varios por personaje).
+// fin_escena (entradas de antes de "Limpiar estados") y limpiar_estados: un cambio por
+// estado quitado (varios por personaje).
 export type DatosEstado =
   | { tipo: "estado_poner"; cambios: CambioEstadoPersonaje[] }
   | { tipo: "estado_quitar"; cambios: CambioEstadoPersonaje[] }
-  | { tipo: "fin_escena"; cambios: CambioEstadoPersonaje[] };
-export type DatosRegistro = DatosRecurso | DatosEstado;
+  | { tipo: "fin_escena"; cambios: CambioEstadoPersonaje[] }
+  | { tipo: "limpiar_estados"; cambios: CambioEstadoPersonaje[] };
+// Vida o fatiga (pestaña Vida): un cambio por objetivo. `ficha`: Character.stats (id =
+// characterId); `combatiente`: la foto de combate (id = combatienteId), jugador o NPC.
+// El nombre se guarda para el texto (un NPC no tiene ficha de donde leerlo). `delta`:
+// lo que pidió el máster; cada cambio guarda lo que de verdad movió (con los topes).
+export type ObjetivoVida = "ficha" | "combatiente";
+export type CambioVida = { objetivo: ObjetivoVida; id: string; nombre: string; npc: boolean; antes: number; despues: number };
+export type DatosVida = { tipo: "vida"; recurso: RecursoVital; delta: number; cambios: CambioVida[] };
+
+export type DatosRegistro = DatosRecurso | DatosEstado | DatosVida;
 
 // Lo que va a la columna `datos` (el tipo va en su columna).
-export function datosParaGuardar(d: DatosRegistro): { cambios: DatosRegistro["cambios"] } {
+export function datosParaGuardar(
+  d: DatosRegistro,
+): { cambios: DatosRegistro["cambios"] } | { recurso: RecursoVital; delta: number; cambios: CambioVida[] } {
+  if (d.tipo === "vida") return { recurso: d.recurso, delta: d.delta, cambios: d.cambios };
   return { cambios: d.cambios };
+}
+
+// Las columnas characterIds y combatienteIds de RegistroMaster: a quién toca la entrada.
+export function idsDeRegistro(d: DatosRegistro): { characterIds: string[]; combatienteIds: string[] } {
+  if (d.tipo === "vida") {
+    const de = (o: ObjetivoVida) => [...new Set(d.cambios.filter((c) => c.objetivo === o).map((c) => c.id))];
+    return { characterIds: de("ficha"), combatienteIds: de("combatiente") };
+  }
+  return { characterIds: [...new Set(d.cambios.map((c) => c.characterId))], combatienteIds: [] };
 }
 
 const parVidaSchema = z.object({ vida: z.number().int().min(0), fatiga: z.number().int().min(0) });
@@ -62,13 +94,32 @@ function leerEstadoGuardado(v: unknown): EstadoActivo | null | undefined {
   return e;
 }
 
+const datosVidaSchema = z.object({
+  recurso: z.enum(["vida", "fatiga"]),
+  delta: z.number().int(),
+  cambios: z.array(
+    z.object({
+      objetivo: z.enum(["ficha", "combatiente"]),
+      id: z.string(),
+      nombre: z.string(),
+      npc: z.boolean(),
+      antes: z.number().int(),
+      despues: z.number().int(),
+    }),
+  ),
+});
+
 export function leerDatosRegistro(tipo: string, json: unknown): DatosRegistro | null {
+  if (tipo === "vida") {
+    const r = datosVidaSchema.safeParse(json);
+    return r.success ? { tipo, ...r.data } : null;
+  }
   const cambios = (json as { cambios?: unknown } | null)?.cambios;
   if (tipo === "xp" || tipo === "creditos") {
     const r = z.array(cambioRecursoSchema).safeParse(cambios);
     return r.success ? { tipo, cambios: r.data } : null;
   }
-  if (tipo === "estado_poner" || tipo === "estado_quitar" || tipo === "fin_escena") {
+  if (tipo === "estado_poner" || tipo === "estado_quitar" || tipo === "fin_escena" || tipo === "limpiar_estados") {
     const r = z.array(cambioEstadoSchema).safeParse(cambios);
     if (!r.success) return null;
     const leidos: CambioEstadoPersonaje[] = [];
@@ -176,7 +227,7 @@ function sigueIgual(actual: EstadoActivo, puesto: EstadoActivo): boolean {
 
 function tocaEstado(posterior: EntradaPosterior, characterId: string, estadoId: string): boolean {
   const d = leerDatosRegistro(posterior.tipo, posterior.datos);
-  if (!d || d.tipo === "xp" || d.tipo === "creditos") return false;
+  if (!d || d.tipo === "xp" || d.tipo === "creditos" || d.tipo === "vida") return false;
   return d.cambios.some((c) => c.characterId === characterId && c.estadoId === estadoId);
 }
 
@@ -245,4 +296,44 @@ function devolverVidaFicha(sheet: Sheet, devuelta: ParVida, maximos: ParVida): S
     vidaActual: devolverVida(sheet.vidaActual, devuelta.vida, maximos.vida),
     fatigaActual: devolverVida(sheet.fatigaActual, devuelta.fatiga, maximos.fatiga),
   };
+}
+
+// --- Vida y fatiga (pestaña Vida) ---
+
+// Un objetivo de la pestaña Vida tal como está ahora: valor actual y hasta dónde puede
+// subir (máximo en reposo en la ficha, S74; pgMax/fatigaMax en la foto).
+export type ObjetivoVidaActual = { objetivo: ObjetivoVida; id: string; nombre: string; npc: boolean; actual: number; tope: number };
+
+// Sumar `delta` (negativo = daño) a varios, con los topes de siempre (vidaTrasAjuste).
+// Quien no cambia (curar a quien ya está al tope, dañar a quien está a 0) no sale.
+export function planAjusteVida(objetivos: ObjetivoVidaActual[], delta: number): CambioVida[] {
+  return objetivos.flatMap((o) => {
+    const despues = vidaTrasAjuste(o.actual, o.tope, delta);
+    return despues === o.actual ? [] : [{ objetivo: o.objetivo, id: o.id, nombre: o.nombre, npc: o.npc, antes: o.actual, despues }];
+  });
+}
+
+const claveVida = (o: { objetivo: ObjetivoVida; id: string }) => `${o.objetivo}:${o.id}`;
+
+// Criterio en la cabecera del archivo. `actuales`: los objetivos de la entrada que
+// siguen existiendo, con su valor de ahora.
+export function planDeshacerVida(
+  datos: DatosVida,
+  actuales: ObjetivoVidaActual[],
+): Plan<{ objetivo: ObjetivoVida; id: string; valor: number }[]> {
+  const porClave = new Map(actuales.map((a) => [claveVida(a), a]));
+  const que = datos.recurso === "vida" ? "vida" : "fatiga";
+  const valores: { objetivo: ObjetivoVida; id: string; valor: number }[] = [];
+  for (const c of datos.cambios) {
+    const a = porClave.get(claveVida(c));
+    if (!a) continue;
+    if (a.actual !== c.despues) {
+      return {
+        ok: false,
+        error: `${a.nombre} ya no tiene ${c.despues} de ${que} (ahora ${a.actual}): algo lo ha cambiado después. Deshaz antes lo posterior.`,
+      };
+    }
+    valores.push({ objetivo: c.objetivo, id: c.id, valor: vidaTrasAjuste(c.antes, a.tope, 0) });
+  }
+  return { ok: true, plan: valores };
 }

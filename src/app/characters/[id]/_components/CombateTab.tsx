@@ -11,6 +11,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { describirEstadosActivos, type EstadoActivo } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
+import { ChipEstado } from "@/components/ChipEstado";
 import { ajustarPgAction, ajustarFatigaAction } from "@/app/master/combate/actions";
 
 type CombatienteView = {
@@ -108,20 +109,12 @@ export function CombateTab({
                 {activos.length > 0 && (
                   <div className="flex flex-col gap-1.5 border-t border-border pt-2">
                     {activos.map((a) => (
-                      <div
-                        key={a.estadoId}
-                        className="clip-chamfer-sm border border-accent px-2 py-1 font-mono text-accent"
-                      >
-                        <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide">
-                          <span>{a.label}</span>
-                          {a.rondasRestantes !== null && <span>· {a.rondasRestantes}r</span>}
-                        </div>
+                      <div key={a.estadoId} className="flex flex-col items-start gap-0.5">
+                        <ChipEstado estado={a} />
                         {/* Detalle visible de verdad, no en un `title` —
                             mismo arreglo que CombateConsole.tsx. */}
                         {a.detalle.length > 0 && (
-                          <p className="mt-0.5 text-[10px] normal-case tracking-normal text-muted">
-                            {a.detalle.join(" ")}
-                          </p>
+                          <p className="font-mono text-[10px] text-muted">{a.detalle.join(" ")}</p>
                         )}
                       </div>
                     ))}

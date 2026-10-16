@@ -55,28 +55,36 @@ export function Opcion({
   );
 }
 
-// Interruptor de dos o tres posiciones (Dar / Quitar).
+// Interruptor de dos o tres posiciones (Dar / Quitar). `ancho`: ocupa toda la fila,
+// con botones iguales y más altos (Daño / Curación en la pestaña Vida). `tonoElegido`:
+// la clase del botón elegido si no es el amarillo de siempre.
 export function Segmentado<T extends string>({
   valor,
   opciones,
   onCambio,
   etiqueta,
+  ancho = false,
 }: {
   valor: T;
-  opciones: { valor: T; label: string }[];
+  opciones: { valor: T; label: string; tonoElegido?: string }[];
   onCambio: (v: T) => void;
   etiqueta: string;
+  ancho?: boolean;
 }) {
   return (
-    <div role="group" aria-label={etiqueta} className="inline-flex border border-border bg-surface">
+    <div
+      role="group"
+      aria-label={etiqueta}
+      className={`${ancho ? "grid auto-cols-fr grid-flow-col" : "inline-flex"} border border-border bg-surface`}
+    >
       {opciones.map((o) => (
         <button
           key={o.valor}
           type="button"
           aria-pressed={o.valor === valor}
           onClick={() => onCambio(o.valor)}
-          className={`min-h-11 px-4 font-semibold transition ${
-            o.valor === valor ? "bg-accent text-night" : "text-muted hover:text-foreground"
+          className={`px-4 font-semibold transition ${ancho ? "min-h-13 text-lg" : "min-h-11"} ${
+            o.valor === valor ? (o.tonoElegido ?? "bg-accent text-night") : "text-muted hover:text-foreground"
           } ${FOCO}`}
         >
           {o.label}
@@ -95,6 +103,7 @@ export function Stepper({
   max,
   paso = 1,
   etiqueta,
+  grande = false,
 }: {
   valor: number;
   onCambio: (n: number) => void;
@@ -102,10 +111,14 @@ export function Stepper({
   max: number;
   paso?: number;
   etiqueta: string;
+  // Botones de 56 px y el número en grande (cantidad de la pestaña Vida).
+  grande?: boolean;
 }) {
   const [borrador, setBorrador] = useState<string | null>(null);
   const recortar = (n: number) => Math.min(max, Math.max(min, n));
-  const boton = `grid min-h-11 w-11 place-items-center text-lg text-foreground transition hover:bg-elevated disabled:text-muted ${FOCO}`;
+  const boton = `grid place-items-center text-foreground transition hover:bg-elevated disabled:text-muted ${
+    grande ? "min-h-14 w-14 text-2xl" : "min-h-11 w-11 text-lg"
+  } ${FOCO}`;
   return (
     <span className="inline-flex items-stretch border border-border bg-night">
       <button
@@ -127,7 +140,9 @@ export function Stepper({
           if (texto !== "") onCambio(recortar(Number(texto)));
         }}
         onBlur={() => setBorrador(null)}
-        className={`w-20 border-x border-border bg-transparent text-center font-mono tabular-nums ${FOCO}`}
+        className={`border-x border-border bg-transparent text-center tabular-nums ${
+          grande ? "w-24 font-display text-4xl font-bold" : "w-20 font-mono"
+        } ${FOCO}`}
       />
       <button
         type="button"

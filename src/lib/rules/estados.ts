@@ -65,6 +65,20 @@ const ETIQUETA_UMBRAL: Record<Exclude<UmbralSalud, "normal"> | Exclude<UmbralFat
   exhausto: "Exhausto",
 };
 
+// El umbral de un recurso con su etiqueta y su −N base (sin el ajuste de especie),
+// para enseñarlo fuera de la ficha (vista previa de la pestaña Vida del máster).
+// null = sin umbral.
+export type UmbralVital = { id: Exclude<UmbralSalud | UmbralFatiga, "normal">; etiqueta: string; penalizador: number };
+
+export function umbralVital(recurso: "vida" | "fatiga", actual: number, max: number): UmbralVital | null {
+  if (recurso === "vida") {
+    const u = umbralSalud(actual, max);
+    return u === "normal" ? null : { id: u, etiqueta: ETIQUETA_UMBRAL[u], penalizador: PENALIZADOR_SALUD[u] };
+  }
+  const u = umbralFatiga(actual, max);
+  return u === "normal" ? null : { id: u, etiqueta: ETIQUETA_UMBRAL[u], penalizador: PENALIZADOR_FATIGA[u] };
+}
+
 // Un tramo menos de penalizador por recurso (Guerrero heridas, Siervo fatiga, §14.8):
 // `valor` puntos menos en cada tramo, con la fuente para el desglose. Lo resuelve la
 // especie (ajusteUmbralesDeEspecie) y llega por parámetro obligatorio; sin especie,
@@ -167,9 +181,9 @@ export type EstadoActivo = {
   // catalog/estados.ts); un número que descuenta el bloque 2 al avanzar
   // turno.
   rondasRestantes: number | null;
-  // Solo con rondasRestantes null: se va al terminar la escena ("Terminar escena" del
-  // máster, E1c) en vez de quedarse hasta que lo quiten. Opcional para que lo ya
-  // guardado en Combatiente.estados siga valiendo tal cual.
+  // Solo con rondasRestantes null: dura hasta el fin de escena. Hoy es una etiqueta para
+  // el máster: "Limpiar estados" los quita todos, sean de escena o no. Opcional para que
+  // lo ya guardado en Combatiente.estados siga valiendo tal cual.
   finDeEscena?: true;
 };
 
@@ -223,6 +237,10 @@ export function modificadoresDeEstados(activos: EstadoActivo[]): ModificadorConF
 // propio id en vez de reventar, mismo criterio que modificadoresDeEstados().
 export type EstadoActivoDescrito = EstadoActivo & {
   label: string;
+  // Por separado, para los chips (ChipEstado): "Aturdido" y "Fracaso"; grado null si el
+  // estado tiene un único grado.
+  nombre: string;
+  grado: string | null;
   duracion: DuracionEstado;
   // Frases del catálogo ya unidas para pintar directo — array vacío si el
   // grado no trae detalle o no se encontró en el catálogo.
@@ -236,6 +254,8 @@ export function describirEstadosActivos(activos: EstadoActivo[]): EstadoActivoDe
     return {
       ...ea,
       duracion: duracionDe(ea),
+      nombre: estado?.label ?? ea.estadoId,
+      grado: estado && grado && estado.grados.length !== 1 ? grado.label : null,
       // El número de grados de ESTE estado, no de un desplegable ajeno que
       // pueda estar mostrando otro estado a medio elegir.
       label:
@@ -247,12 +267,11 @@ export function describirEstadosActivos(activos: EstadoActivo[]): EstadoActivoDe
   });
 }
 
-// Un turno que pasa (para cualquiera, no solo para quien lo lleva puesto —
-// subtarea 2.6) descuenta una ronda a cada estado activo con duración
-// conocida y se cae solo al llegar a 0, sin que el máster tenga que
-// quitarlo a mano. `null` es "sin límite" (varios estados del catálogo no
-// dan una duración por defecto, ver catalog/estados.ts) y no se toca — no
-// hay nada que decrementar.
+// Una ronda menos a cada estado activo con duración conocida; se cae solo al llegar a
+// 0, sin que el máster tenga que quitarlo a mano. Se llama al cerrar la vuelta (pasar
+// del último de la cola al primero, `pasarTurno` en turnos.ts), para todos a la vez,
+// no con cada turno (decisión del usuario 2026-10-16, S77). `null` es "sin límite"
+// (escena, hasta quitarlo) y no se toca.
 export function descontarDuracion(estados: EstadoActivo[]): EstadoActivo[] {
   return estados
     .map((e) => (e.rondasRestantes === null ? e : { ...e, rondasRestantes: e.rondasRestantes - 1 }))

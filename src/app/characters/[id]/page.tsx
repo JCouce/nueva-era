@@ -4,7 +4,7 @@ import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
 import { parseSheet, parseSnapshot, leerEstados, estadosDeCombatiente } from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
 import { HudCard } from "@/components/HudCard";
-import { StatusControl, ResourceRow } from "@/app/master/MasterControls";
+import { StatusControl } from "@/app/master/MasterControls";
 import { EstadoFichaChip } from "@/components/EstadoFichaChip";
 import { CharacterSheet } from "./CharacterSheet";
 
@@ -58,16 +58,10 @@ export default async function CharacterPage({
       />
       <main className="mx-auto w-full max-w-md flex-1 px-4 py-5">
         {user.role === "MASTER" && (
-          <HudCard className="mb-4 flex flex-col gap-3 px-4 py-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <EstadoFichaChip estado={character.status} />
-              <StatusControl characterId={character.id} status={character.status} />
-            </div>
-            <ResourceRow
-              characterId={character.id}
-              xp={character.xp}
-              creditos={character.creditos}
-            />
+          // XP y créditos se dan desde la Mesa (E1c); aquí solo el estado de revisión.
+          <HudCard className="mb-4 flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+            <EstadoFichaChip estado={character.status} />
+            <StatusControl characterId={character.id} status={character.status} />
           </HudCard>
         )}
         <CharacterSheet

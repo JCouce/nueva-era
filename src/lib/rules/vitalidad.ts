@@ -16,6 +16,18 @@ import type { Sheet } from "./sheet";
 // de resolverFicha (E1b), cuando salud() tomaba estos modificadores por defecto.
 const saludEnReposo = (sheet: Sheet) => salud(sheet, modificadoresActivos(sheet));
 
+// El tope al que cura un ajuste de vida/fatiga de la ficha (S74): el máximo en reposo.
+export function topesEnReposo(sheet: Sheet): { vida: number; fatiga: number } {
+  const { vida, fatiga } = saludEnReposo(sheet);
+  return { vida, fatiga };
+}
+
+// Delta manual sobre un valor con tope: [0, tope]. La usan la ficha (ajustarVida) y
+// la foto de combate (pgActual/fatigaActual), y la vista previa del máster.
+export function vidaTrasAjuste(actual: number, tope: number, delta: number): number {
+  return Math.max(0, Math.min(tope, actual + Math.round(delta)));
+}
+
 // Recorta vidaActual/fatigaActual al máximo actual de salud() — nunca los
 // sube solo (eso es ajustarVida/ajustarFatiga, una acción explícita del
 // jugador), solo los baja si el máximo cayó por debajo de lo que había.
@@ -33,16 +45,14 @@ export function reconciliarVida(sheet: Sheet): Sheet {
 // ajustarRecurso() en recursos.ts.
 export function ajustarVida(sheet: Sheet, delta: number): Sheet {
   if (!Number.isFinite(delta)) return sheet;
-  const { vida } = saludEnReposo(sheet);
-  const vidaActual = Math.max(0, Math.min(vida, sheet.vidaActual + Math.round(delta)));
+  const vidaActual = vidaTrasAjuste(sheet.vidaActual, saludEnReposo(sheet).vida, delta);
   if (vidaActual === sheet.vidaActual) return sheet;
   return { ...sheet, vidaActual };
 }
 
 export function ajustarFatiga(sheet: Sheet, delta: number): Sheet {
   if (!Number.isFinite(delta)) return sheet;
-  const { fatiga } = saludEnReposo(sheet);
-  const fatigaActual = Math.max(0, Math.min(fatiga, sheet.fatigaActual + Math.round(delta)));
+  const fatigaActual = vidaTrasAjuste(sheet.fatigaActual, saludEnReposo(sheet).fatiga, delta);
   if (fatigaActual === sheet.fatigaActual) return sheet;
   return { ...sheet, fatigaActual };
 }

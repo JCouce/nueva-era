@@ -2,9 +2,18 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
 import { AppHeader } from "@/components/AppHeader";
-import { MasterTabs } from "@/components/MasterTabs";
-import { parseSheet, poder, estadosDeCombatiente } from "@/lib/rules";
+import { listarRegistro } from "@/lib/registroMaster";
+import {
+  parseSheet,
+  poder,
+  estadosDeCombatiente,
+  describirEstadosActivos,
+  resumenCombate,
+  textoEntradaRegistro,
+} from "@/lib/rules";
 import { CombateConsole } from "./CombateConsole";
+
+const ENTRADAS_REGISTRO = 30;
 
 // Fase 6b (docs/fase-6b.md), subtarea 2.1: la consola de combate en sí. Solo
 // un combate abierto a la vez (D1 del brainstorm), así que no hay id en la
@@ -22,7 +31,7 @@ export default async function CombatePage() {
     include: {
       combatientes: {
         orderBy: { orden: "asc" },
-        include: { character: { select: { estados: true } } },
+        include: { character: { select: { estados: true, xp: true, creditos: true } } },
       },
     },
   });
@@ -38,10 +47,18 @@ export default async function CombatePage() {
     ...combateRaw,
     combatientes: combateRaw.combatientes.map(({ character, ...c }) => ({
       ...c,
-      estados: estadosDeCombatiente({ ...c, character }),
+      estados: describirEstadosActivos(estadosDeCombatiente({ ...c, character })),
+      xp: character?.xp ?? null,
+      creditos: character?.creditos ?? null,
       sheet: c.sheet ? parseSheet(c.sheet) : null,
     })),
   };
+
+  // Sin combate abierto: el resumen del último terminado (E1d). El siguiente combate es
+  // otra fila y nace en ronda 1 (default del schema).
+  const resumen = combate ? null : await cargarResumen();
+
+  const { registro, generadoEn } = await cargarRegistro();
 
   const characters = await prisma.character.findMany({
     orderBy: { name: "asc" },
@@ -62,13 +79,44 @@ export default async function CombatePage() {
   return (
     <>
       <AppHeader name={user.name} role={user.role} />
-      <main className="mx-auto w-full max-w-md flex-1 px-4 py-5">
-        <h1 className="mb-4 font-display text-2xl font-bold uppercase tracking-wide">
-          Gestor de combate
-        </h1>
-        <MasterTabs />
-        <CombateConsole combate={combate} characters={characters} npcs={npcs} />
+      <main className="mx-auto w-full max-w-md flex-1 px-4 pb-56 pt-5 lg:max-w-7xl lg:pb-10">
+        <CombateConsole
+          combate={combate}
+          characters={characters}
+          npcs={npcs}
+          resumen={resumen}
+          registro={registro}
+          generadoEn={generadoEn}
+        />
       </main>
     </>
   );
+}
+
+async function cargarRegistro() {
+  const registro = (await listarRegistro(ENTRADAS_REGISTRO)).map((e) => ({
+    id: e.id,
+    creadaEn: e.createdAt.getTime(),
+    texto: textoEntradaRegistro(e.tipo, e.datos, e.personajes),
+    motivo: e.motivo,
+    deshecha: e.deshechoAt !== null,
+    deshacible: e.datos !== null,
+  }));
+  return { registro, generadoEn: Date.now() };
+}
+
+async function cargarResumen() {
+  const ultimo = await prisma.combate.findFirst({
+    where: { estado: "TERMINADO" },
+    orderBy: { terminadoAt: "desc" },
+    include: { combatientes: { select: { characterId: true, derrotado: true } } },
+  });
+  if (!ultimo) return null;
+  const acciones =
+    ultimo.iniciadoAt && ultimo.terminadoAt
+      ? await prisma.registroMaster.count({
+          where: { createdAt: { gte: ultimo.iniciadoAt, lte: ultimo.terminadoAt }, deshechoAt: null },
+        })
+      : 0;
+  return resumenCombate({ ...ultimo, acciones });
 }

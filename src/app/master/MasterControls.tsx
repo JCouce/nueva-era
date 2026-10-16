@@ -74,6 +74,8 @@ export function StatusControl({
   );
 }
 
+// TODO(revisar): E1d la quitó de la ficha (xp/créditos van por la Mesa); sigue en
+// /master/fichas. ¿Fuera también de ahí (y con ella adjustXp/CreditosAction)?
 export function ResourceRow({
   characterId,
   xp,

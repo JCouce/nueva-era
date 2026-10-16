@@ -1,17 +1,41 @@
 "use client";
 
-// Fase 6b, subtarea 2.1: crear combate + añadir jugadores. Nada de
-// FormData+no-op como MasterControls.tsx — las acciones de ./actions son
-// tipadas (ver su cabecera), así que esto llama directo y refresca con
-// router.refresh() al terminar, mismo patrón que CharacterSheet.tsx usa
-// para sus propias acciones tipadas.
-import { useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+// Consola de combate del máster. Desde E1d es el centro de mando dentro del combate:
+//   - escritorio: contador de rondas arriba; debajo, la cola (objetivos), el panel de
+//     mando compartido (components/mando) y el registro con deshacer.
+//   - móvil: la cola en una columna, botón flotante "Acciones a N" que abre la hoja
+//     inferior con el panel de mando (Estados, Vida, Recompensas) y un dock fijo abajo
+//     con el contador y "Siguiente turno".
+// Tocar las barras de PG o fatiga de una fila la deja como objetivo único y abre la
+// pestaña Vida con ese recurso (en móvil, en la hoja).
+// Las acciones de ./actions son tipadas: se llaman directo y refrescan solas
+// (`refresh()` en el servidor).
+import { MasterTabs } from "@/components/MasterTabs";
+import { useEffect, useEffectEvent, useOptimistic, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
-import { HudCard } from "@/components/HudCard";
 import { usePollingCombate } from "@/hooks/usePollingCombate";
-import { ESTADOS, estadoPorId, describirEstadosActivos, type EstadoActivo, type Sheet } from "@/lib/rules";
+import {
+  duracionLegible,
+  formatoNumero,
+  nombreCorto,
+  pasarTurno,
+  type EstadoActivoDescrito,
+  type RecursoVital,
+  type ResumenCombate,
+  type Sheet,
+} from "@/lib/rules";
+import { ChipEstado } from "@/components/ChipEstado";
+import { Aviso } from "@/components/mando/Aviso";
+import { Barra } from "@/components/mando/Barra";
+import { Boton, FOCO, Iniciales } from "@/components/mando/controles";
+import { HojaInferior } from "@/components/mando/HojaInferior";
+import { PanelMando, type PestanaMando } from "@/components/mando/PanelMando";
+import { RegistroMando, type EntradaMando } from "@/components/mando/RegistroMando";
+import { useAvisosMando } from "@/components/mando/useAvisosMando";
+import type { AccionesMando, ObjetivoMando } from "@/components/mando/tipos";
+import { darCreditosAction, darXpAction, deshacerRegistroAction, limpiarEstadosAction } from "../actions";
 import { NpcAccionesPanel } from "./NpcAccionesPanel";
+import { ContadorRondas, type EnCola } from "./ContadorRondas";
 import {
   crearCombateAction,
   comenzarCombateAction,
@@ -22,10 +46,9 @@ import {
   establecerIniciativaAction,
   ordenarPorIniciativaAction,
   moverCombatienteAction,
-  ajustarPgAction,
-  ajustarFatigaAction,
-  aplicarEstadoAction,
-  quitarEstadoAction,
+  ajustarVidaEnCombateAction,
+  aplicarEstadoEnCombateAction,
+  quitarEstadoEnCombateAction,
   type CombateResult,
 } from "./actions";
 
@@ -39,7 +62,10 @@ type CombatienteView = {
   iniciativa: number | null;
   characterId: string | null;
   derrotado: boolean;
-  estados: EstadoActivo[];
+  estados: EstadoActivoDescrito[];
+  // Los de su ficha (jugador); null en un NPC.
+  xp: number | null;
+  creditos: number | null;
   // Solo un NPC lo trae (foto congelada al añadirlo, 5.0) — un
   // Combatiente-jugador siempre lo trae `null`, lee su Sheet en vivo desde
   // su propia ficha. Es lo que habilita el botón "Acciones" de la 5.5.
@@ -69,252 +95,404 @@ type NpcOption = {
   poder: number;
 };
 
+const tipoDe = (c: CombatienteView): "pj" | "npc" => (c.characterId !== null ? "pj" : "npc");
+
+// Vibración corta al pasar turno en móvil (más larga al cerrar la vuelta), si existe.
+function vibrar(patron: number | number[]) {
+  try {
+    navigator.vibrate?.(patron);
+  } catch {
+    // Algunos navegadores la tienen y la bloquean: no pasa nada.
+  }
+}
+
+// La barra espaciadora pasa turno salvo con el foco en algo que ya la usa.
+function focoUsaEspacio(el: Element | null): boolean {
+  if (!(el instanceof HTMLElement)) return false;
+  return el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT", "BUTTON", "A"].includes(el.tagName);
+}
+
 export function CombateConsole({
   combate,
   characters,
   npcs,
+  resumen,
+  registro,
+  generadoEn,
 }: {
   combate: CombateView | null;
   characters: CharacterOption[];
   npcs: NpcOption[];
+  resumen: ResumenCombate | null;
+  registro: EntradaMando[];
+  generadoEn: number;
 }) {
-  const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [pasandoTurno, startTurno] = useTransition();
+  const [terminandoEscena, startEscena] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  // 5.5: un panel a la vez, no un AccionesTab montado por fila — con 30-50
-  // combatientes en la cola sería trabajo de más para lo que se ve en cada
-  // momento.
+  // 5.5: un panel a la vez, no un AccionesTab montado por fila.
   const [tiradasDe, setTiradasDe] = useState<CombatienteView | null>(null);
-  // 4.1: mientras haya un combate en curso, alguien más (otra pestaña, el
-  // jugador desde su ficha) puede cambiarlo sin que esta pantalla se
-  // entere hasta el próximo refresh manual — esto lo hace solo.
+  const [seleccion, setSeleccion] = useState<string[]>([]);
+  const [pestana, setPestana] = useState<PestanaMando>("estados");
+  const [recursoVida, setRecursoVida] = useState<RecursoVital>("vida");
+  const [hoja, setHoja] = useState(false);
+  const { aviso, avisar, cerrarAviso, errores, deshaciendo, deshacer } = useAvisosMando(deshacerRegistroAction);
+  // 4.1: otra pestaña o el jugador desde su ficha pueden cambiar el combate.
   usePollingCombate(combate !== null);
-  // La fila viva (tras el polling o un ajuste de PG), no la que se abrió: de su vida,
-  // fatiga y estados salen las tiradas del panel.
-  const npcAbierto = tiradasDe
-    ? (combate?.combatientes.find((c) => c.id === tiradasDe.id) ?? tiradasDe)
-    : null;
-  // Un input sin control de React por combatiente (subtarea 2.4): con la
-  // cola llena, un estado controlado por fila fuerza un re-render de toda
-  // la lista en cada tecla. Se lee del DOM al aplicar y se limpia a mano.
-  const deltaRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  // "Siguiente turno" mueve el contador al momento; la respuesta de la acción lo confirma.
+  const [pos, moverOptimista] = useOptimistic(
+    { ronda: combate?.ronda ?? 1, turnoIndex: combate?.turnoIndex ?? 0 },
+    (actual, total: number) => pasarTurno(actual, total),
+  );
+
+  const enCurso = combate?.estado === "EN_CURSO";
+  const cola = combate?.combatientes ?? [];
+
+  function siguienteTurno() {
+    if (!combate || !enCurso || pasandoTurno || cola.length === 0) return;
+    vibrar(pasarTurno(pos, cola.length).cierraVuelta ? [20, 40, 30] : 12);
+    setError(null);
+    startTurno(async () => {
+      moverOptimista(cola.length);
+      const r = await avanzarTurnoAction(combate.id);
+      if (!r.ok) setError(r.error);
+    });
+  }
+
+  const alPulsarTecla = useEffectEvent((e: KeyboardEvent) => {
+    if (e.code !== "Space" || e.repeat || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    if (focoUsaEspacio(document.activeElement) || hoja || tiradasDe) return;
+    if (!enCurso) return;
+    e.preventDefault();
+    siguienteTurno();
+  });
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => alPulsarTecla(e);
+    document.addEventListener("keydown", h);
+    return () => document.removeEventListener("keydown", h);
+  }, []);
 
   function ejecutar(accion: () => Promise<CombateResult>) {
     setError(null);
     startTransition(async () => {
       const res = await accion();
-      if (!res.ok) {
-        setError(res.error);
-        return;
-      }
-      router.refresh();
+      if (!res.ok) setError(res.error);
     });
   }
 
   if (!combate) {
     return (
       <div className="flex flex-col gap-4">
-        <HudCard className="border-dashed px-4 py-8 text-center">
-          <p className="font-mono text-sm text-muted">No hay ningún combate abierto.</p>
-        </HudCard>
-        <button
-          type="button"
+        <Cabecera titulo="Combate" />
+        <MasterTabs className="mb-4" />
+        {resumen ? (
+          <Resumen resumen={resumen} />
+        ) : (
+          <p className="border border-dashed border-border px-4 py-8 text-center font-mono text-sm text-muted">
+            No hay ningún combate abierto.
+          </p>
+        )}
+        <Boton
+          variante="primario"
           disabled={pending}
           onClick={() => ejecutar(() => crearCombateAction())}
-          className="clip-chamfer-sm bg-accent px-4 py-3 font-mono text-sm font-semibold uppercase tracking-wide text-black shadow-glow-yellow active:scale-[0.99] disabled:opacity-50"
+          className="min-h-13 text-lg lg:self-start"
         >
-          Crear combate
-        </button>
+          {resumen ? "Nuevo combate" : "Crear combate"}
+        </Boton>
         {error && <p className="font-mono text-xs text-danger">{error}</p>}
       </div>
     );
   }
 
-  // Mismo criterio que agregarJugadorAction: solo cuenta "ya está" si tiene
-  // una fila activa (no derrotada) — un jugador derrotado se puede volver a
-  // meter en fila aparte.
-  const enCombateIds = new Set(
-    combate.combatientes
-      .filter((c) => c.characterId !== null && !c.derrotado)
-      .map((c) => c.characterId as string),
-  );
+  // La fila viva (tras el polling o un ajuste de PG), no la que se abrió.
+  const npcAbierto = tiradasDe ? (cola.find((c) => c.id === tiradasDe.id) ?? tiradasDe) : null;
+
+  const objetivos: ObjetivoMando[] = cola
+    .filter((c) => seleccion.includes(c.id))
+    .map((c) => ({
+      id: c.id,
+      nombre: c.nombre,
+      tipo: tipoDe(c),
+      xp: c.xp,
+      creditos: c.creditos,
+      estados: c.estados,
+      vida: { actual: c.pgActual, max: c.pgMax, tope: c.pgMax },
+      fatiga: { actual: c.fatigaActual, max: c.fatigaMax, tope: c.fatigaMax },
+    }));
+  const todos = cola.length > 0 && cola.every((c) => seleccion.includes(c.id));
+  const alternar = (id: string) => setSeleccion((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  const quitarObjetivo = (id: string) => setSeleccion((s) => s.filter((x) => x !== id));
+  const alternarTodos = () => setSeleccion(todos ? [] : cola.map((c) => c.id));
+
+  const characterIdsDe = (ids: string[]) => [
+    ...new Set(cola.flatMap((c) => (ids.includes(c.id) && c.characterId !== null ? [c.characterId] : []))),
+  ];
+  const acciones: AccionesMando = {
+    aplicarEstado: (combatienteIds, estado) => aplicarEstadoEnCombateAction({ combatienteIds, estado }),
+    quitarEstado: (combatienteIds, estadoId) => quitarEstadoEnCombateAction({ combatienteIds, estadoId }),
+    darRecurso: (recurso, ids, cantidad, motivo) =>
+      (recurso === "xp" ? darXpAction : darCreditosAction)({ characterIds: characterIdsDe(ids), cantidad, motivo }),
+    ajustarVida: (recurso, combatienteIds, cantidad) => ajustarVidaEnCombateAction({ combatienteIds, recurso, cantidad }),
+  };
+
+  // Atajo desde las barras de una fila: objetivo único y pestaña Vida con ese recurso.
+  const abrirVida = (c: CombatienteView, recurso: RecursoVital) => {
+    setSeleccion([c.id]);
+    setRecursoVida(recurso);
+    setPestana("vida");
+    // En escritorio el panel ya está a la vista; la hoja es solo de móvil (lg = 64rem).
+    if (!window.matchMedia("(min-width: 64rem)").matches) setHoja(true);
+  };
+
+  const quitarEstadoDeFila = (c: CombatienteView, e: EstadoActivoDescrito) => {
+    setError(null);
+    startTransition(async () => {
+      const r = await quitarEstadoEnCombateAction({ combatienteIds: [c.id], estadoId: e.estadoId });
+      if (!r.ok) return setError(r.error);
+      avisar({ mensaje: `Quitado ${e.label} a ${nombreCorto(c.nombre)}`, registroId: r.registroId, tono: "ok" });
+    });
+  };
+
+  const terminarEscena = () =>
+    startEscena(async () => {
+      const r = await limpiarEstadosAction({ ambito: "combate" });
+      if (!r.ok) return avisar({ mensaje: r.error, registroId: null, tono: "aviso" });
+      avisar(
+        r.personajes + r.npcs === 0
+          ? { mensaje: "No había estados que limpiar.", registroId: null, tono: "ok" }
+          : { mensaje: "Estados limpiados", registroId: r.registroId, tono: "ok" },
+      );
+    });
+
+  // Mismo criterio que agregarJugadorAction: solo cuenta "ya está" con una fila activa.
+  const enCombateIds = new Set(cola.filter((c) => c.characterId !== null && !c.derrotado).map((c) => c.characterId as string));
   const disponibles = characters.filter((c) => !enCombateIds.has(c.id));
-
-  const turnoActual = combate.combatientes[combate.turnoIndex] ?? null;
-
-  // El número de categoría de daño (no letal/letal/grave) no entra aquí a
-  // propósito: docs/sistema.md §7 dice que las tres restan igual de los
-  // mismos PG ("se suman todas para los PG restantes") — solo cambia cómo
-  // se cura, y eso no está mecanizado todavía. Un selector que no mueve
-  // ningún número sería peor que no tenerlo.
-  function aplicarDelta(combatienteId: string, recurso: "pg" | "fatiga") {
-    const input = deltaRefs.current[combatienteId];
-    if (!input || !input.value) return;
-    const delta = Number(input.value);
-    if (!Number.isFinite(delta) || delta === 0) return;
-    ejecutar(() =>
-      recurso === "pg" ? ajustarPgAction(combatienteId, delta) : ajustarFatigaAction(combatienteId, delta),
-    );
-    input.value = "";
-  }
+  const enCola: EnCola[] = cola.map((c) => ({ id: c.id, nombre: c.nombre, tipo: tipoDe(c) }));
+  const vigentes = registro.filter((e) => !e.deshecha).length;
 
   return (
-    <div className="flex flex-col gap-6">
-      <HudCard className="flex flex-col gap-3 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <span className="font-mono text-sm uppercase tracking-wide">
-            {combate.estado === "PREPARANDO" ? "Preparando combate" : `Ronda ${combate.ronda}`}
-          </span>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => ejecutar(() => terminarCombateAction(combate.id))}
-            className="px-2 py-1 font-mono text-xs uppercase tracking-wide text-muted transition hover:text-danger disabled:opacity-50"
-          >
-            Terminar combate
-          </button>
-        </div>
-        {/* PREPARANDO: el máster monta la escena sin que nadie más lo vea
-            (characters/[id]/page.tsx solo busca EN_CURSO) — "Turno de: X" no
-            significa nada todavía, así que en su lugar va el botón que de
-            verdad decide cuándo empieza (pedido explícito del usuario,
-            2026-09-11: antes "crear combate" ya lo dejaba EN_CURSO). */}
-        {combate.estado === "PREPARANDO" ? (
-          <button
-            type="button"
+    <>
+      <Cabecera titulo="Combate">
+        <Boton variante="aviso" onClick={terminarEscena} disabled={terminandoEscena}>
+          Limpiar estados
+        </Boton>
+        <Boton variante="peligro" disabled={pending} onClick={() => ejecutar(() => terminarCombateAction(combate.id))}>
+          <span className="lg:hidden">Terminar</span>
+          <span className="hidden lg:inline">Terminar combate</span>
+        </Boton>
+      </Cabecera>
+      <MasterTabs className="mb-4" />
+
+      {/* PREPARANDO: el máster monta la escena sin que nadie más lo vea
+          (characters/[id]/page.tsx solo busca EN_CURSO); el botón decide cuándo empieza. */}
+      {combate.estado === "PREPARANDO" ? (
+        <div className="mb-4 flex flex-wrap items-center gap-3 border border-border bg-surface px-4 py-3">
+          <span className="flex-1 font-mono text-sm uppercase tracking-widest text-muted">Preparando combate</span>
+          <Boton
+            variante="primario"
             disabled={pending}
             onClick={() => ejecutar(() => comenzarCombateAction(combate.id))}
-            className="clip-chamfer-sm border-t border-border bg-accent px-3 py-3 font-mono text-sm font-semibold uppercase tracking-wide text-black shadow-glow-yellow active:scale-[0.99] disabled:opacity-50"
+            className="min-h-13 text-lg max-lg:w-full"
           >
             Comenzar combate
-          </button>
-        ) : (
-          <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
-            <span className="font-display text-sm uppercase tracking-wide">
-              Turno de: <span className="text-accent">{turnoActual?.nombre ?? "—"}</span>
-            </span>
-            <button
-              type="button"
-              disabled={pending || combate.combatientes.length === 0}
-              onClick={() => ejecutar(() => avanzarTurnoAction(combate.id))}
-              className="clip-chamfer-sm bg-accent px-3 py-2 font-mono text-xs font-semibold uppercase tracking-wide text-black shadow-glow-yellow active:scale-[0.99] disabled:opacity-50"
-            >
-              Siguiente turno
-            </button>
-          </div>
-        )}
-      </HudCard>
-
-      <section>
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="font-mono text-xs uppercase tracking-wide text-muted">
-            En combate ({combate.combatientes.length})
-          </h2>
-          <button
-            type="button"
-            disabled={pending || combate.combatientes.length < 2}
-            onClick={() => ejecutar(() => ordenarPorIniciativaAction(combate.id))}
-            className="font-mono text-xs uppercase tracking-wide text-muted transition hover:text-accent disabled:opacity-50"
-          >
-            Ordenar por iniciativa
-          </button>
+          </Boton>
         </div>
-        <ul className="flex flex-col gap-2">
-          {combate.combatientes.map((c, i) => (
-            <CombatienteRow
-              key={c.id}
-              c={c}
-              esTurnoActual={i === combate.turnoIndex}
-              esPrimero={i === 0}
-              esUltimo={i === combate.combatientes.length - 1}
-              pending={pending}
-              ejecutar={ejecutar}
-              aplicarDelta={aplicarDelta}
-              onAbrirTiradas={setTiradasDe}
-              deltaRef={(el) => {
-                deltaRefs.current[c.id] = el;
-              }}
+      ) : (
+        <div className="mb-4 hidden lg:block">
+          <ContadorRondas
+            ronda={pos.ronda}
+            turnoIndex={pos.turnoIndex}
+            cola={enCola}
+            variante="barra"
+            onSiguiente={siguienteTurno}
+            deshabilitado={pasandoTurno || cola.length === 0}
+          />
+        </div>
+      )}
+
+      {error && (
+        <p role="alert" className="mb-3 border border-danger px-3 py-2 text-sm text-danger">
+          {error}
+        </p>
+      )}
+
+      <div className="lg:grid lg:grid-cols-[360px_minmax(0,1fr)_280px] lg:border lg:border-border">
+        <section aria-labelledby="combate-cola" className="min-w-0 lg:border-r lg:border-border">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pb-2.5 pt-1 lg:px-4 lg:pt-3.5">
+            <h2 id="combate-cola" className="font-display text-[0.95rem] font-bold uppercase tracking-widest">
+              Cola <span className="font-mono text-xs font-normal text-muted">({cola.length})</span>
+            </h2>
+            <span className="flex-1" />
+            {/* Ordenar, como las flechas y la iniciativa de cada fila, solo al preparar. */}
+            {!enCurso && (
+              <button
+                type="button"
+                disabled={pending || cola.length < 2}
+                onClick={() => ejecutar(() => ordenarPorIniciativaAction(combate.id))}
+                className={`min-h-11 font-mono text-xs uppercase tracking-wide text-muted transition hover:text-accent disabled:opacity-50 ${FOCO}`}
+              >
+                Por iniciativa
+              </button>
+            )}
+            {cola.length > 0 && (
+              <button type="button" onClick={alternarTodos} className={`min-h-9 font-semibold text-info ${FOCO}`}>
+                {todos ? "Ninguno" : "Todos"}
+              </button>
+            )}
+          </div>
+          <ul className="grid gap-2.5 pt-2 lg:px-3 lg:pb-4">
+            {cola.map((c, i) => (
+              <FilaCola
+                key={c.id}
+                c={c}
+                elegido={seleccion.includes(c.id)}
+                esTurno={enCurso && i === pos.turnoIndex}
+                esPrimero={i === 0}
+                esUltimo={i === cola.length - 1}
+                preparando={combate.estado === "PREPARANDO"}
+                pending={pending}
+                onAlternar={() => alternar(c.id)}
+                onQuitarEstado={(e) => quitarEstadoDeFila(c, e)}
+                onAjustarVida={(r) => abrirVida(c, r)}
+                ejecutar={ejecutar}
+                onAbrirTiradas={setTiradasDe}
+              />
+            ))}
+            {cola.length === 0 && (
+              <li className="border border-dashed border-border px-4 py-8 text-center font-mono text-sm text-muted">
+                Todavía no hay nadie en la cola.
+              </li>
+            )}
+          </ul>
+
+          <details open={combate.estado === "PREPARANDO" || cola.length === 0} className="mt-4 lg:mx-3 lg:mb-4">
+            <summary className={`min-h-11 cursor-pointer py-2 font-display font-semibold uppercase tracking-wide ${FOCO}`}>
+              Añadir combatientes
+            </summary>
+            <div className="grid gap-4 pt-2">
+              <ListaAnadir titulo="Jugadores" vacio={characters.length === 0 ? "No hay personajes creados." : "Ya están todos en combate."}>
+                {disponibles.map((c) => (
+                  <FilaAnadir
+                    key={c.id}
+                    nombre={c.name}
+                    sub={c.owner.name ?? c.owner.email}
+                    disabled={pending}
+                    onAnadir={() => ejecutar(() => agregarJugadorAction(combate.id, c.id))}
+                  />
+                ))}
+              </ListaAnadir>
+              <ListaAnadir
+                titulo="NPC"
+                vacio={
+                  <>
+                    No hay NPCs en el catálogo.{" "}
+                    <Link href="/master/npcs" className="text-accent hover:underline">
+                      Crea el primero
+                    </Link>
+                    .
+                  </>
+                }
+              >
+                {npcs.map((n) => (
+                  <FilaAnadir
+                    key={n.id}
+                    nombre={n.nombre}
+                    sub={`${n.poder.toFixed(1)} poder${n.nota ? ` · ${n.nota}` : ""}`}
+                    disabled={pending}
+                    onAnadir={() => ejecutar(() => agregarNpcDeCatalogoAction(combate.id, n.id))}
+                  />
+                ))}
+              </ListaAnadir>
+            </div>
+          </details>
+        </section>
+
+        {/* Escritorio: panel de mando. En móvil va en la hoja inferior. */}
+        <section aria-label="Panel de mando" className="hidden min-w-0 lg:block lg:border-r lg:border-border lg:px-5 lg:pb-5">
+          <PanelMando
+            objetivos={objetivos}
+            acciones={acciones}
+            pestana={pestana}
+            onPestana={setPestana}
+            recursoVida={recursoVida}
+            onRecursoVida={setRecursoVida}
+            onQuitarObjetivo={quitarObjetivo}
+            onAviso={avisar}
+          />
+        </section>
+
+        <aside
+          aria-labelledby="combate-registro"
+          className="hidden min-w-0 lg:sticky lg:top-12 lg:block lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto"
+        >
+          <div className="flex items-center justify-between gap-2 px-4 pb-2.5 pt-3.5">
+            <h2 id="combate-registro" className="font-display text-[0.95rem] font-bold uppercase tracking-widest">
+              Registro
+            </h2>
+            <span className="font-mono text-xs text-muted">{vigentes} acciones</span>
+          </div>
+          <div className="px-3 pb-4">
+            <RegistroMando
+              entradas={registro}
+              generadoEn={generadoEn}
+              errores={errores}
+              deshaciendo={deshaciendo}
+              onDeshacer={deshacer}
             />
-          ))}
-          {combate.combatientes.length === 0 && (
-            <li className="clip-chamfer border border-dashed border-border px-4 py-8 text-center font-mono text-sm text-muted">
-              Todavía no hay nadie en la cola.
-            </li>
-          )}
-        </ul>
-      </section>
+          </div>
+        </aside>
+      </div>
 
-      <section>
-        <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted">Añadir jugador</h2>
-        <ul className="flex flex-col gap-2">
-          {disponibles.map((c) => (
-            <li key={c.id}>
-              <HudCard className="flex items-center justify-between px-4 py-3">
-                <div>
-                  <span className="font-display text-base font-medium uppercase tracking-wide">
-                    {c.name}
-                  </span>
-                  <span className="block font-mono text-xs text-muted">
-                    {c.owner.name ?? c.owner.email}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => ejecutar(() => agregarJugadorAction(combate.id, c.id))}
-                  className="clip-chamfer-sm border border-border px-3 py-2 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
-                >
-                  Añadir
-                </button>
-              </HudCard>
-            </li>
-          ))}
-          {disponibles.length === 0 && (
-            <li className="clip-chamfer border border-dashed border-border px-4 py-8 text-center font-mono text-sm text-muted">
-              {characters.length === 0 ? "No hay personajes creados." : "Ya están todos en combate."}
-            </li>
-          )}
-        </ul>
-      </section>
+      {/* Móvil: botón flotante, hoja inferior y dock con el contador. */}
+      {objetivos.length > 0 && !hoja && (
+        <button
+          type="button"
+          onClick={() => setHoja(true)}
+          className={`fixed right-4 z-30 min-h-12 bg-info px-[18px] font-bold text-night shadow-[0_8px_24px_-8px_var(--color-info)] lg:hidden ${
+            enCurso ? "bottom-[calc(11.5rem+env(safe-area-inset-bottom))]" : "bottom-6"
+          } ${FOCO}`}
+        >
+          Acciones a {objetivos.length}
+        </button>
+      )}
+      {hoja && (
+        <HojaInferior titulo="Acciones" onCerrar={() => setHoja(false)} className="lg:hidden">
+          <PanelMando
+            objetivos={objetivos}
+            acciones={acciones}
+            pestana={pestana}
+            onPestana={setPestana}
+            recursoVida={recursoVida}
+            onRecursoVida={setRecursoVida}
+            onQuitarObjetivo={quitarObjetivo}
+            onAviso={avisar}
+            enLinea
+            onAplicado={() => setHoja(false)}
+          />
+        </HojaInferior>
+      )}
+      {enCurso && (
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface px-3.5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2.5 lg:hidden">
+          <ContadorRondas
+            ronda={pos.ronda}
+            turnoIndex={pos.turnoIndex}
+            cola={enCola}
+            variante="dock"
+            onSiguiente={siguienteTurno}
+            deshabilitado={pasandoTurno || cola.length === 0}
+          />
+        </div>
+      )}
 
-      <section>
-        <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted">Añadir NPC</h2>
-        <ul className="flex flex-col gap-2">
-          {npcs.map((n) => (
-            <li key={n.id}>
-              <HudCard className="flex items-center justify-between gap-2 px-4 py-3">
-                <div className="min-w-0">
-                  <span className="block truncate font-display text-base font-medium uppercase tracking-wide">
-                    {n.nombre}
-                  </span>
-                  <span className="block font-mono text-xs text-muted">
-                    {n.poder.toFixed(1)} poder{n.nota ? ` · ${n.nota}` : ""}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => ejecutar(() => agregarNpcDeCatalogoAction(combate.id, n.id))}
-                  className="clip-chamfer-sm shrink-0 border border-border px-3 py-2 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
-                >
-                  Añadir
-                </button>
-              </HudCard>
-            </li>
-          ))}
-          {npcs.length === 0 && (
-            <li className="clip-chamfer border border-dashed border-border px-4 py-8 text-center font-mono text-sm text-muted">
-              No hay NPCs en el catálogo.{" "}
-              <Link href="/master/npcs" className="text-accent hover:underline">
-                Crea el primero
-              </Link>
-              .
-            </li>
-          )}
-        </ul>
-      </section>
-
-      {error && <p className="font-mono text-xs text-danger">{error}</p>}
+      <Aviso
+        aviso={aviso}
+        onCerrar={cerrarAviso}
+        onDeshacer={deshacer}
+        altura={enCurso ? "bottom-[calc(15.5rem+env(safe-area-inset-bottom))]" : "bottom-24"}
+      />
 
       {npcAbierto && npcAbierto.sheet && (
         <NpcAccionesPanel
@@ -328,260 +506,235 @@ export function CombateConsole({
           onCerrar={() => setTiradasDe(null)}
         />
       )}
+    </>
+  );
+}
+
+function Cabecera({ titulo, children }: { titulo: string; children?: ReactNode }) {
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-2">
+      <h1 className="font-display text-2xl font-bold uppercase tracking-wide">{titulo}</h1>
+      <span className="flex-1" />
+      {children}
     </div>
   );
 }
 
-// Componente aparte, no un bloque más de la lista: los desplegables de
-// estado/grado (subtarea 2.5) necesitan su propio estado local — grado
-// depende de qué estado está elegido, duración depende de qué grado — y
-// eso no cabe bien en el patrón de refs sin control que usa el delta de
-// PG/fatiga (2.4), donde no hace falta reaccionar a lo que el usuario va
-// eligiendo, solo leer un valor al final.
-function CombatienteRow({
+function Resumen({ resumen: r }: { resumen: ResumenCombate }) {
+  const datos: [string, string][] = [
+    ["Duración", r.duracionMs === null ? "—" : duracionLegible(r.duracionMs)],
+    ["Jugadores", String(r.jugadores)],
+    ["NPC", String(r.npcs)],
+    ["Derrotados", String(r.derrotados)],
+    ["Acciones en el registro", formatoNumero(r.acciones)],
+  ];
+  return (
+    <section aria-label="Resumen del último combate" className="grid gap-3 border border-border bg-surface px-5 py-4">
+      <div className="flex items-end gap-5">
+        <div className="grid">
+          <span className="font-mono text-xs tracking-[0.3em] text-accent">COMBATE</span>
+          <span className="font-display text-[3rem] font-bold leading-[0.95]">FIN</span>
+        </div>
+        <div className="grid">
+          <small className="font-mono text-xs uppercase tracking-[0.14em] text-muted">Rondas</small>
+          <b className="font-display text-3xl tabular-nums">{r.rondas}</b>
+        </div>
+      </div>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
+        {datos.map(([k, v]) => (
+          <div key={k} className="grid">
+            <dt className="font-mono text-xs uppercase tracking-widest text-muted">{k}</dt>
+            <dd className="font-semibold tabular-nums">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="text-sm text-muted">El siguiente combate empieza en la ronda 1.</p>
+    </section>
+  );
+}
+
+function ListaAnadir({ titulo, vacio, children }: { titulo: string; vacio: ReactNode; children: ReactNode[] }) {
+  return (
+    <div className="grid min-w-0 gap-2">
+      <h3 className="font-mono text-xs uppercase tracking-widest text-muted">{titulo}</h3>
+      {children.length > 0 ? (
+        <ul className="grid min-w-0 gap-1.5">{children}</ul>
+      ) : (
+        <p className="border border-dashed border-border px-3 py-4 text-sm text-muted">{vacio}</p>
+      )}
+    </div>
+  );
+}
+
+function FilaAnadir({ nombre, sub, disabled, onAnadir }: { nombre: string; sub: string; disabled: boolean; onAnadir: () => void }) {
+  return (
+    <li className="flex min-w-0 items-center justify-between gap-2 border border-border bg-surface py-1.5 pl-3 pr-1.5">
+      <span className="min-w-0">
+        <span className="block truncate font-semibold">{nombre}</span>
+        <span className="block truncate font-mono text-xs text-muted">{sub}</span>
+      </span>
+      <Boton disabled={disabled} onClick={onAnadir} className="shrink-0">
+        Añadir
+      </Boton>
+    </li>
+  );
+}
+
+// Una fila de la cola: la parte de arriba elige objetivo (como en la Mesa); debajo, las
+// barras de PG y fatiga (atajo a la pestaña Vida), los estados con su × y, al preparar,
+// orden e iniciativa. "Acciones" (tiradas del NPC) siempre.
+function FilaCola({
   c,
-  esTurnoActual,
+  elegido,
+  esTurno,
   esPrimero,
   esUltimo,
+  preparando,
   pending,
+  onAlternar,
+  onQuitarEstado,
+  onAjustarVida,
   ejecutar,
-  aplicarDelta,
   onAbrirTiradas,
-  deltaRef,
 }: {
   c: CombatienteView;
-  esTurnoActual: boolean;
+  elegido: boolean;
+  esTurno: boolean;
   esPrimero: boolean;
   esUltimo: boolean;
+  preparando: boolean;
   pending: boolean;
+  onAlternar: () => void;
+  onQuitarEstado: (e: EstadoActivoDescrito) => void;
+  onAjustarVida: (recurso: RecursoVital) => void;
   ejecutar: (accion: () => Promise<CombateResult>) => void;
-  aplicarDelta: (combatienteId: string, recurso: "pg" | "fatiga") => void;
   onAbrirTiradas: (c: CombatienteView) => void;
-  deltaRef: (el: HTMLInputElement | null) => void;
 }) {
-  const [estadoId, setEstadoId] = useState("");
-  const [gradoId, setGradoId] = useState("");
-  const [duracion, setDuracion] = useState("");
-
-  const estadoElegido = estadoId ? estadoPorId(estadoId) : null;
-  const grados = estadoElegido?.grados ?? [];
-
-  function elegirEstado(id: string) {
-    setEstadoId(id);
-    const primerGrado = estadoPorId(id)?.grados[0] ?? null;
-    setGradoId(primerGrado?.id ?? "");
-    setDuracion(primerGrado?.duracionTurnos != null ? String(primerGrado.duracionTurnos) : "");
-  }
-
-  function elegirGrado(id: string) {
-    setGradoId(id);
-    const grado = grados.find((g) => g.id === id);
-    setDuracion(grado?.duracionTurnos != null ? String(grado.duracionTurnos) : "");
-  }
-
-  function aplicarEstado() {
-    if (!estadoId || !gradoId) return;
-    const rondas = duracion === "" ? null : Number(duracion);
-    ejecutar(() => aplicarEstadoAction(c.id, estadoId, gradoId, rondas));
-  }
-
-  // lib/rules/estados.ts (bloque 3): antes vivía inline aquí, ahora
-  // compartido con la ficha del jugador.
-  const activos = describirEstadosActivos(c.estados);
+  const tipo = tipoDe(c);
+  const borde = esTurno
+    ? "border-accent shadow-[inset_0_0_0_1px_var(--color-accent)]"
+    : elegido
+      ? "border-info shadow-[inset_3px_0_0_var(--color-info)]"
+      : "border-border";
+  const control = `grid min-h-11 place-items-center border border-border px-2.5 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-40 ${FOCO}`;
+  const barra = `grid min-h-11 content-center border border-transparent px-1.5 py-1 text-left transition hover:border-border hover:bg-elevated ${FOCO}`;
+  const conControles = preparando || c.sheet !== null;
 
   return (
-    <li>
-      <HudCard
-        className={`flex flex-col gap-2 px-4 py-3 ${c.derrotado ? "opacity-50" : ""} ${
-          esTurnoActual ? "!border-accent shadow-glow-yellow" : ""
-        }`}
+    <li className={`relative border bg-surface ${borde} ${c.derrotado ? "opacity-50" : ""}`}>
+      {esTurno && (
+        <span className="absolute -top-2 right-2.5 bg-accent px-1.5 font-mono text-[0.62rem] tracking-widest text-night">
+          TURNO
+        </span>
+      )}
+      <button
+        type="button"
+        aria-pressed={elegido}
+        onClick={onAlternar}
+        className={`grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2.5 p-2.5 pb-1.5 text-left ${
+          elegido ? "bg-info/5" : ""
+        } ${FOCO}`}
       >
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col">
-            <button
-              type="button"
-              disabled={pending || esPrimero}
-              onClick={() => ejecutar(() => moverCombatienteAction(c.id, "arriba"))}
-              aria-label={`Subir a ${c.nombre}`}
-              className="h-5 w-5 text-muted transition hover:text-accent disabled:opacity-30"
-            >
-              ▲
-            </button>
-            <button
-              type="button"
-              disabled={pending || esUltimo}
-              onClick={() => ejecutar(() => moverCombatienteAction(c.id, "abajo"))}
-              aria-label={`Bajar a ${c.nombre}`}
-              className="h-5 w-5 text-muted transition hover:text-accent disabled:opacity-30"
-            >
-              ▼
-            </button>
-          </div>
+        <Iniciales nombre={c.nombre} tono={tipo} className="row-span-2 size-10" />
+        <span className="truncate text-[1.02rem] font-bold leading-tight">
+          {c.nombre}
+          {c.derrotado && " (derrotado)"}
+        </span>
+        <span
+          aria-hidden="true"
+          className={`row-span-2 grid size-6 place-items-center border text-sm ${
+            elegido ? "border-info bg-info text-night" : "border-border"
+          }`}
+        >
+          {elegido ? "✓" : ""}
+        </span>
+        <span className="min-w-0 truncate text-sm text-muted">
+          {tipo === "npc" ? "NPC" : "Jugador"}
+          {c.iniciativa !== null && <span className="font-mono"> · Ini {c.iniciativa}</span>}
+        </span>
+      </button>
 
-          <div className="min-w-0 flex-1">
-            <span className="font-display text-base font-medium uppercase tracking-wide">
-              {c.nombre}
-              {c.derrotado && " (derrotado)"}
-            </span>
-            <span className="block font-mono text-xs text-muted">
-              PG {c.pgActual}/{c.pgMax} · Fatiga {c.fatigaActual}/{c.fatigaMax}
-            </span>
-          </div>
+      <div className="grid grid-cols-2 gap-1.5 px-1 pb-1.5">
+        <button
+          type="button"
+          onClick={() => onAjustarVida("vida")}
+          aria-label={`PG de ${c.nombre}: ${c.pgActual} de ${c.pgMax}. Ajustar`}
+          className={barra}
+        >
+          <Barra label="PG" actual={c.pgActual} max={c.pgMax} relleno="bg-neon-green" grande />
+        </button>
+        <button
+          type="button"
+          onClick={() => onAjustarVida("fatiga")}
+          aria-label={`Fatiga de ${c.nombre}: ${c.fatigaActual} de ${c.fatigaMax}. Ajustar`}
+          className={barra}
+        >
+          <Barra label="Fatiga" actual={c.fatigaActual} max={c.fatigaMax} relleno="bg-info" grande />
+        </button>
+      </div>
 
-          {/* Solo un NPC trae `sheet` (foto congelada, 5.0) — un jugador
-              tira desde su propia ficha, no desde aquí. */}
+      {c.estados.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 px-2.5 pb-2.5">
+          {c.estados.map((e) => (
+            <ChipEstado
+              key={e.estadoId}
+              estado={e}
+              onQuitar={() => onQuitarEstado(e)}
+              quitarLabel={`Quitar ${e.label} a ${c.nombre}`}
+              deshabilitado={pending}
+            />
+          ))}
+        </div>
+      )}
+
+      {conControles && (
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-border px-2.5 py-2">
+          {preparando && (
+            <>
+              <button
+                type="button"
+                disabled={pending || esPrimero}
+                onClick={() => ejecutar(() => moverCombatienteAction(c.id, "arriba"))}
+                aria-label={`Subir a ${c.nombre}`}
+                className={`${control} w-11 px-0`}
+              >
+                ▲
+              </button>
+              <button
+                type="button"
+                disabled={pending || esUltimo}
+                onClick={() => ejecutar(() => moverCombatienteAction(c.id, "abajo"))}
+                aria-label={`Bajar a ${c.nombre}`}
+                className={`${control} w-11 px-0`}
+              >
+                ▼
+              </button>
+              <input
+                type="number"
+                aria-label={`Iniciativa de ${c.nombre}`}
+                placeholder="Ini"
+                defaultValue={c.iniciativa ?? ""}
+                onBlur={(e) => {
+                  const valor = e.target.value === "" ? null : Number(e.target.value);
+                  if (valor === c.iniciativa) return;
+                  ejecutar(() => establecerIniciativaAction(c.id, valor));
+                }}
+                className={`min-h-11 w-16 border border-border bg-night px-1.5 text-center font-mono text-sm ${FOCO}`}
+              />
+            </>
+          )}
+          {/* Solo un NPC trae `sheet` (foto congelada, 5.0): un jugador tira desde su ficha. */}
           {c.sheet && (
             <button
               type="button"
               onClick={() => onAbrirTiradas(c)}
-              className="clip-chamfer-sm shrink-0 border border-info px-2 py-1.5 font-mono text-[10px] uppercase tracking-wide text-info active:scale-95"
+              className={`grid min-h-11 place-items-center border border-info px-2.5 font-mono text-xs uppercase tracking-wide text-info ${FOCO}`}
             >
               Acciones
             </button>
           )}
-
-          <div className="flex flex-col items-end gap-1">
-            <label htmlFor={`iniciativa-${c.id}`} className="font-mono text-[10px] text-muted">
-              Iniciativa
-            </label>
-            <input
-              id={`iniciativa-${c.id}`}
-              type="number"
-              defaultValue={c.iniciativa ?? ""}
-              onBlur={(e) => {
-                const valor = e.target.value === "" ? null : Number(e.target.value);
-                ejecutar(() => establecerIniciativaAction(c.id, valor));
-              }}
-              className="clip-chamfer-sm w-16 border border-border bg-background px-2 py-1 text-right font-mono text-sm"
-            />
-          </div>
         </div>
-
-        <div className="flex items-center gap-2 border-t border-border pt-2">
-          <input
-            ref={deltaRef}
-            type="number"
-            aria-label={`Delta de PG o fatiga para ${c.nombre}`}
-            placeholder="±N"
-            className="clip-chamfer-sm w-20 border border-border bg-background px-2 py-2.5 text-center font-mono text-sm"
-          />
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => aplicarDelta(c.id, "pg")}
-            className="clip-chamfer-sm flex-1 border border-border px-3 py-2.5 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
-          >
-            Aplicar a PG
-          </button>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => aplicarDelta(c.id, "fatiga")}
-            className="clip-chamfer-sm flex-1 border border-border px-3 py-2.5 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
-          >
-            Aplicar a fatiga
-          </button>
-        </div>
-
-        {activos.length > 0 && (
-          <div className="flex flex-col gap-1.5 border-t border-border pt-2">
-            {activos.map((a) => (
-              <div
-                key={a.estadoId}
-                className="clip-chamfer-sm border border-accent px-2 py-1 font-mono text-accent"
-              >
-                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide">
-                  <span>{a.label}</span>
-                  {a.rondasRestantes !== null && <span>· {a.rondasRestantes}r</span>}
-                  {a.duracion.tipo === "escena" && <span>· escena</span>}
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => ejecutar(() => quitarEstadoAction(c.id, a.estadoId))}
-                    aria-label={`Quitar ${a.label} a ${c.nombre}`}
-                    className="ml-auto disabled:opacity-50"
-                  >
-                    ×
-                  </button>
-                </div>
-                {/* Detalle visible de verdad, no en un `title` — en móvil no
-                    hay hover que lo enseñe (hallazgo real de uso, fase 6b
-                    bloque 3). */}
-                {a.detalle.length > 0 && (
-                  <p className="mt-0.5 text-[10px] normal-case tracking-normal text-muted">
-                    {a.detalle.join(" ")}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="flex flex-wrap items-end gap-2 border-t border-border pt-2">
-          <div className="flex flex-1 flex-col gap-1">
-            <label htmlFor={`estado-${c.id}`} className="font-mono text-[10px] text-muted">
-              Estado
-            </label>
-            <select
-              id={`estado-${c.id}`}
-              value={estadoId}
-              onChange={(e) => elegirEstado(e.target.value)}
-              className="clip-chamfer-sm w-full border border-border bg-background px-2 py-2 font-mono text-xs"
-            >
-              <option value="">— elegir —</option>
-              {ESTADOS.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {grados.length > 1 && (
-            <div className="flex flex-col gap-1">
-              <label htmlFor={`grado-${c.id}`} className="font-mono text-[10px] text-muted">
-                Grado
-              </label>
-              <select
-                id={`grado-${c.id}`}
-                value={gradoId}
-                onChange={(e) => elegirGrado(e.target.value)}
-                className="clip-chamfer-sm border border-border bg-background px-2 py-2 font-mono text-xs"
-              >
-                {grados.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-1">
-            <label htmlFor={`rondas-${c.id}`} className="font-mono text-[10px] text-muted">
-              Rondas
-            </label>
-            <input
-              id={`rondas-${c.id}`}
-              type="number"
-              min={0}
-              value={duracion}
-              onChange={(e) => setDuracion(e.target.value)}
-              placeholder="∞"
-              className="clip-chamfer-sm w-16 border border-border bg-background px-2 py-2 text-center font-mono text-xs"
-            />
-          </div>
-
-          <button
-            type="button"
-            disabled={pending || !estadoId}
-            onClick={aplicarEstado}
-            className="clip-chamfer-sm border border-border px-3 py-2 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
-          >
-            Aplicar estado
-          </button>
-        </div>
-      </HudCard>
+      )}
     </li>
   );
 }

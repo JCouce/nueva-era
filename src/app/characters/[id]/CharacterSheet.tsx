@@ -80,6 +80,7 @@ import type { Sheet } from "@/lib/rules";
 import { PersonajeTab, PanelFieldset } from "./_components/personaje/PersonajeTab";
 import { AvisoEnRevision } from "./_components/RevisionFicha";
 import { EstadoFichaChip } from "@/components/EstadoFichaChip";
+import { ChipEstado } from "@/components/ChipEstado";
 import { AtributosTab } from "./_components/AtributosTab";
 import { HabilidadesTab } from "./_components/HabilidadesTab";
 import { DotesTab } from "./_components/DotesTab";
@@ -647,14 +648,10 @@ export function CharacterSheet({
             </span>
           </div>
           {misEstadosActivos.length > 0 && (
-            <div className="flex flex-col gap-1 border-t border-border pt-1.5">
+            <div className="flex flex-col gap-1.5 border-t border-border pt-1.5">
               {misEstadosActivos.map((a) => (
-                <div key={a.estadoId}>
-                  <span className="uppercase tracking-wide text-accent">
-                    {a.label}
-                    {a.rondasRestantes !== null && ` · ${a.rondasRestantes}r`}
-                    {a.duracion.tipo === "escena" && " · escena"}
-                  </span>
+                <div key={a.estadoId} className="flex flex-col items-start gap-0.5">
+                  <ChipEstado estado={a} />
                   {/* Detalle visible de verdad, no en un `title` — mismo
                       arreglo que CombateConsole.tsx. */}
                   {a.detalle.length > 0 && (

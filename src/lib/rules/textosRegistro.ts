@@ -45,7 +45,18 @@ const TIPO_LEGIBLE: Record<string, string> = {
   estado_poner: "estado",
   estado_quitar: "quitar estado",
   fin_escena: "fin de escena",
+  limpiar_estados: "limpiar estados",
+  vida: "vida",
 };
+
+// Un objetivo de la pestaña Vida en los textos: el NPC con su nombre entero ("Guardia
+// corporativo"), el jugador con el corto, como en el resto del registro.
+export const nombreDeObjetivo = (o: { nombre: string; npc: boolean }) => (o.npc ? o.nombre : nombreCorto(o.nombre));
+
+// "−3 vida a Javi y Guardia corporativo", "+2 fatiga a Javi".
+export function textoAjusteVida(recurso: "vida" | "fatiga", delta: number, objetivos: { nombre: string; npc: boolean }[]): string {
+  return `${conSigno(delta)} ${recurso} a ${listaLegible(objetivos.map(nombreDeObjetivo))}`;
+}
 
 export function textoEntradaRegistro(
   tipo: string,
@@ -69,8 +80,13 @@ export function textoEntradaRegistro(
     return `${unidad === "XP" ? "XP" : "Créditos"}: ${partes.join(", ")}`;
   }
 
+  if (datos.tipo === "vida") return textoAjusteVida(datos.recurso, datos.delta, datos.cambios);
+
   if (datos.tipo === "fin_escena") {
     return `Fin de escena: limpiados los estados de ${de(datos.cambios.map((c) => c.characterId))}`;
+  }
+  if (datos.tipo === "limpiar_estados") {
+    return `Estados limpiados: ${de(datos.cambios.map((c) => c.characterId))}`;
   }
 
   // Poner o quitar: se agrupa por lo que se puso (el mismo estado, grado y duración a

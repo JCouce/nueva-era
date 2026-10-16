@@ -14,7 +14,9 @@ import {
   type DatosRegistro,
   type RecursoMaster,
 } from "@/lib/rules";
+import type { Prisma } from "@/generated/prisma/client";
 import { COMBATE_ABIERTO, registrar, revalidarEstados, type Autoria } from "@/lib/estadosPersonaje";
+import { deshacerVidaEnTx } from "@/lib/vidaMando";
 
 export type ResultadoRegistro = { ok: true } | { ok: false; error: string };
 
@@ -50,6 +52,12 @@ export async function ajustarRecursoDePersonajes(
 // Error que deshace la transacción entera y llega al máster tal cual.
 class NoSePuede extends Error {}
 
+// Con la condición dentro del update: dos "deshacer" a la vez no lo aplican dos veces.
+async function marcarDeshecha(tx: Prisma.TransactionClient, id: string) {
+  const marcada = await tx.registroMaster.updateMany({ where: { id, deshechoAt: null }, data: { deshechoAt: new Date() } });
+  if (marcada.count !== 1) throw new NoSePuede("Esa acción ya está deshecha.");
+}
+
 export async function deshacerRegistro(id: string): Promise<ResultadoRegistro> {
   try {
     const ids = await prisma.$transaction(async (tx) => {
@@ -58,6 +66,11 @@ export async function deshacerRegistro(id: string): Promise<ResultadoRegistro> {
       const leida = entradaDeshacible(entrada);
       if (!leida.ok) throw new NoSePuede(leida.error);
       const datos = leida.plan;
+      if (datos.tipo === "vida") {
+        const tocados = await deshacerVidaEnTx(tx, datos, (error) => new NoSePuede(error));
+        await marcarDeshecha(tx, id);
+        return tocados;
+      }
       const characterIds = [...new Set(datos.cambios.map((c) => c.characterId))];
 
       if (datos.tipo === "xp" || datos.tipo === "creditos") {
@@ -109,9 +122,7 @@ export async function deshacerRegistro(id: string): Promise<ResultadoRegistro> {
         }
       }
 
-      // Con la condición dentro del update: dos "deshacer" a la vez no lo aplican dos veces.
-      const marcada = await tx.registroMaster.updateMany({ where: { id, deshechoAt: null }, data: { deshechoAt: new Date() } });
-      if (marcada.count !== 1) throw new NoSePuede("Esa acción ya está deshecha.");
+      await marcarDeshecha(tx, id);
       return characterIds;
     });
     revalidarEstados(ids);

@@ -2,6 +2,7 @@
 
 import { describirEstadosActivos, notasDeEstado, pesoEquipado, type DuracionEstado, type FichaResuelta } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
+import { ChipEstado } from "@/components/ChipEstado";
 
 // Vistazo rápido: el ajuste de vida y fatiga vive en Recursos (docs/tareas.md, 2026-09-27).
 function Barra({
@@ -87,9 +88,9 @@ function Estados({ ficha }: { ficha: FichaResuelta }) {
       ) : (
         <ul className="flex flex-col gap-2">
           {activos.map((a) => (
-            <li key={a.estadoId} className="clip-chamfer-sm flex flex-col gap-1 border border-accent bg-night px-3 py-2">
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                <span className="font-display text-sm font-semibold uppercase tracking-wide text-accent">{a.label}</span>
+            <li key={a.estadoId} className="flex flex-col gap-1 border-l-2 border-glitch py-1 pl-3">
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                <ChipEstado estado={a} />
                 <span className="font-mono text-[10px] uppercase tracking-wide text-muted">{textoDuracion(a.duracion)}</span>
               </div>
               {a.detalle.length > 0 && (

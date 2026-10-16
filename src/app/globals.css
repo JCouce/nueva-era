@@ -156,6 +156,60 @@
   }
 }
 
+/* Contador de rondas del combate (E1d): el número rueda, el nombre entra, el segmento
+   del turno late, barrido al pasar turno y sello "RONDA N" al cerrar la vuelta. Solo
+   con motion-safe: (sin animación si el sistema pide reducir movimiento). El barrido
+   anima `translate` (la propiedad, como las utilidades translate-* de Tailwind v4). */
+@keyframes ronda-rueda {
+  from {
+    opacity: 0;
+    transform: translateY(70%);
+    filter: blur(2px);
+  }
+}
+@keyframes ronda-entra {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+@keyframes ronda-pulso {
+  50% {
+    opacity: 0.55;
+  }
+}
+@keyframes ronda-sello {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+@keyframes ronda-barrido {
+  from {
+    translate: -100% 0;
+  }
+  to {
+    translate: 100% 0;
+  }
+}
+@keyframes ronda-boton {
+  50% {
+    filter: brightness(1.12);
+  }
+}
+
 /* Aberración cromática en texto (glitch RGB split) */
 @utility text-glitch {
   text-shadow:

@@ -8,15 +8,18 @@ import { FOCO } from "./controles";
 const DURACION_MS = 4200;
 
 // El aviso tras cada acción, abajo y centrado (en móvil, por encima de la barra de
-// pestañas), con "Deshacer" si la acción dejó entrada en el registro.
+// pestañas), con "Deshacer" si la acción dejó entrada en el registro. `altura`: dónde
+// queda en móvil (el combate lo sube por encima de su dock).
 export function Aviso({
   aviso,
   onCerrar,
   onDeshacer,
+  altura = "bottom-24",
 }: {
   aviso: AvisoMando | null;
   onCerrar: () => void;
   onDeshacer: (registroId: string) => void;
+  altura?: string;
 }) {
   useEffect(() => {
     if (!aviso) return;
@@ -29,7 +32,7 @@ export function Aviso({
   return createPortal(
     <div
       role="status"
-      className={`fixed bottom-24 left-1/2 z-50 flex w-max max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-4 border bg-elevated py-2 pl-4 pr-2 shadow-lg motion-safe:animate-[aviso-entra_.25s_ease-out] lg:bottom-6 ${
+      className={`fixed ${altura} left-1/2 z-50 flex w-max max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-4 border bg-elevated py-2 pl-4 pr-2 shadow-lg motion-safe:animate-[aviso-entra_.25s_ease-out] lg:bottom-6 ${
         aviso.tono === "ok" ? "border-neon-green" : "border-neon-orange"
       }`}
     >

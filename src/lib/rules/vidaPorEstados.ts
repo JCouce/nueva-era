@@ -135,25 +135,27 @@ export function aplicarOperacionEstado(
   };
 }
 
-// --- Terminar escena (E1c) ---
+// --- Limpiar estados (antes "Terminar escena") ---
 
-export type ResultadoFinDeEscena = {
+export type ResultadoLimpiarEstados = {
   estados: EstadoActivo[];
   // La misma referencia si no cambió (quitar no resta vida: solo puede subir el máximo).
   sheet: Sheet;
   // Las fotos con el máximo recalculado tras quitarlos todos.
   combatientes: FotoCombatienteNueva[];
-  // Uno por estado quitado: lo que guarda la entrada `fin_escena` del registro.
+  // Uno por estado quitado: lo que guarda la entrada `limpiar_estados` del registro.
   cambios: CambioEstadoPersonaje[];
 };
 
-// Quita a un personaje los estados que duran hasta el fin de escena, uno tras otro con
-// la misma operación que "quitar" (así cada cambio se deshace igual). null si no tenía.
-export function quitarEstadosDeEscena(
+// Quita a un personaje los estados que pasan el filtro (por defecto, todos), uno tras otro
+// con la misma operación que "quitar" (así cada cambio se deshace igual). null si no
+// tenía ninguno.
+export function quitarEstadosDe(
   personaje: { id: string; sheet: Sheet; estados: EstadoActivo[] },
   combatientes: FotoCombatiente[] = [],
-): ResultadoFinDeEscena | null {
-  const deEscena = personaje.estados.filter((e) => e.finDeEscena);
+  filtro: (e: EstadoActivo) => boolean = () => true,
+): ResultadoLimpiarEstados | null {
+  const deEscena = personaje.estados.filter(filtro);
   if (deEscena.length === 0) return null;
   let actual = personaje;
   let fotos = combatientes;

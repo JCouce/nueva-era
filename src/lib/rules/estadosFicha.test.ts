@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { leerEstados, ponerEstado, quitarEstado, estadosTrasTurno, estadosDeCombatiente } from "./estadosFicha";
+import { leerEstados, ponerEstado, quitarEstado, estadosAlCerrarVuelta, sinEstados, estadosDeNpcTras, estadosDeCombatiente } from "./estadosFicha";
 import { duracionDe, estadoActivoCon, describirEstadosActivos, type EstadoActivo } from "./estados";
 import { defaultSheet } from "./sheet";
 import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
@@ -90,15 +90,15 @@ describe("ponerEstado / quitarEstado", () => {
   });
 });
 
-describe("estadosTrasTurno (E1a: Siguiente turno descuenta también en la ficha)", () => {
+describe("estadosAlCerrarVuelta (E1a/E1d: al cerrar la vuelta descuenta, también en la ficha)", () => {
   test("sin estados, nada que escribir", () => {
-    assert.equal(estadosTrasTurno([]), null);
-    assert.equal(estadosTrasTurno("basura"), null);
+    assert.equal(estadosAlCerrarVuelta([]), null);
+    assert.equal(estadosAlCerrarVuelta("basura"), null);
   });
 
   test("las rondas bajan y se caen al llegar a 0; escena y hasta quitarlo no se tocan", () => {
     const uno: EstadoActivo = { estadoId: "aturdido", gradoId: "fracaso", rondasRestantes: 1 };
-    assert.deepEqual(estadosTrasTurno([ATRAPADO, uno, ENFERMO, DERRIBADO]), [
+    assert.deepEqual(estadosAlCerrarVuelta([ATRAPADO, uno, ENFERMO, DERRIBADO]), [
       { ...ATRAPADO, rondasRestantes: 2 },
       ENFERMO,
       DERRIBADO,
@@ -106,7 +106,28 @@ describe("estadosTrasTurno (E1a: Siguiente turno descuenta también en la ficha)
   });
 
   test("solo con escena / hasta quitarlo devuelve la misma lista (se escribe, sin cambios)", () => {
-    assert.deepEqual(estadosTrasTurno([ENFERMO, DERRIBADO]), [ENFERMO, DERRIBADO]);
+    assert.deepEqual(estadosAlCerrarVuelta([ENFERMO, DERRIBADO]), [ENFERMO, DERRIBADO]);
+  });
+});
+
+describe("sinEstados (Limpiar estados sobre un NPC)", () => {
+  test("los quita todos", () => {
+    assert.deepEqual(sinEstados([ATRAPADO, ENFERMO, DERRIBADO]), []);
+  });
+  test("sin estados (o basura), nada que escribir", () => {
+    assert.equal(sinEstados([]), null);
+    assert.equal(sinEstados("basura"), null);
+  });
+});
+
+describe("estadosDeNpcTras (E1d: estados de un NPC desde el panel de mando)", () => {
+  test("poner sustituye el grado del que ya tenía", () => {
+    const nuevo: EstadoActivo = { estadoId: "atrapado", gradoId: "activo", rondasRestantes: 1 };
+    assert.deepEqual(estadosDeNpcTras([ATRAPADO, ENFERMO], { tipo: "poner", estado: nuevo }), [ENFERMO, nuevo]);
+  });
+  test("quitar uno que no tenía no escribe nada", () => {
+    assert.equal(estadosDeNpcTras([ENFERMO], { tipo: "quitar", estadoId: "atrapado" }), null);
+    assert.deepEqual(estadosDeNpcTras([ATRAPADO, ENFERMO], { tipo: "quitar", estadoId: "atrapado" }), [ENFERMO]);
   });
 });
 

@@ -40,6 +40,8 @@
 //   vidaPorEstados.ts  vida/fatiga que se pierden al bajar el máximo por un estado (S75)
 //   registro.ts        registro del máster: qué se guarda de cada acción y cómo se deshace (E1b)
 //   textosRegistro.ts  textos del centro de mando: entradas del registro, duraciones, hora relativa (E1c)
+//   turnos.ts          combate en el centro de mando: vuelta, contador de rondas, resumen, vida en la Mesa (E1d)
+//   ajusteVida.ts      pestaña Vida del máster: daño/curación, vista previa y umbral que cruza
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -82,6 +84,8 @@ export * from "./dotesPoderes";
 export * from "./vidaPorEstados";
 export * from "./registro";
 export * from "./textosRegistro";
+export * from "./turnos";
+export * from "./ajusteVida";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

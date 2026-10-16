@@ -841,6 +841,41 @@ algo que se repite. Sin forma decidida todavía: primero hay que hablarlo.
 pueden encadenar solas y dónde tiene que decidir una persona; cada cuánto correrlo; cómo detectar regresiones al
 tocar `CLAUDE.md` o un workflow; y cuánto cuesta en tokens una pasada completa.
 
+**Material (2026-10-16):** inventario de las 17 tareas de mantenimiento con frecuencia, coste y dónde fallan en
+`~/Documents/jcouce/knowledge/concepts/nuevaera-maintenance-cycle.md`; investigación externa en
+`.../concepts/automated-agent-maintenance.md`; plan del coliseo (escalera N1–N6, ganó "vigía de Drive primero") en
+`.../runs/2026-10-16-coliseo-nuevaera-maintenance/`.
+
+**Estado final al que se apunta (norte).** El proyecto se mantiene solo en lo mecánico y pregunta en lo de diseño:
+- El máster cambia un manual → en menos de 24 h hay un informe de triaje y, para lo aprobado, una rama local con
+  `docs/sistema.md`, catálogo, tests y la auditoría de esa pieza hechos. El usuario lo revisa en ≤10 min y hace él
+  el push.
+- `docs/tareas.md`, los relevos y `gapsConocidos` nunca se quedan viejos: un proceso detecta la deriva y propone el
+  arreglo.
+- Ningún push llega a producción sin un chequeo previo de migraciones, `SCHEMA_VERSION` y tests.
+- Tocar `CLAUDE.md`, un workflow o un prompt pasa por un eval congelado que dice si la fidelidad prosa→motor empeora.
+- Lo que es diseño (reglas sin definir, supuestos, bug o diseño, UX) siempre acaba en una pregunta o una casilla, nunca
+  en una decisión del agente. Nada hace push ni toca la BD de producción.
+
+**Procesos candidatos, priorizados por uso real** (frecuencia y coste del inventario; riesgo = lo que puede romper si
+se automatiza). El coliseo empezó por el vigía de Drive porque era el primer ejemplo, no porque sea lo más frecuente:
+Drive solo ha tenido una foto, y lo que más se toca es este archivo y `sistema.md`.
+
+| # | Proceso | Frecuencia observada | Coste humano hoy | Riesgo al automatizar | Coste de construirlo | Prioridad |
+|---|---|---|---|---|---|---|
+| P1 | Deriva de estado y relevo: `tareas.md` contra git y código, cabeceras viejas, `gapsConocidos` caducado, `docs/prompt-*.md` podridos (→ skill `relevo` bajo demanda) | Muy alta: 98 commits a `tareas.md` en 16 días | Medio y continuo | Bajo (solo docs, propone) | Bajo: script de 0 tokens + skill | **1** |
+| P2 | Chequeo previo al push: migraciones Prisma pendientes, `SCHEMA_VERSION` sin paso en `migraciones.ts`, tests, scripts que apuntan a prod | Cada push (6 días con migración desde septiembre) | Bajo, pero el fallo cuesta caro (push = deploy en Neon) | Bajo (solo lee y avisa) | Bajo: hook/script local | **1** |
+| P3 | Lint mecánico de `docs/sistema.md`: estados FIRME/INFERIDO…, S-números, preguntas, registro y referencias cruzadas | Alta: 76 commits en 16 días | Medio | Bajo (no decide reglas) | Bajo: script | **2** |
+| P4 | Vigía de Drive + triaje del diff (N1 del coliseo) | Baja o desconocida: 1 foto; antes cada 1-2 semanas | Alto cuando ocurre | Medio (input no confiable) | Medio | **2** (en paralelo con P1-P3 si se quiere) |
+| P5 | Aplicar hallazgos y parches aprobados en rama local (N4) | Alta: ~39 `fix:` | Alto | Medio-alto | Alto | 3 (cuando P1-P4 den primitivas fiables) |
+| P6 | Eval congelado del harness (N5) con las calibraciones y hallazgos ya etiquetados | Cada cambio de `CLAUDE.md` (16), `motor.md` (14) o workflows | Invisible hoy (regresiones que no se ven) | Bajo | Medio | 3 |
+| P7 | Reconciliar la línea base por área (N2) | Única: 6 áreas una vez | Alto | Medio | Medio | Proyecto puntual, no proceso: a mano con ayuda |
+| P8 | Smoke test de UI tras cada tanda (sustituir parte de la verificación manual en navegador) | Cada tanda de UI | Bajo-medio | Bajo | Medio | 4 |
+| P9 | Entrada de bugs: hoy salen de pruebas del usuario, partidas en mesa y tests/CI que fallan; falta un sitio único donde caigan y cómo se convierten en tareas | Continua | Medio | Bajo | Bajo | Después de P1-P2 |
+
+**Decidido (usuario, 2026-10-16):** se empieza por **P1 + P2**. El vigía de Drive (P4) se construye cuando el máster
+vuelva a publicar.
+
 ### Fase 6b — Panel de combate en vivo ⬜ (MVP funcional cerrado 2026-09-11, pausada)
 **Hoja de ruta con subtareas, para ir cogiéndolas una a una: `docs/fase-6b.md`.** No
 dupliques su detalle aquí — actualiza ese archivo al cerrar cada pieza y, cuando la fase
@@ -1873,7 +1908,7 @@ no `base`); con dos opciones que bajen el margen de crítico gana el más bajo, 
 - [ ] `setPrioridadAction` sobrescribe `Character.creditos` al cambiar la letra de
       Recursos sin restar lo gastado en la Tienda (el reset de especie solo lo tapa en ese caso)
 
-### Centro de mando del máster + estados en la ficha (E1) ⬜ (decidido 2026-10-16)
+### Centro de mando del máster + estados en la ficha (E1) ✅ (decidido 2026-10-16, cerrado con E1d)
 Maqueta aprobada por el usuario (salvo el degradado púrpura de la cabecera, ya quitado):
 https://claude.ai/artifact/1JWfab9ijSgaC4mCYNTKs9 — escritorio y móvil, Mesa y Combate.
 Sustituye a la idea "Estados en la sub-pestaña Estado" (forma B: los estados se guardan).
@@ -1948,7 +1983,7 @@ Control Anímico) y el hueco de piezas inutilizadas para el Shock (S73).
   quitar XP/créditos en negativo da error en vez de recortar. Textos del registro en
   `rules/textosRegistro.ts`. Añadido "Quitar" el estado elegido a quien lo tenga (no estaba en
   la maqueta, `TODO(revisar)`).*
-- [ ] **E1d — combate:** el componente compartido en la consola y el contador de rondas.
+- [x] **E1d — combate:** el componente compartido en la consola y el contador de rondas.
   Incluye: las rondas de los estados bajan **al cerrar la vuelta**, no con cada turno de
   cualquiera como hasta ahora (`descontarDuracion` en `avanzarTurnoAction`; decisión del
   usuario, 2026-10-16).
@@ -1958,6 +1993,24 @@ Control Anímico) y el hueco de piezas inutilizadas para el Shock (S73).
   - "Terminar escena" solo limpia a los jugadores: los NPC con estados de escena del combate.
   - La tira vieja de xp/créditos dentro de la ficha (`ResourceRow`) no deja quitar en
     negativo pero no avisa: quitarla en favor de la Mesa o que avise.
+  *(2026-10-16) Consola en tres columnas en escritorio (cola · `PanelMando` · registro) y en
+  móvil cola + botón flotante "Aplicar estado a N" (hoja con `PanelEstados enLinea`) + dock;
+  objetivos = filas de la cola, `aplicar/quitarEstadoEnCombateAction` (jugadores con registro,
+  NPC sin él). `ContadorRondas.tsx` (tiempo del turno solo de pantalla) y motor en
+  `rules/turnos.ts` (`pasarTurno`, segmentos, resumen, `vidaEnMesa`). Rondas al cerrar la
+  vuelta (S77); "Terminar escena" también limpia NPC (S76); resumen del último combate; la
+  Mesa enseña la vida del combate marcada; fuera `ResourceRow` de la ficha (sigue en Fichas,
+  `TODO(revisar)`).*
+- [x] **Pulido de UI (tras E1d).**
+  *(2026-10-16) `ChipEstado` único (fondo magenta tintado, nombre en tinta y negrita, grado y
+  duración en mono; sin `text-glitch`) en Mesa, cola del combate y ficha del jugador. Mesa
+  móvil: pestañas Jugadores · Estados · Vida · Recompensas · Registro; el globo de un avatar
+  lleva a su tarjeta. Pestaña **Vida** en `PanelMando` (daño/curación, vida/fatiga, cantidad,
+  vista previa con el umbral que cruza, `rules/ajusteVida.ts`); en combate ajusta la foto, en
+  la Mesa la ficha (o la foto si está en combate, S78). Registro tipo `vida` deshacible también
+  para NPC (columna `RegistroMaster.combatienteIds`, migración `registro_combatientes`). Cola
+  limpia: fuera `±N`/`PG`/`FAT.`, barras grandes que abren Vida, orden e iniciativa solo al
+  preparar; en móvil "Acciones a N" con las tres pestañas.*
 
 ### Componente `Modal` común ⬜ (propuesta del usuario, 2026-10-13)
 Hoy 7 modales montan cada uno su propio fondo `fixed inset-0` (UsarModal, AccionModal,

@@ -13,6 +13,7 @@ import {
   type RecursoMaster,
 } from "@/lib/rules";
 import {
+  ajustarVidaAPersonajesSchema,
   aplicarEstadoAPersonajesSchema,
   characterIdSchema,
   darRecursoSchema,
@@ -21,11 +22,12 @@ import {
   quitarEstadoAPersonajesSchema,
   quitarEstadoSchema,
   registroIdSchema,
-  terminarEscenaSchema,
+  limpiarEstadosSchema,
 } from "@/lib/validation";
-import { cambiarEstadosDePersonajes, terminarEscenaDeJugadores } from "@/lib/estadosPersonaje";
+import { cambiarEstadosDePersonajes, COMBATE_ABIERTO, limpiarEstadosDeJugadores, limpiarEstadosDeNpcs } from "@/lib/estadosPersonaje";
 import { revalidarPanelMaster } from "@/lib/revalidarMaster";
 import { ajustarRecursoDePersonajes, deshacerRegistro } from "@/lib/registroMaster";
+import { ajustarVidaDePersonajes } from "@/lib/vidaMando";
 
 // Aprobar/revertir es cosa del máster, no del dueño de la ficha — a diferencia
 // de canEditCharacter(), aquí el dueño NO vale.
@@ -167,18 +169,43 @@ export async function darCreditosAction(input: { characterIds: string[]; cantida
   return darRecurso("creditos", input);
 }
 
-// "Terminar escena" (E1c): limpia los estados de escena de todos los personajes en juego.
-// Una sola entrada `fin_escena` en el registro, que se deshace como cualquier otra.
-export async function terminarEscenaAction(
-  input: { motivo?: string } = {},
-): Promise<{ ok: true; registroId: string | null; personajes: number } | { ok: false; error: string }> {
+// Pestaña Vida de la Mesa: daño (negativo) o curación de vida o fatiga a varios, con una
+// entrada en el registro. La de la ficha, o la del combate en curso si el jugador está en
+// él (lib/vidaMando.ts).
+export async function ajustarVidaAPersonajesAction(input: {
+  characterIds: string[];
+  recurso: "vida" | "fatiga";
+  cantidad: number;
+}): Promise<MandoResult> {
   const user = await requireMaster();
-  if (!user) return { ok: false, error: "Solo el máster puede terminar la escena." };
-  const parsed = terminarEscenaSchema.safeParse(input);
+  if (!user) return { ok: false, error: "Solo el máster puede ajustar la vida." };
+  const parsed = ajustarVidaAPersonajesSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
+  const { characterIds, recurso, cantidad } = parsed.data;
+  return ajustarVidaDePersonajes(characterIds, recurso, cantidad, { userId: user.id });
+}
+
+// "Limpiar estados": quita todos los estados. En la Mesa, a todos los personajes en juego;
+// en el combate, a su cola (los jugadores de la cola y los NPC). Los de jugadores dejan una
+// sola entrada `limpiar_estados` en el registro; los de NPC no se registran (deshacer no se
+// los devuelve).
+export async function limpiarEstadosAction(input: {
+  ambito: "mesa" | "combate";
+  motivo?: string;
+}): Promise<{ ok: true; registroId: string | null; personajes: number; npcs: number } | { ok: false; error: string }> {
+  const user = await requireMaster();
+  if (!user) return { ok: false, error: "Solo el máster puede limpiar los estados." };
+  const parsed = limpiarEstadosSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
 
-  const res = await terminarEscenaDeJugadores({ userId: user.id, motivo: parsed.data.motivo });
-  return { ok: true, registroId: res.registroId, personajes: res.characterIds.length };
+  const autoria = { userId: user.id, motivo: parsed.data.motivo };
+  if (parsed.data.ambito === "mesa") {
+    const res = await limpiarEstadosDeJugadores({ status: "APPROVED" }, autoria);
+    return { ok: true, registroId: res.registroId, personajes: res.characterIds.length, npcs: 0 };
+  }
+  const res = await limpiarEstadosDeJugadores({ combatientes: { some: { combate: COMBATE_ABIERTO } } }, autoria);
+  const npcs = await limpiarEstadosDeNpcs();
+  return { ok: true, registroId: res.registroId, personajes: res.characterIds.length, npcs };
 }
 
 // Deshace una entrada del registro si todavía se puede (criterios en lib/rules/registro.ts).

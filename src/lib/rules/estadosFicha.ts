@@ -4,6 +4,7 @@
 // EstadoActivo[] y se leen con el mismo lector tolerante.
 import { estadoPorId } from "../catalog/estados";
 import { descontarDuracion, type EstadoActivo } from "./estados";
+import type { OperacionEstado } from "./vidaPorEstados";
 
 // Tope de cordura para una duración en rondas: más que esto es un dato roto.
 export const MAX_RONDAS_ESTADO = 999;
@@ -45,13 +46,27 @@ export function quitarEstado(activos: EstadoActivo[], estadoId: string): EstadoA
   return activos.filter((e) => e.estadoId !== estadoId);
 }
 
-// Lo que escribe "Siguiente turno" en una fila: null si no había nada que descontar
-// (no hace falta tocarla). Ojo: "tenía algo" es la condición, no "cambió de tamaño":
-// pasar de 3 a 2 rondas es un cambio aunque no se caiga ninguno. Los de escena y los
-// de "hasta quitarlo" no bajan (descontarDuracion no toca rondasRestantes null).
-export function estadosTrasTurno(json: unknown): EstadoActivo[] | null {
+// Lo que escribe "Siguiente turno" en una fila al cerrar la vuelta (S77): null si no
+// había nada que descontar (no hace falta tocarla). Ojo: "tenía algo" es la condición,
+// no "cambió de tamaño": pasar de 3 a 2 rondas es un cambio aunque no se caiga ninguno.
+// Los de escena y los de "hasta quitarlo" no bajan (descontarDuracion no toca
+// rondasRestantes null).
+export function estadosAlCerrarVuelta(json: unknown): EstadoActivo[] | null {
   const activos = leerEstados(json);
   return activos.length === 0 ? null : descontarDuracion(activos);
+}
+
+// "Limpiar estados" sobre un NPC: sin ninguno, o null si ya no tenía (no hay que escribir).
+export function sinEstados(json: unknown): EstadoActivo[] | null {
+  return leerEstados(json).length > 0 ? [] : null;
+}
+
+// Poner o quitar un estado a un NPC (su Combatiente.estados): sin vida que restar (su
+// foto no recalcula el máximo con estados) ni registro. null si quitar no cambia nada.
+export function estadosDeNpcTras(json: unknown, op: OperacionEstado): EstadoActivo[] | null {
+  const activos = leerEstados(json);
+  if (op.tipo === "poner") return ponerEstado(activos, op.estado);
+  return activos.some((e) => e.estadoId === op.estadoId) ? quitarEstado(activos, op.estadoId) : null;
 }
 
 // Un solo sitio para los estados de un jugador, también en combate: los de su ficha
