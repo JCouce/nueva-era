@@ -5,10 +5,11 @@ import {
   entradaDeshacible,
   leerDatosRegistro,
   planDeshacerEstados,
+  planAjusteRecurso,
   planDeshacerRecurso,
   type DatosRegistro,
 } from "./registro";
-import { aplicarOperacionEstado, maximosConEstados } from "./vidaPorEstados";
+import { aplicarOperacionEstado, maximosConEstados, quitarEstadosDeEscena } from "./vidaPorEstados";
 import { defaultSheet, parseSheet, type Sheet } from "./sheet";
 import type { EstadoActivo } from "./estados";
 
@@ -32,6 +33,33 @@ describe("entradaDeshacible", () => {
     assert.equal(entradaDeshacible({ tipo: "xp", datos: { cambios: "x" }, deshechoAt: null }).ok, false);
     assert.equal(entradaDeshacible({ tipo: "fin_escena", datos, deshechoAt: null }).ok, false);
     assert.equal(entradaDeshacible({ tipo: "xp", datos, deshechoAt: null }).ok, true);
+  });
+});
+
+describe("planAjusteRecurso", () => {
+  const pjs = [
+    { id: "a", nombre: "Ana", valor: 300 },
+    { id: "b", nombre: "Bea", valor: 50 },
+  ];
+
+  test("dar o quitar lo mismo a todos", () => {
+    assert.deepEqual(planAjusteRecurso("creditos", 100, pjs), {
+      ok: true,
+      plan: [{ characterId: "a", antes: 300, despues: 400 }, { characterId: "b", antes: 50, despues: 150 }],
+    });
+    assert.deepEqual(planAjusteRecurso("xp", -50, pjs), {
+      ok: true,
+      plan: [{ characterId: "a", antes: 300, despues: 250 }, { characterId: "b", antes: 50, despues: 0 }],
+    });
+  });
+
+  test("si a alguien le dejaría en negativo, no se mueve nada y dice a quién", () => {
+    const r = planAjusteRecurso("creditos", -100, pjs);
+    assert.equal(r.ok, false);
+    assert.match(!r.ok ? r.error : "", /Bea \(50\) no tiene 100 créditos/);
+    assert.doesNotMatch(!r.ok ? r.error : "", /Ana/);
+    const dos = planAjusteRecurso("xp", -500, pjs);
+    assert.match(!dos.ok ? dos.error : "", /Ana \(300\) y Bea \(50\) no tienen 500 XP/);
   });
 });
 
@@ -139,3 +167,59 @@ describe("planDeshacerEstados", () => {
     assert.equal(plan.plan.personajes[0].sheet.vidaActual, reposo.vida);
   });
 });
+
+describe("fin de escena", () => {
+  const MIEDO: EstadoActivo = { estadoId: "miedo", gradoId: "asustado", rondasRestantes: null, finDeEscena: true };
+  const ATRAPADO: EstadoActivo = { estadoId: "atrapado", gradoId: "activo", rondasRestantes: 4 };
+  const conEscena = { id: "pj1", nombre: "Pepa", sheet: SHEET, estados: [ATRAPADO, { ...ENF2, finDeEscena: true as const }, MIEDO] };
+
+  test("quita solo los de escena, uno por cambio, sin tocar la vida", () => {
+    const r = quitarEstadosDeEscena(conEscena);
+    assert.ok(r);
+    assert.deepEqual(r.estados, [ATRAPADO]);
+    assert.equal(r.cambios.length, 2);
+    assert.equal(r.sheet.vidaActual, SHEET.vidaActual);
+    assert.equal(quitarEstadosDeEscena({ ...conEscena, estados: [ATRAPADO] }), null);
+  });
+
+  test("la foto de combate recalcula el máximo con todos quitados", () => {
+    const foto = { id: "c1", characterId: "pj1", pgActual: 3, fatigaActual: 2 };
+    const r = quitarEstadosDeEscena({ ...conEscena, estados: [{ ...ENF2, finDeEscena: true }] }, [foto]);
+    assert.ok(r);
+    assert.deepEqual(r.combatientes.map((c) => [c.pgActual, c.pgMax]), [[3, reposo.vida]]);
+  });
+
+  test("deshacer devuelve todos los de escena; si uno ha vuelto a ponerse, ninguno", () => {
+    const r = quitarEstadosDeEscena(conEscena);
+    assert.ok(r);
+    const datos = guardadoYLeido({ tipo: "fin_escena", cambios: r.cambios });
+    assert.ok(datos.tipo === "fin_escena");
+    const tras = { ...conEscena, estados: r.estados };
+    const plan = planDeshacerEstados(datos, [tras], [], []);
+    assert.ok(plan.ok);
+    assert.equal(plan.plan.personajes.length, 1);
+    assert.deepEqual(
+      new Set(plan.plan.personajes[0].estados.map((e) => e.estadoId)),
+      new Set(["atrapado", "enfermedad", "miedo"]),
+    );
+    assert.equal(plan.plan.personajes[0].estados.find((e) => e.estadoId === "enfermedad")?.gradoId, "nivel_2");
+    const repuesto = planDeshacerEstados(datos, [{ ...tras, estados: [...r.estados, MIEDO] }], [], []);
+    assert.equal(repuesto.ok, false);
+  });
+
+  test("un fin de escena posterior bloquea deshacer el poner de antes", () => {
+    const puesto = aplicarOperacionEstado({ ...pjVacio(), estados: [] }, { tipo: "poner", estado: MIEDO });
+    assert.ok(puesto);
+    const datos = guardadoYLeido({ tipo: "estado_poner", cambios: [puesto.cambio] });
+    assert.ok(datos.tipo === "estado_poner");
+    const fin = quitarEstadosDeEscena({ ...pjVacio(), estados: puesto.estados });
+    assert.ok(fin);
+    const posterior = { tipo: "fin_escena", datos: datosParaGuardar({ tipo: "fin_escena", cambios: fin.cambios }) };
+    const plan = planDeshacerEstados(datos, [{ ...pjVacio(), estados: puesto.estados }], [], [posterior]);
+    assert.equal(plan.ok, false);
+  });
+});
+
+function pjVacio() {
+  return { id: "pj1", nombre: "Pepa", sheet: SHEET, estados: [] as EstadoActivo[] };
+}

@@ -1,83 +1,74 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
+import { listarRegistro } from "@/lib/registroMaster";
+import {
+  describirEstadosActivos,
+  leerEstados,
+  parseSheet,
+  resolverFicha,
+  textoEntradaRegistro,
+  VITALIDAD_DE_FICHA,
+} from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
-import { HudCard } from "@/components/HudCard";
-import { MasterTabs } from "@/components/MasterTabs";
-import { StatusControl, ResourceRow } from "./MasterControls";
+import { MesaMaster, type JugadorMesa } from "./MesaMaster";
 
-export default async function MasterPage() {
+const ENTRADAS_REGISTRO = 40;
+
+// La Mesa (E1c, docs/tareas.md "Centro de mando del máster"): estados, recompensas y
+// registro con deshacer sobre los personajes en juego. La lista de fichas (revisión,
+// aprobar...) vive en /master/fichas.
+export default async function MesaPage() {
   const user = await requireUser();
   if (user.role !== "MASTER") redirect("/characters");
-
-  const characters = await prisma.character.findMany({
-    orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
-    include: { owner: { select: { name: true, email: true } } },
-  });
-  type Fila = (typeof characters)[number];
-
-  // En revisión arriba del todo: es lo que espera al máster.
-  const secciones: { titulo: string; vacio: string; fichas: Fila[] }[] = [
-    {
-      titulo: "En revisión",
-      vacio: "Ninguna ficha esperando revisión.",
-      fichas: characters.filter((c) => c.status === "IN_REVIEW"),
-    },
-    {
-      titulo: "En creación",
-      vacio: "Ninguna ficha en creación.",
-      fichas: characters.filter((c) => c.status === "DRAFT"),
-    },
-    {
-      titulo: "En juego",
-      vacio: "Aún no hay fichas aprobadas.",
-      fichas: characters.filter((c) => c.status === "APPROVED"),
-    },
-  ];
+  const { jugadores, registro, generadoEn } = await cargarMesa();
 
   return (
     <>
       <AppHeader name={user.name} role={user.role} />
-      <main className="mx-auto w-full max-w-md flex-1 px-4 py-5">
-        <h1 className="mb-4 font-display text-2xl font-bold uppercase tracking-wide">
-          Panel del máster
-        </h1>
-        <MasterTabs />
-
-        {secciones.map((s) => (
-          <section key={s.titulo} className="mb-6">
-            <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted">
-              {s.titulo} ({s.fichas.length})
-            </h2>
-            <ul className="flex flex-col gap-2">
-              {s.fichas.map((c) => (
-                <li key={c.id}>
-                  <HudCard className="flex flex-col gap-3 px-4 py-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Link href={`/characters/${c.id}`} className="flex-1">
-                        <span className="font-display text-base font-medium uppercase tracking-wide">
-                          {c.name}
-                        </span>
-                        <span className="block font-mono text-xs text-muted">
-                          {c.owner.name ?? c.owner.email}
-                        </span>
-                      </Link>
-                      <StatusControl characterId={c.id} status={c.status} />
-                    </div>
-                    <ResourceRow characterId={c.id} xp={c.xp} creditos={c.creditos} />
-                  </HudCard>
-                </li>
-              ))}
-              {s.fichas.length === 0 && (
-                <li className="clip-chamfer border border-dashed border-border px-4 py-8 text-center font-mono text-sm text-muted">
-                  {s.vacio}
-                </li>
-              )}
-            </ul>
-          </section>
-        ))}
+      <main className="mx-auto w-full max-w-md flex-1 px-4 pb-28 pt-5 lg:max-w-7xl lg:pb-10">
+        <MesaMaster jugadores={jugadores} registro={registro} generadoEn={generadoEn} />
       </main>
     </>
   );
+}
+
+async function cargarMesa() {
+  // En juego = aprobados, los mismos que limpia "Terminar escena".
+  const filas = await prisma.character.findMany({
+    where: { status: "APPROVED" },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, stats: true, estados: true, xp: true, creditos: true },
+  });
+  // TODO(revisar): la vida y la fatiga son las de la ficha; con un combate abierto el
+  // jugador lleva además su foto (Combatiente), que la Mesa no enseña.
+  const jugadores: JugadorMesa[] = filas.map((f) => {
+    const sheet = parseSheet(f.stats);
+    const estados = leerEstados(f.estados);
+    const ficha = resolverFicha(sheet, { estados, vitalidad: VITALIDAD_DE_FICHA });
+    const especie = ficha.especie
+      ? [ficha.especie.especie.label, ficha.especie.casta?.label].filter(Boolean).join(" · ")
+      : null;
+    return {
+      id: f.id,
+      nombre: f.name,
+      especie,
+      xp: f.xp,
+      creditos: f.creditos,
+      vida: { actual: sheet.vidaActual, max: ficha.salud.vida },
+      fatiga: { actual: sheet.fatigaActual, max: ficha.salud.fatiga },
+      estados: describirEstadosActivos(estados),
+    };
+  });
+
+  const registro = (await listarRegistro(ENTRADAS_REGISTRO)).map((e) => ({
+    id: e.id,
+    creadaEn: e.createdAt.getTime(),
+    texto: textoEntradaRegistro(e.tipo, e.datos, e.personajes),
+    motivo: e.motivo,
+    deshecha: e.deshechoAt !== null,
+    deshacible: e.datos !== null,
+  }));
+
+  return { jugadores, registro, generadoEn: Date.now() };
 }

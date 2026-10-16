@@ -1938,12 +1938,26 @@ Control Anímico) y el hueco de piezas inutilizadas para el Shock (S73).
   poner/quitar estado (Mesa y consola, solo jugadores). `deshacerRegistroAction` en
   transacción; criterios de "ya no se puede" en `rules/registro.ts`; `listarRegistro(n)` en
   `lib/registroMaster.ts` para E1c. "Fin de escena" registrará cuando exista (E1c).*
-- [ ] **E1c — centro de mando, Mesa:** pantalla nueva de escritorio y móvil (Estados,
+- [x] **E1c — centro de mando, Mesa:** pantalla nueva de escritorio y móvil (Estados,
   Recompensas, Registro, Terminar escena) con el componente compartido.
+  *(2026-10-16) `/master` es la Mesa (`MesaMaster.tsx`, un componente con breakpoints `lg`:
+  tres columnas en escritorio; tira de avatares, barra de pestañas y hoja inferior en móvil);
+  la lista de fichas pasa a `/master/fichas` y las pestañas son Mesa · Combate · Fichas · NPCs.
+  Panel compartido en `components/mando/` (`PanelMando` con objetivos y acciones por props,
+  para E1d). "Terminar escena" (`terminarEscenaAction`, entrada `fin_escena` deshacible, S76);
+  quitar XP/créditos en negativo da error en vez de recortar. Textos del registro en
+  `rules/textosRegistro.ts`. Añadido "Quitar" el estado elegido a quien lo tenga (no estaba en
+  la maqueta, `TODO(revisar)`).*
 - [ ] **E1d — combate:** el componente compartido en la consola y el contador de rondas.
   Incluye: las rondas de los estados bajan **al cerrar la vuelta**, no con cada turno de
   cualquiera como hasta ahora (`descontarDuracion` en `avanzarTurnoAction`; decisión del
   usuario, 2026-10-16).
+  Cabos que deja E1c para aquí:
+  - La Mesa enseña la vida de la ficha, no la del combate abierto: decidir qué se ve
+    mientras hay combate.
+  - "Terminar escena" solo limpia a los jugadores: los NPC con estados de escena del combate.
+  - La tira vieja de xp/créditos dentro de la ficha (`ResourceRow`) no deja quitar en
+    negativo pero no avisa: quitarla en favor de la Mesa o que avise.
 
 ### Componente `Modal` común ⬜ (propuesta del usuario, 2026-10-13)
 Hoy 7 modales montan cada uno su propio fondo `fixed inset-0` (UsarModal, AccionModal,

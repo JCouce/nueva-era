@@ -1,4 +1,4 @@
-// Piezas de UI del máster compartidas entre /master (la cola) y la tira
+// Piezas de UI del máster compartidas entre /master/fichas (la cola) y la tira
 // solo-máster de characters/[id] (ver la ficha en sí). Los server actions
 // viven en ./actions — aquí solo el markup.
 import type { EstadoFicha } from "@/lib/rules";

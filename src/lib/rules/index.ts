@@ -39,6 +39,7 @@
 //   dotesCompradas.ts  sheet.dotes: forma y lectura tolerante
 //   vidaPorEstados.ts  vida/fatiga que se pierden al bajar el máximo por un estado (S75)
 //   registro.ts        registro del máster: qué se guarda de cada acción y cómo se deshace (E1b)
+//   textosRegistro.ts  textos del centro de mando: entradas del registro, duraciones, hora relativa (E1c)
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -80,6 +81,7 @@ export * from "./dotesAcciones";
 export * from "./dotesPoderes";
 export * from "./vidaPorEstados";
 export * from "./registro";
+export * from "./textosRegistro";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

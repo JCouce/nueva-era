@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { revalidarPanelMaster } from "@/lib/revalidarMaster";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
 import {
   characterCreateSchema,
@@ -188,7 +189,7 @@ export async function setAtributoAction(
   const xp = ctx.xp - coste;
   await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, xp } });
   revalidatePath(`/characters/${characterId}`);
-  revalidatePath("/master");
+  revalidarPanelMaster();
   return { ok: true, sheet, xp };
 }
 
@@ -221,7 +222,7 @@ export async function setHabilidadAction(
   const xp = ctx.xp - coste;
   await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, xp } });
   revalidatePath(`/characters/${characterId}`);
-  revalidatePath("/master");
+  revalidarPanelMaster();
   return { ok: true, sheet, xp };
 }
 
@@ -254,7 +255,7 @@ export async function setDisciplinaAction(
   const xp = ctx.xp - coste;
   await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, xp } });
   revalidatePath(`/characters/${characterId}`);
-  revalidatePath("/master");
+  revalidarPanelMaster();
   return { ok: true, sheet, xp };
 }
 
@@ -280,7 +281,7 @@ export async function comprarDoteAction(characterId: string, entrada: unknown): 
   const xp = ctx.xp - res.costeXp;
   await prisma.character.update({ where: { id: characterId }, data: { stats: res.sheet, xp } });
   revalidatePath(`/characters/${characterId}`);
-  revalidatePath("/master");
+  revalidarPanelMaster();
   return { ok: true, sheet: res.sheet, xp };
 }
 
@@ -327,7 +328,7 @@ export async function setPrioridadAction(
     // en la respuesta: es lo que CharacterSheet reconcilia para que la
     // Tienda no siga mostrando el saldo de antes de elegir la letra.
     revalidatePath(`/characters/${characterId}`);
-    revalidatePath("/master");
+    revalidarPanelMaster();
     return { ok: true, sheet, creditos };
   }
   return persist(characterId, sheet);
@@ -408,7 +409,7 @@ export async function equiparAction(
   const creditos = ctx.creditos - coste;
   await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, creditos } });
   revalidatePath(`/characters/${characterId}`);
-  revalidatePath("/master");
+  revalidarPanelMaster();
   return { ok: true, sheet, creditos };
 }
 
@@ -427,7 +428,7 @@ export async function desequiparAction(
   const creditos = ctx.creditos + refund;
   await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, creditos } });
   revalidatePath(`/characters/${characterId}`);
-  revalidatePath("/master");
+  revalidarPanelMaster();
   return { ok: true, sheet, creditos };
 }
 
@@ -503,7 +504,7 @@ export async function comprarRecargaAction(
     data: { stats: resultado.sheet, creditos },
   });
   revalidatePath(`/characters/${characterId}`);
-  revalidatePath("/master");
+  revalidarPanelMaster();
   return { ok: true, sheet: resultado.sheet, creditos };
 }
 
@@ -537,7 +538,7 @@ export async function comprarMaterialAction(
     data: { stats: resultado.sheet, creditos },
   });
   revalidatePath(`/characters/${characterId}`);
-  revalidatePath("/master");
+  revalidarPanelMaster();
   return { ok: true, sheet: resultado.sheet, creditos };
 }
 
@@ -573,7 +574,7 @@ export async function comprarGranadaAction(
     data: { stats: resultado.sheet, creditos },
   });
   revalidatePath(`/characters/${characterId}`);
-  revalidatePath("/master");
+  revalidarPanelMaster();
   return { ok: true, sheet: resultado.sheet, creditos };
 }
 
@@ -620,7 +621,7 @@ export async function comprarFarmacoAction(
     data: { stats: resultado.sheet, creditos },
   });
   revalidatePath(`/characters/${characterId}`);
-  revalidatePath("/master");
+  revalidarPanelMaster();
   return { ok: true, sheet: resultado.sheet, creditos };
 }
 
@@ -668,7 +669,7 @@ export async function comprarMunicionEspecialAction(
     data: { stats: resultado.sheet, creditos },
   });
   revalidatePath(`/characters/${characterId}`);
-  revalidatePath("/master");
+  revalidarPanelMaster();
   return { ok: true, sheet: resultado.sheet, creditos };
 }
 
@@ -792,7 +793,7 @@ export async function setEspecieAction(
   const creditos = creditosDeLaLetra(sheet.prioridades);
   await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, creditos } });
   revalidatePath(`/characters/${characterId}`);
-  revalidatePath("/master");
+  revalidarPanelMaster();
   return { ok: true, sheet, creditos };
 }
 
@@ -880,7 +881,7 @@ async function cambiarEstadoRevision(
         ? { status: res.estado, submittedAt: new Date(), reviewNote: null }
         : { status: res.estado, submittedAt: null },
   });
-  revalidatePath("/master");
+  revalidarPanelMaster();
   revalidatePath("/characters");
   revalidatePath(`/characters/${characterId}`);
   return { ok: true };

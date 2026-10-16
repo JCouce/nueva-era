@@ -99,3 +99,12 @@ export const darRecursoSchema = z.object({
 export const registroIdSchema = z.string().trim().min(1).max(40);
 
 export const quitarEstadoSchema = z.object({ id: characterIdSchema, estadoId: idCatalogo });
+
+export const quitarEstadoAPersonajesSchema = z.object({
+  characterIds: variosPersonajesSchema,
+  estadoId: idCatalogo,
+  motivo: motivoSchema,
+});
+
+// Terminar escena (E1c): sin objetivo (son todos los personajes en juego), motivo opcional.
+export const terminarEscenaSchema = z.object({ motivo: motivoSchema });

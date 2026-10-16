@@ -141,6 +141,21 @@
   animation: pulso-nucleo 2.4s ease-in-out infinite;
 }
 
+/* Centro de mando (E1c): entrada del aviso y de la hoja inferior. Solo con
+   motion-safe: (sin animación si el sistema pide reducir movimiento). */
+@keyframes aviso-entra {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes hoja-sube {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+}
+
 /* Aberración cromática en texto (glitch RGB split) */
 @utility text-glitch {
   text-shadow:

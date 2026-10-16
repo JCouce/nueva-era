@@ -134,3 +134,38 @@ export function aplicarOperacionEstado(
     },
   };
 }
+
+// --- Terminar escena (E1c) ---
+
+export type ResultadoFinDeEscena = {
+  estados: EstadoActivo[];
+  // La misma referencia si no cambió (quitar no resta vida: solo puede subir el máximo).
+  sheet: Sheet;
+  // Las fotos con el máximo recalculado tras quitarlos todos.
+  combatientes: FotoCombatienteNueva[];
+  // Uno por estado quitado: lo que guarda la entrada `fin_escena` del registro.
+  cambios: CambioEstadoPersonaje[];
+};
+
+// Quita a un personaje los estados que duran hasta el fin de escena, uno tras otro con
+// la misma operación que "quitar" (así cada cambio se deshace igual). null si no tenía.
+export function quitarEstadosDeEscena(
+  personaje: { id: string; sheet: Sheet; estados: EstadoActivo[] },
+  combatientes: FotoCombatiente[] = [],
+): ResultadoFinDeEscena | null {
+  const deEscena = personaje.estados.filter((e) => e.finDeEscena);
+  if (deEscena.length === 0) return null;
+  let actual = personaje;
+  let fotos = combatientes;
+  let fotosNuevas: FotoCombatienteNueva[] = [];
+  const cambios: CambioEstadoPersonaje[] = [];
+  for (const e of deEscena) {
+    const r = aplicarOperacionEstado(actual, { tipo: "quitar", estadoId: e.estadoId }, fotos);
+    if (!r) continue;
+    actual = { ...actual, sheet: r.vida.sheet, estados: r.estados };
+    fotosNuevas = r.vida.combatientes;
+    fotos = fotosNuevas.map((f) => ({ id: f.id, pgActual: f.pgActual, fatigaActual: f.fatigaActual }));
+    cambios.push(r.cambio);
+  }
+  return { estados: actual.estados, sheet: actual.sheet, combatientes: fotosNuevas, cambios };
+}

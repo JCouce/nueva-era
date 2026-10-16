@@ -12,7 +12,9 @@
 //     clase de duración (las rondas pueden haber bajado). Si se quitó o se cayó por
 //     rondas, o lo cambió otra acción, no.
 //   - Quitar un estado: no tiene que haber vuelto a ponerse.
-//   - En los dos de estado, además: si una entrada posterior sin deshacer toca ese
+//   - Fin de escena (E1c): como quitar, para cada estado de escena que limpió; si uno
+//     solo ha vuelto a ponerse, no se devuelve ninguno.
+//   - En los de estado, además: si una entrada posterior sin deshacer toca ese
 //     mismo estado de ese personaje, no (hay que deshacer antes la posterior).
 //   - Un personaje borrado se salta: no queda nada suyo que devolver.
 import { z } from "zod";
@@ -21,8 +23,8 @@ import type { EstadoActivo } from "./estados";
 import { devolverVida, maximosConEstados, type CambioEstadoPersonaje, type ParVida } from "./vidaPorEstados";
 import type { Sheet } from "./sheet";
 
-// "fin_escena" (Terminar escena, E1c) y los que vengan se añaden aquí con su forma.
-export const TIPOS_REGISTRO = ["xp", "creditos", "estado_poner", "estado_quitar"] as const;
+// Los que vengan se añaden aquí con su forma.
+export const TIPOS_REGISTRO = ["xp", "creditos", "estado_poner", "estado_quitar", "fin_escena"] as const;
 export type TipoRegistro = (typeof TIPOS_REGISTRO)[number];
 export type RecursoMaster = "xp" | "creditos";
 
@@ -30,9 +32,11 @@ export type CambioRecurso = { characterId: string; antes: number; despues: numbe
 
 // Un miembro por tipo (y no `tipo: "xp" | "creditos"`) para que TS estreche bien.
 export type DatosRecurso = { tipo: "xp"; cambios: CambioRecurso[] } | { tipo: "creditos"; cambios: CambioRecurso[] };
+// fin_escena: un cambio por estado de escena quitado (varios por personaje).
 export type DatosEstado =
   | { tipo: "estado_poner"; cambios: CambioEstadoPersonaje[] }
-  | { tipo: "estado_quitar"; cambios: CambioEstadoPersonaje[] };
+  | { tipo: "estado_quitar"; cambios: CambioEstadoPersonaje[] }
+  | { tipo: "fin_escena"; cambios: CambioEstadoPersonaje[] };
 export type DatosRegistro = DatosRecurso | DatosEstado;
 
 // Lo que va a la columna `datos` (el tipo va en su columna).
@@ -64,7 +68,7 @@ export function leerDatosRegistro(tipo: string, json: unknown): DatosRegistro | 
     const r = z.array(cambioRecursoSchema).safeParse(cambios);
     return r.success ? { tipo, cambios: r.data } : null;
   }
-  if (tipo === "estado_poner" || tipo === "estado_quitar") {
+  if (tipo === "estado_poner" || tipo === "estado_quitar" || tipo === "fin_escena") {
     const r = z.array(cambioEstadoSchema).safeParse(cambios);
     if (!r.success) return null;
     const leidos: CambioEstadoPersonaje[] = [];
@@ -82,6 +86,12 @@ export function leerDatosRegistro(tipo: string, json: unknown): DatosRegistro | 
 
 export type Plan<T> = { ok: true; plan: T } | { ok: false; error: string };
 
+// "Kira", "Kira y Tarsis", "Kira, Tarsis y Oru".
+export function listaLegible(nombres: string[]): string {
+  if (nombres.length <= 1) return nombres.join("");
+  return `${nombres.slice(0, -1).join(", ")} y ${nombres[nombres.length - 1]}`;
+}
+
 export function entradaDeshacible(entrada: {
   tipo: string;
   datos: unknown;
@@ -94,6 +104,25 @@ export function entradaDeshacible(entrada: {
 }
 
 // --- xp y créditos ---
+
+// Sumar `cantidad` (negativa para quitar) a varios. Si a alguien le dejaría en negativo,
+// no se mueve nada para nadie y se dice a quién no le llega (decisión del usuario,
+// 2026-10-16: avisar en vez de recortar a 0). Quien no cambia (cantidad 0) no sale.
+export function planAjusteRecurso(
+  recurso: RecursoMaster,
+  cantidad: number,
+  personajes: { id: string; nombre: string; valor: number }[],
+): Plan<CambioRecurso[]> {
+  const cortos = personajes.filter((p) => p.valor + cantidad < 0);
+  if (cortos.length > 0) {
+    const que = recurso === "xp" ? "XP" : "créditos";
+    const quien = listaLegible(cortos.map((p) => `${p.nombre} (${p.valor})`));
+    const verbo = cortos.length === 1 ? "no tiene" : "no tienen";
+    return { ok: false, error: `${quien} ${verbo} ${-cantidad} ${que} que quitar.` };
+  }
+  if (cantidad === 0) return { ok: true, plan: [] };
+  return { ok: true, plan: personajes.map((p) => ({ characterId: p.id, antes: p.valor, despues: p.valor + cantidad })) };
+}
 
 export function planDeshacerRecurso(
   recurso: RecursoMaster,
@@ -147,10 +176,12 @@ function sigueIgual(actual: EstadoActivo, puesto: EstadoActivo): boolean {
 
 function tocaEstado(posterior: EntradaPosterior, characterId: string, estadoId: string): boolean {
   const d = leerDatosRegistro(posterior.tipo, posterior.datos);
-  if (!d || (d.tipo !== "estado_poner" && d.tipo !== "estado_quitar")) return false;
+  if (!d || d.tipo === "xp" || d.tipo === "creditos") return false;
   return d.cambios.some((c) => c.characterId === characterId && c.estadoId === estadoId);
 }
 
+// Los cambios se aplican uno tras otro sobre el mismo personaje (fin de escena trae
+// varios por personaje), y la vida y los máximos se calculan al final con todos.
 export function planDeshacerEstados(
   datos: DatosEstado,
   personajes: PersonajeParaDeshacer[],
@@ -158,12 +189,14 @@ export function planDeshacerEstados(
   posteriores: EntradaPosterior[],
 ): Plan<PlanEstados> {
   const porId = new Map(personajes.map((p) => [p.id, p]));
-  const plan: PlanEstados = { personajes: [], combatientes: [] };
+  type EnCurso = { p: PersonajeParaDeshacer; estados: EstadoActivo[]; ficha: ParVida; fotos: Map<string, ParVida> };
+  const enCurso = new Map<string, EnCurso>();
 
   for (const c of datos.cambios) {
     const p = porId.get(c.characterId);
     if (!p) continue;
-    const actual = p.estados.find((e) => e.estadoId === c.estadoId) ?? null;
+    const w = enCurso.get(p.id) ?? { p, estados: p.estados, ficha: { vida: 0, fatiga: 0 }, fotos: new Map() };
+    const actual = w.estados.find((e) => e.estadoId === c.estadoId) ?? null;
 
     if (c.despues) {
       if (!actual) return { ok: false, error: `${p.nombre} ya no tiene ese estado (se quitó o se le acabaron las rondas).` };
@@ -178,15 +211,19 @@ export function planDeshacerEstados(
       };
     }
 
-    const sinEste = quitarEstado(p.estados, c.estadoId);
-    const estados = c.antes ? ponerEstado(sinEste, c.antes) : sinEste;
-    const maximos = maximosConEstados(p.sheet, estados);
-    const sheet = devolverVidaFicha(p.sheet, c.restado, maximos);
-    plan.personajes.push({ id: p.id, estados, sheet });
+    const sinEste = quitarEstado(w.estados, c.estadoId);
+    w.estados = c.antes ? ponerEstado(sinEste, c.antes) : sinEste;
+    w.ficha = sumar(w.ficha, c.restado);
+    for (const f of c.combatientes) w.fotos.set(f.id, sumar(w.fotos.get(f.id) ?? { vida: 0, fatiga: 0 }, f.restado));
+    enCurso.set(p.id, w);
+  }
 
-    const devueltaPorFoto = new Map(c.combatientes.map((f) => [f.id, f.restado]));
+  const plan: PlanEstados = { personajes: [], combatientes: [] };
+  for (const { p, estados, ficha, fotos } of enCurso.values()) {
+    const maximos = maximosConEstados(p.sheet, estados);
+    plan.personajes.push({ id: p.id, estados, sheet: devolverVidaFicha(p.sheet, ficha, maximos) });
     for (const f of combatientes.filter((f) => f.characterId === p.id)) {
-      const devuelta = devueltaPorFoto.get(f.id) ?? { vida: 0, fatiga: 0 };
+      const devuelta = fotos.get(f.id) ?? { vida: 0, fatiga: 0 };
       plan.combatientes.push({
         id: f.id,
         pgActual: devolverVida(f.pgActual, devuelta.vida, maximos.vida),
@@ -198,6 +235,8 @@ export function planDeshacerEstados(
   }
   return { ok: true, plan };
 }
+
+const sumar = (a: ParVida, b: ParVida): ParVida => ({ vida: a.vida + b.vida, fatiga: a.fatiga + b.fatiga });
 
 function devolverVidaFicha(sheet: Sheet, devuelta: ParVida, maximos: ParVida): Sheet {
   if (devuelta.vida === 0 && devuelta.fatiga === 0) return sheet;

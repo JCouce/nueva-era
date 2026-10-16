@@ -1,0 +1,85 @@
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { prisma } from "@/lib/db";
+import { requireUser } from "@/lib/auth-helpers";
+import { AppHeader } from "@/components/AppHeader";
+import { HudCard } from "@/components/HudCard";
+import { MasterTabs } from "@/components/MasterTabs";
+import { StatusControl, ResourceRow } from "../MasterControls";
+
+// La lista de fichas del máster (antes en /master, que desde E1c es la Mesa): en
+// revisión, en creación y en juego, con aprobar, devolver y revertir.
+export default async function FichasPage() {
+  const user = await requireUser();
+  if (user.role !== "MASTER") redirect("/characters");
+
+  const characters = await prisma.character.findMany({
+    orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
+    include: { owner: { select: { name: true, email: true } } },
+  });
+  type Fila = (typeof characters)[number];
+
+  // En revisión arriba del todo: es lo que espera al máster.
+  const secciones: { titulo: string; vacio: string; fichas: Fila[] }[] = [
+    {
+      titulo: "En revisión",
+      vacio: "Ninguna ficha esperando revisión.",
+      fichas: characters.filter((c) => c.status === "IN_REVIEW"),
+    },
+    {
+      titulo: "En creación",
+      vacio: "Ninguna ficha en creación.",
+      fichas: characters.filter((c) => c.status === "DRAFT"),
+    },
+    {
+      titulo: "En juego",
+      vacio: "Aún no hay fichas aprobadas.",
+      fichas: characters.filter((c) => c.status === "APPROVED"),
+    },
+  ];
+
+  return (
+    <>
+      <AppHeader name={user.name} role={user.role} />
+      <main className="mx-auto w-full max-w-md flex-1 px-4 py-5">
+        <h1 className="mb-4 font-display text-2xl font-bold uppercase tracking-wide">
+          Fichas
+        </h1>
+        <MasterTabs />
+
+        {secciones.map((s) => (
+          <section key={s.titulo} className="mb-6">
+            <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted">
+              {s.titulo} ({s.fichas.length})
+            </h2>
+            <ul className="flex flex-col gap-2">
+              {s.fichas.map((c) => (
+                <li key={c.id}>
+                  <HudCard className="flex flex-col gap-3 px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link href={`/characters/${c.id}`} className="flex-1">
+                        <span className="font-display text-base font-medium uppercase tracking-wide">
+                          {c.name}
+                        </span>
+                        <span className="block font-mono text-xs text-muted">
+                          {c.owner.name ?? c.owner.email}
+                        </span>
+                      </Link>
+                      <StatusControl characterId={c.id} status={c.status} />
+                    </div>
+                    <ResourceRow characterId={c.id} xp={c.xp} creditos={c.creditos} />
+                  </HudCard>
+                </li>
+              ))}
+              {s.fichas.length === 0 && (
+                <li className="clip-chamfer border border-dashed border-border px-4 py-8 text-center font-mono text-sm text-muted">
+                  {s.vacio}
+                </li>
+              )}
+            </ul>
+          </section>
+        ))}
+      </main>
+    </>
+  );
+}

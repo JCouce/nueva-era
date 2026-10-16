@@ -18,10 +18,13 @@ import {
   darRecursoSchema,
   motivoSchema,
   notaRevisionSchema,
+  quitarEstadoAPersonajesSchema,
   quitarEstadoSchema,
   registroIdSchema,
+  terminarEscenaSchema,
 } from "@/lib/validation";
-import { cambiarEstadosDePersonajes } from "@/lib/estadosPersonaje";
+import { cambiarEstadosDePersonajes, terminarEscenaDeJugadores } from "@/lib/estadosPersonaje";
+import { revalidarPanelMaster } from "@/lib/revalidarMaster";
 import { ajustarRecursoDePersonajes, deshacerRegistro } from "@/lib/registroMaster";
 
 // Aprobar/revertir es cosa del máster, no del dueño de la ficha — a diferencia
@@ -31,11 +34,11 @@ async function requireMaster() {
   return user.role === "MASTER" ? user : null;
 }
 
-// Las tres vistas que pueden tener esta ficha en caché del lado del cliente:
-// el panel, la lista general y la ficha en sí. Sin las tres, navegar entre
-// ellas por link (sin recargar) enseña datos viejos hasta el siguiente F5.
+// Las vistas que pueden tener esta ficha en caché del lado del cliente: la Mesa y
+// la lista de fichas del máster, la lista general y la ficha en sí. Sin todas,
+// navegar entre ellas por link (sin recargar) enseña datos viejos hasta el siguiente F5.
 function revalidateCharacterViews(id: string) {
-  revalidatePath("/master");
+  revalidarPanelMaster();
   revalidatePath("/characters");
   revalidatePath(`/characters/${id}`);
 }
@@ -110,7 +113,8 @@ export async function revertToDraftAction(formData: FormData) {
 // xp y créditos son recursos que solo concede el máster — por eso viven aquí y
 // no en el autosave de la ficha (@/app/characters/[id]/actions.ts), que el
 // propio jugador puede disparar. Los botones de siempre (MasterControls), con su
-// entrada en el registro (E1b) como las acciones tipadas de abajo.
+// entrada en el registro (E1b) como las acciones tipadas de abajo. Quitar más de lo
+// que tiene no hace nada (aquí no hay dónde enseñar el porqué; la Mesa sí lo dice).
 async function adjustResource(
   formData: FormData,
   field: "xp" | "creditos",
@@ -136,19 +140,23 @@ export async function adjustCreditosAction(formData: FormData) {
 // --- Registro del máster (E1b) ---
 
 export type RegistroResult = { ok: true } | { ok: false; error: string };
+// Lo que devuelven las acciones del centro de mando: el id de la entrada del registro
+// para el "Deshacer" del aviso (null si no cambió nada).
+export type MandoResult = { ok: true; registroId: string | null } | { ok: false; error: string };
 
 // Para el centro de mando (E1c): la misma cantidad a varios personajes, con motivo, y
-// una sola entrada en el registro. Negativa para quitar (suelo 0).
-async function darRecurso(recurso: RecursoMaster, input: unknown): Promise<RegistroResult> {
+// una sola entrada en el registro. Negativa para quitar; si a alguien le dejaría en
+// negativo, error y no se toca a nadie.
+async function darRecurso(recurso: RecursoMaster, input: unknown): Promise<MandoResult> {
   const user = await requireMaster();
   if (!user) return { ok: false, error: "Solo el máster puede dar XP o créditos." };
   const parsed = darRecursoSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
 
   const { characterIds, cantidad, motivo } = parsed.data;
-  const hecho = await ajustarRecursoDePersonajes(characterIds, recurso, cantidad, { userId: user.id, motivo });
-  if (hecho) revalidatePath("/characters");
-  return hecho ? { ok: true } : { ok: false, error: "Alguno de esos personajes no existe." };
+  const res = await ajustarRecursoDePersonajes(characterIds, recurso, cantidad, { userId: user.id, motivo });
+  if (res.ok) revalidatePath("/characters");
+  return res;
 }
 
 export async function darXpAction(input: { characterIds: string[]; cantidad: number; motivo?: string }) {
@@ -157,6 +165,20 @@ export async function darXpAction(input: { characterIds: string[]; cantidad: num
 
 export async function darCreditosAction(input: { characterIds: string[]; cantidad: number; motivo?: string }) {
   return darRecurso("creditos", input);
+}
+
+// "Terminar escena" (E1c): limpia los estados de escena de todos los personajes en juego.
+// Una sola entrada `fin_escena` en el registro, que se deshace como cualquier otra.
+export async function terminarEscenaAction(
+  input: { motivo?: string } = {},
+): Promise<{ ok: true; registroId: string | null; personajes: number } | { ok: false; error: string }> {
+  const user = await requireMaster();
+  if (!user) return { ok: false, error: "Solo el máster puede terminar la escena." };
+  const parsed = terminarEscenaSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
+
+  const res = await terminarEscenaDeJugadores({ userId: user.id, motivo: parsed.data.motivo });
+  return { ok: true, registroId: res.registroId, personajes: res.characterIds.length };
 }
 
 // Deshace una entrada del registro si todavía se puede (criterios en lib/rules/registro.ts).
@@ -175,7 +197,7 @@ export async function deshacerRegistroAction(id: string): Promise<RegistroResult
 // interactivo (el centro de mando, E1c) que tiene que poder decir por qué falló.
 // Character.estados solo lo escribe el máster (columna propia, como xp/créditos).
 
-export type EstadosResult = { ok: true } | { ok: false; error: string };
+export type EstadosResult = MandoResult;
 
 // El mismo estado a varios personajes; a quien ya lo tuviera se le sustituye el grado
 // y la duración (ponerEstado).
@@ -192,7 +214,24 @@ export async function aplicarEstadoAPersonajesAction(input: {
   const { characterIds, estado, motivo } = parsed.data;
   const nuevo = estadoActivoCon(estado.estadoId, estado.gradoId, estado.duracion);
   const hecho = await cambiarEstadosDePersonajes(characterIds, { tipo: "poner", estado: nuevo }, { userId: user.id, motivo });
-  return hecho ? { ok: true } : { ok: false, error: "Alguno de esos personajes no existe." };
+  return hecho ? { ok: true, registroId: hecho.registroId } : { ok: false, error: "Alguno de esos personajes no existe." };
+}
+
+// Quitar un estado a varios a la vez (Mesa, E1c), con una sola entrada en el registro.
+// A quien no lo tenga no le pasa nada.
+export async function quitarEstadoAPersonajesAction(input: {
+  characterIds: string[];
+  estadoId: string;
+  motivo?: string;
+}): Promise<EstadosResult> {
+  const user = await requireMaster();
+  if (!user) return { ok: false, error: "Solo el máster puede quitar un estado." };
+  const parsed = quitarEstadoAPersonajesSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
+
+  const { characterIds, estadoId, motivo } = parsed.data;
+  const hecho = await cambiarEstadosDePersonajes(characterIds, { tipo: "quitar", estadoId }, { userId: user.id, motivo });
+  return hecho ? { ok: true, registroId: hecho.registroId } : { ok: false, error: "Alguno de esos personajes no existe." };
 }
 
 export async function quitarEstadoDePersonajeAction(
@@ -211,5 +250,5 @@ export async function quitarEstadoDePersonajeAction(
     { tipo: "quitar", estadoId: parsed.data.estadoId },
     { userId: user.id, motivo: motivoOk.data },
   );
-  return hecho ? { ok: true } : { ok: false, error: "No existe ese personaje." };
+  return hecho ? { ok: true, registroId: hecho.registroId } : { ok: false, error: "No existe ese personaje." };
 }

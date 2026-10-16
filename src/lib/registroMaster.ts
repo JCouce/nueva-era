@@ -9,8 +9,8 @@ import {
   leerEstados,
   parseSheet,
   planDeshacerEstados,
+  planAjusteRecurso,
   planDeshacerRecurso,
-  type CambioRecurso,
   type DatosRegistro,
   type RecursoMaster,
 } from "@/lib/rules";
@@ -18,33 +18,33 @@ import { COMBATE_ABIERTO, registrar, revalidarEstados, type Autoria } from "@/li
 
 export type ResultadoRegistro = { ok: true } | { ok: false; error: string };
 
-// Suma `cantidad` (negativa para quitar) a varios personajes, con suelo 0 como el
-// panel de siempre, y una sola entrada con lo que de verdad se movió.
-// TODO(revisar): quitar más de lo que tiene recorta a 0 en silencio (como
-// adjustXpAction); ¿debería avisar en vez de recortar?
+// Suma `cantidad` (negativa para quitar) a varios personajes, con una sola entrada. Si
+// a alguien le dejaría en negativo, no toca a nadie y lo explica (planAjusteRecurso).
 export async function ajustarRecursoDePersonajes(
   characterIds: string[],
   recurso: RecursoMaster,
   cantidad: number,
   autoria: Autoria,
-): Promise<boolean> {
+): Promise<{ ok: true; registroId: string | null } | { ok: false; error: string }> {
   const ids = [...new Set(characterIds)];
-  const hecho = await prisma.$transaction(async (tx) => {
-    const filas = await tx.character.findMany({ where: { id: { in: ids } }, select: { id: true, xp: true, creditos: true } });
-    if (filas.length !== ids.length) return false;
-    const cambios: CambioRecurso[] = [];
-    for (const f of filas) {
-      const antes = f[recurso];
-      const despues = Math.max(0, antes + cantidad);
-      if (despues === antes) continue;
-      await tx.character.update({ where: { id: f.id }, data: { [recurso]: despues } });
-      cambios.push({ characterId: f.id, antes, despues });
-    }
-    if (cambios.length > 0) await registrar(tx, autoria, { tipo: recurso, cambios });
-    return true;
+  const res = await prisma.$transaction(async (tx) => {
+    const filas = await tx.character.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, name: true, xp: true, creditos: true },
+    });
+    if (filas.length !== ids.length) return { ok: false as const, error: "Alguno de esos personajes no existe." };
+    const plan = planAjusteRecurso(
+      recurso,
+      cantidad,
+      filas.map((f) => ({ id: f.id, nombre: f.name, valor: f[recurso] })),
+    );
+    if (!plan.ok) return { ok: false as const, error: `${plan.error} No se ha quitado nada a nadie.` };
+    for (const c of plan.plan) await tx.character.update({ where: { id: c.characterId }, data: { [recurso]: c.despues } });
+    const registroId = plan.plan.length > 0 ? await registrar(tx, autoria, { tipo: recurso, cambios: plan.plan }) : null;
+    return { ok: true as const, registroId };
   });
-  if (hecho) revalidarEstados(ids);
-  return hecho;
+  if (res.ok) revalidarEstados(ids);
+  return res;
 }
 
 // Error que deshace la transacción entera y llega al máster tal cual.

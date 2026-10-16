@@ -3,34 +3,32 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// Fase 6b, diseño del panel de máster (2026-09-11): tres rutas server ya
-// separadas (/master, /master/combate, /master/npcs) presentadas como tabs
-// horizontales, mismo lenguaje visual que los tabs de CharacterSheet.tsx —
-// pero de navegación real, no de estado de cliente: cada una es su propio
-// RSC con su propio fetch, así que esto es solo el selector, no un switch.
+// Navegación común del máster: rutas server separadas presentadas como pestañas. Es
+// navegación real, no estado de cliente: cada una es su propio RSC con su fetch. Desde
+// E1c, /master es la Mesa (centro de mando) y la lista de fichas vive en /master/fichas.
 const TABS = [
-  { href: "/master", label: "Jugadores" },
+  { href: "/master", label: "Mesa" },
   { href: "/master/combate", label: "Combate" },
-  { href: "/master/npcs", label: "NPC" },
+  { href: "/master/fichas", label: "Fichas" },
+  { href: "/master/npcs", label: "NPCs" },
 ] as const;
 
-export function MasterTabs() {
+export function MasterTabs({ className = "mb-4" }: { className?: string }) {
   const pathname = usePathname();
 
   return (
-    <nav className="mb-4 flex gap-1 border-b border-border">
+    <nav aria-label="Panel del máster" className={`flex gap-1 overflow-x-auto border-b border-border ${className}`}>
       {TABS.map((t) => {
-        // "/master" a secas necesita match exacto (si no, "Jugadores"
-        // seguiría activo dentro de /master/combate, que también empieza
-        // por "/master"); las otras dos sí usan prefijo, para que
-        // /master/npcs/[id] deje "NPC" resaltado.
+        // "/master" a secas necesita match exacto (todas las demás empiezan por
+        // "/master"); el resto usa prefijo, para que /master/npcs/[id] deje "NPCs" activo.
         const active = t.href === "/master" ? pathname === "/master" : pathname.startsWith(t.href);
         return (
           <Link
             key={t.href}
             href={t.href}
-            className={`-mb-px border-b-2 px-3 py-2 font-display text-sm font-semibold uppercase tracking-wide ${
-              active ? "border-accent text-foreground" : "border-transparent text-muted"
+            aria-current={active ? "page" : undefined}
+            className={`-mb-px flex min-h-11 shrink-0 items-center border-b-2 px-3 font-display text-sm font-semibold uppercase tracking-wide outline-none focus-visible:ring-2 focus-visible:ring-info ${
+              active ? "border-accent text-foreground" : "border-transparent text-muted hover:text-foreground"
             }`}
           >
             {t.label}
