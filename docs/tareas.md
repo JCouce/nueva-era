@@ -11,7 +11,7 @@ está hecho" en cualquier otro documento del proyecto, para — va aquí, no all
 arquitectura — el modelo obligatorio para pasar cualquier elemento nuevo (equipo,
 razas, poderes, dotes, aumentos) de prosa a motor. Este archivo manda en el estado.
 
-**Última actualización:** 2026-10-15.
+**Última actualización:** 2026-10-16.
 
 ## Ahora mismo
 
@@ -33,8 +33,8 @@ foco. Frentes abiertos, cada uno con su sección en Pendiente:
   `docs/sistema.md`. Primer adelanto (Creación): Vida/Fatiga base 8 → 10, Dotes con
   presupuesto por prioridad, topes de creación movidos.
 - "Preguntas al diseñador" (final de este documento) — lo que bloquea a Murillo.
-- **Automatizar el mantenimiento** (épica en Pendiente, sin forma todavía): pensar qué del ciclo Drive → sistema →
-  motor → auditoría puede ir solo y dónde entran los evals.
+- **La fábrica** (épica en Pendiente, forma decidida, sin construir): cadena de montaje de cambios con Jefe de
+  fábrica, línea determinista y revisión con oráculos. Siguiente paso: plantear la construcción del N1.
 
 ---
 
@@ -821,60 +821,66 @@ construir (dos pasadas: rediseño, luego revisión).
 
 ## Pendiente
 
-### Automatizar el mantenimiento de Nueva Era ⬜ (épica, para pensar antes de construir; 2026-10-16)
-**Idea (usuario):** no montar evals por montarlos sobre un archivo cualquiera, sino pensar cómo automatizar el
-mantenimiento del proyecto. Los evals entran donde ayuden a eso: medir si un cambio en el harness mejora o empeora
-algo que se repite. Sin forma decidida todavía: primero hay que hablarlo.
+### La fábrica: automatizar el desarrollo y el mantenimiento de Nueva Era ⬜ (épica; forma decidida 2026-10-16, sin construir)
+**Qué es.** Una cadena de montaje para los cambios del proyecto: entra un encargo y sale una rama verificada que el
+usuario aprueba y sube él. Sustituye al enfoque anterior de la épica ("automatizar el mantenimiento", procesos sueltos
+P1–P9 y empezar por P1 + P2), que el usuario descartó por falta de un proceso de punta a punta con valor medible:
+P1 y P2 eran piezas sueltas de su proceso manual, no resultados. Mapa visual, piezas y decisiones: artifact "Dosier
+de mantenimiento", pestaña **Fábrica** (https://claude.ai/artifact/RRrCuBcYGau6F7shAvWQ5m). Respuestas del cuestionario
+de decisiones: https://claude.ai/artifact/28x6AhJuyGxnfpM4vBqgbP.
 
-**Para la conversación (datos que ya hay):**
-- Lo que más se toca del harness desde septiembre: `CLAUDE.md` (16 commits), `docs/prompt-construir-psionica.md`
-  (16), `.claude/workflows/auditoria-motor-metadata.js` y su extractor, y `.claude/workflows/modelar-area.js`.
-- Mantenimiento que hoy es manual y recurrente: sync con Drive y reconciliar la línea base contra `docs/sistema.md`,
-  pasar la prosa nueva a motor (`modelar-area`) y auditar la transcripción (`auditoria-motor-metadata`), refrescar
-  `gapsConocidos` tras arreglar, y mantener este archivo y los prompts de relevo al día.
-- Ya hay etiquetas para medir: la referencia auditada de las calibraciones de `modelar-area` y los ~45 hallazgos
-  confirmados de las auditorías. Sirven de golden set para un eval de fidelidad prosa→motor con un juez calibrado.
-- Datos de los 12 runs de workflows (agentes, tokens, duración, resultados) y sus lecciones:
-  `~/Documents/jcouce/knowledge` (topic `multi-agent-workflows`, experimento `nuevaera-workflows`).
+**Las piezas (fijas en todos los niveles):**
+- **Tolvas**: de dónde vienen los encargos. N1: solo el usuario. Después: MainPatcher (diff de Drive), Linear, bugs
+  de la mesa.
+- **Jefe de fábrica**: un LLM, el único con el que habla el usuario. Con el contexto de la conversación redacta el
+  encargo y la spec con él (eso es el "tu ok" antes de construir), lanza la línea, informa, relanza y actualiza el
+  panel. No juzga ni toca los criterios una vez congelados.
+- **La línea**: guion de Workflow determinista. Orden, puertas y vueltas en código; ningún modelo se salta estaciones.
+  Inspector de criterios (comprueba que cada criterio sea verificable y tenga oráculo, sin el sesgo del Jefe) →
+  constructor (worktree aparte, rama `fabrica/T-xxx`) → revisión → juez → usuario.
+- **Revisión** (N1): lo mecánico como script (tests, tsc y "push seguro": `SCHEMA_VERSION` con su paso en
+  `migraciones.ts`, migraciones Prisma con su SQL, scripts que apuntan a prod) + un único revisor LLM (criterios y UI
+  en navegador). N2: cuatro revisores especializados (Motor, Fidelidad, UI, Push seguro), cada uno con su oráculo.
+- **Juez**: script con reglas fijas. Un criterio en "falla" devuelve el trabajo (máx. 2 vueltas); a la tercera o ante
+  una duda de diseño, escala. Un LLM solo redacta el resumen.
+- **Contrato**: `T-xxx.md` por trabajo, en la propia rama (llega a main con el cambio). Encargo, Spec, Criterios
+  (congelados, cada uno con su oráculo), Construcción, Revisión, Juicio, Decisión, métricas (vueltas, minutos, tokens,
+  si se retocó antes del push) y una retro de dos líneas. Cada estación escribe solo su sección.
+- **Panel**: un único artifact para todos los trabajos (no uno por feature): por trabajo, cada estación con su
+  veredicto, una línea de resumen y el motivo si falló. Lo actualiza el Jefe. Más adelante, familiar-office (SIMs).
+- **Permisos**: cada estación es un agente con herramientas en lista blanca + hook que bloquea push,
+  `prisma migrate`, seeds y `.env`. El push es siempre del usuario.
 
-**Preguntas abiertas:** qué partes del ciclo Drive → `docs/fuente/` → `docs/sistema.md` → motor → auditoría se
-pueden encadenar solas y dónde tiene que decidir una persona; cada cuánto correrlo; cómo detectar regresiones al
-tocar `CLAUDE.md` o un workflow; y cuánto cuesta en tokens una pasada completa.
+**Decidido para el N1 (usuario, 2026-10-16):** solo tolva manual; todas las estaciones, aunque sean sencillas; "tu ok"
+a la spec siempre; juez script; 2 vueltas; contrato en la rama; la rama incluye su línea de `tareas.md`; sin tope de
+tokens pero medido; métricas en el contrato y resumen en `knowledge/` al cerrar el N1; se pasa al N2 cuando el usuario
+lo sienta fiable, con las métricas delante. Vive en este repo, centrada en Nueva Era; cuando esté probada, el proceso
+se documenta en `knowledge/` para replicarlo.
 
-**Material (2026-10-16):** inventario de las 17 tareas de mantenimiento con frecuencia, coste y dónde fallan en
+**Todo en una carpeta.** Las piezas viven juntas en `fabrica/` para poder visitarlas sin buscar por el repo:
+`README.md` (mapa y uso), `jefe.md`, `estaciones/` (prompts de inspector, constructor y revisor), `contrato/plantilla.md`,
+`guion/` (Workflow de la línea), `juez/`, `comprobaciones/` (scripts de la revisión mecánica), `hooks/` y `trabajos/`.
+Gotcha: Claude Code solo descubre skills, agentes y workflows en `.claude/`; ahí van envoltorios finos que apuntan a
+`fabrica/`, nada de lógica.
+
+**Abierto:**
+- Primer trabajo: repetir uno pequeño ya hecho sobre el commit anterior (worktree sin chuletas) y comparar con la
+  versión del usuario. El usuario quiere aprender el oficio: se revisita según salga.
+- Forma exacta del panel.
+- Medio plazo: aislar la BD por trabajo (`CREATE DATABASE t014 TEMPLATE …` en el mismo contenedor, `.env` por
+  worktree) y el puerto de Next por worktree. Mientras, un trabajo que toque el modelo de datos escala al usuario.
+
+**Idea para más adelante (usuario, 2026-10-16):** un proceso "cambio mínimo" dentro de la fábrica, con menos pruebas
+y menos informe, para arreglos de una línea. Hasta que exista, todo pasa por el proceso completo, sin excepciones.
+
+**Escalera:** N1 línea a mano · N2 revisores especializados con oráculo · N3 tolva MainPatcher (examen: reproducir los
+syncs commiteados, recall ≥95 %) · N4 sin "tu ok" a la spec en lo pequeño · N5 cron y panel vivo.
+
+**Material de partida (2026-10-16):** inventario del mantenimiento en
 `~/Documents/jcouce/knowledge/concepts/nuevaera-maintenance-cycle.md`; investigación externa en
-`.../concepts/automated-agent-maintenance.md`; plan del coliseo (escalera N1–N6, ganó "vigía de Drive primero") en
-`.../runs/2026-10-16-coliseo-nuevaera-maintenance/`.
-
-**Estado final al que se apunta (norte).** El proyecto se mantiene solo en lo mecánico y pregunta en lo de diseño:
-- El máster cambia un manual → en menos de 24 h hay un informe de triaje y, para lo aprobado, una rama local con
-  `docs/sistema.md`, catálogo, tests y la auditoría de esa pieza hechos. El usuario lo revisa en ≤10 min y hace él
-  el push.
-- `docs/tareas.md`, los relevos y `gapsConocidos` nunca se quedan viejos: un proceso detecta la deriva y propone el
-  arreglo.
-- Ningún push llega a producción sin un chequeo previo de migraciones, `SCHEMA_VERSION` y tests.
-- Tocar `CLAUDE.md`, un workflow o un prompt pasa por un eval congelado que dice si la fidelidad prosa→motor empeora.
-- Lo que es diseño (reglas sin definir, supuestos, bug o diseño, UX) siempre acaba en una pregunta o una casilla, nunca
-  en una decisión del agente. Nada hace push ni toca la BD de producción.
-
-**Procesos candidatos, priorizados por uso real** (frecuencia y coste del inventario; riesgo = lo que puede romper si
-se automatiza). El coliseo empezó por el vigía de Drive porque era el primer ejemplo, no porque sea lo más frecuente:
-Drive solo ha tenido una foto, y lo que más se toca es este archivo y `sistema.md`.
-
-| # | Proceso | Frecuencia observada | Coste humano hoy | Riesgo al automatizar | Coste de construirlo | Prioridad |
-|---|---|---|---|---|---|---|
-| P1 | Deriva de estado y relevo: `tareas.md` contra git y código, cabeceras viejas, `gapsConocidos` caducado, `docs/prompt-*.md` podridos (→ skill `relevo` bajo demanda) | Muy alta: 98 commits a `tareas.md` en 16 días | Medio y continuo | Bajo (solo docs, propone) | Bajo: script de 0 tokens + skill | **1** |
-| P2 | Chequeo previo al push: migraciones Prisma pendientes, `SCHEMA_VERSION` sin paso en `migraciones.ts`, tests, scripts que apuntan a prod | Cada push (6 días con migración desde septiembre) | Bajo, pero el fallo cuesta caro (push = deploy en Neon) | Bajo (solo lee y avisa) | Bajo: hook/script local | **1** |
-| P3 | Lint mecánico de `docs/sistema.md`: estados FIRME/INFERIDO…, S-números, preguntas, registro y referencias cruzadas | Alta: 76 commits en 16 días | Medio | Bajo (no decide reglas) | Bajo: script | **2** |
-| P4 | Vigía de Drive + triaje del diff (N1 del coliseo) | Baja o desconocida: 1 foto; antes cada 1-2 semanas | Alto cuando ocurre | Medio (input no confiable) | Medio | **2** (en paralelo con P1-P3 si se quiere) |
-| P5 | Aplicar hallazgos y parches aprobados en rama local (N4) | Alta: ~39 `fix:` | Alto | Medio-alto | Alto | 3 (cuando P1-P4 den primitivas fiables) |
-| P6 | Eval congelado del harness (N5) con las calibraciones y hallazgos ya etiquetados | Cada cambio de `CLAUDE.md` (16), `motor.md` (14) o workflows | Invisible hoy (regresiones que no se ven) | Bajo | Medio | 3 |
-| P7 | Reconciliar la línea base por área (N2) | Única: 6 áreas una vez | Alto | Medio | Medio | Proyecto puntual, no proceso: a mano con ayuda |
-| P8 | Smoke test de UI tras cada tanda (sustituir parte de la verificación manual en navegador) | Cada tanda de UI | Bajo-medio | Bajo | Medio | 4 |
-| P9 | Entrada de bugs: hoy salen de pruebas del usuario, partidas en mesa y tests/CI que fallan; falta un sitio único donde caigan y cómo se convierten en tareas | Continua | Medio | Bajo | Bajo | Después de P1-P2 |
-
-**Decidido (usuario, 2026-10-16):** se empieza por **P1 + P2**. El vigía de Drive (P4) se construye cuando el máster
-vuelva a publicar.
+`.../concepts/automated-agent-maintenance.md`; coliseo (escalera N1–N6, reglas de seguridad) en
+`.../runs/2026-10-16-coliseo-nuevaera-maintenance/`. Lo útil de los P1–P9 está recolocado en la fábrica (tabla
+"Lo del dosier, recolocado" del artifact).
 
 ### Fase 6b — Panel de combate en vivo ⬜ (MVP funcional cerrado 2026-09-11, pausada)
 **Hoja de ruta con subtareas, para ir cogiéndolas una a una: `docs/fase-6b.md`.** No
