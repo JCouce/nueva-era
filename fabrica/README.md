@@ -4,10 +4,29 @@ Cadena de montaje para los cambios de Nueva Era: entra un encargo y sale una ram
 sube él. Todo lo de la fábrica vive en esta carpeta. En `.claude/` solo hay envoltorios finos que apuntan aquí, porque
 Claude Code solo descubre skills, agentes y workflows en `.claude/`.
 
-Mapa visual y decisiones: artifact "Dosier de mantenimiento", pestaña Fábrica
-(https://claude.ai/artifact/RRrCuBcYGau6F7shAvWQ5m). Estado y plan: `docs/tareas.md`, épica "La fábrica".
+Este README es **la foto** de la fábrica: si cambia un proceso, cambia aquí (mapa y "Cambios de proceso"). El
+artifact "Dosier de mantenimiento", pestaña Fábrica (https://claude.ai/artifact/RRrCuBcYGau6F7shAvWQ5m), es la
+versión visual y se regenera desde aquí en cada hito. Estado y plan: `docs/tareas.md`, épica "La fábrica".
 
-## El recorrido
+## Mapa de procesos
+
+```
+ encargo ─▶ [P1 Contrato] ─(tu ok)─▶ [P2 Línea] ─▶ contigo / escalado / error ─▶ [P3 Cierre] ─▶ contrato en main
+                 ▲      │                 │
+                 │      └─ duda de reglas ─▶ tú o Murillo
+                 └──── inspección devuelve ┘
+ cualquier fallo de la fábrica ─▶ [P5 Historial]          repetir un trabajo pasado ─▶ [P4 Estreno] (P1-P3 con `base`)
+```
+
+| Proceso | Qué lo dispara | Quién | Qué deja escrito |
+|---|---|---|---|
+| **P1 Contrato** | Un encargo tuyo (2-4 frases) a `/fabrica` | Jefe y tú | `trabajos/T-xxx.md` en `spec`; con tu ok, `encolado`. El Jefe lee el código y las reglas, busca precedente en `sistema.md` antes de preguntarte, y solo te pregunta lo nuevo (`jefe.md`) |
+| **P2 Línea** | Tu ok al contrato | Guion de Workflow: inspector → constructor → revisión (script + revisor) → juez, hasta 2 vueltas | La rama `fabrica/T-xxx-<slug>` (solo código), las secciones de cada estación en el contrato y las entregas JSON. Detalle en "Cómo se usa" |
+| **P3 Cierre** | Tu Decisión (`aprobado`, `descartado` o `pide cambios`) | Jefe y tú | Métricas y retro en el contrato; `cerrar.mjs` lo commitea en main. El worktree y la rama, solo si tú lo dices |
+| **P4 Estreno** | Querer medir la fábrica con un trabajo que ya hiciste | Jefe y tú | Un contrato con `base: <commit anterior>`: la rama sale de antes del arreglo y a los agentes se les prohíbe mirar main. Se cierra como `descartado` y la rama se conserva para comparar |
+| **P5 Historial** | Cualquier fallo de la fábrica (no del trabajo), aunque la línea acabe bien | Quien lo vea | Una entrada `F-xxx` en `historial.md`: qué pasó, causa, arreglo y lección |
+
+## La línea por dentro
 
 ```
 Tú ⇄ Jefe ──(tu ok)──▶ cola ─▶ inspector ─▶ constructor ─▶ revisión ─▶ juez ─▶ tú (push)
@@ -107,6 +126,29 @@ Sale con código 1 si algo falla. `--base`, `--head` y `--json` para otros rango
 1. Los papeles: contrato, prompts y este mapa. **Hecha.**
 2. Las barreras: comprobaciones y bloqueos. **Hecha.**
 3. La línea: el guion que mueve un trabajo. **Hecha** (probada con un arnés; con agentes reales, en el estreno).
-4. El estreno: repetir un trabajo pasado y compararlo con el del usuario.
+4. El estreno: repetir un trabajo pasado y compararlo con el del usuario. **En curso** (T-001 y T-002 cerrados, T-003 en
+   marcha).
 5. El panel: ver qué hizo cada trabajador.
 6. El rodaje: los primeros trabajos reales.
+
+## Cambios de proceso
+
+Las decisiones que cambian cómo funciona la fábrica, con su porqué. Los fallos van en `historial.md`.
+
+| Fecha | Cambio | Por qué |
+|---|---|---|
+| 2026-10-16 | Nace la fábrica: contrato, Jefe, inspector, constructor y revisor (tanda 1) | Automatizar el desarrollo con una línea verificable |
+| 2026-10-16 | Un solo proceso, sin excepciones, aunque el trabajo sea mínimo | No saltarse las reglas cuando conviene; lo distinto será un proceso nuevo |
+| 2026-10-19 | Barreras: `revisar.mjs` y hook de bloqueos por agente (tanda 2) | Los límites en las herramientas, no en el prompt |
+| 2026-10-19 | La línea como guion de Workflow, con juez de reglas fijas y operario (tanda 3) | Orden y puertas en código; el juez no es un LLM |
+| 2026-10-19 | El contrato vive en main y se commitea al cerrar; la rama lleva solo código (P3) | Merge limpio y se guardan también los descartados (F-004) |
+| 2026-10-19 | El operario se queda, pero se mide su ratio de fallos | Si pasa del 5 %, scripts más gordos o salir del Workflow |
+| 2026-10-19 | Campo `base` en el contrato (P4) | Repetir trabajos pasados para medir la fábrica |
+| 2026-10-19 | Lo que decide va en JSON junto al contrato; ningún LLM lleva datos entre pasos | F-006: los datos en un comando se corrompían |
+| 2026-10-19 | El worktree se prepara antes de la inspección | F-005: el inspector no podía leer el código |
+| 2026-10-19 | Visor de terminal `fabrica:ver` | Seguir un trabajo en vivo |
+| 2026-10-19 | "Puede tocar" incluye las entradas de `tareas.md` que el trabajo deja desfasadas | F-008 |
+| 2026-10-19 | El revisor puede leer la Construcción, pero solo vota con oráculo | F-012: la regla anterior no se podía cumplir |
+| 2026-10-19 | El Jefe busca precedente en `sistema.md` antes de preguntar y lee el código de la `base` | 1 de 3 preguntas del T-003 ya tenía respuesta (S9); F-013 |
+| 2026-10-19 | La UI la juzga el usuario en la Decisión; el revisor da evidencia y opina como hallazgo | Lo subjetivo no tiene oráculo |
+
