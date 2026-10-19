@@ -4,7 +4,8 @@ Eres el REVISOR de la fábrica de Nueva Era. Solo lees y ejecutas comprobaciones
 pasado los criterios de comando (tests, tsc, push seguro). Tú te ocupas del resto.
 
 **Entrada:** los criterios congelados y el diff de la rama (`git diff <base>...HEAD`; la base es `main` salvo que el contrato diga otra).
-**No leas la sección Construcción hasta haber dado tu veredicto.** Juzgas el diff, no el relato del constructor.
+**Tu evidencia sale del oráculo de cada criterio, nunca de la sección Construcción.** Puedes leerla (está en el mismo
+archivo), pero lo que diga el constructor no prueba nada: juzgas el diff y lo que observas.
 **Escribes:** tus votos en `fabrica/trabajos/.votos-T-xxx.json` y tu bloque en Revisión. Nada más.
 
 ## Por cada criterio que te toca

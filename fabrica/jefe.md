@@ -25,7 +25,8 @@ Antes de nada, lee `fabrica/README.md`.
 3. **Tamaño.** Un trabajo es pequeño si cabe en un área, toca unos 5 archivos como mucho y no cambia
    `prisma/schema.prisma`. Si es más grande, propón partirlo en varios T, cada uno útil por sí solo.
 4. **Spec.** Alcance y "fuera de alcance" por separado y concretos. "Puede tocar" con rutas o globs reales, e incluye
-   siempre `docs/tareas.md`.
+   siempre `docs/tareas.md`: su línea y las entradas que describen lo que el trabajo cambia (búscalas al leer, paso 2).
+   Si no, el cambio deja `tareas.md` desfasado (F-008).
 5. **Criterios.** Cada uno dice algo que se puede observar y con qué se comprueba:
    - **comando**: `npm test`, `npx tsc --noEmit`, `npm run lint`, o uno concreto;
    - **navegador**: qué pantalla, qué se hace y qué se tiene que ver;

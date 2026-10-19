@@ -110,7 +110,15 @@ export function juzgar({ criterios, vuelta, bloqueo = null, dudaDiseno = null, r
   return { decision, motivo, vuelta, vueltas, estado, fallan, veredictos };
 }
 
-const celda = (s) => s.split("\n")[0].replace(/\|/g, "\\|").slice(0, 140);
+// La tabla resume: corta por palabra con "…"; la evidencia completa está en la sección Revisión o en la salida del
+// script. Cortar a mitad de palabra dejaba celdas como "recursos.ts:312 (" (F-009).
+export function celda(s, max = 160) {
+  const linea = s.split("\n")[0].replace(/\|/g, "\\|");
+  if (linea.length <= max) return linea;
+  const corte = linea.slice(0, max - 1);
+  const espacio = corte.lastIndexOf(" ");
+  return `${(espacio > max * 0.6 ? corte.slice(0, espacio) : corte).replace(/[\s,;:(\[-]+$/, "")}…`;
+}
 const recortar = (s, n = 1200) => (s.length > n ? `${s.slice(0, n)}…` : s);
 
 export function bloqueJuicio(r, { rama } = {}) {

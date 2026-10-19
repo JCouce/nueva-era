@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { aplicarJuicio, bloqueJuicio, juzgar, leerJuicios, revisionValida } from "./juez.mjs";
+import { aplicarJuicio, bloqueJuicio, celda, juzgar, leerJuicios, revisionValida } from "./juez.mjs";
 import { leerFrontmatter, leerSeccion } from "../guion/contrato.mjs";
 import { rutaEntrega } from "../guion/entregas.mjs";
 
@@ -229,4 +229,13 @@ test("CLI: sin --vuelta, error de uso (código 1)", () => {
   const r = juez(montar({ votos }));
   assert.equal(r.codigo, 1);
   assert.match(r.json.error, /--vuelta/);
+});
+
+test("celda corta por palabra y marca el corte (F-009)", () => {
+  assert.equal(celda("corta"), "corta");
+  assert.equal(celda("a | b"), "a \\| b");
+  const larga = "script propio sobre comprarRecarga del worktree, pistola_mosquito: 0/7 -> 7/7 y 3/7 -> 7/7; recursos.ts:312 (sin cambios en el coste ni en la batería de los subsistemas)";
+  const c = celda(larga, 120);
+  assert.ok(c.endsWith("…") && c.length <= 120, c);
+  assert.ok(!/\($|\(…$/.test(c), c);
 });

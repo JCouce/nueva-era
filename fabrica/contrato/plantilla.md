@@ -26,7 +26,7 @@ Encargo, Spec y Criterios se congelan con el ok del usuario (estado pasa a "enco
 -
 
 **Puede tocar:**
-- `docs/tareas.md` (su línea, siempre)
+- `docs/tareas.md` (su línea, siempre; y las entradas que describan lo que el trabajo cambia)
 -
 
 ## Criterios

@@ -23,7 +23,8 @@ Las reglas del proyecto siguen valiendo: `CLAUDE.md`, `docs/traspaso.md` y, si t
   la ruta exacta y el JSON te los da la línea): es lo que lee el juez para escalar. Si no paras, no lo crees.
 - Si cambias los valores esperados de un test que ya existía, explica en Construcción por qué el valor nuevo es el
   correcto. El revisor lo va a mirar con lupa.
-- Añade en `docs/tareas.md` la línea que corresponde a este trabajo.
+- Añade en `docs/tareas.md` la línea que corresponde a este trabajo, y pon al día las entradas que "Puede tocar"
+  te abra porque describen lo que has cambiado.
 - Un commit por trabajo (o pocos), con mensaje convencional (`feat(...)`, `fix(...)`) y la referencia `T-xxx`.
 - Si vuelves por segunda vez, lee el Juicio. Tienes que arreglar lo que falló, no rehacerlo todo.
 

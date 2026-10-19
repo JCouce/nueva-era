@@ -7,10 +7,11 @@ Formato: `F-xxx · fecha · dónde · estado (abierto | arreglado | asumido)`.
 
 ---
 
-### F-012 · 2026-10-19 · revisor y sección Construcción (T-002) · abierto
+### F-012 · 2026-10-19 · revisor y sección Construcción (T-002) · arreglado
 **Qué pasó:** la estación dice que el revisor juzga el diff sin leer antes la Construcción, pero las dos secciones
 están en el mismo archivo y la leyó. Lo reconoció él mismo como hallazgo.
-**Arreglo:** pendiente. O la Construcción va en un archivo aparte que el revisor no recibe, o se quita la regla.
+**Arreglo:** se quita la regla imposible. El revisor puede leer la Construcción, pero su evidencia sale siempre del
+oráculo de cada criterio; lo que diga el constructor no prueba nada.
 **Lección:** una regla que la estructura no permite cumplir no es una regla.
 
 ### F-011 · 2026-10-19 · navegador del revisor (T-002) · arreglado
@@ -29,16 +30,16 @@ relanzar y se paró la línea a mano.
 **Lección:** un lector que descarta en silencio lo que no entiende convierte un error de forma en un agujero de
 control. Mejor fallar ruidoso.
 
-### F-009 · 2026-10-19 · juez, tabla del Juicio (T-001) · abierto
+### F-009 · 2026-10-19 · juez, tabla del Juicio (T-001) · arreglado
 **Qué pasó:** la tabla corta la evidencia a 140 caracteres y algunas quedan a medias ("recursos.ts:312 (").
-**Arreglo:** pendiente (cortar por frase, o dejar la evidencia entera en `.votos` y en la tabla solo un resumen).
+**Arreglo:** la tabla corta por palabra y marca el corte con "…". La evidencia completa sigue en la sección Revisión.
 
-### F-008 · 2026-10-19 · alcance de `docs/tareas.md` (T-001) · abierto
+### F-008 · 2026-10-19 · alcance de `docs/tareas.md` (T-001) · arreglado
 **Qué pasó:** el trabajo cambió un comportamiento que describe la entrada RECURSOS de `tareas.md`, pero "Puede tocar"
 solo dejaba "su línea". El constructor y el revisor lo vieron (hallazgo) y la entrada quedó desfasada; el usuario, en
 su commit real, sí la actualizó.
-**Arreglo:** pendiente. El Jefe, al escribir "Puede tocar", incluye las entradas de `tareas.md` que describen lo que
-el trabajo cambia.
+**Arreglo:** el Jefe, al escribir "Puede tocar", incluye las entradas de `tareas.md` que describen lo que el trabajo
+cambia (jefe.md y plantilla), y el constructor las pone al día.
 **Lección:** una regla pensada para limitar ("solo su línea") también puede impedir lo correcto.
 
 ### F-007 · 2026-10-19 · juez, relanzar un trabajo · arreglado
