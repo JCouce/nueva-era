@@ -221,8 +221,11 @@ model Pregunta {
   orden        Int
   texto        String
   contexto     String?
+  recomendada  String?
   respuesta    String    @default("")
   respondidaAt DateTime?
+  errata       Boolean   @default(false)
+  corregidaAt  DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

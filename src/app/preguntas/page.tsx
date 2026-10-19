@@ -18,8 +18,11 @@ export default async function PreguntasPage() {
     grupo: p.grupo,
     texto: p.texto,
     contexto: p.contexto,
+    recomendada: p.recomendada,
     respuesta: p.respuesta,
     respondidaAt: p.respondidaAt?.toISOString() ?? null,
+    errata: p.errata,
+    corregidaAt: p.corregidaAt?.toISOString() ?? null,
   }));
 
   return (

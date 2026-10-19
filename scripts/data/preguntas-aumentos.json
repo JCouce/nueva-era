@@ -1,0 +1,444 @@
+{
+  "area": "aumentos",
+  "grupos": [
+    {
+      "grupo": "Mielinización Central",
+      "preguntas": [
+        {
+          "texto": "Mielinización Central: ¿qué punto de fatiga es el que te ahorras una vez por escena?",
+          "contexto": "Texto: «Una vez por escena puedes omitir el gasto de un punto de fatiga para una prueba que utilicen perspicacia, voluntad o expresión. Se puede combinar este beneficio con el gasto de fatiga de aumentos que influyan en el empleo de estos atributos.»\nDuda: Hay dos gastos de fatiga posibles en esa prueba: el punto normal que da +1 a la tirada y el coste de otros aumentos (la ventaja de Prefrontal Aumentada, simplificar con Asa Estriatotalámica, la prueba doble de Red Frontoparietal). «Se puede combinar» puede querer decir que el punto gratis paga ese coste (y el aumento sale gratis) o que se suma a otros puntos que sí pagas.",
+          "recomendada": "Vale para cualquiera de los dos: un punto que ibas a pagar en esa prueba sale gratis, incluido el coste de otro aumento."
+        }
+      ]
+    },
+    {
+      "grupo": "Red Frontoparietal",
+      "preguntas": [
+        {
+          "texto": "Red Frontoparietal: la prueba física que se hace a la vez que la mental, ¿puede ser un ataque o una defensa?",
+          "contexto": "Texto: «Por el gasto de un punto de fatiga, el personaje puede desarrollar una prueba mental que requiera una acción simple o estándar de forma simultánea a una prueba física como parte de la misma acción. La acción empleada es la más compleja.»\nDuda: No dice si «prueba física» incluye las tiradas de combate. Si las incluye, se puede, por ejemplo, disparar y hackear una puerta en la misma acción.",
+          "recomendada": "No: solo pruebas de habilidad, no ataques ni defensas."
+        },
+        {
+          "texto": "Red Frontoparietal: ¿hay límite de usos de la prueba doble, aparte del punto de fatiga?",
+          "contexto": "Texto: la misma frase de arriba; no menciona usos por turno ni por escena.\nDuda: Otras capacidades parecidas llevan «una vez por escena»; esta no dice nada.",
+          "recomendada": "Sin límite: se puede usar cada vez que se pague el punto."
+        }
+      ]
+    },
+    {
+      "grupo": "Prefrontal, Asa y Conectividad",
+      "preguntas": [
+        {
+          "texto": "Asa Estriatotalámica: ¿se puede bajar dos pasos de golpe (de compleja a simple) pagando 2 de fatiga?",
+          "contexto": "Texto: «podrá simplificar acciones que utilicen perspicacia, voluntad o expresión, de compleja a estándar o de estándar a simple por el gasto de un punto de fatiga.»\nDuda: Nombra los dos saltos por separado, pero no dice si se pueden encadenar en la misma acción.",
+          "recomendada": "No, un solo paso por acción."
+        },
+        {
+          "texto": "Conectividad Callosa: la vía de «emplear dos turnos en una acción compleja», ¿también cuesta 1 de fatiga?",
+          "contexto": "Texto: «…lanzando dos dados para la tirada y escogiendo el mejor resultado. Esta habilidad conlleva el gasto de un punto de fatiga. Podrá emplear dos turnos en realizar una acción compleja ganando también este bonificador.»\nDuda: El coste de fatiga va antes de la frase de los dos turnos; no queda claro si se aplica también a esa vía o si el precio ahí es el turno extra.",
+          "recomendada": "No cuesta fatiga: el precio es gastar el turno extra."
+        },
+        {
+          "texto": "Conectividad Callosa: «una acción simple o estándar de cualquier tipo», ¿incluye ataques y defensas?",
+          "contexto": "Texto: «El personaje podrá concentrarse al desarrollar una acción simple o estándar de cualquier tipo y resolverla como acción compleja…»\nDuda: Prefrontal Aumentada (su requisito) lo limita a perspicacia, voluntad o expresión. Conectividad lo abre a «cualquier tipo», y no sé si eso llega a disparar o atacar con ventaja convirtiendo el ataque en compleja.",
+          "recomendada": "Sí, cualquier acción, ataques incluidos."
+        },
+        {
+          "texto": "Conectividad Callosa y Prefrontal Aumentada dan la misma ventaja. ¿Se pueden usar las dos en la misma tirada?",
+          "contexto": "Texto: Prefrontal: «resolverla como acción compleja, lanzando dos dados…». Conectividad: lo mismo «de cualquier tipo». Asa prohíbe usarse con las dos, pero entre ellas no se dice nada.\nDuda: Tirar dos dados y quedarse el mejor no se puede «doblar», pero alguien podría pagar los dos puntos esperando algo más.",
+          "recomendada": "No se juntan: una ventaja es una ventaja."
+        },
+        {
+          "texto": "Prefrontal Aumentada: la ventaja, ¿se suma al +1 normal por gastar un punto de fatiga en la tirada?",
+          "contexto": "Texto: «…lanzando dos dados para la tirada y escogiendo el mejor resultado, usar esta habilidad conlleva el gasto de un punto de fatiga.»\nDuda: El punto que pagas aquí es el precio de la ventaja. No sé si además puedes pagar otro para el +1 de siempre.",
+          "recomendada": "Sí, se puede pagar otro punto más para el +1."
+        }
+      ]
+    },
+    {
+      "grupo": "Foveo-Sensorial y Ojo Biónico",
+      "preguntas": [
+        {
+          "texto": "Optimización Foveo-Sensorial: «ataque a distancia por puntería», ¿es solo tras la acción de Apuntar o cualquier disparo?",
+          "contexto": "Texto: «Además gana un bonificador de +1 en tiradas de ataque a distancia por puntería.»\nDuda: «Por puntería» puede querer decir «cuando apuntas» (la acción que da bonificador) o solo describir el tipo de ataque. Tampoco sé si cuenta lanzar granadas o armas arrojadizas.",
+          "recomendada": "Cualquier ataque con armas a distancia (Combate a Distancia); las granadas y arrojadizas, no."
+        },
+        {
+          "texto": "Foveo-Sensorial y Ojo Biónico: reducir la cobertura en 1, ¿vale también contra la cobertura total y contra escudos?",
+          "contexto": "Texto: Foveo: «reduce en 1 los penalizadores por cobertura visual». Ojo nivel 2: «reduciendo en 1 los niveles de cobertura visual y termo-óptica».\nDuda: Si la cobertura total (no se puede atacar) baja un nivel, pasa a poderse disparar al que está totalmente cubierto. Tampoco sé si los escudos cuentan como cobertura aquí.",
+          "recomendada": "La cobertura total sigue siendo total; contra escudos, sí reduce."
+        },
+        {
+          "texto": "Ojo Biónico nivel 4: ¿qué significa «reduce en dos niveles por completo» los penalizadores por cobertura? ¿Y qué es la cobertura «termo-óptica»?",
+          "contexto": "Texto: Nivel 4: «un procesador de seguimiento que reduce en dos niveles por completo los penalizadores por cobertura visual». Nivel 2: «niveles de cobertura visual y termo-óptica».\nDuda: «Dos niveles» y «por completo» parecen decir cosas distintas. «Termo-óptica» no aparece en las reglas de cobertura.",
+          "recomendada": "−2 niveles de cobertura; lo termo-óptico, como descripción, sin regla aparte."
+        },
+        {
+          "texto": "Ojo Biónico: ¿qué piezas cuentan como «miras telescópicas u otros objetos de visión aumentada»?",
+          "contexto": "Texto: Nivel 1: «La mejora no se apila con miras telescópicas u otros objetos de visión aumentada; en tal caso, usa siempre el mayor bonificador.»\nDuda: En el equipo hay mira telescópica, visor nocturno, visor térmico y otras piezas con bonificador a percibir o a disparar. No sé si todas cuentan, ni si la regla vale para los dos bonificadores del Ojo (percepción y ataque).",
+          "recomendada": "Cuenta cualquier pieza con bonificador a percepción visual o a ataque a distancia, para los dos bonificadores."
+        },
+        {
+          "texto": "Ojo Biónico nivel 4: los 50 metros, ¿son solo para ver a través de paredes (rayos X)?",
+          "contexto": "Texto: Nivel 4: «visión multi-espectro simultáneo (nocturna, térmica y rayos X con un alcance de 50 metros a través de paredes ligeras…)». Nivel 1: «visión nocturna y termo-óptica con un alcance de 500 metros».\nDuda: Leído tal cual, la nocturna y la térmica bajarían de 500 m a 50 m al subir de nivel.",
+          "recomendada": "Los 50 m son solo de los rayos X; la nocturna y la térmica siguen en 500 m."
+        },
+        {
+          "texto": "Ojo Biónico: el bonificador a percepción visual, ¿sube también la Alerta pasiva (la que no tira dado) contra quien se esconde?",
+          "contexto": "Texto: «El personaje obtiene un bonificador de +1 a tiradas de percepción visual…»\nDuda: Dice «tiradas»; la Alerta pasiva es un valor fijo contra el que tira el que se esconde.",
+          "recomendada": "Sí, el bonificador se suma también a la Alerta pasiva."
+        }
+      ]
+    },
+    {
+      "grupo": "Vestíbulo-Auditiva e Introgresión",
+      "preguntas": [
+        {
+          "texto": "Optimización Vestíbulo-Auditiva: la ventaja en percepción auditiva, ¿vale para la Alerta pasiva?",
+          "contexto": "Texto: «permite lanzar dos dados y escoger el mejor en las pruebas de percepción auditiva para detectar enemigos ocultos, o rastrear por el sonido.»\nDuda: Detectar a alguien oculto suele ser la Alerta pasiva, que no tira dado, así que tirar dos dados no aplica.",
+          "recomendada": "Solo cuando el personaje tira (buscar activamente); la pasiva no cambia."
+        },
+        {
+          "texto": "Introgresión, Percepción Electromagnética: ¿qué dificultad tiene ampliar el alcance a 30 metros, y qué pasa si fallas?",
+          "contexto": "Texto: «Su alcance pasivo es de 10 metros, pero con una tirada de perspicacia + exploración y una acción compleja se aumenta el área a 30 metros, si además emplea un punto de fatiga en la prueba, se aumenta el área a 60 metros.»\nDuda: No da dificultad ni dice qué pasa en fracaso.",
+          "recomendada": "Dificultad 8; si fallas, te quedas con los 10 metros."
+        },
+        {
+          "texto": "Introgresión, Percepción Electromagnética: ¿qué efecto de juego tiene la «vulnerabilidad ante descargas eléctricas o campos magnéticos intensos»?",
+          "contexto": "Texto: «no emite pulsos rastreables, aunque muestra vulnerabilidad ante descargas eléctricas directas o campos magnéticos intensos.»\nDuda: No dice si es un penalizador, más daño eléctrico o perder el sentido un tiempo.",
+          "recomendada": "Solo descripción; lo arbitra el máster."
+        },
+        {
+          "texto": "Introgresión, Detección Química: el +2 para detectar ocultos a 4 metros, ¿sube también la Alerta pasiva?",
+          "contexto": "Texto: «otorga un bonificador para detectar objetivos ocultos a corta distancia de +2 (4 metros).»\nDuda: Como en el Ojo: detectar ocultos suele ser la Alerta pasiva.",
+          "recomendada": "Sí, +2 a la Alerta pasiva contra lo que esté a 4 metros o menos."
+        },
+        {
+          "texto": "Introgresión Sensorial Heteróloga: cada sentido nuevo, ¿se paga otra vez (15.000 cada uno)?",
+          "contexto": "Texto: «Este aumento se puede escoger más veces para distintos sentidos.» Coste: 15000 créditos.\nDuda: No dice si el precio es por sentido o si con una compra se van sumando.",
+          "recomendada": "Sí, 15.000 por cada sentido."
+        }
+      ]
+    },
+    {
+      "grupo": "Consciencia, Automatismo y reacciones",
+      "preguntas": [
+        {
+          "texto": "Consciencia Omnidireccional: la esquiva «tirando dos dados», ¿es ventaja en tu esquiva normal o una esquiva extra?",
+          "contexto": "Texto: «por el gasto de un punto de fatiga realiza una acción defensiva de esquiva contra un ataque melee o a distancia tirando dos dados y escogiendo el mejor.»\nDuda: «Realiza una acción defensiva» puede ser una reacción más (además de las que ya tienes) o solo tirar con ventaja la esquiva que ibas a hacer.",
+          "recomendada": "Ventaja en la esquiva normal, no una reacción extra."
+        },
+        {
+          "texto": "Consciencia Omnidireccional: «no puede ser flanqueado», ¿anula solo el bono de flanqueo o cualquier ventaja por rodearle?",
+          "contexto": "Texto: «Además, el personaje no puede ser flanqueado…»\nDuda: Hay dotes como Táctica de Flanqueo que dan bono por flanquear, y también el penalizador por varios atacantes. No sé hasta dónde llega.",
+          "recomendada": "Anula cualquier bono por flanquear o rodear, también el de dotes."
+        },
+        {
+          "texto": "Neuroprótesis Simpática nivel 3: la segunda reacción, ¿es por turno o por ronda?",
+          "contexto": "Texto: «Mientras el implante esté activo, se obtiene una segunda reacción por turno.»\nDuda: En el sistema se tiene 1 reacción por ronda, e Hiperdensidad y Automatismo dicen «segunda reacción por ronda».",
+          "recomendada": "Por ronda."
+        },
+        {
+          "texto": "Automatismo Bulboespinal: «no recibe penalizador en tiradas defensivas por estar sorprendido», ¿también le deja defenderse si le pillan desprevenido?",
+          "contexto": "Texto: «ya no recibe penalizador en tiradas defensivas por estar sorprendido.»\nDuda: Sorprendido da −3 a defender; Desprevenido no deja defenderse. No sé si el aumento cubre los dos.",
+          "recomendada": "Solo quita el −3 de Sorprendido; Desprevenido sigue igual."
+        }
+      ]
+    },
+    {
+      "grupo": "Regulación, Proyección y Matriz de Red",
+      "preguntas": [
+        {
+          "texto": "Regulación Límbico-Prefrontal: «tiradas contra intimidación», ¿incluye la tirada enfrentada social o solo la salvación de Voluntad?",
+          "contexto": "Texto: «gana un bonificador de +1 en tiradas contra coerción, intimidación, manipulación mental y efectos de miedo.»\nDuda: Resistir que te intimiden puede ser una salvación de Voluntad o una tirada social contra la del otro.",
+          "recomendada": "Cualquier tirada que hagas para resistirlo."
+        },
+        {
+          "texto": "Regulación Límbico-Prefrontal: si un efecto es a la vez miedo y coerción, ¿+1 o +2?",
+          "contexto": "Texto: «+1 en tiradas contra coerción, intimidación, manipulación mental y efectos de miedo.»\nDuda: Un mismo efecto puede caer en dos de esas categorías.",
+          "recomendada": "+1; no se suma consigo mismo."
+        },
+        {
+          "texto": "Proyección Neuro-Expresiva: «anular cualquier penalizador en sus interacciones sociales», ¿incluye los de heridas y fatiga? ¿Qué acción es activarlo?",
+          "contexto": "Texto: «mediante el gasto de un punto de fatiga, puede anular cualquier penalizador en sus interacciones sociales durante una hora.»\nDuda: «Cualquier» podría incluir los penalizadores por heridas o fatiga, o solo los de la situación (idioma, cultura, hostilidad). No dice qué acción cuesta.",
+          "recomendada": "Solo los de la situación, no heridas ni fatiga. Activarlo es una acción gratuita."
+        },
+        {
+          "texto": "Matriz de Red Predeterminada: «repetir una tirada de Actitud lanzando dos dados», ¿se decide antes de tirar o después de ver el resultado?",
+          "contexto": "Texto: «Una vez por escena puede repetir un tirada de Actitud lanzando dos dados y escogiendo el mejor resultado.»\nDuda: «Repetir» suena a después de fallar; «lanzando dos dados y escogiendo el mejor» suena a ventaja decidida antes.",
+          "recomendada": "Antes de tirar: es una ventaja."
+        },
+        {
+          "texto": "Proyección Neuro-Expresiva y Matriz de Red Predeterminada: dan una ventaja en Actitud por escena cada una. ¿Se pueden usar las dos en la misma escena?",
+          "contexto": "Texto: Proyección: «una vez por escena o combate puede realizar dos tiradas… en el uso de la habilidad de Actitud». Matriz: «Una vez por escena puede repetir un tirada de Actitud…».\nDuda: Matriz pide Proyección; no sé si una sustituye a la otra o si se acumulan.",
+          "recomendada": "Sí, dos usos por escena, en tiradas distintas."
+        },
+        {
+          "texto": "Matriz de Red Predeterminada (+2) y Regulación Límbico-Prefrontal (+1): contra el mismo efecto mental, ¿se suman?",
+          "contexto": "Texto: Matriz: «+2 en todas las tiradas de salvación contra efectos de dominación mental, sugestión coercitiva o alteración de la voluntad». Regulación: «+1 en tiradas contra coerción… manipulación mental».\nDuda: Hay efectos que entran en las dos listas.",
+          "recomendada": "Sí, +3."
+        }
+      ]
+    },
+    {
+      "grupo": "Hipertrofia, Biogénesis y Resiliencia",
+      "preguntas": [
+        {
+          "texto": "Hipertrofia Miofibrilar: Fortaleza × 1,5 para los puntos de golpe, ¿se redondea hacia arriba o hacia abajo? ¿Y si la Fortaleza es negativa?",
+          "contexto": "Texto: «multiplica por 1,5 la puntuación de fortaleza para calcular los puntos de golpe»\nDuda: Con Fortaleza impar sale medio punto. Con Fortaleza negativa, multiplicar empeora al personaje.",
+          "recomendada": "Hacia abajo; con Fortaleza negativa no se multiplica."
+        },
+        {
+          "texto": "Hipertrofia Miofibrilar: «sana de forma natural daño no letal al doble de velocidad», ¿a qué velocidad se sana normalmente?",
+          "contexto": "Texto: «…y sana de forma natural daño no letal al doble de velocidad.»\nDuda: Las reglas dicen cuánto se recupera en los descansos, pero no hay una velocidad de curación natural fuera de ellos.",
+          "recomendada": "Solo se apunta, sin regla, hasta que haya curación natural."
+        },
+        {
+          "texto": "Biogénesis Mitocondrial: «duplica la efectividad de cualquier consumible o alimento», ¿qué se duplica exactamente?",
+          "contexto": "Texto: «duplica la efectividad de cualquier consumible o alimento empleado para recuperar puntos de fatiga.»\nDuda: Con la comida está claro (el doble de fatiga). Con fármacos y estimulantes no sé si se duplica lo que recuperan, la duración o todo.",
+          "recomendada": "La comida da el doble de fatiga; los fármacos, sin cambio hasta que lo aclares."
+        },
+        {
+          "texto": "Biogénesis Mitocondrial: «duplica el tiempo en hipoxia», ¿solo los turnos que aguantas antes de empezar a asfixiarte?",
+          "contexto": "Texto: «Por último, duplica el tiempo en hipoxia que puede soportar el personaje.»\nDuda: Aguantar la respiración da unos turnos antes del estado de Asfixia; no sé si también alarga los grados de asfixia.",
+          "recomendada": "Solo los turnos antes de la Asfixia."
+        },
+        {
+          "texto": "¿Las salvaciones contra asfixia, toxinas, venenos y enfermedades son siempre de Fortaleza?",
+          "contexto": "Texto: Biogénesis: «tiradas de salvación contra asfixia, toxinas y venenos». Resiliencia: «enfermedad, toxinas, venenos, radiación…». Enjambre 3: «+4 en tiradas de salvación contra toxinas, venenos y enfermedades».\nDuda: Lo damos por hecho, pero ningún texto lo dice.",
+          "recomendada": "Sí, Fortaleza."
+        },
+        {
+          "texto": "Resiliencia Homeostática: los «efectos térmicos extremos», ¿incluyen el daño por fuego de armas (Llamarada)?",
+          "contexto": "Texto: «lanza dos dados en tiradas de salvación contra efectos de enfermedad, toxinas, venenos, radiación, efectos térmicos extremos y asfixia»\nDuda: Puede ser solo el clima (frío o calor extremo) o también las salvaciones contra armas de fuego y frío, que a veces son de Reflejos.",
+          "recomendada": "Solo frío y calor del ambiente."
+        }
+      ]
+    },
+    {
+      "grupo": "Angiogénesis y Regeneración",
+      "preguntas": [
+        {
+          "texto": "¿Qué es la «hemorragia exanguinante»? ¿Es un grado de Hemorragia? ¿Qué hace?",
+          "contexto": "Texto: Angiogénesis: «En caso de hemorragia exanguinante tendrá que emplear dos puntos de fatiga». Regeneración: «en caso de hemorragia exanguinante podrá emplear un punto de fatiga para eliminar el efecto».\nDuda: Entre los estados solo está Hemorragia. Exanguinante no aparece en ningún otro sitio.",
+          "recomendada": "Solo se apunta; hasta que la definas, el máster decide cuándo pasa y qué hace."
+        },
+        {
+          "texto": "Angiogénesis Sistémica: cortar una hemorragia pagando fatiga, ¿qué acción es?",
+          "contexto": "Texto: «podrá emplear un punto de fatiga para interrumpir una hemorragia de forma automática.»\nDuda: No dice si es gratuita, una reacción o una acción.",
+          "recomendada": "Acción simple."
+        },
+        {
+          "texto": "Angiogénesis Sistémica: cambiar 2 niveles de no letal sanados por 1 de letal en el descanso largo, ¿cuántas veces se puede?",
+          "contexto": "Texto: «sanará de forma natural el doble en descanso largo, pudiendo intercambiar dos niveles de daño no letal sanados por uno de daño letal.»\nDuda: Si se puede hacer con todo lo sanado, el descanso largo pasa a curar mucho letal.",
+          "recomendada": "Una vez por descanso."
+        },
+        {
+          "texto": "Regeneración Tisular Acelerada: «2 niveles de daño letal en lugar de 1» en el descanso corto, ¿de dónde sale ese 1?",
+          "contexto": "Texto: Regeneración: «Durante el descanso corto recupera 2 niveles de daño letal en lugar de 1». Angiogénesis (su requisito): «En descanso corto pasa también a sanar un nivel de daño no letal».\nDuda: El descanso corto normal no cura daño. El «1» podría ser el nivel que añade Angiogénesis, pero ese es no letal: quizá querías decir «2 de no letal».",
+          "recomendada": "2 niveles de daño letal en cada descanso corto."
+        },
+        {
+          "texto": "Regeneración Tisular Acelerada: ¿cura el daño letal y grave sin asistencia médica?",
+          "contexto": "Texto: «podrá recuperar un nivel de salud de daño no letal por turno, uno de daño letal por minuto (10 turnos) y uno de daño grave por hora.»\nDuda: Las reglas dicen que el daño letal necesita asistencia médica para curarse.",
+          "recomendada": "Sí, la regeneración no necesita asistencia."
+        },
+        {
+          "texto": "Regeneración Tisular Acelerada: «un personaje en estado de fatiga tarda el doble», ¿es estar Fatigado (por debajo del umbral)?",
+          "contexto": "Texto: «Un personaje en estado de fatiga tarda el doble en regenerar y exhausto no regenera en absoluto.»\nDuda: Puede ser haber gastado algo de fatiga o haber caído al umbral de Fatigado.",
+          "recomendada": "Estar Fatigado (el umbral)."
+        }
+      ]
+    },
+    {
+      "grupo": "Estabilización Autonómica",
+      "preguntas": [
+        {
+          "texto": "¿Qué salvación resiste la Confusión?",
+          "contexto": "Texto: Estabilización Autonómica: «+2 en tiradas de salvación contra efectos de aturdimiento, confusión, shock, y miedo».\nDuda: El estado Confusión no dice con qué atributo se salva.",
+          "recomendada": "Voluntad."
+        },
+        {
+          "texto": "¿Con qué se salva el aturdimiento: Fortaleza o Voluntad?",
+          "contexto": "Texto: Estado Aturdido: salvación de Fortaleza. MQE: «debe superar una voluntad dificultad 10 contra un efecto de aturdimiento».\nDuda: El MQE usa Voluntad y el estado usa Fortaleza. No sé si depende del origen (golpe o mental).",
+          "recomendada": "Fortaleza, salvo que el texto diga otra cosa (como el MQE)."
+        },
+        {
+          "texto": "Estabilización Autonómica: librarse del miedo, ¿es automático o pide tirada?",
+          "contexto": "Texto: «Si el personaje se encuentra en estado de asustado puede emplear una acción simple o una reacción para deshacerse del miedo. Si se encuentra aterrorizado puede realizar una acción estándar durante su turno para pasar a estar asustado.»\nDuda: No dice si basta con gastar la acción o hay que superar una salvación.",
+          "recomendada": "Automático: gastas la acción y ya."
+        }
+      ]
+    },
+    {
+      "grupo": "Neuroprótesis Simpática",
+      "preguntas": [
+        {
+          "texto": "Neuroprótesis nivel 1: «reducir penalizadores por estado en 1», ¿también los de heridas y fatiga?",
+          "contexto": "Texto: «adquirir un aumento de 1 punto en los atributos de fuerza, agilidad y percepción así como reducir penalizadores por estado en 1»\nDuda: Herido, Fatigado… también son estados; pero quizá solo se refiere a miedo, aturdido y similares.",
+          "recomendada": "Solo los estados como miedo o aturdido; heridas y fatiga, no."
+        },
+        {
+          "texto": "Neuroprótesis nivel 2: el +2 a Fuerza o Agilidad, ¿se elige en cada activación o una vez al comprarlo? ¿El otro atributo se queda en +1?",
+          "contexto": "Texto: «Al activar el implante se recibe un aumento de 2 puntos en lugar de 1 en la fuerza o la agilidad, quedando a elección del usuario.»\nDuda: «Al activar» apunta a cada vez; no está claro.",
+          "recomendada": "Se elige en cada activación; el otro se queda en +1 y Percepción en +1."
+        },
+        {
+          "texto": "Neuroprótesis nivel 3: la acción simple adicional, ¿hace falta tener el implante activo?",
+          "contexto": "Texto: «Mientras el implante esté activo, se obtiene una segunda reacción por turno. El personaje puede adquirir una única acción simple adicional durante su turno por el gasto de 2 puntos de fatiga.»\nDuda: La primera frase pide que esté activo; la segunda no lo dice.",
+          "recomendada": "Sí, tiene que estar activo; sacarla es gratuito."
+        },
+        {
+          "texto": "Neuroprótesis nivel 4: los 3 de fatiga, ¿son el mismo «volver a usarla» del nivel 3? El +2 a los atributos, ¿sustituye al +1/+2 de activarlo?",
+          "contexto": "Texto: Nivel 3: «volver a usarla tendrá un coste de 3 puntos de fatiga». Nivel 4: «Si el personaje emplea 3 puntos de fatiga para conseguir una acción simple adicional… obtiene un aumento de +2 a fuerza, agilidad y percepción».\nDuda: Parece que el nivel 4 mejora el segundo uso del nivel 3, pero no lo dice. Y si el implante ya está activo (+1, o +2 en un atributo), no sé si se suman.",
+          "recomendada": "Sí, es ese segundo uso; el +2 sustituye al +1/+2, no se suma."
+        }
+      ]
+    },
+    {
+      "grupo": "Enjambre Nanobot",
+      "preguntas": [
+        {
+          "texto": "Enjambre nivel 1: el +3 «al utilizar drogas y medicamentos», ¿a qué tiradas se suma?",
+          "contexto": "Texto: «el personaje puede utilizar drogas y medicamentos con un bonificador de +3 exclusivamente cuando las utilice de modo personal. Si un tercero utiliza medicinas para sanar al personaje… también gana el mismo bonificador.»\nDuda: Los fármacos se aplican con una tirada de Medicina; muchos no llevan tirada.",
+          "recomendada": "A la tirada de Medicina para aplicar el fármaco o tratar heridas; los fármacos sin tirada no cambian."
+        },
+        {
+          "texto": "Enjambre nivel 2: sanar un letal con 1 de fatiga, ¿qué acción es? ¿Se puede repetir sin límite?",
+          "contexto": "Texto: «si consume un nivel fatiga podrá sanar un nivel letal de forma automática»\nDuda: No dice acción ni límite, así que con fatiga suficiente se curaría todo el letal en un combate.",
+          "recomendada": "Acción estándar, sin más límite que la fatiga."
+        },
+        {
+          "texto": "Enjambre nivel 2: «consume 5 a lo largo de un mínimo de 5 turnos» para sanar uno grave, ¿es 1 de fatiga por turno?",
+          "contexto": "Texto: «si consume 5 a lo largo de un mínimo de 5 turnos, podrá sanar uno grave.»\nDuda: No sé si hay que estar quieto esos 5 turnos o se puede actuar.",
+          "recomendada": "1 de fatiga por turno durante 5 turnos, pudiendo actuar."
+        },
+        {
+          "texto": "Enjambre nivel 3: los 3 de blindaje y el +3 contra el aturdimiento, ¿valen contra cualquier tipo de golpe y de daño?",
+          "contexto": "Texto: «como reacción y con el gasto de un punto de fatiga el enjambre puede densificarse… otorgando 3 puntos de blindaje contra un golpe específico. Si el impacto causa aturdimiento el usuario recibe un bonificador de +3 contra el efecto.»\nDuda: Hay daño cinético, eléctrico, fuego, frío… No sé si el enjambre protege contra todos.",
+          "recomendada": "Sí, contra cualquiera."
+        },
+        {
+          "texto": "Enjambre nivel 4: «duplica su velocidad», pero los números son mucho más rápidos que el doble. ¿Cuál vale?",
+          "contexto": "Texto: Nivel 2: «un nivel de daño no letal por turno, uno letal por minuto (10 turnos) y uno grave por hora». Nivel 4: «duplica su velocidad… (regenera un nivel de daño no letal por acción, uno letal por turno y uno grave por cada 10 turnos)».\nDuda: El doble de «uno grave por hora» sería uno cada media hora, no cada 10 turnos (un minuto).",
+          "recomendada": "Los números del paréntesis."
+        },
+        {
+          "texto": "Enjambre nivel 4: sabotear objetos con la Tempestad Nanobótica, ¿con qué tirada y qué dificultad?",
+          "contexto": "Texto: «De la misma forma se puede emplear para sabotear objetos.»\nDuda: El ataque usa reflejos + tecnociencia; el sabotaje no tiene dificultad ni resultado.",
+          "recomendada": "Reflejos + tecnociencia; la dificultad y el resultado los decide el máster."
+        }
+      ]
+    },
+    {
+      "grupo": "Microprocesador Cuántico de Enlace",
+      "preguntas": [
+        {
+          "texto": "MQE: cada nivel, ¿sustituye al anterior (alcance, dificultad, defensa y contragolpe)? ¿Sigue subiendo la dificultad en 1 por turno?",
+          "contexto": "Texto: Nivel 1: «cada turno aumenta en 1 la dificultad de infiltración psiónica». Nivel 4: «También se puede escoger el mecanismo de defensa de nivel 3».\nDuda: Si el nivel 4 tiene que decir que se puede elegir lo del 3, parece que cada nivel sustituye al anterior. El +1 por turno solo sale en el nivel 1.",
+          "recomendada": "Cada nivel sustituye al anterior; el +1 por turno se mantiene en todos."
+        },
+        {
+          "texto": "MQE: ¿qué tira el psiónico para infiltrarse, y cuándo salta el contragolpe?",
+          "contexto": "Texto: «Dificultad de Infiltración Psiónica: 13… El psiónico debe superar esta prueba cada turno, es una acción compleja que requiere concentración».\nDuda: No dice qué atributo y habilidad (o qué poder) usa el intruso, ni si el contragolpe salta al fallar la prueba o en cuanto le detectan.",
+          "recomendada": "Perspicacia + Tecnociencia (o el poder de Resonancia, si lo tiene); el contragolpe salta al fallar."
+        },
+        {
+          "texto": "MQE nivel 3: el contragolpe hace «daño grave», ¿cuántos niveles?",
+          "contexto": "Texto: «infligiendo daño grave y efecto de aturdimiento (voluntad dificultad 10), cada turno atrapado en el cepo el psiónico recibe el contragolpe de nuevo.»\nDuda: Los niveles 1 y 2 dicen «un nivel de daño letal» y el 4 «2 niveles de daño grave»; el 3 no dice cantidad.",
+          "recomendada": "1 nivel de daño grave."
+        },
+        {
+          "texto": "MQE nivel 2: «hasta cuatro dispositivos a la vez», ¿vale también para los mensajes subvocales?",
+          "contexto": "Texto: Nivel 1: «…pero solo de uno en uno». Nivel 2: «Sincroniza simultáneamente al usuario con hasta cuatro dispositivos del escuadrón (drones, miras inteligentes o pasarelas), permitiendo compartir telemetría».\nDuda: No sé si el nivel 2 levanta el «de uno en uno» para hablar con varias personas.",
+          "recomendada": "Solo la telemetría; los mensajes, de uno en uno."
+        },
+        {
+          "texto": "MQE nivel 4: escoger la defensa y el contragolpe del nivel 3, ¿se decide al instalarlo o en cada intrusión? ¿Van juntos?",
+          "contexto": "Texto: «También se puede escoger el mecanismo de defensa de nivel 3.» «El usuario puede decidir escoger el contragolpe propio del cepo de nivel 3.»\nDuda: Se puede leer como una elección fija o como algo que se decide cada vez.",
+          "recomendada": "En cada intrusión, y defensa y contragolpe van juntos."
+        },
+        {
+          "texto": "MQE nivel 4: «dejar al psiónico inconsciente de inmediato» y «oculta por completo la firma digital», ¿tienen efecto de reglas?",
+          "contexto": "Texto: Contragolpe: «capaz de dejar al psiónico inconsciente de inmediato o provocarle hemorragias cerebrales críticas. El psiónico recibe 2 niveles de daño grave, aturdimiento (voluntad 12) y hemorragia durante 1d10 turnos». Efecto: «oculta por completo la firma digital del usuario».\nDuda: La primera parte parece descripción y los números van después. Lo de la firma digital podría impedir que hackeen o rastreen al portador.",
+          "recomendada": "Las dos son descripción; valen los números."
+        }
+      ]
+    },
+    {
+      "grupo": "Brazo Biónico",
+      "preguntas": [
+        {
+          "texto": "Brazo Biónico: para bloquear con el brazo, ¿hace falta la dote Bloqueo?",
+          "contexto": "Texto: Nivel 2: «se puede utilizar como arma para bloquear».\nDuda: Bloquear con un arma cuerpo a cuerpo pide la dote Bloqueo. No sé si el brazo lo permite sin ella.",
+          "recomendada": "No, el brazo permite bloquear sin la dote."
+        },
+        {
+          "texto": "Brazo Biónico: si tu atributo ya pasa del límite del brazo, ¿cuál se usa?",
+          "contexto": "Texto: Nivel 2: «La fuerza del brazo es un punto superior a la del usuario pero con un límite máximo de 5».\nDuda: Con Fuerza 6, el brazo de nivel 2 se quedaría en 5, por debajo del brazo de carne.",
+          "recomendada": "El del brazo, aunque sea menor: es otra extremidad."
+        },
+        {
+          "texto": "Brazo Biónico nivel 1: ¿puede bloquear o hacer daño letal? ¿Y el modelo Fuerte de los niveles 3 y 4?",
+          "contexto": "Texto: Nivel 2: «se puede utilizar como arma para bloquear. Además causa daño letal en sus ataques de pelea». Nivel 3, modelo Ágil: «Como el nivel 2…». El modelo Fuerte no lo dice.\nDuda: El modelo Ágil remite al nivel 2 y el Fuerte no; no sé si el Fuerte bloquea y hace daño letal.",
+          "recomendada": "El nivel 1 no; todos los modelos de los niveles 3 y 4, sí."
+        },
+        {
+          "texto": "Brazo Biónico: el arma incorporada, ¿cuenta para la carga? ¿Puede ser un arma de fuego? ¿Qué pasa si fallas la tirada de dificultad 8?",
+          "contexto": "Texto: «Se puede incorporar un arma en su interior siempre que su uso sea a una mano… es preciso una acción extendida de 10 minutos y realizar una tirada de perspicacia + biónica dificultad 8 con el instrumental adecuado.»\nDuda: No dice si pesa, si vale una pistola ni qué pasa en fracaso (si se puede repetir o se estropea).",
+          "recomendada": "Cuenta para la carga; cualquier arma a una mano, también de fuego; si fallas, se puede repetir con otros 10 minutos."
+        }
+      ]
+    },
+    {
+      "grupo": "Shock",
+      "preguntas": [
+        {
+          "texto": "¿Qué implantes se ven afectados por el Shock (daño eléctrico que inutiliza implantes)?",
+          "contexto": "Texto: La Neuroprótesis lleva «microestimuladores sinápticos… y ráfagas eléctricas»; el Enjambre son micro-máquinas; el IRM, el Brazo, el Ojo y el MQE son electrónicos.\nDuda: Todo implante parece electrónico, pero a lo mejor querías dejar fuera alguno.",
+          "recomendada": "Todos los implantes cuentan; las operaciones genéticas, no."
+        },
+        {
+          "texto": "MQE nivel 3: «aislando el canal de radio frente a interferencias electromagnéticas», ¿protege del Shock?",
+          "contexto": "Texto: «Amplía el rango de conexión a repetidores lejanos, aislando el canal de radio frente a interferencias electromagnéticas…»\nDuda: Puede ser solo que la comunicación no se corta, o que el implante resiste los efectos eléctricos.",
+          "recomendada": "Solo la comunicación; el implante sigue siendo vulnerable al Shock."
+        }
+      ]
+    },
+    {
+      "grupo": "Erratas",
+      "errata": true,
+      "preguntas": [
+        {
+          "texto": "Ojo Biónico: hay dos «Nivel 3» y ningún «Nivel 2». ¿El primero (Extraño, 32.000) es el nivel 2?",
+          "contexto": "Texto: el primer «Nivel 3» cuesta 32000 y el segundo 64000; el nivel 1 cuesta 16000 y el 4, 128000.",
+          "recomendada": "El primero es el nivel 2."
+        },
+        {
+          "texto": "IRM nivel 3: repite la frase del nivel 2. ¿Es una errata o falta el texto propio del nivel 3?",
+          "contexto": "Texto: Niveles 2 y 3: «Optimiza los conductos y ofrece una disipación térmica superior, corrigiendo la extrema vulnerabilidad del modelo base.»"
+        },
+        {
+          "texto": "IRM: el nivel 1 dice «Fracaso» y los demás dicen «Fallo». ¿Son lo mismo?",
+          "contexto": "Texto: Nivel 1: «Fracaso: El sistema sufre un pico…» y en la Carga Crítica «el daño por fallo». Niveles 2 a 4: «Fallo:».",
+          "recomendada": "Son lo mismo."
+        },
+        {
+          "texto": "Bucle de Realimentación Motora: dice «tercera reacción por turno»; Hiperdensidad y Automatismo dicen «por ronda». ¿Es por ronda?",
+          "contexto": "Texto: «El personaje gana una tercera reacción por turno cambio de un punto de fatiga.»",
+          "recomendada": "Por ronda (y «a cambio de»)."
+        },
+        {
+          "texto": "Enjambre nivel 4: frase rota. ¿Quiere decir que destruye 1 punto del blindaje del objetivo cada vez que acierta?",
+          "contexto": "Texto: «Su daño básico es de 1 Grave, y es cuando acierta al blindaje destruye 1 punto por contacto físico.»",
+          "recomendada": "Sí, cada acierto quita 1 punto de blindaje al objetivo."
+        },
+        {
+          "texto": "Ortografía para corregir en el documento.",
+          "contexto": "Texto: hemorrogia, efeco, sientido, capcidad, infilitración, usario, desprendese, atudimiento, sobeesfuerzo, «un tirada» y «cambio de» (por «a cambio de»)."
+        }
+      ]
+    }
+  ]
+}
