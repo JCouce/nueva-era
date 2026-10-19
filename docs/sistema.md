@@ -989,7 +989,9 @@ al preparar su modelado:
   - Anclaje se tira como **ataque sin daño** (Perspicacia + Física, dificultad que escribe el
     jugador); la esquiva, el escape enfrentado y el Duelo de Métrica del objetivo son texto.
   - "Anclaje pasa a ser acción simple" (nivel 4) se aplica al anclaje de **un** objetivo;
-    anclar a varios a la vez sigue siendo compleja *(supuesto: la prosa no lo precisa)*.
+    anclar a varios a la vez pasa de compleja a **estándar** (Murillo, respuestas del
+    2026-09-29: "anclaje colectivo pasa a acción estándar (nv4)"; corregido 2026-10-19, T-004).
+    Añadir un objetivo en otro turno sigue estándar (sin respuesta).
   - Auto-proyección es una acción aparte de Proyección (sin tirada ni objetivo). Qué
     velocidad dobla o cuadruplica (carrera o traslación de 10 × nivel) no lo dice la prosa:
     **preguntado a Murillo** en `/preguntas` (Traslación); mientras, a criterio del máster.
