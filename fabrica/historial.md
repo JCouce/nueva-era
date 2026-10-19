@@ -7,6 +7,19 @@ Formato: `F-xxx · fecha · dónde · estado (abierto | arreglado | asumido)`.
 
 ---
 
+### F-012 · 2026-10-19 · revisor y sección Construcción (T-002) · abierto
+**Qué pasó:** la estación dice que el revisor juzga el diff sin leer antes la Construcción, pero las dos secciones
+están en el mismo archivo y la leyó. Lo reconoció él mismo como hallazgo.
+**Arreglo:** pendiente. O la Construcción va en un archivo aparte que el revisor no recibe, o se quita la regla.
+**Lección:** una regla que la estructura no permite cumplir no es una regla.
+
+### F-011 · 2026-10-19 · navegador del revisor (T-002) · abierto
+**Qué pasó:** el MCP chrome-devtools tenía el perfil cogido por otra sesión de Claude (pasa a menudo: el usuario
+trabaja con varias sesiones a la vez). El revisor improvisó con `playwright-core` y funcionó.
+**Arreglo:** pendiente. Probable: lanzar el MCP con `--isolated` (perfil temporal por instancia).
+**Lección:** una herramienta compartida entre sesiones es un recurso con cerrojo; la fábrica no puede depender de
+que esté libre.
+
 ### F-010 · 2026-10-19 · lector de criterios (T-002) · arreglado
 **Qué pasó:** al corregir el contrato tras la inspección se añadió un criterio "C6b". El lector solo reconocía
 `C<número>` y se saltó la fila sin avisar: ni el revisor ni el juez la habrían comprobado. Se vio en la salida al
