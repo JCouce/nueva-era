@@ -96,11 +96,16 @@ Devuelve en "codigo" su código de salida y en "salida" su stdout completo, sin 
   return json
 }
 
+// "fallos/llamadas" para el frontmatter (lo lee el visor, fabrica/panel). Cuenta ya la llamada que lo lleva.
+function marcaOperario() {
+  return `${OPERARIO.sinRespuesta + OPERARIO.sinJson + OPERARIO.sumaMal}/${OPERARIO.llamadas + 1}`
+}
+
 class FalloLinea extends Error {}
 
 async function ponerEstado(estado, fase, desde) {
   const r = await operario(
-    `node ${q(`${GUION}/contrato.mjs`)} estado ${q(CONTRATO)} ${estado}${desde ? ` --desde ${desde}` : ''}`,
+    `node ${q(`${GUION}/contrato.mjs`)} estado ${q(CONTRATO)} ${estado}${desde ? ` --desde ${desde}` : ''} --operario ${marcaOperario()}`,
     `estado→${estado}`, fase,
   )
   if (!r.ok) throw new FalloLinea(`no pude pasar el contrato a "${estado}": ${r.error}`)
@@ -244,11 +249,12 @@ plantea una decisión de diseño que no se puede resolver con los criterios (si 
       dudaDiseno: revisor ? revisor.dudaDiseno : null,
       revisor: revisor ? { criterios: revisor.criterios } : null,
     })
-    const comandoJuez = `node ${q(JUEZ)} ${q(CONTRATO)} --suma ${suma(entrada)} <<'FIN_JUEZ'\n${entrada}\nFIN_JUEZ`
-    juicio = await operario(comandoJuez, `juez#${intento}`, 'Juicio')
+    const comandoJuez = () =>
+      `node ${q(JUEZ)} ${q(CONTRATO)} --suma ${suma(entrada)} --operario ${marcaOperario()} <<'FIN_JUEZ'\n${entrada}\nFIN_JUEZ`
+    juicio = await operario(comandoJuez(), `juez#${intento}`, 'Juicio')
     if (!juicio.ok && juicio.error === 'suma') {
       log('la entrada del juez llegó mal copiada; repito una vez')
-      juicio = await operario(comandoJuez, `juez#${intento}-bis`, 'Juicio')
+      juicio = await operario(comandoJuez(), `juez#${intento}-bis`, 'Juicio')
     }
     if (!juicio.ok) throw new FalloLinea(`juez: ${juicio.error}`)
     log(`juez, intento ${intento}: ${juicio.decision} (${juicio.motivo})`)

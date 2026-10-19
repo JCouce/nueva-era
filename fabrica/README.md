@@ -32,6 +32,7 @@ Tú ⇄ Jefe ──(tu ok)──▶ cola ─▶ inspector ─▶ constructor ─
 | Juez | Reglas fijas, sin LLM: un "falla" devuelve; a la tercera o ante diseño, escala | `juez/juez.mjs` | hecho (tanda 3) |
 | Operario | Agente que ejecuta tal cual los scripts deterministas del guion (un guion no tiene shell) | `.claude/agents/fabrica-operario.md` | hecho (tanda 3) |
 | Skill | `/fabrica`: carga `jefe.md` y lanza el guion | `.claude/skills/fabrica/SKILL.md` | hecho (tanda 3) |
+| Visor | Un trabajo en vivo en la terminal: estaciones, criterios, juez, cronómetro y fallos del operario | `panel/ver.mjs` | hecho |
 | Panel | Un único artifact con todos los trabajos, que mantiene el Jefe | — | tanda 5 |
 | Trabajos | Los contratos; llegan a main con la rama de cada trabajo | `trabajos/` | `T-000` es el ejemplo |
 
@@ -66,6 +67,12 @@ Qué hace el guion, en orden:
    `alcance.mjs`, a `trabajos/.revision-T-xxx.json`) → revisor, para los criterios que no son C1 ni C2 → juez.
 4. `contigo`, `escalado` o `error`: se para y el Jefe te lo cuenta.
 
+Para verlo mientras corre, abre un split de Ghostty y deja ahí `npm run fabrica:ver` (sin argumento coge el trabajo
+activo más reciente; si no, `-- T-xxx` o la ruta del contrato). Se redibuja solo al cambiar el contrato o su
+`.revision-T-xxx.json`; `q` o Ctrl+C para salir. `-- --una-vez` lo pinta una vez en texto plano, para pegarlo en un
+chat. El cronómetro y los fallos del operario salen de `inicio`, `fin` y `operario` del frontmatter, que escriben
+`contrato.mjs estado` y el juez (el guion les pasa `--operario <fallos>/<llamadas>`).
+
 Quién vota qué: C1 lo vota el script (tests y tsc), C2 el alcance, el resto el revisor, y "script" (lint, ficha y
 prod) también vota. Si se toca la BD (`bd` de `revisar.mjs`), escala.
 
@@ -80,6 +87,7 @@ código, así que su merge es limpio. Con tu Decisión escrita, el Jefe cierra e
 npm run fabrica:revisar                    # tests, tsc, lint de lo tocado y push seguro, contra origin/main
 npm run fabrica:revisar -- --solo-diff     # solo las reglas de push seguro (ficha, bd, prod)
 npm run fabrica:test                       # tests de la propia fábrica
+npm run fabrica:ver -- --una-vez T-001     # cómo va un trabajo, una vez y sin colores de pantalla
 ```
 
 Sale con código 1 si algo falla. `--base`, `--head` y `--json` para otros rangos o para el juez.

@@ -3,7 +3,7 @@
 // Lógica pura exportada; el CLI es lo mínimo que necesita el guion.
 // Uso:
 //   node fabrica/guion/contrato.mjs leer <ruta>
-//   node fabrica/guion/contrato.mjs estado <ruta> <estado> [--desde <estado>[,<estado>...]]
+//   node fabrica/guion/contrato.mjs estado <ruta> <estado> [--desde <estado>[,<estado>...]] [--operario <fallos>/<llamadas>]
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -46,6 +46,19 @@ export function ponerCampo(texto, clave, valor) {
     nueva = `${nueva.padEnd(Math.max(columna, nueva.length + 1))}${comentario[2]}`;
   }
   lineas[i] = nueva;
+  return `---\n${lineas.join("\n")}\n---\n${texto.slice(fin)}`;
+}
+
+// Como ponerCampo, pero si el campo no existe lo añade al final del frontmatter.
+export function fijarCampo(texto, clave, valor) {
+  const { bloque, fin } = partirFrontmatter(texto);
+  if (bloque.split("\n").some((l) => l.startsWith(`${clave}:`))) return ponerCampo(texto, clave, valor);
+  return `---\n${bloque}\n${clave}: ${valor}\n---\n${texto.slice(fin)}`;
+}
+
+export function quitarCampo(texto, clave) {
+  const { bloque, fin } = partirFrontmatter(texto);
+  const lineas = bloque.split("\n").filter((l) => !l.startsWith(`${clave}:`));
   return `---\n${lineas.join("\n")}\n---\n${texto.slice(fin)}`;
 }
 
@@ -156,13 +169,32 @@ export function resumen(texto) {
   };
 }
 
-export function cambiarEstado(texto, estado, desde = null) {
+// Estados en los que la línea se para; desde ellos el cronómetro del visor deja de correr.
+export const FINALES = ["contigo", "escalado", "spec"];
+
+// Lo que el visor necesita y no se puede deducir del contrato: cuándo entró en la línea, cuándo paró y cómo va el
+// operario. `ahora` es un ISO que pone quien llama (el guion no tiene reloj).
+export function anotarMarcas(texto, { anterior, estado, ahora = null, operario = null }) {
+  const fm = leerFrontmatter(texto);
+  let t = texto;
+  if (ahora && anterior === "encolado" && estado === "inspeccion") {
+    if (!fm.inicio) t = fijarCampo(t, "inicio", ahora);
+    if (fm.fin) t = quitarCampo(t, "fin");
+  } else if (ahora && FINALES.includes(estado) && fm.inicio) {
+    t = fijarCampo(t, "fin", ahora);
+  }
+  if (operario && /^\d+\/\d+$/.test(operario)) t = fijarCampo(t, "operario", operario);
+  return t;
+}
+
+export function cambiarEstado(texto, estado, desde = null, { ahora = null, operario = null } = {}) {
   if (!ESTADOS.includes(estado)) throw new Error(`estado desconocido: ${estado}`);
   const anterior = leerFrontmatter(texto).estado;
   if (desde && !desde.includes(anterior)) {
     throw new Error(`el contrato está en "${anterior}" y este paso espera ${desde.map((d) => `"${d}"`).join(" o ")}`);
   }
-  return { texto: ponerCampo(texto, "estado", estado), anterior };
+  const nuevo = anotarMarcas(ponerCampo(texto, "estado", estado), { anterior, estado, ahora, operario });
+  return { texto: nuevo, anterior };
 }
 
 // ---------- CLI ----------
@@ -182,7 +214,9 @@ function main(argv) {
       const estado = resto[0];
       const k = resto.indexOf("--desde");
       const desde = k === -1 ? null : String(resto[k + 1] ?? "").split(",").filter(Boolean);
-      const r = cambiarEstado(texto, estado, desde);
+      const o = resto.indexOf("--operario");
+      const operario = o === -1 ? null : resto[o + 1];
+      const r = cambiarEstado(texto, estado, desde, { ahora: new Date().toISOString(), operario });
       fs.writeFileSync(ruta, r.texto);
       // Salida corta: la copia el operario.
       const { id, vueltas, rama, criterios: cs } = resumen(r.texto);

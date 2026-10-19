@@ -881,6 +881,10 @@ Se queda, pero cada trabajo apunta en Métricas sus fallos/llamadas (`operario` 
 pasa del 5 %, se juntan pasos en scripts más gordos (unas 4 llamadas por trabajo en vez de unas 10); si aun así da
 guerra, o al llegar al cron (N5), se sustituye el Workflow por un orquestador en Node con `claude -p`.
 
+**Visor de terminal (2026-10-19, hecho):** `npm run fabrica:ver` pinta un trabajo en vivo (estaciones, criterios,
+última decisión del juez, cronómetro y fallos del operario) para tenerlo en un split de Ghostty. Para eso el
+frontmatter gana `inicio`, `fin` y `operario`, que escriben `contrato.mjs estado` y el juez. No es el panel de la tanda 5.
+
 **Escalera:** N1 línea a mano · N2 revisores especializados con oráculo · N3 tolva MainPatcher (examen: reproducir los
 syncs commiteados, recall ≥95 %) · N4 sin "tu ok" a la spec en lo pequeño · N5 cron y panel vivo.
 

@@ -4,13 +4,17 @@ import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
   anadirASeccion,
+  anotarMarcas,
   cambiarEstado,
   celdas,
   criterios,
+  FINALES,
+  fijarCampo,
   leerFrontmatter,
   leerSeccion,
   ponerCampo,
   puedeTocar,
+  quitarCampo,
   reemplazarSeccion,
 } from "./contrato.mjs";
 
@@ -104,4 +108,51 @@ test("cambiarEstado valida el estado y el de partida", () => {
   const r = cambiarEstado(plantilla, "encolado", ["spec"]);
   assert.equal(r.anterior, "spec");
   assert.equal(leerFrontmatter(r.texto).estado, "encolado");
+});
+
+// --- marcas para el visor: inicio, fin y operario ---
+const conEstado = (t, estado) => ponerCampo(t, "estado", estado);
+const H0 = "2026-10-19T10:00:00.000Z";
+const H1 = "2026-10-19T10:06:12.000Z";
+
+test("fijarCampo añade el campo si falta y lo cambia si está; quitarCampo lo quita", () => {
+  let t = fijarCampo(plantilla, "inicio", H0);
+  assert.equal(leerFrontmatter(t).inicio, H0);
+  assert.equal(leerFrontmatter(t).estado, "spec");
+  t = fijarCampo(t, "inicio", H1);
+  assert.equal(leerFrontmatter(t).inicio, H1);
+  assert.equal(t.match(/^inicio:/gm).length, 1);
+  t = quitarCampo(t, "inicio");
+  assert.equal(leerFrontmatter(t).inicio, undefined);
+  assert.equal(t, plantilla);
+});
+
+test("encolado → inspeccion escribe inicio, sin pisar uno que ya hubiera, y quita un fin viejo", () => {
+  const r = cambiarEstado(conEstado(plantilla, "encolado"), "inspeccion", ["encolado"], { ahora: H0 });
+  assert.equal(leerFrontmatter(r.texto).inicio, H0);
+  const viejo = fijarCampo(fijarCampo(conEstado(plantilla, "encolado"), "inicio", H0), "fin", H1);
+  const otra = leerFrontmatter(cambiarEstado(viejo, "inspeccion", null, { ahora: H1 }).texto);
+  assert.equal(otra.inicio, H0);
+  assert.equal(otra.fin, undefined);
+});
+
+test("sin ahora (uso antiguo) no escribe marcas", () => {
+  const r = cambiarEstado(conEstado(plantilla, "encolado"), "inspeccion");
+  assert.equal(leerFrontmatter(r.texto).inicio, undefined);
+});
+
+test("los estados finales escriben fin, pero solo si el trabajo entró en la línea", () => {
+  const enLinea = fijarCampo(conEstado(plantilla, "revision"), "inicio", H0);
+  for (const final of FINALES) {
+    assert.equal(leerFrontmatter(cambiarEstado(enLinea, final, null, { ahora: H1 }).texto).fin, H1, final);
+  }
+  assert.equal(leerFrontmatter(cambiarEstado(enLinea, "construyendo", null, { ahora: H1 }).texto).fin, undefined);
+  assert.equal(leerFrontmatter(cambiarEstado(plantilla, "spec", null, { ahora: H1 }).texto).fin, undefined);
+});
+
+test("operario se guarda como fallos/llamadas; un valor raro se ignora", () => {
+  const t = cambiarEstado(plantilla, "encolado", null, { operario: "1/7" }).texto;
+  assert.equal(leerFrontmatter(t).operario, "1/7");
+  assert.equal(leerFrontmatter(anotarMarcas(t, { estado: "encolado", operario: "2/9" })).operario, "2/9");
+  assert.equal(leerFrontmatter(anotarMarcas(t, { estado: "encolado", operario: "x; rm" })).operario, "1/7");
 });

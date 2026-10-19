@@ -7,7 +7,8 @@
 //   - Algo falla: vuelta < 2 → vuelve; en la vuelta 2 (tercer intento) → escalado. Nada falla → contigo.
 // Escribe un bloque en la sección Juicio (sin borrar los de vueltas anteriores) y `estado`/`vueltas` del contrato.
 //
-// Uso: node fabrica/juez/juez.mjs <ruta-contrato> [--suma <hex>] [--entrada <archivo>]   (sin --entrada, stdin)
+// Uso: node fabrica/juez/juez.mjs <ruta-contrato> [--suma <hex>] [--operario <f>/<l>] [--entrada <archivo>]
+//      (sin --entrada, stdin)
 // Entrada: {"vuelta":0,"bloqueo":null,"dudaDiseno":null,"revisor":{"criterios":[{"id","veredicto","evidencia"}]}}
 // La revisión por script la lee de fabrica/trabajos/.revision-T-xxx.json (la deja revision.mjs).
 // --suma: FNV-1a de la entrada tal como la manda el guion; si no cuadra, el operario la ha copiado mal (código 3).
@@ -15,7 +16,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { rutaRevision } from "../guion/revision.mjs";
-import { anadirASeccion, criterios as leerCriterios, leerFrontmatter, ponerCampo } from "../guion/contrato.mjs";
+import {
+  anadirASeccion,
+  anotarMarcas,
+  celdas,
+  criterios as leerCriterios,
+  leerFrontmatter,
+  leerSeccion,
+  ponerCampo,
+} from "../guion/contrato.mjs";
 
 export const MAX_VUELTAS = 2;
 const VEREDICTOS = new Set(["pasa", "falla", "no aplica"]);
@@ -135,12 +144,40 @@ export function bloqueJuicio(r, { rama } = {}) {
   return lineas.join("\n");
 }
 
-export function aplicarJuicio(textoContrato, r) {
-  const { rama } = leerFrontmatter(textoContrato);
+// Lee de vuelta los bloques que escribe bloqueJuicio (lo usa el visor, fabrica/panel).
+export function leerJuicios(textoContrato) {
+  let seccion;
+  try {
+    seccion = leerSeccion(textoContrato, "Juicio");
+  } catch {
+    return [];
+  }
+  const res = [];
+  for (const linea of seccion.split("\n")) {
+    const cab = linea.match(/^### Intento (\d+) · (\S+)/);
+    if (cab) {
+      res.push({ intento: Number(cab[1]), decision: cab[2], motivo: "", veredictos: [] });
+      continue;
+    }
+    const actual = res.at(-1);
+    if (!actual) continue;
+    const motivo = linea.match(/^\*\*Motivo:\*\* (.*)$/);
+    if (motivo) actual.motivo = motivo[1].trim();
+    else if (linea.startsWith("|")) {
+      const [id, veredicto, fuente, evidencia = ""] = celdas(linea);
+      if (VEREDICTOS.has(veredicto)) actual.veredictos.push({ id, veredicto, fuente, evidencia });
+    }
+  }
+  return res;
+}
+
+// marcas: {ahora, operario} para el frontmatter (fin del cronómetro y fallos del operario); ver anotarMarcas.
+export function aplicarJuicio(textoContrato, r, marcas = {}) {
+  const { rama, estado: anterior } = leerFrontmatter(textoContrato);
   let t = anadirASeccion(textoContrato, "Juicio", bloqueJuicio(r, { rama }));
   t = ponerCampo(t, "estado", r.estado);
   t = ponerCampo(t, "vueltas", `${r.vueltas}/${MAX_VUELTAS}`);
-  return t;
+  return anotarMarcas(t, { anterior, estado: r.estado, ...marcas });
 }
 
 // La revisión vale solo si es de esta vuelta y de esta rama: si revision.mjs no llegó a escribir, no se juzga con
@@ -187,7 +224,7 @@ async function main(argv) {
       revisor: entrada.revisor,
       revision: revisionValida(revision, { vuelta: entrada.vuelta, rama }) ? revision : null,
     });
-    fs.writeFileSync(contrato, aplicarJuicio(textoContrato, r));
+    fs.writeFileSync(contrato, aplicarJuicio(textoContrato, r, { ahora: new Date().toISOString(), operario: opcion("--operario") }));
     salir({
       ok: true,
       decision: r.decision,

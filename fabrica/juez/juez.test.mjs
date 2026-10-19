@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
-import { aplicarJuicio, bloqueJuicio, juzgar, revisionValida, suma } from "./juez.mjs";
+import { aplicarJuicio, bloqueJuicio, juzgar, leerJuicios, revisionValida, suma } from "./juez.mjs";
 import { leerFrontmatter, leerSeccion } from "../guion/contrato.mjs";
 import { decidir } from "../hooks/bloqueos.mjs";
 
@@ -176,4 +176,26 @@ test("jsonParaShell: mismo JSON, y el comando del juez pasa el hook aunque la ev
   assert.equal(r.bloquear, false, r.motivo);
   const crudo = decidir({ tool_name: "Bash", tool_input: { command: JSON.stringify(entrada) }, agent_type: "fabrica-operario", cwd: "/r" });
   assert.equal(crudo.bloquear, true);
+});
+
+test("aplicarJuicio anota fin en contigo o escalado (no en vuelve) y el operario", () => {
+  const enLinea = "---\nid: T-001\nestado: juicio\nvueltas: 0/2\nrama: r\ninicio: 2026-10-19T10:00:00.000Z\n---\n## Juicio\n";
+  const marcas = { ahora: "2026-10-19T10:06:00.000Z", operario: "0/9" };
+  const vuelve = leerFrontmatter(aplicarJuicio(enLinea, con({ revision: conRevisar("tests", "falla") }), marcas));
+  assert.equal(vuelve.fin, undefined);
+  assert.equal(vuelve.operario, "0/9");
+  assert.equal(leerFrontmatter(aplicarJuicio(enLinea, con({}), marcas)).fin, marcas.ahora);
+  assert.equal(leerFrontmatter(aplicarJuicio(enLinea, con({ dudaDiseno: "x" }), marcas)).fin, marcas.ahora);
+});
+
+test("leerJuicios lee de vuelta lo que escribe bloqueJuicio", () => {
+  const plantilla = leer("../contrato/plantilla.md");
+  assert.deepEqual(leerJuicios(plantilla), []);
+  const malo = con({ revision: { ...revision, alcance: { estado: "falla", evidencia: "fuera de \"Puede tocar\": a | b.ts" } } });
+  const t = aplicarJuicio(aplicarJuicio(plantilla, malo), con({ vuelta: 1 }));
+  const js = leerJuicios(t);
+  assert.deepEqual(js.map((j) => [j.intento, j.decision]), [[1, "vuelve"], [2, "contigo"]]);
+  assert.equal(js[0].motivo, malo.motivo);
+  assert.deepEqual(js[0].veredictos.map((v) => v.id), ["C1", "C2", "C3", "C4", "script"]);
+  assert.deepEqual(js[0].veredictos[1], { id: "C2", veredicto: "falla", fuente: "alcance", evidencia: 'fuera de "Puede tocar": a | b.ts' });
 });

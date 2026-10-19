@@ -20,7 +20,8 @@
     "sync-drive": "node scripts/sync-drive.mjs",
     "gen-dotes": "node --import ./scripts/test-resolver.mjs scripts/generar-catalogo-dotes.ts",
     "fabrica:revisar": "node fabrica/comprobaciones/revisar.mjs",
-    "fabrica:test": "node --test 'fabrica/**/*.test.mjs'"
+    "fabrica:test": "node --test 'fabrica/**/*.test.mjs'",
+    "fabrica:ver": "node fabrica/panel/ver.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
