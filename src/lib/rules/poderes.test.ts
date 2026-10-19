@@ -385,10 +385,11 @@ describe("Traslación", () => {
     assert.match(p.resultados.exito!.texto, /paralizado 4 turnos/);
   });
 
-  test("nivel 4: Anclaje de un objetivo pasa a simple; varios a la vez sigue compleja", () => {
+  test("nivel 4: Anclaje de un objetivo pasa a simple; varios a la vez pasa a estándar", () => {
     assert.equal(res("anclaje", 3).economia, "estandar");
+    assert.equal(res("anclaje", 3, { objetivos: "varios" }).economia, "compleja");
     assert.equal(res("anclaje", 4).economia, "simple");
-    assert.equal(res("anclaje", 4, { objetivos: "varios" }).economia, "compleja");
+    assert.equal(res("anclaje", 4, { objetivos: "varios" }).economia, "estandar");
     assert.equal(res("anclaje", 4, { objetivos: "anadir" }).economia, "estandar");
   });
 

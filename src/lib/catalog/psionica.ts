@@ -1923,12 +1923,19 @@ const TRASLACION: Disciplina = {
     },
   ],
   // Nivel 4: "Anclaje pasa a ser acción simple" — la de un objetivo; anclar a
-  // varios a la vez sigue siendo compleja.
+  // varios a la vez pasa de compleja a estándar (Murillo, 2026-09-29: "anclaje
+  // colectivo pasa a acción estándar (nv4)"). Añadir un objetivo no cambia.
   modificadoresEconomia: [
     {
       fuente: "Traslación 4",
       desdeNivelPoseido: 4,
       alcance: { accion: ANCLAJE_ID, opcion: { eje: "objetivos", opcion: "uno" } },
+      op: "baja_un_paso",
+    },
+    {
+      fuente: "Traslación 4: anclaje colectivo",
+      desdeNivelPoseido: 4,
+      alcance: { accion: ANCLAJE_ID, opcion: { eje: "objetivos", opcion: "varios" } },
       op: "baja_un_paso",
     },
   ],

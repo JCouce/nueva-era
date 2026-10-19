@@ -691,6 +691,9 @@ tanda 3 (Proeza con fatiga temporal).
 Tanda 3 hecha (2026-09-30): Proeza, ficha v13 con `fatigaTemporal` (`pagarFatiga`,
 `fatigaEfectiva`, `terminarEscena` en `vitalidad.ts`), fila "Fatiga temporal" con Terminar
 escena en Recursos (también NPC), daño propio al 200 %. **Traslación completa.**
+**Anclaje colectivo en nivel 4 (2026-10-19, T-004):** con Traslación 4, anclar a varios a
+la vez baja de compleja a estándar, como respondió Murillo (antes un supuesto lo dejaba en
+compleja); un objetivo sigue simple y añadir un objetivo, estándar.
 **Contención hecha (2026-09-30):** poder sin tirada con datos en la ficha del modal
 (`AccionPoder.datos`) y ajustes por nivel poseído filtrados por nivel empleado y opción;
 acción aparte para colaborar. Siguiente: Resonancia.
