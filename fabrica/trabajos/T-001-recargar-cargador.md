@@ -133,6 +133,10 @@ queda solo para comparar.
 Ensayo 1 (misma spec, antes de los arreglos F-005 a F-007): el trabajo salió bien pero la línea abortó en el juez
 (F-006). Rama `fabrica/T-001-ensayo1`.
 
+**Ramas que se conservan para comparar** (worktree quitado el 2026-10-19):
+- `fabrica/T-001-ensayo1`: primer ensayo (abortó en el juez, código bueno).
+- `fabrica/T-001-recargar-cargador`: segundo ensayo, `contigo` a la primera.
+
 **Fue bien:** a la primera, con el mismo comportamiento final que el commit del usuario; el operario sin fallos; el
 inspector leyó el código de la base y el revisor comprobó C3-C6 con su propio script.
 **Cambiaríamos:**
