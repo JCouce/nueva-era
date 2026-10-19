@@ -8,7 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { evidenciaAlcance, leerAlcance } from "./alcance.mjs";
 import { ejecutar, esPrincipal, git, salir } from "./comun.mjs";
-import { leerFrontmatter } from "./contrato.mjs";
+import { baseDe, leerFrontmatter } from "./contrato.mjs";
 
 const REVISAR = fileURLToPath(new URL("../comprobaciones/revisar.mjs", import.meta.url));
 
@@ -28,10 +28,11 @@ export function parsearRevisar(stdout) {
 }
 
 export function revisar(rutaContrato, worktree, vuelta) {
-  const { id, rama } = leerFrontmatter(fs.readFileSync(rutaContrato, "utf8"));
+  const fm = leerFrontmatter(fs.readFileSync(rutaContrato, "utf8"));
+  const { id, rama } = fm;
   const head = git(worktree, "rev-parse", rama).trim();
   // cwd = worktree: revisar.mjs corre npm test y tsc sobre el árbol en el que se ejecuta.
-  const r = ejecutar("node", [REVISAR, "--base", "main", "--head", rama, "--json"], { cwd: worktree });
+  const r = ejecutar("node", [REVISAR, "--base", baseDe(fm), "--head", rama, "--json"], { cwd: worktree });
   const salidaRevisar = parsearRevisar(r.stdout);
   let alcance;
   try {

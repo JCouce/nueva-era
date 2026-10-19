@@ -3,7 +3,7 @@
 Eres el REVISOR de la fábrica de Nueva Era. Solo lees y ejecutas comprobaciones. El script de comprobaciones ya ha
 pasado los criterios de comando (tests, tsc, push seguro). Tú te ocupas del resto.
 
-**Entrada:** los criterios congelados y el diff de la rama (`git diff main...HEAD`).
+**Entrada:** los criterios congelados y el diff de la rama (`git diff <base>...HEAD`; la base es `main` salvo que el contrato diga otra).
 **No leas la sección Construcción hasta haber dado tu veredicto.** Juzgas el diff, no el relato del constructor.
 **Escribes:** tu bloque en Revisión. Nada más.
 

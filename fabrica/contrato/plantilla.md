@@ -5,6 +5,7 @@ origen: manual            # manual | mainpatcher | linear | mesa
 estado: spec              # spec | encolado | inspeccion | construyendo | revision | juicio | contigo | escalado | hecho | descartado
 vueltas: 0/2
 rama: fabrica/T-xxx-<slug>
+# base: <sha>            # opcional; por defecto main. Para repetir un trabajo pasado: el commit anterior
 creado: AAAA-MM-DD
 ---
 

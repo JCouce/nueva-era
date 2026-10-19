@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { ejecutar, esPrincipal, git, raizPrincipal, salir } from "./comun.mjs";
-import { leerFrontmatter } from "./contrato.mjs";
+import { baseDe, leerFrontmatter } from "./contrato.mjs";
 
 export function rutaWorktree(raiz, id) {
   return path.join(path.dirname(raiz), `${path.basename(raiz)}-trabajos`, id);
@@ -87,7 +87,9 @@ function prepararPrisma(destino) {
 }
 
 export function preparar(rutaContrato) {
-  const { id, rama } = leerFrontmatter(fs.readFileSync(rutaContrato, "utf8"));
+  const fm = leerFrontmatter(fs.readFileSync(rutaContrato, "utf8"));
+  const { id, rama } = fm;
+  const base = baseDe(fm);
   validarContrato({ id, rama });
   const raiz = raizPrincipal(path.dirname(path.resolve(rutaContrato)));
   const destino = rutaWorktree(raiz, id);
@@ -97,12 +99,13 @@ export function preparar(rutaContrato) {
 
   if (accion !== "reutilizar") {
     fs.mkdirSync(path.dirname(destino), { recursive: true });
-    if (accion === "crear-rama") git(raiz, "worktree", "add", "-b", rama, destino, "main");
+    if (accion === "crear-rama") git(raiz, "worktree", "add", "-b", rama, destino, base);
     else git(raiz, "worktree", "add", destino, rama);
   }
   return {
     worktree: destino,
     rama,
+    base,
     creado: accion !== "reutilizar",
     ramaNueva: accion === "crear-rama",
     nodeModules: prepararNodeModules(raiz, destino),

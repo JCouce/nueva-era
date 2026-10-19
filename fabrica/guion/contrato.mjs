@@ -157,6 +157,10 @@ export function criterios(texto) {
   return res;
 }
 
+// Commit del que sale la rama y contra el que se compara. Por defecto main; otro valor sirve para repetir un trabajo
+// pasado (el estreno) desde el commit anterior a él.
+export const baseDe = (fm) => fm.base || "main";
+
 export function resumen(texto) {
   const fm = leerFrontmatter(texto);
   return {
@@ -164,6 +168,7 @@ export function resumen(texto) {
     estado: fm.estado,
     vueltas: fm.vueltas,
     rama: fm.rama,
+    base: baseDe(fm),
     puedeTocar: puedeTocar(texto),
     criterios: criterios(texto),
   };
@@ -219,8 +224,8 @@ function main(argv) {
       const r = cambiarEstado(texto, estado, desde, { ahora: new Date().toISOString(), operario });
       fs.writeFileSync(ruta, r.texto);
       // Salida corta: la copia el operario.
-      const { id, vueltas, rama, criterios: cs } = resumen(r.texto);
-      salir({ ok: true, anterior: r.anterior, estado, id, vueltas, rama, criterios: cs.map((c) => c.id) });
+      const { id, vueltas, rama, base, criterios: cs } = resumen(r.texto);
+      salir({ ok: true, anterior: r.anterior, estado, id, vueltas, rama, base, criterios: cs.map((c) => c.id) });
     }
     throw new Error(`orden desconocida: ${orden}`);
   } catch (error) {

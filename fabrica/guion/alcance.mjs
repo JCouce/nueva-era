@@ -4,7 +4,7 @@
 // Salida: {"estado":"pasa"|"falla","fuera":[...],"sinCommitear":[...],"cambiados":[...],"puedeTocar":[...]}
 import fs from "node:fs";
 import { esPrincipal, git, salir } from "./comun.mjs";
-import { leerFrontmatter, puedeTocar } from "./contrato.mjs";
+import { baseDe, leerFrontmatter, puedeTocar } from "./contrato.mjs";
 
 // `**` cruza carpetas, `*` y `?` no. Sin comodines: ruta exacta, o carpeta si acaba en `/`.
 export function globARegex(glob) {
@@ -43,10 +43,11 @@ export function evidenciaAlcance(r) {
 
 export function leerAlcance(rutaContrato, worktree) {
   const texto = fs.readFileSync(rutaContrato, "utf8");
-  const { rama } = leerFrontmatter(texto);
+  const fm = leerFrontmatter(texto);
+  const { rama } = fm;
   if (!rama) throw new Error("el contrato no tiene rama");
   // --no-renames: un renombrado cuenta como borrar el viejo y crear el nuevo, y los dos tienen que caber.
-  const cambiados = git(worktree, "diff", "--name-only", "--no-renames", `main...${rama}`).split("\n").filter(Boolean);
+  const cambiados = git(worktree, "diff", "--name-only", "--no-renames", `${baseDe(fm)}...${rama}`).split("\n").filter(Boolean);
   const sinCommitear = git(worktree, "status", "--porcelain", "--untracked-files=all")
     .split("\n")
     .filter(Boolean)

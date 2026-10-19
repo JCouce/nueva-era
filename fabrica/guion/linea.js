@@ -119,13 +119,19 @@ async function linea() {
   phase('Inspección')
   const inicio = await ponerEstado('inspeccion', 'Inspección', 'encolado')
   const { id, rama } = inicio
+  const BASE = inicio.base || 'main'
+  // Repetir un trabajo pasado: el arreglo real ya está en main. Mirarlo sería copiar el examen.
+  const SIN_CHULETA = BASE === 'main' ? '' : `
+Este trabajo sale de ${BASE}, no de main: el código de referencia es el de ${BASE}. NO mires main, commits posteriores
+a ${BASE} ni otras ramas (nada de git log/show/diff sobre ellos): es un ensayo y la solución ya existe.`
   const ids = inicio.criterios
   log(`${id}: ${ids.length} criterios (${ids.join(', ')}), rama ${rama}`)
 
   const inspeccion = await agent(
     `Contrato: ${CONTRATO}
 Escribe tu sección Inspección en ese archivo (ruta absoluta). Si ya tiene una pasada anterior, añade la nueva debajo con
-el título "Pasada N", sin borrar la anterior.
+el título "Pasada N", sin borrar la anterior.${BASE === 'main' ? '' : `
+El código de referencia es el de ${BASE}: léelo con \`git show ${BASE}:<ruta>\`, no del árbol principal.`}${SIN_CHULETA}
 Devuelve tu veredicto y un resumen de 1-3 líneas (qué criterio tiene problema y por qué, o "ok").`,
     {
       agentType: 'fabrica-inspector', phase: 'Inspección', label: `inspector:${id}`,
@@ -172,7 +178,7 @@ debajo del anterior, sin borrarlo.`
 Worktree del trabajo: ${W}, en la rama ${rama}. Trabaja SOLO ahí: cada comando de Bash empieza por \`cd ${q(W)} && \`,
 y lees y editas el código con rutas absolutas bajo ${W}. En el árbol principal no tocas nada salvo tu sección del contrato.
 Tu sección Construcción la escribes en el contrato del árbol principal, por su ruta absoluta (${CONTRATO}).
-Intento ${intento} de ${MAX_VUELTAS + 1}.${enVuelta}
+Intento ${intento} de ${MAX_VUELTAS + 1}.${enVuelta}${SIN_CHULETA}
 Al terminar, deja todo commiteado en la rama (el worktree limpio). Devuelve un resumen de 2-4 líneas y, si paraste,
 el motivo en "bloqueo" (si no, null).`,
       {
@@ -202,11 +208,11 @@ el motivo en "bloqueo" (si no, null).`,
       if (suyos.length) {
         revisor = await agent(
           `Contrato: ${CONTRATO} (árbol principal). Es el único que te toca.
-Worktree del trabajo: ${W}, rama ${rama}. El diff es \`git -C ${q(W)} diff main...${rama}\`. Lees el código con rutas
+Worktree del trabajo: ${W}, rama ${rama}. El diff es \`git -C ${q(W)} diff ${BASE}...${rama}\`. Lees el código con rutas
 absolutas bajo ${W}; si necesitas la app, la levantas desde ahí (\`cd ${q(W)} && npx next dev -p <puerto libre>\`).
 Tu bloque va en la sección Revisión del contrato del árbol principal, por su ruta absoluta (${CONTRATO}).
 Intento ${intento}${vuelta > 0 ? `: añade tu bloque como "### Intento ${intento}" debajo del anterior, sin borrarlo` : ''}.
-Ya votados por script, no los votes tú: C1 (tests y tsc), C2 (alcance) y push seguro. Resultado: ${rev.revisar}; alcance ${rev.alcance}. Detalle en ${rev.archivo}.
+Ya votados por script, no los votes tú: C1 (tests y tsc), C2 (alcance) y push seguro. Resultado: ${rev.revisar}; alcance ${rev.alcance}. Detalle en ${rev.archivo}.${SIN_CHULETA}
 Te tocan: ${suyos.join(', ')}. Devuelve por cada uno veredicto y evidencia; en "dudaDiseno", el motivo si el trabajo
 plantea una decisión de diseño que no se puede resolver con los criterios (si no, null); los hallazgos, aparte.`,
           {
