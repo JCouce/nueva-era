@@ -52,9 +52,9 @@ Encargo, Spec y Criterios se congelan con el ok del usuario (estado pasa a "enco
 <!-- usuario · aprobado | descartado | pide cambios, y por qué -->
 
 ## Métricas y retro
-| vueltas | minutos | tokens | ¿retocado antes del push? |
-|---|---|---|---|
-| | | | |
+| vueltas | minutos | tokens | operario (fallos/llamadas) | ¿retocado antes del push? |
+|---|---|---|---|---|
+| | | | | |
 
 **Fue bien:**
 **Cambiaríamos:**

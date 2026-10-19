@@ -876,6 +876,11 @@ y menos informe, para arreglos de una línea. Hasta que exista, todo pasa por el
 **Idea para más adelante (usuario, 2026-10-16):** correr el script de revisión de la tanda 2 también como GitHub
 Action en cada push.
 
+**Medir el operario (usuario, 2026-10-19):** el operario de la línea es un LLM que ejecuta comandos y copia su salida.
+Se queda, pero cada trabajo apunta en Métricas sus fallos/llamadas (`operario` del resumen de la línea). Si el ratio
+pasa del 5 %, se juntan pasos en scripts más gordos (unas 4 llamadas por trabajo en vez de unas 10); si aun así da
+guerra, o al llegar al cron (N5), se sustituye el Workflow por un orquestador en Node con `claude -p`.
+
 **Escalera:** N1 línea a mano · N2 revisores especializados con oráculo · N3 tolva MainPatcher (examen: reproducir los
 syncs commiteados, recall ≥95 %) · N4 sin "tu ok" a la spec en lo pequeño · N5 cron y panel vivo.
 

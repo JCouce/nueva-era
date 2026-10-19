@@ -70,7 +70,11 @@ const OPERARIO_SCHEMA = {
   required: ['codigo', 'salida'],
 }
 
+// Ratio de fallos del operario: es un LLM transcribiendo, y se mide para decidir si merece la pena sustituirlo.
+const OPERARIO = { llamadas: 0, sinRespuesta: 0, sinJson: 0, sumaMal: 0 }
+
 async function operario(comando, etiqueta, fase) {
+  OPERARIO.llamadas++
   const r = await agent(
     `Ejecuta este comando con Bash, una sola vez y tal cual, sin cambiar ni un carácter. Va entre las marcas, sin ellas:
 
@@ -81,8 +85,13 @@ ${comando}
 Devuelve en "codigo" su código de salida y en "salida" su stdout completo, sin tocarlo.`,
     { agentType: 'fabrica-operario', schema: OPERARIO_SCHEMA, label: `operario:${etiqueta}`, phase: fase, effort: 'low' },
   )
-  if (!r) return { ok: false, error: `el operario (${etiqueta}) no devolvió nada` }
+  if (!r) {
+    OPERARIO.sinRespuesta++
+    return { ok: false, error: `el operario (${etiqueta}) no devolvió nada` }
+  }
   const json = ultimoJson(r.salida)
+  if (!json) OPERARIO.sinJson++
+  else if (json.ok === false && json.error === 'suma') OPERARIO.sumaMal++
   if (!json) return { ok: false, error: `${etiqueta}: la salida no trae JSON (código ${r.codigo}): ${String(r.salida).slice(-600)}` }
   return json
 }
@@ -260,6 +269,7 @@ plantea una decisión de diseño que no se puede resolver con los criterios (si 
     inspeccion: inspeccion.resumen,
     construccion,
     hallazgos,
+    operario: OPERARIO,
   }
 }
 
@@ -272,5 +282,5 @@ try {
   if (error instanceof FalloLinea) {
     try { await ponerEstado('escalado', 'Juicio') } catch { /* el motivo ya va en la respuesta */ }
   }
-  return { fin: 'error', motivo, contrato: CONTRATO }
+  return { fin: 'error', motivo, contrato: CONTRATO, operario: OPERARIO }
 }
