@@ -64,6 +64,11 @@ test("criterios del ejemplo", () => {
   assert.equal(cs[1].oraculo, "`git diff --stat`");
 });
 
+test("criterios: un id que no es C<número> rompe en vez de saltarse (F-010)", () => {
+  const texto = "## Criterios\n| # | Qué | Oráculo |\n|---|---|---|\n| C1 | algo | comando |\n| C6b | otra cosa | navegador |\n";
+  assert.throws(() => criterios(texto), /C6b/);
+});
+
 test("criterios de la plantilla: la fila vacía C3 no cuenta", () => {
   assert.deepEqual(criterios(plantilla).map((c) => c.id), ["C1", "C2"]);
 });

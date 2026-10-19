@@ -153,7 +153,10 @@ export function criterios(texto) {
   for (const l of leerSeccion(texto, "Criterios").split("\n")) {
     if (!l.trim().startsWith("|")) continue;
     const [id, que = "", oraculo = ""] = celdas(l);
-    if (!/^C\d+$/.test(id) || !que) continue;
+    if (id === "#" || /^:?-+:?$/.test(id)) continue;
+    // Una fila con otro id (C6b, c3…) no se puede saltar en silencio: nadie la comprobaría (F-010).
+    if (!/^C\d+$/.test(id)) throw new Error(`criterio con id no válido: "${id}" (tiene que ser C<número>)`);
+    if (!que) continue;
     res.push({ id, texto: que, oraculo });
   }
   return res;

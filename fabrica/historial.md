@@ -7,6 +7,14 @@ Formato: `F-xxx · fecha · dónde · estado (abierto | arreglado | asumido)`.
 
 ---
 
+### F-010 · 2026-10-19 · lector de criterios (T-002) · arreglado
+**Qué pasó:** al corregir el contrato tras la inspección se añadió un criterio "C6b". El lector solo reconocía
+`C<número>` y se saltó la fila sin avisar: ni el revisor ni el juez la habrían comprobado. Se vio en la salida al
+relanzar y se paró la línea a mano.
+**Arreglo:** una fila de criterios con otro id rompe con error en vez de saltarse. El criterio pasó a C10.
+**Lección:** un lector que descarta en silencio lo que no entiende convierte un error de forma en un agujero de
+control. Mejor fallar ruidoso.
+
 ### F-009 · 2026-10-19 · juez, tabla del Juicio (T-001) · abierto
 **Qué pasó:** la tabla corta la evidencia a 140 caracteres y algunas quedan a medias ("recursos.ts:312 (").
 **Arreglo:** pendiente (cortar por frase, o dejar la evidencia entera en `.votos` y en la tabla solo un resumen).
