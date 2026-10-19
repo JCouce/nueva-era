@@ -2,19 +2,19 @@
 // El juez de la fábrica. Sin LLM: reglas fijas sobre los veredictos por criterio.
 //   - C1 lo vota el script (tests + tsc de revisar.mjs), C2 lo vota alcance.mjs, el resto el revisor.
 //   - "script" (lint, ficha, prod de revisar.mjs) también vota; "bd" distinto de "no aplica" escala.
-//   - Sin veredicto o sin evidencia, falla. Los hallazgos del revisor no votan (ni llegan aquí).
+//   - Sin veredicto o sin evidencia, falla. Los hallazgos del revisor no votan.
 //   - Bloqueo del constructor o duda de diseño del revisor → escalado.
 //   - Algo falla: vuelta < 2 → vuelve; en la vuelta 2 (tercer intento) → escalado. Nada falla → contigo.
 // Escribe un bloque en la sección Juicio (sin borrar los de vueltas anteriores) y `estado`/`vueltas` del contrato.
 //
-// Uso: node fabrica/juez/juez.mjs <ruta-contrato> [--suma <hex>] [--operario <f>/<l>] [--entrada <archivo>]
-//      (sin --entrada, stdin)
-// Entrada: {"vuelta":0,"bloqueo":null,"dudaDiseno":null,"revisor":{"criterios":[{"id","veredicto","evidencia"}]}}
-// La revisión por script la lee de fabrica/trabajos/.revision-T-xxx.json (la deja revision.mjs).
-// --suma: FNV-1a de la entrada tal como la manda el guion; si no cuadra, el operario la ha copiado mal (código 3).
+// Uso: node fabrica/juez/juez.mjs <ruta-contrato> --vuelta <n> [--operario <f>/<l>]
+// El comando no lleva datos: todo lo lee de los archivos que dejan las estaciones junto al contrato (entregas.mjs):
+// .revision-T-xxx.json (revision.mjs), .votos-T-xxx.json (revisor) y .obra-T-xxx.json (constructor, si paró).
+// Si los votos faltan o no valen, los criterios del revisor fallan con ese motivo; la línea no se aborta.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { leerObra, leerVotos } from "../guion/entregas.mjs";
 import { rutaRevision } from "../guion/revision.mjs";
 import {
   anadirASeccion,
@@ -28,16 +28,6 @@ import {
 
 export const MAX_VUELTAS = 2;
 const VEREDICTOS = new Set(["pasa", "falla", "no aplica"]);
-
-// FNV-1a de 32 bits sobre las unidades UTF-16. El guion (linea.js) tiene una copia idéntica; un test las compara.
-export function suma(texto) {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < texto.length; i++) {
-    h ^= texto.charCodeAt(i);
-    h = Math.imul(h, 0x01000193) >>> 0;
-  }
-  return h.toString(16).padStart(8, "0");
-}
 
 const v = (id, veredicto, evidencia, fuente) => ({ id, veredicto, evidencia, fuente });
 const texto = (x) => (typeof x === "string" ? x.trim() : "");
@@ -71,7 +61,8 @@ function veredictoScript(revision) {
   return v("script", "pasa", vistos.join("; ") || "sin comprobaciones de push seguro", "script");
 }
 
-function veredictoRevisor(id, revisor) {
+function veredictoRevisor(id, revisor, errorVotos) {
+  if (!revisor && errorVotos) return v(id, "falla", errorVotos, "revisor");
   const suyos = (revisor?.criterios ?? []).filter((c) => c?.id === id);
   if (!suyos.length) return v(id, "falla", "el revisor no dio veredicto", "revisor");
   const malo = suyos.find((c) => !VEREDICTOS.has(c.veredicto) || !texto(c.evidencia));
@@ -84,10 +75,11 @@ function veredictoRevisor(id, revisor) {
   return v(id, elegido.veredicto, texto(elegido.evidencia), "revisor");
 }
 
-export function juzgar({ criterios, vuelta, bloqueo = null, dudaDiseno = null, revision = null, revisor = null }) {
+// errorVotos: por qué no hay votos del revisor (archivo ausente o mal formado); es la evidencia de sus criterios.
+export function juzgar({ criterios, vuelta, bloqueo = null, dudaDiseno = null, revision = null, revisor = null, errorVotos = null }) {
   if (!Number.isInteger(vuelta) || vuelta < 0 || vuelta > MAX_VUELTAS) throw new Error(`vuelta no válida: ${vuelta}`);
   const veredictos = criterios.map(({ id }) =>
-    id === "C1" ? veredictoC1(revision) : id === "C2" ? veredictoC2(revision) : veredictoRevisor(id, revisor),
+    id === "C1" ? veredictoC1(revision) : id === "C2" ? veredictoC2(revision) : veredictoRevisor(id, revisor, errorVotos),
   );
   veredictos.push(veredictoScript(revision));
   const fallan = veredictos.filter((x) => x.veredicto === "falla").map((x) => x.id);
@@ -199,32 +191,29 @@ function salir(objeto, codigo = 0) {
   process.exit(codigo);
 }
 
-async function main(argv) {
+function main(argv) {
   const opcion = (n) => { const k = argv.indexOf(n); return k === -1 ? null : argv[k + 1]; };
   const contrato = argv.find((a, i) => !a.startsWith("--") && !argv[i - 1]?.startsWith("--"));
   try {
-    if (!contrato) throw new Error("uso: juez.mjs <ruta-contrato> [--suma <hex>] [--entrada <archivo>]");
-    let crudo = "";
-    if (opcion("--entrada")) crudo = fs.readFileSync(opcion("--entrada"), "utf8");
-    else for await (const trozo of process.stdin) crudo += trozo;
-    crudo = crudo.trim();
-    const esperada = opcion("--suma");
-    if (esperada && suma(crudo) !== esperada) {
-      salir({ ok: false, error: "suma", esperada, calculada: suma(crudo) }, 3);
+    const vuelta = Number(opcion("--vuelta"));
+    if (!contrato || opcion("--vuelta") === null || !Number.isInteger(vuelta)) {
+      throw new Error("uso: juez.mjs <ruta-contrato> --vuelta <n> [--operario <f>/<l>]");
     }
-    const entrada = JSON.parse(crudo);
-    const textoContrato = fs.readFileSync(contrato, "utf8");
+    const ruta = path.resolve(contrato);
+    const textoContrato = fs.readFileSync(ruta, "utf8");
     const { id, rama } = leerFrontmatter(textoContrato);
-    const revision = leerJson(rutaRevision(path.resolve(contrato), id));
+    const revision = leerJson(rutaRevision(ruta, id));
+    const { votos, error: errorVotos } = leerVotos(ruta, { id, vuelta });
     const r = juzgar({
       criterios: leerCriterios(textoContrato),
-      vuelta: entrada.vuelta,
-      bloqueo: entrada.bloqueo,
-      dudaDiseno: entrada.dudaDiseno,
-      revisor: entrada.revisor,
-      revision: revisionValida(revision, { vuelta: entrada.vuelta, rama }) ? revision : null,
+      vuelta,
+      bloqueo: leerObra(ruta, { id, vuelta }).bloqueo,
+      dudaDiseno: votos?.dudaDiseno ?? null,
+      revisor: votos,
+      errorVotos,
+      revision: revisionValida(revision, { vuelta, rama }) ? revision : null,
     });
-    fs.writeFileSync(contrato, aplicarJuicio(textoContrato, r, { ahora: new Date().toISOString(), operario: opcion("--operario") }));
+    fs.writeFileSync(ruta, aplicarJuicio(textoContrato, r, { ahora: new Date().toISOString(), operario: opcion("--operario") }));
     salir({
       ok: true,
       decision: r.decision,

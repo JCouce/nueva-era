@@ -30,6 +30,7 @@ Tú ⇄ Jefe ──(tu ok)──▶ cola ─▶ inspector ─▶ constructor ─
 | Orquestador | Guion de Workflow: orden, puertas y vueltas en código | `guion/linea.js` | hecho (tanda 3) |
 | Scripts de la línea | Estado del contrato, worktree, revisión por script, alcance (C2) y cierre del trabajo | `guion/*.mjs` | hecho (tanda 3) |
 | Juez | Reglas fijas, sin LLM: un "falla" devuelve; a la tercera o ante diseño, escala | `juez/juez.mjs` | hecho (tanda 3) |
+| Entregas | Lo que decide cada estación, en JSON junto al contrato (`.revision`, `.votos`, `.obra`) | `guion/entregas.mjs` | hecho |
 | Operario | Agente que ejecuta tal cual los scripts deterministas del guion (un guion no tiene shell) | `.claude/agents/fabrica-operario.md` | hecho (tanda 3) |
 | Skill | `/fabrica`: carga `jefe.md` y lanza el guion | `.claude/skills/fabrica/SKILL.md` | hecho (tanda 3) |
 | Visor | Un trabajo en vivo en la terminal: estaciones, criterios, juez, cronómetro y fallos del operario | `panel/ver.mjs` | hecho |
@@ -46,6 +47,9 @@ Tú ⇄ Jefe ──(tu ok)──▶ cola ─▶ inspector ─▶ constructor ─
 - Sin evidencia, el veredicto es "falla". Un revisor sin oráculo puede anotar, pero no vota.
 - Como mucho 2 vueltas y 3 trabajos abiertos a la vez.
 - Los límites van en las herramientas de cada agente y en el hook, no en el prompt.
+- Lo que decide va en un archivo estructurado; lo que explica, en el md. Ningún LLM lleva datos de un paso a otro:
+  cada estación escribe su resultado en un JSON junto al contrato (`guion/entregas.mjs`) y el código lo lee de ahí.
+  Los comandos que teclea el operario son fijos y cortos (rutas y números), nunca llevan datos.
 - Un trabajo que cambie `prisma/schema.prisma` escala al usuario: en el N1 los worktrees comparten la BD local.
 - Hay un solo proceso y no tiene excepciones, aunque el trabajo sea mínimo (incluida su línea en `docs/tareas.md`).
   Si algún tipo de trabajo necesita otro camino, se crea como un proceso nuevo de la fábrica.
@@ -59,13 +63,18 @@ compensa.
 
 Qué hace el guion, en orden:
 
-1. Contrato a `inspeccion` (solo si estaba en `encolado`) e inspector. Si devuelve, el contrato vuelve a `spec` y la
-   línea acaba en `vuelve al jefe`.
-2. `preparar.mjs`: worktree en `../nuevaEra-trabajos/T-xxx` con la rama del contrato, `node_modules` clonado (APFS;
-   Turbopack no acepta un enlace que salga del proyecto), el cliente de Prisma generado y `.env` enlazado al del repo
-   (nunca copiado; si apunta a `neon.tech`, no se enlaza y lo avisa). Idempotente.
-3. Hasta 3 intentos (2 vueltas): constructor en el worktree → `revision.mjs` (`revisar.mjs` dentro del worktree +
-   `alcance.mjs`, a `trabajos/.revision-T-xxx.json`) → revisor, para los criterios que no son C1 ni C2 → juez.
+1. Contrato a `inspeccion` (solo si estaba en `encolado`) y `preparar.mjs`: worktree en `../nuevaEra-trabajos/T-xxx`
+   con la rama del contrato, `node_modules` clonado (APFS; Turbopack no acepta un enlace que salga del proyecto), el
+   cliente de Prisma generado y `.env` enlazado al del repo (nunca copiado; si apunta a `neon.tech`, no se enlaza y lo
+   avisa). Idempotente.
+2. Inspector, que lee el código de la base en ese worktree (no tiene shell). Si devuelve, el contrato vuelve a `spec`,
+   el worktree se queda y la línea acaba en `vuelve al jefe`.
+3. Hasta 3 intentos (2 vueltas): contrato a `construyendo` (borra las entregas del intento anterior) → constructor en
+   el worktree → `revision.mjs` (`revisar.mjs` dentro del worktree + `alcance.mjs`, a `trabajos/.revision-T-xxx.json`)
+   → revisor, para los criterios que no son C1 ni C2, que escribe sus votos en `trabajos/.votos-T-xxx.json` → juez,
+   con un comando fijo (`juez.mjs <contrato> --vuelta N --operario f/l`) que lo lee todo de esos archivos.
+   Si el constructor para, deja `trabajos/.obra-T-xxx.json` con el bloqueo: `revision.mjs` se salta la revisión y el
+   juez escala.
 4. `contigo`, `escalado` o `error`: se para y el Jefe te lo cuenta.
 
 Para verlo mientras corre, abre un split de Ghostty y deja ahí `npm run fabrica:ver` (sin argumento coge el trabajo

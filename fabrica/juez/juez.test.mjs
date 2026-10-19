@@ -1,10 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { aplicarJuicio, bloqueJuicio, juzgar, leerJuicios, revisionValida, suma } from "./juez.mjs";
+import { aplicarJuicio, bloqueJuicio, juzgar, leerJuicios, revisionValida } from "./juez.mjs";
 import { leerFrontmatter, leerSeccion } from "../guion/contrato.mjs";
-import { decidir } from "../hooks/bloqueos.mjs";
+import { rutaEntrega } from "../guion/entregas.mjs";
 
 const leer = (rel) => fs.readFileSync(fileURLToPath(new URL(rel, import.meta.url)), "utf8");
 
@@ -84,6 +87,13 @@ test("criterio sin veredicto, sin evidencia o con veredicto raro → falla", () 
   assert.deepEqual(con({ revisor: null }).fallan, ["C3", "C4"]);
 });
 
+test("sin votos válidos, los criterios del revisor fallan con el motivo del archivo", () => {
+  const r = con({ revisor: null, errorVotos: "el revisor no dejó sus votos en .votos-T-001.json" });
+  assert.deepEqual(r.fallan, ["C3", "C4"]);
+  assert.equal(r.decision, "vuelve");
+  assert.match(r.veredictos[2].evidencia, /no dejó sus votos/);
+});
+
 test("veredictos duplicados del revisor: si uno falla, falla", () => {
   const revisor = { criterios: [...revisorOk.criterios, { id: "C3", veredicto: "falla", evidencia: "segundo vistazo" }] };
   assert.deepEqual(con({ revisor }).fallan, ["C3"]);
@@ -140,44 +150,6 @@ test("bloqueJuicio escapa | en la tabla", () => {
   assert.match(bloqueJuicio(r), /\| C3 \| pasa \| revisor \| a \\\| b \|/);
 });
 
-// --- el guion (linea.js) no se puede importar: se sacan sus funciones del texto y se comparan con las del juez ---
-const guion = leer("../guion/linea.js");
-const funcionDelGuion = (nombre) => {
-  const m = guion.match(new RegExp(`function ${nombre}\\([^)]*\\) \\{[\\s\\S]*?\\n\\}`));
-  assert.ok(m, `linea.js no tiene function ${nombre}`);
-  return new Function(`${m[0]}; return ${nombre};`)();
-};
-
-test("suma() del guion es la misma que la del juez", () => {
-  const sumaGuion = funcionDelGuion("suma");
-  for (const s of ["", "abc", '{"vuelta":0,"evidencia":"Modo de ataque: Simple — ñ"}']) {
-    assert.equal(sumaGuion(s), suma(s), s);
-  }
-  assert.equal(suma("abc"), "1a47e90b");
-});
-
-test("jsonParaShell: mismo JSON, y el comando del juez pasa el hook aunque la evidencia sea peligrosa", () => {
-  const jsonParaShell = funcionDelGuion("jsonParaShell");
-  const entrada = {
-    vuelta: 1,
-    bloqueo: null,
-    dudaDiseno: null,
-    revisor: {
-      criterios: [
-        { id: "C3", veredicto: "falla", evidencia: "hace git push y lee .env con DATABASE_URL=x; npm run build; neon.tech; make-master\n'comilla' `tick` $HOME" },
-      ],
-    },
-  };
-  const texto = jsonParaShell(entrada);
-  assert.deepEqual(JSON.parse(texto), entrada);
-  assert.ok(!texto.includes("\n"));
-  const comando = `node '/r/fabrica/juez/juez.mjs' '/r/fabrica/trabajos/T-001-x.md' --suma ${suma(texto)} <<'FIN_JUEZ'\n${texto}\nFIN_JUEZ`;
-  const r = decidir({ tool_name: "Bash", tool_input: { command: comando }, agent_type: "fabrica-operario", cwd: "/r" });
-  assert.equal(r.bloquear, false, r.motivo);
-  const crudo = decidir({ tool_name: "Bash", tool_input: { command: JSON.stringify(entrada) }, agent_type: "fabrica-operario", cwd: "/r" });
-  assert.equal(crudo.bloquear, true);
-});
-
 test("aplicarJuicio anota fin en contigo o escalado (no en vuelve) y el operario", () => {
   const enLinea = "---\nid: T-001\nestado: juicio\nvueltas: 0/2\nrama: r\ninicio: 2026-10-19T10:00:00.000Z\n---\n## Juicio\n";
   const marcas = { ahora: "2026-10-19T10:06:00.000Z", operario: "0/9" };
@@ -198,4 +170,63 @@ test("leerJuicios lee de vuelta lo que escribe bloqueJuicio", () => {
   assert.equal(js[0].motivo, malo.motivo);
   assert.deepEqual(js[0].veredictos.map((v) => v.id), ["C1", "C2", "C3", "C4", "script"]);
   assert.deepEqual(js[0].veredictos[1], { id: "C2", veredicto: "falla", fuente: "alcance", evidencia: 'fuera de "Puede tocar": a | b.ts' });
+});
+
+// --- CLI: el juez lo lee todo de archivos junto al contrato ---
+const JUEZ = fileURLToPath(new URL("./juez.mjs", import.meta.url));
+
+function montar({ votos, obra, conRevision = true }) {
+  const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "juez-")), "fabrica", "trabajos");
+  fs.mkdirSync(dir, { recursive: true });
+  const contrato = path.join(dir, "T-001-x.md");
+  const texto = leer("../contrato/plantilla.md")
+    .replace("id: T-xxx", "id: T-001")
+    .replace("rama: fabrica/T-xxx-<slug>", "rama: fabrica/T-001-x")
+    .replace("estado: spec   ", "estado: revision")
+    .replace("| C3 | | |", "| C3 | dice X | navegador |\n| C4 | dice Y | diff |");
+  fs.writeFileSync(contrato, texto);
+  if (conRevision) fs.writeFileSync(rutaEntrega(contrato, "revision", "T-001"), JSON.stringify(revision));
+  if (votos !== undefined) fs.writeFileSync(rutaEntrega(contrato, "votos", "T-001"), typeof votos === "string" ? votos : JSON.stringify(votos));
+  if (obra !== undefined) fs.writeFileSync(rutaEntrega(contrato, "obra", "T-001"), JSON.stringify(obra));
+  return contrato;
+}
+const juez = (contrato, ...args) => {
+  const r = spawnSync("node", [JUEZ, contrato, ...args], { encoding: "utf8" });
+  return { codigo: r.status, json: JSON.parse(r.stdout.trim().split("\n").at(-1)) };
+};
+const votos = { id: "T-001", vuelta: 0, ...revisorOk, dudaDiseno: null, hallazgos: [] };
+
+test("CLI: votos válidos → contigo, y la tabla del Juicio sale del archivo", () => {
+  const c = montar({ votos });
+  const r = juez(c, "--vuelta", "0", "--operario", "0/5");
+  assert.equal(r.codigo, 0);
+  assert.equal(r.json.decision, "contigo");
+  const t = fs.readFileSync(c, "utf8");
+  assert.equal(leerFrontmatter(t).estado, "contigo");
+  assert.equal(leerFrontmatter(t).operario, "0/5");
+  assert.match(leerSeccion(t, "Juicio"), /\| C3 \| pasa \| revisor \| combate\.ts:40 \|/);
+});
+
+test("CLI: sin .votos o con votos de otra vuelta → C3 y C4 fallan con motivo, sin abortar", () => {
+  const sin = juez(montar({}), "--vuelta", "0");
+  assert.equal(sin.codigo, 0);
+  assert.equal(sin.json.decision, "vuelve");
+  assert.deepEqual(sin.json.fallan, ["C3", "C4"]);
+  const c = montar({ votos: { ...votos, vuelta: 1 } });
+  assert.deepEqual(juez(c, "--vuelta", "0").json.fallan, ["C3", "C4"]);
+  assert.match(leerSeccion(fs.readFileSync(c, "utf8"), "Juicio"), /vuelta 1, no de la 0/);
+  assert.deepEqual(juez(montar({ votos: "{roto" }), "--vuelta", "0").json.fallan, ["C3", "C4"]);
+});
+
+test("CLI: duda de diseño del archivo de votos y bloqueo de .obra escalan", () => {
+  assert.equal(juez(montar({ votos: { ...votos, dudaDiseno: "¿catálogo o regla?" } }), "--vuelta", "0").json.decision, "escalado");
+  const r = juez(montar({ obra: { id: "T-001", vuelta: 0, bloqueo: "hay que tocar schema.prisma" }, conRevision: false }), "--vuelta", "0");
+  assert.equal(r.json.decision, "escalado");
+  assert.match(r.json.motivo, /bloqueo: hay que tocar schema\.prisma/);
+});
+
+test("CLI: sin --vuelta, error de uso (código 1)", () => {
+  const r = juez(montar({ votos }));
+  assert.equal(r.codigo, 1);
+  assert.match(r.json.error, /--vuelta/);
 });

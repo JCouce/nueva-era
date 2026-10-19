@@ -1,2 +1,5 @@
-# Revisión por script de cada trabajo (la deja guion/revision.mjs y la lee el juez). Se regenera en cada vuelta.
+# Entregas de cada trabajo, junto al contrato (guion/entregas.mjs): las escriben revision.mjs (.revision), el revisor
+# (.votos) y el constructor si para (.obra), y las lee el juez. Se borran al empezar cada intento.
 trabajos/.revision-*.json
+trabajos/.votos-*.json
+trabajos/.obra-*.json

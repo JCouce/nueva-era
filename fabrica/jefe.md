@@ -71,7 +71,7 @@ El contrato vive en main y no viaja en la rama: se commitea al cerrar.
 
 1. Escribe con el usuario la sección Decisión. La primera línea empieza por `aprobado`, `descartado` o
    `pide cambios`, y sigue el porqué. Rellena también Métricas y retro; en `operario` van fallos/llamadas
-   (`sinRespuesta + sinJson + sumaMal` / `llamadas`, del campo `operario` del resumen de la línea).
+   (`sinRespuesta + sinJson` / `llamadas`, del campo `operario` del resumen de la línea).
 2. Ejecuta `node fabrica/guion/cerrar.mjs <ruta-contrato>`. Con `aprobado` o `descartado` pone `estado: hecho` o
    `descartado` y commitea en main solo ese archivo. Con `pide cambios` no toca nada: se rehace el contrato o se abre
    un trabajo nuevo.

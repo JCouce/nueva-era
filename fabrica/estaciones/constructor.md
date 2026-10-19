@@ -19,7 +19,8 @@ Las reglas del proyecto siguen valiendo: `CLAUDE.md`, `docs/traspaso.md` y, si t
 ## Cómo trabajas
 
 - Si la spec es imposible, ambigua o necesita tocar algo fuera de "Puede tocar", **para**. Escribe
-  `bloqueo: <motivo>` en Construcción y no improvises.
+  `bloqueo: <motivo>` en Construcción y no improvises. Y crea `fabrica/trabajos/.obra-T-xxx.json` (árbol principal;
+  la ruta exacta y el JSON te los da la línea): es lo que lee el juez para escalar. Si no paras, no lo crees.
 - Si cambias los valores esperados de un test que ya existía, explica en Construcción por qué el valor nuevo es el
   correcto. El revisor lo va a mirar con lupa.
 - Añade en `docs/tareas.md` la línea que corresponde a este trabajo.

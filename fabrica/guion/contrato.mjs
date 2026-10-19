@@ -4,9 +4,11 @@
 // Uso:
 //   node fabrica/guion/contrato.mjs leer <ruta>
 //   node fabrica/guion/contrato.mjs estado <ruta> <estado> [--desde <estado>[,<estado>...]] [--operario <fallos>/<llamadas>]
+// Pasar a "construyendo" empieza un intento: borra las entregas del anterior (.revision, .votos, .obra; ver entregas.mjs).
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { limpiarEntregas } from "./entregas.mjs";
 
 export const ESTADOS = [
   "spec", "encolado", "inspeccion", "construyendo", "revision", "juicio",
@@ -223,6 +225,7 @@ function main(argv) {
       const operario = o === -1 ? null : resto[o + 1];
       const r = cambiarEstado(texto, estado, desde, { ahora: new Date().toISOString(), operario });
       fs.writeFileSync(ruta, r.texto);
+      if (estado === "construyendo") limpiarEntregas(path.resolve(ruta), leerFrontmatter(r.texto).id);
       // Salida corta: la copia el operario.
       const { id, vueltas, rama, base, criterios: cs } = resumen(r.texto);
       salir({ ok: true, anterior: r.anterior, estado, id, vueltas, rama, base, criterios: cs.map((c) => c.id) });

@@ -2,6 +2,8 @@
 // Revisión por script de un trabajo: revisar.mjs (tests, tsc, lint, push seguro) DENTRO del worktree y alcance.mjs.
 // El resultado completo va a fabrica/trabajos/.revision-T-xxx.json (gitignored), que lee el juez; por stdout sale
 // solo un resumen corto, para que el operario no tenga que copiar salidas largas.
+// Si el constructor dejó .obra-T-xxx.json con bloqueo para esta vuelta, no revisa nada y sale con {"bloqueo":true}:
+// el juez escalará leyendo el mismo archivo.
 // Uso: node fabrica/guion/revision.mjs <ruta-contrato> <worktree> --vuelta <n>
 import fs from "node:fs";
 import path from "node:path";
@@ -9,11 +11,12 @@ import { fileURLToPath } from "node:url";
 import { evidenciaAlcance, leerAlcance } from "./alcance.mjs";
 import { ejecutar, esPrincipal, git, salir } from "./comun.mjs";
 import { baseDe, leerFrontmatter } from "./contrato.mjs";
+import { leerObra, rutaEntrega } from "./entregas.mjs";
 
 const REVISAR = fileURLToPath(new URL("../comprobaciones/revisar.mjs", import.meta.url));
 
 export function rutaRevision(rutaContrato, id) {
-  return path.join(path.dirname(rutaContrato), `.revision-${id}.json`);
+  return rutaEntrega(rutaContrato, "revision", id);
 }
 
 // La salida de revisar.mjs --json es un objeto que ocupa varias líneas; se busca desde la primera `{` de línea.
@@ -73,7 +76,10 @@ if (esPrincipal(import.meta.url)) {
     if (!contrato || !worktree || !Number.isInteger(vuelta)) {
       throw new Error("uso: revision.mjs <ruta-contrato> <worktree> --vuelta <n>");
     }
-    const { archivo, revision } = revisar(path.resolve(contrato), path.resolve(worktree), vuelta);
+    const ruta = path.resolve(contrato);
+    const { id } = leerFrontmatter(fs.readFileSync(ruta, "utf8"));
+    if (leerObra(ruta, { id, vuelta }).bloqueo) salir({ ok: true, bloqueo: true });
+    const { archivo, revision } = revisar(ruta, path.resolve(worktree), vuelta);
     salir({ ok: true, archivo, ...resumirRevision(revision) });
   } catch (error) {
     salir({ ok: false, error: error.message }, 1);
