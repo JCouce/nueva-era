@@ -34,7 +34,8 @@ Tú ⇄ Jefe ──(tu ok)──▶ cola ─▶ inspector ─▶ constructor ─
 | Skill | `/fabrica`: carga `jefe.md` y lanza el guion | `.claude/skills/fabrica/SKILL.md` | hecho (tanda 3) |
 | Visor | Un trabajo en vivo en la terminal: estaciones, criterios, juez, cronómetro y fallos del operario | `panel/ver.mjs` | hecho |
 | Panel | Un único artifact con todos los trabajos, que mantiene el Jefe | — | tanda 5 |
-| Trabajos | Los contratos; llegan a main con la rama de cada trabajo | `trabajos/` | `T-000` es el ejemplo |
+| Trabajos | Los contratos; viven en main y se commitean al cerrar | `trabajos/` | `T-000` es el ejemplo |
+| Historial | Los fallos de la propia fábrica y qué aprendimos de cada uno | `historial.md` | abierto |
 
 ## Reglas que no se negocian
 

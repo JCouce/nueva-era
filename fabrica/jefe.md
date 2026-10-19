@@ -62,7 +62,8 @@ Antes de nada, lee `fabrica/README.md`.
   (`git -C <worktree> diff main...<rama>`) y las métricas. Recuérdale que el push es suyo. El trabajo está en el
   worktree `../nuevaEra-trabajos/T-xxx`; la rama lleva solo código.
 - Si acaba en `escalado`, cuéntale el motivo del Juicio: es una decisión suya. Si acaba en `error`, es un fallo de la
-  propia línea, no del trabajo: dile qué falló y no lo relances sin hablarlo.
+  propia línea, no del trabajo: dile qué falló, apúntalo en `fabrica/historial.md` y no lo relances sin hablarlo.
+  Cualquier fallo de la fábrica que veas, aunque la línea acabe bien, también va al historial.
 
 ## Cerrar un trabajo
 
