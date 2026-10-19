@@ -62,7 +62,6 @@ Encargo, Spec y Criterios se congelan con el ok del usuario (estado pasa a "enco
 |---|---|---|---|---|
 | | | | | |
 
-**Tiempo del usuario:** <!-- encargo, preguntas, ok y revisión final; y qué lo habría quitado -->
 **Preguntas de reglas:** <!-- cuántas hubo; cuántas resolvieron los árbitros; cuántas llegaron al usuario o a Murillo; cuántas de los árbitros corrigió el usuario -->
 **Fue bien:**
 **Cambiaríamos:**
