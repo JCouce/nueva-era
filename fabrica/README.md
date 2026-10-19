@@ -22,7 +22,7 @@ versión visual y se regenera desde aquí en cada hito. Estado y plan: `docs/tar
 |---|---|---|---|
 | **P1 Contrato** | Un encargo tuyo (2-4 frases) a `/fabrica` | Jefe, dos árbitros de reglas y tú | `trabajos/T-xxx.md` en `spec`; con tu ok, `encolado`. El Jefe lee el código y las reglas; las dudas de reglas van antes a dos árbitros (lentes precedentes y fuente): si coinciden con cita, se aplican y las ves en "Decisiones de reglas"; si no, te llegan a ti o a Murillo (`jefe.md`, `estaciones/arbitro.md`) |
 | **P2 Línea** | Tu ok al contrato | Guion de Workflow: inspector → constructor → revisión (script + revisor) → juez, hasta 2 vueltas | La rama `fabrica/T-xxx-<slug>` (solo código), las secciones de cada estación en el contrato y las entregas JSON. Detalle en "Cómo se usa" |
-| **P3 Cierre** | Tu Decisión (`aprobado`, `descartado` o `pide cambios`) | Jefe y tú | Métricas y retro en el contrato; `cerrar.mjs` lo commitea en main. El worktree y la rama, solo si tú lo dices |
+| **P3 Cierre** | Tu Decisión (`aprobado`, `descartado` o `pide cambios`) | Jefe y tú | Métricas y retro en el contrato; `cerrar.mjs` lo commitea en main. Después el Jefe quita siempre el worktree y la rama, salvo que merezca conservarla para investigar (lo apunta en la retro) |
 | **P4 Estreno** | Querer medir la fábrica con un trabajo que ya hiciste | Jefe y tú | Un contrato con `base: <commit anterior>`: la rama sale de antes del arreglo y a los agentes se les prohíbe mirar main. Se cierra como `descartado` y la rama se conserva para comparar |
 | **P5 Historial** | Cualquier fallo de la fábrica (no del trabajo), aunque la línea acabe bien | Quien lo vea | Una entrada `F-xxx` en `historial.md`: qué pasó, causa, arreglo y lección |
 
@@ -154,4 +154,4 @@ Las decisiones que cambian cómo funciona la fábrica, con su porqué. Los fallo
 | 2026-10-19 | La UI la juzga el usuario en la Decisión; el revisor da evidencia y opina como hallazgo | Lo subjetivo no tiene oráculo |
 | 2026-10-19 | Árbitros de reglas en P1: dos agentes (precedentes y fuente) resuelven las dudas lógicas; si discrepan o es gusto o diseño, al usuario o a Murillo | La mayoría de las dudas son lógicas; el usuario solo debería decidir las suyas |
 | 2026-10-19 | Examen de los árbitros (12 dudas con respuesta conocida + 4 de Murillo): con la regla de las dos lentes, 3 de 4 aplicadas bien, 0 inventadas; lo que hace el código ya no cuenta como precedente | El único fallo grave (S23) tomó lo construido por lo decidido |
-
+| 2026-10-19 | Al cerrar, el Jefe quita siempre el worktree y borra la rama salvo que merezca conservarla para investigar | Que no se acumulen worktrees ni ramas; las que se guardan, con su porqué |

@@ -92,8 +92,11 @@ El contrato vive en main y no viaja en la rama: se commitea al cerrar.
 2. Ejecuta `node fabrica/guion/cerrar.mjs <ruta-contrato>`. Con `aprobado` o `descartado` pone `estado: hecho` o
    `descartado` y commitea en main solo ese archivo. Con `pide cambios` no toca nada: se rehace el contrato o se abre
    un trabajo nuevo.
-3. Ofrécele (no lo hagas tú) quitar el worktree (`git worktree remove ../nuevaEra-trabajos/T-xxx`) y, si se
-   descartó, la rama (`git branch -D fabrica/T-xxx-<slug>`).
+3. **Limpia, sin preguntar** (autorizado por el usuario, 2026-10-19):
+   - el **worktree, siempre**: `git worktree remove ../nuevaEra-trabajos/T-xxx`;
+   - la **rama, salvo que merezca conservarla** para futuras investigaciones (un estreno, una comparativa, un
+     trabajo descartado que enseñe algo). Mergeada: `git branch -d`; descartada sin interés: `git branch -D`.
+     Si la conservas, dilo y apúntalo en la retro del contrato ("Rama que se conserva…") con el porqué.
 
 ## Numeración
 
