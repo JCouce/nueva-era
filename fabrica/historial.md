@@ -7,6 +7,18 @@ Formato: `F-xxx · fecha · dónde · estado (abierto | arreglado | asumido)`.
 
 ---
 
+### F-009 · 2026-10-19 · juez, tabla del Juicio (T-001) · abierto
+**Qué pasó:** la tabla corta la evidencia a 140 caracteres y algunas quedan a medias ("recursos.ts:312 (").
+**Arreglo:** pendiente (cortar por frase, o dejar la evidencia entera en `.votos` y en la tabla solo un resumen).
+
+### F-008 · 2026-10-19 · alcance de `docs/tareas.md` (T-001) · abierto
+**Qué pasó:** el trabajo cambió un comportamiento que describe la entrada RECURSOS de `tareas.md`, pero "Puede tocar"
+solo dejaba "su línea". El constructor y el revisor lo vieron (hallazgo) y la entrada quedó desfasada; el usuario, en
+su commit real, sí la actualizó.
+**Arreglo:** pendiente. El Jefe, al escribir "Puede tocar", incluye las entradas de `tareas.md` que describen lo que
+el trabajo cambia.
+**Lección:** una regla pensada para limitar ("solo su línea") también puede impedir lo correcto.
+
 ### F-007 · 2026-10-19 · juez, relanzar un trabajo · arreglado
 **Qué pasó:** visto al arreglar F-006, sin que llegara a ocurrir. El juez daba por buena `.revision-T-xxx.json` si
 era de la misma vuelta y rama. Al relanzar un trabajo (tras un escalado o un `error`), la vuelta vuelve a 0: si
