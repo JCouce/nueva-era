@@ -57,5 +57,7 @@ Encargo, Spec y Criterios se congelan con el ok del usuario (estado pasa a "enco
 |---|---|---|---|---|
 | | | | | |
 
+**Tiempo del usuario:** <!-- encargo, preguntas, ok y revisión final; y qué lo habría quitado -->
+**Preguntas de reglas:** <!-- cuántas hubo y cuántas tenían precedente en sistema.md -->
 **Fue bien:**
 **Cambiaríamos:**

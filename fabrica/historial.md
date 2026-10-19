@@ -7,6 +7,15 @@ Formato: `F-xxx · fecha · dónde · estado (abierto | arreglado | asumido)`.
 
 ---
 
+### F-013 · 2026-10-19 · Jefe, contrato de un estreno (T-003) · arreglado
+**Qué pasó:** el Jefe escribió los oráculos de C3-C9 con `montarTirada`, la API de hoy, que no existía en la base del
+estreno (c164eca). El inspector lo pilló y devolvió el contrato.
+**Causa:** el Jefe redactó mirando el código de main y no el de la base.
+**Arreglo:** en `jefe.md` (paso 2): Con `base` distinta de main, el Jefe lee el código con `git show <base>:<ruta>`; y los oráculos
+describen qué se comprueba, sin nombrar funciones si no hace falta. Contrato del T-003 corregido
+(oráculos sin `montarTirada` y C13 nuevo).
+**Lección:** el inspector funciona como segunda red también para los errores del Jefe.
+
 ### F-012 · 2026-10-19 · revisor y sección Construcción (T-002) · arreglado
 **Qué pasó:** la estación dice que el revisor juzga el diff sin leer antes la Construcción, pero las dos secciones
 están en el mismo archivo y la leyó. Lo reconoció él mismo como hallazgo.

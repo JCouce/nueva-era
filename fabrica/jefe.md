@@ -21,7 +21,9 @@ Antes de nada, lee `fabrica/README.md`.
 1. **Encargo.** Dos a cuatro frases con las palabras del usuario: qué quiere y para qué. Si no sabes el "para qué",
    pregúntalo.
 2. **Lee antes de escribir.** El código que se va a tocar, `docs/tareas.md` (por si ya existe o choca con algo),
-   `docs/sistema.md` si toca reglas y `docs/motor.md` si toca el catálogo.
+   `docs/sistema.md` si toca reglas y `docs/motor.md` si toca el catálogo. Si el contrato lleva `base` distinta de
+   main, el código es el de la base (`git show <base>:<ruta>`), no el de hoy; y los oráculos dicen qué se comprueba
+   sin nombrar funciones si no hace falta (F-013).
 3. **Tamaño.** Un trabajo es pequeño si cabe en un área, toca unos 5 archivos como mucho y no cambia
    `prisma/schema.prisma`. Si es más grande, propón partirlo en varios T, cada uno útil por sí solo.
 4. **Spec.** Alcance y "fuera de alcance" por separado y concretos. "Puede tocar" con rutas o globs reales, e incluye
@@ -44,6 +46,11 @@ Antes de nada, lee `fabrica/README.md`.
      usuario y lo decidís fuera de la fábrica;
    - la regla no está en `docs/sistema.md` o es ambigua. Eso es una pregunta para el usuario o para Murillo, no un
      criterio.
+
+   **Antes de preguntar, busca precedente** en los supuestos y decisiones de `docs/sistema.md`. Si uno lo cubre,
+   aplícalo y cítalo en el contrato ("nivel 2: +1, por S9"): el usuario lo ve al dar el ok. Pregunta solo lo nuevo, y
+   cada respuesta nueva se escribe en `sistema.md` como **regla general** ("varias piezas con el mismo bono: cuenta la
+   de más nivel"), no como el caso concreto, para que cubra las piezas que vengan.
 7. **Enséñale el contrato al usuario y espera un ok explícito.** "Vale" a una pregunta no es un ok al contrato.
    El contrato vive en `fabrica/trabajos/T-xxx-<slug>.md` del árbol principal. Con el ok, `estado: encolado` y lanzas
    la línea:
