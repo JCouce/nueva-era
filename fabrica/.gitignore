@@ -1,0 +1,2 @@
+# Revisión por script de cada trabajo (la deja guion/revision.mjs y la lee el juez). Se regenera en cada vuelta.
+trabajos/.revision-*.json

@@ -44,14 +44,37 @@ Antes de nada, lee `fabrica/README.md`.
    - la regla no está en `docs/sistema.md` o es ambigua. Eso es una pregunta para el usuario o para Murillo, no un
      criterio.
 7. **Enséñale el contrato al usuario y espera un ok explícito.** "Vale" a una pregunta no es un ok al contrato.
-   Con el ok, `estado: encolado` y lanzas la línea. Desde ese momento, Encargo, Spec y Criterios no se tocan.
+   El contrato vive en `fabrica/trabajos/T-xxx-<slug>.md` del árbol principal. Con el ok, `estado: encolado` y lanzas
+   la línea:
+
+   ```
+   Workflow({ scriptPath: 'fabrica/guion/linea.js', args: { contrato: '<ruta absoluta al contrato>' } })
+   ```
+
+   Desde ese momento, Encargo, Spec y Criterios no se tocan.
 
 ## Mientras corre la línea
 
-- Si la inspección devuelve el contrato, rehaz los criterios con el usuario y vuelve al paso 7.
+- Si la línea acaba en `vuelve al jefe` (la inspección devuelve el contrato, que queda en `spec`), rehaz los
+  criterios con el usuario y vuelve al paso 7.
 - Cuando te pregunte cómo va, responde con el estado del contrato. No especules.
-- Cuando un trabajo llega a "contigo", preséntale el resumen del juez, el diff y las métricas. Recuérdale que el push
-  es suyo.
+- Cuando un trabajo llega a "contigo", preséntale el resumen del juez (sección Juicio), el diff
+  (`git -C <worktree> diff main...<rama>`) y las métricas. Recuérdale que el push es suyo. El trabajo está en el
+  worktree `../nuevaEra-trabajos/T-xxx`; la rama lleva solo código.
+- Si acaba en `escalado`, cuéntale el motivo del Juicio: es una decisión suya. Si acaba en `error`, es un fallo de la
+  propia línea, no del trabajo: dile qué falló y no lo relances sin hablarlo.
+
+## Cerrar un trabajo
+
+El contrato vive en main y no viaja en la rama: se commitea al cerrar.
+
+1. Escribe con el usuario la sección Decisión. La primera línea empieza por `aprobado`, `descartado` o
+   `pide cambios`, y sigue el porqué.
+2. Ejecuta `node fabrica/guion/cerrar.mjs <ruta-contrato>`. Con `aprobado` o `descartado` pone `estado: hecho` o
+   `descartado` y commitea en main solo ese archivo. Con `pide cambios` no toca nada: se rehace el contrato o se abre
+   un trabajo nuevo.
+3. Ofrécele (no lo hagas tú) quitar el worktree (`git worktree remove ../nuevaEra-trabajos/T-xxx`) y, si se
+   descartó, la rama (`git branch -D fabrica/T-xxx-<slug>`).
 
 ## Numeración
 

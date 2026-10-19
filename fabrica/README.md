@@ -27,8 +27,11 @@ Tú ⇄ Jefe ──(tu ok)──▶ cola ─▶ inspector ─▶ constructor ─
 | Revisión, LLM | Criterios que no son comandos, y la UI en el navegador | `estaciones/revisor.md` | escrito |
 | Bloqueos | Hook que corta push, `prisma migrate`, seeds y `.env` (también en Grep y Glob) | `hooks/` | escrito (tanda 2) |
 | Agentes | Envoltorios finos: herramientas en lista blanca y "lee tu estación" | `.claude/agents/fabrica-*.md` | escrito (tanda 2) |
-| Orquestador | Guion de Workflow: orden, puertas y vueltas en código | `guion/` | tanda 3 |
-| Juez | Reglas fijas: un "falla" devuelve; a la tercera o ante diseño, escala | `juez/` | tanda 3 |
+| Orquestador | Guion de Workflow: orden, puertas y vueltas en código | `guion/linea.js` | hecho (tanda 3) |
+| Scripts de la línea | Estado del contrato, worktree, revisión por script, alcance (C2) y cierre del trabajo | `guion/*.mjs` | hecho (tanda 3) |
+| Juez | Reglas fijas, sin LLM: un "falla" devuelve; a la tercera o ante diseño, escala | `juez/juez.mjs` | hecho (tanda 3) |
+| Operario | Agente que ejecuta tal cual los scripts deterministas del guion (un guion no tiene shell) | `.claude/agents/fabrica-operario.md` | hecho (tanda 3) |
+| Skill | `/fabrica`: carga `jefe.md` y lanza el guion | `.claude/skills/fabrica/SKILL.md` | hecho (tanda 3) |
 | Panel | Un único artifact con todos los trabajos, que mantiene el Jefe | — | tanda 5 |
 | Trabajos | Los contratos; llegan a main con la rama de cada trabajo | `trabajos/` | `T-000` es el ejemplo |
 
@@ -47,8 +50,29 @@ Tú ⇄ Jefe ──(tu ok)──▶ cola ─▶ inspector ─▶ constructor ─
 
 ## Cómo se usa
 
-Hoy, hasta la tanda 3, se usa a mano: el Jefe es la sesión de Claude con la que hablas, y las estaciones se lanzan una
-a una con sus prompts. Con la tanda 3, la skill `/fabrica` carga `jefe.md` y el guion mueve la línea.
+`/fabrica` en la sesión principal: carga `jefe.md` y esa sesión pasa a ser el Jefe. Con tu ok al contrato, el Jefe
+lanza el guion (`Workflow({ scriptPath: 'fabrica/guion/linea.js', args: { contrato: '<ruta absoluta>' } })`). El
+guion no sale en la lista de workflows: `.claude/workflows/` no admite envoltorios (sin imports), y duplicarlo no
+compensa.
+
+Qué hace el guion, en orden:
+
+1. Contrato a `inspeccion` (solo si estaba en `encolado`) e inspector. Si devuelve, el contrato vuelve a `spec` y la
+   línea acaba en `vuelve al jefe`.
+2. `preparar.mjs`: worktree en `../nuevaEra-trabajos/T-xxx` con la rama del contrato, `node_modules` clonado (APFS;
+   Turbopack no acepta un enlace que salga del proyecto), el cliente de Prisma generado y `.env` enlazado al del repo
+   (nunca copiado; si apunta a `neon.tech`, no se enlaza y lo avisa). Idempotente.
+3. Hasta 3 intentos (2 vueltas): constructor en el worktree → `revision.mjs` (`revisar.mjs` dentro del worktree +
+   `alcance.mjs`, a `trabajos/.revision-T-xxx.json`) → revisor, para los criterios que no son C1 ni C2 → juez.
+4. `contigo`, `escalado` o `error`: se para y el Jefe te lo cuenta.
+
+Quién vota qué: C1 lo vota el script (tests y tsc), C2 el alcance, el resto el revisor, y "script" (lint, ficha y
+prod) también vota. Si se toca la BD (`bd` de `revisar.mjs`), escala.
+
+El contrato vive en main (`fabrica/trabajos/`) y todas las estaciones escriben en esa copia. La rama lleva solo
+código, así que su merge es limpio. Con tu Decisión escrita, el Jefe cierra el trabajo con `cerrar.mjs`, que pone
+`hecho` o `descartado` y commitea en main solo el contrato (`git commit --only`, sin arrastrar lo que haya en el
+índice). Después te ofrece quitar el worktree y, si se descartó, la rama.
 
 ## Usarlo tú antes de un push
 
@@ -64,7 +88,7 @@ Sale con código 1 si algo falla. `--base`, `--head` y `--json` para otros rango
 
 1. Los papeles: contrato, prompts y este mapa. **Hecha.**
 2. Las barreras: comprobaciones y bloqueos. **Hecha.**
-3. La línea: el guion que mueve un trabajo.
+3. La línea: el guion que mueve un trabajo. **Hecha** (probada con un arnés; con agentes reales, en el estreno).
 4. El estreno: repetir un trabajo pasado y compararlo con el del usuario.
 5. El panel: ver qué hizo cada trabajador.
 6. El rodaje: los primeros trabajos reales.
