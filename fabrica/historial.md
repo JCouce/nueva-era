@@ -7,6 +7,12 @@ Formato: `F-xxx · fecha · dónde · estado (abierto | arreglado | asumido)`.
 
 ---
 
+### F-014 · 2026-10-19 · Jefe, alcance sin criterio (T-002, T-003, T-004) · arreglado
+**Qué pasó:** tres contratos seguidos devueltos por el inspector porque un punto del alcance (docs o comentarios) no
+tenía criterio que lo comprobara.
+**Arreglo:** en `jefe.md`, antes de enseñar el contrato, el Jefe repasa que cada punto del alcance tenga su criterio.
+**Lección:** el inspector lo pilla siempre, pero cada devolución es una vuelta; mejor que el Jefe se lo revise antes.
+
 ### F-013 · 2026-10-19 · Jefe, contrato de un estreno (T-003) · arreglado
 **Qué pasó:** el Jefe escribió los oráculos de C3-C9 con `montarTirada`, la API de hoy, que no existía en la base del
 estreno (c164eca). El inspector lo pilló y devolvió el contrato.

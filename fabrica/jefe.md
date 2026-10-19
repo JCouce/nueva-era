@@ -58,6 +58,8 @@ Antes de nada, lee `fabrica/README.md`.
    Cada respuesta nueva (del usuario o de Murillo) se escribe en `sistema.md` como **regla general** ("varias piezas
    con el mismo bono: cuenta la de más nivel"), no como el caso concreto, para que cubra las piezas que vengan: ponla
    en el alcance y en un criterio de tipo prosa fuente, y `docs/sistema.md` en "Puede tocar".
+   **Antes de enseñarlo, repasa que cada punto del alcance tenga al menos un criterio** (también los de docs y
+   comentarios). Si falta uno, el inspector lo devuelve y cuesta una vuelta (F-014).
 7. **Enséñale el contrato al usuario y espera un ok explícito.** "Vale" a una pregunta no es un ok al contrato.
    El contrato vive en `fabrica/trabajos/T-xxx-<slug>.md` del árbol principal. Con el ok, `estado: encolado` y lanzas
    la línea:
