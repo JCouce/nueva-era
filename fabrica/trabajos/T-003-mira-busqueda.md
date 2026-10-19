@@ -2,7 +2,7 @@
 id: T-003
 titulo: La Mira Telescópica da su bono en Buscar / Percibir con un toggle
 origen: manual
-estado: contigo
+estado: descartado
 vueltas: 0/2
 rama: fabrica/T-003-mira-busqueda
 base: c164eca
@@ -221,12 +221,21 @@ Hallazgos (no votan):
 **Para el usuario:** Todo pasa. La rama fabrica/T-003-mira-busqueda está lista para que la mires; el push es tuyo.
 
 ## Decisión
+descartado: es el estreno 3, un ensayo. Mismo comportamiento que el commit original (4fb7799) y además deja las
+decisiones de reglas en sistema.md. No se mergea: main ya tiene la Mira resuelta. La rama queda para comparar.
 
 ## Métricas y retro
 | vueltas | minutos | tokens | operario (fallos/llamadas) | ¿retocado antes del push? |
 |---|---|---|---|---|
-| | | | | |
+| 0/2 | 7,4 (+1,3 de la inspección devuelta) | ~360k (13 agentes en total) | 0/7 | no aplica (ensayo) |
 
-**Tiempo del usuario:**
-**Fue bien:**
-**Cambiaríamos:**
+**Tiempo del usuario:** 2 min de encargo, 3 preguntas de reglas y un ok tras la inspección devuelta.
+**Preguntas de reglas:** 3 al usuario; 1 tenía precedente (S9, nivel 2 hereda el +1) y el Jefe no lo buscó. De ahí
+la regla de buscar precedente y los árbitros de reglas.
+**Fue bien:** a la primera, con el mismo resultado que el usuario y las decisiones escritas como supuesto. El inspector
+pilló un oráculo que el Jefe escribió contra el código de hoy (F-013). El revisor probó el modal en el navegador.
+**Cambiaríamos:** F-013 (Jefe leyendo main en vez de la base). Hallazgo: una mira suelta en el inventario, sin
+instalar, también da el toggle (igual que en el original); duda de reglas sin fijar. El navegador volvió a chocar con
+el perfil (F-011, la sesión no se había reiniciado).
+
+**Rama que se conserva para comparar:** `fabrica/T-003-mira-busqueda`.
