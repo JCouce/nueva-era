@@ -47,10 +47,17 @@ Antes de nada, lee `fabrica/README.md`.
    - la regla no está en `docs/sistema.md` o es ambigua. Eso es una pregunta para el usuario o para Murillo, no un
      criterio.
 
-   **Antes de preguntar, busca precedente** en los supuestos y decisiones de `docs/sistema.md`. Si uno lo cubre,
-   aplícalo y cítalo en el contrato ("nivel 2: +1, por S9"): el usuario lo ve al dar el ok. Pregunta solo lo nuevo, y
-   cada respuesta nueva se escribe en `sistema.md` como **regla general** ("varias piezas con el mismo bono: cuenta la
-   de más nivel"), no como el caso concreto, para que cubra las piezas que vengan.
+   **Antes de preguntar, pásale las dudas a los árbitros** (`estaciones/arbitro.md`). Lanza dos agentes
+   `fabrica-arbitro` en paralelo con las mismas dudas y el contexto del trabajo, uno con la lente **precedentes** y otro
+   con la lente **fuente**. Por cada duda:
+   - los dos dan la **misma decisión**, de tipo **lógica**, con cita y confianza alta o media → la aplicas y la
+     escribes en "Decisiones de reglas" del contrato, con su fundamento. El usuario la ve al dar el ok y la puede tachar;
+   - discrepan, alguno dice "sin decisión", o el tipo es **gusto** o **diseño** → se la preguntas al usuario (las de
+     diseño, si él no quiere decidir, van a `/preguntas` para Murillo y el trabajo espera).
+
+   Cada respuesta nueva (del usuario o de Murillo) se escribe en `sistema.md` como **regla general** ("varias piezas
+   con el mismo bono: cuenta la de más nivel"), no como el caso concreto, para que cubra las piezas que vengan: ponla
+   en el alcance y en un criterio de tipo prosa fuente, y `docs/sistema.md` en "Puede tocar".
 7. **Enséñale el contrato al usuario y espera un ok explícito.** "Vale" a una pregunta no es un ok al contrato.
    El contrato vive en `fabrica/trabajos/T-xxx-<slug>.md` del árbol principal. Con el ok, `estado: encolado` y lanzas
    la línea:

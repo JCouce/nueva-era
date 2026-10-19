@@ -20,7 +20,7 @@ versión visual y se regenera desde aquí en cada hito. Estado y plan: `docs/tar
 
 | Proceso | Qué lo dispara | Quién | Qué deja escrito |
 |---|---|---|---|
-| **P1 Contrato** | Un encargo tuyo (2-4 frases) a `/fabrica` | Jefe y tú | `trabajos/T-xxx.md` en `spec`; con tu ok, `encolado`. El Jefe lee el código y las reglas, busca precedente en `sistema.md` antes de preguntarte, y solo te pregunta lo nuevo (`jefe.md`) |
+| **P1 Contrato** | Un encargo tuyo (2-4 frases) a `/fabrica` | Jefe, dos árbitros de reglas y tú | `trabajos/T-xxx.md` en `spec`; con tu ok, `encolado`. El Jefe lee el código y las reglas; las dudas de reglas van antes a dos árbitros (lentes precedentes y fuente): si coinciden con cita, se aplican y las ves en "Decisiones de reglas"; si no, te llegan a ti o a Murillo (`jefe.md`, `estaciones/arbitro.md`) |
 | **P2 Línea** | Tu ok al contrato | Guion de Workflow: inspector → constructor → revisión (script + revisor) → juez, hasta 2 vueltas | La rama `fabrica/T-xxx-<slug>` (solo código), las secciones de cada estación en el contrato y las entregas JSON. Detalle en "Cómo se usa" |
 | **P3 Cierre** | Tu Decisión (`aprobado`, `descartado` o `pide cambios`) | Jefe y tú | Métricas y retro en el contrato; `cerrar.mjs` lo commitea en main. El worktree y la rama, solo si tú lo dices |
 | **P4 Estreno** | Querer medir la fábrica con un trabajo que ya hiciste | Jefe y tú | Un contrato con `base: <commit anterior>`: la rama sale de antes del arreglo y a los agentes se les prohíbe mirar main. Se cierra como `descartado` y la rama se conserva para comparar |
@@ -40,6 +40,7 @@ Tú ⇄ Jefe ──(tu ok)──▶ cola ─▶ inspector ─▶ constructor ─
 |---|---|---|---|
 | Jefe de fábrica | Convierte la conversación en contrato con el usuario, lanza la línea e informa. No juzga | `jefe.md` | escrito |
 | Contrato | Una ficha por trabajo; cada estación escribe solo su sección | `contrato/plantilla.md` | escrito |
+| Árbitros de reglas | Resuelven dudas de reglas con cita (precedente o texto fuente) antes de preguntar; dos lentes, si discrepan escala | `estaciones/arbitro.md` | escrito, sin estrenar |
 | Inspector | Comprueba que cada criterio es observable y tiene un oráculo independiente | `estaciones/inspector.md` | escrito |
 | Constructor | Implementa la spec en un worktree, rama `fabrica/T-xxx-<slug>` | `estaciones/constructor.md` | escrito |
 | Revisión, script | Tests, tsc, lint y push seguro | `comprobaciones/` | escrito (tanda 2) |
@@ -151,4 +152,4 @@ Las decisiones que cambian cómo funciona la fábrica, con su porqué. Los fallo
 | 2026-10-19 | El revisor puede leer la Construcción, pero solo vota con oráculo | F-012: la regla anterior no se podía cumplir |
 | 2026-10-19 | El Jefe busca precedente en `sistema.md` antes de preguntar y lee el código de la `base` | 1 de 3 preguntas del T-003 ya tenía respuesta (S9); F-013 |
 | 2026-10-19 | La UI la juzga el usuario en la Decisión; el revisor da evidencia y opina como hallazgo | Lo subjetivo no tiene oráculo |
-
+| 2026-10-19 | Árbitros de reglas en P1: dos agentes (precedentes y fuente) resuelven las dudas lógicas; si discrepan o es gusto o diseño, al usuario o a Murillo | La mayoría de las dudas son lógicas; el usuario solo debería decidir las suyas |

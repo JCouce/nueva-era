@@ -17,6 +17,11 @@ Encargo, Spec y Criterios se congelan con el ok del usuario (estado pasa a "enco
 ## Encargo
 <!-- jefe, con el usuario · qué se pide y por qué, en 2-4 frases -->
 
+## Decisiones de reglas
+<!-- jefe · dudas de reglas del trabajo y quién las resolvió · se congelan con el ok -->
+| # | Duda | Decisión | Quién | Fundamento |
+|---|---|---|---|---|
+
 ## Spec
 <!-- jefe, con el usuario · se congela con su ok -->
 **Alcance:**
@@ -58,6 +63,6 @@ Encargo, Spec y Criterios se congelan con el ok del usuario (estado pasa a "enco
 | | | | | |
 
 **Tiempo del usuario:** <!-- encargo, preguntas, ok y revisión final; y qué lo habría quitado -->
-**Preguntas de reglas:** <!-- cuántas hubo y cuántas tenían precedente en sistema.md -->
+**Preguntas de reglas:** <!-- cuántas hubo; cuántas resolvieron los árbitros; cuántas llegaron al usuario o a Murillo; cuántas de los árbitros corrigió el usuario -->
 **Fue bien:**
 **Cambiaríamos:**
