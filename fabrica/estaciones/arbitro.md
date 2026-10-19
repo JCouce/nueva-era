@@ -40,3 +40,7 @@ D1  <la duda, en una frase>
 - **Sin cita no hay decisión.** Si no encuentras fundamento, di "sin decisión" y explica qué falta. Inventar una regla
   verosímil es lo peor que puedes hacer: el Jefe la aplicaría sin preguntar.
 - Si el texto del diseñador y un supuesto chocan, gana el texto más reciente del diseñador. Dilo.
+- **Lo que hace el código no es precedente** si no lo respalda un supuesto, una decisión escrita o el texto del
+  diseñador: puede ser un apaño o algo que nadie decidió. Y si la duda nace de querer **cambiar algo que ya existe**,
+  es de tipo gusto: el usuario quiere otra cosa y no se deduce de lo que había. (Examen 2026-10-19: los dos árbitros
+  dijeron "altura vacía por defecto" porque el código lo hacía así, y el usuario había decidido el punto medio.)

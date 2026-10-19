@@ -40,7 +40,7 @@ Tú ⇄ Jefe ──(tu ok)──▶ cola ─▶ inspector ─▶ constructor ─
 |---|---|---|---|
 | Jefe de fábrica | Convierte la conversación en contrato con el usuario, lanza la línea e informa. No juzga | `jefe.md` | escrito |
 | Contrato | Una ficha por trabajo; cada estación escribe solo su sección | `contrato/plantilla.md` | escrito |
-| Árbitros de reglas | Resuelven dudas de reglas con cita (precedente o texto fuente) antes de preguntar; dos lentes, si discrepan escala | `estaciones/arbitro.md` | escrito, sin estrenar |
+| Árbitros de reglas | Resuelven dudas de reglas con cita (precedente o texto fuente) antes de preguntar; dos lentes, si discrepan escala | `estaciones/arbitro.md` | examinado (2026-10-19) |
 | Inspector | Comprueba que cada criterio es observable y tiene un oráculo independiente | `estaciones/inspector.md` | escrito |
 | Constructor | Implementa la spec en un worktree, rama `fabrica/T-xxx-<slug>` | `estaciones/constructor.md` | escrito |
 | Revisión, script | Tests, tsc, lint y push seguro | `comprobaciones/` | escrito (tanda 2) |
@@ -153,3 +153,5 @@ Las decisiones que cambian cómo funciona la fábrica, con su porqué. Los fallo
 | 2026-10-19 | El Jefe busca precedente en `sistema.md` antes de preguntar y lee el código de la `base` | 1 de 3 preguntas del T-003 ya tenía respuesta (S9); F-013 |
 | 2026-10-19 | La UI la juzga el usuario en la Decisión; el revisor da evidencia y opina como hallazgo | Lo subjetivo no tiene oráculo |
 | 2026-10-19 | Árbitros de reglas en P1: dos agentes (precedentes y fuente) resuelven las dudas lógicas; si discrepan o es gusto o diseño, al usuario o a Murillo | La mayoría de las dudas son lógicas; el usuario solo debería decidir las suyas |
+| 2026-10-19 | Examen de los árbitros (12 dudas con respuesta conocida + 4 de Murillo): con la regla de las dos lentes, 3 de 4 aplicadas bien, 0 inventadas; lo que hace el código ya no cuenta como precedente | El único fallo grave (S23) tomó lo construido por lo decidido |
+
