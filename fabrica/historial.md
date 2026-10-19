@@ -13,10 +13,11 @@ están en el mismo archivo y la leyó. Lo reconoció él mismo como hallazgo.
 **Arreglo:** pendiente. O la Construcción va en un archivo aparte que el revisor no recibe, o se quita la regla.
 **Lección:** una regla que la estructura no permite cumplir no es una regla.
 
-### F-011 · 2026-10-19 · navegador del revisor (T-002) · abierto
+### F-011 · 2026-10-19 · navegador del revisor (T-002) · arreglado
 **Qué pasó:** el MCP chrome-devtools tenía el perfil cogido por otra sesión de Claude (pasa a menudo: el usuario
 trabaja con varias sesiones a la vez). El revisor improvisó con `playwright-core` y funcionó.
-**Arreglo:** pendiente. Probable: lanzar el MCP con `--isolated` (perfil temporal por instancia).
+**Arreglo:** el MCP chrome-devtools se lanza con `--isolated` (config global del usuario, `~/.claude.json`): perfil
+temporal por instancia, sin logins guardados. Sin probar aún con dos sesiones a la vez.
 **Lección:** una herramienta compartida entre sesiones es un recurso con cerrojo; la fábrica no puede depender de
 que esté libre.
 
