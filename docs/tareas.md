@@ -1451,11 +1451,25 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      (VTF nivel 2, Pico de Cuervo Poco Habitual: dificultad sugerida 7, antes
      habría sido 9).
 
-### Aumentos ⬜ (sin empezar)
-No hay nada construido. Prosa del diseñador en `docs/fuente/aumentos.md`. Mismo camino que
-psiónica y dotes: transcripción, `modelar-area` y el análisis de `docs/motor.md` antes de
-dar de alta nada. Enganches que ya esperan:
-- La bolsa de 60.000 del humano (E2a, `FichaResuelta.bolsaAumentos`) se ve en Tienda y
+### Aumentos ⬜ (encargo y transcripción hechos, 2026-10-16)
+Nada de código todavía. Encargo y pasos: `docs/prompt-aumentos.md`. Fuente literal:
+`docs/aumentos.md` (26 operaciones genéticas y 11 implantes; **5 implantes en proceso**,
+de Control Anímico al final: no se modelan hasta la próxima foto de Drive). Decisión del usuario: entran
+como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primero).
+- [x] Transcripción fiel `docs/aumentos.md` (erratas para Murillo al final).
+- [x] `sistema.md` §11 (dos ramas, lo que no dice) y §14.6 (bolsa 70.000); preguntas 11 y 20
+  reabiertas.
+- [ ] `MODELO_AUMENTOS` enseñado al usuario → `modelar-area` → `docs/modelado-aumentos.md`.
+- [x] Cuestionario de decisiones (2026-10-16, https://claude.ai/artifact/2ycU8EYmku9YBAVAFyJXgG):
+  respuestas en `sistema.md` §11.3.
+- [ ] `docs/propuesta-aumentos.md` con tandas.
+- [ ] Cuando Murillo cierre los 5 implantes en proceso: `sync-drive`, transcribirlos de
+  nuevo y modelarlos en una pasada corta.
+- [ ] **Código:** bolsa del humano a **70.000** (`catalog/especies.ts`, `bolsaAumentos`; el
+  documento manda, antes 60.000) y textos/tests que digan 60.000.
+
+Enganches que ya esperan:
+- La bolsa del humano (E2a, `FichaResuelta.bolsaAumentos`) se ve en Tienda y
   Recursos pero no se gasta (ver "Especies reales").
 - **Dependencia detectada (2026-09-21, repaso de efectos especiales de equipo):** el
   estado `Shock` (`src/lib/catalog/estados.ts:670-678`) ya prevé una rama para
@@ -1465,6 +1479,18 @@ dar de alta nada. Enganches que ya esperan:
   ("susceptible a shock"/"apagón" sin definir, detectado en Inyector Hipodérmico/
   Soporte Vital/Anticorrosivo/Tejido Conductor — `docs/equipo-efectos-especiales.md`
   §Mejoras Estándar) — es la misma pieza de motor vista desde dos tareas distintas.
+
+### Psiónica biológica por especie ⬜ (decidido con Murillo vía el usuario, 2026-10-16)
+Solo los **Arianyi** y la **Casa Maolher** (Manduk) son psiónicos biológicos. Hoy la app
+deja comprar psiónica a cualquiera que ponga puntos en creación, y S30 trata como psiónico
+biológico a quien tenga una disciplina mayor que 0. El cambio:
+- "Psiónico biológico" como atributo visible de la especie (o de la casa).
+- Requisito en las disciplinas.
+- El IRM (aumentos) lo da.
+- Qué pasa con las fichas que ya tienen psiónica sin serlo: marca "requisito no cumplido",
+  como al cambiar de especie.
+
+Va **después** de aumentos: el IRM se modela allí pero no se conecta (`sistema.md` §11.3).
 
 ### Puntos Heroicos ⬜ (sin empezar)
 No hay nada construido. Prosa del diseñador en `docs/fuente/puntos-heroicos.md`.

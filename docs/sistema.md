@@ -30,6 +30,7 @@ cambie, se edita aquí y se anota qué lo tumbó.
 | `ESP` | `docs/especies.md` (transcrito de `Especies.pdf`) — las 5 especies, castas y linajes Manduk | 2026-09-26 |
 | `HOJA3` | `docs/fuente/creacion-de-personaje.md` (sync de Drive) — revisión de `HOJA2`: pool de Dotes A-E, Vida/Fatiga base 10 | 2026-10-14 |
 | `DOTES` | `docs/fuente/dotes.md` (sync de Drive), transcrito en `docs/dotes.md` — 105 dotes | 2026-10-14 |
+| `AUM` | `docs/fuente/aumentos.md` (sync de Drive), transcrito en `docs/aumentos.md` — 26 operaciones genéticas y 11 implantes (5 en proceso) | 2026-10-16 |
 | `CONV-n` | Conversaciones con el diseñador (se anotan abajo según lleguen) | — |
 
 **`HOJA2` sustituye a `HOJA` allí donde se contradicen** (creación por prioridad en vez de
@@ -1162,13 +1163,102 @@ al preparar su modelado:
 - Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de
   alcance, etc.) se han mandado a Murillo.
 
-## 11. Aumentos `[PARCIAL · CONV-1]`
+## 11. Aumentos `[PARCIAL · CONV-1 + AUM + ESP]`
 
-**Aumentos = biónicos + genéticos.** Los **biónicos** son implantes de hardware; los
-**genéticos**, modificaciones del propio organismo. Ambos cuelgan del mismo bloque de
-ficha (`CONV-1`).
+**Aumentos = biónicos + genéticos** (`CONV-1`). El catálogo literal está en
+`docs/aumentos.md`. El encargo de modelado, en `docs/prompt-aumentos.md`.
 
-**Estado del documento del diseñador:** falta bastante por escribir.
+### 11.1 Las dos ramas `[FIRME · AUM]`
+| | Operaciones genéticas | Implantes |
+|---|---|---|
+| Cuántas | 26 | 11: 6 cerrados y 5 **en proceso** (de Control Anímico al final; no se modelan) |
+| Niveles | No: cada operación es una pieza | 1-4, 1-3 o 1-2; precio y rareza **por nivel** |
+| Rareza | "Operación \<Rareza\>" (Poco Habitual · Extraña · Muy Extraña) | "Objeto \<Rareza\>" (de Común a Muy Extraña) |
+| Precio | 15.000-45.000 créditos | De 1.500 (MQE 1) a 240.000 (IRM 4) |
+| Requisitos | Otras operaciones, en árbol (*Mielinización Central* → *Neurogénesis Hipocampal* → *Estabilización Engramática*) | Ninguno escrito |
+| Repetible | Solo *Introgresión Sensorial Heteróloga*, un sentido distinto cada vez (6) | No |
+
+- **Se compran con créditos**, como el equipo.
+- **Reglas generales de los implantes**: casi todos son susceptibles de **sabotaje**.
+  Algunos biónicos se pueden **extraer** como recurso con **perspicacia o reflejos +
+  biónica** y el instrumental adecuado.
+- **Qué aportan**: lo más común es +1 a un atributo **básico**. También ventaja ("dos dados,
+  el mejor") pagando fatiga, bonos a salvaciones y tiradas concretas, armadura natural por
+  tipo de daño, reducción de penalizadores por heridas o fatiga, reacciones o acciones
+  extra, regeneración e inmunidades.
+- **Decisión del usuario (2026-10-16)**: los aumentos entran en la app como una **familia de
+  equipo**, con chip propio en Equipo y compra en la Tienda. Lo que falta por decidir está
+  en `docs/prompt-aumentos.md` §3.
+
+### 11.2 Lo que el documento no dice `[PENDIENTE]`
+- **Tope de implantes**: pregunta 11, sigue abierta.
+- **Biociencia o Tecnociencia**: pregunta 20, sigue abierta. Hay dos datos: la extracción y
+  el Brazo usan **biónica** (especialidad de Biociencia), y Tempestad Nanobótica usa
+  **tecnociencia**.
+- **Erratas** pendientes de Murillo: ver "Notas de transcripción" en `docs/aumentos.md`.
+
+### 11.3 Decisiones del usuario `[FIRME · usuario 2026-10-16, Cuestionario Aumentos]`
+- **En la ficha**: una pieza de equipo más, que se equipa y se desequipa ("un jugador se
+  puede equivocar y querer quitarla"). Sale en Equipo con un chip propio y se compra en la
+  Tienda.
+- **El +1 a un atributo básico cuenta para los requisitos de dotes**: el aumento es parte
+  del cuerpo, como la especie. Matiza S30.
+- **Brazo Biónico**: el modelo se elige al comprar y queda guardado. Cambiar de modelo es
+  comprar otro brazo.
+- **Operaciones genéticas**: en la Tienda, en la misma lista que los implantes. Las que no
+  cumplen requisitos salen bloqueadas y dicen qué falta.
+- **Bolsa del humano**: las fichas ya aprobadas también pueden gastarla. Lo que no se gaste
+  se pierde igual.
+- **Sobreesfuerzo del IRM**: lo tira la app, en la ventana del poder, como la sobrecarga.
+  Le salta a cualquiera que lleve el IRM y use un poder; si toca también la sobrecarga, se
+  tiran las dos, primero la sobrecarga. **No se construye hasta la tarea de psiónica
+  biológica** (usuario, R5).
+- **IRM y psiónica: se modela pero no se conecta** en este desarrollo, y no se tocan los
+  requisitos de la psiónica. Según Murillo (vía el usuario, 2026-10-16), las únicas especies
+  **psiónicas biológicas** son los **Arianyi** y la **Casa Maolher** de los Manduk. Hoy la
+  app trata como psiónico biológico a cualquiera que ponga puntos en psiónica al crear.
+  Cambio futuro:
+  - "psiónico biológico" pasa a ser un atributo de especie visible;
+  - las disciplinas lo piden como requisito;
+  - el IRM lo da.
+  
+  Tarea aparte en `docs/tareas.md`.
+- **Niveles de implante** (sin consulta a Murillo; quedan como supuestos hasta que lo
+  confirme):
+  - Se puede comprar **cualquier nivel directamente**, y subir de nivel cuesta **la
+    diferencia de precio**.
+  - **Los niveles se acumulan**: cada nivel trae los efectos de los anteriores, salvo lo que
+    diga "en lugar de".
+  - ~~"Resistencia" = Aguante~~ **En espera:** solo aparece en implantes que siguen en
+    proceso (Refuerzo Protésico, Sistema de Emergencia).
+
+**Segunda ronda** (usuario 2026-10-16, tras el modelado):
+- **Cómo se construye**:
+  - **"Una vez por escena"**: la misma casilla que en dotes, que se limpia con "Terminar
+    escena". "Hasta un descanso breve o largo" (Neuroprótesis 3 y 4) queda como texto.
+  - **Duraciones**: turno = ronda ("tres turnos" son 3 rondas). "Una hora" dura hasta el
+    final de la escena.
+  - **El +1 temporal de un activable** (Neuroprótesis 1) **no cuenta** para requisitos de
+    dotes. Solo cuentan los aumentos permanentes.
+  - **Brazo Biónico**: casilla "con el brazo biónico" en las tiradas de golpes, bloqueos y
+    armas de una mano, que cambia tu Fuerza y Agilidad por las del brazo.
+  - **Armadura natural** (Osteotendinosa, Matriz Ósea): +1 contra Cinético cada una, con
+    una nota de a qué golpes vale. Con las dos, +2.
+- **Reglas** (pendientes de que Murillo las confirme):
+  - **Techo de atributos: los aumentos no tienen límite** (usuario, 2026-10-16, cambia lo
+    que respondió en R7). Sus puntos van aparte de los comprados y de los de especie, igual
+    que el bono de especie (S7): el 4 de creación y el 6 de techo miran solo lo comprado, y
+    el total puede pasar de 6. Vale también para el +1 temporal de los activables.
+  - **Penalizadores por heridas y fatiga**: cada reducción baja el penalizador en 1 y se
+    suma a la de la especie y a la de otros aumentos. Nota del usuario: malherido acaba
+    siendo un estado más, con un penalizador igual al máximo que le corresponde menos los
+    bonificadores de aumentos y especie.
+  - **"Pruebas que usen perspicacia, voluntad o expresión"**: cualquier tirada que use ese
+    aplicado, salvaciones de Voluntad y poderes incluidos.
+  - **Rebajas de coste de habilidad**: se suman (mínimo 1), y valen para lo que se compre
+    después de tener la operación.
+  - **Ceguera**: se salva con **Fortaleza**.
+  - **Blindaje del Brazo**: solo protege el golpe que bloqueas con el brazo, como un escudo.
 
 ## 12. Equipamiento
 
@@ -1413,10 +1503,12 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 - *NPC:* `resolverFicha(sheet, { libre: true })` deja el ajuste neutro y sin bolsa (14.3).
 
 **Humanos, bolsa de aumentos** (M3) — *visible, sin gastar: no hay aumentos*
-- 60.000 créditos aparte, **solo para aumentos**. No toca `Character.creditos`.
+- **70.000** créditos aparte, **solo para aumentos** (`docs/fuente/especies.md`; antes 60.000,
+  la app aún dice 60.000 — tarea en `docs/tareas.md`, Aumentos). No toca `Character.creditos`.
 - Un aumento se paga **primero con la bolsa**; si no llega, lo que falte sale de los
   créditos normales.
-- Lo que quede en la bolsa al aprobar se pierde.
+- Lo que quede en la bolsa al aprobar se pierde, pero mientras tanto lo que sobra puede
+  juntarse con los recursos de creación para comprar otros aumentos (`fuente/especies.md`).
 - Hasta que existan los aumentos, la ficha solo la muestra como dato. *En la app (E2a):*
   `bolsaAumentos` en el rasgo del humano → `FichaResuelta.bolsaAumentos`; línea "Bolsa de
   aumentos 60.000 · pendiente de aumentos" en la cabecera de la Tienda y en Recursos.
@@ -1595,7 +1687,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S4 | Tope de **3 especialidades** por habilidad. | **Murillo (2026-09-23) confirma que las reglas no ponen tope, solo el coste en experiencia.** Se mantiene el 3 igualmente, como límite de interfaz deliberado (decisión del usuario, 2026-09-23: la diferencia es menor, no compensa tocarlo ahora) — ya no es un hueco de regla, es UX. |
 | ~~S5~~ | ~~Las especialidades son **texto libre**.~~ **Cerrado (tanda ESP, 2026-10-15):** lista cerrada por id desde `docs/fuente/habilidades.md` (§3, `catalog/especialidades.ts`). | El fallo crítico de Elión (§14.8) sigue bloqueado, ahora por la tarea "La tirada sabe qué especialidad se usa". |
 | ~~S6~~ | ~~El movimiento no baja de 0.~~ **Superado (Murillo, 2026-09-23):** el salto vertical tiene mínimo **15 cm**, no 0; el resto de fórmulas de movimiento sigue cortándose en 0 (no preguntado, no respondido). El mínimo de 15 cm vale también para el salto vertical del Arköru (usuario, M23, §14.7). | Se queda aquí tachado como rastro — igual que S1. |
-| S7 | En creación el tope es **4** tanto en atributos como en habilidades; 6 es el techo del sistema, alcanzable en partida con puntos que reparte el máster. | `HOJA2` sube el "4/5" y "3/5" de `HOJA` a "4/6" en los dos, unificando el máximo de creación. La partición 4-creación/6-techo la confirma el usuario (2026-09-10); falta que Murillo la valide con una fórmula de progresión concreta. **Especies (usuario, M1-M2, 2026-10-09):** el 4 y el 6 miran solo lo comprado; el bono de especie va aparte y el total puede superarlos (§14.2). |
+| S7 | En creación el tope es **4** tanto en atributos como en habilidades; 6 es el techo del sistema, alcanzable en partida con puntos que reparte el máster. | `HOJA2` sube el "4/5" y "3/5" de `HOJA` a "4/6" en los dos, unificando el máximo de creación. La partición 4-creación/6-techo la confirma el usuario (2026-09-10); falta que Murillo la valide con una fórmula de progresión concreta. **Especies (usuario, M1-M2, 2026-10-09):** el 4 y el 6 miran solo lo comprado; el bono de especie va aparte y el total puede superarlos (§14.2). **Aumentos (usuario, 2026-10-16):** igual, sus puntos van aparte y sin límite (§11.3). |
 | S8 | El **valor de Atletismo** que entra en las fórmulas de movimiento es el valor puro, sin aplicar la mitad por estar fuera de especialidad. | Las fórmulas de `HOJA` dicen "Potencia + Atletismo" a secas. |
 | S9 | En un módulo con niveles (mejora estándar o subsistema de `EQUIP`), un efecto que un nivel introduce y los superiores no repiten ni anulan se **acumula**: el nivel N conserva lo desbloqueado en 1..N-1. Cuando el documento da un total explícito para ese nivel ("mejora la bonificación a +2"), se usa ese total tal cual, sin sumarlo al de niveles inferiores. **Implementado de verdad 2026-09-25** (antes solo estaba escrito aquí: el código leía únicamente el bloque del nivel exacto, `niveles.find(n => n.nivel === pieza.nivel)`, y perdía todo lo de 1..N-1 que el nivel actual no repitiera — bug real, detectado en Mira Telescópica/Visor Nocturno, que hasta entonces se parcheaba a mano copiando el efecto en cada nivel superior). `nivelesHasta()`/`acumulaPorClave()`/`ultimoQueDefine()` en `lib/rules/equipo.ts` lo resuelven de forma genérica; los parches a mano ya no hacen falta y se han quitado (Soporte Vital, Sistema de Retroceso, Estabilizador Neuronal). | `EQUIP` describe cada nivel como una mejora sobre el anterior, nunca como un reemplazo (p. ej. Soporte Vital nivel 1 da Resistencia Térmica y los niveles 2-3 no la repiten, pero tampoco dicen que se pierda). Asumir que se pierde algo al subir de nivel sería más raro que asumir que se mantiene. |
 | S10 | El bono de Fuerza del Exoesqueleto, que `EQUIP` duplica para "carga transportable y proezas de fuerza", se aplica **x2 a las 5 fórmulas de movimiento** (Carrera, Salto Vertical, Salto Horizontal, Escalada, Nado) **y a la Carga Transportable** (sección 5.5, `cargaMaxima()`) — la cita completa de `EQUIP`, ya cerrada del todo (2026-09-11: hasta ahora solo se aplicaba a movimiento). No toca la Fuerza general ni Fortaleza/Vida, que siguen sin mecanizar. | `EQUIP` no dice explícitamente qué cuenta como "proeza de fuerza"; las 5 fórmulas salen de Potencia + Atletismo, la misma base física, así que tratarlas todas igual es lo más consistente. Pendiente de confirmar con Murillo. |
@@ -1728,7 +1820,7 @@ sospecha que también contra eléctrico, 2026-09-12)? Pendiente de confirmar con
 **Diseño pendiente**
 9. ~~Dotes: `HOJA2` da presupuesto (0 en la letra E, el resto sin rellenar), pero sigue sin decir qué son, cuántas se eligen ni qué compra cada punto.~~ **Resuelta (2026-10-14):** llegó el documento de Dotes (`DOTES`) y el pool completo (`HOJA3`); ver sección 9.
 10. ~~Psiónica: ¿los poderes se compran con los 10 puntos de creación, con otro pool, o vienen dados por especie/dote?~~ **Resuelta por `HOJA2`:** pool propio, ligado a la letra de prioridad. Sigue sin catálogo de poderes.
-11. ~~Aumentos: ¿hay un tope de capacidad de lo que un cuerpo aguanta instalado? ¿Biónicos y genéticos comparten ese tope o van por separado? ¿Instalarse de más tiene consecuencia?~~ **En proceso (usuario, 2026-09-10):** el diseñador ya lo está preparando — se retoma cuando llegue el documento.
+11. ~~Aumentos: ¿hay un tope de capacidad de lo que un cuerpo aguanta instalado? ¿Biónicos y genéticos comparten ese tope o van por separado? ¿Instalarse de más tiene consecuencia?~~ **En proceso (usuario, 2026-09-10):** el diseñador ya lo está preparando — se retoma cuando llegue el documento. **Reabierta (2026-10-16):** el documento de aumentos (`AUM`) llegó y no lo dice.
 12. ~~Progresión post-creación: ¿XP, hitos, puntos por sesión?~~ **Resuelta por `HOJA2`:** hay XP, y el coste por nivel es el mismo que en creación (Nivel × factor según categoría) — ver "Coste y progresión", sección 2.
 13. ~~Especies: lista y qué modifican.~~ **En proceso (usuario, 2026-09-10):** confirmado, ya en camino. **Resuelta por `ESP`** (2026-10-09): ver sección 14. Sus dudas de lectura (M1-M24) las cerró el usuario; no queda ninguna para Murillo.
 
@@ -1739,7 +1831,7 @@ sospecha que también contra eléctrico, 2026-09-12)? Pendiente de confirmar con
 17. ~~Fallar la intrusión psiónica provoca "colapso cognitivo o pérdida de consciencia". ¿Eso es fatiga, daño (no letal/letal), o los estados Aturdido/Inconsciente que ya usa `EQUIP`?~~ **Resuelta, ver sección 10.5** (varía por poder, sin regla universal).
 18. ~~¿Existen sistemas **no cuánticos** (legacy digital) donde el psiónico no pueda entrar y sí el hacker clásico?~~ **Resuelta, ver sección 10.5:** sí existen.
 19. ~~Si el cerebro actúa como cúbit y hay **interfaces neurales** para no psiónicos (`EQUIP`, camuflaje trifásico), ¿puede un no psiónico entrelazarse con hardware, o eso está vetado?~~ **Resuelta, ver sección 10.5:** sí, existe esa tecnología (así se entrena a los aspirantes a psiónico).
-20. ~~¿Los aumentos genéticos usan Biociencia donde los biónicos usan Tecnociencia?~~ **En proceso (usuario, 2026-09-10):** parte del documento de aumentos que el diseñador ya está preparando.
+20. ~~¿Los aumentos genéticos usan Biociencia donde los biónicos usan Tecnociencia?~~ **En proceso (usuario, 2026-09-10):** parte del documento de aumentos que el diseñador ya está preparando. **Reabierta (2026-10-16):** `AUM` no lo resuelve; pistas mixtas (biónica de Biociencia para extraer, tecnociencia en Tempestad Nanobótica), ver §11.2.
 
 **Huecos detectados al planificar la app** (ver `docs/plan-app.md`)
 26. ~~No existe fórmula de capacidad de carga.~~ **Resuelta por `HOJA2`:** sale de Fuerza (Fuerza × 20 kg, con pisos y penalizadores propios) — ver "Carga transportable", sección 5.5.

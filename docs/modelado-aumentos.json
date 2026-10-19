@@ -1,0 +1,5279 @@
+{
+  "aumentos": [
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_mielinizacion_central",
+      "label": "Mielinización Central",
+      "rareza": "Poco Habitual",
+      "coste": 30000,
+      "requisitos": [],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "inteligencia",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "Una vez por escena puedes omitir el gasto de un punto de fatiga en una prueba que use perspicacia, voluntad o expresión. Se combina con el gasto de fatiga de otros aumentos que influyan en esos atributos.",
+          "condicion": null,
+          "porque": "turno",
+          "limite": {
+            "veces": 1,
+            "por": "escena"
+          },
+          "_campoNuevo": "descuento_fatiga"
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "aplicado:perspicacia|voluntad|expresion"
+          },
+          "mecanismo": "hueco",
+          "estado": "bloqueado",
+          "hueco": "descuento de fatiga sobre el gasto de una tirada, con alcance por aplicado y límite por escena",
+          "bloqueoPor": "pregunta: qué gasto de fatiga se omite (el +1 genérico de §7 o el coste de capacidades)"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_neurogenesis_hipocampal",
+      "label": "Neurogénesis Hipocampal",
+      "rareza": "Poco Habitual",
+      "coste": 45000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_mielinizacion_central"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "inteligencia",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "reduce_penalizador",
+          "de": [
+            "fatiga"
+          ],
+          "valor": 1,
+          "alcance": "aplicado:perspicacia|voluntad|expresion",
+          "_capaNueva": true,
+          "_campoNuevo": "Alcance 'aplicado:<a>'"
+        },
+        {
+          "tipo": "coste_habilidad",
+          "habilidades": [
+            "biociencia",
+            "cultura",
+            "tecnociencia"
+          ],
+          "valor": 1,
+          "minimo": 1,
+          "_capaNueva": true
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "aplicado:perspicacia|voluntad|expresion"
+          },
+          "mecanismo": "hueco",
+          "estado": "pendiente",
+          "hueco": "reducción del penalizador por umbral de fatiga aportada por una pieza y limitada a ciertos aplicados (hoy ajusteUmbrales solo de especie)"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "pendiente",
+          "nota": "coste_habilidad: patrón derivadoEstatico (creación/progresión), no toca tiradas"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_estabilizacion_engramatica",
+      "label": "Estabilización Engramática",
+      "rareza": "Extraño",
+      "coste": 45000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_neurogenesis_hipocampal"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "inteligencia",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "El cerebro elimina por completo la degradación de los recuerdos. Cada concepto, habilidad o dato adquirido se archiva con fidelidad estructural imborrable.",
+          "condicion": null,
+          "porque": "narrativo"
+        },
+        {
+          "tipo": "coste_habilidad",
+          "habilidades": "todas",
+          "valor": 1,
+          "minimo": 1,
+          "_capaNueva": true
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "narrativo",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "construido"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "pendiente",
+          "nota": "coste_habilidad: patrón derivadoEstatico (creación/progresión), no toca tiradas"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_red_frontoparietal",
+      "label": "Red Frontoparietal",
+      "rareza": "Extraño",
+      "coste": 30000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_mielinizacion_central"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "inteligencia",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "atributo",
+          "id": "caracter",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "grupo:Iniciativa",
+          "condicion": null
+        },
+        {
+          "tipo": "accion",
+          "accion": {
+            "id": "aumentos_accion_combinada",
+            "label": "Prueba mental y física a la vez",
+            "economia": [
+              "simple",
+              "estandar"
+            ],
+            "coste": {
+              "fatiga": 1
+            },
+            "limite": null,
+            "resolucion": {
+              "tipo": "sin_dado"
+            },
+            "resultados": {},
+            "notas": [
+              {
+                "texto": "Haces una prueba mental (acción simple o estándar) a la vez que una prueba física, como parte de la misma acción. La acción empleada es la más compleja de las dos.",
+                "condicion": null
+              }
+            ]
+          }
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#5"
+          ]
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "grupo:Iniciativa"
+          },
+          "mecanismo": "hueco",
+          "estado": "pendiente",
+          "hueco": "ventaja fija por alcance puesta por una pieza (hoy solo Disciplina.ventajas)"
+        },
+        {
+          "tipo": "accion",
+          "afecta": {
+            "modo": "accion_nueva",
+            "id": "aumentos_accion_combinada"
+          },
+          "mecanismo": "accion_equipo",
+          "estado": "pendiente"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_prefrontal_aumentada",
+      "label": "Prefrontal Aumentada",
+      "rareza": "Poco Habitual",
+      "coste": 25000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_mielinizacion_central"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "percepcion",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "economia",
+          "alcance": "aplicado:perspicacia|voluntad|expresion",
+          "economia": "compleja",
+          "condicion": "Concentrarse (acción simple o estándar resuelta como compleja)"
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "aplicado:perspicacia|voluntad|expresion",
+          "condicion": "Concentrarse (acción simple o estándar resuelta como compleja)",
+          "coste": {
+            "fatiga": 1
+          }
+        },
+        {
+          "tipo": "texto",
+          "lugar": "aplicado:perspicacia|voluntad|expresion",
+          "texto": "No se puede usar a la vez que Asa Estriatotalámica.",
+          "condicion": "Concentrarse (acción simple o estándar resuelta como compleja)",
+          "porque": "turno"
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "aplicado:perspicacia|voluntad|expresion"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "aplicado:perspicacia|voluntad|expresion"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "aplicado:perspicacia|voluntad|expresion"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente",
+          "corregido": "nota_fija → eleccion_jugador"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_optimizacion_foveo_sensorial",
+      "label": "Optimización Foveo-Sensorial",
+      "rareza": "Poco Habitual",
+      "coste": 30000,
+      "requisitos": [],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "percepcion",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "bono",
+          "alcance": "habilidad:combate_distancia",
+          "valor": 1,
+          "condicion": "Ataque a distancia por puntería"
+        },
+        {
+          "tipo": "reduce_penalizador",
+          "de": [
+            "cobertura"
+          ],
+          "valor": 1,
+          "alcance": "habilidad:combate_distancia",
+          "_capaNueva": true,
+          "_condicion": "Objetivo con cobertura visual (1-4)"
+        },
+        {
+          "tipo": "reduce_penalizador",
+          "de": [
+            "cobertura"
+          ],
+          "valor": 1,
+          "alcance": "alerta_activa",
+          "_capaNueva": true,
+          "_condicion": "Percepción visual contra algo a cubierto"
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "grupoHabilidad:Ataques+combate_distancia"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "bloqueado",
+          "bloqueoPor": "pregunta: 'por puntería' = acción Apuntar (como Gran Puntería) o cualquier disparo"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "grupoHabilidad:Ataques+combate_distancia"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_optimizacion_vestibulo_auditiva",
+      "label": "Optimización Vestíbulo-Auditiva",
+      "rareza": "Extraño",
+      "coste": 25000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_optimizacion_foveo_sensorial"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "percepcion",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "bono",
+          "alcance": "salvacion:ceguera",
+          "valor": 2,
+          "condicion": "¿Es contra ceguera?"
+        },
+        {
+          "tipo": "bono",
+          "alcance": "salvacion:sordera",
+          "valor": 2,
+          "condicion": "¿Es contra sordera?"
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "alerta_activa",
+          "condicion": "Percepción auditiva para detectar enemigos ocultos o rastrear por el sonido"
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_ceguera"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "bloqueado",
+          "bloqueoPor": "qué salvación resiste la Ceguera (§Ceguera no lo dice; mismo hueco que Visor y Axadren)"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_fortaleza"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente",
+          "nota": "sordera: 'normalmente Fortaleza'"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_consciencia_omnidireccional",
+      "label": "Consciencia Omnidireccional",
+      "rareza": "Muy Extraño",
+      "coste": 30000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_optimizacion_foveo_sensorial"
+        },
+        {
+          "tipo": "aumento",
+          "id": "aum_prefrontal_aumentada"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "percepcion",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "texto",
+          "lugar": "defensa",
+          "texto": "No puede ser flanqueado: quien le ataca no gana el bono de flanqueo.",
+          "condicion": null,
+          "porque": "tercero"
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "defensa",
+          "condicion": "Esquiva contra un ataque melee o a distancia",
+          "coste": {
+            "fatiga": 1
+          }
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "objetivo_tercero",
+            "id": "ataque_melee_<instancia>"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente",
+          "colgadoDe": "defensa"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "defensa"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_asa_estriatotalamica",
+      "label": "Asa Estriatotalámica",
+      "rareza": "Poco Habitual",
+      "coste": 15000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_mielinizacion_central"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "economia",
+          "alcance": "aplicado:perspicacia|voluntad|expresion",
+          "economia": [
+            "estandar",
+            "simple"
+          ],
+          "condicion": "Simplificar (compleja → estándar o estándar → simple)",
+          "coste": {
+            "fatiga": 1
+          },
+          "_campoNuevo": "coste en Efecto economia"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "aplicado:perspicacia|voluntad|expresion",
+          "texto": "No se puede usar a la vez que Conectividad Callosa o Prefrontal Aumentada.",
+          "condicion": "Simplificar (compleja → estándar o estándar → simple)",
+          "porque": "turno"
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "aplicado:perspicacia|voluntad|expresion"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "aplicado:perspicacia|voluntad|expresion"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente",
+          "corregido": "nota_fija → eleccion_jugador"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_conectividad_callosa",
+      "label": "Conectividad Callosa",
+      "rareza": "Extraño",
+      "coste": 20000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_prefrontal_aumentada"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "ventaja",
+          "alcance": "todas",
+          "condicion": "Concentrarse: resolver una acción simple o estándar como acción compleja",
+          "coste": {
+            "fatiga": 1
+          },
+          "_campoNuevo": "alcance 'todas' + filtro por economía simple/estándar"
+        },
+        {
+          "tipo": "economia",
+          "alcance": "todas",
+          "economia": "compleja",
+          "condicion": "Concentrarse: resolver una acción simple o estándar como acción compleja"
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "todas",
+          "condicion": "Emplear dos turnos en una acción compleja",
+          "_pregunta": "¿esta vía también cuesta 1 de fatiga?"
+        },
+        {
+          "tipo": "economia",
+          "alcance": "todas",
+          "economia": {
+            "tiempo": "2 turnos"
+          },
+          "condicion": "Emplear dos turnos en una acción compleja"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "todas",
+          "texto": "No se puede usar a la vez que Asa Estriatotalámica.",
+          "condicion": "Concentrarse: resolver una acción simple o estándar como acción compleja",
+          "porque": "turno"
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "bloqueado",
+          "bloqueoPor": "pregunta: ¿la vía de dos turnos también cuesta 1 de fatiga?"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_regulacion_limbico_prefrontal",
+      "label": "Regulación Límbico-Prefrontal",
+      "rareza": "Poco Habitual",
+      "coste": 30000,
+      "requisitos": [],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "caracter",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "bono",
+          "alcance": "salvacion:coercion",
+          "valor": 1,
+          "condicion": "Contra coerción",
+          "noApila": {
+            "grupo": "aum_regulacion_limbico_prefrontal",
+            "regla": "mayor"
+          }
+        },
+        {
+          "tipo": "bono",
+          "alcance": "salvacion:intimidacion",
+          "valor": 1,
+          "condicion": "Contra intimidación",
+          "noApila": {
+            "grupo": "aum_regulacion_limbico_prefrontal",
+            "regla": "mayor"
+          }
+        },
+        {
+          "tipo": "bono",
+          "alcance": "salvacion:manipulacion_mental",
+          "valor": 1,
+          "condicion": "Contra manipulación mental",
+          "noApila": {
+            "grupo": "aum_regulacion_limbico_prefrontal",
+            "regla": "mayor"
+          }
+        },
+        {
+          "tipo": "bono",
+          "alcance": "salvacion:miedo",
+          "valor": 1,
+          "condicion": "Contra efectos de miedo",
+          "noApila": {
+            "grupo": "aum_regulacion_limbico_prefrontal",
+            "regla": "mayor"
+          }
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_voluntad"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_voluntad"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_voluntad"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_voluntad"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_proyeccion_neuro_expresiva",
+      "label": "Proyección Neuro-Expresiva",
+      "rareza": "Extraño",
+      "coste": 25000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_regulacion_limbico_prefrontal"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "caracter",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "habilidad:actitud",
+          "condicion": "La prueba emplea algún tipo de lenguaje",
+          "limite": {
+            "veces": 1,
+            "por": "escena"
+          }
+        },
+        {
+          "tipo": "activable",
+          "_capaNueva": true,
+          "coste": {
+            "fatiga": 1
+          },
+          "economia": {
+            "tiempo": "sin indicar"
+          },
+          "duracion": {
+            "tiempo": "1 hora"
+          },
+          "efectos": [
+            {
+              "tipo": "reduce_penalizador",
+              "_capaNueva": true,
+              "de": [
+                "heridas",
+                "fatiga",
+                "estado",
+                "carga",
+                "cobertura"
+              ],
+              "valor": "todos",
+              "alcance": "habilidad:actitud",
+              "_campoNuevo": "de: 'cualquiera'"
+            }
+          ]
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "habilidad:actitud"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "social"
+          },
+          "mecanismo": "hueco",
+          "estado": "bloqueado",
+          "hueco": "activable sobre uno mismo con coste de fatiga y duración que anula penalizadores en un alcance",
+          "bloqueoPor": "capas activable_estado_propio + reduce_penalizador_por_pieza"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_matriz_de_red_predeterminada",
+      "label": "Matriz de Red Predeterminada",
+      "rareza": "Muy Extraño",
+      "coste": 35000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_proyeccion_neuro_expresiva"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "caracter",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "El núcleo de su personalidad es impermeable: muy resistente a dominación mental artificial, sugestión coercitiva o pérdida de voluntad por agentes químicos, farmacológicos o neurológicos.",
+          "condicion": null,
+          "porque": "narrativo"
+        },
+        {
+          "tipo": "bono",
+          "alcance": "salvacion:dominacion_mental",
+          "valor": 2,
+          "condicion": "Contra dominación mental",
+          "noApila": {
+            "grupo": "aum_matriz_de_red_predeterminada",
+            "regla": "mayor"
+          }
+        },
+        {
+          "tipo": "bono",
+          "alcance": "salvacion:sugestion_coercitiva",
+          "valor": 2,
+          "condicion": "Contra sugestión coercitiva",
+          "noApila": {
+            "grupo": "aum_matriz_de_red_predeterminada",
+            "regla": "mayor"
+          }
+        },
+        {
+          "tipo": "bono",
+          "alcance": "salvacion:alteracion_voluntad",
+          "valor": 2,
+          "condicion": "Contra alteración de la voluntad",
+          "noApila": {
+            "grupo": "aum_matriz_de_red_predeterminada",
+            "regla": "mayor"
+          }
+        },
+        {
+          "tipo": "texto",
+          "lugar": "salv_voluntad",
+          "texto": "Si está dominado o manipulado, puede repetir la salvación al final de cada uno de sus turnos para romper el control de inmediato.",
+          "condicion": "Dominado o manipulado",
+          "porque": "turno"
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "habilidad:actitud",
+          "condicion": "Usar la repetición de la escena",
+          "limite": {
+            "veces": 1,
+            "por": "escena"
+          }
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "narrativo",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "construido"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "grupo:Salvaciones"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "grupo:Salvaciones"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "grupo:Salvaciones"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_voluntad"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "habilidad:actitud"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_integridad_osteotendinosa",
+      "label": "Integridad Osteotendinosa",
+      "rareza": "Poco Habitual",
+      "coste": 30000,
+      "requisitos": [],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "fuerza",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "atributo",
+          "id": "agilidad",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "armadura_natural",
+          "valor": 1,
+          "tiposDanio": [
+            "perforante",
+            "cortante"
+          ],
+          "_capaNueva": true
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#5"
+          ]
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "bloquear_danio"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "bloqueado",
+          "bloqueoPor": "tipos de daño perforante/cortante no existen en TIPOS_DANIO (blindaje.ts); pregunta al diseñador"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_matriz_osea_adaptativa",
+      "label": "Matriz Ósea Adaptativa",
+      "rareza": "Poco Habitual",
+      "coste": 40000,
+      "requisitos": [],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "fuerza",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "atributo",
+          "id": "aguante",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "reduce_penalizador",
+          "de": [
+            "carga"
+          ],
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "armadura_natural",
+          "valor": 1,
+          "tiposDanio": [
+            "contundente",
+            "impacto_masivo"
+          ],
+          "_capaNueva": true
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#5"
+          ]
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "acciones_fisicas_carga"
+          },
+          "mecanismo": "hueco",
+          "estado": "bloqueado",
+          "hueco": "reducción de un penalizador derivado aportada por equipo (hoy solo especie)",
+          "bloqueoPor": "penalizadores por carga sin mecanizar (sistema.md §5.5)"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "bloquear_danio"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "bloqueado",
+          "bloqueoPor": "tipos de daño contundente/impacto_masivo no existen en TIPOS_DANIO (blindaje.ts); pregunta al diseñador"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_hipertrofia_miofibrilar",
+      "label": "Hipertrofia Miofibrilar",
+      "rareza": "Poco Habitual",
+      "coste": 40000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_matriz_osea_adaptativa"
+        },
+        {
+          "tipo": "aumento",
+          "id": "aum_integridad_osteotendinosa"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "fuerza",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "formula_salud",
+          "multiplicaFortaleza": 1.5,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "Sana de forma natural el daño no letal al doble de velocidad.",
+          "condicion": null,
+          "porque": "tiempo"
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#5"
+          ]
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "derivado:vida"
+          },
+          "mecanismo": "hueco",
+          "estado": "pendiente",
+          "hueco": "multiplicador sobre Fortaleza en vida = 8 + Fortaleza × k (bonoDerivado solo suma)"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "ficha"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_sincronizacion_neuromotora_profunda",
+      "label": "Sincronización Neuromotora Profunda",
+      "rareza": "Poco Habitual",
+      "coste": 40000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_integridad_osteotendinosa"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "fuerza",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "atributo",
+          "id": "agilidad",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "todas",
+          "condicion": "La tirada usa Potencia (gastas 1 punto de fatiga)",
+          "coste": {
+            "fatiga": 1
+          },
+          "_campoNuevo": "Alcance 'aplicado:potencia' (alternativa a 'todas' + condición)"
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#5"
+          ]
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_hiperdensidad_propioceptiva",
+      "label": "Hiperdensidad Propioceptiva",
+      "rareza": "Poco Habitual",
+      "coste": 40000,
+      "requisitos": [],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "agilidad",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "texto",
+          "lugar": "defensa",
+          "texto": "Puede ganar una segunda reacción por ronda pagando 1 punto de fatiga.",
+          "condicion": null,
+          "porque": "turno"
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "defensa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_automatismo_bulboespinal",
+      "label": "Automatismo Bulboespinal",
+      "rareza": "Extraño",
+      "coste": 40000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_hiperdensidad_propioceptiva"
+        },
+        {
+          "tipo": "aumento",
+          "id": "aum_integridad_osteotendinosa"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "agilidad",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "La segunda reacción por ronda (Hiperdensidad Propioceptiva) ya no cuesta fatiga.",
+          "condicion": null,
+          "porque": "turno"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "grupo:Defensa",
+          "texto": "Estando Sorprendido no aplicas el −3 en la primera tirada defensiva.",
+          "condicion": "Sorprendido",
+          "porque": "turno"
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#5"
+          ]
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "ad_hoc"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "defensa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_bucle_de_realimentacion_motora",
+      "label": "Bucle de Realimentación Motora",
+      "rareza": "Muy Extraño",
+      "coste": 25000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_automatismo_bulboespinal"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "Tercera reacción por ronda a cambio de 1 punto de fatiga.",
+          "condicion": null,
+          "porque": "turno"
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "atletismo",
+          "condicion": "Equilibrio para no caer derribado"
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "ad_hoc"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "atletismo"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_biogenesis_mitocondrial",
+      "label": "Biogénesis Mitocondrial",
+      "rareza": "Poco Habitual",
+      "coste": 30000,
+      "requisitos": [],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "aguante",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "Los consumibles y alimentos que recuperan fatiga recuperan el doble.",
+          "condicion": "si el consumible recupera fatiga",
+          "porque": "tiempo"
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "salvacion:asfixia",
+          "condicion": "contra asfixia",
+          "coste": {
+            "fatiga": 1
+          }
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "salvacion:toxinas",
+          "condicion": "contra toxinas",
+          "coste": {
+            "fatiga": 1
+          }
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "salvacion:venenos",
+          "condicion": "contra venenos",
+          "coste": {
+            "fatiga": 1
+          }
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "Aguanta el doble de tiempo en hipoxia (sin oxígeno: 2 × Fortaleza turnos antes de la asfixia).",
+          "condicion": null,
+          "porque": "tiempo"
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "ad_hoc"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_fortaleza"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_fortaleza"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_fortaleza"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "ad_hoc"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_angiogenesis_sistemica",
+      "label": "Angiogénesis Sistémica",
+      "rareza": "Extraño",
+      "coste": 40000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_matriz_osea_adaptativa"
+        },
+        {
+          "tipo": "aumento",
+          "id": "aum_biogenesis_mitocondrial"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "aguante",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "La hemorragia te dura la mitad de lo habitual.",
+          "condicion": "Hemorragia",
+          "porque": "tiempo"
+        },
+        {
+          "tipo": "accion",
+          "accion": {
+            "id": "aumentos_cortar_hemorragia",
+            "label": "Cortar la hemorragia",
+            "economia": {
+              "tiempo": "la fuente no lo dice"
+            },
+            "coste": {
+              "fatiga": 1
+            },
+            "limite": null,
+            "resolucion": {
+              "tipo": "sin_dado"
+            },
+            "resultados": {},
+            "notas": [
+              {
+                "texto": "Interrumpe la hemorragia de forma automática: el máster quita el estado.",
+                "condicion": "Hemorragia"
+              }
+            ]
+          }
+        },
+        {
+          "tipo": "accion",
+          "accion": {
+            "id": "aumentos_cortar_exanguinante",
+            "label": "Cortar la hemorragia exanguinante",
+            "economia": {
+              "tiempo": "la fuente no lo dice"
+            },
+            "coste": {
+              "fatiga": 2
+            },
+            "limite": null,
+            "resolucion": {
+              "tipo": "sin_dado"
+            },
+            "resultados": {},
+            "notas": [
+              {
+                "texto": "Interrumpe la hemorragia exanguinante: el máster quita el estado.",
+                "condicion": "Hemorragia exanguinante"
+              }
+            ]
+          }
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "En descanso largo sanas el doble de forma natural.",
+          "condicion": null,
+          "porque": "tiempo"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "En descanso largo puedes cambiar 2 niveles de daño no letal sanados por 1 de letal.",
+          "condicion": null,
+          "porque": "tiempo"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "En descanso corto sanas además 1 nivel de daño no letal.",
+          "condicion": null,
+          "porque": "tiempo"
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#5"
+          ]
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "ad_hoc"
+        },
+        {
+          "tipo": "accion",
+          "afecta": {
+            "modo": "accion_nueva",
+            "id": "aumentos_cortar_hemorragia"
+          },
+          "mecanismo": "accion_equipo",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "accion",
+          "afecta": {
+            "modo": "accion_nueva",
+            "id": "aumentos_cortar_exanguinante"
+          },
+          "mecanismo": "accion_equipo",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "ad_hoc"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "ad_hoc"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "ad_hoc"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_resiliencia_homeostatica",
+      "label": "Resiliencia Homeostática",
+      "rareza": "Extraño",
+      "coste": 40000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_angiogenesis_sistemica"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "atributo",
+          "id": "aguante",
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "salvacion:enfermedad",
+          "condicion": "contra enfermedad"
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "salvacion:toxinas",
+          "condicion": "contra toxinas"
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "salvacion:venenos",
+          "condicion": "contra venenos"
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "salvacion:radiacion",
+          "condicion": "contra radiación"
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "salvacion:termicos",
+          "condicion": "contra efectos térmicos extremos"
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "salvacion:asfixia",
+          "condicion": "contra asfixia"
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "suma_derivado",
+          "estado": "pendiente",
+          "hueco": null,
+          "nota": "Modificador tipo 'atributo' desde una pieza (capa atributo_por_pieza); cuenta para requisitos de dote (§11.3)",
+          "claims": [
+            "#4"
+          ]
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_fortaleza"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_fortaleza"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_fortaleza"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_fortaleza"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_fortaleza"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_fortaleza"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_regeneracion_tisular_acelerada",
+      "label": "Regeneración Tisular Acelerada",
+      "rareza": "Extraño",
+      "coste": 30000,
+      "requisitos": [
+        {
+          "tipo": "aumento",
+          "id": "aum_angiogenesis_sistemica"
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "reemplazaAccion": [
+        {
+          "accion": "aumentos_cortar_exanguinante",
+          "por": "aumentos_eliminar_exanguinante",
+          "_campoNuevo": true
+        }
+      ],
+      "efectos": [
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "Regeneras 1 nivel de daño no letal por turno.",
+          "condicion": null,
+          "porque": "tiempo"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "Regeneras 1 nivel de daño letal por minuto (10 turnos).",
+          "condicion": null,
+          "porque": "tiempo"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "Regeneras 1 nivel de daño grave por hora.",
+          "condicion": null,
+          "porque": "tiempo"
+        },
+        {
+          "tipo": "inmunidad",
+          "estado": "hemorragia",
+          "condicion": null,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "accion",
+          "accion": {
+            "id": "aumentos_eliminar_exanguinante",
+            "label": "Eliminar la hemorragia exanguinante",
+            "economia": {
+              "tiempo": "la fuente no lo dice"
+            },
+            "coste": {
+              "fatiga": 1
+            },
+            "limite": null,
+            "resolucion": {
+              "tipo": "sin_dado"
+            },
+            "resultados": {},
+            "notas": [
+              {
+                "texto": "Elimina la hemorragia exanguinante: el máster quita el estado.",
+                "condicion": "Hemorragia exanguinante"
+              }
+            ]
+          }
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "Fatigado: la regeneración tarda el doble.",
+          "condicion": "Fatigado",
+          "porque": "tiempo"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "Exhausto: no regeneras.",
+          "condicion": "Exhausto",
+          "porque": "tiempo"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "En descanso corto recuperas 2 niveles de daño letal en lugar de 1.",
+          "condicion": null,
+          "porque": "tiempo"
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "ad_hoc"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "ad_hoc"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "ad_hoc"
+        },
+        {
+          "tipo": "habilitador",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "estado:hemorragia"
+          },
+          "mecanismo": "hueco",
+          "estado": "bloqueado",
+          "hueco": "no existe inmunidad a estados por pieza: Character.estados la acepta igual",
+          "bloqueoPor": "capa inmunidad_estado"
+        },
+        {
+          "tipo": "accion",
+          "afecta": {
+            "modo": "accion_nueva",
+            "id": "aumentos_eliminar_exanguinante"
+          },
+          "mecanismo": "accion_equipo",
+          "estado": "pendiente",
+          "campoNuevo": "Operacion.reemplazaAccion (oculta aumentos_cortar_exanguinante de Angiogénesis)"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "ad_hoc"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "ad_hoc"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "ad_hoc"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_estabilizacion_autonomica",
+      "label": "Estabilización Autonómica",
+      "rareza": "Poco Habitual",
+      "coste": 15000,
+      "requisitos": [],
+      "eleccion": null,
+      "repetible": false,
+      "efectos": [
+        {
+          "tipo": "reduce_penalizador",
+          "de": [
+            "heridas",
+            "fatiga"
+          ],
+          "valor": 1,
+          "_capaNueva": true
+        },
+        {
+          "tipo": "bono",
+          "alcance": "salvacion:aturdimiento",
+          "valor": 2,
+          "condicion": "contra aturdimiento"
+        },
+        {
+          "tipo": "bono",
+          "alcance": "salvacion:confusion",
+          "valor": 2,
+          "condicion": "contra confusión"
+        },
+        {
+          "tipo": "bono",
+          "alcance": "salvacion:shock",
+          "valor": 2,
+          "condicion": "contra shock"
+        },
+        {
+          "tipo": "bono",
+          "alcance": "salvacion:miedo",
+          "valor": 2,
+          "condicion": "contra miedo"
+        },
+        {
+          "tipo": "accion",
+          "accion": {
+            "id": "aumentos_sacudir_miedo",
+            "label": "Sacudirse el miedo",
+            "economia": [
+              "simple",
+              "reaccion"
+            ],
+            "limite": null,
+            "resolucion": {
+              "tipo": "sin_dado"
+            },
+            "resultados": {},
+            "notas": [
+              {
+                "texto": "Estando Asustado, te libras del miedo: el máster quita el estado.",
+                "condicion": "Asustado"
+              }
+            ]
+          }
+        },
+        {
+          "tipo": "accion",
+          "accion": {
+            "id": "aumentos_dominar_terror",
+            "label": "Dominar el terror",
+            "economia": "estandar",
+            "limite": null,
+            "resolucion": {
+              "tipo": "sin_dado"
+            },
+            "resultados": {},
+            "notas": [
+              {
+                "texto": "Estando Aterrorizado, pasas a Asustado: el máster baja el grado.",
+                "condicion": "Aterrorizado"
+              }
+            ]
+          }
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "todas"
+          },
+          "mecanismo": "hueco",
+          "estado": "pendiente",
+          "hueco": "AjusteUmbrales solo lo alimenta la especie; falta que la familia aumentos sume {salud:1, fatiga:1}"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salvacion_aturdimiento"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "bloqueado",
+          "bloqueoPor": "la fuente no fija qué salvación resiste el aturdimiento (Fortaleza en Aturdido, Voluntad en MQE)"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salvacion_confusion"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "bloqueado",
+          "bloqueoPor": "Confusión no dice qué salvación la resiste"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_fortaleza"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_voluntad"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "accion",
+          "afecta": {
+            "modo": "accion_nueva",
+            "id": "aumentos_sacudir_miedo"
+          },
+          "mecanismo": "accion_equipo",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "accion",
+          "afecta": {
+            "modo": "accion_nueva",
+            "id": "aumentos_dominar_terror"
+          },
+          "mecanismo": "accion_equipo",
+          "estado": "pendiente"
+        }
+      ]
+    },
+    {
+      "familia": "operacion_genetica",
+      "id": "aum_introgresion_sensorial_heterologa",
+      "label": "Introgresión Sensorial Heteróloga",
+      "rareza": "Extraño",
+      "coste": 15000,
+      "requisitos": [],
+      "eleccion": {
+        "id": "sentido",
+        "label": "Sentido",
+        "opciones": [
+          {
+            "id": "vision_nocturna",
+            "label": "Visión Nocturna"
+          },
+          {
+            "id": "vision_termica",
+            "label": "Visión Térmica"
+          },
+          {
+            "id": "percepcion_electromagnetica",
+            "label": "Percepción Electromagnética"
+          },
+          {
+            "id": "espectro_ultravioleta",
+            "label": "Espectro Ultravioleta y Rastro Forense"
+          },
+          {
+            "id": "deteccion_quimica",
+            "label": "Detección Química y de Feromonas"
+          },
+          {
+            "id": "ecolocalizacion",
+            "label": "Ecolocalización y Sónar Orgánico"
+          }
+        ]
+      },
+      "repetible": true,
+      "efectos": [
+        {
+          "opcion": "vision_nocturna",
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "Visión nocturna orgánica: resiste mejor destellos y explosiones intensas.",
+          "condicion": null,
+          "porque": "narrativo"
+        },
+        {
+          "opcion": "vision_nocturna",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "Con poca luz ves igual que con luz: no apliques penalizador por oscuridad.",
+          "condicion": "poca luz",
+          "porque": "sin_regla"
+        },
+        {
+          "opcion": "vision_nocturna",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "A grandes distancias la visión nocturna se restringe.",
+          "condicion": "a gran distancia",
+          "porque": "tablero"
+        },
+        {
+          "opcion": "vision_nocturna",
+          "tipo": "bono",
+          "alcance": "salvacion:ceguera",
+          "valor": 2,
+          "condicion": "ceguera por detonación"
+        },
+        {
+          "opcion": "vision_termica",
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "Visión térmica integrada: superpone el infrarrojo a la vista normal sin perder detalle.",
+          "condicion": null,
+          "porque": "narrativo"
+        },
+        {
+          "opcion": "vision_termica",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "Sin penalizadores en percepción visual fuera del gradiente térmico.",
+          "condicion": "percepción visual",
+          "porque": "sin_regla"
+        },
+        {
+          "opcion": "vision_termica",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "Ves el rastro térmico reciente (pisadas, estelas, paso de un objetivo): puedes rastrear rutas aunque el blanco ya no esté a la vista.",
+          "condicion": "rastrear",
+          "porque": "sin_regla"
+        },
+        {
+          "opcion": "vision_termica",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "El rastro se desvanece a los 5 turnos y persiste de 10 a 15 minutos en condiciones normales.",
+          "condicion": "rastrear",
+          "porque": "tiempo"
+        },
+        {
+          "opcion": "vision_termica",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "Con frío extremo o mucha ventilación, el rastro dura la mitad (2 turnos o 5 minutos).",
+          "condicion": "frío extremo o ventilación",
+          "porque": "tiempo"
+        },
+        {
+          "opcion": "vision_termica",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "En superficies aislantes o interiores sellados, el rastro dura algo más.",
+          "condicion": "interior sellado",
+          "porque": "tiempo"
+        },
+        {
+          "opcion": "percepcion_electromagnetica",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "Detectas campos electromagnéticos (motores, baterías, sintéticos, armas energéticas) a corta distancia, a través de tabiques finos.",
+          "condicion": null,
+          "porque": "sin_regla"
+        },
+        {
+          "opcion": "percepcion_electromagnetica",
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "Proceso orgánico: no emite pulsos rastreables.",
+          "condicion": null,
+          "porque": "narrativo"
+        },
+        {
+          "opcion": "percepcion_electromagnetica",
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "Vulnerable a descargas eléctricas directas y campos magnéticos intensos.",
+          "condicion": "descarga eléctrica o campo magnético intenso",
+          "porque": "sin_regla"
+        },
+        {
+          "opcion": "percepcion_electromagnetica",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "Alcance pasivo: 10 m.",
+          "condicion": null,
+          "porque": "tablero"
+        },
+        {
+          "opcion": "percepcion_electromagnetica",
+          "tipo": "accion",
+          "accion": {
+            "id": "aumentos_barrido_electromagnetico",
+            "label": "Barrido electromagnético",
+            "economia": "compleja",
+            "limite": null,
+            "resolucion": {
+              "tipo": "tirada",
+              "aplicado": "perspicacia",
+              "habilidad": "exploracion",
+              "dificultad": {
+                "manual": "la fuente no la da"
+              }
+            },
+            "resultados": {
+              "exito": {
+                "texto": "Detectas campos electromagnéticos hasta 30 m."
+              }
+            },
+            "notas": [
+              {
+                "texto": "Gastando 1 punto de fatiga en la prueba, el área sube a 60 m.",
+                "condicion": "gasta 1 de fatiga",
+                "coste": {
+                  "fatiga": 1
+                },
+                "_campoNuevo": "AccionAumento.notas[].coste"
+              }
+            ]
+          }
+        },
+        {
+          "opcion": "espectro_ultravioleta",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "Ves en ultravioleta: residuos químicos recientes, fluidos orgánicos, polímeros de ocultación, marcas holográficas e ionización de armas energéticas.",
+          "condicion": null,
+          "porque": "sin_regla"
+        },
+        {
+          "opcion": "espectro_ultravioleta",
+          "tipo": "bono",
+          "alcance": "especialidad:investigacion",
+          "valor": 2,
+          "condicion": "investigación de campo"
+        },
+        {
+          "opcion": "espectro_ultravioleta",
+          "tipo": "bono",
+          "alcance": "alerta_activa",
+          "valor": 2,
+          "condicion": "buscar accesos ocultos"
+        },
+        {
+          "opcion": "deteccion_quimica",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "Olfato químico: percibes transpiración y emisiones hormonales en espacios cerrados, hasta 20 m.",
+          "condicion": "espacio cerrado",
+          "porque": "tablero"
+        },
+        {
+          "opcion": "deteccion_quimica",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "Contrarresta el camuflaje químico.",
+          "condicion": "objetivo con camuflaje químico",
+          "porque": "tercero"
+        },
+        {
+          "opcion": "deteccion_quimica",
+          "tipo": "bono",
+          "alcance": "alerta_activa",
+          "valor": 2,
+          "condicion": "detectar oculto a 4 m o menos"
+        },
+        {
+          "opcion": "ecolocalizacion",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "Sónar orgánico continuo y pasivo, sin activarlo.",
+          "condicion": null,
+          "porque": "sin_regla"
+        },
+        {
+          "opcion": "ecolocalizacion",
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "Imperceptible para escáneres electrónicos e inmune a pulsos de interferencia.",
+          "condicion": null,
+          "porque": "narrativo"
+        },
+        {
+          "opcion": "ecolocalizacion",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "Mapeas el entorno en oscuridad absoluta o bajo el agua.",
+          "condicion": "oscuridad absoluta o bajo el agua",
+          "porque": "sin_regla"
+        },
+        {
+          "opcion": "ecolocalizacion",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "En tierra: contornos, obstáculos y movimiento de blancos hasta 20 m.",
+          "condicion": null,
+          "porque": "tablero"
+        },
+        {
+          "opcion": "ecolocalizacion",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "Más allá de ese radio pierde resolución táctica.",
+          "condicion": null,
+          "porque": "tablero"
+        },
+        {
+          "opcion": "ecolocalizacion",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "En agua o medios densos, el alcance se dobla (40 m).",
+          "condicion": "bajo el agua o medio denso",
+          "porque": "tablero"
+        },
+        {
+          "opcion": "ecolocalizacion",
+          "tipo": "texto",
+          "lugar": "alerta_activa",
+          "texto": "A 4 m o menos: precisión milimétrica (texturas, huecos tras paneles finos, vibraciones).",
+          "condicion": "a 4 m o menos",
+          "porque": "tablero"
+        }
+      ],
+      "motor": [
+        {
+          "tipo": "narrativo",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "construido"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "salv_ceguera"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "bloqueado",
+          "bloqueoPor": "§Ceguera no dice qué atributo la resiste (TODO(revisar) Axadren)"
+        },
+        {
+          "tipo": "narrativo",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "construido"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "narrativo",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "construido"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "bloqueado",
+          "bloqueoPor": "la fuente no dice qué efecto tiene la vulnerabilidad"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "accion",
+          "afecta": {
+            "modo": "accion_nueva",
+            "id": "aumentos_barrido_electromagnetico"
+          },
+          "mecanismo": "accion_equipo",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "objetivo_tercero",
+            "id": "sigilo"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente",
+          "colgadoDe": "alerta_activa"
+        },
+        {
+          "tipo": "numerico",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "narrativo",
+          "afecta": {
+            "modo": "ninguna"
+          },
+          "mecanismo": null,
+          "estado": "construido"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "alerta_activa"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
+        }
+      ]
+    },
+    {
+      "familia": "implante",
+      "id": "aum_implante_de_resonancia_metrica",
+      "label": "Implante de Resonancia Métrica",
+      "descripcion": "Las especies no psiónicas carecen de las vías neurosinápticas orgánicas necesarias para modular la dinámica métrica. El IRM lo resuelve con un nodo central biocompatible anclado a la región parietal-temporal y una red de microfilamentos superconductores por la médula espinal y el sistema nervioso central. Ante una orden de pensamiento enfocado intercepta el impulso, lo traduce con un coprocesador cuántico subdérmico y genera un campo de resonancia artificial; actúa como amplificador y disipador de calor sináptico. El usuario no adquiere de forma inmediata capacidad para la psiónica: debe entrenarla como un psiónico orgánico.",
+      "sabotaje": true,
+      "extraible": null,
+      "electronico": true,
+      "niveles": [
+        {
+          "nivel": 1,
+          "rareza": "Poco Habitual",
+          "coste": 30000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "habilita_psionica",
+              "_capaNueva": true,
+              "nota": "§11.3: se modela pero NO se conecta"
+            },
+            {
+              "tipo": "sobreesfuerzo",
+              "_capaNueva": true,
+              "tirada": "salv_voluntad",
+              "cuando": "Al activar el implante estando fatigado o al emplear poderes de nivel 3 o más",
+              "dificultad": {
+                "base": 6,
+                "masNivelPoder": true
+              },
+              "resultados": {
+                "exito": "Sin efecto",
+                "fracaso": "Pico de retroalimentación: 1 nivel de daño letal",
+                "fracasoCritico": "Daño grave y aturdido por el colapso sináptico"
+              },
+              "cargaCritica": {
+                "fracaso": "Exhausto: el daño pasa a ser grave",
+                "fracasoCritico": "Exhausto: muerte cerebral automática"
+              }
+            },
+            {
+              "tipo": "texto",
+              "lugar": "ficha",
+              "texto": "Punto de entrada: hardware rudimentario, sin filtros de seguridad avanzados. Permite empezar a desarrollar y manifestar los primeros poderes básicos.",
+              "condicion": null,
+              "porque": "narrativo"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "habilitador",
+              "afecta": {
+                "modo": "ninguna",
+                "id": "psionica"
+              },
+              "mecanismo": "gate_instalacion",
+              "estado": "bloqueado",
+              "bloqueoPor": "§11.3: se modela pero no se conecta (tarea psiónico biológico)"
+            },
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "aumentos_sobreesfuerzo_irm"
+              },
+              "mecanismo": "hueco",
+              "estado": "pendiente",
+              "hueco": "tirada disparada por condición al usar otra acción (ventana del poder), con dificultad base + nivel empleado y tabla de grados propia"
+            },
+            {
+              "tipo": "narrativo",
+              "afecta": {
+                "modo": "ninguna"
+              },
+              "mecanismo": null,
+              "estado": "construido"
+            }
+          ]
+        },
+        {
+          "nivel": 2,
+          "rareza": "Poco Habitual",
+          "coste": 60000,
+          "sustituye": [
+            {
+              "efecto": "sobreesfuerzo.cuando (fatigado o poderes de nivel 3+)",
+              "por": "fatigado o poderes de nivel 4+"
+            },
+            {
+              "efecto": "sobreesfuerzo.resultados.fracaso (1 letal)",
+              "por": "no letal"
+            },
+            {
+              "efecto": "sobreesfuerzo.cargaCritica.fracaso (grave)",
+              "por": "letal"
+            }
+          ],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "sobreesfuerzo",
+              "_capaNueva": true,
+              "cuando": "Siempre que el personaje esté fatigado o emplee poderes de nivel 4 o más",
+              "resultados": {
+                "fracaso": "El daño se mitiga y pasa a ser no letal",
+                "fracasoCritico": "Daño grave y aturdimiento"
+              },
+              "cargaCritica": {
+                "fracaso": "Exhausto: el daño deja de ser seguro y pasa a ser letal",
+                "fracasoCritico": "Exhausto: muerte cerebral automática"
+              }
+            },
+            {
+              "tipo": "texto",
+              "lugar": "ficha",
+              "texto": "Optimiza los conductos y ofrece una disipación térmica superior, corrigiendo la extrema vulnerabilidad del modelo base.",
+              "condicion": null,
+              "porque": "narrativo"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "aumentos_sobreesfuerzo_irm"
+              },
+              "mecanismo": "hueco",
+              "estado": "pendiente",
+              "hueco": "tirada disparada por condición al usar otra acción (ventana del poder), con dificultad base + nivel empleado y tabla de grados propia"
+            },
+            {
+              "tipo": "narrativo",
+              "afecta": {
+                "modo": "ninguna"
+              },
+              "mecanismo": null,
+              "estado": "construido"
+            }
+          ]
+        },
+        {
+          "nivel": 3,
+          "rareza": "Extraño",
+          "coste": 120000,
+          "sustituye": [
+            {
+              "efecto": "sobreesfuerzo.cuando (fatigado o poderes de nivel 4+)",
+              "por": "usar poderes estando fatigado o poderes de nivel 5+; los de nivel 1 no generan"
+            },
+            {
+              "efecto": "sobreesfuerzo.resultados.fracasoCritico (grave y aturdimiento)",
+              "por": "letal y aturdido"
+            },
+            {
+              "efecto": "sobreesfuerzo.cargaCritica.fracasoCritico (muerte cerebral)",
+              "por": "grave"
+            }
+          ],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "sobreesfuerzo",
+              "_capaNueva": true,
+              "cuando": "Usar poderes estando fatigado o poderes de nivel 5 o más",
+              "exentos": "Poderes de nivel 1",
+              "resultados": {
+                "fracaso": "El daño se mitiga y pasa a ser no letal",
+                "fracasoCritico": "Daño letal y aturdido"
+              },
+              "cargaCritica": {
+                "fracaso": "Exhausto: cualquier fallo provoca directamente daño letal",
+                "fracasoCritico": "Exhausto: escala a daño grave"
+              }
+            },
+            {
+              "tipo": "texto",
+              "lugar": "ficha",
+              "texto": "Enlace profundo que soporta flujos energéticos masivos y ejecución simultánea, para entornos de alta exigencia táctica.",
+              "condicion": null,
+              "porque": "narrativo"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "aumentos_sobreesfuerzo_irm"
+              },
+              "mecanismo": "hueco",
+              "estado": "pendiente",
+              "hueco": "tirada disparada por condición al usar otra acción (ventana del poder), con dificultad base + nivel empleado y tabla de grados propia"
+            },
+            {
+              "tipo": "narrativo",
+              "afecta": {
+                "modo": "ninguna"
+              },
+              "mecanismo": null,
+              "estado": "construido"
+            }
+          ]
+        },
+        {
+          "nivel": 4,
+          "rareza": "Muy Extraño",
+          "coste": 240000,
+          "sustituye": [
+            {
+              "efecto": "sobreesfuerzo.cuando",
+              "por": "solo estando fatigado, con poderes de nivel 3+; sin fatiga, ningún poder lo genera"
+            },
+            {
+              "efecto": "sobreesfuerzo.exentos (nivel 1)",
+              "por": "nivel 2 o menos"
+            },
+            {
+              "efecto": "sobreesfuerzo.dificultad.base (6)",
+              "por": "4 ('baja a 4 + nivel')"
+            },
+            {
+              "efecto": "sobreesfuerzo.resultados.fracasoCritico (letal y aturdido)",
+              "por": "a elegir: aturdimiento o daño letal"
+            },
+            {
+              "efecto": "sobreesfuerzo.cargaCritica.fracasoCritico (grave)",
+              "por": "grave y aturdimiento"
+            }
+          ],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "sobreesfuerzo",
+              "_capaNueva": true,
+              "cuando": "Solo estando fatigado, al usar poderes de nivel 3 o más",
+              "exentos": "Poderes de nivel 2 o menos; sin fatiga, ningún nivel de poder",
+              "dificultad": {
+                "base": 4,
+                "masNivelPoder": true
+              },
+              "resultados": {
+                "fracaso": "Daño no letal",
+                "fracasoCritico": "El usuario escoge: aturdimiento o daño letal"
+              },
+              "cargaCritica": {
+                "fracaso": "Daño letal",
+                "fracasoCritico": "Daño grave y aturdimiento"
+              }
+            },
+            {
+              "tipo": "texto",
+              "lugar": "ficha",
+              "texto": "Modo límite: los limitadores de seguridad se anulan por completo para desatar potencias destructivas o manipulación métrica de escala mayor.",
+              "condicion": null,
+              "porque": "narrativo"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "aumentos_sobreesfuerzo_irm"
+              },
+              "mecanismo": "hueco",
+              "estado": "pendiente",
+              "hueco": "tirada disparada por condición al usar otra acción (ventana del poder), con dificultad base + nivel empleado y tabla de grados propia"
+            },
+            {
+              "tipo": "narrativo",
+              "afecta": {
+                "modo": "ninguna"
+              },
+              "mecanismo": null,
+              "estado": "construido"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "familia": "implante",
+      "id": "aum_microprocesador_cuantico_de_enlace",
+      "label": "Microprocesador Cuántico de Enlace",
+      "descripcion": "Implante de perfil bajo, integrado de forma discreta en el tejido subdérmico o maxilar: un chip de comunicaciones cuánticas miniaturizado para el intercambio táctico de datos y voz a corta distancia. Usa una matriz de qubits de baja potencia y protocolos de Distribución de Claves Cuánticas (QKD): si alguien intercepta la transmisión, la perturbación se detecta al instante y la clave se anula. Cualquier psiónico que quiera forzar los cúbits en tránsito asume un riesgo letal. Diseñado exclusivamente para comunicaciones y transferencia cifrada, no para intrusión ni craqueo.",
+      "sabotaje": true,
+      "extraible": null,
+      "electronico": true,
+      "niveles": [
+        {
+          "nivel": 1,
+          "rareza": "Común",
+          "coste": 1500,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "accion",
+              "accion": {
+                "id": "aumentos_mqe_comunicar",
+                "label": "Mensaje subvocal (MQE)",
+                "economia": "gratuita",
+                "limite": null,
+                "resolucion": {
+                  "tipo": "sin_dado"
+                },
+                "resultados": {},
+                "notas": [
+                  {
+                    "texto": "Comunicación subvocal cifrada y enlace directo con terminales locales o radios tácticas de corto alcance, sin emitir sonido ni requerir dispositivos externos.",
+                    "condicion": null
+                  },
+                  {
+                    "texto": "Solo de uno en uno.",
+                    "condicion": null
+                  },
+                  {
+                    "texto": "Capacidad: un audio subvocal de 6 s, una línea de texto o coordenadas GPS. Una imagen o un documento pesado colapsa el búfer.",
+                    "condicion": null
+                  },
+                  {
+                    "texto": "El mensaje debe poder reproducirse en la duración de un turno.",
+                    "condicion": null
+                  },
+                  {
+                    "texto": "Alcance: 50 m.",
+                    "condicion": null
+                  }
+                ]
+              }
+            },
+            {
+              "tipo": "defensa_intrusion",
+              "_capaNueva": true,
+              "dificultad": 13,
+              "subePorTurno": 1,
+              "alcanceM": 50,
+              "tiradaIntruso": "El psiónico intruso debe superar la prueba cada turno; es una acción compleja que requiere concentración.",
+              "defensa": "Colapso instantáneo del canal QKD al detectar la menor alteración probabilística en el flujo de cúbits; corta la conexión de forma abrupta.",
+              "contragolpe": "El psiónico recibe 1 nivel de daño letal y debe superar Voluntad dif. 10 contra aturdimiento."
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "aumentos_mqe_comunicar"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "objetivo_tercero",
+                "id": "intrusion_psionica_mqe"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            }
+          ]
+        },
+        {
+          "nivel": 2,
+          "rareza": "Común",
+          "coste": 3000,
+          "sustituye": [
+            {
+              "efecto": "alcance 50 m",
+              "por": "200 m"
+            },
+            {
+              "efecto": "defensa_intrusion.dificultad 13",
+              "por": "14"
+            },
+            {
+              "efecto": "defensa_intrusion.defensa (colapso del canal)",
+              "por": "doble capa de encriptación rotativa"
+            }
+          ],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "accion",
+              "accion": {
+                "id": "aumentos_mqe_telemetria",
+                "label": "Compartir telemetría (MQE)",
+                "economia": "gratuita",
+                "limite": null,
+                "resolucion": {
+                  "tipo": "sin_dado"
+                },
+                "resultados": {},
+                "notas": [
+                  {
+                    "texto": "Sincroniza al usuario a la vez con hasta cuatro dispositivos del escuadrón (drones, miras inteligentes o pasarelas) y comparte telemetría táctica en tiempo real.",
+                    "condicion": null
+                  },
+                  {
+                    "texto": "Alcance: 200 m.",
+                    "condicion": null
+                  }
+                ]
+              }
+            },
+            {
+              "tipo": "defensa_intrusion",
+              "_capaNueva": true,
+              "dificultad": 14,
+              "alcanceM": 200,
+              "defensa": "Doble capa de encriptación cuántica rotativa que cambia constantemente y desvía al psiónico hacia datos falsos y vacíos.",
+              "contragolpe": "El psiónico recibe 1 nivel de daño letal y debe superar Voluntad dif. 10 contra aturdimiento."
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "aumentos_mqe_telemetria"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "objetivo_tercero",
+                "id": "intrusion_psionica_mqe"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            }
+          ]
+        },
+        {
+          "nivel": 3,
+          "rareza": "Poco Habitual",
+          "coste": 6000,
+          "sustituye": [
+            {
+              "efecto": "alcance 200 m",
+              "por": "500 m"
+            },
+            {
+              "efecto": "capacidad (audio de 6 s, línea de texto o GPS)",
+              "por": "flujos de datos pesados sin pérdida de velocidad"
+            },
+            {
+              "efecto": "defensa_intrusion.dificultad 14",
+              "por": "15"
+            },
+            {
+              "efecto": "defensa_intrusion.defensa (encriptación rotativa)",
+              "por": "cepo de 3 turnos"
+            },
+            {
+              "efecto": "defensa_intrusion.contragolpe (1 letal + aturdimiento)",
+              "por": "daño grave + aturdimiento, cada turno en el cepo"
+            }
+          ],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "texto",
+              "lugar": "aumentos_mqe_comunicar",
+              "texto": "Amplía el rango de conexión a repetidores lejanos.",
+              "condicion": null,
+              "porque": "narrativo"
+            },
+            {
+              "tipo": "texto",
+              "lugar": "aumentos_mqe_comunicar",
+              "texto": "Canal de radio aislado frente a interferencias electromagnéticas.",
+              "condicion": null,
+              "porque": "sin_regla"
+            },
+            {
+              "tipo": "texto",
+              "lugar": "aumentos_mqe_comunicar",
+              "texto": "Gestiona flujos de datos pesados sin pérdida de velocidad: planos tridimensionales de un complejo entero, manuales de seguridad o bloques de archivos pesados casi al instante. Alcance: 500 m.",
+              "condicion": null,
+              "porque": "narrativo"
+            },
+            {
+              "tipo": "defensa_intrusion",
+              "_capaNueva": true,
+              "dificultad": 15,
+              "alcanceM": 500,
+              "defensa": "Cepo: finge un fallo de seguridad y atrapa la consciencia del psiónico en un bucle durante 3 turnos. Cada turno puede intentar escapar con Perspicacia + Tecnociencia dif. 10 (acción estándar).",
+              "escape": {
+                "aplicado": "perspicacia",
+                "habilidad": "tecnociencia",
+                "dificultad": 10,
+                "economia": "estandar",
+                "duracionTurnos": 3,
+                "_campoNuevo": true
+              },
+              "contragolpe": "Contragolpe de entropía focalizada: daño grave y aturdimiento (Voluntad dif. 10). Cada turno atrapado en el cepo lo recibe de nuevo."
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "aumentos_mqe_comunicar"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "aumentos_mqe_comunicar"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "aumentos_mqe_comunicar"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "objetivo_tercero",
+                "id": "intrusion_psionica_mqe"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            }
+          ]
+        },
+        {
+          "nivel": 4,
+          "rareza": "Extraño",
+          "coste": 12000,
+          "sustituye": [
+            {
+              "efecto": "alcance 500 m",
+              "por": "2 km"
+            },
+            {
+              "efecto": "capacidad (datos pesados)",
+              "por": "volcados de servidores centrales y paquetes de grado militar en un par de segundos"
+            },
+            {
+              "efecto": "defensa_intrusion.dificultad 15",
+              "por": "16"
+            },
+            {
+              "efecto": "defensa_intrusion.defensa (cepo)",
+              "por": "fortaleza cuántica (o el cepo del nivel 3, a elección)"
+            },
+            {
+              "efecto": "defensa_intrusion.contragolpe (entropía focalizada)",
+              "por": "inversión de fase (o el del cepo del nivel 3, a elección)"
+            }
+          ],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "texto",
+              "lugar": "aumentos_mqe_comunicar",
+              "texto": "Enlace cuántico de grado militar con servidores corporativos centrales y nodos de alta seguridad; automatiza contramedidas en milisegundos.",
+              "condicion": null,
+              "porque": "narrativo"
+            },
+            {
+              "tipo": "texto",
+              "lugar": "ficha",
+              "texto": "Oculta por completo la firma digital del usuario.",
+              "condicion": null,
+              "porque": "tercero"
+            },
+            {
+              "tipo": "texto",
+              "lugar": "aumentos_mqe_comunicar",
+              "texto": "Volcados de servidores centrales, bases de datos de personal completas o paquetes de datos de grado militar sincronizados en un par de segundos. Alcance: 2 km.",
+              "condicion": null,
+              "porque": "narrativo"
+            },
+            {
+              "tipo": "defensa_intrusion",
+              "_capaNueva": true,
+              "dificultad": 16,
+              "alcanceM": 2000,
+              "defensa": "Fortaleza cuántica con aislamiento de fase absoluta: detecta la intención en la Métrica antes de que la información sea leída y sella herméticamente los puertos sinápticos locales. El usuario puede escoger en su lugar el cepo del nivel 3.",
+              "contragolpe": "Inversión de fase: reinyecta un eco de colapso masivo a través del puente sináptico. El psiónico recibe 2 niveles de daño grave, aturdimiento (Voluntad 12) y hemorragia durante 1d10 turnos. El usuario puede escoger en su lugar el contragolpe del cepo del nivel 3.",
+              "defensaAlternativa": {
+                "nivel": 3,
+                "_campoNuevo": true
+              }
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "aumentos_mqe_comunicar"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "objetivo_tercero",
+                "id": "tecnica"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "aumentos_mqe_comunicar"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "objetivo_tercero",
+                "id": "intrusion_psionica_mqe"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "familia": "implante",
+      "id": "aum_brazo_bionico",
+      "label": "Brazo Biónico",
+      "descripcion": "El brazo biónico sustituye la extremidad orgánica por una estructura de aleación de alta resistencia conectada directamente al sistema nervioso periférico y a los impulsos de la médula espinal. Utiliza un sistema de tendones de nanotubos de carbono y servomotores de respuesta ultrarrápida que traducen las órdenes motoras del usuario en una fuerza bruta o una agilidad sobresaliente, integrando además un chasis blindado y anclajes internos para alojar armamento táctico o herramientas de precisión.",
+      "sabotaje": true,
+      "extraible": null,
+      "electronico": true,
+      "niveles": [
+        {
+          "nivel": 1,
+          "rareza": "Común",
+          "coste": 12500,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "extremidad",
+              "_capaNueva": true,
+              "fuerza": {
+                "delta": 0,
+                "max": null
+              },
+              "agilidad": {
+                "delta": -1,
+                "max": null
+              },
+              "blindaje": 0,
+              "bloquea": false,
+              "armaIntegrada": true
+            },
+            {
+              "tipo": "economia",
+              "alcance": "arma_incorporada",
+              "_capaNueva": true,
+              "economia": "gratuita",
+              "condicion": "Con un arma incorporada en el brazo",
+              "nota": "Desenfundado gratuito"
+            },
+            {
+              "tipo": "texto",
+              "lugar": "ficha",
+              "texto": "Mientras el arma esté incorporada en el brazo, no puede ser desarmado.",
+              "condicion": "Con un arma incorporada en el brazo",
+              "porque": "tercero"
+            },
+            {
+              "tipo": "accion",
+              "accion": {
+                "id": "aumentos_montar_arma_brazo",
+                "label": "Incorporar o desmontar arma del brazo",
+                "economia": {
+                  "tiempo": "10 minutos (acción extendida)"
+                },
+                "limite": null,
+                "resolucion": {
+                  "tipo": "tirada",
+                  "aplicado": "perspicacia",
+                  "habilidad": "biociencia",
+                  "especialidad": "bionica",
+                  "dificultad": 8
+                },
+                "resultados": {
+                  "exito": {
+                    "texto": "El arma (de uso a una mano) queda incorporada en el brazo, o se desmonta."
+                  }
+                },
+                "notas": [
+                  {
+                    "texto": "Requiere el instrumental adecuado.",
+                    "condicion": null
+                  },
+                  {
+                    "texto": "Solo armas de uso a una mano.",
+                    "condicion": null
+                  },
+                  {
+                    "texto": "Desmontar el arma es la misma acción. Si se extrae de un cuerpo sin respetar su salud, se hace como el saqueo de implantes.",
+                    "condicion": null
+                  }
+                ]
+              }
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "ataque_melee_<instancia>"
+              },
+              "mecanismo": "hueco",
+              "estado": "bloqueado",
+              "hueco": "atributo básico propio de una extremidad (delta y tope) que sustituye al del personaje en las acciones hechas con ella",
+              "bloqueoPor": "capa extremidad_atributos_propios"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "ataque_melee_<instancia>"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "bloqueado",
+              "bloqueoPor": "capa nueva: arma incorporada (vínculo brazo-instancia de arma)"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "objetivo_tercero",
+                "id": "desarmar"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "bloqueado",
+              "bloqueoPor": "capa nueva: arma incorporada (vínculo brazo-instancia de arma)"
+            },
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "aumentos_montar_arma_brazo"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "pendiente"
+            }
+          ]
+        },
+        {
+          "nivel": 2,
+          "rareza": "Poco Habitual",
+          "coste": 25000,
+          "sustituye": [
+            {
+              "efecto": "Fuerza del brazo igual a la del usuario",
+              "por": "Fuerza del usuario +1, máximo 5"
+            },
+            {
+              "efecto": "Agilidad del brazo 1 punto menor que la del usuario",
+              "por": "Agilidad idéntica a la del usuario"
+            }
+          ],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "extremidad",
+              "_capaNueva": true,
+              "fuerza": {
+                "delta": 1,
+                "max": 5
+              },
+              "agilidad": {
+                "delta": 0,
+                "max": null
+              },
+              "blindaje": 3,
+              "bloquea": true,
+              "armaIntegrada": true
+            },
+            {
+              "tipo": "categoria_danio",
+              "alcance": "especialidad:pelea",
+              "a": "letal",
+              "condicion": "¿Golpeas con el brazo biónico?"
+            },
+            {
+              "tipo": "accion",
+              "accion": {
+                "id": "aumentos_bloquear_brazo",
+                "label": "Bloquear con el brazo biónico",
+                "economia": "reaccion",
+                "limite": null,
+                "resolucion": {
+                  "tipo": "tirada",
+                  "aplicado": "potencia",
+                  "habilidad": "combate_melee",
+                  "especialidad": "pelea",
+                  "_supuesto": "resolución no dada por la prosa; ligada a la pregunta de la dote Bloqueo"
+                },
+                "resultados": {
+                  "exito": {
+                    "texto": "Desvía el ataque melee."
+                  }
+                },
+                "notas": [
+                  {
+                    "texto": "Usa la Fuerza propia del brazo para la Potencia.",
+                    "condicion": null
+                  },
+                  {
+                    "texto": "Daño letal: no cuenta como desarmado frente a atacante armado (regla de Bloqueo).",
+                    "condicion": null
+                  }
+                ]
+              }
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "ataque_melee_<instancia>"
+              },
+              "mecanismo": "hueco",
+              "estado": "bloqueado",
+              "hueco": "atributo básico propio de una extremidad (delta y tope) que sustituye al del personaje en las acciones hechas con ella",
+              "bloqueoPor": "capa extremidad_atributos_propios"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "bloquear_danio"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "bloqueado",
+              "bloqueoPor": "pregunta: ¿el blindaje del brazo suma al del personaje o solo protege el brazo?"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "ataque_melee_<instancia>"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "aumentos_bloquear_brazo"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "bloqueado",
+              "bloqueoPor": "capa extremidad_atributos_propios; pregunta: ¿exige la dote Bloqueo?"
+            }
+          ]
+        },
+        {
+          "nivel": 3,
+          "rareza": "Extraño",
+          "coste": 50000,
+          "sustituye": [
+            {
+              "efecto": "Fuerza +1 (máx 5) y blindaje 3 del nivel 2",
+              "por": "Modelo Fuerte: Fuerza +2 (máx 7), blindaje 6"
+            },
+            {
+              "efecto": "Agilidad idéntica del nivel 2",
+              "por": "Modelo Ágil: Agilidad +1 (máx 5)"
+            }
+          ],
+          "variantes": [
+            {
+              "id": "fuerte",
+              "label": "Modelo Fuerte",
+              "efectos": [
+                {
+                  "tipo": "extremidad",
+                  "_capaNueva": true,
+                  "fuerza": {
+                    "delta": 2,
+                    "max": 7
+                  },
+                  "agilidad": {
+                    "delta": 0,
+                    "max": null
+                  },
+                  "blindaje": 6,
+                  "bloquea": true,
+                  "armaIntegrada": true
+                }
+              ],
+              "motor": [
+                {
+                  "tipo": "numerico",
+                  "afecta": {
+                    "modo": "accion_existente",
+                    "id": "ataque_melee_<instancia>"
+                  },
+                  "mecanismo": "hueco",
+                  "estado": "bloqueado",
+                  "hueco": "atributo básico propio de una extremidad (delta y tope) que sustituye al del personaje en las acciones hechas con ella",
+                  "bloqueoPor": "capa extremidad_atributos_propios"
+                },
+                {
+                  "tipo": "numerico",
+                  "afecta": {
+                    "modo": "accion_existente",
+                    "id": "bloquear_danio"
+                  },
+                  "mecanismo": "suma_derivado",
+                  "estado": "bloqueado",
+                  "bloqueoPor": "pregunta: ¿el blindaje del brazo suma al del personaje o solo protege el brazo?"
+                }
+              ]
+            },
+            {
+              "id": "agil",
+              "label": "Modelo Ágil",
+              "efectos": [
+                {
+                  "tipo": "extremidad",
+                  "_capaNueva": true,
+                  "fuerza": {
+                    "delta": 1,
+                    "max": 5
+                  },
+                  "agilidad": {
+                    "delta": 1,
+                    "max": 5
+                  },
+                  "blindaje": 3,
+                  "bloquea": true,
+                  "armaIntegrada": true
+                }
+              ],
+              "motor": [
+                {
+                  "tipo": "numerico",
+                  "afecta": {
+                    "modo": "accion_existente",
+                    "id": "ataque_melee_<instancia>"
+                  },
+                  "mecanismo": "hueco",
+                  "estado": "bloqueado",
+                  "hueco": "atributo básico propio de una extremidad (delta y tope) que sustituye al del personaje en las acciones hechas con ella",
+                  "bloqueoPor": "capa extremidad_atributos_propios"
+                },
+                {
+                  "tipo": "numerico",
+                  "afecta": {
+                    "modo": "accion_existente",
+                    "id": "bloquear_danio"
+                  },
+                  "mecanismo": "suma_derivado",
+                  "estado": "bloqueado",
+                  "bloqueoPor": "pregunta: ¿el blindaje del brazo suma al del personaje o solo protege el brazo?"
+                }
+              ]
+            }
+          ],
+          "efectos": [],
+          "motor": []
+        },
+        {
+          "nivel": 4,
+          "rareza": "Muy Extraño",
+          "coste": 100000,
+          "sustituye": [
+            {
+              "efecto": "Valores de extremidad del nivel 3",
+              "por": "Los del modelo elegido en el nivel 4"
+            }
+          ],
+          "variantes": [
+            {
+              "id": "fuerte",
+              "label": "Modelo Fuerte",
+              "efectos": [
+                {
+                  "tipo": "extremidad",
+                  "_capaNueva": true,
+                  "fuerza": {
+                    "delta": 4,
+                    "max": 10
+                  },
+                  "agilidad": {
+                    "delta": 0,
+                    "max": null
+                  },
+                  "blindaje": 8,
+                  "bloquea": true,
+                  "armaIntegrada": true
+                }
+              ],
+              "motor": [
+                {
+                  "tipo": "numerico",
+                  "afecta": {
+                    "modo": "accion_existente",
+                    "id": "ataque_melee_<instancia>"
+                  },
+                  "mecanismo": "hueco",
+                  "estado": "bloqueado",
+                  "hueco": "atributo básico propio de una extremidad (delta y tope) que sustituye al del personaje en las acciones hechas con ella",
+                  "bloqueoPor": "capa extremidad_atributos_propios"
+                },
+                {
+                  "tipo": "numerico",
+                  "afecta": {
+                    "modo": "accion_existente",
+                    "id": "bloquear_danio"
+                  },
+                  "mecanismo": "suma_derivado",
+                  "estado": "bloqueado",
+                  "bloqueoPor": "pregunta: ¿el blindaje del brazo suma al del personaje o solo protege el brazo?"
+                }
+              ]
+            },
+            {
+              "id": "equilibrado",
+              "label": "Modelo Equilibrado",
+              "efectos": [
+                {
+                  "tipo": "extremidad",
+                  "_capaNueva": true,
+                  "fuerza": {
+                    "delta": 2,
+                    "max": 7
+                  },
+                  "agilidad": {
+                    "delta": 2,
+                    "max": 6
+                  },
+                  "blindaje": 6,
+                  "bloquea": true,
+                  "armaIntegrada": true
+                }
+              ],
+              "motor": [
+                {
+                  "tipo": "numerico",
+                  "afecta": {
+                    "modo": "accion_existente",
+                    "id": "ataque_melee_<instancia>"
+                  },
+                  "mecanismo": "hueco",
+                  "estado": "bloqueado",
+                  "hueco": "atributo básico propio de una extremidad (delta y tope) que sustituye al del personaje en las acciones hechas con ella",
+                  "bloqueoPor": "capa extremidad_atributos_propios"
+                },
+                {
+                  "tipo": "numerico",
+                  "afecta": {
+                    "modo": "accion_existente",
+                    "id": "bloquear_danio"
+                  },
+                  "mecanismo": "suma_derivado",
+                  "estado": "bloqueado",
+                  "bloqueoPor": "pregunta: ¿el blindaje del brazo suma al del personaje o solo protege el brazo?"
+                }
+              ]
+            },
+            {
+              "id": "agil",
+              "label": "Modelo Ágil",
+              "efectos": [
+                {
+                  "tipo": "extremidad",
+                  "_capaNueva": true,
+                  "fuerza": {
+                    "delta": 1,
+                    "max": 5
+                  },
+                  "agilidad": {
+                    "delta": 3,
+                    "max": 8
+                  },
+                  "blindaje": 3,
+                  "bloquea": true,
+                  "armaIntegrada": true
+                }
+              ],
+              "motor": [
+                {
+                  "tipo": "numerico",
+                  "afecta": {
+                    "modo": "accion_existente",
+                    "id": "ataque_melee_<instancia>"
+                  },
+                  "mecanismo": "hueco",
+                  "estado": "bloqueado",
+                  "hueco": "atributo básico propio de una extremidad (delta y tope) que sustituye al del personaje en las acciones hechas con ella",
+                  "bloqueoPor": "capa extremidad_atributos_propios"
+                },
+                {
+                  "tipo": "numerico",
+                  "afecta": {
+                    "modo": "accion_existente",
+                    "id": "bloquear_danio"
+                  },
+                  "mecanismo": "suma_derivado",
+                  "estado": "bloqueado",
+                  "bloqueoPor": "pregunta: ¿el blindaje del brazo suma al del personaje o solo protege el brazo?"
+                }
+              ]
+            }
+          ],
+          "efectos": [],
+          "motor": []
+        }
+      ]
+    },
+    {
+      "familia": "implante",
+      "id": "aum_ojo_bionico",
+      "label": "Ojo Biónico",
+      "descripcion": "El Ojo Biónico reemplaza el globo ocular orgánico por un complejo ensamblaje optoelectrónico integrado directamente en el nervio óptico y el córtex visual. Utiliza microcristales de enfoque activo, sensores de espectro variable y un coprocesador gráfico dedicado que procesa la información en tiempo real, eliminando el temblor natural de la pupila biológica, filtrando destellos cegadores y superponiendo una interfaz de datos táctica directamente sobre el campo de visión del usuario.",
+      "sabotaje": true,
+      "extraible": null,
+      "electronico": true,
+      "niveles": [
+        {
+          "nivel": 1,
+          "rareza": "Poco Habitual",
+          "coste": 16000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "bono",
+              "alcance": "alerta_activa",
+              "valor": 1,
+              "condicion": "¿Es percepción visual?",
+              "noApila": {
+                "grupo": "vision_aumentada",
+                "regla": "mayor"
+              }
+            },
+            {
+              "tipo": "bono",
+              "alcance": "grupoHabilidad:Ataques+combate_distancia",
+              "valor": 1,
+              "condicion": null,
+              "noApila": {
+                "grupo": "vision_aumentada",
+                "regla": "mayor"
+              },
+              "_campoNuevo": "Alcance grupoHabilidad"
+            },
+            {
+              "tipo": "bono",
+              "alcance": "salvacion:ceguera",
+              "valor": 2,
+              "condicion": "¿Es contra ceguera?"
+            },
+            {
+              "tipo": "texto",
+              "lugar": "alerta_activa",
+              "texto": "Visión nocturna y termo-óptica, alcance 500 m.",
+              "condicion": "En oscuridad o buscando firmas de calor",
+              "porque": "sin_regla"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "alerta_activa"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "pendiente",
+              "nota": "noApila depende de la capa no_apilamiento_mayor"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "grupoHabilidad:Ataques+combate_distancia"
+              },
+              "mecanismo": "siempre_activo",
+              "estado": "pendiente",
+              "nota": "noApila depende de la capa no_apilamiento_mayor"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_ceguera"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "bloqueado",
+              "bloqueoPor": "salvación contra ceguera sin definir (qué atributo la resiste)"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "alerta_activa"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "pendiente"
+            }
+          ]
+        },
+        {
+          "nivel": 2,
+          "rareza": "Extraño",
+          "coste": 32000,
+          "sustituye": [
+            {
+              "efecto": "+1 a percepción visual",
+              "por": "+2 a percepción visual"
+            }
+          ],
+          "nota": "La fuente lo etiqueta 'Nivel 3 (sic)': es el nivel 2 (errata conocida)",
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "bono",
+              "alcance": "alerta_activa",
+              "valor": 2,
+              "condicion": "¿Es percepción visual?",
+              "noApila": {
+                "grupo": "vision_aumentada",
+                "regla": "mayor"
+              }
+            },
+            {
+              "tipo": "inmunidad",
+              "_capaNueva": true,
+              "estado": "ceguera",
+              "condicion": null
+            },
+            {
+              "tipo": "reduce_penalizador",
+              "_capaNueva": true,
+              "de": [
+                "cobertura"
+              ],
+              "valor": 1,
+              "alcance": "grupoHabilidad:Ataques+combate_distancia",
+              "condicion": "¿Objetivo con cobertura visual?"
+            },
+            {
+              "tipo": "reduce_penalizador",
+              "_capaNueva": true,
+              "de": [
+                "cobertura"
+              ],
+              "valor": 1,
+              "alcance": "alerta_activa",
+              "condicion": "¿Objetivo con cobertura visual?"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "alerta_activa"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "pendiente",
+              "nota": "noApila depende de la capa no_apilamiento_mayor"
+            },
+            {
+              "tipo": "habilitador",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "estado:ceguera"
+              },
+              "mecanismo": "hueco",
+              "estado": "bloqueado",
+              "hueco": "inmunidad a un estado: la consola del máster no lo aplica o avisa",
+              "bloqueoPor": "capa inmunidad_estado"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "grupoHabilidad:Ataques+combate_distancia"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "alerta_activa"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "pendiente"
+            }
+          ]
+        },
+        {
+          "nivel": 3,
+          "rareza": "Muy Extraño",
+          "coste": 64000,
+          "sustituye": [
+            {
+              "efecto": "+2 a percepción visual",
+              "por": "+3 a percepción visual"
+            },
+            {
+              "efecto": "+1 a ataques a distancia",
+              "por": "+2 a ataques a distancia"
+            }
+          ],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "bono",
+              "alcance": "alerta_activa",
+              "valor": 3,
+              "condicion": "¿Es percepción visual?",
+              "noApila": {
+                "grupo": "vision_aumentada",
+                "regla": "mayor"
+              }
+            },
+            {
+              "tipo": "bono",
+              "alcance": "grupoHabilidad:Ataques+combate_distancia",
+              "valor": 2,
+              "condicion": null,
+              "noApila": {
+                "grupo": "vision_aumentada",
+                "regla": "mayor"
+              },
+              "_campoNuevo": "Alcance grupoHabilidad"
+            },
+            {
+              "tipo": "texto",
+              "lugar": "alerta_activa",
+              "texto": "Visión de rayos X: ve a través de tejidos sencillos, alcance 10 m.",
+              "condicion": null,
+              "porque": "tablero"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "alerta_activa"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "pendiente",
+              "nota": "noApila depende de la capa no_apilamiento_mayor"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "grupoHabilidad:Ataques+combate_distancia"
+              },
+              "mecanismo": "siempre_activo",
+              "estado": "pendiente",
+              "nota": "noApila depende de la capa no_apilamiento_mayor"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "alerta_activa"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            }
+          ]
+        },
+        {
+          "nivel": 4,
+          "rareza": "Muy Extraño",
+          "coste": 128000,
+          "sustituye": [
+            {
+              "efecto": "+3 a percepción visual",
+              "por": "+4 a percepción visual"
+            },
+            {
+              "efecto": "+2 a ataques a distancia",
+              "por": "+3 a ataques a distancia"
+            },
+            {
+              "efecto": "Rayos X a través de tejidos sencillos, 10 m",
+              "por": "Visión multi-espectro (nocturna, térmica y rayos X), 50 m, a través de paredes ligeras o blindajes no reforzados"
+            },
+            {
+              "efecto": "Reduce en 1 los niveles de cobertura visual",
+              "por": "Reduce en 2 los niveles de cobertura visual"
+            }
+          ],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "bono",
+              "alcance": "alerta_activa",
+              "valor": 4,
+              "condicion": "¿Es percepción visual?",
+              "noApila": {
+                "grupo": "vision_aumentada",
+                "regla": "mayor"
+              }
+            },
+            {
+              "tipo": "bono",
+              "alcance": "grupoHabilidad:Ataques+combate_distancia",
+              "valor": 3,
+              "condicion": null,
+              "noApila": {
+                "grupo": "vision_aumentada",
+                "regla": "mayor"
+              },
+              "_campoNuevo": "Alcance grupoHabilidad"
+            },
+            {
+              "tipo": "inmunidad",
+              "_capaNueva": true,
+              "estado": "ceguera",
+              "condicion": null
+            },
+            {
+              "tipo": "texto",
+              "lugar": "alerta_activa",
+              "texto": "Visión multi-espectro simultánea (nocturna, térmica y rayos X), alcance 50 m, a través de paredes ligeras o blindajes no reforzados.",
+              "condicion": null,
+              "porque": "tablero"
+            },
+            {
+              "tipo": "reduce_penalizador",
+              "_capaNueva": true,
+              "de": [
+                "cobertura"
+              ],
+              "valor": 2,
+              "alcance": "grupoHabilidad:Ataques+combate_distancia",
+              "condicion": "¿Objetivo con cobertura visual?"
+            },
+            {
+              "tipo": "reduce_penalizador",
+              "_capaNueva": true,
+              "de": [
+                "cobertura"
+              ],
+              "valor": 2,
+              "alcance": "alerta_activa",
+              "condicion": "¿Objetivo con cobertura visual?"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "alerta_activa"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "pendiente",
+              "nota": "noApila depende de la capa no_apilamiento_mayor"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "grupoHabilidad:Ataques+combate_distancia"
+              },
+              "mecanismo": "siempre_activo",
+              "estado": "pendiente",
+              "nota": "noApila depende de la capa no_apilamiento_mayor"
+            },
+            {
+              "tipo": "habilitador",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "estado:ceguera"
+              },
+              "mecanismo": "hueco",
+              "estado": "bloqueado",
+              "hueco": "inmunidad a un estado: la consola del máster no lo aplica o avisa",
+              "bloqueoPor": "capa inmunidad_estado"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "alerta_activa"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "grupoHabilidad:Ataques+combate_distancia"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "alerta_activa"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "pendiente"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "familia": "implante",
+      "id": "aum_neuroprotesis_simpatica",
+      "label": "Neuroprótesis Simpática",
+      "descripcion": "Implante biotecnológico acoplado al sistema nervioso autónomo y a las glándulas suprarrenales que fuerza una respuesta de \"lucha o huida\" bajo demanda: microestimuladores sinápticos y microbombas de neuromoduladores aceleran reflejos, contracción muscular y agudeza sensorial a cambio de exprimir la resistencia biológica del usuario.",
+      "sabotaje": true,
+      "extraible": null,
+      "electronico": true,
+      "niveles": [
+        {
+          "nivel": 1,
+          "rareza": "Poco Habitual",
+          "coste": 20000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "activable",
+              "_capaNueva": true,
+              "coste": {
+                "fatiga": 2
+              },
+              "economia": [
+                "gratuita",
+                "reaccion"
+              ],
+              "duracion": {
+                "rondas": 3
+              },
+              "limite": null,
+              "efectos": [
+                {
+                  "tipo": "atributo",
+                  "_capaNueva": true,
+                  "id": "fuerza",
+                  "valor": 1
+                },
+                {
+                  "tipo": "atributo",
+                  "_capaNueva": true,
+                  "id": "agilidad",
+                  "valor": 1
+                },
+                {
+                  "tipo": "atributo",
+                  "_capaNueva": true,
+                  "id": "percepcion",
+                  "valor": 1
+                },
+                {
+                  "tipo": "reduce_penalizador",
+                  "_capaNueva": true,
+                  "de": [
+                    "estado"
+                  ],
+                  "valor": 1
+                },
+                {
+                  "tipo": "bono",
+                  "alcance": "salv_fortaleza",
+                  "valor": -1,
+                  "condicion": "¿Contra enfermedad, radiación, toxina o veneno?"
+                }
+              ]
+            },
+            {
+              "tipo": "texto",
+              "lugar": "ficha",
+              "texto": "Activar: acción gratuita en tu turno o reacción en cualquier momento del turno, 2 de fatiga. El efecto dura tres turnos.",
+              "condicion": null,
+              "porque": "turno"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "aumentos_activar_neuroprotesis"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "pendiente",
+              "efecto": "0"
+            },
+            {
+              "efecto": "0.efectos.0",
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "atributo:fuerza"
+              },
+              "mecanismo": "hueco",
+              "estado": "bloqueado",
+              "hueco": "efecto activable con duración sobre uno mismo + atributo básico desde equipo",
+              "bloqueoPor": "capas activable_estado_propio y atributo_por_pieza"
+            },
+            {
+              "efecto": "0.efectos.1",
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "atributo:agilidad"
+              },
+              "mecanismo": "hueco",
+              "estado": "bloqueado",
+              "hueco": "efecto activable con duración sobre uno mismo + atributo básico desde equipo",
+              "bloqueoPor": "capas activable_estado_propio y atributo_por_pieza"
+            },
+            {
+              "efecto": "0.efectos.2",
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "atributo:percepcion"
+              },
+              "mecanismo": "hueco",
+              "estado": "bloqueado",
+              "hueco": "efecto activable con duración sobre uno mismo + atributo básico desde equipo",
+              "bloqueoPor": "capas activable_estado_propio y atributo_por_pieza"
+            },
+            {
+              "efecto": "0.efectos.3",
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "todas"
+              },
+              "mecanismo": "hueco",
+              "estado": "bloqueado",
+              "hueco": "activable + reduce_penalizador desde equipo",
+              "bloqueoPor": "capas activable_estado_propio y reduce_penalizador_por_pieza"
+            },
+            {
+              "efecto": "0.efectos.4",
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_fortaleza"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "pendiente"
+            },
+            {
+              "efecto": "1",
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "aumentos_activar_neuroprotesis"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            }
+          ]
+        },
+        {
+          "nivel": 2,
+          "rareza": "Extraño",
+          "coste": 40000,
+          "sustituye": [
+            {
+              "efecto": "activable del nivel 1: atributo fuerza +1 / agilidad +1",
+              "por": "+2 en Fuerza o en Agilidad, a elección del usuario al activar (el otro sigue en +1)"
+            }
+          ],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "activable_eleccion",
+              "_capaNueva": true,
+              "_campoNuevo": "activable.eleccion",
+              "eleccion": {
+                "id": "atributo_potenciado",
+                "label": "Atributo a +2",
+                "opciones": [
+                  {
+                    "id": "fuerza",
+                    "label": "Fuerza +2",
+                    "efectos": [
+                      {
+                        "tipo": "atributo",
+                        "id": "fuerza",
+                        "valor": 2
+                      }
+                    ]
+                  },
+                  {
+                    "id": "agilidad",
+                    "label": "Agilidad +2",
+                    "efectos": [
+                      {
+                        "tipo": "atributo",
+                        "id": "agilidad",
+                        "valor": 2
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "atributo:fuerza|agilidad"
+              },
+              "mecanismo": "hueco",
+              "estado": "bloqueado",
+              "hueco": "activable con elección de atributo al activar (no al comprar)",
+              "bloqueoPor": "capas activable_estado_propio, activable_eleccion_al_activar y atributo_por_pieza"
+            }
+          ]
+        },
+        {
+          "nivel": 3,
+          "rareza": "Muy Extraño",
+          "coste": 80000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "texto",
+              "lugar": "ficha",
+              "texto": "Mientras la Neuroprótesis está activa, tienes una segunda reacción por turno.",
+              "condicion": "Neuroprótesis activa",
+              "porque": "turno"
+            },
+            {
+              "tipo": "accion",
+              "accion": {
+                "id": "aumentos_accion_simple_adicional",
+                "label": "Acción simple adicional",
+                "economia": {
+                  "tiempo": "sin indicar"
+                },
+                "coste": {
+                  "fatiga": 2
+                },
+                "limite": {
+                  "veces": 1,
+                  "por": "turno"
+                },
+                "resolucion": {
+                  "tipo": "sin_dado"
+                },
+                "resultados": {},
+                "costeTrasUso": {
+                  "fatiga": 3,
+                  "hasta": "descanso",
+                  "_campoNuevo": true
+                },
+                "notas": [
+                  {
+                    "texto": "Ganas una única acción simple adicional en tu turno.",
+                    "condicion": null
+                  },
+                  {
+                    "texto": "Tras usarla, volver a usarla cuesta 3 de fatiga hasta un descanso breve o largo.",
+                    "condicion": null
+                  }
+                ]
+              }
+            }
+          ],
+          "motor": [
+            {
+              "efecto": "0",
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "aumentos_activar_neuroprotesis"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            },
+            {
+              "efecto": "1",
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "aumentos_accion_simple_adicional"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "pendiente"
+            }
+          ]
+        },
+        {
+          "nivel": 4,
+          "rareza": "Muy Extraño",
+          "coste": 160000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "activable",
+              "_capaNueva": true,
+              "coste": {
+                "fatiga": 3
+              },
+              "economia": "gratuita",
+              "duracion": "turno",
+              "limite": {
+                "veces": 1,
+                "por": "descanso"
+              },
+              "disparadoPor": {
+                "accion": "aumentos_accion_simple_adicional",
+                "coste": {
+                  "fatiga": 3
+                },
+                "_campoNuevo": true
+              },
+              "efectos": [
+                {
+                  "tipo": "atributo",
+                  "_capaNueva": true,
+                  "id": "fuerza",
+                  "valor": 2
+                },
+                {
+                  "tipo": "atributo",
+                  "_capaNueva": true,
+                  "id": "agilidad",
+                  "valor": 2
+                },
+                {
+                  "tipo": "atributo",
+                  "_capaNueva": true,
+                  "id": "percepcion",
+                  "valor": 2
+                },
+                {
+                  "tipo": "reduce_penalizador",
+                  "_capaNueva": true,
+                  "de": [
+                    "heridas",
+                    "fatiga"
+                  ],
+                  "valor": "todos"
+                }
+              ]
+            },
+            {
+              "tipo": "texto",
+              "lugar": "aumentos_accion_simple_adicional",
+              "texto": "Si pagas 3 de fatiga por la acción simple adicional: ese turno +2 a Fuerza, Agilidad y Percepción y sin penalizadores por heridas ni fatiga. No se puede repetir hasta un descanso breve o largo.",
+              "condicion": null,
+              "porque": "turno"
+            }
+          ],
+          "motor": [
+            {
+              "efecto": "0.efectos.0",
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "atributo:fuerza"
+              },
+              "mecanismo": "hueco",
+              "estado": "bloqueado",
+              "hueco": "efecto activable con duración sobre uno mismo + atributo básico desde equipo",
+              "bloqueoPor": "capas activable_disparado_por_coste y atributo_por_pieza"
+            },
+            {
+              "efecto": "0.efectos.1",
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "atributo:agilidad"
+              },
+              "mecanismo": "hueco",
+              "estado": "bloqueado",
+              "hueco": "efecto activable con duración sobre uno mismo + atributo básico desde equipo",
+              "bloqueoPor": "capas activable_disparado_por_coste y atributo_por_pieza"
+            },
+            {
+              "efecto": "0.efectos.2",
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "atributo:percepcion"
+              },
+              "mecanismo": "hueco",
+              "estado": "bloqueado",
+              "hueco": "efecto activable con duración sobre uno mismo + atributo básico desde equipo",
+              "bloqueoPor": "capas activable_disparado_por_coste y atributo_por_pieza"
+            },
+            {
+              "efecto": "0.efectos.3",
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "todas"
+              },
+              "mecanismo": "hueco",
+              "estado": "bloqueado",
+              "hueco": "activable que anula los penalizadores por umbral de heridas y fatiga durante un turno",
+              "bloqueoPor": "capas activable_disparado_por_coste y reduce_penalizador_por_pieza"
+            },
+            {
+              "efecto": "1",
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "aumentos_accion_simple_adicional"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "familia": "implante",
+      "id": "aum_enjambre_nanobot",
+      "label": "Enjambre Nanobot",
+      "descripcion": "Colonia masiva de micro-máquinas programables integrada en el torrente sanguíneo, el tejido linfático y las capas subdérmicas. Concebido como quirófano móvil de emergencia, reestructura tejidos, purga toxinas, blinda el organismo y puede proyectarse de forma ofensiva o táctica.",
+      "sabotaje": true,
+      "extraible": null,
+      "electronico": true,
+      "niveles": [
+        {
+          "nivel": 1,
+          "rareza": "Poco Habitual",
+          "coste": 25000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "bono",
+              "alcance": "grupo:Fármacos",
+              "valor": 3,
+              "condicion": "¿Te lo aplicas a ti mismo?"
+            },
+            {
+              "tipo": "bono",
+              "alcance": "medicina",
+              "valor": 3,
+              "condicion": "¿Te tratas a ti mismo con medicinas?"
+            },
+            {
+              "tipo": "texto",
+              "lugar": "ficha",
+              "texto": "Si otro personaje usa medicinas para sanarte, también gana +3.",
+              "condicion": null,
+              "porque": "tercero"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "grupo:Fármacos"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "medicina"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "objetivo_tercero",
+                "id": "medicina"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            }
+          ]
+        },
+        {
+          "nivel": 2,
+          "rareza": "Extraño",
+          "coste": 50000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "texto",
+              "lugar": "ficha",
+              "texto": "Regeneras un nivel de daño no letal por turno.",
+              "condicion": "sin penalizadores por fatiga",
+              "porque": "tiempo"
+            },
+            {
+              "tipo": "texto",
+              "lugar": "ficha",
+              "texto": "Regeneras un nivel de daño letal por minuto (10 turnos).",
+              "condicion": "sin penalizadores por fatiga",
+              "porque": "tiempo"
+            },
+            {
+              "tipo": "texto",
+              "lugar": "ficha",
+              "texto": "Regeneras un nivel de daño grave por hora.",
+              "condicion": "sin penalizadores por fatiga",
+              "porque": "tiempo"
+            },
+            {
+              "tipo": "accion",
+              "accion": {
+                "id": "aumentos_enjambre_sanar_letal",
+                "label": "Sanar un nivel letal (Enjambre)",
+                "economia": {
+                  "tiempo": "sin indicar"
+                },
+                "coste": {
+                  "fatiga": 1
+                },
+                "limite": null,
+                "resolucion": {
+                  "tipo": "sin_dado"
+                },
+                "resultados": {},
+                "notas": [
+                  {
+                    "texto": "Sanas un nivel de daño letal de forma automática.",
+                    "condicion": null
+                  }
+                ]
+              }
+            },
+            {
+              "tipo": "accion",
+              "accion": {
+                "id": "aumentos_enjambre_sanar_grave",
+                "label": "Sanar un nivel grave (Enjambre)",
+                "economia": {
+                  "tiempo": "mínimo 5 turnos"
+                },
+                "coste": {
+                  "fatiga": 5
+                },
+                "limite": null,
+                "resolucion": {
+                  "tipo": "sin_dado"
+                },
+                "resultados": {},
+                "notas": [
+                  {
+                    "texto": "Consumes 5 de fatiga a lo largo de al menos 5 turnos y sanas un nivel de daño grave.",
+                    "condicion": null
+                  }
+                ]
+              }
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "ficha"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "ficha"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "ficha"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "aumentos_enjambre_sanar_letal"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "aumentos_enjambre_sanar_grave"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "pendiente"
+            }
+          ]
+        },
+        {
+          "nivel": 3,
+          "rareza": "Muy Extraño",
+          "coste": 100000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "bono",
+              "alcance": "salv_fortaleza",
+              "valor": 4,
+              "condicion": "¿Contra toxina, veneno o enfermedad?"
+            },
+            {
+              "tipo": "accion",
+              "accion": {
+                "id": "aumentos_enjambre_densificar",
+                "label": "Densificar el enjambre",
+                "economia": "reaccion",
+                "coste": {
+                  "fatiga": 1
+                },
+                "limite": null,
+                "resolucion": {
+                  "tipo": "sin_dado"
+                },
+                "resultados": {},
+                "notas": [
+                  {
+                    "texto": "+3 de blindaje contra un golpe concreto (se aplica a mano al recibir ese golpe).",
+                    "condicion": null
+                  }
+                ]
+              }
+            },
+            {
+              "tipo": "bono",
+              "alcance": "salv_fortaleza",
+              "valor": 3,
+              "condicion": "¿Contra el aturdimiento de un golpe que has densificado?"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_fortaleza"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "aumentos_enjambre_densificar"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_fortaleza"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "pendiente"
+            }
+          ]
+        },
+        {
+          "nivel": 4,
+          "rareza": "Muy Extraño",
+          "coste": 200000,
+          "sustituye": [
+            {
+              "efecto": "regeneración pasiva del nivel 2: condición 'sin penalizadores por fatiga'",
+              "por": "funciona también fatigado o exhausto"
+            },
+            {
+              "efecto": "ritmo de regeneración del nivel 2 (1 no letal/turno, 1 letal/10 turnos, 1 grave/hora)",
+              "por": "sin estar fatigado: 1 no letal por acción, 1 letal por turno, 1 grave cada 10 turnos"
+            }
+          ],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "texto",
+              "lugar": "ficha",
+              "texto": "Sin estar fatigado, la regeneración va al doble: 1 nivel no letal por acción, 1 letal por turno y 1 grave cada 10 turnos. Fatigado o exhausto sigue funcionando, al ritmo normal.",
+              "condicion": null,
+              "porque": "tiempo"
+            },
+            {
+              "tipo": "accion",
+              "accion": {
+                "id": "aumentos_tempestad_nanobotica",
+                "label": "Tempestad Nanobótica",
+                "economia": "estandar",
+                "coste": {
+                  "fatiga": 2
+                },
+                "limite": null,
+                "resolucion": {
+                  "tipo": "ataque",
+                  "aplicado": "reflejos",
+                  "habilidad": "tecnociencia"
+                },
+                "danio": {
+                  "categoria": "grave",
+                  "base": 1,
+                  "efectoBlindaje": "Al acertar, destruye 1 punto de blindaje por contacto físico (frase rota en la fuente)"
+                },
+                "resultados": {},
+                "notas": [
+                  {
+                    "texto": "Alcance melee.",
+                    "condicion": null
+                  },
+                  {
+                    "texto": "También sirve para sabotear objetos del entorno inmediato.",
+                    "condicion": null
+                  }
+                ]
+              }
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "ficha"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "aumentos_tempestad_nanobotica"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "pendiente"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "objetivo_tercero",
+                "id": "blindaje_del_objetivo"
+              },
+              "mecanismo": "nota_fija",
+              "estado": "bloqueado",
+              "efecto": "1.accion.danio.efectoBlindaje",
+              "bloqueoPor": "errata pendiente de Murillo (frase rota)"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "extraccion": {
+    "_campoNuevo": "CatalogoAumentos.extraccion: regla general de implantes, no de una pieza",
+    "id": "aumentos_extraer_implante",
+    "label": "Extraer implante",
+    "economia": {
+      "tiempo": "variable según método (sin definir)"
+    },
+    "limite": null,
+    "resolucion": {
+      "tipo": "tirada",
+      "aplicado": [
+        "perspicacia",
+        "reflejos"
+      ],
+      "habilidad": "biociencia",
+      "especialidad": "bionica",
+      "dificultad": null
+    },
+    "resultados": {
+      "exito": {
+        "texto": "El implante se extrae para convertirse en recursos."
+      }
+    },
+    "notas": [
+      {
+        "texto": "Requiere el instrumental adecuado. La tira quien extrae, sobre el cuerpo de otro.",
+        "condicion": null
+      },
+      {
+        "texto": "Duración variable según el método.",
+        "condicion": null
+      }
+    ],
+    "motor": {
+      "tipo": "accion",
+      "afecta": {
+        "modo": "accion_nueva",
+        "id": "aumentos_extraer_implante"
+      },
+      "mecanismo": "hueco",
+      "estado": "bloqueado",
+      "hueco": "acción fija general (no ligada a una pieza propia) con aplicado a elegir entre dos",
+      "bloqueoPor": "dificultad y método sin escribir; qué implantes son extraíbles (extraible null); pregunta 20 (Biociencia/Tecnociencia)"
+    }
+  }
+}

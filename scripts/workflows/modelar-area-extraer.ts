@@ -225,7 +225,111 @@ AccionDote {
   notas: { texto: string; condicion: Condicion }[]
 }`;
 
-const MODELOS: Record<string, string> = { psionica: MODELO_PSIONICA, dotes: MODELO_DOTES };
+const MODELO_AUMENTOS = `// v1, 2026-10-16: aprobado por el usuario. Decisiones en docs/sistema.md §11.3.
+// Los aumentos son una FAMILIA DE EQUIPO:
+// - los implantes van por niveles, como los subsistemas (NivelModulo: nivel, rareza, coste,
+//   modificadores, motor);
+// - las operaciones genéticas son piezas sueltas, con requisitos.
+// Principio: lo que la app puede aplicar o recalcular se aplica en la ficha. Lo demás es
+// texto, con su motivo y su condición, para mostrarlo solo cuando toca.
+// UN EFECTO = UNA CONSECUENCIA SOBRE UN ALCANCE: los compuestos se parten.
+// NIVELES: cada NivelImplante recoge SOLO lo que dice su texto, y en sustituye marca lo que
+// dice "en lugar de". La acumulación la aplica el motor después: decisión del usuario, el
+// nivel N trae lo de los anteriores salvo lo que diga "en lugar de".
+CatalogoAumentos { aumentos: Aumento[] }
+
+Aumento = Operacion | Implante
+
+Operacion {
+  familia: "operacion_genetica"
+  id                                  // "aum_<slug>"
+  label
+  rareza: "Común" | "Poco Habitual" | "Extraño" | "Muy Extraño"   // la fuente dice "Extraña": se normaliza al enum de equipo
+  coste: number                       // créditos
+  requisitos: { tipo: "aumento"; id }[]                          // todos (Y)
+  eleccion: { id; label; opciones: { id; label }[] } | null       // se elige al comprar (Introgresión: sentido)
+  repetible: boolean                  // Introgresión: sí, con otra elección
+  efectos: Efecto[]                   // con eleccion: cada efecto lleva opcion: <id> si solo vale con esa opción
+  motor: MotorMetadata[]              // uno por efecto
+}
+
+Implante {
+  familia: "implante"
+  id                                  // "aum_<slug>"
+  label; descripcion: string | null
+  sabotaje: boolean                   // regla general: "casi todos son susceptibles de sabotaje"
+  extraible: boolean | null           // "algunos implantes biónicos pueden ser extraídos"; null = la fuente no lo dice
+  electronico: boolean                // para el Shock (S73); si cambia por nivel, va en NivelImplante.electronico
+  niveles: NivelImplante[]
+}
+
+NivelImplante {
+  nivel; rareza; coste
+  sustituye: { efecto: string; por: string }[]   // "2 puntos en lugar de 1" (Neuroprótesis 2); [] si solo añade
+  electronico?: boolean               // solo si difiere del implante
+  variantes: { id; label; efectos: Efecto[]; motor: MotorMetadata[] }[] | null   // modelos del Brazo: se elige al comprar
+  efectos: Efecto[]                   // los comunes a todas las variantes
+  motor: MotorMetadata[]
+}
+
+Alcance = string        // id de acción | "grupo:<g>" | "habilidad:<h>" | "especialidad:<e>" | "familia:<f>" | "salvacion:<contra>" (ceguera, miedo, toxinas…)
+Valor   = number | { manual: string }
+Economia = "gratuita" | "simple" | "estandar" | "compleja" | "reaccion" | { tiempo: string }
+Limite  = { veces: number; por: "turno" | "ronda" | "escena" | "dia" | "descanso" } | null   // DATO: hoy solo se muestra
+Grado   = "critico" | "exito" | "fracaso" | "fracasoCritico"
+Condicion = string | null           // null = siempre; string = interruptor que el jugador marca al tirar (o cuándo se muestra un texto)
+NoApila = { grupo: string; regla: "mayor" }   // "no se apila con miras telescópicas…: usa siempre el mayor"
+
+Efecto =
+  // --- los mismos de dotes ---
+  | { tipo: "bono"; alcance: Alcance; valor: Valor; condicion: Condicion; noApila?: NoApila }
+  | { tipo: "ventaja"; alcance: Alcance; condicion: Condicion; coste?: { fatiga: number }; limite?: Limite }   // dos d12, vale el mejor
+  | { tipo: "categoria_danio"; alcance: Alcance; a: string; condicion: Condicion }        // pelea → Letal
+  | { tipo: "economia"; alcance: Alcance; economia: Economia | Economia[]; limite?: Limite; condicion: Condicion }   // DATO
+  | { tipo: "accion"; accion: AccionAumento }
+  | { tipo: "texto"; lugar: Alcance | "ficha"; texto: string; condicion: Condicion;
+      porque: "tablero" | "turno" | "tercero" | "tiempo" | "estado_pieza" | "sin_regla" | "narrativo" }
+      // porque:
+      //   tablero      = casillas, alcance, tamaño (nunca habrá grid)
+      //   turno        = reacciones, acciones extra y límites de uso
+      //   tercero      = lo que le pasa a otro personaje
+      //   tiempo       = regeneración, descanso, horas (la app no lleva el paso del tiempo)
+      //   estado_pieza = sabotaje, extracción (no hay estado por pieza)
+      //   sin_regla    = falta una regla del diseñador
+      //   narrativo    = sabor
+  // --- capas que trae aumentos: NO existen hoy, márcalas como capa nueva ---
+  | { tipo: "atributo"; id: string; valor: number; noApila?: NoApila }                    // +1 a un atributo BÁSICO (hoy el equipo no toca básicos)
+  | { tipo: "armadura_natural"; valor: number; tiposDanio: string[] | "todos" }            // por tipo de daño (hoy un solo valor, de especie)
+  | { tipo: "reduce_penalizador"; de: ("heridas" | "fatiga" | "estado" | "carga" | "cobertura")[];
+      valor: number | "todos"; alcance?: Alcance }                                         // hoy solo viene de la especie
+  | { tipo: "coste_habilidad"; habilidades: string[] | "todas"; valor: number; minimo: number }   // hoy solo viene de la especie
+  | { tipo: "formula_salud"; multiplicaFortaleza: number }                                 // Hipertrofia: ×1,5
+  | { tipo: "inmunidad"; estado: string; condicion: Condicion }
+  | { tipo: "extremidad"; fuerza: { delta: number; max: number | null }; agilidad: { delta: number; max: number | null };
+      blindaje: number; bloquea: boolean; armaIntegrada: boolean }                         // Brazo Biónico: valores propios en las acciones hechas con ese brazo
+  | { tipo: "activable"; coste: { fatiga: number; subeA?: number }; economia: Economia | Economia[];
+      duracion: { rondas: number } | "escena" | "turno" | { tiempo: string };
+      limite?: Limite; efectos: Efecto[] }                                                 // candidata a los estados con duración de E1 (Character.estados)
+  | { tipo: "habilita_psionica" }                                                          // IRM: SE MODELA PERO NO SE CONECTA (§11.3)
+  | { tipo: "sobreesfuerzo"; cuando: string; exentos?: string;
+      dificultad: { base: number; masNivelPoder: true };
+      resultados: Partial<Record<Grado, string>>; cargaCritica: Partial<Record<Grado, string>> }   // IRM; la app lo tira en la ventana del poder, como la sobrecarga
+  | { tipo: "defensa_intrusion"; dificultad: number; subePorTurno?: number; alcanceM: number;
+      defensa: string; contragolpe: string }                                               // MQE: dato sobre quien intenta la intrusión (un tercero)
+
+AccionAumento {
+  id; label
+  economia: Economia | Economia[]
+  coste?: { fatiga: number }
+  limite: Limite | Limite[]
+  resolucion: { tipo: "sin_dado" }
+            | { tipo: "tirada" | "ataque"; aplicado; habilidad; especialidad?: string | string[]; dificultad?: Valor }
+  danio?: { categoria: string; base: number; efectoBlindaje?: string }   // Tempestad Nanobótica: 1 Grave, destruye 1 de blindaje
+  resultados: Partial<Record<Grado, { texto: string }>>
+  notas: { texto: string; condicion: Condicion }[]
+}`;
+
+const MODELOS: Record<string, string> = { psionica: MODELO_PSIONICA, dotes: MODELO_DOTES, aumentos: MODELO_AUMENTOS };
 
 // Instrucciones por área que el workflow usa en vez de las de psiónica (que son
 // las de por defecto dentro de modelar-area.js).
@@ -242,14 +346,34 @@ const INSTRUCCIONES_POR_AREA: Record<string, Record<string, string | null>> = {
     notaRedaccion:
       "En dotes cada lote es un grupo de la fuente (habilidad) y cada item una Dote: donde la estructura diga 'disciplina' lee 'grupo'. No hay matriz de nivel. El JSON raíz es CatalogoDotes. Añade una sección con las candidatas a UX agrupadas por patrón y otra con los textos agrupados por 'porque'.",
   },
+  aumentos: {
+    nivelesExplicados:
+      "Las operaciones genéticas no tienen niveles: nivel null y eje sin_nivel. Los implantes tienen niveles de PIEZA (1-4), como los subsistemas de equipo, no niveles de poder. La prosa de cada nivel viene prefijada con [Nivel N]. Cada NivelImplante recoge solo lo que dice su texto (la acumulación la aplica el motor después) y marca en sustituye lo que dice 'en lugar de'. En el Ojo Biónico, el primer bloque etiquetado 'Nivel 3 (sic…)' es el nivel 2: errata conocida.",
+    seccionesSistema: "§6 (resolución y acciones por turno), §7 (salud, daño y estados), §9 (dotes: requisitos), §10 (psiónica: uso de poderes y sobrecarga), §11 (aumentos: decisiones firmes) y §12 (equipamiento)",
+    propuestaItem:
+      "la entrada Operacion o Implante del MODELO OBJETIVO, rellena con los valores literales de la prosa y de la línea de rareza, coste y requisitos. Un efecto por consecuencia y alcance: parte los compuestos ('+1 a Fuerza y Agilidad' son dos efectos atributo). Lo que la app no puede aplicar ni recalcular va como Efecto texto, con su porque y su condicion. La economía y el límite de uso se rellenan siempre como DATO, aunque hoy solo se muestren. Usa las capas nuevas del modelo cuando encajen (atributo, armadura_natural, reduce_penalizador, activable…) e indica en cada efecto que es capa nueva. Si algo no cabe en ningún campo, NO lo fuerces: déjalo fuera y márcalo en su efecto con campoNuevo.",
+    propuestaLote: null,
+    fidelidad:
+      "rarezas o costes distintos (por nivel); requisitos omitidos o inventados; efectos compuestos sin partir; '+1 a dos atributos' contado como uno; niveles mal asignados; 'en lugar de' leído como suma o al revés; variantes del Brazo mezcladas; valores o topes de la extremidad cambiados; condiciones perdidas (gasto de fatiga, una vez por escena, 'no se apila'); economía o límite de uso omitidos; cosas que se pueden recalcular mandadas a texto, o texto (tablero, turnos, terceros, tiempo) convertido en mecánica",
+    notaRedaccion:
+      "En aumentos cada lote es un trozo de una rama (Operaciones genéticas o Implantes) y cada item es una pieza: donde la estructura diga 'disciplina', lee 'pieza'. El JSON raíz es CatalogoAumentos. Añade tres secciones: las CAPAS NUEVAS, ordenadas por cuántas piezas desbloquea cada una; los textos, agrupados por 'porque'; y lo susceptible a Shock (electronico), por implante y nivel.",
+  },
 };
 
 const DECISIONES_POR_AREA: Record<string, { seccion: string }> = {
   psionica: { seccion: "### 10.6" },
   dotes: { seccion: "## 9. Dotes" },
+  aumentos: { seccion: "## 11. Aumentos" },
 };
 
 const CONSUMIDORES_POR_AREA: Record<string, string[]> = {
+  aumentos: [
+    "Dotes que tocan aumentos (docs/dotes.md, hoy texto con area_sin_construir): Artesano Biónico / Gran Maestro Biónico (dificultad y coste de fabricar y reparar implantes), Genio Genetista / Gran Genio Genetista (operaciones genéticas)",
+    "Requisitos de dote (dotes.ts, supuesto S30): decisión §11.3, el +1 a un atributo básico de un aumento SÍ cuenta para los requisitos",
+    "Bolsa del humano (FichaResuelta.bolsaAumentos, especie.ts): paga primero los aumentos; lo que falte, créditos",
+    "Psiónica (usoPoder.ts): la salvación de sobrecarga es la pieza a reutilizar para el sobreesfuerzo del IRM; habilita_psionica NO se conecta en este desarrollo",
+    "Estados con duración (estadosFicha.ts, E1): candidatos para los efectos activables (Neuroprótesis)",
+  ],
   psionica: [
     "Xovromium (medicina.ts, equipamiento.md:1338): toggle +1 en toda tirada que resuelva un poder si el personaje lo tiene en recursos; 'ignora el primer nivel de fatiga por uso de poderes' → ModificadorFatiga ignora_primero",
     "Munición Supresora (municion.ts, equipamiento.md:796): el psiónico afectado gasta el DOBLE de fatiga (ModificadorFatiga multiplica ×2) y −2 a toda tirada de poder 1 minuto; con fracaso crítico, 1 nivel de daño letal por punto de fatiga empleado",
@@ -453,6 +577,77 @@ function trocearDotes(md: string): Lote[] {
   return lotes;
 }
 
+// docs/aumentos.md: `## Operaciones genéticas` (### por operación) y `## Implantes`
+// (### por implante, #### por nivel). Cada pieza es un item, y la prosa de cada nivel va
+// prefijada con "[Nivel N]". Las reglas generales de los implantes van a reglasComunes de
+// todos sus lotes. Se para en "## EN PROCESO" (piezas que el diseñador sigue escribiendo) y
+// en las notas de transcripción.
+const MAX_PIEZAS_POR_LOTE: Record<string, number> = { operaciones_geneticas: 9, implantes: 2 };
+function trocearAumentos(md: string): Lote[] {
+  type Pieza = { titulo: string; lineas: string[] };
+  const ramas: { titulo: string; piezas: Pieza[]; comunes: string[] }[] = [];
+  let pieza: Pieza | null = null;
+  let enComunes = false;
+  for (const linea of md.split("\n")) {
+    const h2 = /^## (.+)$/.exec(linea);
+    if (h2) {
+      if (/^(EN PROCESO|Notas de transcripci)/.test(h2[1])) break;
+      ramas.push({ titulo: h2[1].trim(), piezas: [], comunes: [] });
+      pieza = null;
+      enComunes = false;
+      continue;
+    }
+    const rama = ramas[ramas.length - 1];
+    if (!rama) continue;
+    const h3 = /^### (.+)$/.exec(linea);
+    if (h3) {
+      enComunes = /^Reglas generales/.test(h3[1]);
+      pieza = enComunes ? null : { titulo: h3[1].trim(), lineas: [] };
+      if (pieza) rama.piezas.push(pieza);
+      continue;
+    }
+    const h4 = /^#### (.+)$/.exec(linea);
+    if (h4 && pieza) {
+      pieza.lineas.push("", `[${h4[1].trim()}]`, "");
+      continue;
+    }
+    if (enComunes) rama.comunes.push(linea);
+    else pieza?.lineas.push(linea);
+  }
+  const lotes: Lote[] = [];
+  for (const r of ramas.filter((r) => r.piezas.length)) {
+    const base = slug(r.titulo);
+    const max = MAX_PIEZAS_POR_LOTE[base] ?? 6;
+    const trozos = Math.ceil(r.piezas.length / max);
+    const comunes = bloques(r.comunes);
+    for (let t = 0; t < trozos; t++) {
+      const id = base + (trozos > 1 ? `_${t + 1}` : "");
+      const label = r.titulo + (trozos > 1 ? ` (${t + 1}/${trozos})` : "");
+      const items = r.piezas.slice(t * max, (t + 1) * max).map((p) => {
+        // La etiqueta "[Nivel N]" queda sola en su bloque: se pega delante de cada bloque siguiente.
+        const prosa: string[] = [];
+        let prefijo = "";
+        for (const b of bloques(p.lineas)) {
+          if (/^\[Nivel \d+[^\]]*\]$/.test(b)) {
+            prefijo = b;
+            continue;
+          }
+          prosa.push(prefijo ? `${prefijo} ${b}` : b);
+        }
+        return { id: `${id}.${slug(p.titulo)}`, label: p.titulo, rama: r.titulo, disciplina: r.titulo, prosa };
+      });
+      lotes.push({
+        id,
+        label,
+        rama: r.titulo,
+        reglasComunes: comunes.length ? ["[Reglas generales de los implantes]", ...comunes] : [],
+        items,
+      });
+    }
+  }
+  return lotes;
+}
+
 // Piezas ya auditadas (2026-09-24/25) que cubren mecanismos variados y, sobre
 // todo, piezas con niveles — el mismo eje "qué cambia al subir de nivel" que
 // tienen los poderes.
@@ -499,7 +694,8 @@ if (!entrada || !salida) {
 const calibracion = entrada === "--calibracion";
 const area = calibracion ? "calibracion" : basename(entrada, ".md");
 const md = calibracion ? "" : readFileSync(entrada, "utf8");
-const lotes = calibracion ? [loteCalibracion()] : area === "dotes" ? trocearDotes(md) : trocearArea(md);
+const TROCEADORES: Record<string, (md: string) => Lote[]> = { dotes: trocearDotes, aumentos: trocearAumentos };
+const lotes = calibracion ? [loteCalibracion()] : (TROCEADORES[area] ?? trocearArea)(md);
 const args = {
   area,
   fuente: calibracion ? "catálogo de equipo (src/lib/catalog)" : entrada,
