@@ -873,6 +873,9 @@ Gotcha: Claude Code solo descubre skills, agentes y workflows en `.claude/`; ah�
 **Idea para más adelante (usuario, 2026-10-16):** un proceso "cambio mínimo" dentro de la fábrica, con menos pruebas
 y menos informe, para arreglos de una línea. Hasta que exista, todo pasa por el proceso completo, sin excepciones.
 
+**Idea para más adelante (usuario, 2026-10-16):** correr el script de revisión de la tanda 2 también como GitHub
+Action en cada push.
+
 **Escalera:** N1 línea a mano · N2 revisores especializados con oráculo · N3 tolva MainPatcher (examen: reproducir los
 syncs commiteados, recall ≥95 %) · N4 sin "tu ok" a la spec en lo pequeño · N5 cron y panel vivo.
 

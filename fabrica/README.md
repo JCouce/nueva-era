@@ -23,9 +23,10 @@ Tú ⇄ Jefe ──(tu ok)──▶ cola ─▶ inspector ─▶ constructor ─
 | Contrato | Una ficha por trabajo; cada estación escribe solo su sección | `contrato/plantilla.md` | escrito |
 | Inspector | Comprueba que cada criterio es observable y tiene un oráculo independiente | `estaciones/inspector.md` | escrito |
 | Constructor | Implementa la spec en un worktree, rama `fabrica/T-xxx-<slug>` | `estaciones/constructor.md` | escrito |
-| Revisión, script | Tests, tsc, lint y push seguro | `comprobaciones/` | tanda 2 |
+| Revisión, script | Tests, tsc, lint y push seguro | `comprobaciones/` | escrito (tanda 2) |
 | Revisión, LLM | Criterios que no son comandos, y la UI en el navegador | `estaciones/revisor.md` | escrito |
-| Bloqueos | Hook que corta push, `prisma migrate`, seeds y `.env` | `hooks/` | tanda 2 |
+| Bloqueos | Hook que corta push, `prisma migrate`, seeds y `.env` (también en Grep y Glob) | `hooks/` | escrito (tanda 2) |
+| Agentes | Envoltorios finos: herramientas en lista blanca y "lee tu estación" | `.claude/agents/fabrica-*.md` | escrito (tanda 2) |
 | Orquestador | Guion de Workflow: orden, puertas y vueltas en código | `guion/` | tanda 3 |
 | Juez | Reglas fijas: un "falla" devuelve; a la tercera o ante diseño, escala | `juez/` | tanda 3 |
 | Panel | Un único artifact con todos los trabajos, que mantiene el Jefe | — | tanda 5 |
@@ -49,10 +50,20 @@ Tú ⇄ Jefe ──(tu ok)──▶ cola ─▶ inspector ─▶ constructor ─
 Hoy, hasta la tanda 3, se usa a mano: el Jefe es la sesión de Claude con la que hablas, y las estaciones se lanzan una
 a una con sus prompts. Con la tanda 3, la skill `/fabrica` carga `jefe.md` y el guion mueve la línea.
 
+## Usarlo tú antes de un push
+
+```
+npm run fabrica:revisar                    # tests, tsc, lint de lo tocado y push seguro, contra origin/main
+npm run fabrica:revisar -- --solo-diff     # solo las reglas de push seguro (ficha, bd, prod)
+npm run fabrica:test                       # tests de la propia fábrica
+```
+
+Sale con código 1 si algo falla. `--base`, `--head` y `--json` para otros rangos o para el juez.
+
 ## Construcción por tandas
 
-1. Los papeles: contrato, prompts y este mapa. **Escrita, pendiente de revisión.**
-2. Las barreras: comprobaciones y bloqueos.
+1. Los papeles: contrato, prompts y este mapa. **Hecha.**
+2. Las barreras: comprobaciones y bloqueos. **Hecha.**
 3. La línea: el guion que mueve un trabajo.
 4. El estreno: repetir un trabajo pasado y compararlo con el del usuario.
 5. El panel: ver qué hizo cada trabajador.
