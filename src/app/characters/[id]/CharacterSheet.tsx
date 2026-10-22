@@ -12,6 +12,7 @@ import {
   setEspecieAction,
   resetBuildAction,
   equiparAction,
+  comprarAumentoAction,
   desequiparAction,
   setPrioridadAction,
   ajustarRecursoAction,
@@ -65,6 +66,7 @@ import {
   type HabilidadId,
   type DisciplinaId,
   type PiezaEquipada,
+  type CompraAumento,
   type CategoriaPrioridad,
   type LetraPrioridad,
   type MaterialTier,
@@ -484,6 +486,10 @@ export function CharacterSheet({
   const commitComprarFarmaco = (catalogoId: string) => {
     runSave(() => comprarFarmacoAction(characterId, catalogoId), setSheet);
   };
+  // Sin optimista: requisitos, precio y bolsa los decide el servidor (comprarAumento).
+  const commitComprarAumento = (compra: CompraAumento) => {
+    runSave(() => comprarAumentoAction(characterId, compra), setSheet);
+  };
   const commitComprarMunicionEspecial = (municionId: string) => {
     runSave(() => comprarMunicionEspecialAction(characterId, municionId), setSheet);
   };
@@ -801,6 +807,7 @@ export function CharacterSheet({
               onComprarFarmaco={commitComprarFarmaco}
               onRecargar={commitRecargar}
               onComprarMunicionEspecial={commitComprarMunicionEspecial}
+              onComprarAumento={commitComprarAumento}
             />
           )}
           {activeEfectivo === "equipo" && (

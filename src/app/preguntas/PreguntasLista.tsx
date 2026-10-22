@@ -162,7 +162,7 @@ export function PreguntasLista({ preguntas }: { preguntas: PreguntaVista[] }) {
                   <HudCard className={`flex flex-col gap-3 px-4 py-4 ${hecha ? "border-accent" : ""}`}>
                     <div className="flex items-center justify-between gap-2">
                       {marca.errata ? (
-                        <span className="border border-glitch px-1.5 py-0.5 font-mono text-xs uppercase text-glitch">Errata</span>
+                        <span className="border border-glitch px-1.5 py-0.5 font-mono text-xs uppercase text-neon-magenta">Errata</span>
                       ) : (
                         <span />
                       )}

@@ -1,5 +1,12 @@
+"use client";
+
+import { useState } from "react";
 import {
   equipoPorId,
+  aumentoPorId,
+  aumentosConRequisitoRoto,
+  etiquetaEleccionAumento,
+  esPiezaAumento,
   ranurasSubsistemaUsadas,
   mejorasArmaInstaladas,
   type Sheet,
@@ -18,6 +25,9 @@ import {
   DetalleArmaMelee,
   DetalleModulo,
   DetalleArmaPesada,
+  DetalleOperacion,
+  DetalleImplante,
+  MarcasImplante,
 } from "./equipo/PiezaDetalle";
 
 function BotonQuitar({ onClick }: { onClick: () => void }) {
@@ -82,6 +92,53 @@ function Fondos({ creditos }: { creditos: number }) {
   );
 }
 
+// Aumentos (A0, docs/sistema.md §11.3): pieza, nivel, elección y textos. Una operación
+// cuyo requisito se ha quitado queda marcada "requisito roto", como las dotes.
+function SeccionAumentos({ sheet, onDesequipar }: { sheet: Sheet; onDesequipar: (instanciaId: string) => void }) {
+  const aumentos = sheet.equipo.filter(esPiezaAumento);
+  const rotos = aumentosConRequisitoRoto(sheet);
+  if (aumentos.length === 0) {
+    return <p className="font-sans text-[11px] leading-relaxed text-muted">Sin aumentos. Están en la Tienda.</p>;
+  }
+  return (
+    <>
+      <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{`// Aumentos · ${aumentos.length}`}</p>
+      <p className="font-sans text-[11px] leading-relaxed text-muted">
+        Sus efectos aún no se aplican en la ficha. En creación, quitar un aumento devuelve lo pagado (bolsa y créditos); aprobada la ficha, no devuelve nada.
+      </p>
+      {aumentos.map((a) => {
+        const cat = aumentoPorId(a.catalogoId);
+        if (!cat) return null;
+        const eleccion = etiquetaEleccionAumento(a);
+        const roto = rotos.find((r) => r.instanciaId === a.instanciaId);
+        const titulo = eleccion ? `${cat.label} · ${eleccion}` : cat.label;
+        const resumen = cat.familia === "implante" ? `Nivel ${a.nivel} · ${cat.resumen}` : cat.resumen;
+        return (
+          <div key={a.instanciaId}>
+            <Acordeon titulo={titulo} resumen={resumen} etiqueta={<BotonQuitar onClick={() => onDesequipar(a.instanciaId)} />}>
+              {cat.familia === "operacionGenetica" ? (
+                <DetalleOperacion p={cat} eleccion={a.eleccion} />
+              ) : (
+                <DetalleImplante p={cat} nivelActual={a.nivel} eleccion={a.eleccion} />
+              )}
+            </Acordeon>
+            {(roto || cat.familia === "implante") && (
+              <div className="mt-1 flex flex-wrap items-center gap-1.5 px-1">
+                {roto && (
+                  <span className="font-mono text-[10px] uppercase text-danger">
+                    requisito roto: falta {roto.faltan.join(", ")}
+                  </span>
+                )}
+                {cat.familia === "implante" && <MarcasImplante p={cat} />}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 export function EquipoTab({
   sheet,
   creditos,
@@ -94,6 +151,7 @@ export function EquipoTab({
   creditos?: number;
   onDesequipar: (instanciaId: string) => void;
 }) {
+  const [filtro, setFiltro] = useState<"todo" | "aumentos">("todo");
   if (sheet.equipo.length === 0) {
     return (
       <HudCard className="border-dashed p-5">
@@ -110,6 +168,7 @@ export function EquipoTab({
     );
   }
 
+  const todo = filtro === "todo";
   const armaduras = sheet.equipo.filter((p) => equipoPorId(p.catalogoId)?.familia === "armadura");
   const armas = sheet.equipo.filter((p) => equipoPorId(p.catalogoId)?.familia === "arma");
   const armasMelee = sheet.equipo.filter((p) => equipoPorId(p.catalogoId)?.familia === "armaMelee");
@@ -128,7 +187,22 @@ export function EquipoTab({
         </p>
         {creditos !== undefined && <Fondos creditos={creditos} />}
       </div>
-      {armaduras.map((a) => {
+      <div className="flex gap-1">
+        {(["todo", "aumentos"] as const).map((f) => (
+          <button
+            key={f}
+            type="button"
+            aria-pressed={filtro === f}
+            onClick={() => setFiltro(f)}
+            className={`clip-chamfer-sm border px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide active:scale-95 ${
+              filtro === f ? "border-accent text-accent" : "border-border text-muted"
+            }`}
+          >
+            {f === "todo" ? "Todo" : "Aumentos"}
+          </button>
+        ))}
+      </div>
+      {todo && armaduras.map((a) => {
         const cat = equipoPorId(a.catalogoId) as Armadura;
         const usadas = ranurasSubsistemaUsadas(sheet, a.instanciaId);
         return (
@@ -153,7 +227,7 @@ export function EquipoTab({
         );
       })}
 
-      {armas.map((a) => {
+      {todo && armas.map((a) => {
         const cat = equipoPorId(a.catalogoId) as ArmaFuego | null;
         if (!cat || cat.familia !== "arma") return null;
         const usadas = mejorasArmaInstaladas(sheet, a.instanciaId);
@@ -173,7 +247,7 @@ export function EquipoTab({
         );
       })}
 
-      {armasMelee.map((a) => {
+      {todo && armasMelee.map((a) => {
         const cat = equipoPorId(a.catalogoId) as ArmaMelee | null;
         if (!cat || cat.familia !== "armaMelee") return null;
         return (
@@ -191,7 +265,7 @@ export function EquipoTab({
         );
       })}
 
-      {herramientas.map((a) => {
+      {todo && herramientas.map((a) => {
         const cat = equipoPorId(a.catalogoId) as Herramienta | null;
         if (!cat || cat.familia !== "herramienta") return null;
         return (
@@ -206,7 +280,7 @@ export function EquipoTab({
         );
       })}
 
-      {armamentoPesado.map((a) => {
+      {todo && armamentoPesado.map((a) => {
         const cat = equipoPorId(a.catalogoId) as ArmaPesada | null;
         if (!cat || cat.familia !== "armaPesada") return null;
         return (
@@ -225,6 +299,7 @@ export function EquipoTab({
           </Acordeon>
         );
       })}
+      {(!todo || sheet.equipo.some(esPiezaAumento)) && <SeccionAumentos sheet={sheet} onDesequipar={onDesequipar} />}
     </div>
   );
 }

@@ -37,6 +37,7 @@
 //   dotesAcciones.ts   acciones propias de dote (sección Dotes de Acciones, D2c-1)
 //   dotesPoderes.ts    poderes de dote (Impacto/Sobrecarga Métrica) como PoderDisponible (D2c-2)
 //   dotesCompradas.ts  sheet.dotes: forma y lectura tolerante
+//   aumentos.ts        aumentos (A0): compra, subir de nivel, elección, bolsa del humano y requisito roto
 //   vidaPorEstados.ts  vida/fatiga que se pierden al bajar el máximo por un estado (S75)
 //   registro.ts        registro del máster: qué se guarda de cada acción y cómo se deshace (E1b)
 //   textosRegistro.ts  textos del centro de mando: entradas del registro, duraciones, hora relativa (E1c)
@@ -78,6 +79,7 @@ export * from "./fichaResuelta";
 export * from "./progresion";
 export * from "./dotes";
 export * from "./dotesCompradas";
+export * from "./aumentos";
 export * from "./dotesEfectos";
 export * from "./dotesAcciones";
 export * from "./dotesPoderes";

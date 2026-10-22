@@ -22,6 +22,7 @@ import {
   quitarDote,
   CONTEXTO_LIBRE,
   type DoteComprada,
+  type CompraAumento,
 } from "@/lib/rules";
 import { AtributosTab } from "@/app/characters/[id]/_components/AtributosTab";
 import { HabilidadesTab } from "@/app/characters/[id]/_components/HabilidadesTab";
@@ -66,6 +67,7 @@ import {
   setEspecieNpcAction,
   ponerDoteNpcAction,
   quitarDoteNpcAction,
+  comprarAumentoNpcAction,
 } from "../actions";
 
 // Fase 6b 5.1: espejo simplificado de CharacterSheet.tsx — reusa sus tabs de
@@ -287,6 +289,12 @@ export function NpcEditor({
   const commitComprarMunicionEspecial = async (municionId: string) => {
     setStatus("saving");
     const res = await comprarMunicionEspecialNpcAction(npcId, municionId);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
+  const commitComprarAumento = async (compra: CompraAumento) => {
+    setStatus("saving");
+    const res = await comprarAumentoNpcAction(npcId, compra);
     if (res.ok) setSheet(res.sheet);
     setStatus(res.ok ? "saved" : "error");
   };
@@ -525,6 +533,7 @@ export function NpcEditor({
           onComprarFarmaco={commitComprarFarmaco}
           onRecargar={commitRecargar}
           onComprarMunicionEspecial={commitComprarMunicionEspecial}
+          onComprarAumento={commitComprarAumento}
         />
       )}
     </div>

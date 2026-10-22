@@ -36,7 +36,8 @@ function tieneNiveles(
     pieza.familia === "subsistema" ||
     pieza.familia === "movimiento" ||
     pieza.familia === "mejoraArma" ||
-    pieza.familia === "herramienta"
+    pieza.familia === "herramienta" ||
+    pieza.familia === "implante"
   );
 }
 

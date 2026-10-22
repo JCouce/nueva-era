@@ -514,9 +514,9 @@ export const ESPECIES: Especie[] = [
         id: "bolsa_aumentos",
         label: "Civilización Aumentada",
         texto:
-          "60.000 créditos aparte, solo para aumentos; se gastan antes que los créditos normales y lo que sobre al aprobar se pierde.",
+          "70.000 créditos aparte, solo para aumentos; se gastan antes que los créditos normales y lo que no se gaste se pierde (nunca se convierte en créditos).",
         creacion: true,
-        bolsaAumentos: 60_000,
+        bolsaAumentos: 70_000,
         motor: [],
       },
     ],

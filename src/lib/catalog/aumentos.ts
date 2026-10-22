@@ -1,0 +1,1135 @@
+// Catálogo de aumentos (docs/sistema.md §11): 26 operaciones genéticas y los 6
+// implantes cerrados. Los 5 implantes "en proceso" de docs/aumentos.md no entran
+// hasta que Murillo los cierre.
+//
+// Escrito a mano a partir de docs/modelado-aumentos.json (ids, rareza, coste,
+// requisitos, niveles, variantes, elección y MotorMetadata) y de la prosa literal de
+// docs/aumentos.md (`detalle`, sin las marcas *(sic)*). `resumen` es redacción nuestra
+// para la card cerrada. aumentos.test.ts cruza ids, costes, rarezas, requisitos y
+// niveles contra el JSON: si el modelado cambia, el test lo dice.
+//
+// Tanda A0 (docs/propuesta-aumentos.md §2): se compran, se ven y se pagan; NINGÚN
+// efecto de reglas está aplicado todavía. Por eso `modificadores` va vacío en todas y
+// cada MotorMetadata está "pendiente" o "bloqueado" (salvo las frases puramente
+// narrativas, que ya se ven en la card). A1-A7 los irán construyendo.
+//
+// MotorMetadata: copiado del modelado. Donde el modelado dice `mecanismo: "hueco"`
+// (aún no hay mecanismo en el motor), se pone el mecanismo más cercano por tipo
+// (habilitador → gate_instalacion; acción → accion_equipo; extremidad del Brazo →
+// sustitucion_aplicado; ventaja en un grupo → siempre_activo; el resto, que alimenta
+// un derivado o un atributo → suma_derivado) y se conservan estado y bloqueoPor.
+// TODO(revisar): esa traducción de "hueco" es provisional; cada tanda A1-A7 debe
+// confirmar el mecanismo real al construir su capa.
+import type { Modificador } from "../rules/modificadores";
+import type { MotorMetadata } from "../rules/motor";
+import type { NivelModulo, Rareza } from "./equipo";
+
+// Elección al comprar (Introgresión: el sentido). Cada opción con su texto.
+export type OpcionAumento = { id: string; label: string; detalle: string[] };
+export type EleccionAumento = { id: string; label: string; opciones: OpcionAumento[] };
+
+export type OperacionGenetica = {
+  familia: "operacionGenetica";
+  id: string;
+  label: string;
+  resumen: string;
+  detalle: string[];
+  rareza: Rareza;
+  coste: number;
+  // Ids de otras operaciones; hacen falta todas (§11.1).
+  requisitos: string[];
+  eleccion: EleccionAumento | null;
+  // Solo Introgresión: se vuelve a comprar con otra elección, nunca la misma.
+  repetible: boolean;
+  modificadores: Modificador[];
+  motor: MotorMetadata[];
+};
+
+// Modelos del Brazo Biónico en los niveles 3 y 4: se elige al comprar ese nivel.
+export type VarianteImplante = { id: string; label: string; detalle: string[] };
+export type NivelImplante = NivelModulo & { variantes?: VarianteImplante[] };
+
+export type Implante = {
+  familia: "implante";
+  id: string;
+  label: string;
+  resumen: string;
+  descripcion: string;
+  // Reglas generales de los implantes (docs/aumentos.md): marcas para la ficha.
+  sabotaje: boolean;
+  // Lo afecta el Shock (§11.3, tercera ronda): todos los implantes hoy.
+  electronico: boolean;
+  // null: el documento no dice si se puede extraer (pregunta 20).
+  extraible: boolean | null;
+  niveles: NivelImplante[];
+};
+
+export type Aumento = OperacionGenetica | Implante;
+
+export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
+  {
+    familia: "operacionGenetica",
+    id: "aum_mielinizacion_central",
+    label: "Mielinización Central",
+    resumen: "+1 Inteligencia. Una vez por escena, ahorra 1 de fatiga en una prueba de perspicacia, voluntad o expresión.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en el atributo de Inteligencia.",
+      "Una vez por escena puedes omitir el gasto de un punto de fatiga para una prueba que utilicen perspicacia, voluntad o expresión. Se puede combinar este beneficio con el gasto de fatiga de aumentos que influyan en el empleo de estos atributos.",
+    ],
+    rareza: "Poco Habitual",
+    coste: 30000,
+    requisitos: [],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_neurogenesis_hipocampal",
+    label: "Neurogénesis Hipocampal",
+    resumen: "+1 Inteligencia. −1 al penalizador por fatiga en perspicacia, voluntad y expresión; Biociencia, Cultura y Tecnociencia cuestan 1 menos.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en el atributo de Inteligencia.",
+      "El personaje reduce en 1 los penalizadores por fatiga cuando vaya a realizar pruebas que utilicen perspicacia, voluntad o expresión.",
+      "Reduce en 1 (gasto mínimo 1) el coste para aumentar las habilidades de Biociencia, Cultura y Tecnociencia.",
+    ],
+    rareza: "Poco Habitual",
+    coste: 45000,
+    requisitos: ["aum_mielinizacion_central"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_estabilizacion_engramatica",
+    label: "Estabilización Engramática",
+    resumen: "+1 Inteligencia adicional y memoria perfecta. Subir cualquier habilidad cuesta 1 menos (mínimo 1).",
+    detalle: [
+      "El personaje aumenta en 1 adicional su puntuación en el atributo de Inteligencia.",
+      "El cerebro elimina por completo la degradación de los recuerdos. Cada concepto, habilidad o dato adquirido se archiva con fidelidad estructural imborrable.",
+      "Reduce en 1 el coste para cualquier aumento de habilidad (mínimo 1).",
+    ],
+    rareza: "Extraño",
+    coste: 45000,
+    requisitos: ["aum_neurogenesis_hipocampal"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_red_frontoparietal",
+    label: "Red Frontoparietal",
+    resumen: "+1 Inteligencia y Carácter. Dos dados en Iniciativa; por 1 de fatiga, una prueba mental y otra física en la misma acción.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en los atributos de Inteligencia y Carácter.",
+      "El personaje lanza dos dados para su Iniciativa y escoge la mejor tirada.",
+      "Por el gasto de un punto de fatiga, el personaje puede desarrollar una prueba mental que requiera una acción simple o estándar de forma simultánea a una prueba física como parte de la misma acción. La acción empleada es la más compleja.",
+    ],
+    rareza: "Extraño",
+    coste: 30000,
+    requisitos: ["aum_mielinizacion_central"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Iniciativa" }, mecanismo: "siempre_activo", estado: "pendiente" },
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_accion_combinada" }, mecanismo: "accion_equipo", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_prefrontal_aumentada",
+    label: "Prefrontal Aumentada",
+    resumen: "+1 Percepción. Por 1 de fatiga, te concentras en una acción de perspicacia, voluntad o expresión y tiras dos dados.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en el atributo de Percepción.",
+      "El personaje podrá concentrarse al desarrollar una acción simple o estándar que utilice perspicacia, voluntad o expresión y resolverla como acción compleja, lanzando dos dados para la tirada y escogiendo el mejor resultado, usar esta habilidad conlleva el gasto de un punto de fatiga.",
+      "No se puede utilizar de forma simultánea a la de Asa Estriatotalámica.",
+    ],
+    rareza: "Poco Habitual",
+    coste: 25000,
+    requisitos: ["aum_mielinizacion_central"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_optimizacion_foveo_sensorial",
+    label: "Optimización Foveo-Sensorial",
+    resumen: "+1 Percepción. +1 a los ataques a distancia tras apuntar y −1 a la cobertura visual.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en el atributo de Percepción.",
+      "Además gana un bonificador de +1 en tiradas de ataque a distancia por puntería. También reduce en 1 los penalizadores por cobertura visual al realizar ataques a distancia o pruebas de percepción visual.",
+    ],
+    rareza: "Poco Habitual",
+    coste: 30000,
+    requisitos: [],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_optimizacion_vestibulo_auditiva",
+    label: "Optimización Vestíbulo-Auditiva",
+    resumen: "+1 Percepción. +2 contra ceguera y sordera; dos dados al buscar o rastrear por el oído.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en el atributo de Percepción.",
+      "Además, otorga un bonificador de +2 contra efectos de ceguera y sordera. También permite lanzar dos dados y escoger el mejor en las pruebas de percepción auditiva para detectar enemigos ocultos, o rastrear por el sonido.",
+    ],
+    rareza: "Extraño",
+    coste: 25000,
+    requisitos: ["aum_optimizacion_foveo_sensorial"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_consciencia_omnidireccional",
+    label: "Consciencia Omnidireccional",
+    resumen: "+1 Percepción. No te pueden flanquear; por 1 de fatiga, esquivas con dos dados.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en el atributo de Percepción.",
+      "Además, el personaje no puede ser flanqueado, además por el gasto de un punto de fatiga realiza una acción defensiva de esquiva contra un ataque melee o a distancia tirando dos dados y escogiendo el mejor.",
+    ],
+    rareza: "Muy Extraño",
+    coste: 30000,
+    requisitos: ["aum_optimizacion_foveo_sensorial", "aum_prefrontal_aumentada"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee_<instancia>" }, mecanismo: "nota_fija", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_asa_estriatotalamica",
+    label: "Asa Estriatotalámica",
+    resumen: "Por 1 de fatiga, una acción de perspicacia, voluntad o expresión baja un paso (de compleja a estándar o de estándar a simple).",
+    detalle: [
+      "El personaje podrá simplificar acciones que utilicen perspicacia, voluntad o expresión, de compleja a estándar o de estándar a simple por el gasto de un punto de fatiga.",
+      "Esta habilidad no se puede utilizar de forma simultánea a la de Conectividad Callosa o Prefrontal Aumentada",
+    ],
+    rareza: "Poco Habitual",
+    coste: 15000,
+    requisitos: ["aum_mielinizacion_central"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_conectividad_callosa",
+    label: "Conectividad Callosa",
+    resumen: "Por 1 de fatiga, te concentras en cualquier acción simple o estándar y tiras dos dados.",
+    detalle: [
+      "El personaje podrá concentrarse al desarrollar una acción simple o estándar de cualquier tipo y resolverla como acción compleja, lanzando dos dados para la tirada y escogiendo el mejor resultado. Esta habilidad conlleva el gasto de un punto de fatiga. Podrá emplear dos turnos en realizar una acción compleja ganando también este bonificador.",
+      "Este aumento no se puede usar simultáneamente con la habilidad de Asa Estriatotalámica.",
+    ],
+    rareza: "Extraño",
+    coste: 20000,
+    requisitos: ["aum_prefrontal_aumentada"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "nota_fija", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_regulacion_limbico_prefrontal",
+    label: "Regulación Límbico-Prefrontal",
+    resumen: "+1 Carácter. +1 contra coerción, intimidación, manipulación mental y miedo.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en el atributo de Carácter.",
+      "Además, gana un bonificador de +1 en tiradas contra coerción, intimidación, manipulación mental y efectos de miedo.",
+    ],
+    rareza: "Poco Habitual",
+    coste: 30000,
+    requisitos: [],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_proyeccion_neuro_expresiva",
+    label: "Proyección Neuro-Expresiva",
+    resumen: "+1 Carácter. Una vez por escena, dos dados en una prueba de Actitud con lenguaje; por 1 de fatiga, anulas los penalizadores sociales.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en el atributo de Carácter.",
+      "Además, una vez por escena o combate puede realizar dos tiradas para una misma prueba y escoger el mejor resultado en el uso de la habilidad de Actitud, la prueba en cuestión tiene que emplear algún tipo de lenguaje.",
+      "También, mediante el gasto de un punto de fatiga, puede anular cualquier penalizador en sus interacciones sociales durante una hora.",
+    ],
+    rareza: "Extraño",
+    coste: 25000,
+    requisitos: ["aum_regulacion_limbico_prefrontal"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "social" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_estado_propio + reduce_penalizador_por_pieza" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_matriz_de_red_predeterminada",
+    label: "Matriz de Red Predeterminada",
+    resumen: "+1 Carácter. +2 contra dominación y sugestión, con salvación extra cada turno; una vez por escena repites una tirada de Actitud.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en el atributo de Carácter.",
+      "El núcleo de su personalidad se vuelve impermeable: es muy resistente contra efectos de dominación mental artificial, sugestión coercitiva o pérdida de voluntad por agentes químicos, farmacológicos o neurológicos.",
+      "Gana un bonificador de +2 en todas las tiradas de salvación contra efectos de dominación mental, sugestión coercitiva o alteración de la voluntad; si llega a ser dominado o manipulado, puede realizar una tirada de salvación adicional al final de cada uno de sus turnos para romper el control de inmediato.",
+      "Una vez por escena puede repetir un tirada de Actitud lanzando dos dados y escogiendo el mejor resultado.",
+    ],
+    rareza: "Muy Extraño",
+    coste: 35000,
+    requisitos: ["aum_proyeccion_neuro_expresiva"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Salvaciones" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "nota_fija", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "nota_fija", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_integridad_osteotendinosa",
+    label: "Integridad Osteotendinosa",
+    resumen: "+1 Fuerza y Agilidad. +1 de armadura natural contra perforantes y cortantes.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en los atributos de Fuerza y Agilidad.",
+      "Además, gana un punto de blindaje por armadura natural contra ataques perforantes o cortantes.",
+    ],
+    rareza: "Poco Habitual",
+    coste: 30000,
+    requisitos: [],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_matriz_osea_adaptativa",
+    label: "Matriz Ósea Adaptativa",
+    resumen: "+1 Fuerza y Aguante. −1 a los penalizadores de carga y +1 de armadura natural contra contundentes.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en los atributos de Fuerza y Aguante.",
+      "Reduce en 1 los penalizadores por capacidad de carga, además, gana un punto de blindaje por armadura natural contra ataques contundentes o por impactos masivos.",
+    ],
+    rareza: "Poco Habitual",
+    coste: 40000,
+    requisitos: [],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "acciones_fisicas_carga" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "penalizadores por carga sin mecanizar (sistema.md §5.5)" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_hipertrofia_miofibrilar",
+    label: "Hipertrofia Miofibrilar",
+    resumen: "+1 Fuerza. La Fortaleza cuenta ×1,5 para la vida y sanas el daño no letal al doble de velocidad.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en el atributo de Fuerza.",
+      "Además, multiplica por 1,5 la puntuación de fortaleza para calcular los puntos de golpe y sana de forma natural daño no letal al doble de velocidad.",
+    ],
+    rareza: "Poco Habitual",
+    coste: 40000,
+    requisitos: ["aum_matriz_osea_adaptativa", "aum_integridad_osteotendinosa"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "derivado:vida" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ficha" }, mecanismo: "nota_fija", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_sincronizacion_neuromotora_profunda",
+    label: "Sincronización Neuromotora Profunda",
+    resumen: "+1 Fuerza y Agilidad. Por 1 de fatiga, dos dados en una tirada de Potencia.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en los atributos de Fuerza y Agilidad.",
+      "Además, por el gasto de un punto de fatiga puede lanzar dos dados para una tirada en la que utilice el atributo de potencia y utilizar el resultado más alto.",
+    ],
+    rareza: "Poco Habitual",
+    coste: 40000,
+    requisitos: ["aum_integridad_osteotendinosa"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:potencia" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_hiperdensidad_propioceptiva",
+    label: "Hiperdensidad Propioceptiva",
+    resumen: "+1 Agilidad. Segunda reacción por ronda pagando 1 de fatiga.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en el atributo de Agilidad.",
+      "Además, gana una segunda reacción por ronda a cambio de un punto de fatiga.",
+    ],
+    rareza: "Poco Habitual",
+    coste: 40000,
+    requisitos: [],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "nota_fija", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_automatismo_bulboespinal",
+    label: "Automatismo Bulboespinal",
+    resumen: "+1 Agilidad. La segunda reacción ya no cuesta fatiga y Sorprendido no te penaliza al defender.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en el atributo de Agilidad.",
+      "El personaje ya no tiene que emplear fatiga para obtener la segunda reacción por ronda, además, ya no recibe penalizador en tiradas defensivas por estar sorprendido.",
+    ],
+    rareza: "Extraño",
+    coste: 40000,
+    requisitos: ["aum_hiperdensidad_propioceptiva", "aum_integridad_osteotendinosa"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "nota_fija", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_bucle_de_realimentacion_motora",
+    label: "Bucle de Realimentación Motora",
+    resumen: "Tercera reacción por ronda pagando 1 de fatiga; dos dados en equilibrio para no caer derribado.",
+    detalle: [
+      "El personaje gana una tercera reacción por turno cambio de un punto de fatiga. Además, para cualquier tirada de equilibrio para evitar caer derribado, lanza dos dados y escoge el mejor resultado.",
+    ],
+    rareza: "Muy Extraño",
+    coste: 25000,
+    requisitos: ["aum_automatismo_bulboespinal"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "atletismo" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_biogenesis_mitocondrial",
+    label: "Biogénesis Mitocondrial",
+    resumen: "+1 Aguante. Los alimentos recuperan el doble de fatiga; por 1 de fatiga, dos dados contra asfixia, toxinas y venenos; aguantas el doble en hipoxia.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en el atributo de Aguante.",
+      "Además, duplica la efectividad de cualquier consumible o alimento empleado para recuperar puntos de fatiga. También permite emplear un punto de fatiga y lanzar dos dados en tiradas de salvación contra asfixia, toxinas y venenos, escogiendo el mejor resultado. Por último, duplica el tiempo en hipoxia que puede soportar el personaje.",
+    ],
+    rareza: "Poco Habitual",
+    coste: 30000,
+    requisitos: [],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_angiogenesis_sistemica",
+    label: "Angiogénesis Sistémica",
+    resumen: "+1 Aguante. Las hemorragias duran la mitad y las cortas pagando fatiga; sanas el doble al descansar.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en el atributo de Aguante.",
+      "Además, los efectos de hemorrogia solo duran la mitad del habitual, podrá emplear un punto de fatiga para interrumpir una hemorragia de forma automática. En caso de hemorragia exanguinante tendrá que emplear dos puntos de fatiga.",
+      "También, el personaje sanará de forma natural el doble en descanso largo, pudiendo intercambiar dos niveles de daño no letal sanados por uno de daño letal. En descanso corto pasa también a sanar un nivel de daño no letal además de los efectos habituales.",
+    ],
+    rareza: "Extraño",
+    coste: 40000,
+    requisitos: ["aum_matriz_osea_adaptativa", "aum_biogenesis_mitocondrial"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_cortar_hemorragia" }, mecanismo: "accion_equipo", estado: "pendiente" },
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_cortar_exanguinante" }, mecanismo: "accion_equipo", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_resiliencia_homeostatica",
+    label: "Resiliencia Homeostática",
+    resumen: "+1 Aguante. Dos dados, sin pagar fatiga, contra enfermedad, toxinas, venenos, radiación, frío o calor extremos y asfixia.",
+    detalle: [
+      "El personaje aumenta en 1 su puntuación en el atributo de Aguante.",
+      "Además, el personaje lanza dos dados en tiradas de salvación contra efectos de enfermedad, toxinas, venenos, radiación, efectos térmicos extremos y asfixia sin necesidad de gastar fatiga.",
+    ],
+    rareza: "Extraño",
+    coste: 40000,
+    requisitos: ["aum_angiogenesis_sistemica"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_regeneracion_tisular_acelerada",
+    label: "Regeneración Tisular Acelerada",
+    resumen: "Regeneras daño no letal, letal y grave con el tiempo; inmune a la hemorragia.",
+    detalle: [
+      "El personaje podrá recuperar un nivel de salud de daño no letal por turno, uno de daño letal por minuto (10 turnos) y uno de daño grave por hora.",
+      "Además, es inmune al estado de hemorragia, y en caso de hemorragia exanguinante podrá emplear un punto de fatiga para eliminar el efeco.",
+      "Un personaje en estado de fatiga tarda el doble en regenerar y exhausto no regenera en absoluto.",
+      "Durante el descanso corto recupera 2 niveles de daño letal en lugar de 1.",
+    ],
+    rareza: "Extraño",
+    coste: 30000,
+    requisitos: ["aum_angiogenesis_sistemica"],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:hemorragia" }, mecanismo: "gate_instalacion", arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "capa inmunidad_estado" },
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_eliminar_exanguinante" }, mecanismo: "accion_equipo", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_estabilizacion_autonomica",
+    label: "Estabilización Autonómica",
+    resumen: "−1 a los penalizadores por heridas y fatiga; +2 contra aturdimiento, confusión, shock y miedo.",
+    detalle: [
+      "El personaje reduce en 1 los penalizadores acumulados por heridas y fatiga. Además, gana un bonificador de +2 en tiradas de salvación contra efectos de aturdimiento, confusión, shock, y miedo.",
+      "Si el personaje se encuentra en estado de asustado puede emplear una acción simple o una reacción para deshacerse del miedo. Si se encuentra aterrorizado puede realizar una acción estándar durante su turno para pasar a estar asustado.",
+    ],
+    rareza: "Poco Habitual",
+    coste: 15000,
+    requisitos: [],
+    eleccion: null,
+    repetible: false,
+    modificadores: [],
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_sacudir_miedo" }, mecanismo: "accion_equipo", estado: "pendiente" },
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_dominar_terror" }, mecanismo: "accion_equipo", estado: "pendiente" },
+    ],
+  },
+  {
+    familia: "operacionGenetica",
+    id: "aum_introgresion_sensorial_heterologa",
+    label: "Introgresión Sensorial Heteróloga",
+    resumen: "Un sentido nuevo a elegir: visión nocturna o térmica, campos electromagnéticos, ultravioleta, olfato químico o sónar.",
+    detalle: [
+      "El personaje puede escoger entre uno de los siguientes sentidos:",
+      "Este aumento se puede escoger más veces para distintos sentidos.",
+    ],
+    rareza: "Extraño",
+    coste: 15000,
+    requisitos: [],
+    eleccion: {
+      id: "sentido",
+      label: "Sentido",
+      opciones: [
+        {
+          id: "vision_nocturna",
+          label: "Visión Nocturna",
+          detalle: [
+            "La adaptación biológica procesa los fotones a nivel celular orgánico, permitiendo una visión nocturna natural que resiste mejor los destellos y explosiones intensas. La visión se adapta a espacios de escasa iluminación con la misma claridad que en espacios iluminados, aunque se podrá restringir a grandes distancias. Además otorga un bonificador de +2 en tiradas de salvación contra ceguera por detonaciones gracias a la rápida respuesta de obturación orgánica.",
+          ],
+        },
+        {
+          id: "vision_termica",
+          label: "Visión Térmica",
+          detalle: [
+            "La integración sináptica de sensores térmicos permite al sistema nervioso superponer el espectro infrarrojo a la visión óptica normal sin recurrir a abstracciones cromáticas digitales y sin perder detalle. Esto anula por completo cualquier penalizador en tiradas de percepción visual fuera del gradiente térmico a diferencia de los visores tecnológicos. El sientido adquirido no solo procesa la temperatura actual, sino que registra y resalta el rastro térmico reciente (como huellas de pisadas luminosas en el suelo, la estela de calor de un proyectil o el rastro residual de un objetivo que acaba de pasar), permitiendo rastrear rutas de movimiento recientes aunque el blanco ya no esté a la vista. El rastro más inmediato brilla con mayor intensidad, desvaneciéndose de forma progresiva a los 5 turnos, pero persistiendo de 10 a 15 minutos en condiciones ambientales estándar. En situaciones de frío extremo o alta ventilación, el calor se disipa con rapidez, reduciendo la duración del rastro a la mitad (2 turnos o 5 minutos). En superficies aislantes o interiores sellados, la huella térmica perdura ligeramente más tiempo al carecer de corrientes de aire que fuercen la convección.",
+          ],
+        },
+        {
+          id: "percepcion_electromagnetica",
+          label: "Percepción Electromagnética",
+          detalle: [
+            "Este aumento dota al personaje de una capacidad de detección de campos electromagnéticos generados por motores, baterías, sintéticos y armamento energético a corta distancia a través de tabiques finos. Al ser un proceso orgánico, no emite pulsos rastreables, aunque muestra vulnerabilidad ante descargas eléctricas directas o campos magnéticos intensos. Su alcance pasivo es de 10 metros, pero con una tirada de perspicacia + exploración y una acción compleja se aumenta el área a 30 metros, si además emplea un punto de fatiga en la prueba, se aumenta el área a 60 metros.",
+          ],
+        },
+        {
+          id: "espectro_ultravioleta",
+          label: "Espectro Ultravioleta y Rastro Forense",
+          detalle: [
+            "La expansión de la visión hacia los ultravioletas permite identificar residuos químicos recientes, fluidos orgánicos, huellas de polímeros de ocultación, marcas de seguridad holográficas y la ionización residual del armamento energético. Proporciona un bonificador de +2 en tiradas de investigación de campo o búsqueda de accesos ocultos.",
+          ],
+        },
+        {
+          id: "deteccion_quimica",
+          label: "Detección Química y de Feromonas",
+          detalle: [
+            "Es de carácter estrictamente olfativo, capaz de percibir trazas químicas de transpiración y emisiones hormonales en espacios confinados hasta un radio de 20 metros. Este sentido contrarresta las técnicas de camuflaje químico y otorga un bonificador para detectar objetivos ocultos a corta distancia de +2 (4 metros).",
+          ],
+        },
+        {
+          id: "ecolocalizacion",
+          label: "Ecolocalización y Sónar Orgánico",
+          detalle: [
+            "Funciona como un sistema de ecolocalización continuo y pasivo que opera de manera idéntica a un sónar de proximidad. Es totalmente imperceptible para escáneres electrónicos, inmune a pulsos de interferencia y permite mapear el entorno en la oscuridad absoluta o bajo el agua, sin requerir acciones manuales de activación. En medios terrestres el alcance efectivo es de hasta 20 metros para la detección precisa de contornos, obstáculos y el movimiento de blancos. Fuera de este radio, las ondas se atenúan con rapidez y pierden resolución táctica. En medios acuáticos o de alta densidad el alcance se duplica (40 metros) gracias a la excelente propagación del sonido a través del agua y fluidos densos. A corta distancia (4 metros), el sistema ofrece una precisión milimétrica capaz de percibir texturas de materiales, oquedades tras paneles delgados o la vibración de estructuras cercanas.",
+          ],
+        },
+      ],
+    },
+    repetible: true,
+    modificadores: [],
+    motor: [
+      { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_barrido_electromagnetico" }, mecanismo: "accion_equipo", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "sigilo" }, mecanismo: "nota_fija", estado: "pendiente" },
+    ],
+  },
+];
+
+export const IMPLANTES: Implante[] = [
+  {
+    familia: "implante",
+    id: "aum_implante_de_resonancia_metrica",
+    label: "Implante de Resonancia Métrica",
+    resumen: "Permite a una especie no psiónica entrenar la psiónica, con riesgo de sobreesfuerzo al usarla.",
+    descripcion: "Las especies no psiónicas carecen de las vías neurosinápticas orgánicas necesarias para modular la dinámica métrica. El IRM lo resuelve con un nodo central biocompatible anclado a la región parietal-temporal y una red de microfilamentos superconductores por la médula espinal y el sistema nervioso central. Ante una orden de pensamiento enfocado intercepta el impulso, lo traduce con un coprocesador cuántico subdérmico y genera un campo de resonancia artificial; actúa como amplificador y disipador de calor sináptico. El usuario no adquiere de forma inmediata capacidad para la psiónica: debe entrenarla como un psiónico orgánico.",
+    sabotaje: true,
+    electronico: true,
+    extraible: null,
+    niveles: [
+      {
+        nivel: 1,
+        rareza: "Poco Habitual",
+        coste: 30000,
+        detalle: [
+          "Es el punto de entrada. Permite a una especie no psiónica empezar a desarrollar y manifestar sus primeros poderes básicos, pero el hardware es rudimentario y carece de filtros de seguridad avanzados.",
+          "Sobreesfuerzo: Si el usuario activa el implante estando fatigado o emplea poderes de nivel 3 o más, debe superar una tirada de voluntad dificultad igual a 6 + nivel de poder empleado. En caso de éxito no tiene efecto, pero en caso de fracaso:",
+          "Fracaso: El sistema sufre un pico de retroalimentación y el usuario sufre un nivel de daño letal.",
+          "Fracaso Crítico: El daño recibido es grave y, además, el personaje queda aturdido por el colapso sináptico.",
+          "Carga Crítica: Si el personaje se encuentra en estado exhausto, la protección del implante colapsa: el daño por fallo deja de ser seguro y pasa a ser grave y en caso de fracaso crítico provoca muerte cerebral automática.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "psionica" }, mecanismo: "gate_instalacion", arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "§11.3: se modela pero no se conecta (tarea psiónico biológico)" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_sobreesfuerzo_irm" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+        ],
+      },
+      {
+        nivel: 2,
+        rareza: "Poco Habitual",
+        coste: 60000,
+        detalle: [
+          "Optimiza los conductos y ofrece una disipación térmica superior, corrigiendo la extrema vulnerabilidad del modelo base.",
+          "Sobreesfuerzo: Siempre que el personaje esté fatigado o emplee poderes de nivel 4 o más.",
+          "Fallo: El daño se mitiga drásticamente y pasa a ser no letal.",
+          "Fracaso Crítico: El daño es grave y causa aturdimiento.",
+          "Carga Crítica: Si el personaje se encuentra en estado exhausto: el daño por fallo deja de ser seguro y pasa a ser letal y en caso de fracaso crítico provoca muerte cerebral automática.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "accion", afecta: { modo: "accion_existente", id: "aumentos_sobreesfuerzo_irm" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+        ],
+      },
+      {
+        nivel: 3,
+        rareza: "Extraño",
+        coste: 120000,
+        detalle: [
+          "Enlace profundo que soporta flujos energéticos masivos y ejecución simultánea, diseñado para entornos de alta exigencia táctica.",
+          "Optimiza los conductos y ofrece una disipación térmica superior, corrigiendo la extrema vulnerabilidad del modelo base.",
+          "Sobreesfuerzo: Los poderes de nivel 1 no generan sobreesfuerzo, si lo genera utilizar poderes estando fatigado o habilidades psiónicas de nivel 5 o más.",
+          "Fallo: El daño se mitiga drásticamente y pasa a ser no letal.",
+          "Fracaso Crítico: causa daño letal y deja al usuario aturdido.",
+          "Carga Crítica: Si el personaje está exhausto, el margen de error desaparece: cualquier fallo provoca directamente daño letal, y un fracaso crítico escala a daño grave.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "accion", afecta: { modo: "accion_existente", id: "aumentos_sobreesfuerzo_irm" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+        ],
+      },
+      {
+        nivel: 4,
+        rareza: "Muy Extraño",
+        coste: 240000,
+        detalle: [
+          "El modo límite del implante. Los limitadores de seguridad se anulan por completo para desatar potencias destructivas o manipulación métrica de escala mayor.",
+          "Sobreesfuerzo: Los poderes de nivel 2 o menos no generan sobreesfuerzo, si el personaje no está en fatiga ningún nivel de habilidad psiónica genera sobeesfuerzo. Durante fatiga se produce sobreesfuerzo en poderes de nivel 3 o más con una dificultad baja a 4 + nivel de poder empleado.",
+          "Fallo: El daño base por fallo es no letal.",
+          "Fracaso Crítico: El usuario tiene la opción táctica de escoger entre sufrir aturdimiento o recibir daño letal.",
+          "Carga Crítica: el fallo causa daño letal y el fracaso crítico inflige daño grave además de provocar aturdimiento.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "accion", afecta: { modo: "accion_existente", id: "aumentos_sobreesfuerzo_irm" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+        ],
+      },
+    ],
+  },
+  {
+    familia: "implante",
+    id: "aum_microprocesador_cuantico_de_enlace",
+    label: "Microprocesador Cuántico de Enlace",
+    resumen: "Comunicación subvocal cifrada; castiga al psiónico que intente infiltrarse.",
+    descripcion: "Implante de perfil bajo, integrado de forma discreta en el tejido subdérmico o maxilar: un chip de comunicaciones cuánticas miniaturizado para el intercambio táctico de datos y voz a corta distancia. Usa una matriz de qubits de baja potencia y protocolos de Distribución de Claves Cuánticas (QKD): si alguien intercepta la transmisión, la perturbación se detecta al instante y la clave se anula. Cualquier psiónico que quiera forzar los cúbits en tránsito asume un riesgo letal. Diseñado exclusivamente para comunicaciones y transferencia cifrada, no para intrusión ni craqueo.",
+    sabotaje: true,
+    electronico: true,
+    extraible: null,
+    niveles: [
+      {
+        nivel: 1,
+        rareza: "Común",
+        coste: 1500,
+        detalle: [
+          "Permite la comunicación subvocal cifrada y el enlace directo con terminales locales o radios tácticas de corto alcance sin emitir sonido ni requerir dispositivos externos, pero solo de uno en uno. La capcidad de este implante de nivel 1 es muy baja y permite enviar un audio subvocal de seis segundos, una línea de texto o coordenadas GPS; es un canal tan estrecho que intentar meter una imagen o un documento pesado colapsa el búfer. La comunicación se resuelve como acción gratuita aunque debe ser un mensaje capaz de reproducir en la duración de un turno.",
+          "Alcance: 50 metros.",
+          "Dificultad de Infiltración Psiónica: 13 (12 + 1 del nivel del implante). El psiónico debe superar esta prueba cada turno, es una acción compleja que requiere concentración, además, la dificultad aumenta y con ello también el riesgo de contragolpe; cada turno aumenta en 1 la dificultad de infilitración psiónica.",
+          "Mecanismo de Defensa: Colapso instantáneo del canal QKD al detectar la menor alteración probabilística en el flujo de cúbits, cortando la conexión de forma abrupta.",
+          "Contragolpe: El psiónico recibe un nivel de daño letal y debe superar una voluntad dificultad 10 contra un efecto de aturdimiento.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_mqe_comunicar" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "intrusion_psionica_mqe" }, mecanismo: "nota_fija", estado: "pendiente" },
+        ],
+      },
+      {
+        nivel: 2,
+        rareza: "Común",
+        coste: 3000,
+        detalle: [
+          "Sincroniza simultáneamente al usuario con hasta cuatro dispositivos del escuadrón (drones, miras inteligentes o pasarelas), permitiendo compartir telemetría táctica en tiempo real como acción gratuita.",
+          "Alcance: 200 metros.",
+          "Dificultad de Infiltración Psiónica: 14 (12 + 2 del nivel del implante).",
+          "Mecanismo de Defensa: Doble capa de encriptación cuántica rotativa que cambia constantemente, desviando al psiónico hacia datos falsos y vacíos.",
+          "Contragolpe: El psiónico recibe un nivel de daño letal y debe superar una voluntad dificultad 10 contra un efecto de aturdimiento",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_mqe_telemetria" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "intrusion_psionica_mqe" }, mecanismo: "nota_fija", estado: "pendiente" },
+        ],
+      },
+      {
+        nivel: 3,
+        rareza: "Poco Habitual",
+        coste: 6000,
+        detalle: [
+          "Amplía el rango de conexión a repetidores lejanos, aislando el canal de radio frente a interferencias electromagnéticas y permitiendo gestionar flujos de datos pesados sin pérdida de velocidad. Podrías enviar planos arquitectónicos tridimensionales de un complejo entero, manuales de seguridad o bloques de archivos pesados casi al instante.",
+          "Alcance: 500 metros.",
+          "Dificultad de Infiltración Psiónica: 15 (12 + 3 del nivel del implante).",
+          "Mecanismo de Defensa: Un cepo que finge un fallo de seguridad, atrapando la consciencia del psiónico en un bucle con una duración de 3 turnos. Cada turno el psiónico infiltrado puede tratar de escapar con una tirada de perspicacia + tecnociencia dificultad 10 que emplea una acción estándar.",
+          "Contragolpe: Contragolpe de entropía focalizada; quema parcialmente las conexiones sinápticas de la interfaz métrica, infligiendo daño grave y efecto de aturdimiento (voluntad dificultad 10), cada turno atrapado en el cepo el psiónico recibe el contragolpe de nuevo.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_mqe_comunicar" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "intrusion_psionica_mqe" }, mecanismo: "nota_fija", estado: "pendiente" },
+        ],
+      },
+      {
+        nivel: 4,
+        rareza: "Extraño",
+        coste: 12000,
+        detalle: [
+          "Enlace cuántico de grado militar con servidores corporativos centrales y nodos de alta seguridad; oculta por completo la firma digital del usuario y automatiza contramedidas en milisegundos. Volcados de servidores centrales, bases de datos de personal completas o paquetes de datos de grado militar sincronizados en un par de segundos.",
+          "Alcance: 2 kilómetros.",
+          "Dificultad de Infiltración Psiónica: 16 (12 + 4 del nivel del implante).",
+          "Mecanismo de Defensa: Fortaleza cuántica con aislamiento de fase absoluta. El chip detecta la intención en la Métrica antes de que la información sea leída y sella herméticamente los puertos sinápticos locales. También se puede escoger el mecanismo de defensa de nivel 3.",
+          "Contragolpe: Contragolpe catastrófico de inversión de fase; reinyecta un eco de colapso masivo a través del puente sináptico capaz de dejar al psiónico inconsciente de inmediato o provocarle hemorragias cerebrales críticas. El psiónico recibe 2 niveles de daño grave, aturdimiento (voluntad 12) y hemorragia durante 1d10 turnos. El usuario puede decidir escoger el contragolpe propio del cepo de nivel 3.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_mqe_comunicar" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "tecnica" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "intrusion_psionica_mqe" }, mecanismo: "nota_fija", estado: "pendiente" },
+        ],
+      },
+    ],
+  },
+  {
+    familia: "implante",
+    id: "aum_brazo_bionico",
+    label: "Brazo Biónico",
+    resumen: "Un brazo con su propia Fuerza y Agilidad, blindaje y arma incorporada. En los niveles 3 y 4 se elige modelo.",
+    descripcion: "El brazo biónico sustituye la extremidad orgánica por una estructura de aleación de alta resistencia conectada directamente al sistema nervioso periférico y a los impulsos de la médula espinal. Utiliza un sistema de tendones de nanotubos de carbono y servomotores de respuesta ultrarrápida que traducen las órdenes motoras del usuario en una fuerza bruta o una agilidad sobresaliente, integrando además un chasis blindado y anclajes internos para alojar armamento táctico o herramientas de precisión.",
+    sabotaje: true,
+    electronico: true,
+    extraible: null,
+    niveles: [
+      {
+        nivel: 1,
+        rareza: "Común",
+        coste: 12500,
+        detalle: [
+          "El personaje reemplaza un brazo por uno biónico básico. Esta tiene su propia puntuación de fuerza y agilidad pero basada en los atributos del usuario. Estos valores se aplicarán cuando el personaje emplee una acción usando esta extremidad, la prótesis de primer nivel es más bien sustitutoria, iguala la fuerza del usuario pero se mueve más torpemente, la agilidad de la extremidad es 1 punto menor.",
+          "Se puede incorporar un arma en su interior siempre que su uso sea a una mano, mientras esté incorporada, su desenfundado es gratuito y no puede ser desarmado. Para incorporar este arma, es preciso una acción extendida de 10 minutos y realizar una tirada de perspicacia + biónica dificultad 8 con el instrumental adecuado. Para desprendese del arma es preciso la misma acción, pero si esta quiere ser extraída de un cuerpo sin respetar su salud, se realiza como el resto de implantes cuando son saqueados.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "sustitucion_aplicado", estado: "bloqueado", bloqueoPor: "capa extremidad_atributos_propios" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "capa nueva: arma incorporada (vínculo brazo-instancia de arma)" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "desarmar" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "capa nueva: arma incorporada (vínculo brazo-instancia de arma)" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_montar_arma_brazo" }, mecanismo: "accion_equipo", estado: "pendiente" },
+        ],
+      },
+      {
+        nivel: 2,
+        rareza: "Poco Habitual",
+        coste: 25000,
+        detalle: [
+          "La fuerza del brazo es un punto superior a la del usuario pero con un límite máximo de 5 en su puntuación, su agilidad es idéntica a la del usuario.",
+          "El brazo biónico de segundo nivel tiene un blindaje de 3 puntos y se puede utilizar como arma para bloquear. Además causa daño letal en sus ataques de pelea.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "sustitucion_aplicado", estado: "bloqueado", bloqueoPor: "capa extremidad_atributos_propios" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "suma_derivado", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_bloquear_brazo" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "capa extremidad_atributos_propios" },
+        ],
+      },
+      {
+        nivel: 3,
+        rareza: "Extraño",
+        coste: 50000,
+        detalle: [
+          "El usario puede escoger entre un modelo fuerte o ágil:",
+        ],
+        variantes: [
+          { id: "fuerte", label: "Modelo Fuerte", detalle: ["+2 a puntuación de fuerza sobre la del usuario con límite máximo de 7, la agilidad es idéntica a la del usuario. El modelo fuerte tiene un blindaje de 6 puntos."] },
+          { id: "agil", label: "Modelo Ágil", detalle: ["Como el nivel 2 pero con un aumento de +1 en la agilidad sobre el usuario con límite de 5."] },
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "sustitucion_aplicado", estado: "bloqueado", bloqueoPor: "capa extremidad_atributos_propios" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "suma_derivado", estado: "pendiente" },
+        ],
+      },
+      {
+        nivel: 4,
+        rareza: "Muy Extraño",
+        coste: 100000,
+        detalle: [
+          "Tres modelos a elegir:",
+        ],
+        variantes: [
+          { id: "fuerte", label: "Modelo Fuerte", detalle: ["+4 a puntuación de fuerza sobre la del usuario con límite máximo de 10, la agilidad es idéntica a la del usuario. El modelo fuerte tiene un blindaje de 8 puntos."] },
+          { id: "equilibrado", label: "Modelo Equilibrado", detalle: ["+2 a puntuación de fuerza sobre la del usuario con límite de 7, la agilidad es de +2 en la agilidad sobre el usuario con límite de 6. El modelo equilibrado tiene un blindaje de 6 puntos."] },
+          { id: "agil", label: "Modelo Ágil", detalle: ["La fuerza del brazo es +1 punto superior a la del usuario pero con límite de 5, aumento de +3 en la agilidad sobre el usuario con límite de 8. Su puntuación de blindaje es de 3 puntos."] },
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "sustitucion_aplicado", estado: "bloqueado", bloqueoPor: "capa extremidad_atributos_propios" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "suma_derivado", estado: "pendiente" },
+        ],
+      },
+    ],
+  },
+  {
+    familia: "implante",
+    id: "aum_ojo_bionico",
+    label: "Ojo Biónico",
+    resumen: "Bonos a percepción visual y a distancia, visión nocturna y térmica, rayos X y, en niveles altos, inmunidad a la ceguera.",
+    descripcion: "El Ojo Biónico reemplaza el globo ocular orgánico por un complejo ensamblaje optoelectrónico integrado directamente en el nervio óptico y el córtex visual. Utiliza microcristales de enfoque activo, sensores de espectro variable y un coprocesador gráfico dedicado que procesa la información en tiempo real, eliminando el temblor natural de la pupila biológica, filtrando destellos cegadores y superponiendo una interfaz de datos táctica directamente sobre el campo de visión del usuario.",
+    sabotaje: true,
+    electronico: true,
+    extraible: null,
+    niveles: [
+      {
+        nivel: 1,
+        rareza: "Poco Habitual",
+        coste: 16000,
+        detalle: [
+          "El personaje obtiene un bonificador de +1 a tiradas de percepción visual y a las de ataques a distancia.",
+          "Además gana un bonificador de +2 en tiradas de salvación contra efectos de ceguera. La mejora no se apila con miras telescópicas u otros objetos de visión aumentada; en tal caso, usa siempre el mayor bonificador.",
+          "Incluye visión nocturna y termo-óptica con un alcance de 500 metros.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+        ],
+      },
+      {
+        nivel: 2,
+        rareza: "Extraño",
+        coste: 32000,
+        detalle: [
+          "El implante aumenta el bonificador en tiradas de percepción visual a +2 y se hace inmune a efecto de ceguera.",
+          "El ojo incluye un sistema de seguimiento predictivo que permite ignorar penalizadores menores por cobertura visual, reduciendo en 1 los niveles de cobertura visual y termo-óptica.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:ceguera" }, mecanismo: "gate_instalacion", arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "capa inmunidad_estado" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+        ],
+      },
+      {
+        nivel: 3,
+        rareza: "Muy Extraño",
+        coste: 64000,
+        detalle: [
+          "El ojo aumenta sus bonificadores, otorga un bonificador de +3 a tiradas de percepción visual y otro de +2 a las de ataques a distancia.",
+          "Incorpora visión de rayos X que permite ver a través de tejidos sencillos con un alcance de 10 metros.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "pendiente" },
+        ],
+      },
+      {
+        nivel: 4,
+        rareza: "Muy Extraño",
+        coste: 128000,
+        detalle: [
+          "El cenit de la tecnología optoelectrónica táctica. El personaje obtiene un bonificador de +4 a tiradas de percepción visual y un +3 a las de ataques a distancia, siendo completamente inmune a la ceguera.",
+          "Integra un sistema de visión multi-espectro simultáneo (nocturna, térmica y rayos X con un alcance de 50 metros a través de paredes ligeras o blindajes no reforzados) y un procesador de seguimiento que reduce en dos niveles por completo los penalizadores por cobertura visual.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "pendiente" },
+          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:ceguera" }, mecanismo: "gate_instalacion", arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "capa inmunidad_estado" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+        ],
+      },
+    ],
+  },
+  {
+    familia: "implante",
+    id: "aum_neuroprotesis_simpatica",
+    label: "Neuroprótesis Simpática",
+    resumen: "Se activa pagando fatiga: más Fuerza, Agilidad y Percepción durante unos turnos, y reacciones y acciones extra.",
+    descripcion: "Implante biotecnológico acoplado al sistema nervioso autónomo y a las glándulas suprarrenales que fuerza una respuesta de \"lucha o huida\" bajo demanda: microestimuladores sinápticos y microbombas de neuromoduladores aceleran reflejos, contracción muscular y agudeza sensorial a cambio de exprimir la resistencia biológica del usuario.",
+    sabotaje: true,
+    electronico: true,
+    extraible: null,
+    niveles: [
+      {
+        nivel: 1,
+        rareza: "Poco Habitual",
+        coste: 20000,
+        detalle: [
+          "Como acción gratuita durante su turno o reacción en cualquier momento del turno, el personaje puede emplear 2 puntos de fatiga y de forma temporal adquirir un aumento de 1 punto en los atributos de fuerza, agilidad y percepción así como reducir penalizadores por estado en 1, en contrapartida mientras dure este efecto recibe un penalizador de -1 a tiradas de salvación de fortaleza contra enfermedades, radiación, toxinas y venenos. El efecto dura tres turnos.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_activar_neuroprotesis" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:fuerza" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_estado_propio y atributo_por_pieza" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_estado_propio y atributo_por_pieza" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:percepcion" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_estado_propio y atributo_por_pieza" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_estado_propio y reduce_penalizador_por_pieza" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_activar_neuroprotesis" }, mecanismo: "nota_fija", estado: "pendiente" },
+        ],
+      },
+      {
+        nivel: 2,
+        rareza: "Extraño",
+        coste: 40000,
+        detalle: [
+          "Al activar el implante se recibe un aumento de 2 puntos en lugar de 1 en la fuerza o la agilidad, quedando a elección del usuario.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:fuerza|agilidad" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_estado_propio, activable_eleccion_al_activar y atributo_por_pieza" },
+        ],
+      },
+      {
+        nivel: 3,
+        rareza: "Muy Extraño",
+        coste: 80000,
+        detalle: [
+          "Mientras el implante esté activo, se obtiene una segunda reacción por turno.",
+          "El personaje puede adquirir una única acción simple adicional durante su turno por el gasto de 2 puntos de fatiga. Una vez empleada esta habilidad, volver a usarla tendrá un coste de 3 puntos de fatiga, hasta que el personaje realice un descanso breve o largo.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_activar_neuroprotesis" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_accion_simple_adicional" }, mecanismo: "accion_equipo", estado: "pendiente" },
+        ],
+      },
+      {
+        nivel: 4,
+        rareza: "Muy Extraño",
+        coste: 160000,
+        detalle: [
+          "Si el personaje emplea 3 puntos de fatiga para conseguir una acción simple adicional durante un turno además durante ese turno obtiene un aumento de +2 a fuerza, agilidad y percepción de forma simultánea y elimina por completo penalizadores por heridas o fatiga. Esta habilidad de nivel 4 no se puede volver a usar hasta que el personaje realice un descanso breve o largo.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:fuerza" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_disparado_por_coste y atributo_por_pieza" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_disparado_por_coste y atributo_por_pieza" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:percepcion" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_disparado_por_coste y atributo_por_pieza" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_disparado_por_coste y reduce_penalizador_por_pieza" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_accion_simple_adicional" }, mecanismo: "nota_fija", estado: "pendiente" },
+        ],
+      },
+    ],
+  },
+  {
+    familia: "implante",
+    id: "aum_enjambre_nanobot",
+    label: "Enjambre Nanobot",
+    resumen: "Nanobots: +3 con fármacos, regeneración, blindaje reactivo y, en nivel 4, Tempestad Nanobótica.",
+    descripcion: "Colonia masiva de micro-máquinas programables integrada en el torrente sanguíneo, el tejido linfático y las capas subdérmicas. Concebido como quirófano móvil de emergencia, reestructura tejidos, purga toxinas, blinda el organismo y puede proyectarse de forma ofensiva o táctica.",
+    sabotaje: true,
+    electronico: true,
+    extraible: null,
+    niveles: [
+      {
+        nivel: 1,
+        rareza: "Poco Habitual",
+        coste: 25000,
+        detalle: [
+          "Gracias a este implante, el personaje puede utilizar drogas y medicamentos con un bonificador de +3 exclusivamente cuando las utilice de modo personal. Si un tercero utiliza medicinas para sanar al personaje con este implante, también gana el mismo bonificador.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "medicina" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "medicina" }, mecanismo: "nota_fija", estado: "pendiente" },
+        ],
+      },
+      {
+        nivel: 2,
+        rareza: "Extraño",
+        coste: 50000,
+        detalle: [
+          "Gracias a unos nanobots de microcirugía, el personaje que adquiera este aumento biónico regenera un nivel de daño no letal por turno, uno letal por minuto (10 turnos) y uno grave por hora. Además si consume un nivel fatiga podrá sanar un nivel letal de forma automática, y si consume 5 a lo largo de un mínimo de 5 turnos, podrá sanar uno grave. Este implante en su función pasiva funciona siempre y cuando el personaje no tenga penalizadores por fatiga.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ficha" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_sanar_letal" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_sanar_grave" }, mecanismo: "accion_equipo", estado: "pendiente" },
+        ],
+      },
+      {
+        nivel: 3,
+        rareza: "Muy Extraño",
+        coste: 100000,
+        detalle: [
+          "El enjambre evoluciona hacia una red defensiva y de purga sistémica avanzada. El usuario obtiene un bonificador de +4 en tiradas de salvación contra toxinas, venenos y enfermedades.",
+          "Además, como reacción y con el gasto de un punto de fatiga el enjambre puede densificarse de forma reactiva bajo la dermis, otorgando 3 puntos de blindaje contra un golpe específico. Si el impacto causa atudimiento el usuario recibe un bonificador de +3 contra el efecto.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_densificar" }, mecanismo: "accion_equipo", estado: "pendiente" },
+        ],
+      },
+      {
+        nivel: 4,
+        rareza: "Muy Extraño",
+        coste: 200000,
+        detalle: [
+          "El cénit de la simbiosis nanotecnológica. El enjambre rompe las limitaciones biológicas previas: la regeneración pasiva del implante funciona incluso si el personaje se encuentra fatigado o exhausto, y duplica su velocidad mientras no esté fatigado (regenera un nivel de daño no letal por acción, uno letal por turno y uno grave por cada 10 turnos).",
+          "Además, introduce la capacidad de Tempestad Nanobótica: como acción estándar y gastando 2 puntos de fatiga, el usuario puede forzar al enjambre a desbordarse momentáneamente a través de la piel para atacar o sabotear el entorno inmediato. El ataque se resuelve como acción estándar, su alcance es melee y requiere de una tirada de reflejos + tecnociencia. Su daño básico es de 1 Grave, y es cuando acierta al blindaje destruye 1 punto por contacto físico. De la misma forma se puede emplear para sabotear objetos.",
+        ],
+        modificadores: [],
+        motor: [
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ficha" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_tempestad_nanobotica" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "blindaje_del_objetivo" }, mecanismo: "nota_fija", estado: "pendiente" },
+        ],
+      },
+    ],
+  },
+];
+
+export const AUMENTOS: Aumento[] = [...OPERACIONES_GENETICAS, ...IMPLANTES];

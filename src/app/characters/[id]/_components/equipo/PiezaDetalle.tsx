@@ -1,4 +1,12 @@
-import { ATRIBUTOS, HABILIDADES, ACCIONES, ALCANCE_ARROJADA, disciplinaPorId, ETIQUETA_DERIVADO } from "@/lib/rules";
+import {
+  ATRIBUTOS,
+  HABILIDADES,
+  ACCIONES,
+  ALCANCE_ARROJADA,
+  disciplinaPorId,
+  ETIQUETA_DERIVADO,
+  aumentoPorId,
+} from "@/lib/rules";
 import type {
   Armadura,
   ArmaFuego,
@@ -13,6 +21,8 @@ import type {
   MunicionGranada,
   Modificador,
   Rareza,
+  OperacionGenetica,
+  Implante,
 } from "@/lib/rules";
 
 // Un color por tramo de rareza, no uno por palabra: cinco tonos ya sobran de
@@ -392,6 +402,114 @@ export function DetalleConsumible({ p }: { p: Consumible }) {
         <Stat label="Rareza" value={`${p.rareza} · ${p.coste} cr.`} />
       </dl>
       <ChipsModificadores mods={p.modificadores} />
+    </>
+  );
+}
+
+// ── Aumentos (A0, docs/sistema.md §11.3): sin efectos aplicados todavía, solo texto ──
+
+function Lineas({ lineas }: { lineas: string[] }) {
+  return (
+    <ul className="mt-1.5 list-disc pl-4 font-sans text-[11px] leading-relaxed text-muted">
+      {lineas.map((d, i) => (
+        <li key={i}>{d}</li>
+      ))}
+    </ul>
+  );
+}
+
+// Marcas de las reglas generales de los implantes.
+export function MarcasImplante({ p }: { p: Implante }) {
+  const marcas = [p.sabotaje && "sabotaje", p.electronico && "electrónico (Shock)"].filter(
+    (m): m is string => typeof m === "string",
+  );
+  if (marcas.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {marcas.map((m) => (
+        <span
+          key={m}
+          className="clip-chamfer-sm border border-glitch px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide text-neon-magenta"
+        >
+          {m}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// `eleccion`: en la ficha, solo se enseña la opción elegida; sin ella (Tienda), todas.
+export function DetalleOperacion({ p, eleccion }: { p: OperacionGenetica; eleccion?: string }) {
+  const opciones = p.eleccion?.opciones.filter((o) => eleccion === undefined || o.id === eleccion) ?? [];
+  return (
+    <>
+      <Lineas lineas={p.detalle} />
+      {opciones.map((o) => (
+        <div key={o.id} className="mt-2 clip-chamfer-sm border border-border p-2">
+          <p className="font-mono text-[11px] uppercase text-foreground">{o.label}</p>
+          <Lineas lineas={o.detalle} />
+        </div>
+      ))}
+      <dl className="mt-3 grid grid-cols-1 gap-x-4 font-mono text-[11px] sm:grid-cols-2">
+        <Stat
+          label="Requisitos"
+          value={p.requisitos.length ? p.requisitos.map((id) => aumentoPorId(id)?.label ?? id).join(", ") : "Ninguno"}
+        />
+        <Stat label="Rareza" value={`${p.rareza} · ${p.coste} cr.`} />
+      </dl>
+    </>
+  );
+}
+
+export function DetalleImplante({
+  p,
+  nivelActual,
+  eleccion,
+}: {
+  p: Implante;
+  nivelActual?: number;
+  eleccion?: string;
+}) {
+  return (
+    <>
+      <p className="font-sans text-sm leading-relaxed text-muted">{p.descripcion}</p>
+      <div className="mt-2">
+        <MarcasImplante p={p} />
+      </div>
+      <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+        {p.niveles.map((n) => {
+          const actual = n.nivel === nivelActual;
+          return (
+            <div key={n.nivel} className={`clip-chamfer-sm border p-2 ${actual ? "border-accent" : "border-border"}`}>
+              <div className="flex items-baseline justify-between font-mono text-[11px] uppercase">
+                <span className={actual ? "text-accent" : "text-foreground"}>
+                  Nivel {n.nivel}
+                  {actual ? " · equipado" : ""}
+                </span>
+                <span className="text-muted">
+                  {n.rareza} · {n.coste} cr.
+                </span>
+              </div>
+              <Lineas lineas={n.detalle} />
+              {n.variantes?.map((v) => {
+                const elegida = actual && v.id === eleccion;
+                return (
+                  <div
+                    key={v.id}
+                    className={`mt-1.5 clip-chamfer-sm border p-2 ${elegida ? "border-accent" : "border-border"}`}
+                  >
+                    <p className={`font-mono text-[10px] uppercase ${elegida ? "text-accent" : "text-foreground"}`}>
+                      {v.label}
+                      {elegida ? " · el tuyo" : ""}
+                    </p>
+                    <Lineas lineas={v.detalle} />
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
     </>
   );
 }

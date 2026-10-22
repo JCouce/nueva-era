@@ -47,6 +47,17 @@ import {
   type MunicionGranada,
   type MunicionEspecial,
   type Rareza,
+  OPERACIONES_GENETICAS,
+  IMPLANTES,
+  AUMENTOS,
+  planCompraAumento,
+  repartoPago,
+  eleccionesTomadas,
+  requisitosQueFaltan,
+  type OperacionGenetica,
+  type Implante,
+  type CompraAumento,
+  type BolsaAumentosResuelta,
 } from "@/lib/rules";
 import { Acordeon } from "@/components/Acordeon";
 import { BolsaAumentos } from "./BolsaAumentos";
@@ -59,6 +70,8 @@ import {
   DetalleConsumible,
   DetalleArmaPesada,
   DetalleGranada,
+  DetalleOperacion,
+  DetalleImplante,
 } from "./equipo/PiezaDetalle";
 
 // Las cuatro herramientas con niveles de la categoría "Herramientas" — igual
@@ -96,6 +109,7 @@ const CATEGORIAS = [
     cantidad: ARMAMENTO_PESADO.length + MUNICION_GRANADA.length,
   },
   { id: "municion", titulo: "Munición", cantidad: MUNICION_ESPECIAL.length },
+  { id: "aumentos", titulo: "Aumentos", cantidad: AUMENTOS.length },
 ] as const;
 
 type CategoriaId = (typeof CATEGORIAS)[number]["id"];
@@ -536,6 +550,7 @@ const SIN_COMPATIBLES: Record<
     | "herramientas"
     | "armamentoPesado"
     | "municion"
+    | "aumentos"
   >,
   string
 > = {
@@ -737,6 +752,251 @@ function DetalleMunicionEspecial({
   );
 }
 
+// ── Aumentos (A0, docs/sistema.md §11.3) ──────────────────────────────────
+// Operaciones e implantes en la misma lista. Qué se puede comprar, a qué precio y por
+// qué no lo deciden planCompraAumento y repartoPago (rules/aumentos.ts); el servidor
+// vuelve a decidirlo con la ficha de la base (comprarAumentoAction).
+
+type ContextoPagoAumento = {
+  sheet: Sheet;
+  creditos: number;
+  // Saldo de la bolsa del humano (0 si no la tiene); se gasta antes que los créditos.
+  saldoBolsa: number;
+  topeRareza: Rareza | null;
+  libre: boolean;
+  onComprar: (c: CompraAumento) => void;
+};
+
+function Opciones<T extends { id: string; label: string }>({
+  titulo,
+  opciones,
+  elegida,
+  bloqueadas = [],
+  onElegir,
+}: {
+  titulo: string;
+  opciones: T[];
+  elegida: string | undefined;
+  bloqueadas?: string[];
+  onElegir: (id: string) => void;
+}) {
+  return (
+    <>
+      <p className="mt-3 font-mono text-[10px] uppercase tracking-widest text-muted">{`// ${titulo}`}</p>
+      <div className="mt-1.5 flex flex-wrap gap-1">
+        {opciones.map((o) => {
+          const tomada = bloqueadas.includes(o.id);
+          return (
+            <button
+              key={o.id}
+              type="button"
+              disabled={tomada}
+              onClick={() => onElegir(o.id)}
+              className={`clip-chamfer-sm border px-2 py-1.5 font-mono text-[11px] active:scale-95 disabled:opacity-50 ${
+                elegida === o.id ? "border-accent text-accent" : "border-border text-muted"
+              }`}
+            >
+              {o.label}
+              {tomada ? " ✓" : ""}
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+// Botón de compra + desglose del pago + motivo si no se puede. `pista`: lo que falta
+// elegir (en gris, no es un error).
+function CompraAumentoBoton({
+  compra,
+  rareza,
+  etiqueta,
+  pista,
+  ctx,
+}: {
+  compra: CompraAumento;
+  rareza: Rareza | null;
+  etiqueta: string;
+  pista: string | null;
+  ctx: ContextoPagoAumento;
+}) {
+  const plan = planCompraAumento(ctx.sheet, compra);
+  const pago = plan.ok && !ctx.libre ? repartoPago(plan.precio, ctx.saldoBolsa, ctx.creditos) : null;
+  const sinRareza = ctx.topeRareza !== null && !rarezaPermitida(rareza, ctx.topeRareza);
+  const motivo = pista
+    ? null
+    : !plan.ok
+      ? plan.motivo
+      : sinRareza
+        ? `Tu letra de Recursos no llega a ${rareza}: tope ${ctx.topeRareza}.`
+        : !ctx.libre && !pago
+          ? `Te faltan ${(plan.precio - ctx.saldoBolsa - ctx.creditos).toLocaleString("es-ES")} créditos.`
+          : null;
+  return (
+    <>
+      <BotonEquipar
+        className="mt-3"
+        disabled={pista !== null || motivo !== null}
+        onClick={() => ctx.onComprar(compra)}
+        labelVinculando="implantando"
+        labelVinculado="✓ Hecho"
+      >
+        {etiqueta}
+        {plan.ok && !ctx.libre ? ` · ${plan.precio.toLocaleString("es-ES")} cr.` : ""}
+      </BotonEquipar>
+      {pista && <p className="mt-1 font-sans text-[11px] leading-relaxed text-muted">{pista}</p>}
+      {!pista && !motivo && pago && pago.deBolsa > 0 && (
+        <p className="mt-1 font-mono text-[10px] uppercase tracking-wide text-info">
+          {`Bolsa ${pago.deBolsa.toLocaleString("es-ES")} + créditos ${pago.deCreditos.toLocaleString("es-ES")}`}
+        </p>
+      )}
+      {motivo && <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">{motivo}</p>}
+    </>
+  );
+}
+
+function AccionOperacion({ op, ctx }: { op: OperacionGenetica; ctx: ContextoPagoAumento }) {
+  const [eleccion, setEleccion] = useState<string | undefined>(undefined);
+  const tomadas = eleccionesTomadas(ctx.sheet, op.id);
+  const faltan = requisitosQueFaltan(ctx.sheet, op);
+  return (
+    <div className="mt-3 border-t border-border pt-3">
+      {op.requisitos.length > 0 && (
+        <p className={`font-mono text-[10px] uppercase ${faltan.length ? "text-danger" : "text-muted"}`}>
+          {faltan.length ? `Bloqueada · falta: ${faltan.join(", ")}` : "✓ Requisitos cumplidos"}
+        </p>
+      )}
+      {op.eleccion && (
+        <Opciones
+          titulo={op.eleccion.label}
+          opciones={op.eleccion.opciones}
+          elegida={eleccion}
+          bloqueadas={tomadas}
+          onElegir={setEleccion}
+        />
+      )}
+      <CompraAumentoBoton
+        compra={{ catalogoId: op.id, eleccion }}
+        rareza={op.rareza}
+        etiqueta={op.repetible && tomadas.length > 0 ? "Comprar otro" : "Comprar"}
+        pista={op.eleccion && !eleccion && faltan.length === 0 ? `Elige ${op.eleccion.label.toLowerCase()}.` : null}
+        ctx={ctx}
+      />
+    </div>
+  );
+}
+
+function AccionImplante({ imp, ctx }: { imp: Implante; ctx: ContextoPagoAumento }) {
+  const actual = ctx.sheet.equipo.find((p) => p.catalogoId === imp.id)?.nivel ?? 0;
+  const maximo = imp.niveles[imp.niveles.length - 1].nivel;
+  const [nivel, setNivel] = useState(Math.min(actual + 1, maximo));
+  const [eleccion, setEleccion] = useState<string | undefined>(undefined);
+  const nivelInfo = imp.niveles.find((n) => n.nivel === nivel);
+  const variantes = nivelInfo?.variantes ?? [];
+
+  if (actual >= maximo) {
+    return (
+      <p className="mt-3 border-t border-border pt-3 font-mono text-[10px] uppercase text-muted">
+        Tienes el nivel máximo ({actual}).
+      </p>
+    );
+  }
+  return (
+    <div className="mt-3 border-t border-border pt-3">
+      <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+        {actual ? `// Subir de nivel · tienes el ${actual}` : "// Nivel"}
+      </p>
+      <div className="mt-1.5 flex gap-1">
+        {imp.niveles.map((n) => (
+          <button
+            key={n.nivel}
+            type="button"
+            disabled={n.nivel <= actual}
+            onClick={() => {
+              setNivel(n.nivel);
+              setEleccion(undefined);
+            }}
+            className={`clip-chamfer-sm flex-1 border py-1.5 font-mono text-xs active:scale-95 disabled:opacity-40 ${
+              nivel === n.nivel ? "border-accent text-accent" : "border-border text-muted"
+            }`}
+          >
+            {n.nivel}
+          </button>
+        ))}
+      </div>
+      {variantes.length > 0 && (
+        <Opciones titulo="Modelo" opciones={variantes} elegida={eleccion} onElegir={setEleccion} />
+      )}
+      <CompraAumentoBoton
+        compra={{ catalogoId: imp.id, nivel, eleccion: variantes.length ? eleccion : undefined }}
+        rareza={nivelInfo?.rareza ?? null}
+        etiqueta={actual ? `Subir a nivel ${nivel}` : `Comprar nivel ${nivel}`}
+        pista={variantes.length > 0 && !eleccion ? "Elige modelo." : null}
+        ctx={ctx}
+      />
+    </div>
+  );
+}
+
+function SeccionAumentos({ ctx }: { ctx: ContextoPagoAumento }) {
+  return (
+    <>
+      <p className="font-sans text-[11px] leading-relaxed text-muted">
+        De momento los aumentos solo se compran y se leen: sus efectos aún no se aplican en la ficha. En
+        creación, quitarlos devuelve lo pagado; aprobada la ficha, no devuelve nada.
+      </p>
+      <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+        {`// Operaciones genéticas · ${OPERACIONES_GENETICAS.length}`}
+      </p>
+      {OPERACIONES_GENETICAS.map((op) => {
+        const veces = ctx.sheet.equipo.filter((p) => p.catalogoId === op.id).length;
+        return (
+          <Acordeon
+            key={op.id}
+            titulo={op.label}
+            resumen={op.resumen}
+            etiqueta={
+              <div className="flex flex-col items-end gap-1">
+                <BadgeRareza rareza={op.rareza} />
+                {veces > 0 ? (
+                  <span className="font-mono text-[10px] uppercase text-accent">
+                    ✓ {veces > 1 ? `×${veces}` : "la tienes"}
+                  </span>
+                ) : (
+                  <Precio coste={op.coste} />
+                )}
+              </div>
+            }
+          >
+            <DetalleOperacion p={op} />
+            <AccionOperacion op={op} ctx={ctx} />
+          </Acordeon>
+        );
+      })}
+      <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+        {`// Implantes · ${IMPLANTES.length}`}
+      </p>
+      {IMPLANTES.map((imp) => {
+        const actual = ctx.sheet.equipo.find((p) => p.catalogoId === imp.id)?.nivel;
+        return (
+          <Acordeon
+            key={imp.id}
+            titulo={imp.label}
+            resumen={imp.resumen}
+            etiqueta={
+              actual ? <span className="font-mono text-[10px] uppercase text-accent">✓ nivel {actual}</span> : undefined
+            }
+          >
+            <DetalleImplante p={imp} nivelActual={actual} />
+            <AccionImplante imp={imp} ctx={ctx} />
+          </Acordeon>
+        );
+      })}
+    </>
+  );
+}
+
 export function TiendaTab({
   sheet,
   creditos,
@@ -749,6 +1009,7 @@ export function TiendaTab({
   bolsaAumentos = null,
   excepcionRareza = null,
   onEquipar,
+  onComprarAumento,
   onComprarGranada,
   onComprarFarmaco,
   onRecargar,
@@ -759,7 +1020,7 @@ export function TiendaTab({
   topeRareza: Rareza | null;
   libre?: boolean;
   // De la FichaResuelta (§14.6): null si la especie no la trae.
-  bolsaAumentos?: number | null;
+  bolsaAumentos?: BolsaAumentosResuelta | null;
   // Excepción de rareza por especie (kerzul del Arköru, §14.6); null en el NPC.
   excepcionRareza?: ContextoExcepcionRareza | null;
   onEquipar: (p: PiezaEquipada) => void;
@@ -767,6 +1028,7 @@ export function TiendaTab({
   onComprarFarmaco: (catalogoId: string) => void;
   onRecargar: (instanciaId: string) => void;
   onComprarMunicionEspecial: (municionId: string) => void;
+  onComprarAumento: (c: CompraAumento) => void;
 }) {
   const [categoria, setCategoria] = useState<CategoriaId>("armaduras");
   const [soloCompatible, setSoloCompatible] = useState(false);
@@ -790,7 +1052,7 @@ export function TiendaTab({
               Tope de rareza en creación: <span className="text-foreground">{topeRareza}</span>
             </p>
           )}
-          {!libre && bolsaAumentos !== null && <BolsaAumentos creditos={bolsaAumentos} />}
+          {!libre && bolsaAumentos !== null && <BolsaAumentos bolsa={bolsaAumentos} />}
         </div>
         {libre ? (
           <p className="font-mono text-[10px] uppercase tracking-widest text-info">Edición libre</p>
@@ -1061,6 +1323,19 @@ export function TiendaTab({
               </Acordeon>
             ))}
           </>
+        )}
+
+        {categoria === "aumentos" && (
+          <SeccionAumentos
+            ctx={{
+              sheet,
+              creditos: creditosEfectivos,
+              saldoBolsa: bolsaAumentos?.saldo ?? 0,
+              topeRareza,
+              libre,
+              onComprar: onComprarAumento,
+            }}
+          />
         )}
 
         {categoria === "municion" && (

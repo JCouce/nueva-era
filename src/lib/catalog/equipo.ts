@@ -54,6 +54,14 @@ import {
   type MejoraDeArma,
   type CompatibilidadArma,
 } from "./mejorasArma";
+import {
+  AUMENTOS,
+  OPERACIONES_GENETICAS,
+  IMPLANTES,
+  type OperacionGenetica,
+  type Implante,
+  type Aumento,
+} from "./aumentos";
 
 // Reexports — ningún archivo externo necesita cambiar su import tras el split.
 export { ARMADURAS, type Armadura };
@@ -62,6 +70,7 @@ export { MEJORAS_ESTANDAR, type MejoraEstandar };
 export { SUBSISTEMAS, type Subsistema };
 export { MOVIMIENTO, type MejoraMovimiento };
 export { MEJORAS_ARMA, MEJORAS_MUNICION_ESPECIAL, PREFIJO_MEJORA_MUNICION, type MejoraDeArma, type CompatibilidadArma };
+export { AUMENTOS, OPERACIONES_GENETICAS, IMPLANTES, type OperacionGenetica, type Implante, type Aumento };
 
 export type Rareza = "Común" | "Poco Habitual" | "Extraño" | "Muy Extraño" | "Singular";
 
@@ -196,7 +205,11 @@ export type Equipo =
   | Herramienta
   | Consumible
   | ArmaPesada
-  | MunicionGranada;
+  | MunicionGranada
+  // Aumentos (docs/sistema.md §11.3): familia de equipo con chip propio; se compran
+  // con compraAumento (rules/aumentos.ts), no con equipar().
+  | OperacionGenetica
+  | Implante;
 
 export const EQUIPO: Equipo[] = [
   ...ARMADURAS,
@@ -216,6 +229,7 @@ export const EQUIPO: Equipo[] = [
   ...MATERIALES,
   ...ARMAMENTO_PESADO,
   ...MUNICION_GRANADA,
+  ...AUMENTOS,
 ];
 
 // Índice O(1), construido una sola vez a partir de EQUIPO (ya evaluado por

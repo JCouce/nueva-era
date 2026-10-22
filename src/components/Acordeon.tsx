@@ -32,7 +32,7 @@ export function Acordeon({
           className="flex min-w-0 flex-1 items-start justify-between gap-2 text-left"
         >
           <div className="min-w-0">
-            <span className="truncate font-display text-base font-semibold uppercase leading-none">
+            <span className="block break-words font-display text-base font-semibold uppercase leading-tight">
               {titulo}
             </span>
             <p className="mt-1 font-sans text-xs leading-snug text-muted">{resumen}</p>

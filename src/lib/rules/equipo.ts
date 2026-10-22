@@ -91,6 +91,12 @@ export type PiezaEquipada = {
   // Comprada saltándose el tope de rareza por una excepción de especie (kerzul del
   // Arköru, §14.6). Solo la pone el servidor (puedeEquiparSinRareza en equiparAction).
   viaEspecie?: true;
+  // Aumentos (§11.3): el sentido de Introgresión o el modelo del Brazo Biónico
+  // (niveles 3 y 4). Lo valida compraAumento (rules/aumentos.ts) al comprar.
+  eleccion?: string;
+  // Aumentos: parte del precio pagada con la bolsa del humano (lo demás fueron créditos).
+  // Hace falta para devolver cada cosa a su sitio al quitarlo en creación. Solo el servidor.
+  pagoBolsa?: number;
 };
 
 export const piezaEquipadaSchema = z.object({
@@ -99,11 +105,13 @@ export const piezaEquipadaSchema = z.object({
   nivel: z.number().int().min(1).max(4).optional(),
   instaladoEnId: z.string().min(1).max(60).optional(),
   viaEspecie: z.literal(true).optional(),
+  eleccion: z.string().min(1).max(40).optional(),
+  pagoBolsa: z.number().int().min(0).max(9_999_999).optional(),
 });
 
 // Lo que se acepta del cliente al equipar: `viaEspecie` no, lo decide el servidor
 // (zod descarta la clave si llega).
-export const piezaEquipadaEntradaSchema = piezaEquipadaSchema.omit({ viaEspecie: true });
+export const piezaEquipadaEntradaSchema = piezaEquipadaSchema.omit({ viaEspecie: true, pagoBolsa: true });
 
 // Generador de ids, separado de las funciones puras de más abajo para que
 // sigan siendo testeables sin azar de por medio — mismo criterio que
@@ -265,6 +273,9 @@ export function validarInstalacion(
 export function equipar(sheet: Sheet, pieza: PiezaEquipada): Sheet {
   const cat = equipoPorId(pieza.catalogoId);
   if (!cat) return sheet;
+  // Los aumentos tienen su propia compra (requisitos, subir de nivel, elección y
+  // bolsa del humano): compraAumento en rules/aumentos.ts.
+  if (cat.familia === "operacionGenetica" || cat.familia === "implante") return sheet;
 
   // herramienta, consumible y armaPesada se equipan directo, como una
   // armadura — no están en esta lista a propósito, caen en la rama de abajo
@@ -393,7 +404,8 @@ export function costeDePieza(pieza: PiezaEquipada): number {
     cat.familia === "armaMelee" ||
     cat.familia === "consumible" ||
     cat.familia === "armaPesada" ||
-    cat.familia === "granada"
+    cat.familia === "granada" ||
+    cat.familia === "operacionGenetica"
   ) {
     return cat.coste ?? 0;
   }
@@ -404,9 +416,15 @@ export function costeDePieza(pieza: PiezaEquipada): number {
 // lo que llevara instalado dentro, porque desequipar() se lo lleva por
 // delante en el mismo golpe. Decisión del usuario (2026-09-10): desequipar
 // devuelve el coste íntegro, no hay medias tintas ni penalización.
+// Los aumentos no entran aquí: con la ficha aprobada no se revenden, y en creación
+// los devuelve devolucionAumento (aumentos.ts), que separa bolsa y créditos.
 export function costeDeRetirar(sheet: Sheet, instanciaId: string): number {
   return sheet.equipo
     .filter((p) => p.instanciaId === instanciaId || p.instaladoEnId === instanciaId)
+    .filter((p) => {
+      const familia = equipoPorId(p.catalogoId)?.familia;
+      return familia !== "operacionGenetica" && familia !== "implante";
+    })
     .reduce((total, p) => total + costeDePieza(p), 0);
 }
 
@@ -423,7 +441,8 @@ export function rarezaDePieza(pieza: PiezaEquipada): Rareza | null {
     cat.familia === "armaMelee" ||
     cat.familia === "consumible" ||
     cat.familia === "armaPesada" ||
-    cat.familia === "granada"
+    cat.familia === "granada" ||
+    cat.familia === "operacionGenetica"
   ) {
     return cat.rareza;
   }
@@ -551,7 +570,8 @@ export function modificadoresDeEquipo(sheet: Sheet): ModificadorConFuente[] {
       cat.familia === "armadura" ||
       cat.familia === "arma" ||
       cat.familia === "consumible" ||
-      cat.familia === "armaPesada"
+      cat.familia === "armaPesada" ||
+      cat.familia === "operacionGenetica"
     ) {
       return cat.modificadores.map((m) => ({ ...m, origen: "equipo" as const, fuente: cat.label }));
     }

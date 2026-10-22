@@ -1480,18 +1480,32 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
 - [x] Transcripción fiel `docs/aumentos.md` (erratas para Murillo al final).
 - [x] `sistema.md` §11 (dos ramas, lo que no dice) y §14.6 (bolsa 70.000); preguntas 11 y 20
   reabiertas.
-- [ ] `MODELO_AUMENTOS` enseñado al usuario → `modelar-area` → `docs/modelado-aumentos.md`.
+- [x] `MODELO_AUMENTOS` enseñado al usuario → `modelar-area` → `docs/modelado-aumentos.md`.
 - [x] Cuestionario de decisiones (2026-10-16, https://claude.ai/artifact/2ycU8EYmku9YBAVAFyJXgG):
   respuestas en `sistema.md` §11.3.
-- [ ] `docs/propuesta-aumentos.md` con tandas.
+- [x] Segunda y tercera ronda de preguntas (`/preguntas`, área Aumentos, 2026-10-22):
+  respuestas en `sistema.md` §11.3 y aplicadas en `docs/modelado-aumentos.json`.
+- [x] `docs/propuesta-aumentos.md` con tandas (A0-A7). Falta la luz verde y las 3 decisiones de su §4.
+- [x] A0 · Catálogo, Tienda y ficha (incluye la bolsa a 70.000). *(sin commit; falta
+  revisión y navegador)* `catalog/aumentos.ts` (32 piezas, test cruzado con el JSON),
+  `rules/aumentos.ts` (`comprarAumento`, `aumentosConRequisitoRoto`), ficha v18
+  (`PiezaEquipada.eleccion`, `bolsaAumentosGastada`), chip "Aumentos" en Tienda y en Equipo,
+  `comprarAumentoAction` y `comprarAumentoNpcAction`.
+- [ ] A1 · Atributos y derivados.
+- [ ] A2 · Tiradas: bonos, ventajas y casillas.
+- [ ] A3 · Penalizadores.
+- [ ] A4 · Acciones propias y "una vez por escena".
+- [ ] A5 · Activables.
+- [ ] A6 · Brazo Biónico.
+- [ ] A7 · Inmunidades.
 - [ ] Cuando Murillo cierre los 5 implantes en proceso: `sync-drive`, transcribirlos de
   nuevo y modelarlos en una pasada corta.
-- [ ] **Código:** bolsa del humano a **70.000** (`catalog/especies.ts`, `bolsaAumentos`; el
-  documento manda, antes 60.000) y textos/tests que digan 60.000.
+- [x] **Código:** bolsa del humano a **70.000** (`catalog/especies.ts`, `bolsaAumentos`; el
+  documento manda, antes 60.000) y textos/tests que digan 60.000. Va dentro de A0.
 
 Enganches que ya esperan:
-- La bolsa del humano (E2a, `FichaResuelta.bolsaAumentos`) se ve en Tienda y
-  Recursos pero no se gasta (ver "Especies reales").
+- ~~La bolsa del humano se ve pero no se gasta~~: se gasta desde A0 (bolsa primero, luego
+  créditos).
 - **Dependencia detectada (2026-09-21, repaso de efectos especiales de equipo):** el
   estado `Shock` (`src/lib/catalog/estados.ts:670-678`) ya prevé una rama para
   "equipamiento o armadura tecnológica" (resistencia = Estructura, no Fortaleza),
@@ -1954,7 +1968,7 @@ no `base`); con dos opciones que bajen el margen de crítico gana el más bajo, 
       mano. Axadren, sin coste)*
 
 **Bloqueado**
-- Gastar la bolsa de aumentos (dos bolsas, la de aumentos primero): espera a los aumentos
+- ~~Gastar la bolsa de aumentos (dos bolsas, la de aumentos primero)~~: hecho en Aumentos A0
 - Regeneración de Ílkrem, descanso y raciones (Riux, Siervo): la app no lleva el tiempo
 
 **Aparte, detectado en la revisión**

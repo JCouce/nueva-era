@@ -319,3 +319,24 @@ describe("parseSheet migra antes de normalizar", () => {
     );
   });
 });
+
+describe("v17 → v18: aumentos (eleccion en las piezas y bolsa gastada)", () => {
+  test("arranca con la bolsa sin gastar y no toca el equipo", () => {
+    const equipo = [{ instanciaId: "a1", catalogoId: "pistola_mosquito" }];
+    const { ficha, aplicadas } = migrar({ schemaVersion: 17, especieId: "humano", equipo }, 18);
+    assert.equal(ficha.schemaVersion, 18);
+    assert.equal(aplicadas.length, 1);
+    assert.equal(ficha.bolsaAumentosGastada, 0);
+    assert.deepEqual(ficha.equipo, equipo);
+  });
+
+  test("parseSheet conserva la elección y recorta lo gastado", () => {
+    const s = parseSheet({
+      schemaVersion: 18,
+      equipo: [{ instanciaId: "a1", catalogoId: "aum_brazo_bionico", nivel: 3, eleccion: "fuerte" }],
+      bolsaAumentosGastada: -5,
+    });
+    assert.equal(s.equipo[0].eleccion, "fuerte");
+    assert.equal(s.bolsaAumentosGastada, 0);
+  });
+});

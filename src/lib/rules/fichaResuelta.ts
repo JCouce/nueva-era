@@ -7,6 +7,7 @@
 // catálogo. Los estados (columna propia, los pone el máster) y la vida/fatiga de un
 // combate no están en la ficha, por eso entran aparte.
 import { APLICADOS, ATRIBUTOS, type AplicadoId, type AtributoId } from "./atributos";
+import { saldoBolsaAumentos } from "./aumentos";
 import { tieneEscudoMelee, type ArmaduraNatural } from "./blindaje";
 import {
   alerta,
@@ -77,6 +78,13 @@ import type { CondicionTirada } from "./condiciones";
 
 export type DesgloseDerivado = { total: number; fuentes: Fuente[] };
 
+export type BolsaAumentosResuelta = { total: number; gastada: number; saldo: number };
+
+function bolsaResuelta(total: number | null, gastada: number): BolsaAumentosResuelta | null {
+  if (total === null) return null;
+  return { total, gastada, saldo: saldoBolsaAumentos(total, gastada) };
+}
+
 export type FichaResuelta = {
   ficha: Sheet;
   especie: EspecieResuelta | null;
@@ -140,7 +148,8 @@ export type FichaResuelta = {
   // compra y el coste del siguiente nivel, y la bolsa de aumentos (null si la
   // especie no la trae). En modo libre (NPC, §14.3), neutros.
   ajusteCoste: AjusteCoste;
-  bolsaAumentos: number | null;
+  // Bolsa de aumentos (Humanos): total de la especie, lo gastado (sheet) y el saldo.
+  bolsaAumentos: BolsaAumentosResuelta | null;
   // Piezas sin tope de rareza por especie (kerzul del Arköru, §14.6): las recibe
   // puedeEquiparSinRareza. Es de creación: vacío en modo libre.
   excepcionesRareza: ExcepcionRareza[];
@@ -258,7 +267,7 @@ export function resolverFicha(sheet: Sheet, { estados, vitalidad, libre = false 
     accionesDotes: accionesDeDotes(activas),
     poderesDotes: poderesDeDotes(activas, sheet, psionica.paraEfectos),
     ajusteCoste: libre ? AJUSTE_NEUTRO : ajustesDeCoste(especie),
-    bolsaAumentos: libre ? null : bolsaDeAumentos(especie),
+    bolsaAumentos: libre ? null : bolsaResuelta(bolsaDeAumentos(especie), sheet.bolsaAumentosGastada),
     excepcionesRareza: libre ? [] : excepcionesRareza(especie),
     psionica,
     requisitosDotes,

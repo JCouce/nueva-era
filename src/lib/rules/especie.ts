@@ -291,7 +291,8 @@ export function ajustesDeCoste(especie: EspecieResuelta | null): AjusteCoste {
   return tocado ? ajuste : AJUSTE_NEUTRO;
 }
 
-// Bolsa de aumentos (M3): hoy solo se enseña, no se gasta (no hay aumentos).
+// Bolsa de aumentos (M3): el total de la especie. Lo gastado vive en
+// sheet.bolsaAumentosGastada y el saldo lo da saldoBolsaAumentos (aumentos.ts).
 export function bolsaDeAumentos(especie: EspecieResuelta | null): number | null {
   const bolsas = (especie?.rasgos ?? []).flatMap((r) => (r.bolsaAumentos === undefined ? [] : [r.bolsaAumentos]));
   return bolsas.length ? bolsas.reduce((a, b) => a + b, 0) : null;

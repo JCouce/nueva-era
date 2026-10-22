@@ -63,6 +63,9 @@ import {
   comprarDote,
   quitarDote,
   CONTEXTO_LIBRE,
+  compraAumentoSchema,
+  comprarAumento,
+  nuevaInstanciaId,
 } from "@/lib/rules";
 
 export type NpcResult = { ok: true; sheet: Sheet } | { ok: false; error: string };
@@ -322,6 +325,20 @@ export async function equiparNpcAction(npcId: string, pieza: PiezaEquipada): Pro
   const sheet = equipar(ctx.sheet, parsed.data);
   if (sheet === ctx.sheet) return { ok: false, error: "Pieza de equipo inválida" };
   return persist(npcId, sheet);
+}
+
+// Aumentos del NPC: sin coste ni bolsa (§14.3), con las mismas reglas de compra
+// (requisitos, un implante de cada que solo sube, elección).
+// Los requisitos se piden igual que a un jugador, aunque las dotes del NPC no los pidan
+// (§9.4): decisión del usuario, 2026-10-22.
+export async function comprarAumentoNpcAction(npcId: string, entrada: unknown): Promise<NpcResult> {
+  const parsed = compraAumentoSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Aumento inválido" };
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const res = comprarAumento(ctx.sheet, parsed.data, { libre: true, instanciaId: nuevaInstanciaId() });
+  if (!res.ok) return { ok: false, error: res.error };
+  return persist(npcId, res.sheet);
 }
 
 export async function desequiparNpcAction(npcId: string, instanciaId: string): Promise<NpcResult> {

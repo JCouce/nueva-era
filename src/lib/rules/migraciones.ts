@@ -269,6 +269,15 @@ export const MIGRACIONES: Migracion[] = [
       return { ...ficha, habilidades, dotes, avisoEspecialidades: avisos };
     },
   },
+  {
+    desde: 17,
+    hasta: 18,
+    descripcion:
+      "Aumentos (A0, docs/sistema.md §11.3): las piezas equipadas admiten `eleccion` (opcional, " +
+      "ninguna existente la lleva) y se añade bolsaAumentosGastada a 0: hasta ahora la bolsa " +
+      "del humano solo se enseñaba, nadie ha gastado nada de ella.",
+    migrar: (ficha) => ({ ...ficha, bolsaAumentosGastada: 0 }),
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le

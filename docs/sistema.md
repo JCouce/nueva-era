@@ -1191,6 +1191,19 @@ al preparar su modelado:
 - **Decisión del usuario (2026-10-16)**: los aumentos entran en la app como una **familia de
   equipo**, con chip propio en Equipo y compra en la Tienda. Lo que falta por decidir está
   en `docs/prompt-aumentos.md` §3.
+- *En la app (A0, sin efectos de reglas):* `catalog/aumentos.ts` (familias
+  `operacionGenetica` e `implante` del `Equipo`, cruzado con `docs/modelado-aumentos.json`
+  por test). Se guardan en `sheet.equipo`; `PiezaEquipada.eleccion` lleva el sentido de
+  Introgresión o el modelo del Brazo (ficha v18). La compra la decide `comprarAumento`
+  (`rules/aumentos.ts`): requisitos (todos), un implante de cada que solo sube pagando la
+  diferencia, elección obligatoria donde toca y otra Introgresión solo con otro sentido.
+  **Quitar (usuario, 2026-10-22):** en creación devuelve lo pagado, lo de la bolsa a la bolsa
+  y el resto a créditos (`PiezaEquipada.pagoBolsa`, `devolucionAumento`); aprobada la ficha,
+  no devuelve nada (el resto del equipo sí devuelve su coste siempre). Quitar una operación
+  que otra pide marca esa otra "requisito roto" (`aumentosConRequisitoRoto`). **La letra de
+  Recursos topa su rareza en creación**, como al resto del equipo (usuario, 2026-10-22).
+  **NPC:** sin coste, pero con los mismos requisitos que un jugador (usuario, 2026-10-22).
+  **Brazo 3 → 4:** se elige cualquier modelo del nivel 4 (usuario, 2026-10-22).
 
 ### 11.2 Lo que el documento no dice `[PENDIENTE]`
 - **Tope de implantes**: pregunta 11, sigue abierta.
@@ -1261,6 +1274,94 @@ al preparar su modelado:
     después de tener la operación.
   - **Ceguera**: se salva con **Fortaleza**.
   - **Blindaje del Brazo**: solo protege el golpe que bloqueas con el brazo, como un escudo.
+
+**Tercera ronda** (usuario 2026-10-22, `/preguntas` área Aumentos; ids `aumentos.<grupo>.<n>`):
+- **Reglas generales**:
+  - **Dificultad por defecto de un ataque: 0** (sin penalizador), como un puñetazo. Vale
+    para cualquier ataque cuya dificultad no esté escrita (Tempestad Nanobótica incluida).
+  - **Salvaciones**: asfixia, toxinas, venenos, enfermedades y aturdimiento con
+    **Fortaleza** (salvo que el texto diga otra cosa, como el MQE); Confusión con
+    **Voluntad**.
+  - **Sanación natural = la de los descansos**: sin descanso no se sana nada.
+  - **Fatigado** es el estado por umbral de fatiga restante que ya tiene el sistema.
+  - **Hemorragia exanguinante**: no para nunca hasta que te curen por medios médicos.
+  - **Cobertura**: los aumentos visuales (Foveo, Ojo 1-3) reducen solo la cobertura visual;
+    la total no se reduce salvo con un ataque que la atraviese. **Ojo nivel 4**: −2 niveles
+    de cualquier cobertura, física o visual.
+  - **Alerta pasiva**: los bonos de vista (Ojo) y de olfato (Detección Química) sí la suben,
+    mientras el sentido se pueda usar (en el vacío con traje, no). La ventaja auditiva
+    (Vestíbulo-Auditiva) no: solo al buscar activamente.
+- **Por pieza** (lo que coincide con la recomendada va sin marca; lo que el usuario cambió,
+  con *):
+  - **Mielinización Central***: ahorras **un** punto de fatiga, aunque el gasto combinado
+    sea mayor. Una vez por escena.
+  - **Red Frontoparietal***: la acción física simultánea es **cualquier acción simple o
+    estándar física**, ataques y defensas incluidos. Sin límite de usos, pagando el punto.
+  - **Asa Estriatotalámica**: un solo paso por acción.
+  - **Conectividad Callosa***: la vía de "dos turnos" **también cuesta 1 de fatiga**. Vale
+    para cualquier acción, ataques incluidos.
+  - **Conectividad Callosa y Prefrontal Aumentada*** no se juntan: Prefrontal es solo para
+    acciones mentales y Callosa es su progresión sin límite. Prefrontal sí se suma al +1 de
+    pagar otro punto de fatiga.
+  - **Foveo-Sensorial**: solo tras Apuntar.
+  - **Ojo Biónico**: cuentan como visión aumentada las miras y las **gafas que hagan algo
+    parecido***. Los 50 m del nivel 4 son solo de los rayos X; nocturna y térmica, 500 m.
+    El primer "Nivel 3" (Extraño, 32.000) es el **nivel 2** (errata).
+  - **Introgresión***: ampliar la Percepción Electromagnética a 30 m **no tiene
+    dificultad**; la tienen encontrar y distinguir cosas (la pone el máster). La
+    vulnerabilidad eléctrica es descripción. Cada sentido nuevo cuesta 15.000.
+  - **Consciencia Omnidireccional**: ventaja en la esquiva normal; anula cualquier bono por
+    flanquear o rodear, también de dotes.
+  - **Automatismo Bulboespinal**: solo quita el −3 de Sorprendido; Desprevenido sigue igual.
+  - **Neuroprótesis Simpática**: segunda reacción por ronda. Nivel 1: reduce en 1
+    **todos*** los penalizadores por estado, **heridas y fatiga incluidos**. Nivel 2: +2 a
+    Fuerza o Agilidad elegido en cada activación (el otro y Percepción, +1). Nivel 3: la
+    acción simple extra solo pide que el implante **no esté saboteado ni apagado***, no que
+    esté activado. Nivel 4: es el segundo uso del nivel 3, y el +2 sustituye al +1/+2.
+  - **Regulación Límbico-Prefrontal**: cualquier tirada para resistir la intimidación; +1
+    aunque el efecto sea miedo y coerción a la vez. Con Matriz de Red (+2) se suma: +3.
+  - **Proyección Neuro-Expresiva***: anula **cualquier** penalizador social, heridas y
+    fatiga incluidos. Activarla es gratuito.
+  - **Proyección y Matriz de Red*** se pueden usar en la misma escena: una tira con
+    ventaja y la otra repite con ventaja tras fallar.
+  - **Hipertrofia Miofibrilar**: Fortaleza × 1,5 redondeado hacia abajo; con Fortaleza
+    negativa no se multiplica.
+  - **Biogénesis Mitocondrial***: "consumible" es otro nombre de alimento (un gel
+    nutritivo); los fármacos no dan fatiga y no cambian. La hipoxia duplica solo los turnos
+    antes de la Asfixia.
+  - **Resiliencia Homeostática**: solo frío y calor del ambiente, no armas de fuego.
+  - **Angiogénesis Sistémica***: cortar una hemorragia es **acción gratuita**. El cambio de
+    no letal por letal en el descanso largo se hace **todas las veces que dé el tiempo**.
+  - **Regeneración Tisular**: 2 letales por descanso corto, sin asistencia médica.
+  - **Estabilización Autonómica**: librarse del miedo es automático, gastando la acción.
+  - **Enjambre Nanobot**: el +3 va a la tirada de Medicina para aplicar fármacos o tratar.
+    Sanar un letal es **una sola acción gratuita por ronda***. El grave: 1 de fatiga por
+    turno durante 5 turnos, pudiendo actuar. Blindaje y +3 contra aturdimiento valen
+    **contra todo lo que pare un blindaje*** (el daño mental, no). La velocidad del nivel 4
+    es la del paréntesis. Cada acierto quita 1 punto de blindaje al objetivo (errata).
+  - **MQE**: cada nivel sustituye al anterior y la dificultad sigue subiendo +1 por turno.
+    El psiónico se infiltra con **lo que proceda por Resonancia***. Contragolpe del nivel 3:
+    1 nivel grave. **Nivel 2: los mensajes subvocales llegan a varias personas***. Nivel
+    4: defensa y contragolpe juntos, elegidos en cada intrusión; lo de dejar inconsciente y
+    ocultar la firma es descripción. Aislar el canal de radio no protege del Shock.
+  - **Brazo Biónico**: para bloquear **siempre hace falta la dote Bloqueo***. Se usa el
+    atributo del brazo aunque sea menor. El nivel 1 no bloquea ni hace letal; los modelos
+    de los niveles 3 y 4, sí. El arma incorporada cuenta para la carga, cualquier arma a
+    una mano (también de fuego), y si fallas la de dificultad 8 se repite con otros 10
+    minutos.
+  - **Shock***: afecta a **todos los implantes**, salvo los que sean puro material de
+    refuerzo (pendientes de diseñar; Refuerzo Protésico ya no debe existir). Las
+    operaciones genéticas, no.
+  - **IRM**: "Fracaso" y "Fallo" son lo mismo; hay que unificar el texto.
+  - **Bucle de Realimentación Motora**: la tercera reacción es por ronda.
+- **Dudas resueltas** (usuario 2026-10-22, segunda pasada):
+  - **Mielinización Central**: una vez **por escena**, como dice el documento.
+  - **Foveo-Sensorial**: el bono solo vale **tras la acción de Apuntar**.
+  - **Matriz de Red Predeterminada**: fallas y repites **esa misma tirada** con ventaja, una
+    vez por escena.
+  - **Proyección Neuro-Expresiva**: activarla es **acción gratuita**.
+- **Erratas pendientes de corregir en el documento**: IRM nivel 3 repite la frase del nivel
+  2, y la ortografía.
 
 ## 12. Equipamiento
 
@@ -1504,16 +1605,19 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
   bloqueados con el motivo. Con un 7, la cabecera dice "nivel 7 · efectos de nivel 6".
 - *NPC:* `resolverFicha(sheet, { libre: true })` deja el ajuste neutro y sin bolsa (14.3).
 
-**Humanos, bolsa de aumentos** (M3) — *visible, sin gastar: no hay aumentos*
-- **70.000** créditos aparte, **solo para aumentos** (`docs/fuente/especies.md`; antes 60.000,
-  la app aún dice 60.000 — tarea en `docs/tareas.md`, Aumentos). No toca `Character.creditos`.
+**Humanos, bolsa de aumentos** (M3)
+- **70.000** créditos aparte, **solo para aumentos** (`docs/fuente/especies.md`; antes
+  60.000). No toca `Character.creditos`.
 - Un aumento se paga **primero con la bolsa**; si no llega, lo que falte sale de los
   créditos normales.
-- Lo que quede en la bolsa al aprobar se pierde, pero mientras tanto lo que sobra puede
-  juntarse con los recursos de creación para comprar otros aumentos (`fuente/especies.md`).
-- Hasta que existan los aumentos, la ficha solo la muestra como dato. *En la app (E2a):*
-  `bolsaAumentos` en el rasgo del humano → `FichaResuelta.bolsaAumentos`; línea "Bolsa de
-  aumentos 60.000 · pendiente de aumentos" en la cabecera de la Tienda y en Recursos.
+- Se puede gastar también con la ficha aprobada (§11.3). Lo que no se gaste se pierde: nunca
+  se convierte en créditos.
+- *En la app (E2a + A0):* `bolsaAumentos` en el rasgo del humano es el total; la ficha guarda
+  solo lo gastado (`sheet.bolsaAumentosGastada`, ficha v18) y `FichaResuelta.bolsaAumentos`
+  da `{ total, gastada, saldo }`. `comprarAumento` (`rules/aumentos.ts`) reparte el pago
+  (`repartoPago`: bolsa primero, luego créditos). Tienda y Recursos enseñan "Bolsa de
+  aumentos saldo / total". Quitar un aumento en creación devuelve a la bolsa lo que salió
+  de ella; aprobada la ficha, nada.
 
 **Arköru, acceso al kerzul** (M9)
 - Una sola pieza de kerzul del catálogo (cualquiera, Escudo incluido) **sin tope de rareza**,

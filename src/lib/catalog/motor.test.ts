@@ -9,6 +9,7 @@ import {
   type MejoraMovimiento,
   type MejoraDeArma,
   type Herramienta,
+  type Implante,
 } from "./equipo";
 import { ARMAMENTO_PESADO } from "./armamentoPesado";
 import { MUNICION_GRANADA } from "./municion";
@@ -18,7 +19,7 @@ import { ESPECIES, type Rasgo } from "./especies";
 // (modificadores, condiciones, notaTirada) viven por nivel, no en la pieza
 // contenedora, así que el MotorMetadata también (docs/motor.md, decisión al
 // dar de alta este test).
-type ConNiveles = MejoraEstandar | Subsistema | MejoraMovimiento | MejoraDeArma | Herramienta;
+type ConNiveles = MejoraEstandar | Subsistema | MejoraMovimiento | MejoraDeArma | Herramienta | Implante;
 
 function tieneNiveles(pieza: Equipo): pieza is ConNiveles {
   return (
@@ -26,7 +27,8 @@ function tieneNiveles(pieza: Equipo): pieza is ConNiveles {
     pieza.familia === "subsistema" ||
     pieza.familia === "movimiento" ||
     pieza.familia === "mejoraArma" ||
-    pieza.familia === "herramienta"
+    pieza.familia === "herramienta" ||
+    pieza.familia === "implante"
   );
 }
 

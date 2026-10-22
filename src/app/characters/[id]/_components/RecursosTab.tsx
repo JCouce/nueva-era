@@ -142,7 +142,7 @@ export function RecursosTab({
 
   return (
     <div className="flex flex-col gap-3">
-      {ficha.bolsaAumentos !== null && <BolsaAumentos creditos={ficha.bolsaAumentos} />}
+      {ficha.bolsaAumentos !== null && <BolsaAumentos bolsa={ficha.bolsaAumentos} />}
       <p className="border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
         {"//SYSTEM · vida y fatiga"}
       </p>

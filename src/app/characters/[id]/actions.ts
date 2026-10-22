@@ -91,6 +91,12 @@ import {
   faltasDeDotes,
   valoresRequisitoDeFicha,
   doteCompradaSchema,
+  compraAumentoSchema,
+  comprarAumento,
+  devolucionAumento,
+  aumentoPorId,
+  bolsaDeAumentos,
+  nuevaInstanciaId,
 } from "@/lib/rules";
 
 export type SaveResult =
@@ -382,6 +388,7 @@ export async function equiparAction(
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   let nueva: PiezaEquipada = parsed.data;
+  if (aumentoPorId(nueva.catalogoId)) return { ok: false, error: "Los aumentos se compran desde su ficha de la Tienda" };
 
   // Tope de rareza por letra de Recursos (docs/sistema.md §2): solo en
   // creación, nunca al máster (decisión del usuario, 2026-09-11) — aprobada
@@ -413,9 +420,50 @@ export async function equiparAction(
   return { ok: true, sheet, creditos };
 }
 
+// Aumentos (docs/sistema.md §11.3, A0). Requisitos, subir de nivel (paga la
+// diferencia), elección y reparto bolsa → créditos los decide comprarAumento
+// (rules/aumentos.ts) con la ficha de la base; nunca con lo que mande la pantalla.
+// Vale también con la ficha aprobada (la bolsa también se gasta, §11.3).
+export async function comprarAumentoAction(characterId: string, entrada: unknown): Promise<SaveResult> {
+  const parsed = compraAumentoSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Aumento inválido" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const compra = parsed.data;
+
+  // Tope de rareza por letra de Recursos, como el resto del equipo (solo en creación y
+  // nunca al máster). Sin excepción de especie: el kerzul no es un aumento.
+  // La letra de Recursos topa también los aumentos, como al resto del equipo (usuario,
+  // 2026-10-22).
+  if (!ctx.aprobada && !ctx.esMaster) {
+    const letra = ctx.sheet.prioridades.recursos;
+    const tope = letra ? RECURSOS_POR_LETRA[letra].rareza : null;
+    const rareza = rarezaDePieza({ instanciaId: "-", catalogoId: compra.catalogoId, nivel: compra.nivel });
+    if (tope && !rarezaPermitida(rareza, tope)) {
+      return { ok: false, error: `Tu letra de Recursos no llega a ${rareza}: tope ${tope}.` };
+    }
+  }
+
+  const res = comprarAumento(ctx.sheet, compra, {
+    libre: false,
+    instanciaId: nuevaInstanciaId(),
+    bolsaTotal: bolsaDeAumentos(especieDeFicha(ctx.sheet)),
+    creditos: ctx.creditos,
+  });
+  if (!res.ok) return { ok: false, error: res.error };
+
+  const creditos = ctx.creditos - res.pago.deCreditos;
+  await prisma.character.update({ where: { id: characterId }, data: { stats: res.sheet, creditos } });
+  revalidatePath(`/characters/${characterId}`);
+  revalidarPanelMaster();
+  return { ok: true, sheet: res.sheet, creditos };
+}
+
 // Desequipar devuelve el coste íntegro de lo retirado (decisión del usuario,
 // 2026-09-10) — incluida cualquier mejora o subsistema que colgara de la
-// pieza, porque desequipar() se los lleva por delante en el mismo golpe.
+// pieza, porque desequipar() se los lleva por delante en el mismo golpe. Los
+// aumentos, solo en creación (usuario, 2026-10-22): la bolsa a la bolsa y el resto
+// a créditos; aprobada la ficha no se revenden (costeDeRetirar los cuenta a 0).
 export async function desequiparAction(
   characterId: string,
   instanciaId: string,
@@ -423,8 +471,12 @@ export async function desequiparAction(
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
 
-  const refund = costeDeRetirar(ctx.sheet, instanciaId);
-  const sheet = desequipar(ctx.sheet, instanciaId);
+  const devolucion = ctx.aprobada ? null : devolucionAumento(ctx.sheet, instanciaId);
+  const refund = costeDeRetirar(ctx.sheet, instanciaId) + (devolucion?.deCreditos ?? 0);
+  const sinPieza = desequipar(ctx.sheet, instanciaId);
+  const sheet = devolucion
+    ? { ...sinPieza, bolsaAumentosGastada: Math.max(0, sinPieza.bolsaAumentosGastada - devolucion.deBolsa) }
+    : sinPieza;
   const creditos = ctx.creditos + refund;
   await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, creditos } });
   revalidatePath(`/characters/${characterId}`);

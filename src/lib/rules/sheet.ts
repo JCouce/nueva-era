@@ -66,7 +66,13 @@ import { ESPECIALIDAD_IDS, esEspecialidadDe, type EspecialidadId } from "../cata
 //   16 → se añaden las dotes compradas (dotes)
 //   17 → las especialidades pasan de texto libre a ids del catálogo
 //        (catalog/especialidades.ts); lo que no casa va a avisoEspecialidades
-export const SCHEMA_VERSION = 17;
+//   18 → aumentos (A0): las piezas equipadas admiten `eleccion` (sentido de
+//        Introgresión, modelo del Brazo) y se añade lo gastado de la bolsa del
+//        humano (bolsaAumentosGastada)
+export const SCHEMA_VERSION = 18;
+
+// Tope de lo gastado de la bolsa de aumentos: muy por encima de cualquier bolsa real.
+export const MAX_BOLSA_AUMENTOS = 9_999_999;
 
 export const MAX_AVISOS_ESPECIALIDADES = 40;
 
@@ -132,6 +138,10 @@ export const sheetSchema = z.object({
   // Fatiga gastada de más en una Proeza (psiónica, Traslación): cuenta para los
   // umbrales mientras dura la escena y se devuelve al terminarla (vitalidad.ts).
   fatigaTemporal: z.number().int().min(0).max(999),
+  // Bolsa de aumentos del humano (§14.6): solo se guarda lo gastado, que no se puede
+  // recalcular (los aumentos no se revenden). El saldo = bolsa de la especie − esto
+  // (saldoBolsaAumentos, rules/aumentos.ts).
+  bolsaAumentosGastada: z.number().int().min(0).max(MAX_BOLSA_AUMENTOS),
 });
 
 export type Sheet = z.infer<typeof sheetSchema>;
@@ -171,6 +181,7 @@ export function defaultSheet(): Sheet {
     vidaActual: 999,
     fatigaActual: 999,
     fatigaTemporal: 0,
+    bolsaAumentosGastada: 0,
   };
 }
 
@@ -349,6 +360,7 @@ export function parseSheet(raw: unknown): Sheet {
       vidaActual: clampInt(r.vidaActual, 0, 999, 999),
       fatigaActual: clampInt(r.fatigaActual, 0, 999, 999),
       fatigaTemporal: clampInt(r.fatigaTemporal, 0, 999, 0),
+      bolsaAumentosGastada: clampInt(r.bolsaAumentosGastada, 0, MAX_BOLSA_AUMENTOS, 0),
     }),
   );
 }

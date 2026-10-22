@@ -209,8 +209,18 @@ describe("FichaResuelta: ajuste y bolsa", () => {
     assert.equal(experienciaInvertida(sabio), 10); // "Poder" del NPC, sin descuento de casta
   });
 
-  test("bolsa de 60.000 solo para Humanos", () => {
-    assert.equal(resolverFicha(ficha("humano"), { vitalidad: VITALIDAD_DE_FICHA, estados: [] }).bolsaAumentos, 60_000);
+  test("bolsa de 70.000 solo para Humanos", () => {
+    assert.deepEqual(resolverFicha(ficha("humano"), { vitalidad: VITALIDAD_DE_FICHA, estados: [] }).bolsaAumentos, {
+      total: 70_000,
+      gastada: 0,
+      saldo: 70_000,
+    });
+    const gastada = { ...ficha("humano"), bolsaAumentosGastada: 30_000 };
+    assert.deepEqual(resolverFicha(gastada, { vitalidad: VITALIDAD_DE_FICHA, estados: [] }).bolsaAumentos, {
+      total: 70_000,
+      gastada: 30_000,
+      saldo: 40_000,
+    });
     assert.equal(bolsaDeAumentos(null), null);
     for (const e of ESPECIES.filter((x) => x.id !== "humano")) {
       const opciones = e.castas ? e.castas.map((c) => ficha(e.id, c.id, e.linajes?.casta === c.id ? e.linajes.opciones[0].id : undefined)) : [ficha(e.id)];
