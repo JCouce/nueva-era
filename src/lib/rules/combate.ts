@@ -164,13 +164,16 @@ function bonosTramoDeMejoras(sheet: Sheet, arma: ArmaFuego, instanciaId: string)
     if (pieza.instaladoEnId !== instanciaId || pieza.nivel === undefined) continue;
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat || cat.familia !== "mejoraArma") continue;
-    const ajuste = ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel), "ajusteTramo")?.ajusteTramo;
+    const define = ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel), "ajusteTramo");
+    const ajuste = define?.ajusteTramo;
     if (!ajuste) continue;
     const yaIncluido = sustituyeMiraIntegrada(cat.id, arma)
       ? ultimoQueDefine(nivelesHasta(cat.niveles, arma.miraIntegrada ?? 0), "ajusteTramo")?.ajusteTramo
       : undefined;
     const porTramo = restarAjusteTramo(ajuste, yaIncluido ?? {});
-    if (Object.keys(porTramo).length > 0) bonos.push({ fuente: cat.label, porTramo });
+    // TODO(revisar): la mira integrada de los fusiles de precisión va dentro de los números
+    // del arma, sin bono propio, así que el Ojo Biónico se le suma (no hay con qué compararlo).
+    if (Object.keys(porTramo).length > 0) bonos.push({ fuente: cat.label, porTramo, ...(define?.noApila && { noApila: define.noApila }) });
   }
   return bonos;
 }

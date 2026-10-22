@@ -12,13 +12,16 @@ function signo(n: number) {
 // AccionModal.tsx ("nada suma en silencio"), componente propio en vez de
 // compartido porque este modal no tira dado y no comparte el resto de esa
 // forma (dificultad, condiciones...).
-function LineaBlindaje({ etiqueta, valor }: { etiqueta: string; valor: number }) {
+function LineaBlindaje({ etiqueta, valor, nota }: { etiqueta: string; valor: number; nota?: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 font-mono text-[11px]">
-      <span className="truncate text-muted">{etiqueta}</span>
-      <span className={`shrink-0 tabular-nums ${valor > 0 ? "text-info" : "text-muted"}`}>
-        {signo(valor)}
-      </span>
+    <div>
+      <div className="flex items-baseline justify-between gap-3 font-mono text-[11px]">
+        <span className="truncate text-muted">{etiqueta}</span>
+        <span className={`shrink-0 tabular-nums ${valor > 0 ? "text-info" : "text-muted"}`}>
+          {signo(valor)}
+        </span>
+      </div>
+      {nota && <p className="font-sans text-[10px] leading-relaxed text-muted">{nota}</p>}
     </div>
   );
 }
@@ -125,7 +128,7 @@ export function BloquearDanioModal({ ficha, onCerrar }: { ficha: FichaResuelta; 
           <div className="mt-4 flex flex-col gap-1 border-t border-border pt-3">
             <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Desglose"}</p>
             {desglose.map((l, i) => (
-              <LineaBlindaje key={i} etiqueta={l.etiqueta} valor={l.valor} />
+              <LineaBlindaje key={i} etiqueta={l.etiqueta} valor={l.valor} nota={l.nota} />
             ))}
             <div className="mt-1 flex items-baseline justify-between border-t border-border pt-1.5">
               <span className="font-mono text-xs uppercase text-foreground">Blindaje</span>

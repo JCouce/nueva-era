@@ -29,10 +29,20 @@ import {
   notasCondiciones,
   valorBonosTramo,
   valorCondiciones,
+  type BonoPorTramo,
   type CondicionTirada,
   type EstadoCondiciones,
+  type OpcionCondicion,
+  type TramoDistancia,
 } from "./condiciones";
-import { bonoAlcance, desgloseAlcance, type ContextoAccion } from "./modificadores";
+import {
+  alcanzaA,
+  bonoAlcance,
+  desgloseAlcance,
+  descartadosPorNoApila,
+  type ContextoAccion,
+  type ModificadorConFuente,
+} from "./modificadores";
 import type { FichaResuelta } from "./fichaResuelta";
 
 // Lo único de la ficha resuelta que hace falta para montar: prepararPoder lo arma con
@@ -148,37 +158,85 @@ function conCriticoFijo(margenes: TiradaMontada["margenes"], fijo: Accion["criti
   return fijo ? { ...margenes, criticoExito: Math.min(margenes.criticoExito, fijo.margen) } : margenes;
 }
 
+// No apilamiento (A2a, `noApila`): de lo que entra en la tirada con el mismo grupo (bonos con
+// alcance, casillas marcadas y bonos por tramo en el tramo elegido) solo vale el mayor. Los
+// demás se quedan en el desglose a 0, diciendo con cuál no se suman: nada desaparece.
+type Entradas = { mods: ModificadorConFuente[]; condiciones: CondicionTirada[]; bonosTramo: BonoPorTramo[] };
+
+function sinApilar(e: Entradas, ctx: ContextoAccion, estado: EstadoCondiciones): Entradas {
+  type Aporte = { grupo: string | undefined; valor: number; fuente: string; ref: unknown };
+  const tramo = typeof estado.tramo === "string" ? (estado.tramo as TramoDistancia) : null;
+  const aportes: Aporte[] = [
+    ...e.mods.flatMap((m): Aporte[] =>
+      m.tipo === "tirada" && m.noApila && alcanzaA(m.alcance, ctx) ? [{ grupo: m.noApila, valor: m.valor, fuente: m.fuente, ref: m }] : [],
+    ),
+    ...e.condiciones.flatMap((c): Aporte[] =>
+      c.tipo === "toggle" && c.noApila && Boolean(estado[c.id]) ? [{ grupo: c.noApila, valor: c.valorActivo, fuente: c.etiqueta, ref: c }] : [],
+    ),
+    ...e.bonosTramo.flatMap((b): Aporte[] =>
+      b.noApila && tramo ? [{ grupo: b.noApila, valor: b.porTramo[tramo] ?? 0, fuente: b.fuente, ref: b }] : [],
+    ),
+  ];
+  const fuera = descartadosPorNoApila(aportes, (a) => a.grupo, (a) => a.valor);
+  if (fuera.size === 0) return e;
+  const porRef = new Map([...fuera].map(([a, gana]) => [a.ref, `no se suma con ${gana.fuente}`]));
+  return {
+    mods: e.mods.map((m) => (porRef.has(m) ? { ...m, valor: 0, fuente: `${m.fuente} (${porRef.get(m)})` } : m)),
+    condiciones: e.condiciones.map((c) =>
+      c.tipo === "toggle" && porRef.has(c) ? { ...c, valorActivo: 0, etiqueta: `${c.etiqueta} (${porRef.get(c)})` } : c,
+    ),
+    bonosTramo: e.bonosTramo.map((b) => (porRef.has(b) ? { ...b, porTramo: {}, fuente: `${b.fuente} (${porRef.get(b)})` } : b)),
+  };
+}
+
+// La opción elegida de cada condición de tipo opción.
+function opcionesElegidas(condiciones: CondicionTirada[], estado: EstadoCondiciones): OpcionCondicion[] {
+  return condiciones.flatMap((c) => {
+    if (c.tipo !== "opcion") return [];
+    const o = c.opciones.find((x) => x.id === estado[c.id]);
+    return o ? [o] : [];
+  });
+}
+
 export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: EleccionTirada): TiradaMontada {
   const { sutil, estadoCondiciones: estado, circunstancial } = eleccion;
   const enEspecialidad = enEspecialidadEfectiva(ficha.ficha, tirada, eleccion.enEspecialidad);
-  const condiciones = tirada.condiciones ?? [];
-  // Sin los que piden especialidad si no se va en ella, y el mejor de los que no se suman.
-  const bonosTramo = bonosTramoAplicables(tirada.bonosTramo ?? [], estado, enEspecialidad);
   const ajustesFijos = tirada.ajustesFijos ?? [];
-
-  const activas = condiciones.filter((c): c is Toggle => c.tipo === "toggle" && Boolean(estado[c.id]));
-  // Casilla que cambia el aplicado (Negociación Analítica): manda sobre el estilo Sutil.
-  const otroAplicado = activas.find((c) => c.aplicado)?.aplicado;
-  const mod = otroAplicado
-    ? modificadorAccion(ficha.ficha, { ...tirada, aplicado: otroAplicado }, enEspecialidad, ficha.modificadores, false)
-    : modificadorAccion(ficha.ficha, tirada, enEspecialidad, ficha.modificadores, sutil);
-  const aplicadoId = otroAplicado ?? (sutil && tirada.aplicadoSutil ? tirada.aplicadoSutil : tirada.aplicado);
-  const base = mod.total + ajustesFijos.reduce((t, a) => t + a.valor, 0);
-
-  const modo = modoElegido(condiciones, estado);
   const ctx: ContextoAccion = {
     id: tirada.id,
     grupo: tirada.grupo,
     habilidad: tirada.habilidad,
-    modoElegido: modo,
+    modoElegido: modoElegido(tirada.condiciones ?? [], estado),
     ...(tirada.familiaArma && { familiaArma: tirada.familiaArma }),
     ...(tirada.empleoArma && { empleoArma: tirada.empleoArma }),
     ...(tirada.desarmado && { desarmado: true }),
     ...(tirada.contundente && { contundente: true }),
     ...(tirada.especialidadArma && { especialidadArma: tirada.especialidadArma }),
   };
+  // Sin los que piden especialidad si no se va en ella, y el mejor de los que no se suman.
+  const { mods, condiciones, bonosTramo } = sinApilar(
+    {
+      mods: ficha.modificadores,
+      condiciones: tirada.condiciones ?? [],
+      bonosTramo: bonosTramoAplicables(tirada.bonosTramo ?? [], estado, enEspecialidad),
+    },
+    ctx,
+    estado,
+  );
+
+  const activas = condiciones.filter((c): c is Toggle => c.tipo === "toggle" && Boolean(estado[c.id]));
+  // Casilla que cambia el aplicado (Negociación Analítica): manda sobre el estilo Sutil.
+  const otroAplicado = activas.find((c) => c.aplicado)?.aplicado;
+  const mod = otroAplicado
+    ? modificadorAccion(ficha.ficha, { ...tirada, aplicado: otroAplicado }, enEspecialidad, mods, false)
+    : modificadorAccion(ficha.ficha, tirada, enEspecialidad, mods, sutil);
+  const aplicadoId = otroAplicado ?? (sutil && tirada.aplicadoSutil ? tirada.aplicadoSutil : tirada.aplicado);
+  const base = mod.total + ajustesFijos.reduce((t, a) => t + a.valor, 0);
+
+  const modo = ctx.modoElegido;
+  const elegidas = opcionesElegidas(condiciones, estado);
   const modificador =
-    base + bonoAlcance(ficha.modificadores, ctx) + valorCondiciones(condiciones, estado) + valorBonosTramo(bonosTramo, estado);
+    base + bonoAlcance(mods, ctx) + valorCondiciones(condiciones, estado) + valorBonosTramo(bonosTramo, estado);
 
   const habilidadLabel = tirada.habilidad ? HABILIDADES.find((h) => h.id === tirada.habilidad)!.label : null;
   const desglose: LineaDesglose[] = [
@@ -187,7 +245,7 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
       ? [{ etiqueta: `${habilidadLabel}${enEspecialidad ? " (especialidad)" : ""}`, valor: mod.habilidad ?? 0 }]
       : []),
     ...ajustesFijos.map((a) => ({ etiqueta: a.fuente, valor: a.valor })),
-    ...desgloseAlcance(ficha.modificadores, ctx),
+    ...desgloseAlcance(mods, ctx),
     ...desgloseCondiciones(condiciones, estado),
     ...desgloseBonosTramo(bonosTramo, estado),
     ...(circunstancial !== 0 ? [{ etiqueta: "Modificador circunstancial", valor: circunstancial }] : []),
@@ -213,11 +271,17 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
       ...notasCondiciones(condiciones, estado),
     ],
     modoElegido: modo,
-    ventaja: tirada.ventaja ?? activas.find((c) => c.ventaja)?.etiqueta ?? null,
+    ventaja: tirada.ventaja ?? activas.find((c) => c.ventaja)?.etiqueta ?? ventajaDeOpcion(elegidas),
     subeGrado: activas.find((c) => c.subeGrado)?.etiqueta ?? null,
     danio: danioDeCasillas(activas),
-    costeFatiga: activas.reduce((t, c) => t + (c.costeFatiga ?? 0), 0),
+    costeFatiga:
+      activas.reduce((t, c) => t + (c.costeFatiga ?? 0), 0) + elegidas.reduce((t, o) => t + (o.costeFatiga ?? 0), 0),
   };
+}
+
+function ventajaDeOpcion(elegidas: OpcionCondicion[]): string | null {
+  const o = elegidas.find((x) => x.ventaja);
+  return o ? (o.fuenteVentaja ?? o.etiqueta) : null;
 }
 
 function especialidadFijaMontada(sheet: Sheet, tirada: Accion, tiene: boolean): TiradaMontada["especialidadArma"] {

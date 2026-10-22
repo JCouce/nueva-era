@@ -29,6 +29,12 @@ export type MejoraDeArma = {
 
 export const ID_BUSQUEDA_MIRA = "mira_telescopica_busqueda";
 
+// Grupo de no apilamiento de la visión aumentada (Ojo Biónico, miras y gafas que hagan algo
+// parecido, §11.3): de lo que entre en una tirada con este grupo, solo vale el mayor.
+// TODO(revisar): de las gafas y visores del catálogo ninguno da un bono numérico a ataque o
+// a percepción visual (Visor Nocturno y Térmico son notas), así que hoy solo está la mira.
+export const VISION_AUMENTADA = "vision_aumentada";
+
 function condicionBusquedaMira(bono: number): CondicionTirada {
   return {
     id: ID_BUSQUEDA_MIRA,
@@ -38,6 +44,8 @@ function condicionBusquedaMira(bono: number): CondicionTirada {
     valorActivo: bono,
     valorInactivo: 0,
     nota: "Solo percepción visual a través de la mira.",
+    // No se suma con el Ojo Biónico: vale el mayor (§11.3, tercera ronda).
+    noApila: VISION_AUMENTADA,
   };
 }
 
@@ -64,6 +72,7 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // opción de tramo de la tirada de ataque, no es un +1 incondicional.
         modificadores: [],
         ajusteTramo: { media: 1, larga: 1 },
+        noApila: VISION_AUMENTADA,
         // "El mismo bonificador sirve para tiradas de búsqueda": toggle plano en
         // Alerta Activa, sin distancia (decisión del usuario 2026-09-28). Una sola
         // vez aunque haya varias miras — lo agrega condicionBusquedaMira()
@@ -112,6 +121,7 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // Total explícito del nivel, no +1 adicional sobre el del nivel 1
         // (supuesto S9: solo aplica dentro de la MISMA pieza instalada).
         ajusteTramo: { media: 2, larga: 2 },
+        noApila: VISION_AUMENTADA,
         // Mismo id que el del nivel 1: lo sustituye (S9, acumulaPorClave).
         condiciones: [condicionBusquedaMira(2)],
         motor: [

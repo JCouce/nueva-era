@@ -119,6 +119,9 @@ export type NivelModulo = {
   // pintarse como control aparte — ver combate.ts. Las claves ausentes no
   // tocan ese tramo.
   ajusteTramo?: Partial<Record<TramoDistancia, number>>;
+  // Grupo de no apilamiento del bono de `ajusteTramo` (A2a de aumentos): con el Ojo Biónico
+  // solo vale el mayor (montarTirada). La Mira Telescópica: "vision_aumentada".
+  noApila?: string;
   // Igual que ajusteTramo, pero incondicional: se suma a los cuatro tramos
   // por igual mientras la pieza está instalada (el -1 del Lanzagranadas
   // Integrado por el peso, por ejemplo). No es una condición porque no hay

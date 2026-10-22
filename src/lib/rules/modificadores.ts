@@ -129,9 +129,13 @@ export type AlcanceModificador =
 
 export type Modificador =
   | { tipo: "atributo"; id: AtributoId; valor: number }
-  | { tipo: "derivado"; id: DerivadoId; valor: number }
+  // `noApila` (A2a de aumentos): grupo de no apilamiento. De lo que llega a un mismo
+  // derivado o a una misma tirada con el mismo grupo, solo vale el mayor (Ojo Biónico con
+  // miras y gafas, "vision_aumentada"). En la tirada lo resuelve montarTirada (también
+  // contra casillas y bonos por tramo); en el derivado, bonoDerivado.
+  | { tipo: "derivado"; id: DerivadoId; valor: number; noApila?: string }
   | { tipo: "habilidad"; id: HabilidadId; valor: number }
-  | { tipo: "tirada"; alcance: AlcanceModificador; valor: number }
+  | { tipo: "tirada"; alcance: AlcanceModificador; valor: number; noApila?: string }
   // Nivel de una disciplina psiónica (Resonancia +1 del Arianyi, §14.6). No toca
   // ninguna tirada: sube el nivel efectivo, que es el que miran requisitos y
   // poderes (psionica.ts: nivelesDePsionica). Ver docs/modificadores-tiradas.md §9.
@@ -170,10 +174,34 @@ export function bonoDerivado(
   mods: ModificadorConFuente[],
   id: DerivadoId,
 ): number {
-  return mods.reduce(
-    (t, m) => (m.tipo === "derivado" && m.id === id ? t + m.valor : t),
-    0,
-  );
+  const propios = mods.filter((m) => m.tipo === "derivado" && m.id === id);
+  const fuera = descartadosPorNoApila(propios, (m) => (m.tipo === "derivado" ? m.noApila : undefined), (m) => m.valor);
+  return propios.reduce((t, m) => (fuera.has(m) ? t : t + m.valor), 0);
+}
+
+// No apilamiento (A2a): de los elementos con el mismo grupo y valor distinto de 0, se queda
+// el mayor (con empate, el primero); devuelve los demás, cada uno con el que gana. Los sin
+// grupo no compiten.
+export function descartadosPorNoApila<T>(
+  items: readonly T[],
+  grupoDe: (item: T) => string | undefined,
+  valorDe: (item: T) => number,
+): Map<T, T> {
+  const mejor = new Map<string, T>();
+  for (const item of items) {
+    const grupo = grupoDe(item);
+    if (!grupo || valorDe(item) === 0) continue;
+    const actual = mejor.get(grupo);
+    if (actual === undefined || valorDe(item) > valorDe(actual)) mejor.set(grupo, item);
+  }
+  const fuera = new Map<T, T>();
+  for (const item of items) {
+    const grupo = grupoDe(item);
+    if (!grupo || valorDe(item) === 0) continue;
+    const gana = mejor.get(grupo)!;
+    if (gana !== item) fuera.set(item, gana);
+  }
+  return fuera;
 }
 
 export function bonoHabilidad(

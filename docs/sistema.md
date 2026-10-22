@@ -1222,6 +1222,39 @@ al preparar su modelado:
   sin todos sus requisitos funcionando no da efectos (ni atributos ni rebajas), en cadena,
   como una dote (S34): `operacionesActivas` (`rules/aumentos.ts`). **Dos multiplicadores de
   vida:** cuenta el mayor (supuesto; hoy solo existe Hipertrofia, que no se repite).
+- *En la app (A2a, tiradas y blindaje):* `rules/aumentosTiradas.ts`, con
+  `operacionesActivas` (requisito roto, sin nada) y los niveles de implante acumulados (el
+  nivel alto sustituye la misma casilla o salvación).
+  - **Selector "Contra…"** (decisión del usuario) en las salvaciones de Fortaleza y Voluntad
+    que tengan alguna amenaza cubierta: "Nada en especial" por defecto y una opción por
+    amenaza (`AMENAZAS`). La opción suma todo lo que le aplica, con una línea por fuente en
+    el desglose. Fortaleza: ceguera, ceguera por detonación (suma también lo de ceguera),
+    sordera, aturdimiento, shock, asfixia, toxinas, venenos, enfermedad, radiación y frío o
+    calor del ambiente. Voluntad: confusión, miedo, coerción, intimidación, manipulación
+    mental, dominación, sugestión coercitiva y alteración de la voluntad.
+  - **Ventaja:** no se acumula. Si una fuente la da gratis (Resiliencia), no se cobra la de
+    pago (Biogénesis). Si solo hay de pago, salen dos opciones, sin pagar y "pagando
+    fatiga" (ventaja y 1 de fatiga), porque el texto lo deja a elección ("permite emplear").
+  - **Dominación mental, sugestión coercitiva y alteración de la voluntad cuentan también
+    como manipulación mental** (usuario, 2026-10-22): Regulación (+1) y Matriz (+2) se
+    suman (+3).
+  - **Matriz de Red:** la repetición de la salvación al final de cada turno, como texto en
+    la salvación de Voluntad.
+  - **`noApila` (grupo `vision_aumentada`):** de lo que entra en una tirada con el mismo
+    grupo, solo vale el mayor; el resto sale en el desglose a 0, diciendo con cuál no se
+    suma. Ojo Biónico a distancia (+1/+1/+2/+3, siempre activo) y su casilla de percepción
+    visual en Buscar/percibir (+1/+2/+3/+4), contra la Mira Telescópica (bono por tramo y
+    casilla de búsqueda). Los visores no dan bono numérico, así que hoy no entran. La mira
+    integrada de los fusiles de precisión va dentro de los números del arma y no compite
+    (`TODO(revisar)`, `combate.ts`).
+  - **Alerta pasiva:** el Ojo la sube con su nivel (Modificador `derivado` "alerta", también
+    con `noApila`). La Detección Química va como nota junto a la Alerta (+2 a 4 m o menos) y
+    como casilla en Buscar/percibir. La ventaja auditiva de Vestíbulo, solo casilla en
+    Buscar/percibir.
+  - **Casillas en Buscar/percibir:** Ojo (visual), Vestíbulo (ventaja auditiva), Detección
+    Química (+2 a 4 m o menos) y Ultravioleta (+2 buscando accesos ocultos).
+  - **Armadura natural (R6):** Osteotendinosa y Matriz Ósea, +1 contra Cinético cada una,
+    una línea por pieza en "Bloquear daño" con su nota. La de especie no cambia.
 
 ### 11.2 Lo que el documento no dice `[PENDIENTE]`
 - **Tope de implantes**: pregunta 11, sigue abierta.

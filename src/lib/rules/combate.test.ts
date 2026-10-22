@@ -392,7 +392,7 @@ describe("mejoras que afectan a la distancia", () => {
     let sheet = equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "fusil_precision_telum" });
     sheet = equipar(sheet, { instanciaId: "m1", catalogoId: "mira_telescopica", nivel: 3, instaladoEnId: "f1" });
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Telum")!;
-    assert.deepEqual(fila.bonosTramo, [{ fuente: "Mira Telescópica", porTramo: { media: 1, larga: 1 } }]);
+    assert.deepEqual(fila.bonosTramo, [{ fuente: "Mira Telescópica", porTramo: { media: 1, larga: 1 }, noApila: "vision_aumentada" }]);
   });
 
   test("fusil de precisión con mira nv2: sin bono de tramo extra (nv2 no mejora el +1)", () => {
@@ -417,7 +417,7 @@ describe("mejoras que afectan a la distancia", () => {
     assert.equal(opcion(tramo, "media"), 0);
     assert.equal(opcion(tramo, "larga"), -2);
     assert.deepEqual(fila.bonosTramo, [
-      { fuente: "Mira Telescópica", porTramo: { media: 1, larga: 1 } },
+      { fuente: "Mira Telescópica", porTramo: { media: 1, larga: 1 }, noApila: "vision_aumentada" },
     ]);
   });
 
@@ -432,7 +432,7 @@ describe("mejoras que afectan a la distancia", () => {
     });
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
     assert.deepEqual(fila.bonosTramo, [
-      { fuente: "Mira Telescópica", porTramo: { media: 2, larga: 2 } },
+      { fuente: "Mira Telescópica", porTramo: { media: 2, larga: 2 }, noApila: "vision_aumentada" },
     ]);
   });
 

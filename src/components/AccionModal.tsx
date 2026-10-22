@@ -9,6 +9,7 @@ import {
   montarTirada,
   avisoInsuficiente,
   resumenCasilla,
+  resumenOpcion,
   type Accion,
   type CondicionTirada,
   type EleccionTirada,
@@ -95,7 +96,7 @@ export function ControlCondicion({
               }`}
             >
               {o.etiqueta}
-              <span className="ml-1 tabular-nums">{signo(o.valor)}</span>
+              <span className="ml-1 tabular-nums">{resumenOpcion(o)}</span>
             </button>
           ))}
         </div>

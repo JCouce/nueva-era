@@ -943,9 +943,11 @@ function SeccionAumentos({ ctx }: { ctx: ContextoPagoAumento }) {
   return (
     <>
       <p className="font-sans text-[11px] leading-relaxed text-muted">
-        De momento solo se aplican los atributos, la vida de Hipertrofia y las rebajas de coste de
-        habilidad (con la ficha aprobada); el resto de sus efectos, todavía no. En creación, quitarlos
-        devuelve lo pagado; aprobada la ficha, no devuelve nada.
+        De momento solo se aplican los atributos, la vida de Hipertrofia, las rebajas de coste de
+        habilidad (con la ficha aprobada), los bonos a salvaciones (selector «Contra…»), las casillas
+        de Buscar/percibir, la Alerta pasiva del Ojo, su bono a distancia y la armadura natural; el
+        resto de sus efectos, todavía no. En creación, quitarlos devuelve lo pagado; aprobada la
+        ficha, no devuelve nada.
       </p>
       <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
         {`// Operaciones genéticas · ${OPERACIONES_GENETICAS.length}`}

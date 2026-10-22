@@ -16,6 +16,10 @@
 // ajusteCosteConAumentos). Esos efectos llevan su MotorMetadata en "construido"; el
 // resto sigue "pendiente" o "bloqueado" (salvo las frases puramente narrativas, que
 // ya se ven en la card) hasta A2-A7.
+// Tanda A2a: `salvaciones` (selector "Contra…"), `casillas` (con alcance), `textos`,
+// `notaAlertaPasiva` y `armaduraNatural` en la operación o en la opción de Introgresión, y
+// `salvaciones`/`condiciones`/`modificadores` por nivel en los implantes (el Ojo, con
+// `noApila`). Los lee rules/aumentosTiradas.ts.
 //
 // MotorMetadata: copiado del modelado. Donde el modelado dice `mecanismo: "hueco"`
 // (aún no hay mecanismo en el motor), se pone el mecanismo más cercano por tipo
@@ -28,12 +32,16 @@
 // (sin acción: ajuste de coste de progresión) y `formula_salud` (suma_derivado:
 // Modificador "multiplicadorVida" sobre la vida).
 import type { HabilidadId } from "../rules/habilidades";
+import type { CondicionTirada } from "../rules/condiciones";
 import type { Modificador } from "../rules/modificadores";
 import type { MotorMetadata } from "../rules/motor";
+import type { EfectoSalvacion, EfectosTiradaAumento } from "../rules/aumentosTiradas";
 import type { NivelModulo, Rareza } from "./equipo";
+import { VISION_AUMENTADA } from "./mejorasArma";
 
-// Elección al comprar (Introgresión: el sentido). Cada opción con su texto.
-export type OpcionAumento = { id: string; label: string; detalle: string[] };
+// Elección al comprar (Introgresión: el sentido). Cada opción con su texto y, desde A2a,
+// lo que ese sentido pone en las tiradas (EfectosTiradaAumento).
+export type OpcionAumento = { id: string; label: string; detalle: string[] } & EfectosTiradaAumento;
 export type EleccionAumento = { id: string; label: string; opciones: OpcionAumento[] };
 
 export type OperacionGenetica = {
@@ -55,11 +63,15 @@ export type OperacionGenetica = {
   // Solo efectos permanentes (A1: +1 a atributos básicos y multiplicadorVida).
   modificadores: Modificador[];
   motor: MotorMetadata[];
-};
+} & EfectosTiradaAumento;
 
 // Modelos del Brazo Biónico en los niveles 3 y 4: se elige al comprar ese nivel.
 export type VarianteImplante = { id: string; label: string; detalle: string[] };
-export type NivelImplante = NivelModulo & { variantes?: VarianteImplante[] };
+// A2a: `modificadores` lleva los bonos siempre activos (Ojo a distancia y a la Alerta
+// pasiva), `condiciones` las casillas con alcance y `salvaciones` lo que entra en el
+// selector "Contra…" (rules/aumentosTiradas.ts). Los niveles se acumulan; la misma clave
+// en un nivel alto sustituye a la del bajo.
+export type NivelImplante = NivelModulo & { variantes?: VarianteImplante[]; salvaciones?: EfectoSalvacion[] };
 
 export type Implante = {
   familia: "implante";
@@ -225,10 +237,22 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "percepcion", valor: 1 }],
+    salvaciones: [{ contra: ["ceguera", "sordera"], bono: 2 }],
+    // La ventaja auditiva solo al buscar activamente: no sube la Alerta pasiva (§11.3).
+    casillas: [
+      {
+        id: "aum_vestibulo_auditiva",
+        tipo: "toggle",
+        etiqueta: "¿Percepción auditiva? (detectar ocultos o rastrear por el sonido)",
+        alcance: { tipo: "tiradaId", id: "alerta_activa" },
+        valorActivo: 0,
+        ventaja: true,
+      },
+    ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -307,9 +331,10 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "caracter", valor: 1 }],
+    salvaciones: [{ contra: ["coercion", "intimidacion", "manipulacion_mental", "miedo"], bono: 1 }],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -351,11 +376,18 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "caracter", valor: 1 }],
+    salvaciones: [{ contra: ["dominacion_mental", "sugestion_coercitiva", "alteracion_voluntad"], bono: 2 }],
+    textos: [
+      {
+        en: { tipo: "tiradaId", id: "salv_voluntad" },
+        texto: "Si está dominado o manipulado, puede repetir la salvación al final de cada uno de sus turnos para romper el control de inmediato.",
+      },
+    ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Salvaciones" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "nota_fija", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Salvaciones" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "nota_fija", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "nota_fija", estado: "pendiente" },
     ],
@@ -375,9 +407,11 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "fuerza", valor: 1 }, { tipo: "atributo", id: "agilidad", valor: 1 }],
+    // R6: +1 contra Cinético, con la nota de a qué golpes vale.
+    armaduraNatural: { valor: 1, tipos: ["cinetico"], nota: "Vale contra golpes perforantes y cortantes; el máster lo arbitra." },
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
     ],
   },
   {
@@ -395,10 +429,11 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "fuerza", valor: 1 }, { tipo: "atributo", id: "aguante", valor: 1 }],
+    armaduraNatural: { valor: 1, tipos: ["cinetico"], nota: "Vale contra golpes contundentes e impactos masivos; el máster lo arbitra." },
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "acciones_fisicas_carga" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "penalizadores por carga sin mecanizar (sistema.md §5.5)" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
     ],
   },
   {
@@ -517,10 +552,11 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "aguante", valor: 1 }],
+    salvaciones: [{ contra: ["asfixia", "toxinas", "venenos"], ventaja: "fatiga" }],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -561,9 +597,10 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "aguante", valor: 1 }],
+    salvaciones: [{ contra: ["enfermedad", "toxinas", "venenos", "radiacion", "termicos", "asfixia"], ventaja: "gratis" }],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -604,10 +641,14 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [],
+    salvaciones: [
+      { contra: ["aturdimiento", "shock"], bono: 2 },
+      { contra: ["confusion", "miedo"], bono: 2 },
+    ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_sacudir_miedo" }, mecanismo: "accion_equipo", estado: "pendiente" },
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_dominar_terror" }, mecanismo: "accion_equipo", estado: "pendiente" },
     ],
@@ -634,6 +675,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
           detalle: [
             "La adaptación biológica procesa los fotones a nivel celular orgánico, permitiendo una visión nocturna natural que resiste mejor los destellos y explosiones intensas. La visión se adapta a espacios de escasa iluminación con la misma claridad que en espacios iluminados, aunque se podrá restringir a grandes distancias. Además otorga un bonificador de +2 en tiradas de salvación contra ceguera por detonaciones gracias a la rápida respuesta de obturación orgánica.",
           ],
+          salvaciones: [{ contra: ["ceguera_detonacion"], bono: 2 }],
         },
         {
           id: "vision_termica",
@@ -655,6 +697,17 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
           detalle: [
             "La expansión de la visión hacia los ultravioletas permite identificar residuos químicos recientes, fluidos orgánicos, huellas de polímeros de ocultación, marcas de seguridad holográficas y la ionización residual del armamento energético. Proporciona un bonificador de +2 en tiradas de investigación de campo o búsqueda de accesos ocultos.",
           ],
+          // El +2 a investigación de campo (especialidad) queda pendiente: no hay alcance
+          // por especialidad.
+          casillas: [
+            {
+              id: "aum_introgresion_ultravioleta_accesos",
+              tipo: "toggle",
+              etiqueta: "¿Buscas accesos ocultos?",
+              alcance: { tipo: "tiradaId", id: "alerta_activa" },
+              valorActivo: 2,
+            },
+          ],
         },
         {
           id: "deteccion_quimica",
@@ -662,6 +715,18 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
           detalle: [
             "Es de carácter estrictamente olfativo, capaz de percibir trazas químicas de transpiración y emisiones hormonales en espacios confinados hasta un radio de 20 metros. Este sentido contrarresta las técnicas de camuflaje químico y otorga un bonificador para detectar objetivos ocultos a corta distancia de +2 (4 metros).",
           ],
+          // Sube también la Alerta pasiva (§11.3), pero solo a 4 m o menos: allí va como nota.
+          casillas: [
+            {
+              id: "aum_introgresion_quimica_cerca",
+              tipo: "toggle",
+              etiqueta: "¿Objetivo oculto a 4 m o menos?",
+              alcance: { tipo: "tiradaId", id: "alerta_activa" },
+              valorActivo: 2,
+              nota: "Solo si puedes usar el olfato (en el vacío con traje, no).",
+            },
+          ],
+          notaAlertaPasiva: "+2 contra ocultos a 4 m o menos, si puedes usar el olfato",
         },
         {
           id: "ecolocalizacion",
@@ -677,13 +742,29 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     motor: [
       { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "pendiente" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_barrido_electromagnetico" }, mecanismo: "accion_equipo", estado: "pendiente" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "sigilo" }, mecanismo: "nota_fija", estado: "pendiente" },
     ],
   },
 ];
+
+// Ojo Biónico (A2a): el bono a distancia (siempre activo) y el de percepción visual (casilla
+// en Alerta activa y suma a la pasiva) no se apilan con miras ni gafas de visión aumentada:
+// vale el mayor (grupo "vision_aumentada", también en la Mira Telescópica).
+const DISTANCIA = { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combate_distancia" } as const;
+
+function casillaVisualOjo(valor: number): CondicionTirada {
+  return {
+    id: "aum_ojo_visual",
+    tipo: "toggle",
+    etiqueta: "¿Es percepción visual?",
+    alcance: { tipo: "tiradaId", id: "alerta_activa" },
+    valorActivo: valor,
+    noApila: VISION_AUMENTADA,
+  };
+}
 
 export const IMPLANTES: Implante[] = [
   {
@@ -947,11 +1028,16 @@ export const IMPLANTES: Implante[] = [
           "Además gana un bonificador de +2 en tiradas de salvación contra efectos de ceguera. La mejora no se apila con miras telescópicas u otros objetos de visión aumentada; en tal caso, usa siempre el mayor bonificador.",
           "Incluye visión nocturna y termo-óptica con un alcance de 500 metros.",
         ],
-        modificadores: [],
+        modificadores: [
+          { tipo: "tirada", alcance: DISTANCIA, valor: 1, noApila: VISION_AUMENTADA },
+          { tipo: "derivado", id: "alerta", valor: 1, noApila: VISION_AUMENTADA },
+        ],
+        condiciones: [casillaVisualOjo(1)],
+        salvaciones: [{ contra: ["ceguera"], bono: 2 }],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "pendiente" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
         ],
       },
@@ -963,9 +1049,13 @@ export const IMPLANTES: Implante[] = [
           "El implante aumenta el bonificador en tiradas de percepción visual a +2 y se hace inmune a efecto de ceguera.",
           "El ojo incluye un sistema de seguimiento predictivo que permite ignorar penalizadores menores por cobertura visual, reduciendo en 1 los niveles de cobertura visual y termo-óptica.",
         ],
-        modificadores: [],
+        // El nivel 2 no sube el bono a distancia: sigue el +1 del nivel 1.
+        modificadores: [
+          { tipo: "derivado", id: "alerta", valor: 2, noApila: VISION_AUMENTADA },
+        ],
+        condiciones: [casillaVisualOjo(2)],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:ceguera" }, mecanismo: "gate_instalacion", arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "capa inmunidad_estado" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
         ],
@@ -978,10 +1068,14 @@ export const IMPLANTES: Implante[] = [
           "El ojo aumenta sus bonificadores, otorga un bonificador de +3 a tiradas de percepción visual y otro de +2 a las de ataques a distancia.",
           "Incorpora visión de rayos X que permite ver a través de tejidos sencillos con un alcance de 10 metros.",
         ],
-        modificadores: [],
+        modificadores: [
+          { tipo: "tirada", alcance: DISTANCIA, valor: 2, noApila: VISION_AUMENTADA },
+          { tipo: "derivado", id: "alerta", valor: 3, noApila: VISION_AUMENTADA },
+        ],
+        condiciones: [casillaVisualOjo(3)],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "pendiente" },
         ],
       },
@@ -993,10 +1087,14 @@ export const IMPLANTES: Implante[] = [
           "El cenit de la tecnología optoelectrónica táctica. El personaje obtiene un bonificador de +4 a tiradas de percepción visual y un +3 a las de ataques a distancia, siendo completamente inmune a la ceguera.",
           "Integra un sistema de visión multi-espectro simultáneo (nocturna, térmica y rayos X con un alcance de 50 metros a través de paredes ligeras o blindajes no reforzados) y un procesador de seguimiento que reduce en dos niveles por completo los penalizadores por cobertura visual.",
         ],
-        modificadores: [],
+        modificadores: [
+          { tipo: "tirada", alcance: DISTANCIA, valor: 3, noApila: VISION_AUMENTADA },
+          { tipo: "derivado", id: "alerta", valor: 4, noApila: VISION_AUMENTADA },
+        ],
+        condiciones: [casillaVisualOjo(4)],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "construido" },
           { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:ceguera" }, mecanismo: "gate_instalacion", arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "capa inmunidad_estado" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "pendiente" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
@@ -1122,8 +1220,10 @@ export const IMPLANTES: Implante[] = [
           "Además, como reacción y con el gasto de un punto de fatiga el enjambre puede densificarse de forma reactiva bajo la dermis, otorgando 3 puntos de blindaje contra un golpe específico. Si el impacto causa atudimiento el usuario recibe un bonificador de +3 contra el efecto.",
         ],
         modificadores: [],
+        // El +3 contra el aturdimiento de un golpe densificado llega con la acción (A4).
+        salvaciones: [{ contra: ["toxinas", "venenos", "enfermedad"], bono: 4 }],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_densificar" }, mecanismo: "accion_equipo", estado: "pendiente" },
         ],
       },

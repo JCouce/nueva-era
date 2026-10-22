@@ -8,6 +8,7 @@
 // combate no están en la ficha, por eso entran aparte.
 import { APLICADOS, ATRIBUTOS, type AplicadoId, type AtributoId } from "./atributos";
 import { ajusteCosteDeSubida, modificadoresDeAumentos, saldoBolsaAumentos } from "./aumentos";
+import { casillasDeAumentos, notasAlertaPasivaDeAumentos, textosDeAumentos } from "./aumentosTiradas";
 import { tieneEscudoMelee, type ArmaduraNatural } from "./blindaje";
 import {
   alerta,
@@ -70,7 +71,7 @@ import {
 } from "./estados";
 import { levitacion, type PoderDisponible } from "./poderes";
 import { fatigaEfectiva } from "./vitalidad";
-import { alcanzaA, type FamiliaArma, type ModificadorConFuente } from "./modificadores";
+import { alcanzaA, descartadosPorNoApila, type FamiliaArma, type ModificadorConFuente } from "./modificadores";
 import { conTextosEnTirada, contextoDe, junta, textosDe, textosSinDado } from "./textosTirada";
 import type { Sheet } from "./sheet";
 import type { Accion, AccionDirecta } from "./acciones";
@@ -124,12 +125,13 @@ export type FichaResuelta = {
   // (desgloseBlindaje) lo pide el modal con lo que elige el jugador, pasándole
   // la armadura natural de aquí.
   blindaje: { tieneEscudoMelee: boolean; armaduraNatural: ArmaduraNatural };
-  // Casillas con alcance del equipo, de la especie (§14.8) y de las dotes (§9.3),
-  // indexadas una vez (consultaIndiceCondiciones). Las de especie y dotes son derivadas:
-  // también al NPC.
+  // Casillas con alcance del equipo, de la especie (§14.8), de las dotes (§9.3) y de los
+  // aumentos (A2a: casillas de Alerta y el selector "Contra…" de las salvaciones),
+  // indexadas una vez (consultaIndiceCondiciones). Las de especie, dotes y aumentos son
+  // derivadas: también al NPC.
   indiceCondiciones: IndiceCondiciones;
-  // Textos sin mecanizar de la especie (§14.10) y de las dotes (§9.3) que cuelgan de una
-  // tirada: los pone conExtrasDeFicha en su nota o en su texto de crítico.
+  // Textos sin mecanizar de la especie (§14.10), de las dotes (§9.3) y de los aumentos
+  // (A2a: Matriz de Red en la salvación de Voluntad) que cuelgan de una tirada: los pone conExtrasDeFicha en su nota o en su texto de crítico.
   textosTirada: TextoEnTirada[];
   // Lo de las dotes que no es casilla ni texto (D2b-1): bonos por tramo de distancia con
   // su alcance y críticos fijos por especialidad de arma. También los pone conExtrasDeFicha.
@@ -275,8 +277,8 @@ export function resolverFicha(
     formulaMovimiento,
     multiplicadorCarga,
     blindaje: { tieneEscudoMelee: tieneEscudoMelee(sheet), armaduraNatural: armaduraNaturalDeEspecie(especie) },
-    indiceCondiciones: indiceDeCondiciones(sheet, [...casillasDeEspecie(especie), ...dotes.casillas]),
-    textosTirada: [...textosDeEspecie(especie), ...dotes.textos],
+    indiceCondiciones: indiceDeCondiciones(sheet, [...casillasDeEspecie(especie), ...dotes.casillas, ...casillasDeAumentos(sheet)]),
+    textosTirada: [...textosDeEspecie(especie), ...dotes.textos, ...textosDeAumentos(sheet)],
     extrasDotes: { bonosTramo: dotes.bonosTramo, criticos: dotes.criticos, permisos: dotes.permisos, descuentos: dotes.descuentos },
     accionesDotes: accionesDeDotes(activas),
     poderesDotes: poderesDeDotes(activas, sheet, psionica.paraEfectos),
@@ -352,6 +354,7 @@ export function conExtrasDirectaDeFicha(ficha: Pick<FichaResuelta, "textosTirada
 // --- Notas de Personaje → Estado ------------------------------------------------
 
 export type CampoEstado =
+  | "alerta"
   | "carrera"
   | "saltoVertical"
   | "saltoHorizontal"
@@ -381,6 +384,7 @@ const CAMPO_DE_FORMULA: Record<keyof FormulaMovimientoResuelta["formula"], Campo
 // Varias, separadas por coma. undefined si el valor sale de la fórmula general.
 export function notasDeEstado(ficha: FichaResuelta): NotasEstado {
   const notas: Record<CampoEstado, string[]> = {
+    alerta: [],
     carrera: [],
     saltoVertical: [],
     saltoHorizontal: [],
@@ -403,6 +407,16 @@ export function notasDeEstado(ficha: FichaResuelta): NotasEstado {
     if (!campo) continue;
     notas[campo].push(`${m.valor >= 0 ? "+" : ""}${m.valor} · ${m.fuente}`);
   }
+  // Alerta pasiva (A2a): lo que la sube, con su fuente (el que no se apila, a 0), y lo que
+  // solo vale en ciertas condiciones, como nota sin sumar (Detección Química).
+  const deAlerta = ficha.modificadores.filter((m) => m.tipo === "derivado" && m.id === "alerta");
+  const fueraAlerta = descartadosPorNoApila(deAlerta, (m) => (m.tipo === "derivado" ? m.noApila : undefined), (m) => m.valor);
+  for (const m of deAlerta) {
+    const gana = fueraAlerta.get(m);
+    notas.alerta.push(gana ? `${m.fuente} no se suma con ${gana.fuente}` : `${m.valor >= 0 ? "+" : ""}${m.valor} · ${m.fuente}`);
+  }
+  notas.alerta.push(...notasAlertaPasivaDeAumentos(ficha.ficha));
+
   const { valor, fuente } = ficha.multiplicadorCarga;
   if (valor !== 1) notas.carga.push(`×${String(valor).replace(".", ",")}${fuente ? ` · ${fuente}` : ""}`);
 

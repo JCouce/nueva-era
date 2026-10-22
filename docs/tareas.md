@@ -1498,6 +1498,15 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
   (Modificador `multiplicadorVida` en `salud()`) y `retirarPieza` (recorta la vida al
   desequipar).
 - [ ] A2 · Tiradas: bonos, ventajas y casillas.
+  - [x] A2a · Canal de casillas, selector "Contra…" de salvaciones, `noApila`, Alerta
+    pasiva y armadura natural. *(sin commit; falta revisión y navegador)*
+    `rules/aumentosTiradas.ts` (`casillasDeAumentos`, `textosDeAumentos`,
+    `notasAlertaPasivaDeAumentos`, `armaduraNaturalDeAumentos`) al índice de condiciones y a
+    `textosTirada` en `resolverFicha`; `OpcionCondicion` con `ventaja`/`costeFatiga`/`partes`;
+    `noApila` en `montarTirada` y `bonoDerivado` (Ojo con la Mira Telescópica); armadura
+    natural en `desgloseBlindaje`.
+  - [ ] A2b · Alcance `aplicado:<a>`, casillas de la rama cognitiva, Foveo, Iniciativa,
+    Proyección/Matriz Actitud y textos de tirada.
 - [ ] A3 · Penalizadores.
 - [ ] A4 · Acciones propias y "una vez por escena".
 - [ ] A5 · Activables.

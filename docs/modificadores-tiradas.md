@@ -614,6 +614,17 @@ Tests: `montaje-caracterizacion.test.ts` fija lo que montaba cada sitio de la UI
 número de ahí cambia, es un bug.** Sus fichas están enteras de vida y fatiga, así que M1b
 no movió ninguno: lo que M1b cambia a propósito vive en `umbrales.test.ts`.
 
+**No apilamiento (`noApila`, A2a de aumentos, 2026-10-22).** Un `Modificador` `tirada` o
+`derivado`, una casilla `toggle` y un `BonoPorTramo` (vía `NivelModulo.noApila` junto a
+`ajusteTramo`) pueden llevar un grupo. `montarTirada` junta lo que entra en la tirada con el
+mismo grupo (alcance que casa, casilla marcada, bono en el tramo elegido) y deja solo el
+mayor; los demás siguen en el desglose a 0, con "(no se suma con X)". En los derivados lo
+hace `bonoDerivado`. Hoy: `vision_aumentada` (Ojo Biónico y Mira Telescópica).
+
+**Opciones con ventaja y fatiga (A2a).** `OpcionCondicion` lleva también `ventaja`,
+`fuenteVentaja`, `costeFatiga` y `partes` (una línea del desglose por fuente). Lo usa el
+selector "Contra…" de las salvaciones (`rules/aumentosTiradas.ts`).
+
 **Umbrales de salud y fatiga (M1b, 2026-10-13).** El "−1/−3/−5 a todo" y "−1/−2 a todo"
 de §7 no los suma nadie a mano: `resolverFicha` los añade al final de
 `FichaResuelta.modificadores` (`modificadoresDeUmbrales`, alcance `todas`, fuente

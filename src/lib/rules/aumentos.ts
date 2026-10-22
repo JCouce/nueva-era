@@ -1,7 +1,7 @@
 // Aumentos en la ficha (docs/sistema.md §11.3, tandas A0 y A1 de docs/propuesta-aumentos.md):
 // comprar, subir de nivel, pagar con la bolsa del humano y marcar requisitos rotos (A0);
 // los +1 a atributos, la vida de Hipertrofia y las rebajas de coste de habilidad (A1).
-// El resto de efectos llega en A2-A7.
+// Lo que ponen en tiradas y blindaje (A2a) vive en aumentosTiradas.ts; el resto, A2b-A7.
 //
 // Viven en sheet.equipo como cualquier pieza, pero no se compran con equipar(): las
 // operaciones piden otras operaciones, los implantes suben de nivel pagando la

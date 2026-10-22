@@ -8,6 +8,7 @@
 import { equipoPorId, type Armadura, type Subsistema } from "../catalog/equipo";
 import type { ArmaMelee } from "../catalog/armasMelee";
 import { nivelesHasta, ultimoQueDefine } from "./equipo";
+import { armaduraNaturalDeAumentos } from "./aumentosTiradas";
 import type { Sheet } from "./sheet";
 
 export const TIPOS_DANIO = [
@@ -70,7 +71,8 @@ function bonoTejidoConductor(sheet: Sheet, tipo: TipoDanio): number {
   return (pieza?.nivel ?? 0) >= 2 ? 1 : 0;
 }
 
-export type LineaBlindaje = { etiqueta: string; valor: number };
+// `nota`: a qué golpes vale, si no es a todos (armadura natural de los aumentos, R6).
+export type LineaBlindaje = { etiqueta: string; valor: number; nota?: string };
 
 // Armadura natural de especie (Arköru 1, Matriz Biometálica, §14.7), ya resuelta en
 // la FichaResuelta: se suma a la armadura puesta y, como ella, no cuenta contra
@@ -101,6 +103,12 @@ export function desgloseBlindaje(
       etiqueta: armaduraNatural.fuente ? `Armadura natural · ${armaduraNatural.fuente}` : "Armadura natural",
       valor: armaduraNatural.valor,
     });
+  }
+
+  // Aumentos (A2a, R6): +1 contra Cinético por pieza (Osteotendinosa, Matriz Ósea), con su
+  // nota. Aparte de la de especie, que no cambia.
+  for (const a of armaduraNaturalDeAumentos(sheet, tipo)) {
+    lineas.push({ etiqueta: `Armadura natural · ${a.fuente}`, valor: a.valor, nota: a.nota });
   }
 
   const deflector = absorcionEscudoDeflector(sheet);

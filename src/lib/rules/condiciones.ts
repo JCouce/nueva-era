@@ -29,7 +29,22 @@ import { APLICADOS, type AplicadoId } from "./atributos";
 // crítico a partir de este margen en vez del general (VTM nv4 "complejo" y los
 // "éxito → crítico" de especie, §14.8: 0, cualquier éxito). Lo lee montarTirada
 // (montaje.ts); con varios activos gana el más bajo.
-export type OpcionCondicion = { id: string; etiqueta: string; valor: number; nota?: string; margenCriticoExito?: number };
+//
+// `ventaja`, `costeFatiga`: como en el toggle, con la opción elegida (el selector "Contra…"
+// de las salvaciones, A2a de aumentos). `fuenteVentaja` es de dónde sale la ventaja, para
+// el aviso del modal. `partes`: de qué fuentes sale `valor` (su suma), para que el
+// desglose las enseñe una a una en vez de un número opaco.
+export type OpcionCondicion = {
+  id: string;
+  etiqueta: string;
+  valor: number;
+  nota?: string;
+  margenCriticoExito?: number;
+  ventaja?: true;
+  fuenteVentaja?: string;
+  costeFatiga?: number;
+  partes?: { fuente: string; valor: number }[];
+};
 
 export type CondicionTirada = (
   | {
@@ -57,6 +72,10 @@ export type CondicionTirada = (
       //                Derribo)
       ventaja?: true;
       subeGrado?: true;
+      // Grupo de no apilamiento (A2a, `noApila`): de todo lo que entra en la tirada con el
+      // mismo grupo (casillas, bonos con alcance, bonos por tramo) solo vale el mayor. Lo
+      // resuelve montarTirada. "vision_aumentada": Ojo Biónico, miras y gafas.
+      noApila?: string;
       aplicado?: AplicadoId;
       costeFatiga?: number;
       danio?: EfectoDanioCasilla;
@@ -118,6 +137,15 @@ export function resumenCasilla(c: Extract<CondicionTirada, { tipo: "toggle" }>, 
   return partes.join(" · ");
 }
 
+// Lo que enseña un botón de opción junto a su etiqueta: el número y, si los lleva, la
+// ventaja y la fatiga que cobra. Pura, como resumenCasilla.
+export function resumenOpcion(o: OpcionCondicion): string {
+  const partes = [o.valor >= 0 ? `+${o.valor}` : `${o.valor}`];
+  if (o.ventaja) partes.push("ventaja");
+  if (o.costeFatiga) partes.push(`−${o.costeFatiga} fatiga`);
+  return partes.join(" · ");
+}
+
 export type TramoDistancia = "bocajarro" | "corta" | "media" | "larga";
 
 // Estado que lleva el modal: qué opción está elegida en cada condición (por
@@ -166,7 +194,7 @@ export function desgloseCondiciones(
   condiciones: CondicionTirada[],
   estado: EstadoCondiciones,
 ): { etiqueta: string; valor: number }[] {
-  return condiciones.map((c) => {
+  return condiciones.flatMap((c) => {
     if (c.tipo === "toggle") {
       const activo = Boolean(estado[c.id]);
       return {
@@ -176,7 +204,9 @@ export function desgloseCondiciones(
     }
     if (c.tipo === "opcion") {
       const elegida = c.opciones.find((o) => o.id === estado[c.id]);
-      return { etiqueta: `${c.etiqueta}: ${elegida?.etiqueta ?? "—"}`, valor: elegida?.valor ?? 0 };
+      const etiqueta = `${c.etiqueta}: ${elegida?.etiqueta ?? "—"}`;
+      if (elegida?.partes?.length) return elegida.partes.map((p) => ({ etiqueta: `${etiqueta} · ${p.fuente}`, valor: p.valor }));
+      return { etiqueta, valor: elegida?.valor ?? 0 };
     }
     const n = typeof estado[c.id] === "number" ? (estado[c.id] as number) : c.porDefecto;
     const d = c.descuento;
@@ -225,6 +255,8 @@ export type BonoPorTramo = {
   porTramo: Partial<Record<TramoDistancia, number>>;
   soloEnEspecialidad?: true;
   excluyente?: string;
+  // Grupo de no apilamiento con casillas y bonos con alcance (el de la casilla, arriba).
+  noApila?: string;
 };
 
 function tramoElegido(estado: EstadoCondiciones): TramoDistancia | null {

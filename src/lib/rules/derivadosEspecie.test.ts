@@ -234,7 +234,7 @@ describe("NPC en modo libre: le llegan los derivados de especie (§14.3)", () =>
 });
 
 describe("notas de Personaje → Estado", () => {
-  const NADA = { carrera: undefined, saltoVertical: undefined, saltoHorizontal: undefined, escalada: undefined, nado: undefined, vuelo: undefined, levitacion: undefined, carga: undefined };
+  const NADA = { alerta: undefined, carrera: undefined, saltoVertical: undefined, saltoHorizontal: undefined, escalada: undefined, nado: undefined, vuelo: undefined, levitacion: undefined, carga: undefined };
 
   test("sin especie ni exoesqueleto, ninguna; Riux y Humanos tampoco", () => {
     for (const especieId of [null, "riux", "humano"]) assert.deepEqual(notasDeEstado(resuelta(ficha(especieId, 0, false))), NADA);

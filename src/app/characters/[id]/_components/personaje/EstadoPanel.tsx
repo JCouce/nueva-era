@@ -139,7 +139,7 @@ export function EstadoPanel({ ficha }: { ficha: FichaResuelta }) {
       <HudCard className="flex flex-col gap-3 p-4">
         <p className="font-mono text-[11px] uppercase tracking-widest text-muted">{"//SYSTEM · datos"}</p>
         <div className="grid grid-cols-2 gap-2">
-          <Dato label="Alerta" valor={ficha.alerta} tono="text-accent" />
+          <Dato label="Alerta" valor={ficha.alerta} tono="text-accent" nota={notas.alerta} />
           {/* Carga transportable (sistema.md §5.5): solo el dato, sin penalizadores todavía. */}
           <Dato
             label="Carga (armas)"

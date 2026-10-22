@@ -114,21 +114,61 @@ describe("integridad del catálogo de aumentos", () => {
     }
   });
 
-  test("A1: ningún implante trae modificadores permanentes (los activables llegan en A5)", () => {
-    for (const imp of IMPLANTES) for (const n of imp.niveles) assert.deepEqual(n.modificadores, [], `${imp.id} ${n.nivel}`);
+  test("A2a: de los implantes, solo el Ojo trae modificadores: distancia y Alerta pasiva, sin apilarse con miras", () => {
+    const distancia = (valor: number) => ({
+      tipo: "tirada",
+      alcance: { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combate_distancia" },
+      valor,
+      noApila: "vision_aumentada",
+    });
+    const alerta = (valor: number) => ({ tipo: "derivado", id: "alerta", valor, noApila: "vision_aumentada" });
+    const ojo: Record<number, object[]> = {
+      1: [distancia(1), alerta(1)],
+      2: [alerta(2)],
+      3: [distancia(2), alerta(3)],
+      4: [distancia(3), alerta(4)],
+    };
+    for (const imp of IMPLANTES) {
+      for (const n of imp.niveles) {
+        assert.deepEqual(n.modificadores, imp.id === "aum_ojo_bionico" ? ojo[n.nivel] : [], `${imp.id} ${n.nivel}`);
+      }
+    }
   });
 
-  test("A1: solo lo construido en A1 (atributo, coste de habilidad, vida) o lo narrativo está marcado como construido", () => {
+  // Efectos de motor construidos en A2a (casillas, selector "Contra…", textos y armadura
+  // natural), por pieza o por "pieza nivel"; el resto, los de A1.
+  const CONSTRUIDOS_A2A: Record<string, number> = {
+    aum_optimizacion_vestibulo_auditiva: 2,
+    aum_regulacion_limbico_prefrontal: 1,
+    aum_matriz_de_red_predeterminada: 2,
+    aum_integridad_osteotendinosa: 1,
+    aum_matriz_osea_adaptativa: 1,
+    aum_biogenesis_mitocondrial: 1,
+    aum_resiliencia_homeostatica: 1,
+    aum_estabilizacion_autonomica: 2,
+    aum_introgresion_sensorial_heterologa: 2,
+    "aum_ojo_bionico 1": 3,
+    "aum_ojo_bionico 2": 1,
+    "aum_ojo_bionico 3": 2,
+    "aum_ojo_bionico 4": 2,
+    "aum_enjambre_nanobot 3": 1,
+  };
+
+  test("A1 y A2a: solo lo construido (o lo narrativo) está marcado como construido", () => {
     for (const op of OPERACIONES_GENETICAS) {
       const construidos = op.motor.filter((m) => m.estado === "construido" && m.tipo !== "narrativo");
       const esperados =
         (op.modificadores.some((m) => m.tipo === "atributo") ? 1 : 0) +
         (op.rebajaCosteHabilidad ? 1 : 0) +
-        (op.modificadores.some((m) => m.tipo === "multiplicadorVida") ? 1 : 0);
+        (op.modificadores.some((m) => m.tipo === "multiplicadorVida") ? 1 : 0) +
+        (CONSTRUIDOS_A2A[op.id] ?? 0);
       assert.equal(construidos.length, esperados, op.id);
     }
-    for (const m of IMPLANTES.flatMap((imp) => imp.niveles.flatMap((n) => n.motor ?? []))) {
-      if (m.estado === "construido") assert.equal(m.tipo, "narrativo", JSON.stringify(m));
+    for (const imp of IMPLANTES) {
+      for (const n of imp.niveles) {
+        const construidos = (n.motor ?? []).filter((m) => m.estado === "construido" && m.tipo !== "narrativo");
+        assert.equal(construidos.length, CONSTRUIDOS_A2A[`${imp.id} ${n.nivel}`] ?? 0, `${imp.id} ${n.nivel}`);
+      }
     }
   });
 });

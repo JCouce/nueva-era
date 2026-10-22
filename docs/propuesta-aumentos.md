@@ -125,6 +125,33 @@ aumento, coste de habilidad con las dos rebajas y la vida de Hipertrofia.
 
 ### A2 · Tiradas: bonos, ventajas y casillas
 
+**Partida en dos pasadas (usuario, 2026-10-22):**
+- **A2a:** canal de casillas de aumentos; salvaciones con un selector **"¿Contra qué?"** por
+  salvación (decisión del usuario) que suma todo lo que aplica a esa amenaza; `noApila` del
+  Ojo con miras y gafas; Alerta pasiva; armadura natural +1 contra Cinético.
+- **A2b:** alcance `aplicado:<a>`, casillas de ventaja con fatiga de la rama cognitiva,
+  Foveo tras Apuntar, ventaja fija en Iniciativa, Proyección/Matriz y textos de tirada.
+
+**A2a construido (2026-10-22, sin commit):** como arriba, con estos matices:
+- El canal es `rules/aumentosTiradas.ts`: las casillas y los selectores van al mismo índice
+  que las de equipo, especie y dotes, y los textos a `textosTirada`.
+- **Biogénesis sola:** dos opciones por amenaza, sin pagar y "pagando fatiga", porque pagar
+  es opcional. Con Resiliencia, una sola opción con ventaja gratis.
+- **Amenazas que coinciden:** dominación, sugestión y alteración de la voluntad cuentan
+  también como manipulación mental (Regulación +1 y Matriz +2 = +3). Supuesto,
+  `TODO(revisar)`.
+- **Shock** sale como amenaza propia de Fortaleza (Estabilización: aturdimiento y shock).
+- **Ceguera por detonación** es una opción aparte que suma lo de ceguera más la visión
+  nocturna de Introgresión.
+- **Ultravioleta** (+2 buscando accesos ocultos) entró también como casilla de Buscar/percibir.
+  Su +2 a investigación de campo espera un alcance por especialidad.
+- **`noApila`:** hoy solo la Mira Telescópica comparte grupo con el Ojo. Los visores no dan
+  bono numérico. La mira integrada de los fusiles de precisión no compite
+  (`TODO(revisar)`).
+- **Pendiente para otras tandas:** los textos de alcance de visión del Ojo (nocturna 500 m,
+  rayos X) en Buscar/percibir; el +3 del Visor Nocturno 2 contra ceguera por destello, que
+  ya podría ir con Fortaleza (R11), pero es equipo.
+
 **Qué hace**
 - **Alcance nuevo `aplicado:<a>`** (Mielinización, Neurogénesis, Prefrontal, Asa y
   Sincronización con `aplicado:potencia`). Vale para cualquier tirada que use ese aplicado,
