@@ -19,9 +19,9 @@ Sin valoración de prioridad aquí a propósito — se queda obsoleta en cuanto 
 foco. Frentes abiertos, cada uno con su sección en Pendiente:
 - **Dotes**: D1–D2d y las dotes de NPC hechas; quedan la especialidad elegida en la tirada
   y las tiradas fijas que faltan (10 efectos con `bloqueoPor: "tiradas-fijas"`).
-- **Aumentos**: tandas A0-A6b hechas y A7 construida sin commit (2026-10-23). Con A7 se
-  cierran las tandas: queda lo que espera a Murillo (5 implantes en proceso, extracción, tope
-  de implantes, Shock) y la psiónica biológica.
+- **Aumentos**: hecho (tandas A0-A7 commiteadas, 2026-10-23). Queda lo que espera a Murillo
+  (preguntas de A4-A7, 5 implantes en proceso, extracción, tope de implantes, Shock) y la
+  psiónica biológica (IRM).
 - **Puntos Heroicos**: sin empezar, con la prosa ya en `docs/fuente/`.
   *Neos Plouton* (`docs/fuente/neos-plouton.md`) es la aventura que juega la mesa, no un
   área de reglas que construir.
@@ -1475,10 +1475,10 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      (VTF nivel 2, Pico de Cuervo Poco Habitual: dificultad sugerida 7, antes
      habría sido 9).
 
-### Aumentos ⬜ (A0-A6b commiteadas; A7 construida sin commit, 2026-10-23)
-**Con A7 se cierran las tandas de `docs/propuesta-aumentos.md`.** Lo que queda espera a Murillo
-(5 implantes en proceso, extracción, tope de implantes, Shock S73; ver su §5) o a la tarea de
-psiónica biológica (IRM).
+### Aumentos ✅ salvo lo que espera a Murillo (A0-A7 commiteadas, 2026-10-23)
+**Las tandas de `docs/propuesta-aumentos.md` están cerradas.** Lo que queda espera a Murillo
+(ver "Pendiente de Murillo" al final de esta sección; detalle en `sistema.md` §11.2 y en la
+propuesta §5) o a la tarea de psiónica biológica (IRM: sobreesfuerzo y `habilita_psionica`).
 Encargo y pasos: `docs/prompt-aumentos.md`. Fuente literal:
 `docs/aumentos.md` (26 operaciones genéticas y 11 implantes; **5 implantes en proceso**,
 de Control Anímico al final: no se modelan hasta la próxima foto de Drive). Decisión del usuario: entran
@@ -1599,13 +1599,13 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
     (escudos incluidos; la Pelea no, que es "Bloquear con el brazo biónico"). Vínculo
     `PiezaEquipada.armaIncorporada` (migración v19→v20 sin cambios de datos), con
     `esArmaIncorporable`, `armasIncorporables`, `conArmaIncorporadaValida` (en `parseSheet` y
-    `desequipar`: arma no equipada, de dos manos o Pelea, fuera) y `fijarArmaIncorporada` en
+    `desequipar`: arma no equipada, de dos manos, Pelea o escudo, fuera) y `fijarArmaIncorporada` en
     `rules/equipo.ts`. Selector "Arma incorporada" en la tarjeta del brazo (Equipo, también en
     el NPC), sin exigir la tirada; `fijarArmaIncorporadaAction` y
     `fijarArmaIncorporadaNpcAction` con Zod (`armaIncorporadaEntradaSchema`). Las filas del arma
     incorporada (golpe o disparo y su "Bloquear con X") llevan `Accion.extremidad` fija, sin
     casilla, y `NOTA_ARMA_INCORPORADA` (`conBrazo` en `combate.ts`).
-- [x] A7 · Inmunidades. *(sin commit; falta revisión y navegador)* `rules/inmunidades.ts`:
+- [x] A7 · Inmunidades. *(commiteada y probada en el navegador)* `rules/inmunidades.ts`:
   `inmunidadesDe(sheet)` con `inmuneA` del catálogo (Ojo Biónico 2-4 → ceguera, fuente "Ojo
   Biónico N"; Regeneración Tisular funcionando → hemorragia). Al poner un estado
   (`operacionConInmunidad` en `cambiarEstadosDePersonajes` y `cambiarEstadosDeNpcs`, este con
@@ -1619,6 +1619,16 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
   es columna aparte, lector tolerante).
 - [ ] Cuando Murillo cierre los 5 implantes en proceso: `sync-drive`, transcribirlos de
   nuevo y modelarlos en una pasada corta.
+
+Pendiente de Murillo (la app ya funciona con un supuesto en cada una; si contesta distinto, se
+ajusta):
+- [ ] Preguntas de A4-A7 (subir a `/preguntas`, área Aumentos): Eliminar exanguinante, Encontrar
+  o distinguir, Tempestad y dotes cuerpo a cuerpo, Neuroprótesis 1 (atributos) y 4 (velocidad y
+  carga), Ojo Biónico 2 frente a 4, tope del Brazo y escudos incorporables.
+- [ ] Extracción de implantes y Biociencia o Tecnociencia (pregunta 20).
+- [ ] Tope de implantes (pregunta 11).
+- [ ] Shock S73 sobre implantes y el material de refuerzo.
+- [ ] Erratas del documento (IRM nivel 3, ortografía).
 - [x] **Código:** bolsa del humano a **70.000** (`catalog/especies.ts`, `bolsaAumentos`; el
   documento manda, antes 60.000) y textos/tests que digan 60.000. Va dentro de A0.
 

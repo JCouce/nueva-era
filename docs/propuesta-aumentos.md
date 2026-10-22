@@ -659,5 +659,9 @@ créditos); aprobada la ficha, nada.
 - **Ojo Biónico 2 frente a 4:** el 2 es "inmune a efecto de ceguera" y el 4 "completamente
   inmune a la ceguera". ¿Cubre el 2 una ceguera física (tapar o arrancar el ojo)? Hoy el
   máster lo arbitra con "Aplicar igualmente".
+- **Neuroprótesis 4:** si quitar los penalizadores por heridas o fatiga quita también la media
+  velocidad y la carga del umbral (hoy no).
+- **Brazo, "con límite máximo":** si la base ya pasa el tope, el brazo vale el tope (hoy) o lo
+  tuyo. **Escudo incorporado:** hoy no se puede.
 - **Erratas del documento:** el nivel 3 del IRM repite la frase del nivel 2, y la
   ortografía.

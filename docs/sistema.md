@@ -1548,6 +1548,10 @@ al preparar su modelado:
 - **Neuroprótesis Simpática 4**: si "elimina por completo penalizadores por heridas o fatiga"
   quita también la media velocidad y la carga del umbral. La app solo quita el −N de las
   tiradas, como las reducciones de A3.
+- **Brazo Biónico, "con límite máximo"**: si tu Fuerza o Agilidad ya pasa el tope del modelo,
+  ¿el brazo vale el tope (menos que tú) o al menos lo tuyo? La app usa el tope.
+- **Brazo Biónico, arma incorporada**: ¿se puede incorporar un escudo de una mano? La app no lo
+  deja (no cabe "en su interior"; usuario, 2026-10-22), pero bloquear con él sí usa el brazo.
 
 ### 11.3 Decisiones del usuario `[FIRME · usuario 2026-10-16, Cuestionario Aumentos]`
 - **En la ficha**: una pieza de equipo más, que se equipa y se desequipa ("un jugador se
