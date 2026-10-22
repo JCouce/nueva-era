@@ -8,6 +8,7 @@ import {
   leerDatosRegistro,
   leerEstados,
   parseSheet,
+  reconciliarVidaConEstados,
   planDeshacerEstados,
   planAjusteRecurso,
   planDeshacerRecurso,
@@ -106,7 +107,10 @@ export async function deshacerRegistro(id: string): Promise<ResultadoRegistro> {
         });
         const plan = planDeshacerEstados(
           datos,
-          filas.map((f) => ({ id: f.id, nombre: f.name, sheet: parseSheet(f.stats), estados: leerEstados(f.estados) })),
+          filas.map((f) => {
+            const estados = leerEstados(f.estados);
+            return { id: f.id, nombre: f.name, sheet: reconciliarVidaConEstados(parseSheet(f.stats), estados), estados };
+          }),
           fotos.flatMap((f) => (f.characterId === null ? [] : [{ ...f, characterId: f.characterId }])),
           posteriores,
         );

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
 import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import { accionesDeAumentos, operacionDeEfecto, usoDeAccionAumento, type EfectoAccionAumento } from "./aumentosAcciones";
-import { topesEnReposo } from "./vitalidad";
+import { topesDeVida } from "./vitalidad";
 import type { EstadoActivo } from "./estados";
 import { montarTirada, SIN_ELECCION } from "./montaje";
 import { resolverDanio, type Accion } from "./acciones";
@@ -147,7 +147,7 @@ describe("usar una acción de aumento", () => {
 
   test("Sanar letal: 1 de fatiga y +1 de vida, topado al máximo", () => {
     const base = con(defaultSheet(), ENJAMBRE, 2);
-    const max = topesEnReposo(base).vida;
+    const max = topesDeVida(base).vida;
     const herido = usoDeAccionAumento(conRecursos(base, 3, max - 1), [], "aumentos_enjambre_sanar_letal");
     assert.ok(herido.ok);
     assert.equal(herido.sheet.vidaActual, max);

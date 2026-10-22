@@ -83,9 +83,10 @@ export function RecursosTab({
   onLiberarUsoEscena?: (id: string) => void;
 }) {
   const sheet = ficha.ficha;
-  // TODO(revisar) E1b: en combate, este máximo lleva los estados (FichaResuelta) y el
-  // clamp de ajustarVida/ajustarFatiga (vitalidad.ts, también en el servidor) no:
-  // puede verse "actual > máximo" con un estado que baje Fortaleza/Voluntad.
+  // TODO(revisar) E1b: este máximo lleva todos los estados (FichaResuelta) y el clamp de
+  // ajustarVida/ajustarFatiga (vitalidad.ts, también en el servidor) solo los activables de
+  // aumento (A5b, topesDeVida): puede verse "actual > máximo" curando con un estado del
+  // máster que baje Fortaleza/Voluntad (S74).
   const { vida, fatiga } = ficha.salud;
   // Solo los tipos que ya se poseen (docs/tareas.md, 2026-09-27) — para
   // descubrir/comprar tipos nuevos ya está Tienda, que es donde se compran

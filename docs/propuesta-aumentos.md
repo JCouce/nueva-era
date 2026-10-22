@@ -405,6 +405,53 @@ activables, Neuroprótesis 1-2 y Proyección) y **A5b** (Neuroprótesis 3-4).
 - **Vida:** al caerse el activable, `vidaTrasCambioDeEstados` calcula la bajada sin los
   activables: no resta vida (supuesto, `TODO(revisar)`).
 - **Combate:** la fatiga se cobra de la ficha, no de la foto del combatiente (igual que A4a).
+  *(Arreglado en A5b: ahora va también a la foto.)*
+
+**Construido (A5b, matices):**
+- **Acción simple adicional:** en el nivel 3 (`accionAdicionalNeuroprotesis`), efecto
+  `accionAdicional` con `repetida: { costeFatiga: 3, activar? }`. La casilla del modal
+  (`ID_ACCION_REPETIDA`) es un toggle con `costeFatiga: 1` (el botón dice "−1 fatiga", lo que
+  sube sobre los 2) y nota "Cuesta 3…"; sin 3 de fatiga sale con `bloqueada`. El servidor
+  recibe `extra: { eleccion?, repetida? }` (antes el 3.er argumento era solo la elección) y
+  `usoDeAccionAumento` devuelve `coste`, que es lo que se cobra en `preparar`.
+- **Nivel 4:** la misma acción con `activar` (sustituye a la del 3 por id). El estado es
+  `aum_neuroprotesis_4` (grado único, 1 ronda) y su efecto vive en `activos` del nivel 4 (campo
+  nuevo: más de un estado propio por nivel; `activosDeAumentos` se queda con el del nivel más
+  alto por estado). `sustituyeAtributosDe: "aum_neuroprotesis"` quita los atributos de la activa
+  mientras dura, sin tocar su −1 a los estados ni su −1 de Fortaleza.
+  `eliminaPenalizadoresUmbrales`: ajuste de umbrales de 99 (no da línea; con él no sale la
+  compensación de Neurogénesis, que no tiene nada que compensar). Reactivarlo antes de que caiga
+  lo renueva. La fila "Desactivar" del estado sale detrás de la acción adicional.
+- **Segunda reacción:** `textos` en el `ActivoAumento` del nivel 3 (`efectosDeActivables` →
+  `textosTirada`), y una frase más en la nota de Activar desde el nivel 3.
+- **Recorte de vida:** en `vidaTrasCambioDeEstados`, solo si cambia el conjunto de activables
+  (estado o grado, `cambianActivables`). La ficha se recorta a `topesDeVida` (reposo más los
+  activables que queden); la foto, a su `pgMax`. Cuenta en `restado` (deshacer lo devuelve). Un
+  estado normal no recorta.
+- **Tope con el activable puesto (arreglo):** antes `parseSheet`/`reconciliarVida` y
+  `ajustarVida`/`ajustarFatiga` topaban con el máximo en reposo, sin estados: un 9 curado se
+  leía 8 y no se podía curar hasta 9. Ahora (`rules/vitalidad.ts`):
+  - `topesDeVida(sheet, estados)`: reposo más `efectosDeActivables`. Es el tope de
+    `ajustarVida`/`ajustarFatiga` (3.er argumento, servidor y optimista de `CharacterSheet`),
+    Sanar letal, `retirarPieza` y la pestaña Vida (`vidaMando`, Mesa).
+  - `parseSheet` recorta a `topesPosibles` (cada estado propio de los activables equipados, en
+    cada grado, el mejor): no baja nunca un valor que valga con algún activable puesto.
+  - `reconciliarVidaConEstados(sheet, estados)`: el recorte exacto, en cada lectura que conoce
+    `Character.estados` (página de la ficha, `loadEditable`, la Mesa, `vidaMando`,
+    `cambiarEstadosDePersonajes`, `limpiarEstadosDeJugadores`, "Siguiente turno", deshacer).
+    Los NPC (`master/npcs`), con `reconciliarVida` a secas.
+  - Caminos de caída: desactivar, quitar desde Mesa/combate y "Limpiar estados" ya recortaban
+    por `vidaTrasCambioDeEstados`, y "Siguiente turno" también, pero los tres partían de una
+    ficha que `parseSheet` ya había bajado. Deshacer "Activar" en el registro no recortaba:
+    ahora `planDeshacerEstados` recorta ficha y fotos si cambian los activables, y devuelve
+    hasta `topesDeVida`.
+- **Combate (paso 0):** `fotoTrasCambioDeFicha` (pura) y `guardarFichaConFotos`
+  (`lib/estadosPersonaje.ts`); `cambiarEstadosDePersonajes` aplica lo que mueva `preparar` a las
+  fotos antes de la operación. `devolverFatigaAction` nuevo para desmarcar Densificar (el +/-
+  de Recursos sigue con `ajustarFatigaAction`, solo ficha).
+- **Visual:** `OpcionCondicion.sinValor` (sin "+0" en el selector de activar);
+  `resumenCasilla` ya no pone "+0" en una casilla que solo cobra fatiga; `EstadoPanel` no pinta
+  la duración corta al lado de un activable.
 
 **Qué hace**
 - **`activable_estado_propio`:** un botón sin dado que cobra la fatiga y pone un

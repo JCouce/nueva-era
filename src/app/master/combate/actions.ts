@@ -12,6 +12,7 @@ import { prisma } from "@/lib/db";
 import { requireUser, canAdjustCombatiente } from "@/lib/auth-helpers";
 import {
   parseSheet,
+  reconciliarVidaConEstados,
   resolverFicha,
   VITALIDAD_DE_FICHA,
   vitalidadAlEntrarEnCombate,
@@ -243,14 +244,17 @@ export async function avanzarTurnoAction(combateId: string): Promise<CombateResu
     select: { id: true, estados: true, stats: true },
   });
   // Al caerse un estado por rondas, su foto recalcula el máximo (sube) sin tocar la
-  // vida actual; vidaTrasCambioDeEstados solo restaría si el máximo bajara (S75).
+  // vida actual; vidaTrasCambioDeEstados solo restaría si el máximo bajara (S75). Si el que
+  // se cae es un activable de aumento (la Neuroprótesis, A5b), recorta la ficha y la foto
+  // a su máximo nuevo.
   const actualizacionesJugadores = jugadores.flatMap((j) => {
     const estados = estadosAlCerrarVuelta(j.estados);
     if (!estados) return [];
-    const sheet = parseSheet(j.stats);
+    const antes = leerEstados(j.estados);
+    const sheet = reconciliarVidaConEstados(parseSheet(j.stats), antes);
     const vida = vidaTrasCambioDeEstados(
       sheet,
-      leerEstados(j.estados),
+      antes,
       estados,
       combate.combatientes.filter((c) => c.characterId === j.id),
     );

@@ -29,6 +29,7 @@ import {
   comprarFarmacoAction,
   ajustarVidaAction,
   ajustarFatigaAction,
+  devolverFatigaAction,
   pagarFatigaAction,
   ajustarFatigaTemporalAction,
   terminarEscenaAction,
@@ -83,7 +84,7 @@ import {
   type DoteComprada,
   type EstadoActivo,
 } from "@/lib/rules";
-import type { Sheet } from "@/lib/rules";
+import type { ExtraAccionAumento, Sheet } from "@/lib/rules";
 import { PersonajeTab, PanelFieldset } from "./_components/personaje/PersonajeTab";
 import { AvisoEnRevision } from "./_components/RevisionFicha";
 import { EstadoFichaChip } from "@/components/EstadoFichaChip";
@@ -440,7 +441,7 @@ export function CharacterSheet({
     runSave(() => equiparAction(characterId, pieza), setSheet);
   };
   const commitDesequipar = (instanciaId: string) => {
-    setSheet((s) => retirarPieza(s, instanciaId));
+    setSheet((s) => retirarPieza(s, instanciaId, estados));
     runSave(() => desequiparAction(characterId, instanciaId), setSheet);
   };
   const commitAjustarRecurso = (instanciaId: string, delta: number) => {
@@ -466,12 +467,19 @@ export function CharacterSheet({
     runSave(() => ajustarFarmacoAction(characterId, catalogoId, delta), setSheet);
   };
   const commitAjustarVida = (delta: number) => {
-    setSheet((s) => ajustarVida(s, delta));
+    setSheet((s) => ajustarVida(s, delta, estados));
     runSave(() => ajustarVidaAction(characterId, delta), setSheet);
   };
   const commitAjustarFatiga = (delta: number) => {
-    setSheet((s) => ajustarFatiga(s, delta));
+    setSheet((s) => ajustarFatiga(s, delta, estados));
     runSave(() => ajustarFatigaAction(characterId, delta), setSheet);
+  };
+  // Densificar desmarcado (A4b): devuelve lo que cobró pagarFatigaAction, también a la foto
+  // del combate (A5b).
+  const commitDevolverFatiga = (delta: number) => {
+    if (delta <= 0) return;
+    setSheet((s) => ajustarFatiga(s, delta, estados));
+    runSave(() => devolverFatigaAction(characterId, delta), setSheet);
   };
   const commitPagarFatiga = (coste: number, permiteTemporal: boolean) => {
     setSheet((s) => pagarFatiga(s, coste, permiteTemporal));
@@ -496,11 +504,12 @@ export function CharacterSheet({
   };
   // Acciones de aumento (A4a): sin estado optimista, las cobra y aplica el servidor (también
   // quitar un estado, que llega por la revalidación de la página).
-  // Activables (A5a): `eleccion` es lo elegido en el modal de activar (Neuroprótesis 2).
-  const commitUsarAccionAumento = (accionId: string, onMensaje: (m: string) => void, eleccion?: string) => {
+  // Activables (A5a): `extra.eleccion` es lo elegido en el modal de activar (Neuroprótesis 2);
+  // `extra.repetida`, la casilla "ya usada" de la acción adicional (A5b).
+  const commitUsarAccionAumento = (accionId: string, onMensaje: (m: string) => void, extra?: ExtraAccionAumento) => {
     runSave(
       async () => {
-        const res = await usarAccionAumentoAction(characterId, accionId, eleccion);
+        const res = await usarAccionAumentoAction(characterId, accionId, extra);
         onMensaje(res.ok ? (res.mensaje ?? "Hecho.") : res.error);
         return res;
       },
@@ -819,7 +828,7 @@ export function CharacterSheet({
               onAjustarFarmaco={commitAjustarFarmaco}
               onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
               onPagarFatiga={commitPagarFatiga}
-              onAjustarFatiga={commitAjustarFatiga}
+              onAjustarFatiga={commitDevolverFatiga}
               onAjustarVida={commitAjustarVida}
               onGastarUsosEscena={commitGastarUsosEscena}
               onUsarAccionAumento={commitUsarAccionAumento}

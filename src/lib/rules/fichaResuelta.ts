@@ -322,7 +322,7 @@ export function resolverFicha(
       ...dotes.casillas,
       ...conUsosEscena(casillasDeAumentos(sheet, activables.salvaciones), sheet.usosEscena),
     ]),
-    textosTirada: [...textosDeEspecie(especie), ...dotes.textos, ...textosDeAumentos(sheet)],
+    textosTirada: [...textosDeEspecie(especie), ...dotes.textos, ...textosDeAumentos(sheet), ...activables.textos],
     ventajasFijas: ventajasFijasDeAumentos(sheet),
     extrasDotes: { bonosTramo: dotes.bonosTramo, criticos: dotes.criticos, permisos: dotes.permisos, descuentos: dotes.descuentos },
     accionesDotes: accionesDeDotes(activas),

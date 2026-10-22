@@ -28,9 +28,15 @@
 import { z } from "zod";
 import { leerEstados, ponerEstado, quitarEstado } from "./estadosFicha";
 import type { EstadoActivo } from "./estados";
-import { devolverVida, maximosConEstados, type CambioEstadoPersonaje, type ParVida } from "./vidaPorEstados";
+import {
+  cambianActivables,
+  devolverVida,
+  maximosConEstados,
+  type CambioEstadoPersonaje,
+  type ParVida,
+} from "./vidaPorEstados";
 import type { Sheet } from "./sheet";
-import { vidaTrasAjuste } from "./vitalidad";
+import { reconciliarVida, topesDeVida, vidaTrasAjuste } from "./vitalidad";
 import type { RecursoVital } from "./ajusteVida";
 
 // Los que vengan se añaden aquí con su forma.
@@ -269,17 +275,24 @@ export function planDeshacerEstados(
     enCurso.set(p.id, w);
   }
 
+  // Si deshacer pone o quita un activable de aumento (deshacer "Activar", A5b), la vida que
+  // quede por encima del máximo nuevo se recorta, como al caerse (vidaTrasCambioDeEstados).
+  // La ficha, a su tope (topesDeVida, también para devolver); la foto, a su máximo.
   const plan: PlanEstados = { personajes: [], combatientes: [] };
   for (const { p, estados, ficha, fotos } of enCurso.values()) {
     const maximos = maximosConEstados(p.sheet, estados);
-    plan.personajes.push({ id: p.id, estados, sheet: devolverVidaFicha(p.sheet, ficha, maximos) });
+    const topes = topesDeVida(p.sheet, estados);
+    const recorta = cambianActivables(p.estados, estados);
+    const devuelta = devolverVidaFicha(p.sheet, ficha, topes);
+    plan.personajes.push({ id: p.id, estados, sheet: recorta ? reconciliarVida(devuelta, topes) : devuelta });
+    const alTope = (n: number, max: number) => (recorta ? Math.min(n, Math.max(0, max)) : n);
     for (const f of combatientes.filter((f) => f.characterId === p.id)) {
-      const devuelta = fotos.get(f.id) ?? { vida: 0, fatiga: 0 };
+      const devueltaFoto = fotos.get(f.id) ?? { vida: 0, fatiga: 0 };
       plan.combatientes.push({
         id: f.id,
-        pgActual: devolverVida(f.pgActual, devuelta.vida, maximos.vida),
+        pgActual: alTope(devolverVida(f.pgActual, devueltaFoto.vida, maximos.vida), maximos.vida),
         pgMax: maximos.vida,
-        fatigaActual: devolverVida(f.fatigaActual, devuelta.fatiga, maximos.fatiga),
+        fatigaActual: alTope(devolverVida(f.fatigaActual, devueltaFoto.fatiga, maximos.fatiga), maximos.fatiga),
         fatigaMax: maximos.fatiga,
       });
     }

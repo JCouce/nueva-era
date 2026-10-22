@@ -19,7 +19,7 @@ Sin valoración de prioridad aquí a propósito — se queda obsoleta en cuanto 
 foco. Frentes abiertos, cada uno con su sección en Pendiente:
 - **Dotes**: D1–D2d y las dotes de NPC hechas; quedan la especialidad elegida en la tirada
   y las tiradas fijas que faltan (10 efectos con `bloqueoPor: "tiradas-fijas"`).
-- **Aumentos**: por tandas (A0-A4b hechas, A5a construida sin commit; quedan A5b-A7).
+- **Aumentos**: por tandas (A0-A5a hechas, A5b construida sin commit; quedan A6-A7).
 - **Puntos Heroicos**: sin empezar, con la prosa ya en `docs/fuente/`.
   *Neos Plouton* (`docs/fuente/neos-plouton.md`) es la aventura que juega la mesa, no un
   área de reglas que construir.
@@ -1473,7 +1473,7 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      (VTF nivel 2, Pico de Cuervo Poco Habitual: dificultad sugerida 7, antes
      habría sido 9).
 
-### Aumentos ⬜ (A0-A4b commiteadas; A5a construida, 2026-10-22)
+### Aumentos ⬜ (A0-A5a commiteadas; A5b construida, 2026-10-22)
 Encargo y pasos: `docs/prompt-aumentos.md`. Fuente literal:
 `docs/aumentos.md` (26 operaciones genéticas y 11 implantes; **5 implantes en proceso**,
 de Control Anímico al final: no se modelan hasta la próxima foto de Drive). Decisión del usuario: entran
@@ -1546,9 +1546,8 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
     Densificar: `blindajeReactivo` del Enjambre 3, `casillaBlindajeReactivo` y el 5.º
     parámetro de `desgloseBlindaje` (`blindaje.ts`); "Bloquear daño" cobra al marcar y
     devuelve al desmarcar (`onAjustarFatiga` nuevo en AccionesTab).
-- [ ] A5 · Activables.
-  - [x] A5a · Capa de activables, Neuroprótesis 1-2 y Proyección. *(sin commit; falta
-    revisión y navegador)* Efecto `activar` en `AccionAumentoCatalogo` (con `eleccion` en la
+- [x] A5 · Activables (A5b sin commit).
+  - [x] A5a · Capa de activables, Neuroprótesis 1-2 y Proyección (commit 0567b20). Efecto `activar` en `AccionAumentoCatalogo` (con `eleccion` en la
     Neuroprótesis 2: selector `ID_ELECCION_ACTIVABLE` en el modal) que cobra y pone un estado
     propio (`ESTADOS_DE_AUMENTO` en `catalog/estados.ts`: `aum_neuroprotesis` con grados
     activo/fuerza/agilidad, `aum_proyeccion`; fuera del selector del máster) por
@@ -1562,7 +1561,20 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
     Modificador `anulaPenalizadores` (Proyección en Actitud, `conPenalizadoresAnulados` en
     `montarTirada`; Neurogénesis lleva `compensa`). Chip con `duracionActivable` ("3 rondas, en
     combate"). Los activables no restan vida al caerse (`vidaTrasCambioDeEstados`).
-  - [ ] A5b · Neuroprótesis 3-4.
+  - [x] A5b · Neuroprótesis 3-4. *(sin commit; falta revisión y navegador)* Acción
+    "Acción simple adicional" del nivel 3 (efecto `accionAdicional`, 2 de fatiga; casilla
+    `ID_ACCION_REPETIDA` "Ya usada desde el último descanso" que cobra 3, apagada si no
+    llega; `extra.repetida` en `usarAccionAumentoAction`). Con el nivel 4, pagar 3 pone
+    `aum_neuroprotesis_4` (1 ronda, convive con `aum_neuroprotesis`): `activos` en el nivel del
+    implante, `sustituyeAtributosDe` (+2 a los tres en lugar del +1/+2) y
+    `eliminaPenalizadoresUmbrales`. Segunda reacción del nivel 3: `textos` del activo, en
+    Defensa, solo con la Neuroprótesis activa. Vida: al cambiar un activable, la actual (ficha
+    y fotos) se recorta al máximo nuevo (`vidaTrasCambioDeEstados`). **Combate:** lo que la
+    ficha cobra o suma por su cuenta llega también a la foto del combate abierto
+    (`fotoTrasCambioDeFicha`, `guardarFichaConFotos`; `pagarFatigaAction`,
+    `usarAccionAumentoAction`, `devolverFatigaAction` nuevo para Densificar). Visual: sin "+0" en
+    el selector de activar (`OpcionCondicion.sinValor`) y sin la duración repetida al lado del
+    chip de un activable (`EstadoPanel`).
 - [ ] A6 · Brazo Biónico.
 - [ ] A7 · Inmunidades.
 - [ ] Cuando Murillo cierre los 5 implantes en proceso: `sync-drive`, transcribirlos de

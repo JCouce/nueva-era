@@ -44,6 +44,8 @@ export type OpcionCondicion = {
   fuenteVentaja?: string;
   costeFatiga?: number;
   partes?: { fuente: string; valor: number }[];
+  // Opción sin número (el selector de activar, A5b): el botón no enseña "+0".
+  sinValor?: true;
 };
 
 export type CondicionTirada = (
@@ -135,7 +137,7 @@ export function resumenCasilla(c: Extract<CondicionTirada, { tipo: "toggle" }>, 
   const valor = activo ? c.valorActivo : (c.valorInactivo ?? 0);
   const signo = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
   const partes: string[] = [];
-  if (valor !== 0 || (!c.ventaja && !c.subeGrado && !c.aplicado && c.margenCriticoExito === undefined && !c.danio && !c.ahorroFatiga))
+  if (valor !== 0 || (!c.ventaja && !c.subeGrado && !c.aplicado && c.margenCriticoExito === undefined && !c.danio && !c.ahorroFatiga && !c.costeFatiga))
     partes.push(signo(valor));
   if (c.ventaja) partes.push("ventaja");
   if (c.subeGrado) partes.push("fallo → éxito");
@@ -153,7 +155,7 @@ export function resumenCasilla(c: Extract<CondicionTirada, { tipo: "toggle" }>, 
 // Lo que enseña un botón de opción junto a su etiqueta: el número y, si los lleva, la
 // ventaja y la fatiga que cobra. Pura, como resumenCasilla.
 export function resumenOpcion(o: OpcionCondicion): string {
-  const partes = [o.valor >= 0 ? `+${o.valor}` : `${o.valor}`];
+  const partes = o.sinValor ? [] : [o.valor >= 0 ? `+${o.valor}` : `${o.valor}`];
   if (o.ventaja) partes.push("ventaja");
   if (o.costeFatiga) partes.push(`−${o.costeFatiga} fatiga`);
   return partes.join(" · ");

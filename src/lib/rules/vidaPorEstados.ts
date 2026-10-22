@@ -13,6 +13,7 @@ import { ponerEstado, quitarEstado } from "./estadosFicha";
 import type { EstadoActivo } from "./estados";
 import { esEstadoDeAumento } from "../catalog/estados";
 import type { Sheet } from "./sheet";
+import { topesDeVida } from "./vitalidad";
 
 export type ParVida = { vida: number; fatiga: number };
 
@@ -45,8 +46,10 @@ export type CambioDeVida = {
   combatientes: FotoCombatienteNueva[];
 };
 
-function restar(actual: number, bajada: number): { actual: number; restado: number } {
-  const nuevo = Math.max(0, actual - bajada);
+// Resta la bajada (S75) y, con `tope`, recorta además al máximo nuevo (A5b, activables).
+function restar(actual: number, bajada: number, tope: number | null = null): { actual: number; restado: number } {
+  const tras = Math.max(0, actual - bajada);
+  const nuevo = tope !== null && tras > tope ? Math.max(0, tope) : tras;
   return { actual: nuevo, restado: actual - nuevo };
 }
 
@@ -54,9 +57,25 @@ function restar(actual: number, bajada: number): { actual: number; restado: numb
 // duran. No cuentan para la bajada: si no, activar y dejar que caduque costaría vida de verdad
 // (al activar la actual no sube; al caerse, S75 restaría lo que bajó el máximo). El máximo que
 // se escribe en las fotos sí los lleva.
-// TODO(revisar): supuesto nuestro (no está en S75); con la vida por encima del máximo al caerse
-// la Neuroprótesis, se queda por encima (como al curar en reposo, S74).
+// Recorte (usuario, 2026-10-22, A5b; cambia A5a): si al caerse, desactivarse o cambiar un
+// activable la vida actual queda por encima del máximo nuevo, se recorta a él (como
+// retirarPieza/reconciliarVida al desequipar). Igual la fatiga y las fotos. Solo cuando cambian
+// los activables: un estado normal sigue con S75 y no toca la vida que esté por encima del
+// máximo por otra vía (S74). Lo recortado cuenta como restado (deshacer lo devuelve).
+// La ficha se recorta a su tope (topesDeVida: reposo más los activables que queden, el mismo
+// al que cura); la foto, a su máximo con todos los estados, que es el suyo.
 const sinActivables = (estados: EstadoActivo[]) => estados.filter((e) => !esEstadoDeAumento(e.estadoId));
+const claveActivables = (estados: readonly EstadoActivo[]) =>
+  estados
+    .filter((e) => esEstadoDeAumento(e.estadoId))
+    .map((e) => `${e.estadoId}:${e.gradoId}`)
+    .sort()
+    .join("|");
+
+// Si entre dos listas de estados cambian los activables (alguno se pone, se cae o cambia de
+// grado; las rondas no cuentan). Es cuando toca recortar.
+export const cambianActivables = (antes: readonly EstadoActivo[], despues: readonly EstadoActivo[]) =>
+  claveActivables(antes) !== claveActivables(despues);
 
 export function vidaTrasCambioDeEstados(
   sheet: Sheet,
@@ -69,16 +88,19 @@ export function vidaTrasCambioDeEstados(
     maximosConEstados(sheet, sinActivables(antes)),
     maximosConEstados(sheet, sinActivables(despues)),
   );
-  const vida = restar(sheet.vidaActual, bajada.vida);
-  const fatiga = restar(sheet.fatigaActual, bajada.fatiga);
+  const recorta = cambianActivables(antes, despues);
+  const tope = (n: number) => (recorta ? n : null);
+  const topes = topesDeVida(sheet, despues);
+  const vida = restar(sheet.vidaActual, bajada.vida, tope(topes.vida));
+  const fatiga = restar(sheet.fatigaActual, bajada.fatiga, tope(topes.fatiga));
   const cambia = vida.restado > 0 || fatiga.restado > 0;
   return {
     sheet: cambia ? { ...sheet, vidaActual: vida.actual, fatigaActual: fatiga.actual } : sheet,
     restado: { vida: vida.restado, fatiga: fatiga.restado },
     maximos,
     combatientes: combatientes.map((c) => {
-      const pg = restar(c.pgActual, bajada.vida);
-      const fat = restar(c.fatigaActual, bajada.fatiga);
+      const pg = restar(c.pgActual, bajada.vida, tope(maximos.vida));
+      const fat = restar(c.fatigaActual, bajada.fatiga, tope(maximos.fatiga));
       return {
         id: c.id,
         pgActual: pg.actual,
@@ -89,6 +111,25 @@ export function vidaTrasCambioDeEstados(
       };
     }),
   };
+}
+
+// --- Cobros desde la ficha con el jugador en combate (A5b, paso 0) ---
+
+// En combate la vida y la fatiga que valen son las de la foto (Combatiente). Lo que la ficha
+// cobra o suma por su cuenta (fatiga de acciones de aumento, casillas y poderes; Sanar letal)
+// se lleva también a la foto: la misma diferencia, entre 0 y su máximo. Sin cambio, la foto
+// no se toca (ni se recorta).
+export type FotoConMaximos = FotoCombatiente & { pgMax: number; fatigaMax: number };
+type ParActual = Pick<Sheet, "vidaActual" | "fatigaActual">;
+
+export function fotoTrasCambioDeFicha<T extends FotoConMaximos>(foto: T, antes: ParActual, despues: ParActual): T {
+  const dv = despues.vidaActual - antes.vidaActual;
+  const df = despues.fatigaActual - antes.fatigaActual;
+  if (dv === 0 && df === 0) return foto;
+  // Restar: suelo 0. Sumar: hasta el máximo, sin bajar una actual que ya esté por encima.
+  const mover = (actual: number, delta: number, max: number) =>
+    delta < 0 ? Math.max(0, actual + delta) : delta > 0 ? Math.max(actual, Math.min(max, actual + delta)) : actual;
+  return { ...foto, pgActual: mover(foto.pgActual, dv, foto.pgMax), fatigaActual: mover(foto.fatigaActual, df, foto.fatigaMax) };
 }
 
 // Devolver lo restado (deshacer): sube hasta el máximo, nunca baja. Si la actual ya

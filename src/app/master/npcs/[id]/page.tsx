@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
-import { parseSheet } from "@/lib/rules";
+import { parseSheet, reconciliarVida } from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
 import { NpcEditor } from "./NpcEditor";
 
@@ -21,7 +21,7 @@ export default async function NpcPage({ params }: { params: Promise<{ id: string
           npcId={npc.id}
           initialNombre={npc.nombre}
           initialNota={npc.nota ?? ""}
-          initialSheet={parseSheet(npc.stats)}
+          initialSheet={reconciliarVida(parseSheet(npc.stats))}
         />
       </main>
     </>

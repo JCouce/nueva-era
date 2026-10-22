@@ -6,9 +6,11 @@ import {
   aplicarOperacionEstado,
   datosParaGuardar,
   estadosDeNpcTras,
+  fotoTrasCambioDeFicha,
   idsDeRegistro,
   leerEstados,
   parseSheet,
+  reconciliarVidaConEstados,
   quitarEstadosDe,
   sinEstados,
   vaciarUsosEscena,
@@ -47,7 +49,8 @@ export async function registrar(tx: Prisma.TransactionClient, autoria: Autoria, 
 // registro para todos. null si alguno de los personajes no existe (y no escribe nada);
 // registroId null si no cambió nada o no se registra.
 // `preparar`: cambio en la ficha que va en la misma transacción, antes del estado (el cobro
-// de fatiga de las acciones de aumento, A4a).
+// de fatiga de las acciones de aumento, A4a). Lo que mueva de vida o fatiga se lleva también a
+// sus fotos de combate abiertas (A5b: en combate valen las de la foto).
 export async function cambiarEstadosDePersonajes(
   characterIds: string[],
   op: OperacionEstado,
@@ -63,20 +66,21 @@ export async function cambiarEstadosDePersonajes(
     if (filas.length !== ids.length) return null;
     const fotos = await tx.combatiente.findMany({
       where: { characterId: { in: ids }, combate: COMBATE_ABIERTO },
-      select: { id: true, characterId: true, pgActual: true, fatigaActual: true },
+      select: { id: true, characterId: true, pgActual: true, pgMax: true, fatigaActual: true, fatigaMax: true },
     });
 
     const cambios: CambioEstadoPersonaje[] = [];
     for (const f of filas) {
-      const leida = parseSheet(f.stats);
+      const estados = leerEstados(f.estados);
+      // Con el recorte exacto de los activables puestos (A5b): parseSheet topa con el posible.
+      const leida = reconciliarVidaConEstados(parseSheet(f.stats), estados);
       const sheet = preparar ? preparar(leida) : leida;
-      const r = aplicarOperacionEstado(
-        { id: f.id, sheet, estados: leerEstados(f.estados) },
-        op,
-        fotos.filter((c) => c.characterId === f.id),
-      );
+      const propias = fotos.filter((c) => c.characterId === f.id);
+      const cobradas = propias.map((c) => fotoTrasCambioDeFicha(c, leida, sheet));
+      const r = aplicarOperacionEstado({ id: f.id, sheet, estados }, op, cobradas);
       if (!r) {
         if (sheet !== leida) await tx.character.update({ where: { id: f.id }, data: { stats: sheet } });
+        await escribirFotosCobradas(tx, propias, cobradas);
         continue;
       }
       await tx.character.update({
@@ -127,9 +131,10 @@ export async function limpiarEstadosDeJugadores(
     // Fichas sin estados a las que solo se les han vaciado los usos: se revalidan, no cuentan.
     const soloUsos: string[] = [];
     for (const f of filas) {
-      const sheet = parseSheet(f.stats);
+      const estados = leerEstados(f.estados);
+      const sheet = reconciliarVidaConEstados(parseSheet(f.stats), estados);
       const r = quitarEstadosDe(
-        { id: f.id, sheet, estados: leerEstados(f.estados) },
+        { id: f.id, sheet, estados },
         fotos.filter((c) => c.characterId === f.id),
       );
       // TODO(revisar): reescribir stats aquí pisa una escritura del autosave del jugador que
@@ -206,4 +211,33 @@ export function revalidarEstados(characterIds: string[]) {
   for (const id of characterIds) revalidatePath(`/characters/${id}`);
   revalidarPanelMaster();
   revalidatePath("/master/combate");
+}
+
+type FotoCobro = { id: string; pgActual: number; pgMax: number; fatigaActual: number; fatigaMax: number };
+
+async function escribirFotosCobradas(tx: Prisma.TransactionClient, antes: FotoCobro[], despues: FotoCobro[]) {
+  for (const [i, c] of despues.entries()) {
+    if (c === antes[i]) continue;
+    await tx.combatiente.update({ where: { id: c.id }, data: { pgActual: c.pgActual, fatigaActual: c.fatigaActual } });
+  }
+}
+
+// Guarda la ficha que ha cobrado o sumado vida o fatiga por su cuenta (pagar fatiga, acciones
+// de aumento sin estado, devolver la de Densificar) y, si el personaje está en un combate
+// abierto, lleva la misma diferencia a su foto, en una transacción (A5b, paso 0: antes la
+// foto, que es la que vale en combate, no se enteraba). No comprueba permisos: quien llama ya
+// lo ha hecho.
+export async function guardarFichaConFotos(characterId: string, antes: Sheet, despues: Sheet): Promise<void> {
+  const tocadas = await prisma.$transaction(async (tx) => {
+    await tx.character.update({ where: { id: characterId }, data: { stats: despues } });
+    if (antes.vidaActual === despues.vidaActual && antes.fatigaActual === despues.fatigaActual) return 0;
+    const fotos = await tx.combatiente.findMany({
+      where: { characterId, combate: COMBATE_ABIERTO },
+      select: { id: true, pgActual: true, pgMax: true, fatigaActual: true, fatigaMax: true },
+    });
+    const cobradas = fotos.map((c) => fotoTrasCambioDeFicha(c, antes, despues));
+    await escribirFotosCobradas(tx, fotos, cobradas);
+    return cobradas.filter((c, i) => c !== fotos[i]).length;
+  });
+  if (tocadas > 0) revalidarEstados([characterId]);
 }

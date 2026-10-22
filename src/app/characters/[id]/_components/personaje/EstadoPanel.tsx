@@ -91,7 +91,10 @@ function Estados({ ficha }: { ficha: FichaResuelta }) {
             <li key={a.estadoId} className="flex flex-col gap-1 border-l-2 border-glitch py-1 pl-3">
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                 <ChipEstado estado={a} />
-                <span className="font-mono text-[10px] uppercase tracking-wide text-muted">{textoDuracion(a.duracion)}</span>
+                {/* Los activables (A5a) ya llevan la duración larga en el chip. */}
+                {!a.duracionActivable && (
+                  <span className="font-mono text-[10px] uppercase tracking-wide text-muted">{textoDuracion(a.duracion)}</span>
+                )}
               </div>
               {a.detalle.length > 0 && (
                 <p className="font-mono text-[11px] leading-relaxed text-foreground">{a.detalle.join(" ")}</p>

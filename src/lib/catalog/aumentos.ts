@@ -128,6 +128,9 @@ export type NivelImplante = NivelModulo & {
   // A5a: lo que hace mientras su estado propio está puesto (Neuroprótesis). Cada nivel que lo
   // trae lo trae entero: vale el del nivel más alto.
   activo?: ActivoAumento;
+  // A5b: otros activables del nivel, cada uno con su estado propio (Neuroprótesis 4). Por
+  // estado, vale el del nivel más alto.
+  activos?: ActivoAumento[];
 };
 
 export type Implante = {
@@ -157,7 +160,7 @@ const ACTIVO_NEUROPROTESIS: ActivoAumento = {
   salvaciones: [{ contra: ["enfermedad", "radiacion", "toxinas", "venenos"], bono: -1 }],
 };
 
-function activarNeuroprotesis(conEleccion: boolean): AccionAumentoCatalogo {
+function activarNeuroprotesis(conEleccion: boolean, segundaReaccion = false): AccionAumentoCatalogo {
   return {
     id: "aumentos_activar_neuroprotesis",
     label: "Activar Neuroprótesis",
@@ -165,7 +168,8 @@ function activarNeuroprotesis(conEleccion: boolean): AccionAumentoCatalogo {
     costeFatiga: 2,
     nota:
       (conEleccion ? "+2 a Fuerza o Agilidad (eliges al activar) y +1 a los otros dos de Fuerza, Agilidad y Percepción" : "+1 a Fuerza, Agilidad y Percepción") +
-      " (no cuenta para requisitos de dote), −1 a cada penalizador por estado, heridas y fatiga (sin pasar de 0) y −1 a las salvaciones de Fortaleza contra enfermedad, radiación, toxinas y venenos. Dura 3 rondas, que solo corren en combate: fuera de él, desactívala a mano.",
+      " (no cuenta para requisitos de dote), −1 a cada penalizador por estado, heridas y fatiga (sin pasar de 0) y −1 a las salvaciones de Fortaleza contra enfermedad, radiación, toxinas y venenos. Dura 3 rondas, que solo corren en combate: fuera de él, desactívala a mano." +
+      (segundaReaccion ? " Mientras dura, segunda reacción por ronda (nivel 3)." : ""),
     efecto: {
       tipo: "activar",
       estadoId: "aum_neuroprotesis",
@@ -179,6 +183,48 @@ function activarNeuroprotesis(conEleccion: boolean): AccionAumentoCatalogo {
           ],
         },
       }),
+    },
+  };
+}
+
+
+// A5b: Neuroprótesis 3, segunda reacción mientras está activa (texto en Defensa, como las de
+// A2b) sobre lo de los niveles 1-2.
+const ACTIVO_NEUROPROTESIS_3: ActivoAumento = {
+  ...ACTIVO_NEUROPROTESIS,
+  mejora: { atributos: ["fuerza", "agilidad"], valor: 2 },
+  textos: [{ en: { tipo: "grupo", grupo: "Defensa" }, texto: "Segunda reacción por ronda mientras la Neuroprótesis está activa." }],
+};
+
+// A5b: Neuroprótesis 4, la acción adicional pagada a 3. Estado propio de 1 ronda que convive
+// con el de la activa: +2 a los tres sustituyendo al +1/+2 y heridas y fatiga a 0.
+const ACTIVO_NEUROPROTESIS_4: ActivoAumento = {
+  estadoId: "aum_neuroprotesis_4",
+  atributos: { fuerza: 2, agilidad: 2, percepcion: 2 },
+  sustituyeAtributosDe: "aum_neuroprotesis",
+  eliminaPenalizadoresUmbrales: true,
+};
+
+// A5b: la acción simple adicional del nivel 3 (2 de fatiga; 3 si ya se usó desde el último
+// descanso, casilla del modal). No pide tener la Neuroprótesis activada, solo el implante
+// (el sabotaje y los descansos no los lleva la app). Con el nivel 4, pagar 3 pone su estado.
+function accionAdicionalNeuroprotesis(nivel4: boolean): AccionAumentoCatalogo {
+  return {
+    id: "aumentos_accion_simple_adicional",
+    label: "Acción simple adicional",
+    economia: "En tu turno, una vez",
+    costeFatiga: 2,
+    nota:
+      "Ganas una acción simple más este turno. No hace falta tener la Neuroprótesis activada, solo que el implante no esté saboteado ni apagado. Vuelve a usarla antes de un descanso breve o largo y cuesta 3 (marca la casilla; la app no lleva los descansos)." +
+      (nivel4
+        ? " Nivel 4: pagando 3, durante esta ronda +2 a Fuerza, Agilidad y Percepción (sustituye al +1/+2 de la activa) y sin penalizadores por heridas ni fatiga; esa parte no se puede volver a usar hasta un descanso breve o largo."
+        : ""),
+    efecto: {
+      tipo: "accionAdicional",
+      repetida: {
+        costeFatiga: 3,
+        ...(nivel4 && { activar: { estadoId: "aum_neuroprotesis_4", duracion: { tipo: "rondas", rondas: 1 } } }),
+      },
     },
   };
 }
@@ -1615,9 +1661,12 @@ export const IMPLANTES: Implante[] = [
           "El personaje puede adquirir una única acción simple adicional durante su turno por el gasto de 2 puntos de fatiga. Una vez empleada esta habilidad, volver a usarla tendrá un coste de 3 puntos de fatiga, hasta que el personaje realice un descanso breve o largo.",
         ],
         modificadores: [],
+        // A5b: la segunda reacción, texto mientras está activa; la acción adicional, sin activarla.
+        acciones: [activarNeuroprotesis(true, true), accionAdicionalNeuroprotesis(false)],
+        activo: ACTIVO_NEUROPROTESIS_3,
         motor: [
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_activar_neuroprotesis" }, mecanismo: "nota_fija", estado: "pendiente" },
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_accion_simple_adicional" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_activar_neuroprotesis" }, mecanismo: "nota_fija", estado: "construido" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_accion_simple_adicional" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
       },
       {
@@ -1628,12 +1677,15 @@ export const IMPLANTES: Implante[] = [
           "Si el personaje emplea 3 puntos de fatiga para conseguir una acción simple adicional durante un turno además durante ese turno obtiene un aumento de +2 a fuerza, agilidad y percepción de forma simultánea y elimina por completo penalizadores por heridas o fatiga. Esta habilidad de nivel 4 no se puede volver a usar hasta que el personaje realice un descanso breve o largo.",
         ],
         modificadores: [],
+        // A5b: la misma acción, ahora con el estado de 1 ronda al pagar 3.
+        acciones: [accionAdicionalNeuroprotesis(true)],
+        activos: [ACTIVO_NEUROPROTESIS_4],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:fuerza" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_disparado_por_coste y atributo_por_pieza" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_disparado_por_coste y atributo_por_pieza" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:percepcion" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_disparado_por_coste y atributo_por_pieza" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_disparado_por_coste y reduce_penalizador_por_pieza" },
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_accion_simple_adicional" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:fuerza" }, mecanismo: "suma_derivado", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:percepcion" }, mecanismo: "suma_derivado", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_accion_simple_adicional" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
     ],

@@ -1404,7 +1404,54 @@ al preparar su modelado:
     circunstancial ni los bonos. Su +1 de Carácter es el permanente de A1.
   - **Vida (supuesto):** el +1 a Fuerza puede subir la vida máxima; al caerse o desactivarse
     la Neuroprótesis **no se resta vida** (S75 no cuenta los activables), para que activarla no
-    cueste vida de verdad.
+    cueste vida de verdad. *(Matizado en A5b: si queda por encima del máximo nuevo, se recorta.)*
+- *En la app (A5b, Neuroprótesis 3-4, recorte de vida y fatiga en combate; usuario, 2026-10-22):*
+  - **Acción simple adicional (nivel 3):** acción de aumento sin dado (efecto
+    `accionAdicional`), 2 de fatiga. Solo pide el implante (nivel 3+), no tenerlo activado; el
+    sabotaje y los descansos no los lleva la app. Casilla en el modal **"Ya usada desde el
+    último descanso (cuesta 3)"**: cobra 3; si no llega la fatiga sale apagada con el motivo, y
+    el servidor rechaza cualquier coste que no llegue. Con el nivel 3 no toca estados ni deja
+    registro.
+  - **Segunda reacción (nivel 3):** texto en Defensa ("Segunda reacción por ronda mientras la
+    Neuroprótesis está activa") y en la nota de Activar, solo con el estado de la activa puesto.
+  - **Nivel 4:** pagar 3 por la acción adicional (la casilla marcada) pone un estado propio,
+    `aum_neuroprotesis_4`, de **1 ronda** (chip "1 ronda, en combate"), con registro como A5a.
+    Va aparte del de la activa: conviven, y al caerse el de 1 ronda la activa sigue con lo que le
+    quede. Mientras dura: **+2 a Fuerza, Agilidad y Percepción que sustituye al +1/+2 de la
+    activa** (no se suman; también sin la activa), con origen "estado" (fuera de los requisitos
+    de dote), y **sin penalizadores por heridas ni fatiga** (el ajuste de umbrales los deja a 0;
+    la media velocidad y la carga del umbral no cambian, como en A3). Los −1 de la activa a los
+    estados y el −1 de Fortaleza siguen. "No se puede volver a usar hasta un descanso", texto en
+    la nota.
+  - **Vida al caerse un activable (usuario, 2026-10-22; cambia A5a):** sigue sin restarse lo
+    que baja el máximo, pero **si la vida actual queda por encima del máximo nuevo, se recorta
+    a él** (como al desequipar, `retirarPieza`): nada de 9/8. Igual la fatiga y las fotos de
+    combate abiertas. Solo cuando cambian los activables (ponerse, caerse, desactivarse o
+    cambiar de grado); un estado normal sigue con S75 y S74. Lo recortado cuenta como restado:
+    deshacer en el registro lo devuelve.
+  - **Tope de la vida y la fatiga actuales con un activable puesto (usuario, 2026-10-22):**
+    "con la Neuroprótesis puesta el máximo real es 9 y tienes que poder curarte hasta 9". El
+    tope al que se cura (+/- de Recursos, Sanar letal, la pestaña Vida del máster sobre la
+    ficha) y al que se recorta es el **máximo en reposo más los activables puestos**
+    (`topesDeVida`); los estados del máster siguen fuera (S74). Al leer, `parseSheet` no conoce
+    `Character.estados` y recorta al **máximo posible** (`topesPosibles`: los activables
+    equipados en su mejor grado), así que nunca baja un 9 curado con ella puesta; el recorte
+    exacto (`reconciliarVidaConEstados`) lo hacen las lecturas que sí los conocen: la página de
+    la ficha, `loadEditable`, la Mesa, la pestaña Vida, los cambios de estado, "Siguiente
+    turno" y deshacer del registro. Así se llega a 9/9 y nunca se ve ni se guarda 9/8.
+    Recortes al caerse, por todos los caminos: "Desactivar" en la ficha, quitar desde la Mesa o
+    el combate, "Limpiar estados", caducar con "Siguiente turno" y deshacer "Activar" en el
+    registro (deshacer "Desactivar" devuelve lo recortado). Un NPC no tiene estados: su tope es
+    el de reposo.
+  - **Fatiga en combate:** en combate la vida y la fatiga que valen son las de la foto
+    (`Combatiente`), y hasta A5b lo que cobraba la ficha (acciones de aumento, casillas de una
+    tirada, poderes) solo bajaba `stats.fatigaActual`: la foto no se enteraba. Ahora la misma
+    diferencia va también a la foto del combate abierto (suelo 0, tope su máximo), en la misma
+    transacción: `pagarFatigaAction`, `usarAccionAumentoAction` (también Sanar letal, que sube
+    la vida) y devolver la fatiga de Densificar. El +/- de Recursos sigue siendo solo de la
+    ficha, y el ajuste de la fila propia en Combate, solo de la foto.
+    `TODO(revisar)`: el "no te llega la fatiga" de las acciones mira la de la ficha, no la de
+    la foto.
 
 ### 11.2 Lo que el documento no dice `[PENDIENTE]`
 - **Tope de implantes**: pregunta 11, sigue abierta.
@@ -1420,6 +1467,9 @@ al preparar su modelado:
   aplica, porque no es un arma (usuario, 2026-10-22).
 - **Neuroprótesis Simpática 1**: si "reducir penalizadores por estado en 1" alcanza también a
   los −N a atributos (Enfermedad, Parálisis). La app solo reduce los de las tiradas.
+- **Neuroprótesis Simpática 4**: si "elimina por completo penalizadores por heridas o fatiga"
+  quita también la media velocidad y la carga del umbral. La app solo quita el −N de las
+  tiradas, como las reducciones de A3.
 
 ### 11.3 Decisiones del usuario `[FIRME · usuario 2026-10-16, Cuestionario Aumentos]`
 - **En la ficha**: una pieza de equipo más, que se equipa y se desequipa ("un jugador se
@@ -2070,7 +2120,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S72 | **Pool de creación en negativo: se permite, pero bloquea el envío a revisión.** Bajar la letra de una categoría tras gastar (o que otra categoría se lleve su letra) deja el pool en negativo; el cambio de letra no se impide, para poder reordenar prioridades, y el exceso es una falta ("Te has pasado N puntos en …") en Atributos, Habilidades, Psiónica y Dotes. El máster puede aprobar igual. | Decisión del usuario (2026-10-15). |
 | S73 | **Shock: dos grados, cuerpo y equipo (opción B).** El máster aplica el Shock con dos grados: el de **Fortaleza** (cuerpo) decide la parálisis y los implantes; el de **Estructura** (equipo), todos los sistemas electrónicos que lleva encima a la vez, no pieza a pieza. La app no tira: el grado lo pone el máster. Propuesta de la mesa, también pendiente: una pieza afectada **pierde su bono entero** (no −2/−1), salvo excepción escrita en la pieza, por nivel. Un "averiado" pieza a pieza (sabotaje, Sistema de Emergencia) iría aparte, como herramienta del máster. | Decisión del usuario (2026-10-16), fiel a `fuente/sistema.md` (Shock). **Pendiente de que Murillo la confirme**: maqueta https://claude.ai/artifact/VYm4ZrSrPBuYSMmx6nLLEX |
 | S74 | **Estados de la ficha y vida máxima (E1a).** Los estados que pone el máster (`Character.estados`) mueven la vida y la fatiga máximas también fuera de combate. La vida actual no se recorta al máximo con estados (`parseSheet` reconcilia contra el máximo en reposo, sin estados): lo que baja al poner el estado es S75; curar topa en el máximo en reposo. *(Superado por S75: "la vida actual no se recorta" y "un estado puesto o quitado dentro del combate no mueve la foto `pgMax`".)* Una duración de **0 rondas** vale (la usa el catálogo: se cae al cerrar la vuelta, S77). | Decisión del usuario (2026-10-16: "los estados mueven la vida máxima también fuera de combate"); el tope de curar, del redactor. |
-| S75 | **Vida perdida al bajar el máximo.** Cuando poner un estado (o cambiarle el grado) **baja** la vida máxima, la vida actual baja lo mismo y se guarda; igual la fatiga. No se recupera al quitarse el estado ni al caerse por rondas: es castigo. Si el máximo sube o no cambia, la actual no se toca. Suelo 0; llegar a 0 no hace nada automático (la inconsciencia la marca el máster). En combate baja también la foto del jugador (`pgActual`/`fatigaActual`), y la foto recalcula `pgMax`/`fatigaMax` con los estados nuevos cada vez que cambian (poner, quitar, caerse por rondas). Deshacer la acción en el registro del máster (E1b) devuelve lo restado, hasta el máximo. Motor: `rules/vidaPorEstados.ts`. | Decisión del usuario (2026-10-16). |
+| S75 | **Vida perdida al bajar el máximo.** Cuando poner un estado (o cambiarle el grado) **baja** la vida máxima, la vida actual baja lo mismo y se guarda; igual la fatiga. No se recupera al quitarse el estado ni al caerse por rondas: es castigo. Si el máximo sube o no cambia, la actual no se toca. Suelo 0; llegar a 0 no hace nada automático (la inconsciencia la marca el máster). En combate baja también la foto del jugador (`pgActual`/`fatigaActual`), y la foto recalcula `pgMax`/`fatigaMax` con los estados nuevos cada vez que cambian (poner, quitar, caerse por rondas). Deshacer la acción en el registro del máster (E1b) devuelve lo restado, hasta el máximo. **Activables de aumento (A5a-A5b):** sus estados no cuentan para la bajada, pero si al cambiar quedan la vida o la fatiga por encima del máximo nuevo, se recortan a él; y mientras están puestos suben el tope al que se cura (§11, A5b). Motor: `rules/vidaPorEstados.ts`. | Decisión del usuario (2026-10-16; activables, 2026-10-22). |
 | S76 | **Terminar escena (E1c).** "Terminar escena" del máster quita los estados con duración "fin de escena" a todos los personajes **en juego** (aprobados), en una sola acción del registro que se deshace entera (si a alguno le han vuelto a poner uno de esos estados, no se deshace ninguno). Quitar no resta vida (S75); las fotos de combate abiertas recalculan su máximo. Desde E1d también limpia los estados de escena de los **NPC** del combate abierto, sin registro (deshacer no se los devuelve). Recompensas: quitar XP o créditos que dejaría a alguien en negativo **no se hace para nadie** y se explica (antes se recortaba a 0). Motor: `quitarEstadosDeEscena` (`rules/vidaPorEstados.ts`), `planAjusteRecurso` (`rules/registro.ts`). | Decisión del usuario (2026-10-16); "solo aprobados" y "NPC fuera", del redactor. |
 | S77 | **Las rondas de los estados bajan al cerrar la vuelta (E1d).** "N rondas" se cuenta en vueltas de la cola, no en turnos: cada estado con duración en rondas pierde una cuando el turno pasa del último de la cola al primero (sube la ronda), para todos a la vez (jugadores en su ficha, NPC en su fila), y se cae al llegar a 0. Un turno normal no descuenta nada. Un estado de 1 ronda puesto a mitad de vuelta dura hasta el final de esa vuelta. Sustituye al criterio de la fase 6b (subtarea 2.6: cada turno de cualquiera descontaba una ronda). Al caerse uno, la foto de combate del jugador recalcula su máximo (S75). Motor: `pasarTurno` (`rules/turnos.ts`), `descontarDuracion`, `estadosAlCerrarVuelta`. | Decisión del usuario (2026-10-16). |
 | S78 | **Vida y fatiga a mano por el máster (pestaña Vida, tras E1d).** El máster elige daño o curación y una cantidad; el signo lo pone el modo y las tres categorías de daño restan igual (§7). Suelo 0; la curación topa en el máximo en reposo en la ficha (S74, el mismo `ajustarVida` del jugador) y en `pgMax`/`fatigaMax` en la foto de combate. En combate se ajusta la foto de cada fila (jugador o NPC); en la Mesa, la ficha, salvo que el jugador esté en un combate **en curso**: entonces su foto, la que enseña la Mesa (`TODO(revisar)`). Una acción a varios es una entrada `vida` del registro; deshacerla vuelve al "antes" de cada uno (recortado al tope de hoy) y **no se puede** si el valor actual ya no es el "después" registrado (hay que deshacer antes lo posterior); un objetivo que ya no existe o de un combate terminado se salta. La vista previa enseña el umbral de §7 que se cruza con su −N base (sin el ajuste de especie, §14.8). Motor: `rules/ajusteVida.ts`, `planAjusteVida`/`planDeshacerVida` (`rules/registro.ts`). | Decisión del usuario (2026-10-16: pestaña Vida, deshacer también para NPC); Mesa en combate y "solo mira el valor", del redactor. |

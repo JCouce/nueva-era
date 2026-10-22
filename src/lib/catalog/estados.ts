@@ -851,6 +851,26 @@ export const ESTADOS_DE_AUMENTO: Estado[] = [
       },
     ],
   },
+  // A5b: la acción simple adicional pagada a 3 con el nivel 4. Va aparte de aum_neuroprotesis
+  // para no pisarla: al caerse este (1 ronda), la activa sigue con lo que le quede.
+  {
+    id: "aum_neuroprotesis_4",
+    label: "Neuroprótesis Simpática 4",
+    resumen: "Acción simple adicional a 3 de fatiga: +2 a Fuerza, Agilidad y Percepción esta ronda.",
+    grados: [
+      {
+        id: "activo",
+        label: "Nivel 4",
+        modificadores: [],
+        detalle: [
+          "+2 a Fuerza, Agilidad y Percepción, que sustituye al +1/+2 de la Neuroprótesis activa (no " +
+            "se suman; no cuenta para requisitos de dote). Sin penalizadores por heridas ni fatiga. No " +
+            "se puede volver a usar hasta un descanso breve o largo.",
+        ],
+        duracionTurnos: 1,
+      },
+    ],
+  },
   {
     id: "aum_proyeccion",
     label: "Proyección Neuro-Expresiva",

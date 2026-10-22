@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { revalidarPanelMaster } from "@/lib/revalidarMaster";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
-import { cambiarEstadosDePersonajes } from "@/lib/estadosPersonaje";
+import { cambiarEstadosDePersonajes, guardarFichaConFotos } from "@/lib/estadosPersonaje";
 import { z } from "zod";
 import {
   characterCreateSchema,
@@ -78,7 +78,7 @@ import {
   terminarEscena,
   elegirEspecie,
   creditosDeLaLetra,
-  reconciliarVida,
+  reconciliarVidaConEstados,
   type EleccionEspecie,
   fichaSoloLectura,
   transicionRevision,
@@ -157,7 +157,9 @@ async function loadEditable(characterId: string): Promise<Editable | { error: st
   if (fichaSoloLectura({ estado: character.status, esMaster: user.role === "MASTER" })) {
     return { error: "La ficha está en revisión: retírala para seguir editando" };
   }
-  const sheet = parseSheet(character.stats);
+  const estados = leerEstados(character.estados);
+  // Recorte exacto de la vida con los activables puestos (A5b): parseSheet topa con el posible.
+  const sheet = reconciliarVidaConEstados(parseSheet(character.stats), estados);
   const ajuste = ajustesDeCoste(especieDeFicha(sheet));
   return {
     sheet,
@@ -171,7 +173,7 @@ async function loadEditable(characterId: string): Promise<Editable | { error: st
     creditos: character.creditos,
     esMaster: user.role === "MASTER",
     userId: user.id,
-    estados: leerEstados(character.estados),
+    estados,
   };
 }
 
@@ -495,7 +497,7 @@ export async function desequiparAction(
   const devolucion = ctx.aprobada ? null : devolucionAumento(ctx.sheet, instanciaId);
   const refund = costeDeRetirar(ctx.sheet, instanciaId) + (devolucion?.deCreditos ?? 0);
   // retirarPieza recorta la vida actual si el máximo baja (Hipertrofia y los +1, A1).
-  const sinPieza = retirarPieza(ctx.sheet, instanciaId);
+  const sinPieza = retirarPieza(ctx.sheet, instanciaId, ctx.estados);
   const sheet = devolucion
     ? { ...sinPieza, bolsaAumentosGastada: Math.max(0, sinPieza.bolsaAumentosGastada - devolucion.deBolsa) }
     : sinPieza;
@@ -525,17 +527,18 @@ export async function ajustarRecursoAction(
 export async function ajustarVidaAction(characterId: string, delta: number): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, ajustarVida(ctx.sheet, delta));
+  return persist(characterId, ajustarVida(ctx.sheet, delta, ctx.estados));
 }
 
 export async function ajustarFatigaAction(characterId: string, delta: number): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, ajustarFatiga(ctx.sheet, delta));
+  return persist(characterId, ajustarFatiga(ctx.sheet, delta, ctx.estados));
 }
 
-// Pago de fatiga de un poder psiónico; con `permiteTemporal` (Proeza) el exceso
-// sobre la fatiga que se tiene pasa a fatiga temporal.
+// Pago de fatiga de un poder psiónico, de las casillas de una tirada y de las acciones sin
+// dado; con `permiteTemporal` (Proeza) el exceso sobre la fatiga que se tiene pasa a fatiga
+// temporal. En combate se cobra también de la foto (guardarFichaConFotos, A5b).
 export async function pagarFatigaAction(
   characterId: string,
   coste: number,
@@ -543,7 +546,21 @@ export async function pagarFatigaAction(
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, pagarFatiga(ctx.sheet, coste, permiteTemporal === true));
+  const sheet = pagarFatiga(ctx.sheet, coste, permiteTemporal === true);
+  await guardarFichaConFotos(characterId, ctx.sheet, sheet);
+  return { ok: true, sheet };
+}
+
+// Devolver fatiga que se acaba de cobrar (desmarcar Densificar en "Bloquear daño", A4b): como
+// ajustarFatigaAction, pero en combate también a la foto, para deshacer lo que hizo
+// pagarFatigaAction. El +/- de Recursos sigue siendo solo de la ficha.
+export async function devolverFatigaAction(characterId: string, cantidad: number): Promise<SaveResult> {
+  if (!Number.isInteger(cantidad) || cantidad <= 0 || cantidad > 99) return { ok: false, error: "Cantidad no válida" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const sheet = ajustarFatiga(ctx.sheet, cantidad, ctx.estados);
+  await guardarFichaConFotos(characterId, ctx.sheet, sheet);
+  return { ok: true, sheet };
 }
 
 export async function ajustarFatigaTemporalAction(characterId: string, delta: number): Promise<SaveResult> {
@@ -591,36 +608,41 @@ export async function liberarUsoEscenaAction(characterId: string, id: unknown): 
 // Sin el estado, la acción se cobra igual y el mensaje lo dice. Con estado, el cobro va en la
 // misma transacción que el cambio de estado (`preparar` de cambiarEstadosDePersonajes).
 // Activables (A5a): activar pone el estado propio del aumento (renueva si ya estaba) y
-// desactivar lo quita, por el mismo camino; `eleccion` es lo elegido en el modal de activar
-// (Neuroprótesis 2: a qué va el +2), y lo valida usoDeAccionAumento.
+// desactivar lo quita, por el mismo camino. `extra`: lo del modal, que valida
+// usoDeAccionAumento: `eleccion` (Neuroprótesis 2: a qué va el +2) y `repetida` (A5b: la casilla
+// "ya usada" de la acción adicional, que cobra 3 y, con el nivel 4, pone su estado).
+// En combate, lo que se cobra (o se cura) va también a la foto del combatiente (A5b).
 const accionAumentoSchema = z.string().min(1).max(60);
-const eleccionActivableSchema = z.string().min(1).max(40).optional();
+const extraAccionAumentoSchema = z
+  .object({ eleccion: z.string().min(1).max(40).optional(), repetida: z.boolean().optional() })
+  .optional();
 
-export async function usarAccionAumentoAction(characterId: string, accionId: unknown, eleccion?: unknown): Promise<SaveResult> {
+export async function usarAccionAumentoAction(characterId: string, accionId: unknown, extra?: unknown): Promise<SaveResult> {
   const parsed = accionAumentoSchema.safeParse(accionId);
-  const parsedEleccion = eleccionActivableSchema.safeParse(eleccion ?? undefined);
-  if (!parsed.success || !parsedEleccion.success) return { ok: false, error: "Acción no válida" };
+  const parsedExtra = extraAccionAumentoSchema.safeParse(extra ?? undefined);
+  if (!parsed.success || !parsedExtra.success) return { ok: false, error: "Acción no válida" };
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  const uso = usoDeAccionAumento(ctx.sheet, ctx.estados, parsed.data, parsedEleccion.data);
+  const uso = usoDeAccionAumento(ctx.sheet, ctx.estados, parsed.data, parsedExtra.data ?? {});
   if (!uso.ok) return { ok: false, error: uso.error };
   if (!uso.op) {
-    await persist(characterId, uso.sheet);
+    await guardarFichaConFotos(characterId, ctx.sheet, uso.sheet);
     return { ok: true, sheet: uso.sheet, mensaje: uso.mensaje };
   }
-  const coste = uso.accion.costeFatiga ?? 0;
+  const coste = uso.coste;
   const hecho = await cambiarEstadosDePersonajes(
     [characterId],
     uso.op,
     { userId: ctx.userId, motivo: `${uso.accion.label} (${uso.accion.fuente}), desde la ficha` },
-    // TODO(revisar): en combate se cobra de la ficha, no de la foto del combatiente (igual
-    // que el resto de A4a).
+    // El cobro, en la misma transacción que el estado; cambiarEstadosDePersonajes lo lleva
+    // también a la foto del combate abierto.
     coste > 0 ? (s) => pagarFatiga(s, coste, false) : undefined,
   );
   if (!hecho) return { ok: false, error: "Personaje no encontrado" };
   // Cambiar el estado puede tocar la vida (S75): la ficha que vale es la de la base.
-  const fila = await prisma.character.findUnique({ where: { id: characterId }, select: { stats: true } });
-  return { ok: true, sheet: fila ? parseSheet(fila.stats) : uso.sheet, mensaje: uso.mensaje };
+  const fila = await prisma.character.findUnique({ where: { id: characterId }, select: { stats: true, estados: true } });
+  const sheet = fila ? reconciliarVidaConEstados(parseSheet(fila.stats), leerEstados(fila.estados)) : uso.sheet;
+  return { ok: true, sheet, mensaje: uso.mensaje };
 }
 
 // "Recargar" (cargador de balas / batería portátil, S17/S18 de sistema.md):
@@ -926,7 +948,7 @@ export async function setEspecieAction(
   if ("error" in res) return { ok: false, error: res.error };
   // El reset deja vida y fatiga en el centinela 999 y una especie nueva puede bajar el
   // máximo: se recortan aquí, no al releer, para que la pantalla no vea "999/9".
-  const sheet = reconciliarVida(res.sheet);
+  const sheet = reconciliarVidaConEstados(res.sheet, ctx.estados);
   if (!res.reseteada) return persist(characterId, sheet);
 
   const creditos = creditosDeLaLetra(sheet.prioridades);

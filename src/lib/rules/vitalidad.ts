@@ -8,19 +8,45 @@
 // Deliberadamente fuera de este cambio: el snapshot de PG/fatiga que lleva
 // `Combatiente` en Fase 6b (master/combate) sigue igual — esto es para fuera
 // de combate (la ficha, RecursosTab), no sustituye esa foto.
+import { activosDeAumentos, efectosDeActivables } from "./aumentosActivables";
 import { modificadoresActivos, salud } from "./derivados";
 import { desequipar } from "./equipo";
+import type { EstadoActivo } from "./estados";
 import type { Sheet } from "./sheet";
+import { estadoPorId } from "../catalog/estados";
 
-// Máximos en reposo (especie + equipo), sin estados de combate: es lo que recorta
-// parseSheet y lo que clampa el servidor, que no conoce el combate. Igual que antes
-// de resolverFicha (E1b), cuando salud() tomaba estos modificadores por defecto.
-const saludEnReposo = (sheet: Sheet) => salud(sheet, modificadoresActivos(sheet));
+export type TopesVida = { vida: number; fatiga: number };
 
-// El tope al que cura un ajuste de vida/fatiga de la ficha (S74): el máximo en reposo.
-export function topesEnReposo(sheet: Sheet): { vida: number; fatiga: number } {
-  const { vida, fatiga } = saludEnReposo(sheet);
-  return { vida, fatiga };
+// Tope de la vida y la fatiga actuales: el máximo en reposo (especie + equipo) más lo que
+// suban los activables de aumento puestos (A5b, usuario 2026-10-22: "con la Neuroprótesis
+// puesta el máximo real es 9 y tienes que poder curarte hasta 9"). Los estados que pone el
+// máster no cuentan: con ellos sigue S74 (curar topa en reposo; lo que bajan es S75). Sin
+// `estados`, el máximo en reposo de siempre.
+export function topesDeVida(sheet: Sheet, estados: readonly EstadoActivo[] = []): TopesVida {
+  const activables = efectosDeActivables(sheet, estados).modificadores;
+  return salud(sheet, [...modificadoresActivos(sheet), ...activables]);
+}
+
+// El tope más alto que podrían dar los activables equipados (cada estado propio, puesto o no,
+// en cada grado). Es lo que recorta parseSheet, que no conoce Character.estados: así nunca
+// baja una vida curada con la Neuroprótesis puesta. El recorte exacto, con los estados, lo
+// hace quien los lee (reconciliarVidaConEstados). Sin activables equipados, el de reposo.
+export function topesPosibles(sheet: Sheet): TopesVida {
+  const base = topesDeVida(sheet);
+  const ids = [...new Set(activosDeAumentos(sheet).map((a) => a.activo.estadoId))];
+  if (ids.length === 0) return base;
+  let combinaciones: EstadoActivo[][] = [[]];
+  for (const estadoId of ids) {
+    const grados = estadoPorId(estadoId)?.grados ?? [];
+    combinaciones = combinaciones.flatMap((c) => [
+      c,
+      ...grados.map((g) => [...c, { estadoId, gradoId: g.id, rondasRestantes: null }]),
+    ]);
+  }
+  return combinaciones.reduce((mejor, estados) => {
+    const t = topesDeVida(sheet, estados);
+    return { vida: Math.max(mejor.vida, t.vida), fatiga: Math.max(mejor.fatiga, t.fatiga) };
+  }, base);
 }
 
 // Delta manual sobre un valor con tope: [0, tope]. La usan la ficha (ajustarVida) y
@@ -29,39 +55,53 @@ export function vidaTrasAjuste(actual: number, tope: number, delta: number): num
   return Math.max(0, Math.min(tope, actual + Math.round(delta)));
 }
 
-// Recorta vidaActual/fatigaActual al máximo actual de salud() — nunca los
-// sube solo (eso es ajustarVida/ajustarFatiga, una acción explícita del
-// jugador), solo los baja si el máximo cayó por debajo de lo que había.
-// Se llama desde parseSheet en cada lectura, mismo criterio que
-// reconciliarRecursos: idempotente, sin efecto si ya está dentro de rango.
-export function reconciliarVida(sheet: Sheet): Sheet {
-  const { vida, fatiga } = saludEnReposo(sheet);
+// Recorta vidaActual/fatigaActual a `topes` — nunca los sube solo (eso es
+// ajustarVida/ajustarFatiga, una acción explícita del jugador), solo los baja si el
+// máximo cayó por debajo de lo que había. Idempotente, sin efecto si ya está dentro de
+// rango. parseSheet lo llama con topesPosibles; quien conoce los estados, con
+// reconciliarVidaConEstados.
+export function reconciliarVida(sheet: Sheet, topes: TopesVida = topesDeVida(sheet)): Sheet {
+  const { vida, fatiga } = topes;
   const vidaActual = Math.min(sheet.vidaActual, vida);
   const fatigaActual = Math.min(sheet.fatigaActual, fatiga);
   if (vidaActual === sheet.vidaActual && fatigaActual === sheet.fatigaActual) return sheet;
   return { ...sheet, vidaActual, fatigaActual };
 }
 
+// Lo que hace parseSheet en cada lectura: recortar al tope posible (topesPosibles). El
+// centinela 999 de una ficha nueva cae aquí a un número de verdad.
+export function reconciliarVidaAlLeer(sheet: Sheet): Sheet {
+  return reconciliarVida(sheet, topesPosibles(sheet));
+}
+
 // Desequipar y recortar la vida/fatiga actuales al máximo nuevo en el mismo golpe: quitar
 // una pieza que daba vida (Hipertrofia, un +1 a Agilidad o Aguante, A1) baja el máximo y
 // la pantalla no debe ver "12/10" hasta la próxima lectura. Ponerla no sube la actual
 // (como con la especie o el equipo: curar es ajustarVida).
-export function retirarPieza(sheet: Sheet, instanciaId: string): Sheet {
-  return reconciliarVida(desequipar(sheet, instanciaId));
+// `estados`: los del personaje, para no recortar lo que da un activable que sigue puesto.
+export function retirarPieza(sheet: Sheet, instanciaId: string, estados: readonly EstadoActivo[] = []): Sheet {
+  return reconciliarVidaConEstados(desequipar(sheet, instanciaId), estados);
 }
 
-// Delta manual (+/-), clamp [0, máximo de salud()] — mismo patrón que
-// ajustarRecurso() en recursos.ts.
-export function ajustarVida(sheet: Sheet, delta: number): Sheet {
+// El recorte exacto: al tope con los activables puestos (topesDeVida). Lo usan las lecturas
+// que conocen Character.estados (la ficha, loadEditable, la Mesa, el combate).
+export function reconciliarVidaConEstados(sheet: Sheet, estados: readonly EstadoActivo[]): Sheet {
+  return reconciliarVida(sheet, topesDeVida(sheet, estados));
+}
+
+// Delta manual (+/-), clamp [0, topesDeVida] — mismo patrón que ajustarRecurso() en
+// recursos.ts. `estados`: los del personaje (con la Neuroprótesis puesta se cura hasta su
+// máximo, A5b); sin ellos, el máximo en reposo.
+export function ajustarVida(sheet: Sheet, delta: number, estados: readonly EstadoActivo[] = []): Sheet {
   if (!Number.isFinite(delta)) return sheet;
-  const vidaActual = vidaTrasAjuste(sheet.vidaActual, saludEnReposo(sheet).vida, delta);
+  const vidaActual = vidaTrasAjuste(sheet.vidaActual, topesDeVida(sheet, estados).vida, delta);
   if (vidaActual === sheet.vidaActual) return sheet;
   return { ...sheet, vidaActual };
 }
 
-export function ajustarFatiga(sheet: Sheet, delta: number): Sheet {
+export function ajustarFatiga(sheet: Sheet, delta: number, estados: readonly EstadoActivo[] = []): Sheet {
   if (!Number.isFinite(delta)) return sheet;
-  const fatigaActual = vidaTrasAjuste(sheet.fatigaActual, saludEnReposo(sheet).fatiga, delta);
+  const fatigaActual = vidaTrasAjuste(sheet.fatigaActual, topesDeVida(sheet, estados).fatiga, delta);
   if (fatigaActual === sheet.fatigaActual) return sheet;
   return { ...sheet, fatigaActual };
 }

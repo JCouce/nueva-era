@@ -179,12 +179,16 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_brazo_bionico 1": 1,
     "aum_enjambre_nanobot 4": 2,
     // A5a: activables. Neuroprótesis 1 entera (activar, +1 a los tres, −1 a los penalizadores,
-    // −1 en "Contra…" y la nota) y la elección del 2; el 3 y el 4 son A5b.
+    // −1 en "Contra…" y la nota) y la elección del 2.
     "aum_neuroprotesis_simpatica 1": 7,
     "aum_neuroprotesis_simpatica 2": 1,
+    // A5b: segunda reacción y acción adicional (3); el estado de 1 ronda con sus +2, la
+    // eliminación de heridas y fatiga y la nota (4).
+    "aum_neuroprotesis_simpatica 3": 2,
+    "aum_neuroprotesis_simpatica 4": 5,
   };
 
-  test("A1, A2a, A2b, A3, A4a, A4b y A5a: solo lo construido (o lo narrativo) está marcado como construido", () => {
+  test("A1, A2a, A2b, A3, A4a, A4b, A5a y A5b: solo lo construido (o lo narrativo) está marcado como construido", () => {
     for (const op of OPERACIONES_GENETICAS) {
       const construidos = op.motor.filter((m) => m.estado === "construido" && m.tipo !== "narrativo");
       const esperados =

@@ -6,10 +6,12 @@ import { prisma } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma/client";
 import {
   fotoEnMesa,
+  leerEstados,
   parseSheet,
+  reconciliarVidaConEstados,
   planAjusteVida,
   planDeshacerVida,
-  topesEnReposo,
+  topesDeVida,
   type DatosVida,
   type ObjetivoVida,
   type ObjetivoVidaActual,
@@ -53,16 +55,18 @@ const objetivoDeFoto = (f: FotoLeida, recurso: RecursoVital): ObjetivoVidaActual
 });
 
 async function fichasComoObjetivos(tx: Tx, ids: string[], recurso: RecursoVital) {
-  const filas = await tx.character.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, stats: true } });
+  const filas = await tx.character.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, stats: true, estados: true } });
   return filas.map((f) => {
-    const sheet = parseSheet(f.stats);
+    // Tope y recorte con los activables puestos (A5b): parseSheet topa con el posible.
+    const estados = leerEstados(f.estados);
+    const sheet = reconciliarVidaConEstados(parseSheet(f.stats), estados);
     const objetivo: ObjetivoVidaActual = {
       objetivo: "ficha",
       id: f.id,
       nombre: f.name,
       npc: false,
       actual: sheet[CAMPO_FICHA[recurso]],
-      tope: topesEnReposo(sheet)[recurso],
+      tope: topesDeVida(sheet, estados)[recurso],
     };
     return { objetivo, sheet };
   });

@@ -6,9 +6,10 @@ import {
   describirEstadosActivos,
   leerEstados,
   parseSheet,
+  reconciliarVidaConEstados,
   resolverFicha,
   textoEntradaRegistro,
-  topesEnReposo,
+  topesDeVida,
   vidaEnMesa,
   VITALIDAD_DE_FICHA,
 } from "@/lib/rules";
@@ -56,8 +57,9 @@ async function cargarMesa() {
     },
   });
   const jugadores: JugadorMesa[] = filas.map((f) => {
-    const sheet = parseSheet(f.stats);
     const estados = leerEstados(f.estados);
+    // Recorte exacto con los activables puestos (A5b): parseSheet topa con el posible.
+    const sheet = reconciliarVidaConEstados(parseSheet(f.stats), estados);
     const ficha = resolverFicha(sheet, { estados, vitalidad: VITALIDAD_DE_FICHA });
     const especie = ficha.especie
       ? [ficha.especie.especie.label, ficha.especie.casta?.label].filter(Boolean).join(" · ")
@@ -69,10 +71,11 @@ async function cargarMesa() {
       },
       fotos.filter((c) => c.characterId === f.id),
     );
-    // Hasta dónde cura la pestaña Vida: la foto, a su máximo; la ficha, al de reposo (S74).
+    // Hasta dónde cura la pestaña Vida: la foto, a su máximo; la ficha, al de reposo (S74)
+    // más los activables puestos (A5b).
     const tope = mostrada.deCombate
       ? { vida: mostrada.vida.max, fatiga: mostrada.fatiga.max }
-      : topesEnReposo(sheet);
+      : topesDeVida(sheet, estados);
     return {
       id: f.id,
       nombre: f.name,

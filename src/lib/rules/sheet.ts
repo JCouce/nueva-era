@@ -34,7 +34,7 @@ import {
   type Farmacos,
   type MunicionEspecialStock,
 } from "./recursos";
-import { reconciliarVida } from "./vitalidad";
+import { reconciliarVidaAlLeer } from "./vitalidad";
 import { MAX_USOS_ESCENA, normalizarUsosEscena } from "./usosEscena";
 import { MUNICION_GRANADA, MUNICION_ESPECIAL } from "../catalog/municion";
 import { FARMACOS } from "../catalog/medicina";
@@ -329,14 +329,16 @@ export function parseSheet(raw: unknown): Sheet {
   // Idempotente y sin efectos destructivos: nunca toca una entrada que ya
   // existe, solo añade/quita para que coincida con sheet.equipo.
   //
-  // reconciliarVida() después: recorta vidaActual/fatigaActual al máximo real
-  // (salud(), que depende de atributos/equipo/especie ya reconciliados) — el
-  // centinela 999 de una ficha nueva o recién migrada cae aquí a su tope de
-  // verdad, y una ficha vieja que perdiera un bono de vida no se queda con
-  // un `actual` por encima de su nuevo máximo.
+  // reconciliarVidaAlLeer() después: recorta vidaActual/fatigaActual al tope
+  // posible (salud(), que depende de atributos/equipo/especie ya reconciliados,
+  // más lo que puedan dar los activables equipados: la ficha no conoce
+  // Character.estados, A5b) — el centinela 999 de una ficha nueva o recién
+  // migrada cae aquí a un número de verdad, y una ficha vieja que perdiera un
+  // bono de vida no se queda con un `actual` por encima de su nuevo máximo. El
+  // recorte exacto con los estados lo hace quien los lee (reconciliarVidaConEstados).
   const especieId = typeof r.especieId === "string" ? r.especieId.slice(0, 40) : null;
 
-  return reconciliarVida(
+  return reconciliarVidaAlLeer(
     reconciliarRecursos({
       schemaVersion: clampInt(r.schemaVersion, 1, SCHEMA_VERSION, SCHEMA_VERSION),
       edad: r.edad === null || r.edad === undefined ? null : clampInt(r.edad, 0, 999, 0),

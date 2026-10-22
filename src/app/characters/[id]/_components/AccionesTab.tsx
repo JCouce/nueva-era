@@ -35,6 +35,7 @@ import {
   efectosDelResultado,
   tirarPeaje,
   SELECCION_PODER_VACIA,
+  ID_ACCION_REPETIDA,
   ID_ELECCION_ACTIVABLE,
   type SeleccionPoder,
   type EfectosDeUso,
@@ -55,6 +56,7 @@ import {
   type EstadoCondiciones,
   type EleccionTirada,
   type FichaResuelta,
+  type ExtraAccionAumento,
   type TiradaMontada,
   type NivelesPsionica,
   type DisciplinaId,
@@ -561,7 +563,7 @@ export function AccionesTab({
   onGastarUsosEscena?: (ids: string[]) => void;
   // Acciones de aumento (A4a): las cobra y aplica el servidor (usarAccionAumentoAction), que
   // devuelve qué ha pasado por `onMensaje`. Sin él (NPC), se paga la fatiga con onPagarFatiga.
-  onUsarAccionAumento?: (accionId: string, onMensaje: (mensaje: string) => void, eleccion?: string) => void;
+  onUsarAccionAumento?: (accionId: string, onMensaje: (mensaje: string) => void, extra?: ExtraAccionAumento) => void;
   // NpcEditor.tsx (edición libre de máster): la tirada de Fabricar no aplica
   // — FabricarSeccion la salta y llama a onFabricar directo con éxito fijo,
   // mismo criterio que AtributosTab/HabilidadesTab con este mismo prop.
@@ -1049,12 +1051,12 @@ export function AccionesTab({
     if (deAumento) {
       setAvisoAumento(null);
       // Activables (A5a): lo elegido en el selector del modal (Neuroprótesis 2: a qué va el +2).
+      // Acción adicional (A5b): la casilla "ya usada" (cuesta 3).
       const eleccion = estadoModal[ID_ELECCION_ACTIVABLE];
-      onUsarAccionAumento(
-        modalDirecta.id,
-        (m) => setAvisoAumento(`${modalDirecta.label}: ${m}`),
-        typeof eleccion === "string" ? eleccion : undefined,
-      );
+      onUsarAccionAumento(modalDirecta.id, (m) => setAvisoAumento(`${modalDirecta.label}: ${m}`), {
+        ...(typeof eleccion === "string" && { eleccion }),
+        ...(estadoModal[ID_ACCION_REPETIDA] === true && { repetida: true }),
+      });
     } else if (modalDirecta.costeFatiga) onPagarFatiga?.(modalDirecta.costeFatiga, false);
     const id = Date.now();
     setHistorial((h) =>

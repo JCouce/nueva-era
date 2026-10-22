@@ -80,11 +80,15 @@ function revalidateNpcs() {
   revalidatePath("/master/npcs");
 }
 
+// Un NPC no tiene estados: su tope de vida es el de reposo. parseSheet topa con el posible
+// (cuenta los activables de aumento que lleve equipados, A5b); aquí, el exacto.
+const leerNpc = (stats: unknown): Sheet => reconciliarVida(parseSheet(stats));
+
 async function loadSheet(npcId: string): Promise<{ sheet: Sheet } | { error: string }> {
   if (!(await requireMaster())) return { error: "Solo el máster puede editar NPCs." };
   const npc = await prisma.npcTemplate.findUnique({ where: { id: npcId }, select: { stats: true } });
   if (!npc) return { error: "No existe ese NPC." };
-  return { sheet: parseSheet(npc.stats) };
+  return { sheet: leerNpc(npc.stats) };
 }
 
 async function persist(npcId: string, sheet: Sheet): Promise<NpcResult> {
@@ -180,7 +184,7 @@ export async function renombrarNpcAction(npcId: string, nombre: string): Promise
     data: { nombre: nombreLimpio },
   });
   revalidateNpcs();
-  return { ok: true, sheet: parseSheet(npc.stats) };
+  return { ok: true, sheet: leerNpc(npc.stats) };
 }
 
 export async function setNotaNpcAction(npcId: string, nota: string): Promise<NpcResult> {
@@ -190,7 +194,7 @@ export async function setNotaNpcAction(npcId: string, nota: string): Promise<Npc
     data: { nota: nota.slice(0, 2000) || null },
   });
   revalidateNpcs();
-  return { ok: true, sheet: parseSheet(npc.stats) };
+  return { ok: true, sheet: leerNpc(npc.stats) };
 }
 
 // Especie en modo libre (docs/sistema.md §14.3): sin reset, sin bloqueo por

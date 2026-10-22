@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
-import { parseSheet, parseSnapshot, leerEstados, estadosDeCombatiente } from "@/lib/rules";
+import { parseSheet, parseSnapshot, leerEstados, estadosDeCombatiente, reconciliarVidaConEstados } from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
 import { HudCard } from "@/components/HudCard";
 import { StatusControl } from "@/app/master/MasterControls";
@@ -20,9 +20,11 @@ export default async function CharacterPage({
   // En este modelo, ver = poder editar (dueño o máster).
   if (!character || !canEditCharacter(user, character)) notFound();
 
-  const sheet = parseSheet(character.stats);
   // Aparte de `sheet` (que la ficha guarda en useState): así el polling los refresca.
   const estados = leerEstados(character.estados);
+  // parseSheet topa la vida con el máximo posible; aquí, el exacto con los activables puestos
+  // (A5b): con la Neuroprótesis se ve 9/9, sin ella nunca 9/8.
+  const sheet = reconciliarVidaConEstados(parseSheet(character.stats), estados);
 
   // Fase 6b bloque 3 (D5: combate → ficha, nunca al revés): si el personaje
   // está metido en el Combate EN_CURSO actual, la ficha se lo enseña — tira
