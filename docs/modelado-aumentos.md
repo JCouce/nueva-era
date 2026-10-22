@@ -1,7 +1,8 @@
 # Modelado de los Aumentos: salida del workflow `modelar-area`
 
 - **Qué es:** la salida del workflow `modelar-area` sobre `docs/aumentos.md` (fuente literal del diseñador), con el **modelo de aumentos** (`CatalogoAumentos`, `scripts/workflows/modelar-area-extraer.ts`; decisiones en `docs/sistema.md` §11).
-- **Estado:** **propuesta sin construir**. Nada de esto está en `src/lib/rules` ni en el catálogo.
+- **Estado:** **propuesta sin construir**. Nada de esto está en `src/lib/rules` ni en el catálogo. Plan por tandas: `docs/propuesta-aumentos.md`.
+- **Respuestas aplicadas (2026-10-22):** el JSON lleva ya las respuestas del usuario (sistema.md §11.3, segunda y tercera ronda); cada cambio va marcado con `resuelto`. Los únicos `bloqueado` que quedan son capas por construir, la carga sin mecanizar, el IRM (psiónica biológica) y la extracción. Las tablas de este documento (§1.3, §9) son la foto de antes de las respuestas.
 - **Quién manda:** `docs/sistema.md`. Si algo de aquí choca con él, gana sistema.md; un supuesto de este documento no existe para el código hasta que entre allí.
 - **Borrador:** `docs/modelado-aumentos.json`, raíz `CatalogoAumentos { aumentos: Aumento[]; extraccion }`. Lleva aplicadas **las correcciones del verificador** (§7) y un `motor` por efecto.
 - **Lectura:** cada lote es un trozo de una rama (Operaciones genéticas 1-3, Implantes 1-3) y cada item es una **pieza**. Donde la plantilla dice "disciplina", aquí es "pieza".

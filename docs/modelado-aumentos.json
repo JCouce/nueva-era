@@ -19,7 +19,7 @@
         {
           "tipo": "texto",
           "lugar": "ficha",
-          "texto": "Una vez por escena puedes omitir el gasto de un punto de fatiga en una prueba que use perspicacia, voluntad o expresión. Se combina con el gasto de fatiga de otros aumentos que influyan en esos atributos.",
+          "texto": "Una vez por escena puedes omitir el gasto de un punto de fatiga en una prueba que use perspicacia, voluntad o expresión. Se combina con el gasto de fatiga de otros aumentos que influyan en esos atributos. Se ahorra un solo punto aunque el gasto combinado sea mayor.",
           "condicion": null,
           "porque": "turno",
           "limite": {
@@ -50,10 +50,10 @@
             "modo": "accion_existente",
             "id": "aplicado:perspicacia|voluntad|expresion"
           },
-          "mecanismo": "hueco",
-          "estado": "bloqueado",
-          "hueco": "descuento de fatiga sobre el gasto de una tirada, con alcance por aplicado y límite por escena",
-          "bloqueoPor": "pregunta: qué gasto de fatiga se omite (el +1 genérico de §7 o el coste de capacidades)"
+          "mecanismo": "eleccion_jugador",
+          "estado": "pendiente",
+          "hueco": "descuento de 1 punto de fatiga en una tirada con alcance por aplicado; límite con la casilla de escena (R1)",
+          "resuelto": "usuario 2026-10-22: un solo punto, una vez por escena"
         }
       ]
     },
@@ -259,6 +259,11 @@
               {
                 "texto": "Haces una prueba mental (acción simple o estándar) a la vez que una prueba física, como parte de la misma acción. La acción empleada es la más compleja de las dos.",
                 "condicion": null
+              },
+              {
+                "texto": "La prueba física puede ser cualquier acción simple o estándar física, ataques y defensas incluidos. Sin límite de usos: cada vez que pagues el punto.",
+                "condicion": null,
+                "resuelto": "usuario 2026-10-22: cualquier acción simple o estándar física"
               }
             ]
           }
@@ -422,7 +427,8 @@
           "tipo": "bono",
           "alcance": "habilidad:combate_distancia",
           "valor": 1,
-          "condicion": "Ataque a distancia por puntería"
+          "condicion": "Tras la acción de Apuntar",
+          "resuelto": "usuario 2026-10-22: solo tras Apuntar"
         },
         {
           "tipo": "reduce_penalizador",
@@ -432,7 +438,8 @@
           "valor": 1,
           "alcance": "habilidad:combate_distancia",
           "_capaNueva": true,
-          "_condicion": "Objetivo con cobertura visual (1-4)"
+          "_condicion": "Objetivo con cobertura visual (1-4) (solo cobertura visual; la total no se reduce)",
+          "resuelto": "usuario 2026-10-22: solo cobertura visual"
         },
         {
           "tipo": "reduce_penalizador",
@@ -442,7 +449,8 @@
           "valor": 1,
           "alcance": "alerta_activa",
           "_capaNueva": true,
-          "_condicion": "Percepción visual contra algo a cubierto"
+          "_condicion": "Percepción visual contra algo a cubierto (solo cobertura visual; la total no se reduce)",
+          "resuelto": "usuario 2026-10-22: solo cobertura visual"
         }
       ],
       "motor": [
@@ -467,8 +475,8 @@
             "id": "grupoHabilidad:Ataques+combate_distancia"
           },
           "mecanismo": "eleccion_jugador",
-          "estado": "bloqueado",
-          "bloqueoPor": "pregunta: 'por puntería' = acción Apuntar (como Gran Puntería) o cualquier disparo"
+          "estado": "pendiente",
+          "resuelto": "usuario 2026-10-22: solo tras Apuntar: casilla"
         },
         {
           "tipo": "numerico",
@@ -513,7 +521,7 @@
         },
         {
           "tipo": "bono",
-          "alcance": "salvacion:ceguera",
+          "alcance": "salv_fortaleza",
           "valor": 2,
           "condicion": "¿Es contra ceguera?"
         },
@@ -548,11 +556,11 @@
           "tipo": "numerico",
           "afecta": {
             "modo": "accion_existente",
-            "id": "salv_ceguera"
+            "id": "salv_fortaleza"
           },
           "mecanismo": "eleccion_jugador",
-          "estado": "bloqueado",
-          "bloqueoPor": "qué salvación resiste la Ceguera (§Ceguera no lo dice; mismo hueco que Visor y Axadren)"
+          "estado": "pendiente",
+          "resuelto": "usuario 2026-10-22: ceguera con Fortaleza (R11)"
         },
         {
           "tipo": "numerico",
@@ -571,7 +579,8 @@
             "id": "alerta_activa"
           },
           "mecanismo": "eleccion_jugador",
-          "estado": "pendiente"
+          "estado": "pendiente",
+          "nota": "Solo al buscar activamente; la Alerta pasiva no cambia (usuario 2026-10-22: recomendada)"
         }
       ]
     },
@@ -603,7 +612,7 @@
         {
           "tipo": "texto",
           "lugar": "defensa",
-          "texto": "No puede ser flanqueado: quien le ataca no gana el bono de flanqueo.",
+          "texto": "No puede ser flanqueado: quien le ataca no gana ningún bono por flanquear o rodear, tampoco el de dotes.",
           "condicion": null,
           "porque": "tercero"
         },
@@ -678,7 +687,8 @@
           "coste": {
             "fatiga": 1
           },
-          "_campoNuevo": "coste en Efecto economia"
+          "_campoNuevo": "coste en Efecto economia",
+          "nota": "Un solo paso por acción."
         },
         {
           "tipo": "texto",
@@ -744,7 +754,10 @@
           "tipo": "ventaja",
           "alcance": "todas",
           "condicion": "Emplear dos turnos en una acción compleja",
-          "_pregunta": "¿esta vía también cuesta 1 de fatiga?"
+          "coste": {
+            "fatiga": 1
+          },
+          "resuelto": "usuario 2026-10-22: la vía de dos turnos también cuesta 1 de fatiga"
         },
         {
           "tipo": "economia",
@@ -757,7 +770,7 @@
         {
           "tipo": "texto",
           "lugar": "todas",
-          "texto": "No se puede usar a la vez que Asa Estriatotalámica.",
+          "texto": "No se puede usar a la vez que Asa Estriatotalámica, ni junto a Prefrontal Aumentada en la misma tirada (Callosa es su progresión).",
           "condicion": "Concentrarse: resolver una acción simple o estándar como acción compleja",
           "porque": "turno"
         }
@@ -788,8 +801,8 @@
             "id": "todas"
           },
           "mecanismo": "eleccion_jugador",
-          "estado": "bloqueado",
-          "bloqueoPor": "pregunta: ¿la vía de dos turnos también cuesta 1 de fatiga?"
+          "estado": "pendiente",
+          "resuelto": "usuario 2026-10-22: también cuesta 1 de fatiga"
         },
         {
           "tipo": "texto",
@@ -957,12 +970,8 @@
           "coste": {
             "fatiga": 1
           },
-          "economia": {
-            "tiempo": "sin indicar"
-          },
-          "duracion": {
-            "tiempo": "1 hora"
-          },
+          "economia": "gratuita",
+          "duracion": "escena",
           "efectos": [
             {
               "tipo": "reduce_penalizador",
@@ -978,7 +987,8 @@
               "alcance": "habilidad:actitud",
               "_campoNuevo": "de: 'cualquiera'"
             }
-          ]
+          ],
+          "resuelto": "usuario 2026-10-22: activar es gratuito; anula cualquier penalizador social, heridas y fatiga incluidos; una hora = escena (R2)"
         }
       ],
       "motor": [
@@ -1086,11 +1096,20 @@
         {
           "tipo": "ventaja",
           "alcance": "habilidad:actitud",
-          "condicion": "Usar la repetición de la escena",
+          "condicion": "Repetir una tirada de Actitud fallada",
           "limite": {
             "veces": 1,
             "por": "escena"
-          }
+          },
+          "repetir": true,
+          "resuelto": "usuario 2026-10-22: fallas y repites esa misma tirada con ventaja"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "habilidad:actitud",
+          "texto": "Compatible con Proyección Neuro-Expresiva en la misma escena: una tira con ventaja y esta repite con ventaja tras fallar.",
+          "condicion": null,
+          "porque": "turno"
         }
       ],
       "motor": [
@@ -1160,6 +1179,15 @@
           },
           "mecanismo": "eleccion_jugador",
           "estado": "pendiente"
+        },
+        {
+          "tipo": "texto",
+          "afecta": {
+            "modo": "accion_existente",
+            "id": "habilidad:actitud"
+          },
+          "mecanismo": "nota_fija",
+          "estado": "pendiente"
         }
       ]
     },
@@ -1189,10 +1217,10 @@
           "tipo": "armadura_natural",
           "valor": 1,
           "tiposDanio": [
-            "perforante",
-            "cortante"
+            "cinetico"
           ],
-          "_capaNueva": true
+          "_capaNueva": true,
+          "nota": "Vale contra golpes perforantes y cortantes; el máster lo arbitra."
         }
       ],
       "motor": [
@@ -1231,8 +1259,8 @@
             "id": "bloquear_danio"
           },
           "mecanismo": "suma_derivado",
-          "estado": "bloqueado",
-          "bloqueoPor": "tipos de daño perforante/cortante no existen en TIPOS_DANIO (blindaje.ts); pregunta al diseñador"
+          "estado": "pendiente",
+          "resuelto": "usuario 2026-10-16 (R6): +1 contra Cinético con nota de a qué golpes vale"
         }
       ]
     },
@@ -1270,10 +1298,10 @@
           "tipo": "armadura_natural",
           "valor": 1,
           "tiposDanio": [
-            "contundente",
-            "impacto_masivo"
+            "cinetico"
           ],
-          "_capaNueva": true
+          "_capaNueva": true,
+          "nota": "Vale contra golpes contundentes e impactos masivos; el máster lo arbitra."
         }
       ],
       "motor": [
@@ -1323,8 +1351,8 @@
             "id": "bloquear_danio"
           },
           "mecanismo": "suma_derivado",
-          "estado": "bloqueado",
-          "bloqueoPor": "tipos de daño contundente/impacto_masivo no existen en TIPOS_DANIO (blindaje.ts); pregunta al diseñador"
+          "estado": "pendiente",
+          "resuelto": "usuario 2026-10-16 (R6): +1 contra Cinético con nota de a qué golpes vale"
         }
       ]
     },
@@ -1356,12 +1384,14 @@
         {
           "tipo": "formula_salud",
           "multiplicaFortaleza": 1.5,
-          "_capaNueva": true
+          "_capaNueva": true,
+          "redondeo": "abajo",
+          "fortalezaNegativa": "no se multiplica"
         },
         {
           "tipo": "texto",
           "lugar": "ficha",
-          "texto": "Sana de forma natural el daño no letal al doble de velocidad.",
+          "texto": "En los descansos sana el daño no letal al doble (la sanación natural es la de los descansos).",
           "condicion": null,
           "porque": "tiempo"
         }
@@ -1431,12 +1461,12 @@
         },
         {
           "tipo": "ventaja",
-          "alcance": "todas",
-          "condicion": "La tirada usa Potencia (gastas 1 punto de fatiga)",
+          "alcance": "aplicado:potencia",
+          "condicion": null,
           "coste": {
             "fatiga": 1
           },
-          "_campoNuevo": "Alcance 'aplicado:potencia' (alternativa a 'todas' + condición)"
+          "_campoNuevo": "Alcance 'aplicado:<a>'"
         }
       ],
       "motor": [
@@ -1472,7 +1502,7 @@
           "tipo": "numerico",
           "afecta": {
             "modo": "accion_existente",
-            "id": "todas"
+            "id": "aplicado:potencia"
           },
           "mecanismo": "eleccion_jugador",
           "estado": "pendiente"
@@ -1670,9 +1700,10 @@
         {
           "tipo": "texto",
           "lugar": "ficha",
-          "texto": "Los consumibles y alimentos que recuperan fatiga recuperan el doble.",
-          "condicion": "si el consumible recupera fatiga",
-          "porque": "tiempo"
+          "texto": "Los alimentos y consumibles nutritivos (un gel, por ejemplo) recuperan el doble de fatiga. Los fármacos no cambian.",
+          "condicion": null,
+          "porque": "tiempo",
+          "resuelto": "usuario 2026-10-22: consumible = alimento"
         },
         {
           "tipo": "ventaja",
@@ -1803,9 +1834,7 @@
           "accion": {
             "id": "aumentos_cortar_hemorragia",
             "label": "Cortar la hemorragia",
-            "economia": {
-              "tiempo": "la fuente no lo dice"
-            },
+            "economia": "gratuita",
             "coste": {
               "fatiga": 1
             },
@@ -1819,7 +1848,8 @@
                 "texto": "Interrumpe la hemorragia de forma automática: el máster quita el estado.",
                 "condicion": "Hemorragia"
               }
-            ]
+            ],
+            "resuelto": "usuario 2026-10-22: acción gratuita"
           }
         },
         {
@@ -1827,9 +1857,7 @@
           "accion": {
             "id": "aumentos_cortar_exanguinante",
             "label": "Cortar la hemorragia exanguinante",
-            "economia": {
-              "tiempo": "la fuente no lo dice"
-            },
+            "economia": "gratuita",
             "coste": {
               "fatiga": 2
             },
@@ -1842,8 +1870,13 @@
               {
                 "texto": "Interrumpe la hemorragia exanguinante: el máster quita el estado.",
                 "condicion": "Hemorragia exanguinante"
+              },
+              {
+                "texto": "La hemorragia exanguinante no para nunca hasta que te curen por medios médicos.",
+                "condicion": null
               }
-            ]
+            ],
+            "resuelto": "usuario 2026-10-22: acción gratuita"
           }
         },
         {
@@ -1856,7 +1889,7 @@
         {
           "tipo": "texto",
           "lugar": "ficha",
-          "texto": "En descanso largo puedes cambiar 2 niveles de daño no letal sanados por 1 de letal.",
+          "texto": "En descanso largo puedes cambiar 2 niveles de daño no letal sanados por 1 de letal, tantas veces como dé el tiempo de descanso.",
           "condicion": null,
           "porque": "tiempo"
         },
@@ -2134,7 +2167,7 @@
         {
           "tipo": "texto",
           "lugar": "ficha",
-          "texto": "Fatigado: la regeneración tarda el doble.",
+          "texto": "Fatigado (umbral de fatiga): la regeneración tarda el doble.",
           "condicion": "Fatigado",
           "porque": "tiempo"
         },
@@ -2246,13 +2279,13 @@
         },
         {
           "tipo": "bono",
-          "alcance": "salvacion:aturdimiento",
+          "alcance": "salv_fortaleza",
           "valor": 2,
           "condicion": "contra aturdimiento"
         },
         {
           "tipo": "bono",
-          "alcance": "salvacion:confusion",
+          "alcance": "salv_voluntad",
           "valor": 2,
           "condicion": "contra confusión"
         },
@@ -2286,6 +2319,10 @@
               {
                 "texto": "Estando Asustado, te libras del miedo: el máster quita el estado.",
                 "condicion": "Asustado"
+              },
+              {
+                "texto": "Automático: gastas la acción y ya, sin tirada.",
+                "condicion": null
               }
             ]
           }
@@ -2325,21 +2362,21 @@
           "tipo": "numerico",
           "afecta": {
             "modo": "accion_existente",
-            "id": "salvacion_aturdimiento"
+            "id": "salv_fortaleza"
           },
           "mecanismo": "eleccion_jugador",
-          "estado": "bloqueado",
-          "bloqueoPor": "la fuente no fija qué salvación resiste el aturdimiento (Fortaleza en Aturdido, Voluntad en MQE)"
+          "estado": "pendiente",
+          "resuelto": "usuario 2026-10-22: aturdimiento con Fortaleza"
         },
         {
           "tipo": "numerico",
           "afecta": {
             "modo": "accion_existente",
-            "id": "salvacion_confusion"
+            "id": "salv_voluntad"
           },
           "mecanismo": "eleccion_jugador",
-          "estado": "bloqueado",
-          "bloqueoPor": "Confusión no dice qué salvación la resiste"
+          "estado": "pendiente",
+          "resuelto": "usuario 2026-10-22: Confusión con Voluntad"
         },
         {
           "tipo": "numerico",
@@ -2445,7 +2482,7 @@
         {
           "opcion": "vision_nocturna",
           "tipo": "bono",
-          "alcance": "salvacion:ceguera",
+          "alcance": "salv_fortaleza",
           "valor": 2,
           "condicion": "ceguera por detonación"
         },
@@ -2517,9 +2554,9 @@
           "opcion": "percepcion_electromagnetica",
           "tipo": "texto",
           "lugar": "ficha",
-          "texto": "Vulnerable a descargas eléctricas directas y campos magnéticos intensos.",
+          "texto": "Vulnerable a descargas eléctricas directas y campos magnéticos intensos. Lo arbitra el máster.",
           "condicion": "descarga eléctrica o campo magnético intenso",
-          "porque": "sin_regla"
+          "porque": "narrativo"
         },
         {
           "opcion": "percepcion_electromagnetica",
@@ -2542,15 +2579,20 @@
               "aplicado": "perspicacia",
               "habilidad": "exploracion",
               "dificultad": {
-                "manual": "la fuente no la da"
+                "manual": "la pone el máster según lo que se busque"
               }
             },
             "resultados": {
               "exito": {
-                "texto": "Detectas campos electromagnéticos hasta 30 m."
+                "texto": "Encuentras y distingues lo que buscas dentro del área."
               }
             },
             "notas": [
+              {
+                "texto": "Ampliar el área a 30 m no tiene dificultad; la tirada es para encontrar y distinguir cosas.",
+                "condicion": null,
+                "resuelto": "usuario 2026-10-22: ampliar no tiene dificultad"
+              },
               {
                 "texto": "Gastando 1 punto de fatiga en la prueba, el área sube a 60 m.",
                 "condicion": "gasta 1 de fatiga",
@@ -2605,7 +2647,8 @@
           "tipo": "bono",
           "alcance": "alerta_activa",
           "valor": 2,
-          "condicion": "detectar oculto a 4 m o menos"
+          "condicion": "detectar oculto a 4 m o menos (si puedes usar el olfato: en el vacío con traje, no)",
+          "tambienPasiva": true
         },
         {
           "opcion": "ecolocalizacion",
@@ -2695,11 +2738,11 @@
           "tipo": "numerico",
           "afecta": {
             "modo": "accion_existente",
-            "id": "salv_ceguera"
+            "id": "salv_fortaleza"
           },
           "mecanismo": "eleccion_jugador",
-          "estado": "bloqueado",
-          "bloqueoPor": "§Ceguera no dice qué atributo la resiste (TODO(revisar) Axadren)"
+          "estado": "pendiente",
+          "resuelto": "usuario 2026-10-22: ceguera con Fortaleza (R11)"
         },
         {
           "tipo": "narrativo",
@@ -2772,13 +2815,13 @@
           "estado": "construido"
         },
         {
-          "tipo": "texto",
+          "tipo": "narrativo",
           "afecta": {
             "modo": "ninguna"
           },
           "mecanismo": null,
-          "estado": "bloqueado",
-          "bloqueoPor": "la fuente no dice qué efecto tiene la vulnerabilidad"
+          "estado": "construido",
+          "resuelto": "usuario 2026-10-22: solo descripción; lo arbitra el máster"
         },
         {
           "tipo": "texto",
@@ -2851,7 +2894,8 @@
             "id": "alerta_activa"
           },
           "mecanismo": "eleccion_jugador",
-          "estado": "pendiente"
+          "estado": "pendiente",
+          "nota": "También suma a la Alerta pasiva (usuario 2026-10-22: sí, mientras se pueda usar el sentido)"
         },
         {
           "tipo": "texto",
@@ -3255,9 +3299,10 @@
               "dificultad": 13,
               "subePorTurno": 1,
               "alcanceM": 50,
-              "tiradaIntruso": "El psiónico intruso debe superar la prueba cada turno; es una acción compleja que requiere concentración.",
+              "tiradaIntruso": "El psiónico intruso tira lo que proceda por su poder de Resonancia, cada turno; es una acción compleja que requiere concentración. Si falla, salta el contragolpe.",
               "defensa": "Colapso instantáneo del canal QKD al detectar la menor alteración probabilística en el flujo de cúbits; corta la conexión de forma abrupta.",
-              "contragolpe": "El psiónico recibe 1 nivel de daño letal y debe superar Voluntad dif. 10 contra aturdimiento."
+              "contragolpe": "El psiónico recibe 1 nivel de daño letal y debe superar Voluntad dif. 10 contra aturdimiento.",
+              "resuelto": "usuario 2026-10-22: lo que proceda por Resonancia"
             }
           ],
           "motor": [
@@ -3297,6 +3342,11 @@
             {
               "efecto": "defensa_intrusion.defensa (colapso del canal)",
               "por": "doble capa de encriptación rotativa"
+            },
+            {
+              "efecto": "mensajes subvocales de uno en uno",
+              "por": "a varias personas a la vez",
+              "resuelto": "usuario 2026-10-22: nivel 2 varias personas"
             }
           ],
           "variantes": null,
@@ -3319,6 +3369,10 @@
                   },
                   {
                     "texto": "Alcance: 200 m.",
+                    "condicion": null
+                  },
+                  {
+                    "texto": "Los mensajes subvocales también pueden ir a varias personas a la vez.",
                     "condicion": null
                   }
                 ]
@@ -3392,7 +3446,7 @@
             {
               "tipo": "texto",
               "lugar": "aumentos_mqe_comunicar",
-              "texto": "Canal de radio aislado frente a interferencias electromagnéticas.",
+              "texto": "Canal de radio aislado frente a interferencias electromagnéticas. No protege del Shock.",
               "condicion": null,
               "porque": "sin_regla"
             },
@@ -3641,6 +3695,10 @@
                   {
                     "texto": "Desmontar el arma es la misma acción. Si se extrae de un cuerpo sin respetar su salud, se hace como el saqueo de implantes.",
                     "condicion": null
+                  },
+                  {
+                    "texto": "Cualquier arma a una mano, también de fuego. Cuenta para la carga. Si fallas, se puede repetir con otros 10 minutos.",
+                    "condicion": null
                   }
                 ]
               }
@@ -3737,8 +3795,7 @@
                   "tipo": "tirada",
                   "aplicado": "potencia",
                   "habilidad": "combate_melee",
-                  "especialidad": "pelea",
-                  "_supuesto": "resolución no dada por la prosa; ligada a la pregunta de la dote Bloqueo"
+                  "especialidad": "pelea"
                 },
                 "resultados": {
                   "exito": {
@@ -3747,14 +3804,24 @@
                 },
                 "notas": [
                   {
+                    "texto": "Siempre hace falta la dote Bloqueo.",
+                    "condicion": null,
+                    "resuelto": "usuario 2026-10-22: siempre necesitas la dote"
+                  },
+                  {
                     "texto": "Usa la Fuerza propia del brazo para la Potencia.",
                     "condicion": null
                   },
                   {
                     "texto": "Daño letal: no cuenta como desarmado frente a atacante armado (regla de Bloqueo).",
                     "condicion": null
+                  },
+                  {
+                    "texto": "El blindaje del brazo solo protege el golpe que bloqueas con él, como un escudo.",
+                    "condicion": null
                   }
-                ]
+                ],
+                "requiereDote": "bloqueo"
               }
             }
           ],
@@ -3774,11 +3841,11 @@
               "tipo": "numerico",
               "afecta": {
                 "modo": "accion_existente",
-                "id": "bloquear_danio"
+                "id": "aumentos_bloquear_brazo"
               },
               "mecanismo": "suma_derivado",
-              "estado": "bloqueado",
-              "bloqueoPor": "pregunta: ¿el blindaje del brazo suma al del personaje o solo protege el brazo?"
+              "estado": "pendiente",
+              "resuelto": "usuario 2026-10-16 (R12): solo protege el golpe bloqueado con el brazo"
             },
             {
               "tipo": "numerico",
@@ -3797,7 +3864,8 @@
               },
               "mecanismo": "accion_equipo",
               "estado": "bloqueado",
-              "bloqueoPor": "capa extremidad_atributos_propios; pregunta: ¿exige la dote Bloqueo?"
+              "bloqueoPor": "capa extremidad_atributos_propios",
+              "resuelto": "usuario 2026-10-22: exige la dote Bloqueo"
             }
           ]
         },
@@ -3852,11 +3920,11 @@
                   "tipo": "numerico",
                   "afecta": {
                     "modo": "accion_existente",
-                    "id": "bloquear_danio"
+                    "id": "aumentos_bloquear_brazo"
                   },
                   "mecanismo": "suma_derivado",
-                  "estado": "bloqueado",
-                  "bloqueoPor": "pregunta: ¿el blindaje del brazo suma al del personaje o solo protege el brazo?"
+                  "estado": "pendiente",
+                  "resuelto": "usuario 2026-10-16 (R12): solo protege el golpe bloqueado con el brazo"
                 }
               ]
             },
@@ -3896,11 +3964,11 @@
                   "tipo": "numerico",
                   "afecta": {
                     "modo": "accion_existente",
-                    "id": "bloquear_danio"
+                    "id": "aumentos_bloquear_brazo"
                   },
                   "mecanismo": "suma_derivado",
-                  "estado": "bloqueado",
-                  "bloqueoPor": "pregunta: ¿el blindaje del brazo suma al del personaje o solo protege el brazo?"
+                  "estado": "pendiente",
+                  "resuelto": "usuario 2026-10-16 (R12): solo protege el golpe bloqueado con el brazo"
                 }
               ]
             }
@@ -3955,11 +4023,11 @@
                   "tipo": "numerico",
                   "afecta": {
                     "modo": "accion_existente",
-                    "id": "bloquear_danio"
+                    "id": "aumentos_bloquear_brazo"
                   },
                   "mecanismo": "suma_derivado",
-                  "estado": "bloqueado",
-                  "bloqueoPor": "pregunta: ¿el blindaje del brazo suma al del personaje o solo protege el brazo?"
+                  "estado": "pendiente",
+                  "resuelto": "usuario 2026-10-16 (R12): solo protege el golpe bloqueado con el brazo"
                 }
               ]
             },
@@ -3999,11 +4067,11 @@
                   "tipo": "numerico",
                   "afecta": {
                     "modo": "accion_existente",
-                    "id": "bloquear_danio"
+                    "id": "aumentos_bloquear_brazo"
                   },
                   "mecanismo": "suma_derivado",
-                  "estado": "bloqueado",
-                  "bloqueoPor": "pregunta: ¿el blindaje del brazo suma al del personaje o solo protege el brazo?"
+                  "estado": "pendiente",
+                  "resuelto": "usuario 2026-10-16 (R12): solo protege el golpe bloqueado con el brazo"
                 }
               ]
             },
@@ -4043,11 +4111,11 @@
                   "tipo": "numerico",
                   "afecta": {
                     "modo": "accion_existente",
-                    "id": "bloquear_danio"
+                    "id": "aumentos_bloquear_brazo"
                   },
                   "mecanismo": "suma_derivado",
-                  "estado": "bloqueado",
-                  "bloqueoPor": "pregunta: ¿el blindaje del brazo suma al del personaje o solo protege el brazo?"
+                  "estado": "pendiente",
+                  "resuelto": "usuario 2026-10-16 (R12): solo protege el golpe bloqueado con el brazo"
                 }
               ]
             }
@@ -4080,8 +4148,10 @@
               "condicion": "¿Es percepción visual?",
               "noApila": {
                 "grupo": "vision_aumentada",
-                "regla": "mayor"
-              }
+                "regla": "mayor",
+                "cuenta": "miras telescópicas y gafas que hagan algo parecido"
+              },
+              "tambienPasiva": true
             },
             {
               "tipo": "bono",
@@ -4090,13 +4160,14 @@
               "condicion": null,
               "noApila": {
                 "grupo": "vision_aumentada",
-                "regla": "mayor"
+                "regla": "mayor",
+                "cuenta": "miras telescópicas y gafas que hagan algo parecido"
               },
               "_campoNuevo": "Alcance grupoHabilidad"
             },
             {
               "tipo": "bono",
-              "alcance": "salvacion:ceguera",
+              "alcance": "salv_fortaleza",
               "valor": 2,
               "condicion": "¿Es contra ceguera?"
             },
@@ -4117,7 +4188,7 @@
               },
               "mecanismo": "eleccion_jugador",
               "estado": "pendiente",
-              "nota": "noApila depende de la capa no_apilamiento_mayor"
+              "nota": "noApila depende de la capa no_apilamiento_mayor; también suma a la Alerta pasiva"
             },
             {
               "tipo": "numerico",
@@ -4133,11 +4204,11 @@
               "tipo": "numerico",
               "afecta": {
                 "modo": "accion_existente",
-                "id": "salv_ceguera"
+                "id": "salv_fortaleza"
               },
               "mecanismo": "eleccion_jugador",
-              "estado": "bloqueado",
-              "bloqueoPor": "salvación contra ceguera sin definir (qué atributo la resiste)"
+              "estado": "pendiente",
+              "resuelto": "usuario 2026-10-22: ceguera con Fortaleza (R11)"
             },
             {
               "tipo": "texto",
@@ -4170,8 +4241,10 @@
               "condicion": "¿Es percepción visual?",
               "noApila": {
                 "grupo": "vision_aumentada",
-                "regla": "mayor"
-              }
+                "regla": "mayor",
+                "cuenta": "miras telescópicas y gafas que hagan algo parecido"
+              },
+              "tambienPasiva": true
             },
             {
               "tipo": "inmunidad",
@@ -4187,7 +4260,7 @@
               ],
               "valor": 1,
               "alcance": "grupoHabilidad:Ataques+combate_distancia",
-              "condicion": "¿Objetivo con cobertura visual?"
+              "condicion": "¿Objetivo con cobertura visual? (la total no se reduce)"
             },
             {
               "tipo": "reduce_penalizador",
@@ -4197,7 +4270,7 @@
               ],
               "valor": 1,
               "alcance": "alerta_activa",
-              "condicion": "¿Objetivo con cobertura visual?"
+              "condicion": "¿Objetivo con cobertura visual? (la total no se reduce)"
             }
           ],
           "motor": [
@@ -4209,7 +4282,7 @@
               },
               "mecanismo": "eleccion_jugador",
               "estado": "pendiente",
-              "nota": "noApila depende de la capa no_apilamiento_mayor"
+              "nota": "noApila depende de la capa no_apilamiento_mayor; también suma a la Alerta pasiva"
             },
             {
               "tipo": "habilitador",
@@ -4265,8 +4338,10 @@
               "condicion": "¿Es percepción visual?",
               "noApila": {
                 "grupo": "vision_aumentada",
-                "regla": "mayor"
-              }
+                "regla": "mayor",
+                "cuenta": "miras telescópicas y gafas que hagan algo parecido"
+              },
+              "tambienPasiva": true
             },
             {
               "tipo": "bono",
@@ -4275,7 +4350,8 @@
               "condicion": null,
               "noApila": {
                 "grupo": "vision_aumentada",
-                "regla": "mayor"
+                "regla": "mayor",
+                "cuenta": "miras telescópicas y gafas que hagan algo parecido"
               },
               "_campoNuevo": "Alcance grupoHabilidad"
             },
@@ -4296,7 +4372,7 @@
               },
               "mecanismo": "eleccion_jugador",
               "estado": "pendiente",
-              "nota": "noApila depende de la capa no_apilamiento_mayor"
+              "nota": "noApila depende de la capa no_apilamiento_mayor; también suma a la Alerta pasiva"
             },
             {
               "tipo": "numerico",
@@ -4338,7 +4414,7 @@
             },
             {
               "efecto": "Reduce en 1 los niveles de cobertura visual",
-              "por": "Reduce en 2 los niveles de cobertura visual"
+              "por": "Reduce en 2 los niveles de cualquier cobertura, física o visual"
             }
           ],
           "variantes": null,
@@ -4350,8 +4426,10 @@
               "condicion": "¿Es percepción visual?",
               "noApila": {
                 "grupo": "vision_aumentada",
-                "regla": "mayor"
-              }
+                "regla": "mayor",
+                "cuenta": "miras telescópicas y gafas que hagan algo parecido"
+              },
+              "tambienPasiva": true
             },
             {
               "tipo": "bono",
@@ -4360,7 +4438,8 @@
               "condicion": null,
               "noApila": {
                 "grupo": "vision_aumentada",
-                "regla": "mayor"
+                "regla": "mayor",
+                "cuenta": "miras telescópicas y gafas que hagan algo parecido"
               },
               "_campoNuevo": "Alcance grupoHabilidad"
             },
@@ -4385,7 +4464,8 @@
               ],
               "valor": 2,
               "alcance": "grupoHabilidad:Ataques+combate_distancia",
-              "condicion": "¿Objetivo con cobertura visual?"
+              "condicion": "¿Objetivo con cobertura, física o visual? (la total no se reduce)",
+              "resuelto": "usuario 2026-10-22: nivel 4: cualquier cobertura, física o visual"
             },
             {
               "tipo": "reduce_penalizador",
@@ -4395,7 +4475,8 @@
               ],
               "valor": 2,
               "alcance": "alerta_activa",
-              "condicion": "¿Objetivo con cobertura visual?"
+              "condicion": "¿Objetivo con cobertura, física o visual? (la total no se reduce)",
+              "resuelto": "usuario 2026-10-22: nivel 4: cualquier cobertura, física o visual"
             }
           ],
           "motor": [
@@ -4407,7 +4488,7 @@
               },
               "mecanismo": "eleccion_jugador",
               "estado": "pendiente",
-              "nota": "noApila depende de la capa no_apilamiento_mayor"
+              "nota": "noApila depende de la capa no_apilamiento_mayor; también suma a la Alerta pasiva"
             },
             {
               "tipo": "numerico",
@@ -4514,9 +4595,12 @@
                   "tipo": "reduce_penalizador",
                   "_capaNueva": true,
                   "de": [
-                    "estado"
+                    "estado",
+                    "heridas",
+                    "fatiga"
                   ],
-                  "valor": 1
+                  "valor": 1,
+                  "resuelto": "usuario 2026-10-22: todos, heridas y fatiga incluidos"
                 },
                 {
                   "tipo": "bono",
@@ -4590,7 +4674,7 @@
               },
               "mecanismo": "hueco",
               "estado": "bloqueado",
-              "hueco": "activable + reduce_penalizador desde equipo",
+              "hueco": "activable + reduce_penalizador (estados, heridas y fatiga) desde equipo",
               "bloqueoPor": "capas activable_estado_propio y reduce_penalizador_por_pieza"
             },
             {
@@ -4685,7 +4769,7 @@
             {
               "tipo": "texto",
               "lugar": "ficha",
-              "texto": "Mientras la Neuroprótesis está activa, tienes una segunda reacción por turno.",
+              "texto": "Mientras la Neuroprótesis está activa, tienes una segunda reacción por ronda.",
               "condicion": "Neuroprótesis activa",
               "porque": "turno"
             },
@@ -4721,6 +4805,11 @@
                   {
                     "texto": "Tras usarla, volver a usarla cuesta 3 de fatiga hasta un descanso breve o largo.",
                     "condicion": null
+                  },
+                  {
+                    "texto": "No hace falta activar el implante: basta con que no esté saboteado ni apagado.",
+                    "condicion": null,
+                    "resuelto": "usuario 2026-10-22: que no esté saboteado o apagado"
                   }
                 ]
               }
@@ -4763,7 +4852,9 @@
                 "fatiga": 3
               },
               "economia": "gratuita",
-              "duracion": "turno",
+              "duracion": {
+                "rondas": 1
+              },
               "limite": {
                 "veces": 1,
                 "por": "descanso"
@@ -4894,9 +4985,9 @@
           "efectos": [
             {
               "tipo": "bono",
-              "alcance": "grupo:Fármacos",
+              "alcance": "medicina",
               "valor": 3,
-              "condicion": "¿Te lo aplicas a ti mismo?"
+              "condicion": "¿Te aplicas un fármaco a ti mismo? (los fármacos sin tirada no cambian)"
             },
             {
               "tipo": "bono",
@@ -4917,7 +5008,7 @@
               "tipo": "numerico",
               "afecta": {
                 "modo": "accion_existente",
-                "id": "grupo:Fármacos"
+                "id": "medicina"
               },
               "mecanismo": "eleccion_jugador",
               "estado": "pendiente"
@@ -4975,13 +5066,14 @@
               "accion": {
                 "id": "aumentos_enjambre_sanar_letal",
                 "label": "Sanar un nivel letal (Enjambre)",
-                "economia": {
-                  "tiempo": "sin indicar"
-                },
+                "economia": "gratuita",
                 "coste": {
                   "fatiga": 1
                 },
-                "limite": null,
+                "limite": {
+                  "veces": 1,
+                  "por": "ronda"
+                },
                 "resolucion": {
                   "tipo": "sin_dado"
                 },
@@ -4991,7 +5083,8 @@
                     "texto": "Sanas un nivel de daño letal de forma automática.",
                     "condicion": null
                   }
-                ]
+                ],
+                "resuelto": "usuario 2026-10-22: una única acción gratuita por ronda"
               }
             },
             {
@@ -5012,7 +5105,7 @@
                 "resultados": {},
                 "notas": [
                   {
-                    "texto": "Consumes 5 de fatiga a lo largo de al menos 5 turnos y sanas un nivel de daño grave.",
+                    "texto": "1 de fatiga por turno durante 5 turnos, pudiendo actuar; al acabar sanas un nivel de daño grave.",
                     "condicion": null
                   }
                 ]
@@ -5096,7 +5189,7 @@
                 "resultados": {},
                 "notas": [
                   {
-                    "texto": "+3 de blindaje contra un golpe concreto (se aplica a mano al recibir ese golpe).",
+                    "texto": "+3 de blindaje contra un golpe concreto, de cualquier daño que pare un blindaje (el mental, no). Se aplica a mano al recibir ese golpe.",
                     "condicion": null
                   }
                 ]
@@ -5175,12 +5268,13 @@
                 "resolucion": {
                   "tipo": "ataque",
                   "aplicado": "reflejos",
-                  "habilidad": "tecnociencia"
+                  "habilidad": "tecnociencia",
+                  "dificultad": 0
                 },
                 "danio": {
                   "categoria": "grave",
                   "base": 1,
-                  "efectoBlindaje": "Al acertar, destruye 1 punto de blindaje por contacto físico (frase rota en la fuente)"
+                  "efectoBlindaje": "Cada acierto quita 1 punto de blindaje al objetivo."
                 },
                 "resultados": {},
                 "notas": [
@@ -5189,7 +5283,7 @@
                     "condicion": null
                   },
                   {
-                    "texto": "También sirve para sabotear objetos del entorno inmediato.",
+                    "texto": "También sirve para sabotear objetos del entorno inmediato, con la misma tirada (dificultad 0 si no se indica otra).",
                     "condicion": null
                   }
                 ]
@@ -5222,9 +5316,9 @@
                 "id": "blindaje_del_objetivo"
               },
               "mecanismo": "nota_fija",
-              "estado": "bloqueado",
+              "estado": "pendiente",
               "efecto": "1.accion.danio.efectoBlindaje",
-              "bloqueoPor": "errata pendiente de Murillo (frase rota)"
+              "resuelto": "usuario 2026-10-22: errata resuelta: cada acierto quita 1 de blindaje"
             }
           ]
         }
