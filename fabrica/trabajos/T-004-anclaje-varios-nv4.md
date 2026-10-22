@@ -150,7 +150,7 @@ aprobado: el usuario lo da por bueno; mergeado en main (5b8e77e). El push es suy
 ## Métricas y retro
 | vueltas | minutos | tokens | operario (fallos/llamadas) | ¿retocado antes del push? |
 |---|---|---|---|---|
-| 0/2 | 2,5 (+1 de la inspección devuelta) | ~250k (13 agentes en total) | 0/7 | no |
+| 0/2 | 2,5 (+1 de la inspección devuelta) | ~250k (13 agentes en total) | 0/6 (+1 de la inspección devuelta) | no |
 
 **Preguntas de reglas:** 0. La única duda (R1) ya la había respondido Murillo; la encontraron los árbitros en su examen.
 **Fue bien:** primer trabajo real: salió de un hallazgo de los árbitros y pasó a la primera. El constructor añadió por su
