@@ -96,7 +96,7 @@ export function textoEntradaRegistro(
     const estado = datos.tipo === "estado_poner" ? c.despues : c.antes;
     const clave = estado
       ? datos.tipo === "estado_poner"
-        ? `${etiquetaEstado(estado)} a {} · ${etiquetaDuracion(duracionDe(estado))}`
+        ? `${etiquetaEstado(estado)}${estado.forzado ? " forzado (inmune)" : ""} a {} · ${etiquetaDuracion(duracionDe(estado))}`
         : `Quitado ${etiquetaEstado(estado)} a {}`
       : `${datos.tipo === "estado_poner" ? "Puesto" : "Quitado"} ${c.estadoId} a {}`;
     grupos.set(clave, [...(grupos.get(clave) ?? []), c.characterId]);

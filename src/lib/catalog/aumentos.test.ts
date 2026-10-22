@@ -148,9 +148,9 @@ describe("integridad del catálogo de aumentos", () => {
     aum_estabilizacion_autonomica: 5, // 2 de A2a, el ajuste de umbrales (A3) y Sacudir/Dominar (A4a)
     aum_introgresion_sensorial_heterologa: 3, // 2 de A2a y el barrido electromagnético (A4b)
     "aum_ojo_bionico 1": 3,
-    "aum_ojo_bionico 2": 3, // 1 de A2a y la cobertura visual en distancia y Buscar (A3)
+    "aum_ojo_bionico 2": 4, // 1 de A2a, la cobertura visual en distancia y Buscar (A3) y la inmunidad (A7)
     "aum_ojo_bionico 3": 2,
-    "aum_ojo_bionico 4": 4, // 2 de A2a y cualquier cobertura en distancia y Buscar (A3)
+    "aum_ojo_bionico 4": 5, // 2 de A2a, cualquier cobertura en distancia y Buscar (A3) y la inmunidad (A7)
     "aum_enjambre_nanobot 3": 2, // salvaciones (A2a) y Densificar (A4b)
     // A2b: casillas por aplicado y de cualquier tirada, ventaja fija y textos.
     aum_mielinizacion_central: 1,
@@ -169,7 +169,7 @@ describe("integridad del catálogo de aumentos", () => {
     aum_bucle_de_realimentacion_motora: 2,
     // A4a: acciones propias y la defensa del MQE (con el alcance de cada nivel en su nota).
     aum_angiogenesis_sistemica: 2,
-    aum_regeneracion_tisular_acelerada: 1,
+    aum_regeneracion_tisular_acelerada: 2, // Eliminar exanguinante (A4a) e inmunidad a la hemorragia (A7)
     "aum_microprocesador_cuantico_de_enlace 1": 2,
     "aum_microprocesador_cuantico_de_enlace 2": 2,
     "aum_microprocesador_cuantico_de_enlace 3": 2,
@@ -194,7 +194,7 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_brazo_bionico 4": 2,
   };
 
-  test("A1, A2a, A2b, A3, A4a, A4b, A5a, A5b, A6a y A6b: solo lo construido (o lo narrativo) está marcado como construido", () => {
+  test("A1, A2a, A2b, A3, A4a, A4b, A5a, A5b, A6a, A6b y A7: solo lo construido (o lo narrativo) está marcado como construido", () => {
     for (const op of OPERACIONES_GENETICAS) {
       const construidos = op.motor.filter((m) => m.estado === "construido" && m.tipo !== "narrativo");
       const esperados =

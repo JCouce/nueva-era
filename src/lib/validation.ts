@@ -82,6 +82,8 @@ export const aplicarEstadoAPersonajesSchema = z.object({
   characterIds: variosPersonajesSchema,
   estado: estadoAAplicarSchema,
   motivo: motivoSchema,
+  // A7: "Aplicar igualmente" a quien es inmune.
+  forzar: z.boolean().optional(),
 });
 
 // XP o créditos a varios (E1b): negativa para quitar.
@@ -121,6 +123,8 @@ export const aplicarEstadoEnCombateSchema = z.object({
   combatienteIds: variosCombatientesSchema,
   estado: estadoAAplicarSchema,
   motivo: motivoSchema,
+  // A7: "Aplicar igualmente" a quien es inmune.
+  forzar: z.boolean().optional(),
 });
 
 export const quitarEstadoEnCombateSchema = z.object({

@@ -10,7 +10,7 @@
 //     avatar (nº de estados) lleva a su tarjeta en Jugadores.
 import { useState, useTransition, type ReactNode } from "react";
 import { flushSync } from "react-dom";
-import { formatoNumero, nombreCorto, type EstadoActivoDescrito, type RecursoVital, type VitalDeObjetivo } from "@/lib/rules";
+import { formatoNumero, nombreCorto, type EstadoActivoDescrito, type Inmunidad, type RecursoVital, type VitalDeObjetivo } from "@/lib/rules";
 import { MasterTabs } from "@/components/MasterTabs";
 import { ChipEstado } from "@/components/ChipEstado";
 import { usePollingCombate } from "@/hooks/usePollingCombate";
@@ -42,10 +42,11 @@ export type JugadorMesa = {
   // La vida y la fatiga son las del combate en curso (su foto), no las de la ficha (E1d).
   deCombate: boolean;
   estados: EstadoActivoDescrito[];
+  inmunidades: Inmunidad[];
 };
 
 const ACCIONES: AccionesMando = {
-  aplicarEstado: (characterIds, estado) => aplicarEstadoAPersonajesAction({ characterIds, estado }),
+  aplicarEstado: (characterIds, estado, forzar) => aplicarEstadoAPersonajesAction({ characterIds, estado, forzar }),
   quitarEstado: (characterIds, estadoId) => quitarEstadoAPersonajesAction({ characterIds, estadoId }),
   darRecurso: (recurso, characterIds, cantidad, motivo) =>
     (recurso === "xp" ? darXpAction : darCreditosAction)({ characterIds, cantidad, motivo }),
@@ -93,6 +94,7 @@ export function MesaMaster({
       xp: j.xp,
       creditos: j.creditos,
       estados: j.estados,
+      inmunidades: j.inmunidades,
       vida: j.vida,
       fatiga: j.fatiga,
     }));

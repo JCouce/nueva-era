@@ -85,7 +85,8 @@ async function cargarMesa() {
       vida: { ...mostrada.vida, tope: tope.vida },
       fatiga: { ...mostrada.fatiga, tope: tope.fatiga },
       deCombate: mostrada.deCombate,
-      estados: describirEstadosActivos(estados),
+      estados: describirEstadosActivos(estados, ficha.inmunidades),
+      inmunidades: ficha.inmunidades,
     };
   });
 

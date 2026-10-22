@@ -232,7 +232,27 @@ export type EstadoActivo = {
   // el máster: "Limpiar estados" los quita todos, sean de escena o no. Opcional para que
   // lo ya guardado en Combatiente.estados siga valiendo tal cual.
   finDeEscena?: true;
+  // A7: puesto con "Aplicar igualmente" a quien es inmune. Hace efecto aunque haya inmunidad.
+  // Opcional por lo mismo que finDeEscena.
+  forzado?: true;
 };
+
+// Inmunidad a un estado del catálogo (A7: Ojo Biónico 2-4, Regeneración Tisular), con la pieza
+// que la da: "Ojo Biónico 2". La calcula inmunidadesDe (inmunidades.ts) con la ficha.
+export type Inmunidad = { estadoId: string; fuente: string };
+
+// La inmunidad que deja sin efecto este estado puesto, o null: la hay y no se forzó.
+export function inmunidadQueAnula(activo: EstadoActivo, inmunidades: readonly Inmunidad[]): Inmunidad | null {
+  if (activo.forzado) return null;
+  return inmunidades.find((i) => i.estadoId === activo.estadoId) ?? null;
+}
+
+// Los estados que hacen efecto (A7): sin los puestos antes de ganar la inmunidad (siguen en la
+// lista y el máster los quita cuando quiera). Los forzados sí cuentan.
+export function estadosConEfecto(activos: EstadoActivo[], inmunidades: readonly Inmunidad[]): EstadoActivo[] {
+  if (inmunidades.length === 0) return activos;
+  return activos.filter((e) => !inmunidadQueAnula(e, inmunidades));
+}
 
 // Las tres duraciones que elige el máster (docs/tareas.md, E1). Es la vista de
 // EstadoActivo para pintar y validar; lo guardado sigue siendo EstadoActivo.
@@ -311,6 +331,8 @@ export type EstadoActivoDescrito = EstadoActivo & {
   // ("3 rondas, en combate", "hasta el final de la escena"), porque fuera de combate las
   // rondas no corren y se desactiva a mano.
   duracionActivable?: string;
+  // A7: la fuente de la inmunidad que lo deja sin efecto ("Ojo Biónico 2"), para el chip.
+  inmune?: string;
 };
 
 // "3 rondas, en combate" / "hasta el final de la escena" (A5a).
@@ -319,8 +341,10 @@ export function textoDuracionActivable(d: DuracionEstado): string {
   return d.tipo === "escena" ? "hasta el final de la escena" : "hasta desactivarlo";
 }
 
-export function describirEstadosActivos(activos: EstadoActivo[]): EstadoActivoDescrito[] {
+// `inmunidades` (A7): las de la ficha; un estado que anulan sale con `inmune`.
+export function describirEstadosActivos(activos: EstadoActivo[], inmunidades: readonly Inmunidad[] = []): EstadoActivoDescrito[] {
   return activos.map((ea) => {
+    const anula = inmunidadQueAnula(ea, inmunidades);
     const estado = estadoPorId(ea.estadoId);
     const grado = estado?.grados.find((g) => g.id === ea.gradoId);
     return {
@@ -336,6 +360,7 @@ export function describirEstadosActivos(activos: EstadoActivo[]): EstadoActivoDe
           : (estado?.label ?? ea.estadoId),
       detalle: grado?.detalle ?? [],
       ...(esEstadoDeAumento(ea.estadoId) && { duracionActivable: textoDuracionActivable(duracionDe(ea)) }),
+      ...(anula && { inmune: anula.fuente }),
     };
   });
 }

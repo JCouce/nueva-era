@@ -8,13 +8,15 @@ import {
   etiquetaDuracion,
   listaLegible,
   nombreCorto,
+  textoInmuneAlAplicar,
   type DuracionEstado,
   type Estado,
+  type InmuneAlAplicar,
 } from "@/lib/rules";
 import { Boton, FOCO, Fila, Opcion, Stepper } from "./controles";
 import { HojaInferior } from "./HojaInferior";
 import { BarraObjetivo } from "./BarraObjetivo";
-import type { AccionesMando, AvisoMando, ObjetivoMando } from "./tipos";
+import type { AccionesMando, AvisoMando, EstadoAAplicar, ObjetivoMando } from "./tipos";
 
 type TipoDuracion = DuracionEstado["tipo"];
 
@@ -24,6 +26,9 @@ const normalizar = (t: string) => t.normalize("NFD").replace(/\p{Diacritic}/gu, 
 // El grado que se propone al elegir un estado: Fracaso si lo tiene (el resultado más
 // habitual de una salvación fallida), si no el primero.
 const gradoInicial = (e: Estado) => (e.grados.some((g) => g.id === "fracaso") ? "fracaso" : e.grados[0].id);
+
+// A7: lo que no se aplicó por inmune, a la espera de "Aplicar igualmente".
+type PorForzar = { estado: EstadoAAplicar; label: string; inmunes: InmuneAlAplicar[] };
 
 // Pestaña Estados del panel de mando: buscador, rejilla del catálogo y la configuración
 // del elegido (grado, duración, efecto). En escritorio la configuración va debajo de la
@@ -52,6 +57,7 @@ export function PanelEstados({
   const [rondas, setRondas] = useState(1);
   const [hoja, setHoja] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [porForzar, setPorForzar] = useState<PorForzar | null>(null);
   const [pendiente, startTransition] = useTransition();
 
   const q = normalizar(busqueda.trim());
@@ -65,6 +71,7 @@ export function PanelEstados({
     setGradoId(g);
     proponerDuracion(e, g);
     setError(null);
+    setPorForzar(null);
     if (!enLinea) setHoja(true);
   };
   // Si el documento da una duración por defecto para el grado, se propone en rondas.
@@ -82,19 +89,54 @@ export function PanelEstados({
   // TODO(revisar): "Quitar" no sale en la maqueta de la Mesa; sin él, un estado "hasta
   // quitarlo" solo se podría quitar desde la consola de combate.
   const conEste = estado ? objetivos.filter((o) => o.estados.some((e) => e.estadoId === estado.id)) : [];
+  // A7: los objetivos inmunes a un estado, con la pieza ("Javi (Ojo Biónico 2)").
+  const inmunesA = (estadoId: string) =>
+    objetivos.flatMap((o) => {
+      const i = o.inmunidades.find((x) => x.estadoId === estadoId);
+      return i ? [`${nombreCorto(o.nombre)} (${i.fuente})`] : [];
+    });
+  const inmunesAlElegido = estado ? inmunesA(estado.id) : [];
 
+  // A quien es inmune no se le pone (A7): el resto lo recibe y el aviso de abajo ofrece
+  // "Aplicar igualmente" solo para ellos.
   const aplicar = () => {
     if (!estado || !grado || objetivos.length === 0) return;
     setError(null);
+    setPorForzar(null);
+    const aAplicar: EstadoAAplicar = { estadoId: estado.id, gradoId: grado.id, duracion };
     startTransition(async () => {
       const r = await acciones.aplicarEstado(
         objetivos.map((o) => o.id),
-        { estadoId: estado.id, gradoId: grado.id, duracion },
+        aAplicar,
       );
       if (!r.ok) return setError(r.error);
+      const inmunes = r.inmunes ?? [];
+      const aplicados = objetivos.filter((o) => !inmunes.some((i) => i.id === o.id));
+      if (aplicados.length > 0) {
+        const a = listaLegible(aplicados.map((o) => nombreCorto(o.nombre)));
+        onAviso({ mensaje: `${estado.label} a ${a}`, registroId: r.registroId, tono: "ok" });
+      }
+      if (inmunes.length > 0) return setPorForzar({ estado: aAplicar, label: estado.label, inmunes });
       setHoja(false);
       onAplicado?.();
-      onAviso({ mensaje: `${estado.label} a ${nombres}`, registroId: r.registroId, tono: "ok" });
+    });
+  };
+  const aplicarIgualmente = () => {
+    if (!porForzar) return;
+    setError(null);
+    const { estado: aForzar, label, inmunes } = porForzar;
+    startTransition(async () => {
+      const r = await acciones.aplicarEstado(
+        inmunes.map((i) => i.id),
+        aForzar,
+        true,
+      );
+      if (!r.ok) return setError(r.error);
+      setPorForzar(null);
+      setHoja(false);
+      onAplicado?.();
+      const quien = listaLegible(inmunes.map((i) => nombreCorto(i.nombre)));
+      onAviso({ mensaje: `${label} forzado a ${quien}`, registroId: r.registroId, tono: "aviso" });
     });
   };
   const quitar = () => {
@@ -157,6 +199,28 @@ export function PanelEstados({
           </p>
         ))}
       </div>
+      {inmunesAlElegido.length > 0 && !porForzar && (
+        <p className="border-l-2 border-info py-1 pl-3 text-sm text-info">
+          Inmune: {listaLegible(inmunesAlElegido)}. No se le aplicará; luego podrás aplicarlo igualmente.
+        </p>
+      )}
+      {porForzar && (
+        <div role="alert" className="grid gap-2 border border-neon-orange px-3 py-2">
+          {porForzar.inmunes.map((i) => (
+            <p key={i.id} className="text-sm">
+              {textoInmuneAlAplicar(i, nombreCorto(i.nombre))}: no se le ha aplicado.
+            </p>
+          ))}
+          <div className="flex flex-wrap gap-2">
+            <Boton variante="aviso" onClick={aplicarIgualmente} disabled={pendiente}>
+              {pendiente ? "Aplicando…" : "Aplicar igualmente"}
+            </Boton>
+            <Boton onClick={() => setPorForzar(null)} disabled={pendiente}>
+              Dejarlo así
+            </Boton>
+          </div>
+        </div>
+      )}
       {error && (
         <p role="alert" className="border border-danger px-3 py-2 text-sm text-danger">
           {error}
@@ -195,6 +259,9 @@ export function PanelEstados({
           >
             <b className="font-display text-[0.98rem] leading-tight">{e.label}</b>
             <span className="line-clamp-2 text-sm leading-snug text-muted">{e.resumen}</span>
+            {inmunesA(e.id).length > 0 && (
+              <span className="text-xs leading-snug text-info">Inmune: {listaLegible(inmunesA(e.id))}</span>
+            )}
           </button>
         ))}
         {lista.length === 0 && <p className="col-span-full text-muted">Ningún estado se llama así.</p>}

@@ -1503,6 +1503,30 @@ al preparar su modelado:
     la carga". Desenfundado, desarme y carga son **solo texto**. Lanzarla, sin cambios.
   - **Fuera:** lanzar o arrojar con el brazo, las granadas, la carga como número, el sabotaje y
     la extracción.
+- *En la app (A7, inmunidades; usuario, 2026-10-22):* `rules/inmunidades.ts`, con los datos en el
+  catálogo (`inmuneA` del nivel del implante o de la operación).
+  - **Quién:** Ojo Biónico 2, 3 y 4 contra la **ceguera** (fuente "Ojo Biónico N"; el 1, nada) y
+    Regeneración Tisular Acelerada **funcionando** (`operacionesActivas`) contra la
+    **hemorragia**. La exanguinante no es un estado: fuera.
+  - **Al aplicar (Mesa y combate):** poner el estado a un inmune **no lo pone**; los demás
+    objetivos lo reciben igual. El panel de Estados marca "Inmune: Javi (Ojo Biónico 2)" en la
+    rejilla y, tras aplicar, avisa "Javi es inmune a Ceguera (Ojo Biónico 2): no se le ha
+    aplicado" con **"Aplicar igualmente"**, que repite la operación solo para los inmunes y la
+    guarda **forzada** (`EstadoActivo.forzado`). Un forzado **sí hace efecto** y se registra como
+    cualquier poner ("Ceguera (Fracaso) forzado (inmune) a Javi"); deshacer, igual. Quitar no
+    mira inmunidades.
+  - **NPC:** lo mismo, con los aumentos de la ficha de su fila de combate (`Combatiente.sheet`).
+  - **Puesto antes de ganar la inmunidad** (sin forzar): sigue en la lista pero **no hace nada**
+    (`estadosConEfecto` antes de `modificadoresDeEstados` en `resolverFicha`: ni tiradas, ni
+    atributos, ni vida máxima); su chip dice "Inmune (Ojo Biónico 2)". El máster lo quita cuando
+    quiera.
+  - **Ficha:** "Inmune a: Ceguera (Ojo Biónico 2)" en Personaje → Estado. En el selector
+    "Contra…" de Fortaleza, Ceguera y Ceguera por detonación salen "· inmune" con la nota
+    "Inmune (Ojo Biónico 2): no hace falta tirar" (siguen elegibles: el máster puede forzar).
+  - **Vida:** ni la ceguera ni la hemorragia tocan la vida máxima, así que ganar o perder la
+    inmunidad no mueve la vida. Si algún día un estado con inmunidad la tocara, ganarla subiría
+    el máximo sin curar y perderla recortaría como al desequipar (`TODO(revisar)` en
+    `inmunidades.ts`).
 
 ### 11.2 Lo que el documento no dice `[PENDIENTE]`
 - **Tope de implantes**: pregunta 11, sigue abierta.
@@ -1518,6 +1542,9 @@ al preparar su modelado:
   aplica, porque no es un arma (usuario, 2026-10-22).
 - **Neuroprótesis Simpática 1**: si "reducir penalizadores por estado en 1" alcanza también a
   los −N a atributos (Enfermedad, Parálisis). La app solo reduce los de las tiradas.
+- **Ojo Biónico 2 frente a 4**: el 2 es "inmune a efecto de ceguera" y el 4 "completamente
+  inmune a la ceguera". ¿Cubre el 2 una ceguera física (tapar o arrancar el ojo)? La app bloquea
+  la ceguera desde el 2 y el máster puede "Aplicar igualmente" (usuario, 2026-10-22).
 - **Neuroprótesis Simpática 4**: si "elimina por completo penalizadores por heridas o fatiga"
   quita también la media velocidad y la carga del umbral. La app solo quita el −N de las
   tiradas, como las reducciones de A3.

@@ -22,7 +22,7 @@ export function leerEstados(json: unknown): EstadoActivo[] {
   const porId = new Map<string, EstadoActivo>();
   for (const e of json) {
     if (typeof e !== "object" || e === null) continue;
-    const { estadoId, gradoId, rondasRestantes, finDeEscena } = e as Record<string, unknown>;
+    const { estadoId, gradoId, rondasRestantes, finDeEscena, forzado } = e as Record<string, unknown>;
     if (typeof estadoId !== "string" || typeof gradoId !== "string") continue;
     if (!estadoPorId(estadoId)?.grados.some((g) => g.id === gradoId)) continue;
     const activo: EstadoActivo = rondasValidas(rondasRestantes)
@@ -31,7 +31,7 @@ export function leerEstados(json: unknown): EstadoActivo[] {
         ? { estadoId, gradoId, rondasRestantes: null, finDeEscena: true }
         : { estadoId, gradoId, rondasRestantes: null };
     porId.delete(estadoId);
-    porId.set(estadoId, activo);
+    porId.set(estadoId, forzado === true ? { ...activo, forzado: true } : activo);
   }
   return [...porId.values()];
 }

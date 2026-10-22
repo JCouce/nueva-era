@@ -20,6 +20,7 @@ import {
   nombreCorto,
   pasarTurno,
   type EstadoActivoDescrito,
+  type Inmunidad,
   type RecursoVital,
   type ResumenCombate,
   type Sheet,
@@ -63,6 +64,8 @@ type CombatienteView = {
   characterId: string | null;
   derrotado: boolean;
   estados: EstadoActivoDescrito[];
+  // A7: los de su ficha (jugador) o los de la foto (NPC).
+  inmunidades: Inmunidad[];
   // Los de su ficha (jugador); null en un NPC.
   xp: number | null;
   creditos: number | null;
@@ -219,6 +222,7 @@ export function CombateConsole({
       xp: c.xp,
       creditos: c.creditos,
       estados: c.estados,
+      inmunidades: c.inmunidades,
       vida: { actual: c.pgActual, max: c.pgMax, tope: c.pgMax },
       fatiga: { actual: c.fatigaActual, max: c.fatigaMax, tope: c.fatigaMax },
     }));
@@ -231,7 +235,7 @@ export function CombateConsole({
     ...new Set(cola.flatMap((c) => (ids.includes(c.id) && c.characterId !== null ? [c.characterId] : []))),
   ];
   const acciones: AccionesMando = {
-    aplicarEstado: (combatienteIds, estado) => aplicarEstadoEnCombateAction({ combatienteIds, estado }),
+    aplicarEstado: (combatienteIds, estado, forzar) => aplicarEstadoEnCombateAction({ combatienteIds, estado, forzar }),
     quitarEstado: (combatienteIds, estadoId) => quitarEstadoEnCombateAction({ combatienteIds, estadoId }),
     darRecurso: (recurso, ids, cantidad, motivo) =>
       (recurso === "xp" ? darXpAction : darCreditosAction)({ characterIds: characterIdsDe(ids), cantidad, motivo }),

@@ -10,6 +10,7 @@ import {
   snapshotFromSheet,
   transicionRevision,
   type DuracionEstado,
+  type InmuneAlAplicar,
   type RecursoMaster,
 } from "@/lib/rules";
 import {
@@ -144,7 +145,8 @@ export async function adjustCreditosAction(formData: FormData) {
 export type RegistroResult = { ok: true } | { ok: false; error: string };
 // Lo que devuelven las acciones del centro de mando: el id de la entrada del registro
 // para el "Deshacer" del aviso (null si no cambió nada).
-export type MandoResult = { ok: true; registroId: string | null } | { ok: false; error: string };
+// `inmunes` (A7): a quién no se le puso el estado por ser inmune (solo al aplicar un estado).
+export type MandoResult = { ok: true; registroId: string | null; inmunes?: InmuneAlAplicar[] } | { ok: false; error: string };
 
 // Para el centro de mando (E1c): la misma cantidad a varios personajes, con motivo, y
 // una sola entrada en el registro. Negativa para quitar; si a alguien le dejaría en
@@ -227,21 +229,30 @@ export async function deshacerRegistroAction(id: string): Promise<RegistroResult
 export type EstadosResult = MandoResult;
 
 // El mismo estado a varios personajes; a quien ya lo tuviera se le sustituye el grado
-// y la duración (ponerEstado).
+// y la duración (ponerEstado). A quien es inmune (A7) no se le pone: sale en `inmunes`. Con
+// `forzar` ("Aplicar igualmente") se le pone forzado.
 export async function aplicarEstadoAPersonajesAction(input: {
   characterIds: string[];
   estado: { estadoId: string; gradoId: string; duracion: DuracionEstado };
   motivo?: string;
+  forzar?: boolean;
 }): Promise<EstadosResult> {
   const user = await requireMaster();
   if (!user) return { ok: false, error: "Solo el máster puede aplicar un estado." };
   const parsed = aplicarEstadoAPersonajesSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
 
-  const { characterIds, estado, motivo } = parsed.data;
+  const { characterIds, estado, motivo, forzar } = parsed.data;
   const nuevo = estadoActivoCon(estado.estadoId, estado.gradoId, estado.duracion);
-  const hecho = await cambiarEstadosDePersonajes(characterIds, { tipo: "poner", estado: nuevo }, { userId: user.id, motivo });
-  return hecho ? { ok: true, registroId: hecho.registroId } : { ok: false, error: "Alguno de esos personajes no existe." };
+  const hecho = await cambiarEstadosDePersonajes(
+    characterIds,
+    { tipo: "poner", estado: nuevo },
+    { userId: user.id, motivo },
+    { forzar },
+  );
+  return hecho
+    ? { ok: true, registroId: hecho.registroId, inmunes: hecho.inmunes }
+    : { ok: false, error: "Alguno de esos personajes no existe." };
 }
 
 // Quitar un estado a varios a la vez (Mesa, E1c), con una sola entrada en el registro.

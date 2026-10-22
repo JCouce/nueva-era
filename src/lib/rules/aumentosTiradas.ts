@@ -15,6 +15,8 @@
 //   - ventaja fija sin casilla (Red Frontoparietal en Iniciativa: `ventajasFijas`), que pone
 //     conExtrasDeFicha en `Accion.ventaja`;
 //   - textos por grupo o por aplicado (Asa, Consciencia, Automatismo, Red Frontoparietal).
+// Tanda A7: con inmunidad a un estado (Ojo 2-4 a la ceguera), sus opciones del "Contra…" lo
+// dicen y salen aunque ningún aumento les dé bono (la ceguera por detonación con el Ojo).
 // Tanda A3: las casillas de cobertura (Foveo, Ojo 2-4) llegan por este mismo canal, con su
 // grupo `noApila`; las reducciones de penalizador viven en aumentos.ts.
 // Respeta operacionesActivas (una operación con requisito roto no da nada) y el nivel del
@@ -22,6 +24,8 @@
 import type { DestinoTexto } from "../catalog/especies";
 import type { Implante, OperacionGenetica, OpcionAumento } from "../catalog/aumentos";
 import { aumentoPorId, operacionesActivas } from "./aumentos";
+import type { Inmunidad } from "./estados";
+import { inmunidadesDe } from "./inmunidades";
 import type { TipoDanio } from "./blindaje";
 import type { AlcanceModificador } from "./modificadores";
 import type { CondicionTirada, OpcionCondicion } from "./condiciones";
@@ -142,7 +146,23 @@ const amenazasQueCuenta = (a: (typeof AMENAZAS)[number]): readonly string[] => [
 // Las opciones de una amenaza con lo que le aplica. Con una ventaja de pago y ninguna
 // gratis, dos opciones: sin pagar (solo los bonos, si hay alguno) y pagando, porque el
 // texto lo deja a elección ("permite emplear un punto de fatiga").
-function opcionesDeAmenaza(a: (typeof AMENAZAS)[number], efectos: EfectoConFuente[]): OpcionCondicion[] {
+function opcionesDeAmenaza(a: (typeof AMENAZAS)[number], efectos: EfectoConFuente[], inmunidades: Inmunidad[]): OpcionCondicion[] {
+  const opciones = opcionesSinInmunidad(a, efectos);
+  const inmune = inmunidadDeAmenaza(a, inmunidades);
+  if (!inmune) return opciones;
+  // La opción se queda (el máster puede forzar el estado con "Aplicar igualmente"), con el aviso
+  // delante de lo que suma.
+  const aviso = `Inmune (${inmune.fuente}): no hace falta tirar`;
+  return opciones.map((o) => ({ ...o, etiqueta: `${o.etiqueta} · inmune`, nota: o.nota ? `${aviso} · ${o.nota}` : aviso }));
+}
+
+// La inmunidad que cubre esta amenaza (la ceguera por detonación es ceguera), o null.
+function inmunidadDeAmenaza(a: (typeof AMENAZAS)[number], inmunidades: Inmunidad[]): Inmunidad | null {
+  const cuenta = amenazasQueCuenta(a);
+  return inmunidades.find((i) => cuenta.includes(i.estadoId)) ?? null;
+}
+
+function opcionesSinInmunidad(a: (typeof AMENAZAS)[number], efectos: EfectoConFuente[]): OpcionCondicion[] {
   const cuenta = amenazasQueCuenta(a);
   const aplican = efectos.filter((e) => e.contra.some((c) => cuenta.includes(c)));
   const partes = aplican.filter((e) => e.bono).map((e) => ({ fuente: e.fuente, valor: e.bono! }));
@@ -172,15 +192,14 @@ const conSigno = (n: number) => (n < 0 ? `−${-n}` : `+${n}`);
 
 // Una condición "Contra…" por salvación que tenga alguna amenaza cubierta: "Nada en
 // especial" por defecto y una opción por amenaza (en el orden de AMENAZAS).
-function selectoresContra(aportes: Aporte[]): CondicionTirada[] {
+function selectoresContra(aportes: Aporte[], inmunidades: Inmunidad[]): CondicionTirada[] {
   const efectos: EfectoConFuente[] = aportes.flatMap((a) => (a.efectos.salvaciones ?? []).map((e) => ({ ...e, fuente: a.fuente })));
-  if (efectos.length === 0) return [];
   const salvaciones: SalvacionConSelector[] = ["salv_fortaleza", "salv_voluntad"];
   return salvaciones.flatMap((salvacion): CondicionTirada[] => {
     const directas = new Set(efectos.flatMap((e) => e.contra));
-    const opciones = AMENAZAS.filter((a) => a.salvacion === salvacion && directas.has(a.id)).flatMap((a) =>
-      opcionesDeAmenaza(a, efectos),
-    );
+    const opciones = AMENAZAS.filter(
+      (a) => a.salvacion === salvacion && (directas.has(a.id) || inmunidadDeAmenaza(a, inmunidades)),
+    ).flatMap((a) => opcionesDeAmenaza(a, efectos, inmunidades));
     if (opciones.length === 0) return [];
     return [
       {
@@ -213,7 +232,7 @@ export function casillasDeAumentos(
   const casillas = aportes.flatMap((a) =>
     (a.efectos.casillas ?? []).map((c): CondicionTirada => ({ ...c, etiqueta: `${c.etiqueta} · ${a.fuente}` })),
   );
-  return [...casillas, ...selectoresContra(aportes)];
+  return [...casillas, ...selectoresContra(aportes, inmunidadesDe(sheet))];
 }
 
 export function textosDeAumentos(sheet: Pick<Sheet, "equipo">): TextoEnTirada[] {

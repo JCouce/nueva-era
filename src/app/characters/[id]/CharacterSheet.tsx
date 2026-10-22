@@ -633,7 +633,7 @@ export function CharacterSheet({
   const puntosSkill = puntosHabilidadesDisponibles(sheet, ficha.ajusteCoste);
   const { vida, fatiga } = ficha.salud;
   const esMiTurno = !!(miCombatiente && combate!.combatientes[combate!.turnoIndex]?.id === miCombatiente.id);
-  const misEstadosActivos = miCombatiente ? describirEstadosActivos(estados) : [];
+  const misEstadosActivos = miCombatiente ? describirEstadosActivos(estados, ficha.inmunidades) : [];
 
   // Tope de rareza de la letra de Recursos (docs/sistema.md §2): solo en
   // creación, nunca al máster — aprobada la ficha, o editando el máster,

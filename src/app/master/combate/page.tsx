@@ -8,6 +8,7 @@ import {
   poder,
   estadosDeCombatiente,
   describirEstadosActivos,
+  inmunidadesDe,
   resumenCombate,
   textoEntradaRegistro,
 } from "@/lib/rules";
@@ -31,7 +32,7 @@ export default async function CombatePage() {
     include: {
       combatientes: {
         orderBy: { orden: "asc" },
-        include: { character: { select: { estados: true, xp: true, creditos: true } } },
+        include: { character: { select: { estados: true, stats: true, xp: true, creditos: true } } },
       },
     },
   });
@@ -45,13 +46,20 @@ export default async function CombatePage() {
   // Sheet en vivo desde su propia ficha).
   const combate = combateRaw && {
     ...combateRaw,
-    combatientes: combateRaw.combatientes.map(({ character, ...c }) => ({
-      ...c,
-      estados: describirEstadosActivos(estadosDeCombatiente({ ...c, character })),
-      xp: character?.xp ?? null,
-      creditos: character?.creditos ?? null,
-      sheet: c.sheet ? parseSheet(c.sheet) : null,
-    })),
+    combatientes: combateRaw.combatientes.map(({ character, ...c }) => {
+      const sheet = c.sheet ? parseSheet(c.sheet) : null;
+      // A7: las del jugador, con su ficha en vivo; las del NPC, con su foto.
+      const deFicha = character ? parseSheet(character.stats) : sheet;
+      const inmunidades = deFicha ? inmunidadesDe(deFicha) : [];
+      return {
+        ...c,
+        estados: describirEstadosActivos(estadosDeCombatiente({ ...c, character }), inmunidades),
+        inmunidades,
+        xp: character?.xp ?? null,
+        creditos: character?.creditos ?? null,
+        sheet,
+      };
+    }),
   };
 
   // Sin combate abierto: el resumen del último terminado (E1d). El siguiente combate es

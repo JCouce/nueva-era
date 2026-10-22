@@ -650,7 +650,7 @@ export async function usarAccionAumentoAction(characterId: string, accionId: unk
     { userId: ctx.userId, motivo: `${uso.accion.label} (${uso.accion.fuente}), desde la ficha` },
     // El cobro, en la misma transacción que el estado; cambiarEstadosDePersonajes lo lleva
     // también a la foto del combate abierto.
-    coste > 0 ? (s) => pagarFatiga(s, coste, false) : undefined,
+    { preparar: coste > 0 ? (s) => pagarFatiga(s, coste, false) : undefined },
   );
   if (!hecho) return { ok: false, error: "Personaje no encontrado" };
   // Cambiar el estado puede tocar la vida (S75): la ficha que vale es la de la base.

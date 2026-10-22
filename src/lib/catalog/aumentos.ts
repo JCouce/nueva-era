@@ -45,6 +45,10 @@
 // Tanda A6a: `extremidad` del Brazo Biónico (en el nivel 1-2 y en cada modelo del 3-4): Fuerza
 // y Agilidad propias con su tope, blindaje, bloqueo y letal en pelea (rules/brazoBionico.ts).
 //
+// Tanda A7: `inmuneA` (en la operación o en el nivel del implante): estados del catálogo que no
+// se le aplican (Ojo Biónico 2-4 contra la ceguera; Regeneración Tisular contra la hemorragia).
+// Lo lee rules/inmunidades.ts.
+//
 // Tanda A3: `reducePenalizador` (Estabilización Autonómica en heridas y fatiga, Neurogénesis
 // en fatiga solo con sus aplicados, Matriz Ósea en carga como nota) y las casillas de
 // cobertura (Foveo, Ojo 2-4) en ataques a distancia y Buscar/percibir, sin apilar entre sí.
@@ -109,6 +113,8 @@ export type OperacionGenetica = {
   acciones?: AccionAumentoCatalogo[];
   // A5a: lo que hace mientras su estado propio está puesto (Proyección).
   activo?: ActivoAumento;
+  // A7: ids de estados del catálogo a los que es inmune mientras funciona (rules/inmunidades.ts).
+  inmuneA?: string[];
   // Solo efectos permanentes (A1: +1 a atributos básicos y multiplicadorVida).
   modificadores: Modificador[];
   motor: MotorMetadata[];
@@ -140,6 +146,9 @@ export type NivelImplante = NivelModulo & {
   // permanente del usuario, con su tope, y el blindaje para el golpe bloqueado. En los niveles
   // 3 y 4 lo trae cada modelo (`variantes`).
   extremidad?: ExtremidadBionica;
+  // A7: ids de estados del catálogo a los que es inmune desde este nivel (se acumula: el 3
+  // hereda la del 2).
+  inmuneA?: string[];
 };
 
 export type Implante = {
@@ -978,6 +987,8 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [],
+    // A7: "inmune al estado de hemorragia". La exanguinante no es un estado: fuera.
+    inmuneA: ["hemorragia"],
     // A4a. La exanguinante no es un estado del catálogo: solo cobra.
     acciones: [
       {
@@ -992,7 +1003,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     ],
     motor: [
       { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
-      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:hemorragia" }, mecanismo: "gate_instalacion", arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "capa inmunidad_estado" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:hemorragia" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "construido" },
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_eliminar_exanguinante" }, mecanismo: "accion_equipo", estado: "construido" },
     ],
   },
@@ -1603,9 +1614,12 @@ export const IMPLANTES: Implante[] = [
         ],
         // A3: la cobertura visual (−1 nivel) llega en el nivel 2; el 1 no la trae.
         condiciones: [casillaVisualOjo(2), ...casillasCobertura("aum_ojo", 1, false)],
+        // A7: "inmune a efecto de ceguera". Si cubre una ceguera física lo arbitra el máster con
+        // "Aplicar igualmente" (pregunta a Murillo, §11.2).
+        inmuneA: ["ceguera"],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:ceguera" }, mecanismo: "gate_instalacion", arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "capa inmunidad_estado" },
+          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:ceguera" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
@@ -1643,10 +1657,12 @@ export const IMPLANTES: Implante[] = [
         ],
         // A3: −2 niveles de cualquier cobertura, física o visual (sustituye a la del nivel 2).
         condiciones: [casillaVisualOjo(4), ...casillasCobertura("aum_ojo", 2, true)],
+        // A7: "completamente inmune a la ceguera" (ya la trae el 2; se repite por la fuente del texto).
+        inmuneA: ["ceguera"],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "construido" },
-          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:ceguera" }, mecanismo: "gate_instalacion", arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "capa inmunidad_estado" },
+          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:ceguera" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "pendiente" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },

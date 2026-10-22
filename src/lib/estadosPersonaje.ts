@@ -9,6 +9,7 @@ import {
   fotoTrasCambioDeFicha,
   idsDeRegistro,
   leerEstados,
+  operacionConInmunidad,
   parseSheet,
   reconciliarVidaConEstados,
   quitarEstadosDe,
@@ -16,6 +17,7 @@ import {
   vaciarUsosEscena,
   type CambioEstadoPersonaje,
   type DatosRegistro,
+  type InmuneAlAplicar,
   type OperacionEstado,
   type Sheet,
 } from "@/lib/rules";
@@ -51,17 +53,20 @@ export async function registrar(tx: Prisma.TransactionClient, autoria: Autoria, 
 // `preparar`: cambio en la ficha que va en la misma transacción, antes del estado (el cobro
 // de fatiga de las acciones de aumento, A4a). Lo que mueva de vida o fatiga se lleva también a
 // sus fotos de combate abiertas (A5b: en combate valen las de la foto).
+// Inmunidades (A7): poner un estado a quien es inmune no lo pone; sale en `inmunes` (id =
+// characterId) y los demás lo reciben igual. `forzar` ("Aplicar igualmente") lo pone marcado
+// como forzado a los inmunes, y hace efecto.
 export async function cambiarEstadosDePersonajes(
   characterIds: string[],
   op: OperacionEstado,
   autoria: Autoria | null,
-  preparar?: (sheet: Sheet) => Sheet,
-): Promise<{ registroId: string | null } | null> {
+  { preparar, forzar = false }: { preparar?: (sheet: Sheet) => Sheet; forzar?: boolean } = {},
+): Promise<{ registroId: string | null; inmunes: InmuneAlAplicar[] } | null> {
   const ids = [...new Set(characterIds)];
   const hecho = await prisma.$transaction(async (tx) => {
     const filas = await tx.character.findMany({
       where: { id: { in: ids } },
-      select: { id: true, stats: true, estados: true },
+      select: { id: true, name: true, stats: true, estados: true },
     });
     if (filas.length !== ids.length) return null;
     const fotos = await tx.combatiente.findMany({
@@ -70,14 +75,22 @@ export async function cambiarEstadosDePersonajes(
     });
 
     const cambios: CambioEstadoPersonaje[] = [];
+    const inmunes: InmuneAlAplicar[] = [];
     for (const f of filas) {
       const estados = leerEstados(f.estados);
       // Con el recorte exacto de los activables puestos (A5b): parseSheet topa con el posible.
       const leida = reconciliarVidaConEstados(parseSheet(f.stats), estados);
+      const tras = operacionConInmunidad(leida, op, forzar);
+      if (tras.tipo === "inmune") {
+        // Sin estado no hay cobro (`preparar`): hoy solo lo usan los estados propios de los
+        // aumentos, que no tienen inmunidad.
+        inmunes.push({ id: f.id, nombre: f.name, ...tras.inmunidad });
+        continue;
+      }
       const sheet = preparar ? preparar(leida) : leida;
       const propias = fotos.filter((c) => c.characterId === f.id);
       const cobradas = propias.map((c) => fotoTrasCambioDeFicha(c, leida, sheet));
-      const r = aplicarOperacionEstado({ id: f.id, sheet, estados }, op, cobradas);
+      const r = aplicarOperacionEstado({ id: f.id, sheet, estados }, tras.op, cobradas);
       if (!r) {
         if (sheet !== leida) await tx.character.update({ where: { id: f.id }, data: { stats: sheet } });
         await escribirFotosCobradas(tx, propias, cobradas);
@@ -99,7 +112,7 @@ export async function cambiarEstadosDePersonajes(
       autoria && cambios.length > 0
         ? await registrar(tx, autoria, { tipo: op.tipo === "poner" ? "estado_poner" : "estado_quitar", cambios })
         : null;
-    return { registroId };
+    return { registroId, inmunes };
   });
   if (hecho) revalidarEstados(ids);
   return hecho;
@@ -170,22 +183,33 @@ export async function limpiarEstadosDeJugadores(
 }
 
 // Estados de NPC (E1d): en su fila de combate (Combatiente.estados), sin vida que restar
-// ni registro. Devuelve cuántas filas cambió. Las filas de jugador se ignoran: sus
-// estados van por cambiarEstadosDePersonajes.
-export async function cambiarEstadosDeNpcs(combatienteIds: string[], op: OperacionEstado): Promise<number> {
+// ni registro. Devuelve cuántas filas cambió y los inmunes (A7: con los aumentos de la ficha de
+// su fila, `Combatiente.sheet`; id = combatienteId), como cambiarEstadosDePersonajes. Las
+// filas de jugador se ignoran: sus estados van por cambiarEstadosDePersonajes.
+export async function cambiarEstadosDeNpcs(
+  combatienteIds: string[],
+  op: OperacionEstado,
+  forzar = false,
+): Promise<{ cambiados: number; inmunes: InmuneAlAplicar[] }> {
   const filas = await prisma.combatiente.findMany({
     where: { id: { in: [...new Set(combatienteIds)] }, characterId: null },
-    select: { id: true, estados: true },
+    select: { id: true, nombre: true, estados: true, sheet: true },
   });
+  const inmunes: InmuneAlAplicar[] = [];
   const cambios = filas.flatMap((f) => {
-    const estados = estadosDeNpcTras(f.estados, op);
+    const tras = operacionConInmunidad(f.sheet ? parseSheet(f.sheet) : null, op, forzar);
+    if (tras.tipo === "inmune") {
+      inmunes.push({ id: f.id, nombre: f.nombre, ...tras.inmunidad });
+      return [];
+    }
+    const estados = estadosDeNpcTras(f.estados, tras.op);
     return estados ? [{ id: f.id, estados }] : [];
   });
   if (cambios.length > 0) {
     await prisma.$transaction(cambios.map((c) => prisma.combatiente.update({ where: { id: c.id }, data: { estados: c.estados } })));
     revalidatePath("/master/combate");
   }
-  return cambios.length;
+  return { cambiados: cambios.length, inmunes };
 }
 
 // "Limpiar estados" sobre los NPC del combate abierto: les quita todos, sin registro (no

@@ -42,6 +42,7 @@
 //   aumentosAcciones.ts acciones propias de aumento (sección Aumentos de Acciones: sin dado y con dado) y su uso en servidor (A4a, A4b)
 //   aumentosActivables.ts lo que hacen los activables encendidos (estado propio + pieza): atributos, penalizadores, "Contra…" (A5a)
 //   brazoBionico.ts    Brazo Biónico: Fuerza y Agilidad del brazo, casilla en los ataques, bloqueo y blindaje (A6a)
+//   inmunidades.ts     inmunidades a estados (Ojo Biónico 2-4, Regeneración): bloqueo al aplicar, forzado (A7)
 //   usosEscena.ts      casillas "una vez por escena": gastar al tirar, bloquear, liberar y vaciar (A4a)
 //   vidaPorEstados.ts  vida/fatiga que se pierden al bajar el máximo por un estado (S75)
 //   registro.ts        registro del máster: qué se guarda de cada acción y cómo se deshace (E1b)
@@ -89,6 +90,7 @@ export * from "./aumentosTiradas";
 export * from "./aumentosAcciones";
 export * from "./aumentosActivables";
 export * from "./brazoBionico";
+export * from "./inmunidades";
 export * from "./usosEscena";
 export * from "./dotesEfectos";
 export * from "./dotesAcciones";

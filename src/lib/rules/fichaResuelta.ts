@@ -73,7 +73,9 @@ import { poderesDeDotes } from "./dotesPoderes";
 import type { ExcepcionRareza } from "../catalog/especies";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
 import { consultaIndiceCondiciones, indiceDeCondiciones, modificadoresDeEquipo, type IndiceCondiciones } from "./equipo";
+import { inmunidadesDe } from "./inmunidades";
 import {
+  estadosConEfecto,
   modificadoresDeEstados,
   modificadoresDeUmbrales,
   movimientoPorUmbrales,
@@ -82,6 +84,7 @@ import {
   type AjusteUmbrales,
   umbralSalud,
   type EstadoActivo,
+  type Inmunidad,
   type MovimientoPorUmbral,
   type UmbralFatiga,
   type UmbralSalud,
@@ -108,6 +111,9 @@ export type FichaResuelta = {
   especie: EspecieResuelta | null;
   // Los estados que lleva puestos (los de OpcionesFicha), para pintarlos.
   estados: EstadoActivo[];
+  // A7: estados a los que es inmune, con la pieza que lo da. Los puestos sin forzar no hacen
+  // efecto (estadosConEfecto); siguen en `estados`. Derivado: también al NPC.
+  inmunidades: Inmunidad[];
   // Piezas que no funcionan ahora mismo, por instanciaId, con el motivo. Hueco para el
   // Shock (S73: la pieza afectada pierde su bono) y los aumentos; vacío hasta entonces.
   piezasInutilizadas: ReadonlyMap<string, string>;
@@ -241,6 +247,8 @@ export function resolverFicha(
   // Activables encendidos (A5a): estado propio puesto y pieza que funciona. Sus atributos van con
   // origen "estado" y no entran en requisitosDotes (R3, S30).
   const activables = efectosDeActivables(sheet, estados);
+  // A7: lo puesto antes de ganar la inmunidad sigue en la lista pero no hace nada.
+  const inmunidades = inmunidadesDe(sheet);
   const requisitosDotes = valoresDeRequisito(sheet, modificadoresDeRequisito(sheet, especie?.modificadores ?? []));
   // Lo que ponen las dotes en las tiradas (§9.3, D2a). Sin las de requisito roto (S34);
   // en modo libre (NPC del máster) sin mirar requisitos (§9.4).
@@ -254,7 +262,7 @@ export function resolverFicha(
     ...dotes.modificadores,
     ...modificadoresDeEquipo(sheet),
     ...deAumentos,
-    ...modificadoresDeEstados(estados, activables.reduceEstados),
+    ...modificadoresDeEstados(estadosConEfecto(estados, inmunidades), activables.reduceEstados),
     ...activables.modificadores,
   ];
   // Los umbrales solo dan modificadores de tirada: no tocan los máximos de salud.
@@ -294,6 +302,7 @@ export function resolverFicha(
     ficha: sheet,
     especie,
     estados,
+    inmunidades,
     piezasInutilizadas: SIN_PIEZAS_INUTILIZADAS,
     modificadores,
     atributos: atributosEfectivos(sheet, modificadores),

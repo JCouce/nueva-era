@@ -560,6 +560,39 @@ bloqueado y el blindaje solo en el bloqueo.
 
 ### A7 · Inmunidades
 
+**Decidido (usuario, 2026-10-22):** una sola pasada.
+- **Bloqueo con "Aplicar igualmente":** el estado no se aplica al inmune (Ojo Biónico 2-4
+  contra la ceguera; Regeneración Tisular, funcionando, contra la hemorragia). El aviso del
+  máster lo dice y ofrece "Aplicar igualmente" para arbitrar los casos que el texto no cubra.
+  Por ejemplo, una ceguera física (tapar o arrancar el ojo) seguramente no la cubre el Ojo 2
+  ("inmune a efecto de ceguera"), frente al 4 ("completamente inmune"). Forzado, el estado sí
+  hace efecto.
+- **Estado puesto antes de ganar la inmunidad:** sigue en la lista pero no hace nada, y su chip
+  dice "Inmune (fuente)". El máster lo quita cuando quiera.
+- **NPC:** la misma inmunidad, por `cambiarEstadosDeNpcs`.
+- **Ficha:** "Inmune a: …" en Personaje → Estado. En el selector "Contra…" de Fortaleza, las
+  opciones de ceguera dicen que eres inmune.
+
+**Construido (A7, matices):**
+- **Datos:** `inmuneA` en `NivelImplante` (Ojo 2 y 4; el 3 la hereda, fuente "Ojo Biónico 3") y
+  en `OperacionGenetica` (Regeneración, solo funcionando). `inmunidadesDe` (`rules/inmunidades.ts`)
+  y `FichaResuelta.inmunidades`.
+- **Aviso, no bloqueo duro:** `operacionConInmunidad` en `cambiarEstadosDePersonajes` y
+  `cambiarEstadosDeNpcs` salta al inmune y lo devuelve en `inmunes` (`MandoResult.inmunes`, con
+  el id de la pantalla: characterId en la Mesa, combatienteId en el combate). El aviso vive en el
+  propio panel de Estados, no en el toast (que se cierra solo): una línea por inmune y
+  "Aplicar igualmente" / "Dejarlo así". Forzar solo marca `forzado` a quien es inmune.
+- **Rejilla:** cada estado lleva "Inmune: Javi (Ojo Biónico 2)" si algún objetivo elegido lo es,
+  y la configuración lo repite antes de aplicar.
+- **Chip:** `EstadoActivoDescrito.inmune` (borde discontinuo, nombre tachado, "Inmune (Ojo
+  Biónico 2)"); un forzado dice "forzado". En la ficha, el detalle cambia a "No te hace nada:
+  eres inmune". La lista del combate que ve el jugador (otros combatientes) no lo marca.
+- **"Contra…":** las opciones de ceguera se quedan con "· inmune" y la nota, y Ceguera por
+  detonación sale también solo por la inmunidad (antes solo con la visión nocturna de
+  Introgresión).
+- **MotorMetadata:** los tres habilitadores `estado:*` pasan a `construido` con arbitraje
+  `blando` (avisa y el máster decide).
+
 **Qué hace:** `inmunidad_estado` para el Ojo 2 y 4 (ceguera) y para Regeneración
 (hemorragia). La consola del máster avisa o no deja aplicar el estado. Aviso o bloqueo duro
 lo decides tú al plantear la tanda.
@@ -623,5 +656,8 @@ créditos); aprobada la ficha, nada.
   de ataque cuerpo a cuerpo (hoy no).
 - **Neuroprótesis 1:** si su −1 alcanza a los −N a atributos de Enfermedad y Parálisis (hoy
   solo reduce los de las tiradas).
+- **Ojo Biónico 2 frente a 4:** el 2 es "inmune a efecto de ceguera" y el 4 "completamente
+  inmune a la ceguera". ¿Cubre el 2 una ceguera física (tapar o arrancar el ojo)? Hoy el
+  máster lo arbitra con "Aplicar igualmente".
 - **Erratas del documento:** el nivel 3 del IRM repite la frase del nivel 2, y la
   ortografía.

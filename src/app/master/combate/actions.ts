@@ -22,6 +22,7 @@ import {
   pasarTurno,
   vidaTrasCambioDeEstados,
   type DuracionEstado,
+  type InmuneAlAplicar,
   type OperacionEstado,
 } from "@/lib/rules";
 import { ajustarVidaEnCombateSchema, aplicarEstadoEnCombateSchema, quitarEstadoEnCombateSchema } from "@/lib/validation";
@@ -452,41 +453,50 @@ export async function ajustarVidaEnCombateAction(input: {
 // (`combatienteIds`, pestaña Vida): registrar los estados de NPC pide su propio tipo de
 // cambio (sin vida restada) y su deshacer.
 
+// Inmunidades (A7): los inmunes, jugadores y NPC, vuelven en `inmunes` con su combatienteId
+// (el id de la cola, que es el que repite "Aplicar igualmente" con `forzar`).
 async function cambiarEstadosEnCombate(
   userId: string,
   combatienteIds: string[],
   op: OperacionEstado,
   motivo: string | undefined,
+  forzar = false,
 ): Promise<MandoResult> {
   const ids = [...new Set(combatienteIds)];
-  const filas = await prisma.combatiente.findMany({ where: { id: { in: ids } }, select: { characterId: true } });
+  const filas = await prisma.combatiente.findMany({ where: { id: { in: ids } }, select: { id: true, characterId: true } });
   if (filas.length !== ids.length) return { ok: false, error: "Alguno de esos combatientes ya no está en la cola." };
 
   const characterIds = filas.flatMap((f) => (f.characterId !== null ? [f.characterId] : []));
   let registroId: string | null = null;
+  const inmunes: InmuneAlAplicar[] = [];
   if (characterIds.length > 0) {
-    const hecho = await cambiarEstadosDePersonajes(characterIds, op, { userId, motivo });
+    const hecho = await cambiarEstadosDePersonajes(characterIds, op, { userId, motivo }, { forzar });
     if (!hecho) return { ok: false, error: "No existe el personaje de alguno de esos combatientes." };
     registroId = hecho.registroId;
+    for (const i of hecho.inmunes) {
+      for (const f of filas.filter((f) => f.characterId === i.id)) inmunes.push({ ...i, id: f.id });
+    }
   }
-  await cambiarEstadosDeNpcs(ids, op);
+  const npcs = await cambiarEstadosDeNpcs(ids, op, forzar);
+  inmunes.push(...npcs.inmunes);
   revalidateCombate();
-  return { ok: true, registroId };
+  return { ok: true, registroId, ...(op.tipo === "poner" && { inmunes }) };
 }
 
 export async function aplicarEstadoEnCombateAction(input: {
   combatienteIds: string[];
   estado: { estadoId: string; gradoId: string; duracion: DuracionEstado };
   motivo?: string;
+  forzar?: boolean;
 }): Promise<MandoResult> {
   const user = await requireMaster();
   if (!user) return { ok: false, error: "Solo el máster puede aplicar un estado." };
   const parsed = aplicarEstadoEnCombateSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
 
-  const { combatienteIds, estado, motivo } = parsed.data;
+  const { combatienteIds, estado, motivo, forzar } = parsed.data;
   const nuevo = estadoActivoCon(estado.estadoId, estado.gradoId, estado.duracion);
-  return cambiarEstadosEnCombate(user.id, combatienteIds, { tipo: "poner", estado: nuevo }, motivo);
+  return cambiarEstadosEnCombate(user.id, combatienteIds, { tipo: "poner", estado: nuevo }, motivo, forzar);
 }
 
 // También la × de cada chip de estado en la cola (con un solo combatiente).

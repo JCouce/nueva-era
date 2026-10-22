@@ -1,6 +1,13 @@
 "use client";
 
-import { describirEstadosActivos, notasDeEstado, pesoEquipado, type DuracionEstado, type FichaResuelta } from "@/lib/rules";
+import {
+  describirEstadosActivos,
+  notasDeEstado,
+  pesoEquipado,
+  textoInmunidad,
+  type DuracionEstado,
+  type FichaResuelta,
+} from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { ChipEstado } from "@/components/ChipEstado";
 
@@ -77,12 +84,18 @@ function textoDuracion(d: DuracionEstado): string {
   }
 }
 
-// Los estados que ha puesto el máster: solo lectura, el jugador no se los quita.
+// Los estados que ha puesto el máster: solo lectura, el jugador no se los quita. Con las
+// inmunidades de los aumentos (A7) delante: un estado al que es inmune no hace nada.
 function Estados({ ficha }: { ficha: FichaResuelta }) {
-  const activos = describirEstadosActivos(ficha.estados);
+  const activos = describirEstadosActivos(ficha.estados, ficha.inmunidades);
   return (
     <HudCard className="flex flex-col gap-3 p-4">
       <p className="font-mono text-[11px] uppercase tracking-widest text-muted">{"//SYSTEM · estados"}</p>
+      {ficha.inmunidades.length > 0 && (
+        <p className="font-mono text-xs text-info">
+          Inmune a: {ficha.inmunidades.map(textoInmunidad).join(" · ")}
+        </p>
+      )}
       {activos.length === 0 ? (
         <p className="font-mono text-xs text-muted">Sin estados activos.</p>
       ) : (
@@ -96,8 +109,14 @@ function Estados({ ficha }: { ficha: FichaResuelta }) {
                   <span className="font-mono text-[10px] uppercase tracking-wide text-muted">{textoDuracion(a.duracion)}</span>
                 )}
               </div>
-              {a.detalle.length > 0 && (
-                <p className="font-mono text-[11px] leading-relaxed text-foreground">{a.detalle.join(" ")}</p>
+              {a.inmune ? (
+                <p className="font-mono text-[11px] leading-relaxed text-info">
+                  No te hace nada: eres inmune ({a.inmune}). El máster lo quitará.
+                </p>
+              ) : (
+                a.detalle.length > 0 && (
+                  <p className="font-mono text-[11px] leading-relaxed text-foreground">{a.detalle.join(" ")}</p>
+                )
               )}
             </li>
           ))}
