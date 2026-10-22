@@ -29,7 +29,15 @@ import { atributoEfectivo, aplicado } from "./derivados";
 import { ESPECIALIDAD_ARMA, ESPECIALIDAD_ATAQUE_ESPECIAL, ESPECIALIDAD_LANZAR } from "../catalog/especialidadesArma";
 import { FAMILIAS_SOLO_CON_DOTE } from "../catalog/dotesDestinos";
 import type { PermisosDeDotes } from "./dotesEfectos";
-import { brazoBionico, casillaBrazo, extremidadDeBloqueo, ID_BLOQUEAR_BRAZO, type BrazoBionico } from "./brazoBionico";
+import {
+  brazoBionico,
+  casillaBrazo,
+  extremidadDeBloqueo,
+  extremidadIncorporada,
+  ID_BLOQUEAR_BRAZO,
+  NOTA_ARMA_INCORPORADA,
+  type BrazoBionico,
+} from "./brazoBionico";
 
 const TRAMOS: TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
 
@@ -904,11 +912,19 @@ function tiradaBloqueoAguijon(pieza: PiezaEquipada, sutil: boolean): Accion {
   };
 }
 
-// Brazo Biónico (A6a, rules/brazoBionico.ts): la casilla "Con el brazo biónico" en los ataques
-// que la admiten (Puñetazo, codazo, cuerpo a cuerpo y fuego de una mano), detrás de las suyas.
-function conCasillaBrazo(t: Accion, catalogoId: string, brazo: BrazoBionico): Accion {
+// Brazo Biónico (A6a, rules/brazoBionico.ts): la casilla "Con el brazo biónico" en las filas
+// que la admiten (Puñetazo, codazo, cuerpo a cuerpo y fuego de una mano, y su "Bloquear con X"),
+// detrás de las suyas. Las del arma incorporada (A6b) van siempre con el brazo, sin casilla
+// (`Accion.extremidad`), y con su nota.
+function conBrazo(t: Accion, pieza: PiezaEquipada, brazo: BrazoBionico): Accion {
   const danioDeFuerza = t.ataque?.modos.some((m) => m.formulaDanio !== null && bonoFormulaFuerza(m.formulaDanio) !== null) ?? false;
-  const casilla = casillaBrazo(brazo, { catalogoId, familiaArma: t.familiaArma, empleoArma: t.empleoArma, danioDeFuerza });
+  const ataque = { catalogoId: pieza.catalogoId, familiaArma: t.familiaArma, empleoArma: t.empleoArma, danioDeFuerza };
+  const incorporada = extremidadIncorporada(brazo, pieza.instanciaId, ataque);
+  if (incorporada) {
+    const nota = `${NOTA_ARMA_INCORPORADA} Con la Fuerza ${brazo.fuerza} y la Agilidad ${brazo.agilidad} del brazo (${brazo.fuente}).`;
+    return { ...t, extremidad: incorporada, nota: t.nota ? `${t.nota} · ${nota}` : nota };
+  }
+  const casilla = casillaBrazo(brazo, ataque);
   return casilla ? { ...t, condiciones: [...(t.condiciones ?? []), casilla] } : t;
 }
 
@@ -1085,7 +1101,7 @@ export function accionesDeAtaque(sheet: Sheet, mods: ModificadorConFuente[], per
     if (!generador) continue;
     if (!generaAccionPropia(cat, pieza.nivel)) continue;
     const generadas = generador(sheet, pieza, cat, mods, permisos);
-    tiradas.push(...(brazo ? generadas.map((t) => conCasillaBrazo(t, pieza.catalogoId, brazo)) : generadas));
+    tiradas.push(...(brazo ? generadas.map((t) => conBrazo(t, pieza, brazo)) : generadas));
   }
   const bloqueoBrazo = brazo ? tiradaBloqueoBrazo(brazo) : null;
   if (bloqueoBrazo) tiradas.push(bloqueoBrazo);

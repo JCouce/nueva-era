@@ -1451,20 +1451,24 @@ export const IMPLANTES: Implante[] = [
         // A6a: iguala la Fuerza del usuario y tiene 1 menos de Agilidad. Ni bloquea ni hace letal.
         extremidad: { fuerza: { delta: 0 }, agilidad: { delta: -1 } },
         // A6a: la casilla "Con el brazo biónico" (una CondicionTirada, de ahí eleccion_jugador).
-        // El arma incorporada (vínculo, desenfundado, desarme y carga) es A6b.
+        // A6b: el arma incorporada (PiezaEquipada.armaIncorporada, selector en Equipo). Sus filas
+        // van siempre con el brazo y llevan la nota de desenfundado gratis, sin desarme y carga
+        // (solo texto), en el cuerpo a cuerpo y en el fuego.
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "capa nueva: arma incorporada (vínculo brazo-instancia de arma)" },
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "desarmar" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "capa nueva: arma incorporada (vínculo brazo-instancia de arma)" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "nota_fija", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego_<instancia>" }, mecanismo: "nota_fija", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "desarmar" }, mecanismo: "nota_fija", estado: "construido" },
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_montar_arma_brazo" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
-        // A4b: solo la tirada (usuario, 2026-10-22). El vínculo del arma con el brazo, en A6b.
+        // A4b: solo la tirada (usuario, 2026-10-22). El vínculo del arma con el brazo se fija en
+        // Equipo (A6b), sin exigir esta tirada.
         acciones: [
           {
             id: "aumentos_montar_arma_brazo",
             label: "Incorporar arma",
             economia: "Acción extendida de 10 minutos",
-            nota: "Con el instrumental adecuado. El arma, de una mano (también de fuego). Si fallas, se repite con otros 10 minutos. Quitarla es la misma acción. La app aún no guarda qué arma lleva el brazo.",
+            nota: "Con el instrumental adecuado. El arma, de una mano (también de fuego). Si fallas, se repite con otros 10 minutos. Quitarla es la misma acción. Qué arma lleva el brazo se fija en Equipo, en la tarjeta del Brazo Biónico.",
             tirada: { aplicado: "perspicacia", habilidad: "biociencia", especialidad: "bionica", dificultad: 8 },
           },
         ],

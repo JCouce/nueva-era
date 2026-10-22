@@ -14,6 +14,7 @@ import {
   equiparAction,
   comprarAumentoAction,
   desequiparAction,
+  fijarArmaIncorporadaAction,
   setPrioridadAction,
   ajustarRecursoAction,
   comprarRecargaAction,
@@ -51,6 +52,7 @@ import {
   puntosHabilidadesDisponibles,
   equipar,
   retirarPieza,
+  fijarArmaIncorporada,
   setPrioridad,
   ajustarRecurso,
   ajustarMaterial,
@@ -443,6 +445,13 @@ export function CharacterSheet({
   const commitDesequipar = (instanciaId: string) => {
     setSheet((s) => retirarPieza(s, instanciaId, estados));
     runSave(() => desequiparAction(characterId, instanciaId), setSheet);
+  };
+  const commitArmaIncorporada = (brazoInstanciaId: string, armaInstanciaId: string | null) => {
+    setSheet((s) => {
+      const res = fijarArmaIncorporada(s, brazoInstanciaId, armaInstanciaId);
+      return res.ok ? res.sheet : s;
+    });
+    runSave(() => fijarArmaIncorporadaAction(characterId, { brazoInstanciaId, armaInstanciaId }), setSheet);
   };
   const commitAjustarRecurso = (instanciaId: string, delta: number) => {
     setSheet((s) => ajustarRecurso(s, instanciaId, delta));
@@ -850,7 +859,12 @@ export function CharacterSheet({
             />
           )}
           {activeEfectivo === "equipo" && (
-            <EquipoTab sheet={sheet} creditos={creditos} onDesequipar={commitDesequipar} />
+            <EquipoTab
+              sheet={sheet}
+              creditos={creditos}
+              onDesequipar={commitDesequipar}
+              onArmaIncorporada={commitArmaIncorporada}
+            />
           )}
           {activeEfectivo === "recursos" && (
             <RecursosTab

@@ -1482,9 +1482,27 @@ al preparar su modelado:
     solo con el nivel 2+: suma el blindaje del brazo (3, 6 u 8) a ese golpe, donde cuente el
     blindaje (no contra Mental ni Fuego sin Ignífuga, `blindajeNoCuenta`); cambiar a uno de
     esos tipos la desmarca. Vale igual en el combate en vivo del máster (el mismo modal).
-  - **Fuera (A6b y después):** el arma incorporada (vínculo, desenfundado gratis, sin desarme,
-    carga), el sabotaje y la extracción. Tampoco llevan la casilla lanzar un arma arrojadiza,
-    lanzar granadas ni "Bloquear con X" con un arma de una mano (`TODO(revisar)`).
+  - **Fuera (A6a):** el arma incorporada, el sabotaje y la extracción. Lanzar un arma
+    arrojadiza y lanzar granadas, sin casilla (usuario, 2026-10-22).
+- *En la app (A6b, Brazo Biónico: bloqueo con arma y arma incorporada; usuario, 2026-10-22):*
+  ficha **v20**.
+  - **Casilla en "Bloquear con X":** con un arma de cuerpo a cuerpo de una mano, escudos de una
+    mano incluidos, igual que en sus ataques. No a dos manos ni en la Pelea: bloquear con el
+    Puñetazo o el codazo es bloquear con el brazo, que ya es "Bloquear con el brazo biónico"
+    (nivel 2+; con el 1 no se bloquea) (supuesto, `TODO(revisar)`).
+  - **Arma incorporada:** `PiezaEquipada.armaIncorporada` en la pieza del brazo, que apunta a
+    un arma equipada de una mano, de cuerpo a cuerpo o de fuego (ni la Pelea ni los escudos, que
+    no caben "en su interior": usuario, 2026-10-22). Se fija en Equipo, en la tarjeta del brazo ("Arma
+    incorporada": Ninguna o una de esas armas), **sin exigir la tirada** de "Incorporar arma",
+    que sigue en Acciones. El servidor comprueba que el arma está equipada y es de una mano. Si
+    el arma se desequipa, el vínculo cae; al leer la ficha, un vínculo que no cumple se
+    descarta.
+  - **Efectos:** las filas del arma incorporada (golpe o disparo y su "Bloquear con X") van
+    **siempre** con la Fuerza y la Agilidad del brazo, sin casilla, y su nota dice
+    "Incorporada en el Brazo Biónico: desenfundado gratis, no te la pueden desarmar, cuenta para
+    la carga". Desenfundado, desarme y carga son **solo texto**. Lanzarla, sin cambios.
+  - **Fuera:** lanzar o arrojar con el brazo, las granadas, la carga como número, el sabotaje y
+    la extracción.
 
 ### 11.2 Lo que el documento no dice `[PENDIENTE]`
 - **Tope de implantes**: pregunta 11, sigue abierta.

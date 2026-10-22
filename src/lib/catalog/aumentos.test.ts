@@ -187,13 +187,14 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_neuroprotesis_simpatica 4": 5,
     // A6a: la casilla del brazo (1-4), el blindaje y el bloqueo (2-4), el letal en pelea (2) y la
     // fila "Bloquear con el brazo biónico" (2). El nivel 1 suma la casilla a Incorporar arma.
-    "aum_brazo_bionico 1": 2,
+    // A6b: las notas del arma incorporada (cuerpo a cuerpo, fuego y desarme) en el nivel 1.
+    "aum_brazo_bionico 1": 5,
     "aum_brazo_bionico 2": 4,
     "aum_brazo_bionico 3": 2,
     "aum_brazo_bionico 4": 2,
   };
 
-  test("A1, A2a, A2b, A3, A4a, A4b, A5a, A5b y A6a: solo lo construido (o lo narrativo) está marcado como construido", () => {
+  test("A1, A2a, A2b, A3, A4a, A4b, A5a, A5b, A6a y A6b: solo lo construido (o lo narrativo) está marcado como construido", () => {
     for (const op of OPERACIONES_GENETICAS) {
       const construidos = op.motor.filter((m) => m.estado === "construido" && m.tipo !== "narrativo");
       const esperados =

@@ -8,6 +8,8 @@ import { resolverDanio, type Accion } from "./acciones";
 import { brazoBionico, ID_BLOQUEAR_BRAZO, ID_CASILLA_BRAZO } from "./brazoBionico";
 import { casillaBlindajeBrazo, desgloseBlindaje, SIN_ARMADURA_NATURAL } from "./blindaje";
 import type { EstadoActivo } from "./estados";
+import { armaIncorporadaEntradaSchema, armasIncorporables, desequipar, fijarArmaIncorporada } from "./equipo";
+import { parseSheet } from "./sheet";
 
 const BRAZO = "aum_brazo_bionico";
 const OSTEO = "aum_integridad_osteotendinosa"; // +1 Fuerza y +1 Agilidad permanentes
@@ -279,5 +281,163 @@ describe("Brazo Biónico: no toca la ficha", () => {
       assert.deepEqual(conB.salud, sin.salud);
       assert.deepEqual(conB.requisitosDotes.atributos, sin.requisitosDotes.atributos);
     }
+  });
+});
+
+// ── A6b ──────────────────────────────────────────────────────────────
+
+// La última pieza añadida con `con` (para coger su instanciaId).
+const ultima = (s: Sheet) => s.equipo[s.equipo.length - 1].instanciaId;
+const idBrazo = (s: Sheet) => s.equipo.find((p) => p.catalogoId === BRAZO)!.instanciaId;
+function incorporar(s: Sheet, armaId: string): Sheet {
+  const res = fijarArmaIncorporada(s, idBrazo(s), armaId);
+  assert.ok(res.ok);
+  return res.sheet;
+}
+const bloqueoDe = (s: Sheet, instanciaId: string) => ataques(s).find((t) => t.id === `bloquear_melee_${instanciaId}`);
+
+describe("Brazo Biónico: casilla en «Bloquear con X» (A6b)", () => {
+  test("con un arma de una mano (escudo incluido) sí; a dos manos no; Pelea no (es «Bloquear con el brazo biónico»)", () => {
+    let s = conDotes(conBrazo(ficha(), 2), "dote_bloqueo");
+    s = con(s, "corta_tonfa_porra");
+    const tonfa = ultima(s);
+    s = con(s, "asta_baston_combate");
+    const baston = ultima(s);
+    s = con(s, "escudo_rodela");
+    const rodela = ultima(s);
+    s = con(s, "pelea_punetazo");
+    const punetazo = ultima(s);
+    s = con(s, "pelea_patada");
+    const patada = ultima(s);
+    assert.ok(casillaDe(bloqueoDe(s, tonfa)));
+    assert.ok(casillaDe(bloqueoDe(s, rodela)));
+    assert.ok(bloqueoDe(s, baston));
+    assert.equal(casillaDe(bloqueoDe(s, baston)), undefined);
+    assert.ok(bloqueoDe(s, punetazo));
+    assert.equal(casillaDe(bloqueoDe(s, punetazo)), undefined);
+    assert.equal(casillaDe(bloqueoDe(s, patada)), undefined);
+  });
+
+  test("marcada, el bloqueo tira con los atributos del brazo", () => {
+    let s = conDotes(conBrazo(ficha({ fuerza: 1, agilidad: 1 }), 4, "fuerte"), "dote_bloqueo");
+    s = con(s, "corta_tonfa_porra");
+    const t = bloqueoDe(s, ultima(s))!;
+    assert.equal(montar(s, t, false).aplicado.valor, 1); // ⌈(1+1)/2⌉
+    assert.equal(montar(s, t, true).aplicado.valor, 3); // ⌈(5+1)/2⌉
+  });
+
+  test("lanzar un arma arrojadiza sigue sin casilla", () => {
+    const s = con(conBrazo(ficha(), 2), "espada_cuchillo_combate");
+    const lanzar = ataques(s).find((t) => t.familiaArma === "lanzar_melee");
+    assert.ok(lanzar);
+    assert.equal(casillaDe(lanzar), undefined);
+  });
+});
+
+describe("Brazo Biónico: arma incorporada (A6b)", () => {
+  test("opciones: armas de una mano equipadas, de cuerpo a cuerpo y de fuego; sin Pelea, dos manos ni escudos", () => {
+    let s = conBrazo(ficha(), 1);
+    for (const id of ["pelea_punetazo", "corta_tonfa_porra", "asta_baston_combate", "pistola_mosquito", "escopeta_feritas", "escudo_rodela"]) s = con(s, id);
+    assert.deepEqual(
+      armasIncorporables(s).map((p) => p.catalogoId),
+      ["corta_tonfa_porra", "pistola_mosquito"],
+    );
+  });
+
+  test("validación: brazo de la ficha y arma equipada de una mano; null la quita", () => {
+    let s = conBrazo(ficha(), 1);
+    s = con(s, "corta_tonfa_porra");
+    const tonfa = ultima(s);
+    s = con(s, "asta_baston_combate");
+    const baston = ultima(s);
+    s = con(s, "pelea_punetazo");
+    const punetazo = ultima(s);
+    assert.equal(fijarArmaIncorporada(s, idBrazo(s), baston).ok, false);
+    assert.equal(fijarArmaIncorporada(s, idBrazo(s), punetazo).ok, false);
+    assert.equal(fijarArmaIncorporada(s, idBrazo(s), "no-existe").ok, false);
+    assert.equal(fijarArmaIncorporada(s, tonfa, tonfa).ok, false); // la tonfa no es el brazo
+    const conArma = incorporar(s, tonfa);
+    assert.equal(conArma.equipo.find((p) => p.catalogoId === BRAZO)!.armaIncorporada, tonfa);
+    const res = fijarArmaIncorporada(conArma, idBrazo(conArma), null);
+    assert.ok(res.ok);
+    assert.equal(res.sheet.equipo.find((p) => p.catalogoId === BRAZO)!.armaIncorporada, undefined);
+  });
+
+  test("la entrada del cliente: ids de texto, el arma puede ser null", () => {
+    assert.ok(armaIncorporadaEntradaSchema.safeParse({ brazoInstanciaId: "b", armaInstanciaId: null }).success);
+    assert.ok(armaIncorporadaEntradaSchema.safeParse({ brazoInstanciaId: "b", armaInstanciaId: "a" }).success);
+    assert.equal(armaIncorporadaEntradaSchema.safeParse({ brazoInstanciaId: "", armaInstanciaId: "a" }).success, false);
+    assert.equal(armaIncorporadaEntradaSchema.safeParse({ brazoInstanciaId: "b" }).success, false);
+    assert.equal(armaIncorporadaEntradaSchema.safeParse({ brazoInstanciaId: "b", armaInstanciaId: 3 }).success, false);
+  });
+
+  test("ataque y bloqueo del arma incorporada: siempre con el brazo, sin casilla y con la nota", () => {
+    let s = conDotes(conBrazo(ficha({ fuerza: 1, agilidad: 1 }), 4, "fuerte"), "dote_bloqueo");
+    s = con(s, "corta_tonfa_porra");
+    const tonfa = ultima(s);
+    s = incorporar(s, tonfa);
+    const golpe = ataques(s).find((t) => t.id === `ataque_melee_${tonfa}`)!;
+    assert.equal(casillaDe(golpe), undefined);
+    assert.ok(golpe.extremidad);
+    assert.match(golpe.nota!, /Incorporada en el Brazo Biónico: desenfundado gratis, no te la pueden desarmar, cuenta para la carga\./);
+    const m = montarTirada(resolver(s), golpe, eleccionSinTocar(golpe, false, false));
+    assert.equal(m.aplicado.valor, 3); // ⌈(5+1)/2⌉, sin marcar nada
+    assert.equal(m.danio.ajustes.length, 1); // Fuerza 5 del brazo frente a la tuya 1
+    assert.equal(m.danio.ajustes[0].valor, 4);
+    const bloqueo = bloqueoDe(s, tonfa)!;
+    assert.equal(casillaDe(bloqueo), undefined);
+    assert.equal(montarTirada(resolver(s), bloqueo, eleccionSinTocar(bloqueo, false, false)).aplicado.valor, 3);
+  });
+
+  test("un arma de fuego incorporada dispara con la Agilidad del brazo, sin casilla", () => {
+    let s = con(conBrazo(ficha({ agilidad: 2, percepcion: 2 }), 4, "agil"), "pistola_mosquito");
+    const pistola = ultima(s);
+    s = incorporar(s, pistola);
+    const t = ataques(s).find((x) => x.id === `ataque_fuego_${pistola}`)!;
+    assert.equal(casillaDe(t), undefined);
+    assert.equal(t.extremidad?.agilidad, 5);
+  });
+
+  test("las demás armas siguen con su casilla", () => {
+    let s = con(conBrazo(ficha(), 1), "corta_tonfa_porra");
+    const tonfa = ultima(s);
+    s = con(s, "pistola_mosquito");
+    s = incorporar(s, tonfa);
+    assert.ok(casillaDe(ataques(s).find((t) => t.id.startsWith("ataque_fuego_"))));
+  });
+
+  test("al desequipar el arma, el vínculo cae; al quitar otra, no", () => {
+    let s = con(conBrazo(ficha(), 1), "corta_tonfa_porra");
+    const tonfa = ultima(s);
+    s = con(s, "pistola_mosquito");
+    const pistola = ultima(s);
+    s = incorporar(s, tonfa);
+    const brazoDe = (x: Sheet) => x.equipo.find((p) => p.catalogoId === BRAZO)!;
+    assert.equal(brazoDe(desequipar(s, pistola)).armaIncorporada, tonfa);
+    assert.equal(brazoDe(desequipar(s, tonfa)).armaIncorporada, undefined);
+  });
+
+  test("parseSheet descarta el vínculo inválido: arma no equipada, de dos manos o Pelea", () => {
+    const base = (arma: string, catalogoId: string | null) => ({
+      ...defaultSheet(),
+      equipo: [
+        { instanciaId: "brazo", catalogoId: BRAZO, nivel: 1, armaIncorporada: arma },
+        ...(catalogoId ? [{ instanciaId: arma, catalogoId }] : []),
+      ],
+    });
+    const vinculo = (raw: unknown) => parseSheet(raw).equipo.find((p) => p.catalogoId === BRAZO)!.armaIncorporada;
+    assert.equal(vinculo(base("x", "corta_tonfa_porra")), "x");
+    assert.equal(vinculo(base("x", null)), undefined);
+    assert.equal(vinculo(base("x", "asta_baston_combate")), undefined);
+    assert.equal(vinculo(base("x", "pelea_punetazo")), undefined);
+    // Solo vale en la pieza del brazo.
+    const enOtra = parseSheet({
+      ...defaultSheet(),
+      equipo: [
+        { instanciaId: "t", catalogoId: "corta_tonfa_porra", armaIncorporada: "p" },
+        { instanciaId: "p", catalogoId: "pistola_mosquito" },
+      ],
+    });
+    assert.equal(enOtra.equipo[0].armaIncorporada, undefined);
   });
 });

@@ -287,6 +287,14 @@ export const MIGRACIONES: Migracion[] = [
       "sin gastar.",
     migrar: (ficha) => ({ ...ficha, usosEscena: [] }),
   },
+  {
+    desde: 19,
+    hasta: 20,
+    descripcion:
+      "Aumentos (A6b, docs/sistema.md §11): la pieza del Brazo Biónico admite armaIncorporada " +
+      "(opcional). Hasta ahora la app no guardaba qué arma lleva el brazo: ninguna ficha la trae.",
+    migrar: (ficha) => ficha,
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le

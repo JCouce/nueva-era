@@ -355,3 +355,24 @@ describe("v18 → v19: usos por escena de los aumentos", () => {
     assert.deepEqual(parseSheet({ schemaVersion: 18 }).usosEscena, []);
   });
 });
+
+describe("v19 → v20: arma incorporada del Brazo Biónico", () => {
+  const equipo = [
+    { instanciaId: "b", catalogoId: "aum_brazo_bionico", nivel: 2 },
+    { instanciaId: "p", catalogoId: "pistola_mosquito" },
+  ];
+
+  test("las fichas viejas no traen vínculo y no se toca nada más", () => {
+    const { ficha, aplicadas } = migrar({ schemaVersion: 19, equipo, usosEscena: [] }, 20);
+    assert.equal(ficha.schemaVersion, 20);
+    assert.equal(aplicadas.length, 1);
+    assert.deepEqual(ficha.equipo, equipo);
+    assert.deepEqual(ficha.usosEscena, []);
+  });
+
+  test("una ficha v19 leída con parseSheet sale sin arma incorporada", () => {
+    const s = parseSheet({ schemaVersion: 19, equipo });
+    assert.equal(s.schemaVersion, 20);
+    assert.equal(s.equipo.find((p) => p.instanciaId === "b")?.armaIncorporada, undefined);
+  });
+});

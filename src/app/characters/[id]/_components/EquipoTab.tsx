@@ -9,6 +9,9 @@ import {
   esPiezaAumento,
   ranurasSubsistemaUsadas,
   mejorasArmaInstaladas,
+  armasIncorporables,
+  ID_BRAZO_BIONICO,
+  type PiezaEquipada,
   type Sheet,
   type Armadura,
   type ArmaFuego,
@@ -92,9 +95,64 @@ function Fondos({ creditos }: { creditos: number }) {
   );
 }
 
+// Brazo Biónico (A6b): qué arma lleva incorporada. Las armas de una mano equipadas, de cuerpo
+// a cuerpo y de fuego (sin la Pelea). Sin exigir la tirada de "Incorporar arma".
+type OnArmaIncorporada = (brazoInstanciaId: string, armaInstanciaId: string | null) => void;
+
+function SelectorArmaIncorporada({
+  sheet,
+  brazo,
+  onCambiar,
+}: {
+  sheet: Sheet;
+  brazo: PiezaEquipada;
+  onCambiar: OnArmaIncorporada;
+}) {
+  const armas = armasIncorporables(sheet);
+  const etiqueta = (p: PiezaEquipada) => {
+    const label = equipoPorId(p.catalogoId)?.label ?? p.catalogoId;
+    const iguales = armas.filter((a) => a.catalogoId === p.catalogoId);
+    return iguales.length > 1 ? `${label} (${iguales.indexOf(p) + 1})` : label;
+  };
+  const id = `arma-incorporada-${brazo.instanciaId}`;
+  return (
+    <div className="mt-2 flex flex-col gap-1 px-1">
+      <label htmlFor={id} className="font-mono text-[10px] uppercase tracking-widest text-muted">
+        Arma incorporada
+      </label>
+      <select
+        id={id}
+        value={brazo.armaIncorporada ?? ""}
+        onChange={(e) => onCambiar(brazo.instanciaId, e.target.value || null)}
+        className="w-full border border-border bg-elevated px-2 py-2 font-mono text-[11px] text-foreground outline-none focus:border-accent"
+      >
+        <option value="">Ninguna</option>
+        {armas.map((a) => (
+          <option key={a.instanciaId} value={a.instanciaId}>
+            {etiqueta(a)}
+          </option>
+        ))}
+      </select>
+      <p className="font-sans text-[11px] leading-relaxed text-muted">
+        {armas.length === 0
+          ? "Equipa un arma de una mano (de cuerpo a cuerpo o de fuego) para incorporarla."
+          : "Sus ataques y su bloqueo van siempre con el brazo. Desenfundado gratis, no te la pueden desarmar y cuenta para la carga. La tirada de «Incorporar arma» está en Acciones."}
+      </p>
+    </div>
+  );
+}
+
 // Aumentos (A0, docs/sistema.md §11.3): pieza, nivel, elección y textos. Una operación
 // cuyo requisito se ha quitado queda marcada "requisito roto", como las dotes.
-function SeccionAumentos({ sheet, onDesequipar }: { sheet: Sheet; onDesequipar: (instanciaId: string) => void }) {
+function SeccionAumentos({
+  sheet,
+  onDesequipar,
+  onArmaIncorporada,
+}: {
+  sheet: Sheet;
+  onDesequipar: (instanciaId: string) => void;
+  onArmaIncorporada?: OnArmaIncorporada;
+}) {
   const aumentos = sheet.equipo.filter(esPiezaAumento);
   const rotos = aumentosConRequisitoRoto(sheet);
   if (aumentos.length === 0) {
@@ -132,6 +190,9 @@ function SeccionAumentos({ sheet, onDesequipar }: { sheet: Sheet; onDesequipar: 
                 {cat.familia === "implante" && <MarcasImplante p={cat} />}
               </div>
             )}
+            {a.catalogoId === ID_BRAZO_BIONICO && onArmaIncorporada && (
+              <SelectorArmaIncorporada sheet={sheet} brazo={a} onCambiar={onArmaIncorporada} />
+            )}
           </div>
         );
       })}
@@ -143,6 +204,7 @@ export function EquipoTab({
   sheet,
   creditos,
   onDesequipar,
+  onArmaIncorporada,
 }: {
   sheet: Sheet;
   // Ausente para un NPC (fase 6b 5.1): no lleva cartera de créditos que
@@ -150,6 +212,8 @@ export function EquipoTab({
   // inventarse un número.
   creditos?: number;
   onDesequipar: (instanciaId: string) => void;
+  // El selector del arma incorporada del Brazo Biónico (A6b); sin él, no sale.
+  onArmaIncorporada?: OnArmaIncorporada;
 }) {
   const [filtro, setFiltro] = useState<"todo" | "aumentos">("todo");
   if (sheet.equipo.length === 0) {
@@ -169,6 +233,11 @@ export function EquipoTab({
   }
 
   const todo = filtro === "todo";
+  const incorporadaId = sheet.equipo.find((p) => p.catalogoId === ID_BRAZO_BIONICO)?.armaIncorporada;
+  const marcaIncorporada = (instanciaId: string) =>
+    instanciaId === incorporadaId && (
+      <p className="mb-2 font-mono text-[10px] uppercase tracking-wide text-info">Incorporada en el Brazo Biónico</p>
+    );
   const armaduras = sheet.equipo.filter((p) => equipoPorId(p.catalogoId)?.familia === "armadura");
   const armas = sheet.equipo.filter((p) => equipoPorId(p.catalogoId)?.familia === "arma");
   const armasMelee = sheet.equipo.filter((p) => equipoPorId(p.catalogoId)?.familia === "armaMelee");
@@ -238,6 +307,7 @@ export function EquipoTab({
             resumen={cat.resumen}
             etiqueta={<BotonQuitar onClick={() => onDesequipar(a.instanciaId)} />}
           >
+            {marcaIncorporada(a.instanciaId)}
             <DetalleArma p={cat} />
             <p className="mt-3 font-mono text-[10px] uppercase tracking-widest text-muted">
               Mejoras instaladas: {usadas}/{cat.mejorasAdmitidas}
@@ -260,6 +330,7 @@ export function EquipoTab({
             {a.viaEspecie && (
               <p className="mb-2 font-mono text-[10px] uppercase tracking-wide text-info">Vía especie</p>
             )}
+            {marcaIncorporada(a.instanciaId)}
             <DetalleArmaMelee p={cat} />
           </Acordeon>
         );
@@ -299,7 +370,7 @@ export function EquipoTab({
           </Acordeon>
         );
       })}
-      {(!todo || sheet.equipo.some(esPiezaAumento)) && <SeccionAumentos sheet={sheet} onDesequipar={onDesequipar} />}
+      {(!todo || sheet.equipo.some(esPiezaAumento)) && <SeccionAumentos sheet={sheet} onDesequipar={onDesequipar} onArmaIncorporada={onArmaIncorporada} />}
     </div>
   );
 }

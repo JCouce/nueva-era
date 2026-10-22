@@ -44,6 +44,7 @@ import {
   removeEspecialidadNpcAction,
   equiparNpcAction,
   desequiparNpcAction,
+  fijarArmaIncorporadaNpcAction,
   ajustarRecursoNpcAction,
   comprarRecargaNpcAction,
   ajustarMaterialNpcAction,
@@ -247,6 +248,12 @@ export function NpcEditor({
   const commitDesequipar = async (instanciaId: string) => {
     setStatus("saving");
     const res = await desequiparNpcAction(npcId, instanciaId);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
+  const commitArmaIncorporada = async (brazoInstanciaId: string, armaInstanciaId: string | null) => {
+    setStatus("saving");
+    const res = await fijarArmaIncorporadaNpcAction(npcId, { brazoInstanciaId, armaInstanciaId });
     if (res.ok) setSheet(res.sheet);
     setStatus(res.ok ? "saved" : "error");
   };
@@ -506,7 +513,7 @@ export function NpcEditor({
           />
         </div>
       )}
-      {active === "equipo" && <EquipoTab sheet={sheet} onDesequipar={commitDesequipar} />}
+      {active === "equipo" && <EquipoTab sheet={sheet} onDesequipar={commitDesequipar} onArmaIncorporada={commitArmaIncorporada} />}
       {active === "recursos" && (
         <RecursosTab
           ficha={ficha}

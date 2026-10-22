@@ -66,6 +66,8 @@ import {
   compraAumentoSchema,
   comprarAumento,
   nuevaInstanciaId,
+  armaIncorporadaEntradaSchema,
+  fijarArmaIncorporada,
 } from "@/lib/rules";
 
 export type NpcResult = { ok: true; sheet: Sheet } | { ok: false; error: string };
@@ -349,6 +351,17 @@ export async function desequiparNpcAction(npcId: string, instanciaId: string): P
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(npcId, retirarPieza(ctx.sheet, instanciaId));
+}
+
+// Arma incorporada del Brazo Biónico (A6b): misma validación que la del personaje.
+export async function fijarArmaIncorporadaNpcAction(npcId: string, entrada: unknown): Promise<NpcResult> {
+  const parsed = armaIncorporadaEntradaSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Arma no válida" };
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const res = fijarArmaIncorporada(ctx.sheet, parsed.data.brazoInstanciaId, parsed.data.armaInstanciaId);
+  if (!res.ok) return res;
+  return persist(npcId, res.sheet);
 }
 
 // RECURSOS: mismo criterio "libre" que el resto de la ficha del NPC — sin

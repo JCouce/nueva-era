@@ -522,6 +522,27 @@ la sustitución del nivel 4.
 - **Fuera de la casilla (`TODO(revisar)`):** lanzar un arma arrojadiza, lanzar granadas y
   "Bloquear con X" con un arma de una mano.
 
+**Construido (A6b, matices):**
+- **Bloquear con X:** `llevaCasillaBrazo` admite `bloquear_melee` de una mano, con lo que entran
+  los escudos de una mano (Rodela, Escudo). La Pelea no lleva la casilla al bloquear
+  (`TODO(revisar)`): "Bloquear con Puñetazo" con el brazo duplicaría "Bloquear con el brazo
+  biónico" y, con el nivel 1, que no bloquea, la contradiría.
+- **Vínculo (ficha v20):** `PiezaEquipada.armaIncorporada`, solo en la pieza del brazo.
+  `esArmaIncorporable`: `arma` o `armaMelee` de una mano, sin la Pelea ni los escudos
+  (usuario, 2026-10-22: no caben "en su interior"; al bloquear sí llevan la casilla). `conArmaIncorporadaValida` lo limpia en `parseSheet` y en
+  `desequipar` (así cae al quitar el arma, por `retirarPieza`). Subir de nivel el brazo lo
+  conserva. `piezaEquipadaEntradaSchema` no lo acepta al equipar.
+- **Selector:** "Arma incorporada" bajo la tarjeta del Brazo Biónico en Equipo (filtro Todo y
+  Aumentos), con "Ninguna" y las armas incorporables; dos iguales se numeran. En la tarjeta del
+  arma, la marca "Incorporada en el Brazo Biónico". El NPC comparte la pestaña: mismo selector
+  con `fijarArmaIncorporadaNpcAction` (solo el máster).
+- **Efectos:** `conBrazo` (`combate.ts`, antes `conCasillaBrazo`): las filas del arma
+  incorporada que llevarían la casilla llevan `Accion.extremidad` fija (con el daño de Fuerza
+  si lo hay) y la nota `NOTA_ARMA_INCORPORADA` más la Fuerza y la Agilidad del brazo. Lanzar el
+  arma incorporada y el Lanzagranadas de una pistola incorporada, sin cambios.
+- **MotorMetadata (nivel 1):** las notas del arma incorporada en el cuerpo a cuerpo, en el fuego
+  (entrada nueva) y en el desarme, `construido`.
+
 **Qué hace**
 - **`extremidad_atributos_propios`:** casilla "con el brazo biónico" en golpes, bloqueos y
   armas de una mano (R4). Cambia Fuerza y Agilidad por las del brazo (básico + delta, con su

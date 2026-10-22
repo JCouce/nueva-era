@@ -7,16 +7,17 @@
 // requisitos de dote (modificadoresDeRequisito). Encima, el delta del nivel o del modelo con
 // su tope (`ExtremidadBionica`, en el catálogo). Los atributos del brazo solo valen en las
 // tiradas y el daño hechos con él: no tocan la vida, los requisitos ni la ficha (usuario,
-// 2026-10-22). El arma incorporada (vínculo, desenfundado, desarme y carga) es A6b.
+// 2026-10-22). A6b: la casilla también en "Bloquear con X" con un arma de una mano, y el arma
+// incorporada (el vínculo, PiezaEquipada.armaIncorporada, vive en rules/equipo.ts): sus filas
+// usan siempre el brazo, sin casilla.
 import { aumentoPorId, nivelDeImplante } from "./aumentos";
 import { atributosEfectivos } from "./derivados";
 import { modificadoresDeRequisito } from "./dotes";
 import { especieDeFicha } from "./especie";
-import { nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
+import { ID_BRAZO_BIONICO, nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import type { AtributosExtremidad, CondicionTirada } from "./condiciones";
 import type { Sheet } from "./sheet";
 
-export const ID_BRAZO_BIONICO = "aum_brazo_bionico";
 export const ID_CASILLA_BRAZO = "brazo_bionico";
 export const ID_BLOQUEAR_BRAZO = "aumentos_bloquear_brazo";
 
@@ -71,6 +72,8 @@ export type BrazoBionico = {
   blindaje: number | null;
   bloquea: boolean;
   peleaLetal: boolean;
+  // instanciaId del arma incorporada (A6b), o null.
+  armaIncorporada: string | null;
 };
 
 export function brazoBionico(sheet: Sheet): BrazoBionico | null {
@@ -88,6 +91,7 @@ export function brazoBionico(sheet: Sheet): BrazoBionico | null {
     blindaje: e.extremidad.blindaje ?? null,
     bloquea: e.extremidad.bloquea === true,
     peleaLetal: e.extremidad.peleaLetal === true,
+    armaIncorporada: e.pieza.armaIncorporada ?? null,
   };
 }
 
@@ -117,18 +121,23 @@ const CODAZO = "pelea_codazo_rodillazo";
 const PATADA = "pelea_patada";
 
 // Puñetazo y "Codazo o Rodillazo" (solo el codazo, por la nota), las armas de cuerpo a cuerpo
-// de una mano y las de fuego de una mano. La Patada no: es la pierna.
-// TODO(revisar): lanzar un arma arrojadiza, lanzar granadas y "Bloquear con X" con un arma de
-// una mano no llevan la casilla (fuera del contrato de A6a).
+// de una mano, las de fuego de una mano y "Bloquear con X" con un arma de cuerpo a cuerpo de una
+// mano, escudos incluidos (A6b). La Patada no: es la pierna. Lanzar un arma arrojadiza y lanzar
+// granadas, tampoco (usuario, 2026-10-22).
 export function llevaCasillaBrazo(a: AtaqueParaBrazo): boolean {
   if (a.catalogoId === PATADA) return false;
   if (a.empleoArma !== "una mano") return false;
-  return a.familiaArma === "ataque_melee" || a.familiaArma === "ataque_fuego";
+  return a.familiaArma === "ataque_melee" || a.familiaArma === "ataque_fuego" || a.familiaArma === "bloquear_melee";
 }
+
+const esPeleaDeBrazo = (catalogoId: string) => catalogoId === PUNETAZO || catalogoId === CODAZO;
 
 export function casillaBrazo(brazo: BrazoBionico, a: AtaqueParaBrazo): CondicionTirada | null {
   if (!llevaCasillaBrazo(a)) return null;
-  const esPelea = a.catalogoId === PUNETAZO || a.catalogoId === CODAZO;
+  const esPelea = esPeleaDeBrazo(a.catalogoId);
+  // "Bloquear con Puñetazo" con el brazo es bloquear con el brazo: eso ya es la fila "Bloquear
+  // con el brazo biónico" (nivel 2+; con el 1 no se bloquea). TODO(revisar): sin casilla.
+  if (esPelea && a.familiaArma === "bloquear_melee") return null;
   const letal = esPelea && brazo.peleaLetal;
   const nota = [
     `Fuerza ${brazo.fuerza} y Agilidad ${brazo.agilidad} del brazo (${brazo.fuente}) en vez de las tuyas, aunque sean menores${a.danioDeFuerza ? "; también en el daño" : ""}.`,
@@ -146,6 +155,18 @@ export function casillaBrazo(brazo: BrazoBionico, a: AtaqueParaBrazo): Condicion
     extremidad: atributosDeBrazo(brazo, a.danioDeFuerza),
     ...(letal && { danio: { categoria: "Letal" } }),
   };
+}
+
+// ── Arma incorporada (A6b) ─────────────────────────────────────────────
+
+export const NOTA_ARMA_INCORPORADA =
+  "Incorporada en el Brazo Biónico: desenfundado gratis, no te la pueden desarmar, cuenta para la carga.";
+
+// Las filas del arma incorporada que van con el brazo (las mismas que llevarían la casilla):
+// siempre con sus atributos, sin casilla. Lanzarla, no (fuera de A6b). null si no toca.
+export function extremidadIncorporada(brazo: BrazoBionico, instanciaId: string, a: AtaqueParaBrazo): AtributosExtremidad | null {
+  if (brazo.armaIncorporada !== instanciaId || !llevaCasillaBrazo(a)) return null;
+  return atributosDeBrazo(brazo, a.danioDeFuerza);
 }
 
 // ── "Bloquear con el brazo biónico" ─────────────────────────────────────

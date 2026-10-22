@@ -19,7 +19,7 @@ Sin valoración de prioridad aquí a propósito — se queda obsoleta en cuanto 
 foco. Frentes abiertos, cada uno con su sección en Pendiente:
 - **Dotes**: D1–D2d y las dotes de NPC hechas; quedan la especialidad elegida en la tirada
   y las tiradas fijas que faltan (10 efectos con `bloqueoPor: "tiradas-fijas"`).
-- **Aumentos**: por tandas (A0-A5b hechas, A6a construida sin commit; quedan A6b y A7).
+- **Aumentos**: por tandas (A0-A6a hechas, A6b construida sin commit; queda A7).
 - **Puntos Heroicos**: sin empezar, con la prosa ya en `docs/fuente/`.
   *Neos Plouton* (`docs/fuente/neos-plouton.md`) es la aventura que juega la mesa, no un
   área de reglas que construir.
@@ -1473,7 +1473,7 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      (VTF nivel 2, Pico de Cuervo Poco Habitual: dificultad sugerida 7, antes
      habría sido 9).
 
-### Aumentos ⬜ (A0-A5b commiteadas; A6a construida, 2026-10-22)
+### Aumentos ⬜ (A0-A6a commiteadas; A6b construida, 2026-10-22)
 Encargo y pasos: `docs/prompt-aumentos.md`. Fuente literal:
 `docs/aumentos.md` (26 operaciones genéticas y 11 implantes; **5 implantes en proceso**,
 de Control Anímico al final: no se modelan hasta la próxima foto de Drive). Decisión del usuario: entran
@@ -1575,9 +1575,8 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
     `usarAccionAumentoAction`, `devolverFatigaAction` nuevo para Densificar). Visual: sin "+0" en
     el selector de activar (`OpcionCondicion.sinValor`) y sin la duración repetida al lado del
     chip de un activable (`EstadoPanel`).
-- [ ] A6 · Brazo Biónico (A6a sin commit; falta A6b).
-  - [x] A6a · Atributos del brazo, casilla, bloqueo y blindaje. *(sin commit; falta revisión y
-    navegador)* `rules/brazoBionico.ts`: `brazoBionico(sheet)` (base permanente =
+- [x] A6 · Brazo Biónico (A6b sin commit).
+  - [x] A6a · Atributos del brazo, casilla, bloqueo y blindaje. `rules/brazoBionico.ts`: `brazoBionico(sheet)` (base permanente =
     `modificadoresDeRequisito`, más el delta del nivel o del modelo con su tope;
     `ExtremidadBionica` en `NivelImplante.extremidad` y `VarianteImplante.extremidad` del
     catálogo). Casilla toggle "Con el brazo biónico" (`ID_CASILLA_BRAZO`, campo `extremidad`
@@ -1591,6 +1590,17 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
     con la dote Bloqueo; nivel 2+), con `Accion.extremidad` fija. "Bloquear daño": casilla
     "Bloqueado con el brazo biónico" (`casillaBlindajeBrazo`, 6.º parámetro de
     `desgloseBlindaje`), nivel 2+, sin coste, donde cuente el blindaje.
+  - [x] A6b · Casilla en "Bloquear con X" y arma incorporada, ficha **v20**. *(sin commit;
+    falta revisión y navegador)* `llevaCasillaBrazo` admite `bloquear_melee` de una mano
+    (escudos incluidos; la Pelea no, que es "Bloquear con el brazo biónico"). Vínculo
+    `PiezaEquipada.armaIncorporada` (migración v19→v20 sin cambios de datos), con
+    `esArmaIncorporable`, `armasIncorporables`, `conArmaIncorporadaValida` (en `parseSheet` y
+    `desequipar`: arma no equipada, de dos manos o Pelea, fuera) y `fijarArmaIncorporada` en
+    `rules/equipo.ts`. Selector "Arma incorporada" en la tarjeta del brazo (Equipo, también en
+    el NPC), sin exigir la tirada; `fijarArmaIncorporadaAction` y
+    `fijarArmaIncorporadaNpcAction` con Zod (`armaIncorporadaEntradaSchema`). Las filas del arma
+    incorporada (golpe o disparo y su "Bloquear con X") llevan `Accion.extremidad` fija, sin
+    casilla, y `NOTA_ARMA_INCORPORADA` (`conBrazo` en `combate.ts`).
 - [ ] A7 · Inmunidades.
 - [ ] Cuando Murillo cierre los 5 implantes en proceso: `sync-drive`, transcribirlos de
   nuevo y modelarlos en una pasada corta.

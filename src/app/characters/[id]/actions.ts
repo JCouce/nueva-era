@@ -105,6 +105,8 @@ import {
   gastarUsosEscena,
   liberarUsoEscena,
   usoDeAccionAumento,
+  armaIncorporadaEntradaSchema,
+  fijarArmaIncorporada,
 } from "@/lib/rules";
 
 export type SaveResult =
@@ -506,6 +508,18 @@ export async function desequiparAction(
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
   return { ok: true, sheet, creditos };
+}
+
+// Arma incorporada del Brazo Biónico (A6b): el servidor comprueba que el brazo es de la ficha y
+// que el arma está equipada y es de una mano (fijarArmaIncorporada). Sin tirada.
+export async function fijarArmaIncorporadaAction(characterId: string, entrada: unknown): Promise<SaveResult> {
+  const parsed = armaIncorporadaEntradaSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Arma no válida" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const res = fijarArmaIncorporada(ctx.sheet, parsed.data.brazoInstanciaId, parsed.data.armaInstanciaId);
+  if (!res.ok) return res;
+  return persist(characterId, res.sheet);
 }
 
 // RECURSOS (docs/tareas.md, fase 6b): gasto manual (+/-), igual que PG/fatiga

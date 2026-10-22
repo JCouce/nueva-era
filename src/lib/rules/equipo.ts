@@ -25,6 +25,7 @@ import {
 import type { ExcepcionRareza } from "../catalog/especies";
 import type { EstadoFicha } from "./revision";
 import { ID_BUSQUEDA_MIRA } from "../catalog/mejorasArma";
+import { PELEA } from "../catalog/armasMelee";
 import { alcanzaA, alcanzaAlgunAplicado, type ContextoAccion, type FamiliaArma, type GrupoAccion, type Modificador, type ModificadorConFuente } from "./modificadores";
 import type { CondicionTirada } from "./condiciones";
 import type { HabilidadId } from "./habilidades";
@@ -99,6 +100,10 @@ export type PiezaEquipada = {
   // Aumentos: parte del precio pagada con la bolsa del humano (lo demás fueron créditos).
   // Hace falta para devolver cada cosa a su sitio al quitarlo en creación. Solo el servidor.
   pagoBolsa?: number;
+  // Brazo Biónico (A6b): instanciaId del arma incorporada, un arma de una mano equipada (de
+  // cuerpo a cuerpo o de fuego, no la Pelea). Solo en la pieza del brazo; lo fija
+  // fijarArmaIncorporada y lo limpia conArmaIncorporadaValida.
+  armaIncorporada?: string;
 };
 
 export const piezaEquipadaSchema = z.object({
@@ -109,11 +114,12 @@ export const piezaEquipadaSchema = z.object({
   viaEspecie: z.literal(true).optional(),
   eleccion: z.string().min(1).max(40).optional(),
   pagoBolsa: z.number().int().min(0).max(9_999_999).optional(),
+  armaIncorporada: z.string().min(1).max(60).optional(),
 });
 
 // Lo que se acepta del cliente al equipar: `viaEspecie` no, lo decide el servidor
-// (zod descarta la clave si llega).
-export const piezaEquipadaEntradaSchema = piezaEquipadaSchema.omit({ viaEspecie: true, pagoBolsa: true });
+// (zod descarta la clave si llega). El arma incorporada va por su propia acción.
+export const piezaEquipadaEntradaSchema = piezaEquipadaSchema.omit({ viaEspecie: true, pagoBolsa: true, armaIncorporada: true });
 
 // Generador de ids, separado de las funciones puras de más abajo para que
 // sigan siendo testeables sin azar de por medio — mismo criterio que
@@ -378,13 +384,74 @@ export function fabricar(sheet: Sheet, catalogoId: string, tier: MaterialTier, e
 
 // Quitar una armadura o un arma se lleva también lo que tuviera instalado
 // dentro: un subsistema o una mejora no puede quedar flotando sin dónde vivir.
+// Si se va el arma incorporada en el Brazo Biónico, el vínculo cae con ella (A6b).
 export function desequipar(sheet: Sheet, instanciaId: string): Sheet {
   return reconciliarRecursos({
     ...sheet,
-    equipo: sheet.equipo.filter(
-      (p) => p.instanciaId !== instanciaId && p.instaladoEnId !== instanciaId,
+    equipo: conArmaIncorporadaValida(
+      sheet.equipo.filter((p) => p.instanciaId !== instanciaId && p.instaladoEnId !== instanciaId),
     ),
   });
+}
+
+// ── Arma incorporada del Brazo Biónico (A6b, docs/sistema.md §11) ─────────
+
+export const ID_BRAZO_BIONICO = "aum_brazo_bionico";
+const IDS_PELEA = new Set(PELEA.map((p) => p.id));
+
+// Un arma de una mano, de cuerpo a cuerpo o de fuego; no la Pelea (es el propio brazo) ni los
+// escudos, que no caben "en su interior" (usuario, 2026-10-22; al bloquear sí llevan la casilla).
+export function esArmaIncorporable(pieza: Pick<PiezaEquipada, "catalogoId"> | undefined): boolean {
+  if (!pieza) return false;
+  const cat = equipoPorId(pieza.catalogoId);
+  if (cat?.familia === "arma") return cat.empleo === "una mano";
+  if (cat?.familia === "armaMelee") return cat.empleo === "una mano" && !IDS_PELEA.has(cat.id) && !cat.defensa;
+  return false;
+}
+
+// Las armas equipadas que se pueden incorporar al brazo: las opciones del selector de Equipo.
+export function armasIncorporables(sheet: Pick<Sheet, "equipo">): PiezaEquipada[] {
+  return sheet.equipo.filter((p) => esArmaIncorporable(p));
+}
+
+// El vínculo solo vale en la pieza del brazo y apuntando a un arma incorporable que siga
+// equipada; si no, se descarta (parseSheet y desequipar).
+export function conArmaIncorporadaValida(equipo: PiezaEquipada[]): PiezaEquipada[] {
+  return equipo.map((p) => {
+    if (p.armaIncorporada === undefined) return p;
+    const arma = equipo.find((q) => q.instanciaId === p.armaIncorporada);
+    if (p.catalogoId === ID_BRAZO_BIONICO && esArmaIncorporable(arma)) return p;
+    const sinVinculo = { ...p };
+    delete sinVinculo.armaIncorporada;
+    return sinVinculo;
+  });
+}
+
+// Lo que llega del cliente al fijar el arma incorporada: el brazo y el arma (null, ninguna).
+export const armaIncorporadaEntradaSchema = z.object({
+  brazoInstanciaId: z.string().min(1).max(60),
+  armaInstanciaId: z.string().min(1).max(60).nullable(),
+});
+
+// Fija (o quita, con null) el arma incorporada del brazo. Sin exigir la tirada de "Incorporar
+// arma" (usuario, 2026-10-22): la tirada se hace aparte, en Acciones.
+export function fijarArmaIncorporada(
+  sheet: Sheet,
+  brazoInstanciaId: string,
+  armaInstanciaId: string | null,
+): { ok: true; sheet: Sheet } | { ok: false; error: string } {
+  const brazo = sheet.equipo.find((p) => p.instanciaId === brazoInstanciaId);
+  if (!brazo || brazo.catalogoId !== ID_BRAZO_BIONICO) return { ok: false, error: "No llevas ese Brazo Biónico" };
+  if (armaInstanciaId !== null && !esArmaIncorporable(sheet.equipo.find((p) => p.instanciaId === armaInstanciaId))) {
+    return { ok: false, error: "Esa arma no está equipada o no es de una mano" };
+  }
+  const equipo = sheet.equipo.map((p) => {
+    if (p !== brazo) return p;
+    const sinVinculo = { ...p };
+    delete sinVinculo.armaIncorporada;
+    return armaInstanciaId === null ? sinVinculo : { ...sinVinculo, armaIncorporada: armaInstanciaId };
+  });
+  return { ok: true, sheet: { ...sheet, equipo } };
 }
 
 // Precio de una pieza equipada, para la Tienda con créditos (docs/traspaso.md

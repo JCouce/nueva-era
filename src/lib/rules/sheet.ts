@@ -15,7 +15,7 @@ import {
   HABILIDAD_MAX,
   MAX_ESPECIALIDADES,
 } from "./habilidades";
-import { piezaEquipadaSchema, type PiezaEquipada } from "./equipo";
+import { conArmaIncorporadaValida, piezaEquipadaSchema, type PiezaEquipada } from "./equipo";
 import {
   recursoSchema,
   reconciliarRecursos,
@@ -71,7 +71,8 @@ import { ESPECIALIDAD_IDS, esEspecialidadDe, type EspecialidadId } from "../cata
 //        Introgresión, modelo del Brazo) y se añade lo gastado de la bolsa del
 //        humano (bolsaAumentosGastada)
 //   19 → usos "una vez por escena" de los aumentos (A4a): usosEscena
-export const SCHEMA_VERSION = 19;
+//   20 → la pieza del Brazo Biónico admite `armaIncorporada` (A6b)
+export const SCHEMA_VERSION = 20;
 
 // Tope de lo gastado de la bolsa de aumentos: muy por encima de cualquier bolsa real.
 export const MAX_BOLSA_AUMENTOS = 9_999_999;
@@ -250,11 +251,14 @@ export function parseSheet(raw: unknown): Sheet {
   // Cada pieza se valida por separado: una entrada corrupta se descarta sin
   // tirar el resto del equipo por la borda.
   const rEquipo = Array.isArray(r.equipo) ? r.equipo : [];
-  const equipo: PiezaEquipada[] = rEquipo
-    .map((p) => piezaEquipadaSchema.safeParse(p))
-    .filter((res): res is { success: true; data: PiezaEquipada } => res.success)
-    .map((res) => res.data)
-    .slice(0, 200);
+  // El arma incorporada del brazo (A6b) se descarta si ya no está equipada o no es de una mano.
+  const equipo: PiezaEquipada[] = conArmaIncorporadaValida(
+    rEquipo
+      .map((p) => piezaEquipadaSchema.safeParse(p))
+      .filter((res): res is { success: true; data: PiezaEquipada } => res.success)
+      .map((res) => res.data)
+      .slice(0, 200),
+  );
 
   // Mismo criterio que el equipo: cada recurso se valida por separado, uno
   // corrupto no tira el resto por la borda.
