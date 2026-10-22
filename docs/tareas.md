@@ -33,8 +33,8 @@ foco. Frentes abiertos, cada uno con su sección en Pendiente:
   `docs/sistema.md`. Primer adelanto (Creación): Vida/Fatiga base 8 → 10, Dotes con
   presupuesto por prioridad, topes de creación movidos.
 - "Preguntas al diseñador" (final de este documento) — lo que bloquea a Murillo.
-- **La fábrica** (épica en Pendiente, forma decidida, sin construir): cadena de montaje de cambios con Jefe de
-  fábrica, línea determinista y revisión con oráculos. Siguiente paso: plantear la construcción del N1.
+- **La fábrica** (épica en Pendiente, N1 construido, en rodaje desde 2026-10-22): cadena de montaje de cambios con
+  Jefe de fábrica, línea determinista y revisión con oráculos. Uso y qué se apunta dónde: `fabrica/README.md`.
 
 ---
 
@@ -824,7 +824,11 @@ construir (dos pasadas: rediseño, luego revisión).
 
 ## Pendiente
 
-### La fábrica: automatizar el desarrollo y el mantenimiento de Nueva Era ⬜ (épica; forma decidida 2026-10-16, sin construir)
+### La fábrica: automatizar el desarrollo y el mantenimiento de Nueva Era ⬜ (épica; N1 construido 2026-10-19, en rodaje desde 2026-10-22)
+**Cómo está hoy:** `fabrica/README.md` es la foto vigente (procesos, piezas, uso y qué se apunta dónde) y
+`fabrica/historial.md` guarda los fallos. Esta entrada guarda el plan, lo abierto y las ideas: las ideas o mejoras que
+salgan usándola van aquí, en "Ideas del rodaje".
+
 **Qué es.** Una cadena de montaje para los cambios del proyecto: entra un encargo y sale una rama verificada que el
 usuario aprueba y sube él. Sustituye al enfoque anterior de la épica ("automatizar el mantenimiento", procesos sueltos
 P1–P9 y empezar por P1 + P2), que el usuario descartó por falta de un proceso de punta a punta con valor medible:
@@ -846,7 +850,7 @@ de decisiones: https://claude.ai/artifact/28x6AhJuyGxnfpM4vBqgbP.
   en navegador). N2: cuatro revisores especializados (Motor, Fidelidad, UI, Push seguro), cada uno con su oráculo.
 - **Juez**: script con reglas fijas. Un criterio en "falla" devuelve el trabajo (máx. 2 vueltas); a la tercera o ante
   una duda de diseño, escala. Un LLM solo redacta el resumen.
-- **Contrato**: `T-xxx.md` por trabajo, en la propia rama (llega a main con el cambio). Encargo, Spec, Criterios
+- **Contrato**: `T-xxx.md` por trabajo, en main (`fabrica/trabajos/`; la rama lleva solo código, 2026-10-19). Encargo, Spec, Criterios
   (congelados, cada uno con su oráculo), Construcción, Revisión, Juicio, Decisión, métricas (vueltas, minutos, tokens,
   si se retocó antes del push) y una retro de dos líneas. Cada estación escribe solo su sección.
 - **Panel**: un único artifact para todos los trabajos (no uno por feature): por trabajo, cada estación con su
@@ -866,10 +870,13 @@ se documenta en `knowledge/` para replicarlo.
 Gotcha: Claude Code solo descubre skills, agentes y workflows en `.claude/`; ahí van envoltorios finos que apuntan a
 `fabrica/`, nada de lógica.
 
+**Hecho (2026-10-19):** tandas 1-4 (papeles, barreras, línea y estrenos T-001-T-003, descartados con su rama
+conservada) y primer trabajo real, T-004 (aprobado).
+
 **Abierto:**
-- Primer trabajo: repetir uno pequeño ya hecho sobre el commit anterior (worktree sin chuletas) y comparar con la
-  versión del usuario. El usuario quiere aprender el oficio: se revisita según salga.
-- Forma exacta del panel.
+- Rodaje: usarla en el día a día y apuntar lo que salga (fallos al historial, ideas aquí abajo).
+- Comprobar F-011 tras reiniciar sesión: el revisor con chrome-devtools `--isolated`, sin pisar otras sesiones.
+- Forma exacta del panel (hoy, el visor de terminal `fabrica:ver`).
 - Medio plazo: aislar la BD por trabajo (`CREATE DATABASE t014 TEMPLATE …` en el mismo contenedor, `.env` por
   worktree) y el puerto de Next por worktree. Mientras, un trabajo que toque el modelo de datos escala al usuario.
 
@@ -890,6 +897,8 @@ frontmatter gana `inicio`, `fin` y `operario`, que escriben `contrato.mjs estado
 
 **Escalera:** N1 línea a mano · N2 revisores especializados con oráculo · N3 tolva MainPatcher (examen: reproducir los
 syncs commiteados, recall ≥95 %) · N4 sin "tu ok" a la spec en lo pequeño · N5 cron y panel vivo.
+
+**Ideas del rodaje:** (vacío)
 
 **Material de partida (2026-10-16):** inventario del mantenimiento en
 `~/Documents/jcouce/knowledge/concepts/nuevaera-maintenance-cycle.md`; investigación externa en

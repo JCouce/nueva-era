@@ -8,6 +8,17 @@ Este README es **la foto** de la fábrica: si cambia un proceso, cambia aquí (m
 artifact "Dosier de mantenimiento", pestaña Fábrica (https://claude.ai/artifact/RRrCuBcYGau6F7shAvWQ5m), es la
 versión visual y se regenera desde aquí en cada hito. Estado y plan: `docs/tareas.md`, épica "La fábrica".
 
+## Dónde se apunta cada cosa
+
+| Qué | Dónde | Quién |
+|---|---|---|
+| Un trabajo: contrato, lo que hizo cada estación, decisión, métricas y retro (y si se conserva su rama, por qué) | `trabajos/T-xxx-<slug>.md` | Jefe y estaciones |
+| Un fallo de la fábrica (no del trabajo), aunque la línea acabe bien | `historial.md`, entrada `F-xxx` | Quien lo vea |
+| Un cambio en cómo funciona la fábrica | Este README: el mapa o la sección que toque, y una fila en "Cambios de proceso" | Jefe |
+| Una idea o mejora que se te ocurre usándola (no es un fallo) | `docs/tareas.md`, épica "La fábrica" | Quien la tenga |
+| Una regla del juego que se decide al hacer un contrato | `docs/sistema.md`, como regla general (`jefe.md`, paso 6) | Jefe, con tu respuesta o la de Murillo |
+| Una lección que sirve fuera de Nueva Era (cómo montar fábricas de agentes) | Knowledge, `experiments/nuevaera-workflows.md` o una nota enlazada | El Jefe lo sugiere; tú decides |
+
 ## Mapa de procesos
 
 ```
@@ -109,7 +120,8 @@ prod) también vota. Si se toca la BD (`bd` de `revisar.mjs`), escala.
 El contrato vive en main (`fabrica/trabajos/`) y todas las estaciones escriben en esa copia. La rama lleva solo
 código, así que su merge es limpio. Con tu Decisión escrita, el Jefe cierra el trabajo con `cerrar.mjs`, que pone
 `hecho` o `descartado` y commitea en main solo el contrato (`git commit --only`, sin arrastrar lo que haya en el
-índice). Después te ofrece quitar el worktree y, si se descartó, la rama.
+índice). Después limpia sin preguntar: el worktree, siempre; la rama, salvo que merezca conservarla para investigar
+(lo apunta en la retro).
 
 ## Usarlo tú antes de un push
 
@@ -127,10 +139,11 @@ Sale con código 1 si algo falla. `--base`, `--head` y `--json` para otros rango
 1. Los papeles: contrato, prompts y este mapa. **Hecha.**
 2. Las barreras: comprobaciones y bloqueos. **Hecha.**
 3. La línea: el guion que mueve un trabajo. **Hecha** (probada con un arnés; con agentes reales, en el estreno).
-4. El estreno: repetir un trabajo pasado y compararlo con el del usuario. **En curso** (T-001 y T-002 cerrados, T-003 en
-   marcha).
-5. El panel: ver qué hizo cada trabajador.
-6. El rodaje: los primeros trabajos reales.
+4. El estreno: repetir un trabajo pasado y compararlo con el del usuario. **Hecha** (T-001, T-002 y T-003, descartados
+   con su rama conservada para comparar).
+5. El panel: ver qué hizo cada trabajador. **Hecha a medias**: `npm run fabrica:ver` enseña el avance y los fallos del
+   operario, no el detalle de cada trabajador.
+6. El rodaje: trabajos reales en el día a día. **En curso** desde el 2026-10-22 (el primero fue T-004, aprobado).
 
 ## Cambios de proceso
 
@@ -155,3 +168,4 @@ Las decisiones que cambian cómo funciona la fábrica, con su porqué. Los fallo
 | 2026-10-19 | Árbitros de reglas en P1: dos agentes (precedentes y fuente) resuelven las dudas lógicas; si discrepan o es gusto o diseño, al usuario o a Murillo | La mayoría de las dudas son lógicas; el usuario solo debería decidir las suyas |
 | 2026-10-19 | Examen de los árbitros (12 dudas con respuesta conocida + 4 de Murillo): con la regla de las dos lentes, 3 de 4 aplicadas bien, 0 inventadas; lo que hace el código ya no cuenta como precedente | El único fallo grave (S23) tomó lo construido por lo decidido |
 | 2026-10-19 | Al cerrar, el Jefe quita siempre el worktree y borra la rama salvo que merezca conservarla para investigar | Que no se acumulen worktrees ni ramas; las que se guardan, con su porqué |
+| 2026-10-22 | Tabla "Dónde se apunta cada cosa" arriba del README; las ideas del rodaje van a `docs/tareas.md` | Empieza el rodaje: que no haya que reconstruir dónde va cada cosa |
