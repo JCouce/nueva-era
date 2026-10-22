@@ -278,6 +278,15 @@ export const MIGRACIONES: Migracion[] = [
       "del humano solo se enseñaba, nadie ha gastado nada de ella.",
     migrar: (ficha) => ({ ...ficha, bolsaAumentosGastada: 0 }),
   },
+  {
+    desde: 18,
+    hasta: 19,
+    descripcion:
+      "Aumentos (A4a, docs/sistema.md §11): se añade usosEscena, las casillas «una vez por " +
+      "escena» ya gastadas. Hasta ahora ese límite lo llevaba el jugador a ojo: todas empiezan " +
+      "sin gastar.",
+    migrar: (ficha) => ({ ...ficha, usosEscena: [] }),
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le

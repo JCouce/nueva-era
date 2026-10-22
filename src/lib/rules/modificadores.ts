@@ -55,7 +55,9 @@ export type GrupoAccion =
   // externos de la psiónica (Xovromium, Munición Supresora...).
   | "Psiónica"
   // Acciones propias de dote (dotesAcciones.ts, D2c-1).
-  | "Dotes";
+  | "Dotes"
+  // Acciones propias de aumento (aumentosAcciones.ts, A4a).
+  | "Aumentos";
 
 // Familia de un ataque, bloqueo o "Levantar escudo" generado por arma (combate.ts): la
 // pone el generador al crear la Accion, no se deduce del id. Es lo que miran las dotes

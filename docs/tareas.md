@@ -19,7 +19,8 @@ Sin valoración de prioridad aquí a propósito — se queda obsoleta en cuanto 
 foco. Frentes abiertos, cada uno con su sección en Pendiente:
 - **Dotes**: D1–D2d y las dotes de NPC hechas; quedan la especialidad elegida en la tirada
   y las tiradas fijas que faltan (10 efectos con `bloqueoPor: "tiradas-fijas"`).
-- **Aumentos** y **Puntos Heroicos**: sin empezar, con la prosa ya en `docs/fuente/`.
+- **Aumentos**: por tandas (A0-A3 hechas, A4a construida sin commit; quedan A4b-A7).
+- **Puntos Heroicos**: sin empezar, con la prosa ya en `docs/fuente/`.
   *Neos Plouton* (`docs/fuente/neos-plouton.md`) es la aventura que juega la mesa, no un
   área de reglas que construir.
 - **Equipo**: lo construible está hecho; lo que queda espera a Murillo o es diseño
@@ -1472,8 +1473,8 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      (VTF nivel 2, Pico de Cuervo Poco Habitual: dificultad sugerida 7, antes
      habría sido 9).
 
-### Aumentos ⬜ (encargo y transcripción hechos, 2026-10-16)
-Nada de código todavía. Encargo y pasos: `docs/prompt-aumentos.md`. Fuente literal:
+### Aumentos ⬜ (A0-A3 commiteadas y probadas; A4a construida, 2026-10-22)
+Encargo y pasos: `docs/prompt-aumentos.md`. Fuente literal:
 `docs/aumentos.md` (26 operaciones genéticas y 11 implantes; **5 implantes en proceso**,
 de Control Anímico al final: no se modelan hasta la próxima foto de Drive). Decisión del usuario: entran
 como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primero).
@@ -1486,12 +1487,12 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
 - [x] Segunda y tercera ronda de preguntas (`/preguntas`, área Aumentos, 2026-10-22):
   respuestas en `sistema.md` §11.3 y aplicadas en `docs/modelado-aumentos.json`.
 - [x] `docs/propuesta-aumentos.md` con tandas (A0-A7). Falta la luz verde y las 3 decisiones de su §4.
-- [x] A0 · Catálogo, Tienda y ficha (incluye la bolsa a 70.000). *(sin commit; falta
-  revisión y navegador)* `catalog/aumentos.ts` (32 piezas, test cruzado con el JSON),
+- [x] A0 · Catálogo, Tienda y ficha (incluye la bolsa a 70.000). *(commiteada y probada en
+  el navegador)* `catalog/aumentos.ts` (32 piezas, test cruzado con el JSON),
   `rules/aumentos.ts` (`comprarAumento`, `aumentosConRequisitoRoto`), ficha v18
   (`PiezaEquipada.eleccion`, `bolsaAumentosGastada`), chip "Aumentos" en Tienda y en Equipo,
   `comprarAumentoAction` y `comprarAumentoNpcAction`.
-- [x] A1 · Atributos y derivados. *(sin commit; falta revisión y navegador)*
+- [x] A1 · Atributos y derivados. *(commiteada y probada en el navegador)*
   `modificadoresDeAumentos` (+1 con origen "aumento", sin techo), requisitos de dote con
   aumentos (`modificadoresDeRequisito`), `rebajaCosteHabilidad` solo aprobada
   (`FichaResuelta.ajusteCosteSubida`, `ajusteXp` en el servidor), Hipertrofia
@@ -1499,21 +1500,21 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
   desequipar).
 - [x] A2 · Tiradas: bonos, ventajas y casillas.
   - [x] A2a · Canal de casillas, selector "Contra…" de salvaciones, `noApila`, Alerta
-    pasiva y armadura natural. *(sin commit; falta revisión y navegador)*
+    pasiva y armadura natural. *(commiteada y probada en el navegador)*
     `rules/aumentosTiradas.ts` (`casillasDeAumentos`, `textosDeAumentos`,
     `notasAlertaPasivaDeAumentos`, `armaduraNaturalDeAumentos`) al índice de condiciones y a
     `textosTirada` en `resolverFicha`; `OpcionCondicion` con `ventaja`/`costeFatiga`/`partes`;
     `noApila` en `montarTirada` y `bonoDerivado` (Ojo con la Mira Telescópica); armadura
     natural en `desgloseBlindaje`.
   - [x] A2b · Alcance `aplicado:<a>`, casillas de la rama cognitiva, Foveo, Iniciativa,
-    Proyección/Matriz Actitud y textos de tirada. *(sin commit; falta revisión y navegador)*
+    Proyección/Matriz Actitud y textos de tirada. *(commiteada y probada en el navegador)*
     Alcance `{ tipo: "aplicado" }` (`alcanzaA` con `ContextoAccion.aplicado`, índice
     `porAplicado` con los aplicados posibles; `montarTirada` deja sin efecto las que no casan
     con el aplicado de verdad: `casillasSinEfecto`); `ahorroFatiga` en el toggle
     (`costeFatiga` neto y `ahorroSinUsar`, que `usarPoder` resta del poder);
     `prepararPoder` consulta el índice (`indiceCondiciones`); `FichaResuelta.ventajasFijas`
     (Red Frontoparietal) en `conExtrasDeFicha`; `DestinoTexto` por grupo y por aplicado.
-- [x] A3 · Penalizadores. *(sin commit; falta revisión y navegador)*
+- [x] A3 · Penalizadores. *(commiteada y probada en el navegador)*
   `reducePenalizador` en el catálogo; `ajusteUmbralesDeAumentos` (Estabilización) sumado al
   de especie con `sumaAjustesUmbrales` (`resolverFicha`, fuente combinada en el desglose);
   Neurogénesis como compensación con alcance `aplicado` (`reduccionesPorAplicadoDeAumentos`,
@@ -1521,6 +1522,20 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
   Foveo y Ojo 2-4 (grupo `noApila` `reduccion_cobertura`) en ataques a distancia y
   Buscar/percibir; Matriz Ósea como nota en la carga (`notasCargaDeAumentos`).
 - [ ] A4 · Acciones propias y "una vez por escena".
+  - [x] A4a · Contador por escena y acciones sin dado. *(sin commit; falta revisión y
+    navegador)* Ficha v19 (`sheet.usosEscena`, `rules/usosEscena.ts`): casillas con
+    `usoPorEscena` (Mielinización, Proyección, Matriz de Red) que `montarTirada` devuelve en
+    `usosEscena` solo si tienen efecto y se gastan al tirar (`gastarUsosEscenaAction`);
+    gastadas salen `bloqueada` ("Usada esta escena", `conUsosEscena` en el índice); lista con
+    "Liberar" y "Terminar escena" en Recursos (`liberarUsoEscenaAction`); `terminarEscena` y
+    el "Limpiar estados" del máster (`limpiarEstadosDeJugadores`) las vacían, sin registro.
+    `rules/aumentosAcciones.ts` (`accionesDeAumentos` → `FichaResuelta.accionesAumentos`,
+    sección "Aumentos" de Acciones): combinada, hemorragias, miedo, MQE (mensaje, telemetría
+    y fila informativa de defensa por nivel) y Enjambre (sanar letal y grave).
+    `usarAccionAumentoAction` cobra en el servidor y, con `cambiarEstadosDePersonajes`, quita
+    Hemorragia o Miedo (o baja Aterrorizado a Asustado) con entrada de registro deshacible
+    (autor: el jugador).
+  - [ ] A4b · Barrido electromagnético, Tempestad Nanobótica, Densificar e Incorporar arma.
 - [ ] A5 · Activables.
 - [ ] A6 · Brazo Biónico.
 - [ ] A7 · Inmunidades.

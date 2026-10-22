@@ -1306,6 +1306,43 @@ al preparar su modelado:
     total no se reduce.
   - **Matriz Ósea:** −1 a los penalizadores por carga solo como nota junto a la carga
     (Personaje → Estado); la carga no está mecanizada (§5.5).
+- *En la app (A4a, una vez por escena y acciones sin dado):*
+  - **Una vez por escena (R1):** ficha v19, `sheet.usosEscena` (ids de casilla,
+    `rules/usosEscena.ts`). Las casillas con `usoPorEscena` (Mielinización "Ahorro de fatiga",
+    Proyección "Con lenguaje", Matriz de Red "Repetir tras fallar") **se gastan al tirar** con
+    ellas marcadas, no al marcarlas (usuario, 2026-10-22): `montarTirada` las devuelve en
+    `usosEscena` y la pestaña Acciones las apunta. Una casilla sin efecto (por el aplicado) no
+    gasta; el ahorro de Mielinización tampoco si no ha ahorrado nada (sin casillas de pago y
+    fuera de un poder). Gastada, sale en el modal **bloqueada** ("Usada esta escena") hasta
+    terminar la escena. "Hasta un descanso" (Neuroprótesis 3 y 4) sigue como texto.
+  - **Terminar escena:** el del jugador (Recursos) y el "Limpiar estados" del máster (Mesa y
+    combate, en las mismas fichas de jugador) vacían `usosEscena`. **Deshacer ese "Limpiar
+    estados" no devuelve los usos de escena** (usuario, 2026-10-22): solo los estados. En Recursos, la lista de lo usado lleva "Liberar" por entrada, para los errores.
+  - **Acciones de aumento** (`rules/aumentosAcciones.ts`, sección "Aumentos" de Acciones, con
+    `operacionesActivas` y los niveles del implante; la misma acción en un nivel alto
+    sustituye a la del bajo): Acción combinada (Red Frontoparietal, 1 de fatiga, sin límite;
+    sustituye al texto de A2b en las pruebas mentales), Cortar hemorragia (1, gratuita) y
+    exanguinante (2, gratuita) de Angiogénesis, Eliminar exanguinante (Regeneración, 1,
+    gratuita como cortar: el texto no lo dice; usuario 2026-10-22, pendiente de Murillo),
+    Sacudir miedo y Dominar terror (Estabilización, sin coste), Mensaje subvocal (MQE; desde el
+    nivel 2 a varias personas, usuario 2026-10-22) y Telemetría (MQE 2+), Sanar letal y Sanar
+    grave (Enjambre 2+, 1 cada pulsación). Sin fatiga suficiente, la acción sale bloqueada.
+  - **Estados (usuario, 2026-10-22):** Cortar hemorragia quita `hemorragia`; Sacudir miedo
+    quita `miedo` en Asustado; Dominar terror lo pasa de Aterrorizado a Asustado (con la misma
+    duración). Si la ficha no tiene el estado, la acción se cobra igual y lo dice. La
+    exanguinante no es un estado del catálogo: sus dos acciones solo cobran, con la nota de
+    avisar al máster. Es la única vía del jugador a `Character.estados`: el servidor comprueba
+    la pieza, cobra y cambia solo ese estado por `cambiarEstadosDePersonajes`, **en una sola
+    transacción** (el cobro va en su `preparar`), con una entrada
+    del registro del máster (autor: el jugador) que se puede deshacer; deshacer devuelve el
+    estado, no la fatiga.
+  - **Sanar letal:** +1 a la vida actual, sin pasar del máximo en reposo; "una vez por ronda",
+    texto. **Sanar grave:** cada pulsación cobra 1; "5 turnos seguidos; al quinto, súmate 1 de
+    vida a mano". Lo de "sin penalizadores por fatiga" del Enjambre es solo de la regeneración
+    pasiva (fuera de A4a).
+  - **Defensa del MQE:** fila informativa sin botón con alcance, dificultad de infiltración
+    (+1 por turno), defensa y contragolpe del nivel que se tenga; el nivel 4 dice que el cepo
+    del 3 se puede elegir en cada intrusión. La app no tira por el intruso.
 
 ### 11.2 Lo que el documento no dice `[PENDIENTE]`
 - **Tope de implantes**: pregunta 11, sigue abierta.
@@ -1313,6 +1350,8 @@ al preparar su modelado:
   el Brazo usan **biónica** (especialidad de Biociencia), y Tempestad Nanobótica usa
   **tecnociencia**.
 - **Erratas** pendientes de Murillo: ver "Notas de transcripción" en `docs/aumentos.md`.
+- **Eliminar exanguinante** (Regeneración Tisular): el texto no dice qué acción cuesta. La app
+  la trata como gratuita, igual que cortar la hemorragia en Angiogénesis (usuario, 2026-10-22).
 
 ### 11.3 Decisiones del usuario `[FIRME · usuario 2026-10-16, Cuestionario Aumentos]`
 - **En la ficha**: una pieza de equipo más, que se equipa y se desequipa ("un jugador se

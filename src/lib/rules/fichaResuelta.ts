@@ -66,6 +66,8 @@ import {
   type PermisosDeDotes,
 } from "./dotesEfectos";
 import { accionesDeDotes, type AccionesDeDotes } from "./dotesAcciones";
+import { accionesDeAumentos, type AccionesDeAumentos } from "./aumentosAcciones";
+import { conUsosEscena, usosEscenaDeFicha } from "./usosEscena";
 import { poderesDeDotes } from "./dotesPoderes";
 import type { ExcepcionRareza } from "../catalog/especies";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
@@ -165,6 +167,13 @@ export type FichaResuelta = {
   // PoderDisponible al nivel de su disciplina (psionica.paraEfectos). Van a la sección "Dotes"
   // de Acciones y se usan con prepararPoder como cualquier poder. Sin las de requisito roto.
   poderesDotes: PoderDisponible[];
+  // Acciones propias de aumento (A4a, aumentosAcciones.ts): la sección "Aumentos" de Acciones,
+  // con las filas informativas (defensa del MQE). Sin las de requisito roto; derivadas: también
+  // al NPC.
+  accionesAumentos: AccionesDeAumentos;
+  // Casillas "una vez por escena" ya gastadas (sheet.usosEscena), con su etiqueta: la lista de
+  // Recursos. En el índice de condiciones esas casillas ya salen bloqueadas.
+  usosEscena: { id: string; etiqueta: string }[];
   // Creación y progresión (§14.6): el ajuste de coste que reciben los puntos, la
   // compra y el coste del siguiente nivel, y la bolsa de aumentos (null si la
   // especie no la trae). En modo libre (NPC, §14.3), neutros.
@@ -299,12 +308,18 @@ export function resolverFicha(
     formulaMovimiento,
     multiplicadorCarga,
     blindaje: { tieneEscudoMelee: tieneEscudoMelee(sheet), armaduraNatural: armaduraNaturalDeEspecie(especie) },
-    indiceCondiciones: indiceDeCondiciones(sheet, [...casillasDeEspecie(especie), ...dotes.casillas, ...casillasDeAumentos(sheet)]),
+    indiceCondiciones: indiceDeCondiciones(sheet, [
+      ...casillasDeEspecie(especie),
+      ...dotes.casillas,
+      ...conUsosEscena(casillasDeAumentos(sheet), sheet.usosEscena),
+    ]),
     textosTirada: [...textosDeEspecie(especie), ...dotes.textos, ...textosDeAumentos(sheet)],
     ventajasFijas: ventajasFijasDeAumentos(sheet),
     extrasDotes: { bonosTramo: dotes.bonosTramo, criticos: dotes.criticos, permisos: dotes.permisos, descuentos: dotes.descuentos },
     accionesDotes: accionesDeDotes(activas),
     poderesDotes: poderesDeDotes(activas, sheet, psionica.paraEfectos),
+    accionesAumentos: accionesDeAumentos(sheet),
+    usosEscena: usosEscenaDeFicha(sheet),
     ajusteCoste,
     ajusteCosteSubida: libre ? AJUSTE_NEUTRO : ajusteCosteDeSubida(ajusteCoste, sheet, aprobada),
     bolsaAumentos: libre ? null : bolsaResuelta(bolsaDeAumentos(especie), sheet.bolsaAumentosGastada),

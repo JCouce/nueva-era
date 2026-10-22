@@ -92,9 +92,11 @@ export function ajustarFatigaTemporal(sheet: Sheet, delta: number): Sheet {
   return fatigaTemporal === sheet.fatigaTemporal ? sheet : { ...sheet, fatigaTemporal };
 }
 
-// "Al terminar la escena volverá al nivel de fatiga que le correspondiese".
+// "Al terminar la escena volverá al nivel de fatiga que le correspondiese". También se
+// vacían los usos "una vez por escena" de los aumentos (A4a, usosEscena.ts).
 export function terminarEscena(sheet: Sheet): Sheet {
-  return sheet.fatigaTemporal === 0 ? sheet : { ...sheet, fatigaTemporal: 0 };
+  if (sheet.fatigaTemporal === 0 && sheet.usosEscena.length === 0) return sheet;
+  return { ...sheet, fatigaTemporal: 0, usosEscena: [] };
 }
 
 // Foto con la que un jugador entra en un combate: su vida y fatiga actuales de la

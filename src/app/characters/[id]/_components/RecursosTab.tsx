@@ -60,6 +60,7 @@ export function RecursosTab({
   onAjustarFatiga,
   onAjustarFatigaTemporal,
   onTerminarEscena,
+  onLiberarUsoEscena,
 }: {
   ficha: FichaResuelta;
   // Ausente para un NPC: edición libre, sin cartera de créditos que cobrar
@@ -78,6 +79,8 @@ export function RecursosTab({
   // Fatiga temporal de Proeza (vitalidad.ts). Ausentes donde no se lleva.
   onAjustarFatigaTemporal?: (delta: number) => void;
   onTerminarEscena?: () => void;
+  // Usos "una vez por escena" (A4a): liberar uno a mano. Ausente en el NPC.
+  onLiberarUsoEscena?: (id: string) => void;
 }) {
   const sheet = ficha.ficha;
   // TODO(revisar) E1b: en combate, este máximo lleva los estados (FichaResuelta) y el
@@ -183,6 +186,9 @@ export function RecursosTab({
             onTerminarEscena={onTerminarEscena}
           />
         )}
+      {onTerminarEscena && onLiberarUsoEscena && ficha.usosEscena.length > 0 && (
+        <UsosEscenaCard usos={ficha.usosEscena} onLiberar={onLiberarUsoEscena} onTerminarEscena={onTerminarEscena} />
+      )}
 
       <p className="mt-2 border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
         {"//SYSTEM · materiales"}
@@ -413,6 +419,50 @@ function FatigaTemporalCard({
           onClick={onTerminarEscena}
           disabled={valor <= 0}
           className="clip-chamfer-sm ml-auto border border-accent px-3 py-1.5 font-display text-xs font-semibold uppercase tracking-wide text-accent active:scale-95 disabled:border-border disabled:text-muted"
+        >
+          Terminar escena
+        </button>
+      </div>
+    </HudCard>
+  );
+}
+
+// Casillas "una vez por escena" ya gastadas (A4a): cada una con "liberar" para los errores, y
+// "Terminar escena", que las vacía todas (y la fatiga temporal).
+function UsosEscenaCard({
+  usos,
+  onLiberar,
+  onTerminarEscena,
+}: {
+  usos: { id: string; etiqueta: string }[];
+  onLiberar: (id: string) => void;
+  onTerminarEscena: () => void;
+}) {
+  return (
+    <HudCard className="p-3">
+      <div className="flex items-baseline justify-between gap-2 font-mono text-xs">
+        <span className="uppercase tracking-wide text-muted">Usado esta escena</span>
+        <span className="tabular-nums text-info">{usos.length}</span>
+      </div>
+      <ul className="mt-2 flex flex-col gap-1.5">
+        {usos.map((u) => (
+          <li key={u.id} className="flex items-center justify-between gap-2">
+            <span className="min-w-0 flex-1 font-sans text-[12px] leading-snug text-foreground">{u.etiqueta}</span>
+            <button
+              type="button"
+              onClick={() => onLiberar(u.id)}
+              className="clip-chamfer-sm shrink-0 border border-border px-2 py-1 font-mono text-[10px] uppercase text-muted active:scale-95"
+            >
+              Liberar
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-2 flex">
+        <button
+          type="button"
+          onClick={onTerminarEscena}
+          className="clip-chamfer-sm ml-auto border border-accent px-3 py-1.5 font-display text-xs font-semibold uppercase tracking-wide text-accent active:scale-95"
         >
           Terminar escena
         </button>

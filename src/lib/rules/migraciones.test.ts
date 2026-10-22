@@ -340,3 +340,18 @@ describe("v17 → v18: aumentos (eleccion en las piezas y bolsa gastada)", () =>
     assert.equal(s.bolsaAumentosGastada, 0);
   });
 });
+
+describe("v18 → v19: usos por escena de los aumentos", () => {
+  test("todas las fichas empiezan sin usos gastados y no se toca nada más", () => {
+    const { ficha, aplicadas } = migrar({ schemaVersion: 18, bolsaAumentosGastada: 5, fatigaTemporal: 2 }, 19);
+    assert.equal(ficha.schemaVersion, 19);
+    assert.equal(aplicadas.length, 1);
+    assert.deepEqual(ficha.usosEscena, []);
+    assert.equal(ficha.bolsaAumentosGastada, 5);
+    assert.equal(ficha.fatigaTemporal, 2);
+  });
+
+  test("una ficha v18 leída con parseSheet sale con la lista vacía", () => {
+    assert.deepEqual(parseSheet({ schemaVersion: 18 }).usosEscena, []);
+  });
+});

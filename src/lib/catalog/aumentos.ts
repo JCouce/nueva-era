@@ -26,6 +26,12 @@
 // Consciencia, Automatismo, Red Frontoparietal). "Una vez por escena" va en la nota de la
 // casilla hasta A4.
 //
+// Tanda A4a: `usoPorEscena` en las casillas de una vez por escena (Mielinización, Proyección,
+// Matriz de Red; usosEscena.ts), `acciones` (sin dado, con su fatiga y, si toca, quitar o bajar
+// un estado o +1 de vida: aumentosAcciones.ts) en la operación o en el nivel del implante, y la
+// `defensaIntrusion` del MQE por nivel. La acción combinada de Red Frontoparietal deja de ser
+// texto en las pruebas mentales.
+//
 // Tanda A3: `reducePenalizador` (Estabilización Autonómica en heridas y fatiga, Neurogénesis
 // en fatiga solo con sus aplicados, Matriz Ósea en carga como nota) y las casillas de
 // cobertura (Foveo, Ojo 2-4) en ataques a distancia y Buscar/percibir, sin apilar entre sí.
@@ -46,6 +52,7 @@ import type { CondicionTirada } from "../rules/condiciones";
 import type { Modificador } from "../rules/modificadores";
 import type { MotorMetadata } from "../rules/motor";
 import type { EfectoSalvacion, EfectosTiradaAumento } from "../rules/aumentosTiradas";
+import type { AccionAumentoCatalogo, DefensaIntrusion } from "../rules/aumentosAcciones";
 import type { NivelModulo, Rareza } from "./equipo";
 import { VISION_AUMENTADA } from "./mejorasArma";
 
@@ -82,6 +89,8 @@ export type OperacionGenetica = {
   // (mínimo 1), solo al subir con XP con la ficha aprobada (usuario, 2026-10-22).
   rebajaCosteHabilidad?: { habilidades: HabilidadId[] | "todas"; valor: number };
   reducePenalizador?: ReduccionPenalizadorAumento[];
+  // A4a: acciones propias, sin dado.
+  acciones?: AccionAumentoCatalogo[];
   // Solo efectos permanentes (A1: +1 a atributos básicos y multiplicadorVida).
   modificadores: Modificador[];
   motor: MotorMetadata[];
@@ -93,7 +102,14 @@ export type VarianteImplante = { id: string; label: string; detalle: string[] };
 // pasiva), `condiciones` las casillas con alcance y `salvaciones` lo que entra en el
 // selector "Contra…" (rules/aumentosTiradas.ts). Los niveles se acumulan; la misma clave
 // en un nivel alto sustituye a la del bajo.
-export type NivelImplante = NivelModulo & { variantes?: VarianteImplante[]; salvaciones?: EfectoSalvacion[] };
+// A4a: `acciones` (se acumulan por id como las casillas) y `defensaIntrusion` (MQE: vale la
+// del nivel más alto).
+export type NivelImplante = NivelModulo & {
+  variantes?: VarianteImplante[];
+  salvaciones?: EfectoSalvacion[];
+  acciones?: AccionAumentoCatalogo[];
+  defensaIntrusion?: DefensaIntrusion;
+};
 
 export type Implante = {
   familia: "implante";
@@ -129,8 +145,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "inteligencia", valor: 1 }],
     // A2b: casilla de ahorro, que resta 1 al gasto de fatiga de la tirada (el de las casillas
-    // de pago y, en un poder, el del poder), sin bajar de 0. El "una vez por escena" lo
-    // lleva el jugador hasta A4.
+    // de pago y, en un poder, el del poder), sin bajar de 0. Una vez por escena (A4a).
     casillas: [
       {
         id: "aum_mielinizacion_ahorro",
@@ -139,6 +154,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
         alcance: { tipo: "aplicado", aplicados: ["perspicacia", "voluntad", "expresion"] },
         valorActivo: 0,
         ahorroFatiga: 1,
+        usoPorEscena: true,
         nota: "Una vez por escena: omites 1 punto del gasto de fatiga de esta prueba, aunque el gasto combinado sea mayor.",
       },
     ],
@@ -213,19 +229,22 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "inteligencia", valor: 1 }, { tipo: "atributo", id: "caracter", valor: 1 }],
     ventajasFijas: [{ alcance: { tipo: "grupo", grupo: "Iniciativa" } }],
-    // La acción combinada es una acción propia (A4); hasta entonces, texto en las pruebas
-    // mentales.
-    textos: [
+    // A4a: la acción combinada, acción propia (antes, texto en las pruebas mentales). Sin
+    // límite de usos (§11.3, tercera ronda).
+    acciones: [
       {
-        en: { tipo: "aplicado", aplicados: ["perspicacia", "voluntad", "expresion"] },
-        texto:
-          "Por 1 de fatiga, esta prueba (acción simple o estándar) puede hacerse a la vez que una acción física simple o estándar, ataques y defensas incluidos, como parte de la misma acción. La acción empleada es la más compleja.",
+        id: "aumentos_accion_combinada",
+        label: "Acción combinada",
+        economia: "Acción simple o estándar (cuenta la más compleja)",
+        costeFatiga: 1,
+        nota:
+          "Haces una prueba mental (perspicacia, voluntad o expresión) de acción simple o estándar a la vez que cualquier acción física simple o estándar, ataques y defensas incluidos, como parte de la misma acción. Cada prueba se tira en su fila. Sin límite de usos.",
       },
     ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Iniciativa" }, mecanismo: "siempre_activo", estado: "construido" },
-      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_accion_combinada" }, mecanismo: "accion_equipo", estado: "pendiente" },
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_accion_combinada" }, mecanismo: "accion_equipo", estado: "construido" },
     ],
   },
   {
@@ -486,6 +505,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
         alcance: { tipo: "habilidad", habilidad: "actitud" },
         valorActivo: 0,
         ventaja: true,
+        usoPorEscena: true,
         nota: "Una vez por escena o combate; la prueba tiene que emplear algún tipo de lenguaje.",
       },
     ],
@@ -521,6 +541,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
         alcance: { tipo: "habilidad", habilidad: "actitud" },
         valorActivo: 0,
         ventaja: true,
+        usoPorEscena: true,
         nota: "Solo al repetir esa misma tirada de Actitud tras fallarla; una vez por escena.",
       },
     ],
@@ -770,11 +791,30 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "aguante", valor: 1 }],
+    // A4a. Cortar es acción gratuita (§11.3, tercera ronda). La exanguinante no es un estado
+    // del catálogo: solo cobra.
+    acciones: [
+      {
+        id: "aumentos_cortar_hemorragia",
+        label: "Cortar hemorragia",
+        economia: "Acción gratuita",
+        costeFatiga: 1,
+        nota: "Interrumpes una hemorragia de forma automática. Si tienes el estado Hemorragia, se te quita.",
+        efecto: { tipo: "estado", estadoId: "hemorragia", a: null },
+      },
+      {
+        id: "aumentos_cortar_exanguinante",
+        label: "Cortar exanguinante",
+        economia: "Acción gratuita",
+        costeFatiga: 2,
+        nota: "Interrumpes una hemorragia exanguinante. La app no la lleva como estado: avisa al máster.",
+      },
+    ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
-      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_cortar_hemorragia" }, mecanismo: "accion_equipo", estado: "pendiente" },
-      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_cortar_exanguinante" }, mecanismo: "accion_equipo", estado: "pendiente" },
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_cortar_hemorragia" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_cortar_exanguinante" }, mecanismo: "accion_equipo", estado: "construido" },
     ],
   },
   {
@@ -815,10 +855,22 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [],
+    // A4a. La exanguinante no es un estado del catálogo: solo cobra.
+    acciones: [
+      {
+        id: "aumentos_eliminar_exanguinante",
+        label: "Eliminar exanguinante",
+        // El texto no dice qué acción cuesta: gratuita, como Cortar hemorragia (usuario,
+        // 2026-10-22; pendiente de confirmar con Murillo).
+        economia: "Acción gratuita",
+        costeFatiga: 1,
+        nota: "Eliminas el efecto de una hemorragia exanguinante. La app no la lleva como estado: avisa al máster.",
+      },
+    ],
     motor: [
       { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:hemorragia" }, mecanismo: "gate_instalacion", arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "capa inmunidad_estado" },
-      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_eliminar_exanguinante" }, mecanismo: "accion_equipo", estado: "pendiente" },
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_eliminar_exanguinante" }, mecanismo: "accion_equipo", estado: "construido" },
     ],
   },
   {
@@ -844,12 +896,29 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
       { contra: ["aturdimiento", "shock"], bono: 2 },
       { contra: ["confusion", "miedo"], bono: 2 },
     ],
+    // A4a: librarse del miedo es automático, gastando la acción (§11.3, tercera ronda).
+    acciones: [
+      {
+        id: "aumentos_sacudir_miedo",
+        label: "Sacudir miedo",
+        economia: "Acción simple o reacción",
+        nota: "Si estás Asustado, te deshaces del miedo: se te quita el estado.",
+        efecto: { tipo: "estado", estadoId: "miedo", desde: "asustado", a: null },
+      },
+      {
+        id: "aumentos_dominar_terror",
+        label: "Dominar terror",
+        economia: "Acción estándar en tu turno",
+        nota: "Si estás Aterrorizado, pasas a Asustado.",
+        efecto: { tipo: "estado", estadoId: "miedo", desde: "aterrorizado", a: "asustado" },
+      },
+    ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "siempre_activo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_sacudir_miedo" }, mecanismo: "accion_equipo", estado: "pendiente" },
-      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_dominar_terror" }, mecanismo: "accion_equipo", estado: "pendiente" },
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_sacudir_miedo" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_dominar_terror" }, mecanismo: "accion_equipo", estado: "construido" },
     ],
   },
   {
@@ -948,6 +1017,31 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     ],
   },
 ];
+
+// MQE (A4a): Mensaje subvocal y Telemetría con el alcance y la capacidad del nivel (cada nivel
+// sustituye al anterior, §11.3), y la defensa contra la intrusión de ese nivel, fila
+// informativa en Acciones. Desde el nivel 2 los mensajes llegan a varias personas (decisión
+// del usuario, 2026-10-22).
+const CAPACIDAD_MQE_BASICA = "Un mensaje que quepa en un turno: 6 s de audio, una línea de texto o unas coordenadas GPS.";
+function mensajeMqe(alcance: string, capacidad: string, varios: boolean): AccionAumentoCatalogo {
+  return {
+    id: "aumentos_mqe_comunicar",
+    label: "Mensaje subvocal",
+    economia: "Acción gratuita",
+    nota: `Comunicación subvocal cifrada o enlace con terminales y radios tácticas, sin sonido ni dispositivos externos, ${
+      varios ? "a varias personas a la vez" : "de uno en uno"
+    }. ${capacidad} Alcance: ${alcance}.`,
+  };
+}
+function telemetriaMqe(alcance: string): AccionAumentoCatalogo {
+  return {
+    id: "aumentos_mqe_telemetria",
+    label: "Telemetría",
+    economia: "Acción gratuita",
+    nota: `Sincronizas hasta cuatro dispositivos del escuadrón (drones, miras inteligentes o pasarelas) y compartes telemetría táctica en tiempo real. Alcance: ${alcance}.`,
+  };
+}
+const CONTRAGOLPE_MQE_1 = "1 nivel de daño letal y salvación de Voluntad (dificultad 10) contra aturdimiento.";
 
 // Ojo Biónico (A2a): el bono a distancia (siempre activo) y el de percepción visual (casilla
 // en Alerta activa y suma a la pasiva) no se apilan con miras ni gafas de visión aumentada:
@@ -1082,9 +1176,16 @@ export const IMPLANTES: Implante[] = [
           "Contragolpe: El psiónico recibe un nivel de daño letal y debe superar una voluntad dificultad 10 contra un efecto de aturdimiento.",
         ],
         modificadores: [],
+        acciones: [mensajeMqe("50 m", CAPACIDAD_MQE_BASICA, false)],
+        defensaIntrusion: {
+          alcance: "50 m",
+          dificultad: 13,
+          defensa: "colapso instantáneo del canal QKD al detectar la menor alteración: corta la conexión de golpe.",
+          contragolpe: CONTRAGOLPE_MQE_1,
+        },
         motor: [
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_mqe_comunicar" }, mecanismo: "accion_equipo", estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "intrusion_psionica_mqe" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_mqe_comunicar" }, mecanismo: "accion_equipo", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "intrusion_psionica_mqe" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
       {
@@ -1099,9 +1200,16 @@ export const IMPLANTES: Implante[] = [
           "Contragolpe: El psiónico recibe un nivel de daño letal y debe superar una voluntad dificultad 10 contra un efecto de aturdimiento",
         ],
         modificadores: [],
+        acciones: [mensajeMqe("200 m", CAPACIDAD_MQE_BASICA, true), telemetriaMqe("200 m")],
+        defensaIntrusion: {
+          alcance: "200 m",
+          dificultad: 14,
+          defensa: "doble capa de encriptación cuántica rotativa que desvía al psiónico hacia datos falsos y vacíos.",
+          contragolpe: CONTRAGOLPE_MQE_1,
+        },
         motor: [
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_mqe_telemetria" }, mecanismo: "accion_equipo", estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "intrusion_psionica_mqe" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_mqe_telemetria" }, mecanismo: "accion_equipo", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "intrusion_psionica_mqe" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
       {
@@ -1116,9 +1224,24 @@ export const IMPLANTES: Implante[] = [
           "Contragolpe: Contragolpe de entropía focalizada; quema parcialmente las conexiones sinápticas de la interfaz métrica, infligiendo daño grave y efecto de aturdimiento (voluntad dificultad 10), cada turno atrapado en el cepo el psiónico recibe el contragolpe de nuevo.",
         ],
         modificadores: [],
+        acciones: [
+          mensajeMqe(
+            "500 m",
+            "Datos pesados (planos tridimensionales de un complejo, manuales, bloques de archivos) casi al instante, por repetidores lejanos y con el canal aislado de interferencias electromagnéticas (no protege del Shock).",
+            true,
+          ),
+          telemetriaMqe("500 m"),
+        ],
+        defensaIntrusion: {
+          alcance: "500 m",
+          dificultad: 15,
+          defensa:
+            "cepo que finge un fallo de seguridad y atrapa al psiónico 3 turnos; cada turno puede intentar escapar con Perspicacia + Tecnociencia, dificultad 10, acción estándar.",
+          contragolpe: "1 nivel de daño grave y salvación de Voluntad (dificultad 10) contra aturdimiento; se repite cada turno que siga en el cepo.",
+        },
         motor: [
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_mqe_comunicar" }, mecanismo: "nota_fija", estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "intrusion_psionica_mqe" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_mqe_comunicar" }, mecanismo: "nota_fija", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "intrusion_psionica_mqe" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
       {
@@ -1133,10 +1256,26 @@ export const IMPLANTES: Implante[] = [
           "Contragolpe: Contragolpe catastrófico de inversión de fase; reinyecta un eco de colapso masivo a través del puente sináptico capaz de dejar al psiónico inconsciente de inmediato o provocarle hemorragias cerebrales críticas. El psiónico recibe 2 niveles de daño grave, aturdimiento (voluntad 12) y hemorragia durante 1d10 turnos. El usuario puede decidir escoger el contragolpe propio del cepo de nivel 3.",
         ],
         modificadores: [],
+        acciones: [
+          mensajeMqe(
+            "2 km",
+            "Enlace de grado militar con servidores y nodos de alta seguridad: volcados de servidores, bases de datos de personal o paquetes militares en un par de segundos. Tu firma digital queda oculta.",
+            true,
+          ),
+          telemetriaMqe("2 km"),
+        ],
+        defensaIntrusion: {
+          alcance: "2 km",
+          dificultad: 16,
+          defensa:
+            "fortaleza cuántica: detecta la intención en la Métrica y sella los puertos sinápticos antes de que se lea nada. En cada intrusión puedes elegir en su lugar el cepo del nivel 3.",
+          contragolpe:
+            "2 niveles de daño grave, salvación de Voluntad (dificultad 12) contra aturdimiento y hemorragia durante 1d10 turnos. Con el cepo, el contragolpe del nivel 3.",
+        },
         motor: [
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_mqe_comunicar" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_mqe_comunicar" }, mecanismo: "nota_fija", estado: "construido" },
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "tecnica" }, mecanismo: "nota_fija", estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "intrusion_psionica_mqe" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "intrusion_psionica_mqe" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
     ],
@@ -1420,10 +1559,29 @@ export const IMPLANTES: Implante[] = [
           "Gracias a unos nanobots de microcirugía, el personaje que adquiera este aumento biónico regenera un nivel de daño no letal por turno, uno letal por minuto (10 turnos) y uno grave por hora. Además si consume un nivel fatiga podrá sanar un nivel letal de forma automática, y si consume 5 a lo largo de un mínimo de 5 turnos, podrá sanar uno grave. Este implante en su función pasiva funciona siempre y cuando el personaje no tenga penalizadores por fatiga.",
         ],
         modificadores: [],
+        // A4a. "Sin penalizadores por fatiga" es solo de la regeneración pasiva (que no entra
+        // aquí), no de estas dos.
+        acciones: [
+          {
+            id: "aumentos_enjambre_sanar_letal",
+            label: "Sanar letal",
+            economia: "Acción gratuita, una vez por ronda",
+            costeFatiga: 1,
+            nota: "Sanas un nivel de daño letal de forma automática: +1 a la vida actual, sin pasar del máximo.",
+            efecto: { tipo: "vida", delta: 1 },
+          },
+          {
+            id: "aumentos_enjambre_sanar_grave",
+            label: "Sanar grave",
+            economia: "Un punto por turno, pudiendo actuar",
+            costeFatiga: 1,
+            nota: "Cada pulsación cobra 1 de fatiga. 5 turnos seguidos; al quinto, súmate 1 de vida a mano.",
+          },
+        ],
         motor: [
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ficha" }, mecanismo: "nota_fija", estado: "pendiente" },
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_sanar_letal" }, mecanismo: "accion_equipo", estado: "pendiente" },
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_sanar_grave" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_sanar_letal" }, mecanismo: "accion_equipo", estado: "construido" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_sanar_grave" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
       },
       {

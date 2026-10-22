@@ -244,6 +244,30 @@ total intacta.
 
 ### A4 · Acciones propias y "una vez por escena"
 
+**Decidido (usuario, 2026-10-22):** se parte en dos pasadas. **A4a** (luz verde): el contador
+por escena y las acciones sin dado. **A4b** (pendiente de plantear): Barrido
+electromagnético, Tempestad Nanobótica, Densificar (casilla en "Bloquear daño", +3 de
+blindaje por 1 de fatiga) e Incorporar arma (solo la tirada; el vínculo va en A6).
+- **Uso por escena:** `sheet.usosEscena` (ficha v19). Se gasta al tirar con la casilla
+  marcada, no al marcarla. La casilla gastada queda bloqueada hasta "Terminar escena". En
+  Recursos, junto a "Terminar escena", sale la lista de lo usado con un botón "liberar" para
+  los errores.
+- **Terminar escena del máster** (Mesa y combate) vacía también `usosEscena` en las fichas
+  en juego. Deshacer no devuelve los usos.
+- **Quitar estados:** Cortar hemorragia, Eliminar exanguinante, Sacudir miedo y Dominar
+  terror cobran la fatiga. Si la ficha tiene el estado (`Character.estados`), lo quitan
+  (Dominar terror: de Aterrorizado a Asustado), con una entrada en el registro que el máster
+  puede deshacer. Es una excepción de permiso acotada a esto. La exanguinante no es un estado
+  del catálogo: solo cobra, con una nota. *(Corrección: el planteamiento decía que la ficha
+  no guardaba estados, y era falso.)*
+- **Sanar letal** (Enjambre): cobra 1 de fatiga y sube 1 la vida actual, sin pasar del
+  máximo. El límite de 1 por ronda queda como texto.
+- **Sanar grave:** cada pulsación cobra 1 de fatiga. La nota dice "5 turnos seguidos; al
+  quinto, +1 de vida", y esa vida la sube el jugador a mano.
+- **Acción combinada:** un botón que cobra 1 de fatiga y sustituye al texto de A2b en las
+  pruebas mentales.
+- **Defensa del MQE:** una fila informativa en la sección "Aumentos" de Acciones.
+
 **Qué hace**
 - Acciones de aumento con la misma plantilla que las de dote:
   - **Sin dado:** Acción combinada, Cortar hemorragia y exanguinante (gratuitas), Eliminar
@@ -261,6 +285,34 @@ total intacta.
 
 **Tests:** que el coste de fatiga se cobre, que el límite por ronda y por escena funcione y
 que la casilla se reinicie con "Terminar escena".
+
+**Construido (A4a, matices):**
+- **Uso por escena:** el id del uso es el de la casilla (`usoPorEscena` en el toggle).
+  `montarTirada` devuelve `usosEscena`; la pestaña Acciones los apunta al tirar, junto al cobro
+  de fatiga de las casillas (`gastarUsosEscenaAction`). Además de la casilla sin efecto por el
+  aplicado, **el ahorro de Mielinización no gasta si no ha ahorrado nada** (sin casillas de
+  pago y fuera de un poder). La casilla gastada lleva `bloqueada` (la pone `conUsosEscena` al
+  montar el índice, así llega también a los poderes) y `montarTirada` la trata como
+  desmarcada. En un NPC no se gasta nada (no hay ficha que guardar).
+- **Recursos:** tarjeta "Usado esta escena" con "Liberar" por entrada y su propio "Terminar
+  escena" (el de la fatiga temporal solo sale con Traslación o fatiga temporal).
+- **Terminar escena del máster:** `limpiarEstadosDeJugadores` vacía también los usos, aunque
+  la ficha no tenga estados (esas no cuentan en "personajes" del resultado, pero se
+  revalidan). Reescribe `stats`, así que puede pisar un autosave del jugador que entre a la vez
+  (`TODO(revisar)`; ya pasaba al restar vida).
+- **Acciones:** `rules/aumentosAcciones.ts`; datos en el catálogo (`acciones` en la operación o
+  en el nivel del implante, `defensaIntrusion` en los niveles del MQE). El Mensaje del MQE
+  cambia de nota con el nivel (alcance y capacidad). Sin fatiga suficiente, la acción sale
+  bloqueada y el servidor la rechaza (no se paga a medias).
+- **Servidor:** `usarAccionAumentoAction` valida que la ficha tiene la acción
+  (`usoDeAccionAumento`), cobra, suma la vida (Sanar letal) y, si toca, cambia el estado con
+  `cambiarEstadosDePersonajes` (registro `estado_quitar`/`estado_poner` con el jugador de autor y
+  el motivo "<acción> (<pieza>), desde la ficha"). El cobro y el estado van en una sola
+  transacción (`preparar` de `cambiarEstadosDePersonajes`; usuario, 2026-10-22). El mensaje de lo que ha pasado sale encima de la sección.
+- **Eliminar exanguinante:** el texto no dice el tipo de acción: gratuita, como cortar
+  (usuario, 2026-10-22; a la lista de Murillo, §5).
+- **Enjambre:** "sin penalizadores por fatiga" es solo de la regeneración pasiva; las dos
+  acciones no lo piden.
 
 ### A5 · Activables (Neuroprótesis y Proyección)
 
@@ -357,5 +409,7 @@ créditos); aprobada la ficha, nada.
   diseñar.
 - **5 implantes en proceso:** `sync-drive` cuando Murillo los cierre, y una pasada corta de
   modelado.
+- **Eliminar exanguinante** (Regeneración): qué acción cuesta. La app la da por gratuita, como
+  cortar la hemorragia (usuario, 2026-10-22).
 - **Erratas del documento:** el nivel 3 del IRM repite la frase del nivel 2, y la
   ortografía.

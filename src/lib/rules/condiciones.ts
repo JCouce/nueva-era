@@ -84,6 +84,13 @@ export type CondicionTirada = (
       // encuentra que ahorrar en las casillas lo deja en `ahorroSinUsar` (el coste del poder).
       ahorroFatiga?: number;
       danio?: EfectoDanioCasilla;
+      // "Una vez por escena" (A4a de aumentos): al tirar con ella marcada y con efecto, su id
+      // se apunta en sheet.usosEscena (montarTirada la devuelve en `usosEscena`) hasta
+      // "Terminar escena". El id de la casilla es el id del uso (usosEscena.ts).
+      usoPorEscena?: true;
+      // La casilla sale en el modal pero no se puede marcar, con el motivo ("Usada esta
+      // escena", la pone conUsosEscena). montarTirada la trata como desmarcada.
+      bloqueada?: string;
     }
   | {
       id: string;
@@ -161,7 +168,7 @@ export type EstadoCondiciones = Record<string, string | number | boolean>;
 export function estadoInicial(condiciones: CondicionTirada[]): EstadoCondiciones {
   const estado: EstadoCondiciones = {};
   for (const c of condiciones) {
-    if (c.tipo === "toggle") estado[c.id] = c.activaPorDefecto ?? false;
+    if (c.tipo === "toggle") estado[c.id] = !c.bloqueada && (c.activaPorDefecto ?? false);
     else if (c.tipo === "opcion") estado[c.id] = c.porDefecto;
     else estado[c.id] = c.porDefecto;
   }

@@ -57,6 +57,23 @@ export function ControlCondicion({
   onCambiar: (id: string, valor: string | number | boolean) => void;
   sinEfecto?: string;
 }) {
+  if (condicion.tipo === "toggle" && condicion.bloqueada) {
+    // Casilla gastada ("Usada esta escena", A4a): se ve, pero no se puede marcar.
+    return (
+      <div className="opacity-60">
+        <button
+          type="button"
+          disabled
+          aria-disabled
+          className="clip-chamfer-sm w-full cursor-not-allowed border border-dashed border-border px-3 py-2 text-left font-mono text-xs uppercase text-muted"
+        >
+          {condicion.etiqueta}
+        </button>
+        <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">{condicion.bloqueada}</p>
+      </div>
+    );
+  }
+
   if (condicion.tipo === "toggle") {
     const activo = Boolean(estado[condicion.id]);
     return (

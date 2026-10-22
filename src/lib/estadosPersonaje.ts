@@ -11,9 +11,11 @@ import {
   parseSheet,
   quitarEstadosDe,
   sinEstados,
+  vaciarUsosEscena,
   type CambioEstadoPersonaje,
   type DatosRegistro,
   type OperacionEstado,
+  type Sheet,
 } from "@/lib/rules";
 
 // Quién y por qué, para el registro del máster (E1b). null = no se registra.
@@ -44,10 +46,13 @@ export async function registrar(tx: Prisma.TransactionClient, autoria: Autoria, 
 // máximo (S75) en la ficha y en sus fotos de combate abiertas, y una sola entrada de
 // registro para todos. null si alguno de los personajes no existe (y no escribe nada);
 // registroId null si no cambió nada o no se registra.
+// `preparar`: cambio en la ficha que va en la misma transacción, antes del estado (el cobro
+// de fatiga de las acciones de aumento, A4a).
 export async function cambiarEstadosDePersonajes(
   characterIds: string[],
   op: OperacionEstado,
   autoria: Autoria | null,
+  preparar?: (sheet: Sheet) => Sheet,
 ): Promise<{ registroId: string | null } | null> {
   const ids = [...new Set(characterIds)];
   const hecho = await prisma.$transaction(async (tx) => {
@@ -63,16 +68,20 @@ export async function cambiarEstadosDePersonajes(
 
     const cambios: CambioEstadoPersonaje[] = [];
     for (const f of filas) {
-      const sheet = parseSheet(f.stats);
+      const leida = parseSheet(f.stats);
+      const sheet = preparar ? preparar(leida) : leida;
       const r = aplicarOperacionEstado(
         { id: f.id, sheet, estados: leerEstados(f.estados) },
         op,
         fotos.filter((c) => c.characterId === f.id),
       );
-      if (!r) continue;
+      if (!r) {
+        if (sheet !== leida) await tx.character.update({ where: { id: f.id }, data: { stats: sheet } });
+        continue;
+      }
       await tx.character.update({
         where: { id: f.id },
-        data: r.vida.sheet === sheet ? { estados: r.estados } : { estados: r.estados, stats: r.vida.sheet },
+        data: r.vida.sheet === leida ? { estados: r.estados } : { estados: r.estados, stats: r.vida.sheet },
       });
       for (const c of r.vida.combatientes) {
         await tx.combatiente.update({
@@ -95,6 +104,9 @@ export async function cambiarEstadosDePersonajes(
 // "Limpiar estados": quita TODOS los estados a los personajes indicados, en una
 // transacción y con una sola entrada `limpiar_estados` en el registro. Quitar no resta vida
 // (S75); las fotos de combate abiertas recalculan su máximo como al quitar uno a mano.
+// Es el terminar escena del máster: vacía también los usos "una vez por escena" de los
+// aumentos (A4a, usosEscena.ts), aunque no tengan estados. Eso no va al registro: deshacer no
+// devuelve los usos (usuario, 2026-10-22).
 export async function limpiarEstadosDeJugadores(
   donde: Prisma.CharacterWhereInput,
   autoria: Autoria,
@@ -112,16 +124,28 @@ export async function limpiarEstadosDeJugadores(
 
     const cambios: CambioEstadoPersonaje[] = [];
     const tocados: string[] = [];
+    // Fichas sin estados a las que solo se les han vaciado los usos: se revalidan, no cuentan.
+    const soloUsos: string[] = [];
     for (const f of filas) {
       const sheet = parseSheet(f.stats);
       const r = quitarEstadosDe(
         { id: f.id, sheet, estados: leerEstados(f.estados) },
         fotos.filter((c) => c.characterId === f.id),
       );
-      if (!r) continue;
+      // TODO(revisar): reescribir stats aquí pisa una escritura del autosave del jugador que
+      // entre entre esta lectura y la escritura (no hay bloqueo de fila); ya pasaba al restar
+      // vida, ahora pasa también con cualquier ficha que tenga usos gastados.
+      const final = vaciarUsosEscena(r?.sheet ?? sheet);
+      if (!r) {
+        if (final !== sheet) {
+          await tx.character.update({ where: { id: f.id }, data: { stats: final } });
+          soloUsos.push(f.id);
+        }
+        continue;
+      }
       await tx.character.update({
         where: { id: f.id },
-        data: r.sheet === sheet ? { estados: r.estados } : { estados: r.estados, stats: r.sheet },
+        data: final === sheet ? { estados: r.estados } : { estados: r.estados, stats: final },
       });
       for (const c of r.combatientes) {
         await tx.combatiente.update({
@@ -133,10 +157,11 @@ export async function limpiarEstadosDeJugadores(
       tocados.push(f.id);
     }
     const registroId = cambios.length > 0 ? await registrar(tx, autoria, { tipo: "limpiar_estados", cambios }) : null;
-    return { registroId, characterIds: tocados };
+    return { registroId, characterIds: tocados, soloUsos };
   });
-  if (res.characterIds.length > 0) revalidarEstados(res.characterIds);
-  return res;
+  const revalidar = [...res.characterIds, ...res.soloUsos];
+  if (revalidar.length > 0) revalidarEstados(revalidar);
+  return { registroId: res.registroId, characterIds: res.characterIds };
 }
 
 // Estados de NPC (E1d): en su fila de combate (Combatiente.estados), sin vida que restar

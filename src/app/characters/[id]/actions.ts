@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { revalidarPanelMaster } from "@/lib/revalidarMaster";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
+import { cambiarEstadosDePersonajes } from "@/lib/estadosPersonaje";
+import { z } from "zod";
 import {
   characterCreateSchema,
   characterIdSchema,
@@ -98,10 +100,16 @@ import {
   aumentoPorId,
   bolsaDeAumentos,
   nuevaInstanciaId,
+  leerEstados,
+  type EstadoActivo,
+  gastarUsosEscena,
+  liberarUsoEscena,
+  usoDeAccionAumento,
 } from "@/lib/rules";
 
 export type SaveResult =
-  | { ok: true; sheet: Sheet; xp?: number; creditos?: number }
+  // `mensaje`: qué ha pasado, cuando no basta con ver la ficha (acciones de aumento, A4a).
+  | { ok: true; sheet: Sheet; xp?: number; creditos?: number; mensaje?: string }
   | { ok: false; error: string };
 
 type Editable = {
@@ -122,6 +130,10 @@ type Editable = {
   xp: number;
   creditos: number;
   esMaster: boolean;
+  // Quien edita (autoría del registro del máster) y los estados que le ha puesto el máster
+  // (Character.estados): los usan las acciones de aumento que quitan un estado (A4a).
+  userId: string;
+  estados: EstadoActivo[];
 };
 
 // Carga la ficha comprobando permisos. Base de todas las acciones de autosave.
@@ -158,6 +170,8 @@ async function loadEditable(characterId: string): Promise<Editable | { error: st
     xp: character.xp,
     creditos: character.creditos,
     esMaster: user.role === "MASTER",
+    userId: user.id,
+    estados: leerEstados(character.estados),
   };
 }
 
@@ -542,6 +556,64 @@ export async function terminarEscenaAction(characterId: string): Promise<SaveRes
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(characterId, terminarEscena(ctx.sheet));
+}
+
+// Usos "una vez por escena" de los aumentos (A4a, usosEscena.ts): se gastan al tirar con la
+// casilla marcada (la lista la da montarTirada en el cliente) y se liberan a mano en Recursos.
+// Solo restringen al propio jugador, así que basta con validar que son ids del catálogo
+// (gastarUsosEscena descarta el resto).
+const usosEscenaSchema = z.array(z.string().min(1).max(60)).min(1).max(10);
+const usoEscenaSchema = z.string().min(1).max(60);
+
+export async function gastarUsosEscenaAction(characterId: string, ids: unknown): Promise<SaveResult> {
+  const parsed = usosEscenaSchema.safeParse(ids);
+  if (!parsed.success) return { ok: false, error: "Usos no válidos" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, gastarUsosEscena(ctx.sheet, parsed.data));
+}
+
+export async function liberarUsoEscenaAction(characterId: string, id: unknown): Promise<SaveResult> {
+  const parsed = usoEscenaSchema.safeParse(id);
+  if (!parsed.success) return { ok: false, error: "Uso no válido" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, liberarUsoEscena(ctx.sheet, parsed.data));
+}
+
+// Acciones propias de aumento (A4a, aumentosAcciones.ts). El servidor comprueba que la ficha
+// tiene la acción (pieza equipada, requisito sano, nivel) y que llega la fatiga; cobra y, en
+// Sanar letal, suma la vida. Las que quitan o bajan un estado (Cortar hemorragia, Sacudir
+// miedo, Dominar terror) son la única vía del jugador a Character.estados, que si no solo
+// escribe el máster: solo ese estado, por el mismo camino que el máster
+// (cambiarEstadosDePersonajes) y con una entrada en su registro, con el jugador de autor, que
+// el máster puede deshacer. Deshacer devuelve el estado, no la fatiga.
+// Sin el estado, la acción se cobra igual y el mensaje lo dice. Con estado, el cobro va en la
+// misma transacción que el cambio de estado (`preparar` de cambiarEstadosDePersonajes).
+const accionAumentoSchema = z.string().min(1).max(60);
+
+export async function usarAccionAumentoAction(characterId: string, accionId: unknown): Promise<SaveResult> {
+  const parsed = accionAumentoSchema.safeParse(accionId);
+  if (!parsed.success) return { ok: false, error: "Acción no válida" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const uso = usoDeAccionAumento(ctx.sheet, ctx.estados, parsed.data);
+  if (!uso.ok) return { ok: false, error: uso.error };
+  if (!uso.op) {
+    await persist(characterId, uso.sheet);
+    return { ok: true, sheet: uso.sheet, mensaje: uso.mensaje };
+  }
+  const coste = uso.accion.costeFatiga ?? 0;
+  const hecho = await cambiarEstadosDePersonajes(
+    [characterId],
+    uso.op,
+    { userId: ctx.userId, motivo: `${uso.accion.label} (${uso.accion.fuente}), desde la ficha` },
+    (s) => pagarFatiga(s, coste, false),
+  );
+  if (!hecho) return { ok: false, error: "Personaje no encontrado" };
+  // Cambiar el estado puede tocar la vida (S75): la ficha que vale es la de la base.
+  const fila = await prisma.character.findUnique({ where: { id: characterId }, select: { stats: true } });
+  return { ok: true, sheet: fila ? parseSheet(fila.stats) : uso.sheet, mensaje: uso.mensaje };
 }
 
 // "Recargar" (cargador de balas / batería portátil, S17/S18 de sistema.md):

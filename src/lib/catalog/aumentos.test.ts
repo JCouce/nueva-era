@@ -145,7 +145,7 @@ describe("integridad del catálogo de aumentos", () => {
     aum_matriz_osea_adaptativa: 2, // armadura natural (A2a) y la nota de carga (A3)
     aum_biogenesis_mitocondrial: 1,
     aum_resiliencia_homeostatica: 1,
-    aum_estabilizacion_autonomica: 3, // 2 de A2a y el ajuste de umbrales (A3)
+    aum_estabilizacion_autonomica: 5, // 2 de A2a, el ajuste de umbrales (A3) y Sacudir/Dominar (A4a)
     aum_introgresion_sensorial_heterologa: 2,
     "aum_ojo_bionico 1": 3,
     "aum_ojo_bionico 2": 3, // 1 de A2a y la cobertura visual en distancia y Buscar (A3)
@@ -154,7 +154,7 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_enjambre_nanobot 3": 1,
     // A2b: casillas por aplicado y de cualquier tirada, ventaja fija y textos.
     aum_mielinizacion_central: 1,
-    aum_red_frontoparietal: 1,
+    aum_red_frontoparietal: 2, // ventaja en Iniciativa (A2b) y la acción combinada (A4a)
     aum_prefrontal_aumentada: 2,
     aum_optimizacion_foveo_sensorial: 3, // Tras Apuntar (A2b) y cobertura visual (A3)
     // A3: compensación de fatiga en las pruebas mentales.
@@ -167,9 +167,17 @@ describe("integridad del catálogo de aumentos", () => {
     aum_automatismo_bulboespinal: 2,
     aum_hiperdensidad_propioceptiva: 1,
     aum_bucle_de_realimentacion_motora: 2,
+    // A4a: acciones propias y la defensa del MQE (con el alcance de cada nivel en su nota).
+    aum_angiogenesis_sistemica: 2,
+    aum_regeneracion_tisular_acelerada: 1,
+    "aum_microprocesador_cuantico_de_enlace 1": 2,
+    "aum_microprocesador_cuantico_de_enlace 2": 2,
+    "aum_microprocesador_cuantico_de_enlace 3": 2,
+    "aum_microprocesador_cuantico_de_enlace 4": 2,
+    "aum_enjambre_nanobot 2": 2,
   };
 
-  test("A1, A2a, A2b y A3: solo lo construido (o lo narrativo) está marcado como construido", () => {
+  test("A1, A2a, A2b, A3 y A4a: solo lo construido (o lo narrativo) está marcado como construido", () => {
     for (const op of OPERACIONES_GENETICAS) {
       const construidos = op.motor.filter((m) => m.estado === "construido" && m.tipo !== "narrativo");
       const esperados =

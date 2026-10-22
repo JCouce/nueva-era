@@ -35,6 +35,7 @@ import {
   type MunicionEspecialStock,
 } from "./recursos";
 import { reconciliarVida } from "./vitalidad";
+import { MAX_USOS_ESCENA, normalizarUsosEscena } from "./usosEscena";
 import { MUNICION_GRANADA, MUNICION_ESPECIAL } from "../catalog/municion";
 import { FARMACOS } from "../catalog/medicina";
 import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./prioridad";
@@ -69,7 +70,8 @@ import { ESPECIALIDAD_IDS, esEspecialidadDe, type EspecialidadId } from "../cata
 //   18 → aumentos (A0): las piezas equipadas admiten `eleccion` (sentido de
 //        Introgresión, modelo del Brazo) y se añade lo gastado de la bolsa del
 //        humano (bolsaAumentosGastada)
-export const SCHEMA_VERSION = 18;
+//   19 → usos "una vez por escena" de los aumentos (A4a): usosEscena
+export const SCHEMA_VERSION = 19;
 
 // Tope de lo gastado de la bolsa de aumentos: muy por encima de cualquier bolsa real.
 export const MAX_BOLSA_AUMENTOS = 9_999_999;
@@ -142,6 +144,9 @@ export const sheetSchema = z.object({
   // recalcular (los aumentos no se revenden). El saldo = bolsa de la especie − esto
   // (saldoBolsaAumentos, rules/aumentos.ts).
   bolsaAumentosGastada: z.number().int().min(0).max(MAX_BOLSA_AUMENTOS),
+  // Casillas "una vez por escena" ya gastadas (ids de casilla, usosEscena.ts): estado de
+  // partida que no se puede recalcular. Se vacía al terminar la escena.
+  usosEscena: z.array(z.string().max(60)).max(MAX_USOS_ESCENA),
 });
 
 export type Sheet = z.infer<typeof sheetSchema>;
@@ -182,6 +187,7 @@ export function defaultSheet(): Sheet {
     fatigaActual: 999,
     fatigaTemporal: 0,
     bolsaAumentosGastada: 0,
+    usosEscena: [],
   };
 }
 
@@ -361,6 +367,7 @@ export function parseSheet(raw: unknown): Sheet {
       fatigaActual: clampInt(r.fatigaActual, 0, 999, 999),
       fatigaTemporal: clampInt(r.fatigaTemporal, 0, 999, 0),
       bolsaAumentosGastada: clampInt(r.bolsaAumentosGastada, 0, MAX_BOLSA_AUMENTOS, 0),
+      usosEscena: normalizarUsosEscena(r.usosEscena),
     }),
   );
 }

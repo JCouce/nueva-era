@@ -361,6 +361,7 @@ function FilaBloquearDanio({ onAbrir }: { onAbrir: () => void }) {
 // habilidad (no hay ninguno). Hoy solo la genera accionesDirectasDeHerramientas()
 // (Radar nv4 "Marcar objetivo"); cuando llegue una segunda familia con acción
 // sin dado propia, esta fila se reutiliza tal cual.
+// `bloqueada` (acciones de aumento sin fatiga suficiente, A4a): botón apagado con el motivo.
 function FilaUsar({ accion, onAbrir }: { accion: AccionDirecta; onAbrir: (a: AccionDirecta) => void }) {
   return (
     <HudCard className="p-3">
@@ -369,15 +370,37 @@ function FilaUsar({ accion, onAbrir }: { accion: AccionDirecta; onAbrir: (a: Acc
           <span className="block font-display text-base font-semibold uppercase leading-tight">
             {accion.label}
           </span>
+          {accion.costeFatiga ? (
+            <span className="mt-1 block font-mono text-[10px] uppercase text-muted">{accion.costeFatiga} fatiga</span>
+          ) : null}
+          {accion.bloqueada && <p className="mt-1 font-mono text-[11px] text-danger">{accion.bloqueada}</p>}
         </div>
         <button
           type="button"
+          disabled={Boolean(accion.bloqueada)}
           onClick={() => onAbrir(accion)}
-          className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95"
+          className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted disabled:active:scale-100"
         >
           Usar
         </button>
       </div>
+    </HudCard>
+  );
+}
+
+// Fila informativa de un aumento (defensa del MQE, A4a): sin botón, solo lo que hay que saber.
+function FilaInfo({ label, fuente, lineas }: { label: string; fuente: string; lineas: string[] }) {
+  return (
+    <HudCard className="border-dashed p-3">
+      <span className="block font-display text-base font-semibold uppercase leading-tight">{label}</span>
+      <span className="mt-1 block font-mono text-[10px] uppercase text-muted">{fuente}</span>
+      <ul className="mt-2 flex flex-col gap-1">
+        {lineas.map((l) => (
+          <li key={l} className="font-sans text-[11px] leading-relaxed text-muted">
+            {l}
+          </li>
+        ))}
+      </ul>
     </HudCard>
   );
 }
@@ -476,6 +499,8 @@ export function AccionesTab({
   onAjustarMunicionEspecial,
   onPagarFatiga,
   onAjustarVida,
+  onGastarUsosEscena,
+  onUsarAccionAumento,
   libre = false,
 }: {
   // La ficha ya resuelta (useFichaResuelta). Fase 6b, 3.1b (D5: combate → ficha):
@@ -526,6 +551,12 @@ export function AccionesTab({
   onPagarFatiga?: (coste: number, permiteTemporal: boolean) => void;
   // Daño de la sobrecarga psiónica, restado de la vida de la ficha.
   onAjustarVida?: (delta: number) => void;
+  // Usos "una vez por escena" gastados al tirar (A4a, montada.usosEscena). Ausente donde no
+  // hay ficha que guardar (NPC): ahí no se gastan.
+  onGastarUsosEscena?: (ids: string[]) => void;
+  // Acciones de aumento (A4a): las cobra y aplica el servidor (usarAccionAumentoAction), que
+  // devuelve qué ha pasado por `onMensaje`. Sin él (NPC), se paga la fatiga con onPagarFatiga.
+  onUsarAccionAumento?: (accionId: string, onMensaje: (mensaje: string) => void) => void;
   // NpcEditor.tsx (edición libre de máster): la tirada de Fabricar no aplica
   // — FabricarSeccion la salta y llama a onFabricar directo con éxito fijo,
   // mismo criterio que AtributosTab/HabilidadesTab con este mismo prop.
@@ -944,6 +975,8 @@ export function AccionesTab({
     if (tirada.farmacoId) onAjustarFarmaco?.(tirada.farmacoId, -1);
     // Fatiga de una casilla marcada (Ojo Clínico: la ventaja cuesta 1), sin temporal.
     if (montada.costeFatiga > 0) onPagarFatiga?.(montada.costeFatiga, false);
+    // Casillas "una vez por escena" (A4a): se gastan aquí, al tirar, no al marcarlas.
+    if (montada.usosEscena.length > 0) onGastarUsosEscena?.(montada.usosEscena);
     if (tirada.grupo === "Psiónica" && preparado) {
       pagarPoder("uso", montada.ahorroSinUsar);
       // Daño propio que depende del resultado (fracaso crítico del Sondeo).
@@ -987,14 +1020,22 @@ export function AccionesTab({
   // mismo hueco de 6 que las tiradas (`tirar()` arriba). Los campos de
   // Resultado son relleno inerte: `sinDado` hace que FilaHistorial nunca los
   // lea (ver tonoResultado/textoExitos).
+  // Lo que ha pasado al usar la última acción de aumento (lo dice el servidor).
+  const [avisoAumento, setAvisoAumento] = useState<string | null>(null);
+
   const usarDirecta = () => {
     if (!modalDirecta) return;
+    // Acciones de aumento (A4a): las cobra y aplica el servidor; aquí solo el rastro.
+    const deAumento = modalDirecta.grupo === "Aumentos" && onUsarAccionAumento;
     // Fármacos sin tirada (docs/prompt-gasto-recursos.md, Fase 2): mismo
     // criterio que en tirar(), 1 dosis al confirmar.
     if (modalDirecta.farmacoId) onAjustarFarmaco?.(modalDirecta.farmacoId, -1);
     // Activar la visión del Arianyi (§14.9): la primera hora, por el camino de la fatiga
     // de los poderes; sin onPagarFatiga (consola), a mano.
-    if (modalDirecta.costeFatiga) onPagarFatiga?.(modalDirecta.costeFatiga, false);
+    if (deAumento) {
+      setAvisoAumento(null);
+      onUsarAccionAumento(modalDirecta.id, (m) => setAvisoAumento(`${modalDirecta.label}: ${m}`));
+    } else if (modalDirecta.costeFatiga) onPagarFatiga?.(modalDirecta.costeFatiga, false);
     const id = Date.now();
     setHistorial((h) =>
       [
@@ -1238,6 +1279,26 @@ export function AccionesTab({
           ))}
           {dotesDirectas.map((a) => (
             <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} />
+          ))}
+        </div>
+      )}
+
+      {/* Aumentos (A4a): las acciones propias de los aumentos que funcionan y las filas
+          informativas (defensa del MQE), de la FichaResuelta (aumentosAcciones.ts). Sin
+          ninguna, no hay sección. */}
+      {(ficha.accionesAumentos.directas.length > 0 || ficha.accionesAumentos.informativas.length > 0) && (
+        <div className="flex flex-col gap-2">
+          <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
+            Aumentos
+          </h2>
+          {avisoAumento && (
+            <p className="border-l-2 border-info pl-2 font-sans text-[12px] leading-relaxed text-info">{avisoAumento}</p>
+          )}
+          {ficha.accionesAumentos.directas.map((a) => (
+            <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} />
+          ))}
+          {ficha.accionesAumentos.informativas.map((i) => (
+            <FilaInfo key={i.id} label={i.label} fuente={i.fuente} lineas={i.lineas} />
           ))}
         </div>
       )}

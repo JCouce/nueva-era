@@ -32,6 +32,9 @@ import {
   pagarFatigaAction,
   ajustarFatigaTemporalAction,
   terminarEscenaAction,
+  gastarUsosEscenaAction,
+  liberarUsoEscenaAction,
+  usarAccionAumentoAction,
   comprarDoteAction,
   quitarDoteAction,
   type SaveResult,
@@ -58,6 +61,8 @@ import {
   pagarFatiga,
   ajustarFatigaTemporal,
   terminarEscena,
+  gastarUsosEscena,
+  liberarUsoEscena,
   RECURSOS_POR_LETRA,
   describirEstadosActivos,
   fichaSoloLectura,
@@ -480,6 +485,27 @@ export function CharacterSheet({
     setSheet((s) => terminarEscena(s));
     runSave(() => terminarEscenaAction(characterId), setSheet);
   };
+  // Usos "una vez por escena" (A4a): se gastan al tirar y se liberan a mano en Recursos.
+  const commitGastarUsosEscena = (ids: string[]) => {
+    setSheet((s) => gastarUsosEscena(s, ids));
+    runSave(() => gastarUsosEscenaAction(characterId, ids), setSheet);
+  };
+  const commitLiberarUsoEscena = (id: string) => {
+    setSheet((s) => liberarUsoEscena(s, id));
+    runSave(() => liberarUsoEscenaAction(characterId, id), setSheet);
+  };
+  // Acciones de aumento (A4a): sin estado optimista, las cobra y aplica el servidor (también
+  // quitar un estado, que llega por la revalidación de la página).
+  const commitUsarAccionAumento = (accionId: string, onMensaje: (m: string) => void) => {
+    runSave(
+      async () => {
+        const res = await usarAccionAumentoAction(characterId, accionId);
+        onMensaje(res.ok ? (res.mensaje ?? "Hecho.") : res.error);
+        return res;
+      },
+      setSheet,
+    );
+  };
   const commitComprarGranada = (catalogoId: string) => {
     runSave(() => comprarGranadaAction(characterId, catalogoId), setSheet);
   };
@@ -793,6 +819,8 @@ export function CharacterSheet({
               onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
               onPagarFatiga={commitPagarFatiga}
               onAjustarVida={commitAjustarVida}
+              onGastarUsosEscena={commitGastarUsosEscena}
+              onUsarAccionAumento={commitUsarAccionAumento}
             />
           )}
           {activeEfectivo === "tienda" && (
@@ -829,6 +857,7 @@ export function CharacterSheet({
               onAjustarFatiga={commitAjustarFatiga}
               onAjustarFatigaTemporal={commitAjustarFatigaTemporal}
               onTerminarEscena={commitTerminarEscena}
+              onLiberarUsoEscena={commitLiberarUsoEscena}
             />
           )}
           {activeEfectivo === "combate" && combate && (

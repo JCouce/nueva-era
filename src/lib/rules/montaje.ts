@@ -126,6 +126,11 @@ export type TiradaMontada = {
   // casilla que lo cambia): por id, el motivo. No suman ni dan ventaja ni cobran; el modal
   // las enseña con el motivo.
   casillasSinEfecto: Record<string, string>;
+  // Usos "una vez por escena" que gasta esta tirada (A4a, usosEscena.ts): las casillas con
+  // `usoPorEscena` marcadas y con efecto. Una sin efecto (por el aplicado) no gasta, ni el
+  // ahorro de Mielinización si no ha ahorrado nada (sin casillas de pago y fuera de un poder).
+  // Las bloqueadas ("Usada esta escena") cuentan como desmarcadas.
+  usosEscena: string[];
 };
 
 const SIN_AJUSTE_DANIO: AjusteDanio = { ajustes: [], categoria: null, sinBonoExitos: null };
@@ -225,8 +230,22 @@ function opcionesElegidas(condiciones: CondicionTirada[], estado: EstadoCondicio
   });
 }
 
+// Una casilla bloqueada no cuenta aunque llegue marcada.
+function sinBloqueadas(condiciones: CondicionTirada[], estado: EstadoCondiciones): EstadoCondiciones {
+  const bloqueadas = condiciones.filter((c) => c.tipo === "toggle" && c.bloqueada && Boolean(estado[c.id]));
+  if (bloqueadas.length === 0) return estado;
+  return { ...estado, ...Object.fromEntries(bloqueadas.map((c) => [c.id, false])) };
+}
+
+function usosGastados(activas: Toggle[], fatiga: Pick<TiradaMontada, "ahorroSinUsar">, esPoder: boolean): string[] {
+  const ahorro = activas.reduce((t, c) => t + (c.ahorroFatiga ?? 0), 0);
+  const ahorroUsado = esPoder || fatiga.ahorroSinUsar < ahorro;
+  return activas.filter((c) => c.usoPorEscena && (!c.ahorroFatiga || ahorroUsado)).map((c) => c.id);
+}
+
 export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: EleccionTirada): TiradaMontada {
-  const { sutil, estadoCondiciones: estado, circunstancial } = eleccion;
+  const { sutil, circunstancial } = eleccion;
+  const estado = sinBloqueadas(tirada.condiciones ?? [], eleccion.estadoCondiciones);
   const enEspecialidad = enEspecialidadEfectiva(ficha.ficha, tirada, eleccion.enEspecialidad);
   const ajustesFijos = tirada.ajustesFijos ?? [];
   // El aplicado con el que se tira de verdad. Una casilla que lo cambia (Negociación
@@ -267,6 +286,7 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
 
   const modo = ctx.modoElegido;
   const elegidas = opcionesElegidas(condiciones, estado);
+  const fatiga = fatigaDeCasillas(activas, elegidas, tirada.ventaja != null);
   const modificador =
     base + bonoAlcance(mods, ctx) + valorCondiciones(condiciones, estado) + valorBonosTramo(bonosTramo, estado);
 
@@ -306,8 +326,9 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     ventaja: tirada.ventaja ?? activas.find((c) => c.ventaja)?.etiqueta ?? ventajaDeOpcion(elegidas),
     subeGrado: activas.find((c) => c.subeGrado)?.etiqueta ?? null,
     danio: danioDeCasillas(activas),
-    ...fatigaDeCasillas(activas, elegidas, tirada.ventaja != null),
+    ...fatiga,
     casillasSinEfecto: porAplicado.sinEfecto,
+    usosEscena: usosGastados(activas, fatiga, tirada.grupo === "Psiónica"),
   };
 }
 
