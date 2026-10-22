@@ -227,7 +227,7 @@ decisiones de reglas en sistema.md. No se mergea: main ya tiene la Mira resuelta
 ## Métricas y retro
 | vueltas | minutos | tokens | operario (fallos/llamadas) | ¿retocado antes del push? |
 |---|---|---|---|---|
-| 0/2 | 7,4 (+1,3 de la inspección devuelta) | ~360k (13 agentes en total) | 0/7 | no aplica (ensayo) |
+| 0/2 | 7,4 (+1,3 de la inspección devuelta) | ~360k (13 agentes en total) | 0/6 (+1 de la inspección devuelta) | no aplica (ensayo) |
 
 **Tiempo del usuario:** 2 min de encargo, 3 preguntas de reglas y un ok tras la inspección devuelta.
 **Preguntas de reglas:** 3 al usuario; 1 tenía precedente (S9, nivel 2 hereda el +1) y el Jefe no lo buscó. De ahí

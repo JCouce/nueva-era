@@ -165,7 +165,7 @@ primer commit"), pero no se mergea: el panel del máster se rediseñó después 
 ## Métricas y retro
 | vueltas | minutos | tokens | operario (fallos/llamadas) | ¿retocado antes del push? |
 |---|---|---|---|---|
-| 0/2 | 5,7 (+1 de la inspección devuelta) | ~265k (13 agentes en total) | 0/7 | no aplica (ensayo) |
+| 0/2 | 5,7 (+1 de la inspección devuelta) | ~265k (13 agentes en total) | 0/6 (+1 de la inspección devuelta) | no aplica (ensayo) |
 
 **Tiempo del usuario:** unos 2 min de encargo, un ok tras la inspección devuelta y la revisión de la UI. Lo que más
 pesa es mirar la UI: unas capturas en el informe del revisor lo abaratarían.
