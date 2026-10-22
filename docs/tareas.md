@@ -1513,7 +1513,13 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
     (`costeFatiga` neto y `ahorroSinUsar`, que `usarPoder` resta del poder);
     `prepararPoder` consulta el índice (`indiceCondiciones`); `FichaResuelta.ventajasFijas`
     (Red Frontoparietal) en `conExtrasDeFicha`; `DestinoTexto` por grupo y por aplicado.
-- [ ] A3 · Penalizadores.
+- [x] A3 · Penalizadores. *(sin commit; falta revisión y navegador)*
+  `reducePenalizador` en el catálogo; `ajusteUmbralesDeAumentos` (Estabilización) sumado al
+  de especie con `sumaAjustesUmbrales` (`resolverFicha`, fuente combinada en el desglose);
+  Neurogénesis como compensación con alcance `aplicado` (`reduccionesPorAplicadoDeAumentos`,
+  6.º parámetro de `modificadoresDeUmbrales`, nunca pasa de 0); casillas de cobertura de
+  Foveo y Ojo 2-4 (grupo `noApila` `reduccion_cobertura`) en ataques a distancia y
+  Buscar/percibir; Matriz Ósea como nota en la carga (`notasCargaDeAumentos`).
 - [ ] A4 · Acciones propias y "una vez por escena".
 - [ ] A5 · Activables.
 - [ ] A6 · Brazo Biónico.

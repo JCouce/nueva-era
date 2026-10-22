@@ -2,7 +2,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
 import { equipar } from "./equipo";
-import { conExtrasDeFicha, notasDeEstado, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
+import { conExtrasDeFicha, notasDeEstado, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta, type VitalidadActual } from "./fichaResuelta";
 import { ACCIONES, type Accion } from "./acciones";
 import { accionesDeAtaque } from "./combate";
 import { estadoInicial, type CondicionTirada, type EstadoCondiciones } from "./condiciones";
@@ -417,5 +417,164 @@ describe("A2b: ventaja fija y textos", () => {
     assert.ok(!tiradaFija(f, "defensa").nota?.includes("baja un paso"));
     assert.ok(tiradaFija(f, "defensa").nota?.includes("Sorprendido"));
     assert.ok(!tiradaFija(f, "salv_voluntad").nota?.includes("Sorprendido"));
+  });
+});
+
+// ── A3: penalizadores por heridas y fatiga, Neurogénesis, cobertura y carga ──
+
+const NEUROGENESIS = "aum_neurogenesis_hipocampal"; // pide Mielinización
+
+describe("A3: ajuste de umbrales = especie + aumentos (R8)", () => {
+  // Vida y fatiga 10: Herido 4, Malherido 2, Moribundo 1; Fatigado 2, Exhausto 1.
+  const enCombate = (pgActual: number, fatigaActual: number): VitalidadActual => ({
+    origen: "combate",
+    pgActual,
+    pgMax: 10,
+    fatigaActual,
+    fatigaMax: 10,
+  });
+  const GUERRERO: Partial<Sheet> = { especieId: "manduk", especieOpciones: { casta: "guerrero" } };
+  const SIERVO: Partial<Sheet> = { especieId: "manduk", especieOpciones: { casta: "siervo" } };
+  const UMBRALES = /^(Herido|Malherido|Moribundo|Fatigado|Exhausto|Neurogénesis)/;
+  const lineas = (s: Sheet, v: VitalidadActual, tiradaId = "salv_voluntad") => {
+    const f = resolverFicha(s, { estados: [], vitalidad: v });
+    const t = ACCIONES.find((a) => a.id === tiradaId)!;
+    return montarTirada(f, t, SIN_ELECCION).desglose.filter((l) => UMBRALES.test(l.etiqueta));
+  };
+  const ficha = (patch: Partial<Sheet>, aumentos: string[]) => conTodas(aumentos, { ...defaultSheet(), ...patch });
+
+  test("Estabilización sola: Herido 0, Malherido −2, Moribundo −4; Fatigado 0, Exhausto −1", () => {
+    const s = ficha({}, [ESTABILIZACION]);
+    assert.deepEqual(lineas(s, enCombate(4, 10)), []);
+    assert.deepEqual(lineas(s, enCombate(2, 10)), [{ etiqueta: "Malherido (Estabilización Autonómica)", valor: -2 }]);
+    assert.deepEqual(lineas(s, enCombate(1, 10)), [{ etiqueta: "Moribundo (Estabilización Autonómica)", valor: -4 }]);
+    assert.deepEqual(lineas(s, enCombate(10, 2)), []);
+    assert.deepEqual(lineas(s, enCombate(10, 1)), [{ etiqueta: "Exhausto (Estabilización Autonómica)", valor: -1 }]);
+  });
+
+  test("Guerrero + Estabilización en heridas: −1 → 0, −3 → −1, −5 → −3, con las dos fuentes", () => {
+    const s = ficha(GUERRERO, [ESTABILIZACION]);
+    assert.deepEqual(lineas(s, enCombate(4, 10)), []);
+    assert.deepEqual(lineas(s, enCombate(2, 10)), [{ etiqueta: "Malherido (Manduk · Guerrero y Estabilización Autonómica)", valor: -1 }]);
+    assert.deepEqual(lineas(s, enCombate(1, 10)), [{ etiqueta: "Moribundo (Manduk · Guerrero y Estabilización Autonómica)", valor: -3 }]);
+    const f = resolverFicha(s, { estados: [], vitalidad: enCombate(1, 10) });
+    assert.deepEqual(f.ajusteUmbrales.salud, { valor: 2, fuente: "Manduk · Guerrero y Estabilización Autonómica" });
+    assert.deepEqual(f.ajusteUmbrales.fatiga, { valor: 1, fuente: "Estabilización Autonómica" });
+  });
+
+  test("Siervo + Estabilización en fatiga: −1 y −2 se quedan en 0, sin línea", () => {
+    const s = ficha(SIERVO, [ESTABILIZACION]);
+    assert.deepEqual(lineas(s, enCombate(10, 2)), []);
+    assert.deepEqual(lineas(s, enCombate(10, 1)), []);
+  });
+
+  test("Estabilización no toca la velocidad: Malherido sigue a media velocidad", () => {
+    const f = resolverFicha(ficha({}, [ESTABILIZACION]), { estados: [], vitalidad: enCombate(2, 10) });
+    assert.deepEqual(f.umbrales.movimiento.mediaVelocidad, ["Malherido"]);
+  });
+
+  test("Neurogénesis con el requisito roto (sin Mielinización): no compensa nada", () => {
+    assert.deepEqual(lineas(ficha({}, [NEUROGENESIS]), enCombate(10, 2)), [{ etiqueta: "Fatigado", valor: -1 }]);
+  });
+
+  test("Neurogénesis: +1 en las pruebas mentales mientras la fatiga penalice; en Reflejos, nada", () => {
+    const s = ficha({}, [MIELINIZACION, NEUROGENESIS]);
+    assert.deepEqual(lineas(s, enCombate(10, 2)), [
+      { etiqueta: "Fatigado", valor: -1 },
+      { etiqueta: "Neurogénesis Hipocampal (Fatigado)", valor: 1 },
+    ]);
+    assert.deepEqual(lineas(s, enCombate(10, 1)), [
+      { etiqueta: "Exhausto", valor: -2 },
+      { etiqueta: "Neurogénesis Hipocampal (Exhausto)", valor: 1 },
+    ]);
+    assert.deepEqual(lineas(s, enCombate(10, 2), "salv_reflejos"), [{ etiqueta: "Fatigado", valor: -1 }]);
+    // Sin fatiga penalizada no aparece; las heridas no las toca.
+    assert.deepEqual(lineas(s, enCombate(10, 10)), []);
+    assert.deepEqual(lineas(s, enCombate(4, 10)), [{ etiqueta: "Herido", valor: -1 }]);
+  });
+
+  test("Neurogénesis nunca deja la fatiga por encima de 0 (Siervo, Estabilización)", () => {
+    // Siervo Fatigado: ya en 0, no suma.
+    assert.deepEqual(lineas(ficha(SIERVO, [MIELINIZACION, NEUROGENESIS]), enCombate(10, 2)), []);
+    // Siervo Exhausto: −1 y +1.
+    assert.deepEqual(lineas(ficha(SIERVO, [MIELINIZACION, NEUROGENESIS]), enCombate(10, 1)), [
+      { etiqueta: "Exhausto (Manduk · Siervo)", valor: -1 },
+      { etiqueta: "Neurogénesis Hipocampal (Exhausto)", valor: 1 },
+    ]);
+    // Siervo + Estabilización Exhausto: 0, no suma.
+    assert.deepEqual(lineas(ficha(SIERVO, [ESTABILIZACION, MIELINIZACION, NEUROGENESIS]), enCombate(10, 1)), []);
+  });
+
+  test("Neurogénesis vale con el aplicado con el que se tira (casilla que cambia a Perspicacia)", () => {
+    const f = resolverFicha(ficha({}, [MIELINIZACION, NEUROGENESIS]), { estados: [], vitalidad: enCombate(10, 2) });
+    const cambia: CondicionTirada = { id: "a_perspicacia", tipo: "toggle", etiqueta: "Con Perspicacia", valorActivo: 0, aplicado: "perspicacia" };
+    const t: Accion = { id: "prueba", label: "Prueba", grupo: "Acciones", aplicado: "reflejos", habilidad: null, condiciones: [cambia] };
+    const neuro = (m: TiradaMontada) => m.desglose.filter((l) => l.etiqueta.startsWith("Neurogénesis"));
+    assert.deepEqual(neuro(montar(f, t)), []);
+    assert.deepEqual(neuro(montar(f, t, { a_perspicacia: true })), [{ etiqueta: "Neurogénesis Hipocampal (Fatigado)", valor: 1 }]);
+  });
+});
+
+describe("A3: cobertura (casillas, sin apilar)", () => {
+  const conFusil = (aumentos: [string, number?][]) => {
+    let s = equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "fusil_asalto_impetus" });
+    for (const [id, nivel] of aumentos) s = con(s, id, nivel === undefined ? {} : { nivel });
+    return resolver(s);
+  };
+  const disparo = (f: FichaResuelta) =>
+    conExtrasDeFicha(f, accionesDeAtaque(f.ficha, f.modificadores, f.extrasDotes.permisos).find((t) => t.label === "Disparar con Impetus")!);
+  const cobertura = (t: Accion) => ids(t).filter((id) => id.includes("_cobertura_"));
+  const suma = (f: FichaResuelta, t: Accion, marcar: string[]) =>
+    montar(f, t, Object.fromEntries(marcar.map((id) => [id, true]))).modificador - montar(f, t).modificador;
+
+  test("Foveo: +1 por cobertura visual en ataques a distancia y en Buscar/percibir; no en Iniciativa ni Defensa", () => {
+    const f = conFusil([[FOVEO]]);
+    assert.deepEqual(cobertura(disparo(f)), ["aum_foveo_cobertura_distancia"]);
+    assert.equal(suma(f, disparo(f), ["aum_foveo_cobertura_distancia"]), 1);
+    const buscar = tiradaFija(f, "alerta_activa");
+    assert.deepEqual(cobertura(buscar), ["aum_foveo_cobertura_alerta"]);
+    assert.equal(suma(f, buscar, ["aum_foveo_cobertura_alerta"]), 1);
+    const c = buscar.condiciones!.find((x) => x.id === "aum_foveo_cobertura_alerta")!;
+    assert.equal(c.etiqueta, "Objetivo con cobertura visual · Optimización Foveo-Sensorial");
+    assert.ok(c.tipo === "toggle" && c.nota?.includes("La cobertura total no se reduce"));
+    for (const id of ["iniciativa_arma", "defensa"]) assert.deepEqual(cobertura(tiradaFija(f, id)), [], id);
+  });
+
+  test("Ojo: el 1 no trae cobertura; el 2 y el 3, +1 visual; el 4, +2 a cualquier cobertura", () => {
+    assert.deepEqual(cobertura(disparo(conFusil([[OJO, 1]]))), []);
+    for (const nivel of [2, 3]) {
+      const f = conFusil([[OJO, nivel]]);
+      assert.equal(suma(f, disparo(f), ["aum_ojo_cobertura_distancia"]), 1, `nivel ${nivel}`);
+    }
+    const f4 = conFusil([[OJO, 4]]);
+    const t4 = disparo(f4);
+    assert.deepEqual(cobertura(t4), ["aum_ojo_cobertura_distancia"]);
+    assert.equal(t4.condiciones!.find((c) => c.id === "aum_ojo_cobertura_distancia")!.etiqueta, "Objetivo con cobertura (física o visual) · Ojo Biónico 4");
+    assert.equal(suma(f4, t4, ["aum_ojo_cobertura_distancia"]), 2);
+    assert.equal(suma(f4, tiradaFija(f4, "alerta_activa"), ["aum_ojo_cobertura_alerta"]), 2);
+  });
+
+  test("Foveo + Ojo 4 marcadas: solo la mayor (+2); Foveo sale a 0 diciendo por qué", () => {
+    const f = conFusil([[FOVEO], [OJO, 4]]);
+    const t = disparo(f);
+    const marcar = ["aum_foveo_cobertura_distancia", "aum_ojo_cobertura_distancia"];
+    assert.equal(suma(f, t, marcar), 2);
+    const m = montar(f, t, Object.fromEntries(marcar.map((id) => [id, true])));
+    assert.ok(m.desglose.some((l) => l.etiqueta.startsWith("Objetivo con cobertura visual · Optimización Foveo-Sensorial (no se suma con") && l.valor === 0));
+  });
+
+  test("Foveo + Ojo 2 marcadas: +1, no +2", () => {
+    const f = conFusil([[FOVEO], [OJO, 2]]);
+    const t = tiradaFija(f, "alerta_activa");
+    assert.equal(suma(f, t, ["aum_foveo_cobertura_alerta", "aum_ojo_cobertura_alerta"]), 1);
+  });
+});
+
+describe("A3: Matriz Ósea, −1 a la carga como nota", () => {
+  test("nota junto a la carga, sin tocar el número", () => {
+    const sin = resolver(defaultSheet());
+    const f = resolver(conTodas([MATRIZ_OSEA]));
+    assert.match(notasDeEstado(f).carga ?? "", /−1 a los penalizadores por carga \(sin mecanizar\) · Matriz Ósea Adaptativa/);
+    assert.equal(notasDeEstado(sin).carga, undefined);
   });
 });

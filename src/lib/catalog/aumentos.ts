@@ -26,6 +26,10 @@
 // Consciencia, Automatismo, Red Frontoparietal). "Una vez por escena" va en la nota de la
 // casilla hasta A4.
 //
+// Tanda A3: `reducePenalizador` (Estabilización Autonómica en heridas y fatiga, Neurogénesis
+// en fatiga solo con sus aplicados, Matriz Ósea en carga como nota) y las casillas de
+// cobertura (Foveo, Ojo 2-4) en ataques a distancia y Buscar/percibir, sin apilar entre sí.
+//
 // MotorMetadata: copiado del modelado. Donde el modelado dice `mecanismo: "hueco"`
 // (aún no hay mecanismo en el motor), se pone el mecanismo más cercano por tipo
 // (habilitador → gate_instalacion; acción → accion_equipo; extremidad del Brazo →
@@ -36,6 +40,7 @@
 // efectos `atributo` (suma_derivado: Modificador "atributo"), `coste_habilidad`
 // (sin acción: ajuste de coste de progresión) y `formula_salud` (suma_derivado:
 // Modificador "multiplicadorVida" sobre la vida).
+import type { AplicadoId } from "../rules/atributos";
 import type { HabilidadId } from "../rules/habilidades";
 import type { CondicionTirada } from "../rules/condiciones";
 import type { Modificador } from "../rules/modificadores";
@@ -43,6 +48,17 @@ import type { MotorMetadata } from "../rules/motor";
 import type { EfectoSalvacion, EfectosTiradaAumento } from "../rules/aumentosTiradas";
 import type { NivelModulo, Rareza } from "./equipo";
 import { VISION_AUMENTADA } from "./mejorasArma";
+
+// Cobertura (A3; §11.3, tercera ronda): las casillas de Foveo y del Ojo compensan lo que el
+// jugador ya resta a mano en el circunstancial. No se apilan entre sí: vale la mayor.
+const NO_APILA_COBERTURA = "reduccion_cobertura";
+const NOTA_COBERTURA = "La cobertura total no se reduce; resta la cobertura a mano en el circunstancial y marca esto.";
+
+// Puntos menos de penalizador (A3, R8 de §11.3). `heridas` y `fatiga` se suman al ajuste de
+// umbrales de la especie (ajusteUmbralesDeAumentos); con `aplicados`, solo en esas tiradas, como
+// compensación aparte (reduccionesPorAplicadoDeAumentos). `carga`: solo nota, porque los
+// penalizadores por carga no están mecanizados (notasCargaDeAumentos).
+export type ReduccionPenalizadorAumento = { de: "heridas" | "fatiga" | "carga"; valor: number; aplicados?: AplicadoId[] };
 
 // Elección al comprar (Introgresión: el sentido). Cada opción con su texto y, desde A2a,
 // lo que ese sentido pone en las tiradas (EfectosTiradaAumento).
@@ -65,6 +81,7 @@ export type OperacionGenetica = {
   // Neurogénesis y Engramática (A1): −valor al coste de cada nivel de esas habilidades
   // (mínimo 1), solo al subir con XP con la ficha aprobada (usuario, 2026-10-22).
   rebajaCosteHabilidad?: { habilidades: HabilidadId[] | "todas"; valor: number };
+  reducePenalizador?: ReduccionPenalizadorAumento[];
   // Solo efectos permanentes (A1: +1 a atributos básicos y multiplicadorVida).
   modificadores: Modificador[];
   motor: MotorMetadata[];
@@ -146,10 +163,13 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     rebajaCosteHabilidad: { habilidades: ["biociencia", "cultura", "tecnociencia"], valor: 1 },
+    // A3: compensación automática (+1) en las pruebas mentales mientras la fatiga penalice,
+    // sin dejar el penalizador por encima de 0 (usuario, 2026-10-22).
+    reducePenalizador: [{ de: "fatiga", valor: 1, aplicados: ["perspicacia", "voluntad", "expresion"] }],
     modificadores: [{ tipo: "atributo", id: "inteligencia", valor: 1 }],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "siempre_activo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
     ],
   },
@@ -268,11 +288,13 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
         alcance: { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combate_distancia" },
         valorActivo: 1,
       },
+      ...casillasCobertura("aum_foveo", 1, false),
     ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -555,9 +577,12 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "fuerza", valor: 1 }, { tipo: "atributo", id: "aguante", valor: 1 }],
     armaduraNatural: { valor: 1, tipos: ["cinetico"], nota: "Vale contra golpes contundentes e impactos masivos; el máster lo arbitra." },
+    // A3: solo nota junto a la carga (Personaje → Estado); el número sigue bloqueado.
+    reducePenalizador: [{ de: "carga", valor: 1 }],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "acciones_fisicas_carga" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "penalizadores por carga sin mecanizar (sistema.md §5.5)" },
+      { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
     ],
   },
@@ -811,12 +836,16 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [],
+    reducePenalizador: [
+      { de: "heridas", valor: 1 },
+      { de: "fatiga", valor: 1 },
+    ],
     salvaciones: [
       { contra: ["aturdimiento", "shock"], bono: 2 },
       { contra: ["confusion", "miedo"], bono: 2 },
     ],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "siempre_activo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_sacudir_miedo" }, mecanismo: "accion_equipo", estado: "pendiente" },
@@ -934,6 +963,18 @@ function casillaVisualOjo(valor: number): CondicionTirada {
     valorActivo: valor,
     noApila: VISION_AUMENTADA,
   };
+}
+
+// Las dos casillas de cobertura de una pieza: ataques a distancia y Buscar/percibir. Las del
+// Ojo llevan el mismo id en los niveles 2 y 4, para que el 4 sustituya al 2 (acumulaPorClave).
+// Los alcances van escritos aquí (no DISTANCIA): Foveo la llama antes de que exista.
+function casillasCobertura(prefijo: string, valor: number, cualquiera: boolean): CondicionTirada[] {
+  const etiqueta = cualquiera ? "Objetivo con cobertura (física o visual)" : "Objetivo con cobertura visual";
+  const comun = { tipo: "toggle", etiqueta, valorActivo: valor, noApila: NO_APILA_COBERTURA, nota: NOTA_COBERTURA } as const;
+  return [
+    { ...comun, id: `${prefijo}_cobertura_distancia`, alcance: { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combate_distancia" } },
+    { ...comun, id: `${prefijo}_cobertura_alerta`, alcance: { tipo: "tiradaId", id: "alerta_activa" } },
+  ];
 }
 
 export const IMPLANTES: Implante[] = [
@@ -1223,11 +1264,13 @@ export const IMPLANTES: Implante[] = [
         modificadores: [
           { tipo: "derivado", id: "alerta", valor: 2, noApila: VISION_AUMENTADA },
         ],
-        condiciones: [casillaVisualOjo(2)],
+        // A3: la cobertura visual (−1 nivel) llega en el nivel 2; el 1 no la trae.
+        condiciones: [casillaVisualOjo(2), ...casillasCobertura("aum_ojo", 1, false)],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:ceguera" }, mecanismo: "gate_instalacion", arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "capa inmunidad_estado" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
       {
@@ -1261,13 +1304,15 @@ export const IMPLANTES: Implante[] = [
           { tipo: "tirada", alcance: DISTANCIA, valor: 3, noApila: VISION_AUMENTADA },
           { tipo: "derivado", id: "alerta", valor: 4, noApila: VISION_AUMENTADA },
         ],
-        condiciones: [casillaVisualOjo(4)],
+        // A3: −2 niveles de cualquier cobertura, física o visual (sustituye a la del nivel 2).
+        condiciones: [casillaVisualOjo(4), ...casillasCobertura("aum_ojo", 2, true)],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "construido" },
           { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:ceguera" }, mecanismo: "gate_instalacion", arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "capa inmunidad_estado" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "pendiente" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
     ],

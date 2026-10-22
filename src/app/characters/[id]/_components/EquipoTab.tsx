@@ -104,7 +104,7 @@ function SeccionAumentos({ sheet, onDesequipar }: { sheet: Sheet; onDesequipar: 
     <>
       <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{`// Aumentos · ${aumentos.length}`}</p>
       <p className="font-sans text-[11px] leading-relaxed text-muted">
-        De momento solo se aplican los atributos, la vida de Hipertrofia, las rebajas de coste de habilidad (con la ficha aprobada), los bonos a salvaciones (selector «Contra…»), las casillas de Buscar/percibir, la Alerta pasiva del Ojo, su bono a distancia, la armadura natural, las casillas de ventaja con fatiga de la rama cognitiva (y el ahorro de Mielinización), la ventaja en Iniciativa de Red Frontoparietal y sus textos en las tiradas; el resto de sus efectos, todavía no. En creación, quitar un aumento devuelve lo pagado (bolsa y créditos); aprobada la ficha, no devuelve nada.
+        De momento solo se aplican los atributos, la vida de Hipertrofia, las rebajas de coste de habilidad (con la ficha aprobada), los bonos a salvaciones (selector «Contra…»), las casillas de Buscar/percibir, la Alerta pasiva del Ojo, su bono a distancia, la armadura natural, las casillas de ventaja con fatiga de la rama cognitiva (y el ahorro de Mielinización), la ventaja en Iniciativa de Red Frontoparietal, sus textos en las tiradas, la reducción de los penalizadores por heridas y fatiga (Estabilización Autonómica, Neurogénesis) y las casillas de cobertura (Foveo, Ojo); el resto de sus efectos, todavía no. En creación, quitar un aumento devuelve lo pagado (bolsa y créditos); aprobada la ficha, no devuelve nada.
       </p>
       {aumentos.map((a) => {
         const cat = aumentoPorId(a.catalogoId);

@@ -1,7 +1,8 @@
 // Aumentos en la ficha (docs/sistema.md §11.3, tandas A0 y A1 de docs/propuesta-aumentos.md):
 // comprar, subir de nivel, pagar con la bolsa del humano y marcar requisitos rotos (A0);
 // los +1 a atributos, la vida de Hipertrofia y las rebajas de coste de habilidad (A1).
-// Lo que ponen en tiradas y blindaje (A2a) vive en aumentosTiradas.ts; el resto, A2b-A7.
+// Lo que ponen en tiradas y blindaje (A2a, A2b y la cobertura de A3) vive en
+// aumentosTiradas.ts; las reducciones de penalizador (A3), aquí abajo; el resto, A4-A7.
 //
 // Viven en sheet.equipo como cualquier pieza, pero no se compran con equipar(): las
 // operaciones piden otras operaciones, los implantes suben de nivel pagando la
@@ -10,9 +11,10 @@
 // la bolsa y el resto a créditos (devolucionAumento); aprobada la ficha, nada.
 import { z } from "zod";
 import { equipoPorId } from "../catalog/equipo";
-import type { Aumento, Implante, NivelImplante, OperacionGenetica } from "../catalog/aumentos";
+import type { Aumento, Implante, NivelImplante, OperacionGenetica, ReduccionPenalizadorAumento } from "../catalog/aumentos";
 import { acumulaPorClave, claveModificador, costeDePieza, nivelesHasta, type PiezaEquipada } from "./equipo";
 import { HABILIDADES, type HabilidadId } from "./habilidades";
+import { SIN_AJUSTE_UMBRALES, type AjusteUmbral, type AjusteUmbrales, type ReduccionPorAplicado } from "./estados";
 import type { ModificadorConFuente } from "./modificadores";
 import type { AjusteCoste, AjusteHabilidad } from "./progresion";
 import type { Sheet } from "./sheet";
@@ -328,4 +330,50 @@ export function ajusteCosteConAumentos(base: AjusteCoste, sheet: Pick<Sheet, "eq
 // (setHabilidadAction) y resolverFicha (FichaResuelta.ajusteCosteSubida).
 export function ajusteCosteDeSubida(base: AjusteCoste, sheet: Pick<Sheet, "equipo">, aprobada: boolean): AjusteCoste {
   return aprobada ? ajusteCosteConAumentos(base, sheet) : base;
+}
+
+// ── Penalizadores (A3) ─────────────────────────────────────────────────
+
+// Las reducciones de penalizador de las operaciones que funcionan, con su pieza.
+function reduccionesDeAumentos(sheet: Pick<Sheet, "equipo">): { fuente: string; r: ReduccionPenalizadorAumento }[] {
+  const activas = operacionesActivas(sheet);
+  return sheet.equipo.flatMap((pieza) => {
+    const cat = aumentoPorId(pieza.catalogoId);
+    if (cat?.familia !== "operacionGenetica" || !activas.has(cat.id)) return [];
+    return (cat.reducePenalizador ?? []).map((r) => ({ fuente: cat.label, r }));
+  });
+}
+
+const RECURSO_DE = { heridas: "salud", fatiga: "fatiga" } as const;
+
+// Lo que los aumentos quitan a los penalizadores por heridas y fatiga en cualquier tirada
+// (Estabilización Autonómica). Se suma al de la especie con sumaAjustesUmbrales (R8).
+export function ajusteUmbralesDeAumentos(sheet: Pick<Sheet, "equipo">): AjusteUmbrales {
+  const generales = reduccionesDeAumentos(sheet).filter(({ r }) => r.de !== "carga" && !r.aplicados);
+  const ajuste = (recurso: keyof AjusteUmbrales): AjusteUmbral | null => {
+    const con = generales.filter(({ r }) => r.de !== "carga" && RECURSO_DE[r.de] === recurso);
+    if (con.length === 0) return null;
+    return { valor: con.reduce((t, { r }) => t + r.valor, 0), fuente: [...new Set(con.map((c) => c.fuente))].join(" y ") };
+  };
+  const salud = ajuste("salud");
+  const fatiga = ajuste("fatiga");
+  return salud || fatiga ? { salud, fatiga } : SIN_AJUSTE_UMBRALES;
+}
+
+// Las que solo valen con ciertos aplicados (Neurogénesis Hipocampal), para
+// modificadoresDeUmbrales: una compensación propia en el desglose, sin pasar de 0.
+export function reduccionesPorAplicadoDeAumentos(sheet: Pick<Sheet, "equipo">): ReduccionPorAplicado[] {
+  return reduccionesDeAumentos(sheet).flatMap(({ fuente, r }): ReduccionPorAplicado[] =>
+    r.de !== "carga" && r.aplicados
+      ? [{ recurso: RECURSO_DE[r.de], valor: r.valor, aplicados: r.aplicados, fuente, origen: "aumento" }]
+      : [],
+  );
+}
+
+// Matriz Ósea: los penalizadores por carga no están mecanizados (§5.5), así que su −1 va como
+// nota junto a la carga (notasDeEstado).
+export function notasCargaDeAumentos(sheet: Pick<Sheet, "equipo">): string[] {
+  return reduccionesDeAumentos(sheet).flatMap(({ fuente, r }) =>
+    r.de === "carga" ? [`−${r.valor} a los penalizadores por carga (sin mecanizar) · ${fuente}`] : [],
+  );
 }

@@ -7,7 +7,14 @@
 // catálogo. Los estados (columna propia, los pone el máster) y la vida/fatiga de un
 // combate no están en la ficha, por eso entran aparte.
 import { APLICADOS, ATRIBUTOS, type AplicadoId, type AtributoId } from "./atributos";
-import { ajusteCosteDeSubida, modificadoresDeAumentos, saldoBolsaAumentos } from "./aumentos";
+import {
+  ajusteCosteDeSubida,
+  ajusteUmbralesDeAumentos,
+  modificadoresDeAumentos,
+  notasCargaDeAumentos,
+  reduccionesPorAplicadoDeAumentos,
+  saldoBolsaAumentos,
+} from "./aumentos";
 import {
   casillasDeAumentos,
   notasAlertaPasivaDeAumentos,
@@ -67,6 +74,7 @@ import {
   modificadoresDeEstados,
   modificadoresDeUmbrales,
   movimientoPorUmbrales,
+  sumaAjustesUmbrales,
   umbralFatiga,
   type AjusteUmbrales,
   umbralSalud,
@@ -115,8 +123,10 @@ export type FichaResuelta = {
   // Umbrales de §7 con la vida/fatiga de `vitalidad` (fatiga efectiva) y lo que hacen
   // a velocidad y carga, ya aplicado en movimiento, vuelo, levitación y cargaMaxima.
   umbrales: { salud: UmbralSalud; fatiga: UmbralFatiga; movimiento: MovimientoPorUmbral };
-  // Un tramo menos de penalizador por especie (Guerrero, Siervo; §14.8), ya aplicado en
-  // los modificadores de umbral de arriba. Derivado: también al NPC.
+  // Puntos menos de penalizador por especie (Guerrero, Siervo; §14.8) y por aumentos
+  // (Estabilización Autonómica, A3), sumados (R8) y ya aplicados en los modificadores de umbral
+  // de arriba. No lleva las reducciones por aplicado (Neurogénesis), que van como compensación
+  // propia en `modificadores`. Derivado: también al NPC.
   ajusteUmbrales: AjusteUmbrales;
   movimiento: ReturnType<typeof movimiento>;
   // null si la ficha no vuela (Movilidad Aérea) o no levita (Traslación 2+).
@@ -247,8 +257,11 @@ export function resolverFicha(
     fatiga: umbralFatiga(v.fatiga, v.fatigaMax),
   };
   const porUmbral = movimientoPorUmbrales(umbrales.salud, umbrales.fatiga);
-  const ajusteUmbrales = ajusteUmbralesDeEspecie(especie);
-  const modificadores = [...sinUmbrales, ...modificadoresDeUmbrales(v.pg, v.pgMax, v.fatiga, v.fatigaMax, ajusteUmbrales)];
+  const ajusteUmbrales = sumaAjustesUmbrales(ajusteUmbralesDeEspecie(especie), ajusteUmbralesDeAumentos(sheet));
+  const modificadores = [
+    ...sinUmbrales,
+    ...modificadoresDeUmbrales(v.pg, v.pgMax, v.fatiga, v.fatigaMax, ajusteUmbrales, reduccionesPorAplicadoDeAumentos(sheet)),
+  ];
 
   // Media velocidad: carrera, vuelo y levitación; saltos, escalada y nado no (S26).
   const velocidad = (m: number) => (porUmbral.mediaVelocidad.length > 0 ? Math.floor(m / 2) : m);
@@ -433,6 +446,7 @@ export function notasDeEstado(ficha: FichaResuelta): NotasEstado {
 
   const { valor, fuente } = ficha.multiplicadorCarga;
   if (valor !== 1) notas.carga.push(`×${String(valor).replace(".", ",")}${fuente ? ` · ${fuente}` : ""}`);
+  notas.carga.push(...notasCargaDeAumentos(ficha.ficha));
 
   const { mediaVelocidad, unaCasillaPorTurno, reduccionCarga } = ficha.umbrales.movimiento;
   for (const c of CAMPOS_VELOCIDAD) {

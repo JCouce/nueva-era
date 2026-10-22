@@ -142,21 +142,23 @@ describe("integridad del catálogo de aumentos", () => {
     aum_regulacion_limbico_prefrontal: 1,
     aum_matriz_de_red_predeterminada: 4, // 2 de A2a y 2 de A2b
     aum_integridad_osteotendinosa: 1,
-    aum_matriz_osea_adaptativa: 1,
+    aum_matriz_osea_adaptativa: 2, // armadura natural (A2a) y la nota de carga (A3)
     aum_biogenesis_mitocondrial: 1,
     aum_resiliencia_homeostatica: 1,
-    aum_estabilizacion_autonomica: 2,
+    aum_estabilizacion_autonomica: 3, // 2 de A2a y el ajuste de umbrales (A3)
     aum_introgresion_sensorial_heterologa: 2,
     "aum_ojo_bionico 1": 3,
-    "aum_ojo_bionico 2": 1,
+    "aum_ojo_bionico 2": 3, // 1 de A2a y la cobertura visual en distancia y Buscar (A3)
     "aum_ojo_bionico 3": 2,
-    "aum_ojo_bionico 4": 2,
+    "aum_ojo_bionico 4": 4, // 2 de A2a y cualquier cobertura en distancia y Buscar (A3)
     "aum_enjambre_nanobot 3": 1,
     // A2b: casillas por aplicado y de cualquier tirada, ventaja fija y textos.
     aum_mielinizacion_central: 1,
     aum_red_frontoparietal: 1,
     aum_prefrontal_aumentada: 2,
-    aum_optimizacion_foveo_sensorial: 1,
+    aum_optimizacion_foveo_sensorial: 3, // Tras Apuntar (A2b) y cobertura visual (A3)
+    // A3: compensación de fatiga en las pruebas mentales.
+    aum_neurogenesis_hipocampal: 1,
     aum_consciencia_omnidireccional: 2,
     aum_asa_estriatotalamica: 1,
     aum_conectividad_callosa: 3,
@@ -167,7 +169,7 @@ describe("integridad del catálogo de aumentos", () => {
     aum_bucle_de_realimentacion_motora: 2,
   };
 
-  test("A1, A2a y A2b: solo lo construido (o lo narrativo) está marcado como construido", () => {
+  test("A1, A2a, A2b y A3: solo lo construido (o lo narrativo) está marcado como construido", () => {
     for (const op of OPERACIONES_GENETICAS) {
       const construidos = op.motor.filter((m) => m.estado === "construido" && m.tipo !== "narrativo");
       const esperados =

@@ -17,7 +17,8 @@
 // que el documento no dice explícitamente: S14 (los umbrales de un mismo
 // recurso no se acumulan, solo el más profundo aporta su penalizador) y S15
 // (cómo se interpreta el "mínimo 1" de Moribundo/Exhausto).
-import type { ModificadorConFuente } from "./modificadores";
+import type { AplicadoId } from "./atributos";
+import type { ModificadorConFuente, OrigenModificador } from "./modificadores";
 import { estadoPorId } from "../catalog/estados";
 
 export type UmbralSalud = "normal" | "herido" | "malherido" | "moribundo";
@@ -79,23 +80,49 @@ export function umbralVital(recurso: "vida" | "fatiga", actual: number, max: num
   return u === "normal" ? null : { id: u, etiqueta: ETIQUETA_UMBRAL[u], penalizador: PENALIZADOR_FATIGA[u] };
 }
 
-// Un tramo menos de penalizador por recurso (Guerrero heridas, Siervo fatiga, §14.8):
-// `valor` puntos menos en cada tramo, con la fuente para el desglose. Lo resuelve la
-// especie (ajusteUmbralesDeEspecie) y llega por parámetro obligatorio; sin especie,
-// SIN_AJUSTE_UMBRALES. Solo toca el −N de las tiradas: la velocidad y la carga del
-// mismo umbral no cambian (movimientoPorUmbrales no lo recibe).
+// Puntos menos de penalizador por recurso (§14.8 y R8 de §11.3): especie (Guerrero heridas,
+// Siervo fatiga) y aumentos (Estabilización Autonómica, heridas y fatiga), `valor` puntos
+// menos en cada tramo, con la fuente para el desglose. Cada reducción baja el penalizador en 1
+// y se suma a las demás (sumaAjustesUmbrales); el tramo no pasa de 0. Lo resuelve
+// resolverFicha y llega por parámetro obligatorio; sin nada, SIN_AJUSTE_UMBRALES. Solo toca
+// el −N de las tiradas: la velocidad y la carga del mismo umbral no cambian
+// (movimientoPorUmbrales no lo recibe).
 // TODO(revisar): §14.8 dice "reducen en 1 los penalizadores"; se lee como el −N a
 // todo (M12), no como la media velocidad ni la carga de §7.
 export type AjusteUmbral = { valor: number; fuente: string };
 export type AjusteUmbrales = { salud: AjusteUmbral | null; fatiga: AjusteUmbral | null };
 export const SIN_AJUSTE_UMBRALES: AjusteUmbrales = { salud: null, fatiga: null };
 
-function modificadorDeUmbral(
-  penalizador: number,
-  etiqueta: string,
-  ajuste: AjusteUmbral | null,
-): ModificadorConFuente | null {
-  const valor = Math.min(0, penalizador + (ajuste?.valor ?? 0));
+// Junta varios ajustes (especie + aumentos) en uno por recurso: los valores se suman y las
+// fuentes se leen juntas ("Manduk · Siervo y Estabilización Autonómica").
+export function sumaAjustesUmbrales(...ajustes: AjusteUmbrales[]): AjusteUmbrales {
+  const suma = (recurso: keyof AjusteUmbrales): AjusteUmbral | null => {
+    const con = ajustes.flatMap((a) => (a[recurso] ? [a[recurso]!] : []));
+    if (con.length === 0) return null;
+    return { valor: con.reduce((t, a) => t + a.valor, 0), fuente: [...new Set(con.map((a) => a.fuente))].join(" y ") };
+  };
+  const salud = suma("salud");
+  const fatiga = suma("fatiga");
+  return salud || fatiga ? { salud, fatiga } : SIN_AJUSTE_UMBRALES;
+}
+
+// Una reducción que solo vale en las tiradas con ciertos aplicados (Neurogénesis Hipocampal:
+// fatiga, en perspicacia, voluntad y expresión). No entra en el ajuste general: sale como una
+// compensación propia (+valor) con alcance "aplicado", y solo si el tramo sigue penalizando
+// tras el ajuste general; nunca deja el penalizador por encima de 0.
+export type ReduccionPorAplicado = {
+  recurso: keyof AjusteUmbrales;
+  valor: number;
+  aplicados: AplicadoId[];
+  fuente: string;
+  origen: OrigenModificador;
+};
+
+function valorDeUmbral(penalizador: number, ajuste: AjusteUmbral | null): number {
+  return Math.min(0, penalizador + (ajuste?.valor ?? 0));
+}
+
+function modificadorDeUmbral(valor: number, etiqueta: string, ajuste: AjusteUmbral | null): ModificadorConFuente | null {
   // Un tramo que el ajuste deja en 0 no da línea en el desglose.
   if (valor === 0) return null;
   return {
@@ -107,31 +134,51 @@ function modificadorDeUmbral(
   };
 }
 
+// Las compensaciones por aplicado de un recurso sobre su penalizador ya ajustado (`valor`,
+// ≤ 0). Se descuentan en orden de lo que queda por compensar, para que juntas tampoco pasen
+// de 0 (hoy solo existe Neurogénesis).
+function compensacionesPorAplicado(
+  valor: number,
+  etiqueta: string,
+  reducciones: ReduccionPorAplicado[],
+): ModificadorConFuente[] {
+  let restante = -valor;
+  return reducciones.flatMap((r): ModificadorConFuente[] => {
+    const v = Math.min(r.valor, restante);
+    if (v <= 0) return [];
+    restante -= v;
+    return [{ tipo: "tirada", alcance: { tipo: "aplicado", aplicados: r.aplicados }, valor: v, origen: r.origen, fuente: `${r.fuente} (${etiqueta})` }];
+  });
+}
+
 // El "-1/-3/-5 a todo" de PG y el "-1/-2 a todo" de fatiga (docs/sistema.md
 // §7), listos para sumarse al resto de modificadores de la ficha: resolverFicha los
 // mete en FichaResuelta.modificadores (M1b), así llegan a montarTirada y a
 // prepararPoder sin que nadie más los sume. La velocidad y la carga del mismo
 // umbral, que no son deltas, van aparte: movimientoPorUmbrales, abajo.
+// `porAplicado` (A3 de aumentos): compensaciones que solo valen con ciertos aplicados, detrás
+// del penalizador de su recurso. Las casa montarTirada con el aplicado con el que se tira.
 export function modificadoresDeUmbrales(
   pgActual: number,
   pgMax: number,
   fatigaActual: number,
   fatigaMax: number,
   ajuste: AjusteUmbrales,
+  porAplicado: ReduccionPorAplicado[] = [],
 ): ModificadorConFuente[] {
   const mods: ModificadorConFuente[] = [];
+  const tramo = (recurso: keyof AjusteUmbrales, penalizador: number, etiqueta: string) => {
+    const valor = valorDeUmbral(penalizador, ajuste[recurso]);
+    const m = modificadorDeUmbral(valor, etiqueta, ajuste[recurso]);
+    if (m) mods.push(m);
+    mods.push(...compensacionesPorAplicado(valor, etiqueta, porAplicado.filter((r) => r.recurso === recurso)));
+  };
 
   const salud = umbralSalud(pgActual, pgMax);
-  if (salud !== "normal") {
-    const m = modificadorDeUmbral(PENALIZADOR_SALUD[salud], ETIQUETA_UMBRAL[salud], ajuste.salud);
-    if (m) mods.push(m);
-  }
+  if (salud !== "normal") tramo("salud", PENALIZADOR_SALUD[salud], ETIQUETA_UMBRAL[salud]);
 
   const fatiga = umbralFatiga(fatigaActual, fatigaMax);
-  if (fatiga !== "normal") {
-    const m = modificadorDeUmbral(PENALIZADOR_FATIGA[fatiga], ETIQUETA_UMBRAL[fatiga], ajuste.fatiga);
-    if (m) mods.push(m);
-  }
+  if (fatiga !== "normal") tramo("fatiga", PENALIZADOR_FATIGA[fatiga], ETIQUETA_UMBRAL[fatiga]);
 
   return mods;
 }

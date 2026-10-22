@@ -37,7 +37,7 @@
 //   dotesAcciones.ts   acciones propias de dote (sección Dotes de Acciones, D2c-1)
 //   dotesPoderes.ts    poderes de dote (Impacto/Sobrecarga Métrica) como PoderDisponible (D2c-2)
 //   dotesCompradas.ts  sheet.dotes: forma y lectura tolerante
-//   aumentos.ts        aumentos: compra, subir de nivel, elección, bolsa y requisito roto (A0); +1 a atributos, vida de Hipertrofia y rebajas de coste (A1)
+//   aumentos.ts        aumentos: compra, subir de nivel, elección, bolsa y requisito roto (A0); +1 a atributos, vida de Hipertrofia y rebajas de coste (A1); reducción de penalizadores por heridas, fatiga y carga (A3)
 //   aumentosTiradas.ts lo que los aumentos ponen en tiradas y blindaje: casillas, selector "Contra…" de salvaciones, textos, Alerta pasiva y armadura natural (A2a)
 //   vidaPorEstados.ts  vida/fatiga que se pierden al bajar el máximo por un estado (S75)
 //   registro.ts        registro del máster: qué se guarda de cada acción y cómo se deshace (E1b)

@@ -1286,6 +1286,26 @@ al preparar su modelado:
   - **Reacciones y equilibrio (usuario, 2026-10-22):** Hiperdensidad (2.ª reacción por 1 de
     fatiga), Automatismo (la deja gratis) y Bucle (3.ª reacción por 1 de fatiga) como texto
     en Defensa; Bucle, casilla de ventaja en Atletismo "Equilibrio para no caer derribado".
+- *En la app (A3, penalizadores):* campo `reducePenalizador` de la operación, con
+  `operacionesActivas` (requisito roto, sin nada).
+  - **Heridas y fatiga (R8):** Estabilización Autonómica −1 a las dos. El ajuste de la
+    especie y el de los aumentos se suman en un valor por recurso (`sumaAjustesUmbrales`,
+    `rules/estados.ts`); el tramo nunca pasa de 0 y el desglose lleva las fuentes juntas
+    ("Malherido (Manduk · Guerrero y Estabilización Autonómica)": −3 + 2 = −1). Solo el −N:
+    media velocidad y carga del umbral no cambian. Neuroprótesis 1 llega con A5.
+  - **Neurogénesis Hipocampal (usuario, 2026-10-22):** compensación automática sin casilla,
+    +1 con alcance `aplicado` (perspicacia, voluntad, expresión; el aplicado con el que se
+    tira de verdad), en su propia línea ("Neurogénesis Hipocampal (Fatigado)"). Solo sale si
+    el tramo de fatiga sigue penalizando tras especie y Estabilización, y nunca lo deja por
+    encima de 0 (Siervo Fatigado: nada; Siervo Exhausto: −1 y +1).
+  - **Cobertura (usuario, 2026-10-22):** casillas que suman para compensar la cobertura que
+    el jugador resta a mano en el circunstancial, en ataques con Combate a Distancia y en
+    Buscar/percibir. Foveo y Ojo 2-3: "Objetivo con cobertura visual" +1; Ojo 4: "Objetivo
+    con cobertura (física o visual)" +2 (sustituye a la del 2). El Ojo 1 no trae. Mismo grupo
+    `noApila` (`reduccion_cobertura`): vale la mayor. La nota recuerda que la cobertura
+    total no se reduce.
+  - **Matriz Ósea:** −1 a los penalizadores por carga solo como nota junto a la carga
+    (Personaje → Estado); la carga no está mecanizada (§5.5).
 
 ### 11.2 Lo que el documento no dice `[PENDIENTE]`
 - **Tope de implantes**: pregunta 11, sigue abierta.

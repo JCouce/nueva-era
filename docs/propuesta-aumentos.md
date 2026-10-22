@@ -212,6 +212,11 @@ aumento, coste de habilidad con las dos rebajas y la vida de Hipertrofia.
 
 ### A3 · Penalizadores (`reduce_penalizador_por_pieza`)
 
+**Decidido (usuario, 2026-10-22):** Neurogénesis como compensación automática de +1 en las
+pruebas mentales solo si hay penalizador por fatiga (nunca pasa de 0); la cobertura como
+casillas que suman +1/+2 para compensar lo que el jugador resta a mano en el circunstancial
+(no se modela la cobertura como selector), sin apilar (vale la mayor).
+
 **Qué hace**
 - `AjusteUmbrales` deja de depender solo de la especie: suma especie + aumentos (R8). Cada
   reducción baja el penalizador en 1.
@@ -226,6 +231,16 @@ aumento, coste de habilidad con las dos rebajas y la vida de Hipertrofia.
 
 **Tests:** especie + dos aumentos sobre el mismo tramo, alcance por aplicado y cobertura
 total intacta.
+
+**Construido (A3, matices):**
+- El ajuste de umbrales es un valor sumado por recurso con fuente combinada, no una lista de
+  fuentes. Neurogénesis no entra en él: va como compensación aparte (+1 con alcance
+  `aplicado`) detrás del penalizador de fatiga, para tener su línea y casar con el aplicado
+  efectivo.
+- Cobertura: el Ojo 2 trae −1 a la visual (el modelado lo pone ahí; el nivel 1 no la trae) y el
+  3 la hereda; "−2 en Ojo 2+" de arriba era impreciso. La cobertura total no se modela: lo
+  dice la nota de la casilla.
+- Matriz Ósea, solo nota en la carga (Personaje → Estado).
 
 ### A4 · Acciones propias y "una vez por escena"
 

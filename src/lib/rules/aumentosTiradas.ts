@@ -15,6 +15,8 @@
 //   - ventaja fija sin casilla (Red Frontoparietal en Iniciativa: `ventajasFijas`), que pone
 //     conExtrasDeFicha en `Accion.ventaja`;
 //   - textos por grupo o por aplicado (Asa, Consciencia, Automatismo, Red Frontoparietal).
+// Tanda A3: las casillas de cobertura (Foveo, Ojo 2-4) llegan por este mismo canal, con su
+// grupo `noApila`; las reducciones de penalizador viven en aumentos.ts.
 // Respeta operacionesActivas (una operación con requisito roto no da nada) y el nivel del
 // implante (los niveles se acumulan; el que repite clave sustituye al anterior).
 import type { DestinoTexto } from "../catalog/especies";
