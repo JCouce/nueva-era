@@ -943,8 +943,9 @@ function SeccionAumentos({ ctx }: { ctx: ContextoPagoAumento }) {
   return (
     <>
       <p className="font-sans text-[11px] leading-relaxed text-muted">
-        De momento los aumentos solo se compran y se leen: sus efectos aún no se aplican en la ficha. En
-        creación, quitarlos devuelve lo pagado; aprobada la ficha, no devuelve nada.
+        De momento solo se aplican los atributos, la vida de Hipertrofia y las rebajas de coste de
+        habilidad (con la ficha aprobada); el resto de sus efectos, todavía no. En creación, quitarlos
+        devuelve lo pagado; aprobada la ficha, no devuelve nada.
       </p>
       <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
         {`// Operaciones genéticas · ${OPERACIONES_GENETICAS.length}`}

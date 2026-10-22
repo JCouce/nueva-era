@@ -7,7 +7,7 @@
 // catálogo. Los estados (columna propia, los pone el máster) y la vida/fatiga de un
 // combate no están en la ficha, por eso entran aparte.
 import { APLICADOS, ATRIBUTOS, type AplicadoId, type AtributoId } from "./atributos";
-import { saldoBolsaAumentos } from "./aumentos";
+import { ajusteCosteDeSubida, modificadoresDeAumentos, saldoBolsaAumentos } from "./aumentos";
 import { tieneEscudoMelee, type ArmaduraNatural } from "./blindaje";
 import {
   alerta,
@@ -42,7 +42,7 @@ import {
   type MultiplicadorCarga,
 } from "./especie";
 import { bonosDeDisciplina, nivelesDePsionica, type PsionicaResuelta } from "./psionica";
-import { valoresDeRequisito, type ValoresRequisito } from "./dotes";
+import { modificadoresDeRequisito, valoresDeRequisito, type ValoresRequisito } from "./dotes";
 import {
   dotesActivas,
   efectosDeDotes,
@@ -93,7 +93,7 @@ export type FichaResuelta = {
   // Piezas que no funcionan ahora mismo, por instanciaId, con el motivo. Hueco para el
   // Shock (S73: la pieza afectada pierde su bono) y los aumentos; vacío hasta entonces.
   piezasInutilizadas: ReadonlyMap<string, string>;
-  // Especie, dotes (bonos fijos a tiradas, §9.3), equipo, estados y umbrales de
+  // Especie, dotes (bonos fijos a tiradas, §9.3), equipo, aumentos (A1), estados y umbrales de
   // salud/fatiga (§7), en ese orden (el de modificadoresActivos más los estados detrás,
   // como los sumaba Acciones).
   modificadores: ModificadorConFuente[];
@@ -147,7 +147,12 @@ export type FichaResuelta = {
   // Creación y progresión (§14.6): el ajuste de coste que reciben los puntos, la
   // compra y el coste del siguiente nivel, y la bolsa de aumentos (null si la
   // especie no la trae). En modo libre (NPC, §14.3), neutros.
+  // `ajusteCoste`: el de la especie, el del point-buy de creación (puntos gastados,
+  // excesos, compra en borrador). `ajusteCosteSubida`: con el que se paga la siguiente
+  // subida en el estado de la ficha — aprobada (XP), con las rebajas de los aumentos
+  // (A1); en borrador, igual que ajusteCoste. Lo lee el coste del "+" (Habilidades).
   ajusteCoste: AjusteCoste;
+  ajusteCosteSubida: AjusteCoste;
   // Bolsa de aumentos (Humanos): total de la especie, lo gastado (sheet) y el saldo.
   bolsaAumentos: BolsaAumentosResuelta | null;
   // Piezas sin tope de rareza por especie (kerzul del Arköru, §14.6): las recibe
@@ -157,8 +162,9 @@ export type FichaResuelta = {
   // puede pasar de 6) y paraEfectos (tope 6), y los requisitos rotos. Derivado: le
   // llega también al NPC. Poderes y bonos por nivel leen `paraEfectos`.
   psionica: PsionicaResuelta;
-  // Los valores que miran los requisitos de dotes (§9.1, dotes.ts): con la especie,
-  // sin equipo ni estados de combate. Los lee la pestaña Dotes y faltasDeDotes.
+  // Los valores que miran los requisitos de dotes (§9.1, dotes.ts): con la especie y
+  // los aumentos permanentes (§11.3), sin equipo normal ni estados de combate. Los lee
+  // la pestaña Dotes y faltasDeDotes.
   requisitosDotes: ValoresRequisito;
   // Otras áreas (§14.9, E5), derivadas: también al NPC. El peaje al pagar fatiga por un
   // poder (lo lee usarPoder; null sin el rasgo), las notas fijas de las filas de
@@ -173,7 +179,9 @@ export type FichaResuelta = {
 // bolsa de aumentos, kerzul sin rareza).
 // `estados`: los del personaje (Character.estados, también en combate) o los de la fila
 // del NPC; mueven también la vida y la fatiga máximas.
-export type OpcionesFicha = { estados: EstadoActivo[]; vitalidad: VitalidadActual; libre?: boolean };
+// `aprobada`: la ficha está aprobada (Character.status === "APPROVED") y sube con XP. Solo
+// cambia ajusteCosteSubida (rebajas de los aumentos, A1). Sin él, borrador.
+export type OpcionesFicha = { estados: EstadoActivo[]; vitalidad: VitalidadActual; libre?: boolean; aprobada?: boolean };
 
 // De dónde salen la vida y la fatiga para los umbrales (§7). Fuera de combate, las de
 // la ficha (vidaActual/fatigaActual) contra los máximos que resuelve esta misma
@@ -191,11 +199,15 @@ const reducir = (valor: number, fraccion: number) => Math.floor(valor * (1 - fra
 
 const SIN_PIEZAS_INUTILIZADAS: ReadonlyMap<string, string> = new Map();
 
-export function resolverFicha(sheet: Sheet, { estados, vitalidad, libre = false }: OpcionesFicha): FichaResuelta {
+export function resolverFicha(
+  sheet: Sheet,
+  { estados, vitalidad, libre = false, aprobada = false }: OpcionesFicha,
+): FichaResuelta {
   const especie = especieDeFicha(sheet);
   const formulaMovimiento = formulaMovimientoDeEspecie(especie);
   const multiplicadorCarga = multiplicadorCargaDeEspecie(especie);
-  const requisitosDotes = valoresDeRequisito(sheet, especie?.modificadores ?? []);
+  const deAumentos = modificadoresDeAumentos(sheet);
+  const requisitosDotes = valoresDeRequisito(sheet, modificadoresDeRequisito(sheet, especie?.modificadores ?? []));
   // Lo que ponen las dotes en las tiradas (§9.3, D2a). Sin las de requisito roto (S34);
   // en modo libre (NPC del máster) sin mirar requisitos (§9.4).
   const valoresDotes = libre ? null : requisitosDotes;
@@ -207,6 +219,7 @@ export function resolverFicha(sheet: Sheet, { estados, vitalidad, libre = false 
     ...(especie?.modificadores ?? []),
     ...dotes.modificadores,
     ...modificadoresDeEquipo(sheet),
+    ...deAumentos,
     ...modificadoresDeEstados(estados),
   ];
   // Los umbrales solo dan modificadores de tirada: no tocan los máximos de salud.
@@ -233,6 +246,7 @@ export function resolverFicha(sheet: Sheet, { estados, vitalidad, libre = false 
   const psionica = nivelesDePsionica(sheet, bonosDeDisciplina(modificadores));
   const lev = levitacion(psionica.paraEfectos);
   const carga = cargaMaxima(sheet, modificadores, multiplicadorCarga.valor);
+  const ajusteCoste = libre ? AJUSTE_NEUTRO : ajustesDeCoste(especie);
 
   return {
     ficha: sheet,
@@ -266,7 +280,8 @@ export function resolverFicha(sheet: Sheet, { estados, vitalidad, libre = false 
     extrasDotes: { bonosTramo: dotes.bonosTramo, criticos: dotes.criticos, permisos: dotes.permisos, descuentos: dotes.descuentos },
     accionesDotes: accionesDeDotes(activas),
     poderesDotes: poderesDeDotes(activas, sheet, psionica.paraEfectos),
-    ajusteCoste: libre ? AJUSTE_NEUTRO : ajustesDeCoste(especie),
+    ajusteCoste,
+    ajusteCosteSubida: libre ? AJUSTE_NEUTRO : ajusteCosteDeSubida(ajusteCoste, sheet, aprobada),
     bolsaAumentos: libre ? null : bolsaResuelta(bolsaDeAumentos(especie), sheet.bolsaAumentosGastada),
     excepcionesRareza: libre ? [] : excepcionesRareza(especie),
     psionica,

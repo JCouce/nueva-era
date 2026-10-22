@@ -19,6 +19,7 @@ import { aplicados, atributosEfectivos } from "./derivados";
 import { bonoHabilidad, type ModificadorConFuente } from "./modificadores";
 import { bonosDeDisciplina, nivelEfectivo } from "./psionica";
 import { especieDeFicha } from "./especie";
+import { modificadoresDeAumentos } from "./aumentos";
 import { PUNTOS_DOTES_POR_LETRA } from "./prioridad";
 import type { Sheet } from "./sheet";
 import { dotePorId, eleccionValida, mismaDote, type DoteComprada } from "./dotesCompradas";
@@ -48,11 +49,11 @@ function psionicaPorImplante(sheet: Sheet): boolean {
   return false;
 }
 
-// `mods`: los de la especie (con casta y linaje). Solo la especie, ni equipo ni
-// estados de combate: un requisito no debería romperse por quitarse una pieza o por
-// estar herido.
-// TODO(revisar): §9.1 dice "especie incluida"; si el equipo (exoesqueleto…) también
-// debe contar para cumplir requisitos, se añade aquí y en fichaResuelta.ts.
+// `mods`: los de modificadoresDeRequisito — especie (con casta y linaje) y aumentos
+// permanentes. Ni equipo normal ni estados de combate: un requisito no debería romperse
+// por quitarse una pieza o por estar herido. Los aumentos sí cuentan (§11.3: "el
+// aumento es parte del cuerpo, como la especie", matiza S30); el +1 temporal de un
+// activable no (R3), y por eso los activables no pasarán por modificadoresDeAumentos.
 export function valoresDeRequisito(sheet: Sheet, mods: ModificadorConFuente[]): ValoresRequisito {
   const bonos = bonosDeDisciplina(mods);
   const disciplinas = Object.fromEntries(
@@ -74,9 +75,15 @@ export function valoresDeRequisito(sheet: Sheet, mods: ModificadorConFuente[]): 
   };
 }
 
+// Lo que cuenta para los requisitos de dote: especie y aumentos permanentes (S30, §11.3).
+// `deEspecie`: los de la especie ya resuelta (resolverFicha) o los de especieDeFicha.
+export function modificadoresDeRequisito(sheet: Sheet, deEspecie: ModificadorConFuente[]): ModificadorConFuente[] {
+  return [...deEspecie, ...modificadoresDeAumentos(sheet)];
+}
+
 // Servidor (actions.ts): la misma cuenta que resolverFicha con la especie de la ficha.
 export function valoresRequisitoDeFicha(sheet: Sheet): ValoresRequisito {
-  return valoresDeRequisito(sheet, especieDeFicha(sheet)?.modificadores ?? []);
+  return valoresDeRequisito(sheet, modificadoresDeRequisito(sheet, especieDeFicha(sheet)?.modificadores ?? []));
 }
 
 // ── Requisitos ─────────────────────────────────────────────────────────

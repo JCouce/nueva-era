@@ -61,6 +61,7 @@ function etiquetaModificador(m: Modificador): string {
   if (m.tipo === "habilidad") return HABILIDADES.find((h) => h.id === m.id)!.label;
   if (m.tipo === "derivado") return ETIQUETA_DERIVADO[m.id];
   if (m.tipo === "disciplina") return disciplinaPorId(m.id).label;
+  if (m.tipo === "multiplicadorVida") return "Fortaleza en la vida";
   const a = m.alcance;
   if (a.tipo === "tiradaId") return ACCIONES.find((t) => t.id === a.id)?.label ?? a.id;
   if (a.tipo === "grupo") return a.grupo;
@@ -82,7 +83,7 @@ function ChipsModificadores({ mods }: { mods: Modificador[] }) {
             m.valor >= 0 ? "border-info text-info" : "border-danger text-danger"
           }`}
         >
-          {signo(m.valor)} {etiquetaModificador(m)}
+          {m.tipo === "multiplicadorVida" ? `×${String(m.valor).replace(".", ",")}` : signo(m.valor)} {etiquetaModificador(m)}
         </span>
       ))}
     </div>
@@ -406,7 +407,7 @@ export function DetalleConsumible({ p }: { p: Consumible }) {
   );
 }
 
-// ── Aumentos (A0, docs/sistema.md §11.3): sin efectos aplicados todavía, solo texto ──
+// ── Aumentos (docs/sistema.md §11.3): texto; los efectos que ya se aplican (A1) van por la ficha ──
 
 function Lineas({ lineas }: { lineas: string[] }) {
   return (

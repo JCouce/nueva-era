@@ -89,6 +89,9 @@ Introgresión, orden de la bolsa y migración.
 
 ### A1 · Atributos y derivados (`atributo_por_pieza`)
 
+**Decidido (usuario, 2026-10-22):** las rebajas de coste de habilidad solo valen con la
+ficha aprobada, al subir con XP. En creación (point-buy, que se recalcula entero) no cuentan.
+
 **Qué hace**
 - Cada aumento emite su `Modificador` `atributo` con origen `"aumento"`.
 - **Sin techo (R7):** los puntos de los aumentos van aparte, como los de la especie (S7). El
@@ -104,6 +107,21 @@ Introgresión, orden de la bolsa y migración.
 
 **Tests:** un atributo por encima de 6 con aumentos, un requisito de dote cumplido por un
 aumento, coste de habilidad con las dos rebajas y la vida de Hipertrofia.
+
+**Construido (2026-10-22, sin commit):** como arriba, con estos matices:
+- Los aumentos salen de `modificadoresDeEquipo` y van por `modificadoresDeAumentos`
+  (origen `"aumento"`). Los implantes acumulan niveles como el equipo; hoy ninguno da
+  modificadores permanentes (los de Neuroprótesis son activables, A5).
+- El estado de la ficha llega a `resolverFicha` con `OpcionesFicha.aprobada`. La ficha
+  tiene dos ajustes: `ajusteCoste` (especie, para el point-buy) y `ajusteCosteSubida`
+  (con las rebajas si está aprobada, para el "+"). El servidor, igual: `ajuste` y `ajusteXp`.
+- `AjusteHabilidad.delta` pasa a número: casta y aumentos se suman en un solo delta y la
+  pista dice "−2 aumentos" o "−3 casta y aumentos".
+- Hipertrofia: Modificador `multiplicadorVida` (`valor` = factor). Si un día hay dos,
+  cuenta el mayor (`TODO(revisar)` en `factorVida`).
+- `retirarPieza` (desequipar + `reconciliarVida`) en la ficha, su server action y la del
+  NPC: quitar Hipertrofia o un +1 recorta la vida actual al nuevo máximo.
+- Una operación con requisito roto no da efectos, en cadena, como una dote (usuario, 2026-10-22: `operacionesActivas`).
 
 ### A2 · Tiradas: bonos, ventajas y casillas
 

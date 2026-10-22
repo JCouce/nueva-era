@@ -9,6 +9,7 @@
 // `Combatiente` en Fase 6b (master/combate) sigue igual — esto es para fuera
 // de combate (la ficha, RecursosTab), no sustituye esa foto.
 import { modificadoresActivos, salud } from "./derivados";
+import { desequipar } from "./equipo";
 import type { Sheet } from "./sheet";
 
 // Máximos en reposo (especie + equipo), sin estados de combate: es lo que recorta
@@ -39,6 +40,14 @@ export function reconciliarVida(sheet: Sheet): Sheet {
   const fatigaActual = Math.min(sheet.fatigaActual, fatiga);
   if (vidaActual === sheet.vidaActual && fatigaActual === sheet.fatigaActual) return sheet;
   return { ...sheet, vidaActual, fatigaActual };
+}
+
+// Desequipar y recortar la vida/fatiga actuales al máximo nuevo en el mismo golpe: quitar
+// una pieza que daba vida (Hipertrofia, un +1 a Agilidad o Aguante, A1) baja el máximo y
+// la pantalla no debe ver "12/10" hasta la próxima lectura. Ponerla no sube la actual
+// (como con la especie o el equipo: curar es ajustarVida).
+export function retirarPieza(sheet: Sheet, instanciaId: string): Sheet {
+  return reconciliarVida(desequipar(sheet, instanciaId));
 }
 
 // Delta manual (+/-), clamp [0, máximo de salud()] — mismo patrón que

@@ -1,6 +1,7 @@
-// Aumentos en la ficha (docs/sistema.md §11.3, tanda A0 de docs/propuesta-aumentos.md):
-// comprar, subir de nivel, pagar con la bolsa del humano y marcar requisitos rotos.
-// Sin efectos de reglas todavía (A1-A7).
+// Aumentos en la ficha (docs/sistema.md §11.3, tandas A0 y A1 de docs/propuesta-aumentos.md):
+// comprar, subir de nivel, pagar con la bolsa del humano y marcar requisitos rotos (A0);
+// los +1 a atributos, la vida de Hipertrofia y las rebajas de coste de habilidad (A1).
+// El resto de efectos llega en A2-A7.
 //
 // Viven en sheet.equipo como cualquier pieza, pero no se compran con equipar(): las
 // operaciones piden otras operaciones, los implantes suben de nivel pagando la
@@ -10,7 +11,10 @@
 import { z } from "zod";
 import { equipoPorId } from "../catalog/equipo";
 import type { Aumento, Implante, NivelImplante, OperacionGenetica } from "../catalog/aumentos";
-import { costeDePieza, type PiezaEquipada } from "./equipo";
+import { acumulaPorClave, claveModificador, costeDePieza, nivelesHasta, type PiezaEquipada } from "./equipo";
+import { HABILIDADES, type HabilidadId } from "./habilidades";
+import type { ModificadorConFuente } from "./modificadores";
+import type { AjusteCoste, AjusteHabilidad } from "./progresion";
 import type { Sheet } from "./sheet";
 
 export type CompraAumento = { catalogoId: string; nivel?: number; eleccion?: string };
@@ -41,13 +45,36 @@ export function requisitosQueFaltan(sheet: Pick<Sheet, "equipo">, op: OperacionG
 
 export type AumentoRoto = { instanciaId: string; faltan: string[] };
 
-// Operaciones equipadas cuyo requisito se ha quitado después (igual que las dotes:
-// no se borra nada, la ficha lo marca).
+// Ids de las operaciones equipadas que funcionan: todos sus requisitos equipados y
+// funcionando, en cadena (quitar Mielinización apaga Neurogénesis y, por ella,
+// Engramática). Con el requisito roto la operación no da efectos, como una dote sin
+// su requisito (S34; usuario, 2026-10-22).
+export function operacionesActivas(sheet: Pick<Sheet, "equipo">): Set<string> {
+  const equipadas = new Set(sheet.equipo.map((p) => p.catalogoId));
+  const activas = new Set<string>();
+  let cambio = true;
+  while (cambio) {
+    cambio = false;
+    for (const id of equipadas) {
+      const cat = aumentoPorId(id);
+      if (cat?.familia !== "operacionGenetica" || activas.has(id)) continue;
+      if (cat.requisitos.every((r) => activas.has(r))) {
+        activas.add(id);
+        cambio = true;
+      }
+    }
+  }
+  return activas;
+}
+
+// Operaciones equipadas con algún requisito que falta o que tampoco funciona (igual que
+// las dotes: no se borra nada, la ficha lo marca y la operación no da efectos).
 export function aumentosConRequisitoRoto(sheet: Pick<Sheet, "equipo">): AumentoRoto[] {
+  const activas = operacionesActivas(sheet);
   return sheet.equipo.flatMap((p) => {
     const cat = aumentoPorId(p.catalogoId);
-    if (cat?.familia !== "operacionGenetica") return [];
-    const faltan = requisitosQueFaltan(sheet, cat);
+    if (cat?.familia !== "operacionGenetica" || activas.has(cat.id)) return [];
+    const faltan = cat.requisitos.filter((r) => !activas.has(r)).map((r) => aumentoPorId(r)?.label ?? r);
     return faltan.length ? [{ instanciaId: p.instanciaId, faltan }] : [];
   });
 }
@@ -231,4 +258,74 @@ export function devolucionAumento(sheet: Sheet, instanciaId: string): RepartoPag
   const precio = costeDePieza(pieza);
   const deBolsa = Math.min(precio, pieza.pagoBolsa ?? 0, sheet.bolsaAumentosGastada);
   return { deBolsa, deCreditos: precio - deBolsa };
+}
+
+// ── Efectos permanentes (A1) ───────────────────────────────────────────
+
+// Los modificadores permanentes de los aumentos equipados, con origen "aumento" y la
+// pieza como fuente: +1 a atributos básicos y el multiplicador de vida de Hipertrofia.
+// Cuentan para los atributos efectivos, los derivados y los requisitos de dote (§11.3:
+// "el aumento es parte del cuerpo, como la especie"), y no tienen techo (R7, S7): el 4
+// de creación y el 6 miran solo lo comprado. Los activables (Neuroprótesis, A5) no
+// pasan por aquí: llegarán como estado propio y no cuentan para requisitos (R3).
+// Implantes: sus niveles se acumulan como los del equipo (acumulaPorClave). Hoy ningún
+// nivel de implante trae modificadores permanentes.
+// Una operación con el requisito roto no da efectos (operacionesActivas).
+export function modificadoresDeAumentos(sheet: Pick<Sheet, "equipo">): ModificadorConFuente[] {
+  const activas = operacionesActivas(sheet);
+  return sheet.equipo.flatMap((pieza): ModificadorConFuente[] => {
+    const cat = aumentoPorId(pieza.catalogoId);
+    if (!cat) return [];
+    if (cat.familia === "operacionGenetica") {
+      if (!activas.has(cat.id)) return [];
+      return cat.modificadores.map((m) => ({ ...m, origen: "aumento" as const, fuente: cat.label }));
+    }
+    if (pieza.nivel === undefined) return [];
+    const mods = acumulaPorClave(
+      nivelesHasta(cat.niveles, pieza.nivel).map((n) => n.modificadores),
+      claveModificador,
+    );
+    return mods.map((m) => ({ ...m, origen: "aumento" as const, fuente: `${cat.label} ${pieza.nivel}` }));
+  });
+}
+
+// Rebaja de coste de habilidad (Neurogénesis, Engramática) por habilidad: la suma de
+// las operaciones equipadas, en positivo.
+function rebajasDeCoste(sheet: Pick<Sheet, "equipo">): Partial<Record<HabilidadId, number>> {
+  const rebajas: Partial<Record<HabilidadId, number>> = {};
+  const activas = operacionesActivas(sheet);
+  for (const pieza of sheet.equipo) {
+    const cat = aumentoPorId(pieza.catalogoId);
+    if (cat?.familia !== "operacionGenetica" || !cat.rebajaCosteHabilidad || !activas.has(cat.id)) continue;
+    const { habilidades, valor } = cat.rebajaCosteHabilidad;
+    const ids = habilidades === "todas" ? HABILIDADES.map((h) => h.id) : habilidades;
+    for (const id of ids) rebajas[id] = (rebajas[id] ?? 0) + valor;
+  }
+  return rebajas;
+}
+
+// El ajuste de coste para subir habilidades con XP con la ficha aprobada: el de la
+// especie (casta de Manduk) más las rebajas de los aumentos, sumados en un único delta
+// por nivel (el mínimo de 1 lo pone costeNivelHabilidad). Solo con la ficha aprobada
+// (usuario, 2026-10-22): en creación el point-buy usa el de la especie a secas. Vale
+// para lo que se compra después de tener la operación (§11.3) porque el coste se
+// calcula al comprar. Psiónica y atributos, sin tocar.
+export function ajusteCosteConAumentos(base: AjusteCoste, sheet: Pick<Sheet, "equipo">): AjusteCoste {
+  const rebajas = Object.entries(rebajasDeCoste(sheet)) as [HabilidadId, number][];
+  if (rebajas.length === 0) return base;
+  const habilidades: Partial<Record<HabilidadId, AjusteHabilidad>> = { ...base.habilidades };
+  for (const [id, rebaja] of rebajas) {
+    const previo = habilidades[id];
+    habilidades[id] = previo
+      ? { delta: previo.delta - rebaja, etiqueta: `${previo.etiqueta} y aumentos` }
+      : { delta: -rebaja, etiqueta: "aumentos" };
+  }
+  return { ...base, habilidades };
+}
+
+// El ajuste con el que se paga la siguiente subida: con la ficha aprobada (XP) lleva
+// las rebajas de los aumentos; en borrador, el de la especie solo. Lo usan el servidor
+// (setHabilidadAction) y resolverFicha (FichaResuelta.ajusteCosteSubida).
+export function ajusteCosteDeSubida(base: AjusteCoste, sheet: Pick<Sheet, "equipo">, aprobada: boolean): AjusteCoste {
+  return aprobada ? ajusteCosteConAumentos(base, sheet) : base;
 }

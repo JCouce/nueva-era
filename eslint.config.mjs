@@ -21,7 +21,8 @@ const eslintConfig = defineConfig([
   // las server actions. La pantalla decide con las funciones del borrador
   // (eleccionCompleta, eleccionesIguales, hayQueAvisar, bloqueoDeEspecie) y lee lo
   // resuelto en ficha.especie; especieDeFicha ya está vetada arriba. Los costes de
-  // especie (§14.6) también: la pantalla lee ficha.ajusteCoste / ficha.bolsaAumentos
+  // especie (§14.6) también: la pantalla lee ficha.ajusteCoste / ficha.ajusteCosteSubida
+  // (con las rebajas de los aumentos, A1) / ficha.bolsaAumentos
   // y el coste del siguiente nivel sale de costeSiguienteNivel. Los niveles de
   // disciplina (comprado/efectivo/paraEfectos, requisitos rotos) y las excepciones de
   // rareza, de ficha.psionica / ficha.excepcionesRareza. Lo que la especie pone en las
@@ -65,6 +66,11 @@ const eslintConfig = defineConfig([
               importNames: [
                 "modificadoresActivos",
                 "modificadoresDeEquipo",
+                "modificadoresDeAumentos",
+                "modificadoresDeRequisito",
+                "factorVida",
+                "ajusteCosteConAumentos",
+                "ajusteCosteDeSubida",
                 "modificadoresDeEstados",
                 "especieDeFicha",
                 "indiceDeCondiciones",

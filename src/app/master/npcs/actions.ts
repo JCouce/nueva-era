@@ -25,7 +25,7 @@ import {
   modificadoresActivos,
   removeEspecialidad,
   equipar,
-  desequipar,
+  retirarPieza,
   piezaEquipadaEntradaSchema,
   ajustarRecurso,
   comprarRecarga,
@@ -344,7 +344,7 @@ export async function comprarAumentoNpcAction(npcId: string, entrada: unknown): 
 export async function desequiparNpcAction(npcId: string, instanciaId: string): Promise<NpcResult> {
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(npcId, desequipar(ctx.sheet, instanciaId));
+  return persist(npcId, retirarPieza(ctx.sheet, instanciaId));
 }
 
 // RECURSOS: mismo criterio "libre" que el resto de la ficha del NPC — sin

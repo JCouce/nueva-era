@@ -1204,6 +1204,24 @@ al preparar su modelado:
   Recursos topa su rareza en creación**, como al resto del equipo (usuario, 2026-10-22).
   **NPC:** sin coste, pero con los mismos requisitos que un jugador (usuario, 2026-10-22).
   **Brazo 3 → 4:** se elige cualquier modelo del nivel 4 (usuario, 2026-10-22).
+- *En la app (A1, atributos y derivados):* cada operación da sus +1 como `Modificador`
+  "atributo" con origen `"aumento"` y la pieza de fuente (`modificadoresDeAumentos`,
+  `rules/aumentos.ts`), y entran en `modificadoresActivos` y en `resolverFicha` (también al
+  NPC): atributos efectivos, desglose, aplicados y derivados. **Sin techo** (R7, S7): el
+  point-buy sigue mirando `sheet.atributos`; el efectivo puede pasar de 6. **Requisitos de
+  dote:** cuentan especie + aumentos permanentes (`modificadoresDeRequisito`, `dotes.ts`),
+  ni equipo normal ni estados (S30). **Rebajas de coste** (Neurogénesis −1 en Biociencia,
+  Cultura y Tecnociencia; Engramática −1 en todas): un solo delta por habilidad, sumado a la
+  casta de Manduk, mínimo 1 por nivel, **solo con la ficha aprobada** (usuario, 2026-10-22):
+  `FichaResuelta.ajusteCosteSubida` (con `OpcionesFicha.aprobada`) para el "+" y `ajusteXp`
+  en `setHabilidadAction`; el point-buy de creación sigue con el ajuste de especie
+  (`ajusteCoste`). **Hipertrofia:** Modificador `multiplicadorVida` (×1,5) que lee `salud()`:
+  vida = 8 + ⌊Fortaleza × 1,5⌋ con Fortaleza > 0, y 8 + Fortaleza si no. Quitar un aumento
+  (o cualquier pieza) recorta la vida actual al nuevo máximo (`retirarPieza`,
+  `vitalidad.ts`); ponerlo no la sube. **Requisito roto (usuario, 2026-10-22):** una operación
+  sin todos sus requisitos funcionando no da efectos (ni atributos ni rebajas), en cadena,
+  como una dote (S34): `operacionesActivas` (`rules/aumentos.ts`). **Dos multiplicadores de
+  vida:** cuenta el mayor (supuesto; hoy solo existe Hipertrofia, que no se repite).
 
 ### 11.2 Lo que el documento no dice `[PENDIENTE]`
 - **Tope de implantes**: pregunta 11, sigue abierta.
@@ -1816,7 +1834,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S27 | **Malherido y Exhausto a la vez no se acumulan**: la velocidad se divide entre 2 una sola vez, y de las reducciones de carga se aplica **la mayor**, no la suma (Malherido + Exhausto = −25 %; Moribundo + Exhausto = −50 %). Moribundo + Exhausto sí da media velocidad (la de Exhausto). | Misma lectura que S14 llevada al otro eje: sumar dos "media velocidad" (un cuarto) o −25 % −25 % no lo dice ninguna fila de la tabla. Propuesta por defecto implementada en M1b (2026-10-13), pendiente de Murillo (pregunta 38). |
 | S28 | Las reducciones de §7 **redondean hacia abajo** (carrera 21 → 10; carga 45 × 0,75 → 33). | El documento no da redondeo. Hacia abajo es lo conservador para un penalizador. Propuesta por defecto implementada en M1b (2026-10-13), pendiente de Murillo (pregunta 39). |
 | S29 | La reducción de carga de §7 va **al final, sobre la carga ya multiplicada por la especie** (Arköru: Fuerza 4 → 96 kg, Malherido → 72, Moribundo → 48). | Los dos son porcentajes sobre el mismo número: el orden solo cambia el redondeo, pero hay que fijarlo. Propuesta por defecto implementada en M1b (2026-10-13), pendiente de Murillo (pregunta 40). |
-| S30 | Los **requisitos de dote** (§9.1, "especie incluida") miran atributos, aplicados, habilidades y disciplinas **con los modificadores de especie solamente**: ni equipo ni estados de combate ni umbrales de salud/fatiga. La habilidad cuenta entera (no la mitad fuera de especialidad) más el bono de especie; la disciplina, su nivel efectivo (Resonancia +1 del Arianyi incluida); "psiónica de origen biológico" = alguna disciplina efectiva > 0 (hueco para el implante en `psionicaPorImplante`, `dotes.ts`). `TODO(revisar)` en `dotes.ts`. | Lectura literal de §9.1: un requisito no debería romperse por quitarse una pieza o por estar herido. Tanda D1 (2026-10-15), pendiente de que el usuario confirme si el equipo debe contar. |
+| S30 | Los **requisitos de dote** (§9.1, "especie incluida") miran atributos, aplicados, habilidades y disciplinas **con los modificadores de especie solamente**: ni equipo ni estados de combate ni umbrales de salud/fatiga. La habilidad cuenta entera (no la mitad fuera de especialidad) más el bono de especie; la disciplina, su nivel efectivo (Resonancia +1 del Arianyi incluida); "psiónica de origen biológico" = alguna disciplina efectiva > 0 (hueco para el implante en `psionicaPorImplante`, `dotes.ts`). **Aumentos (§11.3, construido en A1):** sus +1 permanentes sí cuentan, como la especie; el equipo normal no; el +1 temporal de un activable tampoco (R3). | Lectura literal de §9.1: un requisito no debería romperse por quitarse una pieza o por estar herido. Tanda D1 (2026-10-15). Resuelto el TODO del equipo con §11.3: el equipo normal no cuenta, los aumentos sí. |
 | ~~S31~~ | ~~Especialidad en requisitos de dote por nombre normalizado.~~ **Cerrado (tanda ESP, 2026-10-15):** los requisitos comparan **ids** del catálogo; el generador de dotes falla si un id del borrador no es una especialidad de la habilidad del requisito (tabla de equivalencias en el script, hoy vacía). Los nombres legibles salen del catálogo (adiós a `NOMBRES_ESPECIALIDAD_DOTES`). | — |
 | S32 | **Ficha aprobada: ninguna dote se vende**, ni las de la foto de aprobación ni las compradas después con XP (mismo criterio que atributos, habilidades y disciplinas aprobados, que solo suben). La foto (`approvedSnapshot.dotes`, opcional para no invalidar las fotos viejas) dice cuáles venían de creación. `TODO(revisar)` en `dotes.ts` (`motivoNoQuitable`). | El usuario fijó "una dote de la foto no se quita"; para las compradas con XP no dijo nada, y quitarlas sin devolver XP pierde XP y devolviéndola es vender. Lo conservador: nada. Tanda D1 (2026-10-15). |
 | S33 | **Lectura tolerante de `sheet.dotes`**: una entrada sin la elección que su dote exige, o con una fuera de la lista cerrada, **se descarta entera** (no se queda la dote sin elección); una elección abierta se recorta a 60 caracteres; a una dote sin elección se le quita la que traiga. | "Descartar elecciones que no encajan" (encargo D1) leído como descartar la compra: una *Especialidad Médica* sin pareja no significa nada. Ninguna ficha tiene dotes todavía, así que no se pierde nada real. Tanda D1 (2026-10-15). |

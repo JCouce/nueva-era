@@ -3,7 +3,17 @@ import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
 import { desequipar, equipar, costeDeRetirar, costeDePieza, rarezaDePieza, type PiezaEquipada } from "./equipo";
 import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { modificadoresDeEquipo } from "./equipo";
+import { puntosAtributosGastados, puntosHabilidadesGastados } from "./creacion";
+import { cumpleRequisitoDote, valoresRequisitoDeFicha } from "./dotes";
+import { AJUSTE_NEUTRO, costeSiguienteNivel, costeSubidaXp } from "./progresion";
+import { retirarPieza } from "./vitalidad";
+import type { EstadoActivo } from "./estados";
+import type { RequisitoDote } from "../catalog/dotesTipos";
 import {
+  ajusteCosteDeSubida,
+  modificadoresDeAumentos,
+  ajusteCosteConAumentos,
   aumentosConRequisitoRoto,
   comprarAumento,
   devolucionAumento,
@@ -76,6 +86,22 @@ describe("requisitos de las operaciones", () => {
     const sin = desequipar(s, mielina.instanciaId);
     assert.deepEqual(aumentosConRequisitoRoto(sin), [{ instanciaId: neuro.instanciaId, faltan: ["Mielinización Central"] }]);
     assert.ok(sin.equipo.some((p) => p.catalogoId === NEUROGENESIS));
+  });
+
+  test("con el requisito roto la operación no da efectos, en cadena (como una dote, S34)", () => {
+    let s = compra(defaultSheet(), { catalogoId: MIELINIZACION });
+    s = compra(s, { catalogoId: NEUROGENESIS });
+    s = compra(s, { catalogoId: ENGRAMATICA });
+    const intel = (sh: Sheet) => modificadoresDeAumentos(sh).filter((m) => m.tipo === "atributo" && m.id === "inteligencia").length;
+    assert.equal(intel(s), 3);
+    const sin = desequipar(s, s.equipo.find((p) => p.catalogoId === MIELINIZACION)!.instanciaId);
+    // Neurogénesis pierde su requisito y Engramática, por ella, también se apaga.
+    assert.equal(intel(sin), 0);
+    assert.deepEqual(
+      aumentosConRequisitoRoto(sin).map((r) => r.faltan),
+      [["Mielinización Central"], ["Neurogénesis Hipocampal"]],
+    );
+    assert.deepEqual(ajusteCosteConAumentos(AJUSTE_NEUTRO, sin), AJUSTE_NEUTRO);
   });
 });
 
@@ -228,5 +254,173 @@ describe("equipar() no compra aumentos", () => {
     const pieza: PiezaEquipada = { instanciaId: "x", catalogoId: MIELINIZACION };
     const s = defaultSheet();
     assert.equal(equipar(s, pieza), s);
+  });
+});
+
+// ── A1: atributos, requisitos, coste de habilidad y vida ─────────────────────
+
+const HIPERTROFIA = "aum_hipertrofia_miofibrilar"; // +1 Fuerza, vida con Fortaleza × 1,5; pide Matriz Ósea y Osteotendinosa
+const SINCRONIZACION = "aum_sincronizacion_neuromotora_profunda"; // +1 Fuerza y Agilidad, pide Osteotendinosa
+const OSTEOTENDINOSA = "aum_integridad_osteotendinosa"; // +1 Fuerza y Agilidad, sin requisitos
+const MATRIZ_OSEA = "aum_matriz_osea_adaptativa"; // +1 Fuerza y Aguante, sin requisitos
+
+const resuelta = (s: Sheet, aprobada = false, estados: EstadoActivo[] = []) =>
+  resolverFicha(s, { estados, vitalidad: VITALIDAD_DE_FICHA, aprobada });
+const conAtributos = (s: Sheet, atr: Partial<Sheet["atributos"]>): Sheet => ({ ...s, atributos: { ...s.atributos, ...atr } });
+const comprarVarias = (s: Sheet, ids: string[]) => ids.reduce((acc, id) => compra(acc, { catalogoId: id }), s);
+
+describe("A1: +1 a atributos desde los aumentos", () => {
+  test("modificadoresDeAumentos: origen aumento y la pieza como fuente", () => {
+    const s = compra(defaultSheet(), { catalogoId: OSTEOTENDINOSA });
+    assert.deepEqual(modificadoresDeAumentos(s), [
+      { tipo: "atributo", id: "fuerza", valor: 1, origen: "aumento", fuente: "Integridad Osteotendinosa" },
+      { tipo: "atributo", id: "agilidad", valor: 1, origen: "aumento", fuente: "Integridad Osteotendinosa" },
+    ]);
+  });
+
+  test("sin techo: el efectivo pasa de 6 y el point-buy solo mira lo comprado", () => {
+    const base = conAtributos(defaultSheet(), { fuerza: 4 });
+    const gastadosAntes = puntosAtributosGastados(base);
+    const s = comprarVarias(base, [OSTEOTENDINOSA, MATRIZ_OSEA, SINCRONIZACION]);
+    assert.equal(puntosAtributosGastados(s), gastadosAntes);
+    const f = resuelta(conAtributos(s, { fuerza: 6 }));
+    assert.equal(f.atributos.fuerza, 9);
+    assert.equal(f.ficha.atributos.fuerza, 6);
+  });
+
+  test("el desglose del atributo lleva cada aumento con su nombre", () => {
+    const s = comprarVarias(conAtributos(defaultSheet(), { fuerza: 2 }), [OSTEOTENDINOSA, SINCRONIZACION]);
+    assert.deepEqual(resuelta(s).desgloses.atributos.fuerza, {
+      total: 4,
+      fuentes: [
+        { etiqueta: "Base", valor: 2 },
+        { etiqueta: "Integridad Osteotendinosa", valor: 1 },
+        { etiqueta: "Sincronización Neuromotora Profunda", valor: 1 },
+      ],
+    });
+    assert.ok(resuelta(s).modificadores.some((m) => m.origen === "aumento" && m.fuente === "Integridad Osteotendinosa"));
+  });
+
+  test("los aumentos ya no salen como equipo", () => {
+    const s = compra(defaultSheet(), { catalogoId: OSTEOTENDINOSA });
+    assert.deepEqual(modificadoresDeEquipo(s), []);
+  });
+
+  test("NPC (modo libre): sus aumentos dan los atributos igual", () => {
+    const res = comprarAumento(defaultSheet(), { catalogoId: MIELINIZACION }, { libre: true, instanciaId: "npc1" });
+    assert.ok(res.ok);
+    const f = resolverFicha(res.sheet, { estados: [], vitalidad: VITALIDAD_DE_FICHA, libre: true });
+    assert.equal(f.atributos.inteligencia, 1);
+  });
+});
+
+describe("A1: requisitos de dote con aumentos", () => {
+  const INT_1: RequisitoDote = { tipo: "atributo", id: "inteligencia", min: 1 };
+  const FUE_1: RequisitoDote = { tipo: "atributo", id: "fuerza", min: 1 };
+
+  test("un +1 de aumento cumple el requisito, en servidor y en la ficha", () => {
+    const s = defaultSheet();
+    assert.equal(cumpleRequisitoDote(INT_1, valoresRequisitoDeFicha(s), []), false);
+    const con = compra(s, { catalogoId: MIELINIZACION });
+    assert.equal(cumpleRequisitoDote(INT_1, valoresRequisitoDeFicha(con), []), true);
+    assert.equal(resuelta(con).requisitosDotes.atributos.inteligencia, 1);
+  });
+
+  test("ni el equipo normal (exoesqueleto) ni los estados cuentan", () => {
+    const exo = equipar(defaultSheet(), { instanciaId: "exo", catalogoId: "exoesqueleto", nivel: 2 });
+    assert.equal(cumpleRequisitoDote(FUE_1, valoresRequisitoDeFicha(exo), []), false);
+    const enfermo: EstadoActivo = { estadoId: "enfermedad", gradoId: "nivel_1", rondasRestantes: null };
+    const s = compra(defaultSheet(), { catalogoId: OSTEOTENDINOSA });
+    const f = resuelta(s, false, [enfermo]);
+    assert.equal(f.atributos.fuerza, 0); // +1 del aumento, −1 de la enfermedad
+    assert.equal(f.requisitosDotes.atributos.fuerza, 1);
+  });
+});
+
+describe("A1: rebajas de coste de habilidad (solo aprobada)", () => {
+  const manduk = (casta: string): Sheet => ({ ...defaultSheet(), especieId: "manduk", especieOpciones: { casta } });
+  const cerebro = (s: Sheet) => comprarVarias(s, [MIELINIZACION, NEUROGENESIS, ENGRAMATICA]);
+  const costeBio = (f: ReturnType<typeof resuelta>, valor: number) =>
+    costeSiguienteNivel({ tipo: "habilidad", id: "biociencia" }, valor, f.ajusteCosteSubida);
+
+  test("aprobada: Neurogénesis + Engramática rebajan 2 en Biociencia, mínimo 1", () => {
+    const s = cerebro(defaultSheet());
+    assert.deepEqual(costeBio(resuelta(s, true), 1), { nivel: 2, coste: 1, pista: "−2 aumentos" }); // 2 − 2 → mínimo 1
+    assert.deepEqual(costeBio(resuelta(s, true), 3), { nivel: 4, coste: 2, pista: "−2 aumentos" });
+    // Engramática vale para todas; Neurogénesis solo para sus tres.
+    assert.equal(costeSiguienteNivel({ tipo: "habilidad", id: "atletismo" }, 3, resuelta(s, true).ajusteCosteSubida).coste, 3);
+  });
+
+  test("aprobada: se suman a la casta de Manduk (Sabio −1, Guerrero +1)", () => {
+    assert.deepEqual(costeBio(resuelta(cerebro(manduk("sabio")), true), 4), { nivel: 5, coste: 2, pista: "−3 casta y aumentos" });
+    assert.deepEqual(costeBio(resuelta(cerebro(manduk("guerrero")), true), 4), { nivel: 5, coste: 4, pista: "−1 casta y aumentos" });
+  });
+
+  test("en borrador no hay rebaja: el point-buy y el coste del + usan solo la especie", () => {
+    const s = cerebro(manduk("sabio"));
+    const f = resuelta(s);
+    assert.deepEqual(f.ajusteCosteSubida, f.ajusteCoste);
+    assert.deepEqual(costeBio(f, 4), { nivel: 5, coste: 4, pista: "−1 casta" });
+    const conBio = { ...s, habilidades: { ...s.habilidades, biociencia: { valor: 3, especialidades: [] } } };
+    assert.equal(puntosHabilidadesGastados(conBio, resuelta(conBio, true).ajusteCoste), 1 + 1 + 2);
+  });
+
+  test("XP del servidor: el ajuste de subida con aumentos cobra la rebaja", () => {
+    const s = cerebro(defaultSheet());
+    const ajuste = ajusteCosteDeSubida(AJUSTE_NEUTRO, s, true);
+    assert.equal(costeSubidaXp({ tipo: "habilidad", id: "biociencia" }, 2, 4, ajuste), 1 + 2);
+    assert.equal(costeSubidaXp({ tipo: "habilidad", id: "biociencia" }, 2, 4, ajusteCosteDeSubida(AJUSTE_NEUTRO, s, false)), 3 + 4);
+  });
+});
+
+describe("A1: Hipertrofia Miofibrilar", () => {
+  // Fortaleza = ⌈(Fuerza + Aguante) / 2⌉. Hipertrofia va con sus requisitos (sin ellos no
+  // da efectos): Osteotendinosa, Matriz Ósea e Hipertrofia suman Fuerza +3 y Aguante +1.
+  const conRequisitos = (s: Sheet): Sheet => ({
+    ...s,
+    equipo: [
+      { instanciaId: "o", catalogoId: OSTEOTENDINOSA },
+      { instanciaId: "m", catalogoId: MATRIZ_OSEA },
+      { instanciaId: "h", catalogoId: HIPERTROFIA },
+    ],
+  });
+  const vida = (fuerza: number, aguante: number) =>
+    resuelta(conRequisitos(conAtributos(defaultSheet(), { fuerza, aguante }))).salud.vida;
+
+  test("Fortaleza positiva par: × 1,5", () => {
+    assert.equal(vida(1, 3), 8 + 6); // Fue 4, Agu 4 → For 4 → 6
+  });
+
+  test("Fortaleza impar: × 1,5 redondeado hacia abajo", () => {
+    assert.equal(vida(0, 2), 8 + 4); // Fue 3, Agu 3 → For 3 → 4,5 → 4
+    assert.equal(vida(-1, -1), 8 + 1); // Fue 2, Agu 0 → For 1 → 1,5 → 1
+  });
+
+  test("sin sus requisitos no multiplica (requisito roto)", () => {
+    const sola: Sheet = { ...conAtributos(defaultSheet(), { fuerza: 3, aguante: 4 }), equipo: [{ instanciaId: "h", catalogoId: HIPERTROFIA }] };
+    assert.equal(resuelta(sola).salud.vida, 8 + 4); // Fue 3, Agu 4 → For 4, sin × 1,5 ni +1
+  });
+
+  test("Fortaleza 0 o negativa: no se multiplica", () => {
+    const muyDebil: EstadoActivo = { estadoId: "enfermedad", gradoId: "nivel_3", rondasRestantes: null };
+    const s = conRequisitos(conAtributos(defaultSheet(), { fuerza: -1, aguante: -1 }));
+    const f = resuelta(s, false, [muyDebil]); // Fue 2 − 3, Agu 0 − 3 → For ⌈−2⌉ = −2
+    assert.equal(f.aplicados.fortaleza, -2);
+    assert.equal(f.salud.vida, 8 - 2);
+  });
+
+  test("quitarla recorta la vida actual al máximo nuevo; ponerla no la sube", () => {
+    // Con sus requisitos (Osteotendinosa y Matriz Ósea): Fue 1+2 = 3, Agu 3+1 = 4 → For 4 → 12.
+    const base = comprarVarias(conAtributos(defaultSheet(), { fuerza: 1, aguante: 3 }), [OSTEOTENDINOSA, MATRIZ_OSEA]);
+    assert.equal(resuelta(base).salud.vida, 12);
+    const s = compra(base, { catalogoId: HIPERTROFIA }); // Fue 4 → For 4 → 8 + 6 = 14
+    assert.equal(resuelta(s).salud.vida, 14);
+    const llena = { ...s, vidaActual: 14 };
+    const pieza = llena.equipo.find((p) => p.catalogoId === HIPERTROFIA)!;
+    const sin = retirarPieza(llena, pieza.instanciaId);
+    assert.equal(resuelta(sin).salud.vida, 12);
+    assert.equal(sin.vidaActual, 12);
+    assert.equal(retirarPieza({ ...s, vidaActual: 5 }, pieza.instanciaId).vidaActual, 5);
+    assert.equal(compra({ ...base, vidaActual: 12 }, { catalogoId: HIPERTROFIA }).vidaActual, 12);
   });
 });

@@ -14,11 +14,14 @@ import { HABILIDAD_MIN_ENTRENADA, type HabilidadId } from "./habilidades";
 import type { DisciplinaId } from "../catalog/psionica";
 import { costeMarginal, COSTE_FACTOR_ATRIBUTO, COSTE_FACTOR_HABILIDAD, COSTE_FACTOR_PSIONICA } from "./prioridad";
 
-// `etiqueta`: la palabra corta de la pista ("casta", "arianyi", "Maolher").
-export type AjusteHabilidad = { delta: -1 | 1; etiqueta: string };
+// `etiqueta`: la palabra corta de la pista ("casta", "arianyi", "Maolher"; "aumentos" o
+// "casta y aumentos" con las rebajas de los aumentos, A1). `delta`: la suma de todo lo
+// que toca esa habilidad (casta ±1, cada aumento −1); el coste nunca baja de 1.
+export type AjusteHabilidad = { delta: number; etiqueta: string };
 
 export type AjusteCoste = {
-  // Casta de Manduk: −1 (mínimo 1) o +1 al coste de cada nivel de esa habilidad.
+  // Casta de Manduk: −1 (mínimo 1) o +1 al coste de cada nivel de esa habilidad. Con la
+  // ficha aprobada se suman las rebajas de los aumentos (ajusteCosteConAumentos).
   habilidades: Partial<Record<HabilidadId, AjusteHabilidad>>;
   // Arianyi: el nivel 1 de cada disciplina cuesta esto en vez de 3.
   psionicaNivel1: { coste: number; etiqueta: string } | null;
@@ -72,7 +75,7 @@ export function costeSubidaXp(
   return total;
 }
 
-const signo = (n: number) => (n > 0 ? `+${n}` : `−${-n}`);
+const signo = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : "±0");
 
 function pista(rasgo: RasgoProgresion, nivel: number, ajuste: AjusteCoste): string | null {
   switch (rasgo.tipo) {

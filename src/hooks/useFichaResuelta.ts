@@ -14,14 +14,15 @@ export const SIN_ESTADOS: EstadoActivo[] = [];
 // `vitalidad`: de dónde salen la vida/fatiga de los umbrales (VITALIDAD_DE_FICHA fuera
 // de combate, la fila del combatiente dentro). Referencia estable: memorizarla fuera.
 // `libre`: editor de NPC (sin costes de creación ni bolsa de aumentos, §14.3).
+// `aprobada`: ficha aprobada, sube con XP (las rebajas de coste de los aumentos, A1).
 export function useFichaResuelta(
   sheet: Sheet,
   estados: EstadoActivo[],
   vitalidad: VitalidadActual,
-  { libre = false }: { libre?: boolean } = {},
+  { libre = false, aprobada = false }: { libre?: boolean; aprobada?: boolean } = {},
 ): FichaResuelta {
   return useMemo(
-    () => resolverFicha(sheet, { estados, vitalidad, libre }),
-    [sheet, estados, vitalidad, libre],
+    () => resolverFicha(sheet, { estados, vitalidad, libre, aprobada }),
+    [sheet, estados, vitalidad, libre, aprobada],
   );
 }

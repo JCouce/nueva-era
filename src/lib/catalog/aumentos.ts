@@ -8,10 +8,14 @@
 // para la card cerrada. aumentos.test.ts cruza ids, costes, rarezas, requisitos y
 // niveles contra el JSON: si el modelado cambia, el test lo dice.
 //
-// Tanda A0 (docs/propuesta-aumentos.md §2): se compran, se ven y se pagan; NINGÚN
-// efecto de reglas está aplicado todavía. Por eso `modificadores` va vacío en todas y
-// cada MotorMetadata está "pendiente" o "bloqueado" (salvo las frases puramente
-// narrativas, que ya se ven en la card). A1-A7 los irán construyendo.
+// Tanda A0 (docs/propuesta-aumentos.md §2): se compran, se ven y se pagan.
+// Tanda A1: los +1 permanentes a atributos básicos (`modificadores` con tipo
+// "atributo", origen "aumento" vía modificadoresDeAumentos en rules/aumentos.ts), la
+// vida de Hipertrofia (Modificador "multiplicadorVida", que lee salud()) y las rebajas
+// de coste de habilidad (`rebajaCosteHabilidad`, solo con la ficha aprobada:
+// ajusteCosteConAumentos). Esos efectos llevan su MotorMetadata en "construido"; el
+// resto sigue "pendiente" o "bloqueado" (salvo las frases puramente narrativas, que
+// ya se ven en la card) hasta A2-A7.
 //
 // MotorMetadata: copiado del modelado. Donde el modelado dice `mecanismo: "hueco"`
 // (aún no hay mecanismo en el motor), se pone el mecanismo más cercano por tipo
@@ -19,7 +23,11 @@
 // sustitucion_aplicado; ventaja en un grupo → siempre_activo; el resto, que alimenta
 // un derivado o un atributo → suma_derivado) y se conservan estado y bloqueoPor.
 // TODO(revisar): esa traducción de "hueco" es provisional; cada tanda A1-A7 debe
-// confirmar el mecanismo real al construir su capa.
+// confirmar el mecanismo real al construir su capa. A1 ya lo resolvió para los
+// efectos `atributo` (suma_derivado: Modificador "atributo"), `coste_habilidad`
+// (sin acción: ajuste de coste de progresión) y `formula_salud` (suma_derivado:
+// Modificador "multiplicadorVida" sobre la vida).
+import type { HabilidadId } from "../rules/habilidades";
 import type { Modificador } from "../rules/modificadores";
 import type { MotorMetadata } from "../rules/motor";
 import type { NivelModulo, Rareza } from "./equipo";
@@ -41,6 +49,10 @@ export type OperacionGenetica = {
   eleccion: EleccionAumento | null;
   // Solo Introgresión: se vuelve a comprar con otra elección, nunca la misma.
   repetible: boolean;
+  // Neurogénesis y Engramática (A1): −valor al coste de cada nivel de esas habilidades
+  // (mínimo 1), solo al subir con XP con la ficha aprobada (usuario, 2026-10-22).
+  rebajaCosteHabilidad?: { habilidades: HabilidadId[] | "todas"; valor: number };
+  // Solo efectos permanentes (A1: +1 a atributos básicos y multiplicadorVida).
   modificadores: Modificador[];
   motor: MotorMetadata[];
 };
@@ -81,9 +93,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: [],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "inteligencia", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
     ],
   },
@@ -102,11 +114,12 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: ["aum_mielinizacion_central"],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    rebajaCosteHabilidad: { habilidades: ["biociencia", "cultura", "tecnociencia"], valor: 1 },
+    modificadores: [{ tipo: "atributo", id: "inteligencia", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "suma_derivado", estado: "pendiente" },
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
     ],
   },
   {
@@ -124,11 +137,12 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: ["aum_neurogenesis_hipocampal"],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    rebajaCosteHabilidad: { habilidades: "todas", valor: 1 },
+    modificadores: [{ tipo: "atributo", id: "inteligencia", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
     ],
   },
   {
@@ -146,9 +160,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: ["aum_mielinizacion_central"],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "inteligencia", valor: 1 }, { tipo: "atributo", id: "caracter", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Iniciativa" }, mecanismo: "siempre_activo", estado: "pendiente" },
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_accion_combinada" }, mecanismo: "accion_equipo", estado: "pendiente" },
     ],
@@ -168,9 +182,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: ["aum_mielinizacion_central"],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "percepcion", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
     ],
@@ -189,9 +203,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: [],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "percepcion", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
     ],
@@ -210,9 +224,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: ["aum_optimizacion_foveo_sensorial"],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "percepcion", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
     ],
@@ -231,9 +245,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: ["aum_optimizacion_foveo_sensorial", "aum_prefrontal_aumentada"],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "percepcion", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee_<instancia>" }, mecanismo: "nota_fija", estado: "pendiente" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
     ],
@@ -292,9 +306,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: [],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "caracter", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
     ],
   },
@@ -313,9 +327,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: ["aum_regulacion_limbico_prefrontal"],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "caracter", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "social" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_estado_propio + reduce_penalizador_por_pieza" },
     ],
@@ -336,9 +350,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: ["aum_proyeccion_neuro_expresiva"],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "caracter", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Salvaciones" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "nota_fija", estado: "pendiente" },
@@ -360,9 +374,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: [],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "fuerza", valor: 1 }, { tipo: "atributo", id: "agilidad", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "pendiente" },
     ],
   },
@@ -380,9 +394,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: [],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "fuerza", valor: 1 }, { tipo: "atributo", id: "aguante", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "acciones_fisicas_carga" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "penalizadores por carga sin mecanizar (sistema.md §5.5)" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "pendiente" },
     ],
@@ -401,10 +415,10 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: ["aum_matriz_osea_adaptativa", "aum_integridad_osteotendinosa"],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "fuerza", valor: 1 }, { tipo: "multiplicadorVida", valor: 1.5 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "derivado:vida" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "derivado:vida" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ficha" }, mecanismo: "nota_fija", estado: "pendiente" },
     ],
   },
@@ -422,9 +436,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: ["aum_integridad_osteotendinosa"],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "fuerza", valor: 1 }, { tipo: "atributo", id: "agilidad", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:potencia" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
     ],
   },
@@ -442,9 +456,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: [],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "agilidad", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "nota_fija", estado: "pendiente" },
     ],
   },
@@ -462,9 +476,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: ["aum_hiperdensidad_propioceptiva", "aum_integridad_osteotendinosa"],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "agilidad", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "nota_fija", estado: "pendiente" },
     ],
@@ -502,9 +516,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: [],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "aguante", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
     ],
@@ -524,9 +538,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: ["aum_matriz_osea_adaptativa", "aum_biogenesis_mitocondrial"],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "aguante", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_cortar_hemorragia" }, mecanismo: "accion_equipo", estado: "pendiente" },
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_cortar_exanguinante" }, mecanismo: "accion_equipo", estado: "pendiente" },
@@ -546,9 +560,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     requisitos: ["aum_angiogenesis_sistemica"],
     eleccion: null,
     repetible: false,
-    modificadores: [],
+    modificadores: [{ tipo: "atributo", id: "aguante", valor: 1 }],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
     ],
   },

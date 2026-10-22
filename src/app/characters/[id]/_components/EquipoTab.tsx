@@ -104,7 +104,7 @@ function SeccionAumentos({ sheet, onDesequipar }: { sheet: Sheet; onDesequipar: 
     <>
       <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{`// Aumentos · ${aumentos.length}`}</p>
       <p className="font-sans text-[11px] leading-relaxed text-muted">
-        Sus efectos aún no se aplican en la ficha. En creación, quitar un aumento devuelve lo pagado (bolsa y créditos); aprobada la ficha, no devuelve nada.
+        De momento solo se aplican los atributos, la vida de Hipertrofia y las rebajas de coste de habilidad (con la ficha aprobada); el resto de sus efectos, todavía no. En creación, quitar un aumento devuelve lo pagado (bolsa y créditos); aprobada la ficha, no devuelve nada.
       </p>
       {aumentos.map((a) => {
         const cat = aumentoPorId(a.catalogoId);

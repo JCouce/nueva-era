@@ -135,7 +135,12 @@ export type Modificador =
   // Nivel de una disciplina psiónica (Resonancia +1 del Arianyi, §14.6). No toca
   // ninguna tirada: sube el nivel efectivo, que es el que miran requisitos y
   // poderes (psionica.ts: nivelesDePsionica). Ver docs/modificadores-tiradas.md §9.
-  | { tipo: "disciplina"; id: DisciplinaId; valor: number };
+  | { tipo: "disciplina"; id: DisciplinaId; valor: number }
+  // Multiplica la Fortaleza en la fórmula de la vida (Hipertrofia Miofibrilar, A1,
+  // §11.3): vida = 8 + ⌊Fortaleza × factor⌋ si Fortaleza > 0; con 0 o menos no se
+  // multiplica. Lo lee salud() (derivados.ts); no toca ninguna tirada. `valor` es el
+  // factor (1,5), no un sumando: no lo suma ningún bono*.
+  | { tipo: "multiplicadorVida"; valor: number };
 
 export type OrigenModificador =
   | "especie"
@@ -179,6 +184,13 @@ export function bonoHabilidad(
     (t, m) => (m.tipo === "habilidad" && m.id === id ? t + m.valor : t),
     0,
   );
+}
+
+// El factor de la vida (Hipertrofia). Una sola pieza lo da hoy; si llegaran dos, cuenta
+// el mayor en vez de encadenarlos.
+// Ningún documento lo dice; el usuario lo dejó así (2026-10-22).
+export function factorVida(mods: ModificadorConFuente[]): number {
+  return mods.reduce((f, m) => (m.tipo === "multiplicadorVida" ? Math.max(f, m.valor) : f), 1);
 }
 
 export function bonoDisciplina(

@@ -1491,7 +1491,12 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
   `rules/aumentos.ts` (`comprarAumento`, `aumentosConRequisitoRoto`), ficha v18
   (`PiezaEquipada.eleccion`, `bolsaAumentosGastada`), chip "Aumentos" en Tienda y en Equipo,
   `comprarAumentoAction` y `comprarAumentoNpcAction`.
-- [ ] A1 · Atributos y derivados.
+- [x] A1 · Atributos y derivados. *(sin commit; falta revisión y navegador)*
+  `modificadoresDeAumentos` (+1 con origen "aumento", sin techo), requisitos de dote con
+  aumentos (`modificadoresDeRequisito`), `rebajaCosteHabilidad` solo aprobada
+  (`FichaResuelta.ajusteCosteSubida`, `ajusteXp` en el servidor), Hipertrofia
+  (Modificador `multiplicadorVida` en `salud()`) y `retirarPieza` (recorta la vida al
+  desequipar).
 - [ ] A2 · Tiradas: bonos, ventajas y casillas.
 - [ ] A3 · Penalizadores.
 - [ ] A4 · Acciones propias y "una vez por escena".

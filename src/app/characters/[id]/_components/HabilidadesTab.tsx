@@ -158,12 +158,13 @@ export function HabilidadesTab({
         const { valor, especialidades } = sheet.habilidades[h.id];
         const entrenada = valor >= HABILIDAD_MIN_ENTRENADA;
         // Coste del siguiente punto: Nivel × 1, con el ajuste de casta si lo hay
-        // (docs/sistema.md §2.5 y §14.6). Puntos en creación, XP aprobada.
+        // (docs/sistema.md §2.5 y §14.6) y, aprobada, las rebajas de los aumentos (A1).
+        // Puntos en creación, XP aprobada.
         const {
           nivel: siguiente,
           coste: costeSiguiente,
           pista,
-        } = costeSiguienteNivel({ tipo: "habilidad", id: h.id }, valor, ficha.ajusteCoste);
+        } = costeSiguienteNivel({ tipo: "habilidad", id: h.id }, valor, ficha.ajusteCosteSubida);
         const conLista = admiteEspecialidades(h.id);
         const fuera = entrenada ? Math.ceil(valor / 2) : HABILIDAD_NO_ENTRENADA;
 

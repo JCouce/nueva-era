@@ -66,7 +66,8 @@ export function acumulaPorClave<T>(porNivel: T[][], claveDe: (item: T) => string
   return [...mapa.values()];
 }
 
-function claveModificador(m: Modificador): string {
+export function claveModificador(m: Modificador): string {
+  if (m.tipo === "multiplicadorVida") return m.tipo;
   return m.tipo === "tirada" ? `tirada:${JSON.stringify(m.alcance)}` : `${m.tipo}:${m.id}`;
 }
 
@@ -564,14 +565,14 @@ export function pesoEquipado(sheet: Sheet): number {
 export function modificadoresDeEquipo(sheet: Sheet): ModificadorConFuente[] {
   return sheet.equipo.flatMap((pieza): ModificadorConFuente[] => {
     const cat = equipoPorId(pieza.catalogoId);
-    if (!cat) return [];
+    // Los aumentos dan los suyos con origen "aumento" (modificadoresDeAumentos, aumentos.ts).
+    if (!cat || cat.familia === "operacionGenetica" || cat.familia === "implante") return [];
 
     if (
       cat.familia === "armadura" ||
       cat.familia === "arma" ||
       cat.familia === "consumible" ||
-      cat.familia === "armaPesada" ||
-      cat.familia === "operacionGenetica"
+      cat.familia === "armaPesada"
     ) {
       return cat.modificadores.map((m) => ({ ...m, origen: "equipo" as const, fuente: cat.label }));
     }

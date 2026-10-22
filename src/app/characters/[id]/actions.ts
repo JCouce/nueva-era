@@ -20,7 +20,7 @@ import {
   descartarAvisoEspecialidades,
   resetBuild,
   equipar,
-  desequipar,
+  retirarPieza,
   costeDePieza,
   costeDeRetirar,
   rarezaDePieza,
@@ -94,6 +94,7 @@ import {
   compraAumentoSchema,
   comprarAumento,
   devolucionAumento,
+  ajusteCosteDeSubida,
   aumentoPorId,
   bolsaDeAumentos,
   nuevaInstanciaId,
@@ -106,8 +107,12 @@ export type SaveResult =
 type Editable = {
   sheet: Sheet;
   // Ajuste de coste de la especie (§14.6), resuelto aquí con la ficha de la base:
-  // el mismo que calcula resolverFicha en la pantalla.
+  // el mismo que calcula resolverFicha en la pantalla (ficha.ajusteCoste). Es el del
+  // point-buy de creación.
   ajuste: AjusteCoste;
+  // El de subir con XP (aprobada): el de la especie más las rebajas de coste de
+  // habilidad de los aumentos (A1). Igual que ficha.ajusteCosteSubida.
+  ajusteXp: AjusteCoste;
   // Bonos de nivel de disciplina (Resonancia +1, §14.6): los requisitos miran el
   // nivel efectivo. Los mismos que FichaResuelta.psionica.bonos.
   bonosDisciplina: BonosDisciplina;
@@ -141,9 +146,11 @@ async function loadEditable(characterId: string): Promise<Editable | { error: st
     return { error: "La ficha está en revisión: retírala para seguir editando" };
   }
   const sheet = parseSheet(character.stats);
+  const ajuste = ajustesDeCoste(especieDeFicha(sheet));
   return {
     sheet,
-    ajuste: ajustesDeCoste(especieDeFicha(sheet)),
+    ajuste,
+    ajusteXp: ajusteCosteDeSubida(ajuste, sheet, true),
     bonosDisciplina: bonosDeDisciplina(modificadoresActivos(sheet)),
     estado: character.status,
     aprobada: character.status === "APPROVED",
@@ -215,7 +222,7 @@ export async function setHabilidadAction(
   const objetivo = Math.max(actual, Math.min(HABILIDAD_MAX, Math.round(value)));
   if (objetivo === actual) return { ok: true, sheet: ctx.sheet, xp: ctx.xp };
 
-  const coste = costeSubidaXp({ tipo: "habilidad", id: habilidadId }, actual, objetivo, ctx.ajuste);
+  const coste = costeSubidaXp({ tipo: "habilidad", id: habilidadId }, actual, objetivo, ctx.ajusteXp);
   if (coste > ctx.xp) return { ok: false, error: "No tienes XP suficiente" };
 
   const sheet: Sheet = {
@@ -473,7 +480,8 @@ export async function desequiparAction(
 
   const devolucion = ctx.aprobada ? null : devolucionAumento(ctx.sheet, instanciaId);
   const refund = costeDeRetirar(ctx.sheet, instanciaId) + (devolucion?.deCreditos ?? 0);
-  const sinPieza = desequipar(ctx.sheet, instanciaId);
+  // retirarPieza recorta la vida actual si el máximo baja (Hipertrofia y los +1, A1).
+  const sinPieza = retirarPieza(ctx.sheet, instanciaId);
   const sheet = devolucion
     ? { ...sinPieza, bolsaAumentosGastada: Math.max(0, sinPieza.bolsaAumentosGastada - devolucion.deBolsa) }
     : sinPieza;

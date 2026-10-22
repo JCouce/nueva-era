@@ -11,23 +11,24 @@ import {
   bonoAtributo,
   bonoDerivado,
   bonoHabilidad,
+  factorVida,
   type ModificadorConFuente,
 } from "./modificadores";
 import { especieDeFicha } from "./especie";
 import type { FormulaMovimiento } from "./formulaMovimiento";
 import { equipoPorId } from "../catalog/equipo";
 import { modificadoresDeEquipo } from "./equipo";
+import { modificadoresDeAumentos } from "./aumentos";
 import type { Sheet } from "./sheet";
 import { admiteEspecialidades } from "../catalog/especialidades";
 
-// Los modificadores activos de una ficha: especie (con casta y linaje) y equipo por ahora; cuando
-// existan dotes y aumentos, se añaden aquí y todo lo demás sigue funcionando sin
-// tocarse. Las pantallas no lo llaman: leen FichaResuelta.modificadores
+// Los modificadores activos de una ficha: especie (con casta y linaje), equipo y aumentos
+// (A1: sus efectos permanentes). Las dotes las suma resolverFicha. Las pantallas no lo llaman: leen FichaResuelta.modificadores
 // (fichaResuelta.ts), que además lleva los estados de combate. Los derivados de abajo
 // reciben `mods` siempre explícito: sin valor por defecto, ningún recálculo escondido.
 export function modificadoresActivos(sheet: Sheet): ModificadorConFuente[] {
   const deEspecie = especieDeFicha(sheet)?.modificadores ?? [];
-  return [...deEspecie, ...modificadoresDeEquipo(sheet)];
+  return [...deEspecie, ...modificadoresDeEquipo(sheet), ...modificadoresDeAumentos(sheet)];
 }
 
 // Una línea de un desglose: de dónde sale parte de un número, y cuánto aporta.
@@ -121,12 +122,18 @@ export function aplicados(
   ) as Record<AplicadoId, number>;
 }
 
+// Vida con Hipertrofia (A1, §11.3 tercera ronda): la Fortaleza positiva se multiplica
+// por el factor y se redondea hacia abajo; con Fortaleza 0 o negativa no se multiplica.
+function fortalezaParaVida(fortaleza: number, factor: number): number {
+  return fortaleza > 0 ? Math.floor(fortaleza * factor) : fortaleza;
+}
+
 export function salud(
   sheet: Sheet,
   mods: ModificadorConFuente[],
 ): { vida: number; fatiga: number } {
   return {
-    vida: 8 + aplicado(sheet, "fortaleza", mods) + bonoDerivado(mods, "vida"),
+    vida: 8 + fortalezaParaVida(aplicado(sheet, "fortaleza", mods), factorVida(mods)) + bonoDerivado(mods, "vida"),
     fatiga: 8 + aplicado(sheet, "voluntad", mods) + bonoDerivado(mods, "fatiga"),
   };
 }

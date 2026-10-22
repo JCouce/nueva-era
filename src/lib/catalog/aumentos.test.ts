@@ -19,7 +19,13 @@ type AumentoJson = {
   sabotaje?: boolean;
   electronico?: boolean;
   niveles?: NivelJson[];
+  efectos?: EfectoJson[];
 };
+type EfectoJson =
+  | { tipo: "atributo"; id: string; valor: number }
+  | { tipo: "formula_salud"; multiplicaFortaleza: number }
+  | { tipo: "coste_habilidad"; habilidades: string[] | "todas"; valor: number }
+  | { tipo: "otro" };
 const MODELADO = (
   JSON.parse(readFileSync(new URL("../../../docs/modelado-aumentos.json", import.meta.url), "utf8")) as {
     aumentos: AumentoJson[];
@@ -88,17 +94,40 @@ describe("integridad del catálogo de aumentos", () => {
     }
   });
 
-  test("A0: ningún aumento aplica modificadores todavía", () => {
-    for (const op of OPERACIONES_GENETICAS) assert.deepEqual(op.modificadores, [], op.id);
+  test("A1: los modificadores de las operaciones son los +1 y la vida del modelado", () => {
+    for (const op of OPERACIONES_GENETICAS) {
+      const j = MODELADO.find((a) => a.id === op.id)!;
+      const esperados = (j.efectos ?? []).flatMap((e) =>
+        e.tipo === "atributo"
+          ? [{ tipo: "atributo", id: e.id, valor: e.valor }]
+          : e.tipo === "formula_salud"
+            ? [{ tipo: "multiplicadorVida", valor: e.multiplicaFortaleza }]
+            : [],
+      );
+      assert.deepEqual(op.modificadores, esperados, op.id);
+      const coste = (j.efectos ?? []).find((e) => e.tipo === "coste_habilidad");
+      assert.deepEqual(
+        op.rebajaCosteHabilidad ?? null,
+        coste ? { habilidades: coste.habilidades, valor: coste.valor } : null,
+        op.id,
+      );
+    }
+  });
+
+  test("A1: ningún implante trae modificadores permanentes (los activables llegan en A5)", () => {
     for (const imp of IMPLANTES) for (const n of imp.niveles) assert.deepEqual(n.modificadores, [], `${imp.id} ${n.nivel}`);
   });
 
-  test("A0: nada que dé números está marcado como construido", () => {
-    const motores = [
-      ...OPERACIONES_GENETICAS.flatMap((op) => op.motor),
-      ...IMPLANTES.flatMap((imp) => imp.niveles.flatMap((n) => n.motor ?? [])),
-    ];
-    for (const m of motores) {
+  test("A1: solo lo construido en A1 (atributo, coste de habilidad, vida) o lo narrativo está marcado como construido", () => {
+    for (const op of OPERACIONES_GENETICAS) {
+      const construidos = op.motor.filter((m) => m.estado === "construido" && m.tipo !== "narrativo");
+      const esperados =
+        (op.modificadores.some((m) => m.tipo === "atributo") ? 1 : 0) +
+        (op.rebajaCosteHabilidad ? 1 : 0) +
+        (op.modificadores.some((m) => m.tipo === "multiplicadorVida") ? 1 : 0);
+      assert.equal(construidos.length, esperados, op.id);
+    }
+    for (const m of IMPLANTES.flatMap((imp) => imp.niveles.flatMap((n) => n.motor ?? []))) {
       if (m.estado === "construido") assert.equal(m.tipo, "narrativo", JSON.stringify(m));
     }
   });

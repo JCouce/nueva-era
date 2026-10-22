@@ -46,7 +46,7 @@ import {
   puntosAtributosDisponibles,
   puntosHabilidadesDisponibles,
   equipar,
-  desequipar,
+  retirarPieza,
   setPrioridad,
   ajustarRecurso,
   ajustarMaterial,
@@ -435,7 +435,7 @@ export function CharacterSheet({
     runSave(() => equiparAction(characterId, pieza), setSheet);
   };
   const commitDesequipar = (instanciaId: string) => {
-    setSheet((s) => desequipar(s, instanciaId));
+    setSheet((s) => retirarPieza(s, instanciaId));
     runSave(() => desequiparAction(characterId, instanciaId), setSheet);
   };
   const commitAjustarRecurso = (instanciaId: string, delta: number) => {
@@ -582,7 +582,7 @@ export function CharacterSheet({
         : VITALIDAD_DE_FICHA,
     [miCombatiente],
   );
-  const ficha = useFichaResuelta(sheet, estados, vitalidad);
+  const ficha = useFichaResuelta(sheet, estados, vitalidad, { aprobada });
   const puntosAttr = puntosAtributosDisponibles(sheet);
   // Con el ajuste de coste de la especie (§14.6), el mismo que aplica el servidor.
   const puntosSkill = puntosHabilidadesDisponibles(sheet, ficha.ajusteCoste);
