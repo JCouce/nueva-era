@@ -19,7 +19,7 @@ Sin valoración de prioridad aquí a propósito — se queda obsoleta en cuanto 
 foco. Frentes abiertos, cada uno con su sección en Pendiente:
 - **Dotes**: D1–D2d y las dotes de NPC hechas; quedan la especialidad elegida en la tirada
   y las tiradas fijas que faltan (10 efectos con `bloqueoPor: "tiradas-fijas"`).
-- **Aumentos**: por tandas (A0-A5a hechas, A5b construida sin commit; quedan A6-A7).
+- **Aumentos**: por tandas (A0-A5b hechas, A6a construida sin commit; quedan A6b y A7).
 - **Puntos Heroicos**: sin empezar, con la prosa ya en `docs/fuente/`.
   *Neos Plouton* (`docs/fuente/neos-plouton.md`) es la aventura que juega la mesa, no un
   área de reglas que construir.
@@ -1473,7 +1473,7 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      (VTF nivel 2, Pico de Cuervo Poco Habitual: dificultad sugerida 7, antes
      habría sido 9).
 
-### Aumentos ⬜ (A0-A5a commiteadas; A5b construida, 2026-10-22)
+### Aumentos ⬜ (A0-A5b commiteadas; A6a construida, 2026-10-22)
 Encargo y pasos: `docs/prompt-aumentos.md`. Fuente literal:
 `docs/aumentos.md` (26 operaciones genéticas y 11 implantes; **5 implantes en proceso**,
 de Control Anímico al final: no se modelan hasta la próxima foto de Drive). Decisión del usuario: entran
@@ -1546,7 +1546,7 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
     Densificar: `blindajeReactivo` del Enjambre 3, `casillaBlindajeReactivo` y el 5.º
     parámetro de `desgloseBlindaje` (`blindaje.ts`); "Bloquear daño" cobra al marcar y
     devuelve al desmarcar (`onAjustarFatiga` nuevo en AccionesTab).
-- [x] A5 · Activables (A5b sin commit).
+- [x] A5 · Activables.
   - [x] A5a · Capa de activables, Neuroprótesis 1-2 y Proyección (commit 0567b20). Efecto `activar` en `AccionAumentoCatalogo` (con `eleccion` en la
     Neuroprótesis 2: selector `ID_ELECCION_ACTIVABLE` en el modal) que cobra y pone un estado
     propio (`ESTADOS_DE_AUMENTO` en `catalog/estados.ts`: `aum_neuroprotesis` con grados
@@ -1561,7 +1561,7 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
     Modificador `anulaPenalizadores` (Proyección en Actitud, `conPenalizadoresAnulados` en
     `montarTirada`; Neurogénesis lleva `compensa`). Chip con `duracionActivable` ("3 rondas, en
     combate"). Los activables no restan vida al caerse (`vidaTrasCambioDeEstados`).
-  - [x] A5b · Neuroprótesis 3-4. *(sin commit; falta revisión y navegador)* Acción
+  - [x] A5b · Neuroprótesis 3-4 (commit 4db5ac6). Acción
     "Acción simple adicional" del nivel 3 (efecto `accionAdicional`, 2 de fatiga; casilla
     `ID_ACCION_REPETIDA` "Ya usada desde el último descanso" que cobra 3, apagada si no
     llega; `extra.repetida` en `usarAccionAumentoAction`). Con el nivel 4, pagar 3 pone
@@ -1575,7 +1575,22 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
     `usarAccionAumentoAction`, `devolverFatigaAction` nuevo para Densificar). Visual: sin "+0" en
     el selector de activar (`OpcionCondicion.sinValor`) y sin la duración repetida al lado del
     chip de un activable (`EstadoPanel`).
-- [ ] A6 · Brazo Biónico.
+- [ ] A6 · Brazo Biónico (A6a sin commit; falta A6b).
+  - [x] A6a · Atributos del brazo, casilla, bloqueo y blindaje. *(sin commit; falta revisión y
+    navegador)* `rules/brazoBionico.ts`: `brazoBionico(sheet)` (base permanente =
+    `modificadoresDeRequisito`, más el delta del nivel o del modelo con su tope;
+    `ExtremidadBionica` en `NivelImplante.extremidad` y `VarianteImplante.extremidad` del
+    catálogo). Casilla toggle "Con el brazo biónico" (`ID_CASILLA_BRAZO`, campo `extremidad`
+    en el toggle) en Puñetazo, "Codazo o Rodillazo" (nota "solo si es codazo"), cuerpo a cuerpo
+    y fuego de una mano (no la Patada ni lo de dos manos), que pone `conCasillaBrazo` en
+    `accionesDeAtaque`; con nivel 2+, `danio.categoria: "Letal"` en Puñetazo y codazo.
+    `montarTirada` recalcula el aplicado con la Fuerza y la Agilidad del brazo
+    (`conExtremidad`, línea "Potencia · Brazo Biónico 2: Fuerza 3 (tuya 1), …") y el daño de
+    Fuerza (o de Potencia con Sutil) como ajuste con su fuente, aunque bajen.
+    "Bloquear con el brazo biónico" (`aumentos_bloquear_brazo`, familia `bloquear_melee`: solo
+    con la dote Bloqueo; nivel 2+), con `Accion.extremidad` fija. "Bloquear daño": casilla
+    "Bloqueado con el brazo biónico" (`casillaBlindajeBrazo`, 6.º parámetro de
+    `desgloseBlindaje`), nivel 2+, sin coste, donde cuente el blindaje.
 - [ ] A7 · Inmunidades.
 - [ ] Cuando Murillo cierre los 5 implantes en proceso: `sync-drive`, transcribirlos de
   nuevo y modelarlos en una pasada corta.

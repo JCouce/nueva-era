@@ -1452,6 +1452,39 @@ al preparar su modelado:
     ficha, y el ajuste de la fila propia en Combate, solo de la foto.
     `TODO(revisar)`: el "no te llega la fatiga" de las acciones mira la de la ficha, no la de
     la foto.
+- *En la app (A6a, Brazo Biónico: atributos, casilla, bloqueo y blindaje; usuario, 2026-10-22):*
+  `rules/brazoBionico.ts`, con los datos por nivel y modelo en el catálogo
+  (`extremidad` del nivel 1-2 y de cada modelo del 3-4; el modelo viaja en
+  `PiezaEquipada.eleccion`).
+  - **Atributos del brazo:** base = Fuerza y Agilidad **permanentes** del usuario (comprado +
+    especie + aumentos permanentes; sin equipo normal, estados ni activables: la misma base que
+    los requisitos de dote), más el delta con su tope. Si la base ya pasa el tope, vale el tope
+    ("con límite máximo"). Nivel 1: Fuerza igual, Agilidad −1. Nivel 2: Fuerza +1 (tope 5),
+    blindaje 3. Nivel 3 Fuerte: Fuerza +2 (tope 7), blindaje 6; Ágil: como el 2 y Agilidad +1
+    (tope 5), blindaje 3. Nivel 4 Fuerte: Fuerza +4 (tope 10), blindaje 8; Equilibrado: Fuerza
+    +2 (tope 7), Agilidad +2 (tope 6), blindaje 6; Ágil: Fuerza +1 (tope 5), Agilidad +3 (tope
+    8), blindaje 3. **Solo valen en las tiradas y el daño hechos con el brazo**: no tocan
+    atributos, aplicados, vida ni requisitos de la ficha.
+  - **Casilla "Con el brazo biónico"** (toggle sin coste): en Puñetazo, "Codazo o Rodillazo"
+    (nota: solo si es codazo), las armas de cuerpo a cuerpo de una mano y las de fuego de una
+    mano. No en la Patada ni en las de dos manos. Marcada, `montarTirada` recalcula el aplicado
+    con la Fuerza y la Agilidad del brazo en lugar de las **efectivas** del usuario (con estados
+    y activables), aunque salgan menores (R4); la línea del aplicado dice "Potencia · Brazo
+    Biónico 2: Fuerza 3 (tuya 1), Agilidad 2 (tuya 2)". El daño que sale de la Fuerza (o de la
+    Potencia, con Sutil) cambia con ellas: un ajuste del daño con su fuente ("Brazo Biónico 2:
+    Fuerza 5 (tuya 6)" −1). Con el nivel 2+, el Puñetazo y el codazo con la casilla son
+    **letales**; las armas no cambian de categoría.
+  - **"Bloquear con el brazo biónico":** fila de Defensa con el nivel 2+, familia
+    `bloquear_melee` (solo con la dote Bloqueo, sus casillas incluidas), Potencia + Combate
+    Melee siempre con los atributos del brazo, sin casilla. Especialidad Pelea, sin Sutil y sin
+    contar como desarmado (supuesto, `TODO(revisar)`).
+  - **Blindaje (R12):** casilla "Bloqueado con el brazo biónico" en "Bloquear daño", sin coste,
+    solo con el nivel 2+: suma el blindaje del brazo (3, 6 u 8) a ese golpe, donde cuente el
+    blindaje (no contra Mental ni Fuego sin Ignífuga, `blindajeNoCuenta`); cambiar a uno de
+    esos tipos la desmarca. Vale igual en el combate en vivo del máster (el mismo modal).
+  - **Fuera (A6b y después):** el arma incorporada (vínculo, desenfundado gratis, sin desarme,
+    carga), el sabotaje y la extracción. Tampoco llevan la casilla lanzar un arma arrojadiza,
+    lanzar granadas ni "Bloquear con X" con un arma de una mano (`TODO(revisar)`).
 
 ### 11.2 Lo que el documento no dice `[PENDIENTE]`
 - **Tope de implantes**: pregunta 11, sigue abierta.

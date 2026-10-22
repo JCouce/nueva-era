@@ -18,7 +18,8 @@ import {
 } from "./acciones";
 import { etiquetaEspecialidad, type EspecialidadId } from "../catalog/especialidades";
 import type { Sheet } from "./sheet";
-import { APLICADOS, type AplicadoId } from "./atributos";
+import { APLICADOS, ATRIBUTOS, type AplicadoId } from "./atributos";
+import { aplicado as valorAplicado, atributoEfectivo } from "./derivados";
 import { HABILIDADES, type HabilidadId } from "./habilidades";
 import {
   bonosTramoAplicables,
@@ -29,6 +30,7 @@ import {
   notasCondiciones,
   valorBonosTramo,
   valorCondiciones,
+  type AtributosExtremidad,
   type BonoPorTramo,
   type CondicionTirada,
   type EstadoCondiciones,
@@ -229,6 +231,50 @@ function conAplicadoEfectivo(
   return { condiciones: filtradas, sinEfecto };
 }
 
+// Brazo Biónico (A6a): la tirada con la Fuerza y la Agilidad de la extremidad en vez de las del
+// usuario, aunque sean menores (R4). Se añade a los modificadores lo que falta para llegar a
+// ellas desde las efectivas (con estados y activables), solo para esta tirada.
+const ATRIBUTOS_EXTREMIDAD = ["fuerza", "agilidad"] as const;
+
+function conExtremidad(sheet: Sheet, mods: ModificadorConFuente[], e: AtributosExtremidad): ModificadorConFuente[] {
+  return [
+    ...mods,
+    ...ATRIBUTOS_EXTREMIDAD.map(
+      (id): ModificadorConFuente => ({ tipo: "atributo", id, valor: e[id] - atributoEfectivo(sheet, id, mods), origen: "aumento", fuente: e.fuente }),
+    ),
+  ];
+}
+
+// "Potencia · Brazo Biónico 2: Fuerza 3 (tuya 1), Agilidad 2 (tuya 2)": solo los atributos del
+// aplicado que cambia la extremidad.
+function etiquetaAplicado(sheet: Sheet, aplicadoId: AplicadoId, mods: ModificadorConFuente[], e: AtributosExtremidad | undefined): string {
+  const def = APLICADOS.find((a) => a.id === aplicadoId)!;
+  if (!e) return def.label;
+  const partes = ATRIBUTOS_EXTREMIDAD.filter((id) => (def.de as readonly string[]).includes(id)).map(
+    (id) => `${ATRIBUTOS.find((a) => a.id === id)!.label} ${e[id]} (tuya ${atributoEfectivo(sheet, id, mods)})`,
+  );
+  return partes.length > 0 ? `${def.label} · ${e.fuente}: ${partes.join(", ")}` : def.label;
+}
+
+// El daño que sale de la Fuerza (o de la Potencia con Sutil) con la extremidad: lo que cambia
+// respecto al del usuario, como un ajuste más del daño con su fuente (también si baja).
+function ajusteDanioDeExtremidad(
+  sheet: Sheet,
+  mods: ModificadorConFuente[],
+  conBrazo: ModificadorConFuente[],
+  e: AtributosExtremidad | undefined,
+  sutilDanio: boolean,
+): AjusteDanio["ajustes"] {
+  if (!e?.danioDeFuerza) return [];
+  const [nombre, tuya, delBrazo] = sutilDanio
+    ? ["Potencia", valorAplicado(sheet, "potencia", mods), valorAplicado(sheet, "potencia", conBrazo)]
+    : ["Fuerza", atributoEfectivo(sheet, "fuerza", mods), e.fuerza];
+  return delBrazo === tuya ? [] : [{ valor: delBrazo - tuya, fuente: `${e.fuente}: ${nombre} ${delBrazo} (tuya ${tuya})` }];
+}
+
+const conAjustesDanio = (a: AjusteDanio, extra: AjusteDanio["ajustes"]): AjusteDanio =>
+  extra.length > 0 ? { ...a, ajustes: [...a.ajustes, ...extra] } : a;
+
 // La opción elegida de cada condición de tipo opción.
 function opcionesElegidas(condiciones: CondicionTirada[], estado: EstadoCondiciones): OpcionCondicion[] {
   return condiciones.flatMap((c) => {
@@ -262,6 +308,12 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     (c): c is Toggle => c.tipo === "toggle" && Boolean(estado[c.id]) && c.aplicado !== undefined,
   )?.aplicado;
   const aplicadoId = otroAplicado ?? (sutil && tirada.aplicadoSutil ? tirada.aplicadoSutil : tirada.aplicado);
+  // La extremidad con la que se tira (A6a): la de la tirada, o la de la casilla marcada.
+  const extremidad =
+    tirada.extremidad ??
+    (tirada.condiciones ?? []).find(
+      (c): c is Toggle => c.tipo === "toggle" && Boolean(estado[c.id]) && c.extremidad !== undefined,
+    )?.extremidad;
   const porAplicado = conAplicadoEfectivo(tirada.condiciones ?? [], aplicadoId);
   const ctx: ContextoAccion = {
     id: tirada.id,
@@ -290,9 +342,11 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
   const mods = conPenalizadoresAnulados(sinApilados.mods, ctx);
 
   const activas = condiciones.filter((c): c is Toggle => c.tipo === "toggle" && Boolean(estado[c.id]));
+  // Los atributos de la extremidad solo valen para el aplicado y el daño de esta tirada.
+  const modsAplicado = extremidad ? conExtremidad(ficha.ficha, mods, extremidad) : mods;
   const mod = otroAplicado
-    ? modificadorAccion(ficha.ficha, { ...tirada, aplicado: otroAplicado }, enEspecialidad, mods, false)
-    : modificadorAccion(ficha.ficha, tirada, enEspecialidad, mods, sutil);
+    ? modificadorAccion(ficha.ficha, { ...tirada, aplicado: otroAplicado }, enEspecialidad, modsAplicado, false)
+    : modificadorAccion(ficha.ficha, tirada, enEspecialidad, modsAplicado, sutil);
   const base = mod.total + ajustesFijos.reduce((t, a) => t + a.valor, 0);
 
   const modo = ctx.modoElegido;
@@ -303,7 +357,7 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
 
   const habilidadLabel = tirada.habilidad ? HABILIDADES.find((h) => h.id === tirada.habilidad)!.label : null;
   const desglose: LineaDesglose[] = [
-    { etiqueta: APLICADOS.find((a) => a.id === aplicadoId)!.label, valor: mod.aplicado },
+    { etiqueta: etiquetaAplicado(ficha.ficha, aplicadoId, mods, extremidad), valor: mod.aplicado },
     ...(habilidadLabel
       ? [{ etiqueta: `${habilidadLabel}${enEspecialidad ? " (especialidad)" : ""}`, valor: mod.habilidad ?? 0 }]
       : []),
@@ -336,7 +390,10 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     modoElegido: modo,
     ventaja: tirada.ventaja ?? activas.find((c) => c.ventaja)?.etiqueta ?? ventajaDeOpcion(elegidas),
     subeGrado: activas.find((c) => c.subeGrado)?.etiqueta ?? null,
-    danio: conDanioFijo(danioDeCasillas(activas), tirada.ataque?.sinBonoExitos),
+    danio: conAjustesDanio(
+      conDanioFijo(danioDeCasillas(activas), tirada.ataque?.sinBonoExitos),
+      ajusteDanioDeExtremidad(ficha.ficha, mods, modsAplicado, extremidad, sutil && tirada.aplicadoSutil !== undefined),
+    ),
     ...fatiga,
     casillasSinEfecto: porAplicado.sinEfecto,
     usosEscena: usosGastados(activas, fatiga, tirada.grupo === "Psiónica"),

@@ -93,6 +93,9 @@ export type CondicionTirada = (
       // La casilla sale en el modal pero no se puede marcar, con el motivo ("Usada esta
       // escena", la pone conUsosEscena). montarTirada la trata como desmarcada.
       bloqueada?: string;
+      // La tirada se hace con la Fuerza y la Agilidad de una extremidad propia (Brazo Biónico,
+      // A6a de aumentos): montarTirada recalcula el aplicado y, si toca, el daño con ellas.
+      extremidad?: AtributosExtremidad;
     }
   | {
       id: string;
@@ -129,6 +132,12 @@ export type CondicionTirada = (
 //   categoria      el daño pasa a esta categoría: Golpe Mejorado con Escudo, "Letal"
 //   sinBonoExitos  sin el +1 por cada dos éxitos (Derribo: daño máximo el básico)
 //   conBonoExitos  lo devuelve aunque otra casilla lo quite (Derribo Brutal, acción estándar)
+// Fuerza y Agilidad de una extremidad propia (Brazo Biónico, A6a), que sustituyen a las del
+// usuario en la tirada aunque sean menores (R4). Las lleva la casilla "Con el brazo biónico" o
+// la propia tirada (`Accion.extremidad`: "Bloquear con el brazo biónico"). `danioDeFuerza`: el
+// daño del ataque sale de la Fuerza (o de la Potencia con Sutil) y cambia con ellas.
+export type AtributosExtremidad = { fuente: string; fuerza: number; agilidad: number; danioDeFuerza?: true };
+
 export type EfectoDanioCasilla = { ajuste?: number; categoria?: string; sinBonoExitos?: true; conBonoExitos?: true };
 
 // Lo que enseña el control de la casilla a la derecha: el número si suma algo, y si no lo
@@ -137,8 +146,9 @@ export function resumenCasilla(c: Extract<CondicionTirada, { tipo: "toggle" }>, 
   const valor = activo ? c.valorActivo : (c.valorInactivo ?? 0);
   const signo = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
   const partes: string[] = [];
-  if (valor !== 0 || (!c.ventaja && !c.subeGrado && !c.aplicado && c.margenCriticoExito === undefined && !c.danio && !c.ahorroFatiga && !c.costeFatiga))
+  if (valor !== 0 || (!c.ventaja && !c.subeGrado && !c.aplicado && c.margenCriticoExito === undefined && !c.danio && !c.ahorroFatiga && !c.costeFatiga && !c.extremidad))
     partes.push(signo(valor));
+  if (c.extremidad) partes.push(`Fue ${c.extremidad.fuerza} · Agi ${c.extremidad.agilidad}`);
   if (c.ventaja) partes.push("ventaja");
   if (c.subeGrado) partes.push("fallo → éxito");
   if (c.aplicado) partes.push(APLICADOS.find((a) => a.id === c.aplicado)?.label ?? c.aplicado);

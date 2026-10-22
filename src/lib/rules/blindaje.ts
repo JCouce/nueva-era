@@ -9,6 +9,7 @@ import { equipoPorId, type Armadura, type Subsistema } from "../catalog/equipo";
 import type { ArmaMelee } from "../catalog/armasMelee";
 import { nivelesHasta, ultimoQueDefine } from "./equipo";
 import { armaduraNaturalDeAumentos, blindajeReactivoDeAumentos } from "./aumentosTiradas";
+import { blindajeDelBrazo } from "./brazoBionico";
 import type { Sheet } from "./sheet";
 
 export const TIPOS_DANIO = [
@@ -96,12 +97,15 @@ export function blindajeNoCuenta(tipo: TipoDanio): string | null {
 //
 // `reactivo` (A4b): la casilla de blindaje reactivo marcada (Densificar del Enjambre 3+). Sin
 // la pieza, o contra Mental o Fuego, no suma nada.
+// `conBrazo` (A6a, R12): la casilla "Bloqueado con el brazo biónico" marcada. Suma el blindaje
+// del brazo (nivel 2+) a este golpe, donde cuente el blindaje; con el nivel 1, nada.
 export function desgloseBlindaje(
   sheet: Sheet,
   tipo: TipoDanio,
   escudoEnAlto: boolean,
   armaduraNatural: ArmaduraNatural,
   reactivo = false,
+  conBrazo = false,
 ): LineaBlindaje[] {
   const noCuenta = blindajeNoCuenta(tipo);
   if (noCuenta) return [{ etiqueta: noCuenta, valor: 0 }];
@@ -138,7 +142,27 @@ export function desgloseBlindaje(
   // Su nota va junto a la casilla (casillaBlindajeReactivo), no repetida en el desglose.
   if (r) lineas.push({ etiqueta: `${r.etiqueta} · ${r.fuente}`, valor: r.valor });
 
+  const brazo = conBrazo ? blindajeDelBrazo(sheet) : null;
+  if (brazo) lineas.push({ etiqueta: `Bloqueado con el brazo · ${brazo.fuente}`, valor: brazo.valor });
+
   return lineas;
+}
+
+// La casilla "Bloqueado con el brazo biónico" de "Bloquear daño" (A6a, R12), o null sin el Brazo
+// de nivel 2 o más. Sin coste. `bloqueada`: el tipo de daño no lo para el blindaje (el mismo
+// criterio que la armadura natural y Densificar).
+export type CasillaBlindajeBrazo = { etiqueta: string; valor: number; nota: string; bloqueada: string | null };
+
+export function casillaBlindajeBrazo(sheet: Pick<Sheet, "equipo">, tipo: TipoDanio): CasillaBlindajeBrazo | null {
+  const brazo = blindajeDelBrazo(sheet);
+  if (!brazo) return null;
+  const noCuenta = blindajeNoCuenta(tipo);
+  return {
+    etiqueta: "Bloqueado con el brazo biónico",
+    valor: brazo.valor,
+    nota: `${brazo.fuente}: su blindaje solo protege el golpe que bloqueas con el brazo, como un escudo.`,
+    bloqueada: noCuenta ? MOTIVO_NO_CUENTA[tipo as "mental" | "fuego"] : null,
+  };
 }
 
 // La casilla de blindaje reactivo de "Bloquear daño" (Densificar, Enjambre 3+; A4b), o null sin

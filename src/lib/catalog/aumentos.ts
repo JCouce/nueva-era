@@ -42,6 +42,9 @@
 // nivel del implante: vale el del nivel más alto) dice qué hace mientras está puesto
 // (aumentosActivables.ts). Neuroprótesis 1-2 y Proyección; la Neuroprótesis 3-4 es A5b.
 //
+// Tanda A6a: `extremidad` del Brazo Biónico (en el nivel 1-2 y en cada modelo del 3-4): Fuerza
+// y Agilidad propias con su tope, blindaje, bloqueo y letal en pelea (rules/brazoBionico.ts).
+//
 // Tanda A3: `reducePenalizador` (Estabilización Autonómica en heridas y fatiga, Neurogénesis
 // en fatiga solo con sus aplicados, Matriz Ósea en carga como nota) y las casillas de
 // cobertura (Foveo, Ojo 2-4) en ataques a distancia y Buscar/percibir, sin apilar entre sí.
@@ -64,6 +67,7 @@ import type { MotorMetadata } from "../rules/motor";
 import type { BlindajeReactivo, EfectoSalvacion, EfectosTiradaAumento } from "../rules/aumentosTiradas";
 import type { AccionAumentoCatalogo, DefensaIntrusion } from "../rules/aumentosAcciones";
 import type { ActivoAumento } from "../rules/aumentosActivables";
+import type { ExtremidadBionica } from "../rules/brazoBionico";
 import type { NivelModulo, Rareza } from "./equipo";
 import { VISION_AUMENTADA } from "./mejorasArma";
 
@@ -110,8 +114,9 @@ export type OperacionGenetica = {
   motor: MotorMetadata[];
 } & EfectosTiradaAumento;
 
-// Modelos del Brazo Biónico en los niveles 3 y 4: se elige al comprar ese nivel.
-export type VarianteImplante = { id: string; label: string; detalle: string[] };
+// Modelos del Brazo Biónico en los niveles 3 y 4: se elige al comprar ese nivel. A6a: la
+// Fuerza, la Agilidad y el blindaje del modelo (`extremidad`, rules/brazoBionico.ts).
+export type VarianteImplante = { id: string; label: string; detalle: string[]; extremidad?: ExtremidadBionica };
 // A2a: `modificadores` lleva los bonos siempre activos (Ojo a distancia y a la Alerta
 // pasiva), `condiciones` las casillas con alcance y `salvaciones` lo que entra en el
 // selector "Contra…" (rules/aumentosTiradas.ts). Los niveles se acumulan; la misma clave
@@ -131,6 +136,10 @@ export type NivelImplante = NivelModulo & {
   // A5b: otros activables del nivel, cada uno con su estado propio (Neuroprótesis 4). Por
   // estado, vale el del nivel más alto.
   activos?: ActivoAumento[];
+  // A6a: el Brazo Biónico sin modelo (niveles 1 y 2): Fuerza y Agilidad propias sobre la base
+  // permanente del usuario, con su tope, y el blindaje para el golpe bloqueado. En los niveles
+  // 3 y 4 lo trae cada modelo (`variantes`).
+  extremidad?: ExtremidadBionica;
 };
 
 export type Implante = {
@@ -1439,13 +1448,17 @@ export const IMPLANTES: Implante[] = [
           "Se puede incorporar un arma en su interior siempre que su uso sea a una mano, mientras esté incorporada, su desenfundado es gratuito y no puede ser desarmado. Para incorporar este arma, es preciso una acción extendida de 10 minutos y realizar una tirada de perspicacia + biónica dificultad 8 con el instrumental adecuado. Para desprendese del arma es preciso la misma acción, pero si esta quiere ser extraída de un cuerpo sin respetar su salud, se realiza como el resto de implantes cuando son saqueados.",
         ],
         modificadores: [],
+        // A6a: iguala la Fuerza del usuario y tiene 1 menos de Agilidad. Ni bloquea ni hace letal.
+        extremidad: { fuerza: { delta: 0 }, agilidad: { delta: -1 } },
+        // A6a: la casilla "Con el brazo biónico" (una CondicionTirada, de ahí eleccion_jugador).
+        // El arma incorporada (vínculo, desenfundado, desarme y carga) es A6b.
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "sustitucion_aplicado", estado: "bloqueado", bloqueoPor: "capa extremidad_atributos_propios" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "capa nueva: arma incorporada (vínculo brazo-instancia de arma)" },
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "desarmar" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "capa nueva: arma incorporada (vínculo brazo-instancia de arma)" },
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_montar_arma_brazo" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
-        // A4b: solo la tirada (usuario, 2026-10-22). El vínculo del arma con el brazo, en A6.
+        // A4b: solo la tirada (usuario, 2026-10-22). El vínculo del arma con el brazo, en A6b.
         acciones: [
           {
             id: "aumentos_montar_arma_brazo",
@@ -1465,11 +1478,16 @@ export const IMPLANTES: Implante[] = [
           "El brazo biónico de segundo nivel tiene un blindaje de 3 puntos y se puede utilizar como arma para bloquear. Además causa daño letal en sus ataques de pelea.",
         ],
         modificadores: [],
+        // A6a: Fuerza +1 (tope 5), la misma Agilidad, blindaje 3, bloquea y letal en pelea.
+        extremidad: { fuerza: { delta: 1, tope: 5 }, agilidad: { delta: 0 }, blindaje: 3, bloquea: true, peleaLetal: true },
+        // A6a: casilla (Fuerza y Agilidad), blindaje en "Bloquear daño" (casilla), letal en la
+        // casilla del Puñetazo y el codazo, y la fila "Bloquear con el brazo biónico" (con la dote
+        // Bloqueo).
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "sustitucion_aplicado", estado: "bloqueado", bloqueoPor: "capa extremidad_atributos_propios" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "suma_derivado", estado: "pendiente" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_bloquear_brazo" }, mecanismo: "accion_equipo", estado: "bloqueado", bloqueoPor: "capa extremidad_atributos_propios" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_bloquear_brazo" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
       },
       {
@@ -1480,13 +1498,24 @@ export const IMPLANTES: Implante[] = [
           "El usario puede escoger entre un modelo fuerte o ágil:",
         ],
         variantes: [
-          { id: "fuerte", label: "Modelo Fuerte", detalle: ["+2 a puntuación de fuerza sobre la del usuario con límite máximo de 7, la agilidad es idéntica a la del usuario. El modelo fuerte tiene un blindaje de 6 puntos."] },
-          { id: "agil", label: "Modelo Ágil", detalle: ["Como el nivel 2 pero con un aumento de +1 en la agilidad sobre el usuario con límite de 5."] },
+          {
+            id: "fuerte",
+            label: "Modelo Fuerte",
+            detalle: ["+2 a puntuación de fuerza sobre la del usuario con límite máximo de 7, la agilidad es idéntica a la del usuario. El modelo fuerte tiene un blindaje de 6 puntos."],
+            extremidad: { fuerza: { delta: 2, tope: 7 }, agilidad: { delta: 0 }, blindaje: 6, bloquea: true, peleaLetal: true },
+          },
+          // "Como el nivel 2": su Fuerza (+1, tope 5) y su blindaje (3), más la Agilidad (usuario, 2026-10-22).
+          {
+            id: "agil",
+            label: "Modelo Ágil",
+            detalle: ["Como el nivel 2 pero con un aumento de +1 en la agilidad sobre el usuario con límite de 5."],
+            extremidad: { fuerza: { delta: 1, tope: 5 }, agilidad: { delta: 1, tope: 5 }, blindaje: 3, bloquea: true, peleaLetal: true },
+          },
         ],
         modificadores: [],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "sustitucion_aplicado", estado: "bloqueado", bloqueoPor: "capa extremidad_atributos_propios" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "suma_derivado", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
       {
@@ -1497,14 +1526,29 @@ export const IMPLANTES: Implante[] = [
           "Tres modelos a elegir:",
         ],
         variantes: [
-          { id: "fuerte", label: "Modelo Fuerte", detalle: ["+4 a puntuación de fuerza sobre la del usuario con límite máximo de 10, la agilidad es idéntica a la del usuario. El modelo fuerte tiene un blindaje de 8 puntos."] },
-          { id: "equilibrado", label: "Modelo Equilibrado", detalle: ["+2 a puntuación de fuerza sobre la del usuario con límite de 7, la agilidad es de +2 en la agilidad sobre el usuario con límite de 6. El modelo equilibrado tiene un blindaje de 6 puntos."] },
-          { id: "agil", label: "Modelo Ágil", detalle: ["La fuerza del brazo es +1 punto superior a la del usuario pero con límite de 5, aumento de +3 en la agilidad sobre el usuario con límite de 8. Su puntuación de blindaje es de 3 puntos."] },
+          {
+            id: "fuerte",
+            label: "Modelo Fuerte",
+            detalle: ["+4 a puntuación de fuerza sobre la del usuario con límite máximo de 10, la agilidad es idéntica a la del usuario. El modelo fuerte tiene un blindaje de 8 puntos."],
+            extremidad: { fuerza: { delta: 4, tope: 10 }, agilidad: { delta: 0 }, blindaje: 8, bloquea: true, peleaLetal: true },
+          },
+          {
+            id: "equilibrado",
+            label: "Modelo Equilibrado",
+            detalle: ["+2 a puntuación de fuerza sobre la del usuario con límite de 7, la agilidad es de +2 en la agilidad sobre el usuario con límite de 6. El modelo equilibrado tiene un blindaje de 6 puntos."],
+            extremidad: { fuerza: { delta: 2, tope: 7 }, agilidad: { delta: 2, tope: 6 }, blindaje: 6, bloquea: true, peleaLetal: true },
+          },
+          {
+            id: "agil",
+            label: "Modelo Ágil",
+            detalle: ["La fuerza del brazo es +1 punto superior a la del usuario pero con límite de 5, aumento de +3 en la agilidad sobre el usuario con límite de 8. Su puntuación de blindaje es de 3 puntos."],
+            extremidad: { fuerza: { delta: 1, tope: 5 }, agilidad: { delta: 3, tope: 8 }, blindaje: 3, bloquea: true, peleaLetal: true },
+          },
         ],
         modificadores: [],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "sustitucion_aplicado", estado: "bloqueado", bloqueoPor: "capa extremidad_atributos_propios" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "suma_derivado", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
     ],

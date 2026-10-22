@@ -472,6 +472,56 @@ la sustitución del nivel 4.
 
 ### A6 · Brazo Biónico
 
+**Decidido (usuario, 2026-10-22):** las cuatro recomendadas, en dos pasadas: **A6a**
+(atributos del brazo, casilla, bloqueo y blindaje) y **A6b** (arma incorporada, ficha v20).
+- **Base del brazo:** Fuerza y Agilidad permanentes (comprado + especie + aumentos), sin
+  estados ni activables (la misma base que los requisitos de dote). Delta y tope por nivel y
+  modelo; el Ágil del 3 hereda la Fuerza (+1, tope 5) y el blindaje (3) del 2.
+- **Los atributos del brazo solo valen en las tiradas y el daño hechos con él**: no tocan la
+  vida, los requisitos de dote ni los atributos de la ficha.
+- **Casilla "Con el brazo biónico":** en Puñetazo y "Codazo o Rodillazo" (con nota: solo si
+  es codazo; la Patada no), en las armas de cuerpo a cuerpo de una mano y en las de fuego de una
+  mano. Cambia Fuerza y Agilidad en los aplicados y en la fórmula del daño, aunque salgan
+  menores (R4). Con el nivel 2+, el Puñetazo es letal.
+- **Bloquear con el brazo:** nivel 2+ y siempre con la dote Bloqueo, por el camino de
+  "Bloquear con X".
+- **Blindaje (R12):** casilla "Bloqueado con el brazo" en "Bloquear daño", sin coste, **solo
+  con el Brazo de nivel 2 o más**, que suma su blindaje (3, 6 u 8) a ese golpe.
+- **Tras A6a (usuario, 2026-10-22):** la casilla del brazo también en "Bloquear con X" con un
+  arma de una mano (va en A6b); lanzar armas arrojadizas y granadas, sin casilla. "Bloquear con
+  el brazo" con especialidad Pelea y sin contar como desarmado, y el daño de las armas de fuego
+  sin tocar: se quedan así.
+- **Arma incorporada (A6b):** selector en Equipo, en la tarjeta del brazo, con las armas de una
+  mano equipadas, sin exigir la tirada. Sus ataques usan siempre el brazo, sin casilla; la nota
+  dice que se desenfunda gratis, que no te la pueden desarmar y que cuenta para la carga.
+
+**Construido (A6a, matices):**
+- **Datos:** `ExtremidadBionica` (`rules/brazoBionico.ts`) en `NivelImplante.extremidad`
+  (niveles 1 y 2) y `VarianteImplante.extremidad` (modelos del 3 y 4): delta y tope de Fuerza y
+  Agilidad, `blindaje`, `bloquea` y `peleaLetal`. Sin modelo válido en el 3-4 (solo con una
+  ficha editada a mano), vale el último nivel que lo trae sin modelo, el 2 (`TODO(revisar)`).
+- **Valor:** `min(base + delta, tope)`: con la base por encima del tope, el tope. La base,
+  `atributosEfectivos` con `modificadoresDeRequisito`.
+- **Casilla:** campo `extremidad` en el toggle (`AtributosExtremidad`: fuente, Fuerza,
+  Agilidad, `danioDeFuerza`), puesta por `conCasillaBrazo` en `accionesDeAtaque` (familias
+  `ataque_melee`/`ataque_fuego` con empleo "una mano", menos la Patada). `montarTirada` añade a
+  los modificadores, solo para el aplicado de esa tirada, lo que falta para llegar a los del
+  brazo desde los efectivos: con la Neuroprótesis activa, el brazo del nivel 1 queda por
+  debajo. El aplicado de la fila (`montada.aplicado.valor`) ya es el del brazo.
+- **Daño:** ajuste en `TiradaMontada.danio.ajustes` (no cambia la base), con la Fuerza o, con
+  Sutil, la Potencia: "Brazo Biónico 4 (Modelo Fuerte): Fuerza 6 (tuya 2)" +4. Sin cambio, sin
+  línea. Las armas de fuego no tocan el daño.
+- **Letal:** `danio.categoria: "Letal"` en la casilla del Puñetazo y del codazo con el nivel 2+.
+- **Bloquear:** fila `aumentos_bloquear_brazo` con `Accion.extremidad` fija (montarTirada la
+  usa sin casilla), `familiaArma: "bloquear_melee"`, especialidad Pelea, sin Sutil ni
+  `desarmado` (`TODO(revisar)`).
+- **Blindaje:** `casillaBlindajeBrazo` y el 6.º parámetro de `desgloseBlindaje`
+  (`blindajeDelBrazo`), línea "Bloqueado con el brazo · Brazo Biónico 3 (Modelo Fuerte)" +6.
+- **MotorMetadata:** la casilla y el blindaje pasan a `eleccion_jugador` (son casillas), la
+  fila de bloqueo a `accion_equipo`, todo `construido`; el arma incorporada sigue `bloqueado`.
+- **Fuera de la casilla (`TODO(revisar)`):** lanzar un arma arrojadiza, lanzar granadas y
+  "Bloquear con X" con un arma de una mano.
+
 **Qué hace**
 - **`extremidad_atributos_propios`:** casilla "con el brazo biónico" en golpes, bloqueos y
   armas de una mano (R4). Cambia Fuerza y Agilidad por las del brazo (básico + delta, con su

@@ -29,6 +29,7 @@ import { atributoEfectivo, aplicado } from "./derivados";
 import { ESPECIALIDAD_ARMA, ESPECIALIDAD_ATAQUE_ESPECIAL, ESPECIALIDAD_LANZAR } from "../catalog/especialidadesArma";
 import { FAMILIAS_SOLO_CON_DOTE } from "../catalog/dotesDestinos";
 import type { PermisosDeDotes } from "./dotesEfectos";
+import { brazoBionico, casillaBrazo, extremidadDeBloqueo, ID_BLOQUEAR_BRAZO, type BrazoBionico } from "./brazoBionico";
 
 const TRAMOS: TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
 
@@ -903,6 +904,39 @@ function tiradaBloqueoAguijon(pieza: PiezaEquipada, sutil: boolean): Accion {
   };
 }
 
+// Brazo Biónico (A6a, rules/brazoBionico.ts): la casilla "Con el brazo biónico" en los ataques
+// que la admiten (Puñetazo, codazo, cuerpo a cuerpo y fuego de una mano), detrás de las suyas.
+function conCasillaBrazo(t: Accion, catalogoId: string, brazo: BrazoBionico): Accion {
+  const danioDeFuerza = t.ataque?.modos.some((m) => m.formulaDanio !== null && bonoFormulaFuerza(m.formulaDanio) !== null) ?? false;
+  const casilla = casillaBrazo(brazo, { catalogoId, familiaArma: t.familiaArma, empleoArma: t.empleoArma, danioDeFuerza });
+  return casilla ? { ...t, condiciones: [...(t.condiciones ?? []), casilla] } : t;
+}
+
+// "Bloquear con el brazo biónico" (A6a): nivel 2+ y, como todo "Bloquear con X", solo con la
+// dote Bloqueo (familia bloquear_melee, la filtra accionesDeAtaque). Siempre con la Fuerza y la
+// Agilidad del brazo, sin casilla. Su blindaje se marca en "Bloquear daño" (R12).
+// TODO(revisar): especialidad Pelea (la del Puñetazo), sin Sutil y sin `desarmado` (el brazo "se
+// puede utilizar como arma para bloquear").
+function tiradaBloqueoBrazo(brazo: BrazoBionico): Accion | null {
+  const extremidad = extremidadDeBloqueo(brazo);
+  if (!extremidad) return null;
+  return {
+    id: ID_BLOQUEAR_BRAZO,
+    label: "Bloquear con el brazo biónico",
+    grupo: "Defensa",
+    aplicado: "potencia",
+    habilidad: "combate_melee",
+    especialidadArma: ESPECIALIDAD_ARMA.pelea_punetazo,
+    familiaArma: "bloquear_melee",
+    empleoArma: "una mano",
+    nota:
+      `Reacción gratuita e ilimitada, como Esquivar. Con la Fuerza ${brazo.fuerza} y la Agilidad ${brazo.agilidad} del brazo (${brazo.fuente}). ` +
+      `Su blindaje (${brazo.blindaje ?? 0}) solo para este golpe: marca "Bloqueado con el brazo biónico" en Bloquear daño.`,
+    condiciones: [CONDICION_ATACANTES_ADICIONALES],
+    extremidad,
+  };
+}
+
 // Registro familia -> generador de acción (T5, docs/motor.md §Escalabilidad):
 // una función por familia con firma uniforme, en vez de un bucle hardcodeado
 // por familia repetido varias veces sobre sheet.equipo. Dar de alta una
@@ -1043,14 +1077,18 @@ function accionesDeGranadas(sheet: Sheet): Accion[] {
 // con Combate Sutil. Obligatorio a propósito: sin él no hay forma de saber qué se ve.
 export function accionesDeAtaque(sheet: Sheet, mods: ModificadorConFuente[], permisos: PermisosDeDotes): Accion[] {
   const tiradas: Accion[] = [];
+  const brazo = brazoBionico(sheet);
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat) continue;
     const generador = REGISTRO_DE_ATAQUE[cat.familia];
     if (!generador) continue;
     if (!generaAccionPropia(cat, pieza.nivel)) continue;
-    tiradas.push(...generador(sheet, pieza, cat, mods, permisos));
+    const generadas = generador(sheet, pieza, cat, mods, permisos);
+    tiradas.push(...(brazo ? generadas.map((t) => conCasillaBrazo(t, pieza.catalogoId, brazo)) : generadas));
   }
+  const bloqueoBrazo = brazo ? tiradaBloqueoBrazo(brazo) : null;
+  if (bloqueoBrazo) tiradas.push(bloqueoBrazo);
   tiradas.push(...accionesDeGranadas(sheet));
   return tiradas.filter(
     (t) => !t.familiaArma || !FAMILIAS_SOLO_CON_DOTE.includes(t.familiaArma) || permisos.familias.includes(t.familiaArma),

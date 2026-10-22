@@ -8,7 +8,7 @@ import type { AplicadoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
 import { aplicado, valorEfectivo } from "./derivados";
 import type { Sheet } from "./sheet";
-import type { CondicionTirada, BonoPorTramo, EstadoCondiciones } from "./condiciones";
+import type { AtributosExtremidad, CondicionTirada, BonoPorTramo, EstadoCondiciones } from "./condiciones";
 import type { EmpleoArma, FamiliaArma, GrupoAccion, ModificadorConFuente } from "./modificadores";
 import type { DetallePoder } from "./poderes";
 import { etiquetaEspecialidad, type EspecialidadId } from "../catalog/especialidades";
@@ -96,6 +96,9 @@ export type Accion = {
   // en vez de inventársela: la UI la muestra apagada con el motivo. También una acción de
   // aumento con fatiga fija que no llega (A4b).
   bloqueada?: string;
+  // La tirada se hace siempre con la Fuerza y la Agilidad de una extremidad propia, sin casilla
+  // ("Bloquear con el brazo biónico", A6a): montarTirada recalcula el aplicado con ellas.
+  extremidad?: AtributosExtremidad;
   // Fatiga fija que se paga al tirar (Tempestad Nanobótica, A4b), además de la de las
   // casillas: montarTirada la suma a TiradaMontada.costeFatiga.
   costeFatiga?: number;

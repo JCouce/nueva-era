@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { casillaBlindajeReactivo, desgloseBlindaje, TIPOS_DANIO, type FichaResuelta, type TipoDanio } from "@/lib/rules";
+import { casillaBlindajeBrazo, casillaBlindajeReactivo, desgloseBlindaje, TIPOS_DANIO, type FichaResuelta, type TipoDanio } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 
 function signo(n: number) {
@@ -32,6 +32,8 @@ function LineaBlindaje({ etiqueta, valor, nota }: { etiqueta: string; valor: num
 // blindaje reactivo (Densificar del Enjambre 3+, A4b): se cobra al marcarla y se devuelve
 // al desmarcarla sin cerrar; qué vale y cuándo lo dice casillaBlindajeReactivo (blindaje.ts).
 // Sin onPagarFatiga (combate en vivo) la casilla suma igual y la fatiga se cobra a mano.
+// "Bloqueado con el brazo biónico" (A6a, Brazo de nivel 2+): sin coste, suma el blindaje del
+// brazo a este golpe (casillaBlindajeBrazo).
 export function BloquearDanioModal({
   ficha,
   onPagarFatiga,
@@ -47,10 +49,19 @@ export function BloquearDanioModal({
   const [escudoEnAlto, setEscudoEnAlto] = useState(false);
   const [danioRecibido, setDanioRecibido] = useState(0);
   const [reactivo, setReactivo] = useState(false);
+  const [conBrazo, setConBrazo] = useState(false);
 
   const conEscudo = ficha.blindaje.tieneEscudoMelee;
   const casilla = casillaBlindajeReactivo(ficha.ficha, tipo, reactivo);
-  const desglose = desgloseBlindaje(ficha.ficha, tipo, conEscudo && escudoEnAlto, ficha.blindaje.armaduraNatural, reactivo);
+  const casillaBrazo = casillaBlindajeBrazo(ficha.ficha, tipo);
+  const desglose = desgloseBlindaje(
+    ficha.ficha,
+    tipo,
+    conEscudo && escudoEnAlto,
+    ficha.blindaje.armaduraNatural,
+    reactivo,
+    conBrazo && Boolean(casillaBrazo),
+  );
 
   const marcarReactivo = () => {
     if (!casilla) return;
@@ -70,6 +81,7 @@ export function BloquearDanioModal({
       onAjustarFatiga?.(otra.costeFatiga);
       setReactivo(false);
     }
+    if (casillaBlindajeBrazo(ficha.ficha, t)?.bloqueada) setConBrazo(false);
     setTipo(t);
   };
   const blindaje = desglose.reduce((total, l) => total + l.valor, 0);
@@ -128,6 +140,29 @@ export function BloquearDanioModal({
               <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">
                 Acción para levantarlo, dura hasta tu siguiente turno. No cuenta si te atacan por
                 la espalda.
+              </p>
+            </div>
+          )}
+
+          {casillaBrazo && (
+            <div className="mt-4 border-t border-border pt-3">
+              <button
+                type="button"
+                onClick={() => setConBrazo((v) => !v)}
+                aria-pressed={conBrazo}
+                disabled={!conBrazo && Boolean(casillaBrazo.bloqueada)}
+                className={`clip-chamfer-sm w-full border px-3 py-2 text-left font-mono text-xs uppercase active:scale-[0.99] disabled:opacity-50 disabled:active:scale-100 ${
+                  conBrazo ? "border-info text-info" : "border-border text-muted"
+                }`}
+              >
+                {conBrazo ? "✓ " : ""}
+                {casillaBrazo.etiqueta}
+              </button>
+              {casillaBrazo.bloqueada && !conBrazo && (
+                <p className="mt-1.5 font-mono text-[11px] text-danger">{casillaBrazo.bloqueada}</p>
+              )}
+              <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">
+                +{casillaBrazo.valor} de blindaje. {casillaBrazo.nota}
               </p>
             </div>
           )}
