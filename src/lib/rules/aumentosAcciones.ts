@@ -1,18 +1,31 @@
-// Acciones propias de los aumentos (tanda A4a de docs/propuesta-aumentos.md, docs/sistema.md
-// §11.3): la sección "Aumentos" de la pestaña Acciones, hermana de "Dotes"
+// Acciones propias de los aumentos (tandas A4a y A4b de docs/propuesta-aumentos.md,
+// docs/sistema.md §11.3): la sección "Aumentos" de la pestaña Acciones, hermana de "Dotes"
 // (dotesAcciones.ts). Lo expone resolverFicha (FichaResuelta.accionesAumentos); la UI solo pinta.
 //
-//   directas      acciones sin dado (AccionDirecta) con su coste de fatiga y su nota:
-//                 Acción combinada, Cortar hemorragia y exanguinante, Eliminar exanguinante,
-//                 Sacudir miedo, Dominar terror, Mensaje subvocal y Telemetría, Sanar letal y
-//                 Sanar grave. Algunas traen `efecto` (quitar o bajar un estado, +1 de vida),
-//                 que aplica el servidor con usoDeAccionAumento.
+//   filas         en el orden del catálogo (por pieza y, dentro de ella, como vienen), para
+//                 que lo que va junto salga junto (Barrido electromagnético: ampliar a 30 m,
+//                 a 60 m y la tirada de buscar):
+//                   directa  acción sin dado (AccionDirecta) con su coste de fatiga y su nota:
+//                            Acción combinada, Cortar hemorragia y exanguinante, Eliminar
+//                            exanguinante, Sacudir miedo, Dominar terror, Mensaje subvocal y
+//                            Telemetría, Sanar letal y grave, Ampliar el barrido. Algunas traen
+//                            `efecto` (quitar o bajar un estado, +1 de vida), que aplica el
+//                            servidor con usoDeAccionAumento.
+//                   tirada   Accion (FilaTirada) (A4b): Encontrar o distinguir (barrido),
+//                            Incorporar arma (Brazo, con la regla de especialidad de las
+//                            acciones de dote) y Tempestad Nanobótica (ataque de daño fijo, con
+//                            su fatiga cobrada al tirar: Accion.costeFatiga).
+//   directas      las filas directas, para el servidor.
 //   informativas  filas sin botón: la defensa del MQE contra la intrusión psiónica, la del
 //                 nivel que se tenga (cada nivel sustituye al anterior).
 //
-// Respeta operacionesActivas (con un requisito roto no hay acción) y los niveles del implante
-// (se acumulan; la misma acción en un nivel alto sustituye a la del bajo).
-import type { AccionDirecta } from "./acciones";
+// Respeta operacionesActivas (con un requisito roto no hay acción), la opción elegida de la
+// operación (Introgresión: el sentido) y los niveles del implante (se acumulan; la misma acción
+// en un nivel alto sustituye a la del bajo).
+import type { Accion, AccionDirecta } from "./acciones";
+import type { AplicadoId } from "./atributos";
+import type { HabilidadId } from "./habilidades";
+import type { EspecialidadId } from "../catalog/especialidades";
 import { aumentoPorId, operacionesActivas } from "./aumentos";
 import { acumulaPorClave, nivelesHasta } from "./equipo";
 import type { EstadoActivo } from "./estados";
@@ -29,7 +42,22 @@ export type EfectoAccionAumento =
   | { tipo: "estado"; estadoId: string; desde?: string; a: string | null }
   | { tipo: "vida"; delta: number };
 
-// En el catálogo (operación o nivel de implante). `economia`: el tipo de acción, en texto.
+// Acción con dado (A4b). `especialidad`: la regla de las acciones de dote (con ella, en
+// especialidad; sin ella, a la mitad). Sin `dificultad`, la pone el máster (el modal abre en
+// la de siempre). `ataque`: daño fijo, sin bono por éxitos. `efectos`: lo que el jugador
+// aplica a mano en otro sitio (el blindaje del objetivo), tras el daño.
+export type TiradaAumentoCatalogo = {
+  aplicado: AplicadoId;
+  habilidad: HabilidadId;
+  especialidad?: EspecialidadId;
+  dificultad?: number;
+  ataque?: { danio: number; categoria: string };
+  efectos?: string[];
+};
+
+// En el catálogo (operación, opción de la operación o nivel de implante). `economia`: el tipo
+// de acción, en texto (vacío: no se dice). Con `tirada` es una acción con dado: su fatiga se
+// cobra al tirar y no lleva `efecto`.
 export type AccionAumentoCatalogo = {
   id: string;
   label: string;
@@ -37,6 +65,7 @@ export type AccionAumentoCatalogo = {
   costeFatiga?: number;
   nota: string;
   efecto?: EfectoAccionAumento;
+  tirada?: TiradaAumentoCatalogo;
 };
 
 // Defensa del MQE contra la intrusión psiónica, por nivel. Dato sobre un tercero: la app no
@@ -45,9 +74,10 @@ export type DefensaIntrusion = { alcance: string; dificultad: number; defensa: s
 
 export type AccionDeAumento = AccionDirecta & { fuente: string; efecto: EfectoAccionAumento | null };
 export type InfoDeAumento = { id: string; label: string; fuente: string; lineas: string[] };
-export type AccionesDeAumentos = { directas: AccionDeAumento[]; informativas: InfoDeAumento[] };
+export type FilaAumento = { tipo: "directa"; accion: AccionDeAumento } | { tipo: "tirada"; accion: Accion };
+export type AccionesDeAumentos = { filas: FilaAumento[]; directas: AccionDeAumento[]; informativas: InfoDeAumento[] };
 
-export const SIN_ACCIONES_DE_AUMENTOS: AccionesDeAumentos = { directas: [], informativas: [] };
+export const SIN_ACCIONES_DE_AUMENTOS: AccionesDeAumentos = { filas: [], directas: [], informativas: [] };
 
 const NOTA_INTRUSO =
   "El intruso tira cada turno lo que proceda por Resonancia (acción compleja, con concentración) y la dificultad sube 1 por turno. La app no tira por él.";
@@ -60,7 +90,12 @@ function aportes(sheet: Pick<Sheet, "equipo">): Aporte[] {
     const cat = aumentoPorId(pieza.catalogoId);
     if (!cat) return [];
     if (cat.familia === "operacionGenetica") {
-      return activas.has(cat.id) && cat.acciones ? [{ fuente: cat.label, acciones: cat.acciones, defensa: null }] : [];
+      if (!activas.has(cat.id)) return [];
+      // La opción elegida (Introgresión: Percepción Electromagnética trae el barrido).
+      const opcion = cat.eleccion?.opciones.find((o) => o.id === pieza.eleccion);
+      const acciones = [...(cat.acciones ?? []), ...(opcion?.acciones ?? [])];
+      if (acciones.length === 0) return [];
+      return [{ fuente: opcion?.acciones ? `${cat.label} (${opcion.label})` : cat.label, acciones, defensa: null }];
     }
     if (pieza.nivel === undefined) return [];
     const niveles = nivelesHasta(cat.niveles, pieza.nivel);
@@ -73,26 +108,59 @@ function aportes(sheet: Pick<Sheet, "equipo">): Aporte[] {
 
 const fatigaTexto = (n: number) => `${n} de fatiga`;
 
+const sinFatiga = (coste: number, fatigaActual: number) =>
+  coste > fatigaActual ? { bloqueada: `No te llega la fatiga: cuesta ${coste} y te quedan ${fatigaActual}.` } : {};
+
 function directa(a: AccionAumentoCatalogo, fuente: string, fatigaActual: number): AccionDeAumento {
   const coste = a.costeFatiga ?? 0;
-  const cabecera = [a.economia, coste > 0 ? fatigaTexto(coste) : "sin coste"].join(", ");
+  const cabecera = [a.economia, coste > 0 ? fatigaTexto(coste) : "sin coste"].filter(Boolean).join(", ");
   return {
     id: a.id,
     label: a.label,
     grupo: "Aumentos",
     nota: `${cabecera}. ${a.nota} (${fuente})`,
     ...(coste > 0 && { costeFatiga: coste }),
-    ...(coste > fatigaActual && { bloqueada: `No te llega la fatiga: cuesta ${coste} y te quedan ${fatigaActual}.` }),
+    ...sinFatiga(coste, fatigaActual),
     fuente,
     efecto: a.efecto ?? null,
   };
 }
 
+function conTirada(a: AccionAumentoCatalogo, t: TiradaAumentoCatalogo, fuente: string, fatigaActual: number): Accion {
+  const coste = a.costeFatiga ?? 0;
+  const cabecera = [a.economia, coste > 0 ? `${fatigaTexto(coste)} al tirar` : null].filter(Boolean).join(", ");
+  return {
+    id: a.id,
+    label: a.label,
+    grupo: "Aumentos",
+    aplicado: t.aplicado,
+    habilidad: t.habilidad,
+    nota: `${cabecera ? `${cabecera}. ` : ""}${a.nota} (${fuente})`,
+    ...(t.especialidad && { especialidadesAccion: [t.especialidad] }),
+    ...(t.dificultad !== undefined && { dificultadSugerida: t.dificultad }),
+    ...(coste > 0 && { costeFatiga: coste }),
+    ...sinFatiga(coste, fatigaActual),
+    ...(t.ataque && {
+      ataque: {
+        modos: [{ id: a.id, danio: t.ataque.danio, formulaDanio: null, categoriaDanio: t.ataque.categoria }],
+        sinBonoExitos: a.label,
+      },
+    }),
+    ...(t.efectos && { efectos: t.efectos.map((texto) => ({ fuente: a.label, texto })) }),
+  };
+}
+
 export function accionesDeAumentos(sheet: Pick<Sheet, "equipo" | "fatigaActual">): AccionesDeAumentos {
-  const directas: AccionDeAumento[] = [];
+  const filas: FilaAumento[] = [];
   const informativas: InfoDeAumento[] = [];
   for (const ap of aportes(sheet)) {
-    for (const a of ap.acciones) directas.push(directa(a, ap.fuente, sheet.fatigaActual));
+    for (const a of ap.acciones) {
+      filas.push(
+        a.tirada
+          ? { tipo: "tirada", accion: conTirada(a, a.tirada, ap.fuente, sheet.fatigaActual) }
+          : { tipo: "directa", accion: directa(a, ap.fuente, sheet.fatigaActual) },
+      );
+    }
     if (ap.defensa) {
       const d = ap.defensa;
       informativas.push({
@@ -109,7 +177,8 @@ export function accionesDeAumentos(sheet: Pick<Sheet, "equipo" | "fatigaActual">
       });
     }
   }
-  return directas.length === 0 && informativas.length === 0 ? SIN_ACCIONES_DE_AUMENTOS : { directas, informativas };
+  const directas = filas.flatMap((f) => (f.tipo === "directa" ? [f.accion] : []));
+  return filas.length === 0 && informativas.length === 0 ? SIN_ACCIONES_DE_AUMENTOS : { filas, directas, informativas };
 }
 
 // --- Usar una acción (lo aplica el servidor) ---------------------------------

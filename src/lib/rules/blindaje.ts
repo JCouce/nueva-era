@@ -8,7 +8,7 @@
 import { equipoPorId, type Armadura, type Subsistema } from "../catalog/equipo";
 import type { ArmaMelee } from "../catalog/armasMelee";
 import { nivelesHasta, ultimoQueDefine } from "./equipo";
-import { armaduraNaturalDeAumentos } from "./aumentosTiradas";
+import { armaduraNaturalDeAumentos, blindajeReactivoDeAumentos } from "./aumentosTiradas";
 import type { Sheet } from "./sheet";
 
 export const TIPOS_DANIO = [
@@ -80,19 +80,31 @@ export type LineaBlindaje = { etiqueta: string; valor: number; nota?: string };
 export type ArmaduraNatural = { valor: number; fuente: string | null };
 export const SIN_ARMADURA_NATURAL: ArmaduraNatural = { valor: 0, fuente: null };
 
+// Por qué el blindaje no cuenta contra `tipo`, o null si cuenta. Lo comparten el desglose y
+// la casilla de blindaje reactivo (Densificar), que vale donde valga la armadura natural.
+export function blindajeNoCuenta(tipo: TipoDanio): string | null {
+  if (tipo === "mental") return "Mental omite blindaje";
+  if (tipo === "fuego") return "Fuego (falta Mejora Ignífuga)";
+  return null;
+}
+
 // Desglose de qué aporta cada fuente contra `tipo` — fuente única de verdad
 // para blindajeContra() (la suma de estas líneas) y para "Bloquear daño"
 // (que las pinta una a una: "nada suma en silencio", mismo criterio que
 // AccionModal.tsx). Mental/Fuego devuelven una única línea a 0 explicando por
 // qué, en vez de una lista vacía sin más.
+//
+// `reactivo` (A4b): la casilla de blindaje reactivo marcada (Densificar del Enjambre 3+). Sin
+// la pieza, o contra Mental o Fuego, no suma nada.
 export function desgloseBlindaje(
   sheet: Sheet,
   tipo: TipoDanio,
   escudoEnAlto: boolean,
   armaduraNatural: ArmaduraNatural,
+  reactivo = false,
 ): LineaBlindaje[] {
-  if (tipo === "mental") return [{ etiqueta: "Mental omite blindaje", valor: 0 }];
-  if (tipo === "fuego") return [{ etiqueta: "Fuego (falta Mejora Ignífuga)", valor: 0 }];
+  const noCuenta = blindajeNoCuenta(tipo);
+  if (noCuenta) return [{ etiqueta: noCuenta, valor: 0 }];
 
   const lineas: LineaBlindaje[] = [];
   const armadura = armaduraEquipada(sheet);
@@ -122,7 +134,49 @@ export function desgloseBlindaje(
     if (escudo?.defensa) lineas.push({ etiqueta: `${escudo.label} (en alto)`, valor: escudo.defensa.blindaje });
   }
 
+  const r = reactivo ? blindajeReactivoDeAumentos(sheet) : null;
+  // Su nota va junto a la casilla (casillaBlindajeReactivo), no repetida en el desglose.
+  if (r) lineas.push({ etiqueta: `${r.etiqueta} · ${r.fuente}`, valor: r.valor });
+
   return lineas;
+}
+
+// La casilla de blindaje reactivo de "Bloquear daño" (Densificar, Enjambre 3+; A4b), o null sin
+// la pieza. Se cobra al marcarla y se devuelve al desmarcarla (lo hace el modal con estos
+// datos). `bloqueada`: por qué no se puede marcar ahora (el tipo de daño no lo para el
+// blindaje, o no llega la fatiga; marcada ya está pagada, así que la fatiga no la bloquea).
+export type CasillaBlindajeReactivo = {
+  etiqueta: string;
+  valor: number;
+  costeFatiga: number;
+  nota: string;
+  bloqueada: string | null;
+};
+
+const MOTIVO_NO_CUENTA = {
+  mental: "No vale contra el daño mental: no lo para el blindaje.",
+  fuego: "No vale contra el fuego: sin Mejora Ignífuga no cuenta el blindaje.",
+} as const;
+
+export function casillaBlindajeReactivo(
+  sheet: Pick<Sheet, "equipo" | "fatigaActual">,
+  tipo: TipoDanio,
+  marcada: boolean,
+): CasillaBlindajeReactivo | null {
+  const r = blindajeReactivoDeAumentos(sheet);
+  if (!r) return null;
+  const noCuenta = blindajeNoCuenta(tipo);
+  const sinFatiga =
+    !marcada && sheet.fatigaActual < r.costeFatiga
+      ? `No te llega la fatiga: cuesta ${r.costeFatiga} y te quedan ${sheet.fatigaActual}.`
+      : null;
+  return {
+    etiqueta: `${r.etiqueta} (${r.fuente.replace(/ \d+$/, "")}, ${r.costeFatiga} fatiga)`,
+    valor: r.valor,
+    costeFatiga: r.costeFatiga,
+    nota: r.nota,
+    bloqueada: noCuenta ? MOTIVO_NO_CUENTA[tipo as "mental" | "fuego"] : sinFatiga,
+  };
 }
 
 // Cuánto blindaje tiene el personaje AHORA MISMO contra `tipo`. `escudoEnAlto`

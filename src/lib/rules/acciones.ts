@@ -93,8 +93,12 @@ export type Accion = {
   // texto por grado propio y lo que tira el objetivo, para el panel de resultado.
   poder?: DetallePoder;
   // Cuando una tirada depende de algo que el sistema aún no define, se declara
-  // en vez de inventársela: la UI la muestra apagada con el motivo.
+  // en vez de inventársela: la UI la muestra apagada con el motivo. También una acción de
+  // aumento con fatiga fija que no llega (A4b).
   bloqueada?: string;
+  // Fatiga fija que se paga al tirar (Tempestad Nanobótica, A4b), además de la de las
+  // casillas: montarTirada la suma a TiradaMontada.costeFatiga.
+  costeFatiga?: number;
   // Qué entrada de sheet.recursos gasta esta tirada al confirmarse
   // (docs/prompt-gasto-recursos.md, Fase 1) — ausente si no consume ningún
   // RECURSO (salvaciones, tiradas fijas, armas melee sin célula). No se
@@ -172,6 +176,9 @@ export type Accion = {
     // Poderes que dañan aunque fallen (Expansión, poderes.ts): "Tirar daño"
     // también con fracaso, con el daño base sin bono por éxitos.
     danioAlFallar?: boolean;
+    // Daño fijo, sin el +1 por cada dos éxitos (Tempestad Nanobótica, A4b): la fuente, que
+    // montarTirada pasa a TiradaMontada.danio y enseña el resultado.
+    sinBonoExitos?: string;
   };
   // Solo "Volar" (Movilidad Aérea, lib/rules/movimiento.ts): payout en
   // metros en vez de daño — campo hermano de `ataque` porque esa UI ya

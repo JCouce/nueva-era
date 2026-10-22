@@ -32,6 +32,11 @@
 // `defensaIntrusion` del MQE por nivel. La acción combinada de Red Frontoparietal deja de ser
 // texto en las pruebas mentales.
 //
+// Tanda A4b: acciones con dado (`tirada` en la acción: el barrido de Percepción
+// Electromagnética, que va en la opción de Introgresión; Incorporar arma del Brazo; Tempestad
+// Nanobótica del Enjambre 4, con daño fijo) y el `blindajeReactivo` del Enjambre 3 (Densificar,
+// casilla en "Bloquear daño": blindaje.ts).
+//
 // Tanda A3: `reducePenalizador` (Estabilización Autonómica en heridas y fatiga, Neurogénesis
 // en fatiga solo con sus aplicados, Matriz Ósea en carga como nota) y las casillas de
 // cobertura (Foveo, Ojo 2-4) en ataques a distancia y Buscar/percibir, sin apilar entre sí.
@@ -51,7 +56,7 @@ import type { HabilidadId } from "../rules/habilidades";
 import type { CondicionTirada } from "../rules/condiciones";
 import type { Modificador } from "../rules/modificadores";
 import type { MotorMetadata } from "../rules/motor";
-import type { EfectoSalvacion, EfectosTiradaAumento } from "../rules/aumentosTiradas";
+import type { BlindajeReactivo, EfectoSalvacion, EfectosTiradaAumento } from "../rules/aumentosTiradas";
 import type { AccionAumentoCatalogo, DefensaIntrusion } from "../rules/aumentosAcciones";
 import type { NivelModulo, Rareza } from "./equipo";
 import { VISION_AUMENTADA } from "./mejorasArma";
@@ -68,8 +73,9 @@ const NOTA_COBERTURA = "La cobertura total no se reduce; resta la cobertura a ma
 export type ReduccionPenalizadorAumento = { de: "heridas" | "fatiga" | "carga"; valor: number; aplicados?: AplicadoId[] };
 
 // Elección al comprar (Introgresión: el sentido). Cada opción con su texto y, desde A2a,
-// lo que ese sentido pone en las tiradas (EfectosTiradaAumento).
-export type OpcionAumento = { id: string; label: string; detalle: string[] } & EfectosTiradaAumento;
+// lo que ese sentido pone en las tiradas (EfectosTiradaAumento). A4b: sus acciones propias
+// (Percepción Electromagnética: el barrido).
+export type OpcionAumento = { id: string; label: string; detalle: string[]; acciones?: AccionAumentoCatalogo[] } & EfectosTiradaAumento;
 export type EleccionAumento = { id: string; label: string; opciones: OpcionAumento[] };
 
 export type OperacionGenetica = {
@@ -103,12 +109,14 @@ export type VarianteImplante = { id: string; label: string; detalle: string[] };
 // selector "Contra…" (rules/aumentosTiradas.ts). Los niveles se acumulan; la misma clave
 // en un nivel alto sustituye a la del bajo.
 // A4a: `acciones` (se acumulan por id como las casillas) y `defensaIntrusion` (MQE: vale la
-// del nivel más alto).
+// del nivel más alto). A4b: `blindajeReactivo` (Densificar: vale el del nivel más alto) y
+// acciones con dado (`tirada`).
 export type NivelImplante = NivelModulo & {
   variantes?: VarianteImplante[];
   salvaciones?: EfectoSalvacion[];
   acciones?: AccionAumentoCatalogo[];
   defensaIntrusion?: DefensaIntrusion;
+  blindajeReactivo?: BlindajeReactivo;
 };
 
 export type Implante = {
@@ -958,6 +966,32 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
           detalle: [
             "Este aumento dota al personaje de una capacidad de detección de campos electromagnéticos generados por motores, baterías, sintéticos y armamento energético a corta distancia a través de tabiques finos. Al ser un proceso orgánico, no emite pulsos rastreables, aunque muestra vulnerabilidad ante descargas eléctricas directas o campos magnéticos intensos. Su alcance pasivo es de 10 metros, pero con una tirada de perspicacia + exploración y una acción compleja se aumenta el área a 30 metros, si además emplea un punto de fatiga en la prueba, se aumenta el área a 60 metros.",
           ],
+          // A4b (usuario, 2026-10-22): ampliar no tira; lo que se tira es la búsqueda. Las tres
+          // juntas y en este orden.
+          acciones: [
+            {
+              id: "aumentos_barrido_30",
+              label: "Ampliar a 30 m",
+              economia: "Acción compleja",
+              nota: "El barrido electromagnético pasa de 10 m a 30 m. No tira: lo que se tira es encontrar o distinguir.",
+            },
+            {
+              id: "aumentos_barrido_60",
+              label: "Ampliar a 60 m",
+              economia: "Acción compleja",
+              costeFatiga: 1,
+              nota: "El barrido electromagnético pasa de 10 m a 60 m. No tira: lo que se tira es encontrar o distinguir.",
+            },
+            {
+              id: "aumentos_barrido_buscar",
+              label: "Encontrar o distinguir",
+              // TODO(revisar): el texto no separa la acción de ampliar de la de buscar; la
+              // búsqueda no lleva economía propia (la acción compleja va en ampliar).
+              economia: "",
+              nota: "Dificultad: la pone el máster. Encuentras o distingues campos electromagnéticos (motores, baterías, sintéticos, armamento energético) en el área del barrido, también tras tabiques finos.",
+              tirada: { aplicado: "perspicacia", habilidad: "exploracion" },
+            },
+          ],
         },
         {
           id: "espectro_ultravioleta",
@@ -1011,7 +1045,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
       { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "pendiente" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_barrido_electromagnetico" }, mecanismo: "accion_equipo", estado: "pendiente" },
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_barrido_electromagnetico" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "sigilo" }, mecanismo: "nota_fija", estado: "pendiente" },
     ],
@@ -1303,7 +1337,17 @@ export const IMPLANTES: Implante[] = [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "sustitucion_aplicado", estado: "bloqueado", bloqueoPor: "capa extremidad_atributos_propios" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "capa nueva: arma incorporada (vínculo brazo-instancia de arma)" },
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "desarmar" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "capa nueva: arma incorporada (vínculo brazo-instancia de arma)" },
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_montar_arma_brazo" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_montar_arma_brazo" }, mecanismo: "accion_equipo", estado: "construido" },
+        ],
+        // A4b: solo la tirada (usuario, 2026-10-22). El vínculo del arma con el brazo, en A6.
+        acciones: [
+          {
+            id: "aumentos_montar_arma_brazo",
+            label: "Incorporar arma",
+            economia: "Acción extendida de 10 minutos",
+            nota: "Con el instrumental adecuado. El arma, de una mano (también de fuego). Si fallas, se repite con otros 10 minutos. Quitarla es la misma acción. La app aún no guarda qué arma lleva el brazo.",
+            tirada: { aplicado: "perspicacia", habilidad: "biociencia", especialidad: "bionica", dificultad: 8 },
+          },
         ],
       },
       {
@@ -1593,11 +1637,18 @@ export const IMPLANTES: Implante[] = [
           "Además, como reacción y con el gasto de un punto de fatiga el enjambre puede densificarse de forma reactiva bajo la dermis, otorgando 3 puntos de blindaje contra un golpe específico. Si el impacto causa atudimiento el usuario recibe un bonificador de +3 contra el efecto.",
         ],
         modificadores: [],
-        // El +3 contra el aturdimiento de un golpe densificado llega con la acción (A4).
         salvaciones: [{ contra: ["toxinas", "venenos", "enfermedad"], bono: 4 }],
+        // A4b: casilla en "Bloquear daño" que cobra al marcarla. El +3 contra el aturdimiento de
+        // ese golpe, como nota.
+        blindajeReactivo: {
+          etiqueta: "Densificar",
+          valor: 3,
+          costeFatiga: 1,
+          nota: "Reacción, contra este golpe. Si te aturde, +3 a la salvación contra el aturdimiento (márcalo en el circunstancial).",
+        },
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_densificar" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_densificar" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
       },
       {
@@ -1609,10 +1660,28 @@ export const IMPLANTES: Implante[] = [
           "Además, introduce la capacidad de Tempestad Nanobótica: como acción estándar y gastando 2 puntos de fatiga, el usuario puede forzar al enjambre a desbordarse momentáneamente a través de la piel para atacar o sabotear el entorno inmediato. El ataque se resuelve como acción estándar, su alcance es melee y requiere de una tirada de reflejos + tecnociencia. Su daño básico es de 1 Grave, y es cuando acierta al blindaje destruye 1 punto por contacto físico. De la misma forma se puede emplear para sabotear objetos.",
         ],
         modificadores: [],
+        // A4b (usuario, 2026-10-22): 1 grave fijo, sin sumar éxitos; dificultad 0 (la de un
+        // ataque por defecto). Quitar blindaje y sabotear, como nota.
+        acciones: [
+          {
+            id: "aumentos_tempestad_nanobotica",
+            label: "Tempestad Nanobótica",
+            economia: "Acción estándar, cuerpo a cuerpo",
+            costeFatiga: 2,
+            nota: "Daño 1 grave fijo: los éxitos no suman. También sirve para sabotear objetos (esa tirada no está definida: la decide el máster).",
+            tirada: {
+              aplicado: "reflejos",
+              habilidad: "tecnociencia",
+              dificultad: 0,
+              ataque: { danio: 1, categoria: "Grave" },
+              efectos: ["Cada acierto destruye 1 punto de blindaje del objetivo por contacto físico: que se lo reste a mano."],
+            },
+          },
+        ],
         motor: [
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ficha" }, mecanismo: "nota_fija", estado: "pendiente" },
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_tempestad_nanobotica" }, mecanismo: "accion_equipo", estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "blindaje_del_objetivo" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_tempestad_nanobotica" }, mecanismo: "accion_equipo", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "blindaje_del_objetivo" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
     ],

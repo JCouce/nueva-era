@@ -1343,6 +1343,32 @@ al preparar su modelado:
   - **Defensa del MQE:** fila informativa sin botón con alcance, dificultad de infiltración
     (+1 por turno), defensa y contragolpe del nivel que se tenga; el nivel 4 dice que el cepo
     del 3 se puede elegir en cada intrusión. La app no tira por el intruso.
+- *En la app (A4b, acciones con dado y Densificar):* mismo canal (`rules/aumentosAcciones.ts`),
+  con `operacionesActivas`, la opción elegida de la operación y los niveles del implante. La
+  sección "Aumentos" pinta las filas **en el orden del catálogo**, directas y tiradas
+  mezcladas.
+  - **Barrido electromagnético** (Introgresión con Percepción Electromagnética; usuario,
+    2026-10-22): "Ampliar a 30 m" (acción compleja, sin coste ni tirada), "Ampliar a 60 m"
+    (1 de fatiga) y "Encontrar o distinguir" (Perspicacia + Exploración, la dificultad la
+    pone el máster: el modal abre en la de siempre). Juntas y en ese orden: ampliar no tira; lo
+    que se tira es la búsqueda. La búsqueda no lleva economía propia (`TODO(revisar)`).
+  - **Tempestad Nanobótica** (Enjambre 4): ataque cuerpo a cuerpo de Reflejos + Tecnociencia,
+    dificultad 0 (la de un ataque por defecto), **1 grave fijo sin sumar éxitos**
+    (`ataque.sinBonoExitos`) y **2 de fatiga cobrados al tirar** (`Accion.costeFatiga`, que
+    `montarTirada` suma a la fatiga de las casillas; el ahorro de Mielinización también la
+    rebaja, como el coste de un poder). Sin 2 de fatiga, la fila sale apagada. Solo en la
+    sección "Aumentos", no en "Ataques" (no es un arma). Quitar 1 de blindaje al objetivo por
+    acierto, aviso tras el daño (se resta a mano); sabotear objetos, nota sin tirada.
+  - **Densificar** (Enjambre 3+): casilla en "Bloquear daño", +3 de blindaje contra ese golpe.
+    **Se cobra 1 de fatiga al marcarla y se devuelve al desmarcarla** sin cerrar el modal; sin
+    fatiga, apagada con el motivo. Vale donde cuenta el blindaje (no contra Mental ni Fuego sin
+    Ignífuga, el mismo criterio que la armadura natural: `blindajeNoCuenta`); cambiar a uno de
+    esos tipos con ella marcada la desmarca y devuelve la fatiga. El +3 contra el aturdimiento,
+    nota. En el combate en vivo del máster suma igual y la fatiga se cobra a mano.
+  - **Incorporar arma** (Brazo, cualquier nivel): Perspicacia + Biociencia a dificultad 8 con
+    la regla de especialidad de las acciones de dote (con Biónica, en especialidad; sin ella, a
+    la mitad). Acción extendida de 10 minutos, instrumental, arma de una mano (también de
+    fuego), repetir si fallas, quitarla igual: nota. El vínculo del arma con el brazo, en A6.
 
 ### 11.2 Lo que el documento no dice `[PENDIENTE]`
 - **Tope de implantes**: pregunta 11, sigue abierta.
@@ -1352,6 +1378,10 @@ al preparar su modelado:
 - **Erratas** pendientes de Murillo: ver "Notas de transcripción" en `docs/aumentos.md`.
 - **Eliminar exanguinante** (Regeneración Tisular): el texto no dice qué acción cuesta. La app
   la trata como gratuita, igual que cortar la hemorragia en Angiogénesis (usuario, 2026-10-22).
+- **Encontrar o distinguir** (barrido de la Percepción Electromagnética): qué acción cuesta. El
+  texto solo pone la acción compleja en ampliar el área; la app no le da tipo propio.
+- **Tempestad Nanobótica**: si le valen las dotes de ataque cuerpo a cuerpo. La app no se las
+  aplica, porque no es un arma (usuario, 2026-10-22).
 
 ### 11.3 Decisiones del usuario `[FIRME · usuario 2026-10-16, Cuestionario Aumentos]`
 - **En la ficha**: una pieza de equipo más, que se equipa y se desequipa ("un jugador se

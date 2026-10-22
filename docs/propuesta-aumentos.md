@@ -314,6 +314,51 @@ que la casilla se reinicie con "Terminar escena".
 - **Enjambre:** "sin penalizadores por fatiga" es solo de la regeneración pasiva; las dos
   acciones no lo piden.
 
+**Decidido A4b (usuario, 2026-10-22):** las cuatro recomendadas.
+- **Barrido electromagnético:** "Ampliar a 30 m" (sin tirada ni coste, acción compleja),
+  "Ampliar a 60 m" (1 de fatiga) y "Encontrar o distinguir" (Perspicacia + Exploración, la
+  dificultad la elige el máster). Las tres van **juntas y en ese orden**, para que se vea que
+  ampliar no tira y lo que se tira es la búsqueda.
+- **Tempestad Nanobótica:** 1 de daño grave **fijo, sin sumar éxitos**. Ataque cuerpo a cuerpo
+  de Reflejos + Tecnociencia, dificultad 0, 2 de fatiga al tirar. Quitar blindaje y sabotear
+  objetos, como nota.
+- **Densificar:** casilla en "Bloquear daño" (+3) que **cobra 1 de fatiga al marcarla**;
+  desmarcarla sin cerrar el modal lo devuelve. Vale **donde cuenta el blindaje** (no contra el
+  daño mental ni el fuego sin Ignífuga), igual que la armadura natural. El +3 contra el
+  aturdimiento, como nota.
+- **Incorporar arma:** Perspicacia + Biociencia a dificultad 8, con la **regla de especialidad
+  de las acciones de dote**: si tienes Biónica, con la especialidad; si no, a la mitad. El
+  vínculo del arma con el brazo, en A6.
+
+**Construido (A4b, matices):**
+- **Orden:** `accionesDeAumentos` devuelve `filas` (directas y tiradas, en el orden del
+  catálogo) y la sección "Aumentos" las pinta así; `directas` queda para el servidor. Las
+  tiradas pasan por `conExtrasDeFicha` como las de dote (les llegan las casillas con alcance).
+- **Barrido:** las tres acciones van en la opción de Introgresión (`OpcionAumento.acciones`);
+  la fuente es "Introgresión Sensorial Heteróloga (Percepción Electromagnética)". Las dos de
+  ampliar son acciones complejas (la de 60 m también: "si además emplea…") y las cobra el
+  servidor como el resto de A4a. "Encontrar o distinguir" no lleva economía propia
+  (`TODO(revisar)`) ni dificultad sugerida: el modal abre en 7 y la nota dice que la pone el
+  máster.
+- **Tempestad:** solo en "Aumentos", no copiada en "Ataques": no es un arma, así que no le
+  tocan las casillas y textos de dote por familia o empleo de arma (`TODO(revisar)` si alguna
+  dote de ataque cuerpo a cuerpo debería valer). Campos nuevos en `Accion`: `costeFatiga`
+  (fatiga fija al tirar; el ahorro de Mielinización la rebaja) y `ataque.sinBonoExitos`
+  (`montarTirada` lo pasa a `danio.sinBonoExitos`; ninguna casilla lo devuelve). Sin 2 de
+  fatiga la fila sale "no disponible" (antes la etiqueta de `Accion.bloqueada` decía "sin
+  definir", y no la usaba nadie) y "Tirar otra vez" se apaga. Quitar blindaje va en
+  `efectos` (aviso tras el daño).
+- **Densificar:** `blindajeReactivo` en el nivel 3 del Enjambre; `casillaBlindajeReactivo` y
+  `desgloseBlindaje(…, reactivo)` en `blindaje.ts`, con `blindajeNoCuenta` compartido. El
+  modal cobra con `onPagarFatiga` y devuelve con `onAjustarFatiga` (nuevo, desde
+  CharacterSheet y NpcEditor). Cambiar a Mental o Fuego con la casilla marcada la desmarca y
+  devuelve. Cerrar el modal con ella marcada no devuelve nada. El +3 contra el aturdimiento,
+  en la nota de la casilla (al circunstancial).
+- **Incorporar arma:** en el nivel 1 del Brazo, así que sale en todos. Nota: "La app aún no
+  guarda qué arma lleva el brazo".
+- **Requisito roto:** Introgresión y los implantes no tienen requisitos, así que el caso no se
+  da hoy; el camino es el mismo `operacionesActivas` de A4a.
+
 ### A5 · Activables (Neuroprótesis y Proyección)
 
 **Qué hace**
@@ -411,5 +456,7 @@ créditos); aprobada la ficha, nada.
   modelado.
 - **Eliminar exanguinante** (Regeneración): qué acción cuesta. La app la da por gratuita, como
   cortar la hemorragia (usuario, 2026-10-22).
+- **Encontrar o distinguir** (barrido): qué acción cuesta. **Tempestad:** si le valen las dotes
+  de ataque cuerpo a cuerpo (hoy no).
 - **Erratas del documento:** el nivel 3 del IRM repite la frase del nivel 2, y la
   ortografía.

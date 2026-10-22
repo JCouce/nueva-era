@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { desgloseBlindaje, TIPOS_DANIO, type FichaResuelta, type TipoDanio } from "@/lib/rules";
+import { casillaBlindajeReactivo, desgloseBlindaje, TIPOS_DANIO, type FichaResuelta, type TipoDanio } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 
 function signo(n: number) {
@@ -27,17 +27,51 @@ function LineaBlindaje({ etiqueta, valor, nota }: { etiqueta: string; valor: num
 }
 
 // "Bloquear daño" (docs/tareas.md, Hallazgo #5 / sistema.md pregunta 29): un
-// calculador puro, sin dado y sin escribir nada en la ficha — eliges tipo de
-// daño + cuánto recibes, y ves cuánto absorbe el blindaje ahora mismo. Por
-// eso no necesita el patrón de ReparaFabricaModal.tsx (tirada + callback de
-// efecto): aquí no hay tirada ni mutación, solo lectura de desgloseBlindaje().
-export function BloquearDanioModal({ ficha, onCerrar }: { ficha: FichaResuelta; onCerrar: () => void }) {
+// calculador puro, sin dado — eliges tipo de daño + cuánto recibes, y ves cuánto
+// absorbe el blindaje ahora mismo. Lo único que escribe es la fatiga de la casilla de
+// blindaje reactivo (Densificar del Enjambre 3+, A4b): se cobra al marcarla y se devuelve
+// al desmarcarla sin cerrar; qué vale y cuándo lo dice casillaBlindajeReactivo (blindaje.ts).
+// Sin onPagarFatiga (combate en vivo) la casilla suma igual y la fatiga se cobra a mano.
+export function BloquearDanioModal({
+  ficha,
+  onPagarFatiga,
+  onAjustarFatiga,
+  onCerrar,
+}: {
+  ficha: FichaResuelta;
+  onPagarFatiga?: (coste: number, permiteTemporal: boolean) => void;
+  onAjustarFatiga?: (delta: number) => void;
+  onCerrar: () => void;
+}) {
   const [tipo, setTipo] = useState<TipoDanio>("cinetico");
   const [escudoEnAlto, setEscudoEnAlto] = useState(false);
   const [danioRecibido, setDanioRecibido] = useState(0);
+  const [reactivo, setReactivo] = useState(false);
 
   const conEscudo = ficha.blindaje.tieneEscudoMelee;
-  const desglose = desgloseBlindaje(ficha.ficha, tipo, conEscudo && escudoEnAlto, ficha.blindaje.armaduraNatural);
+  const casilla = casillaBlindajeReactivo(ficha.ficha, tipo, reactivo);
+  const desglose = desgloseBlindaje(ficha.ficha, tipo, conEscudo && escudoEnAlto, ficha.blindaje.armaduraNatural, reactivo);
+
+  const marcarReactivo = () => {
+    if (!casilla) return;
+    if (reactivo) {
+      onAjustarFatiga?.(casilla.costeFatiga);
+      setReactivo(false);
+    } else if (!casilla.bloqueada) {
+      onPagarFatiga?.(casilla.costeFatiga, false);
+      setReactivo(true);
+    }
+  };
+
+  // Cambiar a un tipo en el que no vale (Mental, Fuego) la desmarca y devuelve la fatiga.
+  const elegirTipo = (t: TipoDanio) => {
+    const otra = casillaBlindajeReactivo(ficha.ficha, t, reactivo);
+    if (reactivo && otra?.bloqueada) {
+      onAjustarFatiga?.(otra.costeFatiga);
+      setReactivo(false);
+    }
+    setTipo(t);
+  };
   const blindaje = desglose.reduce((total, l) => total + l.valor, 0);
   const pasa = Math.max(0, danioRecibido - blindaje);
 
@@ -68,7 +102,7 @@ export function BloquearDanioModal({ ficha, onCerrar }: { ficha: FichaResuelta; 
                 <button
                   key={t.id}
                   type="button"
-                  onClick={() => setTipo(t.id)}
+                  onClick={() => elegirTipo(t.id)}
                   className={`clip-chamfer-sm border px-2 py-1.5 font-mono text-[11px] uppercase active:scale-95 ${
                     tipo === t.id ? "border-accent text-accent" : "border-border text-muted"
                   }`}
@@ -94,6 +128,31 @@ export function BloquearDanioModal({ ficha, onCerrar }: { ficha: FichaResuelta; 
               <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">
                 Acción para levantarlo, dura hasta tu siguiente turno. No cuenta si te atacan por
                 la espalda.
+              </p>
+            </div>
+          )}
+
+          {casilla && (
+            <div className="mt-4 border-t border-border pt-3">
+              <button
+                type="button"
+                onClick={marcarReactivo}
+                aria-pressed={reactivo}
+                disabled={!reactivo && Boolean(casilla.bloqueada)}
+                className={`clip-chamfer-sm w-full border px-3 py-2 text-left font-mono text-xs uppercase active:scale-[0.99] disabled:opacity-50 disabled:active:scale-100 ${
+                  reactivo ? "border-info text-info" : "border-border text-muted"
+                }`}
+              >
+                {reactivo ? "✓ " : ""}
+                {casilla.etiqueta}
+              </button>
+              {casilla.bloqueada && !reactivo && (
+                <p className="mt-1.5 font-mono text-[11px] text-danger">{casilla.bloqueada}</p>
+              )}
+              <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">
+                +{casilla.valor} de blindaje. {casilla.nota}
+                {reactivo ? " Desmarcarla te devuelve la fatiga." : ""}
+                {!onPagarFatiga ? " Cóbrate la fatiga a mano." : ""}
               </p>
             </div>
           )}

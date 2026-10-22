@@ -174,7 +174,7 @@ function FilaTirada({
             {tirada.label}
           </span>
           <span className="font-mono text-[10px] uppercase text-danger">
-            sin definir
+            no disponible
           </span>
         </div>
         <p className="mt-1 font-mono text-[10px] leading-relaxed text-muted">
@@ -498,6 +498,7 @@ export function AccionesTab({
   onAjustarFarmaco,
   onAjustarMunicionEspecial,
   onPagarFatiga,
+  onAjustarFatiga,
   onAjustarVida,
   onGastarUsosEscena,
   onUsarAccionAumento,
@@ -549,6 +550,9 @@ export function AccionesTab({
   // Con `permiteTemporal` (Proeza) el exceso sobre la fatiga que se tiene pasa
   // a fatiga temporal (vitalidad.ts, pagarFatiga).
   onPagarFatiga?: (coste: number, permiteTemporal: boolean) => void;
+  // Devolver fatiga (Densificar desmarcado en "Bloquear daño", A4b). Ausente en el combate
+  // en vivo, como onPagarFatiga.
+  onAjustarFatiga?: (delta: number) => void;
   // Daño de la sobrecarga psiónica, restado de la vida de la ficha.
   onAjustarVida?: (delta: number) => void;
   // Usos "una vez por escena" gastados al tirar (A4a, montada.usosEscena). Ausente donde no
@@ -654,6 +658,15 @@ export function AccionesTab({
       directasDotesEnGrupos: directas.filter((d) => d.grupo !== "Dotes"),
     };
   }, [ficha]);
+
+  // Acciones de aumento (A4a, A4b) en su orden: las tiradas con las casillas de la ficha.
+  const filasAumentos = useMemo(
+    () =>
+      ficha.accionesAumentos.filas.map((f) =>
+        f.tipo === "tirada" ? { ...f, accion: conExtrasDeFicha(ficha, f.accion) } : f,
+      ),
+    [ficha],
+  );
 
   const abrir = (t: Accion, enEspecialidad: boolean, sutil: boolean) => {
     setModal({ tirada: t, ficha, eleccion: { enEspecialidad, sutil }, resultadoId: null });
@@ -1283,10 +1296,10 @@ export function AccionesTab({
         </div>
       )}
 
-      {/* Aumentos (A4a): las acciones propias de los aumentos que funcionan y las filas
-          informativas (defensa del MQE), de la FichaResuelta (aumentosAcciones.ts). Sin
-          ninguna, no hay sección. */}
-      {(ficha.accionesAumentos.directas.length > 0 || ficha.accionesAumentos.informativas.length > 0) && (
+      {/* Aumentos (A4a, A4b): las acciones propias de los aumentos que funcionan (sin dado y
+          con dado) y las filas informativas (defensa del MQE), de la FichaResuelta
+          (aumentosAcciones.ts). Sin ninguna, no hay sección. */}
+      {(filasAumentos.length > 0 || ficha.accionesAumentos.informativas.length > 0) && (
         <div className="flex flex-col gap-2">
           <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
             Aumentos
@@ -1294,9 +1307,15 @@ export function AccionesTab({
           {avisoAumento && (
             <p className="border-l-2 border-info pl-2 font-sans text-[12px] leading-relaxed text-info">{avisoAumento}</p>
           )}
-          {ficha.accionesAumentos.directas.map((a) => (
-            <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} />
-          ))}
+          {/* En el orden del catálogo, directas y tiradas mezcladas: el barrido (ampliar a 30 m,
+              a 60 m y la tirada de buscar) sale junto (A4b). */}
+          {filasAumentos.map((f) =>
+            f.tipo === "tirada" ? (
+              <FilaTirada key={f.accion.id} tirada={f.accion} ficha={ficha} onAbrir={abrir} />
+            ) : (
+              <FilaUsar key={f.accion.id} accion={f.accion} onAbrir={abrirDirecta} />
+            ),
+          )}
           {ficha.accionesAumentos.informativas.map((i) => (
             <FilaInfo key={i.id} label={i.label} fuente={i.fuente} lineas={i.lineas} />
           ))}
@@ -1304,7 +1323,12 @@ export function AccionesTab({
       )}
 
       {bloquearDanioAbierta && (
-        <BloquearDanioModal ficha={ficha} onCerrar={() => setBloquearDanioAbierta(false)} />
+        <BloquearDanioModal
+          ficha={ficha}
+          onPagarFatiga={onPagarFatiga}
+          onAjustarFatiga={onAjustarFatiga}
+          onCerrar={() => setBloquearDanioAbierta(false)}
+        />
       )}
 
       {modalDirecta && (
@@ -1386,7 +1410,14 @@ export function AccionesTab({
               : undefined
           }
           cabecera={modal.tirada.grupo === "Psiónica" ? cabeceraPoder : undefined}
-          bloqueo={modal.tirada.grupo === "Psiónica" ? (preparado?.bloqueo ?? null) : null}
+          bloqueo={
+            modal.tirada.grupo === "Psiónica"
+              ? (preparado?.bloqueo ?? null)
+              : modal.tirada.grupo === "Aumentos"
+                ? // Fatiga fija (Tempestad): "Tirar otra vez" se apaga si ya no llega.
+                  (ficha.accionesAumentos.filas.find((f) => f.accion.id === modal.tirada.id)?.accion.bloqueada ?? null)
+                : null
+          }
           pieResultado={modal.tirada.grupo === "Psiónica" ? piePoder : undefined}
           ficha={modal.ficha}
           eleccion={modal.eleccion}

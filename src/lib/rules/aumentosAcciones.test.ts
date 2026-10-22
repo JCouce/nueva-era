@@ -5,6 +5,10 @@ import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import { accionesDeAumentos, operacionDeEfecto, usoDeAccionAumento, type EfectoAccionAumento } from "./aumentosAcciones";
 import { topesEnReposo } from "./vitalidad";
 import type { EstadoActivo } from "./estados";
+import { montarTirada, SIN_ELECCION } from "./montaje";
+import { resolverDanio, type Accion } from "./acciones";
+import { casillaBlindajeReactivo, desgloseBlindaje, SIN_ARMADURA_NATURAL, type TipoDanio } from "./blindaje";
+import type { EspecialidadId } from "../catalog/especialidades";
 
 let n = 0;
 function con(sheet: Sheet, catalogoId: string, nivel?: number): Sheet {
@@ -32,7 +36,7 @@ const hemorragia: EstadoActivo = { estadoId: "hemorragia", gradoId: "activo", ro
 describe("acciones de aumento: cuáles salen y cuánto cuestan", () => {
   test("sin aumentos no hay sección", () => {
     const r = resolverFicha(defaultSheet(), { estados: [], vitalidad: VITALIDAD_DE_FICHA }).accionesAumentos;
-    assert.deepEqual(r, { directas: [], informativas: [] });
+    assert.deepEqual(r, { filas: [], directas: [], informativas: [] });
   });
 
   test("coste por pieza", () => {
@@ -163,3 +167,182 @@ describe("usar una acción de aumento", () => {
     assert.equal(uso.sheet.vidaActual, 4);
   });
 });
+
+// ── A4b ──────────────────────────────────────────────────────────────
+
+const INTROGRESION = "aum_introgresion_sensorial_heterologa";
+const BRAZO = "aum_brazo_bionico";
+const RED_SIN_MIELINIZACION = RED; // requisito roto: no da nada
+
+function conEleccion(sheet: Sheet, catalogoId: string, eleccion: string): Sheet {
+  return { ...sheet, equipo: [...sheet.equipo, { instanciaId: `x${++n}`, catalogoId, eleccion }] };
+}
+const filas = (s: Sheet) => accionesDeAumentos(s).filas;
+const tiradaDe = (s: Sheet, id: string): Accion | undefined => {
+  const f = filas(s).find((x) => x.accion.id === id);
+  return f?.tipo === "tirada" ? f.accion : undefined;
+};
+const resolver = (s: Sheet) => resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+
+describe("A4b: Barrido electromagnético", () => {
+  test("tres filas, juntas y en orden: ampliar a 30 m, a 60 m (1 de fatiga) y la tirada de buscar", () => {
+    const s = conRecursos(conEleccion(defaultSheet(), INTROGRESION, "percepcion_electromagnetica"));
+    const f = filas(s);
+    assert.deepEqual(
+      f.map((x) => [x.tipo, x.accion.id]),
+      [
+        ["directa", "aumentos_barrido_30"],
+        ["directa", "aumentos_barrido_60"],
+        ["tirada", "aumentos_barrido_buscar"],
+      ],
+    );
+    const [a30, a60] = accionesDeAumentos(s).directas;
+    assert.equal(a30.costeFatiga, undefined);
+    assert.match(a30.nota!, /^Acción compleja, sin coste\./);
+    assert.equal(a60.costeFatiga, 1);
+    const buscar = tiradaDe(s, "aumentos_barrido_buscar")!;
+    assert.equal(buscar.aplicado, "perspicacia");
+    assert.equal(buscar.habilidad, "exploracion");
+    assert.equal(buscar.dificultadSugerida, undefined);
+    assert.equal(buscar.costeFatiga, undefined);
+    assert.match(buscar.nota!, /^Dificultad: la pone el máster\./);
+    assert.match(buscar.nota!, /\(Introgresión Sensorial Heteróloga \(Percepción Electromagnética\)\)$/);
+  });
+
+  test("solo con el sentido electromagnético", () => {
+    for (const otro of ["vision_nocturna", "vision_termica", "espectro_ultravioleta", "deteccion_quimica", "ecolocalizacion"]) {
+      assert.equal(filas(conRecursos(conEleccion(defaultSheet(), INTROGRESION, otro))).length, 0, otro);
+    }
+  });
+
+  test("ampliar a 60 m: sin fatiga sale bloqueada y el servidor la rechaza; ampliar a 30 m se usa igual", () => {
+    const s = conRecursos(conEleccion(defaultSheet(), INTROGRESION, "percepcion_electromagnetica"), 0);
+    assert.match(porId(s).get("aumentos_barrido_60")!.bloqueada!, /cuesta 1 y te quedan 0/);
+    assert.equal(usoDeAccionAumento(s, [], "aumentos_barrido_60").ok, false);
+    const uso = usoDeAccionAumento(conRecursos(s, 3), [], "aumentos_barrido_60");
+    assert.ok(uso.ok);
+    assert.equal(uso.sheet.fatigaActual, 2);
+    assert.ok(usoDeAccionAumento(s, [], "aumentos_barrido_30").ok);
+  });
+});
+
+describe("A4b: Tempestad Nanobótica", () => {
+  test("solo con Enjambre 4", () => {
+    for (const nivel of [1, 2, 3]) assert.equal(tiradaDe(conRecursos(con(defaultSheet(), ENJAMBRE, nivel)), "aumentos_tempestad_nanobotica"), undefined);
+    assert.ok(tiradaDe(conRecursos(con(defaultSheet(), ENJAMBRE, 4)), "aumentos_tempestad_nanobotica"));
+  });
+
+  test("Reflejos + Tecnociencia, dificultad 0, 2 de fatiga al tirar y 1 grave fijo sin bono por éxitos", () => {
+    const s = conRecursos(con(defaultSheet(), ENJAMBRE, 4));
+    const t = tiradaDe(s, "aumentos_tempestad_nanobotica")!;
+    assert.equal(t.aplicado, "reflejos");
+    assert.equal(t.habilidad, "tecnociencia");
+    assert.equal(t.dificultadSugerida, 0);
+    assert.equal(t.costeFatiga, 2);
+    assert.equal(t.bloqueada, undefined);
+    assert.deepEqual(t.ataque!.modos.map((m) => [m.danio, m.categoriaDanio]), [[1, "Grave"]]);
+    assert.match(t.efectos![0].texto, /blindaje del objetivo/);
+    const m = montarTirada(resolver(s), t, SIN_ELECCION);
+    assert.equal(m.costeFatiga, 2);
+    assert.equal(m.danio.sinBonoExitos, "Tempestad Nanobótica");
+    // Con 7 éxitos un ataque normal sumaría +3: aquí se queda en 1.
+    const d = resolverDanio(1, 7, "Grave", m.danio);
+    assert.equal(d.total, 1);
+    assert.equal(d.bonoExitos, 0);
+  });
+
+  test("sin 2 de fatiga sale bloqueada", () => {
+    const t = tiradaDe(conRecursos(con(defaultSheet(), ENJAMBRE, 4), 1), "aumentos_tempestad_nanobotica")!;
+    assert.match(t.bloqueada!, /cuesta 2 y te quedan 1/);
+  });
+});
+
+describe("A4b: Densificar", () => {
+  const enj = (nivel: number, fatiga = 3) => conRecursos(con(defaultSheet(), ENJAMBRE, nivel), fatiga);
+  const conTipos: TipoDanio[] = ["cinetico", "electrico", "frio", "corrosivo", "plasma", "sonico", "toxico"];
+
+  test("marcada: +3 en los tipos en los que cuenta el blindaje", () => {
+    for (const tipo of conTipos) {
+      const d = desgloseBlindaje(enj(3), tipo, false, SIN_ARMADURA_NATURAL, true);
+      assert.deepEqual(d, [{ etiqueta: "Densificar · Enjambre Nanobot 3", valor: 3 }], tipo);
+      assert.equal(casillaBlindajeReactivo(enj(3), tipo, false)!.bloqueada, null, tipo);
+    }
+    assert.deepEqual(desgloseBlindaje(enj(3), "cinetico", false, SIN_ARMADURA_NATURAL, false), []);
+  });
+
+  test("nada contra Mental ni Fuego sin Ignífuga: la casilla sale apagada con el motivo", () => {
+    assert.deepEqual(desgloseBlindaje(enj(4), "mental", false, SIN_ARMADURA_NATURAL, true), [{ etiqueta: "Mental omite blindaje", valor: 0 }]);
+    assert.deepEqual(desgloseBlindaje(enj(4), "fuego", false, SIN_ARMADURA_NATURAL, true), [
+      { etiqueta: "Fuego (falta Mejora Ignífuga)", valor: 0 },
+    ]);
+    assert.match(casillaBlindajeReactivo(enj(4), "mental", false)!.bloqueada!, /mental/);
+    assert.match(casillaBlindajeReactivo(enj(4), "fuego", true)!.bloqueada!, /Ignífuga/);
+  });
+
+  test("solo con Enjambre 3+", () => {
+    for (const nivel of [1, 2]) {
+      assert.equal(casillaBlindajeReactivo(enj(nivel), "cinetico", false), null);
+      assert.deepEqual(desgloseBlindaje(enj(nivel), "cinetico", false, SIN_ARMADURA_NATURAL, true), []);
+    }
+    const c = casillaBlindajeReactivo(enj(4), "cinetico", false)!;
+    assert.equal(c.etiqueta, "Densificar (Enjambre Nanobot, 1 fatiga)");
+    assert.equal(c.costeFatiga, 1);
+    assert.match(c.nota, /\+3 a la salvación contra el aturdimiento/);
+  });
+
+  test("sin fatiga no se puede marcar; ya marcada (pagada), sí se desmarca", () => {
+    assert.match(casillaBlindajeReactivo(enj(3, 0), "cinetico", false)!.bloqueada!, /cuesta 1 y te quedan 0/);
+    assert.equal(casillaBlindajeReactivo(enj(3, 0), "cinetico", true)!.bloqueada, null);
+  });
+});
+
+describe("A4b: Incorporar arma", () => {
+  const brazo = (nivel: number, especialidades: EspecialidadId[] = []) => {
+    const base = con(defaultSheet(), BRAZO, nivel);
+    const s: Sheet = { ...base, habilidades: { ...base.habilidades, biociencia: { valor: 4, especialidades } } };
+    return conRecursos(s);
+  };
+
+  test("en cualquier nivel: Perspicacia + Biociencia, dificultad 8, sin coste", () => {
+    for (const nivel of [1, 2, 3, 4]) {
+      const t = tiradaDe(brazo(nivel), "aumentos_montar_arma_brazo");
+      assert.ok(t, `nivel ${nivel}`);
+      assert.equal(t.aplicado, "perspicacia");
+      assert.equal(t.habilidad, "biociencia");
+      assert.equal(t.dificultadSugerida, 8);
+      assert.equal(t.costeFatiga, undefined);
+      assert.deepEqual(t.especialidadesAccion, ["bionica"]);
+      assert.match(t.nota!, /^Acción extendida de 10 minutos\./);
+    }
+  });
+
+  test("con Biónica va en especialidad; sin ella, a la mitad", () => {
+    const con_ = brazo(1, ["bionica"]);
+    const m = montarTirada(resolver(con_), tiradaDe(con_, "aumentos_montar_arma_brazo")!, SIN_ELECCION);
+    assert.equal(m.enEspecialidad, true);
+    assert.equal(m.habilidad?.valor, 4);
+    const sin = brazo(1);
+    const m2 = montarTirada(resolver(sin), tiradaDe(sin, "aumentos_montar_arma_brazo")!, SIN_ELECCION);
+    assert.equal(m2.enEspecialidad, false);
+    assert.equal(m2.habilidad?.valor, 2);
+    assert.deepEqual(m2.especialidadArma, { id: "bionica", label: "Biónica", tiene: false });
+  });
+});
+
+describe("A4b: con un requisito roto no hay nada", () => {
+  test("una operación con requisito roto junto a las piezas no añade filas; las piezas siguen dando las suyas", () => {
+    const s = conRecursos(
+      conEleccion(con(con(con(defaultSheet(), RED_SIN_MIELINIZACION), ENJAMBRE, 4), BRAZO, 1), INTROGRESION, "percepcion_electromagnetica"),
+    );
+    const ids = filas(s).map((f) => f.accion.id);
+    assert.ok(!ids.includes("aumentos_accion_combinada"));
+    assert.deepEqual(ids.filter((id) => /barrido|tempestad|montar_arma/.test(id)).sort(), [
+      "aumentos_barrido_30",
+      "aumentos_barrido_60",
+      "aumentos_barrido_buscar",
+      "aumentos_montar_arma_brazo",
+      "aumentos_tempestad_nanobotica",
+    ]);
+  });
+});
+

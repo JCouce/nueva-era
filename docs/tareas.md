@@ -19,7 +19,7 @@ Sin valoración de prioridad aquí a propósito — se queda obsoleta en cuanto 
 foco. Frentes abiertos, cada uno con su sección en Pendiente:
 - **Dotes**: D1–D2d y las dotes de NPC hechas; quedan la especialidad elegida en la tirada
   y las tiradas fijas que faltan (10 efectos con `bloqueoPor: "tiradas-fijas"`).
-- **Aumentos**: por tandas (A0-A3 hechas, A4a construida sin commit; quedan A4b-A7).
+- **Aumentos**: por tandas (A0-A4a hechas, A4b construida sin commit; quedan A5-A7).
 - **Puntos Heroicos**: sin empezar, con la prosa ya en `docs/fuente/`.
   *Neos Plouton* (`docs/fuente/neos-plouton.md`) es la aventura que juega la mesa, no un
   área de reglas que construir.
@@ -1473,7 +1473,7 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      (VTF nivel 2, Pico de Cuervo Poco Habitual: dificultad sugerida 7, antes
      habría sido 9).
 
-### Aumentos ⬜ (A0-A3 commiteadas y probadas; A4a construida, 2026-10-22)
+### Aumentos ⬜ (A0-A4a commiteadas; A4b construida, 2026-10-22)
 Encargo y pasos: `docs/prompt-aumentos.md`. Fuente literal:
 `docs/aumentos.md` (26 operaciones genéticas y 11 implantes; **5 implantes en proceso**,
 de Control Anímico al final: no se modelan hasta la próxima foto de Drive). Decisión del usuario: entran
@@ -1521,9 +1521,8 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
   6.º parámetro de `modificadoresDeUmbrales`, nunca pasa de 0); casillas de cobertura de
   Foveo y Ojo 2-4 (grupo `noApila` `reduccion_cobertura`) en ataques a distancia y
   Buscar/percibir; Matriz Ósea como nota en la carga (`notasCargaDeAumentos`).
-- [ ] A4 · Acciones propias y "una vez por escena".
-  - [x] A4a · Contador por escena y acciones sin dado. *(sin commit; falta revisión y
-    navegador)* Ficha v19 (`sheet.usosEscena`, `rules/usosEscena.ts`): casillas con
+- [x] A4 · Acciones propias y "una vez por escena".
+  - [x] A4a · Contador por escena y acciones sin dado. *(commiteada)* Ficha v19 (`sheet.usosEscena`, `rules/usosEscena.ts`): casillas con
     `usoPorEscena` (Mielinización, Proyección, Matriz de Red) que `montarTirada` devuelve en
     `usosEscena` solo si tienen efecto y se gastan al tirar (`gastarUsosEscenaAction`);
     gastadas salen `bloqueada` ("Usada esta escena", `conUsosEscena` en el índice); lista con
@@ -1535,7 +1534,18 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
     `usarAccionAumentoAction` cobra en el servidor y, con `cambiarEstadosDePersonajes`, quita
     Hemorragia o Miedo (o baja Aterrorizado a Asustado) con entrada de registro deshacible
     (autor: el jugador).
-  - [ ] A4b · Barrido electromagnético, Tempestad Nanobótica, Densificar e Incorporar arma.
+  - [x] A4b · Barrido electromagnético, Tempestad Nanobótica, Densificar e Incorporar arma.
+    *(sin commit; falta revisión y navegador)* `accionesDeAumentos` devuelve `filas` en orden
+    (directas y tiradas mezcladas; `directas` sigue para el servidor) y la sección "Aumentos"
+    las pinta así. Acciones con dado (`tirada` en `AccionAumentoCatalogo`): Barrido en la
+    opción Percepción Electromagnética de Introgresión (ampliar a 30 m, a 60 m por 1 de
+    fatiga y la tirada de Perspicacia + Exploración), Incorporar arma del Brazo (Perspicacia +
+    Biociencia, dificultad 8, `especialidadesAccion: ["bionica"]`) y Tempestad Nanobótica
+    (Reflejos + Tecnociencia, dificultad 0; `Accion.costeFatiga` que `montarTirada` suma al
+    cobro de fatiga al tirar, y `ataque.sinBonoExitos` para el daño fijo de 1 grave).
+    Densificar: `blindajeReactivo` del Enjambre 3, `casillaBlindajeReactivo` y el 5.º
+    parámetro de `desgloseBlindaje` (`blindaje.ts`); "Bloquear daño" cobra al marcar y
+    devuelve al desmarcar (`onAjustarFatiga` nuevo en AccionesTab).
 - [ ] A5 · Activables.
 - [ ] A6 · Brazo Biónico.
 - [ ] A7 · Inmunidades.

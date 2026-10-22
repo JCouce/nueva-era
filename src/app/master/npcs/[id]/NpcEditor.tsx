@@ -500,6 +500,7 @@ export function NpcEditor({
             onAjustarFarmaco={commitAjustarFarmaco}
             onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
             onPagarFatiga={commitPagarFatiga}
+            onAjustarFatiga={commitAjustarFatiga}
             onAjustarVida={commitAjustarVida}
             libre
           />

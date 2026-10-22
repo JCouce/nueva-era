@@ -818,6 +818,7 @@ export function CharacterSheet({
               onAjustarFarmaco={commitAjustarFarmaco}
               onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
               onPagarFatiga={commitPagarFatiga}
+              onAjustarFatiga={commitAjustarFatiga}
               onAjustarVida={commitAjustarVida}
               onGastarUsosEscena={commitGastarUsosEscena}
               onUsarAccionAumento={commitUsarAccionAumento}

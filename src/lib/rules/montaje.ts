@@ -113,7 +113,8 @@ export type TiradaMontada = {
   //               una casilla (Ojo Clínico). null sin ventaja. No se acumula.
   //   subeGrado   un fracaso (no el crítico) cuenta como éxito; lo aplica tirarMontada.
   //   danio       cambios al daño del ataque; los aplica resolverDanio (acciones.ts).
-  //   costeFatiga fatiga que se paga al tirar (Ojo Clínico), ya sin lo que ahorre una casilla
+  //   costeFatiga fatiga que se paga al tirar (Ojo Clínico, y la fija de la tirada: Tempestad
+  //               Nanobótica), ya sin lo que ahorre una casilla
   //               (Mielinización Central), sin bajar de 0; 0 si ninguna.
   //   ahorroSinUsar lo que la casilla de ahorro no ha encontrado que ahorrar en las casillas:
   //               se resta del coste del poder (usarPoder), si la tirada es de un poder.
@@ -150,6 +151,12 @@ function danioDeCasillas(activas: Toggle[]): AjusteDanio {
     categoria: categoria ? { a: categoria.danio!.categoria!, fuente: categoria.etiqueta } : null,
     sinBonoExitos: sinBono && !devuelve ? sinBono.etiqueta : null,
   };
+}
+
+// Daño fijo de la propia tirada (Tempestad Nanobótica, A4b): sin bono por éxitos, y ninguna
+// casilla lo devuelve.
+function conDanioFijo(ajuste: AjusteDanio, fuente: string | undefined): AjusteDanio {
+  return fuente ? { ...ajuste, sinBonoExitos: fuente } : ajuste;
 }
 
 // Márgenes que bajan las casillas marcadas: la opción elegida (VTM nv4 "complejo") o el
@@ -286,7 +293,7 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
 
   const modo = ctx.modoElegido;
   const elegidas = opcionesElegidas(condiciones, estado);
-  const fatiga = fatigaDeCasillas(activas, elegidas, tirada.ventaja != null);
+  const fatiga = fatigaDeCasillas(activas, elegidas, tirada.ventaja != null, tirada.costeFatiga ?? 0);
   const modificador =
     base + bonoAlcance(mods, ctx) + valorCondiciones(condiciones, estado) + valorBonosTramo(bonosTramo, estado);
 
@@ -325,7 +332,7 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     modoElegido: modo,
     ventaja: tirada.ventaja ?? activas.find((c) => c.ventaja)?.etiqueta ?? ventajaDeOpcion(elegidas),
     subeGrado: activas.find((c) => c.subeGrado)?.etiqueta ?? null,
-    danio: danioDeCasillas(activas),
+    danio: conDanioFijo(danioDeCasillas(activas), tirada.ataque?.sinBonoExitos),
     ...fatiga,
     casillasSinEfecto: porAplicado.sinEfecto,
     usosEscena: usosGastados(activas, fatiga, tirada.grupo === "Psiónica"),
@@ -337,17 +344,20 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
 // La ventaja no se acumula (usuario, 2026-10-22, como el selector "Contra…" de A2a): si la
 // tirada ya trae ventaja gratis (Red Frontoparietal en Iniciativa, una casilla u opción sin
 // coste), las de ventaja de pago no cobran; sin gratis, de las de pago solo cobra la más barata.
+// `fija`: la fatiga propia de la tirada (Tempestad Nanobótica, A4b), que el ahorro también
+// puede rebajar, como el coste de un poder.
 function fatigaDeCasillas(
   activas: Toggle[],
   elegidas: OpcionCondicion[],
   ventajaDeTirada: boolean,
+  fija: number,
 ): Pick<TiradaMontada, "costeFatiga" | "ahorroSinUsar"> {
   const fuentes = [...activas, ...elegidas];
   const ventajaGratis = ventajaDeTirada || fuentes.some((c) => c.ventaja && !c.costeFatiga);
   const deVentaja = fuentes.filter((c) => c.ventaja && c.costeFatiga);
   const otras = fuentes.filter((c) => !(c.ventaja && c.costeFatiga));
   const porVentaja = ventajaGratis || deVentaja.length === 0 ? 0 : Math.min(...deVentaja.map((c) => c.costeFatiga ?? 0));
-  const bruto = otras.reduce((t, c) => t + (c.costeFatiga ?? 0), 0) + porVentaja;
+  const bruto = otras.reduce((t, c) => t + (c.costeFatiga ?? 0), 0) + porVentaja + fija;
   const ahorro = activas.reduce((t, c) => t + (c.ahorroFatiga ?? 0), 0);
   return { costeFatiga: Math.max(0, bruto - ahorro), ahorroSinUsar: Math.max(0, ahorro - bruto) };
 }

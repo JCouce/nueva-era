@@ -83,10 +83,17 @@ export type EfectosTiradaAumento = {
   // Las casillas de esta pieza no salen si esta otra operación funciona (Prefrontal con
   // Conectividad Callosa, que es su progresión: usuario, 2026-10-22).
   casillasOcultasCon?: string;
+  // Blindaje que se paga al recibir un golpe (Densificar, Enjambre 3; A4b): casilla en
+  // "Bloquear daño" (blindaje.ts, casillaBlindajeReactivo).
+  blindajeReactivo?: BlindajeReactivo;
 };
 
 // +1 de blindaje contra unos tipos (R6: Cinético), con a qué golpes vale.
 export type ArmaduraNaturalAumento = { valor: number; tipos: TipoDanio[]; nota: string };
+
+// +valor de blindaje contra un golpe, por costeFatiga, como reacción. Vale donde cuente el
+// blindaje (no contra Mental ni Fuego sin Ignífuga), igual que la armadura natural.
+export type BlindajeReactivo = { etiqueta: string; valor: number; costeFatiga: number; nota: string };
 
 // ── Lo que aporta cada aumento que funciona ─────────────────────────────
 
@@ -108,6 +115,7 @@ function deImplante(imp: Implante, nivel: number): Aporte {
     efectos: {
       casillas: acumulaPorClave(niveles.map((n) => n.condiciones ?? []), (c) => c.id),
       salvaciones: acumulaPorClave(niveles.map((n) => n.salvaciones ?? []), (e) => e.contra.join("+")),
+      blindajeReactivo: [...niveles].reverse().find((n) => n.blindajeReactivo)?.blindajeReactivo,
     },
   };
 }
@@ -226,4 +234,13 @@ export function armaduraNaturalDeAumentos(
     const an = a.efectos.armaduraNatural;
     return an && an.tipos.includes(tipo) ? [{ fuente: a.fuente, valor: an.valor, nota: an.nota }] : [];
   });
+}
+
+// El blindaje reactivo que se puede pagar (Densificar, Enjambre 3+; A4b), o null. Si hubiera
+// más de uno, el primero: hoy solo existe el del Enjambre.
+export function blindajeReactivoDeAumentos(sheet: Pick<Sheet, "equipo">): (BlindajeReactivo & { fuente: string }) | null {
+  for (const a of aportesDeAumentos(sheet)) {
+    if (a.efectos.blindajeReactivo) return { ...a.efectos.blindajeReactivo, fuente: a.fuente };
+  }
+  return null;
 }
