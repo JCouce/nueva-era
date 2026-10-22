@@ -361,6 +361,51 @@ que la casilla se reinicie con "Terminar escena".
 
 ### A5 · Activables (Neuroprótesis y Proyección)
 
+**Decidido (usuario, 2026-10-22):** las cinco recomendadas, en dos pasadas: **A5a** (capa de
+activables, Neuroprótesis 1-2 y Proyección) y **A5b** (Neuroprótesis 3-4).
+- **Dónde vive:** como estado propio en `Character.estados`, con la misma excepción de permiso
+  que A4a. En combate caduca solo ("Siguiente turno"), el "Limpiar estados" del máster lo
+  quita y el jugador tiene "Desactivar".
+- **Reactivar** estando ya activa **renueva la duración**: no apila un segundo estado.
+- **El chip dice la duración y que solo corre en combate** ("3 rondas, en combate"): fuera de
+  combate no corren las rondas y se desactiva a mano.
+- **Neuroprótesis 1, "−1 a los penalizadores por estado":** −1 a cada penalizador por
+  separado (cada estado, heridas y fatiga), sin pasar de 0, como en A3.
+- **Proyección, "interacciones sociales":** cualquier tirada de Actitud (hoy, "Convencer /
+  mentir" e "Iniciativa (distrayendo)").
+- **Acción simple adicional (nivel 3):** 2 de fatiga, con una casilla en el modal "Ya usada
+  desde el último descanso (cuesta 3)". La app no lleva los descansos.
+- **Registro:** activar y desactivar dejan entrada en el registro del máster. Deshacer
+  devuelve el estado, no la fatiga.
+
+**Construido (A5a, matices):**
+- **Estados propios:** `aum_neuroprotesis` (grados `activo`, `fuerza`, `agilidad`) y
+  `aum_proyeccion`, en `ESTADOS_DE_AUMENTO` (`catalog/estados.ts`), fuera de `ESTADOS`: no salen
+  en el selector del máster. Sus `modificadores` van vacíos; lo que hacen lo calcula
+  `rules/aumentosActivables.ts` con el estado y el `activo` de la pieza (en la operación o en el
+  nivel del implante; vale el del nivel más alto). Sin la pieza, el estado no hace nada, pero
+  sigue en la lista hasta que caduque o se desactive.
+- **Activar:** efecto `activar` en la acción (con `eleccion` en la Neuroprótesis 2: selector en
+  el `UsarModal`, `ID_ELECCION_ACTIVABLE`, que viaja como 3.er argumento de
+  `usarAccionAumentoAction`; sin elección el servidor la rechaza). El botón del modal dice
+  "Activar" o "Renovar", y la nota de la fila dice si ya está activa.
+- **Desactivar:** no está en el catálogo: `accionesDeAumentos` (ahora con `estados`) genera la
+  fila `aumentos_desactivar_<estado>` detrás de su "Activar", o al final si ya no se lleva la
+  pieza.
+- **Penalizadores:** heridas y fatiga por `ajusteUmbrales` (3.er sumando de
+  `sumaAjustesUmbrales`); estados por `modificadoresDeEstados(estados, reduccion)`, solo los de
+  tirada (los de atributo, no: `TODO(revisar)`).
+- **Proyección:** Modificador `anulaPenalizadores` (valor 0) que resuelve `montarTirada`
+  (`conPenalizadoresAnulados`): suma lo que tenga origen "estado" y las compensaciones marcadas
+  (`compensa`: Neurogénesis) que alcancen a la tirada y, si queda negativo, añade la línea que lo
+  deja a 0. Así no pasa de 0 aunque Neurogénesis compense la fatiga en una tirada de Expresión.
+- **"Contra…":** la línea es "Contra…: Enfermedad · Neuroprótesis Simpática 1 (activa)" −1.
+  Arreglado de paso: con una ventaja de pago y un bono negativo, la opción sin pagar ya no
+  desaparece, y las notas llevan el signo.
+- **Vida:** al caerse el activable, `vidaTrasCambioDeEstados` calcula la bajada sin los
+  activables: no resta vida (supuesto, `TODO(revisar)`).
+- **Combate:** la fatiga se cobra de la ficha, no de la foto del combatiente (igual que A4a).
+
 **Qué hace**
 - **`activable_estado_propio`:** un botón sin dado que cobra la fatiga y pone un
   `EstadoActivo` propio.
@@ -458,5 +503,7 @@ créditos); aprobada la ficha, nada.
   cortar la hemorragia (usuario, 2026-10-22).
 - **Encontrar o distinguir** (barrido): qué acción cuesta. **Tempestad:** si le valen las dotes
   de ataque cuerpo a cuerpo (hoy no).
+- **Neuroprótesis 1:** si su −1 alcanza a los −N a atributos de Enfermedad y Parálisis (hoy
+  solo reduce los de las tiradas).
 - **Erratas del documento:** el nivel 3 del IRM repite la frase del nivel 2, y la
   ortografía.

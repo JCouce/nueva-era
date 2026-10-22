@@ -37,6 +37,11 @@
 // Nanobótica del Enjambre 4, con daño fijo) y el `blindajeReactivo` del Enjambre 3 (Densificar,
 // casilla en "Bloquear daño": blindaje.ts).
 //
+// Tanda A5a: activables. La acción de activar (`efecto: "activar"`, aumentosAcciones.ts) pone un
+// estado propio (catalog/estados.ts, ESTADOS_DE_AUMENTO); `activo` (en la operación o en el
+// nivel del implante: vale el del nivel más alto) dice qué hace mientras está puesto
+// (aumentosActivables.ts). Neuroprótesis 1-2 y Proyección; la Neuroprótesis 3-4 es A5b.
+//
 // Tanda A3: `reducePenalizador` (Estabilización Autonómica en heridas y fatiga, Neurogénesis
 // en fatiga solo con sus aplicados, Matriz Ósea en carga como nota) y las casillas de
 // cobertura (Foveo, Ojo 2-4) en ataques a distancia y Buscar/percibir, sin apilar entre sí.
@@ -58,6 +63,7 @@ import type { Modificador } from "../rules/modificadores";
 import type { MotorMetadata } from "../rules/motor";
 import type { BlindajeReactivo, EfectoSalvacion, EfectosTiradaAumento } from "../rules/aumentosTiradas";
 import type { AccionAumentoCatalogo, DefensaIntrusion } from "../rules/aumentosAcciones";
+import type { ActivoAumento } from "../rules/aumentosActivables";
 import type { NivelModulo, Rareza } from "./equipo";
 import { VISION_AUMENTADA } from "./mejorasArma";
 
@@ -97,6 +103,8 @@ export type OperacionGenetica = {
   reducePenalizador?: ReduccionPenalizadorAumento[];
   // A4a: acciones propias, sin dado.
   acciones?: AccionAumentoCatalogo[];
+  // A5a: lo que hace mientras su estado propio está puesto (Proyección).
+  activo?: ActivoAumento;
   // Solo efectos permanentes (A1: +1 a atributos básicos y multiplicadorVida).
   modificadores: Modificador[];
   motor: MotorMetadata[];
@@ -117,6 +125,9 @@ export type NivelImplante = NivelModulo & {
   acciones?: AccionAumentoCatalogo[];
   defensaIntrusion?: DefensaIntrusion;
   blindajeReactivo?: BlindajeReactivo;
+  // A5a: lo que hace mientras su estado propio está puesto (Neuroprótesis). Cada nivel que lo
+  // trae lo trae entero: vale el del nivel más alto.
+  activo?: ActivoAumento;
 };
 
 export type Implante = {
@@ -135,6 +146,42 @@ export type Implante = {
 };
 
 export type Aumento = OperacionGenetica | Implante;
+
+// Neuroprótesis Simpática (A5a): lo que hace mientras está activa (niveles 1 y 2; el 2 añade la
+// mejora) y su acción de activar. No reduce su propio −1 a las salvaciones: va en el selector
+// "Contra…", no es un estado.
+const ACTIVO_NEUROPROTESIS: ActivoAumento = {
+  estadoId: "aum_neuroprotesis",
+  atributos: { fuerza: 1, agilidad: 1, percepcion: 1 },
+  reducePenalizadores: 1,
+  salvaciones: [{ contra: ["enfermedad", "radiacion", "toxinas", "venenos"], bono: -1 }],
+};
+
+function activarNeuroprotesis(conEleccion: boolean): AccionAumentoCatalogo {
+  return {
+    id: "aumentos_activar_neuroprotesis",
+    label: "Activar Neuroprótesis",
+    economia: "Acción gratuita en tu turno o reacción",
+    costeFatiga: 2,
+    nota:
+      (conEleccion ? "+2 a Fuerza o Agilidad (eliges al activar) y +1 a los otros dos de Fuerza, Agilidad y Percepción" : "+1 a Fuerza, Agilidad y Percepción") +
+      " (no cuenta para requisitos de dote), −1 a cada penalizador por estado, heridas y fatiga (sin pasar de 0) y −1 a las salvaciones de Fortaleza contra enfermedad, radiación, toxinas y venenos. Dura 3 rondas, que solo corren en combate: fuera de él, desactívala a mano.",
+    efecto: {
+      tipo: "activar",
+      estadoId: "aum_neuroprotesis",
+      duracion: { tipo: "rondas", rondas: 3 },
+      ...(conEleccion && {
+        eleccion: {
+          etiqueta: "El +2 va a",
+          opciones: [
+            { id: "fuerza", label: "Fuerza" },
+            { id: "agilidad", label: "Agilidad" },
+          ],
+        },
+      }),
+    },
+  };
+}
 
 export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
   {
@@ -517,10 +564,23 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
         nota: "Una vez por escena o combate; la prueba tiene que emplear algún tipo de lenguaje.",
       },
     ],
+    // A5a: "una hora" = hasta el final de la escena (R2); "interacciones sociales" = cualquier
+    // tirada de Actitud (usuario, 2026-10-22); activarla es gratuito (tercera ronda).
+    acciones: [
+      {
+        id: "aumentos_activar_proyeccion",
+        label: "Activar Proyección",
+        economia: "Acción gratuita",
+        costeFatiga: 1,
+        nota: "Hasta el final de la escena, sin penalizadores por heridas, fatiga ni estados en las tiradas de Actitud (Convencer / mentir, Iniciativa distrayendo). El circunstancial no cambia.",
+        efecto: { tipo: "activar", estadoId: "aum_proyeccion", duracion: { tipo: "escena" } },
+      },
+    ],
+    activo: { estadoId: "aum_proyeccion", anulaPenalizadores: { tipo: "habilidad", habilidad: "actitud" } },
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "social" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_estado_propio + reduce_penalizador_por_pieza" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "suma_derivado", estado: "construido" },
     ],
   },
   {
@@ -1518,14 +1578,17 @@ export const IMPLANTES: Implante[] = [
           "Como acción gratuita durante su turno o reacción en cualquier momento del turno, el personaje puede emplear 2 puntos de fatiga y de forma temporal adquirir un aumento de 1 punto en los atributos de fuerza, agilidad y percepción así como reducir penalizadores por estado en 1, en contrapartida mientras dure este efecto recibe un penalizador de -1 a tiradas de salvación de fortaleza contra enfermedades, radiación, toxinas y venenos. El efecto dura tres turnos.",
         ],
         modificadores: [],
+        // A5a: "tres turnos" = 3 rondas (R2). Las rondas solo corren en combate.
+        acciones: [activarNeuroprotesis(false)],
+        activo: ACTIVO_NEUROPROTESIS,
         motor: [
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_activar_neuroprotesis" }, mecanismo: "accion_equipo", estado: "pendiente" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:fuerza" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_estado_propio y atributo_por_pieza" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_estado_propio y atributo_por_pieza" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:percepcion" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_estado_propio y atributo_por_pieza" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_estado_propio y reduce_penalizador_por_pieza" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_activar_neuroprotesis" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_activar_neuroprotesis" }, mecanismo: "accion_equipo", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:fuerza" }, mecanismo: "suma_derivado", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:percepcion" }, mecanismo: "suma_derivado", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_activar_neuroprotesis" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
       {
@@ -1536,8 +1599,11 @@ export const IMPLANTES: Implante[] = [
           "Al activar el implante se recibe un aumento de 2 puntos en lugar de 1 en la fuerza o la agilidad, quedando a elección del usuario.",
         ],
         modificadores: [],
+        // A5a: la misma acción, ahora con la elección; el +2 sustituye al +1 en el elegido.
+        acciones: [activarNeuroprotesis(true)],
+        activo: { ...ACTIVO_NEUROPROTESIS, mejora: { atributos: ["fuerza", "agilidad"], valor: 2 } },
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:fuerza|agilidad" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_estado_propio, activable_eleccion_al_activar y atributo_por_pieza" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:fuerza|agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
         ],
       },
       {

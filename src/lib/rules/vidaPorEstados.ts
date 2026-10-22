@@ -11,6 +11,7 @@
 import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import { ponerEstado, quitarEstado } from "./estadosFicha";
 import type { EstadoActivo } from "./estados";
+import { esEstadoDeAumento } from "../catalog/estados";
 import type { Sheet } from "./sheet";
 
 export type ParVida = { vida: number; fatiga: number };
@@ -49,6 +50,14 @@ function restar(actual: number, bajada: number): { actual: number; restado: numb
   return { actual: nuevo, restado: actual - nuevo };
 }
 
+// Los activables de los aumentos (A5a: Neuroprótesis, +1 a Fuerza) suben el máximo mientras
+// duran. No cuentan para la bajada: si no, activar y dejar que caduque costaría vida de verdad
+// (al activar la actual no sube; al caerse, S75 restaría lo que bajó el máximo). El máximo que
+// se escribe en las fotos sí los lleva.
+// TODO(revisar): supuesto nuestro (no está en S75); con la vida por encima del máximo al caerse
+// la Neuroprótesis, se queda por encima (como al curar en reposo, S74).
+const sinActivables = (estados: EstadoActivo[]) => estados.filter((e) => !esEstadoDeAumento(e.estadoId));
+
 export function vidaTrasCambioDeEstados(
   sheet: Sheet,
   antes: EstadoActivo[],
@@ -56,7 +65,10 @@ export function vidaTrasCambioDeEstados(
   combatientes: FotoCombatiente[] = [],
 ): CambioDeVida {
   const maximos = maximosConEstados(sheet, despues);
-  const bajada = bajadaDeMaximos(maximosConEstados(sheet, antes), maximos);
+  const bajada = bajadaDeMaximos(
+    maximosConEstados(sheet, sinActivables(antes)),
+    maximosConEstados(sheet, sinActivables(despues)),
+  );
   const vida = restar(sheet.vidaActual, bajada.vida);
   const fatiga = restar(sheet.fatigaActual, bajada.fatiga);
   const cambia = vida.restado > 0 || fatiga.restado > 0;

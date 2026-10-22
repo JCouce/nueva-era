@@ -590,14 +590,19 @@ export async function liberarUsoEscenaAction(characterId: string, id: unknown): 
 // el máster puede deshacer. Deshacer devuelve el estado, no la fatiga.
 // Sin el estado, la acción se cobra igual y el mensaje lo dice. Con estado, el cobro va en la
 // misma transacción que el cambio de estado (`preparar` de cambiarEstadosDePersonajes).
+// Activables (A5a): activar pone el estado propio del aumento (renueva si ya estaba) y
+// desactivar lo quita, por el mismo camino; `eleccion` es lo elegido en el modal de activar
+// (Neuroprótesis 2: a qué va el +2), y lo valida usoDeAccionAumento.
 const accionAumentoSchema = z.string().min(1).max(60);
+const eleccionActivableSchema = z.string().min(1).max(40).optional();
 
-export async function usarAccionAumentoAction(characterId: string, accionId: unknown): Promise<SaveResult> {
+export async function usarAccionAumentoAction(characterId: string, accionId: unknown, eleccion?: unknown): Promise<SaveResult> {
   const parsed = accionAumentoSchema.safeParse(accionId);
-  if (!parsed.success) return { ok: false, error: "Acción no válida" };
+  const parsedEleccion = eleccionActivableSchema.safeParse(eleccion ?? undefined);
+  if (!parsed.success || !parsedEleccion.success) return { ok: false, error: "Acción no válida" };
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  const uso = usoDeAccionAumento(ctx.sheet, ctx.estados, parsed.data);
+  const uso = usoDeAccionAumento(ctx.sheet, ctx.estados, parsed.data, parsedEleccion.data);
   if (!uso.ok) return { ok: false, error: uso.error };
   if (!uso.op) {
     await persist(characterId, uso.sheet);
@@ -608,7 +613,9 @@ export async function usarAccionAumentoAction(characterId: string, accionId: unk
     [characterId],
     uso.op,
     { userId: ctx.userId, motivo: `${uso.accion.label} (${uso.accion.fuente}), desde la ficha` },
-    (s) => pagarFatiga(s, coste, false),
+    // TODO(revisar): en combate se cobra de la ficha, no de la foto del combatiente (igual
+    // que el resto de A4a).
+    coste > 0 ? (s) => pagarFatiga(s, coste, false) : undefined,
   );
   if (!hecho) return { ok: false, error: "Personaje no encontrado" };
   // Cambiar el estado puede tocar la vida (S75): la ficha que vale es la de la base.

@@ -67,6 +67,7 @@ import {
 } from "./dotesEfectos";
 import { accionesDeDotes, type AccionesDeDotes } from "./dotesAcciones";
 import { accionesDeAumentos, type AccionesDeAumentos } from "./aumentosAcciones";
+import { efectosDeActivables } from "./aumentosActivables";
 import { conUsosEscena, usosEscenaDeFicha } from "./usosEscena";
 import { poderesDeDotes } from "./dotesPoderes";
 import type { ExcepcionRareza } from "../catalog/especies";
@@ -126,7 +127,7 @@ export type FichaResuelta = {
   // a velocidad y carga, ya aplicado en movimiento, vuelo, levitación y cargaMaxima.
   umbrales: { salud: UmbralSalud; fatiga: UmbralFatiga; movimiento: MovimientoPorUmbral };
   // Puntos menos de penalizador por especie (Guerrero, Siervo; §14.8) y por aumentos
-  // (Estabilización Autonómica, A3), sumados (R8) y ya aplicados en los modificadores de umbral
+  // (Estabilización Autonómica, A3; Neuroprótesis activa, A5a), sumados (R8) y ya aplicados en los modificadores de umbral
   // de arriba. No lleva las reducciones por aplicado (Neurogénesis), que van como compensación
   // propia en `modificadores`. Derivado: también al NPC.
   ajusteUmbrales: AjusteUmbrales;
@@ -237,6 +238,9 @@ export function resolverFicha(
   const formulaMovimiento = formulaMovimientoDeEspecie(especie);
   const multiplicadorCarga = multiplicadorCargaDeEspecie(especie);
   const deAumentos = modificadoresDeAumentos(sheet);
+  // Activables encendidos (A5a): estado propio puesto y pieza que funciona. Sus atributos van con
+  // origen "estado" y no entran en requisitosDotes (R3, S30).
+  const activables = efectosDeActivables(sheet, estados);
   const requisitosDotes = valoresDeRequisito(sheet, modificadoresDeRequisito(sheet, especie?.modificadores ?? []));
   // Lo que ponen las dotes en las tiradas (§9.3, D2a). Sin las de requisito roto (S34);
   // en modo libre (NPC del máster) sin mirar requisitos (§9.4).
@@ -250,7 +254,8 @@ export function resolverFicha(
     ...dotes.modificadores,
     ...modificadoresDeEquipo(sheet),
     ...deAumentos,
-    ...modificadoresDeEstados(estados),
+    ...modificadoresDeEstados(estados, activables.reduceEstados),
+    ...activables.modificadores,
   ];
   // Los umbrales solo dan modificadores de tirada: no tocan los máximos de salud.
   const maximos = salud(sheet, sinUmbrales);
@@ -266,7 +271,11 @@ export function resolverFicha(
     fatiga: umbralFatiga(v.fatiga, v.fatigaMax),
   };
   const porUmbral = movimientoPorUmbrales(umbrales.salud, umbrales.fatiga);
-  const ajusteUmbrales = sumaAjustesUmbrales(ajusteUmbralesDeEspecie(especie), ajusteUmbralesDeAumentos(sheet));
+  const ajusteUmbrales = sumaAjustesUmbrales(
+    ajusteUmbralesDeEspecie(especie),
+    ajusteUmbralesDeAumentos(sheet),
+    activables.ajusteUmbrales,
+  );
   const modificadores = [
     ...sinUmbrales,
     ...modificadoresDeUmbrales(v.pg, v.pgMax, v.fatiga, v.fatigaMax, ajusteUmbrales, reduccionesPorAplicadoDeAumentos(sheet)),
@@ -311,14 +320,14 @@ export function resolverFicha(
     indiceCondiciones: indiceDeCondiciones(sheet, [
       ...casillasDeEspecie(especie),
       ...dotes.casillas,
-      ...conUsosEscena(casillasDeAumentos(sheet), sheet.usosEscena),
+      ...conUsosEscena(casillasDeAumentos(sheet, activables.salvaciones), sheet.usosEscena),
     ]),
     textosTirada: [...textosDeEspecie(especie), ...dotes.textos, ...textosDeAumentos(sheet)],
     ventajasFijas: ventajasFijasDeAumentos(sheet),
     extrasDotes: { bonosTramo: dotes.bonosTramo, criticos: dotes.criticos, permisos: dotes.permisos, descuentos: dotes.descuentos },
     accionesDotes: accionesDeDotes(activas),
     poderesDotes: poderesDeDotes(activas, sheet, psionica.paraEfectos),
-    accionesAumentos: accionesDeAumentos(sheet),
+    accionesAumentos: accionesDeAumentos(sheet, estados),
     usosEscena: usosEscenaDeFicha(sheet),
     ajusteCoste,
     ajusteCosteSubida: libre ? AJUSTE_NEUTRO : ajusteCosteDeSubida(ajusteCoste, sheet, aprobada),

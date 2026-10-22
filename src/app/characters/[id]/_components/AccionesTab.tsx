@@ -35,6 +35,7 @@ import {
   efectosDelResultado,
   tirarPeaje,
   SELECCION_PODER_VACIA,
+  ID_ELECCION_ACTIVABLE,
   type SeleccionPoder,
   type EfectosDeUso,
   type PeajeDeUso,
@@ -560,7 +561,7 @@ export function AccionesTab({
   onGastarUsosEscena?: (ids: string[]) => void;
   // Acciones de aumento (A4a): las cobra y aplica el servidor (usarAccionAumentoAction), que
   // devuelve qué ha pasado por `onMensaje`. Sin él (NPC), se paga la fatiga con onPagarFatiga.
-  onUsarAccionAumento?: (accionId: string, onMensaje: (mensaje: string) => void) => void;
+  onUsarAccionAumento?: (accionId: string, onMensaje: (mensaje: string) => void, eleccion?: string) => void;
   // NpcEditor.tsx (edición libre de máster): la tirada de Fabricar no aplica
   // — FabricarSeccion la salta y llama a onFabricar directo con éxito fijo,
   // mismo criterio que AtributosTab/HabilidadesTab con este mismo prop.
@@ -1036,7 +1037,7 @@ export function AccionesTab({
   // Lo que ha pasado al usar la última acción de aumento (lo dice el servidor).
   const [avisoAumento, setAvisoAumento] = useState<string | null>(null);
 
-  const usarDirecta = () => {
+  const usarDirecta = (estadoModal: EstadoCondiciones = {}) => {
     if (!modalDirecta) return;
     // Acciones de aumento (A4a): las cobra y aplica el servidor; aquí solo el rastro.
     const deAumento = modalDirecta.grupo === "Aumentos" && onUsarAccionAumento;
@@ -1047,7 +1048,13 @@ export function AccionesTab({
     // de los poderes; sin onPagarFatiga (consola), a mano.
     if (deAumento) {
       setAvisoAumento(null);
-      onUsarAccionAumento(modalDirecta.id, (m) => setAvisoAumento(`${modalDirecta.label}: ${m}`));
+      // Activables (A5a): lo elegido en el selector del modal (Neuroprótesis 2: a qué va el +2).
+      const eleccion = estadoModal[ID_ELECCION_ACTIVABLE];
+      onUsarAccionAumento(
+        modalDirecta.id,
+        (m) => setAvisoAumento(`${modalDirecta.label}: ${m}`),
+        typeof eleccion === "string" ? eleccion : undefined,
+      );
     } else if (modalDirecta.costeFatiga) onPagarFatiga?.(modalDirecta.costeFatiga, false);
     const id = Date.now();
     setHistorial((h) =>

@@ -1369,6 +1369,42 @@ al preparar su modelado:
     la regla de especialidad de las acciones de dote (con Biónica, en especialidad; sin ella, a
     la mitad). Acción extendida de 10 minutos, instrumental, arma de una mano (también de
     fuego), repetir si fallas, quitarla igual: nota. El vínculo del arma con el brazo, en A6.
+- *En la app (A5a, activables: Neuroprótesis 1-2 y Proyección; usuario, 2026-10-22):*
+  - **Activar** es una acción de aumento sin dado (`rules/aumentosAcciones.ts`, efecto
+    `activar`) que cobra la fatiga y pone un **estado propio** en `Character.estados`
+    (`ESTADOS_DE_AUMENTO`, `catalog/estados.ts`; no salen en el selector del máster). Mismo
+    camino que A4a: servidor, una transacción con el cobro, entrada del registro (autor: el
+    jugador); deshacer devuelve el estado, no la fatiga. Con `operacionesActivas` y los niveles
+    del implante; sin fatiga, bloqueada con el motivo.
+  - **Duración (R2):** Neuroprótesis 3 rondas (baja con "Siguiente turno", al cerrar la
+    vuelta); Proyección hasta el final de la escena. Las dos se van con "Limpiar estados". El
+    chip lo dice: "3 rondas, en combate" (fuera de combate no corren: se desactiva a mano) y
+    "hasta el final de la escena".
+  - **Reactivar** estando activa **renueva la duración** (sustituye el estado; no apila).
+    **Desactivar:** fila propia con el estado puesto, sin coste y sin devolver la fatiga, con
+    entrada en el registro; sale aunque ya no se lleve la pieza.
+  - **Efectos** (`rules/aumentosActivables.ts`): solo con el estado puesto **y** la pieza
+    equipada y funcionando; sin ella, el estado sigue en la lista pero no hace nada.
+  - **Neuroprótesis 1:** +1 a Fuerza, Agilidad y Percepción con origen "estado": cuentan en
+    atributos, aplicados y derivados, **no en requisitos de dote** (R3, S30). **−1 a cada
+    penalizador por separado, sin pasar de 0:** heridas y fatiga por el ajuste de umbrales (se
+    suma a especie y Estabilización: "Malherido (Neuroprótesis Simpática 1)" −2); cada
+    modificador negativo **de tirada** de cada estado, con su línea ("Neuroprótesis Simpática 1
+    (Aturdido)" +1). Los penalizadores de estado a atributos (Enfermedad, Parálisis) no se
+    tocan (supuesto: "penalizador" = el −N a la tirada). **−1 a las salvaciones de Fortaleza
+    contra enfermedad, radiación, toxinas y venenos** por el selector "Contra…", solo mientras
+    está activa; ese −1 no se reduce (no es un estado).
+  - **Neuroprótesis 2:** al activar se elige a qué va el +2 (Fuerza o Agilidad); ese sustituye
+    al +1 ("en lugar de") y el otro y Percepción reciben +1. La elección es el grado del
+    estado (`fuerza`/`agilidad`); con el nivel 1, un único grado.
+  - **Proyección:** acción gratuita, 1 de fatiga. Mientras dura, **anula los penalizadores en
+    cualquier tirada de Actitud** ("Convencer / mentir", "Iniciativa (distrayendo)"): heridas,
+    fatiga y estados, con sus compensaciones (Neuroprótesis, Neurogénesis), una línea
+    "Proyección Neuro-Expresiva (anula penalizadores)" que deja la suma a 0. No toca el
+    circunstancial ni los bonos. Su +1 de Carácter es el permanente de A1.
+  - **Vida (supuesto):** el +1 a Fuerza puede subir la vida máxima; al caerse o desactivarse
+    la Neuroprótesis **no se resta vida** (S75 no cuenta los activables), para que activarla no
+    cueste vida de verdad.
 
 ### 11.2 Lo que el documento no dice `[PENDIENTE]`
 - **Tope de implantes**: pregunta 11, sigue abierta.
@@ -1382,6 +1418,8 @@ al preparar su modelado:
   texto solo pone la acción compleja en ampliar el área; la app no le da tipo propio.
 - **Tempestad Nanobótica**: si le valen las dotes de ataque cuerpo a cuerpo. La app no se las
   aplica, porque no es un arma (usuario, 2026-10-22).
+- **Neuroprótesis Simpática 1**: si "reducir penalizadores por estado en 1" alcanza también a
+  los −N a atributos (Enfermedad, Parálisis). La app solo reduce los de las tiradas.
 
 ### 11.3 Decisiones del usuario `[FIRME · usuario 2026-10-16, Cuestionario Aumentos]`
 - **En la ficha**: una pieza de equipo más, que se equipa y se desequipa ("un jugador se

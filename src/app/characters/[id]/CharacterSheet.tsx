@@ -496,10 +496,11 @@ export function CharacterSheet({
   };
   // Acciones de aumento (A4a): sin estado optimista, las cobra y aplica el servidor (también
   // quitar un estado, que llega por la revalidación de la página).
-  const commitUsarAccionAumento = (accionId: string, onMensaje: (m: string) => void) => {
+  // Activables (A5a): `eleccion` es lo elegido en el modal de activar (Neuroprótesis 2).
+  const commitUsarAccionAumento = (accionId: string, onMensaje: (m: string) => void, eleccion?: string) => {
     runSave(
       async () => {
-        const res = await usarAccionAumentoAction(characterId, accionId);
+        const res = await usarAccionAumentoAction(characterId, accionId, eleccion);
         onMensaje(res.ok ? (res.mensaje ?? "Hecho.") : res.error);
         return res;
       },

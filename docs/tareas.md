@@ -19,7 +19,7 @@ Sin valoración de prioridad aquí a propósito — se queda obsoleta en cuanto 
 foco. Frentes abiertos, cada uno con su sección en Pendiente:
 - **Dotes**: D1–D2d y las dotes de NPC hechas; quedan la especialidad elegida en la tirada
   y las tiradas fijas que faltan (10 efectos con `bloqueoPor: "tiradas-fijas"`).
-- **Aumentos**: por tandas (A0-A4a hechas, A4b construida sin commit; quedan A5-A7).
+- **Aumentos**: por tandas (A0-A4b hechas, A5a construida sin commit; quedan A5b-A7).
 - **Puntos Heroicos**: sin empezar, con la prosa ya en `docs/fuente/`.
   *Neos Plouton* (`docs/fuente/neos-plouton.md`) es la aventura que juega la mesa, no un
   área de reglas que construir.
@@ -1473,7 +1473,7 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
      (VTF nivel 2, Pico de Cuervo Poco Habitual: dificultad sugerida 7, antes
      habría sido 9).
 
-### Aumentos ⬜ (A0-A4a commiteadas; A4b construida, 2026-10-22)
+### Aumentos ⬜ (A0-A4b commiteadas; A5a construida, 2026-10-22)
 Encargo y pasos: `docs/prompt-aumentos.md`. Fuente literal:
 `docs/aumentos.md` (26 operaciones genéticas y 11 implantes; **5 implantes en proceso**,
 de Control Anímico al final: no se modelan hasta la próxima foto de Drive). Decisión del usuario: entran
@@ -1535,7 +1535,7 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
     Hemorragia o Miedo (o baja Aterrorizado a Asustado) con entrada de registro deshacible
     (autor: el jugador).
   - [x] A4b · Barrido electromagnético, Tempestad Nanobótica, Densificar e Incorporar arma.
-    *(sin commit; falta revisión y navegador)* `accionesDeAumentos` devuelve `filas` en orden
+    *(commiteada)* `accionesDeAumentos` devuelve `filas` en orden
     (directas y tiradas mezcladas; `directas` sigue para el servidor) y la sección "Aumentos"
     las pinta así. Acciones con dado (`tirada` en `AccionAumentoCatalogo`): Barrido en la
     opción Percepción Electromagnética de Introgresión (ampliar a 30 m, a 60 m por 1 de
@@ -1547,6 +1547,22 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
     parámetro de `desgloseBlindaje` (`blindaje.ts`); "Bloquear daño" cobra al marcar y
     devuelve al desmarcar (`onAjustarFatiga` nuevo en AccionesTab).
 - [ ] A5 · Activables.
+  - [x] A5a · Capa de activables, Neuroprótesis 1-2 y Proyección. *(sin commit; falta
+    revisión y navegador)* Efecto `activar` en `AccionAumentoCatalogo` (con `eleccion` en la
+    Neuroprótesis 2: selector `ID_ELECCION_ACTIVABLE` en el modal) que cobra y pone un estado
+    propio (`ESTADOS_DE_AUMENTO` en `catalog/estados.ts`: `aum_neuroprotesis` con grados
+    activo/fuerza/agilidad, `aum_proyeccion`; fuera del selector del máster) por
+    `usarAccionAumentoAction` → `cambiarEstadosDePersonajes` (cobro en `preparar`, registro
+    deshacible). Reactivar sustituye (renueva); fila "Desactivar" generada con el estado
+    puesto (efecto `desactivar`, sin coste, también sin la pieza). `activo` en la operación o
+    en el nivel del implante y `rules/aumentosActivables.ts` (`efectosDeActivables`, estado +
+    pieza que funciona): atributos con origen "estado" (fuera de `requisitosDotes`),
+    `reducePenalizadores` (ajuste de umbrales + compensación por penalizador de estado en
+    `modificadoresDeEstados`), salvaciones al "Contra…" (`casillasDeAumentos`, 2.º parámetro) y
+    Modificador `anulaPenalizadores` (Proyección en Actitud, `conPenalizadoresAnulados` en
+    `montarTirada`; Neurogénesis lleva `compensa`). Chip con `duracionActivable` ("3 rondas, en
+    combate"). Los activables no restan vida al caerse (`vidaTrasCambioDeEstados`).
+  - [ ] A5b · Neuroprótesis 3-4.
 - [ ] A6 · Brazo Biónico.
 - [ ] A7 · Inmunidades.
 - [ ] Cuando Murillo cierre los 5 implantes en proceso: `sync-drive`, transcribirlos de

@@ -19,7 +19,8 @@ export function ChipEstado({
   quitarLabel?: string;
   deshabilitado?: boolean;
 }) {
-  const extra = [estado.grado, etiquetaDuracionCorta(estado.duracion)].filter(Boolean).join(" · ");
+  // Activables de aumento (A5a): la duración larga, que dice que las rondas solo corren en combate.
+  const extra = [estado.grado, estado.duracionActivable ?? etiquetaDuracionCorta(estado.duracion)].filter(Boolean).join(" · ");
   return (
     <span
       className={`inline-flex min-h-7 max-w-full items-center gap-1.5 border border-glitch bg-glitch/15 text-[0.85rem] leading-tight text-foreground ${
@@ -27,7 +28,13 @@ export function ChipEstado({
       }`}
     >
       <b className="truncate font-bold">{estado.nombre}</b>
-      {extra && <span className="shrink-0 whitespace-nowrap font-mono text-[0.72rem] text-muted">· {extra}</span>}
+      {extra && (
+        <span
+          className={`${estado.duracionActivable ? "min-w-0" : "shrink-0 whitespace-nowrap"} font-mono text-[0.72rem] text-muted`}
+        >
+          · {extra}
+        </span>
+      )}
       {onQuitar && (
         <button
           type="button"

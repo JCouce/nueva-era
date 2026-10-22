@@ -40,6 +40,7 @@
 //   aumentos.ts        aumentos: compra, subir de nivel, elección, bolsa y requisito roto (A0); +1 a atributos, vida de Hipertrofia y rebajas de coste (A1); reducción de penalizadores por heridas, fatiga y carga (A3)
 //   aumentosTiradas.ts lo que los aumentos ponen en tiradas y blindaje: casillas, selector "Contra…" de salvaciones, textos, Alerta pasiva y armadura natural (A2a)
 //   aumentosAcciones.ts acciones propias de aumento (sección Aumentos de Acciones: sin dado y con dado) y su uso en servidor (A4a, A4b)
+//   aumentosActivables.ts lo que hacen los activables encendidos (estado propio + pieza): atributos, penalizadores, "Contra…" (A5a)
 //   usosEscena.ts      casillas "una vez por escena": gastar al tirar, bloquear, liberar y vaciar (A4a)
 //   vidaPorEstados.ts  vida/fatiga que se pierden al bajar el máximo por un estado (S75)
 //   registro.ts        registro del máster: qué se guarda de cada acción y cómo se deshace (E1b)
@@ -85,6 +86,7 @@ export * from "./dotesCompradas";
 export * from "./aumentos";
 export * from "./aumentosTiradas";
 export * from "./aumentosAcciones";
+export * from "./aumentosActivables";
 export * from "./usosEscena";
 export * from "./dotesEfectos";
 export * from "./dotesAcciones";

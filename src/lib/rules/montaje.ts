@@ -38,6 +38,7 @@ import {
 import {
   alcanzaA,
   bonoAlcance,
+  conPenalizadoresAnulados,
   desgloseAlcance,
   descartadosPorNoApila,
   type ContextoAccion,
@@ -275,7 +276,7 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     ...(tirada.especialidadArma && { especialidadArma: tirada.especialidadArma }),
   };
   // Sin los que piden especialidad si no se va en ella, y el mejor de los que no se suman.
-  const { mods, condiciones, bonosTramo } = sinApilar(
+  const sinApilados = sinApilar(
     {
       mods: ficha.modificadores,
       condiciones: porAplicado.condiciones,
@@ -284,6 +285,9 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     ctx,
     estado,
   );
+  const { condiciones, bonosTramo } = sinApilados;
+  // Proyección activa (A5a): sus penalizadores, a 0 en las tiradas de Actitud.
+  const mods = conPenalizadoresAnulados(sinApilados.mods, ctx);
 
   const activas = condiciones.filter((c): c is Toggle => c.tipo === "toggle" && Boolean(estado[c.id]));
   const mod = otroAplicado

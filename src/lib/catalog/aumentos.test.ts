@@ -162,7 +162,7 @@ describe("integridad del catálogo de aumentos", () => {
     aum_consciencia_omnidireccional: 2,
     aum_asa_estriatotalamica: 1,
     aum_conectividad_callosa: 3,
-    aum_proyeccion_neuro_expresiva: 1,
+    aum_proyeccion_neuro_expresiva: 2, // ventaja en Actitud (A2b) y el activable (A5a)
     aum_sincronizacion_neuromotora_profunda: 1,
     aum_automatismo_bulboespinal: 2,
     aum_hiperdensidad_propioceptiva: 1,
@@ -178,9 +178,13 @@ describe("integridad del catálogo de aumentos", () => {
     // A4b: Incorporar arma, Tempestad Nanobótica y su nota del blindaje del objetivo.
     "aum_brazo_bionico 1": 1,
     "aum_enjambre_nanobot 4": 2,
+    // A5a: activables. Neuroprótesis 1 entera (activar, +1 a los tres, −1 a los penalizadores,
+    // −1 en "Contra…" y la nota) y la elección del 2; el 3 y el 4 son A5b.
+    "aum_neuroprotesis_simpatica 1": 7,
+    "aum_neuroprotesis_simpatica 2": 1,
   };
 
-  test("A1, A2a, A2b, A3, A4a y A4b: solo lo construido (o lo narrativo) está marcado como construido", () => {
+  test("A1, A2a, A2b, A3, A4a, A4b y A5a: solo lo construido (o lo narrativo) está marcado como construido", () => {
     for (const op of OPERACIONES_GENETICAS) {
       const construidos = op.motor.filter((m) => m.estado === "construido" && m.tipo !== "narrativo");
       const esperados =

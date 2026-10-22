@@ -68,6 +68,7 @@ export function acumulaPorClave<T>(porNivel: T[][], claveDe: (item: T) => string
 
 export function claveModificador(m: Modificador): string {
   if (m.tipo === "multiplicadorVida") return m.tipo;
+  if (m.tipo === "anulaPenalizadores") return `${m.tipo}:${JSON.stringify(m.alcance)}`;
   return m.tipo === "tirada" ? `tirada:${JSON.stringify(m.alcance)}` : `${m.tipo}:${m.id}`;
 }
 

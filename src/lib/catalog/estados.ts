@@ -802,6 +802,78 @@ export const ESTADOS: Estado[] = [
   },
 ];
 
+// Estados propios de los aumentos activables (A5a, docs/propuesta-aumentos.md §A5): los pone
+// el jugador desde Acciones → Aumentos (usarAccionAumentoAction) y viven en Character.estados
+// como cualquier otro, para que caduquen con "Siguiente turno" y se vayan con "Limpiar estados".
+// No están en ESTADOS, así que no salen en el selector del máster (PanelEstados). Sus
+// `modificadores` van vacíos a propósito: los efectos los calcula aumentosActivables.ts con el
+// estado Y la pieza equipada (sin la pieza, el estado no hace nada).
+// TODO(revisar): el máster podría ponerlos por la API (validation.ts los acepta porque
+// estadoPorId los encuentra); no hay botón para ello y no hace daño.
+export const ESTADOS_DE_AUMENTO: Estado[] = [
+  {
+    id: "aum_neuroprotesis",
+    label: "Neuroprótesis Simpática",
+    resumen: "Implante activado: lucha o huida bajo demanda.",
+    grados: [
+      {
+        id: "activo",
+        label: "Nivel 1",
+        modificadores: [],
+        detalle: [
+          "+1 a Fuerza, Agilidad y Percepción (no cuenta para requisitos de dote). −1 a cada " +
+            "penalizador por estado, heridas y fatiga, sin pasar de 0. −1 a las salvaciones de " +
+            "Fortaleza contra enfermedad, radiación, toxinas y venenos.",
+        ],
+        duracionTurnos: 3,
+      },
+      {
+        id: "fuerza",
+        label: "+2 Fuerza",
+        modificadores: [],
+        detalle: [
+          "+2 a Fuerza y +1 a Agilidad y Percepción (no cuenta para requisitos de dote). −1 a cada " +
+            "penalizador por estado, heridas y fatiga, sin pasar de 0. −1 a las salvaciones de " +
+            "Fortaleza contra enfermedad, radiación, toxinas y venenos.",
+        ],
+        duracionTurnos: 3,
+      },
+      {
+        id: "agilidad",
+        label: "+2 Agilidad",
+        modificadores: [],
+        detalle: [
+          "+2 a Agilidad y +1 a Fuerza y Percepción (no cuenta para requisitos de dote). −1 a cada " +
+            "penalizador por estado, heridas y fatiga, sin pasar de 0. −1 a las salvaciones de " +
+            "Fortaleza contra enfermedad, radiación, toxinas y venenos.",
+        ],
+        duracionTurnos: 3,
+      },
+    ],
+  },
+  {
+    id: "aum_proyeccion",
+    label: "Proyección Neuro-Expresiva",
+    resumen: "Interacciones sociales sin penalizadores.",
+    grados: [
+      {
+        id: "activo",
+        label: "Activa",
+        modificadores: [],
+        detalle: [
+          "Sin penalizadores por heridas, fatiga ni estados en las tiradas de Actitud (sin pasar " +
+            "de 0; el circunstancial no cambia).",
+        ],
+        duracionTurnos: null,
+      },
+    ],
+  },
+];
+
 export function estadoPorId(id: string): Estado | null {
-  return ESTADOS.find((e) => e.id === id) ?? null;
+  return ESTADOS.find((e) => e.id === id) ?? ESTADOS_DE_AUMENTO.find((e) => e.id === id) ?? null;
+}
+
+export function esEstadoDeAumento(id: string): boolean {
+  return ESTADOS_DE_AUMENTO.some((e) => e.id === id);
 }

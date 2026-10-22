@@ -19,7 +19,7 @@
 // (cómo se interpreta el "mínimo 1" de Moribundo/Exhausto).
 import type { AplicadoId } from "./atributos";
 import type { ModificadorConFuente, OrigenModificador } from "./modificadores";
-import { estadoPorId } from "../catalog/estados";
+import { esEstadoDeAumento, estadoPorId } from "../catalog/estados";
 
 export type UmbralSalud = "normal" | "herido" | "malherido" | "moribundo";
 export type UmbralFatiga = "normal" | "fatigado" | "exhausto";
@@ -147,7 +147,7 @@ function compensacionesPorAplicado(
     const v = Math.min(r.valor, restante);
     if (v <= 0) return [];
     restante -= v;
-    return [{ tipo: "tirada", alcance: { tipo: "aplicado", aplicados: r.aplicados }, valor: v, origen: r.origen, fuente: `${r.fuente} (${etiqueta})` }];
+    return [{ tipo: "tirada", alcance: { tipo: "aplicado", aplicados: r.aplicados }, valor: v, compensa: true, origen: r.origen, fuente: `${r.fuente} (${etiqueta})` }];
   });
 }
 
@@ -262,17 +262,32 @@ export function estadoActivoCon(estadoId: string, gradoId: string, duracion: Dur
 // (lib/rules/equipo.ts): un estadoId o gradoId que ya no exista en el
 // catálogo (dato viejo, typo) se ignora sin reventar el resto del cálculo,
 // igual que equipoPorId con un catalogoId huérfano.
-export function modificadoresDeEstados(activos: EstadoActivo[]): ModificadorConFuente[] {
+// `reduccion` (Neuroprótesis activa, A5a): −valor a cada penalizador de tirada de cada estado,
+// por separado y sin pasar de 0, como una compensación con el mismo alcance detrás de él
+// ("Neuroprótesis Simpática 1 (Aturdido)"). Los penalizadores a atributos no se tocan.
+// TODO(revisar): "reducir penalizadores por estado en 1" se lee como el −N a las tiradas; los
+// −N a atributos de Enfermedad o Parálisis no se reducen.
+export function modificadoresDeEstados(
+  activos: EstadoActivo[],
+  reduccion: { valor: number; fuente: string } | null = null,
+): ModificadorConFuente[] {
   return activos.flatMap((activo): ModificadorConFuente[] => {
     const estado = estadoPorId(activo.estadoId);
     if (!estado) return [];
     const grado = estado.grados.find((g) => g.id === activo.gradoId);
     if (!grado) return [];
-    return grado.modificadores.map((m) => ({
-      ...m,
-      origen: "estado" as const,
-      fuente: estado.label,
-    }));
+    return grado.modificadores.flatMap((m): ModificadorConFuente[] => {
+      const propio: ModificadorConFuente = { ...m, origen: "estado", fuente: estado.label };
+      if (!reduccion || m.tipo !== "tirada" || m.valor >= 0) return [propio];
+      const compensa: ModificadorConFuente = {
+        tipo: "tirada",
+        alcance: m.alcance,
+        valor: Math.min(reduccion.valor, -m.valor),
+        origen: "estado",
+        fuente: `${reduccion.fuente} (${estado.label})`,
+      };
+      return [propio, compensa];
+    });
   });
 }
 
@@ -292,7 +307,17 @@ export type EstadoActivoDescrito = EstadoActivo & {
   // Frases del catálogo ya unidas para pintar directo — array vacío si el
   // grado no trae detalle o no se encontró en el catálogo.
   detalle: string[];
+  // Solo los estados propios de un aumento activable (A5a): la duración larga para el chip
+  // ("3 rondas, en combate", "hasta el final de la escena"), porque fuera de combate las
+  // rondas no corren y se desactiva a mano.
+  duracionActivable?: string;
 };
+
+// "3 rondas, en combate" / "hasta el final de la escena" (A5a).
+export function textoDuracionActivable(d: DuracionEstado): string {
+  if (d.tipo === "rondas") return `${d.rondas} ${d.rondas === 1 ? "ronda" : "rondas"}, en combate`;
+  return d.tipo === "escena" ? "hasta el final de la escena" : "hasta desactivarlo";
+}
 
 export function describirEstadosActivos(activos: EstadoActivo[]): EstadoActivoDescrito[] {
   return activos.map((ea) => {
@@ -310,6 +335,7 @@ export function describirEstadosActivos(activos: EstadoActivo[]): EstadoActivoDe
           ? `${estado.label} (${grado.label})`
           : (estado?.label ?? ea.estadoId),
       detalle: grado?.detalle ?? [],
+      ...(esEstadoDeAumento(ea.estadoId) && { duracionActivable: textoDuracionActivable(duracionDe(ea)) }),
     };
   });
 }

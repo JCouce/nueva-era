@@ -143,7 +143,9 @@ export type Modificador =
   // contra casillas y bonos por tramo); en el derivado, bonoDerivado.
   | { tipo: "derivado"; id: DerivadoId; valor: number; noApila?: string }
   | { tipo: "habilidad"; id: HabilidadId; valor: number }
-  | { tipo: "tirada"; alcance: AlcanceModificador; valor: number; noApila?: string }
+  // `compensa` (A5a): compensación de un penalizador (Neurogénesis sobre la fatiga) que no
+  // viene con origen "estado"; cuenta junto a los penalizadores al anularlos (Proyección).
+  | { tipo: "tirada"; alcance: AlcanceModificador; valor: number; noApila?: string; compensa?: true }
   // Nivel de una disciplina psiónica (Resonancia +1 del Arianyi, §14.6). No toca
   // ninguna tirada: sube el nivel efectivo, que es el que miran requisitos y
   // poderes (psionica.ts: nivelesDePsionica). Ver docs/modificadores-tiradas.md §9.
@@ -152,7 +154,13 @@ export type Modificador =
   // §11.3): vida = 8 + ⌊Fortaleza × factor⌋ si Fortaleza > 0; con 0 o menos no se
   // multiplica. Lo lee salud() (derivados.ts); no toca ninguna tirada. `valor` es el
   // factor (1,5), no un sumando: no lo suma ningún bono*.
-  | { tipo: "multiplicadorVida"; valor: number };
+  | { tipo: "multiplicadorVida"; valor: number }
+  // Anula los penalizadores de las tiradas de ese alcance (Proyección Neuro-Expresiva activa,
+  // A5a): los de heridas, fatiga y estados con sus compensaciones, sin pasar de 0. No toca el
+  // circunstancial ni los bonos positivos. Lo resuelve montarTirada (conPenalizadoresAnulados).
+  // `valor` siempre 0: no suma nada por sí mismo (lo lleva para que el resto del código, que
+  // lee `valor` de cualquier modificador, no tenga que distinguirlo).
+  | { tipo: "anulaPenalizadores"; alcance: AlcanceModificador; valor: 0 };
 
 export type OrigenModificador =
   | "especie"
@@ -295,6 +303,23 @@ export function alcanzaA(alcance: AlcanceModificador, ctx: ContextoAccion): bool
 export function alcanzaAlgunAplicado(alcance: Extract<AlcanceModificador, { tipo: "aplicado" }>, ctx: ContextoAccion): boolean {
   const posibles = ctx.aplicadosPosibles ?? (ctx.aplicado ? [ctx.aplicado] : []);
   return posibles.some((a) => alcance.aplicados.includes(a));
+}
+
+// Lo que cuenta como penalizador al anularlo: lo que viene de estados y umbrales (origen
+// "estado", con las compensaciones de la Neuroprótesis) y las compensaciones marcadas.
+const esDePenalizador = (m: ModificadorConFuente) => m.origen === "estado" || (m.tipo === "tirada" && m.compensa === true);
+
+// Con un `anulaPenalizadores` que alcance a la tirada, una línea más que deja a 0 lo que suman
+// sus penalizadores (si suman menos de 0). Sin él, la misma lista.
+export function conPenalizadoresAnulados(mods: ModificadorConFuente[], ctx: ContextoAccion): ModificadorConFuente[] {
+  const anula = mods.find((m) => m.tipo === "anulaPenalizadores" && alcanzaA(m.alcance, ctx));
+  if (!anula) return mods;
+  const neto = mods.reduce(
+    (t, m) => (m.tipo === "tirada" && esDePenalizador(m) && alcanzaA(m.alcance, ctx) ? t + m.valor : t),
+    0,
+  );
+  if (neto >= 0) return mods;
+  return [...mods, { tipo: "tirada", alcance: { tipo: "todas" }, valor: -neto, origen: anula.origen, fuente: `${anula.fuente} (anula penalizadores)` }];
 }
 
 export function bonoAlcance(mods: ModificadorConFuente[], ctx: ContextoAccion): number {

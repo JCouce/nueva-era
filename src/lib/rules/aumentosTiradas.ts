@@ -150,7 +150,7 @@ function opcionesDeAmenaza(a: (typeof AMENAZAS)[number], efectos: EfectoConFuent
   const gratis = aplican.filter((e) => e.ventaja === "gratis").map((e) => e.fuente);
   const pago = aplican.filter((e) => e.ventaja === "fatiga").map((e) => e.fuente);
   const lineas = [
-    ...partes.map((p) => `${p.fuente} +${p.valor}`),
+    ...partes.map((p) => `${p.fuente} ${conSigno(p.valor)}`),
     ...gratis.map((f) => `${f}: ventaja`),
     ...pago.map((f) => (gratis.length ? `${f}: ventaja (no se paga, ya la da ${gratis.join(" y ")})` : `${f}: ventaja pagando 1 de fatiga`)),
   ];
@@ -165,8 +165,10 @@ function opcionesDeAmenaza(a: (typeof AMENAZAS)[number], efectos: EfectoConFuent
     fuenteVentaja: pago.join(" y "),
     costeFatiga: 1,
   };
-  return valor > 0 ? [{ ...base, nota: partes.map((p) => `${p.fuente} +${p.valor}`).join(" · ") }, pagando] : [pagando];
+  return valor !== 0 ? [{ ...base, nota: partes.map((p) => `${p.fuente} ${conSigno(p.valor)}`).join(" · ") }, pagando] : [pagando];
 }
+
+const conSigno = (n: number) => (n < 0 ? `−${-n}` : `+${n}`);
 
 // Una condición "Contra…" por salvación que tenga alguna amenaza cubierta: "Nada en
 // especial" por defecto y una opción por amenaza (en el orden de AMENAZAS).
@@ -198,8 +200,16 @@ function selectoresContra(aportes: Aporte[]): CondicionTirada[] {
 // Casillas con alcance de los aumentos que funcionan (las de cada pieza, con la fuente en
 // la etiqueta) y los selectores "Contra…". Van al índice de condiciones con las de equipo,
 // especie y dotes: conExtrasDeFicha las pega a su tirada y montarTirada las suma.
-export function casillasDeAumentos(sheet: Pick<Sheet, "equipo">): CondicionTirada[] {
-  const aportes = aportesDeAumentos(sheet);
+// `deActivables` (A5a): las salvaciones de los activables encendidos (Neuroprótesis: −1 contra
+// enfermedad, radiación, toxinas y venenos), que entran en el selector como las demás.
+export function casillasDeAumentos(
+  sheet: Pick<Sheet, "equipo">,
+  deActivables: { fuente: string; efectos: EfectoSalvacion[] }[] = [],
+): CondicionTirada[] {
+  const aportes = [
+    ...aportesDeAumentos(sheet),
+    ...deActivables.map((a): Aporte => ({ fuente: `${a.fuente} (activa)`, efectos: { salvaciones: a.efectos } })),
+  ];
   const casillas = aportes.flatMap((a) =>
     (a.efectos.casillas ?? []).map((c): CondicionTirada => ({ ...c, etiqueta: `${c.etiqueta} · ${a.fuente}` })),
   );
