@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ficha Nueva Era Psiónica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;500;600;700&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* Variante psiónica: geometría sagrada, ondas y nodos. Sustituye el chaflán por el
+   círculo y el negro por el púrpura sombra de la app; los huecos de escritura siguen
+   blancos. La decoración es casi toda trazo fino para no gastar tinta. */
+:root {
+  --deep: #2d1b4e;
+  --ink: #1a1428;
+  --ink-dim: #5e5672;
+  --line: #3a2d58;
+  --rule: #c3bcd4;
+  --tint: #f4f1fa;
+  --yellow: #fcee0a;
+  --cyan: #00f0ff;
+  --magenta: #ff2e97;
+  --red: #ff003c;
+  --cyan-ink: #00818a;
+  --magenta-ink: #c4146d;
+  --display: "Chakra Petch", system-ui, sans-serif;
+  --sans: "Rajdhani", system-ui, sans-serif;
+  --mono: "Share Tech Mono", ui-monospace, monospace;
+}
+@page { size: A4; margin: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { background: #d9d4e4; color: var(--ink); font-family: var(--sans); font-weight: 600; }
+@media print { body { background: #fff; } }
+
+.page {
+  width: 210mm; height: 297mm; margin: 8mm auto; background: #fff; position: relative; overflow: hidden;
+  padding: 8mm 11mm 7mm 13mm; display: flex; flex-direction: column; gap: 2.6mm; break-after: page;
+}
+.page:last-child { break-after: auto; }
+@media print { .page { margin: 0; } }
+.page > * { position: relative; z-index: 1; }
+.page > .deco { position: absolute; z-index: 0; pointer-events: none; }
+
+/* Hilo neuronal del margen izquierdo (lo dibuja el script) */
+.thread { left: 3mm; top: 0; width: 7mm; height: 297mm; }
+
+/* background-clip: text deja un recuadro fantasma al exportar a PDF; color liso */
+.grad-text { color: var(--magenta-ink); }
+
+/* ── Cabecera ── */
+.hero { position: relative; height: 31mm; display: flex; align-items: center; }
+.hero .mandala { position: absolute; right: -4mm; top: -9mm; width: 46mm; height: 46mm; }
+.hero .txt { display: flex; flex-direction: column; gap: 1mm; }
+.hero .eyebrow { font-family: var(--mono); font-size: 8pt; letter-spacing: .4em; color: var(--magenta-ink); }
+.hero h1 { font-family: var(--display); font-weight: 300; font-size: 36pt; letter-spacing: .22em; line-height: 1; color: var(--deep); }
+.hero h1 b { font-weight: 700; }
+.hero .sub { display: flex; align-items: center; gap: 3mm; font-family: var(--display); font-weight: 600; font-size: 9pt; letter-spacing: .3em; color: var(--ink-dim); }
+.hero .sub .pill { background: var(--deep); color: #fff; border-radius: 99px; padding: .5mm 3mm; letter-spacing: .25em; }
+.hero .wave { position: absolute; left: 0; right: 52mm; bottom: 0; height: 5mm; }
+
+.strip { position: relative; height: 13mm; display: flex; align-items: center; gap: 4mm; border-bottom: .3mm solid var(--rule); }
+.strip .mandala { width: 13mm; height: 13mm; flex: none; }
+.strip .t { font-family: var(--display); font-weight: 300; font-size: 15pt; letter-spacing: .22em; color: var(--deep); }
+.strip .t b { font-weight: 700; }
+.strip .who { flex: 1; display: flex; align-items: baseline; gap: 2mm; font-family: var(--mono); font-size: 7pt; letter-spacing: .3em; color: var(--magenta-ink); }
+.strip .who::after { content: ""; flex: 1; border-bottom: .3mm dotted var(--ink-dim); }
+.strip .pg { font-family: var(--mono); font-size: 8pt; color: #fff; background: var(--deep); border-radius: 99px; padding: .4mm 2.6mm; }
+
+/* ── Secciones: nodo numerado + nombre + onda ── */
+.sec { display: flex; flex-direction: column; gap: 1.7mm; }
+.sec-title { display: flex; align-items: center; gap: 2.4mm; height: 6.5mm; }
+.sec-title .node {
+  width: 6.5mm; height: 6.5mm; border-radius: 50%; flex: none; display: grid; place-items: center;
+  font-family: var(--mono); font-size: 7.5pt; color: #fff; background: var(--deep);
+  box-shadow: 0 0 0 .5mm #fff, 0 0 0 .8mm var(--magenta);
+}
+.sec-title .name { font-family: var(--display); font-weight: 700; font-size: 11.5pt; letter-spacing: .2em; text-transform: uppercase; color: var(--deep); white-space: nowrap; }
+.sec-title .wave { flex: 1; height: 4mm; }
+.sec-title .hint { font-family: var(--mono); font-size: 7pt; color: var(--ink-dim); white-space: nowrap; }
+.sec-title.cyan .node { box-shadow: 0 0 0 .5mm #fff, 0 0 0 .8mm var(--cyan); }
+
+.label { font-family: var(--display); font-weight: 600; font-size: 7.3pt; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-dim); }
+.formula { font-family: var(--mono); font-weight: 400; font-size: 7.3pt; color: var(--ink-dim); }
+
+.box { height: 10mm; border: .3mm solid var(--line); border-radius: 2.4mm; background: #fff; position: relative; }
+.box::before { content: ""; position: absolute; left: 1.6mm; top: 50%; width: 1.2mm; height: 1.2mm; border-radius: 50%; background: var(--magenta); transform: translateY(-50%); opacity: .7; }
+.field { display: flex; flex-direction: column; gap: .7mm; min-width: 0; }
+.row { display: grid; gap: 3mm; }
+
+.lines { display: flex; flex-direction: column; }
+.lines i { display: block; height: 7.6mm; border-bottom: .25mm solid var(--rule); }
+.lines i:nth-child(4n) { border-bottom-color: #a99fc2; }
+
+/* ── Atributos: red neuronal básicos → aplicados ── */
+.neural { position: relative; height: 53mm; }
+.neural svg.links { position: absolute; inset: 0; width: 100%; height: 100%; }
+.neural .n { position: absolute; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: .8mm; width: 30mm; }
+.neural .n .o { border-radius: 50%; background: #fff; }
+.neural .b { top: 0; }
+.neural .b .o { width: 15mm; height: 15mm; border: .6mm solid var(--deep); box-shadow: 0 0 0 .9mm #fff, 0 0 0 1.15mm var(--magenta); }
+.neural .b .lab { font-family: var(--display); font-size: 8.6pt; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.neural .b .lab b { font-family: var(--mono); font-weight: 400; color: var(--magenta-ink); margin-right: 1mm; }
+.neural .a { top: 33mm; }
+.neural .a .o { width: 13mm; height: 13mm; border: .5mm solid var(--cyan-ink); box-shadow: 0 0 0 .8mm #fff, 0 0 0 1mm var(--cyan); }
+.neural .a .lab { font-family: var(--display); font-size: 8.6pt; font-weight: 600; line-height: 1; text-align: center; }
+.neural .a .lab small { display: block; font-family: var(--mono); font-weight: 400; font-size: 6.6pt; color: var(--ink-dim); margin-top: .5mm; }
+.neural .tag { position: absolute; left: 0; font-family: var(--mono); font-size: 6.6pt; letter-spacing: .2em; color: var(--ink-dim); writing-mode: vertical-rl; transform: rotate(180deg); }
+
+/* ── Habilidades ── */
+.rules-strip { display: flex; flex-wrap: wrap; gap: 1mm 4mm; padding: 1.3mm 4mm; border-radius: 99px; background: var(--tint); font-family: var(--mono); font-size: 7.4pt; }
+.rules-strip b { font-family: var(--display); font-weight: 700; color: var(--magenta-ink); }
+table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+thead th { font-family: var(--display); font-weight: 600; font-size: 7.4pt; letter-spacing: .14em; text-transform: uppercase; color: #fff; background: var(--deep); text-align: left; padding: 1.2mm 2mm; }
+thead th:first-child { border-radius: 3mm 0 0 0; padding-left: 4mm; }
+thead th:last-child { border-radius: 0 3mm 0 0; }
+thead th.c { text-align: center; }
+tbody td { border-bottom: .25mm solid var(--rule); height: 8.2mm; padding: 0 2mm; }
+tbody tr td + td { border-left: .25mm solid var(--rule); }
+tbody td.skill { font-family: var(--display); font-weight: 600; font-size: 10.5pt; padding-left: 8mm; position: relative; }
+tbody td.skill::before { content: ""; position: absolute; left: 3mm; top: 50%; width: 2mm; height: 2mm; border-radius: 50%; border: .3mm solid var(--magenta-ink); transform: translateY(-50%); }
+tbody tr:nth-child(even) td.skill::before { border-color: var(--cyan-ink); background: var(--tint); }
+tbody tr:nth-child(even) td.skill { background: var(--tint); }
+tbody td.pts { border-left: .6mm solid var(--deep) !important; }
+tbody tr:last-child td { border-bottom: .5mm solid var(--deep); }
+.gear tbody td { height: 9.6mm; }
+
+/* ── Psiónica: hexagrama con seis nodos ── */
+.psi { position: relative; width: 180mm; height: 74mm; margin: 0 auto; }
+.psi svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.psi .node { position: absolute; width: 14mm; height: 14mm; margin: -7mm 0 0 -7mm; border-radius: 50%; background: #fff; border: .6mm solid var(--cyan-ink); box-shadow: 0 0 0 1mm #fff, 0 0 0 1.3mm var(--cyan); }
+.psi .node.m { border-color: var(--magenta-ink); box-shadow: 0 0 0 1mm #fff, 0 0 0 1.3mm var(--magenta); }
+.psi .pl { position: absolute; transform: translateY(-50%); font-family: var(--display); font-weight: 600; font-size: 11.5pt; color: var(--ink); white-space: nowrap; }
+.psi .pl small { display: block; font-family: var(--mono); font-weight: 400; font-size: 6.6pt; letter-spacing: .14em; color: var(--ink-dim); }
+.psi .pl.l { text-align: right; }
+.psi .side { position: absolute; top: 0; font-family: var(--display); font-weight: 700; font-size: 12pt; letter-spacing: .3em; }
+.psi .side small { display: block; font-family: var(--mono); font-weight: 400; font-size: 6.8pt; letter-spacing: .2em; color: var(--ink-dim); }
+.psi .side.l { left: 0; color: var(--cyan-ink); }
+.psi .side.r { right: 0; text-align: right; color: var(--magenta-ink); }
+
+/* ── Salud ── */
+.health-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.meter { border: .3mm solid var(--line); border-radius: 3mm; overflow: hidden; display: flex; flex-direction: column; }
+.meter-head { display: grid; grid-template-columns: 1fr 16mm 16mm; border-bottom: .3mm solid var(--line); }
+.meter-head .t { padding: 1.4mm 3mm; display: flex; flex-direction: column; justify-content: center; position: relative; }
+.meter-head .t strong { font-family: var(--display); font-weight: 700; font-size: 10.5pt; letter-spacing: .14em; color: var(--deep); }
+.meter-head .t svg { position: absolute; right: 2.5mm; bottom: 1.8mm; width: 18mm; height: 4.5mm; }
+.meter-head .num { border-left: .3mm solid var(--line); display: flex; flex-direction: column; padding: .8mm 1.4mm 0; height: 14mm; }
+.meter-head .num:last-child { border-left: .6mm solid var(--deep); }
+.meter.vida .meter-head { background: linear-gradient(90deg, #ff003c14, transparent 70%); }
+.meter.fatiga .meter-head { background: linear-gradient(90deg, #00f0ff1f, transparent 70%); }
+.track { display: grid; grid-template-columns: repeat(20, 1fr); gap: .9mm; padding: 2.2mm 3mm 1.2mm; }
+.track i { aspect-ratio: 1; border-radius: 50%; border: .25mm solid var(--ink-dim); }
+.track i:nth-child(5n) { border: .4mm solid var(--deep); }
+.vida .track i:nth-child(5n) { border-color: var(--red); }
+.fatiga .track i:nth-child(5n) { border-color: var(--cyan-ink); }
+.track-note { padding: 0 3mm 1.4mm; font-family: var(--mono); font-size: 6.6pt; color: var(--ink-dim); }
+.states { padding: 1.6mm 3mm 2mm; border-top: .25mm dotted var(--rule); display: flex; flex-direction: column; gap: 1mm; }
+.state { display: grid; grid-template-columns: 22mm 1fr; gap: 2mm; font-size: 8.6pt; line-height: 1.15; }
+.state b { font-family: var(--display); font-weight: 700; font-size: 8pt; letter-spacing: .06em; text-transform: uppercase; }
+.state b small { display: block; font-family: var(--mono); font-weight: 400; color: var(--ink-dim); letter-spacing: 0; }
+.vida .state b { color: var(--red); }
+.fatiga .state b { color: var(--cyan-ink); }
+
+/* ── Movimiento ── */
+.move-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2.4mm; }
+.move { border: .3mm solid var(--line); border-radius: 3mm; overflow: hidden; display: flex; flex-direction: column; }
+.move header { font-family: var(--display); font-weight: 700; font-size: 8.4pt; letter-spacing: .14em; text-align: center; padding: 1.1mm 0; color: #fff; background: linear-gradient(100deg, var(--deep), #5a2a7e); }
+.move .f { text-align: center; font-family: var(--mono); font-size: 7pt; color: var(--ink-dim); padding: 1mm .5mm; border-bottom: .25mm dotted var(--rule); min-height: 7mm; display: grid; place-items: center; }
+.move .v { height: 11mm; display: flex; align-items: flex-end; justify-content: flex-end; padding: 0 2mm 1mm; font-family: var(--mono); font-size: 8pt; color: var(--ink-dim); }
+
+/* ── Carga ── */
+.carga { display: grid; grid-template-columns: 74mm 1fr; gap: 4mm; }
+.carga-box { border: .3mm solid var(--line); border-radius: 3mm; overflow: hidden; display: grid; grid-template-columns: 1fr 22mm; }
+.carga-box .t { padding: 1.6mm 3mm; display: flex; flex-direction: column; gap: .5mm; }
+.carga-box .t strong { font-family: var(--display); font-weight: 700; font-size: 10.5pt; letter-spacing: .14em; color: var(--deep); }
+.carga-box .v { border-left: .6mm solid var(--deep); display: flex; align-items: flex-end; justify-content: flex-end; padding: 0 1.6mm 1mm; font-family: var(--mono); font-size: 8pt; color: var(--ink-dim); }
+.carga-rules { display: flex; flex-direction: column; gap: 1.2mm; font-size: 8.6pt; line-height: 1.15; padding-top: .6mm; }
+.carga-rules div { display: grid; grid-template-columns: 16mm 1fr; gap: 2mm; align-items: start; }
+.carga-rules b { font-family: var(--display); font-weight: 700; font-size: 7.6pt; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: var(--magenta-ink); border-radius: 99px; text-align: center; padding: .2mm 0; }
+
+.fill { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.fill .lines { flex: 1; overflow: hidden; }
+.row.fill { display: grid; }
+
+.foot { margin-top: auto; display: flex; align-items: center; gap: 3mm; font-family: var(--mono); font-size: 7pt; letter-spacing: .2em; color: var(--ink-dim); }
+.foot svg { flex: 1; height: 3mm; }
+.foot .pg { color: #fff; background: var(--deep); border-radius: 99px; padding: .3mm 2.6mm; letter-spacing: .1em; }
+
+.notes { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.notes .mandala { position: absolute; left: 50%; top: 50%; width: 150mm; height: 150mm; transform: translate(-50%, -50%); opacity: .16; }
+.notes .lines { position: relative; height: 100%; overflow: hidden; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="g-psi" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00a9b5"/><stop offset=".55" stop-color="#7a3cc0"/><stop offset="1" stop-color="#ff2e97"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<!-- ═════════════ PÁGINA 1 ═════════════ -->
+<section class="page">
+  <svg class="deco thread" data-seed="3"></svg>
+  <div class="hero">
+    <svg class="mandala" data-mandala="full"></svg>
+    <div class="txt">
+      <span class="eyebrow">Ψ · CONCIENCIA EXPANDIDA · Ψ</span>
+      <h1>NUEVA <b class="grad-text">ERA</b></h1>
+      <span class="sub"><span class="pill">NÚCLEO</span>FICHA DE PERSONAJE</span>
+    </div>
+    <svg class="wave" data-wave="eeg" data-seed="5"></svg>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="node">00</span><span class="name">Datos biográficos</span><svg class="wave" data-wave="sine"></svg></div>
+    <div class="row" style="grid-template-columns: 1fr 17mm 44mm 28mm">
+      <div class="field"><span class="label">Nombre</span><div class="box"></div></div>
+      <div class="field"><span class="label">Edad</span><div class="box"></div></div>
+      <div class="field"><span class="label">Especie</span><div class="box"></div></div>
+      <div class="field"><span class="label">Alt. / Peso</span><div class="box"></div></div>
+    </div>
+    <div class="field"><span class="label">Motivación</span><div class="box"></div></div>
+    <div class="row" style="grid-template-columns: 1.3fr 1fr; gap: 6mm">
+      <div class="field"><span class="label">Trasfondo</span><div class="lines" data-n="3"></div></div>
+      <div class="field"><span class="label" style="color:var(--magenta-ink)">◉ 01 · Rasgos de especie</span><div class="lines" data-n="3"></div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="node">02</span><span class="name">Atributos</span><svg class="wave" data-wave="sine"></svg><span class="hint">básicos ⟶ aplicados</span></div>
+    <div class="neural" id="neural"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="node">03</span><span class="name">Habilidades</span><svg class="wave" data-wave="sine"></svg></div>
+    <div class="rules-strip">
+      <span><b>Sin entrenar</b> −1</span>
+      <span><b>Máx. inicial</b> 4/6</span>
+      <span><b>Esp. principal</b> valor total</span>
+      <span><b>Otras esp.</b> mitad (redondeo arriba)</span>
+      <span><b>2ª esp.</b> coste 1 pt</span>
+    </div>
+    <table>
+      <colgroup><col style="width:46mm"><col style="width:15mm"><col><col></colgroup>
+      <thead><tr><th>Habilidad</th><th class="c">Pts</th><th>Especialidad principal</th><th>Otras especialidades</th></tr></thead>
+      <tbody id="skills"></tbody>
+    </table>
+  </div>
+
+  <div class="foot"><span>NUEVA ERA · NÚCLEO</span><svg data-wave="eeg" data-seed="8"></svg><span class="pg">I / IV</span></div>
+</section>
+
+<!-- ═════════════ PÁGINA 2 ═════════════ -->
+<section class="page">
+  <svg class="deco thread" data-seed="9"></svg>
+  <div class="strip"><svg class="mandala" data-mandala="mini"></svg><span class="t">NUEVA <b class="grad-text">ERA</b></span><span class="who">SUJETO</span></div>
+
+  <div class="sec">
+    <div class="sec-title cyan"><span class="node">04</span><span class="name">Psiónica</span><svg class="wave" data-wave="sine"></svg><span class="hint">Ψ el núcleo de la mente</span></div>
+    <div class="psi" id="psi"></div>
+  </div>
+
+  <div class="sec fill">
+    <div class="sec-title"><span class="node">05</span><span class="name">Dotes</span><svg class="wave" data-wave="sine"></svg></div>
+    <div class="lines" data-n="12"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="node">06</span><span class="name">Salud</span><svg class="wave" data-wave="sine"></svg></div>
+    <div class="health-grid">
+      <div class="meter vida">
+        <div class="meter-head">
+          <div class="t"><strong>PUNTOS DE VIDA</strong><span class="formula">10 + Fortaleza</span><svg data-wave="pulse" data-color="#ff003c"></svg></div>
+          <div class="num"><span class="label">Máx</span></div>
+          <div class="num"><span class="label">Act</span></div>
+        </div>
+        <div class="track" data-n="40"></div>
+        <div class="track-note">Rellena un círculo por punto perdido</div>
+        <div class="states">
+          <div class="state"><b>Herido<small>&lt; 50 %</small></b><span>−1 a todas las tiradas</span></div>
+          <div class="state"><b>Malherido<small>&lt; 25 %</small></b><span>−3 tiradas · Mov. base ½ · Carga −25 %</span></div>
+          <div class="state"><b>Moribundo<small>&lt; 10 % (mín. 1)</small></b><span>−5 tiradas · Mov. 1 casilla/turno · Carga −50 %</span></div>
+        </div>
+      </div>
+      <div class="meter fatiga">
+        <div class="meter-head">
+          <div class="t"><strong>PUNTOS DE FATIGA</strong><span class="formula">10 + Voluntad</span><svg data-wave="alpha" data-color="#00818a"></svg></div>
+          <div class="num"><span class="label">Máx</span></div>
+          <div class="num"><span class="label">Act</span></div>
+        </div>
+        <div class="track" data-n="40"></div>
+        <div class="track-note">Rellena un círculo por punto perdido</div>
+        <div class="states">
+          <div class="state"><b>Fatigado<small>&lt; 25 %</small></b><span>−1 a todas las tiradas</span></div>
+          <div class="state"><b>Exhausto<small>&lt; 10 %</small></b><span>−2 tiradas · Mov. base ½ · Carga −25 %</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="node">07</span><span class="name">Movimiento</span><svg class="wave" data-wave="sine"></svg><span class="hint">Pot + Atl = Potencia + Atletismo</span></div>
+    <div class="move-grid">
+      <div class="move"><header>CARRERA</header><div class="f">16 + (Pot + Atl)</div><div class="v">m</div></div>
+      <div class="move"><header>SALTO VERT.</header><div class="f">15 × (Pot + Atl)</div><div class="v">cm</div></div>
+      <div class="move"><header>SALTO HORIZ.</header><div class="f">100 + [(Pot + Atl) × 20]</div><div class="v">cm</div></div>
+      <div class="move"><header>ESCALADA</header><div class="f">4 + [(Pot + Atl) / 2]</div><div class="v">m</div></div>
+      <div class="move"><header>NADO</header><div class="f">4 + [(Pot + Atl) / 2]</div><div class="v">m</div></div>
+    </div>
+  </div>
+
+  <div class="foot"><span>NUEVA ERA · NÚCLEO</span><svg data-wave="eeg" data-seed="12"></svg><span class="pg">II / IV</span></div>
+</section>
+
+<!-- ═════════════ PÁGINA 3 ═════════════ -->
+<section class="page">
+  <svg class="deco thread" data-seed="15"></svg>
+  <div class="strip"><svg class="mandala" data-mandala="mini"></svg><span class="t">NUEVA <b class="grad-text">ERA</b></span><span class="who">SUJETO</span></div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="node">08</span><span class="name">Recursos</span><svg class="wave" data-wave="sine"></svg></div>
+    <span class="label">Armas a distancia</span>
+    <table class="gear">
+      <colgroup><col><col style="width:14mm"><col style="width:10mm"><col style="width:13mm"><col style="width:16mm"><col style="width:13mm"><col style="width:21mm"><col style="width:21mm"><col style="width:12mm"></colgroup>
+      <thead><tr><th>Arma</th><th class="c">Acción</th><th class="c">Dif</th><th class="c">Daño</th><th class="c">Alcance</th><th class="c">Munic.</th><th>Mejoras</th><th>Efectos</th><th class="c">Peso</th></tr></thead>
+      <tbody data-rows="4" data-cols="9"></tbody>
+    </table>
+    <span class="label">Armas cuerpo a cuerpo</span>
+    <table class="gear">
+      <colgroup><col><col style="width:14mm"><col style="width:10mm"><col style="width:13mm"><col style="width:34mm"><col style="width:34mm"><col style="width:12mm"></colgroup>
+      <thead><tr><th>Arma</th><th class="c">Acción</th><th class="c">Dif</th><th class="c">Daño</th><th>Utilización</th><th>Efectos</th><th class="c">Peso</th></tr></thead>
+      <tbody data-rows="4" data-cols="7"></tbody>
+    </table>
+    <div class="field"><span class="label">Armadura</span><div class="box"></div></div>
+  </div>
+
+  <div class="row fill" style="grid-template-columns: 1fr 1fr; gap: 6mm">
+    <div class="sec fill">
+      <div class="sec-title"><span class="node">◈</span><span class="name">Aumentos</span><svg class="wave" data-wave="sine"></svg></div>
+      <div class="lines" data-n="12"></div>
+    </div>
+    <div class="sec fill">
+      <div class="sec-title cyan"><span class="node">◇</span><span class="name">Equipamiento</span><svg class="wave" data-wave="sine"></svg></div>
+      <div class="lines" data-n="12"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="node">09</span><span class="name">Carga transportable</span><svg class="wave" data-wave="sine"></svg></div>
+    <div class="carga">
+      <div class="carga-box">
+        <div class="t"><strong>CARGA LIGERA</strong><span class="formula">20 kg × Fuerza (FUE)</span><span class="formula">FUE 0 = 15 kg · FUE &lt; 0 = −5 kg/pt</span></div>
+        <div class="v">kg</div>
+      </div>
+      <div class="carga-rules">
+        <div><b>Exceso</b><span>−1 automático a físicas. Por cada 20 % extra: −2 acumulativo (máx. −8), Mov. ½, 1 Fatiga/hora.</span></div>
+        <div><b>&gt; 2×</b><span>−10 a acciones físicas, Mov. ¼, 1 Fatiga/minuto.</span></div>
+        <div><b>&gt; 4×</b><span>Sin movimiento. 1 Fatiga/turno como proeza de fuerza.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot"><span>NUEVA ERA · NÚCLEO</span><svg data-wave="eeg" data-seed="18"></svg><span class="pg">III / IV</span></div>
+</section>
+
+<!-- ═════════════ PÁGINA 4 ═════════════ -->
+<section class="page">
+  <svg class="deco thread" data-seed="21"></svg>
+  <div class="strip"><svg class="mandala" data-mandala="mini"></svg><span class="t">NUEVA <b class="grad-text">ERA</b></span><span class="who">SUJETO</span></div>
+  <div class="sec-title cyan"><span class="node">10</span><span class="name">Notas de campaña</span><svg class="wave" data-wave="sine"></svg><span class="hint">visiones · contactos · pistas</span></div>
+  <div class="notes">
+    <svg class="mandala" data-mandala="full"></svg>
+    <div class="lines" data-n="40"></div>
+  </div>
+  <div class="foot"><span>NUEVA ERA · NÚCLEO</span><svg data-wave="eeg" data-seed="24"></svg><span class="pg">IV / IV</span></div>
+</section>
+
+<script>
+  const NS = "http://www.w3.org/2000/svg";
+  const seeded = (s) => () => ((s = (s * 9301 + 49297) % 233280) / 233280);
+  const f = (n) => n.toFixed(2);
+
+  const skills = ["Actitud", "Atletismo", "Biociencia", "Combate a distancia", "Combate melee",
+    "Cultura", "Exploración", "Interpretación", "Sigilo", "Tecnociencia"];
+  document.getElementById("skills").innerHTML = skills
+    .map((s) => `<tr><td class="skill">${s}</td><td class="pts"></td><td></td><td></td></tr>`).join("");
+  document.querySelectorAll(".lines[data-n], .track[data-n]").forEach((el) => { el.innerHTML = "<i></i>".repeat(+el.dataset.n); });
+  document.querySelectorAll("tbody[data-rows]").forEach((el) => {
+    el.innerHTML = `<tr>${"<td></td>".repeat(+el.dataset.cols)}</tr>`.repeat(+el.dataset.rows);
+  });
+
+  // Mandala: anillos, pétalos, hexagrama y ojo central, todo en trazo fino
+  function mandala(full) {
+    const c = 50, parts = [];
+    const ring = (r, w, dash) => parts.push(`<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="url(#g-psi)" stroke-width="${w}" ${dash ? `stroke-dasharray="${dash}"` : ""}/>`);
+    ring(48, .5); ring(45.5, .25, ".6 1.2"); ring(38, .4); ring(24, .5); ring(9, .5);
+    const petals = full ? 24 : 12;
+    for (let i = 0; i < petals; i++) {
+      const a = (360 / petals) * i;
+      parts.push(`<ellipse cx="${c}" cy="${c - 31}" rx="3.2" ry="7" fill="none" stroke="url(#g-psi)" stroke-width=".35" transform="rotate(${a} ${c} ${c})"/>`);
+    }
+    if (full) for (let i = 0; i < 72; i++) {
+      const a = (Math.PI * 2 * i) / 72, r1 = 38, r2 = i % 6 === 0 ? 45.5 : 41;
+      parts.push(`<line x1="${f(c + r1 * Math.cos(a))}" y1="${f(c + r1 * Math.sin(a))}" x2="${f(c + r2 * Math.cos(a))}" y2="${f(c + r2 * Math.sin(a))}" stroke="url(#g-psi)" stroke-width=".25"/>`);
+    }
+    const tri = (rot) => {
+      const pts = [0, 1, 2].map((k) => { const a = rot + (Math.PI * 2 * k) / 3; return `${f(c + 24 * Math.cos(a))},${f(c + 24 * Math.sin(a))}`; });
+      parts.push(`<polygon points="${pts.join(" ")}" fill="none" stroke="url(#g-psi)" stroke-width=".45"/>`);
+    };
+    tri(-Math.PI / 2); tri(Math.PI / 2);
+    parts.push(`<path d="M${c - 14} ${c} Q${c} ${c - 9} ${c + 14} ${c} Q${c} ${c + 9} ${c - 14} ${c} Z" fill="#fff" stroke="#2d1b4e" stroke-width=".6"/>`);
+    parts.push(`<circle cx="${c}" cy="${c}" r="3.6" fill="url(#g-psi)"/><circle cx="${c}" cy="${c}" r="1.3" fill="#fff"/>`);
+    return parts.join("");
+  }
+  document.querySelectorAll("svg[data-mandala]").forEach((el) => {
+    el.setAttribute("viewBox", "0 0 100 100");
+    el.innerHTML = mandala(el.dataset.mandala === "full");
+  });
+
+  // Ondas: seno suave para títulos, EEG irregular para pies, pulso/alfa para salud
+  document.querySelectorAll("svg[data-wave]").forEach((el) => {
+    const kind = el.dataset.wave, rnd = seeded(+(el.dataset.seed || 1));
+    el.setAttribute("viewBox", "0 0 200 10");
+    el.setAttribute("preserveAspectRatio", "none");
+    let d = "M0 5";
+    if (kind === "sine") for (let x = 0; x <= 200; x += 2) d += ` L${x} ${f(5 + 2.6 * Math.sin(x / 6) * Math.sin(x / 47 + 1))}`;
+    if (kind === "eeg") for (let x = 0; x <= 200; x += 1.5) d += ` L${x} ${f(5 + (rnd() - .5) * 3 * (1 + 1.4 * Math.sin(x / 19) ** 2))}`;
+    if (kind === "alpha") for (let x = 0; x <= 200; x += 2) d += ` L${x} ${f(5 + 3.4 * Math.sin(x / 7))}`;
+    if (kind === "pulse") d = "M0 6 H60 L70 6 L76 1 L84 9.5 L90 3 L95 6 H140 L146 4 L152 6 H200";
+    const stroke = el.dataset.color || "url(#g-psi)";
+    el.innerHTML = `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${kind === "sine" ? .9 : 1}" vector-effect="non-scaling-stroke" style="stroke-width:${kind === "sine" ? ".3mm" : ".25mm"}"/>`;
+  });
+
+  // Hilo neuronal del margen: una línea que serpentea con nodos
+  document.querySelectorAll("svg.thread").forEach((el) => {
+    const rnd = seeded(+el.dataset.seed);
+    el.setAttribute("viewBox", "0 0 7 297");
+    let d = "M3.5 0", nodes = "";
+    for (let y = 12; y <= 297; y += 12) {
+      const x = 3.5 + (rnd() - .5) * 4.5;
+      d += ` L${f(x)} ${y}`;
+      if (rnd() > .45) nodes += `<circle cx="${f(x)}" cy="${y}" r="${f(.5 + rnd() * .7)}" fill="${rnd() > .5 ? "#ff2e97" : "#00c8d6"}"/>`;
+    }
+    el.innerHTML = `<path d="${d}" fill="none" stroke="url(#g-psi)" stroke-width=".3"/>${nodes}`;
+  });
+
+  // Red de atributos: cada aplicado cuelga de sus dos básicos
+  const basicos = [["FUE", "Fuerza"], ["AGI", "Agilidad"], ["AGU", "Aguante"], ["PER", "Percepción"], ["INT", "Inteligencia"], ["CAR", "Carácter"]];
+  const aplicados = [["Fortaleza", "FUE", "AGU"], ["Potencia", "FUE", "AGI"], ["Reflejos", "AGI", "PER"],
+    ["Voluntad", "AGU", "CAR"], ["Perspicacia", "INT", "PER"], ["Expresión", "CAR", "INT"]];
+  const neural = document.getElementById("neural");
+  const col = (i) => 7 + i * 17.6; // % del ancho, deja hueco a la izquierda para la etiqueta vertical
+  let links = "";
+  aplicados.forEach(([, p1, p2], i) => {
+    [p1, p2].forEach((p, k) => {
+      const j = basicos.findIndex(([ab]) => ab === p);
+      links += `<path d="M${col(j) * 10} 213 C${col(j) * 10} 275 ${col(i) * 10} 260 ${col(i) * 10} 320" fill="none" stroke="${k ? "#00c8d6" : "#ff2e97"}" stroke-width="1" vector-effect="non-scaling-stroke" style="stroke-width:.3mm" opacity=".75"/>`;
+    });
+  });
+  let html = `<svg class="links" viewBox="0 0 1000 530" preserveAspectRatio="none">${links}</svg>`;
+  html += `<span class="tag" style="top:2mm">BÁSICOS</span><span class="tag" style="top:33mm">APLICADOS</span>`;
+  basicos.forEach(([ab, name], i) => { html += `<div class="n b" style="left:${col(i)}%"><span class="lab"><b>${ab}</b>${name}</span><span class="o"></span></div>`; });
+  aplicados.forEach(([name, p1, p2], i) => { html += `<div class="n a" style="left:${col(i)}%"><span class="o"></span><span class="lab">${name}<small>(${p1}+${p2})/2</small></span></div>`; });
+  neural.innerHTML = html;
+
+  // Hexagrama psiónico: 180×74 mm, centro (90,37), radio 28
+  const psi = document.getElementById("psi");
+  const R = 28, cx = 90, cy = 37;
+  const pt = (deg) => [cx + R * Math.cos((deg * Math.PI) / 180), cy - R * Math.sin((deg * Math.PI) / 180)];
+  const nodos = [
+    [120, "Resonancia", "l"], [180, "Inducción", "l"], [240, "Hipercognición", "l"],
+    [60, "Traslación", "r"], [0, "Contención", "r"], [300, "Singularidad", "r"],
+  ];
+  const hex = [0, 60, 120, 180, 240, 300].map((d) => pt(d).map(f).join(",")).join(" ");
+  const t1 = [0, 120, 240].map((d) => pt(d).map(f).join(",")).join(" ");
+  const t2 = [60, 180, 300].map((d) => pt(d).map(f).join(",")).join(" ");
+  let svg = `<svg viewBox="0 0 180 74">`;
+  [34, 22, 13].forEach((r, i) => { svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="url(#g-psi)" stroke-width="${i ? .3 : .45}" ${i === 1 ? 'stroke-dasharray="1 1.4"' : ""}/>`; });
+  svg += `<polygon points="${hex}" fill="none" stroke="#2d1b4e" stroke-width=".35"/>`;
+  svg += `<polygon points="${t1}" fill="none" stroke="url(#g-psi)" stroke-width=".35"/><polygon points="${t2}" fill="none" stroke="url(#g-psi)" stroke-width=".35"/>`;
+  nodos.forEach(([d]) => { const [x, y] = pt(d); svg += `<line x1="${cx}" y1="${cy}" x2="${f(x)}" y2="${f(y)}" stroke="#c3bcd4" stroke-width=".25" stroke-dasharray=".8 .8"/>`; });
+  // brazos que llevan cada nodo a su etiqueta
+  nodos.forEach(([d, , s]) => { const [x, y] = pt(d); const x2 = s === "l" ? x - 10 : x + 10; svg += `<line x1="${f(x)}" y1="${f(y)}" x2="${f(x2)}" y2="${f(y)}" stroke="${s === "l" ? "#00818a" : "#c4146d"}" stroke-width=".3"/><circle cx="${f(x2)}" cy="${f(y)}" r=".7" fill="${s === "l" ? "#00818a" : "#c4146d"}"/>`; });
+  svg += `<circle cx="${cx}" cy="${cy}" r="7.5" fill="#2d1b4e"/><text x="${cx}" y="${cy + 3.4}" text-anchor="middle" font-family="Chakra Petch" font-weight="700" font-size="10" fill="#fff">Ψ</text>`;
+  svg += `</svg>`;
+  let ph = svg;
+  ph += `<div class="side l">METASENSORIA<small>CANAL α</small></div>`;
+  ph += `<div class="side r">MÉTRICA<small>CANAL Ω</small></div>`;
+  nodos.forEach(([d, name, s]) => {
+    const [x, y] = pt(d);
+    ph += `<span class="node ${s === "r" ? "m" : ""}" style="left:${f(x)}mm; top:${f(y)}mm"></span>`;
+    ph += s === "l"
+      ? `<span class="pl l" style="right:${f(180 - x + 12)}mm; top:${f(y)}mm">${name}</span>`
+      : `<span class="pl" style="left:${f(x + 12)}mm; top:${f(y)}mm">${name}</span>`;
+  });
+  psi.innerHTML = ph;
+</script>
+</body>
+</html>

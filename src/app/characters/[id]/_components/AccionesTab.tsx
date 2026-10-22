@@ -390,6 +390,7 @@ function FilaPoder({
   mods,
   niveles,
   textos,
+  indiceCondiciones,
   onAbrir,
 }: {
   poder: PoderDisponible;
@@ -397,10 +398,19 @@ function FilaPoder({
   mods: ModificadorConFuente[];
   niveles: NivelesPsionica;
   textos: FichaResuelta["textosTirada"];
+  indiceCondiciones: FichaResuelta["indiceCondiciones"];
   onAbrir: (p: PoderDisponible) => void;
 }) {
   // Mismo cálculo que el modal (usoPoder.ts), sin nada elegido todavía.
-  const preparado = prepararPoder({ ficha: sheet, modificadores: mods, niveles, poder, seleccion: SELECCION_PODER_VACIA, textos });
+  const preparado = prepararPoder({
+    ficha: sheet,
+    modificadores: mods,
+    niveles,
+    poder,
+    seleccion: SELECCION_PODER_VACIA,
+    textos,
+    indiceCondiciones,
+  });
   if (!preparado) return null;
   const p = preparado.resuelto;
   // A cuánto tira, igual que FilaTirada (null en poderes sin dado).
@@ -641,6 +651,7 @@ export function AccionesTab({
         poder: poderAbierto.poder,
         seleccion: poderAbierto.seleccion,
         textos: ficha.textosTirada,
+        indiceCondiciones: ficha.indiceCondiciones,
       })
     : null;
 
@@ -699,7 +710,15 @@ export function AccionesTab({
 
   // Abre (o reabre, al cambiar una elección) el modal del poder.
   const abrirPoder = (poder: PoderDisponible, seleccion: SeleccionPoder = SELECCION_PODER_VACIA) => {
-    const p = prepararPoder({ ficha: sheet, modificadores: mods, niveles, poder, seleccion, textos: ficha.textosTirada });
+    const p = prepararPoder({
+      ficha: sheet,
+      modificadores: mods,
+      niveles,
+      poder,
+      seleccion,
+      textos: ficha.textosTirada,
+      indiceCondiciones: ficha.indiceCondiciones,
+    });
     if (!p) return;
     if (p.tirada) abrir(p.tirada, p.enEspecialidad, false);
     setSobrecarga(null);
@@ -727,8 +746,9 @@ export function AccionesTab({
 
   // Uso del poder (con tirada o sin ella), falle o no; "prolongar" = otro turno
   // de Proeza. Sin fatiga numérica se paga a mano: no se aplica nada.
-  const pagarPoder = (modo: "uso" | "prolongar" = "uso"): number =>
-    preparado?.coste ? aplicarUso(usarPoder(ficha, preparado, modo), modo) : 0;
+  // `ahorro`: lo que la casilla de ahorro de la tirada (Mielinización) no gastó en sus casillas.
+  const pagarPoder = (modo: "uso" | "prolongar" = "uso", ahorro = 0): number =>
+    preparado?.coste ? aplicarUso(usarPoder(ficha, preparado, modo, ahorro), modo) : 0;
 
   const registroSinDado = (id: number, label: string) =>
     setHistorial((h) =>
@@ -925,7 +945,7 @@ export function AccionesTab({
     // Fatiga de una casilla marcada (Ojo Clínico: la ventaja cuesta 1), sin temporal.
     if (montada.costeFatiga > 0) onPagarFatiga?.(montada.costeFatiga, false);
     if (tirada.grupo === "Psiónica" && preparado) {
-      pagarPoder();
+      pagarPoder("uso", montada.ahorroSinUsar);
       // Daño propio que depende del resultado (fracaso crítico del Sondeo).
       const tras = efectosDelResultado(preparado, gradoDeTirada(r));
       if (tras.vida > 0) onAjustarVida?.(-tras.vida);
@@ -1108,6 +1128,7 @@ export function AccionesTab({
                     mods={mods}
                     niveles={niveles}
                     textos={ficha.textosTirada}
+                    indiceCondiciones={ficha.indiceCondiciones}
                     onAbrir={abrirPoder}
                   />
                 ))}
@@ -1208,6 +1229,7 @@ export function AccionesTab({
               mods={mods}
               niveles={niveles}
               textos={ficha.textosTirada}
+                    indiceCondiciones={ficha.indiceCondiciones}
               onAbrir={abrirPoder}
             />
           ))}

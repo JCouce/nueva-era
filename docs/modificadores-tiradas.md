@@ -159,6 +159,7 @@ type AlcanceModificador =
   | { tipo: "grupoHabilidad"; grupo: GrupoAccion; habilidad: HabilidadId } // las de ese grupo con esa habilidad
   | { tipo: "modo"; contieneEtiqueta: string }        // solo si el modo elegido la contiene ("F. Auto")
   | { tipo: "familiaArma"; familia: FamiliaArma; empleo?: EmpleoArma } // tiradas de arma de esa familia (D2b-1)
+  | { tipo: "aplicado"; aplicados: AplicadoId[] }     // tiradas con uno de esos aplicados (A2b)
   | { tipo: "todas" };                                // cualquier tirada, sin excepción
 ```
 
@@ -195,6 +196,17 @@ declararlo en el catálogo con el alcance correcto.
   pone `combate.ts`: ataque melee, disparo, pesado, lanzar, bloquear, levantar escudo), y
   con `empleo` solo las de un arma a una/dos manos. Lo usan las dotes (D2b-1). En el
   índice de casillas va por familia; el empleo lo filtra la consulta.
+- `aplicado` → "pruebas que usen perspicacia, voluntad o expresión" (aumentos, A2b): cualquier
+  tirada con ese aplicado, salvaciones y poderes incluidos. **Vale el aplicado con el que se
+  tira de verdad**, no el de la ficha de la tirada: `montarTirada` pone
+  `ContextoAccion.aplicado` tras Sutil y tras una casilla con `aplicado` (Negociación
+  Analítica), y ahí casa el `Modificador`. Las casillas se recogen antes, en
+  `consultaIndiceCondiciones`, con `ContextoAccion.aplicadosPosibles` (el de la tirada, el de
+  Sutil y el de cualquier casilla que lo cambie: `aplicadosPosibles` en `textosTirada.ts`);
+  las que no casan con el de verdad se quedan en el modal sin efecto
+  (`TiradaMontada.casillasSinEfecto`, con el motivo). Los textos (`DestinoTexto` admite
+  `aplicado` y `grupo`) salen si casa alguno de los posibles. Fuera de `montarTirada` (sin
+  aplicado en el contexto) no casa nunca.
 - `todas` → para un penalizador de personaje entero, sin excepción: los
   "-1/-3/-5 a todo" de los umbrales de salud/fatiga (`docs/sistema.md` §7) y
   los estados de la fase 6b que golpean cualquier acción por igual. Úsalo
@@ -620,6 +632,14 @@ no movió ninguno: lo que M1b cambia a propósito vive en `umbrales.test.ts`.
 mismo grupo (alcance que casa, casilla marcada, bono en el tramo elegido) y deja solo el
 mayor; los demás siguen en el desglose a 0, con "(no se suma con X)". En los derivados lo
 hace `bonoDerivado`. Hoy: `vision_aumentada` (Ojo Biónico y Mira Telescópica).
+
+**Ahorro de fatiga (A2b).** Un toggle con `ahorroFatiga` (Mielinización Central) resta ese
+número del gasto de fatiga de las casillas marcadas: `costeFatiga` sale neto, sin bajar de 0,
+y lo que no encuentra que ahorrar va a `ahorroSinUsar`, que `usarPoder(…, ahorro)` resta del
+coste del poder. **Ventaja fija sin casilla:** `Accion.ventaja`, que pone `conExtrasDeFicha`
+desde `FichaResuelta.ventajasFijas` (Red Frontoparietal en Iniciativa) si la tirada no trae
+otra. **Poderes:** `prepararPoder` consulta el mismo índice de casillas
+(`EntradaPoder.indiceCondiciones`).
 
 **Opciones con ventaja y fatiga (A2a).** `OpcionCondicion` lleva también `ventaja`,
 `fuenteVentaja`, `costeFatiga` y `partes` (una línea del desglose por fuente). Lo usa el

@@ -9,6 +9,8 @@ import { estadoInicial, type CondicionTirada, type EstadoCondiciones } from "./c
 import { montarTirada, SIN_ELECCION, type TiradaMontada } from "./montaje";
 import { desgloseBlindaje } from "./blindaje";
 import { casillasDeAumentos, ID_SELECTOR_CONTRA } from "./aumentosTiradas";
+import { accionesDePsionica } from "./poderes";
+import { prepararPoder, SELECCION_PODER_VACIA, usarPoder } from "./usoPoder";
 
 let n = 0;
 function con(sheet: Sheet, catalogoId: string, extra: { nivel?: number; eleccion?: string } = {}): Sheet {
@@ -228,5 +230,192 @@ describe("armadura natural de los aumentos (R6)", () => {
     );
     assert.ok(cinetico.every((l) => l.nota));
     assert.deepEqual(desgloseBlindaje(s, "electrico", false, { valor: 0, fuente: null }), []);
+  });
+});
+
+// ── A2b: alcance por aplicado, casillas de la rama cognitiva, ventaja fija y textos ──
+
+const MIELINIZACION = "aum_mielinizacion_central";
+const PREFRONTAL = "aum_prefrontal_aumentada"; // pide Mielinización
+const CALLOSA = "aum_conectividad_callosa"; // pide Prefrontal
+const RED_FRONTOPARIETAL = "aum_red_frontoparietal"; // pide Mielinización
+const ASA = "aum_asa_estriatotalamica"; // pide Mielinización
+const CONSCIENCIA = "aum_consciencia_omnidireccional"; // pide Foveo y Prefrontal
+const SINCRONIZACION = "aum_sincronizacion_neuromotora_profunda"; // pide Osteotendinosa
+const AUTOMATISMO = "aum_automatismo_bulboespinal"; // pide Hiperdensidad y Osteotendinosa
+const HIPERDENSIDAD = "aum_hiperdensidad_propioceptiva";
+
+const ids = (t: Accion) => (t.condiciones ?? []).map((c) => c.id);
+const CONCENTRARSE_PREFRONTAL = "aum_prefrontal_concentrarse";
+const AHORRO = "aum_mielinizacion_ahorro";
+
+describe("A2b: alcance por aplicado", () => {
+  const f = resolver(conTodas([MIELINIZACION, PREFRONTAL]));
+
+  test("Prefrontal sale en habilidades y salvaciones de perspicacia, voluntad o expresión, y en ninguna otra", () => {
+    for (const id of ["iniciativa", "social", "salv_voluntad", "alerta_activa"]) {
+      assert.ok(ids(tiradaFija(f, id)).includes(CONCENTRARSE_PREFRONTAL), id);
+    }
+    for (const id of ["defensa", "salv_fortaleza", "salv_reflejos", "atletismo"]) {
+      assert.ok(!ids(tiradaFija(f, id)).includes(CONCENTRARSE_PREFRONTAL), id);
+    }
+  });
+
+  test("marcada: ventaja y 1 de fatiga cobrada, con la nota de la acción compleja", () => {
+    const t = tiradaFija(f, "salv_voluntad");
+    const m = montar(f, t, { [CONCENTRARSE_PREFRONTAL]: true });
+    assert.equal(m.ventaja, "Concentrarse · Prefrontal Aumentada");
+    assert.equal(m.costeFatiga, 1);
+    assert.ok(m.notas.some((n) => n.nota.includes("se resuelve como compleja")));
+    assert.equal(montar(f, t).costeFatiga, 0);
+  });
+
+  test("vale el aplicado con el que se tira: una casilla que lo cambia la enciende o la apaga", () => {
+    const cambia: CondicionTirada = { id: "a_perspicacia", tipo: "toggle", etiqueta: "Con Perspicacia", valorActivo: 0, aplicado: "perspicacia" };
+    const base: Accion = { id: "prueba", label: "Prueba", grupo: "Acciones", aplicado: "reflejos", habilidad: null, condiciones: [cambia] };
+    const t = conExtrasDeFicha(f, base);
+    // Se recoge porque puede tirarse con Perspicacia…
+    assert.ok(ids(t).includes(CONCENTRARSE_PREFRONTAL));
+    // …pero con Reflejos no hace nada aunque se marque.
+    const sinCambiar = montar(f, t, { [CONCENTRARSE_PREFRONTAL]: true });
+    assert.equal(sinCambiar.ventaja, null);
+    assert.equal(sinCambiar.costeFatiga, 0);
+    assert.equal(sinCambiar.casillasSinEfecto[CONCENTRARSE_PREFRONTAL], "no aplica tirando con Reflejos");
+    const cambiada = montar(f, t, { [CONCENTRARSE_PREFRONTAL]: true, a_perspicacia: true });
+    assert.equal(cambiada.aplicado.id, "perspicacia");
+    assert.equal(cambiada.ventaja, "Concentrarse · Prefrontal Aumentada");
+    assert.equal(cambiada.costeFatiga, 1);
+    assert.deepEqual(cambiada.casillasSinEfecto, {});
+  });
+
+  test("y al revés: Sincronización (Potencia) deja de valer si la casilla cambia el aplicado", () => {
+    const fs = resolver(conTodas([OSTEO, SINCRONIZACION]));
+    const cambia: CondicionTirada = { id: "a_fortaleza", tipo: "toggle", etiqueta: "Con Fortaleza", valorActivo: 0, aplicado: "fortaleza" };
+    const atletismo = ACCIONES.find((a) => a.id === "atletismo")!;
+    const t = conExtrasDeFicha(fs, { ...atletismo, condiciones: [cambia] });
+    assert.equal(montar(fs, t, { aum_sincronizacion_potencia: true }).ventaja, "Dos dados en Potencia · Sincronización Neuromotora Profunda");
+    const m = montar(fs, t, { aum_sincronizacion_potencia: true, a_fortaleza: true });
+    assert.equal(m.ventaja, null);
+    assert.equal(m.costeFatiga, 0);
+  });
+
+  test("en un poder de Perspicacia: la casilla llega con el índice, y el ahorro baja el coste del poder", () => {
+    const sheet = { ...conTodas([MIELINIZACION, PREFRONTAL]), psionica: { traslacion: 2, singularidad: 2 }, fatigaActual: 8 };
+    const fp = resolver(sheet);
+    const poder = accionesDePsionica(sheet, fp.psionica.paraEfectos).find((p) => p.accion.id === "psi_singularidad_impulso")!;
+    const entrada = { ficha: sheet, modificadores: fp.modificadores, niveles: fp.psionica.paraEfectos, poder, seleccion: SELECCION_PODER_VACIA };
+    assert.ok(!ids(prepararPoder(entrada)!.tirada!).includes(CONCENTRARSE_PREFRONTAL), "sin índice, como antes");
+    const p = prepararPoder({ ...entrada, indiceCondiciones: fp.indiceCondiciones })!;
+    assert.ok(ids(p.tirada!).includes(CONCENTRARSE_PREFRONTAL));
+    assert.ok(ids(p.tirada!).includes(AHORRO));
+    const m = montar(fp, p.tirada!, { [CONCENTRARSE_PREFRONTAL]: true });
+    assert.equal(m.ventaja, "Concentrarse · Prefrontal Aumentada");
+    assert.equal(m.costeFatiga, 1);
+    // Ahorro solo: nada que ahorrar en casillas, sobra 1 para el poder (2 → 1).
+    const conAhorro = montar(fp, p.tirada!, { [AHORRO]: true });
+    assert.equal(conAhorro.costeFatiga, 0);
+    assert.equal(conAhorro.ahorroSinUsar, 1);
+    const uso = { ficha: sheet, modificadores: fp.modificadores, peajeNeurologico: null };
+    assert.equal(p.coste?.total, 2);
+    assert.equal(usarPoder(uso, p, "uso", conAhorro.ahorroSinUsar).fatiga.pagar, 1);
+    assert.equal(usarPoder(uso, p).fatiga.pagar, 2);
+  });
+});
+
+describe("A2b: casillas de la rama cognitiva", () => {
+  test("con Conectividad Callosa funcionando, la casilla de Prefrontal no sale; salen las dos de Callosa en cualquier tirada", () => {
+    const f = resolver(conTodas([MIELINIZACION, PREFRONTAL, CALLOSA]));
+    for (const id of ["salv_voluntad", "defensa", "salv_fortaleza"]) {
+      const t = tiradaFija(f, id);
+      assert.ok(!ids(t).includes(CONCENTRARSE_PREFRONTAL), id);
+      assert.ok(ids(t).includes("aum_callosa_concentrarse"), id);
+      assert.ok(ids(t).includes("aum_callosa_dos_turnos"), id);
+    }
+  });
+
+  test("requisito roto: sin Mielinización, ni Prefrontal ni Callosa (que pide Prefrontal) ponen casillas", () => {
+    // Callosa solo pide Prefrontal: con su requisito roto, Prefrontal tampoco funciona, así que
+    // la casilla de Prefrontal no puede salir sola (no hay caso "Callosa rota y Prefrontal viva").
+    const f = resolver(conTodas([PREFRONTAL, CALLOSA]));
+    const t = tiradaFija(f, "salv_voluntad");
+    assert.equal(t.condiciones, undefined);
+  });
+
+  test("Ahorro de Mielinización: −1 al coste total, mínimo 0", () => {
+    const f = resolver(conTodas([MIELINIZACION, PREFRONTAL, CALLOSA]));
+    const t = tiradaFija(f, "salv_voluntad");
+    // La ventaja no se acumula: con las dos casillas de Callosa solo se cobra una.
+    const dos = { aum_callosa_concentrarse: true, aum_callosa_dos_turnos: true };
+    assert.equal(montar(f, t, dos).costeFatiga, 1);
+    const conAhorro = montar(f, t, { ...dos, [AHORRO]: true });
+    assert.equal(conAhorro.costeFatiga, 0);
+    assert.equal(conAhorro.ahorroSinUsar, 0);
+    const uno = montar(f, t, { aum_callosa_concentrarse: true, [AHORRO]: true });
+    assert.equal(uno.costeFatiga, 0);
+    assert.equal(uno.ahorroSinUsar, 0);
+    const solo = montar(f, t, { [AHORRO]: true });
+    assert.equal(solo.costeFatiga, 0);
+    assert.equal(solo.ahorroSinUsar, 1);
+    // Solo en pruebas mentales.
+    assert.ok(!ids(tiradaFija(f, "defensa")).includes(AHORRO));
+  });
+
+  test("ventaja de pago con ventaja gratis ya puesta: no cobra (Callosa en Iniciativa con Red Frontoparietal)", () => {
+    const f = resolver(conTodas([MIELINIZACION, RED_FRONTOPARIETAL, PREFRONTAL, CALLOSA]));
+    const t = tiradaFija(f, "iniciativa");
+    const m = montar(f, t, { aum_callosa_concentrarse: true });
+    assert.ok(m.ventaja);
+    assert.equal(m.costeFatiga, 0);
+  });
+
+  test("Consciencia: ventaja pagando 1 en la esquiva, y el flanqueo como texto en Defensa", () => {
+    const f = resolver(conTodas([MIELINIZACION, PREFRONTAL, FOVEO, CONSCIENCIA]));
+    const t = tiradaFija(f, "defensa");
+    const m = montar(f, t, { aum_consciencia_esquiva: true });
+    assert.equal(m.ventaja, "Esquivar con dos dados · Consciencia Omnidireccional");
+    assert.equal(m.costeFatiga, 1);
+    assert.ok(t.nota?.includes("No te pueden flanquear"));
+  });
+
+  test("Foveo: +1 tras Apuntar en ataques a distancia, no en Iniciativa desenfundando", () => {
+    const sheet = equipar(conTodas([FOVEO]), { instanciaId: "f1", catalogoId: "fusil_asalto_impetus" });
+    const f = resolver(sheet);
+    const ataque = conExtrasDeFicha(f, accionesDeAtaque(sheet, f.modificadores, f.extrasDotes.permisos).find((t) => t.label === "Disparar con Impetus")!);
+    assert.ok(ids(ataque).includes("aum_foveo_apuntar"));
+    assert.equal(montar(f, ataque, { aum_foveo_apuntar: true }).modificador - montar(f, ataque).modificador, 1);
+    assert.ok(!ids(tiradaFija(f, "iniciativa_arma")).includes("aum_foveo_apuntar"));
+  });
+
+  test("Proyección y Matriz de Red: ventaja en Actitud, cada una con su nota", () => {
+    const f = resolver(conTodas([REGULACION, PROYECCION, MATRIZ_RED]));
+    const t = tiradaFija(f, "social");
+    assert.ok(ids(t).includes("aum_proyeccion_lenguaje"));
+    assert.ok(ids(t).includes("aum_matriz_red_repetir"));
+    const m = montar(f, t, { aum_matriz_red_repetir: true });
+    assert.equal(m.ventaja, "Repetir tras fallar · Matriz de Red Predeterminada");
+    assert.equal(m.costeFatiga, 0);
+    assert.ok(m.notas.some((n) => n.nota.includes("una vez por escena")));
+    assert.ok(!ids(tiradaFija(f, "salv_voluntad")).includes("aum_proyeccion_lenguaje"));
+  });
+});
+
+describe("A2b: ventaja fija y textos", () => {
+  test("Red Frontoparietal: ventaja sin casilla en las tres de Iniciativa, en ninguna más", () => {
+    const f = resolver(conTodas([MIELINIZACION, RED_FRONTOPARIETAL]));
+    for (const id of ["iniciativa", "iniciativa_arma", "iniciativa_distraccion"]) {
+      assert.equal(montar(f, tiradaFija(f, id)).ventaja, "Red Frontoparietal", id);
+    }
+    assert.equal(montar(f, tiradaFija(f, "defensa")).ventaja, null);
+    // Con el requisito roto, nada.
+    assert.equal(montar(resolver(conTodas([RED_FRONTOPARIETAL])), tiradaFija(resolver(conTodas([RED_FRONTOPARIETAL])), "iniciativa")).ventaja, null);
+  });
+
+  test("Asa en las pruebas mentales (con la exclusión); Automatismo en Defensa", () => {
+    const f = resolver(conTodas([MIELINIZACION, ASA, HIPERDENSIDAD, OSTEO, AUTOMATISMO]));
+    assert.ok(tiradaFija(f, "salv_voluntad").nota?.includes("baja un paso"));
+    assert.ok(tiradaFija(f, "social").nota?.includes("No a la vez que Conectividad Callosa"));
+    assert.ok(!tiradaFija(f, "defensa").nota?.includes("baja un paso"));
+    assert.ok(tiradaFija(f, "defensa").nota?.includes("Sorprendido"));
+    assert.ok(!tiradaFija(f, "salv_voluntad").nota?.includes("Sorprendido"));
   });
 });

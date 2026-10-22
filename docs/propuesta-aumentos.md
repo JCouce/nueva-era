@@ -131,6 +131,10 @@ aumento, coste de habilidad con las dos rebajas y la vida de Hipertrofia.
   Ojo con miras y gafas; Alerta pasiva; armadura natural +1 contra Cinético.
 - **A2b:** alcance `aplicado:<a>`, casillas de ventaja con fatiga de la rama cognitiva,
   Foveo tras Apuntar, ventaja fija en Iniciativa, Proyección/Matriz y textos de tirada.
+- **Decidido para A2b (usuario, 2026-10-22):** el alcance `aplicado:<a>` mira el aplicado
+  con el que se tira de verdad (tras casillas como Negociación Analítica); con Conectividad
+  Callosa equipada y activa, la casilla de Prefrontal se oculta (Callosa es su progresión).
+  Mielinización entra como casilla "Ahorro" (−1 al coste de fatiga de la tirada, mínimo 0).
 
 **A2a construido (2026-10-22, sin commit):** como arriba, con estos matices:
 - El canal es `rules/aumentosTiradas.ts`: las casillas y los selectores van al mismo índice
@@ -151,6 +155,32 @@ aumento, coste de habilidad con las dos rebajas y la vida de Hipertrofia.
 - **Pendiente para otras tandas:** los textos de alcance de visión del Ojo (nocturna 500 m,
   rayos X) en Buscar/percibir; el +3 del Visor Nocturno 2 contra ceguera por destello, que
   ya podría ir con Fortaleza (R11), pero es equipo.
+
+**A2b construido (2026-10-22, sin commit):** como arriba, con estos matices:
+- **Aplicado de verdad:** las casillas por aplicado se recogen antes de abrir la tirada con
+  los aplicados *posibles* (el suyo, el de Sutil y el de cualquier casilla que lo cambie,
+  también las que llegan del índice, como Negociación Analítica). `montarTirada` sabe ya el
+  de verdad y deja las que no casan en el modal, sin efecto y con el motivo
+  (`casillasSinEfecto`): se ven, pero no suman, no dan ventaja y no cobran.
+- **Poderes:** `prepararPoder` recibe `indiceCondiciones` y consulta el índice como
+  `conExtrasDeFicha`; así llegan Prefrontal, Mielinización o Callosa a la tirada del poder.
+- **Ahorro de Mielinización:** campo `ahorroFatiga` en el toggle. `costeFatiga` sale neto
+  (mínimo 0) y lo que no se gasta en casillas (`ahorroSinUsar`) se resta del coste del poder
+  en `usarPoder`.
+- **Prefrontal con Callosa:** `casillasOcultasCon` en la operación. Callosa solo pide
+  Prefrontal, así que "Callosa con requisito roto y Prefrontal funcionando" no puede darse.
+- **Ventaja fija** (Red Frontoparietal): `FichaResuelta.ventajasFijas`, que pone
+  `conExtrasDeFicha`; si la tirada ya trae ventaja, manda la suya.
+- **Textos:** `DestinoTexto` admite grupo y aplicado. Asa va como texto (la app no lleva el
+  tipo de acción), no como casilla. La acción combinada de Red Frontoparietal va como texto
+  en las pruebas mentales hasta A4.
+- **Pendiente de decidir:** una casilla de ventaja de pago cobra aunque la tirada ya tenga
+  ventaja gratis (Red Frontoparietal en Iniciativa + Callosa); `TODO(revisar)` en
+  `montaje.ts`.
+- **Foveo:** no existe la acción Apuntar (Gran Puntería tampoco la tiene): casilla
+  "Tras Apuntar" en el ataque, sin engancharla a ninguna dote.
+- **Fuera de A2b, aunque la tabla de §3 las ponga en A2:** la ventaja de equilibrio de
+  Bucle y la segunda reacción de Hiperdensidad (reacciones, A4).
 
 **Qué hace**
 - **Alcance nuevo `aplicado:<a>`** (Mielinización, Neurogénesis, Prefrontal, Asa y

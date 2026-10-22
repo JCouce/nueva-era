@@ -4,19 +4,34 @@
 // tirada fija, en una de arma o en la de un poder.
 import type { Accion } from "./acciones";
 import type { TextoEnTirada } from "./especie";
-import { alcanzaA, type ContextoAccion } from "./modificadores";
+import type { AplicadoId } from "./atributos";
+import { alcanzaA, alcanzaAlgunAplicado, type ContextoAccion } from "./modificadores";
+
+// Los aplicados con los que puede tirarse la tirada: el suyo, el de Sutil y el de cualquier
+// casilla que lo cambie (Negociación Analítica). Sin repetidos.
+export function aplicadosPosibles(t: Partial<Pick<Accion, "aplicado" | "aplicadoSutil" | "condiciones">>): AplicadoId[] {
+  const todos = [
+    t.aplicado,
+    t.aplicadoSutil,
+    ...(t.condiciones ?? []).map((c) => (c.tipo === "toggle" ? c.aplicado : undefined)),
+  ].filter((a): a is AplicadoId => a !== undefined);
+  return [...new Set(todos)];
+}
 
 // `modoElegido: null`: la tirada aún no se ha abierto, así que una casilla con alcance "modo" no
-// tiene nada que casar (ver indiceDeCondiciones).
+// tiene nada que casar (ver indiceDeCondiciones). Por lo mismo, del aplicado solo se sabe con
+// cuáles podría tirarse (`aplicadosPosibles`); el de verdad lo pone montarTirada.
 export const contextoDe = (
-  t: Pick<Accion, "id" | "grupo" | "familiaArma" | "empleoArma" | "desarmado" | "contundente" | "especialidadArma"> & {
-    habilidad: Accion["habilidad"];
-  },
+  t: Pick<Accion, "id" | "grupo" | "familiaArma" | "empleoArma" | "desarmado" | "contundente" | "especialidadArma"> &
+    Partial<Pick<Accion, "aplicado" | "aplicadoSutil" | "condiciones">> & {
+      habilidad: Accion["habilidad"];
+    },
 ): ContextoAccion => ({
   id: t.id,
   grupo: t.grupo,
   habilidad: t.habilidad,
   modoElegido: null,
+  ...(t.aplicado && { aplicado: t.aplicado, aplicadosPosibles: aplicadosPosibles(t) }),
   ...(t.familiaArma && { familiaArma: t.familiaArma }),
   ...(t.empleoArma && { empleoArma: t.empleoArma }),
   ...(t.desarmado && { desarmado: true }),
@@ -24,8 +39,14 @@ export const contextoDe = (
   ...(t.especialidadArma && { especialidadArma: t.especialidadArma }),
 });
 
+// Por aplicado (A2b): basta con que la tirada pueda tirarse con uno de ellos.
 export function textosDe(textos: TextoEnTirada[], ctx: ContextoAccion, desarmado: boolean): TextoEnTirada[] {
-  return textos.filter((x) => (x.en.tipo === "desarmado" ? desarmado : x.en.tipo === "familiaArma" ? alcanzaA(x.en, ctx) : x.en.id === ctx.id));
+  return textos.filter((x) => {
+    if (x.en.tipo === "desarmado") return desarmado;
+    if (x.en.tipo === "tiradaId") return x.en.id === ctx.id;
+    if (x.en.tipo === "aplicado") return alcanzaAlgunAplicado(x.en, ctx);
+    return alcanzaA(x.en, ctx);
+  });
 }
 
 // Si el texto ya empieza por su fuente ("Onda Residual: …", también tras la condición:

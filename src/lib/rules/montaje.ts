@@ -113,11 +113,19 @@ export type TiradaMontada = {
   //               una casilla (Ojo Clínico). null sin ventaja. No se acumula.
   //   subeGrado   un fracaso (no el crítico) cuenta como éxito; lo aplica tirarMontada.
   //   danio       cambios al daño del ataque; los aplica resolverDanio (acciones.ts).
-  //   costeFatiga fatiga que se paga al tirar (Ojo Clínico); 0 si ninguna.
+  //   costeFatiga fatiga que se paga al tirar (Ojo Clínico), ya sin lo que ahorre una casilla
+  //               (Mielinización Central), sin bajar de 0; 0 si ninguna.
+  //   ahorroSinUsar lo que la casilla de ahorro no ha encontrado que ahorrar en las casillas:
+  //               se resta del coste del poder (usarPoder), si la tirada es de un poder.
   ventaja: string | null;
   subeGrado: string | null;
   danio: AjusteDanio;
   costeFatiga: number;
+  ahorroSinUsar: number;
+  // Casillas por aplicado (A2b) que no casan con el aplicado con el que se tira (Sutil o una
+  // casilla que lo cambia): por id, el motivo. No suman ni dan ventaja ni cobran; el modal
+  // las enseña con el motivo.
+  casillasSinEfecto: Record<string, string>;
 };
 
 const SIN_AJUSTE_DANIO: AjusteDanio = { ajustes: [], categoria: null, sinBonoExitos: null };
@@ -189,6 +197,25 @@ function sinApilar(e: Entradas, ctx: ContextoAccion, estado: EstadoCondiciones):
   };
 }
 
+// Las casillas con alcance "aplicado" (A2b de aumentos) se recogen antes de abrir la tirada
+// con los aplicados con los que podría tirarse (consultaIndiceCondiciones); aquí, ya sabido el
+// de verdad (usuario, 2026-10-22: tras Sutil y casillas como Negociación Analítica), las que no
+// casan se quedan en el modal pero sin efecto: a 0, sin ventaja, sin coste ni ahorro.
+function conAplicadoEfectivo(
+  condiciones: CondicionTirada[],
+  aplicado: AplicadoId,
+): { condiciones: CondicionTirada[]; sinEfecto: Record<string, string> } {
+  const sinEfecto: Record<string, string> = {};
+  const label = APLICADOS.find((a) => a.id === aplicado)!.label;
+  const filtradas = condiciones.flatMap((c): CondicionTirada[] => {
+    if (c.alcance?.tipo !== "aplicado" || c.alcance.aplicados.includes(aplicado)) return [c];
+    const motivo = `no aplica tirando con ${label}`;
+    sinEfecto[c.id] = motivo;
+    return c.tipo === "toggle" ? [{ id: c.id, tipo: "toggle", etiqueta: `${c.etiqueta} (${motivo})`, valorActivo: 0, alcance: c.alcance }] : [];
+  });
+  return { condiciones: filtradas, sinEfecto };
+}
+
 // La opción elegida de cada condición de tipo opción.
 function opcionesElegidas(condiciones: CondicionTirada[], estado: EstadoCondiciones): OpcionCondicion[] {
   return condiciones.flatMap((c) => {
@@ -202,11 +229,19 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
   const { sutil, estadoCondiciones: estado, circunstancial } = eleccion;
   const enEspecialidad = enEspecialidadEfectiva(ficha.ficha, tirada, eleccion.enEspecialidad);
   const ajustesFijos = tirada.ajustesFijos ?? [];
+  // El aplicado con el que se tira de verdad. Una casilla que lo cambia (Negociación
+  // Analítica) manda sobre el estilo Sutil.
+  const otroAplicado = (tirada.condiciones ?? []).find(
+    (c): c is Toggle => c.tipo === "toggle" && Boolean(estado[c.id]) && c.aplicado !== undefined,
+  )?.aplicado;
+  const aplicadoId = otroAplicado ?? (sutil && tirada.aplicadoSutil ? tirada.aplicadoSutil : tirada.aplicado);
+  const porAplicado = conAplicadoEfectivo(tirada.condiciones ?? [], aplicadoId);
   const ctx: ContextoAccion = {
     id: tirada.id,
     grupo: tirada.grupo,
     habilidad: tirada.habilidad,
     modoElegido: modoElegido(tirada.condiciones ?? [], estado),
+    aplicado: aplicadoId,
     ...(tirada.familiaArma && { familiaArma: tirada.familiaArma }),
     ...(tirada.empleoArma && { empleoArma: tirada.empleoArma }),
     ...(tirada.desarmado && { desarmado: true }),
@@ -217,7 +252,7 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
   const { mods, condiciones, bonosTramo } = sinApilar(
     {
       mods: ficha.modificadores,
-      condiciones: tirada.condiciones ?? [],
+      condiciones: porAplicado.condiciones,
       bonosTramo: bonosTramoAplicables(tirada.bonosTramo ?? [], estado, enEspecialidad),
     },
     ctx,
@@ -225,12 +260,9 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
   );
 
   const activas = condiciones.filter((c): c is Toggle => c.tipo === "toggle" && Boolean(estado[c.id]));
-  // Casilla que cambia el aplicado (Negociación Analítica): manda sobre el estilo Sutil.
-  const otroAplicado = activas.find((c) => c.aplicado)?.aplicado;
   const mod = otroAplicado
     ? modificadorAccion(ficha.ficha, { ...tirada, aplicado: otroAplicado }, enEspecialidad, mods, false)
     : modificadorAccion(ficha.ficha, tirada, enEspecialidad, mods, sutil);
-  const aplicadoId = otroAplicado ?? (sutil && tirada.aplicadoSutil ? tirada.aplicadoSutil : tirada.aplicado);
   const base = mod.total + ajustesFijos.reduce((t, a) => t + a.valor, 0);
 
   const modo = ctx.modoElegido;
@@ -274,9 +306,29 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     ventaja: tirada.ventaja ?? activas.find((c) => c.ventaja)?.etiqueta ?? ventajaDeOpcion(elegidas),
     subeGrado: activas.find((c) => c.subeGrado)?.etiqueta ?? null,
     danio: danioDeCasillas(activas),
-    costeFatiga:
-      activas.reduce((t, c) => t + (c.costeFatiga ?? 0), 0) + elegidas.reduce((t, o) => t + (o.costeFatiga ?? 0), 0),
+    ...fatigaDeCasillas(activas, elegidas, tirada.ventaja != null),
+    casillasSinEfecto: porAplicado.sinEfecto,
   };
+}
+
+// Lo que cuestan las casillas marcadas y las opciones elegidas, menos lo que ahorran las de
+// ahorro (Mielinización Central), sin bajar de 0. Lo que sobra del ahorro, aparte.
+// La ventaja no se acumula (usuario, 2026-10-22, como el selector "Contra…" de A2a): si la
+// tirada ya trae ventaja gratis (Red Frontoparietal en Iniciativa, una casilla u opción sin
+// coste), las de ventaja de pago no cobran; sin gratis, de las de pago solo cobra la más barata.
+function fatigaDeCasillas(
+  activas: Toggle[],
+  elegidas: OpcionCondicion[],
+  ventajaDeTirada: boolean,
+): Pick<TiradaMontada, "costeFatiga" | "ahorroSinUsar"> {
+  const fuentes = [...activas, ...elegidas];
+  const ventajaGratis = ventajaDeTirada || fuentes.some((c) => c.ventaja && !c.costeFatiga);
+  const deVentaja = fuentes.filter((c) => c.ventaja && c.costeFatiga);
+  const otras = fuentes.filter((c) => !(c.ventaja && c.costeFatiga));
+  const porVentaja = ventajaGratis || deVentaja.length === 0 ? 0 : Math.min(...deVentaja.map((c) => c.costeFatiga ?? 0));
+  const bruto = otras.reduce((t, c) => t + (c.costeFatiga ?? 0), 0) + porVentaja;
+  const ahorro = activas.reduce((t, c) => t + (c.ahorroFatiga ?? 0), 0);
+  return { costeFatiga: Math.max(0, bruto - ahorro), ahorroSinUsar: Math.max(0, ahorro - bruto) };
 }
 
 function ventajaDeOpcion(elegidas: OpcionCondicion[]): string | null {

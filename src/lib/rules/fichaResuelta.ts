@@ -8,7 +8,13 @@
 // combate no están en la ficha, por eso entran aparte.
 import { APLICADOS, ATRIBUTOS, type AplicadoId, type AtributoId } from "./atributos";
 import { ajusteCosteDeSubida, modificadoresDeAumentos, saldoBolsaAumentos } from "./aumentos";
-import { casillasDeAumentos, notasAlertaPasivaDeAumentos, textosDeAumentos } from "./aumentosTiradas";
+import {
+  casillasDeAumentos,
+  notasAlertaPasivaDeAumentos,
+  textosDeAumentos,
+  ventajasFijasDeAumentos,
+  type VentajaFija,
+} from "./aumentosTiradas";
 import { tieneEscudoMelee, type ArmaduraNatural } from "./blindaje";
 import {
   alerta,
@@ -133,6 +139,9 @@ export type FichaResuelta = {
   // Textos sin mecanizar de la especie (§14.10), de las dotes (§9.3) y de los aumentos
   // (A2a: Matriz de Red en la salvación de Voluntad) que cuelgan de una tirada: los pone conExtrasDeFicha en su nota o en su texto de crítico.
   textosTirada: TextoEnTirada[];
+  // Ventajas sin casilla de los aumentos (A2b: Red Frontoparietal en Iniciativa), con su
+  // alcance: las pone conExtrasDeFicha en `Accion.ventaja`. Derivadas: también al NPC.
+  ventajasFijas: VentajaFija[];
   // Lo de las dotes que no es casilla ni texto (D2b-1): bonos por tramo de distancia con
   // su alcance y críticos fijos por especialidad de arma. También los pone conExtrasDeFicha.
   // `permisos` (D2b-2): Bloquear y el estilo Sutil, que solo existen con su dote; se los
@@ -279,6 +288,7 @@ export function resolverFicha(
     blindaje: { tieneEscudoMelee: tieneEscudoMelee(sheet), armaduraNatural: armaduraNaturalDeEspecie(especie) },
     indiceCondiciones: indiceDeCondiciones(sheet, [...casillasDeEspecie(especie), ...dotes.casillas, ...casillasDeAumentos(sheet)]),
     textosTirada: [...textosDeEspecie(especie), ...dotes.textos, ...textosDeAumentos(sheet)],
+    ventajasFijas: ventajasFijasDeAumentos(sheet),
     extrasDotes: { bonosTramo: dotes.bonosTramo, criticos: dotes.criticos, permisos: dotes.permisos, descuentos: dotes.descuentos },
     accionesDotes: accionesDeDotes(activas),
     poderesDotes: poderesDeDotes(activas, sheet, psionica.paraEfectos),
@@ -306,7 +316,7 @@ export function resolverFicha(
 const FAMILIAS_CON_CRITICO_FIJO: readonly FamiliaArma[] = ["ataque_melee", "ataque_fuego", "ataque_pesado"];
 
 export function conExtrasDeFicha(
-  ficha: Pick<FichaResuelta, "indiceCondiciones" | "textosTirada" | "extrasDotes">,
+  ficha: Pick<FichaResuelta, "indiceCondiciones" | "textosTirada" | "extrasDotes" | "ventajasFijas">,
   t: Accion,
 ): Accion {
   const ctx = contextoDe(t);
@@ -319,13 +329,17 @@ export function conExtrasDeFicha(
         .reduce<CriticoDeDote | null>((mejor, c) => (!mejor || c.margen < mejor.margen ? c : mejor), null)
     : null;
   const descuentos = ficha.extrasDotes.descuentos.filter((d) => alcanzaA(d.alcance, ctx));
-  if (extra.length === 0 && textos.length === 0 && bonosTramo.length === 0 && !critico && descuentos.length === 0) return t;
+  // La ventaja que ya trae la tirada manda (no se acumula).
+  const ventaja = t.ventaja ? undefined : ficha.ventajasFijas.find((v) => alcanzaA(v.alcance, ctx))?.fuente;
+  if (extra.length === 0 && textos.length === 0 && bonosTramo.length === 0 && !critico && descuentos.length === 0 && !ventaja)
+    return t;
   const condiciones = conDescuentos([...(t.condiciones ?? []), ...extra], descuentos);
   return {
     ...conTextosEnTirada(t, textos),
     ...((extra.length > 0 || descuentos.length > 0) && { condiciones }),
     ...(bonosTramo.length > 0 && { bonosTramo: [...(t.bonosTramo ?? []), ...bonosTramo] }),
     ...(critico && { criticoFijo: { margen: critico.margen, fuente: critico.fuente } }),
+    ...(ventaja && { ventaja }),
   };
 }
 

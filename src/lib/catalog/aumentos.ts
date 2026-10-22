@@ -20,6 +20,11 @@
 // `notaAlertaPasiva` y `armaduraNatural` en la operación o en la opción de Introgresión, y
 // `salvaciones`/`condiciones`/`modificadores` por nivel en los implantes (el Ojo, con
 // `noApila`). Los lee rules/aumentosTiradas.ts.
+// Tanda A2b: casillas con alcance "aplicado" (Prefrontal, Mielinización con `ahorroFatiga`,
+// Sincronización) o "todas" (Callosa), `casillasOcultasCon` (Prefrontal con Callosa),
+// `ventajasFijas` (Red Frontoparietal en Iniciativa) y textos por grupo o por aplicado (Asa,
+// Consciencia, Automatismo, Red Frontoparietal). "Una vez por escena" va en la nota de la
+// casilla hasta A4.
 //
 // MotorMetadata: copiado del modelado. Donde el modelado dice `mecanismo: "hueco"`
 // (aún no hay mecanismo en el motor), se pone el mecanismo más cercano por tipo
@@ -106,9 +111,23 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "inteligencia", valor: 1 }],
+    // A2b: casilla de ahorro, que resta 1 al gasto de fatiga de la tirada (el de las casillas
+    // de pago y, en un poder, el del poder), sin bajar de 0. El "una vez por escena" lo
+    // lleva el jugador hasta A4.
+    casillas: [
+      {
+        id: "aum_mielinizacion_ahorro",
+        tipo: "toggle",
+        etiqueta: "Ahorro de fatiga",
+        alcance: { tipo: "aplicado", aplicados: ["perspicacia", "voluntad", "expresion"] },
+        valorActivo: 0,
+        ahorroFatiga: 1,
+        nota: "Una vez por escena: omites 1 punto del gasto de fatiga de esta prueba, aunque el gasto combinado sea mayor.",
+      },
+    ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -173,9 +192,19 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "inteligencia", valor: 1 }, { tipo: "atributo", id: "caracter", valor: 1 }],
+    ventajasFijas: [{ alcance: { tipo: "grupo", grupo: "Iniciativa" } }],
+    // La acción combinada es una acción propia (A4); hasta entonces, texto en las pruebas
+    // mentales.
+    textos: [
+      {
+        en: { tipo: "aplicado", aplicados: ["perspicacia", "voluntad", "expresion"] },
+        texto:
+          "Por 1 de fatiga, esta prueba (acción simple o estándar) puede hacerse a la vez que una acción física simple o estándar, ataques y defensas incluidos, como parte de la misma acción. La acción empleada es la más compleja.",
+      },
+    ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Iniciativa" }, mecanismo: "siempre_activo", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Iniciativa" }, mecanismo: "siempre_activo", estado: "construido" },
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_accion_combinada" }, mecanismo: "accion_equipo", estado: "pendiente" },
     ],
   },
@@ -195,10 +224,24 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "percepcion", valor: 1 }],
+    // Conectividad Callosa es su progresión: con ella funcionando, esta casilla no sale.
+    casillasOcultasCon: "aum_conectividad_callosa",
+    casillas: [
+      {
+        id: "aum_prefrontal_concentrarse",
+        tipo: "toggle",
+        etiqueta: "Concentrarse",
+        alcance: { tipo: "aplicado", aplicados: ["perspicacia", "voluntad", "expresion"] },
+        valorActivo: 0,
+        ventaja: true,
+        costeFatiga: 1,
+        nota: "La acción simple o estándar se resuelve como compleja. No a la vez que Asa Estriatotalámica.",
+      },
+    ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -216,9 +259,19 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "percepcion", valor: 1 }],
+    // No existe la acción Apuntar (dotesDestinos: Gran Puntería): casilla en el ataque.
+    casillas: [
+      {
+        id: "aum_foveo_apuntar",
+        tipo: "toggle",
+        etiqueta: "Tras Apuntar",
+        alcance: { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combate_distancia" },
+        valorActivo: 1,
+      },
+    ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
     ],
   },
@@ -270,10 +323,30 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "percepcion", valor: 1 }],
+    casillas: [
+      {
+        id: "aum_consciencia_esquiva",
+        tipo: "toggle",
+        etiqueta: "Esquivar con dos dados",
+        alcance: { tipo: "tiradaId", id: "defensa" },
+        valorActivo: 0,
+        ventaja: true,
+        costeFatiga: 1,
+        nota: "Esquiva contra un ataque melee o a distancia.",
+      },
+    ],
+    // El flanqueo es del que ataca; mientras no haya bono de flanqueo en el motor, texto en la
+    // defensa.
+    textos: [
+      {
+        en: { tipo: "grupo", grupo: "Defensa" },
+        texto: "No te pueden flanquear: quien te ataca no gana ningún bono por flanquear o rodear, tampoco el de dotes.",
+      },
+    ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee_<instancia>" }, mecanismo: "nota_fija", estado: "pendiente" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee_<instancia>" }, mecanismo: "nota_fija", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -291,8 +364,16 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [],
+    // Texto: el tipo de acción no lo lleva la app (no hay economía de acciones por turno).
+    textos: [
+      {
+        en: { tipo: "aplicado", aplicados: ["perspicacia", "voluntad", "expresion"] },
+        texto:
+          "Por 1 de fatiga, esta acción baja un paso: compleja → estándar o estándar → simple; un solo paso por acción. No a la vez que Conectividad Callosa ni Prefrontal Aumentada.",
+      },
+    ],
     motor: [
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "nota_fija", estado: "construido" },
     ],
   },
   {
@@ -310,10 +391,32 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [],
+    casillas: [
+      {
+        id: "aum_callosa_concentrarse",
+        tipo: "toggle",
+        etiqueta: "Concentrarse",
+        alcance: { tipo: "todas" },
+        valorActivo: 0,
+        ventaja: true,
+        costeFatiga: 1,
+        nota: "La acción simple o estándar se resuelve como compleja. No a la vez que Asa Estriatotalámica.",
+      },
+      {
+        id: "aum_callosa_dos_turnos",
+        tipo: "toggle",
+        etiqueta: "Dos turnos",
+        alcance: { tipo: "todas" },
+        valorActivo: 0,
+        ventaja: true,
+        costeFatiga: 1,
+        nota: "Empleas dos turnos en esta acción compleja. No a la vez que Asa Estriatotalámica.",
+      },
+    ],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "nota_fija", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "nota_fija", estado: "construido" },
     ],
   },
   {
@@ -353,9 +456,20 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "caracter", valor: 1 }],
+    casillas: [
+      {
+        id: "aum_proyeccion_lenguaje",
+        tipo: "toggle",
+        etiqueta: "Con lenguaje",
+        alcance: { tipo: "habilidad", habilidad: "actitud" },
+        valorActivo: 0,
+        ventaja: true,
+        nota: "Una vez por escena o combate; la prueba tiene que emplear algún tipo de lenguaje.",
+      },
+    ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "social" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "capas activable_estado_propio + reduce_penalizador_por_pieza" },
     ],
   },
@@ -377,6 +491,17 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "caracter", valor: 1 }],
     salvaciones: [{ contra: ["dominacion_mental", "sugestion_coercitiva", "alteracion_voluntad"], bono: 2 }],
+    casillas: [
+      {
+        id: "aum_matriz_red_repetir",
+        tipo: "toggle",
+        etiqueta: "Repetir tras fallar",
+        alcance: { tipo: "habilidad", habilidad: "actitud" },
+        valorActivo: 0,
+        ventaja: true,
+        nota: "Solo al repetir esa misma tirada de Actitud tras fallarla; una vez por escena.",
+      },
+    ],
     textos: [
       {
         en: { tipo: "tiradaId", id: "salv_voluntad" },
@@ -388,8 +513,8 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
       { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Salvaciones" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "nota_fija", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "nota_fija", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "nota_fija", estado: "construido" },
     ],
   },
   {
@@ -472,9 +597,20 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "fuerza", valor: 1 }, { tipo: "atributo", id: "agilidad", valor: 1 }],
+    casillas: [
+      {
+        id: "aum_sincronizacion_potencia",
+        tipo: "toggle",
+        etiqueta: "Dos dados en Potencia",
+        alcance: { tipo: "aplicado", aplicados: ["potencia"] },
+        valorActivo: 0,
+        ventaja: true,
+        costeFatiga: 1,
+      },
+    ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:potencia" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:potencia" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -492,9 +628,16 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "agilidad", valor: 1 }],
+    // La app no cuenta reacciones: texto en la defensa (Automatismo la deja gratis).
+    textos: [
+      {
+        en: { tipo: "grupo", grupo: "Defensa" },
+        texto: "Segunda reacción por ronda pagando 1 de fatiga (gratis con Automatismo Bulboespinal).",
+      },
+    ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "nota_fija", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "nota_fija", estado: "construido" },
     ],
   },
   {
@@ -512,10 +655,20 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "agilidad", valor: 1 }],
+    textos: [
+      {
+        en: { tipo: "grupo", grupo: "Defensa" },
+        texto: "Estando Sorprendido no aplicas el −3 en la primera tirada defensiva (Desprevenido sigue igual).",
+      },
+      {
+        en: { tipo: "grupo", grupo: "Defensa" },
+        texto: "La segunda reacción por ronda (Hiperdensidad Propioceptiva) ya no cuesta fatiga.",
+      },
+    ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "nota_fija", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "nota_fija", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "nota_fija", estado: "construido" },
     ],
   },
   {
@@ -532,9 +685,26 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [],
+    casillas: [
+      {
+        id: "aum_bucle_equilibrio",
+        tipo: "toggle",
+        etiqueta: "Equilibrio para no caer derribado",
+        alcance: { tipo: "habilidad", habilidad: "atletismo" },
+        valorActivo: 0,
+        ventaja: true,
+      },
+    ],
+    // "Por turno" en la fuente; por ronda (errata resuelta, §11.3).
+    textos: [
+      {
+        en: { tipo: "grupo", grupo: "Defensa" },
+        texto: "Tercera reacción por ronda pagando 1 de fatiga.",
+      },
+    ],
     motor: [
-      { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "atletismo" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "nota_fija", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "atletismo" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {

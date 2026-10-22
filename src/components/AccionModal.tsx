@@ -44,19 +44,23 @@ function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
 }
 
+// `sinEfecto`: por qué la casilla no hace nada con lo elegido (una casilla por aplicado cuando
+// se tira con otro: TiradaMontada.casillasSinEfecto).
 export function ControlCondicion({
   condicion,
   estado,
   onCambiar,
+  sinEfecto,
 }: {
   condicion: CondicionTirada;
   estado: EstadoCondiciones;
   onCambiar: (id: string, valor: string | number | boolean) => void;
+  sinEfecto?: string;
 }) {
   if (condicion.tipo === "toggle") {
     const activo = Boolean(estado[condicion.id]);
     return (
-      <div>
+      <div className={sinEfecto ? "opacity-60" : undefined}>
         <button
           type="button"
           onClick={() => onCambiar(condicion.id, !activo)}
@@ -69,8 +73,11 @@ export function ControlCondicion({
           {condicion.etiqueta}
           <span className="float-right tabular-nums">{resumenCasilla(condicion, activo)}</span>
         </button>
-        {activo && condicion.nota && (
-          <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">{condicion.nota}</p>
+        {sinEfecto ? (
+          <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">Sin efecto: {sinEfecto}</p>
+        ) : (
+          activo &&
+          condicion.nota && <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">{condicion.nota}</p>
         )}
       </div>
     );
@@ -442,7 +449,13 @@ export function AccionModal({
                 {"// Activaciones"}
               </p>
               {condiciones.map((c) => (
-                <ControlCondicion key={c.id} condicion={c} estado={estado} onCambiar={cambiar} />
+                <ControlCondicion
+                  key={c.id}
+                  condicion={c}
+                  estado={estado}
+                  onCambiar={cambiar}
+                  sinEfecto={montada.casillasSinEfecto[c.id]}
+                />
               ))}
             </div>
           )}

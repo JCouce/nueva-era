@@ -140,7 +140,7 @@ describe("integridad del catálogo de aumentos", () => {
   const CONSTRUIDOS_A2A: Record<string, number> = {
     aum_optimizacion_vestibulo_auditiva: 2,
     aum_regulacion_limbico_prefrontal: 1,
-    aum_matriz_de_red_predeterminada: 2,
+    aum_matriz_de_red_predeterminada: 4, // 2 de A2a y 2 de A2b
     aum_integridad_osteotendinosa: 1,
     aum_matriz_osea_adaptativa: 1,
     aum_biogenesis_mitocondrial: 1,
@@ -152,9 +152,22 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_ojo_bionico 3": 2,
     "aum_ojo_bionico 4": 2,
     "aum_enjambre_nanobot 3": 1,
+    // A2b: casillas por aplicado y de cualquier tirada, ventaja fija y textos.
+    aum_mielinizacion_central: 1,
+    aum_red_frontoparietal: 1,
+    aum_prefrontal_aumentada: 2,
+    aum_optimizacion_foveo_sensorial: 1,
+    aum_consciencia_omnidireccional: 2,
+    aum_asa_estriatotalamica: 1,
+    aum_conectividad_callosa: 3,
+    aum_proyeccion_neuro_expresiva: 1,
+    aum_sincronizacion_neuromotora_profunda: 1,
+    aum_automatismo_bulboespinal: 2,
+    aum_hiperdensidad_propioceptiva: 1,
+    aum_bucle_de_realimentacion_motora: 2,
   };
 
-  test("A1 y A2a: solo lo construido (o lo narrativo) está marcado como construido", () => {
+  test("A1, A2a y A2b: solo lo construido (o lo narrativo) está marcado como construido", () => {
     for (const op of OPERACIONES_GENETICAS) {
       const construidos = op.motor.filter((m) => m.estado === "construido" && m.tipo !== "narrativo");
       const esperados =

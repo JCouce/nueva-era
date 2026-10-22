@@ -25,7 +25,7 @@ import {
 import type { ExcepcionRareza } from "../catalog/especies";
 import type { EstadoFicha } from "./revision";
 import { ID_BUSQUEDA_MIRA } from "../catalog/mejorasArma";
-import { alcanzaA, type ContextoAccion, type FamiliaArma, type GrupoAccion, type Modificador, type ModificadorConFuente } from "./modificadores";
+import { alcanzaA, alcanzaAlgunAplicado, type ContextoAccion, type FamiliaArma, type GrupoAccion, type Modificador, type ModificadorConFuente } from "./modificadores";
 import type { CondicionTirada } from "./condiciones";
 import type { HabilidadId } from "./habilidades";
 import { reconciliarRecursos, precioMaterial, sumarGranada, type MaterialTier } from "./recursos";
@@ -684,6 +684,9 @@ export type IndiceCondiciones = {
   porHabilidad: Map<HabilidadId, CondicionIndexada[]>;
   // Tiradas generadas por arma (dotes, D2b-1): por familia; el empleo lo filtra la consulta.
   porFamiliaArma: Map<FamiliaArma, CondicionIndexada[]>;
+  // Por aplicado (A2b de aumentos): pocas, en una lista; la consulta mira los aplicados
+  // posibles de la tirada y montarTirada, el de verdad.
+  porAplicado: CondicionIndexada[];
   todas: CondicionIndexada[];
 };
 
@@ -702,6 +705,7 @@ export function indiceDeCondiciones(sheet: Sheet, deOtrasFuentes: CondicionTirad
     porGrupo: new Map(),
     porHabilidad: new Map(),
     porFamiliaArma: new Map(),
+    porAplicado: [],
     todas: [],
   };
 
@@ -716,6 +720,7 @@ export function indiceDeCondiciones(sheet: Sheet, deOtrasFuentes: CondicionTirad
     // grupoHabilidad va con las de su habilidad; la consulta descarta las de otro grupo.
     else if (alcance.tipo === "grupoHabilidad") agregaIndexada(indice.porHabilidad, alcance.habilidad, entrada);
     else if (alcance.tipo === "familiaArma") agregaIndexada(indice.porFamiliaArma, alcance.familia, entrada);
+    else if (alcance.tipo === "aplicado") indice.porAplicado.push(entrada);
     else if (alcance.tipo === "todas") indice.todas.push(entrada);
     // "modo" queda fuera del índice a propósito, ver comentario de arriba.
   };
@@ -760,5 +765,15 @@ export function consultaIndiceCondiciones(indice: IndiceCondiciones, ctx: Contex
     ),
     ...indice.todas,
   ];
-  return candidatas.sort((a, b) => a.orden - b.orden).map((c) => c.condicion);
+  // Las de aplicado, con los aplicados posibles de la tirada más los de las casillas de arriba
+  // que lo cambian (Negociación Analítica llega por aquí, de las dotes).
+  const cambiados = candidatas.flatMap((c) => (c.condicion.tipo === "toggle" && c.condicion.aplicado ? [c.condicion.aplicado] : []));
+  const conPosibles: ContextoAccion = {
+    ...ctx,
+    aplicadosPosibles: [...(ctx.aplicadosPosibles ?? (ctx.aplicado ? [ctx.aplicado] : [])), ...cambiados],
+  };
+  const porAplicado = indice.porAplicado.filter(
+    (c) => c.condicion.alcance?.tipo === "aplicado" && alcanzaAlgunAplicado(c.condicion.alcance, conPosibles),
+  );
+  return [...candidatas, ...porAplicado].sort((a, b) => a.orden - b.orden).map((c) => c.condicion);
 }

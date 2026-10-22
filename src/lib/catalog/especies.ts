@@ -82,10 +82,12 @@ export type CasillaRasgo = { acciones: string[]; condicion: CondicionTirada };
 // familia de arma, con su empleo si lo filtra (textos de dote, D2b-1; mismo alcance que
 // AlcanceModificador "familiaArma"). `soloEnCritico`: va al texto de crítico de la tirada
 // (Accion.efectoCritico), no a su nota.
+// Desde A2b de aumentos, también un grupo entero (Defensa: flanqueo de Consciencia) o las tiradas
+// de unos aplicados (Asa Estriatotalámica: perspicacia, voluntad o expresión).
 export type DestinoTexto =
   | { tipo: "tiradaId"; id: string }
   | { tipo: "desarmado" }
-  | Extract<AlcanceModificador, { tipo: "familiaArma" }>;
+  | Extract<AlcanceModificador, { tipo: "familiaArma" } | { tipo: "grupo" } | { tipo: "aplicado" }>;
 export type TextoRasgo = { en: DestinoTexto[]; texto: string; soloEnCritico?: true };
 
 // `etiqueta`: palabra corta para la pista junto al coste ("−1 casta").

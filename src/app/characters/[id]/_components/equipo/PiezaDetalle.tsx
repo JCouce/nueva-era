@@ -1,4 +1,5 @@
 import {
+  APLICADOS,
   ATRIBUTOS,
   HABILIDADES,
   ACCIONES,
@@ -68,6 +69,7 @@ function etiquetaModificador(m: Modificador): string {
   if (a.tipo === "habilidad") return HABILIDADES.find((h) => h.id === a.habilidad)!.label;
   if (a.tipo === "grupoHabilidad") return `${a.grupo} con ${HABILIDADES.find((h) => h.id === a.habilidad)!.label}`;
   if (a.tipo === "todas") return "Todas las tiradas";
+  if (a.tipo === "aplicado") return `Tiradas de ${a.aplicados.map((id) => APLICADOS.find((x) => x.id === id)!.label).join(", ")}`;
   if (a.tipo === "familiaArma") return `Ataques (${a.familia.replace("_", " ")})${a.empleo ? `, arma a ${a.empleo}` : ""}`;
   return `Modo ${a.contieneEtiqueta}`;
 }

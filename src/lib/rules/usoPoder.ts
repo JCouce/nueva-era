@@ -43,6 +43,7 @@ import type { Grado, NivelesPsionica } from "./psionica";
 import type { Sheet } from "./sheet";
 import type { TextoEnTirada } from "./especie";
 import { conTextosEnTirada, contextoDe, textosDe, textosSinDado } from "./textosTirada";
+import { consultaIndiceCondiciones, type IndiceCondiciones } from "./equipo";
 import { fatigaEfectiva } from "./vitalidad";
 import { FUENTES_EXTERNAS_FATIGA } from "../catalog/psionica";
 
@@ -66,6 +67,10 @@ export type EntradaPoder = {
   // aquí se eligen los de este poder (por el id de su acción) y van a la nota o al crítico de su
   // tirada, o a sus notas si no tira (D2c-2: Onda Residual en Expansión). La UI solo los pasa.
   textos?: TextoEnTirada[];
+  // FichaResuelta.indiceCondiciones: las casillas con alcance que casan con la tirada del poder
+  // (A2b de aumentos: las de aplicado, como Prefrontal en un poder de Voluntad, y las de
+  // "todas", como Conectividad Callosa), igual que conExtrasDeFicha en cualquier otra tirada.
+  indiceCondiciones?: IndiceCondiciones;
 };
 
 export type PoderPreparado = {
@@ -90,7 +95,15 @@ export type PoderPreparado = {
 };
 
 // null = el personaje no llega al nivel de la acción.
-export function prepararPoder({ ficha, modificadores, niveles, poder, seleccion, textos = [] }: EntradaPoder): PoderPreparado | null {
+export function prepararPoder({
+  ficha,
+  modificadores,
+  niveles,
+  poder,
+  seleccion,
+  textos = [],
+  indiceCondiciones,
+}: EntradaPoder): PoderPreparado | null {
   const sinTextos = resolverPoder(poder.accion, {
     nivelPoseido: poder.nivelPoseido,
     elecciones: seleccion.elecciones,
@@ -122,8 +135,17 @@ export function prepararPoder({ ficha, modificadores, niveles, poder, seleccion,
   const conAjustes = base && ajustes.length > 0 ? { ...base, ajustesFijos: [...(base.ajustesFijos ?? []), ...ajustes] } : base;
   // Textos de la ficha para este poder: a su tirada como en cualquier otra (conExtrasDeFicha);
   // sin tirada, a las notas de la ventana (CabeceraPoder), sin distinguir el crítico.
-  const propios = textosDe(textos, contextoDe({ id: poder.accion.id, grupo: "Psiónica", habilidad: null }), false);
-  const tirada = conAjustes && conTextosEnTirada(conAjustes, propios);
+  const ctx = contextoDe({
+    id: poder.accion.id,
+    grupo: "Psiónica",
+    habilidad: conAjustes?.habilidad ?? null,
+    ...(conAjustes && { aplicado: conAjustes.aplicado, condiciones: conAjustes.condiciones }),
+  });
+  const propios = textosDe(textos, ctx, false);
+  const extra = conAjustes && indiceCondiciones ? consultaIndiceCondiciones(indiceCondiciones, ctx) : [];
+  const conCasillas =
+    conAjustes && extra.length > 0 ? { ...conAjustes, condiciones: [...(conAjustes.condiciones ?? []), ...extra] } : conAjustes;
+  const tirada = conCasillas && conTextosEnTirada(conCasillas, propios);
   const resuelto: PoderResuelto =
     !conAjustes && propios.length > 0
       ? { ...sinTextos, notas: [...sinTextos.notas, ...textosSinDado(propios).map((texto) => ({ texto, lugar: "tirada" as const }))] }
@@ -179,10 +201,12 @@ export type FichaParaUso = Pick<FichaResuelta, "ficha" | "modificadores" | "peaj
 // Gasto al usar un poder (con tirada o sin ella), falle o no. "prolongar" = otro
 // turno de Proeza: cobra solo el extra, sin cargas ni daño propio del uso.
 // Umbrales y sobrecarga van contra la fatiga EFECTIVA.
-export function usarPoder(f: FichaParaUso, p: PoderPreparado, modo: "uso" | "prolongar" = "uso"): EfectosDeUso {
+// `ahorro`: lo que la casilla de ahorro de la tirada (Mielinización Central, A2b) no gastó en
+// las casillas (TiradaMontada.ahorroSinUsar); se resta del uso, sin bajar de 0.
+export function usarPoder(f: FichaParaUso, p: PoderPreparado, modo: "uso" | "prolongar" = "uso", ahorro = 0): EfectosDeUso {
   const { ficha, modificadores } = f;
   const uso = modo === "uso";
-  const pagar = uso ? (p.coste?.total ?? 0) : p.extraProrroga;
+  const pagar = uso ? Math.max(0, (p.coste?.total ?? 0) - ahorro) : p.extraProrroga;
   const antes = fatigaEfectiva(ficha);
   const despues = antes - pagar;
   const cruza = cruzaSobrecarga(antes, despues, salud(ficha, modificadores).fatiga);

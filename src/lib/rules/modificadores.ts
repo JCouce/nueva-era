@@ -5,7 +5,7 @@
 // atributo, cambiar un derivado, regalar habilidad, afectar a un tipo de
 // tirada—, así que comparten un solo tipo. Cuando lleguen los poderes o los
 // aumentos reales, serán datos nuevos en el catálogo, no código nuevo.
-import type { AtributoId } from "./atributos";
+import type { AplicadoId, AtributoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
 import type { DisciplinaId } from "../catalog/psionica";
 import type { EspecialidadId } from "../catalog/especialidades";
@@ -100,6 +100,11 @@ export type EmpleoArma = "una mano" | "dos manos";
 //               ("F. Auto"). Exige que la tirada tenga condición "modo".
 //   familiaArma → las tiradas generadas por arma de esa familia (FAMILIAS_ARMA), y con
 //               `empleo`, solo las de un arma de ese empleo. Lo usan las dotes (D2b-1).
+//   aplicado  → las tiradas que se tiran con uno de esos aplicados (A2b de aumentos: "pruebas
+//               que usen perspicacia, voluntad o expresión", §11.3 R9; salvaciones y poderes
+//               incluidos). Vale el aplicado con el que se tira de verdad: si una casilla lo
+//               cambia (Negociación Analítica) o va en Sutil, el nuevo (usuario, 2026-10-22).
+//               Lo resuelve montarTirada con `ContextoAccion.aplicado`.
 //   todas     → cualquier tirada, sin excepción. Para los "-1/-3/-5 a todo"
 //               de los umbrales de salud/fatiga (docs/sistema.md §7) y los
 //               estados que penalizan toda acción por igual — no hay forma
@@ -125,6 +130,7 @@ export type AlcanceModificador =
       contundente?: true;
       especialidad?: EspecialidadId;
     }
+  | { tipo: "aplicado"; aplicados: AplicadoId[] }
   | { tipo: "todas" };
 
 export type Modificador =
@@ -237,11 +243,18 @@ export function bonoDisciplina(
 // la etiqueta de la opción de la condición "modo" que esté seleccionada
 // ahora mismo en el modal (o null si no hay tal condición o no aplica).
 // `familiaArma`/`empleoArma`: los de la Accion, si la genera un arma (ausentes en el resto).
+// `aplicado`: el aplicado con el que se tira de verdad (montarTirada, tras Sutil y casillas
+// que lo cambian); sin él, un alcance "aplicado" no casa. `aplicadosPosibles`: antes de
+// abrir la tirada (contextoDe), los aplicados con los que podría tirarse (el suyo, el de
+// Sutil y el de cualquier casilla que lo cambie): con ellos se recogen las casillas por
+// aplicado, y montarTirada deja sin efecto las que no casen con el de verdad.
 export type ContextoAccion = {
   id: string;
   grupo: GrupoAccion;
   habilidad: HabilidadId | null;
   modoElegido: string | null;
+  aplicado?: AplicadoId;
+  aplicadosPosibles?: readonly AplicadoId[];
   familiaArma?: FamiliaArma;
   empleoArma?: EmpleoArma;
   desarmado?: boolean;
@@ -257,6 +270,7 @@ export function alcanzaA(alcance: AlcanceModificador, ctx: ContextoAccion): bool
   if (alcance.tipo === "grupo") return alcance.grupo === ctx.grupo;
   if (alcance.tipo === "habilidad") return alcance.habilidad === ctx.habilidad;
   if (alcance.tipo === "grupoHabilidad") return alcance.grupo === ctx.grupo && alcance.habilidad === ctx.habilidad;
+  if (alcance.tipo === "aplicado") return ctx.aplicado !== undefined && alcance.aplicados.includes(ctx.aplicado);
   // Sin empleo conocido (Proyector de Pulso, que va en la armadura), un filtro de empleo no casa.
   if (alcance.tipo === "familiaArma") {
     // Empleo y contundente: basta uno de los dos (si solo hay uno, ese).
@@ -271,6 +285,14 @@ export function alcanzaA(alcance: AlcanceModificador, ctx: ContextoAccion): bool
     );
   }
   return ctx.modoElegido !== null && ctx.modoElegido.includes(alcance.contieneEtiqueta);
+}
+
+// Si un alcance "aplicado" puede llegar a casar con la tirada, antes de abrirla: con alguno de
+// sus aplicados posibles (o con el suyo, si no hay lista). Lo usan el índice de casillas y los
+// textos de tirada.
+export function alcanzaAlgunAplicado(alcance: Extract<AlcanceModificador, { tipo: "aplicado" }>, ctx: ContextoAccion): boolean {
+  const posibles = ctx.aplicadosPosibles ?? (ctx.aplicado ? [ctx.aplicado] : []);
+  return posibles.some((a) => alcance.aplicados.includes(a));
 }
 
 export function bonoAlcance(mods: ModificadorConFuente[], ctx: ContextoAccion): number {

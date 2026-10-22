@@ -1497,7 +1497,7 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
   (`FichaResuelta.ajusteCosteSubida`, `ajusteXp` en el servidor), Hipertrofia
   (Modificador `multiplicadorVida` en `salud()`) y `retirarPieza` (recorta la vida al
   desequipar).
-- [ ] A2 · Tiradas: bonos, ventajas y casillas.
+- [x] A2 · Tiradas: bonos, ventajas y casillas.
   - [x] A2a · Canal de casillas, selector "Contra…" de salvaciones, `noApila`, Alerta
     pasiva y armadura natural. *(sin commit; falta revisión y navegador)*
     `rules/aumentosTiradas.ts` (`casillasDeAumentos`, `textosDeAumentos`,
@@ -1505,8 +1505,14 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
     `textosTirada` en `resolverFicha`; `OpcionCondicion` con `ventaja`/`costeFatiga`/`partes`;
     `noApila` en `montarTirada` y `bonoDerivado` (Ojo con la Mira Telescópica); armadura
     natural en `desgloseBlindaje`.
-  - [ ] A2b · Alcance `aplicado:<a>`, casillas de la rama cognitiva, Foveo, Iniciativa,
-    Proyección/Matriz Actitud y textos de tirada.
+  - [x] A2b · Alcance `aplicado:<a>`, casillas de la rama cognitiva, Foveo, Iniciativa,
+    Proyección/Matriz Actitud y textos de tirada. *(sin commit; falta revisión y navegador)*
+    Alcance `{ tipo: "aplicado" }` (`alcanzaA` con `ContextoAccion.aplicado`, índice
+    `porAplicado` con los aplicados posibles; `montarTirada` deja sin efecto las que no casan
+    con el aplicado de verdad: `casillasSinEfecto`); `ahorroFatiga` en el toggle
+    (`costeFatiga` neto y `ahorroSinUsar`, que `usarPoder` resta del poder);
+    `prepararPoder` consulta el índice (`indiceCondiciones`); `FichaResuelta.ventajasFijas`
+    (Red Frontoparietal) en `conExtrasDeFicha`; `DestinoTexto` por grupo y por aplicado.
 - [ ] A3 · Penalizadores.
 - [ ] A4 · Acciones propias y "una vez por escena".
 - [ ] A5 · Activables.

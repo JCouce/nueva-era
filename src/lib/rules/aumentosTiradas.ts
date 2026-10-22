@@ -8,12 +8,20 @@
 //   - textos en tiradas (Matriz de Red en la salvación de Voluntad) y notas de la Alerta
 //     pasiva (Detección Química);
 //   - la armadura natural contra Cinético (Osteotendinosa y Matriz Ósea, R6).
+// Tanda A2b:
+//   - casillas por aplicado (alcance "aplicado": Prefrontal, Sincronización, Mielinización) y
+//     de cualquier tirada (Conectividad Callosa), con ventaja y su fatiga, o con ahorro de
+//     fatiga (Mielinización); la de Prefrontal no sale con Callosa activa (`casillasOcultasCon`);
+//   - ventaja fija sin casilla (Red Frontoparietal en Iniciativa: `ventajasFijas`), que pone
+//     conExtrasDeFicha en `Accion.ventaja`;
+//   - textos por grupo o por aplicado (Asa, Consciencia, Automatismo, Red Frontoparietal).
 // Respeta operacionesActivas (una operación con requisito roto no da nada) y el nivel del
 // implante (los niveles se acumulan; el que repite clave sustituye al anterior).
 import type { DestinoTexto } from "../catalog/especies";
 import type { Implante, OperacionGenetica, OpcionAumento } from "../catalog/aumentos";
 import { aumentoPorId, operacionesActivas } from "./aumentos";
 import type { TipoDanio } from "./blindaje";
+import type { AlcanceModificador } from "./modificadores";
 import type { CondicionTirada, OpcionCondicion } from "./condiciones";
 import { acumulaPorClave, nivelesHasta } from "./equipo";
 import type { TextoEnTirada } from "./especie";
@@ -68,6 +76,11 @@ export type EfectosTiradaAumento = {
   // Nota junto a la Alerta pasiva, sin sumar (Detección Química: +2 a 4 m o menos).
   notaAlertaPasiva?: string;
   armaduraNatural?: ArmaduraNaturalAumento;
+  // Ventaja sin casilla en las tiradas de ese alcance (Red Frontoparietal: Iniciativa).
+  ventajasFijas?: { alcance: AlcanceModificador }[];
+  // Las casillas de esta pieza no salen si esta otra operación funciona (Prefrontal con
+  // Conectividad Callosa, que es su progresión: usuario, 2026-10-22).
+  casillasOcultasCon?: string;
 };
 
 // +1 de blindaje contra unos tipos (R6: Cinético), con a qué golpes vale.
@@ -77,8 +90,9 @@ export type ArmaduraNaturalAumento = { valor: number; tipos: TipoDanio[]; nota: 
 
 type Aporte = { fuente: string; efectos: EfectosTiradaAumento };
 
-function deOperacion(op: OperacionGenetica, eleccion: string | undefined): Aporte[] {
-  const aportes: Aporte[] = [{ fuente: op.label, efectos: op }];
+function deOperacion(op: OperacionGenetica, eleccion: string | undefined, activas: ReadonlySet<string>): Aporte[] {
+  const oculta = op.casillasOcultasCon !== undefined && activas.has(op.casillasOcultasCon);
+  const aportes: Aporte[] = [{ fuente: op.label, efectos: oculta ? { ...op, casillas: [] } : op }];
   const opcion: OpcionAumento | undefined = op.eleccion?.opciones.find((o) => o.id === eleccion);
   if (opcion) aportes.push({ fuente: `${op.label} (${opcion.label})`, efectos: opcion });
   return aportes;
@@ -101,7 +115,7 @@ function aportesDeAumentos(sheet: Pick<Sheet, "equipo">): Aporte[] {
   return sheet.equipo.flatMap((pieza): Aporte[] => {
     const cat = aumentoPorId(pieza.catalogoId);
     if (!cat) return [];
-    if (cat.familia === "operacionGenetica") return activas.has(cat.id) ? deOperacion(cat, pieza.eleccion) : [];
+    if (cat.familia === "operacionGenetica") return activas.has(cat.id) ? deOperacion(cat, pieza.eleccion, activas) : [];
     return pieza.nivel === undefined ? [] : [deImplante(cat, pieza.nivel)];
   });
 }
@@ -186,6 +200,14 @@ export function textosDeAumentos(sheet: Pick<Sheet, "equipo">): TextoEnTirada[] 
   return aportesDeAumentos(sheet).flatMap((a) =>
     (a.efectos.textos ?? []).map((t) => ({ en: t.en, texto: t.texto, fuente: a.fuente, soloEnCritico: false })),
   );
+}
+
+// Ventajas sin casilla de los aumentos que funcionan, con su alcance y su fuente
+// (conExtrasDeFicha las pone en `Accion.ventaja` si la tirada no trae otra).
+export type VentajaFija = { alcance: AlcanceModificador; fuente: string };
+
+export function ventajasFijasDeAumentos(sheet: Pick<Sheet, "equipo">): VentajaFija[] {
+  return aportesDeAumentos(sheet).flatMap((a) => (a.efectos.ventajasFijas ?? []).map((v) => ({ alcance: v.alcance, fuente: a.fuente })));
 }
 
 // Notas de la Alerta pasiva que no suman (Detección Química), con su fuente.

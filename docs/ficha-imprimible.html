@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ficha Nueva Era</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* Ficha para imprimir y rellenar a lápiz: fondo blanco, tinta casi negra, los neones
+   de la app (globals.css) solo como acento. El amarillo firma va siempre de relleno
+   detrás de texto oscuro: amarillo sobre blanco no se lee impreso. */
+:root {
+  --night: #0a0a0f;
+  --ink: #16161f;
+  --ink-dim: #5a5a70;
+  --line: #2a2a3a;
+  --rule: #b9b9c8;
+  --tint: #f3f3f7;
+  --yellow: #fcee0a;
+  --cyan: #00f0ff;
+  --magenta: #ff2e97;
+  --red: #ff003c;
+  --cyan-ink: #00818a;
+  --magenta-ink: #c4146d;
+  --display: "Chakra Petch", system-ui, sans-serif;
+  --sans: "Rajdhani", system-ui, sans-serif;
+  --mono: "Share Tech Mono", ui-monospace, monospace;
+}
+@page { size: A4; margin: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { background: #d8d8e0; color: var(--ink); font-family: var(--sans); font-weight: 600; }
+@media print { body { background: #fff; } }
+
+.page {
+  width: 210mm; height: 297mm; margin: 8mm auto; background: #fff;
+  padding: 8mm 10mm 7mm; display: flex; flex-direction: column; gap: 2.6mm;
+  position: relative; overflow: hidden; break-after: page;
+}
+.page:last-child { break-after: auto; }
+@media print { .page { margin: 0; } }
+
+/* Riel lateral: degradado edgerunners, firma visual sin gastar tinta */
+.page::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2.2mm;
+  background: linear-gradient(180deg, var(--cyan), var(--magenta));
+}
+
+/* ── Cabecera ── */
+.masthead {
+  display: grid; grid-template-columns: 1fr auto; align-items: stretch;
+  background: var(--night); color: #fff;
+  clip-path: polygon(0 0, calc(100% - 5mm) 0, 100% 5mm, 100% 100%, 5mm 100%, 0 calc(100% - 5mm));
+}
+.masthead .brand { padding: 3mm 5mm 2.6mm; display: flex; align-items: baseline; gap: 4mm; }
+.masthead .logo {
+  font-family: var(--display); font-weight: 700; font-size: 22pt; letter-spacing: .06em; line-height: 1;
+}
+.masthead .logo b { color: var(--yellow); font-weight: 700; }
+.masthead .sub { font-family: var(--mono); font-size: 8.5pt; letter-spacing: .25em; color: var(--cyan); }
+.masthead .tag {
+  display: flex; align-items: center; padding: 0 8mm 0 6mm;
+  font-family: var(--display); font-weight: 700; font-size: 11pt; letter-spacing: .3em;
+  background: repeating-linear-gradient(45deg, var(--yellow) 0 2.4mm, var(--night) 2.4mm 4.8mm);
+}
+.masthead .tag span { background: var(--yellow); color: var(--night); padding: 1mm 2.5mm; }
+.mini-head { height: 9mm; }
+.mini-head .brand { padding: 2mm 5mm; }
+.mini-head .logo { font-size: 13pt; }
+.mini-head .sub { flex: 1; display: flex; align-items: baseline; gap: 2mm; }
+.mini-head .sub::after { content: ""; flex: 1; border-bottom: .3mm solid #5a5a70; max-width: 90mm; }
+
+/* ── Secciones ── */
+.sec { display: flex; flex-direction: column; gap: 1.8mm; }
+.sec-title {
+  display: flex; align-items: center; gap: 2.5mm;
+  font-family: var(--display); font-weight: 700; font-size: 11pt; letter-spacing: .14em; text-transform: uppercase;
+  border-bottom: .5mm solid var(--night); padding-bottom: .6mm;
+}
+.sec-title .num {
+  font-family: var(--mono); font-size: 9pt; letter-spacing: 0; color: var(--night); background: var(--yellow);
+  padding: .4mm 1.6mm; clip-path: polygon(0 0, 100% 0, 100% 70%, 80% 100%, 0 100%);
+}
+.sec-title .hint {
+  margin-left: auto; font-family: var(--mono); font-weight: 400; font-size: 7.5pt; letter-spacing: .04em;
+  text-transform: none; color: var(--ink-dim);
+}
+.sec-title.cyan { border-color: var(--cyan-ink); }
+.sec-title.magenta { border-color: var(--magenta-ink); }
+
+.label {
+  font-family: var(--display); font-weight: 600; font-size: 7.5pt; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink-dim);
+}
+.formula { font-family: var(--mono); font-weight: 400; font-size: 7.5pt; color: var(--ink-dim); letter-spacing: 0; text-transform: none; }
+
+/* Caja de escribir: blanca para que el lápiz se borre limpio */
+.box { border: .3mm solid var(--line); border-left: .8mm solid var(--night); background: #fff; height: 10mm; }
+.field { display: flex; flex-direction: column; gap: .7mm; }
+.row { display: grid; gap: 3mm; }
+
+/* Renglones para texto libre */
+.lines { display: flex; flex-direction: column; }
+.lines i { display: block; height: 7.6mm; border-bottom: .25mm solid var(--rule); }
+.lines i:last-child { border-bottom-color: var(--ink-dim); }
+
+/* ── Atributos ── */
+.attr-block { display: grid; grid-template-columns: 4.5mm 1fr; gap: 1.6mm; }
+.attr-block > .label { writing-mode: vertical-rl; transform: rotate(180deg); text-align: center; font-size: 6.8pt; color: var(--night); background: var(--tint); }
+.tiles { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2.2mm; }
+.tile { border: .3mm solid var(--line); display: flex; flex-direction: column; clip-path: polygon(0 0, calc(100% - 2.5mm) 0, 100% 2.5mm, 100% 100%, 0 100%); }
+.tile header { background: var(--night); color: #fff; padding: 1.2mm 2mm 1.3mm; display: flex; flex-direction: column; }
+.tile header b { font-family: var(--mono); font-weight: 400; font-size: 13pt; line-height: 1; color: var(--yellow); }
+.tile header span { font-family: var(--display); font-weight: 600; font-size: 8.6pt; letter-spacing: .04em; }
+.tile i { height: 11.5mm; }
+.tile.ap header { background: var(--tint); color: var(--night); border-bottom: .6mm solid var(--cyan-ink); }
+.tile.ap header b { color: var(--cyan-ink); }
+.tile.ap header small { font-family: var(--mono); font-size: 6.8pt; color: var(--ink-dim); }
+
+/* ── Habilidades ── */
+.rules-strip {
+  display: flex; flex-wrap: wrap; gap: 1mm 4mm; padding: 1.4mm 3mm;
+  background: var(--tint); border-left: 1mm solid var(--magenta);
+  font-family: var(--mono); font-size: 7.6pt; color: var(--ink);
+}
+.rules-strip b { font-family: var(--display); font-weight: 700; color: var(--magenta-ink); }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+thead th {
+  font-family: var(--display); font-weight: 600; font-size: 7.5pt; letter-spacing: .12em; text-transform: uppercase;
+  color: #fff; background: var(--night); text-align: left; padding: 1.2mm 2mm;
+}
+thead th.c { text-align: center; }
+tbody td { border-bottom: .25mm solid var(--rule); height: 8.2mm; padding: 0 2mm; }
+tbody tr td + td { border-left: .25mm solid var(--rule); }
+tbody td.skill { font-family: var(--display); font-weight: 600; font-size: 10.5pt; }
+tbody td.pts { border-left: .6mm solid var(--night) !important; background: #fff; }
+tbody tr:nth-child(even) td.skill { background: var(--tint); }
+tbody tr:last-child td { border-bottom: .4mm solid var(--night); }
+.gear tbody td { height: 10mm; }
+
+/* ── Psiónica ── */
+.psi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.psi-card { border: .3mm solid var(--line); clip-path: polygon(0 0, calc(100% - 3mm) 0, 100% 3mm, 100% 100%, 0 100%); }
+.psi-card header {
+  padding: 1.4mm 3mm; font-family: var(--display); font-weight: 700; font-size: 10pt; letter-spacing: .2em;
+  color: #fff; background: var(--night); border-bottom: 1mm solid var(--cyan);
+}
+.psi-card.metrica header { border-bottom-color: var(--magenta); }
+.psi-row { display: grid; grid-template-columns: 1fr 14mm; align-items: center; border-top: .25mm solid var(--rule); height: 11mm; padding-left: 3mm; }
+.psi-row:first-of-type { border-top: 0; }
+.psi-row span { font-family: var(--display); font-weight: 600; font-size: 11pt; }
+.psi-row i { height: 100%; border-left: .6mm solid var(--night); }
+
+/* ── Salud ── */
+.health-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.meter { border: .3mm solid var(--line); display: flex; flex-direction: column; }
+.meter-head { display: grid; grid-template-columns: 1fr 17mm 17mm; align-items: stretch; border-bottom: .3mm solid var(--line); }
+.meter-head .t { padding: 1.4mm 3mm; display: flex; flex-direction: column; justify-content: center; }
+.meter-head .t strong { font-family: var(--display); font-weight: 700; font-size: 11pt; letter-spacing: .12em; }
+.meter-head .num { border-left: .3mm solid var(--line); display: flex; flex-direction: column; padding: .8mm 1.4mm 0; height: 14mm; }
+.meter-head .num:last-child { border-left: .6mm solid var(--night); }
+.meter.vida .meter-head { border-top: 1.2mm solid var(--red); }
+.meter.fatiga .meter-head { border-top: 1.2mm solid var(--cyan); }
+/* Contador para tachar: 40 casillas, más de lo que llegará nadie al empezar */
+.track { display: grid; grid-template-columns: repeat(20, 1fr); gap: .8mm; padding: 2mm 3mm 1.2mm; }
+.track i { aspect-ratio: 1; border: .25mm solid var(--ink-dim); border-radius: .4mm; }
+.track i:nth-child(5n) { border-color: var(--night); border-width: .35mm; }
+.track-note { padding: 0 3mm 1.6mm; font-family: var(--mono); font-size: 6.8pt; color: var(--ink-dim); }
+.states { padding: 1.6mm 3mm 2mm; border-top: .25mm dashed var(--rule); display: flex; flex-direction: column; gap: 1mm; }
+.state { display: grid; grid-template-columns: 22mm 1fr; gap: 2mm; font-size: 8.6pt; line-height: 1.15; }
+.state b { font-family: var(--display); font-weight: 700; font-size: 8pt; letter-spacing: .06em; text-transform: uppercase; }
+.state b small { display: block; font-family: var(--mono); font-weight: 400; color: var(--ink-dim); letter-spacing: 0; }
+.vida .state b { color: var(--red); }
+.fatiga .state b { color: var(--cyan-ink); }
+
+/* ── Movimiento ── */
+.move-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2.5mm; }
+.move { border: .3mm solid var(--line); display: flex; flex-direction: column; clip-path: polygon(0 0, calc(100% - 2.5mm) 0, 100% 2.5mm, 100% 100%, 0 100%); }
+.move header { background: var(--night); color: #fff; font-family: var(--display); font-weight: 700; font-size: 8.6pt; letter-spacing: .14em; text-align: center; padding: 1.1mm 0; }
+.move .f { text-align: center; font-family: var(--mono); font-size: 7.2pt; color: var(--ink-dim); padding: 1mm .5mm; border-bottom: .25mm solid var(--rule); min-height: 7mm; display: grid; place-items: center; }
+.move .v { height: 11mm; display: flex; align-items: flex-end; justify-content: flex-end; padding: 0 1.6mm 1mm; font-family: var(--mono); font-size: 8pt; color: var(--ink-dim); }
+
+/* ── Carga ── */
+.carga { display: grid; grid-template-columns: 74mm 1fr; gap: 4mm; }
+.carga-box { border: .3mm solid var(--line); border-top: 1.2mm solid var(--yellow); display: grid; grid-template-columns: 1fr 22mm; }
+.carga-box .t { padding: 1.6mm 3mm; display: flex; flex-direction: column; gap: .6mm; }
+.carga-box .t strong { font-family: var(--display); font-weight: 700; font-size: 11pt; letter-spacing: .12em; }
+.carga-box .v { border-left: .6mm solid var(--night); display: flex; align-items: flex-end; justify-content: flex-end; padding: 0 1.6mm 1mm; font-family: var(--mono); font-size: 8pt; color: var(--ink-dim); }
+.carga-rules { display: flex; flex-direction: column; gap: 1.2mm; font-size: 8.8pt; line-height: 1.15; padding: 1.2mm 0; }
+.carga-rules div { display: grid; grid-template-columns: 20mm 1fr; gap: 2mm; }
+.carga-rules b { font-family: var(--display); font-weight: 700; font-size: 8pt; letter-spacing: .06em; text-transform: uppercase; color: var(--magenta-ink); }
+
+.fill { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.fill .lines { flex: 1; overflow: hidden; }
+.row.fill { display: grid; }
+
+.foot {
+  margin-top: auto; display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--mono); font-size: 7.5pt; letter-spacing: .2em; color: var(--ink-dim);
+  border-top: .25mm solid var(--rule); padding-top: 1.4mm;
+}
+.foot .pg { color: var(--night); background: var(--yellow); padding: .3mm 2mm; letter-spacing: .1em; }
+</style>
+</head>
+<body>
+
+<!-- ═════════════ PÁGINA 1 · IDENTIDAD ═════════════ -->
+<section class="page">
+  <div class="masthead">
+    <div class="brand">
+      <div class="logo">NUEVA <b>ERA</b></div>
+      <div class="sub">FICHA DE PERSONAJE</div>
+    </div>
+    <div class="tag"><span>NÚCLEO</span></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="num">00</span>Datos biográficos y trasfondo</div>
+    <div class="row" style="grid-template-columns: 1fr 18mm 46mm 30mm">
+      <div class="field"><span class="label">Nombre</span><div class="box"></div></div>
+      <div class="field"><span class="label">Edad</span><div class="box"></div></div>
+      <div class="field"><span class="label">Especie</span><div class="box"></div></div>
+      <div class="field"><span class="label">Alt. / Peso</span><div class="box"></div></div>
+    </div>
+    <div class="field"><span class="label">Motivación</span><div class="box"></div></div>
+    <div class="field"><span class="label">Trasfondo</span><div class="lines" data-n="3"></div></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="num">01</span>Rasgos de especie</div>
+    <div class="lines" data-n="3"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="num">02</span>Atributos</div>
+    <div class="attr-block">
+      <span class="label">Básicos</span>
+      <div class="tiles">
+        <div class="tile"><header><b>FUE</b><span>Fuerza</span></header><i></i></div>
+        <div class="tile"><header><b>AGI</b><span>Agilidad</span></header><i></i></div>
+        <div class="tile"><header><b>AGU</b><span>Aguante</span></header><i></i></div>
+        <div class="tile"><header><b>PER</b><span>Percepción</span></header><i></i></div>
+        <div class="tile"><header><b>INT</b><span>Inteligencia</span></header><i></i></div>
+        <div class="tile"><header><b>CAR</b><span>Carácter</span></header><i></i></div>
+      </div>
+    </div>
+    <div class="attr-block">
+      <span class="label">Aplicados</span>
+      <div class="tiles">
+        <div class="tile ap"><header><span>Fortaleza</span><small>(FUE+AGU)/2</small></header><i></i></div>
+        <div class="tile ap"><header><span>Potencia</span><small>(FUE+AGI)/2</small></header><i></i></div>
+        <div class="tile ap"><header><span>Reflejos</span><small>(AGI+PER)/2</small></header><i></i></div>
+        <div class="tile ap"><header><span>Voluntad</span><small>(AGU+CAR)/2</small></header><i></i></div>
+        <div class="tile ap"><header><span>Perspicacia</span><small>(INT+PER)/2</small></header><i></i></div>
+        <div class="tile ap"><header><span>Expresión</span><small>(CAR+INT)/2</small></header><i></i></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="num">03</span>Habilidades</div>
+    <div class="rules-strip">
+      <span><b>Sin entrenar</b> −1</span>
+      <span><b>Máx. inicial</b> 4/6</span>
+      <span><b>Esp. principal</b> valor total</span>
+      <span><b>Otras esp.</b> mitad (redondeo arriba)</span>
+      <span><b>2ª esp.</b> coste 1 pt</span>
+    </div>
+    <table>
+      <colgroup><col style="width:44mm"><col style="width:15mm"><col><col></colgroup>
+      <thead><tr><th>Habilidad</th><th class="c">Pts</th><th>Especialidad principal</th><th>Otras especialidades</th></tr></thead>
+      <tbody id="skills"></tbody>
+    </table>
+  </div>
+
+  <div class="foot"><span>NUEVA ERA // FICHA DE PERSONAJE // NÚCLEO</span><span class="pg">PÁG. 01</span></div>
+</section>
+
+<!-- ═════════════ PÁGINA 2 · DOTES, PODERES Y CUERPO ═════════════ -->
+<section class="page">
+  <div class="masthead mini-head">
+    <div class="brand"><div class="logo">NUEVA <b>ERA</b></div><div class="sub">PERSONAJE&nbsp;▸</div></div>
+    <div class="tag"><span>NÚCLEO</span></div>
+  </div>
+
+  <div class="sec fill">
+    <div class="sec-title"><span class="num">04</span>Dotes</div>
+    <div class="lines" data-n="14"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title cyan"><span class="num">05</span>Psiónica</div>
+    <div class="psi-grid">
+      <div class="psi-card">
+        <header>METASENSORIA</header>
+        <div class="psi-row"><span>Resonancia</span><i></i></div>
+        <div class="psi-row"><span>Inducción</span><i></i></div>
+        <div class="psi-row"><span>Hipercognición</span><i></i></div>
+      </div>
+      <div class="psi-card metrica">
+        <header>MÉTRICA</header>
+        <div class="psi-row"><span>Traslación</span><i></i></div>
+        <div class="psi-row"><span>Contención</span><i></i></div>
+        <div class="psi-row"><span>Singularidad</span><i></i></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="num">06</span>Salud</div>
+    <div class="health-grid">
+      <div class="meter vida">
+        <div class="meter-head">
+          <div class="t"><strong>PUNTOS DE VIDA</strong><span class="formula">10 + Fortaleza</span></div>
+          <div class="num"><span class="label">Máx</span></div>
+          <div class="num"><span class="label">Act</span></div>
+        </div>
+        <div class="track" data-n="40"></div>
+        <div class="track-note">Tacha una casilla por punto perdido</div>
+        <div class="states">
+          <div class="state"><b>Herido<small>&lt; 50 %</small></b><span>−1 a todas las tiradas</span></div>
+          <div class="state"><b>Malherido<small>&lt; 25 %</small></b><span>−3 tiradas · Mov. base ½ · Carga −25 %</span></div>
+          <div class="state"><b>Moribundo<small>&lt; 10 % (mín. 1)</small></b><span>−5 tiradas · Mov. 1 casilla/turno · Carga −50 %</span></div>
+        </div>
+      </div>
+      <div class="meter fatiga">
+        <div class="meter-head">
+          <div class="t"><strong>PUNTOS DE FATIGA</strong><span class="formula">10 + Voluntad</span></div>
+          <div class="num"><span class="label">Máx</span></div>
+          <div class="num"><span class="label">Act</span></div>
+        </div>
+        <div class="track" data-n="40"></div>
+        <div class="track-note">Tacha una casilla por punto perdido</div>
+        <div class="states">
+          <div class="state"><b>Fatigado<small>&lt; 25 %</small></b><span>−1 a todas las tiradas</span></div>
+          <div class="state"><b>Exhausto<small>&lt; 10 %</small></b><span>−2 tiradas · Mov. base ½ · Carga −25 %</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="num">07</span>Movimiento<span class="hint">Pot + Atl = Potencia + Atletismo</span></div>
+    <div class="move-grid">
+      <div class="move"><header>CARRERA</header><div class="f">16 + (Pot + Atl)</div><div class="v">m</div></div>
+      <div class="move"><header>SALTO VERT.</header><div class="f">15 × (Pot + Atl)</div><div class="v">cm</div></div>
+      <div class="move"><header>SALTO HORIZ.</header><div class="f">100 + [(Pot + Atl) × 20]</div><div class="v">cm</div></div>
+      <div class="move"><header>ESCALADA</header><div class="f">4 + [(Pot + Atl) / 2]</div><div class="v">m</div></div>
+      <div class="move"><header>NADO</header><div class="f">4 + [(Pot + Atl) / 2]</div><div class="v">m</div></div>
+    </div>
+  </div>
+
+  <div class="foot"><span>NUEVA ERA // FICHA DE PERSONAJE // NÚCLEO</span><span class="pg">PÁG. 02</span></div>
+</section>
+
+<!-- ═════════════ PÁGINA 3 · EQUIPO ═════════════ -->
+<section class="page">
+  <div class="masthead mini-head">
+    <div class="brand"><div class="logo">NUEVA <b>ERA</b></div><div class="sub">PERSONAJE&nbsp;▸</div></div>
+    <div class="tag"><span>NÚCLEO</span></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title magenta"><span class="num">08</span>Recursos</div>
+    <span class="label">Armas a distancia</span>
+    <table class="gear">
+      <colgroup><col><col style="width:14mm"><col style="width:10mm"><col style="width:13mm"><col style="width:16mm"><col style="width:13mm"><col style="width:22mm"><col style="width:22mm"><col style="width:11mm"></colgroup>
+      <thead><tr><th>Arma</th><th class="c">Acción</th><th class="c">Dif</th><th class="c">Daño</th><th class="c">Alcance</th><th class="c">Munic.</th><th>Mejoras</th><th>Efectos</th><th class="c">Peso</th></tr></thead>
+      <tbody data-rows="4" data-cols="9"></tbody>
+    </table>
+    <span class="label">Armas cuerpo a cuerpo</span>
+    <table class="gear">
+      <colgroup><col><col style="width:14mm"><col style="width:10mm"><col style="width:13mm"><col style="width:36mm"><col style="width:36mm"><col style="width:11mm"></colgroup>
+      <thead><tr><th>Arma</th><th class="c">Acción</th><th class="c">Dif</th><th class="c">Daño</th><th>Utilización</th><th>Efectos</th><th class="c">Peso</th></tr></thead>
+      <tbody data-rows="4" data-cols="7"></tbody>
+    </table>
+    <div class="field"><span class="label">Armadura</span><div class="box"></div></div>
+  </div>
+
+  <div class="row fill" style="grid-template-columns: 1fr 1fr; gap: 5mm">
+    <div class="sec fill">
+      <div class="sec-title magenta">Aumentos e implantes</div>
+      <div class="lines" data-n="12"></div>
+    </div>
+    <div class="sec fill">
+      <div class="sec-title magenta">Equipamiento general</div>
+      <div class="lines" data-n="12"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="num">09</span>Carga transportable</div>
+    <div class="carga">
+      <div class="carga-box">
+        <div class="t"><strong>CARGA LIGERA</strong><span class="formula">20 kg × Fuerza (FUE)</span><span class="formula">FUE 0 = 15 kg · FUE &lt; 0 = −5 kg/pt</span></div>
+        <div class="v">kg</div>
+      </div>
+      <div class="carga-rules">
+        <div><b>Exceso</b><span>−1 automático a físicas. Por cada 20 % extra: −2 acumulativo (máx. −8), Mov. ½, 1 Fatiga/hora.</span></div>
+        <div><b>&gt; 2×</b><span>−10 a acciones físicas, Mov. ¼, 1 Fatiga/minuto.</span></div>
+        <div><b>&gt; 4×</b><span>Sin movimiento. 1 Fatiga/turno como proeza de fuerza.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot"><span>NUEVA ERA // FICHA DE PERSONAJE // NÚCLEO</span><span class="pg">PÁG. 03</span></div>
+</section>
+
+<!-- ═════════════ PÁGINA 4 · NOTAS (para que salgan 2 hojas a doble cara) ═════════════ -->
+<section class="page">
+  <div class="masthead mini-head">
+    <div class="brand"><div class="logo">NUEVA <b>ERA</b></div><div class="sub">PERSONAJE&nbsp;▸</div></div>
+    <div class="tag"><span>NÚCLEO</span></div>
+  </div>
+  <div class="sec fill">
+    <div class="sec-title cyan"><span class="num">10</span>Notas de campaña<span class="hint">contactos · deudas · pistas · lo que no cabe arriba</span></div>
+    <div class="lines" data-n="40"></div>
+  </div>
+  <div class="foot"><span>NUEVA ERA // FICHA DE PERSONAJE // NÚCLEO</span><span class="pg">PÁG. 04</span></div>
+</section>
+
+<script>
+  const skills = ["Actitud", "Atletismo", "Biociencia", "Combate a distancia", "Combate melee",
+    "Cultura", "Exploración", "Interpretación", "Sigilo", "Tecnociencia"];
+  document.getElementById("skills").innerHTML = skills
+    .map((s) => `<tr><td class="skill">${s}</td><td class="pts"></td><td></td><td></td></tr>`).join("");
+  document.querySelectorAll(".lines[data-n]").forEach((el) => { el.innerHTML = "<i></i>".repeat(+el.dataset.n); });
+  document.querySelectorAll(".track[data-n]").forEach((el) => { el.innerHTML = "<i></i>".repeat(+el.dataset.n); });
+  document.querySelectorAll("tbody[data-rows]").forEach((el) => {
+    el.innerHTML = `<tr>${"<td></td>".repeat(+el.dataset.cols)}</tr>`.repeat(+el.dataset.rows);
+  });
+</script>
+</body>
+</html>

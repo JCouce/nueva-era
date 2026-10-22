@@ -78,6 +78,11 @@ export type CondicionTirada = (
       noApila?: string;
       aplicado?: AplicadoId;
       costeFatiga?: number;
+      // Puntos de fatiga que se ahorran del gasto total de la tirada, sin bajar de 0
+      // (Mielinización Central, A2b de aumentos: "omitir el gasto de un punto de fatiga", que
+      // se combina con el de otras casillas). Lo resta montarTirada al final; lo que no
+      // encuentra que ahorrar en las casillas lo deja en `ahorroSinUsar` (el coste del poder).
+      ahorroFatiga?: number;
       danio?: EfectoDanioCasilla;
     }
   | {
@@ -123,7 +128,7 @@ export function resumenCasilla(c: Extract<CondicionTirada, { tipo: "toggle" }>, 
   const valor = activo ? c.valorActivo : (c.valorInactivo ?? 0);
   const signo = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
   const partes: string[] = [];
-  if (valor !== 0 || (!c.ventaja && !c.subeGrado && !c.aplicado && c.margenCriticoExito === undefined && !c.danio))
+  if (valor !== 0 || (!c.ventaja && !c.subeGrado && !c.aplicado && c.margenCriticoExito === undefined && !c.danio && !c.ahorroFatiga))
     partes.push(signo(valor));
   if (c.ventaja) partes.push("ventaja");
   if (c.subeGrado) partes.push("fallo → éxito");
@@ -134,6 +139,7 @@ export function resumenCasilla(c: Extract<CondicionTirada, { tipo: "toggle" }>, 
   if (c.danio?.sinBonoExitos) partes.push("daño básico");
   if (c.danio?.conBonoExitos) partes.push("daño con éxitos");
   if (c.costeFatiga) partes.push(`−${c.costeFatiga} fatiga`);
+  if (c.ahorroFatiga) partes.push(`ahorra ${c.ahorroFatiga} fatiga`);
   return partes.join(" · ");
 }
 

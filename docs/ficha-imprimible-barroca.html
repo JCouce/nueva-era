@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ficha Nueva Era Barroca</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,700&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet">
+<style>
+/* Variante barroca: toda la decoración vive en márgenes, lomos y cabeceras; los huecos
+   donde se escribe siguen blancos y rectos para que el lápiz no sufra. */
+:root {
+  --night: #0a0a0f;
+  --ink: #16161f;
+  --ink-dim: #5a5a70;
+  --line: #2a2a3a;
+  --rule: #b9b9c8;
+  --tint: #f1f1f6;
+  --yellow: #fcee0a;
+  --cyan: #00f0ff;
+  --magenta: #ff2e97;
+  --red: #ff003c;
+  --purple: #2d1b4e;
+  --cyan-ink: #00818a;
+  --magenta-ink: #c4146d;
+  --display: "Chakra Petch", system-ui, sans-serif;
+  --sans: "Rajdhani", system-ui, sans-serif;
+  --mono: "Share Tech Mono", ui-monospace, monospace;
+  --jp: "Noto Sans JP", sans-serif;
+}
+@page { size: A4; margin: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { background: #d8d8e0; color: var(--ink); font-family: var(--sans); font-weight: 600; }
+@media print { body { background: #fff; } }
+
+/* ── Página: lomo a la izquierda en impares, a la derecha en pares ── */
+.page {
+  width: 210mm; height: 297mm; margin: 8mm auto; background: #fff; position: relative; overflow: hidden;
+  display: grid; grid-template-columns: 15mm 1fr; grid-template-rows: 100%; break-after: page;
+}
+.page.even { grid-template-columns: 1fr 15mm; }
+.page.even .spine { order: 2; }
+.page:last-child { break-after: auto; }
+@media print { .page { margin: 0; } }
+
+.content { min-height: 0; padding: 7mm 8mm 6mm 7mm; display: flex; flex-direction: column; gap: 2.6mm; position: relative; min-width: 0; }
+.page.even .content { padding: 7mm 7mm 6mm 9mm; }
+
+/* Lomo: barra negra con texto vertical, regla y código de barras */
+.spine {
+  background: var(--night); color: #fff; position: relative; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; padding: 6mm 0 5mm; gap: 4mm;
+}
+.spine::before {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 1.2mm;
+  background: linear-gradient(180deg, var(--cyan), var(--magenta) 60%, var(--purple));
+  right: 0;
+}
+.page.even .spine::before { right: auto; left: 0; }
+.spine .v { writing-mode: vertical-rl; font-family: var(--mono); font-size: 7pt; letter-spacing: .32em; color: var(--cyan); white-space: nowrap; }
+.spine .v.big { font-family: var(--display); font-weight: 700; font-size: 15pt; letter-spacing: .18em; color: #fff; }
+.spine .v.big b { color: var(--yellow); }
+.spine .jp { font-family: var(--jp); font-weight: 900; font-size: 13pt; line-height: 1.05; writing-mode: vertical-rl; color: var(--magenta); }
+.spine .ruler { width: 6mm; flex: 1; min-height: 20mm;
+  background:
+    repeating-linear-gradient(180deg, #fff 0 .25mm, transparent .25mm 2mm) left / 2.5mm 100% no-repeat,
+    repeating-linear-gradient(180deg, var(--yellow) 0 .35mm, transparent .35mm 10mm) left / 5mm 100% no-repeat;
+}
+.spine .hz { width: 100%; height: 14mm; background: repeating-linear-gradient(-45deg, var(--yellow) 0 2mm, var(--night) 2mm 4mm); }
+.spine .bc { width: 9mm; height: 30mm; }
+.spine .dot { width: 3mm; height: 3mm; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 .6mm var(--night), 0 0 0 .9mm var(--red); }
+
+/* Código de barras: barras de grosor variable generadas por script (semilla fija) */
+.bc { display: flex; gap: 0; }
+.bc.h { flex-direction: row; height: 7mm; }
+.bc.vert { flex-direction: column; }
+.bc i { background: currentColor; flex: none; }
+
+/* ── Cabecera grande ── */
+.hero { position: relative; height: 36mm; margin: -7mm -8mm 0 -7mm; background: var(--night); color: #fff; overflow: hidden;
+  clip-path: polygon(0 0, 100% 0, 100% 72%, 62% 72%, 56% 100%, 0 100%); }
+.hero::before { /* trama de puntos tipo semitono */
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(circle, #ffffff22 .35mm, transparent .4mm) 0 0 / 2.2mm 2.2mm;
+  -webkit-mask: linear-gradient(100deg, transparent 35%, #000 80%); mask: linear-gradient(100deg, transparent 35%, #000 80%);
+}
+.hero::after { /* scanlines */
+  content: ""; position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent 0 .5mm, #ffffff0d .5mm .7mm);
+}
+.hero .title {
+  position: absolute; left: 6mm; top: 4mm; font-family: var(--display); font-weight: 700; font-style: italic;
+  font-size: 34pt; line-height: 1; letter-spacing: -.01em; white-space: nowrap; transform: skewX(-6deg);
+  text-shadow: -1.1mm 0 0 var(--cyan), 1.1mm .4mm 0 var(--magenta);
+  z-index: 2;
+}
+.hero .title b { color: var(--yellow); font-weight: 700; }
+.hero .slice { /* franja de "glitch" desplazada sobre el título */
+  position: absolute; left: 3mm; top: 10.6mm; width: 40mm; height: 1.6mm; background: var(--night); z-index: 3;
+  box-shadow: 9mm 0 0 0 var(--night);
+}
+.hero .slice2 { position: absolute; left: 38mm; top: 7.2mm; width: 34mm; height: 1.2mm; background: var(--magenta); z-index: 3; opacity: .85; mix-blend-mode: screen; }
+.hero .sub { position: absolute; left: 7mm; top: 18.5mm; font-family: var(--mono); font-size: 8pt; letter-spacing: .32em; color: var(--cyan); z-index: 2; }
+.hero .jp { position: absolute; right: 52mm; top: 2mm; font-family: var(--jp); font-weight: 900; font-size: 26pt; color: transparent; -webkit-text-stroke: .25mm var(--magenta); letter-spacing: .05em; z-index: 1; }
+.hero .serial { position: absolute; right: 4mm; top: 3mm; text-align: right; font-family: var(--mono); font-size: 6.6pt; line-height: 1.5; color: #9a9ab0; z-index: 2; }
+.hero .serial b { color: var(--yellow); font-weight: 400; }
+.hero .bc.h { position: absolute; right: 4mm; top: 13mm; color: #fff; z-index: 2; }
+.hero .nucleo {
+  position: absolute; right: 0; top: 0; height: 26mm; width: 13mm; z-index: 2;
+  background: repeating-linear-gradient(45deg, var(--yellow) 0 2.2mm, var(--night) 2.2mm 4.4mm);
+  display: none;
+}
+.hero .badge {
+  position: absolute; left: 6mm; bottom: 2.6mm; z-index: 2; display: flex; gap: 1.2mm;
+  font-family: var(--display); font-weight: 700; font-size: 8pt; letter-spacing: .24em;
+}
+.hero .badge span { padding: .5mm 2mm; background: var(--yellow); color: var(--night); clip-path: polygon(1.5mm 0, 100% 0, calc(100% - 1.5mm) 100%, 0 100%); }
+.hero .badge span + span { background: var(--magenta); color: #fff; }
+.hero .badge span + span + span { background: transparent; color: var(--cyan); border: 0; }
+/* el hueco recortado de la cabecera lo ocupa una pegatina de aviso */
+.hero-side {
+  position: absolute; right: 8mm; top: 29mm; width: 70mm; height: 7.5mm; z-index: 4;
+  display: flex; align-items: center; gap: 2mm; font-family: var(--mono); font-size: 6.6pt; color: var(--ink-dim); letter-spacing: .12em;
+}
+.hero-side .warn { background: var(--yellow); color: var(--night); font-family: var(--display); font-weight: 700; letter-spacing: .1em; padding: .6mm 2mm; transform: rotate(-2deg); }
+
+/* Cabecera pequeña (págs. 2-4) */
+.strip { position: relative; height: 12mm; background: var(--night); color: #fff; display: flex; align-items: center; gap: 3mm; padding: 0 5mm;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 26mm 100%, 22mm 70%, 0 70%); }
+.page.even .strip { clip-path: polygon(0 0, 100% 0, 100% 70%, calc(100% - 22mm) 70%, calc(100% - 26mm) 100%, 0 100%); }
+.strip .title { font-family: var(--display); font-weight: 700; font-style: italic; font-size: 14pt; text-shadow: -.6mm 0 0 var(--cyan), .6mm 0 0 var(--magenta); }
+.strip .title b { color: var(--yellow); }
+.strip .who { flex: 1; display: flex; align-items: baseline; gap: 2mm; font-family: var(--mono); font-size: 7pt; letter-spacing: .3em; color: var(--cyan); }
+.strip .who::after { content: ""; flex: 1; border-bottom: .3mm dashed #6a6a80; }
+.strip .bc.h { color: #fff; height: 5mm; }
+.strip .pg { font-family: var(--mono); font-size: 9pt; background: var(--yellow); color: var(--night); padding: .3mm 2mm; }
+
+/* ── Secciones ── */
+.sec { display: flex; flex-direction: column; gap: 1.6mm; position: relative; }
+.sec-title { display: flex; align-items: stretch; gap: 0; position: relative; }
+.sec-title .hex { font-family: var(--mono); font-size: 8pt; background: var(--night); color: var(--yellow); padding: .9mm 2mm .6mm; display: flex; align-items: center; }
+.sec-title .name {
+  font-family: var(--display); font-weight: 700; font-size: 12pt; letter-spacing: .12em; text-transform: uppercase;
+  background: var(--yellow); color: var(--night); padding: .4mm 6mm .2mm 2.5mm;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 3.5mm) 100%, 0 100%);
+}
+.sec-title .jp { font-family: var(--jp); font-weight: 700; font-size: 8pt; color: var(--magenta-ink); align-self: center; margin-left: 2mm; letter-spacing: .1em; }
+.sec-title .rule { flex: 1; align-self: flex-end; height: .4mm; background: var(--night); margin-left: 2mm; position: relative; }
+.sec-title .rule::after { content: ""; position: absolute; right: 0; bottom: 0; width: 18mm; height: 1.4mm; background: repeating-linear-gradient(90deg, var(--night) 0 .6mm, transparent .6mm 1.4mm); }
+.sec-title .meta { position: absolute; right: 0; top: -.4mm; font-family: var(--mono); font-size: 6.6pt; color: var(--ink-dim); letter-spacing: .08em; background: #fff; padding-left: 1.5mm; }
+.sec-title.cyan .name { background: var(--cyan); }
+.sec-title.magenta .name { background: var(--magenta); color: #fff; }
+.sec-title.rev { flex-direction: row-reverse; }
+.sec-title.rev .name { clip-path: polygon(3.5mm 0, 100% 0, 100% 100%, 0 100%); padding: .4mm 2.5mm .2mm 6mm; }
+.sec-title.rev .rule { margin: 0 2mm 0 0; }
+.sec-title.rev .rule::after { right: auto; left: 0; }
+.sec-title.rev .jp { margin: 0 2mm 0 0; }
+.sec-title.rev .meta { right: auto; left: 0; padding: 0 1.5mm 0 0; }
+
+.label { font-family: var(--display); font-weight: 600; font-size: 7.2pt; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-dim); display: flex; gap: 1.5mm; align-items: baseline; }
+.label::before { content: "▸"; color: var(--magenta-ink); }
+.label .k { font-family: var(--mono); font-size: 6.4pt; color: var(--cyan-ink); letter-spacing: .04em; margin-left: auto; text-transform: none; }
+.formula { font-family: var(--mono); font-weight: 400; font-size: 7.4pt; color: var(--ink-dim); }
+
+/* Caja de escribir con esquinas de visor */
+.box { position: relative; height: 10mm; border: .25mm solid var(--rule); background: #fff; }
+.box::before, .box::after { content: ""; position: absolute; width: 2.6mm; height: 2.6mm; border: .6mm solid var(--night); }
+.box::before { left: -.5mm; top: -.5mm; border-right: 0; border-bottom: 0; }
+.box::after { right: -.5mm; bottom: -.5mm; border-left: 0; border-top: 0; }
+.box.tall { height: 12mm; }
+.field { display: flex; flex-direction: column; gap: .6mm; min-width: 0; }
+.row { display: grid; gap: 3mm; }
+
+.lines { display: flex; flex-direction: column; }
+.lines i { display: block; height: 7.6mm; border-bottom: .25mm solid var(--rule); position: relative; }
+.lines.num { counter-reset: ln; }
+.lines.num i { counter-increment: ln; padding-left: 7mm; }
+.lines.num i::before { content: counter(ln, decimal-leading-zero); position: absolute; left: 0; bottom: .8mm; font-family: var(--mono); font-size: 6.4pt; color: var(--magenta-ink); }
+.lines.num i::after { content: ""; position: absolute; left: 5mm; top: 1.6mm; bottom: 1mm; border-left: .25mm solid var(--rule); }
+
+/* Pegatinas y marcas */
+.sticker { position: absolute; z-index: 5; font-family: var(--display); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 7pt;
+  padding: 1mm 2.4mm; background: var(--night); color: var(--yellow); border: .4mm solid var(--yellow); outline: .4mm solid var(--night); box-shadow: 1mm 1mm 0 var(--magenta); }
+.sticker small { display: block; font-family: var(--mono); font-weight: 400; font-size: 5.8pt; letter-spacing: .1em; color: var(--cyan); }
+.reg { position: absolute; width: 6mm; height: 6mm; z-index: 1; }
+.reg::before, .reg::after { content: ""; position: absolute; background: var(--night); }
+.reg::before { left: 50%; top: 0; bottom: 0; width: .25mm; }
+.reg::after { top: 50%; left: 0; right: 0; height: .25mm; }
+.reg i { position: absolute; inset: 1.4mm; border: .25mm solid var(--night); border-radius: 50%; }
+.halftone { position: absolute; z-index: 0; pointer-events: none;
+  background: radial-gradient(circle, var(--magenta) .45mm, transparent .5mm) 0 0 / 2mm 2mm;
+  -webkit-mask: radial-gradient(closest-side, #000, transparent); mask: radial-gradient(closest-side, #000, transparent); opacity: .55; }
+.circuit { position: absolute; pointer-events: none; z-index: 0; }
+.circuit path, .circuit line { fill: none; stroke-width: .35; }
+.circuit circle { stroke-width: .35; fill: #fff; }
+
+/* ── Bio ── */
+.bio { display: grid; grid-template-columns: 1fr 41mm; gap: 3mm; }
+.portrait { border: .25mm solid var(--line); position: relative; background:
+  linear-gradient(var(--tint) 0 0) 0 0 / 100% 100%; display: flex; flex-direction: column; }
+.portrait .ph { flex: 1; position: relative; background: #fff; margin: 1.6mm; border: .25mm dashed var(--rule); }
+.portrait .ph::before, .portrait .ph::after { content: ""; position: absolute; left: 50%; top: 50%; background: var(--rule); }
+.portrait .ph::before { width: 8mm; height: .25mm; transform: translate(-50%, -50%); }
+.portrait .ph::after { height: 8mm; width: .25mm; transform: translate(-50%, -50%); }
+.portrait .cap { font-family: var(--mono); font-size: 6.2pt; letter-spacing: .14em; color: var(--ink-dim); padding: 0 1.6mm 1.2mm; display: flex; justify-content: space-between; }
+.portrait .cap b { color: var(--red); font-weight: 400; }
+.split { display: grid; grid-template-columns: 1.35fr 1fr; gap: 5mm; }
+
+/* ── Atributos: losetas escalonadas ── */
+.attr-wrap { display: grid; grid-template-columns: 5mm 1fr; gap: 1.6mm; position: relative; }
+.attr-wrap > .vlabel { writing-mode: vertical-rl; transform: rotate(180deg); font-family: var(--display); font-weight: 700; font-size: 6.6pt; letter-spacing: .24em; text-align: center; background: var(--night); color: var(--yellow); }
+.attr-wrap.ap > .vlabel { background: var(--cyan); color: var(--night); }
+.tiles { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2mm; align-items: start; }
+.tile { border: .3mm solid var(--line); display: flex; flex-direction: column; background: #fff; position: relative; }
+.tile:nth-child(odd) { clip-path: polygon(0 0, calc(100% - 3mm) 0, 100% 3mm, 100% 100%, 0 100%); }
+.tile:nth-child(even) { clip-path: polygon(0 0, 100% 0, 100% 100%, 3mm 100%, 0 calc(100% - 3mm)); }
+.tile header { background: var(--night); color: #fff; padding: 1.1mm 2mm 1.2mm; display: flex; flex-direction: column; position: relative; }
+.tile header b { font-family: var(--mono); font-weight: 400; font-size: 14pt; line-height: 1; color: var(--yellow); text-shadow: .35mm 0 0 var(--magenta); }
+.tile header span { font-family: var(--display); font-weight: 600; font-size: 8.4pt; letter-spacing: .03em; }
+.tile header em { position: absolute; right: 1.6mm; top: 1.2mm; font-style: normal; font-family: var(--mono); font-size: 5.6pt; color: #7a7a90; }
+.tile i { height: 11.5mm; }
+.tile.ap header { background: var(--tint); color: var(--night); border-bottom: .8mm solid var(--cyan); }
+.tile.ap header small { font-family: var(--mono); font-size: 6.6pt; color: var(--ink-dim); }
+.tile.ap:nth-child(even) header { border-bottom-color: var(--magenta); }
+
+/* ── Tablas ── */
+.rules-strip { display: flex; flex-wrap: wrap; gap: .8mm 3.5mm; padding: 1.2mm 3mm 1.2mm 8mm; position: relative;
+  background: repeating-linear-gradient(-45deg, var(--tint) 0 1.2mm, #fff 1.2mm 2.4mm); border: .25mm solid var(--rule);
+  font-family: var(--mono); font-size: 7.4pt; color: var(--ink); }
+.rules-strip::before { content: "!"; position: absolute; left: 0; top: 0; bottom: 0; width: 5mm; display: grid; place-items: center; background: var(--magenta); color: #fff; font-family: var(--display); font-weight: 700; font-size: 10pt; }
+.rules-strip b { font-family: var(--display); font-weight: 700; color: var(--magenta-ink); }
+.rules-strip span { background: #fff; padding: 0 1mm; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+thead th { font-family: var(--display); font-weight: 600; font-size: 7.3pt; letter-spacing: .12em; text-transform: uppercase; color: #fff; background: var(--night); text-align: left; padding: 1.1mm 2mm; }
+thead th.c { text-align: center; }
+thead th:first-child { box-shadow: inset 1.2mm 0 0 var(--yellow); }
+thead.slant { clip-path: polygon(0 0, calc(100% - 3mm) 0, 100% 100%, 0 100%); }
+thead.slant th:last-child { padding-right: 3.5mm; }
+thead.slant th.c:last-child { text-align: left; padding-left: 1mm; }
+tbody td { border-bottom: .25mm solid var(--rule); height: 8.2mm; padding: 0 2mm; }
+tbody tr td + td { border-left: .25mm solid var(--rule); }
+tbody td.skill { font-family: var(--display); font-weight: 600; font-size: 10.5pt; position: relative; padding-left: 8mm; }
+tbody td.skill em { position: absolute; left: 1.6mm; top: 50%; transform: translateY(-50%); font-style: normal; font-family: var(--mono); font-size: 6.4pt; color: var(--magenta-ink); }
+tbody td.pts { border-left: .7mm solid var(--night) !important; }
+tbody tr:nth-child(even) td.skill { background: var(--tint); }
+tbody tr:last-child td { border-bottom: .5mm solid var(--night); }
+.gear tbody td { height: 10mm; }
+.gear tbody td:first-child { position: relative; padding-left: 6mm; }
+.gear tbody td:first-child::before { content: attr(data-i); position: absolute; left: 1.2mm; top: 1mm; font-family: var(--mono); font-size: 6pt; color: var(--cyan-ink); }
+
+/* ── Psiónica ── */
+.psi-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 4mm; align-items: start; }
+.psi-card { border: .3mm solid var(--line); position: relative; overflow: hidden; background: #fff; }
+.psi-card header { position: relative; padding: 1.4mm 3mm 1.2mm; font-family: var(--display); font-weight: 700; font-size: 10pt; letter-spacing: .22em; color: #fff; background: linear-gradient(110deg, var(--night) 60%, var(--purple)); border-bottom: 1mm solid var(--cyan); }
+.psi-card header small { float: right; font-family: var(--mono); font-weight: 400; font-size: 6.4pt; letter-spacing: .1em; color: var(--cyan); padding-top: .8mm; }
+.psi-card.metrica { margin-top: 4mm; }
+.psi-card.metrica header { border-bottom-color: var(--magenta); background: linear-gradient(250deg, var(--night) 60%, var(--purple)); }
+.psi-card.metrica header small { color: var(--magenta); }
+.psi-card .glyph { position: absolute; right: 17mm; top: 6mm; font-family: var(--display); font-weight: 700; font-size: 44pt; color: var(--tint); z-index: 0; line-height: 1; }
+.psi-row { display: grid; grid-template-columns: 1fr 15mm; align-items: center; border-top: .25mm solid var(--rule); height: 10.5mm; padding-left: 3mm; position: relative; z-index: 1; }
+.psi-row:first-of-type { border-top: 0; }
+.psi-row span { font-family: var(--display); font-weight: 600; font-size: 11pt; }
+.psi-row span small { font-family: var(--mono); font-weight: 400; font-size: 6.2pt; color: var(--ink-dim); margin-left: 1.5mm; }
+.psi-row i { height: 100%; border-left: .7mm solid var(--night); background: #fff; }
+
+/* ── Biomonitor ── */
+.health-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.meter { border: .3mm solid var(--line); display: flex; flex-direction: column; position: relative; }
+.meter-head { display: grid; grid-template-columns: 1fr 16mm 16mm; border-bottom: .3mm solid var(--line); background: var(--night); color: #fff; position: relative; }
+.meter-head .t { padding: 1.4mm 3mm; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; }
+.meter-head .t strong { font-family: var(--display); font-weight: 700; font-size: 11pt; letter-spacing: .12em; position: relative; z-index: 1; }
+.meter-head .t .formula { color: #a0a0b8; position: relative; z-index: 1; }
+.meter-head .t svg { position: absolute; left: 40%; bottom: .5mm; width: 60%; height: 8mm; opacity: .9; }
+.meter-head .num { background: #fff; color: var(--ink); border-left: .3mm solid var(--line); display: flex; flex-direction: column; padding: .8mm 1.3mm 0; height: 14mm; }
+.meter-head .num:last-child { border-left: .7mm solid var(--night); }
+.meter-head .num .label::before { content: none; }
+.meter.vida { border-top: 1.2mm solid var(--red); }
+.meter.fatiga { border-top: 1.2mm solid var(--cyan); }
+.track { display: grid; grid-template-columns: repeat(20, 1fr); gap: .8mm; padding: 2mm 3mm 1mm; }
+.track i { aspect-ratio: 1; border: .25mm solid var(--ink-dim); transform: skewX(-8deg); }
+.track i:nth-child(5n) { border-color: var(--night); border-width: .4mm; }
+.track-note { padding: 0 3mm 1.4mm; font-family: var(--mono); font-size: 6.6pt; color: var(--ink-dim); display: flex; justify-content: space-between; }
+.states { padding: 1.6mm 3mm 2mm; border-top: .25mm dashed var(--rule); display: flex; flex-direction: column; gap: 1mm; }
+.state { display: grid; grid-template-columns: 22mm 1fr; gap: 2mm; font-size: 8.6pt; line-height: 1.15; }
+.state b { font-family: var(--display); font-weight: 700; font-size: 8pt; letter-spacing: .06em; text-transform: uppercase; }
+.state b small { display: block; font-family: var(--mono); font-weight: 400; color: var(--ink-dim); letter-spacing: 0; }
+.vida .state b { color: var(--red); }
+.fatiga .state b { color: var(--cyan-ink); }
+
+/* ── Movimiento: cinta de paralelogramos de anchos distintos ── */
+.move-grid { display: grid; grid-template-columns: 1.15fr .9fr 1.25fr .85fr .85fr; gap: 1.6mm; }
+.move { display: flex; flex-direction: column; border-bottom: .5mm solid var(--night); }
+.move header { background: var(--night); color: #fff; font-family: var(--display); font-weight: 700; font-size: 8.4pt; letter-spacing: .12em; padding: 1.1mm 0 1.1mm 3mm;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 2.5mm) 100%, 0 100%); }
+.move:nth-child(2n) header { background: var(--purple); }
+.move:nth-child(3) header { background: var(--magenta-ink); }
+.move .f { font-family: var(--mono); font-size: 7pt; color: var(--ink-dim); padding: 1mm 1mm 1mm 3mm; min-height: 7mm; display: flex; align-items: center; border-left: .25mm solid var(--rule); border-right: .25mm solid var(--rule); }
+.move .v { height: 11mm; display: flex; align-items: flex-end; justify-content: flex-end; padding: 0 1.6mm 1mm; font-family: var(--mono); font-size: 8pt; color: var(--ink-dim); border: .25mm solid var(--rule); border-bottom: 0; }
+
+/* ── Carga ── */
+.carga { display: grid; grid-template-columns: 78mm 1fr; gap: 4mm; }
+.carga-box { border: .3mm solid var(--line); display: grid; grid-template-columns: 1fr 24mm; position: relative; }
+.carga-box::before { content: ""; position: absolute; left: 0; right: 0; top: -1.6mm; height: 1.6mm; background: repeating-linear-gradient(-45deg, var(--yellow) 0 1.6mm, var(--night) 1.6mm 3.2mm); }
+.carga-box .t { padding: 1.6mm 3mm; display: flex; flex-direction: column; gap: .5mm; }
+.carga-box .t strong { font-family: var(--display); font-weight: 700; font-size: 11pt; letter-spacing: .12em; }
+.carga-box .v { border-left: .7mm solid var(--night); display: flex; align-items: flex-end; justify-content: flex-end; padding: 0 1.6mm 1mm; font-family: var(--mono); font-size: 8pt; color: var(--ink-dim); }
+.carga-rules { display: flex; flex-direction: column; gap: 1.1mm; font-size: 8.6pt; line-height: 1.15; }
+.carga-rules div { display: grid; grid-template-columns: 17mm 1fr; gap: 2mm; align-items: start; }
+.carga-rules b { font-family: var(--display); font-weight: 700; font-size: 7.6pt; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: var(--magenta-ink); padding: .2mm 1.4mm; clip-path: polygon(0 0, 100% 0, calc(100% - 1.4mm) 100%, 0 100%); }
+.carga-rules div:nth-child(2) b { background: var(--purple); }
+.carga-rules div:nth-child(3) b { background: var(--night); color: var(--yellow); }
+
+.fill { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.fill .lines { flex: 1; overflow: hidden; }
+.row.fill { display: grid; }
+
+.foot { margin-top: auto; display: flex; align-items: center; gap: 3mm; font-family: var(--mono); font-size: 6.8pt; letter-spacing: .18em; color: var(--ink-dim); }
+.foot .bar { flex: 1; height: 1.6mm; background: repeating-linear-gradient(90deg, var(--night) 0 .3mm, transparent .3mm .9mm, var(--night) .9mm 1.6mm, transparent 1.6mm 2.6mm); opacity: .7; }
+.foot .pg { color: var(--night); background: var(--yellow); padding: .3mm 2mm; letter-spacing: .1em; font-size: 7.5pt; }
+.foot .pg::before { content: "◤ "; }
+
+/* Notas: rejilla de puntos tenue bajo los renglones */
+.datapad { position: relative; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; border: .3mm solid var(--line); padding: 2mm 3mm 0;
+  background: radial-gradient(circle, #c9c9d6 .22mm, transparent .25mm) 0 0 / 3.8mm 3.8mm; }
+.datapad .lines { flex: 1; overflow: hidden; }
+.datapad .lines i { border-bottom-color: #a9a9bc; }
+.datapad .wm { position: absolute; right: 4mm; bottom: 6mm; font-family: var(--jp); font-weight: 900; font-size: 92pt; color: transparent; -webkit-text-stroke: .3mm #ff2e9740; writing-mode: vertical-rl; line-height: 1; z-index: 0; }
+.datapad .lines { position: relative; z-index: 1; }
+.datapad .corner { position: absolute; width: 8mm; height: 8mm; border: .9mm solid var(--night); }
+.datapad .corner.tl { left: -1mm; top: -1mm; border-right: 0; border-bottom: 0; }
+.datapad .corner.br { right: -1mm; bottom: -1mm; border-left: 0; border-top: 0; }
+.datapad .corner.tr { right: -1mm; top: -1mm; border-left: 0; border-bottom: 0; border-color: var(--magenta); }
+</style>
+</head>
+<body>
+
+<!-- ═════════════ PÁGINA 1 · IDENTIDAD ═════════════ -->
+<section class="page">
+  <aside class="spine">
+    <span class="dot"></span>
+    <span class="v big">NUEVA <b>ERA</b></span>
+    <span class="jp">新時代</span>
+    <span class="ruler"></span>
+    <span class="v">EXPEDIENTE DE SUJETO // 機密</span>
+    <span class="bc vert" data-seed="7"></span>
+    <span class="hz"></span>
+  </aside>
+  <main class="content">
+    <div class="hero">
+      <div class="title">NUEVA <b>ERA</b></div>
+      <div class="slice"></div><div class="slice2"></div>
+      <div class="jp">ニューエラ</div>
+      <div class="sub">FICHA DE PERSONAJE // NÚCLEO</div>
+      <div class="serial">REG. <b>NE-∆-0047</b><br>CLASE: CIVIL/ARMADO<br>ESTADO: <b>ACTIVO</b></div>
+      <div class="bc h" data-seed="3"></div>
+      <div class="badge"><span>NÚCLEO</span><span>v1.0</span><span>// 個人記録</span></div>
+    </div>
+    <div class="hero-side"><span class="warn">⚠ USAR LÁPIZ</span><span>BORRAR ≠ OLVIDAR</span></div>
+
+    <div class="sec">
+      <div class="sec-title"><span class="hex">0x00</span><span class="name">Datos biográficos</span><span class="jp">身元</span><span class="rule"></span></div>
+      <div class="bio">
+        <div style="display:flex; flex-direction:column; gap:2mm">
+          <div class="row" style="grid-template-columns: 1fr 17mm">
+            <div class="field"><span class="label">Nombre <span class="k">ID.alias</span></span><div class="box tall"></div></div>
+            <div class="field"><span class="label">Edad</span><div class="box tall"></div></div>
+          </div>
+          <div class="row" style="grid-template-columns: 1.3fr 1fr">
+            <div class="field"><span class="label">Especie <span class="k">bio.tipo</span></span><div class="box"></div></div>
+            <div class="field"><span class="label">Alt. / Peso</span><div class="box"></div></div>
+          </div>
+          <div class="field"><span class="label">Motivación <span class="k">núcleo.impulso</span></span><div class="box"></div></div>
+        </div>
+        <div class="portrait"><div class="ph"></div><div class="cap"><span>IMG.SUJETO</span><b>● REC</b></div></div>
+      </div>
+      <div class="split">
+        <div class="field"><span class="label">Trasfondo</span><div class="lines" data-n="3"></div></div>
+        <div class="field"><span class="label" style="color:var(--magenta-ink)">01 · Rasgos de especie</span><div class="lines" data-n="3"></div></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title rev"><span class="hex">0x02</span><span class="name">Atributos</span><span class="jp">能力値</span><span class="rule"></span></div>
+      <div class="attr-wrap">
+        <span class="vlabel">BÁSICOS</span>
+        <div class="tiles">
+          <div class="tile"><header><em>A1</em><b>FUE</b><span>Fuerza</span></header><i></i></div>
+          <div class="tile"><header><em>A2</em><b>AGI</b><span>Agilidad</span></header><i></i></div>
+          <div class="tile"><header><em>A3</em><b>AGU</b><span>Aguante</span></header><i></i></div>
+          <div class="tile"><header><em>A4</em><b>PER</b><span>Percepción</span></header><i></i></div>
+          <div class="tile"><header><em>A5</em><b>INT</b><span>Inteligencia</span></header><i></i></div>
+          <div class="tile"><header><em>A6</em><b>CAR</b><span>Carácter</span></header><i></i></div>
+        </div>
+      </div>
+      <div class="attr-wrap ap">
+        <span class="vlabel">APLICADOS</span>
+        <div class="tiles">
+          <div class="tile ap"><header><span>Fortaleza</span><small>(FUE+AGU)/2</small></header><i></i></div>
+          <div class="tile ap"><header><span>Potencia</span><small>(FUE+AGI)/2</small></header><i></i></div>
+          <div class="tile ap"><header><span>Reflejos</span><small>(AGI+PER)/2</small></header><i></i></div>
+          <div class="tile ap"><header><span>Voluntad</span><small>(AGU+CAR)/2</small></header><i></i></div>
+          <div class="tile ap"><header><span>Perspicacia</span><small>(INT+PER)/2</small></header><i></i></div>
+          <div class="tile ap"><header><span>Expresión</span><small>(CAR+INT)/2</small></header><i></i></div>
+        </div>
+      </div>
+      <div class="sticker" style="left:34mm; top:-4mm; transform: rotate(-3deg)">AUTORIZACIÓN Ω<small>SOLO MÁSTER PUEDE VERIFICAR</small></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title"><span class="hex">0x03</span><span class="name">Habilidades</span><span class="jp">技能</span><span class="rule"></span><span class="meta">10 MÓDULOS CARGADOS</span></div>
+      <div class="rules-strip">
+        <span><b>Sin entrenar</b> −1</span>
+        <span><b>Máx. inicial</b> 4/6</span>
+        <span><b>Esp. principal</b> valor total</span>
+        <span><b>Otras esp.</b> mitad (redondeo arriba)</span>
+        <span><b>2ª esp.</b> coste 1 pt</span>
+      </div>
+      <table>
+        <colgroup><col style="width:48mm"><col style="width:15mm"><col><col></colgroup>
+        <thead class="slant"><tr><th>Habilidad</th><th class="c">Pts</th><th>Especialidad principal</th><th>Otras especialidades</th></tr></thead>
+        <tbody id="skills"></tbody>
+      </table>
+      <div class="halftone" style="right:-10mm; bottom:-8mm; width:38mm; height:30mm"></div>
+    </div>
+
+    <div class="foot"><span>NE//FICHA//NÚCLEO</span><span class="bar"></span><span>SYS.OK</span><span class="pg">01/04</span></div>
+    <div class="reg" style="right:2mm; bottom:12mm"><i></i></div>
+  </main>
+</section>
+
+<!-- ═════════════ PÁGINA 2 · DOTES, PODERES Y CUERPO ═════════════ -->
+<section class="page even">
+  <aside class="spine">
+    <span class="dot"></span>
+    <span class="jp">肉体</span>
+    <span class="v">BIOMONITOR // PSI-LINK // 02</span>
+    <span class="ruler"></span>
+    <span class="bc vert" data-seed="11"></span>
+    <span class="hz"></span>
+  </aside>
+  <main class="content">
+    <div class="strip"><span class="title">NUEVA <b>ERA</b></span><span class="who">SUJETO ▸</span><span class="bc h" data-seed="5"></span></div>
+
+    <div class="sec fill">
+      <div class="sec-title"><span class="hex">0x04</span><span class="name">Dotes</span><span class="jp">特技</span><span class="rule"></span><span class="meta">REGISTRO ABIERTO</span></div>
+      <div class="lines num" data-n="13"></div>
+      <svg class="circuit" style="right:-7mm; top:2mm; width:30mm; height:40mm" viewBox="0 0 30 40">
+        <path d="M30 4 H22 L18 8 V20 L14 24 H6" stroke="#c4146d"/><circle cx="6" cy="24" r="1" stroke="#c4146d"/>
+        <path d="M30 10 H25 V30 L21 34 H12" stroke="#00818a"/><circle cx="12" cy="34" r="1" stroke="#00818a"/>
+      </svg>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title cyan rev"><span class="hex">0x05</span><span class="name">Psiónica</span><span class="jp">超能力</span><span class="rule"></span></div>
+      <div class="psi-grid">
+        <div class="psi-card">
+          <header>METASENSORIA<small>// CANAL α</small></header>
+          <div class="psi-row"><span>Resonancia</span><i></i></div>
+          <div class="psi-row"><span>Inducción</span><i></i></div>
+          <div class="psi-row"><span>Hipercognición</span><i></i></div>
+          <span class="glyph">Ψ</span>
+        </div>
+        <div class="psi-card metrica">
+          <header>MÉTRICA<small>// CANAL Ω</small></header>
+          <div class="psi-row"><span>Traslación</span><i></i></div>
+          <div class="psi-row"><span>Contención</span><i></i></div>
+          <div class="psi-row"><span>Singularidad</span><i></i></div>
+          <span class="glyph">Ω</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title"><span class="hex">0x06</span><span class="name">Salud</span><span class="jp">生命</span><span class="rule"></span></div>
+      <div class="health-grid">
+        <div class="meter vida">
+          <div class="meter-head">
+            <div class="t"><strong>PUNTOS DE VIDA</strong><span class="formula">10 + Fortaleza</span>
+              <svg viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M0 14 H30 L34 14 L37 4 L41 19 L44 10 L46 14 H70 L73 8 L76 14 H100" fill="none" stroke="#ff003c" stroke-width="1"/></svg></div>
+            <div class="num"><span class="label">Máx</span></div>
+            <div class="num"><span class="label">Act</span></div>
+          </div>
+          <div class="track" data-n="40"></div>
+          <div class="track-note"><span>Tacha una casilla por punto perdido</span><span>♥ BPM —</span></div>
+          <div class="states">
+            <div class="state"><b>Herido<small>&lt; 50 %</small></b><span>−1 a todas las tiradas</span></div>
+            <div class="state"><b>Malherido<small>&lt; 25 %</small></b><span>−3 tiradas · Mov. base ½ · Carga −25 %</span></div>
+            <div class="state"><b>Moribundo<small>&lt; 10 % (mín. 1)</small></b><span>−5 tiradas · Mov. 1 casilla/turno · Carga −50 %</span></div>
+          </div>
+        </div>
+        <div class="meter fatiga">
+          <div class="meter-head">
+            <div class="t"><strong>PUNTOS DE FATIGA</strong><span class="formula">10 + Voluntad</span>
+              <svg viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M0 12 Q8 4 16 12 T32 12 T48 12 T64 12 T80 12 T100 12" fill="none" stroke="#00f0ff" stroke-width="1"/></svg></div>
+            <div class="num"><span class="label">Máx</span></div>
+            <div class="num"><span class="label">Act</span></div>
+          </div>
+          <div class="track" data-n="40"></div>
+          <div class="track-note"><span>Tacha una casilla por punto perdido</span><span>O₂ —</span></div>
+          <div class="states">
+            <div class="state"><b>Fatigado<small>&lt; 25 %</small></b><span>−1 a todas las tiradas</span></div>
+            <div class="state"><b>Exhausto<small>&lt; 10 %</small></b><span>−2 tiradas · Mov. base ½ · Carga −25 %</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="sticker" style="left:52mm; top:-4mm; transform: rotate(-4deg); background: var(--red); color:#fff; border-color:#fff; box-shadow: 1mm 1mm 0 var(--night)">☣ RIESGO BIO<small style="color:#fff">NO REANIMAR SIN SEGURO</small></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title rev"><span class="hex">0x07</span><span class="name">Movimiento</span><span class="jp">移動</span><span class="rule"></span><span class="meta">Pot + Atl = Potencia + Atletismo</span></div>
+      <div class="move-grid">
+        <div class="move"><header>CARRERA</header><div class="f">16 + (Pot + Atl)</div><div class="v">m</div></div>
+        <div class="move"><header>SALTO VERT.</header><div class="f">15 × (Pot + Atl)</div><div class="v">cm</div></div>
+        <div class="move"><header>SALTO HORIZ.</header><div class="f">100 + [(Pot + Atl) × 20]</div><div class="v">cm</div></div>
+        <div class="move"><header>ESCALADA</header><div class="f">4 + [(Pot+Atl)/2]</div><div class="v">m</div></div>
+        <div class="move"><header>NADO</header><div class="f">4 + [(Pot+Atl)/2]</div><div class="v">m</div></div>
+      </div>
+    </div>
+
+    <div class="foot"><span class="pg">02/04</span><span>SYS.OK</span><span class="bar"></span><span>NE//FICHA//NÚCLEO</span></div>
+  </main>
+</section>
+
+<!-- ═════════════ PÁGINA 3 · ARSENAL ═════════════ -->
+<section class="page">
+  <aside class="spine">
+    <span class="dot"></span>
+    <span class="jp">武器庫</span>
+    <span class="v big">ARSENAL</span>
+    <span class="ruler"></span>
+    <span class="v">INVENTARIO // 03 // 装備</span>
+    <span class="bc vert" data-seed="19"></span>
+    <span class="hz"></span>
+  </aside>
+  <main class="content">
+    <div class="strip"><span class="title">NUEVA <b>ERA</b></span><span class="who">SUJETO ▸</span><span class="bc h" data-seed="9"></span></div>
+
+    <div class="sec">
+      <div class="sec-title magenta"><span class="hex">0x08</span><span class="name">Recursos</span><span class="jp">資源</span><span class="rule"></span><span class="meta">LICENCIA DE ARMAS: ¿?</span></div>
+      <span class="label">Armas a distancia <span class="k">rng.slots[4]</span></span>
+      <table class="gear">
+        <colgroup><col><col style="width:14mm"><col style="width:10mm"><col style="width:13mm"><col style="width:16mm"><col style="width:13mm"><col style="width:21mm"><col style="width:21mm"><col style="width:11mm"></colgroup>
+        <thead class="slant"><tr><th>Arma</th><th class="c">Acción</th><th class="c">Dif</th><th class="c">Daño</th><th class="c">Alcance</th><th class="c">Munic.</th><th>Mejoras</th><th>Efectos</th><th class="c">Peso</th></tr></thead>
+        <tbody data-rows="4" data-cols="9" data-p="R"></tbody>
+      </table>
+      <span class="label">Armas cuerpo a cuerpo <span class="k">mel.slots[4]</span></span>
+      <table class="gear">
+        <colgroup><col><col style="width:14mm"><col style="width:10mm"><col style="width:13mm"><col style="width:34mm"><col style="width:34mm"><col style="width:11mm"></colgroup>
+        <thead class="slant"><tr><th>Arma</th><th class="c">Acción</th><th class="c">Dif</th><th class="c">Daño</th><th>Utilización</th><th>Efectos</th><th class="c">Peso</th></tr></thead>
+        <tbody data-rows="4" data-cols="7" data-p="M"></tbody>
+      </table>
+      <div class="field"><span class="label">Armadura <span class="k">blindaje.activo</span></span><div class="box"></div></div>
+    </div>
+
+    <div class="row fill" style="grid-template-columns: 1.2fr 1fr; gap: 5mm">
+      <div class="sec fill">
+        <div class="sec-title magenta"><span class="hex">◆</span><span class="name">Aumentos e implantes</span><span class="rule"></span></div>
+        <div class="lines num" data-n="12"></div>
+      </div>
+      <div class="sec fill" style="margin-top: 5mm">
+        <div class="sec-title rev"><span class="hex">◇</span><span class="name">Equipamiento</span><span class="rule"></span></div>
+        <div class="lines" data-n="12"></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title"><span class="hex">0x09</span><span class="name">Carga transportable</span><span class="jp">積載</span><span class="rule"></span></div>
+      <div class="carga">
+        <div class="carga-box">
+          <div class="t"><strong>CARGA LIGERA</strong><span class="formula">20 kg × Fuerza (FUE)</span><span class="formula">FUE 0 = 15 kg · FUE &lt; 0 = −5 kg/pt</span></div>
+          <div class="v">kg</div>
+        </div>
+        <div class="carga-rules">
+          <div><b>Exceso</b><span>−1 automático a físicas. Por cada 20 % extra: −2 acumulativo (máx. −8), Mov. ½, 1 Fatiga/hora.</span></div>
+          <div><b>&gt; 2×</b><span>−10 a acciones físicas, Mov. ¼, 1 Fatiga/minuto.</span></div>
+          <div><b>&gt; 4×</b><span>Sin movimiento. 1 Fatiga/turno como proeza de fuerza.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot"><span>NE//FICHA//NÚCLEO</span><span class="bar"></span><span>SYS.OK</span><span class="pg">03/04</span></div>
+    <div class="reg" style="left:1mm; top:15mm"><i></i></div>
+  </main>
+</section>
+
+<!-- ═════════════ PÁGINA 4 · NOTAS ═════════════ -->
+<section class="page even">
+  <aside class="spine">
+    <span class="dot"></span>
+    <span class="jp">記録</span>
+    <span class="v">DATAPAD // CIFRADO DÉBIL // 04</span>
+    <span class="ruler"></span>
+    <span class="bc vert" data-seed="23"></span>
+    <span class="hz"></span>
+  </aside>
+  <main class="content">
+    <div class="strip"><span class="title">NUEVA <b>ERA</b></span><span class="who">SUJETO ▸</span><span class="bc h" data-seed="13"></span></div>
+    <div class="sec-title rev"><span class="hex">0x0A</span><span class="name">Notas de campaña</span><span class="jp">記録</span><span class="rule"></span><span class="meta">contactos · deudas · pistas</span></div>
+    <div class="datapad">
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner br"></span>
+      <span class="wm">記録</span>
+      <div class="lines" data-n="40"></div>
+    </div>
+    <div class="foot"><span class="pg">04/04</span><span>EOF</span><span class="bar"></span><span>NE//FICHA//NÚCLEO</span></div>
+  </main>
+</section>
+
+<script>
+  const skills = ["Actitud", "Atletismo", "Biociencia", "Combate a distancia", "Combate melee",
+    "Cultura", "Exploración", "Interpretación", "Sigilo", "Tecnociencia"];
+  document.getElementById("skills").innerHTML = skills
+    .map((s, i) => `<tr><td class="skill"><em>${String(i + 1).padStart(2, "0")}</em>${s}</td><td class="pts"></td><td></td><td></td></tr>`).join("");
+  document.querySelectorAll(".lines[data-n], .track[data-n]").forEach((el) => { el.innerHTML = "<i></i>".repeat(+el.dataset.n); });
+  document.querySelectorAll("tbody[data-rows]").forEach((el) => {
+    const rows = [];
+    for (let r = 1; r <= +el.dataset.rows; r++)
+      rows.push(`<tr><td data-i="${el.dataset.p}${r}"></td>${"<td></td>".repeat(+el.dataset.cols - 1)}</tr>`);
+    el.innerHTML = rows.join("");
+  });
+  // Semilla fija: el PDF sale igual cada vez que se regenera
+  document.querySelectorAll(".bc[data-seed]").forEach((el) => {
+    let x = +el.dataset.seed;
+    const rnd = () => ((x = (x * 9301 + 49297) % 233280) / 233280);
+    const vertical = el.classList.contains("vert");
+    let html = "";
+    for (let k = 0; k < 34; k++) {
+      const bar = (0.25 + rnd() * 0.9).toFixed(2), gap = (0.2 + rnd() * 0.6).toFixed(2);
+      html += vertical
+        ? `<i style="height:${bar}mm;width:100%;margin-bottom:${gap}mm"></i>`
+        : `<i style="width:${bar}mm;height:100%;margin-right:${gap}mm"></i>`;
+    }
+    el.innerHTML = html;
+  });
+</script>
+</body>
+</html>

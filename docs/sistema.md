@@ -1255,6 +1255,37 @@ al preparar su modelado:
     Química (+2 a 4 m o menos) y Ultravioleta (+2 buscando accesos ocultos).
   - **Armadura natural (R6):** Osteotendinosa y Matriz Ósea, +1 contra Cinético cada una,
     una línea por pieza en "Bloquear daño" con su nota. La de especie no cambia.
+- *En la app (A2b, rama cognitiva e Iniciativa):* mismo canal (`rules/aumentosTiradas.ts`),
+  con `operacionesActivas`.
+  - **Alcance por aplicado** (R9: "pruebas que usen perspicacia, voluntad o expresión" =
+    cualquier tirada con ese aplicado, salvaciones y poderes incluidos). **Vale el aplicado
+    con el que se tira de verdad** (usuario, 2026-10-22): tras Sutil y tras una casilla que lo
+    cambie (Negociación Analítica). La casilla sale si la tirada puede tirarse con ese
+    aplicado; si al final se tira con otro, se queda en el modal "sin efecto" (ni suma, ni
+    ventaja, ni cobra).
+  - **Casillas de ventaja con 1 de fatiga:** Prefrontal ("Concentrarse", pruebas mentales;
+    **no sale con Conectividad Callosa funcionando**, usuario 2026-10-22), Callosa
+    ("Concentrarse" y "Dos turnos", cualquier tirada), Consciencia (esquiva, en Defensa) y
+    Sincronización (Potencia). La nota dice lo de la acción compleja o los dos turnos.
+  - **Mielinización:** casilla "Ahorro de fatiga" en las pruebas mentales: −1 al gasto de
+    fatiga de la tirada (casillas de pago y, en un poder, el coste del poder), mínimo 0
+    (usuario, 2026-10-22). "Una vez por escena" va en la nota hasta A4.
+  - **Foveo:** casilla "Tras Apuntar" (+1) en los ataques con Combate a Distancia. No existe
+    la acción Apuntar; no se engancha a nada de Gran Puntería.
+  - **Proyección** ("Con lenguaje") y **Matriz de Red** ("Repetir tras fallar"): ventaja en
+    cualquier tirada de Actitud, con su nota (una vez por escena, hasta A4).
+  - **Red Frontoparietal:** ventaja sin casilla en las tres de Iniciativa; la acción combinada
+    (física + mental por 1 de fatiga), como texto en las pruebas mentales hasta A4.
+  - **Textos:** Asa (bajar un paso por 1 de fatiga, con la exclusión de Callosa y
+    Prefrontal) en las pruebas mentales; Consciencia (no te pueden flanquear) y Automatismo
+    (Sorprendido sin −3 en la primera tirada defensiva) en Defensa.
+  - **La ventaja no se acumula al cobrar (usuario, 2026-10-22):** si la tirada ya trae
+    ventaja gratis (Red Frontoparietal en Iniciativa, una casilla u opción sin coste), las
+    casillas de ventaja de pago no cobran; sin gratis, de varias de pago solo cobra una
+    (`fatigaDeCasillas`, `montaje.ts`).
+  - **Reacciones y equilibrio (usuario, 2026-10-22):** Hiperdensidad (2.ª reacción por 1 de
+    fatiga), Automatismo (la deja gratis) y Bucle (3.ª reacción por 1 de fatiga) como texto
+    en Defensa; Bucle, casilla de ventaja en Atletismo "Equilibrio para no caer derribado".
 
 ### 11.2 Lo que el documento no dice `[PENDIENTE]`
 - **Tope de implantes**: pregunta 11, sigue abierta.
