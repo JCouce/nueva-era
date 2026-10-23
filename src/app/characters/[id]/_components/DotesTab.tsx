@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState, type ReactNode } from "react";
+import { Fragment, useState, useSyncExternalStore, type ReactNode } from "react";
 import {
   CONTEXTO_LIBRE,
   SECCIONES_DOTES,
@@ -54,6 +54,14 @@ export function DotesTab({
   const rotas = libre ? [] : dotesConRequisitoRoto(sheet, ficha.requisitosDotes);
   const unidad = aprobada ? "xp" : "pts";
   const sePuedeQuitar = libre || !aprobada;
+  const [soloCumplo, setSoloCumplo] = useSoloCumplo();
+  // Con el filtro: requisitos cumplidos y, si no es repetible, que no la tenga ya
+  // (está arriba en "Tus dotes"). No mira puntos ni XP: eso lo dice cada tarjeta.
+  const visible = (dote: DoteCatalogo) =>
+    !soloCumplo ||
+    (estadoRequisitos(dote, ficha.requisitosDotes, sheet.dotes).every((r) => r.cumple) &&
+      (dote.repetible || !sheet.dotes.some((d) => d.id === dote.id)));
+  const secciones = SECCIONES_DOTES.map((s) => ({ ...s, dotes: s.dotes.filter(visible) })).filter((s) => s.dotes.length);
 
   return (
     <div className="flex flex-col gap-2">
@@ -131,7 +139,30 @@ export function DotesTab({
         })}
       </section>
 
-      {SECCIONES_DOTES.map((s) => (
+      <button
+        type="button"
+        role="switch"
+        aria-checked={soloCumplo}
+        onClick={() => setSoloCumplo(!soloCumplo)}
+        className="mt-3 flex items-center justify-between gap-3 border border-border bg-surface px-3 py-2.5 text-left active:scale-[0.99]"
+      >
+        <span className="font-display text-sm font-semibold uppercase tracking-wide text-foreground">
+          Solo las que cumplo
+        </span>
+        <span
+          aria-hidden="true"
+          className={`flex h-5 w-9 shrink-0 items-center border p-0.5 transition-colors ${
+            soloCumplo ? "justify-end border-accent bg-accent/15" : "justify-start border-border"
+          }`}
+        >
+          <span className={`block size-3.5 ${soloCumplo ? "bg-accent shadow-glow-yellow" : "bg-muted"}`} />
+        </span>
+      </button>
+      {soloCumplo && secciones.length === 0 && (
+        <p className="font-sans text-prosa-sm text-soft">Ninguna dote del catálogo cumple tus requisitos ahora mismo.</p>
+      )}
+
+      {secciones.map((s) => (
         <Seccion key={s.clave} label={s.label} total={s.dotes.length}>
           {s.dotes.map((dote) => (
             <TarjetaDote
@@ -148,6 +179,39 @@ export function DotesTab({
       ))}
     </div>
   );
+}
+
+// Filtro "Solo las que cumplo", recordado por navegador (apagado por defecto). En el
+// servidor y sin localStorage (modo privado), en memoria.
+const CLAVE_SOLO_CUMPLO = "dotes:soloCumplo";
+const suscriptoresSoloCumplo = new Set<() => void>();
+let soloCumploEnMemoria = false;
+
+function leerSoloCumplo(): boolean {
+  try {
+    return localStorage.getItem(CLAVE_SOLO_CUMPLO) === "1";
+  } catch {
+    return soloCumploEnMemoria;
+  }
+}
+
+function useSoloCumplo(): [boolean, (v: boolean) => void] {
+  const valor = useSyncExternalStore(
+    (avisar) => {
+      suscriptoresSoloCumplo.add(avisar);
+      return () => suscriptoresSoloCumplo.delete(avisar);
+    },
+    leerSoloCumplo,
+    () => false,
+  );
+  const cambiar = (v: boolean) => {
+    soloCumploEnMemoria = v;
+    try {
+      localStorage.setItem(CLAVE_SOLO_CUMPLO, v ? "1" : "0");
+    } catch {}
+    suscriptoresSoloCumplo.forEach((avisar) => avisar());
+  };
+  return [valor, cambiar];
 }
 
 function Seccion({ label, total, children }: { label: string; total: number; children: ReactNode }) {
