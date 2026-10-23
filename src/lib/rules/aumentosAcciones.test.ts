@@ -263,16 +263,16 @@ describe("A4b: Densificar", () => {
 
   test("marcada: +3 en los tipos en los que cuenta el blindaje", () => {
     for (const tipo of conTipos) {
-      const d = desgloseBlindaje(enj(3), tipo, false, SIN_ARMADURA_NATURAL, true);
+      const d = desgloseBlindaje(enj(3), tipo, SIN_ARMADURA_NATURAL, true);
       assert.deepEqual(d, [{ etiqueta: "Densificar · Enjambre Nanobot 3", valor: 3 }], tipo);
       assert.equal(casillaBlindajeReactivo(enj(3), tipo, false)!.bloqueada, null, tipo);
     }
-    assert.deepEqual(desgloseBlindaje(enj(3), "cinetico", false, SIN_ARMADURA_NATURAL, false), []);
+    assert.deepEqual(desgloseBlindaje(enj(3), "cinetico", SIN_ARMADURA_NATURAL, false), []);
   });
 
   test("nada contra Mental ni Fuego sin Ignífuga: la casilla sale apagada con el motivo", () => {
-    assert.deepEqual(desgloseBlindaje(enj(4), "mental", false, SIN_ARMADURA_NATURAL, true), [{ etiqueta: "Mental omite blindaje", valor: 0 }]);
-    assert.deepEqual(desgloseBlindaje(enj(4), "fuego", false, SIN_ARMADURA_NATURAL, true), [
+    assert.deepEqual(desgloseBlindaje(enj(4), "mental", SIN_ARMADURA_NATURAL, true), [{ etiqueta: "Mental omite blindaje", valor: 0 }]);
+    assert.deepEqual(desgloseBlindaje(enj(4), "fuego", SIN_ARMADURA_NATURAL, true), [
       { etiqueta: "Fuego (falta Mejora Ignífuga)", valor: 0 },
     ]);
     assert.match(casillaBlindajeReactivo(enj(4), "mental", false)!.bloqueada!, /mental/);
@@ -282,7 +282,7 @@ describe("A4b: Densificar", () => {
   test("solo con Enjambre 3+", () => {
     for (const nivel of [1, 2]) {
       assert.equal(casillaBlindajeReactivo(enj(nivel), "cinetico", false), null);
-      assert.deepEqual(desgloseBlindaje(enj(nivel), "cinetico", false, SIN_ARMADURA_NATURAL, true), []);
+      assert.deepEqual(desgloseBlindaje(enj(nivel), "cinetico", SIN_ARMADURA_NATURAL, true), []);
     }
     const c = casillaBlindajeReactivo(enj(4), "cinetico", false)!;
     assert.equal(c.etiqueta, "Densificar (Enjambre Nanobot, 1 fatiga)");

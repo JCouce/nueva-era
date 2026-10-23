@@ -7,7 +7,7 @@
 //   resumenRasgos      separa los atributos (chips) del resto de rasgos
 //   identidadPorDefecto altura y peso por defecto: el punto medio del rango (§14.5)
 import { ATRIBUTOS, type AtributoId } from "./atributos";
-import { eleccionCompleta, eleccionDeFicha, faltaEnEleccion, type RangoReferencia } from "./especie";
+import { eleccionCompleta, eleccionDeFicha, faltaAtributoLibre, faltaEnEleccion, type RangoReferencia } from "./especie";
 import { repartoCompleto } from "./prioridad";
 import type { Sheet } from "./sheet";
 import type { MecanismoMotor } from "./motor";
@@ -43,7 +43,7 @@ export function pasosPersonaje({
   const eleccion = eleccionDeFicha(sheet);
   // Ojo: eleccionCompleta da por buena "sin especie" (se puede mandar), así que
   // manda faltaEnEleccion. Una especie desconocida: se pide elegir de nuevo.
-  const faltaOrigen = faltaEnEleccion(eleccion) ?? (eleccionCompleta(eleccion) ? null : "Elige especie");
+  const faltaOrigen = faltaEnEleccion(eleccion) ?? (eleccionCompleta(eleccion) ? null : "Elige especie") ?? faltaAtributoLibre(sheet);
   const origen: PasoPersonaje = aprobada
     ? { id: "origen", estado: "fijado", falta: [] }
     : pendiente("origen", faltaOrigen ? [faltaOrigen] : []);

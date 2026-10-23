@@ -393,6 +393,7 @@ const ESPERADO: Record<string, unknown> = {
           { etiqueta: "Reflejos", valor: 1 },
           { etiqueta: "Atletismo", valor: 2 },
           { etiqueta: "Atacantes adicionales esta ronda ×0", valor: -0 }, // 0 × −1: el contador a cero da −0 (se pinta "+0")
+          { etiqueta: "Tengo cobertura (+2) (sin activar)", valor: 0 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
@@ -404,6 +405,7 @@ const ESPERADO: Record<string, unknown> = {
           { etiqueta: "Reflejos", valor: 1 },
           { etiqueta: "Atletismo", valor: 2 },
           { etiqueta: "Atacantes adicionales esta ronda ×2", valor: -2 },
+          { etiqueta: "Tengo cobertura (+2) (sin activar)", valor: 0 },
           { etiqueta: "Modificador circunstancial", valor: -1 },
         ],
         notas: [],
@@ -636,6 +638,7 @@ const ESPERADO: Record<string, unknown> = {
           { etiqueta: "Enfermedad", valor: -1 },
           { etiqueta: "Aturdido", valor: -1 },
           { etiqueta: "Atacantes adicionales esta ronda ×1", valor: -1 },
+          { etiqueta: "Tengo cobertura (+2) (sin activar)", valor: 0 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },

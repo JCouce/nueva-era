@@ -588,6 +588,7 @@ export function AccionesTab({
   onReparar,
   onFabricar,
   onGastarRecurso,
+  onDaniarEscudo,
   onAjustarFarmaco,
   onAjustarMunicionEspecial,
   onPagarFatiga,
@@ -633,6 +634,10 @@ export function AccionesTab({
   // en vivo, `sheet` es la foto congelada de un Combatiente, sin
   // characterId/npcId al que persistir el gasto).
   onGastarRecurso?: (instanciaId: string, delta: number) => void;
+  // Durabilidad que pierde el escudo cuando el golpe le da a él ("Bloquear daño", Murillo
+  // 2026-10-23). Solo lo pasa CharacterSheet: sin él (NPC, combate en vivo) el modal da los
+  // números y no resta nada.
+  onDaniarEscudo?: (instanciaId: string, delta: number) => void;
   // Gasto de 1 dosis de sheet.farmacos al confirmar "Usar [fármaco]"
   // (docs/prompt-gasto-recursos.md, Fase 2) — mismo motivo de ausencia que
   // onGastarRecurso en NpcAccionesPanel.tsx.
@@ -1494,6 +1499,7 @@ export function AccionesTab({
             ficha={ficha}
             onPagarFatiga={onPagarFatiga}
             onAjustarFatiga={onAjustarFatiga}
+            onDaniarEscudo={onDaniarEscudo}
             onCerrar={() => setBloquearDanioAbierta(false)}
           />
         )}

@@ -21,7 +21,7 @@
 //   estados.ts         fase 6b — umbrales de salud/fatiga y catálogo de estados de combate
 //   npc.ts             fase 6b — "Poder" del catálogo de NPCs (métrica del usuario, no del sistema)
 //   npcAleatorio.ts    generación de NPC al azar (botón del catálogo de NPCs)
-//   blindaje.ts        absorción de daño por blindaje (armadura, Escudo Deflector, escudo en alto)
+//   blindaje.ts        absorción de daño por blindaje (armadura, Escudo Deflector) y golpe al escudo
 //   movimiento.ts      Movilidad Aérea equipada convertida en su propia tirada ("Volar")
 //   vitalidad.ts       vida/fatiga como recurso persistente de la ficha (vidaActual/fatigaActual)
 //   farmacos.ts        fármacos del pool (sheet.farmacos) convertidos en su propia acción "Usar"

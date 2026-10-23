@@ -2,6 +2,7 @@
 // ficha viven en "@/lib/rules" porque dependen de las reglas.
 import { z } from "zod";
 import { HABILIDADES, type HabilidadId } from "./rules/habilidades";
+import { ATRIBUTOS, type AtributoId } from "./rules/atributos";
 import { esEspecialidadDe } from "./catalog/especialidades";
 import { estadoPorId } from "./catalog/estados";
 import { MAX_RONDAS_ESTADO } from "./rules/estadosFicha";
@@ -38,6 +39,9 @@ export const eleccionEspecieSchema = z.object({
   casta: idCatalogo.nullable().optional(),
   linaje: idCatalogo.nullable().optional(),
 });
+
+// Atributo libre de la especie (setAtributoLibreAction y su espejo de NPC).
+export const atributoLibreSchema = z.enum(ATRIBUTOS.map((a) => a.id) as [AtributoId, ...AtributoId[]]);
 
 // Especialidad que se añade o se quita (addEspecialidadAction y su espejo de NPC): la
 // habilidad tiene que existir y la especialidad ser un id de SU lista

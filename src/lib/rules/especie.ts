@@ -6,6 +6,8 @@
 //                   que devuelve.
 //   hayQuePerder    decide si hay que avisar antes de cambiar
 //   hayQueAvisar    lo mismo con el contexto: solo avisa si el cambio resetearía
+//   elegirAtributoLibre / bloqueoDeAtributoLibre / faltaAtributoLibre
+//                   el +1 de libre elección (Humanos): aparte de la especie, sin reset
 //   eleccionCompleta / faltaEnEleccion / eleccionDeFicha / eleccionesIguales
 //                   el borrador del selector: no se llama a la action a medias
 //   rangoReferencia peso y altura de referencia con la Fuerza con especie (§14.5)
@@ -29,6 +31,7 @@
 import {
   especiePorId,
   normalizarOpciones,
+  rasgoDeAtributos,
   type Especie,
   type EspecieOpciones,
   type ExcepcionRareza,
@@ -47,6 +50,7 @@ import type { CondicionTirada } from "./condiciones";
 import { SIN_AJUSTE_UMBRALES, type AjusteUmbral, type AjusteUmbrales } from "./estados";
 import type { DestinoTexto } from "../catalog/especies";
 import type { AccionDirecta } from "./acciones";
+import { ATRIBUTOS, type AtributoId } from "./atributos";
 
 export type RasgoConFuente = Rasgo & { fuente: string };
 
@@ -54,7 +58,8 @@ export type EspecieResuelta = {
   especie: Especie;
   casta: OpcionEspecie | null;
   linaje: OpcionEspecie | null;
-  // Especie, casta y linaje, en ese orden, cada uno con su fuente para el desglose.
+  // Especie, casta, linaje y atributo libre, en ese orden, cada uno con su fuente
+  // para el desglose.
   modificadores: ModificadorConFuente[];
   rasgos: RasgoConFuente[];
   referencia: ReferenciaFisica | null; // la de la casta si la hay
@@ -71,6 +76,9 @@ export function especieDeFicha(sheet: Pick<Sheet, "especieId" | "especieOpciones
     { fuente: especie.label, rasgos: especie.rasgos },
     ...(casta ? [{ fuente: casta.fuente, rasgos: casta.rasgos }] : []),
     ...(linaje ? [{ fuente: linaje.fuente, rasgos: linaje.rasgos }] : []),
+    ...(especie.atributoLibre && opciones.atributo
+      ? [{ fuente: `${especie.label} · libre elección`, rasgos: [rasgoDeAtributos({ [opciones.atributo]: especie.atributoLibre })] }]
+      : []),
   ];
   const rasgos = capas.flatMap(({ fuente, rasgos }) => rasgos.map((r) => ({ ...r, fuente })));
   const modificadores: ModificadorConFuente[] = rasgos.flatMap((r) =>
@@ -434,4 +442,36 @@ export function accionesSinDadoDeEspecie(especie: EspecieResuelta | null): Accio
         ]
       : [],
   );
+}
+
+// --- Atributo libre (Humanos) ------------------------------------------------
+//
+// Va aparte de elegirEspecie: no resetea la ficha (no deshace ninguna compra) y el
+// jugador lo puede elegir una vez en una ficha aprobada que aún no lo tenga (decisión
+// del usuario, 2026-10-23). Cambiar de especie lo pierde (resetear y normalizarOpciones).
+
+export function bloqueoDeAtributoLibre(sheet: Pick<Sheet, "especieOpciones">, ctx: ContextoEleccion): string | null {
+  if (ctx.libre || ctx.esMaster || !ctx.aprobada || !sheet.especieOpciones.atributo) return null;
+  return "La ficha está aprobada: el atributo ya está elegido";
+}
+
+export function elegirAtributoLibre(
+  sheet: Sheet,
+  atributo: AtributoId,
+  ctx: ContextoEleccion,
+): { sheet: Sheet } | { error: string } {
+  const especie = especiePorId(sheet.especieId);
+  if (!especie?.atributoLibre) return { error: "Tu especie no elige atributo" };
+  if (!ATRIBUTOS.some((a) => a.id === atributo)) return { error: "Atributo desconocido" };
+  if (sheet.especieOpciones.atributo === atributo) return { sheet };
+  const bloqueo = bloqueoDeAtributoLibre(sheet, ctx);
+  if (bloqueo) return { error: bloqueo };
+  return { sheet: { ...sheet, especieOpciones: { ...sheet.especieOpciones, atributo } } };
+}
+
+// Falta para enviar a revisión (pasosPersonaje, paso Origen).
+export function faltaAtributoLibre(sheet: Pick<Sheet, "especieId" | "especieOpciones">): string | null {
+  const especie = especiePorId(sheet.especieId);
+  if (!especie?.atributoLibre || sheet.especieOpciones.atributo) return null;
+  return `Elige el atributo +${especie.atributoLibre}`;
 }

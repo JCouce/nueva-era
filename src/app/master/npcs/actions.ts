@@ -13,7 +13,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
-import { eleccionEspecieSchema, especialidadDeHabilidadSchema } from "@/lib/validation";
+import { atributoLibreSchema, eleccionEspecieSchema, especialidadDeHabilidadSchema } from "@/lib/validation";
 import {
   type Sheet,
   defaultSheet,
@@ -57,6 +57,7 @@ import {
   ajustarFatigaTemporal,
   terminarEscena,
   elegirEspecie,
+  elegirAtributoLibre,
   reconciliarVida,
   type EleccionEspecie,
   doteCompradaSchema,
@@ -211,6 +212,17 @@ export async function setEspecieNpcAction(npcId: string, eleccion: EleccionEspec
   const res = elegirEspecie(ctx.sheet, parsed.data, { aprobada: false, esMaster: true, libre: true });
   if ("error" in res) return { ok: false, error: res.error };
   // Una especie nueva puede bajar el máximo de vida/fatiga: se recorta aquí (setEspecieAction).
+  return persist(npcId, reconciliarVida(res.sheet));
+}
+
+// Atributo libre de la especie en modo libre: sin bloqueo.
+export async function setAtributoLibreNpcAction(npcId: string, atributo: unknown): Promise<NpcResult> {
+  const parsed = atributoLibreSchema.safeParse(atributo);
+  if (!parsed.success) return { ok: false, error: "Atributo inválido" };
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const res = elegirAtributoLibre(ctx.sheet, parsed.data, { aprobada: false, esMaster: true, libre: true });
+  if ("error" in res) return { ok: false, error: res.error };
   return persist(npcId, reconciliarVida(res.sheet));
 }
 

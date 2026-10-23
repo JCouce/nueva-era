@@ -101,9 +101,11 @@ describe("faltaParaEnviar", () => {
     assert.deepEqual(faltaParaEnviar(pasosPersonaje({ sheet, nombre: "Krag", aprobada: false }), [], []), ["Elige casta"]);
   });
 
-  test("humano con reparto y nombre: nada", () => {
+  test("humano con reparto y nombre: solo falta el atributo libre", () => {
     const sheet = conPrioridades({ atributos: "A", habilidades: "B", dotes: "C", psionica: "D", recursos: "E" });
-    assert.deepEqual(faltaParaEnviar(pasosPersonaje({ sheet, nombre: "Ana", aprobada: false }), [], []), []);
+    assert.deepEqual(faltaParaEnviar(pasosPersonaje({ sheet, nombre: "Ana", aprobada: false }), [], []), ["Elige el atributo +1"]);
+    const conAtributo = { ...sheet, especieOpciones: { atributo: "fuerza" as const } };
+    assert.deepEqual(faltaParaEnviar(pasosPersonaje({ sheet: conAtributo, nombre: "Ana", aprobada: false }), [], []), []);
   });
 });
 

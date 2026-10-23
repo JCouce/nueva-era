@@ -11,7 +11,7 @@ import type { MotorMetadata } from "./motor";
 import { modificadorAccion, gastoTotal, gastoMunicionEspecial, avisoInsuficiente } from "./acciones";
 import { aplicado, modificadoresActivos } from "./derivados";
 import { permisosDeDotes } from "./dotesEfectos";
-import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import { montarTirada, SIN_ELECCION } from "./montaje";
 
 // En reposo (especie + equipo): estos tests no llevan estados de combate. Los permisos de
@@ -1258,7 +1258,8 @@ describe("accionesDirectasDeAtaque", () => {
     assert.equal(accion.grupo, "Defensa");
     assert.match(accion.nota ?? "", /acción simple/i);
     assert.match(accion.nota ?? "", /Cobertura Nivel 1/);
-    assert.match(accion.nota ?? "", /blindaje 4/);
+    // El blindaje del escudo ya no protege al portador (Murillo, 2026-10-23).
+    assert.doesNotMatch(accion.nota ?? "", /blindaje/);
   });
 
   test("Escudo (acción Estándar)", () => {
@@ -1324,5 +1325,50 @@ describe("accionesDirectasDeAtaque", () => {
     assert.equal(accion.recursoInstanciaId, "mp1");
     assert.equal(accion.categoriaDanio, "Plasma");
     assert.doesNotMatch(accion.nota ?? "", /\d+\/\d+/);
+  });
+});
+
+describe("escudo roto (durabilidad a 0, S86)", () => {
+  const conRodela = () =>
+    equipar(conDotes(defaultSheet(), "dote_bloqueo"), { instanciaId: "e1", catalogoId: "escudo_rodela" });
+  const filas = (s: Sheet) => {
+    const ataque = accionesDeAtaque(s);
+    return {
+      golpe: ataque.find((t) => t.id === "ataque_melee_e1")!,
+      bloqueo: ataque.find((t) => t.id === "bloquear_melee_e1")!,
+      levantar: accionesDirectasDeAtaque(s).find((a) => a.id === "levantar_escudo_e1")!,
+    };
+  };
+
+  test("con durabilidad > 0, ni golpear, ni bloquear, ni levantar salen bloqueadas", () => {
+    const { golpe, bloqueo, levantar } = filas(ajustarRecurso(conRodela(), "e1", -7)); // 1/8
+    assert.equal(golpe.bloqueada, undefined);
+    assert.equal(bloqueo.bloqueada, undefined);
+    assert.equal(levantar.bloqueada, undefined);
+  });
+
+  test("a 0, las tres salen bloqueadas con «Escudo roto: repáralo»", () => {
+    const { golpe, bloqueo, levantar } = filas(ajustarRecurso(conRodela(), "e1", -8));
+    for (const fila of [golpe, bloqueo, levantar]) assert.equal(fila.bloqueada, "Escudo roto: repáralo");
+  });
+
+  test("reparado (durabilidad > 0 otra vez), vuelven solas", () => {
+    const roto = ajustarRecurso(conRodela(), "e1", -8);
+    const { golpe, bloqueo, levantar } = filas(ajustarRecurso(roto, "e1", 8));
+    for (const fila of [golpe, bloqueo, levantar]) assert.equal(fila.bloqueada, undefined);
+  });
+
+  test("un arma melee sin defensa con su recurso inexistente no se bloquea", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "c1", catalogoId: "espada_cuchillo_combate" });
+    assert.equal(accionesDeAtaque(s).find((t) => t.id === "ataque_melee_c1")!.bloqueada, undefined);
+  });
+
+  test("el bloqueo sigue llegando bloqueado a la ficha resuelta (conExtrasDeFicha no lo pierde)", () => {
+    const s = ajustarRecurso(conRodela(), "e1", -8);
+    const resuelta = resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+    const bloqueo = accionesDeAtaqueCon(s, resuelta.modificadores, resuelta.extrasDotes.permisos)
+      .map((t) => conExtrasDeFicha(resuelta, t))
+      .find((t) => t.id === "bloquear_melee_e1");
+    assert.equal(bloqueo?.bloqueada, "Escudo roto: repáralo");
   });
 });

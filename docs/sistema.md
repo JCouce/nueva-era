@@ -337,6 +337,23 @@ Detalle completo en `docs/sistema-y-combate.md`. Lo esencial:
   alerta visual; el 5 da cobertura total pero impide atacar. La de escudos no afecta a la
   percepción.
 
+### Cobertura y escudos `[FIRME · Murillo (vía usuario), 2026-10-23]`
+
+- La cobertura (niveles 1-4) sube la dificultad de los ataques en su nivel, sea la que sea
+  (escudo, muro...). Si el ataque **supera la defensa pero falla por la cobertura**, golpea
+  la cobertura en vez de al portador.
+- Si la cobertura es un **escudo**, el escudo recibe el **daño total** del ataque, le resta
+  **su propio blindaje** y **todo lo que sobra va a su durabilidad**. Al portador no le llega
+  nada. Con la durabilidad a 0, **el escudo se rompe**.
+- **El blindaje del escudo no suma al blindaje del portador**: solo sirve para que el escudo
+  aguante.
+- Bloquear con el escudo (dote Bloqueo) desvía el golpe sin que el escudo lo reciba.
+- El Brazo Biónico no cambia: "Bloqueado con el brazo" sigue sumando su blindaje al golpe.
+- En la app (S86): la esquiva lleva la casilla "Tengo cobertura (+2)" para cualquier ficha;
+  "Bloquear daño" pregunta "¿A qué da el golpe?" (A ti · Al escudo · A la cobertura) y "Al
+  escudo" resta de la durabilidad del escudo (`golpeAlEscudo`, `rules/blindaje.ts`). La app
+  no conoce coberturas genéricas (muros...), solo la del escudo.
+
 ### Tiradas fijas de habilidades `[FIRME · fuente/habilidades.md + S79-S83]`
 
 Filas del grupo Acciones (`rules/acciones.ts`, `ACCIONES`), construidas el 2026-10-23:
@@ -1840,7 +1857,7 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 
 | Especie | id | Opciones |
 |---|---|---|
-| Humanos | `humano` | — |
+| Humanos | `humano` | **Atributo +1** de libre elección (§14.4), obligatorio |
 | Riux | `riux` | — |
 | Arianyi | `arianyi` | — |
 | Arköru | `arkoru` | — |
@@ -1895,11 +1912,11 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
   aprobadas cuya especie provisional ya no existe se la pone el máster, sin reset. El
   script del reset general sigue en `scripts/reset-fichas-especies.ts`.
 
-### 14.4 Atributos `[FIRME · ESP]`
+### 14.4 Atributos `[FIRME · ESP + fuente 2026-10-23]`
 
 | Especie / opción | Modificadores |
 |---|---|
-| Humanos | — |
+| Humanos | **+1 a un atributo de libre elección** (`docs/fuente/especies.md`, "·Atributos") |
 | Riux | Agilidad +1, Aguante +1, Inteligencia +1, Carácter −1, Fuerza −1 |
 | Arianyi | Agilidad +1, Percepción +1, Fuerza −1 |
 | Arköru | Fuerza +2, Agilidad −1 |
@@ -1908,6 +1925,17 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 | Manduk Guerrero | Fuerza +1, Agilidad +1, Aguante +1, Carácter −1, Inteligencia −1 |
 | Manduk Siervo | Aguante +1 *(PDF: "Agaunte", sic)*, Percepción +1, Carácter −1, Inteligencia −1 |
 | Linaje (solo Noble) | Ílkrem Fuerza +1 · Zimethroni Agilidad +1 · Irota Aguante +1 · Maolher Inteligencia +1 · Axadren Percepción +1 · Elión Carácter +1 |
+
+- **Atributo libre de los Humanos** (decisiones del usuario, 2026-10-23):
+  - Se guarda la elección en `especieOpciones.atributo`; el +1 lo deriva `especieDeFicha`
+    como un bono de especie más (fuente "Humanos · libre elección"): adicional, fuera del
+    tope de 4 / techo de 6 y sin tocar el coste (§14.2).
+  - **Obligatorio para enviar a revisión** (falta del paso Origen: "Elige el atributo +1").
+  - **Va aparte de la especie: elegirlo o cambiarlo no resetea** la ficha (no deshace
+    ninguna compra). Cambiar de especie sí lo pierde.
+  - **Ficha aprobada:** el jugador lo elige **una vez** si aún no lo tenía (las humanas
+    aprobadas antes de esto); después queda congelado. El máster lo cambia siempre; en el
+    NPC, modo libre.
 
 ### 14.5 Peso y altura de referencia `[FIRME · ESP + usuario M21]`
 
@@ -2245,7 +2273,8 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S82 | ***Foveo-Sensorial* "por puntería" = el selector «Apuntado» en Éxito o Crítico**: +1 al ataque a distancia (además del +1 de Apuntar), como bono por opción, sin casilla propia. | Antes era la casilla "Tras Apuntar" porque no existía la acción (§11.3). Decisión del usuario (2026-10-23). |
 | S83 | ***Cazador Cazado* y *Vigilancia Táctica*: casilla en la fila** (como Levitar: «Con Manipulación (Cazador Cazado)» en Discernir mentiras; «Con Táctica (Vigilancia Táctica)» en Resistir distracción) que cambia habilidad y especialidad; la tirada va entera si la ficha tiene esa especialidad y a la mitad si no. El aplicado (Perspicacia) no cambia. | La prosa da el par entero; las dos tiradas fijas van con Empatía, que es lo que sustituyen. |
 | S84 | **Tirada libre (T-007): aplica lo que casa por aplicado/habilidad (alcances `todas`, `aplicado`, `habilidad`), sin casillas ni extras de dote o aumento, y sin especialidad.** Fila "Tirada libre" al final de "Acciones" (pestaña Básicas): el jugador elige en el modal un aplicado y una habilidad (o ninguna) y tira 1d12 + aplicado + habilidad. Entran los modificadores de tirada de alcance `todas`, `aplicado` y `habilidad`, y `anulaPenalizadores`; no los de `tiradaId` de otra acción, `grupo`, `grupoHabilidad`, `familiaArma` ni `modo` (grupo propio `Libre`). Sin casillas, ventajas, textos, bonos por tramo, descuentos ni crítico fijo de dote o aumento. La habilidad cuenta entera, como en Sigilo o Buscar. | Usuario, 2026-10-23: es para lo que el máster pide en mesa y la app no tiene como fila; ninguna acción con nombre, así que no le toca nada que apunte a una. |
-| S85 | **Contra Fuego, con Mejora Ignífuga (nivel 1) instalada en la armadura que cuenta, solo cuenta el blindaje de esa armadura**: no suman la armadura natural (de especie o de aumentos), el Escudo Deflector, el escudo en alto, el blindaje reactivo (Densificar) ni el brazo biónico, cuyas casillas siguen bloqueadas contra Fuego. Ignífuga instalada en otra armadura que no es la que cuenta no hace nada. | Lectura literal de "la puntuación total de blindaje de su armadura" (`catalog/mejorasEstandar.ts`), pendiente de confirmar con Murillo. Usuario, 2026-10-23. |
+| S85 | **Contra Fuego, con Mejora Ignífuga (nivel 1) instalada en la armadura que cuenta, solo cuenta el blindaje de esa armadura**: no suman la armadura natural (de especie o de aumentos), el Escudo Deflector, el blindaje reactivo (Densificar) ni el brazo biónico, cuyas casillas siguen bloqueadas contra Fuego. Ignífuga instalada en otra armadura que no es la que cuenta no hace nada. | Lectura literal de "la puntuación total de blindaje de su armadura" (`catalog/mejorasEstandar.ts`), pendiente de confirmar con Murillo. Usuario, 2026-10-23. |
+| S86 | **Cobertura y escudos en la app** (regla FIRME de Murillo, 2026-10-23, §6 "Cobertura y escudos"): (1) **contra Fuego el blindaje del escudo vale 0** (un escudo no lleva Mejora Ignífuga, S19): todo el daño va a su durabilidad; **contra Mental no aplica**: "Al escudo" sale bloqueado. (2) **Escudo roto** (durabilidad a 0) **bloquea "Golpear con", "Bloquear con" y "Levantar" ese escudo**, con el motivo "Escudo roto: repáralo"; es derivado, así que repararlo con Materiales lo devuelve solo. (3) **La casilla "Tengo cobertura" de la esquiva es un +2 fijo para cualquier cobertura**, sin mirar su nivel, y sale en cualquier ficha, lleve escudo o no. | (1) y (2), lectura de la regla; (3), decisión del usuario (2026-10-23). |
 
 ## Conflictos detectados
 

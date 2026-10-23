@@ -19,11 +19,17 @@ import {
   tirarD12,
   gastoTotal,
   avisoInsuficiente,
+  ID_TENGO_COBERTURA,
   type Accion,
 } from "./acciones";
 import { modificadoresDeEstados } from "./estados";
 import { modificadoresActivos } from "./derivados";
 import { AJUSTE_NEUTRO } from "./progresion";
+import { equipar } from "./equipo";
+import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { montarTirada, SIN_ELECCION } from "./montaje";
+import { conEsquivaLevitando } from "./poderes";
+import type { NivelesPsionica } from "./psionica";
 
 function buscar(id: string) {
   const t = ACCIONES.find((x) => x.id === id);
@@ -57,6 +63,40 @@ describe("catálogo de tiradas", () => {
     assert.equal(iniciativa.habilidad, "exploracion");
     assert.equal(buscarPercibir.bloqueada, undefined);
     assert.equal(buscarPercibir.habilidad, "exploracion");
+  });
+});
+
+describe("esquiva: casilla «Tengo cobertura» (Murillo, 2026-10-23; S86)", () => {
+  const casilla = (t: Accion) => t.condiciones?.find((c) => c.id === ID_TENGO_COBERTURA);
+
+  test("la esquiva la trae: toggle de +2, desmarcada", () => {
+    const c = casilla(buscar("defensa"));
+    assert.ok(c && c.tipo === "toggle");
+    assert.equal(c.valorActivo, 2);
+    assert.equal(c.activaPorDefecto, undefined);
+  });
+
+  test("sale en cualquier ficha, lleve escudo o no, y suma +2 marcada", () => {
+    const sinEscudo = defaultSheet();
+    const conEscudo = equipar(defaultSheet(), { instanciaId: "e1", catalogoId: "escudo_rodela" });
+    for (const s of [sinEscudo, conEscudo]) {
+      const ficha = resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+      const esquiva = conExtrasDeFicha(ficha, buscar("defensa"));
+      assert.ok(casilla(esquiva));
+      const base = montarTirada(ficha, esquiva, SIN_ELECCION).total;
+      const conCobertura = montarTirada(ficha, esquiva, {
+        ...SIN_ELECCION,
+        estadoCondiciones: { [ID_TENGO_COBERTURA]: true },
+      }).total;
+      assert.equal(conCobertura, base + 2);
+    }
+  });
+
+  test("levitando sigue ahí (conEsquivaLevitando no pisa las condiciones)", () => {
+    const niveles = { traslacion: 2 } as NivelesPsionica;
+    const esquiva = conEsquivaLevitando(niveles, buscar("defensa"));
+    assert.ok(esquiva.habilidadAlternativa);
+    assert.ok(casilla(esquiva));
   });
 });
 

@@ -23,7 +23,7 @@ import { PREFIJO_MEJORA_MUNICION } from "../catalog/mejorasArma";
 import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condiciones";
 import { nivelesHasta, acumulaPorClave, ultimoQueDefine, sustituyeMiraIntegrada, type PiezaEquipada } from "./equipo";
 import type { MotorMetadata } from "./motor";
-import { gastoDelModo } from "./recursos";
+import { escudoRoto, gastoDelModo, MOTIVO_ESCUDO_ROTO } from "./recursos";
 import { CONDICION_ATACANTES_ADICIONALES, condicionApuntado, type Accion, type AccionDirecta } from "./acciones";
 import { atributoEfectivo, aplicado } from "./derivados";
 import { ESPECIALIDAD_ARMA, ESPECIALIDAD_ATAQUE_ESPECIAL, ESPECIALIDAD_LANZAR } from "../catalog/especialidadesArma";
@@ -1009,11 +1009,13 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
   armaMelee: (sheet, pieza, cat, mods, permisos) => {
     const arma = cat as ArmaMelee;
     const lanzar = tiradaLanzarArmaMelee(sheet, mods, arma, pieza.instanciaId);
-    return [
+    const filas = [
       tiradaDeArmaMelee(sheet, mods, arma, pieza.instanciaId, permisos.sutil.includes("ataque_melee")),
       ...(lanzar ? [lanzar] : []),
       tiradaBloqueoDeArmaMelee(arma, pieza.instanciaId, permisos.sutil.includes("bloquear_melee")),
     ];
+    // Escudo roto (S86): sus filas salen, apagadas con el motivo, hasta que se repare.
+    return arma.defensa && escudoRoto(sheet, pieza.instanciaId) ? filas.map((t) => ({ ...t, bloqueada: MOTIVO_ESCUDO_ROTO })) : filas;
   },
   armaPesada: (sheet, pieza, cat) => {
     const tirada = tiradaDeArmamentoPesado(sheet, cat as ArmaPesada, pieza.instanciaId);
@@ -1166,7 +1168,7 @@ function tiradaDetonacionPulsoTermico(pieza: PiezaEquipada): AccionDirecta | nul
 // ("Simple"/"Estándar") se lee de `cat.modos[0].etiqueta` en vez de
 // hardcodearse aparte — es la misma columna que ya usa el ataque del escudo
 // (docs/equipamiento.md:882-905): Rodela y su metamaterial son Simple, el
-// resto Estándar.
+// resto Estándar. Con el escudo roto sale bloqueada (S86).
 //
 // Malla Plasmática (2026-09-28) se suma al mismo bucle, ver
 // tiradaDetonacionPulsoTermico() arriba.
@@ -1183,10 +1185,11 @@ export function accionesDirectasDeAtaque(sheet: Sheet): AccionDirecta[] {
         familiaArma: "levantar_escudo",
         empleoArma: cat.empleo,
         nota:
-          `Acción ${accionCoste.toLowerCase()}. Cobertura Nivel ${cat.defensa.cobertura} y blindaje ` +
-          `${cat.defensa.blindaje} hasta tu próximo turno — no cuenta si te atacan por la espalda. ` +
-          `Marca "Escudo en alto" en Bloquear daño mientras siga levantado.`,
+          `Acción ${accionCoste.toLowerCase()}. Cobertura Nivel ${cat.defensa.cobertura} hasta tu próximo turno ` +
+          `— no cuenta si te atacan por la espalda. Marca "Tengo cobertura" al esquivar; si el ataque ` +
+          `supera tu defensa pero falla por la cobertura, en Bloquear daño elige "Al escudo".`,
         confirmarLabel: "Levantar",
+        ...(escudoRoto(sheet, pieza.instanciaId) && { bloqueada: MOTIVO_ESCUDO_ROTO }),
       });
     } else if (cat?.familia === "subsistema" && pieza.catalogoId === "malla_plasmatica") {
       const detonacion = tiradaDetonacionPulsoTermico(pieza);

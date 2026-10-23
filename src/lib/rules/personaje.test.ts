@@ -33,6 +33,11 @@ describe("pasosPersonaje", () => {
     ]);
   });
 
+  test("Humano sin atributo libre: Origen pendiente", () => {
+    const pasos = pasosPersonaje({ sheet: ficha("humano"), nombre: "K", aprobada: false });
+    assert.deepEqual(pasos[0], { id: "origen", estado: "pendiente", falta: ["Elige el atributo +1"] });
+  });
+
   test("Manduk sin casta y Manduk Noble sin linaje: Origen pendiente con lo que falta", () => {
     const sinCasta = pasosPersonaje({ sheet: ficha("manduk"), nombre: "K", aprobada: false });
     assert.deepEqual(sinCasta[0], { id: "origen", estado: "pendiente", falta: ["Elige casta"] });

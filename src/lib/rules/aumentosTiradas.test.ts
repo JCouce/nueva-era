@@ -220,7 +220,7 @@ describe("Alerta pasiva y activa", () => {
 describe("armadura natural de los aumentos (R6)", () => {
   test("Osteotendinosa y Matriz Ósea: +1 cada una contra Cinético, con su nota; contra otros tipos, nada", () => {
     const s = conTodas([OSTEO, MATRIZ_OSEA]);
-    const cinetico = desgloseBlindaje(s, "cinetico", false, { valor: 0, fuente: null });
+    const cinetico = desgloseBlindaje(s, "cinetico", { valor: 0, fuente: null });
     assert.deepEqual(
       cinetico.map((l) => [l.etiqueta, l.valor]),
       [
@@ -229,7 +229,7 @@ describe("armadura natural de los aumentos (R6)", () => {
       ],
     );
     assert.ok(cinetico.every((l) => l.nota));
-    assert.deepEqual(desgloseBlindaje(s, "electrico", false, { valor: 0, fuente: null }), []);
+    assert.deepEqual(desgloseBlindaje(s, "electrico", { valor: 0, fuente: null }), []);
   });
 });
 

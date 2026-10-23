@@ -76,7 +76,8 @@ export type ArmaMelee = {
   rareza: Rareza | null;
   coste: number | null;
   material?: MaterialPieza;
-  // Solo Escudos: cobertura y blindaje propios mientras se sostiene en alto.
+  // Solo Escudos: cobertura mientras se sostiene en alto, y blindaje y durabilidad del propio
+  // escudo (lo que aguanta cuando el golpe le da a él; no protege al portador).
   defensa: { cobertura: number; blindaje: number; puntosGolpe: number } | null;
   // Bloqueo (pregunta 31, resuelta 2026-09-24): toda arma melee genera su
   // propia acción de "Bloquear" además de "Golpear" (lib/rules/combate.ts),
@@ -410,14 +411,13 @@ export const ESCUDOS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: defensa.blindaje
-      // alimenta blindajeContra() (lib/rules/blindaje.ts) SOLO si el escudo está
-      // en alto (toggle en "Bloquear daño") — docs/equipamiento.md:886, el
-      // beneficio depende de la acción de levantarlo, no de llevarlo encima.
+      // defensa.blindaje es del propio escudo, no del portador (Murillo, 2026-10-23): en
+      // "Bloquear daño", "Al escudo", golpeAlEscudo() (lib/rules/blindaje.ts) lo resta del
+      // golpe y el resto va a la durabilidad (defensa.puntosGolpe).
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // "Levantar [escudo]" construido 2026-09-27 (docs/motor.md, "Acciones sin
       // dado"): accionesDirectasDeAtaque() (combate.ts), para los cinco escudos —
-      // sin estado que rastrear, solo recuerda coste de acción/cobertura/blindaje
+      // sin estado que rastrear, solo recuerda coste de acción y cobertura
       // y deja rastro en Acciones recientes.
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "levantar_escudo" }, mecanismo: "accion_equipo", estado: "construido" },
       // defensa.puntosGolpe: CONSTRUIDO 2026-09-25 (docs/tareas.md, tarea 8) — capacidadDePieza()
@@ -458,14 +458,13 @@ export const ESCUDOS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: defensa.blindaje
-      // alimenta blindajeContra() (lib/rules/blindaje.ts) SOLO si el escudo está
-      // en alto (toggle en "Bloquear daño") — docs/equipamiento.md:886, el
-      // beneficio depende de la acción de levantarlo, no de llevarlo encima.
+      // defensa.blindaje es del propio escudo, no del portador (Murillo, 2026-10-23): en
+      // "Bloquear daño", "Al escudo", golpeAlEscudo() (lib/rules/blindaje.ts) lo resta del
+      // golpe y el resto va a la durabilidad (defensa.puntosGolpe).
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // "Levantar [escudo]" construido 2026-09-27 (docs/motor.md, "Acciones sin
       // dado"): accionesDirectasDeAtaque() (combate.ts), para los cinco escudos —
-      // sin estado que rastrear, solo recuerda coste de acción/cobertura/blindaje
+      // sin estado que rastrear, solo recuerda coste de acción y cobertura
       // y deja rastro en Acciones recientes.
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "levantar_escudo" }, mecanismo: "accion_equipo", estado: "construido" },
       // defensa.puntosGolpe: sin entrada propia — capacidad de RECURSOS ("durabilidad"), mismo
@@ -495,14 +494,13 @@ export const ESCUDOS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: defensa.blindaje
-      // alimenta blindajeContra() (lib/rules/blindaje.ts) SOLO si el escudo está
-      // en alto (toggle en "Bloquear daño") — docs/equipamiento.md:886, el
-      // beneficio depende de la acción de levantarlo, no de llevarlo encima.
+      // defensa.blindaje es del propio escudo, no del portador (Murillo, 2026-10-23): en
+      // "Bloquear daño", "Al escudo", golpeAlEscudo() (lib/rules/blindaje.ts) lo resta del
+      // golpe y el resto va a la durabilidad (defensa.puntosGolpe).
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // "Levantar [escudo]" construido 2026-09-27 (docs/motor.md, "Acciones sin
       // dado"): accionesDirectasDeAtaque() (combate.ts), para los cinco escudos —
-      // sin estado que rastrear, solo recuerda coste de acción/cobertura/blindaje
+      // sin estado que rastrear, solo recuerda coste de acción y cobertura
       // y deja rastro en Acciones recientes.
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "levantar_escudo" }, mecanismo: "accion_equipo", estado: "construido" },
       // defensa.puntosGolpe: sin entrada propia — capacidad de RECURSOS ("durabilidad"), mismo
@@ -532,14 +530,13 @@ export const ESCUDOS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: defensa.blindaje
-      // alimenta blindajeContra() (lib/rules/blindaje.ts) SOLO si el escudo está
-      // en alto (toggle en "Bloquear daño") — docs/equipamiento.md:886, el
-      // beneficio depende de la acción de levantarlo, no de llevarlo encima.
+      // defensa.blindaje es del propio escudo, no del portador (Murillo, 2026-10-23): en
+      // "Bloquear daño", "Al escudo", golpeAlEscudo() (lib/rules/blindaje.ts) lo resta del
+      // golpe y el resto va a la durabilidad (defensa.puntosGolpe).
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // "Levantar [escudo]" construido 2026-09-27 (docs/motor.md, "Acciones sin
       // dado"): accionesDirectasDeAtaque() (combate.ts), para los cinco escudos —
-      // sin estado que rastrear, solo recuerda coste de acción/cobertura/blindaje
+      // sin estado que rastrear, solo recuerda coste de acción y cobertura
       // y deja rastro en Acciones recientes.
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "levantar_escudo" }, mecanismo: "accion_equipo", estado: "construido" },
       // defensa.puntosGolpe: sin entrada propia — capacidad de RECURSOS ("durabilidad"), mismo
@@ -1441,14 +1438,13 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         mecanismo: "accion_equipo",
         estado: "pendiente",
       },
-      // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: defensa.blindaje
-      // alimenta blindajeContra() (lib/rules/blindaje.ts) SOLO si el escudo está
-      // en alto (toggle en "Bloquear daño") — docs/equipamiento.md:886, el
-      // beneficio depende de la acción de levantarlo, no de llevarlo encima.
+      // defensa.blindaje es del propio escudo, no del portador (Murillo, 2026-10-23): en
+      // "Bloquear daño", "Al escudo", golpeAlEscudo() (lib/rules/blindaje.ts) lo resta del
+      // golpe y el resto va a la durabilidad (defensa.puntosGolpe).
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // "Levantar [escudo]" construido 2026-09-27 (docs/motor.md, "Acciones sin
       // dado"): accionesDirectasDeAtaque() (combate.ts), para los cinco escudos —
-      // sin estado que rastrear, solo recuerda coste de acción/cobertura/blindaje
+      // sin estado que rastrear, solo recuerda coste de acción y cobertura
       // y deja rastro en Acciones recientes.
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "levantar_escudo" }, mecanismo: "accion_equipo", estado: "construido" },
       // defensa.puntosGolpe: sin entrada propia — capacidad de RECURSOS ("durabilidad"), mismo

@@ -120,9 +120,12 @@ export type Especie = {
   castas?: OpcionEspecie[];
   // Linaje: solo con esa casta, y entonces obligatorio (M10).
   linajes?: { casta: string; opciones: OpcionEspecie[] };
+  // +N a un atributo que elige el jugador (Humanos, `docs/fuente/especies.md`). Se guarda
+  // en especieOpciones.atributo y lo materializa especieDeFicha; cambiarlo no resetea.
+  atributoLibre?: number;
 };
 
-export type EspecieOpciones = { casta?: string; linaje?: string };
+export type EspecieOpciones = { casta?: string; linaje?: string; atributo?: AtributoId };
 
 // --- Ayudas para declarar rasgos ------------------------------------------
 
@@ -148,6 +151,9 @@ function atributos(valores: Partial<Record<AtributoId, number>>): Rasgo {
     ],
   };
 }
+
+// Para el atributo libre (especieDeFicha), con el mismo rasgo que los fijos.
+export const rasgoDeAtributos = atributos;
 
 // Casilla en una tirada que solo aparece si la ficha tiene el rasgo (§14.8): la
 // declara `casillas` y la suma montarTirada como cualquier casilla del equipo.
@@ -511,6 +517,7 @@ export const ESPECIES: Especie[] = [
     descripcion:
       "Una Federación transhumanista, aumentada en más de un 90 %, pieza clave de la Confederación y a la vez origen de los tecno-oligarcas de la Liga del Gran Cisma.",
     referencia: null,
+    atributoLibre: 1,
     rasgos: [
       {
         id: "bolsa_aumentos",
@@ -761,11 +768,13 @@ export function normalizarOpciones(especieId: string | null, raw: unknown): Espe
   const especie = especiePorId(especieId);
   if (!especie || !raw || typeof raw !== "object" || Array.isArray(raw)) return {};
   const r = raw as Record<string, unknown>;
+  const atributo = especie.atributoLibre ? ATRIBUTOS.find((a) => a.id === r.atributo)?.id : undefined;
+  const conAtributo = atributo ? { atributo } : {};
   const casta = especie.castas?.find((c) => c.id === r.casta);
-  if (!casta) return {};
+  if (!casta) return conAtributo;
   const linaje =
     especie.linajes && especie.linajes.casta === casta.id
       ? especie.linajes.opciones.find((l) => l.id === r.linaje)
       : undefined;
-  return linaje ? { casta: casta.id, linaje: linaje.id } : { casta: casta.id };
+  return linaje ? { casta: casta.id, linaje: linaje.id, ...conAtributo } : { casta: casta.id, ...conAtributo };
 }

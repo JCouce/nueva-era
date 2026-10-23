@@ -10,6 +10,7 @@ import {
   descartarAvisoEspecialidadesAction,
   saveIdentityAction,
   setEspecieAction,
+  setAtributoLibreAction,
   resetBuildAction,
   equiparAction,
   comprarAumentoAction,
@@ -606,6 +607,9 @@ export function CharacterSheet({
   const onEspecie = (eleccion: EleccionEspecie) => {
     runSave(() => setEspecieAction(characterId, eleccion), setSheet);
   };
+  const onAtributoLibre = (id: AtributoId) => {
+    runSave(() => setAtributoLibreAction(characterId, id), setSheet);
+  };
   const onTrasfondo = (v: string) => {
     setSheet((s) => ({ ...s, trasfondo: v }));
     scheduleIdentity();
@@ -788,6 +792,7 @@ export function CharacterSheet({
           onAltura={onAltura}
           onPeso={onPeso}
           onEspecie={onEspecie}
+          onAtributoLibre={onAtributoLibre}
           onTrasfondo={onTrasfondo}
           onMotivacion={onMotivacion}
           onPrioridad={commitPrioridad}
@@ -810,6 +815,7 @@ export function CharacterSheet({
           onReparar={commitReparar}
           onFabricar={commitFabricar}
           onGastarRecurso={commitAjustarRecurso}
+          onDaniarEscudo={commitAjustarRecurso}
           onAjustarFarmaco={commitAjustarFarmaco}
           onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
           onPagarFatiga={commitPagarFatiga}

@@ -345,6 +345,14 @@ export function recursoDe(sheet: Sheet, instanciaId: string): RecursoInstancia |
   return sheet.recursos.find((r) => r.instanciaId === instanciaId);
 }
 
+// Escudo roto (Murillo, 2026-10-23): su durabilidad a 0. Bloquea golpear, bloquear y levantar
+// con él hasta que se repare (S86); es derivado, así que reparar lo devuelve solo.
+export const MOTIVO_ESCUDO_ROTO = "Escudo roto: repáralo";
+
+export function escudoRoto(sheet: Pick<Sheet, "recursos">, instanciaId: string): boolean {
+  return sheet.recursos.find((r) => r.instanciaId === instanciaId)?.actual === 0;
+}
+
 // Delta manual (+/-), clamp [0, max] — mismo patrón que ajustarRecurso() de
 // PG/fatiga en master/combate/actions.ts, pero sobre la ficha persistente en
 // vez de sobre el snapshot de un Combatiente.

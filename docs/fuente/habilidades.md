@@ -33,11 +33,11 @@ Atletismo\**
 \
 · Difícil (Dificultad 9+): especialmente complicado, el mundo se desmorona a tus pies, échale inventiva.\
 \
-**· Escalada:\
+**· Escalada:** La escalada es una prueba de **potencia + escalada** contra dificultad variable, se resuelve como acción simple, la velocidad habitual de escalada es **4 + \[(Potencia + Atletismo)/2\] metros** en caso de obtener éxito, en caso de fracaso el personaje no consigue avanzar, en caso de fracaso crítico el personaje se precipita.**\
 \
-· Escapismo:\
+· Escapismo:** el escapismo funciona con **reflejos** y sirve tanto en tiradas enfrentadas para liberarse de una presa de un enemigo como en pruebas de dificultad para escurrirse por sitios de difícil acceso.**\
 \
-· Lanzamiento:** \
+· Lanzamiento:** El personaje utiliza el atributo de **potencia** para calcular el alcance de un lanzamiento y una prueba de **reflejos + lanzamiento** como si de un ataque a distancia se tratase.\
 \
 **· Nado:** La velocidad básica de movimiento en medio acuático es: **4 + \[(Potencia + Atletismo)/2\] metros.** Mantenerse a flote emplea una reacción o una acción simple por turno.\
 En caso de aguas turbulentas, el personaje deberá realizar una prueba de dificultad tanto para moverse nadando como para mantenerse a flote, la dificultad de dicha tirada variará en función de las circunstancias. La prueba puede resolverse con una tirada de **potencia + nado,** para un personaje no entrenado en **atletismo** todas las aguas se consideran turbulentas y además aumenta la dificultad de aquellas que ya lo fueran en 3. Si se supera la tirada de forma crítica no hay restricción de movimiento, con un éxito normal se mueve la mitad de movimiento, con un fallo puede mantenerse a flote pero no moverse, con fallo crítico se hunde.\
@@ -94,12 +94,12 @@ Mientras mantiene la presa el personaje recibe un penalizador en tiradas de esqu
 \
 **Combate a Distancia\
 \
-Especialidades:** Armas Arrojadizas, Armas Elásticas, Armas de Fuego Cortas, Armas de Fuego Larga, Armas Pesadas.\
+Especialidades:** Armas Arrojadizas, Armas Impulsoras, Pistolas, Escopetas, Subfusiles, Fusiles de Asalto, Fusiles de Precisión, Ametralladoras, Armas Pesadas.\
 
 **Acciones:** Apuntar, Disparo a la Carrera.\
 \
 · **Apuntar:** El personaje se toma un momento para apuntar a un objetivo y afinar el disparo.**\**
-Esta acción se resuelve como una acción simple, se realiza una tirada de **perspicacia** + **combate a distancia**, la dificultad para un objetivo de tamaño medio es de 6, a esta dificultad se le aplican posibles penalizadores por cobertura y visibilidad. Si el objetivo tiene otro tamaño, se le aplican modificadores también (+1 bonificador por cada tamaño mayor; -1 penalizador por cada tamaño menor). Si la tirada tiene éxito, el tirador gana un bonificador de +1 a su siguiente ataque a distancia, si tiene éxito crítico además omite 1 nivel de cobetura.\
+Esta acción se resuelve como una acción simple, se realiza una tirada de **perspicacia** + **combate a distancia**, la dificultad para un objetivo de tamaño medio es de 6, a esta dificultad se le aplican posibles penalizadores por cobertura y visibilidad. Si el objetivo tiene otro tamaño, se le aplican modificadores de dificultad también (+1 bonificador por cada tamaño mayor; -1 penalizador por cada tamaño menor). Si la tirada tiene éxito, el tirador gana un bonificador de +1 a su siguiente ataque a distancia, si tiene éxito crítico además omite 1 nivel de cobetura.\
 El ataque debe resolverse antes del final del próximo turno o se perderán los bonificadores, si el objetivo desaparece del campo de visión del personaje antes de que realice el ataque no se obtiene ningún beneficio.\
 \
 · **Disparo a la Carrera:** El personaje puede realizar un ataque a distancia de tipo simple o estándar a la par que una acción simple de movimiento (salvo especificado), esto se resuelve como acción estándar recibiendo un penalizador de -2 por dificultad al ataque.\
@@ -107,6 +107,18 @@ El ataque debe resolverse antes del final del próximo turno o se perderán los 
 **Cultura**\
 \
 **Especialidades:** Economía, Historia, Lingüística, Sociedad.\
+\
+**· Economía:** Comprensión de los sistemas monetarios, mercados, redes comerciales y flujos de recursos a escala local o galáctica. Permite evaluar el valor real de bienes u objetos extraños, identificar rutas comerciales rentables, detectar fraudes financieros o predecir fluctuaciones de mercado.\
+La prueba habitual es `perspicacia + economía` ****para analizar mercados o tasaciones; se puede utilizar `expresión + economía` para especular o negociar.\
+\
+**· Historia:** El conocimiento de los acontecimientos pasados, mitologías, grandes conflictos, linajes y la evolución de culturas o especies. Resulta fundamental para contextualizar hallazgos arqueológicos, identificar símbolos o ruinas antiguas, comprender rencillas históricas entre facciones y anticipar comportamientos basados en precedentes históricos.\
+La prueba habitual es `perspicacia + historia` ****para recordar hechos relevantes, descifrar iconografía antigua o identificar el origen de un artefacto.\
+\
+**· Lingüística:** Estudio de las lenguas, dialectos, criptografía verbal y estructuras gramaticales de distintas especies o regiones. Permite traducir textos antiguos o raros, aprender o interpretar idiomas desconocidos sobre la marcha, descifrar códigos escritos y detectar acentos o modismos regionales. La prueba habitual es **p**`erspicacia + lingüística` para descifrar lenguas muertas o códigos y **e**`xpresión + lingüística` para comunicarse eficazmente en un dialecto poco común o simular un acento nativo.\
+Cada punto en la especialidad de lingüística supone un idioma adicional conocido.\
+\
+**· Sociedad:** El dominio de los protocolos sociales, etiquetas, jerarquías, tradiciones, leyes y tabúes de diferentes culturas, facciones o estamentos (saber cómo comportarse en la alta aristocracia, en la calle o dentro de una corporación). Permite saber cómo comportarse en eventos formales, evitar ofensas culturales inadvertidas e identificar quién ostenta el poder real en una estructura social.\
+La prueba habitual de **p**`erspicacia + sociedad` sirve para leer la jerarquía, normas implícitas de un entorno o prever el comportamiento de una multitud; con **e**`xpresión + sociedad` podrá mimetizarse en un entorno social y desenvolverse según sus códigos y etiqueta.\
 \
 **Exploración\
 \**
@@ -143,9 +155,9 @@ Interpretación\
 \
 Sigilo\
 \
-Acciones:** Esconderse, Hurto.\
+Especialidades:** Esconderse, Hurto.\
 \
-**· Esconderse:** Un personaje puede esconderse y permanecer en sitio fijo en sigilo o podrá desplazarse de esta forma con distintos tipos de acciones según su dificultad. En todo caso, deberá lanzar una tirada de **reflejos + sigilo** contra la **alerta** de posibles testigos.\
+**· Esconderse:** Un personaje puede esconderse y permanecer en sitio fijo en sigilo o podrá desplazarse de esta forma con distintos tipos de acciones según su dificultad. En todo caso, deberá lanzar una tirada de **reflejos + esconderse** contra la **alerta** de posibles testigos.\
 \
 Puede ocultarse en una posición como acción simple, aunque si lo hace siendo observado recibe un penalizador de dificultad de -6 contra ese objetivo. Permanecer en una posición en la que ya se estaba oculto se resuelve como acción gratuita.\
 \
@@ -153,7 +165,9 @@ Puede ocultarse en una posición como acción simple, aunque si lo hace siendo o
 \
 · Total de su velocidad básica tiene un penalizador de -4 por dificultad.\
 \
-· Esprintando tiene un penalizador de -8 por dificultad.**\
+· Esprintando tiene un penalizador de -8 por dificultad.\
+\
+**· Hurto:** El hurto se resuelva como acción simple o reacción con una prueba enfrentada de **reflejos + hurto** con penalizador de dificultad variable según el elemento en cuestión y la dificultad de acceso a este contra una de **perspicacia + exploración** del objetivo.**\
 \
 Tecnociencia\
 \

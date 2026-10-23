@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  especiePorId,
   clampInt,
   ATRIBUTO_MIN,
   ATRIBUTO_MAX,
@@ -34,6 +35,7 @@ import { EquipoTab } from "@/app/characters/[id]/_components/EquipoTab";
 import { TiendaTab } from "@/app/characters/[id]/_components/TiendaTab";
 import { RecursosTab } from "@/app/characters/[id]/_components/RecursosTab";
 import { EspecieSelector } from "@/app/characters/[id]/_components/EspecieSelector";
+import { AtributoLibre } from "@/app/characters/[id]/_components/personaje/AtributoLibre";
 import { useFichaResuelta, SIN_ESTADOS } from "@/hooks/useFichaResuelta";
 import {
   renombrarNpcAction,
@@ -66,6 +68,7 @@ import {
   ajustarFatigaTemporalNpcAction,
   terminarEscenaNpcAction,
   setEspecieNpcAction,
+  setAtributoLibreNpcAction,
   ponerDoteNpcAction,
   quitarDoteNpcAction,
   comprarAumentoNpcAction,
@@ -395,6 +398,9 @@ export function NpcEditor({
   const commitEspecie = (eleccion: EleccionEspecie) => {
     runSave(() => setEspecieNpcAction(npcId, eleccion), setSheet);
   };
+  const commitAtributoLibre = (id: AtributoId) => {
+    runSave(() => setAtributoLibreNpcAction(npcId, id), setSheet);
+  };
   const eleccion = eleccionDeFicha(sheet);
 
   // Sin confirm() — bloquea el hilo con un diálogo nativo, y el resto de la
@@ -440,6 +446,11 @@ export function NpcEditor({
             bloqueo={null}
             avisar={false}
             onElegir={commitEspecie}
+          />
+          <AtributoLibre
+            especie={especiePorId(sheet.especieId)}
+            elegido={sheet.especieOpciones.atributo ?? null}
+            onElegir={commitAtributoLibre}
           />
           <label className="flex flex-col gap-1">
             <span className="font-mono text-[10px] uppercase tracking-widest text-muted">

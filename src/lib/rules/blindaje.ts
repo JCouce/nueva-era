@@ -6,11 +6,15 @@
 // S85). Tóxico SÍ cuenta como cualquier otro tipo: lo
 // que el blindaje no toca es el estado de Enfermedad/Envenenamiento que
 // dispare el arma, resuelto aparte por su propia salvación (ACCIONES).
+//
+// El escudo melee NO suma al blindaje del portador (Murillo, 2026-10-23): su blindaje solo
+// sirve para que el propio escudo aguante cuando el golpe le da a él (golpeAlEscudo).
 import { equipoPorId, type Armadura, type Subsistema } from "../catalog/equipo";
 import type { ArmaMelee } from "../catalog/armasMelee";
 import { nivelesHasta, ultimoQueDefine } from "./equipo";
 import { armaduraNaturalDeAumentos, blindajeReactivoDeAumentos } from "./aumentosTiradas";
 import { blindajeDelBrazo } from "./brazoBionico";
+import { MOTIVO_ESCUDO_ROTO } from "./recursos";
 import type { Sheet } from "./sheet";
 
 export const TIPOS_DANIO = [
@@ -62,10 +66,10 @@ function absorcionEscudoDeflector(sheet: Sheet): number {
 // el de Kerzul) — null si no lleva ninguno. Si llevara más de uno (nada lo
 // impide hoy), se usa el primero: caso de borde sin sentido de juego real,
 // no vale la pena resolver "cuál cuenta".
-function escudoMeleeEquipado(sheet: Sheet): ArmaMelee | null {
+function escudoMeleeEquipado(sheet: Pick<Sheet, "equipo">): { escudo: ArmaMelee; instanciaId: string } | null {
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
-    if (cat?.familia === "armaMelee" && cat.defensa) return cat;
+    if (cat?.familia === "armaMelee" && cat.defensa) return { escudo: cat, instanciaId: pieza.instanciaId };
   }
   return null;
 }
@@ -120,13 +124,12 @@ export function blindajeNoCuenta(tipo: TipoDanio): string | null {
 export function desgloseBlindaje(
   sheet: Sheet,
   tipo: TipoDanio,
-  escudoEnAlto: boolean,
   armaduraNatural: ArmaduraNatural,
   reactivo = false,
   conBrazo = false,
 ): LineaBlindaje[] {
   // Ignífuga nv1 (S85): contra Fuego cuenta solo "el blindaje de su armadura", sin natural,
-  // deflector, escudo, Densificar ni brazo.
+  // deflector, Densificar ni brazo.
   if (tipo === "fuego") {
     const ignifuga = armaduraConIgnifuga(sheet);
     if (ignifuga) return [{ etiqueta: `${ignifuga.label} · Mejora Ignífuga`, valor: ignifuga.blindaje }];
@@ -156,11 +159,6 @@ export function desgloseBlindaje(
 
   const conductor = bonoTejidoConductor(sheet, tipo);
   if (conductor > 0) lineas.push({ etiqueta: "Tejido Conductor", valor: conductor });
-
-  if (escudoEnAlto) {
-    const escudo = escudoMeleeEquipado(sheet);
-    if (escudo?.defensa) lineas.push({ etiqueta: `${escudo.label} (en alto)`, valor: escudo.defensa.blindaje });
-  }
 
   const r = reactivo ? blindajeReactivoDeAumentos(sheet) : null;
   // Su nota va junto a la casilla (casillaBlindajeReactivo), no repetida en el desglose.
@@ -227,16 +225,59 @@ export function casillaBlindajeReactivo(
   };
 }
 
-// Cuánto blindaje tiene el personaje AHORA MISMO contra `tipo`. `escudoEnAlto`
-// se declara en el momento (docs/equipamiento.md:886, "acción simple para
-// levantarlo") — no hay estado persistente de "escudo levantado" que guardar
-// en la ficha, es una elección de este cálculo en concreto, igual que
-// "atacantes adicionales" en Defensa.
-export function blindajeContra(
-  sheet: Sheet,
+// Cuánto blindaje tiene el personaje AHORA MISMO contra `tipo`: la suma del desglose.
+export function blindajeContra(sheet: Sheet, tipo: TipoDanio, armaduraNatural: ArmaduraNatural): number {
+  return desgloseBlindaje(sheet, tipo, armaduraNatural).reduce((total, l) => total + l.valor, 0);
+}
+
+// El golpe le da al escudo (Murillo, 2026-10-23): el ataque supera la defensa pero falla por
+// la cobertura del escudo. El escudo recibe el daño total, le resta su propio blindaje y el
+// resto va a su durabilidad (el recurso "durabilidad" de la pieza, recursos.ts); al portador
+// no le llega nada. Con la durabilidad a 0 se rompe. Contra Fuego su blindaje vale 0 (un
+// escudo no lleva Ignífuga) y contra Mental no aplica (S86). null sin escudo equipado.
+// `bloqueada`: por qué no se puede elegir "al escudo" ahora (roto, o daño mental).
+export type GolpeAlEscudo = {
+  instanciaId: string;
+  etiqueta: string;
+  blindaje: LineaBlindaje;
+  aDurabilidad: number;
+  durabilidadActual: number;
+  durabilidadMax: number;
+  durabilidadResultante: number;
+  seRompe: boolean;
+  bloqueada: string | null;
+};
+
+export function golpeAlEscudo(
+  sheet: Pick<Sheet, "equipo" | "recursos">,
   tipo: TipoDanio,
-  escudoEnAlto: boolean,
-  armaduraNatural: ArmaduraNatural,
-): number {
-  return desgloseBlindaje(sheet, tipo, escudoEnAlto, armaduraNatural).reduce((total, l) => total + l.valor, 0);
+  danio: number,
+): GolpeAlEscudo | null {
+  const equipado = escudoMeleeEquipado(sheet);
+  const defensa = equipado?.escudo.defensa;
+  if (!equipado || !defensa) return null;
+  const { escudo, instanciaId } = equipado;
+  // Sin entrada en recursos (ficha sin reconciliar) el escudo está entero.
+  const recurso = sheet.recursos.find((r) => r.instanciaId === instanciaId);
+  const durabilidadMax = recurso?.max ?? defensa.puntosGolpe;
+  const durabilidadActual = recurso?.actual ?? durabilidadMax;
+  const blindaje: LineaBlindaje =
+    tipo === "fuego"
+      ? { etiqueta: `${escudo.label} · Fuego (un escudo no lleva Ignífuga)`, valor: 0 }
+      : { etiqueta: escudo.label, valor: defensa.blindaje };
+  const aDurabilidad = Math.max(0, Math.round(danio) - blindaje.valor);
+  const durabilidadResultante = Math.max(0, durabilidadActual - aDurabilidad);
+  const bloqueada =
+    durabilidadActual === 0 ? MOTIVO_ESCUDO_ROTO : tipo === "mental" ? "Mental: el daño mental no lo para un escudo." : null;
+  return {
+    instanciaId,
+    etiqueta: escudo.label,
+    blindaje,
+    aDurabilidad,
+    durabilidadActual,
+    durabilidadMax,
+    durabilidadResultante,
+    seRompe: durabilidadActual > 0 && durabilidadResultante === 0,
+    bloqueada,
+  };
 }

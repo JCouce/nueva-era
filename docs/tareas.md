@@ -254,7 +254,7 @@ usuario). Construido de una sentada tras aclarar en conversación una excepción
   Envenenamiento que dispare, resuelto aparte por su propia salvación.
 - **"Bloquear daño"** (Acciones → Defensa, `AccionesTab.tsx`/`BloquearDanioModal.tsx`
   nuevo): selector de tipo de daño + toggle "Escudo en alto" (solo si hay uno
-  equipado) + contador de daño recibido → "Blindaje: N · Pasa: N". Es un calculador
+  equipado; quitado el 2026-10-23, ver "Cobertura y escudos") + contador de daño recibido → "Blindaje: N · Pasa: N". Es un calculador
   puro, sin dado y sin mutar la ficha — no necesita el patrón de callback de
   Reparar/Fabricar, ni ninguna prop nueva en `CharacterSheet`/`NpcEditor`/
   `NpcAccionesPanel` (los tres montan `AccionesTab` igual, la fila sale gratis en
@@ -832,6 +832,33 @@ construir (dos pasadas: rediseño, luego revisión).
 - [x] Panel del máster: fichas "En revisión" arriba, con contador
       *(secciones En revisión / En creación / En juego)*
 - [x] La migración va en el mismo deploy que especies *(desplegada el 2026-10-13, push `7193cf9`)*
+
+### Cobertura y escudos (regla de Murillo) ✅, 2026-10-23
+
+Regla FIRME de Murillo vía el usuario (`docs/sistema.md` §6 "Cobertura y escudos", supuesto
+S86): si el ataque supera la defensa pero falla por la cobertura, golpea la cobertura; si es
+un escudo, recibe el daño entero, resta su blindaje y el resto va a su durabilidad. El
+blindaje del escudo **deja de sumar al del portador**.
+
+- **Esquiva**: casilla "Tengo cobertura (+2)" en "Defensa / esquiva" (`ACCIONES`,
+  `rules/acciones.ts`), para cualquier ficha, lleve escudo o no (+2 fijo, decisión del usuario).
+- **Blindaje del portador sin escudo**: `desgloseBlindaje`/`blindajeContra` (`rules/blindaje.ts`)
+  pierden el parámetro `escudoEnAlto`; fuera la casilla "Escudo en alto" de "Bloquear daño".
+  Ignífuga (S85) y el Brazo Biónico no cambian.
+- **Golpe al escudo**: `golpeAlEscudo(sheet, tipo, daño)` (`rules/blindaje.ts`) da el blindaje del
+  escudo, lo que pasa a durabilidad (`max(0, daño − blindaje)`), la durabilidad actual y la
+  resultante, y si se rompe. Contra Fuego el blindaje del escudo vale 0; contra Mental no se
+  puede elegir. Usa el recurso `durabilidad` que ya existía (sin migración).
+- **Escudo roto** (durabilidad a 0): "Golpear con", "Bloquear con" y "Levantar" ese escudo salen
+  bloqueadas con "Escudo roto: repáralo" (`escudoRoto`, `rules/recursos.ts`; `combate.ts`).
+  Reparar con Materiales las devuelve solas.
+- **"Bloquear daño"**: selector "¿A qué da el golpe?" (A ti · Al escudo · A la cobertura). "Al
+  escudo" enseña el blindaje del escudo y "El escudo recibe X · durabilidad A → B", con botón
+  que lo resta (`onDaniarEscudo` → `ajustarRecursoAction`, solo en la ficha del jugador; en NPC y
+  combate en vivo, solo los números). "A la cobertura": no recibes daño.
+- Tests: desglose del portador sin escudo, `golpeAlEscudo` (durabilidad, rotura justo en 0 y con
+  sobrante, fuego, mental, roto), filas bloqueadas con el escudo roto y la casilla de cobertura
+  en la esquiva. Sin probar en navegador todavía.
 
 ## Pendiente
 

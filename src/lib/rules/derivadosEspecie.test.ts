@@ -67,9 +67,9 @@ describe("caracterización: movimiento, carga y blindaje sin efectos de especie"
       const mods = modificadoresActivos(s);
       assert.deepEqual(movimiento(s, mods, FORMULA_MOVIMIENTO_GENERAL), c.mov);
       assert.equal(cargaMaxima(s, mods, 1), c.carga);
-      assert.deepEqual(desgloseBlindaje(s, "cinetico", false, SIN_ARMADURA_NATURAL), [{ etiqueta: "Armadura Pesada", valor: 8 }]);
-      assert.deepEqual(desgloseBlindaje(s, "fuego", false, SIN_ARMADURA_NATURAL), [{ etiqueta: "Fuego (falta Mejora Ignífuga)", valor: 0 }]);
-      assert.deepEqual(desgloseBlindaje(s, "mental", false, SIN_ARMADURA_NATURAL), [{ etiqueta: "Mental omite blindaje", valor: 0 }]);
+      assert.deepEqual(desgloseBlindaje(s, "cinetico", SIN_ARMADURA_NATURAL), [{ etiqueta: "Armadura Pesada", valor: 8 }]);
+      assert.deepEqual(desgloseBlindaje(s, "fuego", SIN_ARMADURA_NATURAL), [{ etiqueta: "Fuego (falta Mejora Ignífuga)", valor: 0 }]);
+      assert.deepEqual(desgloseBlindaje(s, "mental", SIN_ARMADURA_NATURAL), [{ etiqueta: "Mental omite blindaje", valor: 0 }]);
     });
   }
 
@@ -83,7 +83,7 @@ describe("caracterización: movimiento, carga y blindaje sin efectos de especie"
 
   test("sin armadura, desglose vacío", () => {
     for (const especieId of [null, "riux", "humano"]) {
-      assert.deepEqual(desgloseBlindaje({ ...defaultSheet(), especieId }, "cinetico", false, SIN_ARMADURA_NATURAL), []);
+      assert.deepEqual(desgloseBlindaje({ ...defaultSheet(), especieId }, "cinetico", SIN_ARMADURA_NATURAL), []);
     }
   });
 });
@@ -186,20 +186,20 @@ describe("armadura natural del Arköru (§14.7, M7)", () => {
 
   test("contra cinético se suma a la armadura puesta, en línea propia", () => {
     const r = resuelta(ficha("arkoru", 0, false));
-    const desglose = desgloseBlindaje(r.ficha, "cinetico", false, r.blindaje.armaduraNatural);
+    const desglose = desgloseBlindaje(r.ficha, "cinetico", r.blindaje.armaduraNatural);
     assert.deepEqual(desglose, [{ etiqueta: "Armadura Pesada", valor: 8 }, LINEA]);
-    assert.equal(blindajeContra(r.ficha, "cinetico", false, r.blindaje.armaduraNatural), 9);
+    assert.equal(blindajeContra(r.ficha, "cinetico", r.blindaje.armaduraNatural), 9);
   });
 
   test("sin armadura, solo la natural", () => {
     const r = resuelta({ ...defaultSheet(), especieId: "arkoru" });
-    assert.deepEqual(desgloseBlindaje(r.ficha, "plasma", false, r.blindaje.armaduraNatural), [LINEA]);
+    assert.deepEqual(desgloseBlindaje(r.ficha, "plasma", r.blindaje.armaduraNatural), [LINEA]);
   });
 
   test("no contra Fuego ni Mental", () => {
     const r = resuelta(ficha("arkoru", 0, false));
-    assert.equal(blindajeContra(r.ficha, "fuego", false, r.blindaje.armaduraNatural), 0);
-    assert.equal(blindajeContra(r.ficha, "mental", false, r.blindaje.armaduraNatural), 0);
+    assert.equal(blindajeContra(r.ficha, "fuego", r.blindaje.armaduraNatural), 0);
+    assert.equal(blindajeContra(r.ficha, "mental", r.blindaje.armaduraNatural), 0);
   });
 
   test("las demás especies no la tienen", () => {

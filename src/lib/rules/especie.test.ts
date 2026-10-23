@@ -9,6 +9,8 @@ import {
   hayQuePerder,
   hayQueAvisar,
   bloqueoDeEspecie,
+  elegirAtributoLibre,
+  faltaAtributoLibre,
   eleccionCompleta,
   eleccionDeFicha,
   eleccionesIguales,
@@ -65,8 +67,17 @@ describe("especieDeFicha: atributos de cada especie (sistema.md §14.4)", () => 
     assert.deepEqual(efectivos(ficha("dragon")), CEROS);
   });
 
-  test("Humanos: sin modificadores", () => {
+  test("Humanos sin elegir: sin modificadores", () => {
     assert.deepEqual(efectivos(ficha("humano")), CEROS);
+  });
+
+  test("Humanos con atributo libre: +1 a lo elegido, con su fuente", () => {
+    const s = ficha("humano", { atributo: "percepcion" });
+    assert.deepEqual(efectivos(s), con({ percepcion: 1 }));
+    assert.deepEqual(
+      especieDeFicha(s)!.modificadores.map((m) => m.fuente),
+      ["Humanos · libre elección"],
+    );
   });
 
   test("Riux", () => {
@@ -666,5 +677,56 @@ describe("resetearFicha (reset general del deploy)", () => {
       [r.edad, r.altura, r.peso, r.motivacion, r.trasfondo, r.prioridades.recursos, r.especieId, r.especieOpciones],
       [30, 190, 90, "algo", "historia", "A", "manduk", { casta: "noble", linaje: "ilkrem" }],
     );
+  });
+});
+
+describe("atributo libre (Humanos)", () => {
+  const BORRADOR: ContextoEleccion = { aprobada: false, esMaster: false, libre: false };
+  const APROBADA: ContextoEleccion = { aprobada: true, esMaster: false, libre: false };
+
+  test("en borrador se elige y se cambia sin resetear nada", () => {
+    const comprada = setAtributoValue(setPrioridad(ficha("humano"), "atributos", "A"), "fuerza", 3);
+    const r1 = elegirAtributoLibre(comprada, "fuerza", BORRADOR);
+    assert.ok("sheet" in r1);
+    const r2 = elegirAtributoLibre(r1.sheet, "agilidad", BORRADOR);
+    assert.ok("sheet" in r2);
+    assert.equal(r2.sheet.especieOpciones.atributo, "agilidad");
+    assert.equal(r2.sheet.atributos.fuerza, 3);
+    assert.deepEqual(efectivos(r2.sheet), con({ fuerza: 3, agilidad: 1 }));
+  });
+
+  test("no cuenta para el tope de creación: Fuerza comprada 4 + 1 = 5", () => {
+    const s = setAtributoValue(setPrioridad(ficha("humano", { atributo: "fuerza" }), "atributos", "S+"), "fuerza", 4);
+    assert.equal(s.atributos.fuerza, 4);
+    assert.equal(efectivos(s).fuerza, 5);
+  });
+
+  test("especie sin atributo libre: error", () => {
+    const r = elegirAtributoLibre(ficha("riux"), "fuerza", BORRADOR);
+    assert.deepEqual(r, { error: "Tu especie no elige atributo" });
+  });
+
+  test("aprobada: el jugador lo elige una vez; luego, solo el máster", () => {
+    const r = elegirAtributoLibre(ficha("humano"), "caracter", APROBADA);
+    assert.ok("sheet" in r);
+    assert.ok("error" in elegirAtributoLibre(r.sheet, "fuerza", APROBADA));
+    const master = elegirAtributoLibre(r.sheet, "fuerza", { ...APROBADA, esMaster: true });
+    assert.ok("sheet" in master && master.sheet.especieOpciones.atributo === "fuerza");
+  });
+
+  test("cambiar de especie lo pierde; parseSheet lo descarta fuera de Humanos", () => {
+    const r = elegirEspecie(ficha("humano", { atributo: "fuerza" }), { especieId: "riux" }, BORRADOR);
+    assert.ok("sheet" in r);
+    assert.deepEqual(r.sheet.especieOpciones, {});
+    const leida = parseSheet({ ...defaultSheet(), schemaVersion: SCHEMA_VERSION, especieId: "riux", especieOpciones: { atributo: "fuerza" } });
+    assert.deepEqual(leida.especieOpciones, {});
+    const humana = parseSheet({ ...defaultSheet(), schemaVersion: SCHEMA_VERSION, especieId: "humano", especieOpciones: { atributo: "fuerza" } });
+    assert.deepEqual(humana.especieOpciones, { atributo: "fuerza" });
+  });
+
+  test("falta para enviar hasta que se elige", () => {
+    assert.equal(faltaAtributoLibre(ficha("humano")), "Elige el atributo +1");
+    assert.equal(faltaAtributoLibre(ficha("humano", { atributo: "fuerza" })), null);
+    assert.equal(faltaAtributoLibre(ficha("riux")), null);
   });
 });

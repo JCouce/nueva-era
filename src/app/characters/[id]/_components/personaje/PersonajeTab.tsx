@@ -9,6 +9,7 @@ import {
   excesosDePuntos,
   faltasDeDotes,
   avisosParaEnviar,
+  type AtributoId,
   type CategoriaPrioridad,
   type EleccionEspecie,
   type EstadoPaso,
@@ -56,6 +57,7 @@ export function PersonajeTab({
   onAltura,
   onPeso,
   onEspecie,
+  onAtributoLibre,
   onTrasfondo,
   onMotivacion,
   onPrioridad,
@@ -72,6 +74,7 @@ export function PersonajeTab({
   onAltura: (v: number | null) => void;
   onPeso: (v: number | null) => void;
   onEspecie: (eleccion: EleccionEspecie) => void;
+  onAtributoLibre: (id: AtributoId) => void;
   onTrasfondo: (v: string) => void;
   onMotivacion: (v: string) => void;
   onPrioridad: (categoria: CategoriaPrioridad, letra: LetraPrioridad | null) => void;
@@ -119,7 +122,7 @@ export function PersonajeTab({
 
       <PanelFieldset disabled={soloLectura}>
         {activa === "origen" && (
-          <OrigenPanel ficha={ficha} aprobada={aprobada} esMaster={esMaster} creditos={creditos} soloLectura={soloLectura} onEspecie={onEspecie} />
+          <OrigenPanel ficha={ficha} aprobada={aprobada} esMaster={esMaster} creditos={creditos} soloLectura={soloLectura} onEspecie={onEspecie} onAtributoLibre={onAtributoLibre} />
         )}
         {activa === "prioridades" && <PrioridadCard prioridades={sheet.prioridades} onSet={onPrioridad} />}
         {activa === "identidad" && (

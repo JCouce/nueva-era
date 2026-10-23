@@ -3022,7 +3022,7 @@ Una vez finalizado el tiempo de efecto, el sistema nervioso sufre una fuerte dep
 **\**
 *Objeto Común: 50 créditos***\
 \
-Gel Sanador Avanzado:** La evolución optimizada del tratamiento médico de campo. A diferencia de la versión estándar, este compuesto incorpora una suspensión hiper-nutritiva de alta densidad energética y andamios moleculares avanzados, aportando tanto los factores de crecimiento como los nutrientes moleculares necesarios para alimentar la mitosis celular. De este modo, la valija suministra el "combustible" desde el exterior, evitando saquear las reservas metabólicas del paciente y eliminando el desgaste por fatiga.
+Gel Sanador Avanzado:** La evolución optimizada del tratamiento médico de campo. A diferencia de la versión estándar, este compuesto incorpora una suspensión hiper-nutritiva de alta densidad energética y andamios moleculares avanzados, aportando tanto los factores de crecimiento como los nutrientes moleculares necesarios para alimentar la mitosis celular. De este modo, suministra el "combustible" desde el exterior, evitando saquear las reservas metabólicas del paciente y eliminando el desgaste por fatiga.
 
 - **Aplicación:** Acción compleja (salvo medios facilitadores) y tirada de *Perspicacia + Medicina* (dificultad 4).
 - **Efecto:** Cada éxito acumulado sana un nivel de daño no letal, cada dos éxitos un nivel de daño letal, y cada cuatro éxitos un nivel de daño grave (a discreción del interventor).\

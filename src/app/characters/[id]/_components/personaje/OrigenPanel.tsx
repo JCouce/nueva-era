@@ -5,8 +5,10 @@ import {
   ESPECIES,
   especiePorId,
   bloqueoDeEspecie,
+  bloqueoDeAtributoLibre,
   hayQueAvisar,
   eleccionDeFicha,
+  type AtributoId,
   type EleccionEspecie,
   type FichaResuelta,
 } from "@/lib/rules";
@@ -14,6 +16,7 @@ import { HudCard } from "@/components/HudCard";
 import { useEleccionEspecie } from "../useEleccionEspecie";
 import { TarjetaEspecie } from "./TarjetaEspecie";
 import { OpcionesEspecie } from "./OpcionesEspecie";
+import { AtributoLibre } from "./AtributoLibre";
 
 // Ficha aprobada y jugador: solo su especie (y casta/casa), sin botón, con el motivo.
 function OrigenFijado({ guardada, bloqueo }: { guardada: EleccionEspecie; bloqueo: string }) {
@@ -123,8 +126,9 @@ function Carrusel({
   );
 }
 
-// Origen (sistema.md §14.1-14.3): carrusel de especies y, para Manduk, casta y casa.
+// Origen (sistema.md §14.1-14.4): carrusel de especies y, para Manduk, casta y casa.
 // En borrador, elegir aplica el reset en el servidor (onEspecie → setEspecieAction).
+// Debajo, el atributo libre de la especie guardada (Humanos), que va aparte y sin reset.
 export function OrigenPanel({
   ficha,
   aprobada,
@@ -132,6 +136,7 @@ export function OrigenPanel({
   creditos,
   soloLectura,
   onEspecie,
+  onAtributoLibre,
 }: {
   ficha: FichaResuelta;
   aprobada: boolean;
@@ -141,18 +146,34 @@ export function OrigenPanel({
   // tarjetas, así que el carrusel ni se monta.
   soloLectura: boolean;
   onEspecie: (eleccion: EleccionEspecie) => void;
+  onAtributoLibre: (id: AtributoId) => void;
 }) {
   const sheet = ficha.ficha;
   const ctx = { aprobada, esMaster, libre: false };
   const guardada = eleccionDeFicha(sheet);
   const bloqueo = soloLectura ? "La ficha está en revisión" : bloqueoDeEspecie(ctx);
-  if (bloqueo) return <OrigenFijado guardada={guardada} bloqueo={bloqueo} />;
-  return (
-    <Carrusel
-      key={`${guardada.especieId}|${guardada.casta}|${guardada.linaje}`}
-      guardada={guardada}
-      avisar={hayQueAvisar(sheet, creditos, ctx)}
-      onElegir={onEspecie}
+  const bloqueoAtributo = soloLectura ? "La ficha está en revisión" : bloqueoDeAtributoLibre(sheet, ctx);
+  const atributoLibre = (
+    <AtributoLibre
+      especie={especiePorId(sheet.especieId)}
+      elegido={sheet.especieOpciones.atributo ?? null}
+      onElegir={bloqueoAtributo ? undefined : onAtributoLibre}
+      pie={bloqueoAtributo && `${bloqueoAtributo}.`}
     />
+  );
+  return (
+    <div className="flex flex-col gap-3">
+      {bloqueo ? (
+        <OrigenFijado guardada={guardada} bloqueo={bloqueo} />
+      ) : (
+        <Carrusel
+          key={`${guardada.especieId}|${guardada.casta}|${guardada.linaje}`}
+          guardada={guardada}
+          avisar={hayQueAvisar(sheet, creditos, ctx)}
+          onElegir={onEspecie}
+        />
+      )}
+      {atributoLibre}
+    </div>
   );
 }

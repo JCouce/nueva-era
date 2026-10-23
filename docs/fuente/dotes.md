@@ -122,7 +122,7 @@ Requisito: Salto 2, Acrobacias 2, Reflejos 1\
 El primer éxito en una tirada de esquiva para evitar un área contabiliza doble.\
 \
 **Salto Evasivo Mejorado (Coste 6)**\
-Requisito: Salto 4, Acrobacias 4, Reflejos 2\
+Requisito: Slato Evasivo, Salto 4, Acrobacias 4, Reflejos 2\
 El primer éxito en una tirada de esquiva para evitar un área contabiliza triple.\
 \
 **Saber Caer (Coste 2)**\
@@ -130,7 +130,7 @@ Requisito: Salto 1, Agilidad 1\
 El personaje reduce en 4 metros la altura efectiva de cualquier caída a efectos de cálculo de daño.\
 
 **Caer Parado (Coste 4)**\
-Requisito: Salto 3, Agilidad 2\
+Requisito: Saber Caer, Salto 3, Agilidad 2\
 El personaje reduce en 8 metros la altura efectiva de cualquier caída a efectos de cálculo de daño.\
 \
 **Salto Ofensivo (Coste 2)**\
@@ -138,7 +138,7 @@ El personaje reduce en 8 metros la altura efectiva de cualquier caída a efectos
 El personaje puede realizar un ataque melee o a distancia durante un salto de forma simultánea como una única acción, se utiliza la acción más compleja.\
 \
 **Salto Ofensivo Mejorado (Coste 3)\**
-Requisito: Salto 3, Reflejos 2, Salto Ofensivo\
+Requisito: Salto Ofensivo, Salto 3, Reflejos 2, Salto Ofensivo\
 El personaje puede realizar un ataque melee o a distancia durante un salto sin penalizador adicional de dificultad.\
 \
 **Agarre Rápido (Coste 2)**\
@@ -261,9 +261,10 @@ Los obstáculos se considera que siempre son acertados de manera crítica de tal
 Requisito: Combate Melee 1\
 Al realizar una presa con éxito llevando un arma de una sola mano se gana una reacción para atacar con esta.\
 \
-**Ataque Melee Doble (Coste 3)\
-Requisito:** Combate Melee 2\
-Si el personaje lleva un arma melee en cada mano, puede efectuar un ataque con ambas como acción estándar, para ello debe llevar a cabo ataques que normalmente se resuelvan como acción simple. Ambos ataques deben ir destinados a un mismo objetivo que esté dentro de su alcance, cada ataque aumenta su dificultad en 1, se resuelve cada tirada por separado así como el daño.\
+**Ataque Melee Doble (Coste 3)\**
+Requisito: Combate Melee 2\
+Si el personaje lleva un arma melee en cada mano, puede efectuar un ataque con ambas como acción estándar, para ello debe llevar a cabo ataques que normalmente se resuelvan como acción simple. Ambos ataques deben ir destinados a un mismo objetivo que esté dentro de su alcance, cada ataque aumenta su dificultad en 1 (penalizador -1), se resuelve cada tirada por separado así como el daño.\
+Si el personaje tiene la dote de desenfundado rápido puede desenfudar ambas arams melee como acción gratuita y realizar este ataque estándar de dos golpes simultáneos.\
 \
 **Combate con Dos Armas Melee (Coste 4)\**
 Requisito: ****Ataque Melee Doble, Combate Melee 3\
@@ -292,7 +293,7 @@ El aumento de dificultad para derribo causando daño se anula, si se utiliza una
 **Desenfundado Rápido (Coste 1)**\
 Requisito: Combate a Distancia 1 o Combate a Melee 1\
 La dote sirve para armas que se puedan utilizar a una mano, se aplica en las armas con las que cumpla el requisito.\
-El personaje puede desenfundar un arma y hacer un ataque simple como parte de la misma acción, si es el primer disparo contra un objetivo y el atacante actúa primero el objetivo estará sorprendido contra ese ataque.\
+El personaje puede desenfundar un arma y hacer un ataque simple como parte de la misma acción, si es el primer ataque contra un objetivo y el atacante actúa primero el objetivo estará sorprendido contra ese ataque.\
 
 **Defensa con Escudo Rápida (Coste 1)**\
 Requisito: Escudos 1\
@@ -343,10 +344,9 @@ Si el personaje ataca a un objetivo sorprendido o desprevenido, segundos ataques
 Requisito: Combate Melee 3, Fuerza 4, Táctica 1\
 El personaje se considera un tamaño superior cuando realiza maniobras contra enemigos de mayor tamaño.\
 \
-**Golpe Entorpecedor (Coste 2)\
-Requisito:** Combate Melee 1 o Combate a Distancia 1, Táctica 1**\**
-El personaje puede apuntar a partes vitales del objetivo o buscando entorpecer las acciones de este. Pirmero debe reconocer una debilidad con una tirada de **perspicacia + táctica** dificultad estándar 6 como acción simple. Si tiene éxito puede realizar un ataque para entorpecer a su rival, lo podrá hacer en ataques melee o a distancia siempre que cumpla el requisito.\
-Recibe un penalizador de -2 por dificultad al ataque, pero si obtuvo éxito crítico en la tirada de **táctico** no tendrá penalizador. Resuelto el ataque si tiene éxito causa **entorpecimiento** durante 1d4 turnos, el golpe crítico también casua efecto crítico durante el mismo tiempo.\
+**Golpe Entorpecedor (Coste 3)\
+Requisito:** Combate Melee 2**\**
+El personaje realiza un ataque melee con un penalizador de -2 por dificultad que causa **entorpecimiento.** La duración del efecto es de 1d6 turnos.\
 \
 **Táctica de Flanqueo (Coste 2)**\
 **Requisito:** Combate Melee 1, Táctica 1\
@@ -359,6 +359,10 @@ Obtiene un bonificador de **+1 a la tirada de ataque y** el objetivo inferior su
 
 \
 **Combate a Distancia\
+\
+Disparo Relámpago (Coste 4)**\
+Requisito: Comabte a Distancia 2, Reflejos 2\
+El personaje puede emplear una reacción para realizar una ataque a distancia dentro de su alcance contra un enemigo que realice una acción de movimiento siempre que el ataque en cuestión se resuelva como una acción simple.**\
 \
 Cobertura Rápida (Coste 1)\
 Requisito:** Acrobacias 1\
@@ -395,9 +399,55 @@ Si atacas a un enemigo en larga distancia el penalizador se reduce en 1 punto.\
 **Tirador de Larga Distancia Avanzado (Coste 5)**\
 Requisito: Percepción 2, Combate a Distancia 3\
 No hay penalizador por larga distancia en ataques de especialidad.\
+\
+**Fuego de Saturación (Coste 1)\**
+Requisito: Combate a Distancia 1\
+En un ataque de fuego automático el personaje concentra en una sola casilla todos los proyectiles, aumentando la dificultad de esquiva y el daño en 1.\
+\
+**Fuego de Supresión (Coste 3)\**
+Requisito: Combate a Distancia 2, Táctica 1.\
+El personaje realiza un ataque de fuego automático, los objetivos pueden decidir esquivarlo de forma automática empleando una reacción, pero al hacerlo reciben un penalizador de -2 en ataques a distancia contra el personaje y sus aliados hasta el final de su siguiente turno.\
+\
+**Fuego de Barrera (Coste 4)**\
+Requisito: Combate a Distancia 2\
+Cuando realizas un ataque de fuego automático, los objetivos que reciban impacto ven reducida su velocidad a la mitad en su primera acción de movimiento hasta el final de su siguiente turno.\
+\
+**Disparo de Interdicción (Coste 3)\**
+Requisito: Combate a Distancia 2\
+El personaje realiza un ataque a distancia con un penalizador de -2 por dificultad que causa **entorpecimiento.** La duración del efecto es de 1d6 turnos.\
+\
+**Arquero Poderoso (Coste 4)\**
+Requisito: Armas Impulsoras 3, Potencia 2\
+Con el gasto de un punto de fatiga y como acción compleja el personaje puede realizar un ataque con arco sumando su total de puntuación de **fuerza**.\
+\
+**Lanzamiento** **Doble** **(Coste** **2)**\
+Requisito: Lanzamiento 2\
+El personaje lanza dos granadas de forma simultánea como acción estándar y con un penalizador de dificultad de -2.\
+\
+**Pistolero (Coste 3)\**
+Requisito: ****Pistolas 2\
+Si el personaje lleva una pistola en cada mano, puede efectuar un ataque con ambas como acción estándar, para ello debe llevar a cabo ataques que normalmente se resuelvan como acción simple. Ambos disparos deben ir destinados a un mismo objetivo que esté dentro de su alcance, cada ataque aumenta su dificultad en 1, se resuelve cada tirada por separado así como el daño.\
+Si el personaje tiene la dote de desenfundado rápido puede desenfudar ambas pistolas como acción gratuita y realizar este ataque estándar de dos disparos simultáneos.\
+\
+**Pistolero Infernal (Coste 3)**\
+Requisito: Pistolero, Pistolas 2\
+Si el personaje lleva una pistola a cada mano puede realizar dos ataques de fuego automático de forma simultánea como acción compleja.\
 **\
 Cultura\
 \
+Políglota (Coste 2)\**
+Requisito: Lingüística 1\
+Por cada punto en la especialidad de lingüística ganas dos idiomas en lugar de 1.\
+\
+**Mente Enciclopédica (Coste 4)**\
+Requisito: Cultura 3, Inteligencia 2\
+Una vez por escena lanzas una tirada de cultura para un prueba de conocimiento con ventaja (dos dados y escoges mejor resultado).\
+\
+**Camaleón Social (Coste 2)\**
+Requisito: Sociedad 2, Expresión 1\
+Si identificas con éxito un grupo social y su jerarquía, obtienes un bonificador de +1 en tiradas de **actitud** en próximas interacciones.
+
+**\
 Exploración\
 \
 Vigilancia Táctica (Coste 2)**\
@@ -435,15 +485,15 @@ Interpretación\
 Sigilo\
 \
 Movimiento Sigiloso (Coste 3)\**
-Requisito: Sigilo 2\
+Requisito: Esconderse 2\
 El personaje reduce en 2 los penalizadores por moverse oculto.\
 \
 **Movimiento Sigiloso Mejorado (Coste 5)\**
-Requisito: Sigilo 3\
+Requisito: Movimiento Sigiloso, Esconderse 3\
 El personaje reduce en 4 los penalizadores por moverse oculto.\
 \
 **Movimiento Sigiloso Constante (Coste 6)**\
-Requisito: Sigilo 5\
+Requisito: Movimiento Sigiloso Mejorado, Esconderse 5\
 El personaje se mueve en sigilo sin penalizador\
 **\
 Tecnociencia\

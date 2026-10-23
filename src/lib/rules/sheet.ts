@@ -6,6 +6,7 @@ import {
   ATRIBUTOS,
   ATRIBUTO_MIN,
   ATRIBUTO_MAX,
+  type AtributoId,
 } from "./atributos";
 import { migrar } from "./migraciones";
 import {
@@ -110,12 +111,13 @@ export const sheetSchema = z.object({
   altura: z.number().int().min(0).max(999).nullable(),
   peso: z.number().int().min(0).max(999).nullable(),
   especieId: z.string().max(40).nullable(),
-  // Casta y linaje (docs/sistema.md §14.1). Solo la elección; sus efectos se
-  // derivan del catálogo (rules/especie.ts). parseSheet descarta lo que no
+  // Casta, linaje y atributo libre (docs/sistema.md §14.1). Solo la elección; sus
+  // efectos se derivan del catálogo (rules/especie.ts). parseSheet descarta lo que no
   // encaje con la especie.
   especieOpciones: z.object({
     casta: z.string().max(40).optional(),
     linaje: z.string().max(40).optional(),
+    atributo: z.enum(ATRIBUTOS.map((a) => a.id) as [AtributoId, ...AtributoId[]]).optional(),
   }),
   trasfondo: z.string().max(2000),
   motivacion: z.string().max(500),

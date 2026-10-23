@@ -9,6 +9,7 @@ import { z } from "zod";
 import {
   characterCreateSchema,
   characterIdSchema,
+  atributoLibreSchema,
   eleccionEspecieSchema,
   especialidadDeHabilidadSchema,
 } from "@/lib/validation";
@@ -77,6 +78,7 @@ import {
   ajustarFatigaTemporal,
   terminarEscena,
   elegirEspecie,
+  elegirAtributoLibre,
   creditosDeLaLetra,
   reconciliarVidaConEstados,
   type EleccionEspecie,
@@ -988,6 +990,18 @@ export async function setEspecieAction(
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
   return { ok: true, sheet, creditos };
+}
+
+// Atributo libre de la especie (Humanos, sistema.md §14.4). Sin reset; en una ficha
+// aprobada el jugador lo elige una vez (elegirAtributoLibre decide).
+export async function setAtributoLibreAction(characterId: string, atributo: unknown): Promise<SaveResult> {
+  const parsed = atributoLibreSchema.safeParse(atributo);
+  if (!parsed.success) return { ok: false, error: "Atributo inválido" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const res = elegirAtributoLibre(ctx.sheet, parsed.data, { aprobada: ctx.aprobada, esMaster: ctx.esMaster, libre: false });
+  if ("error" in res) return { ok: false, error: res.error };
+  return persist(characterId, res.sheet);
 }
 
 export async function saveIdentityAction(

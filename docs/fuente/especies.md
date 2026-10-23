@@ -108,7 +108,7 @@ Su anatomía inferior destaca por unas piernas marcadamente más cortas y robust
 
 **· Capacidad de Carga:** La carga total aumenta en un 20%**\
 \
-· Inamovibles:** reciben un bonificador de **+2 en tiradas para evitar derribos.**\
+· Inamovible:** reciben un bonificador de **+2 en tiradas para evitar derribos.**\
 \
 **· Matriz Biometálica:** Su piel y tejidos cuentan con una matriz biometálica, derivada de un entorno cargado de kerzul en suspensión, que también se encuentra en el agua y en la cadena trófica. Su metabolismo procesa las trazas de la aleación de alta entropía. En lugar de eliminarlas o sufrir una intoxicación por metales pesados, su tejido conectivo y su dermis las fijan mediante un proceso de biomineralización, integrando el kerzul en su matriz de colágeno para formar su cermet biológico Obtienen una puntuación de **armadura natural de 1** y en caso de ataque desarmado, sus golpes críticos convierten en letal el daño.\
 \

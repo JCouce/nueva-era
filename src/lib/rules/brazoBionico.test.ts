@@ -256,7 +256,7 @@ describe("Brazo Biónico: blindaje del golpe bloqueado (R12)", () => {
   test("suma solo marcada y donde cuenta el blindaje", () => {
     const s = conBrazo(ficha(), 4, "fuerte");
     const total = (tipo: Parameters<typeof desgloseBlindaje>[1], marcada: boolean) =>
-      desgloseBlindaje(s, tipo, false, SIN_ARMADURA_NATURAL, false, marcada).reduce((t, l) => t + l.valor, 0);
+      desgloseBlindaje(s, tipo, SIN_ARMADURA_NATURAL, false, marcada).reduce((t, l) => t + l.valor, 0);
     assert.equal(total("cinetico", false), 0);
     assert.equal(total("cinetico", true), 8);
     assert.equal(total("plasma", true), 8);
@@ -266,7 +266,7 @@ describe("Brazo Biónico: blindaje del golpe bloqueado (R12)", () => {
     assert.ok(casillaBlindajeBrazo(s, "fuego")!.bloqueada);
     assert.equal(casillaBlindajeBrazo(s, "cinetico")!.bloqueada, null);
     // Con el nivel 1, marcada no suma.
-    assert.equal(desgloseBlindaje(conBrazo(ficha(), 1), "cinetico", false, SIN_ARMADURA_NATURAL, false, true).length, 0);
+    assert.equal(desgloseBlindaje(conBrazo(ficha(), 1), "cinetico", SIN_ARMADURA_NATURAL, false, true).length, 0);
   });
 });
 

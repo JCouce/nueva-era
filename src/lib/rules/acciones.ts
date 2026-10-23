@@ -291,6 +291,18 @@ export function condicionApuntado(granPunteria?: string): CondicionTirada {
   };
 }
 
+// Casilla "Tengo cobertura" de la esquiva, para cualquier ficha y cualquier cobertura (escudo
+// en alto, un muro...): +2 fijo, sin mirar el nivel (S86, decisión del usuario). Si el ataque
+// supera la defensa pero falla por la cobertura, golpea la cobertura (Bloquear daño).
+export const ID_TENGO_COBERTURA = "tengo_cobertura";
+const CONDICION_TENGO_COBERTURA: CondicionTirada = {
+  id: ID_TENGO_COBERTURA,
+  tipo: "toggle",
+  etiqueta: "Tengo cobertura (+2)",
+  valorActivo: 2,
+  nota: "Si el ataque supera tu defensa pero falla por la cobertura, golpea la cobertura: elígelo en Bloquear daño.",
+};
+
 export const ACCIONES: Accion[] = [
   // ── Defensa ──
   {
@@ -300,7 +312,7 @@ export const ACCIONES: Accion[] = [
     aplicado: "reflejos",
     habilidad: "atletismo",
     nota: "Reacción gratuita e ilimitada. Gastar la reacción normal del turno en defender limpia el penalizador acumulado",
-    condiciones: [CONDICION_ATACANTES_ADICIONALES],
+    condiciones: [CONDICION_ATACANTES_ADICIONALES, CONDICION_TENGO_COBERTURA],
   },
 
   // ── Iniciativa ──

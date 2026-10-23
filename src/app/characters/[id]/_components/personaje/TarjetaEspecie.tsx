@@ -113,7 +113,7 @@ export function TarjetaEspecie({
 
       <div className="flex flex-1 flex-col gap-3 p-4">
         <p className="font-sans text-prosa text-soft">{especie.descripcion}</p>
-        <ChipsAtributos chips={atributos} vacio={especie.castas ? "según casta y casa" : "sin modificadores"} />
+        <ChipsAtributos chips={atributos} vacio={especie.castas ? "según casta y casa" : especie.atributoLibre ? `+${especie.atributoLibre} a un atributo a elegir` : "sin modificadores"} />
         {rasgos.length > 0 && (
           <div className="flex flex-col gap-2">
             <ListaRasgos rasgos={abierta ? rasgos : rasgos.slice(0, VISIBLES)} />
