@@ -8,7 +8,9 @@ import {
   ETIQUETA_DERIVADO,
   aumentoPorId,
   textoDanioModo,
+  type ResumenArmaModificada,
 } from "@/lib/rules";
+import { TipoYExtras } from "@/components/TipoDanio";
 import type {
   Armadura,
   ArmaFuego,
@@ -253,6 +255,43 @@ export function DetalleArmaMelee({ p }: { p: ArmaMelee }) {
         <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed text-info">Crítico: {p.efectoCritico}</p>
       )}
     </>
+  );
+}
+
+// Armas Modificadas (S87): el arma ya transformada, con todo calculado en
+// resumenArmaModificada (lib/rules/armasModificadas.ts). Sale debajo de la ficha del arma
+// básica, al elegir modificaciones o en un arma que ya las lleva.
+export function DetalleArmaModificada({ r }: { r: ResumenArmaModificada }) {
+  return (
+    <div className="mt-3 border-l-2 border-accent pl-2">
+      <div className="flex items-start justify-between gap-2">
+        <p className="font-display text-sm font-semibold uppercase leading-tight text-accent">{r.nombre}</p>
+        <BadgeRareza rareza={r.rareza} />
+      </div>
+      <p className="mt-0.5 font-mono text-[10px] uppercase text-muted">Daño modelo básico: {r.tramo}</p>
+      <div className="mt-2 flex flex-col gap-1.5">
+        {r.modos.map((m) => (
+          <div key={m.etiqueta} className="flex flex-wrap items-baseline justify-between gap-x-2 font-mono text-[11px]">
+            <span className="uppercase text-foreground">{m.etiqueta}</span>
+            <span className="tabular-nums text-muted">
+              dif. {signo(m.dificultad)} · {m.formulaDanio} {m.categoriaDanio}
+              <TipoYExtras tipoBase={m.tipoBase} extras={m.extras} />
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed text-info">
+        {[...r.efectos, ...r.efectosCritico.map((e) => `Crítico: ${e}`)].join(" · ")}
+      </p>
+      <dl className="mt-2 grid grid-cols-1 gap-x-4 font-mono text-[11px] sm:grid-cols-2">
+        {r.ignoraBlindaje !== null && <Stat label="Ignora blindaje" value={`${r.ignoraBlindaje} puntos`} />}
+        <Stat
+          label="Peso"
+          value={r.pesoKg === null ? "No especificado" : r.pesoKg === 0 ? "Insignificante" : `${r.pesoKg} kg`}
+        />
+        <Stat label="Precio" value={r.coste === null ? "—" : `${r.coste.toLocaleString("es-ES")} cr.`} />
+      </dl>
+    </div>
   );
 }
 

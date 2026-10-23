@@ -17,6 +17,15 @@ import {
   tirarMontada,
   nivelVtf,
   dificultadFabricacion,
+  encargoFabricacion,
+  admiteModificaciones,
+  opcionesModificacion,
+  equipoPorId,
+  nombreDePieza,
+  type ModificacionArmaId,
+  type OpcionesFabricar,
+  type PiezaEquipada,
+  type Sheet,
   type Armadura,
   type ArmaFuego,
   type ArmaMelee,
@@ -43,6 +52,7 @@ import {
   DetalleConsumible,
 } from "./equipo/PiezaDetalle";
 import { TIPOS_ARMA } from "./TiendaTab";
+import { SelectorModificaciones } from "./equipo/SelectorModificaciones";
 
 // Fabricar (docs/tareas.md, tarea 8): mismo lenguaje visual que TiendaTab
 // (Tile → categoría → Acordeon con Detalle*), pero SOLO las familias sueltas
@@ -80,6 +90,8 @@ const CATEGORIAS = [
   { id: "armasFuego", titulo: "Armas a distancia", cantidad: ARMAS.length },
   { id: "melee", titulo: "Armas melee", cantidad: ARMAS_MELEE_FABRICABLES.length },
   { id: "kerzul", titulo: "Armas Kerzul", cantidad: KERZUL_FABRICABLES.length },
+  // Armas Modificadas (S87) sobre un arma melee que ya llevas; la cantidad se cuenta con la ficha.
+  { id: "modificar", titulo: "Modificar un arma tuya", cantidad: 0 },
   { id: "medicina", titulo: "Medicina", cantidad: FARMACOS.length },
   {
     id: "pesado",
@@ -100,6 +112,10 @@ const ETIQUETA_TIER: Record<MaterialTier, string> = {
 // `AccionFabricar` en su tipo de abajo, pero TS deja pasar el resto (los
 // llamadores reales traen Armadura/ArmaFuego/etc. completos).
 type PiezaFabricable = { id: string; label: string; rareza: Rareza; coste: number };
+
+// Lo que se construye de verdad: la pieza (o el arma modificada, S87) con su coste y
+// rareza ya calculados por encargoFabricacion, y las opciones que van al servidor.
+type OnConstruir = (pieza: PiezaFabricable, tier: MaterialTier, opciones?: OpcionesFabricar) => void;
 
 function Tile({
   titulo,
@@ -149,10 +165,12 @@ function AccionFabricar({
   pieza,
   materiales,
   onConstruir,
+  opciones,
 }: {
   pieza: PiezaFabricable;
   materiales: Materiales;
-  onConstruir: (pieza: PiezaFabricable, tier: MaterialTier) => void;
+  onConstruir: OnConstruir;
+  opciones?: OpcionesFabricar;
 }) {
   const [tier, setTier] = useState<MaterialTier>(() => tierPorDefecto(pieza.rareza));
 
@@ -187,7 +205,7 @@ function AccionFabricar({
       </div>
       <button
         type="button"
-        onClick={() => onConstruir(pieza, tier)}
+        onClick={() => onConstruir(pieza, tier, opciones)}
         disabled={!cabeRareza || sinStock}
         className="clip-chamfer-sm mt-2 w-full border border-accent bg-accent py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted"
       >
@@ -219,13 +237,88 @@ function FilaFabricable<T extends PiezaFabricable>({
   p: T;
   resumen: string;
   materiales: Materiales;
-  onConstruir: (pieza: PiezaFabricable, tier: MaterialTier) => void;
+  onConstruir: OnConstruir;
   children: React.ReactNode;
 }) {
   return (
     <Acordeon titulo={p.label} resumen={resumen} etiqueta={<BadgeRareza rareza={p.rareza} />}>
       {children}
       <AccionFabricar pieza={p} materiales={materiales} onConstruir={onConstruir} />
+    </Acordeon>
+  );
+}
+
+// Arma melee: como FilaFabricable, con el selector de Armas Modificadas (S87). El coste en
+// materiales, la rareza (y con ella el tier y la dificultad) son los del arma modificada.
+function FilaFabricableMelee({
+  p,
+  sheet,
+  onConstruir,
+}: {
+  p: ArmaMelee & { coste: number; rareza: Rareza };
+  sheet: Sheet;
+  onConstruir: OnConstruir;
+}) {
+  const [seleccion, setSeleccion] = useState<ModificacionArmaId[]>([]);
+  const opciones = seleccion.length > 0 ? { modificaciones: seleccion } : undefined;
+  const encargo = encargoFabricacion(sheet, p.id, opciones);
+  return (
+    <Acordeon titulo={p.label} resumen={p.resumen} etiqueta={<BadgeRareza rareza={p.rareza} />}>
+      <DetalleArmaMelee p={p} />
+      {admiteModificaciones(p) && <SelectorModificaciones arma={p} seleccion={seleccion} onCambiar={setSeleccion} />}
+      {encargo.ok && (
+        <AccionFabricar
+          key={encargo.rareza}
+          pieza={{ id: p.id, label: encargo.nombre, rareza: encargo.rareza, coste: encargo.coste }}
+          materiales={sheet.materiales}
+          onConstruir={onConstruir}
+          opciones={opciones}
+        />
+      )}
+    </Acordeon>
+  );
+}
+
+// Modificar un arma melee que ya llevas (también sobre otra modificación, salvo Plasma):
+// se paga en materiales la diferencia entre el precio nuevo y el que tenía.
+function armasModificables(sheet: Sheet): { pieza: PiezaEquipada; arma: ArmaMelee }[] {
+  return sheet.equipo.flatMap((pieza) => {
+    const arma = equipoPorId(pieza.catalogoId);
+    if (arma?.familia !== "armaMelee" || !admiteModificaciones(arma)) return [];
+    const fijas = pieza.modificaciones ?? [];
+    const quedan = opcionesModificacion(arma, fijas, fijas).some((o) => !o.marcada && o.motivo === null);
+    return quedan ? [{ pieza, arma }] : [];
+  });
+}
+
+function FilaModificarArma({
+  pieza,
+  arma,
+  sheet,
+  onConstruir,
+}: {
+  pieza: PiezaEquipada;
+  arma: ArmaMelee;
+  sheet: Sheet;
+  onConstruir: OnConstruir;
+}) {
+  const fijas = pieza.modificaciones ?? [];
+  const [seleccion, setSeleccion] = useState<ModificacionArmaId[]>(fijas);
+  const opciones = { modificaciones: seleccion, sobreInstanciaId: pieza.instanciaId };
+  const encargo = seleccion.length > fijas.length ? encargoFabricacion(sheet, pieza.catalogoId, opciones) : null;
+  return (
+    <Acordeon titulo={nombreDePieza(pieza)} resumen="Añádele una modificación pagando la diferencia." etiqueta={<BadgeRareza rareza={encargo?.ok ? encargo.rareza : null} />}>
+      <SelectorModificaciones arma={arma} seleccion={seleccion} fijas={fijas} onCambiar={setSeleccion} />
+      {encargo?.ok && (
+        <AccionFabricar
+          key={encargo.rareza}
+          pieza={{ id: pieza.catalogoId, label: encargo.nombre, rareza: encargo.rareza, coste: encargo.coste }}
+          materiales={sheet.materiales}
+          onConstruir={onConstruir}
+          opciones={opciones}
+        />
+      )}
+      {encargo && !encargo.ok && <p className="mt-1 font-sans text-prosa-sm text-danger">{encargo.motivo}</p>}
     </Acordeon>
   );
 }
@@ -244,13 +337,14 @@ export function FabricarSeccion({
   setMemoria: Dispatch<
     SetStateAction<Record<string, { dificultad: number | null; circunstancial: number }>>
   >;
-  onFabricar: (catalogoId: string, tier: MaterialTier, exito: boolean) => void;
+  onFabricar: (catalogoId: string, tier: MaterialTier, exito: boolean, opciones?: OpcionesFabricar) => void;
   // NpcEditor.tsx (edición libre de máster): sin tirada, Construir gasta y
   // entrega en el acto — mismo criterio que Reparar para NPCs.
   libre?: boolean;
 }) {
   const sheet = ficha.ficha;
   const [categoria, setCategoria] = useState<CategoriaId | null>(null);
+  const modificables = armasModificables(sheet);
 
   // Tirada de Fabricar en curso: null mientras se navega el catálogo. Vive
   // aquí, no en `modal` de AccionesTab.tsx — ver el comentario de cabecera.
@@ -260,6 +354,7 @@ export function FabricarSeccion({
     catalogoId: string;
     tier: MaterialTier;
     dificultadSugerida: number;
+    opciones?: OpcionesFabricar;
   } | null>(null);
   const [resultado, setResultado] = useState<Lanzamiento | null>(null);
   // Efecto de ESTA tirada en concreto ("has construido X" / "has perdido
@@ -268,9 +363,9 @@ export function FabricarSeccion({
   // (AccionModal.tsx, prop `notaResultado`, ver su comentario).
   const [mensajeResultado, setMensajeResultado] = useState<string | null>(null);
 
-  const onConstruir = (pieza: PiezaFabricable, tier: MaterialTier) => {
+  const onConstruir = (pieza: PiezaFabricable, tier: MaterialTier, opciones?: OpcionesFabricar) => {
     if (libre) {
-      onFabricar(pieza.id, tier, true);
+      onFabricar(pieza.id, tier, true, opciones);
       return;
     }
     const tirada: Accion = {
@@ -292,6 +387,7 @@ export function FabricarSeccion({
       catalogoId: pieza.id,
       tier,
       dificultadSugerida: dificultadFabricacion(pieza.rareza, nivelVtf(sheet)),
+      opciones,
     });
   };
 
@@ -320,7 +416,7 @@ export function FabricarSeccion({
     setMensajeResultado(
       exito ? `Has construido: ${rollOpen.piezaLabel}.` : "Has perdido los materiales.",
     );
-    onFabricar(rollOpen.catalogoId, rollOpen.tier, exito);
+    onFabricar(rollOpen.catalogoId, rollOpen.tier, exito, rollOpen.opciones);
   };
 
   const cerrarRoll = () => {
@@ -341,7 +437,7 @@ export function FabricarSeccion({
             <Tile
               key={c.id}
               titulo={c.titulo}
-              cantidad={c.cantidad}
+              cantidad={c.id === "modificar" ? modificables.length : c.cantidad}
               activo={false}
               onClick={() => setCategoria(c.id)}
             />
@@ -384,9 +480,24 @@ export function FabricarSeccion({
 
           {categoria === "melee" &&
             (ARMAS_MELEE_FABRICABLES as (ArmaMelee & { coste: number; rareza: Rareza })[]).map((p) => (
-              <FilaFabricable key={p.id} p={p} resumen={p.resumen} materiales={sheet.materiales} onConstruir={onConstruir}>
-                <DetalleArmaMelee p={p} />
-              </FilaFabricable>
+              <FilaFabricableMelee key={p.id} p={p} sheet={sheet} onConstruir={onConstruir} />
+            ))}
+
+          {categoria === "modificar" &&
+            (modificables.length === 0 ? (
+              <p className="font-sans text-prosa-sm text-soft">
+                No llevas ningún arma de cuerpo a cuerpo que admita otra modificación.
+              </p>
+            ) : (
+              modificables.map(({ pieza, arma }) => (
+                <FilaModificarArma
+                  key={`${pieza.instanciaId}:${(pieza.modificaciones ?? []).join(",")}`}
+                  pieza={pieza}
+                  arma={arma}
+                  sheet={sheet}
+                  onConstruir={onConstruir}
+                />
+              ))
             ))}
 
           {categoria === "kerzul" &&

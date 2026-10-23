@@ -64,6 +64,7 @@ import {
   type DisciplinaId,
   type ModificadorConFuente,
   type MaterialTier,
+  type OpcionesFabricar,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { AccionModal } from "@/components/AccionModal";
@@ -627,7 +628,7 @@ export function AccionesTab({
   // (corrección 2026-09-25): resultado de la tirada de Fabricar ya resuelta
   // en el cliente (FabricarSeccion.tsx) — NpcEditor.tsx (edición libre, sin
   // tirada) ignora este tercer argumento, ver su propio commitFabricar.
-  onFabricar?: (catalogoId: string, tier: MaterialTier, exito: boolean) => void;
+  onFabricar?: (catalogoId: string, tier: MaterialTier, exito: boolean, opciones?: OpcionesFabricar) => void;
   // Gasto automático de RECURSOS al confirmar una tirada
   // (docs/prompt-gasto-recursos.md, Fase 1) — mismo motivo que
   // onReparar/onFabricar para estar ausente en NpcAccionesPanel.tsx (combate
@@ -1098,6 +1099,8 @@ export function AccionesTab({
         ignoraBlindaje: ignoraBlindaje.length > 0 ? ignoraBlindaje : undefined,
         alFallar: tirada.ataque.danioAlFallar,
         ajuste: montada.danio,
+        ...(modo.tipoDanio && { tipoDanio: modo.tipoDanio }),
+        ...(modo.danioExtra && { danioExtra: modo.danioExtra }),
       };
     }
 

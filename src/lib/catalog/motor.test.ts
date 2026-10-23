@@ -14,6 +14,7 @@ import {
 import { ARMAMENTO_PESADO } from "./armamentoPesado";
 import { MUNICION_GRANADA } from "./municion";
 import { ESPECIES, type Rasgo } from "./especies";
+import { ARMAS_MODIFICADAS } from "./armasModificadas";
 
 // Las 5 familias que envuelven `niveles: NivelModulo[]` — los efectos reales
 // (modificadores, condiciones, notaTirada) viven por nivel, no en la pieza
@@ -69,6 +70,8 @@ test("cada efecto de cada pieza del catálogo de equipo declara su MotorMetadata
   recorre("EQUIPO", EQUIPO, errores);
   recorre("ARMAMENTO_PESADO", ARMAMENTO_PESADO, errores);
   recorre("MUNICION_GRANADA", MUNICION_GRANADA, errores);
+  // Armas Modificadas (S87): no son piezas de EQUIPO, pero cada una declara sus efectos.
+  for (const m of ARMAS_MODIFICADAS) validaMotor(`ARMAS_MODIFICADAS/${m.id}`, m.motor, errores);
 
   const resto = errores.length - MAX_ERRORES_EN_MENSAJE;
   const mensaje = [

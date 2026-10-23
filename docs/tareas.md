@@ -88,7 +88,8 @@ siguen bloqueadas por el diseñador — ver Pendiente.
   enganchada a una tirada real donde `docs/equipamiento.md` daba un bono limpio que
   mecanizar. Detalle completo: `docs/sistema.md` §12.
 - **Fuera del catálogo a propósito** (no son huecos por descuido) — ver Pendiente:
-  Munición Especial y Armas Modificadas.
+  Munición Especial y Armas Modificadas (estas, construidas el 2026-10-23 como
+  transformación sobre un arma melee, S87).
 
 **Fix de rendimiento (2026-09-23, detectado por el usuario en producción):** cada
 clic en el stepper de un atributo/habilidad durante la creación disparaba un
@@ -633,8 +634,8 @@ Kerzul (`ArmaMelee`, sacado del texto de `efectos`) y en la munición perforante
 (`MunicionEspecial`). Viaja por `Accion.ignoraBlindaje` (Golpear y Lanzar) o por la
 munición elegida, y `ResultadoTirada.tsx` pinta "Ignora N puntos de blindaje del
 objetivo · <fuente>" bajo el daño ya tirado. La ficha del arma lo enseña como dato
-propio. Pendiente cuando existan: las Armas Modificadas de Nanofilamento (mismo efecto,
-2-4 puntos, sin dar de alta).
+propio. Las Armas Modificadas de Nanofilamento (2-4 puntos) usan el mismo aviso desde el
+2026-10-23 (S87).
 
 ### Armas de energía se recargan con batería, 2026-09-28
 
@@ -2314,12 +2315,12 @@ estados que escribe el máster (que van a necesitar refresco también fuera de c
 Ojo con Neon: mientras alguien tenga la ficha abierta en primer plano, la base no se
 suspende, con polling pesado o ligero.
 
-### Armas Modificadas ⬜
-Electrificantes, Térmicas, de Plasma, de Nanofilamento. Su coste es un **multiplicador**
-sobre el precio de otra arma ya comprada ("Básico × 10"), no un objeto con precio propio —
-no encaja en el patrón del catálogo (`coste: number` plano o por nivel) sin decidir antes
-cómo modelar "coste = precio de otra pieza × N". Ver comentario de cabecera en
-`src/lib/catalog/armasMelee.ts`.
+### Armas Modificadas ✅ (2026-10-23)
+Electrificantes, Térmicas, de Plasma, de Nanofilamento: construidas como transformación sobre
+un arma melee (`PiezaEquipada.modificaciones`), con coste multiplicativo, rareza máxima, tramo
+del arma sin modificar y daño desglosado por tipo en el golpe. En Tienda, Equipo (convertir),
+creación y Fabricar. Detalle y decisiones: `docs/sistema.md` §12 y S87. Pendiente: el peso
+cuenta en la carga cuando esta se construya.
 
 ### Penalizadores de Carga Transportable ⬜
 La fórmula y el dato en pantalla ya están (Fase 3); falta aplicar los penalizadores por

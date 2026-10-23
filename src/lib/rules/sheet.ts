@@ -17,6 +17,7 @@ import {
   MAX_ESPECIALIDADES,
 } from "./habilidades";
 import { conArmaIncorporadaValida, piezaEquipadaSchema, type PiezaEquipada } from "./equipo";
+import { conModificacionesValidas } from "./armasModificadas";
 import {
   recursoSchema,
   reconciliarRecursos,
@@ -282,11 +283,12 @@ export function parseSheet(raw: unknown): Sheet {
   // tirar el resto del equipo por la borda.
   const rEquipo = Array.isArray(r.equipo) ? r.equipo : [];
   // El arma incorporada del brazo (A6b) se descarta si ya no está equipada o no es de una mano.
+  // Unas modificaciones de arma que ya no valen (S87) se pierden; el arma se queda.
   const equipo: PiezaEquipada[] = conArmaIncorporadaValida(
     rEquipo
       .map((p) => piezaEquipadaSchema.safeParse(p))
       .filter((res): res is { success: true; data: PiezaEquipada } => res.success)
-      .map((res) => res.data)
+      .map((res) => conModificacionesValidas(res.data))
       .slice(0, 200),
   );
 

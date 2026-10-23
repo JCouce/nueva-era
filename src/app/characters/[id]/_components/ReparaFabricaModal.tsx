@@ -15,6 +15,7 @@ import {
   type FichaResuelta,
   type TiradaMontada,
   type MaterialTier,
+  type OpcionesFabricar,
   type Materiales,
   type RecursoInstancia,
   type Rareza,
@@ -269,7 +270,7 @@ export function ReparaFabricaModal({
     SetStateAction<Record<string, { dificultad: number | null; circunstancial: number }>>
   >;
   onReparar: (instanciaId: string, tier: MaterialTier, exito: boolean) => void;
-  onFabricar?: (catalogoId: string, tier: MaterialTier, exito: boolean) => void;
+  onFabricar?: (catalogoId: string, tier: MaterialTier, exito: boolean, opciones?: OpcionesFabricar) => void;
   libre?: boolean;
   onCerrar: () => void;
 }) {

@@ -33,6 +33,9 @@ import {
   comprarMaterial,
   repararPieza,
   fabricar,
+  opcionesFabricarSchema,
+  conversionArmaEntradaSchema,
+  convertirArma,
   generarNpcAleatorio,
   ajustarGranada,
   comprarGranada,
@@ -345,6 +348,17 @@ export async function equiparNpcAction(npcId: string, pieza: PiezaEquipada): Pro
   return persist(npcId, sheet);
 }
 
+// Armas Modificadas (S87) sobre un arma del NPC: sin coste ni tope de rareza.
+export async function convertirArmaNpcAction(npcId: string, entrada: unknown): Promise<NpcResult> {
+  const parsed = conversionArmaEntradaSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Modificación inválida" };
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const sheet = convertirArma(ctx.sheet, parsed.data.instanciaId, parsed.data.modificaciones);
+  if (sheet === ctx.sheet) return { ok: false, error: "Esa modificación no cabe en esa arma" };
+  return persist(npcId, sheet);
+}
+
 // Aumentos del NPC: sin coste ni bolsa (§14.3), con las mismas reglas de compra
 // (requisitos, un implante de cada que solo sube, elección).
 // Los requisitos se piden igual que a un jugador, aunque las dotes del NPC no los pidan
@@ -514,10 +528,13 @@ export async function fabricarNpcAction(
   npcId: string,
   catalogoId: string,
   tier: MaterialTier,
+  opciones?: unknown,
 ): Promise<NpcResult> {
+  const parsedOpciones = opcionesFabricarSchema.optional().safeParse(opciones);
+  if (!parsedOpciones.success) return { ok: false, error: "Encargo de fabricación inválido." };
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  const sheet = fabricar(ctx.sheet, catalogoId, tier, true);
+  const sheet = fabricar(ctx.sheet, catalogoId, tier, true, parsedOpciones.data);
   if (sheet === ctx.sheet) return { ok: false, error: "No se pudo fabricar (id inválido o sin materiales)." };
   return persist(npcId, sheet);
 }

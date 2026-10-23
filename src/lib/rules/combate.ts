@@ -24,6 +24,8 @@ import {
 import { PREFIJO_MEJORA_MUNICION } from "../catalog/mejorasArma";
 import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condiciones";
 import { nivelesHasta, acumulaPorClave, ultimoQueDefine, sustituyeMiraIntegrada, type PiezaEquipada } from "./equipo";
+import { bonoFormulaFuerza, formulaConSuma, nombreArmaModificada, perfilGolpe, type PerfilGolpe } from "./armasModificadas";
+import type { ModificacionArmaId } from "../catalog/armasModificadas";
 import type { MotorMetadata } from "./motor";
 import { escudoRoto, gastoDelModo, MOTIVO_ESCUDO_ROTO } from "./recursos";
 import { CONDICION_ATACANTES_ADICIONALES, condicionApuntado, type Accion, type AccionDirecta } from "./acciones";
@@ -539,19 +541,8 @@ function tiradaDeGranada(granada: MunicionGranada): Accion {
   };
 }
 
-// El daño melee es una fórmula sobre Fuerza ("Fue+3"), no un número suelto
-// del catálogo — por eso, a diferencia de las armas de fuego, no se podía
-// calcular solo. Todo `formulaDanio` de armasMelee.ts sigue el mismo patrón
-// cerrado: "Fuerza"/"Fue" y, opcionalmente, "+N" (verificado contra el
-// catálogo entero, sin excepciones) — se resuelve leyendo la Fuerza efectiva
-// del propio personaje. Si algún día aparece una fórmula que no seguía este
-// patrón, se detecta aquí (null) y cae al texto "se calcula a mano" de
-// siempre, no revienta.
-function bonoFormulaFuerza(formula: string): number | null {
-  const m = /^(?:Fuerza|Fue)(?:\+(\d+))?$/.exec(formula);
-  if (!m) return null;
-  return m[1] ? Number(m[1]) : 0;
-}
+// El daño melee es una fórmula sobre Fuerza ("Fue+3"): bonoFormulaFuerza
+// (armasModificadas.ts) la lee, y la Fuerza efectiva la pone el propio personaje.
 
 // Malla Plasmática instalada, si la hay — helper compartido por el
 // sacrificio de colchón (melee) y la detonación de pulso térmico.
@@ -604,15 +595,62 @@ function condicionesSacrificioColchon(nivel: number): CondicionTirada[] {
   return condiciones;
 }
 
+// Armas Modificadas (S87): lo que el perfil del golpe pone en la Accion de golpear o
+// lanzar. Sin modificaciones, todo queda como estaba.
+function notaConPerfil(textos: (string | null | undefined)[], perfil: PerfilGolpe | null): string | undefined {
+  const todos = [...textos, ...(perfil?.efectos ?? [])].filter((t): t is string => !!t);
+  return todos.length > 0 ? todos.join(" · ") : undefined;
+}
+
+function criticoConPerfil(arma: ArmaMelee, perfil: PerfilGolpe | null): string | undefined {
+  const todos = [arma.efectoCritico, ...(perfil?.efectosCritico ?? []).map((e) => `Crítico: ${e}`)].filter(
+    (t): t is string => !!t,
+  );
+  return todos.length > 0 ? todos.join(" · ") : undefined;
+}
+
+// Kerzul no se modifica, así que nunca coinciden las dos fuentes de "ignora blindaje".
+function ignoraBlindajeDe(arma: ArmaMelee, perfil: PerfilGolpe | null, nombre: string): Accion["ignoraBlindaje"] {
+  if (arma.ignoraBlindaje) return { valor: arma.ignoraBlindaje, fuente: arma.label };
+  if (perfil?.ignoraBlindaje) return { valor: perfil.ignoraBlindaje, fuente: nombre };
+  return undefined;
+}
+
+// El daño de un modo con las modificaciones: lo del mismo tipo, sumado al básico; lo de
+// otro tipo, aparte; Nanofilamento cambia la categoría de todo el golpe.
+function modoConPerfil<
+  T extends { danio: number | null; danioSutil?: number | null; formulaDanio: string | null; categoriaDanio: string },
+>(
+  modo: T,
+  perfil: PerfilGolpe | null,
+): T & { tipoDanio?: PerfilGolpe["tipoBase"]; danioExtra?: PerfilGolpe["extras"] } {
+  if (!perfil) return modo;
+  const suma = (d: number | null | undefined) => (d === null || d === undefined ? d : d + perfil.sumaBase);
+  return {
+    ...modo,
+    danio: suma(modo.danio) ?? null,
+    // El origen del desglose ("Simple, Fue+5") tiene que cuadrar con la base ya sumada.
+    formulaDanio: modo.formulaDanio === null ? null : formulaConSuma(modo.formulaDanio, perfil.sumaBase),
+    ...(modo.danioSutil !== undefined && { danioSutil: suma(modo.danioSutil) }),
+    categoriaDanio: perfil.categoria ?? modo.categoriaDanio,
+    tipoDanio: perfil.tipoBase,
+    ...(perfil.extras.length > 0 && { danioExtra: perfil.extras }),
+  };
+}
+
 // `sutilPermitido`: la ficha tiene Combate Sutil (D2b-2, §9.5). Sin la dote, un arma Sutil
 // se usa como cualquier otra: Potencia al tirar y Fuerza al daño, sin interruptor.
+// `modificaciones`: las del arma equipada (Armas Modificadas, S87).
 function tiradaDeArmaMelee(
   sheet: Sheet,
   mods: ModificadorConFuente[],
   arma: ArmaMelee,
   instanciaId: string,
   sutilPermitido: boolean,
+  modificaciones?: ModificacionArmaId[],
 ): Accion {
+  const perfil = perfilGolpe(arma, modificaciones);
+  const nombre = nombreArmaModificada(arma, modificaciones ?? []);
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
   const modo = condicionModo(modosConId, "Modo de ataque");
   const fuerza = atributoEfectivo(sheet, "fuerza", mods);
@@ -630,7 +668,7 @@ function tiradaDeArmaMelee(
   // tirada — mismo criterio que `arma.especial` en tiradaDeArmaFuego. Antes de
   // este fix no llegaba ni como texto (ver docs/equipo-efectos-especiales.md
   // §Kerzul, "fix barato" 2026-09-23).
-  const nota = arma.efectos ?? undefined;
+  const nota = notaConPerfil([arma.efectos], perfil);
 
   // Sin selector de modo (un único modo): su `dificultad` va como ajuste fijo,
   // mismo patrón que ajusteModoUnico en tiradaDeArmaFuego. Solo el golpe: el
@@ -640,7 +678,7 @@ function tiradaDeArmaMelee(
 
   return {
     id: `ataque_melee_${instanciaId}`,
-    label: `Golpear con ${arma.label}`,
+    label: `Golpear con ${nombre}`,
     grupo: "Ataques",
     aplicado: "potencia",
     // Sutil (docs/equipamiento.md:848-850): elección del jugador al tirar,
@@ -653,23 +691,26 @@ function tiradaDeArmaMelee(
     familiaArma: "ataque_melee",
     empleoArma: arma.empleo,
     nota,
-    efectoCritico: arma.efectoCritico,
+    efectoCritico: criticoConPerfil(arma, perfil),
     ...(esDesarmado && { desarmado: true as const }),
     ...(arma.contundente && { contundente: true as const }),
-    ignoraBlindaje: arma.ignoraBlindaje ? { valor: arma.ignoraBlindaje, fuente: arma.label } : undefined,
+    ignoraBlindaje: ignoraBlindajeDe(arma, perfil, nombre),
     condiciones: [...(modo ? [modo] : []), ...(malla ? condicionesSacrificioColchon(malla.nivel) : [])],
     ajustesFijos: ajusteModoUnico,
     ataque: {
       modos: modosConId.map((m) => {
         const bono = bonoFormulaFuerza(m.formulaDanio);
-        return {
-          id: m.id,
-          etiqueta: m.etiqueta,
-          danio: bono === null ? null : fuerza + bono,
-          danioSutil: esSutil && bono !== null && potencia !== null ? potencia + bono : undefined,
-          formulaDanio: m.formulaDanio,
-          categoriaDanio: m.categoriaDanio,
-        };
+        return modoConPerfil(
+          {
+            id: m.id,
+            etiqueta: m.etiqueta,
+            danio: bono === null ? null : fuerza + bono,
+            danioSutil: esSutil && bono !== null && potencia !== null ? potencia + bono : undefined,
+            formulaDanio: m.formulaDanio,
+            categoriaDanio: m.categoriaDanio,
+          },
+          perfil,
+        );
       }),
     },
   };
@@ -693,10 +734,15 @@ function tiradaDeArmaMelee(
 //
 // D2b-2 (§9.2): la fila solo existe con la dote Bloqueo (lo filtra accionesDeAtaque, por
 // familia) y el Sutil solo con Combate Sutil (`sutilPermitido`).
-function tiradaBloqueoDeArmaMelee(arma: ArmaMelee, instanciaId: string, sutilPermitido: boolean): Accion {
+function tiradaBloqueoDeArmaMelee(
+  arma: ArmaMelee,
+  instanciaId: string,
+  sutilPermitido: boolean,
+  modificaciones?: ModificacionArmaId[],
+): Accion {
   return {
     id: `bloquear_melee_${instanciaId}`,
-    label: `Bloquear con ${arma.label}`,
+    label: `Bloquear con ${nombreArmaModificada(arma, modificaciones ?? [])}`,
     grupo: "Defensa",
     aplicado: "potencia",
     aplicadoSutil: arma.sutil && sutilPermitido ? "reflejos" : undefined,
@@ -717,32 +763,44 @@ function tiradaBloqueoDeArmaMelee(arma: ArmaMelee, instanciaId: string, sutilPer
 // Atletismo, ALCANCE_ARROJADA) — INFERIDO, decisión 2026-09-28, el usuario;
 // EQUIP solo dice "Arrojadiza". Se lanza con el perfil del primer modo (el
 // Simple): su dificultad como ajuste fijo y su daño. Sin Sutil ni colchón de
-// Malla — un lanzamiento no es un golpe.
-function tiradaLanzarArmaMelee(sheet: Sheet, mods: ModificadorConFuente[], arma: ArmaMelee, instanciaId: string): Accion | null {
+// Malla — un lanzamiento no es un golpe. Arrojadiza modificada: el mismo daño extra y
+// efectos que al golpear (usuario, 2026-10-23).
+function tiradaLanzarArmaMelee(
+  sheet: Sheet,
+  mods: ModificadorConFuente[],
+  arma: ArmaMelee,
+  instanciaId: string,
+  modificaciones?: ModificacionArmaId[],
+): Accion | null {
   if (!arma.arrojadiza) return null;
   const modo = arma.modos[0];
   const bono = bonoFormulaFuerza(modo.formulaDanio);
+  const perfil = perfilGolpe(arma, modificaciones);
+  const nombre = nombreArmaModificada(arma, modificaciones ?? []);
   return {
     id: `lanzar_melee_${instanciaId}`,
-    label: `Lanzar ${arma.label}`,
+    label: `Lanzar ${nombre}`,
     grupo: "Ataques",
     aplicado: "potencia",
     habilidad: "atletismo",
     especialidadArma: ESPECIALIDAD_LANZAR,
     familiaArma: "lanzar_melee",
     empleoArma: arma.empleo,
-    nota: [`Alcance ${ALCANCE_ARROJADA}.`, arma.efectos].filter(Boolean).join(" · "),
-    efectoCritico: arma.efectoCritico,
-    ignoraBlindaje: arma.ignoraBlindaje ? { valor: arma.ignoraBlindaje, fuente: arma.label } : undefined,
+    nota: notaConPerfil([`Alcance ${ALCANCE_ARROJADA}.`, arma.efectos], perfil),
+    efectoCritico: criticoConPerfil(arma, perfil),
+    ignoraBlindaje: ignoraBlindajeDe(arma, perfil, nombre),
     ajustesFijos: modo.dificultad !== 0 ? [{ valor: modo.dificultad, fuente: arma.label }] : [],
     ataque: {
       modos: [
-        {
-          id: "0",
-          danio: bono === null ? null : atributoEfectivo(sheet, "fuerza", mods) + bono,
-          formulaDanio: modo.formulaDanio,
-          categoriaDanio: modo.categoriaDanio,
-        },
+        modoConPerfil(
+          {
+            id: "0",
+            danio: bono === null ? null : atributoEfectivo(sheet, "fuerza", mods) + bono,
+            formulaDanio: modo.formulaDanio,
+            categoriaDanio: modo.categoriaDanio,
+          },
+          perfil,
+        ),
       ],
     },
   };
@@ -1020,11 +1078,11 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
   },
   armaMelee: (sheet, pieza, cat, mods, permisos) => {
     const arma = cat as ArmaMelee;
-    const lanzar = tiradaLanzarArmaMelee(sheet, mods, arma, pieza.instanciaId);
+    const lanzar = tiradaLanzarArmaMelee(sheet, mods, arma, pieza.instanciaId, pieza.modificaciones);
     const filas = [
-      tiradaDeArmaMelee(sheet, mods, arma, pieza.instanciaId, permisos.sutil.includes("ataque_melee")),
+      tiradaDeArmaMelee(sheet, mods, arma, pieza.instanciaId, permisos.sutil.includes("ataque_melee"), pieza.modificaciones),
       ...(lanzar ? [lanzar] : []),
-      tiradaBloqueoDeArmaMelee(arma, pieza.instanciaId, permisos.sutil.includes("bloquear_melee")),
+      tiradaBloqueoDeArmaMelee(arma, pieza.instanciaId, permisos.sutil.includes("bloquear_melee"), pieza.modificaciones),
     ];
     // Escudo roto (S86): sus filas salen, apagadas con el motivo, hasta que se repare.
     return arma.defensa && escudoRoto(sheet, pieza.instanciaId) ? filas.map((t) => ({ ...t, bloqueada: MOTIVO_ESCUDO_ROTO })) : filas;
@@ -1192,7 +1250,7 @@ export function accionesDirectasDeAtaque(sheet: Sheet): AccionDirecta[] {
       const accionCoste = cat.modos[0]?.etiqueta ?? "Estándar";
       acciones.push({
         id: `levantar_escudo_${pieza.instanciaId}`,
-        label: `Levantar ${cat.label}`,
+        label: `Levantar ${nombreArmaModificada(cat, pieza.modificaciones ?? [])}`,
         grupo: "Defensa",
         familiaArma: "levantar_escudo",
         empleoArma: cat.empleo,

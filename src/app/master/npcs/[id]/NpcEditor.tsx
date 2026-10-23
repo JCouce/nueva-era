@@ -14,6 +14,8 @@ import {
   type HabilidadId,
   type PiezaEquipada,
   type MaterialTier,
+  type ModificacionArmaId,
+  type OpcionesFabricar,
   setNivelDisciplina,
   type DisciplinaId,
   type EleccionEspecie,
@@ -53,6 +55,7 @@ import {
   comprarMaterialNpcAction,
   repararNpcAction,
   fabricarNpcAction,
+  convertirArmaNpcAction,
   ajustarGranadaNpcAction,
   comprarGranadaNpcAction,
   comprarMunicionEspecialNpcAction,
@@ -366,10 +369,18 @@ export function NpcEditor({
   };
   // Sin `exito`: edición libre de NPC, sin tirada (ver el comentario de
   // fabricarNpcAction) — el tercer parámetro de `onFabricar` (AccionesTab,
-  // compartido con CharacterSheet.tsx) no aplica aquí, TS lo deja pasar.
-  const commitFabricar = async (catalogoId: string, tier: MaterialTier) => {
+  // compartido con CharacterSheet.tsx) no aplica aquí; el cuarto, el encargo de arma
+  // modificada (S87), sí.
+  // Armas Modificadas (S87) sobre un arma del NPC: libre, sin coste ni tope.
+  const commitConvertirArma = async (instanciaId: string, modificaciones: ModificacionArmaId[]) => {
     setStatus("saving");
-    const res = await fabricarNpcAction(npcId, catalogoId, tier);
+    const res = await convertirArmaNpcAction(npcId, { instanciaId, modificaciones });
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
+  const commitFabricar = async (catalogoId: string, tier: MaterialTier, _exito?: boolean, opciones?: OpcionesFabricar) => {
+    setStatus("saving");
+    const res = await fabricarNpcAction(npcId, catalogoId, tier, opciones);
     if (res.ok) setSheet(res.sheet);
     setStatus(res.ok ? "saved" : "error");
   };
@@ -524,7 +535,7 @@ export function NpcEditor({
           />
         </div>
       )}
-      {active === "equipo" && <EquipoTab sheet={sheet} onDesequipar={commitDesequipar} onArmaIncorporada={commitArmaIncorporada} />}
+      {active === "equipo" && <EquipoTab sheet={sheet} onDesequipar={commitDesequipar} onArmaIncorporada={commitArmaIncorporada} onConvertirArma={commitConvertirArma} />}
       {active === "recursos" && (
         <RecursosTab
           ficha={ficha}

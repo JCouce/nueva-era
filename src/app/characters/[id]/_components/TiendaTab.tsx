@@ -29,6 +29,11 @@ import {
   nuevaInstanciaId,
   rarezaPermitida,
   topeRarezaDeCompra,
+  admiteModificaciones,
+  precioArmaModificada,
+  rarezaArmaModificada,
+  nombreArmaModificada,
+  type ModificacionArmaId,
   type ContextoExcepcionRareza,
   type TopeRarezaCompra,
   type Sheet,
@@ -73,6 +78,7 @@ import {
   DetalleOperacion,
   DetalleImplante,
 } from "./equipo/PiezaDetalle";
+import { SelectorModificaciones } from "./equipo/SelectorModificaciones";
 
 // Las cuatro herramientas con niveles de la categoría "Herramientas" — igual
 // que VALIJA_TACTICA_MEDICA en Medicina, ninguna se instala en nada. Arriba
@@ -266,18 +272,23 @@ function BotonEquipar({
 // de Recursos, entonces se bloquea igual que AccionInstalable bloquea por
 // falta de hueco. `compra` (topeRarezaDeCompra) ya trae la excepción de especie
 // (kerzul del Arköru): "vía especie" en vez de bloqueada, o el motivo.
+// `precio`: el de un arma modificada (AccionMelee), si no es el del catálogo.
 function AccionSimple({
   pieza,
   creditos,
   compra,
   onEquipar,
+  precio,
+  etiqueta = "Equipar",
 }: {
   pieza: Armadura | ArmaFuego | ArmaMelee | ArmaPesada;
   creditos: number;
   compra: TopeRarezaCompra;
   onEquipar: (p: PiezaEquipada) => void;
+  precio?: number;
+  etiqueta?: string;
 }) {
-  const coste = pieza.coste ?? 0;
+  const coste = precio ?? pieza.coste ?? 0;
   const sinFondos = coste > creditos;
   const sinRareza = compra.tipo === "bloqueada";
   return (
@@ -287,7 +298,7 @@ function AccionSimple({
         disabled={sinFondos || sinRareza}
         onClick={() => onEquipar({ instanciaId: nuevaInstanciaId(), catalogoId: pieza.id })}
       >
-        Equipar
+        {etiqueta}
       </BotonEquipar>
       {compra.tipo === "viaEspecie" && (
         <p className="mt-1 font-mono text-[10px] uppercase tracking-wide text-info">
@@ -302,6 +313,44 @@ function AccionSimple({
           Te faltan {(coste - creditos).toLocaleString("es-ES")} créditos.
         </p>
       )}
+    </>
+  );
+}
+
+// Arma melee: como AccionSimple, más el selector de Armas Modificadas (S87) si el arma lo
+// admite. Precio, rareza (y su tope de creación) y nombre salen del arma ya modificada.
+function AccionMelee({
+  pieza,
+  sheet,
+  creditos,
+  topeRareza,
+  excepcionRareza,
+  onEquipar,
+}: {
+  pieza: ArmaMelee;
+  sheet: Sheet;
+  creditos: number;
+  topeRareza: Rareza | null;
+  excepcionRareza: ContextoExcepcionRareza | null;
+  onEquipar: (p: PiezaEquipada) => void;
+}) {
+  const [seleccion, setSeleccion] = useState<ModificacionArmaId[]>([]);
+  const modificada = seleccion.length > 0;
+  const precio = precioArmaModificada(pieza, seleccion) ?? 0;
+  const compra = topeRarezaDeCompra(sheet, pieza.id, rarezaArmaModificada(pieza, seleccion), topeRareza, excepcionRareza);
+  return (
+    <>
+      {admiteModificaciones(pieza) && (
+        <SelectorModificaciones arma={pieza} seleccion={seleccion} onCambiar={setSeleccion} />
+      )}
+      <AccionSimple
+        pieza={pieza}
+        creditos={creditos}
+        compra={compra}
+        precio={precio}
+        etiqueta={modificada ? `Equipar ${nombreArmaModificada(pieza, seleccion)} · ${precio.toLocaleString("es-ES")} cr.` : "Equipar"}
+        onEquipar={(p) => onEquipar(modificada ? { ...p, modificaciones: seleccion } : p)}
+      />
     </>
   );
 }
@@ -1204,7 +1253,14 @@ export function TiendaTab({
               }
             >
               <DetalleArmaMelee p={p} />
-              <AccionSimple pieza={p} creditos={creditosEfectivos} compra={compraDe(p)} onEquipar={onEquipar} />
+              <AccionMelee
+                pieza={p}
+                sheet={sheet}
+                creditos={creditosEfectivos}
+                topeRareza={topeRareza}
+                excepcionRareza={excepcionRareza}
+                onEquipar={onEquipar}
+              />
             </Acordeon>
           ))}
 

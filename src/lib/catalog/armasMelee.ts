@@ -24,13 +24,10 @@
 // nada — casilla en blanco, o una familia entera sin columna de Peso (Armas
 // de Asta) — no para "insignificante".
 //
-// Deliberadamente NO se incluyen las "Armas Modificadas" (Electrificantes,
-// Térmicas, de Plasma, de Nanofilamento): su coste es un MULTIPLICADOR del
-// precio del arma base ("Básico x 10") y el efecto depende del tramo de daño
-// del arma que se modifica — es una transformación sobre un arma existente,
-// no un objeto propio, con la misma forma de problema que Munición Especial
-// en armas de fuego (ver catalog/equipo.ts). Añadirlas pide decidir cómo se
-// modela "coste = precio de otra pieza × N" antes de tocar el catálogo.
+// Las "Armas Modificadas" (Electrificantes, Térmicas, de Plasma, de Nanofilamento) no
+// son piezas de este catálogo: son una transformación sobre un arma de aquí, guardada
+// en `PiezaEquipada.modificaciones` (catalog/armasModificadas.ts y
+// rules/armasModificadas.ts, S87).
 import type { MaterialPieza, Rareza } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
 
@@ -56,6 +53,10 @@ export type ArmaMelee = {
   // patada son contundentes) y los escudos. TODO(revisar): Mangual y Cadena Armada (flagelos;
   // equipamiento.md separa "contundentes" de "flexibles") quedan fuera.
   contundente?: true;
+  // Arma de filo (dagas, espadas, lanzas, hachas…): la única que admite Nanofilamento
+  // (S87). Lista del usuario, 2026-10-23; las mecánicas (Hoja Dentada, Sierra Circular…)
+  // no cuentan, ni los flagelos (la fuente excluye las "flexibles").
+  filo?: true;
   sutil?: boolean;
   // Genera la tirada "Lanzar" (combate.ts, tiradaLanzarArmaMelee).
   arrojadiza?: boolean;
@@ -214,6 +215,7 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     resumen: "Arma corta perforante, causa hemorragia en vez de aturdir.",
     descripcion: "Arma corta a una mano, pensada para perforar.",
     empleo: "una mano",
+    filo: true,
     modos: [{ etiqueta: "Simple", dificultad: -1, formulaDanio: "Fue+2", categoriaDanio: "Letal" }],
     efectos: null,
     efectoCritico: "Hemorragia (1d6 turnos)",
@@ -233,6 +235,7 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     resumen: "Arma corta de filo, la más barata de las que causan hemorragia.",
     descripcion: "Arma corta a una mano, de filo.",
     empleo: "una mano",
+    filo: true,
     modos: [{ etiqueta: "Simple", dificultad: -1, formulaDanio: "Fue+2", categoriaDanio: "Letal" }],
     efectos: null,
     efectoCritico: "Hemorragia (1d6 turnos)",
@@ -281,6 +284,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
     resumen: "Lanza a una mano, se puede arrojar y usar con estilo Sutil.",
     descripcion: "Arma de asta a una mano, arrojadiza.",
     empleo: "una mano",
+    filo: true,
     sutil: true,
     arrojadiza: true,
     modos: [
@@ -308,6 +312,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
     resumen: "Lanza a dos manos con alcance extra.",
     descripcion: "Arma de asta a dos manos, con alcance.",
     empleo: "dos manos",
+    filo: true,
     alcance: 4,
     modos: [
       { etiqueta: "Simple", dificultad: -1, formulaDanio: "Fue+2", categoriaDanio: "Letal" },
@@ -332,6 +337,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
     resumen: "Arma de asta pesada a dos manos, de filo.",
     descripcion: "Arma de asta a dos manos, de filo pesado.",
     empleo: "dos manos",
+    filo: true,
     modos: [
       { etiqueta: "Simple", dificultad: -2, formulaDanio: "Fue+4", categoriaDanio: "Letal" },
       { etiqueta: "Estándar", dificultad: -2, formulaDanio: "Fue+6", categoriaDanio: "Letal" },
@@ -379,6 +385,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
     resumen: "Arma de asta a dos manos con alcance, de filo pesado.",
     descripcion: "Arma de asta a dos manos, con alcance y filo pesado.",
     empleo: "dos manos",
+    filo: true,
     alcance: 4,
     modos: [
       { etiqueta: "Simple", dificultad: -2, formulaDanio: "Fue+3", categoriaDanio: "Letal" },
@@ -574,6 +581,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     resumen: "Arma corta, arrojadiza, ideal para el estilo Sutil.",
     descripcion: "Daga a una mano, ligera y fácil de arrojar.",
     empleo: "una mano",
+    filo: true,
     sutil: true,
     arrojadiza: true,
     modos: [{ etiqueta: "Simple", dificultad: 0, formulaDanio: "Fue+2", categoriaDanio: "Letal" }],
@@ -600,6 +608,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     resumen: "Espada a una mano pensada para el estilo Sutil.",
     descripcion: "Espada a una mano, ligera, apta para el estilo Sutil.",
     empleo: "una mano",
+    filo: true,
     sutil: true,
     modos: [
       { etiqueta: "Simple", dificultad: -1, formulaDanio: "Fue+2", categoriaDanio: "Letal" },
@@ -627,6 +636,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     resumen: "Espada estándar a una mano, más daño que la ligera.",
     descripcion: "Espada a una mano, de filo estándar.",
     empleo: "una mano",
+    filo: true,
     modos: [
       { etiqueta: "Simple", dificultad: -1, formulaDanio: "Fue+3", categoriaDanio: "Letal" },
       { etiqueta: "Estándar", dificultad: -1, formulaDanio: "Fue+5", categoriaDanio: "Letal" },
@@ -651,6 +661,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     resumen: "Espada grande a dos manos, la más pesada de su familia.",
     descripcion: "Espada a dos manos, de gran tamaño.",
     empleo: "dos manos",
+    filo: true,
     modos: [
       { etiqueta: "Simple", dificultad: -2, formulaDanio: "Fue+4", categoriaDanio: "Letal" },
       { etiqueta: "Estándar", dificultad: -2, formulaDanio: "Fue+6", categoriaDanio: "Letal" },

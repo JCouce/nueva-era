@@ -23,6 +23,7 @@ import {
   comprarMaterialAction,
   repararAction,
   fabricarAction,
+  convertirArmaAction,
   ajustarGranadaAction,
   comprarGranadaAction,
   comprarMunicionEspecialAction,
@@ -53,6 +54,9 @@ import {
   puntosAtributosDisponibles,
   puntosHabilidadesDisponibles,
   equipar,
+  convertirArma,
+  type ModificacionArmaId,
+  type OpcionesFabricar,
   retirarPieza,
   fijarArmaIncorporada,
   setPrioridad,
@@ -449,6 +453,12 @@ export function CharacterSheet({
     setSheet((s) => retirarPieza(s, instanciaId, estados));
     runSave(() => desequiparAction(characterId, instanciaId), setSheet);
   };
+  // Armas Modificadas (S87): el precio (la diferencia) y el tope de rareza los vuelve a
+  // comprobar el servidor; aquí solo se adelanta la pieza convertida.
+  const commitConvertirArma = (instanciaId: string, modificaciones: ModificacionArmaId[]) => {
+    setSheet((s) => convertirArma(s, instanciaId, modificaciones));
+    runSave(() => convertirArmaAction(characterId, { instanciaId, modificaciones }), setSheet);
+  };
   const commitArmaIncorporada = (brazoInstanciaId: string, armaInstanciaId: string | null) => {
     setSheet((s) => {
       const res = fijarArmaIncorporada(s, brazoInstanciaId, armaInstanciaId);
@@ -565,8 +575,8 @@ export function CharacterSheet({
   // exito llega ya resuelto por el cliente: la tirada de Fabricar (dado +
   // dificultad) se juega en AccionModal, dentro de FabricarSeccion, antes de
   // llamar aquí — ver el comentario de fabricarAction.
-  const commitFabricar = (catalogoId: string, tier: MaterialTier, exito: boolean) => {
-    runSave(() => fabricarAction(characterId, catalogoId, tier, exito), setSheet);
+  const commitFabricar = (catalogoId: string, tier: MaterialTier, exito: boolean, opciones?: OpcionesFabricar) => {
+    runSave(() => fabricarAction(characterId, catalogoId, tier, exito, opciones), setSheet);
   };
 
   // ── Identidad (debounced, fire-and-forget). ──
@@ -886,6 +896,8 @@ export function CharacterSheet({
               creditos={creditos}
               onDesequipar={commitDesequipar}
               onArmaIncorporada={commitArmaIncorporada}
+              onConvertirArma={commitConvertirArma}
+              topeRareza={topeRareza}
             />
           )}
           {activeEfectivo === "recursos" && (

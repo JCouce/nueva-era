@@ -377,8 +377,8 @@ de control.
   mitad de la ampliación: la "detonación de pulso térmico" de Malla Plasmática
   nivel 2, mismo problema, no cubierta en esta tanda.
 - ⬜ **Hallazgo #2** — ~~Munición Especial~~ dada de alta y enganchada al disparo 2026-09-28
-  (`docs/tareas.md`). Las 4 Armas Modificadas siguen
-  sin existir en el catálogo.
+  (`docs/tareas.md`). ~~Las 4 Armas Modificadas~~ construidas 2026-10-23 como
+  transformación sobre un arma melee (`docs/sistema.md` S87).
 - ⬜ **Hallazgo #3** — Salvaciones genéricas sin especificidad ("¿contra qué resistes?").
   Bloquea `arm2`, `me1`, `me5` del backlog.
 - ⬜ **Hallazgo #4** — Tipo elemental vs. categoría de daño mezclados en
@@ -902,6 +902,9 @@ de control.
   no hay sitio donde engancharlo aunque quisiéramos.
 
 ### Armas Modificadas (mejora comprable)
+
+> ✅ Construidas 2026-10-23 (S87): no como mejora instalable sino como `modificaciones` del
+> arma melee; efectos al golpe, críticos e ignora blindaje enganchados. Lo de abajo es histórico.
 
 - Electrificantes, Térmicas, de Plasma, de Nanofilamento: **❓ VERIFICAR primero el
   hallazgo #2** — ninguna existe hoy en `MEJORAS_ARMA`. Una vez dadas de alta, su

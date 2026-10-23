@@ -17,18 +17,8 @@ import { blindajeDelBrazo } from "./brazoBionico";
 import { MOTIVO_ESCUDO_ROTO } from "./recursos";
 import type { Sheet } from "./sheet";
 
-export const TIPOS_DANIO = [
-  { id: "cinetico", label: "Cinético" },
-  { id: "electrico", label: "Eléctrico" },
-  { id: "fuego", label: "Fuego" },
-  { id: "frio", label: "Frío" },
-  { id: "corrosivo", label: "Corrosivo" },
-  { id: "plasma", label: "Plasma" },
-  { id: "sonico", label: "Sónico" },
-  { id: "toxico", label: "Tóxico" },
-  { id: "mental", label: "Mental" },
-] as const;
-export type TipoDanio = (typeof TIPOS_DANIO)[number]["id"];
+import { TIPOS_DANIO, type TipoDanio } from "../catalog/tiposDanio";
+export { TIPOS_DANIO, type TipoDanio };
 
 function armaduraEquipadaConInstancia(sheet: Sheet): { armadura: Armadura; instanciaId: string } | null {
   for (const pieza of sheet.equipo) {

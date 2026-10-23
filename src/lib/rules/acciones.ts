@@ -11,6 +11,8 @@ import type { Sheet } from "./sheet";
 import type { AtributosExtremidad, CondicionTirada, BonoPorTramo, EstadoCondiciones } from "./condiciones";
 import type { EmpleoArma, FamiliaArma, GrupoAccion, ModificadorConFuente } from "./modificadores";
 import type { DetallePoder } from "./poderes";
+import type { TipoDanio } from "../catalog/tiposDanio";
+import type { DanioExtra } from "./armasModificadas";
 import { etiquetaEspecialidad, type EspecialidadId } from "../catalog/especialidades";
 
 export const CARAS_DADO = 12;
@@ -178,6 +180,10 @@ export type Accion = {
       danioSutil?: number | null;
       formulaDanio: string | null;
       categoriaDanio: string;
+      // Armas Modificadas (S87): tipo del daño de `danio` (sin él, el de siempre, sin
+      // desglose) y el daño extra de otros tipos, que va aparte en el resultado.
+      tipoDanio?: TipoDanio;
+      danioExtra?: DanioExtra[];
       // Cuánto gasta este modo de sheet.recursos al confirmar la tirada
       // (docs/prompt-gasto-recursos.md, Fase 1) — dato, no recalculado de la
       // etiqueta en otro punto (gastoDelModo()/GASTO_MODO_PULSO en combate.ts

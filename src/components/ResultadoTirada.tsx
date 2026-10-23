@@ -1,6 +1,10 @@
+import { PartesDanio, TipoYExtras } from "./TipoDanio";
 import {
+  desgloseDanio,
   gradoDeTirada,
   type AjusteDanio,
+  type DanioExtra,
+  type TipoDanio,
   textoDeGrado,
   type DetallePoder,
   type Grado,
@@ -71,6 +75,10 @@ export type DanioInfo = {
   // Casillas del ataque que tocan el daño (D2d: Golpe Fatigante, golpe letal, Derribo): se
   // aplican al tirarlo (resolverDanio).
   ajuste?: AjusteDanio;
+  // Armas Modificadas (S87): tipo del daño básico y daño extra de otros tipos, para
+  // enseñar el golpe desglosado por tipo.
+  tipoDanio?: TipoDanio;
+  danioExtra?: DanioExtra[];
 };
 
 export type Lanzamiento = Resultado & {
@@ -141,6 +149,11 @@ export function ContenidoResultado({
         : critico
           ? "FRACASO CRÍTICO"
           : "fracaso";
+
+  const desglose =
+    resultado.danioInfo && resultado.danioResuelto
+      ? desgloseDanio(resultado.danioResuelto.total, resultado.danioInfo.tipoDanio, resultado.danioInfo.danioExtra)
+      : null;
 
   const puedeTirarDanio =
     resultado.danioInfo?.base !== null &&
@@ -226,9 +239,14 @@ export function ContenidoResultado({
           {resultado.danioResuelto ? (
             <>
               <p className="font-mono text-xs uppercase text-danger">
-                Daño: <span className="text-lg tabular-nums">{resultado.danioResuelto.total}</span>{" "}
+                Daño: <span className="text-lg tabular-nums">{desglose ? desglose.total : resultado.danioResuelto.total}</span>{" "}
                 {resultado.danioResuelto.categoria}
               </p>
+              {desglose && (
+                <p className="mt-1 font-mono text-xs uppercase">
+                  <PartesDanio partes={desglose.partes} />
+                </p>
+              )}
               {resultado.critico && resultado.efectoCritico && (
                 <p className="mt-1 font-mono text-xs uppercase text-accent">Crítico · {resultado.efectoCritico}</p>
               )}
@@ -250,7 +268,11 @@ export function ContenidoResultado({
               onClick={onTirarDanio}
               className="clip-chamfer-sm w-full border border-danger py-2 font-display text-xs font-semibold uppercase tracking-wide text-danger active:scale-[0.98]"
             >
-              Tirar daño ({resultado.danioInfo.base} {resultado.danioInfo.categoriaDanio} base)
+              Tirar daño ({resultado.danioInfo.base} {resultado.danioInfo.categoriaDanio}
+              {resultado.danioInfo.tipoDanio && (
+                <TipoYExtras tipoBase={resultado.danioInfo.tipoDanio} extras={resultado.danioInfo.danioExtra ?? []} />
+              )}{" "}
+              base)
             </button>
           ) : resultado.danioInfo.formulaDanio ? (
             <p className="font-mono text-[10px] uppercase text-muted">

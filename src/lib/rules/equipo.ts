@@ -31,6 +31,18 @@ import type { CondicionTirada } from "./condiciones";
 import type { HabilidadId } from "./habilidades";
 import { reconciliarRecursos, precioMaterial, sumarGranada, type MaterialTier } from "./recursos";
 import type { Sheet } from "./sheet";
+import type { ModificacionArmaId } from "../catalog/armasModificadas";
+import {
+  conversionDeArma,
+  convertirArma,
+  nombreDePieza,
+  listaModificacionesSchema,
+  modificacionesValidas,
+  normalizarModificaciones,
+  precioArmaModificada,
+  rarezaArmaModificada,
+  pesoArmaModificada,
+} from "./armasModificadas";
 
 // Acumulación de niveles, supuesto S9 (docs/sistema.md): "un efecto que un
 // nivel introduce y los superiores no repiten ni anulan se acumula — el
@@ -104,6 +116,9 @@ export type PiezaEquipada = {
   // cuerpo a cuerpo o de fuego, no la Pelea). Solo en la pieza del brazo; lo fija
   // fijarArmaIncorporada y lo limpia conArmaIncorporadaValida.
   armaIncorporada?: string;
+  // Armas Modificadas (S87): Electrificante, Térmica, Plasma, Nanofilamento sobre un arma
+  // melee. Orden fijo (normalizarModificaciones); lo valida validarModificaciones.
+  modificaciones?: ModificacionArmaId[];
 };
 
 export const piezaEquipadaSchema = z.object({
@@ -115,11 +130,16 @@ export const piezaEquipadaSchema = z.object({
   eleccion: z.string().min(1).max(40).optional(),
   pagoBolsa: z.number().int().min(0).max(9_999_999).optional(),
   armaIncorporada: z.string().min(1).max(60).optional(),
+  // Una lista que no se reconoce se pierde, no la pieza (lectura tolerante, parseSheet).
+  modificaciones: listaModificacionesSchema.optional().catch(undefined),
 });
 
 // Lo que se acepta del cliente al equipar: `viaEspecie` no, lo decide el servidor
-// (zod descarta la clave si llega). El arma incorporada va por su propia acción.
-export const piezaEquipadaEntradaSchema = piezaEquipadaSchema.omit({ viaEspecie: true, pagoBolsa: true, armaIncorporada: true });
+// (zod descarta la clave si llega). El arma incorporada va por su propia acción. Las
+// modificaciones, estrictas: una lista mala se rechaza, no se ignora.
+export const piezaEquipadaEntradaSchema = piezaEquipadaSchema
+  .omit({ viaEspecie: true, pagoBolsa: true, armaIncorporada: true })
+  .extend({ modificaciones: listaModificacionesSchema.optional() });
 
 // Generador de ids, separado de las funciones puras de más abajo para que
 // sigan siendo testeables sin azar de por medio — mismo criterio que
@@ -284,6 +304,9 @@ export function equipar(sheet: Sheet, pieza: PiezaEquipada): Sheet {
   // Los aumentos tienen su propia compra (requisitos, subir de nivel, elección y
   // bolsa del humano): compraAumento en rules/aumentos.ts.
   if (cat.familia === "operacionGenetica" || cat.familia === "implante") return sheet;
+  // Armas Modificadas: solo sobre un arma melee que las admita, en orden fijo (S87).
+  if (!modificacionesValidas(pieza)) return sheet;
+  const nueva = pieza.modificaciones ? { ...pieza, modificaciones: normalizarModificaciones(pieza.modificaciones) } : pieza;
 
   // herramienta, consumible y armaPesada se equipan directo, como una
   // armadura — no están en esta lista a propósito, caen en la rama de abajo
@@ -301,7 +324,7 @@ export function equipar(sheet: Sheet, pieza: PiezaEquipada): Sheet {
     if (!validarInstalacion(sheet, pieza.catalogoId, pieza.instaladoEnId, pieza.nivel).ok) return sheet;
   }
 
-  return reconciliarRecursos({ ...sheet, equipo: [...sheet.equipo, pieza] });
+  return reconciliarRecursos({ ...sheet, equipo: [...sheet.equipo, nueva] });
 }
 
 // VTF equipada (cualquier nivel) — requisito de Fabricar (docs/tareas.md,
@@ -340,6 +363,48 @@ export function dificultadFabricacion(rareza: Rareza, nivelVtf: number | null): 
   return 7 + 2 * rangoEfectivo;
 }
 
+// Armas Modificadas en Fabricar (S87): un arma melee nueva ya modificada, o una
+// modificación sobre un arma que ya se lleva (`sobreInstanciaId`, también sobre otra
+// modificación salvo Plasma), pagando la diferencia de precio en materiales.
+export const opcionesFabricarSchema = z.object({
+  modificaciones: listaModificacionesSchema.optional(),
+  sobreInstanciaId: z.string().min(1).max(60).optional(),
+});
+export type OpcionesFabricar = z.infer<typeof opcionesFabricarSchema>;
+
+// Qué se fabrica y a qué precio y rareza: lo comparten fabricar(), fabricarAction (tope
+// de rareza del material) y Fabricar en la UI (dificultad y unidades).
+export type EncargoFabricacion =
+  | { ok: true; coste: number; rareza: Rareza; nombre: string }
+  | { ok: false; motivo: string };
+
+export function encargoFabricacion(
+  sheet: Pick<Sheet, "equipo">,
+  catalogoId: string,
+  opciones?: OpcionesFabricar,
+): EncargoFabricacion {
+  const cat = piezaFabricablePorId(catalogoId);
+  if (!cat) return { ok: false, motivo: "Esa pieza no se puede fabricar." };
+  const mods = opciones?.modificaciones;
+  if (opciones?.sobreInstanciaId) {
+    const pieza = sheet.equipo.find((p) => p.instanciaId === opciones.sobreInstanciaId);
+    if (!pieza || pieza.catalogoId !== catalogoId) return { ok: false, motivo: "Esa arma ya no está equipada." };
+    const conv = conversionDeArma(sheet, opciones.sobreInstanciaId, mods ?? []);
+    if (!conv.ok) return conv;
+    return { ok: true, coste: conv.coste, rareza: conv.rareza ?? cat.rareza, nombre: conv.nombre };
+  }
+  if (!mods) return { ok: true, coste: cat.coste, rareza: cat.rareza, nombre: cat.label };
+  if (cat.familia !== "armaMelee" || !modificacionesValidas({ catalogoId, modificaciones: mods })) {
+    return { ok: false, motivo: "Esa modificación no cabe en esa pieza." };
+  }
+  return {
+    ok: true,
+    coste: precioArmaModificada(cat, mods) ?? cat.coste,
+    rareza: rarezaArmaModificada(cat, mods) ?? cat.rareza,
+    nombre: nombreDePieza({ catalogoId, modificaciones: mods }),
+  };
+}
+
 // Fabricar: "comprar" pagando en Materiales en vez de en créditos — mismo
 // golpe que equipar(), salvo que la pieza no llega entera del cliente (solo
 // el catalogoId, decisión del usuario), así que el instanciaId se genera
@@ -360,13 +425,19 @@ export function dificultadFabricacion(rareza: Rareza, nivelVtf: number | null): 
 // intento arriesgado, no una compra con devolución. Solo con éxito se añade
 // la pieza a `sheet.equipo`. NPCs (fabricarNpcAction) siguen editando libre,
 // sin tirada — pasan `exito: true` siempre, ver esa action.
-export function fabricar(sheet: Sheet, catalogoId: string, tier: MaterialTier, exito: boolean): Sheet {
-  const cat = piezaFabricablePorId(catalogoId);
-  if (!cat) return sheet;
+export function fabricar(
+  sheet: Sheet,
+  catalogoId: string,
+  tier: MaterialTier,
+  exito: boolean,
+  opciones?: OpcionesFabricar,
+): Sheet {
+  const encargo = encargoFabricacion(sheet, catalogoId, opciones);
+  if (!encargo.ok) return sheet;
 
   const precioUnidad = precioMaterial(tier);
   if (precioUnidad <= 0) return sheet;
-  const unidades = Math.ceil(cat.coste / precioUnidad);
+  const unidades = Math.ceil(encargo.coste / precioUnidad);
   if (sheet.materiales[tier] < unidades) return sheet;
 
   const sinMaterial: Sheet = {
@@ -375,11 +446,17 @@ export function fabricar(sheet: Sheet, catalogoId: string, tier: MaterialTier, e
   };
   if (!exito) return sinMaterial;
 
+  if (opciones?.sobreInstanciaId) return convertirArma(sinMaterial, opciones.sobreInstanciaId, opciones.modificaciones ?? []);
+
   // Granada: no es una pieza equipable (docs/tareas.md, 2026-09-27), es un
   // recurso con cantidad — fabricarla suma 1 unidad en vez de equipar().
-  if (cat.familia === "granada") return sumarGranada(sinMaterial, catalogoId);
+  if (piezaFabricablePorId(catalogoId)?.familia === "granada") return sumarGranada(sinMaterial, catalogoId);
 
-  return equipar(sinMaterial, { instanciaId: nuevaInstanciaId(), catalogoId });
+  return equipar(sinMaterial, {
+    instanciaId: nuevaInstanciaId(),
+    catalogoId,
+    ...(opciones?.modificaciones && { modificaciones: opciones.modificaciones }),
+  });
 }
 
 // Quitar una armadura o un arma se lleva también lo que tuviera instalado
@@ -476,6 +553,7 @@ export function costeDePieza(pieza: PiezaEquipada): number {
     cat.familia === "granada" ||
     cat.familia === "operacionGenetica"
   ) {
+    if (cat.familia === "armaMelee") return precioArmaModificada(cat, pieza.modificaciones ?? []) ?? 0;
     return cat.coste ?? 0;
   }
   return cat.niveles.find((n) => n.nivel === pieza.nivel)?.coste ?? 0;
@@ -513,6 +591,7 @@ export function rarezaDePieza(pieza: PiezaEquipada): Rareza | null {
     cat.familia === "granada" ||
     cat.familia === "operacionGenetica"
   ) {
+    if (cat.familia === "armaMelee") return rarezaArmaModificada(cat, pieza.modificaciones ?? []);
     return cat.rareza;
   }
   return cat.niveles.find((n) => n.nivel === pieza.nivel)?.rareza ?? null;
@@ -616,6 +695,7 @@ export function pesoDePieza(pieza: PiezaEquipada): number {
     cat.familia === "armaPesada" ||
     cat.familia === "granada"
   ) {
+    if (cat.familia === "armaMelee") return pesoArmaModificada(cat, pieza.modificaciones ?? []) ?? 0;
     return cat.pesoKg ?? 0;
   }
   return 0;

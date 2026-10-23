@@ -11,6 +11,14 @@ import {
   mejorasArmaInstaladas,
   armasIncorporables,
   ID_BRAZO_BIONICO,
+  admiteModificaciones,
+  opcionesModificacion,
+  conversionDeArma,
+  resumenArmaModificada,
+  nombreDePieza,
+  rarezaPermitida,
+  type ModificacionArmaId,
+  type Rareza,
   type PiezaEquipada,
   type Sheet,
   type Armadura,
@@ -26,12 +34,14 @@ import {
   DetalleArmadura,
   DetalleArma,
   DetalleArmaMelee,
+  DetalleArmaModificada,
   DetalleModulo,
   DetalleArmaPesada,
   DetalleOperacion,
   DetalleImplante,
   MarcasImplante,
 } from "./equipo/PiezaDetalle";
+import { SelectorModificaciones } from "./equipo/SelectorModificaciones";
 
 function BotonQuitar({ onClick }: { onClick: () => void }) {
   return (
@@ -110,7 +120,7 @@ function SelectorArmaIncorporada({
 }) {
   const armas = armasIncorporables(sheet);
   const etiqueta = (p: PiezaEquipada) => {
-    const label = equipoPorId(p.catalogoId)?.label ?? p.catalogoId;
+    const label = nombreDePieza(p);
     const iguales = armas.filter((a) => a.catalogoId === p.catalogoId);
     return iguales.length > 1 ? `${label} (${iguales.indexOf(p) + 1})` : label;
   };
@@ -139,6 +149,83 @@ function SelectorArmaIncorporada({
           : "Sus ataques y su bloqueo van siempre con el brazo. Desenfundado gratis, no te la pueden desarmar y cuenta para la carga. La tirada de «Incorporar arma» está en Acciones."}
       </p>
     </div>
+  );
+}
+
+// Armas Modificadas (S87): convertir un arma melee que ya llevas, añadiéndole
+// modificaciones (las que tiene no se quitan), pagando la diferencia de precio. El tope de
+// rareza de creación, como en la Tienda; el servidor lo vuelve a comprobar todo.
+type OnConvertirArma = (instanciaId: string, modificaciones: ModificacionArmaId[]) => void;
+
+function ConvertirArma({
+  sheet,
+  pieza,
+  arma,
+  creditos,
+  topeRareza,
+  onConvertir,
+}: {
+  sheet: Sheet;
+  pieza: PiezaEquipada;
+  arma: ArmaMelee;
+  creditos?: number;
+  topeRareza: Rareza | null;
+  onConvertir: OnConvertirArma;
+}) {
+  const fijas = pieza.modificaciones ?? [];
+  const [abierto, setAbierto] = useState(false);
+  const [seleccion, setSeleccion] = useState<ModificacionArmaId[]>(fijas);
+  const quedan = opcionesModificacion(arma, fijas, fijas).some((o) => !o.marcada && o.motivo === null);
+  if (!admiteModificaciones(arma) || !quedan) return null;
+
+  if (!abierto) {
+    return (
+      <button
+        type="button"
+        onClick={() => setAbierto(true)}
+        className="clip-chamfer-sm mt-3 w-full border border-info py-2 font-mono text-[11px] uppercase tracking-wide text-info active:scale-95"
+      >
+        {fijas.length > 0 ? "Añadir otra modificación" : "Convertir en arma modificada"}
+      </button>
+    );
+  }
+
+  const conv = seleccion.length > fijas.length ? conversionDeArma(sheet, pieza.instanciaId, seleccion) : null;
+  const motivoRareza =
+    conv?.ok && topeRareza && !rarezaPermitida(conv.rareza, topeRareza)
+      ? `Tu letra de Recursos no llega a ${conv.rareza}: tope ${topeRareza}.`
+      : null;
+  const faltan = conv?.ok && creditos !== undefined && conv.coste > creditos ? conv.coste - creditos : 0;
+  return (
+    <>
+      <SelectorModificaciones arma={arma} seleccion={seleccion} fijas={fijas} onCambiar={setSeleccion} />
+      <button
+        type="button"
+        disabled={!conv?.ok || motivoRareza !== null || faltan > 0}
+        onClick={() => {
+          onConvertir(pieza.instanciaId, seleccion);
+          setAbierto(false);
+        }}
+        className="clip-chamfer-sm mt-3 w-full border border-accent bg-accent py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted"
+      >
+        {conv?.ok ? `Convertir · ${conv.coste.toLocaleString("es-ES")} cr.` : "Elige una modificación nueva"}
+      </button>
+      {conv && !conv.ok && <p className="mt-1 font-sans text-prosa-sm text-danger">{conv.motivo}</p>}
+      {motivoRareza && <p className="mt-1 font-sans text-prosa-sm text-danger">{motivoRareza}</p>}
+      {faltan > 0 && (
+        <p className="mt-1 font-sans text-prosa-sm text-danger">Te faltan {faltan.toLocaleString("es-ES")} créditos.</p>
+      )}
+      <button
+        type="button"
+        onClick={() => {
+          setSeleccion(fijas);
+          setAbierto(false);
+        }}
+        className="mt-2 w-full font-mono text-[10px] uppercase tracking-wide text-muted active:scale-95"
+      >
+        Cancelar
+      </button>
+    </>
   );
 }
 
@@ -205,6 +292,8 @@ export function EquipoTab({
   creditos,
   onDesequipar,
   onArmaIncorporada,
+  onConvertirArma,
+  topeRareza = null,
 }: {
   sheet: Sheet;
   // Ausente para un NPC (fase 6b 5.1): no lleva cartera de créditos que
@@ -214,6 +303,10 @@ export function EquipoTab({
   onDesequipar: (instanciaId: string) => void;
   // El selector del arma incorporada del Brazo Biónico (A6b); sin él, no sale.
   onArmaIncorporada?: OnArmaIncorporada;
+  // Convertir un arma melee en arma modificada (S87); sin él, no sale.
+  onConvertirArma?: OnConvertirArma;
+  // Tope de rareza de creación (letra de Recursos); null sin tope.
+  topeRareza?: Rareza | null;
 }) {
   const [filtro, setFiltro] = useState<"todo" | "aumentos">("todo");
   if (sheet.equipo.length === 0) {
@@ -320,10 +413,11 @@ export function EquipoTab({
       {todo && armasMelee.map((a) => {
         const cat = equipoPorId(a.catalogoId) as ArmaMelee | null;
         if (!cat || cat.familia !== "armaMelee") return null;
+        const modificada = a.modificaciones ? resumenArmaModificada(cat, a.modificaciones) : null;
         return (
           <Acordeon
             key={a.instanciaId}
-            titulo={cat.label}
+            titulo={nombreDePieza(a)}
             resumen={cat.resumen}
             etiqueta={<BotonQuitar onClick={() => onDesequipar(a.instanciaId)} />}
           >
@@ -332,6 +426,18 @@ export function EquipoTab({
             )}
             {marcaIncorporada(a.instanciaId)}
             <DetalleArmaMelee p={cat} />
+            {modificada && <DetalleArmaModificada r={modificada} />}
+            {onConvertirArma && (
+              <ConvertirArma
+                key={(a.modificaciones ?? []).join(",")}
+                sheet={sheet}
+                pieza={a}
+                arma={cat}
+                creditos={creditos}
+                topeRareza={topeRareza}
+                onConvertir={onConvertirArma}
+              />
+            )}
           </Acordeon>
         );
       })}

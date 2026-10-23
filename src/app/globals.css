@@ -42,6 +42,17 @@
   --color-info: var(--color-neon-cyan);
   --color-glitch: var(--color-neon-magenta);
 
+  /* Tipos de daño (TIPOS_DANIO): el desglose del golpe de las Armas Modificadas */
+  --color-danio-cinetico: var(--color-ink-soft);
+  --color-danio-electrico: #6fa8ff;
+  --color-danio-fuego: var(--color-neon-orange);
+  --color-danio-frio: #9be7ff;
+  --color-danio-corrosivo: #c6ff3d;
+  --color-danio-plasma: #c77dff;
+  --color-danio-sonico: #ffd166;
+  --color-danio-toxico: var(--color-neon-green);
+  --color-danio-mental: var(--color-neon-magenta);
+
   /* Tipografía de lectura. Rajdhani tiene ojo pequeño: por debajo de 13 px la prosa
      no se lee en móvil. Las etiquetas mono en mayúsculas sí pueden ir a 10-11 px. */
   --text-prosa: 0.9375rem; /* 15 px — descripciones, efectos por nivel */

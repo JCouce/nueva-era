@@ -1854,6 +1854,22 @@ transcribir — Medicina y Farmacia, Herramientas y Accesorios, y Otras Armas a 
 > de Hemorragia (1d6 turnos) y Silencioso, en `especial`. `TODO(revisar)` en el archivo: la
 > fuente no trae flechas ni virotes (usan el recurso genérico de balas), los tramos de
 > distancia son los de "Armas de Fuego" y qué mejoras de arma admiten.
+>
+> **Armas Modificadas (Electrificantes, Térmicas, de Plasma, de Nanofilamento), hecho
+> 2026-10-23 — S87.** No son piezas: son una transformación sobre un arma melee, guardada en
+> `PiezaEquipada.modificaciones` (sin ranura ni migración: campo opcional; `parseSheet`
+> descarta una combinación que ya no valga y deja el arma). Datos de las cuatro tablas en
+> `catalog/armasModificadas.ts`; tramo, compatibilidad, coste, rareza, peso, nombre y el golpe
+> resultante en `lib/rules/armasModificadas.ts`. El golpe (y el lanzamiento, si es
+> arrojadiza) sale con el daño **desglosado por tipo** (`ataque.modos[].tipoDanio` /
+> `danioExtra`, colores `--color-danio-*`): Electrificante suma su eléctrico aparte; Térmica y
+> Plasma convierten el básico (fuego, plasma) y le suman su extra; Nanofilamento pasa todo el
+> golpe a **Grave**, +1 del mismo tipo, e ignora 2/3/4 de blindaje (el aviso `ignoraBlindaje`
+> de siempre). Shock/Llamarada/Hemorragia van a la nota del golpe; Fusión y Hemorragia
+> Exanguinante, al crítico. Se elige en la Tienda (al comprar), en Equipo (convertir un arma
+> que ya llevas, pagando la diferencia), en creación (el mismo tope de rareza de la letra) y en
+> Fabricar con la VTF (arma nueva modificada, o modificación sobre un arma tuya pagando la
+> diferencia en materiales). Peso: solo se enseña. Sin gasto de energía; Bloquear no cambia.
 
 ## 13. Progresión `[PARCIAL · HOJA2]`
 
@@ -2310,6 +2326,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S84 | **Tirada libre (T-007): aplica lo que casa por aplicado/habilidad (alcances `todas`, `aplicado`, `habilidad`), sin casillas ni extras de dote o aumento, y sin especialidad.** Fila "Tirada libre" al final de "Acciones" (pestaña Básicas): el jugador elige en el modal un aplicado y una habilidad (o ninguna) y tira 1d12 + aplicado + habilidad. Entran los modificadores de tirada de alcance `todas`, `aplicado` y `habilidad`, y `anulaPenalizadores`; no los de `tiradaId` de otra acción, `grupo`, `grupoHabilidad`, `familiaArma` ni `modo` (grupo propio `Libre`). Sin casillas, ventajas, textos, bonos por tramo, descuentos ni crítico fijo de dote o aumento. La habilidad cuenta entera, como en Sigilo o Buscar. | Usuario, 2026-10-23: es para lo que el máster pide en mesa y la app no tiene como fila; ninguna acción con nombre, así que no le toca nada que apunte a una. |
 | S85 | **Contra Fuego, con Mejora Ignífuga (nivel 1) instalada en la armadura que cuenta, solo cuenta el blindaje de esa armadura**: no suman la armadura natural (de especie o de aumentos), el Escudo Deflector, el blindaje reactivo (Densificar) ni el brazo biónico, cuyas casillas siguen bloqueadas contra Fuego. Ignífuga instalada en otra armadura que no es la que cuenta no hace nada. | Lectura literal de "la puntuación total de blindaje de su armadura" (`catalog/mejorasEstandar.ts`), pendiente de confirmar con Murillo. Usuario, 2026-10-23. |
 | S86 | **Cobertura y escudos en la app** (regla FIRME de Murillo, 2026-10-23, §6 "Cobertura y escudos"): (1) **contra Fuego el blindaje del escudo vale 0** (un escudo no lleva Mejora Ignífuga, S19): todo el daño va a su durabilidad; **contra Mental no aplica**: "Al escudo" sale bloqueado. (2) **Escudo roto** (durabilidad a 0) **bloquea "Golpear con", "Bloquear con" y "Levantar" ese escudo**, con el motivo "Escudo roto: repáralo"; es derivado, así que repararlo con Materiales lo devuelve solo. (3) **La casilla "Tengo cobertura" de la esquiva es un +2 fijo para cualquier cobertura**, sin mirar su nivel, y sale en cualquier ficha, lleve escudo o no. | (1) y (2), lectura de la regla; (3), decisión del usuario (2026-10-23). |
+| S87 | **Armas Modificadas** (decisiones del usuario, 2026-10-23): (1) **no son piezas ni ocupan ranura**: campo opcional `modificaciones` del arma melee (`PiezaEquipada`). (2) **Compatibilidad**: toda arma melee que se compra salvo Pelea y kerzul; **escudos, solo Electrificante**; **Nanofilamento, solo armas de filo** (`ArmaMelee.filo`: Cuchillo de Combate, Espada Ligera, Espada, Montante, Hacha de Armas, Hacha de Guerra, Lanza Corta y Larga, Alabarda, Pico de Cuervo; las mecánicas no). (3) **Varias a la vez**: Plasma no se combina con nada; Electrificante, Térmica y Nanofilamento, libremente (Nanofilamento + Térmica = golpe grave y de fuego). (4) **Tramo** = el +N del **primer modo** del arma **sin modificar** ("2 o menos" cae en la fila "2"), igual para todas sus modificaciones; el daño extra va a todos los modos. (5) **Coste multiplicativo**: básico × N₁ × N₂…; convertir un arma que ya tienes cuesta la diferencia. (6) **Rareza**: la mayor entre el arma y sus modificaciones; cuenta para el tope de la letra de Recursos y para Fabricar (material y dificultad). (7) **Lanzar** una arrojadiza modificada lleva el mismo daño extra y efectos. (8) **Peso**: solo se muestra (+%). (9) **Sin gasto de energía**; Bloquear no cambia. | Lectura del usuario sobre `docs/fuente/equipamiento.md` ("Armas Modificadas" y la cabecera de Escudos: "Modificaciones disponibles: Electrificante"). Supuestos de construcción, sin decisión del usuario: los **porcentajes de peso de varias modificaciones se suman** sobre el básico; las modificaciones **no se quitan** (convertir solo añade); el daño extra lleva la categoría del golpe (Letal/No Letal, o Grave con Nanofilamento); al reparar, la rareza que cuenta es la del arma modificada. |
 
 ## Conflictos detectados
 

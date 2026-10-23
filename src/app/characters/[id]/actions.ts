@@ -43,7 +43,6 @@ import {
   rarezaMaterial,
   fabricar,
   tieneVtf,
-  piezaFabricablePorId,
   ajustarGranada,
   comprarGranada,
   MUNICION_GRANADA,
@@ -110,6 +109,10 @@ import {
   armaIncorporadaEntradaSchema,
   fijarArmaIncorporada,
   marcarFavorita,
+  conversionArmaEntradaSchema,
+  conversionDeArma,
+  opcionesFabricarSchema,
+  encargoFabricacion,
 } from "@/lib/rules";
 
 export type SaveResult =
@@ -442,6 +445,34 @@ export async function equiparAction(
   if (sheet === ctx.sheet) return { ok: false, error: "Pieza de equipo inválida" };
 
   const creditos = ctx.creditos - coste;
+  await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, creditos } });
+  revalidatePath(`/characters/${characterId}`);
+  revalidarPanelMaster();
+  return { ok: true, sheet, creditos };
+}
+
+// Armas Modificadas (S87): convertir un arma melee que ya se lleva, añadiéndole
+// modificaciones. Cobra la diferencia entre el precio nuevo y el que tenía; el tope de
+// rareza de la letra de Recursos, como al comprar (solo en creación y nunca al máster).
+export async function convertirArmaAction(characterId: string, entrada: unknown): Promise<SaveResult> {
+  const parsed = conversionArmaEntradaSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Modificación inválida" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const conv = conversionDeArma(ctx.sheet, parsed.data.instanciaId, parsed.data.modificaciones);
+  if (!conv.ok) return { ok: false, error: conv.motivo };
+
+  if (!ctx.aprobada && !ctx.esMaster) {
+    const letra = ctx.sheet.prioridades.recursos;
+    const tope = letra ? RECURSOS_POR_LETRA[letra].rareza : null;
+    if (tope && !rarezaPermitida(conv.rareza, tope)) {
+      return { ok: false, error: `Tu letra de Recursos no llega a ${conv.rareza}: tope ${tope}.` };
+    }
+  }
+  if (conv.coste > ctx.creditos) return { ok: false, error: "No tienes créditos suficientes" };
+
+  const sheet = { ...ctx.sheet, equipo: ctx.sheet.equipo.map((p) => (p.instanciaId === conv.pieza.instanciaId ? conv.pieza : p)) };
+  const creditos = ctx.creditos - conv.coste;
   await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, creditos } });
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
@@ -924,12 +955,17 @@ export async function repararAction(
 // de esta feature). Lo que el servidor sigue validando es lo de siempre:
 // VTF equipada, rareza y stock — `exito` solo decide si, además de gastar el
 // material, se entrega la pieza.
+// `opciones` (S87): un arma melee ya modificada, o una modificación sobre un arma que
+// ya se lleva; coste y rareza del encargo, recalculados aquí (encargoFabricacion).
 export async function fabricarAction(
   characterId: string,
   catalogoId: string,
   tier: MaterialTier,
   exito: boolean,
+  opciones?: unknown,
 ): Promise<SaveResult> {
+  const parsedOpciones = opcionesFabricarSchema.optional().safeParse(opciones);
+  if (!parsedOpciones.success) return { ok: false, error: "Encargo de fabricación inválido." };
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
 
@@ -937,15 +973,15 @@ export async function fabricarAction(
     return { ok: false, error: "Necesitas la Valija Táctica de Fabricación equipada." };
   }
 
-  const cat = piezaFabricablePorId(catalogoId);
-  if (!cat) return { ok: false, error: "Esa pieza no se puede fabricar." };
+  const encargo = encargoFabricacion(ctx.sheet, catalogoId, parsedOpciones.data);
+  if (!encargo.ok) return { ok: false, error: encargo.motivo };
 
   const tope = rarezaMaterial(tier);
-  if (!tope || !rarezaPermitida(cat.rareza, tope)) {
-    return { ok: false, error: `Necesitas material de rareza ${cat.rareza} o superior.` };
+  if (!tope || !rarezaPermitida(encargo.rareza, tope)) {
+    return { ok: false, error: `Necesitas material de rareza ${encargo.rareza} o superior.` };
   }
 
-  const sheet = fabricar(ctx.sheet, catalogoId, tier, exito);
+  const sheet = fabricar(ctx.sheet, catalogoId, tier, exito, parsedOpciones.data);
   if (sheet === ctx.sheet) return { ok: false, error: "No tienes materiales suficientes de ese tier." };
   return persist(characterId, sheet);
 }

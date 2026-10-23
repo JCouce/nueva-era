@@ -13,6 +13,7 @@
 //   modificadores.ts  cómo especies, dotes, aumentos, equipo y estados alteran números
 //   migraciones.ts    qué pasa con las fichas cuando cambia el formato
 //   equipo.ts         qué lleva puesto un personaje: validación de ranuras y sus modificadores
+//   armasModificadas.ts  Electrificante/Térmica/Plasma/Nanofilamento sobre un arma melee: tramo, coste, rareza, golpe (S87)
 //   recursos.ts        cargas de batería/munición gastadas y recargadas en partida (fase 6b)
 //   condiciones.ts    controles de un modal de tirada: toggle, opción, contador
 //   combate.ts        el equipo convertido en tiradas de ataque concretas
@@ -61,6 +62,7 @@ export * from "./montaje";
 export * from "./modificadores";
 export * from "./migraciones";
 export * from "./equipo";
+export * from "./armasModificadas";
 export * from "./recursos";
 export * from "./condiciones";
 export * from "./combate";
@@ -103,6 +105,7 @@ export * from "./ajusteVida";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";
+export * from "../catalog/armasModificadas";
 export * from "../catalog/municion";
 export * from "../catalog/medicina";
 export * from "../catalog/herramientas";
