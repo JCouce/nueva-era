@@ -101,21 +101,21 @@ describe("desglose de un aplicado", () => {
 });
 
 describe("salud", () => {
-  test("una ficha nueva tiene 8 y 8", () => {
+  test("una ficha nueva tiene 10 y 10", () => {
     const s = defaultSheet();
-    assert.deepEqual(salud(s, modificadoresActivos(s)), { vida: 8, fatiga: 8 });
+    assert.deepEqual(salud(s, modificadoresActivos(s)), { vida: 10, fatiga: 10 });
   });
 
-  test("vida = 8 + fortaleza, fatiga = 8 + voluntad", () => {
+  test("vida = 10 + fortaleza, fatiga = 10 + voluntad", () => {
     const s = ficha({ atributos: { fuerza: 3, aguante: 2, caracter: 1 } });
-    assert.equal(salud(s, modificadoresActivos(s)).vida, 11); // 8 + ceil((3+2)/2)
-    assert.equal(salud(s, modificadoresActivos(s)).fatiga, 10); // 8 + ceil((2+1)/2)
+    assert.equal(salud(s, modificadoresActivos(s)).vida, 13); // 10 + ceil((3+2)/2)
+    assert.equal(salud(s, modificadoresActivos(s)).fatiga, 12); // 10 + ceil((2+1)/2)
   });
 
-  test("con aplicados negativos la salud baja de 8", () => {
+  test("con aplicados negativos la salud baja de 10", () => {
     const s = ficha({ atributos: { fuerza: -1, aguante: -1, caracter: -1 } });
-    assert.equal(salud(s, modificadoresActivos(s)).vida, 7); // 8 + ceil((-1-1)/2)
-    assert.equal(salud(s, modificadoresActivos(s)).fatiga, 7);
+    assert.equal(salud(s, modificadoresActivos(s)).vida, 9); // 10 + ceil((-1-1)/2)
+    assert.equal(salud(s, modificadoresActivos(s)).fatiga, 9);
   });
 });
 
@@ -191,7 +191,7 @@ describe("movimiento (HOJA2: constantes nuevas)", () => {
       total: 3,
       fuentes: [{ etiqueta: "Base", valor: 3 }],
     });
-    assert.equal(salud(s, modificadoresActivos(s)).vida, 8 + 2); // Fortaleza = ceil((3+0)/2), sin exoesqueleto
+    assert.equal(salud(s, modificadoresActivos(s)).vida, 10 + 2); // Fortaleza = ceil((3+0)/2), sin exoesqueleto
   });
 
   test("sin exoesqueleto no cambia nada (regresión)", () => {

@@ -35,7 +35,7 @@ foco. Frentes abiertos, cada uno con su sección en Pendiente:
 - Sync con Drive (`npm run sync-drive`, `docs/drive-sync.md`) — primera foto 2026-10-14 en
   `docs/fuente/`. **Pendiente: reconciliar la línea base** área por área (Creación de
   Personaje, Sistema, Equipamiento, Especies, Psiónica, Habilidades) contra
-  `docs/sistema.md`. Primer adelanto (Creación): Vida/Fatiga base 8 → 10, Dotes con
+  `docs/sistema.md`. Primer adelanto (Creación): Vida/Fatiga base 8 → 10 (hecho, §4 `HOJA3`), Dotes con
   presupuesto por prioridad, topes de creación movidos.
 - "Preguntas al diseñador" (final de este documento) — lo que bloquea a Murillo.
 - **La fábrica** (épica en Pendiente, N1 construido, en rodaje desde 2026-10-22): cadena de montaje de cambios con

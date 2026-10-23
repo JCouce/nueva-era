@@ -388,17 +388,17 @@ describe("A1: Hipertrofia Miofibrilar", () => {
     resuelta(conRequisitos(conAtributos(defaultSheet(), { fuerza, aguante }))).salud.vida;
 
   test("Fortaleza positiva par: × 1,5", () => {
-    assert.equal(vida(1, 3), 8 + 6); // Fue 4, Agu 4 → For 4 → 6
+    assert.equal(vida(1, 3), 10 + 6); // Fue 4, Agu 4 → For 4 → 6
   });
 
   test("Fortaleza impar: × 1,5 redondeado hacia abajo", () => {
-    assert.equal(vida(0, 2), 8 + 4); // Fue 3, Agu 3 → For 3 → 4,5 → 4
-    assert.equal(vida(-1, -1), 8 + 1); // Fue 2, Agu 0 → For 1 → 1,5 → 1
+    assert.equal(vida(0, 2), 10 + 4); // Fue 3, Agu 3 → For 3 → 4,5 → 4
+    assert.equal(vida(-1, -1), 10 + 1); // Fue 2, Agu 0 → For 1 → 1,5 → 1
   });
 
   test("sin sus requisitos no multiplica (requisito roto)", () => {
     const sola: Sheet = { ...conAtributos(defaultSheet(), { fuerza: 3, aguante: 4 }), equipo: [{ instanciaId: "h", catalogoId: HIPERTROFIA }] };
-    assert.equal(resuelta(sola).salud.vida, 8 + 4); // Fue 3, Agu 4 → For 4, sin × 1,5 ni +1
+    assert.equal(resuelta(sola).salud.vida, 10 + 4); // Fue 3, Agu 4 → For 4, sin × 1,5 ni +1
   });
 
   test("Fortaleza 0 o negativa: no se multiplica", () => {
@@ -406,21 +406,21 @@ describe("A1: Hipertrofia Miofibrilar", () => {
     const s = conRequisitos(conAtributos(defaultSheet(), { fuerza: -1, aguante: -1 }));
     const f = resuelta(s, false, [muyDebil]); // Fue 2 − 3, Agu 0 − 3 → For ⌈−2⌉ = −2
     assert.equal(f.aplicados.fortaleza, -2);
-    assert.equal(f.salud.vida, 8 - 2);
+    assert.equal(f.salud.vida, 10 - 2);
   });
 
   test("quitarla recorta la vida actual al máximo nuevo; ponerla no la sube", () => {
-    // Con sus requisitos (Osteotendinosa y Matriz Ósea): Fue 1+2 = 3, Agu 3+1 = 4 → For 4 → 12.
+    // Con sus requisitos (Osteotendinosa y Matriz Ósea): Fue 1+2 = 3, Agu 3+1 = 4 → For 4 → 14.
     const base = comprarVarias(conAtributos(defaultSheet(), { fuerza: 1, aguante: 3 }), [OSTEOTENDINOSA, MATRIZ_OSEA]);
-    assert.equal(resuelta(base).salud.vida, 12);
-    const s = compra(base, { catalogoId: HIPERTROFIA }); // Fue 4 → For 4 → 8 + 6 = 14
-    assert.equal(resuelta(s).salud.vida, 14);
-    const llena = { ...s, vidaActual: 14 };
+    assert.equal(resuelta(base).salud.vida, 14);
+    const s = compra(base, { catalogoId: HIPERTROFIA }); // Fue 4 → For 4 → 10 + 6 = 16
+    assert.equal(resuelta(s).salud.vida, 16);
+    const llena = { ...s, vidaActual: 16 };
     const pieza = llena.equipo.find((p) => p.catalogoId === HIPERTROFIA)!;
     const sin = retirarPieza(llena, pieza.instanciaId);
-    assert.equal(resuelta(sin).salud.vida, 12);
-    assert.equal(sin.vidaActual, 12);
+    assert.equal(resuelta(sin).salud.vida, 14);
+    assert.equal(sin.vidaActual, 14);
     assert.equal(retirarPieza({ ...s, vidaActual: 5 }, pieza.instanciaId).vidaActual, 5);
-    assert.equal(compra({ ...base, vidaActual: 12 }, { catalogoId: HIPERTROFIA }).vidaActual, 12);
+    assert.equal(compra({ ...base, vidaActual: 14 }, { catalogoId: HIPERTROFIA }).vidaActual, 14);
   });
 });

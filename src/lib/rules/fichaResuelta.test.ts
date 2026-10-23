@@ -92,7 +92,7 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
       nMods: 0,
       atributos: { fuerza: 2, agilidad: 1, aguante: 1, percepcion: 0, inteligencia: 1, caracter: -1 },
       aplicados: { fortaleza: 2, potencia: 2, reflejos: 1, voluntad: 0, perspicacia: 1, expresion: 0 },
-      salud: { vida: 10, fatiga: 8 },
+      salud: { vida: 12, fatiga: 10 },
       alerta: 10,
       movimiento: MOV_BASE,
       carga: 40,
@@ -110,7 +110,7 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
       nMods: 3, // atributos + −1 a distancia (E4)
       atributos: { fuerza: 4, agilidad: 0, aguante: 1, percepcion: 0, inteligencia: 1, caracter: -1 },
       aplicados: { fortaleza: 3, potencia: 2, reflejos: 0, voluntad: 0, perspicacia: 1, expresion: 0 },
-      salud: { vida: 11, fatiga: 8 },
+      salud: { vida: 13, fatiga: 10 },
       alerta: 10,
       movimiento: MOV_BASE,
       carga: 80,
@@ -131,7 +131,7 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
       nMods: 2,
       atributos: { fuerza: 3, agilidad: 1, aguante: 1, percepcion: 0, inteligencia: 1, caracter: 0 },
       aplicados: { fortaleza: 2, potencia: 2, reflejos: 1, voluntad: 1, perspicacia: 1, expresion: 1 },
-      salud: { vida: 10, fatiga: 9 },
+      salud: { vida: 12, fatiga: 11 },
       alerta: 10,
       movimiento: MOV_BASE,
       carga: 60,
@@ -149,7 +149,7 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
       nMods: 4,
       atributos: { fuerza: 2, agilidad: 1, aguante: 1, percepcion: 0, inteligencia: 1, caracter: -1 },
       aplicados: { fortaleza: 2, potencia: 2, reflejos: 1, voluntad: 0, perspicacia: 1, expresion: 0 },
-      salud: { vida: 10, fatiga: 8 },
+      salud: { vida: 12, fatiga: 10 },
       alerta: 10,
       movimiento: MOV_EXO,
       carga: 120,
@@ -167,7 +167,7 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
       nMods: 4, // 3 de atributos + Resonancia +1 (E2b: no toca ningún derivado de aquí)
       atributos: { fuerza: 1, agilidad: 2, aguante: 1, percepcion: 1, inteligencia: 1, caracter: -1 },
       aplicados: { fortaleza: 1, potencia: 2, reflejos: 2, voluntad: 0, perspicacia: 1, expresion: 0 },
-      salud: { vida: 9, fatiga: 8 },
+      salud: { vida: 11, fatiga: 10 },
       alerta: 10,
       movimiento: MOV_BASE,
       carga: 20,
@@ -189,7 +189,7 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
       nMods: 11, // E4: +1, el −1 a distancia del Arköru
       atributos: { fuerza: 2, agilidad: 0, aguante: -1, percepcion: 0, inteligencia: 1, caracter: -1 },
       aplicados: { fortaleza: 1, potencia: 1, reflejos: 0, voluntad: -1, perspicacia: 1, expresion: 0 },
-      salud: { vida: 9, fatiga: 7 },
+      salud: { vida: 11, fatiga: 9 },
       alerta: 10,
       movimiento: { bonoExoesqueleto: 4, carrera: 23, saltoVertical: 105, saltoHorizontal: 240, escalada: 7, nado: 7 },
       carga: 120,
@@ -221,7 +221,7 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
 
 // La misma ficha con estados, tal y como la enseñaba Resumen (sin estados). Con la
 // FichaResuelta única, Resumen pasa a ver los de arriba: cambio intencionado (§3.1, 3).
-const RESUMEN_SIN_ESTADOS = { salud: { vida: 11, fatiga: 8 }, movimiento: MOV_EXO, carga: 160, alerta: 10 };
+const RESUMEN_SIN_ESTADOS = { salud: { vida: 13, fatiga: 10 }, movimiento: MOV_EXO, carga: 160, alerta: 10 };
 // Lo mismo con E3 (Arköru, base 8): 18 × 8, 100 + 8 × 25, 8 + 4, 2 + 4; carga 160 × 1,2.
 const RESUMEN_SIN_ESTADOS_E3 = {
   ...RESUMEN_SIN_ESTADOS,

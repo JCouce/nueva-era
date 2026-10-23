@@ -49,7 +49,7 @@ const FAMILIAS_GENERADAS = [
 ];
 
 const OTRAS_PIEZAS_MOTOR = [
-  "Fatiga: recurso persistente de personaje (sheet.fatigaActual, ajustarFatiga en vitalidad.ts), hoy se ajusta a mano en Recursos. Máx = 8 + Voluntad. Umbrales fatigado <25% (-1 a todo) y exhausto <10% (-2, media velocidad) en estados.ts",
+  "Fatiga: recurso persistente de personaje (sheet.fatigaActual, ajustarFatiga en vitalidad.ts), hoy se ajusta a mano en Recursos. Máx = 10 + Voluntad. Umbrales fatigado <25% (-1 a todo) y exhausto <10% (-2, media velocidad) en estados.ts",
   "Estados (confusión, miedo, aturdido, inconsciencia...): EstadoActivo con duración en la consola de combate del máster (estados.ts: modificadoresDeEstados, descontarDuracion)",
   "Recursos de instancia (munición, batería) en recursos.ts; Sheet.recursos",
   "Resolución: 1d12 + aplicado + habilidad vs dificultad; crítico por 6; enfrentadas, empate al defensor (acciones.ts resolverTirada, sistema.md §6)",

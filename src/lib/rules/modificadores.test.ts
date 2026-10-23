@@ -72,10 +72,10 @@ describe("los modificadores de especie llegan a los números", () => {
     const s = conEspecie("arkoru");
     // Fuerza +2 entra en Fortaleza (fue+agu): ceil(2/2) = 1.
     assert.equal(aplicado(s, "fortaleza", modificadoresActivos(s)), 1);
-    assert.equal(salud(s, modificadoresActivos(s)).vida, 9); // 8 + 1
+    assert.equal(salud(s, modificadoresActivos(s)).vida, 11); // 10 + 1
     // Voluntad (agu+car) no la toca: la fatiga se queda igual.
     assert.equal(aplicado(s, "voluntad", modificadoresActivos(s)), 0);
-    assert.equal(salud(s, modificadoresActivos(s)).fatiga, 8);
+    assert.equal(salud(s, modificadoresActivos(s)).fatiga, 10);
   });
 
   test("un bono de habilidad se suma al valor efectivo, también sin entrenar", () => {

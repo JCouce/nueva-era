@@ -446,8 +446,8 @@ describe("A5b: tope de la vida con los activables puestos", () => {
   test("parseSheet no baja una vida curada con ella puesta; el recorte exacto, con los estados", () => {
     const leida = parseSheet(JSON.parse(JSON.stringify(conMax(max + 1))));
     assert.equal(leida.vidaActual, max + 1, "parseSheet topa con el máximo posible");
-    assert.equal(reconciliarVidaConEstados(leida, [neuro()]).vidaActual, max + 1, "puesta: 9/9");
-    assert.equal(reconciliarVidaConEstados(leida, []).vidaActual, max, "sin ella: nunca 9/8");
+    assert.equal(reconciliarVidaConEstados(leida, [neuro()]).vidaActual, max + 1, "puesta: 12/12");
+    assert.equal(reconciliarVidaConEstados(leida, []).vidaActual, max, "sin ella: nunca 12/11");
   });
 
   test("parseSheet cuenta el mejor grado posible (Neuroprótesis 2, +2 a Fuerza)", () => {

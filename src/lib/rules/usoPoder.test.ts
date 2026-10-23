@@ -107,7 +107,7 @@ describe("usarPoder", () => {
     const p = preparar(f, "psi_singularidad_impulso");
     assert.deepEqual(usarPoder(fr(f), p).sobrecarga, { tipo: "reiniciar" });
     // Fatiga máxima 80: el umbral de exhausto sube a 8, y pasar de 8 a 6 lo cruza.
-    const estado: ModificadorConFuente[] = [{ tipo: "derivado", id: "fatiga", valor: 72, origen: "estado", fuente: "Prueba" }];
+    const estado: ModificadorConFuente[] = [{ tipo: "derivado", id: "fatiga", valor: 70, origen: "estado", fuente: "Prueba" }];
     assert.deepEqual(usarPoder(fr(f, estado), p).sobrecarga, { tipo: "salta", nivel: 2 });
   });
 

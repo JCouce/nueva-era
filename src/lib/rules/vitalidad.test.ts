@@ -4,7 +4,7 @@ import { defaultSheet } from "./sheet";
 import { modificadoresActivos, salud } from "./derivados";
 import { reconciliarVida, ajustarVida, ajustarFatiga, vitalidadAlEntrarEnCombate } from "./vitalidad";
 
-// defaultSheet(): todos los atributos a 0 → salud() = { vida: 8, fatiga: 8 }.
+// defaultSheet(): todos los atributos a 0 → salud() = { vida: 10, fatiga: 10 }.
 
 describe("reconciliarVida", () => {
   test("una ficha nueva (centinela 999) se recorta al máximo real de salud()", () => {
@@ -24,8 +24,8 @@ describe("reconciliarVida", () => {
   test("recorta el actual si el máximo bajó por debajo (p. ej. perdió un bono)", () => {
     const s = { ...defaultSheet(), vidaActual: 20, fatigaActual: 20 };
     const r = reconciliarVida(s);
-    assert.equal(r.vidaActual, 8);
-    assert.equal(r.fatigaActual, 8);
+    assert.equal(r.vidaActual, 10);
+    assert.equal(r.fatigaActual, 10);
   });
 
   test("es idempotente: si no cambia nada, devuelve la misma referencia", () => {
@@ -36,10 +36,10 @@ describe("reconciliarVida", () => {
 
 describe("ajustarVida", () => {
   test("resta y suma dentro de rango", () => {
-    const s = reconciliarVida(defaultSheet()); // vidaActual: 8
+    const s = reconciliarVida(defaultSheet()); // vidaActual: 10
     const herido = ajustarVida(s, -3);
-    assert.equal(herido.vidaActual, 5);
-    assert.equal(ajustarVida(herido, 2).vidaActual, 7);
+    assert.equal(herido.vidaActual, 7);
+    assert.equal(ajustarVida(herido, 2).vidaActual, 9);
   });
 
   test("clampa en 0, nunca baja de ahí", () => {
@@ -49,7 +49,7 @@ describe("ajustarVida", () => {
 
   test("clampa en el máximo de salud(), nunca lo supera", () => {
     const s = reconciliarVida(defaultSheet());
-    assert.equal(ajustarVida(s, 999).vidaActual, 8);
+    assert.equal(ajustarVida(s, 999).vidaActual, 10);
   });
 
   test("delta no finito no cambia nada", () => {
@@ -60,20 +60,20 @@ describe("ajustarVida", () => {
 
 describe("ajustarFatiga", () => {
   test("resta y suma dentro de rango, clampada [0, máximo]", () => {
-    const s = reconciliarVida(defaultSheet()); // fatigaActual: 8
+    const s = reconciliarVida(defaultSheet()); // fatigaActual: 10
     assert.equal(ajustarFatiga(s, -10).fatigaActual, 0);
-    assert.equal(ajustarFatiga(s, 10).fatigaActual, 8);
-    assert.equal(ajustarFatiga(s, -2).fatigaActual, 6);
+    assert.equal(ajustarFatiga(s, 10).fatigaActual, 10);
+    assert.equal(ajustarFatiga(s, -2).fatigaActual, 8);
   });
 });
 
 describe("vitalidadAlEntrarEnCombate", () => {
   test("el jugador entra con su vida y fatiga de la ficha, no a tope", () => {
     const s = { ...defaultSheet(), vidaActual: 3, fatigaActual: 5 };
-    assert.deepEqual(vitalidadAlEntrarEnCombate(s, { vida: 8, fatiga: 8 }), { pgActual: 3, fatigaActual: 5 });
+    assert.deepEqual(vitalidadAlEntrarEnCombate(s, { vida: 10, fatiga: 10 }), { pgActual: 3, fatigaActual: 5 });
   });
   test("recortado a [0, máximo]", () => {
     const s = { ...defaultSheet(), vidaActual: 999, fatigaActual: -2 };
-    assert.deepEqual(vitalidadAlEntrarEnCombate(s, { vida: 8, fatiga: 8 }), { pgActual: 8, fatigaActual: 0 });
+    assert.deepEqual(vitalidadAlEntrarEnCombate(s, { vida: 10, fatiga: 10 }), { pgActual: 10, fatigaActual: 0 });
   });
 });

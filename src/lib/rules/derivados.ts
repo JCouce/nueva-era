@@ -133,8 +133,8 @@ export function salud(
   mods: ModificadorConFuente[],
 ): { vida: number; fatiga: number } {
   return {
-    vida: 8 + fortalezaParaVida(aplicado(sheet, "fortaleza", mods), factorVida(mods)) + bonoDerivado(mods, "vida"),
-    fatiga: 8 + aplicado(sheet, "voluntad", mods) + bonoDerivado(mods, "fatiga"),
+    vida: 10 + fortalezaParaVida(aplicado(sheet, "fortaleza", mods), factorVida(mods)) + bonoDerivado(mods, "vida"),
+    fatiga: 10 + aplicado(sheet, "voluntad", mods) + bonoDerivado(mods, "fatiga"),
   };
 }
 

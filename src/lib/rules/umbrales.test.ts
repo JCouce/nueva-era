@@ -49,9 +49,9 @@ const lineasUmbral = (f: FichaResuelta) =>
   montar(f).desglose.filter((l) => ["Herido", "Malherido", "Moribundo", "Fatigado", "Exhausto"].includes(l.etiqueta));
 
 describe("M1b: umbrales de salud y fatiga en montarTirada", () => {
-  test("la ficha de prueba tiene 10 de vida y 10 de fatiga, y entera no tiene umbral", () => {
+  test("la ficha de prueba tiene 12 de vida y 12 de fatiga, y entera no tiene umbral", () => {
     const f = resolver(ficha());
-    assert.deepEqual(f.salud, { vida: 10, fatiga: 10 });
+    assert.deepEqual(f.salud, { vida: 12, fatiga: 12 });
     assert.deepEqual(lineasUmbral(f), []);
     assert.equal(montar(f).modificador, montar(f).base);
   });
@@ -142,7 +142,7 @@ describe("M1b: en combate manda la vida/fatiga del combatiente, fuera la de la f
   });
 
   test("los umbrales no tocan los máximos de salud", () => {
-    assert.deepEqual(resolver(ficha({ vidaActual: 1, fatigaActual: 1 })).salud, { vida: 10, fatiga: 10 });
+    assert.deepEqual(resolver(ficha({ vidaActual: 1, fatigaActual: 1 })).salud, { vida: 12, fatiga: 12 });
   });
 });
 

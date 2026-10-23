@@ -182,8 +182,8 @@ describe("parseSheet aguanta cualquier cosa", () => {
 describe("vidaActual/fatigaActual", () => {
   test("una ficha nueva arranca a tope (el centinela se recorta al máximo real)", () => {
     const s = parseSheet({ schemaVersion: SCHEMA_VERSION });
-    assert.equal(s.vidaActual, 8); // salud() con atributos por defecto (todos 0)
-    assert.equal(s.fatigaActual, 8);
+    assert.equal(s.vidaActual, 10); // salud() con atributos por defecto (todos 0)
+    assert.equal(s.fatigaActual, 10);
   });
 
   test("un actual ya gastado se conserva, no se pisa con el centinela", () => {
@@ -195,7 +195,7 @@ describe("vidaActual/fatigaActual", () => {
   test("valores fuera de rango se recortan igual que el resto de campos", () => {
     const s = parseSheet({ schemaVersion: SCHEMA_VERSION, vidaActual: -5, fatigaActual: 9999 });
     assert.equal(s.vidaActual, 0);
-    assert.equal(s.fatigaActual, 8); // recortado dos veces: al 999 del schema y luego al máximo real
+    assert.equal(s.fatigaActual, 10); // recortado dos veces: al 999 del schema y luego al máximo real
   });
 });
 

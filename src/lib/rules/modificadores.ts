@@ -153,7 +153,7 @@ export type Modificador =
   // poderes (psionica.ts: nivelesDePsionica). Ver docs/modificadores-tiradas.md §9.
   | { tipo: "disciplina"; id: DisciplinaId; valor: number }
   // Multiplica la Fortaleza en la fórmula de la vida (Hipertrofia Miofibrilar, A1,
-  // §11.3): vida = 8 + ⌊Fortaleza × factor⌋ si Fortaleza > 0; con 0 o menos no se
+  // §11.3): vida = 10 + ⌊Fortaleza × factor⌋ si Fortaleza > 0; con 0 o menos no se
   // multiplica. Lo lee salud() (derivados.ts); no toca ninguna tirada. `valor` es el
   // factor (1,5), no un sumando: no lo suma ningún bono*.
   | { tipo: "multiplicadorVida"; valor: number }

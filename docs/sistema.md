@@ -233,14 +233,21 @@ Bayoneta, Lanzagranadas integrado, Proyector de Pulso). Un test obliga a que tod
 ataque con arma tenga una especialidad de la habilidad con la que ataca (salvo el disparo del
 Proyector de Pulso con Tecnociencia, sin especialidad a propósito).
 
-## 4. Salud `[FIRME · HOJA]`
+## 4. Salud `[FIRME · HOJA3]`
 
-- **Puntos de Vida** = 8 + Fortaleza
-- **Puntos de Fatiga** = 8 + Voluntad
+`HOJA3` (Creación de Personaje, foto de Drive 2026-10-14,
+`docs/fuente/creacion-de-personaje.md`) sube la base de 8 a 10 (columna vieja a la
+derecha, para que quede el rastro):
 
-Sin cambios de fórmula, pero Fortaleza y Voluntad ahora son media (no suma) de sus dos
-básicos — ver sección 2, Aplicados — así que el resultado numérico cambia aunque la
-fórmula de esta sección se quede igual.
+| Recurso | Fórmula (`HOJA3`) | Fórmula vieja (`HOJA`/`HOJA2`) |
+|---|---|---|
+| **Puntos de Vida** | 10 + Fortaleza | 8 + Fortaleza |
+| **Puntos de Fatiga** | 10 + Voluntad | 8 + Voluntad |
+
+Además, Fortaleza y Voluntad son media (no suma) de sus dos básicos — ver sección 2,
+Aplicados. Los máximos no se guardan (se recalculan con `salud()`, `rules/derivados.ts`),
+así que el cambio de base llega solo a todas las fichas; la vida y fatiga actuales
+guardadas se quedan como estaban.
 
 ## 5. Movimiento `[FIRME · HOJA2]`
 
@@ -357,7 +364,7 @@ Filas del grupo Acciones (`rules/acciones.ts`, `ACCIONES`), construidas el 2026-
 
 ## 7. Salud, daño y estados `[FIRME · COMBATE]`
 
-**Puntos de golpe = 8 + Fortaleza · Puntos de fatiga = 8 + Voluntad.** Ambos bajan y ambos
+**Puntos de golpe = 10 + Fortaleza · Puntos de fatiga = 10 + Voluntad** (base 10 desde `HOJA3`, §4; antes 8). Ambos bajan y ambos
 imponen penalizadores por umbral:
 
 | Recurso | Estado | Umbral | Efecto |
@@ -1241,7 +1248,7 @@ al preparar su modelado:
   `FichaResuelta.ajusteCosteSubida` (con `OpcionesFicha.aprobada`) para el "+" y `ajusteXp`
   en `setHabilidadAction`; el point-buy de creación sigue con el ajuste de especie
   (`ajusteCoste`). **Hipertrofia:** Modificador `multiplicadorVida` (×1,5) que lee `salud()`:
-  vida = 8 + ⌊Fortaleza × 1,5⌋ con Fortaleza > 0, y 8 + Fortaleza si no. Quitar un aumento
+  vida = 10 + ⌊Fortaleza × 1,5⌋ con Fortaleza > 0, y 10 + Fortaleza si no (base 10 desde `HOJA3`, §4). Quitar un aumento
   (o cualquier pieza) recorta la vida actual al nuevo máximo (`retirarPieza`,
   `vitalidad.ts`); ponerlo no la sube. **Requisito roto (usuario, 2026-10-22):** una operación
   sin todos sus requisitos funcionando no da efectos (ni atributos ni rebajas), en cadena,
