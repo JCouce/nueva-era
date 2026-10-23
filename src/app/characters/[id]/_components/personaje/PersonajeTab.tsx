@@ -111,7 +111,7 @@ export function PersonajeTab({
               >
                 {NOMBRE[p.id]}
               </span>
-              {m && <span className={`font-mono text-[9px] uppercase tracking-wide ${m.clase}`}>{m.texto}</span>}
+              {m && <span className={`font-mono text-[10px] uppercase tracking-wide ${m.clase}`}>{m.texto}</span>}
             </button>
           );
         })}

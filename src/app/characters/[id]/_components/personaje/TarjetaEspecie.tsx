@@ -33,9 +33,9 @@ export function ListaRasgos({ rasgos }: { rasgos: RasgoEtiquetado[] }) {
   return (
     <ul className="flex flex-col gap-2">
       {rasgos.map((r) => (
-        <li key={r.id} className="font-sans text-sm leading-snug text-muted">
+        <li key={r.id} className="font-sans text-prosa text-soft">
           <span
-            className={`mr-1.5 inline-block border px-1 align-[1px] font-mono text-[9px] uppercase tracking-wider ${ETIQUETA[r.etiqueta].clase}`}
+            className={`mr-1.5 inline-block border px-1 align-[1px] font-mono text-[10px] uppercase tracking-wider ${ETIQUETA[r.etiqueta].clase}`}
           >
             {ETIQUETA[r.etiqueta].texto}
           </span>
@@ -112,7 +112,7 @@ export function TarjetaEspecie({
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-4">
-        <p className="font-sans text-sm leading-relaxed text-muted">{especie.descripcion}</p>
+        <p className="font-sans text-prosa text-soft">{especie.descripcion}</p>
         <ChipsAtributos chips={atributos} vacio={especie.castas ? "según casta y casa" : "sin modificadores"} />
         {rasgos.length > 0 && (
           <div className="flex flex-col gap-2">

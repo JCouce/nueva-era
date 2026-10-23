@@ -205,7 +205,7 @@ function ReparacionSeccion({
           <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
             {"//SYSTEM · nada que reparar"}
           </p>
-          <p className="mt-2 font-sans text-sm text-muted">
+          <p className="mt-2 font-sans text-prosa text-soft">
             Un Escudo equipado aparece aquí en cuanto pierde puntos de golpe.
           </p>
         </HudCard>

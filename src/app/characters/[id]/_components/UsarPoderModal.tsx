@@ -81,7 +81,7 @@ export function UsarPoderModal({
             </>
           )}
           {bloqueo && (
-            <p className="mt-2 border-l-2 border-danger pl-2 font-sans text-[11px] leading-relaxed text-danger">{bloqueo}</p>
+            <p className="mt-2 border-l-2 border-danger pl-2 font-sans text-prosa-sm text-danger">{bloqueo}</p>
           )}
         </div>
       </HudCard>

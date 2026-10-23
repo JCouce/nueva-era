@@ -341,7 +341,7 @@ function FilaTirada({
       )}
 
       {tirada.nota && (
-        <p className="mt-2 font-sans text-[11px] leading-relaxed text-muted">
+        <p className="mt-2 font-sans text-prosa-sm text-soft">
           {tirada.nota}
         </p>
       )}
@@ -486,7 +486,7 @@ function FilaInfo({ label, fuente, lineas }: { label: string; fuente: string; li
       <span className="mt-1 block font-mono text-[10px] uppercase text-muted">{fuente}</span>
       <ul className="mt-2 flex flex-col gap-1">
         {lineas.map((l) => (
-          <li key={l} className="font-sans text-[11px] leading-relaxed text-muted">
+          <li key={l} className="font-sans text-prosa text-soft">
             {l}
           </li>
         ))}
@@ -1427,7 +1427,7 @@ export function AccionesTab({
             <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
               {"//SYSTEM · sin tiradas"}
             </p>
-            <p className="mt-2 font-sans text-sm text-muted">
+            <p className="mt-2 font-sans text-prosa text-soft">
               Elige una acción y pulsa Tirar.
             </p>
           </HudCard>
@@ -1466,7 +1466,7 @@ export function AccionesTab({
         <div className="flex flex-col gap-3">
           {enFavoritas && seccionesPestana.length === 0 && (
             <HudCard className="border-dashed p-4 text-center">
-              <p className="font-sans text-sm text-muted">Marca con la estrella las acciones que más uses</p>
+              <p className="font-sans text-prosa text-soft">Marca con la estrella las acciones que más uses</p>
             </HudCard>
           )}
 

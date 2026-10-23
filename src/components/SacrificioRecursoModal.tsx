@@ -57,7 +57,7 @@ export function SacrificioRecursoModal({
             </button>
           </div>
 
-          {nota && <p className="mt-2 font-sans text-[11px] leading-relaxed text-muted">{nota}</p>}
+          {nota && <p className="mt-2 font-sans text-prosa-sm text-soft">{nota}</p>}
 
           <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
             <div>

@@ -51,7 +51,7 @@ export function UsarModal({
             </button>
           </div>
 
-          {nota && <p className="mt-2 font-sans text-[11px] leading-relaxed text-muted">{nota}</p>}
+          {nota && <p className="mt-2 font-sans text-prosa-sm text-soft">{nota}</p>}
 
           {condiciones.length > 0 && (
             <div className="mt-4 flex flex-col gap-3 border-t border-border pt-3">

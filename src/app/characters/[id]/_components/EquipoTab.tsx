@@ -133,7 +133,7 @@ function SelectorArmaIncorporada({
           </option>
         ))}
       </select>
-      <p className="font-sans text-[11px] leading-relaxed text-muted">
+      <p className="font-sans text-prosa-sm text-soft">
         {armas.length === 0
           ? "Equipa un arma de una mano (de cuerpo a cuerpo o de fuego) para incorporarla."
           : "Sus ataques y su bloqueo van siempre con el brazo. Desenfundado gratis, no te la pueden desarmar y cuenta para la carga. La tirada de «Incorporar arma» está en Acciones."}
@@ -156,12 +156,12 @@ function SeccionAumentos({
   const aumentos = sheet.equipo.filter(esPiezaAumento);
   const rotos = aumentosConRequisitoRoto(sheet);
   if (aumentos.length === 0) {
-    return <p className="font-sans text-[11px] leading-relaxed text-muted">Sin aumentos. Están en la Tienda.</p>;
+    return <p className="font-sans text-prosa-sm text-soft">Sin aumentos. Están en la Tienda.</p>;
   }
   return (
     <>
       <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{`// Aumentos · ${aumentos.length}`}</p>
-      <p className="font-sans text-[11px] leading-relaxed text-muted">
+      <p className="font-sans text-prosa-sm text-soft">
         De momento solo se aplican los atributos, la vida de Hipertrofia, las rebajas de coste de habilidad (con la ficha aprobada), los bonos a salvaciones (selector «Contra…»), las casillas de Buscar/percibir, la Alerta pasiva del Ojo, su bono a distancia, la armadura natural, las casillas de ventaja con fatiga de la rama cognitiva (y el ahorro de Mielinización), la ventaja en Iniciativa de Red Frontoparietal, sus textos en las tiradas, la reducción de los penalizadores por heridas y fatiga (Estabilización Autonómica, Neurogénesis) y las casillas de cobertura (Foveo, Ojo); el resto de sus efectos, todavía no. En creación, quitar un aumento devuelve lo pagado (bolsa y créditos); aprobada la ficha, no devuelve nada.
       </p>
       {aumentos.map((a) => {
@@ -225,7 +225,7 @@ export function EquipoTab({
           </p>
           {creditos !== undefined && <Fondos creditos={creditos} />}
         </div>
-        <p className="mt-2 font-sans text-sm leading-relaxed text-muted">
+        <p className="mt-2 font-sans text-prosa text-soft">
           No llevas nada equipado. Ve a la Tienda para coger algo.
         </p>
       </HudCard>

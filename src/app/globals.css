@@ -27,18 +27,27 @@
   /* Neutros */
   --color-ink: #e6e6f0; /* texto principal */
   --color-ink-dim: #8a8aa0; /* texto secundario */
+  --color-ink-soft: #b4b4c8; /* prosa larga: entre ink e ink-dim */
   --color-purple-shadow: #2d1b4e; /* púrpura sombra (degradados) */
 
   /* ── Capa 2: alias semánticos (lo que consumen los componentes) ── */
   --color-background: var(--color-night);
   --color-foreground: var(--color-ink);
   --color-muted: var(--color-ink-dim);
+  --color-soft: var(--color-ink-soft); /* descripciones y efectos (text-muted solo para metadatos) */
   --color-card: var(--color-surface);
   --color-border: var(--color-line);
   --color-accent: var(--color-neon-yellow); /* la firma */
   --color-danger: var(--color-neon-red);
   --color-info: var(--color-neon-cyan);
   --color-glitch: var(--color-neon-magenta);
+
+  /* Tipografía de lectura. Rajdhani tiene ojo pequeño: por debajo de 13 px la prosa
+     no se lee en móvil. Las etiquetas mono en mayúsculas sí pueden ir a 10-11 px. */
+  --text-prosa: 0.9375rem; /* 15 px — descripciones, efectos por nivel */
+  --text-prosa--line-height: 1.55;
+  --text-prosa-sm: 0.8125rem; /* 13 px — notas, motivos de bloqueo, pistas */
+  --text-prosa-sm--line-height: 1.5;
 
   /* Glows neón → generan utilidades shadow-glow-* (alfa en hex de 8 dígitos) */
   --shadow-glow-yellow: 0 0 4px #fcee0a99, 0 0 18px #fcee0a59;

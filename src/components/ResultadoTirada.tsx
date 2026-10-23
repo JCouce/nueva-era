@@ -264,7 +264,7 @@ export function ContenidoResultado({
             <p className="font-mono text-[10px] uppercase tracking-wide text-muted">Efectos</p>
             <ul className="mt-1 flex flex-col gap-1">
               {resultado.efectos.map((e, i) => (
-                <li key={i} className="font-sans text-[11px] leading-relaxed text-foreground">
+                <li key={i} className="font-sans text-prosa text-foreground">
                   <span className="font-semibold">{e.fuente}:</span> {e.texto}
                 </li>
               ))}
@@ -307,7 +307,7 @@ export function ObjetivoTira({ tiradas }: { tiradas: DetallePoder["objetivoTira"
       </summary>
       <ul className="mt-2 flex flex-col gap-2">
         {tiradas.map((t, i) => (
-          <li key={i} className="font-sans text-[11px] leading-relaxed text-foreground">
+          <li key={i} className="font-sans text-prosa text-foreground">
             <p>
               {t.que}
               {t.dificultad !== undefined && <span className="font-mono text-info"> · dificultad {t.dificultad}</span>}

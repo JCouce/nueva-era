@@ -38,7 +38,7 @@ function MiniOpcion({
             : <span className="text-muted">sin modificadores</span>}
         </span>
         {rasgos.length > 0 && (
-          <span className="font-sans text-[11px] leading-tight text-muted">{rasgos.map((r) => r.label).join(" · ")}</span>
+          <span className="font-sans text-prosa-sm leading-tight text-soft">{rasgos.map((r) => r.label).join(" · ")}</span>
         )}
       </span>
     </button>

@@ -41,7 +41,7 @@ const ASENTADO_MS = 900;
 // feedback del usuario 2026-09-28) — mismo sitio en los dos casos, para que
 // sea lo último que se lee justo antes de confirmar la tirada.
 function AvisoRecurso({ texto }: { texto: string }) {
-  return <p className="mt-2 font-sans text-[11px] leading-relaxed text-danger">{texto}</p>;
+  return <p className="mt-2 font-sans text-prosa-sm text-danger">{texto}</p>;
 }
 
 function signo(n: number) {
@@ -73,7 +73,7 @@ export function ControlCondicion({
         >
           {condicion.etiqueta}
         </button>
-        <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">{condicion.bloqueada}</p>
+        <p className="mt-1.5 font-sans text-prosa-sm text-soft">{condicion.bloqueada}</p>
       </div>
     );
   }
@@ -95,10 +95,10 @@ export function ControlCondicion({
           <span className="float-right tabular-nums">{resumenCasilla(condicion, activo)}</span>
         </button>
         {sinEfecto ? (
-          <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">Sin efecto: {sinEfecto}</p>
+          <p className="mt-1.5 font-sans text-prosa-sm text-soft">Sin efecto: {sinEfecto}</p>
         ) : (
           activo &&
-          condicion.nota && <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">{condicion.nota}</p>
+          condicion.nota && <p className="mt-1.5 font-sans text-prosa-sm text-soft">{condicion.nota}</p>
         )}
       </div>
     );
@@ -129,7 +129,7 @@ export function ControlCondicion({
           ))}
         </div>
         {elegida?.nota && (
-          <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">{elegida.nota}</p>
+          <p className="mt-1.5 font-sans text-prosa-sm text-soft">{elegida.nota}</p>
         )}
       </div>
     );
@@ -379,7 +379,7 @@ export function AccionModal({
           </div>
 
           {nota && (
-            <p className="mt-2 font-sans text-[11px] leading-relaxed text-muted">{nota}</p>
+            <p className="mt-2 font-sans text-prosa-sm text-soft">{nota}</p>
           )}
 
           {!resultado && !rodando && cabecera}
@@ -581,7 +581,7 @@ export function AccionModal({
                 <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
                   {"// Modificador circunstancial"}
                 </p>
-                <p className="font-sans text-[11px] text-muted">Heridas, fatiga, cobertura…</p>
+                <p className="font-sans text-prosa-sm text-soft">Heridas, fatiga, cobertura…</p>
               </div>
               <div className="flex items-center gap-2">
                 <button

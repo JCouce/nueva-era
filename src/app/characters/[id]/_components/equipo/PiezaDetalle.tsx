@@ -43,7 +43,7 @@ export function BadgeRareza({ rareza }: { rareza: Rareza | null }) {
   if (rareza === null) return null;
   return (
     <span
-      className={`clip-chamfer-sm shrink-0 whitespace-nowrap border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide ${RAREZA_CLASES[rareza]}`}
+      className={`clip-chamfer-sm shrink-0 whitespace-nowrap border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide ${RAREZA_CLASES[rareza]}`}
     >
       {rareza}
     </span>
@@ -110,7 +110,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 export function DetalleArmadura({ p }: { p: Armadura }) {
   return (
     <>
-      <p className="font-sans text-sm leading-relaxed text-muted">{p.descripcion}</p>
+      <p className="font-sans text-prosa text-soft">{p.descripcion}</p>
       <dl className="mt-3 grid grid-cols-1 gap-x-4 font-mono text-[11px] sm:grid-cols-2">
         <Stat label="Blindaje" value={String(p.blindaje)} />
         <Stat
@@ -135,7 +135,7 @@ export function DetalleArmadura({ p }: { p: Armadura }) {
 export function DetalleArma({ p }: { p: ArmaFuego }) {
   return (
     <>
-      <p className="font-sans text-sm leading-relaxed text-muted">{p.descripcion}</p>
+      <p className="font-sans text-prosa text-soft">{p.descripcion}</p>
 
       {/* Uno o dos modos de disparo: semi y automático tienen su propia
           dificultad y daño, pero comparten alcance, munición y peso. */}
@@ -180,7 +180,7 @@ export function DetalleArma({ p }: { p: ArmaFuego }) {
 export function DetalleArmaMelee({ p }: { p: ArmaMelee }) {
   return (
     <>
-      <p className="font-sans text-sm leading-relaxed text-muted">{p.descripcion}</p>
+      <p className="font-sans text-prosa text-soft">{p.descripcion}</p>
 
       <div className="mt-3 flex flex-col gap-1.5">
         {p.modos.map((m) => (
@@ -267,12 +267,12 @@ export function DetalleModulo({
 }) {
   return (
     <>
-      <p className="font-sans text-sm leading-relaxed text-muted">{p.descripcion}</p>
+      <p className="font-sans text-prosa text-soft">{p.descripcion}</p>
 
       {p.familia === "subsistema" && (
         <div className="mt-3 flex flex-col gap-1.5 border-t border-border pt-3">
           {p.modos.map((m) => (
-            <p key={m.label} className="font-sans text-xs leading-snug text-muted">
+            <p key={m.label} className="font-sans text-prosa text-soft">
               <span className="font-mono uppercase text-foreground">{m.label}: </span>
               {m.descripcion}
             </p>
@@ -285,7 +285,7 @@ export function DetalleModulo({
           )}
           <p className="font-mono text-[10px] uppercase text-muted">{p.accionActivacion}</p>
           {p.notaApilamiento && (
-            <p className="font-sans text-[11px] italic leading-relaxed text-muted">
+            <p className="font-sans text-prosa-sm italic text-soft">
               {p.notaApilamiento}
             </p>
           )}
@@ -309,7 +309,7 @@ export function DetalleModulo({
                 {n.rareza} · {n.coste} cr.
               </span>
             </div>
-            <ul className="mt-1.5 list-disc pl-4 font-sans text-[11px] leading-relaxed text-muted">
+            <ul className="mt-1.5 list-disc pl-4 font-sans text-prosa text-soft">
               {n.detalle.map((d, i) => (
                 <li key={i}>{d}</li>
               ))}
@@ -329,7 +329,7 @@ export function DetalleModulo({
 export function DetalleArmaPesada({ p }: { p: ArmaPesada }) {
   return (
     <>
-      <p className="font-sans text-sm leading-relaxed text-muted">{p.descripcion}</p>
+      <p className="font-sans text-prosa text-soft">{p.descripcion}</p>
 
       <div className="mt-3 flex items-baseline justify-between gap-2 font-mono text-[11px]">
         <span className="uppercase text-foreground">{p.accion}</span>
@@ -385,8 +385,8 @@ export function DetalleGranada({ p }: { p: MunicionGranada }) {
 export function DetalleConsumible({ p }: { p: Consumible }) {
   return (
     <>
-      <p className="font-sans text-sm leading-relaxed text-muted">{p.descripcion}</p>
-      <ul className="mt-3 list-disc pl-4 font-sans text-[11px] leading-relaxed text-muted">
+      <p className="font-sans text-prosa text-soft">{p.descripcion}</p>
+      <ul className="mt-3 list-disc pl-4 font-sans text-prosa text-soft">
         {p.detalle.map((d, i) => (
           <li key={i}>{d}</li>
         ))}
@@ -413,7 +413,7 @@ export function DetalleConsumible({ p }: { p: Consumible }) {
 
 function Lineas({ lineas }: { lineas: string[] }) {
   return (
-    <ul className="mt-1.5 list-disc pl-4 font-sans text-[11px] leading-relaxed text-muted">
+    <ul className="mt-1.5 list-disc pl-4 font-sans text-prosa text-soft">
       {lineas.map((d, i) => (
         <li key={i}>{d}</li>
       ))}
@@ -432,7 +432,7 @@ export function MarcasImplante({ p }: { p: Implante }) {
       {marcas.map((m) => (
         <span
           key={m}
-          className="clip-chamfer-sm border border-glitch px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide text-neon-magenta"
+          className="clip-chamfer-sm border border-glitch px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-neon-magenta"
         >
           {m}
         </span>
@@ -475,7 +475,7 @@ export function DetalleImplante({
 }) {
   return (
     <>
-      <p className="font-sans text-sm leading-relaxed text-muted">{p.descripcion}</p>
+      <p className="font-sans text-prosa text-soft">{p.descripcion}</p>
       <div className="mt-2">
         <MarcasImplante p={p} />
       </div>

@@ -45,7 +45,7 @@ function CampoNumero({
           porDefecto && editando === null ? "text-muted" : "text-foreground"
         }`}
       />
-      {porDefecto && <span className="font-mono text-[9px] uppercase tracking-wide text-muted">por defecto</span>}
+      {porDefecto && <span className="font-mono text-[10px] uppercase tracking-wide text-muted">por defecto</span>}
     </label>
   );
 }
@@ -84,7 +84,7 @@ function SliderRango({
         <span className={fieldLabel}>{label}</span>
         <span className="flex items-baseline gap-2">
           {valor === null ? (
-            <span className="font-mono text-[9px] uppercase tracking-wide text-muted">por defecto</span>
+            <span className="font-mono text-[10px] uppercase tracking-wide text-muted">por defecto</span>
           ) : (
             <button
               type="button"
@@ -224,7 +224,7 @@ export function IdentidadPanel({
             rows={2}
             placeholder="Qué te mueve"
             onChange={(e) => onMotivacion(e.target.value)}
-            className={`${fieldBase} resize-none font-sans text-sm text-foreground placeholder:text-muted`}
+            className={`${fieldBase} resize-none font-sans text-prosa text-foreground placeholder:text-muted`}
           />
         </label>
         <label className="flex flex-col gap-1">
@@ -235,7 +235,7 @@ export function IdentidadPanel({
             rows={5}
             placeholder="Historia, ganchos de rol…"
             onChange={(e) => onTrasfondo(e.target.value)}
-            className={`${fieldBase} resize-none font-sans text-sm text-foreground placeholder:text-muted`}
+            className={`${fieldBase} resize-none font-sans text-prosa text-foreground placeholder:text-muted`}
           />
         </label>
       </HudCard>

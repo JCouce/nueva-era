@@ -306,7 +306,7 @@ function TextoPlegable({ texto }: { texto: string }) {
       {abierto && (
         <div className="mt-2 flex flex-col gap-2 border-t border-border pt-2">
           {texto.split(/\n{2,}/).map((parrafo, i) => (
-            <p key={i} className="whitespace-pre-line font-sans text-xs leading-relaxed text-foreground">
+            <p key={i} className="whitespace-pre-line font-sans text-prosa text-foreground">
               <Prosa texto={parrafo} />
             </p>
           ))}

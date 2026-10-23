@@ -194,12 +194,12 @@ function AccionFabricar({
         Construir · {unidades} {ETIQUETA_TIER[tier].toLowerCase()}
       </button>
       {!cabeRareza && (
-        <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
+        <p className="mt-1 font-sans text-prosa-sm text-danger">
           Necesitas material de rareza {pieza.rareza} o superior.
         </p>
       )}
       {cabeRareza && sinStock && (
-        <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
+        <p className="mt-1 font-sans text-prosa-sm text-danger">
           Te faltan {unidades - disponibles} unidades de {ETIQUETA_TIER[tier]}.
         </p>
       )}

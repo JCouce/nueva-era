@@ -217,7 +217,7 @@ export function RecursosTab({
           <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
             {"//SYSTEM · granadas"}
           </p>
-          <p className="mt-2 font-sans text-sm leading-relaxed text-muted">
+          <p className="mt-2 font-sans text-prosa text-soft">
             No llevas ninguna granada — cómpralas en la Tienda.
           </p>
         </HudCard>
@@ -242,7 +242,7 @@ export function RecursosTab({
           <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
             {"//SYSTEM · fármacos"}
           </p>
-          <p className="mt-2 font-sans text-sm leading-relaxed text-muted">
+          <p className="mt-2 font-sans text-prosa text-soft">
             No llevas ningún fármaco — cómpralos en la Tienda.
           </p>
         </HudCard>
@@ -267,7 +267,7 @@ export function RecursosTab({
           <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
             {"//SYSTEM · equipo · munición y batería"}
           </p>
-          <p className="mt-2 font-sans text-sm leading-relaxed text-muted">
+          <p className="mt-2 font-sans text-prosa text-soft">
             No llevas equipado nada que gaste munición o batería. Un arma de fuego o un
             subsistema con célula (Camuflaje Trifásico, Derivación Psiónica...) aparece aquí
             solo con equiparlo.
@@ -331,7 +331,7 @@ export function RecursosTab({
           <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
             {"//SYSTEM · equipo · durabilidad"}
           </p>
-          <p className="mt-2 font-sans text-sm leading-relaxed text-muted">
+          <p className="mt-2 font-sans text-prosa text-soft">
             No llevas equipado nada con durabilidad propia. Un Escudo aparece aquí solo con
             equiparlo — para repararlo gastando Materiales, ve a Acciones.
           </p>

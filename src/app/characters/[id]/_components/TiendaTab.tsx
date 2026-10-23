@@ -294,10 +294,10 @@ function AccionSimple({
         </p>
       )}
       {compra.tipo === "bloqueada" && (
-        <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">{compra.motivo}</p>
+        <p className="mt-1 font-sans text-prosa-sm text-danger">{compra.motivo}</p>
       )}
       {sinFondos && (
-        <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
+        <p className="mt-1 font-sans text-prosa-sm text-danger">
           Te faltan {(coste - creditos).toLocaleString("es-ES")} créditos.
         </p>
       )}
@@ -339,12 +339,12 @@ function AccionComprarConCantidad({
         {cantidad > 0 ? `Comprar (llevas ${cantidad})` : "Comprar"}
       </BotonEquipar>
       {sinRareza && (
-        <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
+        <p className="mt-1 font-sans text-prosa-sm text-danger">
           Tu letra de Recursos no llega a {pieza.rareza}: tope {topeRareza}.
         </p>
       )}
       {sinFondos && (
-        <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
+        <p className="mt-1 font-sans text-prosa-sm text-danger">
           Te faltan {(coste - creditos).toLocaleString("es-ES")} créditos.
         </p>
       )}
@@ -414,7 +414,7 @@ function AccionInstalable({
         {"// Instalar en"}
       </p>
       {hosts.length === 0 ? (
-        <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-danger">{sinHostTexto}</p>
+        <p className="mt-1.5 font-sans text-prosa-sm text-danger">{sinHostTexto}</p>
       ) : (
         <div className="mt-1.5 flex flex-col gap-2">
           {hosts.map((h) => {
@@ -443,7 +443,7 @@ function AccionInstalable({
                   Equipar en {cat.label}
                 </BotonEquipar>
                 {motivo && (
-                  <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
+                  <p className="mt-1 font-sans text-prosa-sm text-danger">
                     {motivo}
                   </p>
                 )}
@@ -515,7 +515,7 @@ function AccionHerramienta({
       >
         Equipar
       </BotonEquipar>
-      {motivo && <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">{motivo}</p>}
+      {motivo && <p className="mt-1 font-sans text-prosa-sm text-danger">{motivo}</p>}
     </div>
   );
 }
@@ -579,7 +579,7 @@ function ListaInstalable({
   onEquipar: (p: PiezaEquipada) => void;
 }) {
   if (piezas.length === 0) {
-    return <p className="font-sans text-[11px] leading-relaxed text-muted">{mensajeVacio}</p>;
+    return <p className="font-sans text-prosa-sm text-soft">{mensajeVacio}</p>;
   }
   return (
     <>
@@ -629,7 +629,7 @@ function SeccionMunicion({
     <>
       <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Recargar"}</p>
       {armas.length === 0 ? (
-        <p className="font-sans text-[11px] leading-relaxed text-muted">
+        <p className="font-sans text-prosa-sm text-soft">
           No llevas ningún arma de fuego equipada.
         </p>
       ) : (
@@ -672,12 +672,12 @@ function SeccionMunicion({
             </div>
           }
         >
-          <p className="font-sans text-sm leading-relaxed text-muted">{m.efecto}</p>
+          <p className="font-sans text-prosa text-soft">{m.efecto}</p>
           {/* Orden de uso: primero el adaptador en el arma, luego las balas. */}
           <p className="mt-3 font-mono text-[10px] uppercase tracking-widest text-muted">
             {`// 1 · Adaptador para el arma · ${MEJORAS_MUNICION_ESPECIAL[i].niveles[0].coste} cr.`}
           </p>
-          <p className="mt-1 font-sans text-[11px] leading-relaxed text-muted">
+          <p className="mt-1 font-sans text-prosa-sm text-soft">
             Habilita el arma para esta munición. No incluye balas.
           </p>
           <AccionInstalable
@@ -739,12 +739,12 @@ function DetalleMunicionEspecial({
         {cantidad > 0 ? ` (llevas ${cantidad})` : ""}
       </BotonEquipar>
       {habilitadas.length > 0 && sinRareza && (
-        <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
+        <p className="mt-1 font-sans text-prosa-sm text-danger">
           Tu letra de Recursos no llega a {m.rareza}: tope {topeRareza}.
         </p>
       )}
       {habilitadas.length > 0 && sinFondos && (
-        <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">
+        <p className="mt-1 font-sans text-prosa-sm text-danger">
           Te faltan {(coste - creditos).toLocaleString("es-ES")} créditos.
         </p>
       )}
@@ -845,13 +845,13 @@ function CompraAumentoBoton({
         {etiqueta}
         {plan.ok && !ctx.libre ? ` · ${plan.precio.toLocaleString("es-ES")} cr.` : ""}
       </BotonEquipar>
-      {pista && <p className="mt-1 font-sans text-[11px] leading-relaxed text-muted">{pista}</p>}
+      {pista && <p className="mt-1 font-sans text-prosa-sm text-soft">{pista}</p>}
       {!pista && !motivo && pago && pago.deBolsa > 0 && (
         <p className="mt-1 font-mono text-[10px] uppercase tracking-wide text-info">
           {`Bolsa ${pago.deBolsa.toLocaleString("es-ES")} + créditos ${pago.deCreditos.toLocaleString("es-ES")}`}
         </p>
       )}
-      {motivo && <p className="mt-1 font-sans text-[11px] leading-relaxed text-danger">{motivo}</p>}
+      {motivo && <p className="mt-1 font-sans text-prosa-sm text-danger">{motivo}</p>}
     </>
   );
 }
@@ -942,7 +942,7 @@ function AccionImplante({ imp, ctx }: { imp: Implante; ctx: ContextoPagoAumento 
 function SeccionAumentos({ ctx }: { ctx: ContextoPagoAumento }) {
   return (
     <>
-      <p className="font-sans text-[11px] leading-relaxed text-muted">
+      <p className="font-sans text-prosa-sm text-soft">
         De momento solo se aplican los atributos, la vida de Hipertrofia, las rebajas de coste de
         habilidad (con la ficha aprobada), los bonos a salvaciones (selector «Contra…»), las casillas
         de Buscar/percibir, la Alerta pasiva del Ojo, su bono a distancia, la armadura natural, las

@@ -719,7 +719,7 @@ export function CharacterSheet({
                   {/* Detalle visible de verdad, no en un `title` — mismo
                       arreglo que CombateConsole.tsx. */}
                   {a.detalle.length > 0 && (
-                    <p className="text-[11px] normal-case tracking-normal text-muted">
+                    <p className="text-prosa-sm normal-case tracking-normal text-soft">
                       {a.detalle.join(" ")}
                     </p>
                   )}

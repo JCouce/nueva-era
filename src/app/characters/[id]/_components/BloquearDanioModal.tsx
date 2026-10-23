@@ -21,7 +21,7 @@ function LineaBlindaje({ etiqueta, valor, nota }: { etiqueta: string; valor: num
           {signo(valor)}
         </span>
       </div>
-      {nota && <p className="font-sans text-[10px] leading-relaxed text-muted">{nota}</p>}
+      {nota && <p className="font-sans text-prosa-sm text-soft">{nota}</p>}
     </div>
   );
 }
@@ -102,7 +102,7 @@ export function BloquearDanioModal({
               ✕
             </button>
           </div>
-          <p className="mt-2 font-sans text-[11px] leading-relaxed text-muted">
+          <p className="mt-2 font-sans text-prosa-sm text-soft">
             Elige tipo de daño y cuánto recibes — el desglose de abajo explica de dónde sale
             cada punto de blindaje.
           </p>
@@ -137,7 +137,7 @@ export function BloquearDanioModal({
               >
                 {escudoEnAlto ? "✓ " : ""}Escudo en alto
               </button>
-              <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">
+              <p className="mt-1.5 font-sans text-prosa-sm text-soft">
                 Acción para levantarlo, dura hasta tu siguiente turno. No cuenta si te atacan por
                 la espalda.
               </p>
@@ -161,7 +161,7 @@ export function BloquearDanioModal({
               {casillaBrazo.bloqueada && !conBrazo && (
                 <p className="mt-1.5 font-mono text-[11px] text-danger">{casillaBrazo.bloqueada}</p>
               )}
-              <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">
+              <p className="mt-1.5 font-sans text-prosa-sm text-soft">
                 +{casillaBrazo.valor} de blindaje. {casillaBrazo.nota}
               </p>
             </div>
@@ -184,7 +184,7 @@ export function BloquearDanioModal({
               {casilla.bloqueada && !reactivo && (
                 <p className="mt-1.5 font-mono text-[11px] text-danger">{casilla.bloqueada}</p>
               )}
-              <p className="mt-1.5 font-sans text-[11px] leading-relaxed text-muted">
+              <p className="mt-1.5 font-sans text-prosa-sm text-soft">
                 +{casilla.valor} de blindaje. {casilla.nota}
                 {reactivo ? " Desmarcarla te devuelve la fatiga." : ""}
                 {!onPagarFatiga ? " Cóbrate la fatiga a mano." : ""}

@@ -35,7 +35,7 @@ export function Acordeon({
             <span className="block break-words font-display text-base font-semibold uppercase leading-tight">
               {titulo}
             </span>
-            <p className="mt-1 font-sans text-xs leading-snug text-muted">{resumen}</p>
+            <p className="mt-1 font-sans text-prosa-sm text-soft">{resumen}</p>
           </div>
           <span
             className={`mt-0.5 shrink-0 font-mono text-[9px] text-muted transition-transform ${abierto ? "rotate-180" : ""}`}

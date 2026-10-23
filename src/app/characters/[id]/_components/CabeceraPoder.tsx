@@ -250,7 +250,7 @@ export function CabeceraPoder({
       )}
 
       {poder.multiplesObjetivos && (
-        <p className="border-l-2 border-accent pl-2 font-sans text-[11px] leading-relaxed text-foreground">
+        <p className="border-l-2 border-accent pl-2 font-sans text-prosa text-foreground">
           Varios objetivos: cada uno paga{" "}
           {poder.multiplesObjetivos.fatigaPorObjetivo !== undefined
             ? textoValor(poder.multiplesObjetivos.fatigaPorObjetivo)
@@ -264,7 +264,7 @@ export function CabeceraPoder({
       {notas.length > 0 && (
         <ul className="flex flex-col gap-1">
           {notas.map((n, i) => (
-            <li key={i} className="border-l-2 border-info pl-2 font-sans text-[11px] leading-relaxed text-foreground">
+            <li key={i} className="border-l-2 border-info pl-2 font-sans text-prosa text-foreground">
               {n.texto}
             </li>
           ))}
