@@ -834,7 +834,7 @@ construir (dos pasadas: rediseño, luego revisión).
 Dentro de Acciones, una barra por **origen** de la fila (rehecha el 2026-10-23; antes era Básicas sin dado / Tiradas
 con dado): **★** (Favoritas) · **Básicas** (catálogo fijo `ACCIONES` por grupo, Bloquear daño, Reparar/Fabricar,
 Tirada libre) · **Equipo** (Ataques, Defensa con Bloquear con X y Levantar escudo, Movimiento con Volar,
-Herramientas, Fármacos; Pelea incluida) · **Poderes** (Psiónica por disciplina, Dotes —también las de un grupo fijo,
+Herramientas, Fármacos; Pelea incluida) · **Aptitudes** (Psiónica por disciplina, Dotes —también las de un grupo fijo,
 como Traicionero—, Especie) · **Aumentos** (filas e informativas). Con dado y sin dado mezclados. Una tirada fija
 modificada por algo propio (esquiva levitando, psiónica en tirada fija) sigue en Básicas. Las secciones se montan
 como datos (`Seccion`) y cada pestaña pinta las suyas; la que no tiene filas no sale, y si se vacía la abierta se

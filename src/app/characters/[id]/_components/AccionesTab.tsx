@@ -86,7 +86,7 @@ const PESTANAS: { id: Pestana; label: string; aria?: string }[] = [
   { id: "favoritas", label: "★", aria: "Favoritas" },
   { id: "basicas", label: "Básicas" },
   { id: "equipo", label: "Equipo" },
-  { id: "poderes", label: "Poderes" },
+  { id: "poderes", label: "Aptitudes" },
   { id: "aumentos", label: "Aumentos" },
 ];
 
