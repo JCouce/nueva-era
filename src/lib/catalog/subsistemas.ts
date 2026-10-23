@@ -76,6 +76,8 @@ export const SUBSISTEMAS: Subsistema[] = [
         // concepto según modo/movimiento, no efectos distintos.
         motor: [
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "buscar_percibir" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+          // "Activar camuflaje trifásico", acción sin dado que gasta 1 carga (accionActivarCamuflaje, combate.ts).
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "activar_camuflaje" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
       },
       {
@@ -91,6 +93,8 @@ export const SUBSISTEMAS: Subsistema[] = [
         modificadores: [],
         motor: [
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "buscar_percibir" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+          // "Activar camuflaje trifásico", acción sin dado que gasta 1 carga (accionActivarCamuflaje, combate.ts).
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "activar_camuflaje" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
       },
       {
@@ -106,6 +110,8 @@ export const SUBSISTEMAS: Subsistema[] = [
         modificadores: [],
         motor: [
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "buscar_percibir" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+          // "Activar camuflaje trifásico", acción sin dado que gasta 1 carga (accionActivarCamuflaje, combate.ts).
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "activar_camuflaje" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
       },
       {
@@ -121,6 +127,8 @@ export const SUBSISTEMAS: Subsistema[] = [
         modificadores: [],
         motor: [
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "buscar_percibir" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+          // "Activar camuflaje trifásico", acción sin dado que gasta 1 carga (accionActivarCamuflaje, combate.ts).
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "activar_camuflaje" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
       },
     ],

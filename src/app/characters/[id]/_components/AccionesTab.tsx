@@ -726,6 +726,7 @@ export function AccionesTab({
     farmacos,
     farmacosDirectas,
     accionesGeneradas,
+    subsistemasDirectas,
   } = useMemo(() => {
     // Bloquear y Sutil solo con su dote (D2b-2): los permisos salen de la FichaResuelta.
     const generadas = accionesDeAtaque(sheet, mods, ficha.extrasDotes.permisos).map(conExtras);
@@ -748,6 +749,8 @@ export function AccionesTab({
       // Detonación de pulso térmico (Malla Plasmática, 2026-09-28) — primera
       // "acción sin dado" del grupo Ataques, antes solo tenía Defensa.
       ataqueDirecta: directas.filter((a) => a.grupo === "Ataques"),
+      // Activar camuflaje trifásico: ni ataque ni defensa, su propia sección.
+      subsistemasDirectas: directas.filter((a) => a.grupo === "Acciones"),
       // "Volar" (Movilidad Aérea) — mismo criterio que Bloqueo en Defensa:
       // generada por equipo, se mezcla en el grupo fijo "Acciones" en vez de
       // vivir en su propia sección.
@@ -1179,6 +1182,8 @@ export function AccionesTab({
     // Fármacos sin tirada (docs/prompt-gasto-recursos.md, Fase 2): mismo
     // criterio que en tirar(), 1 dosis al confirmar.
     if (modalDirecta.farmacoId) onAjustarFarmaco?.(modalDirecta.farmacoId, -1);
+    // Gasto fijo de recurso (Activar camuflaje trifásico: 1 carga).
+    if (modalDirecta.gastoRecurso) onGastarRecurso?.(modalDirecta.gastoRecurso.instanciaId, -modalDirecta.gastoRecurso.cantidad);
     // Activar la visión del Arianyi (§14.9): la primera hora, por el camino de la fatiga
     // de los poderes; sin onPagarFatiga (consola), a mano.
     if (deAumento) {
@@ -1351,6 +1356,7 @@ export function AccionesTab({
     { origen: "equipo", titulo: "Ataques", filas: [...ataques.map(filaTirada), ...ataqueDirecta.map(filaUsar)] },
     { origen: "equipo", titulo: "Defensa", filas: [...defensaGenerada.map(filaTirada), ...defensaDirecta.map(filaUsar)] },
     { origen: "equipo", titulo: "Movimiento", filas: accionesGeneradas.map(filaTirada) },
+    { origen: "equipo", titulo: "Subsistemas", filas: subsistemasDirectas.map(filaUsar) },
     {
       origen: "equipo",
       titulo: "Herramientas",

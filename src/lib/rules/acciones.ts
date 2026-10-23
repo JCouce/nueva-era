@@ -250,6 +250,9 @@ export type AccionDirecta = {
   // Acciones recientes (mismo campo que ya usa Accion.ataque.modos).
   recursoInstanciaId?: string;
   categoriaDanio?: string;
+  // Gasto FIJO de sheet.recursos al confirmar (Activar camuflaje trifásico: 1 carga), sin
+  // contador: a diferencia de recursoInstanciaId, el jugador no elige cuánto.
+  gastoRecurso?: { instanciaId: string; cantidad: number };
   // Fatiga que se cobra al confirmar (visión del Arianyi, §14.9), por el mismo camino
   // que la de un poder (onPagarFatiga → pagarFatiga, vitalidad.ts).
   costeFatiga?: number;

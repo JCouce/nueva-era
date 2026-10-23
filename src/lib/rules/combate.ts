@@ -14,6 +14,7 @@ import {
 } from "../catalog/equipo";
 import { PELEA, type ArmaMelee } from "../catalog/armasMelee";
 import type { ArmaPesada } from "../catalog/armamentoPesado";
+import type { Subsistema } from "../catalog/subsistemas";
 import {
   MUNICION_GRANADA,
   ALCANCE_ARROJADA,
@@ -27,7 +28,7 @@ import { nivelesHasta, acumulaPorClave, ultimoQueDefine, sustituyeMiraIntegrada,
 import { bonoFormulaFuerza, formulaConSuma, nombreArmaModificada, perfilGolpe, type PerfilGolpe } from "./armasModificadas";
 import type { ModificacionArmaId } from "../catalog/armasModificadas";
 import type { MotorMetadata } from "./motor";
-import { escudoRoto, gastoDelModo, MOTIVO_ESCUDO_ROTO } from "./recursos";
+import { escudoRoto, gastoDelModo, MOTIVO_ESCUDO_ROTO, recursoDe } from "./recursos";
 import { CONDICION_ATACANTES_ADICIONALES, condicionApuntado, type Accion, type AccionDirecta } from "./acciones";
 import { atributoEfectivo, aplicado } from "./derivados";
 import { ESPECIALIDAD_ARMA, ESPECIALIDAD_ATAQUE_ESPECIAL, ESPECIALIDAD_LANZAR } from "../catalog/especialidadesArma";
@@ -1233,6 +1234,30 @@ function tiradaDetonacionPulsoTermico(pieza: PiezaEquipada): AccionDirecta | nul
   };
 }
 
+// "Activar camuflaje trifásico": acción gratuita que gasta 1 carga de su célula
+// (subsistemas.ts). Sin dado: la cobertura la aplica quien busca o dispara al portador, así
+// que la nota da los números del nivel instalado para aplicarlos a mano. El modo pasivo no
+// se activa ni gasta (basta con que quede alguna carga): solo va en la nota.
+export const MOTIVO_SIN_CARGAS = "Sin cargas: recarga o cambia la batería";
+function accionActivarCamuflaje(sheet: Sheet, pieza: PiezaEquipada, cat: Subsistema): AccionDirecta {
+  const nivel = cat.niveles.find((n) => n.nivel === pieza.nivel) ?? cat.niveles[0];
+  const recurso = recursoDe(sheet, pieza.instanciaId);
+  return {
+    id: `activar_camuflaje_${pieza.instanciaId}`,
+    label: `Activar ${cat.label}`,
+    grupo: "Acciones",
+    confirmarLabel: "Activar",
+    nota: [
+      `Acción gratuita, gasta 1 carga${recurso ? ` (quedan ${recurso.actual}/${recurso.max})` : ""}. Nivel ${nivel.nivel}.`,
+      ...nivel.detalle,
+      "La cobertura la aplica quien te busca o te dispara. Con otra cobertura, la menor suma solo la mitad.",
+      "El modo pasivo no se activa ni gasta: dura mientras quede alguna carga.",
+    ].join(" "),
+    gastoRecurso: { instanciaId: pieza.instanciaId, cantidad: 1 },
+    ...(recurso?.actual === 0 && { bloqueada: MOTIVO_SIN_CARGAS }),
+  };
+}
+
 // "Levantar [escudo]" (docs/motor.md, "Acciones sin dado") — para LOS CINCO
 // escudos (cualquier armaMelee con `defensa`), no solo uno. Sin estado que
 // rastrear ni gasto de recurso: coste de acción y duración son comunicación
@@ -1269,6 +1294,8 @@ export function accionesDirectasDeAtaque(sheet: Sheet): AccionDirecta[] {
     } else if (cat?.familia === "subsistema" && pieza.catalogoId === "malla_plasmatica") {
       const detonacion = tiradaDetonacionPulsoTermico(pieza);
       if (detonacion) acciones.push(detonacion);
+    } else if (cat?.familia === "subsistema" && pieza.catalogoId === "camuflaje_trifasico") {
+      acciones.push(accionActivarCamuflaje(sheet, pieza, cat));
     }
   }
   return acciones;

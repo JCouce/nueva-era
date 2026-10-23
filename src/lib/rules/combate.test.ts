@@ -2,8 +2,8 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
 import { equipar } from "./equipo";
-import { ajustarRecurso, ajustarGranada, ajustarMunicionEspecial } from "./recursos";
-import { accionesDeAtaque as accionesDeAtaqueCon, accionesDirectasDeAtaque, generaAccionPropia } from "./combate";
+import { ajustarRecurso, ajustarGranada, ajustarMunicionEspecial, reconciliarRecursos } from "./recursos";
+import { accionesDeAtaque as accionesDeAtaqueCon, accionesDirectasDeAtaque, generaAccionPropia, MOTIVO_SIN_CARGAS } from "./combate";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
 import { MUNICION_GRANADA } from "../catalog/municion";
@@ -1458,5 +1458,39 @@ describe("Exoesqueleto: +N a la Fuerza en tiradas, no en salvaciones (S10)", () 
     const con = conExo(base);
     assert.equal(aplicado(con, "fortaleza", modificadoresActivos(con)), 2); // floor((4+1)/2) en la ficha
     assert.equal(modificadorAccion(con, salv, false, modificadoresActivos(con)).aplicado, 1); // floor((2+1)/2)
+  });
+});
+
+describe("Activar camuflaje trifásico (acción sin dado, 1 carga)", () => {
+  const conCamuflaje = (nivel: number) =>
+    reconciliarRecursos(
+      equipar(equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "armadura_pesada" }), {
+        instanciaId: "cam",
+        catalogoId: "camuflaje_trifasico",
+        nivel,
+        instaladoEnId: "a1",
+      }),
+    );
+  const activar = (s: Sheet) => accionesDirectasDeAtaque(s).find((a) => a.id === "activar_camuflaje_cam");
+
+  test("existe con el camuflaje equipado, gasta 1 carga de su célula y la nota trae los números de su nivel", () => {
+    const s = conCamuflaje(2);
+    const a = activar(s)!;
+    assert.equal(a.label, "Activar Camuflaje Trifásico");
+    assert.deepEqual(a.gastoRecurso, { instanciaId: "cam", cantidad: 1 });
+    assert.equal(a.bloqueada, undefined);
+    assert.match(a.nota!, /quedan 10\/10/);
+    assert.match(a.nota!, /5 min estático \/ 2 turnos dinámico/);
+    assert.doesNotMatch(a.nota!, /1 min estático/);
+  });
+
+  test("sin cargas sale bloqueada", () => {
+    const s = conCamuflaje(1);
+    const vacio = ajustarRecurso(s, "cam", -10);
+    assert.equal(activar(vacio)!.bloqueada, MOTIVO_SIN_CARGAS);
+  });
+
+  test("sin camuflaje no hay acción", () => {
+    assert.equal(activar(defaultSheet()), undefined);
   });
 });
