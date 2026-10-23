@@ -282,11 +282,13 @@ describe("E4: textos sin mecanizar, solo con su rasgo", () => {
     const ataques = (f: FichaResuelta) => accionesDeAtaque(f.ficha, f.modificadores, f.extrasDotes.permisos).map((t) => conExtrasDeFicha(f, t));
     const critico = (f: FichaResuelta, label: string) => ataques(f).find((t) => t.label === label)!.efectoCritico;
     const f = resolver(s);
-    assert.equal(critico(f, "Golpear con Puñetazo"), "Daño letal. (Matriz Biometálica · Arköru)");
-    assert.equal(critico(f, "Golpear con Patada"), "Daño letal. (Matriz Biometálica · Arköru)");
-    assert.equal(critico(f, "Golpear con Codazo o Rodillazo"), "Daño letal. (Matriz Biometálica · Arköru)");
+    // El crítico propio del arma (Aturdimiento) va delante; la especie lo completa.
+    const letal = "Aturdimiento (6) · Daño letal. (Matriz Biometálica · Arköru)";
+    assert.equal(critico(f, "Golpear con Puñetazo"), letal);
+    assert.equal(critico(f, "Golpear con Patada"), letal);
+    assert.equal(critico(f, "Golpear con Codazo o Rodillazo"), letal);
     assert.doesNotMatch(critico(f, "Golpear con Espada Ligera") ?? "", /letal/);
-    assert.equal(critico(resolver({ ...s, especieId: "humano" }), "Golpear con Puñetazo"), undefined);
+    assert.equal(critico(resolver({ ...s, especieId: "humano" }), "Golpear con Puñetazo"), "Aturdimiento (6)");
   });
 
   test("sin especie, conExtrasDeFicha devuelve la misma tirada", () => {

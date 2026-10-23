@@ -1081,9 +1081,18 @@ export function AccionesTab({
         ...(tirada.ignoraBlindaje ? [tirada.ignoraBlindaje] : []),
         ...(municion?.ignoraBlindaje ? [{ valor: municion.ignoraBlindaje, fuente: municion.label }] : []),
       ];
+      const formula = sutilActivo ? modo.formulaDanio?.replace(/^Fue/, "Pot") : modo.formulaDanio;
+      const origenBase = [
+        tirada.ataque.modos.length > 1 ? modo.etiqueta : undefined,
+        formula,
+        ajusteMunicion !== 0 && municion ? `${ajusteMunicion > 0 ? "+" : ""}${ajusteMunicion} ${municion.label}` : undefined,
+      ]
+        .filter(Boolean)
+        .join(", ");
       danioInfo = {
         base: danioBase === null ? null : Math.max(0, danioBase + ajusteMunicion),
         formulaDanio: modo.formulaDanio,
+        origenBase: origenBase || undefined,
         // Casillas que tocan el daño (D2d): la categoría ya cambiada, el resto al tirarlo.
         categoriaDanio: categoriaConAjuste(modo.categoriaDanio, montada.danio),
         ignoraBlindaje: ignoraBlindaje.length > 0 ? ignoraBlindaje : undefined,

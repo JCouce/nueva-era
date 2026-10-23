@@ -168,6 +168,8 @@ export type Accion = {
   ataque?: {
     modos: {
       id: string;
+      // Etiqueta del modo ("Simple", "Ráfaga"…), para explicar la base del daño en el resultado.
+      etiqueta?: string;
       danio: number | null; // null en armas melee: el daño es una fórmula, no un número
       // Daño de este mismo modo con el estilo Sutil activo (Potencia en vez de
       // Fuerza como base) — hermano de `danio`, presente solo si el arma

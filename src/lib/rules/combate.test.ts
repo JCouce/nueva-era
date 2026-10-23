@@ -691,16 +691,24 @@ describe("arma melee equipada", () => {
 
   test("el 'efectos' del arma llega a la nota, igual que 'especial' en armas de fuego", () => {
     let sheet = defaultSheet();
-    sheet = equipar(sheet, { instanciaId: "tonfa1", catalogoId: "corta_tonfa_porra" });
-    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Tonfa o Porra")!;
-    assert.match(fila.nota ?? "", /Crítico de Aturdimiento \(7\)/);
+    sheet = equipar(sheet, { instanciaId: "mangual1", catalogoId: "flagelo_mangual" });
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Mangual")!;
+    assert.match(fila.nota ?? "", /Acción Estándar ignora 2 niveles de Cobertura física/);
   });
 
-  test("un arma Sutil sigue mostrando su 'efectos' en la nota, sin el texto de Sutil", () => {
+  test("el crítico del arma va en efectoCritico, no en la nota", () => {
+    let sheet = defaultSheet();
+    sheet = equipar(sheet, { instanciaId: "tonfa1", catalogoId: "corta_tonfa_porra" });
+    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Tonfa o Porra")!;
+    assert.equal(fila.efectoCritico, "Aturdimiento (7)");
+    assert.doesNotMatch(fila.nota ?? "", /Crítico/);
+  });
+
+  test("un arma Sutil sigue llevando su crítico, sin el texto de Sutil en la nota", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada_ligera" });
     const fila = accionesDeAtaque(sheet).find((t) => t.label.includes("Espada Ligera"))!;
-    assert.match(fila.nota ?? "", /Crítico de Hemorragia \(1d6 turnos\)/);
+    assert.equal(fila.efectoCritico, "Hemorragia (1d6 turnos)");
     assert.doesNotMatch(fila.nota ?? "", /Sutil/);
   });
 
@@ -785,7 +793,7 @@ describe("arma melee arrojadiza — Lanzar (INFERIDO, mismo par que una granada)
     assert.equal(lanzar.ataque?.modos.length, 1);
     assert.equal(lanzar.ataque?.modos[0].danio, 5); // Fue(3) + 2
     assert.match(lanzar.nota ?? "", /Alcance Potencia × 10 m/);
-    assert.match(lanzar.nota ?? "", /Hemorragia \(1d4 turnos\)/);
+    assert.equal(lanzar.efectoCritico, "Hemorragia (1d4 turnos)");
   });
 
   test("el Cuchillo de Combate (dificultad 0) no lleva ajuste fijo y conserva su efectoCritico", () => {
@@ -821,11 +829,13 @@ describe("efectoCritico (Feature 2, piloto Cuchillo de Combate)", () => {
     assert.equal(golpe.nota, undefined);
   });
 
-  test("un arma sin efectoCritico en el catálogo no lo lleva en la Accion", () => {
+  // Desde 2026-10-23 todas las armas melee del catálogo tienen su crítico en efectoCritico.
+  test("cada arma melee propaga el efectoCritico de su catálogo", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada" });
     const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Espada")!;
-    assert.equal(golpe.efectoCritico, undefined);
+    assert.equal(golpe.efectoCritico, "Hemorragia (1d8 turnos)");
+    assert.doesNotMatch(golpe.nota ?? "", /Crítico/);
   });
 });
 

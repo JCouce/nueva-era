@@ -13,6 +13,43 @@ function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
 }
 
+// Todos los sumandos del daño en una línea, en orden, para que cuadren con el total:
+// "= 4 base (Simple, Fue+2) +1 Brazo Biónico 2 +4 por 9 éxitos".
+function DesgloseDanio({
+  danio,
+  origenBase,
+  margen,
+}: {
+  danio: ResultadoDanio;
+  origenBase?: string;
+  margen: number | null;
+}) {
+  const ajustes = danio.ajustes ?? [];
+  const suma = danio.base + danio.bonoExitos + ajustes.reduce((t, a) => t + a.valor, 0);
+  return (
+    <p className="mt-1 font-mono text-[11px] uppercase leading-relaxed text-muted">
+      = {danio.base} base{origenBase && ` (${origenBase})`}
+      {ajustes.map((a) => (
+        <span key={a.fuente}>
+          {" "}
+          {signo(a.valor)} {a.fuente}
+        </span>
+      ))}
+      {danio.sinBonoExitos ? (
+        <span> · sin bono por éxitos ({danio.sinBonoExitos})</span>
+      ) : (
+        danio.bonoExitos > 0 && (
+          <span>
+            {" "}
+            +{danio.bonoExitos} por {margen} éxitos
+          </span>
+        )
+      )}
+      {suma < 0 && <span> · mínimo 0</span>}
+    </p>
+  );
+}
+
 // Info de daño de la tirada de ataque que la generó: null si la tirada no es
 // un ataque. En melee `base` se calcula desde la Fuerza efectiva del propio
 // personaje (combate.ts, bonoFormulaFuerza) — antes de 2026-09-24 se dejaba
@@ -24,6 +61,8 @@ export type DanioInfo = {
   base: number | null;
   formulaDanio: string | null;
   categoriaDanio: string;
+  // De dónde sale la base, para el desglose: "Simple, Fue+2".
+  origenBase?: string;
   // Arma o munición que ignora parte del blindaje del objetivo: se avisa junto
   // al daño, el máster lo resta a mano (docs/tareas.md, 2026-09-28).
   ignoraBlindaje?: { valor: number; fuente: string }[];
@@ -173,8 +212,8 @@ export function ContenidoResultado({
 
       {resultado.poder && <ResultadoPropio poder={resultado.poder} resultado={resultado} />}
 
-      {/* Con daño, el texto de crítico va pegado al daño (abajo). */}
-      {!resultado.danioInfo && resultado.critico && resultado.efectoCritico && (
+      {/* Con el daño ya tirado, el texto de crítico va pegado al daño (abajo). */}
+      {!resultado.danioResuelto && resultado.critico && resultado.efectoCritico && (
         <p className="mt-3 border-t border-border pt-3 font-mono text-xs text-accent">{resultado.efectoCritico}</p>
       )}
 
@@ -185,39 +224,26 @@ export function ContenidoResultado({
       {resultado.danioInfo && (
         <div className="mt-3 border-t border-border pt-3">
           {resultado.danioResuelto ? (
-            <p className="font-mono text-xs uppercase text-danger">
-              Daño: <span className="text-lg tabular-nums">{resultado.danioResuelto.total}</span>{" "}
-              {resultado.danioInfo.categoriaDanio}
-              {resultado.danioResuelto.bonoExitos > 0 && (
-                <span className="text-muted">
-                  {" "}
-                  ({resultado.danioResuelto.base} base +{resultado.danioResuelto.bonoExitos} por éxitos)
-                </span>
-              )}
-              {resultado.critico && resultado.efectoCritico && (
-                <span className="text-accent"> · {resultado.efectoCritico}</span>
-              )}
-            </p>
-          ) : null}
-          {resultado.danioResuelto && (
             <>
-              {resultado.danioResuelto.sinBonoExitos && (
-                <p className="mt-1 font-mono text-[11px] uppercase text-muted">
-                  Sin bono por éxitos · {resultado.danioResuelto.sinBonoExitos}
-                </p>
+              <p className="font-mono text-xs uppercase text-danger">
+                Daño: <span className="text-lg tabular-nums">{resultado.danioResuelto.total}</span>{" "}
+                {resultado.danioResuelto.categoria}
+              </p>
+              {resultado.critico && resultado.efectoCritico && (
+                <p className="mt-1 font-mono text-xs uppercase text-accent">Crítico · {resultado.efectoCritico}</p>
               )}
-              {resultado.danioResuelto.ajustes?.map((a) => (
-                <p key={a.fuente} className="mt-1 font-mono text-[11px] uppercase text-muted">
-                  {signo(a.valor)} al daño · {a.fuente}
-                </p>
-              ))}
+              <DesgloseDanio
+                danio={resultado.danioResuelto}
+                origenBase={resultado.danioInfo.origenBase}
+                margen={margen}
+              />
               {resultado.danioResuelto.categoriaPor && (
                 <p className="mt-1 font-mono text-[11px] uppercase text-muted">
                   {resultado.danioResuelto.categoria} · {resultado.danioResuelto.categoriaPor}
                 </p>
               )}
             </>
-          )}
+          ) : null}
           {resultado.danioResuelto ? null : puedeTirarDanio ? (
             <button
               type="button"

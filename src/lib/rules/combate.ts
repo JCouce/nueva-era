@@ -324,6 +324,7 @@ function tiradaDeArmaFuego(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
     ataque: {
       modos: modosConId.map((m) => ({
         id: m.id,
+        etiqueta: m.etiqueta,
         // "1/2 Fue + N": la mitad hacia abajo (TODO(revisar) en catalog/armasImpulsoras.ts).
         danio: m.danioFuerza === "mitad" ? m.danio + Math.floor(fuerza / 2) : m.danio,
         formulaDanio: m.danioFuerza ? textoDanioModo(m) : null,
@@ -663,6 +664,7 @@ function tiradaDeArmaMelee(
         const bono = bonoFormulaFuerza(m.formulaDanio);
         return {
           id: m.id,
+          etiqueta: m.etiqueta,
           danio: bono === null ? null : fuerza + bono,
           danioSutil: esSutil && bono !== null && potencia !== null ? potencia + bono : undefined,
           formulaDanio: m.formulaDanio,

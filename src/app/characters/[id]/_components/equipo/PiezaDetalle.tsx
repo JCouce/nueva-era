@@ -249,6 +249,9 @@ export function DetalleArmaMelee({ p }: { p: ArmaMelee }) {
       {p.efectos && (
         <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed text-info">{p.efectos}</p>
       )}
+      {p.efectoCritico && (
+        <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed text-info">Crítico: {p.efectoCritico}</p>
+      )}
     </>
   );
 }
