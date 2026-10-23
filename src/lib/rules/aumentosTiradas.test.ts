@@ -377,13 +377,25 @@ describe("A2b: casillas de la rama cognitiva", () => {
     assert.ok(t.nota?.includes("No te pueden flanquear"));
   });
 
-  test("Foveo: +1 tras Apuntar en ataques a distancia, no en Iniciativa desenfundando", () => {
+  test("Foveo: +1 en el ataque a distancia con «Apuntado» en Éxito o Crítico, sin casilla propia", () => {
     const sheet = equipar(conTodas([FOVEO]), { instanciaId: "f1", catalogoId: "fusil_asalto_impetus" });
     const f = resolver(sheet);
     const ataque = conExtrasDeFicha(f, accionesDeAtaque(sheet, f.modificadores, f.extrasDotes.permisos).find((t) => t.label === "Disparar con Impetus")!);
-    assert.ok(ids(ataque).includes("aum_foveo_apuntar"));
-    assert.equal(montar(f, ataque, { aum_foveo_apuntar: true }).modificador - montar(f, ataque).modificador, 1);
-    assert.ok(!ids(tiradaFija(f, "iniciativa_arma")).includes("aum_foveo_apuntar"));
+    assert.ok(!ids(ataque).includes("aum_foveo_apuntar"));
+    const sinApuntar = montar(f, ataque).modificador;
+    // Apuntado Éxito: +1 de Apuntar y +1 de Foveo; Crítico, igual.
+    assert.equal(montar(f, ataque, { apuntado: "exito" }).modificador - sinApuntar, 2);
+    assert.equal(montar(f, ataque, { apuntado: "critico" }).modificador - sinApuntar, 2);
+    const m = montar(f, ataque, { apuntado: "exito" });
+    assert.ok(m.desglose.some((l) => l.etiqueta === "Optimización Foveo-Sensorial" && l.valor === 1));
+    // Sin Foveo, solo el +1 de Apuntar.
+    const sinFoveo = equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "fusil_asalto_impetus" });
+    const g = resolver(sinFoveo);
+    const otro = conExtrasDeFicha(g, accionesDeAtaque(sinFoveo, g.modificadores, g.extrasDotes.permisos).find((t) => t.label === "Disparar con Impetus")!);
+    assert.equal(montar(g, otro, { apuntado: "exito" }).modificador - montar(g, otro).modificador, 1);
+    // Iniciativa desenfundando no tiene selector ni bono.
+    assert.ok(!ids(tiradaFija(f, "iniciativa_arma")).includes("apuntado"));
+    assert.equal(tiradaFija(f, "iniciativa_arma").bonosTramo, undefined);
   });
 
   test("Proyección y Matriz de Red: ventaja en Actitud, cada una con su nota", () => {

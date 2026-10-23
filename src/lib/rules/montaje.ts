@@ -28,6 +28,7 @@ import {
   estadoInicial,
   modoElegido,
   notasCondiciones,
+  valorBonoTramo,
   valorBonosTramo,
   valorCondiciones,
   type AtributosExtremidad,
@@ -35,7 +36,6 @@ import {
   type CondicionTirada,
   type EstadoCondiciones,
   type OpcionCondicion,
-  type TramoDistancia,
 } from "./condiciones";
 import {
   alcanzaA,
@@ -188,7 +188,6 @@ type Entradas = { mods: ModificadorConFuente[]; condiciones: CondicionTirada[]; 
 
 function sinApilar(e: Entradas, ctx: ContextoAccion, estado: EstadoCondiciones): Entradas {
   type Aporte = { grupo: string | undefined; valor: number; fuente: string; ref: unknown };
-  const tramo = typeof estado.tramo === "string" ? (estado.tramo as TramoDistancia) : null;
   const aportes: Aporte[] = [
     ...e.mods.flatMap((m): Aporte[] =>
       m.tipo === "tirada" && m.noApila && alcanzaA(m.alcance, ctx) ? [{ grupo: m.noApila, valor: m.valor, fuente: m.fuente, ref: m }] : [],
@@ -197,7 +196,9 @@ function sinApilar(e: Entradas, ctx: ContextoAccion, estado: EstadoCondiciones):
       c.tipo === "toggle" && c.noApila && Boolean(estado[c.id]) ? [{ grupo: c.noApila, valor: c.valorActivo, fuente: c.etiqueta, ref: c }] : [],
     ),
     ...e.bonosTramo.flatMap((b): Aporte[] =>
-      b.noApila && tramo ? [{ grupo: b.noApila, valor: b.porTramo[tramo] ?? 0, fuente: b.fuente, ref: b }] : [],
+      b.noApila && typeof estado[b.condicion ?? "tramo"] === "string"
+        ? [{ grupo: b.noApila, valor: valorBonoTramo(b, estado), fuente: b.fuente, ref: b }]
+        : [],
     ),
   ];
   const fuera = descartadosPorNoApila(aportes, (a) => a.grupo, (a) => a.valor);
@@ -383,13 +384,14 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     // El crítico fijo (Crítico Mejorado) va primero, con su línea, en las notas del resultado.
     notas: [
       ...(tirada.criticoFijo
-        ? [{ etiqueta: tirada.criticoFijo.fuente, nota: `Crítico con ${tirada.criticoFijo.margen} éxitos en vez de ${MARGEN_CRITICO}.` }]
+        ? [{ etiqueta: tirada.criticoFijo.fuente, nota: notaCriticoFijo(tirada.criticoFijo.margen) }]
         : []),
+      ...(tirada.subeGradoFijo ? [{ etiqueta: tirada.subeGradoFijo, nota: "Un fracaso (no el crítico) cuenta como éxito." }] : []),
       ...notasCondiciones(condiciones, estado),
     ],
     modoElegido: modo,
     ventaja: tirada.ventaja ?? activas.find((c) => c.ventaja)?.etiqueta ?? ventajaDeOpcion(elegidas),
-    subeGrado: activas.find((c) => c.subeGrado)?.etiqueta ?? null,
+    subeGrado: activas.find((c) => c.subeGrado)?.etiqueta ?? tirada.subeGradoFijo ?? null,
     danio: conAjustesDanio(
       conDanioFijo(danioDeCasillas(activas), tirada.ataque?.sinBonoExitos),
       ajusteDanioDeExtremidad(ficha.ficha, mods, modsAplicado, extremidad, sutil && tirada.aplicadoSutil !== undefined),
@@ -422,6 +424,9 @@ function fatigaDeCasillas(
   const ahorro = activas.reduce((t, c) => t + (c.ahorroFatiga ?? 0), 0);
   return { costeFatiga: Math.max(0, bruto - ahorro), ahorroSinUsar: Math.max(0, ahorro - bruto) };
 }
+
+const notaCriticoFijo = (margen: number) =>
+  margen === 0 ? "Cualquier éxito es crítico." : `Crítico con ${margen} éxitos en vez de ${MARGEN_CRITICO}.`;
 
 function ventajaDeOpcion(elegidas: OpcionCondicion[]): string | null {
   const o = elegidas.find((x) => x.ventaja);

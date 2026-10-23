@@ -372,7 +372,9 @@ export function casillasDeEspecie(especie: EspecieResuelta | null): CondicionTir
   );
 }
 
-export type TextoEnTirada = { en: DestinoTexto; texto: string; fuente: string; soloEnCritico: boolean };
+// `soloEnCriticoNatural` (con soloEnCritico): solo con crítico natural, sin la conversión éxito →
+// crítico (Gran Puntería en Apuntar); va a Accion.efectoCriticoNatural.
+export type TextoEnTirada = { en: DestinoTexto; texto: string; fuente: string; soloEnCritico: boolean; soloEnCriticoNatural?: true };
 
 // Los textos sin mecanizar (§14.10), uno por destino, con "rasgo · capa" de fuente.
 export function textosDeEspecie(especie: EspecieResuelta | null): TextoEnTirada[] {

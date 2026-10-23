@@ -56,22 +56,34 @@ const escapa = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const sinFuenteRepetida = (texto: string, fuente: string) =>
   texto.replace(new RegExp(`(^|: )${escapa(fuente)}: `), "$1");
 
-const conFuente = (textos: TextoEnTirada[], critico: boolean) =>
-  textos.filter((x) => x.soloEnCritico === critico).map((x) => `${sinFuenteRepetida(x.texto, x.fuente)} (${x.fuente})`);
+const conFuente = (textos: TextoEnTirada[], critico: boolean, natural = false) =>
+  textos
+    .filter((x) => x.soloEnCritico === critico && (x.soloEnCriticoNatural ?? false) === natural)
+    .map((x) => `${sinFuenteRepetida(x.texto, x.fuente)} (${x.fuente})`);
 
 export const junta = (actual: string | undefined, nuevas: string[]) => [actual, ...nuevas].filter(Boolean).join(" · ");
 
-// Los de crítico al texto de crítico; el resto, a la nota. Sin textos, la misma tirada.
-export function conTextosEnTirada<T extends Pick<Accion, "nota" | "efectoCritico">>(t: T, textos: TextoEnTirada[]): T {
+// Los de crítico al texto de crítico (los de crítico natural, al suyo); el resto, a la nota. Sin
+// textos, la misma tirada.
+export function conTextosEnTirada<T extends Pick<Accion, "nota" | "efectoCritico"> & Partial<Pick<Accion, "efectoCriticoNatural">>>(
+  t: T,
+  textos: TextoEnTirada[],
+): T {
   const enNota = conFuente(textos, false);
   const enCritico = conFuente(textos, true);
-  if (enNota.length === 0 && enCritico.length === 0) return t;
+  const enNatural = conFuente(textos, true, true);
+  if (enNota.length === 0 && enCritico.length === 0 && enNatural.length === 0) return t;
   return {
     ...t,
     ...(enNota.length > 0 && { nota: junta(t.nota, enNota) }),
     ...(enCritico.length > 0 && { efectoCritico: junta(t.efectoCritico, enCritico) }),
+    ...(enNatural.length > 0 && { efectoCriticoNatural: junta(t.efectoCriticoNatural, enNatural) }),
   };
 }
 
 // Sin dado no hay crítico: todos, como líneas de nota (los normales primero).
-export const textosSinDado = (textos: TextoEnTirada[]): string[] => [...conFuente(textos, false), ...conFuente(textos, true)];
+export const textosSinDado = (textos: TextoEnTirada[]): string[] => [
+  ...conFuente(textos, false),
+  ...conFuente(textos, true),
+  ...conFuente(textos, true, true),
+];

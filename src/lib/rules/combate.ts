@@ -24,7 +24,7 @@ import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condicione
 import { nivelesHasta, acumulaPorClave, ultimoQueDefine, sustituyeMiraIntegrada, type PiezaEquipada } from "./equipo";
 import type { MotorMetadata } from "./motor";
 import { gastoDelModo } from "./recursos";
-import { CONDICION_ATACANTES_ADICIONALES, type Accion, type AccionDirecta } from "./acciones";
+import { CONDICION_ATACANTES_ADICIONALES, condicionApuntado, type Accion, type AccionDirecta } from "./acciones";
 import { atributoEfectivo, aplicado } from "./derivados";
 import { ESPECIALIDAD_ARMA, ESPECIALIDAD_ATAQUE_ESPECIAL, ESPECIALIDAD_LANZAR } from "../catalog/especialidadesArma";
 import { FAMILIAS_SOLO_CON_DOTE } from "../catalog/dotesDestinos";
@@ -1106,9 +1106,17 @@ export function accionesDeAtaque(sheet: Sheet, mods: ModificadorConFuente[], per
   const bloqueoBrazo = brazo ? tiradaBloqueoBrazo(brazo) : null;
   if (bloqueoBrazo) tiradas.push(bloqueoBrazo);
   tiradas.push(...accionesDeGranadas(sheet));
-  return tiradas.filter(
-    (t) => !t.familiaArma || !FAMILIAS_SOLO_CON_DOTE.includes(t.familiaArma) || permisos.familias.includes(t.familiaArma),
-  );
+  return tiradas
+    .filter((t) => !t.familiaArma || !FAMILIAS_SOLO_CON_DOTE.includes(t.familiaArma) || permisos.familias.includes(t.familiaArma))
+    .map(conApuntado);
+}
+
+// Todo ataque a distancia (Combate a Distancia) lleva el selector "Apuntado": lo que salió en la
+// acción Apuntar previa (acciones.ts). Lo ve todo el mundo; Gran Puntería lo cambia en
+// conExtrasDeFicha.
+function conApuntado(t: Accion): Accion {
+  if (t.grupo !== "Ataques" || t.habilidad !== "combate_distancia") return t;
+  return { ...t, condiciones: [...(t.condiciones ?? []), condicionApuntado()] };
 }
 
 // Malla Plasmática — detonación de pulso térmico (nivel 2+, docs/tareas.md

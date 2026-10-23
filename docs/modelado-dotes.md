@@ -2131,15 +2131,15 @@ Aparte, el verificador corrigió la clasificación de **48** claims (marcados �
 
 - Cobertura Rápida: ¿deslizarse a cubierto requiere tirada de Acrobacias o es automático? ¿La 'misma acción' es la acción simple de movimiento?
 - Disparo a la Carrera Mejorado: el Disparo a la Carrera base es acción estándar y solo hay una estándar por turno; ¿'una vez por turno' añade algo, o la dote permite hacerlo con acciones simples (dos por turno)?
-- Gran Puntería: 'al apuntar' se lee como la tirada de la acción Apuntar (no el ataque). ¿Correcto?
-- Gran Puntería: cuando el éxito pasa a crítico por la dote, ¿también gana el 'omite 1 nivel de cobertura' del crítico de Apuntar?
-- Gran Puntería: con crítico natural al apuntar, ¿la cobertura baja 2 niveles en total o 2 más el nivel que ya omite el crítico de Apuntar (3)?
+- Gran Puntería: 'al apuntar' se lee como la tirada de la acción Apuntar (no el ataque). ¿Correcto? *(Construido así, 2026-10-23: el éxito → crítico va en la fila Apuntar; supuesto S79, pendiente de Murillo.)*
+- Gran Puntería: cuando el éxito pasa a crítico por la dote, ¿también gana el 'omite 1 nivel de cobertura' del crítico de Apuntar? *(Supuesto S79: sí; con la dote, «Apuntado: Éxito» lleva la nota de omitir 1 nivel. Pendiente de Murillo.)*
+- Gran Puntería: con crítico natural al apuntar, ¿la cobertura baja 2 niveles en total o 2 más el nivel que ya omite el crítico de Apuntar (3)? *(Supuesto S79, aprobado por el usuario: 2 en total. Pendiente de Murillo.)*
 - Precisión Imperturbable: 'de forma gratuita el tirador apunta a cualquier objetivo', ¿es Apuntar como acción gratuita sin límite por turno (sigue tirando perspicacia + combate a distancia) o apunta automáticamente sin tirada (siempre el +1 de Apuntar en el siguiente ataque)? ¿'Cualquier objetivo' quiere decir también varios a la vez?
 - Recarga Relámpago: la recarga como reacción, ¿consume la única reacción por ronda del personaje?
 - Recarga Relámpago: ¿aplica también al armamento pesado (recarga compleja) y a las armas de energía (cambio de batería)?
 - Tirador de Larga Distancia Avanzado: 'ataques de especialidad' se lee como ataques tirados con una especialidad que el personaje tiene (Armas de Fuego Cortas/Larga…). ¿Correcto?
 - Tirador de Larga Distancia Avanzado: no exige Tirador de Larga Distancia. Si se tienen las dos, ¿en especialidad queda en 0 (no se suman) y fuera de especialidad sigue el -1 de la básica?
-- *(común del lote)* Apuntar y Disparo a la Carrera están en fuente/habilidades.md (acciones de Combate a Distancia) pero no en sistema.md ni en la app; cinco dotes del lote dependen de ellas. ¿Se transcriben ya como acciones (Apuntar: perspicacia + combate a distancia, dif. 6, acción simple, +1 al siguiente ataque; Disparo a la carrera: -2 al ataque)?
+- *(común del lote)* Apuntar y Disparo a la Carrera están en fuente/habilidades.md (acciones de Combate a Distancia) pero no en sistema.md ni en la app; cinco dotes del lote dependen de ellas. ¿Se transcriben ya como acciones (Apuntar: perspicacia + combate a distancia, dif. 6, acción simple, +1 al siguiente ataque; Disparo a la carrera: -2 al ataque)? *(Apuntar transcrita como tirada fija, 2026-10-23, `sistema.md` §6; Disparo a la Carrera sigue sin fila.)*
 
 ### Exploración (8)
 

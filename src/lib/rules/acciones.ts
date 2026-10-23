@@ -83,6 +83,13 @@ export type Accion = {
   // conExtrasDeFicha (fichaResuelta.ts); montarTirada lo junta con los márgenes de las
   // casillas (gana el más bajo) y lo enseña en las notas del resultado.
   criticoFijo?: { margen: number; fuente: string };
+  // Fracaso → éxito fijo y sin casilla (Velocista en Carrera), con su fuente. Lo pone
+  // conExtrasDeFicha; montarTirada lo pasa a TiradaMontada.subeGrado como el de una casilla.
+  subeGradoFijo?: string;
+  // Como `efectoCritico`, pero solo con crítico natural (margen ≥ MARGEN_CRITICO, sin contar el
+  // que da una conversión éxito → crítico): Gran Puntería en Apuntar. Lo pinta
+  // ResultadoTirada.tsx con `resultado.criticoNatural`.
+  efectoCriticoNatural?: string;
   // Dificultad con la que se abre el modal si el jugador no ha escrito otra
   // antes (Auto-anclaje: 6). Sin ella, 7.
   dificultadSugerida?: number;
@@ -246,6 +253,40 @@ export const CONDICION_ATACANTES_ADICIONALES: CondicionTirada = {
   porDefecto: 0,
 };
 
+// Selector "Apuntado" de todos los ataques a distancia (Combate a Distancia; combate.ts): lo que
+// salió en la acción Apuntar previa (fuente/habilidades.md: éxito +1 al siguiente ataque a
+// distancia; crítico, además omite 1 nivel de cobertura). La cobertura se sigue restando a mano:
+// la opción solo lo recuerda en su nota. Con Gran Puntería (conExtrasDeFicha) el éxito cuenta
+// como crítico y el crítico natural deja la cobertura 2 niveles por debajo en total (supuesto
+// S79 de docs/sistema.md: 2 en total, no 3; el selector para todos, S81).
+export const ID_APUNTADO = "apuntado";
+export const ID_APUNTAR = "apuntar";
+const OMITE_UN_NIVEL = "Omites 1 nivel de cobertura del objetivo.";
+
+export function condicionApuntado(granPunteria?: string): CondicionTirada {
+  return {
+    id: ID_APUNTADO,
+    tipo: "opcion",
+    etiqueta: granPunteria ? `Apuntado (${granPunteria})` : "Apuntado",
+    porDefecto: "no",
+    opciones: [
+      { id: "no", etiqueta: "No", valor: 0 },
+      {
+        id: "exito",
+        etiqueta: "Éxito",
+        valor: 1,
+        ...(granPunteria && { nota: `${OMITE_UN_NIVEL} El éxito al apuntar cuenta como crítico.` }),
+      },
+      {
+        id: "critico",
+        etiqueta: "Crítico",
+        valor: 1,
+        nota: granPunteria ? "La cobertura del objetivo baja 2 niveles en total (salvo cobertura total)." : OMITE_UN_NIVEL,
+      },
+    ],
+  };
+}
+
 export const ACCIONES: Accion[] = [
   // ── Defensa ──
   {
@@ -350,6 +391,50 @@ export const ACCIONES: Accion[] = [
   // mecánica de hackear sigue sin resolver (docs/sistema.md, pregunta 16 —
   // dualidad hackeo digital/psiónico), inventarse una dificultad aquí sería
   // una regla que el documento no da.
+  // Tiradas fijas de docs/fuente/habilidades.md (tarea "Tiradas fijas que faltan", tareas.md).
+  // Apuntar: sin especialidad fija; las de Combate a Distancia son de arma y la fila deja
+  // marcarla como cualquier otra. TODO(revisar): ¿la especialidad del arma con la que se va a
+  // disparar, o ninguna? La fuente no lo dice.
+  {
+    id: ID_APUNTAR,
+    label: "Apuntar",
+    grupo: "Acciones",
+    aplicado: "perspicacia",
+    habilidad: "combate_distancia",
+    dificultadSugerida: 6,
+    nota:
+      "Acción simple. Dificultad 6 contra un objetivo mediano, con sus penalizadores de cobertura y visibilidad; +1 por cada tamaño mayor y −1 por cada tamaño menor. Éxito: +1 al siguiente ataque a distancia; crítico: además omite 1 nivel de cobertura. Márcalo en «Apuntado» al disparar, antes del final de tu próximo turno",
+  },
+  {
+    id: "carrera",
+    label: "Carrera",
+    grupo: "Acciones",
+    aplicado: "reflejos",
+    habilidad: "atletismo",
+    especialidadesAccion: ["carrera"],
+    dificultadSugerida: 6,
+    nota:
+      "Acción estándar o compleja. Éxito: +2 m; crítico: +4 m; fallo: sin metros de más; fallo crítico: tropiezas y mueves la mitad. Con acción compleja, el resultado total se dobla",
+  },
+  {
+    id: "discernir_mentiras",
+    label: "Discernir mentiras",
+    grupo: "Acciones",
+    aplicado: "perspicacia",
+    habilidad: "actitud",
+    especialidadesAccion: ["empatia"],
+    nota: "Acción gratuita, para calar si alguien miente, finge u oculta sus intenciones. La dificultad depende del contexto",
+  },
+  {
+    id: "resistir_distraccion",
+    label: "Resistir distracción",
+    grupo: "Acciones",
+    aplicado: "perspicacia",
+    habilidad: "actitud",
+    especialidadesAccion: ["empatia"],
+    nota:
+      "Enfrentada a la distracción del rival antes del combate (Expresión + Manipulación). Si gana, quedas sorprendido contra su primer ataque; con crítico, desprevenido",
+  },
   {
     id: "tecnica",
     label: "Hackeo",
@@ -411,6 +496,9 @@ export type Resultado = {
   margen: number | null;
   exito: boolean | null;
   critico: boolean;
+  // Crítico de éxito con el margen general (MARGEN_CRITICO), aunque la tirada lo tenga más bajo
+  // (Gran Puntería: cualquier éxito al apuntar es crítico, pero el "natural" hace más).
+  criticoNatural?: true;
   // Un fracaso que cuenta como éxito por una casilla marcada (Balanceo, D2d): lo pone
   // tirarMontada (montaje.ts), con el margen que sacó de verdad; el margen pasa a 0.
   cambioGrado?: { fuente: string; margenOriginal: number };
@@ -460,6 +548,7 @@ export function resolverTirada({
     margen,
     exito: margen >= 0,
     critico: margen >= margenCriticoExito || margen <= -margenCriticoFallo,
+    ...(margen >= MARGEN_CRITICO && { criticoNatural: true as const }),
   };
 }
 
@@ -636,12 +725,19 @@ export function tieneEspecialidad(sheet: Sheet, habilidad: HabilidadId, especial
 
 // La tirada con la habilidad alternativa ya puesta y si cuenta como especialidad
 // (entera con ella, la mitad sin ella: la regla general de especialidades).
+// La especialidad fija de la tirada (Discernir mentiras: Empatía) deja de contar: manda la de
+// la alternativa (Cazador Cazado: Manipulación), que ya viene resuelta en `enEspecialidad`.
 export function usarHabilidadAlternativa(sheet: Sheet, t: Accion): { tirada: Accion; enEspecialidad: boolean } | null {
   const alt = t.habilidadAlternativa;
   if (!alt) return null;
   const enEspecialidad = tieneEspecialidad(sheet, alt.habilidad, alt.especialidad);
   return {
-    tirada: { ...t, habilidad: alt.habilidad, label: `${t.label} (${etiquetaEspecialidad(alt.especialidad)})` },
+    tirada: {
+      ...t,
+      habilidad: alt.habilidad,
+      label: `${t.label} (${etiquetaEspecialidad(alt.especialidad)})`,
+      especialidadesAccion: undefined,
+    },
     enEspecialidad,
   };
 }

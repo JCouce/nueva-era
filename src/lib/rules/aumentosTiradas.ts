@@ -28,7 +28,7 @@ import type { Inmunidad } from "./estados";
 import { inmunidadesDe } from "./inmunidades";
 import type { TipoDanio } from "./blindaje";
 import type { AlcanceModificador } from "./modificadores";
-import type { CondicionTirada, OpcionCondicion } from "./condiciones";
+import type { BonoPorTramo, CondicionTirada, OpcionCondicion } from "./condiciones";
 import { acumulaPorClave, nivelesHasta } from "./equipo";
 import type { TextoEnTirada } from "./especie";
 import type { Sheet } from "./sheet";
@@ -84,6 +84,9 @@ export type EfectosTiradaAumento = {
   armaduraNatural?: ArmaduraNaturalAumento;
   // Ventaja sin casilla en las tiradas de ese alcance (Red Frontoparietal: Iniciativa).
   ventajasFijas?: { alcance: AlcanceModificador }[];
+  // Bono según la opción elegida en otra condición de la tirada (Foveo: +1 con el selector
+  // "Apuntado" en cualquier opción menos "No"). La fuente la pone bonosTramoDeAumentos.
+  bonosTramo?: { alcance: AlcanceModificador; bono: Omit<BonoPorTramo, "fuente"> }[];
   // Las casillas de esta pieza no salen si esta otra operación funciona (Prefrontal con
   // Conectividad Callosa, que es su progresión: usuario, 2026-10-22).
   casillasOcultasCon?: string;
@@ -247,6 +250,14 @@ export type VentajaFija = { alcance: AlcanceModificador; fuente: string };
 
 export function ventajasFijasDeAumentos(sheet: Pick<Sheet, "equipo">): VentajaFija[] {
   return aportesDeAumentos(sheet).flatMap((a) => (a.efectos.ventajasFijas ?? []).map((v) => ({ alcance: v.alcance, fuente: a.fuente })));
+}
+
+// Bonos por opción de los aumentos que funcionan, con su alcance y su fuente (conExtrasDeFicha
+// los añade a `bonosTramo` de la tirada, como los de las dotes).
+export function bonosTramoDeAumentos(sheet: Pick<Sheet, "equipo">): { alcance: AlcanceModificador; bono: BonoPorTramo }[] {
+  return aportesDeAumentos(sheet).flatMap((a) =>
+    (a.efectos.bonosTramo ?? []).map((b) => ({ alcance: b.alcance, bono: { ...b.bono, fuente: a.fuente } })),
+  );
 }
 
 // Notas de la Alerta pasiva que no suman (Detección Química), con su fuente.

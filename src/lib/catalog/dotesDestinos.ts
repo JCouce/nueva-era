@@ -27,9 +27,10 @@ import type { AlcanceModificador, FamiliaArma } from "../rules/modificadores";
 import { etiquetaEspecialidad } from "./especialidades";
 
 // "tiradas-fijas" no es una tanda de dotes sino la tarea de docs/tareas.md "Tiradas fijas
-// que faltan según habilidades.md": sin esas tiradas no hay dónde colgar el efecto. Va la
+// que faltan según habilidades.md": sin esas tiradas no había dónde colgar el efecto. Va la
 // última para que gane a la tanda del tipo (un cambio de par sobre una tirada que no
-// existe espera a la tirada, no a D2d).
+// existe espera a la tirada, no a D2d). 0 pendientes desde 2026-10-23 (Apuntar, Carrera,
+// Discernir mentiras y Resistir distracción); se queda en la lista como las demás cerradas.
 // "D2c-2" (poderes de dote: Impacto Métrico, Sobrecarga Métrica, y los textos de dote en las
 // tiradas de poder) se partió de D2c el 2026-10-15: va detrás de las acciones de dote (D2c).
 // Cerrada (0 pendientes) desde D2c-2; se queda en la lista como las demás tandas cerradas.
@@ -57,7 +58,8 @@ const tirada = (id: string, especialidad?: string): DestinoDote => ({
   textos: [id],
   ...(especialidad && { especialidad }),
 });
-const tanda = (t: TandaDote, motivo: string): DestinoDote => ({ tipo: "tanda", tanda: t, motivo });
+// Sin destinos { tipo: "tanda" } desde que existen las tiradas fijas (2026-10-23); el día que
+// vuelva a hacer falta uno: { tipo: "tanda", tanda, motivo }.
 // Tiradas generadas por arma de una familia (Accion.familiaArma, combate.ts).
 const familia = (f: FamiliaArma): DestinoDote => ({ tipo: "tirada", alcance: { tipo: "familiaArma", familia: f }, textos: [] });
 
@@ -145,12 +147,16 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   // Onda Residual → Expansión (Singularidad).
   psi_singularidad_expansion: { tipo: "poder", id: "psi_singularidad_expansion" },
 
-  // ── Tiradas que no existen: definidas en docs/fuente/habilidades.md, pendientes de la
-  // tarea "Tiradas fijas que faltan según habilidades.md" (docs/tareas.md) ──
-  apuntar: tanda("tiradas-fijas", "no existe la acción Apuntar (§9.5: Gran Puntería)"),
-  carrera: tanda("tiradas-fijas", "no existe la tirada de Carrera (Reflejos + Atletismo)"),
-  detectar_mentiras: tanda("tiradas-fijas", "no existe la tirada de discernir mentiras (Perspicacia + Empatía)"),
-  resistir_distraccion: tanda("tiradas-fijas", "no existe la tirada de resistir una distracción"),
+  // ── Tiradas fijas de docs/fuente/habilidades.md (tarea "Tiradas fijas que faltan",
+  // docs/tareas.md), en ACCIONES desde 2026-10-23 ──
+  // Apuntar (§9.5: Gran Puntería = la acción Apuntar): Gran Puntería y las Puntería Relámpago.
+  apuntar: tirada("apuntar"),
+  // Velocista.
+  carrera: tirada("carrera"),
+  // Cazador Cazado: Manipulación en lugar de Empatía.
+  detectar_mentiras: tirada("discernir_mentiras"),
+  // Vigilancia Táctica: Exploración (Táctica) en lugar de Actitud (Empatía).
+  resistir_distraccion: tirada("resistir_distraccion"),
 };
 
 // Bonos por opción de otra condición (`tramo` = "<condición>:<opción>") cuya condición

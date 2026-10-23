@@ -258,6 +258,9 @@ export const efectoDoteSchema = z.discriminatedUnion("tipo", [
     texto: z.string().min(1),
     condicion,
     grados: z.array(grado).min(1).optional(), // solo tras ese resultado (efectoCritico si es "critico")
+    // Con grados ["critico"]: solo con crítico natural, sin la conversión éxito → crítico (Gran
+    // Puntería en Apuntar). Va a Accion.efectoCriticoNatural.
+    criticoNatural: z.literal(true).optional(),
     porque: z.enum(PORQUES_TEXTO),
     // Como en los efectos con alcance: requisito por rama y filtro de arma (D2b-1).
     requisitoAlcance: comunes.requisitoAlcance,

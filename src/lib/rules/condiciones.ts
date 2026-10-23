@@ -275,22 +275,34 @@ export function notasCondiciones(
 // Distancia Avanzado). `excluyente`: entre los bonos con la misma clave solo vale el mejor
 // en el tramo elegido, no se suman (la básica y la Avanzada). Los resuelve
 // bonosTramoAplicables, que es lo que suma y pinta montarTirada.
+//
+// `condicion`: la condición de opción cuya opción elegida mira el bono, si no es "tramo" (el
+// selector "Apuntado" de los ataques a distancia: Foveo +1 con cualquier opción menos "No").
+// `porTramo` va entonces por id de opción de esa condición.
 export type BonoPorTramo = {
   fuente: string;
-  porTramo: Partial<Record<TramoDistancia, number>>;
+  porTramo: Partial<Record<TramoDistancia, number>> & Partial<Record<string, number>>;
+  condicion?: string;
   soloEnEspecialidad?: true;
   excluyente?: string;
   // Grupo de no apilamiento con casillas y bonos con alcance (el de la casilla, arriba).
   noApila?: string;
 };
 
-function tramoElegido(estado: EstadoCondiciones): TramoDistancia | null {
-  return typeof estado.tramo === "string" ? (estado.tramo as TramoDistancia) : null;
+// La opción elegida en la condición que mira el bono ("tramo" si no dice otra), o null.
+function opcionDelBono(b: BonoPorTramo, estado: EstadoCondiciones): string | null {
+  const elegida = estado[b.condicion ?? "tramo"];
+  return typeof elegida === "string" ? elegida : null;
+}
+
+// Lo que vale el bono con lo elegido ahora mismo (0 si no hay nada elegido).
+export function valorBonoTramo(b: BonoPorTramo, estado: EstadoCondiciones): number {
+  const opcion = opcionDelBono(b, estado);
+  return opcion ? (b.porTramo[opcion] ?? 0) : 0;
 }
 
 export function bonosTramoAplicables(bonos: BonoPorTramo[], estado: EstadoCondiciones, enEspecialidad: boolean): BonoPorTramo[] {
-  const tramo = tramoElegido(estado);
-  const valor = (b: BonoPorTramo) => (tramo ? (b.porTramo[tramo] ?? 0) : 0);
+  const valor = (b: BonoPorTramo) => valorBonoTramo(b, estado);
   const validos = bonos.filter((b) => !b.soloEnEspecialidad || enEspecialidad);
   const mejor = new Map<string, BonoPorTramo>();
   for (const b of validos) {
@@ -302,18 +314,14 @@ export function bonosTramoAplicables(bonos: BonoPorTramo[], estado: EstadoCondic
 }
 
 export function valorBonosTramo(bonos: BonoPorTramo[], estado: EstadoCondiciones): number {
-  const tramo = tramoElegido(estado);
-  if (!tramo) return 0;
-  return bonos.reduce((total, b) => total + (b.porTramo[tramo] ?? 0), 0);
+  return bonos.reduce((total, b) => total + valorBonoTramo(b, estado), 0);
 }
 
 export function desgloseBonosTramo(
   bonos: BonoPorTramo[],
   estado: EstadoCondiciones,
 ): { etiqueta: string; valor: number }[] {
-  const tramo = tramoElegido(estado);
-  if (!tramo) return [];
-  return bonos.map((b) => ({ etiqueta: b.fuente, valor: b.porTramo[tramo] ?? 0 }));
+  return bonos.filter((b) => opcionDelBono(b, estado) !== null).map((b) => ({ etiqueta: b.fuente, valor: valorBonoTramo(b, estado) }));
 }
 
 // La etiqueta del modo actualmente elegido (si la tirada tiene condición

@@ -45,6 +45,8 @@ export type Lanzamiento = Resultado & {
   // combate.ts) — solo tiene sentido pintarlo si esta tirada acabó en crítico,
   // ver el bloque de daño más abajo.
   efectoCritico?: string;
+  // Solo con crítico natural (Accion.efectoCriticoNatural: Gran Puntería al apuntar).
+  efectoCriticoNatural?: string;
   // Efectos que tocan otra tirada (Accion.efectos, acciones.ts) — no se
   // automatizan, se listan para que el jugador/máster los aplique a mano.
   // Se pintan tras resolver el daño, no antes: es el momento en que el
@@ -174,6 +176,10 @@ export function ContenidoResultado({
       {/* Con daño, el texto de crítico va pegado al daño (abajo). */}
       {!resultado.danioInfo && resultado.critico && resultado.efectoCritico && (
         <p className="mt-3 border-t border-border pt-3 font-mono text-xs text-accent">{resultado.efectoCritico}</p>
+      )}
+
+      {resultado.criticoNatural && resultado.efectoCriticoNatural && (
+        <p className="mt-3 border-t border-border pt-3 font-mono text-xs text-accent">{resultado.efectoCriticoNatural}</p>
       )}
 
       {resultado.danioInfo && (

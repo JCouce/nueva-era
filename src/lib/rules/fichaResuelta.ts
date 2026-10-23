@@ -16,6 +16,7 @@ import {
   saldoBolsaAumentos,
 } from "./aumentos";
 import {
+  bonosTramoDeAumentos,
   casillasDeAumentos,
   notasAlertaPasivaDeAumentos,
   textosDeAumentos,
@@ -60,9 +61,11 @@ import { modificadoresDeRequisito, valoresDeRequisito, type ValoresRequisito } f
 import {
   dotesActivas,
   efectosDeDotes,
+  type AlternativaDeDote,
   type BonoTramoDeDote,
   type CriticoDeDote,
   type DescuentoDeDote,
+  type GradoFijoDeDote,
   type PermisosDeDotes,
 } from "./dotesEfectos";
 import { accionesDeDotes, type AccionesDeDotes } from "./dotesAcciones";
@@ -94,7 +97,7 @@ import { fatigaEfectiva } from "./vitalidad";
 import { alcanzaA, descartadosPorNoApila, type FamiliaArma, type ModificadorConFuente } from "./modificadores";
 import { conTextosEnTirada, contextoDe, junta, textosDe, textosSinDado } from "./textosTirada";
 import type { Sheet } from "./sheet";
-import type { Accion, AccionDirecta } from "./acciones";
+import { condicionApuntado, ID_APUNTADO, ID_APUNTAR, type Accion, type AccionDirecta } from "./acciones";
 import type { CondicionTirada } from "./condiciones";
 
 export type DesgloseDerivado = { total: number; fuentes: Fuente[] };
@@ -166,7 +169,17 @@ export type FichaResuelta = {
   // `permisos` (D2b-2): Bloquear y el estilo Sutil, que solo existen con su dote; se los
   // pasa quien genera las filas de arma (accionesDeAtaque). En modo libre igual: sin dote,
   // tampoco el NPC. `descuentos` (D2c-1): contadores que cuentan de menos (Reflejos Felinos).
-  extrasDotes: { bonosTramo: BonoTramoDeDote[]; criticos: CriticoDeDote[]; permisos: PermisosDeDotes; descuentos: DescuentoDeDote[] };
+  // `grados` y `alternativas` (tiradas fijas): cambios de grado sin casilla (Velocista, Gran
+  // Puntería) y otra habilidad con casilla en la fila (Cazador Cazado, Vigilancia Táctica).
+  // En `bonosTramo` van también los de los aumentos (Foveo con el selector "Apuntado").
+  extrasDotes: {
+    bonosTramo: BonoTramoDeDote[];
+    criticos: CriticoDeDote[];
+    permisos: PermisosDeDotes;
+    descuentos: DescuentoDeDote[];
+    grados: GradoFijoDeDote[];
+    alternativas: AlternativaDeDote[];
+  };
   // Acciones propias de dote (D2c-1, dotesAcciones.ts): la sección "Dotes" de Acciones y las
   // copias en su grupo extra. Sin las de requisito roto (S34); el NPC, sin mirar requisitos.
   accionesDotes: AccionesDeDotes;
@@ -333,7 +346,14 @@ export function resolverFicha(
     ]),
     textosTirada: [...textosDeEspecie(especie), ...dotes.textos, ...textosDeAumentos(sheet), ...activables.textos],
     ventajasFijas: ventajasFijasDeAumentos(sheet),
-    extrasDotes: { bonosTramo: dotes.bonosTramo, criticos: dotes.criticos, permisos: dotes.permisos, descuentos: dotes.descuentos },
+    extrasDotes: {
+      bonosTramo: [...dotes.bonosTramo, ...bonosTramoDeAumentos(sheet)],
+      criticos: dotes.criticos,
+      permisos: dotes.permisos,
+      descuentos: dotes.descuentos,
+      grados: dotes.grados,
+      alternativas: dotes.alternativas,
+    },
     accionesDotes: accionesDeDotes(activas),
     poderesDotes: poderesDeDotes(activas, sheet, psionica.paraEfectos),
     accionesAumentos: accionesDeAumentos(sheet, estados),
@@ -377,16 +397,52 @@ export function conExtrasDeFicha(
   const descuentos = ficha.extrasDotes.descuentos.filter((d) => alcanzaA(d.alcance, ctx));
   // La ventaja que ya trae la tirada manda (no se acumula).
   const ventaja = t.ventaja ? undefined : ficha.ventajasFijas.find((v) => alcanzaA(v.alcance, ctx))?.fuente;
-  if (extra.length === 0 && textos.length === 0 && bonosTramo.length === 0 && !critico && descuentos.length === 0 && !ventaja)
+  // Cambios de grado sin casilla (Velocista, Gran Puntería): el crítico más fácil gana.
+  const grados = ficha.extrasDotes.grados.filter((g) => alcanzaA(g.alcance, ctx));
+  const criticoFinal = [...(critico ? [{ margen: critico.margen, fuente: critico.fuente }] : []), ...grados.flatMap((g) => (g.margen === undefined ? [] : [{ margen: g.margen, fuente: g.fuente }]))]
+    .reduce<{ margen: number; fuente: string } | null>((mejor, c) => (!mejor || c.margen < mejor.margen ? c : mejor), null);
+  const subeGradoFijo = grados.find((g) => g.subeGrado)?.fuente;
+  // Otra habilidad con casilla en la fila (Cazador Cazado), si la tirada no trae ya una y el
+  // aplicado de la dote es el suyo.
+  const alt = t.habilidadAlternativa
+    ? undefined
+    : ficha.extrasDotes.alternativas.find((a) => alcanzaA(a.alcance, ctx) && (!a.aplicado || a.aplicado === t.aplicado));
+  const conApuntado = t.condiciones && selectorApuntadoDeFicha(ficha, t.condiciones);
+  if (
+    extra.length === 0 &&
+    textos.length === 0 &&
+    bonosTramo.length === 0 &&
+    !criticoFinal &&
+    descuentos.length === 0 &&
+    !ventaja &&
+    !subeGradoFijo &&
+    !alt &&
+    conApuntado === t.condiciones
+  )
     return t;
-  const condiciones = conDescuentos([...(t.condiciones ?? []), ...extra], descuentos);
+  const condiciones = conDescuentos([...(conApuntado ?? []), ...extra], descuentos);
   return {
     ...conTextosEnTirada(t, textos),
-    ...((extra.length > 0 || descuentos.length > 0) && { condiciones }),
+    ...((extra.length > 0 || descuentos.length > 0 || conApuntado !== t.condiciones) && { condiciones }),
     ...(bonosTramo.length > 0 && { bonosTramo: [...(t.bonosTramo ?? []), ...bonosTramo] }),
-    ...(critico && { criticoFijo: { margen: critico.margen, fuente: critico.fuente } }),
+    ...(criticoFinal && { criticoFijo: criticoFinal }),
+    ...(subeGradoFijo && { subeGradoFijo }),
+    ...(alt && { habilidadAlternativa: { habilidad: alt.habilidad, especialidad: alt.especialidad, etiqueta: alt.etiqueta } }),
     ...(ventaja && { ventaja }),
   };
+}
+
+// Con Gran Puntería (éxito → crítico sin casilla en Apuntar), el selector "Apuntado" de los
+// ataques a distancia cuenta el éxito como crítico y el crítico natural baja la cobertura 2
+// niveles en total (acciones.ts, condicionApuntado). Sin ella, las mismas condiciones.
+function selectorApuntadoDeFicha(ficha: Pick<FichaResuelta, "extrasDotes">, condiciones: CondicionTirada[]): CondicionTirada[] {
+  const i = condiciones.findIndex((c) => c.id === ID_APUNTADO);
+  if (i < 0) return condiciones;
+  const gp = ficha.extrasDotes.grados.find(
+    (g) => g.alcance.tipo === "tiradaId" && g.alcance.id === ID_APUNTAR && g.margen === 0,
+  );
+  if (!gp) return condiciones;
+  return condiciones.map((c, j) => (j === i ? condicionApuntado(gp.fuente) : c));
 }
 
 // Reflejos Felinos: el contador de la tirada cuenta unidades de menos (varios se suman).

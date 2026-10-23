@@ -330,6 +330,31 @@ Detalle completo en `docs/sistema-y-combate.md`. Lo esencial:
   alerta visual; el 5 da cobertura total pero impide atacar. La de escudos no afecta a la
   percepción.
 
+### Tiradas fijas de habilidades `[FIRME · fuente/habilidades.md + S79-S83]`
+
+Filas del grupo Acciones (`rules/acciones.ts`, `ACCIONES`), construidas el 2026-10-23:
+
+- **Apuntar**: Perspicacia + Combate a Distancia, acción simple, dificultad 6 contra un
+  objetivo mediano (más cobertura y visibilidad; +1 por tamaño mayor, −1 por menor). Éxito:
+  +1 al siguiente ataque a distancia; crítico: además omite 1 nivel de cobertura. Sin
+  especialidad fija (la fila deja marcarla, `TODO(revisar)`).
+- **Carrera**: Reflejos + Atletismo (Carrera), dificultad 6, acción estándar o compleja.
+  Éxito +2 m, crítico +4 m, fallo nada, fallo crítico mueve la mitad; compleja, ×2. Los
+  metros van en la nota (no se calculan).
+- **Discernir mentiras**: Perspicacia + Actitud (Empatía), acción gratuita, dificultad según
+  contexto.
+- **Resistir distracción**: Perspicacia + Actitud (Empatía), enfrentada a la distracción
+  del rival (Expresión + Manipulación): si gana, sorprendido contra su primer ataque; con
+  crítico, desprevenido.
+- **Selector «Apuntado»** (No · Éxito · Crítico) en todo ataque con Combate a Distancia
+  (S81): Éxito +1; Crítico +1 y la nota "omite 1 nivel de cobertura" (la cobertura se sigue
+  restando a mano).
+- Dotes: *Velocista* (S80), *Gran Puntería* (S79), *Puntería Relámpago* y su *Mejorada* y
+  *Precisión Imperturbable* (textos en la nota de Apuntar), *Cazador Cazado* y *Vigilancia
+  Táctica* (S83). *Foveo-Sensorial* va con el selector (S82).
+- Pendientes de la misma tarea: Investigación, Rastreo y Subsistencia siguen en "Buscar /
+  percibir" (S36).
+
 ## 7. Salud, daño y estados `[FIRME · COMBATE]`
 
 **Puntos de golpe = 8 + Fortaleza · Puntos de fatiga = 8 + Voluntad.** Ambos bajan y ambos
@@ -470,9 +495,8 @@ aplicar o recalcular se aplica en la ficha; lo demás queda como texto.**
 - **Capa nueva: cambio de par** (usuario 2026-10-15, D2d): una dote cambia el aplicado y la
   habilidad con los que se tira (*Negociación Analítica*, *Cazador Cazado*, la segunda parte
   de *Vigilancia Táctica*: Perspicacia + Táctica en lugar de Empatía). No estaba entre las
-  capas aprobadas; Combate Sutil no es esta capa (va con su habilitador, D2b-2). Si la
-  tirada destino no existe todavía, espera a la tarea "Tiradas fijas que faltan según
-  habilidades.md" (`docs/tareas.md`).
+  capas aprobadas; Combate Sutil no es esta capa (va con su habilitador, D2b-2). *Cazador
+  Cazado* y *Vigilancia Táctica* se construyeron con sus tiradas fijas (2026-10-23, S83).
 
 - **Golpe Mejorado con Escudo**: se construye, casilla «Golpe letal» en el ataque con escudo
   que cambia el daño a letal (va con las casillas que tocan el daño).
@@ -652,7 +676,8 @@ o eran texto. Decidido:
   (mínimo 0), puñetazo y patada son contundentes; *Asalto Sigiloso* = Sigilo normal; *Golpe
   Entorpecedor* la debilidad vale un ataque; *Asesino*, *Desenfundado Rápido*, *Golpe
   Entorpecedor*: cada rama exige su requisito; *Táctica de Flanqueo* +3 melee o distancia;
-  *Dominio Elevado* vale en maniobras; *Gran Puntería* = acción Apuntar; *Precisión
+  *Dominio Elevado* vale en maniobras; *Gran Puntería* = acción Apuntar (construida
+  2026-10-23, §6 "Tiradas fijas"); *Precisión
   Imperturbable* Apuntar gratis pero se tira; *Tirador Avanzado* "de especialidad" = con una
   especialidad que se tenga; *Bioma Predilecto* subsistencia siempre en su bioma,
   iniciativa solo en combate, lista abierta, no repetible; *Descartar Teoría* repite con
@@ -1270,8 +1295,9 @@ al preparar su modelado:
   - **Mielinización:** casilla "Ahorro de fatiga" en las pruebas mentales: −1 al gasto de
     fatiga de la tirada (casillas de pago y, en un poder, el coste del poder), mínimo 0
     (usuario, 2026-10-22). "Una vez por escena" va en la nota hasta A4.
-  - **Foveo:** casilla "Tras Apuntar" (+1) en los ataques con Combate a Distancia. No existe
-    la acción Apuntar; no se engancha a nada de Gran Puntería.
+  - **Foveo:** +1 en los ataques con Combate a Distancia cuando el selector «Apuntado» no
+    está en "No" (S82; desde 2026-10-23, que existe la acción Apuntar). Antes era una casilla
+    "Tras Apuntar" suelta.
   - **Proyección** ("Con lenguaje") y **Matriz de Red** ("Repetir tras fallar"): ventaja en
     cualquier tirada de Actitud, con su nota (una vez por escena, hasta A4).
   - **Red Frontoparietal:** ventaja sin casilla en las tres de Iniciativa; la acción combinada
@@ -2206,6 +2232,11 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S76 | **Terminar escena (E1c).** "Terminar escena" del máster quita los estados con duración "fin de escena" a todos los personajes **en juego** (aprobados), en una sola acción del registro que se deshace entera (si a alguno le han vuelto a poner uno de esos estados, no se deshace ninguno). Quitar no resta vida (S75); las fotos de combate abiertas recalculan su máximo. Desde E1d también limpia los estados de escena de los **NPC** del combate abierto, sin registro (deshacer no se los devuelve). Recompensas: quitar XP o créditos que dejaría a alguien en negativo **no se hace para nadie** y se explica (antes se recortaba a 0). Motor: `quitarEstadosDeEscena` (`rules/vidaPorEstados.ts`), `planAjusteRecurso` (`rules/registro.ts`). | Decisión del usuario (2026-10-16); "solo aprobados" y "NPC fuera", del redactor. |
 | S77 | **Las rondas de los estados bajan al cerrar la vuelta (E1d).** "N rondas" se cuenta en vueltas de la cola, no en turnos: cada estado con duración en rondas pierde una cuando el turno pasa del último de la cola al primero (sube la ronda), para todos a la vez (jugadores en su ficha, NPC en su fila), y se cae al llegar a 0. Un turno normal no descuenta nada. Un estado de 1 ronda puesto a mitad de vuelta dura hasta el final de esa vuelta. Sustituye al criterio de la fase 6b (subtarea 2.6: cada turno de cualquiera descontaba una ronda). Al caerse uno, la foto de combate del jugador recalcula su máximo (S75). Motor: `pasarTurno` (`rules/turnos.ts`), `descontarDuracion`, `estadosAlCerrarVuelta`. | Decisión del usuario (2026-10-16). |
 | S78 | **Vida y fatiga a mano por el máster (pestaña Vida, tras E1d).** El máster elige daño o curación y una cantidad; el signo lo pone el modo y las tres categorías de daño restan igual (§7). Suelo 0; la curación topa en el máximo en reposo en la ficha (S74, el mismo `ajustarVida` del jugador) y en `pgMax`/`fatigaMax` en la foto de combate. En combate se ajusta la foto de cada fila (jugador o NPC); en la Mesa, la ficha, salvo que el jugador esté en un combate **en curso**: entonces su foto, la que enseña la Mesa (`TODO(revisar)`). Una acción a varios es una entrada `vida` del registro; deshacerla vuelve al "antes" de cada uno (recortado al tope de hoy) y **no se puede** si el valor actual ya no es el "después" registrado (hay que deshacer antes lo posterior); un objetivo que ya no existe o de un combate terminado se salta. La vista previa enseña el umbral de §7 que se cruza con su −N base (sin el ajuste de especie, §14.8). Motor: `rules/ajusteVida.ts`, `planAjusteVida`/`planDeshacerVida` (`rules/registro.ts`). | Decisión del usuario (2026-10-16: pestaña Vida, deshacer también para NPC); Mesa en combate y "solo mira el valor", del redactor. |
+| S79 | ***Gran Puntería*: el éxito al apuntar es crítico, sin casilla** (crítico con 0 éxitos en la fila Apuntar), y el texto "la cobertura baja 2 niveles" solo sale con **crítico natural** (6 éxitos o más). En el selector «Apuntado» del ataque, con la dote, "Éxito" lleva la nota de omitir 1 nivel de cobertura y "Crítico" la de **2 niveles en total** (salvo cobertura total), **no 3** (el 1 del crítico de Apuntar no se suma al 2 de la dote). El bono sigue siendo +1. | "Al apuntar" = la tirada de Apuntar (§9.5). Que el éxito convertido también omita 1 nivel y el "2 en total" son lectura nuestra, aprobada por el usuario (2026-10-23); preguntas de Gran Puntería en `docs/modelado-dotes.md` (Combate a Distancia), pendientes de Murillo. |
+| S80 | ***Velocista* en Carrera, siempre activo y sin casilla: fracaso → éxito y éxito → crítico, en un solo salto.** El fracaso que pasa a éxito queda con margen 0 y **no** llega a crítico; el fracaso crítico no cambia. "Al correr como acción estándar o compleja" es toda tirada de Carrera. | El texto dice "considera el fracaso como éxito y el éxito como éxito crítico"; encadenarlos convertiría todo fracaso en crítico. Decisión del usuario (2026-10-23). |
+| S81 | **Selector «Apuntado» en todos los ataques con Combate a Distancia**, para cualquier ficha (lo que salió en la acción Apuntar previa: No · Éxito · Crítico). La app no comprueba que se apuntara de verdad ni que el ataque sea antes del final del próximo turno: lo marca el jugador. | La regla de Apuntar (fuente/habilidades.md) da el bono al siguiente ataque; la app no lleva registro de acciones por turno. Decisión del usuario (2026-10-23). |
+| S82 | ***Foveo-Sensorial* "por puntería" = el selector «Apuntado» en Éxito o Crítico**: +1 al ataque a distancia (además del +1 de Apuntar), como bono por opción, sin casilla propia. | Antes era la casilla "Tras Apuntar" porque no existía la acción (§11.3). Decisión del usuario (2026-10-23). |
+| S83 | ***Cazador Cazado* y *Vigilancia Táctica*: casilla en la fila** (como Levitar: «Con Manipulación (Cazador Cazado)» en Discernir mentiras; «Con Táctica (Vigilancia Táctica)» en Resistir distracción) que cambia habilidad y especialidad; la tirada va entera si la ficha tiene esa especialidad y a la mitad si no. El aplicado (Perspicacia) no cambia. | La prosa da el par entero; las dos tiradas fijas van con Empatía, que es lo que sustituyen. |
 
 ## Conflictos detectados
 

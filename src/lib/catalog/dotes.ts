@@ -933,8 +933,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "detectar_mentiras"
         },
         "mecanismo": "sustitucion_aplicado",
-        "estado": "pendiente",
-        "bloqueoPor": "tiradas-fijas"
+        "estado": "construido"
       }
     ]
   },
@@ -2353,7 +2352,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         "tipo": "margen_critico",
         "alcance": "carrera",
         "valor": 0,
-        "condicion": "Corriendo (acción estándar o compleja)",
+        "condicion": null,
         "borrador": 1
       }
     ],
@@ -2367,8 +2366,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "carrera"
         },
         "mecanismo": "siempre_activo",
-        "estado": "pendiente",
-        "bloqueoPor": "tiradas-fijas"
+        "estado": "construido"
       },
       {
         "tipo": "numerico",
@@ -2376,9 +2374,8 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "accion_existente",
           "id": "carrera"
         },
-        "mecanismo": "eleccion_jugador",
-        "estado": "pendiente",
-        "bloqueoPor": "tiradas-fijas"
+        "mecanismo": "siempre_activo",
+        "estado": "construido"
       }
     ]
   },
@@ -5592,7 +5589,11 @@ export const DOTES: readonly DoteCatalogo[] = [
         "tipo": "texto",
         "lugar": "apuntar",
         "texto": "Crítico natural al apuntar: la cobertura del objetivo baja 2 niveles para tu ataque (salvo cobertura total).",
-        "condicion": "critico natural",
+        "condicion": null,
+        "grados": [
+          "critico"
+        ],
+        "criticoNatural": true,
         "porque": "tercero",
         "borrador": 1
       }
@@ -5607,8 +5608,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "apuntar"
         },
         "mecanismo": "siempre_activo",
-        "estado": "pendiente",
-        "bloqueoPor": "tiradas-fijas"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -5617,8 +5617,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "apuntar"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "tiradas-fijas"
+        "estado": "construido"
       }
     ]
   },
@@ -5663,8 +5662,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "apuntar"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "tiradas-fijas"
+        "estado": "construido"
       }
     ]
   },
@@ -5722,8 +5720,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "apuntar"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "tiradas-fijas"
+        "estado": "construido"
       },
       {
         "tipo": "texto",
@@ -5732,8 +5729,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "apuntar"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "tiradas-fijas"
+        "estado": "construido"
       }
     ]
   },
@@ -5783,8 +5779,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "apuntar"
         },
         "mecanismo": "nota_fija",
-        "estado": "pendiente",
-        "bloqueoPor": "tiradas-fijas"
+        "estado": "construido"
       }
     ]
   },
@@ -6007,8 +6002,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "resistir_distraccion"
         },
         "mecanismo": "sustitucion_aplicado",
-        "estado": "pendiente",
-        "bloqueoPor": "tiradas-fijas"
+        "estado": "construido"
       }
     ]
   },
@@ -7538,11 +7532,11 @@ export const DOTES: readonly DoteCatalogo[] = [
 
 // Recuento por tanda (lo escribe el generador):
 //   188 efectos (185 en el borrador)
-//   construidos: 90
-//   texto: 88
+//   construidos: 95
+//   texto: 93
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0
 //   pendientes D2c-2: 0
 //   pendientes D2d: 0
-//   pendientes tiradas-fijas: 10
+//   pendientes tiradas-fijas: 0

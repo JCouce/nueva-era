@@ -1013,6 +1013,7 @@ export function AccionesTab({
           dados,
           danioInfo,
           efectoCritico: tirada.efectoCritico,
+          efectoCriticoNatural: tirada.efectoCriticoNatural,
           efectos: tirada.efectos,
           poder: tirada.poder,
           vueloResuelto,

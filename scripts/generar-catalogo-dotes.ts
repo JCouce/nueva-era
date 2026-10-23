@@ -257,11 +257,17 @@ type Efecto = Record<string, unknown> & { tipo?: unknown; borrador: number };
 
 // Condiciones de texto que son el crítico de la propia tirada del lugar.
 const CONDICION_CRITICO = new Set(["critico", "Éxito crítico en la esquiva"]);
+// Y el crítico natural (sin la conversión éxito → crítico): Gran Puntería en Apuntar.
+const CONDICION_CRITICO_NATURAL = new Set(["critico natural"]);
 
 // Efectos que el borrador trae como texto y §9.3 manda modelar como efecto real
 // ("<id de dote>#<índice en el borrador>" → efecto v2, sin `borrador`).
 // Un array parte el efecto en varios (mismo `borrador`), p.ej. un texto en dos destinos.
 const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unknown>[]> = {
+  // Velocista: "al correr como acción estándar o compleja" es toda tirada de Carrera (la fila
+  // ya es eso), así que el éxito → crítico va sin casilla, como su fracaso → éxito (decisión
+  // del usuario, tiradas fijas 2026-10-23).
+  "dote_velocista#1": { tipo: "margen_critico", alcance: "carrera", valor: 0, condicion: null },
   // Imitación +2, +3 con Interpretación ≥ 3 (valor por umbral de ficha, D2d): una sola casilla
   // con el valor que toque (S38 resuelto). El texto capa_pendiente del umbral pasa a la tarjeta.
   "dote_imitacion#0": {
@@ -702,6 +708,11 @@ function normalizarEfectos(id: string, efectos: unknown): Efecto[] {
       e.grados = ["critico"];
       e.condicion = null;
     }
+    if (e.tipo === "texto" && typeof e.condicion === "string" && CONDICION_CRITICO_NATURAL.has(e.condicion)) {
+      e.grados = ["critico"];
+      e.criticoNatural = true;
+      e.condicion = null;
+    }
     if (e.tipo === "bono" && typeof e.condicion === "string") {
       const m = e.condicion.match(/^([a-z_]+):([a-z_]+)( \+ en especialidad)?$/);
       if (m) {
@@ -801,6 +812,21 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
         e.aplicado === "reflejos" &&
         e.habilidad === undefined &&
         e.especialidad === undefined) ||
+      // Tiradas fijas: cambio de grado sin casilla sobre una tirada fija sin especialidad en la
+      // etiqueta (Velocista, Gran Puntería; dotesEfectos.ts, `grados`).
+      (alcanceDestino?.tipo === "tiradaId" &&
+        destino?.tipo === "tirada" &&
+        !destino.especialidad &&
+        e.condicion === null &&
+        ((e.tipo === "sube_grado" && ((e.de === "fracaso" && e.a === "exito") || (e.de === "exito" && e.a === "critico"))) ||
+          e.tipo === "margen_critico")) ||
+      // Tiradas fijas: otra habilidad y especialidad con casilla en la fila (Cazador Cazado,
+      // Vigilancia Táctica; dotesEfectos.ts, `alternativas`).
+      (e.tipo === "cambia_par" &&
+        alcanceDestino?.tipo === "tiradaId" &&
+        typeof e.condicion === "string" &&
+        e.habilidad !== undefined &&
+        e.especialidad !== undefined) ||
       // D2d: casillas sobre una tirada que existe (rules/dotesEfectos.ts), con condición.
       (destino?.tipo === "tirada" &&
         typeof e.condicion === "string" &&

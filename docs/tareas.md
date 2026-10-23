@@ -17,8 +17,10 @@ razas, poderes, dotes, aumentos) de prosa a motor. Este archivo manda en el esta
 
 Sin valoración de prioridad aquí a propósito — se queda obsoleta en cuanto cambia el
 foco. Frentes abiertos, cada uno con su sección en Pendiente:
-- **Dotes**: D1–D2d y las dotes de NPC hechas; quedan la especialidad elegida en la tirada
-  y las tiradas fijas que faltan (10 efectos con `bloqueoPor: "tiradas-fijas"`).
+- **Dotes**: D1–D2d, las dotes de NPC y las tiradas fijas de Apuntar, Carrera, Discernir
+  mentiras y Resistir distracción hechas (0 efectos con `bloqueoPor: "tiradas-fijas"`);
+  quedan la especialidad elegida en la tirada y las tiradas propias de Investigación, Rastreo
+  y Subsistencia.
 - **Aumentos**: hecho (tandas A0-A7 commiteadas, 2026-10-23). Queda lo que espera a Murillo
   (preguntas de A4-A7, 5 implantes en proceso, extracción, tope de implantes, Shock) y la
   psiónica biológica (IRM).
@@ -1705,9 +1707,9 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
     (casillas al índice, bonos fijos como Modificador "dote", textos en `textosTirada`),
     `fuentesDeCapa1` con familia "dote". Supuestos S34-S38 (`sistema.md`).
   - **Recuento por tanda** (lo imprime `npm run gen-dotes` y va al pie de `dotes.ts`):
-    construidos 90 · texto 88 · pendientes D2b-1 0 · D2b-2 0 · D2c 0 · D2c-2 0 · D2d 0 ·
-    tiradas-fijas 10 (estos dependen de la tarea "Tiradas fijas que faltan", más abajo).
-    Antes de D2d: construidos 74 · texto 87 · D2d 17.
+    construidos 95 · texto 93 · pendientes D2b-1 0 · D2b-2 0 · D2c 0 · D2c-2 0 · D2d 0 ·
+    tiradas-fijas 0 (2026-10-23, tarea "Tiradas fijas que faltan", más abajo). Antes:
+    construidos 90 · texto 88 · tiradas-fijas 10. Antes de D2d: construidos 74 · texto 87 · D2d 17.
     Tras D2a era: construidos 20 · texto 38 · D2b-1 50. Tras D2b-1: construidos 41 · texto
     67 · D2b-2 20 · D2c 33. Tras D2b-2: construidos 45 · texto 78 · D2c 38. Tras D2c-1:
     construidos 72 · texto 81 · D2c-2 8.
@@ -1895,13 +1897,21 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
   Negociación el margen baja solo) y permite que las casillas de especialidad de las dotes
   (S35: Presencia Imponente, Intimidación, Investigación…) se apliquen solas en vez de
   marcarlas el jugador.
-- [ ] **Tiradas fijas que faltan según `docs/fuente/habilidades.md`**: Apuntar, discernir
-  mentiras (Perspicacia + Empatía), Carrera (Reflejos + Atletismo) y resistir una
-  distracción; y tiradas propias de Investigación, Rastreo y Subsistencia, que hoy van de
-  apaño a "Buscar / percibir" (S36). Los efectos de dote que esperan por ellas llevan
-  `bloqueoPor: "tiradas-fijas"` (10 hoy, entre ellos el cambio de par de *Vigilancia
-  Táctica*); la tarea se cierra cuando llegan a 0. Va junto a la integración de
-  especialidades.
+- [ ] **Tiradas fijas que faltan según `docs/fuente/habilidades.md`** (sigue abierta: falta
+  la segunda parte). Va junto a la integración de especialidades.
+  - [x] **Apuntar, Carrera, Discernir mentiras y Resistir distracción** (2026-10-23, sin
+    commit; `sistema.md` §6 "Tiradas fijas", S79-S83). Filas nuevas en `ACCIONES`
+    (`rules/acciones.ts`). Los 10 efectos de dote con `bloqueoPor: "tiradas-fijas"`, a 0:
+    *Velocista* (fracaso → éxito y éxito → crítico sin casilla, sin encadenar), *Gran
+    Puntería* (éxito → crítico en Apuntar y el texto de cobertura solo con crítico natural:
+    `Accion.efectoCriticoNatural`), *Puntería Relámpago*, su *Mejorada* y *Precisión
+    Imperturbable* (notas de Apuntar), *Cazador Cazado* y *Vigilancia Táctica* (casilla en la
+    fila, `habilidadAlternativa` como Levitar). Selector «Apuntado» (No · Éxito · Crítico) en
+    todos los ataques con Combate a Distancia, cambiado por *Gran Puntería*; *Foveo* deja la
+    casilla "Tras Apuntar" y pasa a +1 con el selector (`BonoPorTramo.condicion`). Tests en
+    `rules/tiradasFijas.test.ts`. Falta probarlo en el navegador.
+  - [ ] Tiradas propias de **Investigación, Rastreo y Subsistencia**, que hoy van de apaño a
+    "Buscar / percibir" (S36).
 
 ### Revisión de candidatas a UX ✅ (dotes, 2026-10-15: `sistema.md` §9.3; repetir en cada área nueva)
 

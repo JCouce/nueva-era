@@ -20,6 +20,12 @@
 //               Sutil → ataque_melee y bloquear_melee). Lo lee combate.ts al generar filas.
 //   descuentos  (D2c-1) contador de la tirada que cuenta unidades de menos (Reflejos Felinos:
 //               un atacante adicional menos en la esquiva). Lo pone conExtrasDeFicha.
+//   grados      (tiradas fijas) cambios de grado sin casilla en una tirada fija: fracaso → éxito
+//               (Velocista en Carrera) y crítico más fácil (Velocista; Gran Puntería en Apuntar,
+//               éxito → crítico = margen 0). Los pone conExtrasDeFicha (subeGradoFijo,
+//               criticoFijo). No se encadenan: el fracaso que pasa a éxito no llega a crítico.
+//   alternativas (tiradas fijas) otra habilidad/especialidad con casilla en la fila (Cazador
+//               Cazado, Vigilancia Táctica): Accion.habilidadAlternativa, como Levitar.
 //
 // Casillas de D2d: los efectos de una dote con el mismo destino y la misma condición van a UNA
 // casilla, que junta lo que hace cada uno (condiciones.ts, toggle): bono (con el valor según la
@@ -34,10 +40,11 @@
 //
 //   dotesActivas     las compradas que dan efecto: sin requisito roto y sin las que
 //                    sustituye una mejorada que también se tiene ("vale la mejor")
-//   efectosDeDotes   → { casillas, modificadores, textos, bonosTramo, criticos, permisos, descuentos }
+//   efectosDeDotes   → { casillas, modificadores, textos, bonosTramo, criticos, permisos, descuentos,
+//                        grados, alternativas }
 //   casillasDeDotes / textosDeDotes / modificadoresDeDotes / permisosDeDotes   atajos sobre una ficha
-import { ATRIBUTOS } from "./atributos";
-import { HABILIDADES } from "./habilidades";
+import { ATRIBUTOS, type AplicadoId } from "./atributos";
+import { HABILIDADES, type HabilidadId } from "./habilidades";
 import {
   cumpleRequisitoDote,
   dotesConRequisitoRoto,
@@ -49,7 +56,7 @@ import {
 import { dotePorId, mismaDote, normalizarNombre, type DoteComprada } from "./dotesCompradas";
 import { DESTINOS_DOTES, OPCIONES_DE_TRAMO } from "../catalog/dotesDestinos";
 import { DOTES } from "../catalog/dotes";
-import { especialidadPorId, type EspecialidadId } from "../catalog/especialidades";
+import { especialidadPorId, etiquetaEspecialidad, type EspecialidadId } from "../catalog/especialidades";
 import type { DoteCatalogo, EfectoDote, ValorDote } from "../catalog/dotesTipos";
 import type { BonoPorTramo, CondicionTirada, EfectoDanioCasilla, OpcionCondicion, TramoDistancia } from "./condiciones";
 import type { AlcanceModificador, FamiliaArma, ModificadorConFuente } from "./modificadores";
@@ -102,6 +109,19 @@ export const SIN_PERMISOS_DE_DOTES: PermisosDeDotes = { familias: [], sutil: [] 
 // Descuento en un contador de la tirada (Reflejos Felinos): `contador` es el id de la condición.
 export type DescuentoDeDote = { alcance: AlcanceModificador; contador: string; unidades: number; fuente: string };
 
+// Cambio de grado fijo, sin casilla (tiradas fijas): fracaso → éxito y/o crítico con `margen`.
+export type GradoFijoDeDote = { alcance: AlcanceModificador; fuente: string; subeGrado?: true; margen?: number };
+
+// Otra habilidad y especialidad con la casilla de la fila (Cazador Cazado: Manipulación en
+// Discernir mentiras). `aplicado`: el de la dote; solo vale si es el de la tirada.
+export type AlternativaDeDote = {
+  alcance: AlcanceModificador;
+  aplicado?: AplicadoId;
+  habilidad: HabilidadId;
+  especialidad: EspecialidadId;
+  etiqueta: string;
+};
+
 export type EfectosDeDotes = {
   // Casillas con alcance, al mismo índice que las del equipo y la especie.
   casillas: CondicionTirada[];
@@ -112,6 +132,8 @@ export type EfectosDeDotes = {
   criticos: CriticoDeDote[];
   permisos: PermisosDeDotes;
   descuentos: DescuentoDeDote[];
+  grados: GradoFijoDeDote[];
+  alternativas: AlternativaDeDote[];
 };
 
 export const SIN_EFECTOS_DE_DOTES: EfectosDeDotes = {
@@ -122,6 +144,8 @@ export const SIN_EFECTOS_DE_DOTES: EfectosDeDotes = {
   criticos: [],
   permisos: SIN_PERMISOS_DE_DOTES,
   descuentos: [],
+  grados: [],
+  alternativas: [],
 };
 
 const TRAMOS: readonly TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
@@ -232,6 +256,8 @@ export function efectosDeDotes(
   const bonosTramo: BonoTramoDeDote[] = [];
   const criticos: CriticoDeDote[] = [];
   const descuentos: DescuentoDeDote[] = [];
+  const grados: GradoFijoDeDote[] = [];
+  const alternativas: AlternativaDeDote[] = [];
   const familias = new Set<FamiliaArma>();
   const sutil = new Set<FamiliaArma>();
   const compradas = activas.map((a) => a.compra);
@@ -273,6 +299,22 @@ export function efectosDeDotes(
       if (dote.motor[i]?.estado !== "construido") return;
       // Requisito por rama: el efecto de la rama que la ficha no cumple no sale (§9.5).
       if ("requisitoAlcance" in e && e.requisitoAlcance && valores && !cumpleRequisitoDote(e.requisitoAlcance, valores, compradas)) return;
+      // Sin condición y sobre una tirada sin especialidad en la etiqueta: cambio de grado fijo
+      // (Velocista, Gran Puntería), sin casilla.
+      const destinoFijo = "alcance" in e ? DESTINOS_DOTES[e.alcance] : undefined;
+      const fijo = destinoFijo?.tipo === "tirada" && !destinoFijo.especialidad && "condicion" in e && e.condicion === null;
+      if (fijo && e.tipo === "sube_grado" && e.de === "fracaso" && e.a === "exito") {
+        grados.push({ alcance: destinoFijo.alcance, fuente, subeGrado: true });
+        return;
+      }
+      if (fijo && e.tipo === "sube_grado" && e.de === "exito" && e.a === "critico") {
+        grados.push({ alcance: destinoFijo.alcance, fuente, margen: 0 });
+        return;
+      }
+      if (fijo && e.tipo === "margen_critico") {
+        grados.push({ alcance: destinoFijo.alcance, fuente, margen: e.valor });
+        return;
+      }
       if (e.tipo === "margen_critico" && DESTINOS_DOTES[e.alcance]?.tipo === "tirada") {
         // Equilibrista (0: cualquier éxito es crítico) y Especialidad Médica (5), con casilla.
         const c = casillaPara(e, i);
@@ -298,6 +340,18 @@ export function efectosDeDotes(
       // una familia de arma, que es lo que hace el interruptor Sutil de siempre.
       // Otro aplicado con casilla (Negociación Analítica: Perspicacia en vez de Expresión).
       if (e.tipo === "cambia_par" && DESTINOS_DOTES[e.alcance]?.tipo === "tirada" && !e.alcance.startsWith("familia:")) {
+        // Otra habilidad y especialidad (tiradas fijas): la casilla de la fila, no del modal.
+        const destino = DESTINOS_DOTES[e.alcance];
+        if (e.habilidad && e.especialidad && destino?.tipo === "tirada") {
+          alternativas.push({
+            alcance: destino.alcance,
+            ...(e.aplicado && { aplicado: e.aplicado }),
+            habilidad: e.habilidad,
+            especialidad: e.especialidad,
+            etiqueta: `Con ${etiquetaEspecialidad(e.especialidad)} (${fuente})`,
+          });
+          return;
+        }
         const c = e.aplicado && !e.habilidad && !e.especialidad ? casillaPara(e, i) : null;
         if (c) c.aplicado = e.aplicado;
         return;
@@ -411,6 +465,11 @@ export function efectosDeDotes(
         const destino = DESTINOS_DOTES[e.lugar];
         const texto = e.condicion ? `${e.condicion}: ${e.texto}` : e.texto;
         const soloEnCritico = e.grados?.includes("critico") ?? false;
+        // Crítico natural (Gran Puntería en Apuntar): a su campo aparte, que solo sale sin conversión.
+        if (e.criticoNatural && destino?.tipo === "tirada" && destino.alcance.tipo !== "familiaArma") {
+          for (const id of destino.textos) textos.push({ en: { tipo: "tiradaId", id }, texto, fuente, soloEnCritico: true, soloEnCriticoNatural: true });
+          return;
+        }
         // Poder (D2c-2): por el id de su acción; lo recoge prepararPoder (usoPoder.ts).
         if (destino?.tipo === "poder") {
           textos.push({ en: { tipo: "tiradaId", id: destino.id }, texto, fuente, soloEnCritico });
@@ -432,6 +491,8 @@ export function efectosDeDotes(
     criticos,
     permisos: { familias: [...familias], sutil: [...sutil] },
     descuentos,
+    grados,
+    alternativas,
   };
 }
 

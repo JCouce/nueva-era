@@ -417,20 +417,18 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "percepcion", valor: 1 }],
-    // No existe la acción Apuntar (dotesDestinos: Gran Puntería): casilla en el ataque.
-    casillas: [
+    // "Por puntería": +1 en el ataque a distancia con el selector "Apuntado" en Éxito o Crítico
+    // (la acción Apuntar previa salió bien; acciones.ts, condicionApuntado).
+    bonosTramo: [
       {
-        id: "aum_foveo_apuntar",
-        tipo: "toggle",
-        etiqueta: "Tras Apuntar",
         alcance: { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combate_distancia" },
-        valorActivo: 1,
+        bono: { condicion: "apuntado", porTramo: { exito: 1, critico: 1 } },
       },
-      ...casillasCobertura("aum_foveo", 1, false),
     ],
+    casillas: [...casillasCobertura("aum_foveo", 1, false)],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "bono_tramo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],

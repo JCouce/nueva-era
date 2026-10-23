@@ -156,7 +156,7 @@ describe("integridad del catálogo de aumentos", () => {
     aum_mielinizacion_central: 1,
     aum_red_frontoparietal: 2, // ventaja en Iniciativa (A2b) y la acción combinada (A4a)
     aum_prefrontal_aumentada: 2,
-    aum_optimizacion_foveo_sensorial: 3, // Tras Apuntar (A2b) y cobertura visual (A3)
+    aum_optimizacion_foveo_sensorial: 3, // +1 con «Apuntado» (bono por opción) y cobertura visual (A3)
     // A3: compensación de fatiga en las pruebas mentales.
     aum_neurogenesis_hipocampal: 1,
     aum_consciencia_omnidireccional: 2,
