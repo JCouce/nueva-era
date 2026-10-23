@@ -828,7 +828,7 @@ construir (dos pasadas: rediseño, luego revisión).
 
 ## Pendiente
 
-### Pestaña Acciones: pestañas y favoritas ⬜ (usuario, 2026-10-23; fase 1 hecha)
+### Pestaña Acciones: pestañas y favoritas ✅ (usuario, 2026-10-23; T-005 y T-006)
 Dentro de Acciones, una barra con **Básicas** (filas sin dado: `FilaUsar`, Bloquear daño, `FilaInfo`, poderes sin
 tirada) y **Tiradas** (`FilaTirada`, bloqueadas incluidas, Reparar/Fabricar y poderes con tirada). Un poder se
 clasifica con `prepararPoder` y `SELECCION_PODER_VACIA`, igual que lo pinta `FilaPoder`. Cada pestaña conserva los
