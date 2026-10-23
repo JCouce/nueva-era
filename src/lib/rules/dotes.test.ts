@@ -97,9 +97,10 @@ describe("requisitos", () => {
   });
 
   test("aplicado: la media de los dos básicos", () => {
-    // Apoyo: Expresión 1 (Carácter + Inteligencia, media hacia arriba).
+    // Apoyo: Expresión 1 (Carácter + Inteligencia, media hacia abajo).
     assert.equal(cumple(ficha(), "dote_apoyo", 1), false);
-    assert.equal(cumple(conAtributos(ficha(), { caracter: 1 }), "dote_apoyo", 1), true);
+    assert.equal(cumple(conAtributos(ficha(), { caracter: 1 }), "dote_apoyo", 1), false); // ⌊(1+0)/2⌋ = 0
+    assert.equal(cumple(conAtributos(ficha(), { caracter: 1, inteligencia: 1 }), "dote_apoyo", 1), true);
   });
 
   test("habilidad: el nivel entero, no la mitad fuera de especialidad", () => {

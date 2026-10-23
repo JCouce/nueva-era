@@ -153,7 +153,7 @@ describe("ataque con arma: en especialidad sola, sin selector", () => {
     assert.deepEqual(m.especialidadArma, { id: "espadas_y_dagas", label: "Espadas y Dagas", tiene: true });
   });
 
-  test("sin ella: la mitad redondeando arriba, aunque la fila dijera que sí", () => {
+  test("sin ella: la mitad redondeando abajo, aunque la fila dijera que sí", () => {
     const m = montar(conEspada(["pelea"]), true);
     assert.equal(m.habilidad?.valor, 2);
     assert.equal(m.enEspecialidad, false);

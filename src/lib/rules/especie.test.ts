@@ -145,9 +145,13 @@ describe("especieDeFicha: noble de cada linaje (casta + linaje se suman)", () =>
   });
 
   test("el bono llega a la salud: Ílkrem Fuerza +1 sube Fortaleza", () => {
-    // Fortaleza = ceil((1 + 0)/2) = 1 → vida 11.
-    const ilkrem = ficha("manduk", { casta: "noble", linaje: "ilkrem" });
+    // Con Aguante 1 comprado: Fortaleza = floor((1 + 1)/2) = 1 → vida 11; sin el +1, floor(1/2) = 0 → 10.
+    // (Con Aguante 0, floor((1 + 0)/2) = 0 y el bono no se vería.)
+    const base = ficha("manduk", { casta: "noble", linaje: "ilkrem" });
+    const ilkrem = { ...base, atributos: { ...base.atributos, aguante: 1 } };
     assert.equal(salud(ilkrem, modificadoresActivos(ilkrem)).vida, 11);
+    const sinLinaje = { ...ilkrem, especieOpciones: { casta: "noble" } };
+    assert.equal(salud(sinLinaje, modificadoresActivos(sinLinaje)).vida, 10);
   });
 
   test("un linaje sin casta noble no cuenta (opción vieja en la ficha)", () => {

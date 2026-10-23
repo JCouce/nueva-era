@@ -70,7 +70,7 @@ describe("los modificadores de especie llegan a los números", () => {
 
   test("el bono de atributo arrastra a los aplicados y a la salud", () => {
     const s = conEspecie("arkoru");
-    // Fuerza +2 entra en Fortaleza (fue+agu): ceil(2/2) = 1.
+    // Fuerza +2 entra en Fortaleza (fue+agu): floor(2/2) = 1.
     assert.equal(aplicado(s, "fortaleza", modificadoresActivos(s)), 1);
     assert.equal(salud(s, modificadoresActivos(s)).vida, 11); // 10 + 1
     // Voluntad (agu+car) no la toca: la fatiga se queda igual.

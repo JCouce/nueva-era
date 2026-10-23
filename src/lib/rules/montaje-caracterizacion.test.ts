@@ -371,38 +371,38 @@ function legacyPoder(c: (typeof CASOS_PODER)[number]) {
 
 const ESPERADO: Record<string, unknown> = {
   "salvación de Fortaleza sin especie": {
-    fila: { aplicado: 2, habilidad: null, ajustes: [], total: 2 },
-    modBase: 2,
+    fila: { aplicado: 1, habilidad: null, ajustes: [], total: 1 },
+    modBase: 1,
     elecciones: [
       {
-        total: 2,
-        desglose: [{ etiqueta: "Fortaleza", valor: 2 }],
+        total: 1,
+        desglose: [{ etiqueta: "Fortaleza", valor: 1 }],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 2, circunstancial: 0, total: 9, margen: 2, exito: true, critico: false },
+        resultado: { modificador: 1, circunstancial: 0, total: 8, margen: 1, exito: true, critico: false },
       },
     ],
   },
   "Defensa sin especie, dos atacantes adicionales y circunstancial": {
-    fila: { aplicado: 1, habilidad: 1, ajustes: [], total: 2 },
-    modBase: 2,
+    fila: { aplicado: 0, habilidad: 1, ajustes: [], total: 1 },
+    modBase: 1,
     elecciones: [
       {
-        total: 2,
+        total: 1,
         desglose: [
-          { etiqueta: "Reflejos", valor: 1 },
+          { etiqueta: "Reflejos", valor: 0 },
           { etiqueta: "Atletismo", valor: 1 },
           { etiqueta: "Atacantes adicionales esta ronda ×0", valor: -0 }, // 0 × −1: el contador a cero da −0 (se pinta "+0")
           { etiqueta: "Tengo cobertura (+2) (sin activar)", valor: 0 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 2, circunstancial: 0, total: 14, margen: 9, exito: true, critico: true },
+        resultado: { modificador: 1, circunstancial: 0, total: 13, margen: 8, exito: true, critico: true },
       },
       {
-        total: -1,
+        total: -2,
         desglose: [
-          { etiqueta: "Reflejos", valor: 1 },
+          { etiqueta: "Reflejos", valor: 0 },
           { etiqueta: "Atletismo", valor: 1 },
           { etiqueta: "Atacantes adicionales esta ronda ×2", valor: -2 },
           { etiqueta: "Tengo cobertura (+2) (sin activar)", valor: 0 },
@@ -410,18 +410,18 @@ const ESPERADO: Record<string, unknown> = {
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 0, circunstancial: -1, total: 0, margen: -7, exito: false, critico: true },
+        resultado: { modificador: -1, circunstancial: -1, total: -1, margen: -8, exito: false, critico: true },
       },
     ],
   },
   "Buscar con y sin especialidad, con Visor Nocturno": {
-    fila: { aplicado: 1, habilidad: 3, ajustes: [], total: 4 },
-    modBase: 4,
+    fila: { aplicado: 0, habilidad: 3, ajustes: [], total: 3 },
+    modBase: 3,
     elecciones: [
       {
-        total: 4,
+        total: 3,
         desglose: [
-          { etiqueta: "Perspicacia", valor: 1 },
+          { etiqueta: "Perspicacia", valor: 0 },
           { etiqueta: "Exploración (especialidad)", valor: 3 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
@@ -429,12 +429,12 @@ const ESPERADO: Record<string, unknown> = {
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 4, circunstancial: 0, total: 9, margen: -1, exito: false, critico: false },
+        resultado: { modificador: 3, circunstancial: 0, total: 8, margen: -2, exito: false, critico: false },
       },
       {
-        total: 6,
+        total: 5,
         desglose: [
-          { etiqueta: "Perspicacia", valor: 1 },
+          { etiqueta: "Perspicacia", valor: 0 },
           { etiqueta: "Exploración (especialidad)", valor: 3 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
           { etiqueta: "Visor Nocturno activo", valor: 0 },
@@ -448,18 +448,18 @@ const ESPERADO: Record<string, unknown> = {
           },
         ],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 4, circunstancial: 2, total: 15, margen: null, exito: null, critico: false },
+        resultado: { modificador: 3, circunstancial: 2, total: 14, margen: null, exito: null, critico: false },
       },
     ],
   },
   "Buscar sin especialidad": {
-    fila: { aplicado: 1, habilidad: 1, ajustes: [], total: 2 },
-    modBase: 2,
+    fila: { aplicado: 0, habilidad: 1, ajustes: [], total: 1 },
+    modBase: 1,
     elecciones: [
       {
-        total: 2,
+        total: 1,
         desglose: [
-          { etiqueta: "Perspicacia", valor: 1 },
+          { etiqueta: "Perspicacia", valor: 0 },
           { etiqueta: "Exploración", valor: 1 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
@@ -467,31 +467,31 @@ const ESPERADO: Record<string, unknown> = {
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 2, circunstancial: 0, total: 8, margen: 1, exito: true, critico: false },
+        resultado: { modificador: 1, circunstancial: 0, total: 7, margen: 0, exito: true, critico: false },
       },
     ],
   },
   "salvación de Fortaleza con traje (alcance tiradaId)": {
-    fila: { aplicado: 2, habilidad: null, ajustes: [], total: 2 },
-    modBase: 2,
+    fila: { aplicado: 1, habilidad: null, ajustes: [], total: 1 },
+    modBase: 1,
     elecciones: [
       {
-        total: 3,
-        desglose: [{ etiqueta: "Fortaleza", valor: 2 }, { etiqueta: "Traje Ultra Ligero", valor: 1 }],
+        total: 2,
+        desglose: [{ etiqueta: "Fortaleza", valor: 1 }, { etiqueta: "Traje Ultra Ligero", valor: 1 }],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 3, circunstancial: 0, total: 6, margen: -4, exito: false, critico: false },
+        resultado: { modificador: 2, circunstancial: 0, total: 5, margen: -5, exito: false, critico: false },
       },
     ],
   },
   "fusil con lanzagranadas, mira y retroceso: tramos y modos": {
-    fila: { aplicado: 1, habilidad: 1, ajustes: [-1], total: 1 },
-    modBase: 1,
+    fila: { aplicado: 0, habilidad: 1, ajustes: [-1], total: 0 },
+    modBase: 0,
     elecciones: [
       {
-        total: -1,
+        total: -2,
         desglose: [
-          { etiqueta: "Reflejos", valor: 1 },
+          { etiqueta: "Reflejos", valor: 0 },
           { etiqueta: "Combate a Distancia", valor: 1 },
           { etiqueta: "Lanzagranadas Integrado", valor: -1 },
           { etiqueta: "Distancia: Media (200-400 m)", valor: 0 },
@@ -501,27 +501,27 @@ const ESPERADO: Record<string, unknown> = {
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: -1, circunstancial: 0, total: 7, margen: 0, exito: true, critico: false },
-      },
-      {
-        total: -1,
-        desglose: [
-          { etiqueta: "Reflejos", valor: 1 },
-          { etiqueta: "Combate a Distancia", valor: 1 },
-          { etiqueta: "Lanzagranadas Integrado", valor: -1 },
-          { etiqueta: "Distancia: Media (200-400 m)", valor: 0 },
-          { etiqueta: "Modo de disparo: Simple", valor: -3 },
-          { etiqueta: "Apuntado: No", valor: 0 },
-          { etiqueta: "Mira Telescópica", valor: 1 },
-        ],
-        notas: [],
-        margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: -1, circunstancial: 0, total: 7, margen: 0, exito: true, critico: false },
+        resultado: { modificador: -2, circunstancial: 0, total: 6, margen: -1, exito: false, critico: false },
       },
       {
         total: -2,
         desglose: [
-          { etiqueta: "Reflejos", valor: 1 },
+          { etiqueta: "Reflejos", valor: 0 },
+          { etiqueta: "Combate a Distancia", valor: 1 },
+          { etiqueta: "Lanzagranadas Integrado", valor: -1 },
+          { etiqueta: "Distancia: Media (200-400 m)", valor: 0 },
+          { etiqueta: "Modo de disparo: Simple", valor: -3 },
+          { etiqueta: "Apuntado: No", valor: 0 },
+          { etiqueta: "Mira Telescópica", valor: 1 },
+        ],
+        notas: [],
+        margenes: { criticoExito: 6, criticoFallo: 6 },
+        resultado: { modificador: -2, circunstancial: 0, total: 6, margen: -1, exito: false, critico: false },
+      },
+      {
+        total: -3,
+        desglose: [
+          { etiqueta: "Reflejos", valor: 0 },
           { etiqueta: "Combate a Distancia", valor: 1 },
           { etiqueta: "Lanzagranadas Integrado", valor: -1 },
           { etiqueta: "Sistema de Retroceso 1", valor: 1 },
@@ -533,35 +533,18 @@ const ESPERADO: Record<string, unknown> = {
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: -3, circunstancial: 1, total: 10, margen: 3, exito: true, critico: false },
+        resultado: { modificador: -4, circunstancial: 1, total: 9, margen: 2, exito: true, critico: false },
       },
     ],
   },
   "puñetazo sin Sutil": {
-    fila: { aplicado: 2, habilidad: 1, ajustes: [], total: 3 },
-    modBase: 3,
-    elecciones: [
-      {
-        total: 3,
-        desglose: [
-          { etiqueta: "Potencia", valor: 2 },
-          { etiqueta: "Combate Melee", valor: 1 },
-          { etiqueta: "Modo de ataque: Simple", valor: 0 },
-        ],
-        notas: [],
-        margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 3, circunstancial: 0, total: 13, margen: 6, exito: true, critico: true },
-      },
-    ],
-  },
-  "puñetazo con Sutil": {
     fila: { aplicado: 1, habilidad: 1, ajustes: [], total: 2 },
     modBase: 2,
     elecciones: [
       {
         total: 2,
         desglose: [
-          { etiqueta: "Reflejos", valor: 1 },
+          { etiqueta: "Potencia", valor: 1 },
           { etiqueta: "Combate Melee", valor: 1 },
           { etiqueta: "Modo de ataque: Simple", valor: 0 },
         ],
@@ -571,14 +554,31 @@ const ESPERADO: Record<string, unknown> = {
       },
     ],
   },
-  "Tratar heridas con la VTM nv4: normal y complejo": {
-    fila: { aplicado: 1, habilidad: 4, ajustes: [], total: 5 },
-    modBase: 5,
+  "puñetazo con Sutil": {
+    fila: { aplicado: 0, habilidad: 1, ajustes: [], total: 1 },
+    modBase: 1,
     elecciones: [
       {
-        total: 8,
+        total: 1,
         desglose: [
-          { etiqueta: "Perspicacia", valor: 1 },
+          { etiqueta: "Reflejos", valor: 0 },
+          { etiqueta: "Combate Melee", valor: 1 },
+          { etiqueta: "Modo de ataque: Simple", valor: 0 },
+        ],
+        notas: [],
+        margenes: { criticoExito: 6, criticoFallo: 6 },
+        resultado: { modificador: 1, circunstancial: 0, total: 11, margen: 4, exito: true, critico: false },
+      },
+    ],
+  },
+  "Tratar heridas con la VTM nv4: normal y complejo": {
+    fila: { aplicado: 0, habilidad: 4, ajustes: [], total: 4 },
+    modBase: 4,
+    elecciones: [
+      {
+        total: 7,
+        desglose: [
+          { etiqueta: "Perspicacia", valor: 0 },
           { etiqueta: "Biociencia (especialidad)", valor: 4 },
           { etiqueta: "Valija Táctica Médica (VTM) 4", valor: 3 },
           { etiqueta: "Diagnóstico profundo (1 minuto, VTM nv3) (sin activar)", valor: 0 },
@@ -586,12 +586,12 @@ const ESPERADO: Record<string, unknown> = {
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 8, circunstancial: 0, total: 10, margen: 3, exito: true, critico: false },
+        resultado: { modificador: 7, circunstancial: 0, total: 9, margen: 2, exito: true, critico: false },
       },
       {
-        total: 8,
+        total: 7,
         desglose: [
-          { etiqueta: "Perspicacia", valor: 1 },
+          { etiqueta: "Perspicacia", valor: 0 },
           { etiqueta: "Biociencia (especialidad)", valor: 4 },
           { etiqueta: "Valija Táctica Médica (VTM) 4", valor: 3 },
           { etiqueta: "Diagnóstico profundo (1 minuto, VTM nv3) (sin activar)", valor: 0 },
@@ -604,12 +604,12 @@ const ESPERADO: Record<string, unknown> = {
           },
         ],
         margenes: { criticoExito: 0, criticoFallo: 6 },
-        resultado: { modificador: 8, circunstancial: 0, total: 10, margen: 3, exito: true, critico: true },
+        resultado: { modificador: 7, circunstancial: 0, total: 9, margen: 2, exito: true, critico: true },
       },
       {
-        total: 8,
+        total: 7,
         desglose: [
-          { etiqueta: "Perspicacia", valor: 1 },
+          { etiqueta: "Perspicacia", valor: 0 },
           { etiqueta: "Biociencia (especialidad)", valor: 4 },
           { etiqueta: "Valija Táctica Médica (VTM) 4", valor: 3 },
           { etiqueta: "Diagnóstico profundo (1 minuto, VTM nv3) (sin activar)", valor: 0 },
@@ -622,18 +622,18 @@ const ESPERADO: Record<string, unknown> = {
           },
         ],
         margenes: { criticoExito: 0, criticoFallo: 6 },
-        resultado: { modificador: 8, circunstancial: 0, total: 9, margen: -4, exito: false, critico: false },
+        resultado: { modificador: 7, circunstancial: 0, total: 8, margen: -5, exito: false, critico: false },
       },
     ],
   },
   "Defensa con especie y estados (Aturdido, alcance grupo)": {
-    fila: { aplicado: 1, habilidad: 1, ajustes: [], total: 2 },
-    modBase: 2,
+    fila: { aplicado: 0, habilidad: 1, ajustes: [], total: 1 },
+    modBase: 1,
     elecciones: [
       {
-        total: -1,
+        total: -2,
         desglose: [
-          { etiqueta: "Reflejos", valor: 1 },
+          { etiqueta: "Reflejos", valor: 0 },
           { etiqueta: "Atletismo", valor: 1 },
           { etiqueta: "Enfermedad", valor: -1 },
           { etiqueta: "Aturdido", valor: -1 },
@@ -642,110 +642,110 @@ const ESPERADO: Record<string, unknown> = {
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: -1, circunstancial: 0, total: 5, margen: -2, exito: false, critico: false },
+        resultado: { modificador: -2, circunstancial: 0, total: 4, margen: -3, exito: false, critico: false },
       },
     ],
   },
   "salvación de Reflejos con especie y estados": {
-    fila: { aplicado: 1, habilidad: null, ajustes: [], total: 1 },
-    modBase: 1,
+    fila: { aplicado: 0, habilidad: null, ajustes: [], total: 0 },
+    modBase: 0,
     elecciones: [
       {
-        total: 1,
+        total: 0,
         desglose: [
-          { etiqueta: "Reflejos", valor: 1 },
+          { etiqueta: "Reflejos", valor: 0 },
           { etiqueta: "Traje Ultra Ligero", valor: 1 },
           { etiqueta: "Enfermedad", valor: -1 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 1, circunstancial: 0, total: 12, margen: 7, exito: true, critico: true },
+        resultado: { modificador: 0, circunstancial: 0, total: 11, margen: 6, exito: true, critico: true },
       },
     ],
   },
   "puñetazo Sutil con especie y estados": {
-    fila: { aplicado: 1, habilidad: 1, ajustes: [], total: 2 },
-    modBase: 2,
+    fila: { aplicado: 0, habilidad: 1, ajustes: [], total: 1 },
+    modBase: 1,
     elecciones: [
       {
-        total: 1,
+        total: 0,
         desglose: [
-          { etiqueta: "Reflejos", valor: 1 },
+          { etiqueta: "Reflejos", valor: 0 },
           { etiqueta: "Combate Melee", valor: 1 },
           { etiqueta: "Enfermedad", valor: -1 },
           { etiqueta: "Modo de ataque: Simple", valor: 0 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 1, circunstancial: 0, total: 5, margen: -2, exito: false, critico: false },
+        resultado: { modificador: 0, circunstancial: 0, total: 4, margen: -3, exito: false, critico: false },
       },
     ],
   },
   "Fabricar con especie y estados": {
     fila: null,
-    modBase: 2,
+    modBase: 1,
     elecciones: [
       {
-        total: 2,
+        total: 1,
         desglose: [
-          { etiqueta: "Perspicacia", valor: 1 },
+          { etiqueta: "Perspicacia", valor: 0 },
           { etiqueta: "Tecnociencia", valor: 1 },
           { etiqueta: "Enfermedad", valor: -1 },
           { etiqueta: "Modificador circunstancial", valor: 1 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 1, circunstancial: 1, total: 8, margen: -1, exito: false, critico: false },
+        resultado: { modificador: 0, circunstancial: 1, total: 7, margen: -2, exito: false, critico: false },
       },
     ],
   },
   "Reparar sin especie": {
     fila: null,
-    modBase: 2,
+    modBase: 1,
     elecciones: [
       {
-        total: 2,
-        desglose: [{ etiqueta: "Perspicacia", valor: 1 }, { etiqueta: "Tecnociencia", valor: 1 }],
+        total: 1,
+        desglose: [{ etiqueta: "Perspicacia", valor: 0 }, { etiqueta: "Tecnociencia", valor: 1 }],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 2, circunstancial: 0, total: 14, margen: 11, exito: true, critico: true },
+        resultado: { modificador: 1, circunstancial: 0, total: 13, margen: 10, exito: true, critico: true },
       },
     ],
   },
 };
 const ESPERADO_PODER: Record<string, unknown> = {
   "Impulso nv2 sin casillas": {
-    fila: { aplicado: 1, habilidad: 1, ajustes: [], total: 2 },
+    fila: { aplicado: 0, habilidad: 1, ajustes: [], total: 1 },
     modal: {
-      total: 1,
+      total: 0,
       desglose: [
-        { etiqueta: "Perspicacia", valor: 1 },
+        { etiqueta: "Perspicacia", valor: 0 },
         { etiqueta: "Tecnociencia", valor: 1 },
         { etiqueta: "Enfermedad", valor: -1 },
       ],
       notas: [],
     },
-    resultado: { modificador: 1, circunstancial: 0, total: 7, margen: 0, exito: true, critico: false },
+    resultado: { modificador: 0, circunstancial: 0, total: 6, margen: -1, exito: false, critico: false },
   },
   "Impulso nv2 bajo Xovromium (ajuste fijo de casilla)": {
-    fila: { aplicado: 1, habilidad: 1, ajustes: [1], total: 3 },
+    fila: { aplicado: 0, habilidad: 1, ajustes: [1], total: 2 },
     modal: {
-      total: 2,
+      total: 1,
       desglose: [
-        { etiqueta: "Perspicacia", valor: 1 },
+        { etiqueta: "Perspicacia", valor: 0 },
         { etiqueta: "Tecnociencia", valor: 1 },
         { etiqueta: "Xovromium", valor: 1 },
         { etiqueta: "Enfermedad", valor: -1 },
       ],
       notas: [],
     },
-    resultado: { modificador: 2, circunstancial: 0, total: 8, margen: 1, exito: true, critico: false },
+    resultado: { modificador: 1, circunstancial: 0, total: 7, margen: 0, exito: true, critico: false },
   },
 };
 const ESPERADO_SOBRECARGA = {
-  sinEspecie: { modificador: 2, circunstancial: 0, total: 7, margen: -1, exito: false, critico: false },
-  equipada: { modificador: 3, circunstancial: 0, total: 8, margen: 0, exito: true, critico: false },
-  especieYEstados: { modificador: 0, circunstancial: 0, total: 12, margen: 2, exito: true, critico: false },
+  sinEspecie: { modificador: 1, circunstancial: 0, total: 6, margen: -2, exito: false, critico: false },
+  equipada: { modificador: 2, circunstancial: 0, total: 7, margen: -1, exito: false, critico: false },
+  especieYEstados: { modificador: -1, circunstancial: 0, total: 11, margen: 1, exito: true, critico: false },
 };
 
 describe("caracterización: lo que montaba la UI antes de montarTirada", () => {

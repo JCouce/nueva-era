@@ -35,27 +35,32 @@ function ficha(especieId: string | null, fuerza: number, exo: boolean, opciones:
 // --- Caracterización: fijada con el código de antes de E3 --------------------
 // Sin especie y especies sin efectos aquí (Riux, Humanos): estos números no se
 // mueven con E3. Si uno cambia, es un bug.
+// S11 (2026-10-23): los aplicados pasan a redondear hacia abajo. Potencia = ⌊(Fuerza + 2)/2⌋:
+// Fuerza −1 → 0 (base 2), Fuerza 0 → 1 (base 3), Fuerza 3 → 2 (base 4). Con el ceil de
+// antes, Fuerza −1 y 0 daban la misma Potencia 1 y compartían números.
 
+const MOV_SIN_EXO_FM1 = { bonoExoesqueleto: 0, carrera: 18, saltoVertical: 30, saltoHorizontal: 140, escalada: 5, nado: 5 };
 const MOV_SIN_EXO = { bonoExoesqueleto: 0, carrera: 19, saltoVertical: 45, saltoHorizontal: 160, escalada: 5, nado: 5 };
-const MOV_SIN_EXO_F3 = { bonoExoesqueleto: 0, carrera: 21, saltoVertical: 75, saltoHorizontal: 200, escalada: 6, nado: 6 };
+const MOV_SIN_EXO_F3 = { bonoExoesqueleto: 0, carrera: 20, saltoVertical: 60, saltoHorizontal: 180, escalada: 6, nado: 6 };
+const MOV_EXO_FM1 = { bonoExoesqueleto: 4, carrera: 22, saltoVertical: 90, saltoHorizontal: 220, escalada: 7, nado: 7 };
 const MOV_EXO = { bonoExoesqueleto: 4, carrera: 23, saltoVertical: 105, saltoHorizontal: 240, escalada: 7, nado: 7 };
-const MOV_EXO_F3 = { bonoExoesqueleto: 4, carrera: 25, saltoVertical: 135, saltoHorizontal: 280, escalada: 8, nado: 8 };
+const MOV_EXO_F3 = { bonoExoesqueleto: 4, carrera: 24, saltoVertical: 120, saltoHorizontal: 260, escalada: 8, nado: 8 };
 
 const CARACTERIZACION: { especieId: string | null; fuerza: number; exo: boolean; mov: typeof MOV_EXO; carga: number }[] = [
-  { especieId: null, fuerza: -1, exo: false, mov: MOV_SIN_EXO, carga: 10 },
-  { especieId: null, fuerza: -1, exo: true, mov: MOV_EXO, carga: 60 },
+  { especieId: null, fuerza: -1, exo: false, mov: MOV_SIN_EXO_FM1, carga: 10 },
+  { especieId: null, fuerza: -1, exo: true, mov: MOV_EXO_FM1, carga: 60 },
   { especieId: null, fuerza: 0, exo: false, mov: MOV_SIN_EXO, carga: 15 },
   { especieId: null, fuerza: 0, exo: true, mov: MOV_EXO, carga: 80 },
   { especieId: null, fuerza: 3, exo: false, mov: MOV_SIN_EXO_F3, carga: 60 },
   { especieId: null, fuerza: 3, exo: true, mov: MOV_EXO_F3, carga: 140 },
   // Riux: Fuerza −1 y Agilidad +1 (la Potencia no cambia con estos números).
-  { especieId: "riux", fuerza: -1, exo: false, mov: MOV_SIN_EXO, carga: 5 },
-  { especieId: "riux", fuerza: -1, exo: true, mov: MOV_EXO, carga: 40 },
+  { especieId: "riux", fuerza: -1, exo: false, mov: MOV_SIN_EXO_FM1, carga: 5 },
+  { especieId: "riux", fuerza: -1, exo: true, mov: MOV_EXO_FM1, carga: 40 },
   { especieId: "riux", fuerza: 0, exo: false, mov: MOV_SIN_EXO, carga: 10 },
   { especieId: "riux", fuerza: 0, exo: true, mov: MOV_EXO, carga: 60 },
   { especieId: "riux", fuerza: 3, exo: false, mov: MOV_SIN_EXO_F3, carga: 40 },
   { especieId: "riux", fuerza: 3, exo: true, mov: MOV_EXO_F3, carga: 120 },
-  { especieId: "humano", fuerza: -1, exo: false, mov: MOV_SIN_EXO, carga: 10 },
+  { especieId: "humano", fuerza: -1, exo: false, mov: MOV_SIN_EXO_FM1, carga: 10 },
   { especieId: "humano", fuerza: 0, exo: true, mov: MOV_EXO, carga: 80 },
   { especieId: "humano", fuerza: 3, exo: false, mov: MOV_SIN_EXO_F3, carga: 60 },
 ];
@@ -126,15 +131,15 @@ describe("resolución de especie (especie.ts)", () => {
 
 describe("movimiento por especie (§14.7)", () => {
   const CASOS: { nombre: string; s: Sheet; mov: ReturnType<typeof movimiento> }[] = [
-    // Arköru: Fuerza 2, Agilidad 1 → Potencia 2; base 4 (8 con exoesqueleto).
-    { nombre: "Arköru", s: ficha("arkoru", 0, false), mov: { bonoExoesqueleto: 0, carrera: 20, saltoVertical: 72, saltoHorizontal: 200, escalada: 10, nado: 4 } },
-    { nombre: "Arköru con exoesqueleto", s: ficha("arkoru", 0, true), mov: { bonoExoesqueleto: 4, carrera: 24, saltoVertical: 144, saltoHorizontal: 300, escalada: 12, nado: 6 } },
+    // Arköru: Fuerza 2, Agilidad 1 → Potencia ⌊3/2⌋ = 1; base 3 (7 con exoesqueleto).
+    { nombre: "Arköru", s: ficha("arkoru", 0, false), mov: { bonoExoesqueleto: 0, carrera: 19, saltoVertical: 54, saltoHorizontal: 175, escalada: 9, nado: 3 } },
+    { nombre: "Arköru con exoesqueleto", s: ficha("arkoru", 0, true), mov: { bonoExoesqueleto: 4, carrera: 23, saltoVertical: 126, saltoHorizontal: 275, escalada: 11, nado: 5 } },
     // Arianyi: Fuerza −1, Agilidad 3 → Potencia 1; base 3 (7).
     { nombre: "Arianyi", s: ficha("arianyi", 0, false), mov: { bonoExoesqueleto: 0, carrera: 19, saltoVertical: 45, saltoHorizontal: 160, escalada: 5, nado: 9 } },
     { nombre: "Arianyi con exoesqueleto", s: ficha("arianyi", 0, true), mov: { bonoExoesqueleto: 4, carrera: 23, saltoVertical: 105, saltoHorizontal: 240, escalada: 7, nado: 11 } },
-    // Noble Zimethroni: Agilidad 3 → Potencia 2; base 4 (8). +4 / +200 / +200 / +2 / +2.
-    { nombre: "Noble Zimethroni", s: ficha("manduk", 0, false, ZIME), mov: { bonoExoesqueleto: 0, carrera: 24, saltoVertical: 260, saltoHorizontal: 380, escalada: 8, nado: 8 } },
-    { nombre: "Noble Zimethroni con exoesqueleto", s: ficha("manduk", 0, true, ZIME), mov: { bonoExoesqueleto: 4, carrera: 28, saltoVertical: 320, saltoHorizontal: 460, escalada: 10, nado: 10 } },
+    // Noble Zimethroni: Agilidad 3 → Potencia ⌊3/2⌋ = 1; base 3 (7). +4 / +200 / +200 / +2 / +2.
+    { nombre: "Noble Zimethroni", s: ficha("manduk", 0, false, ZIME), mov: { bonoExoesqueleto: 0, carrera: 23, saltoVertical: 245, saltoHorizontal: 360, escalada: 7, nado: 7 } },
+    { nombre: "Noble Zimethroni con exoesqueleto", s: ficha("manduk", 0, true, ZIME), mov: { bonoExoesqueleto: 4, carrera: 27, saltoVertical: 305, saltoHorizontal: 440, escalada: 9, nado: 9 } },
   ];
   for (const { nombre, s, mov } of CASOS) {
     test(nombre, () => assert.deepEqual(resuelta(s).movimiento, mov));
@@ -148,12 +153,13 @@ describe("movimiento por especie (§14.7)", () => {
       especieOpciones: opciones,
       atributos: { ...d.atributos, fuerza },
     });
-    // Arköru: Fuerza 2 y Agilidad −1 → Potencia 1, base 0; con Fuerza −1 comprada, base −1.
-    assert.deepEqual(resuelta(conFuerza("arkoru", 0)).movimiento, { bonoExoesqueleto: 0, carrera: 16, saltoVertical: 15, saltoHorizontal: 100, escalada: 8, nado: 2 });
-    assert.deepEqual(resuelta(conFuerza("arkoru", -1)).movimiento, { bonoExoesqueleto: 0, carrera: 15, saltoVertical: 15, saltoHorizontal: 75, escalada: 7, nado: 1 });
-    // Zimethroni: Agilidad 1 → Potencia 1, base 0; con Fuerza −1, Potencia 0, base −1.
-    assert.deepEqual(resuelta(conFuerza("manduk", 0, ZIME)).movimiento, { bonoExoesqueleto: 0, carrera: 20, saltoVertical: 215, saltoHorizontal: 300, escalada: 6, nado: 6 });
-    assert.deepEqual(resuelta(conFuerza("manduk", -1, ZIME)).movimiento, { bonoExoesqueleto: 0, carrera: 19, saltoVertical: 215, saltoHorizontal: 280, escalada: 5, nado: 5 });
+    // Arköru: Fuerza 1 comprada (3 con la especie) y Agilidad −1 → Potencia ⌊2/2⌋ = 1, base 0;
+    // con Fuerza 0 comprada, Potencia ⌊1/2⌋ = 0, base −1.
+    assert.deepEqual(resuelta(conFuerza("arkoru", 1)).movimiento, { bonoExoesqueleto: 0, carrera: 16, saltoVertical: 15, saltoHorizontal: 100, escalada: 8, nado: 2 });
+    assert.deepEqual(resuelta(conFuerza("arkoru", 0)).movimiento, { bonoExoesqueleto: 0, carrera: 15, saltoVertical: 15, saltoHorizontal: 75, escalada: 7, nado: 1 });
+    // Zimethroni: Fuerza 1 y Agilidad 1 → Potencia 1, base 0; con Fuerza 0, Potencia ⌊1/2⌋ = 0, base −1.
+    assert.deepEqual(resuelta(conFuerza("manduk", 1, ZIME)).movimiento, { bonoExoesqueleto: 0, carrera: 20, saltoVertical: 215, saltoHorizontal: 300, escalada: 6, nado: 6 });
+    assert.deepEqual(resuelta(conFuerza("manduk", 0, ZIME)).movimiento, { bonoExoesqueleto: 0, carrera: 19, saltoVertical: 215, saltoHorizontal: 280, escalada: 5, nado: 5 });
   });
 });
 
@@ -227,7 +233,7 @@ describe("NPC en modo libre: le llegan los derivados de especie (§14.3)", () =>
 
   test("el Arköru NPC recibe de verdad lo suyo", () => {
     const npc = resuelta(ficha("arkoru", 0, false), true);
-    assert.equal(npc.movimiento.saltoVertical, 72);
+    assert.equal(npc.movimiento.saltoVertical, 54);
     assert.equal(npc.cargaMaxima, 48);
     assert.deepEqual(npc.blindaje.armaduraNatural, { valor: 1, fuente: "Arköru" });
   });

@@ -104,7 +104,7 @@ describe("modificador de una tirada", () => {
   const ficha = (): Sheet => {
     let s = conPresupuesto();
     s = setAtributoValue(s, "agilidad", 2);
-    s = setAtributoValue(s, "percepcion", 2); // reflejos = ceil((2+2)/2) = 2
+    s = setAtributoValue(s, "percepcion", 2); // reflejos = floor((2+2)/2) = 2
     s = setHabilidadValue(s, "combate_distancia", 3, AJUSTE_NEUTRO);
     return s;
   };
@@ -123,7 +123,7 @@ describe("modificador de una tirada", () => {
   });
 
   test("una habilidad sin entrenar resta 1", () => {
-    const s = setAtributoValue(conPresupuesto(), "agilidad", 2); // reflejos ceil((2+0)/2)=1
+    const s = setAtributoValue(conPresupuesto(), "agilidad", 2); // reflejos floor((2+0)/2)=1
     const m = modificadorAccion(s, buscar("sigilo"), false, modificadoresActivos(s));
     assert.equal(m.habilidad, -1);
     assert.equal(m.total, 0);
@@ -132,10 +132,10 @@ describe("modificador de una tirada", () => {
   test("una salvación solo usa el aplicado", () => {
     let s = conPresupuesto();
     s = setAtributoValue(s, "fuerza", 3);
-    s = setAtributoValue(s, "aguante", 2); // fortaleza = ceil((3+2)/2) = 3
+    s = setAtributoValue(s, "aguante", 2); // fortaleza = floor((3+2)/2) = 2
     const m = modificadorAccion(s, buscar("salv_fortaleza"), false, modificadoresActivos(s));
     assert.equal(m.habilidad, null);
-    assert.equal(m.total, 3);
+    assert.equal(m.total, 2);
   });
 
   test("la especialidad declarada se refleja en el modificador", () => {
@@ -160,8 +160,8 @@ describe("modificador de una tirada", () => {
   // que ni siquiera coincide con lo que el jugador acaba tirando.
   test("un mods extra (p. ej. estados de combate activos) se suma al aplicado", () => {
     let s = conPresupuesto();
-    s = setAtributoValue(s, "fuerza", 2);
-    s = setAtributoValue(s, "agilidad", 1); // potencia = ceil((2+1)/2) = 2
+    s = setAtributoValue(s, "fuerza", 3);
+    s = setAtributoValue(s, "agilidad", 1); // potencia = floor((3+1)/2) = 2
     const sinEstado = modificadorAccion(s, buscar("atletismo"), false, modificadoresActivos(s));
     assert.equal(sinEstado.aplicado, 2);
 
@@ -169,7 +169,7 @@ describe("modificador de una tirada", () => {
       { estadoId: "enfermedad", gradoId: "nivel_1", rondasRestantes: null }, // Fuerza -1
     ]);
     const conEstado = modificadorAccion(s, buscar("atletismo"), false, mods);
-    assert.equal(conEstado.aplicado, 1); // potencia = ceil((1+1)/2) = 1
+    assert.equal(conEstado.aplicado, 1); // potencia = floor((2+1)/2) = 1
   });
 });
 

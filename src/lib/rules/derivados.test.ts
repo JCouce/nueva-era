@@ -33,14 +33,14 @@ function ficha(patch: {
 }
 
 describe("atributos aplicados", () => {
-  test("son la media de sus dos básicos, redondeando hacia arriba (HOJA2)", () => {
+  test("son la media de sus dos básicos, redondeando hacia abajo (HOJA2)", () => {
     const s = ficha({ atributos: { fuerza: 3, aguante: 2, agilidad: 1 } });
-    assert.equal(aplicado(s, "fortaleza", modificadoresActivos(s)), 3); // ceil((3+2)/2)
-    assert.equal(aplicado(s, "potencia", modificadoresActivos(s)), 2); // ceil((3+1)/2)
+    assert.equal(aplicado(s, "fortaleza", modificadoresActivos(s)), 2); // floor((3+2)/2)
+    assert.equal(aplicado(s, "potencia", modificadoresActivos(s)), 2); // floor((3+1)/2)
   });
 
   test("cada básico alimenta exactamente dos aplicados", () => {
-    const solo = ficha({ atributos: { percepcion: 1 } });
+    const solo = ficha({ atributos: { percepcion: 2 } }); // con 1, floor((1+0)/2) = 0 y no tocaría nada
     const d = aplicados(solo, modificadoresActivos(solo));
     const tocados = Object.entries(d).filter(([, v]) => v !== 0);
     assert.deepEqual(
@@ -51,8 +51,8 @@ describe("atributos aplicados", () => {
 
   test("un atributo a -1 arrastra a los aplicados", () => {
     const s = ficha({ atributos: { caracter: -1, aguante: 2 } });
-    assert.equal(aplicado(s, "voluntad", modificadoresActivos(s)), 1); // ceil((2-1)/2)
-    assert.equal(aplicado(s, "expresion", modificadoresActivos(s)), 0); // ceil((-1+0)/2)
+    assert.equal(aplicado(s, "voluntad", modificadoresActivos(s)), 0); // floor((2-1)/2)
+    assert.equal(aplicado(s, "expresion", modificadoresActivos(s)), -1); // floor((-1+0)/2)
   });
 });
 
@@ -91,7 +91,7 @@ describe("desglose de un aplicado", () => {
     const s = ficha({ atributos: { fuerza: 1, aguante: 2 }, especieId: "arkoru" });
     // Fortaleza = media(Fuerza, Aguante); Fuerza ya lleva el +2 de Arköru
     assert.deepEqual(desgloseAplicado(s, "fortaleza", modificadoresActivos(s)), {
-      total: 3, // ceil((3+2)/2)
+      total: 2, // floor((3+2)/2)
       fuentes: [
         { etiqueta: "Fuerza", valor: 3 },
         { etiqueta: "Aguante", valor: 2 },
@@ -108,13 +108,13 @@ describe("salud", () => {
 
   test("vida = 10 + fortaleza, fatiga = 10 + voluntad", () => {
     const s = ficha({ atributos: { fuerza: 3, aguante: 2, caracter: 1 } });
-    assert.equal(salud(s, modificadoresActivos(s)).vida, 13); // 10 + ceil((3+2)/2)
-    assert.equal(salud(s, modificadoresActivos(s)).fatiga, 12); // 10 + ceil((2+1)/2)
+    assert.equal(salud(s, modificadoresActivos(s)).vida, 12); // 10 + floor((3+2)/2)
+    assert.equal(salud(s, modificadoresActivos(s)).fatiga, 11); // 10 + floor((2+1)/2)
   });
 
   test("con aplicados negativos la salud baja de 10", () => {
     const s = ficha({ atributos: { fuerza: -1, aguante: -1, caracter: -1 } });
-    assert.equal(salud(s, modificadoresActivos(s)).vida, 9); // 10 + ceil((-1-1)/2)
+    assert.equal(salud(s, modificadoresActivos(s)).vida, 9); // 10 + floor((-1-1)/2)
     assert.equal(salud(s, modificadoresActivos(s)).fatiga, 9);
   });
 });
@@ -126,10 +126,10 @@ describe("alerta (percepción pasiva, C4 resuelto: Exploración sustituye a Supe
 
   test("6 + perspicacia + exploración entera, no la mitad fuera de especialidad", () => {
     const s = ficha({
-      atributos: { percepcion: 2, inteligencia: 2 }, // perspicacia = ceil((2+2)/2) = 2
+      atributos: { percepcion: 2, inteligencia: 2 }, // perspicacia = floor((2+2)/2) = 2
       habilidades: { exploracion: { valor: 3, especialidades: [] } },
     });
-    assert.equal(alerta(s, modificadoresActivos(s)), 11); // 6 + 2 + 3, no 6 + 2 + ceil(3/2)
+    assert.equal(alerta(s, modificadoresActivos(s)), 11); // 6 + 2 + 3, no 6 + 2 + floor(3/2)
   });
 });
 
@@ -146,7 +146,7 @@ describe("movimiento (HOJA2: constantes nuevas)", () => {
 
   test("las cinco fórmulas con base 8", () => {
     const s = ficha({
-      atributos: { fuerza: 4, agilidad: 4 }, // potencia = ceil((4+4)/2) = 4
+      atributos: { fuerza: 4, agilidad: 4 }, // potencia = floor((4+4)/2) = 4
       habilidades: { atletismo: { valor: 4, especialidades: [] } },
     });
     const m = movimiento(s, modificadoresActivos(s), FORMULA_MOVIMIENTO_GENERAL); // base = 4 + 4 = 8
@@ -159,7 +159,7 @@ describe("movimiento (HOJA2: constantes nuevas)", () => {
 
   test("la escalada redondea hacia abajo con base impar", () => {
     const s = ficha({
-      atributos: { fuerza: 1, agilidad: 2 }, // potencia = ceil((1+2)/2) = 2
+      atributos: { fuerza: 2, agilidad: 2 }, // potencia = floor((2+2)/2) = 2
       habilidades: { atletismo: { valor: 1, especialidades: [] } },
     });
     assert.equal(movimiento(s, modificadoresActivos(s), FORMULA_MOVIMIENTO_GENERAL).escalada, 5); // 4 + floor(3/2)
@@ -168,7 +168,7 @@ describe("movimiento (HOJA2: constantes nuevas)", () => {
   test("el exoesqueleto duplica su bono en las 5 fórmulas (supuesto S10)", () => {
     // Armadura Pesada admite exoesqueleto hasta nivel 4.
     let s = ficha({
-      atributos: { fuerza: 3, agilidad: 2 }, // potencia = ceil((3+2)/2) = 3
+      atributos: { fuerza: 3, agilidad: 2 }, // potencia = floor((3+2)/2) = 2
       habilidades: { atletismo: { valor: 3, especialidades: [] } },
     });
     s = equipar(s, { instanciaId: "a1", catalogoId: "armadura_pesada" });
@@ -178,12 +178,12 @@ describe("movimiento (HOJA2: constantes nuevas)", () => {
       nivel: 2,
       instaladoEnId: "a1",
     });
-    const m = movimiento(s, modificadoresActivos(s), FORMULA_MOVIMIENTO_GENERAL); // base = 3 (potencia) + 4 (2×nivel 2) + 3 (atletismo) = 10
-    assert.equal(m.carrera, 26); // 16 + 10
-    assert.equal(m.saltoVertical, 150); // 15 * 10
-    assert.equal(m.saltoHorizontal, 300); // 100 + 10*20
-    assert.equal(m.escalada, 9); // 4 + floor(10/2)
-    assert.equal(m.nado, 9);
+    const m = movimiento(s, modificadoresActivos(s), FORMULA_MOVIMIENTO_GENERAL); // base = 2 (potencia) + 4 (2×nivel 2) + 3 (atletismo) = 9
+    assert.equal(m.carrera, 25); // 16 + 9
+    assert.equal(m.saltoVertical, 135); // 15 * 9
+    assert.equal(m.saltoHorizontal, 280); // 100 + 9*20
+    assert.equal(m.escalada, 8); // 4 + floor(9/2)
+    assert.equal(m.nado, 8);
 
     // El bono no debe filtrarse a ningún otro sitio: ni a la Fuerza que se
     // muestra en Atributos, ni a Fortaleza/Vida.
@@ -191,7 +191,7 @@ describe("movimiento (HOJA2: constantes nuevas)", () => {
       total: 3,
       fuentes: [{ etiqueta: "Base", valor: 3 }],
     });
-    assert.equal(salud(s, modificadoresActivos(s)).vida, 10 + 2); // Fortaleza = ceil((3+0)/2), sin exoesqueleto
+    assert.equal(salud(s, modificadoresActivos(s)).vida, 10 + 1); // Fortaleza = floor((3+0)/2), sin exoesqueleto
   });
 
   test("sin exoesqueleto no cambia nada (regresión)", () => {
@@ -199,7 +199,7 @@ describe("movimiento (HOJA2: constantes nuevas)", () => {
       atributos: { fuerza: 3, agilidad: 2 },
       habilidades: { atletismo: { valor: 3, especialidades: [] } },
     });
-    assert.equal(movimiento(s, modificadoresActivos(s), FORMULA_MOVIMIENTO_GENERAL).carrera, 22); // 16 + 6 (potencia 3 + atletismo 3)
+    assert.equal(movimiento(s, modificadoresActivos(s), FORMULA_MOVIMIENTO_GENERAL).carrera, 21); // 16 + 5 (potencia 2 + atletismo 3)
   });
 });
 

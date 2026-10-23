@@ -152,14 +152,15 @@ describe("Brazo Biónico: casilla «Con el brazo biónico»", () => {
   });
 
   test("nivel 1: marcada, la Potencia baja con la Agilidad del brazo; el daño no cambia (misma Fuerza) y sigue no letal", () => {
-    const s = con(conBrazo(ficha({ fuerza: 2, agilidad: 3 }), 1), "pelea_punetazo");
+    // Agilidad 4: con la media hacia abajo, el −1 del brazo solo se nota si la suma tuya es par.
+    const s = con(conBrazo(ficha({ fuerza: 2, agilidad: 4 }), 1), "pelea_punetazo");
     const t = fila(s, "Golpear con Puñetazo")!;
     const sin = montar(s, t, false);
     const conB = montar(s, t, true);
-    assert.equal(sin.aplicado.valor, 3); // ⌈(2+3)/2⌉
-    assert.equal(conB.aplicado.valor, 2); // ⌈(2+2)/2⌉, aunque sea menor (R4)
+    assert.equal(sin.aplicado.valor, 3); // ⌊(2+4)/2⌋
+    assert.equal(conB.aplicado.valor, 2); // ⌊(2+3)/2⌋, aunque sea menor (R4)
     assert.equal(conB.modificador, sin.modificador - 1);
-    assert.equal(conB.desglose[0].etiqueta, "Potencia · Brazo Biónico 1: Fuerza 2 (tuya 2), Agilidad 2 (tuya 3)");
+    assert.equal(conB.desglose[0].etiqueta, "Potencia · Brazo Biónico 1: Fuerza 2 (tuya 2), Agilidad 3 (tuya 4)");
     assert.deepEqual(conB.danio.ajustes, []);
     assert.equal(conB.danio.categoria, null);
   });
@@ -168,7 +169,7 @@ describe("Brazo Biónico: casilla «Con el brazo biónico»", () => {
     const s = con(conBrazo(ficha({ fuerza: 2, agilidad: 3 }), 4, "fuerte"), "pelea_punetazo");
     const t = fila(s, "Golpear con Puñetazo")!;
     const m = montar(s, t, true);
-    assert.equal(m.aplicado.valor, 5); // ⌈(6+3)/2⌉
+    assert.equal(m.aplicado.valor, 4); // ⌊(6+3)/2⌋; la tuya, ⌊(2+3)/2⌋ = 2
     assert.deepEqual(m.danio.ajustes, [{ valor: 4, fuente: "Brazo Biónico 4 (Modelo Fuerte): Fuerza 6 (tuya 2)" }]);
     assert.equal(m.danio.categoria?.a, "Letal");
     // Base del Puñetazo simple: Fuerza del usuario (2) + 4 del brazo = 6, letal.
@@ -194,7 +195,7 @@ describe("Brazo Biónico: casilla «Con el brazo biónico»", () => {
     const m = montar(s, t, true, true);
     assert.equal(m.aplicado.id, "reflejos");
     assert.equal(m.aplicado.valor, 1); // Agilidad del brazo 1 (igual) + Percepción 1
-    // Potencia: tuya ⌈(1+1)/2⌉ = 1; del brazo ⌈(5+1)/2⌉ = 3.
+    // Potencia: tuya ⌊(1+1)/2⌋ = 1; del brazo ⌊(5+1)/2⌋ = 3.
     assert.deepEqual(m.danio.ajustes, [{ valor: 2, fuente: "Brazo Biónico 4 (Modelo Fuerte): Potencia 3 (tuya 1)" }]);
   });
 
@@ -203,7 +204,7 @@ describe("Brazo Biónico: casilla «Con el brazo biónico»", () => {
     const t = ataques(s).find((x) => x.id.startsWith("ataque_fuego_"))!;
     const m = montar(s, t, true);
     assert.equal(montar(s, t, false).aplicado.valor, 2);
-    assert.equal(m.aplicado.valor, 4); // ⌈(5+2)/2⌉
+    assert.equal(m.aplicado.valor, 3); // ⌊(5+2)/2⌋
     assert.deepEqual(m.danio.ajustes, []);
   });
 
@@ -213,7 +214,7 @@ describe("Brazo Biónico: casilla «Con el brazo biónico»", () => {
     const t = fila(s, "Golpear con Puñetazo", [neuro])!;
     assert.equal(montar(s, t, false, false, [neuro]).aplicado.valor, 3); // 3 y 3 con la Neuroprótesis
     const m = montar(s, t, true, false, [neuro]);
-    assert.equal(m.aplicado.valor, 2); // brazo: Fuerza 2, Agilidad 1
+    assert.equal(m.aplicado.valor, 1); // brazo: Fuerza 2, Agilidad 1 → ⌊3/2⌋, por debajo hasta de la base sin activable (2)
     assert.deepEqual(m.danio.ajustes, [{ valor: -1, fuente: "Brazo Biónico 1: Fuerza 2 (tuya 3)" }]);
   });
 });
@@ -237,7 +238,7 @@ describe("Brazo Biónico: «Bloquear con el brazo biónico»", () => {
     const t = bloqueo(s)!;
     assert.equal(casillaDe(t), undefined);
     const m = montarTirada(resolver(s), t, eleccionSinTocar(t, false));
-    assert.equal(m.aplicado.valor, 3); // ⌈(5+1)/2⌉; la tuya, 1
+    assert.equal(m.aplicado.valor, 3); // ⌊(5+1)/2⌋; la tuya, 1
     assert.equal(m.desglose[0].etiqueta, "Potencia · Brazo Biónico 4 (Modelo Fuerte): Fuerza 5 (tuya 1), Agilidad 1 (tuya 1)");
   });
 });
@@ -322,8 +323,8 @@ describe("Brazo Biónico: casilla en «Bloquear con X» (A6b)", () => {
     let s = conDotes(conBrazo(ficha({ fuerza: 1, agilidad: 1 }), 4, "fuerte"), "dote_bloqueo");
     s = con(s, "corta_tonfa_porra");
     const t = bloqueoDe(s, ultima(s))!;
-    assert.equal(montar(s, t, false).aplicado.valor, 1); // ⌈(1+1)/2⌉
-    assert.equal(montar(s, t, true).aplicado.valor, 3); // ⌈(5+1)/2⌉
+    assert.equal(montar(s, t, false).aplicado.valor, 1); // ⌊(1+1)/2⌋
+    assert.equal(montar(s, t, true).aplicado.valor, 3); // ⌊(5+1)/2⌋
   });
 
   test("lanzar un arma arrojadiza sigue sin casilla", () => {
@@ -381,7 +382,7 @@ describe("Brazo Biónico: arma incorporada (A6b)", () => {
     assert.ok(golpe.extremidad);
     assert.match(golpe.nota!, /Incorporada en el Brazo Biónico: desenfundado gratis, no te la pueden desarmar, cuenta para la carga\./);
     const m = montarTirada(resolver(s), golpe, eleccionSinTocar(golpe, false, false));
-    assert.equal(m.aplicado.valor, 3); // ⌈(5+1)/2⌉, sin marcar nada
+    assert.equal(m.aplicado.valor, 3); // ⌊(5+1)/2⌋, sin marcar nada
     assert.equal(m.danio.ajustes.length, 1); // Fuerza 5 del brazo frente a la tuya 1
     assert.equal(m.danio.ajustes[0].valor, 4);
     const bloqueo = bloqueoDe(s, tonfa)!;

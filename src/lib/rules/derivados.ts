@@ -74,12 +74,10 @@ export function desgloseAtributo(
 }
 
 // HOJA2: un Aplicado es la media de sus dos básicos, no la suma — redondeo
-// hacia arriba (S11, decisión del usuario: mismo criterio que ya usaba el
-// motor para habilidades fuera de especialidad).
+// hacia abajo (S11, decisión del usuario 2026-10-23: mismo criterio que la
+// habilidad fuera de especialidad).
 function media(a: number, b: number): number {
-  // `|| 0` normaliza el -0 que da Math.ceil(-0.5): mismo valor, pero
-  // Object.is(-0, 0) es false y eso confunde a assert.strict más adelante.
-  return Math.ceil((a + b) / 2) || 0;
+  return Math.floor((a + b) / 2);
 }
 
 export function aplicado(

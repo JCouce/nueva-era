@@ -256,9 +256,9 @@ describe("Proyección: anula los penalizadores en Actitud", () => {
 
 describe("activables y vida", () => {
   test("que caduque la Neuroprótesis no resta vida aunque baje el máximo", () => {
-    // Fuerza 1 y Aguante 0: Fortaleza 1 (media hacia arriba); con +1 a Fuerza, 1 igual. Con
-    // Aguante 1, Fortaleza 1 → 2 (+1 de vida máxima).
-    const s = { ...conNeuro(), atributos: { ...conNeuro().atributos, fuerza: 1, aguante: 1 } };
+    // Fuerza 2 y Aguante 1: Fortaleza ⌊3/2⌋ = 1 (media hacia abajo); con +1 a Fuerza,
+    // ⌊4/2⌋ = 2 (+1 de vida máxima). Con Fuerza 1 y Aguante 1 el +1 no movería nada.
+    const s = { ...conNeuro(), atributos: { ...conNeuro().atributos, fuerza: 2, aguante: 1 } };
     const max = resolver(s, []).salud.vida;
     assert.equal(resolver(s, [neuro()]).salud.vida, max + 1, "sube el máximo mientras dura");
     const llena = { ...s, vidaActual: max };
@@ -382,8 +382,8 @@ describe("A5b: Neuroprótesis 4", () => {
 });
 
 describe("A5b: vida al caerse un activable", () => {
-  // Fuerza 1 y Aguante 1: +1 a Fuerza sube 1 la vida máxima (ver "activables y vida").
-  const s = { ...conNeuro(), atributos: { ...conNeuro().atributos, fuerza: 1, aguante: 1 } };
+  // Fuerza 2 y Aguante 1: +1 a Fuerza sube 1 la vida máxima (ver "activables y vida").
+  const s = { ...conNeuro(), atributos: { ...conNeuro().atributos, fuerza: 2, aguante: 1 } };
   const max = resolver(s, []).salud.vida;
 
   test("por encima del máximo nuevo, se recorta a él (no 9/8); lo recortado se puede devolver", () => {
@@ -415,8 +415,8 @@ describe("A5b: vida al caerse un activable", () => {
 });
 
 describe("A5b: tope de la vida con los activables puestos", () => {
-  // Fuerza 1 y Aguante 1: la Neuroprótesis sube 1 la vida máxima (de max a max + 1).
-  const s = { ...conNeuro(), atributos: { ...conNeuro().atributos, fuerza: 1, aguante: 1 } };
+  // Fuerza 2 y Aguante 1: la Neuroprótesis sube 1 la vida máxima (de max a max + 1).
+  const s = { ...conNeuro(), atributos: { ...conNeuro().atributos, fuerza: 2, aguante: 1 } };
   const max = resolver(s, []).salud.vida;
   const conMax = (v: number) => ({ ...s, vidaActual: v });
 

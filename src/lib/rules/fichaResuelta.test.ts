@@ -2,6 +2,8 @@
 // código de antes de resolverFicha (derivados con `mods = modificadoresActivos(sheet)`
 // por defecto, y Acciones sumando los estados de combate). resolverFicha tiene que dar
 // exactamente lo mismo. Si uno de estos números cambia, es un bug, no un ajuste.
+// Excepción a propósito: S11 (2026-10-23), los aplicados pasan a redondear hacia abajo;
+// cada aplicado con suma impar de básicos bajó 1 y, con él, vida/fatiga/alerta/movimiento.
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { FORMULA_MOVIMIENTO_GENERAL } from "./formulaMovimiento";
@@ -60,7 +62,10 @@ const CONDICIONES_EQUIPO = [["visor_nocturno_n1_activo", "visor_nocturno_n2_acti
 
 const CASILLAS_FORTALEZA_ARKORU = ["especie_adaptacion_termica_temperatura", "especie_sistemas_filtradores_filtracion"];
 
+// Base = Potencia + Atletismo 2 (+ 4 de exoesqueleto).
+const MOV_BASE_3 = { bonoExoesqueleto: 0, carrera: 19, saltoVertical: 45, saltoHorizontal: 160, escalada: 5, nado: 5 };
 const MOV_BASE = { bonoExoesqueleto: 0, carrera: 20, saltoVertical: 60, saltoHorizontal: 180, escalada: 6, nado: 6 };
+const MOV_EXO_7 = { bonoExoesqueleto: 4, carrera: 23, saltoVertical: 105, saltoHorizontal: 240, escalada: 7, nado: 7 };
 const MOV_EXO = { bonoExoesqueleto: 4, carrera: 24, saltoVertical: 120, saltoHorizontal: 260, escalada: 8, nado: 8 };
 
 type Esperado = {
@@ -91,13 +96,13 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
     esperado: {
       nMods: 0,
       atributos: { fuerza: 2, agilidad: 1, aguante: 1, percepcion: 0, inteligencia: 1, caracter: -1 },
-      aplicados: { fortaleza: 2, potencia: 2, reflejos: 1, voluntad: 0, perspicacia: 1, expresion: 0 },
-      salud: { vida: 12, fatiga: 10 },
-      alerta: 10,
-      movimiento: MOV_BASE,
+      aplicados: { fortaleza: 1, potencia: 1, reflejos: 0, voluntad: 0, perspicacia: 0, expresion: 0 },
+      salud: { vida: 11, fatiga: 10 },
+      alerta: 9,
+      movimiento: MOV_BASE_3,
       carga: 40,
       fuerza: { total: 2, fuentes: [{ etiqueta: "Base", valor: 2 }] },
-      fortaleza: { total: 2, fuentes: [{ etiqueta: "Fuerza", valor: 2 }, { etiqueta: "Aguante", valor: 1 }] },
+      fortaleza: { total: 1, fuentes: [{ etiqueta: "Fuerza", valor: 2 }, { etiqueta: "Aguante", valor: 1 }] },
       escudo: false,
       condiciones: [[], []],
     },
@@ -109,13 +114,13 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
     esperado: {
       nMods: 3, // atributos + −1 a distancia (E4)
       atributos: { fuerza: 4, agilidad: 0, aguante: 1, percepcion: 0, inteligencia: 1, caracter: -1 },
-      aplicados: { fortaleza: 3, potencia: 2, reflejos: 0, voluntad: 0, perspicacia: 1, expresion: 0 },
-      salud: { vida: 13, fatiga: 10 },
-      alerta: 10,
+      aplicados: { fortaleza: 2, potencia: 2, reflejos: 0, voluntad: 0, perspicacia: 0, expresion: 0 },
+      salud: { vida: 12, fatiga: 10 },
+      alerta: 9,
       movimiento: MOV_BASE,
       carga: 80,
       fuerza: { total: 4, fuentes: [{ etiqueta: "Base", valor: 2 }, { etiqueta: "Arköru", valor: 2 }] },
-      fortaleza: { total: 3, fuentes: [{ etiqueta: "Fuerza", valor: 4 }, { etiqueta: "Aguante", valor: 1 }] },
+      fortaleza: { total: 2, fuentes: [{ etiqueta: "Fuerza", valor: 4 }, { etiqueta: "Aguante", valor: 1 }] },
       escudo: false,
       condiciones: [[], []],
       // base 4: 18 × 4, 100 + 4 × 25, 8 + 2, 2 + 2; carga 80 × 1,2
@@ -130,9 +135,9 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
     esperado: {
       nMods: 2,
       atributos: { fuerza: 3, agilidad: 1, aguante: 1, percepcion: 0, inteligencia: 1, caracter: 0 },
-      aplicados: { fortaleza: 2, potencia: 2, reflejos: 1, voluntad: 1, perspicacia: 1, expresion: 1 },
-      salud: { vida: 12, fatiga: 11 },
-      alerta: 10,
+      aplicados: { fortaleza: 2, potencia: 2, reflejos: 0, voluntad: 0, perspicacia: 0, expresion: 0 },
+      salud: { vida: 12, fatiga: 10 },
+      alerta: 9,
       movimiento: MOV_BASE,
       carga: 60,
       fuerza: { total: 3, fuentes: [{ etiqueta: "Base", valor: 2 }, { etiqueta: "Casa de Ílkrem", valor: 1 }] },
@@ -148,13 +153,13 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
     esperado: {
       nMods: 4,
       atributos: { fuerza: 2, agilidad: 1, aguante: 1, percepcion: 0, inteligencia: 1, caracter: -1 },
-      aplicados: { fortaleza: 2, potencia: 2, reflejos: 1, voluntad: 0, perspicacia: 1, expresion: 0 },
-      salud: { vida: 12, fatiga: 10 },
-      alerta: 10,
-      movimiento: MOV_EXO,
+      aplicados: { fortaleza: 1, potencia: 1, reflejos: 0, voluntad: 0, perspicacia: 0, expresion: 0 },
+      salud: { vida: 11, fatiga: 10 },
+      alerta: 9,
+      movimiento: MOV_EXO_7,
       carga: 120,
       fuerza: { total: 2, fuentes: [{ etiqueta: "Base", valor: 2 }] },
-      fortaleza: { total: 2, fuentes: [{ etiqueta: "Fuerza", valor: 2 }, { etiqueta: "Aguante", valor: 1 }] },
+      fortaleza: { total: 1, fuentes: [{ etiqueta: "Fuerza", valor: 2 }, { etiqueta: "Aguante", valor: 1 }] },
       escudo: true,
       condiciones: CONDICIONES_EQUIPO,
     },
@@ -166,17 +171,17 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
     esperado: {
       nMods: 4, // 3 de atributos + Resonancia +1 (E2b: no toca ningún derivado de aquí)
       atributos: { fuerza: 1, agilidad: 2, aguante: 1, percepcion: 1, inteligencia: 1, caracter: -1 },
-      aplicados: { fortaleza: 1, potencia: 2, reflejos: 2, voluntad: 0, perspicacia: 1, expresion: 0 },
+      aplicados: { fortaleza: 1, potencia: 1, reflejos: 1, voluntad: 0, perspicacia: 1, expresion: 0 },
       salud: { vida: 11, fatiga: 10 },
       alerta: 10,
-      movimiento: MOV_BASE,
+      movimiento: MOV_BASE_3,
       carga: 20,
       fuerza: { total: 1, fuentes: [{ etiqueta: "Base", valor: 2 }, { etiqueta: "Arianyi", valor: -1 }] },
       fortaleza: { total: 1, fuentes: [{ etiqueta: "Fuerza", valor: 1 }, { etiqueta: "Aguante", valor: 1 }] },
       escudo: false,
       condiciones: [[], []],
-      // Movimiento Acuático, base 4: nado 8 + 2
-      e3: { movimiento: { ...MOV_BASE, nado: 10 }, carga: 20 },
+      // Movimiento Acuático, base 3: nado 8 + 1
+      e3: { movimiento: { ...MOV_BASE_3, nado: 9 }, carga: 20 },
       e4: { condiciones: [["especie_empatia_biologica_empatia"], []] },
     },
   },
@@ -188,10 +193,10 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
     esperado: {
       nMods: 11, // E4: +1, el −1 a distancia del Arköru
       atributos: { fuerza: 2, agilidad: 0, aguante: -1, percepcion: 0, inteligencia: 1, caracter: -1 },
-      aplicados: { fortaleza: 1, potencia: 1, reflejos: 0, voluntad: -1, perspicacia: 1, expresion: 0 },
-      salud: { vida: 11, fatiga: 9 },
-      alerta: 10,
-      movimiento: { bonoExoesqueleto: 4, carrera: 23, saltoVertical: 105, saltoHorizontal: 240, escalada: 7, nado: 7 },
+      aplicados: { fortaleza: 0, potencia: 1, reflejos: 0, voluntad: -1, perspicacia: 0, expresion: 0 },
+      salud: { vida: 10, fatiga: 9 },
+      alerta: 9,
+      movimiento: MOV_EXO_7,
       carga: 120,
       fuerza: {
         total: 2,
@@ -201,7 +206,7 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
           { etiqueta: "Enfermedad", valor: -2 },
         ],
       },
-      fortaleza: { total: 1, fuentes: [{ etiqueta: "Fuerza", valor: 2 }, { etiqueta: "Aguante", valor: -1 }] },
+      fortaleza: { total: 0, fuentes: [{ etiqueta: "Fuerza", valor: 2 }, { etiqueta: "Aguante", valor: -1 }] },
       escudo: true,
       condiciones: CONDICIONES_EQUIPO,
       // base 7: 18 × 7, 100 + 7 × 25, 8 + 3, 2 + 3; carga 120 × 1,2
@@ -221,7 +226,7 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
 
 // La misma ficha con estados, tal y como la enseñaba Resumen (sin estados). Con la
 // FichaResuelta única, Resumen pasa a ver los de arriba: cambio intencionado (§3.1, 3).
-const RESUMEN_SIN_ESTADOS = { salud: { vida: 13, fatiga: 10 }, movimiento: MOV_EXO, carga: 160, alerta: 10 };
+const RESUMEN_SIN_ESTADOS = { salud: { vida: 12, fatiga: 10 }, movimiento: MOV_EXO, carga: 160, alerta: 9 };
 // Lo mismo con E3 (Arköru, base 8): 18 × 8, 100 + 8 × 25, 8 + 4, 2 + 4; carga 160 × 1,2.
 const RESUMEN_SIN_ESTADOS_E3 = {
   ...RESUMEN_SIN_ESTADOS,

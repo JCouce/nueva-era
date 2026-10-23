@@ -95,7 +95,7 @@ build: dónde pones la A y dónde la E define el personaje.
 
 ### Aplicados `[FIRME · HOJA2]`
 
-Derivados, **no se compran**: son la **media** de dos básicos, redondeando hacia arriba.
+Derivados, **no se compran**: son la **media** de dos básicos, redondeando hacia abajo (S11).
 `HOJA` decía que eran la suma; `HOJA2` lo corrige — cada básico sigue alimentando dos
 aplicados.
 
@@ -277,7 +277,7 @@ que quede el rastro):
 | Nado | 4 + [(Potencia + Atletismo) / 2] metros | 5 + [... / 2] |
 
 Ojo doble cambio: además de las constantes, **Potencia** ya no es la suma de Fuerza +
-Agilidad, es su media redondeada hacia arriba (sección 2) — así que "Potencia +
+Agilidad, es su media redondeada hacia abajo (sección 2) — así que "Potencia +
 Atletismo" da un número distinto aunque no toques nada de la fórmula de esta tabla.
 
 ## 5.5 Carga transportable `[FIRME · HOJA2]`
@@ -2234,7 +2234,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S8 | El **valor de Atletismo** que entra en las fórmulas de movimiento es el valor puro, sin aplicar la mitad por estar fuera de especialidad. | Las fórmulas de `HOJA` dicen "Potencia + Atletismo" a secas. |
 | S9 | En un módulo con niveles (mejora estándar o subsistema de `EQUIP`), un efecto que un nivel introduce y los superiores no repiten ni anulan se **acumula**: el nivel N conserva lo desbloqueado en 1..N-1. Cuando el documento da un total explícito para ese nivel ("mejora la bonificación a +2"), se usa ese total tal cual, sin sumarlo al de niveles inferiores. **Implementado de verdad 2026-09-25** (antes solo estaba escrito aquí: el código leía únicamente el bloque del nivel exacto, `niveles.find(n => n.nivel === pieza.nivel)`, y perdía todo lo de 1..N-1 que el nivel actual no repitiera — bug real, detectado en Mira Telescópica/Visor Nocturno, que hasta entonces se parcheaba a mano copiando el efecto en cada nivel superior). `nivelesHasta()`/`acumulaPorClave()`/`ultimoQueDefine()` en `lib/rules/equipo.ts` lo resuelven de forma genérica; los parches a mano ya no hacen falta y se han quitado (Soporte Vital, Sistema de Retroceso, Estabilizador Neuronal). | `EQUIP` describe cada nivel como una mejora sobre el anterior, nunca como un reemplazo (p. ej. Soporte Vital nivel 1 da Resistencia Térmica y los niveles 2-3 no la repiten, pero tampoco dicen que se pierda). Asumir que se pierde algo al subir de nivel sería más raro que asumir que se mantiene. |
 | S10 | El bono de Fuerza del Exoesqueleto, que `EQUIP` duplica para "carga transportable y proezas de fuerza", se aplica **x2 a las 5 fórmulas de movimiento** (Carrera, Salto Vertical, Salto Horizontal, Escalada, Nado) **y a la Carga Transportable** (sección 5.5, `cargaMaxima()`) — la cita completa de `EQUIP`, ya cerrada del todo (2026-09-11: hasta ahora solo se aplicaba a movimiento). No toca la Fuerza general ni Fortaleza/Vida, que siguen sin mecanizar. | `EQUIP` no dice explícitamente qué cuenta como "proeza de fuerza"; las 5 fórmulas salen de Potencia + Atletismo, la misma base física, así que tratarlas todas igual es lo más consistente. Pendiente de confirmar con Murillo. |
-| S11 | El redondeo de los Aplicados (media de dos básicos) es **hacia arriba**. | Decisión explícita del usuario (2026-09-10): mismo criterio que ya usa el motor para especialidades fuera de especialidad (`Math.ceil`), por consistencia con lo que ya existía. `HOJA2` no especifica el redondeo. |
+| S11 | El redondeo de los Aplicados (media de dos básicos) es **hacia abajo**. | Decisión explícita del usuario (2026-10-23; antes, 2026-09-10, era hacia arriba): mismo criterio que la habilidad fuera de especialidad (`Math.floor`). `HOJA2` no especifica el redondeo. |
 | S12 | ~~Dotes no tiene presupuesto de creación en las letras A-D, solo **0 en la letra E**.~~ **Tumbado por `HOJA3` (2026-10-14):** A 18 · B 15 · C 12 · D 9 · E 6. | `HOJA2` solo rellenaba la casilla E; el documento nuevo trae la columna entera. |
 | S13 | Espada Ligera, Espada y Montante (`catalog/armasMelee.ts`) son **Común**. | `EQUIP` deja esas tres celdas de rareza en blanco (a diferencia de Pelea, que también tiene el coste en blanco: aquí sí hay coste, 100-150 cr.). Decisión del usuario (2026-09-11): Común encaja con ese rango de precio, igual que el resto de piezas Común del catálogo. |
 | S14 | Los umbrales de un mismo recurso **no se acumulan**: solo el más profundo alcanzado aporta su penalizador (Malherido sustituye a Herido, no se suma). PG y fatiga sí son independientes entre sí — Herido (PG) y Fatigado (fatiga) a la vez sí suman sus dos penalizadores. | `SISTEMA` (`docs/sistema-y-combate.md` §"Puntos de salud") da los umbrales como tres/dos filas de una tabla, sin decir si se combinan. Sumar -1-3-5 en Moribundo (-9 a todo) sería más severo que cualquier otra regla del sistema; tratar los tramos como bandas excluyentes es la lectura estándar en este tipo de tablas y la que no exige inventar un techo nuevo. |
