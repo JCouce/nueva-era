@@ -53,6 +53,9 @@ import {
   ajustarMunicionEspecial,
   municionEspecialPorId,
   ajustarVida,
+  ajustarDanioCategoria,
+  CATEGORIAS_DANIO,
+  type CategoriaDanio,
   ajustarFatiga,
   type MaterialTier,
   type AtributoId,
@@ -576,6 +579,25 @@ export async function ajustarVidaAction(characterId: string, delta: number): Pro
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(characterId, ajustarVida(ctx.sheet, delta, ctx.estados));
+}
+
+// Daño de vida por categoría (docs/sistema.md §7, pregunta 24): delta > 0 recibe, < 0 cura
+// esa categoría. Mismo recorte con los estados que ajustarVidaAction.
+const ajusteDanioSchema = z.object({
+  categoria: z.enum(CATEGORIAS_DANIO),
+  delta: z.number().int().min(-99).max(99),
+});
+
+export async function ajustarDanioAction(
+  characterId: string,
+  categoria: CategoriaDanio,
+  delta: number,
+): Promise<SaveResult> {
+  const parsed = ajusteDanioSchema.safeParse({ categoria, delta });
+  if (!parsed.success) return { ok: false, error: "Ajuste de daño no válido" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(characterId, ajustarDanioCategoria(ctx.sheet, parsed.data.categoria, parsed.data.delta, ctx.estados));
 }
 
 export async function ajustarFatigaAction(characterId: string, delta: number): Promise<SaveResult> {

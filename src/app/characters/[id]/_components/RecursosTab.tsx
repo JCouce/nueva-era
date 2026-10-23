@@ -14,6 +14,8 @@ import {
   type RecursoInstancia,
   type MaterialTier,
   fatigaEfectiva,
+  type CategoriaDanio,
+  type DanioVida,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { BolsaAumentos } from "./BolsaAumentos";
@@ -57,6 +59,7 @@ export function RecursosTab({
   onAjustarMunicionEspecial,
   onComprarMunicionEspecial,
   onAjustarVida,
+  onAjustarDanio,
   onAjustarFatiga,
   onAjustarFatigaTemporal,
   onTerminarEscena,
@@ -75,6 +78,9 @@ export function RecursosTab({
   onAjustarMunicionEspecial: (municionId: string, delta: number) => void;
   onComprarMunicionEspecial: (municionId: string) => void;
   onAjustarVida: (delta: number) => void;
+  // Daño por categoría (§7, pregunta 24): delta > 0 recibe, < 0 cura. Ausente en el NPC, que
+  // sigue con el −/+ de vida (su daño entra como letal).
+  onAjustarDanio?: (categoria: CategoriaDanio, delta: number) => void;
   onAjustarFatiga: (delta: number) => void;
   // Fatiga temporal de Proeza (vitalidad.ts). Ausentes donde no se lleva.
   onAjustarFatigaTemporal?: (delta: number) => void;
@@ -150,13 +156,18 @@ export function RecursosTab({
       <p className="border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
         {"//SYSTEM · vida y fatiga"}
       </p>
-      <EstadoCard
-        titulo="Vida"
-        actual={sheet.vidaActual}
-        max={vida}
-        tono="danger"
-        onAjustar={onAjustarVida}
-      />
+      {onAjustarDanio ? (
+        <VidaCard actual={sheet.vidaActual} max={vida} danio={ficha.danio} onAjustarDanio={onAjustarDanio} />
+      ) : (
+        <EstadoCard
+          titulo="Vida"
+          actual={sheet.vidaActual}
+          max={vida}
+          tono="danger"
+          danio={ficha.danio}
+          onAjustar={onAjustarVida}
+        />
+      )}
       {/* Escudo (colchón de Malla Plasmática) justo debajo de Vida, pedido
           del usuario 2026-09-27 — mismo criterio que un HUD de videojuego:
           vida y su escudo van juntos, fatiga es un recurso aparte. */}
@@ -366,17 +377,19 @@ function EstadoCard({
   actual,
   max,
   tono,
+  danio,
   onAjustar,
 }: {
   titulo: string;
   actual: number;
   max: number;
   tono: TonoVital;
+  danio?: DanioVida;
   onAjustar: (delta: number) => void;
 }) {
   return (
     <HudCard className="p-3">
-      <BarraVital label={titulo} actual={actual} max={max} tono={tono} />
+      <BarraVital label={titulo} actual={actual} max={max} tono={tono} danio={danio} />
       <div className="mt-2 flex items-center gap-1.5">
         <BotonDelta onClick={() => onAjustar(-1)} disabled={actual <= 0}>
           −
@@ -386,6 +399,84 @@ function EstadoCard({
         </BotonDelta>
       </div>
     </HudCard>
+  );
+}
+
+// Vida con el daño por categoría (§7, pregunta 24): la barra con lo perdido desglosado y una
+// fila por categoría, de leve a grave. − recibe 1 de esa categoría, + cura 1 de esa categoría.
+const FILAS_HERIDA: { id: CategoriaDanio; nombre: string; punto: string; texto: string }[] = [
+  { id: "noLetal", nombre: "No letal", punto: "bg-herida-no-letal", texto: "no letal" },
+  { id: "letal", nombre: "Letal", punto: "bg-herida-letal", texto: "letal" },
+  { id: "grave", nombre: "Grave", punto: "rayado-grave", texto: "grave" },
+];
+
+function VidaCard({
+  actual,
+  max,
+  danio,
+  onAjustarDanio,
+}: {
+  actual: number;
+  max: number;
+  danio: DanioVida;
+  onAjustarDanio: (categoria: CategoriaDanio, delta: number) => void;
+}) {
+  return (
+    <HudCard className="p-3">
+      <BarraVital label="Vida" actual={actual} max={max} tono="danger" danio={danio} />
+      <ul className="mt-2 flex flex-col">
+        {FILAS_HERIDA.map((f) => (
+          <li key={f.id} className="flex items-center gap-2 border-t border-border py-1 first:border-t-0">
+            <span aria-hidden className={`h-3 w-3 shrink-0 ${f.punto}`} />
+            <span className="min-w-0 flex-1 font-mono text-xs uppercase tracking-wide text-soft">{f.nombre}</span>
+            <span
+              className={`w-8 text-right font-mono text-sm tabular-nums ${danio[f.id] > 0 ? "text-foreground" : "text-muted"}`}
+            >
+              {danio[f.id]}
+            </span>
+            <BotonHerida
+              onClick={() => onAjustarDanio(f.id, 1)}
+              disabled={actual <= 0}
+              etiqueta={`Recibir 1 de daño ${f.texto}`}
+            >
+              −
+            </BotonHerida>
+            <BotonHerida
+              onClick={() => onAjustarDanio(f.id, -1)}
+              disabled={danio[f.id] <= 0}
+              etiqueta={`Curar 1 de daño ${f.texto}`}
+            >
+              +
+            </BotonHerida>
+          </li>
+        ))}
+      </ul>
+    </HudCard>
+  );
+}
+
+function BotonHerida({
+  onClick,
+  disabled,
+  etiqueta,
+  children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  etiqueta: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={etiqueta}
+      title={etiqueta}
+      className="h-11 w-11 shrink-0 border border-border bg-elevated font-mono text-lg leading-none text-foreground active:scale-95 disabled:opacity-30"
+    >
+      {children}
+    </button>
   );
 }
 

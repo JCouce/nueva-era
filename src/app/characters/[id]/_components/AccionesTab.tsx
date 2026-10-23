@@ -40,6 +40,8 @@ import {
   type SeleccionPoder,
   type EfectosDeUso,
   type PeajeDeUso,
+  type CategoriaDanio,
+  categoriaDanioDeTexto,
   usarHabilidadAlternativa,
   elegirEspecialidad,
   etiquetaEspecialidad,
@@ -591,6 +593,7 @@ export function AccionesTab({
   onPagarFatiga,
   onAjustarFatiga,
   onAjustarVida,
+  onAjustarDanio,
   onGastarUsosEscena,
   onUsarAccionAumento,
   onMarcarFavorita,
@@ -652,6 +655,9 @@ export function AccionesTab({
   onAjustarFatiga?: (delta: number) => void;
   // Daño de la sobrecarga psiónica, restado de la vida de la ficha.
   onAjustarVida?: (delta: number) => void;
+  // Daño con categoría conocida (§7, pregunta 24: peaje neurológico, sobrecarga). Sin él, se
+  // resta con onAjustarVida (y la ficha lo apunta como letal).
+  onAjustarDanio?: (categoria: CategoriaDanio, delta: number) => void;
   // Usos "una vez por escena" gastados al tirar (A4a, montada.usosEscena). Ausente donde no
   // hay ficha que guardar (NPC): ahí no se gastan.
   onGastarUsosEscena?: (ids: string[]) => void;
@@ -840,11 +846,18 @@ export function AccionesTab({
     { peaje: PeajeDeUso; salvacion: (Lanzamiento & { aviso: string | null }) | null }[]
   >([]);
 
+  // Resta `n` de vida con su categoría si se sabe y hay dónde apuntarla.
+  const recibirDanio = (categoria: CategoriaDanio | null, n: number) => {
+    if (n <= 0) return;
+    if (categoria && onAjustarDanio) onAjustarDanio(categoria, n);
+    else onAjustarVida?.(-n);
+  };
+
   const tirarSalvacionPeaje = (i: number, id: number) => {
     const actual = peajes[i];
     if (!actual || actual.salvacion) return;
     const t = tirarPeaje(ficha, actual.peaje, tirarD12());
-    if (t.danio > 0) onAjustarVida?.(-t.danio);
+    recibirDanio(categoriaDanioDeTexto(t.categoria), t.danio);
     const lanzamiento = {
       ...t.resultado,
       id,
@@ -865,7 +878,7 @@ export function AccionesTab({
     const dificultad = dificultadSobrecarga(sobrecarga.nivel);
     const r = tirarMontada(montarTirada(ficha, salv, SIN_ELECCION), tirarD12(), dificultad);
     const danio = danioSobrecarga(sobrecarga.nivel, gradoDeTirada(r)!);
-    if (danio > 0) onAjustarVida?.(-danio);
+    recibirDanio("letal", danio);
     const lanzamiento = {
       ...r,
       id,
@@ -994,7 +1007,7 @@ export function AccionesTab({
             key={i}
             dificultad={x.peaje.dificultad}
             salvacion={x.salvacion}
-            restado={!!onAjustarVida}
+            restado={!!(onAjustarVida || onAjustarDanio)}
             onTirar={(id) => tirarSalvacionPeaje(i, id)}
           />
         ))}

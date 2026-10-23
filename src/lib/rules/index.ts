@@ -25,6 +25,7 @@
 //   blindaje.ts        absorción de daño por blindaje (armadura, Escudo Deflector) y golpe al escudo
 //   movimiento.ts      Movilidad Aérea equipada convertida en su propia tirada ("Volar")
 //   vitalidad.ts       vida/fatiga como recurso persistente de la ficha (vidaActual/fatigaActual)
+//   danio.ts           desglose de la vida perdida por categoría: no letal, letal, grave (§7)
 //   farmacos.ts        fármacos del pool (sheet.farmacos) convertidos en su propia acción "Usar"
 //   psionica.ts        forma de los poderes psiónicos y compra de disciplinas (N×3, requisitos)
 //   poderes.ts         evaluador: poder + nivel + opciones elegidas → valores concretos
@@ -76,6 +77,7 @@ export * from "./npcAleatorio";
 export * from "./blindaje";
 export * from "./movimiento";
 export * from "./vitalidad";
+export * from "./danio";
 export * from "./farmacos";
 export * from "./psionica";
 export * from "./poderes";

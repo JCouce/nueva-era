@@ -23,6 +23,7 @@ import {
   ventajasFijasDeAumentos,
   type VentajaFija,
 } from "./aumentosTiradas";
+import { normalizarDanio, type DanioVida } from "./danio";
 import { tieneEscudoMelee, type ArmaduraNatural } from "./blindaje";
 import {
   alerta,
@@ -131,6 +132,9 @@ export type FichaResuelta = {
     aplicados: Record<AplicadoId, DesgloseDerivado>;
   };
   salud: { vida: number; fatiga: number };
+  // Desglose de la vida perdida (danio.ts) contra el máximo de `salud`, el que pinta la barra:
+  // cuadra con lo que se ve aunque un estado del máster mueva el máximo.
+  danio: DanioVida;
   alerta: number;
   // Umbrales de §7 con la vida/fatiga de `vitalidad` (fatiga efectiva) y lo que hacen
   // a velocidad y carga, ya aplicado en movimiento, vuelo, levitación y cargaMaxima.
@@ -329,6 +333,7 @@ export function resolverFicha(
       ) as Record<AplicadoId, DesgloseDerivado>,
     },
     salud: maximos,
+    danio: normalizarDanio(sheet.danio, Math.max(0, maximos.vida - sheet.vidaActual)),
     alerta: alerta(sheet, modificadores),
     umbrales: { ...umbrales, movimiento: porUmbral },
     ajusteUmbrales,

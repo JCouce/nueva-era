@@ -378,6 +378,15 @@ export const MIGRACIONES: Migracion[] = [
       return { ...ficha, habilidades, dotes, avisoEspecialidades: avisos };
     },
   },
+  {
+    desde: 22,
+    hasta: 23,
+    descripcion:
+      "Daño de vida por categoría (docs/sistema.md §7, pregunta 24): se añade danio, el desglose " +
+      "de la vida perdida en no letal, letal y grave. Empieza a 0; al leer, la vida que ya se " +
+      "hubiera perdido pasa a letal (normalizarDanio, el daño sin categoría es letal).",
+    migrar: (ficha) => ({ ...ficha, danio: { noLetal: 0, letal: 0, grave: 0 } }),
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le

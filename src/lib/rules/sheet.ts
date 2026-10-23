@@ -37,6 +37,7 @@ import {
   type MunicionEspecialStock,
 } from "./recursos";
 import { reconciliarVidaAlLeer } from "./vitalidad";
+import { danioSchema, danioVacio, leerDanio } from "./danio";
 import { MAX_USOS_ESCENA, normalizarUsosEscena } from "./usosEscena";
 import { MUNICION_GRANADA, MUNICION_ESPECIAL } from "../catalog/municion";
 import { FARMACOS } from "../catalog/medicina";
@@ -76,7 +77,8 @@ import { ESPECIALIDAD_IDS, esEspecialidadDe, type EspecialidadId } from "../cata
 //   20 → la pieza del Brazo Biónico admite `armaIncorporada` (A6b)
 //   21 → se añaden las acciones favoritas (favoritas, T-006)
 //   22 → especialidades de Combate a Distancia de 5 a 9 (foto de Drive 2026-10-23)
-export const SCHEMA_VERSION = 22;
+//   23 → desglose del daño de vida por categoría (danio: no letal, letal, grave)
+export const SCHEMA_VERSION = 23;
 
 // Tope de lo gastado de la bolsa de aumentos: muy por encima de cualquier bolsa real.
 export const MAX_BOLSA_AUMENTOS = 9_999_999;
@@ -146,6 +148,9 @@ export const sheetSchema = z.object({
   // de salud() en cuanto se puede calcular, sin duplicar aquí su fórmula.
   vidaActual: z.number().int().min(0).max(999),
   fatigaActual: z.number().int().min(0).max(999),
+  // Desglose de la vida perdida (máximo − vidaActual) por categoría (danio.ts, §7). La verdad
+  // es vidaActual: este desglose se normaliza contra ella al leer (vitalidad.ts).
+  danio: danioSchema,
   // Fatiga gastada de más en una Proeza (psiónica, Traslación): cuenta para los
   // umbrales mientras dura la escena y se devuelve al terminarla (vitalidad.ts).
   fatigaTemporal: z.number().int().min(0).max(999),
@@ -198,6 +203,7 @@ export function defaultSheet(): Sheet {
     // fórmula de vida/fatiga aquí.
     vidaActual: 999,
     fatigaActual: 999,
+    danio: danioVacio(),
     fatigaTemporal: 0,
     bolsaAumentosGastada: 0,
     usosEscena: [],
@@ -403,6 +409,7 @@ export function parseSheet(raw: unknown): Sheet {
         : [],
       vidaActual: clampInt(r.vidaActual, 0, 999, 999),
       fatigaActual: clampInt(r.fatigaActual, 0, 999, 999),
+      danio: leerDanio(r.danio),
       fatigaTemporal: clampInt(r.fatigaTemporal, 0, 999, 0),
       bolsaAumentosGastada: clampInt(r.bolsaAumentosGastada, 0, MAX_BOLSA_AUMENTOS, 0),
       usosEscena: normalizarUsosEscena(r.usosEscena),

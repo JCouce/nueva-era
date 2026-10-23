@@ -13,6 +13,7 @@ import { modificadoresActivos, salud } from "./derivados";
 import { desequipar } from "./equipo";
 import type { EstadoActivo } from "./estados";
 import type { Sheet } from "./sheet";
+import { acotarDanio, danioIgual, normalizarDanio, type CategoriaDanio, type DanioVida } from "./danio";
 import { estadoPorId } from "../catalog/estados";
 
 export type TopesVida = { vida: number; fatiga: number };
@@ -60,18 +61,38 @@ export function vidaTrasAjuste(actual: number, tope: number, delta: number): num
 // máximo cayó por debajo de lo que había. Idempotente, sin efecto si ya está dentro de
 // rango. parseSheet lo llama con topesPosibles; quien conoce los estados, con
 // reconciliarVidaConEstados.
+// También normaliza el desglose del daño (danio.ts) contra la vida perdida con ese tope.
 export function reconciliarVida(sheet: Sheet, topes: TopesVida = topesDeVida(sheet)): Sheet {
   const { vida, fatiga } = topes;
   const vidaActual = Math.min(sheet.vidaActual, vida);
   const fatigaActual = Math.min(sheet.fatigaActual, fatiga);
-  if (vidaActual === sheet.vidaActual && fatigaActual === sheet.fatigaActual) return sheet;
-  return { ...sheet, vidaActual, fatigaActual };
+  return conDanio(
+    vidaActual === sheet.vidaActual && fatigaActual === sheet.fatigaActual ? sheet : { ...sheet, vidaActual, fatigaActual },
+    normalizarDanio(sheet.danio, vida - vidaActual),
+  );
+}
+
+function conDanio(sheet: Sheet, danio: DanioVida): Sheet {
+  return danioIgual(danio, sheet.danio) ? sheet : { ...sheet, danio };
 }
 
 // Lo que hace parseSheet en cada lectura: recortar al tope posible (topesPosibles). El
-// centinela 999 de una ficha nueva cae aquí a un número de verdad.
+// centinela 999 de una ficha nueva cae aquí a un número de verdad (antes de mirar el daño:
+// con la vida ya recortada, una ficha nueva no ha perdido nada).
+// El desglose del daño no se normaliza del todo: sin los estados, el tope de verdad está entre
+// el de reposo y el posible (Neuroprótesis, A5b). Se acota a ese rango —lo que falte hasta la
+// pérdida en reposo es letal; lo que pase de la pérdida con el tope posible se quita de lo más
+// leve— y el ajuste exacto lo hace reconciliarVidaConEstados. Normalizar aquí contra el posible
+// y luego contra el exacto se comería el no letal (sobraría y se quitaría lo más leve).
 export function reconciliarVidaAlLeer(sheet: Sheet): Sheet {
-  return reconciliarVida(sheet, topesPosibles(sheet));
+  const posibles = topesPosibles(sheet);
+  const vidaActual = Math.min(sheet.vidaActual, posibles.vida);
+  const fatigaActual = Math.min(sheet.fatigaActual, posibles.fatiga);
+  const reposo = topesDeVida(sheet).vida;
+  return conDanio(
+    vidaActual === sheet.vidaActual && fatigaActual === sheet.fatigaActual ? sheet : { ...sheet, vidaActual, fatigaActual },
+    acotarDanio(sheet.danio, reposo - vidaActual, posibles.vida - vidaActual),
+  );
 }
 
 // Desequipar y recortar la vida/fatiga actuales al máximo nuevo en el mismo golpe: quitar
@@ -91,12 +112,34 @@ export function reconciliarVidaConEstados(sheet: Sheet, estados: readonly Estado
 
 // Delta manual (+/-), clamp [0, topesDeVida] — mismo patrón que ajustarRecurso() en
 // recursos.ts. `estados`: los del personaje (con la Neuroprótesis puesta se cura hasta su
-// máximo, A5b); sin ellos, el máximo en reposo.
+// máximo, A5b); sin ellos, el máximo en reposo. Sin categoría: el daño entra como letal y la
+// cura quita lo más leve primero (normalizarDanio).
 export function ajustarVida(sheet: Sheet, delta: number, estados: readonly EstadoActivo[] = []): Sheet {
   if (!Number.isFinite(delta)) return sheet;
-  const vidaActual = vidaTrasAjuste(sheet.vidaActual, topesDeVida(sheet, estados).vida, delta);
+  const tope = topesDeVida(sheet, estados).vida;
+  const vidaActual = vidaTrasAjuste(sheet.vidaActual, tope, delta);
   if (vidaActual === sheet.vidaActual) return sheet;
-  return { ...sheet, vidaActual };
+  return { ...sheet, vidaActual, danio: normalizarDanio(sheet.danio, tope - vidaActual) };
+}
+
+// Daño o cura de una categoría (docs/sistema.md §7, pregunta 24). delta > 0 recibe daño de
+// esa categoría (baja la vida, sin pasar de 0); delta < 0 cura esa categoría (sube la vida,
+// sin curar más de lo que hay en ella). Mantiene vidaActual + desglose === tope.
+export function ajustarDanioCategoria(
+  sheet: Sheet,
+  categoria: CategoriaDanio,
+  delta: number,
+  estados: readonly EstadoActivo[] = [],
+): Sheet {
+  if (!Number.isFinite(delta)) return sheet;
+  const d = Math.round(delta);
+  if (d === 0) return sheet;
+  const tope = topesDeVida(sheet, estados).vida;
+  const actual = Math.max(0, Math.min(sheet.vidaActual, tope));
+  const danio = normalizarDanio(sheet.danio, tope - actual);
+  const n = d > 0 ? Math.min(d, actual) : -Math.min(-d, danio[categoria]);
+  if (n === 0) return conDanio(actual === sheet.vidaActual ? sheet : { ...sheet, vidaActual: actual }, danio);
+  return { ...sheet, vidaActual: actual - n, danio: { ...danio, [categoria]: danio[categoria] + n } };
 }
 
 export function ajustarFatiga(sheet: Sheet, delta: number, estados: readonly EstadoActivo[] = []): Sheet {

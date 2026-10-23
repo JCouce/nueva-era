@@ -453,6 +453,16 @@ imponen penalizadores por umbral:
 - **Categorías de daño**: no letal → letal → grave. Se suman todas para los PG restantes.
   El no letal se absorbe con **Fortaleza como armadura** y sana solo al descansar; el letal
   necesita asistencia médica; el grave siempre requiere medicina.
+  *En la app (decisiones del usuario, 2026-10-24; pregunta 24, fase 1: la ficha):*
+  `vidaActual` sigue siendo la verdad y la ficha guarda además `danio` (`rules/danio.ts`,
+  v23), el **desglose** de la vida perdida (máximo − actual) en no letal / letal / grave.
+  Se normaliza contra la vida perdida en cada lectura (`reconciliarVida`): el daño sin
+  categoría (S75, panel de mando, −/+ de vida) es **letal por defecto**, y una cura sin
+  categoría quita **de lo más leve primero** (no letal, luego letal, luego grave). En
+  Recursos, la tarjeta de Vida pinta la barra con lo perdido por categoría y una fila por
+  categoría para recibir o curar 1 (`ajustarDanioCategoria`). Peaje neurológico y
+  sobrecarga ya restan con su categoría. Pendiente: combate (foto del combatiente) y panel
+  de mando, Fortaleza absorbiendo el no letal, curas por descanso/medicina.
 - **Daño específico** (eléctrico, fuego, frío, corrosivo, plasma, sónico, tóxico, mental),
   cada uno con su categoría de gravedad y su efecto asociado. El **mental omite armaduras**.
 - **20 estados** documentados con sus cuatro grados de resultado (fracaso crítico, fracaso,
@@ -2458,7 +2468,7 @@ sospecha que también contra eléctrico, 2026-09-12)? Pendiente de confirmar con
 21. ~~Mecánica exacta del dado y conteo de éxitos.~~ **Resuelta:** 1d12 + aplicado + habilidad vs dificultad; crítico al superar por 6.
 22. ~~**Exploración** no existe como habilidad en la hoja pero se usa en iniciativa y alerta.~~ **Resuelta**: sustituye a Supervivencia. *(C4)*
 23. ~~¿La app debe llevar la cuenta de PG y fatiga actuales en partida, con sus estados de herida, o eso se lleva en mesa?~~ **Resuelta (usuario, 2026-09-10): en vivo.** La app lleva PG y fatiga en partida — confirma lo ya apuntado en `docs/traspaso.md` §9 (fase 6b). Es la decisión que determina que la ficha pasa a guardar estado mutable además de la creación.
-24. ~~Si se lleva en la app: ¿se registra el daño por categoría (no letal / letal / grave)?~~ **Resuelta: sí.** "Grave" ya es categoría documentada (`COMBATE`, ver también la línea 278 de este documento); las tres categorías se registran por separado.
+24. ~~Si se lleva en la app: ¿se registra el daño por categoría (no letal / letal / grave)?~~ **Resuelta: sí.** "Grave" ya es categoría documentada (`COMBATE`, ver también la línea 278 de este documento); las tres categorías se registran por separado. **Construida, fase 1 (ficha), 2026-10-24**: desglose `danio` en la ficha, letal por defecto, cura de lo más leve primero (§7, "En la app"); combate y panel de mando pendientes.
 25. **Resiliencia** y **Estructura**: ¿son puntuaciones de PNJ y equipo, o algún personaje jugador (un sintético) puede tenerlas? *(C5)*
 25b. ~~Varias armas de fuego llevan un penalizador propio "al sigilo" al dispararlas
 (p. ej. Rayo Ligero y Plasma SD/SC/etc.: "-6 al sigilo, solo percepción visual"; el

@@ -53,6 +53,13 @@
   --color-danio-toxico: var(--color-neon-green);
   --color-danio-mental: var(--color-neon-magenta);
 
+  /* Categorías de herida (§7, danio.ts): el desglose de la vida perdida en BarraVital y
+     Recursos. De leve a grave baja la luminosidad; la grave además va rayada. */
+  --color-herida-no-letal: var(--color-neon-cyan);
+  --color-herida-letal: var(--color-neon-magenta);
+  --color-herida-grave: #9a3fd0;
+  --color-herida-grave-fondo: #3d0f52;
+
   /* Tipografía de lectura. Rajdhani tiene ojo pequeño: por debajo de 13 px la prosa
      no se lee en móvil. Las etiquetas mono en mayúsculas sí pueden ir a 10-11 px. */
   --text-prosa: 0.9375rem; /* 15 px — descripciones, efectos por nivel */
@@ -132,6 +139,17 @@
 }
 
 /* Barras de peligro amarillo/negro (警告) */
+/* Herida grave: rayado diagonal púrpura, para que no dependa solo del color. */
+@utility rayado-grave {
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--color-herida-grave) 0,
+    var(--color-herida-grave) 3px,
+    var(--color-herida-grave-fondo) 3px,
+    var(--color-herida-grave-fondo) 6px
+  );
+}
+
 @utility hazard-stripes {
   background-image: repeating-linear-gradient(
     45deg,

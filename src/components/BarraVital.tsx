@@ -5,6 +5,8 @@
 // futuristas y molonas para llevar la vida"). Reutilizada por Vida, Fatiga
 // y el colchón de Malla Plasmática (RecursosTab.tsx): el color y la etiqueta
 // son lo único que cambia entre las tres.
+import type { DanioVida } from "@/lib/rules";
+
 const TONOS = {
   danger: { texto: "text-danger", relleno: "bg-danger", glow: "shadow-glow-danger" },
   info: { texto: "text-info", relleno: "bg-info", glow: "shadow-glow-cyan" },
@@ -18,11 +20,15 @@ export function BarraVital({
   actual,
   max,
   tono,
+  danio,
 }: {
   label: string;
   actual: number;
   max: number;
   tono: TonoVital;
+  // Desglose de la vida perdida (FichaResuelta.danio): con él, lo perdido se pinta a la
+  // derecha por categoría, de leve a grave (la grave en el extremo).
+  danio?: DanioVida;
 }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (actual / max) * 100)) : 0;
   const vacio = actual <= 0;
@@ -57,10 +63,19 @@ export function BarraVital({
           vacio || critico ? "border-danger" : "border-border"
         } ${critico ? "animate-pulse" : ""}`}
       >
-        <div
-          className={`h-full transition-[width] duration-500 ease-out ${vacio ? "" : `${relleno} ${glow}`}`}
-          style={{ width: `${pct}%` }}
-        />
+        <div className="flex h-full w-full">
+          <div
+            className={`h-full shrink-0 transition-[width] duration-500 ease-out ${vacio ? "" : `${relleno} ${glow}`}`}
+            style={{ width: `${pct}%` }}
+          />
+          {danio && max > 0 && (
+            <>
+              <SegmentoHerida puntos={danio.noLetal} max={max} clase="bg-herida-no-letal" />
+              <SegmentoHerida puntos={danio.letal} max={max} clase="bg-herida-letal" />
+              <SegmentoHerida puntos={danio.grave} max={max} clase="rayado-grave" />
+            </>
+          )}
+        </div>
         {/* Separadores de segmento — el relleno se lee en bloques, no como un
             degradado líquido, mismo espíritu "panel técnico" que hazard-stripes
             y scanlines en globals.css. */}
@@ -72,5 +87,15 @@ export function BarraVital({
         />
       </div>
     </div>
+  );
+}
+
+function SegmentoHerida({ puntos, max, clase }: { puntos: number; max: number; clase: string }) {
+  if (puntos <= 0) return null;
+  return (
+    <div
+      className={`h-full shrink-0 transition-[width] duration-500 ease-out ${clase}`}
+      style={{ width: `${Math.min(100, (puntos / max) * 100)}%` }}
+    />
   );
 }

@@ -480,3 +480,23 @@ describe("v21 → v22: especialidades de Combate a Distancia (foto de Drive 2026
     assert.deepEqual(s.avisoEspecialidades, []);
   });
 });
+
+describe("v22 → v23: daño de vida por categoría", () => {
+  test("añade el desglose a 0", () => {
+    const { ficha } = migrar({ schemaVersion: 22, vidaActual: 4 }, 23);
+    assert.equal(ficha.schemaVersion, 23);
+    assert.deepEqual(ficha.danio, { noLetal: 0, letal: 0, grave: 0 });
+  });
+
+  test("una ficha vieja con vida perdida la lee como letal", () => {
+    // Atributos a 0: vida máxima 10.
+    const s = parseSheet({ schemaVersion: 22, vidaActual: 4 });
+    assert.equal(s.schemaVersion, SCHEMA_VERSION);
+    assert.equal(s.vidaActual, 4);
+    assert.deepEqual(s.danio, { noLetal: 0, letal: 6, grave: 0 });
+  });
+
+  test("una ficha vieja a tope no ha perdido nada", () => {
+    assert.deepEqual(parseSheet({ schemaVersion: 22 }).danio, { noLetal: 0, letal: 0, grave: 0 });
+  });
+});

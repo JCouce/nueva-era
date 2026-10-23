@@ -31,6 +31,7 @@ import {
   ajustarFarmacoAction,
   comprarFarmacoAction,
   ajustarVidaAction,
+  ajustarDanioAction,
   ajustarFatigaAction,
   devolverFatigaAction,
   pagarFatigaAction,
@@ -66,6 +67,8 @@ import {
   ajustarMunicionEspecial,
   ajustarFarmaco,
   ajustarVida,
+  ajustarDanioCategoria,
+  type CategoriaDanio,
   ajustarFatiga,
   pagarFatiga,
   ajustarFatigaTemporal,
@@ -492,6 +495,10 @@ export function CharacterSheet({
     setSheet((s) => ajustarVida(s, delta, estados));
     runSave(() => ajustarVidaAction(characterId, delta), setSheet);
   };
+  const commitAjustarDanio = (categoria: CategoriaDanio, delta: number) => {
+    setSheet((s) => ajustarDanioCategoria(s, categoria, delta, estados));
+    runSave(() => ajustarDanioAction(characterId, categoria, delta), setSheet);
+  };
   const commitAjustarFatiga = (delta: number) => {
     setSheet((s) => ajustarFatiga(s, delta, estados));
     runSave(() => ajustarFatigaAction(characterId, delta), setSheet);
@@ -831,6 +838,7 @@ export function CharacterSheet({
           onPagarFatiga={commitPagarFatiga}
           onAjustarFatiga={commitDevolverFatiga}
           onAjustarVida={commitAjustarVida}
+          onAjustarDanio={commitAjustarDanio}
           onGastarUsosEscena={commitGastarUsosEscena}
           onUsarAccionAumento={commitUsarAccionAumento}
           onMarcarFavorita={commitMarcarFavorita}
@@ -913,6 +921,7 @@ export function CharacterSheet({
               onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
               onComprarMunicionEspecial={commitComprarMunicionEspecial}
               onAjustarVida={commitAjustarVida}
+              onAjustarDanio={commitAjustarDanio}
               onAjustarFatiga={commitAjustarFatiga}
               onAjustarFatigaTemporal={commitAjustarFatigaTemporal}
               onTerminarEscena={commitTerminarEscena}
