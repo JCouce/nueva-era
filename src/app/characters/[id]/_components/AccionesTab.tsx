@@ -49,6 +49,8 @@ import {
   danioSobrecarga,
   gradoDeTirada,
   tirarD12,
+  tiradaLibre,
+  etiquetaTiradaLibre,
   type PoderDisponible,
   type Accion,
   type AccionDirecta,
@@ -87,6 +89,7 @@ const PESTANAS: { id: Pestana; label: string }[] = [
 // choque con ningún id de acción.
 const FAVORITA_BLOQUEAR_DANIO = "fija:bloquear_danio";
 const FAVORITA_REPARA_FABRICA = "fija:reparar_fabricar";
+const FAVORITA_TIRADA_LIBRE = "fija:tirada_libre";
 
 type Estrella = { marcada: boolean; onMarcar: () => void };
 
@@ -361,6 +364,33 @@ function FilaReparaFabrica({ onAbrir, estrella }: { onAbrir: () => void; estrell
           className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95"
         >
           Abrir
+        </button>
+        {estrella && <BotonEstrella estrella={estrella} />}
+      </div>
+    </HudCard>
+  );
+}
+
+// Tirada libre (T-007): aplicado y habilidad se eligen en el modal, así que la fila no enseña
+// número; última de la sección "Acciones", en Tiradas.
+function FilaTiradaLibre({ onAbrir, estrella }: { onAbrir: () => void; estrella?: Estrella }) {
+  return (
+    <HudCard className="p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <span className="block font-display text-base font-semibold uppercase leading-tight">
+            Tirada libre
+          </span>
+          <span className="mt-1 block font-mono text-[10px] uppercase text-muted">
+            Aplicado + habilidad, a elegir
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onAbrir}
+          className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95"
+        >
+          Tirar
         </button>
         {estrella && <BotonEstrella estrella={estrella} />}
       </div>
@@ -1103,7 +1133,8 @@ export function AccionesTab({
         {
           ...r,
           id,
-          label: tirada.label,
+          // La tirada libre, con el par elegido: "Tirada libre (Reflejos + Sigilo)".
+          label: tirada.libre ? etiquetaTiradaLibre(montada.aplicado.id, montada.habilidad?.id ?? null) : tirada.label,
           dados,
           danioInfo,
           efectoCritico: tirada.efectoCritico,
@@ -1257,8 +1288,10 @@ export function AccionesTab({
     // Reparar y Fabricar vive aquí, junto a Hackeo — no es una tirada fija de
     // ACCIONES, se añade a mano; tira dado dentro de su modal: va a Tiradas.
     const reparaFabrica = grupo === "Acciones" && !!onReparar && verTirada(FAVORITA_REPARA_FABRICA);
-    return { grupo, tiradas, directas, bloquearDanio, reparaFabrica };
-  }).filter((g) => g.tiradas.length + g.directas.length > 0 || g.bloquearDanio || g.reparaFabrica);
+    // Tirada libre (T-007): la última de "Acciones", con dado: va a Tiradas.
+    const conLibre = grupo === "Acciones" && verTirada(FAVORITA_TIRADA_LIBRE);
+    return { grupo, tiradas, directas, bloquearDanio, reparaFabrica, conLibre };
+  }).filter((g) => g.tiradas.length + g.directas.length > 0 || g.bloquearDanio || g.reparaFabrica || g.conLibre);
   const hayFilas =
     ataquesPestana.length +
       ataqueDirectaPestana.length +
@@ -1410,7 +1443,7 @@ export function AccionesTab({
             </div>
           )}
 
-          {gruposPestana.map(({ grupo, tiradas, directas, bloquearDanio, reparaFabrica }) => (
+          {gruposPestana.map(({ grupo, tiradas, directas, bloquearDanio, reparaFabrica, conLibre }) => (
             <div key={grupo} className="flex flex-col gap-2">
               <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
                 {grupo}
@@ -1431,6 +1464,12 @@ export function AccionesTab({
                 <FilaReparaFabrica
                   onAbrir={() => setReparaFabricaAbierta(true)}
                   estrella={estrella(FAVORITA_REPARA_FABRICA)}
+                />
+              )}
+              {conLibre && (
+                <FilaTiradaLibre
+                  onAbrir={() => abrir(tiradaLibre(), false, false)}
+                  estrella={estrella(FAVORITA_TIRADA_LIBRE)}
                 />
               )}
             </div>

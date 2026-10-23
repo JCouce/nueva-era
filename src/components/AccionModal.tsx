@@ -10,7 +10,11 @@ import {
   avisoInsuficiente,
   resumenCasilla,
   resumenOpcion,
+  APLICADOS,
+  HABILIDADES,
   type Accion,
+  type AplicadoId,
+  type HabilidadId,
   type CondicionTirada,
   type EleccionTirada,
   type EstadoCondiciones,
@@ -295,6 +299,12 @@ export function AccionModal({
     return () => clearInterval(id);
   }, [rodando, dadoAsentado]);
 
+  // Tirada libre (Accion.libre): aplicado y habilidad elegidos aquí. Se mantienen mientras el
+  // modal siga abierto ("Tirar otra vez" repite el par); no se guardan en la ficha.
+  const [aplicadoLibre, setAplicadoLibre] = useState<AplicadoId>(tirada.aplicado);
+  const [habilidadLibre, setHabilidadLibre] = useState<HabilidadId | null>(tirada.habilidad);
+  const tiradaEfectiva: Accion = tirada.libre ? { ...tirada, aplicado: aplicadoLibre, habilidad: habilidadLibre } : tirada;
+
   const cambiar = (id: string, valor: string | number | boolean) =>
     setEstado((e) => ({ ...e, [id]: valor }));
 
@@ -316,7 +326,7 @@ export function AccionModal({
     }, RODANDO_MS);
   };
 
-  const montada = montarTirada(ficha, tirada, { ...eleccion, estadoCondiciones: estado, circunstancial });
+  const montada = montarTirada(ficha, tiradaEfectiva, { ...eleccion, estadoCondiciones: estado, circunstancial });
   const totalPrevisto = montada.total;
   // Textos de las opciones activas (Visor Nocturno y demás "texto
   // informativo" del §8) — `estado` no cambia entre elegir y ver el
@@ -457,6 +467,40 @@ export function AccionModal({
               </div>
               {avisoRecurso && <AvisoRecurso texto={avisoRecurso} />}
               {bloqueo && <AvisoRecurso texto={bloqueo} />}
+            </div>
+          )}
+
+          {!resultado && !rodando && tirada.libre && (
+            <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3">
+              <label className="flex min-w-0 flex-col gap-1">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Aplicado"}</span>
+                <select
+                  value={aplicadoLibre}
+                  onChange={(e) => setAplicadoLibre(e.target.value as AplicadoId)}
+                  className="min-h-10 w-full min-w-0 border border-border bg-elevated px-2 font-mono text-xs uppercase text-foreground"
+                >
+                  {APLICADOS.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex min-w-0 flex-col gap-1">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Habilidad"}</span>
+                <select
+                  value={habilidadLibre ?? ""}
+                  onChange={(e) => setHabilidadLibre(e.target.value === "" ? null : (e.target.value as HabilidadId))}
+                  className="min-h-10 w-full min-w-0 border border-border bg-elevated px-2 font-mono text-xs uppercase text-foreground"
+                >
+                  <option value="">Ninguna</option>
+                  {HABILIDADES.map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
           )}
 

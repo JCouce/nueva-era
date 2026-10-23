@@ -68,6 +68,8 @@ export const SIN_ELECCION: EleccionTirada = { enEspecialidad: false, sutil: fals
 // fila no cuenta. Igual una acción de dote con especialidad (`especialidadesAccion`), con
 // cualquiera de las suyas. El resto de tiradas, lo que eligió el jugador.
 export function enEspecialidadEfectiva(sheet: Sheet, tirada: Accion, elegido: boolean): boolean {
+  // La tirada libre no va en especialidad (T-007, R2): la habilidad cuenta entera igual (montarTirada).
+  if (tirada.libre) return false;
   const fijas = especialidadesFijas(tirada);
   if (fijas.length > 0 && tirada.habilidad) return fijas.some((e) => tieneEspecialidad(sheet, tirada.habilidad!, e));
   return elegido;
@@ -344,9 +346,12 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
   const activas = condiciones.filter((c): c is Toggle => c.tipo === "toggle" && Boolean(estado[c.id]));
   // Los atributos de la extremidad solo valen para el aplicado y el daño de esta tirada.
   const modsAplicado = extremidad ? conExtremidad(ficha.ficha, mods, extremidad) : mods;
+  // La tirada libre no va en especialidad pero la habilidad cuenta entera, sin la mitad
+  // (T-007, R2): para el valor es como si fuera en especialidad; el desglose no lo dice.
+  const habilidadEntera = enEspecialidad || tirada.libre === true;
   const mod = otroAplicado
-    ? modificadorAccion(ficha.ficha, { ...tirada, aplicado: otroAplicado }, enEspecialidad, modsAplicado, false)
-    : modificadorAccion(ficha.ficha, tirada, enEspecialidad, modsAplicado, sutil);
+    ? modificadorAccion(ficha.ficha, { ...tirada, aplicado: otroAplicado }, habilidadEntera, modsAplicado, false)
+    : modificadorAccion(ficha.ficha, tirada, habilidadEntera, modsAplicado, sutil);
   const base = mod.total + ajustesFijos.reduce((t, a) => t + a.valor, 0);
 
   const modo = ctx.modoElegido;

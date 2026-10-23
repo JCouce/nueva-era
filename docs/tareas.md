@@ -828,7 +828,7 @@ construir (dos pasadas: rediseño, luego revisión).
 
 ## Pendiente
 
-### Pestaña Acciones: pestañas y favoritas ✅ (usuario, 2026-10-23; T-005 y T-006)
+### Pestaña Acciones: pestañas y favoritas ✅ (usuario, 2026-10-23; T-005, T-006 y T-007)
 Dentro de Acciones, una barra con **Básicas** (filas sin dado: `FilaUsar`, Bloquear daño, `FilaInfo`, poderes sin
 tirada) y **Tiradas** (`FilaTirada`, bloqueadas incluidas, Reparar/Fabricar y poderes con tirada). Un poder se
 clasifica con `prepararPoder` y `SELECCION_PODER_VACIA`, igual que lo pinta `FilaPoder`. Cada pestaña conserva los
@@ -842,6 +842,12 @@ su propio `PanelFieldset` y `CharacterSheet` ya no lo envuelve. NPC y consola de
   las claves fijas `fija:bloquear_danio` / `fija:reparar_fabricar`. Pestaña Favoritas al final (abre en Básicas) con
   las marcadas bajo sus subtítulos de siempre; un id sin acción no se pinta ni se limpia. Solo personajes: sin
   `onMarcarFavorita` (NPC, combate del máster) ni estrella ni pestaña.
+- [x] **T-007** — Tirada libre (2026-10-23): fila "Tirada libre" al final de "Acciones" (Tiradas), con estrella
+  (clave fija `fija:tirada_libre`). El modal (`AccionModal`, por `Accion.libre`) pinta antes de la dificultad dos
+  selects: aplicado (Perspicacia por defecto) y habilidad ("Ninguna" por defecto); se mantienen mientras siga abierto,
+  no se guardan. Motor: `tiradaLibre`/`etiquetaTiradaLibre` (`acciones.ts`), grupo propio `Libre`, montada con
+  `montarTirada` sin especialidad y con la habilidad entera; `conExtrasDeFicha` no le añade nada (S79). En Acciones
+  recientes, "Tirada libre (Reflejos + Sigilo)". También en el editor de NPC y el combate del máster, sin estrella.
 
 ### La fábrica: automatizar el desarrollo y el mantenimiento de Nueva Era ⬜ (épica; N1 construido 2026-10-19, en rodaje desde 2026-10-22)
 **Cómo está hoy:** `fabrica/README.md` es la foto vigente (procesos, piezas, uso y qué se apunta dónde) y
