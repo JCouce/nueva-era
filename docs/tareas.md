@@ -831,20 +831,25 @@ construir (dos pasadas: rediseño, luego revisión).
 ## Pendiente
 
 ### Pestaña Acciones: pestañas y favoritas ✅ (usuario, 2026-10-23; T-005, T-006 y T-007)
-Dentro de Acciones, una barra con **Básicas** (filas sin dado: `FilaUsar`, Bloquear daño, `FilaInfo`, poderes sin
-tirada) y **Tiradas** (`FilaTirada`, bloqueadas incluidas, Reparar/Fabricar y poderes con tirada). Un poder se
-clasifica con `prepararPoder` y `SELECCION_PODER_VACIA`, igual que lo pinta `FilaPoder`. Cada pestaña conserva los
-subtítulos de sección de siempre, en el mismo orden, y no pinta los que se quedan sin filas. El historial queda
-encima, fuera de las pestañas. Abre siempre en Básicas. En solo lectura la barra sigue navegable: `AccionesTab` lleva
+Dentro de Acciones, una barra por **origen** de la fila (rehecha el 2026-10-23; antes era Básicas sin dado / Tiradas
+con dado): **★** (Favoritas) · **Básicas** (catálogo fijo `ACCIONES` por grupo, Bloquear daño, Reparar/Fabricar,
+Tirada libre) · **Equipo** (Ataques, Defensa con Bloquear con X y Levantar escudo, Movimiento con Volar,
+Herramientas, Fármacos; Pelea incluida) · **Poderes** (Psiónica por disciplina, Dotes —también las de un grupo fijo,
+como Traicionero—, Especie) · **Aumentos** (filas e informativas). Con dado y sin dado mezclados. Una tirada fija
+modificada por algo propio (esquiva levitando, psiónica en tirada fija) sigue en Básicas. Las secciones se montan
+como datos (`Seccion`) y cada pestaña pinta las suyas; la que no tiene filas no sale, y si se vacía la abierta se
+vuelve a Básicas. Abre en ★ si hay alguna favorita que pintar, si no en Básicas (se decide al montar). El historial
+queda encima, fuera de las pestañas. En solo lectura la barra sigue navegable: `AccionesTab` lleva
 su propio `PanelFieldset` y `CharacterSheet` ya no lo envuelve. NPC y consola de combate, igual.
 - [x] **T-005** — Básicas y Tiradas (2026-10-23)
 - [x] **T-006** — Favoritas (2026-10-23): estrella (`BotonEstrella`) en toda fila con botón de Básicas y Tiradas
   (bloqueadas incluidas, no en `FilaInfo`), guardada en `sheet.favoritas` (v21, sin Prisma) con
   `marcarFavoritaAction`; cambia al momento y se deshace si falla el guardado. Bloquear daño y Reparar/Fabricar usan
-  las claves fijas `fija:bloquear_danio` / `fija:reparar_fabricar`. Pestaña Favoritas al final (abre en Básicas) con
-  las marcadas bajo sus subtítulos de siempre; un id sin acción no se pinta ni se limpia. Solo personajes: sin
+  las claves fijas `fija:bloquear_danio` / `fija:reparar_fabricar`. Pestaña ★ la primera, con las marcadas de todas
+  bajo sus subtítulos de siempre (las secciones del mismo título, como las dos Defensa, se juntan); un id sin acción no
+  se pinta ni se limpia. Solo personajes: sin
   `onMarcarFavorita` (NPC, combate del máster) ni estrella ni pestaña.
-- [x] **T-007** — Tirada libre (2026-10-23): fila "Tirada libre" al final de "Acciones" (Tiradas), con estrella
+- [x] **T-007** — Tirada libre (2026-10-23): fila "Tirada libre" al final de "Acciones" (Básicas), con estrella
   (clave fija `fija:tirada_libre`). El modal (`AccionModal`, por `Accion.libre`) pinta antes de la dificultad dos
   selects: aplicado (Perspicacia por defecto) y habilidad ("Ninguna" por defecto); se mantienen mientras siga abierto,
   no se guardan. Motor: `tiradaLibre`/`etiquetaTiradaLibre` (`acciones.ts`), grupo propio `Libre`, montada con

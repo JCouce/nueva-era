@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { Fragment, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import {
   ACCIONES,
   GRUPOS_ACCION,
@@ -78,12 +78,22 @@ import { UsarPoderModal } from "./UsarPoderModal";
 import { PanelFieldset } from "./personaje/PersonajeTab";
 import { type DanioInfo, type Lanzamiento } from "@/components/ResultadoTirada";
 
-type Pestana = "basicas" | "tiradas" | "favoritas";
-const PESTANAS: { id: Pestana; label: string }[] = [
+// Por origen de la fila: lo que todo el mundo tiene (catálogo fijo), lo que trae el equipo, lo
+// que dan psiónica, dotes y especie, y los aumentos. Con dado y sin dado, mezclados.
+type Origen = "basicas" | "equipo" | "poderes" | "aumentos";
+type Pestana = "favoritas" | Origen;
+const PESTANAS: { id: Pestana; label: string; aria?: string }[] = [
+  { id: "favoritas", label: "★", aria: "Favoritas" },
   { id: "basicas", label: "Básicas" },
-  { id: "tiradas", label: "Tiradas" },
-  { id: "favoritas", label: "Favoritas" },
+  { id: "equipo", label: "Equipo" },
+  { id: "poderes", label: "Poderes" },
+  { id: "aumentos", label: "Aumentos" },
 ];
+
+// Una sección de la lista (con su subtítulo de siempre) y la pestaña de la que es. `id` null:
+// fila que no se marca (FilaInfo), solo sale en su pestaña. `sub`: subtítulo menor (disciplina).
+type FilaSeccion = { id: string | null; sub?: string; nodo: ReactNode };
+type Seccion = { origen: Origen; titulo: string; filas: FilaSeccion[]; aviso?: ReactNode };
 
 // Favoritas (T-006) de las filas que no son una Accion: clave fija, con prefijo para que no
 // choque con ningún id de acción.
@@ -656,17 +666,10 @@ export function AccionesTab({
   // Ficha en revisión (CharacterSheet): las filas se desactivan, la barra de pestañas no.
   soloLectura?: boolean;
 }) {
-  // Siempre abre en Básicas: CharacterSheet desmonta este componente al cambiar de pestaña.
-  const [pestana, setPestana] = useState<Pestana>("basicas");
-  const enTiradas = pestana === "tiradas";
-  const enFavoritas = pestana === "favoritas";
-  const pestanas = onMarcarFavorita ? PESTANAS : PESTANAS.filter((p) => p.id !== "favoritas");
+  // La pestaña abierta (`elegida`) se declara más abajo, con las secciones ya montadas.
   const sheet = ficha.ficha;
-  // Qué filas salen en la pestaña: Básicas las sin dado, Tiradas las de dado, Favoritas las
-  // marcadas de cualquiera de las dos. Un id guardado sin acción que lo pinte no sale.
+  // Un id guardado sin acción que lo pinte no sale.
   const favoritas = new Set(onMarcarFavorita ? sheet.favoritas : []);
-  const verTirada = (id: string) => (enFavoritas ? favoritas.has(id) : enTiradas);
-  const verDirecta = (id: string) => (enFavoritas ? favoritas.has(id) : pestana === "basicas");
   const estrella = (id: string): Estrella | undefined =>
     onMarcarFavorita
       ? { marcada: favoritas.has(id), onMarcar: () => onMarcarFavorita(id, !favoritas.has(id)) }
@@ -772,22 +775,16 @@ export function AccionesTab({
     [ficha],
   );
 
-  const filasAumentosPestana = filasAumentos.filter((f) =>
-    f.tipo === "tirada" ? verTirada(f.accion.id) : verDirecta(f.accion.id),
-  );
-  // Las informativas no se marcan: solo en Básicas.
-  const informativasPestana = pestana === "basicas" ? ficha.accionesAumentos.informativas : [];
-
   const abrir = (t: Accion, enEspecialidad: boolean, sutil: boolean) => {
     setModal({ tirada: t, ficha, eleccion: { enEspecialidad, sutil }, resultadoId: null });
   };
 
   const niveles = ficha.psionica.paraEfectos;
   const poderes = useMemo(() => accionesDePsionica(sheet, niveles), [sheet, niveles]);
-  // Si un poder tira o no, como lo enseña FilaPoder: con la selección vacía. Los que
-  // prepararPoder no resuelve no se pintan (FilaPoder devuelve null) y no salen en ninguna.
-  const poderEnPestana = (p: PoderDisponible): boolean => {
-    const prep = prepararPoder({
+  // Los que prepararPoder no resuelve no se pintan (FilaPoder devuelve null): fuera ya, para
+  // que no cuenten al decidir si una sección o pestaña tiene filas.
+  const poderPintable = (p: PoderDisponible): boolean =>
+    prepararPoder({
       ficha: sheet,
       modificadores: mods,
       niveles,
@@ -795,13 +792,10 @@ export function AccionesTab({
       seleccion: SELECCION_PODER_VACIA,
       textos: ficha.textosTirada,
       indiceCondiciones: ficha.indiceCondiciones,
-    });
-    if (prep === null) return false;
-    return prep.tirada !== null ? verTirada(p.accion.id) : verDirecta(p.accion.id);
-  };
-  const poderesPestana = poderes.filter(poderEnPestana);
-  const poderesDotesPestana = ficha.poderesDotes.filter(poderEnPestana);
-  const disciplinasConPoderes = [...new Set(poderesPestana.map((p) => p.disciplina))];
+    }) !== null;
+  const poderesPintables = poderes.filter(poderPintable);
+  const poderesDotesPintables = ficha.poderesDotes.filter(poderPintable);
+  const disciplinasConPoderes = [...new Set(poderesPintables.map((p) => p.disciplina))];
   // Poder cuyo modal está abierto y lo que el jugador ha elegido en él. Las
   // reglas (coste, bloqueo, tirada, efectos de usarlo) salen de usoPoder.ts:
   // aquí solo se pinta y se aplica. `directo` = poder sin tirada (UsarPoderModal
@@ -1255,59 +1249,172 @@ export function AccionesTab({
   const resultadoModal =
     modal?.resultadoId != null ? (historial.find((h) => h.id === modal.resultadoId) ?? null) : null;
 
-  // Filas de cada sección en esta pestaña (mismo orden y subtítulos en las tres).
-  const ataquesPestana = ataques.filter((t) => verTirada(t.id));
-  const ataqueDirectaPestana = ataqueDirecta.filter((a) => verDirecta(a.id));
-  const herramientasPestana = herramientas.filter((t) => verTirada(t.id));
-  const herramientasDirectasPestana = herramientasDirectas.filter((a) => verDirecta(a.id));
-  const farmacosPestana = farmacos.filter((t) => verTirada(t.id));
-  const farmacosDirectasPestana = farmacosDirectas.filter((a) => verDirecta(a.id));
-  const dotesTiradasPestana = dotesTiradas.filter((t) => verTirada(t.id));
-  const dotesDirectasPestana = dotesDirectas.filter((a) => verDirecta(a.id));
-  const gruposPestana = GRUPOS_ACCION.map((grupo) => {
-    const tiradas = ACCIONES.filter((t) => t.grupo === grupo)
-      .map(conExtras)
-      .map((t) => conPsionicaEnTiradaFija(niveles, conEsquivaLevitando(niveles, t)))
-      // Defensa/Esquiva (fija) primero, Bloquear-con-X (generado por
-      // equipo) detrás — mismo orden que Ataques: lo fijo antes que lo
-      // que trae cada arma. "Volar" entra igual dentro de "Acciones".
-      .concat(grupo === "Defensa" ? defensaGenerada : grupo === "Acciones" ? accionesGeneradas : [])
-      // Acciones de dote con este grupo extra (Traicionero en Iniciativa, §9.3).
-      .concat(dotesEnGrupos.filter((t) => t.grupo === grupo))
-      .filter((t) => verTirada(t.id));
-    // "Levantar [escudo]" — una fila por cada escudo equipado, generada por
-    // accionesDirectasDeAtaque() (combate.ts), no por el catálogo fijo de ACCIONES.
-    // Detrás, las de dote con este grupo y las de especie (activar la visión, §14.9).
-    const directas = [
-      ...(grupo === "Defensa" ? defensaDirecta : []),
-      ...directasDotesEnGrupos.filter((a) => a.grupo === grupo),
-      ...(grupo === "Acciones" ? ficha.accionesEspecie : []),
-    ].filter((a) => verDirecta(a.id));
-    // Bloquear daño vive junto a Defensa/esquiva — tampoco es una tirada fija de
-    // ACCIONES (no tira dado, no muta la ficha): va a Básicas.
-    const bloquearDanio = grupo === "Defensa" && verDirecta(FAVORITA_BLOQUEAR_DANIO);
-    // Reparar y Fabricar vive aquí, junto a Hackeo — no es una tirada fija de
-    // ACCIONES, se añade a mano; tira dado dentro de su modal: va a Tiradas.
-    const reparaFabrica = grupo === "Acciones" && !!onReparar && verTirada(FAVORITA_REPARA_FABRICA);
-    // Tirada libre (T-007): la última de "Acciones", con dado: va a Tiradas.
-    const conLibre = grupo === "Acciones" && verTirada(FAVORITA_TIRADA_LIBRE);
-    return { grupo, tiradas, directas, bloquearDanio, reparaFabrica, conLibre };
-  }).filter((g) => g.tiradas.length + g.directas.length > 0 || g.bloquearDanio || g.reparaFabrica || g.conLibre);
-  const hayFilas =
-    ataquesPestana.length +
-      ataqueDirectaPestana.length +
-      poderesPestana.length +
-      herramientasPestana.length +
-      herramientasDirectasPestana.length +
-      farmacosPestana.length +
-      farmacosDirectasPestana.length +
-      gruposPestana.length +
-      poderesDotesPestana.length +
-      dotesTiradasPestana.length +
-      dotesDirectasPestana.length +
-      filasAumentosPestana.length +
-      informativasPestana.length >
-    0;
+  // Las filas de cada pestaña por origen, con los subtítulos de siempre. Con dado y sin dado
+  // mezclados: la fila ya dice si es Tirar o Usar.
+  const filaTirada = (t: Accion): FilaSeccion => ({
+    id: t.id,
+    nodo: <FilaTirada key={t.id} tirada={t} ficha={ficha} onAbrir={abrir} estrella={estrella(t.id)} />,
+  });
+  const filaUsar = (a: AccionDirecta): FilaSeccion => ({
+    id: a.id,
+    nodo: <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} estrella={estrella(a.id)} />,
+  });
+  const filaPoder = (p: PoderDisponible, sub?: string): FilaSeccion => ({
+    id: p.accion.id,
+    sub,
+    nodo: (
+      <FilaPoder
+        key={p.accion.id}
+        poder={p}
+        sheet={sheet}
+        mods={mods}
+        niveles={niveles}
+        textos={ficha.textosTirada}
+        indiceCondiciones={ficha.indiceCondiciones}
+        onAbrir={abrirPoder}
+        estrella={estrella(p.accion.id)}
+      />
+    ),
+  });
+
+  // Básicas: lo que tiene todo el mundo. Una tirada fija que cambia por algo propio (esquiva
+  // levitando, psiónica en la tirada) sigue aquí: es un modificador, no una acción nueva.
+  // Bloquear daño, Reparar/Fabricar y la Tirada libre no son de ACCIONES: se añaden a mano.
+  const basicas: Seccion[] = GRUPOS_ACCION.map((grupo) => ({
+    origen: "basicas",
+    titulo: grupo,
+    filas: [
+      ...ACCIONES.filter((t) => t.grupo === grupo)
+        .map(conExtras)
+        .map((t) => conPsionicaEnTiradaFija(niveles, conEsquivaLevitando(niveles, t)))
+        .map(filaTirada),
+      ...(grupo === "Defensa"
+        ? [
+            {
+              id: FAVORITA_BLOQUEAR_DANIO,
+              nodo: (
+                <FilaBloquearDanio
+                  key={FAVORITA_BLOQUEAR_DANIO}
+                  onAbrir={() => setBloquearDanioAbierta(true)}
+                  estrella={estrella(FAVORITA_BLOQUEAR_DANIO)}
+                />
+              ),
+            },
+          ]
+        : []),
+      ...(grupo === "Acciones" && onReparar
+        ? [
+            {
+              id: FAVORITA_REPARA_FABRICA,
+              nodo: (
+                <FilaReparaFabrica
+                  key={FAVORITA_REPARA_FABRICA}
+                  onAbrir={() => setReparaFabricaAbierta(true)}
+                  estrella={estrella(FAVORITA_REPARA_FABRICA)}
+                />
+              ),
+            },
+          ]
+        : []),
+      ...(grupo === "Acciones"
+        ? [
+            {
+              id: FAVORITA_TIRADA_LIBRE,
+              nodo: (
+                <FilaTiradaLibre
+                  key={FAVORITA_TIRADA_LIBRE}
+                  onAbrir={() => abrir(tiradaLibre(), false, false)}
+                  estrella={estrella(FAVORITA_TIRADA_LIBRE)}
+                />
+              ),
+            },
+          ]
+        : []),
+    ],
+  }));
+
+  // Equipo: todo lo que generan las piezas equipadas y los fármacos (Pelea incluida, que sale
+  // de sheet.equipo). Bloquear con X y Levantar escudo, en su propia "Defensa".
+  const equipo: Seccion[] = [
+    { origen: "equipo", titulo: "Ataques", filas: [...ataques.map(filaTirada), ...ataqueDirecta.map(filaUsar)] },
+    { origen: "equipo", titulo: "Defensa", filas: [...defensaGenerada.map(filaTirada), ...defensaDirecta.map(filaUsar)] },
+    { origen: "equipo", titulo: "Movimiento", filas: accionesGeneradas.map(filaTirada) },
+    {
+      origen: "equipo",
+      titulo: "Herramientas",
+      filas: [...herramientas.map(filaTirada), ...herramientasDirectas.map(filaUsar)],
+    },
+    { origen: "equipo", titulo: "Fármacos", filas: [...farmacos.map(filaTirada), ...farmacosDirectas.map(filaUsar)] },
+  ];
+
+  // Poderes: psiónica (por disciplina), dotes (también las que antes iban a un grupo fijo, como
+  // Traicionero en Iniciativa) y las activables de especie.
+  const poderesSecciones: Seccion[] = [
+    {
+      origen: "poderes",
+      titulo: "Psiónica",
+      filas: disciplinasConPoderes.flatMap((d) =>
+        poderesPintables
+          .filter((p) => p.disciplina === d)
+          .map((p) =>
+            filaPoder(p, `${d.label} · ${textoNivelEnAcciones(ficha.psionica.disciplinas[d.id as DisciplinaId])}`),
+          ),
+      ),
+    },
+    {
+      origen: "poderes",
+      titulo: "Dotes",
+      filas: [
+        ...poderesDotesPintables.map((p) => filaPoder(p)),
+        ...dotesTiradas.map(filaTirada),
+        ...dotesEnGrupos.map(filaTirada),
+        ...dotesDirectas.map(filaUsar),
+        ...directasDotesEnGrupos.map(filaUsar),
+      ],
+    },
+    { origen: "poderes", titulo: "Especie", filas: ficha.accionesEspecie.map(filaUsar) },
+  ];
+
+  // Aumentos (A4a, A4b), en el orden del catálogo. Las informativas (defensa del MQE) no se
+  // marcan: solo en su pestaña.
+  const aumentos: Seccion = {
+    origen: "aumentos",
+    titulo: "Aumentos",
+    aviso: avisoAumento ? (
+      <p className="border-l-2 border-info pl-2 font-sans text-[12px] leading-relaxed text-info">{avisoAumento}</p>
+    ) : undefined,
+    filas: [
+      ...filasAumentos.map((f) => (f.tipo === "tirada" ? filaTirada(f.accion) : filaUsar(f.accion))),
+      ...ficha.accionesAumentos.informativas.map((i) => ({
+        id: null,
+        nodo: <FilaInfo key={i.id} label={i.label} fuente={i.fuente} lineas={i.lineas} />,
+      })),
+    ],
+  };
+
+  const secciones = [...basicas, ...equipo, ...poderesSecciones, aumentos].filter((s) => s.filas.length > 0);
+  // Favoritas: las marcadas de todas, en el orden de las pestañas; dos secciones con el mismo
+  // subtítulo (la Defensa básica y la del equipo) salen juntas, donde la primera.
+  const seccionesFavoritas: Seccion[] = [];
+  for (const s of secciones) {
+    const filas = s.filas.filter((f) => f.id !== null && favoritas.has(f.id));
+    if (filas.length === 0) continue;
+    const previa = seccionesFavoritas.find((p) => p.titulo === s.titulo);
+    if (previa) previa.filas.push(...filas);
+    else seccionesFavoritas.push({ ...s, filas });
+  }
+
+  // Se decide al montar: con lo de arriba ya calculado. Marcar o desmarcar luego no cambia de
+  // pestaña.
+  const [elegida, setElegida] = useState<Pestana>(() => (seccionesFavoritas.length > 0 ? "favoritas" : "basicas"));
+  // Una pestaña sin filas no se pinta (Aumentos sin aumentos). Si se vacía la que está abierta
+  // (desequipar lo último), a Básicas.
+  const pestanas = PESTANAS.filter((p) =>
+    p.id === "favoritas" ? !!onMarcarFavorita : secciones.some((s) => s.origen === p.id),
+  );
+  const pestana = pestanas.some((p) => p.id === elegida) ? elegida : "basicas";
+  const enFavoritas = pestana === "favoritas";
+  const seccionesPestana = enFavoritas ? seccionesFavoritas : secciones.filter((s) => s.origen === pestana);
 
   return (
     <div className="flex flex-col gap-3">
@@ -1335,19 +1442,20 @@ export function AccionesTab({
         )}
       </div>
 
-      {/* Básicas (sin dado) y Tiradas (con dado): cada fila sale en una sola, con los
-          subtítulos de siempre y sin pintar los que se quedan vacíos en esa pestaña.
-          Favoritas (T-006, solo con onMarcarFavorita): las marcadas de las dos, igual.
-          Fuera del fieldset: en solo lectura se sigue pudiendo cambiar de pestaña. */}
-      <nav className="flex gap-1 border-b border-border">
+      {/* Por origen: Básicas (lo de todo el mundo), Equipo, Poderes y Aumentos, y delante ★
+          (Favoritas, solo con onMarcarFavorita) con las marcadas de todas. Las pestañas sin
+          filas no salen. Fuera del fieldset: en solo lectura se sigue pudiendo cambiar. */}
+      <nav className="flex border-b border-border">
         {pestanas.map((p) => (
           <button
             key={p.id}
             type="button"
-            onClick={() => setPestana(p.id)}
-            className={`-mb-px min-h-10 border-b-2 px-4 py-2 font-display text-sm font-semibold uppercase tracking-wide ${
-              pestana === p.id ? "border-accent text-foreground" : "border-transparent text-muted"
-            }`}
+            aria-label={p.aria}
+            aria-pressed={pestana === p.id}
+            onClick={() => setElegida(p.id)}
+            className={`-mb-px min-h-10 border-b-2 py-2 font-display font-semibold uppercase tracking-wide ${
+              p.id === "favoritas" ? "shrink-0 px-3 text-base" : "min-w-0 flex-1 px-1 text-xs"
+            } ${pestana === p.id ? "border-accent text-foreground" : "border-transparent text-muted"}`}
           >
             {p.label}
           </button>
@@ -1356,188 +1464,29 @@ export function AccionesTab({
 
       <PanelFieldset disabled={soloLectura}>
         <div className="flex flex-col gap-3">
-          {enFavoritas && !hayFilas && (
+          {enFavoritas && seccionesPestana.length === 0 && (
             <HudCard className="border-dashed p-4 text-center">
               <p className="font-sans text-sm text-muted">Marca con la estrella las acciones que más uses</p>
             </HudCard>
           )}
 
-          {ataquesPestana.length + ataqueDirectaPestana.length > 0 && (
-            <div className="flex flex-col gap-2">
+          {seccionesPestana.map((s) => (
+            <div key={s.titulo} className="flex flex-col gap-2">
               <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
-                Ataques
+                {s.titulo}
               </h2>
-              {ataquesPestana.map((t) => (
-                <FilaTirada key={t.id} tirada={t} ficha={ficha} onAbrir={abrir} estrella={estrella(t.id)} />
+              {s.aviso}
+              {s.filas.map((f, i) => (
+                <Fragment key={f.id ?? `info:${i}`}>
+                  {/* Subtítulo de disciplina en Psiónica, al empezar cada una. */}
+                  {f.sub && f.sub !== s.filas[i - 1]?.sub && (
+                    <h3 className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted">{f.sub}</h3>
+                  )}
+                  {f.nodo}
+                </Fragment>
               ))}
-              {/* Detonación de pulso térmico (Malla Plasmática) — generada por
-                  accionesDirectasDeAtaque() (combate.ts), no tira dado. */}
-              {ataqueDirectaPestana.map((a) => (
-                <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} estrella={estrella(a.id)} />
-              ))}
-            </div>
-          )}
-
-          {/* Psiónica: generada por los niveles de disciplina (poderes.ts), solo si
-              hay algún poder en esta pestaña — mismo criterio que Herramientas. */}
-          {poderesPestana.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
-                Psiónica
-              </h2>
-              {disciplinasConPoderes.map((d) => (
-                <div key={d.id} className="flex flex-col gap-2">
-                  <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">
-                    {d.label} · {textoNivelEnAcciones(ficha.psionica.disciplinas[d.id as DisciplinaId])}
-                  </h3>
-                  {poderesPestana
-                    .filter((p) => p.disciplina === d)
-                    .map((p) => (
-                      <FilaPoder
-                        key={p.accion.id}
-                        poder={p}
-                        sheet={sheet}
-                        mods={mods}
-                        niveles={niveles}
-                        textos={ficha.textosTirada}
-                        indiceCondiciones={ficha.indiceCondiciones}
-                        onAbrir={abrirPoder}
-                        estrella={estrella(p.accion.id)}
-                      />
-                    ))}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Como Ataques: dinámica, generada por lo que hay equipado, no del
-              catálogo fijo (ver herramientas.ts). Solo se pinta si hay algo que
-              la use en esta pestaña. */}
-          {herramientasPestana.length + herramientasDirectasPestana.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
-                Herramientas
-              </h2>
-              {herramientasPestana.map((t) => (
-                <FilaTirada key={t.id} tirada={t} ficha={ficha} onAbrir={abrir} estrella={estrella(t.id)} />
-              ))}
-              {herramientasDirectasPestana.map((a) => (
-                <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} estrella={estrella(a.id)} />
-              ))}
-            </div>
-          )}
-
-          {/* Fármacos (docs/prompt-gasto-recursos.md, Fase 2): dinámica, generada
-              por sheet.farmacos, no por sheet.equipo (ver farmacos.ts) — mismo
-              criterio de "solo si hay algo que la use" que Herramientas. */}
-          {farmacosPestana.length + farmacosDirectasPestana.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
-                Fármacos
-              </h2>
-              {farmacosPestana.map((t) => (
-                <FilaTirada key={t.id} tirada={t} ficha={ficha} onAbrir={abrir} estrella={estrella(t.id)} />
-              ))}
-              {farmacosDirectasPestana.map((a) => (
-                <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} estrella={estrella(a.id)} />
-              ))}
-            </div>
-          )}
-
-          {gruposPestana.map(({ grupo, tiradas, directas, bloquearDanio, reparaFabrica, conLibre }) => (
-            <div key={grupo} className="flex flex-col gap-2">
-              <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
-                {grupo}
-              </h2>
-              {tiradas.map((t) => (
-                <FilaTirada key={t.id} tirada={t} ficha={ficha} onAbrir={abrir} estrella={estrella(t.id)} />
-              ))}
-              {directas.map((a) => (
-                <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} estrella={estrella(a.id)} />
-              ))}
-              {bloquearDanio && (
-                <FilaBloquearDanio
-                  onAbrir={() => setBloquearDanioAbierta(true)}
-                  estrella={estrella(FAVORITA_BLOQUEAR_DANIO)}
-                />
-              )}
-              {reparaFabrica && (
-                <FilaReparaFabrica
-                  onAbrir={() => setReparaFabricaAbierta(true)}
-                  estrella={estrella(FAVORITA_REPARA_FABRICA)}
-                />
-              )}
-              {conLibre && (
-                <FilaTiradaLibre
-                  onAbrir={() => abrir(tiradaLibre(), false, false)}
-                  estrella={estrella(FAVORITA_TIRADA_LIBRE)}
-                />
-              )}
             </div>
           ))}
-
-          {/* Dotes (D2c-1): las acciones propias de las dotes activas, de la FichaResuelta
-              (dotesAcciones.ts). Sin ninguna en esta pestaña, no hay sección. Al final, tras
-              Acciones. Los poderes de dote (D2c-2, dotesPoderes.ts) van primero, con la misma
-              fila y la misma ventana que los de Psiónica. */}
-          {poderesDotesPestana.length + dotesTiradasPestana.length + dotesDirectasPestana.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
-                Dotes
-              </h2>
-              {poderesDotesPestana.map((p) => (
-                <FilaPoder
-                  key={p.accion.id}
-                  poder={p}
-                  sheet={sheet}
-                  mods={mods}
-                  niveles={niveles}
-                  textos={ficha.textosTirada}
-                  indiceCondiciones={ficha.indiceCondiciones}
-                  onAbrir={abrirPoder}
-                  estrella={estrella(p.accion.id)}
-                />
-              ))}
-              {dotesTiradasPestana.map((t) => (
-                <FilaTirada key={t.id} tirada={t} ficha={ficha} onAbrir={abrir} estrella={estrella(t.id)} />
-              ))}
-              {dotesDirectasPestana.map((a) => (
-                <FilaUsar key={a.id} accion={a} onAbrir={abrirDirecta} estrella={estrella(a.id)} />
-              ))}
-            </div>
-          )}
-
-          {/* Aumentos (A4a, A4b): las acciones propias de los aumentos que funcionan (sin dado y
-              con dado) y las filas informativas (defensa del MQE), de la FichaResuelta
-              (aumentosAcciones.ts). Sin ninguna en esta pestaña, no hay sección. */}
-          {filasAumentosPestana.length + informativasPestana.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
-                Aumentos
-              </h2>
-              {/* Sale de usar una acción sin dado de aumento: va con las Básicas (y Favoritas). */}
-              {!enTiradas && avisoAumento && (
-                <p className="border-l-2 border-info pl-2 font-sans text-[12px] leading-relaxed text-info">{avisoAumento}</p>
-              )}
-              {/* En el orden del catálogo, dentro de cada pestaña. */}
-              {filasAumentosPestana.map((f) =>
-                f.tipo === "tirada" ? (
-                  <FilaTirada
-                    key={f.accion.id}
-                    tirada={f.accion}
-                    ficha={ficha}
-                    onAbrir={abrir}
-                    estrella={estrella(f.accion.id)}
-                  />
-                ) : (
-                  <FilaUsar key={f.accion.id} accion={f.accion} onAbrir={abrirDirecta} estrella={estrella(f.accion.id)} />
-                ),
-              )}
-              {informativasPestana.map((i) => (
-                <FilaInfo key={i.id} label={i.label} fuente={i.fuente} lineas={i.lineas} />
-              ))}
-            </div>
-          )}
         </div>
 
         {bloquearDanioAbierta && (
