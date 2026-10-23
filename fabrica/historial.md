@@ -7,6 +7,27 @@ Formato: `F-xxx · fecha · dónde · estado (abierto | arreglado | asumido)`.
 
 ---
 
+### F-016 · 2026-10-23 · Jefe y parser de "Puede tocar" (T-007) · abierto
+**Qué pasó:** T-007 escaló con todo en verde salvo C2. El Jefe puso varias rutas en un bullet de "Puede tocar" con
+líneas de continuación sangradas, y `puedeTocar` (`guion/contrato.mjs`) corta en la primera línea que no empieza por
+`-`: se quedó con 3 de las 11 rutas y marcó 6 archivos legítimos como fuera. El constructor no podía arreglarlo y paró
+con bloqueo en la vuelta 2 (~470k tokens para un falso fallo).
+**Causa:** formato del contrato que el parser no admite, sin aviso: ni el inspector ni el Jefe ven qué rutas extrae.
+**Arreglo:** contrato de T-007 rehecho con una ruta por línea (`alcance.mjs` pasa: 9 archivos, todos dentro).
+Pendiente: que `puedeTocar` admita líneas de continuación, o que el guion pinte las rutas extraídas antes de construir.
+**Lección:** si un script lee el contrato, el contrato tiene un formato; o se valida al encolar o se documenta en la
+plantilla.
+
+### F-015 · 2026-10-23 · Jefe, criterio que choca con la spec (T-005) · abierto
+**Qué pasó:** el inspector devolvió T-005: C4 prohibía el botón "Abrir" en Básicas y la spec mandaba ahí Bloquear
+daño, que lo lleva; además, dos puntos del alcance (orden de secciones, targets táctiles) sin criterio, pese al repaso
+de F-014. Al probarlo, el usuario esperaba ver Favoritas, que era la fase 2 (T-006).
+**Causa:** el Jefe escribió los criterios de navegador sin comprobar el texto real de cada fila, y el repaso de F-014
+se hizo de memoria, no punto por punto. El reparto en dos T se dijo en el cuerpo del contrato, no arriba.
+**Arreglo:** pendiente. Propuesta: en `jefe.md`, el repaso de F-014 se hace como tabla alcance → criterio dentro del
+propio contrato, y un encargo partido en varios T lo dice en la primera línea del Encargo.
+**Lección:** un criterio de navegador que nombra textos de la UI se escribe mirando esos textos en el código.
+
 ### F-014 · 2026-10-19 · Jefe, alcance sin criterio (T-002, T-003, T-004) · arreglado
 **Qué pasó:** tres contratos seguidos devueltos por el inspector porque un punto del alcance (docs o comentarios) no
 tenía criterio que lo comprobara.
