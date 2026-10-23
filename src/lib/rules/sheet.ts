@@ -72,12 +72,16 @@ import { ESPECIALIDAD_IDS, esEspecialidadDe, type EspecialidadId } from "../cata
 //        humano (bolsaAumentosGastada)
 //   19 → usos "una vez por escena" de los aumentos (A4a): usosEscena
 //   20 → la pieza del Brazo Biónico admite `armaIncorporada` (A6b)
-export const SCHEMA_VERSION = 20;
+//   21 → se añaden las acciones favoritas (favoritas, T-006)
+export const SCHEMA_VERSION = 21;
 
 // Tope de lo gastado de la bolsa de aumentos: muy por encima de cualquier bolsa real.
 export const MAX_BOLSA_AUMENTOS = 9_999_999;
 
 export const MAX_AVISOS_ESPECIALIDADES = 40;
+
+export const MAX_FAVORITAS = 100;
+export const MAX_LARGO_FAVORITA = 120;
 
 const atributoValue = z.number().int().min(ATRIBUTO_MIN).max(ATRIBUTO_MAX);
 
@@ -148,6 +152,10 @@ export const sheetSchema = z.object({
   // Casillas "una vez por escena" ya gastadas (ids de casilla, usosEscena.ts): estado de
   // partida que no se puede recalcular. Se vacía al terminar la escena.
   usosEscena: z.array(z.string().max(60)).max(MAX_USOS_ESCENA),
+  // Ids de las acciones que el jugador marca con la estrella (pestaña Favoritas de
+  // Acciones). Preferencia suya, no regla: un id cuya acción ya no existe se queda
+  // aquí sin pintarse.
+  favoritas: z.array(z.string().min(1).max(MAX_LARGO_FAVORITA)).max(MAX_FAVORITAS),
 });
 
 export type Sheet = z.infer<typeof sheetSchema>;
@@ -189,7 +197,26 @@ export function defaultSheet(): Sheet {
     fatigaTemporal: 0,
     bolsaAumentosGastada: 0,
     usosEscena: [],
+    favoritas: [],
   };
+}
+
+// Sin repetidos, solo textos no vacíos dentro del largo, hasta el tope. Lo que sobra
+// se descarta (no se recorta: un id truncado no casaría con ninguna acción).
+export function normalizarFavoritas(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const ids = raw.filter(
+    (x): x is string => typeof x === "string" && x.length > 0 && x.length <= MAX_LARGO_FAVORITA,
+  );
+  return [...new Set(ids)].slice(0, MAX_FAVORITAS);
+}
+
+// Marca o desmarca una acción favorita. Las nuevas van al final; con la lista llena, marcar
+// una más no hace nada (quien llama lo detecta comparando).
+export function marcarFavorita(sheet: Sheet, id: string, marcada: boolean): Sheet {
+  const sin = sheet.favoritas.filter((f) => f !== id);
+  const favoritas = marcada ? normalizarFavoritas([...sheet.favoritas, id]) : sin;
+  return { ...sheet, favoritas };
 }
 
 export function clampInt(
@@ -374,6 +401,7 @@ export function parseSheet(raw: unknown): Sheet {
       fatigaTemporal: clampInt(r.fatigaTemporal, 0, 999, 0),
       bolsaAumentosGastada: clampInt(r.bolsaAumentosGastada, 0, MAX_BOLSA_AUMENTOS, 0),
       usosEscena: normalizarUsosEscena(r.usosEscena),
+      favoritas: normalizarFavoritas(r.favoritas),
     }),
   );
 }

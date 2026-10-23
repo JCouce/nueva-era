@@ -4,8 +4,8 @@
 //
 // El dado entra como parámetro para que la resolución sea pura y testeable; el
 // azar lo pone quien llama (ver `tirarD12`).
-import type { AplicadoId } from "./atributos";
-import type { HabilidadId } from "./habilidades";
+import { APLICADOS, type AplicadoId } from "./atributos";
+import { HABILIDADES, type HabilidadId } from "./habilidades";
 import { aplicado, valorEfectivo } from "./derivados";
 import type { Sheet } from "./sheet";
 import type { AtributosExtremidad, CondicionTirada, BonoPorTramo, EstadoCondiciones } from "./condiciones";
@@ -197,6 +197,10 @@ export type Accion = {
   // un modo aparte (docs/tareas.md, "Movilidad Aérea"): es la condición
   // toggle "maxima_potencia" en `condiciones`, ver resolverVuelo() abajo.
   vuelo?: { velocidadBase: number; bonusCritico: number };
+  // Tirada libre (T-007, tiradaLibre abajo): el jugador elige aplicado y habilidad en el modal.
+  // El modal pinta los selectores por este campo, nunca por el id; montarTirada la tira sin
+  // especialidad y conExtrasDeFicha no le añade casillas, textos ni extras de dote o aumento.
+  libre?: true;
 };
 
 // Hermano discriminado de Accion para lo que docs/motor.md llama "acciones
@@ -455,6 +459,25 @@ export const ACCIONES: Accion[] = [
 // "Ataques" va primero pero no es un grupo de ACCIONES: AccionesTab lo pinta
 // aparte, con las filas que genera combate.ts a partir del equipo.
 export const GRUPOS_ACCION = ["Defensa", "Salvaciones", "Iniciativa", "Acciones"] as const;
+
+// Tirada libre (T-007): 1d12 + el aplicado + la habilidad que elija el jugador, para lo que el
+// máster pide en mesa y no es ninguna acción con nombre. Grupo propio ("Libre") para que ningún
+// alcance por grupo le case: solo le llega lo de alcance `todas`, `aplicado` y `habilidad`
+// (docs/sistema.md, supuestos: tirada libre).
+export const TIRADA_LIBRE_ID = "tirada_libre";
+export const TIRADA_LIBRE_LABEL = "Tirada libre";
+
+export function tiradaLibre(aplicado: AplicadoId = "perspicacia", habilidad: HabilidadId | null = null): Accion {
+  return { id: TIRADA_LIBRE_ID, label: TIRADA_LIBRE_LABEL, grupo: "Libre", aplicado, habilidad, libre: true };
+}
+
+// "Tirada libre (Perspicacia + Sigilo)", o "Tirada libre (Perspicacia)" sin habilidad: el
+// nombre en Acciones recientes.
+export function etiquetaTiradaLibre(aplicado: AplicadoId, habilidad: HabilidadId | null): string {
+  const a = APLICADOS.find((x) => x.id === aplicado)!.label;
+  const h = habilidad ? HABILIDADES.find((x) => x.id === habilidad)!.label : null;
+  return `${TIRADA_LIBRE_LABEL} (${h ? `${a} + ${h}` : a})`;
+}
 
 // Modificador fijo de una tirada: lo que se suma al dado antes de nada más.
 // `mods` obligatorio: los de la FichaResuelta (especie, equipo y estados de

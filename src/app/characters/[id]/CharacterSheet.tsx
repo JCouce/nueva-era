@@ -39,6 +39,7 @@ import {
   usarAccionAumentoAction,
   comprarDoteAction,
   quitarDoteAction,
+  marcarFavoritaAction,
   type SaveResult,
 } from "./actions";
 import {
@@ -83,6 +84,7 @@ import {
   VITALIDAD_DE_FICHA,
   comprarDote,
   quitarDote,
+  marcarFavorita,
   type DoteComprada,
   type EstadoActivo,
 } from "@/lib/rules";
@@ -511,6 +513,17 @@ export function CharacterSheet({
     setSheet((s) => liberarUsoEscena(s, id));
     runSave(() => liberarUsoEscenaAction(characterId, id), setSheet);
   };
+  // Favoritas (T-006): la estrella cambia ya; si el guardado falla (también sin red, que rechaza
+  // la promesa) se deshace solo ese id. En éxito no se toca la ficha: otra estrella pulsada
+  // mientras tanto no parpadea.
+  const commitMarcarFavorita = (id: string, marcada: boolean) => {
+    setSheet((s) => marcarFavorita(s, id, marcada));
+    runSave(
+      () => marcarFavoritaAction(characterId, { id, marcada }).catch(() => ({ ok: false as const, error: "Sin conexión" })),
+      undefined,
+      () => setSheet((s) => marcarFavorita(s, id, !marcada)),
+    );
+  };
   // Acciones de aumento (A4a): sin estado optimista, las cobra y aplica el servidor (también
   // quitar un estado, que llega por la revalidación de la página).
   // Activables (A5a): `extra.eleccion` es lo elegido en el modal de activar (Neuroprótesis 2);
@@ -786,8 +799,30 @@ export function CharacterSheet({
           }
         />
       )}
+      {/* Acciones lleva su propio fieldset (su barra Básicas/Tiradas sigue navegable). */}
+      {activeEfectivo === "acciones" && (
+        <AccionesTab
+          ficha={ficha}
+          historial={accionesHistorial}
+          setHistorial={setAccionesHistorial}
+          memoria={accionesMemoria}
+          setMemoria={setAccionesMemoria}
+          onReparar={commitReparar}
+          onFabricar={commitFabricar}
+          onGastarRecurso={commitAjustarRecurso}
+          onAjustarFarmaco={commitAjustarFarmaco}
+          onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
+          onPagarFatiga={commitPagarFatiga}
+          onAjustarFatiga={commitDevolverFatiga}
+          onAjustarVida={commitAjustarVida}
+          onGastarUsosEscena={commitGastarUsosEscena}
+          onUsarAccionAumento={commitUsarAccionAumento}
+          onMarcarFavorita={commitMarcarFavorita}
+          soloLectura={soloLectura}
+        />
+      )}
       {/* Personaje lleva su propio fieldset (sus sub-pestañas siguen navegables). */}
-      {activeEfectivo !== "personaje" && (
+      {activeEfectivo !== "personaje" && activeEfectivo !== "acciones" && (
         <PanelFieldset disabled={soloLectura}>
           {activeEfectivo === "attrs" && (
             <AtributosTab
@@ -823,25 +858,6 @@ export function CharacterSheet({
           )}
           {activeEfectivo === "psionica" && (
             <PsionicaTab ficha={ficha} aprobada={aprobada} xp={xp} onSet={commitDisciplina} />
-          )}
-          {activeEfectivo === "acciones" && (
-            <AccionesTab
-              ficha={ficha}
-              historial={accionesHistorial}
-              setHistorial={setAccionesHistorial}
-              memoria={accionesMemoria}
-              setMemoria={setAccionesMemoria}
-              onReparar={commitReparar}
-              onFabricar={commitFabricar}
-              onGastarRecurso={commitAjustarRecurso}
-              onAjustarFarmaco={commitAjustarFarmaco}
-              onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
-              onPagarFatiga={commitPagarFatiga}
-              onAjustarFatiga={commitDevolverFatiga}
-              onAjustarVida={commitAjustarVida}
-              onGastarUsosEscena={commitGastarUsosEscena}
-              onUsarAccionAumento={commitUsarAccionAumento}
-            />
           )}
           {activeEfectivo === "tienda" && (
             <TiendaTab

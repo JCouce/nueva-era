@@ -57,7 +57,9 @@ export type GrupoAccion =
   // Acciones propias de dote (dotesAcciones.ts, D2c-1).
   | "Dotes"
   // Acciones propias de aumento (aumentosAcciones.ts, A4a).
-  | "Aumentos";
+  | "Aumentos"
+  // Tirada libre (acciones.ts, T-007): grupo propio para que no le case ningún alcance por grupo.
+  | "Libre";
 
 // Familia de un ataque, bloqueo o "Levantar escudo" generado por arma (combate.ts): la
 // pone el generador al crear la Accion, no se deduce del id. Es lo que miran las dotes

@@ -385,6 +385,9 @@ export function conExtrasDeFicha(
   ficha: Pick<FichaResuelta, "indiceCondiciones" | "textosTirada" | "extrasDotes" | "ventajasFijas">,
   t: Accion,
 ): Accion {
+  // La tirada libre (T-007, R1): sin casillas, textos, ventajas, bonos por tramo, descuentos
+  // ni crítico fijo; solo los modificadores de alcance que casen con su aplicado y habilidad.
+  if (t.libre) return t;
   const ctx = contextoDe(t);
   const extra = consultaIndiceCondiciones(ficha.indiceCondiciones, ctx);
   const textos = textosDe(ficha.textosTirada, ctx, t.desarmado === true);

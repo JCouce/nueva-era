@@ -5,6 +5,7 @@ import {
   defaultSheet,
   sheetSchema,
   SCHEMA_VERSION,
+  marcarFavorita,
 } from "./sheet";
 import { ATRIBUTOS } from "./atributos";
 import { HABILIDADES } from "./habilidades";
@@ -70,6 +71,23 @@ describe("parseSheet aguanta cualquier cosa", () => {
     const s = parseSheet({ schemaVersion: SCHEMA_VERSION, avisoEspecialidades: ["Sigilo: Urbano", 7, "  ", "x".repeat(300)] });
     assert.deepEqual(s.avisoEspecialidades, ["Sigilo: Urbano", "x".repeat(120)]);
     assert.deepEqual(parseSheet({ schemaVersion: SCHEMA_VERSION }).avisoEspecialidades, []);
+  });
+
+  test("las favoritas se leen sin repetidos, solo texto y hasta el tope", () => {
+    assert.deepEqual(parseSheet({ schemaVersion: SCHEMA_VERSION, favoritas: ["a", "a", 7, "b"] }).favoritas, ["a", "b"]);
+    const muchas = Array.from({ length: 150 }, (_, i) => `id${i}`);
+    assert.equal(parseSheet({ schemaVersion: SCHEMA_VERSION, favoritas: muchas }).favoritas.length, 100);
+    assert.deepEqual(parseSheet({ schemaVersion: SCHEMA_VERSION, favoritas: ["x".repeat(200), "", "c"] }).favoritas, ["c"]);
+    assert.deepEqual(parseSheet({ schemaVersion: SCHEMA_VERSION, favoritas: "a" }).favoritas, []);
+  });
+
+  test("marcarFavorita añade al final sin repetir y desmarca", () => {
+    const s = { ...parseSheet({ schemaVersion: SCHEMA_VERSION }), favoritas: ["a"] };
+    assert.deepEqual(marcarFavorita(s, "b", true).favoritas, ["a", "b"]);
+    assert.deepEqual(marcarFavorita(s, "a", true).favoritas, ["a"]);
+    assert.deepEqual(marcarFavorita(s, "a", false).favoritas, []);
+    const llena = { ...s, favoritas: Array.from({ length: 100 }, (_, i) => `id${i}`) };
+    assert.equal(marcarFavorita(llena, "otra", true).favoritas.includes("otra"), false);
   });
 
   test("el texto largo se trunca en lugar de reventar la validación", () => {

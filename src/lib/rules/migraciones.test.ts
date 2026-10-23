@@ -372,7 +372,24 @@ describe("v19 → v20: arma incorporada del Brazo Biónico", () => {
 
   test("una ficha v19 leída con parseSheet sale sin arma incorporada", () => {
     const s = parseSheet({ schemaVersion: 19, equipo });
-    assert.equal(s.schemaVersion, 20);
+    assert.equal(s.schemaVersion, 21);
     assert.equal(s.equipo.find((p) => p.instanciaId === "b")?.armaIncorporada, undefined);
+  });
+});
+
+describe("v20 → v21: acciones favoritas", () => {
+  test("todas las fichas empiezan sin favoritas y no se toca nada más", () => {
+    const { ficha, aplicadas } = migrar({ schemaVersion: 20, usosEscena: ["x"], fatigaTemporal: 2 }, 21);
+    assert.equal(ficha.schemaVersion, 21);
+    assert.equal(aplicadas.length, 1);
+    assert.deepEqual(ficha.favoritas, []);
+    assert.deepEqual(ficha.usosEscena, ["x"]);
+    assert.equal(ficha.fatigaTemporal, 2);
+  });
+
+  test("una ficha v20 leída con parseSheet sale sin favoritas", () => {
+    const s = parseSheet({ schemaVersion: 20 });
+    assert.equal(s.schemaVersion, 21);
+    assert.deepEqual(s.favoritas, []);
   });
 });
