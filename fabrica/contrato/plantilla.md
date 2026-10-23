@@ -30,7 +30,7 @@ Encargo, Spec y Criterios se congelan con el ok del usuario (estado pasa a "enco
 **Fuera de alcance:**
 -
 
-**Puede tocar:**
+**Puede tocar:** <!-- una ruta o glob entre backticks por punto; se admiten líneas de continuación sangradas -->
 - `docs/tareas.md` (su línea, siempre; y las entradas que describan lo que el trabajo cambia)
 -
 
