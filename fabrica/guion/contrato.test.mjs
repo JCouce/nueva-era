@@ -58,6 +58,36 @@ test("puedeTocar ignora backticks con espacios y se corta en el siguiente bloque
   assert.deepEqual(puedeTocar(t), ["a.ts", "b/**"]);
 });
 
+const conSpec = (cuerpo) => `---\nid: T-1\n---\n## Spec\n${cuerpo}\n## Criterios\n`;
+
+test("puedeTocar lee las líneas de continuación sangradas de un punto (F-016)", () => {
+  const cuerpo = (sangria) => [
+    "**Puede tocar:**",
+    "- `a/b.ts`, `a/c.ts` (solo `Tipo`), `a/d.ts`,",
+    `${sangria}\`a/e/*\``,
+    "- `docs/x.md` (nota, ver `npm test`)",
+    "Texto suelto",
+    "- `z.ts`",
+  ].join("\n");
+  const esperado = ["a/b.ts", "a/c.ts", "a/d.ts", "a/e/*", "docs/x.md"];
+  assert.deepEqual(puedeTocar(conSpec(cuerpo("  "))), esperado);
+  assert.deepEqual(puedeTocar(conSpec(cuerpo("\t"))), esperado);
+});
+
+test("puedeTocar: una línea sin sangrar tras un punto corta, aunque lleve rutas", () => {
+  const t = conSpec("**Puede tocar:**\n- `a.ts`,\n`b.ts`\n- `c.ts`");
+  assert.deepEqual(puedeTocar(t), ["a.ts"]);
+});
+
+test("puedeTocar descarta los nombres sin /, . ni * (nombres de código, no rutas)", () => {
+  const t = conSpec("**Puede tocar:**\n- `src/x.ts` (solo `GrupoAccion` y `soloLectura`)\n- `Makefile`, `src/**`");
+  assert.deepEqual(puedeTocar(t), ["src/x.ts", "src/**"]);
+});
+
+test("puedeTocar de la plantilla: el comentario detrás de la etiqueta no corta la lista", () => {
+  assert.deepEqual(puedeTocar(plantilla), ["docs/tareas.md"]);
+});
+
 test("criterios del ejemplo", () => {
   const cs = criterios(ejemplo);
   assert.deepEqual(cs.map((c) => c.id), ["C1", "C2", "C3", "C4"]);

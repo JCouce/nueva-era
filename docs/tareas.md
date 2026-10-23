@@ -925,7 +925,10 @@ frontmatter gana `inicio`, `fin` y `operario`, que escriben `contrato.mjs estado
 **Escalera:** N1 línea a mano · N2 revisores especializados con oráculo · N3 tolva MainPatcher (examen: reproducir los
 syncs commiteados, recall ≥95 %) · N4 sin "tu ok" a la spec en lo pequeño · N5 cron y panel vivo.
 
-**Ideas del rodaje:** (vacío)
+**Ideas del rodaje:**
+- [x] **T-008** — Parser de "Puede tocar" (2026-10-23, F-016): `puedeTocar` (`fabrica/guion/contrato.mjs`) lee también
+  las líneas sangradas de continuación de un punto y solo toma como ruta lo que lleva `/`, `.` o `*`; la plantilla
+  explica el formato en un comentario junto a la etiqueta.
 
 **Material de partida (2026-10-16):** inventario del mantenimiento en
 `~/Documents/jcouce/knowledge/concepts/nuevaera-maintenance-cycle.md`; investigación externa en

@@ -121,12 +121,18 @@ export function puedeTocar(texto) {
   const i = lineas.findIndex((l) => /^\*\*Puede tocar:?\*\*/i.test(l.trim()));
   if (i === -1) return [];
   const globs = [];
+  let enPunto = false;
   for (const l of lineas.slice(i + 1)) {
     const t = l.trim();
     if (!t) continue;
-    if (!t.startsWith("-") && !t.startsWith("*")) break;
     if (/^\*\*/.test(t)) break;
-    for (const m of t.matchAll(/`([^`]+)`/g)) if (!/\s/.test(m[1])) globs.push(m[1]);
+    const esPunto = t.startsWith("-") || t.startsWith("*");
+    // Una línea sangrada justo tras un punto es su continuación (F-016: se comía las rutas de la segunda línea).
+    const esContinuacion = !esPunto && enPunto && /^[ \t]/.test(l);
+    if (!esPunto && !esContinuacion) break;
+    enPunto = true;
+    // Solo es ruta lo que parece ruta: `GrupoAccion` o `npm test` no.
+    for (const m of t.matchAll(/`([^`]+)`/g)) if (!/\s/.test(m[1]) && /[/.*]/.test(m[1])) globs.push(m[1]);
   }
   return globs;
 }
