@@ -5,8 +5,8 @@
 // Ids estables, snake_case sin tildes: son los que guardan las fichas y los que citan los
 // requisitos de dote (docs/modelado-dotes.json), así que no se renombran sin migración.
 //
-// Interpretación y Sigilo no traen lista en la fuente: no admiten especialidades (y se
-// tiran con el valor entero, supuesto S39 de sistema.md; ver derivados.ts, valorEfectivo).
+// Interpretación no trae lista en la fuente: no admite especialidades (y se tira con el valor
+// entero, supuesto S39 de sistema.md; ver derivados.ts, valorEfectivo).
 import type { HabilidadId } from "../rules/habilidades";
 
 export const ESPECIALIDADES = [
@@ -60,6 +60,9 @@ export const ESPECIALIDADES = [
   { id: "investigacion", label: "Investigación", habilidad: "exploracion" },
   { id: "tactica", label: "Táctica", habilidad: "exploracion" },
   { id: "supervivencia", label: "Supervivencia", habilidad: "exploracion" },
+  // Sigilo (foto de Drive 2026-10-23; antes sin lista)
+  { id: "esconderse", label: "Esconderse", habilidad: "sigilo" },
+  { id: "hurto", label: "Hurto", habilidad: "sigilo" },
   // Tecnociencia
   { id: "astrografia", label: "Astrografía", habilidad: "tecnociencia" },
   { id: "fisica", label: "Física", habilidad: "tecnociencia" },
@@ -83,7 +86,7 @@ export function especialidadesDe(habilidad: HabilidadId): readonly Especialidad[
   return ESPECIALIDADES.filter((e) => e.habilidad === habilidad);
 }
 
-// Habilidad sin lista en la fuente (Interpretación, Sigilo): no admite especialidades.
+// Habilidad sin lista en la fuente (Interpretación): no admite especialidades.
 export function admiteEspecialidades(habilidad: HabilidadId): boolean {
   return ESPECIALIDADES.some((e) => e.habilidad === habilidad);
 }

@@ -285,8 +285,10 @@ function ejeAlcanceResonancia(): EjePoder {
   };
 }
 
-// Contra mentes sintéticas se resuena con Tecnociencia (Informática).
-const receptor = (label: string, plural = false): EjePoder => ({
+// Contra mentes sintéticas se resuena con Tecnociencia: con Informática donde la prosa la nombra
+// (Superar la barrera, Rastreo); la Alerta dice "tecnociencia" a secas, entera (usuario,
+// 2026-10-23: sin especialidad nombrada, la habilidad entera).
+const receptor = (label: string, plural = false, informatica = true): EjePoder => ({
   id: "receptor",
   label,
   tipo: "opcion",
@@ -295,7 +297,7 @@ const receptor = (label: string, plural = false): EjePoder => ({
     {
       id: "sintetico",
       label: plural ? "Sintéticas" : "Sintético",
-      cambia: { resolucion: { habilidad: "tecnociencia", especialidad: "informatica" } },
+      cambia: { resolucion: { habilidad: "tecnociencia", ...(informatica && { especialidad: "informatica" as const }) } },
     },
   ],
 });
@@ -543,7 +545,7 @@ const ALERTA_PASIVA: AccionPoder = {
   desplazamiento: null,
   resolucion: { tipo: "tirada", aplicado: "perspicacia", habilidad: "biociencia", dificultad: 6 },
   objetivoTira: OBJETIVO_TIRA_ALERTA,
-  ejes: [receptor("Amenazas", true)],
+  ejes: [receptor("Amenazas", true, false)],
   resultados: RESULTADOS_ALERTA,
   togglesPropios: [MAS_2_RESONANCIA_4(ALERTA_PASIVA_ID)],
   notas: [

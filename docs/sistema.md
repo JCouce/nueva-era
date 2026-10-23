@@ -139,7 +139,39 @@ habilidades. Se sustituye la habilidad entera, no se añade como especialidad de
 > `{ valor: number, especialidades: EspecialidadId[] }` (ids del catálogo de abajo;
 > `SCHEMA_VERSION` 17, tanda ESP 2026-10-15).
 
-- **Habilidad sin lista de especialidades** (Interpretación, Sigilo): no admite ninguna y se
+### Qué especialidad lleva cada tirada `[FIRME · usuario 2026-10-23]`
+
+- **Si la tirada, según el documento fuente, no nombra especialidad, la habilidad suma
+  entera** (sin mitad y sin casilla). Ejemplos: Defensa, Iniciativa, Apuntar, Buscar /
+  percibir, Saltar, las herramientas, Volar, el Proyector de Pulso con Tecnociencia, el
+  Xovromium, Finta, las tiradas de Biociencia de Resonancia e Inducción, la Proeza.
+- **Si la nombra** —en forma larga, "Perspicacia + Biociencia (Medicina)", o corta,
+  "Perspicacia + Medicina" (C8, pregunta 26)— va **entera si la ficha la tiene y a la mitad si
+  no**. Lo decide la tirada, nunca el jugador: **la fila ya no tiene casilla de
+  especialidad**.
+- En código (`rules/montaje.ts`, `habilidadEntera`): la tirada nombra especialidad con
+  `especialidadArma` (ataques y bloqueos), `especialidadesAccion` (filas fijas, dotes,
+  aumentos, fármacos y poderes, con su `resolucion.especialidad`) o `especialidadAElegir`
+  (Convencer / mentir); sin ninguna, entera. La tirada libre (S84) no nombra ninguna.
+- Decisiones de la misma tanda (usuario, 2026-10-23):
+  - **Saltar, levantarse / Escalar**: la fila "Saltar, escalar, levantarse" se parte. Saltar
+    y levantarse, "potencia + atletismo" (salto, derribo), entera; Escalar, "potencia +
+    escalada", con Escalada.
+  - **Convencer / mentir**: selector **obligatorio** en la fila entre las especialidades de
+    Actitud (no deja tirar sin elegir); entera si la ficha tiene la elegida, la mitad si no.
+    Lista: S89.
+  - **Hackeo**: Informática.
+  - **Iniciativa (distrayendo)**: "expresión + manipulación o sigilo" → Manipulación fija;
+    casilla "Con Sigilo" en la fila, y Sigilo (a secas en la fuente) va entero.
+  - **Escáner Detector 2**: "Tecnociencia (o Biociencia)" → la más alta de las dos, entera.
+  - **Sigilo** tiene especialidades (Esconderse, Hurto: tabla de abajo). La fila Sigilo va
+    con Esconderse ("reflejos + esconderse") y hay fila **Hurto** ("reflejos + hurto",
+    enfrentada a Perspicacia + Exploración).
+  - **Tratar heridas** y los fármacos con tirada (salvo Xovromium): Medicina.
+  - **Alerta de Resonancia contra sintéticos**: Tecnociencia entera (deja de llevar
+    Informática; antes era supuesto). Rastreo, Superar la barrera e Inducción sintéticos
+    siguen con Informática, que la prosa nombra.
+- **Habilidad sin lista de especialidades** (Interpretación): no admite ninguna y se
   tira siempre con el valor entero (supuesto S39). La regla "al entrenar se escoge una
   especialidad" no se exige en ningún sitio (ni pasos de personaje ni envío a revisión): la
   primera especialidad va incluida (S3), pero elegirla no bloquea nada.
@@ -147,8 +179,7 @@ habilidades. Se sustituye la habilidad entera, no se añade como especialidad de
   usuario; los bloqueos desde D2b-1, S40). Cada arma tiene la suya
   (`src/lib/catalog/especialidadesArma.ts`: melee y pesado por tabla, armas de fuego e
   impulsoras por su tipo, desde 2026-10-23); si la ficha la tiene en la habilidad con la que tira, la tirada va entera
-  sin tocar nada, y si no, a la mitad. Esas filas no ofrecen selector. El resto de tiradas
-  siguen con el selector sí/no de la fila.
+  sin tocar nada, y si no, a la mitad.
 
 ## 2.5 / 3.5 Coste y progresión `[FIRME · HOJA2]`
 
@@ -208,7 +239,7 @@ valor depende de la ficha (Potencia - Fuerza), no es un número fijo del catálo
 
 Lista cerrada, sacada de la línea "Especialidades:" de cada habilidad en
 `docs/fuente/habilidades.md`. En código: `src/lib/catalog/especialidades.ts` (`{ id, label,
-habilidad }`, ids estables en snake_case sin tildes; añadir una es una fila). 46 en total.
+habilidad }`, ids estables en snake_case sin tildes; añadir una es una fila). 48 en total.
 
 | Habilidad | Especialidades (id) |
 |---|---|
@@ -220,7 +251,8 @@ habilidad }`, ids estables en snake_case sin tildes; añadir una es una fila). 4
 | Cultura (4) | Economía `economia`, Historia `historia`, Lingüística `linguistica`, Sociedad `sociedad` |
 | Exploración (3) | Investigación `investigacion`, Táctica `tactica`, Supervivencia `supervivencia` |
 | Tecnociencia (5) | Astrografía `astrografia`, Física `fisica`, Informática `informatica`, Mecánica `mecanica`, Química `quimica` |
-| Interpretación, Sigilo | — (la fuente no trae lista: no admiten especialidades, S39) |
+| Sigilo (2) | Esconderse `esconderse`, Hurto `hurto` (foto de Drive 2026-10-23; antes sin lista) |
+| Interpretación | — (la fuente no trae lista: no admite especialidades, S39) |
 
 **Cambio de la foto de Drive del 2026-10-23** (`docs/fuente/habilidades.md`): Combate a
 Distancia pasa de 5 especialidades a 9; desaparecen Armas Elásticas y Armas de Fuego
@@ -245,7 +277,7 @@ integrado a Armas Pesadas; lanzar (arma arrojadiza o granada, Potencia + Atletis
 Lanzamiento. Las dudosas llevan comentario en la tabla (Armas Mecánicas, Kerzul mixtas,
 Bayoneta, Lanzagranadas integrado). Un test obliga a que toda fila de
 ataque con arma tenga una especialidad de la habilidad con la que ataca (salvo el disparo del
-Proyector de Pulso con Tecnociencia, sin especialidad a propósito).
+Proyector de Pulso con Tecnociencia, sin especialidad a propósito: entera, §3).
 
 ## 4. Salud `[FIRME · HOJA3]`
 
@@ -320,6 +352,11 @@ vez de calcular el peso exacto siempre.
 > ("sin dato") en vez de `pesoKg: 0` ("pesa, pero no cuenta"). Corregido en
 > `catalog/armasMelee.ts`. El total de `pesoEquipado()` no cambia (ambos sumaban 0), pero
 > el detalle de cada pieza ahora dice "Insignificante" en vez de "No especificado".
+>
+> **Reconciliación con la foto de Drive (2026-10-23):** `docs/fuente/equipamiento.md` ya da
+> peso en kg a todas las armas melee (Armas Cortas, Asta, Espadas, Flagelos, Rodela de
+> Metamaterial) y a las granadas; la "I" desaparece. Transcrito en `catalog/armasMelee.ts`
+> y `catalog/municion.ts`. Solo la Pelea sigue en `null`.
 
 ## 6. Resolución de acciones `[FIRME · COMBATE]`
 
@@ -374,8 +411,13 @@ Filas del grupo Acciones (`rules/acciones.ts`, `ACCIONES`), construidas el 2026-
 
 - **Apuntar**: Perspicacia + Combate a Distancia, acción simple, dificultad 6 contra un
   objetivo mediano (más cobertura y visibilidad; +1 por tamaño mayor, −1 por menor). Éxito:
-  +1 al siguiente ataque a distancia; crítico: además omite 1 nivel de cobertura. Sin
-  especialidad fija (la fila deja marcarla, `TODO(revisar)`).
+  +1 al siguiente ataque a distancia; crítico: además omite 1 nivel de cobertura. La fuente
+  no nombra especialidad: Combate a Distancia entera (§3, usuario 2026-10-23).
+- **Saltar, levantarse** (Potencia + Atletismo, entera) y **Escalar** (Potencia + Atletismo
+  con Escalada), filas aparte desde 2026-10-23 (§3). **Sigilo** (Reflejos + Sigilo con
+  Esconderse) y **Hurto** (Reflejos + Sigilo con Hurto, enfrentada a Perspicacia +
+  Exploración). **Hackeo**, con Informática; **Tratar heridas**, con Medicina; **Convencer /
+  mentir**, con la especialidad de Actitud que se elija al tirar (S89).
 - **Carrera**: Reflejos + Atletismo (Carrera), dificultad 6, acción estándar o compleja.
   Éxito +2 m, crítico +4 m, fallo nada, fallo crítico mueve la mitad; compleja, ×2. Los
   metros van en la nota (no se calculan).
@@ -1136,8 +1178,11 @@ al preparar su modelado:
   - Vínculo: sin tirada, compleja (estándar desde nivel 4), 1 de fatiga por aliado (mensaje
     de varios objetivos), nivel poseído en km² y en minutos. +1 a Voluntad y alertar por el
     vínculo, notas.
-  - *Supuesto:* contra amenazas sintéticas, la Alerta tira Tecnociencia con la especialidad
-    Informática, como Rastreo (la prosa solo dice "tecnociencia").
+  - ~~*Supuesto:* contra amenazas sintéticas, la Alerta tira Tecnociencia con la especialidad
+    Informática, como Rastreo.~~ **Tumbado (usuario, 2026-10-23, §3):** la prosa solo dice
+    "tecnociencia", así que va **entera, sin especialidad**. Las tiradas de Biociencia de
+    Resonancia (Mensaje agresivo, Superar la barrera, Rastreo, Leer Mente y Alerta, contra
+    orgánicos) tampoco nombran especialidad: enteras.
 - **Construcción de Resonancia, tanda 3 (usuario, 2026-09-30):** con Resonancia 4+, la
   tirada fija "Buscar / percibir" gana la ventaja y la casilla "+2 por Resonancia 4
   (combinada con tu alerta psiónica)". El "sin impedimentos" de la prosa no se comprueba:
@@ -1145,9 +1190,10 @@ al preparar su modelado:
   **Resonancia completa.**
 - **Construcción de Inducción, tanda 1 (usuario, 2026-09-30):** base común, Comando y
   Reconfiguración Mnemónica.
-  - Toda acción con tirada es **enfrentada** con selector Orgánico (Expresión + Biociencia;
-    resiste Voluntad + Actitud o + Biociencia si es entrenado) / Sintético (Perspicacia +
-    Informática; resiste Perspicacia + Informática). Alcance 20 m × nivel poseído, con nota
+  - Toda acción con tirada es **enfrentada** con selector Orgánico (Expresión + Biociencia,
+    entera: no nombra especialidad, §3; resiste Voluntad + Actitud o + Biociencia si es
+    entrenado) / Sintético (Perspicacia + Tecnociencia con Informática; resiste Perspicacia +
+    Informática). Alcance 20 m × nivel poseído, con nota
     de que se combina con el local de Resonancia. Desde nivel 5, casilla "Fuera del
     alcance local de Resonancia (−4)".
   - Grados escritos desde el psiónico: su crítico = el fracaso crítico del objetivo (Comando:
@@ -1806,7 +1852,8 @@ transcribir — Medicina y Farmacia, Herramientas y Accesorios, y Otras Armas a 
 > **Herramientas y Accesorios, hecho.** `catalog/herramientas.ts`: Valija Táctica de
 > Fabricación (VTF, 4 niveles), Radar (4), Disfraz Holográfico (2), Escáner Detector (2) y
 > los 3 Materiales. Radar, Escáner Detector y Disfraz Holográfico piden **Perspicacia +
-> Tecnociencia** — pareja distinta de "Buscar/percibir" (Perspicacia + Exploración), así
+> Tecnociencia** (entera, sin especialidad; el Escáner 2 admite también Biociencia y tira con
+> la más alta, §3) — pareja distinta de "Buscar/percibir" (Perspicacia + Exploración), así
 > que **no son un bono a esa tirada: son su propia acción**, generada dinámicamente por
 > tenerlas equipadas (`lib/rules/herramientas.ts`, `tiradasDeHerramientas()` — mismo
 > patrón que `combate.ts` con las armas, nueva fila "Herramientas" en la pestaña Tiradas).
@@ -2137,7 +2184,7 @@ rasgo (usuario, §5b de la propuesta).
 | Rasgo | Efecto | Dónde |
 |---|---|---|
 | Riux, Piel Irisada | +2 contra radiación astral o ambiental | Casilla en Salvación de Fortaleza |
-| Arköru, Inamovibles | +2 para evitar derribos | Casilla en "Saltar, escalar, levantarse". No hay salvación contra derribo (el de las armas pide "su propia salvación" sin decir cuál): `TODO(revisar)` |
+| Arköru, Inamovibles | +2 para evitar derribos | Casilla en "Saltar, levantarse" (antes "Saltar, escalar, levantarse"). No hay salvación contra derribo (el de las armas pide "su propia salvación" sin decir cuál): `TODO(revisar)` |
 | Arköru, Adaptación Térmica | +2 contra efectos de temperatura | Casilla en Salvación de Fortaleza |
 | Arköru, Sistemas Filtradores | +2 contra efectos de filtración en el aire | Casilla en Salvación de Fortaleza |
 | Arköru, visión | −1 en ataques a distancia | Fijo en toda tirada de Combate a Distancia (armas de fuego, pesadas, lanzagranadas, Proyector de Pulso a distancia); **no** en granadas ni armas arrojadizas, que se lanzan con Atletismo (M8). Ver la nota de Iniciativa abajo |
@@ -2278,7 +2325,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S36 | **Rastreo, Subsistencia e Investigación van a "Buscar / percibir".** No tienen tirada propia; sus casillas (*Rastreo al Paso*, *Bioma Predilecto*, *Descartar Teoría*) van a la única tirada de Exploración del grupo Acciones (mismo aplicado y habilidad), con la acción en la etiqueta, y sus textos a su nota. No a "Iniciativa (habitual)". Es un apaño: se mueven a su tirada cuando exista (tarea "Tiradas fijas que faltan según habilidades.md"). | Mismo criterio que S35 a falta de tirada propia. Tanda D2a (2026-10-15); aceptado como apaño por el usuario (2026-10-15). |
 | S37 | ***Movimiento Sigiloso*: casilla de opción sin el penalizador.** La dote pone en Sigilo una casilla "moviéndote oculto" con lo que reduce en cada ritmo (mitad, total, esprint), pero la tirada de Sigilo de la app no lleva el penalizador por moverse oculto (−2/−4/−8, `docs/fuente/habilidades.md`): ese sigue a mano. La etiqueta dice cuánto compensa ("Moviéndome oculto: reduce 2 (Movimiento Sigiloso)", "reduce hasta 4" en la Mejorada). *Movimiento Sigiloso Constante* ("sin penalizador") no es un número fijo: texto en Sigilo, sin casilla. | Añadir el penalizador a Sigilo sería una regla nueva fuera de la tanda. Tanda D2a (2026-10-15); etiqueta y Constante, usuario 2026-10-15. |
 | S38 | ~~**Bono con umbral de ficha, partido.**~~ **Resuelto en D2d**: *Presencia Imponente* (+2 con Fuerza ≥ 5) e *Imitación* (+3 con Interpretación ≥ 3) ponen **una** casilla con el valor ya resuelto con la ficha (los valores de requisito: con especie, sin equipo ni estados; la habilidad entera), y la etiqueta dice el umbral cuando se cumple. El texto del umbral de *Imitación* del borrador pasa a la tarjeta de la dote. | Decisión del usuario (D2a, 2026-10-15; D2d). |
-| S39 | **Habilidad sin lista de especialidades (Interpretación, Sigilo): siempre entera.** No admite especialidades y la tirada usa el valor entero, no la mitad (`valorEfectivo`, `derivados.ts`). `TODO(revisar)`. | La regla de §3 es "en la escogida, entera; en el resto, la mitad": sin lista no hay "resto". Con la mitad, nadie podría tirar Sigilo entero nunca. Tanda ESP (2026-10-15), pendiente de confirmar. **Confirmado por el usuario (Especialidades ESP, 2026-10-15)**; nota suya: probablemente falten especialidades por decidir en la fuente y se corrija más adelante. |
+| S39 | **Habilidad sin lista de especialidades (Interpretación): siempre entera.** No admite especialidades y la tirada usa el valor entero, no la mitad (`valorEfectivo`, `derivados.ts`). **Sigilo sale de aquí (2026-10-23)**: la foto de Drive le da Esconderse y Hurto (§3). Con la regla general de §3 (sin especialidad nombrada, entera) el caso queda cubierto también por ahí. `TODO(revisar)`. | La regla de §3 es "en la escogida, entera; en el resto, la mitad": sin lista no hay "resto". Con la mitad, nadie podría tirar Sigilo entero nunca. Tanda ESP (2026-10-15), pendiente de confirmar. **Confirmado por el usuario (Especialidades ESP, 2026-10-15)**; nota suya: probablemente falten especialidades por decidir en la fuente y se corrija más adelante. |
 | S40 | ~~**La especialidad automática del arma solo va en los ataques**~~ **Construido el cambio (D2b-1, 2026-10-15): "Bloquear con X" (melee, Bayoneta, Aguijón) va con la especialidad de su arma, sin selector.** Antes:, no en "Bloquear con X" (tampoco el bloqueo de la Bayoneta ni el del Aguijón): el bloqueo sigue con el selector de la fila. `TODO(revisar)` en `combate.ts`. | El encargo decía "ataques con arma". Si el bloqueo también usa la del arma, es una línea por bloqueo. Tanda ESP (2026-10-15). **Cambia (usuario, Especialidades ESP, 2026-10-15): los bloqueos también usan la especialidad del arma**, como los ataques; se construye con D2b-1. |
 | S41 | **Lanzar (arma melee arrojadiza o granada) usa Lanzamiento (Atletismo)**, no Armas Arrojadizas (Combate a Distancia), porque la tirada es Potencia + Atletismo (INFERIDO 2026-09-28). `TODO(revisar)` en `especialidadesArma.ts`. | La especialidad tiene que ser de la habilidad con la que se tira. Tanda ESP (2026-10-15). **Confirmado por el usuario (Especialidades ESP, 2026-10-15).** |
 | S42 | **Migración v17**: cada texto de especialidad se casa por nombre normalizado (sin tildes ni mayúsculas, sin la "s" final de cada palabra) con una especialidad de **su** habilidad; lo que no casa se quita y se guarda en `avisoEspecialidades` (la pestaña Habilidades lo enseña con un botón para descartarlo). La elección de *Crítico Mejorado* se casa igual con una especialidad de arma; si no casa, la dote se quita (y va al aviso). | Decisión del usuario (ESP): no hay fichas activas, no se inventan equivalencias (Biónica en Tecnociencia o Química en Biociencia van al aviso). |
@@ -2286,7 +2333,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S44 | ~~**Armas de fuego por empleo**: a una mano, Armas de Fuego Cortas; a dos manos, Largas; ametralladoras, Largas (no Pesadas).~~ **Sustituido (2026-10-23, foto de Drive `docs/fuente/habilidades.md` + usuario):** las especialidades de Combate a Distancia pasan a ser por familia de arma, y cada arma de fuego va por su `tipo` a la de su nombre (§3, "Especialidad por arma"); el Proyector de Pulso a Pistolas. Lo que sigue del supuesto vale para el resto: Armas Mecánicas, Kerzul mixtas (Espadas y Dagas), Bayoneta y lanzagranadas integrado (Armas Pesadas): como los dejó la tanda ESP (`especialidadesArma.ts`). | Usuario, Especialidades ESP (2026-10-15). **Construido (D2b-1, 2026-10-15)**: `especialidadArmaFuego` en `especialidadesArma.ts`. **Sustitución construida (2026-10-23)**: `especialidadArmaFuego` va por `ESPECIALIDAD_POR_TIPO_ARMA`; fichas viejas, migración v21 → v22. |
 | S45 | **Familia y empleo de cada tirada de arma.** Bayoneta: golpe melee y bloqueo melee, a dos manos. Proyector de Pulso por su tipo: Aguijón ataque melee (su bloqueo, bloquear melee), disparo (Combate a Distancia y Tecnociencia) disparo; **sin empleo** (va en la armadura), así que un filtro de empleo no lo alcanza. **Lanzagranadas integrado: armamento pesado**, como su especialidad (S44), con el empleo del arma que lo lleva. Armamento pesado a dos manos ("Empleo a dos manos" del catálogo). Granada lanzada: a una mano. `TODO(revisar)` en `combate.ts` (lanzagranadas integrado, empleo del Proyector). | Familias del encargo D2b-1 (usuario); lo no dicho, por la especialidad ya decidida o la descripción del catálogo. **Confirmado por el usuario (2026-10-15)**: lanzagranadas integrado como armamento pesado; Proyector de Pulso sin empleo (va en la armadura y "permite disparar sin desenfundar", `docs/equipamiento.md`), así que no le alcanzan las dotes "a una mano". |
 | S46 | **Requisito por rama deducido.** Si una dote pide "Combate Melee N o Combate a Distancia M", sus efectos sobre golpes y bloqueos melee exigen Combate Melee ≥ N, y los de disparos y armamento pesado Combate a Distancia ≥ M (valores de juego, especie incluida, como la compra); el NPC del máster no mira requisitos. Lanzar y Levantar escudo no tienen rama: si una dote del patrón los tocara, el generador falla. Encajan: *Asesino*, *Desenfundado Rápido*, *Golpe Entorpecedor* (y *Crítico Mejorado*, cuya especialidad ya se elige en la rama que cumple; en juego se vuelve a comprobar). | §9.5 "cada rama exige su requisito"; el borrador no traía `requisitoAlcance` (decisión del usuario, D2b-1). |
-| S47 | ***Tirador de Larga Distancia* y su *Avanzado*: vale la mejor en cada ataque**, no la dote entera: en especialidad +2 (no +3), fuera de especialidad +1 (la básica), no 0. "De especialidad" = el ataque va en especialidad (`enEspecialidadEfectiva`; el disparo de Tecnociencia del Proyector, con el selector). | "Vale la mejor" (§9.1) leído por tirada: quitar la básica entera dejaría peor al que tiene las dos fuera de especialidad. D2b-1. **Confirmado por el usuario (2026-10-15)**: fuera de especialidad solo aplica la básica (−2 + 1 = −1). |
+| S47 | ***Tirador de Larga Distancia* y su *Avanzado*: vale la mejor en cada ataque**, no la dote entera: en especialidad +2 (no +3), fuera de especialidad +1 (la básica), no 0. "De especialidad" = el ataque va en especialidad (`enEspecialidadEfectiva`). El disparo de Tecnociencia del Proyector no nombra especialidad (va entero desde 2026-10-23, §3) y ya no tiene selector: nunca va "en especialidad", así que solo le llega la básica. | "Vale la mejor" (§9.1) leído por tirada: quitar la básica entera dejaría peor al que tiene las dos fuera de especialidad. D2b-1. **Confirmado por el usuario (2026-10-15)**: fuera de especialidad solo aplica la básica (−2 + 1 = −1). |
 | S48 | ***Crítico Mejorado* solo en ataques** (golpe melee, disparo, armamento pesado) cuya especialidad de arma es la elegida: ni al lanzar el arma (§9.5) ni al bloquear con ella (la prosa dice "ataques"). En juego deja de valer si la ficha ya no tiene esa especialidad en la rama que cumple. La línea va en las notas del resultado ("Crítico con 5 éxitos en vez de 6"), no en el desglose numérico. | D2b-1; el desglose solo lleva números. |
 | S49 | **Filtro "a una mano" también en *Apresar y Apuñalar*** ("llevando un arma de una sola mano"), además de *Desenfundado Rápido* (decisión del usuario). Sin empleo conocido (Proyector de Pulso) el filtro no casa. | Su texto solo tiene sentido en armas a una mano. D2b-1. |
 | S50 | **El NPC del máster no se salta el gate de Bloqueo y Combate Sutil.** El modo libre solo deja de mirar requisitos: sin la dote en su ficha, el NPC no bloquea ni va en sutil. Desde la tarea "Dotes para los NPC" (2026-10-15) el máster se las pone en el editor de NPC (§9.4). | Decisión del usuario (D2b-2); §9.4 dice que el máster les pone dotes a mano. |
@@ -2323,17 +2370,19 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S81 | **Selector «Apuntado» en todos los ataques con Combate a Distancia**, para cualquier ficha (lo que salió en la acción Apuntar previa: No · Éxito · Crítico). La app no comprueba que se apuntara de verdad ni que el ataque sea antes del final del próximo turno: lo marca el jugador. | La regla de Apuntar (fuente/habilidades.md) da el bono al siguiente ataque; la app no lleva registro de acciones por turno. Decisión del usuario (2026-10-23). |
 | S82 | ***Foveo-Sensorial* "por puntería" = el selector «Apuntado» en Éxito o Crítico**: +1 al ataque a distancia (además del +1 de Apuntar), como bono por opción, sin casilla propia. | Antes era la casilla "Tras Apuntar" porque no existía la acción (§11.3). Decisión del usuario (2026-10-23). |
 | S83 | ***Cazador Cazado* y *Vigilancia Táctica*: casilla en la fila** (como Levitar: «Con Manipulación (Cazador Cazado)» en Discernir mentiras; «Con Táctica (Vigilancia Táctica)» en Resistir distracción) que cambia habilidad y especialidad; la tirada va entera si la ficha tiene esa especialidad y a la mitad si no. El aplicado (Perspicacia) no cambia. | La prosa da el par entero; las dos tiradas fijas van con Empatía, que es lo que sustituyen. |
-| S84 | **Tirada libre (T-007): aplica lo que casa por aplicado/habilidad (alcances `todas`, `aplicado`, `habilidad`), sin casillas ni extras de dote o aumento, y sin especialidad.** Fila "Tirada libre" al final de "Acciones" (pestaña Básicas): el jugador elige en el modal un aplicado y una habilidad (o ninguna) y tira 1d12 + aplicado + habilidad. Entran los modificadores de tirada de alcance `todas`, `aplicado` y `habilidad`, y `anulaPenalizadores`; no los de `tiradaId` de otra acción, `grupo`, `grupoHabilidad`, `familiaArma` ni `modo` (grupo propio `Libre`). Sin casillas, ventajas, textos, bonos por tramo, descuentos ni crítico fijo de dote o aumento. La habilidad cuenta entera, como en Sigilo o Buscar. | Usuario, 2026-10-23: es para lo que el máster pide en mesa y la app no tiene como fila; ninguna acción con nombre, así que no le toca nada que apunte a una. |
+| S84 | **Tirada libre (T-007): aplica lo que casa por aplicado/habilidad (alcances `todas`, `aplicado`, `habilidad`), sin casillas ni extras de dote o aumento, y sin especialidad.** Fila "Tirada libre" al final de "Acciones" (pestaña Básicas): el jugador elige en el modal un aplicado y una habilidad (o ninguna) y tira 1d12 + aplicado + habilidad. Entran los modificadores de tirada de alcance `todas`, `aplicado` y `habilidad`, y `anulaPenalizadores`; no los de `tiradaId` de otra acción, `grupo`, `grupoHabilidad`, `familiaArma` ni `modo` (grupo propio `Libre`). Sin casillas, ventajas, textos, bonos por tramo, descuentos ni crítico fijo de dote o aumento. La habilidad cuenta entera, como en Buscar (regla general de §3: no nombra especialidad). | Usuario, 2026-10-23: es para lo que el máster pide en mesa y la app no tiene como fila; ninguna acción con nombre, así que no le toca nada que apunte a una. |
 | S85 | **Contra Fuego, con Mejora Ignífuga (nivel 1) instalada en la armadura que cuenta, solo cuenta el blindaje de esa armadura**: no suman la armadura natural (de especie o de aumentos), el Escudo Deflector, el blindaje reactivo (Densificar) ni el brazo biónico, cuyas casillas siguen bloqueadas contra Fuego. Ignífuga instalada en otra armadura que no es la que cuenta no hace nada. | Lectura literal de "la puntuación total de blindaje de su armadura" (`catalog/mejorasEstandar.ts`), pendiente de confirmar con Murillo. Usuario, 2026-10-23. |
 | S86 | **Cobertura y escudos en la app** (regla FIRME de Murillo, 2026-10-23, §6 "Cobertura y escudos"): (1) **contra Fuego el blindaje del escudo vale 0** (un escudo no lleva Mejora Ignífuga, S19): todo el daño va a su durabilidad; **contra Mental no aplica**: "Al escudo" sale bloqueado. (2) **Escudo roto** (durabilidad a 0) **bloquea "Golpear con", "Bloquear con" y "Levantar" ese escudo**, con el motivo "Escudo roto: repáralo"; es derivado, así que repararlo con Materiales lo devuelve solo. (3) **La casilla "Tengo cobertura" de la esquiva es un +2 fijo para cualquier cobertura**, sin mirar su nivel, y sale en cualquier ficha, lleve escudo o no. | (1) y (2), lectura de la regla; (3), decisión del usuario (2026-10-23). |
 | S87 | **Armas Modificadas** (decisiones del usuario, 2026-10-23): (1) **no son piezas ni ocupan ranura**: campo opcional `modificaciones` del arma melee (`PiezaEquipada`). (2) **Compatibilidad**: toda arma melee que se compra salvo Pelea y kerzul; **escudos, solo Electrificante**; **Nanofilamento, solo armas de filo** (`ArmaMelee.filo`: Cuchillo de Combate, Espada Ligera, Espada, Montante, Hacha de Armas, Hacha de Guerra, Lanza Corta y Larga, Alabarda, Pico de Cuervo; las mecánicas no). (3) **Varias a la vez**: Plasma no se combina con nada; Electrificante, Térmica y Nanofilamento, libremente (Nanofilamento + Térmica = golpe grave y de fuego). (4) **Tramo** = el +N del **primer modo** del arma **sin modificar** ("2 o menos" cae en la fila "2"), igual para todas sus modificaciones; el daño extra va a todos los modos. (5) **Coste multiplicativo**: básico × N₁ × N₂…; convertir un arma que ya tienes cuesta la diferencia. (6) **Rareza**: la mayor entre el arma y sus modificaciones; cuenta para el tope de la letra de Recursos y para Fabricar (material y dificultad). (7) **Lanzar** una arrojadiza modificada lleva el mismo daño extra y efectos. (8) **Peso**: solo se muestra (+%). (9) **Sin gasto de energía**; Bloquear no cambia. | Lectura del usuario sobre `docs/fuente/equipamiento.md` ("Armas Modificadas" y la cabecera de Escudos: "Modificaciones disponibles: Electrificante"). Supuestos de construcción, sin decisión del usuario: los **porcentajes de peso de varias modificaciones se suman** sobre el básico; las modificaciones **no se quitan** (convertir solo añade); el daño extra lleva la categoría del golpe (Letal/No Letal, o Grave con Nanofilamento); al reparar, la rareza que cuenta es la del arma modificada. |
+| S88 | **Reconciliación de armas con la foto de Drive (2026-10-23)**: daño, dificultad y peso de armas de fuego, armamento pesado, granadas y melee se toman de las tablas de `docs/fuente/equipamiento.md` (armas de fuego y granadas −1 de daño en general, Asina–Plasma AAA −2/−3; melee y kerzul +1 a todo "Fue+N" salvo Pelea, Rodela y Escudo; Mosquito dificultad −3; Cañón de Plasma 16 con Efecto de Fusión (12)). Al subir el daño melee, el Cuchillo y las armas que estaban en Fue+2 pasan al tramo "3 a 6" de las Armas Modificadas. **Azra: 11 Letal** — la tabla dice "1 Letal", errata por patrón. | Usuario, 2026-10-23. |
+| S89 | **Construcción de la regla de especialidades (§3, 2026-10-23)**: (1) el selector de **Convencer / mentir** ofrece las **seis** de Actitud (Empatía, Humor, Intimidación, Liderazgo, Manipulación **y Negociación**): la fuente da "expresión + X" para las cinco primeras y dice que Negociación "como el resto de especialidades de actitud utiliza el atributo de expresión". (2) Fila **Hurto** nueva (Reflejos + Sigilo con Hurto; la dificultad y la enfrentada, en la nota). (3) **Sin migración** por dar especialidades a Sigilo: la ficha guarda `especialidades: []` en Sigilo, que sigue siendo válido; quien tuviera Sigilo pasa a tirar la fila Sigilo a la mitad hasta que elija Esconderse (la primera especialidad va incluida, S3). (4) **Reparar y Fabricar** ("Perspicacia + la habilidad técnica aplicable") no nombran especialidad: enteras. (5) La fila "Saltar, levantarse" conserva el id `atletismo` (de ella cuelgan equilibrio, nado y derribo: Balanceo, Equilibrista, Como Pez en el Agua, Inamovibles, Bucle de Equilibrio) y su nota de escapar de un agarre; los textos de *Contacto a Tres Puntos* pasan a Escalar. | Lectura de la fuente y decisiones de construcción, sin preguntar; revisables. |
 
 ## Conflictos detectados
 
 | # | Conflicto | Estado |
 |---|---|---|
 | 1 | `EQUIP` pide tiradas de "Perspicacia + **Medicina**", pero Medicina no está entre las 10 habilidades de `HOJA`. Encaja como **especialidad de Biociencia** (`EQUIP` ya nombra Mecánica/Química/Bioquímica como especialidades). | Resuelto por inferencia, confirmar |
-| 2 | `EQUIP` llama a la misma escopeta **Plasma SC** en la tabla y **Plasma SG** en la descripción; el fusil, **Plasma SA** / **Plasma AR**. | Errata del original, elegir nombre |
+| 2 | `EQUIP` llama a la misma escopeta **Plasma SC** en la tabla y **Plasma SG** en la descripción; el fusil, **Plasma SA** / **Plasma AR**. | Resuelto (usuario, 2026-10-23): se quedan **Plasma SG** y **Plasma AR**, los de la descripción |
 | 3 | ~~La munición corrosiva no indica dificultad del efecto.~~ | **Resuelto** en la revisión del 31 ago: Corrosión (dificultad 7) |
 | C4 | ~~**Exploración** se usa en las tiradas más importantes del juego... pero no está entre las 10 habilidades.~~ **Resuelto** (2026-09-10, decisión del usuario): Exploración sustituye a Supervivencia en la lista de habilidades. Desbloquea Iniciativa y Alerta. | Resuelto |
 | C5 | `COMBATE` nombra **Resiliencia** (resistencia al shock en sintéticos) y **Estructura** (en equipamiento) como puntuaciones de salvación. Ninguna está entre los 6 aplicados de `HOJA`. ¿Son atributos de PNJ/objeto y no de PJ? | Sin resolver |

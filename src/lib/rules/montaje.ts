@@ -52,37 +52,39 @@ import type { FichaResuelta } from "./fichaResuelta";
 // la ficha y los modificadores que recibe.
 export type FichaParaTirada = Pick<FichaResuelta, "ficha" | "modificadores">;
 
-// Lo que elige el jugador: en la fila (especialidad, Sutil) y en el modal (casillas y
-// circunstancial).
+// Lo que elige el jugador: en la fila (Sutil) y en el modal (casillas y circunstancial). La
+// especialidad no se elige: la decide la tirada (enEspecialidadEfectiva).
 export type EleccionTirada = {
-  enEspecialidad: boolean;
   sutil: boolean;
   estadoCondiciones: EstadoCondiciones;
   circunstancial: number;
 };
 
-export const SIN_ELECCION: EleccionTirada = { enEspecialidad: false, sutil: false, estadoCondiciones: {}, circunstancial: 0 };
+export const SIN_ELECCION: EleccionTirada = { sutil: false, estadoCondiciones: {}, circunstancial: 0 };
 
-// Si la tirada va en especialidad. Un ataque con arma (`especialidadArma`) lo sabe solo: en
-// especialidad si la ficha tiene la del arma, y si no, a la mitad; lo que se eligiera en la
-// fila no cuenta. Igual una acción de dote con especialidad (`especialidadesAccion`), con
-// cualquiera de las suyas. El resto de tiradas, lo que eligió el jugador.
-export function enEspecialidadEfectiva(sheet: Sheet, tirada: Accion, elegido: boolean): boolean {
-  // La tirada libre no va en especialidad (T-007, R2): la habilidad cuenta entera igual (montarTirada).
-  if (tirada.libre) return false;
+// Si la tirada va en especialidad: solo la que nombra una especialidad (la del arma,
+// `especialidadArma`; la de la acción, `especialidadesAccion`, con cualquiera de las suyas; o
+// las candidatas de `especialidadAElegir` mientras no se elija) y la ficha la tiene.
+export function enEspecialidadEfectiva(sheet: Sheet, tirada: Accion): boolean {
   const fijas = especialidadesFijas(tirada);
-  if (fijas.length > 0 && tirada.habilidad) return fijas.some((e) => tieneEspecialidad(sheet, tirada.habilidad!, e));
-  return elegido;
+  if (fijas.length === 0 || !tirada.habilidad) return false;
+  return fijas.some((e) => tieneEspecialidad(sheet, tirada.habilidad!, e));
 }
 
 const especialidadesFijas = (t: Accion): readonly EspecialidadId[] =>
-  t.especialidadArma ? [t.especialidadArma] : (t.especialidadesAccion ?? []);
+  t.especialidadArma ? [t.especialidadArma] : (t.especialidadesAccion ?? t.especialidadAElegir ?? []);
+
+// Regla general (docs/sistema.md §3, usuario 2026-10-23): si la tirada no nombra especialidad,
+// la habilidad suma entera; si la nombra, entera solo si la ficha la tiene, y si no, a la mitad.
+export function habilidadEntera(sheet: Sheet, tirada: Accion): boolean {
+  return especialidadesFijas(tirada).length === 0 || enEspecialidadEfectiva(sheet, tirada);
+}
 
 // La tirada tal como abre el modal, sin tocar nada: las casillas en su estado inicial
 // y sin circunstancial. Con esto monta la fila, y su `modificador` es el mismo número
 // que el modal recién abierto (M1b).
-export function eleccionSinTocar(tirada: Accion, enEspecialidad: boolean, sutil = false): EleccionTirada {
-  return { enEspecialidad, sutil, estadoCondiciones: estadoInicial(tirada.condiciones ?? []), circunstancial: 0 };
+export function eleccionSinTocar(tirada: Accion, sutil = false): EleccionTirada {
+  return { sutil, estadoCondiciones: estadoInicial(tirada.condiciones ?? []), circunstancial: 0 };
 }
 
 export type LineaDesglose = { etiqueta: string; valor: number };
@@ -303,7 +305,7 @@ function usosGastados(activas: Toggle[], fatiga: Pick<TiradaMontada, "ahorroSinU
 export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: EleccionTirada): TiradaMontada {
   const { sutil, circunstancial } = eleccion;
   const estado = sinBloqueadas(tirada.condiciones ?? [], eleccion.estadoCondiciones);
-  const enEspecialidad = enEspecialidadEfectiva(ficha.ficha, tirada, eleccion.enEspecialidad);
+  const enEspecialidad = enEspecialidadEfectiva(ficha.ficha, tirada);
   const ajustesFijos = tirada.ajustesFijos ?? [];
   // El aplicado con el que se tira de verdad. Una casilla que lo cambia (Negociación
   // Analítica) manda sobre el estilo Sutil.
@@ -347,12 +349,12 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
   const activas = condiciones.filter((c): c is Toggle => c.tipo === "toggle" && Boolean(estado[c.id]));
   // Los atributos de la extremidad solo valen para el aplicado y el daño de esta tirada.
   const modsAplicado = extremidad ? conExtremidad(ficha.ficha, mods, extremidad) : mods;
-  // La tirada libre no va en especialidad pero la habilidad cuenta entera, sin la mitad
-  // (T-007, R2): para el valor es como si fuera en especialidad; el desglose no lo dice.
-  const habilidadEntera = enEspecialidad || tirada.libre === true;
+  // Sin especialidad nombrada (la tirada libre incluida, T-007) la habilidad cuenta entera
+  // aunque no vaya "en especialidad": el desglose no lo dice.
+  const entera = habilidadEntera(ficha.ficha, tirada);
   const mod = otroAplicado
-    ? modificadorAccion(ficha.ficha, { ...tirada, aplicado: otroAplicado }, habilidadEntera, modsAplicado, false)
-    : modificadorAccion(ficha.ficha, tirada, habilidadEntera, modsAplicado, sutil);
+    ? modificadorAccion(ficha.ficha, { ...tirada, aplicado: otroAplicado }, entera, modsAplicado, false)
+    : modificadorAccion(ficha.ficha, tirada, entera, modsAplicado, sutil);
   const base = mod.total + ajustesFijos.reduce((t, a) => t + a.valor, 0);
 
   const modo = ctx.modoElegido;

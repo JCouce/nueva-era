@@ -554,6 +554,9 @@ export function tiradaDePoder(accion: AccionPoder, p: PoderResuelto): Accion | n
     grupo: "Psiónica",
     aplicado: r.aplicado,
     habilidad: r.habilidad,
+    // Con especialidad (Física en Singularidad), entera si la ficha la tiene y a la mitad si
+    // no; sin ella (Biociencia de Resonancia), entera (montaje.ts, habilidadEntera).
+    ...(r.especialidad && { especialidadesAccion: [r.especialidad] }),
     poder: {
       resultados,
       ...(Object.keys(danioPropio).length > 0 && { danioPropio }),
@@ -595,8 +598,9 @@ export function tiradaDePoder(accion: AccionPoder, p: PoderResuelto): Accion | n
   return tirada;
 }
 
-// La especialidad de un poder (Física en Singularidad) se aplica sola si el
-// personaje la tiene en esa habilidad — no es una elección del jugador.
+// Si el poder va en especialidad: la nombra (Física en Singularidad) y el personaje la tiene en
+// esa habilidad — no es una elección del jugador. Sin especialidad no va "en especialidad",
+// pero la habilidad suma entera igual (montaje.ts, habilidadEntera).
 export function enEspecialidadDePoder(sheet: Sheet, p: PoderResuelto): boolean {
   const r = p.resolucion;
   if (r.tipo === "sin_dado" || !r.especialidad) return false;

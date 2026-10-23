@@ -46,7 +46,7 @@ const fila = (s: Sheet, label: string, estados: EstadoActivo[] = []) => ataques(
 const casillaDe = (t: Accion | undefined) => t?.condiciones?.find((c) => c.id === ID_CASILLA_BRAZO);
 
 function montar(s: Sheet, t: Accion, marcada: boolean, sutil = false, estados: EstadoActivo[] = []) {
-  const base = eleccionSinTocar(t, false, sutil);
+  const base = eleccionSinTocar(t, sutil);
   const eleccion: EleccionTirada = { ...base, estadoCondiciones: { ...base.estadoCondiciones, [ID_CASILLA_BRAZO]: marcada } };
   return montarTirada(resolver(s, estados), t, eleccion);
 }
@@ -237,7 +237,7 @@ describe("Brazo Biónico: «Bloquear con el brazo biónico»", () => {
     const s = conDotes(conBrazo(ficha({ fuerza: 1, agilidad: 1 }), 4, "fuerte"), "dote_bloqueo");
     const t = bloqueo(s)!;
     assert.equal(casillaDe(t), undefined);
-    const m = montarTirada(resolver(s), t, eleccionSinTocar(t, false));
+    const m = montarTirada(resolver(s), t, eleccionSinTocar(t));
     assert.equal(m.aplicado.valor, 3); // ⌊(5+1)/2⌋; la tuya, 1
     assert.equal(m.desglose[0].etiqueta, "Potencia · Brazo Biónico 4 (Modelo Fuerte): Fuerza 5 (tuya 1), Agilidad 1 (tuya 1)");
   });
@@ -381,13 +381,13 @@ describe("Brazo Biónico: arma incorporada (A6b)", () => {
     assert.equal(casillaDe(golpe), undefined);
     assert.ok(golpe.extremidad);
     assert.match(golpe.nota!, /Incorporada en el Brazo Biónico: desenfundado gratis, no te la pueden desarmar, cuenta para la carga\./);
-    const m = montarTirada(resolver(s), golpe, eleccionSinTocar(golpe, false, false));
+    const m = montarTirada(resolver(s), golpe, eleccionSinTocar(golpe));
     assert.equal(m.aplicado.valor, 3); // ⌊(5+1)/2⌋, sin marcar nada
     assert.equal(m.danio.ajustes.length, 1); // Fuerza 5 del brazo frente a la tuya 1
     assert.equal(m.danio.ajustes[0].valor, 4);
     const bloqueo = bloqueoDe(s, tonfa)!;
     assert.equal(casillaDe(bloqueo), undefined);
-    assert.equal(montarTirada(resolver(s), bloqueo, eleccionSinTocar(bloqueo, false, false)).aplicado.valor, 3);
+    assert.equal(montarTirada(resolver(s), bloqueo, eleccionSinTocar(bloqueo)).aplicado.valor, 3);
   });
 
   test("un arma de fuego incorporada dispara con la Agilidad del brazo, sin casilla", () => {

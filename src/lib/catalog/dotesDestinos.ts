@@ -71,6 +71,7 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   // ── Tiradas fijas (ACCIONES) ──
   defensa: tirada("defensa"),
   atletismo: tirada("atletismo"),
+  escalar: tirada("escalar"),
   sigilo: tirada("sigilo"),
   medicina: tirada("medicina"),
   social: tirada("social"),

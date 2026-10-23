@@ -28,7 +28,9 @@ const ETIQUETA_ACCION: Record<string, string> = {
 // familia porque solo hay una familia ("herramienta"), y encima no hay una
 // fórmula común entre sus piezas: cada una se distingue por su propio id de
 // catálogo, no por la familia entera (VTF no genera tirada propia).
-function tiradaDeHerramienta(pieza: PiezaEquipada, cat: Herramienta): Accion | null {
+// La fuente no nombra especialidad en ninguna: Tecnociencia (o la más alta de
+// `habilidadesTirada`, Escáner 2) entera (docs/sistema.md §3).
+function tiradaDeHerramienta(sheet: Sheet, pieza: PiezaEquipada, cat: Herramienta): Accion | null {
   const etiqueta = ETIQUETA_ACCION[cat.id];
   if (!etiqueta) return null; // VTF, o cualquier herramienta futura sin tirada propia
 
@@ -40,7 +42,9 @@ function tiradaDeHerramienta(pieza: PiezaEquipada, cat: Herramienta): Accion | n
     label: `${etiqueta} ${cat.label}`,
     grupo: "Herramientas",
     aplicado: "perspicacia",
-    habilidad: "tecnociencia",
+    habilidad: (nivelInfo.habilidadesTirada ?? ["tecnociencia"]).reduce((mejor, h) =>
+      sheet.habilidades[h].valor > sheet.habilidades[mejor].valor ? h : mejor,
+    ),
     nota: nivelInfo.notaTirada,
   };
 }
@@ -50,7 +54,7 @@ export function accionesDeHerramientas(sheet: Sheet): Accion[] {
   for (const pieza of sheet.equipo) {
     const cat: Equipo | null = equipoPorId(pieza.catalogoId);
     if (cat?.familia !== "herramienta") continue;
-    const tirada = tiradaDeHerramienta(pieza, cat);
+    const tirada = tiradaDeHerramienta(sheet, pieza, cat);
     if (tirada) tiradas.push(tirada);
   }
   return tiradas;

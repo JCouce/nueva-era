@@ -4,7 +4,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
-import { ACCIONES, ID_APUNTADO, usarHabilidadAlternativa, type Accion } from "./acciones";
+import { ACCIONES, ID_APUNTADO, usarHabilidadAlternativa, elegirEspecialidad, type Accion } from "./acciones";
 import { HABILIDADES } from "./habilidades";
 import { resolverFicha, conExtrasDeFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
 import { montarTirada, eleccionSinTocar, tirarMontada, type TiradaMontada } from "./montaje";
@@ -12,7 +12,7 @@ import { accionesDeAtaque } from "./combate";
 import { equipar } from "./equipo";
 import type { CondicionTirada, EstadoCondiciones } from "./condiciones";
 import { DOTES } from "../catalog/dotes";
-import type { EspecialidadId } from "../catalog/especialidades";
+import { especialidadesDe, type EspecialidadId } from "../catalog/especialidades";
 import type { DoteComprada } from "./dotesCompradas";
 
 // Atributos a 4 y habilidades a 5, con las especialidades que piden los requisitos de dote
@@ -37,8 +37,8 @@ function ficha(dotes: DoteComprada[], sin: EspecialidadId[] = []): Sheet {
 const resolver = (s: Sheet) => resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
 const fila = (id: string) => ACCIONES.find((a) => a.id === id)!;
 const fija = (f: FichaResuelta, id: string) => conExtrasDeFicha(f, fila(id));
-const montar = (f: FichaResuelta, t: Accion, cambios: EstadoCondiciones = {}, enEspecialidad = false): TiradaMontada => {
-  const e = eleccionSinTocar(t, enEspecialidad);
+const montar = (f: FichaResuelta, t: Accion, cambios: EstadoCondiciones = {}): TiradaMontada => {
+  const e = eleccionSinTocar(t);
   return montarTirada(f, t, { ...e, estadoCondiciones: { ...e.estadoCondiciones, ...cambios } });
 };
 // La dificultad que deja el total a `margen` del dado 6.
@@ -204,26 +204,92 @@ describe("Cambio de par con casilla en la fila", () => {
       especialidad: "manipulacion",
       etiqueta: "Con Manipulación (Cazador Cazado)",
     });
-    const alt = usarHabilidadAlternativa(f.ficha, t)!;
-    assert.equal(alt.enEspecialidad, true);
-    assert.equal(alt.tirada.especialidadesAccion, undefined);
-    const m = montarTirada(f, alt.tirada, eleccionSinTocar(alt.tirada, alt.enEspecialidad));
+    const alt = usarHabilidadAlternativa(t)!;
+    assert.deepEqual(alt.especialidadesAccion, ["manipulacion"]);
+    const m = montarTirada(f, alt, eleccionSinTocar(alt));
     assert.deepEqual([m.aplicado.id, m.habilidad?.id, m.habilidad?.valor, m.enEspecialidad], ["perspicacia", "actitud", 5, true]);
     // Sin Manipulación en la ficha (NPC sin requisitos o especialidad perdida): a la mitad.
     const sinManip = { ...f.ficha, habilidades: { ...f.ficha.habilidades, actitud: { valor: 5, especialidades: ["empatia" as const] } } };
-    const otra = usarHabilidadAlternativa(sinManip, t)!;
-    assert.equal(otra.enEspecialidad, false);
+    const otra = montarTirada({ ...f, ficha: sinManip }, alt, eleccionSinTocar(alt));
+    assert.deepEqual([otra.enEspecialidad, otra.habilidad?.valor], [false, 2]);
   });
 
   test("Vigilancia Táctica: Resistir distracción con Exploración (Táctica)", () => {
     const f = resolver(ficha([{ id: "dote_vigilancia_tactica" }]));
     const t = fija(f, "resistir_distraccion");
     assert.equal(t.habilidadAlternativa?.etiqueta, "Con Táctica (Vigilancia Táctica)");
-    const alt = usarHabilidadAlternativa(f.ficha, t)!;
-    const m = montarTirada(f, alt.tirada, eleccionSinTocar(alt.tirada, alt.enEspecialidad));
+    const alt = usarHabilidadAlternativa(t)!;
+    const m = montarTirada(f, alt, eleccionSinTocar(alt));
     assert.deepEqual([m.aplicado.id, m.habilidad?.id, m.enEspecialidad], ["perspicacia", "exploracion", true]);
-    assert.equal(alt.tirada.label, "Resistir distracción (Táctica)");
+    assert.equal(alt.label, "Resistir distracción (Táctica)");
     // No sale en Discernir mentiras.
     assert.equal(fija(f, "discernir_mentiras").habilidadAlternativa, undefined);
+  });
+});
+
+// Regla general de especialidades (docs/sistema.md §3, usuario 2026-10-23): sin especialidad
+// nombrada, la habilidad entera; nombrada, entera si la ficha la tiene y a la mitad si no.
+const ESPECIALIDADES_DE: Record<string, string[]> = Object.fromEntries(
+  HABILIDADES.map((h) => [h.id, especialidadesDe(h.id).map((e) => e.id)]),
+);
+
+describe("especialidad de las tiradas fijas: la decide la tirada", () => {
+  // Habilidades a 5 con solo estas especialidades; atributos a 0.
+  const con = (esp: EspecialidadId[] = []): FichaResuelta => {
+    const base = defaultSheet();
+    const habilidades = Object.fromEntries(
+      HABILIDADES.map((h) => [h.id, { valor: 5, especialidades: esp.filter((e) => ESPECIALIDADES_DE[h.id]?.includes(e)) }]),
+    ) as Sheet["habilidades"];
+    return resolver({ ...base, habilidades });
+  };
+  const habilidad = (f: FichaResuelta, t: Accion) => {
+    const m = montar(f, t);
+    return [m.habilidad?.valor, m.enEspecialidad];
+  };
+
+  test("sin especialidad nombrada, entera aunque la ficha tenga otras", () => {
+    for (const id of ["defensa", "iniciativa", "iniciativa_arma", "apuntar", "alerta_activa", "atletismo"]) {
+      assert.deepEqual(habilidad(con(["carrera", "pistolas", "tactica"]), fila(id)), [5, false], id);
+      assert.equal(fila(id).especialidadesAccion, undefined, id);
+    }
+  });
+
+  test("especialidad fija: entera con ella, la mitad sin ella", () => {
+    const casos: [string, EspecialidadId][] = [
+      ["medicina", "medicina"],
+      ["tecnica", "informatica"],
+      ["escalar", "escalada"],
+      ["sigilo", "esconderse"],
+      ["hurto", "hurto"],
+      ["iniciativa_distraccion", "manipulacion"],
+    ];
+    for (const [id, esp] of casos) {
+      assert.deepEqual(fila(id).especialidadesAccion, [esp], id);
+      assert.deepEqual(habilidad(con([esp]), fila(id)), [5, true], id);
+      assert.deepEqual(habilidad(con(), fila(id)), [2, false], id);
+    }
+  });
+
+  test("Saltar, levantarse y Escalar son filas aparte, con su par de la fuente", () => {
+    const [saltar, escalar] = [fila("atletismo"), fila("escalar")];
+    assert.deepEqual([saltar.aplicado, saltar.habilidad, escalar.aplicado, escalar.habilidad], ["potencia", "atletismo", "potencia", "atletismo"]);
+    assert.equal(saltar.label, "Saltar, levantarse");
+  });
+
+  test("Iniciativa distrayendo: con Sigilo (alternativa) va entera, tenga o no especialidad de Sigilo", () => {
+    const t = fila("iniciativa_distraccion");
+    const alt = usarHabilidadAlternativa(t)!;
+    assert.deepEqual([alt.habilidad, alt.especialidadesAccion, alt.label], ["sigilo", undefined, "Iniciativa (distrayendo) (Sigilo)"]);
+    assert.deepEqual(habilidad(con(), alt), [5, false]);
+  });
+
+  test("Convencer / mentir: hay que elegir especialidad; la elegida va entera si se tiene, si no a la mitad", () => {
+    const t = fila("social");
+    assert.deepEqual(t.especialidadAElegir, ["empatia", "humor", "intimidacion", "liderazgo", "manipulacion", "negociacion"]);
+    const empatia = elegirEspecialidad(t, "empatia");
+    assert.deepEqual([empatia.especialidadesAccion, empatia.especialidadAElegir, empatia.label], [["empatia"], undefined, "Convencer / mentir (Empatía)"]);
+    assert.deepEqual(habilidad(con(["empatia"]), empatia), [5, true]);
+    // Con Humor en la ficha, elegir Empatía no vale: a la mitad.
+    assert.deepEqual(habilidad(con(["humor"]), empatia), [2, false]);
   });
 });

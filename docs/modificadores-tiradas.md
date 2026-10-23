@@ -586,9 +586,10 @@ como nivel N en X". **No** para "+N a las tiradas de los poderes de X" (eso es u
 ```ts
 montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: EleccionTirada): TiradaMontada
 tirarMontada(montada: TiradaMontada, dado: number, dificultad: number | null): Resultado
-eleccionSinTocar(tirada: Accion, enEspecialidad: boolean, sutil?: boolean): EleccionTirada
-// EleccionTirada = { enEspecialidad, sutil, estadoCondiciones, circunstancial }
+eleccionSinTocar(tirada: Accion, sutil?: boolean): EleccionTirada
+// EleccionTirada = { sutil, estadoCondiciones, circunstancial }
 // eleccionSinTocar: las casillas en su estado inicial (estadoInicial), sin circunstancial
+// La especialidad no se elige: la nombra la tirada (habilidadEntera, docs/sistema.md §3)
 ```
 
 `FichaParaTirada` es `Pick<FichaResuelta, "ficha" | "modificadores">`: la pantalla pasa la

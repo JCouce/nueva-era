@@ -90,6 +90,9 @@ siguen bloqueadas por el diseñador — ver Pendiente.
 - **Fuera del catálogo a propósito** (no son huecos por descuido) — ver Pendiente:
   Munición Especial y Armas Modificadas (estas, construidas el 2026-10-23 como
   transformación sobre un arma melee, S87).
+- **Armas reconciliadas con la foto de Drive (2026-10-23, S88)**: daños, dificultad y pesos
+  de armas de fuego, armamento pesado, granadas y melee sacados de las tablas de
+  `docs/fuente/equipamiento.md`.
 
 **Fix de rendimiento (2026-09-23, detectado por el usuario en producción):** cada
 clic en el stepper de un atributo/habilidad durante la creación disparaba un
@@ -1963,7 +1966,19 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
   (munición de arco/ballesta, mejoras que admiten, lectura de Arquero Poderoso) y el resto de
   dotes nuevas de esa foto (Fuego de Saturación, de Supresión, de Barrera, Disparo de
   Interdicción, Lanzamiento Doble…), sin transcribir.
-- [ ] **La tirada sabe qué especialidad se usa** (sale de ESP, sin construir): hoy la fila
+- [x] **Cada tirada lleva la especialidad que nombra la fuente** (2026-10-23, sin commit;
+  `docs/sistema.md` §3 "Qué especialidad lleva cada tirada", S89). Regla del usuario: sin
+  especialidad nombrada, la habilidad entera; nombrada, entera si se tiene y a la mitad si no.
+  Fuera la casilla sí/no de la fila y `EleccionTirada.enEspecialidad` (`montaje.ts`,
+  `habilidadEntera`). Poderes con `especialidadesAccion`; Saltar/levantarse y Escalar
+  partidas; Convencer / mentir con selector obligatorio (`especialidadAElegir`,
+  `elegirEspecialidad`); Hackeo Informática; Tratar heridas y fármacos Medicina; Iniciativa
+  distrayendo con Manipulación o Sigilo; Escáner 2 con la más alta; Sigilo con Esconderse y
+  Hurto (fila nueva); Alerta sintética sin Informática. Falta probarlo en el navegador.
+- [ ] **La tirada sabe qué especialidad se usa** (sale de ESP; **en parte** desde la regla
+  de arriba: toda tirada sabe ya cuál nombra, y Convencer / mentir sabe cuál se eligió).
+  Lo que queda: que el resto de filas de Actitud y las casillas de especialidad la usen.
+  Texto original: hoy la fila
   de una tirada que no es ataque con arma solo dice sí/no (`EleccionTirada.enEspecialidad`).
   Cambiarlo por un selector de **cuál** de las especialidades de la ficha en esa habilidad
   (o ninguna), que llegue a `montarTirada`. Desbloquea el "fallo → fallo crítico" de Elión

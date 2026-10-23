@@ -664,8 +664,8 @@ export const ESPECIES: Especie[] = [
       {
         id: "inamovibles",
         label: "Inamovibles",
-        texto: "+2 para evitar derribos (casilla en Saltar, escalar, levantarse).",
-        // TODO(revisar): solo en "Saltar, escalar, levantarse". El derribo de las armas
+        texto: "+2 para evitar derribos (casilla en Saltar, levantarse).",
+        // TODO(revisar): solo en "Saltar, levantarse". El derribo de las armas
         // (notaDerribo, combate.ts) pide "su propia salvación" sin decir cuál; si se
         // define, la casilla va también ahí.
         casillas: [

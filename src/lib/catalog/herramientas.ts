@@ -293,6 +293,7 @@ export const ESCANER_DETECTOR: Herramienta = {
       notaTirada:
         "Perspicacia + Tecnociencia, o Biociencia para peritaje orgánico/químico. Acción " +
         "compleja. Dificultad 6 superficial, 8 escáner profundo.",
+      habilidadesTirada: ["tecnociencia", "biociencia"],
       motor: MOTOR_ESCANER,
     },
   ],

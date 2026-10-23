@@ -43,7 +43,7 @@ const enCombate = (pgActual: number, fatigaActual: number): VitalidadActual => (
 });
 
 const salvFortaleza = ACCIONES.find((a) => a.id === "salv_fortaleza")!;
-const montar = (f: FichaResuelta, t: Accion = salvFortaleza) => montarTirada(f, t, eleccionSinTocar(t, false));
+const montar = (f: FichaResuelta, t: Accion = salvFortaleza) => montarTirada(f, t, eleccionSinTocar(t));
 // Las líneas del desglose que no son la base (aplicado/habilidad).
 const lineasUmbral = (f: FichaResuelta) =>
   montar(f).desglose.filter((l) => ["Herido", "Malherido", "Moribundo", "Fatigado", "Exhausto"].includes(l.etiqueta));
@@ -172,7 +172,6 @@ describe("M1b: un personaje herido que usa un poder tira con −1 (prepararPoder
     const t = p.tirada!;
     const modal = montarTirada(psionico(4), t, {
       ...SIN_ELECCION,
-      enEspecialidad: p.enEspecialidad,
       estadoCondiciones: estadoInicial(t.condiciones ?? []),
     });
     assert.equal(p.montada!.modificador, modal.total);
@@ -189,7 +188,7 @@ describe("M1b: la fila enseña el modificador completo, igual que el modal sin t
   test("fusil con modo y tramo por defecto: la fila suma las casillas en su estado inicial", () => {
     const f = resolver(equipar(ficha(), { instanciaId: "fa", catalogoId: "fusil_asalto_impetus" }));
     const t = accionesDeAtaque(f.ficha, f.modificadores, f.extrasDotes.permisos).find((a) => a.label === "Disparar con Impetus")!;
-    const fila = montarTirada(f, t, eleccionSinTocar(t, false));
+    const fila = montarTirada(f, t, eleccionSinTocar(t));
     const modal = montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: estadoInicial(t.condiciones ?? []) });
     assert.equal(fila.modificador, modal.total);
     assert.notEqual(fila.modificador, fila.base); // "Modo de disparo: Simple" −3

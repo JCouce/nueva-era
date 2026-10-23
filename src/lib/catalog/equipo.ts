@@ -31,6 +31,7 @@
 import type { Modificador } from "../rules/modificadores";
 import type { CondicionTirada, TramoDistancia } from "../rules/condiciones";
 import type { MotorMetadata } from "../rules/motor";
+import type { HabilidadId } from "../rules/habilidades";
 import { ARMAS_MELEE, type ArmaMelee } from "./armasMelee";
 import { VALIJA_TACTICA_MEDICA, FARMACOS } from "./medicina";
 import {
@@ -136,6 +137,9 @@ export type NivelModulo = {
   // mecanizar — la dificultad que citan es la que el jugador teclea en el
   // modal, no un modificador; por eso no hay `modificadores` para esto.
   notaTirada?: string;
+  // Habilidades con las que se puede hacer esa tirada, si no es solo Tecnociencia: se tira con
+  // la más alta de la ficha (Escáner Detector 2: "o Biociencia"). Sin especialidad: entera.
+  habilidadesTirada?: readonly HabilidadId[];
   // Solo lo usa el Escudo Deflector: puntos de absorción de daño de ESE
   // nivel (docs/sistema.md pregunta 29, blindaje.ts) — total del nivel, no
   // acumulativo entre niveles (S9, ultimoQueDefine), igual que velocidadM.

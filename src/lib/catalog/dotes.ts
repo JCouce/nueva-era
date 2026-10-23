@@ -2278,7 +2278,7 @@ export const DOTES: readonly DoteCatalogo[] = [
     "efectos": [
       {
         "tipo": "texto",
-        "lugar": "atletismo",
+        "lugar": "escalar",
         "texto": "Puedes trepar con una mano ocupada sin penalización.",
         "condicion": "Trepando con una mano ocupada",
         "porque": "sin_regla",
@@ -2286,7 +2286,7 @@ export const DOTES: readonly DoteCatalogo[] = [
       },
       {
         "tipo": "texto",
-        "lugar": "atletismo",
+        "lugar": "escalar",
         "texto": "La mano ocupada cuenta como en uso mientras trepas, salvo que te pares y te apoyes en los otros tres puntos.",
         "condicion": "Trepando con una mano ocupada",
         "porque": "narrativo",
@@ -2300,7 +2300,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         "tipo": "texto",
         "afecta": {
           "modo": "accion_existente",
-          "id": "atletismo"
+          "id": "escalar"
         },
         "mecanismo": "nota_fija",
         "estado": "construido"
@@ -2309,7 +2309,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         "tipo": "narrativo",
         "afecta": {
           "modo": "accion_existente",
-          "id": "atletismo"
+          "id": "escalar"
         },
         "mecanismo": "nota_fija",
         "estado": "construido"

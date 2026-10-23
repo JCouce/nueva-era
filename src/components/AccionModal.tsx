@@ -235,10 +235,10 @@ export function AccionModal({
   tirada: Accion;
   recursoActual?: { actual: number; max: number };
   // Total, desglose, notas y márgenes salen de montarTirada con la ficha y lo
-  // elegido en la fila (especialidad, Sutil); el modal solo añade sus casillas y
+  // elegido en la fila (Sutil); el modal solo añade sus casillas y
   // el circunstancial. Ver docs/modificadores-tiradas.md, "Montaje".
   ficha: FichaParaTirada;
-  eleccion: Pick<EleccionTirada, "enEspecialidad" | "sutil">;
+  eleccion: Pick<EleccionTirada, "sutil">;
   dificultadInicial: number | null;
   circunstancialInicial: number;
   // Presente en cuanto se pulsa Tirar: el modal deja de pintar los controles

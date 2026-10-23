@@ -901,8 +901,8 @@ function tiradaDeProyectorPulso(
     grupo: "Ataques",
     aplicado: "reflejos",
     habilidad,
-    // TODO(revisar): con Tecnociencia el disparo no tiene especialidad de arma (ninguna de
-    // Tecnociencia encaja): esa fila sigue con el selector de especialidad de siempre.
+    // Con Tecnociencia el disparo no nombra especialidad (ninguna de Tecnociencia encaja):
+    // entera (docs/sistema.md §3, usuario 2026-10-23).
     especialidadArma: habilidad === "combate_distancia" ? ESPECIALIDAD_ATAQUE_ESPECIAL.proyector_pulso_disparo : undefined,
     // Disparo, con las dos habilidades. Sin empleo: el emisor va en la armadura, no se
     // empuña ("permite disparar sin desenfundar", docs/equipamiento.md), así que un filtro de

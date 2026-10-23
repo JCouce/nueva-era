@@ -100,3 +100,22 @@ describe("varios fármacos a la vez", () => {
     assert.deepEqual(sinDado, ["Usar Analgésico"]);
   });
 });
+
+// Regla general de especialidades (docs/sistema.md §3, usuario 2026-10-23).
+describe("especialidad de los fármacos con tirada", () => {
+  test("todos con Medicina fija, salvo el Xovromium, que no la nombra", () => {
+    for (const id of [
+      "farmaco_hemostaticos",
+      "farmaco_estabilizadores_neurales",
+      "farmaco_calmante",
+      "farmaco_gel_sanador",
+      "farmaco_gel_sanador_avanzado",
+      "farmaco_nano_elixir",
+    ]) {
+      const [fila] = accionesDeFarmacos(conFarmaco(id, 1), []);
+      assert.deepEqual(fila.especialidadesAccion, ["medicina"], id);
+    }
+    const [xovromium] = accionesDeFarmacos(conFarmaco("farmaco_xovromium", 1), []);
+    assert.equal(xovromium.especialidadesAccion, undefined);
+  });
+});

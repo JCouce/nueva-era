@@ -171,7 +171,7 @@ export function prepararPoder({
     fatigaActual,
     tirada,
     enEspecialidad,
-    montada: tirada ? montarTirada({ ficha, modificadores }, tirada, eleccionSinTocar(tirada, enEspecialidad)) : null,
+    montada: tirada ? montarTirada({ ficha, modificadores }, tirada, eleccionSinTocar(tirada)) : null,
     extraProrroga: resuelto.exceso?.extra ?? 0,
   };
 }

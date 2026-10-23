@@ -234,7 +234,7 @@ function ReparacionSeccion({
             nota={rollOpen.tirada.nota}
             tirada={rollOpen.tirada}
             ficha={ficha}
-            eleccion={{ enEspecialidad: false, sutil: false }}
+            eleccion={{ sutil: false }}
             dificultadInicial={memoria[rollOpen.tirada.id]?.dificultad ?? rollOpen.dificultadSugerida}
             circunstancialInicial={memoria[rollOpen.tirada.id]?.circunstancial ?? 0}
             resultado={resultado}

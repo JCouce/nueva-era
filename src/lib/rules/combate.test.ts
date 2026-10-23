@@ -132,7 +132,7 @@ describe("arma de fuego equipada", () => {
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_precision_plaga" });
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Plaga");
     assert.ok(fila);
-    assert.equal(fila!.ataque?.modos[0].danio, 17);
+    assert.equal(fila!.ataque?.modos[0].danio, 16);
     assert.equal(fila!.ataque?.modos[0].categoriaDanio, "Plasma");
   });
 
@@ -199,7 +199,7 @@ describe("arma de fuego equipada", () => {
     const modo = fila.condiciones?.find((c) => c.id === "modo");
     assert.equal(opcion(modo, "0"), -3); // Simple
     assert.equal(opcion(modo, "1"), -4); // Estándar (F. Auto)
-    assert.equal(fila.ataque?.modos[1].danio, 12);
+    assert.equal(fila.ataque?.modos[1].danio, 11);
   });
 });
 
@@ -233,10 +233,10 @@ describe("nota limpia de aviso de munición (RECURSOS) — el aviso vive en avis
 
   test("sin selector de modo, la dificultad del único modo no se pierde: llega como ajustesFijos", () => {
     let sheet = defaultSheet();
-    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_mosquito" }); // Simple, dificultad -2
+    sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_mosquito" }); // Simple, dificultad -3
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Mosquito")!;
     assert.equal(fila.condiciones?.find((c) => c.id === "modo"), undefined);
-    assert.deepEqual(fila.ajustesFijos, [{ valor: -2, fuente: "Mosquito" }]);
+    assert.deepEqual(fila.ajustesFijos, [{ valor: -3, fuente: "Mosquito" }]);
   });
 
   test("con selector de modo, la dificultad sigue viviendo en la condición, no se duplica en ajustesFijos", () => {
@@ -568,7 +568,7 @@ describe("lanzagranadas integrado", () => {
     const modo = fila.condiciones?.find((c) => c.id === "modo");
     assert.ok(modo && modo.tipo === "opcion");
     assert.equal(modo.opciones.length, 14);
-    assert.equal(fila.ataque?.modos.find((m) => m.id === "granada_plasma")?.danio, 16);
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "granada_plasma")?.danio, 15);
     assert.equal(fila.ataque?.modos.find((m) => m.id === "granada_plasma")?.categoriaDanio, "Plasma");
     assert.equal(fila.ataque?.modos.find((m) => m.id === "granada_aturdidora")?.categoriaDanio, "Efecto (sin daño directo)");
   });
@@ -663,15 +663,15 @@ describe("arma melee equipada", () => {
     let sheet = defaultSheet(); // Fuerza 0
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada" });
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Espada")!;
-    assert.equal(fila.ataque?.modos[0].danio, 3); // Fue(0) + 3
-    assert.equal(fila.ataque?.modos[0].formulaDanio, "Fue+3");
+    assert.equal(fila.ataque?.modos[0].danio, 4); // Fue(0) + 4
+    assert.equal(fila.ataque?.modos[0].formulaDanio, "Fue+4");
   });
 
   test("el daño escala con la Fuerza efectiva del personaje", () => {
     let sheet = ficha({ atributos: { fuerza: 4 } });
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada" });
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Espada")!;
-    assert.equal(fila.ataque?.modos[0].danio, 7); // Fue(4) + 3
+    assert.equal(fila.ataque?.modos[0].danio, 8); // Fue(4) + 4
   });
 
   test("una fórmula sin '+N' (solo 'Fuerza' o 'Fue') usa la Fuerza tal cual", () => {
@@ -745,8 +745,8 @@ describe("estilo Sutil — toggle en vez de fila duplicada (docs/equipamiento.md
     const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Espada Ligera")!;
     assert.equal(golpe.aplicado, "potencia");
     assert.equal(golpe.aplicadoSutil, "reflejos");
-    assert.equal(golpe.ataque?.modos[0].danio, 6); // Fue(4) + 2
-    assert.equal(golpe.ataque?.modos[0].danioSutil, 5); // Potencia(3) + 2
+    assert.equal(golpe.ataque?.modos[0].danio, 7); // Fue(4) + 3
+    assert.equal(golpe.ataque?.modos[0].danioSutil, 6); // Potencia(3) + 3
   });
 
   test("un arma no Sutil no lleva aplicadoSutil ni danioSutil", () => {
@@ -791,7 +791,7 @@ describe("arma melee arrojadiza — Lanzar (INFERIDO, mismo par que una granada)
     assert.equal(lanzar.aplicadoSutil, undefined);
     assert.deepEqual(lanzar.ajustesFijos, [{ valor: -1, fuente: "Lanza Corta" }]);
     assert.equal(lanzar.ataque?.modos.length, 1);
-    assert.equal(lanzar.ataque?.modos[0].danio, 5); // Fue(3) + 2
+    assert.equal(lanzar.ataque?.modos[0].danio, 6); // Fue(3) + 3
     assert.match(lanzar.nota ?? "", /Alcance Potencia × 10 m/);
     assert.equal(lanzar.efectoCritico, "Hemorragia (1d4 turnos)");
   });
@@ -910,7 +910,7 @@ describe("D2b-2: Bloquear y el estilo Sutil solo con su dote (§9.2, §9.5)", ()
     assert.equal(golpe.aplicado, "potencia");
     assert.equal(golpe.aplicadoSutil, undefined);
     assert.equal(golpe.ataque?.modos[0].danioSutil, undefined);
-    assert.equal(golpe.ataque?.modos[0].danio, 5); // Fue(3) + 2
+    assert.equal(golpe.ataque?.modos[0].danio, 6); // Fue(3) + 3
     assert.equal(fila(s, "Bloquear con Espada Ligera").aplicadoSutil, undefined);
   });
 
@@ -966,7 +966,7 @@ describe("armamento pesado equipado", () => {
     const modo = fila.condiciones?.find((c) => c.id === "modo");
     assert.ok(modo && modo.tipo === "opcion");
     assert.equal(modo.opciones.length, 14);
-    assert.equal(fila.ataque?.modos.find((m) => m.id === "granada_plasma")?.danio, 16);
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "granada_plasma")?.danio, 15);
     const plasma = MUNICION_GRANADA.find((m) => m.id === "granada_plasma")!;
     assert.equal(opcionNota(modo, "granada_plasma"), plasma.areaEfecto);
     assert.doesNotMatch(fila.nota ?? "", /según la granada elegida/i);
@@ -1111,7 +1111,7 @@ describe("granada en RECURSOS", () => {
     assert.equal(fila.aplicado, "potencia");
     assert.equal(fila.habilidad, "atletismo");
     assert.deepEqual(fila.ajustesFijos, [{ valor: -2, fuente: "Granada de Fragmentación" }]);
-    assert.equal(fila.ataque?.modos[0].danio, 14);
+    assert.equal(fila.ataque?.modos[0].danio, 13);
     assert.equal(fila.ataque?.modos[0].categoriaDanio, "Letal");
     assert.match(fila.nota ?? "", /Potencia × 10 m/);
   });

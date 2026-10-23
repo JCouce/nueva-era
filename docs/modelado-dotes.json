@@ -2472,14 +2472,14 @@
       "efectos": [
         {
           "tipo": "texto",
-          "lugar": "atletismo",
+          "lugar": "escalar",
           "texto": "Puedes trepar con una mano ocupada sin penalización.",
           "condicion": "Trepando con una mano ocupada",
           "porque": "sin_regla"
         },
         {
           "tipo": "texto",
-          "lugar": "atletismo",
+          "lugar": "escalar",
           "texto": "La mano ocupada cuenta como en uso mientras trepas, salvo que te pares y te apoyes en los otros tres puntos.",
           "condicion": "Trepando con una mano ocupada",
           "porque": "narrativo"
@@ -2491,7 +2491,7 @@
           "tipo": "texto",
           "afecta": {
             "modo": "accion_existente",
-            "id": "atletismo"
+            "id": "escalar"
           },
           "mecanismo": "nota_fija",
           "estado": "pendiente",

@@ -32,8 +32,9 @@ const SIN_TIRADA = new Set(["farmaco_analgesico", "farmaco_antipatogeno", "farma
 // — confundir los dos infla el resultado, no fija la dificultad.
 // `ajustesFijos` aquí es SOLO para el +5 real de Nano-Elixir (bono de la
 // dosis a la propia tirada, no una dificultad).
-// Por defecto Perspicacia + Biociencia; `habilidades` con dos = la más alta de la
-// ficha ("Biociencia o Actitud").
+// Por defecto Perspicacia + Biociencia (Medicina): entera con Medicina, la mitad sin ella;
+// `habilidades` con dos = la más alta de la ficha ("Biociencia o Actitud"); `sinEspecialidad`,
+// la tirada que no nombra especialidad (Xovromium): entera (docs/sistema.md §3).
 const CON_TIRADA: Record<
   string,
   {
@@ -41,6 +42,7 @@ const CON_TIRADA: Record<
     ajustesFijos?: { valor: number; fuente: string }[];
     aplicado?: AplicadoId;
     habilidades?: HabilidadId[];
+    sinEspecialidad?: true;
     dificultad?: number;
   }
 > = {
@@ -52,6 +54,7 @@ const CON_TIRADA: Record<
       "Si falla, pierdes la dosis, 1 de fatiga y −1 en tiradas mentales 15 minutos. Al acabar el efecto, 2 de fatiga y −2 mentales durante la hora siguiente (a mano).",
     aplicado: "voluntad",
     habilidades: ["biociencia", "actitud"],
+    sinEspecialidad: true,
     dificultad: 6,
   },
   farmaco_hemostaticos: {
@@ -95,6 +98,7 @@ export function accionesDeFarmacos(sheet: Sheet, notasEspecie: string[]): Accion
       grupo: "Fármacos",
       aplicado: con.aplicado ?? "perspicacia",
       habilidad,
+      ...(!con.sinEspecialidad && { especialidadesAccion: ["medicina" as const] }),
       nota: conNotas(`${con.nota} Quedan ${cantidad}.`, notasEspecie),
       ajustesFijos: con.ajustesFijos,
       ...(con.dificultad !== undefined && { dificultadSugerida: con.dificultad }),

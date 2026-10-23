@@ -163,11 +163,11 @@ describe("efectos de dotes en las tiradas (D2a)", () => {
     for (const id of ["iniciativa", "iniciativa_arma", "iniciativa_distraccion"]) {
       const t = conExtras(f, id);
       assert.ok(!idsDeCasillas(t).some((c) => c.startsWith("dote_vigilancia")), id);
-      const m = montarTirada(f, t, eleccionSinTocar(t, false));
+      const m = montarTirada(f, t, eleccionSinTocar(t));
       assert.deepEqual(m.desglose.find((l) => l.etiqueta === "Vigilancia Táctica"), { etiqueta: "Vigilancia Táctica", valor: 2 }, id);
     }
     // No llega fuera de Iniciativa.
-    const s = montarTirada(f, conExtras(f, "sigilo"), eleccionSinTocar(tirada("sigilo"), false));
+    const s = montarTirada(f, conExtras(f, "sigilo"), eleccionSinTocar(tirada("sigilo")));
     assert.ok(!s.desglose.some((l) => l.etiqueta === "Vigilancia Táctica"));
   });
 
@@ -181,8 +181,8 @@ describe("efectos de dotes en las tiradas (D2a)", () => {
     const f = resolver(fichaCapaz([{ id: "dote_movimiento_sigiloso" }, { id: "dote_movimiento_sigiloso_mejorado" }]));
     const t = conExtras(f, "sigilo");
     assert.deepEqual(idsDeCasillas(t), ["dote_movimiento_sigiloso_mejorado_movimiento_oculto"]);
-    const m = montarTirada(f, t, { ...eleccionSinTocar(t, false), estadoCondiciones: { dote_movimiento_sigiloso_mejorado_movimiento_oculto: "total" } });
-    const sinDote = montarTirada(f, tirada("sigilo"), eleccionSinTocar(tirada("sigilo"), false));
+    const m = montarTirada(f, t, { ...eleccionSinTocar(t), estadoCondiciones: { dote_movimiento_sigiloso_mejorado_movimiento_oculto: "total" } });
+    const sinDote = montarTirada(f, tirada("sigilo"), eleccionSinTocar(tirada("sigilo")));
     assert.equal(m.modificador - sinDote.modificador, 4); // −4 → 0, no 2 + 4
   });
 
@@ -220,8 +220,8 @@ describe("efectos de dotes en las tiradas (D2a)", () => {
     const f = resolver(fichaCapaz([{ id: "dote_autocuidados" }]));
     const t = conExtras(f, "salv_fortaleza");
     const c = t.condiciones!.find((x) => x.id.startsWith("dote_autocuidados"))!;
-    const sin = montarTirada(f, t, eleccionSinTocar(t, false));
-    const con = montarTirada(f, t, { ...eleccionSinTocar(t, false), estadoCondiciones: { [c.id]: true } });
+    const sin = montarTirada(f, t, eleccionSinTocar(t));
+    const con = montarTirada(f, t, { ...eleccionSinTocar(t), estadoCondiciones: { [c.id]: true } });
     assert.equal(con.modificador - sin.modificador, 1);
   });
 
@@ -377,8 +377,8 @@ describe("efectos de dotes en las tiradas de arma (D2b-1)", () => {
     const f = resolver(armado(fichaCombate([{ id: "dote_combinacion" }]), "espada"));
     const t = fila(f, "ataque_melee_");
     const c = t.condiciones!.find((x) => x.id.startsWith("dote_combinacion"))!;
-    const sin = montarTirada(f, t, eleccionSinTocar(t, false));
-    const con = montarTirada(f, t, { ...eleccionSinTocar(t, false), estadoCondiciones: { ...eleccionSinTocar(t, false).estadoCondiciones, [c.id]: true } });
+    const sin = montarTirada(f, t, eleccionSinTocar(t));
+    const con = montarTirada(f, t, { ...eleccionSinTocar(t), estadoCondiciones: { ...eleccionSinTocar(t).estadoCondiciones, [c.id]: true } });
     assert.equal(con.modificador - sin.modificador, -1);
   });
 
@@ -417,7 +417,7 @@ describe("efectos de dotes en las tiradas de arma (D2b-1)", () => {
 
   describe("Tirador de Larga Distancia y su Avanzado (bono por tramo)", () => {
     const enLarga = (f: FichaResuelta, t: Accion) =>
-      montarTirada(f, t, { ...eleccionSinTocar(t, false), estadoCondiciones: { ...eleccionSinTocar(t, false).estadoCondiciones, tramo: "larga" } });
+      montarTirada(f, t, { ...eleccionSinTocar(t), estadoCondiciones: { ...eleccionSinTocar(t).estadoCondiciones, tramo: "larga" } });
     const sinDotes = (esp: EspecialidadId[]) => {
       const f = resolver(armado(fichaCombate([], { esp }), "fusil_asalto_impetus"));
       return enLarga(f, fila(f, "ataque_fuego_")).modificador;
@@ -434,7 +434,7 @@ describe("efectos de dotes en las tiradas de arma (D2b-1)", () => {
       assert.equal(conDotes([{ id: "dote_tirador_de_larga_distancia" }], conLargas).delta, 1);
       const f = resolver(armado(fichaCombate([{ id: "dote_tirador_de_larga_distancia" }]), "fusil_asalto_impetus"));
       const t = fila(f, "ataque_fuego_");
-      const media = montarTirada(f, t, eleccionSinTocar(t, false));
+      const media = montarTirada(f, t, eleccionSinTocar(t));
       assert.ok(!media.desglose.some((l) => l.etiqueta === "Tirador de Larga Distancia" && l.valor !== 0));
     });
 
@@ -465,7 +465,7 @@ describe("efectos de dotes en las tiradas de arma (D2b-1)", () => {
         "pistola_mosquito",
       ),
     );
-    const montar = (t: Accion) => montarTirada(f, t, eleccionSinTocar(t, false));
+    const montar = (t: Accion) => montarTirada(f, t, eleccionSinTocar(t));
 
     test("en el golpe con un arma de la especialidad: margen 5, con su línea en las notas", () => {
       const t = fila(f, "ataque_melee_");
@@ -494,10 +494,10 @@ describe("bloqueos con la especialidad del arma (S40, D2b-1)", () => {
     s = armado(s, ...ids);
     const f = resolver(s);
     const t = filasDe(f).find((x) => x.id.startsWith(prefijo))!;
-    return montarTirada(f, t, eleccionSinTocar(t, true));
+    return montarTirada(f, t, eleccionSinTocar(t));
   };
 
-  test("Bloquear con X: con la especialidad del arma, entero; sin ella, la mitad (aunque la fila dijera que sí)", () => {
+  test("Bloquear con X: con la especialidad del arma, entero; sin ella, la mitad", () => {
     assert.equal(bloqueo(["espadas_y_dagas"], "bloquear_melee_", "espada").habilidad?.valor, 4);
     const sin = bloqueo([], "bloquear_melee_", "espada");
     assert.equal(sin.habilidad?.valor, 2);
@@ -582,8 +582,8 @@ describe("D2b-2: Bloqueo y Combate Sutil habilitan sus filas (§9.2)", () => {
     assert.match(t.nota ?? "", /Desarmado frente a atacante armado: Si tu ataque natural o desarmado hace daño letal/);
     assert.match(t.efectoCritico ?? "", /puedes contraatacarle como reacción\. \(Bloqueo\)/);
     // Marcar la casilla resta 3 al total.
-    const sin = montarTirada(f, t, eleccionSinTocar(t, false));
-    const con = montarTirada(f, t, { ...eleccionSinTocar(t, false), estadoCondiciones: { ...eleccionSinTocar(t, false).estadoCondiciones, [c.id]: true } });
+    const sin = montarTirada(f, t, eleccionSinTocar(t));
+    const con = montarTirada(f, t, { ...eleccionSinTocar(t), estadoCondiciones: { ...eleccionSinTocar(t).estadoCondiciones, [c.id]: true } });
     assert.equal(con.modificador - sin.modificador, -3);
     // Solo en Bloquear: ni en el golpe ni en la esquiva.
     assert.ok(!(fila(f, "ataque_melee_").condiciones ?? []).some((x) => x.id.startsWith("dote_bloqueo")));

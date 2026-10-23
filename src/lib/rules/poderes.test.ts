@@ -30,7 +30,8 @@ import { defaultSheet, parseSheet, type Sheet } from "./sheet";
 import { migrar } from "./migraciones";
 import { pagarFatiga, fatigaEfectiva, ajustarFatigaTemporal, terminarEscena } from "./vitalidad";
 import type { EspecialidadId } from "../catalog/especialidades";
-import { resolverDanio, ACCIONES, usarHabilidadAlternativa, modificadorAccion, tirarDado } from "./acciones";
+import { resolverDanio, ACCIONES, usarHabilidadAlternativa, tirarDado, type Accion } from "./acciones";
+import { montarTirada, eleccionSinTocar } from "./montaje";
 import { fuentesDeCapa1 } from "./capa1";
 import { modificadoresActivos } from "./derivados";
 import { DISCIPLINAS, disciplinaPorId, FUENTES_EXTERNAS_FATIGA } from "../catalog/psionica";
@@ -217,12 +218,17 @@ describe("tiradaDePoder", () => {
     assert.equal(tiradaDePoder(accion("convergencia"), resolver("convergencia", 1))!.label, "Convergencia (nivel 1)");
   });
 
-  test("la especialidad Física se aplica sola si el personaje la tiene", () => {
+  test("la especialidad Física se aplica sola si el personaje la tiene: entera con ella, la mitad sin ella", () => {
     const p = resolver("impulso", 1);
-    const sin = defaultSheet();
-    const con: Sheet = { ...sin, habilidades: { ...sin.habilidades, tecnociencia: { valor: 2, especialidades: ["fisica"] } } };
+    const base = defaultSheet();
+    const sin: Sheet = { ...base, habilidades: { ...base.habilidades, tecnociencia: { valor: 4, especialidades: ["informatica"] } } };
+    const con: Sheet = { ...base, habilidades: { ...base.habilidades, tecnociencia: { valor: 4, especialidades: ["fisica"] } } };
     assert.equal(enEspecialidadDePoder(sin, p), false);
     assert.equal(enEspecialidadDePoder(con, p), true);
+    const t = tiradaDePoder(accion("impulso"), p)!;
+    assert.deepEqual(t.especialidadesAccion, ["fisica"]);
+    const valor = (s: Sheet) => montarTirada({ ficha: s, modificadores: modificadoresActivos(s) }, t, eleccionSinTocar(t)).habilidad?.valor;
+    assert.deepEqual([valor(con), valor(sin)], [4, 2]);
   });
 });
 
@@ -713,14 +719,18 @@ describe("Esquiva levitando con Física", () => {
   test("con Física usa Tecnociencia entera; sin ella, la mitad", () => {
     const con = ficha(2, 4, ["fisica"]);
     const sin = ficha(2, 4);
-    const altCon = usarHabilidadAlternativa(con, conEsquivaLevitando(niv(con), esquiva))!;
-    const altSin = usarHabilidadAlternativa(sin, conEsquivaLevitando(niv(sin), esquiva))!;
-    assert.equal(altCon.tirada.habilidad, "tecnociencia");
-    assert.equal(altCon.enEspecialidad, true);
-    assert.equal(altSin.enEspecialidad, false);
-    assert.equal(modificadorAccion(con, altCon.tirada, altCon.enEspecialidad, modificadoresActivos(con)).habilidad, 4);
-    assert.equal(modificadorAccion(sin, altSin.tirada, altSin.enEspecialidad, modificadoresActivos(sin)).habilidad, 2);
-    assert.equal(altCon.tirada.label, "Defensa / esquiva (Física)");
+    const altCon = usarHabilidadAlternativa(conEsquivaLevitando(niv(con), esquiva))!;
+    const altSin = usarHabilidadAlternativa(conEsquivaLevitando(niv(sin), esquiva))!;
+    assert.equal(altCon.habilidad, "tecnociencia");
+    assert.deepEqual(altCon.especialidadesAccion, ["fisica"]);
+    const montar = (s: Sheet, t: Accion) => montarTirada({ ficha: s, modificadores: modificadoresActivos(s) }, t, eleccionSinTocar(t));
+    const mCon = montar(con, altCon);
+    const mSin = montar(sin, altSin);
+    assert.equal(mCon.enEspecialidad, true);
+    assert.equal(mSin.enEspecialidad, false);
+    assert.equal(mCon.habilidad?.valor, 4);
+    assert.equal(mSin.habilidad?.valor, 2);
+    assert.equal(altCon.label, "Defensa / esquiva (Física)");
   });
 });
 
@@ -904,6 +914,26 @@ describe("Resonancia — tanda 2", () => {
     assert.equal(tiradaDePoder(accionR("alerta_pasiva"), p)!.dificultadSugerida, 6);
     const s = resolverR("alerta_pasiva", 1, { receptor: "sintetico" });
     assert.equal(s.resolucion.tipo === "tirada" && s.resolucion.habilidad, "tecnociencia");
+  });
+
+  // Regla general de especialidades (docs/sistema.md §3, usuario 2026-10-23).
+  test("Alerta contra sintéticos: Tecnociencia sin especialidad (entera); Rastreo sintético sigue con Informática", () => {
+    const alerta = resolverR("alerta_pasiva", 1, { receptor: "sintetico" });
+    assert.equal(alerta.resolucion.tipo === "tirada" && alerta.resolucion.especialidad, undefined);
+    assert.equal(tiradaDePoder(accionR("alerta_pasiva"), alerta)!.especialidadesAccion, undefined);
+    const rastreo = resolverR("rastreo", 1, { receptor: "sintetico" });
+    assert.deepEqual(tiradaDePoder(accionR("rastreo"), rastreo)!.especialidadesAccion, ["informatica"]);
+  });
+
+  test("tiradas de Biociencia de Resonancia: sin especialidad, la habilidad entera", () => {
+    const base = defaultSheet();
+    const ficha: Sheet = { ...base, habilidades: { ...base.habilidades, biociencia: { valor: 5, especialidades: ["medicina"] } } };
+    for (const id of ["alerta_pasiva", "leer_mente", "rastreo"]) {
+      const t = tiradaDePoder(accionR(id), resolverR(id, 1))!;
+      assert.equal(t.habilidad, "biociencia", id);
+      const m = montarTirada({ ficha, modificadores: modificadoresActivos(ficha) }, t, eleccionSinTocar(t));
+      assert.deepEqual([m.habilidad?.valor, m.enEspecialidad], [5, false], id);
+    }
   });
 
   test("Alerta activa: estándar, 1 de fatiga, 1 km², dif 8, sin rebajas de la tabla en ningún nivel", () => {

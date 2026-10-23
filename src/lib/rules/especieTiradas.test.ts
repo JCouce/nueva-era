@@ -49,7 +49,7 @@ const fija = (f: FichaResuelta, id: string): Accion => conExtrasDeFicha(f, ACCIO
 const ids = (t: Accion) => (t.condiciones ?? []).map((c) => c.id);
 
 const marcada = (t: Accion, casilla: string): EleccionTirada => ({
-  ...eleccionSinTocar(t, false),
+  ...eleccionSinTocar(t),
   estadoCondiciones: { ...estadoInicial(t.condiciones ?? []), [casilla]: true },
 });
 
@@ -108,7 +108,7 @@ describe("E4: casillas de especie", () => {
       const f = resolver(ficha(ESPECIE[especie]));
       const t = fija(f, tirada);
       assert.ok(ids(t).includes(casilla));
-      const sinMarcar = montarTirada(f, t, eleccionSinTocar(t, false));
+      const sinMarcar = montarTirada(f, t, eleccionSinTocar(t));
       const conMarca = montarTirada(f, t, marcada(t, casilla));
       assert.equal(conMarca.total - sinMarcar.total, valor);
       assert.ok(conMarca.desglose.some((l) => l.valor === valor && l.etiqueta.startsWith("¿")));
@@ -123,7 +123,7 @@ describe("E4: casillas de especie", () => {
     const f = resolver(ficha(ESPECIE.riux));
     const t = fija(f, "salv_fortaleza");
     const sinCasilla = ACCIONES.find((a) => a.id === "salv_fortaleza")!;
-    assert.equal(montarTirada(f, t, eleccionSinTocar(t, false)).total, montarTirada(f, sinCasilla, eleccionSinTocar(sinCasilla, false)).total);
+    assert.equal(montarTirada(f, t, eleccionSinTocar(t)).total, montarTirada(f, sinCasilla, eleccionSinTocar(sinCasilla)).total);
   });
 
   test("NPC en modo libre: también le llegan (son derivadas, §14.3)", () => {
@@ -154,7 +154,7 @@ describe("E4: Arköru, −1 fijo en Combate a Distancia (no granadas ni arrojadi
   s = { ...s, granadas: { granada_fragmentacion: 1 } };
   const linea = (f: FichaResuelta, pref: string) => {
     const t = conExtrasDeFicha(f, accionesDeAtaque(f.ficha, f.modificadores, f.extrasDotes.permisos).find((a) => a.id.startsWith(pref))!);
-    return montarTirada(f, t, eleccionSinTocar(t, false)).desglose.find((l) => l.etiqueta === "Arköru" && l.valor === -1);
+    return montarTirada(f, t, eleccionSinTocar(t)).desglose.find((l) => l.etiqueta === "Arköru" && l.valor === -1);
   };
 
   test("disparar un arma de fuego: −1 con su línea", () => {
@@ -175,7 +175,7 @@ describe("E4: Arköru, −1 fijo en Combate a Distancia (no granadas ni arrojadi
     // iniciativa_arma usa Combate a Distancia, pero no es del grupo Ataques (alcance grupoHabilidad).
     for (const id of ["defensa", "salv_reflejos", "iniciativa_arma"]) {
       const t = fija(f, id);
-      assert.ok(!montarTirada(f, t, eleccionSinTocar(t, false)).desglose.some((l) => l.etiqueta === "Arköru"), id);
+      assert.ok(!montarTirada(f, t, eleccionSinTocar(t)).desglose.some((l) => l.etiqueta === "Arköru"), id);
     }
   });
 });
@@ -193,7 +193,7 @@ describe("E4: éxito → crítico (margen de crítico 0 con la casilla)", () => 
       const f = resolver(ficha(ESPECIE[especie]));
       const t = fija(f, tirada);
       assert.ok(ids(t).includes(casilla));
-      const sin = montarTirada(f, t, eleccionSinTocar(t, false));
+      const sin = montarTirada(f, t, eleccionSinTocar(t));
       const con = montarTirada(f, t, marcada(t, casilla));
       assert.equal(con.total, sin.total, "la casilla no suma");
       const dificultad = 6 + con.modificador;
@@ -225,7 +225,7 @@ describe("E4: un tramo menos de penalizador (Guerrero heridas, Siervo fatiga)", 
   const UMBRALES = /^(Herido|Malherido|Moribundo|Fatigado|Exhausto)/;
   const lineas = (f: FichaResuelta) => {
     const t = ACCIONES.find((a) => a.id === "salv_fortaleza")!;
-    return montarTirada(f, t, eleccionSinTocar(t, false)).desglose.filter((l) => UMBRALES.test(l.etiqueta));
+    return montarTirada(f, t, eleccionSinTocar(t)).desglose.filter((l) => UMBRALES.test(l.etiqueta));
   };
 
   test("Guerrero Herido: sin línea de penalizador", () => {

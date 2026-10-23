@@ -41,6 +41,7 @@ import {
   type EfectosDeUso,
   type PeajeDeUso,
   usarHabilidadAlternativa,
+  elegirEspecialidad,
   etiquetaEspecialidad,
   conEsquivaLevitando,
   conPsionicaEnTiradaFija,
@@ -57,6 +58,7 @@ import {
   type Sheet,
   type EstadoCondiciones,
   type EleccionTirada,
+  type EspecialidadId,
   type FichaResuelta,
   type ExtraAccionAumento,
   type TiradaMontada,
@@ -180,11 +182,9 @@ function FilaTirada({
 }: {
   tirada: Accion;
   ficha: FichaResuelta;
-  onAbrir: (t: Accion, enEspecialidad: boolean, sutilActivo: boolean) => void;
+  onAbrir: (t: Accion, sutilActivo: boolean) => void;
   estrella?: Estrella;
 }) {
-  const sheet = ficha.ficha;
-  const [enEspecialidad, setEnEspecialidad] = useState(false);
   // Sutil (Feature 1, docs/equipamiento.md:848-850; solo con la dote Combate Sutil,
   // D2b-2: sin ella la tirada no trae aplicadoSutil y no hay interruptor): pre-seleccionado por el
   // aplicado que dé más bonificador de ATAQUE, no de daño — es la parte que
@@ -199,23 +199,16 @@ function FilaTirada({
   // Habilidad alternativa (Levitando: Física): con la casilla marcada la fila y
   // el modal trabajan con la tirada cambiada y la especialidad ya resuelta.
   const [alternativaActiva, setAlternativaActiva] = useState(false);
-  const alternativa = alternativaActiva ? usarHabilidadAlternativa(sheet, tirada) : null;
-  const efectiva = alternativa?.tirada ?? tirada;
-  const enEspEfectiva = alternativa ? alternativa.enEspecialidad : enEspecialidad;
+  const alternativa = alternativaActiva ? usarHabilidadAlternativa(tirada) : null;
+  // Especialidad a elegir (Convencer / mentir): sin elegir no se tira.
+  const [elegida, setElegida] = useState<EspecialidadId | null>(null);
+  const pendienteElegir = !alternativa && !!tirada.especialidadAElegir && elegida === null;
+  const efectiva = alternativa ?? (tirada.especialidadAElegir && elegida ? elegirEspecialidad(tirada, elegida) : tirada);
 
-  // Un ataque con arma (o una acción de dote con especialidad) no ofrece selector: su
-  // especialidad la decide la propia tirada (montada.especialidadArma).
-  const especialidades = !alternativa && !tirada.especialidadArma && !tirada.especialidadesAccion && tirada.habilidad
-    ? sheet.habilidades[tirada.habilidad].especialidades
-    : [];
-  const montada = montarTirada(ficha, efectiva, eleccionSinTocar(efectiva, enEspEfectiva, sutilActivo));
+  // La especialidad la decide la tirada (montaje.ts, habilidadEntera): sin selector sí/no.
+  const montada = montarTirada(ficha, efectiva, eleccionSinTocar(efectiva, sutilActivo));
   const nombreAplicado = APLICADOS.find((a) => a.id === montada.aplicado.id)!;
-  const nombreHabilidad = efectiva.habilidad
-    ? HABILIDADES.find((h) => h.id === efectiva.habilidad)!.label +
-      (alternativa
-        ? ` (${etiquetaEspecialidad(tirada.habilidadAlternativa!.especialidad)}${enEspEfectiva ? "" : ", mitad"})`
-        : "")
-    : null;
+  const nombreHabilidad = efectiva.habilidad ? HABILIDADES.find((h) => h.id === efectiva.habilidad)!.label : null;
 
   if (tirada.bloqueada) {
     return (
@@ -265,8 +258,9 @@ function FilaTirada({
 
         <button
           type="button"
-          onClick={() => onAbrir(efectiva, montada.enEspecialidad, sutilActivo)}
-          className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95"
+          disabled={pendienteElegir}
+          onClick={() => onAbrir(efectiva, sutilActivo)}
+          className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted disabled:active:scale-100"
         >
           Tirar
         </button>
@@ -309,27 +303,29 @@ function FilaTirada({
         </div>
       )}
 
-      {especialidades.length > 0 && (
+      {tirada.especialidadAElegir && !alternativa && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <span className="font-mono text-[10px] uppercase text-muted">
-            especialidad:
+          <span className={`font-mono text-[10px] uppercase ${pendienteElegir ? "text-danger" : "text-muted"}`}>
+            {pendienteElegir ? "elige especialidad:" : "especialidad:"}
           </span>
-          <button
-            type="button"
-            onClick={() => setEnEspecialidad((v) => !v)}
-            className={`clip-chamfer-sm border px-2 py-1 font-mono text-[10px] uppercase active:scale-95 ${
-              enEspecialidad
-                ? "border-info text-info"
-                : "border-border text-muted"
-            }`}
-          >
-            {enEspecialidad ? "✓ " : ""}
-            {especialidades.map(etiquetaEspecialidad).join(" / ")}
-          </button>
+          {tirada.especialidadAElegir.map((e) => (
+            <button
+              key={e}
+              type="button"
+              aria-pressed={elegida === e}
+              onClick={() => setElegida(e)}
+              className={`clip-chamfer-sm border px-2 py-1 font-mono text-[10px] uppercase active:scale-95 ${
+                elegida === e ? "border-info text-info" : "border-border text-muted"
+              }`}
+            >
+              {elegida === e ? "✓ " : ""}
+              {etiquetaEspecialidad(e)}
+            </button>
+          ))}
         </div>
       )}
 
-      {montada.especialidadArma && (
+      {montada.especialidadArma && !pendienteElegir && (
         <p
           className={`mt-2 font-mono text-[10px] uppercase ${
             montada.especialidadArma.tiene ? "text-info" : "text-muted"
@@ -692,9 +688,9 @@ export function AccionesTab({
     tirada: Accion;
     // La ficha al abrir el modal: el total se monta contra ella mientras está abierto.
     ficha: FichaResuelta;
-    // Especialidad y estilo Sutil elegidos en la fila antes de abrir el modal
-    // (Feature 1) — `tirar()` mira `sutil` para usar `modo.danio` o `modo.danioSutil`.
-    eleccion: Pick<EleccionTirada, "enEspecialidad" | "sutil">;
+    // Estilo Sutil elegido en la fila antes de abrir el modal (Feature 1) — `tirar()` mira
+    // `sutil` para usar `modo.danio` o `modo.danioSutil`.
+    eleccion: Pick<EleccionTirada, "sutil">;
     // null mientras se eligen condiciones/dificultad; el id del Lanzamiento
     // recién creado en cuanto se pulsa Tirar — el modal pasa a mostrar el
     // resultado in-place en vez de cerrarse (UX corregida 2026-09-23: cerrar
@@ -781,8 +777,8 @@ export function AccionesTab({
     [ficha],
   );
 
-  const abrir = (t: Accion, enEspecialidad: boolean, sutil: boolean) => {
-    setModal({ tirada: t, ficha, eleccion: { enEspecialidad, sutil }, resultadoId: null });
+  const abrir = (t: Accion, sutil: boolean) => {
+    setModal({ tirada: t, ficha, eleccion: { sutil }, resultadoId: null });
   };
 
   const niveles = ficha.psionica.paraEfectos;
@@ -891,7 +887,7 @@ export function AccionesTab({
       indiceCondiciones: ficha.indiceCondiciones,
     });
     if (!p) return;
-    if (p.tirada) abrir(p.tirada, p.enEspecialidad, false);
+    if (p.tirada) abrir(p.tirada, false);
     setSobrecarga(null);
     setPeajes([]);
     setAvisosPoder([]);
@@ -1253,12 +1249,11 @@ export function AccionesTab({
     );
   };
 
+  // Solo la que nombra la tirada: sin ella, la habilidad va entera y no hay nada que enseñar.
   const especialidadesActuales = modal?.tirada.especialidadArma
     ? [modal.tirada.especialidadArma]
     : modal?.tirada.especialidadesAccion
       ? [...modal.tirada.especialidadesAccion]
-      : modal?.tirada.habilidad
-      ? sheet.habilidades[modal.tirada.habilidad].especialidades
       : [];
   // El resultado vive en `historial` (tirarDanio lo actualiza ahí), no
   // duplicado en el propio `modal` — se busca por id para que las dos vistas
@@ -1340,7 +1335,7 @@ export function AccionesTab({
               nodo: (
                 <FilaTiradaLibre
                   key={FAVORITA_TIRADA_LIBRE}
-                  onAbrir={() => abrir(tiradaLibre(), false, false)}
+                  onAbrir={() => abrir(tiradaLibre(), false)}
                   estrella={estrella(FAVORITA_TIRADA_LIBRE)}
                 />
               ),

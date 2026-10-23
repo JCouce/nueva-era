@@ -66,16 +66,21 @@ export type Accion = {
   efectos?: { fuente: string; texto: string }[];
   // Habilidad que el jugador puede usar en su lugar con una casilla de la fila
   // (Levitar: esquivar con Física). Mismo patrón que `aplicadoSutil`, pero sobre
-  // la habilidad; la especialidad se resuelve sola (ver usarHabilidadAlternativa).
-  habilidadAlternativa?: { habilidad: HabilidadId; especialidad: EspecialidadId; etiqueta: string };
+  // la habilidad; la especialidad, si la nombra, se resuelve sola (ver
+  // usarHabilidadAlternativa). Sin especialidad, entera (Sigilo en la distracción).
+  habilidadAlternativa?: { habilidad: HabilidadId; especialidad?: EspecialidadId; etiqueta: string };
+  // Regla general (docs/sistema.md §3, usuario 2026-10-23): la tirada que no nombra
+  // especialidad suma la habilidad entera; la que la nombra, entera si la ficha la tiene y a
+  // la mitad si no (montaje.ts, habilidadEntera). Nunca la elige el jugador con una casilla.
   // Ataque con arma (combate.ts, catalog/especialidadesArma.ts): la especialidad del arma.
-  // La tirada va en especialidad sola si la ficha la tiene en `habilidad`, y si no, a la
-  // mitad: la fila no ofrece selector (montaje.ts, enEspecialidadEfectiva).
   especialidadArma?: EspecialidadId;
-  // Lo mismo para las acciones de dote cuya resolución trae especialidad (D2c-1,
-  // dotesAcciones.ts): en especialidad sola si la ficha tiene cualquiera de estas (Apoyo:
-  // Empatía o Liderazgo), y si no, a la mitad; sin selector en la fila.
+  // La de las demás tiradas que la nombran (Tratar heridas: Medicina; acciones de dote, D2c-1;
+  // poderes): en especialidad si la ficha tiene cualquiera de estas (Apoyo: Empatía o
+  // Liderazgo).
   especialidadesAccion?: readonly EspecialidadId[];
+  // Tirada que obliga a elegir UNA de estas al tirar (Convencer / mentir): la fila no deja
+  // tirar sin elegir; elegirEspecialidad la pasa a `especialidadesAccion`.
+  especialidadAElegir?: readonly EspecialidadId[];
   // Tirada generada por arma (combate.ts): su familia y el empleo del arma, que miran las
   // casillas, bonos y textos de dote con alcance "familia:<f>" (D2b-1). Sin empleo: arma
   // que no se empuña (Proyector de Pulso).
@@ -206,8 +211,8 @@ export type Accion = {
   // toggle "maxima_potencia" en `condiciones`, ver resolverVuelo() abajo.
   vuelo?: { velocidadBase: number; bonusCritico: number };
   // Tirada libre (T-007, tiradaLibre abajo): el jugador elige aplicado y habilidad en el modal.
-  // El modal pinta los selectores por este campo, nunca por el id; montarTirada la tira sin
-  // especialidad y conExtrasDeFicha no le añade casillas, textos ni extras de dote o aumento.
+  // El modal pinta los selectores por este campo, nunca por el id; no nombra especialidad (la
+  // habilidad, entera) y conExtrasDeFicha no le añade casillas, textos ni extras de dote o aumento.
   libre?: true;
 };
 
@@ -332,12 +337,16 @@ export const ACCIONES: Accion[] = [
     habilidad: "combate_distancia",
     nota: "La tirada depende de cómo entres al combate; esta es la de sacar el arma para atacar",
   },
+  // "expresión + manipulación o sigilo" (fuente/sistema.md): Manipulación fija y Sigilo, que
+  // la fuente da a secas, como alternativa entera (docs/sistema.md §3, usuario 2026-10-23).
   {
     id: "iniciativa_distraccion",
     label: "Iniciativa (distrayendo)",
     grupo: "Iniciativa",
     aplicado: "expresion",
     habilidad: "actitud",
+    especialidadesAccion: ["manipulacion"],
+    habilidadAlternativa: { habilidad: "sigilo", etiqueta: "Con Sigilo" },
     nota: "Para abrir con una distracción. El rival puede oponer Perspicacia + Empatía",
   },
   {
@@ -376,13 +385,25 @@ export const ACCIONES: Accion[] = [
   },
 
   // ── Acciones ──
+  // "reflejos + esconderse" (fuente/habilidades.md, Sigilo).
   {
     id: "sigilo",
     label: "Sigilo",
     grupo: "Acciones",
     aplicado: "reflejos",
     habilidad: "sigilo",
+    especialidadesAccion: ["esconderse"],
     nota: "Se tira contra la Alerta del objetivo. En empate gana la alerta",
+  },
+  {
+    id: "hurto",
+    label: "Hurto",
+    grupo: "Acciones",
+    aplicado: "reflejos",
+    habilidad: "sigilo",
+    especialidadesAccion: ["hurto"],
+    nota:
+      "Acción simple o reacción, enfrentada a Perspicacia + Exploración del objetivo, con penalizador según lo que se quite y lo difícil que sea llegar a ello",
   },
   {
     id: "alerta_activa",
@@ -392,13 +413,27 @@ export const ACCIONES: Accion[] = [
     habilidad: "exploracion",
     nota: "Acción simple o reacción para buscar objetivos ocultos. En empate, alerta gana a sigilo",
   },
+  // Saltar y levantarse: "potencia + atletismo" (fuente/habilidades.md, Salto; fuente/sistema.md,
+  // Derribado), entera. El id se queda: de él cuelgan equilibrio, nado y derribo (dotes, especie).
   {
     id: "atletismo",
-    label: "Saltar, escalar, levantarse",
+    label: "Saltar, levantarse",
     grupo: "Acciones",
     aplicado: "potencia",
     habilidad: "atletismo",
-    nota: "También para escapar de un agarre, donde vale Fortaleza en lugar de Potencia",
+    nota:
+      "Salto horizontal o vertical: dificultad 6; éxito +50 cm (vertical +15 cm), crítico +100 cm (vertical +30 cm). Levantarse o resistir un derribo. También para escapar de un agarre, donde vale Fortaleza en lugar de Potencia",
+  },
+  // "potencia + escalada" (fuente/habilidades.md, Escalada).
+  {
+    id: "escalar",
+    label: "Escalar",
+    grupo: "Acciones",
+    aplicado: "potencia",
+    habilidad: "atletismo",
+    especialidadesAccion: ["escalada"],
+    nota:
+      "Acción simple, dificultad variable. Éxito: avanzas a tu velocidad de escalada; fracaso: no avanzas; fracaso crítico: te precipitas",
   },
   {
     id: "medicina",
@@ -406,7 +441,8 @@ export const ACCIONES: Accion[] = [
     grupo: "Acciones",
     aplicado: "perspicacia",
     habilidad: "biociencia",
-    nota: "Con la especialidad de Medicina. Gel sanador y estabilizar tienen dificultad 4",
+    especialidadesAccion: ["medicina"],
+    nota: "Gel sanador y estabilizar tienen dificultad 4",
   },
   // Reparar y Fabricar ya no viven aquí: tienen su propia acción sin dado
   // (docs/tareas.md, tarea 8) en vez de una tirada de `tecnica` con
@@ -416,9 +452,7 @@ export const ACCIONES: Accion[] = [
   // dualidad hackeo digital/psiónico), inventarse una dificultad aquí sería
   // una regla que el documento no da.
   // Tiradas fijas de docs/fuente/habilidades.md (tarea "Tiradas fijas que faltan", tareas.md).
-  // Apuntar: sin especialidad fija; las de Combate a Distancia son de arma y la fila deja
-  // marcarla como cualquier otra. TODO(revisar): ¿la especialidad del arma con la que se va a
-  // disparar, o ninguna? La fuente no lo dice.
+  // Apuntar: la fuente no nombra especialidad, así que Combate a Distancia va entera.
   {
     id: ID_APUNTAR,
     label: "Apuntar",
@@ -459,20 +493,25 @@ export const ACCIONES: Accion[] = [
     nota:
       "Enfrentada a la distracción del rival antes del combate (Expresión + Manipulación). Si gana, quedas sorprendido contra su primer ataque; con crítico, desprevenido",
   },
+  // Hackeo con Informática (usuario, 2026-10-23).
   {
     id: "tecnica",
     label: "Hackeo",
     grupo: "Acciones",
     aplicado: "perspicacia",
     habilidad: "tecnociencia",
+    especialidadesAccion: ["informatica"],
   },
+  // Las de Actitud con "expresión + X" en fuente/habilidades.md: el jugador elige cuál al tirar
+  // (usuario, 2026-10-23).
   {
     id: "social",
     label: "Convencer / mentir",
     grupo: "Acciones",
     aplicado: "expresion",
     habilidad: "actitud",
-    nota: "Con Empatía o Manipulación según la aproximación",
+    especialidadAElegir: ["empatia", "humor", "intimidacion", "liderazgo", "manipulacion", "negociacion"],
+    nota: "Elige la especialidad según la aproximación",
   },
 ];
 
@@ -766,21 +805,31 @@ export function tieneEspecialidad(sheet: Sheet, habilidad: HabilidadId, especial
   return sheet.habilidades[habilidad].especialidades.includes(especialidad);
 }
 
-// La tirada con la habilidad alternativa ya puesta y si cuenta como especialidad
-// (entera con ella, la mitad sin ella: la regla general de especialidades).
+// La tirada con la habilidad alternativa ya puesta, con su especialidad si la nombra (entera
+// con ella, la mitad sin ella) o sin ninguna (entera: la regla general de especialidades).
 // La especialidad fija de la tirada (Discernir mentiras: Empatía) deja de contar: manda la de
-// la alternativa (Cazador Cazado: Manipulación), que ya viene resuelta en `enEspecialidad`.
-export function usarHabilidadAlternativa(sheet: Sheet, t: Accion): { tirada: Accion; enEspecialidad: boolean } | null {
+// la alternativa (Cazador Cazado: Manipulación).
+export function usarHabilidadAlternativa(t: Accion): Accion | null {
   const alt = t.habilidadAlternativa;
   if (!alt) return null;
-  const enEspecialidad = tieneEspecialidad(sheet, alt.habilidad, alt.especialidad);
+  const nombre = alt.especialidad
+    ? etiquetaEspecialidad(alt.especialidad)
+    : HABILIDADES.find((h) => h.id === alt.habilidad)!.label;
   return {
-    tirada: {
-      ...t,
-      habilidad: alt.habilidad,
-      label: `${t.label} (${etiquetaEspecialidad(alt.especialidad)})`,
-      especialidadesAccion: undefined,
-    },
-    enEspecialidad,
+    ...t,
+    habilidad: alt.habilidad,
+    label: `${t.label} (${nombre})`,
+    especialidadesAccion: alt.especialidad ? [alt.especialidad] : undefined,
+    especialidadAElegir: undefined,
+  };
+}
+
+// La tirada con la especialidad elegida (Convencer / mentir): pasa a nombrarla, como una fija.
+export function elegirEspecialidad(t: Accion, especialidad: EspecialidadId): Accion {
+  return {
+    ...t,
+    label: `${t.label} (${etiquetaEspecialidad(especialidad)})`,
+    especialidadesAccion: [especialidad],
+    especialidadAElegir: undefined,
   };
 }

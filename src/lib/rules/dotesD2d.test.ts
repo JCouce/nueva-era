@@ -48,7 +48,7 @@ type Toggle = Extract<CondicionTirada, { tipo: "toggle" }>;
 const casilla = (t: Accion, pred: (c: Toggle) => boolean): Toggle | undefined =>
   (t.condiciones ?? []).find((c): c is Toggle => c.tipo === "toggle" && pred(c));
 const montar = (f: FichaResuelta, t: Accion, marcadas: string[] = []): TiradaMontada => {
-  const e = eleccionSinTocar(t, false);
+  const e = eleccionSinTocar(t);
   return montarTirada(f, t, { ...e, estadoCondiciones: { ...e.estadoCondiciones, ...Object.fromEntries(marcadas.map((id) => [id, true])) } });
 };
 // La dificultad que deja el total a `margen` del dado 6.

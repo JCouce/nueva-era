@@ -36,7 +36,7 @@ describe("catálogo de especialidades", () => {
     }
   });
 
-  test("recuento por habilidad de docs/fuente/habilidades.md; Interpretación y Sigilo sin lista", () => {
+  test("recuento por habilidad de docs/fuente/habilidades.md; Interpretación sin lista", () => {
     const n = Object.fromEntries(HABILIDADES.map((h) => [h.id, especialidadesDe(h.id).length]));
     assert.deepEqual(n, {
       actitud: 6,
@@ -46,11 +46,11 @@ describe("catálogo de especialidades", () => {
       combate_melee: 6,
       cultura: 4,
       interpretacion: 0,
-      sigilo: 0,
+      sigilo: 2,
       exploracion: 3,
       tecnociencia: 5,
     });
-    assert.equal(admiteEspecialidades("sigilo"), false);
+    assert.equal(admiteEspecialidades("sigilo"), true);
     assert.equal(admiteEspecialidades("interpretacion"), false);
   });
 
@@ -122,7 +122,7 @@ describe("especialidad de cada arma (catalog/especialidadesArma.ts)", () => {
       assert.ok(ataques.some((t) => t.id.startsWith(prefijo)), prefijo);
     }
     for (const t of ataques) {
-      // Única excepción, a propósito: el Proyector de Pulso con Tecnociencia (TODO en combate.ts).
+      // Única excepción, a propósito: el Proyector de Pulso con Tecnociencia (entera, sin especialidad).
       if (t.id.startsWith("ataque_proyector_pulso_tecnociencia_")) {
         assert.equal(t.especialidadArma, undefined, t.id);
         continue;
@@ -141,20 +141,20 @@ describe("ataque con arma: en especialidad sola, sin selector", () => {
       { instanciaId: "e", catalogoId: "espada" },
     );
   };
-  const montar = (s: Sheet, elegido: boolean) => {
+  const montar = (s: Sheet) => {
     const t = accionesDeAtaque(s, modificadoresActivos(s), permisosDeDotes(s)).find((x) => x.id === "ataque_melee_e")!;
-    return montarTirada({ ficha: s, modificadores: modificadoresActivos(s) }, t, eleccionSinTocar(t, elegido));
+    return montarTirada({ ficha: s, modificadores: modificadoresActivos(s) }, t, eleccionSinTocar(t));
   };
 
   test("con la especialidad del arma: valor entero, sin tocar nada", () => {
-    const m = montar(conEspada(["espadas_y_dagas"]), false);
+    const m = montar(conEspada(["espadas_y_dagas"]));
     assert.equal(m.habilidad?.valor, 4);
     assert.equal(m.enEspecialidad, true);
     assert.deepEqual(m.especialidadArma, { id: "espadas_y_dagas", label: "Espadas y Dagas", tiene: true });
   });
 
-  test("sin ella: la mitad redondeando abajo, aunque la fila dijera que sí", () => {
-    const m = montar(conEspada(["pelea"]), true);
+  test("sin ella: la mitad redondeando abajo", () => {
+    const m = montar(conEspada(["pelea"]));
     assert.equal(m.habilidad?.valor, 2);
     assert.equal(m.enEspecialidad, false);
     assert.equal(m.especialidadArma?.tiene, false);
@@ -164,7 +164,7 @@ describe("ataque con arma: en especialidad sola, sin selector", () => {
     let s = defaultSheet();
     s = ajustarGranada({ ...s, habilidades: { ...s.habilidades, atletismo: { valor: 3, especialidades: ["lanzamiento"] } } }, MUNICION_GRANADA[0].id, 1);
     const t = accionesDeAtaque(s, modificadoresActivos(s), permisosDeDotes(s)).find((x) => x.id.startsWith("lanzar_granada_"))!;
-    const m = montarTirada({ ficha: s, modificadores: modificadoresActivos(s) }, t, eleccionSinTocar(t, false));
+    const m = montarTirada({ ficha: s, modificadores: modificadoresActivos(s) }, t, eleccionSinTocar(t));
     assert.equal(m.habilidad?.valor, 3);
   });
 });

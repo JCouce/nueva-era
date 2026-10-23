@@ -82,3 +82,33 @@ describe("no confunde con Buscar/percibir", () => {
     assert.notEqual(fila.habilidad, "exploracion");
   });
 });
+
+// "Perspicacia + Tecnociencia (o Biociencia para peritaje orgánico/químico)", docs/fuente/
+// equipamiento.md: la más alta de las dos, sin especialidad (entera).
+describe("Escáner Detector: con qué habilidad tira", () => {
+  const conHabilidades = (nivel: number, tecnociencia: number, biociencia: number) => {
+    const s = defaultSheet();
+    return equipar(
+      {
+        ...s,
+        habilidades: {
+          ...s.habilidades,
+          tecnociencia: { valor: tecnociencia, especialidades: [] },
+          biociencia: { valor: biociencia, especialidades: [] },
+        },
+      },
+      { instanciaId: "e1", catalogoId: "escaner_detector", nivel },
+    );
+  };
+
+  test("nivel 2: la más alta de Tecnociencia o Biociencia; nivel 1, solo Tecnociencia", () => {
+    assert.equal(accionesDeHerramientas(conHabilidades(2, 1, 3))[0].habilidad, "biociencia");
+    assert.equal(accionesDeHerramientas(conHabilidades(2, 3, 1))[0].habilidad, "tecnociencia");
+    assert.equal(accionesDeHerramientas(conHabilidades(1, 1, 3))[0].habilidad, "tecnociencia");
+  });
+
+  test("sin especialidad nombrada", () => {
+    const [fila] = accionesDeHerramientas(conHabilidades(2, 1, 3));
+    assert.equal(fila.especialidadesAccion, undefined);
+  });
+});

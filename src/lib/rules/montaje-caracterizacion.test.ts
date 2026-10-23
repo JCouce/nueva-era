@@ -2,7 +2,10 @@
 // ANTES de montarTirada, replicado aquí con las mismas funciones de rules y citando
 // archivo:línea del código de entonces. Los números esperados se fijaron con esas
 // réplicas; montarTirada tiene que dar exactamente lo mismo. Si un esperado cambia, es
-// un bug, no un ajuste.
+// un bug, no un ajuste. Única excepción, a propósito: la regla de especialidades del
+// 2026-10-23 (docs/sistema.md §3: sin especialidad nombrada, la habilidad entera) cambió
+// Defensa, Buscar y Fabricar/Reparar; las réplicas reciben aparte si la habilidad va
+// entera (`entera`) y si la tirada va en especialidad (la etiqueta del desglose).
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { ACCIONES, modificadorAccion, resolverTirada, type Accion, type Resultado } from "./acciones";
@@ -105,8 +108,8 @@ function ataque(f: FichaResuelta, label: string): Accion {
 const sumaAjustesFijos = (t: Accion) => (t.ajustesFijos ?? []).reduce((s, a) => s + a.valor, 0);
 
 // FilaTirada, AccionesTab.tsx:156 y :190-204 (también FilaPoder, :387 y :406-423, sin Sutil).
-function legacyFila(f: FichaResuelta, t: Accion, enEsp: boolean, sutil: boolean) {
-  const mod = modificadorAccion(f.ficha, t, enEsp, f.modificadores, sutil);
+function legacyFila(f: FichaResuelta, t: Accion, entera: boolean, sutil: boolean) {
+  const mod = modificadorAccion(f.ficha, t, entera, f.modificadores, sutil);
   return {
     aplicado: mod.aplicado,
     habilidad: mod.habilidad,
@@ -121,8 +124,8 @@ const HABILIDAD_LABEL = Object.fromEntries(HABILIDADES.map((h) => [h.id, h.label
 type Abierto = { tirada: Accion; modBase: number; desgloseBase: Linea[]; ctxBase: Omit<ContextoAccion, "modoElegido"> };
 
 // abrir, AccionesTab.tsx:599-620.
-function legacyAbrir(f: FichaResuelta, t: Accion, enEsp: boolean, sutil: boolean): Abierto {
-  const mod = modificadorAccion(f.ficha, t, enEsp, f.modificadores, sutil);
+function legacyAbrir(f: FichaResuelta, t: Accion, enEsp: boolean, sutil: boolean, entera = enEsp): Abierto {
+  const mod = modificadorAccion(f.ficha, t, entera, f.modificadores, sutil);
   const aplicadoId = sutil && t.aplicadoSutil ? t.aplicadoSutil : t.aplicado;
   const desgloseBase = [
     { etiqueta: APLICADO_LABEL[aplicadoId], valor: mod.aplicado },
@@ -140,10 +143,10 @@ function legacyAbrir(f: FichaResuelta, t: Accion, enEsp: boolean, sutil: boolean
 }
 
 // Fabricar/Reparar, FabricarSeccion.tsx:292-310 y ReparaFabricaModal.tsx:161-179: sin
-// especialidad, sin Sutil, desglose con las etiquetas a mano y el modal con
+// especialidad (la habilidad entera desde 2026-10-23), sin Sutil, desglose con las etiquetas a mano y el modal con
 // condiciones={[]} (FabricarSeccion.tsx:469, ReparaFabricaModal.tsx:252).
 function legacyAbrirFabricar(f: FichaResuelta, t: Accion): Abierto {
-  const mod = modificadorAccion(f.ficha, t, false, f.modificadores, false);
+  const mod = modificadorAccion(f.ficha, t, true, f.modificadores, false);
   return {
     tirada: { ...t, condiciones: [] },
     modBase: mod.total,
@@ -216,6 +219,8 @@ type Caso = {
   ficha: FichaResuelta;
   tirada: () => Accion;
   enEspecialidad: boolean;
+  // La habilidad entera (en especialidad, o sin especialidad nombrada); sin él, enEspecialidad.
+  entera?: boolean;
   sutil: boolean;
   fabricar?: boolean;
   // Elecciones del modal (sobre el estado inicial de sus condiciones) y una tirada por
@@ -231,7 +236,7 @@ const CASOS: Caso[] = [
   },
   {
     nombre: "Defensa sin especie, dos atacantes adicionales y circunstancial",
-    ficha: SIN_ESPECIE, tirada: () => fija(SIN_ESPECIE, "defensa"), enEspecialidad: false, sutil: false,
+    ficha: SIN_ESPECIE, tirada: () => fija(SIN_ESPECIE, "defensa"), enEspecialidad: false, entera: true, sutil: false,
     elecciones: [
       { cambios: {}, circunstancial: 0, dado: 12, dificultad: 5 },
       { cambios: { atacantes_adicionales: 2 }, circunstancial: -1, dado: 1, dificultad: 7 },
@@ -239,7 +244,7 @@ const CASOS: Caso[] = [
   },
   {
     nombre: "Buscar con y sin especialidad, con Visor Nocturno",
-    ficha: EQUIPADA, tirada: () => fija(EQUIPADA, "alerta_activa"), enEspecialidad: true, sutil: false,
+    ficha: EQUIPADA, tirada: () => fija(EQUIPADA, "alerta_activa"), enEspecialidad: false, entera: true, sutil: false,
     elecciones: [
       { cambios: {}, circunstancial: 0, dado: 5, dificultad: 10 },
       { cambios: { visor_nocturno_n2_activo: true }, circunstancial: 2, dado: 9, dificultad: null },
@@ -247,7 +252,7 @@ const CASOS: Caso[] = [
   },
   {
     nombre: "Buscar sin especialidad",
-    ficha: EQUIPADA, tirada: () => fija(EQUIPADA, "alerta_activa"), enEspecialidad: false, sutil: false,
+    ficha: EQUIPADA, tirada: () => fija(EQUIPADA, "alerta_activa"), enEspecialidad: false, entera: true, sutil: false,
     elecciones: [{ cambios: {}, circunstancial: 0, dado: 6, dificultad: 7 }],
   },
   {
@@ -285,7 +290,7 @@ const CASOS: Caso[] = [
   },
   {
     nombre: "Defensa con especie y estados (Aturdido, alcance grupo)",
-    ficha: ESPECIE_Y_ESTADOS, tirada: () => fija(ESPECIE_Y_ESTADOS, "defensa"), enEspecialidad: false, sutil: false,
+    ficha: ESPECIE_Y_ESTADOS, tirada: () => fija(ESPECIE_Y_ESTADOS, "defensa"), enEspecialidad: false, entera: true, sutil: false,
     elecciones: [{ cambios: { atacantes_adicionales: 1 }, circunstancial: 0, dado: 6, dificultad: 7 }],
   },
   {
@@ -323,9 +328,10 @@ function resolverCambios(t: Accion, cambios: EstadoCondiciones): EstadoCondicion
 function legacy(caso: Caso) {
   const t = caso.tirada();
   const f = caso.ficha;
-  const abierto = caso.fabricar ? legacyAbrirFabricar(f, t) : legacyAbrir(f, t, caso.enEspecialidad, caso.sutil);
+  const entera = caso.entera ?? caso.enEspecialidad;
+  const abierto = caso.fabricar ? legacyAbrirFabricar(f, t) : legacyAbrir(f, t, caso.enEspecialidad, caso.sutil, entera);
   return {
-    fila: caso.fabricar ? null : legacyFila(f, t, caso.enEspecialidad, caso.sutil),
+    fila: caso.fabricar ? null : legacyFila(f, t, entera, caso.sutil),
     modBase: abierto.modBase,
     elecciones: caso.elecciones.map((e) => {
       const estado = { ...estadoInicial(abierto.tirada.condiciones ?? []), ...resolverCambios(t, e.cambios) };
@@ -360,10 +366,11 @@ function legacyPoder(c: (typeof CASOS_PODER)[number]) {
   const poder = accionesDePsionica(f.ficha, f.psionica.paraEfectos).find((p) => p.accion.id === c.accionId)!;
   const p = prepararPoder({ ficha: f.ficha, modificadores: f.modificadores, niveles: f.psionica.paraEfectos, poder, seleccion: c.seleccion })!;
   const t = p.tirada!;
-  const abierto = legacyAbrir(f, t, p.enEspecialidad, false);
+  const entera = p.enEspecialidad || !t.especialidadesAccion;
+  const abierto = legacyAbrir(f, t, p.enEspecialidad, false, entera);
   const estado = estadoInicial(t.condiciones ?? []);
   return {
-    fila: legacyFila(f, t, p.enEspecialidad, false),
+    fila: legacyFila(f, t, entera, false),
     modal: legacyModal(f, abierto, estado, 0),
     resultado: res(legacyTirar(f, abierto, estado, c.dado, c.dificultad, 0)),
   };
@@ -384,33 +391,33 @@ const ESPERADO: Record<string, unknown> = {
     ],
   },
   "Defensa sin especie, dos atacantes adicionales y circunstancial": {
-    fila: { aplicado: 0, habilidad: 1, ajustes: [], total: 1 },
-    modBase: 1,
+    fila: { aplicado: 0, habilidad: 3, ajustes: [], total: 3 },
+    modBase: 3,
     elecciones: [
       {
-        total: 1,
+        total: 3,
         desglose: [
           { etiqueta: "Reflejos", valor: 0 },
-          { etiqueta: "Atletismo", valor: 1 },
+          { etiqueta: "Atletismo", valor: 3 },
           { etiqueta: "Atacantes adicionales esta ronda ×0", valor: -0 }, // 0 × −1: el contador a cero da −0 (se pinta "+0")
           { etiqueta: "Tengo cobertura (+2) (sin activar)", valor: 0 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 1, circunstancial: 0, total: 13, margen: 8, exito: true, critico: true },
+        resultado: { modificador: 3, circunstancial: 0, total: 15, margen: 10, exito: true, critico: true },
       },
       {
-        total: -2,
+        total: 0,
         desglose: [
           { etiqueta: "Reflejos", valor: 0 },
-          { etiqueta: "Atletismo", valor: 1 },
+          { etiqueta: "Atletismo", valor: 3 },
           { etiqueta: "Atacantes adicionales esta ronda ×2", valor: -2 },
           { etiqueta: "Tengo cobertura (+2) (sin activar)", valor: 0 },
           { etiqueta: "Modificador circunstancial", valor: -1 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: -1, circunstancial: -1, total: -1, margen: -8, exito: false, critico: true },
+        resultado: { modificador: 1, circunstancial: -1, total: 1, margen: -6, exito: false, critico: true },
       },
     ],
   },
@@ -422,7 +429,7 @@ const ESPERADO: Record<string, unknown> = {
         total: 3,
         desglose: [
           { etiqueta: "Perspicacia", valor: 0 },
-          { etiqueta: "Exploración (especialidad)", valor: 3 },
+          { etiqueta: "Exploración", valor: 3 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
           { etiqueta: "Buscando con la mira telescópica (sin activar)", valor: 0 },
@@ -435,7 +442,7 @@ const ESPERADO: Record<string, unknown> = {
         total: 5,
         desglose: [
           { etiqueta: "Perspicacia", valor: 0 },
-          { etiqueta: "Exploración (especialidad)", valor: 3 },
+          { etiqueta: "Exploración", valor: 3 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
           { etiqueta: "Visor Nocturno activo", valor: 0 },
           { etiqueta: "Buscando con la mira telescópica (sin activar)", valor: 0 },
@@ -453,21 +460,21 @@ const ESPERADO: Record<string, unknown> = {
     ],
   },
   "Buscar sin especialidad": {
-    fila: { aplicado: 0, habilidad: 1, ajustes: [], total: 1 },
-    modBase: 1,
+    fila: { aplicado: 0, habilidad: 3, ajustes: [], total: 3 },
+    modBase: 3,
     elecciones: [
       {
-        total: 1,
+        total: 3,
         desglose: [
           { etiqueta: "Perspicacia", valor: 0 },
-          { etiqueta: "Exploración", valor: 1 },
+          { etiqueta: "Exploración", valor: 3 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
           { etiqueta: "Buscando con la mira telescópica (sin activar)", valor: 0 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 1, circunstancial: 0, total: 7, margen: 0, exito: true, critico: false },
+        resultado: { modificador: 3, circunstancial: 0, total: 9, margen: 2, exito: true, critico: false },
       },
     ],
   },
@@ -627,14 +634,14 @@ const ESPERADO: Record<string, unknown> = {
     ],
   },
   "Defensa con especie y estados (Aturdido, alcance grupo)": {
-    fila: { aplicado: 0, habilidad: 1, ajustes: [], total: 1 },
-    modBase: 1,
+    fila: { aplicado: 0, habilidad: 3, ajustes: [], total: 3 },
+    modBase: 3,
     elecciones: [
       {
-        total: -2,
+        total: 0,
         desglose: [
           { etiqueta: "Reflejos", valor: 0 },
-          { etiqueta: "Atletismo", valor: 1 },
+          { etiqueta: "Atletismo", valor: 3 },
           { etiqueta: "Enfermedad", valor: -1 },
           { etiqueta: "Aturdido", valor: -1 },
           { etiqueta: "Atacantes adicionales esta ronda ×1", valor: -1 },
@@ -642,7 +649,7 @@ const ESPERADO: Record<string, unknown> = {
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: -2, circunstancial: 0, total: 4, margen: -3, exito: false, critico: false },
+        resultado: { modificador: 0, circunstancial: 0, total: 6, margen: -1, exito: false, critico: false },
       },
     ],
   },
@@ -683,32 +690,32 @@ const ESPERADO: Record<string, unknown> = {
   },
   "Fabricar con especie y estados": {
     fila: null,
-    modBase: 1,
+    modBase: 2,
     elecciones: [
       {
-        total: 1,
+        total: 2,
         desglose: [
           { etiqueta: "Perspicacia", valor: 0 },
-          { etiqueta: "Tecnociencia", valor: 1 },
+          { etiqueta: "Tecnociencia", valor: 2 },
           { etiqueta: "Enfermedad", valor: -1 },
           { etiqueta: "Modificador circunstancial", valor: 1 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 0, circunstancial: 1, total: 7, margen: -2, exito: false, critico: false },
+        resultado: { modificador: 1, circunstancial: 1, total: 8, margen: -1, exito: false, critico: false },
       },
     ],
   },
   "Reparar sin especie": {
     fila: null,
-    modBase: 1,
+    modBase: 2,
     elecciones: [
       {
-        total: 1,
-        desglose: [{ etiqueta: "Perspicacia", valor: 0 }, { etiqueta: "Tecnociencia", valor: 1 }],
+        total: 2,
+        desglose: [{ etiqueta: "Perspicacia", valor: 0 }, { etiqueta: "Tecnociencia", valor: 2 }],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 1, circunstancial: 0, total: 13, margen: 10, exito: true, critico: true },
+        resultado: { modificador: 2, circunstancial: 0, total: 14, margen: 11, exito: true, critico: true },
       },
     ],
   },
@@ -779,14 +786,13 @@ const fila = (m: TiradaMontada) => ({
 function nuevo(caso: Caso) {
   const t = caso.tirada();
   const f = caso.ficha;
-  const enFila = montarTirada(f, t, { ...SIN_ELECCION, enEspecialidad: caso.enEspecialidad, sutil: caso.sutil });
+  const enFila = montarTirada(f, t, { ...SIN_ELECCION, sutil: caso.sutil });
   return {
     fila: caso.fabricar ? null : fila(enFila),
     modBase: enFila.base,
     elecciones: caso.elecciones.map((e) => {
       const estado = { ...estadoInicial(t.condiciones ?? []), ...resolverCambios(t, e.cambios) };
       const m = montarTirada(f, t, {
-        enEspecialidad: caso.enEspecialidad,
         sutil: caso.sutil,
         estadoCondiciones: estado,
         circunstancial: e.circunstancial,
@@ -808,7 +814,6 @@ function nuevoPoder(c: (typeof CASOS_PODER)[number]) {
   const p = prepararPoder({ ficha: f.ficha, modificadores: f.modificadores, niveles: f.psionica.paraEfectos, poder, seleccion: c.seleccion })!;
   const t = p.tirada!;
   const m = montarTirada(f, t, {
-    enEspecialidad: p.enEspecialidad,
     sutil: false,
     estadoCondiciones: estadoInicial(t.condiciones ?? []),
     circunstancial: 0,

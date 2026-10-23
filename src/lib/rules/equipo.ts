@@ -682,9 +682,8 @@ export function topeRarezaDeCompra(
 // catálogo — armaduras, herramienta y las familias instalables no traen
 // columna de Peso en EQUIP, así que devuelven 0: no es que pesen cero, es
 // que el documento no lo dice. "granada" se queda en esta rama por
-// completitud de tipos (MunicionGranada sí tiene `pesoKg`, siempre `null`:
-// columna "I" sin determinar, ver catalog/municion.ts), aunque en la
-// práctica ninguna PiezaEquipada la lleva ya (docs/tareas.md, 2026-09-27).
+// completitud de tipos, aunque en la práctica ninguna PiezaEquipada la lleva
+// ya (docs/tareas.md, 2026-09-27).
 export function pesoDePieza(pieza: PiezaEquipada): number {
   const cat = equipoPorId(pieza.catalogoId);
   if (!cat) return 0;
