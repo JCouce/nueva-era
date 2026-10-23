@@ -8,7 +8,7 @@ import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
 import { MUNICION_GRANADA } from "../catalog/municion";
 import type { MotorMetadata } from "./motor";
-import { modificadorAccion, gastoTotal, gastoMunicionEspecial, avisoInsuficiente } from "./acciones";
+import { ACCIONES, modificadorAccion, gastoTotal, gastoMunicionEspecial, avisoInsuficiente } from "./acciones";
 import { aplicado, modificadoresActivos } from "./derivados";
 import { permisosDeDotes } from "./dotesEfectos";
 import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
@@ -1417,5 +1417,33 @@ describe("Arco Táctico y Ballesta", () => {
   test("un arma de fuego sigue necesitando el adaptador", () => {
     const s = ajustarMunicionEspecial(equipar(defaultSheet(), { instanciaId: "x", catalogoId: "pistola_bellum" }), "incendiaria", 3);
     assert.equal(disparo(s).municionesEspeciales, undefined);
+  });
+});
+
+describe("Exoesqueleto: +N a la Fuerza en tiradas, no en salvaciones (S10)", () => {
+  // Fuerza 2, Aguante 1, Agilidad 2; Armadura Pesada con Exoesqueleto 2 → Fuerza 4 en tiradas.
+  const base = ficha({ atributos: { fuerza: 2, aguante: 1, agilidad: 2 } });
+  const conExo = (s: Sheet) =>
+    equipar(equipar(s, { instanciaId: "a1", catalogoId: "armadura_pesada" }), {
+      instanciaId: "e1",
+      catalogoId: "exoesqueleto",
+      nivel: 2,
+      instaladoEnId: "a1",
+    });
+
+  test("el golpe melee sube la Potencia y el daño Fue+N", () => {
+    const golpe = (s: Sheet) => accionesDeAtaque(equipar(s, { instanciaId: "esp", catalogoId: "espada" })).find((t) => t.label === "Golpear con Espada")!;
+    const sin = base;
+    const con = conExo(base);
+    assert.equal(modificadorAccion(sin, golpe(sin), true, modificadoresActivos(sin)).aplicado, 2); // floor((2+2)/2)
+    assert.equal(modificadorAccion(con, golpe(con), true, modificadoresActivos(con)).aplicado, 3); // floor((4+2)/2)
+    assert.equal(golpe(con).ataque!.modos[0].danio! - golpe(sin).ataque!.modos[0].danio!, 2);
+  });
+
+  test("la salvación de Fortaleza va sin el exoesqueleto", () => {
+    const salv = ACCIONES.find((a) => a.id === "salv_fortaleza")!;
+    const con = conExo(base);
+    assert.equal(aplicado(con, "fortaleza", modificadoresActivos(con)), 2); // floor((4+1)/2) en la ficha
+    assert.equal(modificadorAccion(con, salv, false, modificadoresActivos(con)).aplicado, 1); // floor((2+1)/2)
   });
 });

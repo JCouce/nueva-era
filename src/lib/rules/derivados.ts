@@ -12,6 +12,7 @@ import {
   bonoDerivado,
   bonoHabilidad,
   factorVida,
+  sinExceptoSaludYSalvaciones,
   type ModificadorConFuente,
 } from "./modificadores";
 import { especieDeFicha } from "./especie";
@@ -128,8 +129,9 @@ function fortalezaParaVida(fortaleza: number, factor: number): number {
 
 export function salud(
   sheet: Sheet,
-  mods: ModificadorConFuente[],
+  todos: ModificadorConFuente[],
 ): { vida: number; fatiga: number } {
+  const mods = sinExceptoSaludYSalvaciones(todos);
   return {
     vida: 10 + fortalezaParaVida(aplicado(sheet, "fortaleza", mods), factorVida(mods)) + bonoDerivado(mods, "vida"),
     fatiga: 10 + aplicado(sheet, "voluntad", mods) + bonoDerivado(mods, "fatiga"),
@@ -151,13 +153,11 @@ export function alerta(sheet: Sheet, mods: ModificadorConFuente[]): number {
 }
 
 // El exoesqueleto "duplica el bonificador al calcular la carga transportable
-// y realizar proezas de fuerza" (docs/equipamiento.md) — cita completa: las
-// dos cosas que menciona EQUIP. No toca Fuerza en general ni Fortaleza/Vida
-// (ver catalog/equipo.ts). Supuesto S10 de docs/sistema.md: las 5 fórmulas de
-// movimiento cuentan como "proezas de fuerza", pendiente de confirmar con
-// Murillo. La usan movimiento() y cargaMaxima() — por eso vive aparte del
-// sistema de modificadores normal, y no contamina Potencia/Fuerza en ningún
-// otro sitio (combate, ficha de atributos).
+// y realizar proezas de fuerza" (docs/equipamiento.md). Supuesto S10 de
+// docs/sistema.md: las 5 fórmulas de movimiento cuentan como "proezas de
+// fuerza". El +N normal a la Fuerza llega como modificador de atributo
+// (exceptoSaludYSalvaciones); movimiento() y cargaMaxima() lo quitan y suman
+// este doble en su lugar.
 function bonoFuerzaExoesqueleto(sheet: Sheet): number {
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
@@ -183,7 +183,7 @@ function bonoFuerzaExoesqueleto(sheet: Sheet): number {
 export function movimiento(sheet: Sheet, mods: ModificadorConFuente[], formula: FormulaMovimiento) {
   const bonoExoesqueleto = bonoFuerzaExoesqueleto(sheet);
   const base =
-    aplicado(sheet, "potencia", mods) +
+    aplicado(sheet, "potencia", sinExceptoSaludYSalvaciones(mods)) +
     bonoExoesqueleto +
     sheet.habilidades.atletismo.valor +
     bonoHabilidad(mods, "atletismo");
@@ -214,7 +214,7 @@ export function movimiento(sheet: Sheet, mods: ModificadorConFuente[], formula: 
 // en la FichaResuelta; 1 sin especie. Con × 1,2 todos los tramos dan entero
 // (Fuerza × 24, 18, 12, 6, 0), así que no se redondea.
 export function cargaMaxima(sheet: Sheet, mods: ModificadorConFuente[], multiplicador: number): number {
-  const fuerza = atributoEfectivo(sheet, "fuerza", mods) + bonoFuerzaExoesqueleto(sheet);
+  const fuerza = atributoEfectivo(sheet, "fuerza", sinExceptoSaludYSalvaciones(mods)) + bonoFuerzaExoesqueleto(sheet);
   if (fuerza > 0) return fuerza * 20 * multiplicador;
   if (fuerza === 0) return 15 * multiplicador;
   // Suelo en 0, mismo criterio que S6 para el movimiento: el documento no

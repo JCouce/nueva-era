@@ -138,7 +138,9 @@ export type AlcanceModificador =
   | { tipo: "todas" };
 
 export type Modificador =
-  | { tipo: "atributo"; id: AtributoId; valor: number }
+  // `exceptoSaludYSalvaciones` (Exoesqueleto): vale en tiradas y atributos, pero no en la
+  // vida ni en las salvaciones, ni en movimiento y carga, que ya lo cuentan doble aparte.
+  | { tipo: "atributo"; id: AtributoId; valor: number; exceptoSaludYSalvaciones?: true }
   // `noApila` (A2a de aumentos): grupo de no apilamiento. De lo que llega a un mismo
   // derivado o a una misma tirada con el mismo grupo, solo vale el mayor (Ojo Biónico con
   // miras y gafas, "vision_aumentada"). En la tirada lo resuelve montarTirada (también
@@ -177,6 +179,12 @@ export type ModificadorConFuente = Modificador & {
   origen: OrigenModificador;
   fuente: string; // etiqueta legible: "Arkorü", "Malherido", "Exoesqueleto 2"…
 };
+
+// Los modificadores sin los bonos de atributo que no cuentan para salud, salvaciones,
+// movimiento ni carga (Exoesqueleto, docs/sistema.md S10).
+export function sinExceptoSaludYSalvaciones(mods: ModificadorConFuente[]): ModificadorConFuente[] {
+  return mods.filter((m) => !(m.tipo === "atributo" && m.exceptoSaludYSalvaciones));
+}
 
 export function bonoAtributo(
   mods: ModificadorConFuente[],

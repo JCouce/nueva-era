@@ -151,15 +151,17 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
     sheet: conEquipo({ ...base(), especieId: "humano" }),
     estados: [],
     esperado: {
-      nMods: 4,
-      atributos: { fuerza: 2, agilidad: 1, aguante: 1, percepcion: 0, inteligencia: 1, caracter: -1 },
-      aplicados: { fortaleza: 1, potencia: 1, reflejos: 0, voluntad: 0, perspicacia: 0, expresion: 0 },
+      // +1: el +2 a la Fuerza del Exoesqueleto 2 (sube Potencia y Fortaleza, no la vida,
+      // el movimiento ni la carga, que ya lo cuentan doble aparte).
+      nMods: 5,
+      atributos: { fuerza: 4, agilidad: 1, aguante: 1, percepcion: 0, inteligencia: 1, caracter: -1 },
+      aplicados: { fortaleza: 2, potencia: 2, reflejos: 0, voluntad: 0, perspicacia: 0, expresion: 0 },
       salud: { vida: 11, fatiga: 10 },
       alerta: 9,
       movimiento: MOV_EXO_7,
       carga: 120,
-      fuerza: { total: 2, fuentes: [{ etiqueta: "Base", valor: 2 }] },
-      fortaleza: { total: 1, fuentes: [{ etiqueta: "Fuerza", valor: 2 }, { etiqueta: "Aguante", valor: 1 }] },
+      fuerza: { total: 4, fuentes: [{ etiqueta: "Base", valor: 2 }, { etiqueta: "Exoesqueleto 2", valor: 2 }] },
+      fortaleza: { total: 2, fuentes: [{ etiqueta: "Fuerza", valor: 4 }, { etiqueta: "Aguante", valor: 1 }] },
       escudo: true,
       condiciones: CONDICIONES_EQUIPO,
     },
@@ -191,22 +193,23 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
     sheet: conEquipo({ ...base(), especieId: "arkoru" }),
     estados: ENFERMO_Y_ATURDIDO,
     esperado: {
-      nMods: 11, // E4: +1, el −1 a distancia del Arköru
-      atributos: { fuerza: 2, agilidad: 0, aguante: -1, percepcion: 0, inteligencia: 1, caracter: -1 },
-      aplicados: { fortaleza: 0, potencia: 1, reflejos: 0, voluntad: -1, perspicacia: 0, expresion: 0 },
+      nMods: 12, // E4: +1, el −1 a distancia del Arköru; +1, el +2 a la Fuerza del Exoesqueleto 2
+      atributos: { fuerza: 4, agilidad: 0, aguante: -1, percepcion: 0, inteligencia: 1, caracter: -1 },
+      aplicados: { fortaleza: 1, potencia: 2, reflejos: 0, voluntad: -1, perspicacia: 0, expresion: 0 },
       salud: { vida: 10, fatiga: 9 },
       alerta: 9,
       movimiento: MOV_EXO_7,
       carga: 120,
       fuerza: {
-        total: 2,
+        total: 4,
         fuentes: [
           { etiqueta: "Base", valor: 2 },
           { etiqueta: "Arköru", valor: 2 },
+          { etiqueta: "Exoesqueleto 2", valor: 2 },
           { etiqueta: "Enfermedad", valor: -2 },
         ],
       },
-      fortaleza: { total: 0, fuentes: [{ etiqueta: "Fuerza", valor: 2 }, { etiqueta: "Aguante", valor: -1 }] },
+      fortaleza: { total: 1, fuentes: [{ etiqueta: "Fuerza", valor: 4 }, { etiqueta: "Aguante", valor: -1 }] },
       escudo: true,
       condiciones: CONDICIONES_EQUIPO,
       // base 7: 18 × 7, 100 + 7 × 25, 8 + 3, 2 + 3; carga 120 × 1,2

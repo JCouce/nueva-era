@@ -362,7 +362,7 @@ describe("movimiento", () => {
     assert.equal(s.equipo.length, 3);
   });
 
-  test("el bono de Fuerza del exoesqueleto no está mecanizado (queda en texto)", () => {
+  test("el exoesqueleto da su +N a la Fuerza, marcado para quedar fuera de salud y salvaciones", () => {
     const s = equipar(conArmaduraPuesta(), {
       instanciaId: "e1",
       catalogoId: "exoesqueleto",
@@ -370,7 +370,9 @@ describe("movimiento", () => {
       instaladoEnId: "armadura-1",
     });
     const delExo = modificadoresDeEquipo(s).filter((m) => m.fuente.startsWith("Exoesqueleto"));
-    assert.deepEqual(delExo, []);
+    assert.deepEqual(delExo, [
+      { tipo: "atributo", id: "fuerza", valor: 1, exceptoSaludYSalvaciones: true, origen: "equipo", fuente: "Exoesqueleto 1" },
+    ]);
   });
 });
 

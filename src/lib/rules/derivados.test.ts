@@ -185,12 +185,14 @@ describe("movimiento (HOJA2: constantes nuevas)", () => {
     assert.equal(m.escalada, 8); // 4 + floor(9/2)
     assert.equal(m.nado, 8);
 
-    // El bono no debe filtrarse a ningún otro sitio: ni a la Fuerza que se
-    // muestra en Atributos, ni a Fortaleza/Vida.
+    // El +2 normal sí llega a la Fuerza de Atributos (y de ahí a Potencia en las tiradas), pero
+    // no a la vida: la Fortaleza de la vida va sin el exoesqueleto. Y el movimiento de arriba
+    // no lo cuenta dos veces (base 9, no 10).
     assert.deepEqual(desgloseAtributo(s, "fuerza", modificadoresActivos(s)), {
-      total: 3,
-      fuentes: [{ etiqueta: "Base", valor: 3 }],
+      total: 5,
+      fuentes: [{ etiqueta: "Base", valor: 3 }, { etiqueta: "Exoesqueleto 2", valor: 2 }],
     });
+    assert.equal(aplicado(s, "potencia", modificadoresActivos(s)), 3); // floor((5+2)/2)
     assert.equal(salud(s, modificadoresActivos(s)).vida, 10 + 1); // Fortaleza = floor((3+0)/2), sin exoesqueleto
   });
 
@@ -231,10 +233,10 @@ describe("cargaMaxima (docs/sistema.md §5.5)", () => {
     });
     assert.equal(cargaMaxima(s, modificadoresActivos(s), 1), (3 + 4) * 20); // 140
 
-    // El bono no se filtra a la Fuerza que se ve en Atributos.
+    // La carga no cuenta además el +2 normal que se ve en Atributos (sería 180).
     assert.deepEqual(desgloseAtributo(s, "fuerza", modificadoresActivos(s)), {
-      total: 3,
-      fuentes: [{ etiqueta: "Base", valor: 3 }],
+      total: 5,
+      fuentes: [{ etiqueta: "Base", valor: 3 }, { etiqueta: "Exoesqueleto 2", valor: 2 }],
     });
   });
 });

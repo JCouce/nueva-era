@@ -165,6 +165,14 @@ describe("Brazo Biónico: casilla «Con el brazo biónico»", () => {
     assert.equal(conB.danio.categoria, null);
   });
 
+  test("con Exoesqueleto: sin marcar, la Potencia lo lleva; marcada, el brazo usa su Fuerza, sin el exo", () => {
+    let s = con(conBrazo(ficha({ fuerza: 2, agilidad: 4 }), 1), "pelea_punetazo");
+    s = { ...s, equipo: [...s.equipo, { instanciaId: "arm", catalogoId: "armadura_pesada" }, { instanciaId: "exo", catalogoId: "exoesqueleto", nivel: 2, instaladoEnId: "arm" }] };
+    const t = fila(s, "Golpear con Puñetazo")!;
+    assert.equal(montar(s, t, false).aplicado.valor, 4); // ⌊(2+2+4)/2⌋
+    assert.equal(montar(s, t, true).aplicado.valor, 2); // brazo: ⌊(2+3)/2⌋
+  });
+
   test("nivel 4 Fuerte: más Potencia, más daño (ajuste con su fuente) y letal", () => {
     const s = con(conBrazo(ficha({ fuerza: 2, agilidad: 3 }), 4, "fuerte"), "pelea_punetazo");
     const t = fila(s, "Golpear con Puñetazo")!;

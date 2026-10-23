@@ -53,13 +53,11 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
           "Duplica el bonificador al calcular la carga transportable y en proezas de fuerza.",
           "Tan ligero que puede usarse sin armadura, oculto bajo ropa abultada.",
         ],
-        // El bono de Fuerza excluye vida y varias salvaciones a propósito: si se
-        // mecaniza como modificador de "atributo" tal cual, el motor lo aplicaría
-        // también ahí, que es incorrecto. Se deja sin mecanizar hasta decidir
-        // cómo modelar esa excepción (Fase D).
-        modificadores: [],
+        // Sin vida ni salvaciones (exceptoSaludYSalvaciones); en movimiento y carga cuenta
+        // doble aparte (bonoFuerzaExoesqueleto, derivados.ts). Cada nivel sustituye al anterior.
+        modificadores: [{ tipo: "atributo", id: "fuerza", valor: 1, exceptoSaludYSalvaciones: true }],
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // +1 Fuerza con excepciones, sin forma de modelar el carve-out hoy
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
         ],
       },
       {
@@ -67,9 +65,9 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         rareza: "Común",
         coste: 24000,
         detalle: ["+2 a la Fuerza en las mismas tiradas."],
-        modificadores: [],
+        modificadores: [{ tipo: "atributo", id: "fuerza", valor: 2, exceptoSaludYSalvaciones: true }],
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
         ],
       },
       {
@@ -77,9 +75,9 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         rareza: "Poco Habitual",
         coste: 48000,
         detalle: ["+3 a la Fuerza en las mismas tiradas."],
-        modificadores: [],
+        modificadores: [{ tipo: "atributo", id: "fuerza", valor: 3, exceptoSaludYSalvaciones: true }],
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
         ],
       },
       {
@@ -87,9 +85,9 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         rareza: "Extraño",
         coste: 72000,
         detalle: ["+4 a la Fuerza en las mismas tiradas."],
-        modificadores: [],
+        modificadores: [{ tipo: "atributo", id: "fuerza", valor: 4, exceptoSaludYSalvaciones: true }],
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
         ],
       },
     ],

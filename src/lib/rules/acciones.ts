@@ -9,7 +9,7 @@ import { HABILIDADES, type HabilidadId } from "./habilidades";
 import { aplicado, valorEfectivo } from "./derivados";
 import type { Sheet } from "./sheet";
 import type { AtributosExtremidad, CondicionTirada, BonoPorTramo, EstadoCondiciones } from "./condiciones";
-import type { EmpleoArma, FamiliaArma, GrupoAccion, ModificadorConFuente } from "./modificadores";
+import { sinExceptoSaludYSalvaciones, type EmpleoArma, type FamiliaArma, type GrupoAccion, type ModificadorConFuente } from "./modificadores";
 import type { DetallePoder } from "./poderes";
 import type { TipoDanio } from "../catalog/tiposDanio";
 import type { DanioExtra } from "./armasModificadas";
@@ -557,7 +557,9 @@ export function modificadorAccion(
   sutilActivo = false,
 ): { total: number; aplicado: number; habilidad: number | null } {
   const aplicadoId = sutilActivo && tirada.aplicadoSutil ? tirada.aplicadoSutil : tirada.aplicado;
-  const modAplicado = aplicado(sheet, aplicadoId, mods);
+  // El +Fuerza del Exoesqueleto no cuenta en salvaciones (docs/sistema.md S10).
+  const modsAplicado = tirada.grupo === "Salvaciones" ? sinExceptoSaludYSalvaciones(mods) : mods;
+  const modAplicado = aplicado(sheet, aplicadoId, modsAplicado);
   const modHabilidad = tirada.habilidad
     ? valorEfectivo(sheet, tirada.habilidad, enEspecialidad, mods)
     : null;
