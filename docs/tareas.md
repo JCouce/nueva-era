@@ -151,7 +151,8 @@ Dos partes, las dos cerradas:
    Además, rename completo "Tiradas" → "Acciones" en código y UI (`docs/motor.md`
    §Escalabilidad, `docs/modificadores-tiradas.md` actualizado a la par) — el nombre ya
    encaja con que la pestaña vaya a acabar teniendo filas con y sin dado, pero esa parte
-   (Acciones sin dado en sí) **sigue sin diseñar**, el rename no la adelanta.
+   (Acciones sin dado en sí) siguió sin diseñar entonces; la separación de filas con y sin dado en pestañas está
+   en "Pestaña Acciones: pestañas y favoritas" (Pendiente).
 
 **Catálogo dividido**, de paso: `src/lib/catalog/equipo.ts` pasó de 3222 a 190 líneas,
 las 6 familias que vivían ahí (armaduras, armas de fuego, mejoras estándar, subsistemas,
@@ -826,6 +827,18 @@ construir (dos pasadas: rediseño, luego revisión).
 - [x] La migración va en el mismo deploy que especies *(desplegada el 2026-10-13, push `7193cf9`)*
 
 ## Pendiente
+
+### Pestaña Acciones: pestañas y favoritas ⬜ (usuario, 2026-10-23; fase 1 hecha)
+Dentro de Acciones, una barra con **Básicas** (filas sin dado: `FilaUsar`, Bloquear daño, `FilaInfo`, poderes sin
+tirada) y **Tiradas** (`FilaTirada`, bloqueadas incluidas, Reparar/Fabricar y poderes con tirada). Un poder se
+clasifica con `prepararPoder` y `SELECCION_PODER_VACIA`, igual que lo pinta `FilaPoder`. Cada pestaña conserva los
+subtítulos de sección de siempre, en el mismo orden, y no pinta los que se quedan sin filas. El historial queda
+encima, fuera de las pestañas. Abre siempre en Básicas. En solo lectura la barra sigue navegable: `AccionesTab` lleva
+su propio `PanelFieldset` y `CharacterSheet` ya no lo envuelve. NPC y consola de combate, igual.
+- [x] **T-005** — Básicas y Tiradas (2026-10-23)
+- [ ] **T-006** — Favoritas: estrella en tiradas y básicas, guardadas en la ficha (`stats` Json, sube
+  `SCHEMA_VERSION`, sin Prisma), pestaña Favoritas al final (Básicas · Tiradas · Favoritas, abre en Básicas). Solo
+  personajes: en NPC ni estrella ni pestaña. Sale de `main` cuando T-005 esté mergeado.
 
 ### La fábrica: automatizar el desarrollo y el mantenimiento de Nueva Era ⬜ (épica; N1 construido 2026-10-19, en rodaje desde 2026-10-22)
 **Cómo está hoy:** `fabrica/README.md` es la foto vigente (procesos, piezas, uso y qué se apunta dónde) y

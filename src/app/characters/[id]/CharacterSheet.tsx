@@ -786,8 +786,29 @@ export function CharacterSheet({
           }
         />
       )}
+      {/* Acciones lleva su propio fieldset (su barra Básicas/Tiradas sigue navegable). */}
+      {activeEfectivo === "acciones" && (
+        <AccionesTab
+          ficha={ficha}
+          historial={accionesHistorial}
+          setHistorial={setAccionesHistorial}
+          memoria={accionesMemoria}
+          setMemoria={setAccionesMemoria}
+          onReparar={commitReparar}
+          onFabricar={commitFabricar}
+          onGastarRecurso={commitAjustarRecurso}
+          onAjustarFarmaco={commitAjustarFarmaco}
+          onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
+          onPagarFatiga={commitPagarFatiga}
+          onAjustarFatiga={commitDevolverFatiga}
+          onAjustarVida={commitAjustarVida}
+          onGastarUsosEscena={commitGastarUsosEscena}
+          onUsarAccionAumento={commitUsarAccionAumento}
+          soloLectura={soloLectura}
+        />
+      )}
       {/* Personaje lleva su propio fieldset (sus sub-pestañas siguen navegables). */}
-      {activeEfectivo !== "personaje" && (
+      {activeEfectivo !== "personaje" && activeEfectivo !== "acciones" && (
         <PanelFieldset disabled={soloLectura}>
           {activeEfectivo === "attrs" && (
             <AtributosTab
@@ -823,25 +844,6 @@ export function CharacterSheet({
           )}
           {activeEfectivo === "psionica" && (
             <PsionicaTab ficha={ficha} aprobada={aprobada} xp={xp} onSet={commitDisciplina} />
-          )}
-          {activeEfectivo === "acciones" && (
-            <AccionesTab
-              ficha={ficha}
-              historial={accionesHistorial}
-              setHistorial={setAccionesHistorial}
-              memoria={accionesMemoria}
-              setMemoria={setAccionesMemoria}
-              onReparar={commitReparar}
-              onFabricar={commitFabricar}
-              onGastarRecurso={commitAjustarRecurso}
-              onAjustarFarmaco={commitAjustarFarmaco}
-              onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
-              onPagarFatiga={commitPagarFatiga}
-              onAjustarFatiga={commitDevolverFatiga}
-              onAjustarVida={commitAjustarVida}
-              onGastarUsosEscena={commitGastarUsosEscena}
-              onUsarAccionAumento={commitUsarAccionAumento}
-            />
           )}
           {activeEfectivo === "tienda" && (
             <TiendaTab
