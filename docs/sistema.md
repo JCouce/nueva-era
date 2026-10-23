@@ -55,7 +55,7 @@ Fuerza · Agilidad · Aguante · Percepción · Inteligencia · Carácter.
 - **Máximo 4/6** (`HOJA2`, era 4/5 en `HOJA`) — misma lectura que antes: 4 en creación, 6
   techo del sistema. La partición sigue *pendiente de confirmar* explícitamente, pero el
   patrón (creación/techo) ya lo dio por bueno el propio Murillo la vez anterior.
-- Bajar un atributo a **-1** otorga **1 punto adicional**.
+- Bajar un atributo a **-1** otorga **2 puntos adicionales** (usuario, 2026-10-23; `HOJA` decía 1).
 - **De dónde sale el pool para comprar y cuánto cuesta cada punto**: ver "Creación por
   prioridad" y "Coste y progresión" más abajo — `HOJA2` sustituye aquí a los "10 puntos
   planos, coste = valor a conseguir" de `HOJA`.

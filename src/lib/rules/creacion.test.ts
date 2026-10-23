@@ -45,9 +45,9 @@ describe("coste de un atributo: triangular, Nivel × 2 (docs/sistema.md, Coste y
     assert.equal(puntosAtributosDisponibles(s), 6); // 18 - 12
   });
 
-  test("bajar a -1 sigue devolviendo 1 punto (regla de HOJA, sin tocar por HOJA2)", () => {
+  test("bajar a -1 devuelve 2 puntos (usuario, 2026-10-23)", () => {
     const s = setAtributoValue(conLetraAtributos("D"), "caracter", -1);
-    assert.equal(puntosAtributosDisponibles(s), PUNTOS_ATRIBUTOS_POR_LETRA.D + 1);
+    assert.equal(puntosAtributosDisponibles(s), PUNTOS_ATRIBUTOS_POR_LETRA.D + 2);
   });
 
   test("no se puede gastar más de lo que da la letra", () => {

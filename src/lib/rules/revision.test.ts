@@ -133,13 +133,17 @@ describe("avisosParaEnviar", () => {
 
   test("singular con 1 punto", () => {
     let sheet = conPrioridades({ atributos: "E", habilidades: "E", dotes: "C", psionica: "E", recursos: "A" });
-    sheet = setHabilidadValue(sheet, "atletismo", 2, AJUSTE_NEUTRO); // 3 de 6
-    sheet = setHabilidadValue(sheet, "actitud", 2, AJUSTE_NEUTRO); // 6
+    // Atributos ya no pueden dejar 1 suelto (costes y presupuestos pares, el -1 devuelve 2):
+    // el singular se prueba con habilidades.
     sheet = setAtributoValue(sheet, "fuerza", 2); // 6 de 8
-    sheet = setAtributoValue(sheet, "caracter", -1); // devuelve 1 → 5 de 8, quedan 3
-    sheet = setAtributoValue(sheet, "agilidad", 1); // 7 de 8, queda 1
+    sheet = setAtributoValue(sheet, "caracter", -1); // devuelve 2 → 4 de 8
+    sheet = setAtributoValue(sheet, "agilidad", 1); // 6 de 8
+    sheet = setAtributoValue(sheet, "aguante", 1); // 8 de 8
+    sheet = setHabilidadValue(sheet, "atletismo", 2, AJUSTE_NEUTRO); // 3 de 6
+    sheet = setHabilidadValue(sheet, "actitud", 1, AJUSTE_NEUTRO); // 4
+    sheet = setHabilidadValue(sheet, "cultura", 1, AJUSTE_NEUTRO); // 5 de 6, queda 1
     sheet = { ...sheet, dotes: TODAS_LAS_DOTES_DE_C };
-    assert.deepEqual(avisosParaEnviar(sheet, AJUSTE_NEUTRO), ["Te queda 1 punto de atributos sin gastar"]);
+    assert.deepEqual(avisosParaEnviar(sheet, AJUSTE_NEUTRO), ["Te queda 1 punto de habilidades sin gastar"]);
   });
 
   test("S+ (presupuesto infinito, pruebas): no avisa de infinito sin gastar", () => {
