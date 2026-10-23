@@ -849,7 +849,17 @@ describe("Bloqueo (otra forma de defensa, pregunta 31 resuelta)", () => {
     assert.equal(bloqueo.aplicado, "potencia");
     assert.equal(bloqueo.aplicadoSutil, undefined);
     assert.equal(bloqueo.habilidad, "combate_melee");
-    assert.deepEqual(bloqueo.ajustesFijos, []);
+    assert.deepEqual(bloqueo.ajustesFijos, [{ valor: -1, fuente: "Espada" }]); // la dificultad del arma, como al golpear
+  });
+
+  test("los escudos bloquean sin la dificultad del arma, aunque golpeen con ella (Escudo de Kerzul)", () => {
+    let sheet = conDotes(defaultSheet(), "dote_bloqueo");
+    sheet = equipar(sheet, { instanciaId: "rodela1", catalogoId: "escudo_rodela" });
+    sheet = equipar(sheet, { instanciaId: "kz1", catalogoId: "kerzul_escudo" });
+    const ataques = accionesDeAtaque(sheet);
+    assert.deepEqual(ataques.find((t) => t.id === "bloquear_melee_rodela1")!.ajustesFijos, []);
+    assert.deepEqual(ataques.find((t) => t.id === "bloquear_melee_kz1")!.ajustesFijos, []);
+    assert.deepEqual(ataques.find((t) => t.id === "ataque_melee_kz1")!.ajustesFijos, [{ valor: -2, fuente: "Escudo de Kerzul" }]);
   });
 
   test("con un arma Sutil, el Bloqueo expone Reflejos como opción, sin asumirlo (elección del jugador)", () => {
@@ -861,11 +871,14 @@ describe("Bloqueo (otra forma de defensa, pregunta 31 resuelta)", () => {
     assert.equal(bloqueo.habilidad, "combate_melee");
   });
 
-  test("el Mangual trae su propio -2 al Bloqueo", () => {
+  test("el Mangual suma su propio -2 al Bloqueo encima de su dificultad: -4", () => {
     let sheet = conDotes(defaultSheet(), "dote_bloqueo");
     sheet = equipar(sheet, { instanciaId: "mangual1", catalogoId: "flagelo_mangual" });
     const bloqueo = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Mangual")!;
-    assert.deepEqual(bloqueo.ajustesFijos, [{ valor: -2, fuente: "Mangual" }]);
+    assert.deepEqual(bloqueo.ajustesFijos, [
+      { valor: -2, fuente: "Mangual" },
+      { valor: -2, fuente: "Mangual (bloqueo)" },
+    ]);
   });
 
   test("mismo penalizador por atacante adicional que Esquivar", () => {

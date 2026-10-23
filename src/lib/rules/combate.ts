@@ -671,8 +671,8 @@ function tiradaDeArmaMelee(
   const nota = notaConPerfil([arma.efectos], perfil);
 
   // Sin selector de modo (un único modo): su `dificultad` va como ajuste fijo,
-  // mismo patrón que ajusteModoUnico en tiradaDeArmaFuego. Solo el golpe: el
-  // bloqueo no hereda la dificultad del modo.
+  // mismo patrón que ajusteModoUnico en tiradaDeArmaFuego. El bloqueo lleva la
+  // suya aparte (tiradaBloqueoDeArmaMelee).
   const ajusteModoUnico =
     !modo && modosConId[0].dificultad !== 0 ? [{ valor: modosConId[0].dificultad, fuente: arma.label }] : [];
 
@@ -720,9 +720,11 @@ function tiradaDeArmaMelee(
 // de Esquivar (defensa/atletismo en ACCIONES), activa con cualquier arma
 // melee equipada si la ficha tiene la dote Bloqueo (D2b-2, §9.2) — mismo par que su propio ataque (Potencia + Combate Melee,
 // o Reflejos + Combate Melee si el arma es Sutil) y mismo penalizador por
-// atacante adicional que Esquivar. `arma.bloqueoAjuste` es el ajuste propio
-// de una pieza concreta sobre ESTE bloqueo (hoy solo el Mangual, -2) — no
-// confundir con un bono al ataque.
+// atacante adicional que Esquivar. Lleva la dificultad del arma, como su ataque ("la
+// tirada empleada para el bloqueo es la misma de ataque", dotes.md), salvo los escudos
+// (decisión del usuario, 2026-10-23); los dos modos de cada arma comparten dificultad.
+// `arma.bloqueoAjuste` es el ajuste propio de una pieza concreta sobre ESTE bloqueo, que
+// se suma a lo anterior (hoy solo el Mangual: −2 de dificultad y −2 de bloqueo, −4).
 //
 // Sutil aquí ya no se asume en automático (era un bug: el jugador no podía
 // elegir bloquear "a lo bruto" con un arma Sutil) — mismo toggle que el
@@ -754,7 +756,10 @@ function tiradaBloqueoDeArmaMelee(
     // Bloquear con Pelea es bloquear desarmado (casilla de Bloqueo "desarmado frente a armado").
     ...(PELEA.some((p) => p.id === arma.id) && { desarmado: true as const }),
     condiciones: [CONDICION_ATACANTES_ADICIONALES],
-    ajustesFijos: arma.bloqueoAjuste ? [{ valor: arma.bloqueoAjuste, fuente: arma.label }] : [],
+    ajustesFijos: [
+      ...(!arma.defensa && arma.modos[0].dificultad !== 0 ? [{ valor: arma.modos[0].dificultad, fuente: arma.label }] : []),
+      ...(arma.bloqueoAjuste ? [{ valor: arma.bloqueoAjuste, fuente: `${arma.label} (bloqueo)` }] : []),
+    ],
   };
 }
 

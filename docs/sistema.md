@@ -2530,8 +2530,11 @@ lo anota a mano.
     (Potencia + Combate Melee; Reflejos + Combate Melee si el arma es Sutil — decisión
     del usuario por el mismo patrón ya confirmado por Murillo para atacar, ver
     "Emparejamiento atributo + habilidad"). Igual que Esquivar, es reacción gratuita
-    e ilimitada con el mismo -1 acumulativo por atacante adicional. El "-2" del
-    Mangual es un ajuste propio de esa pieza sobre su Bloqueo, no la regla base.
+    e ilimitada con el mismo -1 acumulativo por atacante adicional. Lleva la
+    **dificultad del arma**, como el ataque ("la tirada empleada para el bloqueo es la
+    misma de ataque", `fuente/dotes.md`), **salvo los escudos** (decisión del usuario,
+    2026-10-23). El "-2" del Mangual es un ajuste propio de esa pieza sobre su
+    Bloqueo que se suma a su dificultad: −4 (decisión del usuario, 2026-10-23).
     Implementado: `tiradaBloqueoDeArmaMelee()` (`lib/rules/combate.ts`), genera
     "Bloquear con X" junto a "Golpear con X" para cualquier arma melee equipada.
 32. **"Susceptible a shock" / "apagón" no está definido de forma consistente.** Varias
