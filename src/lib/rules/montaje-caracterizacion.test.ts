@@ -384,33 +384,33 @@ const ESPERADO: Record<string, unknown> = {
     ],
   },
   "Defensa sin especie, dos atacantes adicionales y circunstancial": {
-    fila: { aplicado: 1, habilidad: 2, ajustes: [], total: 3 },
-    modBase: 3,
+    fila: { aplicado: 1, habilidad: 1, ajustes: [], total: 2 },
+    modBase: 2,
     elecciones: [
       {
-        total: 3,
+        total: 2,
         desglose: [
           { etiqueta: "Reflejos", valor: 1 },
-          { etiqueta: "Atletismo", valor: 2 },
+          { etiqueta: "Atletismo", valor: 1 },
           { etiqueta: "Atacantes adicionales esta ronda ×0", valor: -0 }, // 0 × −1: el contador a cero da −0 (se pinta "+0")
           { etiqueta: "Tengo cobertura (+2) (sin activar)", valor: 0 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 3, circunstancial: 0, total: 15, margen: 10, exito: true, critico: true },
+        resultado: { modificador: 2, circunstancial: 0, total: 14, margen: 9, exito: true, critico: true },
       },
       {
-        total: 0,
+        total: -1,
         desglose: [
           { etiqueta: "Reflejos", valor: 1 },
-          { etiqueta: "Atletismo", valor: 2 },
+          { etiqueta: "Atletismo", valor: 1 },
           { etiqueta: "Atacantes adicionales esta ronda ×2", valor: -2 },
           { etiqueta: "Tengo cobertura (+2) (sin activar)", valor: 0 },
           { etiqueta: "Modificador circunstancial", valor: -1 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 1, circunstancial: -1, total: 1, margen: -6, exito: false, critico: true },
+        resultado: { modificador: 0, circunstancial: -1, total: 0, margen: -7, exito: false, critico: true },
       },
     ],
   },
@@ -453,21 +453,21 @@ const ESPERADO: Record<string, unknown> = {
     ],
   },
   "Buscar sin especialidad": {
-    fila: { aplicado: 1, habilidad: 2, ajustes: [], total: 3 },
-    modBase: 3,
+    fila: { aplicado: 1, habilidad: 1, ajustes: [], total: 2 },
+    modBase: 2,
     elecciones: [
       {
-        total: 3,
+        total: 2,
         desglose: [
           { etiqueta: "Perspicacia", valor: 1 },
-          { etiqueta: "Exploración", valor: 2 },
+          { etiqueta: "Exploración", valor: 1 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
           { etiqueta: "Buscando con la mira telescópica (sin activar)", valor: 0 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 3, circunstancial: 0, total: 9, margen: 2, exito: true, critico: false },
+        resultado: { modificador: 2, circunstancial: 0, total: 8, margen: 1, exito: true, critico: false },
       },
     ],
   },
@@ -627,14 +627,14 @@ const ESPERADO: Record<string, unknown> = {
     ],
   },
   "Defensa con especie y estados (Aturdido, alcance grupo)": {
-    fila: { aplicado: 1, habilidad: 2, ajustes: [], total: 3 },
-    modBase: 3,
+    fila: { aplicado: 1, habilidad: 1, ajustes: [], total: 2 },
+    modBase: 2,
     elecciones: [
       {
-        total: 0,
+        total: -1,
         desglose: [
           { etiqueta: "Reflejos", valor: 1 },
-          { etiqueta: "Atletismo", valor: 2 },
+          { etiqueta: "Atletismo", valor: 1 },
           { etiqueta: "Enfermedad", valor: -1 },
           { etiqueta: "Aturdido", valor: -1 },
           { etiqueta: "Atacantes adicionales esta ronda ×1", valor: -1 },
@@ -642,7 +642,7 @@ const ESPERADO: Record<string, unknown> = {
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
-        resultado: { modificador: 0, circunstancial: 0, total: 6, margen: -1, exito: false, critico: false },
+        resultado: { modificador: -1, circunstancial: 0, total: 5, margen: -2, exito: false, critico: false },
       },
     ],
   },

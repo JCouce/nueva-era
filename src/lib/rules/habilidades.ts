@@ -1,6 +1,6 @@
 // Habilidades del sistema. Fuente: docs/sistema.md §3.
 // Cada habilidad tiene un valor y una lista de especialidades: dentro de la
-// especialidad se usa el valor entero, fuera la mitad redondeando hacia arriba.
+// especialidad se usa el valor entero, fuera la mitad redondeando hacia abajo.
 
 export const HABILIDADES = [
   { id: "actitud", label: "Actitud" },

@@ -118,8 +118,8 @@ describe("modificador de una tirada", () => {
 
   test("fuera de especialidad la habilidad cuenta la mitad", () => {
     const m = modificadorAccion(ficha(), buscar("iniciativa_arma"), false, modificadoresActivos(ficha()));
-    assert.equal(m.habilidad, 2); // ceil(3/2)
-    assert.equal(m.total, 4);
+    assert.equal(m.habilidad, 1); // floor(3/2)
+    assert.equal(m.total, 3);
   });
 
   test("una habilidad sin entrenar resta 1", () => {
@@ -144,7 +144,14 @@ describe("modificador de una tirada", () => {
     const dentro = modificadorAccion(s, buscar("medicina"), true, modificadoresActivos(s));
     const fuera = modificadorAccion(s, buscar("medicina"), false, modificadoresActivos(s));
     assert.equal(dentro.habilidad, 2);
-    assert.equal(fuera.habilidad, 1); // ceil(2/2)
+    assert.equal(fuera.habilidad, 1); // floor(2/2)
+  });
+
+  test("un 1 fuera de especialidad cuenta 0, en especialidad 1", () => {
+    let s = setHabilidadValue(conPresupuesto(), "biociencia", 1, AJUSTE_NEUTRO);
+    s = addEspecialidad(s, "biociencia", "Medicina", AJUSTE_NEUTRO);
+    assert.equal(modificadorAccion(s, buscar("medicina"), true, modificadoresActivos(s)).habilidad, 1);
+    assert.equal(modificadorAccion(s, buscar("medicina"), false, modificadoresActivos(s)).habilidad, 0);
   });
 
   // Fase 6b, 3.1b (D5: combate → ficha): un mods extra (aquí, el de un

@@ -15,6 +15,7 @@ import {
   especialidadesDe,
   etiquetaEspecialidad,
   admiteEspecialidades,
+  valorFueraDeEspecialidad,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { Stepper } from "./Stepper";
@@ -166,7 +167,7 @@ export function HabilidadesTab({
           pista,
         } = costeSiguienteNivel({ tipo: "habilidad", id: h.id }, valor, ficha.ajusteCosteSubida);
         const conLista = admiteEspecialidades(h.id);
-        const fuera = entrenada ? Math.ceil(valor / 2) : HABILIDAD_NO_ENTRENADA;
+        const fuera = valorFueraDeEspecialidad(valor);
 
         return (
           <HudCard key={h.id} className="p-3">

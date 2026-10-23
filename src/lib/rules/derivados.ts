@@ -239,8 +239,14 @@ export function vuelo(sheet: Sheet): { velocidadM: number; nivel: number } | nul
   return null;
 }
 
+// Fuera de especialidad, la mitad hacia abajo: un 1 sin especialidad cuenta 0.
+// La fuente dice "hacia arriba"; decisión del usuario, 2026-10-23 (docs/sistema.md §3).
+export function valorFueraDeEspecialidad(valor: number): number {
+  return Math.floor(valor / 2);
+}
+
 // Valor efectivo de una habilidad: total en su especialidad, la mitad hacia
-// arriba fuera de ella. Sin entrenar es -1 siempre, aunque los modificadores
+// abajo fuera de ella. Sin entrenar es -1 siempre, aunque los modificadores
 // externos sí se suman encima.
 //
 // Una habilidad sin especialidades en la fuente (Interpretación, Sigilo) va siempre
@@ -256,5 +262,5 @@ export function valorEfectivo(
   const bono = bonoHabilidad(mods, id);
   if (valor < HABILIDAD_MIN_ENTRENADA) return HABILIDAD_NO_ENTRENADA + bono;
   const entera = enEspecialidad || !admiteEspecialidades(id);
-  return (entera ? valor : Math.ceil(valor / 2)) + bono;
+  return (entera ? valor : valorFueraDeEspecialidad(valor)) + bono;
 }

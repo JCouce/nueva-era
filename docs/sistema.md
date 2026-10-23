@@ -130,7 +130,9 @@ habilidades. Se sustituye la habilidad entera, no se añade como especialidad de
 - Habilidad **no entrenada = -1**.
 - Al entrenar una habilidad se **escoge una especialidad**:
   - En la especialidad escogida se usa el **valor total**.
-  - En el resto, **la mitad redondeando hacia arriba**.
+  - En el resto, **la mitad redondeando hacia abajo**: un 1 fuera de especialidad cuenta 0.
+    La fuente (`creacion-de-personaje.md`) dice "hacia arriba"; decisión del usuario,
+    2026-10-23 (`valorFueraDeEspecialidad`, `derivados.ts`).
   - Una **segunda especialidad** dentro de la misma habilidad cuesta **1 punto**.
 
 > **Implementación:** una habilidad deja de ser un entero y pasa a ser

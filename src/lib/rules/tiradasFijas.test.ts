@@ -77,7 +77,7 @@ describe("Tiradas fijas: las filas", () => {
     }
     // Sin la especialidad, a la mitad.
     const f = resolver(ficha([], ["empatia"]));
-    assert.equal(montar(f, fija(f, "discernir_mentiras")).habilidad?.valor, 3);
+    assert.equal(montar(f, fija(f, "discernir_mentiras")).habilidad?.valor, 2);
   });
 });
 

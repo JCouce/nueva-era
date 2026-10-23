@@ -263,9 +263,9 @@ describe("valor efectivo de una habilidad", () => {
     assert.equal(valorEfectivo(s, "cultura", true, modificadoresActivos(s)), 3);
   });
 
-  test("fuera de la especialidad, la mitad redondeando hacia arriba", () => {
+  test("fuera de la especialidad, la mitad redondeando hacia abajo", () => {
     const s = ficha({ habilidades: { cultura: { valor: 3, especialidades: ["historia"] } } });
-    assert.equal(valorEfectivo(s, "cultura", false, modificadoresActivos(s)), 2); // ceil(3/2)
+    assert.equal(valorEfectivo(s, "cultura", false, modificadoresActivos(s)), 1); // floor(3/2)
   });
 
   test("S39: una habilidad sin especialidades en la fuente (Sigilo) va siempre entera", () => {
