@@ -11,6 +11,8 @@ import type { MotorMetadata } from "./motor";
 import { modificadorAccion, gastoTotal, gastoMunicionEspecial, avisoInsuficiente } from "./acciones";
 import { aplicado, modificadoresActivos } from "./derivados";
 import { permisosDeDotes } from "./dotesEfectos";
+import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { montarTirada, SIN_ELECCION } from "./montaje";
 
 // En reposo (especie + equipo): estos tests no llevan estados de combate. Los permisos de
 // dotes (Bloquear, Sutil; D2b-2) salen de las dotes de la propia ficha, con sus requisitos.
@@ -700,6 +702,31 @@ describe("arma melee equipada", () => {
     const fila = accionesDeAtaque(sheet).find((t) => t.label.includes("Espada Ligera"))!;
     assert.match(fila.nota ?? "", /Crítico de Hemorragia \(1d6 turnos\)/);
     assert.doesNotMatch(fila.nota ?? "", /Sutil/);
+  });
+
+  // Sin selector de modo, la dificultad del único modo no se pierde: llega como
+  // ajuste fijo al golpe (antes el Escudo de Kerzul tiraba +6 en vez de +4).
+  test("un arma de un solo modo con dificultad lleva ese ajuste al total del golpe", () => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "esc1", catalogoId: "kerzul_escudo" });
+    const golpe = accionesDeAtaque(sheet).find((t) => t.id === "ataque_melee_esc1")!;
+    assert.equal(golpe.condiciones?.find((c) => c.id === "modo"), undefined);
+    assert.deepEqual(golpe.ajustesFijos, [{ valor: -2, fuente: "Escudo de Kerzul" }]);
+    const resuelta = resolverFicha(sheet, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+    const sinAjuste = montarTirada(resuelta, { ...golpe, ajustesFijos: [] }, SIN_ELECCION);
+    const conAjuste = montarTirada(resuelta, golpe, SIN_ELECCION);
+    assert.equal(conAjuste.total, sinAjuste.total - 2);
+  });
+
+  test("un arma de un solo modo con dificultad 0 no gana ajuste fijo", () => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "c1", catalogoId: "espada_cuchillo_combate" });
+    const golpe = accionesDeAtaque(sheet).find((t) => t.id === "ataque_melee_c1")!;
+    assert.deepEqual(golpe.ajustesFijos, []);
+  });
+
+  test("la dificultad del modo único es del golpe: el bloqueo no la hereda", () => {
+    const sheet = equipar(conDotes(defaultSheet(), "dote_bloqueo"), { instanciaId: "esc1", catalogoId: "kerzul_escudo" });
+    const bloqueo = accionesDeAtaque(sheet).find((t) => t.id === "bloquear_melee_esc1")!;
+    assert.deepEqual(bloqueo.ajustesFijos, []);
   });
 });
 

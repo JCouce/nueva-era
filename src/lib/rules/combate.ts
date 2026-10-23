@@ -621,6 +621,12 @@ function tiradaDeArmaMelee(
   // §Kerzul, "fix barato" 2026-09-23).
   const nota = arma.efectos ?? undefined;
 
+  // Sin selector de modo (un único modo): su `dificultad` va como ajuste fijo,
+  // mismo patrón que ajusteModoUnico en tiradaDeArmaFuego. Solo el golpe: el
+  // bloqueo no hereda la dificultad del modo.
+  const ajusteModoUnico =
+    !modo && modosConId[0].dificultad !== 0 ? [{ valor: modosConId[0].dificultad, fuente: arma.label }] : [];
+
   return {
     id: `ataque_melee_${instanciaId}`,
     label: `Golpear con ${arma.label}`,
@@ -641,6 +647,7 @@ function tiradaDeArmaMelee(
     ...(arma.contundente && { contundente: true as const }),
     ignoraBlindaje: arma.ignoraBlindaje ? { valor: arma.ignoraBlindaje, fuente: arma.label } : undefined,
     condiciones: [...(modo ? [modo] : []), ...(malla ? condicionesSacrificioColchon(malla.nivel) : [])],
+    ajustesFijos: ajusteModoUnico,
     ataque: {
       modos: modosConId.map((m) => {
         const bono = bonoFormulaFuerza(m.formulaDanio);
