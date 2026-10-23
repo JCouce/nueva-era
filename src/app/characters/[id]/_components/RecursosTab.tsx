@@ -230,6 +230,7 @@ export function RecursosTab({
             <GranadaCard
               key={g.id}
               titulo={g.label}
+              descripcion={[g.categoriaDanio && `${g.danio} ${g.categoriaDanio}`, g.areaEfecto].filter(Boolean).join(" · ")}
               cantidad={sheet.granadas[g.id] ?? 0}
               onAjustar={(delta) => onAjustarGranada(g.id, delta)}
             />
@@ -255,6 +256,7 @@ export function RecursosTab({
             <GranadaCard
               key={f.id}
               titulo={f.label}
+              descripcion={f.resumen}
               cantidad={sheet.farmacos[f.id] ?? 0}
               onAjustar={(delta) => onAjustarFarmaco(f.id, delta)}
             />
@@ -311,6 +313,7 @@ export function RecursosTab({
               <MaterialCard
                 key={m.id}
                 titulo={m.label}
+                descripcion={m.efecto}
                 cantidad={sheet.municionEspecial[m.id] ?? 0}
                 etiquetaComprar={`Lote ${LOTE_MUNICION_ESPECIAL}`}
                 precio={creditos !== undefined ? precio : null}
@@ -474,6 +477,7 @@ function UsosEscenaCard({
 
 function MaterialCard({
   titulo,
+  descripcion,
   cantidad,
   etiquetaComprar = "Comprar",
   precio,
@@ -482,6 +486,7 @@ function MaterialCard({
   onComprar,
 }: {
   titulo: string;
+  descripcion?: string;
   cantidad: number;
   etiquetaComprar?: string;
   // null: NPC, edición libre, sin precio que enseñar.
@@ -497,6 +502,7 @@ function MaterialCard({
         <p className="font-display text-sm font-semibold uppercase text-foreground">{titulo}</p>
         <p className="font-mono text-lg tabular-nums text-foreground">{cantidad}</p>
       </div>
+      {descripcion && <p className="mt-1 font-sans text-xs leading-snug text-soft">{descripcion}</p>}
       <div className="mt-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <BotonDelta onClick={() => onAjustar(-1)} disabled={cantidad <= 0}>
@@ -556,10 +562,12 @@ function DurabilidadCard({
 // esqueleto que DurabilidadCard, sin denominador "/max": aquí no hay tope.
 function GranadaCard({
   titulo,
+  descripcion,
   cantidad,
   onAjustar,
 }: {
   titulo: string;
+  descripcion?: string;
   cantidad: number;
   onAjustar: (delta: number) => void;
 }) {
@@ -569,6 +577,7 @@ function GranadaCard({
         <p className="font-display text-sm font-semibold uppercase text-foreground">{titulo}</p>
         <p className="font-mono text-lg tabular-nums text-foreground">{cantidad}</p>
       </div>
+      {descripcion && <p className="mt-1 font-sans text-xs leading-snug text-soft">{descripcion}</p>}
       <div className="mt-2 flex items-center gap-1.5">
         <BotonDelta onClick={() => onAjustar(-1)} disabled={cantidad <= 0}>
           −
