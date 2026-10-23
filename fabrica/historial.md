@@ -7,14 +7,14 @@ Formato: `F-xxx · fecha · dónde · estado (abierto | arreglado | asumido)`.
 
 ---
 
-### F-016 · 2026-10-23 · Jefe y parser de "Puede tocar" (T-007) · abierto
+### F-016 · 2026-10-23 · Jefe y parser de "Puede tocar" (T-007) · arreglado
 **Qué pasó:** T-007 escaló con todo en verde salvo C2. El Jefe puso varias rutas en un bullet de "Puede tocar" con
 líneas de continuación sangradas, y `puedeTocar` (`guion/contrato.mjs`) corta en la primera línea que no empieza por
 `-`: se quedó con 3 de las 11 rutas y marcó 6 archivos legítimos como fuera. El constructor no podía arreglarlo y paró
 con bloqueo en la vuelta 2 (~470k tokens para un falso fallo).
 **Causa:** formato del contrato que el parser no admite, sin aviso: ni el inspector ni el Jefe ven qué rutas extrae.
 **Arreglo:** contrato de T-007 rehecho con una ruta por línea (`alcance.mjs` pasa: 9 archivos, todos dentro).
-Pendiente: que `puedeTocar` admita líneas de continuación, o que el guion pinte las rutas extraídas antes de construir.
+T-008: `puedeTocar` admite líneas de continuación sangradas y descarta nombres que no son rutas; la plantilla lo dice. Queda como idea que el guion pinte las rutas extraídas antes de construir.
 **Lección:** si un script lee el contrato, el contrato tiene un formato; o se valida al encolar o se documenta en la
 plantilla.
 
