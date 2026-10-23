@@ -1,8 +1,9 @@
 // Absorción de daño por blindaje. Fuente: docs/sistema.md pregunta 29/§7 — 1
 // punto de blindaje absorbe 1 nivel (= 1 punto) de daño. Mental y Fuego se
 // quedan en 0 por defecto: ninguna fuente de blindaje del catálogo los
-// menciona como cubiertos (Mejora Ignífuga es quien reabre Fuego, todavía sin
-// construir — docs/tareas.md). Tóxico SÍ cuenta como cualquier otro tipo: lo
+// menciona como cubiertos. Mejora Ignífuga nivel 1, instalada en la armadura
+// que cuenta, reabre Fuego, pero solo para el blindaje de esa armadura (S19,
+// S85). Tóxico SÍ cuenta como cualquier otro tipo: lo
 // que el blindaje no toca es el estado de Enfermedad/Envenenamiento que
 // dispare el arma, resuelto aparte por su propia salvación (ACCIONES).
 import { equipoPorId, type Armadura, type Subsistema } from "../catalog/equipo";
@@ -25,12 +26,27 @@ export const TIPOS_DANIO = [
 ] as const;
 export type TipoDanio = (typeof TIPOS_DANIO)[number]["id"];
 
-function armaduraEquipada(sheet: Sheet): Armadura | null {
+function armaduraEquipadaConInstancia(sheet: Sheet): { armadura: Armadura; instanciaId: string } | null {
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
-    if (cat?.familia === "armadura") return cat;
+    if (cat?.familia === "armadura") return { armadura: cat, instanciaId: pieza.instanciaId };
   }
   return null;
+}
+
+function armaduraEquipada(sheet: Sheet): Armadura | null {
+  return armaduraEquipadaConInstancia(sheet)?.armadura ?? null;
+}
+
+// Mejora Ignífuga (cualquier nivel incluye el 1) instalada en la armadura que cuenta, no
+// en otra que se lleve de más.
+function armaduraConIgnifuga(sheet: Sheet): Armadura | null {
+  const equipada = armaduraEquipadaConInstancia(sheet);
+  if (!equipada) return null;
+  const lleva = sheet.equipo.some(
+    (p) => p.catalogoId === "mejora_ignifuga" && p.instaladoEnId === equipada.instanciaId,
+  );
+  return lleva ? equipada.armadura : null;
 }
 
 function absorcionEscudoDeflector(sheet: Sheet): number {
@@ -82,7 +98,8 @@ export type ArmaduraNatural = { valor: number; fuente: string | null };
 export const SIN_ARMADURA_NATURAL: ArmaduraNatural = { valor: 0, fuente: null };
 
 // Por qué el blindaje no cuenta contra `tipo`, o null si cuenta. Lo comparten el desglose y
-// la casilla de blindaje reactivo (Densificar), que vale donde valga la armadura natural.
+// las casillas de blindaje reactivo (Densificar) y del brazo, que valen donde valga la armadura
+// natural: contra Fuego siguen fuera aunque la armadura lleve Ignífuga.
 export function blindajeNoCuenta(tipo: TipoDanio): string | null {
   if (tipo === "mental") return "Mental omite blindaje";
   if (tipo === "fuego") return "Fuego (falta Mejora Ignífuga)";
@@ -93,7 +110,8 @@ export function blindajeNoCuenta(tipo: TipoDanio): string | null {
 // para blindajeContra() (la suma de estas líneas) y para "Bloquear daño"
 // (que las pinta una a una: "nada suma en silencio", mismo criterio que
 // AccionModal.tsx). Mental/Fuego devuelven una única línea a 0 explicando por
-// qué, en vez de una lista vacía sin más.
+// qué, en vez de una lista vacía sin más; Fuego con Mejora Ignífuga, solo la
+// línea de la armadura.
 //
 // `reactivo` (A4b): la casilla de blindaje reactivo marcada (Densificar del Enjambre 3+). Sin
 // la pieza, o contra Mental o Fuego, no suma nada.
@@ -107,6 +125,12 @@ export function desgloseBlindaje(
   reactivo = false,
   conBrazo = false,
 ): LineaBlindaje[] {
+  // Ignífuga nv1 (S85): contra Fuego cuenta solo "el blindaje de su armadura", sin natural,
+  // deflector, escudo, Densificar ni brazo.
+  if (tipo === "fuego") {
+    const ignifuga = armaduraConIgnifuga(sheet);
+    if (ignifuga) return [{ etiqueta: `${ignifuga.label} · Mejora Ignífuga`, valor: ignifuga.blindaje }];
+  }
   const noCuenta = blindajeNoCuenta(tipo);
   if (noCuenta) return [{ etiqueta: noCuenta, valor: 0 }];
 
@@ -179,7 +203,7 @@ export type CasillaBlindajeReactivo = {
 
 const MOTIVO_NO_CUENTA = {
   mental: "No vale contra el daño mental: no lo para el blindaje.",
-  fuego: "No vale contra el fuego: sin Mejora Ignífuga no cuenta el blindaje.",
+  fuego: "No vale contra el fuego: contra el fuego solo cuenta la armadura (con Mejora Ignífuga).",
 } as const;
 
 export function casillaBlindajeReactivo(

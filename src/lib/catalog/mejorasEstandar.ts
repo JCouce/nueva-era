@@ -236,10 +236,10 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         modificadores: [],
         // Distinto del +1 de Tejido Conductor nv2 (suma_derivado, ya construido):
         // esto HABILITA que el blindaje de la armadura cuente contra Fuego (que por
-        // defecto es 0, supuesto S19) en vez de sumar un extra — sin construir
-        // todavía en blindajeContra() (lib/rules/blindaje.ts).
+        // defecto es 0, supuesto S19) en vez de sumar un extra — solo el de la
+        // armadura que la lleva (S85, armaduraConIgnifuga en lib/rules/blindaje.ts).
         motor: [
-          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "pendiente" },
+          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
         ],
       },
       {

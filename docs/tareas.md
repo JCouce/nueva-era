@@ -247,8 +247,8 @@ usuario). Construido de una sentada tras aclarar en conversación una excepción
   (docs/equipamiento.md:886, "acción simple para levantarlo" — no hay estado
   persistente que guardar, se declara en el momento). Mental y Fuego devuelven 0
   siempre — supuesto S19 (`sistema.md`): ninguna fuente de blindaje del catálogo
-  menciona Fuego como cubierto (es justo lo que Mejora Ignífuga reabriría, todavía sin
-  construir). Tóxico cuenta como cualquier otro tipo (decisión del usuario,
+  menciona Fuego como cubierto (es justo lo que Mejora Ignífuga reabre: nivel 1
+  construido 2026-10-23, ver más abajo). Tóxico cuenta como cualquier otro tipo (decisión del usuario,
   corrigiendo un supuesto peor que se había barajado antes): el blindaje sí reduce el
   daño de un arma tóxica, lo que se le escapa es el estado de Enfermedad/
   Envenenamiento que dispare, resuelto aparte por su propia salvación.
@@ -272,9 +272,14 @@ usuario). Construido de una sentada tras aclarar en conversación una excepción
   Tejido Conductor lo trae; Anticorrosivo nivel 2 no tiene ningún "ignora el primer
   nivel", solo cambia la categoría de daño (Hallazgo #4); Mejora Ignífuga nivel 1 es un
   mecanismo distinto (habilita el blindaje de la armadura contra Fuego, no suma un
-  extra) y sigue sin construirse.
-- **Fuera de esta pasada, a propósito**: Mejora Ignífuga nivel 1 (habilitar blindaje
-  contra Fuego, mecanismo distinto al +1 de Tejido Conductor, sin construir); Malla
+  extra), construido aparte el 2026-10-23.
+- **Fuera de esta pasada, a propósito**: ~~Mejora Ignífuga nivel 1 (habilitar blindaje
+  contra Fuego, mecanismo distinto al +1 de Tejido Conductor, sin construir)~~ —
+  **✅ construida 2026-10-23** (`armaduraConIgnifuga()`, `blindaje.ts`): instalada en la
+  armadura que cuenta, contra Fuego el desglose da solo la línea "<Armadura> · Mejora
+  Ignífuga" con su blindaje; no suman natural, deflector, escudo, Densificar ni brazo
+  (supuesto S85, pendiente de Murillo). El nivel 2 (fuego letal en vez de grave) sigue
+  pendiente; Malla
   Plasmática (es un colchón/buffer, no blindaje, bloqueada aparte); el "Ignora N puntos
   de blindaje" de las armas de Kerzul (efecto del ATACANTE, no del defensor) — **resuelto
   2026-09-28 como aviso en el resultado del daño**, ver "Ignora blindaje" en Hecho.
@@ -1142,6 +1147,8 @@ priorizado — la fuente detallada de cada uno sigue viviendo en su documento.
    **✅ Hallazgo #5 — absorción de daño por blindaje, construido 2026-09-27** — ver
    entrada propia en "Hecho" arriba. Sigue pendiente engancharlo a Mejora Ignífuga/
    Anticorrosivo n2/Tejido Conductor n2 y al "Ignora N de blindaje" de Kerzul.
+   *(2026-10-23: Mejora Ignífuga nivel 1 ✅ construida, S85; Tejido Conductor n2 y el
+   "Ignora N" de Kerzul ya estaban, ver Hecho. Ignífuga nivel 2 sigue pendiente.)*
 
    **Compartimento Oculto — falta una tirada ad hoc "Esconder objeto" (decisión
    2026-09-24, el usuario).** Los dos niveles prometen ocultar un objeto

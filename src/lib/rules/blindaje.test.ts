@@ -104,6 +104,52 @@ describe("desgloseBlindaje", () => {
   });
 });
 
+describe("Mejora Ignífuga nivel 1 (S85)", () => {
+  const conIgnifuga = () => {
+    let s = equipar(defaultSheet(), { instanciaId: "arm1", catalogoId: "armadura_pesada" }); // blindaje 8
+    s = equipar(s, { instanciaId: "ig1", catalogoId: "mejora_ignifuga", nivel: 1, instaladoEnId: "arm1" });
+    return s;
+  };
+
+  test("instalada en la armadura, contra Fuego cuenta su blindaje", () => {
+    const s = conIgnifuga();
+    assert.deepEqual(desgloseBlindaje(s, "fuego", false, SIN_ARMADURA_NATURAL), [
+      { etiqueta: "Armadura Pesada · Mejora Ignífuga", valor: 8 },
+    ]);
+    assert.equal(blindajeContra(s, "fuego", false, SIN_ARMADURA_NATURAL), 8);
+  });
+
+  test("instalada en otra armadura que no es la que cuenta, Fuego sigue a 0", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "arm1", catalogoId: "armadura_pesada" });
+    s = equipar(s, { instanciaId: "arm2", catalogoId: "armadura_ligera" });
+    s = equipar(s, { instanciaId: "ig1", catalogoId: "mejora_ignifuga", nivel: 1, instaladoEnId: "arm2" });
+    assert.equal(blindajeContra(s, "fuego", false, SIN_ARMADURA_NATURAL), 0);
+  });
+
+  test("sin Ignífuga, Fuego sigue a 0", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "arm1", catalogoId: "armadura_pesada" });
+    assert.equal(blindajeContra(s, "fuego", false, SIN_ARMADURA_NATURAL), 0);
+  });
+
+  test("contra Fuego solo suma la armadura: ni natural, ni deflector, ni escudo en alto", () => {
+    let s = conIgnifuga();
+    s = equipar(s, { instanciaId: "d1", catalogoId: "escudo_deflector", nivel: 2, instaladoEnId: "arm1" });
+    s = equipar(s, { instanciaId: "e1", catalogoId: "escudo_rodela" });
+    const natural = { valor: 1, fuente: "Arköru" };
+    assert.deepEqual(desgloseBlindaje(s, "fuego", true, natural, true, true), [
+      { etiqueta: "Armadura Pesada · Mejora Ignífuga", valor: 8 },
+    ]);
+    assert.equal(blindajeContra(s, "fuego", true, natural), 8);
+  });
+
+  test("contra Cinético no cambia nada", () => {
+    const s = conIgnifuga();
+    assert.deepEqual(desgloseBlindaje(s, "cinetico", false, SIN_ARMADURA_NATURAL), [
+      { etiqueta: "Armadura Pesada", valor: 8 },
+    ]);
+  });
+});
+
 describe("tieneEscudoMelee", () => {
   test("false sin ningún escudo equipado", () => {
     assert.equal(tieneEscudoMelee(defaultSheet()), false);
