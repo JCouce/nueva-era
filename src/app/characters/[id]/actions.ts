@@ -107,6 +107,7 @@ import {
   usoDeAccionAumento,
   armaIncorporadaEntradaSchema,
   fijarArmaIncorporada,
+  marcarFavorita,
 } from "@/lib/rules";
 
 export type SaveResult =
@@ -610,6 +611,23 @@ export async function liberarUsoEscenaAction(characterId: string, id: unknown): 
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(characterId, liberarUsoEscena(ctx.sheet, parsed.data));
+}
+
+// Acciones favoritas (T-006): preferencia del jugador, sin regla detrás, pero pasa por
+// loadEditable como cualquier otro cambio (permisos y ficha en revisión). Se fija el valor
+// (marcada o no) en vez de alternar, para que reintentar no lo invierta.
+const favoritaSchema = z.object({ id: z.string().min(1).max(120), marcada: z.boolean() });
+
+export async function marcarFavoritaAction(characterId: string, entrada: unknown): Promise<SaveResult> {
+  const parsed = favoritaSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Acción no válida" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const sheet = marcarFavorita(ctx.sheet, parsed.data.id, parsed.data.marcada);
+  if (parsed.data.marcada && !sheet.favoritas.includes(parsed.data.id)) {
+    return { ok: false, error: "Ya tienes el máximo de favoritas" };
+  }
+  return persist(characterId, sheet);
 }
 
 // Acciones propias de aumento (A4a, aumentosAcciones.ts). El servidor comprueba que la ficha

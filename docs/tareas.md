@@ -836,9 +836,12 @@ subtítulos de sección de siempre, en el mismo orden, y no pinta los que se que
 encima, fuera de las pestañas. Abre siempre en Básicas. En solo lectura la barra sigue navegable: `AccionesTab` lleva
 su propio `PanelFieldset` y `CharacterSheet` ya no lo envuelve. NPC y consola de combate, igual.
 - [x] **T-005** — Básicas y Tiradas (2026-10-23)
-- [ ] **T-006** — Favoritas: estrella en tiradas y básicas, guardadas en la ficha (`stats` Json, sube
-  `SCHEMA_VERSION`, sin Prisma), pestaña Favoritas al final (Básicas · Tiradas · Favoritas, abre en Básicas). Solo
-  personajes: en NPC ni estrella ni pestaña. Sale de `main` cuando T-005 esté mergeado.
+- [x] **T-006** — Favoritas (2026-10-23): estrella (`BotonEstrella`) en toda fila con botón de Básicas y Tiradas
+  (bloqueadas incluidas, no en `FilaInfo`), guardada en `sheet.favoritas` (v21, sin Prisma) con
+  `marcarFavoritaAction`; cambia al momento y se deshace si falla el guardado. Bloquear daño y Reparar/Fabricar usan
+  las claves fijas `fija:bloquear_danio` / `fija:reparar_fabricar`. Pestaña Favoritas al final (abre en Básicas) con
+  las marcadas bajo sus subtítulos de siempre; un id sin acción no se pinta ni se limpia. Solo personajes: sin
+  `onMarcarFavorita` (NPC, combate del máster) ni estrella ni pestaña.
 
 ### La fábrica: automatizar el desarrollo y el mantenimiento de Nueva Era ⬜ (épica; N1 construido 2026-10-19, en rodaje desde 2026-10-22)
 **Cómo está hoy:** `fabrica/README.md` es la foto vigente (procesos, piezas, uso y qué se apunta dónde) y

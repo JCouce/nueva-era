@@ -295,6 +295,14 @@ export const MIGRACIONES: Migracion[] = [
       "(opcional). Hasta ahora la app no guardaba qué arma lleva el brazo: ninguna ficha la trae.",
     migrar: (ficha) => ficha,
   },
+  {
+    desde: 20,
+    hasta: 21,
+    descripcion:
+      "Acciones favoritas (T-006): se añade favoritas, los ids de las acciones marcadas con " +
+      "la estrella. Hasta ahora no se podía marcar ninguna: todas las fichas empiezan sin favoritas.",
+    migrar: (ficha) => ({ ...ficha, favoritas: [] }),
+  },
 ];
 
 // Lleva una ficha cruda hasta la versión indicada aplicando los pasos que le
