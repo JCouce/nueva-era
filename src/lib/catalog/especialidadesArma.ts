@@ -7,17 +7,27 @@
 // La especialidad es de la habilidad de ESA tirada: un arma melee arrojadiza golpea con su
 // especialidad de Combate Melee y se lanza con Lanzamiento (Atletismo, ver ESPECIALIDAD_LANZAR).
 import type { EspecialidadId } from "./especialidades";
-import { ARMAS, type ArmaFuego } from "./armasFuego";
+import { ARMAS, type ArmaFuego, type TipoArma } from "./armasFuego";
 
-// Armas de fuego por empleo (S44, usuario): a una mano, Armas de Fuego Cortas; a dos manos
-// (subfusiles incluidos), Largas. Las ametralladoras están en Armas de Fuego, no en
-// Armamento Pesado: Largas también, por su empleo. Melee y pesado siguen por tabla.
-export function especialidadArmaFuego(arma: Pick<ArmaFuego, "empleo">): EspecialidadId {
-  return arma.empleo === "una mano" ? "armas_de_fuego_cortas" : "armas_de_fuego_largas";
+// Armas a distancia del catálogo de ArmaFuego por su `tipo`, a la especialidad que se llama
+// como él (foto de Drive 2026-10-23, docs/fuente/habilidades.md; sustituye al reparto por
+// empleo de S44). Arco y Ballesta (`arma_impulsora`), a Armas Impulsoras.
+export const ESPECIALIDAD_POR_TIPO_ARMA = {
+  pistola: "pistolas",
+  escopeta: "escopetas",
+  subfusil: "subfusiles",
+  fusil_asalto: "fusiles_de_asalto",
+  fusil_precision: "fusiles_de_precision",
+  ametralladora: "ametralladoras",
+  arma_impulsora: "armas_impulsoras",
+} as const satisfies Record<TipoArma, EspecialidadId>;
+
+export function especialidadArmaFuego(arma: Pick<ArmaFuego, "tipo">): EspecialidadId {
+  return ESPECIALIDAD_POR_TIPO_ARMA[arma.tipo];
 }
 
 // Armas del catálogo (armasMelee.ts, armasFuego.ts, armamentoPesado.ts): id → especialidad.
-// Las de fuego salen de su empleo (especialidadArmaFuego); el resto, a mano.
+// Las de ArmaFuego salen de su tipo (especialidadArmaFuego); el resto, a mano.
 export const ESPECIALIDAD_ARMA: Readonly<Record<string, EspecialidadId>> = {
   // ── Combate Melee: grupos del catálogo que se llaman como su especialidad ──
   pelea_punetazo: "pelea",
@@ -67,7 +77,7 @@ export const ESPECIALIDAD_ARMA: Readonly<Record<string, EspecialidadId>> = {
   kerzul_alabarda: "armas_de_asta",
   kerzul_escudo: "escudos",
 
-  // ── Combate a Distancia: las armas de fuego van por empleo (especialidadArmaFuego) ──
+  // ── Combate a Distancia: las de ArmaFuego van por tipo (especialidadArmaFuego) ──
   ...Object.fromEntries(ARMAS.map((a) => [a.id, especialidadArmaFuego(a)])),
 
   // Armamento pesado
@@ -86,8 +96,9 @@ export const ESPECIALIDAD_ATAQUE_ESPECIAL = {
   // Confirmado (S44): igual que el Lanzagranadas de armamento pesado; podría ser la
   // especialidad del fusil que lo lleva.
   lanzagranadas_integrado: "armas_pesadas",
-  // Confirmado (S44): disparo de pulso de un emisor en la armadura, leído como arma corta.
-  proyector_pulso_disparo: "armas_de_fuego_cortas",
+  // Disparo de pulso de un emisor en la armadura: Pistolas (usuario, 2026-10-23; antes Armas de
+  // Fuego Cortas, S44).
+  proyector_pulso_disparo: "pistolas",
   // Confirmado (S44): Aguijón, pincho corto de energía a bocajarro (Sutil), leído como daga.
   proyector_pulso_aguijon: "espadas_y_dagas",
 } as const satisfies Record<string, EspecialidadId>;

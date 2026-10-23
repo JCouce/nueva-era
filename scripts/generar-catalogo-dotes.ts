@@ -131,7 +131,9 @@ const RAIZ = new URL("..", import.meta.url);
 const BORRADOR = new URL("docs/modelado-dotes.json", RAIZ);
 const TRANSCRIPCION = new URL("docs/dotes.md", RAIZ);
 const SALIDA = new URL("src/lib/catalog/dotes.ts", RAIZ);
-const TOTAL_ESPERADO = 105;
+// 105 de la foto del 2026-10-14 + Arquero Poderoso, Pistolero y Pistolero Infernal (foto del
+// 2026-10-23, tanda de especialidades de Combate a Distancia).
+const TOTAL_ESPERADO = 108;
 
 const CLAVES_V2 = new Set([
   "id",
@@ -639,12 +641,25 @@ const RAMA_DE_FAMILIA: Readonly<Record<string, "combate_melee" | "combate_distan
 //   Golpe Fatigante (D2d): "un ataque que provoque daño contundente o con un arma a dos manos"
 //     (empleo y tipo de daño: vale cualquiera de los dos), también para su texto.
 //   Golpe Mejorado con Escudo (D2d): "al golpear con el escudo" → especialidad Escudos.
+//   Pistolero y Pistolero Infernal: "una pistola en cada mano" → especialidad Pistolas y a una
+//     mano (deja fuera el disparo del Proyector de Pulso, que va en Pistolas pero no se empuña).
+//   Arquero Poderoso: "un ataque con arco" → especialidad Armas Impulsoras.
 type FiltroArmaDote = { empleo?: "una mano" | "dos manos"; tipoDanio?: "contundente"[]; especialidad?: string };
 const FILTROS_ARMA: Readonly<Record<string, FiltroArmaDote>> = {
   dote_desenfundado_rapido: { empleo: "una mano" },
   dote_apresar_y_apunalar: { empleo: "una mano" },
   dote_golpe_fatigante: { tipoDanio: ["contundente"], empleo: "dos manos" },
   dote_golpe_mejorado_con_escudo: { especialidad: "escudos" },
+  // TODO(revisar): "cada ataque aumenta su dificultad en 1" se lee como la casilla −1 de
+  // Pistolero (como el −2 "por dificultad" de Disparo a la Carrera). Pistolero Infernal no dice
+  // si ese +1 sigue, ni si cada ráfaga gasta su cargador: solo texto.
+  dote_pistolero: { especialidad: "pistolas", empleo: "una mano" },
+  dote_pistolero_infernal: { especialidad: "pistolas", empleo: "una mano" },
+  // TODO(revisar): "sumando su total de puntuación de fuerza" — ¿el daño del Arco pasa de
+  // 1/2 Fue + 8 a Fue + 8, o la Fuerza se suma a la tirada de ataque? ¿Vale la Ballesta ("con
+  // arco")? Hasta que Murillo lo aclare, texto con la prosa en todas las Armas Impulsoras; ni
+  // la fatiga ni el daño se calculan.
+  dote_arquero_poderoso: { especialidad: "armas_impulsoras" },
 };
 
 const claveDeEfecto = (e: Efecto) =>

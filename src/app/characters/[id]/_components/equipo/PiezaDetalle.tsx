@@ -7,6 +7,7 @@ import {
   disciplinaPorId,
   ETIQUETA_DERIVADO,
   aumentoPorId,
+  textoDanioModo,
 } from "@/lib/rules";
 import type {
   Armadura,
@@ -147,7 +148,7 @@ export function DetalleArma({ p }: { p: ArmaFuego }) {
           >
             <span className="uppercase text-foreground">{m.etiqueta}</span>
             <span className="tabular-nums text-muted">
-              dif. {signo(m.dificultad)} · {m.danio} {m.categoriaDanio}
+              dif. {signo(m.dificultad)} · {textoDanioModo(m)} {m.categoriaDanio}
             </span>
           </div>
         ))}

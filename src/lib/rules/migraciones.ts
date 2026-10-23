@@ -11,7 +11,9 @@ import { ESPECIES } from "../catalog/especies";
 import { MUNICION_GRANADA } from "../catalog/municion";
 import { FARMACOS } from "../catalog/medicina";
 import { ESPECIALIDADES_ARMA, claveNombreEspecialidad, especialidadPorNombre } from "../catalog/especialidades";
-import { HABILIDADES } from "./habilidades";
+import { ARMAS } from "../catalog/armasFuego";
+import { especialidadArmaFuego } from "../catalog/especialidadesArma";
+import { HABILIDADES, type HabilidadId } from "./habilidades";
 
 export type Migracion = {
   desde: number;
@@ -27,6 +29,36 @@ function normalizar(texto: string): string {
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
     .trim();
+}
+
+// Especialidades de Combate a Distancia que la v22 retira (foto de Drive 2026-10-23). El paso
+// 16 → 17 casa contra el catálogo de su época, así que las sigue conociendo; el 21 → 22 las
+// traduce a las nuevas.
+const RETIRADAS_V22 = [
+  { id: "armas_elasticas", label: "Armas Elásticas" },
+  { id: "armas_de_fuego_cortas", label: "Armas de Fuego Cortas" },
+  { id: "armas_de_fuego_largas", label: "Armas de Fuego Largas" },
+] as const;
+
+function retiradaPorNombre(habilidad: HabilidadId, texto: string): string | undefined {
+  if (habilidad !== "combate_distancia") return undefined;
+  const clave = claveNombreEspecialidad(texto);
+  return RETIRADAS_V22.find((e) => claveNombreEspecialidad(e.label) === clave || claveNombreEspecialidad(e.id) === clave)?.id;
+}
+
+// v21 → v22: id viejo → el nuevo; Armas de Fuego Largas, la especialidad (por su tipo) del
+// primer arma de fuego a dos manos del equipo, o null si no lleva ninguna.
+function traducirEspecialidadV22(id: string, equipo: unknown): string | null {
+  if (id === "armas_de_fuego_cortas") return "pistolas";
+  if (id === "armas_elasticas") return "armas_impulsoras";
+  if (id !== "armas_de_fuego_largas") return id;
+  const piezas = Array.isArray(equipo) ? equipo : [];
+  for (const p of piezas) {
+    const catalogoId = (p as { catalogoId?: unknown } | null)?.catalogoId;
+    const arma = ARMAS.find((a) => a.id === catalogoId);
+    if (arma && arma.empleo === "dos manos" && arma.tipo !== "arma_impulsora") return especialidadArmaFuego(arma);
+  }
+  return null;
 }
 
 export const MIGRACIONES: Migracion[] = [
@@ -244,9 +276,9 @@ export const MIGRACIONES: Migracion[] = [
         const ids: string[] = [];
         for (const t of textos) {
           if (typeof t !== "string" || !t.trim()) continue;
-          const esp = especialidadPorNombre(h.id, t);
-          if (esp) {
-            if (!ids.includes(esp.id)) ids.push(esp.id);
+          const id = especialidadPorNombre(h.id, t)?.id ?? retiradaPorNombre(h.id, t);
+          if (id) {
+            if (!ids.includes(id)) ids.push(id);
           } else avisos.push(`${h.label}: ${t.trim()}`);
         }
         habilidades[h.id] = { ...(entry as object), especialidades: ids };
@@ -257,10 +289,10 @@ export const MIGRACIONES: Migracion[] = [
             const { id, eleccion } = (d ?? {}) as { id?: unknown; eleccion?: unknown };
             if (id !== "dote_critico_mejorado" || typeof eleccion !== "string") return [d];
             const clave = claveNombreEspecialidad(eleccion);
-            const esp = ESPECIALIDADES_ARMA.find(
-              (e) => claveNombreEspecialidad(e.label) === clave || claveNombreEspecialidad(e.id) === clave,
-            );
-            if (esp) return [{ ...(d as object), eleccion: esp.id }];
+            const esp =
+              ESPECIALIDADES_ARMA.find((e) => claveNombreEspecialidad(e.label) === clave || claveNombreEspecialidad(e.id) === clave)?.id ??
+              retiradaPorNombre("combate_distancia", eleccion);
+            if (esp) return [{ ...(d as object), eleccion: esp }];
             avisos.push(`Crítico Mejorado: ${eleccion.trim()} (dote quitada)`);
             return [];
           })
@@ -302,6 +334,49 @@ export const MIGRACIONES: Migracion[] = [
       "Acciones favoritas (T-006): se añade favoritas, los ids de las acciones marcadas con " +
       "la estrella. Hasta ahora no se podía marcar ninguna: todas las fichas empiezan sin favoritas.",
     migrar: (ficha) => ({ ...ficha, favoritas: [] }),
+  },
+  {
+    desde: 21,
+    hasta: 22,
+    descripcion:
+      "Especialidades de Combate a Distancia (foto de Drive 2026-10-23, docs/sistema.md §3): de " +
+      "5 a 9. Armas de Fuego Cortas pasa a Pistolas y Armas Elásticas a Armas Impulsoras; Armas " +
+      "de Fuego Largas, a la del primer arma de fuego a dos manos del equipo (por su tipo), y si " +
+      "no lleva ninguna se quita y queda en avisoEspecialidades. Lo mismo con la elección de " +
+      "Crítico Mejorado: si se queda sin especialidad, la dote se quita y queda en el aviso.",
+    migrar: (ficha) => {
+      const avisos = Array.isArray(ficha.avisoEspecialidades) ? [...(ficha.avisoEspecialidades as unknown[])] : [];
+      const rHabilidades = (ficha.habilidades ?? {}) as Record<string, unknown>;
+      const habilidades: Record<string, unknown> = { ...rHabilidades };
+      const entry = rHabilidades.combate_distancia;
+      const viejas = entry && typeof entry === "object" ? (entry as { especialidades?: unknown }).especialidades : undefined;
+      if (Array.isArray(viejas)) {
+        const ids: string[] = [];
+        for (const v of viejas) {
+          if (typeof v !== "string") continue;
+          const id = traducirEspecialidadV22(v, ficha.equipo);
+          if (id === null) avisos.push("Combate a Distancia: Armas de Fuego Largas (sin arma de fuego a dos manos equipada)");
+          else if (!ids.includes(id)) ids.push(id);
+        }
+        habilidades.combate_distancia = { ...(entry as object), especialidades: ids };
+      }
+
+      // TODO(revisar): Crítico Mejorado en Armas de Fuego Largas sin arma a dos manos se quita
+      // (como en el paso 16 → 17 lo que no casa); el usuario solo decidió qué pasa con la
+      // especialidad de la habilidad.
+      const dotes = Array.isArray(ficha.dotes)
+        ? ficha.dotes.flatMap((d) => {
+            const { id, eleccion } = (d ?? {}) as { id?: unknown; eleccion?: unknown };
+            if (id !== "dote_critico_mejorado" || typeof eleccion !== "string") return [d];
+            const nueva = traducirEspecialidadV22(eleccion, ficha.equipo);
+            if (nueva) return [{ ...(d as object), eleccion: nueva }];
+            avisos.push("Crítico Mejorado: Armas de Fuego Largas (dote quitada)");
+            return [];
+          })
+        : ficha.dotes;
+
+      return { ...ficha, habilidades, dotes, avisoEspecialidades: avisos };
+    },
   },
 ];
 

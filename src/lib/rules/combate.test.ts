@@ -1372,3 +1372,40 @@ describe("escudo roto (durabilidad a 0, S86)", () => {
     assert.equal(bloqueo?.bloqueada, "Escudo roto: repáralo");
   });
 });
+
+// Armas Impulsoras (foto de Drive 2026-10-23, catalog/armasImpulsoras.ts).
+describe("Arco Táctico y Ballesta", () => {
+  const disparo = (s: Sheet) => accionesDeAtaque(s).find((t) => t.id === "ataque_fuego_x")!;
+
+  test("el Arco hace 1/2 Fue + 8 (la mitad hacia abajo) con la Fuerza de la ficha", () => {
+    for (const [fuerza, danio] of [[3, 9], [4, 10], [0, 8]] as const) {
+      const t = disparo(equipar(ficha({ atributos: { fuerza } }), { instanciaId: "x", catalogoId: "arco_tactico" }));
+      assert.equal(t.ataque?.modos[0].danio, danio, `Fuerza ${fuerza}`);
+      assert.equal(t.ataque?.modos[0].formulaDanio, "1/2 Fue + 8");
+    }
+  });
+
+  test("la Ballesta tiene daño fijo; las dos van con Combate a Distancia en Armas Impulsoras", () => {
+    const t = disparo(equipar(ficha({ atributos: { fuerza: 4 } }), { instanciaId: "x", catalogoId: "ballesta_pro_ue" }));
+    assert.equal(t.ataque?.modos[0].danio, 10);
+    assert.equal(t.ataque?.modos[0].formulaDanio, null);
+    assert.equal(t.habilidad, "combate_distancia");
+    assert.equal(t.especialidadArma, "armas_impulsoras");
+    assert.deepEqual(t.ajustesFijos, [{ valor: -2, fuente: "Ballesta Pro UE" }]);
+    assert.ok(t.condiciones?.some((c) => c.id === "tramo"));
+  });
+
+  test("munición especial sin adaptador: el selector sale con los tipos de los que hay stock", () => {
+    const sin = disparo(equipar(defaultSheet(), { instanciaId: "x", catalogoId: "arco_tactico" }));
+    assert.ok(!sin.condiciones?.some((c) => c.id === "municion"));
+    const s = ajustarMunicionEspecial(equipar(defaultSheet(), { instanciaId: "x", catalogoId: "arco_tactico" }), "incendiaria", 3);
+    const t = disparo(s);
+    assert.deepEqual(t.municionesEspeciales?.map((m) => [m.id, m.stock]), [["incendiaria", 3]]);
+    assert.ok(t.condiciones?.some((c) => c.id === "municion"));
+  });
+
+  test("un arma de fuego sigue necesitando el adaptador", () => {
+    const s = ajustarMunicionEspecial(equipar(defaultSheet(), { instanciaId: "x", catalogoId: "pistola_bellum" }), "incendiaria", 3);
+    assert.equal(disparo(s).municionesEspeciales, undefined);
+  });
+});

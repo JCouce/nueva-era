@@ -43,7 +43,7 @@ import {
 import { ARMAMENTO_PESADO, type ArmaPesada } from "./armamentoPesado";
 import { MUNICION_GRANADA, type MunicionGranada } from "./municion";
 import { ARMADURAS, type Armadura } from "./armaduras";
-import { ARMAS, type ArmaFuego, type ModoDisparo, type TipoArma } from "./armasFuego";
+import { ARMAS, textoDanioModo, type ArmaFuego, type ModoDisparo, type TipoArma } from "./armasFuego";
 import { MEJORAS_ESTANDAR, type MejoraEstandar } from "./mejorasEstandar";
 import { SUBSISTEMAS, type Subsistema } from "./subsistemas";
 import { MOVIMIENTO, type MejoraMovimiento } from "./movimiento";
@@ -65,7 +65,7 @@ import {
 
 // Reexports — ningún archivo externo necesita cambiar su import tras el split.
 export { ARMADURAS, type Armadura };
-export { ARMAS, type ArmaFuego, type ModoDisparo, type TipoArma };
+export { ARMAS, textoDanioModo, type ArmaFuego, type ModoDisparo, type TipoArma };
 export { MEJORAS_ESTANDAR, type MejoraEstandar };
 export { SUBSISTEMAS, type Subsistema };
 export { MOVIMIENTO, type MejoraMovimiento };

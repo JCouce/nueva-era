@@ -42,7 +42,7 @@ describe("catálogo de especialidades", () => {
       actitud: 6,
       atletismo: 8,
       biociencia: 5,
-      combate_distancia: 5,
+      combate_distancia: 9,
       combate_melee: 6,
       cultura: 4,
       interpretacion: 0,
@@ -55,13 +55,14 @@ describe("catálogo de especialidades", () => {
   });
 
   test("especialidades de arma: las de Combate Melee y Combate a Distancia", () => {
-    assert.equal(ESPECIALIDADES_ARMA.length, 11);
+    assert.equal(ESPECIALIDADES_ARMA.length, 15);
     assert.ok(ESPECIALIDADES_ARMA.every((e) => e.habilidad === "combate_melee" || e.habilidad === "combate_distancia"));
   });
 
   test("casar texto escrito a mano: sin tildes ni mayúsculas, singular/plural, solo en su habilidad", () => {
     assert.equal(especialidadPorNombre("biociencia", " INGENIERÍA genetica ")?.id, "ingenieria_genetica");
-    assert.equal(especialidadPorNombre("combate_distancia", "Armas de Fuego Larga")?.id, "armas_de_fuego_largas");
+    assert.equal(especialidadPorNombre("combate_distancia", "Arma Pesada")?.id, "armas_pesadas");
+    assert.equal(especialidadPorNombre("combate_distancia", "fusiles de precision")?.id, "fusiles_de_precision");
     assert.equal(especialidadPorNombre("combate_melee", "Escudo")?.id, "escudos");
     assert.equal(especialidadPorNombre("tecnociencia", "Biónica"), undefined);
     assert.equal(especialidadPorNombre("exploracion", "Rastreo"), undefined); // es una acción, no especialidad
@@ -94,13 +95,24 @@ describe("especialidad de cada arma (catalog/especialidadesArma.ts)", () => {
     assert.deepEqual(Object.keys(ESPECIALIDAD_ARMA).sort(), ids);
   });
 
-  test("armas de fuego por empleo (S44): da lo mismo que la tabla de ESP (pistolas cortas, el resto largas)", () => {
+  test("armas de fuego e impulsoras por su tipo, a la especialidad de su nombre", () => {
+    const esperada: Record<string, EspecialidadId> = {
+      pistola: "pistolas",
+      escopeta: "escopetas",
+      subfusil: "subfusiles",
+      fusil_asalto: "fusiles_de_asalto",
+      fusil_precision: "fusiles_de_precision",
+      ametralladora: "ametralladoras",
+      arma_impulsora: "armas_impulsoras",
+    };
     for (const a of ARMAS) {
-      assert.equal(ESPECIALIDAD_ARMA[a.id], a.tipo === "pistola" ? "armas_de_fuego_cortas" : "armas_de_fuego_largas", a.id);
+      assert.equal(ESPECIALIDAD_ARMA[a.id], esperada[a.tipo], a.id);
       assert.equal(ESPECIALIDAD_ARMA[a.id], especialidadArmaFuego(a), a.id);
     }
-    // Subfusiles a dos manos y ametralladoras: largas.
-    assert.ok(ARMAS.filter((a) => a.tipo === "subfusil" || a.tipo === "ametralladora").every((a) => a.empleo === "dos manos"));
+    assert.deepEqual(
+      ARMAS.filter((a) => a.tipo === "arma_impulsora").map((a) => a.id),
+      ["arco_tactico", "ballesta_pro_ue"],
+    );
   });
 
   test("toda fila de ataque con arma lleva una especialidad de la habilidad con la que ataca", () => {
@@ -168,7 +180,7 @@ describe("migración v16 → v17: especialidades de texto a ids", () => {
           biociencia: { valor: 2, especialidades: ["Medicina", "medicina", "Química"] },
           tecnociencia: { valor: 2, especialidades: ["Física", "Biónica"] },
           sigilo: { valor: 1, especialidades: ["Urbano"] },
-          combate_distancia: { valor: 1, especialidades: ["Armas de Fuego Larga"] },
+          combate_distancia: { valor: 1, especialidades: ["Armas de Fuego Larga", "Pistolas"] },
         },
       },
       17,
@@ -177,7 +189,8 @@ describe("migración v16 → v17: especialidades de texto a ids", () => {
     assert.deepEqual(h.biociencia.especialidades, ["medicina"]);
     assert.deepEqual(h.tecnociencia.especialidades, ["fisica"]);
     assert.deepEqual(h.sigilo.especialidades, []);
-    assert.deepEqual(h.combate_distancia.especialidades, ["armas_de_fuego_largas"]);
+    // Las de antes de la v22 se siguen casando (el paso 21 → 22 las traduce después).
+    assert.deepEqual(h.combate_distancia.especialidades, ["armas_de_fuego_largas", "pistolas"]);
     assert.deepEqual(ficha.avisoEspecialidades, ["Biociencia: Química", "Sigilo: Urbano", "Tecnociencia: Biónica"]);
     assert.equal(ficha.schemaVersion, 17);
   });

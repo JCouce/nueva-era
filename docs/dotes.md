@@ -16,9 +16,15 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **105 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 9 · Cultura 0 · Exploración 6 · Interpretación 0 · Sigilo 3 ·
+> Recuento: **108 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 12 · Cultura 0 · Exploración 6 · Interpretación 0 · Sigilo 3 ·
 > Tecnociencia 0 · Psiónica 8. Ver "Notas de transcripción" al final.
+>
+> **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
+> Distancia): *Arquero Poderoso*, *Pistolero* y *Pistolero Infernal*, transcritas con el mismo
+> criterio. Esa foto trae más dotes nuevas en Combate a Distancia (Fuego de Saturación, Fuego
+> de Supresión, Fuego de Barrera, Disparo de Interdicción, Lanzamiento Doble) y otros grupos
+> que **todavía no están aquí**: el resto del documento sigue siendo la foto del 2026-10-14.
 
 ## Actitud
 
@@ -1047,6 +1053,40 @@ Si atacas a un enemigo en larga distancia el penalizador se reduce en 1 punto.
 **Efecto:**
 No hay penalizador por larga distancia en ataques de especialidad.
 
+### Arquero Poderoso
+
+**Coste:** 4
+
+**Requisitos:**
+- Armas Impulsoras 3 · especialidad (Combate a Distancia)
+- Potencia 2 · atributo aplicado
+
+**Efecto:**
+Con el gasto de un punto de fatiga y como acción compleja el personaje puede realizar un ataque con arco sumando su total de puntuación de **fuerza**.
+
+### Pistolero
+
+**Coste:** 3
+
+**Requisitos:**
+- Pistolas 2 · especialidad (Combate a Distancia)
+
+**Efecto:**
+Si el personaje lleva una pistola en cada mano, puede efectuar un ataque con ambas como acción estándar, para ello debe llevar a cabo ataques que normalmente se resuelvan como acción simple. Ambos disparos deben ir destinados a un mismo objetivo que esté dentro de su alcance, cada ataque aumenta su dificultad en 1, se resuelve cada tirada por separado así como el daño.
+
+Si el personaje tiene la dote de desenfundado rápido puede desenfudar *(sic)* ambas pistolas como acción gratuita y realizar este ataque estándar de dos disparos simultáneos.
+
+### Pistolero Infernal
+
+**Coste:** 3
+
+**Requisitos:**
+- Pistolero · dote previa
+- Pistolas 2 · especialidad (Combate a Distancia)
+
+**Efecto:**
+Si el personaje lleva una pistola a cada mano puede realizar dos ataques de fuego automático de forma simultánea como acción compleja.
+
 ## Cultura
 
 *(Grupo vacío en la fuente: solo el título, sin dotes.)*
@@ -1338,6 +1378,8 @@ Para canalizar la energía sin lesionarse, el personaje deberá realizar de form
 - Requisitos con "o", sin partir: *Apoyo* (Empatía 1 o Liderazgo 1), *Crítico Mejorado*,
   *Desenfundado Rápido*, *Asesino* y *Golpe Entorpecedor* (Combate Melee N o Combate a
   Distancia N).
+- *Pistolero Infernal*: la fuente da "Pistolero, Pistolas 2" en una línea; son dos
+  requisitos (dote previa y especialidad) y van en dos.
 - *Imitación* pide **Interpretación 1**: habilidad, aunque está en el grupo Actitud.
 - *Autocuidados* pide **Actitud 2** (habilidad) y *Saber es Poder* **Biociencia 3**
   (habilidad), no una especialidad.
@@ -1354,7 +1396,7 @@ Para canalizar la energía sin lesionarse, el personaje deberá realizar de form
   Derribo Mejorado: "criticamente". Derribo Brutal: "estandar", "el daño el se resuelve".
   Desenfundado Rápido: requisito "Combate a Melee". Golpe Fatigante: "sufrira",
   "asifxia". Golpe Entorpecedor: "Pirmero", "táctico" (por táctica), "casua". Gran
-  Puntería: "critico". Vigilancia Táctica: "resuleta". Maestría Psiónica: requisito
+  Puntería: "critico". Pistolero: "desenfudar". Vigilancia Táctica: "resuleta". Maestría Psiónica: requisito
   "Potencia Psíónica", "casa aturdimiento". Saber es Poder: "el proceso de biológico".
   Impacto Métrico: "volado", "frme", "po cada". Impacto Métrico Relámpago: "siempre y
   cuando que".

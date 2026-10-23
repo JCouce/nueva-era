@@ -90,7 +90,7 @@ const HERRAMIENTAS_CON_NIVEL: Herramienta[] = [
 // pinta su lista debajo; cambiar de categoría es un tap, no un scroll.
 const CATEGORIAS = [
   { id: "armaduras", titulo: "Armaduras", cantidad: ARMADURAS.length },
-  { id: "armas", titulo: "Armas de fuego", cantidad: ARMAS.length },
+  { id: "armas", titulo: "Armas a distancia", cantidad: ARMAS.length },
   {
     id: "melee",
     titulo: "Armas melee",
@@ -120,7 +120,7 @@ type CategoriaId = (typeof CATEGORIAS)[number]["id"];
 // Melee/Kerzul, pero dentro de una sola categoría en vez de dos tiles.
 // Exportado: ConstruccionModal.tsx (Fabricar, docs/tareas.md tarea 8) lo
 // reutiliza para subdividir Armas de fuego igual que aquí, sin duplicar las
-// 6 etiquetas.
+// etiquetas.
 export const TIPOS_ARMA: { tipo: TipoArma; titulo: string }[] = [
   { tipo: "pistola", titulo: "Pistolas" },
   { tipo: "escopeta", titulo: "Escopetas" },
@@ -128,6 +128,7 @@ export const TIPOS_ARMA: { tipo: TipoArma; titulo: string }[] = [
   { tipo: "fusil_asalto", titulo: "Fusiles de Asalto" },
   { tipo: "fusil_precision", titulo: "Fusiles de Precisión" },
   { tipo: "ametralladora", titulo: "Ametralladoras" },
+  { tipo: "arma_impulsora", titulo: "Armas Impulsoras" },
 ];
 
 // Las únicas cuatro familias que viven dentro de otra pieza (armadura o

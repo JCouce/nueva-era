@@ -427,7 +427,7 @@ describe("efectos de dotes en las tiradas de arma (D2b-1)", () => {
       const m = enLarga(f, fila(f, "ataque_fuego_"));
       return { delta: m.modificador - sinDotes(esp), desglose: m.desglose };
     };
-    const conLargas: EspecialidadId[] = ["armas_de_fuego_largas"];
+    const conLargas: EspecialidadId[] = ["fusiles_de_asalto"];
 
     test("básica: +1 en larga, vaya o no en especialidad; nada en media", () => {
       assert.equal(conDotes([{ id: "dote_tirador_de_larga_distancia" }], []).delta, 1);
@@ -460,7 +460,7 @@ describe("efectos de dotes en las tiradas de arma (D2b-1)", () => {
   describe("Crítico Mejorado: crítico con 5, fijo y sin casilla, en su especialidad", () => {
     const f = resolver(
       armado(
-        fichaCombate([{ id: "dote_critico_mejorado", eleccion: "espadas_y_dagas" }, { id: "dote_bloqueo" }], { esp: ["espadas_y_dagas", "armas_de_fuego_cortas"] }),
+        fichaCombate([{ id: "dote_critico_mejorado", eleccion: "espadas_y_dagas" }, { id: "dote_bloqueo" }], { esp: ["espadas_y_dagas", "pistolas"] }),
         "espada_cuchillo_combate",
         "pistola_mosquito",
       ),
@@ -610,5 +610,50 @@ describe("D2b-2: Bloqueo y Combate Sutil habilitan sus filas (§9.2)", () => {
   test("sin Bloqueo, los textos de bloqueo de otras dotes no tienen dónde ir (no hay fila)", () => {
     const f = resolver(armado(fichaCombate([{ id: "dote_contraataque_rapido" }, { id: "dote_combinacion" }]), "espada"));
     assert.equal(bloquear(f), undefined);
+  });
+});
+
+// Foto de Drive 2026-10-23: dotes de Pistolas y Armas Impulsoras.
+describe("Pistolero, Pistolero Infernal y Arquero Poderoso", () => {
+  const casillaDoble = (t: Accion) => (t.condiciones ?? []).find((c) => c.id.startsWith("dote_pistolero"));
+
+  test("Pistolero: casilla «Disparo doble» −1 y sus textos, solo en pistolas empuñadas", () => {
+    const f = resolver(
+      armado(fichaCombate([{ id: "dote_pistolero" }], { esp: ["pistolas", "fusiles_de_asalto"] }), "pistola_bellum", "fusil_asalto_impetus"),
+    );
+    const pistola = fila(f, "ataque_fuego_a0");
+    const c = casillaDoble(pistola);
+    assert.ok(c && c.tipo === "toggle" && c.valorActivo === -1 && /Disparo doble/.test(c.etiqueta));
+    assert.match(pistola.nota ?? "", /dos disparos que normalmente sean acción simple/);
+    assert.match(pistola.nota ?? "", /Desenfundado Rápido/);
+    const fusil = fila(f, "ataque_fuego_a1");
+    assert.equal(casillaDoble(fusil), undefined);
+    assert.doesNotMatch(fusil.nota ?? "", /Pistolero/);
+  });
+
+  test("Pistolero no llega al disparo del Proyector de Pulso (Pistolas, pero no se empuña)", () => {
+    let s = fichaCombate([{ id: "dote_pistolero" }], { esp: ["pistolas"] });
+    s = equipar(s, { instanciaId: "a", catalogoId: "armadura_pesada" });
+    s = equipar(s, { instanciaId: "pp", catalogoId: "proyector_pulso", nivel: 1, instaladoEnId: "a" });
+    const t = fila(resolver(s), "ataque_proyector_pulso_combate_distancia_");
+    assert.equal(t.especialidadArma, "pistolas");
+    assert.equal(casillaDoble(t), undefined);
+  });
+
+  test("Pistolero Infernal pide Pistolero; su texto sale en las pistolas", () => {
+    const sin = resolver(armado(fichaCombate([{ id: "dote_pistolero_infernal" }], { esp: ["pistolas"] }), "pistola_bellum"));
+    assert.doesNotMatch(fila(sin, "ataque_fuego_").nota ?? "", /fuego automático a la vez/);
+    const con = resolver(
+      armado(fichaCombate([{ id: "dote_pistolero" }, { id: "dote_pistolero_infernal" }], { esp: ["pistolas"] }), "pistola_bellum"),
+    );
+    assert.match(fila(con, "ataque_fuego_").nota ?? "", /dos ataques de fuego automático a la vez, como acción compleja/);
+  });
+
+  test("Arquero Poderoso: texto en las armas impulsoras, no en las de fuego", () => {
+    const f = resolver(
+      armado(fichaCombate([{ id: "dote_arquero_poderoso" }], { esp: ["armas_impulsoras"] }), "arco_tactico", "pistola_bellum"),
+    );
+    assert.match(fila(f, "ataque_fuego_a0").nota ?? "", /Solo con arco, como acción compleja y gastando 1 punto de fatiga.*\(Arquero Poderoso\)/);
+    assert.doesNotMatch(fila(f, "ataque_fuego_a1").nota ?? "", /Arquero Poderoso/);
   });
 });

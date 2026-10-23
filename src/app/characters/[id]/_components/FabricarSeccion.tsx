@@ -77,7 +77,7 @@ const KERZUL_FABRICABLES = ARMAS_MELEE_KERZUL.filter((p) => p.coste !== null);
 
 const CATEGORIAS = [
   { id: "armaduras", titulo: "Armaduras", cantidad: ARMADURAS.length },
-  { id: "armasFuego", titulo: "Armas de fuego", cantidad: ARMAS.length },
+  { id: "armasFuego", titulo: "Armas a distancia", cantidad: ARMAS.length },
   { id: "melee", titulo: "Armas melee", cantidad: ARMAS_MELEE_FABRICABLES.length },
   { id: "kerzul", titulo: "Armas Kerzul", cantidad: KERZUL_FABRICABLES.length },
   { id: "medicina", titulo: "Medicina", cantidad: FARMACOS.length },

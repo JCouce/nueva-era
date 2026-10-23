@@ -7,6 +7,7 @@ import type { Sheet } from "./sheet";
 import type { ModificadorConFuente } from "./modificadores";
 import {
   equipoPorId,
+  textoDanioModo,
   type ArmaFuego,
   type Equipo,
   type TipoArma,
@@ -16,6 +17,7 @@ import type { ArmaPesada } from "../catalog/armamentoPesado";
 import {
   MUNICION_GRANADA,
   ALCANCE_ARROJADA,
+  MUNICION_ESPECIAL,
   municionEspecialPorId,
   type MunicionGranada,
 } from "../catalog/municion";
@@ -237,22 +239,27 @@ function condicionModo(
 // selector solo existe si hay al menos uno; "Normal" es siempre la opción
 // por defecto. Sin valor numérico en la tirada de ataque: la munición cambia
 // el daño y el gasto, no la dificultad.
-function municionesDeArma(sheet: Sheet, instanciaId: string): NonNullable<Accion["municionesEspeciales"]> {
-  return sheet.equipo.flatMap((p) => {
-    if (p.instaladoEnId !== instanciaId || !p.catalogoId.startsWith(PREFIJO_MEJORA_MUNICION)) return [];
-    const m = municionEspecialPorId(p.catalogoId.slice(PREFIJO_MEJORA_MUNICION.length));
-    if (!m) return [];
-    return [
-      {
-        id: m.id,
-        label: m.label,
-        stock: sheet.municionEspecial[m.id] ?? 0,
-        ajusteDanio: m.ajusteDanio,
-        ignoraBlindaje: m.ignoraBlindaje,
-        efecto: m.efecto,
-      },
-    ];
-  });
+//
+// Armas impulsoras (Arco, Ballesta): "su munición puede llevar mejoras de munición especial
+// sin que el arma necesite estar adaptada" (docs/fuente/equipamiento.md) → sin adaptador,
+// los tipos de los que la ficha tenga stock.
+function municionesDeArma(sheet: Sheet, arma: ArmaFuego, instanciaId: string): NonNullable<Accion["municionesEspeciales"]> {
+  const tipos =
+    arma.tipo === "arma_impulsora"
+      ? MUNICION_ESPECIAL.filter((m) => (sheet.municionEspecial[m.id] ?? 0) > 0)
+      : sheet.equipo.flatMap((p) => {
+          if (p.instaladoEnId !== instanciaId || !p.catalogoId.startsWith(PREFIJO_MEJORA_MUNICION)) return [];
+          const m = municionEspecialPorId(p.catalogoId.slice(PREFIJO_MEJORA_MUNICION.length));
+          return m ? [m] : [];
+        });
+  return tipos.map((m) => ({
+    id: m.id,
+    label: m.label,
+    stock: sheet.municionEspecial[m.id] ?? 0,
+    ajusteDanio: m.ajusteDanio,
+    ignoraBlindaje: m.ignoraBlindaje,
+    efecto: m.efecto,
+  }));
 }
 
 function condicionMunicion(municiones: NonNullable<Accion["municionesEspeciales"]>): CondicionTirada {
@@ -274,11 +281,13 @@ function condicionMunicion(municiones: NonNullable<Accion["municionesEspeciales"
   };
 }
 
-function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Accion {
+// `mods`: para el daño que sale de Fuerza (Arco Táctico, `danioFuerza`).
+function tiradaDeArmaFuego(sheet: Sheet, mods: ModificadorConFuente[], arma: ArmaFuego, instanciaId: string): Accion {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
   const modo = condicionModo(modosConId);
+  const fuerza = arma.modos.some((m) => m.danioFuerza) ? atributoEfectivo(sheet, "fuerza", mods) : 0;
 
-  const municiones = municionesDeArma(sheet, instanciaId);
+  const municiones = municionesDeArma(sheet, arma, instanciaId);
   const condiciones = [condicionTramo(arma), modo, municiones.length > 0 ? condicionMunicion(municiones) : null].filter(
     (c): c is CondicionTirada => c !== null,
   );
@@ -315,8 +324,9 @@ function tiradaDeArmaFuego(sheet: Sheet, arma: ArmaFuego, instanciaId: string): 
     ataque: {
       modos: modosConId.map((m) => ({
         id: m.id,
-        danio: m.danio,
-        formulaDanio: null,
+        // "1/2 Fue + N": la mitad hacia abajo (TODO(revisar) en catalog/armasImpulsoras.ts).
+        danio: m.danioFuerza === "mitad" ? m.danio + Math.floor(fuerza / 2) : m.danio,
+        formulaDanio: m.danioFuerza ? textoDanioModo(m) : null,
         categoriaDanio: m.categoriaDanio,
         gasto: gastoDelModo(m.etiqueta, arma.municion),
       })),
@@ -1000,7 +1010,7 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
     const golpeBayoneta = tiradaGolpeBayoneta(sheet, mods, arma, pieza.instanciaId);
     const bloqueoBayoneta = tiradaBloqueoBayoneta(sheet, arma, pieza.instanciaId);
     return [
-      tiradaDeArmaFuego(sheet, arma, pieza.instanciaId),
+      tiradaDeArmaFuego(sheet, mods, arma, pieza.instanciaId),
       ...(lanzagranadas ? [lanzagranadas] : []),
       ...(golpeBayoneta ? [golpeBayoneta] : []),
       ...(bloqueoBayoneta ? [bloqueoBayoneta] : []),

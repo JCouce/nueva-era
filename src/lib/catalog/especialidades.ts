@@ -40,12 +40,16 @@ export const ESPECIALIDADES = [
   { id: "espadas_y_dagas", label: "Espadas y Dagas", habilidad: "combate_melee" },
   { id: "flagelos", label: "Flagelos", habilidad: "combate_melee" },
   { id: "pelea", label: "Pelea", habilidad: "combate_melee" },
-  // Combate a Distancia. La fuente dice "Armas de Fuego Larga" (sic): la etiqueta va en
-  // plural como su pareja "Cortas".
+  // Combate a Distancia (foto de Drive 2026-10-23: sustituye a Armas Elásticas y Armas de
+  // Fuego Cortas/Largas; las fichas viejas, migración v21 → v22).
   { id: "armas_arrojadizas", label: "Armas Arrojadizas", habilidad: "combate_distancia" },
-  { id: "armas_elasticas", label: "Armas Elásticas", habilidad: "combate_distancia" },
-  { id: "armas_de_fuego_cortas", label: "Armas de Fuego Cortas", habilidad: "combate_distancia" },
-  { id: "armas_de_fuego_largas", label: "Armas de Fuego Largas", habilidad: "combate_distancia" },
+  { id: "armas_impulsoras", label: "Armas Impulsoras", habilidad: "combate_distancia" },
+  { id: "pistolas", label: "Pistolas", habilidad: "combate_distancia" },
+  { id: "escopetas", label: "Escopetas", habilidad: "combate_distancia" },
+  { id: "subfusiles", label: "Subfusiles", habilidad: "combate_distancia" },
+  { id: "fusiles_de_asalto", label: "Fusiles de Asalto", habilidad: "combate_distancia" },
+  { id: "fusiles_de_precision", label: "Fusiles de Precisión", habilidad: "combate_distancia" },
+  { id: "ametralladoras", label: "Ametralladoras", habilidad: "combate_distancia" },
   { id: "armas_pesadas", label: "Armas Pesadas", habilidad: "combate_distancia" },
   // Cultura
   { id: "economia", label: "Economía", habilidad: "cultura" },
@@ -101,7 +105,7 @@ export const ESPECIALIDADES_ARMA: readonly Especialidad[] = ESPECIALIDADES.filte
 
 // Para casar texto escrito a mano con el catálogo (migración de fichas de texto libre):
 // minúsculas, sin tildes, espacios/"_"/"-" iguales y sin la "s" final de cada palabra,
-// para que "Armas de Fuego Larga" y "Escudo" casen con su especialidad.
+// para que "Arma Pesada" y "Escudo" casen con su especialidad.
 export function claveNombreEspecialidad(texto: string): string {
   return texto
     .normalize("NFD")

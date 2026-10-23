@@ -29,7 +29,7 @@ cambie, se edita aquí y se anota qué lo tumbó.
 | `CONV-1` | Conversación con Murillo (diseñador) — aumentos, psiónica cuántica | 2026-08-26 |
 | `ESP` | `docs/especies.md` (transcrito de `Especies.pdf`) — las 5 especies, castas y linajes Manduk | 2026-09-26 |
 | `HOJA3` | `docs/fuente/creacion-de-personaje.md` (sync de Drive) — revisión de `HOJA2`: pool de Dotes A-E, Vida/Fatiga base 10 | 2026-10-14 |
-| `DOTES` | `docs/fuente/dotes.md` (sync de Drive), transcrito en `docs/dotes.md` — 105 dotes | 2026-10-14 |
+| `DOTES` | `docs/fuente/dotes.md` (sync de Drive), transcrito en `docs/dotes.md` — 105 dotes, +3 de la foto del 2026-10-23 (Arquero Poderoso, Pistolero, Pistolero Infernal) | 2026-10-14 / 2026-10-23 |
 | `AUM` | `docs/fuente/aumentos.md` (sync de Drive), transcrito en `docs/aumentos.md` — 26 operaciones genéticas y 11 implantes (5 en proceso) | 2026-10-16 |
 | `CONV-n` | Conversaciones con el diseñador (se anotan abajo según lleguen) | — |
 
@@ -143,8 +143,8 @@ habilidades. Se sustituye la habilidad entera, no se añade como especialidad de
   primera especialidad va incluida (S3), pero elegirla no bloquea nada.
 - **Ataques y bloqueos con arma: la especialidad la pone el arma** (tanda ESP, decisión del
   usuario; los bloqueos desde D2b-1, S40). Cada arma tiene la suya
-  (`src/lib/catalog/especialidadesArma.ts`: melee y pesado por tabla, armas de fuego por su
-  empleo, S44); si la ficha la tiene en la habilidad con la que tira, la tirada va entera
+  (`src/lib/catalog/especialidadesArma.ts`: melee y pesado por tabla, armas de fuego e
+  impulsoras por su tipo, desde 2026-10-23); si la ficha la tiene en la habilidad con la que tira, la tirada va entera
   sin tocar nada, y si no, a la mitad. Esas filas no ofrecen selector. El resto de tiradas
   siguen con el selector sí/no de la fila.
 
@@ -202,11 +202,11 @@ Potencia (por defecto) o Reflejos+Potencia-para-daño (`aplicadoSutil`/`danioSut
 (`sustitucion_aplicado`, ver `docs/motor.md`) porque no pasa por `CondicionTirada` — su
 valor depende de la ficha (Potencia - Fuerza), no es un número fijo del catálogo.
 
-### Catálogo de especialidades `[FIRME · docs/fuente/habilidades.md + usuario 2026-10-15]`
+### Catálogo de especialidades `[FIRME · docs/fuente/habilidades.md (foto 2026-10-23) + usuario 2026-10-15]`
 
 Lista cerrada, sacada de la línea "Especialidades:" de cada habilidad en
 `docs/fuente/habilidades.md`. En código: `src/lib/catalog/especialidades.ts` (`{ id, label,
-habilidad }`, ids estables en snake_case sin tildes; añadir una es una fila). 42 en total.
+habilidad }`, ids estables en snake_case sin tildes; añadir una es una fila). 46 en total.
 
 | Habilidad | Especialidades (id) |
 |---|---|
@@ -214,22 +214,34 @@ habilidad }`, ids estables en snake_case sin tildes; añadir una es una fila). 4
 | Atletismo (8) | Acrobacias, Carrera, Equilibrio, Escalada, Escapismo, Lanzamiento, Nado, Salto (`salto`: la fuente lista "Salto" y describe Horizontal y Vertical) |
 | Biociencia (5) | Biónica `bionica`, Bioquímica `bioquimica`, Biotecnología `biotecnologia`, Ingeniería Genética `ingenieria_genetica`, Medicina `medicina` |
 | Combate Melee (6) | Armas Cortas `armas_cortas`, Armas de Asta `armas_de_asta`, Escudos `escudos`, Espadas y Dagas `espadas_y_dagas`, Flagelos `flagelos`, Pelea `pelea` |
-| Combate a Distancia (5) | Armas Arrojadizas `armas_arrojadizas`, Armas Elásticas `armas_elasticas`, Armas de Fuego Cortas `armas_de_fuego_cortas`, Armas de Fuego Largas `armas_de_fuego_largas` (la fuente dice "Larga" *(sic)*), Armas Pesadas `armas_pesadas` |
+| Combate a Distancia (9) | Armas Arrojadizas `armas_arrojadizas`, Armas Impulsoras `armas_impulsoras`, Pistolas `pistolas`, Escopetas `escopetas`, Subfusiles `subfusiles`, Fusiles de Asalto `fusiles_de_asalto`, Fusiles de Precisión `fusiles_de_precision`, Ametralladoras `ametralladoras`, Armas Pesadas `armas_pesadas` |
 | Cultura (4) | Economía `economia`, Historia `historia`, Lingüística `linguistica`, Sociedad `sociedad` |
 | Exploración (3) | Investigación `investigacion`, Táctica `tactica`, Supervivencia `supervivencia` |
 | Tecnociencia (5) | Astrografía `astrografia`, Física `fisica`, Informática `informatica`, Mecánica `mecanica`, Química `quimica` |
 | Interpretación, Sigilo | — (la fuente no trae lista: no admiten especialidades, S39) |
+
+**Cambio de la foto de Drive del 2026-10-23** (`docs/fuente/habilidades.md`): Combate a
+Distancia pasa de 5 especialidades a 9; desaparecen Armas Elásticas y Armas de Fuego
+Cortas/Largas. Las fichas viejas se migran en la v22 (`rules/migraciones.ts`, decisión del
+usuario): Cortas → Pistolas, Elásticas → Armas Impulsoras, Largas → la especialidad del
+primer arma de fuego a dos manos del equipo (por su tipo) o, si no lleva ninguna, se quita y
+queda en el aviso de especialidades; la elección de *Crítico Mejorado* sigue la misma
+traducción, y si se queda sin especialidad la dote se quita (`TODO(revisar)`, no lo decidió
+el usuario). Se aplica igual a los NPCs (comparten `parseSheet`).
 
 Rastreo, Subsistencia y Trato con Animales son **acciones** de Supervivencia, no
 especialidades. Química es de Tecnociencia y Biónica de Biociencia (la fuente manda sobre lo
 citado de pasada en `EQUIP`).
 
 **Especialidad por arma** (`especialidadesArma.ts`): cada grupo de Combate Melee del catálogo
-de equipo va a la especialidad de su nombre; pistolas a Armas de Fuego Cortas; escopetas,
-subfusiles, fusiles y ametralladoras a Largas; armamento pesado a Armas Pesadas; lanzar (arma
-arrojadiza o granada, Potencia + Atletismo) a Lanzamiento. Las dudosas llevan
-`TODO(revisar)` en la tabla (Armas Mecánicas, Kerzul mixtas, subfusiles, ametralladoras,
-Bayoneta, Lanzagranadas integrado, Proyector de Pulso). Un test obliga a que toda fila de
+de equipo va a la especialidad de su nombre; las armas de fuego, por su `tipo`, a la
+especialidad que se llama como él (pistola → Pistolas, escopeta → Escopetas, subfusil →
+Subfusiles, fusil de asalto/de precisión → Fusiles de Asalto/de Precisión, ametralladora →
+Ametralladoras; usuario, 2026-10-23, sustituye a S44); Arco Táctico y Ballesta a Armas
+Impulsoras; el disparo del Proyector de Pulso a Pistolas; armamento pesado y lanzagranadas
+integrado a Armas Pesadas; lanzar (arma arrojadiza o granada, Potencia + Atletismo) a
+Lanzamiento. Las dudosas llevan comentario en la tabla (Armas Mecánicas, Kerzul mixtas,
+Bayoneta, Lanzagranadas integrado). Un test obliga a que toda fila de
 ataque con arma tenga una especialidad de la habilidad con la que ataca (salvo el disparo del
 Proyector de Pulso con Tecnociencia, sin especialidad a propósito).
 
@@ -447,10 +459,12 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
 (regla del usuario); solo se pregunta ante duda real.
 
 ### 9.1 Qué es una dote `[FIRME · DOTES]`
-- **105 dotes** con nombre, **coste** en puntos, **requisitos** y efecto en prosa,
+- **108 dotes** con nombre, **coste** en puntos, **requisitos** y efecto en prosa,
   ordenadas bajo la habilidad a la que pertenecen: Actitud 16 · Atletismo 22 · Biociencia 9 ·
-  Combate Melee 32 · Combate a Distancia 9 · Exploración 6 · Sigilo 3 · Tecnociencia 8 (todas
-  en el subgrupo **Psiónica**). Cultura e Interpretación, sin dotes todavía.
+  Combate Melee 32 · Combate a Distancia 12 · Exploración 6 · Sigilo 3 · Tecnociencia 8 (todas
+  en el subgrupo **Psiónica**). Cultura e Interpretación, sin dotes todavía. Las 3 últimas de
+  Combate a Distancia (*Arquero Poderoso*, *Pistolero*, *Pistolero Infernal*) son de la foto
+  del 2026-10-23; el resto de dotes nuevas de esa foto no está transcrito todavía.
 - El grupo solo ordena: no es requisito (*Mata Gigantes*, en Combate Melee, pide Táctica).
 - **Pool de creación** por letra: A 18 · B 15 · C 12 · D 9 · E 6 (`HOJA3`). Lo que sobra al
   aprobar la ficha **se pierde**.
@@ -708,6 +722,14 @@ o eran texto. Decidido:
   −2; *Saber es Poder* no pide psiónica; vector descendente daño letal que se suma; nivel
   empleado con tope en Singularidad/Traslación y la fatiga se paga aunque falle; "volado" =
   voleo; la ventaja no se acumula.
+- **Dotes de Pistolas y Armas Impulsoras** (foto 2026-10-23; lectura de esta tanda, sin
+  confirmar): *Pistolero* = casilla «Disparo doble» −1 ("cada ataque aumenta su dificultad
+  en 1") más texto, solo en armas de la especialidad Pistolas empuñadas (no el Proyector de
+  Pulso). *Pistolero Infernal* y *Arquero Poderoso*, solo texto en sus disparos: la app no
+  cobra la fatiga de Arquero Poderoso ni recalcula el daño. `TODO(revisar)` en
+  `scripts/generar-catalogo-dotes.ts` (FILTROS_ARMA): si "sumando su total de puntuación de
+  fuerza" es daño Fue + 8 en vez de 1/2 Fue + 8 o un bono a la tirada, si vale la Ballesta
+  ("con arco"), y si Pistolero Infernal arrastra el +1 de dificultad de Pistolero.
 
 ### 9.6 Pendiente de Murillo
 Efecto de *Olfato de Investigador*; regla del sobreesfuerzo biológico; mejoradas sin la
@@ -1819,6 +1841,17 @@ transcribir — Medicina y Farmacia, Herramientas y Accesorios, y Otras Armas a 
 > mecanizado va en la tirada, no como bono de personaje. Con esto se cierra el catálogo de
 > equipo entero — las cuatro grandes familias que quedaban (Medicina, Herramientas, Armamento
 > Pesado, Granadas) están todas transcritas y enganchadas a tiradas donde correspondía.
+>
+> **Armas Impulsoras (foto de Drive 2026-10-23), hecho.** `catalog/armasImpulsoras.ts`: Arco
+> Táctico y Ballesta Pro UE, especialidad Armas Impulsoras. Forma de `ArmaFuego` con `tipo:
+> "arma_impulsora"` (su tabla trae lo mismo: acción, dificultad, daño, corta/media/larga,
+> munición, mejoras), así que comparten el ataque de `combate.ts` y salen en la Tienda con las
+> armas a distancia. Motor propio: el daño del Arco "1/2 Fue + 8" (`danioFuerza: "mitad"`,
+> con la Fuerza efectiva y la mitad hacia abajo, como S28) y la munición especial sin
+> adaptador (el selector de munición sale con el stock de la ficha). Texto: recarga, Crítico
+> de Hemorragia (1d6 turnos) y Silencioso, en `especial`. `TODO(revisar)` en el archivo: la
+> fuente no trae flechas ni virotes (usan el recurso genérico de balas), los tramos de
+> distancia son los de "Armas de Fuego" y qué mejoras de arma admiten.
 
 ## 13. Progresión `[PARCIAL · HOJA2]`
 
@@ -2232,7 +2265,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S41 | **Lanzar (arma melee arrojadiza o granada) usa Lanzamiento (Atletismo)**, no Armas Arrojadizas (Combate a Distancia), porque la tirada es Potencia + Atletismo (INFERIDO 2026-09-28). `TODO(revisar)` en `especialidadesArma.ts`. | La especialidad tiene que ser de la habilidad con la que se tira. Tanda ESP (2026-10-15). **Confirmado por el usuario (Especialidades ESP, 2026-10-15).** |
 | S42 | **Migración v17**: cada texto de especialidad se casa por nombre normalizado (sin tildes ni mayúsculas, sin la "s" final de cada palabra) con una especialidad de **su** habilidad; lo que no casa se quita y se guarda en `avisoEspecialidades` (la pestaña Habilidades lo enseña con un botón para descartarlo). La elección de *Crítico Mejorado* se casa igual con una especialidad de arma; si no casa, la dote se quita (y va al aviso). | Decisión del usuario (ESP): no hay fichas activas, no se inventan equivalencias (Biónica en Tecnociencia o Química en Biociencia van al aviso). |
 | S43 | ***Crítico Mejorado*: lista cerrada de especialidades de arma** (todas las de Combate Melee y a Distancia, Pelea y Escudos incluidas), y solo las que la ficha tiene **en la habilidad con la que cumple el requisito** (≥ 3). `TODO(revisar)` si Pelea o Escudos no cuentan como "especializaciones en armas". | Prosa: "una de sus especializaciones en armas para la habilidad con la que cumpla el requisito". Tanda ESP (2026-10-15). **Confirmado por el usuario (Especialidades ESP, 2026-10-15): Pelea y Escudos cuentan.** |
-| S44 | **Armas de fuego por empleo**: a una mano, Armas de Fuego Cortas; a dos manos, Largas; ametralladoras, Largas (no Pesadas). Armas Mecánicas, Kerzul mixtas (Espadas y Dagas), Bayoneta, lanzagranadas integrado y Proyector de Pulso: como los dejó la tanda ESP (`especialidadesArma.ts`). | Usuario, Especialidades ESP (2026-10-15). Hoy la regla da lo mismo que la tabla (los subfusiles son a dos manos); se construye como regla con D2b-1 para armas futuras. **Construido (D2b-1, 2026-10-15)**: `especialidadArmaFuego` en `especialidadesArma.ts`, con test de equivalencia. |
+| S44 | ~~**Armas de fuego por empleo**: a una mano, Armas de Fuego Cortas; a dos manos, Largas; ametralladoras, Largas (no Pesadas).~~ **Sustituido (2026-10-23, foto de Drive `docs/fuente/habilidades.md` + usuario):** las especialidades de Combate a Distancia pasan a ser por familia de arma, y cada arma de fuego va por su `tipo` a la de su nombre (§3, "Especialidad por arma"); el Proyector de Pulso a Pistolas. Lo que sigue del supuesto vale para el resto: Armas Mecánicas, Kerzul mixtas (Espadas y Dagas), Bayoneta y lanzagranadas integrado (Armas Pesadas): como los dejó la tanda ESP (`especialidadesArma.ts`). | Usuario, Especialidades ESP (2026-10-15). **Construido (D2b-1, 2026-10-15)**: `especialidadArmaFuego` en `especialidadesArma.ts`. **Sustitución construida (2026-10-23)**: `especialidadArmaFuego` va por `ESPECIALIDAD_POR_TIPO_ARMA`; fichas viejas, migración v21 → v22. |
 | S45 | **Familia y empleo de cada tirada de arma.** Bayoneta: golpe melee y bloqueo melee, a dos manos. Proyector de Pulso por su tipo: Aguijón ataque melee (su bloqueo, bloquear melee), disparo (Combate a Distancia y Tecnociencia) disparo; **sin empleo** (va en la armadura), así que un filtro de empleo no lo alcanza. **Lanzagranadas integrado: armamento pesado**, como su especialidad (S44), con el empleo del arma que lo lleva. Armamento pesado a dos manos ("Empleo a dos manos" del catálogo). Granada lanzada: a una mano. `TODO(revisar)` en `combate.ts` (lanzagranadas integrado, empleo del Proyector). | Familias del encargo D2b-1 (usuario); lo no dicho, por la especialidad ya decidida o la descripción del catálogo. **Confirmado por el usuario (2026-10-15)**: lanzagranadas integrado como armamento pesado; Proyector de Pulso sin empleo (va en la armadura y "permite disparar sin desenfundar", `docs/equipamiento.md`), así que no le alcanzan las dotes "a una mano". |
 | S46 | **Requisito por rama deducido.** Si una dote pide "Combate Melee N o Combate a Distancia M", sus efectos sobre golpes y bloqueos melee exigen Combate Melee ≥ N, y los de disparos y armamento pesado Combate a Distancia ≥ M (valores de juego, especie incluida, como la compra); el NPC del máster no mira requisitos. Lanzar y Levantar escudo no tienen rama: si una dote del patrón los tocara, el generador falla. Encajan: *Asesino*, *Desenfundado Rápido*, *Golpe Entorpecedor* (y *Crítico Mejorado*, cuya especialidad ya se elige en la rama que cumple; en juego se vuelve a comprobar). | §9.5 "cada rama exige su requisito"; el borrador no traía `requisitoAlcance` (decisión del usuario, D2b-1). |
 | S47 | ***Tirador de Larga Distancia* y su *Avanzado*: vale la mejor en cada ataque**, no la dote entera: en especialidad +2 (no +3), fuera de especialidad +1 (la básica), no 0. "De especialidad" = el ataque va en especialidad (`enEspecialidadEfectiva`; el disparo de Tecnociencia del Proyector, con el selector). | "Vale la mejor" (§9.1) leído por tirada: quitar la básica entera dejaría peor al que tiene las dos fuera de especialidad. D2b-1. **Confirmado por el usuario (2026-10-15)**: fuera de especialidad solo aplica la básica (−2 + 1 = −1). |

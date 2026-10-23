@@ -6020,6 +6020,112 @@
       ]
     },
     {
+      "id": "dote_arquero_poderoso",
+      "label": "Arquero Poderoso",
+      "grupo": "combate_distancia",
+      "coste": 4,
+      "requisitos": [
+        {
+          "tipo": "especialidad",
+          "habilidad": "combate_distancia",
+          "id": "armas_impulsoras",
+          "min": 3
+        },
+        {
+          "tipo": "aplicado",
+          "id": "potencia",
+          "min": 2
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "texto",
+          "lugar": "familia:ataque_fuego",
+          "texto": "Solo con arco, como acción compleja y gastando 1 punto de fatiga: el ataque suma tu puntuación total de Fuerza.",
+          "condicion": null,
+          "porque": "sin_regla"
+        }
+      ],
+      "candidataUX": null
+    },
+    {
+      "id": "dote_pistolero",
+      "label": "Pistolero",
+      "grupo": "combate_distancia",
+      "coste": 3,
+      "requisitos": [
+        {
+          "tipo": "especialidad",
+          "habilidad": "combate_distancia",
+          "id": "pistolas",
+          "min": 2
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "bono",
+          "alcance": "familia:ataque_fuego",
+          "valor": -1,
+          "condicion": "Disparo doble"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "familia:ataque_fuego",
+          "texto": "Con una pistola en cada mano: dos disparos que normalmente sean acción simple, como una sola acción estándar y al mismo objetivo a tu alcance. Tira cada uno por separado, con su daño.",
+          "condicion": "Disparo doble",
+          "porque": "turno"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "familia:ataque_fuego",
+          "texto": "Con Desenfundado Rápido puedes desenfundar las dos pistolas como acción gratuita y hacer este ataque doble.",
+          "condicion": "Disparo doble",
+          "porque": "turno"
+        }
+      ],
+      "candidataUX": "Dos tiradas en una acción: el disparo doble podría tirar las dos pistolas de una vez"
+    },
+    {
+      "id": "dote_pistolero_infernal",
+      "label": "Pistolero Infernal",
+      "grupo": "combate_distancia",
+      "coste": 3,
+      "requisitos": [
+        {
+          "tipo": "dote",
+          "id": "dote_pistolero"
+        },
+        {
+          "tipo": "especialidad",
+          "habilidad": "combate_distancia",
+          "id": "pistolas",
+          "min": 2
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "texto",
+          "lugar": "familia:ataque_fuego",
+          "texto": "Con una pistola en cada mano: dos ataques de fuego automático a la vez, como acción compleja.",
+          "condicion": null,
+          "porque": "turno"
+        }
+      ],
+      "candidataUX": null
+    },
+    {
       "id": "dote_vigilancia_tactica",
       "label": "Vigilancia Táctica",
       "grupo": "exploracion",

@@ -1953,6 +1953,15 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
   - Pendiente de revisar a mano: los `TODO(revisar)` de `especialidadesArma.ts` (asignaciones
     dudosas) y S39-S43. *(Cerrado: S39-S44 confirmados por el usuario; los TODO de
     subfusiles y ametralladoras se fueron con las armas de fuego por empleo, D2b-1.)*
+- [x] **Especialidades de Combate a Distancia de la foto de Drive 2026-10-23** (construido
+  2026-10-23): de 5 a 9 (`especialidades.ts`), armas por `tipo` a la de su nombre (S44
+  sustituido), migración v21 → v22 (Cortas → Pistolas, Elásticas → Impulsoras, Largas → la del
+  arma a dos manos equipada o fuera, con aviso), Arco Táctico y Ballesta Pro UE
+  (`catalog/armasImpulsoras.ts`) y las dotes *Arquero Poderoso*, *Pistolero* y *Pistolero
+  Infernal*. Detalle en `sistema.md` §3, §9.1, §9.5 y §12. Pendiente: sus `TODO(revisar)`
+  (munición de arco/ballesta, mejoras que admiten, lectura de Arquero Poderoso) y el resto de
+  dotes nuevas de esa foto (Fuego de Saturación, de Supresión, de Barrera, Disparo de
+  Interdicción, Lanzamiento Doble…), sin transcribir.
 - [ ] **La tirada sabe qué especialidad se usa** (sale de ESP, sin construir): hoy la fila
   de una tirada que no es ataque con arma solo dice sí/no (`EleccionTirada.enEspecialidad`).
   Cambiarlo por un selector de **cuál** de las especialidades de la ficha en esa habilidad

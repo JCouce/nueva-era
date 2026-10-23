@@ -61,15 +61,15 @@ const cumple = (s: Sheet, id: string, i = 0) =>
 // ── Catálogo ───────────────────────────────────────────────────────────
 
 describe("catálogo generado", () => {
-  test("105 dotes, ids únicos", () => {
-    assert.equal(DOTES.length, 105);
-    assert.equal(new Set(DOTES.map((d) => d.id)).size, 105);
+  test("108 dotes, ids únicos", () => {
+    assert.equal(DOTES.length, 108);
+    assert.equal(new Set(DOTES.map((d) => d.id)).size, 108);
   });
 
   test("Olfato de Investigador no aparece en las secciones y no se compra", () => {
     assert.equal(dotePorId("dote_olfato_de_investigador")!.visible, false);
     assert.ok(!SECCIONES_DOTES.some((s) => s.dotes.some((d) => d.id === "dote_olfato_de_investigador")));
-    assert.equal(SECCIONES_DOTES.reduce((t, s) => t + s.dotes.length, 0), 104);
+    assert.equal(SECCIONES_DOTES.reduce((t, s) => t + s.dotes.length, 0), 107);
     let s = conHabilidad(ficha(), "exploracion", 4, ["investigacion"]);
     s = conAtributos(s, { inteligencia: 2, percepcion: 2 });
     assert.match(motivoNoComprable(s, { id: "dote_olfato_de_investigador" }, creacion(s)) ?? "", /no tiene efecto/);

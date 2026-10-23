@@ -1,6 +1,7 @@
 import type { Modificador } from "../rules/modificadores";
 import type { MotorMetadata } from "../rules/motor";
 import type { Rareza } from "./equipo";
+import { ARMAS_IMPULSORAS } from "./armasImpulsoras";
 
 // ── Armas de fuego ────────────────────────────────────────────────────
 // Un modo de disparo: acción, dificultad propia y daño. La mayoría de las
@@ -12,17 +13,30 @@ export type ModoDisparo = {
   dificultad: number; // penalizador propio del modo; se suma a la tirada de ataque
   danio: number;
   categoriaDanio: string; // "Letal", "Fuego", "Grave", "Plasma"…
+  // Daño que suma la Fuerza del tirador (Arco Táctico, "1/2 Fue + 8"): `danio` es la parte
+  // fija y esto, la de Fuerza (combate.ts, tiradaDeArmaFuego). Sin el campo, `danio` es el
+  // daño entero, como en toda arma de fuego.
+  danioFuerza?: "mitad";
 };
 
+// El daño del modo tal y como lo da la tabla ("10", "1/2 Fue + 8"): para la tarjeta del arma.
+export function textoDanioModo(m: Pick<ModoDisparo, "danio" | "danioFuerza">): string {
+  return m.danioFuerza === "mitad" ? `1/2 Fue + ${m.danio}` : `${m.danio}`;
+}
+
 // Categoría del arma — la usa la compatibilidad de las mejoras de arma
-// ("solo fusiles de asalto y de precisión", "solo Fusil de Asalto"…).
+// ("solo fusiles de asalto y de precisión", "solo Fusil de Asalto"…) y decide su
+// especialidad (catalog/especialidadesArma.ts). `arma_impulsora`: Arco y Ballesta
+// ("Otras Armas a Distancia", catalog/armasImpulsoras.ts), que comparten la forma de un arma
+// de fuego (modos, tramos de distancia, munición, mejoras) sin serlo.
 export type TipoArma =
   | "pistola"
   | "escopeta"
   | "subfusil"
   | "fusil_asalto"
   | "fusil_precision"
-  | "ametralladora";
+  | "ametralladora"
+  | "arma_impulsora";
 
 export type ArmaFuego = {
   familia: "arma";
@@ -1264,5 +1278,8 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
     ],
   },
+  // Arco y Ballesta: misma lista para que Tienda, Equipo, Acciones y Fabricar las traten como
+  // cualquier arma a distancia (familia "arma"); su tabla vive aparte.
+  ...ARMAS_IMPULSORAS,
 ];
 

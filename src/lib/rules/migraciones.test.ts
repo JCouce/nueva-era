@@ -2,6 +2,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { migrar, MIGRACIONES } from "./migraciones";
 import { parseSheet, SCHEMA_VERSION } from "./sheet";
+import { ARMAS } from "../catalog/armasFuego";
 
 describe("cadena de migraciones", () => {
   test("hay un paso por cada salto de versión, sin huecos", () => {
@@ -372,7 +373,7 @@ describe("v19 → v20: arma incorporada del Brazo Biónico", () => {
 
   test("una ficha v19 leída con parseSheet sale sin arma incorporada", () => {
     const s = parseSheet({ schemaVersion: 19, equipo });
-    assert.equal(s.schemaVersion, 21);
+    assert.equal(s.schemaVersion, SCHEMA_VERSION);
     assert.equal(s.equipo.find((p) => p.instanciaId === "b")?.armaIncorporada, undefined);
   });
 });
@@ -389,7 +390,93 @@ describe("v20 → v21: acciones favoritas", () => {
 
   test("una ficha v20 leída con parseSheet sale sin favoritas", () => {
     const s = parseSheet({ schemaVersion: 20 });
-    assert.equal(s.schemaVersion, 21);
+    assert.equal(s.schemaVersion, SCHEMA_VERSION);
     assert.deepEqual(s.favoritas, []);
+  });
+});
+
+describe("v21 → v22: especialidades de Combate a Distancia (foto de Drive 2026-10-23)", () => {
+  const distancia = (ficha: Record<string, unknown>) =>
+    (ficha.habilidades as Record<string, { valor: number; especialidades: string[] }>).combate_distancia;
+
+  test("Cortas → Pistolas y Elásticas → Impulsoras; el resto se queda, sin duplicados", () => {
+    const { ficha, aplicadas } = migrar(
+      {
+        schemaVersion: 21,
+        habilidades: {
+          combate_distancia: { valor: 3, especialidades: ["armas_de_fuego_cortas", "armas_elasticas", "armas_pesadas", "pistolas"] },
+          combate_melee: { valor: 1, especialidades: ["pelea"] },
+        },
+      },
+      22,
+    );
+    assert.equal(ficha.schemaVersion, 22);
+    assert.equal(aplicadas.length, 1);
+    assert.deepEqual(distancia(ficha), { valor: 3, especialidades: ["pistolas", "armas_impulsoras", "armas_pesadas"] });
+    assert.deepEqual((ficha.habilidades as Record<string, unknown>).combate_melee, { valor: 1, especialidades: ["pelea"] });
+    assert.deepEqual(ficha.avisoEspecialidades, []);
+  });
+
+  test("Largas → la del primer arma de fuego a dos manos equipada, por su tipo", () => {
+    const equipo = [
+      { instanciaId: "p", catalogoId: "pistola_bellum" },
+      { instanciaId: "a", catalogoId: "armadura_pesada" },
+      { instanciaId: "f", catalogoId: "fusil_asalto_impetus" },
+      { instanciaId: "e", catalogoId: ARMAS.find((a) => a.tipo === "escopeta")!.id },
+    ];
+    const { ficha } = migrar(
+      { schemaVersion: 21, equipo, habilidades: { combate_distancia: { valor: 2, especialidades: ["armas_de_fuego_largas"] } } },
+      22,
+    );
+    assert.deepEqual(distancia(ficha).especialidades, ["fusiles_de_asalto"]);
+    assert.deepEqual(ficha.equipo, equipo);
+  });
+
+  test("Largas sin arma de fuego a dos manos: se quita y queda en el aviso", () => {
+    const { ficha } = migrar(
+      {
+        schemaVersion: 21,
+        equipo: [{ instanciaId: "p", catalogoId: "pistola_bellum" }],
+        avisoEspecialidades: ["Sigilo: Urbano"],
+        habilidades: { combate_distancia: { valor: 2, especialidades: ["armas_de_fuego_largas", "armas_arrojadizas"] } },
+      },
+      22,
+    );
+    assert.deepEqual(distancia(ficha).especialidades, ["armas_arrojadizas"]);
+    assert.deepEqual(ficha.avisoEspecialidades, [
+      "Sigilo: Urbano",
+      "Combate a Distancia: Armas de Fuego Largas (sin arma de fuego a dos manos equipada)",
+    ]);
+  });
+
+  test("Crítico Mejorado sigue a su especialidad; sin arma a dos manos, la dote se quita", () => {
+    const dotes = [
+      { id: "dote_critico_mejorado", eleccion: "armas_de_fuego_cortas" },
+      { id: "dote_critico_mejorado", eleccion: "armas_de_fuego_largas" },
+      { id: "dote_critico_mejorado", eleccion: "pelea" },
+    ];
+    const conFusil = migrar({ schemaVersion: 21, dotes, equipo: [{ instanciaId: "f", catalogoId: "fusil_asalto_impetus" }] }, 22).ficha;
+    assert.deepEqual(conFusil.dotes, [
+      { id: "dote_critico_mejorado", eleccion: "pistolas" },
+      { id: "dote_critico_mejorado", eleccion: "fusiles_de_asalto" },
+      { id: "dote_critico_mejorado", eleccion: "pelea" },
+    ]);
+    const sinArma = migrar({ schemaVersion: 21, dotes }, 22).ficha;
+    assert.deepEqual(sinArma.dotes, [
+      { id: "dote_critico_mejorado", eleccion: "pistolas" },
+      { id: "dote_critico_mejorado", eleccion: "pelea" },
+    ]);
+    assert.deepEqual(sinArma.avisoEspecialidades, ["Crítico Mejorado: Armas de Fuego Largas (dote quitada)"]);
+  });
+
+  test("una ficha v16 con texto viejo llega a la especialidad nueva pasando por la v17", () => {
+    const s = parseSheet({
+      schemaVersion: 16,
+      equipo: [{ instanciaId: "f", catalogoId: "fusil_asalto_impetus" }],
+      habilidades: { combate_distancia: { valor: 2, especialidades: ["Armas de Fuego Larga", "Armas de Fuego Cortas"] } },
+    });
+    assert.equal(s.schemaVersion, SCHEMA_VERSION);
+    assert.deepEqual(s.habilidades.combate_distancia.especialidades, ["fusiles_de_asalto", "pistolas"]);
+    assert.deepEqual(s.avisoEspecialidades, []);
   });
 });

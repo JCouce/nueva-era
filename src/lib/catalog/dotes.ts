@@ -5943,6 +5943,193 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_arquero_poderoso",
+    "label": "Arquero Poderoso",
+    "grupo": "combate_distancia",
+    "coste": 4,
+    "requisitos": [
+      {
+        "tipo": "especialidad",
+        "habilidad": "combate_distancia",
+        "id": "armas_impulsoras",
+        "min": 3
+      },
+      {
+        "tipo": "aplicado",
+        "id": "potencia",
+        "min": 2
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "Con el gasto de un punto de fatiga y como acción compleja el personaje puede realizar un ataque con arco sumando su total de puntuación de **fuerza**.",
+    "efectos": [
+      {
+        "tipo": "texto",
+        "lugar": "familia:ataque_fuego",
+        "texto": "Solo con arco, como acción compleja y gastando 1 punto de fatiga: el ataque suma tu puntuación total de Fuerza.",
+        "condicion": null,
+        "porque": "sin_regla",
+        "filtroArma": {
+          "especialidad": "armas_impulsoras"
+        },
+        "borrador": 0
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "familia:ataque_fuego"
+        },
+        "mecanismo": "nota_fija",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
+    "id": "dote_pistolero",
+    "label": "Pistolero",
+    "grupo": "combate_distancia",
+    "coste": 3,
+    "requisitos": [
+      {
+        "tipo": "especialidad",
+        "habilidad": "combate_distancia",
+        "id": "pistolas",
+        "min": 2
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "Si el personaje lleva una pistola en cada mano, puede efectuar un ataque con ambas como acción estándar, para ello debe llevar a cabo ataques que normalmente se resuelvan como acción simple. Ambos disparos deben ir destinados a un mismo objetivo que esté dentro de su alcance, cada ataque aumenta su dificultad en 1, se resuelve cada tirada por separado así como el daño.\n\nSi el personaje tiene la dote de desenfundado rápido puede desenfudar *(sic)* ambas pistolas como acción gratuita y realizar este ataque estándar de dos disparos simultáneos.",
+    "efectos": [
+      {
+        "tipo": "bono",
+        "alcance": "familia:ataque_fuego",
+        "valor": -1,
+        "condicion": "Disparo doble",
+        "filtroArma": {
+          "empleo": "una mano",
+          "especialidad": "pistolas"
+        },
+        "borrador": 0
+      },
+      {
+        "tipo": "texto",
+        "lugar": "familia:ataque_fuego",
+        "texto": "Con una pistola en cada mano: dos disparos que normalmente sean acción simple, como una sola acción estándar y al mismo objetivo a tu alcance. Tira cada uno por separado, con su daño.",
+        "condicion": "Disparo doble",
+        "porque": "turno",
+        "filtroArma": {
+          "empleo": "una mano",
+          "especialidad": "pistolas"
+        },
+        "borrador": 1
+      },
+      {
+        "tipo": "texto",
+        "lugar": "familia:ataque_fuego",
+        "texto": "Con Desenfundado Rápido puedes desenfundar las dos pistolas como acción gratuita y hacer este ataque doble.",
+        "condicion": "Disparo doble",
+        "porque": "turno",
+        "filtroArma": {
+          "empleo": "una mano",
+          "especialidad": "pistolas"
+        },
+        "borrador": 2
+      }
+    ],
+    "limite": null,
+    "candidataUX": "Dos tiradas en una acción: el disparo doble podría tirar las dos pistolas de una vez",
+    "motor": [
+      {
+        "tipo": "numerico",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "familia:ataque_fuego"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      },
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "familia:ataque_fuego"
+        },
+        "mecanismo": "nota_fija",
+        "estado": "construido"
+      },
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "familia:ataque_fuego"
+        },
+        "mecanismo": "nota_fija",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
+    "id": "dote_pistolero_infernal",
+    "label": "Pistolero Infernal",
+    "grupo": "combate_distancia",
+    "coste": 3,
+    "requisitos": [
+      {
+        "tipo": "dote",
+        "id": "dote_pistolero"
+      },
+      {
+        "tipo": "especialidad",
+        "habilidad": "combate_distancia",
+        "id": "pistolas",
+        "min": 2
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "Si el personaje lleva una pistola a cada mano puede realizar dos ataques de fuego automático de forma simultánea como acción compleja.",
+    "efectos": [
+      {
+        "tipo": "texto",
+        "lugar": "familia:ataque_fuego",
+        "texto": "Con una pistola en cada mano: dos ataques de fuego automático a la vez, como acción compleja.",
+        "condicion": null,
+        "porque": "turno",
+        "filtroArma": {
+          "empleo": "una mano",
+          "especialidad": "pistolas"
+        },
+        "borrador": 0
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "familia:ataque_fuego"
+        },
+        "mecanismo": "nota_fija",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_vigilancia_tactica",
     "label": "Vigilancia Táctica",
     "grupo": "exploracion",
@@ -7531,9 +7718,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   188 efectos (185 en el borrador)
-//   construidos: 95
-//   texto: 93
+//   193 efectos (190 en el borrador)
+//   construidos: 96
+//   texto: 97
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0

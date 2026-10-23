@@ -74,7 +74,8 @@ import { ESPECIALIDAD_IDS, esEspecialidadDe, type EspecialidadId } from "../cata
 //   19 → usos "una vez por escena" de los aumentos (A4a): usosEscena
 //   20 → la pieza del Brazo Biónico admite `armaIncorporada` (A6b)
 //   21 → se añaden las acciones favoritas (favoritas, T-006)
-export const SCHEMA_VERSION = 21;
+//   22 → especialidades de Combate a Distancia de 5 a 9 (foto de Drive 2026-10-23)
+export const SCHEMA_VERSION = 22;
 
 // Tope de lo gastado de la bolsa de aumentos: muy por encima de cualquier bolsa real.
 export const MAX_BOLSA_AUMENTOS = 9_999_999;
