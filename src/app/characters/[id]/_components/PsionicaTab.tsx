@@ -13,6 +13,7 @@ import {
   textoPuntos,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
+import { BotonManual } from "@/components/manual/BotonManual";
 import { Stepper } from "./Stepper";
 
 const RAMAS = [
@@ -107,6 +108,7 @@ export function PsionicaTab({
                         mínimo {suelo}: otra disciplina la requiere
                       </span>
                     )}
+                    <BotonManual tipo="disciplina" id={d.id} className="mt-2" />
                   </div>
                   <Stepper
                     value={value}

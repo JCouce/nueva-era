@@ -127,3 +127,13 @@
     display: none;
   }
 }
+
+/* Filas con ancla (la ficha enlaza a las armas, que son filas): que no queden bajo la
+   cabecera fija y que se vea a cuál se ha saltado. */
+.tabla tr[id] {
+  scroll-margin-top: 8rem;
+}
+
+.tabla tr:target td {
+  background: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface));
+}

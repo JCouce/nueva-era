@@ -18,6 +18,7 @@ import {
   valorFueraDeEspecialidad,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
+import { BotonManual } from "@/components/manual/BotonManual";
 import { Stepper } from "./Stepper";
 
 // Especialidades de una habilidad: lista cerrada del catálogo (catalog/especialidades.ts),
@@ -184,6 +185,7 @@ export function HabilidadesTab({
                     {pista}
                   </span>
                 )}
+                <BotonManual tipo="habilidad" id={h.id} className="mt-2" />
               </div>
               <Stepper
                 value={valor}

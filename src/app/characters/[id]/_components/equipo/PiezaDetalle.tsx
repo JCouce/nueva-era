@@ -12,6 +12,7 @@ import {
   type ResumenArmaModificada,
 } from "@/lib/rules";
 import { TipoYExtras } from "@/components/TipoDanio";
+import { BotonManual } from "@/components/manual/BotonManual";
 import type {
   Armadura,
   ArmaFuego,
@@ -133,6 +134,7 @@ export function DetalleArmadura({ p }: { p: Armadura }) {
         />
       </dl>
       <ChipsModificadores mods={p.modificadores} />
+      <BotonManual tipo="equipo" id={p.id} className="mt-3" />
     </>
   );
 }
@@ -175,6 +177,7 @@ export function DetalleArma({ p }: { p: ArmaFuego }) {
         </p>
       )}
       <ChipsModificadores mods={p.modificadores} />
+      <BotonManual tipo="equipo" id={p.id} className="mt-3" />
     </>
   );
 }
@@ -256,6 +259,7 @@ export function DetalleArmaMelee({ p }: { p: ArmaMelee }) {
       {p.efectoCritico && (
         <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed text-info">Crítico: {p.efectoCritico}</p>
       )}
+      <BotonManual tipo="equipo" id={p.id} className="mt-3" />
     </>
   );
 }
@@ -363,6 +367,7 @@ export function DetalleModulo({
           </div>
         ))}
       </div>
+      <BotonManual tipo="equipo" id={p.id} className="mt-3" />
     </>
   );
 }
@@ -395,6 +400,7 @@ export function DetalleArmaPesada({ p }: { p: ArmaPesada }) {
         <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed text-info">{p.efectos}</p>
       )}
       <ChipsModificadores mods={p.modificadores} />
+      <BotonManual tipo="equipo" id={p.id} className="mt-3" />
     </>
   );
 }
@@ -419,6 +425,7 @@ export function DetalleGranada({ p }: { p: MunicionGranada }) {
         <Stat label="Rareza" value={`${p.rareza} · ${p.coste} cr.`} />
       </dl>
       <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed text-info">{p.areaEfecto}</p>
+      <BotonManual tipo="equipo" id={p.id} className="mt-3" />
     </>
   );
 }
@@ -450,6 +457,7 @@ export function DetalleConsumible({ p }: { p: Consumible }) {
         <Stat label="Rareza" value={`${p.rareza} · ${p.coste} cr.`} />
       </dl>
       <ChipsModificadores mods={p.modificadores} />
+      <BotonManual tipo="equipo" id={p.id} className="mt-3" />
     </>
   );
 }
@@ -505,6 +513,7 @@ export function DetalleOperacion({ p, eleccion }: { p: OperacionGenetica; elecci
         />
         <Stat label="Rareza" value={`${p.rareza} · ${p.coste} cr.`} />
       </dl>
+      <BotonManual tipo="equipo" id={p.id} className="mt-3" />
     </>
   );
 }
@@ -558,6 +567,7 @@ export function DetalleImplante({
           );
         })}
       </div>
+      <BotonManual tipo="equipo" id={p.id} className="mt-3" />
     </>
   );
 }

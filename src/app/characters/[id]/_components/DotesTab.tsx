@@ -19,6 +19,7 @@ import {
   type FichaResuelta,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
+import { BotonManual } from "@/components/manual/BotonManual";
 
 // Dotes (docs/sistema.md §9, tanda D1): comprar y quitar, sin efectos todavía. En
 // creación gasta el pool de la letra de Dotes; aprobada, XP al mismo coste y nada se
@@ -133,7 +134,7 @@ export function DotesTab({
                 )}
               </div>
               {motivo && sePuedeQuitar && <p className="mt-1 font-mono text-[10px] leading-relaxed text-muted">{motivo}</p>}
-              <TextoPlegable texto={dote.texto} />
+              <TextoPlegable texto={dote.texto} doteId={dote.id} />
             </HudCard>
           );
         })}
@@ -349,24 +350,31 @@ function TarjetaDote({
           </>
         )}
       </div>
-      <TextoPlegable texto={dote.texto} />
+      <TextoPlegable texto={dote.texto} doteId={dote.id} />
     </HudCard>
   );
 }
 
-function TextoPlegable({ texto }: { texto: string }) {
+// Pie de las dos tarjetas de dote (las tuyas y las del catálogo): efecto plegable y
+// enlace al manual.
+function TextoPlegable({ texto, doteId }: { texto: string; doteId: string }) {
   const [abierto, setAbierto] = useState(false);
-  if (!texto) return null;
   return (
-    <div className="mt-2">
-      <button
-        type="button"
-        onClick={() => setAbierto((v) => !v)}
-        aria-expanded={abierto}
-        className="font-mono text-[10px] uppercase tracking-wide text-info"
-      >
-        {abierto ? "▴ ocultar efecto" : "▾ ver efecto"}
-      </button>
+    <div>
+      {/* empty:hidden: dote sin texto y sin apartado en el manual, sin hueco. */}
+      <div className="mt-2 flex items-center justify-between gap-2 empty:hidden">
+        {texto && (
+          <button
+            type="button"
+            onClick={() => setAbierto((v) => !v)}
+            aria-expanded={abierto}
+            className="font-mono text-[10px] uppercase tracking-wide text-info"
+          >
+            {abierto ? "▴ ocultar efecto" : "▾ ver efecto"}
+          </button>
+        )}
+        <BotonManual tipo="dote" id={doteId} className="ml-auto" />
+      </div>
       {abierto && (
         <div className="mt-2 flex flex-col gap-2 border-t border-border pt-2">
           {texto.split(/\n{2,}/).map((parrafo, i) => (

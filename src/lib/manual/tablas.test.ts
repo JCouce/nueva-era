@@ -68,3 +68,20 @@ test("tabla sin cabecera tras otra del mismo ancho hereda su cabecera", () => {
   assert.equal(celdas(t, "tbody")[0][1].properties.dataLabel, "Blindaje");
   assert.equal(u.properties.dataModo, "scroll");
 });
+
+test("cada fila de datos lleva id = slug de su primera celda, sin pisar encabezados ni otras filas", () => {
+  const h = el("h3", [txt("Mosquito")], { id: "mosquito" });
+  const t = el("table", [
+    fila(tdFuerte("Modelo"), tdFuerte("Daño")),
+    fila(tdFuerte("Mosquito"), td("3")),
+    fila(el("td", [txt("Armadura"), el("br"), txt("Intermedia")]), td("6")),
+    fila(td(""), td("7")),
+    fila(tdFuerte("Mosquito"), td("4")),
+  ]);
+  const arbol: Root = { type: "root", children: [h, t] };
+  rehypeTablasManual()(arbol);
+  const tbody = t.children.find((c): c is Element => c.type === "element" && c.tagName === "tbody")!;
+  const ids = tbody.children.map((f) => (f as Element).properties.id);
+  assert.deepEqual(ids, ["mosquito-2", "armadura-intermedia", undefined, "mosquito-3"]);
+  assert.equal(h.properties.id, "mosquito");
+});

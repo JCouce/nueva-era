@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { resumenRasgos, type ChipAtributo, type Especie, type EtiquetaRasgo, type RasgoEtiquetado } from "@/lib/rules";
+import { BotonManual } from "@/components/manual/BotonManual";
 import { ArteEspecie } from "./arteEspecies";
 
 const ETIQUETA: Record<EtiquetaRasgo, { texto: string; clase: string }> = {
@@ -113,6 +114,7 @@ export function TarjetaEspecie({
 
       <div className="flex flex-1 flex-col gap-3 p-4">
         <p className="font-sans text-prosa text-soft">{especie.descripcion}</p>
+        <BotonManual tipo="especie" id={especie.id} className="self-start" />
         <ChipsAtributos chips={atributos} vacio={especie.castas ? "según casta y casa" : especie.atributoLibre ? `+${especie.atributoLibre} a un atributo a elegir` : "sin modificadores"} />
         {rasgos.length > 0 && (
           <div className="flex flex-col gap-2">

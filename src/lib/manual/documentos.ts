@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { documentosDelManual, parsearIndice, type EntradaIndice } from "./indice";
 import { prepararDocumento, type DocumentoPreparado } from "./encabezados";
+import { analizarDocumento, type AnclasDocumento } from "./apartados";
+import { montarManualFicha, type ManualFicha } from "./paraFicha";
 
 // Se lee en build (las páginas del manual son estáticas). Si alguna pasa a dinámica,
 // next.config.ts ya incluye docs/fuente en el trazado de archivos para Vercel.
@@ -19,4 +21,19 @@ export async function leerDocumento(
   if (!entrada) return null;
   const md = await readFile(path.join(CARPETA, `${entrada.slug}.md`), "utf8");
   return { nombre: entrada.nombre, ...prepararDocumento(md, { titulo: entrada.nombre }) };
+}
+
+let manualFicha: Promise<ManualFicha> | null = null;
+
+// Una sola lectura y análisis por proceso de build (lo piden el índice y cada documento).
+export function manualDeLaFicha(): Promise<ManualFicha> {
+  manualFicha ??= (async () => {
+    const documentos = new Map<string, AnclasDocumento>();
+    for (const { slug } of await listarDocumentos()) {
+      const doc = await leerDocumento(slug);
+      if (doc) documentos.set(slug, analizarDocumento(doc));
+    }
+    return montarManualFicha(documentos);
+  })();
+  return manualFicha;
 }

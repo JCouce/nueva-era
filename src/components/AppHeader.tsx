@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { logoutAction } from "@/lib/session-actions";
+import { NavPrincipal } from "./NavPrincipal";
 
 export function AppHeader({
   name,
@@ -26,15 +27,7 @@ export function AppHeader({
         </Link>
       )}
       <div className="flex items-center gap-3">
-        {name && <span className="text-sm text-zinc-400">{name}</span>}
-        <Link href="/manual" className="text-sm text-zinc-400 underline-offset-4 hover:underline">
-          Manual
-        </Link>
-        {role === "MASTER" && (
-          <Link href="/master" className="text-sm text-zinc-400 underline-offset-4 hover:underline">
-            Panel
-          </Link>
-        )}
+        <NavPrincipal name={name} role={role} />
         <form action={logoutAction}>
           <button
             type="submit"

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
 import { leerDocumento, listarDocumentos } from "@/lib/manual/documentos";
-import { DocumentoMarkdown } from "../_components/DocumentoMarkdown";
+import { DocumentoMarkdown } from "@/components/manual/DocumentoMarkdown";
 import { LectorDocumento } from "../_components/LectorDocumento";
 
 // Un documento por slug activo de docs/fuente/_indice.tsv, generado en build. Lo que no

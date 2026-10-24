@@ -1,4 +1,5 @@
 import type { Element, ElementContent, Root, RootContent } from "hast";
+import { slugificar } from "./encabezados";
 
 // Plugin rehype: prepara las tablas del manual para pintarse como fichas en móvil.
 //
@@ -8,6 +9,10 @@ import type { Element, ElementContent, Root, RootContent } from "hast";
 // en tarjetas en pantalla estrecha. Con rowspan/colspan o filas de distinto ancho no
 // hay forma fiable de emparejar celda y cabecera: `data-modo="scroll"` (tabla con
 // scroll horizontal y primera columna fija).
+//
+// Cada fila de datos lleva `id` = slug de su primera celda, para enlazar a ella (la
+// ficha enlaza así las armas, que en el manual son filas, no apartados). Se desambigua
+// contra los ids que ya hay en el documento (encabezados) y entre filas: `-2`, `-3`…
 
 export type ModoTabla = "fichas" | "scroll";
 
@@ -62,7 +67,26 @@ function abarca(celda: Element): boolean {
   return n(celda.properties.rowSpan) > 1 || n(celda.properties.colSpan) > 1;
 }
 
-function procesarTabla(tabla: Element, cabeceraAnterior: string[] | null): string[] | null {
+export function idUnico(base: string, usados: Set<string>): string {
+  let id = base;
+  for (let n = 2; usados.has(id); n++) id = `${base}-${n}`;
+  usados.add(id);
+  return id;
+}
+
+function recogerIds(nodo: Root | Element, usados: Set<string>) {
+  for (const hijo of nodo.children) {
+    if (!esElemento(hijo)) continue;
+    if (typeof hijo.properties.id === "string") usados.add(hijo.properties.id);
+    recogerIds(hijo, usados);
+  }
+}
+
+function procesarTabla(
+  tabla: Element,
+  cabeceraAnterior: string[] | null,
+  usados: Set<string>,
+): string[] | null {
   const filas = filasDe(tabla).filter((f) => !celdasDe(f).every(vacia));
   if (filas.length === 0) return cabeceraAnterior;
 
@@ -113,6 +137,12 @@ function procesarTabla(tabla: Element, cabeceraAnterior: string[] | null): strin
     }
   }
 
+  for (const fila of cuerpo) {
+    const primera = celdasDe(fila)[0];
+    const texto = primera ? limpio(textoDe(primera)) : "";
+    if (texto) fila.properties = { ...fila.properties, id: idUnico(slugificar(texto), usados) };
+  }
+
   tabla.properties = { ...tabla.properties, dataModo: modo };
   tabla.children = [
     ...(cabecera
@@ -127,10 +157,12 @@ function procesarTabla(tabla: Element, cabeceraAnterior: string[] | null): strin
 export function rehypeTablasManual() {
   return (arbol: Root) => {
     let cabeceraAnterior: string[] | null = null;
+    const usados = new Set<string>();
+    recogerIds(arbol, usados);
     const recorrer = (nodo: Root | Element) => {
       for (const hijo of nodo.children) {
         if (!esElemento(hijo)) continue;
-        if (hijo.tagName === "table") cabeceraAnterior = procesarTabla(hijo, cabeceraAnterior);
+        if (hijo.tagName === "table") cabeceraAnterior = procesarTabla(hijo, cabeceraAnterior, usados);
         else recorrer(hijo);
       }
     };
