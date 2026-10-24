@@ -420,7 +420,20 @@ describe("modificadores de equipo", () => {
     for (const nivel of [1, 2, 3]) {
       const s = equipar(conArmaduraPuesta(), { instanciaId: "sv1", catalogoId: "soporte_vital", nivel, instaladoEnId: "armadura-1" });
       const delSoporte = salvacionesDeEquipo(s).find((a) => a.fuente === `Soporte Vital ${nivel}`);
-      assert.deepEqual(delSoporte?.efectos, [{ contra: ["congelacion", "termicos"], bono: 1 }]);
+      assert.deepEqual(delSoporte?.efectos.find((e) => e.contra.includes("congelacion")), { contra: ["congelacion", "termicos"], bono: 1 });
+    }
+  });
+
+  test("Soporte Vital, Blindaje Ambiental (S94): +1/+2/+3 contra toxinas y radiación, con la protección total en la nota", () => {
+    for (const nivel of [1, 2, 3]) {
+      const s = equipar(conArmaduraPuesta(), { instanciaId: "sv1", catalogoId: "soporte_vital", nivel, instaladoEnId: "armadura-1" });
+      const efectos = salvacionesDeEquipo(s).find((a) => a.fuente === `Soporte Vital ${nivel}`)!.efectos;
+      const ambiental = efectos.filter((e) => e.contra.includes("toxinas"));
+      assert.equal(ambiental.length, 1, "el nivel alto sustituye, no suma");
+      assert.deepEqual(ambiental[0].contra, ["toxinas", "radiacion"]);
+      assert.equal(ambiental[0].bono, nivel);
+      assert.match(ambiental[0].nota ?? "", /protección total contra radiación e intoxicación por inhalación o contacto: sin tirada/);
+      assert.match(ambiental[0].nota ?? "", /armadura está dañada o sufres un ataque o evento que te haga daño directo/);
     }
   });
 
@@ -770,6 +783,25 @@ describe("pesoEquipado", () => {
     s = equipar(s, { instanciaId: "p1", catalogoId: "pistola_mosquito" });
     assert.equal(pesoEquipado(s), 0.5);
   });
+
+  // S96: «El bípode aumenta la carga del arma en 5 kg» (nivel 2: «no suma peso adicional»); el
+  // Lanzagranadas Integrado, «peso añadido de 1.5 kg» (docs/fuente/equipamiento.md).
+  test("mejoras de arma con peso: Bípode 1 suma 5 kg, Bípode 2 nada, Lanzagranadas 1,5 kg (S96)", () => {
+    const base = equipar(defaultSheet(), { instanciaId: "fa", catalogoId: "fusil_asalto_impetus" });
+    const arma = pesoEquipado(base);
+    const bipode1 = equipar(base, { instanciaId: "b", catalogoId: "bipode", nivel: 1, instaladoEnId: "fa" });
+    const bipode2 = equipar(base, { instanciaId: "b", catalogoId: "bipode", nivel: 2, instaladoEnId: "fa" });
+    const lanzagranadas = equipar(base, { instanciaId: "l", catalogoId: "lanzagranadas_integrado", nivel: 1, instaladoEnId: "fa" });
+    assert.equal(pesoEquipado(bipode1), arma + 5);
+    assert.equal(pesoEquipado(bipode2), arma);
+    assert.equal(pesoEquipado(lanzagranadas), arma + 1.5);
+    assert.equal(pesoDePieza({ instanciaId: "s", catalogoId: "silenciador", nivel: 1 }), 0);
+  });
+
+  test("las granadas que se llevan cuentan, cada una con el peso de su tabla (S96)", () => {
+    const s = { ...defaultSheet(), granadas: { granada_fragmentacion: 2, granada_aturdidora: 1, granada_plasma: 1 } };
+    assert.equal(pesoEquipado(s), 1.6); // 0,4 × 2 + 0,3 + 0,5
+  });
 });
 
 describe("herramienta y consumible (Medicina, docs/traspaso.md §6)", () => {
@@ -865,7 +897,7 @@ describe("herramienta y consumible (Medicina, docs/traspaso.md §6)", () => {
     const cs = condicionesActivas(s, ctxMedicina);
     assert.deepEqual(
       cs.map((c) => c.id),
-      ["vtm_diagnostico_profundo", "vtm_tratamiento"],
+      ["vtm_tratamiento", "vtm_diagnostico_profundo"],
     );
   });
 
@@ -874,13 +906,39 @@ describe("herramienta y consumible (Medicina, docs/traspaso.md §6)", () => {
     const cs = condicionesActivas(s, ctxMedicina);
     assert.deepEqual(
       cs.map((c) => c.id),
-      ["vtm_diagnostico_profundo"],
+      ["vtm_tratamiento", "vtm_diagnostico_profundo"],
     );
+    const tratamiento = cs.find((c) => c.id === "vtm_tratamiento");
+    assert.ok(tratamiento?.tipo === "opcion" && !tratamiento.opciones.some((o) => o.margenCriticoExito !== undefined));
   });
 
-  test("VTM nivel 1-2 no aporta ninguna condición todavía", () => {
-    const s = equipar(defaultSheet(), { instanciaId: "v1", catalogoId: "valija_tactica_medica", nivel: 2 });
-    assert.deepEqual(condicionesActivas(s, ctxMedicina), []);
+  // S94: tratamientos de la VTM con su dificultad (docs/fuente/equipamiento.md, VTM).
+  const tratamientosVtm = (nivel: number) => {
+    const s = equipar(defaultSheet(), { instanciaId: "v1", catalogoId: "valija_tactica_medica", nivel });
+    const c = condicionesActivas(s, ctxMedicina).find((x) => x.id === "vtm_tratamiento");
+    assert.ok(c?.tipo === "opcion");
+    return c.opciones.map((o) => [o.id, o.dificultad ?? null, o.margenCriticoExito ?? null]);
+  };
+
+  test("VTM nivel 1: congelación y depuración biológica a 6", () => {
+    assert.deepEqual(tratamientosVtm(1), [["normal", null, null], ["congelacion", 6, null], ["depuracion", 6, null]]);
+  });
+
+  test("VTM nivel 2 (y 3): además parálisis o ceguera y confusión a 7", () => {
+    const esperado = [["normal", null, null], ["congelacion", 6, null], ["depuracion", 6, null], ["paralisis_ceguera", 7, null], ["confusion", 7, null]];
+    assert.deepEqual(tratamientosVtm(2), esperado);
+    assert.deepEqual(tratamientosVtm(3), esperado);
+  });
+
+  test("VTM nivel 4: los estados complejos con cualquier éxito como crítico; la congelación no", () => {
+    assert.deepEqual(tratamientosVtm(4), [
+      ["normal", null, null],
+      ["congelacion", 6, null],
+      ["depuracion", 6, 0],
+      ["paralisis_ceguera", 7, 0],
+      ["confusion", 7, 0],
+      ["complejo", null, 0],
+    ]);
   });
 
   test("el toggle de diagnóstico suma +2 solo si está activo (valorCondiciones)", () => {

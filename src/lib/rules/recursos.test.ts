@@ -21,10 +21,10 @@ import {
   armasHabilitadasPara,
   ajustarFarmaco,
   comprarFarmaco,
-  PRECIO_CARGADOR_BALAS,
   PRECIO_BATERIA_PORTATIL,
   recargaDePieza,
 } from "./recursos";
+import { MUNICION_REGULAR } from "../catalog/municion";
 
 // Mosquito: municion 7, sin F. Auto (tipo "stock").
 // Sydiasi: municion 20, con F. Auto (tipo "stock").
@@ -151,23 +151,42 @@ describe("ajustarRecurso", () => {
 });
 
 describe("comprarRecarga", () => {
-  test("arma de energía: se recarga con batería (150), mismo comportamiento de stock", () => {
+  test("arma de energía: se recarga con su batería, a precio por proyectil (S95)", () => {
     let s = equipar(defaultSheet(), { instanciaId: "l1", catalogoId: "pistola_laser" });
-    assert.deepEqual(recargaDePieza({ instanciaId: "l1", catalogoId: "pistola_laser" }), {
-      etiqueta: "Batería",
-      precio: PRECIO_BATERIA_PORTATIL,
-    });
     const max = recursoDe(s, "l1")!.max;
+    const llena = recargaDePieza({ instanciaId: "l1", catalogoId: "pistola_laser" })!;
+    assert.equal(llena.etiqueta, "Batería");
+    assert.equal(llena.municion?.id, "bateria_laser");
+    assert.equal(llena.municion?.rareza, "Extraño");
+    assert.equal(llena.precio, max * 2);
     s = ajustarRecurso(s, "l1", -1);
     const res = comprarRecarga(s, "l1")!;
-    assert.equal(res.coste, PRECIO_BATERIA_PORTATIL);
+    assert.equal(res.coste, 2); // solo la carga que falta
     assert.deepEqual(recursoDe(res.sheet, "l1"), { instanciaId: "l1", actual: max, max });
   });
 
-  test("arma balística: cargador (50); escudo y colchón no se recargan con créditos", () => {
+  test("partículas a 15 por rayo y plasma a 20 por proyectil (Muy Extraño, Singular)", () => {
+    const rayo = recargaDePieza({ instanciaId: "r1", catalogoId: "pistola_rayo_ligero" })!;
+    assert.equal(rayo.etiqueta, "Célula");
+    assert.equal(rayo.municion?.rareza, "Muy Extraño");
+    assert.equal(rayo.precio, rayo.proyectiles * 15);
+    const plasma = recargaDePieza({ instanciaId: "p1", catalogoId: "pistola_plasma_sd" })!;
+    assert.equal(plasma.municion?.rareza, "Singular");
+    assert.equal(plasma.precio, plasma.proyectiles * 20);
+  });
+
+  test("Electro TK: Célula de Partículas, 120 rayos a 15 (S93, S95)", () => {
+    const r = recargaDePieza({ instanciaId: "t1", catalogoId: "ametralladora_electro_tk" })!;
+    assert.equal(r.municion?.id, "celula_particulas");
+    assert.equal(r.precio, 120 * 15);
+  });
+
+  test("arma balística: cargador de Calibre Estándar a 2 por bala; escudo y colchón no se recargan con créditos", () => {
     assert.deepEqual(recargaDePieza({ instanciaId: "a1", catalogoId: "pistola_mosquito" }), {
       etiqueta: "Cargador",
-      precio: PRECIO_CARGADOR_BALAS,
+      precio: 7 * 2,
+      municion: MUNICION_REGULAR.calibre_estandar,
+      proyectiles: 7,
     });
     assert.equal(recargaDePieza({ instanciaId: "e1", catalogoId: "escudo_rodela" }), null);
     assert.equal(recargaDePieza({ instanciaId: "m1", catalogoId: "malla_plasmatica", nivel: 1 }), null);
@@ -179,7 +198,7 @@ describe("comprarRecarga", () => {
     const res = comprarRecarga(s, "a1");
     assert.ok(res);
     assert.deepEqual(recursoDe(res.sheet, "a1"), { instanciaId: "a1", actual: 7, max: 7 });
-    assert.equal(res.coste, PRECIO_CARGADOR_BALAS);
+    assert.equal(res.coste, 2 * 2); // las 2 balas que faltan
   });
 
   test("desde vacío, rellena hasta el máximo de catálogo, no lo dobla", () => {
@@ -195,7 +214,7 @@ describe("comprarRecarga", () => {
     const res = comprarRecarga(s, "a1");
     assert.ok(res);
     assert.deepEqual(recursoDe(res.sheet, "a1"), { instanciaId: "a1", actual: 40, max: 40 });
-    assert.equal(res.coste, PRECIO_CARGADOR_BALAS);
+    assert.equal(res.coste, 20 * 2); // un cargador entero de repuesto
   });
 
   test("comprar cargadores de sobra en cadena, siempre estando lleno, se acumula sin tope", () => {
@@ -505,5 +524,46 @@ describe("munición especial", () => {
     assert.equal(s.municionEspecial.incendiaria, 7);
     s = ajustarMunicionEspecial(s, "incendiaria", -99);
     assert.deepEqual(s.municionEspecial, {});
+  });
+});
+
+describe("armamento pesado: munición propia (S95)", () => {
+  test("cada arma pesada tiene su cargador como recurso; el Lanzagranadas no (gasta granadas)", () => {
+    assert.deepEqual(capacidadDePieza({ instanciaId: "h1", catalogoId: "lanzallamas_ligero" }), { max: 30, tipo: "stock" });
+    assert.deepEqual(capacidadDePieza({ instanciaId: "h2", catalogoId: "lanzacohetes_rt" }), { max: 1, tipo: "stock" });
+    assert.deepEqual(capacidadDePieza({ instanciaId: "h3", catalogoId: "lanzamisiles_at" }), { max: 1, tipo: "stock" });
+    assert.deepEqual(capacidadDePieza({ instanciaId: "h4", catalogoId: "canon_plasma" }), { max: 12, tipo: "stock" });
+    assert.equal(capacidadDePieza({ instanciaId: "h5", catalogoId: "lanzagranadas_pesado" }), null);
+  });
+
+  test("precios y rareza del documento: cohete 250, misil 5000 (Poco Habitual), cañón 5000 por proyectil", () => {
+    const cohete = recargaDePieza({ instanciaId: "h2", catalogoId: "lanzacohetes_rt" })!;
+    assert.equal(cohete.etiqueta, "Cohete");
+    assert.equal(cohete.precio, 250);
+    const misil = recargaDePieza({ instanciaId: "h3", catalogoId: "lanzamisiles_at" })!;
+    assert.equal(misil.precio, 5000);
+    assert.equal(misil.municion?.rareza, "Poco Habitual");
+    const canon = recargaDePieza({ instanciaId: "h4", catalogoId: "canon_plasma" })!;
+    assert.equal(canon.precio, 12 * 5000);
+    assert.equal(canon.municion?.rareza, "Singular");
+  });
+
+  test("el Depósito de Lanzallamas se compra entero: 60 por rellenar, sea lo que sea lo que falte", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "h1", catalogoId: "lanzallamas_ligero" });
+    s = ajustarRecurso(s, "h1", -5); // 25/30
+    const res = comprarRecarga(s, "h1")!;
+    assert.equal(res.coste, 60);
+    assert.deepEqual(recursoDe(res.sheet, "h1"), { instanciaId: "h1", actual: 30, max: 30 });
+    const repuesto = comprarRecarga(res.sheet, "h1")!; // lleno: un depósito de repuesto
+    assert.equal(repuesto.coste, 60);
+    assert.deepEqual(recursoDe(repuesto.sheet, "h1"), { instanciaId: "h1", actual: 60, max: 60 });
+  });
+
+  test("lanzacohetes vacío: recargar mete 1 cohete por 250", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "h2", catalogoId: "lanzacohetes_rt" });
+    s = ajustarRecurso(s, "h2", -1);
+    const res = comprarRecarga(s, "h2")!;
+    assert.equal(res.coste, 250);
+    assert.deepEqual(recursoDe(res.sheet, "h2"), { instanciaId: "h2", actual: 1, max: 1 });
   });
 });

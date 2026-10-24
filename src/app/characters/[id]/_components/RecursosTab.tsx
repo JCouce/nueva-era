@@ -118,7 +118,7 @@ export function RecursosTab({
     const pieza = sheet.equipo.find((p) => p.instanciaId === recurso.instanciaId);
     const cat = pieza ? equipoPorId(pieza.catalogoId) : null;
     if (!pieza || !cat) return [];
-    const recarga = recargaDePieza(pieza);
+    const recarga = recargaDePieza(pieza, recurso);
     if (!recarga) return [];
     return [{ recurso, cat, recarga }];
   });
@@ -281,7 +281,7 @@ export function RecursosTab({
             {"//SYSTEM · equipo · munición y batería"}
           </p>
           <p className="mt-2 font-sans text-prosa text-soft">
-            No llevas equipado nada que gaste munición o batería. Un arma de fuego o un
+            No llevas equipado nada que gaste munición o batería. Un arma de fuego o pesada, o un
             subsistema con célula (Camuflaje Trifásico, Derivación Psiónica...) aparece aquí
             solo con equiparlo.
           </p>
@@ -299,6 +299,11 @@ export function RecursosTab({
               <RecursoCard
                 key={recurso.instanciaId}
                 titulo={cat.label}
+                subtitulo={
+                  recarga.municion
+                    ? `${recarga.municion.label} · ${recarga.municion.coste} cr./${recarga.municion.unidadCompra}`
+                    : undefined
+                }
                 recurso={recurso}
                 etiquetaRecarga={etiquetaRecarga}
                 precio={creditos !== undefined ? precio : null}
@@ -681,6 +686,7 @@ function GranadaCard({
 
 function RecursoCard({
   titulo,
+  subtitulo,
   recurso,
   etiquetaRecarga,
   precio,
@@ -689,6 +695,8 @@ function RecursoCard({
   onRecargar,
 }: {
   titulo: string;
+  // La munición que la recarga y su precio por unidad (S95); sin él, una célula.
+  subtitulo?: string;
   recurso: RecursoInstancia;
   etiquetaRecarga: string;
   // null: NPC, edición libre, sin precio que enseñar.
@@ -701,7 +709,10 @@ function RecursoCard({
   return (
     <HudCard className="p-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="font-display text-sm font-semibold uppercase text-foreground">{titulo}</p>
+        <div className="min-w-0">
+          <p className="font-display text-sm font-semibold uppercase text-foreground">{titulo}</p>
+          {subtitulo && <p className="font-mono text-[11px] text-muted">{subtitulo}</p>}
+        </div>
         <p
           className={`font-mono text-lg tabular-nums ${vacio ? "text-danger" : "text-foreground"}`}
         >

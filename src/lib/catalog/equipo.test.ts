@@ -10,6 +10,7 @@ import {
   piezaFabricablePorId,
 } from "./equipo";
 import { MATERIALES } from "./herramientas";
+import { municionEspecialPorId } from "./municion";
 import type { NivelModulo } from "./equipo";
 
 // No son fórmulas, pero con ~40 piezas de datos a mano un id duplicado o un
@@ -101,7 +102,20 @@ describe("armas de energía", () => {
       (e) => e.familia === "arma" && e.modos.every((m) => m.categoriaDanio === "Plasma"),
     );
     assert.ok(plasma.some((a) => a.id === "fusil_precision_plaga"));
-    for (const a of plasma) assert.equal(a.familia === "arma" && a.tipoMunicion, "energia", a.id);
+    for (const a of plasma) assert.equal(a.familia === "arma" && a.tipoMunicion, "bateria_plasma", a.id);
+  });
+
+  test("láser, rayo de partículas y plasma, cada uno con su munición; Electro TK, partículas (S93, S95)", () => {
+    const tipoDe = (id: string) => {
+      const a = EQUIPO.find((e) => e.id === id);
+      return a?.familia === "arma" ? a.tipoMunicion : "no es arma";
+    };
+    assert.equal(tipoDe("pistola_laser"), "bateria_laser");
+    assert.equal(tipoDe("fusil_precision_laser_largo_alcance"), "bateria_laser");
+    assert.equal(tipoDe("pistola_rayo_ligero"), "celula_particulas");
+    assert.equal(tipoDe("fusil_asalto_rayo_particulas"), "celula_particulas");
+    assert.equal(tipoDe("ametralladora_electro_tk"), "celula_particulas");
+    assert.equal(tipoDe("pistola_mosquito"), undefined);
   });
 });
 
@@ -113,5 +127,19 @@ describe("retroceso entrópico (Kerzul)", () => {
       const tiene = a.modos.some((m) => m.etiqueta !== "Simple");
       assert.equal(declara, tiene, a.id);
     }
+  });
+});
+
+describe("munición especial: textos del documento (S95)", () => {
+  test("Radiactiva: relanza si ya está envenenado por radiación; con crítico, sin efecto", () => {
+    const t = municionEspecialPorId("radiactiva")!.efecto;
+    assert.match(t, /ya envenenado por radiación, relanza y puede agravarse un nivel/);
+    assert.match(t, /con crítico, sin ningún efecto/);
+  });
+
+  test("Supresora: con crítico sin efecto; acumular fallos pasa a fallo crítico y prolonga", () => {
+    const t = municionEspecialPorId("supresora")!.efecto;
+    assert.match(t, /con crítico, sin efecto/);
+    assert.match(t, /Acumular fallos pasa a fallo crítico y prolonga la duración/);
   });
 });

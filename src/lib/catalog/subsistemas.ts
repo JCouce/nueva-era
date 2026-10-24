@@ -230,17 +230,18 @@ export const SUBSISTEMAS: Subsistema[] = [
         ],
         // Solo lo NUEVO de este nivel — resistir_retroceso_psionico (n1) y
         // resistir_metasensoria (n3) ya llegan acumulados.
-        modificadores: [
-          // Rebaja penalizadores por fatiga, que aún no se aplican en ninguna
-          // tirada: el id queda como marcador, no se aplica a nada.
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "poder_psionico" }, valor: 1 },
-        ],
+        // Simbiosis Sináptica Total (S94): "reduce en 1 los penalizadores por fatiga cuando vaya a
+        // realizar una tirada relacionada con el empleo de un poder psiónico" — compensación del
+        // umbral de fatiga en las tiradas del grupo Psiónica (modificadoresDeUmbrales), sin
+        // pasar de 0. No es un +1: sin penalizador por fatiga, no suma nada.
+        modificadores: [],
+        reducePenalizador: { recurso: "fatiga", valor: 1, alcance: { tipo: "grupo", grupo: "Psiónica" } },
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "la prosa psiónica no tiene tirada de retroceso a la que sumar" }, // heredado de nivel 1 (S9)
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "suma_derivado", estado: "construido" }, // Canal de Alta Resonancia, heredado
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "Salvaciones" }, mecanismo: "eleccion_jugador", estado: "construido" }, // heredado de nivel 3 (S9)
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "poder_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "los penalizadores por umbral de fatiga aún no se aplican en ninguna tirada" }, // Simbiosis Sináptica Total
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Psiónica" }, mecanismo: "siempre_activo", estado: "construido" }, // Simbiosis Sináptica Total: −1 al penalizador por fatiga
         ],
       },
     ],
@@ -372,10 +373,24 @@ export const SUBSISTEMAS: Subsistema[] = [
         // que no le toca una entrada de MotorMetadata (ver `colchon` más
         // abajo y recursos.ts, capacidadDePieza()). "Regenera N por turno" y
         // el tiempo de reactivación tras destruirse siguen sin automatizar,
-        // comunicación de mesa. Sigilo y neutralizar camuflaje siguen sin
-        // construir (docs/tareas.md, 2026-09-28: fuera de esta pasada).
+        // comunicación de mesa. Sigilo y neutralizar camuflaje: S96 (ver `condiciones` y motor).
         modificadores: [],
         colchon: 10,
+        // "Al activarse este subsistema el usuario recibe un penalizador de -8 al sigilo que solo
+        // afecta a la percepción visual" (docs/fuente/equipamiento.md): la Malla no tiene tirada
+        // propia donde colgar el aviso (se activa sin dado), así que va como casilla en las
+        // tiradas de Sigilo (condicionesActivas, equipo.ts; S96). Los niveles 2-4 la heredan.
+        condiciones: [
+          {
+            id: "malla_plasmatica_activa",
+            tipo: "toggle",
+            etiqueta: "Malla Plasmática activa (si te buscan con la vista)",
+            alcance: { tipo: "habilidad", habilidad: "sigilo" },
+            valorActivo: -8,
+            valorInactivo: 0,
+            nota: "Solo frente a la percepción visual. Activa, anula los beneficios activos del Camuflaje Trifásico.",
+          },
+        ],
         motor: [
           // ✅ Construido 2026-09-28 (docs/tareas.md): toggle informativo en
           // Puñetazo/Patada (condicionesSacrificioColchon(), combate.ts) —
@@ -397,15 +412,12 @@ export const SUBSISTEMAS: Subsistema[] = [
           // `ad_hoc`, no `bloqueado`: no falta ningún mecanismo, solo no
           // había una tirada de ataque donde colgar la nota, y no hacía falta.
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-          // -8 al sigilo al activarse: numérico condicionado a "está activa", sin
-          // CondicionTirada construida todavía.
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          // Neutraliza el Camuflaje Trifásico activo: una pieza deshabilita el
-          // efecto de OTRA pieza — no hay precedente de esto en el motor hoy
-          // (gate_instalacion es el mecanismo más cercano, pero siempre se ha
-          // usado pieza-sobre-sí-misma, nunca pieza-sobre-otra-pieza). Caso
-          // inconcluso, ver informe final.
-          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "camuflaje_trifasico" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "pendiente" },
+          // -8 al sigilo al activarse: casilla "Malla Plasmática activa" en Sigilo (S96).
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          // Neutraliza el Camuflaje Trifásico activo: la ficha no guarda si una ni otra están
+          // activas (activar solo gasta la carga), así que no hay nada que apagar — aviso en
+          // "Activar Camuflaje Trifásico" con la Malla equipada y en la casilla de Sigilo (S96).
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "activar_camuflaje" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
       {
@@ -424,8 +436,8 @@ export const SUBSISTEMAS: Subsistema[] = [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "camuflaje_trifasico" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "activar_camuflaje" }, mecanismo: "nota_fija", estado: "construido" },
           // ✅ Construido 2026-09-28: "acción sin dado" (tiradaDetonacionPulsoTermico(),
           // combate.ts), no la tirada de ataque propia que este comentario
           // pedía — no hace falta rodar dado, el colchón sacrificado ES el
@@ -452,8 +464,8 @@ export const SUBSISTEMAS: Subsistema[] = [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "camuflaje_trifasico" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "activar_camuflaje" }, mecanismo: "nota_fija", estado: "construido" },
           { tipo: "accion", afecta: { modo: "accion_existente", id: "detonacion_pulso_termico" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
       },
@@ -472,8 +484,8 @@ export const SUBSISTEMAS: Subsistema[] = [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "camuflaje_trifasico" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "activar_camuflaje" }, mecanismo: "nota_fija", estado: "construido" },
           { tipo: "accion", afecta: { modo: "accion_existente", id: "detonacion_pulso_termico" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
       },
@@ -538,6 +550,9 @@ export const SUBSISTEMAS: Subsistema[] = [
             "cualquier modo de ataque.",
         ],
         modificadores: [],
+        // Aviso en Accion.efectos del disparo y del Aguijón (efectosProyectorPulso, combate.ts),
+        // mismo patrón que el Puntero Láser (S96).
+        notaTirada: "Al atacar con cualquier modo: -5 a tu Sigilo (percepción visual).",
         motor: [
           // Hallazgo #1, construido 2026-09-23: tiradaDeProyectorPulso()
           // (combate.ts), registrado en REGISTRO_DE_ATAQUE bajo "subsistema".
@@ -548,10 +563,9 @@ export const SUBSISTEMAS: Subsistema[] = [
           // habilidad — sin inventar un mecanismo de "elige atributo/habilidad
           // dentro de la misma tirada" que no existe.
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_proyector_pulso" }, mecanismo: "accion_equipo", estado: "construido" },
-          // "-5 al sigilo al disparar": mismo caso que la pregunta 25b
-          // (armasFuego.ts) — decisión de producto (2026-09-23) de no
-          // avisarlo en la UI. Se queda en `detalle`, sin más.
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          // "-5 al sigilo al disparar": tirada propia distinta, aviso en `efectos` como el
+          // Puntero Láser (pregunta 25b revertida; S96).
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
       {

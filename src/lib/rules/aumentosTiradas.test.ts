@@ -285,7 +285,7 @@ describe("A2b: alcance por aplicado", () => {
     assert.equal(cambiada.aplicado.id, "perspicacia");
     assert.equal(cambiada.ventaja, "Concentrarse · Prefrontal Aumentada");
     assert.equal(cambiada.costeFatiga, 1);
-    assert.deepEqual(cambiada.casillasSinEfecto, {});
+    assert.equal(cambiada.casillasSinEfecto[CONCENTRARSE_PREFRONTAL], undefined);
   });
 
   test("y al revés: Sincronización (Potencia) deja de valer si la casilla cambia el aplicado", () => {

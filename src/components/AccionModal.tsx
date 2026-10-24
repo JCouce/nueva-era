@@ -6,6 +6,7 @@ import {
   CARAS_DADO,
   tirarDado,
   estadoInicial,
+  dificultadTrasCambio,
   montarTirada,
   avisoInsuficiente,
   resumenCasilla,
@@ -305,8 +306,16 @@ export function AccionModal({
   const [habilidadLibre, setHabilidadLibre] = useState<HabilidadId | null>(tirada.habilidad);
   const tiradaEfectiva: Accion = tirada.libre ? { ...tirada, aplicado: aplicadoLibre, habilidad: habilidadLibre } : tirada;
 
-  const cambiar = (id: string, valor: string | number | boolean) =>
-    setEstado((e) => ({ ...e, [id]: valor }));
+  // Un selector con dificultades por opción (Hemostáticos, tratamientos de la VTM) pone la
+  // suya al elegirla; el jugador puede cambiarla luego a mano.
+  const cambiar = (id: string, valor: string | number | boolean) => {
+    const nuevo = { ...estado, [id]: valor };
+    setEstado(nuevo);
+    const d = dificultadTrasCambio(condiciones, nuevo, id, dificultadInicial);
+    if (d === undefined) return;
+    setDificultad(d);
+    setDificultadCustom(d !== null && !DIFICULTADES.some((x) => x.valor === d) ? String(d) : "");
+  };
 
   const dispararTirada = () => {
     const { dado, dados } = tirarDado(Boolean(montada.ventaja));

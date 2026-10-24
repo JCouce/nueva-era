@@ -9,7 +9,7 @@
 // genera tirada propia: su uso real es la acción sin dado "Reparar y
 // Fabricar" (ReparaFabricaModal.tsx, docs/tareas.md tarea 8), no una tirada.
 import { equipoPorId, type Equipo, type Herramienta } from "../catalog/equipo";
-import type { PiezaEquipada } from "./equipo";
+import { acumulaPorClave, nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
 import type { Accion, AccionDirecta } from "./acciones";
 
@@ -36,6 +36,14 @@ function tiradaDeHerramienta(sheet: Sheet, pieza: PiezaEquipada, cat: Herramient
 
   const nivelInfo = cat.niveles.find((n) => n.nivel === pieza.nivel);
   if (!nivelInfo?.notaTirada) return null;
+  // Dificultad del documento y variantes con la suya (S94): las condiciones sin alcance de los
+  // niveles hasta el actual, acumuladas por id (el Radar 4 hereda la penetración del 3).
+  const niveles = nivelesHasta(cat.niveles, nivelInfo.nivel);
+  const dificultad = ultimoQueDefine(niveles, "dificultadTirada")?.dificultadTirada;
+  const condiciones = acumulaPorClave(
+    niveles.map((n) => (n.condiciones ?? []).filter((c) => !c.alcance)),
+    (c) => c.id,
+  );
 
   return {
     id: `herramienta_${pieza.instanciaId}`,
@@ -46,6 +54,8 @@ function tiradaDeHerramienta(sheet: Sheet, pieza: PiezaEquipada, cat: Herramient
       sheet.habilidades[h].valor > sheet.habilidades[mejor].valor ? h : mejor,
     ),
     nota: nivelInfo.notaTirada,
+    ...(dificultad !== undefined && { dificultadSugerida: dificultad }),
+    ...(condiciones.length > 0 && { condiciones }),
   };
 }
 

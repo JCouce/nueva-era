@@ -11,6 +11,7 @@ import { montarTirada, eleccionSinTocar, tirarMontada, type TiradaMontada } from
 import { accionesDeAtaque } from "./combate";
 import { equipar } from "./equipo";
 import type { CondicionTirada, EstadoCondiciones } from "./condiciones";
+import { ID_CASILLA_ULTRA_FISICAS } from "./farmacos";
 import { DOTES } from "../catalog/dotes";
 import { especialidadesDe, type EspecialidadId } from "../catalog/especialidades";
 import type { DoteComprada } from "./dotesCompradas";
@@ -87,7 +88,8 @@ describe("Velocista en Carrera: fracaso → éxito y éxito → crítico, sin en
   const m = montar(f, t);
 
   test("sin casilla: fijo en la tirada, con sus dos notas", () => {
-    assert.equal(t.condiciones, undefined);
+    // Solo la de «Bajo Ultra Estimulante», que sale siempre en las físicas (S94).
+    assert.deepEqual((t.condiciones ?? []).map((c) => c.id), [ID_CASILLA_ULTRA_FISICAS]);
     assert.equal(m.margenes.criticoExito, 0);
     assert.equal(m.subeGrado, "Velocista");
     assert.deepEqual(

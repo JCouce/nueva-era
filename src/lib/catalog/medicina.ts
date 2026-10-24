@@ -22,6 +22,7 @@
 import type { Herramienta, Consumible } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
 import type { Modificador } from "../rules/modificadores";
+import type { CondicionTirada, OpcionCondicion } from "../rules/condiciones";
 
 // docs/motor.md: el bono de aplicación de la VTM ya está mecanizado como
 // Modificador tipo "tirada" con alcance a la tirada fija "medicina" — mismo
@@ -53,6 +54,93 @@ const bonoAplicacion = (valor: number): Modificador[] => [
   { tipo: "tirada", alcance: { tipo: "tiradaId", id: "medicina" }, valor },
   { tipo: "tirada", alcance: { tipo: "grupo", grupo: "Fármacos" }, valor },
 ];
+
+// Tratamientos de la valija (S94, docs/fuente/equipamiento.md, VTM): opciones de «Tratar
+// heridas» con la dificultad que da el documento (el modal la pone al elegirlas). Un único
+// selector `vtm_tratamiento` que cada nivel vuelve a declarar entero (acumulaPorClave: gana el
+// del nivel más alto), así las opciones de los niveles bajos no se pierden. Nivel 4: los estados
+// complejos que nombra (parálisis, ceguera, confusión, envenenamiento, enfermedad) y la
+// estabilización/síntesis, con cualquier éxito como crítico; la congelación no la nombra.
+const ID_VTM_TRATAMIENTO = "vtm_tratamiento";
+const ALCANCE_TRATAR = { tipo: "tiradaId", id: "medicina" } as const;
+const OPCION_HERIDA_NORMAL: OpcionCondicion = { id: "normal", etiqueta: "Herida normal", valor: 0, sinValor: true };
+const CRITICO_VTM4 = { margenCriticoExito: 0, nota: "VTM nv4: cualquier éxito en esta tirada cuenta como crítico." };
+
+function opcionesTratamientoVtm(nivel: number): OpcionCondicion[] {
+  const nv4 = nivel >= 4;
+  const conCritico = (o: OpcionCondicion): OpcionCondicion =>
+    nv4 ? { ...o, margenCriticoExito: 0, nota: `${o.nota} ${CRITICO_VTM4.nota}` } : o;
+  const opciones: OpcionCondicion[] = [
+    OPCION_HERIDA_NORMAL,
+    {
+      id: "congelacion",
+      etiqueta: "Congelación (regulación térmica)",
+      valor: 0,
+      sinValor: true,
+      dificultad: 6,
+      nota: "Acción compleja: baja un nivel de frío; con crítico, dos.",
+    },
+    conCritico({
+      id: "depuracion",
+      etiqueta: "Envenenamiento o enfermedad (depuración biológica)",
+      valor: 0,
+      sinValor: true,
+      dificultad: 6,
+      nota:
+        "Antes, sintetizar la antitoxina o el antiviral: Perspicacia + Biociencia (Bioquímica), 1 minuto, " +
+        "dificultad variable. Aplicarlo es acción compleja: reduce un grado de la afección; con crítico, dos.",
+    }),
+  ];
+  if (nivel >= 2) {
+    opciones.push(
+      conCritico({
+        id: "paralisis_ceguera",
+        etiqueta: "Parálisis o ceguera temporal",
+        valor: 0,
+        sinValor: true,
+        dificultad: 7,
+        nota: "Acción compleja: baja un nivel del estado; con crítico, dos.",
+      }),
+      conCritico({
+        id: "confusion",
+        etiqueta: "Confusión",
+        valor: 0,
+        sinValor: true,
+        dificultad: 7,
+        nota: "Acción compleja: con éxito revierte un grado; con crítico, la elimina.",
+      }),
+    );
+  }
+  if (nv4) {
+    opciones.push({
+      id: "complejo",
+      etiqueta: "Otro estado complejo / estabilización / síntesis",
+      valor: 0,
+      sinValor: true,
+      ...CRITICO_VTM4,
+      nota: "Cualquier éxito en esta tirada cuenta como crítico.",
+    });
+  }
+  return opciones;
+}
+
+function condicionTratamientoVtm(nivel: number): CondicionTirada {
+  return {
+    id: ID_VTM_TRATAMIENTO,
+    tipo: "opcion",
+    etiqueta: `Tratamiento (VTM nv${nivel})`,
+    opciones: opcionesTratamientoVtm(nivel),
+    porDefecto: "normal",
+    alcance: ALCANCE_TRATAR,
+  };
+}
+
+const MOTOR_TRATAMIENTOS_VTM: MotorMetadata = {
+  tipo: "numerico",
+  afecta: { modo: "accion_existente", id: "medicina" },
+  mecanismo: "eleccion_jugador",
+  estado: "construido",
+};
 
 export const VALIJA_TACTICA_MEDICA: Herramienta = {
   familia: "herramienta",
@@ -88,7 +176,8 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
       // +1 a las tiradas de aplicación (nivel 1-2): bono de personaje entero
       // mientras se lleva la valija, va a la tirada fija "medicina".
       modificadores: bonoAplicacion(1),
-      motor: MOTOR_BONO_APLICACION,
+      condiciones: [condicionTratamientoVtm(1)],
+      motor: [...MOTOR_BONO_APLICACION, MOTOR_TRATAMIENTOS_VTM],
     },
     {
       nivel: 2,
@@ -106,7 +195,8 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
       // tampoco dice que se pierda — se mantiene hasta que nivel 3 lo suba
       // a un total explícito.
       modificadores: bonoAplicacion(1),
-      motor: MOTOR_BONO_APLICACION,
+      condiciones: [condicionTratamientoVtm(2)],
+      motor: [...MOTOR_BONO_APLICACION, MOTOR_TRATAMIENTOS_VTM],
     },
     {
       nivel: 3,
@@ -169,25 +259,7 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
       // tiradas de fármacos aunque la prosa también las mencione — eso
       // queda aparte si hace falta más adelante. El umbral va como dato de la
       // opción (`margenCriticoExito: 0`) y lo aplica montarTirada (montaje.ts).
-      condiciones: [
-        {
-          id: "vtm_tratamiento",
-          tipo: "opcion",
-          etiqueta: "Tipo de tratamiento (VTM nv4)",
-          opciones: [
-            { id: "normal", etiqueta: "Herida normal", valor: 0 },
-            {
-              id: "complejo",
-              etiqueta: "Estado complejo / estabilización / síntesis",
-              valor: 0,
-              nota: "Cualquier éxito en esta tirada cuenta como crítico.",
-              margenCriticoExito: 0,
-            },
-          ],
-          porDefecto: "normal",
-          alcance: { tipo: "tiradaId", id: "medicina" },
-        },
-      ],
+      condiciones: [condicionTratamientoVtm(4)],
       motor: [
         ...MOTOR_BONO_APLICACION,
         {
@@ -340,18 +412,15 @@ export const FARMACOS: Consumible[] = [
     rareza: "Común",
     coste: 50,
     modificadores: [],
-    // Corregido 2026-09-24 (auditoría): dos números reales, dos entradas — el
-    // resto del texto (penalizador por heridas/fatiga, el peaje al terminar,
-    // el colapso por doble dosis) se queda sin transcribir a propósito, mismo
-    // criterio que el resto del catálogo para prosa sin campo de datos propio.
+    // S94 (2026-10-24): los dos números son la casilla «Bajo Ultra Estimulante» (siempre
+    // visible, como la de Xovromium; casillasDeFarmacos, rules/farmacos.ts): +2 en las
+    // iniciativas y +1 en las tiradas con Fortaleza, Potencia o Reflejos que no son salvación.
+    // La reducción de penalizadores por heridas y fatiga, el bajón al terminar y el colapso por
+    // doble dosis siguen en `detalle`, a mano.
     motor: [
-      // +2 a la iniciativa: "iniciativa" es una tiradaId real (tiradas.ts),
-      // pero el bono es temporal (30 min de la dosis) — no existe mecanismo
-      // de bono temporal, así que pendiente aunque el objetivo sí sea real.
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "iniciativa" }, mecanismo: "ajuste_fijo", estado: "pendiente" },
-      // +1 a las acciones físicas de Agilidad o Fuerza: no hay un grupo/tirada
-      // único al que apunte ("acciones físicas" no es una categoría del motor).
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Iniciativa" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:fortaleza/potencia/reflejos" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // −1 a los penalizadores por heridas y fatiga
     ],
   },
   {

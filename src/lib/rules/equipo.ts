@@ -24,12 +24,14 @@ import {
   type Rareza,
 } from "../catalog/equipo";
 import type { ExcepcionRareza } from "../catalog/especies";
+import { MUNICION_GRANADA } from "../catalog/municion";
 import type { EstadoFicha } from "./revision";
 import { ID_BUSQUEDA_MIRA } from "../catalog/mejorasArma";
 import { PELEA } from "../catalog/armasMelee";
 import { alcanzaA, alcanzaAlgunAplicado, type ContextoAccion, type FamiliaArma, type GrupoAccion, type Modificador, type ModificadorConFuente } from "./modificadores";
 import type { CondicionTirada } from "./condiciones";
 import type { AmenazaId, EfectoSalvacion } from "./aumentosTiradas";
+import type { ReduccionPorAplicado } from "./estados";
 import type { HabilidadId } from "./habilidades";
 import { reconciliarRecursos, precioMaterial, sumarGranada, type MaterialTier } from "./recursos";
 import type { Sheet } from "./sheet";
@@ -683,7 +685,7 @@ export function topeRarezaDeCompra(
 // §5.5). Arma, armaMelee, consumible y armaPesada tienen `pesoKg` en el
 // catálogo — armaduras, herramienta y las familias instalables no traen
 // columna de Peso en EQUIP, así que devuelven 0: no es que pesen cero, es
-// que el documento no lo dice. "granada" se queda en esta rama por
+// que el documento no lo dice (salvo las mejoras de arma con `pesoKg`, abajo). "granada" se queda en esta rama por
 // completitud de tipos, aunque en la práctica ninguna PiezaEquipada la lleva
 // ya (docs/tareas.md, 2026-09-27).
 export function pesoDePieza(pieza: PiezaEquipada): number {
@@ -699,13 +701,26 @@ export function pesoDePieza(pieza: PiezaEquipada): number {
     if (cat.familia === "armaMelee") return pesoArmaModificada(cat, pieza.modificaciones ?? []) ?? 0;
     return cat.pesoKg ?? 0;
   }
+  // Mejoras de arma que el documento pesa (Bípode 1: +5 kg; Lanzagranadas Integrado: +1,5 kg;
+  // S96): el dato es `pesoKg` del nivel, el último que lo define (el Bípode 2 lo deja en 0).
+  if (cat.familia === "mejoraArma") {
+    return ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel ?? 1), "pesoKg")?.pesoKg ?? 0;
+  }
   return 0;
 }
 
-// Suma de lo que SÍ se sabe pesar (ver pesoDePieza) de todo lo equipado. No
-// es "el peso total real" — la interfaz avisa de qué falta (personaje/EstadoPanel).
+// Granadas que se llevan (sheet.granadas, recurso con cantidad desde la v8): cada una con el
+// peso de su tabla (0,3-0,5 kg, docs/fuente/equipamiento.md; S96).
+function pesoGranadas(sheet: Sheet): number {
+  return MUNICION_GRANADA.reduce((total, g) => total + (sheet.granadas[g.id] ?? 0) * g.pesoKg, 0);
+}
+
+// Suma de lo que SÍ se sabe pesar (ver pesoDePieza) de todo lo equipado, más las granadas. No
+// es "el peso total real" — la interfaz avisa de qué falta (personaje/EstadoPanel). Redondeado
+// a la centésima (hay pesos de 6,25 kg): 0,3 + 0,4 en coma flotante no da 0,7.
 export function pesoEquipado(sheet: Sheet): number {
-  return sheet.equipo.reduce((total, p) => total + pesoDePieza(p), 0);
+  const total = sheet.equipo.reduce((t, p) => t + pesoDePieza(p), 0) + pesoGranadas(sheet);
+  return Math.round(total * 100) / 100;
 }
 
 // Los modificadores que aporta lo que el jugador lleva puesto. Solo llegan
@@ -784,6 +799,19 @@ export function salvacionesDeEquipo(sheet: Pick<Sheet, "equipo">): { fuente: str
     if (efectos.length > 0) aportes.push({ fuente: `${cat.label} ${pieza.nivel}`, efectos });
   }
   return aportes;
+}
+
+// Puntos menos de penalizador por umbral que da el equipo solo en ciertas tiradas (Derivación
+// Psiónica 4, S94), para modificadoresDeUmbrales: el nivel más alto que lo define, por pieza.
+export function reduccionesDeEquipo(sheet: Pick<Sheet, "equipo">): ReduccionPorAplicado[] {
+  return sheet.equipo.flatMap((pieza): ReduccionPorAplicado[] => {
+    const cat = equipoPorId(pieza.catalogoId);
+    if (!cat || pieza.nivel === undefined || !("niveles" in cat)) return [];
+    if (cat.familia !== "subsistema" && cat.familia !== "mejoraEstandar" && cat.familia !== "herramienta") return [];
+    const nivel = ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel), "reducePenalizador");
+    const r = nivel?.reducePenalizador;
+    return r ? [{ ...r, fuente: `${cat.label} ${pieza.nivel}`, origen: "equipo" }] : [];
+  });
 }
 
 // CondicionTirada (toggle/opción/contador) que el equipo aporta a CUALQUIER

@@ -28,6 +28,18 @@ function casillasCoberturaVisor(): CondicionTirada[] {
   ];
 }
 
+// Soporte Vital, Blindaje Ambiental (S94, docs/fuente/equipamiento.md): "protege de la radiación
+// externa y de intoxicaciones por inhalación o contacto en su totalidad. Sin embargo, si la
+// armadura resulta dañada o el usuario sufre un ataque/evento que le genere daño directo en un
+// ambiente tóxico, esta defensa total se degrada" al bono del nivel.
+function notaBlindajeAmbiental(bono: number): string {
+  return (
+    "protección total contra radiación e intoxicación por inhalación o contacto: sin tirada. " +
+    `El +${bono} solo si la armadura está dañada o sufres un ataque o evento que te haga daño directo ` +
+    "en el ambiente tóxico"
+  );
+}
+
 export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
   {
     familia: "mejoraEstandar",
@@ -48,22 +60,26 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         detalle: [
           "Duración: 24 horas continuas antes de agotarse (recarga con conector, ~30-60 min).",
           "Blindaje Ambiental: protección total contra radiación e intoxicación por inhalación o " +
-            "contacto. Si la armadura sufre daño en un ambiente tóxico, se degrada a +1 a la salvación.",
+            "contacto. Si la armadura resulta dañada o el usuario sufre un ataque o evento que le " +
+            "haga daño directo en un ambiente tóxico, se degrada a +1 a la salvación.",
           "Resistencia Térmica: +1 contra congelación y calor extremo, acumulable con el bonificador " +
             "de la propia armadura.",
           "Vulnerabilidad al Shock: si hay un apagón, todos los bonificadores bajan a +1, salvo la " +
             "resistencia térmica, que se pierde por completo.",
         ],
-        // Resistencia Térmica es el único bono incondicional (el Blindaje
-        // Ambiental depende de sufrir daño en un ambiente tóxico, así que se
-        // queda solo en `detalle`, sin mecanizar). Un único +1 que vale contra
-        // congelación y contra frío o calor extremos, solo contra esas amenazas
-        // (selector «Contra…» de Fortaleza, 2026-10-24); se suma al de la armadura.
+        // Resistencia Térmica: un único +1 contra congelación y contra frío o calor extremos,
+        // solo contra esas amenazas (selector «Contra…» de Fortaleza, 2026-10-24); se suma al de
+        // la armadura. Blindaje Ambiental (S94): sin tirada mientras la protección es total; el
+        // +1 (+2, +3 en los niveles 2 y 3, que lo sustituyen) va en el mismo selector, contra
+        // toxinas y radiación, con la nota de cuándo vale. El apagón sigue en la pregunta 32.
         modificadores: [],
-        salvaciones: [{ contra: ["congelacion", "termicos"], bono: 1 }],
+        salvaciones: [
+          { contra: ["congelacion", "termicos"], bono: 1 },
+          { contra: ["toxinas", "radiacion"], bono: 1, nota: notaBlindajeAmbiental(1) },
+        ],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Resistencia Térmica
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // Blindaje Ambiental: condicional a daño en ambiente tóxico, sin CondicionTirada ni Modificador que lo represente hoy
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Blindaje Ambiental: +1 en «Contra…» (toxinas, radiación), con la protección total como nota
           { tipo: "habilitador", afecta: { modo: "ninguna" }, mecanismo: null, arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "pregunta 32" }, // Vulnerabilidad al Shock (apagón): degrada/deshabilita los bonos de arriba, exacto comportamiento sin definir
         ],
       },
@@ -83,8 +99,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         // duplicaría (nivel1 +1 + nivel2 +1 = +2 real, el bug que S9 quería
         // evitar). Solo lo que este nivel añade DE NUEVO va en su propio array.
         modificadores: [],
+        salvaciones: [{ contra: ["toxinas", "radiacion"], bono: 2, nota: notaBlindajeAmbiental(2) }],
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // Blindaje Ambiental Mejorado
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Blindaje Ambiental Mejorado
           { tipo: "habilitador", afecta: { modo: "ninguna" }, mecanismo: null, arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "pregunta 32" }, // Vulnerabilidad al Shock, heredada
         ],
       },
@@ -99,8 +116,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         // Mismo criterio que nivel 2: Resistencia Térmica ya llega acumulada
         // desde nivel 1, no se repite aquí.
         modificadores: [],
+        salvaciones: [{ contra: ["toxinas", "radiacion"], bono: 3, nota: notaBlindajeAmbiental(3) }],
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // Blindaje Ambiental Avanzado
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Blindaje Ambiental Avanzado
           { tipo: "habilitador", afecta: { modo: "ninguna" }, mecanismo: null, arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "pregunta 32" }, // Vulnerabilidad al Shock, heredada
         ],
       },

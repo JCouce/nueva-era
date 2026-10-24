@@ -28,7 +28,7 @@
 // familia para que ningún import externo tenga que cambiar, y se queda con
 // los tipos compartidos por varias familias (Rareza, NivelModulo,
 // Herramienta, Consumible) más el tipo unión Equipo y equipoPorId.
-import type { Modificador } from "../rules/modificadores";
+import type { AlcanceModificador, Modificador } from "../rules/modificadores";
 import type { CondicionTirada, TramoDistancia } from "../rules/condiciones";
 import type { MotorMetadata } from "../rules/motor";
 import type { HabilidadId } from "../rules/habilidades";
@@ -130,6 +130,10 @@ export type NivelModulo = {
   // Integrado por el peso, por ejemplo). No es una condición porque no hay
   // elección del jugador de por medio.
   ajusteAtaque?: number;
+  // Peso que la pieza suma a la Carga Transportable (Bípode 1: «aumenta la carga del arma en 5
+  // kg»; Lanzagranadas Integrado: 1,5 kg). Total del nivel, no acumulable (S9, ultimoQueDefine):
+  // el Bípode 2 lo pone a 0 («no suma peso adicional»). pesoDePieza, rules/equipo.ts.
+  pesoKg?: number;
   // Bono al ataque del arma que la aloja solo en los modos cuya etiqueta contiene
   // `contieneEtiqueta` ("F. Auto"), o en todos si el arma es de un tipo de `enCualquierModo`
   // (Sistema de Retroceso: "en ametralladoras mejora el ataque en cualquiera de sus modos").
@@ -147,6 +151,15 @@ export type NivelModulo = {
   // Habilidades con las que se puede hacer esa tirada, si no es solo Tecnociencia: se tira con
   // la más alta de la ficha (Escáner Detector 2: "o Biociencia"). Sin especialidad: entera.
   habilidadesTirada?: readonly HabilidadId[];
+  // Dificultad con la que se abre esa tirada (Escáner Detector: 6), del nivel más alto que la
+  // defina (ultimoQueDefine). Las variantes (escáner profundo 8, penetración del Radar 8) van
+  // como opción con `dificultad` en `condiciones` sin `alcance`: solo en la fila de la pieza
+  // (tiradaDeHerramienta, rules/herramientas.ts). S94.
+  dificultadTirada?: number;
+  // Puntos menos del penalizador por umbral de un recurso en las tiradas de ese alcance
+  // (Derivación Psiónica 4: −1 al de fatiga en las de poder psiónico). Total del nivel
+  // (ultimoQueDefine); lo recoge reduccionesDeEquipo (rules/equipo.ts). S94.
+  reducePenalizador?: { recurso: "salud" | "fatiga"; valor: number; alcance: AlcanceModificador };
   // Solo lo usa el Escudo Deflector: puntos de absorción de daño de ESE
   // nivel (docs/sistema.md pregunta 29, blindaje.ts) — total del nivel, no
   // acumulativo entre niveles (S9, ultimoQueDefine), igual que velocidadM.

@@ -350,3 +350,35 @@ describe("M1b: daño melee, bayoneta y Sutil desde la ficha resuelta", () => {
     assert.equal(danio(resolver({ ...s, especieId: "arkoru" }), "Golpear con Puñetazo").danio, 4);
   });
 });
+
+// S94: Derivación Psiónica 4, "reduce en 1 los penalizadores por fatiga cuando vaya a realizar
+// una tirada relacionada con el empleo de un poder psiónico" (docs/fuente/equipamiento.md).
+describe("Derivación Psiónica 4: −1 al penalizador por fatiga solo en las tiradas de poder", () => {
+  const conDerivacion = (fatigaActual: number, nivel: number) => {
+    let s = equipar(ficha({ psionica: { traslacion: 2, singularidad: 2 }, fatigaActual }), { instanciaId: "a", catalogoId: "armadura_pesada" });
+    s = equipar(s, { instanciaId: "dp", catalogoId: "derivacion_psionica", nivel, instaladoEnId: "a" });
+    return resolver(s);
+  };
+  const impulso = (f: FichaResuelta) => {
+    const poder = accionesDePsionica(f.ficha, f.psionica.paraEfectos).find((p) => p.accion.id === "psi_singularidad_impulso")!;
+    return prepararPoder({ ficha: f.ficha, modificadores: f.modificadores, niveles: f.psionica.paraEfectos, poder, seleccion: SELECCION_PODER_VACIA })!.montada!;
+  };
+  const penalizadorFatiga = (lineas: { etiqueta: string; valor: number }[]) =>
+    lineas.filter((l) => /Fatigado|Exhausto|Derivación/.test(l.etiqueta)).reduce((t, l) => t + l.valor, 0);
+
+  test("Exhausto (−2): el poder tira con −1, con su compensación en el desglose", () => {
+    const f = conDerivacion(1, 4);
+    const m = impulso(f);
+    assert.equal(penalizadorFatiga(m.desglose), -1);
+    assert.ok(m.desglose.some((l) => l.etiqueta === "Derivación Psiónica 4 (Exhausto)" && l.valor === 1));
+  });
+
+  test("fuera de los poderes no compensa nada (salvación de Fortaleza)", () => {
+    assert.equal(penalizadorFatiga(montar(conDerivacion(1, 4)).desglose), -2);
+  });
+
+  test("sin penalizador por fatiga no suma nada; con el nivel 3, tampoco compensa", () => {
+    assert.equal(penalizadorFatiga(impulso(conDerivacion(12, 4)).desglose), 0);
+    assert.equal(penalizadorFatiga(impulso(conDerivacion(1, 3)).desglose), -2);
+  });
+});

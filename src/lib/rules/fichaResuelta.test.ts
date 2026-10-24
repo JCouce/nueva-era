@@ -311,3 +311,72 @@ describe("resolverFicha da exactamente lo mismo", () => {
     }
   });
 });
+
+// S93 (usuario, 2026-10-24): el «Bonificador Máximo de Agilidad» de la armadura topa la
+// Agilidad calculada mientras se lleva; con dos, el tope menor. S94 lo construye.
+describe("tope de Agilidad de la armadura", () => {
+  const resolver = (s: Sheet) => resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+  const conAgilidad = (agilidad: number): Sheet => {
+    const s = defaultSheet();
+    return { ...s, atributos: { ...s.atributos, fuerza: 2, agilidad, percepcion: 2 } };
+  };
+  const vestida = (s: Sheet, ...ids: string[]) =>
+    ids.reduce((acc, catalogoId, i) => equipar(acc, { instanciaId: `arm${i}`, catalogoId }), s);
+
+  test("Intermedia (tope 2) con Agilidad 4: la ficha juega con 2, y lo dice", () => {
+    const f = resolver(vestida(conAgilidad(4), "armadura_intermedia"));
+    assert.equal(f.atributos.agilidad, 2);
+    assert.deepEqual(f.topeAgilidad && { sinTope: f.topeAgilidad.sinTope, tope: f.topeAgilidad.tope, armadura: f.topeAgilidad.armadura }, {
+      sinTope: 4,
+      tope: 2,
+      armadura: "Armadura Intermedia",
+    });
+    assert.deepEqual(f.desgloses.atributos.agilidad.fuentes, [
+      { etiqueta: "Base", valor: 4 },
+      { etiqueta: "Tope de Agilidad (Armadura Intermedia)", valor: -2 },
+    ]);
+    // Lo que sale de la Agilidad, ya topado: Potencia ⌊(2+2)/2⌋, Reflejos ⌊(2+2)/2⌋.
+    assert.equal(f.aplicados.potencia, 2);
+    assert.equal(f.aplicados.reflejos, 2);
+    const sinArmadura = resolver(conAgilidad(2));
+    assert.deepEqual(f.movimiento, sinArmadura.movimiento);
+  });
+
+  test("por debajo del tope, o con armadura Ilimitada, no toca nada", () => {
+    assert.equal(resolver(vestida(conAgilidad(2), "armadura_intermedia")).topeAgilidad, null);
+    const ilimitada = resolver(vestida(conAgilidad(5), "traje_ultra_ligero"));
+    assert.equal(ilimitada.topeAgilidad, null);
+    assert.equal(ilimitada.atributos.agilidad, 5);
+  });
+
+  test("con la especie y el equipo dentro: topa la Agilidad calculada, no la comprada", () => {
+    // Riux: Agilidad +1. Comprada 2 → 3, la Intermedia la deja en 2.
+    const f = resolver({ ...vestida(conAgilidad(2), "armadura_intermedia"), especieId: "riux" });
+    assert.equal(f.atributos.agilidad, 2);
+    assert.equal(f.topeAgilidad?.sinTope, 3);
+  });
+
+  test("con dos armaduras vale el tope menor", () => {
+    const f = resolver(vestida(conAgilidad(4), "armadura_ligera", "armadura_pesada_avanzada"));
+    assert.equal(f.atributos.agilidad, 1);
+    assert.equal(f.topeAgilidad?.armadura, "Armadura Pesada Avanzada");
+  });
+});
+
+// S94: Soporte Vital, Blindaje Ambiental en el selector «Contra…» de Fortaleza.
+describe("Soporte Vital en «Contra…: Toxinas»", () => {
+  test("el +N del nivel con la nota de la protección total", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "a", catalogoId: "armadura_ligera" });
+    s = equipar(s, { instanciaId: "sv", catalogoId: "soporte_vital", nivel: 2, instaladoEnId: "a" });
+    const f = resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+    const ctx: ContextoAccion = { id: "salv_fortaleza", grupo: "Salvaciones", habilidad: null, modoElegido: null };
+    const selector = consultaIndiceCondiciones(f.indiceCondiciones, ctx).find((c) => c.id === "aum_contra_salv_fortaleza");
+    assert.ok(selector?.tipo === "opcion");
+    const opciones = selector.opciones;
+    for (const amenaza of ["toxinas", "radiacion"]) {
+      const o = opciones.find((x) => x.id === amenaza)!;
+      assert.equal(o.valor, 2, amenaza);
+      assert.match(o.nota ?? "", /Soporte Vital 2: protección total contra radiación e intoxicación/);
+    }
+  });
+});

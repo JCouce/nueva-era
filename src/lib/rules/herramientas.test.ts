@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { defaultSheet } from "./sheet";
 import { equipar } from "./equipo";
 import { accionesDeHerramientas, accionesDirectasDeHerramientas } from "./herramientas";
+import { dificultadTrasCambio, estadoInicial } from "./condiciones";
 
 describe("sin nada equipado", () => {
   test("no aparece ninguna herramienta", () => {
@@ -110,5 +111,48 @@ describe("Escáner Detector: con qué habilidad tira", () => {
   test("sin especialidad nombrada", () => {
     const [fila] = accionesDeHerramientas(conHabilidades(2, 1, 3));
     assert.equal(fila.especialidadesAccion, undefined);
+  });
+});
+
+// S94 (docs/fuente/equipamiento.md, Herramientas): la tirada se abre en la dificultad del
+// documento y las variantes son un selector de la fila con la suya.
+describe("dificultades del Escáner Detector y el Radar", () => {
+  const fila = (catalogoId: string, nivel: number) =>
+    accionesDeHerramientas(equipar(defaultSheet(), { instanciaId: "h1", catalogoId, nivel }))[0];
+  const variantes = (catalogoId: string, nivel: number, id: string) => {
+    const c = (fila(catalogoId, nivel).condiciones ?? []).find((x) => x.id === id);
+    assert.ok(c?.tipo === "opcion");
+    return c.opciones.map((o) => [o.id, o.dificultad]);
+  };
+
+  test("Escáner 1: dificultad 6, sin selector", () => {
+    assert.equal(fila("escaner_detector", 1).dificultadSugerida, 6);
+    assert.equal(fila("escaner_detector", 1).condiciones, undefined);
+  });
+
+  test("Escáner 2: 6 superficial, 8 profundo", () => {
+    const t = fila("escaner_detector", 2);
+    assert.equal(t.dificultadSugerida, 6);
+    assert.deepEqual(variantes("escaner_detector", 2, "escaner_profundidad"), [["superficial", 6], ["profundo", 8]]);
+    const cs = t.condiciones ?? [];
+    assert.equal(dificultadTrasCambio(cs, { ...estadoInicial(cs), escaner_profundidad: "profundo" }, "escaner_profundidad", 6), 8);
+  });
+
+  test("Radar 1-2: dificultad 7, sin selector", () => {
+    for (const nivel of [1, 2]) {
+      assert.equal(fila("radar", nivel).dificultadSugerida, 7);
+      assert.equal(fila("radar", nivel).condiciones, undefined);
+    }
+  });
+
+  test("Radar 3 y 4: penetración de obstáculos a 8 (20 m en el 3, 100 m en el 4)", () => {
+    for (const [nivel, alcance] of [[3, "20 m"], [4, "100 m"]] as const) {
+      assert.equal(fila("radar", nivel).dificultadSugerida, 7);
+      assert.deepEqual(variantes("radar", nivel, "radar_barrido"), [["habitual", 7], ["penetracion", 8]]);
+      const c = (fila("radar", nivel).condiciones ?? []).find((x) => x.id === "radar_barrido");
+      assert.ok(c?.tipo === "opcion");
+      assert.match(c.opciones[1].nota ?? "", new RegExp(`alcance ${alcance}`));
+      assert.equal((fila("radar", nivel).condiciones ?? []).length, 1);
+    }
   });
 });

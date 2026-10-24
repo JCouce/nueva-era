@@ -346,8 +346,10 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
     ajusteDanio: 0,
     efecto:
       "Envenenamiento (7): al fallar, enfermo 1; con fallo crítico, enfermo 2 y un nivel de daño " +
-      "agravado. Superándola, -1 durante un turno contra envenenamiento. Sin tratamiento médico " +
-      "relanza la salvación a los 10 turnos (basta un éxito). Afecta a sintéticos, con +2 a su salvación.",
+      "agravado. Superándola, -1 durante un turno contra envenenamiento; con crítico, sin ningún efecto. " +
+      "Si vuelve a recibir daño ya envenenado por radiación, relanza y puede agravarse un nivel. Sin " +
+      "tratamiento médico relanza la salvación a los 10 turnos (basta un éxito). Afecta a sintéticos, " +
+      "con +2 a su salvación.",
   },
   {
     id: "supresora",
@@ -358,10 +360,124 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
     efecto:
       "Daño normal y salvación contra la toxina (8) si recibe daño. Al fallar, un psiónico gasta el " +
       "doble de fatiga y sufre -2 a su empleo durante 1 minuto; con fallo crítico, además un nivel de " +
-      "daño letal por punto de fatiga empleado. Superándola, -1 durante un turno contra la misma toxina.",
+      "daño letal por punto de fatiga empleado. Superándola, -1 durante un turno contra la misma toxina; " +
+      "con crítico, sin efecto. Acumular fallos pasa a fallo crítico y prolonga la duración del efecto.",
   },
 ];
 
 export function municionEspecialPorId(id: string): MunicionEspecial | null {
   return MUNICION_ESPECIAL.find((m) => m.id === id) ?? null;
 }
+
+// ── Munición regular ── docs/fuente/equipamiento.md, "Munición Regular" (S95, 2026-10-24).
+// No es stock compartido como la especial: recarga el recurso de CADA arma (sheet.recursos,
+// recargaDePieza en recursos.ts), y el arma dice cuál usa (`tipoMunicion` de ArmaFuego /
+// ArmaPesada; sin él, un arma de fuego usa Calibre Estándar). `coste` es por unidad de compra:
+// un proyectil (un rayo en la Célula de Partículas) salvo el Depósito de Lanzallamas, que se
+// compra entero y llena `proyectilesPorUnidad` disparos (el cargador 30 de su tabla).
+export type MunicionRegularId =
+  | "calibre_estandar"
+  | "bateria_laser"
+  | "celula_particulas"
+  | "bateria_plasma"
+  | "deposito_lanzallamas"
+  | "cohete"
+  | "misil"
+  | "bateria_plasma_canon";
+
+// Las tres familias de energía de las armas de fuego (Láser, Rayo de Partículas, Plasma).
+export type MunicionEnergiaId = Extract<MunicionRegularId, "bateria_laser" | "celula_particulas" | "bateria_plasma">;
+
+export type MunicionRegular = {
+  id: MunicionRegularId;
+  label: string;
+  rareza: Rareza;
+  coste: number;
+  unidadCompra: string; // "proyectil", "rayo", "depósito": lo que dice el documento tras la barra
+  proyectilesPorUnidad: number;
+  etiquetaRecarga: string; // el botón de recargar
+  unidadRecurso: string; // plural del recurso, para el aviso de "no te llega"
+};
+
+export const MUNICION_REGULAR: Record<MunicionRegularId, MunicionRegular> = {
+  calibre_estandar: {
+    id: "calibre_estandar",
+    label: "Munición Calibre Estándar",
+    rareza: "Común",
+    coste: 2,
+    unidadCompra: "proyectil",
+    proyectilesPorUnidad: 1,
+    etiquetaRecarga: "Cargador",
+    unidadRecurso: "balas",
+  },
+  bateria_laser: {
+    id: "bateria_laser",
+    label: "Batería Láser",
+    rareza: "Extraño",
+    coste: 2,
+    unidadCompra: "proyectil",
+    proyectilesPorUnidad: 1,
+    etiquetaRecarga: "Batería",
+    unidadRecurso: "cargas",
+  },
+  celula_particulas: {
+    id: "celula_particulas",
+    label: "Célula de Partículas",
+    rareza: "Muy Extraño",
+    coste: 15,
+    unidadCompra: "rayo",
+    proyectilesPorUnidad: 1,
+    etiquetaRecarga: "Célula",
+    unidadRecurso: "cargas",
+  },
+  bateria_plasma: {
+    id: "bateria_plasma",
+    label: "Batería de Plasma",
+    rareza: "Singular",
+    coste: 20,
+    unidadCompra: "proyectil",
+    proyectilesPorUnidad: 1,
+    etiquetaRecarga: "Batería",
+    unidadRecurso: "cargas",
+  },
+  deposito_lanzallamas: {
+    id: "deposito_lanzallamas",
+    label: "Depósito de Lanzallamas",
+    rareza: "Común",
+    coste: 60,
+    unidadCompra: "depósito",
+    proyectilesPorUnidad: 30,
+    etiquetaRecarga: "Depósito",
+    unidadRecurso: "cargas",
+  },
+  cohete: {
+    id: "cohete",
+    label: "Cohete",
+    rareza: "Común",
+    coste: 250,
+    unidadCompra: "proyectil",
+    proyectilesPorUnidad: 1,
+    etiquetaRecarga: "Cohete",
+    unidadRecurso: "cohetes",
+  },
+  misil: {
+    id: "misil",
+    label: "Misil",
+    rareza: "Poco Habitual",
+    coste: 5000,
+    unidadCompra: "proyectil",
+    proyectilesPorUnidad: 1,
+    etiquetaRecarga: "Misil",
+    unidadRecurso: "misiles",
+  },
+  bateria_plasma_canon: {
+    id: "bateria_plasma_canon",
+    label: "Batería de Plasma para Cañón",
+    rareza: "Singular",
+    coste: 5000,
+    unidadCompra: "proyectil",
+    proyectilesPorUnidad: 1,
+    etiquetaRecarga: "Batería",
+    unidadRecurso: "cargas",
+  },
+};

@@ -22,10 +22,17 @@
 //     base del catálogo) tanto a `max` como a `actual` — comprar un cargador
 //     de más para llevar de repuesto, sin tope superior (la Carga
 //     Transportable es el límite natural, aunque sus penalizadores siguen
-//     sin mecanizar). Precio fijo, igual en los dos casos de "stock".
+//     sin mecanizar). Desde 2026-10-24 (S95) se paga por proyectil: lo que se
+//     rellena, o el cargador de repuesto entero (recargaDePieza).
 import { z } from "zod";
 import { equipoPorId, type Consumible, type Rareza, type TipoArma } from "../catalog/equipo";
-import { MUNICION_GRANADA, LOTE_MUNICION_ESPECIAL, municionEspecialPorId } from "../catalog/municion";
+import {
+  MUNICION_GRANADA,
+  MUNICION_REGULAR,
+  LOTE_MUNICION_ESPECIAL,
+  municionEspecialPorId,
+  type MunicionRegular,
+} from "../catalog/municion";
 import { PREFIJO_MEJORA_MUNICION } from "../catalog/mejorasArma";
 import { FARMACOS } from "../catalog/medicina";
 import type { PiezaEquipada } from "./equipo";
@@ -264,36 +271,59 @@ export const recursoSchema = z.object({
 // mesa), el jugador ajusta el número a mano con el +/- de siempre.
 export type TipoRecarga = "stock" | "tope" | "durabilidad" | "colchon";
 
-// Precios fijos, sin depender de la capacidad de la pieza (docs/sistema.md
-// S17/S18) — decisión explícita del usuario, sin base en `EQUIP`.
-export const PRECIO_CARGADOR_BALAS = 50; // S18
+// Batería portátil de una célula ("tope": Subsistemas, Movilidad Aérea), precio fijo (S17).
 export const PRECIO_BATERIA_PORTATIL = 150; // S17
 
-// Qué se compra para recargar una pieza y a qué precio: cargador de balas
-// para armas balísticas, batería portátil para lo que tiene célula ("tope") y
-// para las armas de energía (Láser/Plasma/Rayo, `tipoMunicion: "energia"`) —
-// estas mantienen el comportamiento "stock" de un arma, solo cambia qué se
-// compra y cuánto cuesta (decisión del usuario 2026-09-28). null si la pieza
-// no se recarga con créditos.
-export function recargaDePieza(pieza: PiezaEquipada): { etiqueta: "Cargador" | "Batería"; precio: number } | null {
+// La munición regular que recarga una pieza (S95): la que dice el arma, o Calibre Estándar
+// en un arma de fuego que no dice ninguna; el armamento pesado, la suya (el Lanzagranadas no
+// tiene: dispara granadas). null si la pieza no se recarga con munición.
+export function municionRegularDePieza(pieza: Pick<PiezaEquipada, "catalogoId">): MunicionRegular | null {
+  const cat = equipoPorId(pieza.catalogoId);
+  if (cat?.familia === "arma") return MUNICION_REGULAR[cat.tipoMunicion ?? "calibre_estandar"];
+  if (cat?.familia === "armaPesada" && cat.tipoMunicion) return MUNICION_REGULAR[cat.tipoMunicion];
+  return null;
+}
+
+export type Recarga = {
+  etiqueta: string;
+  precio: number;
+  // La munición que se compra (null: batería portátil de una célula) y cuántos disparos mete.
+  municion: MunicionRegular | null;
+  proyectiles: number;
+};
+
+// Qué se compra para recargar una pieza y a qué precio. Una célula ("tope"), la batería
+// portátil a precio fijo (S17). Un arma ("stock"), su munición regular a precio por
+// proyectil (S95): lo que falta hasta el máximo si no está llena, un cargador entero de
+// repuesto si lo está (ver comprarRecarga); el Depósito de Lanzallamas se compra entero.
+// Sin `recurso` (aún no rastreado), el precio de un cargador entero. null si la pieza no se
+// recarga con créditos.
+export function recargaDePieza(
+  pieza: PiezaEquipada,
+  recurso?: Pick<RecursoInstancia, "actual" | "max">,
+): Recarga | null {
   const cap = capacidadDePieza(pieza);
   if (!cap || cap.tipo === "durabilidad" || cap.tipo === "colchon") return null;
-  const cat = equipoPorId(pieza.catalogoId);
-  const esEnergia = cat?.familia === "arma" && cat.tipoMunicion === "energia";
-  return cap.tipo === "stock" && !esEnergia
-    ? { etiqueta: "Cargador", precio: PRECIO_CARGADOR_BALAS }
-    : { etiqueta: "Batería", precio: PRECIO_BATERIA_PORTATIL };
+  if (cap.tipo === "tope") return { etiqueta: "Batería", precio: PRECIO_BATERIA_PORTATIL, municion: null, proyectiles: cap.max };
+  const municion = municionRegularDePieza(pieza);
+  if (!municion) return null;
+  const proyectiles = recurso && recurso.actual < recurso.max ? recurso.max - recurso.actual : cap.max;
+  const unidades = Math.ceil(proyectiles / municion.proyectilesPorUnidad);
+  return { etiqueta: municion.etiquetaRecarga, precio: unidades * municion.coste, municion, proyectiles };
 }
 
 // Capacidad y comportamiento de recarga de una pieza equipada, o null si esa
 // pieza no aporta ningún recurso: familias fuera de alcance de este primer
-// pase (armaPesada, granada, armaMelee...) y Subsistemas sin `célula` (el
+// pase (granada, armaMelee sin defensa...), el Lanzagranadas pesado y Subsistemas sin `célula` (el
 // Escudo Deflector es autorrecargable, ver catalog/equipo.ts) devuelven null
 // a propósito — no es un hueco, es la pieza sin recurso que rastrear.
 export function capacidadDePieza(pieza: PiezaEquipada): { max: number; tipo: TipoRecarga } | null {
   const cat = equipoPorId(pieza.catalogoId);
   if (!cat) return null;
   if (cat.familia === "arma") return { max: cat.municion, tipo: "stock" };
+  // Armamento pesado (S95): su cargador, recargado con su munición regular. El Lanzagranadas
+  // no: gasta de sheet.granadas.
+  if (cat.familia === "armaPesada" && cat.tipoMunicion) return { max: cat.cargador, tipo: "stock" };
   // Malla Plasmática ANTES que el chequeo genérico de célula de abajo: la
   // pieza tiene las dos cosas (célula de batería para activarse Y colchón de
   // puntos de golpe), pero sheet.recursos solo guarda UN recurso por
@@ -368,7 +398,7 @@ export function ajustarRecurso(sheet: Sheet, instanciaId: string, delta: number)
 }
 
 // "Comprar cargador"/"comprar batería": aplica el comportamiento que toque
-// según el tipo de recurso, con su precio fijo (S17/S18). null si la pieza
+// según el tipo de recurso, al precio de recargaDePieza (S17, S95). null si la pieza
 // no tiene recurso que recargar — no debería llegar aquí, la UI no ofrece el
 // botón en ese caso, pero el servidor no confía en el cliente.
 export function comprarRecarga(
@@ -390,7 +420,7 @@ export function comprarRecarga(
   const nuevo: RecursoInstancia = compraCargadorDeMas
     ? { ...recurso, actual: recurso.max + cap.max, max: recurso.max + cap.max }
     : { ...recurso, actual: recurso.max };
-  const coste = recargaDePieza(pieza)?.precio ?? PRECIO_BATERIA_PORTATIL;
+  const coste = recargaDePieza(pieza, recurso)?.precio ?? PRECIO_BATERIA_PORTATIL;
 
   return {
     sheet: { ...sheet, recursos: sheet.recursos.map((r) => (r.instanciaId === instanciaId ? nuevo : r)) },

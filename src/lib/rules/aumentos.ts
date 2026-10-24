@@ -365,7 +365,7 @@ export function ajusteUmbralesDeAumentos(sheet: Pick<Sheet, "equipo">): AjusteUm
 export function reduccionesPorAplicadoDeAumentos(sheet: Pick<Sheet, "equipo">): ReduccionPorAplicado[] {
   return reduccionesDeAumentos(sheet).flatMap(({ fuente, r }): ReduccionPorAplicado[] =>
     r.de !== "carga" && r.aplicados
-      ? [{ recurso: RECURSO_DE[r.de], valor: r.valor, aplicados: r.aplicados, fuente, origen: "aumento" }]
+      ? [{ recurso: RECURSO_DE[r.de], valor: r.valor, alcance: { tipo: "aplicado", aplicados: r.aplicados }, fuente, origen: "aumento" }]
       : [],
   );
 }

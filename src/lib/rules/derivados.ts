@@ -55,6 +55,47 @@ export function atributosEfectivos(
   ) as Record<AtributoId, number>;
 }
 
+// Tope de Agilidad de las armaduras (S93, decisión del usuario 2026-10-24): el «Bonificador
+// Máximo de Agilidad» de la tabla (`bonifMaxAgilidad`, null = Ilimitado) topa la Agilidad
+// calculada de la ficha mientras se lleva la armadura; con dos, vale el tope menor. null si
+// ninguna armadura equipada lo pone.
+export function topeAgilidadDeArmaduras(sheet: Pick<Sheet, "equipo">): { tope: number; fuente: string } | null {
+  let tope: { tope: number; fuente: string } | null = null;
+  for (const pieza of sheet.equipo) {
+    const cat = equipoPorId(pieza.catalogoId);
+    if (cat?.familia !== "armadura" || cat.bonifMaxAgilidad === null) continue;
+    if (!tope || cat.bonifMaxAgilidad < tope.tope) tope = { tope: cat.bonifMaxAgilidad, fuente: cat.label };
+  }
+  return tope;
+}
+
+// Cuando la Agilidad de `mods` pasa el tope de la armadura: el valor sin topar, el tope, la
+// armadura que lo pone y el modificador (negativo) que la deja en él. Va el último: todo lo que
+// sale de la Agilidad (aplicados, movimiento, tiradas) usa ya el valor topado. Origen "equipo",
+// para que el desglose diga de dónde sale. null si no lo pasa.
+export type TopeAgilidadAplicado = {
+  sinTope: number;
+  tope: number;
+  armadura: string;
+  modificador: ModificadorConFuente & { tipo: "atributo" };
+};
+
+export function topeAgilidadAplicado(
+  sheet: Pick<Sheet, "atributos" | "equipo">,
+  mods: ModificadorConFuente[],
+): TopeAgilidadAplicado | null {
+  const tope = topeAgilidadDeArmaduras(sheet);
+  if (!tope) return null;
+  const agilidad = sheet.atributos.agilidad + bonoAtributo(mods, "agilidad");
+  if (agilidad <= tope.tope) return null;
+  return {
+    sinTope: agilidad,
+    tope: tope.tope,
+    armadura: tope.fuente,
+    modificador: { tipo: "atributo", id: "agilidad", valor: tope.tope - agilidad, origen: "equipo", fuente: `Tope de Agilidad (${tope.fuente})` },
+  };
+}
+
 // Desglose de un atributo básico: la base comprada más cada modificador
 // activo que le toque, con su procedencia. Pensado para que la ficha explique
 // de dónde sale un número en vez de mostrar un total opaco — pieza central,

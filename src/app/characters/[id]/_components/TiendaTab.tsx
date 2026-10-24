@@ -672,11 +672,13 @@ function SeccionMunicion({
   onRecargar: (instanciaId: string) => void;
   onComprarMunicionEspecial: (municionId: string) => void;
 }) {
+  // Armas de fuego y armamento pesado: cada una con su munición regular (S95), al precio por
+  // proyectil del documento — lo que falta para llenarla, o un cargador de repuesto si ya está llena.
   const armas = sheet.recursos.flatMap((recurso) => {
     const pieza = sheet.equipo.find((p) => p.instanciaId === recurso.instanciaId);
     const cat = pieza ? equipoPorId(pieza.catalogoId) : null;
-    const recarga = pieza ? recargaDePieza(pieza) : null;
-    return cat?.familia === "arma" && recarga ? [{ recurso, cat, recarga }] : [];
+    const recarga = pieza ? recargaDePieza(pieza, recurso) : null;
+    return cat && recarga?.municion ? [{ recurso, cat, recarga, municion: recarga.municion }] : [];
   });
 
   return (
@@ -684,31 +686,44 @@ function SeccionMunicion({
       <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Recargar"}</p>
       {armas.length === 0 ? (
         <p className="font-sans text-prosa-sm text-soft">
-          No llevas ningún arma de fuego equipada.
+          No llevas ningún arma de fuego ni pesada equipada.
         </p>
       ) : (
-        armas.map(({ recurso, cat, recarga }) => (
-          <div
-            key={recurso.instanciaId}
-            className="clip-chamfer-sm flex items-center justify-between gap-2 border border-border bg-surface p-3"
-          >
-            <div className="min-w-0">
-              <p className="truncate font-display text-xs font-semibold uppercase text-foreground">{cat.label}</p>
-              <p className="font-mono text-[11px] tabular-nums text-muted">
-                {recurso.actual}/{recurso.max}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => onRecargar(recurso.instanciaId)}
-              disabled={recarga.precio > creditos}
-              className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-1.5 font-mono text-[11px] uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted"
+        armas.map(({ recurso, cat, recarga, municion }) => {
+          const sinRareza = topeRareza !== null && !rarezaPermitida(municion.rareza, topeRareza);
+          return (
+            <div
+              key={recurso.instanciaId}
+              className="clip-chamfer-sm flex flex-col gap-1 border border-border bg-surface p-3"
             >
-              {recarga.etiqueta}
-              {Number.isFinite(creditos) && <span className="ml-1 opacity-80">{recarga.precio} cr.</span>}
-            </button>
-          </div>
-        ))
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate font-display text-xs font-semibold uppercase text-foreground">{cat.label}</p>
+                  <p className="font-mono text-[11px] tabular-nums text-muted">
+                    {recurso.actual}/{recurso.max} · {municion.label} · {municion.coste} cr./{municion.unidadCompra}
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <BadgeRareza rareza={municion.rareza} />
+                  <button
+                    type="button"
+                    onClick={() => onRecargar(recurso.instanciaId)}
+                    disabled={recarga.precio > creditos || sinRareza}
+                    className="clip-chamfer-sm border border-accent bg-accent px-3 py-1.5 font-mono text-[11px] uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted"
+                  >
+                    {recarga.etiqueta} +{recarga.proyectiles}
+                    {Number.isFinite(creditos) && <span className="ml-1 opacity-80">{recarga.precio} cr.</span>}
+                  </button>
+                </div>
+              </div>
+              {sinRareza && (
+                <p className="font-sans text-prosa-sm text-danger">
+                  Tu letra de Recursos no llega a {municion.rareza}: tope {topeRareza}.
+                </p>
+              )}
+            </div>
+          );
+        })
       )}
 
       <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">

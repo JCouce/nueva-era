@@ -7,6 +7,9 @@ import {
   notasCondiciones,
   valorBonosTramo,
   desgloseBonosTramo,
+  dificultadDeCondiciones,
+  dificultadTrasCambio,
+  resumenOpcion,
   type CondicionTirada,
 } from "./condiciones";
 
@@ -206,5 +209,39 @@ describe("bonos por tramo", () => {
       lineas.map((l) => l.valor),
       [1, 2],
     );
+  });
+});
+
+// S94: opciones que fijan la dificultad (Hemostáticos, tratamientos de la VTM, Escáner, Radar).
+describe("opciones con dificultad", () => {
+  const SELECTOR: CondicionTirada = {
+    id: "trat",
+    tipo: "opcion",
+    etiqueta: "Tratamiento",
+    opciones: [
+      { id: "normal", etiqueta: "Normal", valor: 0, sinValor: true },
+      { id: "frio", etiqueta: "Congelación", valor: 0, sinValor: true, dificultad: 6 },
+      { id: "confusion", etiqueta: "Confusión", valor: 0, sinValor: true, dificultad: 7 },
+    ],
+    porDefecto: "normal",
+  };
+
+  test("la opción elegida fija la dificultad; sin ella, undefined", () => {
+    assert.equal(dificultadDeCondiciones([SELECTOR], { trat: "normal" }), undefined);
+    assert.equal(dificultadDeCondiciones([SELECTOR], { trat: "frio" }), 6);
+  });
+
+  test("al cambiar el selector: la de la opción, o la base si no trae ninguna", () => {
+    assert.equal(dificultadTrasCambio([SELECTOR], { trat: "confusion" }, "trat", 7), 7);
+    assert.equal(dificultadTrasCambio([SELECTOR], { trat: "frio" }, "trat", 9), 6);
+    assert.equal(dificultadTrasCambio([SELECTOR], { trat: "normal" }, "trat", 9), 9);
+  });
+
+  test("un cambio en otra condición sin dificultades no la toca", () => {
+    assert.equal(dificultadTrasCambio([SELECTOR, TOGGLE], { trat: "frio", apoyado: true }, "apoyado", 7), undefined);
+  });
+
+  test("el botón enseña la dificultad", () => {
+    assert.equal(resumenOpcion({ id: "x", etiqueta: "X", valor: 0, sinValor: true, dificultad: 9 }), "dif. 9");
   });
 });

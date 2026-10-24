@@ -1,9 +1,15 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
-import { accionesDeFarmacos, accionesDirectasDeFarmacos, ID_CASILLA_ANTIPATOGENO } from "./farmacos";
-import { ACCIONES } from "./acciones";
-import { estadoInicial } from "./condiciones";
+import {
+  accionesDeFarmacos,
+  accionesDirectasDeFarmacos,
+  ID_CASILLA_ANTIPATOGENO,
+  ID_CASILLA_ULTRA_FISICAS,
+  ID_CASILLA_ULTRA_INICIATIVA,
+} from "./farmacos";
+import { ACCIONES, type Accion } from "./acciones";
+import { dificultadTrasCambio, estadoInicial } from "./condiciones";
 import { equipar } from "./equipo";
 import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import { montarTirada, SIN_ELECCION } from "./montaje";
@@ -156,5 +162,67 @@ describe("Valija Médica, Antipatógeno y Estabilizadores Neurales", () => {
   test("Estabilizadores Neurales purga un grado, no todo, salvo con crítico", () => {
     const [fila] = accionesDeFarmacos(conFarmaco("farmaco_estabilizadores_neurales", 1), []);
     assert.match(fila.nota ?? "", /purga un grado del aturdimiento; con éxito crítico, el estado entero/);
+  });
+});
+
+// S94 (2026-10-24, docs/fuente/equipamiento.md, Fármacos): dificultades que ya da el documento.
+describe("dificultad con la que se abre cada fármaco", () => {
+  const sugerida = (id: string) => accionesDeFarmacos(conFarmaco(id, 1), [])[0].dificultadSugerida;
+
+  test("Geles, Nano-Elixir y Calmante a 4; Estabilizadores Neurales a 6; Hemostáticos a 7", () => {
+    for (const id of ["farmaco_gel_sanador", "farmaco_gel_sanador_avanzado", "farmaco_nano_elixir", "farmaco_calmante"]) {
+      assert.equal(sugerida(id), 4, id);
+    }
+    assert.equal(sugerida("farmaco_estabilizadores_neurales"), 6);
+    assert.equal(sugerida("farmaco_hemostaticos"), 7);
+  });
+
+  test("Hemostáticos: la hemorragia exanguinante pone 9, y la normal vuelve a 7", () => {
+    const [fila] = accionesDeFarmacos(conFarmaco("farmaco_hemostaticos", 1), []);
+    const cs = fila.condiciones ?? [];
+    const estado = estadoInicial(cs);
+    assert.equal(estado.hemostaticos_hemorragia, "normal");
+    assert.equal(dificultadTrasCambio(cs, { ...estado, hemostaticos_hemorragia: "exanguinante" }, "hemostaticos_hemorragia", 7), 9);
+    assert.equal(dificultadTrasCambio(cs, { ...estado, hemostaticos_hemorragia: "normal" }, "hemostaticos_hemorragia", 7), 7);
+  });
+});
+
+// S94: Ultra Estimulante, "+2 a la iniciativa y +1 a las acciones físicas basadas en Agilidad o
+// Fuerza". Casilla siempre visible, como la de Xovromium.
+describe("casilla «Bajo Ultra Estimulante»", () => {
+  const resolver = (s: Sheet) => resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+  const f = resolver(defaultSheet());
+  const accion = (id: string) => conExtrasDeFicha(f, ACCIONES.find((a) => a.id === id)!);
+  const ids = (id: string) => (accion(id).condiciones ?? []).map((c) => c.id);
+  const conUltra = (id: string, marcadas: string[]) => {
+    const t = accion(id);
+    const estado = { ...estadoInicial(t.condiciones ?? []), ...Object.fromEntries(marcadas.map((m) => [m, true])) };
+    return montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: estado }).total - montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: estadoInicial(t.condiciones ?? []) }).total;
+  };
+
+  test("sale sin tener la dosis (como la de Xovromium)", () => {
+    assert.ok(ids("carrera").includes(ID_CASILLA_ULTRA_FISICAS));
+    assert.ok(ids("iniciativa").includes(ID_CASILLA_ULTRA_INICIATIVA));
+  });
+
+  test("+2 en la iniciativa, +1 en una tirada física (Carrera, con Reflejos)", () => {
+    assert.equal(conUltra("iniciativa", [ID_CASILLA_ULTRA_INICIATIVA]), 2);
+    assert.equal(conUltra("carrera", [ID_CASILLA_ULTRA_FISICAS]), 1);
+  });
+
+  test("no en las salvaciones ni en las tiradas mentales", () => {
+    assert.ok(!ids("salv_reflejos").includes(ID_CASILLA_ULTRA_FISICAS));
+    assert.ok(!ids("salv_fortaleza").includes(ID_CASILLA_ULTRA_FISICAS));
+    assert.ok(!ids("discernir_mentiras").includes(ID_CASILLA_ULTRA_FISICAS));
+  });
+
+  test("una iniciativa con Reflejos lleva las dos, pero no se apilan: +2", () => {
+    const t: Accion = { ...ACCIONES.find((a) => a.id === "iniciativa")!, aplicado: "reflejos" };
+    const conExtras = conExtrasDeFicha(f, t);
+    const cs = conExtras.condiciones ?? [];
+    assert.ok(cs.some((c) => c.id === ID_CASILLA_ULTRA_FISICAS) && cs.some((c) => c.id === ID_CASILLA_ULTRA_INICIATIVA));
+    const estado = { ...estadoInicial(cs), [ID_CASILLA_ULTRA_FISICAS]: true, [ID_CASILLA_ULTRA_INICIATIVA]: true };
+    const sin = montarTirada(f, conExtras, { ...SIN_ELECCION, estadoCondiciones: estadoInicial(cs) }).total;
+    assert.equal(montarTirada(f, conExtras, { ...SIN_ELECCION, estadoCondiciones: estado }).total - sin, 2);
   });
 });

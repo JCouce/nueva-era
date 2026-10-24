@@ -37,6 +37,7 @@ import {
   type EstadoFicha,
   ajustarRecurso,
   comprarRecarga,
+  municionRegularDePieza,
   ajustarMaterial,
   comprarMaterial,
   repararPieza,
@@ -732,15 +733,25 @@ export async function usarAccionAumentoAction(characterId: string, accionId: unk
   return { ok: true, sheet, mensaje: uso.mensaje };
 }
 
-// "Recargar" (cargador de balas / batería portátil, S17/S18 de sistema.md):
-// precio fijo, no se confía en lo que calcule el cliente — se recalcula aquí
-// con el catálogo, igual que equiparAction.
+// "Recargar" (munición regular por proyectil, S95; batería portátil de una célula, S17):
+// no se confía en lo que calcule el cliente — se recalcula aquí con el catálogo, igual que
+// equiparAction. La munición tiene rareza propia: mismo tope de creación que una granada.
 export async function comprarRecargaAction(
   characterId: string,
   instanciaId: string,
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
+
+  const pieza = ctx.sheet.equipo.find((p) => p.instanciaId === instanciaId);
+  const municion = pieza ? municionRegularDePieza(pieza) : null;
+  if (municion && !ctx.aprobada && !ctx.esMaster) {
+    const letra = ctx.sheet.prioridades.recursos;
+    const tope = letra ? RECURSOS_POR_LETRA[letra].rareza : null;
+    if (tope && !rarezaPermitida(municion.rareza, tope)) {
+      return { ok: false, error: `Tu letra de Recursos no llega a ${municion.rareza}: tope ${tope}.` };
+    }
+  }
 
   const resultado = comprarRecarga(ctx.sheet, instanciaId);
   if (!resultado) return { ok: false, error: "No hay ningún recurso que recargar ahí." };

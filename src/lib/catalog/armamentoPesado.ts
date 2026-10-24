@@ -30,6 +30,9 @@
 import type { Modificador } from "../rules/modificadores";
 import type { Rareza } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
+import type { MunicionRegularId } from "./municion";
+
+type MunicionPesadaId = Extract<MunicionRegularId, "deposito_lanzallamas" | "cohete" | "misil" | "bateria_plasma_canon">;
 
 export type ArmaPesada = {
   familia: "armaPesada";
@@ -43,6 +46,9 @@ export type ArmaPesada = {
   categoriaDanio: string | null;
   alcanceM: number | null; // null: Lanzallamas Ligero, sin alcance en la tabla (arma de área, no de tiro)
   cargador: number;
+  // Munición regular que lo recarga (catalog/municion.ts, S95). Sin él (Lanzagranadas), dispara
+  // las granadas de sheet.granadas.
+  tipoMunicion?: MunicionPesadaId;
   mejorasAdmitidas: number;
   efectos: string;
   pesoKg: number;
@@ -69,6 +75,7 @@ export const ARMAMENTO_PESADO: ArmaPesada[] = [
     categoriaDanio: "Fuego",
     alcanceM: null,
     cargador: 30,
+    tipoMunicion: "deposito_lanzallamas",
     mejorasAdmitidas: 0,
     efectos: "Área 2x20 (Esquiva 9) · Efecto Llamarada (12)",
     pesoKg: 20,
@@ -80,6 +87,7 @@ export const ARMAMENTO_PESADO: ArmaPesada[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_pesado" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "ajuste_fijo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
     ],
   },
   {
@@ -94,6 +102,7 @@ export const ARMAMENTO_PESADO: ArmaPesada[] = [
     categoriaDanio: "Letal",
     alcanceM: 450,
     cargador: 1,
+    tipoMunicion: "cohete",
     mejorasAdmitidas: 2,
     efectos: "Área 6x6 (Esquiva 9) · Efecto Aturdimiento (9)",
     pesoKg: 10,
@@ -105,6 +114,7 @@ export const ARMAMENTO_PESADO: ArmaPesada[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_pesado" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "ajuste_fijo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
     ],
   },
   {
@@ -148,6 +158,7 @@ export const ARMAMENTO_PESADO: ArmaPesada[] = [
     categoriaDanio: "Letal",
     alcanceM: 1500,
     cargador: 1,
+    tipoMunicion: "misil",
     mejorasAdmitidas: 2,
     efectos: "Área 8x8 (Esquiva 9) · Efecto Aturdimiento (9)",
     pesoKg: 18,
@@ -159,6 +170,7 @@ export const ARMAMENTO_PESADO: ArmaPesada[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_pesado" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "ajuste_fijo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
     ],
   },
   {
@@ -173,6 +185,7 @@ export const ARMAMENTO_PESADO: ArmaPesada[] = [
     categoriaDanio: "Plasma",
     alcanceM: 400,
     cargador: 12,
+    tipoMunicion: "bateria_plasma_canon",
     mejorasAdmitidas: 2,
     efectos: "Área 8x8 (Esquiva 9) · Efecto Shock (10) · Efecto Llamarada (10) · Efecto de Fusión (12)",
     pesoKg: 9,
@@ -184,6 +197,7 @@ export const ARMAMENTO_PESADO: ArmaPesada[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_pesado" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "ajuste_fijo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
     ],
   },
 ];

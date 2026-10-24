@@ -141,16 +141,12 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
           // modificador de "Volar" (supuesto, ver docs/tareas.md — el motor
           // no tiene concepto de "dificultad de base de una pieza").
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "ajuste_fijo", estado: "construido" },
-          // -1 a los ataques mientras se está en vuelo, y las esquivas usan
-          // Tecnociencia en vez de Atletismo mientras se vuela (descripcion de
-          // la pieza, mismo texto para los 4 niveles) — corregido 2026-09-24
-          // (auditoría, faltaban enteros). No hay estado "en vuelo" rastreado
-          // en la ficha/Combatiente, así que ninguno de los dos puede engancharse
-          // a una tirada concreta todavía. Sigue bloqueado tras construir
-          // "Volar" — es un prerrequisito aparte (el estado "¿está volando?"),
-          // no lo mismo.
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          // -1 a los ataques y esquivas con Tecnociencia en vez de Atletismo mientras se vuela
+          // (descripcion de la pieza, mismo texto en los 4 niveles): descartado de la app el
+          // 2026-09-28 (el usuario, docs/tareas.md: "se lleva en mesa"). Texto en la card, sin
+          // estado "en vuelo" que rastrear; construido tal cual (S94).
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
         ],
       },
       {
@@ -172,14 +168,12 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         motor: [
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "ajuste_fijo", estado: "construido" },
-          // -1 a los ataques mientras se está en vuelo, y las esquivas usan
-          // Tecnociencia en vez de Atletismo mientras se vuela (descripcion de
-          // la pieza, mismo texto para los 4 niveles) — corregido 2026-09-24
-          // (auditoría, faltaban enteros). No hay estado "en vuelo" rastreado
-          // en la ficha/Combatiente, así que ninguno de los dos puede engancharse
-          // a una tirada concreta todavía.
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          // -1 a los ataques y esquivas con Tecnociencia en vez de Atletismo mientras se vuela
+          // (descripcion de la pieza, mismo texto en los 4 niveles): descartado de la app el
+          // 2026-09-28 (el usuario, docs/tareas.md: "se lleva en mesa"). Texto en la card, sin
+          // estado "en vuelo" que rastrear; construido tal cual (S94).
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
         ],
       },
       {
@@ -206,14 +200,12 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         motor: [
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "ajuste_fijo", estado: "construido" },
-          // -1 a los ataques mientras se está en vuelo, y las esquivas usan
-          // Tecnociencia en vez de Atletismo mientras se vuela (descripcion de
-          // la pieza, mismo texto para los 4 niveles) — corregido 2026-09-24
-          // (auditoría, faltaban enteros). No hay estado "en vuelo" rastreado
-          // en la ficha/Combatiente, así que ninguno de los dos puede engancharse
-          // a una tirada concreta todavía.
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          // -1 a los ataques y esquivas con Tecnociencia en vez de Atletismo mientras se vuela
+          // (descripcion de la pieza, mismo texto en los 4 niveles): descartado de la app el
+          // 2026-09-28 (el usuario, docs/tareas.md: "se lleva en mesa"). Texto en la card, sin
+          // estado "en vuelo" que rastrear; construido tal cual (S94).
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           // La elección Velocidad/Maniobrabilidad no se guarda en la ficha
           // todavía (comentario de NivelModulo.velocidadM) — texto puro hoy.
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
@@ -240,14 +232,12 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         motor: [
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "ajuste_fijo", estado: "construido" },
-          // -1 a los ataques mientras se está en vuelo, y las esquivas usan
-          // Tecnociencia en vez de Atletismo mientras se vuela (descripcion de
-          // la pieza, mismo texto para los 4 niveles) — corregido 2026-09-24
-          // (auditoría, faltaban enteros). No hay estado "en vuelo" rastreado
-          // en la ficha/Combatiente, así que ninguno de los dos puede engancharse
-          // a una tirada concreta todavía.
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          // -1 a los ataques y esquivas con Tecnociencia en vez de Atletismo mientras se vuela
+          // (descripcion de la pieza, mismo texto en los 4 niveles): descartado de la app el
+          // 2026-09-28 (el usuario, docs/tareas.md: "se lleva en mesa"). Texto en la card, sin
+          // estado "en vuelo" que rastrear; construido tal cual (S94).
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
         ],
       },
     ],

@@ -99,6 +99,11 @@ export function AtributosTab({
                 />
               </div>
             )}
+            {a.id === "agilidad" && ficha.topeAgilidad && (
+              <p className="mt-1 font-mono text-[11px] text-danger">
+                {a.label} {ficha.topeAgilidad.sinTope} → {ficha.topeAgilidad.tope} ({ficha.topeAgilidad.armadura})
+              </p>
+            )}
             <div className="mt-3 flex gap-1">
               {Array.from({ length: CASILLAS }).map((_, i) => {
                 // Con valor negativo solo se enciende la primera casilla, en

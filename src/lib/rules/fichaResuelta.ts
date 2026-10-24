@@ -32,6 +32,8 @@ import {
   cargaMaxima,
   desgloseAplicado,
   desgloseAtributo,
+  topeAgilidadAplicado,
+  type TopeAgilidadAplicado,
   movimiento,
   salud,
   vuelo,
@@ -76,7 +78,7 @@ import { conUsosEscena, usosEscenaDeFicha } from "./usosEscena";
 import { poderesDeDotes } from "./dotesPoderes";
 import type { ExcepcionRareza } from "../catalog/especies";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
-import { consultaIndiceCondiciones, indiceDeCondiciones, modificadoresDeEquipo, salvacionesDeEquipo, type IndiceCondiciones } from "./equipo";
+import { consultaIndiceCondiciones, indiceDeCondiciones, modificadoresDeEquipo, reduccionesDeEquipo, salvacionesDeEquipo, type IndiceCondiciones } from "./equipo";
 import { casillasDeFarmacos } from "./farmacos";
 import { inmunidadesDe } from "./inmunidades";
 import {
@@ -127,6 +129,10 @@ export type FichaResuelta = {
   // como los sumaba Acciones).
   modificadores: ModificadorConFuente[];
   atributos: Record<AtributoId, number>;
+  // La Agilidad topada por la armadura (S93), para que la ficha lo enseñe («Agilidad 5 → 4
+  // (Armadura Pesada)»); null si ninguna armadura la está topando. Ya aplicado en `atributos`,
+  // `aplicados` y `modificadores`.
+  topeAgilidad: TopeAgilidadAplicado | null;
   aplicados: Record<AplicadoId, number>;
   desgloses: {
     atributos: Record<AtributoId, DesgloseDerivado>;
@@ -275,7 +281,7 @@ export function resolverFicha(
   // Los bonos con umbral (D2d) miran la ficha con la especie también en el NPC.
   const dotes = efectosDeDotes(activas, valoresDotes, requisitosDotes);
   // = [...modificadoresActivos(sheet), ...estados], sin volver a resolver la especie.
-  const sinUmbrales: ModificadorConFuente[] = [
+  const sinTope: ModificadorConFuente[] = [
     ...(especie?.modificadores ?? []),
     ...dotes.modificadores,
     ...modificadoresDeEquipo(sheet),
@@ -283,6 +289,10 @@ export function resolverFicha(
     ...modificadoresDeEstados(estadosConEfecto(estados, inmunidades), activables.reduceEstados),
     ...activables.modificadores,
   ];
+  // Tope de Agilidad de la armadura (S93): detrás de todo lo demás, para que aplicados,
+  // movimiento y tiradas usen ya la Agilidad topada.
+  const tope = topeAgilidadAplicado(sheet, sinTope);
+  const sinUmbrales: ModificadorConFuente[] = tope ? [...sinTope, tope.modificador] : sinTope;
   // Los umbrales solo dan modificadores de tirada: no tocan los máximos de salud.
   const maximos = salud(sheet, sinUmbrales);
   // La temporal de Proeza cuenta para el umbral mientras dura la escena (sheet.ts).
@@ -304,7 +314,10 @@ export function resolverFicha(
   );
   const modificadores = [
     ...sinUmbrales,
-    ...modificadoresDeUmbrales(v.pg, v.pgMax, v.fatiga, v.fatigaMax, ajusteUmbrales, reduccionesPorAplicadoDeAumentos(sheet)),
+    ...modificadoresDeUmbrales(v.pg, v.pgMax, v.fatiga, v.fatigaMax, ajusteUmbrales, [
+      ...reduccionesPorAplicadoDeAumentos(sheet),
+      ...reduccionesDeEquipo(sheet),
+    ]),
   ];
 
   // Media velocidad: carrera, vuelo y levitación; saltos, escalada y nado no (S26).
@@ -324,6 +337,7 @@ export function resolverFicha(
     piezasInutilizadas: SIN_PIEZAS_INUTILIZADAS,
     modificadores,
     atributos: atributosEfectivos(sheet, modificadores),
+    topeAgilidad: tope,
     aplicados: aplicados(sheet, modificadores),
     desgloses: {
       atributos: Object.fromEntries(

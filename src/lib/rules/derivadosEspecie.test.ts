@@ -32,6 +32,13 @@ function ficha(especieId: string | null, fuerza: number, exo: boolean, opciones:
   return s;
 }
 
+// La misma ficha con la Armadura Ligera: admite el exoesqueleto 2 y su tope de Agilidad (4,
+// S93) no toca la de la ficha, así resolverFicha da los números de la caracterización (la
+// Pesada la topa a 0).
+function sinTopeAgilidad(s: Sheet): Sheet {
+  return { ...s, equipo: s.equipo.map((p) => (p.instanciaId === "a" ? { ...p, catalogoId: "armadura_ligera" } : p)) };
+}
+
 // --- Caracterización: fijada con el código de antes de E3 --------------------
 // Sin especie y especies sin efectos aquí (Riux, Humanos): estos números no se
 // mueven con E3. Si uno cambia, es un bug.
@@ -142,7 +149,7 @@ describe("movimiento por especie (§14.7)", () => {
     { nombre: "Noble Zimethroni con exoesqueleto", s: ficha("manduk", 0, true, ZIME), mov: { bonoExoesqueleto: 4, carrera: 27, saltoVertical: 305, saltoHorizontal: 440, escalada: 9, nado: 9 } },
   ];
   for (const { nombre, s, mov } of CASOS) {
-    test(nombre, () => assert.deepEqual(resuelta(s).movimiento, mov));
+    test(nombre, () => assert.deepEqual(resuelta(sinTopeAgilidad(s)).movimiento, mov));
   }
 
   test("salto vertical: mínimo 15 con base 0 y negativa; Zimethroni suma el +200 después (215)", () => {
@@ -297,7 +304,7 @@ describe("notas de Personaje → Estado", () => {
 describe("resolverFicha da lo mismo que la caracterización sin efectos de especie", () => {
   for (const c of CARACTERIZACION) {
     test(`${c.especieId ?? "sin especie"}, Fuerza ${c.fuerza}${c.exo ? ", con exoesqueleto" : ""}`, () => {
-      const r = resuelta(ficha(c.especieId, c.fuerza, c.exo));
+      const r = resuelta(sinTopeAgilidad(ficha(c.especieId, c.fuerza, c.exo)));
       assert.deepEqual(r.movimiento, c.mov);
       assert.equal(r.cargaMaxima, c.carga);
       assert.deepEqual(r.blindaje.armaduraNatural, SIN_ARMADURA_NATURAL);

@@ -291,8 +291,9 @@ describe("E4: textos sin mecanizar, solo con su rasgo", () => {
     assert.equal(critico(resolver({ ...s, especieId: "humano" }), "Golpear con Puñetazo"), "Aturdimiento (6)");
   });
 
+  // Una tirada no física: en las físicas sale siempre «Bajo Ultra Estimulante» (S94).
   test("sin especie, conExtrasDeFicha devuelve la misma tirada", () => {
-    const t = ACCIONES.find((a) => a.id === "defensa")!;
+    const t = ACCIONES.find((a) => a.id === "discernir_mentiras")!;
     assert.equal(conExtrasDeFicha(resolver(ficha()), t), t);
   });
 });

@@ -134,7 +134,9 @@ export type AlcanceModificador =
       contundente?: true;
       especialidad?: EspecialidadId;
     }
-  | { tipo: "aplicado"; aplicados: AplicadoId[] }
+  // `salvoGrupo`: no en las tiradas de ese grupo (Ultra Estimulante: acciones físicas de
+  // Fuerza o Agilidad, no las salvaciones; S94).
+  | { tipo: "aplicado"; aplicados: AplicadoId[]; salvoGrupo?: GrupoAccion }
   | { tipo: "todas" };
 
 export type Modificador =
@@ -290,7 +292,8 @@ export function alcanzaA(alcance: AlcanceModificador, ctx: ContextoAccion): bool
   if (alcance.tipo === "grupo") return alcance.grupo === ctx.grupo;
   if (alcance.tipo === "habilidad") return alcance.habilidad === ctx.habilidad;
   if (alcance.tipo === "grupoHabilidad") return alcance.grupo === ctx.grupo && alcance.habilidad === ctx.habilidad;
-  if (alcance.tipo === "aplicado") return ctx.aplicado !== undefined && alcance.aplicados.includes(ctx.aplicado);
+  if (alcance.tipo === "aplicado")
+    return ctx.aplicado !== undefined && alcance.aplicados.includes(ctx.aplicado) && alcance.salvoGrupo !== ctx.grupo;
   // Sin empleo conocido (Proyector de Pulso, que va en la armadura), un filtro de empleo no casa.
   if (alcance.tipo === "familiaArma") {
     // Empleo y contundente: basta uno de los dos (si solo hay uno, ese).
@@ -311,6 +314,7 @@ export function alcanzaA(alcance: AlcanceModificador, ctx: ContextoAccion): bool
 // sus aplicados posibles (o con el suyo, si no hay lista). Lo usan el índice de casillas y los
 // textos de tirada.
 export function alcanzaAlgunAplicado(alcance: Extract<AlcanceModificador, { tipo: "aplicado" }>, ctx: ContextoAccion): boolean {
+  if (alcance.salvoGrupo === ctx.grupo) return false;
   const posibles = ctx.aplicadosPosibles ?? (ctx.aplicado ? [ctx.aplicado] : []);
   return posibles.some((a) => alcance.aplicados.includes(a));
 }

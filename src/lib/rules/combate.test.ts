@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
 import { equipar } from "./equipo";
 import { ajustarRecurso, ajustarGranada, ajustarMunicionEspecial, reconciliarRecursos } from "./recursos";
-import { accionesDeAtaque as accionesDeAtaqueCon, accionesDirectasDeAtaque, criticoDeEspecial, generaAccionPropia, MOTIVO_SIN_CARGAS } from "./combate";
+import { accionesDeAtaque as accionesDeAtaqueCon, accionesDirectasDeAtaque, criticoDeEspecial, generaAccionPropia, MOTIVO_SIN_CARGAS, NOTA_MALLA_ANULA_CAMUFLAJE } from "./combate";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
 import { MUNICION_GRANADA } from "../catalog/municion";
@@ -220,6 +220,19 @@ describe("arma de fuego equipada", () => {
     assert.match(opcionNota(tramo, "bocajarro")!, /Derribo.*F\. Auto, \+3/);
   });
 
+  // S96: «ocupando dos casillas adyacentes» (pistolas, escopetas, subfusiles, fusiles de asalto y
+  // de precisión) y «4 casillas adyacentes» (ametralladoras), docs/fuente/equipamiento.md.
+  test("el modo F. Auto lleva su área según el tipo de arma: 2 casillas, 4 en ametralladoras (S96)", () => {
+    let sheet = equipar(defaultSheet(), { instanciaId: "pi", catalogoId: "pistola_sydiasi" });
+    sheet = equipar(sheet, { instanciaId: "fa", catalogoId: "fusil_asalto_impetus" });
+    sheet = equipar(sheet, { instanciaId: "am", catalogoId: "ametralladora_asina" });
+    const modoDe = (id: string) => accionesDeAtaque(sheet).find((t) => t.id === id)!.condiciones?.find((c) => c.id === "modo");
+    assert.equal(opcionNota(modoDe("ataque_fuego_pi"), "1"), "Ataque en área: 2 casillas adyacentes.");
+    assert.equal(opcionNota(modoDe("ataque_fuego_fa"), "1"), "Ataque en área: 2 casillas adyacentes.");
+    assert.equal(opcionNota(modoDe("ataque_fuego_am"), "1"), "Ataque en área: 4 casillas adyacentes.");
+    assert.equal(opcionNota(modoDe("ataque_fuego_pi"), "0"), undefined); // el modo Simple, sin área
+  });
+
   test("un arma con dos modos trae la condición de modo", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_sydiasi" });
@@ -247,7 +260,8 @@ describe("nota limpia de aviso de munición (RECURSOS) — el aviso vive en avis
     assert.ok(modo?.tipo === "opcion");
     if (modo?.tipo === "opcion") {
       assert.equal(modo.opciones.find((o) => o.id === "0")?.nota, undefined);
-      assert.equal(modo.opciones.find((o) => o.id === "1")?.nota, undefined);
+      // Solo el área del F. Auto (S96), nada de aviso de munición.
+      assert.equal(modo.opciones.find((o) => o.id === "1")?.nota, "Ataque en área: 2 casillas adyacentes.");
     }
   });
 
@@ -1116,6 +1130,19 @@ describe("armamento pesado equipado", () => {
     assert.match(fila.nota ?? "", /Alcance 450 m/);
   });
 
+  test("cada disparo gasta 1 de su cargador, con aviso si no llega (S95)", () => {
+    let sheet = reconciliarRecursos(equipar(defaultSheet(), { instanciaId: "lac1", catalogoId: "lanzacohetes_rt" }));
+    const fila = () => accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Lanzacohetes RT")!;
+    assert.equal(fila().recursoInstanciaId, "lac1");
+    assert.equal(gastoTotal(fila(), "0", {}), 1);
+    assert.equal(avisoInsuficiente(fila(), "0", {}, { actual: 1, max: 1 }), undefined);
+    sheet = ajustarRecurso(sheet, "lac1", -1);
+    assert.equal(avisoInsuficiente(fila(), "0", {}, { actual: 0, max: 1 }), "Solo quedan 0/1 cohetes — esto gasta 1.");
+    const lanzagranadas = conTodasLasGranadas(equipar(defaultSheet(), { instanciaId: "lg1", catalogoId: "lanzagranadas_pesado" }));
+    const lg = accionesDeAtaque(lanzagranadas).find((t) => t.label === "Disparar con Lanzagranadas")!;
+    assert.equal(lg.recursoInstanciaId, undefined);
+  });
+
   test("el Lanzallamas Ligero no tiene alcance en metros, no aparece en la nota", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "lf1", catalogoId: "lanzallamas_ligero" });
@@ -1233,25 +1260,41 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
     assert.equal(tramo.porDefecto, "media");
   });
 
-  test("con nivel 1 la nota no menciona ninguna variante de crítico desbloqueada", () => {
+  // S96: el crítico va en efectoCritico (sale solo con crítico, como en las armas melee y de
+  // fuego), no en la nota.
+  test("con nivel 1 el crítico es Hemorragia en efectoCritico, sin variantes, y la nota no lo repite", () => {
     const fila = accionesDeAtaque(conProyectorPulso(1)).find((t) => t.label.includes("Combate a Distancia"))!;
-    assert.doesNotMatch(fila.nota ?? "", /Nivel 2|Nivel 3|Nivel 4/);
+    assert.equal(fila.efectoCritico, "Hemorragia (Pulso y Pulso Cargado; el Barrido no tiene crítico)");
+    assert.doesNotMatch(fila.nota ?? "", /Nivel 2|Nivel 3|Nivel 4|Hemorragia/);
   });
 
-  test("con nivel 4 la nota lista las tres variantes de crítico desbloqueadas", () => {
+  test("con nivel 4 el efectoCritico lista las tres variantes; la nota, lo que no es crítico", () => {
     const fila = accionesDeAtaque(conProyectorPulso(4)).find((t) => t.label.includes("Combate a Distancia"))!;
-    assert.match(fila.nota ?? "", /Nivel 2: crítico alternativo Envenenamiento por Radiación \(dificultad 12\)/);
-    assert.match(fila.nota ?? "", /Nivel 3: crítico alternativo Ceguera \(dificultad 12\)/);
-    assert.match(fila.nota ?? "", /Nivel 4: el Shock sube \+1/);
+    assert.match(fila.efectoCritico ?? "", /^Hemorragia/);
+    assert.match(fila.efectoCritico ?? "", /Envenenamiento por Radiación \(dificultad 12\)/);
+    assert.match(fila.efectoCritico ?? "", /Ceguera \(dificultad 12\)/);
+    assert.match(fila.efectoCritico ?? "", /destruye 1 punto de blindaje/);
+    assert.match(fila.nota ?? "", /Fuego con Llamarada/);
+    assert.match(fila.nota ?? "", /Nivel 4: .*el Shock sube \+1/);
+    assert.doesNotMatch(fila.nota ?? "", /Envenenamiento|Ceguera/);
   });
 
-  test("Aguijón también lista las variantes de crítico desbloqueadas (mismo subsistema, no solo los modos a distancia)", () => {
+  test("Aguijón también: crítico Hemorragia con las variantes desbloqueadas (mismo subsistema)", () => {
     const fila = accionesDeAtaque(conProyectorPulso(4)).find(
       (t) => t.label === "Golpear con Proyector de Pulso (Aguijón)",
     )!;
-    assert.match(fila.nota ?? "", /Nivel 2: crítico alternativo Envenenamiento por Radiación \(dificultad 12\)/);
-    assert.match(fila.nota ?? "", /Nivel 3: crítico alternativo Ceguera \(dificultad 12\)/);
-    assert.match(fila.nota ?? "", /Nivel 4: el Shock sube \+1/);
+    assert.match(fila.efectoCritico ?? "", /^Hemorragia · Nivel 2 .*Envenenamiento por Radiación \(dificultad 12\)/);
+    assert.match(fila.efectoCritico ?? "", /Ceguera \(dificultad 12\)/);
+    assert.doesNotMatch(fila.nota ?? "", /Hemorragia/);
+  });
+
+  test("el -5 al Sigilo del nivel 1 sale como aviso en efectos, en el disparo y en el Aguijón (S96)", () => {
+    const filas = accionesDeAtaque(conProyectorPulso(3)).filter(
+      (t) => t.label.startsWith("Disparar Proyector") || t.label === "Golpear con Proyector de Pulso (Aguijón)",
+    );
+    assert.equal(filas.length, 3);
+    for (const f of filas)
+      assert.deepEqual(f.efectos, [{ fuente: "Proyector de Pulso", texto: "Al atacar con cualquier modo: -5 a tu Sigilo (percepción visual)." }]);
   });
 
   test("con las cargas del catálogo (10) nunca avisa de insuficiencia recién equipado", () => {
@@ -1675,5 +1718,44 @@ describe("Activar camuflaje trifásico (acción sin dado, 1 carga)", () => {
 
   test("sin camuflaje no hay acción", () => {
     assert.equal(activar(defaultSheet()), undefined);
+  });
+
+  test("con la Malla Plasmática equipada avisa de que anula el modo activo; sin ella, no (S96)", () => {
+    const s = conCamuflaje(1);
+    assert.ok(!activar(s)!.nota!.includes(NOTA_MALLA_ANULA_CAMUFLAJE));
+    const conMalla = equipar(s, { instanciaId: "mp", catalogoId: "malla_plasmatica", nivel: 1, instaladoEnId: "a1" });
+    assert.ok(activar(conMalla)!.nota!.includes(NOTA_MALLA_ANULA_CAMUFLAJE));
+  });
+});
+
+// «Al activarse este subsistema el usuario recibe un penalizador de -8 al sigilo que solo afecta
+// a la percepción visual» (docs/fuente/equipamiento.md, Malla Plasmática): casilla en las
+// tiradas de Sigilo, que la Malla no tiene tirada propia donde avisarlo (S96).
+describe("Malla Plasmática: -8 al Sigilo con la malla activa (S96)", () => {
+  const conMalla = (nivel: number) =>
+    equipar(equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "armadura_pesada" }), {
+      instanciaId: "mp",
+      catalogoId: "malla_plasmatica",
+      nivel,
+      instaladoEnId: "a1",
+    });
+  const fija = (s: Sheet, id: string) => {
+    const resuelta = resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+    return conExtrasDeFicha(resuelta, ACCIONES.find((a) => a.id === id)!);
+  };
+
+  test("Sigilo y Hurto traen la casilla (-8 activa, 0 si no); también en nivel 4", () => {
+    for (const [nivel, id] of [[1, "sigilo"], [4, "sigilo"], [1, "hurto"]] as const) {
+      const c = fija(conMalla(nivel), id).condiciones?.find((x) => x.id === "malla_plasmatica_activa");
+      assert.ok(c && c.tipo === "toggle", `${id} nivel ${nivel}`);
+      assert.equal(c.valorActivo, -8);
+      assert.equal(c.valorInactivo, 0);
+      assert.match(c.nota ?? "", /Camuflaje Trifásico/);
+    }
+  });
+
+  test("no llega a tiradas que no son de Sigilo, ni sin la malla", () => {
+    assert.equal(fija(conMalla(1), "alerta_activa").condiciones?.find((x) => x.id === "malla_plasmatica_activa"), undefined);
+    assert.equal(fija(defaultSheet(), "sigilo").condiciones?.find((x) => x.id === "malla_plasmatica_activa"), undefined);
   });
 });

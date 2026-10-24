@@ -12,7 +12,7 @@
 // incorporada (el vínculo, PiezaEquipada.armaIncorporada, vive en rules/equipo.ts): sus filas
 // usan siempre el brazo, sin casilla.
 import { aumentoPorId, nivelDeImplante } from "./aumentos";
-import { atributosEfectivos, modificadoresActivos } from "./derivados";
+import { atributosEfectivos, modificadoresActivos, topeAgilidadDeArmaduras } from "./derivados";
 import { modificadoresDeRequisito } from "./dotes";
 import { especieDeFicha } from "./especie";
 import { ID_BRAZO_BIONICO, nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
@@ -86,12 +86,15 @@ export function brazoBionico(sheet: Sheet): BrazoBionico | null {
     ...exoesqueleto,
   ]);
   const base = { fuerza: permanentes.fuerza, agilidad: permanentes.agilidad };
+  // El tope de Agilidad de la armadura (S93) también topa la del brazo: va dentro de la armadura,
+  // y si no, el brazo sería una forma de saltárselo. La base no lo lleva (es la permanente).
+  const topeArmadura = topeAgilidadDeArmaduras(sheet)?.tope ?? Infinity;
   return {
     instanciaId: e.pieza.instanciaId,
     nivel: e.nivel,
     fuente: e.fuente,
     fuerza: valorDeExtremidad(base.fuerza, e.extremidad.fuerza),
-    agilidad: valorDeExtremidad(base.agilidad, e.extremidad.agilidad),
+    agilidad: Math.min(valorDeExtremidad(base.agilidad, e.extremidad.agilidad), topeArmadura),
     base,
     blindaje: e.extremidad.blindaje ?? null,
     bloquea: e.extremidad.bloquea === true,

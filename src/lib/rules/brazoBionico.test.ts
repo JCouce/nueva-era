@@ -167,10 +167,20 @@ describe("Brazo Biónico: casilla «Con el brazo biónico»", () => {
 
   test("con Exoesqueleto: el brazo parte de la Fuerza con el exo (se apilan)", () => {
     let s = con(conBrazo(ficha({ fuerza: 2, agilidad: 4 }), 1), "pelea_punetazo");
-    s = { ...s, equipo: [...s.equipo, { instanciaId: "arm", catalogoId: "armadura_pesada" }, { instanciaId: "exo", catalogoId: "exoesqueleto", nivel: 2, instaladoEnId: "arm" }] };
+    // Ligera: admite el exoesqueleto 2 y su tope de Agilidad (4, S93) no toca la de la ficha.
+    s = { ...s, equipo: [...s.equipo, { instanciaId: "arm", catalogoId: "armadura_ligera" }, { instanciaId: "exo", catalogoId: "exoesqueleto", nivel: 2, instaladoEnId: "arm" }] };
     const t = fila(s, "Golpear con Puñetazo")!;
     assert.equal(montar(s, t, false).aplicado.valor, 4); // ⌊(2+2+4)/2⌋
     assert.equal(montar(s, t, true).aplicado.valor, 3); // brazo: Fuerza 2+2, Agilidad 4−1 → ⌊(4+3)/2⌋
+  });
+
+  test("el tope de Agilidad de la armadura (S93) también topa la del brazo; la base no", () => {
+    // Brazo 1: Agilidad 4 − 1 = 3; con la Intermedia (tope 2), 2.
+    const sinArmadura = conBrazo(ficha({ fuerza: 2, agilidad: 4 }), 1);
+    const conArmadura = con(sinArmadura, "armadura_intermedia");
+    assert.equal(brazoBionico(sinArmadura)!.agilidad, 3);
+    assert.equal(brazoBionico(conArmadura)!.agilidad, 2);
+    assert.equal(brazoBionico(conArmadura)!.base.agilidad, 4);
   });
 
   test("nivel 4 Fuerte: más Potencia, más daño (ajuste con su fuente) y letal", () => {

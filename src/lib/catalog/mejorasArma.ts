@@ -238,6 +238,7 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // El +1 y el -1 son condicionales (apoyado o no): se pintan como
         // toggle en el modal de la tirada de ataque, no como modificador fijo.
         modificadores: [],
+        pesoKg: 5,
         condiciones: [
           {
             id: "apoyado",
@@ -257,6 +258,7 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         coste: 4500,
         detalle: ["Materiales sofisticados: pierde el penalizador de peso y no suma carga."],
         modificadores: [],
+        pesoKg: 0,
         condiciones: [
           {
             id: "apoyado",
@@ -413,6 +415,7 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         // tirada usando MUNICION_GRANADA (catalog/municion.ts) para el daño.
         modificadores: [],
         ajusteAtaque: -1,
+        pesoKg: 1.5,
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "ajuste_fijo", estado: "construido" }, // -1 al arma huésped
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "lanzagranadas_integrado" }, mecanismo: "accion_equipo", estado: "construido" }, // tiradaDeLanzagranadas, combate.ts

@@ -45,6 +45,7 @@ const CON_TIRADA: Record<
     habilidades?: HabilidadId[];
     sinEspecialidad?: true;
     dificultad?: number;
+    condiciones?: CondicionTirada[];
   }
 > = {
   // Su efecto sobre los poderes es la casilla "Bajo Xovromium" del modal del
@@ -58,24 +59,44 @@ const CON_TIRADA: Record<
     sinEspecialidad: true,
     dificultad: 6,
   },
+  // Dificultades del documento (S94, docs/fuente/equipamiento.md, Fármacos): el modal abre
+  // en ellas; la hemorragia exanguinante es una opción de la propia fila (9).
   farmaco_hemostaticos: {
     nota: "Perspicacia + Biociencia (Medicina). Dificultad 7 normal, 9 en hemorragia exanguinante.",
+    dificultad: 7,
+    condiciones: [
+      {
+        id: "hemostaticos_hemorragia",
+        tipo: "opcion",
+        etiqueta: "Hemorragia",
+        opciones: [
+          { id: "normal", etiqueta: "Normal", valor: 0, sinValor: true, dificultad: 7 },
+          { id: "exanguinante", etiqueta: "Exanguinante", valor: 0, sinValor: true, dificultad: 9 },
+        ],
+        porDefecto: "normal",
+      },
+    ],
   },
   farmaco_estabilizadores_neurales: {
     nota: "Perspicacia + Biociencia (Medicina), dificultad 6 — purga un grado del aturdimiento; con éxito crítico, el estado entero.",
+    dificultad: 6,
   },
   farmaco_calmante: {
     nota: "Perspicacia + Medicina, dificultad 4 — fija la duración y reduce en 1 el penalizador por herida.",
+    dificultad: 4,
   },
   farmaco_gel_sanador: {
     nota: "Perspicacia + Medicina, dificultad 4 — cada éxito sana un nivel no letal, cada 2 uno letal, cada 4 uno grave.",
+    dificultad: 4,
   },
   farmaco_gel_sanador_avanzado: {
     nota: "Perspicacia + Medicina, dificultad 4 — igual que Gel Sanador, sin el peaje de fatiga.",
+    dificultad: 4,
   },
   farmaco_nano_elixir: {
     nota: "Perspicacia + Medicina, dificultad 4 — igual que Gel Sanador Avanzado, con +5 ya sumado a esta tirada.",
     ajustesFijos: [{ valor: 5, fuente: "Nano-Elixir" }],
+    dificultad: 4,
   },
 };
 
@@ -103,6 +124,7 @@ export function accionesDeFarmacos(sheet: Sheet, notasEspecie: string[]): Accion
       nota: conNotas(`${con.nota} Quedan ${cantidad}.`, notasEspecie),
       ajustesFijos: con.ajustesFijos,
       ...(con.dificultad !== undefined && { dificultadSugerida: con.dificultad }),
+      ...(con.condiciones && { condiciones: con.condiciones }),
       farmacoId: f.id,
     });
   }
@@ -140,9 +162,44 @@ const CON_EFECTO_ANTIPATOGENO = [
   "farmaco_nano_elixir",
 ];
 
+// Ultra Estimulante (S94, docs/fuente/equipamiento.md, Fármacos): "+2 a la iniciativa y +1 a
+// las acciones físicas basadas en Agilidad o Fuerza" durante 30 minutos. Casilla «Bajo Ultra
+// Estimulante» siempre visible, como la de Xovromium (usuario, 2026-09-30: la app no sabe si te
+// la has tomado, y el efecto sigue tras gastar la última dosis). Física = tirada con un aplicado
+// que lleve Fuerza o Agilidad (Fortaleza, Potencia, Reflejos), sin las salvaciones. Las dos
+// casillas no se apilan: una Iniciativa con Reflejos se queda en +2. La reducción de los
+// penalizadores por heridas y fatiga y el bajón al terminar siguen a mano.
+export const ID_CASILLA_ULTRA_INICIATIVA = "farmaco_ultra_estimulante_iniciativa";
+export const ID_CASILLA_ULTRA_FISICAS = "farmaco_ultra_estimulante_fisicas";
+const ETIQUETA_ULTRA = "Bajo Ultra Estimulante";
+const NOTA_ULTRA =
+  "30 minutos desde la dosis. Al terminar: 2 de fatiga y −1 en tiradas mentales durante una hora (a mano).";
+
+const CASILLAS_ULTRA_ESTIMULANTE: CondicionTirada[] = [
+  {
+    id: ID_CASILLA_ULTRA_INICIATIVA,
+    tipo: "toggle",
+    etiqueta: ETIQUETA_ULTRA,
+    valorActivo: 2,
+    noApila: "ultra_estimulante",
+    nota: NOTA_ULTRA,
+    alcance: { tipo: "grupo", grupo: "Iniciativa" },
+  },
+  {
+    id: ID_CASILLA_ULTRA_FISICAS,
+    tipo: "toggle",
+    etiqueta: ETIQUETA_ULTRA,
+    valorActivo: 1,
+    noApila: "ultra_estimulante",
+    nota: NOTA_ULTRA,
+    alcance: { tipo: "aplicado", aplicados: ["fortaleza", "potencia", "reflejos"], salvoGrupo: "Salvaciones" },
+  },
+];
+
 export function casillasDeFarmacos(sheet: Pick<Sheet, "farmacos">): CondicionTirada[] {
-  if (!CON_EFECTO_ANTIPATOGENO.some((id) => (sheet.farmacos[id] ?? 0) > 0)) return [];
+  if (!CON_EFECTO_ANTIPATOGENO.some((id) => (sheet.farmacos[id] ?? 0) > 0)) return CASILLAS_ULTRA_ESTIMULANTE;
   return [
+    ...CASILLAS_ULTRA_ESTIMULANTE,
     {
       id: ID_CASILLA_ANTIPATOGENO,
       tipo: "toggle",

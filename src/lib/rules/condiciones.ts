@@ -46,6 +46,10 @@ export type OpcionCondicion = {
   partes?: { fuente: string; valor: number }[];
   // Opción sin número (el selector de activar, A5b): el botón no enseña "+0".
   sinValor?: true;
+  // Dificultad que el documento da para esta variante (Hemostáticos: 9 contra hemorragia
+  // exanguinante; VTM: 6 en congelación). Al elegirla, el modal pone esa dificultad
+  // (dificultadTrasCambio); el jugador puede cambiarla después a mano. S94.
+  dificultad?: number;
 };
 
 export type CondicionTirada = (
@@ -168,7 +172,34 @@ export function resumenOpcion(o: OpcionCondicion): string {
   const partes = o.sinValor ? [] : [o.valor >= 0 ? `+${o.valor}` : `${o.valor}`];
   if (o.ventaja) partes.push("ventaja");
   if (o.costeFatiga) partes.push(`−${o.costeFatiga} fatiga`);
+  if (o.dificultad !== undefined) partes.push(`dif. ${o.dificultad}`);
   return partes.join(" · ");
+}
+
+// La dificultad que fijan las opciones elegidas (la última que la declare), o undefined.
+export function dificultadDeCondiciones(condiciones: CondicionTirada[], estado: EstadoCondiciones): number | undefined {
+  let dificultad: number | undefined;
+  for (const c of condiciones) {
+    if (c.tipo !== "opcion") continue;
+    const elegida = c.opciones.find((o) => o.id === estado[c.id]);
+    if (elegida?.dificultad !== undefined) dificultad = elegida.dificultad;
+  }
+  return dificultad;
+}
+
+// Tras cambiar la condición `id`: la dificultad que debe poner el modal, o undefined si el
+// cambio no la toca (la condición no es un selector con dificultades). Si la opción nueva no
+// trae dificultad (Herida normal), vuelve a `base`, la sugerida de la tirada. Pura, para que
+// el modal no decida nada.
+export function dificultadTrasCambio(
+  condiciones: CondicionTirada[],
+  estado: EstadoCondiciones,
+  id: string,
+  base: number | null,
+): number | null | undefined {
+  const c = condiciones.find((x) => x.id === id);
+  if (c?.tipo !== "opcion" || !c.opciones.some((o) => o.dificultad !== undefined)) return undefined;
+  return dificultadDeCondiciones(condiciones, estado) ?? base;
 }
 
 export type TramoDistancia = "bocajarro" | "corta" | "media" | "larga";

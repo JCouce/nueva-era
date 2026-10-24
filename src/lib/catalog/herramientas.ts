@@ -11,15 +11,15 @@
 // por tenerlos equipados (lib/rules/herramientas.ts, mismo patrón que
 // combate.ts con las armas). Ninguno de los tres trae un bono numérico
 // limpio que mecanizar: la "dificultad 7" o "dificultad 6 superficial, 8
-// profundo" que da el documento es la dificultad que el jugador teclea en
-// el modal, no un modificador — se transcribe en `notaTirada`, igual que
-// ya hace `nota` en ACCIONES con "Gel sanador y estabilizar tienen
-// dificultad 4". La Valija Táctica de Fabricación tampoco trae ningún
+// profundo" que da el documento es la dificultad del modal, no un
+// modificador — va en `notaTirada` y, desde S94, como `dificultadTirada` (el
+// modal abre en ella) y opciones con `dificultad` para las variantes. La Valija Táctica de Fabricación tampoco trae ningún
 // número limpio (a diferencia de la Valija Médica, que sí daba "+N a las
 // tiradas de aplicación"): su uso real es la acción sin dado "Reparar y
 // Fabricar" (ReparaFabricaModal.tsx, docs/tareas.md tarea 8), sin modificador.
 import type { Herramienta, Consumible } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
+import type { CondicionTirada } from "../rules/condiciones";
 
 // docs/motor.md — patrones compartidos por varios niveles de este archivo,
 // para no repetir el mismo array literal en cada uno.
@@ -63,7 +63,12 @@ export const VALIJA_TACTICA_FABRICACION: Herramienta = {
       rareza: "Común",
       coste: 5000,
       detalle: [
-        "Sin materiales no pasa de 3 kg; con los cartuchos llenos, 4,5 o 5 kg.",
+        "Sin materiales no pasa de 3 kg; con los cartuchos llenos, 4,5 o 5 kg. Desenfundarla " +
+          "requiere una mano libre y acción compleja.",
+        "Escáner: registrar una pieza o diseño nuevo es acción estándar (o varias, según el " +
+          "volumen) y Perspicacia + la disciplina técnica que toque, con la misma dificultad que " +
+          "fabricarlo (más si el narrador lo ve muy complejo). Registra diseños más grandes de lo " +
+          "que el sintetizador puede materializar.",
         "Fabricación, análisis, reparación y reciclaje de campo: dificultad base 7 para lo común, " +
           "+2 por cada rango de rareza superior. Éxito crítico da gran calidad (+1 a resistencia " +
           "frente a corrosión y shock, +2 puntos de estructura).",
@@ -77,7 +82,9 @@ export const VALIJA_TACTICA_FABRICACION: Herramienta = {
           "fabricación. Éxito crítico recupera el 50% del precio base; éxito normal, el 25%.",
       ],
       modificadores: [],
-      motor: MOTOR_VTF,
+      // S94: el escáner (registrar diseños) y desenfundar, solo en `detalle`: la app no tiene
+      // tirada de registrar ni lleva el tipo de acción; se lleva en mesa.
+      motor: [...MOTOR_VTF, { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" }],
     },
     {
       nivel: 2,
@@ -135,6 +142,35 @@ const MOTOR_RADAR = motorHerramientaActiva("herramienta_radar");
 const MOTOR_DISFRAZ = motorHerramientaActiva("herramienta_disfraz_holografico");
 const MOTOR_ESCANER = motorHerramientaActiva("herramienta_escaner_detector");
 
+// Dificultades del documento (S94): la tirada se abre en `dificultadTirada` y las variantes
+// son un selector propio de la fila (sin `alcance`), cada opción con la suya.
+const MOTOR_VARIANTE_DIFICULTAD = (idAccion: string): MotorMetadata => ({
+  tipo: "numerico",
+  afecta: { modo: "accion_existente", id: idAccion },
+  mecanismo: "eleccion_jugador",
+  estado: "construido",
+});
+
+function selectorBarridoRadar(alcancePenetracion: string): CondicionTirada {
+  return {
+    id: "radar_barrido",
+    tipo: "opcion",
+    etiqueta: "Barrido",
+    opciones: [
+      { id: "habitual", etiqueta: "Función habitual", valor: 0, sinValor: true, dificultad: 7 },
+      {
+        id: "penetracion",
+        etiqueta: "Penetración de obstáculos",
+        valor: 0,
+        sinValor: true,
+        dificultad: 8,
+        nota: `Acción estándar; a través de coberturas ligeras y tabiques, alcance ${alcancePenetracion}.`,
+      },
+    ],
+    porDefecto: "habitual",
+  };
+}
+
 export const RADAR: Herramienta = {
   familia: "herramienta",
   id: "radar",
@@ -153,6 +189,7 @@ export const RADAR: Herramienta = {
       detalle: ["Localiza movimiento, calor, masas inanimadas y firmas biológicas."],
       modificadores: [],
       notaTirada: "Acción simple para barrido rápido. Dificultad 7. Alcance 20 m.",
+      dificultadTirada: 7,
       motor: MOTOR_RADAR,
     },
     {
@@ -167,6 +204,7 @@ export const RADAR: Herramienta = {
       notaTirada:
         "Acción simple, dificultad 7. Alcance 100 m; distingue orgánicos/maquinaria/sintéticos " +
         "con crítico, y a 20 m o menos el éxito normal cuenta como crítico a ese efecto.",
+      dificultadTirada: 7,
       motor: MOTOR_RADAR,
     },
     {
@@ -181,7 +219,9 @@ export const RADAR: Herramienta = {
       notaTirada:
         "Penetración parcial: acción estándar, dificultad 8, alcance 20 m. En función habitual, " +
         "alcance 500 m, distinguiendo tipos hasta 100 m.",
-      motor: MOTOR_RADAR,
+      dificultadTirada: 7,
+      condiciones: [selectorBarridoRadar("20 m")],
+      motor: [...MOTOR_RADAR, MOTOR_VARIANTE_DIFICULTAD("herramienta_radar")],
     },
     {
       nivel: 4,
@@ -196,11 +236,14 @@ export const RADAR: Herramienta = {
       notaTirada:
         "Alcance habitual 1 km, distinguiendo tipos en todo el alcance; penetra coberturas " +
         "ligeras hasta 100 m.",
+      // La penetración, a 100 m (sustituye a la del nivel 3 por id).
+      condiciones: [selectorBarridoRadar("100 m")],
       // "Marcar objetivo" construido 2026-09-27 (docs/tareas.md, arquitectura
       // "acción sin dado"): accionesDirectasDeHerramientas() (herramientas.ts),
       // fila propia en Acciones → Herramientas, sin dado ni estado que rastrear.
       motor: [
         ...MOTOR_RADAR,
+        MOTOR_VARIANTE_DIFICULTAD("herramienta_radar"),
         { tipo: "accion", afecta: { modo: "accion_nueva", id: "radar_marcar_objetivo" }, mecanismo: "accion_equipo", estado: "construido" },
       ],
     },
@@ -277,6 +320,7 @@ export const ESCANER_DETECTOR: Herramienta = {
       detalle: [],
       modificadores: [],
       notaTirada: "Dificultad 6.",
+      dificultadTirada: 6,
       motor: MOTOR_ESCANER,
     },
     {
@@ -294,7 +338,20 @@ export const ESCANER_DETECTOR: Herramienta = {
         "Perspicacia + Tecnociencia, o Biociencia para peritaje orgánico/químico. Acción " +
         "compleja. Dificultad 6 superficial, 8 escáner profundo.",
       habilidadesTirada: ["tecnociencia", "biociencia"],
-      motor: MOTOR_ESCANER,
+      dificultadTirada: 6,
+      condiciones: [
+        {
+          id: "escaner_profundidad",
+          tipo: "opcion",
+          etiqueta: "Escaneo",
+          opciones: [
+            { id: "superficial", etiqueta: "Superficial", valor: 0, sinValor: true, dificultad: 6 },
+            { id: "profundo", etiqueta: "Profundo", valor: 0, sinValor: true, dificultad: 8 },
+          ],
+          porDefecto: "superficial",
+        },
+      ],
+      motor: [...MOTOR_ESCANER, MOTOR_VARIANTE_DIFICULTAD("herramienta_escaner_detector")],
     },
   ],
 };

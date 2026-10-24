@@ -68,10 +68,9 @@ export const ARMADURAS: Armadura[] = [
       // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
       // en 0 hasta que Mejora Ignífuga reabra el segundo.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
-      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
-      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
-      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
+      // bonifMaxAgilidad (S93, usuario 2026-10-24): topa la Agilidad calculada mientras se lleva
+      // (topeAgilidadAplicado, derivados.ts; null = sin tope); con dos armaduras, el menor.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -101,10 +100,9 @@ export const ARMADURAS: Armadura[] = [
       // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
       // en 0 hasta que Mejora Ignífuga reabra el segundo.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
-      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
-      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
-      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
+      // bonifMaxAgilidad (S93, usuario 2026-10-24): topa la Agilidad calculada mientras se lleva
+      // (topeAgilidadAplicado, derivados.ts; null = sin tope); con dos armaduras, el menor.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -139,10 +137,9 @@ export const ARMADURAS: Armadura[] = [
       // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
       // en 0 hasta que Mejora Ignífuga reabra el segundo.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
-      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
-      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
-      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
+      // bonifMaxAgilidad (S93, usuario 2026-10-24): topa la Agilidad calculada mientras se lleva
+      // (topeAgilidadAplicado, derivados.ts; null = sin tope); con dos armaduras, el menor.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -181,10 +178,9 @@ export const ARMADURAS: Armadura[] = [
       // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
       // en 0 hasta que Mejora Ignífuga reabra el segundo.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
-      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
-      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
-      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
+      // bonifMaxAgilidad (S93, usuario 2026-10-24): topa la Agilidad calculada mientras se lleva
+      // (topeAgilidadAplicado, derivados.ts; null = sin tope); con dos armaduras, el menor.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -225,10 +221,9 @@ export const ARMADURAS: Armadura[] = [
       // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
       // en 0 hasta que Mejora Ignífuga reabra el segundo.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
-      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
-      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
-      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
+      // bonifMaxAgilidad (S93, usuario 2026-10-24): topa la Agilidad calculada mientras se lleva
+      // (topeAgilidadAplicado, derivados.ts; null = sin tope); con dos armaduras, el menor.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -272,10 +267,9 @@ export const ARMADURAS: Armadura[] = [
       // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
       // en 0 hasta que Mejora Ignífuga reabra el segundo.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
-      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
-      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
-      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
+      // bonifMaxAgilidad (S93, usuario 2026-10-24): topa la Agilidad calculada mientras se lleva
+      // (topeAgilidadAplicado, derivados.ts; null = sin tope); con dos armaduras, el menor.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -309,10 +303,9 @@ export const ARMADURAS: Armadura[] = [
       // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
       // en 0 hasta que Mejora Ignífuga reabra el segundo.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
-      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
-      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
-      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
+      // bonifMaxAgilidad (S93, usuario 2026-10-24): topa la Agilidad calculada mientras se lleva
+      // (topeAgilidadAplicado, derivados.ts; null = sin tope); con dos armaduras, el menor.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -338,10 +331,9 @@ export const ARMADURAS: Armadura[] = [
       // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
       // en 0 hasta que Mejora Ignífuga reabra el segundo.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
-      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
-      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
-      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
+      // bonifMaxAgilidad (S93, usuario 2026-10-24): topa la Agilidad calculada mientras se lleva
+      // (topeAgilidadAplicado, derivados.ts; null = sin tope); con dos armaduras, el menor.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -367,10 +359,9 @@ export const ARMADURAS: Armadura[] = [
       // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
       // en 0 hasta que Mejora Ignífuga reabra el segundo.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
-      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
-      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
-      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
+      // bonifMaxAgilidad (S93, usuario 2026-10-24): topa la Agilidad calculada mientras se lleva
+      // (topeAgilidadAplicado, derivados.ts; null = sin tope); con dos armaduras, el menor.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
@@ -396,10 +387,9 @@ export const ARMADURAS: Armadura[] = [
       // daño" — salvo contra Mental y Fuego (docs/sistema.md §7), que quedan
       // en 0 hasta que Mejora Ignífuga reabra el segundo.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
-      // bonifMaxAgilidad: solo aparece como columna de la tabla en docs/equipamiento.md,
-      // sin ninguna prosa que explique qué bonifica ni cómo se aplica — no hay pregunta
-      // numerada todavía. Solo se muestra en PiezaDetalle.tsx, ningún cálculo lo consume.
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "qué bonifica y cómo se aplica el tope de Agilidad de la armadura (sin definir en equipamiento.md)" },
+      // bonifMaxAgilidad (S93, usuario 2026-10-24): topa la Agilidad calculada mientras se lleva
+      // (topeAgilidadAplicado, derivados.ts; null = sin tope); con dos armaduras, el menor.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },

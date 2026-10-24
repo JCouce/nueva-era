@@ -17,8 +17,7 @@
 // que el documento no dice explícitamente: S14 (los umbrales de un mismo
 // recurso no se acumulan, solo el más profundo aporta su penalizador) y S15
 // (cómo se interpreta el "mínimo 1" de Moribundo/Exhausto).
-import type { AplicadoId } from "./atributos";
-import type { ModificadorConFuente, OrigenModificador } from "./modificadores";
+import type { AlcanceModificador, ModificadorConFuente, OrigenModificador } from "./modificadores";
 import { esEstadoDeAumento, estadoPorId } from "../catalog/estados";
 
 export type UmbralSalud = "normal" | "herido" | "malherido" | "moribundo";
@@ -106,14 +105,18 @@ export function sumaAjustesUmbrales(...ajustes: AjusteUmbrales[]): AjusteUmbrale
   return salud || fatiga ? { salud, fatiga } : SIN_AJUSTE_UMBRALES;
 }
 
-// Una reducción que solo vale en las tiradas con ciertos aplicados (Neurogénesis Hipocampal:
-// fatiga, en perspicacia, voluntad y expresión). No entra en el ajuste general: sale como una
-// compensación propia (+valor) con alcance "aplicado", y solo si el tramo sigue penalizando
-// tras el ajuste general; nunca deja el penalizador por encima de 0.
+// Una reducción que solo vale en ciertas tiradas: las de unos aplicados (Neurogénesis
+// Hipocampal: fatiga, en perspicacia, voluntad y expresión) o las de un grupo (Derivación
+// Psiónica 4: fatiga, en las de poder psiónico; S94). No entra en el ajuste general: sale como
+// una compensación propia (+valor) con su alcance, y solo si el tramo sigue penalizando tras el
+// ajuste general; nunca deja el penalizador por encima de 0.
+// TODO(revisar): varias se descuentan en orden aunque alcancen a tiradas distintas, así que con
+// el tramo casi compensado la segunda puede quedarse sin nada que compensar en una tirada donde
+// la primera no vale (hoy, solo con Neurogénesis y Derivación 4 a la vez).
 export type ReduccionPorAplicado = {
   recurso: keyof AjusteUmbrales;
   valor: number;
-  aplicados: AplicadoId[];
+  alcance: AlcanceModificador;
   fuente: string;
   origen: OrigenModificador;
 };
@@ -147,7 +150,7 @@ function compensacionesPorAplicado(
     const v = Math.min(r.valor, restante);
     if (v <= 0) return [];
     restante -= v;
-    return [{ tipo: "tirada", alcance: { tipo: "aplicado", aplicados: r.aplicados }, valor: v, compensa: true, origen: r.origen, fuente: `${r.fuente} (${etiqueta})` }];
+    return [{ tipo: "tirada", alcance: r.alcance, valor: v, compensa: true, origen: r.origen, fuente: `${r.fuente} (${etiqueta})` }];
   });
 }
 

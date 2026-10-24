@@ -77,7 +77,9 @@ export type AmenazaId = (typeof AMENAZAS)[number]["id"];
 // Un efecto de aumento contra unas amenazas: un bono, una ventaja (gratis o pagando 1 de
 // fatiga) o las dos cosas. La ventaja no se acumula, y si alguna fuente la da gratis para
 // esa amenaza, no se cobra la de pago.
-export type EfectoSalvacion = { contra: AmenazaId[]; bono?: number; ventaja?: "gratis" | "fatiga" };
+// `nota`: cuándo vale el bono, si no siempre (Soporte Vital: "solo con la armadura dañada o
+// tras un daño directo en el ambiente tóxico"); sale en la opción del selector "Contra…".
+export type EfectoSalvacion = { contra: AmenazaId[]; bono?: number; ventaja?: "gratis" | "fatiga"; nota?: string };
 
 // Lo que puede traer una operación, una opción de Introgresión o un nivel de implante para
 // las tiradas. Las casillas llevan `alcance` (si no, no llegan a ninguna tirada).
@@ -178,8 +180,10 @@ function opcionesSinInmunidad(a: (typeof AMENAZAS)[number], efectos: EfectoConFu
   const valor = partes.reduce((t, p) => t + p.valor, 0);
   const gratis = aplican.filter((e) => e.ventaja === "gratis").map((e) => e.fuente);
   const pago = aplican.filter((e) => e.ventaja === "fatiga").map((e) => e.fuente);
+  const notas = aplican.filter((e) => e.nota).map((e) => `${e.fuente}: ${e.nota}`);
   const lineas = [
     ...partes.map((p) => `${p.fuente} ${conSigno(p.valor)}`),
+    ...notas,
     ...gratis.map((f) => `${f}: ventaja`),
     ...pago.map((f) => (gratis.length ? `${f}: ventaja (no se paga, ya la da ${gratis.join(" y ")})` : `${f}: ventaja pagando 1 de fatiga`)),
   ];
@@ -194,7 +198,7 @@ function opcionesSinInmunidad(a: (typeof AMENAZAS)[number], efectos: EfectoConFu
     fuenteVentaja: pago.join(" y "),
     costeFatiga: 1,
   };
-  return valor !== 0 ? [{ ...base, nota: partes.map((p) => `${p.fuente} ${conSigno(p.valor)}`).join(" · ") }, pagando] : [pagando];
+  return valor !== 0 ? [{ ...base, nota: [...partes.map((p) => `${p.fuente} ${conSigno(p.valor)}`), ...notas].join(" · ") }, pagando] : [pagando];
 }
 
 const conSigno = (n: number) => (n < 0 ? `−${-n}` : `+${n}`);
