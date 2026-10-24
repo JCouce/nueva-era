@@ -105,7 +105,11 @@ const CATEGORIAS = [
   { id: "kerzul", titulo: "Armas Kerzul", cantidad: ARMAS_MELEE_KERZUL.length },
   { id: "mejorasEstandar", titulo: "Mejoras estándar", cantidad: MEJORAS_ESTANDAR.length },
   { id: "subsistemas", titulo: "Subsistemas", cantidad: SUBSISTEMAS.length },
-  { id: "mejorasArma", titulo: "Mejoras de arma", cantidad: MEJORAS_ARMA.length },
+  {
+    id: "mejorasArma",
+    titulo: "Mejoras de arma",
+    cantidad: MEJORAS_ARMA.length + MEJORAS_MUNICION_ESPECIAL.length,
+  },
   { id: "movimiento", titulo: "Movimiento", cantidad: MOVIMIENTO.length },
   { id: "medicina", titulo: "Medicina", cantidad: 1 + FARMACOS.length },
   { id: "herramientas", titulo: "Herramientas", cantidad: HERRAMIENTAS_CON_NIVEL.length },
@@ -787,6 +791,7 @@ function DetalleMunicionEspecial({
       >
         {`Comprar ${LOTE_MUNICION_ESPECIAL}`}
         {cantidad > 0 ? ` (llevas ${cantidad})` : ""}
+        {Number.isFinite(creditos) && <span className="opacity-80"> · {coste} cr.</span>}
       </BotonEquipar>
       {habilitadas.length > 0 && sinRareza && (
         <p className="mt-1 font-sans text-prosa-sm text-danger">
@@ -1218,14 +1223,29 @@ export function TiendaTab({
         )}
 
         {categoria === "mejorasArma" && (
-          <ListaInstalable
-            piezas={filtrar(MEJORAS_ARMA)}
-            mensajeVacio={SIN_COMPATIBLES.mejorasArma}
-            sheet={sheet}
-            creditos={creditosEfectivos}
-            topeRareza={topeRareza}
-            onEquipar={onEquipar}
-          />
+          <>
+            <ListaInstalable
+              piezas={filtrar(MEJORAS_ARMA)}
+              mensajeVacio={SIN_COMPATIBLES.mejorasArma}
+              sheet={sheet}
+              creditos={creditosEfectivos}
+              topeRareza={topeRareza}
+              onEquipar={onEquipar}
+            />
+            {/* Los mismos adaptadores que en Munición: quien busca la mejora "Munición
+                Especial" del documento la busca aquí. Las balas siguen en Munición. */}
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+              {`// Munición especial · adaptadores · ${MEJORAS_MUNICION_ESPECIAL.length}`}
+            </p>
+            <ListaInstalable
+              piezas={filtrar(MEJORAS_MUNICION_ESPECIAL)}
+              mensajeVacio="Ningún arma que lleves admite munición especial (las de plasma no)."
+              sheet={sheet}
+              creditos={creditosEfectivos}
+              topeRareza={topeRareza}
+              onEquipar={onEquipar}
+            />
+          </>
         )}
 
         {categoria === "movimiento" && (
