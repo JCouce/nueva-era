@@ -151,7 +151,7 @@ describe("el golpe", () => {
       tipoBase: "fuego",
       sumaBase: 2,
       extras: [],
-      categoria: null,
+      categoria: "Grave",
       efectos: ["Llamarada (7)"],
       efectosCritico: [],
       ignoraBlindaje: null,
@@ -160,6 +160,7 @@ describe("el golpe", () => {
     const plasma = perfilGolpe(ESPADA, ["plasma"]);
     assert.equal(plasma?.tipoBase, "plasma");
     assert.equal(plasma?.sumaBase, 2);
+    assert.equal(plasma?.categoria, "Grave");
     assert.deepEqual(plasma?.efectosCritico, ["Fusión (11)"]);
   });
 

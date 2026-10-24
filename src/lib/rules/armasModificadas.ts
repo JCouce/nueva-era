@@ -167,11 +167,16 @@ export function etiquetaTipoDanio(tipo: TipoDanio): string {
   return TIPOS_DANIO.find((t) => t.id === tipo)?.label ?? tipo;
 }
 
+// Gravedad del tipo de daño fuera de crítico (null en cinético: la pone el arma).
+const categoriaDeTipo = (tipo: TipoDanio): string | null =>
+  TIPOS_DANIO.find((t) => t.id === tipo)?.categoria ?? null;
+
 export type DanioExtra = { tipo: TipoDanio; valor: number; fuente: string };
 
 // Cómo cambian las modificaciones un golpe del arma: de qué tipo es el daño básico,
 // cuánto se le suma (lo que es de ese mismo tipo), qué daño extra de otro tipo va
-// aparte, la categoría si cambia (Nanofilamento: Grave) y los textos.
+// aparte, la categoría si cambia (Nanofilamento: Grave; Térmica y Plasma: la del tipo al
+// que convierten, grave) y los textos.
 export type PerfilGolpe = {
   tipoBase: TipoDanio;
   sumaBase: number;
@@ -205,7 +210,7 @@ export function perfilGolpe(arma: ArmaMelee, ids: readonly ModificacionArmaId[] 
     tipoBase,
     sumaBase,
     extras,
-    categoria: mods.find(({ mod }) => mod.categoriaGolpe)?.mod.categoriaGolpe ?? null,
+    categoria: mods.find(({ mod }) => mod.categoriaGolpe)?.mod.categoriaGolpe ?? categoriaDeTipo(tipoBase),
     efectos: mods.map(({ fila }) => fila.efecto),
     efectosCritico: mods.flatMap(({ fila }) => (fila.efectoCritico ? [fila.efectoCritico] : [])),
     ignoraBlindaje: ignora > 0 ? ignora : null,

@@ -147,7 +147,16 @@ describe("categoriaDanioDeTexto", () => {
     assert.equal(categoriaDanioDeTexto("letal"), "letal");
     assert.equal(categoriaDanioDeTexto("Letal no absorbible"), "letal");
     assert.equal(categoriaDanioDeTexto("Grave"), "grave");
-    assert.equal(categoriaDanioDeTexto("mental"), null);
     assert.equal(categoriaDanioDeTexto(null), null);
+    assert.equal(categoriaDanioDeTexto("cinético"), null);
+  });
+
+  test("los tipos de daño específico llevan su gravedad", () => {
+    assert.equal(categoriaDanioDeTexto("Fuego"), "grave");
+    assert.equal(categoriaDanioDeTexto("Plasma"), "grave");
+    assert.equal(categoriaDanioDeTexto("Corrosivo"), "grave");
+    assert.equal(categoriaDanioDeTexto("Electrico"), "letal");
+    assert.equal(categoriaDanioDeTexto("mental"), "letal");
+    assert.equal(categoriaDanioDeTexto("Frío"), "noLetal");
   });
 });

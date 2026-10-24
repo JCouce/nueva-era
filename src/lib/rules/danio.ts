@@ -8,6 +8,7 @@
 //     grave.
 // Sin imports de otras reglas a propósito: sheet.ts lo usa al construir su schema.
 import { z } from "zod";
+import { TIPOS_DANIO } from "../catalog/tiposDanio";
 
 export const CATEGORIAS_DANIO = ["noLetal", "letal", "grave"] as const;
 export type CategoriaDanio = (typeof CATEGORIAS_DANIO)[number];
@@ -59,12 +60,16 @@ export function normalizarDanio(danio: DanioVida, perdida: number): DanioVida {
   return acotarDanio(danio, perdida, perdida);
 }
 
-// Categoría de los textos de daño que ya existen ("no letal", "Letal no absorbible", "grave"…):
-// null si no es ninguna de las tres (mental, fuego…), y quien llama lo resta sin categoría.
+const sinAcentos = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+// Categoría de los textos de daño que ya existen ("no letal", "Letal no absorbible", "grave"…)
+// y de los tipos de daño específico ("Fuego" → grave, "Frío" → no letal; docs/fuente/sistema.md,
+// "Daño Específico"). Null si no es ninguno, y quien llama lo resta sin categoría.
 export function categoriaDanioDeTexto(texto: string | null | undefined): CategoriaDanio | null {
-  const t = (texto ?? "").trim().toLowerCase();
+  const t = sinAcentos((texto ?? "").trim().toLowerCase());
   if (t.startsWith("no letal")) return "noLetal";
   if (t.startsWith("letal")) return "letal";
   if (t.startsWith("grave")) return "grave";
-  return null;
+  const tipo = TIPOS_DANIO.find((x) => x.categoria && t.startsWith(sinAcentos(x.label.toLowerCase())));
+  return tipo?.categoria ? categoriaDanioDeTexto(tipo.categoria) : null;
 }
