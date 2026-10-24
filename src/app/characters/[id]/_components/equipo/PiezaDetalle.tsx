@@ -6,6 +6,7 @@ import {
   ALCANCE_ARROJADA,
   disciplinaPorId,
   ETIQUETA_DERIVADO,
+  etiquetaEspecialidad,
   aumentoPorId,
   textoDanioModo,
   type ResumenArmaModificada,
@@ -73,6 +74,7 @@ function etiquetaModificador(m: Modificador): string {
   if (a.tipo === "grupoHabilidad") return `${a.grupo} con ${HABILIDADES.find((h) => h.id === a.habilidad)!.label}`;
   if (a.tipo === "todas") return "Todas las tiradas";
   if (a.tipo === "aplicado") return `Tiradas de ${a.aplicados.map((id) => APLICADOS.find((x) => x.id === id)!.label).join(", ")}`;
+  if (a.tipo === "especialidad") return `Tiradas de ${a.especialidades.map(etiquetaEspecialidad).join(", ")}`;
   if (a.tipo === "familiaArma") return `Ataques (${a.familia.replace("_", " ")})${a.empleo ? `, arma a ${a.empleo}` : ""}`;
   return `Modo ${a.contieneEtiqueta}`;
 }

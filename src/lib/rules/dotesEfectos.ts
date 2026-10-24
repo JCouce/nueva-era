@@ -455,8 +455,8 @@ export function efectosDeDotes(
           modificadores.push({ tipo: "tirada", alcance, valor: valorBono, origen: "dote", fuente });
           return;
         }
-        // Casilla. Con especialidad, aunque el bono sea siempre activo: la tirada no sabe
-        // con cuál vas, así que la marca el jugador (decisión del usuario, D2a).
+        // Casilla. Con especialidad en la etiqueta (apaño S36: Investigación, Rastreo,
+        // Subsistencia, sin tirada propia), aunque el bono sea siempre activo: la marca el jugador.
         const c = casillaPara(e, i, resuelto.umbral);
         if (c) c.valorActivo += valorBono;
         return;

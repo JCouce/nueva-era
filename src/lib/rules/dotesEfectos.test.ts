@@ -2,7 +2,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { defaultSheet, type Sheet } from "./sheet";
-import { ACCIONES, GRUPOS_ACCION, type Accion } from "./acciones";
+import { ACCIONES, GRUPOS_ACCION, elegirEspecialidad, type Accion } from "./acciones";
 import { HABILIDADES } from "./habilidades";
 import { resolverFicha, conExtrasDeFicha, conExtrasDirectaDeFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
 import { ID_CASILLA_ULTRA_FISICAS, ID_CASILLA_ULTRA_INICIATIVA } from "./farmacos";
@@ -94,6 +94,10 @@ describe("catálogo de dotes: efectos (D2a)", () => {
           return ACCIONES.some((t) => t.grupo === a.grupo && t.habilidad === a.habilidad);
         case "familiaArma":
           return FAMILIAS_ARMA.includes(a.familia);
+        case "especialidad":
+          return ACCIONES.some((t) =>
+            a.especialidades.some((e) => [...(t.especialidadesAccion ?? []), ...(t.especialidadAElegir ?? [])].includes(e)),
+          );
         default:
           return false;
       }
@@ -196,19 +200,27 @@ describe("efectos de dotes en las tiradas (D2a)", () => {
     assert.equal(t.nota, tirada("defensa").nota);
   });
 
-  test("Presencia Imponente: una casilla en Actitud con Intimidación, con el valor según la Fuerza (D2d)", () => {
+  test("Presencia Imponente: casilla solo en las tiradas de Intimidación, con el valor según la Fuerza (D2d)", () => {
     // fichaCapaz: Fuerza 5 → +2, y la etiqueta lo dice.
     const f = resolver(fichaCapaz([{ id: "dote_presencia_imponente" }]));
-    for (const id of ["social", "iniciativa_distraccion"]) {
-      const cs = (conExtras(f, id).condiciones ?? []).filter((x) => x.id.startsWith("dote_presencia_imponente"));
-      assert.equal(cs.length, 1, id);
-      const c = cs[0];
-      assert.ok(c.tipo === "toggle", id);
-      assert.equal(c.valorActivo, 2);
-      assert.match(c.etiqueta, /Intimidación/);
-      assert.match(c.etiqueta, /Fuerza ≥ 5/);
-      assert.doesNotMatch(c.etiqueta, /súmalo a mano/);
-    }
+    const presencia = (t: Accion) => (t.condiciones ?? []).filter((x) => x.id.startsWith("dote_presencia_imponente"));
+    const social = conExtras(f, "social");
+    const [c] = presencia(social);
+    assert.ok(c?.tipo === "toggle");
+    assert.equal(c.valorActivo, 2);
+    assert.match(c.etiqueta, /¿Tu físico influye en la amenaza\?/);
+    assert.match(c.etiqueta, /Fuerza ≥ 5/);
+    assert.doesNotMatch(c.etiqueta, /súmalo a mano/);
+    // En Convencer / mentir se queda al elegir Intimidación y se va con otra.
+    assert.equal(presencia(elegirEspecialidad(social, "intimidacion")).length, 1);
+    assert.equal(presencia(elegirEspecialidad(social, "empatia")).length, 0);
+    // Iniciativa (distrayendo) es Manipulación (o Sigilo): no sale.
+    assert.equal(presencia(conExtras(f, "iniciativa_distraccion")).length, 0);
+    // NPC del máster (modo libre): igual.
+    const npc = resolver(fichaCapaz([{ id: "dote_presencia_imponente" }]), true);
+    const socialNpc = conExtras(npc, "social");
+    assert.equal(presencia(elegirEspecialidad(socialNpc, "intimidacion")).length, 1);
+    assert.equal(presencia(elegirEspecialidad(socialNpc, "empatia")).length, 0);
     const dote = DOTES.find((d) => d.id === "dote_presencia_imponente")!;
     assert.ok(dote.motor.every((m) => m.estado === "construido"));
   });

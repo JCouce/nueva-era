@@ -17,9 +17,9 @@ razas, poderes, dotes, aumentos) de prosa a motor. Este archivo manda en el esta
 
 Sin valoración de prioridad aquí a propósito — se queda obsoleta en cuanto cambia el
 foco. Frentes abiertos, cada uno con su sección en Pendiente:
-- **Dotes**: D1–D2d, las dotes de NPC y las tiradas fijas de Apuntar, Carrera, Discernir
-  mentiras y Resistir distracción hechas (0 efectos con `bloqueoPor: "tiradas-fijas"`);
-  quedan la especialidad elegida en la tirada y las tiradas propias de Investigación, Rastreo
+- **Dotes**: hechas D1–D2d, las dotes de NPC, las tiradas fijas de Apuntar, Carrera, Discernir
+  mentiras y Resistir distracción (0 efectos con `bloqueoPor: "tiradas-fijas"`) y la
+  especialidad en la tirada (2026-10-24); quedan las tiradas propias de Investigación, Rastreo
   y Subsistencia.
 - **Aumentos**: hecho (tandas A0-A7 commiteadas, 2026-10-23). Queda lo que espera a Murillo
   (preguntas de A4-A7, 5 implantes en proceso, extracción, tope de implantes, Shock) y la
@@ -1729,7 +1729,7 @@ Va **después** de aumentos: el IRM se modela allí pero no se conecta (`sistema
 ### Puntos Heroicos ⬜ (sin empezar)
 No hay nada construido. Prosa del diseñador en `docs/fuente/puntos-heroicos.md`.
 
-### Dotes ⬜ (D1–D2d y dotes de NPC hechas, 2026-10-15; quedan la especialidad en la tirada y las tiradas fijas)
+### Dotes ⬜ (D1–D2d, dotes de NPC y especialidad en la tirada hechas; quedan las tiradas fijas de Investigación, Rastreo y Subsistencia)
 
 Encargo y pasos: `docs/prompt-dotes.md`. Fuente literal: `docs/dotes.md` (105 dotes).
 Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
@@ -1975,17 +1975,16 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
   `elegirEspecialidad`); Hackeo Informática; Tratar heridas y fármacos Medicina; Iniciativa
   distrayendo con Manipulación o Sigilo; Escáner 2 con la más alta; Sigilo con Esconderse y
   Hurto (fila nueva); Alerta sintética sin Informática. Falta probarlo en el navegador.
-- [ ] **La tirada sabe qué especialidad se usa** (sale de ESP; **en parte** desde la regla
-  de arriba: toda tirada sabe ya cuál nombra, y Convencer / mentir sabe cuál se eligió).
-  Lo que queda: que el resto de filas de Actitud y las casillas de especialidad la usen.
-  Texto original: hoy la fila
-  de una tirada que no es ataque con arma solo dice sí/no (`EleccionTirada.enEspecialidad`).
-  Cambiarlo por un selector de **cuál** de las especialidades de la ficha en esa habilidad
-  (o ninguna), que llegue a `montarTirada`. Desbloquea el "fallo → fallo crítico" de Elión
-  (`rigidez_narcisista` en `especies.ts`, `bloqueoPor` apunta aquí: con Empatía, Humor o
-  Negociación el margen baja solo) y permite que las casillas de especialidad de las dotes
-  (S35: Presencia Imponente, Intimidación, Investigación…) se apliquen solas en vez de
-  marcarlas el jugador.
+- [x] **La tirada sabe qué especialidad se usa** (2026-10-24, sin commit). Alcance nuevo
+  `{ tipo: "especialidad" }` (`rules/modificadores.ts`): casa con las tiradas que nombran esa
+  especialidad (la del arma, la de la acción o la elegida en Convencer / mentir), la tenga o no
+  la ficha. Las casillas entran con las candidatas de Convencer y `elegirEspecialidad` /
+  `usarHabilidadAlternativa` quitan las de otra especialidad. *Presencia Imponente* solo en
+  Convencer con Intimidación (ya no en Iniciativa (distrayendo), que es Manipulación); fallo →
+  fallo crítico de Elión construido (`Rasgo.falloCritico`). S35 sustituido; Investigación,
+  Rastreo y Subsistencia siguen con el apaño S36 hasta tener tirada propia. Tests en
+  `dotesEfectos.test.ts` y `especieTiradas.test.ts`. Falta probarlo en el navegador. Hueco
+  conocido: una casilla de la especialidad de una habilidad alternativa no entra (no hay caso).
 - [ ] **Tiradas fijas que faltan según `docs/fuente/habilidades.md`** (sigue abierta: falta
   la segunda parte). Va junto a la integración de especialidades.
   - [x] **Apuntar, Carrera, Discernir mentiras y Resistir distracción** (2026-10-23, sin
@@ -2165,12 +2164,9 @@ no `base`); con dos opciones que bajen el margen de crítico gana el más bajo, 
       (toxinas), Axadren (enemigo oculto: Alerta activa y Buscar), Elión (sugestión)~~
       *(toggle sin número con `margenCriticoExito: 0`, campo nuevo también en toggles; gana el
       margen más bajo)*
-- [ ] "Fallo → fallo crítico" de Elión (especialidad Empatía / Humor / Negociación):
-      **bloqueado** por la tarea "La tirada sabe qué especialidad se usa" (Dotes; la lista
-      cerrada ya existe desde la tanda ESP, antes era la pregunta 3 / S5), fuera de E4
-      (decisión del usuario, 2026-10-13). Forma decidida: especialidades por id; al tirar se
-      elige **qué** especialidad se usa (no solo sí/no) y, con una de esas tres, el fallo
-      crítico se aplica solo, sin casilla. MotorMetadata `bloqueado`
+- [x] ~~"Fallo → fallo crítico" de Elión (especialidad Empatía / Humor / Negociación)~~
+      *(2026-10-24, con la tarea "La tirada sabe qué especialidad se usa": sin casilla, margen
+      de fallo crítico 1 en las tiradas que nombran una de las tres)*
 - [x] ~~−1 a los tramos de heridas (Guerrero) y fatiga (Siervo)~~ *(`ajusteUmbrales` en el
       rasgo → `FichaResuelta.ajusteUmbrales` → parámetro obligatorio de
       `modificadoresDeUmbrales`; un tramo en 0 no da línea. Solo el −N: velocidad y carga igual)*

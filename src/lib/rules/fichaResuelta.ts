@@ -47,6 +47,7 @@ import {
   casillasDeEspecie,
   especieDeFicha,
   excepcionesRareza,
+  fallosCriticosDeEspecie,
   formulaMovimientoDeEspecie,
   multiplicadorCargaDeEspecie,
   textosDeEspecie,
@@ -54,6 +55,7 @@ import {
   notasFarmacosDeEspecie,
   accionesSinDadoDeEspecie,
   type EspecieResuelta,
+  type FalloCriticoFijo,
   type PeajeNeurologico,
   type TextoEnTirada,
   type FormulaMovimientoResuelta,
@@ -175,6 +177,9 @@ export type FichaResuelta = {
   // Ventajas sin casilla de los aumentos (A2b: Red Frontoparietal en Iniciativa), con su
   // alcance: las pone conExtrasDeFicha en `Accion.ventaja`. Derivadas: también al NPC.
   ventajasFijas: VentajaFija[];
+  // Fallo → fallo crítico sin casilla de la especie (Rigidez narcisista), con su alcance: lo
+  // pone conExtrasDeFicha en `Accion.falloCritico`.
+  fallosCriticos: FalloCriticoFijo[];
   // Lo de las dotes que no es casilla ni texto (D2b-1): bonos por tramo de distancia con
   // su alcance y críticos fijos por especialidad de arma. También los pone conExtrasDeFicha.
   // `permisos` (D2b-2): Bloquear y el estilo Sutil, que solo existen con su dote; se los
@@ -367,6 +372,7 @@ export function resolverFicha(
     ]),
     textosTirada: [...textosDeEspecie(especie), ...dotes.textos, ...textosDeAumentos(sheet), ...activables.textos],
     ventajasFijas: ventajasFijasDeAumentos(sheet),
+    fallosCriticos: fallosCriticosDeEspecie(especie),
     extrasDotes: {
       bonosTramo: [...dotes.bonosTramo, ...bonosTramoDeAumentos(sheet)],
       criticos: dotes.criticos,
@@ -403,7 +409,7 @@ export function resolverFicha(
 const FAMILIAS_CON_CRITICO_FIJO: readonly FamiliaArma[] = ["ataque_melee", "ataque_fuego", "ataque_pesado"];
 
 export function conExtrasDeFicha(
-  ficha: Pick<FichaResuelta, "indiceCondiciones" | "textosTirada" | "extrasDotes" | "ventajasFijas">,
+  ficha: Pick<FichaResuelta, "indiceCondiciones" | "textosTirada" | "extrasDotes" | "ventajasFijas" | "fallosCriticos">,
   t: Accion,
 ): Accion {
   // La tirada libre (T-007, R1): sin casillas, textos, ventajas, bonos por tramo, descuentos
@@ -421,6 +427,7 @@ export function conExtrasDeFicha(
   const descuentos = ficha.extrasDotes.descuentos.filter((d) => alcanzaA(d.alcance, ctx));
   // La ventaja que ya trae la tirada manda (no se acumula).
   const ventaja = t.ventaja ? undefined : ficha.ventajasFijas.find((v) => alcanzaA(v.alcance, ctx))?.fuente;
+  const falloCritico = ficha.fallosCriticos.find((f) => alcanzaA(f.alcance, ctx));
   // Cambios de grado sin casilla (Velocista, Gran Puntería): el crítico más fácil gana.
   const grados = ficha.extrasDotes.grados.filter((g) => alcanzaA(g.alcance, ctx));
   const criticoFinal = [...(critico ? [{ margen: critico.margen, fuente: critico.fuente }] : []), ...grados.flatMap((g) => (g.margen === undefined ? [] : [{ margen: g.margen, fuente: g.fuente }]))]
@@ -439,6 +446,7 @@ export function conExtrasDeFicha(
     !criticoFinal &&
     descuentos.length === 0 &&
     !ventaja &&
+    !falloCritico &&
     !subeGradoFijo &&
     !alt &&
     conApuntado === t.condiciones
@@ -453,6 +461,7 @@ export function conExtrasDeFicha(
     ...(subeGradoFijo && { subeGradoFijo }),
     ...(alt && { habilidadAlternativa: { habilidad: alt.habilidad, especialidad: alt.especialidad, etiqueta: alt.etiqueta } }),
     ...(ventaja && { ventaja }),
+    ...(falloCritico && { falloCritico }),
   };
 }
 

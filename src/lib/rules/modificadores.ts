@@ -137,6 +137,9 @@ export type AlcanceModificador =
   // `salvoGrupo`: no en las tiradas de ese grupo (Ultra Estimulante: acciones físicas de
   // Fuerza o Agilidad, no las salvaciones; S94).
   | { tipo: "aplicado"; aplicados: AplicadoId[]; salvoGrupo?: GrupoAccion }
+  // Las tiradas que nombran alguna de estas especialidades (la del arma, la de la acción o la
+  // elegida en Convencer / mentir), la tenga o no la ficha: Presencia Imponente, Elión.
+  | { tipo: "especialidad"; especialidades: readonly EspecialidadId[] }
   | { tipo: "todas" };
 
 export type Modificador =
@@ -282,6 +285,9 @@ export type ContextoAccion = {
   desarmado?: boolean;
   contundente?: boolean;
   especialidadArma?: EspecialidadId;
+  // Las que nombra la tirada (especialidadesDeTirada). Antes de abrirla (contextoDe), también
+  // las candidatas de `especialidadAElegir`; montarTirada pone las de verdad.
+  especialidades?: readonly EspecialidadId[];
 };
 
 // Exportada para condicionesActivas() (equipo.ts) — mismo criterio de alcance
@@ -292,6 +298,7 @@ export function alcanzaA(alcance: AlcanceModificador, ctx: ContextoAccion): bool
   if (alcance.tipo === "grupo") return alcance.grupo === ctx.grupo;
   if (alcance.tipo === "habilidad") return alcance.habilidad === ctx.habilidad;
   if (alcance.tipo === "grupoHabilidad") return alcance.grupo === ctx.grupo && alcance.habilidad === ctx.habilidad;
+  if (alcance.tipo === "especialidad") return alcance.especialidades.some((e) => ctx.especialidades?.includes(e));
   if (alcance.tipo === "aplicado")
     return ctx.aplicado !== undefined && alcance.aplicados.includes(ctx.aplicado) && alcance.salvoGrupo !== ctx.grupo;
   // Sin empleo conocido (Proyector de Pulso, que va en la armadura), un filtro de empleo no casa.

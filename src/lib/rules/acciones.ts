@@ -9,7 +9,15 @@ import { HABILIDADES, type HabilidadId } from "./habilidades";
 import { aplicado, valorEfectivo } from "./derivados";
 import type { Sheet } from "./sheet";
 import type { AtributosExtremidad, CondicionTirada, BonoPorTramo, EstadoCondiciones } from "./condiciones";
-import { sinExceptoSaludYSalvaciones, type EmpleoArma, type FamiliaArma, type GrupoAccion, type ModificadorConFuente } from "./modificadores";
+import {
+  alcanzaA,
+  sinExceptoSaludYSalvaciones,
+  type AlcanceModificador,
+  type EmpleoArma,
+  type FamiliaArma,
+  type GrupoAccion,
+  type ModificadorConFuente,
+} from "./modificadores";
 import type { DetallePoder } from "./poderes";
 import type { TipoDanio } from "../catalog/tiposDanio";
 import type { DanioExtra } from "./armasModificadas";
@@ -90,6 +98,10 @@ export type Accion = {
   // conExtrasDeFicha (fichaResuelta.ts); montarTirada lo junta con los márgenes de las
   // casillas (gana el más bajo) y lo enseña en las notas del resultado.
   criticoFijo?: { margen: number; fuente: string };
+  // Fallo → fallo crítico sin casilla, en las tiradas de ese alcance (Rigidez narcisista de
+  // Elión: Empatía, Humor o Negociación). Lo pone conExtrasDeFicha con las especialidades
+  // posibles; montarTirada lo vuelve a mirar con las de verdad (la elegida en Convencer).
+  falloCritico?: { alcance: AlcanceModificador; fuente: string };
   // Fracaso → éxito fijo y sin casilla (Velocista en Carrera), con su fuente. Lo pone
   // conExtrasDeFicha; montarTirada lo pasa a TiradaMontada.subeGrado como el de una casilla.
   subeGradoFijo?: string;
@@ -343,7 +355,7 @@ export const ACCIONES: Accion[] = [
     habilidad: "combate_distancia",
     nota: "La tirada depende de cómo entres al combate; esta es la de sacar el arma para atacar",
   },
-  // "expresión + manipulación o sigilo" (fuente/sistema.md): Manipulación fija y Sigilo, que
+  // "expresión + manipulación o sigilo" (fuente/reglas-base.md): Manipulación fija y Sigilo, que
   // la fuente da a secas, como alternativa entera (docs/sistema.md §3, usuario 2026-10-23).
   {
     id: "iniciativa_distraccion",
@@ -419,7 +431,7 @@ export const ACCIONES: Accion[] = [
     habilidad: "exploracion",
     nota: "Acción simple o reacción para buscar objetivos ocultos. En empate, alerta gana a sigilo",
   },
-  // Saltar y levantarse: "potencia + atletismo" (fuente/habilidades.md, Salto; fuente/sistema.md,
+  // Saltar y levantarse: "potencia + atletismo" (fuente/habilidades.md, Salto; fuente/reglas-base.md,
   // Derribado), entera. El id se queda: de él cuelgan equilibrio, nado y derribo (dotes, especie).
   {
     id: "atletismo",
@@ -611,7 +623,7 @@ export function resolverTirada({
   // Umbrales de crítico distintos del general (MARGEN_CRITICO). Los decide
   // montarTirada (montaje.ts) a partir de las casillas marcadas: la VTM nivel 4
   // ("complejo", medicina.ts) y los "éxito → crítico" de especie bajan el de éxito
-  // a 0; ninguna toca el de fallo.
+  // a 0; la Rigidez narcisista de Elión baja el de fallo a 1 (`falloCritico`).
   margenCriticoExito?: number;
   margenCriticoFallo?: number;
 }): Resultado {
@@ -857,21 +869,42 @@ export function usarHabilidadAlternativa(t: Accion): Accion | null {
   const nombre = alt.especialidad
     ? etiquetaEspecialidad(alt.especialidad)
     : HABILIDADES.find((h) => h.id === alt.habilidad)!.label;
-  return {
+  return sinCasillasDeOtraEspecialidad({
     ...t,
     habilidad: alt.habilidad,
     label: `${t.label} (${nombre})`,
     especialidadesAccion: alt.especialidad ? [alt.especialidad] : undefined,
     especialidadAElegir: undefined,
-  };
+  });
 }
 
 // La tirada con la especialidad elegida (Convencer / mentir): pasa a nombrarla, como una fija.
 export function elegirEspecialidad(t: Accion, especialidad: EspecialidadId): Accion {
-  return {
+  return sinCasillasDeOtraEspecialidad({
     ...t,
     label: `${t.label} (${etiquetaEspecialidad(especialidad)})`,
     especialidadesAccion: [especialidad],
     especialidadAElegir: undefined,
-  };
+  });
+}
+
+// Las especialidades que nombra la tirada: la del arma o las de la acción. Con `candidatas`,
+// también las de `especialidadAElegir` mientras no se elija.
+export function especialidadesDeTirada(
+  t: Pick<Accion, "especialidadArma" | "especialidadesAccion" | "especialidadAElegir">,
+  candidatas = false,
+): readonly EspecialidadId[] {
+  if (t.especialidadArma) return [t.especialidadArma];
+  return t.especialidadesAccion ?? (candidatas ? t.especialidadAElegir : undefined) ?? [];
+}
+
+// Las casillas con alcance de especialidad entran en la tirada con las candidatas de Convencer
+// (contextoDe); al elegir una, o al cambiar de habilidad, se quedan solo las de la nueva.
+function sinCasillasDeOtraEspecialidad(t: Accion): Accion {
+  if (!t.condiciones) return t;
+  const especialidades = especialidadesDeTirada(t);
+  const condiciones = t.condiciones.filter(
+    (c) => c.alcance?.tipo !== "especialidad" || alcanzaA(c.alcance, { id: t.id, grupo: t.grupo, habilidad: t.habilidad, modoElegido: null, especialidades }),
+  );
+  return condiciones.length === t.condiciones.length ? t : { ...t, condiciones };
 }

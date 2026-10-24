@@ -36,6 +36,7 @@ import type { HabilidadId } from "./habilidades";
 import { reconciliarRecursos, precioMaterial, sumarGranada, type MaterialTier } from "./recursos";
 import type { Sheet } from "./sheet";
 import type { ModificacionArmaId } from "../catalog/armasModificadas";
+import type { EspecialidadId } from "../catalog/especialidades";
 import {
   conversionDeArma,
   convertirArma,
@@ -901,6 +902,8 @@ export type IndiceCondiciones = {
   // Por aplicado (A2b de aumentos): pocas, en una lista; la consulta mira los aplicados
   // posibles de la tirada y montarTirada, el de verdad.
   porAplicado: CondicionIndexada[];
+  // Por especialidad (Presencia Imponente): una entrada por especialidad del alcance.
+  porEspecialidad: Map<EspecialidadId, CondicionIndexada[]>;
   todas: CondicionIndexada[];
 };
 
@@ -920,6 +923,7 @@ export function indiceDeCondiciones(sheet: Sheet, deOtrasFuentes: CondicionTirad
     porHabilidad: new Map(),
     porFamiliaArma: new Map(),
     porAplicado: [],
+    porEspecialidad: new Map(),
     todas: [],
   };
 
@@ -935,6 +939,8 @@ export function indiceDeCondiciones(sheet: Sheet, deOtrasFuentes: CondicionTirad
     else if (alcance.tipo === "grupoHabilidad") agregaIndexada(indice.porHabilidad, alcance.habilidad, entrada);
     else if (alcance.tipo === "familiaArma") agregaIndexada(indice.porFamiliaArma, alcance.familia, entrada);
     else if (alcance.tipo === "aplicado") indice.porAplicado.push(entrada);
+    else if (alcance.tipo === "especialidad")
+      for (const e of alcance.especialidades) agregaIndexada(indice.porEspecialidad, e, entrada);
     else if (alcance.tipo === "todas") indice.todas.push(entrada);
     // "modo" queda fuera del índice a propósito, ver comentario de arriba.
   };
@@ -977,6 +983,8 @@ export function consultaIndiceCondiciones(indice: IndiceCondiciones, ctx: Contex
     ...(ctx.familiaArma ? (indice.porFamiliaArma.get(ctx.familiaArma) ?? []) : []).filter(
       (c) => c.condicion.alcance !== undefined && alcanzaA(c.condicion.alcance, ctx),
     ),
+    // La misma casilla puede estar en varias especialidades de la tirada: una vez.
+    ...new Set((ctx.especialidades ?? []).flatMap((e) => indice.porEspecialidad.get(e) ?? [])),
     ...indice.todas,
   ];
   // Las de aplicado, con los aplicados posibles de la tirada más los de las casillas de arriba

@@ -9,6 +9,7 @@
 // "Montaje: montarTirada".
 import {
   MARGEN_CRITICO,
+  especialidadesDeTirada,
   modificadorAccion,
   resolverTirada,
   tieneEspecialidad,
@@ -71,8 +72,7 @@ export function enEspecialidadEfectiva(sheet: Sheet, tirada: Accion): boolean {
   return fijas.some((e) => tieneEspecialidad(sheet, tirada.habilidad!, e));
 }
 
-const especialidadesFijas = (t: Accion): readonly EspecialidadId[] =>
-  t.especialidadArma ? [t.especialidadArma] : (t.especialidadesAccion ?? t.especialidadAElegir ?? []);
+const especialidadesFijas = (t: Accion): readonly EspecialidadId[] => especialidadesDeTirada(t, true);
 
 // Regla general (docs/sistema.md §3, usuario 2026-10-23): si la tirada no nombra especialidad,
 // la habilidad suma entera; si la nombra, entera solo si la ficha la tiene, y si no, a la mitad.
@@ -183,6 +183,11 @@ function margenesDeCondiciones(condiciones: CondicionTirada[], estado: EstadoCon
 // El crítico fijo de la tirada (Crítico Mejorado), sin casilla: gana el margen más bajo.
 function conCriticoFijo(margenes: TiradaMontada["margenes"], fijo: Accion["criticoFijo"]): TiradaMontada["margenes"] {
   return fijo ? { ...margenes, criticoExito: Math.min(margenes.criticoExito, fijo.margen) } : margenes;
+}
+
+// Fallo → fallo crítico (Elión): margen ≤ −1, cualquier fracaso.
+function conFalloCritico(margenes: TiradaMontada["margenes"], fuente: string | null): TiradaMontada["margenes"] {
+  return fuente ? { ...margenes, criticoFallo: 1 } : margenes;
 }
 
 // No apilamiento (A2a, `noApila`): de lo que entra en la tirada con el mismo grupo (bonos con
@@ -333,7 +338,9 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     ...(tirada.desarmado && { desarmado: true }),
     ...(tirada.contundente && { contundente: true }),
     ...(tirada.especialidadArma && { especialidadArma: tirada.especialidadArma }),
+    especialidades: especialidadesDeTirada(tirada),
   };
+  const falloCritico = tirada.falloCritico && alcanzaA(tirada.falloCritico.alcance, ctx) ? tirada.falloCritico.fuente : null;
   // Sin los que piden especialidad si no se va en ella, y el mejor de los que no se suman.
   const sinApilados = sinApilar(
     {
@@ -389,12 +396,13 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     circunstancial,
     total: modificador + circunstancial,
     desglose,
-    margenes: conCriticoFijo(margenesDeCondiciones(condiciones, estado), tirada.criticoFijo),
+    margenes: conFalloCritico(conCriticoFijo(margenesDeCondiciones(condiciones, estado), tirada.criticoFijo), falloCritico),
     // El crítico fijo (Crítico Mejorado) va primero, con su línea, en las notas del resultado.
     notas: [
       ...(tirada.criticoFijo
         ? [{ etiqueta: tirada.criticoFijo.fuente, nota: notaCriticoFijo(tirada.criticoFijo.margen) }]
         : []),
+      ...(falloCritico ? [{ etiqueta: falloCritico, nota: "Cualquier fallo es fallo crítico." }] : []),
       ...(tirada.subeGradoFijo ? [{ etiqueta: tirada.subeGradoFijo, nota: "Un fracaso (no el crítico) cuenta como éxito." }] : []),
       ...notasCondiciones(condiciones, estado),
     ],

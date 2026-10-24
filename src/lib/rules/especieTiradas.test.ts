@@ -3,7 +3,7 @@
 // tramo menos de penalizador (Guerrero, Siervo) y los textos sin mecanizar.
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { ACCIONES, type Accion } from "./acciones";
+import { ACCIONES, MARGEN_CRITICO, elegirEspecialidad, type Accion } from "./acciones";
 import { accionesDeAtaque } from "./combate";
 import { estadoInicial } from "./condiciones";
 import { equipar } from "./equipo";
@@ -82,11 +82,32 @@ describe("E4: datos del catálogo", () => {
     }
   });
 
-  test("Elión, fallo → fallo crítico: bloqueado hasta que la tirada sepa qué especialidad se usa, sin casilla", () => {
+  test("Elión, fallo → fallo crítico: sin casilla, en las tiradas de Empatía, Humor o Negociación", () => {
     const elion = ESPECIES.find((e) => e.id === "manduk")!.linajes!.opciones.find((l) => l.id === "elion")!;
     const rigidez = elion.rasgos.find((r) => r.id === "rigidez_narcisista")!;
     assert.equal(rigidez.casillas, undefined);
-    assert.ok(rigidez.motor.every((m) => m.estado === "bloqueado" && m.bloqueoPor?.includes("La tirada sabe qué especialidad se usa")));
+    assert.ok(rigidez.motor.every((m) => m.estado === "construido"));
+
+    const f = resolver(ficha(ESPECIE.elion));
+    const criticoFallo = (t: Accion) => montarTirada(f, t, eleccionSinTocar(t)).margenes.criticoFallo;
+    // Discernir mentiras nombra Empatía: vale aunque la ficha no la tenga.
+    const discernir = fija(f, "discernir_mentiras");
+    const m = montarTirada(f, discernir, eleccionSinTocar(discernir));
+    assert.equal(m.margenes.criticoFallo, 1);
+    assert.ok(m.notas.some((n) => n.etiqueta === "Rigidez narcisista"));
+    assert.equal(tirarMontada(m, 1, m.modificador + 2).critico, true); // fallo por 1
+    // Convencer / mentir: según la elegida.
+    const social = fija(f, "social");
+    assert.equal(criticoFallo(elegirEspecialidad(social, "humor")), 1);
+    assert.equal(criticoFallo(elegirEspecialidad(social, "intimidacion")), MARGEN_CRITICO);
+    // Sin esas especialidades, o sin ser Elión: el margen general.
+    assert.equal(criticoFallo(fija(f, "sigilo")), MARGEN_CRITICO);
+    // NPC del máster (modo libre): igual.
+    const npc = resolver(ficha(ESPECIE.elion), VITALIDAD_DE_FICHA, true);
+    assert.equal(montarTirada(npc, fija(npc, "discernir_mentiras"), eleccionSinTocar(fija(npc, "discernir_mentiras"))).margenes.criticoFallo, 1);
+    const otro = resolver(ficha(ESPECIE.ilkrem));
+    const d = fija(otro, "discernir_mentiras");
+    assert.equal(montarTirada(otro, d, eleccionSinTocar(d)).margenes.criticoFallo, MARGEN_CRITICO);
   });
 });
 

@@ -440,7 +440,7 @@ const AJUSTES_ACCION: Readonly<Record<string, AjusteAccion>> = {
 // TODO(revisar): Agarre Rápido y Mirada Desafiante (pregunta a Murillo, tareas.md; Zafarse
 // confirmado por el usuario: regla de Atrapado). Las tres: la prosa da la economía pero no
 // la tirada; el borrador supone Reflejos + Atletismo (Escalada), Potencia + Atletismo
-// (Escapismo; docs/fuente/sistema.md, Atrapado) y Expresión + Actitud (Intimidación), con la
+// (Escapismo; docs/fuente/reglas-base.md, Atrapado) y Expresión + Actitud (Intimidación), con la
 // dificultad a criterio del máster. Se dejan así (no es un error evidente) hasta que Murillo
 // lo aclare.
 const ajustesUsados = new Set<string>();

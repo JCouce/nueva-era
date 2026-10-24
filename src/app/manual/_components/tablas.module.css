@@ -1,0 +1,129 @@
+/* Tablas del manual (las marca rehypeTablasManual, src/lib/manual/tablas.ts).
+   Ancho: tabla normal. Estrecho y data-modo="fichas": una tarjeta por fila. */
+
+.envoltorio {
+  margin: 1.25rem 0;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.tabla th,
+.tabla td {
+  border: 1px solid var(--color-border);
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.tabla th {
+  background: var(--color-elevated);
+  color: var(--color-info);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tabla td {
+  background: var(--color-surface);
+  color: var(--color-soft);
+}
+
+.tabla td[data-titulo] {
+  color: var(--color-foreground);
+}
+
+/* Fallback (rowspan/colspan, filas irregulares o sin cabecera): scroll lateral con
+   la primera columna fija. */
+.scroll {
+  overflow-x: auto;
+}
+
+.scroll .tabla {
+  width: max-content;
+  min-width: 100%;
+}
+
+.scroll .tabla th,
+.scroll .tabla td {
+  max-width: 22rem;
+}
+
+.scroll .tabla tr > :first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--color-elevated);
+}
+
+@media (max-width: 767.98px) {
+  .fichas .tabla,
+  .fichas .tabla tbody,
+  .fichas .tabla tr,
+  .fichas .tabla td {
+    display: block;
+  }
+
+  .fichas .tabla thead {
+    display: none;
+  }
+
+  .fichas .tabla tr {
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    clip-path: polygon(
+      0 0.5rem,
+      0.5rem 0,
+      100% 0,
+      100% calc(100% - 0.5rem),
+      calc(100% - 0.5rem) 100%,
+      0 100%
+    );
+  }
+
+  .fichas .tabla td {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, 38%) 1fr;
+    gap: 0.75rem;
+    border: 0;
+    border-top: 1px solid var(--color-border);
+    padding: 0.4rem 0.75rem;
+  }
+
+  .fichas .tabla td::before {
+    content: attr(data-label);
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    line-height: 1.9;
+    text-transform: uppercase;
+  }
+
+  .fichas .tabla td[data-titulo] {
+    display: block;
+    border-top: 0;
+    background: var(--color-elevated);
+    color: var(--color-accent);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.55rem 0.75rem;
+    text-transform: uppercase;
+  }
+
+  .fichas .tabla td[data-titulo]::before {
+    content: none;
+  }
+
+  .fichas .tabla td[data-vacia] {
+    display: none;
+  }
+}

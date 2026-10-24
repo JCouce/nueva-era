@@ -2,7 +2,7 @@
 // una tirada y cómo se pegan a ella. Lo comparten conExtrasDeFicha / conExtrasDirectaDeFicha
 // (fichaResuelta.ts) y prepararPoder (usoPoder.ts, D2c-2), para que un texto salga igual en una
 // tirada fija, en una de arma o en la de un poder.
-import type { Accion } from "./acciones";
+import { especialidadesDeTirada, type Accion } from "./acciones";
 import type { TextoEnTirada } from "./especie";
 import type { AplicadoId } from "./atributos";
 import { alcanzaA, alcanzaAlgunAplicado, type ContextoAccion } from "./modificadores";
@@ -20,10 +20,11 @@ export function aplicadosPosibles(t: Partial<Pick<Accion, "aplicado" | "aplicado
 
 // `modoElegido: null`: la tirada aún no se ha abierto, así que una casilla con alcance "modo" no
 // tiene nada que casar (ver indiceDeCondiciones). Por lo mismo, del aplicado solo se sabe con
-// cuáles podría tirarse (`aplicadosPosibles`); el de verdad lo pone montarTirada.
+// cuáles podría tirarse (`aplicadosPosibles`), y de la especialidad, también las candidatas
+// de Convencer (`especialidadAElegir`); lo de verdad lo pone montarTirada.
 export const contextoDe = (
   t: Pick<Accion, "id" | "grupo" | "familiaArma" | "empleoArma" | "desarmado" | "contundente" | "especialidadArma"> &
-    Partial<Pick<Accion, "aplicado" | "aplicadoSutil" | "condiciones">> & {
+    Partial<Pick<Accion, "aplicado" | "aplicadoSutil" | "condiciones" | "especialidadesAccion" | "especialidadAElegir">> & {
       habilidad: Accion["habilidad"];
     },
 ): ContextoAccion => ({
@@ -37,6 +38,7 @@ export const contextoDe = (
   ...(t.desarmado && { desarmado: true }),
   ...(t.contundente && { contundente: true }),
   ...(t.especialidadArma && { especialidadArma: t.especialidadArma }),
+  especialidades: especialidadesDeTirada(t, true),
 });
 
 // Por aplicado (A2b): basta con que la tirada pueda tirarse con uno de ellos.

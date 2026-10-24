@@ -20,12 +20,16 @@ export function AppHeader({
         // Cabecera bifurcada (fase 6b, diseño del panel de máster, 2026-09-11):
         // "Nueva Era Master" en vez de un badge aparte junto al nombre — el
         // badge "MÁSTER" que había antes duplicaba la misma información.
-        <Link href="/characters" className="text-base font-bold tracking-tight">
+        // Sin rol (páginas estáticas como el manual) se va a "/", que redirige según el rol.
+        <Link href={role ? "/characters" : "/"} className="text-base font-bold tracking-tight">
           Nueva Era{role === "MASTER" && <span className="text-accent"> Master</span>}
         </Link>
       )}
       <div className="flex items-center gap-3">
         {name && <span className="text-sm text-zinc-400">{name}</span>}
+        <Link href="/manual" className="text-sm text-zinc-400 underline-offset-4 hover:underline">
+          Manual
+        </Link>
         {role === "MASTER" && (
           <Link href="/master" className="text-sm text-zinc-400 underline-offset-4 hover:underline">
             Panel

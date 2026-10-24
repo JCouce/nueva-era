@@ -63,7 +63,7 @@ export function normalizarDanio(danio: DanioVida, perdida: number): DanioVida {
 const sinAcentos = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 // Categoría de los textos de daño que ya existen ("no letal", "Letal no absorbible", "grave"…)
-// y de los tipos de daño específico ("Fuego" → grave, "Frío" → no letal; docs/fuente/sistema.md,
+// y de los tipos de daño específico ("Fuego" → grave, "Frío" → no letal; docs/fuente/reglas-base.md,
 // "Daño Específico"). Null si no es ninguno, y quien llama lo resta sin categoría.
 export function categoriaDanioDeTexto(texto: string | null | undefined): CategoriaDanio | null {
   const t = sinAcentos((texto ?? "").trim().toLowerCase());

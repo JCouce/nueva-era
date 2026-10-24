@@ -1,7 +1,7 @@
 // Tipos de daño (docs/sistema.md §7). Datos puros: los usan el blindaje (blindaje.ts, que
 // los reexporta) y las Armas Modificadas (armasModificadas.ts) sin importarse entre sí.
 //
-// `categoria`: gravedad del daño específico (docs/fuente/sistema.md, "Daño Específico");
+// `categoria`: gravedad del daño específico (docs/fuente/reglas-base.md, "Daño Específico");
 // `categoriaCritico`, la que toma en crítico si cambia. Cinético no tiene: la pone el arma.
 export const TIPOS_DANIO = [
   { id: "cinetico", label: "Cinético", categoria: null },

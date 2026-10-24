@@ -6,12 +6,12 @@
 //
 //   tirada → casillas y bonos van con `alcance` (AlcanceModificador, el mismo del
 //            motor); los textos, a las tiradas fijas de `textos`, o, si el alcance es de
-//            familia de arma (D2b-1), a las tiradas de esa familia (`textos` vacío). `especialidad`: la tirada solo sabe si vas en especialidad, no
-//            en cuál (decisión del usuario, D2a), así que el efecto va como casilla en
-//            la habilidad con la especialidad en la etiqueta, y la marca el jugador. Es
-//            texto de etiqueta (el nombre del catálogo de especialidades, o el de la
-//            acción en Rastreo/Subsistencia); se sustituye cuando la tirada sepa qué
-//            especialidad se usa (docs/tareas.md, "La tirada sabe qué especialidad se usa").
+//            familia de arma (D2b-1), a las tiradas de esa familia (`textos` vacío). Con
+//            alcance "especialidad" (Intimidación), solo en las tiradas que la nombran.
+//            `especialidad`: apaño S36 para lo que no tiene tirada propia (Investigación,
+//            Rastreo, Subsistencia): el efecto va como casilla en "Buscar / percibir" con la
+//            especialidad en la etiqueta, y la marca el jugador. Es texto de etiqueta; se
+//            quita cuando existan sus tiradas (docs/tareas.md, "Tiradas fijas que faltan").
 //   ficha  → texto que solo vive en la tarjeta de la dote (no hay tirada a la que colgarlo).
 //   especialidadArmaElegida → los ataques con arma de la especialidad elegida al comprar
 //            (Crítico Mejorado: crítico fijo, sin casilla; rules/dotesEfectos.ts).
@@ -92,13 +92,13 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
     textos: ["iniciativa_arma", "iniciativa_distraccion", "iniciativa"],
   },
 
-  // ── Especialidades: casilla en la habilidad, la especialidad en la etiqueta ──
-  // Intimidación (Actitud): "Convencer / mentir" e "Iniciativa (distrayendo)".
+  // ── Especialidades ──
+  // Intimidación: las tiradas que la nombran (hoy, Convencer / mentir con ella elegida). No
+  // Iniciativa (distrayendo), que es Manipulación (usuario, 2026-10-24).
   "especialidad:intimidacion": {
     tipo: "tirada",
-    alcance: { tipo: "habilidad", habilidad: "actitud" },
-    textos: ["social", "iniciativa_distraccion"],
-    especialidad: etiquetaEspecialidad("intimidacion"),
+    alcance: { tipo: "especialidad", especialidades: ["intimidacion"] },
+    textos: ["social"],
   },
   // Apaño (supuesto S36): Investigación, Rastreo y Subsistencia no tienen tirada propia y
   // van a "Buscar / percibir", la única de Exploración en Acciones, con la especialidad

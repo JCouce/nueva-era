@@ -18,6 +18,7 @@ import type { MotorMetadata } from "../rules/motor";
 import type { FormulaMovimiento } from "../rules/formulaMovimiento";
 import { ATRIBUTOS, type AtributoId } from "../rules/atributos";
 import type { HabilidadId } from "../rules/habilidades";
+import type { EspecialidadId } from "./especialidades";
 import type { MaterialPieza } from "./equipo";
 
 // Peso/altura de referencia (§14.5): solo se enseña junto a los campos libres de
@@ -57,6 +58,9 @@ export type Rasgo = {
   // una tirada no va aquí: es un Modificador "tirada" con alcance.
   casillas?: CasillaRasgo[];
   textos?: TextoRasgo[];
+  // Fallo → fallo crítico, sin casilla, en las tiradas que nombran alguna de estas
+  // especialidades (Rigidez narcisista). Lo resuelve fallosCriticosDeEspecie.
+  falloCritico?: { especialidades: EspecialidadId[] };
   // Puntos menos de penalizador en cada tramo de heridas o de fatiga (§7; M12).
   ajusteUmbrales?: { salud?: number; fatiga?: number };
   // Otras áreas (§14.9, E5). Los resuelve especie.ts una vez en la FichaResuelta:
@@ -489,18 +493,15 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         id: "rigidez_narcisista",
         label: "Rigidez narcisista",
         texto: "Un fallo en Empatía, Humor o Negociación es fallo crítico (cualquier tirada con una especialidad de ese nombre).",
-        // Fuera de E4 (decisión del usuario, 2026-10-13). Las especialidades ya son lista
-        // cerrada (tanda ESP); falta que la tirada sepa QUÉ especialidad se usa (hoy
-        // `enEspecialidad` es sí/no). Con eso, y una de estas tres (empatia, humor,
-        // negociacion), el margen de fallo crítico baja solo, sin casilla
-        // (eleccion_jugador: lo dispara la especialidad elegida al tirar).
+        // Vale la especialidad que nombra la tirada, la tenga o no la ficha (usuario,
+        // 2026-10-24); en Convencer / mentir, la elegida al tirar.
+        falloCritico: { especialidades: ["empatia", "humor", "negociacion"] },
         motor: [
           {
             tipo: "numerico",
             afecta: { modo: "accion_existente", id: "todas" },
             mecanismo: "eleccion_jugador",
-            estado: "bloqueado",
-            bloqueoPor: "docs/tareas.md, «La tirada sabe qué especialidad se usa»",
+            estado: "construido",
           },
         ],
       },

@@ -22,6 +22,7 @@
 //                   lo que la especie pone en las tiradas (§14.8, E4): casillas al
 //                   mismo índice que las del equipo, notas fijas y el tramo menos de
 //                   penalizador por umbral
+//   fallosCriticosDeEspecie fallo → fallo crítico en tiradas de ciertas especialidades
 //   peajeNeurologicoDeEspecie / notasFarmacosDeEspecie / accionesSinDadoDeEspecie
 //                   otras áreas (§14.9, E5): el peaje al usar un poder (lo lee
 //                   usarPoder), la nota fija de los fármacos y las acciones sin dado
@@ -39,7 +40,7 @@ import {
   type ReferenciaFisica,
   type Rasgo,
 } from "../catalog/especies";
-import type { ModificadorConFuente } from "./modificadores";
+import type { AlcanceModificador, ModificadorConFuente } from "./modificadores";
 import { creditosDeLaLetra } from "./prioridad";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
 import { defaultSheet, type Sheet } from "./sheet";
@@ -377,6 +378,16 @@ export function casillasDeEspecie(especie: EspecieResuelta | null): CondicionTir
         alcance: { tipo: "tiradaId" as const, id },
       })),
     ),
+  );
+}
+
+// Fallo → fallo crítico sin casilla (Rigidez narcisista), con el rasgo de fuente. Lo cuelga
+// conExtrasDeFicha de las tiradas que casan.
+export type FalloCriticoFijo = { alcance: AlcanceModificador; fuente: string };
+
+export function fallosCriticosDeEspecie(especie: EspecieResuelta | null): FalloCriticoFijo[] {
+  return (especie?.rasgos ?? []).flatMap((r) =>
+    r.falloCritico ? [{ alcance: { tipo: "especialidad" as const, especialidades: r.falloCritico.especialidades }, fuente: r.label }] : [],
   );
 }
 
