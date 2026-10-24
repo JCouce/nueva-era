@@ -8,15 +8,21 @@ const master = { id: "u3", role: "MASTER" as const };
 
 describe("canEditCharacter", () => {
   test("el dueño puede editar su propia ficha", () => {
-    assert.equal(canEditCharacter(player, { ownerId: "u1" }), true);
+    assert.equal(canEditCharacter(player, { ownerId: "u1", deletedAt: null }), true);
   });
 
   test("otro jugador no puede editar una ficha ajena", () => {
-    assert.equal(canEditCharacter(otherPlayer, { ownerId: "u1" }), false);
+    assert.equal(canEditCharacter(otherPlayer, { ownerId: "u1", deletedAt: null }), false);
   });
 
   test("el máster puede editar cualquier ficha, sea o no el dueño", () => {
-    assert.equal(canEditCharacter(master, { ownerId: "u1" }), true);
+    assert.equal(canEditCharacter(master, { ownerId: "u1", deletedAt: null }), true);
+  });
+
+  test("una ficha borrada no la edita nadie, ni su dueño ni el máster", () => {
+    const borrada = { ownerId: "u1", deletedAt: new Date() };
+    assert.equal(canEditCharacter(player, borrada), false);
+    assert.equal(canEditCharacter(master, borrada), false);
   });
 });
 
@@ -31,6 +37,10 @@ describe("canAdjustCombatiente (fase 6b, D2: el jugador solo toca su propio comb
 
   test("el máster puede ajustar cualquier combatiente ligado a un Character", () => {
     assert.equal(canAdjustCombatiente(master, { character: { ownerId: "u1" } }), true);
+  });
+
+  test("un combate abierto sigue manejando al combatiente aunque su ficha esté borrada", () => {
+    assert.equal(canAdjustCombatiente(player, { character: { ownerId: "u1" } }), true);
   });
 
   test("un combatiente sin Character (NPC ad-hoc o de catálogo) no tiene dueño: solo el máster", () => {

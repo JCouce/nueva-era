@@ -29,6 +29,7 @@ import { cambiarEstadosDePersonajes, COMBATE_ABIERTO, limpiarEstadosDeJugadores,
 import { revalidarPanelMaster } from "@/lib/revalidarMaster";
 import { ajustarRecursoDePersonajes, deshacerRegistro } from "@/lib/registroMaster";
 import { ajustarVidaDePersonajes } from "@/lib/vidaMando";
+import { NO_BORRADA } from "@/lib/borrado";
 
 // Aprobar/revertir es cosa del máster, no del dueño de la ficha — a diferencia
 // de canEditCharacter(), aquí el dueño NO vale.
@@ -202,7 +203,7 @@ export async function limpiarEstadosAction(input: {
 
   const autoria = { userId: user.id, motivo: parsed.data.motivo };
   if (parsed.data.ambito === "mesa") {
-    const res = await limpiarEstadosDeJugadores({ status: "APPROVED" }, autoria);
+    const res = await limpiarEstadosDeJugadores({ ...NO_BORRADA, status: "APPROVED" }, autoria);
     return { ok: true, registroId: res.registroId, personajes: res.characterIds.length, npcs: 0 };
   }
   const res = await limpiarEstadosDeJugadores({ combatientes: { some: { combate: COMBATE_ABIERTO } } }, autoria);

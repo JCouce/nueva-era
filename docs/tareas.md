@@ -883,6 +883,21 @@ blindaje del escudo **deja de sumar al del portador**.
 - **Cabecera común** (`NavPrincipal`): nombre de la cuenta · Manual · Personajes · (Panel) ·
   Salir, con la sección activa resaltada.
 
+### Borrado de fichas: soft delete si tiene trabajo ✅, 2026-10-24
+
+- Columna `Character.deletedAt` (migración `character_deleted_at`). Regla en `src/lib/borrado.ts`:
+  **tocada** = `updatedAt > createdAt` (cualquier escritura, del jugador o del máster) o estado
+  distinto de DRAFT; también va por soft si ha estado en algún combate (el borrado de verdad
+  arrastra sus combatientes en cascada).
+- Virgen → se borra de verdad sin preguntar. Tocada → modal (✕ · Confirmar) y `deletedAt`. Lo
+  decide el servidor (`deleteCharacter`); el cliente solo pinta el modal (`BorrarFicha`).
+- `canEditCharacter` niega cualquier edición de una ficha borrada (una pestaña abierta no sigue
+  autoguardando; su URL da 404). `canAdjustCombatiente` no mira el borrado: un combate abierto
+  sigue manejando a quien ya estaba.
+- `NO_BORRADA` en las listas: Personajes (jugador y máster), Jugadores en mesa, Fichas del máster
+  y "fin de escena". El selector para añadir jugadores al combate pasa a solo APPROVED.
+- Sin papelera: se recupera poniendo `deletedAt` a null en la BD.
+
 ## Pendiente
 
 ### Pestaña Acciones: pestañas y favoritas ✅ (usuario, 2026-10-23; T-005, T-006 y T-007)

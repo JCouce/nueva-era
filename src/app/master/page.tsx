@@ -15,6 +15,7 @@ import {
 } from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
 import { MesaMaster, type JugadorMesa } from "./MesaMaster";
+import { NO_BORRADA } from "@/lib/borrado";
 
 const ENTRADAS_REGISTRO = 40;
 
@@ -39,7 +40,7 @@ export default async function MesaPage() {
 async function cargarMesa() {
   // En juego = aprobados, los mismos que limpia "Limpiar estados".
   const filas = await prisma.character.findMany({
-    where: { status: "APPROVED" },
+    where: { ...NO_BORRADA, status: "APPROVED" },
     orderBy: { name: "asc" },
     select: { id: true, name: true, stats: true, estados: true, xp: true, creditos: true },
   });

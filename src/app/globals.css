@@ -54,9 +54,10 @@
   --color-danio-mental: var(--color-neon-magenta);
 
   /* Categorías de herida (§7, danio.ts): el desglose de la vida perdida en BarraVital y
-     Recursos. De leve a grave baja la luminosidad; la grave además va rayada. */
+     Recursos. La grave además va rayada. Letal en naranja y no en magenta: pegado al
+     rojo de la vida restante, el magenta no se distinguía. */
   --color-herida-no-letal: var(--color-neon-cyan);
-  --color-herida-letal: var(--color-neon-magenta);
+  --color-herida-letal: var(--color-neon-orange);
   --color-herida-grave: #9a3fd0;
   --color-herida-grave-fondo: #3d0f52;
 

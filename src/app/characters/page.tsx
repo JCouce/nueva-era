@@ -4,14 +4,16 @@ import { requireUser } from "@/lib/auth-helpers";
 import { AppHeader } from "@/components/AppHeader";
 import { HudCard } from "@/components/HudCard";
 import { EstadoFichaChip } from "@/components/EstadoFichaChip";
-import { createCharacter, deleteCharacter } from "./actions";
+import { createCharacter } from "./actions";
+import { BorrarFicha } from "./_components/BorrarFicha";
+import { NO_BORRADA } from "@/lib/borrado";
 
 export default async function CharactersPage() {
   const user = await requireUser();
   const isMaster = user.role === "MASTER";
 
   const characters = await prisma.character.findMany({
-    where: isMaster ? undefined : { ownerId: user.id },
+    where: isMaster ? NO_BORRADA : { ...NO_BORRADA, ownerId: user.id },
     orderBy: { updatedAt: "desc" },
     include: { owner: { select: { name: true, email: true } } },
   });
@@ -39,16 +41,7 @@ export default async function CharactersPage() {
                     </span>
                   )}
                 </Link>
-                <form action={deleteCharacter}>
-                  <input type="hidden" name="id" value={c.id} />
-                  <button
-                    type="submit"
-                    className="px-2 py-1 font-mono text-xs uppercase tracking-wide text-muted transition hover:text-danger"
-                    aria-label={`Borrar ${c.name}`}
-                  >
-                    Borrar
-                  </button>
-                </form>
+                <BorrarFicha id={c.id} nombre={c.name} />
               </HudCard>
             </li>
           ))}

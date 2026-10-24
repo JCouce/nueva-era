@@ -6,12 +6,20 @@
 // siempre.
 type UsuarioConRol = { id: string; role: "PLAYER" | "MASTER" };
 
-/** Regla central de permisos: el dueño o el máster pueden editar. */
+function esDuenoOMaster(user: UsuarioConRol, character: { ownerId: string }): boolean {
+  return user.role === "MASTER" || character.ownerId === user.id;
+}
+
+/**
+ * Regla central de permisos: el dueño o el máster pueden editar. Una ficha borrada
+ * (soft delete, lib/borrado.ts) no la edita nadie: así una pestaña que se quedó abierta
+ * no sigue autoguardando en ella.
+ */
 export function canEditCharacter(
   user: UsuarioConRol,
-  character: { ownerId: string },
+  character: { ownerId: string; deletedAt: Date | null },
 ): boolean {
-  return user.role === "MASTER" || character.ownerId === user.id;
+  return !character.deletedAt && esDuenoOMaster(user, character);
 }
 
 /**
@@ -19,12 +27,13 @@ export function canEditCharacter(
  * un Combatiente en un combate. Decisión D2 del brainstorm: el máster
  * siempre puede; el jugador solo si el combatiente es su propio Character
  * (no un NPC ad-hoc ni de catálogo, que no tienen dueño). Misma regla que
- * canEditCharacter, extendida a "combatiente sin Character no tiene dueño".
+ * canEditCharacter (salvo el borrado), extendida a "combatiente sin Character no tiene dueño".
  */
 export function canAdjustCombatiente(
   user: UsuarioConRol,
   combatiente: { character: { ownerId: string } | null },
 ): boolean {
   if (!combatiente.character) return user.role === "MASTER";
-  return canEditCharacter(user, combatiente.character);
+  // Sin mirar el borrado: un combate abierto sigue manejando a quien ya estaba en él.
+  return esDuenoOMaster(user, combatiente.character);
 }

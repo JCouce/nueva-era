@@ -13,6 +13,7 @@ import {
   textoEntradaRegistro,
 } from "@/lib/rules";
 import { CombateConsole } from "./CombateConsole";
+import { NO_BORRADA } from "@/lib/borrado";
 
 const ENTRADAS_REGISTRO = 30;
 
@@ -68,7 +69,9 @@ export default async function CombatePage() {
 
   const { registro, generadoEn } = await cargarRegistro();
 
+  // Para añadir al combate: solo fichas en juego.
   const characters = await prisma.character.findMany({
+    where: { ...NO_BORRADA, status: "APPROVED" },
     orderBy: { name: "asc" },
     select: { id: true, name: true, owner: { select: { name: true, email: true } } },
   });

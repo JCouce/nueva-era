@@ -6,6 +6,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { HudCard } from "@/components/HudCard";
 import { MasterTabs } from "@/components/MasterTabs";
 import { StatusControl, ResourceRow } from "../MasterControls";
+import { NO_BORRADA } from "@/lib/borrado";
 
 // La lista de fichas del máster (antes en /master, que desde E1c es la Mesa): en
 // revisión, en creación y en juego, con aprobar, devolver y revertir.
@@ -14,6 +15,7 @@ export default async function FichasPage() {
   if (user.role !== "MASTER") redirect("/characters");
 
   const characters = await prisma.character.findMany({
+    where: NO_BORRADA,
     orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
     include: { owner: { select: { name: true, email: true } } },
   });

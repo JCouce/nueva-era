@@ -63,6 +63,9 @@ model Character {
   // del jugador reescribe `stats` entero y pisaría lo del máster. También en combate:
   // el Combatiente de un jugador no usa su `estados`.
   estados          Json            @default("[]")
+  // Soft delete (lib/borrado.ts): una ficha con trabajo no se borra, se marca. Las listas
+  // la ocultan y nadie la puede editar; se recupera poniéndolo a null a mano en la BD.
+  deletedAt        DateTime?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
   combatientes     Combatiente[]
