@@ -190,7 +190,7 @@ describe("el golpe", () => {
     assert.equal(m.tipoDanio, "cinetico");
     assert.deepEqual(m.danioExtra, [{ tipo: "electrico", valor: 2, fuente: "Electrificante" }]);
     assert.match(golpe.nota ?? "", /Shock \(7\).*Hemorragia \(1d8 turnos\)/);
-    assert.equal(golpe.efectoCritico, "Hemorragia (1d6 turnos) · Crítico: Hemorragia Exanguinante");
+    assert.equal(golpe.efectoCritico, "Hemorragia (1d6 turnos) · Hemorragia Exanguinante");
     assert.deepEqual(golpe.ignoraBlindaje, { valor: 3, fuente: "Cuchillo de Combate de Nanofilamento Electrificante" });
 
     const lanzar = accionesDeAtaque(mod).find((a) => a.id === "lanzar_melee_c1")!;

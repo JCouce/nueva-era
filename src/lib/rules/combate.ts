@@ -604,9 +604,7 @@ function notaConPerfil(textos: (string | null | undefined)[], perfil: PerfilGolp
 }
 
 function criticoConPerfil(arma: ArmaMelee, perfil: PerfilGolpe | null): string | undefined {
-  const todos = [arma.efectoCritico, ...(perfil?.efectosCritico ?? []).map((e) => `Crítico: ${e}`)].filter(
-    (t): t is string => !!t,
-  );
+  const todos = [arma.efectoCritico, ...(perfil?.efectosCritico ?? [])].filter((t): t is string => !!t);
   return todos.length > 0 ? todos.join(" · ") : undefined;
 }
 

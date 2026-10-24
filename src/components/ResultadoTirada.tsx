@@ -18,8 +18,8 @@ function signo(n: number) {
 }
 
 // Todos los sumandos del daño en una línea, en orden, para que cuadren con el total:
-// "= 4 base (Simple, Fue+2) +1 Brazo Biónico 2 +4 por 9 éxitos".
-function DesgloseDanio({
+// "4 base (Simple, Fue+2) +1 Brazo Biónico 2 +4 por 9 éxitos".
+function CalculoDanio({
   danio,
   origenBase,
   margen,
@@ -31,8 +31,8 @@ function DesgloseDanio({
   const ajustes = danio.ajustes ?? [];
   const suma = danio.base + danio.bonoExitos + ajustes.reduce((t, a) => t + a.valor, 0);
   return (
-    <p className="mt-1 font-mono text-[11px] uppercase leading-relaxed text-muted">
-      = {danio.base} base{origenBase && ` (${origenBase})`}
+    <>
+      {danio.base} base{origenBase && ` (${origenBase})`}
       {ajustes.map((a) => (
         <span key={a.fuente}>
           {" "}
@@ -50,7 +50,17 @@ function DesgloseDanio({
         )
       )}
       {suma < 0 && <span> · mínimo 0</span>}
-    </p>
+    </>
+  );
+}
+
+// Una fila del daño ya tirado: etiqueta en gris a la izquierda, valor a la derecha.
+function FilaDanio({ etiqueta, children, className }: { etiqueta: string; children: React.ReactNode; className?: string }) {
+  return (
+    <>
+      <dt className="text-muted">{etiqueta}</dt>
+      <dd className={className}>{children}</dd>
+    </>
   );
 }
 
@@ -238,23 +248,29 @@ export function ContenidoResultado({
         <div className="mt-3 border-t border-border pt-3">
           {resultado.danioResuelto ? (
             <>
-              <p className="font-mono text-xs uppercase text-danger">
-                Daño: <span className="text-lg tabular-nums">{desglose ? desglose.total : resultado.danioResuelto.total}</span>{" "}
-                {resultado.danioResuelto.categoria}
-              </p>
-              {desglose && (
-                <p className="mt-1 font-mono text-xs uppercase">
-                  <PartesDanio partes={desglose.partes} />
-                </p>
-              )}
-              {resultado.critico && resultado.efectoCritico && (
-                <p className="mt-1 font-mono text-xs uppercase text-accent">Crítico · {resultado.efectoCritico}</p>
-              )}
-              <DesgloseDanio
-                danio={resultado.danioResuelto}
-                origenBase={resultado.danioInfo.origenBase}
-                margen={margen}
-              />
+              <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1 font-mono text-xs uppercase">
+                <FilaDanio etiqueta="Daño total" className="text-danger">
+                  <span className="text-lg tabular-nums">{desglose ? desglose.total : resultado.danioResuelto.total}</span>{" "}
+                  {resultado.danioResuelto.categoria}
+                </FilaDanio>
+                {desglose && (
+                  <FilaDanio etiqueta="Desglose">
+                    <PartesDanio partes={desglose.partes} />
+                  </FilaDanio>
+                )}
+                {resultado.critico && resultado.efectoCritico && (
+                  <FilaDanio etiqueta="Efecto crítico" className="text-accent">
+                    {resultado.efectoCritico}
+                  </FilaDanio>
+                )}
+                <FilaDanio etiqueta="Cálculo" className="text-[11px] leading-relaxed text-muted">
+                  <CalculoDanio
+                    danio={resultado.danioResuelto}
+                    origenBase={resultado.danioInfo.origenBase}
+                    margen={margen}
+                  />
+                </FilaDanio>
+              </dl>
               {resultado.danioResuelto.categoriaPor && (
                 <p className="mt-1 font-mono text-[11px] uppercase text-muted">
                   {resultado.danioResuelto.categoria} · {resultado.danioResuelto.categoriaPor}
