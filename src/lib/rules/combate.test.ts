@@ -3,12 +3,12 @@ import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
 import { equipar } from "./equipo";
 import { ajustarRecurso, ajustarGranada, ajustarMunicionEspecial, reconciliarRecursos } from "./recursos";
-import { accionesDeAtaque as accionesDeAtaqueCon, accionesDirectasDeAtaque, generaAccionPropia, MOTIVO_SIN_CARGAS } from "./combate";
+import { accionesDeAtaque as accionesDeAtaqueCon, accionesDirectasDeAtaque, criticoDeEspecial, generaAccionPropia, MOTIVO_SIN_CARGAS } from "./combate";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
 import { MUNICION_GRANADA } from "../catalog/municion";
 import type { MotorMetadata } from "./motor";
-import { ACCIONES, modificadorAccion, gastoTotal, gastoMunicionEspecial, avisoInsuficiente, danioConMunicion, municionEspecialElegida } from "./acciones";
+import { ACCIONES, modificadorAccion, gastoTotal, gastoMunicionEspecial, avisoInsuficiente, danioConMunicion, efectoCriticoConMunicion, municionEspecialElegida } from "./acciones";
 import { desgloseDanio } from "./armasModificadas";
 import { aplicado, modificadoresActivos } from "./derivados";
 import { permisosDeDotes } from "./dotesEfectos";
@@ -367,6 +367,23 @@ describe("munición especial en el disparo (fase 2)", () => {
     return ajustarMunicionEspecial(sheet, "incendiaria", stock);
   }
   const disparo = (sheet: Sheet) => accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
+
+  test("crítico de arma de fuego: sale del texto especial, como efecto crítico", () => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "s1", catalogoId: "pistola_sydiasi" });
+    assert.equal(disparo(sheet).efectoCritico, "Aturdimiento (8)");
+    assert.equal(criticoDeEspecial("Efecto Shock y Llamarada (8) · Crítico de Fusión (12) · F. Auto (Esquiva 10)"), "Fusión (12)");
+    assert.equal(criticoDeEspecial("Recarga: acción estándar · Crítico de Hemorragia (1d6 turnos) · Silencioso"), "Hemorragia (1d6 turnos)");
+    assert.equal(criticoDeEspecial("F. Auto (Esquiva 8)"), undefined);
+  });
+
+  test("crítico con munición especial: se suma al del arma, o lo sustituye (Perforante)", () => {
+    const fila = disparo(conSydiasiIncendiaria(10));
+    const inc = municionEspecialElegida(fila, { municion: "incendiaria" });
+    assert.equal(efectoCriticoConMunicion(fila, inc), "Aturdimiento (8) · Ceguera (10) (Munición Incendiaria)");
+    assert.equal(efectoCriticoConMunicion(fila, municionEspecialElegida(fila, { municion: "normal" })), "Aturdimiento (8)");
+    const perforante = { id: "perforante", label: "Munición Perforante", stock: 1, ajusteDanio: -1, efecto: "", efectoCritico: "Consume 1 punto de blindaje del objetivo", sustituyeCritico: true };
+    assert.equal(efectoCriticoConMunicion(fila, perforante), "Consume 1 punto de blindaje del objetivo (Munición Perforante)");
+  });
 
   test("sin adaptador no hay selector de munición", () => {
     const sheet = equipar(defaultSheet(), { instanciaId: "s1", catalogoId: "pistola_sydiasi" });

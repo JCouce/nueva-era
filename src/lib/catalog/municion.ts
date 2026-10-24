@@ -265,6 +265,10 @@ export type MunicionEspecial = {
   // Mismo aviso que ArmaMelee.ignoraBlindaje (solo la perforante).
   ignoraBlindaje?: number;
   efecto: string;
+  // Su crítico, como dato (va al "Efecto crítico" del resultado junto al del arma). Con
+  // `sustituyeCritico`, en lugar del crítico del arma (la Perforante).
+  efectoCritico?: string;
+  sustituyeCritico?: boolean;
 };
 
 // Se compra por lotes: a 4 cr. la bala, de una en una no tiene sentido.
@@ -282,6 +286,8 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
     efecto:
       "Un nivel menos de daño, pero ignora los 2 primeros puntos de blindaje. Su crítico consume " +
       "un punto de blindaje del objetivo en lugar del crítico habitual.",
+    efectoCritico: "Consume 1 punto de blindaje del objetivo",
+    sustituyeCritico: true,
   },
   {
     id: "incendiaria",
@@ -291,6 +297,7 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
     ajusteDanio: 1,
     tipoDanio: "fuego",
     efecto: "+1 nivel de daño por Fuego y Llamarada (7); en crítico, Ceguera (10).",
+    efectoCritico: "Ceguera (10)",
   },
   {
     id: "electrizante",
@@ -300,6 +307,7 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
     ajusteDanio: 1,
     tipoDanio: "electrico",
     efecto: "+1 nivel de daño Eléctrico y Shock (7); en crítico, Shock (10).",
+    efectoCritico: "Shock (10)",
   },
   {
     id: "toxica",

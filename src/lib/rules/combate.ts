@@ -318,6 +318,8 @@ function municionesDeArma(sheet: Sheet, arma: ArmaFuego, instanciaId: string): N
     ...(m.tipoDanio && { tipoDanio: m.tipoDanio }),
     ignoraBlindaje: m.ignoraBlindaje,
     efecto: m.efecto,
+    ...(m.efectoCritico && { efectoCritico: m.efectoCritico }),
+    ...(m.sustituyeCritico && { sustituyeCritico: true }),
   }));
 }
 
@@ -341,6 +343,16 @@ function condicionMunicion(municiones: NonNullable<Accion["municionesEspeciales"
 }
 
 // `mods`: para el daño que sale de Fuerza (Arco Táctico, `danioFuerza`).
+// El crítico de un arma de fuego vive en su texto `especial` ("Crítico de Aturdimiento (10) ·
+// F. Auto (Esquiva 8)"): se saca de ahí para el "Efecto crítico" del resultado, como el
+// `efectoCritico` de las armas melee.
+export function criticoDeEspecial(especial: string | null | undefined): string | undefined {
+  const criticos = (especial ?? "")
+    .split(" · ")
+    .flatMap((t) => (t.startsWith("Crítico de ") ? [t.slice("Crítico de ".length)] : []));
+  return criticos.length > 0 ? criticos.join(" · ") : undefined;
+}
+
 function tiradaDeArmaFuego(sheet: Sheet, mods: ModificadorConFuente[], arma: ArmaFuego, instanciaId: string): Accion {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}` }));
   const modo = condicionModo(modosConId);
@@ -374,6 +386,7 @@ function tiradaDeArmaFuego(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
     familiaArma: "ataque_fuego",
     empleoArma: arma.empleo,
     nota: arma.especial ?? undefined,
+    efectoCritico: criticoDeEspecial(arma.especial),
     efectos: efectos.length > 0 ? efectos : undefined,
     recursoInstanciaId: instanciaId,
     recursoUnidad: arma.tipoMunicion === "energia" ? "cargas" : undefined,

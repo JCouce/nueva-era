@@ -150,6 +150,8 @@ export type Accion = {
     tipoDanio?: TipoDanio;
     ignoraBlindaje?: number;
     efecto: string;
+    efectoCritico?: string;
+    sustituyeCritico?: boolean;
   }[];
   // "Ignora N puntos de blindaje" del arma (Kerzul): aviso en el resultado del
   // daño, con su fuente — el blindaje es del objetivo, se resta a mano.
@@ -727,6 +729,18 @@ export function municionEspecialElegida(
   const id = estado.municion;
   if (typeof id !== "string") return null;
   return accion.municionesEspeciales?.find((m) => m.id === id) ?? null;
+}
+
+// El crítico de la tirada con la munición especial elegida: el del arma más el de la
+// munición ("en crítico, Ceguera (10)"), o solo el de la munición si lo sustituye (Perforante).
+export function efectoCriticoConMunicion(
+  accion: Pick<Accion, "efectoCritico">,
+  municion: NonNullable<Accion["municionesEspeciales"]>[number] | null,
+): string | undefined {
+  if (!municion?.efectoCritico) return accion.efectoCritico;
+  const delaMunicion = `${municion.efectoCritico} (${municion.label})`;
+  if (municion.sustituyeCritico || !accion.efectoCritico) return delaMunicion;
+  return `${accion.efectoCritico} · ${delaMunicion}`;
 }
 
 // Lo que la munición especial elegida hace al daño del modo: lo que es del tipo del arma
