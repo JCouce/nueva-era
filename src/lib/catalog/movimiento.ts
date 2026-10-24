@@ -6,11 +6,10 @@ import type { NivelModulo } from "./equipo";
 // como plaza ocupada. `tope` dice a qué columna de la armadura mirar, para
 // no comparar por id a pelo en el motor.
 //
-// El bono de Fuerza del exoesqueleto se queda sin mecanizar a propósito: la
-// regla lo excluye de vida y de varias salvaciones, y nuestro modificador de
-// "atributo" no sabe hacer esa excepción sin inventarse un sistema de
-// exclusiones a partir de una muestra de uno. Se queda en `detalle`, en
-// texto, hasta que aparezca un segundo caso que justifique generalizarlo.
+// El bono de Fuerza del exoesqueleto está mecanizado: Modificador "atributo" con
+// `exceptoSaludYSalvaciones` (no cuenta en la vida ni en las salvaciones, como dice la
+// regla), y en movimiento y carga cuenta doble aparte (bonoFuerzaExoesqueleto,
+// derivados.ts). Cabecera corregida 2026-10-24: antes decía que seguía en texto.
 export type MejoraMovimiento = {
   familia: "movimiento";
   id: string;

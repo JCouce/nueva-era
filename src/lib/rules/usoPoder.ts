@@ -23,6 +23,7 @@ import {
   bloqueoPorFatiga,
   costeFatiga,
   cruzaSobrecarga,
+  bonoAlcanceDeFicha,
   derivacionDeFicha,
   gradoDeTirada,
   efectosDeCasillas,
@@ -112,6 +113,7 @@ export function prepararPoder({
     niveles,
     disciplina: poder.disciplina,
     pesoKg: seleccion.pesoKg,
+    bonoAlcance: bonoAlcanceDeFicha(ficha) ?? undefined,
   });
   if (!sinTextos) return null;
   const marcadas = new Set(seleccion.casillas);

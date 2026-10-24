@@ -162,7 +162,7 @@ export function ContenidoResultado({
 
   const desglose =
     resultado.danioInfo && resultado.danioResuelto
-      ? desgloseDanio(resultado.danioResuelto.total, resultado.danioInfo.tipoDanio, resultado.danioInfo.danioExtra)
+      ? desgloseDanio(resultado.danioResuelto.total, resultado.danioInfo.tipoDanio, resultado.danioInfo.danioExtra, exito === true && critico)
       : null;
 
   const puedeTirarDanio =
@@ -285,7 +285,7 @@ export function ContenidoResultado({
               className="clip-chamfer-sm w-full border border-danger py-2 font-display text-xs font-semibold uppercase tracking-wide text-danger active:scale-[0.98]"
             >
               Tirar daño ({resultado.danioInfo.base} {resultado.danioInfo.categoriaDanio}
-              {resultado.danioInfo.tipoDanio && (
+              {(resultado.danioInfo.tipoDanio || resultado.danioInfo.danioExtra) && (
                 <TipoYExtras tipoBase={resultado.danioInfo.tipoDanio} extras={resultado.danioInfo.danioExtra ?? []} />
               )}{" "}
               base)

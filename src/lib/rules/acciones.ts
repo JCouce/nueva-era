@@ -147,6 +147,7 @@ export type Accion = {
     label: string;
     stock: number;
     ajusteDanio: number;
+    tipoDanio?: TipoDanio;
     ignoraBlindaje?: number;
     efecto: string;
   }[];
@@ -726,6 +727,28 @@ export function municionEspecialElegida(
   const id = estado.municion;
   if (typeof id !== "string") return null;
   return accion.municionesEspeciales?.find((m) => m.id === id) ?? null;
+}
+
+// Lo que la munición especial elegida hace al daño del modo: lo que es del tipo del arma
+// (o sin tipo, la Perforante) se suma al daño básico; lo de otro tipo ("+1 Fuego") va
+// aparte como daño extra, con su gravedad, igual que en las Armas Modificadas (2026-10-24).
+type ModoAtaque = NonNullable<Accion["ataque"]>["modos"][number];
+
+export function danioConMunicion(
+  modo: Pick<ModoAtaque, "tipoDanio" | "danioExtra">,
+  municion: NonNullable<Accion["municionesEspeciales"]>[number] | null,
+): { sumaBase: number; danioExtra: DanioExtra[] | undefined } {
+  const extras = modo.danioExtra ?? [];
+  if (!municion || municion.ajusteDanio === 0) return { sumaBase: 0, danioExtra: modo.danioExtra };
+  const tipo = municion.tipoDanio;
+  if (!tipo || tipo === (modo.tipoDanio ?? "cinetico")) return { sumaBase: municion.ajusteDanio, danioExtra: modo.danioExtra };
+  const previo = extras.find((e) => e.tipo === tipo);
+  return {
+    sumaBase: 0,
+    danioExtra: previo
+      ? extras.map((e) => (e === previo ? { ...e, valor: e.valor + municion.ajusteDanio } : e))
+      : [...extras, { tipo, valor: municion.ajusteDanio, fuente: municion.label, gravedadPropia: true as const }],
+  };
 }
 
 // Proyectiles especiales que gasta el disparo: lo mismo que el modo gastaría

@@ -76,7 +76,8 @@ import { conUsosEscena, usosEscenaDeFicha } from "./usosEscena";
 import { poderesDeDotes } from "./dotesPoderes";
 import type { ExcepcionRareza } from "../catalog/especies";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
-import { consultaIndiceCondiciones, indiceDeCondiciones, modificadoresDeEquipo, type IndiceCondiciones } from "./equipo";
+import { consultaIndiceCondiciones, indiceDeCondiciones, modificadoresDeEquipo, salvacionesDeEquipo, type IndiceCondiciones } from "./equipo";
+import { casillasDeFarmacos } from "./farmacos";
 import { inmunidadesDe } from "./inmunidades";
 import {
   estadosConEfecto,
@@ -347,7 +348,8 @@ export function resolverFicha(
     indiceCondiciones: indiceDeCondiciones(sheet, [
       ...casillasDeEspecie(especie),
       ...dotes.casillas,
-      ...conUsosEscena(casillasDeAumentos(sheet, activables.salvaciones), sheet.usosEscena),
+      ...conUsosEscena(casillasDeAumentos(sheet, activables.salvaciones, salvacionesDeEquipo(sheet)), sheet.usosEscena),
+      ...casillasDeFarmacos(sheet),
     ]),
     textosTirada: [...textosDeEspecie(especie), ...dotes.textos, ...textosDeAumentos(sheet), ...activables.textos],
     ventajasFijas: ventajasFijasDeAumentos(sheet),

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { defaultSheet } from "./sheet";
 import { equipar } from "./equipo";
 import { ajustarRecurso } from "./recursos";
-import { blindajeContra, desgloseBlindaje, golpeAlEscudo, SIN_ARMADURA_NATURAL, tieneEscudoMelee, TIPOS_DANIO } from "./blindaje";
+import { blindajeContra, categoriaDelGolpe, desgloseBlindaje, golpeAlEscudo, SIN_ARMADURA_NATURAL, tieneEscudoMelee, TIPOS_DANIO } from "./blindaje";
 
 describe("blindajeContra", () => {
   test("sin nada equipado, blindaje 0 contra cualquier tipo", () => {
@@ -233,5 +233,35 @@ describe("golpeAlEscudo (Murillo, 2026-10-23; S86)", () => {
     const g = golpeAlEscudo(s, "cinetico", 5)!;
     assert.equal(g.bloqueada, "Escudo roto: repáralo");
     assert.equal(g.seRompe, false);
+  });
+});
+
+// R8 (2026-10-24, docs/fuente/equipamiento.md): Mejora Ignífuga 2 y Polímero Anticorrosivo 2,
+// "el usuario que reciba daño [de fuego / corrosivo] lo considera letal en lugar de grave".
+describe("categoriaDelGolpe", () => {
+  const conMejora = (id: string, nivel: number) =>
+    equipar(equipar(defaultSheet(), { instanciaId: "arm", catalogoId: "armadura_ligera" }), {
+      instanciaId: "m",
+      catalogoId: id,
+      nivel,
+      instaladoEnId: "arm",
+    });
+
+  test("sin mejoras, la del tipo (Fuego grave; Cinético sin categoría)", () => {
+    assert.deepEqual(categoriaDelGolpe(defaultSheet(), "fuego"), { categoria: "Grave", fuente: null });
+    assert.deepEqual(categoriaDelGolpe(defaultSheet(), "cinetico"), { categoria: null, fuente: null });
+  });
+
+  test("Ignífuga 2 deja el fuego en letal; la 1 no; el corrosivo sigue grave", () => {
+    assert.deepEqual(categoriaDelGolpe(conMejora("mejora_ignifuga", 2), "fuego"), { categoria: "Letal", fuente: "Mejora Ignífuga 2" });
+    assert.equal(categoriaDelGolpe(conMejora("mejora_ignifuga", 1), "fuego").categoria, "Grave");
+    assert.equal(categoriaDelGolpe(conMejora("mejora_ignifuga", 2), "corrosivo").categoria, "Grave");
+  });
+
+  test("Polímero 2 deja el corrosivo en letal", () => {
+    assert.deepEqual(categoriaDelGolpe(conMejora("polimero_anticorrosivo", 2), "corrosivo"), {
+      categoria: "Letal",
+      fuente: "Polímero Anticorrosivo 2",
+    });
   });
 });

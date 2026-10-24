@@ -171,7 +171,10 @@ export function etiquetaTipoDanio(tipo: TipoDanio): string {
 const categoriaDeTipo = (tipo: TipoDanio): string | null =>
   TIPOS_DANIO.find((t) => t.id === tipo)?.categoria ?? null;
 
-export type DanioExtra = { tipo: TipoDanio; valor: number; fuente: string };
+// `gravedadPropia`: el extra lleva la gravedad de su tipo, no la del golpe (munición especial,
+// "+1 Fuego" es Grave aunque el arma pegue Letal; 2026-10-24). Los de las Armas Modificadas
+// no la llevan: van con la categoría del golpe (S87).
+export type DanioExtra = { tipo: TipoDanio; valor: number; fuente: string; gravedadPropia?: true };
 
 // Cómo cambian las modificaciones un golpe del arma: de qué tipo es el daño básico,
 // cuánto se le suma (lo que es de ese mismo tipo), qué daño extra de otro tipo va
@@ -273,12 +276,22 @@ export function resumenArmaModificada(arma: ArmaMelee, ids: readonly Modificacio
 // Daño ya tirado, por tipo, para el resultado del golpe: el básico (con el bono por
 // éxitos y los ajustes ya dentro) de su tipo más los extras de otros tipos. Null si el
 // golpe no lleva tipo propio (armas sin modificar).
-export type ParteDanio = { tipo: TipoDanio; label: string; valor: number };
+// Los extras con `gravedadPropia` llevan la de su tipo (`categoria`; en crítico, la de
+// crítico si cambia). El básico y los demás no la llevan: es la del golpe, que ya sale en el
+// total (2026-10-24, munición especial).
+export type ParteDanio = { tipo: TipoDanio; label: string; valor: number; categoria?: string };
+
+function categoriaDeExtra(tipo: TipoDanio, critico: boolean): string | undefined {
+  const t = TIPOS_DANIO.find((x) => x.id === tipo);
+  if (!t?.categoria) return undefined;
+  return critico && "categoriaCritico" in t ? t.categoriaCritico : t.categoria;
+}
 
 export function desgloseDanio(
   totalBase: number,
   tipoBase: TipoDanio | undefined,
   extras: readonly DanioExtra[] | undefined,
+  critico = false,
 ): { partes: ParteDanio[]; total: number } | null {
   if (!tipoBase && (!extras || extras.length === 0)) return null;
   const base = tipoBase ?? "cinetico";
@@ -286,7 +299,10 @@ export function desgloseDanio(
   for (const e of extras ?? []) {
     const previa = partes.find((p) => p.tipo === e.tipo);
     if (previa) previa.valor += e.valor;
-    else partes.push({ tipo: e.tipo, label: etiquetaTipoDanio(e.tipo), valor: e.valor });
+    else {
+      const categoria = e.gravedadPropia ? categoriaDeExtra(e.tipo, critico) : undefined;
+      partes.push({ tipo: e.tipo, label: etiquetaTipoDanio(e.tipo), valor: e.valor, ...(categoria && { categoria }) });
+    }
   }
   return { partes, total: partes.reduce((t, p) => t + p.valor, 0) };
 }

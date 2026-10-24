@@ -56,6 +56,9 @@ export type ArmaFuego = {
   // normales de la tienda. "energia" marca la familia Láser/Plasma/Rayo, que
   // necesita su propio recurso distinto (batería, no munición balística).
   tipoMunicion?: "energia";
+  // Proyectiles por ataque en F. Auto cuando el arma dice el suyo (Sydiasi: "consume 3
+  // disparos del cargador por cada ataque"); sin él, la regla general de gastoDelModo.
+  gastoFAuto?: number;
   mejorasAdmitidas: number;
   // Nivel de Mira Telescópica que el arma trae de serie (los 8 fusiles de
   // precisión, nivel 1). EQUIP: "ya contabilizada en la dificultad de ataque y
@@ -189,6 +192,7 @@ export const ARMAS: ArmaFuego[] = [
     ],
     alcance: { corta: 10, media: 30, larga: 60 },
     municion: 20,
+    gastoFAuto: 3,
     mejorasAdmitidas: 4,
     especial: "Crítico de Aturdimiento (8) · F. Auto (Esquiva 8)",
     pesoKg: 1.5,
@@ -1064,6 +1068,7 @@ export const ARMAS: ArmaFuego[] = [
     modos: [{ etiqueta: "Compleja", dificultad: -2, danio: 16, categoriaDanio: "Plasma" }],
     alcance: { corta: 50, media: 1000, larga: 2000 },
     municion: 5,
+    tipoMunicion: "energia", // faltaba, como en el resto de plasma (2026-10-24)
     mejorasAdmitidas: 2,
     miraIntegrada: 1,
     especial: "Efecto Shock y Llamarada (8) · Crítico de Fusión (14)",

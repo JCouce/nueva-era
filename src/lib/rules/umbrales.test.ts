@@ -9,7 +9,7 @@ import { accionesDeAtaque } from "./combate";
 import { estadoInicial } from "./condiciones";
 import { equipar } from "./equipo";
 import type { EstadoActivo } from "./estados";
-import { notasDeEstado, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta, type VitalidadActual } from "./fichaResuelta";
+import { conExtrasDeFicha, notasDeEstado, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta, type VitalidadActual } from "./fichaResuelta";
 import { eleccionSinTocar, montarTirada, SIN_ELECCION } from "./montaje";
 import { accionesDePsionica } from "./poderes";
 import { defaultSheet, type Sheet } from "./sheet";
@@ -179,10 +179,18 @@ describe("M1b: un personaje herido que usa un poder tira con −1 (prepararPoder
 });
 
 describe("M1b: la fila enseña el modificador completo, igual que el modal sin tocar", () => {
-  test("salvación de Fortaleza con traje: la fila pasa de 2 (base) a 3 (+1 del traje)", () => {
+  // El +1 del traje solo vale contra congelación y llamarada (selector «Contra…», 2026-10-24):
+  // sin elegir amenaza, la fila es la base; eligiéndola en el modal, +1.
+  test("salvación de Fortaleza con traje: la fila es la base; con «Contra…: Congelación», +1", () => {
     const f = resolver(equipar(ficha(), { instanciaId: "t", catalogoId: "traje_ultra_ligero" }));
     const m = montar(f);
-    assert.equal(m.modificador, m.base + 1);
+    assert.equal(m.modificador, m.base);
+    const t = conExtrasDeFicha(f, salvFortaleza);
+    const conAmenaza = montarTirada(f, t, {
+      ...SIN_ELECCION,
+      estadoCondiciones: { ...estadoInicial(t.condiciones ?? []), aum_contra_salv_fortaleza: "congelacion" },
+    });
+    assert.equal(conAmenaza.total, m.base + 1);
   });
 
   test("fusil con modo y tramo por defecto: la fila suma las casillas en su estado inicial", () => {

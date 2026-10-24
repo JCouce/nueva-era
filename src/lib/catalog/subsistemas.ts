@@ -186,7 +186,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "eleccion_jugador", estado: "construido" }, // cambia la eficiencia (3 cargas), la acción ya se declaró en nivel 1
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "la prosa psiónica no tiene tirada de retroceso a la que sumar" }, // Estabilizador Neuronal, heredado (S9)
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 33" }, // Canal de Alta Resonancia, +10% sin número fijo que mecanizar
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "suma_derivado", estado: "construido" }, // Canal de Alta Resonancia: +10 % al alcance en metros, mínimo 2 m (bonoAlcanceDeFicha, poderes.ts; pregunta 33 cerrada)
         ],
       },
       {
@@ -215,7 +215,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "la prosa psiónica no tiene tirada de retroceso a la que sumar" }, // heredado de nivel 1 (S9)
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 33" }, // Canal de Alta Resonancia, heredado
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "suma_derivado", estado: "construido" }, // Canal de Alta Resonancia, heredado
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "Salvaciones" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Blindaje Psico-Reactivo
         ],
       },
@@ -238,7 +238,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "la prosa psiónica no tiene tirada de retroceso a la que sumar" }, // heredado de nivel 1 (S9)
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "pregunta 33" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "suma_derivado", estado: "construido" }, // Canal de Alta Resonancia, heredado
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "Salvaciones" }, mecanismo: "eleccion_jugador", estado: "construido" }, // heredado de nivel 3 (S9)
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poder_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "los penalizadores por umbral de fatiga aún no se aplican en ninguna tirada" }, // Simbiosis Sináptica Total
         ],
@@ -502,25 +502,28 @@ export const SUBSISTEMAS: Subsistema[] = [
       {
         label: "Pulso",
         descripcion:
-          "Acción simple, 1 carga, dificultad -2, daño 8 + Nivel, alcance 40 × Nivel metros. " +
+          "Acción simple, 1 carga, dificultad -2, daño 7 + Nivel, alcance corto 20 + (10 × Nivel), " +
+          "medio 80 + (20 × Nivel), largo 160 + (20 × Nivel) metros. " +
           "Efecto: Shock (4 + Nivel); crítico: Hemorragia.",
       },
       {
         label: "Pulso Cargado",
         descripcion:
-          "Acción compleja, 4 cargas, dificultad -2, daño 11 + Nivel, alcance 60 × Nivel metros. " +
+          "Acción compleja, 4 cargas, dificultad -2, daño 10 + Nivel, alcance corto 30 + (10 × Nivel), " +
+          "medio 100 + (20 × Nivel), largo 200 + (20 × Nivel) metros. " +
           "Efecto: Shock (6 + Nivel); crítico: Hemorragia.",
       },
       {
         label: "Barrido",
         descripcion:
-          "Acción estándar, 5 cargas, dificultad -3, daño de área 10 + Nivel en 6x6 a 40 × Nivel " +
-          "metros. Efecto: Esquiva (7 + Nivel) y Shock (7 + Nivel).",
+          "Acción estándar, 5 cargas, dificultad -3, daño de área 9 + Nivel en 6x6, alcance corto " +
+          "20 + (10 × Nivel), medio 80 + (20 × Nivel), largo 160 + (20 × Nivel) metros. " +
+          "Efecto: Esquiva (7 + Nivel) y Shock (7 + Nivel).",
       },
       {
         label: "Aguijón",
         descripcion:
-          "Acción simple, 1 carga, dificultad 0, daño 2 + Fuerza + Nivel, alcance melee, Sutil. " +
+          "Acción simple, 1 carga, dificultad 0, daño 4 + Fuerza + Nivel, alcance melee, Sutil. " +
           "Duración del efecto: Nivel turnos. Efecto: Shock (4 + Nivel); crítico: Hemorragia.",
       },
     ],

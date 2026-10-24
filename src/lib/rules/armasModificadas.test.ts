@@ -213,7 +213,7 @@ describe("el golpe", () => {
     assert.deepEqual(desgloseDanio(7, "cinetico", [{ tipo: "electrico", valor: 2, fuente: "Electrificante" }]), {
       partes: [
         { tipo: "cinetico", label: "Cinético", valor: 7 },
-        { tipo: "electrico", label: "Eléctrico", valor: 2 },
+        { tipo: "electrico", label: "Eléctrico", valor: 2 }, // sin gravedad propia: la del golpe (S87)
       ],
       total: 9,
     });

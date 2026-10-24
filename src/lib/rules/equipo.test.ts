@@ -8,6 +8,7 @@ import {
   ranurasSubsistemaUsadas,
   mejorasArmaInstaladas,
   modificadoresDeEquipo,
+  salvacionesDeEquipo,
   condicionesActivas,
   indiceDeCondiciones,
   consultaIndiceCondiciones,
@@ -246,44 +247,12 @@ describe("mejoras de arma", () => {
     assert.equal(s.equipo.length, 0);
   });
 
-  test("Sistema de Retroceso aporta su modificador con origen \"equipo\"", () => {
-    let s = conFusilAsaltoPuesto();
-    s = equipar(s, {
-      instanciaId: "sr1",
-      catalogoId: "sistema_retroceso",
-      nivel: 1,
-      instaladoEnId: "arma-1",
-    });
-    const mods = modificadoresDeEquipo(s).filter((m) => m.fuente === "Sistema de Retroceso 1");
-    assert.deepEqual(mods, [
-      {
-        tipo: "tirada",
-        alcance: { tipo: "modo", contieneEtiqueta: "F. Auto" },
-        valor: 1,
-        origen: "equipo",
-        fuente: "Sistema de Retroceso 1",
-      },
-    ]);
-  });
-
-  test("S9: Sistema de Retroceso en nivel 2 mantiene un único +1 (nivel 1), no lo duplica", () => {
-    let s = conFusilAsaltoPuesto();
-    s = equipar(s, {
-      instanciaId: "sr1",
-      catalogoId: "sistema_retroceso",
-      nivel: 2,
-      instaladoEnId: "arma-1",
-    });
-    const mods = modificadoresDeEquipo(s).filter((m) => m.fuente === "Sistema de Retroceso 2");
-    assert.deepEqual(mods, [
-      {
-        tipo: "tirada",
-        alcance: { tipo: "modo", contieneEtiqueta: "F. Auto" },
-        valor: 1,
-        origen: "equipo",
-        fuente: "Sistema de Retroceso 2",
-      },
-    ]);
+  test("Sistema de Retroceso ya no aporta un Modificador de personaje: va por arma (2026-10-24)", () => {
+    for (const nivel of [1, 2]) {
+      let s = conFusilAsaltoPuesto();
+      s = equipar(s, { instanciaId: "sr1", catalogoId: "sistema_retroceso", nivel, instaladoEnId: "arma-1" });
+      assert.deepEqual(modificadoresDeEquipo(s).filter((m) => m.fuente.startsWith("Sistema de Retroceso")), []);
+    }
   });
 });
 
@@ -428,10 +397,11 @@ describe("modificadores de equipo", () => {
     ]);
   });
 
-  test("una armadura equipada aporta los suyos", () => {
-    const mods = modificadoresDeEquipo(conArmaduraPuesta());
-    assert.equal(mods.length, 2);
-    assert.ok(mods.every((m) => m.origen === "equipo" && m.fuente === "Armadura Ligera"));
+  test("una armadura equipada ya no suma a la salvación entera: su bono va contra sus amenazas", () => {
+    assert.deepEqual(modificadoresDeEquipo(conArmaduraPuesta()), []);
+    assert.deepEqual(salvacionesDeEquipo(conArmaduraPuesta()), [
+      { fuente: "Armadura Ligera", efectos: [{ contra: ["congelacion", "llamarada"], bono: 1 }] },
+    ]);
   });
 
   test("un subsistema sin modificadores mecanizados no aporta nada (queda en texto)", () => {
@@ -446,32 +416,37 @@ describe("modificadores de equipo", () => {
     assert.deepEqual(delCamuflaje, []);
   });
 
-  test("una mejora estándar con nivel instalado aporta los modificadores de ESE nivel", () => {
-    let s = conArmaduraPuesta();
-    s = equipar(s, {
-      instanciaId: "sv1",
-      catalogoId: "soporte_vital",
-      nivel: 2,
-      instaladoEnId: "armadura-1",
-    });
-    // Un único +1 a salv_fortaleza (Resistencia Térmica, cubre congelación y calor
-    // extremo con el mismo bono) — antes había un duplicado que sumaba +2 real.
-    const delSoporte = modificadoresDeEquipo(s).filter((m) => m.fuente === "Soporte Vital 2");
-    assert.equal(delSoporte.length, 1);
-    assert.equal(delSoporte[0]?.valor, 1);
+  test("Soporte Vital: un único +1 contra congelación y frío o calor extremos, en cualquier nivel (S9)", () => {
+    for (const nivel of [1, 2, 3]) {
+      const s = equipar(conArmaduraPuesta(), { instanciaId: "sv1", catalogoId: "soporte_vital", nivel, instaladoEnId: "armadura-1" });
+      const delSoporte = salvacionesDeEquipo(s).find((a) => a.fuente === `Soporte Vital ${nivel}`);
+      assert.deepEqual(delSoporte?.efectos, [{ contra: ["congelacion", "termicos"], bono: 1 }]);
+    }
   });
 
-  test("S9: Soporte Vital en nivel 3 da un único +1, no lo acumula 3 veces (nivel 1+2+3)", () => {
+  test("Polímero y Tejido: el nivel 2 sustituye al +1 del 1 (no suman +3)", () => {
+    let s = equipar(conArmaduraPuesta(), { instanciaId: "po", catalogoId: "polimero_anticorrosivo", nivel: 2, instaladoEnId: "armadura-1" });
+    s = equipar(s, { instanciaId: "te", catalogoId: "tejido_conductor", nivel: 1, instaladoEnId: "armadura-1" });
+    const porFuente = Object.fromEntries(salvacionesDeEquipo(s).map((a) => [a.fuente, a.efectos]));
+    assert.deepEqual(porFuente["Polímero Anticorrosivo 2"], [{ contra: ["corrosion"], bono: 2 }]);
+    assert.deepEqual(porFuente["Tejido Conductor 1"], [{ contra: ["shock"], bono: 1 }]);
+  });
+
+  test("Mejora Ignífuga 2 sube a +2 el bono de la armadura contra llamarada (pone la diferencia)", () => {
+    const s = equipar(conArmaduraPuesta(), { instanciaId: "ig", catalogoId: "mejora_ignifuga", nivel: 2, instaladoEnId: "armadura-1" });
+    const ign = salvacionesDeEquipo(s).find((a) => a.fuente === "Mejora Ignífuga 2");
+    assert.deepEqual(ign?.efectos, [{ contra: ["llamarada"], bono: 1 }]);
+    // En una armadura sin bono propio contra llamarada (las avanzadas), el +2 entero.
+    let av = equipar(defaultSheet(), { instanciaId: "av", catalogoId: "armadura_ligera_avanzada" });
+    av = equipar(av, { instanciaId: "ig", catalogoId: "mejora_ignifuga", nivel: 2, instaladoEnId: "av" });
+    assert.deepEqual(salvacionesDeEquipo(av), [{ fuente: "Mejora Ignífuga 2", efectos: [{ contra: ["llamarada"], bono: 2 }] }]);
+  });
+
+  test("solo cuentan la primera armadura y las mejoras instaladas en ella", () => {
     let s = conArmaduraPuesta();
-    s = equipar(s, {
-      instanciaId: "sv1",
-      catalogoId: "soporte_vital",
-      nivel: 3,
-      instaladoEnId: "armadura-1",
-    });
-    const delSoporte = modificadoresDeEquipo(s).filter((m) => m.fuente === "Soporte Vital 3");
-    assert.equal(delSoporte.length, 1);
-    assert.equal(delSoporte[0]?.valor, 1);
+    s = equipar(s, { instanciaId: "otra", catalogoId: "traje_ultra_ligero" });
+    s = equipar(s, { instanciaId: "po", catalogoId: "polimero_anticorrosivo", nivel: 1, instaladoEnId: "otra" });
+    assert.deepEqual(salvacionesDeEquipo(s).map((a) => a.fuente), ["Armadura Ligera"]);
   });
 
   test("sin nada equipado no hay modificadores de equipo", () => {
@@ -493,8 +468,19 @@ describe("condicionesActivas", () => {
     const cs = condicionesActivas(s, ctxAlertaActiva);
     assert.deepEqual(
       cs.map((c) => c.id),
-      ["visor_nocturno_n1_activo", "visor_nocturno_n2_activo"],
+      ["visor_nocturno_n1_activo", "visor_nocturno_n2_activo", "visor_nocturno_cobertura_alerta"],
     );
+  });
+
+  test("Visor Nocturno 2: la casilla de cobertura visual vale 2, en Buscar y en ataques a distancia, sin apilar con el Ojo", () => {
+    const s = equipar(conArmaduraPuesta(), { instanciaId: "vn1", catalogoId: "visor_nocturno", nivel: 2, instaladoEnId: "armadura-1" });
+    const distancia = condicionesActivas(s, { id: "x", grupo: "Ataques", habilidad: "combate_distancia", modoElegido: null });
+    const casilla = distancia.find((c) => c.id === "visor_nocturno_cobertura_distancia");
+    assert.ok(casilla && casilla.tipo === "toggle");
+    assert.equal(casilla.valorActivo, 2);
+    assert.equal(casilla.noApila, "reduccion_cobertura");
+    const alerta = condicionesActivas(s, ctxAlertaActiva).find((c) => c.id === "visor_nocturno_cobertura_alerta");
+    assert.equal(alerta?.tipo === "toggle" && alerta.valorActivo, 2);
   });
 
   test("nivel 1 del Visor Nocturno aporta SOLO su propia condición (no adelanta la de nivel 2)", () => {
@@ -607,7 +593,7 @@ describe("indiceDeCondiciones + consultaIndiceCondiciones ≡ condicionesActivas
     assert.deepEqual(indexado, directo);
     assert.deepEqual(
       directo.map((c) => c.id),
-      ["visor_nocturno_n1_activo", "visor_nocturno_n2_activo", "visor_termico_n1_activo"],
+      ["visor_nocturno_n1_activo", "visor_nocturno_n2_activo", "visor_nocturno_cobertura_alerta", "visor_termico_n1_activo"],
     );
   });
 
@@ -842,6 +828,14 @@ describe("herramienta y consumible (Medicina, docs/traspaso.md §6)", () => {
         origen: "equipo",
         fuente: "Valija Táctica Médica (VTM) 1",
       },
+      // R4 (2026-10-24): "al administrar cualquier compuesto": también al usar un fármaco.
+      {
+        tipo: "tirada",
+        alcance: { tipo: "grupo", grupo: "Fármacos" },
+        valor: 1,
+        origen: "equipo",
+        fuente: "Valija Táctica Médica (VTM) 1",
+      },
     ]);
   });
 
@@ -852,8 +846,8 @@ describe("herramienta y consumible (Medicina, docs/traspaso.md §6)", () => {
       nivel: 3,
     });
     const mods = modificadoresDeEquipo(s);
-    assert.equal(mods.length, 1);
-    assert.equal(mods[0].valor, 2);
+    assert.equal(mods.length, 2); // Tratar heridas y Fármacos
+    assert.ok(mods.every((m) => m.valor === 2));
   });
 
   test("modificadoresDeEquipo: los fármacos no aportan ningún modificador (bonos por dosis, no de personaje)", () => {

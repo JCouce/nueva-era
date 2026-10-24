@@ -24,7 +24,7 @@
 //     Transportable es el límite natural, aunque sus penalizadores siguen
 //     sin mecanizar). Precio fijo, igual en los dos casos de "stock".
 import { z } from "zod";
-import { equipoPorId, type Consumible, type Rareza } from "../catalog/equipo";
+import { equipoPorId, type Consumible, type Rareza, type TipoArma } from "../catalog/equipo";
 import { MUNICION_GRANADA, LOTE_MUNICION_ESPECIAL, municionEspecialPorId } from "../catalog/municion";
 import { PREFIJO_MEJORA_MUNICION } from "../catalog/mejorasArma";
 import { FARMACOS } from "../catalog/medicina";
@@ -436,6 +436,15 @@ export function repararPieza(sheet: Sheet, instanciaId: string, tier: MaterialTi
 // cargadores físicos que rastrear, así que el número no cambia aunque
 // queden más balas sueltas en el total. Confirmado en conversación: no
 // existe un modo "Ráfaga" separado en el catálogo.
-export function gastoDelModo(etiqueta: string, municionArma: number): number {
-  return etiqueta.includes("F. Auto") ? municionArma : 1;
+//
+// Excepción de familia: las ametralladoras en F. Auto consumen 100 proyectiles por
+// ataque, no el cargador entero ("este modo consume 100 proyectiles por ataque",
+// docs/fuente/equipamiento.md, Ametralladoras; 2026-10-24). Y un arma con su propio
+// `gastoFAuto` (Sydiasi, 3) manda sobre las dos.
+export const GASTO_FAUTO_AMETRALLADORA = 100;
+
+export function gastoDelModo(etiqueta: string, municionArma: number, tipoArma?: TipoArma, gastoFAuto?: number): number {
+  if (!etiqueta.includes("F. Auto")) return 1;
+  if (gastoFAuto !== undefined) return gastoFAuto;
+  return tipoArma === "ametralladora" ? GASTO_FAUTO_AMETRALLADORA : municionArma;
 }

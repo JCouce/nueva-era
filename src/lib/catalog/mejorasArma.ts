@@ -177,10 +177,11 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
           "Con ojo biónico o Mira Telescópica de nivel 3, el puntero deja de penalizar el sigilo.",
         ],
         modificadores: [],
-        // Depende de que nivel 1 se construya primero, y "ojo biónico" no
-        // existe en el catálogo (Fase 5, aumentos).
+        // El aviso del -2 al Sigilo (nivel 1) deja de salir con Ojo Biónico o Mira
+        // Telescópica 3 en la misma arma (efectosDeMejoras, combate.ts). Desbloqueado
+        // 2026-10-24: el Ojo Biónico ya existe (aumentos).
         motor: [
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "Fase 5" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
     ],
@@ -319,17 +320,15 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
           "Reduce en 1 el penalizador de dificultad en tiradas de ataque en modo automático.",
           "En ametralladoras, mejora el ataque en cualquiera de sus modos.",
         ],
-        // "En ametralladoras, mejora el ataque en cualquiera de sus modos" es
-        // una excepción de familia que este alcance no distingue (no sabe qué
-        // tipo de arma es, solo qué modo está elegido): con una ametralladora
-        // en modo Estándar (no automático), este +1 no se aplicaría, aunque el
-        // documento diga que debería. Pendiente de un alcance más fino si hace
-        // falta — ver docs/modificadores-tiradas.md.
-        modificadores: [
-          { tipo: "tirada", alcance: { tipo: "modo", contieneEtiqueta: "F. Auto" }, valor: 1 },
-        ],
+        // Por arma (`ajusteModo`), no un Modificador del personaje: antes era un
+        // "tirada" con alcance modo F. Auto, que no sabía de qué arma era (sumaba
+        // al F. Auto de cualquier otra arma) ni del tipo, y en ametralladora en
+        // modo Estándar no se aplicaba aunque el documento diga «en cualquiera de
+        // sus modos» (2026-10-24).
+        modificadores: [],
+        ajusteModo: { contieneEtiqueta: "F. Auto", valor: 1, enCualquierModo: ["ametralladora"] },
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "siempre_activo", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "bono_tramo", estado: "construido" },
         ],
       },
       {

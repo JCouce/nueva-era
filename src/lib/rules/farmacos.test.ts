@@ -1,7 +1,12 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
-import { accionesDeFarmacos, accionesDirectasDeFarmacos } from "./farmacos";
+import { accionesDeFarmacos, accionesDirectasDeFarmacos, ID_CASILLA_ANTIPATOGENO } from "./farmacos";
+import { ACCIONES } from "./acciones";
+import { estadoInicial } from "./condiciones";
+import { equipar } from "./equipo";
+import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { montarTirada, SIN_ELECCION } from "./montaje";
 
 function conFarmaco(catalogoId: string, cantidad: number): Sheet {
   return { ...defaultSheet(), farmacos: { [catalogoId]: cantidad } };
@@ -117,5 +122,39 @@ describe("especialidad de los fármacos con tirada", () => {
     }
     const [xovromium] = accionesDeFarmacos(conFarmaco("farmaco_xovromium", 1), []);
     assert.equal(xovromium.especialidadesAccion, undefined);
+  });
+});
+
+// R4/R9/R10 (2026-10-24, docs/fuente/equipamiento.md, Medicina y Farmacia).
+describe("Valija Médica, Antipatógeno y Estabilizadores Neurales", () => {
+  const resolver = (s: Sheet) => resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+  const usar = (f: ReturnType<typeof resolver>, id: string) => {
+    const t = conExtrasDeFicha(f, accionesDeFarmacos(f.ficha, []).find((a) => a.farmacoId === id)!);
+    return montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: estadoInicial(t.condiciones ?? []) });
+  };
+
+  test("la Valija suma su bono de aplicación al usar un fármaco (+1 a nivel 1, +3 a nivel 4)", () => {
+    const sin = usar(resolver(conFarmaco("farmaco_gel_sanador", 1)), "farmaco_gel_sanador");
+    for (const [nivel, bono] of [[1, 1], [4, 3]] as const) {
+      const s = equipar(conFarmaco("farmaco_gel_sanador", 1), { instanciaId: "v", catalogoId: "valija_tactica_medica", nivel });
+      const con = usar(resolver(s), "farmaco_gel_sanador");
+      assert.equal(con.total - sin.total, bono);
+      assert.ok(con.desglose.some((l) => l.etiqueta === `Valija Táctica Médica (VTM) ${nivel}` && l.valor === bono));
+    }
+  });
+
+  test("Antipatógeno: casilla +3 en la salvación de Fortaleza mientras quede una dosis (o un Gel)", () => {
+    const fila = (s: Sheet) => conExtrasDeFicha(resolver(s), ACCIONES.find((a) => a.id === "salv_fortaleza")!);
+    assert.ok(!(fila(defaultSheet()).condiciones ?? []).some((c) => c.id === ID_CASILLA_ANTIPATOGENO));
+    for (const id of ["farmaco_antipatogeno", "farmaco_gel_sanador"]) {
+      const c = fila(conFarmaco(id, 1)).condiciones?.find((x) => x.id === ID_CASILLA_ANTIPATOGENO);
+      assert.ok(c && c.tipo === "toggle" && c.valorActivo === 3, id);
+    }
+    assert.ok(!(fila(conFarmaco("farmaco_antipatogeno", 0)).condiciones ?? []).some((c) => c.id === ID_CASILLA_ANTIPATOGENO));
+  });
+
+  test("Estabilizadores Neurales purga un grado, no todo, salvo con crítico", () => {
+    const [fila] = accionesDeFarmacos(conFarmaco("farmaco_estabilizadores_neurales", 1), []);
+    assert.match(fila.nota ?? "", /purga un grado del aturdimiento; con éxito crítico, el estado entero/);
   });
 });

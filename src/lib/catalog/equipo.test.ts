@@ -94,3 +94,24 @@ describe("PIEZAS_FABRICABLES (docs/tareas.md, tarea 8)", () => {
     assert.equal(piezaFabricablePorId("no-existe"), null);
   });
 });
+
+describe("armas de energía", () => {
+  test("toda arma de fuego de plasma lleva tipoMunicion energía (Plaga faltaba, 2026-10-24)", () => {
+    const plasma = EQUIPO.filter(
+      (e) => e.familia === "arma" && e.modos.every((m) => m.categoriaDanio === "Plasma"),
+    );
+    assert.ok(plasma.some((a) => a.id === "fusil_precision_plaga"));
+    for (const a of plasma) assert.equal(a.familia === "arma" && a.tipoMunicion, "energia", a.id);
+  });
+});
+
+describe("retroceso entrópico (Kerzul)", () => {
+  test("solo lo declaran las armas de Kerzul con algún ataque Estándar o Compleja (Puñal fuera, 2026-10-24)", () => {
+    for (const a of EQUIPO) {
+      if (a.familia !== "armaMelee" || a.material !== "kerzul") continue;
+      const declara = (a.motor ?? []).some((m) => m.afecta.modo === "accion_nueva" && m.afecta.id === "salvacion_retroceso_entropico");
+      const tiene = a.modos.some((m) => m.etiqueta !== "Simple");
+      assert.equal(declara, tiene, a.id);
+    }
+  });
+});

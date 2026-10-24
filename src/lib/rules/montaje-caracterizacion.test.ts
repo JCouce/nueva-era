@@ -258,7 +258,8 @@ const CASOS: Caso[] = [
   {
     nombre: "salvación de Fortaleza con traje (alcance tiradaId)",
     ficha: EQUIPADA, tirada: () => fija(EQUIPADA, "salv_fortaleza"), enEspecialidad: false, sutil: false,
-    elecciones: [{ cambios: {}, circunstancial: 0, dado: 3, dificultad: 10 }],
+    // El +1 del traje solo contra congelación y llamarada (2026-10-24): se elige en «Contra…».
+    elecciones: [{ cambios: { aum_contra_salv_fortaleza: "congelacion" }, circunstancial: 0, dado: 3, dificultad: 10 }],
   },
   {
     nombre: "fusil con lanzagranadas, mira y retroceso: tramos y modos",
@@ -296,7 +297,7 @@ const CASOS: Caso[] = [
   {
     nombre: "salvación de Reflejos con especie y estados",
     ficha: ESPECIE_Y_ESTADOS, tirada: () => fija(ESPECIE_Y_ESTADOS, "salv_reflejos"), enEspecialidad: false, sutil: false,
-    elecciones: [{ cambios: {}, circunstancial: 0, dado: 11, dificultad: 5 }],
+    elecciones: [{ cambios: { aum_contra_salv_reflejos: "llamarada" }, circunstancial: 0, dado: 11, dificultad: 5 }],
   },
   {
     nombre: "puñetazo Sutil con especie y estados",
@@ -432,6 +433,7 @@ const ESPERADO: Record<string, unknown> = {
           { etiqueta: "Exploración", valor: 3 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
+          { etiqueta: "Objetivo con cobertura visual a 50 m o menos (Visor Nocturno) (sin activar)", valor: 0 },
           { etiqueta: "Buscando con la mira telescópica (sin activar)", valor: 0 },
         ],
         notas: [],
@@ -445,13 +447,14 @@ const ESPERADO: Record<string, unknown> = {
           { etiqueta: "Exploración", valor: 3 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
           { etiqueta: "Visor Nocturno activo", valor: 0 },
+          { etiqueta: "Objetivo con cobertura visual a 50 m o menos (Visor Nocturno) (sin activar)", valor: 0 },
           { etiqueta: "Buscando con la mira telescópica (sin activar)", valor: 0 },
           { etiqueta: "Modificador circunstancial", valor: 2 },
         ],
         notas: [
           {
             etiqueta: "Visor Nocturno activo",
-            nota: "Ves a través de humo denso, niebla o partículas. Cobertura visual -2 dentro de 50 m (aplícalo a mano).",
+            nota: "Ves a través de humo denso, niebla o partículas.",
           },
         ],
         margenes: { criticoExito: 6, criticoFallo: 6 },
@@ -470,6 +473,7 @@ const ESPERADO: Record<string, unknown> = {
           { etiqueta: "Exploración", valor: 3 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
           { etiqueta: "Visor Nocturno activo (sin activar)", valor: 0 },
+          { etiqueta: "Objetivo con cobertura visual a 50 m o menos (Visor Nocturno) (sin activar)", valor: 0 },
           { etiqueta: "Buscando con la mira telescópica (sin activar)", valor: 0 },
         ],
         notas: [],
@@ -484,8 +488,8 @@ const ESPERADO: Record<string, unknown> = {
     elecciones: [
       {
         total: 2,
-        desglose: [{ etiqueta: "Fortaleza", valor: 1 }, { etiqueta: "Traje Ultra Ligero", valor: 1 }],
-        notas: [],
+        desglose: [{ etiqueta: "Fortaleza", valor: 1 }, { etiqueta: "Contra…: Congelación · Traje Ultra Ligero", valor: 1 }],
+        notas: [{ etiqueta: "Contra…", nota: "Traje Ultra Ligero +1" }],
         margenes: { criticoExito: 6, criticoFallo: 6 },
         resultado: { modificador: 2, circunstancial: 0, total: 5, margen: -5, exito: false, critico: false },
       },
@@ -504,6 +508,7 @@ const ESPERADO: Record<string, unknown> = {
           { etiqueta: "Distancia: Media (200-400 m)", valor: 0 },
           { etiqueta: "Modo de disparo: Simple", valor: -3 },
           { etiqueta: "Apuntado: No", valor: 0 },
+          { etiqueta: "Objetivo con cobertura visual a 50 m o menos (Visor Nocturno) (sin activar)", valor: 0 },
           { etiqueta: "Mira Telescópica", valor: 1 },
         ],
         notas: [],
@@ -519,6 +524,7 @@ const ESPERADO: Record<string, unknown> = {
           { etiqueta: "Distancia: Media (200-400 m)", valor: 0 },
           { etiqueta: "Modo de disparo: Simple", valor: -3 },
           { etiqueta: "Apuntado: No", valor: 0 },
+          { etiqueta: "Objetivo con cobertura visual a 50 m o menos (Visor Nocturno) (sin activar)", valor: 0 },
           { etiqueta: "Mira Telescópica", valor: 1 },
         ],
         notas: [],
@@ -531,11 +537,13 @@ const ESPERADO: Record<string, unknown> = {
           { etiqueta: "Reflejos", valor: 0 },
           { etiqueta: "Combate a Distancia", valor: 1 },
           { etiqueta: "Lanzagranadas Integrado", valor: -1 },
-          { etiqueta: "Sistema de Retroceso 1", valor: 1 },
           { etiqueta: "Distancia: Larga (400+ m)", valor: -2 },
           { etiqueta: "Modo de disparo: Estándar (F. Auto)", valor: -4 },
           { etiqueta: "Apuntado: No", valor: 0 },
+          { etiqueta: "Objetivo con cobertura visual a 50 m o menos (Visor Nocturno) (sin activar)", valor: 0 },
           { etiqueta: "Mira Telescópica", valor: 1 },
+          // Sistema de Retroceso por arma, como bono del modo elegido (2026-10-24).
+          { etiqueta: "Sistema de Retroceso", valor: 1 },
           { etiqueta: "Modificador circunstancial", valor: 1 },
         ],
         notas: [],
@@ -661,10 +669,10 @@ const ESPERADO: Record<string, unknown> = {
         total: 0,
         desglose: [
           { etiqueta: "Reflejos", valor: 0 },
-          { etiqueta: "Traje Ultra Ligero", valor: 1 },
           { etiqueta: "Enfermedad", valor: -1 },
+          { etiqueta: "Contra…: Llamarada · Traje Ultra Ligero", valor: 1 },
         ],
-        notas: [],
+        notas: [{ etiqueta: "Contra…", nota: "Traje Ultra Ligero +1" }],
         margenes: { criticoExito: 6, criticoFallo: 6 },
         resultado: { modificador: 0, circunstancial: 0, total: 11, margen: 6, exito: true, critico: true },
       },
@@ -751,8 +759,9 @@ const ESPERADO_PODER: Record<string, unknown> = {
 };
 const ESPERADO_SOBRECARGA = {
   sinEspecie: { modificador: 1, circunstancial: 0, total: 6, margen: -2, exito: false, critico: false },
-  equipada: { modificador: 2, circunstancial: 0, total: 7, margen: -1, exito: false, critico: false },
-  especieYEstados: { modificador: -1, circunstancial: 0, total: 11, margen: 1, exito: true, critico: false },
+  // Sin elegir amenaza en «Contra…», el +1 del traje ya no cuenta (2026-10-24).
+  equipada: { modificador: 1, circunstancial: 0, total: 6, margen: -2, exito: false, critico: false },
+  especieYEstados: { modificador: -2, circunstancial: 0, total: 10, margen: 0, exito: true, critico: false },
 };
 
 describe("caracterización: lo que montaba la UI antes de montarTirada", () => {

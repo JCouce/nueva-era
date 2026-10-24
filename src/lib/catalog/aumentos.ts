@@ -74,11 +74,9 @@ import type { ActivoAumento } from "../rules/aumentosActivables";
 import type { ExtremidadBionica } from "../rules/brazoBionico";
 import type { NivelModulo, Rareza } from "./equipo";
 import { VISION_AUMENTADA } from "./mejorasArma";
+import { NO_APILA_COBERTURA, NOTA_COBERTURA } from "./cobertura";
 
-// Cobertura (A3; §11.3, tercera ronda): las casillas de Foveo y del Ojo compensan lo que el
-// jugador ya resta a mano en el circunstancial. No se apilan entre sí: vale la mayor.
-const NO_APILA_COBERTURA = "reduccion_cobertura";
-const NOTA_COBERTURA = "La cobertura total no se reduce; resta la cobertura a mano en el circunstancial y marca esto.";
+// Cobertura (A3): constantes compartidas con el Visor Nocturno 2 (catalog/cobertura.ts).
 
 // Puntos menos de penalizador (A3, R8 de §11.3). `heridas` y `fatiga` se suman al ajuste de
 // umbrales de la especie (ajusteUmbralesDeAumentos); con `aplicados`, solo en esas tiradas, como
@@ -1123,13 +1121,14 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
           detalle: [
             "La expansión de la visión hacia los ultravioletas permite identificar residuos químicos recientes, fluidos orgánicos, huellas de polímeros de ocultación, marcas de seguridad holográficas y la ionización residual del armamento energético. Proporciona un bonificador de +2 en tiradas de investigación de campo o búsqueda de accesos ocultos.",
           ],
-          // El +2 a investigación de campo (especialidad) queda pendiente: no hay alcance
-          // por especialidad.
+          // R10 (2026-10-24): el +2 vale en investigación de campo y en buscar accesos ocultos.
+          // Las dos son Buscar / percibir (Perspicacia + Exploración; la investigación, con su
+          // especialidad): una casilla para las dos, el id se queda.
           casillas: [
             {
               id: "aum_introgresion_ultravioleta_accesos",
               tipo: "toggle",
-              etiqueta: "¿Buscas accesos ocultos?",
+              etiqueta: "¿Investigación de campo o buscas accesos ocultos?",
               alcance: { tipo: "tiradaId", id: "alerta_activa" },
               valorActivo: 2,
             },

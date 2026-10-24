@@ -590,3 +590,47 @@ describe("A3: Matriz Ósea, −1 a la carga como nota", () => {
     assert.equal(notasDeEstado(sin).carga, undefined);
   });
 });
+
+// R2/R5 (2026-10-24): los bonos de salvación del equipo cuentan solo contra su amenaza, por el
+// mismo selector «Contra…» que los aumentos (docs/fuente/equipamiento.md).
+describe("«Contra…» con los bonos del equipo", () => {
+  const vestido = (...mejoras: [string, number][]) =>
+    mejoras.reduce(
+      (s, [id, nivel], i) => equipar(s, { instanciaId: `m${i}`, catalogoId: id, nivel, instaladoEnId: "arm" }),
+      equipar(defaultSheet(), { instanciaId: "arm", catalogoId: "armadura_ligera" }),
+    );
+  const contra = (f: FichaResuelta, salv: string) =>
+    tiradaFija(f, salv).condiciones?.find((c) => c.id === `${ID_SELECTOR_CONTRA}_${salv}`);
+  const valor = (c: CondicionTirada | undefined, id: string) =>
+    c?.tipo === "opcion" ? c.opciones.find((o) => o.id === id)?.valor : undefined;
+
+  test("la armadura: +1 contra congelación (Fortaleza) y llamarada (Reflejos), nada más", () => {
+    const f = resolver(vestido());
+    const fort = contra(f, "salv_fortaleza");
+    assert.equal(valor(fort, "congelacion"), 1);
+    assert.equal(valor(fort, "shock"), undefined);
+    assert.equal(valor(contra(f, "salv_reflejos"), "llamarada"), 1);
+    // Sin elegir amenaza, la salvación es la de siempre.
+    const t = tiradaFija(f, "salv_fortaleza");
+    assert.equal(montar(f, t).total, montar(resolver(defaultSheet()), tiradaFija(resolver(defaultSheet()), "salv_fortaleza")).total);
+  });
+
+  test("Polímero 2, Tejido 1, Soporte Vital y Mejora Ignífuga 2, cada uno contra lo suyo", () => {
+    const f = resolver(vestido(["polimero_anticorrosivo", 2], ["tejido_conductor", 1], ["soporte_vital", 1], ["mejora_ignifuga", 2]));
+    const fort = contra(f, "salv_fortaleza");
+    assert.equal(valor(fort, "corrosion"), 2);
+    assert.equal(valor(fort, "shock"), 1);
+    assert.equal(valor(fort, "congelacion"), 2); // armadura +1 y Soporte Vital +1
+    assert.equal(valor(fort, "termicos"), 1);
+    assert.equal(valor(contra(f, "salv_reflejos"), "llamarada"), 2); // Ignífuga 2 la sube a +2
+  });
+
+  test("Visor Nocturno 2: +3 contra la ceguera por detonación, no contra cualquier ceguera", () => {
+    const f = resolver(vestido(["visor_nocturno", 2]));
+    const fort = contra(f, "salv_fortaleza");
+    assert.equal(valor(fort, "ceguera_detonacion"), 3);
+    assert.equal(valor(fort, "ceguera"), undefined);
+    const t = tiradaFija(f, "salv_fortaleza");
+    assert.equal(montar(f, t, { [`${ID_SELECTOR_CONTRA}_salv_fortaleza`]: "ceguera_detonacion" }).total - montar(f, t).total, 3);
+  });
+});

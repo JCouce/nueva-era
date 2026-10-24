@@ -1,6 +1,7 @@
 import type { Modificador } from "../rules/modificadores";
 import type { MotorMetadata } from "../rules/motor";
 import type { Rareza } from "./equipo";
+import type { EfectoSalvacion } from "../rules/aumentosTiradas";
 
 // ── Armaduras y trajes ──────────────────────────────────────────────────
 export type Armadura = {
@@ -17,6 +18,12 @@ export type Armadura = {
   rareza: Rareza;
   coste: number;
   modificadores: Modificador[];
+  // Bonos a salvaciones solo contra unas amenazas (selector «Contra…», aumentosTiradas.ts),
+  // de la armadura que cuenta (salvacionesDeEquipo, rules/equipo.ts). 2026-10-24.
+  salvaciones?: EfectoSalvacion[];
+  // Golpe desarmado con la armadura (Ligera, Intermedia, Pesada): +N al daño y bloquear
+  // desarmado contra armas melee sin el −3 (rules/golpeDesarmado.ts). 2026-10-24.
+  desarmado?: { bonoDanio: number };
   // docs/motor.md: un MotorMetadata por efecto de la pieza. Opcional para
   // que el barrido sea incremental — catalog/motor.test.ts es quien exige
   // que acabe estando completo, no el tipo.
@@ -29,6 +36,9 @@ export type Armadura = {
 // congelación/llamarada para ellas, así que no se le supone (a diferencia de
 // los niveles de un mismo módulo, esto son modelos distintos — el supuesto S9
 // no aplica entre modelos).
+// El bono de las armaduras corrientes: +1 solo contra congelación y llamarada (2026-10-24).
+const CONGELACION_Y_LLAMARADA: EfectoSalvacion = { contra: ["congelacion", "llamarada"], bono: 1 };
+
 const DESCRIPCION_AVANZADA =
   "En fase de prototipo, con un alto coste de fabricación por el diseño y los metamateriales " +
   "avanzados que usa. Su mejoría es evidente en todos los aspectos, tanto a nivel defensivo como " +
@@ -83,10 +93,8 @@ export const ARMADURAS: Armadura[] = [
     topeMovilidadAerea: null,
     rareza: "Común",
     coste: 4000,
-    modificadores: [
-      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
-      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
-    ],
+    modificadores: [],
+    salvaciones: [CONGELACION_Y_LLAMARADA],
     motor: [
       // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
       // alimenta blindajeContra() (lib/rules/blindaje.ts), leído por "Bloquear
@@ -100,8 +108,10 @@ export const ARMADURAS: Armadura[] = [
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "siempre_activo", estado: "construido" },
+      // +1 contra congelación (Fortaleza) y llamarada (Reflejos), solo contra esas amenazas:
+      // opción del selector «Contra…» de cada salvación (2026-10-24).
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -121,10 +131,8 @@ export const ARMADURAS: Armadura[] = [
     topeMovilidadAerea: null,
     rareza: "Poco Habitual",
     coste: 5000,
-    modificadores: [
-      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
-      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
-    ],
+    modificadores: [],
+    salvaciones: [CONGELACION_Y_LLAMARADA],
     motor: [
       // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
       // alimenta blindajeContra() (lib/rules/blindaje.ts), leído por "Bloquear
@@ -138,8 +146,10 @@ export const ARMADURAS: Armadura[] = [
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "siempre_activo", estado: "construido" },
+      // +1 contra congelación (Fortaleza) y llamarada (Reflejos), solo contra esas amenazas:
+      // opción del selector «Contra…» de cada salvación (2026-10-24).
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -151,8 +161,10 @@ export const ARMADURAS: Armadura[] = [
       "La armadura ligera añade al traje una coraza parcial y zonas blindadas en las extremidades. " +
       "Su estructura permite integrar exoesqueleto biomecánico para mejorar el rendimiento físico " +
       "del usuario. Su naturaleza aislante otorga un bonificador en tiradas de salvación contra " +
-      "congelación y llamarada de +1. La relación de movilidad, defensa, versatilidad y por " +
-      "supuesto, precio, la convierten en la estrella del mercado.",
+      "congelación y llamarada de +1. La armadura aumenta el daño de ataques desarmado en +1 y " +
+      "permite usar acciones de bloqueo estando desarmado contra armas melee sin penalizador. La " +
+      "relación de movilidad, defensa, versatilidad y por supuesto, precio, la convierten en la " +
+      "estrella del mercado.",
     blindaje: 4,
     bonifMaxAgilidad: 4,
     ranurasSubsistema: 1,
@@ -160,10 +172,9 @@ export const ARMADURAS: Armadura[] = [
     topeMovilidadAerea: 2,
     rareza: "Común",
     coste: 6000,
-    modificadores: [
-      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
-      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
-    ],
+    modificadores: [],
+    salvaciones: [CONGELACION_Y_LLAMARADA],
+    desarmado: { bonoDanio: 1 },
     motor: [
       // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
       // alimenta blindajeContra() (lib/rules/blindaje.ts), leído por "Bloquear
@@ -177,8 +188,14 @@ export const ARMADURAS: Armadura[] = [
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "siempre_activo", estado: "construido" },
+      // +1 contra congelación (Fortaleza) y llamarada (Reflejos), solo contra esas amenazas:
+      // opción del selector «Contra…» de cada salvación (2026-10-24).
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      // Golpe desarmado (Pelea) con la armadura: +N al daño, y bloquear desarmado contra armas
+      // melee sin el −3 de la casilla de Bloqueo (rules/golpeDesarmado.ts, 2026-10-24).
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "suma_derivado", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -189,8 +206,9 @@ export const ARMADURAS: Armadura[] = [
     descripcion:
       "En pro de ofrecer una mayor protección, este modelo limita en mayor grado la movilidad y, " +
       "aunque su eficiencia es probada, su coste adicional hace que su fabricación sea más " +
-      "infrecuente. Como su hermana menor, otorga el mismo bonificador contra congelación y " +
-      "llamarada.",
+      "infrecuente. La armadura aumenta el daño de ataques desarmado en +1 y permite usar acciones " +
+      "de bloqueo estando desarmado contra armas melee sin penalizador. Como su hermana menor, " +
+      "otorga el mismo bonificador contra congelación y llamarada.",
     blindaje: 6,
     bonifMaxAgilidad: 2,
     ranurasSubsistema: 1,
@@ -198,10 +216,9 @@ export const ARMADURAS: Armadura[] = [
     topeMovilidadAerea: 3,
     rareza: "Poco Habitual",
     coste: 12000,
-    modificadores: [
-      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
-      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
-    ],
+    modificadores: [],
+    salvaciones: [CONGELACION_Y_LLAMARADA],
+    desarmado: { bonoDanio: 1 },
     motor: [
       // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
       // alimenta blindajeContra() (lib/rules/blindaje.ts), leído por "Bloquear
@@ -215,8 +232,14 @@ export const ARMADURAS: Armadura[] = [
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "siempre_activo", estado: "construido" },
+      // +1 contra congelación (Fortaleza) y llamarada (Reflejos), solo contra esas amenazas:
+      // opción del selector «Contra…» de cada salvación (2026-10-24).
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      // Golpe desarmado (Pelea) con la armadura: +N al daño, y bloquear desarmado contra armas
+      // melee sin el −3 de la casilla de Bloqueo (rules/golpeDesarmado.ts, 2026-10-24).
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "suma_derivado", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -230,7 +253,9 @@ export const ARMADURAS: Armadura[] = [
       "propulsores de movilidad aérea, y tiene capacidad para varias baterías, permitiendo usar " +
       "varios subsistemas a la vez. Apenas la usan unidades de élite en misiones de asalto de alto " +
       "riesgo: su portentosa defensa limita mucho la agilidad, por lo que no es habitual en " +
-      "infiltración. Confiere un bonificador de +1 en salvaciones contra congelación y llamarada.",
+      "infiltración. Confiere un bonificador de +1 en salvaciones contra congelación y llamarada. " +
+      "La armadura aumenta el daño de ataques desarmado en +2 y permite usar acciones de bloqueo " +
+      "estando desarmado contra armas melee sin penalizador.",
     blindaje: 8,
     bonifMaxAgilidad: 0,
     ranurasSubsistema: 2,
@@ -238,10 +263,9 @@ export const ARMADURAS: Armadura[] = [
     topeMovilidadAerea: 4,
     rareza: "Extraño",
     coste: 20000,
-    modificadores: [
-      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
-      { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_reflejos" }, valor: 1 },
-    ],
+    modificadores: [],
+    salvaciones: [CONGELACION_Y_LLAMARADA],
+    desarmado: { bonoDanio: 2 },
     motor: [
       // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
       // alimenta blindajeContra() (lib/rules/blindaje.ts), leído por "Bloquear
@@ -255,8 +279,14 @@ export const ARMADURAS: Armadura[] = [
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "instalar_subsistema" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "exoesqueleto" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "movilidadAerea" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "siempre_activo", estado: "construido" },
+      // +1 contra congelación (Fortaleza) y llamarada (Reflejos), solo contra esas amenazas:
+      // opción del selector «Contra…» de cada salvación (2026-10-24).
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      // Golpe desarmado (Pelea) con la armadura: +N al daño, y bloquear desarmado contra armas
+      // melee sin el −3 de la casilla de Bloqueo (rules/golpeDesarmado.ts, 2026-10-24).
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "suma_derivado", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {

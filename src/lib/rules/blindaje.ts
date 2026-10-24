@@ -220,6 +220,29 @@ export function blindajeContra(sheet: Sheet, tipo: TipoDanio, armaduraNatural: A
   return desgloseBlindaje(sheet, tipo, armaduraNatural).reduce((total, l) => total + l.valor, 0);
 }
 
+// La categoría con la que el portador recibe un golpe de `tipo` (R8, 2026-10-24): la del tipo
+// (tiposDanio.ts; null en Cinético, que la pone el arma) salvo que una mejora de la armadura
+// que cuenta diga otra — Mejora Ignífuga 2 y Polímero Anticorrosivo 2: "lo considera letal en
+// lugar de grave". `fuente`: la mejora que la cambia, o null. "Bloquear daño" la enseña.
+export function categoriaDelGolpe(
+  sheet: Sheet,
+  tipo: TipoDanio,
+): { categoria: string | null; fuente: string | null } {
+  const delTipo = TIPOS_DANIO.find((t) => t.id === tipo)?.categoria ?? null;
+  const armadura = armaduraEquipadaConInstancia(sheet);
+  if (armadura && delTipo === "Grave") {
+    for (const p of sheet.equipo) {
+      if (p.instaladoEnId !== armadura.instanciaId || p.nivel === undefined) continue;
+      const cat = equipoPorId(p.catalogoId);
+      if (cat?.familia !== "mejoraEstandar") continue;
+      if (nivelesHasta(cat.niveles, p.nivel).some((n) => n.recibeComoLetal === tipo)) {
+        return { categoria: "Letal", fuente: `${cat.label} ${p.nivel}` };
+      }
+    }
+  }
+  return { categoria: delTipo, fuente: null };
+}
+
 // El golpe le da al escudo (Murillo, 2026-10-23): el ataque supera la defensa pero falla por
 // la cobertura del escudo. El escudo recibe el daño total, le resta su propio blindaje y el
 // resto va a su durabilidad (el recurso "durabilidad" de la pieza, recursos.ts); al portador

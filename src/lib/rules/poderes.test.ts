@@ -22,6 +22,7 @@ import {
   conPsionicaEnTiradaFija,
   efectosDeCasillas,
   derivacionDeFicha,
+  bonoAlcanceDeFicha,
   maxPuntosConCargas,
   pagoConCargas,
 } from "./poderes";
@@ -1364,5 +1365,30 @@ describe("textoNivelEnAcciones (S24)", () => {
   test("con un 7 dice los dos niveles; hasta 6, solo uno", () => {
     assert.equal(textoNivelEnAcciones({ comprado: 6, bono: 1, efectivo: 7, paraEfectos: 6 }), "nivel 7 · efectos de nivel 6");
     assert.equal(textoNivelEnAcciones({ comprado: 1, bono: 1, efectivo: 2, paraEfectos: 2 }), "nivel 2");
+  });
+});
+
+// R8 (2026-10-24): Canal de Alta Resonancia, desbloqueado al cerrarse la pregunta 33 ("el
+// porcentaje se queda"): +10 % de alcance en metros, mínimo 2 m, a la baja.
+describe("Derivación Psiónica 2+: Canal de Alta Resonancia", () => {
+  const con = (nivel: number): Sheet => ({
+    ...defaultSheet(),
+    equipo: [{ instanciaId: "der1", catalogoId: "derivacion_psionica", nivel }],
+  });
+  const alerta = disciplinaPorId("resonancia").acciones.find((a) => a.id === "psi_resonancia_alerta_pasiva")!;
+  const resonancia = disciplinaPorId("resonancia");
+
+  test("solo desde el nivel 2", () => {
+    assert.equal(bonoAlcanceDeFicha(con(1)), null);
+    assert.equal(bonoAlcanceDeFicha(defaultSheet()), null);
+    assert.deepEqual(bonoAlcanceDeFicha(con(2)), { porcentaje: 10, minimoM: 2, fuente: "Derivación Psiónica (Canal de Alta Resonancia)" });
+  });
+
+  test("+10 % a la baja con mínimo 2 m: 20 m → 22 m, 60 m → 66 m", () => {
+    const bono = bonoAlcanceDeFicha(con(2))!;
+    const sin = resolverPoder(alerta, { nivelPoseido: 1, disciplina: resonancia })!;
+    assert.equal(sin.alcance, 20);
+    assert.equal(resolverPoder(alerta, { nivelPoseido: 1, disciplina: resonancia, bonoAlcance: bono })!.alcance, 22);
+    assert.equal(resolverPoder(alerta, { nivelPoseido: 3, disciplina: resonancia, bonoAlcance: bono })!.alcance, 66);
   });
 });

@@ -12,8 +12,11 @@
 // granada cargada.
 import type { Rareza } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
+import type { TipoDanio } from "./tiposDanio";
 
-export const ALCANCE_ARROJADA = "Potencia × 10 m";
+// "Potencia x 14" en la columna Alcance de todas las granadas (docs/fuente/equipamiento.md,
+// Granadas); antes ×10, de una transcripción vieja (2026-10-24).
+export const ALCANCE_ARROJADA = "Potencia × 14 m";
 
 // Las 14 granadas comparten exactamente el mismo MotorMetadata (docs/motor.md):
 // solo cambian los valores de sus propios campos (dificultadArrojada, danio,
@@ -225,10 +228,12 @@ export const MUNICION_GRANADA: MunicionGranada[] = [
     dificultadArrojada: -2,
     danio: 15,
     categoriaDanio: "Plasma",
-    areaEfecto: "Área 6x6 (Esquiva 9) · Efecto Shock (8) · Efecto Llamarada (8) · Crítico: Fusión (12)",
+    // "Efecto Fusión (12)" es un efecto más, no de crítico, y cuesta 500 (docs/fuente/
+    // equipamiento.md, Granadas; corregido 2026-10-24, antes "Crítico: Fusión" y 2000).
+    areaEfecto: "Área 6x6 (Esquiva 9) · Efecto Shock (8) · Efecto Llamarada (8) · Efecto Fusión (12)",
     pesoKg: 0.5,
     rareza: "Extraño",
-    coste: 2000,
+    coste: 500,
     motor: MOTOR_GRANADA,
   },
 ];
@@ -250,9 +255,13 @@ export type MunicionEspecial = {
   rareza: Rareza;
   costeProyectil: number;
   // Niveles de daño que suma (o resta) al daño del arma al dispararla — 1 nivel
-  // = 1 punto (C11, docs/sistema.md). El tipo ("+1 Fuego") se queda en `efecto`:
-  // se suma al total, sin partir el daño en dos categorías (usuario, 2026-09-28).
+  // = 1 punto (C11, docs/sistema.md).
   ajusteDanio: number;
+  // De qué tipo es ese daño si no es el del arma ("suma 1 nivel de daño por Fuego"): va
+  // aparte, con la gravedad de su tipo, como el daño extra de las Armas Modificadas
+  // (danioConMunicion, acciones.ts). Sin él (Perforante), se suma al daño del arma.
+  // Antes se sumaba todo al arma con su categoría (usuario, 2026-09-28; cambiado 2026-10-24).
+  tipoDanio?: TipoDanio;
   // Mismo aviso que ArmaMelee.ignoraBlindaje (solo la perforante).
   ignoraBlindaje?: number;
   efecto: string;
@@ -280,6 +289,7 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
     rareza: "Poco Habitual",
     costeProyectil: 6,
     ajusteDanio: 1,
+    tipoDanio: "fuego",
     efecto: "+1 nivel de daño por Fuego y Llamarada (7); en crítico, Ceguera (10).",
   },
   {
@@ -288,6 +298,7 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
     rareza: "Poco Habitual",
     costeProyectil: 8,
     ajusteDanio: 1,
+    tipoDanio: "electrico",
     efecto: "+1 nivel de daño Eléctrico y Shock (7); en crítico, Shock (10).",
   },
   {
@@ -307,6 +318,7 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
     rareza: "Extraño",
     costeProyectil: 10,
     ajusteDanio: 1,
+    tipoDanio: "frio",
     efecto: "+1 nivel de daño por Frío y Congelación (7).",
   },
   {
@@ -315,6 +327,7 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
     rareza: "Extraño",
     costeProyectil: 10,
     ajusteDanio: 1,
+    tipoDanio: "corrosivo",
     efecto: "+1 nivel de daño Corrosivo y Corrosión (7).",
   },
   {

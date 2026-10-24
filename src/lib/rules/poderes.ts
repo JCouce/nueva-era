@@ -105,7 +105,12 @@ export type ContextoPoder = {
   // empleado) y las rebajas de tipo de acción por nivel poseído.
   disciplina?: Disciplina;
   pesoKg?: number; // Proeza: peso del objetivo (excesoDeCarga)
+  // Derivación Psiónica 2+ (Canal de Alta Resonancia): +10 % al alcance en metros, mínimo 2 m,
+  // a la baja (bonoAlcanceDeFicha).
+  bonoAlcance?: BonoAlcancePoder;
 };
+
+export type BonoAlcancePoder = { porcentaje: number; minimoM: number; fuente: string };
 
 export type ExcesoResuelto = {
   pesoKg: number | null;
@@ -241,6 +246,13 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
   }
   w.fatiga = evaluar(w.fatiga, "fatiga");
   w.alcance = opt(w.alcance, (x) => evaluar(x, "alcance"));
+  // El porcentaje se queda tal cual (pregunta 33, cerrada 2026-09-28): el alcance es informativo.
+  // Solo en metros (sin unidad propia) y con alcance > 0: tocar a alguien no gana 2 m.
+  const b = ctx.bonoAlcance;
+  if (b && typeof w.alcance === "number" && w.alcance > 0 && (accion.unidades?.alcance ?? "m") === "m") {
+    w.alcance = w.alcance + Math.max(b.minimoM, Math.floor((w.alcance * b.porcentaje) / 100));
+    w.notas = [...(w.notas as Nota[]), { texto: `Alcance con ${b.fuente} (+${b.porcentaje} %, mínimo ${b.minimoM} m).`, lugar: "tirada" as const }];
+  }
   w.duracion = opt(w.duracion, (x) => evaluar(x, "duracion"));
   w.desplazamiento = opt(w.desplazamiento, (x) => evaluar(x, "desplazamiento"));
   const objetivo = w.objetivo as Record<string, unknown> | null;
@@ -463,6 +475,7 @@ export function accionesDePsionica(sheet: Sheet, niveles: NivelesPsionica): Pode
         disciplina,
         habilidades: valoresHabilidad(sheet),
         niveles,
+        bonoAlcance: bonoAlcanceDeFicha(sheet) ?? undefined,
       });
       return porDefecto
         ? [{ disciplina, accion, nivelPoseido, porDefecto, bloqueo: bloqueoPorRequisito(disciplina, niveles) }]
@@ -794,6 +807,14 @@ export function efectosDeCasillas(
 const CARGAS_POR_PUNTO_DERIVACION = [4, 3, 2, 1];
 
 export type Derivacion = { instanciaId: string; nivel: number; cargasPorPunto: number; cargas: number };
+
+// Canal de Alta Resonancia (Derivación Psiónica nivel 2+, docs/fuente/equipamiento.md): "+10% de
+// alcance efectivo de los poderes (mínimo 2 metros, redondeando a la baja)". Desbloqueado
+// 2026-10-24: la pregunta 33 se cerró con "el porcentaje se queda".
+export function bonoAlcanceDeFicha(sheet: Sheet): BonoAlcancePoder | null {
+  const nivel = Math.max(0, ...sheet.equipo.filter((p) => p.catalogoId === "derivacion_psionica").map((p) => p.nivel ?? 0));
+  return nivel >= 2 ? { porcentaje: 10, minimoM: 2, fuente: "Derivación Psiónica (Canal de Alta Resonancia)" } : null;
+}
 
 // Con varias instaladas, la de mejor conversión.
 export function derivacionDeFicha(sheet: Sheet): Derivacion | null {

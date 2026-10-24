@@ -590,6 +590,24 @@ describe("D2b-2: Bloqueo y Combate Sutil habilitan sus filas (§9.2)", () => {
     assert.doesNotMatch(fila(f, "ataque_melee_").nota ?? "", /Bloqueo/);
   });
 
+  // R3/F1 (2026-10-24, docs/fuente/equipamiento.md): Armadura Ligera/Intermedia/Pesada "permiten
+  // usar acciones de bloqueo estando desarmado contra armas melee sin penalizador"; con Refuerzo
+  // de Combate el golpe desarmado es letal, y entonces "no se considera desarmado" (Bloqueo).
+  test("con Armadura Ligera (o Refuerzo de Combate), bloquear desarmado no lleva la casilla del −3", () => {
+    const conLigera = bloquear(resolver(armado(fichaCombate([{ id: "dote_bloqueo" }]), "pelea_punetazo", "armadura_ligera")))!;
+    assert.ok(!(conLigera.condiciones ?? []).some((x) => x.id.startsWith("dote_bloqueo")));
+    assert.doesNotMatch(conLigera.nota ?? "", /Desarmado frente a atacante armado/);
+    assert.match(conLigera.nota ?? "", /sin el −3 \(Armadura Ligera\)/);
+    let conRefuerzo = armado(fichaCombate([{ id: "dote_bloqueo" }]), "pelea_punetazo", "traje_ultra_ligero");
+    conRefuerzo = equipar(conRefuerzo, { instanciaId: "rc", catalogoId: "refuerzo_combate", nivel: 1, instaladoEnId: "a1" });
+    const t = bloquear(resolver(conRefuerzo))!;
+    assert.ok(!(t.condiciones ?? []).some((x) => x.id.startsWith("dote_bloqueo")));
+    assert.match(t.nota ?? "", /sin el −3 \(Refuerzo de Combate 1\)/);
+    // Con el traje a secas (sin bono de desarmado), la casilla sigue.
+    const conTraje = bloquear(resolver(armado(fichaCombate([{ id: "dote_bloqueo" }]), "pelea_punetazo", "traje_ultra_ligero")))!;
+    assert.ok((conTraje.condiciones ?? []).some((x) => x.id.startsWith("dote_bloqueo")));
+  });
+
   test("Contraataque Rápido y Maestro en Contraataque: texto de crítico en Bloquear", () => {
     const rapido = bloquear(resolver(armado(fichaCombate([{ id: "dote_bloqueo" }, { id: "dote_contraataque_rapido" }]), "espada")))!;
     assert.match(rapido.efectoCritico ?? "", /acción gratuita en vez de reacción, una vez por turno\. \(Contraataque Rápido\)/);

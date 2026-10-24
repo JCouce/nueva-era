@@ -17,6 +17,7 @@ import {
   piezaFabricablePorId,
   RAREZA_ORDEN,
   type ArmaFuego,
+  type Armadura,
   type Equipo,
   type MaterialPieza,
   type MejoraDeArma,
@@ -28,6 +29,7 @@ import { ID_BUSQUEDA_MIRA } from "../catalog/mejorasArma";
 import { PELEA } from "../catalog/armasMelee";
 import { alcanzaA, alcanzaAlgunAplicado, type ContextoAccion, type FamiliaArma, type GrupoAccion, type Modificador, type ModificadorConFuente } from "./modificadores";
 import type { CondicionTirada } from "./condiciones";
+import type { AmenazaId, EfectoSalvacion } from "./aumentosTiradas";
 import type { HabilidadId } from "./habilidades";
 import { reconciliarRecursos, precioMaterial, sumarGranada, type MaterialTier } from "./recursos";
 import type { Sheet } from "./sheet";
@@ -745,6 +747,43 @@ export function modificadoresDeEquipo(sheet: Sheet): ModificadorConFuente[] {
       fuente: `${cat.label} ${pieza.nivel}`,
     }));
   });
+}
+
+// Bonos a salvaciones del equipo contra unas amenazas (2026-10-24): los de la armadura que
+// cuenta (la primera de la ficha, como el blindaje) y los de las mejoras estándar instaladas
+// en ella. Van al selector «Contra…» de cada salvación (casillasDeAumentos), no a la salvación
+// entera. Por niveles, el que repite amenazas sustituye al anterior.
+export function salvacionesDeEquipo(sheet: Pick<Sheet, "equipo">): { fuente: string; efectos: EfectoSalvacion[] }[] {
+  let armadura: { pieza: PiezaEquipada; cat: Armadura } | null = null;
+  for (const pieza of sheet.equipo) {
+    const cat = equipoPorId(pieza.catalogoId);
+    if (cat?.familia === "armadura") {
+      armadura = { pieza, cat };
+      break;
+    }
+  }
+  if (!armadura) return [];
+  const deArmadura = armadura.cat.salvaciones ?? [];
+  const bonoArmadura = (contra: AmenazaId) =>
+    deArmadura.filter((e) => e.contra.includes(contra)).reduce((t, e) => t + (e.bono ?? 0), 0);
+  const aportes = deArmadura.length > 0 ? [{ fuente: armadura.cat.label, efectos: deArmadura }] : [];
+  for (const pieza of sheet.equipo) {
+    if (pieza.instaladoEnId !== armadura.pieza.instanciaId || pieza.nivel === undefined) continue;
+    const cat = equipoPorId(pieza.catalogoId);
+    if (cat?.familia !== "mejoraEstandar") continue;
+    const efectos = acumulaPorClave(
+      nivelesHasta(cat.niveles, pieza.nivel).map((n) => n.salvaciones ?? []),
+      (e) => e.contra.join("+"),
+    ).flatMap(({ subeLaDeLaArmadura, ...e }): EfectoSalvacion[] => {
+      if (!subeLaDeLaArmadura) return [e];
+      return e.contra.flatMap((c) => {
+        const extra = (e.bono ?? 0) - bonoArmadura(c);
+        return extra > 0 ? [{ contra: [c], bono: extra }] : [];
+      });
+    });
+    if (efectos.length > 0) aportes.push({ fuente: `${cat.label} ${pieza.nivel}`, efectos });
+  }
+  return aportes;
 }
 
 // CondicionTirada (toggle/opción/contador) que el equipo aporta a CUALQUIER

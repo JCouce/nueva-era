@@ -213,7 +213,9 @@ function sinApilar(e: Entradas, ctx: ContextoAccion, estado: EstadoCondiciones):
     condiciones: e.condiciones.map((c) =>
       c.tipo === "toggle" && porRef.has(c) ? { ...c, valorActivo: 0, etiqueta: `${c.etiqueta} (${porRef.get(c)})` } : c,
     ),
-    bonosTramo: e.bonosTramo.map((b) => (porRef.has(b) ? { ...b, porTramo: {}, fuente: `${b.fuente} (${porRef.get(b)})` } : b)),
+    bonosTramo: e.bonosTramo.map((b) =>
+      porRef.has(b) ? { ...b, porTramo: { [String(estado[b.condicion ?? "tramo"])]: 0 }, fuente: `${b.fuente} (${porRef.get(b)})` } : b,
+    ),
   };
 }
 

@@ -189,10 +189,14 @@ describe("bonos por tramo", () => {
     assert.equal(valorBonosTramo([MIRA], {}), 0);
   });
 
-  test("el desglose muestra la fuente y el valor en ese tramo, aunque sea 0", () => {
-    const [linea] = desgloseBonosTramo([MIRA], { tramo: "corta" });
-    assert.equal(linea.etiqueta, "Mira Telescópica");
-    assert.equal(linea.valor, 0);
+  test("el desglose no pinta una fila a 0 en un tramo que el bono no cubre (2026-10-24)", () => {
+    assert.deepEqual(desgloseBonosTramo([MIRA], { tramo: "corta" }), []);
+    assert.deepEqual(desgloseBonosTramo([MIRA], { tramo: "media" }), [{ etiqueta: "Mira Telescópica", valor: 1 }]);
+  });
+
+  test("un 0 explícito del tramo elegido (descartado por no apilar) sí sale", () => {
+    const descartado = { fuente: "Mira Telescópica (no se suma con Ojo Biónico)", porTramo: { media: 0 } };
+    assert.deepEqual(desgloseBonosTramo([descartado], { tramo: "media" }), [{ etiqueta: descartado.fuente, valor: 0 }]);
   });
 
   test("varios bonos se listan cada uno con su fuente", () => {

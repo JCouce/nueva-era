@@ -187,11 +187,13 @@ declararlo en el catálogo con el alcance correcto.
   Combate a Distancia pero no es un ataque. En el índice de casillas va con
   las de su habilidad y la consulta descarta las de otro grupo
   (`consultaIndiceCondiciones`, `equipo.ts`).
-- `modo` → solo tiene sentido en una tirada de ataque con condición "modo"
-  (el Sistema de Retroceso, que solo ayuda en F. Auto). **Limitación
-  conocida:** no distingue por tipo de arma — el documento dice que en
-  ametralladoras el Sistema de Retroceso ayuda en *cualquier* modo, y este
-  alcance no lo captura (ver el comentario en su entrada del catálogo).
+- `modo` → solo tiene sentido en una tirada de ataque con condición "modo".
+  No distingue por arma ni por tipo de arma: un modificador de personaje con
+  este alcance cae en el modo de **cualquier** arma. Por eso el Sistema de
+  Retroceso ya no lo usa (2026-10-24, S90): va por arma con `ajusteModo`
+  (`NivelModulo`), un bono por opción del selector "modo" de la tirada de esa
+  arma (`bonosModoDeMejoras`, `combate.ts`), que en ametralladoras cubre todos
+  los modos.
 - `familiaArma` → las tiradas generadas por arma de una familia (`Accion.familiaArma`, la
   pone `combate.ts`: ataque melee, disparo, pesado, lanzar, bloquear, levantar escudo), y
   con `empleo` solo las de un arma a una/dos manos. Lo usan las dotes (D2b-1). En el

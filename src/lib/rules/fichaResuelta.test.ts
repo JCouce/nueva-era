@@ -58,7 +58,12 @@ const ENFERMO_Y_ATURDIDO: EstadoActivo[] = [
 
 const CTX_ALERTA: ContextoAccion = { id: "alerta_activa", grupo: "Acciones", habilidad: "exploracion", modoElegido: null };
 const CTX_SALV_FORTALEZA: ContextoAccion = { id: "salv_fortaleza", grupo: "Salvaciones", habilidad: null, modoElegido: null };
-const CONDICIONES_EQUIPO = [["visor_nocturno_n1_activo", "visor_nocturno_n2_activo", "mira_telescopica_busqueda"], []];
+// La salvación de Fortaleza lleva el selector «Contra…» (2026-10-24): congelación (armadura y
+// Soporte Vital), frío o calor extremos (Soporte Vital) y ceguera por detonación (Visor 2).
+const CONDICIONES_EQUIPO = [
+  ["visor_nocturno_n1_activo", "visor_nocturno_n2_activo", "visor_nocturno_cobertura_alerta", "mira_telescopica_busqueda"],
+  ["aum_contra_salv_fortaleza"],
+];
 
 const CASILLAS_FORTALEZA_ARKORU = ["especie_adaptacion_termica_temperatura", "especie_sistemas_filtradores_filtracion"];
 
@@ -153,7 +158,8 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
     esperado: {
       // +1: el +2 a la Fuerza del Exoesqueleto 2 (sube Potencia y Fortaleza, no la vida,
       // el movimiento ni la carga, que ya lo cuentan doble aparte).
-      nMods: 5,
+      // Sin los +1 de la armadura y Soporte Vital ni el +3 del Visor 2: van al «Contra…».
+      nMods: 1,
       atributos: { fuerza: 4, agilidad: 1, aguante: 1, percepcion: 0, inteligencia: 1, caracter: -1 },
       aplicados: { fortaleza: 2, potencia: 2, reflejos: 0, voluntad: 0, perspicacia: 0, expresion: 0 },
       salud: { vida: 11, fatiga: 10 },
@@ -193,7 +199,7 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
     sheet: conEquipo({ ...base(), especieId: "arkoru" }),
     estados: ENFERMO_Y_ATURDIDO,
     esperado: {
-      nMods: 12, // E4: +1, el −1 a distancia del Arköru; +1, el +2 a la Fuerza del Exoesqueleto 2
+      nMods: 8, // E4: +1, el −1 a distancia del Arköru; +1, el +2 a la Fuerza del Exoesqueleto 2; −4, los bonos de salvación del equipo (van al «Contra…»)
       atributos: { fuerza: 4, agilidad: 0, aguante: -1, percepcion: 0, inteligencia: 1, caracter: -1 },
       aplicados: { fortaleza: 1, potencia: 2, reflejos: 0, voluntad: -1, perspicacia: 0, expresion: 0 },
       salud: { vida: 10, fatiga: 9 },
@@ -220,7 +226,7 @@ const MUESTRAS: { nombre: string; sheet: Sheet; estados: EstadoActivo[]; esperad
       e4: {
         condiciones: [
           [...CONDICIONES_EQUIPO[0], "especie_percepcion_sensorial_visual"],
-          CASILLAS_FORTALEZA_ARKORU,
+          [...CASILLAS_FORTALEZA_ARKORU, ...CONDICIONES_EQUIPO[1]],
         ],
       },
     },

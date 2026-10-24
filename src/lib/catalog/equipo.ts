@@ -32,6 +32,8 @@ import type { Modificador } from "../rules/modificadores";
 import type { CondicionTirada, TramoDistancia } from "../rules/condiciones";
 import type { MotorMetadata } from "../rules/motor";
 import type { HabilidadId } from "../rules/habilidades";
+import type { EfectoSalvacion } from "../rules/aumentosTiradas";
+import type { TipoDanio } from "./tiposDanio";
 import { ARMAS_MELEE, type ArmaMelee } from "./armasMelee";
 import { VALIJA_TACTICA_MEDICA, FARMACOS } from "./medicina";
 import {
@@ -128,6 +130,11 @@ export type NivelModulo = {
   // Integrado por el peso, por ejemplo). No es una condición porque no hay
   // elección del jugador de por medio.
   ajusteAtaque?: number;
+  // Bono al ataque del arma que la aloja solo en los modos cuya etiqueta contiene
+  // `contieneEtiqueta` ("F. Auto"), o en todos si el arma es de un tipo de `enCualquierModo`
+  // (Sistema de Retroceso: "en ametralladoras mejora el ataque en cualquiera de sus modos").
+  // Por arma, no por personaje: va en la tirada de ESA arma (combate.ts, bonosModoDeMejoras).
+  ajusteModo?: { contieneEtiqueta: string; valor: number; enCualquierModo?: TipoArma[] };
   // Solo lo usan las Herramientas activas (Radar, Escáner Detector, Disfraz
   // Holográfico): la nota de la tirada propia que ese nivel habilita —
   // aplicado y habilidad los pone lib/rules/herramientas.ts (siempre
@@ -162,8 +169,24 @@ export type NivelModulo = {
   // consume resolverVuelo() (acciones.ts) para calcular los metros exactos,
   // no un texto informativo.
   bonusCriticoM?: number;
+  // Bonos a salvaciones solo contra unas amenazas (2026-10-24): entran en el selector
+  // «Contra…» de la salvación (aumentosTiradas.ts) si la pieza va instalada en la armadura
+  // que cuenta (salvacionesDeEquipo, rules/equipo.ts). Por niveles, el que repite amenazas
+  // sustituye al anterior (no se suman, S9).
+  salvaciones?: SalvacionDeEquipo[];
+  // Solo Refuerzo de Combate: el golpe desarmado con la armadura (rules/golpeDesarmado.ts).
+  // Total del nivel, no se suma entre niveles (ultimoQueDefine).
+  refuerzoDesarmado?: { bonoDanio: number; letal: true; aturdimiento: number };
+  // Mejora Ignífuga 2 (fuego) y Polímero Anticorrosivo 2 (corrosivo): "el usuario que reciba
+  // daño [de ese tipo] lo considera letal en lugar de grave" (categoriaDelGolpe, blindaje.ts).
+  recibeComoLetal?: TipoDanio;
   motor?: MotorMetadata[]; // docs/motor.md — un MotorMetadata por efecto DE ESTE NIVEL
 };
+
+// Bono de una pieza a una salvación contra unas amenazas. `subeLaDeLaArmadura`: el bono es el
+// total que pasa a tener la armadura contra ellas, no uno aparte (Mejora Ignífuga 2: "mejora
+// el bonificador del traje o la armadura contra llamarada a +2").
+export type SalvacionDeEquipo = EfectoSalvacion & { subeLaDeLaArmadura?: true };
 
 // ── Herramientas ── Objetos con niveles que, a diferencia de las mejoras y
 // subsistemas de arriba, no se instalan en nada: se equipan directos, como

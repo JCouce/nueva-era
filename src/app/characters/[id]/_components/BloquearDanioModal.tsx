@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   casillaBlindajeBrazo,
   casillaBlindajeReactivo,
+  categoriaDelGolpe,
   desgloseBlindaje,
   golpeAlEscudo,
   TIPOS_DANIO,
@@ -71,6 +72,8 @@ export function BloquearDanioModal({
   const [escudoAplicado, setEscudoAplicado] = useState<{ recibe: number; de: number; a: number } | null>(null);
 
   const golpe = golpeAlEscudo(ficha.ficha, tipo, danioRecibido);
+  // Ignífuga 2 / Polímero 2: ese daño cuenta como letal, no grave (R8).
+  const categoria = categoriaDelGolpe(ficha.ficha, tipo);
   // Roto o daño mental: "Al escudo" no se puede elegir, y si estaba elegido vuelve a "A ti"
   // (salvo que se acabe de romper con el botón: se queda mostrando lo que pasó).
   const destino: Destino =
@@ -294,6 +297,12 @@ export function BloquearDanioModal({
                 <span className="font-mono text-xs uppercase text-foreground">Pasa</span>
                 <span className="font-mono text-2xl font-bold tabular-nums text-danger">{pasa}</span>
               </div>
+              {categoria.categoria && (
+                <p className="mt-1 font-mono text-[11px] text-muted">
+                  Cuenta como {categoria.categoria.toLowerCase()}
+                  {categoria.fuente && <span className="text-info"> · {categoria.fuente}</span>}
+                </p>
+              )}
             </>
           )}
 

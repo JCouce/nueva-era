@@ -2337,6 +2337,30 @@ del arma sin modificar y daño desglosado por tipo en el golpe. En Tienda, Equip
 creación y Fabricar. Detalle y decisiones: `docs/sistema.md` §12 y S87. Pendiente: el peso
 cuenta en la carga cuando esta se construya.
 
+### Venenos ⬜ (área nueva, salió del barrido de items 2026-10-24)
+Necrotoxina, Neurotoxina, Mitotoxinas y Citotoxinas, niveles 1-4 (`docs/fuente/equipamiento.md`
+~3046-3098): cada uno con salvación de Fortaleza, cinco grados de efecto y precio por nivel.
+La dote Potenciar Veneno ya da por hecho que existen. Modelarlos aparte (skill `modelar-area`),
+no como pieza suelta.
+
+### Bayoneta con cuchillos de otras tecnologías ⬜ (barrido de items 2026-10-24)
+El documento dice que la bayoneta admite «cuchillos de distintas tecnologías»; en la app no se
+le pueden poner Armas Modificadas (Electrificante, Térmica…). Hoy su daño se lee del Cuchillo
+de Combate base.
+
+### Barrido de items: abaratar el siguiente ⬜ (propuesta de los auditores, sin decidir)
+- Script que saque las tablas de `docs/fuente/` a datos y las compare columna a columna con el
+  catálogo (desviaciones permitidas citando su supuesto), lanzado por `sync-drive`.
+- Instantánea por pieza y nivel: equiparla en una ficha vacía, montar todas las tiradas y
+  guardar el desglose, para revisar una tabla en vez de código.
+- Quitar números a mano del motor (bayoneta, alcance de lanzar, gasto de F. Auto, acción de
+  levantar escudo) y sacarlos del catálogo.
+- Tests de coherencia: arma de energía ⇒ batería; arma que admite mejoras ⇒ alguna instalable;
+  ningún bloqueo cita una pregunta ya cerrada.
+- Cada supuesto de `sistema.md` con las piezas a las que afecta.
+- El workflow `auditoria-motor-metadata` compara prosa nuestra con código; pasarle el trozo del
+  documento del diseñador y lo que da el motor al ejecutarlo.
+
 ### Penalizadores de Carga Transportable ⬜
 La fórmula y el dato en pantalla ya están (Fase 3); falta aplicar los penalizadores por
 exceso de carga (−25% malherido, −50% moribundo, −25% exhausto) y la Proeza de Fuerza.

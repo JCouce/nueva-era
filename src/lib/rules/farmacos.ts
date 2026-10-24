@@ -17,6 +17,7 @@ import type { Sheet } from "./sheet";
 import type { Accion, AccionDirecta } from "./acciones";
 import type { AplicadoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
+import type { CondicionTirada } from "./condiciones";
 
 // Los tres que no llevan tirada (docs/checklist-motor-vs-prosa-2026-09-24.md
 // / prompt-gasto-recursos.md): el nota explica el efecto, "Usar" solo gasta
@@ -61,7 +62,7 @@ const CON_TIRADA: Record<
     nota: "Perspicacia + Biociencia (Medicina). Dificultad 7 normal, 9 en hemorragia exanguinante.",
   },
   farmaco_estabilizadores_neurales: {
-    nota: "Perspicacia + Biociencia (Medicina), dificultad 6 — purga el aturdimiento.",
+    nota: "Perspicacia + Biociencia (Medicina), dificultad 6 — purga un grado del aturdimiento; con éxito crítico, el estado entero.",
   },
   farmaco_calmante: {
     nota: "Perspicacia + Medicina, dificultad 4 — fija la duración y reduce en 1 el penalizador por herida.",
@@ -124,4 +125,34 @@ export function accionesDirectasDeFarmacos(sheet: Sheet, notasEspecie: string[])
     });
   }
   return acciones;
+}
+
+// Antipatógeno (R9, 2026-10-24): "permite una segunda tirada de salvación, con un bonificador de
+// +3" si el personaje está envenenado, enfermo o intoxicado. Casilla en la salvación de Fortaleza
+// mientras queda alguna dosis de algo que lo incluya (los Geles Sanadores "incluyen los efectos
+// del Analgésico y el Antipatógeno"; el Avanzado y el Nano-Elixir funcionan como el Gel). La dosis
+// se gasta con su "Usar"; la casilla no gasta nada.
+export const ID_CASILLA_ANTIPATOGENO = "farmaco_antipatogeno_segunda_salvacion";
+const CON_EFECTO_ANTIPATOGENO = [
+  "farmaco_antipatogeno",
+  "farmaco_gel_sanador",
+  "farmaco_gel_sanador_avanzado",
+  "farmaco_nano_elixir",
+];
+
+export function casillasDeFarmacos(sheet: Pick<Sheet, "farmacos">): CondicionTirada[] {
+  if (!CON_EFECTO_ANTIPATOGENO.some((id) => (sheet.farmacos[id] ?? 0) > 0)) return [];
+  return [
+    {
+      id: ID_CASILLA_ANTIPATOGENO,
+      tipo: "toggle",
+      etiqueta: "Segunda salvación con Antipatógeno",
+      valorActivo: 3,
+      alcance: { tipo: "tiradaId", id: "salv_fortaleza" },
+      nota:
+        "Solo envenenado, enfermo o intoxicado: la segunda salvación que da el Antipatógeno (o un Gel " +
+        "Sanador, que incluye su efecto). Revierte un nivel de gravedad. Uno cada 8 horas; la dosis se " +
+        "gasta con su «Usar».",
+    },
+  ];
 }

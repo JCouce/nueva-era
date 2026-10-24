@@ -1,4 +1,6 @@
+import type { CondicionTirada } from "../rules/condiciones";
 import type { NivelModulo } from "./equipo";
+import { NO_APILA_COBERTURA, NOTA_COBERTURA } from "./cobertura";
 
 export type MejoraEstandar = {
   familia: "mejoraEstandar";
@@ -8,6 +10,23 @@ export type MejoraEstandar = {
   descripcion: string;
   niveles: NivelModulo[];
 };
+
+// Visor Nocturno 2: "reduce en 2 los niveles de cobertura visual descritos dentro de un alcance
+// de 50 metros". Mismo par de casillas que el Ojo Biónico (catalog/aumentos.ts): ataques a
+// distancia y Buscar/percibir, en el mismo grupo de no apilamiento (vale la mayor).
+function casillasCoberturaVisor(): CondicionTirada[] {
+  const comun = {
+    tipo: "toggle",
+    etiqueta: "Objetivo con cobertura visual a 50 m o menos (Visor Nocturno)",
+    valorActivo: 2,
+    noApila: NO_APILA_COBERTURA,
+    nota: NOTA_COBERTURA,
+  } as const;
+  return [
+    { ...comun, id: "visor_nocturno_cobertura_distancia", alcance: { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combate_distancia" } },
+    { ...comun, id: "visor_nocturno_cobertura_alerta", alcance: { tipo: "tiradaId", id: "alerta_activa" } },
+  ];
+}
 
 export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
   {
@@ -37,17 +56,13 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         ],
         // Resistencia Térmica es el único bono incondicional (el Blindaje
         // Ambiental depende de sufrir daño en un ambiente tóxico, así que se
-        // queda solo en `detalle`, sin mecanizar). Un único +1: cubre
-        // congelación y calor extremo a la vez (ninguno tiene salvación propia,
-        // los dos caen en salv_fortaleza — no son dos bonos, es el mismo +1
-        // aplicable a dos disparadores distintos). Bug corregido 2026-09-23:
-        // antes había dos entradas idénticas, sumando +2 real en vez de +1
-        // (ver docs/equipo-efectos-especiales.md §Mejoras Estándar, `me1`).
-        modificadores: [
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
-        ],
+        // queda solo en `detalle`, sin mecanizar). Un único +1 que vale contra
+        // congelación y contra frío o calor extremos, solo contra esas amenazas
+        // (selector «Contra…» de Fortaleza, 2026-10-24); se suma al de la armadura.
+        modificadores: [],
+        salvaciones: [{ contra: ["congelacion", "termicos"], bono: 1 }],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" }, // Resistencia Térmica
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Resistencia Térmica
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // Blindaje Ambiental: condicional a daño en ambiente tóxico, sin CondicionTirada ni Modificador que lo represente hoy
           { tipo: "habilitador", afecta: { modo: "ninguna" }, mecanismo: null, arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "pregunta 32" }, // Vulnerabilidad al Shock (apagón): degrada/deshabilita los bonos de arriba, exacto comportamiento sin definir
         ],
@@ -129,7 +144,7 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         coste: 4000,
         detalle: [
           "Admite objetos de tamaño medio: un arma corta estándar o herramientas de precisión.",
-          "Sube la dificultad a 4 contra escáneres avanzados; indetectable en inspecciones " +
+          "Sube la dificultad en 4 contra escáneres avanzados; indetectable en inspecciones " +
             "visuales o físicas superficiales.",
         ],
         modificadores: [],
@@ -250,16 +265,16 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           "El daño por fuego se considera letal en vez de grave.",
           "Mejora el bonificador del traje o la armadura contra llamarada a +2.",
         ],
-        // El +2 mejora el bono de LA ARMADURA (otra pieza), no aporta uno propio
-        // independiente: no hay forma limpia de modelarlo sin acoplar ambas piezas.
+        // El +2 es el total del bono de LA ARMADURA contra llamarada, no uno aparte:
+        // `subeLaDeLaArmadura` pone la diferencia (salvacionesDeEquipo, rules/equipo.ts).
         modificadores: [],
+        salvaciones: [{ contra: ["llamarada"], bono: 2, subeLaDeLaArmadura: true }],
+        recibeComoLetal: "fuego",
         motor: [
-          // "Daño de fuego letal en vez de grave" es Hallazgo #4 (categoriaDanio
-          // mezcla tipo elemental y categoría de gravedad, sin tabla TIPO_A_CATEGORIA
-          // ni forma de sobrescribirla por condición) — NO Hallazgo #5/pregunta 29
-          // (blindaje), que ya está construido (blindajeContra(), lib/rules/blindaje.ts).
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "Hallazgo #4" },
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // mejora el bono de OTRA pieza (la armadura), sin forma de modelar el acoplamiento hoy
+          // "Daño de fuego letal en vez de grave": la categoría del golpe recibido
+          // (categoriaDelGolpe, lib/rules/blindaje.ts), que "Bloquear daño" enseña.
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "nota_fija", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
     ],
@@ -279,11 +294,10 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         rareza: "Común",
         coste: 1000,
         detalle: ["+1 contra corrosión.", "Esta mejora no es susceptible a shock."],
-        modificadores: [
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
-        ],
+        modificadores: [],
+        salvaciones: [{ contra: ["corrosion"], bono: 1 }],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
       {
@@ -294,14 +308,67 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           "El daño corrosivo se considera letal en vez de grave.",
           "El bonificador contra corrosión sube a +2.",
         ],
-        modificadores: [
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 2 },
-        ],
+        modificadores: [],
+        // Sustituye al +1 del nivel 1 (mismas amenazas).
+        salvaciones: [{ contra: ["corrosion"], bono: 2 }],
+        recibeComoLetal: "corrosivo",
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
-          // Hallazgo #4 (categoriaDanio), no Hallazgo #5/blindaje — ver comentario
-          // completo junto a Mejora Ignífuga nivel 2, mismo caso exacto.
-          { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: "Hallazgo #4" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          // Corrosivo letal en vez de grave: mismo caso que Mejora Ignífuga nivel 2.
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "nota_fija", estado: "construido" },
+        ],
+      },
+    ],
+  },
+  {
+    familia: "mejoraEstandar",
+    id: "refuerzo_combate",
+    label: "Refuerzo de Combate",
+    resumen: "Refuerzos en la armadura que hacen letal el golpe desarmado.",
+    descripcion:
+      "Refuerzos integrados en la armadura que aumentan el daño de los golpes desarmados dados " +
+      "con ella y lo convierten en letal.",
+    // docs/fuente/equipamiento.md, "Refuerzo de Combate (Nivel 1-2)" (2026-10-24). Las dos
+    // preguntas de docs/motor.md, por efecto:
+    //   - +N al daño del golpe desarmado (Pelea) con la armadura: numérico, ataque_melee,
+    //     sumado al daño de la fila (rules/golpeDesarmado.ts). Nivel 2 "en 2 más": total del
+    //     nivel, no se suma al del 1 (como el resto del catálogo, S9).
+    //   - el daño pasa a letal: numérico (categoría del daño), ataque_melee, mismo sitio.
+    //   - crítico con aturdimiento de dificultad 7 (8 en el nivel 2): texto, el crítico de la fila.
+    //   - bloquear desarmado sin el −3 ("si el ataque desarmado de quien bloquea causa daño
+    //     letal no se considera desarmado", Bloqueo, docs/fuente/dotes.md): numérico,
+    //     bloquear_melee, la casilla del −3 deja de salir.
+    niveles: [
+      {
+        nivel: 1,
+        rareza: "Común",
+        coste: 500,
+        detalle: [
+          "Los golpes desarmados con la armadura hacen 1 más de daño, y el daño pasa a letal.",
+          "En golpe crítico, el aturdimiento tiene dificultad 7.",
+        ],
+        modificadores: [],
+        refuerzoDesarmado: { bonoDanio: 1, letal: true, aturdimiento: 7 },
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "suma_derivado", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "suma_derivado", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+        ],
+      },
+      {
+        nivel: 2,
+        rareza: "Común",
+        coste: 3000,
+        detalle: [
+          "Los golpes desarmados con la armadura hacen 2 más de daño (en total, no se suma al nivel 1).",
+          "En golpe crítico, el aturdimiento tiene dificultad 8.",
+        ],
+        modificadores: [],
+        refuerzoDesarmado: { bonoDanio: 2, letal: true, aturdimiento: 8 },
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "suma_derivado", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
     ],
@@ -320,11 +387,10 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         rareza: "Común",
         coste: 1000,
         detalle: ["+1 contra shock.", "Esta mejora no es susceptible a su propio efecto."],
-        modificadores: [
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 1 },
-        ],
+        modificadores: [],
+        salvaciones: [{ contra: ["shock"], bono: 1 }],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
       {
@@ -335,11 +401,11 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           "Ignora el primer nivel de daño eléctrico.",
           "El bonificador contra shock sube a +2.",
         ],
-        modificadores: [
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_fortaleza" }, valor: 2 },
-        ],
+        modificadores: [],
+        // Sustituye al +1 del nivel 1 (mismas amenazas).
+        salvaciones: [{ contra: ["shock"], bono: 2 }],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
           // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: +1 de blindaje
           // específico contra Eléctrico, vía bonoTejidoConductor() (lib/rules/blindaje.ts).
           {
@@ -403,20 +469,14 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           "+3 a la tirada contra ceguera provocada por destellos, al cortar el sensor antes de " +
             "saturarse.",
         ],
-        modificadores: [
-          // El estado Ceguera (sistema-y-combate.md) no declara qué atributo la
-          // salva — a diferencia de Congelación/Corrosión/Fusión/Llamarada, que sí
-          // dicen "salvación habitual de X". No se le asigna una al azar: el id
-          // queda como marcador para cuando se aclare, sin aplicarse a nada.
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_ceguera_destello" }, valor: 3 },
-        ],
-        // Primer caso real del mecanismo de docs/modificadores-tiradas.md §8:
-        // "ve a través de humo/cobertura -2 dentro de 50m" no se puede
-        // auto-aplicar (el motor no rastrea distancia real ni cobertura, ver
-        // el Camuflaje Trifásico) — pero sí informar en la propia tirada de
-        // Buscar/percibir del portador, para que el máster lo aplique a mano
-        // contra quien busca al personaje. Sin valor numérico (0/0): solo la
-        // nota. docs/equipo-efectos-especiales.md §Mejoras Estándar.
+        // +3 contra la ceguera por destellos (detonación, granada de luz): la ceguera se salva
+        // con Fortaleza (decidido; amenaza «ceguera por detonación», aumentosTiradas.ts).
+        modificadores: [],
+        salvaciones: [{ contra: ["ceguera_detonacion"], bono: 3 }],
+        // Ve a través de humo/niebla: recordatorio en Buscar/percibir (toggle sin valor).
+        // "Reduce en 2 los niveles de cobertura visual dentro de 50 m": casillas con valor en
+        // ataques a distancia y Buscar/percibir, como el Ojo Biónico (A3) y sin apilarse con él
+        // ni con Foveo (grupo NO_APILA_COBERTURA). 2026-10-24.
         condiciones: [
           {
             id: "visor_nocturno_n2_activo",
@@ -425,15 +485,14 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
             alcance: { tipo: "tiradaId", id: "alerta_activa" },
             valorActivo: 0,
             valorInactivo: 0,
-            nota: "Ves a través de humo denso, niebla o partículas. Cobertura visual -2 dentro de 50 m (aplícalo a mano).",
+            nota: "Ves a través de humo denso, niebla o partículas.",
           },
+          ...casillasCoberturaVisor(),
         ],
         motor: [
-          // NO "construido": el propio comentario de `modificadores` (arriba) dice
-          // que "salv_ceguera_destello" es un id marcador sin tirada real detrás —
-          // el +3 nunca se aplica a nada hasta que se sepa qué atributo salva
-          // Ceguera. Corregido en revisión 2026-09-23 (estaba mal como "construido").
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_ceguera_destello" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "qué salva Ceguera (sin definir, sistema-y-combate.md §Ceguera)" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          // Cobertura visual −2 a 50 m o menos: casilla con valor (ataques a distancia y Buscar).
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" }, // toggle real (condiciones), no nota_fija
         ],
       },

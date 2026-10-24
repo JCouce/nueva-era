@@ -461,6 +461,15 @@ describe("gastoDelModo", () => {
     assert.equal(gastoDelModo("Estándar (F. Auto)", 20), 20);
     assert.equal(gastoDelModo("Compleja (F. Auto)", 100), 100);
   });
+
+  test("ametralladora en F. Auto: 100 proyectiles por ataque, no el cargador de 150 (2026-10-24)", () => {
+    assert.equal(gastoDelModo("Compleja (F. Auto)", 150, "ametralladora"), 100);
+    assert.equal(gastoDelModo("Estándar", 150, "ametralladora"), 1);
+    assert.equal(gastoDelModo("Estándar (F. Auto)", 20, "fusil_asalto"), 20);
+    // Sydiasi: "consume 3 disparos del cargador por cada ataque".
+    assert.equal(gastoDelModo("Estándar (F. Auto)", 20, "pistola", 3), 3);
+    assert.equal(gastoDelModo("Simple", 20, "pistola", 3), 1);
+  });
 });
 
 describe("munición especial", () => {

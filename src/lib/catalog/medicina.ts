@@ -21,6 +21,7 @@
 // "Usar" y el gasto de 1 dosis al confirmar.
 import type { Herramienta, Consumible } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
+import type { Modificador } from "../rules/modificadores";
 
 // docs/motor.md: el bono de aplicación de la VTM ya está mecanizado como
 // Modificador tipo "tirada" con alcance a la tirada fija "medicina" — mismo
@@ -29,6 +30,10 @@ import type { MotorMetadata } from "../rules/motor";
 // 1 minuto, "cualquier éxito cuenta como crítico"...) es prosa todavía sin
 // transcribir a ningún campo de datos — no lleva entrada propia hasta que se
 // capture como Modificador/CondicionTirada real, igual que `descripcion`.
+// R4 (2026-10-24): "al administrar cualquier compuesto a través del instrumental de la valija
+// obtiene un bonificador ... a las tiradas de aplicación" — también en "Usar [fármaco]" (grupo
+// Fármacos), no solo en Tratar heridas. Un Modificador por alcance (clave distinta), así cada
+// nivel sustituye su valor en los dos (acumulaPorClave).
 const MOTOR_BONO_APLICACION: MotorMetadata[] = [
   {
     tipo: "numerico",
@@ -36,6 +41,17 @@ const MOTOR_BONO_APLICACION: MotorMetadata[] = [
     mecanismo: "siempre_activo",
     estado: "construido",
   },
+  {
+    tipo: "numerico",
+    afecta: { modo: "accion_existente", id: "grupo:Fármacos" },
+    mecanismo: "siempre_activo",
+    estado: "construido",
+  },
+];
+
+const bonoAplicacion = (valor: number): Modificador[] => [
+  { tipo: "tirada", alcance: { tipo: "tiradaId", id: "medicina" }, valor },
+  { tipo: "tirada", alcance: { tipo: "grupo", grupo: "Fármacos" }, valor },
 ];
 
 export const VALIJA_TACTICA_MEDICA: Herramienta = {
@@ -71,7 +87,7 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
       ],
       // +1 a las tiradas de aplicación (nivel 1-2): bono de personaje entero
       // mientras se lleva la valija, va a la tirada fija "medicina".
-      modificadores: [{ tipo: "tirada", alcance: { tipo: "tiradaId", id: "medicina" }, valor: 1 }],
+      modificadores: bonoAplicacion(1),
       motor: MOTOR_BONO_APLICACION,
     },
     {
@@ -89,7 +105,7 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
       // S9: el documento no repite el +1 de aplicación en este nivel, pero
       // tampoco dice que se pierda — se mantiene hasta que nivel 3 lo suba
       // a un total explícito.
-      modificadores: [{ tipo: "tirada", alcance: { tipo: "tiradaId", id: "medicina" }, valor: 1 }],
+      modificadores: bonoAplicacion(1),
       motor: MOTOR_BONO_APLICACION,
     },
     {
@@ -103,7 +119,7 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
         "El diagnóstico profundo pasa a acción compleja; dedicándole 1 minuto da +2. Desenfundar " +
           "la valija pasa a acción estándar.",
       ],
-      modificadores: [{ tipo: "tirada", alcance: { tipo: "tiradaId", id: "medicina" }, valor: 2 }],
+      modificadores: bonoAplicacion(2),
       // Diagnóstico profundo (docs/checklist-motor-vs-prosa-2026-09-24.md):
       // +2 declarado por el jugador, no un bono de personaje entero — mismo
       // criterio que Visor Nocturno/Bípode (toggle con alcance a la tirada
@@ -143,7 +159,7 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
         "Permite combinar dos tratamientos en una sola acción: dos fármacos, o un tratamiento y un " +
           "fármaco.",
       ],
-      modificadores: [{ tipo: "tirada", alcance: { tipo: "tiradaId", id: "medicina" }, valor: 3 }],
+      modificadores: bonoAplicacion(3),
       // Crítico parametrizable (docs/tareas.md, 2026-09-28): el motor no
       // puede distinguir por sí solo "herida normal" de "estado complejo/
       // estabilización/síntesis" en la misma tirada "Tratar heridas" — se
@@ -250,11 +266,11 @@ export const FARMACOS: Consumible[] = [
     familia: "consumible",
     id: "farmaco_estabilizadores_neurales",
     label: "Estabilizadores Neurales",
-    resumen: "Purga el aturdimiento al instante. Consume un cartucho de reactivo.",
+    resumen: "Purga un grado del aturdimiento al instante. Consume un cartucho de reactivo.",
     descripcion: "Solución inyectable que suprime la sobrecarga o cortocircuito sináptico del aturdimiento.",
     detalle: [
       "Acción estándar y Perspicacia + Biociencia (Medicina), dificultad 6: purga instantáneamente " +
-        "el aturdimiento.",
+        "un grado del aturdimiento. Con éxito crítico elimina por completo el estado.",
     ],
     pesoKg: null,
     rareza: "Común",
@@ -279,7 +295,12 @@ export const FARMACOS: Consumible[] = [
     rareza: "Común",
     coste: 20,
     modificadores: [],
-    motor: MOTOR_FARMACO,
+    // R9 (2026-10-24): "reduce en 1 el penalizador por herida" es numérico, no narrativo; sin
+    // enganche todavía: el motor no guarda qué dosis siguen haciendo efecto (como el Analgésico).
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "farmaco_farmaco_calmante" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+    ],
   },
   {
     familia: "consumible",
@@ -296,7 +317,11 @@ export const FARMACOS: Consumible[] = [
     rareza: "Común",
     coste: 50,
     modificadores: [],
-    motor: MOTOR_FARMACO,
+    // R9 (2026-10-24): la segunda salvación con +3, casilla en la salvación de Fortaleza
+    // mientras quede una dosis (casillasDeFarmacos, rules/farmacos.ts).
+    motor: [
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+    ],
   },
   {
     familia: "consumible",
@@ -387,7 +412,12 @@ export const FARMACOS: Consumible[] = [
     rareza: "Extraño",
     coste: 750,
     modificadores: [],
-    motor: MOTOR_FARMACO,
+    // R9 (2026-10-24): el +5 ya va sumado en su fila "Usar Nano-Elixir" (ajustesFijos,
+    // rules/farmacos.ts) — numérico construido, no narrativo.
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "farmaco_farmaco_nano_elixir" }, mecanismo: "accion_equipo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "farmaco_farmaco_nano_elixir" }, mecanismo: "ajuste_fijo", estado: "construido" },
+    ],
   },
   {
     familia: "consumible",

@@ -2,7 +2,7 @@
 // docs/propuesta-aumentos.md, docs/sistema.md §11.3):
 //   - casillas con alcance (Alerta activa: Ojo Biónico, Vestíbulo-Auditiva, Introgresión),
 //     al mismo índice que las de equipo, especie y dotes (resolverFicha);
-//   - el selector "Contra…" de las salvaciones de Fortaleza y Voluntad (decisión del
+//   - el selector "Contra…" de las salvaciones de Fortaleza, Reflejos (2026-10-24) y Voluntad (decisión del
 //     usuario): una opción por amenaza que cubre algún aumento, que suma todo lo que le
 //     aplica, con la ventaja y su coste;
 //   - textos en tiradas (Matriz de Red en la salvación de Voluntad) y notas de la Alerta
@@ -35,7 +35,7 @@ import type { Sheet } from "./sheet";
 
 // ── Amenazas de las salvaciones ─────────────────────────────────────────
 
-export type SalvacionConSelector = "salv_fortaleza" | "salv_voluntad";
+export type SalvacionConSelector = "salv_fortaleza" | "salv_reflejos" | "salv_voluntad";
 
 // Contra qué se salva (§11.3, segunda y tercera ronda: ceguera, asfixia, toxinas, venenos,
 // enfermedad y aturdimiento con Fortaleza; confusión con Voluntad). `incluye`: una amenaza
@@ -54,6 +54,12 @@ export const AMENAZAS = [
   { id: "radiacion", label: "Radiación", salvacion: "salv_fortaleza" },
   // Solo frío y calor del ambiente, no el fuego de las armas (Resiliencia, tercera ronda).
   { id: "termicos", label: "Frío o calor extremos", salvacion: "salv_fortaleza" },
+  // Los estados de equipo (2026-10-24): el bono de cada pieza solo vale contra su amenaza
+  // (armaduras: congelación y llamarada; Polímero Anticorrosivo: corrosión). La llamarada se
+  // salva con Reflejos (estado Llamarada, "salvación habitual de Reflejos").
+  { id: "congelacion", label: "Congelación", salvacion: "salv_fortaleza" },
+  { id: "corrosion", label: "Corrosión", salvacion: "salv_fortaleza" },
+  { id: "llamarada", label: "Llamarada", salvacion: "salv_reflejos" },
   { id: "confusion", label: "Confusión", salvacion: "salv_voluntad" },
   { id: "miedo", label: "Miedo", salvacion: "salv_voluntad" },
   { id: "coercion", label: "Coerción", salvacion: "salv_voluntad" },
@@ -197,7 +203,7 @@ const conSigno = (n: number) => (n < 0 ? `−${-n}` : `+${n}`);
 // especial" por defecto y una opción por amenaza (en el orden de AMENAZAS).
 function selectoresContra(aportes: Aporte[], inmunidades: Inmunidad[]): CondicionTirada[] {
   const efectos: EfectoConFuente[] = aportes.flatMap((a) => (a.efectos.salvaciones ?? []).map((e) => ({ ...e, fuente: a.fuente })));
-  const salvaciones: SalvacionConSelector[] = ["salv_fortaleza", "salv_voluntad"];
+  const salvaciones: SalvacionConSelector[] = ["salv_fortaleza", "salv_reflejos", "salv_voluntad"];
   return salvaciones.flatMap((salvacion): CondicionTirada[] => {
     const directas = new Set(efectos.flatMap((e) => e.contra));
     const opciones = AMENAZAS.filter(
@@ -224,13 +230,16 @@ function selectoresContra(aportes: Aporte[], inmunidades: Inmunidad[]): Condicio
 // especie y dotes: conExtrasDeFicha las pega a su tirada y montarTirada las suma.
 // `deActivables` (A5a): las salvaciones de los activables encendidos (Neuroprótesis: −1 contra
 // enfermedad, radiación, toxinas y venenos), que entran en el selector como las demás.
+// `deEquipo` (2026-10-24): las de la armadura y sus mejoras (salvacionesDeEquipo, equipo.ts).
 export function casillasDeAumentos(
   sheet: Pick<Sheet, "equipo">,
   deActivables: { fuente: string; efectos: EfectoSalvacion[] }[] = [],
+  deEquipo: { fuente: string; efectos: EfectoSalvacion[] }[] = [],
 ): CondicionTirada[] {
   const aportes = [
     ...aportesDeAumentos(sheet),
     ...deActivables.map((a): Aporte => ({ fuente: `${a.fuente} (activa)`, efectos: { salvaciones: a.efectos } })),
+    ...deEquipo.map((a): Aporte => ({ fuente: a.fuente, efectos: { salvaciones: a.efectos } })),
   ];
   const casillas = aportes.flatMap((a) =>
     (a.efectos.casillas ?? []).map((c): CondicionTirada => ({ ...c, etiqueta: `${c.etiqueta} · ${a.fuente}` })),

@@ -321,7 +321,14 @@ export function desgloseBonosTramo(
   bonos: BonoPorTramo[],
   estado: EstadoCondiciones,
 ): { etiqueta: string; valor: number }[] {
-  return bonos.filter((b) => opcionDelBono(b, estado) !== null).map((b) => ({ etiqueta: b.fuente, valor: valorBonoTramo(b, estado) }));
+  // Un bono que no dice nada del tramo elegido no sale (la mira a corta o a bocajarro): antes
+  // pintaba una fila a 0. Los descartados por no apilar llevan su 0 explícito y sí salen.
+  return bonos
+    .filter((b) => {
+      const opcion = opcionDelBono(b, estado);
+      return opcion !== null && b.porTramo[opcion] !== undefined;
+    })
+    .map((b) => ({ etiqueta: b.fuente, valor: valorBonoTramo(b, estado) }));
 }
 
 // La etiqueta del modo actualmente elegido (si la tirada tiene condición

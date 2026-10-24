@@ -8,7 +8,8 @@ import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
 import { MUNICION_GRANADA } from "../catalog/municion";
 import type { MotorMetadata } from "./motor";
-import { ACCIONES, modificadorAccion, gastoTotal, gastoMunicionEspecial, avisoInsuficiente } from "./acciones";
+import { ACCIONES, modificadorAccion, gastoTotal, gastoMunicionEspecial, avisoInsuficiente, danioConMunicion, municionEspecialElegida } from "./acciones";
+import { desgloseDanio } from "./armasModificadas";
 import { aplicado, modificadoresActivos } from "./derivados";
 import { permisosDeDotes } from "./dotesEfectos";
 import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
@@ -118,6 +119,18 @@ describe("pelea (puñetazo, patada, codazo)", () => {
     assert.ok(punetazo.condiciones?.find((c) => c.id === "sacrificio_colchon_mayor"));
   });
 
+  test("R7: desde el nivel 3, el plasma liberado causa shock y llamarada (5 + nivel) y en crítico fusión (7 + nivel)", () => {
+    let sheet = conMallaPlasmatica(defaultSheet(), 4);
+    sheet = equipar(sheet, { instanciaId: "p1", catalogoId: "pelea_punetazo" });
+    const [punetazo] = accionesDeAtaque(sheet);
+    for (const id of ["sacrificio_colchon_menor", "sacrificio_colchon_mayor"]) {
+      const c = punetazo.condiciones?.find((x) => x.id === id);
+      assert.ok(c?.tipo === "toggle");
+      assert.match(c.nota ?? "", /Causa shock y llamarada \(dificultad 9\); en crítico, fusión \(dificultad 11\)\./, id);
+      assert.doesNotMatch(c.nota ?? "", /dificultad de absorción/, id);
+    }
+  });
+
   test("un arma melee normal (no desarmada) no gana el sacrificio aunque haya Malla equipada", () => {
     let sheet = conMallaPlasmatica(defaultSheet(), 1);
     sheet = equipar(sheet, { instanciaId: "e1", catalogoId: "espada_cuchillo_combate" });
@@ -192,6 +205,21 @@ describe("arma de fuego equipada", () => {
     assert.equal(opcionNota(tramo, "corta"), undefined);
   });
 
+  test("arma con F. Auto: a bocajarro avisa del +3 a la esquiva del objetivo; sin F. Auto, no (2026-10-24)", () => {
+    let sheet = equipar(defaultSheet(), { instanciaId: "fa", catalogoId: "fusil_asalto_impetus" });
+    sheet = equipar(sheet, { instanciaId: "fp", catalogoId: "fusil_precision_plaga" });
+    const tramoDe = (label: string) => accionesDeAtaque(sheet).find((t) => t.label === label)!.condiciones?.find((c) => c.id === "tramo");
+    assert.match(opcionNota(tramoDe("Disparar con Impetus"), "bocajarro")!, /F\. Auto, \+3 a la dificultad de esquiva/);
+    assert.equal(opcionNota(tramoDe("Disparar con Impetus"), "corta"), undefined);
+    assert.equal(opcionNota(tramoDe("Disparar con Plaga"), "bocajarro"), undefined);
+  });
+
+  test("Derribo y F. Auto a bocajarro van juntos en la misma nota", () => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "am", catalogoId: "ametralladora_asina" });
+    const tramo = accionesDeAtaque(sheet).find((t) => t.id === "ataque_fuego_am")!.condiciones?.find((c) => c.id === "tramo");
+    assert.match(opcionNota(tramo, "bocajarro")!, /Derribo.*F\. Auto, \+3/);
+  });
+
   test("un arma con dos modos trae la condición de modo", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_sydiasi" });
@@ -263,12 +291,12 @@ describe("gasto por modo (docs/prompt-gasto-recursos.md, Fase 1)", () => {
     assert.equal(fila.ataque?.modos[0].gasto, 1);
   });
 
-  test("F. Auto gasta el cargador entero, Simple sigue gastando 1", () => {
+  test("Sydiasi en F. Auto gasta sus 3 disparos, Simple sigue gastando 1", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "pistola_sydiasi" }); // 20 balas
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
     assert.equal(fila.ataque?.modos[0].gasto, 1); // Simple
-    assert.equal(fila.ataque?.modos[1].gasto, 20); // Estándar (F. Auto)
+    assert.equal(fila.ataque?.modos[1].gasto, 3); // Estándar (F. Auto): "consume 3 disparos del cargador"
   });
 
   function conProyectorPulso(nivel: number) {
@@ -354,8 +382,39 @@ describe("munición especial en el disparo (fase 2)", () => {
     const inc = c.opciones.find((o) => o.id === "incendiaria")!;
     assert.equal(inc.etiqueta, "Incendiaria (10)");
     assert.equal(inc.valor, 0);
-    assert.match(inc.nota ?? "", /^\+1 daño\. .*Llamarada \(7\)/);
+    assert.match(inc.nota ?? "", /^\+1 daño Fuego\. .*Llamarada \(7\)/);
     assert.deepEqual(fila.municionesEspeciales?.map((m) => [m.id, m.stock, m.ajusteDanio]), [["incendiaria", 10, 1]]);
+    assert.equal(fila.municionesEspeciales?.[0].tipoDanio, "fuego");
+  });
+
+  test("D2: el +1 Fuego va aparte del daño del arma, con su gravedad (2026-10-24)", () => {
+    const fila = disparo(conSydiasiIncendiaria(10));
+    const modo = fila.ataque!.modos[0];
+    const inc = municionEspecialElegida(fila, { municion: "incendiaria" });
+    const r = danioConMunicion(modo, inc);
+    assert.equal(r.sumaBase, 0);
+    assert.deepEqual(r.danioExtra, [{ tipo: "fuego", valor: 1, fuente: "Munición Incendiaria", gravedadPropia: true }]);
+    const d = desgloseDanio(8, modo.tipoDanio, r.danioExtra)!;
+    assert.deepEqual(d.partes, [
+      { tipo: "cinetico", label: "Cinético", valor: 8 },
+      { tipo: "fuego", label: "Fuego", valor: 1, categoria: "Grave" },
+    ]);
+    assert.equal(d.total, 9);
+  });
+
+  test("D2: sin tipo propio (Perforante) o munición normal, se suma al básico como antes", () => {
+    let sheet = equipar(defaultSheet(), { instanciaId: "s1", catalogoId: "pistola_sydiasi" });
+    sheet = equipar(sheet, { instanciaId: "ad1", catalogoId: "municion_especial_perforante", nivel: 1, instaladoEnId: "s1" });
+    const fila = disparo(ajustarMunicionEspecial(sheet, "perforante", 5));
+    const modo = fila.ataque!.modos[0];
+    assert.deepEqual(danioConMunicion(modo, municionEspecialElegida(fila, { municion: "perforante" })), { sumaBase: -1, danioExtra: undefined });
+    assert.deepEqual(danioConMunicion(modo, municionEspecialElegida(fila, { municion: "normal" })), { sumaBase: 0, danioExtra: undefined });
+  });
+
+  test("D2: criogénica en crítico, el Frío pasa a Letal (categoriaCritico)", () => {
+    const frio = [{ tipo: "frio" as const, valor: 1, fuente: "Munición Criogénica", gravedadPropia: true as const }];
+    assert.equal(desgloseDanio(8, undefined, frio)!.partes[1].categoria, "No Letal");
+    assert.equal(desgloseDanio(8, undefined, frio, true)!.partes[1].categoria, "Letal");
   });
 
   test("munición normal: gasta del cargador, nada del stock especial", () => {
@@ -365,20 +424,20 @@ describe("munición especial en el disparo (fase 2)", () => {
     assert.equal(gastoMunicionEspecial(fila, "0", estado), null);
   });
 
-  test("munición especial: el cargador no se toca, el modo gasta del stock (F. Auto = capacidad)", () => {
+  test("munición especial: el cargador no se toca, el modo gasta del stock (F. Auto de la Sydiasi = 3)", () => {
     const fila = disparo(conSydiasiIncendiaria(30));
     assert.equal(gastoTotal(fila, "0", { municion: "incendiaria" }), 0);
     assert.deepEqual(gastoMunicionEspecial(fila, "0", { municion: "incendiaria" }), { id: "incendiaria", cantidad: 1 });
-    assert.deepEqual(gastoMunicionEspecial(fila, "1", { municion: "incendiaria" }), { id: "incendiaria", cantidad: 20 });
+    assert.deepEqual(gastoMunicionEspecial(fila, "1", { municion: "incendiaria" }), { id: "incendiaria", cantidad: 3 });
   });
 
   test("aviso si el stock especial no llega, contra el stock y no contra el cargador", () => {
-    const fila = disparo(conSydiasiIncendiaria(5));
+    const fila = disparo(conSydiasiIncendiaria(2));
     const recurso = { actual: 20, max: 20 };
     assert.equal(avisoInsuficiente(fila, "0", { municion: "incendiaria" }, recurso), undefined);
     assert.match(
       avisoInsuficiente(fila, "1", { municion: "incendiaria" }, recurso) ?? "",
-      /Solo quedan 5 de munición incendiaria — esto gasta 20/,
+      /Solo quedan 2 de munición incendiaria — esto gasta 3/,
     );
   });
 });
@@ -394,7 +453,10 @@ describe("mejoras que afectan a la distancia", () => {
     let sheet = equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "fusil_precision_telum" });
     sheet = equipar(sheet, { instanciaId: "m1", catalogoId: "mira_telescopica", nivel: 3, instaladoEnId: "f1" });
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Telum")!;
-    assert.deepEqual(fila.bonosTramo, [{ fuente: "Mira Telescópica", porTramo: { media: 1, larga: 1 }, noApila: "vision_aumentada" }]);
+    // La etiqueta explica por qué una mira de nivel 3 suma solo +1 (2026-10-24).
+    assert.deepEqual(fila.bonosTramo, [
+      { fuente: "Mira Telescópica 3 (la integrada ya va en la dificultad)", porTramo: { media: 1, larga: 1 }, noApila: "vision_aumentada" },
+    ]);
   });
 
   test("fusil de precisión con mira nv2: sin bono de tramo extra (nv2 no mejora el +1)", () => {
@@ -480,6 +542,21 @@ describe("Accion.efectos (objetivo_tercero / tirada propia distinta, docs/sistem
       { fuente: "Puntero Láser", texto: "Con el puntero activo: -2 a tu Sigilo (percepción visual)." },
     ]);
     assert.doesNotMatch(fila.nota ?? "", /Sigilo/);
+  });
+
+  test("Puntero Láser 2 con Ojo Biónico o Mira 3 en el arma: sin aviso de -2 al Sigilo (2026-10-24)", () => {
+    const base = () => {
+      const s = equipar(defaultSheet(), { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
+      return equipar(s, { instanciaId: "p1", catalogoId: "puntero_laser", nivel: 2, instaladoEnId: "arma1" });
+    };
+    const efectos = (s: Sheet) => accionesDeAtaque(s).find((t) => t.label === "Disparar con Impetus")!.efectos ?? [];
+    assert.equal(efectos(base()).length, 1); // nivel 2 sin ojo ni mira 3: sigue penalizando
+
+    const conMira = equipar(base(), { instanciaId: "m1", catalogoId: "mira_telescopica", nivel: 3, instaladoEnId: "arma1" });
+    assert.deepEqual(efectos(conMira), []);
+
+    const conOjo: Sheet = { ...base(), equipo: [...base().equipo, { instanciaId: "o1", catalogoId: "aum_ojo_bionico", nivel: 1 }] };
+    assert.deepEqual(efectos(conOjo), []);
   });
 
   test("Silenciador: el aviso a la Alerta Activa del objetivo cuelga de la tirada de disparo, no de nota", () => {
@@ -630,6 +707,52 @@ describe("lanzagranadas integrado", () => {
   });
 });
 
+describe("Sistema de Retroceso (por arma, 2026-10-24)", () => {
+  const retroceso = (s: Sheet, en: string, nivel = 1) =>
+    equipar(s, { instanciaId: `sr_${en}`, catalogoId: "sistema_retroceso", nivel, instaladoEnId: en });
+
+  test("fusil de asalto: +1 solo en el modo F. Auto", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "fa", catalogoId: "fusil_asalto_impetus" });
+    s = retroceso(s, "fa");
+    const fila = accionesDeAtaque(s).find((t) => t.label === "Disparar con Impetus")!;
+    assert.deepEqual(fila.bonosTramo, [{ fuente: "Sistema de Retroceso", condicion: "modo", porTramo: { "1": 1 } }]);
+    assert.equal(valorBonosTramo(fila.bonosTramo!, { modo: "0" }), 0);
+    assert.equal(valorBonosTramo(fila.bonosTramo!, { modo: "1" }), 1);
+  });
+
+  test("ametralladora: «en cualquiera de sus modos» (docs/fuente/equipamiento.md, Sistema de Retroceso)", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "am", catalogoId: "ametralladora_asina" });
+    s = retroceso(s, "am", 2);
+    const fila = accionesDeAtaque(s).find((t) => t.id === "ataque_fuego_am")!;
+    assert.equal(valorBonosTramo(fila.bonosTramo!, { modo: "0" }), 1);
+    assert.equal(valorBonosTramo(fila.bonosTramo!, { modo: "1" }), 1);
+  });
+
+  test("no se cuela en el F. Auto de otra arma sin la mejora", () => {
+    let s = equipar(defaultSheet(), { instanciaId: "fa", catalogoId: "fusil_asalto_impetus" });
+    s = equipar(s, { instanciaId: "am", catalogoId: "ametralladora_asina" });
+    s = retroceso(s, "fa");
+    const otra = accionesDeAtaque(s).find((t) => t.id === "ataque_fuego_am")!;
+    assert.deepEqual(otra.bonosTramo, []);
+  });
+});
+
+describe("Impacto Estructural (Kerzul, 2026-10-24)", () => {
+  const critico = (id: string) => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "k1", catalogoId: id });
+    return accionesDeAtaque(sheet).find((t) => t.grupo === "Ataques" && t.id.includes("k1") && !t.id.startsWith("lanzar"))!.efectoCritico;
+  };
+
+  test("una mano: el crítico explica que reduce 1 punto de blindaje de forma permanente", () => {
+    assert.equal(critico("kerzul_punal"), "Impacto Estructural (10): reduce de forma permanente el blindaje del objetivo en 1 punto");
+  });
+
+  test("dos manos: 2 puntos", () => {
+    const dosManos = EQUIPO.find((e) => e.familia === "armaMelee" && e.material === "kerzul" && e.empleo === "dos manos")!;
+    assert.match(critico(dosManos.id) ?? "", /en 2 puntos$/);
+  });
+});
+
 describe("bayoneta", () => {
   test("genera Golpear+Bloquear con el mismo daño y crítico que el Cuchillo de Combate", () => {
     let sheet = conDotes(ficha({ atributos: { fuerza: 4 } }), "dote_bloqueo");
@@ -640,8 +763,9 @@ describe("bayoneta", () => {
     assert.equal(golpe.aplicado, "potencia");
     assert.equal(golpe.aplicadoSutil, undefined);
     assert.deepEqual(golpe.ajustesFijos, [{ valor: -1, fuente: "Bayoneta" }]);
-    assert.equal(golpe.ataque?.modos[0].danio, 6); // Fue(4) + 2
-    assert.equal(golpe.ataque?.modos[0].formulaDanio, "Fue+2");
+    // «El daño será idéntico» al del Cuchillo de Combate (Fue+3), leído del catálogo (2026-10-24).
+    assert.equal(golpe.ataque?.modos[0].danio, 7); // Fue(4) + 3
+    assert.equal(golpe.ataque?.modos[0].formulaDanio, "Fue+3");
     assert.equal(golpe.ataque?.modos[0].categoriaDanio, "Letal");
     assert.equal(golpe.efectoCritico, "Hemorragia (1d6 turnos)");
 
@@ -792,8 +916,22 @@ describe("arma melee arrojadiza — Lanzar (INFERIDO, mismo par que una granada)
     assert.deepEqual(lanzar.ajustesFijos, [{ valor: -1, fuente: "Lanza Corta" }]);
     assert.equal(lanzar.ataque?.modos.length, 1);
     assert.equal(lanzar.ataque?.modos[0].danio, 6); // Fue(3) + 3
-    assert.match(lanzar.nota ?? "", /Alcance Potencia × 10 m/);
+    assert.match(lanzar.nota ?? "", /Alcance Potencia × 12 m/); // "Arrojadiza: Potencia x 12" (EQUIP)
     assert.equal(lanzar.efectoCritico, "Hemorragia (1d4 turnos)");
+  });
+
+  test("cada arrojadiza con su alcance del documento (S20, 2026-10-24)", () => {
+    const alcances: [string, number][] = [
+      ["asta_lanza_corta", 12],
+      ["espada_cuchillo_combate", 6],
+      ["kerzul_punal", 6],
+      ["kerzul_lanza_corta", 12],
+    ];
+    for (const [id, x] of alcances) {
+      const sheet = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: id });
+      const lanzar = accionesDeAtaque(sheet).find((t) => t.id === "lanzar_melee_a1")!;
+      assert.match(lanzar.nota ?? "", new RegExp(`Alcance Potencia × ${x} m`), id);
+    }
   });
 
   test("el Cuchillo de Combate (dificultad 0) no lleva ajuste fijo y conserva su efectoCritico", () => {
@@ -934,8 +1072,8 @@ describe("D2b-2: Bloquear y el estilo Sutil solo con su dote (§9.2, §9.5)", ()
     assert.equal(fila(sin, BLOQUEO_AGUIJON).aplicado, "potencia");
     assert.equal(fila(con, AGUIJON).aplicado, "reflejos");
     assert.equal(fila(con, BLOQUEO_AGUIJON).aplicado, "reflejos");
-    assert.equal(fila(sin, AGUIJON).ataque?.modos[0].danio, 7); // Fue(3) + 2 + nivel 2
-    assert.equal(fila(con, AGUIJON).ataque?.modos[0].danio, 7);
+    assert.equal(fila(sin, AGUIJON).ataque?.modos[0].danio, 9); // Fue(3) + 4 + nivel 2
+    assert.equal(fila(con, AGUIJON).ataque?.modos[0].danio, 9);
   });
 
   test("con el requisito roto (Combate Melee sin entrenar), igual que sin la dote", () => {
@@ -1047,9 +1185,9 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
     const fila = accionesDeAtaque(conProyectorPulso(2)).find((t) =>
       t.label.includes("Combate a Distancia"),
     )!;
-    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso")?.danio, 10); // 8 + 2
-    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso_cargado")?.danio, 13); // 11 + 2
-    assert.equal(fila.ataque?.modos.find((m) => m.id === "barrido")?.danio, 12); // 10 + 2
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso")?.danio, 9); // 7 + 2
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso_cargado")?.danio, 12); // 10 + 2
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "barrido")?.danio, 11); // 9 + 2
     const modo = fila.condiciones?.find((c) => c.id === "modo");
     assert.equal(opcion(modo, "pulso"), -2);
     assert.equal(opcion(modo, "pulso_cargado"), -2);
@@ -1061,8 +1199,21 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
       (t) => t.label === "Golpear con Proyector de Pulso (Aguijón)",
     )!;
     const aguijon = fila.ataque?.modos[0];
-    assert.equal(aguijon?.danio, 5); // Fue(0) + 2 + nivel(3)
-    assert.equal(aguijon?.formulaDanio, "Fue+5"); // 2 + nivel(3)
+    assert.equal(aguijon?.danio, 7); // Fue(0) + 4 + nivel(3)
+    assert.equal(aguijon?.formulaDanio, "Fue+7"); // 4 + nivel(3)
+  });
+
+  test("distancia: el modificador general (+4/+2/0/-2) con los tramos del documento por nivel", () => {
+    const fila = accionesDeAtaque(conProyectorPulso(2)).find((t) => t.label.includes("Combate a Distancia"))!;
+    const tramo = fila.condiciones?.find((c) => c.id === "tramo");
+    assert.ok(tramo && tramo.tipo === "opcion");
+    assert.deepEqual(
+      tramo.opciones.map((o) => [o.id, o.valor]),
+      [["bocajarro", 4], ["corta", 2], ["media", 0], ["larga", -2]],
+    );
+    // Pulso/Barrido: 20+10n, 80+20n, 160+20n; Cargado: 30+10n, 100+20n, 200+20n (n = 2).
+    assert.equal(tramo.opciones.find((o) => o.id === "corta")?.etiqueta, "Corta (40-120 m; Cargado 50-140 m)");
+    assert.equal(tramo.porDefecto, "media");
   });
 
   test("con nivel 1 la nota no menciona ninguna variante de crítico desbloqueada", () => {
@@ -1126,7 +1277,14 @@ describe("granada en RECURSOS", () => {
     assert.deepEqual(fila.ajustesFijos, [{ valor: -2, fuente: "Granada de Fragmentación" }]);
     assert.equal(fila.ataque?.modos[0].danio, 13);
     assert.equal(fila.ataque?.modos[0].categoriaDanio, "Letal");
-    assert.match(fila.nota ?? "", /Potencia × 10 m/);
+    assert.match(fila.nota ?? "", /Potencia × 14 m/); // "Potencia x 14" (EQUIP, Granadas)
+  });
+
+  test("Granada de Plasma: 500 créditos y Fusión (12) como efecto, no de crítico (2026-10-24)", () => {
+    const plasma = MUNICION_GRANADA.find((m) => m.id === "granada_plasma")!;
+    assert.equal(plasma.coste, 500);
+    assert.match(plasma.areaEfecto, /· Efecto Fusión \(12\)$/);
+    assert.doesNotMatch(plasma.areaEfecto, /Crítico/);
   });
 
   test("una granada de solo efecto (sin daño directo) lo indica en la categoría", () => {
@@ -1285,11 +1443,19 @@ describe("accionesDirectasDeAtaque", () => {
     assert.doesNotMatch(accion.nota ?? "", /blindaje/);
   });
 
-  test("Escudo (acción Estándar)", () => {
-    const sheet = equipar(defaultSheet(), { instanciaId: "e1", catalogoId: "escudo_estandar" });
+  test("levantar es Acción Simple en todos los escudos, aunque el golpe sea Estándar (2026-10-24)", () => {
+    for (const id of ["escudo_estandar", "escudo_metamaterial", "kerzul_escudo"]) {
+      const sheet = equipar(defaultSheet(), { instanciaId: "e1", catalogoId: id });
+      const [accion] = accionesDirectasDeAtaque(sheet);
+      assert.match(accion.nota ?? "", /acción simple/i, id);
+      assert.doesNotMatch(accion.nota ?? "", /estándar/i, id);
+    }
+  });
+
+  test("la nota de levantar recuerda que el escudo se beneficia del Escudo Deflector y la Malla (A12)", () => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "e1", catalogoId: "escudo_rodela" });
     const [accion] = accionesDirectasDeAtaque(sheet);
-    assert.equal(accion.label, "Levantar Escudo");
-    assert.match(accion.nota ?? "", /acción estándar/i);
+    assert.match(accion.nota ?? "", /Escudo Deflector y la Malla Plasmática/);
   });
 
   test("Escudo de Kerzul también genera su fila", () => {

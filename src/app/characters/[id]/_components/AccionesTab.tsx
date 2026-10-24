@@ -16,6 +16,7 @@ import {
   gastoTotal,
   gastoMunicionEspecial,
   municionEspecialElegida,
+  danioConMunicion,
   accionesDeAtaque,
   accionesDirectasDeAtaque,
   accionesDeHerramientas,
@@ -1087,9 +1088,11 @@ export function AccionesTab({
     if (tirada.ataque) {
       const modo = tirada.ataque.modos.find((m) => m.id === modoId) ?? tirada.ataque.modos[0];
       const danioBase = sutilActivo ? (modo.danioSutil ?? modo.danio) : modo.danio;
-      // Munición especial: +/- niveles de daño sobre la base (mínimo 0).
+      // Munición especial: lo del tipo del arma, sobre la base (mínimo 0); lo de otro tipo
+      // ("+1 Fuego"), aparte como daño extra (danioConMunicion).
       const municion = municionEspecialElegida(tirada, estadoCondiciones);
-      const ajusteMunicion = municion?.ajusteDanio ?? 0;
+      const conMunicion = danioConMunicion(modo, municion);
+      const ajusteMunicion = conMunicion.sumaBase;
       const ignoraBlindaje = [
         ...(tirada.ignoraBlindaje ? [tirada.ignoraBlindaje] : []),
         ...(municion?.ignoraBlindaje ? [{ valor: municion.ignoraBlindaje, fuente: municion.label }] : []),
@@ -1112,7 +1115,7 @@ export function AccionesTab({
         alFallar: tirada.ataque.danioAlFallar,
         ajuste: montada.danio,
         ...(modo.tipoDanio && { tipoDanio: modo.tipoDanio }),
-        ...(modo.danioExtra && { danioExtra: modo.danioExtra }),
+        ...(conMunicion.danioExtra && { danioExtra: conMunicion.danioExtra }),
       };
     }
 

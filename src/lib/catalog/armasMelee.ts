@@ -50,8 +50,9 @@ export type ArmaMelee = {
   // no cuentan, ni los flagelos (la fuente excluye las "flexibles").
   filo?: true;
   sutil?: boolean;
-  // Genera la tirada "Lanzar" (combate.ts, tiradaLanzarArmaMelee).
-  arrojadiza?: boolean;
+  // Genera la tirada "Lanzar" (combate.ts, tiradaLanzarArmaMelee). El número es el
+  // multiplicador de Potencia del alcance en metros ("Arrojadiza: Potencia x 12", EQUIP).
+  arrojadiza?: number;
   alcance?: number; // "Alcance 4" de EQUIP, solo informativo
   // "Ignora N puntos de blindaje" (armas de Kerzul): aviso en el resultado del
   // daño (ResultadoTirada.tsx) — el blindaje es del objetivo y la ficha del
@@ -278,7 +279,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
     empleo: "una mano",
     filo: true,
     sutil: true,
-    arrojadiza: true,
+    arrojadiza: 12, // "Arrojadiza: Potencia x 12" (EQUIP)
     modos: [
       { etiqueta: "Simple", dificultad: -1, formulaDanio: "Fue+3", categoriaDanio: "Letal" },
       { etiqueta: "Estándar", dificultad: -1, formulaDanio: "Fue+5", categoriaDanio: "Letal" },
@@ -397,9 +398,14 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
   },
 ];
 
-// ── Escudos ── Acción simple (Rodela) o estándar (Escudo) para levantarlo y
-// beneficiarse de la cobertura; no se aplica si atacan por la espalda, y se
-// benefician de escudo deflector / malla plasmática si el usuario los lleva.
+// ── Escudos ── Acción simple para levantarlo (todos: "Empleo: Acción Simple para levantar
+// el escudo", EQUIP; la columna Acción es la del golpe) y beneficiarse de la cobertura; no
+// se aplica si atacan por la espalda, y se benefician de escudo deflector / malla
+// plasmática si el usuario los lleva ("Especial", cabecera de Escudos).
+// Texto, no motor: el Escudo Deflector y la Malla son de la armadura y la app no sabe
+// todavía repartir su absorción entre portador y escudo al "Bloquear daño" (2026-10-24).
+export const NOTA_ESCUDO_SUBSISTEMAS = "El escudo se beneficia del Escudo Deflector y la Malla Plasmática si los llevas.";
+
 export const ESCUDOS: ArmaMelee[] = [
   {
     familia: "armaMelee",
@@ -455,7 +461,7 @@ export const ESCUDOS: ArmaMelee[] = [
     label: "Escudo",
     resumen: "Escudo de cobertura mayor que la rodela, pero siempre ocupa la mano.",
     descripcion:
-      "Requiere una acción estándar para levantarlo; a diferencia de la rodela, siempre ocupa la " +
+      "Requiere una acción simple para levantarlo; a diferencia de la rodela, siempre ocupa la " +
       "mano. No se aplica si atacan por la espalda.",
     empleo: "una mano",
     contundente: true,
@@ -575,7 +581,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     empleo: "una mano",
     filo: true,
     sutil: true,
-    arrojadiza: true,
+    arrojadiza: 6, // "Arrojadiza: Potencia x 6" (EQUIP)
     modos: [{ etiqueta: "Simple", dificultad: 0, formulaDanio: "Fue+3", categoriaDanio: "Letal" }],
     efectos: null,
     efectoCritico: "Hemorragia (1d6 turnos)",
@@ -852,13 +858,15 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
         etiqueta: "Estándar",
         dificultad: -2,
         formulaDanio: "Fue+6",
-        categoriaDanio: "(sin especificar en la fuente)",
+        // La fuente no trae categoría ("Fue+6 / Fue +8" a secas): Letal, como el resto de
+        // armas mecánicas de filo (supuesto, decisión del usuario 2026-10-24, docs/sistema.md).
+        categoriaDanio: "Letal",
       },
       {
         etiqueta: "Compleja",
         dificultad: -2,
         formulaDanio: "Fue+8",
-        categoriaDanio: "(sin especificar en la fuente)",
+        categoriaDanio: "Letal",
       },
     ],
     efectos: "Hemorragia 1 turno · Acción Compleja: ignora 1 nivel de armadura",
@@ -974,7 +982,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     resumen: "Daga de kerzul, arrojadiza, ignora blindaje.",
     descripcion: "Daga de kerzul a una mano; toda su energía cinética atraviesa la defensa del objetivo.",
     empleo: "una mano",
-    arrojadiza: true,
+    arrojadiza: 6, // "Arrojadiza: Potencia x 6" (EQUIP)
     modos: [{ etiqueta: "Simple", dificultad: -1, formulaDanio: "Fue+5", categoriaDanio: "Letal" }],
     ignoraBlindaje: 2,
     efectos: "Hemorragia (1d8 turnos)",
@@ -1002,18 +1010,12 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
-        estado: "bloqueado",
-        bloqueoPor: "C13",
+        // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
+        // el blindaje del objetivo se baja a mano.
+        estado: "construido",
       },
-      // Retroceso entrópico (comentario de cabecera del archivo): compartido por las 10 armas
-      // Kerzul. Regla clara (Fortaleza vs. daño básico del arma), pero hoy ni siquiera se
-      // muestra en la UI — no está bloqueado por ninguna pregunta, solo sin construir.
-      {
-        tipo: "accion",
-        afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
-        mecanismo: "accion_equipo",
-        estado: "pendiente",
-      },
+      // Sin retroceso entrópico: solo salta con ataques Estándar o Compleja (EQUIP, Kerzul) y
+      // el Puñal solo tiene modo Simple (quitado 2026-10-24).
     ],
   },
   {
@@ -1051,8 +1053,9 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
-        estado: "bloqueado",
-        bloqueoPor: "C13",
+        // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
+        // el blindaje del objetivo se baja a mano.
+        estado: "construido",
       },
       {
         tipo: "accion",
@@ -1106,8 +1109,9 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
-        estado: "bloqueado",
-        bloqueoPor: "C13",
+        // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
+        // el blindaje del objetivo se baja a mano.
+        estado: "construido",
       },
       {
         tipo: "accion",
@@ -1160,8 +1164,9 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
-        estado: "bloqueado",
-        bloqueoPor: "C13",
+        // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
+        // el blindaje del objetivo se baja a mano.
+        estado: "construido",
       },
       {
         tipo: "accion",
@@ -1215,8 +1220,9 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
-        estado: "bloqueado",
-        bloqueoPor: "C13",
+        // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
+        // el blindaje del objetivo se baja a mano.
+        estado: "construido",
       },
       {
         tipo: "accion",
@@ -1234,7 +1240,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     resumen: "Lanza de kerzul a una mano, arrojadiza.",
     descripcion: "Lanza de kerzul a una mano, arrojadiza.",
     empleo: "una mano",
-    arrojadiza: true,
+    arrojadiza: 12, // "Arrojadiza: Potencia x 12" (EQUIP)
     modos: [
       { etiqueta: "Simple", dificultad: -2, formulaDanio: "Fue+5", categoriaDanio: "Letal" },
       { etiqueta: "Estándar", dificultad: -2, formulaDanio: "Fue+7", categoriaDanio: "Letal" },
@@ -1263,8 +1269,9 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
-        estado: "bloqueado",
-        bloqueoPor: "C13",
+        // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
+        // el blindaje del objetivo se baja a mano.
+        estado: "construido",
       },
       {
         tipo: "accion",
@@ -1310,8 +1317,9 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
-        estado: "bloqueado",
-        bloqueoPor: "C13",
+        // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
+        // el blindaje del objetivo se baja a mano.
+        estado: "construido",
       },
       {
         tipo: "accion",
@@ -1364,8 +1372,9 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
-        estado: "bloqueado",
-        bloqueoPor: "C13",
+        // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
+        // el blindaje del objetivo se baja a mano.
+        estado: "construido",
       },
       {
         tipo: "accion",
@@ -1411,8 +1420,9 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
-        estado: "bloqueado",
-        bloqueoPor: "C13",
+        // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
+        // el blindaje del objetivo se baja a mano.
+        estado: "construido",
       },
       {
         tipo: "accion",
@@ -1461,8 +1471,9 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "texto",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
-        estado: "bloqueado",
-        bloqueoPor: "C13",
+        // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
+        // el blindaje del objetivo se baja a mano.
+        estado: "construido",
       },
       {
         tipo: "accion",

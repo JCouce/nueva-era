@@ -12,7 +12,7 @@ import {
   type Equipo,
   type TipoArma,
 } from "../catalog/equipo";
-import { PELEA, type ArmaMelee } from "../catalog/armasMelee";
+import { ESPADAS_Y_DAGAS, NOTA_ESCUDO_SUBSISTEMAS, PELEA, type ArmaMelee } from "../catalog/armasMelee";
 import type { ArmaPesada } from "../catalog/armamentoPesado";
 import type { Subsistema } from "../catalog/subsistemas";
 import {
@@ -25,12 +25,13 @@ import {
 import { PREFIJO_MEJORA_MUNICION } from "../catalog/mejorasArma";
 import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condiciones";
 import { nivelesHasta, acumulaPorClave, ultimoQueDefine, sustituyeMiraIntegrada, type PiezaEquipada } from "./equipo";
-import { bonoFormulaFuerza, formulaConSuma, nombreArmaModificada, perfilGolpe, type PerfilGolpe } from "./armasModificadas";
+import { bonoFormulaFuerza, etiquetaTipoDanio, formulaConSuma, nombreArmaModificada, perfilGolpe, type PerfilGolpe } from "./armasModificadas";
 import type { ModificacionArmaId } from "../catalog/armasModificadas";
 import type { MotorMetadata } from "./motor";
 import { escudoRoto, gastoDelModo, MOTIVO_ESCUDO_ROTO, recursoDe } from "./recursos";
 import { CONDICION_ATACANTES_ADICIONALES, condicionApuntado, type Accion, type AccionDirecta } from "./acciones";
 import { atributoEfectivo, aplicado } from "./derivados";
+import { criticoDesarmado, golpeDesarmadoConArmadura } from "./golpeDesarmado";
 import { ESPECIALIDAD_ARMA, ESPECIALIDAD_ATAQUE_ESPECIAL, ESPECIALIDAD_LANZAR } from "../catalog/especialidadesArma";
 import { FAMILIAS_SOLO_CON_DOTE } from "../catalog/dotesDestinos";
 import type { PermisosDeDotes } from "./dotesEfectos";
@@ -57,8 +58,10 @@ const TRAMOS: TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
 // habitual". Es una regla de familia (todas las armas de ese tipo la
 // comparten), no de una pieza concreta, así que vive en código y no como
 // dato repetido en cada arma del catálogo.
+const AJUSTE_TRAMO_GENERAL: Record<TramoDistancia, number> = { bocajarro: 4, corta: 2, media: 0, larga: -2 };
+
 function ajusteTramoBase(tipo: TipoArma): Record<TramoDistancia, number> {
-  const base: Record<TramoDistancia, number> = { bocajarro: 4, corta: 2, media: 0, larga: -2 };
+  const base = AJUSTE_TRAMO_GENERAL;
   if (tipo === "escopeta") {
     return { ...base, bocajarro: base.bocajarro + 1, corta: base.corta + 1 };
   }
@@ -98,6 +101,17 @@ function notaDerribo(arma: ArmaFuego, tramo: TramoDistancia): string | undefined
   return `Derribo — el objetivo tira su propia salvación, dificultad ${arma.efectoDerribo}.`;
 }
 
+// "En fuego automático aumenta en 3 la dificultad de esquiva cuando se realiza a
+// bocajarro" (docs/fuente/equipamiento.md, A Bocajarro): la esquiva es del objetivo, así
+// que es aviso en la opción, como el Derribo (2026-10-24).
+const NOTA_FAUTO_BOCAJARRO = "En F. Auto, +3 a la dificultad de esquiva del objetivo.";
+
+function notaTramo(arma: ArmaFuego, tramo: TramoDistancia): string | undefined {
+  const fAuto = tramo === "bocajarro" && arma.modos.some((m) => m.etiqueta.includes("F. Auto")) ? NOTA_FAUTO_BOCAJARRO : undefined;
+  const notas = [notaDerribo(arma, tramo), fAuto].filter((n): n is string => n !== undefined);
+  return notas.length > 0 ? notas.join(" ") : undefined;
+}
+
 function condicionTramo(arma: ArmaFuego): CondicionTirada {
   const ajuste = ajusteTramoBase(arma.tipo);
   return {
@@ -108,7 +122,7 @@ function condicionTramo(arma: ArmaFuego): CondicionTirada {
       id: tramo,
       etiqueta: etiquetaTramo(tramo, arma.alcance),
       valor: ajuste[tramo],
-      nota: notaDerribo(arma, tramo),
+      nota: notaTramo(arma, tramo),
     })),
     porDefecto: "media",
   };
@@ -148,12 +162,25 @@ function condicionesDeMejoras(sheet: Sheet, instanciaId: string): CondicionTirad
 // decisión revisada 2026-09-24; ver Accion.efectos, acciones.ts). Mismo
 // patrón que `notaTerceroDeArma` (línea de abajo), pero por nivel de mejora
 // en vez de por arma.
+// Puntero Láser 2: "si el usuario posee un ojo biónico o su arma lleva una mejora de mira
+// telescópica de nivel 3, esta mejora permite usar el puntero sin penalizador visual al
+// sigilo" (docs/fuente/equipamiento.md). Antes bloqueado por "Fase 5" (el Ojo Biónico ya
+// existe): cumplido, el aviso del -2 al Sigilo del nivel 1 no sale (2026-10-24).
+function punteroSinPenalizacion(sheet: Sheet, instanciaId: string): boolean {
+  return sheet.equipo.some(
+    (p) =>
+      (p.catalogoId === "aum_ojo_bionico" && p.nivel !== undefined) ||
+      (p.catalogoId === "mira_telescopica" && p.instaladoEnId === instanciaId && (p.nivel ?? 0) >= 3),
+  );
+}
+
 function efectosDeMejoras(sheet: Sheet, instanciaId: string): { fuente: string; texto: string }[] {
   const efectos: { fuente: string; texto: string }[] = [];
   for (const pieza of sheet.equipo) {
     if (pieza.instaladoEnId !== instanciaId || pieza.nivel === undefined) continue;
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat || cat.familia !== "mejoraArma") continue;
+    if (cat.id === "puntero_laser" && pieza.nivel >= 2 && punteroSinPenalizacion(sheet, instanciaId)) continue;
     const niveles = nivelesHasta(cat.niveles, pieza.nivel);
     for (const n of niveles) {
       if (n.notaTirada) efectos.push({ fuente: cat.label, texto: n.notaTirada });
@@ -185,9 +212,11 @@ function bonosTramoDeMejoras(sheet: Sheet, arma: ArmaFuego, instanciaId: string)
       ? ultimoQueDefine(nivelesHasta(cat.niveles, arma.miraIntegrada ?? 0), "ajusteTramo")?.ajusteTramo
       : undefined;
     const porTramo = restarAjusteTramo(ajuste, yaIncluido ?? {});
+    // Sobre la integrada el desglose dice por qué la mira de nivel 3 suma solo +1 (2026-10-24).
+    const fuente = yaIncluido ? `${cat.label} ${pieza.nivel} (la integrada ya va en la dificultad)` : cat.label;
     // TODO(revisar): la mira integrada de los fusiles de precisión va dentro de los números
     // del arma, sin bono propio, así que el Ojo Biónico se le suma (no hay con qué compararlo).
-    if (Object.keys(porTramo).length > 0) bonos.push({ fuente: cat.label, porTramo, ...(define?.noApila && { noApila: define.noApila }) });
+    if (Object.keys(porTramo).length > 0) bonos.push({ fuente, porTramo, ...(define?.noApila && { noApila: define.noApila }) });
   }
   return bonos;
 }
@@ -220,6 +249,32 @@ function ajustesFijosDeMejoras(sheet: Sheet, instanciaId: string): { valor: numb
     if (nivelConAjuste?.ajusteAtaque) ajustes.push({ valor: nivelConAjuste.ajusteAtaque, fuente: cat.label });
   }
   return ajustes;
+}
+
+// `ajusteModo` de las mejoras de ESTA arma (Sistema de Retroceso): un bono que mira la
+// opción elegida en la condición "modo", con la fuente de la pieza. Sin selector de modo
+// (arma de un único modo), si ese modo cuenta, va como ajuste fijo.
+function bonosModoDeMejoras(
+  sheet: Sheet,
+  arma: ArmaFuego,
+  modos: { id: string; etiqueta: string }[],
+  instanciaId: string,
+): { bonos: BonoPorTramo[]; fijos: { valor: number; fuente: string }[] } {
+  const bonos: BonoPorTramo[] = [];
+  const fijos: { valor: number; fuente: string }[] = [];
+  for (const pieza of sheet.equipo) {
+    if (pieza.instaladoEnId !== instanciaId || pieza.nivel === undefined) continue;
+    const cat = equipoPorId(pieza.catalogoId);
+    if (!cat || cat.familia !== "mejoraArma") continue;
+    const ajuste = ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel), "ajusteModo")?.ajusteModo;
+    if (!ajuste) continue;
+    const todos = ajuste.enCualquierModo?.includes(arma.tipo) ?? false;
+    const cuenta = modos.filter((m) => todos || m.etiqueta.includes(ajuste.contieneEtiqueta));
+    if (cuenta.length === 0) continue;
+    if (modos.length <= 1) fijos.push({ valor: ajuste.valor, fuente: cat.label });
+    else bonos.push({ fuente: cat.label, condicion: "modo", porTramo: Object.fromEntries(cuenta.map((m) => [m.id, ajuste.valor])) });
+  }
+  return { bonos, fijos };
 }
 
 // `etiqueta`: "Modo de disparo" en armas de fuego; los golpes melee pasan "Modo de ataque".
@@ -260,6 +315,7 @@ function municionesDeArma(sheet: Sheet, arma: ArmaFuego, instanciaId: string): N
     label: m.label,
     stock: sheet.municionEspecial[m.id] ?? 0,
     ajusteDanio: m.ajusteDanio,
+    ...(m.tipoDanio && { tipoDanio: m.tipoDanio }),
     ignoraBlindaje: m.ignoraBlindaje,
     efecto: m.efecto,
   }));
@@ -277,7 +333,7 @@ function condicionMunicion(municiones: NonNullable<Accion["municionesEspeciales"
         id: m.id,
         etiqueta: `${m.label.replace(/^Munición /, "")} (${m.stock})`,
         valor: 0,
-        nota: `${m.ajusteDanio !== 0 ? `${signo(m.ajusteDanio)} daño. ` : ""}${m.efecto}`,
+        nota: `${m.ajusteDanio !== 0 ? `${signo(m.ajusteDanio)} daño${m.tipoDanio ? ` ${etiquetaTipoDanio(m.tipoDanio)}` : ""}. ` : ""}${m.efecto}`,
       })),
     ],
     porDefecto: "normal",
@@ -306,6 +362,7 @@ function tiradaDeArmaFuego(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
   // ajuste fijo, mismo patrón que arma.dificultad en armamento pesado.
   const ajusteModoUnico =
     !modo && modosConId[0].dificultad !== 0 ? [{ valor: modosConId[0].dificultad, fuente: arma.label }] : [];
+  const porModo = bonosModoDeMejoras(sheet, arma, modosConId, instanciaId);
 
   return {
     id: `ataque_fuego_${instanciaId}`,
@@ -322,8 +379,8 @@ function tiradaDeArmaFuego(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
     recursoUnidad: arma.tipoMunicion === "energia" ? "cargas" : undefined,
     municionesEspeciales: municiones.length > 0 ? municiones : undefined,
     condiciones,
-    ajustesFijos: [...ajusteModoUnico, ...ajustesFijosDeMejoras(sheet, instanciaId)],
-    bonosTramo: bonosTramoDeMejoras(sheet, arma, instanciaId),
+    ajustesFijos: [...ajusteModoUnico, ...ajustesFijosDeMejoras(sheet, instanciaId), ...porModo.fijos],
+    bonosTramo: [...bonosTramoDeMejoras(sheet, arma, instanciaId), ...porModo.bonos],
     ataque: {
       modos: modosConId.map((m) => ({
         id: m.id,
@@ -332,7 +389,7 @@ function tiradaDeArmaFuego(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
         danio: m.danioFuerza === "mitad" ? m.danio + Math.floor(fuerza / 2) : m.danio,
         formulaDanio: m.danioFuerza ? textoDanioModo(m) : null,
         categoriaDanio: m.categoriaDanio,
-        gasto: gastoDelModo(m.etiqueta, arma.municion),
+        gasto: gastoDelModo(m.etiqueta, arma.municion, arma.tipo, arma.gastoFAuto),
       })),
     },
   };
@@ -392,17 +449,22 @@ function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: strin
 // disparo. "El arma pasa a considerarse arma a dos manos mientras se usa como
 // bayoneta" (catálogo) pisa el Sutil/una mano del Cuchillo de Combate base
 // (armasMelee.ts, espada_cuchillo_combate): aplicado Potencia siempre, sin
-// aplicadoSutil ni arrojadiza. Mismo daño (Fue+2, Letal) y mismo crítico
-// (Hemorragia 1d6 turnos) que ese cuchillo, y ataque+bloqueo van juntos como
+// aplicadoSutil ni arrojadiza. Mismo daño y mismo crítico que ese cuchillo («el daño
+// será idéntico», EQUIP): se leen de su ficha de catálogo, no se copian a mano (antes
+// decía Fue+2 con el cuchillo en Fue+3; arreglado 2026-10-24). Ataque+bloqueo van juntos como
 // en cualquier arma melee del catálogo — decisión 2026-09-25, el usuario. El
 // bloqueo, como todos, solo con la dote Bloqueo (D2b-2, lo filtra accionesDeAtaque).
 function tieneBayonetaInstalada(sheet: Sheet, instanciaId: string): boolean {
   return sheet.equipo.some((p) => p.instaladoEnId === instanciaId && p.catalogoId === "bayoneta");
 }
 
+const CUCHILLO_DE_COMBATE = ESPADAS_Y_DAGAS.find((a) => a.id === "espada_cuchillo_combate")!;
+
 function tiradaGolpeBayoneta(sheet: Sheet, mods: ModificadorConFuente[], arma: ArmaFuego, instanciaId: string): Accion | null {
   if (!tieneBayonetaInstalada(sheet, instanciaId)) return null;
   const fuerza = atributoEfectivo(sheet, "fuerza", mods);
+  const modoCuchillo = CUCHILLO_DE_COMBATE.modos[0];
+  const bono = bonoFormulaFuerza(modoCuchillo.formulaDanio) ?? 0;
   return {
     id: `golpear_bayoneta_${instanciaId}`,
     label: `Bayoneta (${arma.label})`,
@@ -412,10 +474,10 @@ function tiradaGolpeBayoneta(sheet: Sheet, mods: ModificadorConFuente[], arma: A
     especialidadArma: ESPECIALIDAD_ATAQUE_ESPECIAL.bayoneta,
     familiaArma: "ataque_melee",
     empleoArma: "dos manos", // "el arma pasa a considerarse arma a dos manos" (catálogo)
-    efectoCritico: "Hemorragia (1d6 turnos)",
+    efectoCritico: CUCHILLO_DE_COMBATE.efectoCritico,
     ajustesFijos: [{ valor: -1, fuente: "Bayoneta" }],
     ataque: {
-      modos: [{ id: "0", danio: fuerza + 2, formulaDanio: "Fue+2", categoriaDanio: "Letal" }],
+      modos: [{ id: "0", danio: fuerza + bono, formulaDanio: modoCuchillo.formulaDanio, categoriaDanio: modoCuchillo.categoriaDanio }],
     },
   };
 }
@@ -567,6 +629,16 @@ function mallaPlasmaticaEquipada(sheet: Sheet): { instanciaId: string; nivel: nu
 // no algo que se sume encima — declarar solo uno de los dos, el motor no
 // arbitra si se combinan ambos, mismo criterio de confianza en el jugador
 // que el resto de toggles independientes.
+// Efectos del plasma liberado (R7, 2026-10-24, docs/fuente/equipamiento.md): en los niveles 1-2,
+// solo en crítico uno de los habituales (dificultad 6 + nivel); desde el 3, "causan efecto de
+// shock y de llamarada (dificultad 5 + nivel), en caso de crítico efecto de fusión (dificultad
+// 7 + nivel)". Vale para los dos sacrificios.
+function efectosPlasmaLiberado(nivel: number): string {
+  return nivel >= 3
+    ? `Causa shock y llamarada (dificultad ${5 + nivel}); en crítico, fusión (dificultad ${7 + nivel}).`
+    : `Sin sus efectos salvo en crítico: shock, llamarada o fusión — dificultad de absorción ${6 + nivel}.`;
+}
+
 function condicionesSacrificioColchon(nivel: number): CondicionTirada[] {
   const condiciones: CondicionTirada[] = [
     {
@@ -576,9 +648,8 @@ function condicionesSacrificioColchon(nivel: number): CondicionTirada[] {
       valorActivo: 0,
       valorInactivo: 0,
       nota:
-        "Suma 1 nivel de daño de plasma al golpe, aparte del daño normal. En crítico, puede " +
-        `causar shock, llamarada o fusión — dificultad de absorción ${6 + nivel}. Descuenta 2 ` +
-        "puntos del colchón a mano en Recursos.",
+        `Suma 1 nivel de daño de plasma al golpe, aparte del daño normal. ${efectosPlasmaLiberado(nivel)} ` +
+        "Descuenta 2 puntos del colchón a mano en Recursos.",
     },
   ];
   if (nivel >= 3) {
@@ -589,7 +660,7 @@ function condicionesSacrificioColchon(nivel: number): CondicionTirada[] {
       valorActivo: 0,
       valorInactivo: 0,
       nota:
-        "Alternativa al sacrificio menor: +2 nivel de daño de plasma por 4 puntos del colchón. " +
+        `Alternativa al sacrificio menor: +2 nivel de daño de plasma por 4 puntos del colchón. ${efectosPlasmaLiberado(nivel)} ` +
         "Descuéntalos a mano en Recursos.",
     });
   }
@@ -603,8 +674,18 @@ function notaConPerfil(textos: (string | null | undefined)[], perfil: PerfilGolp
   return todos.length > 0 ? todos.join(" · ") : undefined;
 }
 
+// "Impacto Estructural: … reduce de forma permanente el valor de blindaje del objetivo en
+// 1 punto. En armas a dos manos la reducción del blindaje es de 2 puntos" (docs/fuente/
+// equipamiento.md, Kerzul): el crítico lleva su efecto, no solo el nombre (2026-10-24).
+function textoCriticoArma(arma: ArmaMelee): string | undefined {
+  const critico = arma.efectoCritico;
+  if (!critico?.startsWith("Impacto Estructural")) return critico;
+  const puntos = arma.empleo === "dos manos" ? 2 : 1;
+  return `${critico}: reduce de forma permanente el blindaje del objetivo en ${puntos} punto${puntos > 1 ? "s" : ""}`;
+}
+
 function criticoConPerfil(arma: ArmaMelee, perfil: PerfilGolpe | null): string | undefined {
-  const todos = [arma.efectoCritico, ...(perfil?.efectosCritico ?? [])].filter((t): t is string => !!t);
+  const todos = [textoCriticoArma(arma), ...(perfil?.efectosCritico ?? [])].filter((t): t is string => !!t);
   return todos.length > 0 ? todos.join(" · ") : undefined;
 }
 
@@ -661,13 +742,24 @@ function tiradaDeArmaMelee(
   // "ataque desarmado" del PDF no hace excepciones (usuario, 2026-10-13).
   const esDesarmado = PELEA.some((p) => p.id === arma.id);
   const malla = esDesarmado ? mallaPlasmaticaEquipada(sheet) : null;
+  // Con armadura (Ligera/Intermedia/Pesada) y Refuerzo de Combate: +N al daño, letal y
+  // aturdimiento del crítico (golpeDesarmado.ts). La Pelea no se modifica (S87): sin perfil.
+  const conArmadura = esDesarmado ? golpeDesarmadoConArmadura(sheet) : null;
+  const bonoArmadura = conArmadura?.bonoDanio ?? 0;
 
   // `arma.efectos` (Crítico de X, Ignora N de blindaje...) es hoy puramente
   // decorativo en el catálogo, pero al menos debe llegar como texto a la
   // tirada — mismo criterio que `arma.especial` en tiradaDeArmaFuego. Antes de
   // este fix no llegaba ni como texto (ver docs/equipo-efectos-especiales.md
   // §Kerzul, "fix barato" 2026-09-23).
-  const nota = notaConPerfil([arma.efectos], perfil);
+  const nota = notaConPerfil(
+    [
+      arma.efectos,
+      conArmadura && bonoArmadura > 0 ? `Daño desarmado con la armadura: ${conArmadura.fuentes.join(" · ")}` : null,
+      conArmadura?.letal ? `Daño letal (${conArmadura.letal})` : null,
+    ],
+    perfil,
+  );
 
   // Sin selector de modo (un único modo): su `dificultad` va como ajuste fijo,
   // mismo patrón que ajusteModoUnico en tiradaDeArmaFuego. El bloqueo lleva la
@@ -690,7 +782,7 @@ function tiradaDeArmaMelee(
     familiaArma: "ataque_melee",
     empleoArma: arma.empleo,
     nota,
-    efectoCritico: criticoConPerfil(arma, perfil),
+    efectoCritico: criticoDesarmado(criticoConPerfil(arma, perfil), conArmadura),
     ...(esDesarmado && { desarmado: true as const }),
     ...(arma.contundente && { contundente: true as const }),
     ignoraBlindaje: ignoraBlindajeDe(arma, perfil, nombre),
@@ -703,10 +795,10 @@ function tiradaDeArmaMelee(
           {
             id: m.id,
             etiqueta: m.etiqueta,
-            danio: bono === null ? null : fuerza + bono,
-            danioSutil: esSutil && bono !== null && potencia !== null ? potencia + bono : undefined,
-            formulaDanio: m.formulaDanio,
-            categoriaDanio: m.categoriaDanio,
+            danio: bono === null ? null : fuerza + bono + bonoArmadura,
+            danioSutil: esSutil && bono !== null && potencia !== null ? potencia + bono + bonoArmadura : undefined,
+            formulaDanio: m.formulaDanio === null ? null : formulaConSuma(m.formulaDanio, bonoArmadura),
+            categoriaDanio: conArmadura?.letal ? "Letal" : m.categoriaDanio,
           },
           perfil,
         );
@@ -735,12 +827,16 @@ function tiradaDeArmaMelee(
 //
 // D2b-2 (§9.2): la fila solo existe con la dote Bloqueo (lo filtra accionesDeAtaque, por
 // familia) y el Sutil solo con Combate Sutil (`sutilPermitido`).
+// `sinPenalizadorDesarmado`: la armadura (o el Refuerzo de Combate) que deja bloquear desarmado
+// contra armas melee sin el −3 (golpeDesarmado.ts): la fila no cuenta como desarmada.
 function tiradaBloqueoDeArmaMelee(
   arma: ArmaMelee,
   instanciaId: string,
   sutilPermitido: boolean,
   modificaciones?: ModificacionArmaId[],
+  sinPenalizadorDesarmado?: string | null,
 ): Accion {
+  const desarmado = PELEA.some((p) => p.id === arma.id);
   return {
     id: `bloquear_melee_${instanciaId}`,
     label: `Bloquear con ${nombreArmaModificada(arma, modificaciones ?? [])}`,
@@ -751,9 +847,12 @@ function tiradaBloqueoDeArmaMelee(
     especialidadArma: ESPECIALIDAD_ARMA[arma.id],
     familiaArma: "bloquear_melee",
     empleoArma: arma.empleo,
-    nota: "Reacción gratuita e ilimitada, como Esquivar — activa mientras se lleva el arma.",
+    nota:
+      desarmado && sinPenalizadorDesarmado
+        ? `Reacción gratuita e ilimitada, como Esquivar — activa mientras se lleva el arma. · Bloqueas desarmado contra armas melee sin el −3 (${sinPenalizadorDesarmado}).`
+        : "Reacción gratuita e ilimitada, como Esquivar — activa mientras se lleva el arma.",
     // Bloquear con Pelea es bloquear desarmado (casilla de Bloqueo "desarmado frente a armado").
-    ...(PELEA.some((p) => p.id === arma.id) && { desarmado: true as const }),
+    ...(desarmado && !sinPenalizadorDesarmado && { desarmado: true as const }),
     condiciones: [CONDICION_ATACANTES_ADICIONALES],
     ajustesFijos: [
       ...(!arma.defensa && arma.modos[0].dificultad !== 0 ? [{ valor: arma.modos[0].dificultad, fuente: arma.label }] : []),
@@ -763,9 +862,9 @@ function tiradaBloqueoDeArmaMelee(
 }
 
 // Arma melee arrojadiza (Lanza Corta, Cuchillo de Combate, Puñal y Lanza
-// Corta de Kerzul): mismo par y alcance que lanzar una granada (Potencia +
-// Atletismo, ALCANCE_ARROJADA) — INFERIDO, decisión 2026-09-28, el usuario;
-// EQUIP solo dice "Arrojadiza". Se lanza con el perfil del primer modo (el
+// Corta de Kerzul): mismo par que lanzar una granada (Potencia + Atletismo) — INFERIDO,
+// decisión 2026-09-28, el usuario. El alcance es el suyo ("Arrojadiza: Potencia x 12",
+// EQUIP; `arrojadiza` lleva el multiplicador), no el de la granada (S20, 2026-10-24). Se lanza con el perfil del primer modo (el
 // Simple): su dificultad como ajuste fijo y su daño. Sin Sutil ni colchón de
 // Malla — un lanzamiento no es un golpe. Arrojadiza modificada: el mismo daño extra y
 // efectos que al golpear (usuario, 2026-10-23).
@@ -790,7 +889,7 @@ function tiradaLanzarArmaMelee(
     especialidadArma: ESPECIALIDAD_LANZAR,
     familiaArma: "lanzar_melee",
     empleoArma: arma.empleo,
-    nota: notaConPerfil([`Alcance ${ALCANCE_ARROJADA}.`, arma.efectos], perfil),
+    nota: notaConPerfil([`Alcance Potencia × ${arma.arrojadiza} m.`, arma.efectos], perfil),
     efectoCritico: criticoConPerfil(arma, perfil),
     ignoraBlindaje: ignoraBlindajeDe(arma, perfil, nombre),
     ajustesFijos: modo.dificultad !== 0 ? [{ valor: modo.dificultad, fuente: arma.label }] : [],
@@ -869,6 +968,35 @@ function variantesCriticoDesbloqueadas(nivel: number): string[] {
   ].filter((v): v is string => v !== null);
 }
 
+// Alcances de la tabla "Modo de Ataque" (docs/fuente/equipamiento.md, Proyector de Pulso):
+// Pulso y Barrido comparten tramos; Pulso Cargado lleva los suyos (30/100/200 + nivel).
+function alcancePulso(modo: "pulso" | "pulso_cargado" | "barrido", nivel: number): ArmaFuego["alcance"] {
+  if (modo === "pulso_cargado") return { corta: 30 + 10 * nivel, media: 100 + 20 * nivel, larga: 200 + 20 * nivel };
+  return { corta: 20 + 10 * nivel, media: 80 + 20 * nivel, larga: 160 + 20 * nivel };
+}
+
+// El modificador general de distancia de las armas a distancia (+4/+2/0/-2), como cualquier
+// arma de fuego (2026-10-24). Un solo selector para los tres modos: la etiqueta trae los
+// metros de Pulso/Barrido y, aparte, los del Pulso Cargado.
+function condicionTramoPulso(nivel: number): CondicionTirada {
+  const comun = alcancePulso("pulso", nivel);
+  const cargado = alcancePulso("pulso_cargado", nivel);
+  const NOMBRE: Record<TramoDistancia, string> = { bocajarro: "Bocajarro", corta: "Corta", media: "Media", larga: "Larga" };
+  const metros = (tramo: TramoDistancia, a: ArmaFuego["alcance"]) =>
+    ({ bocajarro: `< ${a.corta} m`, corta: `${a.corta}-${a.media} m`, media: `${a.media}-${a.larga} m`, larga: `${a.larga}+ m` })[tramo];
+  return {
+    id: "tramo",
+    tipo: "opcion",
+    etiqueta: "Distancia",
+    opciones: TRAMOS.map((tramo) => ({
+      id: tramo,
+      etiqueta: `${NOMBRE[tramo]} (${metros(tramo, comun)}; Cargado ${metros(tramo, cargado)})`,
+      valor: AJUSTE_TRAMO_GENERAL[tramo],
+    })),
+    porDefecto: "media",
+  };
+}
+
 function tiradaDeProyectorPulso(
   sheet: Sheet,
   pieza: PiezaEquipada,
@@ -888,12 +1016,13 @@ function tiradaDeProyectorPulso(
   };
 
   const variantesDesbloqueadas = variantesCriticoDesbloqueadas(nivel);
+  const tramos = (a: ArmaFuego["alcance"]) => `corto ${a.corta} m, medio ${a.media} m, largo ${a.larga} m`;
 
   const nota = [
     "Daño grave.",
-    `Pulso: alcance ${40 * nivel}m · Efecto Shock (${4 + nivel}) · Crítico Hemorragia.`,
-    `Pulso Cargado: alcance ${60 * nivel}m · Efecto Shock (${6 + nivel}) · Crítico Hemorragia.`,
-    `Barrido: área 6x6 a ${40 * nivel}m · Efecto Esquiva (${7 + nivel}) y Shock (${7 + nivel}).`,
+    `Pulso: alcance ${tramos(alcancePulso("pulso", nivel))} · Efecto Shock (${4 + nivel}) · Crítico Hemorragia.`,
+    `Pulso Cargado: alcance ${tramos(alcancePulso("pulso_cargado", nivel))} · Efecto Shock (${6 + nivel}) · Crítico Hemorragia.`,
+    `Barrido: área 6x6, alcance ${tramos(alcancePulso("barrido", nivel))} · Efecto Esquiva (${7 + nivel}) y Shock (${7 + nivel}).`,
     ...variantesDesbloqueadas,
   ].join(" · ");
 
@@ -915,20 +1044,20 @@ function tiradaDeProyectorPulso(
     nota,
     recursoInstanciaId: pieza.instanciaId,
     recursoUnidad: "cargas",
-    condiciones: [modo],
+    condiciones: [condicionTramoPulso(nivel), modo],
     ataque: {
       modos: [
-        { id: "pulso", danio: 8 + nivel, formulaDanio: null, categoriaDanio: "Grave", gasto: GASTO_MODO_PULSO.pulso },
+        { id: "pulso", danio: 7 + nivel, formulaDanio: null, categoriaDanio: "Grave", gasto: GASTO_MODO_PULSO.pulso },
         {
           id: "pulso_cargado",
-          danio: 11 + nivel,
+          danio: 10 + nivel,
           formulaDanio: null,
           categoriaDanio: "Grave",
           gasto: GASTO_MODO_PULSO.pulso_cargado,
         },
         {
           id: "barrido",
-          danio: 10 + nivel,
+          danio: 9 + nivel,
           formulaDanio: null,
           categoriaDanio: "Grave",
           gasto: GASTO_MODO_PULSO.barrido,
@@ -942,8 +1071,8 @@ function tiradaDeProyectorPulso(
 // Melee, Sutil, mismo patrón Golpear+Bloquear que cualquier arma melee.
 //
 // D2b-2 (§9.5: "sin Combate Sutil no hay modo sutil, también el Aguijón"): con la dote, como
-// siempre, Reflejos fijo; sin ella, Potencia. El daño sale de Fuerza en los dos casos (era
-// así antes de la tanda: Fue+2+nivel).
+// siempre, Reflejos fijo; sin ella, Potencia. El daño sale de Fuerza en los dos casos:
+// «4 + Fuerza + Nivel» (tabla del documento; hasta 2026-10-24 era Fue+2+nivel, errata nuestra).
 // TODO(revisar): con la dote el Aguijón sigue siendo Reflejos fijo, sin interruptor y con el
 // daño de Fuerza; las armas Sutil normales ofrecen elegir y sacan el daño Sutil de Potencia.
 // Se dejó como estaba (decisión del usuario: "con la dote, como hoy").
@@ -968,8 +1097,8 @@ function tiradaGolpeAguijon(sheet: Sheet, mods: ModificadorConFuente[], pieza: P
       modos: [
         {
           id: "0",
-          danio: atributoEfectivo(sheet, "fuerza", mods) + 2 + nivel,
-          formulaDanio: `Fue+${2 + nivel}`,
+          danio: atributoEfectivo(sheet, "fuerza", mods) + 4 + nivel,
+          formulaDanio: `Fue+${4 + nivel}`,
           categoriaDanio: "Grave",
           gasto: GASTO_MODO_PULSO.aguijon,
         },
@@ -1086,7 +1215,13 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
     const filas = [
       tiradaDeArmaMelee(sheet, mods, arma, pieza.instanciaId, permisos.sutil.includes("ataque_melee"), pieza.modificaciones),
       ...(lanzar ? [lanzar] : []),
-      tiradaBloqueoDeArmaMelee(arma, pieza.instanciaId, permisos.sutil.includes("bloquear_melee"), pieza.modificaciones),
+      tiradaBloqueoDeArmaMelee(
+        arma,
+        pieza.instanciaId,
+        permisos.sutil.includes("bloquear_melee"),
+        pieza.modificaciones,
+        golpeDesarmadoConArmadura(sheet)?.bloqueoSinPenalizador,
+      ),
     ];
     // Escudo roto (S86): sus filas salen, apagadas con el motivo, hasta que se repare.
     return arma.defensa && escudoRoto(sheet, pieza.instanciaId) ? filas.map((t) => ({ ...t, bloqueada: MOTIVO_ESCUDO_ROTO })) : filas;
@@ -1262,11 +1397,12 @@ function accionActivarCamuflaje(sheet: Sheet, pieza: PiezaEquipada, cat: Subsist
 // de mesa, como ya decidió el usuario (docs/tareas.md, "Escudos — falta la
 // acción de levantarlos") — esto no revierte esa decisión, solo le da un
 // sitio donde vivir en vez de quedarse solo en `descripcion`, y ahora deja
-// rastro en Acciones recientes (usarDirecta(), AccionesTab.tsx). El coste
-// ("Simple"/"Estándar") se lee de `cat.modos[0].etiqueta` en vez de
-// hardcodearse aparte — es la misma columna que ya usa el ataque del escudo
-// (docs/equipamiento.md:882-905): Rodela y su metamaterial son Simple, el
-// resto Estándar. Con el escudo roto sale bloqueada (S86).
+// rastro en Acciones recientes (usarDirecta(), AccionesTab.tsx). Levantar es
+// siempre Acción Simple ("Empleo: Acción Simple para levantar el escudo",
+// cabecera de Escudos en docs/fuente/equipamiento.md, y "Escudo: … emplear una
+// acción simple"): antes se leía de la columna Acción, que es la del golpe con el
+// escudo, y salía Estándar en Escudo, Metamaterial y Kerzul (2026-10-24). Con el
+// escudo roto sale bloqueada (S86).
 //
 // Malla Plasmática (2026-09-28) se suma al mismo bucle, ver
 // tiradaDetonacionPulsoTermico() arriba.
@@ -1275,7 +1411,6 @@ export function accionesDirectasDeAtaque(sheet: Sheet): AccionDirecta[] {
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
     if (cat?.familia === "armaMelee" && cat.defensa) {
-      const accionCoste = cat.modos[0]?.etiqueta ?? "Estándar";
       acciones.push({
         id: `levantar_escudo_${pieza.instanciaId}`,
         label: `Levantar ${nombreArmaModificada(cat, pieza.modificaciones ?? [])}`,
@@ -1283,9 +1418,10 @@ export function accionesDirectasDeAtaque(sheet: Sheet): AccionDirecta[] {
         familiaArma: "levantar_escudo",
         empleoArma: cat.empleo,
         nota:
-          `Acción ${accionCoste.toLowerCase()}. Cobertura Nivel ${cat.defensa.cobertura} hasta tu próximo turno ` +
+          `Acción simple. Cobertura Nivel ${cat.defensa.cobertura} hasta tu próximo turno ` +
           `— no cuenta si te atacan por la espalda. Marca "Tengo cobertura" al esquivar; si el ataque ` +
-          `supera tu defensa pero falla por la cobertura, en Bloquear daño elige "Al escudo".`,
+          `supera tu defensa pero falla por la cobertura, en Bloquear daño elige "Al escudo". ` +
+          NOTA_ESCUDO_SUBSISTEMAS,
         confirmarLabel: "Levantar",
         ...(escudoRoto(sheet, pieza.instanciaId) && { bloqueada: MOTIVO_ESCUDO_ROTO }),
       });

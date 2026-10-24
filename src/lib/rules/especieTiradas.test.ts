@@ -135,7 +135,7 @@ describe("E4: casillas de especie", () => {
     let s = equipar(ficha(ESPECIE.arkoru), { instanciaId: "arm", catalogoId: "traje_ultra_ligero" });
     s = equipar(s, { instanciaId: "vn", catalogoId: "visor_nocturno", nivel: 2, instaladoEnId: "arm" });
     const t = fija(resolver(s), "alerta_activa");
-    assert.deepEqual(ids(t), ["visor_nocturno_n1_activo", "visor_nocturno_n2_activo", "especie_percepcion_sensorial_visual"]);
+    assert.deepEqual(ids(t), ["visor_nocturno_n1_activo", "visor_nocturno_n2_activo", "visor_nocturno_cobertura_alerta", "especie_percepcion_sensorial_visual"]);
   });
 });
 
