@@ -25,8 +25,9 @@ foco. Frentes abiertos, cada uno con su sección en Pendiente:
   (preguntas de A4-A7, 5 implantes en proceso, extracción, tope de implantes, Shock) y la
   psiónica biológica (IRM).
 - **Puntos Heroicos**: sin empezar, con la prosa ya en `docs/fuente/`.
-  *Neos Plouton* (`docs/fuente/neos-plouton.md`) es la aventura que juega la mesa, no un
-  área de reglas que construir.
+  *Neos Plouton* (`docs/fuente/neos-plouton.md`) es el mundo y el registro de la aventura que
+  juega la mesa, no un área de reglas. Fuera del manual a propósito: idea del usuario
+  (2026-10-24) de hacer con él algo interactivo que muestre qué está haciendo la mesa. Sin diseñar.
 - **Equipo**: lo construible está hecho; lo que queda espera a Murillo o es diseño
   pequeño (ver su sección).
 - **Panel de combate**: épica para debatir qué aporta; Fase 6b pausada mientras.
@@ -863,6 +864,24 @@ blindaje del escudo **deja de sumar al del portador**.
 - Tests: desglose del portador sin escudo, `golpeAlEscudo` (durabilidad, rotura justo en 0 y con
   sobrante, fuego, mental, roto), filas bloqueadas con el escudo roto y la casilla de cobertura
   en la esquiva. Sin probar en navegador todavía.
+
+### Manual de reglas en la app + enlace desde la ficha ✅, 2026-10-24
+
+- **`/manual`**: los documentos de `docs/fuente/` renderizados en build (sin BD): encabezados
+  inferidos de las negritas de pandoc, índice plegable, buscador (sin tildes, resalta y salta),
+  tablas como fichas en móvil (scroll con primera columna fija si son irregulares). Código en
+  `src/lib/manual/`. *Neos Plouton* queda fuera (`EXCLUIDOS_MANUAL`, ver Pendiente).
+- `docs/fuente/sistema.md` pasa a `reglas-base.md` (slug fijado en `_indice.tsv`) para no
+  confundirlo con `docs/sistema.md`; en Drive sigue llamándose "Sistema".
+- **Ficha → manual**: `BotonManual` en las vistas de detalle (equipo, dotes, aumentos, especie,
+  disciplinas, habilidades; también en NPC) abre una hoja con el apartado y "Abrir en el
+  manual". La resolución vive en un solo sitio (`src/lib/manual/referencias.ts`): por nombre +
+  tabla `EXCEPCIONES`; sin referencia no se pinta nada. Un test exige que cada excepción apunte
+  a un ancla que exista (un sync que renombre un apartado lo rompe). Cobertura: todo salvo
+  Interpretación (sin texto en la fuente). Pendiente de Murillo: la VTF no tiene encabezado
+  propio en el documento.
+- **Cabecera común** (`NavPrincipal`): nombre de la cuenta · Manual · Personajes · (Panel) ·
+  Salir, con la sección activa resaltada.
 
 ## Pendiente
 
