@@ -128,6 +128,8 @@ export function addEspecialidad(
   id: HabilidadId,
   especialidad: string,
   ajuste: AjusteCoste,
+  // Edición libre (NPC): sin prioridades no hay saldo de puntos que mirar.
+  { libre = false }: { libre?: boolean } = {},
 ): Sheet {
   const actual = sheet.habilidades[id];
   if (actual.valor < HABILIDAD_MIN_ENTRENADA) return sheet; // sin entrenar, no hay especialidad
@@ -141,7 +143,7 @@ export function addEspecialidad(
       [id]: { ...actual, especialidades: [...actual.especialidades, especialidad] },
     },
   };
-  return puntosHabilidadesDisponibles(next, ajuste) < 0 ? sheet : next;
+  return !libre && puntosHabilidadesDisponibles(next, ajuste) < 0 ? sheet : next;
 }
 
 export function removeEspecialidad(

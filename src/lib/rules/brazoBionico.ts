@@ -3,15 +3,16 @@
 // la fila "Bloquear con el brazo biónico" y el blindaje para el golpe bloqueado.
 //
 // Base del brazo: la Fuerza y la Agilidad permanentes del usuario (comprado + especie +
-// aumentos permanentes, sin equipo normal, estados ni activables), la misma base que los
-// requisitos de dote (modificadoresDeRequisito). Encima, el delta del nivel o del modelo con
+// aumentos permanentes, sin estados ni activables), la misma base que los requisitos de dote
+// (modificadoresDeRequisito), más el +N a la Fuerza del Exoesqueleto: se apilan (usuario,
+// 2026-10-24). Encima, el delta del nivel o del modelo con
 // su tope (`ExtremidadBionica`, en el catálogo). Los atributos del brazo solo valen en las
 // tiradas y el daño hechos con él: no tocan la vida, los requisitos ni la ficha (usuario,
 // 2026-10-22). A6b: la casilla también en "Bloquear con X" con un arma de una mano, y el arma
 // incorporada (el vínculo, PiezaEquipada.armaIncorporada, vive en rules/equipo.ts): sus filas
 // usan siempre el brazo, sin casilla.
 import { aumentoPorId, nivelDeImplante } from "./aumentos";
-import { atributosEfectivos } from "./derivados";
+import { atributosEfectivos, modificadoresActivos } from "./derivados";
 import { modificadoresDeRequisito } from "./dotes";
 import { especieDeFicha } from "./especie";
 import { ID_BRAZO_BIONICO, nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
@@ -67,7 +68,7 @@ export type BrazoBionico = {
   fuente: string;
   fuerza: number;
   agilidad: number;
-  // La base permanente del usuario de la que sale.
+  // La base del usuario de la que sale: permanente más el Exoesqueleto.
   base: { fuerza: number; agilidad: number };
   blindaje: number | null;
   bloquea: boolean;
@@ -79,7 +80,11 @@ export type BrazoBionico = {
 export function brazoBionico(sheet: Sheet): BrazoBionico | null {
   const e = extremidadEquipada(sheet);
   if (!e) return null;
-  const permanentes = atributosEfectivos(sheet, modificadoresDeRequisito(sheet, especieDeFicha(sheet)?.modificadores ?? []));
+  const exoesqueleto = modificadoresActivos(sheet).filter((m) => m.tipo === "atributo" && m.exceptoSaludYSalvaciones);
+  const permanentes = atributosEfectivos(sheet, [
+    ...modificadoresDeRequisito(sheet, especieDeFicha(sheet)?.modificadores ?? []),
+    ...exoesqueleto,
+  ]);
   const base = { fuerza: permanentes.fuerza, agilidad: permanentes.agilidad };
   return {
     instanciaId: e.pieza.instanciaId,

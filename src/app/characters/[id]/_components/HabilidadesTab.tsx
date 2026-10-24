@@ -82,7 +82,7 @@ function Especialidades({
           aria-label="Añadir especialidad"
           className="clip-chamfer-sm border border-border bg-elevated px-2 py-1 font-mono text-[10px] uppercase text-muted outline-none focus:border-accent"
         >
-          <option value="">+ especialidad{cuesta ? " (1pt)" : ""}</option>
+          <option value="">+ especialidad{cuesta && Number.isFinite(puntosDisponibles) ? " (1pt)" : ""}</option>
           {libres.map((e) => (
             <option key={e.id} value={e.id}>
               {e.label}

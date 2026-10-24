@@ -321,7 +321,7 @@ export async function addEspecialidadNpcAction(
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   // NPC: sin ajuste de casta (§14.3).
-  return persist(npcId, addEspecialidad(ctx.sheet, parsed.data.habilidadId, parsed.data.especialidadId, AJUSTE_NEUTRO));
+  return persist(npcId, addEspecialidad(ctx.sheet, parsed.data.habilidadId, parsed.data.especialidadId, AJUSTE_NEUTRO, { libre: true }));
 }
 
 export async function removeEspecialidadNpcAction(

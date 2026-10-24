@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { defaultSheet } from "./sheet";
+import { defaultSheet, type Sheet } from "./sheet";
 import { HABILIDAD_MAX_CREACION } from "./habilidades";
 import { PUNTOS_ATRIBUTOS_POR_LETRA, PUNTOS_HABILIDADES_POR_LETRA } from "./prioridad";
 import {
@@ -152,6 +152,16 @@ describe("especialidades", () => {
     assert.equal(puntosHabilidadesDisponibles(s, AJUSTE_NEUTRO), 0);
     s = addEspecialidad(s, "atletismo", "escalada", AJUSTE_NEUTRO); // ya no cabe
     assert.deepEqual(s.habilidades.atletismo.especialidades, ["carrera", "salto"]);
+  });
+
+  test("libre (NPC): sin prioridades entra igual; el resto de límites se mantiene", () => {
+    const base = defaultSheet();
+    let s: Sheet = { ...base, habilidades: { ...base.habilidades, combate_melee: { valor: 2, especialidades: [] } } };
+    assert.ok(puntosHabilidadesDisponibles(s, AJUSTE_NEUTRO) < 0);
+    assert.deepEqual(addEspecialidad(s, "combate_melee", "espadas_y_dagas", AJUSTE_NEUTRO).habilidades.combate_melee.especialidades, []);
+    s = addEspecialidad(s, "combate_melee", "espadas_y_dagas", AJUSTE_NEUTRO, { libre: true });
+    assert.deepEqual(s.habilidades.combate_melee.especialidades, ["espadas_y_dagas"]);
+    assert.equal(addEspecialidad(s, "sigilo", "historia", AJUSTE_NEUTRO, { libre: true }), s); // sin entrenar
   });
 
   test("quitar una especialidad devuelve su punto", () => {
