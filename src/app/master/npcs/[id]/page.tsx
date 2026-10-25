@@ -16,7 +16,9 @@ export default async function NpcPage({ params }: { params: Promise<{ id: string
   return (
     <>
       <AppHeader name={user.name} role={user.role} back={{ href: "/master/npcs", label: "NPCs" }} />
-      <main className="mx-auto w-full max-w-md flex-1 px-4 py-5">
+      {/* Abajo, hueco para el dock de NavegacionFicha en móvil (más el safe-area); en
+          escritorio se ensancha para que las pestañas quepan en una sola fila. */}
+      <main className="mx-auto w-full max-w-md flex-1 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-5 lg:max-w-4xl lg:pb-5">
         <NpcEditor
           npcId={npc.id}
           initialNombre={npc.nombre}

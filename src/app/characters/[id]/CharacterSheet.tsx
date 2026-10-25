@@ -111,6 +111,7 @@ import { EquipoTab } from "./_components/EquipoTab";
 import { RecursosTab } from "./_components/RecursosTab";
 import { CombateTab, type CombateView } from "./_components/CombateTab";
 import type { Lanzamiento } from "@/components/ResultadoTirada";
+import { NavegacionFicha, SECCIONES_FICHA, type TabId } from "@/components/ficha/NavegacionFicha";
 
 // Único sitio para tocar el delay de autosave — lo usan tanto identidad como
 // el debounce por campo de atributos/habilidades (y, cuando existan, dotes/
@@ -119,56 +120,7 @@ const AUTOSAVE_DEBOUNCE_MS = 500;
 import { usePollingCombate } from "@/hooks/usePollingCombate";
 import { useFichaResuelta } from "@/hooks/useFichaResuelta";
 
-// Tres grupos, no una lista plana: la ficha en sí (fila 1), lo que el
-// personaje hace o lleva (fila 2, izquierda) y el catálogo — que no es del
-// personaje, es la dirección del juego consultando o repartiendo equipo —
-// separado a la derecha en esa misma fila.
-const TABS_FICHA = [
-  { id: "personaje", label: "Personaje" },
-  { id: "attrs", label: "Atributos" },
-  { id: "skills", label: "Habilidades" },
-  { id: "dotes", label: "Dotes" },
-  { id: "psionica", label: "Psiónica" },
-] as const;
-const TABS_PERSONAJE = [
-  { id: "acciones", label: "Acciones" },
-  { id: "equipo", label: "Equipo" },
-  { id: "recursos", label: "Recursos" },
-] as const;
-const TABS_CATALOGO = [{ id: "tienda", label: "Tienda" }] as const;
-// No es un cuarto grupo estático: "combate" solo existe mientras el
-// personaje está metido en un Combate EN_CURSO (fase 6b bloque 3, D5), así
-// que se añade a mano junto a TABS_PERSONAJE en vez de vivir en su propia
-// lista siempre visible.
-type TabId =
-  | (typeof TABS_FICHA)[number]["id"]
-  | (typeof TABS_PERSONAJE)[number]["id"]
-  | (typeof TABS_CATALOGO)[number]["id"]
-  | "combate";
 type SaveStatus = "idle" | "saving" | "saved" | "error";
-
-function TabButton({
-  tab,
-  active,
-  onClick,
-}: {
-  tab: { id: TabId; label: string };
-  active: boolean;
-  onClick: (id: TabId) => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => onClick(tab.id)}
-      className={`-mb-px border-b-2 px-3 py-2 font-display text-sm font-semibold uppercase tracking-wide ${
-        active ? "border-accent text-foreground" : "border-transparent text-muted"
-      }`}
-    >
-      {tab.label}
-    </button>
-  );
-}
-
 
 function clampInt(n: number, min: number, max: number) {
   if (!Number.isFinite(n)) return min;
@@ -761,37 +713,14 @@ export function CharacterSheet({
         </p>
       )}
 
-      <div className="flex flex-col gap-1 border-b border-border">
-        <nav className="flex flex-wrap gap-1">
-          {TABS_FICHA.map((t) => (
-            <TabButton key={t.id} tab={t} active={activeEfectivo === t.id} onClick={setActive} />
-          ))}
-        </nav>
-
-        <div className="flex items-end justify-between gap-2">
-          <nav className="flex flex-wrap gap-1">
-            {TABS_PERSONAJE.map((t) => (
-              <TabButton key={t.id} tab={t} active={activeEfectivo === t.id} onClick={setActive} />
-            ))}
-            {/* Solo mientras el personaje está en el Combate EN_CURSO — no
-                un tab más de la lista estática, ver TabId más arriba. */}
-            {combate && (
-              <TabButton
-                tab={{ id: "combate", label: "Combate" }}
-                active={activeEfectivo === "combate"}
-                onClick={setActive}
-              />
-            )}
-          </nav>
-          {/* Separada del resto: la Tienda es catálogo, no algo que "es" del
-              personaje — el borde y el hueco a la izquierda lo marcan. */}
-          <nav className="flex flex-wrap gap-1 border-l border-border pl-2">
-            {TABS_CATALOGO.map((t) => (
-              <TabButton key={t.id} tab={t} active={activeEfectivo === t.id} onClick={setActive} />
-            ))}
-          </nav>
-        </div>
-      </div>
+      {/* "combate" solo existe mientras el personaje está metido en un Combate
+          EN_CURSO (fase 6b bloque 3, D5): sin él, la sección no se pinta. */}
+      <NavegacionFicha
+        secciones={SECCIONES_FICHA}
+        activa={activeEfectivo}
+        onCambiar={setActive}
+        enCombate={Boolean(combate)}
+      />
 
       {characterStatus === "IN_REVIEW" && esDueno && (
         <AvisoEnRevision characterId={characterId} submittedAt={submittedAt} puedeRetirar={esDueno} />

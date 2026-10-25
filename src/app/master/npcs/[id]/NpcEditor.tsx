@@ -27,6 +27,7 @@ import {
   type DoteComprada,
   type CompraAumento,
 } from "@/lib/rules";
+import { NavegacionFicha, SECCIONES_FICHA, type Seccion } from "@/components/ficha/NavegacionFicha";
 import { AtributosTab } from "@/app/characters/[id]/_components/AtributosTab";
 import { HabilidadesTab } from "@/app/characters/[id]/_components/HabilidadesTab";
 import { AccionesTab } from "@/app/characters/[id]/_components/AccionesTab";
@@ -91,41 +92,17 @@ import {
 // especialidades, equipo) se queda con el viaje directo: son ediciones de
 // texto o de un solo click, no steppers que se mashean.
 const AUTOSAVE_DEBOUNCE_MS = 500;
-const TABS = [
-  { id: "identidad", label: "Identidad" },
-  { id: "attrs", label: "Atributos" },
-  { id: "skills", label: "Habilidades" },
-  { id: "psionica", label: "Psiónica" },
-  { id: "dotes", label: "Dotes" },
-  { id: "acciones", label: "Acciones" },
-  { id: "equipo", label: "Equipo" },
-  { id: "recursos", label: "Recursos" },
-  { id: "tienda", label: "Tienda" },
-] as const;
-type TabId = (typeof TABS)[number]["id"];
+// Mismas secciones que la ficha, salvo que "personaje" aquí es "identidad" y un NPC
+// plantilla nunca está en combate.
+const SECCIONES_NPC = [
+  { id: "identidad", label: "Identidad", sigla: "ID", grupo: "ficha" },
+  ...SECCIONES_FICHA.filter(
+    (s): s is Exclude<(typeof SECCIONES_FICHA)[number], { id: "personaje" | "combate" }> =>
+      s.id !== "personaje" && s.id !== "combate",
+  ),
+] as const satisfies readonly Seccion[];
+type TabId = (typeof SECCIONES_NPC)[number]["id"];
 type SaveStatus = "idle" | "saving" | "saved" | "error";
-
-function TabButton({
-  tab,
-  active,
-  onClick,
-}: {
-  tab: { id: TabId; label: string };
-  active: boolean;
-  onClick: (id: TabId) => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => onClick(tab.id)}
-      className={`-mb-px border-b-2 px-3 py-2 font-display text-sm font-semibold uppercase tracking-wide ${
-        active ? "border-accent text-foreground" : "border-transparent text-muted"
-      }`}
-    >
-      {tab.label}
-    </button>
-  );
-}
 
 export function NpcEditor({
   npcId,
@@ -434,11 +411,7 @@ export function NpcEditor({
         </p>
       )}
 
-      <nav className="flex flex-wrap gap-1 border-b border-border">
-        {TABS.map((t) => (
-          <TabButton key={t.id} tab={t} active={active === t.id} onClick={setActive} />
-        ))}
-      </nav>
+      <NavegacionFicha secciones={SECCIONES_NPC} activa={active} onCambiar={setActive} />
 
       {active === "identidad" && (
         <div className="flex flex-col gap-3">

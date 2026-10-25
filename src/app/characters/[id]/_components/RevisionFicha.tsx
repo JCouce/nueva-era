@@ -56,7 +56,7 @@ export function BarraEnvio({
   const listo = falta.length === 0;
 
   return (
-    <div className="sticky bottom-0 z-[5] -mx-4 mt-2 bg-linear-to-t from-background from-70% to-transparent px-4 pb-3 pt-4">
+    <div className="sticky bottom-[calc(61px+env(safe-area-inset-bottom))] z-[5] -mx-4 mt-2 lg:bottom-0 bg-linear-to-t from-background from-70% to-transparent px-4 pb-3 pt-4">
       <div className="flex flex-col gap-2">
         {reviewNote && (
           <div className="clip-chamfer-sm border border-neon-magenta bg-neon-magenta/10 px-3 py-2">

@@ -58,7 +58,9 @@ export default async function CharacterPage({
         role={user.role}
         back={{ href: "/characters", label: "Personajes" }}
       />
-      <main className="mx-auto w-full max-w-md flex-1 px-4 py-5">
+      {/* Abajo, hueco para el dock de NavegacionFicha en móvil (más el safe-area); en
+          escritorio se ensancha para que las pestañas quepan en una sola fila. */}
+      <main className="mx-auto w-full max-w-md flex-1 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-5 lg:max-w-4xl lg:pb-5">
         {user.role === "MASTER" && (
           // XP y créditos se dan desde la Mesa (E1c); aquí solo el estado de revisión.
           <HudCard className="mb-4 flex flex-wrap items-center justify-between gap-2 px-4 py-3">
