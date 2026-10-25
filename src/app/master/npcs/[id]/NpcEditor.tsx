@@ -26,6 +26,7 @@ import {
   CONTEXTO_LIBRE,
   type DoteComprada,
   type CompraAumento,
+  type CategoriaDanio,
 } from "@/lib/rules";
 import { NavegacionFicha, SECCIONES_FICHA, type Seccion } from "@/components/ficha/NavegacionFicha";
 import { AtributosTab } from "@/app/characters/[id]/_components/AtributosTab";
@@ -64,6 +65,7 @@ import {
   ajustarFarmacoNpcAction,
   comprarFarmacoNpcAction,
   ajustarVidaNpcAction,
+  ajustarDanioNpcAction,
   ajustarFatigaNpcAction,
   eliminarNpcAction,
   type NpcResult,
@@ -312,6 +314,12 @@ export function NpcEditor({
     if (res.ok) setSheet(res.sheet);
     setStatus(res.ok ? "saved" : "error");
   };
+  const commitAjustarDanio = async (categoria: CategoriaDanio, delta: number) => {
+    setStatus("saving");
+    const res = await ajustarDanioNpcAction(npcId, categoria, delta);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
   const commitAjustarFatiga = async (delta: number) => {
     setStatus("saving");
     const res = await ajustarFatigaNpcAction(npcId, delta);
@@ -520,7 +528,7 @@ export function NpcEditor({
           onAjustarFarmaco={commitAjustarFarmaco}
           onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
           onComprarMunicionEspecial={commitComprarMunicionEspecial}
-          onAjustarVida={commitAjustarVida}
+          onAjustarDanio={commitAjustarDanio}
           onAjustarFatiga={commitAjustarFatiga}
           onAjustarFatigaTemporal={commitAjustarFatigaTemporal}
           onTerminarEscena={commitTerminarEscena}

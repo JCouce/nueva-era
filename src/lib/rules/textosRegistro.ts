@@ -3,6 +3,7 @@
 // Solo presentación: qué se guarda y cómo se deshace vive en registro.ts.
 import { describirEstadosActivos, duracionDe, type DuracionEstado, type EstadoActivo } from "./estados";
 import { listaLegible, type DatosRegistro } from "./registro";
+import { ETIQUETA_DANIO, type CategoriaDanio } from "./danio";
 
 const NUMERO = new Intl.NumberFormat("es-ES");
 export const formatoNumero = (n: number) => NUMERO.format(n);
@@ -54,8 +55,15 @@ const TIPO_LEGIBLE: Record<string, string> = {
 export const nombreDeObjetivo = (o: { nombre: string; npc: boolean }) => (o.npc ? o.nombre : nombreCorto(o.nombre));
 
 // "−3 vida a Javi y Guardia corporativo", "+2 fatiga a Javi".
-export function textoAjusteVida(recurso: "vida" | "fatiga", delta: number, objetivos: { nombre: string; npc: boolean }[]): string {
-  return `${conSigno(delta)} ${recurso} a ${listaLegible(objetivos.map(nombreDeObjetivo))}`;
+// "−2 vida grave a Kira": con categoría (solo vida), su nombre detrás del recurso.
+export function textoAjusteVida(
+  recurso: "vida" | "fatiga",
+  delta: number,
+  objetivos: { nombre: string; npc: boolean }[],
+  categoria?: CategoriaDanio,
+): string {
+  const cat = recurso === "vida" && categoria ? ` ${ETIQUETA_DANIO[categoria].toLowerCase()}` : "";
+  return `${conSigno(delta)} ${recurso}${cat} a ${listaLegible(objetivos.map(nombreDeObjetivo))}`;
 }
 
 export function textoEntradaRegistro(
@@ -80,7 +88,7 @@ export function textoEntradaRegistro(
     return `${unidad === "XP" ? "XP" : "Créditos"}: ${partes.join(", ")}`;
   }
 
-  if (datos.tipo === "vida") return textoAjusteVida(datos.recurso, datos.delta, datos.cambios);
+  if (datos.tipo === "vida") return textoAjusteVida(datos.recurso, datos.delta, datos.cambios, datos.categoria);
 
   if (datos.tipo === "fin_escena") {
     return `Fin de escena: limpiados los estados de ${de(datos.cambios.map((c) => c.characterId))}`;

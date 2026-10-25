@@ -9,6 +9,7 @@ import {
   parseSheet,
   snapshotFromSheet,
   transicionRevision,
+  type CategoriaDanio,
   type DuracionEstado,
   type InmuneAlAplicar,
   type RecursoMaster,
@@ -179,13 +180,14 @@ export async function ajustarVidaAPersonajesAction(input: {
   characterIds: string[];
   recurso: "vida" | "fatiga";
   cantidad: number;
+  categoria?: CategoriaDanio;
 }): Promise<MandoResult> {
   const user = await requireMaster();
   if (!user) return { ok: false, error: "Solo el máster puede ajustar la vida." };
   const parsed = ajustarVidaAPersonajesSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
-  const { characterIds, recurso, cantidad } = parsed.data;
-  return ajustarVidaDePersonajes(characterIds, recurso, cantidad, { userId: user.id });
+  const { characterIds, recurso, cantidad, categoria } = parsed.data;
+  return ajustarVidaDePersonajes(characterIds, recurso, cantidad, categoria, { userId: user.id });
 }
 
 // "Limpiar estados": quita todos los estados. En la Mesa, a todos los personajes en juego;

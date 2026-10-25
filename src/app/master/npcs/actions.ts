@@ -13,7 +13,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
-import { atributoLibreSchema, eleccionEspecieSchema, especialidadDeHabilidadSchema } from "@/lib/validation";
+import {
+  atributoLibreSchema,
+  categoriaDanioSchema,
+  eleccionEspecieSchema,
+  especialidadDeHabilidadSchema,
+} from "@/lib/validation";
 import {
   type Sheet,
   defaultSheet,
@@ -44,6 +49,8 @@ import {
   ajustarMunicionEspecial,
   comprarMunicionEspecial,
   ajustarVida,
+  ajustarDanioCategoria,
+  type CategoriaDanio,
   ajustarFatiga,
   ATRIBUTO_MIN,
   ATRIBUTO_MAX,
@@ -408,6 +415,15 @@ export async function ajustarVidaNpcAction(npcId: string, delta: number): Promis
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(npcId, ajustarVida(ctx.sheet, delta));
+}
+
+// Daño o cura de una categoría (§7): delta > 0 recibe, < 0 cura. Mismo control que la ficha.
+export async function ajustarDanioNpcAction(npcId: string, categoria: CategoriaDanio, delta: number): Promise<NpcResult> {
+  const cat = categoriaDanioSchema.safeParse(categoria);
+  if (!cat.success || !Number.isInteger(delta) || Math.abs(delta) > 999) return { ok: false, error: "Ajuste de daño no válido" };
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(npcId, ajustarDanioCategoria(ctx.sheet, cat.data, delta));
 }
 
 export async function ajustarFatigaNpcAction(npcId: string, delta: number): Promise<NpcResult> {

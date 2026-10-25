@@ -5,6 +5,7 @@
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma/client";
 import {
+  danioDeFoto,
   fotoEnMesa,
   leerEstados,
   parseSheet,
@@ -12,10 +13,13 @@ import {
   planAjusteVida,
   planDeshacerVida,
   topesDeVida,
+  type CategoriaDanio,
+  type DanioVida,
   type DatosVida,
   type ObjetivoVida,
   type ObjetivoVidaActual,
   type RecursoVital,
+  type ValorDeshacerVida,
 } from "@/lib/rules";
 import { COMBATE_ABIERTO, registrar, revalidarEstados, type Autoria } from "@/lib/estadosPersonaje";
 
@@ -34,6 +38,7 @@ type FotoLeida = {
   pgMax: number;
   fatigaActual: number;
   fatigaMax: number;
+  danio: Prisma.JsonValue;
 };
 const SELECT_FOTO = {
   id: true,
@@ -43,6 +48,7 @@ const SELECT_FOTO = {
   pgMax: true,
   fatigaActual: true,
   fatigaMax: true,
+  danio: true,
 } as const;
 
 const objetivoDeFoto = (f: FotoLeida, recurso: RecursoVital): ObjetivoVidaActual => ({
@@ -52,6 +58,7 @@ const objetivoDeFoto = (f: FotoLeida, recurso: RecursoVital): ObjetivoVidaActual
   npc: f.characterId === null,
   actual: f[CAMPO_FOTO[recurso]],
   tope: f[MAX_FOTO[recurso]],
+  ...(recurso === "vida" ? { danio: danioDeFoto(f.danio, f.pgActual, f.pgMax) } : {}),
 });
 
 async function fichasComoObjetivos(tx: Tx, ids: string[], recurso: RecursoVital) {
@@ -67,26 +74,32 @@ async function fichasComoObjetivos(tx: Tx, ids: string[], recurso: RecursoVital)
       npc: false,
       actual: sheet[CAMPO_FICHA[recurso]],
       tope: topesDeVida(sheet, estados)[recurso],
+      // Ya normalizado contra este mismo tope (reconciliarVidaConEstados).
+      ...(recurso === "vida" ? { danio: sheet.danio } : {}),
     };
     return { objetivo, sheet };
   });
 }
 
-// Escribe los valores nuevos (ajuste o deshacer). Las fichas se reescriben enteras desde
-// la ya leída (parseSheet), como el resto de acciones sobre `stats`.
+// Escribe los valores nuevos (ajuste o deshacer), con el desglose de la vida si lo trae.
+// Las fichas se reescriben enteras desde la ya leída (parseSheet), como el resto de
+// acciones sobre `stats`.
 async function escribir(
   tx: Tx,
   recurso: RecursoVital,
-  valores: { objetivo: ObjetivoVida; id: string; valor: number }[],
+  valores: (ValorDeshacerVida & { danio?: DanioVida })[],
   fichas: Map<string, ReturnType<typeof parseSheet>>,
 ) {
   for (const v of valores) {
+    const danio = recurso === "vida" && v.danio ? { danio: v.danio } : {};
     if (v.objetivo === "combatiente") {
-      await tx.combatiente.update({ where: { id: v.id }, data: { [CAMPO_FOTO[recurso]]: v.valor } });
+      await tx.combatiente.update({ where: { id: v.id }, data: { [CAMPO_FOTO[recurso]]: v.valor, ...danio } });
       continue;
     }
     const sheet = fichas.get(v.id);
-    if (sheet) await tx.character.update({ where: { id: v.id }, data: { stats: { ...sheet, [CAMPO_FICHA[recurso]]: v.valor } } });
+    if (sheet) {
+      await tx.character.update({ where: { id: v.id }, data: { stats: { ...sheet, [CAMPO_FICHA[recurso]]: v.valor, ...danio } } });
+    }
   }
 }
 
@@ -96,17 +109,20 @@ async function aplicar(
   fichas: Map<string, ReturnType<typeof parseSheet>>,
   recurso: RecursoVital,
   delta: number,
+  categoria: CategoriaDanio | undefined,
   autoria: Autoria,
 ): Promise<string | null> {
-  const cambios = planAjusteVida(objetivos, delta);
+  // La fatiga no tiene categorías.
+  const cat = recurso === "vida" ? categoria : undefined;
+  const cambios = planAjusteVida(objetivos, delta, cat);
   if (cambios.length === 0) return null;
   await escribir(
     tx,
     recurso,
-    cambios.map((c) => ({ objetivo: c.objetivo, id: c.id, valor: c.despues })),
+    cambios.map((c) => ({ objetivo: c.objetivo, id: c.id, valor: c.despues, danio: c.danioDespues })),
     fichas,
   );
-  return registrar(tx, autoria, { tipo: "vida", recurso, delta, cambios });
+  return registrar(tx, autoria, { tipo: "vida", recurso, delta, ...(cat ? { categoria: cat } : {}), cambios });
 }
 
 // Combate: la foto (pgActual/fatigaActual) de cada fila de la cola, jugador o NPC.
@@ -114,13 +130,14 @@ export async function ajustarVidaDeCombatientes(
   combatienteIds: string[],
   recurso: RecursoVital,
   delta: number,
+  categoria: CategoriaDanio | undefined,
   autoria: Autoria,
 ): Promise<ResultadoVida> {
   const ids = [...new Set(combatienteIds)];
   const res = await prisma.$transaction(async (tx) => {
     const fotos = await tx.combatiente.findMany({ where: { id: { in: ids } }, select: SELECT_FOTO });
     if (fotos.length !== ids.length) return { ok: false as const, error: "Alguno de esos combatientes ya no está en la cola." };
-    const registroId = await aplicar(tx, fotos.map((f) => objetivoDeFoto(f, recurso)), new Map(), recurso, delta, autoria);
+    const registroId = await aplicar(tx, fotos.map((f) => objetivoDeFoto(f, recurso)), new Map(), recurso, delta, categoria, autoria);
     return { ok: true as const, registroId, characterIds: fotos.flatMap((f) => (f.characterId ? [f.characterId] : [])) };
   });
   if (!res.ok) return res;
@@ -137,6 +154,7 @@ export async function ajustarVidaDePersonajes(
   characterIds: string[],
   recurso: RecursoVital,
   delta: number,
+  categoria: CategoriaDanio | undefined,
   autoria: Autoria,
 ): Promise<ResultadoVida> {
   const ids = [...new Set(characterIds)];
@@ -153,7 +171,7 @@ export async function ajustarVidaDePersonajes(
       return foto ? { ...objetivoDeFoto(foto, recurso), nombre: objetivo.nombre } : objetivo;
     });
     const porId = new Map(fichas.map((f) => [f.objetivo.id, f.sheet]));
-    return { ok: true as const, registroId: await aplicar(tx, objetivos, porId, recurso, delta, autoria) };
+    return { ok: true as const, registroId: await aplicar(tx, objetivos, porId, recurso, delta, categoria, autoria) };
   });
   if (!res.ok) return res;
   revalidarEstados(ids);

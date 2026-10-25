@@ -656,7 +656,7 @@ export function CharacterSheet({
           creditos={creditos}
           controlMaster={controlMaster}
           soloLectura={soloLectura}
-          onAjustarVida={commitAjustarVida}
+          onAjustarDanio={commitAjustarDanio}
           onAjustarFatiga={commitAjustarFatiga}
         />
       </aside>
@@ -881,7 +881,6 @@ export function CharacterSheet({
                 onAjustarFarmaco={commitAjustarFarmaco}
                 onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
                 onComprarMunicionEspecial={commitComprarMunicionEspecial}
-                onAjustarVida={commitAjustarVida}
                 onAjustarDanio={commitAjustarDanio}
                 onAjustarFatiga={commitAjustarFatiga}
                 onAjustarFatigaTemporal={commitAjustarFatigaTemporal}

@@ -6,6 +6,7 @@ import { ATRIBUTOS, type AtributoId } from "./rules/atributos";
 import { esEspecialidadDe } from "./catalog/especialidades";
 import { estadoPorId } from "./catalog/estados";
 import { MAX_RONDAS_ESTADO } from "./rules/estadosFicha";
+import { CATEGORIAS_DANIO } from "./rules/danio";
 
 // Login flexible para el grupo: acepta usuario simple (no hace falta email) y
 // contraseñas cortas. El campo se llama `email` porque mapea a User.email.
@@ -147,14 +148,32 @@ const cantidadVidaSchema = z
   .max(999)
   .refine((n) => n !== 0, "La cantidad no puede ser 0.");
 
+// Categoría del daño (o de lo que se cura) en la vida; la fatiga no tiene y se ignora.
+export const categoriaDanioSchema = z.enum(CATEGORIAS_DANIO);
+
 export const ajustarVidaAPersonajesSchema = z.object({
   characterIds: variosPersonajesSchema,
   recurso: recursoVitalSchema,
   cantidad: cantidadVidaSchema,
+  categoria: categoriaDanioSchema.optional(),
 });
 
 export const ajustarVidaEnCombateSchema = z.object({
   combatienteIds: variosCombatientesSchema,
   recurso: recursoVitalSchema,
   cantidad: cantidadVidaSchema,
+  categoria: categoriaDanioSchema.optional(),
+});
+
+// Fila propia del jugador en el combate: daño (delta > 0) o cura (< 0) de una categoría en
+// su foto, como ajustarDanioAction en la ficha.
+export const ajustarDanioCombatienteSchema = z.object({
+  combatienteId: z.string().min(1),
+  categoria: categoriaDanioSchema,
+  delta: z
+    .number()
+    .int()
+    .min(-999)
+    .max(999)
+    .refine((n) => n !== 0, "La cantidad no puede ser 0."),
 });

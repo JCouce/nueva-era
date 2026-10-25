@@ -898,6 +898,16 @@ blindaje del escudo **deja de sumar al del portador**.
   y "fin de escena". El selector para añadir jugadores al combate pasa a solo APPROVED.
 - Sin papelera: se recupera poniendo `deletedAt` a null en la BD.
 
+### Ficha nueva en móvil y escritorio + daño por categoría en todas partes ✅, 2026-10-25
+
+- Navegación de la ficha (`src/components/ficha/NavegacionFicha.tsx`): en móvil, dock de mesa
+  y botón Ficha que abre una rueda; en escritorio, una fila de pestañas.
+- Escritorio ancho (xl+): cabina de tres columnas (`RailFicha`, centro, `MesaFicha`).
+- Vida por categoría (no letal / letal / grave) en todo ajuste manual: `ControlVida` en Recursos,
+  raíl, fila de combate y editor de NPC; selector de categoría en el panel del máster (Mesa y
+  Combate), con Deshacer que restaura el desglose. Migración `combatiente_danio`.
+- Queda fuera: que el daño del combate vuelva a la ficha al terminar (TODO en `vidaMando.ts`).
+
 ## Pendiente
 
 ### Pestaña Acciones: pestañas y favoritas ✅ (usuario, 2026-10-23; T-005, T-006 y T-007)

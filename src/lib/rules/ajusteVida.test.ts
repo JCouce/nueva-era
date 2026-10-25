@@ -2,6 +2,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { deltaDeModo, previaAjusteVida, textoUmbral } from "./ajusteVida";
+import { textoAjusteVida } from "./textosRegistro";
 import { umbralVital } from "./estados";
 
 describe("previaAjusteVida", () => {
@@ -40,5 +41,30 @@ describe("previaAjusteVida", () => {
   test("el modo pone el signo", () => {
     assert.equal(deltaDeModo("danio", 3), -3);
     assert.equal(deltaDeModo("curacion", 3), 3);
+  });
+});
+
+describe("previaAjusteVida con categoría", () => {
+  const v = { actual: 6, max: 10, tope: 10, danio: { noLetal: 1, letal: 3, grave: 0 } };
+  test("el daño va a la categoría y la vista previa trae el desglose", () => {
+    const p = previaAjusteVida(v, "vida", -2, "grave");
+    assert.equal(p.despues, 4);
+    assert.deepEqual(p.danioDespues, { noLetal: 1, letal: 3, grave: 2 });
+  });
+  test("curar una categoría vacía no cambia nada", () => {
+    assert.equal(previaAjusteVida(v, "vida", 3, "grave").despues, 6);
+  });
+  test("la fatiga ignora la categoría", () => {
+    const p = previaAjusteVida(v, "fatiga", 3, "grave");
+    assert.equal(p.despues, 9);
+    assert.equal(p.danioDespues, undefined);
+  });
+});
+
+describe("textoAjusteVida", () => {
+  test("con categoría, la nombra detrás del recurso (solo en la vida)", () => {
+    assert.equal(textoAjusteVida("vida", -2, [{ nombre: "Kira", npc: false }], "grave"), "−2 vida grave a Kira");
+    assert.equal(textoAjusteVida("vida", 1, [{ nombre: "Kira", npc: false }], "noLetal"), "+1 vida no letal a Kira");
+    assert.equal(textoAjusteVida("fatiga", 1, [{ nombre: "Kira", npc: false }], "noLetal"), "+1 fatiga a Kira");
   });
 });

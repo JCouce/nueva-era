@@ -12,6 +12,8 @@ import {
   topesDeVida,
   vidaEnMesa,
   VITALIDAD_DE_FICHA,
+  danioDeFoto,
+  fotoEnMesa,
 } from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
 import { MesaMaster, type JugadorMesa } from "./MesaMaster";
@@ -55,6 +57,7 @@ async function cargarMesa() {
       pgMax: true,
       fatigaActual: true,
       fatigaMax: true,
+      danio: true,
     },
   });
   const jugadores: JugadorMesa[] = filas.map((f) => {
@@ -77,13 +80,17 @@ async function cargarMesa() {
     const tope = mostrada.deCombate
       ? { vida: mostrada.vida.max, fatiga: mostrada.fatiga.max }
       : topesDeVida(sheet, estados);
+    // El desglose de la vida que se enseña: el de la foto en combate; si no, el de la ficha
+    // (ya normalizado contra ese mismo tope por reconciliarVidaConEstados).
+    const foto = mostrada.deCombate ? fotoEnMesa(fotos.filter((c) => c.characterId === f.id)) : null;
+    const danio = foto ? danioDeFoto(foto.danio, foto.pgActual, foto.pgMax) : sheet.danio;
     return {
       id: f.id,
       nombre: f.name,
       especie,
       xp: f.xp,
       creditos: f.creditos,
-      vida: { ...mostrada.vida, tope: tope.vida },
+      vida: { ...mostrada.vida, tope: tope.vida, danio },
       fatiga: { ...mostrada.fatiga, tope: tope.fatiga },
       deCombate: mostrada.deCombate,
       estados: describirEstadosActivos(estados, ficha.inmunidades),

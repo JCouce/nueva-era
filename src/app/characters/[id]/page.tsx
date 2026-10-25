@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
-import { parseSheet, parseSnapshot, leerEstados, estadosDeCombatiente, reconciliarVidaConEstados } from "@/lib/rules";
+import { parseSheet, parseSnapshot, leerEstados, estadosDeCombatiente, reconciliarVidaConEstados, danioDeFoto } from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
 import { HudCard } from "@/components/HudCard";
 import { StatusControl } from "@/app/master/MasterControls";
@@ -44,6 +44,7 @@ export default async function CharacterPage({
     ...combateRaw,
     combatientes: combateRaw.combatientes.map(({ character, ...c }) => ({
       ...c,
+      danio: danioDeFoto(c.danio, c.pgActual, c.pgMax),
       estados: estadosDeCombatiente({ ...c, character }),
     })),
   };

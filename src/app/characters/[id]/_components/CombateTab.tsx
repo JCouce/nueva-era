@@ -9,16 +9,19 @@
 // docs/fase-6b.md bloque 3).
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { describirEstadosActivos, type EstadoActivo } from "@/lib/rules";
+import { describirEstadosActivos, type CategoriaDanio, type DanioVida, type EstadoActivo } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { ChipEstado } from "@/components/ChipEstado";
-import { ajustarPgAction, ajustarFatigaAction } from "@/app/master/combate/actions";
+import { ControlVida, nombreDanio } from "@/components/ficha/ControlVida";
+import { ajustarDanioCombatienteAction, ajustarFatigaAction } from "@/app/master/combate/actions";
 
 type CombatienteView = {
   id: string;
   nombre: string;
   pgActual: number;
   pgMax: number;
+  // Desglose de lo perdido en la foto (danioDeFoto).
+  danio: DanioVida;
   fatigaActual: number;
   fatigaMax: number;
   characterId: string | null;
@@ -50,6 +53,8 @@ export function CombateTab({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const deltaRef = useRef<HTMLInputElement | null>(null);
+  // Categoría de la vida: la del control compacto, que usa también el ±N de "PG".
+  const [categoria, setCategoria] = useState<CategoriaDanio>("letal");
   const turnoActual = combate.combatientes[combate.turnoIndex] ?? null;
 
   // Mismo patrón sin control de React que CombateConsole.tsx (2.4): un solo
@@ -61,19 +66,25 @@ export function CombateTab({
     if (!input || !input.value) return;
     const delta = Number(input.value);
     if (!Number.isFinite(delta) || delta === 0) return;
+    // En el ±N, negativo es daño; en la acción de categoría, positivo es recibir.
+    ejecutar(() =>
+      recurso === "pg"
+        ? ajustarDanioCombatienteAction({ combatienteId, categoria, delta: -delta })
+        : ajustarFatigaAction(combatienteId, delta),
+    );
+    input.value = "";
+  }
+
+  function ejecutar(accion: () => Promise<{ ok: true } | { ok: false; error: string }>) {
     setError(null);
     startTransition(async () => {
-      const res =
-        recurso === "pg"
-          ? await ajustarPgAction(combatienteId, delta)
-          : await ajustarFatigaAction(combatienteId, delta);
+      const res = await accion();
       if (!res.ok) {
         setError(res.error);
         return;
       }
       router.refresh();
     });
-    input.value = "";
   }
 
   return (
@@ -128,7 +139,24 @@ export function CombateTab({
                     no solo leer — su propio PG/fatiga, un número objetivo
                     sin juicio de por medio, no un botón "curar"/"herir". */}
                 {esYo && !c.derrotado && (
-                  <div className="flex items-center gap-2 border-t border-border pt-2">
+                  <div className="border-t border-border pt-2">
+                    <ControlVida
+                      variante="compacta"
+                      label="PG"
+                      actual={c.pgActual}
+                      max={c.pgMax}
+                      danio={c.danio}
+                      disabled={pending}
+                      categoria={categoria}
+                      onCategoria={setCategoria}
+                      onAjustar={(cat, delta) =>
+                        ejecutar(() => ajustarDanioCombatienteAction({ combatienteId: c.id, categoria: cat, delta }))
+                      }
+                    />
+                  </div>
+                )}
+                {esYo && !c.derrotado && (
+                  <div className="flex items-center gap-2">
                     <input
                       ref={deltaRef}
                       type="number"
@@ -140,10 +168,10 @@ export function CombateTab({
                       type="button"
                       disabled={pending}
                       onClick={() => aplicarDelta(c.id, "pg")}
-                      aria-label={compacta ? "Aplicar a PG" : undefined}
+                      aria-label={`Aplicar a PG (${nombreDanio(categoria)})`}
                       className="clip-chamfer-sm flex-1 border border-border px-3 py-2.5 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
                     >
-                      {compacta ? "PG" : "Aplicar a PG"}
+                      {compacta ? "PG" : `PG · ${nombreDanio(categoria)}`}
                     </button>
                     <button
                       type="button"

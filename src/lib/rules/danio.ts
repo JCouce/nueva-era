@@ -60,6 +60,31 @@ export function normalizarDanio(danio: DanioVida, perdida: number): DanioVida {
   return acotarDanio(danio, perdida, perdida);
 }
 
+export const ETIQUETA_DANIO: Record<CategoriaDanio, string> = { noLetal: "No letal", letal: "Letal", grave: "Grave" };
+
+// Una vida con su desglose: la de la ficha (vidaActual, tope) o la foto de un combatiente
+// (pgActual, pgMax). Invariante tras ajustar: actual + suma(danio) === tope.
+export type VidaConDanio = { actual: number; tope: number; danio: DanioVida };
+
+// Daño o cura de una categoría sobre cualquier vida con desglose. delta > 0 recibe daño de
+// esa categoría (sin bajar de 0); delta < 0 cura esa categoría (sin curar más de lo que hay
+// en ella). La usan la ficha (ajustarDanioCategoria), la foto de combate y el panel de mando.
+export function ajustarDanioVital(v: VidaConDanio, categoria: CategoriaDanio, delta: number): { actual: number; danio: DanioVida } {
+  const tope = Math.max(0, Math.round(v.tope));
+  const actual = Math.max(0, Math.min(Math.round(v.actual), tope));
+  const danio = normalizarDanio(v.danio, tope - actual);
+  const d = Number.isFinite(delta) ? Math.round(delta) : 0;
+  const n = d > 0 ? Math.min(d, actual) : -Math.min(-d, danio[categoria]);
+  if (n === 0) return { actual, danio };
+  return { actual: actual - n, danio: { ...danio, [categoria]: danio[categoria] + n } };
+}
+
+// El desglose guardado en la foto de un combatiente (Combatiente.danio, Json?), contra su
+// vida perdida. Null (filas de antes de la columna) se lee todo letal.
+export function danioDeFoto(raw: unknown, pgActual: number, pgMax: number): DanioVida {
+  return normalizarDanio(leerDanio(raw), Math.max(0, pgMax - Math.max(0, Math.min(pgActual, pgMax))));
+}
+
 const sinAcentos = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 // Categoría de los textos de daño que ya existen ("no letal", "Letal no absorbible", "grave"…)

@@ -70,10 +70,24 @@ describe("ajustarFatiga", () => {
 describe("vitalidadAlEntrarEnCombate", () => {
   test("el jugador entra con su vida y fatiga de la ficha, no a tope", () => {
     const s = { ...defaultSheet(), vidaActual: 3, fatigaActual: 5 };
-    assert.deepEqual(vitalidadAlEntrarEnCombate(s, { vida: 10, fatiga: 10 }), { pgActual: 3, fatigaActual: 5 });
+    assert.deepEqual(vitalidadAlEntrarEnCombate(s, { vida: 10, fatiga: 10 }), {
+      pgActual: 3,
+      fatigaActual: 5,
+      danio: { noLetal: 0, letal: 7, grave: 0 },
+    });
   });
   test("recortado a [0, máximo]", () => {
     const s = { ...defaultSheet(), vidaActual: 999, fatigaActual: -2 };
-    assert.deepEqual(vitalidadAlEntrarEnCombate(s, { vida: 10, fatiga: 10 }), { pgActual: 10, fatigaActual: 0 });
+    assert.deepEqual(vitalidadAlEntrarEnCombate(s, { vida: 10, fatiga: 10 }), {
+      pgActual: 10,
+      fatigaActual: 0,
+      danio: { noLetal: 0, letal: 0, grave: 0 },
+    });
+  });
+  test("la foto se lleva el desglose de la ficha, contra su máximo", () => {
+    const s = { ...defaultSheet(), vidaActual: 6, danio: { noLetal: 1, letal: 1, grave: 2 } };
+    assert.deepEqual(vitalidadAlEntrarEnCombate(s, { vida: 10, fatiga: 10 }).danio, { noLetal: 1, letal: 1, grave: 2 });
+    // Con un máximo más bajo en combate (un estado), lo que sobra sale de lo más leve.
+    assert.deepEqual(vitalidadAlEntrarEnCombate(s, { vida: 8, fatiga: 10 }).danio, { noLetal: 0, letal: 0, grave: 2 });
   });
 });

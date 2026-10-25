@@ -6,15 +6,17 @@ import {
   APLICADOS,
   describirEstadosActivos,
   pesoEquipado,
+  type CategoriaDanio,
   type EstadoFicha,
   type FichaResuelta,
 } from "@/lib/rules";
 import { BarraVital } from "@/components/BarraVital";
+import { ControlVida } from "@/components/ficha/ControlVida";
 import { ChipEstado } from "@/components/ChipEstado";
 import { EstadoFichaChip } from "@/components/EstadoFichaChip";
 
 // Columna izquierda de la cabina de escritorio: el vistazo de siempre a la ficha. Solo lee,
-// salvo el −/+ de vida y fatiga (los mismos commits que Recursos). Lo que se edita —
+// salvo la vida (por categoría, el mismo commit que Recursos) y el −/+ de fatiga. Lo que se edita —
 // identidad, especie, compra de atributos, envío a revisión— sigue en sus pestañas.
 export function RailFicha({
   name,
@@ -24,7 +26,7 @@ export function RailFicha({
   creditos,
   controlMaster,
   soloLectura,
-  onAjustarVida,
+  onAjustarDanio,
   onAjustarFatiga,
 }: {
   name: string;
@@ -34,7 +36,7 @@ export function RailFicha({
   creditos: number;
   controlMaster?: ReactNode;
   soloLectura: boolean;
-  onAjustarVida: (delta: number) => void;
+  onAjustarDanio: (categoria: CategoriaDanio, delta: number) => void;
   onAjustarFatiga: (delta: number) => void;
 }) {
   const sheet = ficha.ficha;
@@ -65,14 +67,13 @@ export function RailFicha({
       {controlMaster && <div className="flex flex-wrap items-center gap-2">{controlMaster}</div>}
 
       <Bloque titulo="salud">
-        <Vital
-          label="Vida"
+        <ControlVida
+          variante="compacta"
           actual={sheet.vidaActual}
           max={vida}
-          tono="danger"
           danio={ficha.danio}
           disabled={soloLectura}
-          onAjustar={onAjustarVida}
+          onAjustar={onAjustarDanio}
         />
         <Vital
           label="Fatiga"
@@ -162,7 +163,6 @@ function Vital({
   actual,
   max,
   tono,
-  danio,
   disabled,
   onAjustar,
 }: {
@@ -170,14 +170,13 @@ function Vital({
   actual: number;
   max: number;
   tono: "danger" | "info";
-  danio?: FichaResuelta["danio"];
   disabled: boolean;
   onAjustar: (delta: number) => void;
 }) {
   return (
     <div className="flex items-end gap-2">
       <div className="min-w-0 flex-1">
-        <BarraVital label={label} actual={actual} max={max} tono={tono} danio={danio} />
+        <BarraVital label={label} actual={actual} max={max} tono={tono} />
       </div>
       <BotonVital label={`Bajar ${label.toLowerCase()}`} disabled={disabled || actual <= 0} onClick={() => onAjustar(-1)}>
         −

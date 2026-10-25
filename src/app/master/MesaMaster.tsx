@@ -50,7 +50,8 @@ const ACCIONES: AccionesMando = {
   quitarEstado: (characterIds, estadoId) => quitarEstadoAPersonajesAction({ characterIds, estadoId }),
   darRecurso: (recurso, characterIds, cantidad, motivo) =>
     (recurso === "xp" ? darXpAction : darCreditosAction)({ characterIds, cantidad, motivo }),
-  ajustarVida: (recurso, characterIds, cantidad) => ajustarVidaAPersonajesAction({ characterIds, recurso, cantidad }),
+  ajustarVida: (recurso, characterIds, cantidad, categoria) =>
+    ajustarVidaAPersonajesAction({ characterIds, recurso, cantidad, categoria }),
 };
 
 type VistaMovil = "jugadores" | PestanaMando | "registro";
@@ -322,7 +323,7 @@ function TarjetaJugador({ jugador: j, elegido, onClick }: { jugador: JugadorMesa
         </span>
       </span>
       <span className="col-start-2 col-end-4 grid grid-cols-2 gap-1.5 pt-1">
-        <Barra label="Vida" actual={j.vida.actual} max={j.vida.max} relleno="bg-neon-green" />
+        <Barra label="Vida" actual={j.vida.actual} max={j.vida.max} relleno="bg-neon-green" danio={j.vida.danio} />
         <Barra label="Fatiga" actual={j.fatiga.actual} max={j.fatiga.max} relleno="bg-info" />
       </span>
       {j.deCombate && (

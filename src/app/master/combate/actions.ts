@@ -11,6 +11,8 @@ import { refresh, revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser, canAdjustCombatiente } from "@/lib/auth-helpers";
 import {
+  ajustarDanioVital,
+  danioDeFoto,
   parseSheet,
   reconciliarVidaConEstados,
   resolverFicha,
@@ -21,11 +23,17 @@ import {
   estadosAlCerrarVuelta,
   pasarTurno,
   vidaTrasCambioDeEstados,
+  type CategoriaDanio,
   type DuracionEstado,
   type InmuneAlAplicar,
   type OperacionEstado,
 } from "@/lib/rules";
-import { ajustarVidaEnCombateSchema, aplicarEstadoEnCombateSchema, quitarEstadoEnCombateSchema } from "@/lib/validation";
+import {
+  ajustarDanioCombatienteSchema,
+  ajustarVidaEnCombateSchema,
+  aplicarEstadoEnCombateSchema,
+  quitarEstadoEnCombateSchema,
+} from "@/lib/validation";
 import { ajustarVidaDeCombatientes } from "@/lib/vidaMando";
 import { cambiarEstadosDeNpcs, cambiarEstadosDePersonajes, revalidarEstados } from "@/lib/estadosPersonaje";
 import type { MandoResult } from "../actions";
@@ -130,7 +138,7 @@ export async function agregarJugadorAction(
   // (cambiarEstadosDePersonajes, S75).
   const sheet = parseSheet(character.stats);
   const { vida, fatiga } = resolverFicha(sheet, { estados: leerEstados(character.estados), vitalidad: VITALIDAD_DE_FICHA }).salud;
-  const { pgActual, fatigaActual } = vitalidadAlEntrarEnCombate(sheet, { vida, fatiga });
+  const { pgActual, fatigaActual, danio } = vitalidadAlEntrarEnCombate(sheet, { vida, fatiga });
 
   await prisma.combatiente.create({
     data: {
@@ -139,6 +147,7 @@ export async function agregarJugadorAction(
       nombre: character.name,
       pgActual,
       pgMax: vida,
+      danio,
       fatigaActual,
       fatigaMax: fatiga,
       orden: await ordenSiguiente(combateId),
@@ -388,8 +397,8 @@ export async function moverCombatienteAction(
 
 // --- PG / fatiga (D2: el dueño del Character también puede, no solo el máster) ---
 //
-// ajustarPgAction/ajustarFatigaAction siguen para la fila propia del jugador en su ficha
-// (CombateTab). El máster usa ajustarVidaEnCombateAction (pestaña Vida, con registro).
+// ajustarDanioCombatienteAction/ajustarFatigaAction son para la fila propia del jugador en su
+// ficha (CombateTab). El máster usa ajustarVidaEnCombateAction (pestaña Vida, con registro).
 
 async function ajustarRecurso(
   combatienteId: string,
@@ -415,8 +424,28 @@ async function ajustarRecurso(
   return { ok: true };
 }
 
-export async function ajustarPgAction(combatienteId: string, delta: number): Promise<CombateResult> {
-  return ajustarRecurso(combatienteId, delta, "pgActual", "pgMax");
+// La vida de la foto por categoría (§7): delta > 0 recibe daño de esa categoría, < 0 la cura.
+export async function ajustarDanioCombatienteAction(input: {
+  combatienteId: string;
+  categoria: CategoriaDanio;
+  delta: number;
+}): Promise<CombateResult> {
+  const user = await requireUser();
+  const parsed = ajustarDanioCombatienteSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
+  const { combatienteId, categoria, delta } = parsed.data;
+
+  const c = await prisma.combatiente.findUnique({
+    where: { id: combatienteId },
+    include: { character: { select: { ownerId: true } } },
+  });
+  if (!c) return { ok: false, error: "No existe ese combatiente." };
+  if (!canAdjustCombatiente(user, c)) return { ok: false, error: "No puedes tocar a ese combatiente." };
+
+  const r = ajustarDanioVital({ actual: c.pgActual, tope: c.pgMax, danio: danioDeFoto(c.danio, c.pgActual, c.pgMax) }, categoria, delta);
+  await prisma.combatiente.update({ where: { id: combatienteId }, data: { pgActual: r.actual, danio: r.danio } });
+  revalidateCombate();
+  return { ok: true };
 }
 
 export async function ajustarFatigaAction(combatienteId: string, delta: number): Promise<CombateResult> {
@@ -430,13 +459,14 @@ export async function ajustarVidaEnCombateAction(input: {
   combatienteIds: string[];
   recurso: "vida" | "fatiga";
   cantidad: number;
+  categoria?: CategoriaDanio;
 }): Promise<MandoResult> {
   const user = await requireMaster();
   if (!user) return { ok: false, error: "Solo el máster puede ajustar la vida." };
   const parsed = ajustarVidaEnCombateSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
-  const { combatienteIds, recurso, cantidad } = parsed.data;
-  const res = await ajustarVidaDeCombatientes(combatienteIds, recurso, cantidad, { userId: user.id });
+  const { combatienteIds, recurso, cantidad, categoria } = parsed.data;
+  const res = await ajustarVidaDeCombatientes(combatienteIds, recurso, cantidad, categoria, { userId: user.id });
   if (res.ok) revalidateCombate();
   return res;
 }

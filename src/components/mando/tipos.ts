@@ -1,4 +1,5 @@
 import type {
+  CategoriaDanio,
   DuracionEstado,
   EstadoActivoDescrito,
   InmuneAlAplicar,
@@ -37,8 +38,8 @@ export type AccionesMando = {
   aplicarEstado: (ids: string[], estado: EstadoAAplicar, forzar?: boolean) => Promise<ResultadoMando>;
   quitarEstado: (ids: string[], estadoId: string) => Promise<ResultadoMando>;
   darRecurso: (recurso: RecursoMaster, ids: string[], cantidad: number, motivo?: string) => Promise<ResultadoMando>;
-  // `delta` con signo: negativo = daño.
-  ajustarVida: (recurso: RecursoVital, ids: string[], delta: number) => Promise<ResultadoMando>;
+  // `delta` con signo: negativo = daño. `categoria`: a qué parte del desglose va (solo vida).
+  ajustarVida: (recurso: RecursoVital, ids: string[], delta: number, categoria?: CategoriaDanio) => Promise<ResultadoMando>;
 };
 
 // El aviso (toast) que sale tras cada acción, con "Deshacer" si dejó entrada.

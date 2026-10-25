@@ -461,8 +461,19 @@ imponen penalizadores por umbral:
   categoría quita **de lo más leve primero** (no letal, luego letal, luego grave). En
   Recursos, la tarjeta de Vida pinta la barra con lo perdido por categoría y una fila por
   categoría para recibir o curar 1 (`ajustarDanioCategoria`). Peaje neurológico y
-  sobrecarga ya restan con su categoría. Pendiente: combate (foto del combatiente) y panel
-  de mando, Fortaleza absorbiendo el no letal, curas por descanso/medicina.
+  sobrecarga ya restan con su categoría.
+  *Fase 2 (2026-10-25): categoría en todos los −/+ de vida.* Un solo control
+  (`components/ficha/ControlVida.tsx`, completo en Recursos y en el editor de NPC, compacto
+  en la cabina y en la fila propia del combate). La foto del combatiente guarda su desglose
+  (`Combatiente.danio`, Json nullable; se lee con `danioDeFoto`, una fila sin él es todo
+  letal), sembrado desde la ficha al entrar en combate (`vitalidadAlEntrarEnCombate`); los NPC
+  entran enteros. La pestaña Vida del máster (Mesa y combate) elige categoría para dañar
+  (por defecto letal) y para curar (por defecto no letal; cura solo de esa categoría), y el
+  registro guarda el desglose de antes y de después de cada objetivo: deshacer devuelve el
+  exacto y se niega si el desglose cambió después aunque la vida sea la misma. Lo que mueve
+  la vida sin categoría (estados por S75, efectos de reglas) sigue normalizándose al leer.
+  Pendiente: Fortaleza absorbiendo el no letal, curas por descanso/medicina, y que el daño
+  del combate vuelva a la ficha al terminar.
 - **Daño específico** (eléctrico, fuego, frío, corrosivo, plasma, sónico, tóxico, mental),
   cada uno con su categoría de gravedad y su efecto asociado. El **mental omite armaduras**.
   *En la app (2026-10-24, aviso de Murillo: "el fuego es daño grave"):* la gravedad de

@@ -1,7 +1,15 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, parseSheet, type Sheet } from "./sheet";
-import { acotarDanio, categoriaDanioDeTexto, normalizarDanio, sumaDanio, type DanioVida } from "./danio";
+import {
+  acotarDanio,
+  ajustarDanioVital,
+  categoriaDanioDeTexto,
+  danioDeFoto,
+  normalizarDanio,
+  sumaDanio,
+  type DanioVida,
+} from "./danio";
 import { ajustarDanioCategoria, ajustarVida, reconciliarVida, reconciliarVidaConEstados, topesDeVida } from "./vitalidad";
 import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import type { EstadoActivo } from "./estados";
@@ -158,5 +166,37 @@ describe("categoriaDanioDeTexto", () => {
     assert.equal(categoriaDanioDeTexto("Electrico"), "letal");
     assert.equal(categoriaDanioDeTexto("mental"), "letal");
     assert.equal(categoriaDanioDeTexto("Frío"), "noLetal");
+  });
+});
+
+describe("ajustarDanioVital (foto de combate y panel de mando)", () => {
+  test("recibir suma a la categoría, sin bajar de 0; curar solo de esa categoría", () => {
+    assert.deepEqual(ajustarDanioVital({ actual: 8, tope: 10, danio: d(0, 2, 0) }, "grave", 3), { actual: 5, danio: d(0, 2, 3) });
+    assert.deepEqual(ajustarDanioVital({ actual: 2, tope: 10, danio: d(0, 8, 0) }, "noLetal", 5), { actual: 0, danio: d(2, 8, 0) });
+    assert.deepEqual(ajustarDanioVital({ actual: 5, tope: 10, danio: d(1, 2, 2) }, "grave", -5), { actual: 7, danio: d(1, 2, 0) });
+    assert.deepEqual(ajustarDanioVital({ actual: 5, tope: 10, danio: d(1, 2, 2) }, "noLetal", 0), { actual: 5, danio: d(1, 2, 2) });
+  });
+
+  test("normaliza antes de ajustar: un desglose viejo que no cuadra entra como letal", () => {
+    assert.deepEqual(ajustarDanioVital({ actual: 6, tope: 10, danio: d(0, 0, 0) }, "letal", -1), { actual: 7, danio: d(0, 3, 0) });
+  });
+
+  test("invariante actual + desglose === tope", () => {
+    let v = { actual: 12, tope: 12, danio: d(0, 0, 0) };
+    for (const [c, n] of [["grave", 3], ["noLetal", 4], ["letal", -2], ["noLetal", -9], ["letal", 20]] as const) {
+      const r = ajustarDanioVital(v, c, n);
+      v = { ...v, ...r };
+      assert.equal(v.actual + sumaDanio(v.danio), v.tope);
+    }
+  });
+});
+
+describe("danioDeFoto", () => {
+  test("una fila vieja (null) se lee todo letal; la guardada, normalizada", () => {
+    assert.deepEqual(danioDeFoto(null, 7, 10), d(0, 3, 0));
+    assert.deepEqual(danioDeFoto({ noLetal: 1, letal: 0, grave: 2 }, 7, 10), d(1, 0, 2));
+    // Un estado bajó la vida después sin categoría: lo que falta, letal.
+    assert.deepEqual(danioDeFoto({ noLetal: 1, letal: 0, grave: 2 }, 5, 10), d(1, 2, 2));
+    assert.deepEqual(danioDeFoto("basura", 10, 10), d(0, 0, 0));
   });
 });

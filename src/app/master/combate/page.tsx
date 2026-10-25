@@ -11,6 +11,7 @@ import {
   inmunidadesDe,
   resumenCombate,
   textoEntradaRegistro,
+  danioDeFoto,
 } from "@/lib/rules";
 import { CombateConsole } from "./CombateConsole";
 import { NO_BORRADA } from "@/lib/borrado";
@@ -54,6 +55,7 @@ export default async function CombatePage() {
       const inmunidades = deFicha ? inmunidadesDe(deFicha) : [];
       return {
         ...c,
+        danio: danioDeFoto(c.danio, c.pgActual, c.pgMax),
         estados: describirEstadosActivos(estadosDeCombatiente({ ...c, character }), inmunidades),
         inmunidades,
         xp: character?.xp ?? null,

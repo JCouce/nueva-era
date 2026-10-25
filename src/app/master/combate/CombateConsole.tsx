@@ -24,6 +24,7 @@ import {
   type RecursoVital,
   type ResumenCombate,
   type Sheet,
+  type DanioVida,
 } from "@/lib/rules";
 import { ChipEstado } from "@/components/ChipEstado";
 import { Aviso } from "@/components/mando/Aviso";
@@ -58,6 +59,8 @@ type CombatienteView = {
   nombre: string;
   pgActual: number;
   pgMax: number;
+  // Desglose de lo perdido en la foto (danioDeFoto).
+  danio: DanioVida;
   fatigaActual: number;
   fatigaMax: number;
   iniciativa: number | null;
@@ -223,7 +226,7 @@ export function CombateConsole({
       creditos: c.creditos,
       estados: c.estados,
       inmunidades: c.inmunidades,
-      vida: { actual: c.pgActual, max: c.pgMax, tope: c.pgMax },
+      vida: { actual: c.pgActual, max: c.pgMax, tope: c.pgMax, danio: c.danio },
       fatiga: { actual: c.fatigaActual, max: c.fatigaMax, tope: c.fatigaMax },
     }));
   const todos = cola.length > 0 && cola.every((c) => seleccion.includes(c.id));
@@ -239,7 +242,8 @@ export function CombateConsole({
     quitarEstado: (combatienteIds, estadoId) => quitarEstadoEnCombateAction({ combatienteIds, estadoId }),
     darRecurso: (recurso, ids, cantidad, motivo) =>
       (recurso === "xp" ? darXpAction : darCreditosAction)({ characterIds: characterIdsDe(ids), cantidad, motivo }),
-    ajustarVida: (recurso, combatienteIds, cantidad) => ajustarVidaEnCombateAction({ combatienteIds, recurso, cantidad }),
+    ajustarVida: (recurso, combatienteIds, cantidad, categoria) =>
+      ajustarVidaEnCombateAction({ combatienteIds, recurso, cantidad, categoria }),
   };
 
   // Atajo desde las barras de una fila: objetivo único y pestaña Vida con ese recurso.
@@ -665,7 +669,7 @@ function FilaCola({
           aria-label={`PG de ${c.nombre}: ${c.pgActual} de ${c.pgMax}. Ajustar`}
           className={barra}
         >
-          <Barra label="PG" actual={c.pgActual} max={c.pgMax} relleno="bg-neon-green" grande />
+          <Barra label="PG" actual={c.pgActual} max={c.pgMax} relleno="bg-neon-green" danio={c.danio} grande />
         </button>
         <button
           type="button"

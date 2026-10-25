@@ -13,7 +13,7 @@ import { modificadoresActivos, salud } from "./derivados";
 import { desequipar } from "./equipo";
 import type { EstadoActivo } from "./estados";
 import type { Sheet } from "./sheet";
-import { acotarDanio, danioIgual, normalizarDanio, type CategoriaDanio, type DanioVida } from "./danio";
+import { acotarDanio, ajustarDanioVital, danioIgual, normalizarDanio, type CategoriaDanio, type DanioVida } from "./danio";
 import { estadoPorId } from "../catalog/estados";
 
 export type TopesVida = { vida: number; fatiga: number };
@@ -131,15 +131,10 @@ export function ajustarDanioCategoria(
   delta: number,
   estados: readonly EstadoActivo[] = [],
 ): Sheet {
-  if (!Number.isFinite(delta)) return sheet;
-  const d = Math.round(delta);
-  if (d === 0) return sheet;
+  if (!Number.isFinite(delta) || Math.round(delta) === 0) return sheet;
   const tope = topesDeVida(sheet, estados).vida;
-  const actual = Math.max(0, Math.min(sheet.vidaActual, tope));
-  const danio = normalizarDanio(sheet.danio, tope - actual);
-  const n = d > 0 ? Math.min(d, actual) : -Math.min(-d, danio[categoria]);
-  if (n === 0) return conDanio(actual === sheet.vidaActual ? sheet : { ...sheet, vidaActual: actual }, danio);
-  return { ...sheet, vidaActual: actual - n, danio: { ...danio, [categoria]: danio[categoria] + n } };
+  const r = ajustarDanioVital({ actual: sheet.vidaActual, tope, danio: sheet.danio }, categoria, delta);
+  return conDanio(r.actual === sheet.vidaActual ? sheet : { ...sheet, vidaActual: r.actual }, r.danio);
 }
 
 export function ajustarFatiga(sheet: Sheet, delta: number, estados: readonly EstadoActivo[] = []): Sheet {
@@ -189,9 +184,12 @@ export function terminarEscena(sheet: Sheet): Sheet {
 export function vitalidadAlEntrarEnCombate(
   sheet: Sheet,
   max: { vida: number; fatiga: number },
-): { pgActual: number; fatigaActual: number } {
+): { pgActual: number; fatigaActual: number; danio: DanioVida } {
+  const pgActual = Math.max(0, Math.min(sheet.vidaActual, max.vida));
   return {
-    pgActual: Math.max(0, Math.min(sheet.vidaActual, max.vida)),
+    pgActual,
     fatigaActual: Math.max(0, Math.min(sheet.fatigaActual, max.fatiga)),
+    // El desglose de la ficha, contra lo perdido en la foto (su máximo puede ser otro).
+    danio: normalizarDanio(sheet.danio, max.vida - pgActual),
   };
 }

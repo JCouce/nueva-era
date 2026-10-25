@@ -141,6 +141,9 @@ model Combatiente {
   pgMax         Int
   fatigaActual  Int
   fatigaMax     Int
+  // Desglose de la vida perdida en la foto (pgMax − pgActual) por categoría, como
+  // Sheet.danio (rules/danio.ts). Null en filas de antes: se lee normalizado (todo letal).
+  danio         Json?
   iniciativa    Int?
   // Orden de la cola de iniciativa. No se deriva solo de `iniciativa`
   // (empates, reordenar a mano con las flechas de la subtarea 2.3): es su

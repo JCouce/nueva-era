@@ -230,6 +230,10 @@ describe("limpiar estados", () => {
   });
 });
 
+function cambio(o: { objetivo: "ficha" | "combatiente"; id: string; nombre: string; npc: boolean; actual: number }, despues: number) {
+  return { objetivo: o.objetivo, id: o.id, nombre: o.nombre, npc: o.npc, antes: o.actual, despues };
+}
+
 function pjVacio() {
   return { id: "pj1", nombre: "Pepa", sheet: SHEET, estados: [] as EstadoActivo[] };
 }
@@ -280,6 +284,66 @@ describe("vida (pestaña Vida del máster)", () => {
   test("un objetivo que ya no existe se salta", () => {
     const d = { tipo: "vida" as const, recurso: "vida" as const, delta: 2, cambios: planAjusteVida([{ ...javi, actual: 4 }, guardia], 2) };
     assert.deepEqual(planDeshacerVida(d, [{ ...javi, actual: 6 }]), { ok: true, plan: [{ objetivo: "ficha", id: "c1", valor: 4 }] });
+  });
+
+  describe("con categoría (desglose de la vida)", () => {
+    const D = (noLetal: number, letal: number, grave: number) => ({ noLetal, letal, grave });
+    const kira = { ...javi, actual: 6, tope: 10, danio: D(1, 3, 0) };
+    const npc = { ...guardia, actual: 12, tope: 12, danio: D(0, 0, 0) };
+
+    test("el daño entra en la categoría y guarda el desglose de antes y después", () => {
+      assert.deepEqual(planAjusteVida([kira, npc], -2, "grave"), [
+        { ...cambio(kira, 4), danioAntes: D(1, 3, 0), danioDespues: D(1, 3, 2) },
+        { ...cambio(npc, 10), danioAntes: D(0, 0, 0), danioDespues: D(0, 0, 2) },
+      ]);
+    });
+
+    test("curar una categoría solo quita de ella; quien no tiene de esa no sale", () => {
+      assert.deepEqual(planAjusteVida([kira, npc], 5, "noLetal"), [
+        { ...cambio(kira, 7), danioAntes: D(1, 3, 0), danioDespues: D(0, 3, 0) },
+      ]);
+    });
+
+    test("sin categoría, el de siempre, con el desglose normalizado", () => {
+      assert.deepEqual(planAjusteVida([kira], 2), [{ ...cambio(kira, 8), danioAntes: D(1, 3, 0), danioDespues: D(0, 2, 0) }]);
+    });
+
+    test("se guarda y se lee igual, con la categoría", () => {
+      const d: DatosRegistro = { tipo: "vida", recurso: "vida", delta: -2, categoria: "grave", cambios: planAjusteVida([kira, npc], -2, "grave") };
+      assert.deepEqual(guardadoYLeido(d), d);
+    });
+
+    test("deshacer devuelve exactamente el desglose de antes", () => {
+      const d: DatosRegistro = { tipo: "vida", recurso: "vida", delta: -2, categoria: "grave", cambios: planAjusteVida([kira, npc], -2, "grave") };
+      const r = planDeshacerVida(d, [
+        { ...kira, actual: 4, danio: D(1, 3, 2) },
+        { ...npc, actual: 10, danio: D(0, 0, 2) },
+      ]);
+      assert.deepEqual(r, {
+        ok: true,
+        plan: [
+          { objetivo: "ficha", id: "c1", valor: 6, danio: D(1, 3, 0) },
+          { objetivo: "combatiente", id: "k1", valor: 12, danio: D(0, 0, 0) },
+        ],
+      });
+    });
+
+    test("no se puede si cambió el tipo de daño aunque la vida sea la misma", () => {
+      const d: DatosRegistro = { tipo: "vida", recurso: "vida", delta: -2, categoria: "grave", cambios: planAjusteVida([kira], -2, "grave") };
+      const r = planDeshacerVida(d, [{ ...kira, actual: 4, danio: D(2, 2, 2) }]);
+      assert.equal(r.ok, false);
+      assert.match(!r.ok ? r.error : "", /tipo de daño/);
+    });
+
+    test("una entrada vieja sin desglose vuelve al número y normaliza el de ahora", () => {
+      const viejo: DatosRegistro = { tipo: "vida", recurso: "vida", delta: -2, cambios: [cambio(kira, 4)] };
+      const leido = leerDatosRegistro("vida", JSON.parse(JSON.stringify(datosParaGuardar(viejo))));
+      assert.ok(leido && leido.tipo === "vida");
+      assert.deepEqual(planDeshacerVida(leido, [{ ...kira, actual: 4, danio: D(1, 3, 2) }]), {
+        ok: true,
+        plan: [{ objetivo: "ficha", id: "c1", valor: 6, danio: D(0, 2, 2) }],
+      });
+    });
   });
 
   test("una entrada de vida no bloquea deshacer un estado del mismo personaje", () => {
