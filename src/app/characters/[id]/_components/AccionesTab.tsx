@@ -178,6 +178,63 @@ function FilaHistorial({ h }: { h: Lanzamiento }) {
   );
 }
 
+// El log de tiradas: lista compacta en la pestaña (móvil) y, en la mesa de escritorio
+// (`destacada`), la última en grande encima del resto.
+export function HistorialTiradas({ historial, destacada = false }: { historial: Lanzamiento[]; destacada?: boolean }) {
+  if (historial.length === 0) {
+    return (
+      <HudCard className="border-dashed p-4 text-center">
+        <p className="font-mono text-[11px] uppercase tracking-widest text-muted">{"//SYSTEM · sin tiradas"}</p>
+        <p className="mt-2 font-sans text-prosa text-soft">Elige una acción y pulsa Tirar.</p>
+      </HudCard>
+    );
+  }
+  const [ultima, ...resto] = historial;
+  const filas = destacada ? resto : historial;
+  return (
+    <>
+      {destacada && <UltimaTirada key={ultima.id} h={ultima} />}
+      {filas.length > 0 && (
+        <HudCard className="p-3">
+          <div className="flex flex-col">
+            {filas.map((h) => (
+              <FilaHistorial key={h.id} h={h} />
+            ))}
+          </div>
+        </HudCard>
+      )}
+    </>
+  );
+}
+
+function UltimaTirada({ h }: { h: Lanzamiento }) {
+  const tono = tonoResultado(h);
+  return (
+    <div
+      className={`clip-chamfer-sm flex flex-col gap-1 border border-current bg-surface px-4 py-3 motion-safe:animate-[aviso-entra_.25s_ease-out] ${tono}`}
+    >
+      <span className="font-display text-sm font-semibold uppercase leading-tight text-foreground">{h.label}</span>
+      <span className="font-display text-3xl font-bold uppercase tracking-wide">{textoExitos(h)}</span>
+      {!h.sinDado && (
+        <span className="font-mono text-[11px] tabular-nums text-muted">
+          d12 {h.dados ? `${h.dados[0]}/${h.dados[1]}` : h.dado} {signo(h.modificador)}
+          {h.circunstancial !== 0 && ` ${signo(h.circunstancial)}`} = {h.total}
+          {h.dificultad !== null && ` · dif ${h.dificultad}`}
+          {h.critico && (h.exito ? " · crítico" : " · pifia")}
+        </span>
+      )}
+      {h.danioResuelto && (
+        <span className="font-mono text-xs text-danger">daño {h.danioResuelto.total}</span>
+      )}
+      {h.vueloResuelto && (
+        <span className="font-mono text-xs text-info">
+          {h.vueloResuelto.descontrolado ? "vuelo descontrolado" : `vuelas ${h.vueloResuelto.metros}m`}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function FilaTirada({
   tirada,
   ficha,
@@ -601,6 +658,7 @@ export function AccionesTab({
   onMarcarFavorita,
   libre = false,
   soloLectura = false,
+  cabina = false,
 }: {
   // La ficha ya resuelta (useFichaResuelta). Fase 6b, 3.1b (D5: combate → ficha):
   // lleva dentro los estados que el máster le tenga puestos ahora mismo en el
@@ -675,6 +733,9 @@ export function AccionesTab({
   libre?: boolean;
   // Ficha en revisión (CharacterSheet): las filas se desactivan, la barra de pestañas no.
   soloLectura?: boolean;
+  // Ficha en escritorio (CharacterSheet, xl+): el log de tiradas lo pinta la columna de la
+  // mesa, las favoritas van fijas arriba y las filas a dos columnas.
+  cabina?: boolean;
 }) {
   // La pestaña abierta (`elegida`) se declara más abajo, con las secciones ya montadas.
   const sheet = ficha.ficha;
@@ -1445,37 +1506,46 @@ export function AccionesTab({
   // Una pestaña sin filas no se pinta (Aumentos sin aumentos). Si se vacía la que está abierta
   // (desequipar lo último), a Básicas.
   const pestanas = PESTANAS.filter((p) =>
-    p.id === "favoritas" ? !!onMarcarFavorita : secciones.some((s) => s.origen === p.id),
+    p.id === "favoritas" ? !!onMarcarFavorita && !cabina : secciones.some((s) => s.origen === p.id),
   );
   const pestana = pestanas.some((p) => p.id === elegida) ? elegida : "basicas";
   const enFavoritas = pestana === "favoritas";
   const seccionesPestana = enFavoritas ? seccionesFavoritas : secciones.filter((s) => s.origen === pestana);
 
+  // Cabina de escritorio: las favoritas fijas arriba (sin pestaña ★) y las filas a dos columnas.
+  const filasFavoritas = seccionesFavoritas.flatMap((s) => s.filas);
+  const rejilla = cabina ? "grid gap-2 xl:grid-cols-2" : "flex flex-col gap-2";
+
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-2">
-        <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
-          Acciones recientes
-        </h2>
-        {historial.length === 0 ? (
-          <HudCard className="border-dashed p-4 text-center">
-            <p className="font-mono text-[11px] uppercase tracking-widest text-muted">
-              {"//SYSTEM · sin tiradas"}
-            </p>
-            <p className="mt-2 font-sans text-prosa text-soft">
-              Elige una acción y pulsa Tirar.
-            </p>
-          </HudCard>
-        ) : (
-          <HudCard className="p-3">
-            <div className="flex flex-col">
-              {historial.map((h) => (
-                <FilaHistorial key={h.id} h={h} />
-              ))}
-            </div>
-          </HudCard>
-        )}
-      </div>
+      {/* En cabina el log vive en la columna de la mesa (CharacterSheet). */}
+      {!cabina && (
+        <div className="flex flex-col gap-2">
+          <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
+            Acciones recientes
+          </h2>
+          <HistorialTiradas historial={historial} />
+        </div>
+      )}
+
+      {cabina && onMarcarFavorita && (
+        <PanelFieldset disabled={soloLectura}>
+          <div className="flex flex-col gap-2">
+            <h2 className="border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-accent">
+              ★ Favoritas
+            </h2>
+            {filasFavoritas.length === 0 ? (
+              <p className="font-sans text-prosa-sm text-soft">Marca con la estrella las acciones que más uses.</p>
+            ) : (
+              <div className="grid gap-2 xl:grid-cols-2">
+                {filasFavoritas.map((f, i) => (
+                  <Fragment key={f.id ?? `info:${i}`}>{f.nodo}</Fragment>
+                ))}
+              </div>
+            )}
+          </div>
+        </PanelFieldset>
+      )}
 
       {/* Por origen: Básicas (lo de todo el mundo), Equipo, Poderes y Aumentos, y delante ★
           (Favoritas, solo con onMarcarFavorita) con las marcadas de todas. Las pestañas sin
@@ -1506,16 +1576,16 @@ export function AccionesTab({
           )}
 
           {seccionesPestana.map((s) => (
-            <div key={s.titulo} className="flex flex-col gap-2">
-              <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
+            <div key={s.titulo} className={rejilla}>
+              <h2 className="col-span-full mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
                 {s.titulo}
               </h2>
-              {s.aviso}
+              {s.aviso && <div className="col-span-full">{s.aviso}</div>}
               {s.filas.map((f, i) => (
                 <Fragment key={f.id ?? `info:${i}`}>
                   {/* Subtítulo de disciplina en Psiónica, al empezar cada una. */}
                   {f.sub && f.sub !== s.filas[i - 1]?.sub && (
-                    <h3 className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted">{f.sub}</h3>
+                    <h3 className="col-span-full mt-1 font-mono text-[10px] uppercase tracking-widest text-muted">{f.sub}</h3>
                   )}
                   {f.nodo}
                 </Fragment>

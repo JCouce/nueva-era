@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   setAtributoAction,
   setHabilidadAction,
@@ -110,6 +110,8 @@ import { TiendaTab } from "./_components/TiendaTab";
 import { EquipoTab } from "./_components/EquipoTab";
 import { RecursosTab } from "./_components/RecursosTab";
 import { CombateTab, type CombateView } from "./_components/CombateTab";
+import { RailFicha } from "./_components/RailFicha";
+import { MesaFicha } from "./_components/MesaFicha";
 import type { Lanzamiento } from "@/components/ResultadoTirada";
 import { NavegacionFicha, SECCIONES_FICHA, type TabId } from "@/components/ficha/NavegacionFicha";
 
@@ -119,6 +121,7 @@ import { NavegacionFicha, SECCIONES_FICHA, type TabId } from "@/components/ficha
 const AUTOSAVE_DEBOUNCE_MS = 500;
 import { usePollingCombate } from "@/hooks/usePollingCombate";
 import { useFichaResuelta } from "@/hooks/useFichaResuelta";
+import { useCabina } from "@/hooks/useCabina";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -142,6 +145,7 @@ export function CharacterSheet({
   estados,
   vidaGuardada,
   combate,
+  controlMaster,
 }: {
   characterId: string;
   initialName: string;
@@ -167,6 +171,9 @@ export function CharacterSheet({
   // tiene fila dentro (fase 6b bloque 3) — en los dos casos, nada de
   // combate se enseña en la ficha.
   combate: CombateView | null;
+  // Aprobar/devolver del máster: en escritorio va en la columna izquierda (en móvil lo
+  // pinta page.tsx encima de la ficha).
+  controlMaster?: ReactNode;
 }) {
   const aprobada = characterStatus === "APPROVED";
   // En revisión, el jugador solo lee (el máster puede editar): la regla, en revision.ts.
@@ -223,7 +230,10 @@ export function CharacterSheet({
   // carga y otra de esta página (el combate terminó) con `active` todavía
   // en "combate", cae a "personaje" en vez de dejar la ficha en blanco — el
   // switch de abajo no renderiza nada para "combate" sin `combate`.
-  const activeEfectivo: TabId = active === "combate" && !combate ? "personaje" : active;
+  // En la cabina (xl+) la cola del combate está siempre a la vista en la columna de la mesa:
+  // la pestaña no sale, y si venía elegida del móvil, cae igual.
+  const cabina = useCabina();
+  const activeEfectivo: TabId = active === "combate" && (!combate || cabina) ? "personaje" : active;
 
   // Refs con el último valor, para leerlos dentro de los saves con debounce.
   // Se sincronizan en efecto, no en render: escribirlas durante el render
@@ -630,250 +640,277 @@ export function CharacterSheet({
       ? RECURSOS_POR_LETRA[sheet.prioridades.recursos].rareza
       : null;
 
+  // Columnas de la cabina (xl+): sticky y con su propio scroll, sin transform ni filtros
+  // (los modales `fixed` del centro y los portales no deben quedar atrapados).
+  const columnaLateral =
+    "hidden xl:sticky xl:top-[4.25rem] xl:flex xl:max-h-[calc(100dvh-5.5rem)] xl:flex-col xl:overflow-y-auto xl:overscroll-contain xl:[scrollbar-width:thin]";
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <h1 className="font-display text-3xl font-bold uppercase tracking-wide">
-          {name || "Sin nombre"}
-        </h1>
-        <EstadoFichaChip estado={characterStatus} />
-      </div>
-
-      {/* HUD fino: estado de solo lectura (la edición está en cada tab) */}
-      <div className="flex items-center gap-3 border-y border-border py-2 font-mono text-sm">
-        <span className="uppercase tracking-wide text-muted">
-          {ficha.especie
-            ? [ficha.especie.especie, ficha.especie.casta, ficha.especie.linaje]
-                .flatMap((o) => (o ? [o.label] : []))
-                .join(" · ")
-            : "sin especie"}
-        </span>
-        <span className="ml-auto tabular-nums text-danger">
-          {vida}
-          <span className="text-muted"> pv</span>
-        </span>
-        <span className="tabular-nums text-info">
-          {fatiga}
-          <span className="text-muted"> fat</span>
-        </span>
-      </div>
-
-      {/* Tira de combate (fase 6b, bloque 3, D5: combate → ficha, nunca al
-          revés): solo aparece si este personaje está metido en el Combate
-          EN_CURSO actual. PG/fatiga aquí son la foto del combatiente, no el
-          derivado de la ficha de arriba — durante combate son magnitudes
-          distintas a propósito (ver comentario de Combatiente en
-          schema.prisma). */}
-      {miCombatiente && (
-        <div
-          className={`clip-chamfer-sm flex flex-col gap-1.5 border px-3 py-2 font-mono text-xs ${
-            esMiTurno ? "!border-accent shadow-glow-yellow" : "border-border"
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <span className="uppercase tracking-wide text-muted">Ronda {combate!.ronda}</span>
-            {esMiTurno && (
-              <span className="uppercase tracking-wide text-accent">Tu turno</span>
-            )}
-            <span className="ml-auto tabular-nums text-danger">
-              {miCombatiente.pgActual}
-              <span className="text-muted">/{miCombatiente.pgMax} pv</span>
-            </span>
-            <span className="tabular-nums text-info">
-              {miCombatiente.fatigaActual}
-              <span className="text-muted">/{miCombatiente.fatigaMax} fat</span>
-            </span>
-          </div>
-          {misEstadosActivos.length > 0 && (
-            <div className="flex flex-col gap-1.5 border-t border-border pt-1.5">
-              {misEstadosActivos.map((a) => (
-                <div key={a.estadoId} className="flex flex-col items-start gap-0.5">
-                  <ChipEstado estado={a} />
-                  {/* Detalle visible de verdad, no en un `title` — mismo
-                      arreglo que CombateConsole.tsx. */}
-                  {a.detalle.length > 0 && (
-                    <p className="text-prosa-sm normal-case tracking-normal text-soft">
-                      {a.detalle.join(" ")}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* El guardado es automático y casi siempre invisible a propósito —
-          "guardando…"/"guardado ✓" permanente en la fila de tabs sobraba
-          más de lo que ayudaba. Solo se avisa cuando de verdad hace falta
-          hacer algo: el guardado ha fallado. */}
-      {status === "error" && (
-        <p className="font-mono text-[11px] uppercase tracking-wide text-danger">
-          Error al guardar — vuelve a intentarlo
-        </p>
-      )}
-
-      {/* "combate" solo existe mientras el personaje está metido en un Combate
-          EN_CURSO (fase 6b bloque 3, D5): sin él, la sección no se pinta. */}
-      <NavegacionFicha
-        secciones={SECCIONES_FICHA}
-        activa={activeEfectivo}
-        onCambiar={setActive}
-        enCombate={Boolean(combate)}
-      />
-
-      {characterStatus === "IN_REVIEW" && esDueno && (
-        <AvisoEnRevision characterId={characterId} submittedAt={submittedAt} puedeRetirar={esDueno} />
-      )}
-
-      {activeEfectivo === "personaje" && (
-        <PersonajeTab
+    <div className="flex flex-col gap-4 xl:grid xl:grid-cols-[15.5rem_minmax(0,1fr)_17.5rem] xl:items-start xl:gap-5 2xl:grid-cols-[18.75rem_minmax(0,1fr)_22.5rem] 2xl:gap-6">
+      <aside aria-label="Ficha de un vistazo" className={`${columnaLateral} xl:border-r xl:border-border xl:pr-5`}>
+        <RailFicha
           name={name}
+          estado={characterStatus}
           ficha={ficha}
-          aprobada={aprobada}
-          esMaster={esMaster}
+          xp={xp}
           creditos={creditos}
-          onName={onName}
-          onEdad={onEdad}
-          onAltura={onAltura}
-          onPeso={onPeso}
-          onEspecie={onEspecie}
-          onAtributoLibre={onAtributoLibre}
-          onTrasfondo={onTrasfondo}
-          onMotivacion={onMotivacion}
-          onPrioridad={commitPrioridad}
+          controlMaster={controlMaster}
           soloLectura={soloLectura}
-          envio={
-            esDueno && characterStatus === "DRAFT"
-              ? { characterId, reviewNote, esperarGuardados: () => queue.current }
-              : null
-          }
-        />
-      )}
-      {/* Acciones lleva su propio fieldset (su barra Básicas/Tiradas sigue navegable). */}
-      {activeEfectivo === "acciones" && (
-        <AccionesTab
-          ficha={ficha}
-          historial={accionesHistorial}
-          setHistorial={setAccionesHistorial}
-          memoria={accionesMemoria}
-          setMemoria={setAccionesMemoria}
-          onReparar={commitReparar}
-          onFabricar={commitFabricar}
-          onGastarRecurso={commitAjustarRecurso}
-          onDaniarEscudo={commitAjustarRecurso}
-          onAjustarFarmaco={commitAjustarFarmaco}
-          onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
-          onPagarFatiga={commitPagarFatiga}
-          onAjustarFatiga={commitDevolverFatiga}
           onAjustarVida={commitAjustarVida}
-          onAjustarDanio={commitAjustarDanio}
-          onGastarUsosEscena={commitGastarUsosEscena}
-          onUsarAccionAumento={commitUsarAccionAumento}
-          onMarcarFavorita={commitMarcarFavorita}
-          soloLectura={soloLectura}
+          onAjustarFatiga={commitAjustarFatiga}
         />
-      )}
-      {/* Personaje lleva su propio fieldset (sus sub-pestañas siguen navegables). */}
-      {activeEfectivo !== "personaje" && activeEfectivo !== "acciones" && (
-        <PanelFieldset disabled={soloLectura}>
-          {activeEfectivo === "attrs" && (
-            <AtributosTab
-              ficha={ficha}
-              puntosDisponibles={puntosAttr}
-              aprobada={aprobada}
-              xp={xp}
-              onSet={commitAtributo}
-            />
-          )}
-          {activeEfectivo === "skills" && (
-            <HabilidadesTab
-              ficha={ficha}
-              puntosDisponibles={puntosSkill}
-              aprobada={aprobada}
-              xp={xp}
-              onSet={commitHabilidad}
-              onAddEspecialidad={commitAddEspecialidad}
-              onRemoveEspecialidad={commitRemoveEspecialidad}
-              onDescartarAviso={commitDescartarAviso}
-            />
-          )}
-          {activeEfectivo === "dotes" && (
-            <DotesTab
-              ficha={ficha}
-              aprobada={aprobada}
-              xp={xp}
-              foto={dotesDeLaFoto}
-              error={errorDotes}
-              onComprar={commitComprarDote}
-              onQuitar={commitQuitarDote}
-            />
-          )}
-          {activeEfectivo === "psionica" && (
-            <PsionicaTab ficha={ficha} aprobada={aprobada} xp={xp} onSet={commitDisciplina} />
-          )}
-          {activeEfectivo === "tienda" && (
-            <TiendaTab
-              sheet={sheet}
-              creditos={creditos}
-              topeRareza={topeRareza}
-              bolsaAumentos={ficha.bolsaAumentos}
-              excepcionRareza={{ estado: characterStatus, esMaster, excepciones: ficha.excepcionesRareza }}
-              onEquipar={commitEquipar}
-              onComprarGranada={commitComprarGranada}
-              onComprarFarmaco={commitComprarFarmaco}
-              onRecargar={commitRecargar}
-              onComprarMunicionEspecial={commitComprarMunicionEspecial}
-              onComprarAumento={commitComprarAumento}
-            />
-          )}
-          {activeEfectivo === "equipo" && (
-            <EquipoTab
-              sheet={sheet}
-              creditos={creditos}
-              onDesequipar={commitDesequipar}
-              onArmaIncorporada={commitArmaIncorporada}
-              onConvertirArma={commitConvertirArma}
-              topeRareza={topeRareza}
-            />
-          )}
-          {activeEfectivo === "recursos" && (
-            <RecursosTab
-              ficha={ficha}
-              creditos={creditos}
-              onAjustar={commitAjustarRecurso}
-              onRecargar={commitRecargar}
-              onAjustarMaterial={commitAjustarMaterial}
-              onComprarMaterial={commitComprarMaterial}
-              onAjustarGranada={commitAjustarGranada}
-              onAjustarFarmaco={commitAjustarFarmaco}
-              onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
-              onComprarMunicionEspecial={commitComprarMunicionEspecial}
-              onAjustarVida={commitAjustarVida}
-              onAjustarDanio={commitAjustarDanio}
-              onAjustarFatiga={commitAjustarFatiga}
-              onAjustarFatigaTemporal={commitAjustarFatigaTemporal}
-              onTerminarEscena={commitTerminarEscena}
-              onLiberarUsoEscena={commitLiberarUsoEscena}
-            />
-          )}
-          {activeEfectivo === "combate" && combate && (
-            <CombateTab combate={combate} miCombatienteId={miCombatiente?.id ?? null} />
-          )}
+      </aside>
 
-          {/* Resetear es vender todo de golpe: no tiene sentido, y el servidor
-              lo rechaza, en cuanto la ficha está aprobada. */}
-          {!aprobada && (activeEfectivo === "attrs" || activeEfectivo === "skills") && (
-            <button
-              type="button"
-              onClick={reset}
-              className="clip-chamfer-sm mt-2 self-start border border-danger px-3 py-1.5 font-mono text-[11px] uppercase tracking-wide text-danger active:scale-95"
-            >
-              ⟲ Reset build
-            </button>
-          )}
-        </PanelFieldset>
-      )}
+      <div className="flex min-w-0 flex-col gap-4">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 xl:hidden">
+          <h1 className="font-display text-3xl font-bold uppercase tracking-wide">
+            {name || "Sin nombre"}
+          </h1>
+          <EstadoFichaChip estado={characterStatus} />
+        </div>
+
+        {/* HUD fino: estado de solo lectura (la edición está en cada tab) */}
+        <div className="flex items-center gap-3 border-y border-border py-2 font-mono text-sm xl:hidden">
+          <span className="uppercase tracking-wide text-muted">
+            {ficha.especie
+              ? [ficha.especie.especie, ficha.especie.casta, ficha.especie.linaje]
+                  .flatMap((o) => (o ? [o.label] : []))
+                  .join(" · ")
+              : "sin especie"}
+          </span>
+          <span className="ml-auto tabular-nums text-danger">
+            {vida}
+            <span className="text-muted"> pv</span>
+          </span>
+          <span className="tabular-nums text-info">
+            {fatiga}
+            <span className="text-muted"> fat</span>
+          </span>
+        </div>
+
+        {/* Tira de combate (fase 6b, bloque 3, D5: combate → ficha, nunca al
+            revés): solo aparece si este personaje está metido en el Combate
+            EN_CURSO actual. PG/fatiga aquí son la foto del combatiente, no el
+            derivado de la ficha de arriba — durante combate son magnitudes
+            distintas a propósito (ver comentario de Combatiente en
+            schema.prisma). */}
+        {miCombatiente && (
+          <div
+            className={`clip-chamfer-sm flex flex-col gap-1.5 border px-3 py-2 font-mono text-xs xl:hidden ${
+              esMiTurno ? "!border-accent shadow-glow-yellow" : "border-border"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <span className="uppercase tracking-wide text-muted">Ronda {combate!.ronda}</span>
+              {esMiTurno && (
+                <span className="uppercase tracking-wide text-accent">Tu turno</span>
+              )}
+              <span className="ml-auto tabular-nums text-danger">
+                {miCombatiente.pgActual}
+                <span className="text-muted">/{miCombatiente.pgMax} pv</span>
+              </span>
+              <span className="tabular-nums text-info">
+                {miCombatiente.fatigaActual}
+                <span className="text-muted">/{miCombatiente.fatigaMax} fat</span>
+              </span>
+            </div>
+            {misEstadosActivos.length > 0 && (
+              <div className="flex flex-col gap-1.5 border-t border-border pt-1.5">
+                {misEstadosActivos.map((a) => (
+                  <div key={a.estadoId} className="flex flex-col items-start gap-0.5">
+                    <ChipEstado estado={a} />
+                    {/* Detalle visible de verdad, no en un `title` — mismo
+                        arreglo que CombateConsole.tsx. */}
+                    {a.detalle.length > 0 && (
+                      <p className="text-prosa-sm normal-case tracking-normal text-soft">
+                        {a.detalle.join(" ")}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* El guardado es automático y casi siempre invisible a propósito —
+            "guardando…"/"guardado ✓" permanente en la fila de tabs sobraba
+            más de lo que ayudaba. Solo se avisa cuando de verdad hace falta
+            hacer algo: el guardado ha fallado. */}
+        {status === "error" && (
+          <p className="font-mono text-[11px] uppercase tracking-wide text-danger">
+            Error al guardar — vuelve a intentarlo
+          </p>
+        )}
+
+        {/* "combate" solo existe mientras el personaje está metido en un Combate
+            EN_CURSO (fase 6b bloque 3, D5): sin él, la sección no se pinta. */}
+        <NavegacionFicha
+          secciones={SECCIONES_FICHA}
+          activa={activeEfectivo}
+          onCambiar={setActive}
+          enCombate={Boolean(combate)}
+          combateEnEscritorio={!cabina}
+        />
+
+        {characterStatus === "IN_REVIEW" && esDueno && (
+          <AvisoEnRevision characterId={characterId} submittedAt={submittedAt} puedeRetirar={esDueno} />
+        )}
+
+        {activeEfectivo === "personaje" && (
+          <PersonajeTab
+            name={name}
+            ficha={ficha}
+            aprobada={aprobada}
+            esMaster={esMaster}
+            creditos={creditos}
+            onName={onName}
+            onEdad={onEdad}
+            onAltura={onAltura}
+            onPeso={onPeso}
+            onEspecie={onEspecie}
+            onAtributoLibre={onAtributoLibre}
+            onTrasfondo={onTrasfondo}
+            onMotivacion={onMotivacion}
+            onPrioridad={commitPrioridad}
+            soloLectura={soloLectura}
+            envio={
+              esDueno && characterStatus === "DRAFT"
+                ? { characterId, reviewNote, esperarGuardados: () => queue.current }
+                : null
+            }
+          />
+        )}
+        {/* Acciones lleva su propio fieldset (su barra Básicas/Tiradas sigue navegable). */}
+        {activeEfectivo === "acciones" && (
+          <AccionesTab
+            ficha={ficha}
+            historial={accionesHistorial}
+            setHistorial={setAccionesHistorial}
+            memoria={accionesMemoria}
+            setMemoria={setAccionesMemoria}
+            onReparar={commitReparar}
+            onFabricar={commitFabricar}
+            onGastarRecurso={commitAjustarRecurso}
+            onDaniarEscudo={commitAjustarRecurso}
+            onAjustarFarmaco={commitAjustarFarmaco}
+            onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
+            onPagarFatiga={commitPagarFatiga}
+            onAjustarFatiga={commitDevolverFatiga}
+            onAjustarVida={commitAjustarVida}
+            onAjustarDanio={commitAjustarDanio}
+            onGastarUsosEscena={commitGastarUsosEscena}
+            onUsarAccionAumento={commitUsarAccionAumento}
+            onMarcarFavorita={commitMarcarFavorita}
+            soloLectura={soloLectura}
+            cabina={cabina}
+          />
+        )}
+        {/* Personaje lleva su propio fieldset (sus sub-pestañas siguen navegables). */}
+        {activeEfectivo !== "personaje" && activeEfectivo !== "acciones" && (
+          <PanelFieldset disabled={soloLectura}>
+            {activeEfectivo === "attrs" && (
+              <AtributosTab
+                ficha={ficha}
+                puntosDisponibles={puntosAttr}
+                aprobada={aprobada}
+                xp={xp}
+                onSet={commitAtributo}
+              />
+            )}
+            {activeEfectivo === "skills" && (
+              <HabilidadesTab
+                ficha={ficha}
+                puntosDisponibles={puntosSkill}
+                aprobada={aprobada}
+                xp={xp}
+                onSet={commitHabilidad}
+                onAddEspecialidad={commitAddEspecialidad}
+                onRemoveEspecialidad={commitRemoveEspecialidad}
+                onDescartarAviso={commitDescartarAviso}
+              />
+            )}
+            {activeEfectivo === "dotes" && (
+              <DotesTab
+                ficha={ficha}
+                aprobada={aprobada}
+                xp={xp}
+                foto={dotesDeLaFoto}
+                error={errorDotes}
+                onComprar={commitComprarDote}
+                onQuitar={commitQuitarDote}
+              />
+            )}
+            {activeEfectivo === "psionica" && (
+              <PsionicaTab ficha={ficha} aprobada={aprobada} xp={xp} onSet={commitDisciplina} />
+            )}
+            {activeEfectivo === "tienda" && (
+              <TiendaTab
+                sheet={sheet}
+                creditos={creditos}
+                topeRareza={topeRareza}
+                bolsaAumentos={ficha.bolsaAumentos}
+                excepcionRareza={{ estado: characterStatus, esMaster, excepciones: ficha.excepcionesRareza }}
+                onEquipar={commitEquipar}
+                onComprarGranada={commitComprarGranada}
+                onComprarFarmaco={commitComprarFarmaco}
+                onRecargar={commitRecargar}
+                onComprarMunicionEspecial={commitComprarMunicionEspecial}
+                onComprarAumento={commitComprarAumento}
+              />
+            )}
+            {activeEfectivo === "equipo" && (
+              <EquipoTab
+                sheet={sheet}
+                creditos={creditos}
+                onDesequipar={commitDesequipar}
+                onArmaIncorporada={commitArmaIncorporada}
+                onConvertirArma={commitConvertirArma}
+                topeRareza={topeRareza}
+              />
+            )}
+            {activeEfectivo === "recursos" && (
+              <RecursosTab
+                ficha={ficha}
+                creditos={creditos}
+                onAjustar={commitAjustarRecurso}
+                onRecargar={commitRecargar}
+                onAjustarMaterial={commitAjustarMaterial}
+                onComprarMaterial={commitComprarMaterial}
+                onAjustarGranada={commitAjustarGranada}
+                onAjustarFarmaco={commitAjustarFarmaco}
+                onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
+                onComprarMunicionEspecial={commitComprarMunicionEspecial}
+                onAjustarVida={commitAjustarVida}
+                onAjustarDanio={commitAjustarDanio}
+                onAjustarFatiga={commitAjustarFatiga}
+                onAjustarFatigaTemporal={commitAjustarFatigaTemporal}
+                onTerminarEscena={commitTerminarEscena}
+                onLiberarUsoEscena={commitLiberarUsoEscena}
+              />
+            )}
+            {activeEfectivo === "combate" && combate && (
+              <CombateTab combate={combate} miCombatienteId={miCombatiente?.id ?? null} />
+            )}
+
+            {/* Resetear es vender todo de golpe: no tiene sentido, y el servidor
+                lo rechaza, en cuanto la ficha está aprobada. */}
+            {!aprobada && (activeEfectivo === "attrs" || activeEfectivo === "skills") && (
+              <button
+                type="button"
+                onClick={reset}
+                className="clip-chamfer-sm mt-2 self-start border border-danger px-3 py-1.5 font-mono text-[11px] uppercase tracking-wide text-danger active:scale-95"
+              >
+                ⟲ Reset build
+              </button>
+            )}
+          </PanelFieldset>
+        )}
+      </div>
+
+      <aside aria-label="Mesa" className={`${columnaLateral} xl:border-l xl:border-border xl:pl-5`}>
+        <MesaFicha combate={combate} miCombatienteId={miCombatiente?.id ?? null} historial={accionesHistorial} />
+      </aside>
     </div>
   );
 }

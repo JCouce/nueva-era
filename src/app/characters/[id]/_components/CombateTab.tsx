@@ -36,8 +36,11 @@ export type CombateView = {
 export function CombateTab({
   combate,
   miCombatienteId,
+  compacta = false,
 }: {
   combate: CombateView;
+  // En la columna estrecha de la mesa (escritorio): botones con etiqueta corta.
+  compacta?: boolean;
   // Para resaltar la propia fila en la cola y decidir dónde va el control
   // de autogestión (D2, 3.2) — nadie más lo ve, ni siquiera el máster desde
   // esta pantalla (él ajusta desde /master/combate, no desde aquí).
@@ -137,17 +140,19 @@ export function CombateTab({
                       type="button"
                       disabled={pending}
                       onClick={() => aplicarDelta(c.id, "pg")}
+                      aria-label={compacta ? "Aplicar a PG" : undefined}
                       className="clip-chamfer-sm flex-1 border border-border px-3 py-2.5 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
                     >
-                      Aplicar a PG
+                      {compacta ? "PG" : "Aplicar a PG"}
                     </button>
                     <button
                       type="button"
                       disabled={pending}
                       onClick={() => aplicarDelta(c.id, "fatiga")}
+                      aria-label={compacta ? "Aplicar a fatiga" : undefined}
                       className="clip-chamfer-sm flex-1 border border-border px-3 py-2.5 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-50"
                     >
-                      Aplicar a fatiga
+                      {compacta ? "Fatiga" : "Aplicar a fatiga"}
                     </button>
                   </div>
                 )}

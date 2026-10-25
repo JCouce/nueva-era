@@ -1760,6 +1760,14 @@ biológico a quien tenga una disciplina mayor que 0. El cambio:
 
 Va **después** de aumentos: el IRM se modela allí pero no se conecta (`sistema.md` §11.3).
 
+### Ficha en escritorio: propuestas para después del lanzamiento ⬜ (usuario, 2026-10-25)
+Para el lanzamiento se construye la D1 (cabina de tres columnas). El usuario quiere volver
+a explorar las otras cuatro después: D2 mosaico que se despliega, D3 lista + detalle +
+manual siempre abierto, D4 hoja de papel viva, D5 mesa y taller (barra de acciones fija,
+paleta ⌘K, modo PREPARAR con cambios en lote). Maquetas clicables en el lienzo
+https://claude.ai/artifact/1aaHAUvV3LNnxkWD5jGyWG (fila "Escritorio"; arriba, las
+propuestas móviles).
+
 ### Puntos Heroicos ⬜ (sin empezar)
 No hay nada construido. Prosa del diseñador en `docs/fuente/puntos-heroicos.md`.
 

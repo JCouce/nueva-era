@@ -61,15 +61,22 @@ export function NavegacionFicha<Id extends string>({
   activa,
   onCambiar,
   enCombate = false,
+  combateEnEscritorio = true,
 }: {
   secciones: readonly Seccion<Id>[];
   activa: Id;
   onCambiar: (id: Id) => void;
   enCombate?: boolean;
+  // false: en escritorio el combate ya se ve fuera de las pestañas (la mesa de la ficha).
+  combateEnEscritorio?: boolean;
 }) {
   const visibles = secciones.filter((s) => s.grupo !== "combate" || enCombate);
   const porGrupo = (g: GrupoSeccion) => visibles.filter((s) => s.grupo === g);
-  const escritorio = [porGrupo("ficha"), [...porGrupo("mesa"), ...porGrupo("combate")], porGrupo("catalogo")];
+  const escritorio = [
+    porGrupo("ficha"),
+    [...porGrupo("mesa"), ...(combateEnEscritorio ? porGrupo("combate") : [])],
+    porGrupo("catalogo"),
+  ];
 
   return (
     <>
@@ -112,7 +119,7 @@ function TabEscritorio({
       type="button"
       onClick={onClick}
       aria-current={activa ? "page" : undefined}
-      className={`relative -mb-px whitespace-nowrap border-b-2 px-2 py-2 font-display text-xs font-semibold uppercase tracking-wide ${
+      className={`relative -mb-px whitespace-nowrap border-b-2 px-2 py-2 xl:px-1.5 2xl:px-2 font-display text-xs font-semibold uppercase tracking-wide ${
         activa ? `border-current ${COLOR[seccion.grupo].texto}` : "border-transparent text-muted hover:text-foreground"
       } ${FOCO}`}
     >

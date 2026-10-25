@@ -59,11 +59,12 @@ export default async function CharacterPage({
         back={{ href: "/characters", label: "Personajes" }}
       />
       {/* Abajo, hueco para el dock de NavegacionFicha en móvil (más el safe-area); en
-          escritorio se ensancha para que las pestañas quepan en una sola fila. */}
-      <main className="mx-auto w-full max-w-md flex-1 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-5 lg:max-w-4xl lg:pb-5">
+          escritorio, una columna hasta xl; desde xl, ancho entero para la cabina de tres columnas. */}
+      <main className="mx-auto w-full max-w-md flex-1 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-5 lg:max-w-4xl lg:pb-5 xl:max-w-[1600px] xl:px-6 xl:pb-8">
         {user.role === "MASTER" && (
-          // XP y créditos se dan desde la Mesa (E1c); aquí solo el estado de revisión.
-          <HudCard className="mb-4 flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+          // XP y créditos se dan desde la Mesa (E1c); aquí solo el estado de revisión. En
+          // la cabina (xl+) va en la columna izquierda de la ficha (controlMaster).
+          <HudCard className="mb-4 flex flex-wrap items-center justify-between gap-2 px-4 py-3 xl:hidden">
             <EstadoFichaChip estado={character.status} />
             <StatusControl characterId={character.id} status={character.status} />
           </HudCard>
@@ -83,6 +84,11 @@ export default async function CharacterPage({
           estados={estados}
           vidaGuardada={{ vida: sheet.vidaActual, fatiga: sheet.fatigaActual }}
           combate={enCombate ? combate : null}
+          controlMaster={
+            user.role === "MASTER" ? (
+              <StatusControl characterId={character.id} status={character.status} />
+            ) : undefined
+          }
         />
       </main>
     </>
