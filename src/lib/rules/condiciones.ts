@@ -100,6 +100,9 @@ export type CondicionTirada = (
       // La tirada se hace con la Fuerza y la Agilidad de una extremidad propia (Brazo Biónico,
       // A6a de aumentos): montarTirada recalcula el aplicado y, si toca, el daño con ellas.
       extremidad?: AtributosExtremidad;
+      // Lo que enseña el control en vez del número, para una casilla que no suma por sí misma
+      // sino que enciende bonos por opción de otro selector (Bioma Predilecto en «Marcha»).
+      resumen?: string;
     }
   | {
       id: string;
@@ -147,6 +150,7 @@ export type EfectoDanioCasilla = { ajuste?: number; categoria?: string; sinBonoE
 // Lo que enseña el control de la casilla a la derecha: el número si suma algo, y si no lo
 // que hace ("ventaja", "fallo → éxito"…). Pura, para que el modal no decida nada.
 export function resumenCasilla(c: Extract<CondicionTirada, { tipo: "toggle" }>, activo: boolean): string {
+  if (c.resumen) return c.resumen;
   const valor = activo ? c.valorActivo : (c.valorInactivo ?? 0);
   const signo = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
   const partes: string[] = [];
@@ -318,6 +322,9 @@ export type BonoPorTramo = {
   excluyente?: string;
   // Grupo de no apilamiento con casillas y bonos con alcance (el de la casilla, arriba).
   noApila?: string;
+  // Id de una casilla (toggle) que tiene que estar marcada para que el bono cuente (Bioma
+  // Predilecto: «En tu bioma predilecto» con la opción adversa de «Marcha»). Sin marcar, 0.
+  siActiva?: string;
 };
 
 // La opción elegida en la condición que mira el bono ("tramo" si no dice otra), o null.
@@ -328,6 +335,7 @@ function opcionDelBono(b: BonoPorTramo, estado: EstadoCondiciones): string | nul
 
 // Lo que vale el bono con lo elegido ahora mismo (0 si no hay nada elegido).
 export function valorBonoTramo(b: BonoPorTramo, estado: EstadoCondiciones): number {
+  if (b.siActiva && !estado[b.siActiva]) return 0;
   const opcion = opcionDelBono(b, estado);
   return opcion ? (b.porTramo[opcion] ?? 0) : 0;
 }
@@ -356,6 +364,7 @@ export function desgloseBonosTramo(
   // pintaba una fila a 0. Los descartados por no apilar llevan su 0 explícito y sí salen.
   return bonos
     .filter((b) => {
+      if (b.siActiva && !estado[b.siActiva]) return false;
       const opcion = opcionDelBono(b, estado);
       return opcion !== null && b.porTramo[opcion] !== undefined;
     })

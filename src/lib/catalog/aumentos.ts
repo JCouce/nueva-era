@@ -447,13 +447,22 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "percepcion", valor: 1 }],
     salvaciones: [{ contra: ["ceguera", "sordera"], bono: 2 }],
-    // La ventaja auditiva solo al buscar activamente: no sube la Alerta pasiva (§11.3).
+    // La ventaja auditiva solo al buscar activamente: no sube la Alerta pasiva (§11.3). Detectar
+    // ocultos en Buscar / percibir; rastrear por el sonido en Rastreo (2026-10-26).
     casillas: [
       {
         id: "aum_vestibulo_auditiva",
         tipo: "toggle",
-        etiqueta: "¿Percepción auditiva? (detectar ocultos o rastrear por el sonido)",
+        etiqueta: "¿Percepción auditiva? (detectar ocultos)",
         alcance: { tipo: "tiradaId", id: "alerta_activa" },
+        valorActivo: 0,
+        ventaja: true,
+      },
+      {
+        id: "aum_vestibulo_auditiva_rastreo",
+        tipo: "toggle",
+        etiqueta: "¿Rastreas por el sonido?",
+        alcance: { tipo: "tiradaId", id: "rastreo" },
         valorActivo: 0,
         ventaja: true,
       },
@@ -462,6 +471,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "rastreo" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -1081,6 +1091,15 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
           detalle: [
             "La integración sináptica de sensores térmicos permite al sistema nervioso superponer el espectro infrarrojo a la visión óptica normal sin recurrir a abstracciones cromáticas digitales y sin perder detalle. Esto anula por completo cualquier penalizador en tiradas de percepción visual fuera del gradiente térmico a diferencia de los visores tecnológicos. El sientido adquirido no solo procesa la temperatura actual, sino que registra y resalta el rastro térmico reciente (como huellas de pisadas luminosas en el suelo, la estela de calor de un proyectil o el rastro residual de un objetivo que acaba de pasar), permitiendo rastrear rutas de movimiento recientes aunque el blanco ya no esté a la vista. El rastro más inmediato brilla con mayor intensidad, desvaneciéndose de forma progresiva a los 5 turnos, pero persistiendo de 10 a 15 minutos en condiciones ambientales estándar. En situaciones de frío extremo o alta ventilación, el calor se disipa con rapidez, reduciendo la duración del rastro a la mitad (2 turnos o 5 minutos). En superficies aislantes o interiores sellados, la huella térmica perdura ligeramente más tiempo al carecer de corrientes de aire que fuercen la convección.",
           ],
+          // "Permitiendo rastrear rutas de movimiento recientes" no da número: nota en Rastreo
+          // (usuario, 2026-10-26).
+          textos: [
+            {
+              en: { tipo: "tiradaId", id: "rastreo" },
+              texto:
+                "Visión Térmica: ves el rastro de calor reciente (pisadas, estelas). Se apaga a los 5 turnos y persiste 10-15 min; la mitad con frío extremo o mucha ventilación.",
+            },
+          ],
         },
         {
           id: "percepcion_electromagnetica",
@@ -1122,14 +1141,21 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
             "La expansión de la visión hacia los ultravioletas permite identificar residuos químicos recientes, fluidos orgánicos, huellas de polímeros de ocultación, marcas de seguridad holográficas y la ionización residual del armamento energético. Proporciona un bonificador de +2 en tiradas de investigación de campo o búsqueda de accesos ocultos.",
           ],
           // R10 (2026-10-24): el +2 vale en investigación de campo y en buscar accesos ocultos.
-          // Las dos son Buscar / percibir (Perspicacia + Exploración; la investigación, con su
-          // especialidad): una casilla para las dos, el id se queda.
+          // Desde 2026-10-26 cada uno en su tirada: accesos ocultos en Buscar / percibir (el id se
+          // queda), investigación de campo en Investigación.
           casillas: [
             {
               id: "aum_introgresion_ultravioleta_accesos",
               tipo: "toggle",
-              etiqueta: "¿Investigación de campo o buscas accesos ocultos?",
+              etiqueta: "¿Buscas accesos ocultos?",
               alcance: { tipo: "tiradaId", id: "alerta_activa" },
+              valorActivo: 2,
+            },
+            {
+              id: "aum_introgresion_ultravioleta_investigacion",
+              tipo: "toggle",
+              etiqueta: "¿Investigación de campo?",
+              alcance: { tipo: "tiradaId", id: "investigacion" },
               valorActivo: 2,
             },
           ],
@@ -1170,6 +1196,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_barrido_electromagnetico" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "investigacion" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "sigilo" }, mecanismo: "nota_fija", estado: "pendiente" },
     ],
   },

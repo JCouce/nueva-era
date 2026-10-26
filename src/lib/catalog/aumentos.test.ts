@@ -138,7 +138,7 @@ describe("integridad del catálogo de aumentos", () => {
   // Efectos de motor construidos en A2a (casillas, selector "Contra…", textos y armadura
   // natural), por pieza o por "pieza nivel"; el resto, los de A1.
   const CONSTRUIDOS_A2A: Record<string, number> = {
-    aum_optimizacion_vestibulo_auditiva: 2,
+    aum_optimizacion_vestibulo_auditiva: 3, // 2 de A2a y la ventaja al rastrear por el sonido (tiradas fijas)
     aum_regulacion_limbico_prefrontal: 1,
     aum_matriz_de_red_predeterminada: 4, // 2 de A2a y 2 de A2b
     aum_integridad_osteotendinosa: 1,
@@ -146,7 +146,7 @@ describe("integridad del catálogo de aumentos", () => {
     aum_biogenesis_mitocondrial: 1,
     aum_resiliencia_homeostatica: 1,
     aum_estabilizacion_autonomica: 5, // 2 de A2a, el ajuste de umbrales (A3) y Sacudir/Dominar (A4a)
-    aum_introgresion_sensorial_heterologa: 3, // 2 de A2a y el barrido electromagnético (A4b)
+    aum_introgresion_sensorial_heterologa: 4, // 2 de A2a, el barrido electromagnético (A4b) y la UV en Investigación
     "aum_ojo_bionico 1": 3,
     "aum_ojo_bionico 2": 4, // 1 de A2a, la cobertura visual en distancia y Buscar (A3) y la inmunidad (A7)
     "aum_ojo_bionico 3": 2,

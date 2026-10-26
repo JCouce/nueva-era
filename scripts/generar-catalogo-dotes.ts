@@ -116,6 +116,7 @@ import {
   EXCEPCIONES_TANDA,
   FAMILIAS_SOLO_CON_DOTE,
   OPCIONES_DE_TRAMO,
+  SELECTORES_DE_TIRADA,
   TANDAS_DOTES,
   type TandaDote,
 } from "../src/lib/catalog/dotesDestinos";
@@ -319,6 +320,38 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
     condicion: "Golpe fatigante",
     sobre: "danio",
     filtroArma: { tipoDanio: ["contundente"], empleo: "dos manos" },
+  },
+  // Rastreo al Paso: "reduce en 3 cualquier penalizador por desplazarse a una velocidad
+  // superior" → +3 en las tres opciones de «Marcha» que penalizan (tiradas fijas, 2026-10-26;
+  // antes, tres casillas sueltas en Buscar / percibir, S36). Bono por opción, sin casilla.
+  "dote_rastreo_al_paso#0": { tipo: "bono", alcance: "rastreo", valor: 3, condicion: null, tramo: "marcha:normal_total" },
+  "dote_rastreo_al_paso#1": { tipo: "bono", alcance: "rastreo", valor: 3, condicion: null, tramo: "marcha:adversa_mitad" },
+  "dote_rastreo_al_paso#2": { tipo: "bono", alcance: "rastreo", valor: 3, condicion: null, tramo: "marcha:adversa_total" },
+  // Bioma Predilecto: "iguala las condiciones adversas a condiciones normales" → con la casilla
+  // «En tu bioma predilecto», la adversa a mitad pasa a 0 y la adversa a velocidad total a −3
+  // (las de la normal). Con Rastreo al Paso se encadena (usuario, 2026-10-26, S97): adversa total
+  // → normal total (−3) → 0; en adversa a mitad no apila, que ya está en 0 con cualquiera.
+  "dote_bioma_predilecto#2": {
+    tipo: "bono",
+    alcance: "rastreo",
+    valor: 3,
+    condicion: "En tu bioma predilecto",
+    tramo: "marcha:adversa_mitad",
+    noAcumulaCon: ["dote_rastreo_al_paso"],
+  },
+  "dote_bioma_predilecto#3": {
+    tipo: "bono",
+    alcance: "rastreo",
+    valor: 3,
+    condicion: "En tu bioma predilecto",
+    tramo: "marcha:adversa_total",
+  },
+  "dote_bioma_predilecto#4": {
+    tipo: "texto",
+    lugar: "rastreo",
+    texto: "Lo adverso cuenta como normal: tu ritmo estándar es la mitad de la velocidad de carrera, no un tercio. Con Rastreo al Paso, a velocidad total vas sin penalizador.",
+    condicion: "En tu bioma predilecto",
+    porque: "turno",
   },
   // Salto Evasivo: casilla «Esquivando un área» +1 (Mejorado +2, que sustituye a la básica: vale
   // la mejor). Decisión del usuario (D2d): bono normal, aunque convierta un fallo justo en
@@ -827,11 +860,10 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
         e.aplicado === "reflejos" &&
         e.habilidad === undefined &&
         e.especialidad === undefined) ||
-      // Tiradas fijas: cambio de grado sin casilla sobre una tirada fija sin especialidad en la
-      // etiqueta (Velocista, Gran Puntería; dotesEfectos.ts, `grados`).
+      // Tiradas fijas: cambio de grado sin casilla sobre una tirada fija (Velocista, Gran
+      // Puntería; dotesEfectos.ts, `grados`).
       (alcanceDestino?.tipo === "tiradaId" &&
         destino?.tipo === "tirada" &&
-        !destino.especialidad &&
         e.condicion === null &&
         ((e.tipo === "sube_grado" && ((e.de === "fracaso" && e.a === "exito") || (e.de === "exito" && e.a === "critico"))) ||
           e.tipo === "margen_critico")) ||
@@ -882,9 +914,13 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
       falla(id, `efecto ${e.borrador}: texto con grados ${JSON.stringify(grados)}: solo se sabe pintar el crítico`);
     }
     const tramo = e.tramo as string | undefined;
-    if (tramo && !tramo.startsWith("tramo:") && !OPCIONES_DE_TRAMO[tramo.split(":")[0]]) {
-      falla(id, `efecto ${e.borrador}: tramo "${tramo}" sin OPCIONES_DE_TRAMO`);
+    const [grupoTramo, opcionTramo] = (tramo ?? "").split(":");
+    const selector = SELECTORES_DE_TIRADA[grupoTramo];
+    if (tramo && !tramo.startsWith("tramo:") && !OPCIONES_DE_TRAMO[grupoTramo] && !selector) {
+      falla(id, `efecto ${e.borrador}: tramo "${tramo}" sin OPCIONES_DE_TRAMO ni SELECTORES_DE_TIRADA`);
     }
+    if (selector && !selector.opciones.includes(opcionTramo))
+      falla(id, `efecto ${e.borrador}: opción "${opcionTramo}" que no está en el selector «${selector.etiqueta}»`);
   }
 
   const mecanismoCasilla = e.condicion === null || e.condicion === undefined ? "siempre_activo" : "eleccion_jugador";
@@ -897,11 +933,12 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
     }
     case "bono": {
       const tramo = e.tramo as string | undefined;
-      // Casilla aunque sea siempre activo si va a una especialidad (la marca el jugador).
-      const enEspecialidad = destino?.tipo === "tirada" && destino.especialidad !== undefined;
-      const mecanismo = tramo?.startsWith("tramo:")
+      // Opción de un selector de la tirada sin casilla propia (Rastreo al Paso en «Marcha»):
+      // bono por opción, como el de distancia; con casilla (Bioma Predilecto), la marca el jugador.
+      const deSelector = tramo !== undefined && SELECTORES_DE_TIRADA[tramo.split(":")[0]] !== undefined;
+      const mecanismo = tramo?.startsWith("tramo:") || (deSelector && mecanismoCasilla === "siempre_activo")
         ? "bono_tramo"
-        : tramo || enEspecialidad
+        : tramo
           ? "eleccion_jugador"
           : mecanismoCasilla;
       return { tipo: "numerico", afecta: { modo: "accion_existente", id: clave! }, mecanismo, ...estado };

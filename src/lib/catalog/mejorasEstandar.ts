@@ -564,10 +564,21 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
             "o ventilación; algo más en interiores sellados sin convección).",
         ],
         modificadores: [],
-        // Narrativo puro, correctamente sin mecanizar: el motor no lleva reloj
-        // de turnos por rastro ni mapa de posiciones pasadas.
+        // Sin número: el motor no lleva reloj de turnos por rastro. Desde que existe Rastreo
+        // (usuario, 2026-10-26), casilla informativa allí, como el modo térmico del nivel 1.
+        condiciones: [
+          {
+            id: "visor_termico_n2_rastro",
+            tipo: "toggle",
+            etiqueta: "Siguiendo un rastro térmico",
+            alcance: { tipo: "tiradaId", id: "rastreo" },
+            valorActivo: 0,
+            valorInactivo: 0,
+            nota: "El rastro de calor se apaga a los 5 turnos y persiste 10-15 min; la mitad con frío extremo o mucha ventilación.",
+          },
+        ],
         motor: [
-          { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "rastreo" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
     ],

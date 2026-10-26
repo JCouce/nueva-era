@@ -80,12 +80,13 @@ describe("D2d: ventaja con casilla", () => {
     assert.deepEqual(tirarDado(Boolean(con.ventaja), dado), { dado: 9, dados: [3, 9] });
   });
 
-  test("Bioma Predilecto: ventaja en Iniciativa y en Subsistencia (Buscar / percibir)", () => {
+  test("Bioma Predilecto: ventaja en Iniciativa y en Subsistencia (ya no en Buscar / percibir)", () => {
     const f = resolver(ficha([{ id: "dote_bioma_predilecto", eleccion: "Selva densa" }]));
     for (const id of ["iniciativa", "iniciativa_arma", "iniciativa_distraccion"])
       assert.ok(casilla(fija(f, id), (c) => c.ventaja === true && /bioma predilecto/.test(c.etiqueta)), id);
-    const buscar = casilla(fija(f, "alerta_activa"), (c) => c.ventaja === true)!;
-    assert.match(buscar.etiqueta, /^Subsistencia: Dentro de tu bioma predilecto/);
+    const sub = casilla(fija(f, "subsistencia"), (c) => c.ventaja === true)!;
+    assert.match(sub.etiqueta, /^Dentro de tu bioma predilecto \(Bioma Predilecto: Selva densa\)/);
+    assert.equal(casilla(fija(f, "alerta_activa"), (c) => c.ventaja === true), undefined);
   });
 
   test("Violencia Aterradora: casilla de ventaja en su acción, sin la nota de «a mano»", () => {

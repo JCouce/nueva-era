@@ -86,6 +86,11 @@ export type Accion = {
   // poderes): en especialidad si la ficha tiene cualquiera de estas (Apoyo: Empatía o
   // Liderazgo).
   especialidadesAccion?: readonly EspecialidadId[];
+  // Fila fija que solo se pinta si la ficha tiene alguna de `especialidadesAccion` o algo de
+  // capa 1 (dote, aumento, especie) le engancha algo por su id (Rastreo, Subsistencia, Trato
+  // con Animales, Investigación; decisión del usuario 2026-10-26). Lo decide tiradaFijaVisible
+  // (fichaResuelta.ts), nunca la UI.
+  soloConEspecialidad?: true;
   // Tirada que obliga a elegir UNA de estas al tirar (Convencer / mentir): la fila no deja
   // tirar sin elegir; elegirEspecialidad la pasa a `especialidadesAccion`.
   especialidadAElegir?: readonly EspecialidadId[];
@@ -322,6 +327,28 @@ export function condicionApuntado(granPunteria?: string): CondicionTirada {
   };
 }
 
+// Selector «Marcha» de Rastreo (fuente/habilidades.md, Rastreo): condiciones y ritmo en un solo
+// selector, cada opción con el penalizador por marcha forzada de la fuente. Adversas: rastro de
+// más de 24 h, meteorología desfavorable u objetivo que oculta sus huellas. Las dotes no cambian
+// los valores de las opciones: Rastreo al Paso y Bioma Predilecto ponen bonos por opción encima
+// (dotesEfectos.ts; S97 de docs/sistema.md). Los ids los repite SELECTORES_DE_TIRADA
+// (catalog/dotesDestinos.ts), y un test comprueba que coinciden.
+export const ID_MARCHA = "marcha";
+export const ID_RASTREO = "rastreo";
+export const CONDICION_MARCHA: CondicionTirada = {
+  id: ID_MARCHA,
+  tipo: "opcion",
+  etiqueta: "Marcha",
+  porDefecto: "normal_mitad",
+  opciones: [
+    { id: "normal_mitad", etiqueta: "Normal · mitad de carrera", valor: 0 },
+    { id: "normal_total", etiqueta: "Normal · velocidad total", valor: -3 },
+    { id: "adversa_tercio", etiqueta: "Adversa · un tercio", valor: 0 },
+    { id: "adversa_mitad", etiqueta: "Adversa · mitad", valor: -3 },
+    { id: "adversa_total", etiqueta: "Adversa · velocidad total", valor: -6 },
+  ],
+};
+
 // Casilla "Tengo cobertura" de la esquiva, para cualquier ficha y cualquier cobertura (escudo
 // en alto, un muro...): +2 fijo, sin mirar el nivel (S86, decisión del usuario). Si el ataque
 // supera la defensa pero falla por la cobertura, golpea la cobertura (Bloquear daño).
@@ -510,6 +537,66 @@ export const ACCIONES: Accion[] = [
     especialidadesAccion: ["empatia"],
     nota:
       "Enfrentada a la distracción del rival antes del combate (Expresión + Manipulación). Si gana, quedas sorprendido contra su primer ataque; con crítico, desprevenido",
+  },
+  // Exploración (fuente/habilidades.md): Rastreo, Subsistencia y Trato con Animales van con
+  // Supervivencia; Investigación, con la suya. Solo salen con la especialidad o con algo que les
+  // enganche (soloConEspecialidad). Antes colgaban de "Buscar / percibir" (S36, sustituido).
+  {
+    id: ID_RASTREO,
+    label: "Rastreo",
+    grupo: "Acciones",
+    aplicado: "perspicacia",
+    habilidad: "exploracion",
+    especialidadesAccion: ["supervivencia"],
+    soloConEspecialidad: true,
+    condiciones: [CONDICION_MARCHA],
+    nota:
+      "Seguir huellas, ramas rotas, restos o perturbaciones del terreno. La dificultad depende de lo evidente del rastro, la superficie y el tiempo transcurrido. Ritmo estándar: mitad de la velocidad de carrera; en condiciones adversas (rastro de más de 24 h, meteorología desfavorable u objetivo que oculta sus huellas), un tercio. Elige en «Marcha» a qué ritmo vas",
+  },
+  {
+    id: "subsistencia",
+    label: "Subsistencia",
+    grupo: "Acciones",
+    aplicado: "perspicacia",
+    habilidad: "exploracion",
+    especialidadesAccion: ["supervivencia"],
+    soloConEspecialidad: true,
+    nota:
+      "Localizar, extraer o purificar recursos para mantenerse con vida y asegurar un emplazamiento frente a las inclemencias del bioma. La dificultad depende de la hostilidad del terreno",
+  },
+  // Lectura e interacción tienen aplicado distinto: dos filas (S98).
+  {
+    id: "trato_animales_lectura",
+    label: "Trato con animales: leer",
+    grupo: "Acciones",
+    aplicado: "perspicacia",
+    habilidad: "exploracion",
+    especialidadesAccion: ["supervivencia"],
+    soloConEspecialidad: true,
+    nota:
+      "Interpretar el lenguaje corporal, los instintos y el estado emocional de un animal, autóctono o adiestrado. La dificultad depende de la naturaleza, agresividad e inteligencia de la especie",
+  },
+  {
+    id: "trato_animales_interaccion",
+    label: "Trato con animales: interactuar",
+    grupo: "Acciones",
+    aplicado: "expresion",
+    habilidad: "exploracion",
+    especialidadesAccion: ["supervivencia"],
+    soloConEspecialidad: true,
+    nota:
+      "Pacificar, intimidar o manejar (animales domésticos) para evitar agresiones, calmarlo o dirigir su comportamiento. La dificultad depende de la naturaleza, agresividad e inteligencia de la especie. Con trato continuado y favorable puede llegar a domesticarse o adiestrarse",
+  },
+  {
+    id: "investigacion",
+    label: "Investigación",
+    grupo: "Acciones",
+    aplicado: "perspicacia",
+    habilidad: "exploracion",
+    especialidadesAccion: ["investigacion"],
+    soloConEspecialidad: true,
+    nota:
+      "Búsqueda metódica, análisis e interconexión de datos y pistas: Inspección de Escena, Análisis de Pistas y Búsqueda Documental",
   },
   // Hackeo con Informática (usuario, 2026-10-23).
   {

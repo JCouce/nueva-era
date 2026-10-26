@@ -11,16 +11,16 @@ está hecho" en cualquier otro documento del proyecto, para — va aquí, no all
 arquitectura — el modelo obligatorio para pasar cualquier elemento nuevo (equipo,
 razas, poderes, dotes, aumentos) de prosa a motor. Este archivo manda en el estado.
 
-**Última actualización:** 2026-10-16.
+**Última actualización:** 2026-10-26.
 
 ## Ahora mismo
 
 Sin valoración de prioridad aquí a propósito — se queda obsoleta en cuanto cambia el
 foco. Frentes abiertos, cada uno con su sección en Pendiente:
-- **Dotes**: hechas D1–D2d, las dotes de NPC, las tiradas fijas de Apuntar, Carrera, Discernir
-  mentiras y Resistir distracción (0 efectos con `bloqueoPor: "tiradas-fijas"`) y la
-  especialidad en la tirada (2026-10-24); quedan las tiradas propias de Investigación, Rastreo
-  y Subsistencia.
+- **Dotes**: hechas D1–D2d, las dotes de NPC, la especialidad en la tirada (2026-10-24) y
+  todas las tiradas fijas de `habilidades.md`: Apuntar, Carrera, Discernir mentiras, Resistir
+  distracción y, desde 2026-10-26 (sin commit, falta navegador), Rastreo, Subsistencia, Trato
+  con Animales e Investigación (sin apaño S36).
 - **Aumentos**: hecho (tandas A0-A7 commiteadas, 2026-10-23). Queda lo que espera a Murillo
   (preguntas de A4-A7, 5 implantes en proceso, extracción, tope de implantes, Shock) y la
   psiónica biológica (IRM).
@@ -1781,7 +1781,7 @@ propuestas móviles).
 ### Puntos Heroicos ⬜ (sin empezar)
 No hay nada construido. Prosa del diseñador en `docs/fuente/puntos-heroicos.md`.
 
-### Dotes ⬜ (D1–D2d, dotes de NPC y especialidad en la tirada hechas; quedan las tiradas fijas de Investigación, Rastreo y Subsistencia)
+### Dotes ✅ (D1–D2d, dotes de NPC, especialidad en la tirada y tiradas fijas de habilidades.md hechas; tiradas de Exploración, 2026-10-26, sin commit)
 
 Encargo y pasos: `docs/prompt-dotes.md`. Fuente literal: `docs/dotes.md` (105 dotes).
 Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
@@ -2037,8 +2037,8 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
   Rastreo y Subsistencia siguen con el apaño S36 hasta tener tirada propia. Tests en
   `dotesEfectos.test.ts` y `especieTiradas.test.ts`. Falta probarlo en el navegador. Hueco
   conocido: una casilla de la especialidad de una habilidad alternativa no entra (no hay caso).
-- [ ] **Tiradas fijas que faltan según `docs/fuente/habilidades.md`** (sigue abierta: falta
-  la segunda parte). Va junto a la integración de especialidades.
+- [x] **Tiradas fijas que faltan según `docs/fuente/habilidades.md`** (cerrada 2026-10-26,
+  sin commit). Va junto a la integración de especialidades.
   - [x] **Apuntar, Carrera, Discernir mentiras y Resistir distracción** (2026-10-23, sin
     commit; `sistema.md` §6 "Tiradas fijas", S79-S83). Filas nuevas en `ACCIONES`
     (`rules/acciones.ts`). Los 10 efectos de dote con `bloqueoPor: "tiradas-fijas"`, a 0:
@@ -2050,8 +2050,19 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
     todos los ataques con Combate a Distancia, cambiado por *Gran Puntería*; *Foveo* deja la
     casilla "Tras Apuntar" y pasa a +1 con el selector (`BonoPorTramo.condicion`). Tests en
     `rules/tiradasFijas.test.ts`. Falta probarlo en el navegador.
-  - [ ] Tiradas propias de **Investigación, Rastreo y Subsistencia**, que hoy van de apaño a
-    "Buscar / percibir" (S36).
+  - [x] Tiradas propias de **Investigación, Rastreo, Subsistencia y Trato con Animales**
+    (2026-10-26, sin commit; `sistema.md` §6 "Tiradas fijas", S97-S100; S36 sustituido). Filas
+    nuevas en `ACCIONES`, pestaña Básicas: Rastreo con el selector «Marcha» (condiciones y ritmo
+    en uno), Subsistencia, Trato con animales en dos filas (leer / interactuar) e Investigación.
+    Solo se pintan con su especialidad o con algo que les enganche (`tiradaFijaVisible`,
+    `rules/fichaResuelta.ts`; también NPC). *Rastreo al Paso* y *Bioma Predilecto* como bonos
+    por opción de «Marcha» (`SELECTORES_DE_TIRADA`, `BonoPorTramo.siActiva`); la ventaja de
+    *Bioma* en Subsistencia; *Descartar Teoría* en Investigación. Visión ultravioleta partida
+    (accesos ocultos en Buscar, investigación de campo en Investigación) y oído biónico también
+    en Rastreo; rastro térmico (Visión Térmica, Visor Térmico nv2) como nota en Rastreo.
+    `DestinoDote.especialidad` eliminado. Tests en `rules/tiradasFijas.test.ts`. Probado en el
+    navegador (2026-10-26).
+    Falta probarlo en el navegador.
 
 ### Revisión de candidatas a UX ✅ (dotes, 2026-10-15: `sistema.md` §9.3; repetir en cada área nueva)
 

@@ -100,10 +100,10 @@ import {
 } from "./estados";
 import { levitacion, type PoderDisponible } from "./poderes";
 import { fatigaEfectiva } from "./vitalidad";
-import { alcanzaA, descartadosPorNoApila, type FamiliaArma, type ModificadorConFuente } from "./modificadores";
+import { alcanzaA, descartadosPorNoApila, type AlcanceModificador, type FamiliaArma, type ModificadorConFuente } from "./modificadores";
 import { conTextosEnTirada, contextoDe, junta, textosDe, textosSinDado } from "./textosTirada";
 import type { Sheet } from "./sheet";
-import { condicionApuntado, ID_APUNTADO, ID_APUNTAR, type Accion, type AccionDirecta } from "./acciones";
+import { condicionApuntado, ID_APUNTADO, ID_APUNTAR, tieneEspecialidad, type Accion, type AccionDirecta } from "./acciones";
 import type { CondicionTirada } from "./condiciones";
 
 export type DesgloseDerivado = { total: number; fuentes: Fuente[] };
@@ -463,6 +463,37 @@ export function conExtrasDeFicha(
     ...(ventaja && { ventaja }),
     ...(falloCritico && { falloCritico }),
   };
+}
+
+// ¿Se pinta esta tirada fija? Las de `soloConEspecialidad` (Rastreo, Subsistencia, Trato con
+// Animales, Investigación; decisión del usuario 2026-10-26, S99) solo si la ficha tiene alguna
+// de sus especialidades o si algo de capa 1 le engancha algo a ella: una casilla, texto, bono,
+// ventaja o cambio de grado con alcance por su id o por su especialidad. Lo general (alcance por
+// grupo, habilidad, aplicado o "todas") no cuenta: no es de esa fila. El NPC, igual, con sus
+// especialidades y lo derivado de su especie, dotes y aumentos.
+export function tiradaFijaVisible(
+  ficha: Pick<
+    FichaResuelta,
+    "ficha" | "modificadores" | "indiceCondiciones" | "textosTirada" | "extrasDotes" | "ventajasFijas" | "fallosCriticos"
+  >,
+  t: Accion,
+): boolean {
+  if (!t.soloConEspecialidad) return true;
+  const especialidades = t.especialidadesAccion ?? [];
+  const habilidad = t.habilidad;
+  if (habilidad && especialidades.some((e) => tieneEspecialidad(ficha.ficha, habilidad, e))) return true;
+  const apunta = (a: AlcanceModificador) =>
+    (a.tipo === "tiradaId" && a.id === t.id) || (a.tipo === "especialidad" && a.especialidades.some((e) => especialidades.includes(e)));
+  const x = ficha.extrasDotes;
+  return (
+    (ficha.indiceCondiciones.porTiradaId.get(t.id)?.length ?? 0) > 0 ||
+    especialidades.some((e) => (ficha.indiceCondiciones.porEspecialidad.get(e)?.length ?? 0) > 0) ||
+    ficha.textosTirada.some((txt) => txt.en.tipo === "tiradaId" && txt.en.id === t.id) ||
+    ficha.modificadores.some((m) => m.tipo === "tirada" && apunta(m.alcance)) ||
+    [...x.bonosTramo, ...x.grados, ...x.alternativas, ...x.descuentos, ...ficha.ventajasFijas, ...ficha.fallosCriticos].some((e) =>
+      apunta(e.alcance),
+    )
+  );
 }
 
 // Con Gran Puntería (éxito → crítico sin casilla en Apuntar), el selector "Apuntado" de los

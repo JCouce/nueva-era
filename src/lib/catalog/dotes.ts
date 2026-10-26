@@ -6300,21 +6300,24 @@ export const DOTES: readonly DoteCatalogo[] = [
         "tipo": "bono",
         "alcance": "rastreo",
         "valor": 3,
-        "condicion": "Condiciones normales, velocidad total",
+        "condicion": null,
+        "tramo": "marcha:normal_total",
         "borrador": 0
       },
       {
         "tipo": "bono",
         "alcance": "rastreo",
         "valor": 3,
-        "condicion": "Condiciones adversas, mitad de velocidad",
+        "condicion": null,
+        "tramo": "marcha:adversa_mitad",
         "borrador": 1
       },
       {
         "tipo": "bono",
         "alcance": "rastreo",
         "valor": 3,
-        "condicion": "Condiciones adversas, velocidad total",
+        "condicion": null,
+        "tramo": "marcha:adversa_total",
         "borrador": 2
       }
     ],
@@ -6327,7 +6330,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "accion_existente",
           "id": "rastreo"
         },
-        "mecanismo": "eleccion_jugador",
+        "mecanismo": "bono_tramo",
         "estado": "construido"
       },
       {
@@ -6336,7 +6339,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "accion_existente",
           "id": "rastreo"
         },
-        "mecanismo": "eleccion_jugador",
+        "mecanismo": "bono_tramo",
         "estado": "construido"
       },
       {
@@ -6345,7 +6348,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "accion_existente",
           "id": "rastreo"
         },
-        "mecanismo": "eleccion_jugador",
+        "mecanismo": "bono_tramo",
         "estado": "construido"
       }
     ]
@@ -6397,21 +6400,26 @@ export const DOTES: readonly DoteCatalogo[] = [
         "tipo": "bono",
         "alcance": "rastreo",
         "valor": 3,
-        "condicion": "Condiciones adversas, mitad de velocidad (en tu bioma predilecto)",
+        "condicion": "En tu bioma predilecto",
+        "tramo": "marcha:adversa_mitad",
+        "noAcumulaCon": [
+          "dote_rastreo_al_paso"
+        ],
         "borrador": 2
       },
       {
         "tipo": "bono",
         "alcance": "rastreo",
         "valor": 3,
-        "condicion": "Condiciones adversas, velocidad total (en tu bioma predilecto)",
+        "condicion": "En tu bioma predilecto",
+        "tramo": "marcha:adversa_total",
         "borrador": 3
       },
       {
         "tipo": "texto",
         "lugar": "rastreo",
-        "texto": "En tu bioma predilecto el terreno adverso cuenta como normal también para el ritmo. No se suma con Rastreo al Paso en la misma opción.",
-        "condicion": "Rastreando dentro de tu bioma predilecto",
+        "texto": "Lo adverso cuenta como normal: tu ritmo estándar es la mitad de la velocidad de carrera, no un tercio. Con Rastreo al Paso, a velocidad total vas sin penalizador.",
+        "condicion": "En tu bioma predilecto",
         "porque": "turno",
         "borrador": 4
       }

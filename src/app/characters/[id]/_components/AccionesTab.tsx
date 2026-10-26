@@ -28,6 +28,7 @@ import {
   recursoDe,
   conExtrasDeFicha,
   conExtrasDirectaDeFicha,
+  tiradaFijaVisible,
   accionesDePsionica,
   textoNivelEnAcciones,
   etiquetaEconomia,
@@ -1375,11 +1376,13 @@ export function AccionesTab({
   // Básicas: lo que tiene todo el mundo. Una tirada fija que cambia por algo propio (esquiva
   // levitando, psiónica en la tirada) sigue aquí: es un modificador, no una acción nueva.
   // Bloquear daño, Reparar/Fabricar y la Tirada libre no son de ACCIONES: se añaden a mano.
+  // Rastreo, Subsistencia, Trato con animales e Investigación, solo con su especialidad o algo que
+  // les enganche (tiradaFijaVisible, del motor).
   const basicas: Seccion[] = GRUPOS_ACCION.map((grupo) => ({
     origen: "basicas",
     titulo: grupo,
     filas: [
-      ...ACCIONES.filter((t) => t.grupo === grupo)
+      ...ACCIONES.filter((t) => t.grupo === grupo && tiradaFijaVisible(ficha, t))
         .map(conExtras)
         .map((t) => conPsionicaEnTiradaFija(niveles, conEsquivaLevitando(niveles, t)))
         .map(filaTirada),

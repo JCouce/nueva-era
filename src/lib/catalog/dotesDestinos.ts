@@ -8,10 +8,6 @@
 //            motor); los textos, a las tiradas fijas de `textos`, o, si el alcance es de
 //            familia de arma (D2b-1), a las tiradas de esa familia (`textos` vacío). Con
 //            alcance "especialidad" (Intimidación), solo en las tiradas que la nombran.
-//            `especialidad`: apaño S36 para lo que no tiene tirada propia (Investigación,
-//            Rastreo, Subsistencia): el efecto va como casilla en "Buscar / percibir" con la
-//            especialidad en la etiqueta, y la marca el jugador. Es texto de etiqueta; se
-//            quita cuando existan sus tiradas (docs/tareas.md, "Tiradas fijas que faltan").
 //   ficha  → texto que solo vive en la tarjeta de la dote (no hay tirada a la que colgarlo).
 //   especialidadArmaElegida → los ataques con arma de la especialidad elegida al comprar
 //            (Crítico Mejorado: crítico fijo, sin casilla; rules/dotesEfectos.ts).
@@ -24,7 +20,6 @@
 //            poner aquí (el poder no pasa por el índice de condiciones): el generador los rechaza.
 //   tanda  → el destino aún no existe: el efecto queda pendiente de esa tanda.
 import type { AlcanceModificador, FamiliaArma } from "../rules/modificadores";
-import { etiquetaEspecialidad } from "./especialidades";
 
 // "tiradas-fijas" no es una tanda de dotes sino la tarea de docs/tareas.md "Tiradas fijas
 // que faltan según habilidades.md": sin esas tiradas no había dónde colgar el efecto. Va la
@@ -45,27 +40,18 @@ export type TandaDote = (typeof TANDAS_DOTES)[number];
 export const FAMILIAS_SOLO_CON_DOTE: readonly FamiliaArma[] = ["bloquear_melee"];
 
 export type DestinoDote =
-  | { tipo: "tirada"; alcance: AlcanceModificador; textos: string[]; especialidad?: string }
+  | { tipo: "tirada"; alcance: AlcanceModificador; textos: string[] }
   | { tipo: "ficha" }
   | { tipo: "especialidadArmaElegida" }
   | { tipo: "accionDote" }
   | { tipo: "poder"; id: string }
   | { tipo: "tanda"; tanda: TandaDote; motivo: string };
 
-const tirada = (id: string, especialidad?: string): DestinoDote => ({
-  tipo: "tirada",
-  alcance: { tipo: "tiradaId", id },
-  textos: [id],
-  ...(especialidad && { especialidad }),
-});
+const tirada = (id: string): DestinoDote => ({ tipo: "tirada", alcance: { tipo: "tiradaId", id }, textos: [id] });
 // Sin destinos { tipo: "tanda" } desde que existen las tiradas fijas (2026-10-23); el día que
 // vuelva a hacer falta uno: { tipo: "tanda", tanda, motivo }.
 // Tiradas generadas por arma de una familia (Accion.familiaArma, combate.ts).
 const familia = (f: FamiliaArma): DestinoDote => ({ tipo: "tirada", alcance: { tipo: "familiaArma", familia: f }, textos: [] });
-
-// Las tiradas de Exploración del grupo Acciones (hoy solo "Buscar / percibir"). Sin
-// "Iniciativa (habitual)", que también usa Exploración pero no es rastrear ni investigar.
-const exploracionEnAcciones: AlcanceModificador = { tipo: "grupoHabilidad", grupo: "Acciones", habilidad: "exploracion" };
 
 export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   // ── Tiradas fijas (ACCIONES) ──
@@ -100,18 +86,12 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
     alcance: { tipo: "especialidad", especialidades: ["intimidacion"] },
     textos: ["social"],
   },
-  // Apaño (supuesto S36): Investigación, Rastreo y Subsistencia no tienen tirada propia y
-  // van a "Buscar / percibir", la única de Exploración en Acciones, con la especialidad
-  // en la etiqueta. Se mueven cuando existan sus tiradas (tarea "Tiradas fijas…").
-  "especialidad:investigacion": {
-    tipo: "tirada",
-    alcance: exploracionEnAcciones,
-    textos: ["alerta_activa"],
-    especialidad: etiquetaEspecialidad("investigacion"),
-  },
-  rastreo: { tipo: "tirada", alcance: exploracionEnAcciones, textos: ["alerta_activa"], especialidad: "Rastreo" },
-  // Hoy solo lo usa la ventaja de Bioma Predilecto (D2d), casilla «Subsistencia: …».
-  subsistencia: { tipo: "tirada", alcance: exploracionEnAcciones, textos: ["alerta_activa"], especialidad: "Subsistencia" },
+  // Tiradas de Exploración propias desde 2026-10-26 (antes, apaño S36 en "Buscar / percibir"):
+  // Descartar Teoría a Investigación; Rastreo al Paso y Bioma Predilecto a Rastreo (bonos por
+  // opción de «Marcha», SELECTORES_DE_TIRADA); la ventaja de Bioma Predilecto, a Subsistencia.
+  "especialidad:investigacion": tirada("investigacion"),
+  rastreo: tirada("rastreo"),
+  subsistencia: tirada("subsistencia"),
 
   // ── Texto que solo vive en la tarjeta de la dote ──
   ficha: { tipo: "ficha" },
@@ -174,6 +154,14 @@ export const OPCIONES_DE_TRAMO: Readonly<
     ninguna: "Sin moverte",
     opciones: { mitad: "A mitad de velocidad", total: "A velocidad total", esprint: "Esprintando" },
   },
+};
+
+// Selectores que ya trae la tirada (no los pone la dote, a diferencia de OPCIONES_DE_TRAMO):
+// un bono con `tramo` "<selector>:<opción>" va como bono por opción de ese selector, y con
+// condición, además, con su casilla (rules/dotesEfectos.ts). Los ids repiten los de la tirada
+// (CONDICION_MARCHA, rules/acciones.ts; un test lo comprueba).
+export const SELECTORES_DE_TIRADA: Readonly<Record<string, { etiqueta: string; opciones: readonly string[] }>> = {
+  marcha: { etiqueta: "Marcha", opciones: ["normal_mitad", "normal_total", "adversa_tercio", "adversa_mitad", "adversa_total"] },
 };
 
 // Excepciones por efecto ("<id de dote>#<índice en el borrador>"): su destino existe,

@@ -13,7 +13,9 @@
 // y los textos con destino de familia. Un efecto con requisito por rama (Asesino…) solo sale
 // si la ficha cumple el de su rama. Aparte, lo que no es casilla ni texto:
 //   bonosTramo  bono por tramo de distancia (Tirador de Larga Distancia y su Avanzado, este
-//               solo en especialidad; vale el mejor de los dos)
+//               solo en especialidad; vale el mejor de los dos), y por opción de un selector de
+//               la tirada (SELECTORES_DE_TIRADA: Rastreo al Paso en «Marcha»; con condición, solo
+//               con su casilla marcada, `siActiva`: Bioma Predilecto)
 //   criticos    crítico fijo en los ataques de la especialidad elegida (Crítico Mejorado)
 //   permisos    (D2b-2) lo que solo existe con dote en las tiradas de arma: las familias
 //               habilitadas (Bloqueo → bloquear_melee) y dónde cabe el estilo Sutil (Combate
@@ -54,7 +56,7 @@ import {
   type ValoresRequisito,
 } from "./dotes";
 import { dotePorId, mismaDote, normalizarNombre, type DoteComprada } from "./dotesCompradas";
-import { DESTINOS_DOTES, OPCIONES_DE_TRAMO } from "../catalog/dotesDestinos";
+import { DESTINOS_DOTES, OPCIONES_DE_TRAMO, SELECTORES_DE_TIRADA } from "../catalog/dotesDestinos";
 import { DOTES } from "../catalog/dotes";
 import { especialidadPorId, etiquetaEspecialidad, type EspecialidadId } from "../catalog/especialidades";
 import type { DoteCatalogo, EfectoDote, ValorDote } from "../catalog/dotesTipos";
@@ -284,8 +286,7 @@ export function efectosDeDotes(
       const llave = `${JSON.stringify(alcance)}|${condicion}`;
       let c = porCondicion.get(llave);
       if (!c) {
-        const texto = destino.especialidad ? `${destino.especialidad}: ${condicion}` : condicion;
-        c = { id: `${clave}_${i}`, tipo: "toggle", etiqueta: `${texto} (${fuente}${umbral ? `, ${umbral}` : ""})`, valorActivo: 0, alcance };
+        c = { id: `${clave}_${i}`, tipo: "toggle", etiqueta: `${condicion} (${fuente}${umbral ? `, ${umbral}` : ""})`, valorActivo: 0, alcance };
         porCondicion.set(llave, c);
         casillas.push(c);
       }
@@ -299,10 +300,9 @@ export function efectosDeDotes(
       if (dote.motor[i]?.estado !== "construido") return;
       // Requisito por rama: el efecto de la rama que la ficha no cumple no sale (§9.5).
       if ("requisitoAlcance" in e && e.requisitoAlcance && valores && !cumpleRequisitoDote(e.requisitoAlcance, valores, compradas)) return;
-      // Sin condición y sobre una tirada sin especialidad en la etiqueta: cambio de grado fijo
-      // (Velocista, Gran Puntería), sin casilla.
+      // Sin condición: cambio de grado fijo (Velocista, Gran Puntería), sin casilla.
       const destinoFijo = "alcance" in e ? DESTINOS_DOTES[e.alcance] : undefined;
-      const fijo = destinoFijo?.tipo === "tirada" && !destinoFijo.especialidad && "condicion" in e && e.condicion === null;
+      const fijo = destinoFijo?.tipo === "tirada" && "condicion" in e && e.condicion === null;
       if (fijo && e.tipo === "sube_grado" && e.de === "fracaso" && e.a === "exito") {
         grados.push({ alcance: destinoFijo.alcance, fuente, subeGrado: true });
         return;
@@ -424,6 +424,26 @@ export function efectosDeDotes(
             });
             return;
           }
+          // Opción de un selector que ya trae la tirada («Marcha» de Rastreo): bono por opción
+          // y, si la dote pone condición (Bioma Predilecto), solo con su casilla marcada.
+          const selector = SELECTORES_DE_TIRADA[grupo];
+          if (selector) {
+            if (!selector.opciones.includes(opcion)) return;
+            const excluyente = claveExcluyente(dote, e);
+            const c = e.condicion ? casillaPara(e, i) : null;
+            if (c) c.resumen = `cambia «${selector.etiqueta}»`;
+            bonosTramo.push({
+              alcance,
+              bono: {
+                fuente,
+                condicion: grupo,
+                porTramo: { [opcion]: valorBono },
+                ...(c && { siActiva: c.id }),
+                ...(excluyente && { excluyente }),
+              },
+            });
+            return;
+          }
           const def = OPCIONES_DE_TRAMO[grupo];
           if (!def) return;
           let g = porTramo.get(grupo);
@@ -450,13 +470,11 @@ export function efectosDeDotes(
           g.casilla.etiqueta = `${def.etiqueta} ${cuanto} (${fuente})`;
           return;
         }
-        // Siempre activo y sin especialidad: bono fijo, sale en el desglose con la dote.
-        if (e.condicion === null && !destino.especialidad) {
+        // Siempre activo: bono fijo, sale en el desglose con la dote.
+        if (e.condicion === null) {
           modificadores.push({ tipo: "tirada", alcance, valor: valorBono, origen: "dote", fuente });
           return;
         }
-        // Casilla. Con especialidad en la etiqueta (apaño S36: Investigación, Rastreo,
-        // Subsistencia, sin tirada propia), aunque el bono sea siempre activo: la marca el jugador.
         const c = casillaPara(e, i, resuelto.umbral);
         if (c) c.valorActivo += valorBono;
         return;

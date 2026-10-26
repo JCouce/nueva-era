@@ -1,12 +1,14 @@
 // Tiradas fijas de docs/fuente/habilidades.md (Apuntar, Carrera, Discernir mentiras, Resistir
-// distracción), el selector "Apuntado" de los ataques a distancia y las dotes que cuelgan de
-// ellas (Velocista, Gran Puntería, Puntería Relámpago, Cazador Cazado, Vigilancia Táctica).
+// distracción; Rastreo, Subsistencia, Trato con Animales e Investigación), el selector "Apuntado"
+// de los ataques a distancia, el «Marcha» de Rastreo y las dotes que cuelgan de ellas (Velocista,
+// Gran Puntería, Puntería Relámpago, Cazador Cazado, Vigilancia Táctica, Rastreo al Paso, Bioma
+// Predilecto, Descartar Teoría).
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
-import { ACCIONES, ID_APUNTADO, usarHabilidadAlternativa, elegirEspecialidad, type Accion } from "./acciones";
+import { ACCIONES, CONDICION_MARCHA, ID_APUNTADO, ID_MARCHA, usarHabilidadAlternativa, elegirEspecialidad, type Accion } from "./acciones";
 import { HABILIDADES } from "./habilidades";
-import { resolverFicha, conExtrasDeFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
+import { resolverFicha, conExtrasDeFicha, tiradaFijaVisible, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
 import { montarTirada, eleccionSinTocar, tirarMontada, type TiradaMontada } from "./montaje";
 import { accionesDeAtaque } from "./combate";
 import { equipar } from "./equipo";
@@ -15,6 +17,7 @@ import { ID_CASILLA_ULTRA_FISICAS } from "./farmacos";
 import { DOTES } from "../catalog/dotes";
 import { especialidadesDe, type EspecialidadId } from "../catalog/especialidades";
 import type { DoteComprada } from "./dotesCompradas";
+import { SELECTORES_DE_TIRADA } from "../catalog/dotesDestinos";
 
 // Atributos a 4 y habilidades a 5, con las especialidades que piden los requisitos de dote
 // (Carrera, Manipulación, Táctica, Empatía…), menos las de `sin`.
@@ -295,3 +298,166 @@ describe("especialidad de las tiradas fijas: la decide la tirada", () => {
     assert.deepEqual(habilidad(con(["humor"]), empatia), [2, false]);
   });
 });
+
+// ── Exploración: Rastreo, Subsistencia, Trato con Animales e Investigación (2026-10-26) ──
+
+const EXPLORACION = ["rastreo", "subsistencia", "trato_animales_lectura", "trato_animales_interaccion", "investigacion"];
+const SUPERVIVENCIA = ["rastreo", "subsistencia", "trato_animales_lectura", "trato_animales_interaccion"];
+const visibles = (f: FichaResuelta) => EXPLORACION.filter((id) => tiradaFijaVisible(f, fila(id)));
+// Ficha con Exploración 5 y solo estas especialidades de Exploración (el resto, las de dotes).
+const conExploracion = (esp: EspecialidadId[], dotes: DoteComprada[] = []): Sheet => {
+  const s = ficha(dotes, ["supervivencia", "investigacion", "tactica"]);
+  return { ...s, habilidades: { ...s.habilidades, exploracion: { valor: 5, especialidades: esp } } };
+};
+let n = 0;
+const conAumento = (s: Sheet, catalogoId: string, eleccion?: string): Sheet => ({
+  ...s,
+  equipo: [...s.equipo, { instanciaId: `aum${++n}`, catalogoId, ...(eleccion && { eleccion }) }],
+});
+const marcha = (t: Accion) => t.condiciones!.find((c): c is Opcion => c.id === ID_MARCHA && c.tipo === "opcion")!;
+// Lo que la marcha (y lo que le cuelga) suma a la tirada en cada opción, contra «Normal · mitad».
+const penalizadores = (f: FichaResuelta, cambios: EstadoCondiciones = {}) => {
+  const t = fija(f, "rastreo");
+  const base = montar(f, t, cambios).modificador;
+  return Object.fromEntries(marcha(t).opciones.map((o) => [o.id, montar(f, t, { ...cambios, marcha: o.id }).modificador - base]));
+};
+
+describe("Exploración: las filas", () => {
+  test("Perspicacia + Exploración con Supervivencia; interactuar con un animal, con Expresión", () => {
+    for (const id of SUPERVIVENCIA) {
+      const t = fila(id);
+      assert.deepEqual([t.grupo, t.habilidad, t.especialidadesAccion, t.soloConEspecialidad], ["Acciones", "exploracion", ["supervivencia"], true], id);
+      assert.equal(t.aplicado, id === "trato_animales_interaccion" ? "expresion" : "perspicacia", id);
+    }
+    const inv = fila("investigacion");
+    assert.deepEqual([inv.aplicado, inv.habilidad, inv.especialidadesAccion], ["perspicacia", "exploracion", ["investigacion"]]);
+    assert.match(inv.nota!, /Inspección de Escena.*Análisis de Pistas.*Búsqueda Documental/);
+  });
+
+  test("con la especialidad, entera; sin ella (pintada por una dote), a la mitad", () => {
+    const f = resolver(conExploracion(["supervivencia", "investigacion"]));
+    for (const id of EXPLORACION) assert.deepEqual([montar(f, fija(f, id)).habilidad?.valor, montar(f, fija(f, id)).enEspecialidad], [5, true], id);
+    const g = resolver(conExploracion([]));
+    for (const id of EXPLORACION) assert.equal(montar(g, fija(g, id)).habilidad?.valor, 2, id);
+  });
+
+  test("«Marcha» de las dotes repite los ids del selector de la tirada", () => {
+    assert.deepEqual(SELECTORES_DE_TIRADA[ID_MARCHA].opciones, (CONDICION_MARCHA as Opcion).opciones.map((o) => o.id));
+  });
+});
+
+describe("Exploración: solo se pintan con la especialidad o con algo que les enganche (S99)", () => {
+  test("sin Supervivencia ni Investigación, ninguna; Buscar / percibir, siempre", () => {
+    const f = resolver(conExploracion([]));
+    assert.deepEqual(visibles(f), []);
+    assert.ok(tiradaFijaVisible(f, fila("alerta_activa")));
+  });
+
+  test("Supervivencia pinta Rastreo, Subsistencia y Trato; Investigación, la suya", () => {
+    assert.deepEqual(visibles(resolver(conExploracion(["supervivencia"]))), SUPERVIVENCIA);
+    assert.deepEqual(visibles(resolver(conExploracion(["investigacion"]))), ["investigacion"]);
+  });
+
+  test("una dote que engancha pinta su fila aunque falte la especialidad (NPC, sin requisitos)", () => {
+    const s = conExploracion([], [{ id: "dote_bioma_predilecto", eleccion: "Selva densa" }]);
+    const npc = resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA, libre: true });
+    assert.deepEqual(visibles(npc), ["rastreo", "subsistencia"]);
+  });
+
+  test("un aumento también: UV en Investigación, oído biónico en Rastreo", () => {
+    const uv = resolver(conAumento(conExploracion([]), "aum_introgresion_sensorial_heterologa", "espectro_ultravioleta"));
+    assert.deepEqual(visibles(uv), ["investigacion"]);
+    const oido = resolver(conAumento(conAumento(conExploracion([]), "aum_optimizacion_foveo_sensorial"), "aum_optimizacion_vestibulo_auditiva"));
+    assert.deepEqual(visibles(oido), ["rastreo"]);
+  });
+});
+
+describe("Rastreo: selector «Marcha» y sus dotes", () => {
+  test("sin dotes: normal mitad 0 · total −3; adversa tercio 0 · mitad −3 · total −6", () => {
+    const f = resolver(conExploracion(["supervivencia"]));
+    assert.equal(marcha(fija(f, "rastreo")).porDefecto, "normal_mitad");
+    assert.deepEqual(penalizadores(f), { normal_mitad: 0, normal_total: -3, adversa_tercio: 0, adversa_mitad: -3, adversa_total: -6 });
+  });
+
+  test("Rastreo al Paso: 3 menos en las que penalizan, sin casilla", () => {
+    const f = resolver(conExploracion(["supervivencia"], [{ id: "dote_rastreo_al_paso" }]));
+    const t = fija(f, "rastreo");
+    assert.deepEqual(t.condiciones!.map((c) => c.id), [ID_MARCHA]);
+    assert.deepEqual(penalizadores(f), { normal_mitad: 0, normal_total: 0, adversa_tercio: 0, adversa_mitad: 0, adversa_total: -3 });
+    assert.deepEqual(montar(f, t, { marcha: "adversa_total" }).desglose.filter((l) => /Rastreo al Paso/.test(l.etiqueta)).map((l) => l.valor), [3]);
+  });
+
+  test("Bioma Predilecto: con «En tu bioma predilecto», lo adverso cuenta como normal", () => {
+    const f = resolver(conExploracion(["supervivencia"], [{ id: "dote_bioma_predilecto", eleccion: "Selva densa" }]));
+    const t = fija(f, "rastreo");
+    const c = casillaToggle(t, /^En tu bioma predilecto/)!;
+    assert.equal(c.resumen, "cambia «Marcha»");
+    assert.deepEqual(penalizadores(f), { normal_mitad: 0, normal_total: -3, adversa_tercio: 0, adversa_mitad: -3, adversa_total: -6 });
+    assert.deepEqual(penalizadores(f, { [c.id]: true }), { normal_mitad: 0, normal_total: -3, adversa_tercio: 0, adversa_mitad: 0, adversa_total: -3 });
+    assert.match(t.nota!, /En tu bioma predilecto: Lo adverso cuenta como normal/);
+  });
+
+  // S97: el bioma pasa lo adverso a normal y Rastreo al Paso quita 3 encima (adversa total → 0);
+  // en adversa a mitad no apilan, que con cualquiera ya está en 0.
+  test("Rastreo al Paso y Bioma Predilecto se encadenan", () => {
+    const f = resolver(
+      conExploracion(["supervivencia"], [{ id: "dote_rastreo_al_paso" }, { id: "dote_bioma_predilecto", eleccion: "Selva densa" }]),
+    );
+    const c = casillaToggle(fija(f, "rastreo"), /^En tu bioma predilecto/)!;
+    assert.deepEqual(penalizadores(f, { [c.id]: true }), { normal_mitad: 0, normal_total: 0, adversa_tercio: 0, adversa_mitad: 0, adversa_total: 0 });
+    assert.deepEqual(penalizadores(f, {}), { normal_mitad: 0, normal_total: 0, adversa_tercio: 0, adversa_mitad: 0, adversa_total: -3 });
+  });
+
+  test("rastro térmico: nota en Rastreo con Visión Térmica, aunque no haya Supervivencia", () => {
+    const f = resolver(conAumento(conExploracion([]), "aum_introgresion_sensorial_heterologa", "vision_termica"));
+    assert.ok(tiradaFijaVisible(f, fija(f, "rastreo")));
+    assert.match(fija(f, "rastreo").nota!, /Visión Térmica: ves el rastro de calor reciente/);
+  });
+
+  test("oído biónico: ventaja al rastrear por el sonido; en Buscar, solo detectar ocultos", () => {
+    const f = resolver(conAumento(conAumento(conExploracion(["supervivencia"]), "aum_optimizacion_foveo_sensorial"), "aum_optimizacion_vestibulo_auditiva"));
+    const r = casillaToggle(fija(f, "rastreo"), /sonido/)!;
+    assert.ok(r.ventaja);
+    assert.ok(montar(f, fija(f, "rastreo"), { [r.id]: true }).ventaja);
+    assert.match(casillaToggle(fija(f, "alerta_activa"), /Percepción auditiva/)!.etiqueta, /^¿Percepción auditiva\? \(detectar ocultos\) ·/);
+  });
+});
+
+describe("Subsistencia e Investigación: lo que antes colgaba de Buscar / percibir", () => {
+  test("Bioma Predilecto: ventaja en Subsistencia con su casilla", () => {
+    const f = resolver(conExploracion(["supervivencia"], [{ id: "dote_bioma_predilecto", eleccion: "Zona árida" }]));
+    const t = fija(f, "subsistencia");
+    const c = casillaToggle(t, /^Dentro de tu bioma predilecto \(Bioma Predilecto: Zona árida\)$/)!;
+    assert.equal(montar(f, t).ventaja, null);
+    assert.ok(montar(f, t, { [c.id]: true }).ventaja);
+  });
+
+  test("Descartar Teoría: texto en la nota de Investigación y su casilla −2; nada en Buscar", () => {
+    const f = resolver(conExploracion(["investigacion"], [{ id: "dote_descartar_teoria" }]));
+    const t = fija(f, "investigacion");
+    assert.match(t.nota!, /repetir la prueba con −2.*\(Descartar Teoría\)/);
+    const c = casillaToggle(t, /Descartar Teoría/)!;
+    assert.equal(montar(f, t, { [c.id]: true }).modificador - montar(f, t).modificador, -2);
+    const buscar = fija(f, "alerta_activa");
+    assert.doesNotMatch(buscar.nota ?? "", /Descartar Teoría/);
+    assert.equal(casillaToggle(buscar, /Descartar Teoría/), undefined);
+  });
+
+  test("UV partida: +2 a accesos ocultos en Buscar y +2 a investigación de campo en Investigación", () => {
+    const f = resolver(conAumento(conExploracion(["investigacion"]), "aum_introgresion_sensorial_heterologa", "espectro_ultravioleta"));
+    const buscar = fija(f, "alerta_activa");
+    const inv = fija(f, "investigacion");
+    const accesos = casillaToggle(buscar, /accesos ocultos/)!;
+    const campo = casillaToggle(inv, /Investigación de campo/)!;
+    assert.match(accesos.etiqueta, /^¿Buscas accesos ocultos\? ·/);
+    assert.equal(casillaToggle(buscar, /Investigación de campo/), undefined);
+    assert.equal(casillaToggle(inv, /accesos/), undefined);
+    assert.equal(montar(f, buscar, { [accesos.id]: true }).modificador - montar(f, buscar).modificador, 2);
+    assert.equal(montar(f, inv, { [campo.id]: true }).modificador - montar(f, inv).modificador, 2);
+  });
+});
+
+type Toggle = Extract<CondicionTirada, { tipo: "toggle" }>;
+function casillaToggle(t: Accion, etiqueta: RegExp): Toggle | undefined {
+  return t.condiciones?.find((c): c is Toggle => c.tipo === "toggle" && etiqueta.test(c.etiqueta));
+}
