@@ -387,7 +387,8 @@ Simple + 1). Cero "acción sin dado" nueva aquí; solo una tirada normal + un re
 - **`accionesDeMovimiento()`** (nuevo, `lib/rules/movimiento.ts`): genera "Volar"
   (Reflejos + Tecnociencia, grupo Acciones) por cada Movilidad Aérea equipada. "Dificultad
   de maniobrabilidad: -N" del catálogo se modela como **ajuste fijo al modificador**
-  (+3/+3/+3/+4 según nivel) — matemáticamente idéntico a bajar N la dificultad, y el
+  (−3/−3/−3/−4 según nivel: penalizador, Murillo 2026-10-26, S101; hasta entonces se
+  aplicaba como +3/+4) — el
   único mecanismo que el motor ya tiene para que un número de una pieza entre en la
   cuenta de una tirada (`ajustesFijos`, mismo patrón que el -1 del Lanzagranadas
   Integrado).

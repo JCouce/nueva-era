@@ -55,6 +55,29 @@ function tiradaDeVolar(pieza: PiezaEquipada, cat: MejoraMovimiento): Accion | nu
   };
 }
 
+// Esquiva en vuelo: con Tecnociencia en vez de Atletismo y la maniobrabilidad de la pieza
+// (Murillo, 2026-10-26). Casilla "En vuelo" de la fila, como "Levitando" (la app no sabe si
+// vuelas). Si la esquiva ya trae otra habilidad (Levitar), gana el vuelo: es la que cambia
+// el número (S101).
+export function conEsquivaEnVuelo(sheet: Sheet, t: Accion): Accion {
+  if (t.id !== "defensa") return t;
+  for (const pieza of sheet.equipo) {
+    const cat = equipoPorId(pieza.catalogoId);
+    if (cat?.familia !== "movimiento" || cat.id !== "movilidad_aerea") continue;
+    const valor = cat.niveles.find((n) => n.nivel === pieza.nivel)?.maniobrabilidad;
+    if (valor === undefined) continue;
+    return {
+      ...t,
+      habilidadAlternativa: {
+        habilidad: "tecnociencia",
+        etiqueta: `En vuelo: Tecnociencia, ${String(valor).replace("-", "−")}`,
+        ajuste: { valor, fuente: `Maniobrabilidad (${cat.label})` },
+      },
+    };
+  }
+  return t;
+}
+
 export function accionesDeMovimiento(sheet: Sheet): Accion[] {
   const acciones: Accion[] = [];
   for (const pieza of sheet.equipo) {

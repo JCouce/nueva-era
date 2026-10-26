@@ -2,9 +2,9 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet } from "./sheet";
 import { equipar } from "./equipo";
-import { accionesDeMovimiento } from "./movimiento";
+import { accionesDeMovimiento, conEsquivaEnVuelo } from "./movimiento";
 import { capacidadDePieza } from "./recursos";
-import { resolverVuelo, MARGEN_CRITICO } from "./acciones";
+import { resolverVuelo, MARGEN_CRITICO, ACCIONES, usarHabilidadAlternativa } from "./acciones";
 
 function equiparMovilidadAerea(nivel: number) {
   let s = equipar(defaultSheet(), { instanciaId: "arm1", catalogoId: "armadura_pesada" }); // tope 4
@@ -23,14 +23,14 @@ describe("accionesDeMovimiento", () => {
     assert.deepEqual(accionesDeMovimiento(s), []);
   });
 
-  test("Movilidad Aérea nivel 1: Reflejos + Tecnociencia, ajuste fijo +3, grupo Acciones", () => {
+  test("Movilidad Aérea nivel 1: Reflejos + Tecnociencia, maniobrabilidad −3, grupo Acciones", () => {
     const sheet = equiparMovilidadAerea(1);
     const [accion] = accionesDeMovimiento(sheet);
     assert.equal(accion.label, "Volar");
     assert.equal(accion.grupo, "Acciones");
     assert.equal(accion.aplicado, "reflejos");
     assert.equal(accion.habilidad, "tecnociencia");
-    assert.deepEqual(accion.ajustesFijos, [{ valor: 3, fuente: "Maniobrabilidad (Movilidad Aérea)" }]);
+    assert.deepEqual(accion.ajustesFijos, [{ valor: -3, fuente: "Maniobrabilidad (Movilidad Aérea)" }]);
     assert.deepEqual(accion.vuelo, { velocidadBase: 50, bonusCritico: 25 });
   });
 
@@ -64,10 +64,10 @@ describe("accionesDeMovimiento", () => {
     }
   });
 
-  test("nivel 4: ajuste +4, vuelo con los números de ese nivel", () => {
+  test("nivel 4: ajuste −4, vuelo con los números de ese nivel", () => {
     const sheet = equiparMovilidadAerea(4);
     const [accion] = accionesDeMovimiento(sheet);
-    assert.deepEqual(accion.ajustesFijos, [{ valor: 4, fuente: "Maniobrabilidad (Movilidad Aérea)" }]);
+    assert.deepEqual(accion.ajustesFijos, [{ valor: -4, fuente: "Maniobrabilidad (Movilidad Aérea)" }]);
     assert.deepEqual(accion.vuelo, { velocidadBase: 140, bonusCritico: 70 });
   });
 });
@@ -111,5 +111,26 @@ describe("capacidadDePieza — Movilidad Aérea", () => {
   test("Exoesqueleto no tiene recurso (su célula no está poblada en el catálogo)", () => {
     const cap = capacidadDePieza({ instanciaId: "e1", catalogoId: "exoesqueleto", nivel: 1 });
     assert.equal(cap, null);
+  });
+});
+
+describe("conEsquivaEnVuelo", () => {
+  const defensa = ACCIONES.find((t) => t.id === "defensa")!;
+
+  test("sin Movilidad Aérea, la esquiva no cambia", () => {
+    assert.equal(conEsquivaEnVuelo(defaultSheet(), defensa), defensa);
+  });
+
+  test("con Movilidad Aérea 4, la casilla En vuelo esquiva con Tecnociencia y −4", () => {
+    const t = conEsquivaEnVuelo(equiparMovilidadAerea(4), defensa);
+    assert.equal(t.habilidadAlternativa?.etiqueta, "En vuelo: Tecnociencia, −4");
+    const enVuelo = usarHabilidadAlternativa(t)!;
+    assert.equal(enVuelo.habilidad, "tecnociencia");
+    assert.deepEqual(enVuelo.ajustesFijos, [{ valor: -4, fuente: "Maniobrabilidad (Movilidad Aérea)" }]);
+  });
+
+  test("solo toca la esquiva", () => {
+    const otra = ACCIONES.find((t) => t.id !== "defensa")!;
+    assert.equal(conEsquivaEnVuelo(equiparMovilidadAerea(1), otra), otra);
   });
 });

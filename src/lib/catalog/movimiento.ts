@@ -120,7 +120,7 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         ],
         modificadores: [],
         velocidadM: 50,
-        maniobrabilidad: 3,
+        maniobrabilidad: -3,
         notaTirada:
           "Acción simple, 1 carga por acción de vuelo. Fallo: recorres la mitad. Fracaso crítico: " +
           "desplazamiento descontrolado en dirección aleatoria — resuélvelo a mano. Activa Máxima " +
@@ -137,14 +137,12 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
           // mostrado en personaje/EstadoPanel) — Capa 1 → Derivado, además de alimentar
           // ahora la nota de "Volar".
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
-          // Dificultad de maniobrabilidad: modelada como ajuste fijo al
-          // modificador de "Volar" (supuesto, ver docs/tareas.md — el motor
-          // no tiene concepto de "dificultad de base de una pieza").
+          // Dificultad de maniobrabilidad: penalizador (Murillo, 2026-10-26, pregunta 42) como
+          // ajuste fijo al modificador de "Volar" y de la esquiva en vuelo (conEsquivaEnVuelo).
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "ajuste_fijo", estado: "construido" },
-          // -1 a los ataques y esquivas con Tecnociencia en vez de Atletismo mientras se vuela
-          // (descripcion de la pieza, mismo texto en los 4 niveles): descartado de la app el
-          // 2026-09-28 (el usuario, docs/tareas.md: "se lleva en mesa"). Texto en la card, sin
-          // estado "en vuelo" que rastrear; construido tal cual (S94).
+          // -1 a los ataques mientras se vuela (mismo texto en los 4 niveles): se lleva en mesa
+          // (usuario, 2026-09-28; S94). La esquiva con Tecnociencia y la maniobrabilidad sí
+          // están: casilla "En vuelo" de la esquiva (conEsquivaEnVuelo, S101).
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
         ],
@@ -160,7 +158,7 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         ],
         modificadores: [],
         velocidadM: 70,
-        maniobrabilidad: 3,
+        maniobrabilidad: -3,
         notaTirada:
           "Acción simple, 1 carga cada 2 acciones de vuelo. Fallo: recorres la mitad. Fracaso crítico: " +
           "desplazamiento descontrolado. Máxima Potencia declara acción Compleja y 2 cargas.",
@@ -168,10 +166,9 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         motor: [
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "ajuste_fijo", estado: "construido" },
-          // -1 a los ataques y esquivas con Tecnociencia en vez de Atletismo mientras se vuela
-          // (descripcion de la pieza, mismo texto en los 4 niveles): descartado de la app el
-          // 2026-09-28 (el usuario, docs/tareas.md: "se lleva en mesa"). Texto en la card, sin
-          // estado "en vuelo" que rastrear; construido tal cual (S94).
+          // -1 a los ataques mientras se vuela (mismo texto en los 4 niveles): se lleva en mesa
+          // (usuario, 2026-09-28; S94). La esquiva con Tecnociencia y la maniobrabilidad sí
+          // están: casilla "En vuelo" de la esquiva (conEsquivaEnVuelo, S101).
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
         ],
@@ -190,7 +187,7 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         ],
         modificadores: [],
         velocidadM: 100,
-        maniobrabilidad: 3,
+        maniobrabilidad: -3,
         notaTirada:
           "Acción simple, 1 carga cada 3 acciones de vuelo. Fallo: recorres la mitad. Fracaso crítico: " +
           "desplazamiento descontrolado. Máxima Potencia declara acción Compleja y 2 cargas. (La " +
@@ -200,10 +197,9 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         motor: [
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "ajuste_fijo", estado: "construido" },
-          // -1 a los ataques y esquivas con Tecnociencia en vez de Atletismo mientras se vuela
-          // (descripcion de la pieza, mismo texto en los 4 niveles): descartado de la app el
-          // 2026-09-28 (el usuario, docs/tareas.md: "se lleva en mesa"). Texto en la card, sin
-          // estado "en vuelo" que rastrear; construido tal cual (S94).
+          // -1 a los ataques mientras se vuela (mismo texto en los 4 niveles): se lleva en mesa
+          // (usuario, 2026-09-28; S94). La esquiva con Tecnociencia y la maniobrabilidad sí
+          // están: casilla "En vuelo" de la esquiva (conEsquivaEnVuelo, S101).
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           // La elección Velocidad/Maniobrabilidad no se guarda en la ficha
@@ -223,7 +219,7 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         ],
         modificadores: [],
         velocidadM: 140,
-        maniobrabilidad: 4,
+        maniobrabilidad: -4,
         notaTirada:
           "Acción simple, 1 carga cada 4 acciones de vuelo. Fallo: recorres la mitad. Fracaso crítico: " +
           "desplazamiento descontrolado. Máxima Potencia declara acción Compleja y 2 cargas. (La mejora " +
@@ -232,10 +228,9 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         motor: [
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "ajuste_fijo", estado: "construido" },
-          // -1 a los ataques y esquivas con Tecnociencia en vez de Atletismo mientras se vuela
-          // (descripcion de la pieza, mismo texto en los 4 niveles): descartado de la app el
-          // 2026-09-28 (el usuario, docs/tareas.md: "se lleva en mesa"). Texto en la card, sin
-          // estado "en vuelo" que rastrear; construido tal cual (S94).
+          // -1 a los ataques mientras se vuela (mismo texto en los 4 niveles): se lleva en mesa
+          // (usuario, 2026-09-28; S94). La esquiva con Tecnociencia y la maniobrabilidad sí
+          // están: casilla "En vuelo" de la esquiva (conEsquivaEnVuelo, S101).
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
         ],

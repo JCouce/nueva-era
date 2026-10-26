@@ -172,10 +172,9 @@ export type NivelModulo = {
   // destruirse siguen sin automatizar, se ajusta a mano.
   colchon?: number;
   // Solo lo usa Movilidad Aérea: "Dificultad de maniobrabilidad: -N" del
-  // catálogo, modelado como ajuste fijo al MODIFICADOR de la tirada "Volar"
-  // (matemáticamente idéntico a bajar N la dificultad — el motor no tiene
-  // concepto de "dificultad de base de una pieza", toda dificultad se elige
-  // a mano en el modal) — mismo criterio que ajusteAtaque, total del nivel.
+  // catálogo, un penalizador (Murillo, 2026-10-26): ajuste fijo al MODIFICADOR
+  // de "Volar" y de la esquiva en vuelo, con su signo. Mismo criterio que
+  // ajusteAtaque, total del nivel.
   maniobrabilidad?: number;
   // Solo Movilidad Aérea: el bonus de distancia de Máxima Potencia si la
   // tirada de Volar sale crítica ("+25 m" a nivel 1) — número real, lo

@@ -49,6 +49,7 @@ import {
   elegirEspecialidad,
   etiquetaEspecialidad,
   conEsquivaLevitando,
+  conEsquivaEnVuelo,
   conPsionicaEnTiradaFija,
   etiquetaPoder,
   dificultadSobrecarga,
@@ -1384,7 +1385,7 @@ export function AccionesTab({
     filas: [
       ...ACCIONES.filter((t) => t.grupo === grupo && tiradaFijaVisible(ficha, t))
         .map(conExtras)
-        .map((t) => conPsionicaEnTiradaFija(niveles, conEsquivaLevitando(niveles, t)))
+        .map((t) => conPsionicaEnTiradaFija(niveles, conEsquivaEnVuelo(sheet, conEsquivaLevitando(niveles, t))))
         .map(filaTirada),
       ...(grupo === "Defensa"
         ? [

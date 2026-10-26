@@ -76,7 +76,13 @@ export type Accion = {
   // (Levitar: esquivar con Física). Mismo patrón que `aplicadoSutil`, pero sobre
   // la habilidad; la especialidad, si la nombra, se resuelve sola (ver
   // usarHabilidadAlternativa). Sin especialidad, entera (Sigilo en la distracción).
-  habilidadAlternativa?: { habilidad: HabilidadId; especialidad?: EspecialidadId; etiqueta: string };
+  // `ajuste`: se suma a la tirada al usarla (esquiva en vuelo: maniobrabilidad).
+  habilidadAlternativa?: {
+    habilidad: HabilidadId;
+    especialidad?: EspecialidadId;
+    etiqueta: string;
+    ajuste?: { valor: number; fuente: string };
+  };
   // Regla general (docs/sistema.md §3, usuario 2026-10-23): la tirada que no nombra
   // especialidad suma la habilidad entera; la que la nombra, entera si la ficha la tiene y a
   // la mitad si no (montaje.ts, habilidadEntera). Nunca la elige el jugador con una casilla.
@@ -962,6 +968,7 @@ export function usarHabilidadAlternativa(t: Accion): Accion | null {
     label: `${t.label} (${nombre})`,
     especialidadesAccion: alt.especialidad ? [alt.especialidad] : undefined,
     especialidadAElegir: undefined,
+    ...(alt.ajuste && { ajustesFijos: [...(t.ajustesFijos ?? []), alt.ajuste] }),
   });
 }
 
