@@ -23,13 +23,12 @@ const ficha = (especieId: string | null, especieOpciones: Sheet["especieOpciones
 const REPARTO: Prioridades = { atributos: "A", habilidades: "B", dotes: "C", psionica: "D", recursos: "E" };
 
 describe("pasosPersonaje", () => {
-  test("ficha vacía en creación: los tres primeros pendientes, Estado sin marca", () => {
+  test("ficha vacía en creación: los tres pendientes", () => {
     const pasos = pasosPersonaje({ sheet: ficha(null), nombre: "", aprobada: false });
     assert.deepEqual(pasos, [
       { id: "origen", estado: "pendiente", falta: ["Elige especie"] },
       { id: "prioridades", estado: "pendiente", falta: ["Reparte las 5 letras de prioridad"] },
       { id: "identidad", estado: "pendiente", falta: ["Ponle nombre"] },
-      { id: "estado", estado: null, falta: [] },
     ]);
   });
 
@@ -57,7 +56,6 @@ describe("pasosPersonaje", () => {
         ["origen", "hecho"],
         ["prioridades", "hecho"],
         ["identidad", "hecho"],
-        ["estado", null],
       ],
     );
     assert.ok(pasos.every((p) => p.falta.length === 0));
@@ -78,14 +76,13 @@ describe("pasosPersonaje", () => {
     assert.deepEqual(pasos, [
       { id: "origen", estado: "fijado", falta: [] },
       { id: "identidad", estado: null, falta: [] },
-      { id: "estado", estado: null, falta: [] },
     ]);
   });
 });
 
 describe("subPestanaInicial", () => {
-  test("aprobada: Estado", () => {
-    assert.equal(subPestanaInicial(pasosPersonaje({ sheet: ficha(null), nombre: "", aprobada: true }), true), "estado");
+  test("aprobada: Identidad", () => {
+    assert.equal(subPestanaInicial(pasosPersonaje({ sheet: ficha(null), nombre: "", aprobada: true }), true), "identidad");
   });
   test("en creación: el primer pendiente", () => {
     assert.equal(subPestanaInicial(pasosPersonaje({ sheet: ficha(null), nombre: "", aprobada: false }), false), "origen");

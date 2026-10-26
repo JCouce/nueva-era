@@ -178,7 +178,8 @@ export function CharacterSheet({
   const aprobada = characterStatus === "APPROVED";
   // En revisión, el jugador solo lee (el máster puede editar): la regla, en revision.ts.
   const soloLectura = fichaSoloLectura({ estado: characterStatus, esMaster });
-  const [active, setActive] = useState<TabId>("personaje");
+  // Aprobada, se entra por Recursos: vida, estados y datos, lo que se mira en mesa.
+  const [active, setActive] = useState<TabId>(aprobada ? "recursos" : "personaje");
   const [sheet, setSheet] = useState<Sheet>(initialSheet);
   const [name, setName] = useState(initialName);
   const [xp, setXp] = useState(initialXp);

@@ -21,14 +21,12 @@ import {
 import { PrioridadCard } from "../PrioridadCard";
 import { OrigenPanel } from "./OrigenPanel";
 import { IdentidadPanel } from "./IdentidadPanel";
-import { EstadoPanel } from "./EstadoPanel";
 import { BarraEnvio } from "../RevisionFicha";
 
 const NOMBRE: Record<PasoPersonajeId, string> = {
   origen: "Origen",
   prioridades: "Prioridades",
   identidad: "Identidad",
-  estado: "Estado",
 };
 
 function marca(paso: PasoPersonaje): { texto: string; clase: string } | null {
@@ -38,13 +36,12 @@ function marca(paso: PasoPersonaje): { texto: string; clase: string } | null {
     fijado: { texto: "fijado", clase: "text-muted" },
   };
   if (paso.estado) return porEstado[paso.estado];
-  // Estado no es un paso de creación: sin texto (antes "en juego", que chocaba con el
-  // chip de ficha aprobada). Identidad en una ficha aprobada sigue editable.
-  return paso.id === "estado" ? null : { texto: "editable", clase: "text-muted" };
+  // Identidad en una ficha aprobada sigue editable.
+  return { texto: "editable", clase: "text-muted" };
 }
 
 // La pestaña Personaje: los pasos de creación en orden (Origen → Prioridades →
-// Identidad → Estado) como sub-pestañas, cada uno con su estado. Todo lo que decide
+// Identidad) como sub-pestañas, cada uno con su estado. Todo lo que decide
 // sale de pasosPersonaje (@/lib/rules/personaje.ts).
 export function PersonajeTab({
   name,
@@ -87,8 +84,8 @@ export function PersonajeTab({
   const sheet = ficha.ficha;
   const pasos = pasosPersonaje({ sheet, nombre: name, aprobada });
   const [sub, setSub] = useState<PasoPersonajeId>(() => subPestanaInicial(pasos, aprobada));
-  // Si la ficha se aprueba estando en Prioridades, el paso desaparece: cae a Estado.
-  const activa: PasoPersonajeId = pasos.some((p) => p.id === sub) ? sub : "estado";
+  // Si la ficha se aprueba estando en Prioridades, el paso desaparece: cae a Identidad.
+  const activa: PasoPersonajeId = pasos.some((p) => p.id === sub) ? sub : "identidad";
 
   return (
     <div className="flex flex-col gap-4">
@@ -137,7 +134,6 @@ export function PersonajeTab({
             onTrasfondo={onTrasfondo}
           />
         )}
-        {activa === "estado" && <EstadoPanel ficha={ficha} />}
       </PanelFieldset>
 
       {envio && (

@@ -21,6 +21,7 @@ import { HudCard } from "@/components/HudCard";
 import { BolsaAumentos } from "./BolsaAumentos";
 import { BarraVital, type TonoVital } from "@/components/BarraVital";
 import { ControlVida } from "@/components/ficha/ControlVida";
+import { EstadosCard, DatosCard } from "./EstadosYDatos";
 
 // RECURSOS (docs/tareas.md, fase 6b): una tarjeta por instancia de pieza
 // equipada que rastree un recurso (armas de fuego → balas, subsistemas con
@@ -188,6 +189,8 @@ export function RecursosTab({
       {onTerminarEscena && onLiberarUsoEscena && ficha.usosEscena.length > 0 && (
         <UsosEscenaCard usos={ficha.usosEscena} onLiberar={onLiberarUsoEscena} onTerminarEscena={onTerminarEscena} />
       )}
+
+      <EstadosCard ficha={ficha} />
 
       <p className="mt-2 border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
         {"//SYSTEM · materiales"}
@@ -358,6 +361,7 @@ export function RecursosTab({
         </>
       )}
 
+      <DatosCard ficha={ficha} />
     </div>
   );
 }

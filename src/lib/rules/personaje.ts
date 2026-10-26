@@ -1,6 +1,6 @@
 // La pestaña Personaje, sin UI (docs/tareas.md, "Pestaña Personaje"):
 //
-//   pasosPersonaje     Origen → Prioridades → Identidad → Estado, con su estado y
+//   pasosPersonaje     Origen → Prioridades → Identidad, con su estado y
 //                      lo que falta. La pasada 2 (envío a revisión) lee `falta`.
 //   subPestanaInicial  dónde se abre la pestaña
 //   etiquetaRasgo      CREACIÓN / SIEMPRE / TIRADA / TEXTO de un rasgo de especie
@@ -13,11 +13,11 @@ import type { Sheet } from "./sheet";
 import type { MecanismoMotor } from "./motor";
 import type { Rasgo } from "../catalog/especies";
 
-export const PASOS_PERSONAJE = ["origen", "prioridades", "identidad", "estado"] as const;
+export const PASOS_PERSONAJE = ["origen", "prioridades", "identidad"] as const;
 export type PasoPersonajeId = (typeof PASOS_PERSONAJE)[number];
 
 // "fijado": Origen en una ficha aprobada (no se puede cambiar, tampoco está pendiente).
-// null: sin marca (Estado siempre; Identidad en una ficha aprobada, que sigue editable).
+// null: sin marca (Identidad en una ficha aprobada, que sigue editable).
 export type EstadoPaso = "hecho" | "pendiente" | "fijado" | null;
 
 export type PasoPersonaje = {
@@ -53,20 +53,18 @@ export function pasosPersonaje({
     ? { id: "identidad", estado: null, falta: [] }
     : pendiente("identidad", nombre.trim() ? [] : ["Ponle nombre"]);
 
-  const estado: PasoPersonaje = { id: "estado", estado: null, falta: [] };
-
-  if (aprobada) return [origen, identidad, estado];
+  if (aprobada) return [origen, identidad];
   const prioridades = pendiente(
     "prioridades",
     repartoCompleto(sheet.prioridades) ? [] : ["Reparte las 5 letras de prioridad"],
   );
-  return [origen, prioridades, identidad, estado];
+  return [origen, prioridades, identidad];
 }
 
-// Aprobada → Estado (en juego). En creación, el primer paso pendiente; con todo
-// hecho, Identidad (lo único que se sigue retocando antes de enviar).
+// Aprobada → Identidad (lo único editable). En creación, el primer paso pendiente; con
+// todo hecho, Identidad (lo único que se sigue retocando antes de enviar).
 export function subPestanaInicial(pasos: PasoPersonaje[], aprobada: boolean): PasoPersonajeId {
-  if (aprobada) return "estado";
+  if (aprobada) return "identidad";
   return pasos.find((p) => p.estado === "pendiente")?.id ?? "identidad";
 }
 

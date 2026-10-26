@@ -717,7 +717,7 @@ function pesoGranadas(sheet: Sheet): number {
 }
 
 // Suma de lo que SÍ se sabe pesar (ver pesoDePieza) de todo lo equipado, más las granadas. No
-// es "el peso total real" — la interfaz avisa de qué falta (personaje/EstadoPanel). Redondeado
+// es "el peso total real" — la interfaz avisa de qué falta (EstadosYDatos, en Recursos). Redondeado
 // a la centésima (hay pesos de 6,25 kg): 0,3 + 0,4 en coma flotante no da 0,7.
 export function pesoEquipado(sheet: Sheet): number {
   const total = sheet.equipo.reduce((t, p) => t + pesoDePieza(p), 0) + pesoGranadas(sheet);
