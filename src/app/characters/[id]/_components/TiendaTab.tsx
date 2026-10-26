@@ -90,39 +90,43 @@ const HERRAMIENTAS_CON_NIVEL: Herramienta[] = [
   ESCANER_DETECTOR,
 ];
 
-// El catálogo entero (~110 piezas) como menú de terminal: un grid de
-// categorías —mismo lenguaje que las tiles de Aplicados en AtributosTab— en
-// vez de nueve secciones apiladas y siempre visibles. Se elige una y solo esa
-// pinta su lista debajo; cambiar de categoría es un tap, no un scroll.
+// El catálogo entero (~110 piezas) como menú de terminal: cuatro grupos en
+// tiles —mismo lenguaje que las tiles de Aplicados en AtributosTab— y, dentro
+// de cada uno, una fila de pestañas con sus categorías. Solo la categoría
+// elegida pinta su lista debajo; cambiar es un tap, no un scroll.
 const CATEGORIAS = [
   { id: "armaduras", titulo: "Armaduras", cantidad: ARMADURAS.length },
-  { id: "armas", titulo: "Armas a distancia", cantidad: ARMAS.length },
-  {
-    id: "melee",
-    titulo: "Armas melee",
-    cantidad: ARMAS_MELEE.length - ARMAS_MELEE_KERZUL.length,
-  },
-  { id: "kerzul", titulo: "Armas Kerzul", cantidad: ARMAS_MELEE_KERZUL.length },
   { id: "mejorasEstandar", titulo: "Mejoras estándar", cantidad: MEJORAS_ESTANDAR.length },
   { id: "subsistemas", titulo: "Subsistemas", cantidad: SUBSISTEMAS.length },
+  { id: "movimiento", titulo: "Movimiento", cantidad: MOVIMIENTO.length },
+  { id: "armas", titulo: "A distancia", cantidad: ARMAS.length },
+  { id: "melee", titulo: "Melee", cantidad: ARMAS_MELEE.length },
+  {
+    id: "armamentoPesado",
+    titulo: "Pesado",
+    cantidad: ARMAMENTO_PESADO.length + MUNICION_GRANADA.length,
+  },
   {
     id: "mejorasArma",
     titulo: "Mejoras de arma",
     cantidad: MEJORAS_ARMA.length + MEJORAS_MUNICION_ESPECIAL.length,
   },
-  { id: "movimiento", titulo: "Movimiento", cantidad: MOVIMIENTO.length },
+  { id: "municion", titulo: "Munición", cantidad: MUNICION_ESPECIAL.length },
   { id: "medicina", titulo: "Medicina", cantidad: 1 + FARMACOS.length },
   { id: "herramientas", titulo: "Herramientas", cantidad: HERRAMIENTAS_CON_NIVEL.length },
-  {
-    id: "armamentoPesado",
-    titulo: "Armamento Pesado",
-    cantidad: ARMAMENTO_PESADO.length + MUNICION_GRANADA.length,
-  },
-  { id: "municion", titulo: "Munición", cantidad: MUNICION_ESPECIAL.length },
   { id: "aumentos", titulo: "Aumentos", cantidad: AUMENTOS.length },
 ] as const;
 
 type CategoriaId = (typeof CATEGORIAS)[number]["id"];
+
+const GRUPOS: { id: string; titulo: string; categorias: CategoriaId[] }[] = [
+  { id: "armaduras", titulo: "Armaduras", categorias: ["armaduras", "mejorasEstandar", "subsistemas", "movimiento"] },
+  { id: "armas", titulo: "Armas", categorias: ["armas", "melee", "armamentoPesado", "mejorasArma", "municion"] },
+  { id: "equipo", titulo: "Equipo", categorias: ["medicina", "herramientas"] },
+  { id: "aumentos", titulo: "Aumentos", categorias: ["aumentos"] },
+];
+
+const categoriaPorId = (id: CategoriaId) => CATEGORIAS.find((c) => c.id === id)!;
 
 // Mismo orden que el catálogo (catalog/equipo.ts): de la más ligera a la más
 // pesada. 39 armas en una sola lista era mucho scroll para encontrar un
@@ -599,7 +603,6 @@ const SIN_COMPATIBLES: Record<
     | "armaduras"
     | "armas"
     | "melee"
-    | "kerzul"
     | "medicina"
     | "herramientas"
     | "armamentoPesado"
@@ -1106,6 +1109,7 @@ export function TiendaTab({
   onComprarAumento: (c: CompraAumento) => void;
 }) {
   const [categoria, setCategoria] = useState<CategoriaId>("armaduras");
+  const grupo = GRUPOS.find((g) => g.categorias.includes(categoria))!;
   const [soloCompatible, setSoloCompatible] = useState(false);
   const creditosEfectivos = libre ? Number.POSITIVE_INFINITY : creditos!;
   const compraDe = (p: Armadura | ArmaFuego | ArmaMelee | ArmaPesada) =>
@@ -1139,20 +1143,43 @@ export function TiendaTab({
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        {CATEGORIAS.map((c) => (
+        {GRUPOS.map((g) => (
           <Tile
-            key={c.id}
-            titulo={c.titulo}
-            cantidad={c.cantidad}
-            activo={categoria === c.id}
-            onClick={() => setCategoria(c.id)}
+            key={g.id}
+            titulo={g.titulo}
+            cantidad={g.categorias.reduce((n, id) => n + categoriaPorId(id).cantidad, 0)}
+            activo={grupo.id === g.id}
+            onClick={() => setCategoria(g.categorias[0])}
           />
         ))}
       </div>
 
+      {grupo.categorias.length > 1 && (
+        <div role="tablist" className="flex flex-wrap gap-1.5">
+          {grupo.categorias.map((id) => {
+            const c = categoriaPorId(id);
+            const activa = categoria === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={activa}
+                onClick={() => setCategoria(id)}
+                className={`clip-chamfer-sm border px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-wide active:scale-95 ${
+                  activa ? "border-accent bg-elevated text-accent" : "border-border text-muted"
+                }`}
+              >
+                {c.titulo} <span className="tabular-nums opacity-70">{c.cantidad}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-2 border-b border-border pb-1">
         <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-muted">
-          {CATEGORIAS.find((c) => c.id === categoria)!.titulo}
+          {categoriaPorId(categoria).titulo}
         </h2>
         {INSTALABLES.has(categoria) && (
           <button
@@ -1274,48 +1301,52 @@ export function TiendaTab({
           />
         )}
 
-        {categoria === "melee" &&
-          ARMAS_MELEE.filter((p) => !ARMAS_MELEE_KERZUL.includes(p)).map((p) => (
-            <Acordeon
-              key={p.id}
-              titulo={p.label}
-              resumen={p.resumen}
-              etiqueta={
-                <div className="flex flex-col items-end gap-1">
-                  <BadgeRareza rareza={p.rareza} />
-                  <Precio coste={p.coste} />
-                </div>
-              }
-            >
-              <DetalleArmaMelee p={p} />
-              <AccionMelee
-                pieza={p}
-                sheet={sheet}
-                creditos={creditosEfectivos}
-                topeRareza={topeRareza}
-                excepcionRareza={excepcionRareza}
-                onEquipar={onEquipar}
-              />
-            </Acordeon>
-          ))}
-
-        {categoria === "kerzul" &&
-          ARMAS_MELEE_KERZUL.map((p) => (
-            <Acordeon
-              key={p.id}
-              titulo={p.label}
-              resumen={p.resumen}
-              etiqueta={
-                <div className="flex flex-col items-end gap-1">
-                  <BadgeRareza rareza={p.rareza} />
-                  <Precio coste={p.coste} />
-                </div>
-              }
-            >
-              <DetalleArmaMelee p={p} />
-              <AccionSimple pieza={p} creditos={creditosEfectivos} compra={compraDe(p)} onEquipar={onEquipar} />
-            </Acordeon>
-          ))}
+        {categoria === "melee" && (
+          <>
+            {ARMAS_MELEE.filter((p) => !ARMAS_MELEE_KERZUL.includes(p)).map((p) => (
+              <Acordeon
+                key={p.id}
+                titulo={p.label}
+                resumen={p.resumen}
+                etiqueta={
+                  <div className="flex flex-col items-end gap-1">
+                    <BadgeRareza rareza={p.rareza} />
+                    <Precio coste={p.coste} />
+                  </div>
+                }
+              >
+                <DetalleArmaMelee p={p} />
+                <AccionMelee
+                  pieza={p}
+                  sheet={sheet}
+                  creditos={creditosEfectivos}
+                  topeRareza={topeRareza}
+                  excepcionRareza={excepcionRareza}
+                  onEquipar={onEquipar}
+                />
+              </Acordeon>
+            ))}
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+              {`// Kerzul · ${ARMAS_MELEE_KERZUL.length}`}
+            </p>
+            {ARMAS_MELEE_KERZUL.map((p) => (
+              <Acordeon
+                key={p.id}
+                titulo={p.label}
+                resumen={p.resumen}
+                etiqueta={
+                  <div className="flex flex-col items-end gap-1">
+                    <BadgeRareza rareza={p.rareza} />
+                    <Precio coste={p.coste} />
+                  </div>
+                }
+              >
+                <DetalleArmaMelee p={p} />
+                <AccionSimple pieza={p} creditos={creditosEfectivos} compra={compraDe(p)} onEquipar={onEquipar} />
+              </Acordeon>
+            ))}
+          </>
+        )}
 
         {categoria === "medicina" && (
           <>
