@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { eleccionCompleta, eleccionesIguales, faltaEnEleccion, type EleccionEspecie } from "@/lib/rules";
 import { UsarModal } from "@/components/UsarModal";
 
@@ -52,27 +51,22 @@ export function useEleccionEspecie({
   const motivo = borrador.especieId ? faltaEnEleccion(borrador) : null;
   const falta = motivo ? `${motivo} para aplicar el cambio.` : null;
 
-  // createPortal: dentro de una HudCard el modal `fixed` quedaba atrapado debajo del
-  // resto de la página (mismo problema y misma salida que en FabricarSeccion.tsx).
-  const modal =
-    pendiente &&
-    createPortal(
-      <UsarModal
-        titulo="Cambiar de especie"
-        nota={AVISO_RESET}
-        confirmarLabel="Seguir"
-        onUsar={() => {
-          confirmado.current = true;
-          onElegir(pendiente);
-        }}
-        onCerrar={() => {
-          if (!confirmado.current) setBorrador(guardada);
-          confirmado.current = false;
-          setPendiente(null);
-        }}
-      />,
-      document.body,
-    );
+  const modal = pendiente && (
+    <UsarModal
+      titulo="Cambiar de especie"
+      nota={AVISO_RESET}
+      confirmarLabel="Seguir"
+      onUsar={() => {
+        confirmado.current = true;
+        onElegir(pendiente);
+      }}
+      onCerrar={() => {
+        if (!confirmado.current) setBorrador(guardada);
+        confirmado.current = false;
+        setPendiente(null);
+      }}
+    />
+  );
 
   return { borrador, falta, onEspecie, onCasta, onLinaje, modal };
 }

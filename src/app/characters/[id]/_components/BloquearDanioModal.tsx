@@ -11,7 +11,7 @@ import {
   type FichaResuelta,
   type TipoDanio,
 } from "@/lib/rules";
-import { HudCard } from "@/components/HudCard";
+import { Modal } from "@/components/Modal";
 
 function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
@@ -142,215 +142,200 @@ export function BloquearDanioModal({
   const pasa = Math.max(0, danioRecibido - blindaje);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={onCerrar}>
-      <HudCard className="max-h-[85vh] w-full max-w-md overflow-y-auto p-4 sm:mx-4">
-        <div onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-start justify-between gap-2">
-            <h2 className="font-display text-lg font-semibold uppercase leading-tight">Bloquear daño</h2>
+    <Modal titulo="Bloquear daño" onCerrar={onCerrar}>
+      <p className="mt-2 font-sans text-prosa-sm text-soft">
+        Elige tipo de daño y cuánto recibes — el desglose de abajo explica de dónde sale
+        cada punto de blindaje.
+      </p>
+
+      <div className="mt-4 border-t border-border pt-3">
+        <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Tipo de daño"}</p>
+        <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+          {TIPOS_DANIO.map((t) => (
             <button
+              key={t.id}
               type="button"
-              onClick={onCerrar}
-              aria-label="Cerrar"
-              className="shrink-0 border border-border px-2 py-1 font-mono text-xs text-muted active:scale-95"
+              onClick={() => elegirTipo(t.id)}
+              className={`clip-chamfer-sm border px-2 py-1.5 font-mono text-[11px] uppercase active:scale-95 ${
+                tipo === t.id ? "border-accent text-accent" : "border-border text-muted"
+              }`}
             >
-              ✕
+              {t.label}
             </button>
-          </div>
-          <p className="mt-2 font-sans text-prosa-sm text-soft">
-            Elige tipo de daño y cuánto recibes — el desglose de abajo explica de dónde sale
-            cada punto de blindaje.
-          </p>
-
-          <div className="mt-4 border-t border-border pt-3">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Tipo de daño"}</p>
-            <div className="mt-1.5 grid grid-cols-3 gap-1.5">
-              {TIPOS_DANIO.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => elegirTipo(t.id)}
-                  className={`clip-chamfer-sm border px-2 py-1.5 font-mono text-[11px] uppercase active:scale-95 ${
-                    tipo === t.id ? "border-accent text-accent" : "border-border text-muted"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-4 border-t border-border pt-3">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// ¿A qué da el golpe?"}</p>
-            <div className="mt-1.5 grid grid-cols-3 gap-1.5">
-              {(
-                [
-                  { id: "portador", label: "A ti", disabled: false },
-                  ...(golpe ? [{ id: "escudo", label: "Al escudo", disabled: Boolean(golpe.bloqueada) }] : []),
-                  { id: "cobertura", label: "A la cobertura", disabled: false },
-                ] as { id: Destino; label: string; disabled: boolean }[]
-              ).map((o) => (
-                <button
-                  key={o.id}
-                  type="button"
-                  onClick={() => elegirDestino(o.id)}
-                  disabled={o.disabled}
-                  aria-pressed={destino === o.id}
-                  className={`clip-chamfer-sm min-h-11 border px-2 py-1.5 font-mono text-[11px] uppercase active:scale-95 disabled:opacity-50 disabled:active:scale-100 ${
-                    destino === o.id ? "border-accent text-accent" : "border-border text-muted"
-                  }`}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
-            {golpe?.bloqueada && <p className="mt-1.5 font-mono text-[11px] text-danger">{golpe.bloqueada}</p>}
-          </div>
-
-          {destino === "portador" && casillaBrazo && (
-            <div className="mt-4 border-t border-border pt-3">
-              <button
-                type="button"
-                onClick={() => setConBrazo((v) => !v)}
-                aria-pressed={conBrazo}
-                disabled={!conBrazo && Boolean(casillaBrazo.bloqueada)}
-                className={`clip-chamfer-sm w-full border px-3 py-2 text-left font-mono text-xs uppercase active:scale-[0.99] disabled:opacity-50 disabled:active:scale-100 ${
-                  conBrazo ? "border-info text-info" : "border-border text-muted"
-                }`}
-              >
-                {conBrazo ? "✓ " : ""}
-                {casillaBrazo.etiqueta}
-              </button>
-              {casillaBrazo.bloqueada && !conBrazo && (
-                <p className="mt-1.5 font-mono text-[11px] text-danger">{casillaBrazo.bloqueada}</p>
-              )}
-              <p className="mt-1.5 font-sans text-prosa-sm text-soft">
-                +{casillaBrazo.valor} de blindaje. {casillaBrazo.nota}
-              </p>
-            </div>
-          )}
-
-          {destino === "portador" && casilla && (
-            <div className="mt-4 border-t border-border pt-3">
-              <button
-                type="button"
-                onClick={marcarReactivo}
-                aria-pressed={reactivo}
-                disabled={!reactivo && Boolean(casilla.bloqueada)}
-                className={`clip-chamfer-sm w-full border px-3 py-2 text-left font-mono text-xs uppercase active:scale-[0.99] disabled:opacity-50 disabled:active:scale-100 ${
-                  reactivo ? "border-info text-info" : "border-border text-muted"
-                }`}
-              >
-                {reactivo ? "✓ " : ""}
-                {casilla.etiqueta}
-              </button>
-              {casilla.bloqueada && !reactivo && (
-                <p className="mt-1.5 font-mono text-[11px] text-danger">{casilla.bloqueada}</p>
-              )}
-              <p className="mt-1.5 font-sans text-prosa-sm text-soft">
-                +{casilla.valor} de blindaje. {casilla.nota}
-                {reactivo ? " Desmarcarla te devuelve la fatiga." : ""}
-                {!onPagarFatiga ? " Cóbrate la fatiga a mano." : ""}
-              </p>
-            </div>
-          )}
-
-          <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
-              {"// Daño recibido"}
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setDanioRecibido((v) => Math.max(0, v - 1))}
-                aria-label="Bajar daño recibido"
-                className="h-9 w-9 border border-border bg-elevated font-mono text-lg leading-none text-muted active:scale-95"
-              >
-                −
-              </button>
-              <span className="w-8 text-center font-mono text-lg tabular-nums text-foreground">
-                {danioRecibido}
-              </span>
-              <button
-                type="button"
-                onClick={() => setDanioRecibido((v) => Math.min(50, v + 1))}
-                aria-label="Subir daño recibido"
-                className="h-9 w-9 border border-border bg-elevated font-mono text-lg leading-none text-muted active:scale-95"
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          {destino === "portador" && (
-            <>
-              <div className="mt-4 flex flex-col gap-1 border-t border-border pt-3">
-                <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Desglose"}</p>
-                {desglose.map((l, i) => (
-                  <LineaBlindaje key={i} etiqueta={l.etiqueta} valor={l.valor} nota={l.nota} />
-                ))}
-                <div className="mt-1 flex items-baseline justify-between border-t border-border pt-1.5">
-                  <span className="font-mono text-xs uppercase text-foreground">Blindaje</span>
-                  <span className="font-mono text-lg font-bold tabular-nums text-info">{signo(blindaje)}</span>
-                </div>
-              </div>
-              <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-                <span className="font-mono text-xs uppercase text-foreground">Pasa</span>
-                <span className="font-mono text-2xl font-bold tabular-nums text-danger">{pasa}</span>
-              </div>
-              {categoria.categoria && (
-                <p className="mt-1 font-mono text-[11px] text-muted">
-                  Cuenta como {categoria.categoria.toLowerCase()}
-                  {categoria.fuente && <span className="text-info"> · {categoria.fuente}</span>}
-                </p>
-              )}
-            </>
-          )}
-
-          {destino === "escudo" && golpe && (
-            <div className="mt-4 flex flex-col gap-1 border-t border-border pt-3">
-              <p className="font-display text-sm font-semibold uppercase text-info">Te golpean el escudo</p>
-              <p className="font-sans text-prosa-sm text-soft">
-                El escudo recibe el daño entero y le resta su blindaje; a ti no te llega nada.
-              </p>
-              <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">{"// Blindaje del escudo"}</p>
-              <LineaBlindaje etiqueta={golpe.blindaje.etiqueta} valor={golpe.blindaje.valor} />
-              <p className="mt-2 font-mono text-xs text-foreground">
-                El escudo recibe{" "}
-                <span className="tabular-nums text-danger">
-                  {durabilidad?.recibe}
-                </span> · durabilidad{" "}
-                <span className="tabular-nums">
-                  {durabilidad?.de} → {durabilidad?.a}
-                </span>
-              </p>
-              {seRompe && (
-                <p className="font-display text-sm font-semibold uppercase text-danger">El escudo se rompe</p>
-              )}
-              {onDaniarEscudo &&
-                (escudoAplicado ? (
-                  <p className="mt-2 font-mono text-[11px] text-info">Hecho: restado de la durabilidad.</p>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={daniarEscudo}
-                    disabled={golpe.aDurabilidad === 0}
-                    className="clip-chamfer-sm mt-2 min-h-11 w-full border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted disabled:active:scale-100"
-                  >
-                    Restar {golpe.aDurabilidad} de durabilidad
-                  </button>
-                ))}
-            </div>
-          )}
-
-          {destino === "cobertura" && (
-            <div className="mt-4 border-t border-border pt-3">
-              <p className="font-display text-sm font-semibold uppercase text-info">
-                Te golpean la cobertura: no recibes daño
-              </p>
-            </div>
-          )}
+          ))}
         </div>
-      </HudCard>
-    </div>
+      </div>
+
+      <div className="mt-4 border-t border-border pt-3">
+        <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// ¿A qué da el golpe?"}</p>
+        <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+          {(
+            [
+              { id: "portador", label: "A ti", disabled: false },
+              ...(golpe ? [{ id: "escudo", label: "Al escudo", disabled: Boolean(golpe.bloqueada) }] : []),
+              { id: "cobertura", label: "A la cobertura", disabled: false },
+            ] as { id: Destino; label: string; disabled: boolean }[]
+          ).map((o) => (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => elegirDestino(o.id)}
+              disabled={o.disabled}
+              aria-pressed={destino === o.id}
+              className={`clip-chamfer-sm min-h-11 border px-2 py-1.5 font-mono text-[11px] uppercase active:scale-95 disabled:opacity-50 disabled:active:scale-100 ${
+                destino === o.id ? "border-accent text-accent" : "border-border text-muted"
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+        {golpe?.bloqueada && <p className="mt-1.5 font-mono text-[11px] text-danger">{golpe.bloqueada}</p>}
+      </div>
+
+      {destino === "portador" && casillaBrazo && (
+        <div className="mt-4 border-t border-border pt-3">
+          <button
+            type="button"
+            onClick={() => setConBrazo((v) => !v)}
+            aria-pressed={conBrazo}
+            disabled={!conBrazo && Boolean(casillaBrazo.bloqueada)}
+            className={`clip-chamfer-sm w-full border px-3 py-2 text-left font-mono text-xs uppercase active:scale-[0.99] disabled:opacity-50 disabled:active:scale-100 ${
+              conBrazo ? "border-info text-info" : "border-border text-muted"
+            }`}
+          >
+            {conBrazo ? "✓ " : ""}
+            {casillaBrazo.etiqueta}
+          </button>
+          {casillaBrazo.bloqueada && !conBrazo && (
+            <p className="mt-1.5 font-mono text-[11px] text-danger">{casillaBrazo.bloqueada}</p>
+          )}
+          <p className="mt-1.5 font-sans text-prosa-sm text-soft">
+            +{casillaBrazo.valor} de blindaje. {casillaBrazo.nota}
+          </p>
+        </div>
+      )}
+
+      {destino === "portador" && casilla && (
+        <div className="mt-4 border-t border-border pt-3">
+          <button
+            type="button"
+            onClick={marcarReactivo}
+            aria-pressed={reactivo}
+            disabled={!reactivo && Boolean(casilla.bloqueada)}
+            className={`clip-chamfer-sm w-full border px-3 py-2 text-left font-mono text-xs uppercase active:scale-[0.99] disabled:opacity-50 disabled:active:scale-100 ${
+              reactivo ? "border-info text-info" : "border-border text-muted"
+            }`}
+          >
+            {reactivo ? "✓ " : ""}
+            {casilla.etiqueta}
+          </button>
+          {casilla.bloqueada && !reactivo && (
+            <p className="mt-1.5 font-mono text-[11px] text-danger">{casilla.bloqueada}</p>
+          )}
+          <p className="mt-1.5 font-sans text-prosa-sm text-soft">
+            +{casilla.valor} de blindaje. {casilla.nota}
+            {reactivo ? " Desmarcarla te devuelve la fatiga." : ""}
+            {!onPagarFatiga ? " Cóbrate la fatiga a mano." : ""}
+          </p>
+        </div>
+      )}
+
+      <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
+        <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+          {"// Daño recibido"}
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setDanioRecibido((v) => Math.max(0, v - 1))}
+            aria-label="Bajar daño recibido"
+            className="h-9 w-9 border border-border bg-elevated font-mono text-lg leading-none text-muted active:scale-95"
+          >
+            −
+          </button>
+          <span className="w-8 text-center font-mono text-lg tabular-nums text-foreground">
+            {danioRecibido}
+          </span>
+          <button
+            type="button"
+            onClick={() => setDanioRecibido((v) => Math.min(50, v + 1))}
+            aria-label="Subir daño recibido"
+            className="h-9 w-9 border border-border bg-elevated font-mono text-lg leading-none text-muted active:scale-95"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      {destino === "portador" && (
+        <>
+          <div className="mt-4 flex flex-col gap-1 border-t border-border pt-3">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Desglose"}</p>
+            {desglose.map((l, i) => (
+              <LineaBlindaje key={i} etiqueta={l.etiqueta} valor={l.valor} nota={l.nota} />
+            ))}
+            <div className="mt-1 flex items-baseline justify-between border-t border-border pt-1.5">
+              <span className="font-mono text-xs uppercase text-foreground">Blindaje</span>
+              <span className="font-mono text-lg font-bold tabular-nums text-info">{signo(blindaje)}</span>
+            </div>
+          </div>
+          <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+            <span className="font-mono text-xs uppercase text-foreground">Pasa</span>
+            <span className="font-mono text-2xl font-bold tabular-nums text-danger">{pasa}</span>
+          </div>
+          {categoria.categoria && (
+            <p className="mt-1 font-mono text-[11px] text-muted">
+              Cuenta como {categoria.categoria.toLowerCase()}
+              {categoria.fuente && <span className="text-info"> · {categoria.fuente}</span>}
+            </p>
+          )}
+        </>
+      )}
+
+      {destino === "escudo" && golpe && (
+        <div className="mt-4 flex flex-col gap-1 border-t border-border pt-3">
+          <p className="font-display text-sm font-semibold uppercase text-info">Te golpean el escudo</p>
+          <p className="font-sans text-prosa-sm text-soft">
+            El escudo recibe el daño entero y le resta su blindaje; a ti no te llega nada.
+          </p>
+          <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">{"// Blindaje del escudo"}</p>
+          <LineaBlindaje etiqueta={golpe.blindaje.etiqueta} valor={golpe.blindaje.valor} />
+          <p className="mt-2 font-mono text-xs text-foreground">
+            El escudo recibe{" "}
+            <span className="tabular-nums text-danger">
+              {durabilidad?.recibe}
+            </span> · durabilidad{" "}
+            <span className="tabular-nums">
+              {durabilidad?.de} → {durabilidad?.a}
+            </span>
+          </p>
+          {seRompe && (
+            <p className="font-display text-sm font-semibold uppercase text-danger">El escudo se rompe</p>
+          )}
+          {onDaniarEscudo &&
+            (escudoAplicado ? (
+              <p className="mt-2 font-mono text-[11px] text-info">Hecho: restado de la durabilidad.</p>
+            ) : (
+              <button
+                type="button"
+                onClick={daniarEscudo}
+                disabled={golpe.aDurabilidad === 0}
+                className="clip-chamfer-sm mt-2 min-h-11 w-full border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted disabled:active:scale-100"
+              >
+                Restar {golpe.aDurabilidad} de durabilidad
+              </button>
+            ))}
+        </div>
+      )}
+
+      {destino === "cobertura" && (
+        <div className="mt-4 border-t border-border pt-3">
+          <p className="font-display text-sm font-semibold uppercase text-info">
+            Te golpean la cobertura: no recibes daño
+          </p>
+        </div>
+      )}
+    </Modal>
   );
 }

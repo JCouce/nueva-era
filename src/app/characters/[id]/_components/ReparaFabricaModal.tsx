@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type Dispatch, type SetStateAction } from "react";
-import { createPortal } from "react-dom";
 import {
   equipoPorId,
   capacidadDePieza,
@@ -22,6 +21,7 @@ import {
   type Accion,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
+import { Modal } from "@/components/Modal";
 import { AccionModal } from "@/components/AccionModal";
 import { FabricarSeccion } from "./FabricarSeccion";
 import { type Lanzamiento } from "@/components/ResultadoTirada";
@@ -223,28 +223,22 @@ function ReparacionSeccion({
         ))
       )}
 
-      {/* createPortal: ver el comentario en FabricarSeccion.tsx — este
-          AccionModal también es descendiente del HudCard `overflow-y-auto`
-          de ReparaFabricaModal, mismo riesgo de que un navegador móvil trate
-          el `fixed` anidado como relativo al padre en vez de al viewport. */}
-      {rollOpen &&
-        createPortal(
-          <AccionModal
-            titulo={rollOpen.tirada.label}
-            nota={rollOpen.tirada.nota}
-            tirada={rollOpen.tirada}
-            ficha={ficha}
-            eleccion={{ sutil: false }}
-            dificultadInicial={memoria[rollOpen.tirada.id]?.dificultad ?? rollOpen.dificultadSugerida}
-            circunstancialInicial={memoria[rollOpen.tirada.id]?.circunstancial ?? 0}
-            resultado={resultado}
-            notaResultado={mensajeResultado ?? undefined}
-            onTirarDanio={() => {}}
-            onCerrar={cerrarRoll}
-            onTirar={onTirar}
-          />,
-          document.body,
-        )}
+      {rollOpen && (
+        <AccionModal
+          titulo={rollOpen.tirada.label}
+          nota={rollOpen.tirada.nota}
+          tirada={rollOpen.tirada}
+          ficha={ficha}
+          eleccion={{ sutil: false }}
+          dificultadInicial={memoria[rollOpen.tirada.id]?.dificultad ?? rollOpen.dificultadSugerida}
+          circunstancialInicial={memoria[rollOpen.tirada.id]?.circunstancial ?? 0}
+          resultado={resultado}
+          notaResultado={mensajeResultado ?? undefined}
+          onTirarDanio={() => {}}
+          onCerrar={cerrarRoll}
+          onTirar={onTirar}
+        />
+      )}
     </div>
   );
 }
@@ -276,51 +270,31 @@ export function ReparaFabricaModal({
 }) {
   const sheet = ficha.ficha;
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
-      onClick={onCerrar}
-    >
-      <HudCard className="max-h-[85vh] w-full max-w-md overflow-y-auto p-4 sm:mx-4">
-        <div onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-start justify-between gap-2">
-            <h2 className="font-display text-lg font-semibold uppercase leading-tight">
-              Reparar y Fabricar
-            </h2>
-            <button
-              type="button"
-              onClick={onCerrar}
-              aria-label="Cerrar"
-              className="shrink-0 border border-border px-2 py-1 font-mono text-xs text-muted active:scale-95"
-            >
-              ✕
-            </button>
-          </div>
+    <Modal titulo="Reparar y Fabricar" onCerrar={onCerrar}>
 
-          <div className="mt-4 flex flex-col gap-4">
-            <ReparacionSeccion
+      <div className="mt-4 flex flex-col gap-4">
+        <ReparacionSeccion
+          ficha={ficha}
+          setHistorial={setHistorial}
+          memoria={memoria}
+          setMemoria={setMemoria}
+          onReparar={onReparar}
+          libre={libre}
+        />
+
+        {onFabricar && tieneVtf(sheet) && (
+          <div className="border-t border-border pt-4">
+            <FabricarSeccion
               ficha={ficha}
               setHistorial={setHistorial}
               memoria={memoria}
               setMemoria={setMemoria}
-              onReparar={onReparar}
+              onFabricar={onFabricar}
               libre={libre}
             />
-
-            {onFabricar && tieneVtf(sheet) && (
-              <div className="border-t border-border pt-4">
-                <FabricarSeccion
-                  ficha={ficha}
-                  setHistorial={setHistorial}
-                  memoria={memoria}
-                  setMemoria={setMemoria}
-                  onFabricar={onFabricar}
-                  libre={libre}
-                />
-              </div>
-            )}
           </div>
-        </div>
-      </HudCard>
-    </div>
+        )}
+      </div>
+    </Modal>
   );
 }

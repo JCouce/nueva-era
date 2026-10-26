@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { Sheet, EstadoActivo, VitalidadActual } from "@/lib/rules";
-import { HudCard } from "@/components/HudCard";
+import { Modal } from "@/components/Modal";
 import { AccionesTab } from "@/app/characters/[id]/_components/AccionesTab";
 import { useFichaResuelta } from "@/hooks/useFichaResuelta";
 import type { Lanzamiento } from "@/components/ResultadoTirada";
@@ -14,9 +14,9 @@ import type { Lanzamiento } from "@/components/ResultadoTirada";
 // el resto de `Combatiente`). Un panel bajo demanda, uno a la vez — con
 // 30-50 combatientes en la cola, montar un AccionesTab por fila sería
 // bastante trabajo de más para lo que se ve en pantalla en cada momento.
-// Mismo lenguaje visual que AccionModal.tsx (el modal que AccionesTab abre
-// por dentro al pulsar "Tirar" queda encima de este, sin conflicto: cada
-// overlay cierra solo con su propio fondo).
+// Va en Modal, como AccionModal.tsx: el modal que AccionesTab abre por dentro al
+// pulsar "Tirar" se monta después en body y queda encima (antes este iba a z-40 para
+// eso); Escape y el fondo cierran solo el de arriba.
 export function NpcAccionesPanel({
   nombre,
   sheet,
@@ -54,36 +54,29 @@ export function NpcAccionesPanel({
   >({});
 
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/70"
-      onClick={onCerrar}
-    >
-      <HudCard className="max-h-[85vh] w-full max-w-md overflow-y-auto p-4 sm:mx-4">
-        <div onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-start justify-between gap-2 border-b border-border pb-2">
-            <h2 className="truncate font-display text-lg font-semibold uppercase leading-tight">
-              {nombre}
-            </h2>
-            <button
-              type="button"
-              onClick={onCerrar}
-              aria-label="Cerrar"
-              className="shrink-0 border border-border px-2 py-1 font-mono text-xs text-muted active:scale-95"
-            >
-              Cerrar
-            </button>
-          </div>
-          <div className="mt-3">
-            <AccionesTab
-              ficha={ficha}
-              historial={historial}
-              setHistorial={setHistorial}
-              memoria={memoria}
-              setMemoria={setMemoria}
-            />
-          </div>
-        </div>
-      </HudCard>
-    </div>
+    <Modal ariaLabel={nombre} onCerrar={onCerrar}>
+      <div className="flex items-start justify-between gap-2 border-b border-border pb-2">
+        <h2 className="truncate font-display text-lg font-semibold uppercase leading-tight">
+          {nombre}
+        </h2>
+        <button
+          type="button"
+          onClick={onCerrar}
+          aria-label="Cerrar"
+          className="shrink-0 border border-border px-2 py-1 font-mono text-xs text-muted active:scale-95"
+        >
+          Cerrar
+        </button>
+      </div>
+      <div className="mt-3">
+        <AccionesTab
+          ficha={ficha}
+          historial={historial}
+          setHistorial={setHistorial}
+          memoria={memoria}
+          setMemoria={setMemoria}
+        />
+      </div>
+    </Modal>
   );
 }

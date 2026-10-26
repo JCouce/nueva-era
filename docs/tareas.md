@@ -2370,15 +2370,16 @@ Control Anímico) y el hueco de piezas inutilizadas para el Shock (S73).
   limpia: fuera `±N`/`PG`/`FAT.`, barras grandes que abren Vida, orden e iniciativa solo al
   preparar; en móvil "Acciones a N" con las tres pestañas.*
 
-### Componente `Modal` común ⬜ (propuesta del usuario, 2026-10-13)
-Hoy 7 modales montan cada uno su propio fondo `fixed inset-0` (UsarModal, AccionModal,
-BloquearDanioModal, UsarPoderModal, ReparaFabricaModal, SacrificioRecursoModal y el de
-`NpcAccionesPanel`) y solo 3 sitios pasan por `createPortal`. Un modal `fixed` dentro de
-una tarjeta queda atrapado debajo del resto de la página: pasó en Fabricar (2026-09-25) y
-en el selector de especie (2026-10-13). Propuesta: un componente base en
-`src/components/Modal.tsx` que siempre hace portal a `document.body`, pone el fondo y cierra
-al pulsar fuera y con Escape; los 7 pasan a usarlo y solo aportan su contenido. Sin hook
-`useModal` (solo ahorraría un `useState`).
+### Componente `Modal` común ✅ (2026-10-26, probado en el navegador con anidados)
+`src/components/Modal.tsx`: portal a body, fondo `bg-night/70` (botón aparte, como
+`HojaInferior`), cierra con Escape y tocando fuera, pila de módulo para que Escape cierre
+solo el de arriba en modales anidados, cabecera estándar opcional con `titulo` y `cerrable`
+para bloquear el cierre (AccionModal mientras rueda el dado). Migrados los 8 (UsarModal,
+AccionModal, SacrificioRecursoModal, BloquearDanioModal, UsarPoderModal, ReparaFabricaModal,
+NpcAccionesPanel —de z-40 a z-50, el anidado gana por orden en body— y BorrarFicha); fuera
+los `createPortal` a mano de FabricarSeccion, ReparaFabricaModal y useEleccionEspecie.
+Quedan fuera a propósito `HojaInferior`, el cajón de `NavegacionFicha` y `Aviso` (otras
+piezas). Sin gestión de foco nueva (ninguno la tenía).
 
 ### Polling ligero: "¿hay algo nuevo?" ⬜ (idea, 2026-10-16)
 Hoy `usePollingCombate` hace `router.refresh()` cada 15 s (4 s en combate): vuelve a

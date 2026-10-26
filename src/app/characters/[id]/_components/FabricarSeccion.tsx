@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type Dispatch, type SetStateAction } from "react";
-import { createPortal } from "react-dom";
 import {
   ARMADURAS,
   ARMAS,
@@ -543,35 +542,22 @@ export function FabricarSeccion({
         </div>
       )}
 
-      {/* createPortal a document.body (corrección 2026-09-25, reporte del
-          usuario: "el botón Tirar se ve diminuto en móvil"): este AccionModal
-          es descendiente del HudCard `overflow-y-auto` de
-          ReparaFabricaModal.tsx. `position: fixed` debería escapar de un
-          ancestro con overflow sin más, pero algunos navegadores móviles
-          (Safari/iOS de forma notoria) tratan un `fixed` anidado dentro de un
-          contenedor con scroll propio como si su containing block fuera ESE
-          contenedor, no el viewport — de ahí que el jugador viera el modal
-          encogido al tamaño del padre. El portal saca el nodo del árbol del
-          padre por completo, así que el problema no puede darse por más que
-          cambie el navegador. */}
-      {rollOpen &&
-        createPortal(
-          <AccionModal
-            titulo={rollOpen.tirada.label}
-            nota={rollOpen.tirada.nota}
-            tirada={rollOpen.tirada}
-            ficha={ficha}
-            eleccion={{ sutil: false }}
-            dificultadInicial={memoria[rollOpen.tirada.id]?.dificultad ?? rollOpen.dificultadSugerida}
-            circunstancialInicial={memoria[rollOpen.tirada.id]?.circunstancial ?? 0}
-            resultado={resultado}
-            notaResultado={mensajeResultado ?? undefined}
-            onTirarDanio={() => {}}
-            onCerrar={cerrarRoll}
-            onTirar={onTirar}
-          />,
-          document.body,
-        )}
+      {rollOpen && (
+        <AccionModal
+          titulo={rollOpen.tirada.label}
+          nota={rollOpen.tirada.nota}
+          tirada={rollOpen.tirada}
+          ficha={ficha}
+          eleccion={{ sutil: false }}
+          dificultadInicial={memoria[rollOpen.tirada.id]?.dificultad ?? rollOpen.dificultadSugerida}
+          circunstancialInicial={memoria[rollOpen.tirada.id]?.circunstancial ?? 0}
+          resultado={resultado}
+          notaResultado={mensajeResultado ?? undefined}
+          onTirarDanio={() => {}}
+          onCerrar={cerrarRoll}
+          onTirar={onTirar}
+        />
+      )}
     </div>
   );
 }

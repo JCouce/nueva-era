@@ -22,7 +22,7 @@ import {
   type FichaParaTirada,
   type TiradaMontada,
 } from "@/lib/rules";
-import { HudCard } from "./HudCard";
+import { Modal } from "./Modal";
 import { BarraProgreso } from "./BarraProgreso";
 import { ContenidoResultado, type Lanzamiento } from "./ResultadoTirada";
 
@@ -353,310 +353,300 @@ export function AccionModal({
     : null;
   const avisoRecurso = avisoInsuficiente(tirada, modoId, estado, recursoActual);
 
-  // Bloqueado mientras rueda el dado: 650ms es corto, mejor no dejar que un
-  // tap accidental en el fondo o la ✕ corte la animación a medias — el dado
-  // ya se ha tirado de verdad en cuanto arranca (ver dispararTirada).
+  // Bloqueado mientras rueda el dado (fondo, Escape y ✕): 650ms es corto, mejor no
+  // dejar que un tap accidental corte la animación a medias — el dado ya se ha tirado
+  // de verdad en cuanto arranca y onTirar llegaría con el modal ya cerrado (ver
+  // dispararTirada).
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
-      onClick={rodando ? undefined : onCerrar}
-    >
-      <HudCard
-        className="max-h-[85vh] w-full max-w-md overflow-y-auto p-4 sm:mx-4"
-        // Evita que un tap dentro de la tarjeta cierre el modal por el
-        // listener del fondo.
-      >
-        <div onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h2 className="font-display text-lg font-semibold uppercase leading-tight">
-                {titulo}
-              </h2>
-              {subtitulo && (
-                <p className="mt-0.5 font-mono text-[10px] uppercase text-muted">{subtitulo}</p>
-              )}
+    <Modal ariaLabel={titulo} onCerrar={onCerrar} cerrable={!rodando}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h2 className="font-display text-lg font-semibold uppercase leading-tight">
+            {titulo}
+          </h2>
+          {subtitulo && (
+            <p className="mt-0.5 font-mono text-[10px] uppercase text-muted">{subtitulo}</p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onCerrar}
+          disabled={rodando}
+          aria-label="Cerrar"
+          className="shrink-0 border border-border px-2 py-1 font-mono text-xs text-muted active:scale-95 disabled:opacity-40"
+        >
+          ✕
+        </button>
+      </div>
+
+      {nota && (
+        <p className="mt-2 font-sans text-prosa-sm text-soft">{nota}</p>
+      )}
+
+      {!resultado && !rodando && cabecera}
+
+      {rodando && (
+        <div className="mt-4 border-t border-border pt-3">
+          <p
+            className={`font-mono text-[11px] uppercase tracking-widest ${
+              dadoAsentado ? "text-accent" : "text-info"
+            }`}
+          >
+            {dadoAsentado ? "// tirada" : "// tirando"}
+            {!dadoAsentado && <span className="animate-pulse">_</span>}
+          </p>
+          <div className={`mt-2 grid gap-4 ${numerosRodando.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
+            {numerosRodando.map((n, i) => {
+              const descartado = dadoAsentado && numerosRodando.length === 2 && i !== indiceMejor;
+              return (
+                <div key={i}>
+                  <div className="flex items-baseline gap-3">
+                    <span
+                      className={`font-display text-5xl font-bold tabular-nums ${
+                        descartado ? "text-muted line-through" : dadoAsentado ? "text-accent" : "text-info"
+                      }`}
+                    >
+                      {n}
+                    </span>
+                    <span className="font-mono text-xs text-muted">
+                      d{CARAS_DADO}
+                      {dadoAsentado && numerosRodando.length === 2 && (descartado ? " · descartado" : " · vale")}
+                    </span>
+                  </div>
+                  <BarraProgreso ms={RODANDO_MS} />
+                </div>
+              );
+            })}
+          </div>
+          {montada.ventaja && (
+            <p className="mt-2 font-mono text-[11px] uppercase text-muted">
+              Ventaja ({montada.ventaja}): 2d{CARAS_DADO}, te quedas el mejor
+            </p>
+          )}
+        </div>
+      )}
+
+      {resultado && !rodando && (
+        <div className="mt-4 border-t border-border pt-3">
+          <ContenidoResultado resultado={resultado} onTirarDanio={onTirarDanio} />
+          {pieResultado}
+          {notaResultado && (
+            <p className="mt-3 border-l-2 border-accent pl-2 font-sans text-[12px] font-semibold leading-relaxed text-accent">
+              {notaResultado}
+            </p>
+          )}
+          {notas.length > 0 && (
+            <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+              {notas.map((n, i) => (
+                <div key={i}>
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-info">
+                    {n.etiqueta}
+                  </p>
+                  <p className="mt-0.5 border-l-2 border-info pl-2 font-sans text-[12px] leading-relaxed text-foreground">
+                    {n.nota}
+                  </p>
+                </div>
+              ))}
             </div>
+          )}
+          <div className="mt-3 grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={onCerrar}
-              disabled={rodando}
-              aria-label="Cerrar"
-              className="shrink-0 border border-border px-2 py-1 font-mono text-xs text-muted active:scale-95 disabled:opacity-40"
+              className="clip-chamfer-sm border border-border py-3 font-display text-sm font-semibold uppercase tracking-wide text-muted active:scale-[0.98]"
             >
-              ✕
+              Cerrar
             </button>
-          </div>
-
-          {nota && (
-            <p className="mt-2 font-sans text-prosa-sm text-soft">{nota}</p>
-          )}
-
-          {!resultado && !rodando && cabecera}
-
-          {rodando && (
-            <div className="mt-4 border-t border-border pt-3">
-              <p
-                className={`font-mono text-[11px] uppercase tracking-widest ${
-                  dadoAsentado ? "text-accent" : "text-info"
-                }`}
-              >
-                {dadoAsentado ? "// tirada" : "// tirando"}
-                {!dadoAsentado && <span className="animate-pulse">_</span>}
-              </p>
-              <div className={`mt-2 grid gap-4 ${numerosRodando.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
-                {numerosRodando.map((n, i) => {
-                  const descartado = dadoAsentado && numerosRodando.length === 2 && i !== indiceMejor;
-                  return (
-                    <div key={i}>
-                      <div className="flex items-baseline gap-3">
-                        <span
-                          className={`font-display text-5xl font-bold tabular-nums ${
-                            descartado ? "text-muted line-through" : dadoAsentado ? "text-accent" : "text-info"
-                          }`}
-                        >
-                          {n}
-                        </span>
-                        <span className="font-mono text-xs text-muted">
-                          d{CARAS_DADO}
-                          {dadoAsentado && numerosRodando.length === 2 && (descartado ? " · descartado" : " · vale")}
-                        </span>
-                      </div>
-                      <BarraProgreso ms={RODANDO_MS} />
-                    </div>
-                  );
-                })}
-              </div>
-              {montada.ventaja && (
-                <p className="mt-2 font-mono text-[11px] uppercase text-muted">
-                  Ventaja ({montada.ventaja}): 2d{CARAS_DADO}, te quedas el mejor
-                </p>
-              )}
-            </div>
-          )}
-
-          {resultado && !rodando && (
-            <div className="mt-4 border-t border-border pt-3">
-              <ContenidoResultado resultado={resultado} onTirarDanio={onTirarDanio} />
-              {pieResultado}
-              {notaResultado && (
-                <p className="mt-3 border-l-2 border-accent pl-2 font-sans text-[12px] font-semibold leading-relaxed text-accent">
-                  {notaResultado}
-                </p>
-              )}
-              {notas.length > 0 && (
-                <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
-                  {notas.map((n, i) => (
-                    <div key={i}>
-                      <p className="font-mono text-[10px] uppercase tracking-widest text-info">
-                        {n.etiqueta}
-                      </p>
-                      <p className="mt-0.5 border-l-2 border-info pl-2 font-sans text-[12px] leading-relaxed text-foreground">
-                        {n.nota}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={onCerrar}
-                  className="clip-chamfer-sm border border-border py-3 font-display text-sm font-semibold uppercase tracking-wide text-muted active:scale-[0.98]"
-                >
-                  Cerrar
-                </button>
-                <button
-                  type="button"
-                  onClick={dispararTirada}
-                  disabled={Boolean(bloqueo)}
-                  className="clip-chamfer-sm border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98] disabled:border-border disabled:bg-elevated disabled:text-muted"
-                >
-                  Tirar otra vez
-                </button>
-              </div>
-              {avisoRecurso && <AvisoRecurso texto={avisoRecurso} />}
-              {bloqueo && <AvisoRecurso texto={bloqueo} />}
-            </div>
-          )}
-
-          {!resultado && !rodando && tirada.libre && (
-            <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3">
-              <label className="flex min-w-0 flex-col gap-1">
-                <span className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Aplicado"}</span>
-                <select
-                  value={aplicadoLibre}
-                  onChange={(e) => setAplicadoLibre(e.target.value as AplicadoId)}
-                  className="min-h-10 w-full min-w-0 border border-border bg-elevated px-2 font-mono text-xs uppercase text-foreground"
-                >
-                  {APLICADOS.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex min-w-0 flex-col gap-1">
-                <span className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Habilidad"}</span>
-                <select
-                  value={habilidadLibre ?? ""}
-                  onChange={(e) => setHabilidadLibre(e.target.value === "" ? null : (e.target.value as HabilidadId))}
-                  className="min-h-10 w-full min-w-0 border border-border bg-elevated px-2 font-mono text-xs uppercase text-foreground"
-                >
-                  <option value="">Ninguna</option>
-                  {HABILIDADES.map((h) => (
-                    <option key={h.id} value={h.id}>
-                      {h.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          )}
-
-          {!resultado && !rodando && condiciones.length > 0 && (
-            <div className="mt-4 flex flex-col gap-3 border-t border-border pt-3">
-              <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
-                {"// Activaciones"}
-              </p>
-              {condiciones.map((c) => (
-                <ControlCondicion
-                  key={c.id}
-                  condicion={c}
-                  estado={estado}
-                  onCambiar={cambiar}
-                  sinEfecto={montada.casillasSinEfecto[c.id]}
-                />
-              ))}
-            </div>
-          )}
-
-          {!resultado && !rodando && (
-            <div className="mt-4 border-t border-border pt-3">
-              <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
-                {"// Dificultad"}
-              </p>
-              <div className="mt-2 grid grid-cols-4 gap-1">
-                {DIFICULTADES.map((d) => (
-                  <button
-                    key={d.id}
-                    type="button"
-                    onClick={() => {
-                      setDificultad(d.valor);
-                      setDificultadCustom("");
-                    }}
-                    className={`clip-chamfer-sm border px-1 py-1.5 font-mono text-[10px] uppercase active:scale-95 ${
-                      dificultad === d.valor && dificultadCustom === ""
-                        ? "border-accent text-accent"
-                        : "border-border text-muted"
-                    }`}
-                  >
-                    {d.label}
-                    <span className="block tabular-nums">{d.valor}</span>
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDificultad(null);
-                    setDificultadCustom("");
-                  }}
-                  className={`clip-chamfer-sm border px-1 py-1.5 font-mono text-[10px] uppercase active:scale-95 ${
-                    dificultad === null
-                      ? "border-accent text-accent"
-                      : "border-border text-muted"
-                  }`}
-                >
-                  sin dificultad
-                </button>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  placeholder="custom"
-                  value={dificultadCustom}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setDificultadCustom(v);
-                    setDificultad(v === "" ? null : Number(v));
-                  }}
-                  className="clip-chamfer-sm border border-border bg-elevated px-1 py-1.5 text-center font-mono text-[10px] uppercase text-foreground placeholder:text-muted"
-                />
-              </div>
-            </div>
-          )}
-
-          {!resultado && !rodando && (
-            <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
-              <div>
-                <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
-                  {"// Modificador circunstancial"}
-                </p>
-                <p className="font-sans text-prosa-sm text-soft">Heridas, fatiga, cobertura…</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCircunstancial((v) => Math.max(-10, v - 1))}
-                  aria-label="Bajar modificador"
-                  className="h-9 w-9 border border-border bg-elevated font-mono text-lg leading-none text-muted active:scale-95"
-                >
-                  −
-                </button>
-                <span
-                  className={`w-10 text-center font-mono text-xl tabular-nums ${
-                    circunstancial === 0 ? "text-muted" : circunstancial > 0 ? "text-info" : "text-danger"
-                  }`}
-                >
-                  {signo(circunstancial)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setCircunstancial((v) => Math.min(10, v + 1))}
-                  aria-label="Subir modificador"
-                  className="h-9 w-9 border border-border bg-elevated font-mono text-lg leading-none text-muted active:scale-95"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          )}
-
-          {!resultado && !rodando && (
-            <div className="mt-4 flex flex-col gap-1 border-t border-border pt-3">
-              <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
-                {"// Desglose"}
-              </p>
-              {montada.desglose.map((f, i) => (
-                <LineaDesglose key={i} etiqueta={f.etiqueta} valor={f.valor} />
-              ))}
-              <div className="mt-1 flex items-baseline justify-between border-t border-border pt-1.5">
-                <span className="font-mono text-xs uppercase text-foreground">Total</span>
-                <span className="font-mono text-lg font-bold tabular-nums text-accent">
-                  {signo(totalPrevisto)}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {!resultado && !rodando && montada.ventaja && (
-            <p className="mt-3 border-l-2 border-info pl-2 font-mono text-[11px] uppercase text-info">
-              Ventaja ({montada.ventaja}): tiras 2d{CARAS_DADO} y te quedas el mejor
-            </p>
-          )}
-
-          {!resultado && !rodando && (
             <button
               type="button"
               onClick={dispararTirada}
               disabled={Boolean(bloqueo)}
-              className="clip-chamfer-sm mt-3 w-full border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98] disabled:border-border disabled:bg-elevated disabled:text-muted"
+              className="clip-chamfer-sm border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98] disabled:border-border disabled:bg-elevated disabled:text-muted"
             >
-              Tirar ({signo(totalPrevisto)})
+              Tirar otra vez
             </button>
-          )}
-          {!resultado && !rodando && avisoRecurso && <AvisoRecurso texto={avisoRecurso} />}
-          {!resultado && !rodando && bloqueo && <AvisoRecurso texto={bloqueo} />}
+          </div>
+          {avisoRecurso && <AvisoRecurso texto={avisoRecurso} />}
+          {bloqueo && <AvisoRecurso texto={bloqueo} />}
         </div>
-      </HudCard>
-    </div>
+      )}
+
+      {!resultado && !rodando && tirada.libre && (
+        <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3">
+          <label className="flex min-w-0 flex-col gap-1">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Aplicado"}</span>
+            <select
+              value={aplicadoLibre}
+              onChange={(e) => setAplicadoLibre(e.target.value as AplicadoId)}
+              className="min-h-10 w-full min-w-0 border border-border bg-elevated px-2 font-mono text-xs uppercase text-foreground"
+            >
+              {APLICADOS.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex min-w-0 flex-col gap-1">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Habilidad"}</span>
+            <select
+              value={habilidadLibre ?? ""}
+              onChange={(e) => setHabilidadLibre(e.target.value === "" ? null : (e.target.value as HabilidadId))}
+              className="min-h-10 w-full min-w-0 border border-border bg-elevated px-2 font-mono text-xs uppercase text-foreground"
+            >
+              <option value="">Ninguna</option>
+              {HABILIDADES.map((h) => (
+                <option key={h.id} value={h.id}>
+                  {h.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+
+      {!resultado && !rodando && condiciones.length > 0 && (
+        <div className="mt-4 flex flex-col gap-3 border-t border-border pt-3">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+            {"// Activaciones"}
+          </p>
+          {condiciones.map((c) => (
+            <ControlCondicion
+              key={c.id}
+              condicion={c}
+              estado={estado}
+              onCambiar={cambiar}
+              sinEfecto={montada.casillasSinEfecto[c.id]}
+            />
+          ))}
+        </div>
+      )}
+
+      {!resultado && !rodando && (
+        <div className="mt-4 border-t border-border pt-3">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+            {"// Dificultad"}
+          </p>
+          <div className="mt-2 grid grid-cols-4 gap-1">
+            {DIFICULTADES.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => {
+                  setDificultad(d.valor);
+                  setDificultadCustom("");
+                }}
+                className={`clip-chamfer-sm border px-1 py-1.5 font-mono text-[10px] uppercase active:scale-95 ${
+                  dificultad === d.valor && dificultadCustom === ""
+                    ? "border-accent text-accent"
+                    : "border-border text-muted"
+                }`}
+              >
+                {d.label}
+                <span className="block tabular-nums">{d.valor}</span>
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                setDificultad(null);
+                setDificultadCustom("");
+              }}
+              className={`clip-chamfer-sm border px-1 py-1.5 font-mono text-[10px] uppercase active:scale-95 ${
+                dificultad === null
+                  ? "border-accent text-accent"
+                  : "border-border text-muted"
+              }`}
+            >
+              sin dificultad
+            </button>
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="custom"
+              value={dificultadCustom}
+              onChange={(e) => {
+                const v = e.target.value;
+                setDificultadCustom(v);
+                setDificultad(v === "" ? null : Number(v));
+              }}
+              className="clip-chamfer-sm border border-border bg-elevated px-1 py-1.5 text-center font-mono text-[10px] uppercase text-foreground placeholder:text-muted"
+            />
+          </div>
+        </div>
+      )}
+
+      {!resultado && !rodando && (
+        <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+              {"// Modificador circunstancial"}
+            </p>
+            <p className="font-sans text-prosa-sm text-soft">Heridas, fatiga, cobertura…</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCircunstancial((v) => Math.max(-10, v - 1))}
+              aria-label="Bajar modificador"
+              className="h-9 w-9 border border-border bg-elevated font-mono text-lg leading-none text-muted active:scale-95"
+            >
+              −
+            </button>
+            <span
+              className={`w-10 text-center font-mono text-xl tabular-nums ${
+                circunstancial === 0 ? "text-muted" : circunstancial > 0 ? "text-info" : "text-danger"
+              }`}
+            >
+              {signo(circunstancial)}
+            </span>
+            <button
+              type="button"
+              onClick={() => setCircunstancial((v) => Math.min(10, v + 1))}
+              aria-label="Subir modificador"
+              className="h-9 w-9 border border-border bg-elevated font-mono text-lg leading-none text-muted active:scale-95"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!resultado && !rodando && (
+        <div className="mt-4 flex flex-col gap-1 border-t border-border pt-3">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+            {"// Desglose"}
+          </p>
+          {montada.desglose.map((f, i) => (
+            <LineaDesglose key={i} etiqueta={f.etiqueta} valor={f.valor} />
+          ))}
+          <div className="mt-1 flex items-baseline justify-between border-t border-border pt-1.5">
+            <span className="font-mono text-xs uppercase text-foreground">Total</span>
+            <span className="font-mono text-lg font-bold tabular-nums text-accent">
+              {signo(totalPrevisto)}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {!resultado && !rodando && montada.ventaja && (
+        <p className="mt-3 border-l-2 border-info pl-2 font-mono text-[11px] uppercase text-info">
+          Ventaja ({montada.ventaja}): tiras 2d{CARAS_DADO} y te quedas el mejor
+        </p>
+      )}
+
+      {!resultado && !rodando && (
+        <button
+          type="button"
+          onClick={dispararTirada}
+          disabled={Boolean(bloqueo)}
+          className="clip-chamfer-sm mt-3 w-full border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98] disabled:border-border disabled:bg-elevated disabled:text-muted"
+        >
+          Tirar ({signo(totalPrevisto)})
+        </button>
+      )}
+      {!resultado && !rodando && avisoRecurso && <AvisoRecurso texto={avisoRecurso} />}
+      {!resultado && !rodando && bloqueo && <AvisoRecurso texto={bloqueo} />}
+    </Modal>
   );
 }
