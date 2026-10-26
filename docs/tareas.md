@@ -19,7 +19,7 @@ Sin valoración de prioridad aquí a propósito — se queda obsoleta en cuanto 
 foco. Frentes abiertos, cada uno con su sección en Pendiente:
 - **Dotes**: hechas D1–D2d, las dotes de NPC, la especialidad en la tirada (2026-10-24) y
   todas las tiradas fijas de `habilidades.md`: Apuntar, Carrera, Discernir mentiras, Resistir
-  distracción y, desde 2026-10-26 (sin commit, falta navegador), Rastreo, Subsistencia, Trato
+  distracción y, desde 2026-10-26 (`7db56f2`), Rastreo, Subsistencia, Trato
   con Animales e Investigación (sin apaño S36).
 - **Aumentos**: hecho (tandas A0-A7 commiteadas, 2026-10-23). Queda lo que espera a Murillo
   (preguntas de A4-A7, 5 implantes en proceso, extracción, tope de implantes, Shock) y la
@@ -1781,7 +1781,7 @@ propuestas móviles).
 ### Puntos Heroicos ⬜ (sin empezar)
 No hay nada construido. Prosa del diseñador en `docs/fuente/puntos-heroicos.md`.
 
-### Dotes ✅ (D1–D2d, dotes de NPC, especialidad en la tirada y tiradas fijas de habilidades.md hechas; tiradas de Exploración, 2026-10-26, sin commit)
+### Dotes ✅ (D1–D2d, dotes de NPC, especialidad en la tirada y tiradas fijas de habilidades.md hechas; tiradas de Exploración, 2026-10-26)
 
 Encargo y pasos: `docs/prompt-dotes.md`. Fuente literal: `docs/dotes.md` (105 dotes).
 Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
@@ -2038,7 +2038,7 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
   `dotesEfectos.test.ts` y `especieTiradas.test.ts`. Falta probarlo en el navegador. Hueco
   conocido: una casilla de la especialidad de una habilidad alternativa no entra (no hay caso).
 - [x] **Tiradas fijas que faltan según `docs/fuente/habilidades.md`** (cerrada 2026-10-26,
-  sin commit). Va junto a la integración de especialidades.
+  `7db56f2`). Va junto a la integración de especialidades.
   - [x] **Apuntar, Carrera, Discernir mentiras y Resistir distracción** (2026-10-23, sin
     commit; `sistema.md` §6 "Tiradas fijas", S79-S83). Filas nuevas en `ACCIONES`
     (`rules/acciones.ts`). Los 10 efectos de dote con `bloqueoPor: "tiradas-fijas"`, a 0:
@@ -2051,7 +2051,7 @@ Decisiones del usuario (Cuestionario Dotes, 2026-10-14): `docs/sistema.md` §9.
     casilla "Tras Apuntar" y pasa a +1 con el selector (`BonoPorTramo.condicion`). Tests en
     `rules/tiradasFijas.test.ts`. Falta probarlo en el navegador.
   - [x] Tiradas propias de **Investigación, Rastreo, Subsistencia y Trato con Animales**
-    (2026-10-26, sin commit; `sistema.md` §6 "Tiradas fijas", S97-S100; S36 sustituido). Filas
+    (2026-10-26, `7db56f2`; `sistema.md` §6 "Tiradas fijas", S97-S100; S36 sustituido). Filas
     nuevas en `ACCIONES`, pestaña Básicas: Rastreo con el selector «Marcha» (condiciones y ritmo
     en uno), Subsistencia, Trato con animales en dos filas (leer / interactuar) e Investigación.
     Solo se pintan con su especialidad o con algo que les enganche (`tiradaFijaVisible`,
@@ -2420,9 +2420,20 @@ de Combate base.
 - El workflow `auditoria-motor-metadata` compara prosa nuestra con código; pasarle el trozo del
   documento del diseñador y lo que da el motor al ejecutarlo.
 
-### Penalizadores de Carga Transportable ⬜
+### Penalizadores de Carga Transportable ⬜ (falta definición, 2026-10-26)
 La fórmula y el dato en pantalla ya están (Fase 3); falta aplicar los penalizadores por
-exceso de carga (−25% malherido, −50% moribundo, −25% exhausto) y la Proeza de Fuerza.
+exceso de carga (`sistema.md` §5.5: −1 y −2 por cada 20 % hasta −8, doble −10, cuádruple sin
+moverse; movimiento a la mitad o a un cuarto; fatiga por hora, minuto o turno) y la Proeza de
+Fuerza. Lo de "−25 % malherido, −50 % moribundo, −25 % exhausto" que ponía aquí no está en
+`fuente/creacion-de-personaje.md`: averiguar de dónde salió antes de usarlo.
+
+**Bloqueado por datos de peso** (recuento 2026-10-26): `fuente/equipamiento.md` solo pesa
+las armas. Con peso: armas de fuego 41/41, melee 36/39 (faltan los golpes sin arma), pesadas
+5/5, granadas 14/14, mejoras de arma 2/16. Sin peso: **armaduras 10/10** (el hueco gordo),
+herramientas 5 (VTF y VTM lo dan en prosa, 3 kg vacías / 4,5-5 kg llenas, sin transcribir),
+fármacos 13, subsistemas/mejoras estándar/movilidad 17 (van montados en la armadura).
+`pesoEquipado()` no suma la munición, aunque `catalog/municion.ts` tiene `pesoKg`. Antes de
+construir: pesos de armadura (Murillo o supuesto provisional) y qué cuenta como acción física.
 
 ### Sigilo / Visibilidad en combate ⬜ (idea sin construir, 2026-09-12)
 Salió de revisar los penalizadores "al sigilo" de varias armas (`docs/
