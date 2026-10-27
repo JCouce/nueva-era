@@ -86,6 +86,7 @@ import { SobrecargaPanel } from "./SobrecargaPanel";
 import { PeajePanel } from "./PeajePanel";
 import { UsarPoderModal } from "./UsarPoderModal";
 import { PanelFieldset } from "./personaje/PersonajeTab";
+import { BarraSalvaciones } from "./BarraSalvaciones";
 import {
   ArbolHabilidades,
   BotonEstrella,
@@ -97,14 +98,13 @@ import {
 } from "./ArbolHabilidades";
 import { type DanioInfo, type Lanzamiento } from "@/components/ResultadoTirada";
 
-// Básicas (defensa, iniciativa, salvaciones, Bloquear daño, tirada libre), Habilidades (el
-// árbol: todo lo que tira con habilidad) y Sin dado (agrupado por parecido). Las filas del árbol
-// también se montan como filas sueltas, sin pintarlas, para ★ y la cabina.
+// Habilidades (el árbol: todo lo que tira con habilidad) y Sin dado (agrupado por parecido).
+// Salvaciones y tirada libre van en la barra de encima ("basicas" ya no es pestaña). Las filas
+// del árbol y de la barra también se montan como filas sueltas, sin pintarlas, para ★ y la cabina.
 type Origen = "basicas" | "arbol" | "sindado";
-type Pestana = "favoritas" | "basicas" | "habilidades" | "sindado";
+type Pestana = "favoritas" | "habilidades" | "sindado";
 const PESTANAS: { id: Pestana; label: string; aria?: string }[] = [
   { id: "favoritas", label: "★", aria: "Favoritas" },
-  { id: "basicas", label: "Básicas" },
   { id: "habilidades", label: "Habilidades" },
   { id: "sindado", label: "Sin dado" },
 ];
@@ -1415,23 +1415,20 @@ export function AccionesTab({
   const basicasConDado = conDado.filter(({ accion }) => aBasicas(accion));
   const arbolConDado = conDado.filter(({ accion }) => !aBasicas(accion));
 
+  const filaBloquearDanio: FilaSeccion = {
+    id: FAVORITA_BLOQUEAR_DANIO,
+    nodo: (
+      <FilaBloquearDanio
+        key={FAVORITA_BLOQUEAR_DANIO}
+        onAbrir={() => setBloquearDanioAbierta(true)}
+        estrella={estrella(FAVORITA_BLOQUEAR_DANIO)}
+      />
+    ),
+  };
+  const salvaciones = basicasConDado.filter((x) => x.titulo === "Salvaciones").map((x) => x.accion);
+  // Básicas ya no es pestaña: salvaciones y tirada libre van en la barra de arriba. Sus filas
+  // se siguen montando para ★ y la cabina.
   const basicas: Seccion[] = [
-    {
-      origen: "basicas",
-      titulo: "Defensa",
-      filas: [
-        {
-          id: FAVORITA_BLOQUEAR_DANIO,
-          nodo: (
-            <FilaBloquearDanio
-              key={FAVORITA_BLOQUEAR_DANIO}
-              onAbrir={() => setBloquearDanioAbierta(true)}
-              estrella={estrella(FAVORITA_BLOQUEAR_DANIO)}
-            />
-          ),
-        },
-      ],
-    },
     {
       origen: "basicas",
       titulo: "Salvaciones",
@@ -1573,7 +1570,7 @@ export function AccionesTab({
 
   // Sin dado, agrupado por lo que hace.
   const directasPorGrupo: Record<GrupoSinDado, FilaSeccion[]> = {
-    Combate: [...ataqueDirecta, ...defensaDirecta, ...dotesDirectas, ...directasDotesEnGrupos].map(filaUsar),
+    Combate: [filaBloquearDanio, ...[...ataqueDirecta, ...defensaDirecta, ...dotesDirectas, ...directasDotesEnGrupos].map(filaUsar)],
     "Activar y desactivar": [...subsistemasDirectas, ...ficha.accionesEspecie].map(filaUsar),
     Poderes: poderesSinTirada.map(({ poder, dote }) => filaPoder(poder, subDePoder(poder, dote))),
     "Curación y fármacos": farmacosDirectas.map(filaUsar),
@@ -1612,8 +1609,8 @@ export function AccionesTab({
 
   // Se decide al montar: con lo de arriba ya calculado. Marcar o desmarcar luego no cambia de
   // pestaña.
-  const [elegida, setElegida] = useState<Pestana>(() => (seccionesFavoritas.length > 0 ? "favoritas" : "basicas"));
-  // Sin dado vacía no sale; si se vacía la abierta, a Básicas.
+  const [elegida, setElegida] = useState<Pestana>(() => (seccionesFavoritas.length > 0 ? "favoritas" : "habilidades"));
+  // Sin dado vacía no sale; si se vacía la abierta, a Habilidades.
   const pestanas = PESTANAS.filter((p) =>
     p.id === "favoritas"
       ? !!onMarcarFavorita && !cabina
@@ -1621,7 +1618,7 @@ export function AccionesTab({
         ? secciones.some((s) => s.origen === "sindado")
         : true,
   );
-  const pestana = pestanas.some((p) => p.id === elegida) ? elegida : "basicas";
+  const pestana = pestanas.some((p) => p.id === elegida) ? elegida : "habilidades";
   const enFavoritas = pestana === "favoritas";
   const enHabilidades = pestana === "habilidades";
   const seccionesPestana = enFavoritas
@@ -1665,7 +1662,16 @@ export function AccionesTab({
         </PanelFieldset>
       )}
 
-      {/* ★ (solo con onMarcarFavorita) · Básicas · Habilidades (árbol) · Sin dado (si hay).
+      <PanelFieldset disabled={soloLectura}>
+        <BarraSalvaciones
+          ficha={ficha}
+          salvaciones={salvaciones}
+          onAbrir={(t) => abrir(t, false)}
+          onLibre={() => abrir(tiradaLibre(), false)}
+        />
+      </PanelFieldset>
+
+      {/* ★ (solo con onMarcarFavorita) · Habilidades (árbol) · Sin dado (si hay).
           Fuera del fieldset: en solo lectura se sigue pudiendo cambiar. */}
       <nav className="flex border-b border-border">
         {pestanas.map((p) => (
