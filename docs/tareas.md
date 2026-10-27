@@ -11,7 +11,7 @@ está hecho" en cualquier otro documento del proyecto, para — va aquí, no all
 arquitectura — el modelo obligatorio para pasar cualquier elemento nuevo (equipo,
 razas, poderes, dotes, aumentos) de prosa a motor. Este archivo manda en el estado.
 
-**Última actualización:** 2026-10-26.
+**Última actualización:** 2026-10-27.
 
 ## Ahora mismo
 
@@ -936,6 +936,29 @@ su propio `PanelFieldset` y `CharacterSheet` ya no lo envuelve. NPC y consola de
   no se guardan. Motor: `tiradaLibre`/`etiquetaTiradaLibre` (`acciones.ts`), grupo propio `Libre`, montada con
   `montarTirada` sin especialidad y con la habilidad entera; `conExtrasDeFicha` no le añade nada (S84). En Acciones
   recientes, "Tirada libre (Reflejos + Sigilo)". También en el editor de NPC y el combate del máster, sin estrella.
+
+### Acciones por habilidad: árbol, barra de salvaciones y Sin dado ✅ (usuario, 2026-10-27; rama `prueba/tiradas-en-habilidades`)
+Sustituye la barra por origen de arriba. Motivo: en mesa se tiraba "atributo + habilidad" a pelo y se perdían dotes,
+especialidades y bonos; el barrido de la fuente (dotes, aumentos, psiónica, equipo, especies) mostró que el texto nombra
+los objetivos de forma caótica, así que la app tiene que dar la tirada ya colgada en su sitio. Solo presentación: el
+motor no cambia.
+- **Barra encima de las pestañas** (`BarraSalvaciones.tsx`): Fort · Refl · Vol con icono y total, y Libre.
+- **Pestañas: ★ · Habilidades · Sin dado.** Fuera Básicas, Equipo, Aptitudes y Aumentos.
+- **Habilidades** (`ArbolHabilidades.tsx`): Habilidad › Especialidad (plegables) › tirada, con el número de cada nivel y
+  su desglose, estrella en cada hoja y tirada genérica por especialidad (aplicado a elegir, grupo `Libre`). Entra todo
+  lo que tira con habilidad, de cualquier origen: fijas (esquiva, iniciativas incluidas), ataques y bloqueos por la
+  especialidad del arma, herramientas, fármacos, dotes, aumentos, Reparar/Fabricar (Tecnociencia) y poderes con tirada
+  (una hoja por variante que cambie habilidad o especialidad; etiqueta con la disciplina).
+- **Sin dado**: Combate (Bloquear daño, Levantar escudo…), Activar y desactivar, Poderes, Curación y fármacos, Sensores y
+  comunicación, Referencia.
+- Las filas de la barra y del árbol se siguen montando sueltas (sin pintar) para ★ y la cabina. NPC y combate del
+  máster, igual.
+- [ ] **Genérica por habilidad** (entera, §3) para "tírame Sigilo" sin especialidad: propuesta, sin decidir. Con ella la
+  Libre solo haría falta para atributo a secas.
+- [ ] Las cuatro de Exploración siguen ocultas sin su especialidad (S99): en el árbol la especialidad sale "sin tiradas"
+  aunque la tirada existe y se podría tirar a la mitad. Decidir si en el árbol se pintan siempre.
+- [ ] Los valores de habilidad y especialidad del árbol los suma la pantalla (réplica de `valorEfectivo`, vetado en UI).
+  Si se queda, pasar a un helper del motor para que no se desincronicen.
 
 ### La fábrica: automatizar el desarrollo y el mantenimiento de Nueva Era ⬜ (épica; N1 construido 2026-10-19, en rodaje desde 2026-10-22)
 **Cómo está hoy:** `fabrica/README.md` es la foto vigente (procesos, piezas, uso y qué se apunta dónde) y
