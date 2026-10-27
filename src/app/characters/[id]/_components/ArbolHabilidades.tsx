@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   APLICADOS,
   HABILIDADES,
@@ -9,32 +9,64 @@ import {
   conExtrasDeFicha,
   elegirEspecialidad,
   especialidadesDe,
-  especialidadesDeTirada,
   esEspecialidadDe,
   etiquetaEspecialidad,
   eleccionSinTocar,
   montarTirada,
+  usarHabilidadAlternativa,
   valorFueraDeEspecialidad,
+  textoValor,
+  etiquetaEconomia,
   type Accion,
   type AplicadoId,
   type EspecialidadId,
   type FichaResuelta,
   type Fuente,
   type HabilidadId,
+  type PoderDisponible,
+  type PoderPreparado,
+  type SeleccionPoder,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { Desglose } from "@/components/Desglose";
 
-// Prototipo (rama prueba/tiradas-en-habilidades): las tiradas de habilidad de todos los
-// orígenes colgadas en Habilidad › Especialidad › Tirada, para ver si ayuda a tirar la que
-// trae los bonos en vez de la libre. Solo presentación: los números salen de la ficha
-// resuelta y de montarTirada, como en el resto de la pestaña.
+// Pestaña Habilidades de Acciones: todo lo que tira con habilidad (tiradas, ataques, poderes,
+// Reparar y Fabricar) colgado en Habilidad › Especialidad › Hoja. Solo presentación: los números
+// salen de la ficha resuelta, de montarTirada y de prepararPoder.
 
-// `origen`: la pestaña de la que viene la fila, para comparar con la vista por origen.
-export type TiradaDeArbol = { accion: Accion; origen: string };
+// Una hoja del árbol: dónde cuelga (habilidad y especialidades que nombra; sin ninguna de esa
+// habilidad, de la habilidad entera) y qué se pinta. `aplicado`: para la tirada genérica.
+export type HojaDeArbol = {
+  key: string;
+  habilidad: HabilidadId;
+  especialidades: readonly EspecialidadId[];
+  aplicado: AplicadoId;
+  nodo: ReactNode;
+};
+
+export type Estrella = { marcada: boolean; onMarcar: () => void };
+
+// Marca la fila como favorita. Dentro del fieldset de la pestaña: en solo lectura se apaga sola.
+export function BotonEstrella({ estrella }: { estrella: Estrella }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={estrella.marcada}
+      aria-label={estrella.marcada ? "Quitar de favoritas" : "Añadir a favoritas"}
+      onClick={estrella.onMarcar}
+      className={`flex min-h-10 min-w-10 shrink-0 items-center justify-center text-xl leading-none active:scale-90 disabled:opacity-50 ${
+        estrella.marcada ? "text-accent" : "text-muted"
+      }`}
+    >
+      {estrella.marcada ? "★" : "☆"}
+    </button>
+  );
+}
 
 const BOTON_TIRAR =
   "clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted disabled:active:scale-100";
+
+const CHIP = "clip-chamfer-sm min-h-8 border px-2 py-1 font-mono text-[10px] uppercase active:scale-95";
 
 const sumar = (fuentes: Fuente[]) => fuentes.reduce((t, f) => t + f.valor, 0);
 
@@ -57,20 +89,22 @@ function fuentesDeEspecialidad(ficha: FichaResuelta, especialidad: EspecialidadI
   );
 }
 
-// El aplicado que más usan las tiradas de esa rama: el punto de partida de la genérica.
-function aplicadoHabitual(tiradas: TiradaDeArbol[]): AplicadoId {
+// El aplicado que más usan las hojas de esa rama: el punto de partida de la genérica.
+function aplicadoHabitual(hojas: HojaDeArbol[]): AplicadoId {
   const cuenta = new Map<AplicadoId, number>();
-  for (const { accion } of tiradas) cuenta.set(accion.aplicado, (cuenta.get(accion.aplicado) ?? 0) + 1);
+  for (const { aplicado } of hojas) cuenta.set(aplicado, (cuenta.get(aplicado) ?? 0) + 1);
   return [...cuenta.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "perspicacia";
 }
 
+const textoCuenta = (n: number) => (n === 0 ? "sin tiradas" : `${n} tirada${n === 1 ? "" : "s"}`);
+
 export function ArbolHabilidades({
   ficha,
-  tiradas,
+  hojas,
   onAbrir,
 }: {
   ficha: FichaResuelta;
-  tiradas: TiradaDeArbol[];
+  hojas: HojaDeArbol[];
   onAbrir: (t: Accion, sutil: boolean) => void;
 }) {
   return (
@@ -81,7 +115,7 @@ export function ArbolHabilidades({
           habilidad={h.id}
           label={h.label}
           ficha={ficha}
-          tiradas={tiradas.filter((t) => t.accion.habilidad === h.id)}
+          hojas={hojas.filter((t) => t.habilidad === h.id)}
           onAbrir={onAbrir}
         />
       ))}
@@ -93,13 +127,13 @@ function RamaHabilidad({
   habilidad,
   label,
   ficha,
-  tiradas,
+  hojas,
   onAbrir,
 }: {
   habilidad: HabilidadId;
   label: string;
   ficha: FichaResuelta;
-  tiradas: TiradaDeArbol[];
+  hojas: HojaDeArbol[];
   onAbrir: (t: Accion, sutil: boolean) => void;
 }) {
   const [abierto, setAbierto] = useState(false);
@@ -114,9 +148,9 @@ function RamaHabilidad({
 
   // Cuelga de cada especialidad de esta habilidad que nombre; sin ninguna (o a elegir), de la
   // habilidad.
-  const enEspecialidad = (t: TiradaDeArbol): EspecialidadId[] =>
-    especialidadesDeTirada(t.accion).filter((e) => esEspecialidadDe(habilidad, e));
-  const directas = tiradas.filter((t) => enEspecialidad(t).length === 0);
+  const enEspecialidad = (t: HojaDeArbol): readonly EspecialidadId[] =>
+    t.especialidades.filter((e) => esEspecialidadDe(habilidad, e));
+  const directas = hojas.filter((t) => enEspecialidad(t).length === 0);
 
   return (
     <HudCard className="p-3">
@@ -130,7 +164,7 @@ function RamaHabilidad({
           <div className="min-w-0">
             <span className="block font-display text-base font-semibold uppercase leading-tight">{label}</span>
             <span className="mt-1 block font-mono text-[10px] uppercase text-muted">
-              {tiradas.length === 0 ? "sin tiradas" : `${tiradas.length} tirada${tiradas.length === 1 ? "" : "s"}`}
+              {textoCuenta(hojas.length)}
               {propias.length > 0 && ` · ${propias.map(etiquetaEspecialidad).join(", ")}`}
             </span>
           </div>
@@ -149,7 +183,7 @@ function RamaHabilidad({
                 {catalogo.length > 0 ? "// Habilidad entera" : "// Sin especialidades: siempre entera"}
               </p>
               {directas.map((t) => (
-                <HojaTirada key={t.accion.id} tirada={t} ficha={ficha} onAbrir={onAbrir} />
+                <div key={t.key}>{t.nodo}</div>
               ))}
             </div>
           )}
@@ -160,14 +194,14 @@ function RamaHabilidad({
               habilidad={habilidad}
               especialidad={null}
               etiqueta={label}
-              aplicadoInicial={aplicadoHabitual(tiradas)}
+              aplicadoInicial={aplicadoHabitual(hojas)}
               ficha={ficha}
               onAbrir={onAbrir}
             />
           )}
 
           {catalogo.map((e) => {
-            const colgadas = tiradas.filter((t) => enEspecialidad(t).includes(e.id));
+            const colgadas = hojas.filter((t) => enEspecialidad(t).includes(e.id));
             return (
               <RamaEspecialidad
                 key={e.id}
@@ -176,8 +210,8 @@ function RamaHabilidad({
                 label={e.label}
                 ficha={ficha}
                 fuentesHabilidad={deHabilidad}
-                tiradas={colgadas}
-                aplicadoInicial={aplicadoHabitual(colgadas.length > 0 ? colgadas : tiradas)}
+                hojas={colgadas}
+                aplicadoInicial={aplicadoHabitual(colgadas.length > 0 ? colgadas : hojas)}
                 onAbrir={onAbrir}
               />
             );
@@ -194,7 +228,7 @@ function RamaEspecialidad({
   label,
   ficha,
   fuentesHabilidad,
-  tiradas,
+  hojas,
   aplicadoInicial,
   onAbrir,
 }: {
@@ -203,7 +237,7 @@ function RamaEspecialidad({
   label: string;
   ficha: FichaResuelta;
   fuentesHabilidad: Fuente[];
-  tiradas: TiradaDeArbol[];
+  hojas: HojaDeArbol[];
   aplicadoInicial: AplicadoId;
   onAbrir: (t: Accion, sutil: boolean) => void;
 }) {
@@ -234,7 +268,7 @@ function RamaEspecialidad({
               {!entrenada ? "sin entrenar" : tiene ? "✓ especialidad" : "la mitad"}
               <span className="text-muted">
                 {" · "}
-                {tiradas.length === 0 ? "sin tiradas" : `${tiradas.length} tirada${tiradas.length === 1 ? "" : "s"}`}
+                {textoCuenta(hojas.length)}
               </span>
             </span>
           </div>
@@ -247,8 +281,8 @@ function RamaEspecialidad({
 
       {abierta && (
         <>
-          {tiradas.map((t) => (
-            <HojaTirada key={t.accion.id} tirada={t} ficha={ficha} onAbrir={onAbrir} />
+          {hojas.map((t) => (
+            <div key={t.key}>{t.nodo}</div>
           ))}
           <TiradaGenerica
             habilidad={habilidad}
@@ -264,31 +298,44 @@ function RamaEspecialidad({
   );
 }
 
-function HojaTirada({
-  tirada,
+const MARCO_HOJA = "flex flex-col gap-1.5 border border-border bg-night p-2";
+
+// Una tirada (fija, de arma, de equipo, de dote, de aumento): Sutil, habilidad alternativa y
+// especialidad a elegir en la propia hoja, como en FilaTirada.
+export function HojaTirada({
+  accion: t,
+  origen,
   ficha,
   onAbrir,
+  estrella,
 }: {
-  tirada: TiradaDeArbol;
+  accion: Accion;
+  origen: string;
   ficha: FichaResuelta;
   onAbrir: (t: Accion, sutil: boolean) => void;
+  estrella?: Estrella;
 }) {
-  const t = tirada.accion;
+  // Sutil: preseleccionado por el aplicado que dé más al ataque (como FilaTirada).
+  const [sutilActivo, setSutilActivo] = useState(() =>
+    t.aplicadoSutil ? ficha.aplicados[t.aplicadoSutil] > ficha.aplicados[t.aplicado] : false,
+  );
+  const [alternativaActiva, setAlternativaActiva] = useState(false);
+  const alternativa = alternativaActiva ? usarHabilidadAlternativa(t) : null;
   // Convencer / mentir: como en su fila, no se tira sin elegir especialidad.
   const [elegida, setElegida] = useState<EspecialidadId | null>(null);
-  const pendienteElegir = !!t.especialidadAElegir && elegida === null;
-  const efectiva = t.especialidadAElegir && elegida ? elegirEspecialidad(t, elegida) : t;
-  const montada = montarTirada(ficha, efectiva, eleccionSinTocar(efectiva));
+  const pendienteElegir = !alternativa && !!t.especialidadAElegir && elegida === null;
+  const efectiva = alternativa ?? (t.especialidadAElegir && elegida ? elegirEspecialidad(t, elegida) : t);
+  const montada = montarTirada(ficha, efectiva, eleccionSinTocar(efectiva, sutilActivo));
   const aplicado = APLICADOS.find((a) => a.id === montada.aplicado.id)!;
   const situacional = (t.condiciones?.length ?? 0) > 0;
 
   return (
-    <div className={`flex flex-col gap-1.5 border border-border bg-night p-2 ${t.bloqueada ? "border-dashed opacity-60" : ""}`}>
+    <div className={`${MARCO_HOJA} ${t.bloqueada ? "border-dashed opacity-60" : ""}`}>
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
           <span className="block font-display text-sm font-semibold uppercase leading-tight">{t.label}</span>
           <span className="mt-0.5 block font-mono text-[10px] uppercase text-muted">
-            {aplicado.abbr} · {tirada.origen}
+            {aplicado.abbr} · {origen}
             {situacional && <span className="text-info"> · ± según situación</span>}
           </span>
         </div>
@@ -297,16 +344,43 @@ function HojaTirada({
         ) : (
           <>
             <Desglose total={montada.modificador} fuentes={montada.desglose} className="text-lg text-info" />
-            <button type="button" disabled={pendienteElegir} onClick={() => onAbrir(efectiva, false)} className={BOTON_TIRAR}>
+            <button type="button" disabled={pendienteElegir} onClick={() => onAbrir(efectiva, sutilActivo)} className={BOTON_TIRAR}>
               Tirar
             </button>
           </>
         )}
+        {estrella && <BotonEstrella estrella={estrella} />}
       </div>
 
       {t.bloqueada && <p className="font-mono text-[10px] leading-relaxed text-muted">{t.bloqueada}</p>}
 
-      {t.especialidadAElegir && !t.bloqueada && (
+      {!t.bloqueada && (t.aplicadoSutil || t.habilidadAlternativa) && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {t.aplicadoSutil && (
+            <button
+              type="button"
+              aria-pressed={sutilActivo}
+              onClick={() => setSutilActivo((v) => !v)}
+              className={`${CHIP} ${sutilActivo ? "border-info text-info" : "border-border text-muted"}`}
+            >
+              {sutilActivo ? "✓ " : ""}Sutil
+            </button>
+          )}
+          {t.habilidadAlternativa && (
+            <button
+              type="button"
+              aria-pressed={alternativaActiva}
+              onClick={() => setAlternativaActiva((v) => !v)}
+              className={`${CHIP} ${alternativaActiva ? "border-info text-info" : "border-border text-muted"}`}
+            >
+              {alternativaActiva ? "✓ " : ""}
+              {t.habilidadAlternativa.etiqueta}
+            </button>
+          )}
+        </div>
+      )}
+
+      {t.especialidadAElegir && !alternativa && !t.bloqueada && (
         <div className="flex flex-wrap items-center gap-1.5">
           <span className={`font-mono text-[10px] uppercase ${pendienteElegir ? "text-danger" : "text-muted"}`}>
             {pendienteElegir ? "elige especialidad:" : "especialidad:"}
@@ -317,9 +391,7 @@ function HojaTirada({
               type="button"
               aria-pressed={elegida === e}
               onClick={() => setElegida(e)}
-              className={`clip-chamfer-sm min-h-8 border px-2 py-1 font-mono text-[10px] uppercase active:scale-95 ${
-                elegida === e ? "border-info text-info" : "border-border text-muted"
-              }`}
+              className={`${CHIP} ${elegida === e ? "border-info text-info" : "border-border text-muted"}`}
             >
               {elegida === e ? "✓ " : ""}
               {etiquetaEspecialidad(e)}
@@ -328,11 +400,69 @@ function HojaTirada({
         </div>
       )}
 
-      {t.habilidadAlternativa && (
-        <p className="font-mono text-[10px] uppercase text-muted">
-          alternativa ({t.habilidadAlternativa.etiqueta}): desde su pestaña
-        </p>
+      {montada.especialidadArma && !pendienteElegir && !montada.especialidadArma.tiene && (
+        <p className="font-mono text-[10px] uppercase text-muted">sin {montada.especialidadArma.label}: la mitad</p>
       )}
+    </div>
+  );
+}
+
+// Un poder con tirada, en la variante que cuelga de esta rama (`preparado` con la selección
+// puesta). "Usar" abre el flujo de poder de siempre con esa selección.
+export function HojaPoder({
+  poder,
+  preparado,
+  origen,
+  onAbrir,
+  estrella,
+}: {
+  poder: PoderDisponible;
+  preparado: PoderPreparado;
+  origen: string;
+  onAbrir: (p: PoderDisponible, seleccion: SeleccionPoder) => void;
+  estrella?: Estrella;
+}) {
+  const { montada, tirada } = preparado;
+  if (!montada || !tirada) return null;
+  const p = preparado.resuelto;
+  const aplicado = APLICADOS.find((a) => a.id === montada.aplicado.id)!;
+  const fatiga = preparado.coste ? preparado.coste.total : textoValor(p.fatiga);
+  const datos = [etiquetaEconomia(p.economia), `${fatiga} fatiga`].join(" · ");
+  return (
+    <div className={`${MARCO_HOJA} ${poder.bloqueo ? "border-dashed opacity-60" : ""}`}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <span className="block font-display text-sm font-semibold uppercase leading-tight">{tirada.label}</span>
+          <span className="mt-0.5 block font-mono text-[10px] uppercase text-muted">
+            {aplicado.abbr} · {origen}
+          </span>
+          <span className="mt-0.5 block font-mono text-[10px] text-muted">{datos}</span>
+        </div>
+        <Desglose total={montada.modificador} fuentes={montada.desglose} className="text-lg text-info" />
+        <button type="button" disabled={!!poder.bloqueo} onClick={() => onAbrir(poder, preparado.seleccion)} className={BOTON_TIRAR}>
+          Usar
+        </button>
+        {estrella && <BotonEstrella estrella={estrella} />}
+      </div>
+      {poder.bloqueo && <p className="font-mono text-[10px] leading-relaxed text-danger">{poder.bloqueo}</p>}
+    </div>
+  );
+}
+
+// Reparar y Fabricar: abre su modal (ReparaFabricaModal); la tirada se hace allí.
+export function HojaReparaFabrica({ onAbrir, estrella }: { onAbrir: () => void; estrella?: Estrella }) {
+  return (
+    <div className={MARCO_HOJA}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <span className="block font-display text-sm font-semibold uppercase leading-tight">Reparar y Fabricar</span>
+          <span className="mt-0.5 block font-mono text-[10px] uppercase text-muted">Per · tira al reparar o construir</span>
+        </div>
+        <button type="button" onClick={onAbrir} className={BOTON_TIRAR}>
+          Abrir
+        </button>
+        {estrella && <BotonEstrella estrella={estrella} />}
+      </div>
     </div>
   );
 }
