@@ -85,14 +85,18 @@ import { SobrecargaPanel } from "./SobrecargaPanel";
 import { PeajePanel } from "./PeajePanel";
 import { UsarPoderModal } from "./UsarPoderModal";
 import { PanelFieldset } from "./personaje/PersonajeTab";
+import { ArbolHabilidades, type TiradaDeArbol } from "./ArbolHabilidades";
 import { type DanioInfo, type Lanzamiento } from "@/components/ResultadoTirada";
 
 // Por origen de la fila: lo que todo el mundo tiene (catálogo fijo), lo que trae el equipo, lo
 // que dan psiónica, dotes y especie, y los aumentos. Con dado y sin dado, mezclados.
 type Origen = "basicas" | "equipo" | "poderes" | "aumentos";
-type Pestana = "favoritas" | Origen;
+// "habilidades" (prototipo): las tiradas de habilidad de todos los orígenes en árbol
+// (ArbolHabilidades), duplicadas a propósito con las de su pestaña de origen.
+type Pestana = "favoritas" | "habilidades" | Origen;
 const PESTANAS: { id: Pestana; label: string; aria?: string }[] = [
   { id: "favoritas", label: "★", aria: "Favoritas" },
+  { id: "habilidades", label: "Habil.", aria: "Habilidades" },
   { id: "basicas", label: "Básicas" },
   { id: "equipo", label: "Equipo" },
   { id: "poderes", label: "Aptitudes" },
@@ -111,6 +115,8 @@ const FAVORITA_REPARA_FABRICA = "fija:reparar_fabricar";
 const FAVORITA_TIRADA_LIBRE = "fija:tirada_libre";
 
 type Estrella = { marcada: boolean; onMarcar: () => void };
+
+const GRUPOS_FUERA_DEL_ARBOL = new Set<Accion["grupo"]>(["Ataques", "Defensa", "Salvaciones", "Iniciativa", "Psiónica", "Libre"]);
 
 // Marca la fila como favorita. Dentro del fieldset de la pestaña: en solo lectura se apaga sola.
 function BotonEstrella({ estrella }: { estrella: Estrella }) {
@@ -1379,14 +1385,14 @@ export function AccionesTab({
   // Bloquear daño, Reparar/Fabricar y la Tirada libre no son de ACCIONES: se añaden a mano.
   // Rastreo, Subsistencia, Trato con animales e Investigación, solo con su especialidad o algo que
   // les enganche (tiradaFijaVisible, del motor).
+  const fijas = ACCIONES.filter((t) => tiradaFijaVisible(ficha, t))
+    .map(conExtras)
+    .map((t) => conPsionicaEnTiradaFija(niveles, conEsquivaEnVuelo(sheet, conEsquivaLevitando(niveles, t))));
   const basicas: Seccion[] = GRUPOS_ACCION.map((grupo) => ({
     origen: "basicas",
     titulo: grupo,
     filas: [
-      ...ACCIONES.filter((t) => t.grupo === grupo && tiradaFijaVisible(ficha, t))
-        .map(conExtras)
-        .map((t) => conPsionicaEnTiradaFija(niveles, conEsquivaEnVuelo(sheet, conEsquivaLevitando(niveles, t))))
-        .map(filaTirada),
+      ...fijas.filter((t) => t.grupo === grupo).map(filaTirada),
       ...(grupo === "Defensa"
         ? [
             {
@@ -1493,6 +1499,18 @@ export function AccionesTab({
   };
 
   const secciones = [...basicas, ...equipo, ...poderesSecciones, aumentos].filter((s) => s.filas.length > 0);
+
+  // Pestaña Habilidades: las mismas tiradas con dado de las demás pestañas, con habilidad y
+  // fuera de los grupos que no son "tirar una habilidad" (ataques, defensa, salvaciones,
+  // iniciativa, poderes) y de la tirada libre. Los poderes de dote van por prepararPoder: fuera.
+  const tiradasArbol: TiradaDeArbol[] = [
+    ...fijas.map((accion) => ({ accion, origen: "Básica" })),
+    ...accionesGeneradas.map((accion) => ({ accion, origen: "Equipo" })),
+    ...herramientas.map((accion) => ({ accion, origen: "Herramienta" })),
+    ...farmacos.map((accion) => ({ accion, origen: "Fármaco" })),
+    ...[...dotesTiradas, ...dotesEnGrupos].map((accion) => ({ accion, origen: "Dote" })),
+    ...filasAumentos.flatMap((f) => (f.tipo === "tirada" ? [{ accion: f.accion, origen: "Aumento" }] : [])),
+  ].filter(({ accion }) => accion.habilidad !== null && !accion.libre && !GRUPOS_FUERA_DEL_ARBOL.has(accion.grupo));
   // Favoritas: las marcadas de todas, en el orden de las pestañas; dos secciones con el mismo
   // subtítulo (la Defensa básica y la del equipo) salen juntas, donde la primera.
   const seccionesFavoritas: Seccion[] = [];
@@ -1510,11 +1528,16 @@ export function AccionesTab({
   // Una pestaña sin filas no se pinta (Aumentos sin aumentos). Si se vacía la que está abierta
   // (desequipar lo último), a Básicas.
   const pestanas = PESTANAS.filter((p) =>
-    p.id === "favoritas" ? !!onMarcarFavorita && !cabina : secciones.some((s) => s.origen === p.id),
+    p.id === "favoritas"
+      ? !!onMarcarFavorita && !cabina
+      : p.id === "habilidades" || secciones.some((s) => s.origen === p.id),
   );
   const pestana = pestanas.some((p) => p.id === elegida) ? elegida : "basicas";
   const enFavoritas = pestana === "favoritas";
-  const seccionesPestana = enFavoritas ? seccionesFavoritas : secciones.filter((s) => s.origen === pestana);
+  const enHabilidades = pestana === "habilidades";
+  const seccionesPestana = enFavoritas
+    ? seccionesFavoritas
+    : secciones.filter((s) => s.origen === pestana);
 
   // Cabina de escritorio: las favoritas fijas arriba (sin pestaña ★) y las filas a dos columnas.
   const filasFavoritas = seccionesFavoritas.flatMap((s) => s.filas);
@@ -1578,6 +1601,8 @@ export function AccionesTab({
               <p className="font-sans text-prosa text-soft">Marca con la estrella las acciones que más uses</p>
             </HudCard>
           )}
+
+          {enHabilidades && <ArbolHabilidades ficha={ficha} tiradas={tiradasArbol} onAbrir={abrir} />}
 
           {seccionesPestana.map((s) => (
             <div key={s.titulo} className={rejilla}>
