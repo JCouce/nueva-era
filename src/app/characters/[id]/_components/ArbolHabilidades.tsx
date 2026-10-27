@@ -29,6 +29,7 @@ import {
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { Desglose } from "@/components/Desglose";
+import { teAfecta } from "./teAfecta";
 
 // Pestaña Habilidades de Acciones: todo lo que tira con habilidad (tiradas, ataques, poderes,
 // Reparar y Fabricar) colgado en Habilidad › Especialidad › Hoja. Solo presentación: los números
@@ -327,7 +328,7 @@ export function HojaTirada({
   const efectiva = alternativa ?? (t.especialidadAElegir && elegida ? elegirEspecialidad(t, elegida) : t);
   const montada = montarTirada(ficha, efectiva, eleccionSinTocar(efectiva, sutilActivo));
   const aplicado = APLICADOS.find((a) => a.id === montada.aplicado.id)!;
-  const situacional = (t.condiciones?.length ?? 0) > 0;
+  const afecta = teAfecta(ficha, efectiva, montada.aplicado.id);
 
   return (
     <div className={`${MARCO_HOJA} ${t.bloqueada ? "border-dashed opacity-60" : ""}`}>
@@ -336,7 +337,6 @@ export function HojaTirada({
           <span className="block font-display text-sm font-semibold uppercase leading-tight">{t.label}</span>
           <span className="mt-0.5 block font-mono text-[10px] uppercase text-muted">
             {aplicado.abbr} · {origen}
-            {situacional && <span className="text-info"> · ± según situación</span>}
           </span>
         </div>
         {t.bloqueada ? (
@@ -351,6 +351,10 @@ export function HojaTirada({
         )}
         {estrella && <BotonEstrella estrella={estrella} />}
       </div>
+
+      {afecta.length > 0 && (
+        <p className="break-words font-mono text-[10px] uppercase leading-relaxed text-muted">te afecta: {afecta.join(", ")}</p>
+      )}
 
       {t.bloqueada && <p className="font-mono text-[10px] leading-relaxed text-muted">{t.bloqueada}</p>}
 
