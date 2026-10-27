@@ -217,33 +217,49 @@ function RamaEspecialidad({
       ? { etiqueta: "Ficha (especialidad)", valor }
       : { etiqueta: "Ficha (mitad, sin especialidad)", valor: valorFueraDeEspecialidad(valor) };
   const fuentes = [base, ...fuentesHabilidad, ...fuentesDeEspecialidad(ficha, especialidad)];
+  const [abierta, setAbierta] = useState(false);
 
   return (
     <div className="flex flex-col gap-2 border-l-2 border-border pl-3">
       <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <span className="block font-display text-sm font-semibold uppercase leading-tight">{label}</span>
-          <span className={`mt-0.5 block font-mono text-[10px] uppercase ${tiene ? "text-info" : "text-muted"}`}>
-            {!entrenada ? "sin entrenar" : tiene ? "✓ especialidad" : "sin especialidad: la mitad"}
+        <button
+          type="button"
+          onClick={() => setAbierta((v) => !v)}
+          aria-expanded={abierta}
+          className="flex min-h-10 min-w-0 flex-1 items-center justify-between gap-2 text-left"
+        >
+          <div className="min-w-0">
+            <span className="block font-display text-sm font-semibold uppercase leading-tight">{label}</span>
+            <span className={`mt-0.5 block font-mono text-[10px] uppercase ${tiene ? "text-info" : "text-muted"}`}>
+              {!entrenada ? "sin entrenar" : tiene ? "✓ especialidad" : "la mitad"}
+              <span className="text-muted">
+                {" · "}
+                {tiradas.length === 0 ? "sin tiradas" : `${tiradas.length} tirada${tiradas.length === 1 ? "" : "s"}`}
+              </span>
+            </span>
+          </div>
+          <span className={`shrink-0 font-mono text-[9px] text-muted transition-transform ${abierta ? "rotate-180" : ""}`}>
+            ▾
           </span>
-        </div>
+        </button>
         <Desglose total={sumar(fuentes)} fuentes={fuentes} className="text-lg text-foreground" />
       </div>
 
-      {tiradas.length === 0 ? (
-        <p className="font-mono text-[10px] uppercase text-muted">sin tiradas definidas</p>
-      ) : (
-        tiradas.map((t) => <HojaTirada key={t.accion.id} tirada={t} ficha={ficha} onAbrir={onAbrir} />)
+      {abierta && (
+        <>
+          {tiradas.map((t) => (
+            <HojaTirada key={t.accion.id} tirada={t} ficha={ficha} onAbrir={onAbrir} />
+          ))}
+          <TiradaGenerica
+            habilidad={habilidad}
+            especialidad={especialidad}
+            etiqueta={label}
+            aplicadoInicial={aplicadoInicial}
+            ficha={ficha}
+            onAbrir={onAbrir}
+          />
+        </>
       )}
-
-      <TiradaGenerica
-        habilidad={habilidad}
-        especialidad={especialidad}
-        etiqueta={label}
-        aplicadoInicial={aplicadoInicial}
-        ficha={ficha}
-        onAbrir={onAbrir}
-      />
     </div>
   );
 }
