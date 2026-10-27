@@ -1399,9 +1399,9 @@ export function AccionesTab({
 
   // Lo que tira con dado, por dónde va: Básicas (defensa, iniciativa, salvaciones y lo que no
   // tenga habilidad) o el árbol. Las dotes en otro grupo (Traicionero en Iniciativa), igual.
-  // Los bloqueos con arma van al árbol, con la especialidad del arma, como los ataques.
-  const aBasicas = (t: Accion, origen: string) =>
-    t.habilidad === null || (GRUPOS_BASICOS.has(t.grupo) && !(t.grupo === "Defensa" && origen === "Equipo"));
+  // Esquiva, iniciativas y bloqueos tiran con habilidad: van al árbol. En Básicas, las
+  // salvaciones y lo que no tenga habilidad.
+  const aBasicas = (t: Accion) => t.habilidad === null || t.grupo === "Salvaciones";
   const conDado: { accion: Accion; origen: string; titulo: string }[] = [
     ...fijas.map((accion) => ({ accion, origen: "Básica", titulo: accion.grupo })),
     ...ataques.map((accion) => ({ accion, origen: "Arma", titulo: "Ataques" })),
@@ -1412,15 +1412,14 @@ export function AccionesTab({
     ...[...dotesTiradas, ...dotesEnGrupos].map((accion) => ({ accion, origen: "Dote", titulo: GRUPOS_BASICOS.has(accion.grupo) ? accion.grupo : "Dotes" })),
     ...filasAumentos.flatMap((f) => (f.tipo === "tirada" ? [{ accion: f.accion, origen: "Aumento", titulo: "Aumentos" }] : [])),
   ];
-  const basicasConDado = conDado.filter(({ accion, origen }) => aBasicas(accion, origen));
-  const arbolConDado = conDado.filter(({ accion, origen }) => !aBasicas(accion, origen));
+  const basicasConDado = conDado.filter(({ accion }) => aBasicas(accion));
+  const arbolConDado = conDado.filter(({ accion }) => !aBasicas(accion));
 
   const basicas: Seccion[] = [
     {
       origen: "basicas",
       titulo: "Defensa",
       filas: [
-        ...basicasConDado.filter((x) => x.titulo === "Defensa").map((x) => filaTirada(x.accion)),
         {
           id: FAVORITA_BLOQUEAR_DANIO,
           nodo: (
@@ -1433,19 +1432,17 @@ export function AccionesTab({
         },
       ],
     },
-    ...(["Salvaciones", "Iniciativa"] as const).map(
-      (titulo): Seccion => ({
-        origen: "basicas",
-        titulo,
-        filas: basicasConDado.filter((x) => x.titulo === titulo).map((x) => filaTirada(x.accion)),
-      }),
-    ),
+    {
+      origen: "basicas",
+      titulo: "Salvaciones",
+      filas: basicasConDado.filter((x) => x.titulo === "Salvaciones").map((x) => filaTirada(x.accion)),
+    },
     {
       origen: "basicas",
       titulo: "Otras",
       filas: [
-        // Sin habilidad fuera de los grupos de Básicas (hoy ninguna): aquí antes que perderla.
-        ...basicasConDado.filter((x) => !GRUPOS_BASICOS.has(x.titulo as Accion["grupo"])).map((x) => filaTirada(x.accion)),
+        // Sin habilidad y que no sea salvación (hoy ninguna): aquí antes que perderla.
+        ...basicasConDado.filter((x) => x.titulo !== "Salvaciones").map((x) => filaTirada(x.accion)),
         {
           id: FAVORITA_TIRADA_LIBRE,
           nodo: (
