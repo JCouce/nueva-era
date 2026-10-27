@@ -1399,7 +1399,9 @@ export function AccionesTab({
 
   // Lo que tira con dado, por dónde va: Básicas (defensa, iniciativa, salvaciones y lo que no
   // tenga habilidad) o el árbol. Las dotes en otro grupo (Traicionero en Iniciativa), igual.
-  const aBasicas = (t: Accion) => GRUPOS_BASICOS.has(t.grupo) || t.habilidad === null;
+  // Los bloqueos con arma van al árbol, con la especialidad del arma, como los ataques.
+  const aBasicas = (t: Accion, origen: string) =>
+    t.habilidad === null || (GRUPOS_BASICOS.has(t.grupo) && !(t.grupo === "Defensa" && origen === "Equipo"));
   const conDado: { accion: Accion; origen: string; titulo: string }[] = [
     ...fijas.map((accion) => ({ accion, origen: "Básica", titulo: accion.grupo })),
     ...ataques.map((accion) => ({ accion, origen: "Arma", titulo: "Ataques" })),
@@ -1410,8 +1412,8 @@ export function AccionesTab({
     ...[...dotesTiradas, ...dotesEnGrupos].map((accion) => ({ accion, origen: "Dote", titulo: GRUPOS_BASICOS.has(accion.grupo) ? accion.grupo : "Dotes" })),
     ...filasAumentos.flatMap((f) => (f.tipo === "tirada" ? [{ accion: f.accion, origen: "Aumento", titulo: "Aumentos" }] : [])),
   ];
-  const basicasConDado = conDado.filter(({ accion }) => aBasicas(accion));
-  const arbolConDado = conDado.filter(({ accion }) => !aBasicas(accion));
+  const basicasConDado = conDado.filter(({ accion, origen }) => aBasicas(accion, origen));
+  const arbolConDado = conDado.filter(({ accion, origen }) => !aBasicas(accion, origen));
 
   const basicas: Seccion[] = [
     {
