@@ -27,6 +27,8 @@ const DESCRIPCION_TIPO: Record<TipoModificador, string> = {
   texto: "3 · Modificador de texto: condición ? nota informativa : nada, sin sumar número",
   narrativo: "4 · Modificador narrativo: no modifica nada, solo queda apuntado",
   habilitador: "5 · Habilitador/deshabilitador: habilita o deshabilita una acción entera (exige arbitraje duro/blando/pendiente)",
+  resolucion: "6 · Resolución: cambia cómo se resuelve la tirada, no su total (aplicado, habilidad, especialidad, dados, umbrales de crítico/fallo, reglas del daño)",
+  coste: "7 · Coste: gasta un recurso al confirmar la acción (fatiga, munición, dosis, usos por escena); no toca el total",
 };
 
 const DESCRIPCION_MECANISMO: Record<MecanismoMotor, string> = {

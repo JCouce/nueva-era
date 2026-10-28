@@ -39,7 +39,8 @@ foco. Frentes abiertos, cada uno con su sección en Pendiente:
   `docs/sistema.md`. Primer adelanto (Creación): Vida/Fatiga base 8 → 10 (hecho, §4 `HOJA3`), Dotes con
   presupuesto por prioridad, topes de creación movidos.
 - **Ítems y aportes (pestaña Acciones)**: plan aprobado 2026-10-28 en `docs/aportes/plan.md`,
-  fases 0-7 sin empezar. El estado por fase vive en su cabecera allí.
+  fases 0 y 1 hechas; siguen 1b (reclasificar `MotorMetadata`) y la tarea de umbrales como
+  estados. El estado por fase vive en su cabecera allí.
 - "Preguntas al diseñador" (final de este documento) — lo que bloquea a Murillo.
 - **La fábrica** (épica en Pendiente, N1 construido, en rodaje desde 2026-10-22): cadena de montaje de cambios con
   Jefe de fábrica, línea determinista y revisión con oráculos. Uso y qué se apunta dónde: `fabrica/README.md`.
@@ -938,6 +939,13 @@ su propio `PanelFieldset` y `CharacterSheet` ya no lo envuelve. NPC y consola de
   no se guardan. Motor: `tiradaLibre`/`etiquetaTiradaLibre` (`acciones.ts`), grupo propio `Libre`, montada con
   `montarTirada` sin especialidad y con la habilidad entera; `conExtrasDeFicha` no le añade nada (S84). En Acciones
   recientes, "Tirada libre (Reflejos + Sigilo)". También en el editor de NPC y el combate del máster, sin estrella.
+
+### Umbrales de salud y fatiga como estados automáticos ⬜ (usuario, 2026-10-28)
+Los umbrales de §7 (penalizadores por heridas y por fatiga) pasan a ser **estados** («Malherido»,
+«Fatigado»…) que se ponen solos al cruzar el umbral y se quitan al volver, en vez de modificadores
+sin ítem. Idea antigua del usuario; salió como E4 del inventario de aportes y va antes de la fase 2
+de `docs/aportes/plan.md`. Sin plantear: forma, nombres de los estados y cómo conviven con los
+estados que pone el máster, por decidir con el usuario.
 
 ### Acciones por habilidad: árbol, barra de salvaciones y Sin dado ✅ (usuario, 2026-10-27; rama `prueba/tiradas-en-habilidades`)
 Sustituye la barra por origen de arriba. Motivo: en mesa se tiraba "atributo + habilidad" a pelo y se perdían dotes,

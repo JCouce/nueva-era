@@ -1,6 +1,6 @@
 # Plan: ítems y aportes — la pestaña Acciones, coherente y mantenible
 
-**Estado:** plan aprobado en conversación con el usuario (2026-10-28). Ninguna fase empezada.
+**Estado:** plan aprobado en conversación con el usuario (2026-10-28). El estado de cada fase va en su cabecera.
 El estado de cada fase se marca aquí (cabecera de la fase) y en `docs/tareas.md`.
 
 Este documento es a la vez **hoja de ruta** y **encargo para subagentes**: cada fase dice qué
@@ -118,12 +118,19 @@ campos fijos de `conExtrasDeFicha`), **casilla** (el jugador lo marca al tirar:
 `CondicionTirada`), **tramo** (depende de otra elección ya hecha: `bonosTramo`). Se corresponde
 con `MotorMetadata.mecanismo`.
 
-### 1.6 Momento (solo Texto)
+**Una casilla es una entrega, no un aporte** (usuario, 2026-10-28, E1 del inventario): puede
+agrupar varios aportes de tipos distintos que se activan juntos (Ojo Clínico: ventaja =
+Resolución, 1 de fatiga = Coste). Cada aporte de la casilla se pinta según su tipo (fase 5).
+
+### 1.6 Momento (Texto) y condición de grado (Texto y Coste)
 - **antes**: informa una decisión (si tirar, cómo, qué casilla marcar). Se pinta en la hoja.
 - **después**: solo tiene sentido con el resultado. Se pinta en el resultado.
 - **El resultado enseña siempre todos los textos de la tirada**, los de antes incluidos: es el
   sitio donde el jugador lo lee todo junto.
 - Condición de grado opcional: siempre · en éxito · en crítico · en crítico natural · en fallo.
+- **Coste también lleva condición de grado** (usuario, 2026-10-28, E3 del inventario): hay costes
+  que dependen del resultado (daño propio de un poder al fallar, daño por punto de la Munición
+  Supresora, peaje neurológico). Sin condición, el coste es "siempre", al confirmar.
 
 ### 1.7 Anclaje
 Dónde cuelga una hoja de Acción: lista de (habilidad, especialidad?) y **quién elige**:
@@ -143,7 +150,10 @@ Lo que no sigue la regla general y está bien que no la siga:
 1. **Barra**: salvaciones y tirada libre (sin habilidad).
 2. **Sin dado**: agrupadas por lo que hacen (Combate, Activar y desactivar, Poderes, Curación y
    fármacos, Sensores y comunicación, Referencia), no por habilidad.
-3. **Aporte sobre aporte**: Gran Puntería → «Apuntado».
+3. **Aporte sobre aporte — lista cerrada** (usuario, 2026-10-28, E2 del inventario): Gran
+   Puntería → selector «Apuntado»; Reflejos Felinos → descuento en «Atacantes adicionales»;
+   munición especial con `sustituyeCritico` → crítico del arma. Un caso nuevo se añade aquí
+   justificado; no es un tipo de blanco general.
 4. **Tablero**: siempre Texto (`motor.md`, "Lo que queda fuera del modelo").
 5. **Economía de creación** (coste, rareza, dinero inicial): fuera del modelo.
 
@@ -178,7 +188,7 @@ Lo que hay hoy y motiva el plan, para que nadie lo redescubra:
 
 ## 3. Fases
 
-Orden: 0 → 1 → 2 → 3 → 4 → 5. La 6 depende de una regla pendiente; la 7 se decide al final.
+Orden: 0 → 1 → 1b → umbrales (tarea previa) → 2 → 3 → 4 → 5. La 6 depende de una regla pendiente; la 7 se decide al final.
 Cada fase deja la app funcionando y se puede parar entre fases.
 
 ### Fase 0 — Vocabulario oficial en `motor.md` ✅ (2026-10-28)
@@ -200,7 +210,7 @@ Cada fase deja la app funcionando y se puede parar entre fases.
 
 ---
 
-### Fase 1 — Inventario de aportes ⬜
+### Fase 1 — Inventario de aportes ✅ (2026-10-28)
 **Tipo:** docs + un cambio pequeño de tipos. **Quién:** subagente (lectura extensa).
 
 **Objetivo:** saber, con datos, cuánto encaja en el modelo y qué se sale. Ningún cambio de
@@ -243,6 +253,11 @@ con el usuario.
 
 **No toques:** ningún componente, ningún generador, ningún catálogo.
 
+**Resultado (2026-10-28):** `docs/aportes/inventario.md`, 181 filas; de 93 aportes, 76 encajan
+limpio. Decisiones del usuario sobre las excepciones: E1 → §1.5, E2 → §1.8.3, E3 → §1.6, E4 →
+los umbrales serán **estados automáticos** (tarea aparte, antes de la fase 2: ver "Tarea previa a
+la fase 2"). El resto (E5-E11) son deudas ya asignadas a fases en el inventario.
+
 **Hecho cuando:** el inventario cubre las cinco estructuras, cada fila tiene las ocho columnas,
 `npm test` en verde, y el usuario ha revisado la lista de excepciones (puede que añada o quite
 excepciones declaradas en la sección 1.8 de este plan).
@@ -252,6 +267,47 @@ excepciones declaradas en la sección 1.8 de este plan).
 > `docs/aportes/inventario.md`. Solo puedes tocar ese archivo y `src/lib/rules/motor.ts`
 > (añadir los dos tipos). No commitees. Devuelve: ruta del inventario, recuento por tipo, la
 > lista de excepciones y la lista de reclasificaciones de `MotorMetadata` propuestas.
+
+---
+
+### Fase 1b — Reclasificar `MotorMetadata` al vocabulario nuevo ⬜
+**Tipo:** datos de catálogo (metadato documental, sin efecto en ejecución). **Quién:** subagente.
+
+**Objetivo:** que el catálogo use `resolucion` y `coste` donde corresponde, para que la
+auditoría y los workflows (`modelar-area`, `auditoria-motor-metadata`) hablen el vocabulario
+nuevo desde ya.
+
+**Lee antes:** sección 0, 1, `docs/aportes/inventario.md` (sección de reclasificaciones
+propuestas), `docs/motor.md` ("El dato: `MotorMetadata`"), `src/lib/rules/motor.ts`,
+`src/lib/catalog/motor.test.ts`, la skill `auditoria-motor-metadata`
+(`~/.claude/skills` o `.claude/skills` del repo).
+
+**Pasos:**
+1. Resolver primero las piezas marcadas «(sin verificar cuál)» en el inventario: leer la prosa de
+   la pieza (`docs/fuente/`, `docs/sistema.md`) y el código que produce cada efecto para saber
+   qué metadato corresponde a qué efecto.
+2. Aplicar las reclasificaciones de la lista: cambiar `tipo` a `resolucion`/`coste`; partir en
+   dos los metadatos que hoy juntan Resolución y Coste (un `MotorMetadata` por efecto, como
+   exige `motor.md`). No cambiar `afecta`, `mecanismo` ni `estado` salvo que el cambio de tipo lo
+   exija (y entonces, justificarlo).
+3. Pasar la auditoría `auditoria-motor-metadata` sobre las piezas tocadas.
+
+**No toques:** ningún campo del catálogo que no sea `motor`; ningún generador ni componente;
+ningún test (si un test de catálogo falla, es que la reclasificación viola una regla: se para y
+se informa).
+
+**Hecho cuando:** todas las reclasificaciones propuestas aplicadas o descartadas con motivo,
+ninguna «(sin verificar cuál)» pendiente, `npm test`/`lint`/`tsc` en verde sin tocar tests, y el
+inventario actualizado (columna de reclasificación marcada como aplicada).
+
+---
+
+### Tarea previa a la fase 2 — Umbrales como estados automáticos ⬜ (fuera de este plan)
+Decisión del usuario (2026-10-28, E4 del inventario): los umbrales de salud y fatiga (§7)
+dejan de ser aportes sin ítem y pasan a ser **estados** («Malherido», «Fatigado»…) que se ponen
+solos al pasar el umbral y se quitan al volver. Es funcionalidad nueva y toca reglas: se plantea
+con el usuario como tarea propia (`docs/tareas.md`) antes de la fase 2. Cuando exista, la fase 2
+no necesita el origen `"umbral"`: su origen es `"estado"`.
 
 ---
 
@@ -267,9 +323,10 @@ entero, `fichaResuelta.ts` (`conExtrasDeFicha`, `resolverFicha`), `equipo.ts`
 
 **Diseño propuesto (a confirmar en el planteamiento):**
 - Tipo nuevo en `lib/rules`: `OrigenAporte = { tipo: "equipo" | "aumento" | "poder" | "dote" |
-  "especie" | "farmaco" | "estado" | "umbral" | "accion"; id: string; label: string;
+  "especie" | "farmaco" | "estado" | "accion"; id: string; label: string;
   instanciaId?: string }`. `"accion"` = lo trae la propia tirada de catálogo (no es de ningún
-  ítem); `"umbral"` = heridas/fatiga.
+  ítem). Los umbrales de heridas/fatiga son estados automáticos (tarea previa), con origen
+  `"estado"`.
 - Campo **opcional** `origen?: OrigenAporte` en: `ModificadorConFuente`, `CondicionTirada`,
   `TextoEnTirada`, los extras de `extrasDotes`/`ventajasFijas`/`fallosCriticos`, y en las líneas
   de desglose (`LineaDesglose`) y notas de `TiradaMontada`.
