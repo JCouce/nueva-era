@@ -27,7 +27,7 @@ import type { CondicionTirada } from "./condiciones";
 import type { GrupoAccion } from "./modificadores";
 import type { Grado } from "./psionica";
 import { etiquetaEconomia, type DetallePoder } from "./poderes";
-import type { DoteActiva } from "./dotesEfectos";
+import { origenDeDote, type DoteActiva } from "./dotesEfectos";
 import { DESTINOS_DOTES } from "../catalog/dotesDestinos";
 import type { AccionDote, DoteCatalogo, EfectoDote } from "../catalog/dotesTipos";
 
@@ -205,13 +205,20 @@ export function accionesDeDotes(activas: readonly DoteActiva[]): AccionesDeDotes
   const tiradas: Accion[] = [];
   const directas: AccionDirecta[] = [];
   const anadidos = anadidosPorAccion(activas);
-  for (const { dote } of activas) {
+  for (const activa of activas) {
+    const { dote } = activa;
+    const origen = origenDeDote(activa);
     dote.efectos.forEach((e: EfectoDote, i) => {
       if (e.tipo !== "accion" || dote.motor[i]?.estado !== "construido") return;
       const hecha = construir(dote, e.accion, anadidos);
       const extra = e.accion.grupoExtra;
-      if ("tirada" in hecha) tiradas.push(hecha.tirada, ...(extra ? [enGrupo(hecha.tirada, extra)] : []));
-      else directas.push(hecha.directa, ...(extra ? [enGrupo(hecha.directa, extra)] : []));
+      if ("tirada" in hecha) {
+        const tirada = { ...hecha.tirada, origen };
+        tiradas.push(tirada, ...(extra ? [enGrupo(tirada, extra)] : []));
+      } else {
+        const directa = { ...hecha.directa, origen };
+        directas.push(directa, ...(extra ? [enGrupo(directa, extra)] : []));
+      }
     });
   }
   return tiradas.length === 0 && directas.length === 0 ? SIN_ACCIONES_DE_DOTES : { tiradas, directas };

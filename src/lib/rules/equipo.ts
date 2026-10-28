@@ -30,6 +30,7 @@ import { ID_BUSQUEDA_MIRA } from "../catalog/mejorasArma";
 import { PELEA } from "../catalog/armasMelee";
 import { alcanzaA, alcanzaAlgunAplicado, type ContextoAccion, type FamiliaArma, type GrupoAccion, type Modificador, type ModificadorConFuente } from "./modificadores";
 import type { CondicionTirada } from "./condiciones";
+import { origenDePieza } from "./origen";
 import type { AmenazaId, EfectoSalvacion } from "./aumentosTiradas";
 import type { ReduccionPorAplicado } from "./estados";
 import type { HabilidadId } from "./habilidades";
@@ -739,7 +740,7 @@ export function modificadoresDeEquipo(sheet: Sheet): ModificadorConFuente[] {
       cat.familia === "consumible" ||
       cat.familia === "armaPesada"
     ) {
-      return cat.modificadores.map((m) => ({ ...m, origen: "equipo" as const, fuente: cat.label }));
+      return cat.modificadores.map((m) => ({ ...m, origen: "equipo" as const, fuente: cat.label, item: origenDePieza("equipo", cat, pieza.instanciaId) }));
     }
 
     // Las armas melee no tienen niveles ni modificadores mecanizados: el
@@ -761,6 +762,7 @@ export function modificadoresDeEquipo(sheet: Sheet): ModificadorConFuente[] {
       ...m,
       origen: "equipo" as const,
       fuente: `${cat.label} ${pieza.nivel}`,
+      item: origenDePieza("equipo", cat, pieza.instanciaId),
     }));
   });
 }
@@ -850,7 +852,9 @@ export function condicionBusquedaMiraDeFicha(sheet: Sheet): CondicionTirada | nu
     nivelesHasta(mira.niveles, nivel).map((n) => n.condiciones ?? []),
     (c) => c.id,
   );
-  return condiciones.find((c) => c.id === ID_BUSQUEDA_MIRA) ?? null;
+  const busqueda = condiciones.find((c) => c.id === ID_BUSQUEDA_MIRA);
+  // Una sola casilla por ficha, la de la mira de más nivel (instalada o integrada): sin instancia.
+  return busqueda ? { ...busqueda, origen: { tipo: "equipo", id: mira.id, label: mira.label } } : null;
 }
 
 export function condicionesActivas(sheet: Sheet, ctx: ContextoAccion): CondicionTirada[] {
@@ -871,7 +875,10 @@ export function condicionesActivas(sheet: Sheet, ctx: ContextoAccion): Condicion
       niveles.map((n) => n.condiciones ?? []),
       (c) => c.id,
     );
-    return condiciones.filter((c) => c.id !== ID_BUSQUEDA_MIRA && c.alcance && alcanzaA(c.alcance, ctx));
+    const origen = origenDePieza("equipo", cat, pieza.instanciaId);
+    return condiciones
+      .filter((c) => c.id !== ID_BUSQUEDA_MIRA && c.alcance && alcanzaA(c.alcance, ctx))
+      .map((c) => ({ ...c, origen }));
   });
   const busqueda = condicionBusquedaMiraDeFicha(sheet);
   return busqueda?.alcance && alcanzaA(busqueda.alcance, ctx) ? [...porPieza, busqueda] : porPieza;
@@ -962,8 +969,9 @@ export function indiceDeCondiciones(sheet: Sheet, deOtrasFuentes: CondicionTirad
       (c) => c.id,
     );
 
+    const origen = origenDePieza("equipo", cat, pieza.instanciaId);
     for (const condicion of condiciones) {
-      if (condicion.id !== ID_BUSQUEDA_MIRA) indexar(condicion);
+      if (condicion.id !== ID_BUSQUEDA_MIRA) indexar({ ...condicion, origen });
     }
   }
   const busqueda = condicionBusquedaMiraDeFicha(sheet);

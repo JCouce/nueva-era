@@ -12,6 +12,7 @@ import { equipoPorId, type Equipo, type Herramienta } from "../catalog/equipo";
 import { acumulaPorClave, nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
 import type { Accion, AccionDirecta } from "./acciones";
+import { origenDePieza } from "./origen";
 
 // Qué acción describe cada una, para el label de la fila ("Escanear con
 // Radar"). Los tres piden Perspicacia + Tecnociencia — pareja distinta de
@@ -65,7 +66,7 @@ export function accionesDeHerramientas(sheet: Sheet): Accion[] {
     const cat: Equipo | null = equipoPorId(pieza.catalogoId);
     if (cat?.familia !== "herramienta") continue;
     const tirada = tiradaDeHerramienta(sheet, pieza, cat);
-    if (tirada) tiradas.push(tirada);
+    if (tirada) tiradas.push({ ...tirada, origen: origenDePieza("equipo", cat, pieza.instanciaId) });
   }
   return tiradas;
 }
@@ -101,7 +102,7 @@ export function accionesDirectasDeHerramientas(sheet: Sheet): AccionDirecta[] {
     const cat: Equipo | null = equipoPorId(pieza.catalogoId);
     if (cat?.familia !== "herramienta") continue;
     const accion = accionDirectaDeHerramienta(pieza, cat);
-    if (accion) acciones.push(accion);
+    if (accion) acciones.push({ ...accion, origen: origenDePieza("equipo", cat, pieza.instanciaId) });
   }
   return acciones;
 }

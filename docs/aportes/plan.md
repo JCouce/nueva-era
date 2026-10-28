@@ -312,7 +312,7 @@ Cuando exista, la fase 2 no necesita el origen `"umbral"`: su origen es `"estado
 
 ---
 
-### Fase 2 — Origen en cada aporte ⬜
+### Fase 2 — Origen en cada aporte ✅ (2026-10-28)
 **Tipo:** motor + `teAfecta`. **Quién:** subagente.
 
 **Objetivo:** que cada aporte que llega a una tirada lleve **de qué ítem viene** como dato, y

@@ -104,7 +104,7 @@ import {
 } from "./estados";
 import { levitacion, type PoderDisponible } from "./poderes";
 import { fatigaEfectiva } from "./vitalidad";
-import { alcanzaA, descartadosPorNoApila, type AlcanceModificador, type FamiliaArma, type ModificadorConFuente } from "./modificadores";
+import { alcanzaA, descartadosPorNoApila, type AlcanceModificador, type ModificadorConFuente } from "./modificadores";
 import { conTextosEnTirada, contextoDe, junta, textosDe, textosSinDado } from "./textosTirada";
 import type { Sheet } from "./sheet";
 import { condicionApuntado, ID_APUNTADO, ID_APUNTAR, tieneEspecialidad, type Accion, type AccionDirecta } from "./acciones";
@@ -419,9 +419,8 @@ export function estadosParaPintar(ficha: Pick<FichaResuelta, "estados" | "estado
 // tirada ni la pantalla saben de dónde vienen. `modoElegido: null`: la tirada aún no se
 // ha abierto, así que una casilla con alcance "modo" no tiene nada que casar (ver
 // indiceDeCondiciones). De las dotes, además, los bonos por tramo y el crítico fijo de
-// Crítico Mejorado (solo en ataques: ni al lanzar ni al bloquear). Sin nada que añadir,
-// devuelve la misma tirada.
-const FAMILIAS_CON_CRITICO_FIJO: readonly FamiliaArma[] = ["ataque_melee", "ataque_fuego", "ataque_pesado"];
+// Crítico Mejorado (en las familias de su destino: solo ataques, ni al lanzar ni al bloquear).
+// Sin nada que añadir, devuelve la misma tirada.
 
 export function conExtrasDeFicha(
   ficha: Pick<FichaResuelta, "indiceCondiciones" | "textosTirada" | "extrasDotes" | "ventajasFijas" | "fallosCriticos">,
@@ -434,20 +433,31 @@ export function conExtrasDeFicha(
   const extra = consultaIndiceCondiciones(ficha.indiceCondiciones, ctx);
   const textos = textosDe(ficha.textosTirada, ctx, t.desarmado === true);
   const bonosTramo = ficha.extrasDotes.bonosTramo.filter((b) => alcanzaA(b.alcance, ctx)).map((b) => b.bono);
-  const critico = t.familiaArma && FAMILIAS_CON_CRITICO_FIJO.includes(t.familiaArma) && t.especialidadArma
+  const familia = t.familiaArma;
+  const critico = familia && t.especialidadArma
     ? ficha.extrasDotes.criticos
-        .filter((c) => c.especialidad === t.especialidadArma)
+        .filter((c) => c.especialidad === t.especialidadArma && c.familias.includes(familia))
         .reduce<CriticoDeDote | null>((mejor, c) => (!mejor || c.margen < mejor.margen ? c : mejor), null)
     : null;
   const descuentos = ficha.extrasDotes.descuentos.filter((d) => alcanzaA(d.alcance, ctx));
   // La ventaja que ya trae la tirada manda (no se acumula).
-  const ventaja = t.ventaja ? undefined : ficha.ventajasFijas.find((v) => alcanzaA(v.alcance, ctx))?.fuente;
+  const ventajaFija = t.ventaja ? undefined : ficha.ventajasFijas.find((v) => alcanzaA(v.alcance, ctx));
+  const ventaja = ventajaFija?.fuente;
   const falloCritico = ficha.fallosCriticos.find((f) => alcanzaA(f.alcance, ctx));
   // Cambios de grado sin casilla (Velocista, Gran Puntería): el crítico más fácil gana.
   const grados = ficha.extrasDotes.grados.filter((g) => alcanzaA(g.alcance, ctx));
-  const criticoFinal = [...(critico ? [{ margen: critico.margen, fuente: critico.fuente }] : []), ...grados.flatMap((g) => (g.margen === undefined ? [] : [{ margen: g.margen, fuente: g.fuente }]))]
-    .reduce<{ margen: number; fuente: string } | null>((mejor, c) => (!mejor || c.margen < mejor.margen ? c : mejor), null);
-  const subeGradoFijo = grados.find((g) => g.subeGrado)?.fuente;
+  type Critico = NonNullable<Accion["criticoFijo"]>;
+  const conOrigen = (c: { margen: number; fuente: string; origen?: Critico["origen"] }): Critico => ({
+    margen: c.margen,
+    fuente: c.fuente,
+    ...(c.origen && { origen: c.origen }),
+  });
+  const criticoFinal = [
+    ...(critico ? [conOrigen(critico)] : []),
+    ...grados.flatMap((g) => (g.margen === undefined ? [] : [conOrigen({ ...g, margen: g.margen })])),
+  ].reduce<Critico | null>((mejor, c) => (!mejor || c.margen < mejor.margen ? c : mejor), null);
+  const gradoSube = grados.find((g) => g.subeGrado);
+  const subeGradoFijo = gradoSube?.fuente;
   // Otra habilidad con casilla en la fila (Cazador Cazado), si la tirada no trae ya una y el
   // aplicado de la dote es el suyo.
   const alt = t.habilidadAlternativa
@@ -470,12 +480,20 @@ export function conExtrasDeFicha(
   const condiciones = conDescuentos([...(conApuntado ?? []), ...extra], descuentos);
   return {
     ...conTextosEnTirada(t, textos),
+    ...(textos.length > 0 && { textosDeFicha: [...(t.textosDeFicha ?? []), ...textos] }),
     ...((extra.length > 0 || descuentos.length > 0 || conApuntado !== t.condiciones) && { condiciones }),
     ...(bonosTramo.length > 0 && { bonosTramo: [...(t.bonosTramo ?? []), ...bonosTramo] }),
     ...(criticoFinal && { criticoFijo: criticoFinal }),
-    ...(subeGradoFijo && { subeGradoFijo }),
-    ...(alt && { habilidadAlternativa: { habilidad: alt.habilidad, especialidad: alt.especialidad, etiqueta: alt.etiqueta } }),
-    ...(ventaja && { ventaja }),
+    ...(subeGradoFijo && { subeGradoFijo, ...(gradoSube?.origen && { origenSubeGrado: gradoSube.origen }) }),
+    ...(alt && {
+      habilidadAlternativa: {
+        habilidad: alt.habilidad,
+        especialidad: alt.especialidad,
+        etiqueta: alt.etiqueta,
+        ...(alt.origen && { origen: alt.origen }),
+      },
+    }),
+    ...(ventaja && { ventaja, ...(ventajaFija?.origen && { origenVentaja: ventajaFija.origen }) }),
     ...(falloCritico && { falloCritico }),
   };
 }
@@ -521,7 +539,8 @@ function selectorApuntadoDeFicha(ficha: Pick<FichaResuelta, "extrasDotes">, cond
     (g) => g.alcance.tipo === "tiradaId" && g.alcance.id === ID_APUNTAR && g.margen === 0,
   );
   if (!gp) return condiciones;
-  return condiciones.map((c, j) => (j === i ? condicionApuntado(gp.fuente) : c));
+  // El selector cambiado es de Gran Puntería (aporte sobre aporte, plan de aportes §1.8.3).
+  return condiciones.map((c, j) => (j === i ? { ...condicionApuntado(gp.fuente), ...(gp.origen && { origen: gp.origen }) } : c));
 }
 
 // Reflejos Felinos: el contador de la tirada cuenta unidades de menos (varios se suman).
@@ -533,7 +552,11 @@ function conDescuentos(condiciones: CondicionTirada[], descuentos: DescuentoDeDo
     if (propios.length === 0) return c;
     return {
       ...c,
-      descuento: { unidades: propios.reduce((t, d) => t + d.unidades, 0), fuente: propios.map((d) => d.fuente).join(", ") },
+      descuento: {
+        unidades: propios.reduce((t, d) => t + d.unidades, 0),
+        fuente: propios.map((d) => d.fuente).join(", "),
+        ...(propios.some((d) => d.origen) && { origenes: propios.flatMap((d) => (d.origen ? [d.origen] : [])) }),
+      },
     };
   });
 }

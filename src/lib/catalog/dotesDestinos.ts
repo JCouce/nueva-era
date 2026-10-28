@@ -10,7 +10,8 @@
 //            alcance "especialidad" (Intimidación), solo en las tiradas que la nombran.
 //   ficha  → texto que solo vive en la tarjeta de la dote (no hay tirada a la que colgarlo).
 //   especialidadArmaElegida → los ataques con arma de la especialidad elegida al comprar
-//            (Crítico Mejorado: crítico fijo, sin casilla; rules/dotesEfectos.ts).
+//            (Crítico Mejorado: crítico fijo, sin casilla; rules/dotesEfectos.ts). `familias`:
+//            qué tiradas de esa arma cuentan como ataque (ni lanzarla ni bloquear con ella).
 //   accionDote → una acción propia de dote (D2c-1): sus textos van a la nota de la acción y
 //            sus bonos a la casilla de opción de la acción (rules/dotesAcciones.ts). Solo
 //            sale si la acción sale (la dote que la da está activa).
@@ -42,7 +43,7 @@ export const FAMILIAS_SOLO_CON_DOTE: readonly FamiliaArma[] = ["bloquear_melee"]
 export type DestinoDote =
   | { tipo: "tirada"; alcance: AlcanceModificador; textos: string[] }
   | { tipo: "ficha" }
-  | { tipo: "especialidadArmaElegida" }
+  | { tipo: "especialidadArmaElegida"; familias: readonly FamiliaArma[] }
   | { tipo: "accionDote" }
   | { tipo: "poder"; id: string }
   | { tipo: "tanda"; tanda: TandaDote; motivo: string };
@@ -105,7 +106,7 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   // Acción sin dado: solo textos, a su nota (el generador rechaza casillas aquí).
   "familia:levantar_escudo": familia("levantar_escudo"),
   // Crítico Mejorado: la especialidad de arma elegida al comprar.
-  "especialidad:<elegida>": { tipo: "especialidadArmaElegida" },
+  "especialidad:<elegida>": { tipo: "especialidadArmaElegida", familias: ["ataque_melee", "ataque_fuego", "ataque_pesado"] },
 
   // ── Habilitadas por dote (D2b-2) ──
   // «Bloquear con X» solo existe con la dote Bloqueo (§9.2, FAMILIAS_SOLO_CON_DOTE): su

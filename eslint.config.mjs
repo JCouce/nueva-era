@@ -37,6 +37,10 @@ const eslintConfig = defineConfig([
   // Y las tiradas (M1, docs/modificadores-tiradas.md "Montaje"): total, desglose y
   // márgenes de crítico salen de montarTirada / tirarMontada (rules/montaje.ts). La
   // pantalla no suma aplicado, habilidad, casillas, tramos ni alcance por su cuenta.
+  //
+  // Y "te afecta" (fase 2, docs/aportes/plan.md): de qué ítem viene cada aporte de una tirada lo
+  // dice su `origen`, y lo lee aportesDeTirada / teAfecta (rules/aportes.ts, rules/teAfecta.ts).
+  // La pantalla no mira a qué tiradas alcanza un bono, una casilla o un texto.
   {
     files: ["src/app/**/*.tsx", "src/components/**/*.tsx", "src/hooks/**/*.{ts,tsx}"],
     rules: {
@@ -131,6 +135,11 @@ const eslintConfig = defineConfig([
                 "desgloseBonosTramo",
               ],
               message: "Usa montarTirada / tirarMontada (src/lib/rules/montaje.ts).",
+            },
+            {
+              name: "@/lib/rules",
+              importNames: ["alcanzaA", "alcanzaAlgunAplicado"],
+              message: "Usa aportesDeTirada / teAfecta (src/lib/rules/aportes.ts): cada aporte trae su origen.",
             },
             {
               name: "@/lib/rules",

@@ -272,9 +272,10 @@ const comprarVarias = (s: Sheet, ids: string[]) => ids.reduce((acc, id) => compr
 describe("A1: +1 a atributos desde los aumentos", () => {
   test("modificadoresDeAumentos: origen aumento y la pieza como fuente", () => {
     const s = compra(defaultSheet(), { catalogoId: OSTEOTENDINOSA });
+    const item = { tipo: "aumento", id: OSTEOTENDINOSA, label: "Integridad Osteotendinosa", instanciaId: s.equipo[0].instanciaId };
     assert.deepEqual(modificadoresDeAumentos(s), [
-      { tipo: "atributo", id: "fuerza", valor: 1, origen: "aumento", fuente: "Integridad Osteotendinosa" },
-      { tipo: "atributo", id: "agilidad", valor: 1, origen: "aumento", fuente: "Integridad Osteotendinosa" },
+      { tipo: "atributo", id: "fuerza", valor: 1, origen: "aumento", fuente: "Integridad Osteotendinosa", item },
+      { tipo: "atributo", id: "agilidad", valor: 1, origen: "aumento", fuente: "Integridad Osteotendinosa", item },
     ]);
   });
 

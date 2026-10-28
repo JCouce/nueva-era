@@ -51,6 +51,9 @@
 //   textosRegistro.ts  textos del centro de mando: entradas del registro, duraciones, hora relativa (E1c)
 //   turnos.ts          combate en el centro de mando: vuelta, contador de rondas, resumen, vida en la Mesa (E1d)
 //   ajusteVida.ts      pestaña Vida del máster: daño/curación, vista previa y umbral que cruza
+//   origen.ts          OrigenAporte: de qué ítem viene cada aporte a una tirada (fase 2 de docs/aportes/plan.md)
+//   aportes.ts         aportesDeTirada: los aportes de los ítems de la ficha a una tirada, con su origen
+//   teAfecta.ts        "te afecta" de una hoja de tirada: los nombres de esos ítems
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -104,6 +107,9 @@ export * from "./registro";
 export * from "./textosRegistro";
 export * from "./turnos";
 export * from "./ajusteVida";
+export * from "./origen";
+export * from "./aportes";
+export * from "./teAfecta";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

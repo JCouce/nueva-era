@@ -10,6 +10,7 @@ import type { PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
 import type { Accion } from "./acciones";
 import type { CondicionTirada } from "./condiciones";
+import { origenDePieza } from "./origen";
 
 function tiradaDeVolar(pieza: PiezaEquipada, cat: MejoraMovimiento): Accion | null {
   if (cat.id !== "movilidad_aerea") return null;
@@ -72,6 +73,7 @@ export function conEsquivaEnVuelo(sheet: Sheet, t: Accion): Accion {
         habilidad: "tecnociencia",
         etiqueta: `En vuelo: Tecnociencia, ${String(valor).replace("-", "−")}`,
         ajuste: { valor, fuente: `Maniobrabilidad (${cat.label})` },
+        origen: origenDePieza("equipo", cat, pieza.instanciaId),
       },
     };
   }
@@ -84,7 +86,7 @@ export function accionesDeMovimiento(sheet: Sheet): Accion[] {
     const cat: Equipo | null = equipoPorId(pieza.catalogoId);
     if (cat?.familia !== "movimiento") continue;
     const accion = tiradaDeVolar(pieza, cat);
-    if (accion) acciones.push(accion);
+    if (accion) acciones.push({ ...accion, origen: origenDePieza("equipo", cat, pieza.instanciaId) });
   }
   return acciones;
 }

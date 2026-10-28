@@ -32,6 +32,7 @@ import { nivelesHasta } from "./equipo";
 import { SIN_AJUSTE_UMBRALES, type AjusteUmbrales, type EstadoActivo } from "./estados";
 import type { AlcanceModificador, ModificadorConFuente } from "./modificadores";
 import type { Sheet } from "./sheet";
+import { origenDePieza, type OrigenAporte } from "./origen";
 
 export type ActivoAumento = {
   estadoId: string;
@@ -70,13 +71,14 @@ export const SIN_EFECTOS_ACTIVABLES: EfectosActivables = {
 // El `activo` de cada pieza equipada que funciona, con su fuente ("Neuroprótesis Simpática 2").
 // Implantes: por cada estado propio, el del nivel más alto que lo trae (cada nivel lo repite
 // entero). `activo` y `activos` (A5b: un nivel con más de un estado propio, Neuroprótesis 4).
-export function activosDeAumentos(sheet: Pick<Sheet, "equipo">): { fuente: string; activo: ActivoAumento }[] {
+// `origen` (fase 2): la pieza, para lo que el activable pone en las tiradas.
+export function activosDeAumentos(sheet: Pick<Sheet, "equipo">): { fuente: string; activo: ActivoAumento; origen: OrigenAporte }[] {
   const activas = operacionesActivas(sheet);
   return sheet.equipo.flatMap((pieza) => {
     const cat = aumentoPorId(pieza.catalogoId);
     if (!cat) return [];
     if (cat.familia === "operacionGenetica") {
-      return cat.activo && activas.has(cat.id) ? [{ fuente: cat.label, activo: cat.activo }] : [];
+      return cat.activo && activas.has(cat.id) ? [{ fuente: cat.label, activo: cat.activo, origen: origenDePieza("aumento", cat, pieza.instanciaId) }] : [];
     }
     if (pieza.nivel === undefined) return [];
     const porEstado = new Map<string, ActivoAumento>();
@@ -85,14 +87,15 @@ export function activosDeAumentos(sheet: Pick<Sheet, "equipo">): { fuente: strin
         if (!porEstado.has(a.estadoId)) porEstado.set(a.estadoId, a);
       }
     }
-    return [...porEstado.values()].map((activo) => ({ fuente: `${cat.label} ${pieza.nivel}`, activo }));
+    const origen = origenDePieza("aumento", cat, pieza.instanciaId);
+    return [...porEstado.values()].map((activo) => ({ fuente: `${cat.label} ${pieza.nivel}`, activo, origen }));
   });
 }
 
 export function efectosDeActivables(sheet: Pick<Sheet, "equipo">, estados: readonly EstadoActivo[]): EfectosActivables {
-  const encendidos = activosDeAumentos(sheet).flatMap(({ fuente, activo }) => {
+  const encendidos = activosDeAumentos(sheet).flatMap(({ fuente, activo, origen }) => {
     const estado = estados.find((e) => e.estadoId === activo.estadoId);
-    return estado ? [{ fuente, activo, grado: estado.gradoId }] : [];
+    return estado ? [{ fuente, activo, grado: estado.gradoId, origen }] : [];
   });
   if (encendidos.length === 0) return SIN_EFECTOS_ACTIVABLES;
 
@@ -102,18 +105,18 @@ export function efectosDeActivables(sheet: Pick<Sheet, "equipo">, estados: reado
   let reduccion: ReduccionDeEstados | null = null;
   let elimina: string | null = null;
   const sustituidos = new Set(encendidos.flatMap(({ activo }) => (activo.sustituyeAtributosDe ? [activo.sustituyeAtributosDe] : [])));
-  for (const { fuente, activo, grado } of encendidos) {
+  for (const { fuente, activo, grado, origen } of encendidos) {
     const atributos = sustituidos.has(activo.estadoId) ? {} : { ...activo.atributos };
     // "En lugar de": el elegido al activar recibe el valor de la mejora.
     const elegido = activo.mejora?.atributos.find((a) => a === grado);
     if (elegido && activo.mejora && !sustituidos.has(activo.estadoId)) atributos[elegido] = activo.mejora.valor;
     for (const [id, valor] of Object.entries(atributos) as [AtributoId, number][]) {
-      modificadores.push({ tipo: "atributo", id, valor, origen: "estado", fuente });
+      modificadores.push({ tipo: "atributo", id, valor, origen: "estado", fuente, item: origen });
     }
-    for (const t of activo.textos ?? []) textos.push({ en: t.en, texto: t.texto, fuente, soloEnCritico: false });
+    for (const t of activo.textos ?? []) textos.push({ en: t.en, texto: t.texto, fuente, soloEnCritico: false, origen });
     if (activo.eliminaPenalizadoresUmbrales) elimina = fuente;
     if (activo.anulaPenalizadores) {
-      modificadores.push({ tipo: "anulaPenalizadores", alcance: activo.anulaPenalizadores, valor: 0, origen: "estado", fuente });
+      modificadores.push({ tipo: "anulaPenalizadores", alcance: activo.anulaPenalizadores, valor: 0, origen: "estado", fuente, item: origen });
     }
     if (activo.salvaciones?.length) salvaciones.push({ fuente, efectos: activo.salvaciones });
     if (activo.reducePenalizadores) {

@@ -13,6 +13,7 @@ import {
   etiquetaEspecialidad,
   eleccionSinTocar,
   montarTirada,
+  teAfecta,
   usarHabilidadAlternativa,
   valorFueraDeEspecialidad,
   textoValor,
@@ -29,7 +30,6 @@ import {
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { Desglose } from "@/components/Desglose";
-import { teAfecta } from "./teAfecta";
 
 // Pestaña Habilidades de Acciones: todo lo que tira con habilidad (tiradas, ataques, poderes,
 // Reparar y Fabricar) colgado en Habilidad › Especialidad › Hoja. Solo presentación: los números
@@ -328,7 +328,7 @@ export function HojaTirada({
   const efectiva = alternativa ?? (t.especialidadAElegir && elegida ? elegirEspecialidad(t, elegida) : t);
   const montada = montarTirada(ficha, efectiva, eleccionSinTocar(efectiva, sutilActivo));
   const aplicado = APLICADOS.find((a) => a.id === montada.aplicado.id)!;
-  const afecta = teAfecta(ficha, efectiva, montada.aplicado.id);
+  const afecta = teAfecta(ficha, efectiva, montada);
 
   return (
     <div className={`${MARCO_HOJA} ${t.bloqueada ? "border-dashed opacity-60" : ""}`}>

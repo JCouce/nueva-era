@@ -18,6 +18,7 @@ import type { Accion, AccionDirecta } from "./acciones";
 import type { AplicadoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
 import type { CondicionTirada } from "./condiciones";
+import type { OrigenAporte } from "./origen";
 
 // Los tres que no llevan tirada (docs/checklist-motor-vs-prosa-2026-09-24.md
 // / prompt-gasto-recursos.md): el nota explica el efecto, "Usar" solo gasta
@@ -126,6 +127,7 @@ export function accionesDeFarmacos(sheet: Sheet, notasEspecie: string[]): Accion
       ...(con.dificultad !== undefined && { dificultadSugerida: con.dificultad }),
       ...(con.condiciones && { condiciones: con.condiciones }),
       farmacoId: f.id,
+      origen: { tipo: "farmaco", id: f.id, label: f.label },
     });
   }
   return acciones;
@@ -144,6 +146,7 @@ export function accionesDirectasDeFarmacos(sheet: Sheet, notasEspecie: string[])
       nota: conNotas(`${f.resumen} Quedan ${cantidad}.`, notasEspecie),
       confirmarLabel: "Usar",
       farmacoId: f.id,
+      origen: { tipo: "farmaco", id: f.id, label: f.label },
     });
   }
   return acciones;
@@ -175,6 +178,12 @@ const ETIQUETA_ULTRA = "Bajo Ultra Estimulante";
 const NOTA_ULTRA =
   "30 minutos desde la dosis. Al terminar: 2 de fatiga y −1 en tiradas mentales durante una hora (a mano).";
 
+// Origen: un estado («estar bajo sus efectos»), no la dosis de esta ficha. La casilla sale en
+// cualquier ficha, tenga o no el fármaco, así que "te afecta" no la lista (lo general).
+// TODO(revisar): no existe un estado «Bajo Ultra Estimulante» en el catálogo de estados; el id
+// es solo el de la casilla. Opción conservadora: tipo "estado" para que no cuente como ítem.
+const ORIGEN_ULTRA: OrigenAporte = { tipo: "estado", id: "farmaco_ultra_estimulante", label: ETIQUETA_ULTRA };
+
 const CASILLAS_ULTRA_ESTIMULANTE: CondicionTirada[] = [
   {
     id: ID_CASILLA_ULTRA_INICIATIVA,
@@ -184,6 +193,7 @@ const CASILLAS_ULTRA_ESTIMULANTE: CondicionTirada[] = [
     noApila: "ultra_estimulante",
     nota: NOTA_ULTRA,
     alcance: { tipo: "grupo", grupo: "Iniciativa" },
+    origen: ORIGEN_ULTRA,
   },
   {
     id: ID_CASILLA_ULTRA_FISICAS,
@@ -193,11 +203,13 @@ const CASILLAS_ULTRA_ESTIMULANTE: CondicionTirada[] = [
     noApila: "ultra_estimulante",
     nota: NOTA_ULTRA,
     alcance: { tipo: "aplicado", aplicados: ["fortaleza", "potencia", "reflejos"], salvoGrupo: "Salvaciones" },
+    origen: ORIGEN_ULTRA,
   },
 ];
 
 export function casillasDeFarmacos(sheet: Pick<Sheet, "farmacos">): CondicionTirada[] {
-  if (!CON_EFECTO_ANTIPATOGENO.some((id) => (sheet.farmacos[id] ?? 0) > 0)) return CASILLAS_ULTRA_ESTIMULANTE;
+  const conAntipatogeno = FARMACOS.find((f) => CON_EFECTO_ANTIPATOGENO.includes(f.id) && (sheet.farmacos[f.id] ?? 0) > 0);
+  if (!conAntipatogeno) return CASILLAS_ULTRA_ESTIMULANTE;
   return [
     ...CASILLAS_ULTRA_ESTIMULANTE,
     {
@@ -210,6 +222,7 @@ export function casillasDeFarmacos(sheet: Pick<Sheet, "farmacos">): CondicionTir
         "Solo envenenado, enfermo o intoxicado: la segunda salvación que da el Antipatógeno (o un Gel " +
         "Sanador, que incluye su efecto). Revierte un nivel de gravedad. Uno cada 8 horas; la dosis se " +
         "gasta con su «Usar».",
+      origen: { tipo: "farmaco", id: conAntipatogeno.id, label: conAntipatogeno.label },
     },
   ];
 }

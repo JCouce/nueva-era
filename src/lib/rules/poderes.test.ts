@@ -711,6 +711,7 @@ describe("Esquiva levitando con Física", () => {
       habilidad: "tecnociencia",
       especialidad: "fisica",
       etiqueta: "Levitando: Física",
+      origen: { tipo: "poder", id: "traslacion", label: "Traslación" },
     });
     // otras tiradas no
     const salv = ACCIONES.find((a) => a.id === "salv_fortaleza")!;

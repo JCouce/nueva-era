@@ -18,6 +18,7 @@ import { especieDeFicha } from "./especie";
 import { ID_BRAZO_BIONICO, nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import type { AtributosExtremidad, CondicionTirada } from "./condiciones";
 import type { Sheet } from "./sheet";
+import type { OrigenAporte } from "./origen";
 
 export const ID_CASILLA_BRAZO = "brazo_bionico";
 export const ID_BLOQUEAR_BRAZO = "aumentos_bloquear_brazo";
@@ -109,8 +110,19 @@ export function blindajeDelBrazo(sheet: Pick<Sheet, "equipo">): { valor: number;
   return e?.extremidad.blindaje ? { valor: e.extremidad.blindaje, fuente: e.fuente } : null;
 }
 
+// El ítem de lo que pone el brazo en una tirada (fase 2): la pieza, con el nombre del catálogo.
+export function origenDeBrazo(brazo: Pick<BrazoBionico, "instanciaId">): OrigenAporte {
+  return { tipo: "aumento", id: ID_BRAZO_BIONICO, label: aumentoPorId(ID_BRAZO_BIONICO)?.label ?? ID_BRAZO_BIONICO, instanciaId: brazo.instanciaId };
+}
+
 function atributosDeBrazo(brazo: BrazoBionico, danioDeFuerza: boolean): AtributosExtremidad {
-  return { fuente: brazo.fuente, fuerza: brazo.fuerza, agilidad: brazo.agilidad, ...(danioDeFuerza && { danioDeFuerza: true as const }) };
+  return {
+    fuente: brazo.fuente,
+    fuerza: brazo.fuerza,
+    agilidad: brazo.agilidad,
+    ...(danioDeFuerza && { danioDeFuerza: true as const }),
+    origen: origenDeBrazo(brazo),
+  };
 }
 
 // ── Casilla "Con el brazo biónico" ─────────────────────────────────────
@@ -162,6 +174,7 @@ export function casillaBrazo(brazo: BrazoBionico, a: AtaqueParaBrazo): Condicion
     nota,
     extremidad: atributosDeBrazo(brazo, a.danioDeFuerza),
     ...(letal && { danio: { categoria: "Letal" } }),
+    origen: origenDeBrazo(brazo),
   };
 }
 

@@ -38,6 +38,7 @@ import type { CondicionTirada } from "./condiciones";
 import type { OperacionEstado } from "./vidaPorEstados";
 import { ajustarVida, pagarFatiga, topesDeVida } from "./vitalidad";
 import type { Sheet } from "./sheet";
+import { origenDePieza, type OrigenAporte } from "./origen";
 import { esEstadoDeAumento, estadoPorId } from "../catalog/estados";
 
 // Lo que hace la acción además de cobrar:
@@ -116,7 +117,7 @@ export const SIN_ACCIONES_DE_AUMENTOS: AccionesDeAumentos = { filas: [], directa
 const NOTA_INTRUSO =
   "El intruso tira cada turno lo que proceda por Resonancia (acción compleja, con concentración) y la dificultad sube 1 por turno. La app no tira por él.";
 
-type Aporte = { fuente: string; acciones: AccionAumentoCatalogo[]; defensa: DefensaIntrusion | null };
+type Aporte = { fuente: string; acciones: AccionAumentoCatalogo[]; defensa: DefensaIntrusion | null; origen: OrigenAporte };
 
 function aportes(sheet: Pick<Sheet, "equipo">): Aporte[] {
   const activas = operacionesActivas(sheet);
@@ -129,14 +130,16 @@ function aportes(sheet: Pick<Sheet, "equipo">): Aporte[] {
       const opcion = cat.eleccion?.opciones.find((o) => o.id === pieza.eleccion);
       const acciones = [...(cat.acciones ?? []), ...(opcion?.acciones ?? [])];
       if (acciones.length === 0) return [];
-      return [{ fuente: opcion?.acciones ? `${cat.label} (${opcion.label})` : cat.label, acciones, defensa: null }];
+      return [
+        { fuente: opcion?.acciones ? `${cat.label} (${opcion.label})` : cat.label, acciones, defensa: null, origen: origenDePieza("aumento", cat, pieza.instanciaId) },
+      ];
     }
     if (pieza.nivel === undefined) return [];
     const niveles = nivelesHasta(cat.niveles, pieza.nivel);
     const acciones = acumulaPorClave(niveles.map((n) => n.acciones ?? []), (a) => a.id);
     const defensa = [...niveles].reverse().find((n) => n.defensaIntrusion)?.defensaIntrusion ?? null;
     if (acciones.length === 0 && !defensa) return [];
-    return [{ fuente: `${cat.label} ${pieza.nivel}`, acciones, defensa }];
+    return [{ fuente: `${cat.label} ${pieza.nivel}`, acciones, defensa, origen: origenDePieza("aumento", cat, pieza.instanciaId) }];
   });
 }
 
@@ -252,8 +255,8 @@ export function accionesDeAumentos(
     for (const a of ap.acciones) {
       filas.push(
         a.tirada
-          ? { tipo: "tirada", accion: conTirada(a, a.tirada, ap.fuente, sheet.fatigaActual) }
-          : { tipo: "directa", accion: directa(a, ap.fuente, sheet.fatigaActual, estados) },
+          ? { tipo: "tirada", accion: { ...conTirada(a, a.tirada, ap.fuente, sheet.fatigaActual), origen: ap.origen } }
+          : { tipo: "directa", accion: { ...directa(a, ap.fuente, sheet.fatigaActual, estados), origen: ap.origen } },
       );
     }
     if (ap.defensa) {

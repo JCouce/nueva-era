@@ -32,6 +32,7 @@ import type { BonoPorTramo, CondicionTirada, OpcionCondicion } from "./condicion
 import { acumulaPorClave, nivelesHasta } from "./equipo";
 import type { TextoEnTirada } from "./especie";
 import type { Sheet } from "./sheet";
+import { origenDePieza, type OrigenAporte } from "./origen";
 
 // ── Amenazas de las salvaciones ─────────────────────────────────────────
 
@@ -112,21 +113,24 @@ export type BlindajeReactivo = { etiqueta: string; valor: number; costeFatiga: n
 
 // ── Lo que aporta cada aumento que funciona ─────────────────────────────
 
-type Aporte = { fuente: string; efectos: EfectosTiradaAumento };
+// `origen` (fase 2): la pieza que lo da. Sin él, lo de los activables y la armadura, que entran
+// aquí solo para el selector "Contra…".
+type Aporte = { fuente: string; efectos: EfectosTiradaAumento; origen?: OrigenAporte };
 
-function deOperacion(op: OperacionGenetica, eleccion: string | undefined, activas: ReadonlySet<string>): Aporte[] {
+function deOperacion(op: OperacionGenetica, eleccion: string | undefined, activas: ReadonlySet<string>, origen: OrigenAporte): Aporte[] {
   const oculta = op.casillasOcultasCon !== undefined && activas.has(op.casillasOcultasCon);
-  const aportes: Aporte[] = [{ fuente: op.label, efectos: oculta ? { ...op, casillas: [] } : op }];
+  const aportes: Aporte[] = [{ fuente: op.label, efectos: oculta ? { ...op, casillas: [] } : op, origen }];
   const opcion: OpcionAumento | undefined = op.eleccion?.opciones.find((o) => o.id === eleccion);
-  if (opcion) aportes.push({ fuente: `${op.label} (${opcion.label})`, efectos: opcion });
+  if (opcion) aportes.push({ fuente: `${op.label} (${opcion.label})`, efectos: opcion, origen });
   return aportes;
 }
 
 // Niveles acumulados: casillas por id y salvaciones por amenazas, el nivel alto sustituye.
-function deImplante(imp: Implante, nivel: number): Aporte {
+function deImplante(imp: Implante, nivel: number, origen: OrigenAporte): Aporte {
   const niveles = nivelesHasta(imp.niveles, nivel);
   return {
     fuente: `${imp.label} ${nivel}`,
+    origen,
     efectos: {
       casillas: acumulaPorClave(niveles.map((n) => n.condiciones ?? []), (c) => c.id),
       salvaciones: acumulaPorClave(niveles.map((n) => n.salvaciones ?? []), (e) => e.contra.join("+")),
@@ -140,8 +144,9 @@ function aportesDeAumentos(sheet: Pick<Sheet, "equipo">): Aporte[] {
   return sheet.equipo.flatMap((pieza): Aporte[] => {
     const cat = aumentoPorId(pieza.catalogoId);
     if (!cat) return [];
-    if (cat.familia === "operacionGenetica") return activas.has(cat.id) ? deOperacion(cat, pieza.eleccion, activas) : [];
-    return pieza.nivel === undefined ? [] : [deImplante(cat, pieza.nivel)];
+    const origen = origenDePieza("aumento", cat, pieza.instanciaId);
+    if (cat.familia === "operacionGenetica") return activas.has(cat.id) ? deOperacion(cat, pieza.eleccion, activas, origen) : [];
+    return pieza.nivel === undefined ? [] : [deImplante(cat, pieza.nivel, origen)];
   });
 }
 
@@ -246,30 +251,32 @@ export function casillasDeAumentos(
     ...deEquipo.map((a): Aporte => ({ fuente: a.fuente, efectos: { salvaciones: a.efectos } })),
   ];
   const casillas = aportes.flatMap((a) =>
-    (a.efectos.casillas ?? []).map((c): CondicionTirada => ({ ...c, etiqueta: `${c.etiqueta} · ${a.fuente}` })),
+    (a.efectos.casillas ?? []).map((c): CondicionTirada => ({ ...c, etiqueta: `${c.etiqueta} · ${a.fuente}`, ...(a.origen && { origen: a.origen }) })),
   );
   return [...casillas, ...selectoresContra(aportes, inmunidadesDe(sheet))];
 }
 
 export function textosDeAumentos(sheet: Pick<Sheet, "equipo">): TextoEnTirada[] {
   return aportesDeAumentos(sheet).flatMap((a) =>
-    (a.efectos.textos ?? []).map((t) => ({ en: t.en, texto: t.texto, fuente: a.fuente, soloEnCritico: false })),
+    (a.efectos.textos ?? []).map((t) => ({ en: t.en, texto: t.texto, fuente: a.fuente, soloEnCritico: false, ...(a.origen && { origen: a.origen }) })),
   );
 }
 
 // Ventajas sin casilla de los aumentos que funcionan, con su alcance y su fuente
 // (conExtrasDeFicha las pone en `Accion.ventaja` si la tirada no trae otra).
-export type VentajaFija = { alcance: AlcanceModificador; fuente: string };
+export type VentajaFija = { alcance: AlcanceModificador; fuente: string; origen?: OrigenAporte };
 
 export function ventajasFijasDeAumentos(sheet: Pick<Sheet, "equipo">): VentajaFija[] {
-  return aportesDeAumentos(sheet).flatMap((a) => (a.efectos.ventajasFijas ?? []).map((v) => ({ alcance: v.alcance, fuente: a.fuente })));
+  return aportesDeAumentos(sheet).flatMap((a) =>
+    (a.efectos.ventajasFijas ?? []).map((v) => ({ alcance: v.alcance, fuente: a.fuente, ...(a.origen && { origen: a.origen }) })),
+  );
 }
 
 // Bonos por opción de los aumentos que funcionan, con su alcance y su fuente (conExtrasDeFicha
 // los añade a `bonosTramo` de la tirada, como los de las dotes).
 export function bonosTramoDeAumentos(sheet: Pick<Sheet, "equipo">): { alcance: AlcanceModificador; bono: BonoPorTramo }[] {
   return aportesDeAumentos(sheet).flatMap((a) =>
-    (a.efectos.bonosTramo ?? []).map((b) => ({ alcance: b.alcance, bono: { ...b.bono, fuente: a.fuente } })),
+    (a.efectos.bonosTramo ?? []).map((b) => ({ alcance: b.alcance, bono: { ...b.bono, fuente: a.fuente, ...(a.origen && { origen: a.origen }) } })),
   );
 }
 

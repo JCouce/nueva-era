@@ -19,6 +19,8 @@ import {
   type ModificadorConFuente,
 } from "./modificadores";
 import type { DetallePoder } from "./poderes";
+import type { OrigenAporte } from "./origen";
+import type { TextoEnTirada } from "./especie";
 import type { TipoDanio } from "../catalog/tiposDanio";
 import type { DanioExtra } from "./armasModificadas";
 import { etiquetaEspecialidad, type EspecialidadId } from "../catalog/especialidades";
@@ -37,9 +39,15 @@ export const DIFICULTADES = [
 // Margen de éxitos o fracasos acumulados que convierte un resultado en crítico.
 export const MARGEN_CRITICO = 6;
 
+// Origen de los aportes (fase 2, docs/aportes/plan.md): cada campo que trae algo de un ítem lleva
+// su `origen` (OrigenAporte) puesto por quien lo genera; sin él, es de la propia tirada. Los
+// que son texto suelto (`ventaja`, `subeGradoFijo`) lo llevan al lado (`origenVentaja`,
+// `origenSubeGrado`). `origen` de la Accion: el ítem que la crea (arma, herramienta, dote,
+// aumento, poder, fármaco), para no tener que sacarlo del id; sin él, es de catálogo (ACCIONES).
 export type Accion = {
   id: string;
   label: string;
+  origen?: OrigenAporte;
   // "Ataques" y "Herramientas" no viven en ACCIONES ni en GRUPOS_ACCION: los
   // generan combate.ts y herramientas.ts a partir del equipo, no este
   // catálogo fijo.
@@ -71,7 +79,7 @@ export type Accion = {
   // 2026-09-24 (docs/sistema.md, pregunta 25b). Se pintan en
   // ResultadoTirada.tsx tras resolver el daño, no en `nota` (que es
   // información sobre ESTA tirada, no un aviso para otra).
-  efectos?: { fuente: string; texto: string }[];
+  efectos?: { fuente: string; texto: string; origen?: OrigenAporte }[];
   // Habilidad que el jugador puede usar en su lugar con una casilla de la fila
   // (Levitar: esquivar con Física). Mismo patrón que `aplicadoSutil`, pero sobre
   // la habilidad; la especialidad, si la nombra, se resuelve sola (ver
@@ -82,6 +90,7 @@ export type Accion = {
     especialidad?: EspecialidadId;
     etiqueta: string;
     ajuste?: { valor: number; fuente: string };
+    origen?: OrigenAporte;
   };
   // Regla general (docs/sistema.md §3, usuario 2026-10-23): la tirada que no nombra
   // especialidad suma la habilidad entera; la que la nombra, entera si la ficha la tiene y a
@@ -108,14 +117,15 @@ export type Accion = {
   // Crítico con menos éxitos, fijo y sin casilla (Crítico Mejorado: 5 en vez de 6). Lo pone
   // conExtrasDeFicha (fichaResuelta.ts); montarTirada lo junta con los márgenes de las
   // casillas (gana el más bajo) y lo enseña en las notas del resultado.
-  criticoFijo?: { margen: number; fuente: string };
+  criticoFijo?: { margen: number; fuente: string; origen?: OrigenAporte };
   // Fallo → fallo crítico sin casilla, en las tiradas de ese alcance (Rigidez narcisista de
   // Elión: Empatía, Humor o Negociación). Lo pone conExtrasDeFicha con las especialidades
   // posibles; montarTirada lo vuelve a mirar con las de verdad (la elegida en Convencer).
-  falloCritico?: { alcance: AlcanceModificador; fuente: string };
+  falloCritico?: { alcance: AlcanceModificador; fuente: string; origen?: OrigenAporte };
   // Fracaso → éxito fijo y sin casilla (Velocista en Carrera), con su fuente. Lo pone
   // conExtrasDeFicha; montarTirada lo pasa a TiradaMontada.subeGrado como el de una casilla.
   subeGradoFijo?: string;
+  origenSubeGrado?: OrigenAporte;
   // Como `efectoCritico`, pero solo con crítico natural (margen ≥ MARGEN_CRITICO, sin contar el
   // que da una conversión éxito → crítico): Gran Puntería en Apuntar. Lo pinta
   // ResultadoTirada.tsx con `resultado.criticoNatural`.
@@ -126,6 +136,11 @@ export type Accion = {
   // Ventaja (Alerta con Resonancia 4): se tiran dos d12 y vale el mejor. El
   // texto es la fuente, para enseñarla en el modal.
   ventaja?: string;
+  origenVentaja?: OrigenAporte;
+  // Textos de ítem que conExtrasDeFicha ha pegado a `nota` / `efectoCritico` /
+  // `efectoCriticoNatural` (conTextosEnTirada), tal cual y con su origen: los mismos que se leen
+  // en esos textos, sin tener que buscar «(fuente)» en ellos (E7 del inventario).
+  textosDeFicha?: TextoEnTirada[];
   // Poderes psiónicos (tiradaDePoder, poderes.ts) y acciones de dote (dotesAcciones.ts):
   // texto por grado propio y lo que tira el objetivo, para el panel de resultado.
   poder?: DetallePoder;
@@ -178,7 +193,7 @@ export type Accion = {
   }[];
   // "Ignora N puntos de blindaje" del arma (Kerzul): aviso en el resultado del
   // daño, con su fuente — el blindaje es del objetivo, se resta a mano.
-  ignoraBlindaje?: { valor: number; fuente: string };
+  ignoraBlindaje?: { valor: number; fuente: string; origen?: OrigenAporte };
   // Controles del modal (ver condiciones.ts): tramo de distancia, apoyado con
   // bípode, atacantes adicionales... Las tiradas de ataque las llevan
   // calculadas al vuelo desde el equipo (ver combate.ts); las demás las
@@ -189,7 +204,7 @@ export type Accion = {
   // números fantasma — el peso del Lanzagranadas Integrado en el arma que lo
   // lleva, la dificultad -2 fija de su propio disparo... Se suman al
   // modificador base y se pintan como una línea más del desglose.
-  ajustesFijos?: { valor: number; fuente: string }[];
+  ajustesFijos?: { valor: number; fuente: string; origen?: OrigenAporte }[];
   // Bonos que dependen del tramo ya elegido en la condición "tramo" (la mira
   // telescópica solo ayuda a media y larga): no se funden en el valor de esa
   // opción, salen como su propia línea del desglose — ver condiciones.ts.
@@ -254,6 +269,8 @@ export type Accion = {
 export type AccionDirecta = {
   id: string;
   label: string;
+  // Como en Accion: el ítem que la crea.
+  origen?: OrigenAporte;
   grupo: GrupoAccion;
   // Como en Accion ("Levantar [escudo]": levantar_escudo), para los textos de dote.
   familiaArma?: FamiliaArma;

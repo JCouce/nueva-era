@@ -486,7 +486,12 @@ describe("mejoras que afectan a la distancia", () => {
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Telum")!;
     // La etiqueta explica por qué una mira de nivel 3 suma solo +1 (2026-10-24).
     assert.deepEqual(fila.bonosTramo, [
-      { fuente: "Mira Telescópica 3 (la integrada ya va en la dificultad)", porTramo: { media: 1, larga: 1 }, noApila: "vision_aumentada" },
+      {
+        fuente: "Mira Telescópica 3 (la integrada ya va en la dificultad)",
+        porTramo: { media: 1, larga: 1 },
+        noApila: "vision_aumentada",
+        origen: { tipo: "equipo", id: "mira_telescopica", label: "Mira Telescópica", instanciaId: "m1" },
+      },
     ]);
   });
 
@@ -512,7 +517,7 @@ describe("mejoras que afectan a la distancia", () => {
     assert.equal(opcion(tramo, "media"), 0);
     assert.equal(opcion(tramo, "larga"), -2);
     assert.deepEqual(fila.bonosTramo, [
-      { fuente: "Mira Telescópica", porTramo: { media: 1, larga: 1 }, noApila: "vision_aumentada" },
+      { fuente: "Mira Telescópica", porTramo: { media: 1, larga: 1 }, noApila: "vision_aumentada", origen: { tipo: "equipo", id: "mira_telescopica", label: "Mira Telescópica", instanciaId: "mira1" } },
     ]);
   });
 
@@ -527,7 +532,7 @@ describe("mejoras que afectan a la distancia", () => {
     });
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
     assert.deepEqual(fila.bonosTramo, [
-      { fuente: "Mira Telescópica", porTramo: { media: 2, larga: 2 }, noApila: "vision_aumentada" },
+      { fuente: "Mira Telescópica", porTramo: { media: 2, larga: 2 }, noApila: "vision_aumentada", origen: { tipo: "equipo", id: "mira_telescopica", label: "Mira Telescópica", instanciaId: "mira1" } },
     ]);
   });
 
@@ -570,7 +575,11 @@ describe("Accion.efectos (objetivo_tercero / tirada propia distinta, docs/sistem
     // ya no existe como condición, así que no puede colarse aquí.
     assert.equal(fila.condiciones?.filter((c) => c.id.startsWith("activo")).length, 1);
     assert.deepEqual(fila.efectos, [
-      { fuente: "Puntero Láser", texto: "Con el puntero activo: -2 a tu Sigilo (percepción visual)." },
+      {
+        fuente: "Puntero Láser",
+        texto: "Con el puntero activo: -2 a tu Sigilo (percepción visual).",
+        origen: { tipo: "equipo", id: "puntero_laser", label: "Puntero Láser", instanciaId: "p1" },
+      },
     ]);
     assert.doesNotMatch(fila.nota ?? "", /Sigilo/);
   });
@@ -604,6 +613,7 @@ describe("Accion.efectos (objetivo_tercero / tirada propia distinta, docs/sistem
       {
         fuente: "Silenciador",
         texto: "Ataque sorpresivo con silenciador: -2 (no el habitual) a la Alerta Activa de quien te detecta.",
+        origen: { tipo: "equipo", id: "silenciador", label: "Silenciador", instanciaId: "s1" },
       },
     ]);
     assert.doesNotMatch(fila.nota ?? "", /Alerta Activa/);
@@ -634,6 +644,7 @@ describe("Accion.efectos (objetivo_tercero / tirada propia distinta, docs/sistem
       {
         fuente: "Sistema de Retroceso",
         texto: "En modo automático: +1 a la dificultad de Esquiva de quien recibe el disparo.",
+        origen: { tipo: "equipo", id: "sistema_retroceso", label: "Sistema de Retroceso", instanciaId: "r1" },
       },
     ]);
     assert.doesNotMatch(fila.nota ?? "", /dificultad de Esquiva/);
@@ -656,7 +667,13 @@ describe("lanzagranadas integrado", () => {
     assert.equal(opcion(tramo, "corta"), 2);
     assert.equal(opcion(tramo, "media"), 0);
     assert.equal(opcion(tramo, "larga"), -2);
-    assert.deepEqual(fila.ajustesFijos, [{ valor: -1, fuente: "Lanzagranadas Integrado" }]);
+    assert.deepEqual(fila.ajustesFijos, [
+      {
+        valor: -1,
+        fuente: "Lanzagranadas Integrado",
+        origen: { tipo: "equipo", id: "lanzagranadas_integrado", label: "Lanzagranadas Integrado", instanciaId: "lanza1" },
+      },
+    ]);
   });
 
   test("aparece como tirada aparte, con dificultad fija -2 y selector de granada", () => {
@@ -746,7 +763,14 @@ describe("Sistema de Retroceso (por arma, 2026-10-24)", () => {
     let s = equipar(defaultSheet(), { instanciaId: "fa", catalogoId: "fusil_asalto_impetus" });
     s = retroceso(s, "fa");
     const fila = accionesDeAtaque(s).find((t) => t.label === "Disparar con Impetus")!;
-    assert.deepEqual(fila.bonosTramo, [{ fuente: "Sistema de Retroceso", condicion: "modo", porTramo: { "1": 1 } }]);
+    assert.deepEqual(fila.bonosTramo, [
+      {
+        fuente: "Sistema de Retroceso",
+        condicion: "modo",
+        porTramo: { "1": 1 },
+        origen: { tipo: "equipo", id: "sistema_retroceso", label: "Sistema de Retroceso", instanciaId: "sr_fa" },
+      },
+    ]);
     assert.equal(valorBonosTramo(fila.bonosTramo!, { modo: "0" }), 0);
     assert.equal(valorBonosTramo(fila.bonosTramo!, { modo: "1" }), 1);
   });

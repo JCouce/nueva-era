@@ -30,14 +30,14 @@ Cómo leer las columnas:
 
 | Campo | Tipo de aporte | Blanco | Entrega | Momento (si Texto) | Lo produce (función:archivo) | Lo consume en UI (componente) | Encaja / excepción / deuda |
 |---|---|---|---|---|---|---|---|
-| `id` | — identidad (y clave de ★) | la hoja | — | — | `ACCIONES` (acciones.ts:370); generadores: `` `ataque_fuego_${instanciaId}` `` (combate.ts:393), `` `herramienta_${…}` `` (herramientas.ts:49), `` `volar_${…}` `` (movimiento.ts:39), `` `farmaco_${id}` `` (farmacos.ts:118), id de acción de poder/dote/aumento | `estrella(id)` y `memoria[id]` (AccionesTab), key de `HojaTirada`, `teAfecta` (`ACCIONES.find`) | deuda (fase 2): la instancia va dentro del string; nadie la lee de ahí (lo prohíbe el comentario de `recursoInstanciaId`) |
+| `id` | — identidad (y clave de ★) | la hoja | — | — | `ACCIONES` (acciones.ts:370); generadores: `` `ataque_fuego_${instanciaId}` `` (combate.ts:393), `` `herramienta_${…}` `` (herramientas.ts:49), `` `volar_${…}` `` (movimiento.ts:39), `` `farmaco_${id}` `` (farmacos.ts:118), id de acción de poder/dote/aumento | `estrella(id)` y `memoria[id]` (AccionesTab), key de `HojaTirada`, `teAfecta` (`ACCIONES.find`) | deuda (fase 2): la instancia va dentro del string; nadie la lee de ahí (lo prohíbe el comentario de `recursoInstanciaId`). **Fase 2: resuelto** con `Accion.origen` (el ítem que la crea, con `instanciaId`) |
 | `label` | — presentación | la hoja | — | — | ídem | `HojaTirada`, `FilaTirada`, `AccionModal` (título), `teAfecta` (no repite lo que ya dice el label) | encaja |
 | `grupo` | — identidad / blanco transversal (`grupo`) | la hoja | — | — | generadores | `aBasicas`, títulos de sección y `conDado` (AccionesTab:1404-1414), `grupo === "Psiónica"/"Aumentos"` en `tirar()` y en el `bloqueo` del modal (AccionesTab:1812-1817) | deuda (fase 3): la UI reparte hojas por `grupo` |
 | `aplicado` | — identidad (dato de Resolución base) | la hoja | — | — | generadores; `tiradaLibre` (acciones.ts:640) | `BarraSalvaciones` (icono), `HojaTirada` (abbr, vía montada), `AccionModal` (libre), `hojasArbol.aplicado` (AccionesTab:1435) | encaja |
 | `aplicadoSutil` | Resolución | la hoja | casilla (hoja) | — | `tiradaDeArmaMelee` (combate.ts:809), `tiradaBloqueoDeArmaMelee` (combate.ts:875), solo con `extrasDotes.permisos.sutil` | `HojaTirada`/`FilaTirada` (chip Sutil; preselección comparando `ficha.aplicados`), `tirar()` (`danioSutil`, `formulaDanio.replace(/^Fue/, "Pot")`) | deuda (fase 3/5): la preselección y la fórmula Fue→Pot son regla en la UI |
 | `habilidad` | — anclaje (habilidad) | — | — | — | generadores | `aBasicas` y `hojasArbol.habilidad` (AccionesTab), `HojaTirada` (vía montada) | encaja |
 | `nota` | Texto | la hoja | fijo | antes | `ACCIONES`; `notaConPerfil` (combate.ts:702), `conTirada` (aumentosAcciones.ts:215), `accionesDeFarmacos` (farmacos.ts:107, con `notasFarmacos`); `conTextosEnTirada` (textosTirada.ts:70) pega los textos de ítems con «(fuente)» | `FilaTirada` (AccionesTab:410), `AccionModal` (prop `nota`), `teAfecta` (busca «(fuente)»). **`HojaTirada` no la pinta** | deuda (fases 2 y 4): un string con textos de varios ítems; el árbol no enseña el texto de «antes» |
-| `efectoCritico` | Texto | la hoja | fijo | después (crítico) | `tiradaDeArmaFuego`/`tiradaDeArmaMelee`/`tiradaLanzarArmaMelee`/`tiradaGolpeBayoneta`/`tiradaDeProyectorPulso`/`tiradaGolpeAguijon` (combate.ts), `conTextosEnTirada`; `efectoCriticoConMunicion` (acciones.ts:841) lo cambia al tirar | `tirar()` → `ResultadoTirada` (:239-263); `teAfecta` | deuda (fase 2): textos de ítems concatenados en el string |
+| `efectoCritico` | Texto | la hoja | fijo | después (crítico) | `tiradaDeArmaFuego`/`tiradaDeArmaMelee`/`tiradaLanzarArmaMelee`/`tiradaGolpeBayoneta`/`tiradaDeProyectorPulso`/`tiradaGolpeAguijon` (combate.ts), `conTextosEnTirada`; `efectoCriticoConMunicion` (acciones.ts:841) lo cambia al tirar | `tirar()` → `ResultadoTirada` (:239-263); `teAfecta` | deuda (fase 2): textos de ítems concatenados en el string. **Fase 2: origen resuelto** (`Accion.textosDeFicha`, con `origen`); el string sigue igual hasta la fase 4 |
 | `desarmado` | — identidad (casa blancos transversales) | — | — | — | `tiradaDeArmaMelee` (combate.ts:788) | `teAfecta` (contexto) | encaja |
 | `contundente` | — identidad | — | — | — | `tiradaDeArmaMelee` (combate.ts:817) | `teAfecta` (contexto) | encaja |
 | `efectos[]` (`{fuente, texto}`) | Texto | otra tirada / tercero | fijo | después (tras el daño) | `efectosDeMejoras` (combate.ts:188), `tiradaDeArmaFuego`, `efectosProyectorPulso` (combate.ts:1012), `tiradaDePoder` (poderes.ts:582), `conTirada` (aumentosAcciones.ts:236) | `tirar()` → `ResultadoTirada` (:324); `teAfecta` | encaja (origen solo texto) |
@@ -49,10 +49,10 @@ Cómo leer las columnas:
 | `especialidadAElegir` | anclaje (jugador) | — | casilla (hoja) | — | `ACCIONES` (acciones.ts:624) | `HojaTirada`/`FilaTirada` (chips; `elegirEspecialidad`) | deuda (fase 3): cuelga de la habilidad, no de cada especialidad candidata (ArbolHabilidades.tsx:150 «o a elegir, de la habilidad») |
 | `familiaArma` | — identidad (blanco transversal `familiaArma`) | — | — | — | generadores de arma (combate.ts) | `teAfecta` (contexto) | encaja |
 | `empleoArma` | — identidad | — | — | — | generadores de arma (combate.ts) | `teAfecta` (contexto) | encaja |
-| `criticoFijo` | Resolución | la hoja (origen: especialidad de arma o `tiradaId`) | fijo | — | `conExtrasDeFicha` (fichaResuelta.ts:422-434, de `extrasDotes.criticos` y `grados`) | vía montada (`margenes`, `notas`) → `AccionModal`; `teAfecta` | encaja (las familias que lo admiten, `FAMILIAS_CON_CRITICO_FIJO`, están en código y no en el dato: deuda menor, fase 2) |
+| `criticoFijo` | Resolución | la hoja (origen: especialidad de arma o `tiradaId`) | fijo | — | `conExtrasDeFicha` (fichaResuelta.ts:422-434, de `extrasDotes.criticos` y `grados`) | vía montada (`margenes`, `notas`) → `AccionModal`; `teAfecta` | encaja (las familias que lo admiten, `FAMILIAS_CON_CRITICO_FIJO`, están en código y no en el dato: deuda menor, fase 2). **Fase 2: resuelto**: `familias` en el destino de la dote y en `CriticoDeDote`; `criticoFijo.origen` |
 | `falloCritico` | Resolución | transversal (especialidad) | fijo | — | `conExtrasDeFicha` (de `fallosCriticos`) | vía montada; `teAfecta` | encaja |
 | `subeGradoFijo` | Resolución | la hoja / transversal | fijo | — | `conExtrasDeFicha` (de `grados`) | vía montada (`subeGrado`) → `ResultadoTirada` (`cambioGrado`); `teAfecta` | encaja |
-| `efectoCriticoNatural` | Texto | la hoja | fijo | después (crítico natural) | `conTextosEnTirada` (`soloEnCriticoNatural`) | `tirar()` → `ResultadoTirada` (:243) | deuda (fase 2): string concatenado |
+| `efectoCriticoNatural` | Texto | la hoja | fijo | después (crítico natural) | `conTextosEnTirada` (`soloEnCriticoNatural`) | `tirar()` → `ResultadoTirada` (:243) | deuda (fase 2): string concatenado. **Fase 2: origen resuelto** (`textosDeFicha`); el string, fase 4 |
 | `dificultadSugerida` | — identidad (dato de la hoja) | la hoja | — | — | `ACCIONES` (:513, :524), `tiradaDePoder` (poderes.ts:584), `construir` (dotesAcciones.ts), `conTirada` (aumentosAcciones.ts:227), `accionesDeFarmacos` (farmacos.ts:126), `tiradaDeHerramienta` (herramientas.ts:57) | `dificultadInicial` y key de `AccionModal` (AccionesTab:1798, 1822), `FabricarSeccion`, `ReparaFabricaModal` | encaja |
 | `ventaja` | Resolución | la hoja / transversal | fijo | — | `tiradaDePoder` (`p.ventaja`), `conPsionicaEnTiradaFija` (poderes.ts:768), `conExtrasDeFicha` (de `ventajasFijas`) | vía montada → `AccionModal` (`tirarDado` con dos d12); `teAfecta` | encaja (fuente solo texto) |
 | `poder` | — contenedor (ver 1.4) | — | — | — | `tiradaDePoder` (poderes.ts:552), `construir` (dotesAcciones.ts:189) | `tirar()` → `ResultadoTirada` (:116, :236, :339) | encaja |
@@ -81,7 +81,7 @@ Cómo leer las columnas:
 | `modos[].danioSutil` | — dato de Resolución (daño con Sutil) | la hoja | casilla (hoja) | — | `modoConPerfil` (combate.ts:731), `tiradaDeArmaMelee` | `tirar()` | encaja |
 | `modos[].formulaDanio` | — dato de Acción | la hoja | — | — | generadores de arma | `tirar()` (fórmula, Fue→Pot con Sutil) | deuda (fase 3/5): el `replace` Fue→Pot vive en `tirar()` |
 | `modos[].categoriaDanio` | — dato de Acción | la hoja | — | — | generadores | `tirar()` (`categoriaConAjuste`) → `ResultadoTirada` (:287) | encaja |
-| `modos[].tipoDanio` | — dato de Acción / Resolución de otro ítem (Armas Modificadas) | daño | fijo | — | `modoConPerfil` (combate.ts:731) | `tirar()` → `ResultadoTirada` | deuda (fase 2): con Armas Modificadas es un aporte de otra pieza horneado en el generador, sin origen |
+| `modos[].tipoDanio` | — dato de Acción / Resolución de otro ítem (Armas Modificadas) | daño | fijo | — | `modoConPerfil` (combate.ts:731) | `tirar()` → `ResultadoTirada` | deuda (fase 2): con Armas Modificadas es un aporte de otra pieza horneado en el generador, sin origen. **Fase 2: sin resolver** (E9: ver la nota de la sección de origen) |
 | `modos[].danioExtra[]` | Resolución (daño) | daño | fijo | — | `modoConPerfil` (combate.ts:731) | `tirar()` → `ResultadoTirada` | deuda (fase 2): ídem |
 | `modos[].gasto` | Coste | la hoja | fijo (por modo) | — | `tiradaDeArmaFuego`, `tiradaDeArmamentoPesado`, `tiradaDeProyectorPulso`, `tiradaGolpeAguijon` | `tirar()` (`gastoTotal`), `AccionModal` (`avisoInsuficiente`) | encaja |
 | `danioAlFallar` | Resolución (daño) | la hoja | fijo | — | `tiradaDePoder` (poderes.ts) | `tirar()` → `danioInfo.alFallar` → `ResultadoTirada` | encaja |
@@ -117,9 +117,9 @@ Cómo leer las columnas:
 
 | Campo | Tipo de aporte | Blanco | Entrega | Momento (si Texto) | Lo produce (función:archivo) | Lo consume en UI (componente) | Encaja / excepción / deuda |
 |---|---|---|---|---|---|---|---|
-| `id` | — identidad (y id de uso en `usosEscena`) | — | — | — | catálogo (`NivelModulo.condiciones`, `ACCIONES`), `casillasDeEspecie` (especie.ts:371), `efectosDeDotes` (dotesEfectos.ts:249), `casillasDeAumentos` (aumentosTiradas.ts:238), `casillasDeFarmacos` (farmacos.ts:199), generadores | `AccionModal` (estado), `teAfecta` (`piezaPorCasilla`, `casillasDeCualquiera`) | deuda (fase 2): `teAfecta` deduce la pieza buscando el id en el catálogo (dos piezas iguales comparten id) |
+| `id` | — identidad (y id de uso en `usosEscena`) | — | — | — | catálogo (`NivelModulo.condiciones`, `ACCIONES`), `casillasDeEspecie` (especie.ts:371), `efectosDeDotes` (dotesEfectos.ts:249), `casillasDeAumentos` (aumentosTiradas.ts:238), `casillasDeFarmacos` (farmacos.ts:199), generadores | `AccionModal` (estado), `teAfecta` (`piezaPorCasilla`, `casillasDeCualquiera`) | deuda (fase 2): `teAfecta` deduce la pieza buscando el id en el catálogo (dos piezas iguales comparten id). **Fase 2: resuelto** con `CondicionTirada.origen` (con la instancia) |
 | `tipo` | — entrega (toggle / opción / contador) | — | casilla | — | ídem | `AccionModal` | encaja |
-| `etiqueta` | — presentación (y origen en texto) | — | — | — | ídem; las de dote llevan la fuente entre paréntesis | `AccionModal`, `teAfecta` (`nombreDeEtiqueta`, regex) | deuda (fase 2): el origen solo existe dentro de la etiqueta |
+| `etiqueta` | — presentación (y origen en texto) | — | — | — | ídem; las de dote llevan la fuente entre paréntesis | `AccionModal`, `teAfecta` (`nombreDeEtiqueta`, regex) | deuda (fase 2): el origen solo existe dentro de la etiqueta. **Fase 2: resuelto** (`CondicionTirada.origen`; la etiqueta ya no se lee) |
 | `alcance` | — blanco del aporte | transversal / la hoja | casilla | — | ídem | `indiceDeCondiciones` (equipo.ts:919); `teAfecta` | encaja |
 
 ### 2.2 Variante `toggle`
@@ -174,7 +174,7 @@ Cómo leer las columnas:
 
 | Campo | Tipo de aporte | Blanco | Entrega | Momento (si Texto) | Lo produce (función:archivo) | Lo consume en UI (componente) | Encaja / excepción / deuda |
 |---|---|---|---|---|---|---|---|
-| `fuente` | — origen (texto) | — | — | — | `bonosTramoDeMejoras` (combate.ts:213), `efectosDeDotes`, `bonosTramoDeAumentos` (aumentosTiradas.ts:270) | vía montada (`desglose`); `teAfecta` | deuda (fase 2): solo texto |
+| `fuente` | — origen (texto) | — | — | — | `bonosTramoDeMejoras` (combate.ts:213), `efectosDeDotes`, `bonosTramoDeAumentos` (aumentosTiradas.ts:270) | vía montada (`desglose`); `teAfecta` | deuda (fase 2): solo texto. **Fase 2: resuelto** (`BonoPorTramo.origen`) |
 | `porTramo` | Ajuste | la hoja | tramo | — | ídem | vía montada | encaja |
 | `condicion` | — dato de entrega (qué selector mira) | — | tramo | — | ídem («Apuntado», «modo», «Marcha») | `valorBonoTramo` | encaja |
 | `soloEnEspecialidad` | Habilitador (del aporte) | el bono | fijo | — | `efectosDeDotes` | `bonosTramoAplicables` (montaje) | encaja |
@@ -203,17 +203,17 @@ Producen todos: `resolverFicha` (fichaResuelta.ts:289-326) con `especieDeFicha` 
 | `disciplina` | Ajuste | derivado (nivel de disciplina) | fijo | — | especie (Resonancia +1) | no se pinta en Acciones | encaja |
 | `multiplicadorVida` | Resolución (cambia la fórmula, no suma) | derivado (vida) | fijo | — | `modificadoresDeAumentos` (Hipertrofia) | no se pinta en Acciones | encaja como Resolución; hoy vive en `Modificador` junto a los Ajustes |
 | `anulaPenalizadores` | Resolución | transversal (alcance) | fijo | — | `efectosDeActivables` (Proyección activa) | vía montada (`conPenalizadoresAnulados`) | encaja |
-| `origen` | — origen (categoría: especie/dote/aumento/equipo/estado) | — | — | — | todas | `teAfecta` (descarta `estado`) | deuda (fase 2): categoría, no ítem |
-| `fuente` | — origen (texto) | — | — | — | todas | desglose, `fuentesDeHabilidad`, `teAfecta` | deuda (fase 2): solo texto |
+| `origen` | — origen (categoría: especie/dote/aumento/equipo/estado) | — | — | — | todas | `teAfecta` (descarta `estado`) | deuda (fase 2): categoría, no ítem. **Fase 2: resuelto** con `item` (OrigenAporte; `origen` sigue siendo la categoría) salvo estados y umbrales (ver la sección de origen) |
+| `fuente` | — origen (texto) | — | — | — | todas | desglose, `fuentesDeHabilidad`, `teAfecta` | deuda (fase 2): solo texto. **Fase 2**: el ítem va en `item`; `fuente` se queda para el desglose |
 
 ### 3.2 Resto de extras
 
 | Campo | Tipo de aporte | Blanco | Entrega | Momento (si Texto) | Lo produce (función:archivo) | Lo consume en UI (componente) | Encaja / excepción / deuda |
 |---|---|---|---|---|---|---|---|
-| `indiceCondiciones` | — contenedor de casillas con alcance (Ajuste/Resolución/Coste/Texto según la casilla) | transversal | casilla | — | `indiceDeCondiciones` (equipo.ts:919) con equipo + `casillasDeEspecie` + `dotes.casillas` + `conUsosEscena(casillasDeAumentos)` + `casillasDeFarmacos` | `conExtrasDeFicha` vía `consultaIndiceCondiciones` (equipo.ts:976); `prepararPoder` (FilaPoder y AccionesTab le pasan el índice); `teAfecta` (`casillasDeCualquiera`, con una ficha vacía en caché de módulo) | deuda (fase 2): `CondicionIndexada` es `{condicion, orden}`, el origen se pierde al indexar |
+| `indiceCondiciones` | — contenedor de casillas con alcance (Ajuste/Resolución/Coste/Texto según la casilla) | transversal | casilla | — | `indiceDeCondiciones` (equipo.ts:919) con equipo + `casillasDeEspecie` + `dotes.casillas` + `conUsosEscena(casillasDeAumentos)` + `casillasDeFarmacos` | `conExtrasDeFicha` vía `consultaIndiceCondiciones` (equipo.ts:976); `prepararPoder` (FilaPoder y AccionesTab le pasan el índice); `teAfecta` (`casillasDeCualquiera`, con una ficha vacía en caché de módulo) | deuda (fase 2): `CondicionIndexada` es `{condicion, orden}`, el origen se pierde al indexar. **Fase 2: resuelto**: el origen va en la propia casilla (`CondicionTirada.origen`), ya no hace falta la caché |
 | `textosTirada[]` (`TextoEnTirada`: `en`, `texto`, `fuente`, `soloEnCritico`, `soloEnCriticoNatural`) | Texto | `en` (tiradaId, desarmado, aplicado, transversal) | fijo | antes (nota) / después (crítico, crítico natural) | `textosDeEspecie` (especie.ts:399), `efectosDeDotes`, `textosDeAumentos` (aumentosTiradas.ts:254), `efectosDeActivables` | `conExtrasDeFicha` → `conTextosEnTirada` (los pega a `nota`/`efectoCritico`); `prepararPoder`; `conExtrasDirectaDeFicha`; `teAfecta` (busca «(fuente)» en los strings) | deuda (fases 2 y 4): bien tipado aquí, se aplana a string al pegarlo |
 | `extrasDotes.bonosTramo` | Ajuste | transversal (alcance) | tramo | — | `efectosDeDotes` + `bonosTramoDeAumentos` | `conExtrasDeFicha` | encaja (origen en `bono.fuente`, texto) |
-| `extrasDotes.criticos` | Resolución | especialidad de arma (y familias de ataque en código) | fijo | — | `efectosDeDotes` (Crítico Mejorado) | `conExtrasDeFicha` | deuda menor (fase 2): el blanco «solo ataques» está en `FAMILIAS_CON_CRITICO_FIJO`, no en el dato |
+| `extrasDotes.criticos` | Resolución | especialidad de arma (y familias de ataque en código) | fijo | — | `efectosDeDotes` (Crítico Mejorado) | `conExtrasDeFicha` | deuda menor (fase 2): el blanco «solo ataques» está en `FAMILIAS_CON_CRITICO_FIJO`, no en el dato. **Fase 2: resuelto** (`CriticoDeDote.familias`, del destino) |
 | `extrasDotes.permisos.familias` | Habilitador (de hojas: «Bloquear con X») | familia de arma | fijo | — | `efectosDeDotes` (Bloqueo) | `accionesDeAtaque(…, ficha.extrasDotes.permisos)` (AccionesTab:810) | encaja (sin origen: lista de familias, no qué dote) |
 | `extrasDotes.permisos.sutil` | Habilitador (de un aporte: Sutil) | familia de arma | fijo | — | `efectosDeDotes` (Combate Sutil) | ídem | encaja (ídem) |
 | `extrasDotes.descuentos` | Ajuste sobre otro aporte | el contador «Atacantes adicionales» | fijo | — | `efectosDeDotes` (Reflejos Felinos) | `conExtrasDeFicha` (`conDescuentos`) | excepción: aporte sobre aporte (E2) |
@@ -250,7 +250,7 @@ qué aportes agrega.
 | `modificador` | — salida (suma de Ajustes) | — | — | — | ídem | `HojaTirada`/`HojaPoder` (`Desglose`), `FilaTirada`, `FilaPoder`, `BarraSalvaciones` | encaja |
 | `circunstancial` | — salida (lo escribe el jugador; no es de ningún ítem) | — | — | — | ídem | `AccionModal` | encaja |
 | `total` | — salida | — | — | — | ídem | `AccionModal` | encaja |
-| `desglose` | — salida (líneas de Ajuste con etiqueta) | — | — | — | ídem | `HojaTirada`/`HojaPoder` (`Desglose`), `AccionModal` | deuda (fase 2): cada línea lleva solo etiqueta |
+| `desglose` | — salida (líneas de Ajuste con etiqueta) | — | — | — | ídem | `HojaTirada`/`HojaPoder` (`Desglose`), `AccionModal` | deuda (fase 2): cada línea lleva solo etiqueta. **Fase 2: sin resolver** (rompe tests de caracterización de montaje: ver la sección de origen) |
 | `margenes` | — salida (Resolución) | — | — | — | `margenesDeCondiciones`, `conCriticoFijo`, `conFalloCritico` | `tirarMontada` (no la UI) | encaja |
 | `notas` | — salida (Texto de casillas + Resolución explicada en texto: crítico fijo, fallo crítico, sube grado) | — | — | antes y después | ídem, `notasCondiciones` | `AccionModal` (bloque de notas) | encaja |
 | `modoElegido` | — salida | — | — | — | `modoElegido` (condiciones.ts) | no se lee en UI | encaja |
@@ -290,7 +290,7 @@ Producen: `accionDirectaDeHerramienta` (herramientas.ts:82), `accionesDirectasDe
 
 | Campo | Tipo de aporte | Blanco | Entrega | Momento (si Texto) | Lo produce (función:archivo) | Lo consume en UI (componente) | Encaja / excepción / deuda |
 |---|---|---|---|---|---|---|---|
-| `id` | — identidad (clave de ★) | la hoja | — | — | ver arriba (`` `levantar_escudo_${instanciaId}` ``, `` `radar_marcar_${…}` ``…) | `FilaUsar` (`estrella`) | deuda (fase 2): instancia dentro del string |
+| `id` | — identidad (clave de ★) | la hoja | — | — | ver arriba (`` `levantar_escudo_${instanciaId}` ``, `` `radar_marcar_${…}` ``…) | `FilaUsar` (`estrella`) | deuda (fase 2): instancia dentro del string. **Fase 2: resuelto** (`AccionDirecta.origen`) |
 | `label` | — presentación | — | — | — | ídem | `FilaUsar`, `UsarModal`, `SacrificioRecursoModal`, historial | encaja |
 | `grupo` | — identidad | — | — | — | ídem | AccionesTab (separa Ataques/Defensa/Acciones y `grupo === "Aumentos"` en `usarDirecta()`) | deuda (fase 3): el reparto en Sin dado es de la UI |
 | `familiaArma` | — identidad | — | — | — | `accionesDirectasDeAtaque` | `conExtrasDirectaDeFicha` (textos de dote) | encaja |
@@ -322,10 +322,10 @@ Propuestas, para que el usuario decida (excepción declarada en §1.8 o deuda).
 | E4 | **Aportes sin ítem**: los modificadores de umbral de salud/fatiga (§7, `modificadoresDeUmbrales`, origen `"estado"`) | No los pone ningún ítem ni el máster: salen de la vida y fatiga actuales | Excepción declarada nueva: «aportes de la propia ficha (umbrales §7)», o tratarlos como un ítem sintético «Salud» en la fase 2 |
 | E5 | **Anclaje «jugador» que no se pinta en cada anclaje posible**: `especialidadAElegir` (cuelga de la habilidad), `habilidadAlternativa` (solo en la habilidad original); los poderes sí, pero calculado en la UI (`variantesDePoder`) | Contradice §1.7 | Deuda, fase 3 |
 | E6 | **El Texto «antes» no se ve en el árbol**: `HojaTirada` no pinta `nota` (solo `FilaTirada`, para ★/cabina, y el modal) | Contradice §1.6 («antes: se pinta en la hoja») | Deuda, fase 4 |
-| E7 | **Textos de ítems aplanados a string**: `conTextosEnTirada` pega `TextoEnTirada` a `nota`/`efectoCritico` con «(fuente)»; `teAfecta` los recupera con regex | Se pierde tipo y origen | Deuda, fases 2 (origen) y 4 (momento) |
+| E7 | **Textos de ítems aplanados a string**: `conTextosEnTirada` pega `TextoEnTirada` a `nota`/`efectoCritico` con «(fuente)»; `teAfecta` los recupera con regex | Se pierde tipo y origen | Deuda, fases 2 (origen) y 4 (momento). **Origen resuelto en la fase 2** (`Accion.textosDeFicha`); el aplanado sigue para la fase 4 |
 | E8 | **Ajustes de casilla del poder entregados como fijos**: `prepararPoder` convierte las casillas de fatiga (Xovromium +1, Supresora −2) en `ajustesFijos` | La entrega (casilla) se pierde al llegar a la tirada | Deuda, fase 5 |
-| E9 | **Armas Modificadas horneado en el generador**: `tipoDanio`/`danioExtra` de `modoConPerfil` | Es un aporte de otra pieza que entra en la hoja sin origen | Deuda, fase 2 |
-| E10 | **Regla de blanco en código**: `FAMILIAS_CON_CRITICO_FIJO` (fichaResuelta.ts:409) | El blanco de Crítico Mejorado («solo ataques») no está en el dato | Deuda menor, fase 2 (al dar blanco completo) |
+| E9 | **Armas Modificadas horneado en el generador**: `tipoDanio`/`danioExtra` de `modoConPerfil` | Es un aporte de otra pieza que entra en la hoja sin origen | Deuda, fase 2. **Sin resolver en la fase 2**: la modificación es parte de la propia arma (`pieza.modificaciones`), así que `Accion.origen` ya la cubre; un `origen` por modificación en `DanioExtra` rompe 2 tests de `armasModificadas.test.ts` (pendiente de decisión) |
+| E10 | **Regla de blanco en código**: `FAMILIAS_CON_CRITICO_FIJO` (fichaResuelta.ts:409) | El blanco de Crítico Mejorado («solo ataques») no está en el dato | Deuda menor, fase 2 (al dar blanco completo). **Resuelto en la fase 2** (`familias` en el destino `especialidadArmaElegida`) |
 | E11 | **`multiplicadorVida` y el tope de Agilidad** viven como `Modificador` (tipo de Ajuste) | Uno multiplica y el otro topa: son Resolución sobre un derivado | Encaja si se tipan como Resolución; no llegan a Acciones, prioridad baja (sin fase) |
 
 No aparecen excepciones nuevas para la barra, Sin dado, el tablero ni la economía de creación:
@@ -378,6 +378,20 @@ Si hoy se puede saber de qué ítem viene cada aporte **sin parsear texto**.
 | **Coste** | Sí, el mejor parado: `recursoInstanciaId`, `gastoRecurso.instanciaId` y `cargas.derivacion.instanciaId` llevan la instancia; `farmacoId` el id de catálogo (los fármacos no tienen instancia); `usoPorEscena` usa el id de la casilla como id del uso; el coste de un poder es del poder. **No** lo saben `costeFatiga` (de `Accion`, casilla u opción) ni `ahorroFatiga` | `fatigaDeCasillas` (montaje.ts) suma la fatiga de casillas sin conservar de qué casilla viene |
 | **Texto** | No. `efectos[].fuente` y `TextoEnTirada.fuente` («rasgo · capa») son texto; al llegar a la hoja, `conTextosEnTirada` los **aplana** dentro de `nota`/`efectoCritico`/`efectoCriticoNatural` con «(fuente)». `notasFarmacos` son strings sueltos | `conTextosEnTirada` (textosTirada.ts:70); `teAfecta` busca `(${fuente})` dentro del string |
 | **Habilitador** | Solo `piezasInutilizadas` (por `instanciaId`), y está vacío. `bloqueada` y `poder.bloqueo` son solo el motivo; `soloConEspecialidad` un flag; `permisos` una lista de familias sin la dote | `efectosDeDotes` (permisos), `sinFatiga` (aumentosAcciones.ts) |
+
+**Fase 2 (2026-10-28, en revisión):** `OrigenAporte` (`rules/origen.ts`) puesto por cada
+productor. Lleva origen: `ModificadorConFuente.item` (especie, dotes, equipo, aumentos,
+activables), `CondicionTirada.origen` (equipo con alcance y mejoras de arma, especie, dotes,
+aumentos, fármacos, psiónica en tiradas fijas, brazo biónico, Gran Puntería en «Apuntado»),
+`contador.descuento.origenes`, `TextoEnTirada.origen` y `Accion.textosDeFicha`, `BonoPorTramo.origen`,
+`ajustesFijos[]`/`efectos[]` de mejoras, `criticoFijo`/`falloCritico`/`habilidadAlternativa`/
+`extremidad` `.origen`, `origenVentaja`/`origenSubeGrado`, los extras de `extrasDotes`,
+`ventajasFijas`, `fallosCriticos`, y `Accion.origen`/`AccionDirecta.origen` en las acciones que crea un
+ítem. **Sin origen**: modificadores de estados y umbrales (2 tests con `deepEqual`; "te afecta" los
+descarta por categoría), `LineaDesglose` y notas de `TiradaMontada` (9 tests más, 6 de ellos de
+`montaje-caracterizacion`), `DanioExtra` (E9), el selector «Contra…» (junta varias fuentes),
+`notasFarmacos` (strings, fase 3), el tope de Agilidad. Los Costes siguen con `recursoInstanciaId`
+/`farmacoId`. Lo lee `aportesDeTirada` (`rules/aportes.ts`).
 
 Para la fase 2: el patrón que ya funciona es el de Coste (`instanciaId` como dato, puesto por el
 generador que conoce la pieza). El punto más rentable es `FichaResuelta`: `resolverFicha` y

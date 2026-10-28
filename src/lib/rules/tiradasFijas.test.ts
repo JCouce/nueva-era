@@ -208,6 +208,7 @@ describe("Cambio de par con casilla en la fila", () => {
       habilidad: "actitud",
       especialidad: "manipulacion",
       etiqueta: "Con Manipulación (Cazador Cazado)",
+      origen: { tipo: "dote", id: "dote_cazador_cazado", label: "Cazador Cazado" },
     });
     const alt = usarHabilidadAlternativa(t)!;
     assert.deepEqual(alt.especialidadesAccion, ["manipulacion"]);

@@ -12,6 +12,7 @@ import type { EspecialidadId } from "../catalog/especialidades";
 import type { Sheet } from "./sheet";
 import { tieneEspecialidad, type Accion } from "./acciones";
 import type { CondicionTirada } from "./condiciones";
+import type { OrigenAporte } from "./origen";
 import { DISCIPLINAS, PSIONICA, disciplinaPorId, type DisciplinaId } from "../catalog/psionica";
 import { umbralFatiga } from "./estados";
 import { recursoDe } from "./recursos";
@@ -564,6 +565,7 @@ export function tiradaDePoder(accion: AccionPoder, p: PoderResuelto): Accion | n
   const tirada: Accion = {
     id: accion.id,
     label: etiquetaPoder(accion, p),
+    origen: { tipo: "poder", id: accion.id, label: accion.label },
     grupo: "Psiónica",
     aplicado: r.aplicado,
     habilidad: r.habilidad,
@@ -765,24 +767,31 @@ function etiquetaVentaja(d: Disciplina, v: Disciplina["ventajas"][number]): stri
 // Lo que la psiónica de la ficha añade a una tirada fija (Buscar / percibir con
 // Resonancia 4: ventaja y la casilla de +2): `Disciplina.ventajas` y
 // `bonosEnOtrasTiradas` cuyo alcance es el id o el grupo de la tirada.
+// El ítem es la disciplina (fase 2): lo que da es por su nivel, no por un poder concreto.
+const origenDeDisciplina = (d: Disciplina): OrigenAporte => ({ tipo: "poder", id: d.id, label: d.label });
+
 export function conPsionicaEnTiradaFija(niveles: NivelesPsionica, t: Accion): Accion {
   let ventaja = t.ventaja;
+  let origenVentaja = t.origenVentaja;
   const condiciones: CondicionTirada[] = [];
   for (const d of DISCIPLINAS) {
     const nivel = niveles[d.id as DisciplinaId] ?? 0;
     if (nivel <= 0 || bloqueoPorRequisito(d, niveles)) continue;
     const v = d.ventajas.find((x) => x.acciones.includes(t.id) && nivel >= x.desdeNivelPoseido);
-    if (v && !ventaja) ventaja = etiquetaVentaja(d, v);
+    if (v && !ventaja) {
+      ventaja = etiquetaVentaja(d, v);
+      origenVentaja = origenDeDisciplina(d);
+    }
     d.bonosEnOtrasTiradas.forEach((b, i) => {
       if ((b.alcance === t.id || b.alcance === t.grupo) && enTramo(b, nivel)) {
-        condiciones.push({ id: `psi_${d.id}_${i}`, tipo: "toggle", etiqueta: b.etiqueta, valorActivo: b.valor });
+        condiciones.push({ id: `psi_${d.id}_${i}`, tipo: "toggle", etiqueta: b.etiqueta, valorActivo: b.valor, origen: origenDeDisciplina(d) });
       }
     });
   }
   if (ventaja === t.ventaja && condiciones.length === 0) return t;
   return {
     ...t,
-    ...(ventaja && { ventaja }),
+    ...(ventaja && { ventaja, ...(origenVentaja && { origenVentaja }) }),
     ...(condiciones.length > 0 && { condiciones: [...(t.condiciones ?? []), ...condiciones] }),
   };
 }
@@ -863,5 +872,13 @@ export function levitacion(niveles: NivelesPsionica): { velocidadM: number; nive
 // la esquiva fija gana la casilla "Levitando: Física" si la ficha puede levitar.
 export function conEsquivaLevitando(niveles: NivelesPsionica, t: Accion): Accion {
   if (t.id !== "defensa" || !levitacion(niveles)) return t;
-  return { ...t, habilidadAlternativa: { habilidad: "tecnociencia", especialidad: "fisica", etiqueta: "Levitando: Física" } };
+  return {
+    ...t,
+    habilidadAlternativa: {
+      habilidad: "tecnociencia",
+      especialidad: "fisica",
+      etiqueta: "Levitando: Física",
+      origen: origenDeDisciplina(disciplinaPorId("traslacion")),
+    },
+  };
 }

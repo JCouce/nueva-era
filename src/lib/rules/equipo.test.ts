@@ -340,7 +340,15 @@ describe("movimiento", () => {
     });
     const delExo = modificadoresDeEquipo(s).filter((m) => m.fuente.startsWith("Exoesqueleto"));
     assert.deepEqual(delExo, [
-      { tipo: "atributo", id: "fuerza", valor: 1, exceptoSaludYSalvaciones: true, origen: "equipo", fuente: "Exoesqueleto 1" },
+      {
+        tipo: "atributo",
+        id: "fuerza",
+        valor: 1,
+        exceptoSaludYSalvaciones: true,
+        origen: "equipo",
+        fuente: "Exoesqueleto 1",
+        item: { tipo: "equipo", id: "exoesqueleto", label: "Exoesqueleto", instanciaId: "e1" },
+      },
     ]);
   });
 });
@@ -393,6 +401,7 @@ describe("modificadores de equipo", () => {
         valor: 2,
         origen: "equipo",
         fuente: "Mosquito",
+        item: { tipo: "equipo", id: "pistola_mosquito", label: "Mosquito", instanciaId: "a1" },
       },
     ]);
   });
@@ -859,6 +868,7 @@ describe("herramienta y consumible (Medicina, docs/traspaso.md §6)", () => {
         valor: 1,
         origen: "equipo",
         fuente: "Valija Táctica Médica (VTM) 1",
+        item: { tipo: "equipo", id: "valija_tactica_medica", label: "Valija Táctica Médica (VTM)", instanciaId: "v1" },
       },
       // R4 (2026-10-24): "al administrar cualquier compuesto": también al usar un fármaco.
       {
@@ -867,6 +877,7 @@ describe("herramienta y consumible (Medicina, docs/traspaso.md §6)", () => {
         valor: 1,
         origen: "equipo",
         fuente: "Valija Táctica Médica (VTM) 1",
+        item: { tipo: "equipo", id: "valija_tactica_medica", label: "Valija Táctica Médica (VTM)", instanciaId: "v1" },
       },
     ]);
   });

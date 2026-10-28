@@ -63,6 +63,7 @@ import type { DoteCatalogo, EfectoDote, ValorDote } from "../catalog/dotesTipos"
 import type { BonoPorTramo, CondicionTirada, EfectoDanioCasilla, OpcionCondicion, TramoDistancia } from "./condiciones";
 import type { AlcanceModificador, FamiliaArma, ModificadorConFuente } from "./modificadores";
 import type { TextoEnTirada } from "./especie";
+import type { OrigenAporte } from "./origen";
 import type { Sheet } from "./sheet";
 
 export type DoteActiva = { dote: DoteCatalogo; compra: DoteComprada };
@@ -99,7 +100,15 @@ export function dotesActivas(sheet: Sheet, valores: ValoresRequisito | null): Do
 // (conExtrasDeFicha lo añade a su `bonosTramo`).
 export type BonoTramoDeDote = { alcance: AlcanceModificador; bono: BonoPorTramo };
 // Crítico fijo (Crítico Mejorado): `margen` éxitos en los ataques con arma de esa especialidad.
-export type CriticoDeDote = { especialidad: EspecialidadId; margen: number; fuente: string };
+// `familias`: las tiradas de esa arma que cuentan (las de ataque: ni lanzarla ni bloquear),
+// del destino de la dote (E10 del inventario de aportes: antes, una lista en conExtrasDeFicha).
+export type CriticoDeDote = {
+  especialidad: EspecialidadId;
+  familias: readonly FamiliaArma[];
+  margen: number;
+  fuente: string;
+  origen?: OrigenAporte;
+};
 
 // Lo que habilitan las dotes en las tiradas generadas por arma (D2b-2, §9.2). Sin dote no
 // hay permiso: ni el NPC del máster (modo libre) se lo salta, solo deja de mirar requisitos.
@@ -109,10 +118,10 @@ export type PermisosDeDotes = { familias: readonly FamiliaArma[]; sutil: readonl
 export const SIN_PERMISOS_DE_DOTES: PermisosDeDotes = { familias: [], sutil: [] };
 
 // Descuento en un contador de la tirada (Reflejos Felinos): `contador` es el id de la condición.
-export type DescuentoDeDote = { alcance: AlcanceModificador; contador: string; unidades: number; fuente: string };
+export type DescuentoDeDote = { alcance: AlcanceModificador; contador: string; unidades: number; fuente: string; origen?: OrigenAporte };
 
 // Cambio de grado fijo, sin casilla (tiradas fijas): fracaso → éxito y/o crítico con `margen`.
-export type GradoFijoDeDote = { alcance: AlcanceModificador; fuente: string; subeGrado?: true; margen?: number };
+export type GradoFijoDeDote = { alcance: AlcanceModificador; fuente: string; subeGrado?: true; margen?: number; origen?: OrigenAporte };
 
 // Otra habilidad y especialidad con la casilla de la fila (Cazador Cazado: Manipulación en
 // Discernir mentiras). `aplicado`: el de la dote; solo vale si es el de la tirada.
@@ -122,6 +131,7 @@ export type AlternativaDeDote = {
   habilidad: HabilidadId;
   especialidad: EspecialidadId;
   etiqueta: string;
+  origen?: OrigenAporte;
 };
 
 export type EfectosDeDotes = {
@@ -185,6 +195,13 @@ function nombreDe({ dote, compra }: DoteActiva): string {
   return el ? `${dote.label}: ${el}` : dote.label;
 }
 
+// El ítem de los aportes de una dote (fase 2): su id, con la elección si es repetible (como
+// fuentesDeCapa1, capa1.ts), y el nombre con la elección ("Bioma Predilecto: Selva densa").
+export function origenDeDote(activa: DoteActiva): OrigenAporte {
+  const { dote, compra } = activa;
+  return { tipo: "dote", id: dote.repetible && compra.eleccion ? `${dote.id}:${compra.eleccion}` : dote.id, label: nombreDe(activa) };
+}
+
 // Prefijo estable de los ids de casilla: el id de la dote, y la elección si es repetible
 // (una casilla por pareja comprada de Especialidad Médica, §9.3).
 function claveDe({ dote, compra }: DoteActiva): string {
@@ -219,7 +236,9 @@ const categoriaLegible = (c: string) => c.charAt(0).toUpperCase() + c.slice(1);
 // estándar» devuelve el bono por éxitos, en su propia casilla).
 // TODO(revisar): "por cada tamaño de diferencia ±2 al ataque" y "puede no causar daño, sin −2"
 // van en la nota, a mano (circunstancial).
-function casillaDeManiobra(maniobras: { fuente: string; sinPenalizador: boolean }[]): Toggle {
+// TODO(revisar): con varias dotes de derribo la casilla es una sola; su `origen` es el de la
+// primera (como el nombre que enseñaba "te afecta"), las demás solo van en la etiqueta.
+function casillaDeManiobra(maniobras: { fuente: string; sinPenalizador: boolean; origen: OrigenAporte }[]): Toggle {
   const sinPenalizador = maniobras.find((m) => m.sinPenalizador);
   const fuentes = [...new Set(maniobras.map((m) => m.fuente))];
   const nota = [
@@ -240,6 +259,7 @@ function casillaDeManiobra(maniobras: { fuente: string; sinPenalizador: boolean 
     nota,
     danio: { sinBonoExitos: true },
     alcance: { tipo: "familiaArma", familia: "ataque_melee" },
+    origen: maniobras[0].origen,
   };
 }
 
@@ -263,11 +283,12 @@ export function efectosDeDotes(
   const familias = new Set<FamiliaArma>();
   const sutil = new Set<FamiliaArma>();
   const compradas = activas.map((a) => a.compra);
-  const maniobras: { fuente: string; sinPenalizador: boolean }[] = [];
+  const maniobras: { fuente: string; sinPenalizador: boolean; origen: OrigenAporte }[] = [];
 
   for (const activa of activas) {
     const { dote, compra } = activa;
     const fuente = nombreDe(activa);
+    const origen = origenDeDote(activa);
     const clave = claveDe(activa);
     // Bonos por opción de una condición que la tirada no tiene: una casilla de opción por
     // grupo (movimiento_oculto), con una opción por bono.
@@ -286,7 +307,7 @@ export function efectosDeDotes(
       const llave = `${JSON.stringify(alcance)}|${condicion}`;
       let c = porCondicion.get(llave);
       if (!c) {
-        c = { id: `${clave}_${i}`, tipo: "toggle", etiqueta: `${condicion} (${fuente}${umbral ? `, ${umbral}` : ""})`, valorActivo: 0, alcance };
+        c = { id: `${clave}_${i}`, tipo: "toggle", etiqueta: `${condicion} (${fuente}${umbral ? `, ${umbral}` : ""})`, valorActivo: 0, alcance, origen };
         porCondicion.set(llave, c);
         casillas.push(c);
       }
@@ -304,15 +325,15 @@ export function efectosDeDotes(
       const destinoFijo = "alcance" in e ? DESTINOS_DOTES[e.alcance] : undefined;
       const fijo = destinoFijo?.tipo === "tirada" && "condicion" in e && e.condicion === null;
       if (fijo && e.tipo === "sube_grado" && e.de === "fracaso" && e.a === "exito") {
-        grados.push({ alcance: destinoFijo.alcance, fuente, subeGrado: true });
+        grados.push({ alcance: destinoFijo.alcance, fuente, subeGrado: true, origen });
         return;
       }
       if (fijo && e.tipo === "sube_grado" && e.de === "exito" && e.a === "critico") {
-        grados.push({ alcance: destinoFijo.alcance, fuente, margen: 0 });
+        grados.push({ alcance: destinoFijo.alcance, fuente, margen: 0, origen });
         return;
       }
       if (fijo && e.tipo === "margen_critico") {
-        grados.push({ alcance: destinoFijo.alcance, fuente, margen: e.valor });
+        grados.push({ alcance: destinoFijo.alcance, fuente, margen: e.valor, origen });
         return;
       }
       if (e.tipo === "margen_critico" && DESTINOS_DOTES[e.alcance]?.tipo === "tirada") {
@@ -325,9 +346,10 @@ export function efectosDeDotes(
         // Crítico Mejorado: la especialidad elegida al comprar, mientras siga siendo propia y
         // de la rama que cumple (S43; NPC sin mirar).
         const esp = compra.eleccion ? especialidadPorId(compra.eleccion) : undefined;
-        if (DESTINOS_DOTES[e.alcance]?.tipo !== "especialidadArmaElegida" || !esp) return;
+        const destino = DESTINOS_DOTES[e.alcance];
+        if (destino?.tipo !== "especialidadArmaElegida" || !esp) return;
         if (valores && !especialidadArmaPropia(dote, esp.id, valores, compradas)) return;
-        criticos.push({ especialidad: esp.id, margen: e.valor, fuente });
+        criticos.push({ especialidad: esp.id, familias: destino.familias, margen: e.valor, fuente, origen });
         return;
       }
       // Habilitador (Bloqueo): la familia aparece. Arbitraje duro (§9.2): sin él, no existe.
@@ -349,6 +371,7 @@ export function efectosDeDotes(
             habilidad: e.habilidad,
             especialidad: e.especialidad,
             etiqueta: `Con ${etiquetaEspecialidad(e.especialidad)} (${fuente})`,
+            origen,
           });
           return;
         }
@@ -386,7 +409,7 @@ export function efectosDeDotes(
         return;
       }
       if (e.tipo === "maniobra") {
-        maniobras.push({ fuente, sinPenalizador: e.sinPenalizador === true });
+        maniobras.push({ fuente, sinPenalizador: e.sinPenalizador === true, origen });
         return;
       }
       if (e.tipo === "cambia_par") {
@@ -398,7 +421,7 @@ export function efectosDeDotes(
       // Reflejos Felinos (D2c-1): el contador de su tirada cuenta unidades de menos.
       if (e.tipo === "descuento_contador") {
         const destino = DESTINOS_DOTES[e.alcance];
-        if (destino?.tipo === "tirada") descuentos.push({ alcance: destino.alcance, contador: e.contador, unidades: e.unidades, fuente });
+        if (destino?.tipo === "tirada") descuentos.push({ alcance: destino.alcance, contador: e.contador, unidades: e.unidades, fuente, origen });
         return;
       }
       if (e.tipo === "bono" && e.sobre === "danio") {
@@ -423,6 +446,7 @@ export function efectosDeDotes(
               alcance,
               bono: {
                 fuente,
+                origen,
                 porTramo: { [opcion]: valorBono },
                 ...(e.soloEspecialidad && { soloEnEspecialidad: true as const }),
                 ...(excluyente && { excluyente }),
@@ -442,6 +466,7 @@ export function efectosDeDotes(
               alcance,
               bono: {
                 fuente,
+                origen,
                 condicion: grupo,
                 porTramo: { [opcion]: valorBono },
                 ...(c && { siActiva: c.id }),
@@ -462,6 +487,7 @@ export function efectosDeDotes(
                 opciones: [{ id: "ninguna", etiqueta: def.ninguna, valor: 0 }],
                 porDefecto: "ninguna",
                 alcance,
+                origen,
               },
             };
             porTramo.set(grupo, g);
@@ -478,7 +504,7 @@ export function efectosDeDotes(
         }
         // Siempre activo: bono fijo, sale en el desglose con la dote.
         if (e.condicion === null) {
-          modificadores.push({ tipo: "tirada", alcance, valor: valorBono, origen: "dote", fuente });
+          modificadores.push({ tipo: "tirada", alcance, valor: valorBono, origen: "dote", fuente, item: origen });
           return;
         }
         const c = casillaPara(e, i, resuelto.umbral);
@@ -491,18 +517,18 @@ export function efectosDeDotes(
         const soloEnCritico = e.grados?.includes("critico") ?? false;
         // Crítico natural (Gran Puntería en Apuntar): a su campo aparte, que solo sale sin conversión.
         if (e.criticoNatural && destino?.tipo === "tirada" && destino.alcance.tipo !== "familiaArma") {
-          for (const id of destino.textos) textos.push({ en: { tipo: "tiradaId", id }, texto, fuente, soloEnCritico: true, soloEnCriticoNatural: true });
+          for (const id of destino.textos) textos.push({ en: { tipo: "tiradaId", id }, texto, fuente, soloEnCritico: true, soloEnCriticoNatural: true, origen });
           return;
         }
         // Poder (D2c-2): por el id de su acción; lo recoge prepararPoder (usoPoder.ts).
         if (destino?.tipo === "poder") {
-          textos.push({ en: { tipo: "tiradaId", id: destino.id }, texto, fuente, soloEnCritico });
+          textos.push({ en: { tipo: "tiradaId", id: destino.id }, texto, fuente, soloEnCritico, origen });
           return;
         }
         if (destino?.tipo !== "tirada") return; // "ficha": vive en la tarjeta de la dote
         const alcance = alcanceDe(destino.alcance, e);
-        if (alcance.tipo === "familiaArma") textos.push({ en: alcance, texto, fuente, soloEnCritico });
-        else for (const id of destino.textos) textos.push({ en: { tipo: "tiradaId", id }, texto, fuente, soloEnCritico });
+        if (alcance.tipo === "familiaArma") textos.push({ en: alcance, texto, fuente, soloEnCritico, origen });
+        else for (const id of destino.textos) textos.push({ en: { tipo: "tiradaId", id }, texto, fuente, soloEnCritico, origen });
       }
     });
   }

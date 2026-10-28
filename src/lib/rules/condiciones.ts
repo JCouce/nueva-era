@@ -13,6 +13,7 @@
 //   contador → un número entre un mínimo y un máximo ("atacantes adicionales esta ronda")
 //
 import type { AlcanceModificador } from "./modificadores";
+import type { OrigenAporte } from "./origen";
 import { APLICADOS, type AplicadoId } from "./atributos";
 
 // Vive aparte de modificadores.ts a propósito: un ModificadorConFuente es
@@ -121,7 +122,8 @@ export type CondicionTirada = (
       porDefecto: number;
       // Cuenta `unidades` menos, sin bajar de `min` (Reflejos Felinos: un atacante adicional
       // menos en la esquiva, §9.3). Lo pone conExtrasDeFicha; sale en la etiqueta del desglose.
-      descuento?: { unidades: number; fuente: string };
+      // `origenes`: las dotes que lo dan, en el orden de `fuente` (fase 2).
+      descuento?: { unidades: number; fuente: string; origenes?: OrigenAporte[] };
     }
 ) & {
   // Sin `alcance`: la condición solo se pinta en la tirada del arma/mejora
@@ -132,6 +134,9 @@ export type CondicionTirada = (
   // alcance. Excluye "modo" en la práctica: no tiene sentido de origen (ver
   // condicionesActivas). docs/modificadores-tiradas.md §8.
   alcance?: AlcanceModificador;
+  // De qué ítem viene la casilla (fase 2, docs/aportes/plan.md): lo pone quien la genera. Sin
+  // él, es de la propia tirada (la del catálogo o la del arma que la genera: tramo, modo…).
+  origen?: OrigenAporte;
 };
 
 // Cambios al daño de una casilla marcada:
@@ -143,7 +148,7 @@ export type CondicionTirada = (
 // usuario en la tirada aunque sean menores (R4). Las lleva la casilla "Con el brazo biónico" o
 // la propia tirada (`Accion.extremidad`: "Bloquear con el brazo biónico"). `danioDeFuerza`: el
 // daño del ataque sale de la Fuerza (o de la Potencia con Sutil) y cambia con ellas.
-export type AtributosExtremidad = { fuente: string; fuerza: number; agilidad: number; danioDeFuerza?: true };
+export type AtributosExtremidad = { fuente: string; fuerza: number; agilidad: number; danioDeFuerza?: true; origen?: OrigenAporte };
 
 export type EfectoDanioCasilla = { ajuste?: number; categoria?: string; sinBonoExitos?: true; conBonoExitos?: true };
 
@@ -316,6 +321,8 @@ export function notasCondiciones(
 // `porTramo` va entonces por id de opción de esa condición.
 export type BonoPorTramo = {
   fuente: string;
+  // El ítem que lo da (fase 2): mira, dote, aumento.
+  origen?: OrigenAporte;
   porTramo: Partial<Record<TramoDistancia, number>> & Partial<Record<string, number>>;
   condicion?: string;
   soloEnEspecialidad?: true;

@@ -9,6 +9,7 @@ import type { AplicadoId, AtributoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
 import type { DisciplinaId } from "../catalog/psionica";
 import type { EspecialidadId } from "../catalog/especialidades";
+import type { OrigenAporte } from "./origen";
 
 // Valores derivados que algo puede modificar directamente.
 export const DERIVADOS_MODIFICABLES = [
@@ -180,9 +181,12 @@ export type OrigenModificador =
 
 // Un modificador con su procedencia, para que la ficha pueda explicar de dónde
 // sale cada número en vez de mostrar un total opaco.
+// `item` (fase 2, docs/aportes/plan.md): de qué ítem viene, como dato. Se llama `item` y no
+// `origen` porque `origen` ya es la categoría (la que miran desgloses y umbrales).
 export type ModificadorConFuente = Modificador & {
   origen: OrigenModificador;
   fuente: string; // etiqueta legible: "Arkorü", "Malherido", "Exoesqueleto 2"…
+  item?: OrigenAporte;
 };
 
 // Los modificadores sin los bonos de atributo que no cuentan para salud, salvaciones,

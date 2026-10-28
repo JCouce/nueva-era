@@ -39,7 +39,8 @@ foco. Frentes abiertos, cada uno con su sección en Pendiente:
   `docs/sistema.md`. Primer adelanto (Creación): Vida/Fatiga base 8 → 10 (hecho, §4 `HOJA3`), Dotes con
   presupuesto por prioridad, topes de creación movidos.
 - **Ítems y aportes (pestaña Acciones)**: plan aprobado 2026-10-28 en `docs/aportes/plan.md`,
-  fases 0, 1 y 1b y los umbrales como estados hechos; sigue la fase 2 (origen en cada aporte). El estado por fase vive en su cabecera allí.
+  fases 0, 1, 1b y 2 y los umbrales como estados hechos; sigue la auditoría de todos los ítems y
+  la fase 3 (el árbol lo monta el motor). El estado por fase vive en su cabecera allí.
 - "Preguntas al diseñador" (final de este documento) — lo que bloquea a Murillo.
 - **La fábrica** (épica en Pendiente, N1 construido, en rodaje desde 2026-10-22): cadena de montaje de cambios con
   Jefe de fábrica, línea determinista y revisión con oráculos. Uso y qué se apunta dónde: `fabrica/README.md`.

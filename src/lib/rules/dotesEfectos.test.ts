@@ -484,7 +484,11 @@ describe("efectos de dotes en las tiradas de arma (D2b-1)", () => {
 
     test("en el golpe con un arma de la especialidad: margen 5, con su línea en las notas", () => {
       const t = fila(f, "ataque_melee_");
-      assert.deepEqual(t.criticoFijo, { margen: 5, fuente: "Crítico Mejorado: Espadas y Dagas" });
+      assert.deepEqual(t.criticoFijo, {
+        margen: 5,
+        fuente: "Crítico Mejorado: Espadas y Dagas",
+        origen: { tipo: "dote", id: "dote_critico_mejorado", label: "Crítico Mejorado: Espadas y Dagas" },
+      });
       assert.ok(!(t.condiciones ?? []).some((c) => c.id.startsWith("dote_critico")));
       const m = montar(t);
       assert.equal(m.margenes.criticoExito, 5);

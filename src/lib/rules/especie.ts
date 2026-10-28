@@ -48,12 +48,16 @@ import { FORMULA_MOVIMIENTO_GENERAL, type FormulaMovimiento } from "./formulaMov
 import { SIN_ARMADURA_NATURAL, type ArmaduraNatural } from "./blindaje";
 import type { HabilidadId } from "./habilidades";
 import type { CondicionTirada } from "./condiciones";
+import type { OrigenAporte } from "./origen";
 import { SIN_AJUSTE_UMBRALES, type AjusteUmbral, type AjusteUmbrales } from "./estados";
 import type { DestinoTexto } from "../catalog/especies";
 import type { AccionDirecta } from "./acciones";
 import { ATRIBUTOS, type AtributoId } from "./atributos";
 
 export type RasgoConFuente = Rasgo & { fuente: string };
+
+// El ítem de un aporte de especie es el rasgo (plan de aportes §1.1), con su nombre.
+const origenDeRasgo = (r: Pick<Rasgo, "id" | "label">): OrigenAporte => ({ tipo: "especie", id: r.id, label: r.label });
 
 export type EspecieResuelta = {
   especie: Especie;
@@ -83,7 +87,7 @@ export function especieDeFicha(sheet: Pick<Sheet, "especieId" | "especieOpciones
   ];
   const rasgos = capas.flatMap(({ fuente, rasgos }) => rasgos.map((r) => ({ ...r, fuente })));
   const modificadores: ModificadorConFuente[] = rasgos.flatMap((r) =>
-    (r.modificadores ?? []).map((m) => ({ ...m, origen: "especie" as const, fuente: r.fuente })),
+    (r.modificadores ?? []).map((m) => ({ ...m, origen: "especie" as const, fuente: r.fuente, item: origenDeRasgo(r) })),
   );
   return {
     especie,
@@ -376,6 +380,7 @@ export function casillasDeEspecie(especie: EspecieResuelta | null): CondicionTir
         id: `especie_${r.id}_${condicion.id}`,
         etiqueta: `${condicion.etiqueta} (${r.label})`,
         alcance: { tipo: "tiradaId" as const, id },
+        origen: origenDeRasgo(r),
       })),
     ),
   );
@@ -383,23 +388,33 @@ export function casillasDeEspecie(especie: EspecieResuelta | null): CondicionTir
 
 // Fallo → fallo crítico sin casilla (Rigidez narcisista), con el rasgo de fuente. Lo cuelga
 // conExtrasDeFicha de las tiradas que casan.
-export type FalloCriticoFijo = { alcance: AlcanceModificador; fuente: string };
+export type FalloCriticoFijo = { alcance: AlcanceModificador; fuente: string; origen?: OrigenAporte };
 
 export function fallosCriticosDeEspecie(especie: EspecieResuelta | null): FalloCriticoFijo[] {
   return (especie?.rasgos ?? []).flatMap((r) =>
-    r.falloCritico ? [{ alcance: { tipo: "especialidad" as const, especialidades: r.falloCritico.especialidades }, fuente: r.label }] : [],
+    r.falloCritico
+      ? [{ alcance: { tipo: "especialidad" as const, especialidades: r.falloCritico.especialidades }, fuente: r.label, origen: origenDeRasgo(r) }]
+      : [],
   );
 }
 
 // `soloEnCriticoNatural` (con soloEnCritico): solo con crítico natural, sin la conversión éxito →
 // crítico (Gran Puntería en Apuntar); va a Accion.efectoCriticoNatural.
-export type TextoEnTirada = { en: DestinoTexto; texto: string; fuente: string; soloEnCritico: boolean; soloEnCriticoNatural?: true };
+// `origen` (fase 2): el ítem que lo pone (rasgo, dote, aumento, activable).
+export type TextoEnTirada = {
+  en: DestinoTexto;
+  texto: string;
+  fuente: string;
+  soloEnCritico: boolean;
+  soloEnCriticoNatural?: true;
+  origen?: OrigenAporte;
+};
 
 // Los textos sin mecanizar (§14.10), uno por destino, con "rasgo · capa" de fuente.
 export function textosDeEspecie(especie: EspecieResuelta | null): TextoEnTirada[] {
   return (especie?.rasgos ?? []).flatMap((r) =>
     (r.textos ?? []).flatMap((t) =>
-      t.en.map((en) => ({ en, texto: t.texto, fuente: `${r.label} · ${r.fuente}`, soloEnCritico: t.soloEnCritico ?? false })),
+      t.en.map((en) => ({ en, texto: t.texto, fuente: `${r.label} · ${r.fuente}`, soloEnCritico: t.soloEnCritico ?? false, origen: origenDeRasgo(r) })),
     ),
   );
 }
@@ -449,6 +464,7 @@ export function accionesSinDadoDeEspecie(especie: EspecieResuelta | null): Accio
             nota: r.accionSinDado.nota,
             confirmarLabel: "Activar",
             ...(r.accionSinDado.costeFatiga !== undefined && { costeFatiga: r.accionSinDado.costeFatiga }),
+            origen: origenDeRasgo(r),
           },
         ]
       : [],

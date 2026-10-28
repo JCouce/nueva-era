@@ -25,6 +25,7 @@ import {
 } from "../catalog/municion";
 import { PREFIJO_MEJORA_MUNICION } from "../catalog/mejorasArma";
 import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condiciones";
+import { origenDePieza, type OrigenAporte } from "./origen";
 import { nivelesHasta, acumulaPorClave, ultimoQueDefine, sustituyeMiraIntegrada, type PiezaEquipada } from "./equipo";
 import { bonoFormulaFuerza, etiquetaTipoDanio, formulaConSuma, nombreArmaModificada, perfilGolpe, type PerfilGolpe } from "./armasModificadas";
 import type { ModificacionArmaId } from "../catalog/armasModificadas";
@@ -43,6 +44,7 @@ import {
   extremidadIncorporada,
   ID_BLOQUEAR_BRAZO,
   NOTA_ARMA_INCORPORADA,
+  origenDeBrazo,
   type BrazoBionico,
 } from "./brazoBionico";
 
@@ -157,8 +159,11 @@ function condicionesDeMejoras(sheet: Sheet, instanciaId: string): CondicionTirad
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat || cat.familia !== "mejoraArma") continue;
     const niveles = nivelesHasta(cat.niveles, pieza.nivel);
+    const origen = origenDePieza("equipo", cat, pieza.instanciaId);
     condiciones.push(
-      ...acumulaPorClave(niveles.map((n) => n.condiciones ?? []), (c) => c.id).filter((c) => !c.alcance),
+      ...acumulaPorClave(niveles.map((n) => n.condiciones ?? []), (c) => c.id)
+        .filter((c) => !c.alcance)
+        .map((c) => ({ ...c, origen })),
     );
   }
   return condiciones;
@@ -185,8 +190,8 @@ function punteroSinPenalizacion(sheet: Sheet, instanciaId: string): boolean {
   );
 }
 
-function efectosDeMejoras(sheet: Sheet, instanciaId: string): { fuente: string; texto: string }[] {
-  const efectos: { fuente: string; texto: string }[] = [];
+function efectosDeMejoras(sheet: Sheet, instanciaId: string): NonNullable<Accion["efectos"]> {
+  const efectos: NonNullable<Accion["efectos"]> = [];
   for (const pieza of sheet.equipo) {
     if (pieza.instaladoEnId !== instanciaId || pieza.nivel === undefined) continue;
     const cat = equipoPorId(pieza.catalogoId);
@@ -194,7 +199,7 @@ function efectosDeMejoras(sheet: Sheet, instanciaId: string): { fuente: string; 
     if (cat.id === "puntero_laser" && pieza.nivel >= 2 && punteroSinPenalizacion(sheet, instanciaId)) continue;
     const niveles = nivelesHasta(cat.niveles, pieza.nivel);
     for (const n of niveles) {
-      if (n.notaTirada) efectos.push({ fuente: cat.label, texto: n.notaTirada });
+      if (n.notaTirada) efectos.push({ fuente: cat.label, texto: n.notaTirada, origen: origenDePieza("equipo", cat, pieza.instanciaId) });
     }
   }
   return efectos;
@@ -227,7 +232,8 @@ function bonosTramoDeMejoras(sheet: Sheet, arma: ArmaFuego, instanciaId: string)
     const fuente = yaIncluido ? `${cat.label} ${pieza.nivel} (la integrada ya va en la dificultad)` : cat.label;
     // TODO(revisar): la mira integrada de los fusiles de precisión va dentro de los números
     // del arma, sin bono propio, así que el Ojo Biónico se le suma (no hay con qué compararlo).
-    if (Object.keys(porTramo).length > 0) bonos.push({ fuente, porTramo, ...(define?.noApila && { noApila: define.noApila }) });
+    if (Object.keys(porTramo).length > 0)
+      bonos.push({ fuente, origen: origenDePieza("equipo", cat, pieza.instanciaId), porTramo, ...(define?.noApila && { noApila: define.noApila }) });
   }
   return bonos;
 }
@@ -249,15 +255,16 @@ function restarAjusteTramo(
 // después): cada uno con la etiqueta de la pieza que lo trae, para que el
 // desglose del modal no tenga ningún número sin firmar. Mismo criterio que
 // ajusteTramo: total por nivel, no acumulable (S9).
-function ajustesFijosDeMejoras(sheet: Sheet, instanciaId: string): { valor: number; fuente: string }[] {
-  const ajustes: { valor: number; fuente: string }[] = [];
+function ajustesFijosDeMejoras(sheet: Sheet, instanciaId: string): NonNullable<Accion["ajustesFijos"]> {
+  const ajustes: NonNullable<Accion["ajustesFijos"]> = [];
   for (const pieza of sheet.equipo) {
     if (pieza.instaladoEnId !== instanciaId || pieza.nivel === undefined) continue;
     const cat = equipoPorId(pieza.catalogoId);
     if (!cat || cat.familia !== "mejoraArma") continue;
     const niveles = nivelesHasta(cat.niveles, pieza.nivel);
     const nivelConAjuste = ultimoQueDefine(niveles, "ajusteAtaque");
-    if (nivelConAjuste?.ajusteAtaque) ajustes.push({ valor: nivelConAjuste.ajusteAtaque, fuente: cat.label });
+    if (nivelConAjuste?.ajusteAtaque)
+      ajustes.push({ valor: nivelConAjuste.ajusteAtaque, fuente: cat.label, origen: origenDePieza("equipo", cat, pieza.instanciaId) });
   }
   return ajustes;
 }
@@ -270,9 +277,9 @@ function bonosModoDeMejoras(
   arma: ArmaFuego,
   modos: { id: string; etiqueta: string }[],
   instanciaId: string,
-): { bonos: BonoPorTramo[]; fijos: { valor: number; fuente: string }[] } {
+): { bonos: BonoPorTramo[]; fijos: NonNullable<Accion["ajustesFijos"]> } {
   const bonos: BonoPorTramo[] = [];
-  const fijos: { valor: number; fuente: string }[] = [];
+  const fijos: NonNullable<Accion["ajustesFijos"]> = [];
   for (const pieza of sheet.equipo) {
     if (pieza.instaladoEnId !== instanciaId || pieza.nivel === undefined) continue;
     const cat = equipoPorId(pieza.catalogoId);
@@ -282,8 +289,9 @@ function bonosModoDeMejoras(
     const todos = ajuste.enCualquierModo?.includes(arma.tipo) ?? false;
     const cuenta = modos.filter((m) => todos || m.etiqueta.includes(ajuste.contieneEtiqueta));
     if (cuenta.length === 0) continue;
-    if (modos.length <= 1) fijos.push({ valor: ajuste.valor, fuente: cat.label });
-    else bonos.push({ fuente: cat.label, condicion: "modo", porTramo: Object.fromEntries(cuenta.map((m) => [m.id, ajuste.valor])) });
+    const origen = origenDePieza("equipo", cat, pieza.instanciaId);
+    if (modos.length <= 1) fijos.push({ valor: ajuste.valor, fuente: cat.label, origen });
+    else bonos.push({ fuente: cat.label, origen, condicion: "modo", porTramo: Object.fromEntries(cuenta.map((m) => [m.id, ajuste.valor])) });
   }
   return { bonos, fijos };
 }
@@ -426,10 +434,10 @@ function tiradaDeArmaFuego(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
 // dificultad fija (-2, sea cual sea la granada) y su daño según la munición
 // elegida — igual que un modo de disparo, salvo que aquí hay 13 en vez de 2.
 function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Accion | null {
-  const tieneLanzagranadas = sheet.equipo.some(
+  const lanzagranadas = sheet.equipo.find(
     (p) => p.instaladoEnId === instanciaId && p.catalogoId === "lanzagranadas_integrado",
   );
-  if (!tieneLanzagranadas) return null;
+  if (!lanzagranadas) return null;
 
   // Solo lo que el personaje lleva en RECURSOS (docs/tareas.md, 2026-09-27),
   // no las 14 del catálogo — sin ninguna, no hay nada que disparar: se
@@ -446,6 +454,7 @@ function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: strin
   return {
     id: `lanzagranadas_${instanciaId}`,
     label: `Lanzagranadas (${arma.label})`,
+    origen: mejoraInstalada(lanzagranadas),
     grupo: "Ataques",
     aplicado: "reflejos",
     habilidad: "combate_distancia",
@@ -480,20 +489,28 @@ function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: strin
 // decía Fue+2 con el cuchillo en Fue+3; arreglado 2026-10-24). Ataque+bloqueo van juntos como
 // en cualquier arma melee del catálogo — decisión 2026-09-25, el usuario. El
 // bloqueo, como todos, solo con la dote Bloqueo (D2b-2, lo filtra accionesDeAtaque).
-function tieneBayonetaInstalada(sheet: Sheet, instanciaId: string): boolean {
-  return sheet.equipo.some((p) => p.instaladoEnId === instanciaId && p.catalogoId === "bayoneta");
+function bayonetaInstalada(sheet: Sheet, instanciaId: string): PiezaEquipada | undefined {
+  return sheet.equipo.find((p) => p.instaladoEnId === instanciaId && p.catalogoId === "bayoneta");
+}
+
+// La mejora que crea su propia fila (Lanzagranadas, Bayoneta): el ítem de esa fila.
+function mejoraInstalada(pieza: PiezaEquipada): OrigenAporte {
+  const cat = equipoPorId(pieza.catalogoId);
+  return origenDePieza("equipo", { id: pieza.catalogoId, label: cat?.label ?? pieza.catalogoId }, pieza.instanciaId);
 }
 
 const CUCHILLO_DE_COMBATE = ESPADAS_Y_DAGAS.find((a) => a.id === "espada_cuchillo_combate")!;
 
 function tiradaGolpeBayoneta(sheet: Sheet, mods: ModificadorConFuente[], arma: ArmaFuego, instanciaId: string): Accion | null {
-  if (!tieneBayonetaInstalada(sheet, instanciaId)) return null;
+  const bayoneta = bayonetaInstalada(sheet, instanciaId);
+  if (!bayoneta) return null;
   const fuerza = atributoEfectivo(sheet, "fuerza", mods);
   const modoCuchillo = CUCHILLO_DE_COMBATE.modos[0];
   const bono = bonoFormulaFuerza(modoCuchillo.formulaDanio) ?? 0;
   return {
     id: `golpear_bayoneta_${instanciaId}`,
     label: `Bayoneta (${arma.label})`,
+    origen: mejoraInstalada(bayoneta),
     grupo: "Ataques",
     aplicado: "potencia",
     habilidad: "combate_melee",
@@ -509,10 +526,12 @@ function tiradaGolpeBayoneta(sheet: Sheet, mods: ModificadorConFuente[], arma: A
 }
 
 function tiradaBloqueoBayoneta(sheet: Sheet, arma: ArmaFuego, instanciaId: string): Accion | null {
-  if (!tieneBayonetaInstalada(sheet, instanciaId)) return null;
+  const bayoneta = bayonetaInstalada(sheet, instanciaId);
+  if (!bayoneta) return null;
   return {
     id: `bloquear_bayoneta_${instanciaId}`,
     label: `Bloquear con Bayoneta (${arma.label})`,
+    origen: mejoraInstalada(bayoneta),
     grupo: "Defensa",
     aplicado: "potencia",
     habilidad: "combate_melee",
@@ -1214,6 +1233,7 @@ function tiradaBloqueoBrazo(brazo: BrazoBionico): Accion | null {
       `Su blindaje (${brazo.blindaje ?? 0}) solo para este golpe: marca "Bloqueado con el brazo biónico" en Bloquear daño.`,
     condiciones: [CONDICION_ATACANTES_ADICIONALES],
     extremidad,
+    origen: origenDeBrazo(brazo),
   };
 }
 
@@ -1353,9 +1373,11 @@ export function generaAccionPropia(cat: Equipo, nivel?: number): boolean {
 // MotorMetadata que antes, con el mismo orden que el catálogo en vez del de
 // inserción del Record.
 function accionesDeGranadas(sheet: Sheet): Accion[] {
-  return MUNICION_GRANADA.filter((g) => (sheet.granadas[g.id] ?? 0) > 0 && generaAccionPropia(g)).map((g) =>
-    tiradaDeGranada(g),
-  );
+  // Las granadas no tienen instancia: van por tipo en sheet.granadas.
+  return MUNICION_GRANADA.filter((g) => (sheet.granadas[g.id] ?? 0) > 0 && generaAccionPropia(g)).map((g) => ({
+    ...tiradaDeGranada(g),
+    origen: { tipo: "equipo", id: g.id, label: g.label },
+  }));
 }
 
 // `mods`: los de la FichaResuelta (especie, equipo, estados de combate), para el daño
@@ -1372,7 +1394,9 @@ export function accionesDeAtaque(sheet: Sheet, mods: ModificadorConFuente[], per
     const generador = REGISTRO_DE_ATAQUE[cat.familia];
     if (!generador) continue;
     if (!generaAccionPropia(cat, pieza.nivel)) continue;
-    const generadas = generador(sheet, pieza, cat, mods, permisos);
+    // El ítem que crea la fila es la pieza (la del Lanzagranadas o la Bayoneta lo dice ella).
+    const origen = origenDePieza("equipo", cat, pieza.instanciaId);
+    const generadas = generador(sheet, pieza, cat, mods, permisos).map((t) => (t.origen ? t : { ...t, origen }));
     tiradas.push(...(brazo ? generadas.map((t) => conBrazo(t, pieza, brazo)) : generadas));
   }
   const bloqueoBrazo = brazo ? tiradaBloqueoBrazo(brazo) : null;
@@ -1484,12 +1508,13 @@ export function accionesDirectasDeAtaque(sheet: Sheet): AccionDirecta[] {
           NOTA_ESCUDO_SUBSISTEMAS,
         confirmarLabel: "Levantar",
         ...(escudoRoto(sheet, pieza.instanciaId) && { bloqueada: MOTIVO_ESCUDO_ROTO }),
+        origen: origenDePieza("equipo", cat, pieza.instanciaId),
       });
     } else if (cat?.familia === "subsistema" && pieza.catalogoId === "malla_plasmatica") {
       const detonacion = tiradaDetonacionPulsoTermico(pieza);
-      if (detonacion) acciones.push(detonacion);
+      if (detonacion) acciones.push({ ...detonacion, origen: origenDePieza("equipo", cat, pieza.instanciaId) });
     } else if (cat?.familia === "subsistema" && pieza.catalogoId === "camuflaje_trifasico") {
-      acciones.push(accionActivarCamuflaje(sheet, pieza, cat));
+      acciones.push({ ...accionActivarCamuflaje(sheet, pieza, cat), origen: origenDePieza("equipo", cat, pieza.instanciaId) });
     }
   }
   return acciones;

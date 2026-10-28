@@ -16,6 +16,7 @@ import { acumulaPorClave, claveModificador, costeDePieza, nivelesHasta, type Pie
 import { HABILIDADES, type HabilidadId } from "./habilidades";
 import { SIN_AJUSTE_UMBRALES, type AjusteUmbral, type AjusteUmbrales, type ReduccionPorAplicado } from "./estados";
 import type { ModificadorConFuente } from "./modificadores";
+import { origenDePieza } from "./origen";
 import type { AjusteCoste, AjusteHabilidad } from "./progresion";
 import type { Sheet } from "./sheet";
 
@@ -280,14 +281,14 @@ export function modificadoresDeAumentos(sheet: Pick<Sheet, "equipo">): Modificad
     if (!cat) return [];
     if (cat.familia === "operacionGenetica") {
       if (!activas.has(cat.id)) return [];
-      return cat.modificadores.map((m) => ({ ...m, origen: "aumento" as const, fuente: cat.label }));
+      return cat.modificadores.map((m) => ({ ...m, origen: "aumento" as const, fuente: cat.label, item: origenDePieza("aumento", cat, pieza.instanciaId) }));
     }
     if (pieza.nivel === undefined) return [];
     const mods = acumulaPorClave(
       nivelesHasta(cat.niveles, pieza.nivel).map((n) => n.modificadores),
       claveModificador,
     );
-    return mods.map((m) => ({ ...m, origen: "aumento" as const, fuente: `${cat.label} ${pieza.nivel}` }));
+    return mods.map((m) => ({ ...m, origen: "aumento" as const, fuente: `${cat.label} ${pieza.nivel}`, item: origenDePieza("aumento", cat, pieza.instanciaId) }));
   });
 }
 
