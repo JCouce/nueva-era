@@ -306,8 +306,9 @@ inventario actualizado (columna de reclasificación marcada como aplicada).
 Decisión del usuario (2026-10-28, E4 del inventario): los umbrales de salud y fatiga (§7)
 dejan de ser aportes sin ítem y pasan a ser **estados** («Malherido», «Fatigado»…) que se ponen
 solos al pasar el umbral y se quitan al volver. Es funcionalidad nueva y toca reglas: se plantea
-con el usuario como tarea propia (`docs/tareas.md`) antes de la fase 2. Cuando exista, la fase 2
-no necesita el origen `"umbral"`: su origen es `"estado"`.
+con el usuario como tarea propia antes de la fase 2: **planteada y decidida (2026-10-28)**, el
+contrato está en `docs/tareas.md`, sección "Umbrales de salud y fatiga como estados automáticos".
+Cuando exista, la fase 2 no necesita el origen `"umbral"`: su origen es `"estado"`.
 
 ---
 

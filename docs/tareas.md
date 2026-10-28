@@ -940,11 +940,34 @@ su propio `PanelFieldset` y `CharacterSheet` ya no lo envuelve. NPC y consola de
   recientes, "Tirada libre (Reflejos + Sigilo)". También en el editor de NPC y el combate del máster, sin estrella.
 
 ### Umbrales de salud y fatiga como estados automáticos ⬜ (usuario, 2026-10-28)
-Los umbrales de §7 (penalizadores por heridas y por fatiga) pasan a ser **estados** («Malherido»,
-«Fatigado»…) que se ponen solos al cruzar el umbral y se quitan al volver, en vez de modificadores
-sin ítem. Idea antigua del usuario; salió como E4 del inventario de aportes y va antes de la fase 2
-de `docs/aportes/plan.md`. Sin plantear: forma, nombres de los estados y cómo conviven con los
-estados que pone el máster, por decidir con el usuario.
+Los umbrales de §7 (penalizadores por heridas y por fatiga) pasan a ser **estados** que aparecen
+solos al cruzar el umbral y se van al volver, en vez de modificadores sin ítem. Idea antigua del
+usuario; salió como E4 del inventario de aportes y va antes de la fase 2 de `docs/aportes/plan.md`.
+La fuente lo respalda: `fuente/reglas-base.md` lista **Heridas** y **Fatiga** entre los estados
+(remiten a Salud para sus niveles), y el catálogo de la app no los tiene.
+
+**Decisiones del usuario (2026-10-28):**
+- **Derivados, nunca guardados**: salen de la vida y la fatiga en cada lectura (`resolverFicha`, con
+  la misma `vitalidad` que hoy usan los umbrales: ficha fuera de combate, foto del `Combatiente`
+  dentro; fatiga efectiva con la temporal de Proeza). No se escriben en `Character.estados` ni en
+  `Combatiente.estados`; «Limpiar estados» no los toca; valen igual para NPCs.
+- **Dos estados con niveles** en `catalog/estados.ts`: **Heridas** (Herido <50 %, Malherido <25 %,
+  Moribundo <10 %, mínimo de S15) y **Fatiga** (Fatigado <25 %, Exhausto <10 %). Un nivel por estado
+  a la vez (S14 sale de la forma).
+- **Inconsciencia automática** con vida ≤ 0 o fatiga ≤ 0 (el estado `inconsciencia` ya existe). La
+  de sobrecarga psiónica (en el límite con fatiga > 0) no es derivable: sigue como aviso y la pone el
+  máster. Si el máster la ha puesto a mano y además sale derivada, se enseña una vez.
+- **El máster no puede anularlos**: solo se quitan cambiando la vida o la fatiga. Lo que hoy reduce o
+  anula penalizadores de heridas y fatiga (Guerrero, Siervo, Estabilización Autonómica, Neuroprótesis,
+  Proyección, Neurogénesis) sigue igual.
+
+**Contrato:**
+- **Ningún número cambia**: −N a todo, bandas, mínimos, media velocidad, carga y las reducciones de
+  arriba dan lo mismo (S14, S15, S26-S29). Lo que cambia es el origen (`"estado"`) y que se ven.
+- Se ven en la lista de estados de la ficha (Personaje → Estado), en el centro de mando y en el
+  combate del máster, marcados como automáticos (sin duración ni botón de quitar).
+- El selector de estados del máster no ofrece Heridas ni Fatiga (son solo derivados).
+- `docs/sistema.md` §7: el bloque "En la app" pasa a describir los estados derivados.
 
 ### Acciones por habilidad: árbol, barra de salvaciones y Sin dado ✅ (usuario, 2026-10-27; rama `prueba/tiradas-en-habilidades`)
 Sustituye la barra por origen de arriba. Motivo: en mesa se tiraba "atributo + habilidad" a pelo y se perdían dotes,
