@@ -263,7 +263,7 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
       motor: [
         ...MOTOR_BONO_APLICACION,
         {
-          tipo: "numerico",
+          tipo: "resolucion",
           afecta: { modo: "accion_existente", id: "medicina" },
           mecanismo: "eleccion_jugador",
           estado: "construido",

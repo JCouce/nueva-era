@@ -277,7 +277,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "coste", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -360,7 +360,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Iniciativa" }, mecanismo: "siempre_activo", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "grupo:Iniciativa" }, mecanismo: "siempre_activo", estado: "construido" },
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_accion_combinada" }, mecanismo: "accion_equipo", estado: "construido" },
     ],
   },
@@ -397,7 +397,8 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "coste", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -470,8 +471,8 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "rastreo" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "rastreo" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -512,7 +513,8 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee_<instancia>" }, mecanismo: "nota_fija", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "coste", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -580,7 +582,8 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
       },
     ],
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "coste", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "nota_fija", estado: "construido" },
     ],
@@ -649,8 +652,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     activo: { estadoId: "aum_proyeccion", anulaPenalizadores: { tipo: "habilidad", habilidad: "actitud" } },
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "suma_derivado", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "coste", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "suma_derivado", estado: "construido" },
     ],
   },
   {
@@ -694,7 +698,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
       { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Salvaciones" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "nota_fija", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "nota_fija", estado: "construido" },
     ],
   },
@@ -794,7 +798,8 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:potencia" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "aplicado:potencia" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "coste", afecta: { modo: "accion_existente", id: "aplicado:potencia" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -888,7 +893,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     ],
     motor: [
       { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "nota_fija", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "atletismo" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "atletismo" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -910,7 +915,8 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "coste", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -973,7 +979,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     salvaciones: [{ contra: ["enfermedad", "toxinas", "venenos", "radiacion", "termicos", "asfixia"], ventaja: "gratis" }],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -1490,7 +1496,7 @@ export const IMPLANTES: Implante[] = [
         // van siempre con el brazo y llevan la nota de desenfundado gratis, sin desarme y carga
         // (solo texto), en el cuerpo a cuerpo y en el fuego.
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "nota_fija", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego_<instancia>" }, mecanismo: "nota_fija", estado: "construido" },
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "desarmar" }, mecanismo: "nota_fija", estado: "construido" },
@@ -1523,9 +1529,9 @@ export const IMPLANTES: Implante[] = [
         // casilla del Puñetazo y el codazo, y la fila "Bloquear con el brazo biónico" (con la dote
         // Bloqueo).
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "resolucion", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_bloquear_brazo" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
       },
@@ -1553,8 +1559,8 @@ export const IMPLANTES: Implante[] = [
         ],
         modificadores: [],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "resolucion", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
       {
@@ -1586,8 +1592,8 @@ export const IMPLANTES: Implante[] = [
         ],
         modificadores: [],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "resolucion", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
     ],

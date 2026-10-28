@@ -199,6 +199,10 @@ export const efectoDoteSchema = z.discriminatedUnion("tipo", [
     coste: z.strictObject({ fatiga: z.number().int().min(1) }).optional(),
     ...comunes,
   }),
+  // Coste de una casilla, aparte de lo que hace (docs/aportes/plan.md §1.3, fase 1b): se cobra
+  // al confirmar la tirada en la casilla de la misma condición (Ojo Clínico: la ventaja y 1 de
+  // fatiga son dos efectos).
+  z.strictObject({ tipo: z.literal("coste"), alcance, condicion, fatiga: z.number().int().min(1), ...comunes }),
   z.strictObject({ tipo: z.literal("exito_extra"), alcance, exitos: z.number().int().min(1), condicion, ...comunes }),
   z.strictObject({ tipo: z.literal("danio_por_exitos"), alcance, condicion, ...comunes }),
   z.strictObject({ tipo: z.literal("categoria_danio"), alcance, a: z.string().min(1), condicion, ...comunes }),

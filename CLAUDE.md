@@ -37,6 +37,7 @@ todo elemento nuevo tiene que responder antes de darse por transcrito.
 | `npm run db:migrate` | `prisma migrate dev` — crear migración nueva al cambiar el schema. |
 | `npm run make-master -- <email>` | Asciende un usuario a MASTER. |
 | `npm run seed-npcs` | Crea/actualiza NPCs de ejemplo (`NpcTemplate`) por código, upsert por `nombre`. Los NPCs normales se crean desde `/master/npcs`. |
+| `npm run gen-dotes` | Genera `src/lib/catalog/dotes.ts` desde `docs/modelado-dotes.json` + `docs/dotes.md`. `dotes.ts` nunca se edita a mano: se cambia la fuente (o el generador, `scripts/generar-catalogo-dotes.ts`) y se regenera; `dotes.generado.test.ts` falla si no coinciden. |
 | `npm run sync-drive` | Baja los documentos del diseñador de Drive a `docs/fuente/` (Markdown) y enseña qué ha cambiado desde la última foto. Nunca commitea; la foto se commitea como `fuente: sync Drive AAAA-MM-DD`. Requiere `brew install pandoc`. Qué hacer después: `docs/drive-sync.md`. |
 | `npm run seed-preguntas -- <json>` | Siembra/actualiza las preguntas al diseñador de `/preguntas` (página pública, sin login) desde `scripts/data/*.json`. Nunca pisa respuestas. En prod: `DATABASE_URL=<Neon> npm run seed-preguntas -- <json>`. |
 

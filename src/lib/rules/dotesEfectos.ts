@@ -363,6 +363,12 @@ export function efectosDeDotes(
         if (e.coste) c.costeFatiga = (c.costeFatiga ?? 0) + e.coste.fatiga;
         return;
       }
+      if (e.tipo === "coste") {
+        // Lo que cobra la casilla de la misma condición (Ojo Clínico).
+        const c = casillaPara(e, i);
+        if (c) c.costeFatiga = (c.costeFatiga ?? 0) + e.fatiga;
+        return;
+      }
       if (e.tipo === "sube_grado") {
         // Solo fracaso → éxito (el generador no construye otro).
         const c = e.de === "fracaso" && e.a === "exito" ? casillaPara(e, i) : null;

@@ -143,7 +143,7 @@ describe("integridad del catálogo de aumentos", () => {
     aum_matriz_de_red_predeterminada: 4, // 2 de A2a y 2 de A2b
     aum_integridad_osteotendinosa: 1,
     aum_matriz_osea_adaptativa: 2, // armadura natural (A2a) y la nota de carga (A3)
-    aum_biogenesis_mitocondrial: 1,
+    aum_biogenesis_mitocondrial: 2, // +1: Coste partido de la casilla de ventaja, fase 1b
     aum_resiliencia_homeostatica: 1,
     aum_estabilizacion_autonomica: 5, // 2 de A2a, el ajuste de umbrales (A3) y Sacudir/Dominar (A4a)
     aum_introgresion_sensorial_heterologa: 4, // 2 de A2a, el barrido electromagnético (A4b) y la UV en Investigación
@@ -155,15 +155,15 @@ describe("integridad del catálogo de aumentos", () => {
     // A2b: casillas por aplicado y de cualquier tirada, ventaja fija y textos.
     aum_mielinizacion_central: 1,
     aum_red_frontoparietal: 2, // ventaja en Iniciativa (A2b) y la acción combinada (A4a)
-    aum_prefrontal_aumentada: 2,
+    aum_prefrontal_aumentada: 3, // +1: Coste partido de la casilla de ventaja, fase 1b
     aum_optimizacion_foveo_sensorial: 3, // +1 con «Apuntado» (bono por opción) y cobertura visual (A3)
     // A3: compensación de fatiga en las pruebas mentales.
     aum_neurogenesis_hipocampal: 1,
-    aum_consciencia_omnidireccional: 2,
+    aum_consciencia_omnidireccional: 3, // +1: Coste partido de la casilla de ventaja, fase 1b
     aum_asa_estriatotalamica: 1,
-    aum_conectividad_callosa: 3,
-    aum_proyeccion_neuro_expresiva: 2, // ventaja en Actitud (A2b) y el activable (A5a)
-    aum_sincronizacion_neuromotora_profunda: 1,
+    aum_conectividad_callosa: 4, // +1: Coste partido de la casilla de ventaja, fase 1b
+    aum_proyeccion_neuro_expresiva: 3, // ventaja en Actitud (A2b) y el activable (A5a); +1: Coste partido de la casilla de ventaja, fase 1b
+    aum_sincronizacion_neuromotora_profunda: 2, // +1: Coste partido de la casilla de ventaja, fase 1b
     aum_automatismo_bulboespinal: 2,
     aum_hiperdensidad_propioceptiva: 1,
     aum_bucle_de_realimentacion_motora: 2,

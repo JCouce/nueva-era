@@ -103,7 +103,7 @@ export const PELEA: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
     ],
   },
@@ -129,7 +129,7 @@ export const PELEA: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
     ],
   },
@@ -153,7 +153,7 @@ export const PELEA: ArmaMelee[] = [
     defensa: null,
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
     ],
   },
@@ -294,7 +294,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "lanzar_arma_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
     ],
   },
@@ -592,7 +592,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "lanzar_arma_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       // efectoCritico: ya no es un volcado de texto sin lógica — solo se
       // pinta cuando resultado.critico es true (ResultadoTirada.tsx), así
       // que pasa a "construido" (piloto, 2026-09-23).
@@ -623,7 +623,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
     ],
   },
@@ -698,7 +698,7 @@ export const FLAGELOS: ArmaMelee[] = [
     defensa: null,
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
     ],
   },
@@ -765,7 +765,7 @@ export const FLAGELOS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
     ],
   },
@@ -999,7 +999,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       {
         // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
         // daño, se resta a mano del blindaje del objetivo (2026-09-28).
-        tipo: "texto",
+        tipo: "resolucion",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         estado: "construido",
@@ -1044,7 +1044,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       {
         // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
         // daño, se resta a mano del blindaje del objetivo (2026-09-28).
-        tipo: "texto",
+        tipo: "resolucion",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         estado: "construido",
@@ -1100,7 +1100,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       {
         // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
         // daño, se resta a mano del blindaje del objetivo (2026-09-28).
-        tipo: "texto",
+        tipo: "resolucion",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         estado: "construido",
@@ -1155,7 +1155,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       {
         // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
         // daño, se resta a mano del blindaje del objetivo (2026-09-28).
-        tipo: "texto",
+        tipo: "resolucion",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         estado: "construido",
@@ -1211,7 +1211,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       {
         // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
         // daño, se resta a mano del blindaje del objetivo (2026-09-28).
-        tipo: "texto",
+        tipo: "resolucion",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         estado: "construido",
@@ -1260,7 +1260,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       {
         // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
         // daño, se resta a mano del blindaje del objetivo (2026-09-28).
-        tipo: "texto",
+        tipo: "resolucion",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         estado: "construido",
@@ -1308,7 +1308,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       {
         // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
         // daño, se resta a mano del blindaje del objetivo (2026-09-28).
-        tipo: "texto",
+        tipo: "resolucion",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         estado: "construido",
@@ -1363,7 +1363,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       {
         // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
         // daño, se resta a mano del blindaje del objetivo (2026-09-28).
-        tipo: "texto",
+        tipo: "resolucion",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         estado: "construido",
@@ -1411,7 +1411,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       {
         // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
         // daño, se resta a mano del blindaje del objetivo (2026-09-28).
-        tipo: "texto",
+        tipo: "resolucion",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         estado: "construido",
@@ -1462,7 +1462,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       {
         // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
         // daño, se resta a mano del blindaje del objetivo (2026-09-28).
-        tipo: "texto",
+        tipo: "resolucion",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         estado: "construido",

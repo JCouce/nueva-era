@@ -110,6 +110,7 @@
 //   - el coste;
 //   - el grupo (## de la transcripción; "Tecnociencia · Psiónica" = tecnociencia + subgrupo psionica).
 import { readFileSync, writeFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 import { doteCatalogoSchema, type DoteCatalogo, type RequisitoDote } from "../src/lib/catalog/dotesTipos";
 import {
   DESTINOS_DOTES,
@@ -168,11 +169,10 @@ const falla = (id: string, msg: string) => errores.push(`  ${id}: ${msg}`);
 
 // ── 1. Borrador ──────────────────────────────────────────────────────────
 const crudo = JSON.parse(readFileSync(BORRADOR, "utf8")) as unknown;
-const lista = (crudo as { dotes?: unknown }).dotes;
-if (!Array.isArray(lista)) {
-  console.error("docs/modelado-dotes.json no trae un array `dotes`");
-  process.exit(1);
-}
+const dotesCrudas = (crudo as { dotes?: unknown }).dotes;
+if (!Array.isArray(dotesCrudas)) throw new Error("docs/modelado-dotes.json no trae un array `dotes`");
+// Aparte: el narrowing de Array.isArray no llega dentro de generarCatalogoDotes(); la const sí.
+const lista = dotesCrudas;
 
 // ── Transcripción: secciones ### por dote ────────────────────────────────
 type SeccionMd = { grupo: string; coste: number | null; requisitos: string[]; texto: string };
@@ -805,6 +805,7 @@ function tandaDelTipo(e: Efecto): TandaDote | null {
     case "margen_critico":
     case "sube_grado":
     case "ventaja":
+    case "coste":
     case "exito_extra":
     case "danio_por_exitos":
     case "categoria_danio":
@@ -878,6 +879,7 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
       (destino?.tipo === "tirada" &&
         typeof e.condicion === "string" &&
         (e.tipo === "ventaja" ||
+          e.tipo === "coste" ||
           (e.tipo === "sube_grado" && e.de === "fracaso" && e.a === "exito") ||
           (e.tipo === "margen_critico" && familiaDestino === null) ||
           (e.tipo === "cambia_par" &&
@@ -944,7 +946,8 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
       return { tipo: "numerico", afecta: { modo: "accion_existente", id: clave! }, mecanismo, ...estado };
     }
     case "cambia_par":
-      return { tipo: "numerico", afecta: { modo: "accion_existente", id: clave! }, mecanismo: "sustitucion_aplicado", ...estado };
+      // Resolución (docs/aportes/plan.md §1.3): cambia qué aplicado o habilidad alimenta la tirada.
+      return { tipo: "resolucion", afecta: { modo: "accion_existente", id: clave! }, mecanismo: "sustitucion_aplicado", ...estado };
     case "descuento_contador":
       // Cambia lo que vale el contador que pone el jugador al tirar.
       return { tipo: "numerico", afecta: { modo: "accion_existente", id: clave! }, mecanismo: "eleccion_jugador", ...estado };
@@ -954,7 +957,12 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
     case "exito_extra":
     case "danio_por_exitos":
     case "categoria_danio":
-      return { tipo: "numerico", afecta: { modo: "accion_existente", id: clave! }, mecanismo: mecanismoCasilla, ...estado };
+      // Resolución (§1.3): cambian cómo se resuelve (dados, umbrales de grado, reglas del daño),
+      // no el total.
+      return { tipo: "resolucion", afecta: { modo: "accion_existente", id: clave! }, mecanismo: mecanismoCasilla, ...estado };
+    case "coste":
+      // Coste (§1.3): lo que cobra la casilla al confirmar (Ojo Clínico, 1 de fatiga).
+      return { tipo: "coste", afecta: { modo: "accion_existente", id: clave! }, mecanismo: mecanismoCasilla, ...estado };
     case "economia":
       return { tipo: "texto", afecta: { modo: "accion_existente", id: clave! }, mecanismo: "nota_fija", ...estado };
     case "habilita":
@@ -991,226 +999,239 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
   }
 }
 
-const dotes: DoteCatalogo[] = [];
-for (const [i, entrada] of lista.entries()) {
-  if (!entrada || typeof entrada !== "object" || Array.isArray(entrada)) {
-    falla(`#${i}`, "no es un objeto");
-    continue;
-  }
-  const d = entrada as Record<string, unknown>;
-  const id = typeof d.id === "string" ? d.id : `#${i}`;
-  const raras = Object.keys(d).filter((k) => !CLAVES_V2.has(k));
-  if (raras.length) falla(id, `claves fuera de MODELO_DOTES v2: ${raras.join(", ")}`);
+// El texto de src/lib/catalog/dotes.ts, sin escribirlo: lo usa el script (abajo) y el test de deriva
+// (src/lib/catalog/dotes.generado.test.ts). Si el borrador no encaja, lanza con la lista de fallos.
+export function generarCatalogoDotes(): { texto: string; total: number; avisos: string[]; lineasRecuento: string[] } {
+  errores.length = 0;
+  avisos.length = 0;
+  ajustesUsados.clear();
+  ajustesPoderUsados.clear();
 
-  const seccion = typeof d.label === "string" ? md.get(d.label) : undefined;
-  if (!seccion) falla(id, `no casa con ningún ### de docs/dotes.md (label ${JSON.stringify(d.label)})`);
-
-  const compra = {
-    id: d.id,
-    label: d.label,
-    grupo: d.grupo,
-    ...(d.subgrupo !== undefined && { subgrupo: d.subgrupo }),
-    coste: d.coste,
-    requisitos: Array.isArray(d.requisitos) ? d.requisitos.map((r) => normalizarRequisito(id, r)) : d.requisitos,
-    eleccion: normalizarEleccion(id, d.eleccion),
-    repetible: d.repetible,
-    sustituye: d.sustituye,
-    visible: d.visible,
-    texto: seccion?.texto ?? "",
-  };
-  const efectos = aplicarRamaYFiltro(
-    id,
-    Array.isArray(d.requisitos) ? d.requisitos.map((r) => normalizarRequisito(id, r)) : d.requisitos,
-    normalizarEfectos(id, d.efectos),
-  );
-  const motor = efectos.map((e) => clasificar(id, e));
-  const completa = {
-    ...compra,
-    efectos,
-    limite: d.limite ?? null,
-    candidataUX: d.candidataUX ?? null,
-    motor,
-  };
-  const res = doteCatalogoSchema.safeParse(completa);
-  if (!res.success) {
-    for (const issue of res.error.issues) {
-      const [campo, n] = issue.path;
-      const donde = (campo === "efectos" || campo === "motor") && typeof n === "number" ? ` (efecto ${n}, borrador #${efectos[n]?.borrador})` : "";
-      falla(id, `${issue.path.join(".") || "(raíz)"}${donde}: ${issue.message}`);
+  const dotes: DoteCatalogo[] = [];
+  for (const [i, entrada] of lista.entries()) {
+    if (!entrada || typeof entrada !== "object" || Array.isArray(entrada)) {
+      falla(`#${i}`, "no es un objeto");
+      continue;
     }
-    continue;
-  }
-  dotes.push(res.data);
-}
+    const d = entrada as Record<string, unknown>;
+    const id = typeof d.id === "string" ? d.id : `#${i}`;
+    const raras = Object.keys(d).filter((k) => !CLAVES_V2.has(k));
+    if (raras.length) falla(id, `claves fuera de MODELO_DOTES v2: ${raras.join(", ")}`);
 
-// ── 4. Referencias y recuento ─────────────────────────────────────────────
-const porId = new Map<string, DoteCatalogo>();
-const labels = new Set<string>();
-for (const d of dotes) {
-  if (porId.has(d.id)) falla(d.id, "id repetido");
-  if (labels.has(d.label)) falla(d.id, `nombre repetido: ${d.label}`);
-  porId.set(d.id, d);
-  labels.add(d.label);
-}
-const planos = (rs: RequisitoDote[]) => rs.flatMap((r) => (r.tipo === "uno_de" ? r.opciones : [r]));
-for (const d of dotes) {
-  if (d.sustituye && !porId.has(d.sustituye)) falla(d.id, `sustituye a una dote que no existe: ${d.sustituye}`);
-  for (const r of planos(d.requisitos)) {
-    if (r.tipo === "dote" && !porId.has(r.id)) falla(d.id, `requisito de dote previa inexistente: ${r.id}`);
-    if (r.tipo === "dote" && r.id === d.id) falla(d.id, "se tiene de requisito a sí misma");
-    if (r.tipo === "especialidad" && especialidadPorId(r.id)?.habilidad !== r.habilidad)
-      falla(d.id, `requisito de especialidad "${r.id}" que no es de ${r.habilidad} en el catálogo de especialidades`);
+    const seccion = typeof d.label === "string" ? md.get(d.label) : undefined;
+    if (!seccion) falla(id, `no casa con ningún ### de docs/dotes.md (label ${JSON.stringify(d.label)})`);
+
+    const compra = {
+      id: d.id,
+      label: d.label,
+      grupo: d.grupo,
+      ...(d.subgrupo !== undefined && { subgrupo: d.subgrupo }),
+      coste: d.coste,
+      requisitos: Array.isArray(d.requisitos) ? d.requisitos.map((r) => normalizarRequisito(id, r)) : d.requisitos,
+      eleccion: normalizarEleccion(id, d.eleccion),
+      repetible: d.repetible,
+      sustituye: d.sustituye,
+      visible: d.visible,
+      texto: seccion?.texto ?? "",
+    };
+    const efectos = aplicarRamaYFiltro(
+      id,
+      Array.isArray(d.requisitos) ? d.requisitos.map((r) => normalizarRequisito(id, r)) : d.requisitos,
+      normalizarEfectos(id, d.efectos),
+    );
+    const motor = efectos.map((e) => clasificar(id, e));
+    const completa = {
+      ...compra,
+      efectos,
+      limite: d.limite ?? null,
+      candidataUX: d.candidataUX ?? null,
+      motor,
+    };
+    const res = doteCatalogoSchema.safeParse(completa);
+    if (!res.success) {
+      for (const issue of res.error.issues) {
+        const [campo, n] = issue.path;
+        const donde = (campo === "efectos" || campo === "motor") && typeof n === "number" ? ` (efecto ${n}, borrador #${efectos[n]?.borrador})` : "";
+        falla(id, `${issue.path.join(".") || "(raíz)"}${donde}: ${issue.message}`);
+      }
+      continue;
+    }
+    dotes.push(res.data);
   }
-  // Especialidades en efectos: resolución de acciones de dote y cambio de par.
-  for (const e of d.efectos) {
-    const pares: { habilidad?: string; especialidad?: string | string[] }[] = [];
-    if (e.tipo === "accion") pares.push(e.accion.resolucion as { habilidad?: string; especialidad?: string | string[] });
-    if (e.tipo === "cambia_par") pares.push(e);
-    for (const p of pares) {
-      for (const esp of [p.especialidad ?? []].flat()) {
-        const cat = especialidadPorId(esp);
-        if (!cat) falla(d.id, `especialidad "${esp}" que no está en el catálogo de especialidades`);
-        else if (p.habilidad && cat.habilidad !== p.habilidad) falla(d.id, `especialidad "${esp}" que no es de ${p.habilidad}`);
+
+  // ── 4. Referencias y recuento ─────────────────────────────────────────────
+  const porId = new Map<string, DoteCatalogo>();
+  const labels = new Set<string>();
+  for (const d of dotes) {
+    if (porId.has(d.id)) falla(d.id, "id repetido");
+    if (labels.has(d.label)) falla(d.id, `nombre repetido: ${d.label}`);
+    porId.set(d.id, d);
+    labels.add(d.label);
+  }
+  const planos = (rs: RequisitoDote[]) => rs.flatMap((r) => (r.tipo === "uno_de" ? r.opciones : [r]));
+  for (const d of dotes) {
+    if (d.sustituye && !porId.has(d.sustituye)) falla(d.id, `sustituye a una dote que no existe: ${d.sustituye}`);
+    for (const r of planos(d.requisitos)) {
+      if (r.tipo === "dote" && !porId.has(r.id)) falla(d.id, `requisito de dote previa inexistente: ${r.id}`);
+      if (r.tipo === "dote" && r.id === d.id) falla(d.id, "se tiene de requisito a sí misma");
+      if (r.tipo === "especialidad" && especialidadPorId(r.id)?.habilidad !== r.habilidad)
+        falla(d.id, `requisito de especialidad "${r.id}" que no es de ${r.habilidad} en el catálogo de especialidades`);
+    }
+    // Especialidades en efectos: resolución de acciones de dote y cambio de par.
+    for (const e of d.efectos) {
+      const pares: { habilidad?: string; especialidad?: string | string[] }[] = [];
+      if (e.tipo === "accion") pares.push(e.accion.resolucion as { habilidad?: string; especialidad?: string | string[] });
+      if (e.tipo === "cambia_par") pares.push(e);
+      for (const p of pares) {
+        for (const esp of [p.especialidad ?? []].flat()) {
+          const cat = especialidadPorId(esp);
+          if (!cat) falla(d.id, `especialidad "${esp}" que no está en el catálogo de especialidades`);
+          else if (p.habilidad && cat.habilidad !== p.habilidad) falla(d.id, `especialidad "${esp}" que no es de ${p.habilidad}`);
+        }
+      }
+    }
+    if (d.repetible && !d.eleccion) falla(d.id, "repetible sin elección: no habría forma de distinguir las copias");
+    if (d.motor.length !== d.efectos.length) falla(d.id, `${d.motor.length} MotorMetadata para ${d.efectos.length} efectos`);
+    d.motor.forEach((m, n) => {
+      for (const e of erroresDeMotorMetadata(m)) falla(d.id, `motor ${n}: ${e}`);
+    });
+  }
+  // Destino "accionDote": la acción tiene que existir en el catálogo (D2c-1).
+  const accionesDeCatalogo = new Set(dotes.flatMap((d) => d.efectos.flatMap((e) => (e.tipo === "accion" ? [e.accion.id] : []))));
+  for (const [clave, destino] of Object.entries(DESTINOS_DOTES))
+    if (destino.tipo === "accionDote" && !accionesDeCatalogo.has(clave)) falla("(destinos)", `accionDote "${clave}" sin acción en el catálogo`);
+  for (const a of Object.keys(AJUSTES_ACCION)) if (!ajustesUsados.has(a)) falla("(AJUSTES_ACCION)", `"${a}" no es una acción del borrador`);
+  for (const a of Object.keys(AJUSTES_PODER)) if (!ajustesPoderUsados.has(a)) falla("(AJUSTES_PODER)", `"${a}" no es un poder del borrador`);
+  // Destino "poder" (D2c-2): el id es una acción de psiónica o un poder de dote del catálogo.
+  const poderesConocidos = new Set([
+    ...DISCIPLINAS.flatMap((d) => d.acciones.map((a) => a.id)),
+    ...dotes.flatMap((d) => d.efectos.flatMap((e) => (e.tipo === "poder" ? [e.accion.id] : []))),
+  ]);
+  for (const [clave, destino] of Object.entries(DESTINOS_DOTES))
+    if (destino.tipo === "poder" && !poderesConocidos.has(destino.id)) falla("(destinos)", `poder "${destino.id}" (${clave}) que no existe`);
+  if (lista.length !== TOTAL_ESPERADO) falla("(catálogo)", `el borrador trae ${lista.length} dotes, se esperaban ${TOTAL_ESPERADO}`);
+  if (md.size !== TOTAL_ESPERADO) falla("(catálogo)", `docs/dotes.md trae ${md.size} dotes, se esperaban ${TOTAL_ESPERADO}`);
+
+  // ── 5. Cruce contra docs/dotes.md ─────────────────────────────────────────
+  const grupoMd = (g: string): { grupo: string; subgrupo?: string } | null => {
+    if (g === "Tecnociencia · Psiónica") return { grupo: "tecnociencia", subgrupo: "psionica" };
+    const h = HABILIDADES.find((x) => x.label === g);
+    return h ? { grupo: h.id } : null;
+  };
+  const claseDeTipo = (r: RequisitoDote): string => {
+    const base = r.tipo === "uno_de" ? r.opciones[0] : r;
+    if (r.tipo === "uno_de" && r.opciones.some((o) => o.tipo !== base.tipo)) return "uno_de mixto";
+    switch (base.tipo) {
+      case "atributo":
+        return "atributo";
+      case "aplicado":
+        return "atributo aplicado";
+      case "habilidad":
+        return "habilidad";
+      case "especialidad":
+        return `especialidad (${HABILIDADES.find((h) => h.id === base.habilidad)!.label})`;
+      case "dote":
+        return "dote previa";
+      case "disciplina":
+        return "(?) disciplina psiónica";
+      case "psionico":
+        return "(?)";
+    }
+  };
+  const discrepancias: string[] = [];
+  for (const d of dotes) {
+    const s = md.get(d.label);
+    if (!s) continue;
+    const problemas: string[] = [];
+    if (s.requisitos.length !== d.requisitos.length)
+      problemas.push(`${s.requisitos.length} líneas de requisito en dotes.md, ${d.requisitos.length} en el borrador`);
+    const clasesMd = s.requisitos.map((l) => l.split(" · ").at(-1)!.trim()).sort();
+    const clasesJson = d.requisitos.map(claseDeTipo).sort();
+    if (clasesMd.join("|") !== clasesJson.join("|"))
+      problemas.push(`clases ${JSON.stringify(clasesMd)} en dotes.md frente a ${JSON.stringify(clasesJson)}`);
+    if (s.coste !== d.coste) problemas.push(`coste ${s.coste} en dotes.md, ${d.coste} en el borrador`);
+    const g = grupoMd(s.grupo);
+    if (!g || g.grupo !== d.grupo || g.subgrupo !== d.subgrupo) problemas.push(`grupo "${s.grupo}" en dotes.md, ${d.grupo}/${d.subgrupo ?? "-"} en el borrador`);
+    if (problemas.length) discrepancias.push(`  ${d.id}: ${problemas.join("; ")}`);
+  }
+
+  // Cruce de nombres: cada especialidad citada en requisitos tiene que aparecer con el
+  // nombre de su catálogo en las líneas de docs/dotes.md ("Empatía 1 o Liderazgo 1 ·
+  // especialidad (Actitud)"): se parte por " o ", se quita el número (y el punto suelto,
+  // "Medicina 1.") y se casa con el id por nombre normalizado. Si no, falla. Los nombres
+  // legibles salen del catálogo de especialidades, no de aquí.
+  const claveEspecialidad = (s: string) =>
+    s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim().replace(/[\s_-]+/g, "_");
+  const nombresMd = new Map<string, string>();
+  for (const s of md.values()) {
+    for (const l of s.requisitos) {
+      const [texto, clase] = l.split(" · ");
+      if (!clase?.startsWith("especialidad")) continue;
+      for (const parte of texto.split(" o ")) {
+        const nombre = parte.replace(/\s+\d+\.?\s*$/, "").trim();
+        nombresMd.set(claveEspecialidad(nombre), nombre);
       }
     }
   }
-  if (d.repetible && !d.eleccion) falla(d.id, "repetible sin elección: no habría forma de distinguir las copias");
-  if (d.motor.length !== d.efectos.length) falla(d.id, `${d.motor.length} MotorMetadata para ${d.efectos.length} efectos`);
-  d.motor.forEach((m, n) => {
-    for (const e of erroresDeMotorMetadata(m)) falla(d.id, `motor ${n}: ${e}`);
-  });
-}
-// Destino "accionDote": la acción tiene que existir en el catálogo (D2c-1).
-const accionesDeCatalogo = new Set(dotes.flatMap((d) => d.efectos.flatMap((e) => (e.tipo === "accion" ? [e.accion.id] : []))));
-for (const [clave, destino] of Object.entries(DESTINOS_DOTES))
-  if (destino.tipo === "accionDote" && !accionesDeCatalogo.has(clave)) falla("(destinos)", `accionDote "${clave}" sin acción en el catálogo`);
-for (const a of Object.keys(AJUSTES_ACCION)) if (!ajustesUsados.has(a)) falla("(AJUSTES_ACCION)", `"${a}" no es una acción del borrador`);
-for (const a of Object.keys(AJUSTES_PODER)) if (!ajustesPoderUsados.has(a)) falla("(AJUSTES_PODER)", `"${a}" no es un poder del borrador`);
-// Destino "poder" (D2c-2): el id es una acción de psiónica o un poder de dote del catálogo.
-const poderesConocidos = new Set([
-  ...DISCIPLINAS.flatMap((d) => d.acciones.map((a) => a.id)),
-  ...dotes.flatMap((d) => d.efectos.flatMap((e) => (e.tipo === "poder" ? [e.accion.id] : []))),
-]);
-for (const [clave, destino] of Object.entries(DESTINOS_DOTES))
-  if (destino.tipo === "poder" && !poderesConocidos.has(destino.id)) falla("(destinos)", `poder "${destino.id}" (${clave}) que no existe`);
-if (lista.length !== TOTAL_ESPERADO) falla("(catálogo)", `el borrador trae ${lista.length} dotes, se esperaban ${TOTAL_ESPERADO}`);
-if (md.size !== TOTAL_ESPERADO) falla("(catálogo)", `docs/dotes.md trae ${md.size} dotes, se esperaban ${TOTAL_ESPERADO}`);
-
-// ── 5. Cruce contra docs/dotes.md ─────────────────────────────────────────
-const grupoMd = (g: string): { grupo: string; subgrupo?: string } | null => {
-  if (g === "Tecnociencia · Psiónica") return { grupo: "tecnociencia", subgrupo: "psionica" };
-  const h = HABILIDADES.find((x) => x.label === g);
-  return h ? { grupo: h.id } : null;
-};
-const claseDeTipo = (r: RequisitoDote): string => {
-  const base = r.tipo === "uno_de" ? r.opciones[0] : r;
-  if (r.tipo === "uno_de" && r.opciones.some((o) => o.tipo !== base.tipo)) return "uno_de mixto";
-  switch (base.tipo) {
-    case "atributo":
-      return "atributo";
-    case "aplicado":
-      return "atributo aplicado";
-    case "habilidad":
-      return "habilidad";
-    case "especialidad":
-      return `especialidad (${HABILIDADES.find((h) => h.id === base.habilidad)!.label})`;
-    case "dote":
-      return "dote previa";
-    case "disciplina":
-      return "(?) disciplina psiónica";
-    case "psionico":
-      return "(?)";
-  }
-};
-const discrepancias: string[] = [];
-for (const d of dotes) {
-  const s = md.get(d.label);
-  if (!s) continue;
-  const problemas: string[] = [];
-  if (s.requisitos.length !== d.requisitos.length)
-    problemas.push(`${s.requisitos.length} líneas de requisito en dotes.md, ${d.requisitos.length} en el borrador`);
-  const clasesMd = s.requisitos.map((l) => l.split(" · ").at(-1)!.trim()).sort();
-  const clasesJson = d.requisitos.map(claseDeTipo).sort();
-  if (clasesMd.join("|") !== clasesJson.join("|"))
-    problemas.push(`clases ${JSON.stringify(clasesMd)} en dotes.md frente a ${JSON.stringify(clasesJson)}`);
-  if (s.coste !== d.coste) problemas.push(`coste ${s.coste} en dotes.md, ${d.coste} en el borrador`);
-  const g = grupoMd(s.grupo);
-  if (!g || g.grupo !== d.grupo || g.subgrupo !== d.subgrupo) problemas.push(`grupo "${s.grupo}" en dotes.md, ${d.grupo}/${d.subgrupo ?? "-"} en el borrador`);
-  if (problemas.length) discrepancias.push(`  ${d.id}: ${problemas.join("; ")}`);
-}
-
-// Cruce de nombres: cada especialidad citada en requisitos tiene que aparecer con el
-// nombre de su catálogo en las líneas de docs/dotes.md ("Empatía 1 o Liderazgo 1 ·
-// especialidad (Actitud)"): se parte por " o ", se quita el número (y el punto suelto,
-// "Medicina 1.") y se casa con el id por nombre normalizado. Si no, falla. Los nombres
-// legibles salen del catálogo de especialidades, no de aquí.
-const claveEspecialidad = (s: string) =>
-  s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim().replace(/[\s_-]+/g, "_");
-const nombresMd = new Map<string, string>();
-for (const s of md.values()) {
-  for (const l of s.requisitos) {
-    const [texto, clase] = l.split(" · ");
-    if (!clase?.startsWith("especialidad")) continue;
-    for (const parte of texto.split(" o ")) {
-      const nombre = parte.replace(/\s+\d+\.?\s*$/, "").trim();
-      nombresMd.set(claveEspecialidad(nombre), nombre);
+  for (const d of dotes) {
+    for (const r of planos(d.requisitos)) {
+      if (r.tipo !== "especialidad") continue;
+      const nombre = nombresMd.get(r.id);
+      const cat = especialidadPorId(r.id);
+      if (!nombre) discrepancias.push(`  ${d.id}: la especialidad "${r.id}" no aparece con ese nombre en dotes.md`);
+      else if (cat && claveEspecialidad(cat.label) !== claveEspecialidad(nombre))
+        discrepancias.push(`  ${d.id}: "${nombre}" en dotes.md, "${cat.label}" en el catálogo de especialidades`);
     }
   }
-}
-for (const d of dotes) {
-  for (const r of planos(d.requisitos)) {
-    if (r.tipo !== "especialidad") continue;
-    const nombre = nombresMd.get(r.id);
-    const cat = especialidadPorId(r.id);
-    if (!nombre) discrepancias.push(`  ${d.id}: la especialidad "${r.id}" no aparece con ese nombre en dotes.md`);
-    else if (cat && claveEspecialidad(cat.label) !== claveEspecialidad(nombre))
-      discrepancias.push(`  ${d.id}: "${nombre}" en dotes.md, "${cat.label}" en el catálogo de especialidades`);
+
+  // ── Informe ───────────────────────────────────────────────────────────────
+  if (errores.length) throw new Error(`El borrador no encaja con MODELO_DOTES v2 (${errores.length}):\n${errores.join("\n")}`);
+  if (discrepancias.length) throw new Error(`Cruce con docs/dotes.md: ${discrepancias.length} dotes no cuadran:\n${discrepancias.join("\n")}`);
+
+  // ── 7. Recuento por tanda y escribir ─────────────────────────────────────
+  // construido = efecto numérico que la app aplica; texto = texto o narrativo construido
+  // (nota en una tirada o en la tarjeta); pendiente = por tanda (bloqueoPor). Una tanda se
+  // cierra cuando sus pendientes llegan a 0 (docs/tareas.md, "Dotes").
+  const recuento = { construido: 0, texto: 0, pendiente: Object.fromEntries(TANDAS_DOTES.map((t) => [t, 0])) as Record<TandaDote, number> };
+  for (const d of dotes) {
+    for (const m of d.motor) {
+      if (m.estado === "construido") {
+        if (m.tipo === "texto" || m.tipo === "narrativo") recuento.texto++;
+        else recuento.construido++;
+      } else recuento.pendiente[m.bloqueoPor as TandaDote]++;
+    }
   }
-}
+  const totalEfectos = dotes.reduce((t, d) => t + d.efectos.length, 0);
+  const lineasRecuento = [
+    `${totalEfectos} efectos (${lista.reduce((t: number, d: { efectos?: unknown[] }) => t + (d.efectos?.length ?? 0), 0)} en el borrador)`,
+    `construidos: ${recuento.construido}`,
+    `texto: ${recuento.texto}`,
+    ...TANDAS_DOTES.map((t) => `pendientes ${t}: ${recuento.pendiente[t]}`),
+  ];
 
-// ── Informe ───────────────────────────────────────────────────────────────
-if (avisos.length) console.log(`Normalización v1 → v2:\n${avisos.join("\n")}`);
-if (errores.length) {
-  console.error(`El borrador no encaja con MODELO_DOTES v2 (${errores.length}):\n${errores.join("\n")}`);
-  process.exit(1);
-}
-if (discrepancias.length) {
-  console.error(`Cruce con docs/dotes.md: ${discrepancias.length} dotes no cuadran:\n${discrepancias.join("\n")}`);
-  process.exit(1);
-}
-
-// ── 7. Recuento por tanda y escribir ─────────────────────────────────────
-// construido = efecto numérico que la app aplica; texto = texto o narrativo construido
-// (nota en una tirada o en la tarjeta); pendiente = por tanda (bloqueoPor). Una tanda se
-// cierra cuando sus pendientes llegan a 0 (docs/tareas.md, "Dotes").
-const recuento = { construido: 0, texto: 0, pendiente: Object.fromEntries(TANDAS_DOTES.map((t) => [t, 0])) as Record<TandaDote, number> };
-for (const d of dotes) {
-  for (const m of d.motor) {
-    if (m.estado === "construido") {
-      if (m.tipo === "texto" || m.tipo === "narrativo") recuento.texto++;
-      else recuento.construido++;
-    } else recuento.pendiente[m.bloqueoPor as TandaDote]++;
-  }
-}
-const totalEfectos = dotes.reduce((t, d) => t + d.efectos.length, 0);
-const lineasRecuento = [
-  `${totalEfectos} efectos (${lista.reduce((t: number, d: { efectos?: unknown[] }) => t + (d.efectos?.length ?? 0), 0)} en el borrador)`,
-  `construidos: ${recuento.construido}`,
-  `texto: ${recuento.texto}`,
-  ...TANDAS_DOTES.map((t) => `pendientes ${t}: ${recuento.pendiente[t]}`),
-];
-
-const cabecera = `// GENERADO por scripts/generar-catalogo-dotes.ts (npm run gen-dotes). No editar a mano:
+  const cabecera = `// GENERADO por scripts/generar-catalogo-dotes.ts (npm run gen-dotes). No editar a mano:
 // se cambia el borrador (docs/modelado-dotes.json), la transcripción (docs/dotes.md) o la
 // tabla de destinos (dotesDestinos.ts) y se regenera. Compra (docs/sistema.md §9.1) y
 // efectos con su MotorMetadata (§9.3); qué se aplica ya, rules/dotesEfectos.ts.
 import type { DoteCatalogo } from "./dotesTipos";
 
 export const DOTES: readonly DoteCatalogo[] = `;
-const pie = `
+  const pie = `
 // Recuento por tanda (lo escribe el generador):
 ${lineasRecuento.map((l) => `//   ${l}`).join("\n")}
 `;
-writeFileSync(SALIDA, `${cabecera}${JSON.stringify(dotes, null, 2)};\n${pie}`);
-console.log(`${dotes.length} dotes escritas en src/lib/catalog/dotes.ts; cruce con docs/dotes.md sin discrepancias.`);
-console.log(`Recuento por tanda:\n${lineasRecuento.map((l) => `  ${l}`).join("\n")}`);
+  return { texto: `${cabecera}${JSON.stringify(dotes, null, 2)};\n${pie}`, total: dotes.length, avisos: [...avisos], lineasRecuento };
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  try {
+    const { texto, total, avisos: normalizacion, lineasRecuento } = generarCatalogoDotes();
+    if (normalizacion.length) console.log(`Normalización v1 → v2:\n${normalizacion.join("\n")}`);
+    writeFileSync(SALIDA, texto);
+    console.log(`${total} dotes escritas en src/lib/catalog/dotes.ts; cruce con docs/dotes.md sin discrepancias.`);
+    console.log(`Recuento por tanda:\n${lineasRecuento.map((l) => `  ${l}`).join("\n")}`);
+  } catch (e) {
+    console.error(e instanceof Error ? e.message : e);
+    process.exit(1);
+  }
+}

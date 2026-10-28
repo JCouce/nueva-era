@@ -8,8 +8,8 @@
 //   estado/bloqueoPor → estado de construcción, sí cambia con el tiempo.
 import { z } from "zod";
 
-// "resolucion" y "coste": los dos tipos de aporte nuevos (docs/aportes/plan.md §1.3, fase 1).
-// Ningún dato del catálogo los usa todavía: la reclasificación se decide aparte.
+// "resolucion" y "coste": los dos tipos de aporte nuevos (docs/aportes/plan.md §1.3). El catálogo
+// los usa desde la fase 1b (reclasificación: docs/aportes/inventario.md).
 export const TIPOS_MODIFICADOR = ["accion", "numerico", "texto", "narrativo", "habilitador", "resolucion", "coste"] as const;
 export type TipoModificador = (typeof TIPOS_MODIFICADOR)[number];
 

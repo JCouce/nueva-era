@@ -260,12 +260,12 @@ arriba es la foto del 2026-09-23; la lista viva es `TIPOS_MODIFICADOR` y
 
 - **Tipo → aporte**: `accion` = Acción, `numerico` = Ajuste, `texto` = Texto,
   `habilitador` = Habilitador. `narrativo` existe pero no es aporte (nunca
-  llega a Acciones). **Resolución y Coste no tienen valor todavía**:
-  `"resolucion"` y `"coste"` se añaden a `TIPOS_MODIFICADOR` en la fase 1 de
-  `docs/aportes/plan.md`, sin reclasificar nada del catálogo; hasta que el
-  usuario apruebe la reclasificación, esos aportes siguen tipados como
-  estaban (p. ej. Sutil es `numerico` + `sustitucion_aplicado` en
-  `armasMelee.ts`).
+  llega a Acciones). Resolución = `resolucion` y Coste = `coste`: se añadieron
+  a `TIPOS_MODIFICADOR` en la fase 1 de `docs/aportes/plan.md` y el catálogo
+  se reclasificó en la fase 1b (lista en `docs/aportes/inventario.md`): Sutil
+  es `resolucion` + `sustitucion_aplicado`, y una casilla con ventaja y fatiga
+  lleva dos metadatos, uno `resolucion` y otro `coste`. Las dotes salen del
+  generador (`npm run gen-dotes`), que clasifica por tipo de efecto.
 - **Mecanismo → entrega**: `eleccion_jugador` = casilla; `bono_tramo` =
   tramo; `siempre_activo`, `ajuste_fijo`, `nota_fija` y `suma_derivado` =
   fijo (este último con blanco derivado). `accion_equipo` y

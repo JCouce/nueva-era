@@ -2795,10 +2795,13 @@
         {
           "tipo": "ventaja",
           "alcance": "medicina",
+          "condicion": "Prueba de diagnóstico"
+        },
+        {
+          "tipo": "coste",
+          "alcance": "medicina",
           "condicion": "Prueba de diagnóstico",
-          "coste": {
-            "fatiga": 1
-          }
+          "fatiga": 1
         }
       ],
       "candidataUX": "Casilla 'Ventaja (Ojo Clínico, 1 fatiga)' en Tratar heridas que active los dos d12 y descuente la fatiga al confirmar",

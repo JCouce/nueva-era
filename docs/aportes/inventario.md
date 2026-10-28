@@ -386,51 +386,85 @@ Textos con alcance.
 
 ---
 
-## Reclasificaciones de `MotorMetadata` propuestas (sin aplicar)
+## Reclasificaciones de `MotorMetadata` (fase 1b, aplicadas 2026-10-28)
 
-`"resolucion"` y `"coste"` ya existen en `TIPOS_MODIFICADOR` (motor.ts); ningún dato del catálogo
-los usa. Lista sacada de cruzar cada pieza del catálogo que lleva una señal de Resolución o Coste
-(`ventaja`, `margenCriticoExito`, `subeGrado`, `cambia_par`, `extremidad`, `costeFatiga`,
-`ahorroFatiga`, `usoPorEscena`…) con su `motor`. Donde la pieza tiene varios metadatos del mismo
-tipo y no está claro cuál es el de ese efecto, va «(sin verificar cuál)».
+Lista sacada en la fase 1 de cruzar cada pieza del catálogo que lleva una señal de Resolución o
+Coste (`ventaja`, `margenCriticoExito`, `subeGrado`, `cambia_par`, `extremidad`, `costeFatiga`,
+`ahorroFatiga`, `usoPorEscena`…) con su `motor`. En la fase 1b se resolvió qué metadato es cada
+efecto (índice entre corchetes, contando desde 0 en el array `motor` de la pieza o del nivel) y se
+aplicó. `afecta`, `mecanismo` y `estado` no se han tocado en ninguna.
 
-**A `resolucion`** (mecanismo igual):
-- Sutil en armas melee, `numerico`/`sustitucion_aplicado`: `pelea_punetazo`, `pelea_patada`,
+**A `resolucion`, aplicadas** (mecanismo igual):
+- Sutil en armas melee, la `sustitucion_aplicado`: `pelea_punetazo`, `pelea_patada`,
   `pelea_codazo_rodillazo`, `asta_lanza_corta`, `espada_cuchillo_combate`, `espada_ligera`,
-  `flagelo_latigo`, `flagelo_cadena_armada` (catalog/armasMelee.ts).
-- Dotes con `sustitucion_aplicado`: `dote_cazador_cazado`, `dote_negociacion_analitica`,
-  `dote_combate_sutil` (las dos), `dote_vigilancia_tactica` (la de `resistir_distraccion`; la de
-  `grupo:Iniciativa` es un +2, se queda `numerico`).
-- Grado y crítico: `dote_velocista` (las dos, `siempre_activo`), `dote_critico_mejorado`,
-  `dote_gran_punteria` (la `numerico`), `dote_equilibrista`, `dote_balanceo`,
-  `dote_como_pez_en_el_agua` (la `numerico`), `dote_especialidad_medica` (sin verificar cuál de
-  las dos), `valija_tactica_medica` nivel 4 (sin verificar cuál de las `numerico`).
-- Ventaja: `dote_apoyo` y `dote_violencia_aterradora` (la `numerico`/`eleccion_jugador`),
-  `dote_bioma_predilecto` (sin verificar cuál de las cuatro); `aum_red_frontoparietal` (la
-  `siempre_activo` de `grupo:Iniciativa`, ventaja fija); casillas de ventaja de los aumentos
-  `aum_optimizacion_vestibulo_auditiva`, `aum_bucle_de_realimentacion_motora`,
-  `aum_biogenesis_mitocondrial`, `aum_resiliencia_homeostatica`, `aum_matriz_de_red_predeterminada`
-  (sin verificar cuál de sus `numerico`/`eleccion_jugador` es la de ventaja).
-- Daño: `dote_derribo_brutal`, `dote_golpe_mejorado_con_escudo` (`numerico`/`eleccion_jugador`).
-- Extremidad: `aum_brazo_bionico` niveles 1-4 (las `numerico`/`eleccion_jugador` sobre
-  `ataque_melee_<instancia>` y `aumentos_bloquear_brazo`).
-- `aum_proyeccion_neuro_expresiva`: la `numerico`/`suma_derivado` sobre `habilidad:actitud`
-  (`anulaPenalizadores`) (sin verificar).
-- Kerzul con `ignoraBlindaje` (`kerzul_*`): una de sus `texto`/`nota_fija` (sin verificar cuál).
+  `flagelo_latigo`, `flagelo_cadena_armada` (catalog/armasMelee.ts). ✅
+- Dotes con `sustitucion_aplicado` (efecto `cambia_par`): `dote_cazador_cazado` [0],
+  `dote_negociacion_analitica` [0], `dote_combate_sutil` [0] y [1], `dote_vigilancia_tactica` [1]
+  (la de `resistir_distraccion`; la [0] de `grupo:Iniciativa` es un +2 y se queda `numerico`). ✅
+- Grado y crítico: `dote_velocista` [0] (`sube_grado`) y [1] (`margen_critico`),
+  `dote_critico_mejorado` [0], `dote_gran_punteria` [0], `dote_equilibrista` [0],
+  `dote_balanceo` [0] (la [1] es un +1, se queda `numerico`), `dote_como_pez_en_el_agua` [1],
+  `dote_especialidad_medica` [1] (`margen_critico`; la [0] es el +1, se queda `numerico`),
+  `valija_tactica_medica` nivel 4: la literal tras `MOTOR_BONO_APLICACION` (el selector de
+  tratamiento con `margenCriticoExito: 0`; las dos de `MOTOR_BONO_APLICACION` son el +3 y se
+  quedan `numerico`). ✅
+- Ventaja: `dote_apoyo` [1], `dote_violencia_aterradora` [1], `dote_bioma_predilecto` [0]
+  (Iniciativa) y [1] (Subsistencia) — eran dos, no una; [2] y [3] son el +3 de Rastreo y se
+  quedan `numerico`. `aum_red_frontoparietal` [1] (ventaja fija en `grupo:Iniciativa`).
+  Casillas de ventaja de los aumentos: `aum_optimizacion_vestibulo_auditiva` [2] (`alerta_activa`)
+  y [3] (`rastreo`) — la [1] es el +2 de salvación, se queda `numerico`;
+  `aum_bucle_de_realimentacion_motora` [1]; `aum_biogenesis_mitocondrial` [2] (ventaja en
+  salvación con 1 de fatiga: lleva también un Coste, ver "partir" abajo);
+  `aum_resiliencia_homeostatica` [1]; `aum_matriz_de_red_predeterminada` [4] (casilla «Repetir
+  tras fallar»; la [2] es el +2 de salvación, se queda `numerico`). ✅
+- Daño: `dote_derribo_brutal` [1] (`danio_por_exitos`; la [0], que quita el −2 de la maniobra,
+  se queda `numerico`), `dote_golpe_mejorado_con_escudo` [0] (`categoria_danio`). ✅
+- Extremidad: `aum_brazo_bionico` nivel 1 [0]; nivel 2 [0] (casilla del brazo), [1] (blindaje y
+  bloqueo, `aumentos_bloquear_brazo`) y [2] (letal en pelea); niveles 3 y 4 [0] y [1]. ✅
+  Duda para la auditoría: el blindaje del brazo en el golpe bloqueado es un número; se ha dejado
+  en Resolución porque el metadato también cubre que la fila use la Fuerza/Agilidad del brazo.
+- `aum_proyeccion_neuro_expresiva` [2] (`anulaPenalizadores` del activable; `suma_derivado`
+  sobre `habilidad:actitud`). Verificado: es la única `suma_derivado` que no es el +1 de Carácter
+  [0]. ✅
+- Kerzul con `ignoraBlindaje` (`kerzul_*`, las diez armas): la `texto`/`nota_fija` comentada como
+  «"Ignora N puntos de blindaje"» (la otra `nota_fija` construida es el crítico de Impacto
+  Estructural, y la `ad_hoc` son los `efectos`). ✅ **Añadida en 1b**: el mismo caso en la
+  modificación `nanofilamento` (armasModificadas.ts), última entrada de su `motor`.
 
-**A `coste`:**
-- `aum_mielinizacion_central`: hoy `texto`/`eleccion_jugador` (ahorro de fatiga una vez por
-  escena). Es el caso más claro de tipo mal puesto.
+**A `coste`, aplicada:**
+- `aum_mielinizacion_central` [1]: era `texto`/`eleccion_jugador` (casilla de ahorro de fatiga,
+  una vez por escena). ✅
 
-**Partir en dos (Resolución + Coste)**, porque un metadato describe una casilla con los dos:
-- `dote_ojo_clinico` (ventaja + 1 fatiga).
-- `aum_prefrontal_aumentada`, `aum_consciencia_omnidireccional`, `aum_conectividad_callosa`,
-  `aum_sincronizacion_neuromotora_profunda`, `aum_proyeccion_neuro_expresiva` (casillas con
-  ventaja y `costeFatiga`; sin verificar cuál de sus metadatos es cada casilla).
+**Partir en dos (Resolución + Coste), aplicado** (fase 1b ampliada, con permiso del usuario):
+un metadato `resolucion` (la ventaja) y justo detrás uno `coste`, con el mismo `afecta`,
+`mecanismo` y `estado`. ✅
+- Aumentos: `aum_prefrontal_aumentada` [2]+[3], `aum_consciencia_omnidireccional` [2]+[3],
+  `aum_conectividad_callosa` [0]+[1] (cubre las dos casillas, Concentrarse y Dos turnos),
+  `aum_sincronizacion_neuromotora_profunda` [1]+[2], `aum_biogenesis_mitocondrial` [2]+[3]
+  (ventaja en salvación con 1 de fatiga; no estaba en la lista de la fase 1) y
+  `aum_proyeccion_neuro_expresiva` [1]+[2] (casilla «Con lenguaje»: el Coste es el
+  `usoPorEscena`; el `costeFatiga` de Proyección es de la acción «Activar Proyección», que no
+  tiene metadato propio). `CONSTRUIDOS_A2A` (`aumentos.test.ts`) sube 1 en cada una.
+- `dote_ojo_clinico`: el efecto se parte en el modelado (`docs/modelado-dotes.json`): `ventaja`
+  y un efecto nuevo `coste` (`fatiga: 1`) con la misma condición. El tipo de efecto `coste` es
+  nuevo en `efectoDoteSchema` (dotesTipos.ts), lo aplica `dotesEfectos.ts` en la casilla de la
+  misma condición (la misma casilla de antes: mismo id, ventaja y 1 de fatiga) y el generador
+  lo clasifica como `coste`.
+- Sin partir, mismo caso: `aum_matriz_de_red_predeterminada` [4] (casilla «Repetir tras
+  fallar»: ventaja + `usoPorEscena`, como Proyección). No estaba entre las siete autorizadas;
+  queda `resolucion` sola.
+
+**Generador de dotes**: `dotes.ts` sale de `npm run gen-dotes`. `clasificar`
+(`scripts/generar-catalogo-dotes.ts`) emite `resolucion` para `cambia_par`, `margen_critico`,
+`sube_grado`, `ventaja`, `exito_extra`, `danio_por_exitos` y `categoria_danio`, y `coste` para
+el efecto `coste`; regenerar da exactamente las reclasificaciones de arriba. El test
+`src/lib/catalog/dotes.generado.test.ts` falla si `dotes.ts` no coincide con lo que genera.
+`exito_extra` no lo usa ninguna dote hoy: se ha puesto en Resolución por la lista, pero sumar
+éxitos podría leerse como un número; revisarlo cuando aparezca el primero.
 
 **Se quedan como están** (el coste es parte de la acción que crean, no un aporte aparte): las
 `accion`/`accion_equipo` de aumentos con fatiga (`aum_angiogenesis_sistemica`,
 `aum_enjambre_nanobot`, `aum_neuroprotesis_simpatica`…) y `arianyi:vision_uv_ir`.
 
 **Para decidir:** `dote_reflejos_felinos` (`descuento_contador`) es un Ajuste sobre otro aporte
-(E2); se puede quedar `numerico`.
+(E2); se queda `numerico` (no tocado en 1b).

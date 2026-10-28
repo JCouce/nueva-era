@@ -188,7 +188,7 @@ Lo que hay hoy y motiva el plan, para que nadie lo redescubra:
 
 ## 3. Fases
 
-Orden: 0 → 1 → 1b → umbrales (tarea previa) → 2 → 3 → 4 → 5. La 6 depende de una regla pendiente; la 7 se decide al final.
+Orden: 0 → 1 → 1b → umbrales (tarea previa) → 2 → auditoría de todos los ítems → 3 → 4 → 5. La 6 depende de una regla pendiente; la 7 se decide al final.
 Cada fase deja la app funcionando y se puede parar entre fases.
 
 ### Fase 0 — Vocabulario oficial en `motor.md` ✅ (2026-10-28)
@@ -270,7 +270,7 @@ excepciones declaradas en la sección 1.8 de este plan).
 
 ---
 
-### Fase 1b — Reclasificar `MotorMetadata` al vocabulario nuevo ⬜
+### Fase 1b — Reclasificar `MotorMetadata` al vocabulario nuevo ✅ (2026-10-28)
 **Tipo:** datos de catálogo (metadato documental, sin efecto en ejecución). **Quién:** subagente.
 
 **Objetivo:** que el catálogo use `resolucion` y `coste` donde corresponde, para que la
@@ -355,6 +355,19 @@ salvo `teAfecta.ts` y `ArbolHabilidades.tsx` (si cambia la firma).
 **Hecho cuando:** "te afecta" sale igual en el navegador para las fichas de prueba, sin regex,
 `npm test`/`lint` en verde, y los `origen` cubren todos los tipos de aporte del inventario
 (los que no, listados en el informe con motivo).
+
+---
+
+### Tras la fase 2 — Auditoría `MotorMetadata` sobre todos los ítems ⬜
+**Decisión del usuario (2026-10-28).** La auditoría `auditoria-motor-metadata`
+(`.claude/workflows/`, extractor `scripts/workflows/auditoria-motor-metadata-extraer.ts`) solo
+recorre equipo y dotes: aumentos, psiónica y especie se quedan sin red. No se pasó tras la 1b
+porque la 1b solo cambió etiquetas (`tipo`) y la auditoría compara prosa con código.
+
+**Qué hacer:** reescribir el extractor sobre una vista común de ítems (`fuentesDeCapa1`,
+`capa1.ts`, ampliada a aumentos y especie) y los aportes con origen de la fase 2, en vez de
+conocer la forma de cada catálogo. Después, pasar la auditoría al catálogo entero, por lotes.
+Va después de la fase 2 para escribir el extractor una vez sobre la forma común, no dos.
 
 ---
 

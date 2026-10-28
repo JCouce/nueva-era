@@ -109,7 +109,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         "estado": "construido"
       },
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "dotes_apoyo"
@@ -655,7 +655,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         "estado": "construido"
       },
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "dotes_violencia_aterradora"
@@ -927,7 +927,7 @@ export const DOTES: readonly DoteCatalogo[] = [
     "candidataUX": null,
     "motor": [
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "detectar_mentiras"
@@ -1168,7 +1168,7 @@ export const DOTES: readonly DoteCatalogo[] = [
     "candidataUX": null,
     "motor": [
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "social"
@@ -1401,7 +1401,7 @@ export const DOTES: readonly DoteCatalogo[] = [
     "candidataUX": null,
     "motor": [
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "atletismo"
@@ -1456,7 +1456,7 @@ export const DOTES: readonly DoteCatalogo[] = [
     "candidataUX": null,
     "motor": [
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "atletismo"
@@ -1515,7 +1515,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         "estado": "construido"
       },
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "atletismo"
@@ -2360,7 +2360,7 @@ export const DOTES: readonly DoteCatalogo[] = [
     "candidataUX": null,
     "motor": [
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "carrera"
@@ -2369,7 +2369,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         "estado": "construido"
       },
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "carrera"
@@ -2583,7 +2583,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         "estado": "construido"
       },
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "medicina"
@@ -2621,17 +2621,30 @@ export const DOTES: readonly DoteCatalogo[] = [
         "tipo": "ventaja",
         "alcance": "medicina",
         "condicion": "Prueba de diagnóstico",
-        "coste": {
-          "fatiga": 1
-        },
         "borrador": 0
+      },
+      {
+        "tipo": "coste",
+        "alcance": "medicina",
+        "condicion": "Prueba de diagnóstico",
+        "fatiga": 1,
+        "borrador": 1
       }
     ],
     "limite": null,
     "candidataUX": "Casilla 'Ventaja (Ojo Clínico, 1 fatiga)' en Tratar heridas que active los dos d12 y descuente la fatiga al confirmar",
     "motor": [
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "medicina"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      },
+      {
+        "tipo": "coste",
         "afecta": {
           "modo": "accion_existente",
           "id": "medicina"
@@ -3453,7 +3466,7 @@ export const DOTES: readonly DoteCatalogo[] = [
     "candidataUX": null,
     "motor": [
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "familia:ataque_melee"
@@ -3462,7 +3475,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         "estado": "construido"
       },
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "familia:bloquear_melee"
@@ -4184,7 +4197,7 @@ export const DOTES: readonly DoteCatalogo[] = [
     "candidataUX": null,
     "motor": [
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "especialidad:<elegida>"
@@ -4322,7 +4335,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         "estado": "construido"
       },
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "familia:ataque_melee"
@@ -4542,7 +4555,7 @@ export const DOTES: readonly DoteCatalogo[] = [
     "candidataUX": null,
     "motor": [
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "familia:ataque_melee"
@@ -5602,7 +5615,7 @@ export const DOTES: readonly DoteCatalogo[] = [
     "candidataUX": null,
     "motor": [
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "apuntar"
@@ -6183,7 +6196,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         "estado": "construido"
       },
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "resistir_distraccion"
@@ -6428,7 +6441,7 @@ export const DOTES: readonly DoteCatalogo[] = [
     "candidataUX": "interruptor de entorno persistente ('estoy en mi bioma') que active solo las casillas de esta dote en vez de marcarlas tirada a tirada",
     "motor": [
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "grupo:Iniciativa"
@@ -6437,7 +6450,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         "estado": "construido"
       },
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "subsistencia"
@@ -7726,8 +7739,8 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   193 efectos (190 en el borrador)
-//   construidos: 96
+//   194 efectos (191 en el borrador)
+//   construidos: 97
 //   texto: 97
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0

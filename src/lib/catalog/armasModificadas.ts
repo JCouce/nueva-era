@@ -155,7 +155,7 @@ export const ARMAS_MODIFICADAS: readonly ModificacionArma[] = [
       // Crítico de Hemorragia Exanguinante: al efecto de crítico del golpe.
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "construido" },
       // "Ignora N puntos de blindaje": aviso en el resultado del daño, como el kerzul.
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "construido" },
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "construido" },
     ],
   },
 ];
