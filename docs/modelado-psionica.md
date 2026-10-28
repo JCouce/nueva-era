@@ -314,6 +314,7 @@ La terna de motor se escribe `tipo · modo:id · mecanismo · estado`. Los claim
 - **Base:** desde nv1 · estándar · fatiga 1 · alcance 1 · objetivo unico · enfr. Perspicacia + Biociencia
 - **Eje `alcance`** (nivel_empleado): Local (1 km²): alc 1 · Local como reacción [nv3]: reacción, alc 1 · Nivel 1: tabla, fat tabla, alc tabla · Nivel 2 [nv2]: tabla, fat tabla, alc tabla · Nivel 3 [nv3]: tabla, fat tabla, alc tabla · Nivel 4 [nv4]: tabla, fat tabla, alc tabla · Nivel 5 [nv5]: tabla, fat tabla, alc tabla · Nivel 6 [nv6]: tabla, fat tabla, alc tabla
 - **Manual:** Mantenimiento (reacción o acción simple por turno) y duración de la lectura · +2 en tiradas enfrentadas contra el objetivo mientras dure · +2 en empatía/manipulación/negociación contra él, o resolverlo narrativamente
+- **Construido 2026-10-28 (P1, ya no a mano):** casilla «Mente leída» (+2) en ataques, defensas, poderes y las fijas enfrentadas; la marca el jugador contra el leído.
 
 | Claims | Destino / ruta | Motor |
 |---|---|---|
@@ -346,6 +347,7 @@ La terna de motor se escribe `tipo · modo:id · mecanismo · estado`. Los claim
 - **Múltiples objetivos:** Tantos aliados como fatiga tengas: 1 de fatiga por aliado vinculado, descuéntatela a mano
 - **Bonos en otras tiradas:** Vínculo +1 +1 en salv_voluntad
 - **Manual:** Duración del vínculo activo
+- **Construido 2026-10-28 (P1, ya no a mano):** casilla «Vínculo activo» (+1) en tu salvación de Voluntad; a los aliados, texto (`objetivo_tercero`).
 
 | Claims | Destino / ruta | Motor |
 |---|---|---|
@@ -454,6 +456,7 @@ Resto de Inducción (coste fijo): Comando estándar/1 (reacción desde nv2; vari
 - **Ajustes por nivel poseído:** nv2 sustituye `ejes.uso.opciones.mitigar.duracion` → 100 · nv4 sustituye `ejes.uso.opciones.mitigar.duracion` → 300 · nv6 sustituye `bonosEnOtrasTiradas.1.valor` → 4
 - **Bonos en otras tiradas:** Estabilización (+2) +2 en Salvaciones · Estabilización como reacción (sustituye al +2, no se suman) +3 en Salvaciones (nv4)
 - **Manual:** Reducción de tus propios penalizadores de estado durante la duración (efecto activo sobre uno mismo). · Desde nivel 4: omite por completo tus penalizadores de daño y fatiga durante la misma duración. · Desde nivel 6: elimina por completo tus penalizadores de estado presentes durante la duración; no afecta a los adquiridos después.
+- **Construido 2026-10-28 (P1, ya no a mano):** mitigar = selector «Estabilizado» en las tiradas con penalizadores: éxito −1 / crítico −2 a cada penalizador de estado; nv4 además fuera heridas y fatiga; nv6 fuera todos (`conPenalizadoresReducidos`).
 
 | Claims | Destino / ruta | Motor |
 |---|---|---|
@@ -541,6 +544,7 @@ Precognición no tiene tramos: estándar, 1 de fatiga, dificultad 8, burbuja de 
 
 - **Base:** desde nv1 · estándar · fatiga 1 · alcance 10·niv · duración 1·niv · objetivo propio (área 10·niv) · Perspicacia + Tecnociencia (Física), dif 8
 - **Manual:** Bonos de la burbuja (+3/+2/+1 dentro/fuera), ignorar cobertura y segunda reacción mientras dure: efecto activo sobre uno mismo, a mano · Penalizadores del fracaso y fracaso crítico (−1/−2, sin reacción, media velocidad): a mano
+- **Construido 2026-10-28 (P1, ya no a mano):** selector «Precognición» en ataques y defensas (crítico +3/+2, éxito +2/+1 dentro/fuera de la burbuja, fracaso −1, fracaso crítico −2). Cobertura y segunda reacción siguen en texto.
 
 | Claims | Destino / ruta | Motor |
 |---|---|---|
@@ -559,6 +563,7 @@ Precognición no tiene tramos: estándar, 1 de fatiga, dificultad 8, burbuja de 
 - **Base:** desde nv1 · compleja · fatiga 1 · alcance — · objetivo casilla (área 10·niv) · Perspicacia + Tecnociencia (Física), dif 6/7/8 (máster)
 - **Eje `tiempo`** (opcion): Últimos minutos / menos de 1 hora: compleja, fat 1, Perspicacia + Tecnociencia (Física), dif 6/7/8 (máster) · Últimas 24 horas: 1 minuto, fat 1, Perspicacia + Tecnociencia (Física), dif 9/10/11 (máster) · Varios días (hasta 1 semana): 10 minutos, fat 2, Perspicacia + Tecnociencia (Física), dif 12/13/14 (máster) · Pasado extendido (más de una semana): 1 hora, fat 4, Perspicacia + Tecnociencia (Física), dif 15+ (máster)
 - **Ajustes por nivel poseído:** nv4 suma `resolucion.dificultad` → -1 · nv6 suma `resolucion.dificultad` → -1
+- **Construido 2026-10-28 (P1, ya no a mano):** el fracaso crítico pone solo Aturdido (grado «fracaso») 1 turno sobre el psiónico (`resultados.fracasoCritico.estados`, efectosDelResultado).
 
 | Claims | Destino / ruta | Motor |
 |---|---|---|
@@ -624,6 +629,7 @@ Precognición no tiene tramos: estándar, 1 de fatiga, dificultad 8, burbuja de 
 - **Eje `uso`** (opcion): Anclar: sin cambios · Oponerse al escape: gratuita, fat 0, objetivo tira, resultados 2 grados · Renovar al agotar la duración: estándar, sin dado, resultados 1 grados · Auto-anclaje: reacción, dur —, Reflejos + Tecnociencia (Física), dif 6, resultados 2 grados
 - **Múltiples objetivos:** Cada objetivo paga su propia fatiga (la de la fila del nivel empleado). Todos deben estar dentro del alcance y la carga máxima del nivel, contada como carga total. Mantener a varios: acción estándar por turno.
 - **Manual:** Mantener el anclaje: 1 acción simple por turno (un objetivo) o 1 acción estándar por turno (varios). · Concentración: −1 al resto de acciones mientras mantienes el anclaje. · Seguimiento de turnos restantes y de qué objetivos siguen anclados.
+- **Construido 2026-10-28 (P1, ya no a mano):** casilla «Manteniendo anclaje» (−1) en todas las tiradas.
 - **Acción hermana `psi_traslacion_duelo_metrica`** (Duelo de Métrica): desde nv1 · reacción · fatiga 1 · enfr. Perspicacia + Tecnociencia (Física)
 
 | Claims | Destino / ruta | Motor |
@@ -660,6 +666,7 @@ Precognición no tiene tramos: estándar, 1 de fatiga, dificultad 8, burbuja de 
 - **Eje `economia`** (opcion): Acción simple: sin cambios · Reacción: reacción
 - **Eje `modo`** (opcion): Proyectar objetivo anclado: sin cambios · Auto-proyección (estándar, velocidad ×2): estándar, fat 1, alc —, sin dado, resultados 1 grados · Auto-proyección (compleja, velocidad ×4): compleja, fat 1, alc —, sin dado, resultados 1 grados
 - **Manual:** Auto-proyección: +1 a esquiva hasta el inicio del siguiente turno (efecto activo sobre uno mismo). · +1 de daño por cada 200 kg extra, mientras Valor no admita un contador.
+- **Construido 2026-10-28 (P1, ya no a mano):** Auto-proyección (hoy acción aparte, `psi_traslacion_auto_proyeccion`): casilla «Auto-proyección» (+1) en la esquiva.
 
 | Claims | Destino / ruta | Motor |
 |---|---|---|
@@ -756,6 +763,7 @@ Precognición no tiene tramos: estándar, 1 de fatiga, dificultad 8, burbuja de 
 - **Eje `forma`** (opcion): Personal: sin cambios · Ampliada (colectiva) [nv2]: estándar, nota
 - **Ajustes por nivel poseído:** nv3 sustituye `ejes.nivel.opciones.n1.duracion` → «20 turnos» · nv4 sustituye `ejes.nivel.opciones.n1.duracion` → «30 turnos» · nv4 sustituye `ejes.nivel.opciones.n3.duracion` → «20 turnos» · nv5 sustituye `ejes.nivel.opciones.n1.duracion` → «40 turnos» · nv5 sustituye `ejes.nivel.opciones.n3.duracion` → «30 turnos» · nv5 sustituye `ejes.nivel.opciones.n4.duracion` → «20 turnos» · nv6 sustituye `ejes.nivel.opciones.n1.resultados.exito.texto` → Absorción 1 (3 quieto; 6 contra el ataque) · sin reducción de Agilidad · nv6 sustituye `ejes.nivel.opciones.n3.duracion` → «40 turnos» · nv6 sustituye `ejes.nivel.opciones.n4.duracion` → «30 turnos» · nv6 sustituye `ejes.nivel.opciones.n5.duracion` → «20 turnos» · nv6 sustituye `ejes.nivel.opciones.n3.resultados.exito.texto` → Absorción 2 (5 quieto; 10 contra el ataque) · Agilidad −1 · nv6 sustituye `ejes.nivel.opciones.n4.resultados.exito.texto` → Absorción 3 (7 quieto; 14 contra el ataque) · Agilidad −1 · nv6 sustituye `ejes.nivel.opciones.n5.resultados.exito.texto` → Absorción 4 (9 quieto; 18 contra el ataque) · Agilidad −2 · nv6 sustituye `ejes.forma.opciones.personal.duracion` → «Empleando nivel 1: 1 hora sin fatiga; después 1 de fatiga por hora (a mano). Otros niveles: la duración de su fila.»
 - **Manual:** Absorción (normal/quieto/contra el ataque) y −Agilidad sobre uno mismo mientras dura: efecto activo propio, a mano · Área de la forma ampliada (1 casilla adyacente por nivel; ×2 en n1 desde nv4, ×3 en n1 y ×2 en n3 desde nv5, ×3 en n3 y ×2 en n4 desde nv6) y su duración: se mira en el manual · Concentración y mantenimiento de la forma colectiva (acción simple por turno; reacción desde nv4) · Participantes en una ampliada: +1 casilla por 1 fatiga cada uno (se la descuentan a mano); su casilla desaparece si quedan inconscientes o salen del área · Retirar la protección a un personaje del área (reacción o acción gratuita en su turno) · Nv6, nivel 1 personal: tras la primera hora, 1 fatiga por hora
+- **Construido 2026-10-28 (P1, ya no a mano):** al usarla pone el estado propio «Contención» (−Agilidad y absorción de su fila; la absorción, en Bloquear daño) hasta acabar la duración o «Terminar contención». El área de la ampliada se calcula (`objetivo.area`). Quieto, contra el ataque, concentración y participantes siguen en texto.
 
 | Claims | Destino / ruta | Motor |
 |---|---|---|
@@ -877,7 +885,7 @@ El verificador encontró 24 errores. Todos están aplicados en el JSON.
 | 4 | hipercongnicion (disciplina) · `modificadoresEconomia[retrocognicion nv3+nv5]` | Dos baja_un_paso sin suelo dejan el tramo local en simple en nv5. La prosa de Retrocognición dice 'de compleja a estándar (mínimo tiempo posible)', y la respuesta de Murillo sobre simple es solo para Sondeo. | Se añade `minimo: "estandar"` a los dos `baja_un_paso` de Retrocognición (campo nuevo en `modificadoresEconomia`). Sondeo sigue bajando a simple en nv5, como dijo Murillo. La duda queda en preguntas. |
 | 5 | hipercongnicion.precognicion · `resultados.fracasoCritico.estados` | Confusión aparece como estado automático, pero la prosa la condiciona a fallar una salvación de Voluntad dificultad 8. | Confusión sale de `estados`; queda en el texto con su salvación de Voluntad 8. |
 | 6 | hipercongnicion.sondeo_no_local · `resultados.fracaso.estados y resultados.fracasoCritico.estados` | Aturdido aparece como estado automático, pero la prosa dice 'puede quedar aturdido' tras una salvación de Fortaleza (8 en fracaso, la dificultad de la prueba en fracaso crítico). | Aturdido sale de `estados` en fracaso y fracaso crítico; queda en el texto con su salvación de Fortaleza. |
-| 7 | hipercongnicion.retrocognicion · `resultados.fracaso.estados` | Aturdido aparece como automático, pero la prosa pide antes una salvación de Voluntad dificultad 6 contra aturdimiento. El fracaso crítico sí es automático. | Aturdido sale de `estados` en el fracaso (sigue automático en el fracaso crítico). |
+| 7 | hipercongnicion.retrocognicion · `resultados.fracaso.estados` | Aturdido aparece como automático, pero la prosa pide antes una salvación de Voluntad dificultad 6 contra aturdimiento. El fracaso crítico sí es automático. | Aturdido sale de `estados` en el fracaso (sigue automático en el fracaso crítico: construido el 2026-10-28, P1). |
 | 8 | singularidad.impulso · `fatiga / alcance / desplazamiento / resolucion.danio / objetivoTira[1].dificultad / ejes[nivel].opciones[*].cambia` | La prosa dice 'nivel de poder empleado' en todo, pero se codifica con Valor.porNivel, que por convención es nivel POSEÍDO. El eje nivel_empleado existe pero todas sus opciones tienen cambia {}, así que la elección del jugador no cambia nada: un nivel 6 que emplee nivel 1 pagaría 6 de fatiga y haría 15 de daño. | Cada opción Nn del eje `nivel` fija fatiga N, alcance 20N, `resolucion.danio` 9+N, empuje 4N m (campo `desplazamiento`, fuera del Pick de `Opcion.cambia`) y `objetivoTira` con 8+N. La base queda en "tabla". Poderoso: compleja + nota con los +2/+1/8×N. El +1 de fatiga sigue en `modificadoresFatiga`. |
 | 9 | singularidad.expansion · `fatiga / alcance / objetivo.area / resolucion.danio / objetivoTira[*].dificultad / ejes[nivel].opciones[*].cambia` | Mismo fallo: todo es 'nivel empleado' pero va con porNivel (poseído) y el eje nivel_empleado tiene cambia vacío. | Opción Nn: fatiga N, alcance 20N, `objetivo.area` 4+2N (fuera del Pick), daño 13+N, esquiva 6+N y empuje 8+N. Poderosa: compleja + nota (+1 daño, +1 a las dos dificultades). |
 | 10 | singularidad.convergencia · `fatiga / alcance / resolucion.danio / objetivoTira[1].dificultad / ejes[nivel].opciones[*].cambia` | Mismo fallo: 'nivel empleado' codificado como porNivel (poseído), con el eje nivel_empleado vacío. | Opción Nn: fatiga N, alcance 15N, daño 5+N, Fortaleza 6+N. Poderosa: compleja + nota (+2 daño). |

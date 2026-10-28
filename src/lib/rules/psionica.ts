@@ -7,6 +7,8 @@ import type { AplicadoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
 import type { EspecialidadId } from "../catalog/especialidades";
 import type { MotorMetadata } from "./motor";
+import type { CondicionTirada } from "./condiciones";
+import type { AlcanceModificador } from "./modificadores";
 import { clampInt, type Sheet } from "./sheet";
 import { PUNTOS_PSIONICA_POR_LETRA } from "./prioridad";
 import { costeNivelDisciplina, type AjusteCoste } from "./progresion";
@@ -61,9 +63,12 @@ export type ResolucionPoder =
 // desplazamiento (Impulso Poderoso) no deja los metros del texto desfasados.
 export type TiradaObjetivo = { que: string; dificultad?: Valor; grados?: Partial<Record<Grado, string>> };
 
+// `estados` con `sobre: "propio"`: los pone la app sobre el psiónico al conocer el grado
+// (efectosDelResultado, usoPoder.ts), con el grado del estado del catálogo (`grado`). Los
+// de `sobre: "objetivo"` serían texto: la app no toca la ficha de otro.
 export type ResultadoPoder = {
   texto: string;
-  estados: { estado: string; duracion: Valor; sobre: "objetivo" | "propio" }[];
+  estados: { estado: string; grado?: string; duracion: Valor; sobre: "objetivo" | "propio" }[];
   danio?: { valor: Valor; categoria: string; sobre: "objetivo" | "propio" };
 };
 
@@ -78,6 +83,20 @@ export type BonoToggle = {
 };
 
 export type Nota = { texto: string; lugar: "tirada" | "danio" };
+
+// Casilla que un poder cuelga de OTRAS tiradas del psiónico mientras lo tiene en la ficha
+// (P1, 2026-10-28: Leer Mente, Vínculo, Anclaje, Auto-proyección, Precognición,
+// Estabilización). El jugador la marca cuando el efecto está activo: la app no sabe si se
+// superó una enfrentada ni lleva la cuenta de la duración. Una CondicionTirada por alcance,
+// con el poder de origen (casillasDePsionica, poderes.ts). `soloConPenalizadores`: solo
+// sale si la ficha tiene algún penalizador de estado, heridas o fatiga (Estabilización).
+export type CasillaDePoder = {
+  alcances: AlcanceModificador[];
+  condicion: CondicionTirada;
+  desdeNivelPoseido?: number;
+  hastaNivelPoseido?: number;
+  soloConPenalizadores?: true;
+};
 
 export type OpcionElegida = { eje: string; opcion: string };
 
@@ -104,6 +123,12 @@ export type AccionPoder = {
   notas: Nota[];
   togglesPropios: BonoToggle[];
   bonosEnOtrasTiradas: BonoToggle[];
+  casillasEnTiradas?: CasillaDePoder[];
+  // Estado propio que se pone el psiónico al usar el poder (Contención). Su grado es el valor
+  // resuelto de esos `datos`, unidos con "_" ("2_-1": absorción 2, Agilidad −1), y dura lo que
+  // `duracion` (en turnos; sin número, hasta quitarlo). Datos y no una función: resolverPoder
+  // clona la acción con structuredClone.
+  estadoAlUsar?: { estadoId: string; gradoDeDatos: string[] };
   movimientoOtorgado: { tipo: "levitar"; velocidad: Valor } | null;
   // `sobre` admite ruta con puntos ("datos.2.valor"). `nivelEmpleado` y `opcion`
   // lo restringen a un nivel empleado / una opción elegida (Contención: con nivel 6,

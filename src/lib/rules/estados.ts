@@ -135,6 +135,7 @@ function modificadorDeUmbral(valor: number, etiqueta: string, ajuste: AjusteUmbr
     valor,
     origen: "estado",
     fuente: ajuste ? `${etiqueta} (${ajuste.fuente})` : etiqueta,
+    umbral: true,
   };
 }
 
@@ -151,7 +152,7 @@ function compensacionesPorAplicado(
     const v = Math.min(r.valor, restante);
     if (v <= 0) return [];
     restante -= v;
-    return [{ tipo: "tirada", alcance: r.alcance, valor: v, compensa: true, origen: r.origen, fuente: `${r.fuente} (${etiqueta})` }];
+    return [{ tipo: "tirada", alcance: r.alcance, valor: v, compensa: true, umbral: true, origen: r.origen, fuente: `${r.fuente} (${etiqueta})` }];
   });
 }
 

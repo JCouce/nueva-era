@@ -19,7 +19,10 @@ import {
   type TiradaMontada,
 } from "./montaje";
 import type { FichaResuelta } from "./fichaResuelta";
+import { estadoActivoCon, type EstadoActivo } from "./estados";
+import { estadoPorId } from "../catalog/estados";
 import {
+  accionesDePsionica,
   bloqueoPorFatiga,
   costeFatiga,
   cruzaSobrecarga,
@@ -195,6 +198,9 @@ export type EfectosDeUso = {
   // null sin el rasgo o sin fatiga pagada. Va después de la sobrecarga.
   peaje: PeajeDeUso | null;
   avisos: string[];
+  // Estado propio que el uso pone sobre el psiónico (Contención, P1). Solo si lo hay: lo pone
+  // el servidor (ponerEstadosDePoderAction), que lo vuelve a calcular con estadosPropiosDeUso.
+  estadoPropio?: EstadoActivo;
 };
 
 // Lo de la ficha resuelta que hace falta para usar un poder.
@@ -218,6 +224,8 @@ export function usarPoder(f: FichaParaUso, p: PoderPreparado, modo: "uso" | "pro
   // Supresora con fallo crítico: 1 de daño por punto de fatiga gastado.
   const porPunto = efectosDeCasillas(FUENTES_EXTERNAS_FATIGA, new Set(p.seleccion.casillas)).danioPorPunto;
   const danioSupresora = porPunto && pagar > 0 ? pagar : 0;
+
+  const estadoPropio = uso ? estadoAlUsar(p.poder, p.resuelto) : null;
 
   const avisos = [
     ...(despues <= 0 && !cruza ? ["Te has quedado sin fatiga: quedas inconsciente al terminar la acción."] : []),
@@ -243,7 +251,77 @@ export function usarPoder(f: FichaParaUso, p: PoderPreparado, modo: "uso" | "pro
         : { tipo: "mantener" },
     peaje: peajeDeUso(f, p, pagar),
     avisos,
+    ...(estadoPropio && { estadoPropio }),
   };
+}
+
+// El estado propio que pone el poder al usarlo (`AccionPoder.estadoAlUsar`), con el grado de sus
+// datos ya resueltos y la duración resuelta (turnos; sin número, hasta quitarlo). null si no
+// trae, o si el grado no está en el catálogo (dato desfasado: no se pone nada).
+export function estadoAlUsar(poder: Pick<PoderDisponible, "accion">, resuelto: PoderResuelto): EstadoActivo | null {
+  const e = poder.accion.estadoAlUsar;
+  if (!e) return null;
+  const grado = e.gradoDeDatos.map((etiqueta) => resuelto.datos.find((d) => d.etiqueta === etiqueta)?.valor).join("_");
+  if (!estadoPorId(e.estadoId)?.grados.some((g) => g.id === grado)) return null;
+  const d = resuelto.duracion;
+  return estadoActivoCon(e.estadoId, grado, typeof d === "number" && d > 0 ? { tipo: "rondas", rondas: d } : { tipo: "hastaQuitarlo" });
+}
+
+// Los estados propios del grado (`resultados.<grado>.estados` con `sobre: "propio"`: el
+// Aturdido del fracaso crítico de Retrocognición), con su grado de estado y su duración.
+export function estadosDelResultado(resuelto: PoderResuelto, grado: Grado | null): EstadoActivo[] {
+  const r = grado ? resuelto.resultados[grado] : undefined;
+  return (r?.estados ?? []).flatMap((e) => {
+    if (e.sobre !== "propio") return [];
+    const cat = estadoPorId(e.estado);
+    const gradoId = e.grado ?? cat?.grados[0]?.id;
+    if (!cat || !gradoId || !cat.grados.some((g) => g.id === gradoId)) return [];
+    const d = e.duracion;
+    return [estadoActivoCon(e.estado, gradoId, typeof d === "number" && d > 0 ? { tipo: "rondas", rondas: d } : { tipo: "hastaQuitarlo" })];
+  });
+}
+
+// Lo que la pantalla pide al servidor sobre los estados propios de un poder: ponerlos tras usarlo
+// (lo vuelve a calcular estadosPropiosDeUso) o quitar a mano el de un poder que se mantiene.
+export type OperacionEstadoDePoder =
+  | { tipo: "poner"; poderId: string; elecciones: Record<string, string>; grado: Grado | null }
+  | { tipo: "quitar"; estadoId: string };
+
+// «Terminar contención»: el estado al usar del poder, si lo lleva puesto. null si no.
+export function estadoParaTerminar(
+  accion: Pick<PoderDisponible["accion"], "estadoAlUsar" | "label">,
+  estados: readonly EstadoActivo[],
+): { estadoId: string; etiqueta: string } | null {
+  const id = accion.estadoAlUsar?.estadoId;
+  return id && estados.some((e) => e.estadoId === id) ? { estadoId: id, etiqueta: `Terminar ${accion.label.toLocaleLowerCase("es")}` } : null;
+}
+
+// Lo que el servidor pone en Character.estados tras usar un poder, calculado otra vez con la
+// ficha guardada (no se fía del cliente): el estado al usarlo (grado null) o los del grado de
+// la tirada. Vacío si la ficha no tiene el poder, o lo tiene con el requisito roto.
+export function estadosPropiosDeUso(
+  ficha: Sheet,
+  niveles: NivelesPsionica,
+  poderId: string,
+  elecciones: Record<string, string>,
+  grado: Grado | null,
+): EstadoActivo[] {
+  const poder = accionesDePsionica(ficha, niveles).find((p) => p.accion.id === poderId);
+  if (!poder || poder.bloqueo) return [];
+  const resuelto = resolverPoder(poder.accion, {
+    nivelPoseido: poder.nivelPoseido,
+    elecciones,
+    habilidades: valoresHabilidad(ficha),
+    niveles,
+    disciplina: poder.disciplina,
+    bonoAlcance: bonoAlcanceDeFicha(ficha) ?? undefined,
+  });
+  if (!resuelto) return [];
+  if (grado === null) {
+    const e = estadoAlUsar(poder, resuelto);
+    return e ? [e] : [];
+  }
+  return estadosDelResultado(resuelto, grado);
 }
 
 // §14.9: se tira siempre que se pague fatiga, aunque el poder falle. `pagar` ya va sin
@@ -285,9 +363,15 @@ export function tirarPeaje(ficha: FichaParaTirada, peaje: PeajeDeUso, dado: numb
 }
 
 // Tras tirar: el daño propio que depende del grado (fracaso crítico del Sondeo
-// o de la Precognición).
-export function efectosDelResultado(p: PoderPreparado, grado: Grado | null): { vida: number; avisos: string[] } {
+// o de la Precognición) y los estados propios del grado (Aturdido del fracaso crítico de
+// Retrocognición, P1), que pone el servidor (`estadosPropios`, solo si los hay).
+export function efectosDelResultado(
+  p: PoderPreparado,
+  grado: Grado | null,
+): { vida: number; avisos: string[]; estadosPropios?: EstadoActivo[] } {
   const propio = grado ? p.tirada?.poder?.danioPropio?.[grado] : undefined;
-  if (!propio) return { vida: 0, avisos: [] };
-  return { vida: propio.valor, avisos: [`Recibes ${propio.valor} de daño ${propio.categoria} (ya restado).`] };
+  const estados = estadosDelResultado(p.resuelto, grado);
+  const conEstados = estados.length > 0 ? { estadosPropios: estados } : {};
+  if (!propio) return { vida: 0, avisos: [], ...conEstados };
+  return { vida: propio.valor, avisos: [`Recibes ${propio.valor} de daño ${propio.categoria} (ya restado).`], ...conEstados };
 }

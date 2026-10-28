@@ -315,10 +315,26 @@ const ESPERADO: Record<string, Record<string, string[]>> = {
     "ataque_melee_pu": ["Matriz Biometálica"],
   },
   riux: {},
+  // P1 de psiónica (2026-10-28): las casillas de Leer Mente («Mente leída», en las enfrentadas) y
+  // de Auto-proyección (esquiva). «Manteniendo anclaje» va a todas: "te afecta" no lista las de
+  // alcance `todas`.
   psionica: {
-    "defensa": ["Traslación"],
-    "defensa+alternativa": ["Traslación"],
+    "defensa": ["Traslación", "Leer Mente", "Auto-proyección"],
+    "defensa+alternativa": ["Traslación", "Leer Mente", "Auto-proyección"],
     "alerta_activa": ["Resonancia"],
+    "iniciativa_distraccion": ["Leer Mente"],
+    "iniciativa_distraccion+alternativa": ["Leer Mente"],
+    "discernir_mentiras": ["Leer Mente"],
+    "resistir_distraccion": ["Leer Mente"],
+    "sigilo": ["Leer Mente"],
+    "hurto": ["Leer Mente"],
+    "social": ["Leer Mente"],
+    "social+empatia": ["Leer Mente"],
+    "social+humor": ["Leer Mente"],
+    "social+intimidacion": ["Leer Mente"],
+    "social+liderazgo": ["Leer Mente"],
+    "social+manipulacion": ["Leer Mente"],
+    "social+negociacion": ["Leer Mente"],
   },
   farmacos: {},
 };

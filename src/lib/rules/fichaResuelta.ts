@@ -24,7 +24,7 @@ import {
   type VentajaFija,
 } from "./aumentosTiradas";
 import { normalizarDanio, type DanioVida } from "./danio";
-import { tieneEscudoMelee, type ArmaduraNatural } from "./blindaje";
+import { absorcionDeContencion, tieneEscudoMelee, type AbsorcionPropia, type ArmaduraNatural } from "./blindaje";
 import {
   alerta,
   aplicados,
@@ -102,7 +102,7 @@ import {
   type UmbralFatiga,
   type UmbralSalud,
 } from "./estados";
-import { levitacion, type PoderDisponible } from "./poderes";
+import { casillasDePsionica, levitacion, type PoderDisponible } from "./poderes";
 import { fatigaEfectiva } from "./vitalidad";
 import { alcanzaA, descartadosPorNoApila, type AlcanceModificador, type ModificadorConFuente } from "./modificadores";
 import { conTextosEnTirada, contextoDe, junta, textosDe, textosSinDado } from "./textosTirada";
@@ -173,7 +173,8 @@ export type FichaResuelta = {
   // Lo de blindaje que no depende de la tirada; el desglose contra un tipo de daño
   // (desgloseBlindaje) lo pide el modal con lo que elige el jugador, pasándole
   // la armadura natural de aquí.
-  blindaje: { tieneEscudoMelee: boolean; armaduraNatural: ArmaduraNatural };
+  // `contencion`: la absorción de la Contención puesta (estado propio del poder), o null.
+  blindaje: { tieneEscudoMelee: boolean; armaduraNatural: ArmaduraNatural; contencion: AbsorcionPropia | null };
   // Casillas con alcance del equipo, de la especie (§14.8), de las dotes (§9.3) y de los
   // aumentos (A2a: casillas de Alerta y el selector "Contra…" de las salvaciones),
   // indexadas una vez (consultaIndiceCondiciones). Las de especie, dotes y aumentos son
@@ -270,6 +271,10 @@ export const VITALIDAD_DE_FICHA: VitalidadActual = { origen: "ficha" };
 // La reducción de §7 sobre un valor ya calculado (con la especie dentro), hacia abajo.
 // TODO(revisar): S28 y S29 de docs/sistema.md (redondeo y orden con la especie).
 const reducir = (valor: number, fraccion: number) => Math.floor(valor * (1 - fraccion));
+
+// Algún penalizador de estado, heridas o fatiga en las tiradas: lo que hace salir la casilla
+// «Estabilizado» (casillasDePsionica).
+const tienePenalizadores = (mods: ModificadorConFuente[]) => mods.some((m) => m.tipo === "tirada" && m.origen === "estado" && m.valor < 0);
 
 const SIN_PIEZAS_INUTILIZADAS: ReadonlyMap<string, string> = new Map();
 
@@ -372,12 +377,17 @@ export function resolverFicha(
     cargaMaxima: porUmbral.reduccionCarga ? reducir(carga, porUmbral.reduccionCarga.fraccion) : carga,
     formulaMovimiento,
     multiplicadorCarga,
-    blindaje: { tieneEscudoMelee: tieneEscudoMelee(sheet), armaduraNatural: armaduraNaturalDeEspecie(especie) },
+    blindaje: {
+      tieneEscudoMelee: tieneEscudoMelee(sheet),
+      armaduraNatural: armaduraNaturalDeEspecie(especie),
+      contencion: absorcionDeContencion(estadosConEfecto(estados, inmunidades)),
+    },
     indiceCondiciones: indiceDeCondiciones(sheet, [
       ...casillasDeEspecie(especie),
       ...dotes.casillas,
       ...conUsosEscena(casillasDeAumentos(sheet, activables.salvaciones, salvacionesDeEquipo(sheet)), sheet.usosEscena),
       ...casillasDeFarmacos(sheet),
+      ...casillasDePsionica(psionica.paraEfectos, tienePenalizadores(modificadores)),
     ]),
     textosTirada: [...textosDeEspecie(especie), ...dotes.textos, ...textosDeAumentos(sheet), ...activables.textos],
     ventajasFijas: ventajasFijasDeAumentos(sheet),

@@ -42,10 +42,12 @@ import {
   alcanzaA,
   bonoAlcance,
   conPenalizadoresAnulados,
+  conPenalizadoresReducidos,
   desgloseAlcance,
   descartadosPorNoApila,
   type ContextoAccion,
   type ModificadorConFuente,
+  type ReduccionPenalizadores,
 } from "./modificadores";
 import type { FichaResuelta } from "./fichaResuelta";
 
@@ -296,6 +298,20 @@ function opcionesElegidas(condiciones: CondicionTirada[], estado: EstadoCondicio
   });
 }
 
+// La reducción de penalizadores de la opción elegida (la primera que la traiga), con la
+// etiqueta de su condición como fuente.
+function reduccionElegida(
+  condiciones: CondicionTirada[],
+  estado: EstadoCondiciones,
+): (ReduccionPenalizadores & { fuente: string }) | null {
+  for (const c of condiciones) {
+    if (c.tipo !== "opcion") continue;
+    const r = c.opciones.find((o) => o.id === estado[c.id])?.reducePenalizadores;
+    if (r) return { ...r, fuente: c.etiqueta };
+  }
+  return null;
+}
+
 // Una casilla bloqueada no cuenta aunque llegue marcada.
 function sinBloqueadas(condiciones: CondicionTirada[], estado: EstadoCondiciones): EstadoCondiciones {
   const bloqueadas = condiciones.filter((c) => c.tipo === "toggle" && c.bloqueada && Boolean(estado[c.id]));
@@ -352,8 +368,9 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     estado,
   );
   const { condiciones, bonosTramo } = sinApilados;
-  // Proyección activa (A5a): sus penalizadores, a 0 en las tiradas de Actitud.
-  const mods = conPenalizadoresAnulados(sinApilados.mods, ctx);
+  // Proyección activa (A5a): sus penalizadores, a 0 en las tiradas de Actitud. Detrás, la
+  // reducción de la opción elegida que la traiga (Estabilizado).
+  const mods = conPenalizadoresReducidos(conPenalizadoresAnulados(sinApilados.mods, ctx), ctx, reduccionElegida(condiciones, estado));
 
   const activas = condiciones.filter((c): c is Toggle => c.tipo === "toggle" && Boolean(estado[c.id]));
   // Los atributos de la extremidad solo valen para el aplicado y el daño de esta tirada.

@@ -35,12 +35,15 @@ import {
   prepararPoder,
   usarPoder,
   efectosDelResultado,
+  estadoParaTerminar,
   tirarPeaje,
   SELECCION_PODER_VACIA,
   ID_ACCION_REPETIDA,
   ID_ELECCION_ACTIVABLE,
   type SeleccionPoder,
   type EfectosDeUso,
+  type OperacionEstadoDePoder,
+  type Grado,
   type PeajeDeUso,
   type CategoriaDanio,
   categoriaDanioDeTexto,
@@ -664,6 +667,7 @@ export function AccionesTab({
   onAjustarDanio,
   onGastarUsosEscena,
   onUsarAccionAumento,
+  onEstadoDePoder,
   onMarcarFavorita,
   libre = false,
   soloLectura = false,
@@ -733,6 +737,10 @@ export function AccionesTab({
   // Acciones de aumento (A4a): las cobra y aplica el servidor (usarAccionAumentoAction), que
   // devuelve qué ha pasado por `onMensaje`. Sin él (NPC), se paga la fatiga con onPagarFatiga.
   onUsarAccionAumento?: (accionId: string, onMensaje: (mensaje: string) => void, extra?: ExtraAccionAumento) => void;
+  // Estados propios de los poderes (P1 de psiónica: Contención al usarla, Aturdido del fracaso
+  // crítico de Retrocognición, «Terminar contención»): los pone y quita el servidor. Sin él (NPC),
+  // el máster los pone desde su panel.
+  onEstadoDePoder?: (op: OperacionEstadoDePoder, onMensaje: (mensaje: string) => void) => void;
   // Acciones favoritas (T-006), guardadas en sheet.favoritas. Solo lo pasa CharacterSheet: sin
   // él (NPC, combate del máster) no hay estrellas ni pestaña Favoritas.
   onMarcarFavorita?: (id: string, marcada: boolean) => void;
@@ -995,8 +1003,15 @@ export function AccionesTab({
     if (e.sobrecarga.tipo === "salta") setSobrecarga({ nivel: e.sobrecarga.nivel, salvacion: null });
     else if (e.sobrecarga.tipo === "reiniciar") setSobrecarga(null);
     setAvisosPoder(e.avisos);
+    if (e.estadoPropio && poderAbierto && preparado) ponerEstadosDePoder(poderAbierto.poder.accion.id, preparado.seleccion.elecciones, null);
     return e.fatiga.pagar;
   };
+
+  // El servidor vuelve a calcular qué estados toca poner (estadosPropiosDeUso) y su aviso llega
+  // a la ventana del poder.
+  const avisoPoder = (m: string) => setAvisosPoder((a) => [...a, m]);
+  const ponerEstadosDePoder = (poderId: string, elecciones: Record<string, string>, grado: Grado | null) =>
+    onEstadoDePoder?.({ tipo: "poner", poderId, elecciones, grado }, avisoPoder);
 
   // Uso del poder (con tirada o sin ella), falle o no; "prolongar" = otro turno
   // de Proeza. Sin fatiga numérica se paga a mano: no se aplica nada.
@@ -1049,9 +1064,20 @@ export function AccionesTab({
   };
 
   const extraProeza = preparado?.extraProrroga ?? 0;
+  // «Terminar contención»: el estado que el poder abierto puso, si sigue puesto.
+  const terminar = poderAbierto && onEstadoDePoder ? estadoParaTerminar(poderAbierto.poder.accion, ficha.estados) : null;
   const piePoder =
-    avisosPoder.length > 0 || sobrecarga || peajes.length > 0 || extraProeza > 0 ? (
+    avisosPoder.length > 0 || sobrecarga || peajes.length > 0 || extraProeza > 0 || terminar ? (
       <>
+        {terminar && (
+          <button
+            type="button"
+            onClick={() => onEstadoDePoder?.({ tipo: "quitar", estadoId: terminar.estadoId }, avisoPoder)}
+            className="clip-chamfer-sm mt-3 w-full border border-accent py-2 font-display text-xs font-semibold uppercase tracking-wide text-accent active:scale-[0.98]"
+          >
+            {terminar.etiqueta}
+          </button>
+        )}
         {extraProeza > 0 && (
           <button
             type="button"
@@ -1216,9 +1242,12 @@ export function AccionesTab({
     if (tirada.grupo === "Psiónica" && preparado) {
       pagarPoder("uso", montada.ahorroSinUsar);
       // Daño propio que depende del resultado (fracaso crítico del Sondeo).
-      const tras = efectosDelResultado(preparado, gradoDeTirada(r));
+      const grado = gradoDeTirada(r);
+      const tras = efectosDelResultado(preparado, grado);
       if (tras.vida > 0) onAjustarVida?.(-tras.vida);
       if (tras.avisos.length > 0) setAvisosPoder((a) => [...a, ...tras.avisos]);
+      // Estados propios del grado (Aturdido del fracaso crítico de Retrocognición).
+      if (tras.estadosPropios && poderAbierto) ponerEstadosDePoder(poderAbierto.poder.accion.id, preparado.seleccion.elecciones, grado);
     }
     const gastoEspecial = gastoMunicionEspecial(tirada, modoId, estadoCondiciones);
     if (gastoEspecial && gastoEspecial.cantidad > 0) onAjustarMunicionEspecial?.(gastoEspecial.id, -gastoEspecial.cantidad);

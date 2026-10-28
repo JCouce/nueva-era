@@ -72,7 +72,7 @@ export type PoderResuelto = {
       Grado,
       {
         texto: string;
-        estados: { estado: string; duracion: ValorResuelto; sobre: "objetivo" | "propio" }[];
+        estados: { estado: string; grado?: string; duracion: ValorResuelto; sobre: "objetivo" | "propio" }[];
         danio?: { valor: ValorResuelto; categoria: string; sobre: "objetivo" | "propio" };
       }
     >
@@ -759,7 +759,7 @@ export function togglesDeFatiga(
   return [...vistos.values()];
 }
 
-function enTramo(b: BonoToggle, nivel: number): boolean {
+function enTramo(b: Pick<BonoToggle, "desdeNivelPoseido" | "hastaNivelPoseido">, nivel: number): boolean {
   return nivel >= (b.desdeNivelPoseido ?? 0) && nivel <= (b.hastaNivelPoseido ?? Infinity);
 }
 
@@ -797,6 +797,27 @@ export function conPsionicaEnTiradaFija(niveles: NivelesPsionica, t: Accion): Ac
     ...(ventaja && { ventaja, ...(origenVentaja && { origenVentaja }) }),
     ...(condiciones.length > 0 && { condiciones: [...(t.condiciones ?? []), ...condiciones] }),
   };
+}
+
+// Las casillas que los poderes de la ficha cuelgan de otras tiradas (P1, 2026-10-28:
+// `AccionPoder.casillasEnTiradas`), una por alcance, con el poder como origen. Solo los poderes
+// que el personaje tiene (nivel poseído, requisito sano) y en su tramo de nivel. Van al índice
+// de casillas con alcance (resolverFicha), como las de dotes y aumentos: llegan a cualquier
+// tirada que case, fija, de arma o de poder. `conPenalizadores`: si la ficha lleva ahora algún
+// penalizador de estado, heridas o fatiga (las de `soloConPenalizadores`, si no, no salen).
+export function casillasDePsionica(niveles: NivelesPsionica, conPenalizadores: boolean): CondicionTirada[] {
+  return DISCIPLINAS.flatMap((d) => {
+    const nivel = niveles[d.id as DisciplinaId] ?? 0;
+    if (nivel <= 0 || bloqueoPorRequisito(d, niveles)) return [];
+    return d.acciones.flatMap((accion) => {
+      if (nivel < accion.desdeNivel || !generaAccionDePoder(accion)) return [];
+      const origen: OrigenAporte = { tipo: "poder", id: accion.id, label: accion.label };
+      return (accion.casillasEnTiradas ?? [])
+        .filter((c) => enTramo({ desdeNivelPoseido: c.desdeNivelPoseido, hastaNivelPoseido: c.hastaNivelPoseido }, nivel))
+        .filter((c) => !c.soloConPenalizadores || conPenalizadores)
+        .flatMap((c) => c.alcances.map((alcance): CondicionTirada => ({ ...c.condicion, alcance, origen })));
+    });
+  });
 }
 
 // Lo que las casillas marcadas hacen además de la fatiga: ajustes a la tirada del

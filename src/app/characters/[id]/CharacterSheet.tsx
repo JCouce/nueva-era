@@ -40,6 +40,8 @@ import {
   gastarUsosEscenaAction,
   liberarUsoEscenaAction,
   usarAccionAumentoAction,
+  ponerEstadosDePoderAction,
+  quitarEstadoDePoderAction,
   comprarDoteAction,
   quitarDoteAction,
   marcarFavoritaAction,
@@ -96,7 +98,7 @@ import {
   type DoteComprada,
   type EstadoActivo,
 } from "@/lib/rules";
-import type { ExtraAccionAumento, Sheet } from "@/lib/rules";
+import type { ExtraAccionAumento, OperacionEstadoDePoder, Sheet } from "@/lib/rules";
 import { PersonajeTab, PanelFieldset } from "./_components/personaje/PersonajeTab";
 import { AvisoEnRevision } from "./_components/RevisionFicha";
 import { EstadoFichaChip } from "@/components/EstadoFichaChip";
@@ -519,6 +521,19 @@ export function CharacterSheet({
       setSheet,
     );
   };
+  // Estados propios de los poderes (P1 de psiónica): los pone o quita el servidor, que los vuelve
+  // a calcular con la ficha guardada. No se toca la ficha local con lo que devuelve (estos estados
+  // no mueven la vida): el estado llega por la revalidación de la página.
+  const commitEstadoDePoder = (op: OperacionEstadoDePoder, onMensaje: (m: string) => void) => {
+    runSave(async () => {
+      const res =
+        op.tipo === "poner"
+          ? await ponerEstadosDePoderAction(characterId, { poderId: op.poderId, elecciones: op.elecciones, grado: op.grado })
+          : await quitarEstadoDePoderAction(characterId, op.estadoId);
+      if (!res.ok || res.mensaje) onMensaje(res.ok ? res.mensaje! : res.error);
+      return res;
+    });
+  };
   const commitComprarGranada = (catalogoId: string) => {
     runSave(() => comprarGranadaAction(characterId, catalogoId), setSheet);
   };
@@ -802,6 +817,7 @@ export function CharacterSheet({
             onAjustarDanio={commitAjustarDanio}
             onGastarUsosEscena={commitGastarUsosEscena}
             onUsarAccionAumento={commitUsarAccionAumento}
+            onEstadoDePoder={commitEstadoDePoder}
             onMarcarFavorita={commitMarcarFavorita}
             soloLectura={soloLectura}
             cabina={cabina}

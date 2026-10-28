@@ -155,7 +155,9 @@ export type Modificador =
   | { tipo: "habilidad"; id: HabilidadId; valor: number }
   // `compensa` (A5a): compensación de un penalizador (Neurogénesis sobre la fatiga) que no
   // viene con origen "estado"; cuenta junto a los penalizadores al anularlos (Proyección).
-  | { tipo: "tirada"; alcance: AlcanceModificador; valor: number; noApila?: string; compensa?: true }
+  // `umbral`: el −N de heridas o fatiga de §7 (o su compensación por aplicado), para poder
+  // quitarlo aparte de los de estado (Estabilización nv4, conPenalizadoresReducidos).
+  | { tipo: "tirada"; alcance: AlcanceModificador; valor: number; noApila?: string; compensa?: true; umbral?: true }
   // Nivel de una disciplina psiónica (Resonancia +1 del Arianyi, §14.6). No toca
   // ninguna tirada: sube el nivel efectivo, que es el que miran requisitos y
   // poderes (psionica.ts: nivelesDePsionica). Ver docs/modificadores-tiradas.md §9.
@@ -345,6 +347,43 @@ export function conPenalizadoresAnulados(mods: ModificadorConFuente[], ctx: Cont
   );
   if (neto >= 0) return mods;
   return [...mods, { tipo: "tirada", alcance: { tipo: "todas" }, valor: -neto, origen: anula.origen, fuente: `${anula.fuente} (anula penalizadores)` }];
+}
+
+// Reducción de penalizadores que trae una casilla marcada (Estabilización, P1 de psiónica):
+// −`porEstado` a cada penalizador de tirada de un estado, por separado y sin pasar de 0 (99 =
+// todos), y con `umbrales` además fuera los de heridas y fatiga. Mismo criterio que
+// `reducePenalizadores`/`eliminaPenalizadoresUmbrales` de los activables de aumento
+// (aumentosActivables.ts), pero para una sola tirada.
+export type ReduccionPenalizadores = { porEstado: number; umbrales?: true };
+
+const esPenalizadorDeEstado = (m: ModificadorConFuente, ctx: ContextoAccion) =>
+  m.tipo === "tirada" && m.origen === "estado" && !m.umbral && alcanzaA(m.alcance, ctx);
+
+// Con una reducción, una o dos líneas más (estados; heridas y fatiga) que compensan. Lo ya
+// compensado (Neuroprótesis, Proyección…) no se vuelve a compensar: lo que se añade nunca deja
+// los penalizadores de la tirada, todos juntos, por encima de 0.
+export function conPenalizadoresReducidos(
+  mods: ModificadorConFuente[],
+  ctx: ContextoAccion,
+  r: (ReduccionPenalizadores & { fuente: string }) | null,
+): ModificadorConFuente[] {
+  if (!r) return mods;
+  const deEstado = mods.filter((m) => esPenalizadorDeEstado(m, ctx));
+  const netoEstados = deEstado.reduce((t, m) => t + m.valor, 0);
+  const porLinea = deEstado.reduce((t, m) => (m.valor < 0 ? t + Math.min(r.porEstado, -m.valor) : t), 0);
+  const estados = Math.min(porLinea, Math.max(0, -netoEstados));
+  const netoUmbrales = mods.reduce((t, m) => (m.tipo === "tirada" && m.umbral && alcanzaA(m.alcance, ctx) ? t + m.valor : t), 0);
+  const umbrales = r.umbrales ? Math.max(0, -netoUmbrales) : 0;
+  // Tope común: lo que queda de penalizador en la tirada (con anulaciones y compensaciones).
+  const neto = mods.reduce((t, m) => (m.tipo === "tirada" && esDePenalizador(m) && alcanzaA(m.alcance, ctx) ? t + m.valor : t), 0);
+  let queda = Math.max(0, -neto);
+  const linea = (valor: number, que: string): ModificadorConFuente[] => {
+    const v = Math.min(valor, queda);
+    queda -= v;
+    return v > 0 ? [{ tipo: "tirada", alcance: { tipo: "todas" }, valor: v, compensa: true, origen: "estado", fuente: `${r.fuente} (${que})` }] : [];
+  };
+  const extra = [...linea(estados, "estados"), ...linea(umbrales, "heridas y fatiga")];
+  return extra.length > 0 ? [...mods, ...extra] : mods;
 }
 
 export function bonoAlcance(mods: ModificadorConFuente[], ctx: ContextoAccion): number {

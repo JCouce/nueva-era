@@ -12,7 +12,7 @@
 //   opcion   → una de varias, excluyentes ("tramo de distancia", "modo de disparo")
 //   contador → un número entre un mínimo y un máximo ("atacantes adicionales esta ronda")
 //
-import type { AlcanceModificador } from "./modificadores";
+import type { AlcanceModificador, ReduccionPenalizadores } from "./modificadores";
 import type { OrigenAporte } from "./origen";
 import { APLICADOS, type AplicadoId } from "./atributos";
 
@@ -51,6 +51,10 @@ export type OpcionCondicion = {
   // exanguinante; VTM: 6 en congelación). Al elegirla, el modal pone esa dificultad
   // (dificultadTrasCambio); el jugador puede cambiarla después a mano. S94.
   dificultad?: number;
+  // Con la opción elegida, la tirada reduce sus penalizadores (Estabilización, P1 de psiónica):
+  // lo resuelve montarTirada (conPenalizadoresReducidos), con la etiqueta de la condición
+  // como fuente.
+  reducePenalizadores?: ReduccionPenalizadores;
 };
 
 export type CondicionTirada = (
@@ -182,8 +186,14 @@ export function resumenOpcion(o: OpcionCondicion): string {
   if (o.ventaja) partes.push("ventaja");
   if (o.costeFatiga) partes.push(`−${o.costeFatiga} fatiga`);
   if (o.dificultad !== undefined) partes.push(`dif. ${o.dificultad}`);
+  if (o.reducePenalizadores) partes.push(textoReduccion(o.reducePenalizadores));
   return partes.join(" · ");
 }
+
+const textoReduccion = (r: ReduccionPenalizadores): string => {
+  const estados = r.porEstado >= 99 ? "sin penalizadores de estado" : `−${r.porEstado} a cada penalizador de estado`;
+  return r.umbrales ? `${estados}, sin heridas ni fatiga` : estados;
+};
 
 // La dificultad que fijan las opciones elegidas (la última que la declare), o undefined.
 export function dificultadDeCondiciones(condiciones: CondicionTirada[], estado: EstadoCondiciones): number | undefined {

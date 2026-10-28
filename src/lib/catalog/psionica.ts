@@ -4,8 +4,12 @@
 //
 // Las 6 disciplinas con sus acciones.
 import type { MotorMetadata } from "../rules/motor";
+import type { Estado } from "./estados";
+import type { AlcanceModificador } from "../rules/modificadores";
+import type { CondicionTirada, OpcionCondicion } from "../rules/condiciones";
 import type {
   AccionPoder,
+  CasillaDePoder,
   CambiosOpcion,
   CatalogoPsionica,
   Disciplina,
@@ -45,6 +49,14 @@ function motorDeAccion(id: string, notas: { tercero?: string[]; propias?: boolea
     ...(notas.extra ?? []),
   ];
 }
+
+// MotorMetadata de una casilla de `casillasEnTiradas` (P1): un Ajuste (o una Resolución, si
+// cambia cómo se resuelve) que el jugador marca al tirar, por cada blanco.
+const motorDeCasilla = (tipo: "numerico" | "resolucion", ids: string[]): MotorMetadata[] =>
+  ids.map((id) => ({ tipo, afecta: { modo: "accion_existente", id }, mecanismo: "eleccion_jugador", estado: "construido" }));
+
+const grupo = (g: Extract<AlcanceModificador, { tipo: "grupo" }>["grupo"]): AlcanceModificador => ({ tipo: "grupo", grupo: g });
+const tirada = (id: string): AlcanceModificador => ({ tipo: "tiradaId", id });
 
 // Campos que ninguna acción de Singularidad usa: se rellenan una vez aquí.
 const SIN_EXTRAS = {
@@ -475,6 +487,15 @@ const RASTREO: AccionPoder = {
   motor: motorDeAccion(RASTREO_ID, { propias: true }),
 };
 
+// Las tiradas enfrentadas a otro personaje en las que cabe el +2 de Leer Mente: ataques y
+// defensas (reglas-base: "las acciones defensivas se resuelven de forma enfrentada a las de
+// ataque"), los poderes (Inducción, Sincronía, Duelo…) y las fijas que la fuente da como
+// enfrentadas. La app no sabe contra quién se tira: el jugador la marca si es contra el leído.
+// TODO(revisar): la prosa dice "tiradas enfrentadas contra el objetivo" sin lista; las de grupo
+// Dotes (Fintar…) no están, y el grupo Psiónica incluye poderes que no son enfrentados.
+const ENFRENTADAS_FIJAS = ["social", "discernir_mentiras", "resistir_distraccion", "iniciativa_distraccion", "sigilo", "hurto"];
+const ALCANCES_ENFRENTADAS: AlcanceModificador[] = [grupo("Ataques"), grupo("Defensa"), grupo("Psiónica"), ...ENFRENTADAS_FIJAS.map(tirada)];
+
 // Enfrentada: los grados van desde el punto de vista del psiónico (su fracaso =
 // el objetivo salva con éxito, que aún deja 1 turno de lectura).
 const LEER_MENTE_ID = "psi_resonancia_leer_mente";
@@ -494,14 +515,14 @@ const LEER_MENTE: AccionPoder = {
   ejes: [ejeAlcanceResonancia()],
   resultados: {
     critico: {
-      texto: "Lees sus pensamientos más vívidos y superficiales durante 1 minuto (10 turnos) sin gastar acción para mantenerlo, y +2 en tus tiradas enfrentadas contra él",
+      texto: "Lees sus pensamientos más vívidos y superficiales durante 1 minuto (10 turnos) sin gastar acción para mantenerlo, y +2 en tus tiradas enfrentadas contra él: márcalo en la casilla «Mente leída»",
       estados: [],
     },
     exito: {
-      texto: "Lees sus pensamientos más vívidos y superficiales durante 10 turnos (1 minuto); mantenerlo cuesta una reacción o una acción simple cada turno. +2 en tus tiradas enfrentadas contra él",
+      texto: "Lees sus pensamientos más vívidos y superficiales durante 10 turnos (1 minuto); mantenerlo cuesta una reacción o una acción simple cada turno. +2 en tus tiradas enfrentadas contra él: márcalo en la casilla «Mente leída»",
       estados: [],
     },
-    fracaso: { texto: "Lo lees solo durante 1 turno (con el +2 en enfrentadas contra él ese turno)", estados: [] },
+    fracaso: { texto: "Lo lees solo durante 1 turno (con el +2 en enfrentadas contra él ese turno: casilla «Mente leída»)", estados: [] },
     fracasoCritico: {
       texto: "No lees nada y percibe la anomalía: puede hacer una prueba libre, según sus conocimientos, para darse cuenta de que le han intentado leer la mente",
       estados: [],
@@ -514,7 +535,12 @@ const LEER_MENTE: AccionPoder = {
       lugar: "tirada",
     },
   ],
-  motor: motorDeAccion(LEER_MENTE_ID, { propias: true, tercero: ["salv_voluntad"] }),
+  casillasEnTiradas: [{ alcances: ALCANCES_ENFRENTADAS, condicion: { id: "psi_mente_leida", tipo: "toggle", etiqueta: "Mente leída (+2 contra el objetivo leído)", valorActivo: 2 } }],
+  motor: motorDeAccion(LEER_MENTE_ID, {
+    propias: true,
+    tercero: ["salv_voluntad"],
+    extra: motorDeCasilla("numerico", ["grupo:Ataques", "grupo:Defensa", "grupo:Psiónica", ...ENFRENTADAS_FIJAS]),
+  }),
 };
 
 // Alerta: dos acciones (pasiva y activa) porque cambian alcance y unidades. Coste
@@ -605,14 +631,19 @@ const VINCULO: AccionPoder = {
   resultados: {},
   multiplesObjetivos: { texto: "Tantos aliados como fatiga tengas.", fatigaPorObjetivo: 1 },
   notas: [
-    { texto: "Los vinculados tienen +1 a las salvaciones de Voluntad mientras dure (a mano).", lugar: "tirada" },
+    {
+      texto: "Mientras dure, +1 a las salvaciones de Voluntad de todos los vinculados: tú, con la casilla «Vínculo activo» de tu salvación de Voluntad; los demás, díselo.",
+      lugar: "tirada",
+    },
     { texto: "Se benefician de tu alerta pasiva contra las amenazas que los incluyan.", lugar: "tirada" },
     {
       texto: "Como reacción, quien encuentre a un objetivo escondido puede avisar por el vínculo: un ataque por sorpresa pasa a normal, o un aliado desprevenido pasa a sorprendido.",
       lugar: "tirada",
     },
   ],
-  motor: motorDeAccion(VINCULO_ID, { propias: true }),
+  casillasEnTiradas: [{ alcances: [tirada("salv_voluntad")], condicion: { id: "psi_vinculo_activo", tipo: "toggle", etiqueta: "Vínculo activo (+1)", valorActivo: 1 } }],
+  // El +1 de los aliados es texto (objetivo_tercero, cerrado 2026-09-24).
+  motor: motorDeAccion(VINCULO_ID, { propias: true, tercero: ["salv_voluntad"], extra: motorDeCasilla("numerico", ["salv_voluntad"]) }),
 };
 
 const RESONANCIA: Disciplina = {
@@ -1109,6 +1140,43 @@ const SUPRESION: AccionPoder = {
   motor: motorDeAccion(SUPRESION_ID, { propias: true }),
 };
 
+// Selector «Estabilizado» (P1, 2026-10-28): lo que dejó la Estabilización (mitigar) en cada
+// tirada mientras dura. Opción y no casilla: éxito y crítico reducen distinto.
+// TODO(revisar): en nv6 la prosa no quita "los penalizadores que llegues a sufrir después";
+// la app no sabe cuáles son, así que el jugador lo tiene en cuenta (lo dice la opción).
+const ESTABILIZADO_ID = "psi_estabilizado";
+const ESTABILIZADO: Pick<CasillaDePoder, "alcances" | "soloConPenalizadores"> = { alcances: [{ tipo: "todas" }], soloConPenalizadores: true };
+const NO_ESTABILIZADO: OpcionCondicion = { id: "no", etiqueta: "No", valor: 0, sinValor: true };
+const estabilizado = (umbrales: boolean): CondicionTirada =>
+  ({
+    id: ESTABILIZADO_ID,
+    tipo: "opcion",
+    etiqueta: "Estabilizado",
+    porDefecto: "no",
+    opciones: [
+      NO_ESTABILIZADO,
+      { id: "exito", etiqueta: "Con éxito", valor: 0, sinValor: true, reducePenalizadores: { porEstado: 1, ...(umbrales && { umbrales: true as const }) } },
+      { id: "critico", etiqueta: "Con crítico", valor: 0, sinValor: true, reducePenalizadores: { porEstado: 2, ...(umbrales && { umbrales: true as const }) } },
+    ],
+  });
+const ESTABILIZADO_6: CondicionTirada = {
+  id: ESTABILIZADO_ID,
+  tipo: "opcion",
+  etiqueta: "Estabilizado",
+  porDefecto: "no",
+  opciones: [
+    NO_ESTABILIZADO,
+    {
+      id: "exito",
+      etiqueta: "Superada",
+      valor: 0,
+      sinValor: true,
+      reducePenalizadores: { porEstado: 99, umbrales: true },
+      nota: "No quita los penalizadores de estados que te pongan después de usarla: esos, réstalos en el circunstancial.",
+    },
+  ],
+};
+
 // Estabilización: la Supresión sobre uno mismo, dificultad 6, 1 de fatiga
 // (usuario, 2026-09-29). Duraciones tal cual la prosa (10 y 30 minutos, sin "×
 // nivel"). El bonificador a la salvación va en dos pasos (usuario, 2026-09-30): se
@@ -1142,7 +1210,13 @@ const ESTABILIZACION: AccionPoder = {
       label: "Uso",
       tipo: "opcion",
       opciones: [
-        { id: "mitigar", label: "Mitigar penalizadores", cambia: {} },
+        {
+          id: "mitigar",
+          label: "Mitigar penalizadores",
+          cambia: {
+            notas: [{ texto: "Si la superas, marca el selector «Estabilizado» de tus tiradas mientras dure (sale cuando tienes penalizadores).", lugar: "tirada" }],
+          },
+        },
         {
           id: "salvacion",
           label: "Bonificador a una salvación",
@@ -1215,8 +1289,16 @@ const ESTABILIZACION: AccionPoder = {
     exito: { texto: "Reduces en 1 tus penalizadores por estados mientras dure", estados: [] },
     fracaso: { texto: "Sin efecto", estados: [] },
   },
-  notas: [{ texto: "Los penalizadores de estado, a mano.", lugar: "tirada" }],
-  motor: motorDeAccion(ESTABILIZACION_ID, { propias: true }),
+  notas: [],
+  // Mitigar (P1): el selector «Estabilizado» en las tiradas con penalizadores, por tramo de
+  // nivel. Éxito −1 y crítico −2 a cada penalizador de estado; desde nv4 además fuera heridas y
+  // fatiga; en nv6 fuera todos. El +2/+3/+4 a la salvación sigue en `bonosEnOtrasTiradas`.
+  casillasEnTiradas: [
+    { ...ESTABILIZADO, hastaNivelPoseido: 3, condicion: estabilizado(false) },
+    { ...ESTABILIZADO, desdeNivelPoseido: 4, hastaNivelPoseido: 5, condicion: estabilizado(true) },
+    { ...ESTABILIZADO, desdeNivelPoseido: 6, condicion: ESTABILIZADO_6 },
+  ],
+  motor: motorDeAccion(ESTABILIZACION_ID, { propias: true, extra: motorDeCasilla("resolucion", ["todas"]) }),
 };
 
 const estabilizacionEnSalvacion = (valor: number, desde: number, hasta?: number, como?: string) => ({
@@ -1417,18 +1499,27 @@ const RETROCOGNICION: AccionPoder = {
       estados: [],
     },
     fracaso: { texto: "Eco difuso: poca información útil y un leve mareo; salvación de Voluntad contra 6 o quedas aturdido", estados: [] },
-    fracasoCritico: { texto: "Contaminación mnemónica: tomas por cierta una superposición errónea de datos y quedas aturdido 1 turno", estados: [] },
+    // Aturdido sin salvación: el grado "fracaso" del estado, el normal de quien no lo evita.
+    // TODO(revisar): la prosa no da grado; "fracaso crítico" del estado sería −2 a la defensa.
+    fracasoCritico: {
+      texto: "Contaminación mnemónica: tomas por cierta una superposición errónea de datos y quedas aturdido 1 turno (se te pone solo)",
+      estados: [{ estado: "aturdido", grado: "fracaso", duracion: 1, sobre: "propio" }],
+    },
   },
   notas: [
     { texto: "Solo lo que pasó dentro de la burbuja. Dificultad sugerida: el valor bajo del tramo (6-8, 9-11, 12-14, 15+).", lugar: "tirada" },
     { texto: "Con el escenario arrasado, el rastro puede estar disipado del todo (a criterio del máster).", lugar: "tirada" },
   ],
-  motor: motorDeAccion(RETROCOGNICION_ID, { propias: true }),
+  // El Aturdido del fracaso crítico: estado propio que pone la app (efectosDelResultado).
+  motor: motorDeAccion(RETROCOGNICION_ID, {
+    propias: true,
+    extra: [{ tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Defensa" }, mecanismo: "siempre_activo", estado: "construido" }],
+  }),
 };
 
-// Precognición: los bonos son un efecto activo sobre uno mismo, a mano. Las
-// salvaciones no cuentan como tiradas defensivas; el fracaso crítico dura 1 turno
-// (Murillo, 2026-09-29).
+// Precognición: los bonos y penalizadores, con el selector «Precognición» de ataques y
+// defensas (P1, 2026-10-28; antes a mano). Las salvaciones no cuentan como tiradas
+// defensivas; el fracaso crítico dura 1 turno (Murillo, 2026-09-29).
 const PRECOGNICION: AccionPoder = {
   ...SIN_EXTRAS,
   id: PRECOGNICION_ID,
@@ -1458,10 +1549,35 @@ const PRECOGNICION: AccionPoder = {
     },
   },
   notas: [
-    { texto: "Los bonos los llevas a mano mientras dure. Las salvaciones no cuentan como tiradas defensivas.", lugar: "tirada" },
+    {
+      texto: "Mientras dure, marca el resultado en el selector «Precognición» de tus ataques y defensas (el fracaso, solo el turno siguiente). Las salvaciones no cuentan como tiradas defensivas.",
+      lugar: "tirada",
+    },
     { texto: "Interferencias físicas o electromagnéticas masivas suben la dificultad (la dice el máster).", lugar: "tirada" },
   ],
-  motor: motorDeAccion(PRECOGNICION_ID, { propias: true }),
+  casillasEnTiradas: [
+    {
+      alcances: [grupo("Ataques"), grupo("Defensa")],
+      condicion: {
+        id: "psi_precognicion",
+        tipo: "opcion",
+        etiqueta: "Precognición",
+        porDefecto: "no",
+        opciones: [
+          { id: "no", etiqueta: "No", valor: 0, sinValor: true },
+          { id: "critico_dentro", etiqueta: "Crítico, dentro de la burbuja", valor: 3 },
+          { id: "critico_fuera", etiqueta: "Crítico, fuera", valor: 2 },
+          { id: "exito_dentro", etiqueta: "Éxito, dentro de la burbuja", valor: 2 },
+          { id: "exito_fuera", etiqueta: "Éxito, fuera", valor: 1 },
+          { id: "fracaso", etiqueta: "Fracaso (turno siguiente)", valor: -1 },
+          { id: "fracaso_critico", etiqueta: "Fracaso crítico (1 turno)", valor: -2 },
+        ],
+      },
+    },
+  ],
+  // TODO(revisar): los poderes de ataque (Singularidad, Anclaje…) también son tiradas ofensivas
+  // y el selector no les llega (grupo Psiónica, que mezcla de todo).
+  motor: motorDeAccion(PRECOGNICION_ID, { propias: true, extra: motorDeCasilla("numerico", ["grupo:Ataques", "grupo:Defensa"]) }),
 };
 
 const HIPERCOGNICION: Disciplina = {
@@ -1562,10 +1678,16 @@ const ANCLAJE: AccionPoder = {
     fracaso: { texto: "No queda anclado", estados: [] },
   },
   notas: [
-    { texto: "Mantenerlo: una acción simple por turno (estándar si son varios) y −1 al resto de tus acciones por la concentración.", lugar: "tirada" },
+    {
+      texto: "Mantenerlo: una acción simple por turno (estándar si son varios) y −1 al resto de tus acciones por la concentración: marca «Manteniendo anclaje» en ellas.",
+      lugar: "tirada",
+    },
     { texto: "Pasada la duración, renovarlo es volver a usar Anclaje (acción estándar y su fatiga).", lugar: "tirada" },
   ],
-  motor: motorDeAccion(ANCLAJE_ID, { propias: true, tercero: ["defensa", "salv_fortaleza"] }),
+  casillasEnTiradas: [
+    { alcances: [{ tipo: "todas" }], condicion: { id: "psi_manteniendo_anclaje", tipo: "toggle", etiqueta: "Manteniendo anclaje (−1)", valorActivo: -1 } },
+  ],
+  motor: motorDeAccion(ANCLAJE_ID, { propias: true, tercero: ["defensa", "salv_fortaleza"], extra: motorDeCasilla("numerico", ["todas"]) }),
 };
 
 const TRASLADAR: AccionPoder = {
@@ -1706,8 +1828,12 @@ const AUTO_PROYECCION: AccionPoder = {
     },
   ],
   resultados: {},
-  notas: [{ texto: "Por la inercia, +1 a tus esquivas hasta el inicio de tu siguiente turno (a mano).", lugar: "tirada" }],
-  motor: motorDeAccion("psi_traslacion_auto_proyeccion", { propias: true }),
+  notas: [{ texto: "Por la inercia, +1 a tus esquivas hasta el inicio de tu siguiente turno: marca «Auto-proyección» en la esquiva.", lugar: "tirada" }],
+  // La esquiva es la fila "Defensa / esquiva"; los bloqueos del grupo Defensa no son esquivas.
+  casillasEnTiradas: [
+    { alcances: [tirada("defensa")], condicion: { id: "psi_auto_proyeccion", tipo: "toggle", etiqueta: "Auto-proyección (+1)", valorActivo: 1 } },
+  ],
+  motor: motorDeAccion("psi_traslacion_auto_proyeccion", { propias: true, extra: motorDeCasilla("numerico", ["defensa"]) }),
 };
 
 const SENSOR: AccionPoder = {
@@ -1976,8 +2102,8 @@ const TRASLACION: Disciplina = {
 // Un único poder sin tirada. La tabla va por nivel EMPLEADO (nivel 2 personal =
 // nivel 1); las duraciones largas y rebajas de −Agilidad dependen además del
 // POSEÍDO (ajustesPorNivelPoseido filtrados por nivel empleado). Absorción y
-// −Agilidad se aplican a mano; área de la ampliada, en el manual (usuario,
-// 2026-09-28/29).
+// −Agilidad, con el estado propio «Contención» al usarla; el área de la ampliada, calculada
+// (P1, 2026-10-28; antes a mano y en el manual por decisión del 2026-09-28/29).
 const CONTENCION_ID = "psi_contencion_contencion";
 const ABS = [1, 1, 2, 3, 4, 5];
 const QUIETO = [3, 3, 5, 7, 9, 11];
@@ -1988,6 +2114,65 @@ const duracionPor = (desdeNivel: number, nivelEmpleado: number, turnos: number) 
   ({ desdeNivel, nivelEmpleado, sobre: "duracion", op: "sustituye", valor: turnos }) as const;
 const agilidadPor = (desdeNivel: number, nivelEmpleado: number, valor: number) =>
   ({ desdeNivel, nivelEmpleado, sobre: `datos.${I_AGILIDAD}.valor`, op: "sustituye", valor }) as const;
+// Nivel 6: la Agilidad que queda al emplear estos niveles (agilidadPor). Lo usan los ajustes y
+// los grados del estado «Contención».
+const AGILIDAD_NV6: [nivelEmpleado: number, valor: number][] = [
+  [1, 0],
+  [3, -1],
+  [4, -1],
+  [5, -2],
+];
+// Área de la forma colectiva (P1, antes "mira el manual"): 1 casilla adyacente por nivel
+// empleado, ×2 o ×3 según el nivel poseído (prosa de nv4, nv5 y nv6). Para la ampliada y el foco.
+const AREA_COLECTIVA: [desdeNivel: number, nivelEmpleado: number, factor: number][] = [
+  [4, 1, 2],
+  [5, 1, 3],
+  [5, 3, 2],
+  [6, 3, 3],
+  [6, 4, 2],
+];
+const FORMAS_COLECTIVAS = ["ampliada", "foco"] as const;
+const areaPor = ([desdeNivel, nivelEmpleado, factor]: (typeof AREA_COLECTIVA)[number]) =>
+  FORMAS_COLECTIVAS.map(
+    (forma) =>
+      ({ desdeNivel, nivelEmpleado, opcion: { eje: "forma", opcion: forma }, sobre: "objetivo.area", op: "sustituye", valor: nivelEmpleado * factor }) as const,
+  );
+
+// Estado propio «Contención» (P1, 2026-10-28): lo pone la app al usarla (estadoAlUsar) y se va
+// al acabar la duración, con «Terminar contención» o con "Limpiar estados". Un grado por
+// absorción y −Agilidad posibles (los de la tabla y los de nv6), con id "absorción_agilidad"
+// ("2_-1"). La −Agilidad va como modificador del estado; la absorción la lee el blindaje
+// (absorcionDeContencion, rules/blindaje.ts), que no es un Modificador.
+export const ESTADO_CONTENCION_ID = "psi_contencion";
+const GRADOS_CONTENCION: { absorcion: number; agilidad: number }[] = [
+  ...NIVELES.map((n) => ({ absorcion: ABS[n - 1], agilidad: AGILIDAD[n - 1] })),
+  ...AGILIDAD_NV6.map(([n, agilidad]) => ({ absorcion: ABS[n - 1], agilidad })),
+].filter((g, i, todos) => todos.findIndex((x) => x.absorcion === g.absorcion && x.agilidad === g.agilidad) === i);
+
+export const gradoContencion = (absorcion: number, agilidad: number) => `${absorcion}_${agilidad}`;
+
+export function absorcionDeGradoContencion(gradoId: string): number | null {
+  return GRADOS_CONTENCION.find((g) => gradoContencion(g.absorcion, g.agilidad) === gradoId)?.absorcion ?? null;
+}
+
+export const ESTADOS_DE_PODER: Estado[] = [
+  {
+    id: ESTADO_CONTENCION_ID,
+    label: "Contención",
+    resumen: "Discontinuidad gravitatoria propia: absorción de daño a cambio de Agilidad, mientras dure.",
+    grados: GRADOS_CONTENCION.map(({ absorcion, agilidad }) => ({
+      id: gradoContencion(absorcion, agilidad),
+      label: `Absorción ${absorcion}${agilidad < 0 ? ` · Agilidad ${agilidad}` : ""}`,
+      modificadores: agilidad < 0 ? [{ tipo: "atributo", id: "agilidad", valor: agilidad }] : [],
+      detalle: [
+        `Absorción ${absorcion} contra todo daño menos el mental (en Bloquear daño); no la reducen los efectos antiblindaje.` +
+          (agilidad < 0 ? ` Agilidad ${agilidad}.` : ""),
+        "Quieto o contra el ataque, la absorción es otra: mira la Contención en Acciones.",
+      ],
+      duracionTurnos: null,
+    })),
+  },
+];
 
 const CONTENCION: AccionPoder = {
   ...SIN_EXTRAS,
@@ -1998,7 +2183,7 @@ const CONTENCION: AccionPoder = {
   fatiga: "tabla",
   alcance: null,
   duracion: 10,
-  unidades: { duracion: "turnos" },
+  unidades: { duracion: "turnos", area: "casillas adyacentes" },
   objetivo: { tipo: "propio" },
   desplazamiento: null,
   resolucion: { tipo: "sin_dado" },
@@ -2026,10 +2211,10 @@ const CONTENCION: AccionPoder = {
           desdeNivel: 2,
           cambia: {
             economia: "estandar",
-            objetivo: { tipo: "varios" },
+            objetivo: { tipo: "varios", area: { base: 0, porNivel: 1 } },
             notas: [
               {
-                texto: "Protege una casilla adyacente por nivel empleado (×2 o ×3 según tu nivel: mira el manual) y se mueve contigo; quien sale del área pierde la protección.",
+                texto: "Protege {area} casillas adyacentes y se mueve contigo; quien sale del área pierde la protección.",
                 lugar: "tirada",
               },
               { texto: "Mantenerla: concentración y una acción simple por turno (reacción desde tu nivel 4).", lugar: "tirada" },
@@ -2044,7 +2229,7 @@ const CONTENCION: AccionPoder = {
           desdeNivel: 2,
           cambia: {
             economia: "estandar",
-            objetivo: { tipo: "varios" },
+            objetivo: { tipo: "varios", area: { base: 0, porNivel: 1 } },
             notas: [
               {
                 texto: "Con colaboradores: pagas lo normal (sin ×2); cada colaborador paga 1 por la casilla que añade. Si uno cae inconsciente o sale del área, su casilla desaparece.",
@@ -2077,14 +2262,15 @@ const CONTENCION: AccionPoder = {
       op: "sustituye",
       valor: { manual: "1 hora gratis; después, 1 de fatiga por hora" },
     },
-    agilidadPor(6, 1, 0),
-    agilidadPor(6, 3, -1),
-    agilidadPor(6, 4, -1),
-    agilidadPor(6, 5, -2),
+    ...AGILIDAD_NV6.map(([n, valor]) => agilidadPor(6, n, valor)),
+    ...AREA_COLECTIVA.flatMap(areaPor),
   ],
   resultados: {},
   notas: [
-    { texto: "Absorción y −Agilidad duran lo que la contención: apúntalos a mano.", lugar: "tirada" },
+    {
+      texto: "Al usarla te pones el estado «Contención», con su absorción (en Bloquear daño) y su −Agilidad. Se va al acabar la duración o con «Terminar contención».",
+      lugar: "tirada",
+    },
     { texto: "Quieto (sin esquivar): la absorción de quieto sustituye a la normal.", lugar: "tirada" },
     {
       texto: "Contra el ataque: con tu reacción doblas la absorción de quieto; el objeto bloqueado recibe daño igual al nivel empleado (letal si es un orgánico con golpe desarmado).",
@@ -2093,7 +2279,17 @@ const CONTENCION: AccionPoder = {
     { texto: "Cubre todo daño menos el mental y no se reduce con efectos antiblindaje.", lugar: "tirada" },
     { texto: "No se apila con otras contenciones: se usa la mejor.", lugar: "tirada" },
   ],
-  motor: motorDeAccion(CONTENCION_ID, { propias: true }),
+  estadoAlUsar: { estadoId: ESTADO_CONTENCION_ID, gradoDeDatos: ["Absorción", "Agilidad"] },
+  motor: motorDeAccion(CONTENCION_ID, {
+    propias: true,
+    extra: [
+      // Estado propio al usarla: la absorción (Bloquear daño) y la −Agilidad.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
+      // Área de la forma colectiva, calculada (objetivo.area): texto en la ventana del poder.
+      { tipo: "texto", afecta: { modo: "accion_existente", id: CONTENCION_ID }, mecanismo: "nota_fija", estado: "construido" },
+    ],
+  }),
 };
 
 // Sumarse a la contención ampliada de otro psiónico: no usa tu nivel ni tus datos

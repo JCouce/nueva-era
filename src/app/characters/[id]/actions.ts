@@ -117,6 +117,11 @@ import {
   conversionDeArma,
   opcionesFabricarSchema,
   encargoFabricacion,
+  GRADOS,
+  nivelesDePsionica,
+  estadosPropiosDeUso,
+  esEstadoDePoder,
+  estadoPorId,
 } from "@/lib/rules";
 
 export type SaveResult =
@@ -731,6 +736,59 @@ export async function usarAccionAumentoAction(characterId: string, accionId: unk
   const fila = await prisma.character.findUnique({ where: { id: characterId }, select: { stats: true, estados: true } });
   const sheet = fila ? reconciliarVidaConEstados(parseSheet(fila.stats), leerEstados(fila.estados)) : uso.sheet;
   return { ok: true, sheet, mensaje: uso.mensaje };
+}
+
+// Estados propios de los poderes (P1 de psiónica, 2026-10-28): la Contención al usarla (`grado`
+// null) y el Aturdido del fracaso crítico de Retrocognición (`grado` de la tirada). Nunca se
+// fía del cliente: con la ficha guardada, los vuelve a calcular estadosPropiosDeUso (poder que
+// la ficha tiene, con su requisito sano, y las elecciones del modal). El grado lo dice el
+// cliente, como cualquier tirada de la ficha. Por el mismo camino que los activables de aumento
+// (cambiarEstadosDePersonajes): registro del máster con el jugador de autor, también en
+// combate. Poner uno que ya está lo renueva.
+const estadoDePoderSchema = z.object({
+  poderId: z.string().min(1).max(80),
+  elecciones: z.record(z.string().max(40), z.string().max(40)),
+  grado: z.enum(GRADOS).nullable(),
+});
+
+export async function ponerEstadosDePoderAction(characterId: string, entrada: unknown): Promise<SaveResult> {
+  const parsed = estadoDePoderSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Datos no válidos" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const { poderId, elecciones, grado } = parsed.data;
+  const niveles = nivelesDePsionica(ctx.sheet, ctx.bonosDisciplina).paraEfectos;
+  const estados = estadosPropiosDeUso(ctx.sheet, niveles, poderId, elecciones, grado);
+  if (estados.length === 0) return { ok: true, sheet: ctx.sheet };
+  for (const estado of estados) {
+    const hecho = await cambiarEstadosDePersonajes([characterId], { tipo: "poner", estado }, { userId: ctx.userId, motivo: "Poder psiónico, desde la ficha" });
+    if (!hecho) return { ok: false, error: "Personaje no encontrado" };
+  }
+  const nombres = estados.map((e) => estadoPorId(e.estadoId)?.label ?? e.estadoId).join(" y ");
+  const fila = await prisma.character.findUnique({ where: { id: characterId }, select: { stats: true, estados: true } });
+  const sheet = fila ? reconciliarVidaConEstados(parseSheet(fila.stats), leerEstados(fila.estados)) : ctx.sheet;
+  return { ok: true, sheet, mensaje: `Te pones ${nombres}.` };
+}
+
+// Quitar a mano un estado propio de poder («Terminar contención»). Solo los de poder: el resto
+// los quita el máster (o una acción de aumento).
+const estadoIdSchema = z.string().min(1).max(60);
+
+export async function quitarEstadoDePoderAction(characterId: string, estadoId: unknown): Promise<SaveResult> {
+  const parsed = estadoIdSchema.safeParse(estadoId);
+  if (!parsed.success || !esEstadoDePoder(parsed.data)) return { ok: false, error: "Estado no válido" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  if (!ctx.estados.some((e) => e.estadoId === parsed.data)) return { ok: true, sheet: ctx.sheet, mensaje: "Ya no estaba puesto." };
+  const hecho = await cambiarEstadosDePersonajes(
+    [characterId],
+    { tipo: "quitar", estadoId: parsed.data },
+    { userId: ctx.userId, motivo: "Poder psiónico terminado, desde la ficha" },
+  );
+  if (!hecho) return { ok: false, error: "Personaje no encontrado" };
+  const fila = await prisma.character.findUnique({ where: { id: characterId }, select: { stats: true, estados: true } });
+  const sheet = fila ? reconciliarVidaConEstados(parseSheet(fila.stats), leerEstados(fila.estados)) : ctx.sheet;
+  return { ok: true, sheet, mensaje: `Se te quita ${estadoPorId(parsed.data)?.label ?? parsed.data}.` };
 }
 
 // "Recargar" (munición regular por proyectil, S95; batería portátil de una célula, S17):

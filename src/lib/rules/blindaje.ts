@@ -16,6 +16,8 @@ import { armaduraNaturalDeAumentos, blindajeReactivoDeAumentos } from "./aumento
 import { blindajeDelBrazo } from "./brazoBionico";
 import { MOTIVO_ESCUDO_ROTO } from "./recursos";
 import type { Sheet } from "./sheet";
+import type { EstadoActivo } from "./estados";
+import { absorcionDeGradoContencion, ESTADO_CONTENCION_ID } from "../catalog/psionica";
 
 import { TIPOS_DANIO, type TipoDanio } from "../catalog/tiposDanio";
 export { TIPOS_DANIO, type TipoDanio };
@@ -91,6 +93,17 @@ export type LineaBlindaje = { etiqueta: string; valor: number; nota?: string };
 export type ArmaduraNatural = { valor: number; fuente: string | null };
 export const SIN_ARMADURA_NATURAL: ArmaduraNatural = { valor: 0, fuente: null };
 
+// Absorción de la Contención puesta (estado propio, P1 de psiónica), ya resuelta en la
+// FichaResuelta. Cubre todo daño menos el mental, también el fuego (Murillo, 2026-09-29: "todo
+// daño menos el mental"), y se suma al resto. Con los estados que hacen efecto (sin inmunes).
+export type AbsorcionPropia = { valor: number; fuente: string };
+
+export function absorcionDeContencion(estados: readonly EstadoActivo[]): AbsorcionPropia | null {
+  const puesto = estados.find((e) => e.estadoId === ESTADO_CONTENCION_ID);
+  const valor = puesto ? absorcionDeGradoContencion(puesto.gradoId) : null;
+  return valor ? { valor, fuente: "Contención" } : null;
+}
+
 // Por qué el blindaje no cuenta contra `tipo`, o null si cuenta. Lo comparten el desglose y
 // las casillas de blindaje reactivo (Densificar) y del brazo, que valen donde valga la armadura
 // natural: contra Fuego siguen fuera aunque la armadura lleve Ignífuga.
@@ -111,21 +124,26 @@ export function blindajeNoCuenta(tipo: TipoDanio): string | null {
 // la pieza, o contra Mental o Fuego, no suma nada.
 // `conBrazo` (A6a, R12): la casilla "Bloqueado con el brazo biónico" marcada. Suma el blindaje
 // del brazo (nivel 2+) a este golpe, donde cuente el blindaje; con el nivel 1, nada.
+// `contencion` (P1 de psiónica): la absorción de la Contención puesta, que vale también contra
+// el fuego; contra el mental, no.
 export function desgloseBlindaje(
   sheet: Sheet,
   tipo: TipoDanio,
   armaduraNatural: ArmaduraNatural,
   reactivo = false,
   conBrazo = false,
+  contencion: AbsorcionPropia | null = null,
 ): LineaBlindaje[] {
+  const deContencion: LineaBlindaje[] =
+    contencion && tipo !== "mental" ? [{ etiqueta: `Absorción · ${contencion.fuente}`, valor: contencion.valor }] : [];
   // Ignífuga nv1 (S85): contra Fuego cuenta solo "el blindaje de su armadura", sin natural,
   // deflector, Densificar ni brazo.
   if (tipo === "fuego") {
     const ignifuga = armaduraConIgnifuga(sheet);
-    if (ignifuga) return [{ etiqueta: `${ignifuga.label} · Mejora Ignífuga`, valor: ignifuga.blindaje }];
+    if (ignifuga) return [{ etiqueta: `${ignifuga.label} · Mejora Ignífuga`, valor: ignifuga.blindaje }, ...deContencion];
   }
   const noCuenta = blindajeNoCuenta(tipo);
-  if (noCuenta) return [{ etiqueta: noCuenta, valor: 0 }];
+  if (noCuenta) return [{ etiqueta: noCuenta, valor: 0 }, ...deContencion];
 
   const lineas: LineaBlindaje[] = [];
   const armadura = armaduraEquipada(sheet);
@@ -157,7 +175,7 @@ export function desgloseBlindaje(
   const brazo = conBrazo ? blindajeDelBrazo(sheet) : null;
   if (brazo) lineas.push({ etiqueta: `Bloqueado con el brazo · ${brazo.fuente}`, valor: brazo.valor });
 
-  return lineas;
+  return [...lineas, ...deContencion];
 }
 
 // La casilla "Bloqueado con el brazo biónico" de "Bloquear daño" (A6a, R12), o null sin el Brazo
@@ -216,8 +234,13 @@ export function casillaBlindajeReactivo(
 }
 
 // Cuánto blindaje tiene el personaje AHORA MISMO contra `tipo`: la suma del desglose.
-export function blindajeContra(sheet: Sheet, tipo: TipoDanio, armaduraNatural: ArmaduraNatural): number {
-  return desgloseBlindaje(sheet, tipo, armaduraNatural).reduce((total, l) => total + l.valor, 0);
+export function blindajeContra(
+  sheet: Sheet,
+  tipo: TipoDanio,
+  armaduraNatural: ArmaduraNatural,
+  contencion: AbsorcionPropia | null = null,
+): number {
+  return desgloseBlindaje(sheet, tipo, armaduraNatural, false, false, contencion).reduce((total, l) => total + l.valor, 0);
 }
 
 // La categoría con la que el portador recibe un golpe de `tipo` (R8, 2026-10-24): la del tipo

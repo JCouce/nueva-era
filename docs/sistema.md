@@ -1010,9 +1010,34 @@ al preparar su modelado:
   adelante; en la tirada basta mostrar el texto ("aplica miedo").
 - **Ventaja** (tirar 2 dados y quedarse el mejor; Alerta nivel 4): mecánica propia y
   genérica, no un parche de Alerta.
-- **Efectos activos con duración sobre uno mismo** (bonos de Precognición, absorción y
+- ~~**Efectos activos con duración sobre uno mismo** (bonos de Precognición, absorción y
   −Agilidad de Contención…) y **concentración/mantenimiento**: se llevan **a mano**, fuera del
-  motor por ahora.
+  motor por ahora.~~ **Sustituido 2026-10-28 (P1, forma decidida por el usuario):** lo que un
+  poder hace a la ficha del propio psiónico se aplica de verdad, de dos formas:
+  - **Casillas** en las tiradas afectadas, visibles solo si el personaje tiene el poder
+    (`AccionPoder.casillasEnTiradas` → `casillasDePsionica`, al índice de casillas como las de
+    dotes y aumentos). El jugador las marca mientras dura el efecto: en una enfrentada la app no
+    sabe si se superó al rival, ni lleva la cuenta de la duración. Sin marcar, la tirada no cambia.
+    - *Leer Mente*: «Mente leída» +2 en ataques, defensas, poderes y las fijas enfrentadas
+      (Convencer / mentir, Discernir mentiras, Resistir distracción, Iniciativa distrayendo,
+      Sigilo, Hurto).
+    - *Vínculo*: «Vínculo activo» +1 en la salvación de Voluntad propia; a los aliados, texto.
+    - *Anclaje*: «Manteniendo anclaje» −1 en todas las tiradas.
+    - *Auto-proyección*: «Auto-proyección» +1 en la esquiva (la fila Defensa / esquiva).
+    - *Precognición*: selector en ataques y defensas: crítico +3 dentro / +2 fuera de la burbuja,
+      éxito +2 / +1, fracaso −1 (turno siguiente), fracaso crítico −2.
+    - *Estabilización (mitigar)*: selector «Estabilizado», solo con algún penalizador puesto.
+      Éxito −1 y crítico −2 a cada penalizador de estado, sin pasar de 0; desde nv4 además fuera
+      heridas y fatiga; en nv6, fuera todos. Lo resuelve `montarTirada`
+      (`conPenalizadoresReducidos`). El +2/+3/+4 a la salvación sigue como estaba.
+  - **Estados propios automáticos**, solo dos: **Contención** (sin dado) pone al usarla el estado
+    «Contención» con la −Agilidad y la absorción de su fila (la absorción, en Bloquear daño, vale
+    contra todo menos el mental, fuego incluido); dura lo que la contención y se quita con
+    «Terminar contención». **Retrocognición** con fracaso crítico pone Aturdido 1 turno (grado
+    «fracaso» del estado). Los pone el servidor, que los vuelve a calcular con la ficha guardada
+    (`estadosPropiosDeUso`), por el camino de los activables de aumento.
+  - El área de la Contención ampliada se calcula (1 casilla por nivel empleado, ×2/×3 según el
+    nivel poseído). Quieto, contra el ataque y la concentración siguen siendo texto.
 - **Xovromium** (`docs/equipamiento.md:1338`, "+1 a las manifestaciones psiónicas"): toggle
   de +1 en **toda tirada que resuelva un poder**. ~~Visible si el personaje tiene Xovromium
   en recursos~~ — **sustituido 2026-09-30: siempre visible** (ver "Fuentes externas, tanda
@@ -1057,8 +1082,8 @@ al preparar su modelado:
     por 6+, se muestra el "fracaso crítico" del objetivo).
   - *Mensaje + a mano*: objetivos múltiples (Comando nv3, Modulación nv4/nv6, Anclaje) — se
     muestra el coste por objetivo y el jugador se descuenta la fatiga; Proeza: nota "+1 de
-    fatiga por cada 10% de peso extra", fatiga a mano; área/duración de Contención ampliada:
-    no se calcula, se mira en el manual.
+    fatiga por cada 10% de peso extra", fatiga a mano; ~~área/duración de Contención ampliada:
+    no se calcula, se mira en el manual~~ (2026-10-28: el área y la duración se calculan).
   - *Notas, no acciones*: Alertar por Vínculo, Confrontar (Contención), "requiere objetivo
     anclado" (Trasladar/Proyección), Alerta pasiva exhausta (aviso, se puede tirar).
   - *Acciones propias*: "Duelo de Métrica" como reacción en fichas con Traslación, con toggle
@@ -2474,6 +2499,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S99 | **Rastreo, Subsistencia, Trato con animales e Investigación solo se pintan si la ficha tiene su especialidad** (Supervivencia; Investigación) **o si algo de capa 1 le engancha algo a esa fila**: casilla, texto, bono, bono por opción, ventaja, cambio de grado, otra habilidad o fallo crítico con alcance por el id de la fila o por su especialidad. Lo general (grupo, habilidad, aplicado, "todas") no cuenta. Lo decide el motor (`tiradaFijaVisible`, `rules/fichaResuelta.ts`; `Accion.soloConEspecialidad`), también para el NPC con sus especialidades. | Decisión del usuario (2026-10-26, opción a). |
 | S100 | **Lo que colgaba de Buscar / percibir por S36, a su tirada** (2026-10-26): *Rastreo al Paso* y *Bioma Predilecto* (rastreo) a Rastreo; la ventaja de *Bioma* en subsistencia a Subsistencia (la casilla pierde el prefijo «Subsistencia:»); *Descartar Teoría* a Investigación, **con su casilla −2** además del texto. **Visión ultravioleta** (Introgresión, R10) partida en dos casillas de +2: «¿Buscas accesos ocultos?» en Buscar / percibir (el id se queda) y «¿Investigación de campo?» en Investigación. **Oído biónico** (Vestíbulo-Auditiva): la ventaja de detectar ocultos se queda en Buscar y la de rastrear por el sonido va a Rastreo, casilla aparte. **Rastro térmico** (sin número en la fuente): la Visión Térmica (aumento) pone una nota en Rastreo y el Visor Térmico nv2 una casilla informativa «Siguiendo un rastro térmico» (+0 con nota, como el modo térmico del nv1); las dos hacen visible la fila (S99) (usuario, 2026-10-26). El poder psiónico *Rastreo* no tiene que ver. | Encargo del usuario (2026-10-26); lo de la casilla −2, decisión de construcción. |
 | S101 | **Maniobrabilidad de Movilidad Aérea como penalizador (pregunta 42, 2026-10-26)**: −3 en los niveles 1-3 y −4 en el 4 (`NivelModulo.maniobrabilidad`), como ajuste fijo a «Volar» y a la esquiva en vuelo. La esquiva gana la casilla «En vuelo: Tecnociencia, −N» si la ficha lleva Movilidad Aérea (`conEsquivaEnVuelo`, `rules/movimiento.ts`; `habilidadAlternativa.ajuste`): esquiva con Tecnociencia en vez de Atletismo y resta la maniobrabilidad (la app no sabe si vuelas, como «Levitando»). Si además puede levitar, la casilla es la de vuelo (solo cabe una habilidad alternativa por fila). La mejora de Maniobrabilidad del nivel 3 («disminuye la dificultad en 1», un punto menos de castigo) sigue a mano; el −1 a los ataques en vuelo, en mesa (S94). | Penalizador y esquiva: Murillo (vía usuario, 2026-10-26). Casilla y prioridad sobre Levitar: decisión de construcción. |
+| S102 | **Efectos de poder sobre uno mismo (P1 de psiónica, 2026-10-28)**, supuestos al construirlos (§10.6): (1) **Leer Mente**: "tiradas enfrentadas contra el objetivo" = ataques, defensas, poderes y las fijas que la fuente da como enfrentadas (Convencer / mentir, Discernir mentiras, Resistir distracción, Iniciativa distrayendo, Sigilo, Hurto); el jugador la marca solo contra el leído. Las acciones de dote no la llevan. (2) **Auto-proyección**: "+1 a tiradas de esquiva" = la fila Defensa / esquiva, no los bloqueos. (3) **Precognición**: en ataques de arma y defensas; los poderes de ataque (grupo Psiónica) no la llevan. (4) **Estabilizado**: −N a cada penalizador de estado por separado, sin pasar de 0, y lo ya compensado (Neuroprótesis, Proyección) no se vuelve a compensar; en nv6 no distingue los penalizadores que lleguen después (lo dice la opción). (5) **Retrocognición**: el Aturdido automático del fracaso crítico es el grado «fracaso» del estado (sin salvación), 1 turno. (6) **Contención**: el estado se pone en cualquier forma (el psiónico también está dentro de la ampliada); con duración sin número (nv6, nivel 1 personal) dura hasta quitarlo. Quieto y contra el ataque siguen como texto. | Construcción, sin preguntar; revisables (`TODO(revisar)` en `catalog/psionica.ts`). |
 
 ## Conflictos detectados
 

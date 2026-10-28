@@ -136,8 +136,9 @@ describe("E4: casillas de especie", () => {
     });
   }
 
+  // Solo las de especie: con la Resonancia +1 del Arianyi sale también «Mente leída» (Leer Mente).
   test("Empatía Biológica no está en Convencer / mentir", () => {
-    assert.deepEqual(ids(fija(resolver(ficha(ESPECIE.arianyi)), "social")), []);
+    assert.deepEqual(ids(fija(resolver(ficha(ESPECIE.arianyi)), "social")).filter((id) => id.startsWith("especie_")), []);
   });
 
   test("la casilla sin marcar no mueve la fila (estado inicial apagado)", () => {

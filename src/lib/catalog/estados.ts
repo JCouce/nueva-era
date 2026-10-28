@@ -40,6 +40,7 @@
 // aplica a criterio del máster, como ya se hace con Fármacos/VTF en el
 // catálogo de equipo (docs/sistema.md §12).
 import type { Modificador } from "../rules/modificadores";
+import { ESTADOS_DE_PODER } from "./psionica";
 
 export type GradoEstado = {
   id: string;
@@ -959,10 +960,16 @@ export const ESTADOS_DERIVADOS: Estado[] = [
   },
 ];
 
-// Los estados que se pueden poner y guardar (los del máster y los de los activables). Los
-// derivados no: ver ESTADOS_DERIVADOS.
+// Los estados que se pueden poner y guardar (los del máster, los de los activables y los propios
+// de los poderes: Contención, catalog/psionica.ts). Los derivados no: ver ESTADOS_DERIVADOS.
+// Los de poder, como los de aumento, no están en ESTADOS: no salen en el selector del máster.
 export function estadoPorId(id: string): Estado | null {
-  return ESTADOS.find((e) => e.id === id) ?? ESTADOS_DE_AUMENTO.find((e) => e.id === id) ?? null;
+  return (
+    ESTADOS.find((e) => e.id === id) ??
+    ESTADOS_DE_AUMENTO.find((e) => e.id === id) ??
+    ESTADOS_DE_PODER.find((e) => e.id === id) ??
+    null
+  );
 }
 
 // Para pintar: cualquiera, derivados incluidos.
@@ -972,4 +979,9 @@ export function estadoParaPintar(id: string): Estado | null {
 
 export function esEstadoDeAumento(id: string): boolean {
   return ESTADOS_DE_AUMENTO.some((e) => e.id === id);
+}
+
+// Estado propio de un poder (P1 de psiónica): el jugador lo pone al usar el poder y lo quita él.
+export function esEstadoDePoder(id: string): boolean {
+  return ESTADOS_DE_PODER.some((e) => e.id === id);
 }

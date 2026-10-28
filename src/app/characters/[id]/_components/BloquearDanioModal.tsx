@@ -90,6 +90,7 @@ export function BloquearDanioModal({
     ficha.blindaje.armaduraNatural,
     reactivo,
     conBrazo && Boolean(casillaBrazo),
+    ficha.blindaje.contencion,
   );
 
   const setDanioRecibido = (f: (v: number) => number) => {
