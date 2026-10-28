@@ -671,7 +671,7 @@ Supresora, Derivación Psiónica) y psiónica en NPC. Pruebas manuales:
 
 **Modelo cerrado el 2026-09-29.** Prosa literal en
 `docs/psionica.md`; todas las decisiones (usuario y Murillo) en `docs/sistema.md` §10.6.
-Workflow `.claude/workflows/modelar-area.js` (+ `scripts/workflows/modelar-area-extraer.ts`)
+Workflow `modelar-area` (**retirado 2026-10-28**, archivado en `scripts/workflows/archivo/` con su README)
 relanzado con el modelo v2: `docs/modelado-psionica.md` (cobertura 98%, checklist, campos,
 capas C1–C14) y borrador de catálogo `docs/modelado-psionica.json` (raíz
 `CatalogoPsionica`, versiones Poderosas corregidas a mano con `Opcion.suma`). Lo que la
