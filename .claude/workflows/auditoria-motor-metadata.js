@@ -22,11 +22,16 @@
 //    script para el motivo):
 //      node --import ./scripts/test-resolver.mjs \
 //        scripts/workflows/auditoria-motor-metadata-extraer.ts /ruta/de/salida.json
-//    Filtra con `--familia equipo|dote|todo` y, para dotes, `--estado` /
-//    `--tanda D2a|D2b-1|D2b-2|D2c|D2d` (D2a = efectos construidos), y
-//    `--en-tirada` para dejar fuera las de solo texto de tarjeta. Las dotes
-//    llevan `familia: "dote"`, la prosa de docs/dotes.md en `detalle` y lo que
-//    la app pone de verdad en las tiradas (casillas, bonos fijos, notas).
+//    Filtra con `--familia equipo|dote|aumento|poder|especie|todo` (todo = las
+//    cinco), `--ids a,b,c` (solo esos ítems: piezaId, piezaId#nivel o el id base
+//    de un ítem con elección) y, para dotes, `--estado` / `--tanda
+//    D2a|D2b-1|D2b-2|D2c|D2d` (D2a = efectos construidos), y `--en-tirada` para
+//    dejar fuera las de solo texto de tarjeta. `--contar` solo dice cuántos items
+//    saldrían por familia (para estimar el coste antes de lanzar). Cada item lleva
+//    la prosa en `detalle` (con `fuenteProsa` si no es un campo del catálogo), su
+//    `motor` (con `motorAusente` si va vacío) y lo que la app pone de verdad
+//    (casillas, bonos fijos, notas y, en `otros`, lo demás: acciones propias,
+//    derivados...). Detalle por familia: cabecera del propio script.
 // 2. Lanza este workflow con Workflow({ name: 'auditoria-motor-metadata',
 //    args: <el JSON del paso 1, como valor, NO como string> }).
 //    MODO POR LOTES (dotes, 2026-10-16): args = { items: <el JSON>, lote: N }. Un
@@ -137,7 +142,8 @@ const VERDICT_SCHEMA = {
 function extraerClaimsDeCodigo(item) {
   const claims = []
   for (const m of item.modificadores ?? []) {
-    claims.push(`modificadores: tipo=${m.tipo} alcance=${JSON.stringify(m.alcance)} valor=${m.valor}`)
+    // Sin alcance (atributo, derivado...: aumentos y especie), el modificador entero, que dice a qué va.
+    claims.push(m.alcance !== undefined ? `modificadores: tipo=${m.tipo} alcance=${JSON.stringify(m.alcance)} valor=${m.valor}` : `modificadores: ${JSON.stringify(m)}`)
   }
   if (item.ajusteTramo) claims.push(`ajusteTramo: ${JSON.stringify(item.ajusteTramo)}`)
   if (item.ajusteAtaque != null) claims.push(`ajusteAtaque: ${item.ajusteAtaque}`)
@@ -148,8 +154,17 @@ function extraerClaimsDeCodigo(item) {
     claims.push(`condicion "${c.etiqueta ?? c.id}": ${valor}${c.alcance ? ' alcance=' + JSON.stringify(c.alcance) : ''}`)
   }
   if (item.notaTirada) claims.push(`notaTirada: ${item.notaTirada}`)
+  // Aumentos, poderes y especie (extractor, 2026-10-28): lo demás que pone la app, en líneas.
+  for (const o of item.otros ?? []) claims.push(o)
   return claims
 }
+
+// De dónde sale la prosa cuando no es un campo del catálogo, y por qué motor va vacío.
+const prosa = item => item.detalle.map((d, i) => `${i + 1}. ${d}`).join('\n') + (item.fuenteProsa ? `\n(Prosa: ${item.fuenteProsa})` : '')
+// En lotes, el id con el que el agente devuelve cada item: con nivel si lo tiene (los implantes
+// salen un item por nivel con el mismo piezaId).
+const clave = item => (item.nivel == null ? item.piezaId : `${item.piezaId}#${item.nivel}`)
+const motorTexto = (item, ...fmt) => JSON.stringify(item.motor, ...fmt) + (item.motorAusente ? ` (vacío: ${item.motorAusente})` : '')
 
 
 if (porLotes) {
@@ -186,13 +201,13 @@ if (porLotes) {
     },
     required: ['veredictos'],
   }
-  const ficha = item => `### ${item.piezaLabel} (${item.piezaId})
+  const ficha = item => `### ${item.piezaLabel} (${clave(item)})
 PROSA:
-${item.detalle.map((d, i) => `${i + 1}. ${d}`).join('\n')}
+${prosa(item)}
 CÓDIGO (lo que la app entrega de verdad; fuente de verdad):
 ${extraerClaimsDeCodigo(item).map((c, i) => `${i + 1}. ${c}`).join('\n') || '(nada)'}
 motorMetadata (estado "construido" = se supone hecho; "pendiente"/"bloqueado"/"ad_hoc" = hueco ya reconocido):
-${JSON.stringify(item.motor)}`
+${motorTexto(item)}`
   const NO_REPO = 'Todo lo que necesitas está en este mensaje: NO leas archivos del repositorio ni lances búsquedas.'
 
   const porLote = await pipeline(
@@ -220,7 +235,7 @@ DISCREPANCIAS:
 ${cand.map((c, n) => `${n}. [${c.piezaId}] [${c.d.tipo}] ${c.d.explicacion}`).join('\n')}
 
 ELEMENTOS:
-${lote.filter(it => cand.some(c => c.piezaId === it.piezaId)).map(ficha).join('\n\n')}`,
+${lote.filter(it => cand.some(c => c.piezaId === clave(it))).map(ficha).join('\n\n')}`,
         { phase: 'Verificar discrepancias', label: `verificar lote ${i + 1}/${lotes.length}`, schema: VEREDICTOS_SCHEMA }
       ).then(v => ({
         lote,
@@ -230,7 +245,7 @@ ${lote.filter(it => cand.some(c => c.piezaId === it.piezaId)).map(ficha).join('\
     }
   )
   const ok = porLote.filter(Boolean)
-  const porId = id => items.find(it => it.piezaId === id)
+  const porId = id => items.find(it => clave(it) === id)
   const agrupa = lista => Object.values(lista.reduce((acc, { piezaId, d }) => {
     (acc[piezaId] ??= { item: porId(piezaId) ?? { piezaId }, discrepancias: [] }).discrepancias.push(d)
     return acc
@@ -249,7 +264,7 @@ const results = await pipeline(
   item => agent(
     `Traduce esta descripción en prosa de una pieza de equipo (o una dote) de un juego de rol a una lista de efectos prometidos, uno por claim. Una frase puede contener más de un efecto -- sepáralos. No interpretes de más, no añadas nada que la prosa no diga.
 Pieza "${item.piezaLabel}" (${item.piezaId}) nivel ${item.nivel}:
-${item.detalle.map((d, i) => `${i + 1}. ${d}`).join('\n')}`,
+${prosa(item)}`,
     { phase: 'Extraer prosa', label: `prosa:${item.piezaId}#${item.nivel}`, schema: CLAIM_SCHEMA }
   ),
   (prosaResult, item) => ({
@@ -267,7 +282,7 @@ EFECTOS QUE REALMENTE ENTREGA EL CÓDIGO (modificadores/ajustes/condiciones -- f
 ${codigoClaims.map((c, i) => `${i + 1}. ${c}`).join('\n') || '(ninguno)'}
 
 CLASIFICACIÓN DECLARADA EN motorMetadata (tipo/afecta/mecanismo/estado -- estado "construido" = se supone hecho; "pendiente"/"bloqueado"/"ad_hoc" = ya reconocido como incompleto en el propio dato):
-${JSON.stringify(item.motor, null, 2)}
+${motorTexto(item, null, 2)}
 
 Para cada efecto prometido por la prosa que NO tenga un efecto de código correspondiente:
 - si hay una entrada de motorMetadata con estado distinto de "construido" que razonablemente cubre ese hueco, clasifícalo como "gap_conocido" (ya admitido en el dato, no es un hallazgo nuevo).
@@ -290,9 +305,9 @@ const verificadas = await parallel(aVerificar.map(r => () =>
     agent(
       `Intenta REFUTAR esta discrepancia entre prosa y motorMetadata para "${r.item.piezaLabel}" nivel ${r.item.nivel}.
 Discrepancia a refutar: [${d.tipo}] ${d.explicacion}
-Prosa completa: ${r.item.detalle.join(' | ')}
+Prosa completa: ${r.item.detalle.join(' | ')}${r.item.fuenteProsa ? ` (Prosa: ${r.item.fuenteProsa})` : ''}
 Código real (modificadores/ajustes/condiciones): ${JSON.stringify(extraerClaimsDeCodigo(r.item))}
-motorMetadata: ${JSON.stringify(r.item.motor)}
+motorMetadata: ${motorTexto(r.item)}
 Si tienes duda razonable, marca real=false (default a "no es un fallo real" salvo evidencia clara).`,
       { phase: 'Verificar discrepancias', schema: VERDICT_SCHEMA }
     )

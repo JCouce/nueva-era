@@ -22,7 +22,7 @@ sufijo que dice qué hace:
 
 | Workflow (`.claude/workflows/`) | Script de apoyo (aquí) | Qué hace |
 |---|---|---|
-| `auditoria-motor-metadata.js` | `auditoria-motor-metadata-extraer.ts` | Extrae el catálogo de equipo (`EQUIPO`) a JSON — eso es lo que se pasa como `args` al workflow. |
+| `auditoria-motor-metadata.js` | `auditoria-motor-metadata-extraer.ts` | Extrae a JSON los ítems del catálogo (equipo, dotes, aumentos, poderes psiónicos y rasgos de especie) con su prosa, su `MotorMetadata` y lo que la app pone de verdad — eso es lo que se pasa como `args` al workflow. Flags: `--familia equipo\|dote\|aumento\|poder\|especie\|todo`, `--ids a,b,c`, `--contar` (solo cuántos items por familia) y los de dotes (`--estado`, `--tanda`, `--en-tirada`, `--sin-texto`). Detalle en su cabecera; `extraerItems` se exporta para su test. |
 
 Un grep del nombre del workflow encuentra todo lo suyo, esté donde esté.
 
