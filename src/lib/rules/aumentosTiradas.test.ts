@@ -96,6 +96,20 @@ describe("selector «Contra…» de las salvaciones", () => {
     assert.ok(pagando.ventaja);
   });
 
+  // Triaje 2026-10-28, #21: el +3 contra el aturdimiento tras Densificar.
+  test("Enjambre 3 contra aturdimiento: +3, con la nota de Densificar", () => {
+    const f = resolver(con(defaultSheet(), ENJAMBRE, { nivel: 3 }));
+    const t = tiradaFija(f, "salv_fortaleza");
+    const sel = selector(t);
+    const opcion = sel.opciones.find((o) => o.id === "aturdimiento");
+    assert.ok(opcion);
+    assert.match(opcion.nota ?? "", /tras Densificar/);
+    assert.equal(montar(f, t, { [sel.id]: "aturdimiento" }).modificador - montar(f, t).modificador, 3);
+    // Con Enjambre 2 no está.
+    const f2 = resolver(con(defaultSheet(), ENJAMBRE, { nivel: 2 }));
+    assert.equal(tiradaFija(f2, "salv_fortaleza").condiciones, undefined);
+  });
+
   test("Regulación + Matriz de Red contra dominación: +3, una línea por fuente", () => {
     const f = resolver(conTodas([REGULACION, PROYECCION, MATRIZ_RED]));
     const t = tiradaFija(f, "salv_voluntad");
@@ -422,13 +436,43 @@ describe("A2b: ventaja fija y textos", () => {
     assert.equal(montar(resolver(conTodas([RED_FRONTOPARIETAL])), tiradaFija(resolver(conTodas([RED_FRONTOPARIETAL])), "iniciativa")).ventaja, null);
   });
 
-  test("Asa en las pruebas mentales (con la exclusión); Automatismo en Defensa", () => {
+  // Triaje 2026-10-28 (#2-3): Asa pasa de texto a casilla que cobra, como Conectividad Callosa.
+  test("Asa: casilla «Simplificar» en las pruebas mentales, 1 de fatiga, con la exclusión; Automatismo en Defensa", () => {
     const f = resolver(conTodas([MIELINIZACION, ASA, HIPERDENSIDAD, OSTEO, AUTOMATISMO]));
-    assert.ok(tiradaFija(f, "salv_voluntad").nota?.includes("baja un paso"));
-    assert.ok(tiradaFija(f, "social").nota?.includes("No a la vez que Conectividad Callosa"));
-    assert.ok(!tiradaFija(f, "defensa").nota?.includes("baja un paso"));
+    for (const id of ["salv_voluntad", "social"]) {
+      const t = tiradaFija(f, id);
+      const asa = t.condiciones?.find((c) => c.id === "aum_asa_simplificar");
+      assert.ok(asa && asa.tipo === "toggle", id);
+      assert.match(asa.nota ?? "", /baja un paso/);
+      assert.match(asa.nota ?? "", /No a la vez que Conectividad Callosa ni Prefrontal Aumentada/);
+      const m = montar(f, t, { aum_asa_simplificar: true });
+      assert.equal(m.costeFatiga, 1);
+      assert.equal(m.modificador, montar(f, t).modificador);
+    }
+    assert.ok(!ids(tiradaFija(f, "defensa")).includes("aum_asa_simplificar"));
     assert.ok(tiradaFija(f, "defensa").nota?.includes("Sorprendido"));
     assert.ok(!tiradaFija(f, "salv_voluntad").nota?.includes("Sorprendido"));
+  });
+
+  // D1 del triaje 2026-10-28: la reacción extra se cobra con una casilla en las defensas.
+  test("Hiperdensidad: «Reacción extra» cobra 1; con Automatismo, la suya es gratis; Bucle cobra la tercera", () => {
+    const sola = resolver(conTodas([HIPERDENSIDAD]));
+    const d = tiradaFija(sola, "defensa");
+    assert.ok(ids(d).includes("aum_hiperdensidad_reaccion"));
+    assert.equal(montar(sola, d, { aum_hiperdensidad_reaccion: true }).costeFatiga, 1);
+    assert.ok(!ids(tiradaFija(sola, "salv_reflejos")).includes("aum_hiperdensidad_reaccion"));
+
+    const conAuto = resolver(conTodas([HIPERDENSIDAD, OSTEO, AUTOMATISMO, "aum_bucle_de_realimentacion_motora"]));
+    const d2 = tiradaFija(conAuto, "defensa");
+    assert.ok(!ids(d2).includes("aum_hiperdensidad_reaccion"));
+    assert.ok(ids(d2).includes("aum_automatismo_reaccion"));
+    assert.equal(montar(conAuto, d2, { aum_automatismo_reaccion: true }).costeFatiga, 0);
+    assert.equal(montar(conAuto, d2, { aum_automatismo_reaccion: true, aum_bucle_reaccion: true }).costeFatiga, 1);
+
+    // Automatismo con el requisito roto (sin Osteotendinosa): vuelve la casilla de pago.
+    const rota = tiradaFija(resolver(conTodas([HIPERDENSIDAD, AUTOMATISMO])), "defensa");
+    assert.ok(ids(rota).includes("aum_hiperdensidad_reaccion"));
+    assert.ok(!ids(rota).includes("aum_automatismo_reaccion"));
   });
 });
 

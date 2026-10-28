@@ -291,7 +291,8 @@ const ESPERADO: Record<string, Record<string, string[]>> = {
     "ataque_fuego_fa": ["Ojo Biónico", "Optimización Foveo-Sensorial"],
   },
   axadren: {
-    "alerta_activa": ["Ojo avizor"],
+    // + Visión infrarroja: nota en Buscar / percibir en vez de la acción «Activar visión» (D3 del triaje 2026-10-28).
+    "alerta_activa": ["Ojo avizor", "Visión infrarroja"],
   },
   zimethroni: {
     "defensa": ["Tras esquivar", "Tensión ósea"],

@@ -31,7 +31,9 @@ function ejeNivelEmpleado(fila: (n: number) => CambiosOpcion): EjePoder {
   };
 }
 
-function motorDeAccion(id: string, notas: { tercero?: string[]; propias?: boolean }): MotorMetadata[] {
+// `extra`: entradas que no son ni la acción ni textos (Convergencia: ignorar media absorción y
+// los escudos, como `ignoraBlindaje` de las armas: Resolución con nota fija).
+function motorDeAccion(id: string, notas: { tercero?: string[]; propias?: boolean; extra?: MotorMetadata[] }): MotorMetadata[] {
   return [
     { tipo: "accion", afecta: { modo: "accion_nueva", id }, mecanismo: "accion_sin_equipo", estado: "construido" },
     ...(notas.propias
@@ -40,6 +42,7 @@ function motorDeAccion(id: string, notas: { tercero?: string[]; propias?: boolea
     ...(notas.tercero ?? []).map(
       (t) => ({ tipo: "texto", afecta: { modo: "objetivo_tercero", id: t }, mecanismo: "nota_fija", estado: "construido" }) as const,
     ),
+    ...(notas.extra ?? []),
   ];
 }
 
@@ -259,7 +262,15 @@ const CONVERGENCIA: AccionPoder = {
     { texto: "Las armaduras o blindajes (también de vehículos y sintéticos) pueden recibir daño; la pérdida de absorción es permanente", lugar: "danio" },
     { texto: "El daño de fuego ignora cualquier absorción", lugar: "danio" },
   ],
-  motor: motorDeAccion("psi_singularidad_convergencia", { propias: true, tercero: ["defensa", "salv_fortaleza"] }),
+  // Las notas propias que se quedan en texto: las armaduras se dañan; el fuego ignora la absorción.
+  motor: motorDeAccion("psi_singularidad_convergencia", {
+    propias: true,
+    tercero: ["defensa", "salv_fortaleza"],
+    extra: [
+      // Ignora la mitad de la absorción y los escudos: aviso junto al daño, se resta a mano.
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "psi_singularidad_convergencia" }, mecanismo: "nota_fija", estado: "construido" },
+    ],
+  }),
 };
 
 // ── Resonancia ────────────────────────────────────────────────────
@@ -1177,16 +1188,23 @@ const ESTABILIZACION: AccionPoder = {
       op: "sustituye",
       valor: "Eliminas por completo tus penalizadores por estados mientras dure (no los que llegues a sufrir después) y omites los de daño y fatiga",
     },
+    // El +3/+4 solo como reacción (prosa de nv4 y nv6); como acción simple sigue el +2.
     {
       desdeNivel: 4,
-      opcion: { eje: "uso", opcion: "salvacion" },
+      opcion: [
+        { eje: "uso", opcion: "salvacion" },
+        { eje: "economia", opcion: "reaccion" },
+      ],
       sobre: "resultados.exito.texto",
       op: "sustituye",
       valor: "+3 a tu salvación: márcalo en la casilla «+3 por Estabilización» de la salvación",
     },
     {
       desdeNivel: 6,
-      opcion: { eje: "uso", opcion: "salvacion" },
+      opcion: [
+        { eje: "uso", opcion: "salvacion" },
+        { eje: "economia", opcion: "reaccion" },
+      ],
       sobre: "resultados.exito.texto",
       op: "sustituye",
       valor: "+4 a tu salvación: márcalo en la casilla «+4 por Estabilización» de la salvación",
@@ -1201,8 +1219,8 @@ const ESTABILIZACION: AccionPoder = {
   motor: motorDeAccion(ESTABILIZACION_ID, { propias: true }),
 };
 
-const estabilizacionEnSalvacion = (valor: number, desde: number, hasta?: number) => ({
-  etiqueta: `+${valor} por Estabilización (si la superaste)`,
+const estabilizacionEnSalvacion = (valor: number, desde: number, hasta?: number, como?: string) => ({
+  etiqueta: `+${valor} por Estabilización (${como ? `${como}, ` : ""}si la superaste)`,
   alcance: "Salvaciones",
   valor,
   desdeNivelPoseido: desde,
@@ -1235,9 +1253,12 @@ const INDUCCION: Disciplina = {
     { fuente: "Inducción 2", desdeNivelPoseido: 2, alcance: { accion: HIPOMANIA_ALIADO_ID }, op: "sustituye", valor: "estandar" },
   ],
   bonosEnOtrasTiradas: [
+    // Desde nv4, el +3/+4 es solo como reacción; como acción simple sigue el +2. Dos casillas
+    // excluyentes (la exclusión, solo en la etiqueta: modelado-psionica.md, error #20).
     estabilizacionEnSalvacion(2, 1, 3),
-    estabilizacionEnSalvacion(3, 4, 5),
-    estabilizacionEnSalvacion(4, 6),
+    estabilizacionEnSalvacion(2, 4, undefined, "como acción simple"),
+    estabilizacionEnSalvacion(3, 4, 5, "como reacción"),
+    estabilizacionEnSalvacion(4, 6, undefined, "como reacción"),
   ],
   ventajas: [],
   acciones: [COMANDO, MODULACION, HIPOMANIA_ALIADO, RECONFIGURACION, SUPRESION, ESTABILIZACION],
@@ -1458,10 +1479,15 @@ const HIPERCOGNICION: Disciplina = {
   ],
   modificadoresFatiga: [],
   // Niveles 3 y 5: un paso de tiempo cada uno (1 hora → 10 minutos → 1 minuto →
-  // compleja → estándar → simple; Murillo: el local llega a simple en el 5).
-  modificadoresEconomia: [SONDEO_ID, RETROCOGNICION_ID].flatMap((accion) => [
-    { fuente: "Hipercognición 3", desdeNivelPoseido: 3, alcance: { accion }, op: "baja_un_paso" as const },
-    { fuente: "Hipercognición 5", desdeNivelPoseido: 5, alcance: { accion }, op: "baja_un_paso" as const },
+  // compleja → estándar → simple; Murillo: el local llega a simple en el 5, pero solo en
+  // Sondeo). Retrocognición se queda en estándar: «de compleja a estándar (mínimo tiempo
+  // posible)» (modelado-psionica.md, error #4).
+  modificadoresEconomia: [
+    { accion: SONDEO_ID, minimo: undefined },
+    { accion: RETROCOGNICION_ID, minimo: "estandar" as const },
+  ].flatMap(({ accion, minimo }) => [
+    { fuente: "Hipercognición 3", desdeNivelPoseido: 3, alcance: { accion }, op: "baja_un_paso" as const, ...(minimo && { minimo }) },
+    { fuente: "Hipercognición 5", desdeNivelPoseido: 5, alcance: { accion }, op: "baja_un_paso" as const, ...(minimo && { minimo }) },
   ]),
   bonosEnOtrasTiradas: [],
   ventajas: [],

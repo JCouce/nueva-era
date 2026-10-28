@@ -532,16 +532,25 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [],
-    // Texto: el tipo de acción no lo lleva la app (no hay economía de acciones por turno).
-    textos: [
+    // Casilla que cobra (mismo patrón que Conectividad Callosa). El paso de acción no lo lleva la
+    // app (no hay economía de acciones por turno): va en la nota.
+    casillas: [
       {
-        en: { tipo: "aplicado", aplicados: ["perspicacia", "voluntad", "expresion"] },
-        texto:
-          "Por 1 de fatiga, esta acción baja un paso: compleja → estándar o estándar → simple; un solo paso por acción. No a la vez que Conectividad Callosa ni Prefrontal Aumentada.",
+        id: "aum_asa_simplificar",
+        tipo: "toggle",
+        etiqueta: "Simplificar (−1 paso)",
+        alcance: { tipo: "aplicado", aplicados: ["perspicacia", "voluntad", "expresion"] },
+        valorActivo: 0,
+        costeFatiga: 1,
+        nota: "La acción baja un paso: compleja → estándar o estándar → simple; un solo paso por acción. No a la vez que Conectividad Callosa ni Prefrontal Aumentada.",
       },
     ],
     motor: [
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "nota_fija", estado: "construido" },
+      { tipo: "coste", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      // El paso de acción, en la nota de la casilla.
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      // Exclusión con Callosa y Prefrontal: solo aviso (precedente de Callosa, auditoría tanda 1).
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -824,16 +833,23 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "agilidad", valor: 1 }],
-    // La app no cuenta reacciones: texto en la defensa (Automatismo la deja gratis).
-    textos: [
+    // La app no cuenta reacciones: casilla en las defensas que cobra la fatiga al marcarla
+    // (usuario, D1 del triaje 2026-10-28). Con Automatismo no sale: la suya es gratis.
+    casillas: [
       {
-        en: { tipo: "grupo", grupo: "Defensa" },
-        texto: "Segunda reacción por ronda pagando 1 de fatiga (gratis con Automatismo Bulboespinal).",
+        id: "aum_hiperdensidad_reaccion",
+        tipo: "toggle",
+        etiqueta: "Reacción extra",
+        alcance: { tipo: "grupo", grupo: "Defensa" },
+        valorActivo: 0,
+        costeFatiga: 1,
+        nota: "Segunda reacción de la ronda.",
       },
     ],
+    casillasOcultasCon: "aum_automatismo_bulboespinal",
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "nota_fija", estado: "construido" },
+      { tipo: "coste", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -856,15 +872,24 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
         en: { tipo: "grupo", grupo: "Defensa" },
         texto: "Estando Sorprendido no aplicas el −3 en la primera tirada defensiva (Desprevenido sigue igual).",
       },
+    ],
+    // La segunda reacción de Hiperdensidad, gratis: su casilla de pago no sale con Automatismo
+    // (`casillasOcultasCon`) y sale esta, sin coste (usuario, D1 del triaje 2026-10-28).
+    casillas: [
       {
-        en: { tipo: "grupo", grupo: "Defensa" },
-        texto: "La segunda reacción por ronda (Hiperdensidad Propioceptiva) ya no cuesta fatiga.",
+        id: "aum_automatismo_reaccion",
+        tipo: "toggle",
+        etiqueta: "Reacción extra",
+        alcance: { tipo: "grupo", grupo: "Defensa" },
+        valorActivo: 0,
+        resumen: "sin fatiga",
+        nota: "Segunda reacción de la ronda, sin fatiga (Automatismo Bulboespinal).",
       },
     ],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "nota_fija", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "nota_fija", estado: "construido" },
+      { tipo: "coste", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {
@@ -890,16 +915,20 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
         valorActivo: 0,
         ventaja: true,
       },
-    ],
-    // "Por turno" en la fuente; por ronda (errata resuelta, §11.3).
-    textos: [
+      // "Por turno" en la fuente; por ronda (errata resuelta, §11.3). Casilla que cobra, como la
+      // de Hiperdensidad (usuario, D1 del triaje 2026-10-28).
       {
-        en: { tipo: "grupo", grupo: "Defensa" },
-        texto: "Tercera reacción por ronda pagando 1 de fatiga.",
+        id: "aum_bucle_reaccion",
+        tipo: "toggle",
+        etiqueta: "Tercera reacción",
+        alcance: { tipo: "grupo", grupo: "Defensa" },
+        valorActivo: 0,
+        costeFatiga: 1,
+        nota: "Tercera reacción de la ronda.",
       },
     ],
     motor: [
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "nota_fija", estado: "construido" },
+      { tipo: "coste", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "resolucion", afecta: { modo: "accion_existente", id: "atletismo" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
@@ -1268,6 +1297,14 @@ function casillasCobertura(prefijo: string, valor: number, cualquiera: boolean):
   ];
 }
 
+// Sobreesfuerzo del IRM en los niveles 2-4 (triaje 2026-10-28, #10-12): cada nivel cambia
+// cuándo salta (Habilitador) y el daño por tramo, y en el 4 la dificultad 4 + nivel (Resolución)
+// de la tirada que añade el nivel 1. Todo pendiente, como esa tirada.
+const MOTOR_SOBREESFUERZO_IRM: MotorMetadata[] = [
+  { tipo: "habilitador", afecta: { modo: "accion_existente", id: "aumentos_sobreesfuerzo_irm" }, mecanismo: "gate_instalacion", arbitraje: "pendiente", estado: "pendiente" },
+  { tipo: "resolucion", afecta: { modo: "accion_existente", id: "aumentos_sobreesfuerzo_irm" }, mecanismo: "accion_equipo", estado: "pendiente" },
+];
+
 export const IMPLANTES: Implante[] = [
   {
     familia: "implante",
@@ -1310,7 +1347,7 @@ export const IMPLANTES: Implante[] = [
         ],
         modificadores: [],
         motor: [
-          { tipo: "accion", afecta: { modo: "accion_existente", id: "aumentos_sobreesfuerzo_irm" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          ...MOTOR_SOBREESFUERZO_IRM,
           { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
         ],
       },
@@ -1328,7 +1365,7 @@ export const IMPLANTES: Implante[] = [
         ],
         modificadores: [],
         motor: [
-          { tipo: "accion", afecta: { modo: "accion_existente", id: "aumentos_sobreesfuerzo_irm" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          ...MOTOR_SOBREESFUERZO_IRM,
           { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
         ],
       },
@@ -1345,7 +1382,7 @@ export const IMPLANTES: Implante[] = [
         ],
         modificadores: [],
         motor: [
-          { tipo: "accion", afecta: { modo: "accion_existente", id: "aumentos_sobreesfuerzo_irm" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          ...MOTOR_SOBREESFUERZO_IRM,
           { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
         ],
       },
@@ -1828,7 +1865,8 @@ export const IMPLANTES: Implante[] = [
           {
             id: "aumentos_enjambre_sanar_letal",
             label: "Sanar letal",
-            economia: "Acción gratuita, una vez por ronda",
+            // Sin tope por ronda: la prosa no lo pone (usuario, D2 del triaje 2026-10-28).
+            economia: "Acción gratuita",
             costeFatiga: 1,
             nota: "Sanas un nivel de daño letal de forma automática: +1 a la vida actual, sin pasar del máximo.",
             efecto: { tipo: "vida", delta: 1 },
@@ -1844,7 +1882,10 @@ export const IMPLANTES: Implante[] = [
         motor: [
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ficha" }, mecanismo: "nota_fija", estado: "pendiente" },
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_sanar_letal" }, mecanismo: "accion_equipo", estado: "construido" },
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_sanar_grave" }, mecanismo: "accion_equipo", estado: "construido" },
+          // TODO(revisar): falta contar las 5 pulsaciones en turnos seguidos y sumar la vida al
+          // quinto (efecto vida +1). No hay pieza que guarde un contador entre turnos: hoy cobra
+          // cada pulsación y la vida va a mano.
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_sanar_grave" }, mecanismo: "accion_equipo", estado: "pendiente" },
         ],
       },
       {
@@ -1856,18 +1897,26 @@ export const IMPLANTES: Implante[] = [
           "Además, como reacción y con el gasto de un punto de fatiga el enjambre puede densificarse de forma reactiva bajo la dermis, otorgando 3 puntos de blindaje contra un golpe específico. Si el impacto causa atudimiento el usuario recibe un bonificador de +3 contra el efecto.",
         ],
         modificadores: [],
-        salvaciones: [{ contra: ["toxinas", "venenos", "enfermedad"], bono: 4 }],
-        // A4b: casilla en "Bloquear daño" que cobra al marcarla. El +3 contra el aturdimiento de
-        // ese golpe, como nota.
+        // El +3 contra el aturdimiento del golpe densificado, en el selector "Contra…".
+        salvaciones: [
+          { contra: ["toxinas", "venenos", "enfermedad"], bono: 4 },
+          { contra: ["aturdimiento"], bono: 3, nota: "solo tras Densificar, contra el aturdimiento de ese golpe" },
+        ],
+        // A4b: casilla en "Bloquear daño" que cobra al marcarla.
         blindajeReactivo: {
           etiqueta: "Densificar",
           valor: 3,
           costeFatiga: 1,
-          nota: "Reacción, contra este golpe. Si te aturde, +3 a la salvación contra el aturdimiento (márcalo en el circunstancial).",
+          nota: "Reacción, contra este golpe. Si te aturde, +3 a la salvación: elige «Aturdimiento» en el «Contra…» de la Salvación de Fortaleza.",
         },
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_densificar" }, mecanismo: "accion_equipo", estado: "construido" },
+          // Densificar: casilla en Bloquear daño que suma blindaje y cobra la fatiga (no es una
+          // acción propia; triaje 2026-10-28, #20).
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "coste", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          // +3 contra el aturdimiento tras Densificar.
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
       {

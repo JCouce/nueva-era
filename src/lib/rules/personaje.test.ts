@@ -143,7 +143,7 @@ const ESPERADAS: Record<string, EtiquetaRasgo> = {
   "manduk.guerrero/coste_habilidad": "creacion",
   "manduk.siervo/umbral_fatiga": "siempre",
   "manduk.siervo/frugal": "siempre",
-  "manduk.ilkrem/regeneracion": "siempre",
+  "manduk.ilkrem/regeneracion": "texto", // triaje 2026-10-28 (#59): texto en la ficha, bloqueado, como la regeneración del Enjambre
   "manduk.ilkrem/falla_metabolica": "texto", // TODO(revisar): la prosa pide una salvación de Fortaleza; el catálogo la tiene como nota_fija (en Salvación de Fortaleza, E4)
   "manduk.zimethroni/movimiento": "siempre",
   "manduk.zimethroni/tras_esquivar": "texto", // TODO(revisar): nota_fija en Defensa
@@ -156,7 +156,7 @@ const ESPERADAS: Record<string, EtiquetaRasgo> = {
   "manduk.axadren/contra_ocultos": "tirada",
   "manduk.axadren/deslumbramiento": "texto", // TODO(revisar): la prosa pide tirada de ceguera; el catálogo la tiene como nota_fija
   "manduk.elion/contra_sugestion": "tirada",
-  "manduk.elion/rigidez_narcisista": "tirada",
+  "manduk.elion/rigidez_narcisista": "siempre", // triaje 2026-10-28 (#67): fallo crítico automático por especialidad, siempre_activo
 };
 
 function todosLosRasgos(): { clave: string; rasgo: Rasgo }[] {

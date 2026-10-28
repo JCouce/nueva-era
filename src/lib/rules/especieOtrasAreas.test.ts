@@ -1,5 +1,5 @@
 // E5 (docs/sistema.md §14.9): peaje neurológico del Maolher al usar un poder, nota de
-// fármacos del Irota y "Activar visión" del Arianyi y del Axadren.
+// fármacos del Irota, "Activar visión" del Arianyi y la visión pasiva del Axadren.
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { accionesDeFarmacos, accionesDirectasDeFarmacos } from "./farmacos";
@@ -166,29 +166,33 @@ describe("Irota: fármacos a la mitad (nota fija)", () => {
   });
 });
 
-describe("Activar visión (Arianyi y Axadren)", () => {
+describe("Activar visión (Arianyi); visión del Axadren, pasiva", () => {
   test("solo con su rasgo", () => {
     for (const s of [ficha({ especieId: "humano" }), ficha(MAOLHER), ficha({ especieId: "arkoru" })]) {
       assert.deepEqual(resolver(s).accionesEspecie, []);
     }
-    for (const s of [ficha({ especieId: "arianyi" }), ficha(AXADREN)]) {
-      const acciones = resolver(s).accionesEspecie;
-      assert.equal(acciones.length, 1);
-      assert.equal(acciones[0].label, "Activar visión");
-      assert.equal(acciones[0].grupo, "Acciones");
-      assert.match(acciones[0].nota ?? "", /calor y las huellas químicas o eléctricas/);
-    }
+    const acciones = resolver(ficha({ especieId: "arianyi" })).accionesEspecie;
+    assert.equal(acciones.length, 1);
+    assert.equal(acciones[0].label, "Activar visión");
+    assert.equal(acciones[0].grupo, "Acciones");
+    assert.match(acciones[0].nota ?? "", /calor y las huellas químicas o eléctricas/);
   });
 
-  test("Arianyi cobra 1 de fatiga (la primera hora); Axadren, nada", () => {
+  test("Arianyi cobra 1 de fatiga por escena", () => {
     const arianyi = resolver(ficha({ especieId: "arianyi" }));
     const [vision] = arianyi.accionesEspecie;
     assert.equal(vision.costeFatiga, 1);
-    assert.match(vision.nota ?? "", /cada hora más, 1 punto a mano/);
+    assert.match(vision.nota ?? "", /dura la escena; en cada escena más, vuelve a activarla/);
     assert.equal(pagarFatiga(arianyi.ficha, vision.costeFatiga!, false).fatigaActual, 9);
+  });
 
-    const [axadren] = resolver(ficha(AXADREN)).accionesEspecie;
-    assert.equal(axadren.costeFatiga, undefined);
+  // D3 del triaje (2026-10-28): pasiva y sin coste, sin acción de activar; nota en Buscar / percibir.
+  test("Axadren: sin acción, nota en Buscar / percibir", () => {
+    const f = resolver(ficha(AXADREN));
+    assert.deepEqual(f.accionesEspecie, []);
+    const vision = f.textosTirada.filter((t) => /Visión infrarroja/.test(t.texto));
+    assert.equal(vision.length, 1);
+    assert.deepEqual(vision[0].en, { tipo: "tiradaId", id: "alerta_activa" });
   });
 
   test("también al NPC en modo libre (es derivado)", () => {

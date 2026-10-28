@@ -452,12 +452,50 @@ function itemDeAumento(
     ajusteAtaque: null,
     condiciones: condiciones.length ? condiciones : null,
     notaTirada: pone.notaTirada,
-    otros: [...pone.otros, ...conEncendido, ...diferencias(fichaCon, fichaSin, yaConOrigen)],
+    otros: [...pone.otros, ...conEncendido, ...diferencias(fichaCon, fichaSin, yaConOrigen), ...fueraDeLaFicha(pieza, con.equipo)],
     motor,
     ...(motor.length === 0 && { motorAusente: "fuentesDeCapa1 no devuelve MotorMetadata para esta pieza y nivel" }),
     origen: { tipo: "aumento", id: pieza.catalogoId },
   };
 }
+
+// Lo que la app pone por campos que la ficha resuelta no etiqueta con origen (P5 del triaje
+// 2026-10-28: daban falsos «falta en código»). Cada línea dice qué lo lee.
+function fueraDeLaFicha(pieza: PiezaEquipada, equipo: PiezaEquipada[]): string[] {
+  const cat = EQUIPO.find((e) => e.id === pieza.catalogoId);
+  const lineas: string[] = [];
+  if (cat?.familia === "operacionGenetica") {
+    const opcion = cat.eleccion?.opciones.find((o) => o.id === pieza.eleccion);
+    for (const a of [cat.armaduraNatural, opcion?.armaduraNatural]) {
+      if (a) lineas.push(`armaduraNatural (blindaje.ts: línea propia en Bloquear daño, contra ${a.tipos.join(", ")}): ${json(a)}`);
+    }
+    for (const r of cat.reducePenalizador ?? []) {
+      if (r.aplicados?.length)
+        lineas.push(`reducePenalizador con aplicados (aumentos.ts reduccionesPorAplicadoDeAumentos → compensa el penalizador por ${r.de} en las tiradas de ${r.aplicados.join(", ")}): ${json(r)}`);
+    }
+    const reactivo = opcion?.blindajeReactivo ?? cat.blindajeReactivo;
+    if (reactivo) lineas.push(`blindajeReactivo (blindaje.ts: casilla en Bloquear daño que suma blindaje y cobra la fatiga): ${json(reactivo)}`);
+  } else if (cat?.familia === "implante" && pieza.nivel !== undefined) {
+    // Vale el del nivel más alto que lo trae, hasta el que se tiene.
+    const hasta = cat.niveles.filter((n) => n.nivel <= pieza.nivel!).reverse();
+    const reactivo = hasta.find((n) => n.blindajeReactivo)?.blindajeReactivo;
+    if (reactivo) lineas.push(`blindajeReactivo (blindaje.ts: casilla en Bloquear daño que suma blindaje y cobra la fatiga): ${json(reactivo)}`);
+    const defensa = hasta.find((n) => n.defensaIntrusion)?.defensaIntrusion;
+    if (defensa) lineas.push(`defensaIntrusion (aumentosAcciones.ts: fila informativa «Defensa contra intrusión psiónica» en Acciones): ${json(defensa)}`);
+  }
+  for (const { activo } of activosDeAumentos({ equipo }).filter((a) => a.origen.instanciaId === pieza.instanciaId)) {
+    for (const sv of activo.salvaciones ?? []) {
+      lineas.push(`[activable encendido] salvación en el selector «Contra…» (aumentosActivables.ts → fichaResuelta): ${json(sv)}`);
+    }
+  }
+  return lineas;
+}
+
+// En un ítem con elección (opción de la operación, modelo del implante), el `motor` es el de la
+// operación o el nivel entero, no el de la opción: que el auditor no le atribuya las entradas
+// de las demás.
+const notaMotorDeEleccion = (todo: string, opcion: string) =>
+  `El \`motor\` es el de ${todo} entero (todas sus opciones), no solo el de «${opcion}»: puede traer entradas de otras opciones; audita solo las que tocan a «${opcion}» y no des por mal construida una entrada por ser de otra.`;
 
 function extraerAumentos(): ItemAuditoria[] {
   const items: ItemAuditoria[] = [];
@@ -465,19 +503,19 @@ function extraerAumentos(): ItemAuditoria[] {
     const requisitos = [...conRequisitos(op).values()];
     const opciones = op.eleccion?.opciones ?? [null];
     for (const opcion of opciones) {
-      items.push(
-        itemDeAumento(
-          {
-            piezaId: opcion ? `${op.id}:${opcion.id}` : op.id,
-            piezaLabel: opcion ? `${op.label}: ${opcion.label}` : op.label,
-            familia: op.familia,
-            nivel: null,
-            detalle: [...op.detalle, ...(opcion ? opcion.detalle.map((d) => `${opcion.label}: ${d}`) : [])],
-          },
-          { instanciaId: "item", catalogoId: op.id, ...(opcion && { eleccion: opcion.id }) },
-          requisitos,
-        ),
+      const item = itemDeAumento(
+        {
+          piezaId: opcion ? `${op.id}:${opcion.id}` : op.id,
+          piezaLabel: opcion ? `${op.label}: ${opcion.label}` : op.label,
+          familia: op.familia,
+          nivel: null,
+          detalle: [...op.detalle, ...(opcion ? opcion.detalle.map((d) => `${opcion.label}: ${d}`) : [])],
+        },
+        { instanciaId: "item", catalogoId: op.id, ...(opcion && { eleccion: opcion.id }) },
+        requisitos,
       );
+      if (opcion) item.fuenteProsa = notaMotorDeEleccion(`la operación «${op.label}»`, opcion.label);
+      items.push(item);
     }
   }
   for (const imp of IMPLANTES_CAT) {
@@ -497,6 +535,7 @@ function extraerAumentos(): ItemAuditoria[] {
         );
         // La extremidad del Brazo (Fuerza, Agilidad, blindaje) no sale en la ficha resuelta: la leen
         // sus acciones de bloqueo y pelea (rules/brazoBionico.ts).
+        if (v) item.fuenteProsa = notaMotorDeEleccion(`el nivel ${nivel.nivel} de «${imp.label}»`, v.label);
         const extremidad = v?.extremidad ?? nivel.extremidad;
         if (extremidad) item.otros = [...(item.otros ?? []), `extremidad (rules/brazoBionico.ts): ${json(extremidad)}`];
         items.push(item);
@@ -649,6 +688,7 @@ function extraerPoderes(): ItemAuditoria[] {
           ...accion.ejes.flatMap((e) =>
             e.opciones.map((o) => `eje «${e.label}», opción «${o.label}»${o.desdeNivel ? ` (desde ${o.desdeNivel})` : ""}: ${compacto({ cambia: o.cambia, suma: o.suma, multiplicaTiempo: o.multiplicaTiempo })}`),
           ),
+          ...lineasPorOpcion(accion, d, niveles),
           ...accion.ajustesPorNivelPoseido.map((a) => `ajuste por nivel poseído: ${compacto(a)}`),
           ...(accion.porObjetivo ? [`por objetivo: ${compacto(accion.porObjetivo)}`] : []),
           ...(accion.excesoDeCarga ? [`exceso de carga: ${compacto(accion.excesoDeCarga)}`] : []),
@@ -662,6 +702,41 @@ function extraerPoderes(): ItemAuditoria[] {
     }
   }
   return items;
+}
+
+// Lo que la línea compacta del eje no deja ver (P5 del triaje 2026-10-28):
+//   - las tiradas del objetivo que trae una opción, con la dificultad ya resuelta a nivel 6
+//     (la línea del eje se corta a 400 caracteres y la del poder solo ve las opciones por defecto);
+//   - que `cambia.resultados` sustituye los resultados enteros (poderes.ts) y, si la opción no
+//     trae crítico, el crítico enseña el texto de éxito (textoDeGrado).
+function lineasPorOpcion(accion: Disciplina["acciones"][number], d: Disciplina, niveles: Parameters<typeof resolverPoder>[1]["niveles"]): string[] {
+  return accion.ejes.flatMap((e) =>
+    e.opciones.flatMap((o) => {
+      const donde = `con «${e.label}: ${o.label}»`;
+      const lineas: string[] = [];
+      if (o.cambia.objetivoTira?.length) {
+        let resuelto: ReturnType<typeof resolverPoder> = null;
+        try {
+          resuelto = resolverPoder(accion, { nivelPoseido: NIVEL_PODERES, disciplina: d, niveles, elecciones: { [e.id]: o.id } });
+        } catch {
+          resuelto = null;
+        }
+        const tiradas = resuelto?.objetivoTira ?? o.cambia.objetivoTira;
+        lineas.push(...tiradas.map((t) => `${donde}, el objetivo tira (texto, nivel ${NIVEL_PODERES}): ${compacto(t)}`));
+      }
+      if (o.cambia.resultados) {
+        const r = o.cambia.resultados;
+        const respaldos = [
+          ...(!("critico" in r) ? ["sin «critico», un éxito crítico enseña el texto de éxito"] : []),
+          ...(!("fracasoCritico" in r) ? ["sin «fracasoCritico», un fracaso crítico enseña el de fracaso"] : []),
+        ];
+        lineas.push(
+          `${donde}: cambia.resultados SUSTITUYE los resultados enteros del poder (no se mezclan con los de la base)${respaldos.length ? `; ${respaldos.join("; ")} (textoDeGrado): no es que falte` : ""}`,
+        );
+      }
+      return lineas;
+    }),
+  );
 }
 
 // ── Rasgos de especie ──────────────────────────────────────────────────

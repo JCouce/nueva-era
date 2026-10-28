@@ -79,6 +79,8 @@ export type BonoToggle = {
 
 export type Nota = { texto: string; lugar: "tirada" | "danio" };
 
+export type OpcionElegida = { eje: string; opcion: string };
+
 export type AccionPoder = {
   id: string; // "psi_<disciplina>_<accion>"
   label: string;
@@ -105,11 +107,12 @@ export type AccionPoder = {
   movimientoOtorgado: { tipo: "levitar"; velocidad: Valor } | null;
   // `sobre` admite ruta con puntos ("datos.2.valor"). `nivelEmpleado` y `opcion`
   // lo restringen a un nivel empleado / una opción elegida (Contención: con nivel 6,
-  // emplear el nivel 1 personal es gratis).
+  // emplear el nivel 1 personal es gratis). Con varias opciones, tienen que estar
+  // elegidas todas (Estabilización: el +3 a la salvación, solo como reacción).
   ajustesPorNivelPoseido: {
     desdeNivel: number;
     nivelEmpleado?: number;
-    opcion?: { eje: string; opcion: string };
+    opcion?: OpcionElegida | OpcionElegida[];
     sobre: string;
     op: "sustituye" | "suma" | "multiplica";
     valor: Valor | Economia | string;
@@ -221,6 +224,8 @@ export type Disciplina = {
     alcance: { accion?: string; nivelEmpleado?: number; opcion?: { eje: string; opcion: string } };
     op: "baja_un_paso" | "sustituye";
     valor?: Economia;
+    // Suelo de "baja_un_paso": ya en esta economía, no baja más (Retrocognición: estándar).
+    minimo?: Economia;
   }[];
   bonosEnOtrasTiradas: BonoToggle[];
   // `acciones`: ids de acciones de poder o de tiradas fijas ("alerta_activa").

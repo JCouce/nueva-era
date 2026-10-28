@@ -1178,6 +1178,17 @@ describe("Inducción — tanda 3: Supresión y Estabilización", () => {
     assert.match(resolverI("estabilizacion", 6, { uso: "salvacion" }).resultados.exito!.texto, /^\+4/);
   });
 
+  // Triaje 2026-10-28 (#35): «+3 cuando use este poder como reacción»; como simple, el +2.
+  test("Estabilización: el +3/+4 a la salvación, solo como reacción", () => {
+    for (const nivel of [4, 6]) {
+      const simple = resolverI("estabilizacion", nivel, { uso: "salvacion", economia: "simple" });
+      assert.match(simple.resultados.exito!.texto, /^\+2/, `nv${nivel}`);
+    }
+    assert.match(resolverI("estabilizacion", 4, { uso: "salvacion", economia: "reaccion" }).resultados.exito!.texto, /^\+3/);
+    // El uso «mitigar» como simple no se toca.
+    assert.match(resolverI("estabilizacion", 4, { economia: "simple" }).resultados.exito!.texto, /omites por completo/);
+  });
+
   test("casilla en las salvaciones con el valor del tramo, sin sumarse", () => {
     const salv = ACCIONES.find((a) => a.id === "salv_voluntad")!;
     const casilla = (nivel: number) => {
@@ -1186,8 +1197,9 @@ describe("Inducción — tanda 3: Supresión y Estabilización", () => {
     };
     assert.deepEqual(casilla(1), [2]);
     assert.deepEqual(casilla(3), [2]);
-    assert.deepEqual(casilla(4), [3]);
-    assert.deepEqual(casilla(6), [4]);
+    // Desde nv4, dos casillas excluyentes: +2 como simple y +3/+4 como reacción (triaje 2026-10-28, #35).
+    assert.deepEqual(casilla(4), [2, 3]);
+    assert.deepEqual(casilla(6), [2, 4]);
     assert.equal(conPsionicaEnTiradaFija(niv(defaultSheet()), salv), salv);
   });
 });
@@ -1249,6 +1261,14 @@ describe("Hipercognición", () => {
     assert.equal(p.fatiga, 2);
     assert.deepEqual(p.economia, { tiempo: "10 minutos" });
     assert.equal(p.objetivo?.area, 20);
+  });
+
+  // Triaje 2026-10-28 (#41): Retrocognición baja «de compleja a estándar»; solo Sondeo llega a simple.
+  test("Retrocognición: el tramo local no baja de estándar; Sondeo sí llega a simple en nv5", () => {
+    assert.equal(resolverH("retrocognicion", 1).economia, "compleja");
+    assert.equal(resolverH("retrocognicion", 3).economia, "estandar");
+    assert.equal(resolverH("retrocognicion", 5).economia, "estandar");
+    assert.equal(resolverH("sondeo", 5).economia, "simple");
   });
 
   test("Precognición: estándar, 1, dificultad 8; fracaso crítico con 1 de daño propio", () => {

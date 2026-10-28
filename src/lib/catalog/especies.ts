@@ -168,6 +168,10 @@ const casilla = (id: string): MotorMetadata => ({
   estado: "construido",
 });
 
+// La misma casilla cuando no suma: "éxito cuenta como crítico" (exitoCritico) cambia cómo se
+// resuelve la tirada, no su total (Resolución, docs/motor.md).
+const casillaResolucion = (id: string): MotorMetadata => ({ ...casilla(id), tipo: "resolucion" });
+
 // Texto fijo en una tirada, solo con el rasgo (§14.10): lo declara `textos`.
 const textoEn = (id: string): MotorMetadata => ({
   tipo: "texto",
@@ -210,13 +214,11 @@ const derivadoEstatico: MotorMetadata = {
 
 const narrativo: MotorMetadata = { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" };
 
-const sinDescanso: MotorMetadata = {
-  tipo: "numerico",
-  afecta: { modo: "ninguna" },
-  mecanismo: null,
-  estado: "bloqueado",
-  bloqueoPor: "no hay descanso ni raciones en la app (sistema.md §14.10)",
-};
+// Descanso y raciones (Riux, Siervo): la ración es lo que se gasta (Coste); la duración y el
+// número de descansos, cómo se resuelve el descanso (Resolución). Ninguno tiene dónde engancharse.
+const SIN_DESCANSO = "no hay descanso ni raciones en la app (sistema.md §14.10)";
+const racionBloqueada: MotorMetadata = { tipo: "coste", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: SIN_DESCANSO };
+const descansoBloqueado: MotorMetadata = { tipo: "resolucion", afecta: { modo: "ninguna" }, mecanismo: null, estado: "bloqueado", bloqueoPor: SIN_DESCANSO };
 
 const textoBloqueado = (id: string, por: string): MotorMetadata => ({
   tipo: "texto",
@@ -257,7 +259,7 @@ const CASTAS_MANDUK: OpcionEspecie[] = [
         label: "Contra el miedo",
         texto: "Un éxito cuenta como crítico en tiradas contra intimidación y miedo (casilla en Salvación de Voluntad).",
         casillas: [{ acciones: ["salv_voluntad"], condicion: exitoCritico("miedo", "¿Es contra miedo o intimidación?") }],
-        motor: [casilla("salv_voluntad")],
+        motor: [casillaResolucion("salv_voluntad")],
       },
       costeCasta("Actitud cuesta 1 menos por nivel (mínimo 1).", { actitud: -1 }),
     ],
@@ -313,7 +315,7 @@ const CASTAS_MANDUK: OpcionEspecie[] = [
         id: "frugal",
         label: "Frugal",
         texto: "Media ración para recuperar la misma fatiga; Descanso Largo de 6 horas.",
-        motor: [sinDescanso],
+        motor: [racionBloqueada, descansoBloqueado],
       },
     ],
   },
@@ -331,15 +333,8 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         label: "Regeneración",
         texto:
           "1 nivel no letal por turno, 1 letal por minuto (10 turnos), 1 grave por hora; fatigado, el doble de lento; exhausto, nada.",
-        motor: [
-          {
-            tipo: "numerico",
-            afecta: { modo: "ninguna" },
-            mecanismo: null,
-            estado: "bloqueado",
-            bloqueoPor: "la app no lleva el paso del tiempo (sistema.md §14.10)",
-          },
-        ],
+        // Como la regeneración pasiva del Enjambre Nanobot: texto en la ficha, sin tiempo que lo mueva.
+        motor: [textoBloqueado("ficha", "la app no lleva el paso del tiempo (sistema.md §14.10)")],
       },
       {
         id: "falla_metabolica",
@@ -402,7 +397,7 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         label: "Inmunidad",
         texto: "Un éxito cuenta como crítico en salvaciones contra toxinas, venenos y enfermedades (casilla en Salvación de Fortaleza).",
         casillas: [{ acciones: ["salv_fortaleza"], condicion: exitoCritico("toxinas", "¿Contra toxinas, venenos o enfermedad?") }],
-        motor: [casilla("salv_fortaleza")],
+        motor: [casillaResolucion("salv_fortaleza")],
       },
       {
         id: "farmacos_mitad",
@@ -452,9 +447,10 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         id: "vision_infrarroja",
         label: "Visión infrarroja",
         texto: "Ve el calor y las huellas químicas o eléctricas.",
-        // El PDF no le pone coste (a diferencia del Arianyi).
-        accionSinDado: { label: "Activar visión", nota: "Visión infrarroja: ves el calor y las huellas químicas o eléctricas." },
-        motor: [accionDeEspecie("activar_vision")],
+        // Pasiva y sin coste en la prosa (a diferencia del Arianyi): nota en Buscar / percibir,
+        // sin acción de activar (usuario, D3 del triaje 2026-10-28).
+        textos: [{ en: [tiradaFija("alerta_activa")], texto: "Visión infrarroja: ves el calor y las huellas químicas o eléctricas." }],
+        motor: [textoEn("alerta_activa")],
       },
       {
         id: "contra_ocultos",
@@ -462,7 +458,7 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         texto: "Un éxito cuenta como crítico en alerta contra enemigos ocultos (casilla en Buscar / percibir).",
         // Buscar / percibir es la Alerta activa (M22); la pasiva no tira dado.
         casillas: [{ acciones: ["alerta_activa"], condicion: exitoCritico("oculto", "¿Enemigo oculto?") }],
-        motor: [casilla("alerta_activa")],
+        motor: [casillaResolucion("alerta_activa")],
       },
       {
         id: "deslumbramiento",
@@ -487,7 +483,7 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         label: "Voluntad férrea",
         texto: "Un éxito cuenta como crítico contra efectos sugestivos (casilla en Salvación de Voluntad).",
         casillas: [{ acciones: ["salv_voluntad"], condicion: exitoCritico("sugestion", "¿Contra un efecto sugestivo?") }],
-        motor: [casilla("salv_voluntad")],
+        motor: [casillaResolucion("salv_voluntad")],
       },
       {
         id: "rigidez_narcisista",
@@ -496,11 +492,12 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         // Vale la especialidad que nombra la tirada, la tenga o no la ficha (usuario,
         // 2026-10-24); en Convencer / mentir, la elegida al tirar.
         falloCritico: { especialidades: ["empatia", "humor", "negociacion"] },
+        // Automático por especialidad, sin casilla: cambia el umbral de fallo (Resolución).
         motor: [
           {
-            tipo: "numerico",
+            tipo: "resolucion",
             afecta: { modo: "accion_existente", id: "todas" },
-            mecanismo: "eleccion_jugador",
+            mecanismo: "siempre_activo",
             estado: "construido",
           },
         ],
@@ -543,7 +540,8 @@ export const ESPECIES: Especie[] = [
         id: "ciclo_cerrado",
         label: "Metabolismo de Ciclo Cerrado",
         texto: "Media ración para recuperar la misma fatiga; Descanso Largo de 4 horas; 4 Descansos Breves al día en vez de 2.",
-        motor: [sinDescanso],
+        // Ración; horas del Descanso Largo; número de Descansos Breves.
+        motor: [racionBloqueada, descansoBloqueado, descansoBloqueado],
       },
       {
         id: "piel_irisada",
@@ -594,15 +592,18 @@ export const ESPECIES: Especie[] = [
         id: "vision_uv_ir",
         label: "Visión UV e Infrarroja",
         texto: "Ve el calor y las huellas químicas o eléctricas; cuesta 1 punto de fatiga por hora.",
-        // Se cobra la primera hora al activarla; las siguientes, a mano (la app no lleva
-        // el paso del tiempo).
+        // Una hora = una escena (usuario, triaje 2026-10-28): se cobra al activarla y se vuelve
+        // a activar en cada escena (la app no lleva el paso del tiempo).
         accionSinDado: {
           label: "Activar visión",
           nota:
-            "Visión UV e infrarroja: ves el calor y las huellas químicas o eléctricas (lees el estado de una máquina o el rastro de una persona). Activarla cobra 1 punto de fatiga, la primera hora; cada hora más, 1 punto a mano.",
+            "Visión UV e infrarroja: ves el calor y las huellas químicas o eléctricas (lees el estado de una máquina o el rastro de una persona). Activarla cobra 1 punto de fatiga y dura la escena; en cada escena más, vuelve a activarla.",
           costeFatiga: 1,
         },
-        motor: [accionDeEspecie("activar_vision")],
+        motor: [
+          accionDeEspecie("activar_vision"),
+          { tipo: "coste", afecta: { modo: "accion_existente", id: "activar_vision" }, mecanismo: "accion_sin_equipo", estado: "construido" },
+        ],
       },
       {
         id: "empatia_biologica",
@@ -687,7 +688,9 @@ export const ESPECIES: Especie[] = [
           // Mismo mecanismo que el blindaje de una armadura: alimenta desgloseBlindaje,
           // que lee Bloquear daño.
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
-          textoEn("ataque_melee"),
+          // Crítico desarmado letal: cambia una regla del daño y se entrega como nota (mismo
+          // criterio que `ignoraBlindaje` de las armas melee).
+          { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
       {

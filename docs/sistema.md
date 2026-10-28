@@ -1296,7 +1296,10 @@ al preparar su modelado:
   - **El bonificador a la salvación va en dos pasos**: se tira Estabilización (paga la
     fatiga y la sobrecarga) y, si sale, en las tres salvaciones fijas se marca la casilla
     "+N por Estabilización (si la superaste)", que no cobra nada: +2 hasta nivel 3, +3 en
-    4-5, +4 en 6 (`BonoToggle.hastaNivelPoseido`, sin sumarse).
+    4-5, +4 en 6 (`BonoToggle.hastaNivelPoseido`, sin sumarse). **El +3/+4 solo como
+    reacción**, como dice la prosa (triaje 2026-10-28): desde nivel 4 hay dos casillas,
+    "+2 … (como acción simple)" y "+3/+4 … (como reacción)", excluyentes solo en la etiqueta;
+    el texto del éxito sigue la Acción elegida (ajuste con varias opciones a la vez).
   - Los penalizadores de estado se aplican a mano (y los de umbral de salud y fatiga siguen
     sin aplicarse en ninguna tirada).
   - **Inducción completa.**
@@ -1307,7 +1310,9 @@ al preparar su modelado:
     fatiga y **dificultad sugerida = el valor bajo del rango** (6, 8, 10, 12 / 6, 9, 12,
     15); la interferencia (+0/+2/+4/+6) es un selector que se suma. Nivel 4: −1; nivel 6:
     −2. Niveles 3 y 5: un paso de tiempo cada uno (1 hora → 10 minutos → 1 minuto →
-    compleja → estándar → simple).
+    compleja → estándar → simple). **Retrocognición no baja de estándar** («de compleja a
+    estándar», `minimo` en `modificadoresEconomia`; triaje 2026-10-28): lo de simple en el 5
+    de Murillo era solo para Sondeo.
   - **Alcance de los tramos del Sondeo calculado con el nivel de Resonancia de la ficha**
     (¼, ½ y todo el alcance de su fila; local 1 km²).
   - **Duración del Sondeo:** nivel turnos (errata de Murillo); **desde nivel 3, 1 minuto**
@@ -1466,7 +1471,8 @@ al preparar su modelado:
   - **Red Frontoparietal:** ventaja sin casilla en las tres de Iniciativa; la acción combinada
     (física + mental por 1 de fatiga), como texto en las pruebas mentales hasta A4.
   - **Textos:** Asa (bajar un paso por 1 de fatiga, con la exclusión de Callosa y
-    Prefrontal) en las pruebas mentales; Consciencia (no te pueden flanquear) y Automatismo
+    Prefrontal) en las pruebas mentales *(desde el triaje 2026-10-28, casilla que cobra: ver
+    "Por pieza")*; Consciencia (no te pueden flanquear) y Automatismo
     (Sorprendido sin −3 en la primera tirada defensiva) en Defensa.
   - **La ventaja no se acumula al cobrar (usuario, 2026-10-22):** si la tirada ya trae
     ventaja gratis (Red Frontoparietal en Iniciativa, una casilla u opción sin coste), las
@@ -1474,7 +1480,10 @@ al preparar su modelado:
     (`fatigaDeCasillas`, `montaje.ts`).
   - **Reacciones y equilibrio (usuario, 2026-10-22):** Hiperdensidad (2.ª reacción por 1 de
     fatiga), Automatismo (la deja gratis) y Bucle (3.ª reacción por 1 de fatiga) como texto
-    en Defensa; Bucle, casilla de ventaja en Atletismo "Equilibrio para no caer derribado".
+    en Defensa. *Desde el triaje 2026-10-28 (usuario, D1):* casillas en las tiradas del grupo
+    Defensa: «Reacción extra» de Hiperdensidad cobra 1; con Automatismo (que funcione) no sale
+    y sale la suya, «Reacción extra» sin fatiga (`casillasOcultasCon`); Bucle, «Tercera
+    reacción», cobra 1. La app sigue sin contar reacciones: marcarla es cosa del jugador. Bucle, casilla de ventaja en Atletismo "Equilibrio para no caer derribado".
 - *En la app (A3, penalizadores):* campo `reducePenalizador` de la operación, con
   `operacionesActivas` (requisito roto, sin nada).
   - **Heridas y fatiga (R8):** Estabilización Autonómica −1 a las dos. El ajuste de la
@@ -1525,9 +1534,10 @@ al preparar su modelado:
     transacción** (el cobro va en su `preparar`), con una entrada
     del registro del máster (autor: el jugador) que se puede deshacer; deshacer devuelve el
     estado, no la fatiga.
-  - **Sanar letal:** +1 a la vida actual, sin pasar del máximo en reposo; "una vez por ronda",
-    texto. **Sanar grave:** cada pulsación cobra 1; "5 turnos seguidos; al quinto, súmate 1 de
-    vida a mano". Lo de "sin penalizadores por fatiga" del Enjambre es solo de la regeneración
+  - **Sanar letal:** +1 a la vida actual, sin pasar del máximo en reposo; acción gratuita,
+    **sin tope por ronda** (la prosa no lo pone; usuario, D2 del triaje 2026-10-28). **Sanar
+    grave:** cada pulsación cobra 1; "5 turnos seguidos; al quinto, súmate 1 de vida a mano"
+    (`TODO(revisar)`: falta un contador de pulsaciones entre turnos; su motor, `pendiente`). Lo de "sin penalizadores por fatiga" del Enjambre es solo de la regeneración
     pasiva (fuera de A4a).
   - **Defensa del MQE:** fila informativa sin botón con alcance, dificultad de infiltración
     (+1 por turno), defensa y contragolpe del nivel que se tenga; el nivel 4 dice que el cepo
@@ -1553,7 +1563,8 @@ al preparar su modelado:
     fatiga, apagada con el motivo. Vale donde cuenta el blindaje (no contra Mental ni Fuego sin
     Ignífuga, el mismo criterio que la armadura natural: `blindajeNoCuenta`); cambiar a uno de
     esos tipos con ella marcada la desmarca y devuelve la fatiga. El +3 contra el aturdimiento,
-    nota. En el combate en vivo del máster suma igual y la fatiga se cobra a mano.
+    opción «Aturdimiento» del «Contra…» de la Salvación de Fortaleza, con la nota «solo tras
+    Densificar» (triaje 2026-10-28). En el combate en vivo del máster suma igual y la fatiga se cobra a mano.
   - **Incorporar arma** (Brazo, cualquier nivel): Perspicacia + Biociencia a dificultad 8 con
     la regla de especialidad de las acciones de dote (con Biónica, en especialidad; sin ella, a
     la mitad). Acción extendida de 10 minutos, instrumental, arma de una mano (también de
@@ -1830,7 +1841,9 @@ al preparar su modelado:
     sea mayor. Una vez por escena.
   - **Red Frontoparietal***: la acción física simultánea es **cualquier acción simple o
     estándar física**, ataques y defensas incluidos. Sin límite de usos, pagando el punto.
-  - **Asa Estriatotalámica**: un solo paso por acción.
+  - **Asa Estriatotalámica**: un solo paso por acción. Casilla «Simplificar (−1 paso)» en las
+    pruebas de perspicacia, voluntad y expresión que cobra 1 de fatiga; el paso y la exclusión
+    con Callosa y Prefrontal, en su nota (triaje 2026-10-28).
   - **Conectividad Callosa***: la vía de "dos turnos" **también cuesta 1 de fatiga**. Vale
     para cualquier acción, ataques incluidos.
   - **Conectividad Callosa y Prefrontal Aumentada*** no se juntan: Prefrontal es solo para
@@ -2330,10 +2343,11 @@ rasgo (usuario, §5b de la propuesta).
   `accionesDirectasDeFarmacos`) en cada fila de fármaco y en su tirada. La casilla "Bajo
   Xovromium" de los poderes no cambia: la mitad de 1 con mínimo 1 sigue siendo 1 (+1 a la
   tirada, −1 de fatiga).
-- **Visión**: dato `accionSinDado` → `FichaResuelta.accionesEspecie` → fila "Activar visión"
-  en el grupo Acciones, con la nota de qué ve. Arianyi: al confirmar se cobra **1 punto de
-  fatiga, la primera hora** (por el mismo `onPagarFatiga` que los poderes); las horas
-  siguientes, a mano (lo dice la nota; la app no lleva el tiempo). Axadren: sin coste.
+- **Visión**: Arianyi, dato `accionSinDado` → `FichaResuelta.accionesEspecie` → fila "Activar
+  visión" en el grupo Acciones, con la nota de qué ve. Al confirmar se cobra **1 punto de
+  fatiga, por escena** (una hora = una escena; usuario, triaje 2026-10-28), por el mismo
+  `onPagarFatiga` que los poderes; en cada escena nueva se vuelve a activar. Axadren: pasiva y
+  sin coste, **sin acción**: nota en Buscar / percibir (usuario, D3 del triaje 2026-10-28).
 
 ### 14.10 Sin mecanizar: texto en la ficha `[FIRME · ESP + usuario M15, M19]`
 

@@ -130,6 +130,8 @@ const PASO_TIEMPO: Record<string, Economia> = {
   "1 minuto": "compleja",
 };
 
+const mismaEconomia = (a: Economia, b: Economia) => JSON.stringify(a) === JSON.stringify(b);
+
 function bajarUnPaso(e: Economia): Economia {
   if (typeof e === "string") return PASO_ECONOMIA[e] ?? e;
   return PASO_TIEMPO[e.tiempo] ?? e;
@@ -206,7 +208,7 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
   for (const a of accion.ajustesPorNivelPoseido) {
     if (nivelPoseido < a.desdeNivel) continue;
     if (a.nivelEmpleado !== undefined && a.nivelEmpleado !== nivelEmpleado) continue;
-    if (a.opcion && elecciones[a.opcion.eje] !== a.opcion.opcion) continue;
+    if (a.opcion && [a.opcion].flat().some((o) => elecciones[o.eje] !== o.opcion)) continue;
     const ruta = a.sobre.split(".");
     const padre = ruta.slice(0, -1).reduce<Record<string, unknown> | undefined>(
       (n, k) => (n?.[k] as Record<string, unknown> | undefined),
@@ -234,7 +236,8 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
     if (a.nivelEmpleado !== undefined && a.nivelEmpleado !== nivelEmpleado) continue;
     if (a.opcion && elecciones[a.opcion.eje] !== a.opcion.opcion) continue;
     if (m.op === "sustituye" && m.valor) w.economia = m.valor;
-    else if (m.op === "baja_un_paso") w.economia = bajarUnPaso(w.economia as Economia);
+    else if (m.op === "baja_un_paso" && !(m.minimo !== undefined && mismaEconomia(w.economia as Economia, m.minimo)))
+      w.economia = bajarUnPaso(w.economia as Economia);
   }
   if (multiplicaTiempo !== 1) {
     const e = w.economia as Economia;

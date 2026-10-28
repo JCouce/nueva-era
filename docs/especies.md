@@ -35,7 +35,7 @@ Esta dualidad convierte a los humanos en un actor incómodo pero central de la G
 
 ### Civilización Aumentada
 
-Los humanos reciben 60000 créditos que pueden emplear únicamente en aumentos. Si sobre parte de este dinero al escoger los aumentos, el dinero se pierde, pero, puede utilizarse la parte sobrante junto a recursos de creación del personaje para adquirir otros aumentos.
+Los humanos reciben 70000 créditos que pueden emplear únicamente en aumentos. Si sobre parte de este dinero al escoger los aumentos, el dinero se pierde, pero, puede utilizarse la parte sobrante junto a recursos de creación del personaje para adquirir otros aumentos.
 
 ## Riux
 

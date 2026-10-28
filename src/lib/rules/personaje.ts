@@ -10,7 +10,7 @@ import { ATRIBUTOS, type AtributoId } from "./atributos";
 import { eleccionCompleta, eleccionDeFicha, faltaAtributoLibre, faltaEnEleccion, type RangoReferencia } from "./especie";
 import { repartoCompleto } from "./prioridad";
 import type { Sheet } from "./sheet";
-import type { MecanismoMotor } from "./motor";
+import type { MecanismoMotor, TipoModificador } from "./motor";
 import type { Rasgo } from "../catalog/especies";
 
 export const PASOS_PERSONAJE = ["origen", "prioridades", "identidad"] as const;
@@ -74,6 +74,7 @@ export type EtiquetaRasgo = "creacion" | "siempre" | "tirada" | "texto";
 
 const MECANISMOS_TIRADA: MecanismoMotor[] = ["eleccion_jugador", "ajuste_fijo", "bono_tramo"];
 const MECANISMOS_SIEMPRE: MecanismoMotor[] = ["siempre_activo", "suma_derivado"];
+const TIPOS_PASIVOS: TipoModificador[] = ["numerico", "coste", "resolucion"];
 
 // Lee la clasificación del catálogo (MotorMetadata), no la prosa: si un rasgo cambia
 // de mecanismo, la etiqueta le sigue. Prioridad: creación > tirada > siempre > texto.
@@ -89,11 +90,12 @@ export function etiquetaRasgo(rasgo: Pick<Rasgo, "creacion" | "motor">): Etiquet
   const { motor } = rasgo;
   if (motor.some((m) => m.afecta.modo === "accion_existente" && m.mecanismo && MECANISMOS_TIRADA.includes(m.mecanismo)))
     return "tirada";
-  // Numérico sin acción: fórmulas de derivados (movimiento, carga) y pasivos aún sin
-  // dónde vivir (descanso, regeneración). Siempre activos, aunque no se apliquen todavía.
+  // Sin acción: fórmulas de derivados (movimiento, carga, numéricos) y pasivos aún sin dónde
+  // vivir (ración como Coste y descanso como Resolución, desde el triaje 2026-10-28). Siempre
+  // activos, aunque no se apliquen todavía.
   if (
     motor.some(
-      (m) => (m.mecanismo && MECANISMOS_SIEMPRE.includes(m.mecanismo)) || (m.tipo === "numerico" && m.afecta.modo === "ninguna"),
+      (m) => (m.mecanismo && MECANISMOS_SIEMPRE.includes(m.mecanismo)) || (TIPOS_PASIVOS.includes(m.tipo) && m.afecta.modo === "ninguna"),
     )
   )
     return "siempre";

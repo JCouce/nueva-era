@@ -287,7 +287,7 @@ describe("A4b: Densificar", () => {
     const c = casillaBlindajeReactivo(enj(4), "cinetico", false)!;
     assert.equal(c.etiqueta, "Densificar (Enjambre Nanobot, 1 fatiga)");
     assert.equal(c.costeFatiga, 1);
-    assert.match(c.nota, /\+3 a la salvación contra el aturdimiento/);
+    assert.match(c.nota, /Si te aturde, \+3 a la salvación: elige «Aturdimiento» en el «Contra…»/);
   });
 
   test("sin fatiga no se puede marcar; ya marcada (pagada), sí se desmarca", () => {

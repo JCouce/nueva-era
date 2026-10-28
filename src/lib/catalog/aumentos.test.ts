@@ -151,7 +151,7 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_ojo_bionico 2": 4, // 1 de A2a, la cobertura visual en distancia y Buscar (A3) y la inmunidad (A7)
     "aum_ojo_bionico 3": 2,
     "aum_ojo_bionico 4": 5, // 2 de A2a, cualquier cobertura en distancia y Buscar (A3) y la inmunidad (A7)
-    "aum_enjambre_nanobot 3": 2, // salvaciones (A2a) y Densificar (A4b)
+    "aum_enjambre_nanobot 3": 4, // salvaciones (A2a) y Densificar (A4b), partido en Ajuste y Coste (triaje 2026-10-28, #20); +1: el +3 contra el aturdimiento tras Densificar (#21)
     // A2b: casillas por aplicado y de cualquier tirada, ventaja fija y textos.
     aum_mielinizacion_central: 1,
     aum_red_frontoparietal: 2, // ventaja en Iniciativa (A2b) y la acción combinada (A4a)
@@ -160,7 +160,7 @@ describe("integridad del catálogo de aumentos", () => {
     // A3: compensación de fatiga en las pruebas mentales.
     aum_neurogenesis_hipocampal: 1,
     aum_consciencia_omnidireccional: 3, // +1: Coste partido de la casilla de ventaja, fase 1b
-    aum_asa_estriatotalamica: 1,
+    aum_asa_estriatotalamica: 3, // casilla «Simplificar» (triaje 2026-10-28, #2-3): Coste, Resolución y la exclusión como Texto
     aum_conectividad_callosa: 4, // +1: Coste partido de la casilla de ventaja, fase 1b
     aum_proyeccion_neuro_expresiva: 5, // ventaja en Actitud (A2b) y el activable (A5a); +1: Coste partido de la casilla de ventaja, fase 1b; +2: el activable partido en Acción, Resolución y Coste (auditoría tanda 1)
     aum_sincronizacion_neuromotora_profunda: 2, // +1: Coste partido de la casilla de ventaja, fase 1b
@@ -174,7 +174,7 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_microprocesador_cuantico_de_enlace 2": 2,
     "aum_microprocesador_cuantico_de_enlace 3": 2,
     "aum_microprocesador_cuantico_de_enlace 4": 2,
-    "aum_enjambre_nanobot 2": 2,
+    "aum_enjambre_nanobot 2": 1, // Sanar grave, pendiente: falta el contador de 5 turnos (triaje 2026-10-28, #18)
     // A4b: Incorporar arma, Tempestad Nanobótica y su nota del blindaje del objetivo.
     "aum_enjambre_nanobot 4": 2,
     // A5a: activables. Neuroprótesis 1 entera (activar, +1 a los tres, −1 a los penalizadores,
