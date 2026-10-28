@@ -1876,16 +1876,17 @@ export const IMPLANTES: Implante[] = [
             label: "Sanar grave",
             economia: "Un punto por turno, pudiendo actuar",
             costeFatiga: 1,
-            nota: "Cada pulsación cobra 1 de fatiga. 5 turnos seguidos; al quinto, súmate 1 de vida a mano.",
+            nota: "Cada pulsación cobra 1 de fatiga, una por turno. A la quinta sanas un nivel grave: +1 a la vida actual (se suma sola) y la cuenta vuelve a 0.",
+            // Contador de pulsaciones en la escena (usuario, 2026-10-28): se reinicia a mano
+            // (fila «Reiniciar») y con «Terminar escena».
+            efecto: { tipo: "contador", cada: 5, vida: 1 },
           },
         ],
         motor: [
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ficha" }, mecanismo: "nota_fija", estado: "pendiente" },
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_sanar_letal" }, mecanismo: "accion_equipo", estado: "construido" },
-          // TODO(revisar): falta contar las 5 pulsaciones en turnos seguidos y sumar la vida al
-          // quinto (efecto vida +1). No hay pieza que guarde un contador entre turnos: hoy cobra
-          // cada pulsación y la vida va a mano.
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_sanar_grave" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          // Sanar grave: contador de pulsaciones en la escena; a la quinta, +1 de vida.
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_sanar_grave" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
       },
       {

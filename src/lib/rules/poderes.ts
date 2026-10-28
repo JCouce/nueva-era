@@ -16,10 +16,14 @@ import type { OrigenAporte } from "./origen";
 import { DISCIPLINAS, PSIONICA, disciplinaPorId, type DisciplinaId } from "../catalog/psionica";
 import { umbralFatiga } from "./estados";
 import { recursoDe } from "./recursos";
+import { DOTES } from "../catalog/dotes";
+import type { AlcanceModificador } from "./modificadores";
 import type {
   AccionPoder,
+  BlancoDePoder,
   BonoToggle,
   Disciplina,
+  EstadoDeResultado,
   EjePoder,
   Economia,
   Grado,
@@ -72,7 +76,7 @@ export type PoderResuelto = {
       Grado,
       {
         texto: string;
-        estados: { estado: string; grado?: string; duracion: ValorResuelto; sobre: "objetivo" | "propio" }[];
+        estados: (Omit<EstadoDeResultado, "duracion"> & { duracion: ValorResuelto })[];
         danio?: { valor: ValorResuelto; categoria: string; sobre: "objetivo" | "propio" };
       }
     >
@@ -803,9 +807,8 @@ export function conPsionicaEnTiradaFija(niveles: NivelesPsionica, t: Accion): Ac
 // `AccionPoder.casillasEnTiradas`), una por alcance, con el poder como origen. Solo los poderes
 // que el personaje tiene (nivel poseído, requisito sano) y en su tramo de nivel. Van al índice
 // de casillas con alcance (resolverFicha), como las de dotes y aumentos: llegan a cualquier
-// tirada que case, fija, de arma o de poder. `conPenalizadores`: si la ficha lleva ahora algún
-// penalizador de estado, heridas o fatiga (las de `soloConPenalizadores`, si no, no salen).
-export function casillasDePsionica(niveles: NivelesPsionica, conPenalizadores: boolean): CondicionTirada[] {
+// tirada que case, fija, de arma, de dote o de poder.
+export function casillasDePsionica(niveles: NivelesPsionica): CondicionTirada[] {
   return DISCIPLINAS.flatMap((d) => {
     const nivel = niveles[d.id as DisciplinaId] ?? 0;
     if (nivel <= 0 || bloqueoPorRequisito(d, niveles)) return [];
@@ -814,9 +817,50 @@ export function casillasDePsionica(niveles: NivelesPsionica, conPenalizadores: b
       const origen: OrigenAporte = { tipo: "poder", id: accion.id, label: accion.label };
       return (accion.casillasEnTiradas ?? [])
         .filter((c) => enTramo({ desdeNivelPoseido: c.desdeNivelPoseido, hastaNivelPoseido: c.hastaNivelPoseido }, nivel))
-        .filter((c) => !c.soloConPenalizadores || conPenalizadores)
-        .flatMap((c) => c.alcances.map((alcance): CondicionTirada => ({ ...c.condicion, alcance, origen })));
+        .flatMap((c) => [...c.alcances, ...alcancesDeBlancos(c.blancos ?? [])].map((alcance): CondicionTirada => ({ ...c.condicion, alcance, origen })));
     });
+  });
+}
+
+// Todas las acciones de poder del catálogo: las de las disciplinas y las de dote (Impacto y
+// Sobrecarga Métrica), que se tiran con el id de su acción en el grupo Psiónica.
+function todosLosPoderes(): Pick<AccionPoder, "id" | "resolucion" | "resultados" | "contraLaDefensa">[] {
+  const deDotes = DOTES.flatMap((d) =>
+    d.efectos.flatMap((e) => (e.tipo === "poder" ? [e.accion as unknown as Pick<AccionPoder, "id" | "resolucion" | "resultados">] : [])),
+  );
+  return [...DISCIPLINAS.flatMap((d) => d.acciones), ...deDotes];
+}
+
+// Ofensivo: se resuelve como ataque, hace daño al objetivo en algún grado o va contra su
+// defensa sin daño (`contraLaDefensa`, Anclaje).
+const esPoderDeAtaque = (a: Pick<AccionPoder, "resolucion" | "resultados" | "contraLaDefensa">) =>
+  a.resolucion.tipo === "ataque" || a.contraLaDefensa === true || Object.values(a.resultados).some((r) => r?.danio?.sobre === "objetivo");
+
+const porBlanco: Partial<Record<BlancoDePoder, AlcanceModificador[]>> = {};
+const tiradaId = (id: string): AlcanceModificador => ({ tipo: "tiradaId", id });
+
+// Los alcances de cada blanco (CasillaDePoder.blancos), sacados del catálogo una vez. Perezoso:
+// el catálogo de dotes se lee al usarlo, no al cargar el módulo.
+export function alcancesDeBlancos(blancos: readonly BlancoDePoder[]): AlcanceModificador[] {
+  return blancos.flatMap((b) => {
+    const hecho = porBlanco[b];
+    if (hecho) return hecho;
+    let ids: string[];
+    if (b === "poderes_enfrentados") ids = todosLosPoderes().filter((a) => a.resolucion.tipo === "enfrentada").map((a) => a.id);
+    else if (b === "poderes_de_ataque") ids = todosLosPoderes().filter(esPoderDeAtaque).map((a) => a.id);
+    else {
+      // La copia en otro grupo lleva su propio id (enGrupo, dotesAcciones.ts).
+      ids = DOTES.flatMap((d) =>
+        d.efectos.flatMap((e) =>
+          e.tipo === "accion" && e.accion.resolucion.tipo === "enfrentada"
+            ? [e.accion.id, ...(e.accion.grupoExtra ? [`${e.accion.id}__${e.accion.grupoExtra.toLowerCase()}`] : [])]
+            : [],
+        ),
+      );
+    }
+    const alcances = ids.map(tiradaId);
+    porBlanco[b] = alcances;
+    return alcances;
   });
 }
 

@@ -8,6 +8,7 @@
 // consola interactiva, no formularios sueltos, y ahí conviene poder
 // mostrarle al máster por qué falló una acción.
 import { refresh, revalidatePath } from "next/cache";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireUser, canAdjustCombatiente } from "@/lib/auth-helpers";
 import {
@@ -23,6 +24,13 @@ import {
   estadosAlCerrarVuelta,
   pasarTurno,
   vidaTrasCambioDeEstados,
+  GRADOS,
+  bonosDeDisciplina,
+  esEstadoDePoder,
+  estadoPorId,
+  estadosPropiosDeUso,
+  modificadoresActivos,
+  nivelesDePsionica,
   type CategoriaDanio,
   type DuracionEstado,
   type InmuneAlAplicar,
@@ -542,4 +550,64 @@ export async function quitarEstadoEnCombateAction(input: {
 
   const { combatienteIds, estadoId, motivo } = parsed.data;
   return cambiarEstadosEnCombate(user.id, combatienteIds, { tipo: "quitar", estadoId }, motivo);
+}
+
+// --- Estados propios de los poderes de un NPC (P1 de psiónica) ---
+//
+// El mismo camino que la ficha del jugador (ponerEstadosDePoderAction), pero sobre la fila del
+// NPC en la cola (Combatiente.estados, por cambiarEstadosDeNpcs como los estados que pone el
+// máster a mano): la Contención al usarla, el Aturdido del fracaso crítico de Retrocognición y
+// el Estabilizado. Nunca se fía del cliente: con la ficha congelada del NPC (su foto) se vuelven
+// a calcular con estadosPropiosDeUso. «Terminar contención» quita solo estados de poder.
+const estadoDePoderNpcSchema = z.discriminatedUnion("tipo", [
+  z.object({
+    tipo: z.literal("poner"),
+    poderId: z.string().min(1).max(80),
+    elecciones: z.record(z.string().max(40), z.string().max(40)),
+    grado: z.enum(GRADOS).nullable(),
+  }),
+  z.object({ tipo: z.literal("quitar"), estadoId: z.string().min(1).max(60) }),
+]);
+
+export async function estadoDePoderNpcAction(
+  combatienteId: unknown,
+  operacion: unknown,
+): Promise<{ ok: true; mensaje: string | null } | { ok: false; error: string }> {
+  const user = await requireMaster();
+  if (!user) return { ok: false, error: "Solo el máster puede tocar los estados de un NPC." };
+  const id = z.string().min(1).max(60).safeParse(combatienteId);
+  const op = estadoDePoderNpcSchema.safeParse(operacion);
+  if (!id.success || !op.success) return { ok: false, error: "Datos no válidos" };
+  const fila = await prisma.combatiente.findUnique({
+    where: { id: id.data },
+    select: { characterId: true, sheet: true, estados: true },
+  });
+  if (!fila || fila.characterId !== null || !fila.sheet) return { ok: false, error: "Ese NPC ya no está en la cola." };
+  const estados = leerEstados(fila.estados);
+
+  if (op.data.tipo === "quitar") {
+    const estadoId = op.data.estadoId;
+    if (!esEstadoDePoder(estadoId)) return { ok: false, error: "Estado no válido" };
+    if (!estados.some((e) => e.estadoId === estadoId)) return { ok: true, mensaje: "Ya no estaba puesto." };
+    await cambiarEstadosDeNpcs([id.data], { tipo: "quitar", estadoId });
+    revalidateCombate();
+    return { ok: true, mensaje: `Se le quita ${estadoPorId(estadoId)?.label ?? estadoId}.` };
+  }
+
+  const sheet = parseSheet(fila.sheet);
+  const niveles = nivelesDePsionica(sheet, bonosDeDisciplina(modificadoresActivos(sheet))).paraEfectos;
+  const nuevos = estadosPropiosDeUso(sheet, niveles, op.data.poderId, op.data.elecciones, op.data.grado, estados);
+  if (nuevos.length === 0) return { ok: true, mensaje: null };
+  const puestos: string[] = [];
+  const inmune: string[] = [];
+  for (const estado of nuevos) {
+    const r = await cambiarEstadosDeNpcs([id.data], { tipo: "poner", estado });
+    (r.inmunes.length > 0 ? inmune : puestos).push(estadoPorId(estado.estadoId)?.label ?? estado.estadoId);
+  }
+  revalidateCombate();
+  const partes = [
+    puestos.length > 0 ? `Se le pone ${puestos.join(" y ")}.` : null,
+    inmune.length > 0 ? `Es inmune a ${inmune.join(" y ")}: no se le pone.` : null,
+  ];
+  return { ok: true, mensaje: partes.filter(Boolean).join(" ") };
 }

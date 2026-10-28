@@ -7,6 +7,7 @@ import { HudCard } from "@/components/HudCard";
 import { StatusControl } from "@/app/master/MasterControls";
 import { EstadoFichaChip } from "@/components/EstadoFichaChip";
 import { CharacterSheet } from "./CharacterSheet";
+import { mesaDeFicha } from "@/lib/mesaDeFicha";
 
 export default async function CharacterPage({
   params,
@@ -51,6 +52,8 @@ export default async function CharacterPage({
   // Si el personaje no tiene fila en este combate, no hay "su combate" que
   // enseñar (mismo criterio que la redacción original de la 3.1).
   const enCombate = combate?.combatientes.some((c) => c.characterId === character.id) ?? false;
+  // Aliados y turno de combate, para los límites de las acciones de dote (Apoyo: uno por aliado).
+  const mesa = await mesaDeFicha(character.id);
 
   return (
     <>
@@ -85,6 +88,7 @@ export default async function CharacterPage({
           estados={estados}
           vidaGuardada={{ vida: sheet.vidaActual, fatiga: sheet.fatigaActual }}
           combate={enCombate ? combate : null}
+          mesa={mesa}
           controlMaster={
             user.role === "MASTER" ? (
               <StatusControl characterId={character.id} status={character.status} />

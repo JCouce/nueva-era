@@ -174,7 +174,7 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_microprocesador_cuantico_de_enlace 2": 2,
     "aum_microprocesador_cuantico_de_enlace 3": 2,
     "aum_microprocesador_cuantico_de_enlace 4": 2,
-    "aum_enjambre_nanobot 2": 1, // Sanar grave, pendiente: falta el contador de 5 turnos (triaje 2026-10-28, #18)
+    "aum_enjambre_nanobot 2": 2, // Sanar letal y Sanar grave (contador de 5 pulsaciones, usuario 2026-10-28)
     // A4b: Incorporar arma, Tempestad Nanobótica y su nota del blindaje del objetivo.
     "aum_enjambre_nanobot 4": 2,
     // A5a: activables. Neuroprótesis 1 entera (activar, +1 a los tres, −1 a los penalizadores,

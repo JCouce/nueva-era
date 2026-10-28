@@ -73,7 +73,7 @@ import {
   type GradoFijoDeDote,
   type PermisosDeDotes,
 } from "./dotesEfectos";
-import { accionesDeDotes, type AccionesDeDotes } from "./dotesAcciones";
+import { accionesDeDotes, type AccionesDeDotes, type MesaDeFicha } from "./dotesAcciones";
 import { accionesDeAumentos, type AccionesDeAumentos } from "./aumentosAcciones";
 import { efectosDeActivables } from "./aumentosActivables";
 import { conUsosEscena, usosEscenaDeFicha } from "./usosEscena";
@@ -84,7 +84,9 @@ import { consultaIndiceCondiciones, indiceDeCondiciones, modificadoresDeEquipo, 
 import { casillasDeFarmacos } from "./farmacos";
 import { inmunidadesDe } from "./inmunidades";
 import {
+  ajusteUmbralesDeEstabilizado,
   describirEstados,
+  estabilizacionPuesta,
   estadosConEfecto,
   estadosDerivados,
   modificadoresDeEstados,
@@ -256,7 +258,15 @@ export type FichaResuelta = {
 // del NPC; mueven también la vida y la fatiga máximas.
 // `aprobada`: la ficha está aprobada (Character.status === "APPROVED") y sube con XP. Solo
 // cambia ajusteCosteSubida (rebajas de los aumentos, A1). Sin él, borrador.
-export type OpcionesFicha = { estados: EstadoActivo[]; vitalidad: VitalidadActual; libre?: boolean; aprobada?: boolean };
+// `mesa`: los aliados y el turno de combate de un jugador, para contar los límites de sus
+// acciones de dote (dotesAcciones.ts). Sin ella (NPC, editor), los límites son texto.
+export type OpcionesFicha = {
+  estados: EstadoActivo[];
+  vitalidad: VitalidadActual;
+  libre?: boolean;
+  aprobada?: boolean;
+  mesa?: MesaDeFicha | null;
+};
 
 // De dónde salen la vida y la fatiga para los umbrales (§7). Fuera de combate, las de
 // la ficha (vidaActual/fatigaActual) contra los máximos que resuelve esta misma
@@ -272,15 +282,11 @@ export const VITALIDAD_DE_FICHA: VitalidadActual = { origen: "ficha" };
 // TODO(revisar): S28 y S29 de docs/sistema.md (redondeo y orden con la especie).
 const reducir = (valor: number, fraccion: number) => Math.floor(valor * (1 - fraccion));
 
-// Algún penalizador de estado, heridas o fatiga en las tiradas: lo que hace salir la casilla
-// «Estabilizado» (casillasDePsionica).
-const tienePenalizadores = (mods: ModificadorConFuente[]) => mods.some((m) => m.tipo === "tirada" && m.origen === "estado" && m.valor < 0);
-
 const SIN_PIEZAS_INUTILIZADAS: ReadonlyMap<string, string> = new Map();
 
 export function resolverFicha(
   sheet: Sheet,
-  { estados, vitalidad, libre = false, aprobada = false }: OpcionesFicha,
+  { estados, vitalidad, libre = false, aprobada = false, mesa = null }: OpcionesFicha,
 ): FichaResuelta {
   const especie = especieDeFicha(sheet);
   const formulaMovimiento = formulaMovimientoDeEspecie(especie);
@@ -298,13 +304,17 @@ export function resolverFicha(
   const activas = dotesActivas(sheet, valoresDotes);
   // Los bonos con umbral (D2d) miran la ficha con la especie también en el NPC.
   const dotes = efectosDeDotes(activas, valoresDotes, requisitosDotes);
+  const conEfecto = estadosConEfecto(estados, inmunidades);
+  // Estabilizado (Estabilización, mitigar): reduce los estados que tenía al ponérselo y, desde
+  // nv4, quita heridas y fatiga.
+  const estabilizado = estabilizacionPuesta(conEfecto);
   // = [...modificadoresActivos(sheet), ...estados], sin volver a resolver la especie.
   const sinTope: ModificadorConFuente[] = [
     ...(especie?.modificadores ?? []),
     ...dotes.modificadores,
     ...modificadoresDeEquipo(sheet),
     ...deAumentos,
-    ...modificadoresDeEstados(estadosConEfecto(estados, inmunidades), activables.reduceEstados),
+    ...modificadoresDeEstados(conEfecto, activables.reduceEstados, estabilizado),
     ...activables.modificadores,
   ];
   // Tope de Agilidad de la armadura (S93): detrás de todo lo demás, para que aplicados,
@@ -329,6 +339,7 @@ export function resolverFicha(
     ajusteUmbralesDeEspecie(especie),
     ajusteUmbralesDeAumentos(sheet),
     activables.ajusteUmbrales,
+    ajusteUmbralesDeEstabilizado(estabilizado),
   );
   const modificadores = [
     ...sinUmbrales,
@@ -380,14 +391,14 @@ export function resolverFicha(
     blindaje: {
       tieneEscudoMelee: tieneEscudoMelee(sheet),
       armaduraNatural: armaduraNaturalDeEspecie(especie),
-      contencion: absorcionDeContencion(estadosConEfecto(estados, inmunidades)),
+      contencion: absorcionDeContencion(conEfecto),
     },
     indiceCondiciones: indiceDeCondiciones(sheet, [
       ...casillasDeEspecie(especie),
       ...dotes.casillas,
       ...conUsosEscena(casillasDeAumentos(sheet, activables.salvaciones, salvacionesDeEquipo(sheet)), sheet.usosEscena),
       ...casillasDeFarmacos(sheet),
-      ...casillasDePsionica(psionica.paraEfectos, tienePenalizadores(modificadores)),
+      ...casillasDePsionica(psionica.paraEfectos),
     ]),
     textosTirada: [...textosDeEspecie(especie), ...dotes.textos, ...textosDeAumentos(sheet), ...activables.textos],
     ventajasFijas: ventajasFijasDeAumentos(sheet),
@@ -400,10 +411,10 @@ export function resolverFicha(
       grados: dotes.grados,
       alternativas: dotes.alternativas,
     },
-    accionesDotes: accionesDeDotes(activas),
+    accionesDotes: accionesDeDotes(activas, { usosEscena: sheet.usosEscena, mesa }),
     poderesDotes: poderesDeDotes(activas, sheet, psionica.paraEfectos),
     accionesAumentos: accionesDeAumentos(sheet, estados),
-    usosEscena: usosEscenaDeFicha(sheet),
+    usosEscena: usosEscenaDeFicha(sheet, mesa?.aliados),
     ajusteCoste,
     ajusteCosteSubida: libre ? AJUSTE_NEUTRO : ajusteCosteDeSubida(ajusteCoste, sheet, aprobada),
     bolsaAumentos: libre ? null : bolsaResuelta(bolsaDeAumentos(especie), sheet.bolsaAumentosGastada),

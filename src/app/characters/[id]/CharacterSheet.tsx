@@ -38,6 +38,7 @@ import {
   ajustarFatigaTemporalAction,
   terminarEscenaAction,
   gastarUsosEscenaAction,
+  gastarUsoLimitadoAction,
   liberarUsoEscenaAction,
   usarAccionAumentoAction,
   ponerEstadosDePoderAction,
@@ -76,6 +77,7 @@ import {
   ajustarFatigaTemporal,
   terminarEscena,
   gastarUsosEscena,
+  gastarUsoLimitado,
   liberarUsoEscena,
   RECURSOS_POR_LETRA,
   estadosParaPintar,
@@ -98,7 +100,7 @@ import {
   type DoteComprada,
   type EstadoActivo,
 } from "@/lib/rules";
-import type { ExtraAccionAumento, OperacionEstadoDePoder, Sheet } from "@/lib/rules";
+import type { ExtraAccionAumento, MesaDeFicha, OperacionEstadoDePoder, Sheet, UsoLimitado } from "@/lib/rules";
 import { PersonajeTab, PanelFieldset } from "./_components/personaje/PersonajeTab";
 import { AvisoEnRevision } from "./_components/RevisionFicha";
 import { EstadoFichaChip } from "@/components/EstadoFichaChip";
@@ -147,6 +149,7 @@ export function CharacterSheet({
   estados,
   vidaGuardada,
   combate,
+  mesa,
   controlMaster,
 }: {
   characterId: string;
@@ -173,6 +176,9 @@ export function CharacterSheet({
   // tiene fila dentro (fase 6b bloque 3) — en los dos casos, nada de
   // combate se enseña en la ficha.
   combate: CombateView | null;
+  // Aliados (los otros personajes en juego) y turno del combate en curso: los límites de las
+  // acciones de dote (lib/mesaDeFicha.ts).
+  mesa: MesaDeFicha;
   // Aprobar/devolver del máster: en escritorio va en la columna izquierda (en móvil lo
   // pinta page.tsx encima de la ficha).
   controlMaster?: ReactNode;
@@ -534,6 +540,15 @@ export function CharacterSheet({
       return res;
     });
   };
+  // Límites de las acciones de dote: el uso se gasta al tirar. La ficha local se adelanta con la
+  // misma regla; el servidor lo vuelve a calcular con su ficha y su mesa.
+  const commitGastarUsoLimitado = (uso: UsoLimitado, aliadoId: string | null) => {
+    setSheet((s) => {
+      const r = gastarUsoLimitado(s, uso, aliadoId, mesa.aliados);
+      return r.ok ? r.sheet : s;
+    });
+    runSave(() => gastarUsoLimitadoAction(characterId, { accionId: uso.accionId, aliadoId }), setSheet);
+  };
   const commitComprarGranada = (catalogoId: string) => {
     runSave(() => comprarGranadaAction(characterId, catalogoId), setSheet);
   };
@@ -639,7 +654,7 @@ export function CharacterSheet({
         : VITALIDAD_DE_FICHA,
     [miCombatiente],
   );
-  const ficha = useFichaResuelta(sheet, estados, vitalidad, { aprobada });
+  const ficha = useFichaResuelta(sheet, estados, vitalidad, { aprobada, mesa });
   const puntosAttr = puntosAtributosDisponibles(sheet);
   // Con el ajuste de coste de la especie (§14.6), el mismo que aplica el servidor.
   const puntosSkill = puntosHabilidadesDisponibles(sheet, ficha.ajusteCoste);
@@ -818,6 +833,7 @@ export function CharacterSheet({
             onGastarUsosEscena={commitGastarUsosEscena}
             onUsarAccionAumento={commitUsarAccionAumento}
             onEstadoDePoder={commitEstadoDePoder}
+            onGastarUsoLimitado={commitGastarUsoLimitado}
             onMarcarFavorita={commitMarcarFavorita}
             soloLectura={soloLectura}
             cabina={cabina}

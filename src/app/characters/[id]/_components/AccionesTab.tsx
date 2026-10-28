@@ -40,9 +40,11 @@ import {
   SELECCION_PODER_VACIA,
   ID_ACCION_REPETIDA,
   ID_ELECCION_ACTIVABLE,
+  ID_ALIADO_DOTE,
   type SeleccionPoder,
   type EfectosDeUso,
   type OperacionEstadoDePoder,
+  type UsoLimitado,
   type Grado,
   type PeajeDeUso,
   type CategoriaDanio,
@@ -668,6 +670,7 @@ export function AccionesTab({
   onGastarUsosEscena,
   onUsarAccionAumento,
   onEstadoDePoder,
+  onGastarUsoLimitado,
   onMarcarFavorita,
   libre = false,
   soloLectura = false,
@@ -738,9 +741,13 @@ export function AccionesTab({
   // devuelve qué ha pasado por `onMensaje`. Sin él (NPC), se paga la fatiga con onPagarFatiga.
   onUsarAccionAumento?: (accionId: string, onMensaje: (mensaje: string) => void, extra?: ExtraAccionAumento) => void;
   // Estados propios de los poderes (P1 de psiónica: Contención al usarla, Aturdido del fracaso
-  // crítico de Retrocognición, «Terminar contención»): los pone y quita el servidor. Sin él (NPC),
-  // el máster los pone desde su panel.
+  // crítico de Retrocognición, Estabilizado, «Terminar contención»): los pone y quita el
+  // servidor, en la ficha del jugador o en la fila del NPC (NpcAccionesPanel). Sin él, no se
+  // pone nada.
   onEstadoDePoder?: (op: OperacionEstadoDePoder, onMensaje: (mensaje: string) => void) => void;
+  // Límites de las acciones de dote (Accion.usoLimitado): se gastan al tirar, con el aliado del
+  // selector si va por aliado. Sin él (NPC), el límite es texto.
+  onGastarUsoLimitado?: (uso: UsoLimitado, aliadoId: string | null) => void;
   // Acciones favoritas (T-006), guardadas en sheet.favoritas. Solo lo pasa CharacterSheet: sin
   // él (NPC, combate del máster) no hay estrellas ni pestaña Favoritas.
   onMarcarFavorita?: (id: string, marcada: boolean) => void;
@@ -996,6 +1003,8 @@ export function AccionesTab({
   const aplicarUso = (e: EfectosDeUso, modo: "uso" | "prolongar"): number => {
     const nuevo = e.peaje ? [{ peaje: e.peaje, salvacion: null }] : [];
     setPeajes((ps) => (modo === "uso" ? nuevo : [...ps, ...nuevo]));
+    // El estado propio (Contención) también sin onPagarFatiga: el NPC de la consola lo recibe.
+    if (e.estadoPropio && poderAbierto && preparado) ponerEstadosDePoder(poderAbierto.poder.accion.id, preparado.seleccion.elecciones, null);
     if (!onPagarFatiga) return e.fatiga.pagar;
     if (e.fatiga.pagar > 0) onPagarFatiga(e.fatiga.pagar, e.fatiga.temporal);
     if (e.cargas) onGastarRecurso?.(e.cargas.instanciaId, -e.cargas.gastar);
@@ -1003,7 +1012,6 @@ export function AccionesTab({
     if (e.sobrecarga.tipo === "salta") setSobrecarga({ nivel: e.sobrecarga.nivel, salvacion: null });
     else if (e.sobrecarga.tipo === "reiniciar") setSobrecarga(null);
     setAvisosPoder(e.avisos);
-    if (e.estadoPropio && poderAbierto && preparado) ponerEstadosDePoder(poderAbierto.poder.accion.id, preparado.seleccion.elecciones, null);
     return e.fatiga.pagar;
   };
 
@@ -1239,6 +1247,11 @@ export function AccionesTab({
     if (montada.costeFatiga > 0) onPagarFatiga?.(montada.costeFatiga, false);
     // Casillas "una vez por escena" (A4a): se gastan aquí, al tirar, no al marcarlas.
     if (montada.usosEscena.length > 0) onGastarUsosEscena?.(montada.usosEscena);
+    // Límite de una acción de dote (1 por escena, por aliado, por turno): se gasta al tirar.
+    if (tirada.usoLimitado) {
+      const aliado = estadoCondiciones[ID_ALIADO_DOTE];
+      onGastarUsoLimitado?.(tirada.usoLimitado, typeof aliado === "string" ? aliado : null);
+    }
     if (tirada.grupo === "Psiónica" && preparado) {
       pagarPoder("uso", montada.ahorroSinUsar);
       // Daño propio que depende del resultado (fracaso crítico del Sondeo).

@@ -6,10 +6,8 @@
 import type { MotorMetadata } from "../rules/motor";
 import type { Estado } from "./estados";
 import type { AlcanceModificador } from "../rules/modificadores";
-import type { CondicionTirada, OpcionCondicion } from "../rules/condiciones";
 import type {
   AccionPoder,
-  CasillaDePoder,
   CambiosOpcion,
   CatalogoPsionica,
   Disciplina,
@@ -17,6 +15,8 @@ import type {
   EjePoder,
   ModificadorFatiga,
   Opcion,
+  ResultadoPoder,
+  Valor,
 } from "../rules/psionica";
 
 export const DISCIPLINA_IDS = ["resonancia", "induccion", "hipercognicion", "traslacion", "contencion", "singularidad"] as const;
@@ -489,12 +489,12 @@ const RASTREO: AccionPoder = {
 
 // Las tiradas enfrentadas a otro personaje en las que cabe el +2 de Leer Mente: ataques y
 // defensas (reglas-base: "las acciones defensivas se resuelven de forma enfrentada a las de
-// ataque"), los poderes (Inducción, Sincronía, Duelo…) y las fijas que la fuente da como
-// enfrentadas. La app no sabe contra quién se tira: el jugador la marca si es contra el leído.
-// TODO(revisar): la prosa dice "tiradas enfrentadas contra el objetivo" sin lista; las de grupo
-// Dotes (Fintar…) no están, y el grupo Psiónica incluye poderes que no son enfrentados.
+// ataque"), las fijas que la fuente da como enfrentadas y, por sus datos (blancos de
+// CasillaDePoder), los poderes y las acciones de dote con resolución "enfrentada" (Inducción,
+// Duelo de Métrica, Finta, Burla…). La app no sabe contra quién se tira: el jugador la marca si
+// es contra el leído.
 const ENFRENTADAS_FIJAS = ["social", "discernir_mentiras", "resistir_distraccion", "iniciativa_distraccion", "sigilo", "hurto"];
-const ALCANCES_ENFRENTADAS: AlcanceModificador[] = [grupo("Ataques"), grupo("Defensa"), grupo("Psiónica"), ...ENFRENTADAS_FIJAS.map(tirada)];
+const ALCANCES_ENFRENTADAS: AlcanceModificador[] = [grupo("Ataques"), grupo("Defensa"), ...ENFRENTADAS_FIJAS.map(tirada)];
 
 // Enfrentada: los grados van desde el punto de vista del psiónico (su fracaso =
 // el objetivo salva con éxito, que aún deja 1 turno de lectura).
@@ -535,11 +535,17 @@ const LEER_MENTE: AccionPoder = {
       lugar: "tirada",
     },
   ],
-  casillasEnTiradas: [{ alcances: ALCANCES_ENFRENTADAS, condicion: { id: "psi_mente_leida", tipo: "toggle", etiqueta: "Mente leída (+2 contra el objetivo leído)", valorActivo: 2 } }],
+  casillasEnTiradas: [
+    {
+      alcances: ALCANCES_ENFRENTADAS,
+      blancos: ["poderes_enfrentados", "dotes_enfrentadas"],
+      condicion: { id: "psi_mente_leida", tipo: "toggle", etiqueta: "Mente leída (+2 contra el objetivo leído)", valorActivo: 2 },
+    },
+  ],
   motor: motorDeAccion(LEER_MENTE_ID, {
     propias: true,
     tercero: ["salv_voluntad"],
-    extra: motorDeCasilla("numerico", ["grupo:Ataques", "grupo:Defensa", "grupo:Psiónica", ...ENFRENTADAS_FIJAS]),
+    extra: motorDeCasilla("numerico", ["grupo:Ataques", "grupo:Defensa", "poderes:enfrentada", "dotes:enfrentada", ...ENFRENTADAS_FIJAS]),
   }),
 };
 
@@ -1140,42 +1146,62 @@ const SUPRESION: AccionPoder = {
   motor: motorDeAccion(SUPRESION_ID, { propias: true }),
 };
 
-// Selector «Estabilizado» (P1, 2026-10-28): lo que dejó la Estabilización (mitigar) en cada
-// tirada mientras dura. Opción y no casilla: éxito y crítico reducen distinto.
-// TODO(revisar): en nv6 la prosa no quita "los penalizadores que llegues a sufrir después";
-// la app no sabe cuáles son, así que el jugador lo tiene en cuenta (lo dice la opción).
-const ESTABILIZADO_ID = "psi_estabilizado";
-const ESTABILIZADO: Pick<CasillaDePoder, "alcances" | "soloConPenalizadores"> = { alcances: [{ tipo: "todas" }], soloConPenalizadores: true };
-const NO_ESTABILIZADO: OpcionCondicion = { id: "no", etiqueta: "No", valor: 0, sinValor: true };
-const estabilizado = (umbrales: boolean): CondicionTirada =>
-  ({
-    id: ESTABILIZADO_ID,
-    tipo: "opcion",
-    etiqueta: "Estabilizado",
-    porDefecto: "no",
-    opciones: [
-      NO_ESTABILIZADO,
-      { id: "exito", etiqueta: "Con éxito", valor: 0, sinValor: true, reducePenalizadores: { porEstado: 1, ...(umbrales && { umbrales: true as const }) } },
-      { id: "critico", etiqueta: "Con crítico", valor: 0, sinValor: true, reducePenalizadores: { porEstado: 2, ...(umbrales && { umbrales: true as const }) } },
+// Estado «Estabilizado» (Estabilización, mitigar; usuario 2026-10-28): la tirada tiene
+// dificultad fija, así que la app conoce el resultado y, al superarla, lo pone sobre el
+// psiónico (estadosDelResultado, usoPoder.ts) con el grado del resultado y del tramo de nivel.
+// Reduce los penalizadores de tirada de los estados que el psiónico tenía al usarla
+// (EstadoActivo.cubre), cada uno por separado y sin pasar de 0; los que lleguen después, no
+// (prosa de nv6). Desde nv4, además fuera heridas y fatiga. Lo aplica resolverFicha
+// (estabilizacionPuesta, estados.ts).
+export const ESTADO_ESTABILIZADO_ID = "psi_estabilizado";
+// `porEstado` 99 = todos (nv6).
+const GRADOS_ESTABILIZADO = [
+  { id: "exito", label: "Éxito", porEstado: 1, umbrales: false },
+  { id: "critico", label: "Crítico", porEstado: 2, umbrales: false },
+  { id: "exito_nv4", label: "Éxito, nivel 4", porEstado: 1, umbrales: true },
+  { id: "critico_nv4", label: "Crítico, nivel 4", porEstado: 2, umbrales: true },
+  { id: "exito_nv6", label: "Éxito, nivel 6", porEstado: 99, umbrales: true },
+  { id: "critico_nv6", label: "Crítico, nivel 6", porEstado: 99, umbrales: true },
+] as const;
+
+export function reduccionDeGradoEstabilizado(gradoId: string): { porEstado: number; umbrales: boolean } | null {
+  const g = GRADOS_ESTABILIZADO.find((x) => x.id === gradoId);
+  return g ? { porEstado: g.porEstado, umbrales: g.umbrales } : null;
+}
+
+const ESTADO_ESTABILIZADO: Estado = {
+  id: ESTADO_ESTABILIZADO_ID,
+  label: "Estabilizado",
+  resumen: "Estabilización sobre uno mismo: menos penalizadores de los estados que tenías al usarla, mientras dure.",
+  grados: GRADOS_ESTABILIZADO.map((g) => ({
+    id: g.id,
+    label: g.label,
+    modificadores: [],
+    detalle: [
+      (g.porEstado >= 99
+        ? "Sin penalizadores de los estados que tenías al usarla"
+        : `−${g.porEstado} a cada penalizador de los estados que tenías al usarla (sin pasar de 0)`) +
+        (g.umbrales ? ", y sin los de heridas ni fatiga." : "."),
+      "Los estados que te pongan después penalizan entero.",
     ],
-  });
-const ESTABILIZADO_6: CondicionTirada = {
-  id: ESTABILIZADO_ID,
-  tipo: "opcion",
-  etiqueta: "Estabilizado",
-  porDefecto: "no",
-  opciones: [
-    NO_ESTABILIZADO,
-    {
-      id: "exito",
-      etiqueta: "Superada",
-      valor: 0,
-      sinValor: true,
-      reducePenalizadores: { porEstado: 99, umbrales: true },
-      nota: "No quita los penalizadores de estados que te pongan después de usarla: esos, réstalos en el circunstancial.",
-    },
-  ],
+    duracionTurnos: null,
+  })),
 };
+
+// El estado de cada resultado de mitigar, por tramo de nivel poseído. Duración de la prosa: nv1
+// "1 minuto" (10 turnos, 1 minuto = 10 turnos como en Leer Mente o la Regeneración), nv2-3 "10
+// minutos por nivel de poder" (100 turnos por nivel poseído), nv4+ "30 minutos", que es una
+// escena (una hora = una escena; usuario, 2026-10-28).
+const estabilizadoAlSuperar = (grado: string, duracion: Valor, escena = false): ResultadoPoder["estados"] => [
+  { estado: ESTADO_ESTABILIZADO_ID, grado, duracion, sobre: "propio", apuntaEstados: true, ...(escena && { escena: true as const }) },
+];
+const ajusteEstabilizado = (desdeNivel: number, grado: "exito" | "critico", sufijo: string, duracion: Valor, escena = false) => ({
+  desdeNivel,
+  opcion: { eje: "uso", opcion: "mitigar" },
+  sobre: `resultados.${grado}.estados`,
+  op: "sustituye" as const,
+  valor: estabilizadoAlSuperar(`${grado}${sufijo}`, duracion, escena),
+});
 
 // Estabilización: la Supresión sobre uno mismo, dificultad 6, 1 de fatiga
 // (usuario, 2026-09-29). Duraciones tal cual la prosa (10 y 30 minutos, sin "×
@@ -1214,7 +1240,12 @@ const ESTABILIZACION: AccionPoder = {
           id: "mitigar",
           label: "Mitigar penalizadores",
           cambia: {
-            notas: [{ texto: "Si la superas, marca el selector «Estabilizado» de tus tiradas mientras dure (sale cuando tienes penalizadores).", lugar: "tirada" }],
+            notas: [
+              {
+                texto: "Si la superas, se te pone el estado «Estabilizado»: reduce los penalizadores de los estados que tienes ahora, no los que te pongan después.",
+                lugar: "tirada",
+              },
+            ],
           },
         },
         {
@@ -1232,35 +1263,42 @@ const ESTABILIZACION: AccionPoder = {
     },
   ],
   ajustesPorNivelPoseido: [
-    { desdeNivel: 2, opcion: { eje: "uso", opcion: "mitigar" }, sobre: "duracion", op: "sustituye", valor: { manual: "10 minutos" } },
-    { desdeNivel: 4, opcion: { eje: "uso", opcion: "mitigar" }, sobre: "duracion", op: "sustituye", valor: { manual: "30 minutos" } },
+    { desdeNivel: 2, opcion: { eje: "uso", opcion: "mitigar" }, sobre: "duracion", op: "sustituye", valor: { manual: "10 minutos por nivel" } },
+    { desdeNivel: 4, opcion: { eje: "uso", opcion: "mitigar" }, sobre: "duracion", op: "sustituye", valor: { manual: "30 minutos (una escena)" } },
+    // El estado «Estabilizado» de cada tramo (grado y duración); en salvación no hay estado.
+    ajusteEstabilizado(2, "exito", "", { base: 0, porNivelPoseido: 100 }),
+    ajusteEstabilizado(2, "critico", "", { base: 0, porNivelPoseido: 100 }),
+    ajusteEstabilizado(4, "exito", "_nv4", 0, true),
+    ajusteEstabilizado(4, "critico", "_nv4", 0, true),
+    ajusteEstabilizado(6, "exito", "_nv6", 0, true),
+    ajusteEstabilizado(6, "critico", "_nv6", 0, true),
     {
       desdeNivel: 4,
       opcion: { eje: "uso", opcion: "mitigar" },
       sobre: "resultados.exito.texto",
       op: "sustituye",
-      valor: "Reduces en 1 tus penalizadores por estados mientras dure y omites por completo los de daño y fatiga",
+      valor: "Reduces en 1 tus penalizadores por estados mientras dure y omites por completo los de daño y fatiga (se te pone «Estabilizado»)",
     },
     {
       desdeNivel: 4,
       opcion: { eje: "uso", opcion: "mitigar" },
       sobre: "resultados.critico.texto",
       op: "sustituye",
-      valor: "Reduces en 2 tus penalizadores por estados mientras dure y omites por completo los de daño y fatiga",
+      valor: "Reduces en 2 tus penalizadores por estados mientras dure y omites por completo los de daño y fatiga (se te pone «Estabilizado»)",
     },
     {
       desdeNivel: 6,
       opcion: { eje: "uso", opcion: "mitigar" },
       sobre: "resultados.exito.texto",
       op: "sustituye",
-      valor: "Eliminas por completo tus penalizadores por estados mientras dure (no los que llegues a sufrir después) y omites los de daño y fatiga",
+      valor: "Eliminas por completo tus penalizadores por estados mientras dure (no los que llegues a sufrir después) y omites los de daño y fatiga (se te pone «Estabilizado»)",
     },
     {
       desdeNivel: 6,
       opcion: { eje: "uso", opcion: "mitigar" },
       sobre: "resultados.critico.texto",
       op: "sustituye",
-      valor: "Eliminas por completo tus penalizadores por estados mientras dure (no los que llegues a sufrir después) y omites los de daño y fatiga",
+      valor: "Eliminas por completo tus penalizadores por estados mientras dure (no los que llegues a sufrir después) y omites los de daño y fatiga (se te pone «Estabilizado»)",
     },
     // El +3/+4 solo como reacción (prosa de nv4 y nv6); como acción simple sigue el +2.
     {
@@ -1284,21 +1322,20 @@ const ESTABILIZACION: AccionPoder = {
       valor: "+4 a tu salvación: márcalo en la casilla «+4 por Estabilización» de la salvación",
     },
   ],
+  // Mitigar: al superarla, el estado «Estabilizado» sobre el psiónico (se pone solo; ver
+  // ESTADO_ESTABILIZADO). Éxito −1 y crítico −2 a cada penalizador de los estados que tenía;
+  // desde nv4 además fuera heridas y fatiga; en nv6 fuera todos. El +2/+3/+4 a la salvación
+  // sigue en `bonosEnOtrasTiradas`.
   resultados: {
-    critico: { texto: "Reduces en 2 tus penalizadores por estados mientras dure", estados: [] },
-    exito: { texto: "Reduces en 1 tus penalizadores por estados mientras dure", estados: [] },
+    critico: { texto: "Reduces en 2 tus penalizadores por estados mientras dure (se te pone «Estabilizado»)", estados: estabilizadoAlSuperar("critico", 10) },
+    exito: { texto: "Reduces en 1 tus penalizadores por estados mientras dure (se te pone «Estabilizado»)", estados: estabilizadoAlSuperar("exito", 10) },
     fracaso: { texto: "Sin efecto", estados: [] },
   },
   notas: [],
-  // Mitigar (P1): el selector «Estabilizado» en las tiradas con penalizadores, por tramo de
-  // nivel. Éxito −1 y crítico −2 a cada penalizador de estado; desde nv4 además fuera heridas y
-  // fatiga; en nv6 fuera todos. El +2/+3/+4 a la salvación sigue en `bonosEnOtrasTiradas`.
-  casillasEnTiradas: [
-    { ...ESTABILIZADO, hastaNivelPoseido: 3, condicion: estabilizado(false) },
-    { ...ESTABILIZADO, desdeNivelPoseido: 4, hastaNivelPoseido: 5, condicion: estabilizado(true) },
-    { ...ESTABILIZADO, desdeNivelPoseido: 6, condicion: ESTABILIZADO_6 },
-  ],
-  motor: motorDeAccion(ESTABILIZACION_ID, { propias: true, extra: motorDeCasilla("resolucion", ["todas"]) }),
+  motor: motorDeAccion(ESTABILIZACION_ID, {
+    propias: true,
+    extra: [{ tipo: "resolucion", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "siempre_activo", estado: "construido" }],
+  }),
 };
 
 const estabilizacionEnSalvacion = (valor: number, desde: number, hasta?: number, como?: string) => ({
@@ -1499,8 +1536,8 @@ const RETROCOGNICION: AccionPoder = {
       estados: [],
     },
     fracaso: { texto: "Eco difuso: poca información útil y un leve mareo; salvación de Voluntad contra 6 o quedas aturdido", estados: [] },
-    // Aturdido sin salvación: el grado "fracaso" del estado, el normal de quien no lo evita.
-    // TODO(revisar): la prosa no da grado; "fracaso crítico" del estado sería −2 a la defensa.
+    // Aturdido sin salvación: el grado "fracaso" del estado; sin salvación cuenta como
+    // fallarla (usuario, 2026-10-28).
     fracasoCritico: {
       texto: "Contaminación mnemónica: tomas por cierta una superposición errónea de datos y quedas aturdido 1 turno (se te pone solo)",
       estados: [{ estado: "aturdido", grado: "fracaso", duracion: 1, sobre: "propio" }],
@@ -1550,7 +1587,7 @@ const PRECOGNICION: AccionPoder = {
   },
   notas: [
     {
-      texto: "Mientras dure, marca el resultado en el selector «Precognición» de tus ataques y defensas (el fracaso, solo el turno siguiente). Las salvaciones no cuentan como tiradas defensivas.",
+      texto: "Mientras dure, marca el resultado en el selector «Precognición» de tus ataques, poderes de ataque y defensas (el fracaso, solo el turno siguiente). Las salvaciones no cuentan como tiradas defensivas.",
       lugar: "tirada",
     },
     { texto: "Interferencias físicas o electromagnéticas masivas suben la dificultad (la dice el máster).", lugar: "tirada" },
@@ -1558,6 +1595,7 @@ const PRECOGNICION: AccionPoder = {
   casillasEnTiradas: [
     {
       alcances: [grupo("Ataques"), grupo("Defensa")],
+      blancos: ["poderes_de_ataque"],
       condicion: {
         id: "psi_precognicion",
         tipo: "opcion",
@@ -1575,9 +1613,9 @@ const PRECOGNICION: AccionPoder = {
       },
     },
   ],
-  // TODO(revisar): los poderes de ataque (Singularidad, Anclaje…) también son tiradas ofensivas
-  // y el selector no les llega (grupo Psiónica, que mezcla de todo).
-  motor: motorDeAccion(PRECOGNICION_ID, { propias: true, extra: motorDeCasilla("numerico", ["grupo:Ataques", "grupo:Defensa"]) }),
+  // Los poderes de ataque (blanco "poderes_de_ataque": Proyección, Singularidad, Anclaje) son
+  // tiradas ofensivas: también llevan el selector.
+  motor: motorDeAccion(PRECOGNICION_ID, { propias: true, extra: motorDeCasilla("numerico", ["grupo:Ataques", "grupo:Defensa", "poderes:ataque"]) }),
 };
 
 const HIPERCOGNICION: Disciplina = {
@@ -1631,8 +1669,9 @@ const ANCLAJE: AccionPoder = {
   objetivo: { tipo: "unico" },
   desplazamiento: null,
   // La prosa lo trata como ataque a distancia sin daño (usuario, 2026-09-30): el
-  // objetivo esquiva; lo enfrentado es luego el escape.
+  // objetivo esquiva; lo enfrentado es luego el escape. Ofensivo (Precognición).
   resolucion: { tipo: "tirada", aplicado: "perspicacia", habilidad: "tecnociencia", especialidad: "fisica" },
+  contraLaDefensa: true,
   objetivoTira: [
     { que: "Esquiva con Reflejos + Atletismo contra el ataque a distancia" },
     {
@@ -2156,6 +2195,7 @@ export function absorcionDeGradoContencion(gradoId: string): number | null {
 }
 
 export const ESTADOS_DE_PODER: Estado[] = [
+  ESTADO_ESTABILIZADO,
   {
     id: ESTADO_CONTENCION_ID,
     label: "Contención",

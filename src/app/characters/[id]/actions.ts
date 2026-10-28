@@ -122,7 +122,11 @@ import {
   estadosPropiosDeUso,
   esEstadoDePoder,
   estadoPorId,
+  resolverFicha,
+  VITALIDAD_DE_FICHA,
+  gastarUsoLimitado,
 } from "@/lib/rules";
+import { mesaDeFicha } from "@/lib/mesaDeFicha";
 
 export type SaveResult =
   // `mensaje`: qué ha pasado, cuando no basta con ver la ficha (acciones de aumento, A4a).
@@ -674,6 +678,30 @@ export async function liberarUsoEscenaAction(characterId: string, id: unknown): 
   return persist(characterId, liberarUsoEscena(ctx.sheet, parsed.data));
 }
 
+// Límites de las acciones de dote (dotesAcciones.ts; usuario, 2026-10-28): "N por escena", "1 por
+// aliado" (Apoyo) y "N por turno" en combate. Se gasta al tirar. No se fía del cliente: la acción
+// y su límite salen de la ficha guardada resuelta con su mesa (aliados en juego y turno del
+// combate en curso, lib/mesaDeFicha.ts); agotada, o con un aliado que no es de la mesa, no gasta.
+const usoLimitadoSchema = z.object({
+  accionId: z.string().min(1).max(80),
+  aliadoId: z.string().min(1).max(40).nullable(),
+});
+
+export async function gastarUsoLimitadoAction(characterId: string, entrada: unknown): Promise<SaveResult> {
+  const parsed = usoLimitadoSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Datos no válidos" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const mesa = await mesaDeFicha(characterId);
+  const ficha = resolverFicha(ctx.sheet, { estados: ctx.estados, vitalidad: VITALIDAD_DE_FICHA, aprobada: ctx.aprobada, mesa });
+  const tirada = ficha.accionesDotes.tiradas.find((t) => t.usoLimitado?.accionId === parsed.data.accionId);
+  if (!tirada?.usoLimitado) return { ok: false, error: "Esa acción no tiene un límite que contar." };
+  if (tirada.bloqueada) return { ok: false, error: tirada.bloqueada };
+  const r = gastarUsoLimitado(ctx.sheet, tirada.usoLimitado, parsed.data.aliadoId, mesa.aliados);
+  if (!r.ok) return { ok: false, error: r.error };
+  return persist(characterId, r.sheet);
+}
+
 // Acciones favoritas (T-006): preferencia del jugador, sin regla detrás, pero pasa por
 // loadEditable como cualquier otro cambio (permisos y ficha en revisión). Se fija el valor
 // (marcada o no) en vez de alternar, para que reintentar no lo invierta.
@@ -739,7 +767,8 @@ export async function usarAccionAumentoAction(characterId: string, accionId: unk
 }
 
 // Estados propios de los poderes (P1 de psiónica, 2026-10-28): la Contención al usarla (`grado`
-// null) y el Aturdido del fracaso crítico de Retrocognición (`grado` de la tirada). Nunca se
+// null), el Aturdido del fracaso crítico de Retrocognición y el Estabilizado de la
+// Estabilización, que apunta los estados que ya tiene (`grado` de la tirada). Nunca se
 // fía del cliente: con la ficha guardada, los vuelve a calcular estadosPropiosDeUso (poder que
 // la ficha tiene, con su requisito sano, y las elecciones del modal). El grado lo dice el
 // cliente, como cualquier tirada de la ficha. Por el mismo camino que los activables de aumento
@@ -758,7 +787,7 @@ export async function ponerEstadosDePoderAction(characterId: string, entrada: un
   if ("error" in ctx) return { ok: false, error: ctx.error };
   const { poderId, elecciones, grado } = parsed.data;
   const niveles = nivelesDePsionica(ctx.sheet, ctx.bonosDisciplina).paraEfectos;
-  const estados = estadosPropiosDeUso(ctx.sheet, niveles, poderId, elecciones, grado);
+  const estados = estadosPropiosDeUso(ctx.sheet, niveles, poderId, elecciones, grado, ctx.estados);
   if (estados.length === 0) return { ok: true, sheet: ctx.sheet };
   for (const estado of estados) {
     const hecho = await cambiarEstadosDePersonajes([characterId], { tipo: "poner", estado }, { userId: ctx.userId, motivo: "Poder psiónico, desde la ficha" });

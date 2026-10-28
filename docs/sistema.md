@@ -606,10 +606,12 @@ como acciones de dote (solo salen con la dote).
 Regla general (ver `docs/motor.md`, "Lo que queda fuera del modelo"): **lo que la app puede
 aplicar o recalcular se aplica en la ficha; lo demás queda como texto.**
 - **Texto para siempre**: casillas, alcance, tamaño, altura. No habrá tablero.
-- **Texto hoy**: acciones por turno (reacción, gratuita…) y todos los **límites de uso** (por
-  escena, por día, por objetivo). El coste en acciones y el límite se guardan como dato en
-  el catálogo aunque solo se muestren, para el día que exista registro de acciones
-  (`docs/tareas.md`, "Panel de combate: qué aporta").
+- **Texto hoy**: acciones por turno (reacción, gratuita…). El coste en acciones se guarda
+  como dato en el catálogo aunque solo se muestre, para el día que exista registro de
+  acciones (`docs/tareas.md`, "Panel de combate: qué aporta").
+- **Límites de uso de las acciones de dote: se cuentan (usuario, 2026-10-28).** Antes eran
+  texto. Ver "Límites de las acciones de dote" en el bloque D2c-1, más abajo. Los límites de
+  dotes sin acción propia (`DoteCatalogo.limite`) siguen como dato y texto.
 - **Efectos sobre otros personajes**: texto que lee el jugador.
 - **Cambios de resultado** (*Velocista*, *Equilibrista*, *Gran Puntería*: fracaso → éxito,
   éxito → crítico; *Crítico Mejorado*: crítico con 5): **los aplica la app** al tirar, con
@@ -720,8 +722,26 @@ aplicar o recalcular se aplica en la ficha; lo demás queda como texto.**
   cada acción de una dote activa sale como fila; sin dotes con acción no hay sección, y con
   el requisito roto la acción no sale (S34). Tirada y enfrentada → fila de tirada con el texto
   por grado y lo que tira el rival en el resultado; sin dado → "Usar" con su nota (*Paso
-  Atrás*, *Salida Explosiva*, *Ataque de oportunidad*, *Combinación*). Economía, límites,
-  dificultad a criterio y gasto de materiales: texto en la nota.
+  Atrás*, *Salida Explosiva*, *Ataque de oportunidad*, *Combinación*). Economía, dificultad
+  a criterio y gasto de materiales: texto en la nota.
+- **Límites de las acciones de dote (usuario, 2026-10-28):** el `limite` sigue en la nota y,
+  en la ficha de un jugador, se aplica (`dotesAcciones.ts`, `Accion.usoLimitado`). Se gasta
+  al tirar, en el servidor (`gastarUsoLimitadoAction`, que recalcula la acción y su límite con
+  la ficha guardada y su mesa), en los contadores de la escena (`sheet.usosEscena`, entradas
+  `<clave>#<n>`, `usosEscena.ts`), así que se liberan con «Terminar escena» (el del jugador o
+  «Limpiar estados» del máster) o a mano en Recursos.
+  - *N por escena* (*Humor de afrontamiento*, *Grito de guerra*, *Violencia aterradora*,
+    *Acción inspiradora*): agotada, la fila sale bloqueada con el motivo.
+  - *Por aliado* (*Apoyo*: 1 por aliado y escena): selector «Aliado» en el modal con los de la
+    mesa a los que aún no se ha apoyado; sin ninguno, bloqueada. **Aliados = los otros
+    personajes en juego** (aprobados y sin borrar, los mismos de la Mesa del máster;
+    `lib/mesaDeFicha.ts`): no hay grupos ni campañas, y la cola del combate solo existe en
+    combate.
+  - *N por turno* (*Mirada desafiante*, *Aferrarse a un asidero*): solo en combate, con el
+    combatiente en la cola: el turno es la ronda del combate en curso (cada uno actúa una vez
+    por ronda). Fuera de combate no se cuenta (texto).
+  - *Por día, objetivo o pista*: ninguna acción los usa hoy.
+  - Sin mesa (NPC en la consola o en su editor) el límite sigue siendo texto.
 - **Especialidad** en la resolución → la fila va en especialidad sola (S54). ***Arrollar***,
   tirada de ataque Potencia + Combate Melee en Pelea (S53). ***Traicionero*** sale también en
   Iniciativa (S56).
@@ -1018,24 +1038,46 @@ al preparar su modelado:
     (`AccionPoder.casillasEnTiradas` → `casillasDePsionica`, al índice de casillas como las de
     dotes y aumentos). El jugador las marca mientras dura el efecto: en una enfrentada la app no
     sabe si se superó al rival, ni lleva la cuenta de la duración. Sin marcar, la tirada no cambia.
-    - *Leer Mente*: «Mente leída» +2 en ataques, defensas, poderes y las fijas enfrentadas
-      (Convencer / mentir, Discernir mentiras, Resistir distracción, Iniciativa distrayendo,
-      Sigilo, Hurto).
+    - *Leer Mente*: «Mente leída» +2 en ataques, defensas, las fijas enfrentadas (Convencer /
+      mentir, Discernir mentiras, Resistir distracción, Iniciativa distrayendo, Sigilo, Hurto) y,
+      por sus datos (no por lista), los **poderes con resolución enfrentada** (Mensaje agresivo,
+      Leer Mente, Comando, Modulación, Reconfiguración, Duelo de Métrica) y las **acciones de
+      dote con resolución enfrentada** (Burla, Grito de guerra, Violencia aterradora, Finta,
+      Táctica de flanqueo, Traicionero también en Iniciativa) (usuario, 2026-10-28). Los poderes
+      de ataque, de tirada o sin dado ya no la llevan (antes iba a todo el grupo Psiónica).
     - *Vínculo*: «Vínculo activo» +1 en la salvación de Voluntad propia; a los aliados, texto.
     - *Anclaje*: «Manteniendo anclaje» −1 en todas las tiradas.
     - *Auto-proyección*: «Auto-proyección» +1 en la esquiva (la fila Defensa / esquiva).
-    - *Precognición*: selector en ataques y defensas: crítico +3 dentro / +2 fuera de la burbuja,
-      éxito +2 / +1, fracaso −1 (turno siguiente), fracaso crítico −2.
-    - *Estabilización (mitigar)*: selector «Estabilizado», solo con algún penalizador puesto.
-      Éxito −1 y crítico −2 a cada penalizador de estado, sin pasar de 0; desde nv4 además fuera
-      heridas y fatiga; en nv6, fuera todos. Lo resuelve `montarTirada`
-      (`conPenalizadoresReducidos`). El +2/+3/+4 a la salvación sigue como estaba.
-  - **Estados propios automáticos**, solo dos: **Contención** (sin dado) pone al usarla el estado
-    «Contención» con la −Agilidad y la absorción de su fila (la absorción, en Bloquear daño, vale
-    contra todo menos el mental, fuego incluido); dura lo que la contención y se quita con
-    «Terminar contención». **Retrocognición** con fracaso crítico pone Aturdido 1 turno (grado
-    «fracaso» del estado). Los pone el servidor, que los vuelve a calcular con la ficha guardada
-    (`estadosPropiosDeUso`), por el camino de los activables de aumento.
+    - *Precognición*: selector en ataques, defensas y **poderes de ataque**: crítico +3 dentro /
+      +2 fuera de la burbuja, éxito +2 / +1, fracaso −1 (turno siguiente), fracaso crítico −2.
+      Poder de ataque, por sus datos (usuario, 2026-10-28): resolución `ataque`, daño al
+      objetivo en algún grado, o `contraLaDefensa` (Anclaje: ataque a distancia sin daño, el
+      objetivo esquiva). Hoy: Proyección, Impulso, Expansión, Convergencia y Anclaje.
+    Los blancos que salen de datos los calcula `alcancesDeBlancos` (`poderes.ts`) con el
+    catálogo de poderes (disciplinas y poderes de dote) y el de dotes.
+  - **Estados propios automáticos**, donde la app conoce el resultado. Los pone el servidor, que
+    los vuelve a calcular con la ficha guardada (`estadosPropiosDeUso`): en el jugador por el
+    camino de los activables de aumento (`ponerEstadosDePoderAction`); en un **NPC del combate**,
+    en su fila de la cola por el mismo camino que los estados que pone el máster
+    (`estadoDePoderNpcAction` → `cambiarEstadosDeNpcs`; usuario, 2026-10-28).
+    - **Contención** (sin dado) pone al usarla el estado «Contención» con la −Agilidad y la
+      absorción de su fila (la absorción, en Bloquear daño, vale contra todo menos el mental,
+      fuego incluido); dura lo que la contención y se quita con «Terminar contención».
+    - **Retrocognición** con fracaso crítico pone Aturdido 1 turno, grado «fracaso»: sin
+      salvación cuenta como fallarla (usuario, 2026-10-28).
+    - **Estabilización (mitigar)** (usuario, 2026-10-28; antes un selector en las tiradas): la
+      tirada tiene dificultad fija 6, así que al superarla pone sobre el psiónico el estado
+      «Estabilizado», con el grado del resultado (éxito o crítico) y del tramo de nivel. El
+      estado **apunta los estados que tenías al usarla** (`EstadoActivo.cubre`) y solo reduce los
+      penalizadores de tirada de esos (prosa de nv6: «no afecta a nuevos penalizadores
+      adquiridos después»): éxito −1 y crítico −2 a cada uno, sin pasar de 0 ni repetir lo que
+      ya compensa la Neuroprótesis; desde nv4 además fuera heridas y fatiga (todas, también las
+      que lleguen después); en nv6, fuera todos los de los estados apuntados. Duración de la
+      prosa: nv1 1 minuto = 10 turnos; nv2-3 10 minutos por nivel = 100 turnos por nivel
+      poseído (1 minuto = 10 turnos, el criterio del código); nv4+ 30 minutos = la escena (una
+      hora = una escena). Lo aplica `resolverFicha` (`estabilizacionPuesta`,
+      `modificadoresDeEstados`, ajuste de umbrales). Se quita con «Terminar estabilización». El
+      +2/+3/+4 a la salvación sigue como estaba.
   - El área de la Contención ampliada se calcula (1 casilla por nivel empleado, ×2/×3 según el
     nivel poseído). Quieto, contra el ataque y la concentración siguen siendo texto.
 - **Xovromium** (`docs/equipamiento.md:1338`, "+1 a las manifestaciones psiónicas"): toggle
@@ -1561,8 +1603,12 @@ al preparar su modelado:
     estado, no la fatiga.
   - **Sanar letal:** +1 a la vida actual, sin pasar del máximo en reposo; acción gratuita,
     **sin tope por ronda** (la prosa no lo pone; usuario, D2 del triaje 2026-10-28). **Sanar
-    grave:** cada pulsación cobra 1; "5 turnos seguidos; al quinto, súmate 1 de vida a mano"
-    (`TODO(revisar)`: falta un contador de pulsaciones entre turnos; su motor, `pendiente`). Lo de "sin penalizadores por fatiga" del Enjambre es solo de la regeneración
+    grave:** contador de pulsaciones (usuario, 2026-10-28; efecto `contador` de
+    `aumentosAcciones.ts`): la fila dice «pulsación N/5»; cada uso cobra 1 de fatiga y sube el
+    contador (en `sheet.usosEscena`, como los usos por escena); a la quinta suma sola +1 de vida
+    (`ajustarVida`, como *Sanar letal*) y vuelve a 0. Se reinicia a mano (fila «Reiniciar sanar
+    grave», sin coste ni devolver fatiga) y con «Terminar escena». Que sean turnos seguidos no
+    se comprueba. Lo de "sin penalizadores por fatiga" del Enjambre es solo de la regeneración
     pasiva (fuera de A4a).
   - **Defensa del MQE:** fila informativa sin botón con alcance, dificultad de infiltración
     (+1 por turno), defensa y contragolpe del nivel que se tenga; el nivel 4 dice que el cepo
@@ -2499,7 +2545,8 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S99 | **Rastreo, Subsistencia, Trato con animales e Investigación solo se pintan si la ficha tiene su especialidad** (Supervivencia; Investigación) **o si algo de capa 1 le engancha algo a esa fila**: casilla, texto, bono, bono por opción, ventaja, cambio de grado, otra habilidad o fallo crítico con alcance por el id de la fila o por su especialidad. Lo general (grupo, habilidad, aplicado, "todas") no cuenta. Lo decide el motor (`tiradaFijaVisible`, `rules/fichaResuelta.ts`; `Accion.soloConEspecialidad`), también para el NPC con sus especialidades. | Decisión del usuario (2026-10-26, opción a). |
 | S100 | **Lo que colgaba de Buscar / percibir por S36, a su tirada** (2026-10-26): *Rastreo al Paso* y *Bioma Predilecto* (rastreo) a Rastreo; la ventaja de *Bioma* en subsistencia a Subsistencia (la casilla pierde el prefijo «Subsistencia:»); *Descartar Teoría* a Investigación, **con su casilla −2** además del texto. **Visión ultravioleta** (Introgresión, R10) partida en dos casillas de +2: «¿Buscas accesos ocultos?» en Buscar / percibir (el id se queda) y «¿Investigación de campo?» en Investigación. **Oído biónico** (Vestíbulo-Auditiva): la ventaja de detectar ocultos se queda en Buscar y la de rastrear por el sonido va a Rastreo, casilla aparte. **Rastro térmico** (sin número en la fuente): la Visión Térmica (aumento) pone una nota en Rastreo y el Visor Térmico nv2 una casilla informativa «Siguiendo un rastro térmico» (+0 con nota, como el modo térmico del nv1); las dos hacen visible la fila (S99) (usuario, 2026-10-26). El poder psiónico *Rastreo* no tiene que ver. | Encargo del usuario (2026-10-26); lo de la casilla −2, decisión de construcción. |
 | S101 | **Maniobrabilidad de Movilidad Aérea como penalizador (pregunta 42, 2026-10-26)**: −3 en los niveles 1-3 y −4 en el 4 (`NivelModulo.maniobrabilidad`), como ajuste fijo a «Volar» y a la esquiva en vuelo. La esquiva gana la casilla «En vuelo: Tecnociencia, −N» si la ficha lleva Movilidad Aérea (`conEsquivaEnVuelo`, `rules/movimiento.ts`; `habilidadAlternativa.ajuste`): esquiva con Tecnociencia en vez de Atletismo y resta la maniobrabilidad (la app no sabe si vuelas, como «Levitando»). Si además puede levitar, la casilla es la de vuelo (solo cabe una habilidad alternativa por fila). La mejora de Maniobrabilidad del nivel 3 («disminuye la dificultad en 1», un punto menos de castigo) sigue a mano; el −1 a los ataques en vuelo, en mesa (S94). | Penalizador y esquiva: Murillo (vía usuario, 2026-10-26). Casilla y prioridad sobre Levitar: decisión de construcción. |
-| S102 | **Efectos de poder sobre uno mismo (P1 de psiónica, 2026-10-28)**, supuestos al construirlos (§10.6): (1) **Leer Mente**: "tiradas enfrentadas contra el objetivo" = ataques, defensas, poderes y las fijas que la fuente da como enfrentadas (Convencer / mentir, Discernir mentiras, Resistir distracción, Iniciativa distrayendo, Sigilo, Hurto); el jugador la marca solo contra el leído. Las acciones de dote no la llevan. (2) **Auto-proyección**: "+1 a tiradas de esquiva" = la fila Defensa / esquiva, no los bloqueos. (3) **Precognición**: en ataques de arma y defensas; los poderes de ataque (grupo Psiónica) no la llevan. (4) **Estabilizado**: −N a cada penalizador de estado por separado, sin pasar de 0, y lo ya compensado (Neuroprótesis, Proyección) no se vuelve a compensar; en nv6 no distingue los penalizadores que lleguen después (lo dice la opción). (5) **Retrocognición**: el Aturdido automático del fracaso crítico es el grado «fracaso» del estado (sin salvación), 1 turno. (6) **Contención**: el estado se pone en cualquier forma (el psiónico también está dentro de la ampliada); con duración sin número (nv6, nivel 1 personal) dura hasta quitarlo. Quieto y contra el ataque siguen como texto. | Construcción, sin preguntar; revisables (`TODO(revisar)` en `catalog/psionica.ts`). |
+| S102 | **Efectos de poder sobre uno mismo (P1 de psiónica, 2026-10-28)**, supuestos al construirlos (§10.6), revisados el mismo día con el usuario: (1) **Leer Mente**: "tiradas enfrentadas contra el objetivo" = ataques, defensas, las fijas que la fuente da como enfrentadas (Convencer / mentir, Discernir mentiras, Resistir distracción, Iniciativa distrayendo, Sigilo, Hurto) y, **decidido por el usuario**, los poderes y las acciones de dote con resolución `enfrentada` (por sus datos); el jugador la marca solo contra el leído. Los poderes de ataque (resolución `ataque`) no la llevan: no son `enfrentada` en el catálogo. (2) **Auto-proyección**: "+1 a tiradas de esquiva" = la fila Defensa / esquiva, no los bloqueos. (3) **Precognición**: en ataques de arma, defensas y, **decidido por el usuario**, los poderes de ataque (resolución `ataque`, daño al objetivo o `contraLaDefensa`, que hoy solo lleva Anclaje). Las acciones de dote de ataque (Arrollar) no: el encargo era de poderes. (4) **Estabilizado** (estado, **decidido por el usuario**): −N a cada penalizador de tirada de los estados apuntados al usarla, por separado y sin pasar de 0, detrás de la Neuroprótesis (entre las dos no pasan de 0); heridas y fatiga (nv4+) fuera enteras, también las que lleguen después: la prosa de "no afecta a los nuevos" es de los penalizadores de estado; los −N a atributos de un estado no se tocan (como la Neuroprótesis). Reusarla sustituye al anterior y vuelve a apuntar. (5) **Retrocognición**: el Aturdido automático del fracaso crítico es el grado «fracaso» del estado (sin salvación cuenta como fallarla, **usuario**), 1 turno. (6) **Contención**: el estado se pone en cualquier forma (el psiónico también está dentro de la ampliada); con duración sin número (nv6, nivel 1 personal) dura hasta quitarlo. Quieto y contra el ataque siguen como texto. | Construcción; (1), (3), (4) y (5) cerrados por el usuario el 2026-10-28. |
+| S103 | **Límites de las acciones de dote y contador de Sanar grave (2026-10-28)**, supuestos al construirlos (§9.3, §11.3): (1) **aliados** = los otros personajes en juego (aprobados, sin borrar), la lista más parecida a "compañeros" que hay (no existen grupos ni campañas; la cola del combate solo vale en combate). La ficha del jugador ve sus nombres. (2) **"por aliado"** se reinicia con la escena (Apoyo: «1 vez por aliado y escena», usuario). (3) **"por turno"** = por ronda del combate en curso (cada combatiente actúa una vez por ronda); fuera de combate no se cuenta. (4) Lo gastado vive en `sheet.usosEscena` como contador (`<clave>#<n>`) y el tope de la lista sube de 20 a 40 entradas (`MAX_USOS_ESCENA`, `usosEscena.ts`): sin migración, porque la lectura sigue siendo tolerante. (5) **Sanar grave**: «5 turnos seguidos» no se comprueba; el contador va por escena y se reinicia a mano. | Construcción, sin preguntar; revisables. |
 
 ## Conflictos detectados
 

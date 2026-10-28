@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { resolverFicha, type EstadoActivo, type FichaResuelta, type Sheet, type VitalidadActual } from "@/lib/rules";
+import { resolverFicha, type EstadoActivo, type FichaResuelta, type MesaDeFicha, type Sheet, type VitalidadActual } from "@/lib/rules";
 
 // Sin estados. Constante de módulo para que la referencia no cambie en cada render
 // (un `[]` literal invalidaría el useMemo de abajo siempre).
@@ -15,14 +15,16 @@ export const SIN_ESTADOS: EstadoActivo[] = [];
 // de combate, la fila del combatiente dentro). Referencia estable: memorizarla fuera.
 // `libre`: editor de NPC (sin costes de creación ni bolsa de aumentos, §14.3).
 // `aprobada`: ficha aprobada, sube con XP (las rebajas de coste de los aumentos, A1).
+// `mesa`: aliados y turno de combate de un jugador (límites de las acciones de dote).
+// Referencia estable, como `vitalidad`.
 export function useFichaResuelta(
   sheet: Sheet,
   estados: EstadoActivo[],
   vitalidad: VitalidadActual,
-  { libre = false, aprobada = false }: { libre?: boolean; aprobada?: boolean } = {},
+  { libre = false, aprobada = false, mesa = null }: { libre?: boolean; aprobada?: boolean; mesa?: MesaDeFicha | null } = {},
 ): FichaResuelta {
   return useMemo(
-    () => resolverFicha(sheet, { estados, vitalidad, libre, aprobada }),
-    [sheet, estados, vitalidad, libre, aprobada],
+    () => resolverFicha(sheet, { estados, vitalidad, libre, aprobada, mesa }),
+    [sheet, estados, vitalidad, libre, aprobada, mesa],
   );
 }

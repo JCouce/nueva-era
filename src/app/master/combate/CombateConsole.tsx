@@ -504,6 +504,7 @@ export function CombateConsole({
 
       {npcAbierto && npcAbierto.sheet && (
         <NpcAccionesPanel
+          combatienteId={npcAbierto.id}
           nombre={npcAbierto.nombre}
           sheet={npcAbierto.sheet}
           estadosCombate={npcAbierto.estados.filter((e) => !e.automatico)}

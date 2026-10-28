@@ -20,7 +20,7 @@ import {
 } from "./montaje";
 import type { FichaResuelta } from "./fichaResuelta";
 import { estadoActivoCon, type EstadoActivo } from "./estados";
-import { estadoPorId } from "../catalog/estados";
+import { esEstadoDePoder, estadoPorId } from "../catalog/estados";
 import {
   accionesDePsionica,
   bloqueoPorFatiga,
@@ -268,8 +268,11 @@ export function estadoAlUsar(poder: Pick<PoderDisponible, "accion">, resuelto: P
 }
 
 // Los estados propios del grado (`resultados.<grado>.estados` con `sobre: "propio"`: el
-// Aturdido del fracaso crítico de Retrocognición), con su grado de estado y su duración.
-export function estadosDelResultado(resuelto: PoderResuelto, grado: Grado | null): EstadoActivo[] {
+// Aturdido del fracaso crítico de Retrocognición, el Estabilizado de la Estabilización), con su
+// grado de estado y su duración (turnos; `escena`, hasta el final de la escena; sin número,
+// hasta quitarlo). `actuales`: los estados que lleva el psiónico, que apunta el que los pide
+// (`apuntaEstados` → EstadoActivo.cubre, sin contarse a sí mismo).
+export function estadosDelResultado(resuelto: PoderResuelto, grado: Grado | null, actuales: readonly EstadoActivo[] = []): EstadoActivo[] {
   const r = grado ? resuelto.resultados[grado] : undefined;
   return (r?.estados ?? []).flatMap((e) => {
     if (e.sobre !== "propio") return [];
@@ -277,7 +280,13 @@ export function estadosDelResultado(resuelto: PoderResuelto, grado: Grado | null
     const gradoId = e.grado ?? cat?.grados[0]?.id;
     if (!cat || !gradoId || !cat.grados.some((g) => g.id === gradoId)) return [];
     const d = e.duracion;
-    return [estadoActivoCon(e.estado, gradoId, typeof d === "number" && d > 0 ? { tipo: "rondas", rondas: d } : { tipo: "hastaQuitarlo" })];
+    const activo = estadoActivoCon(
+      e.estado,
+      gradoId,
+      e.escena ? { tipo: "escena" } : typeof d === "number" && d > 0 ? { tipo: "rondas", rondas: d } : { tipo: "hastaQuitarlo" },
+    );
+    if (!e.apuntaEstados) return [activo];
+    return [{ ...activo, cubre: [...new Set(actuales.map((a) => a.estadoId).filter((id) => id !== e.estado))] }];
   });
 }
 
@@ -287,24 +296,31 @@ export type OperacionEstadoDePoder =
   | { tipo: "poner"; poderId: string; elecciones: Record<string, string>; grado: Grado | null }
   | { tipo: "quitar"; estadoId: string };
 
-// «Terminar contención»: el estado al usar del poder, si lo lleva puesto. null si no.
+// «Terminar contención» / «Terminar estabilización»: el estado propio del poder (el de usarlo o
+// el que pone un resultado, si es un estado de poder), si lo lleva puesto. null si no.
 export function estadoParaTerminar(
-  accion: Pick<PoderDisponible["accion"], "estadoAlUsar" | "label">,
+  accion: Pick<PoderDisponible["accion"], "estadoAlUsar" | "label" | "resultados">,
   estados: readonly EstadoActivo[],
 ): { estadoId: string; etiqueta: string } | null {
-  const id = accion.estadoAlUsar?.estadoId;
-  return id && estados.some((e) => e.estadoId === id) ? { estadoId: id, etiqueta: `Terminar ${accion.label.toLocaleLowerCase("es")}` } : null;
+  const propios = [
+    ...(accion.estadoAlUsar ? [accion.estadoAlUsar.estadoId] : []),
+    ...Object.values(accion.resultados).flatMap((r) => (r?.estados ?? []).filter((e) => e.sobre === "propio" && esEstadoDePoder(e.estado)).map((e) => e.estado)),
+  ];
+  const id = propios.find((p) => estados.some((e) => e.estadoId === p));
+  return id ? { estadoId: id, etiqueta: `Terminar ${accion.label.toLocaleLowerCase("es")}` } : null;
 }
 
-// Lo que el servidor pone en Character.estados tras usar un poder, calculado otra vez con la
-// ficha guardada (no se fía del cliente): el estado al usarlo (grado null) o los del grado de
-// la tirada. Vacío si la ficha no tiene el poder, o lo tiene con el requisito roto.
+// Lo que el servidor pone en Character.estados (o en el Combatiente.estados de un NPC) tras
+// usar un poder, calculado otra vez con la ficha guardada (no se fía del cliente): el estado al
+// usarlo (grado null) o los del grado de la tirada, que apuntan los `actuales` si lo piden
+// (Estabilizado). Vacío si la ficha no tiene el poder, o lo tiene con el requisito roto.
 export function estadosPropiosDeUso(
   ficha: Sheet,
   niveles: NivelesPsionica,
   poderId: string,
   elecciones: Record<string, string>,
   grado: Grado | null,
+  actuales: readonly EstadoActivo[] = [],
 ): EstadoActivo[] {
   const poder = accionesDePsionica(ficha, niveles).find((p) => p.accion.id === poderId);
   if (!poder || poder.bloqueo) return [];
@@ -321,7 +337,7 @@ export function estadosPropiosDeUso(
     const e = estadoAlUsar(poder, resuelto);
     return e ? [e] : [];
   }
-  return estadosDelResultado(resuelto, grado);
+  return estadosDelResultado(resuelto, grado, actuales);
 }
 
 // §14.9: se tira siempre que se pague fatiga, aunque el poder falle. `pagar` ya va sin

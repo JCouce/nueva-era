@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Sheet, EstadoActivo, VitalidadActual } from "@/lib/rules";
+import type { Sheet, EstadoActivo, OperacionEstadoDePoder, VitalidadActual } from "@/lib/rules";
 import { Modal } from "@/components/Modal";
 import { AccionesTab } from "@/app/characters/[id]/_components/AccionesTab";
 import { useFichaResuelta } from "@/hooks/useFichaResuelta";
 import type { Lanzamiento } from "@/components/ResultadoTirada";
+import { estadoDePoderNpcAction } from "./actions";
 
 // Fase 6b, subtarea 5.5 (el motivo original de todo el rediseño del bloque
 // 5): mismo AccionesTab.tsx que ya usa el jugador, alimentado por el `sheet`
@@ -18,6 +19,7 @@ import type { Lanzamiento } from "@/components/ResultadoTirada";
 // pulsar "Tirar" se monta después en body y queda encima (antes este iba a z-40 para
 // eso); Escape y el fondo cierran solo el de arriba.
 export function NpcAccionesPanel({
+  combatienteId,
   nombre,
   sheet,
   estadosCombate,
@@ -27,6 +29,8 @@ export function NpcAccionesPanel({
   fatigaMax,
   onCerrar,
 }: {
+  // Su fila en la cola: ahí van los estados propios de sus poderes (estadoDePoderNpcAction).
+  combatienteId: string;
   nombre: string;
   sheet: Sheet;
   estadosCombate: EstadoActivo[];
@@ -49,6 +53,15 @@ export function NpcAccionesPanel({
   // sobreviva a cambiar de tab en la ficha del jugador), pero aquí no aplica
   // ese problema: no hay tabs que cambiar dentro de este panel.
   const [historial, setHistorial] = useState<Lanzamiento[]>([]);
+  // Estados propios de sus poderes (Contención, Aturdido de Retrocognición, Estabilizado): los
+  // pone y quita el servidor en su fila, como los que pone el máster; llegan con la consola
+  // revalidada.
+  const estadoDePoder = (op: OperacionEstadoDePoder, onMensaje: (m: string) => void) => {
+    void estadoDePoderNpcAction(combatienteId, op).then((res) => {
+      if (!res.ok) onMensaje(res.error);
+      else if (res.mensaje) onMensaje(res.mensaje);
+    });
+  };
   const [memoria, setMemoria] = useState<
     Record<string, { dificultad: number | null; circunstancial: number }>
   >({});
@@ -75,6 +88,7 @@ export function NpcAccionesPanel({
           setHistorial={setHistorial}
           memoria={memoria}
           setMemoria={setMemoria}
+          onEstadoDePoder={estadoDePoder}
         />
       </div>
     </Modal>

@@ -20,6 +20,7 @@
 // (cómo se interpreta el "mínimo 1" de Moribundo/Exhausto).
 import type { AlcanceModificador, ModificadorConFuente, OrigenModificador } from "./modificadores";
 import { esEstadoDeAumento, estadoParaPintar, estadoPorId } from "../catalog/estados";
+import { ESTADO_ESTABILIZADO_ID, reduccionDeGradoEstabilizado } from "../catalog/psionica";
 
 export type UmbralSalud = "normal" | "herido" | "malherido" | "moribundo";
 export type UmbralFatiga = "normal" | "fatigado" | "exhausto";
@@ -135,7 +136,6 @@ function modificadorDeUmbral(valor: number, etiqueta: string, ajuste: AjusteUmbr
     valor,
     origen: "estado",
     fuente: ajuste ? `${etiqueta} (${ajuste.fuente})` : etiqueta,
-    umbral: true,
   };
 }
 
@@ -152,7 +152,7 @@ function compensacionesPorAplicado(
     const v = Math.min(r.valor, restante);
     if (v <= 0) return [];
     restante -= v;
-    return [{ tipo: "tirada", alcance: r.alcance, valor: v, compensa: true, umbral: true, origen: r.origen, fuente: `${r.fuente} (${etiqueta})` }];
+    return [{ tipo: "tirada", alcance: r.alcance, valor: v, compensa: true, origen: r.origen, fuente: `${r.fuente} (${etiqueta})` }];
   });
 }
 
@@ -263,6 +263,10 @@ export type EstadoActivo = {
   // A7: puesto con "Aplicar igualmente" a quien es inmune. Hace efecto aunque haya inmunidad.
   // Opcional por lo mismo que finDeEscena.
   forzado?: true;
+  // Los estados que el personaje tenía al ponérselo, para los que solo valen contra esos
+  // (Estabilizado: no reduce los que lleguen después; estabilizacionPuesta). Opcional por lo
+  // mismo que finDeEscena.
+  cubre?: string[];
 };
 
 // Inmunidad a un estado del catálogo (A7: Ojo Biónico 2-4, Regeneración Tisular), con la pieza
@@ -315,29 +319,58 @@ export function estadoActivoCon(estadoId: string, gradoId: string, duracion: Dur
 // ("Neuroprótesis Simpática 1 (Aturdido)"). Los penalizadores a atributos no se tocan.
 // TODO(revisar): "reducir penalizadores por estado en 1" se lee como el −N a las tiradas; los
 // −N a atributos de Enfermedad o Parálisis no se reducen.
+// `estabilizado` (Estabilización, P1 de psiónica): lo mismo, pero solo en los estados que tenía
+// al ponérselo (`cubre`), y detrás de la reducción de arriba: entre las dos no pasan de 0.
 export function modificadoresDeEstados(
   activos: EstadoActivo[],
   reduccion: { valor: number; fuente: string } | null = null,
+  estabilizado: Estabilizacion | null = null,
 ): ModificadorConFuente[] {
   return activos.flatMap((activo): ModificadorConFuente[] => {
     const estado = estadoPorId(activo.estadoId);
     if (!estado) return [];
     const grado = estado.grados.find((g) => g.id === activo.gradoId);
     if (!grado) return [];
+    const cubierto = estabilizado?.cubre.includes(activo.estadoId) ?? false;
     return grado.modificadores.flatMap((m): ModificadorConFuente[] => {
       const propio: ModificadorConFuente = { ...m, origen: "estado", fuente: estado.label };
-      if (!reduccion || m.tipo !== "tirada" || m.valor >= 0) return [propio];
-      const compensa: ModificadorConFuente = {
-        tipo: "tirada",
-        alcance: m.alcance,
-        valor: Math.min(reduccion.valor, -m.valor),
-        origen: "estado",
-        fuente: `${reduccion.fuente} (${estado.label})`,
+      if (m.tipo !== "tirada" || m.valor >= 0) return [propio];
+      const lineas: ModificadorConFuente[] = [propio];
+      let queda = -m.valor;
+      const compensa = (valor: number, fuente: string) => {
+        const v = Math.min(valor, queda);
+        if (v <= 0) return;
+        queda -= v;
+        lineas.push({ tipo: "tirada", alcance: m.alcance, valor: v, origen: "estado", fuente: `${fuente} (${estado.label})` });
       };
-      return [propio, compensa];
+      if (reduccion) compensa(reduccion.valor, reduccion.fuente);
+      if (estabilizado && cubierto) compensa(estabilizado.porEstado, estabilizado.fuente);
+      return lineas;
     });
   });
 }
+
+// El Estabilizado puesto (Estabilización, mitigar), con lo que reduce: `porEstado` a cada
+// penalizador de tirada de los estados de `cubre` (99 = todos) y, con `umbrales`, fuera los de
+// heridas y fatiga. null si no lo lleva (o con un grado que ya no existe).
+export type Estabilizacion = { porEstado: number; umbrales: boolean; cubre: readonly string[]; fuente: string };
+
+export function estabilizacionPuesta(activos: readonly EstadoActivo[]): Estabilizacion | null {
+  const puesto = activos.find((e) => e.estadoId === ESTADO_ESTABILIZADO_ID);
+  const r = puesto ? reduccionDeGradoEstabilizado(puesto.gradoId) : null;
+  if (!puesto || !r) return null;
+  return { ...r, cubre: puesto.cubre ?? [], fuente: estadoPorId(ESTADO_ESTABILIZADO_ID)?.label ?? "Estabilizado" };
+}
+
+// Con heridas y fatiga fuera (Estabilizado desde nv4): el ajuste de umbrales que los deja en 0.
+export function ajusteUmbralesDeEstabilizado(e: Estabilizacion | null): AjusteUmbrales {
+  if (!e?.umbrales) return SIN_AJUSTE_UMBRALES;
+  const ajuste = { valor: QUITA_UMBRAL, fuente: e.fuente };
+  return { salud: ajuste, fatiga: { ...ajuste } };
+}
+
+// Más que cualquier tramo de §7 (el peor es −5): el ajuste lo deja en 0 y no da línea.
+const QUITA_UMBRAL = 99;
 
 // Un EstadoActivo (solo ids) con el label/detalle que trae su grado en el
 // catálogo, para pintarlo sin que cada consumidor repita la búsqueda —

@@ -146,8 +146,12 @@ export type Accion = {
   poder?: DetallePoder;
   // Cuando una tirada depende de algo que el sistema aún no define, se declara
   // en vez de inventársela: la UI la muestra apagada con el motivo. También una acción de
-  // aumento con fatiga fija que no llega (A4b).
+  // aumento con fatiga fija que no llega (A4b), o una de dote con su límite agotado.
   bloqueada?: string;
+  // Límite de usos de una acción de dote (Humor de afrontamiento: 1 por escena; Apoyo: 1 por
+  // aliado; Mirada desafiante: 1 por turno), que se gasta al tirar (dotesAcciones.ts). Solo en
+  // la ficha de un jugador (con mesa); el NPC sigue con el límite como texto.
+  usoLimitado?: UsoLimitado;
   // La tirada se hace siempre con la Fuerza y la Agilidad de una extremidad propia, sin casilla
   // ("Bloquear con el brazo biónico", A6a): montarTirada recalcula el aplicado con ellas.
   extremidad?: AtributosExtremidad;
@@ -266,6 +270,15 @@ export type Accion = {
 // propio efecto con su propio callback, mismo criterio que Reparar/Fabricar
 // (docs/tareas.md, tarea 8) — no hay un motor de efectos genérico todavía,
 // y no se inventa uno para un solo caso real.
+// Lo que gasta una tirada con límite: un contador de la escena por `claves` (usosEscena.ts:
+// la acción, o la acción y el turno de combate) y, con `porAliado`, el del aliado elegido en
+// el selector ID_ALIADO_DOTE (que solo ofrece aliados con usos).
+export type UsoLimitado = {
+  accionId: string;
+  claves: { clave: string; veces: number }[];
+  porAliado?: { veces: number };
+};
+
 export type AccionDirecta = {
   id: string;
   label: string;

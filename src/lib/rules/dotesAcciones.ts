@@ -9,7 +9,17 @@
 //               especialidad sola si la ficha tiene alguna de ellas, y si no, a la mitad
 //               (`especialidadesAccion`, como la especialidad de un arma).
 //   sin_dado  → AccionDirecta (FilaUsar), con sus notas.
-//   Economía, límites, dificultad a criterio y notas: texto en la nota (§9.3).
+//   Economía, dificultad a criterio y notas: texto en la nota (§9.3).
+//
+// Límites (`limite`, usuario 2026-10-28): en la nota y, en la ficha de un jugador (con `mesa`),
+// se cuentan de verdad con los contadores de la escena (usosEscena.ts) y se gastan al tirar
+// (gastarUsoLimitado, en el servidor):
+//   escena   N por escena: agotado, la tirada sale bloqueada hasta "Terminar escena".
+//   aliado   1 por aliado (y escena): selector de aliado (los de la mesa con usos); sin
+//            ninguno, bloqueada.
+//   turno    N por turno: solo en combate (la ronda del combate en curso); fuera, texto.
+//   dia, objetivo, pista: ninguna acción los usa hoy; quedan como texto.
+// Sin `mesa` (NPC en la consola o en su editor) el límite es solo texto, como antes.
 //
 // Lo que otras dotes añaden a una acción de dote (destino "accionDote", dotesDestinos.ts):
 //   textos → a su nota, con la dote de la que salen (Ataque de Oportunidad Poderoso…).
@@ -22,8 +32,10 @@
 //
 // Requisito roto (S34) y "vale la mejor" entre básica y mejorada los resuelve dotesActivas:
 // aquí solo llegan las activas.
-import type { Accion, AccionDirecta } from "./acciones";
+import type { Accion, AccionDirecta, UsoLimitado } from "./acciones";
 import type { CondicionTirada } from "./condiciones";
+import type { Sheet } from "./sheet";
+import { claveContador, conContador, contadorEscena } from "./usosEscena";
 import type { GrupoAccion } from "./modificadores";
 import type { Grado } from "./psionica";
 import { etiquetaEconomia, type DetallePoder } from "./poderes";
@@ -52,6 +64,78 @@ const POR: Record<LimiteUno["por"], string> = {
 };
 
 const textoLimiteUno = (l: LimiteUno) => `${l.veces === 1 ? "una vez" : `${l.veces} veces`} por ${POR[l.por]}`;
+
+// Lo que la ficha sabe de la mesa para los límites: los aliados (los otros personajes en juego)
+// y el turno del combate en curso (claveDeTurno; null fuera de combate). Lo pone quien resuelve
+// la ficha de un jugador (página y servidor, lib/mesaDeFicha.ts).
+export type MesaDeFicha = { aliados: readonly { id: string; nombre: string }[]; turno: string | null };
+
+export const ID_ALIADO_DOTE = "dote_aliado";
+
+type ContextoLimites = { usosEscena: readonly string[]; mesa: MesaDeFicha | null };
+const SIN_LIMITES: ContextoLimites = { usosEscena: [], mesa: null };
+
+const limitesDe = (l: Limite): LimiteUno[] => (!l ? [] : Array.isArray(l) ? l : [l]);
+
+// El uso limitado de una acción, su bloqueo si está agotado y el selector de aliado. null si no
+// tiene límite que se cuente (o no hay mesa).
+function limiteContado(
+  accion: AccionDote,
+  { usosEscena, mesa }: ContextoLimites,
+): { uso: UsoLimitado; bloqueada?: string; selector?: CondicionTirada } | null {
+  if (!mesa) return null;
+  const uso: UsoLimitado = { accionId: accion.id, claves: [] };
+  const motivos: string[] = [];
+  let selector: CondicionTirada | undefined;
+  for (const l of limitesDe(accion.limite)) {
+    if (l.por === "escena" || (l.por === "turno" && mesa.turno)) {
+      const clave = l.por === "escena" ? claveContador(accion.id) : claveContador(accion.id, { turno: mesa.turno! });
+      uso.claves.push({ clave, veces: l.veces });
+      const usados = contadorEscena(usosEscena, clave);
+      if (usados >= l.veces) motivos.push(`Usada ${l.por === "escena" ? "esta escena" : "este turno"} (${usados}/${l.veces}).`);
+    } else if (l.por === "aliado") {
+      uso.porAliado = { veces: l.veces };
+      const libres = mesa.aliados.filter((a) => contadorEscena(usosEscena, claveContador(accion.id, { aliado: a.id })) < l.veces);
+      if (libres.length === 0) {
+        motivos.push(mesa.aliados.length === 0 ? "No hay aliados en la mesa." : "Ya la has usado con todos tus aliados esta escena.");
+      } else {
+        selector = {
+          id: ID_ALIADO_DOTE,
+          tipo: "opcion",
+          etiqueta: "Aliado",
+          opciones: libres.map((a) => ({ id: a.id, etiqueta: a.nombre, valor: 0, sinValor: true as const })),
+          porDefecto: libres[0].id,
+        };
+      }
+    }
+  }
+  if (uso.claves.length === 0 && !uso.porAliado) return null;
+  return { uso, ...(motivos.length > 0 && { bloqueada: motivos.join(" ") }), ...(selector && { selector }) };
+}
+
+// Gasta un uso de la acción (al tirar): sube sus contadores y, por aliado, el del elegido. Lo
+// vuelve a comprobar todo (el servidor lo llama con el uso que él mismo ha calculado).
+export function gastarUsoLimitado(
+  sheet: Sheet,
+  uso: UsoLimitado,
+  aliadoId: string | null,
+  aliados: readonly { id: string }[],
+): { ok: true; sheet: Sheet } | { ok: false; error: string } {
+  let tras = sheet;
+  for (const { clave, veces } of uso.claves) {
+    const usados = contadorEscena(sheet.usosEscena, clave);
+    if (usados >= veces) return { ok: false, error: "Ya no te quedan usos de esa acción." };
+    tras = conContador(tras, clave, usados + 1);
+  }
+  if (uso.porAliado) {
+    if (!aliadoId || !aliados.some((a) => a.id === aliadoId)) return { ok: false, error: "Elige un aliado de la mesa." };
+    const clave = claveContador(uso.accionId, { aliado: aliadoId });
+    const usados = contadorEscena(sheet.usosEscena, clave);
+    if (usados >= uso.porAliado.veces) return { ok: false, error: "Ya la has usado con ese aliado esta escena." };
+    tras = conContador(tras, clave, usados + 1);
+  }
+  return { ok: true, sheet: tras };
+}
 
 function textoLimite(l: Limite): string | null {
   if (!l) return null;
@@ -144,6 +228,7 @@ function construir(
   dote: DoteCatalogo,
   accion: AccionDote,
   anadidos: ReturnType<typeof anadidosPorAccion>,
+  limites: ContextoLimites,
 ): { tirada: Accion } | { directa: AccionDirecta } {
   const r = accion.resolucion;
   const dificultad = dificultadDe(r);
@@ -168,7 +253,9 @@ function construir(
     };
   }
 
+  const limite = limiteContado(accion, limites);
   const casillas = [
+    ...(limite?.selector ? [limite.selector] : []),
     ...[casillaDeBonos(accion, dote, anadidos.bonos.get(accion.id))].filter((c) => c !== null),
     ...(anadidos.ventajas.get(accion.id) ?? []),
   ];
@@ -187,6 +274,8 @@ function construir(
       ...(r.tipo === "ataque" && r.modificador !== undefined && { ajustesFijos: [{ valor: r.modificador, fuente: accion.label }] }),
       ...(casillas.length > 0 && { condiciones: casillas }),
       poder: detalle,
+      ...(limite && { usoLimitado: limite.uso }),
+      ...(limite?.bloqueada && { bloqueada: limite.bloqueada }),
     },
   };
 }
@@ -201,7 +290,8 @@ const enGrupo = <T extends { id: string; grupo: GrupoAccion }>(a: T, grupo: Grup
   grupo,
 });
 
-export function accionesDeDotes(activas: readonly DoteActiva[]): AccionesDeDotes {
+// `limites`: los usos gastados de la ficha y su mesa, para contar los límites (sin mesa, texto).
+export function accionesDeDotes(activas: readonly DoteActiva[], limites: ContextoLimites = SIN_LIMITES): AccionesDeDotes {
   const tiradas: Accion[] = [];
   const directas: AccionDirecta[] = [];
   const anadidos = anadidosPorAccion(activas);
@@ -210,7 +300,7 @@ export function accionesDeDotes(activas: readonly DoteActiva[]): AccionesDeDotes
     const origen = origenDeDote(activa);
     dote.efectos.forEach((e: EfectoDote, i) => {
       if (e.tipo !== "accion" || dote.motor[i]?.estado !== "construido") return;
-      const hecha = construir(dote, e.accion, anadidos);
+      const hecha = construir(dote, e.accion, anadidos, limites);
       const extra = e.accion.grupoExtra;
       if ("tirada" in hecha) {
         const tirada = { ...hecha.tirada, origen };

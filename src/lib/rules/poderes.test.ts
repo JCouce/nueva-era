@@ -1169,9 +1169,10 @@ describe("Inducción — tanda 3: Supresión y Estabilización", () => {
   });
 
   test("Estabilización: duraciones y textos por nivel poseído", () => {
-    assert.deepEqual(resolverI("estabilizacion", 2).duracion, { manual: "10 minutos" });
+    // La prosa de nv2: «10 minutos por nivel de poder»; nv4: «30 minutos» (una escena).
+    assert.deepEqual(resolverI("estabilizacion", 2).duracion, { manual: "10 minutos por nivel" });
     const n4 = resolverI("estabilizacion", 4);
-    assert.deepEqual(n4.duracion, { manual: "30 minutos" });
+    assert.deepEqual(n4.duracion, { manual: "30 minutos (una escena)" });
     assert.match(n4.resultados.exito!.texto, /omites por completo los de daño y fatiga/);
     assert.match(resolverI("estabilizacion", 6).resultados.critico!.texto, /Eliminas por completo/);
     assert.match(resolverI("estabilizacion", 5, { uso: "salvacion" }).resultados.exito!.texto, /^\+3/);

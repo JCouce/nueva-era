@@ -66,9 +66,22 @@ export type TiradaObjetivo = { que: string; dificultad?: Valor; grados?: Partial
 // `estados` con `sobre: "propio"`: los pone la app sobre el psiónico al conocer el grado
 // (efectosDelResultado, usoPoder.ts), con el grado del estado del catálogo (`grado`). Los
 // de `sobre: "objetivo"` serían texto: la app no toca la ficha de otro.
+// `escena`: dura hasta el final de la escena (la "hora" o los "30 minutos" de la prosa; una
+// hora = una escena, usuario 2026-10-28) y `duracion` no cuenta. `apuntaEstados`: el estado
+// guarda qué otros estados tenía el psiónico al ponérselo (EstadoActivo.cubre: Estabilizado
+// solo reduce esos, no los que lleguen después).
+export type EstadoDeResultado = {
+  estado: string;
+  grado?: string;
+  duracion: Valor;
+  sobre: "objetivo" | "propio";
+  escena?: true;
+  apuntaEstados?: true;
+};
+
 export type ResultadoPoder = {
   texto: string;
-  estados: { estado: string; grado?: string; duracion: Valor; sobre: "objetivo" | "propio" }[];
+  estados: EstadoDeResultado[];
   danio?: { valor: Valor; categoria: string; sobre: "objetivo" | "propio" };
 };
 
@@ -88,14 +101,21 @@ export type Nota = { texto: string; lugar: "tirada" | "danio" };
 // (P1, 2026-10-28: Leer Mente, Vínculo, Anclaje, Auto-proyección, Precognición,
 // Estabilización). El jugador la marca cuando el efecto está activo: la app no sabe si se
 // superó una enfrentada ni lleva la cuenta de la duración. Una CondicionTirada por alcance,
-// con el poder de origen (casillasDePsionica, poderes.ts). `soloConPenalizadores`: solo
-// sale si la ficha tiene algún penalizador de estado, heridas o fatiga (Estabilización).
+// con el poder de origen (casillasDePsionica, poderes.ts). `blancos`: alcances que salen de
+// los datos del catálogo en vez de una lista a mano (alcancesDeBlancos, poderes.ts):
+//   poderes_enfrentados  las tiradas de poder con resolución "enfrentada" (Leer Mente).
+//   dotes_enfrentadas    las acciones de dote con resolución "enfrentada", y su copia en otro
+//                        grupo (Traicionero en Iniciativa) (Leer Mente).
+//   poderes_de_ataque    las tiradas ofensivas de poder: resolución "ataque", daño al objetivo
+//                        en algún grado o `contraLaDefensa` (Precognición).
+export type BlancoDePoder = "poderes_enfrentados" | "dotes_enfrentadas" | "poderes_de_ataque";
+
 export type CasillaDePoder = {
   alcances: AlcanceModificador[];
+  blancos?: BlancoDePoder[];
   condicion: CondicionTirada;
   desdeNivelPoseido?: number;
   hastaNivelPoseido?: number;
-  soloConPenalizadores?: true;
 };
 
 export type OpcionElegida = { eje: string; opcion: string };
@@ -112,6 +132,10 @@ export type AccionPoder = {
   objetivo: { tipo: "unico" | "casilla" | "varios" | "propio" | "aliado"; area?: Valor | "tabla" } | null;
   desplazamiento: Valor | "tabla" | null;
   resolucion: ResolucionPoder;
+  // Tirada ofensiva contra la defensa del objetivo aunque se resuelva como "tirada" y sin daño
+  // (Anclaje: la prosa lo trata como un ataque a distancia, el objetivo esquiva). Cuenta como
+  // poder de ataque (blanco "poderes_de_ataque").
+  contraLaDefensa?: true;
   porObjetivo?: { organico?: Partial<AccionPoder>; sintetico?: Partial<AccionPoder> };
   objetivoTira: TiradaObjetivo[]; // SOLO TEXTO tras tirar
   ejes: EjePoder[];
@@ -140,7 +164,9 @@ export type AccionPoder = {
     opcion?: OpcionElegida | OpcionElegida[];
     sobre: string;
     op: "sustituye" | "suma" | "multiplica";
-    valor: Valor | Economia | string;
+    // Los estados de un resultado (`resultados.<grado>.estados`), para cambiar su grado y su
+    // duración por tramo de nivel (Estabilizado).
+    valor: Valor | Economia | string | EstadoDeResultado[];
   }[];
   // Proeza: la fatiga extra sale del peso del objetivo que escribe el jugador
   // frente a la carga máxima de la fila (+N por cada 10 % completo de exceso,
