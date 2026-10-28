@@ -8,7 +8,8 @@ import {
   poder,
   estadosDeCombatiente,
   describirEstadosActivos,
-  inmunidadesDe,
+  estadosParaPintar,
+  resolverFicha,
   resumenCombate,
   textoEntradaRegistro,
   danioDeFoto,
@@ -50,14 +51,22 @@ export default async function CombatePage() {
     ...combateRaw,
     combatientes: combateRaw.combatientes.map(({ character, ...c }) => {
       const sheet = c.sheet ? parseSheet(c.sheet) : null;
-      // A7: las del jugador, con su ficha en vivo; las del NPC, con su foto.
+      // A7: las del jugador, con su ficha en vivo; las del NPC, con su foto. Los estados
+      // automáticos (Heridas, Fatiga, Inconsciencia), con la vida y la fatiga de la fila.
       const deFicha = character ? parseSheet(character.stats) : sheet;
-      const inmunidades = deFicha ? inmunidadesDe(deFicha) : [];
+      const guardados = estadosDeCombatiente({ ...c, character });
+      const ficha =
+        deFicha &&
+        resolverFicha(deFicha, {
+          estados: guardados,
+          vitalidad: { origen: "combate", pgActual: c.pgActual, pgMax: c.pgMax, fatigaActual: c.fatigaActual, fatigaMax: c.fatigaMax },
+          libre: !character,
+        });
       return {
         ...c,
         danio: danioDeFoto(c.danio, c.pgActual, c.pgMax),
-        estados: describirEstadosActivos(estadosDeCombatiente({ ...c, character }), inmunidades),
-        inmunidades,
+        estados: ficha ? estadosParaPintar(ficha) : describirEstadosActivos(guardados),
+        inmunidades: ficha?.inmunidades ?? [],
         xp: character?.xp ?? null,
         creditos: character?.creditos ?? null,
         sheet,

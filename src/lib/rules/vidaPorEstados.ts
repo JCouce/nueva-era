@@ -2,8 +2,8 @@
 // docs/sistema.md): cuando poner un estado, o cambiarle el grado, baja la vida máxima,
 // la vida actual baja lo mismo y se queda así. Es castigo: no vuelve al quitarse el
 // estado ni al caerse por rondas. Igual con la fatiga. Si el máximo sube o no cambia,
-// la actual no se toca. Suelo 0; llegar a 0 no hace nada solo (la inconsciencia la
-// marca el máster).
+// la actual no se toca. Suelo 0; llegar a 0 no escribe nada: la inconsciencia sale sola
+// como estado automático, sin guardarse (estadosDerivados, estados.ts).
 //
 // Fuera de combate se escribe en la ficha (vidaActual/fatigaActual). Si el jugador
 // tiene fila en un combate abierto, además en su foto (pgActual/fatigaActual), y la

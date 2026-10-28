@@ -531,6 +531,23 @@ imponen penalizadores por umbral:
 - **Sin mecanizar**: "una casilla por turno" de Moribundo (solo la nota; el número de
   carrera no cambia) y la media velocidad en los metros de la tirada de Volar (solo se
   parte el vuelo de Estado; pendiente en `docs/tareas.md`).
+- **Como estados automáticos** (usuario, 2026-10-28): los umbrales se ven como los estados
+  **Heridas** (Herido, Malherido, Moribundo) y **Fatiga** (Fatigado, Exhausto), un nivel por
+  estado, más **Inconsciencia** con vida ≤ 0 o fatiga efectiva ≤ 0. Son **derivados, nunca
+  guardados**: `resolverFicha` los calcula con la misma vida/fatiga de arriba
+  (`FichaResuelta.estadosDerivados`, función `estadosDerivados` de `rules/estados.ts`) y no se
+  escriben en `Character.estados` ni en `Combatiente.estados`, así que «Limpiar estados» y
+  «Siguiente turno» no los tocan y el máster no los puede quitar: se van al subir la vida o la
+  fatiga. Viven en `ESTADOS_DERIVADOS` (`catalog/estados.ts`), fuera de `ESTADOS` y de
+  `estadoPorId`: no salen en el selector del máster ni los acepta la validación. Sus
+  `modificadores` van vacíos: el −N, la media velocidad y la carga siguen saliendo de
+  `modificadoresDeUmbrales` y `movimientoPorUmbrales` (con origen `"estado"`), una sola vez, y
+  las reducciones (Guerrero, Siervo, Estabilización Autonómica, Neuroprótesis, Proyección,
+  Neurogénesis) no cambian. Se pintan con `estadosParaPintar` (`fichaResuelta.ts`) en
+  Recursos (tarjeta de estados), el rail de la ficha y la tira de combate del jugador, la Mesa
+  y el combate del máster, marcados «automático», sin duración ni ×. La inconsciencia de
+  sobrecarga psiónica no es derivable y la sigue poniendo el máster; si está puesta a mano y
+  además sale derivada, se enseña una vez, la puesta.
 
 ## 8. Economía `[PARCIAL · EQUIP + HOJA2]`
 

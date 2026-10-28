@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import {
   ATRIBUTOS,
   APLICADOS,
-  describirEstadosActivos,
+  estadosParaPintar,
   pesoEquipado,
   type CategoriaDanio,
   type EstadoFicha,
@@ -44,7 +44,7 @@ export function RailFicha({
   const especie = ficha.especie
     ? [ficha.especie.especie, ficha.especie.casta, ficha.especie.linaje].flatMap((o) => (o ? [o.label] : [])).join(" · ")
     : "sin especie";
-  const estados = describirEstadosActivos(ficha.estados, ficha.inmunidades);
+  const estados = estadosParaPintar(ficha);
   const mov = ficha.movimiento;
   const pesoArmas = pesoEquipado(sheet);
 

@@ -1,12 +1,11 @@
 // Catálogo de estados de combate — fuente: docs/sistema-y-combate.md
 // §"Efectos y estados" (fase 6b, docs/fase-6b.md bloque 0, subtarea 0.3).
 //
-// **Qué NO está aquí y por qué:**
+// **Qué NO está en `ESTADOS` y por qué:**
 // - **Fatiga** y **Heridas**: el propio documento las remite a "Puntos de
-//   fatiga"/"Puntos de golpe" — son exactamente los umbrales
-//   Herido/Malherido/Moribundo/Fatigado/Exhausto que ya se derivan solos en
-//   `modificadoresDeUmbrales()` (subtarea 0.2a). No son un estado que el
-//   máster aplique a mano, así que no duplican entrada aquí.
+//   fatiga"/"Puntos de golpe" — son los umbrales Herido/Malherido/Moribundo/
+//   Fatigado/Exhausto. Viven abajo, en `ESTADOS_DERIVADOS`: los calcula
+//   resolverFicha con la vida y la fatiga, nadie los pone ni los guarda.
 // - **Muerte**: no es un estado con duración que se lleve puesto, es un
 //   marcador terminal del combatiente — vive en el modelo de `Combatiente`
 //   (bloque 1: derrotado/fuera de combate), no en este catálogo.
@@ -890,8 +889,85 @@ export const ESTADOS_DE_AUMENTO: Estado[] = [
   },
 ];
 
+// Los umbrales de §7 como estados (usuario, 2026-10-28): Heridas y Fatiga, un nivel por estado
+// (S14). Derivados, nunca guardados: los calcula resolverFicha con la vida y la fatiga
+// (estadosDerivados, rules/estados.ts) y se van solos al volver por encima del umbral. Fuera de
+// estadoPorId a propósito: así no los acepta la validación del máster (validation.ts), ni el
+// lector de lo guardado (leerEstados), ni el selector (PanelEstados, que lista ESTADOS). Sus
+// `modificadores` van vacíos: el −N, la media velocidad y la carga los sigue poniendo la lógica
+// de umbrales (modificadoresDeUmbrales, movimientoPorUmbrales) con sus reducciones; aquí solo el
+// texto para pintarlos. Los ids de grado son los de UmbralSalud/UmbralFatiga.
+export const ESTADOS_DERIVADOS: Estado[] = [
+  {
+    id: "heridas",
+    label: "Heridas",
+    resumen:
+      "Puntos de golpe por debajo de la mitad. Lo pone y lo quita la vida: sale solo al bajar del " +
+      "umbral y se va al curarse por encima.",
+    grados: [
+      {
+        id: "herido",
+        label: "Herido",
+        modificadores: [],
+        detalle: ["Menos del 50 % de los puntos de golpe: −1 a todas las tiradas."],
+        duracionTurnos: null,
+      },
+      {
+        id: "malherido",
+        label: "Malherido",
+        modificadores: [],
+        detalle: ["Menos del 25 % de los puntos de golpe: −3 a todas las tiradas, media velocidad y −25 % de carga."],
+        duracionTurnos: null,
+      },
+      {
+        id: "moribundo",
+        label: "Moribundo",
+        modificadores: [],
+        detalle: [
+          "Menos del 10 % de los puntos de golpe (mínimo 1): −5 a todas las tiradas, una casilla por " +
+            "turno y −50 % de carga.",
+        ],
+        duracionTurnos: null,
+      },
+    ],
+  },
+  {
+    id: "fatiga",
+    label: "Fatiga",
+    resumen:
+      "Puntos de fatiga por debajo de la cuarta parte. Lo pone y lo quita la fatiga: sale solo al " +
+      "bajar del umbral y se va al recuperarla.",
+    grados: [
+      {
+        id: "fatigado",
+        label: "Fatigado",
+        modificadores: [],
+        detalle: ["Menos del 25 % de los puntos de fatiga: −1 a todas las tiradas."],
+        duracionTurnos: null,
+      },
+      {
+        id: "exhausto",
+        label: "Exhausto",
+        modificadores: [],
+        detalle: [
+          "Menos del 10 % de los puntos de fatiga (mínimo 1): −2 a todas las tiradas, media velocidad " +
+            "y −25 % de carga.",
+        ],
+        duracionTurnos: null,
+      },
+    ],
+  },
+];
+
+// Los estados que se pueden poner y guardar (los del máster y los de los activables). Los
+// derivados no: ver ESTADOS_DERIVADOS.
 export function estadoPorId(id: string): Estado | null {
   return ESTADOS.find((e) => e.id === id) ?? ESTADOS_DE_AUMENTO.find((e) => e.id === id) ?? null;
+}
+
+// Para pintar: cualquiera, derivados incluidos.
+export function estadoParaPintar(id: string): Estado | null {
+  return estadoPorId(id) ?? ESTADOS_DERIVADOS.find((e) => e.id === id) ?? null;
 }
 
 export function esEstadoDeAumento(id: string): boolean {

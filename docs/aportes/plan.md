@@ -302,7 +302,7 @@ inventario actualizado (columna de reclasificación marcada como aplicada).
 
 ---
 
-### Tarea previa a la fase 2 — Umbrales como estados automáticos ⬜ (fuera de este plan)
+### Tarea previa a la fase 2 — Umbrales como estados automáticos ✅ (2026-10-28, fuera de este plan)
 Decisión del usuario (2026-10-28, E4 del inventario): los umbrales de salud y fatiga (§7)
 dejan de ser aportes sin ítem y pasan a ser **estados** («Malherido», «Fatigado»…) que se ponen
 solos al pasar el umbral y se quitan al volver. Es funcionalidad nueva y toca reglas: se plantea

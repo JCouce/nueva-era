@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
 import { listarRegistro } from "@/lib/registroMaster";
 import {
-  describirEstadosActivos,
+  estadosParaPintar,
   leerEstados,
   parseSheet,
   reconciliarVidaConEstados,
@@ -14,6 +14,7 @@ import {
   VITALIDAD_DE_FICHA,
   danioDeFoto,
   fotoEnMesa,
+  type VitalidadActual,
 } from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
 import { MesaMaster, type JugadorMesa } from "./MesaMaster";
@@ -64,7 +65,21 @@ async function cargarMesa() {
     const estados = leerEstados(f.estados);
     // Recorte exacto con los activables puestos (A5b): parseSheet topa con el posible.
     const sheet = reconciliarVidaConEstados(parseSheet(f.stats), estados);
-    const ficha = resolverFicha(sheet, { estados, vitalidad: VITALIDAD_DE_FICHA });
+    const propias = fotos.filter((c) => c.characterId === f.id);
+    // Los estados automáticos (Heridas, Fatiga, Inconsciencia) salen de la vida que se enseña:
+    // la de su foto si está en un combate en curso (la misma que elige vidaEnMesa), si no la
+    // de la ficha.
+    const enCombate = fotoEnMesa(propias);
+    const vitalidad: VitalidadActual = enCombate
+      ? {
+          origen: "combate",
+          pgActual: enCombate.pgActual,
+          pgMax: enCombate.pgMax,
+          fatigaActual: enCombate.fatigaActual,
+          fatigaMax: enCombate.fatigaMax,
+        }
+      : VITALIDAD_DE_FICHA;
+    const ficha = resolverFicha(sheet, { estados, vitalidad });
     const especie = ficha.especie
       ? [ficha.especie.especie.label, ficha.especie.casta?.label].filter(Boolean).join(" · ")
       : null;
@@ -73,7 +88,7 @@ async function cargarMesa() {
         vida: { actual: sheet.vidaActual, max: ficha.salud.vida },
         fatiga: { actual: sheet.fatigaActual, max: ficha.salud.fatiga },
       },
-      fotos.filter((c) => c.characterId === f.id),
+      propias,
     );
     // Hasta dónde cura la pestaña Vida: la foto, a su máximo; la ficha, al de reposo (S74)
     // más los activables puestos (A5b).
@@ -82,7 +97,7 @@ async function cargarMesa() {
       : topesDeVida(sheet, estados);
     // El desglose de la vida que se enseña: el de la foto en combate; si no, el de la ficha
     // (ya normalizado contra ese mismo tope por reconciliarVidaConEstados).
-    const foto = mostrada.deCombate ? fotoEnMesa(fotos.filter((c) => c.characterId === f.id)) : null;
+    const foto = mostrada.deCombate ? enCombate : null;
     const danio = foto ? danioDeFoto(foto.danio, foto.pgActual, foto.pgMax) : sheet.danio;
     return {
       id: f.id,
@@ -93,7 +108,7 @@ async function cargarMesa() {
       vida: { ...mostrada.vida, tope: tope.vida, danio },
       fatiga: { ...mostrada.fatiga, tope: tope.fatiga },
       deCombate: mostrada.deCombate,
-      estados: describirEstadosActivos(estados, ficha.inmunidades),
+      estados: estadosParaPintar(ficha),
       inmunidades: ficha.inmunidades,
     };
   });

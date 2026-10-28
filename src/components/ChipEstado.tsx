@@ -21,10 +21,12 @@ export function ChipEstado({
 }) {
   // Activables de aumento (A5a): la duración larga, que dice que las rondas solo corren en combate.
   // A7: un estado que la inmunidad deja sin efecto lo dice ("Inmune (Ojo Biónico 2)"), y uno
-  // puesto con "Aplicar igualmente", "forzado".
+  // puesto con "Aplicar igualmente", "forzado". Los automáticos (Heridas, Fatiga, Inconsciencia
+  // por la vida o la fatiga) no tienen duración ni ×: se van solos.
+  const quitable = onQuitar && !estado.automatico;
   const extra = [
     estado.grado,
-    estado.duracionActivable ?? etiquetaDuracionCorta(estado.duracion),
+    estado.automatico ? "automático" : (estado.duracionActivable ?? etiquetaDuracionCorta(estado.duracion)),
     estado.inmune ? `Inmune (${estado.inmune})` : null,
     estado.forzado ? "forzado" : null,
   ]
@@ -33,8 +35,12 @@ export function ChipEstado({
   return (
     <span
       className={`inline-flex min-h-7 max-w-full items-center gap-1.5 border text-[0.85rem] leading-tight text-foreground ${
-        estado.inmune ? "border-dashed border-info bg-info/10" : "border-glitch bg-glitch/15"
-      } ${onQuitar ? "pl-2" : "px-2"}`}
+        estado.inmune
+          ? "border-dashed border-info bg-info/10"
+          : estado.automatico
+            ? "border-danger bg-danger/10"
+            : "border-glitch bg-glitch/15"
+      } ${quitable ? "pl-2" : "px-2"}`}
     >
       <b className={`truncate font-bold ${estado.inmune ? "line-through decoration-info" : ""}`}>{estado.nombre}</b>
       {extra && (
@@ -44,7 +50,7 @@ export function ChipEstado({
           · {extra}
         </span>
       )}
-      {onQuitar && (
+      {quitable && (
         <button
           type="button"
           onClick={onQuitar}

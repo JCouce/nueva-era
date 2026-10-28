@@ -506,7 +506,7 @@ export function CombateConsole({
         <NpcAccionesPanel
           nombre={npcAbierto.nombre}
           sheet={npcAbierto.sheet}
-          estadosCombate={npcAbierto.estados}
+          estadosCombate={npcAbierto.estados.filter((e) => !e.automatico)}
           pgActual={npcAbierto.pgActual}
           pgMax={npcAbierto.pgMax}
           fatigaActual={npcAbierto.fatigaActual}

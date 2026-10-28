@@ -39,7 +39,7 @@ foco. Frentes abiertos, cada uno con su sección en Pendiente:
   `docs/sistema.md`. Primer adelanto (Creación): Vida/Fatiga base 8 → 10 (hecho, §4 `HOJA3`), Dotes con
   presupuesto por prioridad, topes de creación movidos.
 - **Ítems y aportes (pestaña Acciones)**: plan aprobado 2026-10-28 en `docs/aportes/plan.md`,
-  fases 0, 1 y 1b hechas; sigue la tarea de umbrales como estados y después la fase 2. El estado por fase vive en su cabecera allí.
+  fases 0, 1 y 1b y los umbrales como estados hechos; sigue la fase 2 (origen en cada aporte). El estado por fase vive en su cabecera allí.
 - "Preguntas al diseñador" (final de este documento) — lo que bloquea a Murillo.
 - **La fábrica** (épica en Pendiente, N1 construido, en rodaje desde 2026-10-22): cadena de montaje de cambios con
   Jefe de fábrica, línea determinista y revisión con oráculos. Uso y qué se apunta dónde: `fabrica/README.md`.
@@ -939,7 +939,7 @@ su propio `PanelFieldset` y `CharacterSheet` ya no lo envuelve. NPC y consola de
   `montarTirada` sin especialidad y con la habilidad entera; `conExtrasDeFicha` no le añade nada (S84). En Acciones
   recientes, "Tirada libre (Reflejos + Sigilo)". También en el editor de NPC y el combate del máster, sin estrella.
 
-### Umbrales de salud y fatiga como estados automáticos ⬜ (usuario, 2026-10-28)
+### Umbrales de salud y fatiga como estados automáticos ✅ (usuario, 2026-10-28; construido y verificado en navegador 2026-10-28)
 Los umbrales de §7 (penalizadores por heridas y por fatiga) pasan a ser **estados** que aparecen
 solos al cruzar el umbral y se van al volver, en vez de modificadores sin ítem. Idea antigua del
 usuario; salió como E4 del inventario de aportes y va antes de la fase 2 de `docs/aportes/plan.md`.
@@ -968,6 +968,13 @@ La fuente lo respalda: `fuente/reglas-base.md` lista **Heridas** y **Fatiga** en
   combate del máster, marcados como automáticos (sin duración ni botón de quitar).
 - El selector de estados del máster no ofrece Heridas ni Fatiga (son solo derivados).
 - `docs/sistema.md` §7: el bloque "En la app" pasa a describir los estados derivados.
+
+**Construido (2026-10-28, pendiente de revisión en navegador):** `ESTADOS_DERIVADOS` en
+`catalog/estados.ts` (fuera de `ESTADOS` y de `estadoPorId`), `estadosDerivados` y
+`describirEstados` en `rules/estados.ts`, `FichaResuelta.estadosDerivados` y
+`estadosParaPintar`. Caracterización en `umbrales-caracterizacion.test.ts` (números sin tocar) y
+tests en `estadosDerivados.test.ts`. Fuera de alcance: la lista de combatientes que ve el jugador
+en su pestaña Combate (`CombateTab`) sigue enseñando solo los guardados.
 
 ### Acciones por habilidad: árbol, barra de salvaciones y Sin dado ✅ (usuario, 2026-10-27; rama `prueba/tiradas-en-habilidades`)
 Sustituye la barra por origen de arriba. Motivo: en mesa se tiraba "atributo + habilidad" a pelo y se perdían dotes,

@@ -84,7 +84,9 @@ import { consultaIndiceCondiciones, indiceDeCondiciones, modificadoresDeEquipo, 
 import { casillasDeFarmacos } from "./farmacos";
 import { inmunidadesDe } from "./inmunidades";
 import {
+  describirEstados,
   estadosConEfecto,
+  estadosDerivados,
   modificadoresDeEstados,
   modificadoresDeUmbrales,
   movimientoPorUmbrales,
@@ -93,6 +95,8 @@ import {
   type AjusteUmbrales,
   umbralSalud,
   type EstadoActivo,
+  type EstadoActivoDescrito,
+  type EstadoDerivado,
   type Inmunidad,
   type MovimientoPorUmbral,
   type UmbralFatiga,
@@ -118,8 +122,12 @@ function bolsaResuelta(total: number | null, gastada: number): BolsaAumentosResu
 export type FichaResuelta = {
   ficha: Sheet;
   especie: EspecieResuelta | null;
-  // Los estados que lleva puestos (los de OpcionesFicha), para pintarlos.
+  // Los estados que lleva puestos (los de OpcionesFicha): los guardados, sin los derivados.
   estados: EstadoActivo[];
+  // Los umbrales de §7 como estados (Heridas, Fatiga) e Inconsciencia a 0, con la misma
+  // vida/fatiga que `umbrales`. Nunca se guardan; para pintarlos junto a `estados`, con
+  // estadosParaPintar. Sus números ya van en `modificadores`, `movimiento` y `cargaMaxima`.
+  estadosDerivados: EstadoDerivado[];
   // A7: estados a los que es inmune, con la pieza que lo da. Los puestos sin forzar no hacen
   // efecto (estadosConEfecto); siguen en `estados`. Derivado: también al NPC.
   inmunidades: Inmunidad[];
@@ -338,6 +346,7 @@ export function resolverFicha(
     ficha: sheet,
     especie,
     estados,
+    estadosDerivados: estadosDerivados(v.pg, v.pgMax, v.fatiga, v.fatigaMax),
     inmunidades,
     piezasInutilizadas: SIN_PIEZAS_INUTILIZADAS,
     modificadores,
@@ -395,6 +404,12 @@ export function resolverFicha(
     notasFarmacos: notasFarmacosDeEspecie(especie),
     accionesEspecie: accionesSinDadoDeEspecie(especie),
   };
+}
+
+// Lo que se pinta en las listas de estados (ficha, Mesa, combate): los derivados de la vida y la
+// fatiga, marcados automáticos, y los guardados con sus inmunidades (describirEstados).
+export function estadosParaPintar(ficha: Pick<FichaResuelta, "estados" | "estadosDerivados" | "inmunidades">): EstadoActivoDescrito[] {
+  return describirEstados(ficha.estados, ficha.estadosDerivados, ficha.inmunidades);
 }
 
 // --- Lo que la ficha añade a una tirada antes de montarla ------------------------

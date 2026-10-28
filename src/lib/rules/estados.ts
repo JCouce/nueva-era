@@ -7,7 +7,8 @@
 //
 //   - Los umbrales de PG/fatiga (este fichero, más abajo) se DERIVAN solos
 //     del número actual frente al máximo — nadie los "aplica", igual que hoy
-//     se derivan los aplicados o la salud máxima.
+//     se derivan los aplicados o la salud máxima. Se enseñan como los estados
+//     Heridas y Fatiga (ESTADOS_DERIVADOS, estadosDerivados), sin guardarse.
 //   - Los ~20 estados del catálogo (docs/sistema.md §7) los aplica el máster
 //     a mano en un combate — llegan en 0.3/0.4, con su propio catálogo y su
 //     propia función `modificadoresDeEstados()`.
@@ -18,7 +19,7 @@
 // recurso no se acumulan, solo el más profundo aporta su penalizador) y S15
 // (cómo se interpreta el "mínimo 1" de Moribundo/Exhausto).
 import type { AlcanceModificador, ModificadorConFuente, OrigenModificador } from "./modificadores";
-import { esEstadoDeAumento, estadoPorId } from "../catalog/estados";
+import { esEstadoDeAumento, estadoParaPintar, estadoPorId } from "../catalog/estados";
 
 export type UmbralSalud = "normal" | "herido" | "malherido" | "moribundo";
 export type UmbralFatiga = "normal" | "fatigado" | "exhausto";
@@ -220,6 +221,29 @@ export function movimientoPorUmbrales(salud: UmbralSalud, fatiga: UmbralFatiga):
   };
 }
 
+// Los umbrales como estados (usuario, 2026-10-28; docs/tareas.md "Umbrales de salud y fatiga
+// como estados automáticos"): Heridas y Fatiga con su nivel (un nivel por estado, S14) e
+// Inconsciencia con vida ≤ 0 o fatiga ≤ 0 (la fatiga, la efectiva). Solo ids, para pintarlos:
+// no es un EstadoActivo a propósito (sin duración), así no cabe en lo que se guarda
+// (Character.estados, Combatiente.estados) ni en modificadoresDeEstados. Los números siguen
+// saliendo de modificadoresDeUmbrales y movimientoPorUmbrales, una sola vez.
+// La inconsciencia de sobrecarga psiónica (en el límite con fatiga > 0) no es derivable: la
+// pone el máster.
+export type EstadoDerivado = { estadoId: string; gradoId: string };
+
+const ID_INCONSCIENCIA = "inconsciencia";
+
+export function estadosDerivados(pgActual: number, pgMax: number, fatigaActual: number, fatigaMax: number): EstadoDerivado[] {
+  const salud = umbralSalud(pgActual, pgMax);
+  const fatiga = umbralFatiga(fatigaActual, fatigaMax);
+  const inconsciente = (pgMax > 0 && pgActual <= 0) || (fatigaMax > 0 && fatigaActual <= 0);
+  return [
+    ...(salud !== "normal" ? [{ estadoId: "heridas", gradoId: salud }] : []),
+    ...(fatiga !== "normal" ? [{ estadoId: "fatiga", gradoId: fatiga }] : []),
+    ...(inconsciente ? [{ estadoId: ID_INCONSCIENCIA, gradoId: "activo" }] : []),
+  ];
+}
+
 // Un estado del catálogo (0.3) puesto en un combatiente concreto: qué grado
 // le tocó y cuántas rondas le quedan. Vive aquí, no en el schema de Prisma
 // del bloque 1 todavía — esa forma se decide al construir Combatiente, esto
@@ -336,6 +360,8 @@ export type EstadoActivoDescrito = EstadoActivo & {
   duracionActivable?: string;
   // A7: la fuente de la inmunidad que lo deja sin efecto ("Ojo Biónico 2"), para el chip.
   inmune?: string;
+  // Derivado de la vida o la fatiga (estadosDerivados): sin duración y sin quitar; se va solo.
+  automatico?: true;
 };
 
 // "3 rondas, en combate" / "hasta el final de la escena" (A5a).
@@ -366,6 +392,37 @@ export function describirEstadosActivos(activos: EstadoActivo[], inmunidades: re
       ...(anula && { inmune: anula.fuente }),
     };
   });
+}
+
+// Los guardados (describirEstadosActivos) y, delante, los derivados de la vida y la fatiga,
+// marcados `automatico`. Un derivado que además está puesto a mano (la inconsciencia) se enseña
+// una vez, el puesto: es el que tiene duración y se puede quitar. Las inmunidades (A7) no tocan a
+// los derivados (ninguna pieza da inmunidad a Heridas, Fatiga ni Inconsciencia).
+export function describirEstados(
+  guardados: EstadoActivo[],
+  derivados: readonly EstadoDerivado[],
+  inmunidades: readonly Inmunidad[] = [],
+): EstadoActivoDescrito[] {
+  const automaticos = derivados
+    .filter((d) => !guardados.some((g) => g.estadoId === d.estadoId))
+    .map((d): EstadoActivoDescrito => {
+      const estado = estadoParaPintar(d.estadoId);
+      const grado = estado?.grados.find((g) => g.id === d.gradoId);
+      const nombre = estado?.label ?? d.estadoId;
+      const conGrado = estado && grado && estado.grados.length !== 1 ? grado.label : null;
+      return {
+        estadoId: d.estadoId,
+        gradoId: d.gradoId,
+        rondasRestantes: null,
+        duracion: { tipo: "hastaQuitarlo" },
+        nombre,
+        grado: conGrado,
+        label: conGrado ? `${nombre} (${conGrado})` : nombre,
+        detalle: grado?.detalle ?? [],
+        automatico: true,
+      };
+    });
+  return [...automaticos, ...describirEstadosActivos(guardados, inmunidades)];
 }
 
 // Una ronda menos a cada estado activo con duración conocida; se cae solo al llegar a

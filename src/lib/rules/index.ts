@@ -19,7 +19,7 @@
 //   combate.ts        el equipo convertido en tiradas de ataque concretas
 //   herramientas.ts    herramientas activas equipadas (Radar…) convertidas en su propia tirada
 //   aprobacion.ts      guardarraíl de la ficha aprobada: solo comprar, nunca vender
-//   estados.ts         fase 6b — umbrales de salud/fatiga y catálogo de estados de combate
+//   estados.ts         fase 6b — umbrales de salud/fatiga (y sus estados derivados: Heridas, Fatiga, Inconsciencia) y estados de combate
 //   npc.ts             fase 6b — "Poder" del catálogo de NPCs (métrica del usuario, no del sistema)
 //   npcAleatorio.ts    generación de NPC al azar (botón del catálogo de NPCs)
 //   blindaje.ts        absorción de daño por blindaje (armadura, Escudo Deflector) y golpe al escudo

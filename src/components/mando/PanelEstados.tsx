@@ -88,7 +88,8 @@ export function PanelEstados({
   const nombres = listaLegible(objetivos.map((o) => nombreCorto(o.nombre)));
   // TODO(revisar): "Quitar" no sale en la maqueta de la Mesa; sin él, un estado "hasta
   // quitarlo" solo se podría quitar desde la consola de combate.
-  const conEste = estado ? objetivos.filter((o) => o.estados.some((e) => e.estadoId === estado.id)) : [];
+  // Los automáticos (la Inconsciencia por la vida o la fatiga) no se quitan: no están puestos.
+  const conEste = estado ? objetivos.filter((o) => o.estados.some((e) => e.estadoId === estado.id && !e.automatico)) : [];
   // A7: los objetivos inmunes a un estado, con la pieza ("Javi (Ojo Biónico 2)").
   const inmunesA = (estadoId: string) =>
     objetivos.flatMap((o) => {

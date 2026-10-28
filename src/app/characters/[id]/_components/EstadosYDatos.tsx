@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  describirEstadosActivos,
+  estadosParaPintar,
   notasDeEstado,
   pesoEquipado,
   textoInmunidad,
@@ -52,9 +52,10 @@ function textoDuracion(d: DuracionEstado): string {
 }
 
 // Los estados que ha puesto el máster: solo lectura, el jugador no se los quita. Con las
-// inmunidades de los aumentos (A7) delante: un estado al que es inmune no hace nada.
+// inmunidades de los aumentos (A7) delante: un estado al que es inmune no hace nada. Delante,
+// los automáticos (Heridas, Fatiga, Inconsciencia), que salen de la vida y la fatiga.
 export function EstadosCard({ ficha }: { ficha: FichaResuelta }) {
-  const activos = describirEstadosActivos(ficha.estados, ficha.inmunidades);
+  const activos = estadosParaPintar(ficha);
   return (
     <HudCard className="mt-2 flex flex-col gap-3 p-4">
       <p className="font-mono text-[11px] uppercase tracking-widest text-muted">{"//SYSTEM · estados"}</p>
@@ -68,11 +69,17 @@ export function EstadosCard({ ficha }: { ficha: FichaResuelta }) {
       ) : (
         <ul className="flex flex-col gap-2">
           {activos.map((a) => (
-            <li key={a.estadoId} className="flex flex-col gap-1 border-l-2 border-glitch py-1 pl-3">
+            <li
+              key={a.estadoId}
+              className={`flex flex-col gap-1 border-l-2 py-1 pl-3 ${a.automatico ? "border-danger" : "border-glitch"}`}
+            >
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                 <ChipEstado estado={a} />
-                {/* Los activables (A5a) ya llevan la duración larga en el chip. */}
-                {!a.duracionActivable && (
+                {/* Los activables (A5a) ya llevan la duración larga en el chip; los automáticos no
+                    tienen duración: se van al subir la vida o la fatiga. */}
+                {a.automatico ? (
+                  <span className="font-mono text-[10px] uppercase tracking-wide text-muted">se va solo</span>
+                ) : !a.duracionActivable && (
                   <span className="font-mono text-[10px] uppercase tracking-wide text-muted">{textoDuracion(a.duracion)}</span>
                 )}
               </div>
