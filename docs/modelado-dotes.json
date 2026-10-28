@@ -82,6 +82,13 @@
           "tipo": "ventaja",
           "alcance": "dotes_apoyo",
           "condicion": "¿El vínculo de afecto con el aliado es fuerte?"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "dotes_apoyo",
+          "texto": "El aliado aplica el bono en su propia tirada: la app no se lo suma.",
+          "condicion": null,
+          "porque": "tercero"
         }
       ],
       "candidataUX": "una vez por aliado por escena (contador por aliado)",

@@ -484,19 +484,22 @@ function extraerAumentos(): ItemAuditoria[] {
     for (const nivel of imp.niveles) {
       const variantes = nivel.variantes?.length ? nivel.variantes : [null];
       for (const v of variantes) {
-        items.push(
-          itemDeAumento(
-            {
-              piezaId: v ? `${imp.id}:${v.id}` : imp.id,
-              piezaLabel: v ? `${imp.label}: ${v.label}` : imp.label,
-              familia: imp.familia,
-              nivel: nivel.nivel,
-              detalle: [...nivel.detalle, ...(v ? v.detalle.map((d) => `${v.label}: ${d}`) : [])],
-            },
-            { instanciaId: "item", catalogoId: imp.id, nivel: nivel.nivel, ...(v && { eleccion: v.id }) },
-            [],
-          ),
+        const item = itemDeAumento(
+          {
+            piezaId: v ? `${imp.id}:${v.id}` : imp.id,
+            piezaLabel: v ? `${imp.label}: ${v.label}` : imp.label,
+            familia: imp.familia,
+            nivel: nivel.nivel,
+            detalle: [...nivel.detalle, ...(v ? v.detalle.map((d) => `${v.label}: ${d}`) : [])],
+          },
+          { instanciaId: "item", catalogoId: imp.id, nivel: nivel.nivel, ...(v && { eleccion: v.id }) },
+          [],
         );
+        // La extremidad del Brazo (Fuerza, Agilidad, blindaje) no sale en la ficha resuelta: la leen
+        // sus acciones de bloqueo y pelea (rules/brazoBionico.ts).
+        const extremidad = v?.extremidad ?? nivel.extremidad;
+        if (extremidad) item.otros = [...(item.otros ?? []), `extremidad (rules/brazoBionico.ts): ${json(extremidad)}`];
+        items.push(item);
       }
     }
   }

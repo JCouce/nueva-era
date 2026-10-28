@@ -162,7 +162,7 @@ describe("integridad del catálogo de aumentos", () => {
     aum_consciencia_omnidireccional: 3, // +1: Coste partido de la casilla de ventaja, fase 1b
     aum_asa_estriatotalamica: 1,
     aum_conectividad_callosa: 4, // +1: Coste partido de la casilla de ventaja, fase 1b
-    aum_proyeccion_neuro_expresiva: 3, // ventaja en Actitud (A2b) y el activable (A5a); +1: Coste partido de la casilla de ventaja, fase 1b
+    aum_proyeccion_neuro_expresiva: 5, // ventaja en Actitud (A2b) y el activable (A5a); +1: Coste partido de la casilla de ventaja, fase 1b; +2: el activable partido en Acción, Resolución y Coste (auditoría tanda 1)
     aum_sincronizacion_neuromotora_profunda: 2, // +1: Coste partido de la casilla de ventaja, fase 1b
     aum_automatismo_bulboespinal: 2,
     aum_hiperdensidad_propioceptiva: 1,

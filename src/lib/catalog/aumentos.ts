@@ -584,8 +584,10 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     motor: [
       { tipo: "resolucion", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "coste", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      // «Dos turnos»: dos dados y se queda el mejor (Resolución, auditoría tanda 1).
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      // Exclusión con Asa: solo aviso (usuario, auditoría tanda 1), en la nota de las dos casillas.
       { tipo: "texto", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "nota_fija", estado: "construido" },
     ],
   },
   {
@@ -645,7 +647,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
         label: "Activar Proyección",
         economia: "Acción gratuita",
         costeFatiga: 1,
-        nota: "Hasta el final de la escena, sin penalizadores por heridas, fatiga ni estados en las tiradas de Actitud (Convencer / mentir, Iniciativa distrayendo). El circunstancial no cambia.",
+        nota: "Hasta el final de la escena (la «hora» de la regla: la app no lleva reloj), sin penalizadores por heridas, fatiga ni estados en las tiradas de Actitud (Convencer / mentir, Iniciativa distrayendo). El circunstancial no cambia.",
         efecto: { tipo: "activar", estadoId: "aum_proyeccion", duracion: { tipo: "escena" } },
       },
     ],
@@ -654,7 +656,11 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "resolucion", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "coste", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      // «Activar Proyección» (auditoría tanda 1: antes, una sola entrada con acción, efecto y coste).
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_activar_proyeccion" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "resolucion", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "suma_derivado", estado: "construido" },
+      // Coste sobre la acción propia: el mecanismo es el de la acción que lo cobra (costeFatiga, aumentosAcciones.ts).
+      { tipo: "coste", afecta: { modo: "accion_existente", id: "aumentos_activar_proyeccion" }, mecanismo: "accion_equipo", estado: "construido" },
     ],
   },
   {
@@ -699,7 +705,8 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Salvaciones" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "nota_fija", estado: "construido" },
       { tipo: "resolucion", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "nota_fija", estado: "construido" },
+      // Una vez por escena: `usoPorEscena` de la casilla (usosEscena.ts), como Mielinización.
+      { tipo: "coste", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
   },
   {

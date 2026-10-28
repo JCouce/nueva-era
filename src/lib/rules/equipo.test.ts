@@ -908,7 +908,7 @@ describe("herramienta y consumible (Medicina, docs/traspaso.md §6)", () => {
     const cs = condicionesActivas(s, ctxMedicina);
     assert.deepEqual(
       cs.map((c) => c.id),
-      ["vtm_tratamiento", "vtm_diagnostico_profundo"],
+      ["vtm_tratamiento", "vtm_diagnostico_profundo", "vtm_combinar_tratar"],
     );
   });
 

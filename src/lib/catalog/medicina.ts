@@ -21,7 +21,7 @@
 // "Usar" y el gasto de 1 dosis al confirmar.
 import type { Herramienta, Consumible } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
-import type { Modificador } from "../rules/modificadores";
+import type { AlcanceModificador, Modificador } from "../rules/modificadores";
 import type { CondicionTirada, OpcionCondicion } from "../rules/condiciones";
 
 // docs/motor.md: el bono de aplicación de la VTM ya está mecanizado como
@@ -122,6 +122,13 @@ function opcionesTratamientoVtm(nivel: number): OpcionCondicion[] {
     });
   }
   return opciones;
+}
+
+const NOTA_COMBINAR_VTM =
+  "VTM nv4: combina dos tratamientos en una sola acción (dos fármacos, o un tratamiento y un fármaco); cada uno se tira aparte.";
+
+function casillaCombinarVtm(id: string, alcance: AlcanceModificador): CondicionTirada {
+  return { id, tipo: "toggle", etiqueta: "Combinar dos tratamientos (VTM nv4)", valorActivo: 0, valorInactivo: 0, nota: NOTA_COMBINAR_VTM, alcance };
 }
 
 function condicionTratamientoVtm(nivel: number): CondicionTirada {
@@ -259,7 +266,13 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
       // tiradas de fármacos aunque la prosa también las mencione — eso
       // queda aparte si hace falta más adelante. El umbral va como dato de la
       // opción (`margenCriticoExito: 0`) y lo aplica montarTirada (montaje.ts).
-      condiciones: [condicionTratamientoVtm(4)],
+      // "Combinar dos tratamientos en una sola acción": solo aviso, como el Visor Nocturno (casilla
+      // sin número con su nota), en Tratar heridas y en los fármacos (auditoría tanda 1, usuario).
+      condiciones: [
+        condicionTratamientoVtm(4),
+        casillaCombinarVtm("vtm_combinar_tratar", ALCANCE_TRATAR),
+        casillaCombinarVtm("vtm_combinar_farmacos", { tipo: "grupo", grupo: "Fármacos" }),
+      ],
       motor: [
         ...MOTOR_BONO_APLICACION,
         {
@@ -268,6 +281,8 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
           mecanismo: "eleccion_jugador",
           estado: "construido",
         },
+        { tipo: "texto", afecta: { modo: "accion_existente", id: "medicina" }, mecanismo: "eleccion_jugador", estado: "construido" },
+        { tipo: "texto", afecta: { modo: "accion_existente", id: "grupo:Fármacos" }, mecanismo: "eleccion_jugador", estado: "construido" },
       ],
     },
   ],

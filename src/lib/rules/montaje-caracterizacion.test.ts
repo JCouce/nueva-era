@@ -599,6 +599,7 @@ const ESPERADO: Record<string, unknown> = {
           { etiqueta: "Valija Táctica Médica (VTM) 4", valor: 3 },
           { etiqueta: "Tratamiento (VTM nv4): Herida normal", valor: 0 },
           { etiqueta: "Diagnóstico profundo (1 minuto, VTM nv3) (sin activar)", valor: 0 },
+          { etiqueta: "Combinar dos tratamientos (VTM nv4) (sin activar)", valor: 0 },
         ],
         notas: [],
         margenes: { criticoExito: 6, criticoFallo: 6 },
@@ -612,6 +613,7 @@ const ESPERADO: Record<string, unknown> = {
           { etiqueta: "Valija Táctica Médica (VTM) 4", valor: 3 },
           { etiqueta: "Tratamiento (VTM nv4): Otro estado complejo / estabilización / síntesis", valor: 0 },
           { etiqueta: "Diagnóstico profundo (1 minuto, VTM nv3) (sin activar)", valor: 0 },
+          { etiqueta: "Combinar dos tratamientos (VTM nv4) (sin activar)", valor: 0 },
         ],
         notas: [
           {
@@ -630,6 +632,7 @@ const ESPERADO: Record<string, unknown> = {
           { etiqueta: "Valija Táctica Médica (VTM) 4", valor: 3 },
           { etiqueta: "Tratamiento (VTM nv4): Otro estado complejo / estabilización / síntesis", valor: 0 },
           { etiqueta: "Diagnóstico profundo (1 minuto, VTM nv3) (sin activar)", valor: 0 },
+          { etiqueta: "Combinar dos tratamientos (VTM nv4) (sin activar)", valor: 0 },
         ],
         notas: [
           {

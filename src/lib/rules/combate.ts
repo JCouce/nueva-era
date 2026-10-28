@@ -804,6 +804,7 @@ function tiradaDeArmaMelee(
   const nota = notaConPerfil(
     [
       arma.efectos,
+      arma.alcance ? `Alcance ${arma.alcance}` : null,
       conArmadura && bonoArmadura > 0 ? `Daño desarmado con la armadura: ${conArmadura.fuentes.join(" · ")}` : null,
       conArmadura?.letal ? `Daño letal (${conArmadura.letal})` : null,
     ],

@@ -94,6 +94,14 @@ export const DOTES: readonly DoteCatalogo[] = [
         "alcance": "dotes_apoyo",
         "condicion": "¿El vínculo de afecto con el aliado es fuerte?",
         "borrador": 1
+      },
+      {
+        "tipo": "texto",
+        "lugar": "dotes_apoyo",
+        "texto": "El aliado aplica el bono en su propia tirada: la app no se lo suma.",
+        "condicion": null,
+        "porque": "tercero",
+        "borrador": 2
       }
     ],
     "limite": null,
@@ -115,6 +123,15 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_apoyo"
         },
         "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      },
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "objetivo_tercero",
+          "id": "dotes_apoyo"
+        },
+        "mecanismo": "nota_fija",
         "estado": "construido"
       }
     ]
@@ -4326,7 +4343,7 @@ export const DOTES: readonly DoteCatalogo[] = [
     "candidataUX": null,
     "motor": [
       {
-        "tipo": "numerico",
+        "tipo": "resolucion",
         "afecta": {
           "modo": "accion_existente",
           "id": "familia:ataque_melee"
@@ -7739,9 +7756,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   194 efectos (191 en el borrador)
+//   195 efectos (192 en el borrador)
 //   construidos: 97
-//   texto: 97
+//   texto: 98
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0

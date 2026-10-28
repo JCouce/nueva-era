@@ -1566,7 +1566,9 @@ al preparar su modelado:
     jugador); deshacer devuelve el estado, no la fatiga. Con `operacionesActivas` y los niveles
     del implante; sin fatiga, bloqueada con el motivo.
   - **Duración (R2):** Neuroprótesis 3 rondas (baja con "Siguiente turno", al cerrar la
-    vuelta); Proyección hasta el final de la escena. Las dos se van con "Limpiar estados". El
+    vuelta); Proyección hasta el final de la escena: la "hora" del texto equivale a una escena
+    porque la app no lleva reloj (usuario, confirmado 2026-10-28 en la auditoría de
+    MotorMetadata). Las dos se van con "Limpiar estados". El
     chip lo dice: "3 rondas, en combate" (fuera de combate no corren: se desactiva a mano) y
     "hasta el final de la escena".
   - **Reactivar** estando activa **renueva la duración** (sustituye el estado; no apila).

@@ -975,9 +975,10 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
         ...estado,
       };
     case "maniobra":
-      // Sin dote de derribo la casilla no existe (habilitador, duro); Brutal le quita el −2.
+      // Sin dote de derribo la casilla no existe (habilitador, duro); Brutal le quita el −2:
+      // anula un penalizador de la maniobra, no suma un número (Resolución, auditoría tanda 1).
       return e.sinPenalizador
-        ? { tipo: "numerico", afecta: { modo: "accion_existente", id: clave! }, mecanismo: "eleccion_jugador", ...estado }
+        ? { tipo: "resolucion", afecta: { modo: "accion_existente", id: clave! }, mecanismo: "eleccion_jugador", ...estado }
         : {
             tipo: "habilitador",
             afecta: { modo: "accion_existente", id: clave! },

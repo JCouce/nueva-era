@@ -53,7 +53,7 @@ export type ArmaMelee = {
   // Genera la tirada "Lanzar" (combate.ts, tiradaLanzarArmaMelee). El número es el
   // multiplicador de Potencia del alcance en metros ("Arrojadiza: Potencia x 12", EQUIP).
   arrojadiza?: number;
-  alcance?: number; // "Alcance 4" de EQUIP, solo informativo
+  alcance?: number; // "Alcance 4" de EQUIP: nota "Alcance N" en el golpe, sin número en la tirada
   // "Ignora N puntos de blindaje" (armas de Kerzul): aviso en el resultado del
   // daño (ResultadoTirada.tsx) — el blindaje es del objetivo y la ficha del
   // atacante no lo conoce, se resta a mano (usuario, 2026-09-28).
@@ -1230,6 +1230,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         mecanismo: "accion_equipo",
         estado: "pendiente",
       },
+      // "Con alcance": la nota "Alcance N" del golpe (combate.ts, tiradaDeArmaMelee).
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "construido" },
     ],
   },
   {
@@ -1327,6 +1329,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         mecanismo: "accion_equipo",
         estado: "pendiente",
       },
+      // "Con alcance": la nota "Alcance N" del golpe (combate.ts, tiradaDeArmaMelee).
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "construido" },
     ],
   },
   {

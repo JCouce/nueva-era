@@ -43,6 +43,9 @@
 //    envoltorio con los args incrustados que llame a
 //    `workflow({ scriptPath: '<repo>/.claude/workflows/auditoria-motor-metadata.js' }, ARGS)`
 //    y lánzalo con `scriptPath` (mismo truco que modelar-area).
+//    Además de prosa-vs-código, cada comparador revisa el `tipo` de cada
+//    entrada de motorMetadata contra la lista cerrada de docs/motor.md
+//    (`tipo_mal_clasificado`; añadido tras la 1b de aportes, 2026-10-28).
 // 3. El resultado trae dos listas: `confirmadas` (hallazgos reales, ya
 //    verificados adversarialmente) y `gapsConocidos` (discrepancias que el
 //    propio dato ya reconoce vía `estado: pendiente/bloqueado/ad_hoc` — no
@@ -122,7 +125,7 @@ const DIFF_SCHEMA = {
       items: {
         type: 'object',
         properties: {
-          tipo: { type: 'string', enum: ['falta_en_codigo', 'sobra_en_codigo', 'valor_distinto', 'gap_conocido'] },
+          tipo: { type: 'string', enum: ['falta_en_codigo', 'sobra_en_codigo', 'valor_distinto', 'tipo_mal_clasificado', 'gap_conocido'] },
           efectoProsa: { type: 'string' },
           explicacion: { type: 'string' },
         },
@@ -132,6 +135,24 @@ const DIFF_SCHEMA = {
   },
   required: ['discrepancias'],
 }
+
+// Criterio de `tipo` en motorMetadata (docs/motor.md, "Los tipos de aporte: lista cerrada").
+// Desde la 1b de aportes (2026-10-28) también se audita la clasificación, no solo lo entregado.
+const CRITERIO_TIPOS = `CRITERIO DE "tipo" EN motorMetadata (lista cerrada, cada efecto concreto es de un único tipo):
+- accion: añade una o varias acciones nuevas (disparar con un arma, un poder, una acción de dote).
+- numerico (Ajuste): suma o resta al total de una tirada que ya existe; se apila con otros.
+- texto: cuelga una nota informativa en una acción, sin número.
+- narrativo: no modifica nada; sabor.
+- habilitador: habilita o deshabilita una acción entera o un aporte (bloqueos, requisitos de especialidad, permisos).
+- resolucion: cambia CÓMO se resuelve la tirada, no su total: qué aplicado, qué habilidad o especialidad, ventaja/dados, umbrales de crítico o fallo, reglas del daño (ignorar blindaje, extremidad, subir grado). No se apila: hay regla de quién gana.
+- coste: gasta un recurso al confirmar la acción (fatiga, ahorro de fatiga, usos por escena, munición, fármaco); no toca el total.
+"tipo_mal_clasificado": una entrada de motorMetadata cuyo "tipo" no es el que dicta este criterio para el efecto que describe (p. ej. un crítico fijo como "numerico", una fatiga como "resolucion"). Si una entrada mezcla dos tipos (p. ej. resolución + coste), también lo es: debería partirse. Di qué tipo tiene y cuál le toca.`
+
+// Lecturas del código que los auditores malinterpretaban (tanda 1, 2026-10-28).
+const LECTURA_CODIGO = `CÓMO LEER EL CÓDIGO:
+- "margenCriticoExito": N = éxitos de margen que hacen falta para crítico (por defecto 3). 0 = cualquier éxito es crítico.
+- El selector "Contra…" de las salvaciones junta las opciones de TODOS los aumentos de la ficha, y el ítem se audita con sus requisitos instalados: un valor mayor que el de la prosa, u opciones que la prosa no menciona, pueden venir de un requisito (suman). No es discrepancia si la diferencia cuadra con eso.
+- Un bono a la tirada de OTRO personaje (aliado, objetivo) es SIEMPRE texto (decisión cerrada): si va como texto en los resultados de la acción, cuadra.`
 
 const VERDICT_SCHEMA = {
   type: 'object',
@@ -156,6 +177,8 @@ function extraerClaimsDeCodigo(item) {
   if (item.notaTirada) claims.push(`notaTirada: ${item.notaTirada}`)
   // Aumentos, poderes y especie (extractor, 2026-10-28): lo demás que pone la app, en líneas.
   for (const o of item.otros ?? []) claims.push(o)
+  // Dotes: lo que entregan vive en `efectos` (dotesEfectos.ts), no en modificadores/condiciones.
+  for (const e of item.efectos ?? []) claims.push(`efecto de dote: ${JSON.stringify(e)}`)
   return claims
 }
 
@@ -218,7 +241,12 @@ Para CADA elemento: saca de la prosa los efectos prometidos (sin interpretar de 
 - Efecto de la prosa sin código correspondiente: "gap_conocido" si alguna entrada de motorMetadata con estado distinto de "construido" lo cubre razonablemente; si no, "falta_en_codigo".
 - "sobra_en_codigo": el código hace algo que la prosa no dice. "valor_distinto": mismo efecto, número distinto.
 - Lo que la prosa dice y es texto/narrativo (no suma números ni pone casillas) NO es discrepancia: esta auditoría solo mira números, casillas, críticos, tramos y requisitos por rama.
+- Revisa además el "tipo" de cada entrada de motorMetadata contra el criterio de abajo.
 No inventes discrepancias: si un elemento cuadra, devuelve su array vacío. Devuelve una entrada por elemento, con su piezaId.
+
+${CRITERIO_TIPOS}
+
+${LECTURA_CODIGO}
 
 ${lote.map(ficha).join('\n\n')}`,
       { phase: 'Comparar', label: `lote ${i + 1}/${lotes.length}`, schema: LOTE_SCHEMA }
@@ -230,7 +258,8 @@ ${lote.map(ficha).join('\n\n')}`,
       return agent(
         `Intenta REFUTAR cada una de estas discrepancias entre prosa y código. ${NO_REPO}
 Si tienes duda razonable, real=false (por defecto, no es un fallo real salvo evidencia clara). Devuelve un veredicto por número.
-
+${LECTURA_CODIGO}
+${cand.some(c => c.d.tipo === 'tipo_mal_clasificado') ? `\n${CRITERIO_TIPOS}\n` : ''}
 DISCREPANCIAS:
 ${cand.map((c, n) => `${n}. [${c.piezaId}] [${c.d.tipo}] ${c.d.explicacion}`).join('\n')}
 
@@ -288,6 +317,9 @@ Para cada efecto prometido por la prosa que NO tenga un efecto de código corres
 - si hay una entrada de motorMetadata con estado distinto de "construido" que razonablemente cubre ese hueco, clasifícalo como "gap_conocido" (ya admitido en el dato, no es un hallazgo nuevo).
 - si no hay ninguna entrada de motorMetadata que lo cubra, o la que hay está en estado "construido" pero el efecto sigue sin aparecer en el código, clasifícalo "falta_en_codigo" (hallazgo real).
 Señala también "sobra_en_codigo" (el código hace algo que la prosa no menciona) y "valor_distinto" (mismo efecto, número distinto) cuando los veas.
+Revisa además el "tipo" de cada entrada de motorMetadata contra este criterio:
+${CRITERIO_TIPOS}
+${LECTURA_CODIGO}
 No inventes discrepancias -- si todo cuadra, devuelve un array vacío.`,
     { phase: 'Comparar', label: `diff:${item.piezaId}#${item.nivel}`, schema: DIFF_SCHEMA }
   ).then(diff => ({ item, discrepancias: diff?.discrepancias ?? [] }))
@@ -308,7 +340,8 @@ Discrepancia a refutar: [${d.tipo}] ${d.explicacion}
 Prosa completa: ${r.item.detalle.join(' | ')}${r.item.fuenteProsa ? ` (Prosa: ${r.item.fuenteProsa})` : ''}
 Código real (modificadores/ajustes/condiciones): ${JSON.stringify(extraerClaimsDeCodigo(r.item))}
 motorMetadata: ${motorTexto(r.item)}
-Si tienes duda razonable, marca real=false (default a "no es un fallo real" salvo evidencia clara).`,
+${LECTURA_CODIGO}
+${d.tipo === 'tipo_mal_clasificado' ? CRITERIO_TIPOS + '\n' : ''}Si tienes duda razonable, marca real=false (default a "no es un fallo real" salvo evidencia clara).`,
       { phase: 'Verificar discrepancias', schema: VERDICT_SCHEMA }
     )
   )).then(veredictos => ({
