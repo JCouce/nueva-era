@@ -60,24 +60,48 @@ que su texto esté copiado en `descripcion`/`detalle`.
    "a ninguna todavía" (el peso, antes de que existan los penalizadores de
    Carga Transportable), dilo explícitamente — no es un hueco, es una pieza
    que apunta a un derivado que todavía no toca ninguna acción.
-2. **¿Qué tipo de modificador es?** Uno de los cinco de abajo, **ni uno más**.
+2. **¿Qué tipo de modificador es?** Uno de la lista cerrada de abajo (seis
+   tipos de aporte más `narrativo`), **sin inventar otros**.
    Un elemento puede ser varios tipos a la vez (un arma es "modificador de
    acción" porque crea su propia fila, y además trae "modificador numérico"
    en sus mejoras) — pero cada efecto concreto dentro del elemento es de un
    único tipo.
 
-### Los cinco tipos, ni uno más
+### Los tipos de aporte: lista cerrada
 
-| # | Tipo | Qué hace | Ejemplo |
+| # | Tipo (nombre de aporte) | Qué hace | Ejemplo |
 |---|---|---|---|
-| 1 | **Modificador de acción** | Añade una o varias acciones nuevas a la capa 2 | Equipar un arma añade "Disparar con X"; un poder futuro como "Desatar la tormenta" añadiría su propia acción |
-| 2 | **Modificador numérico** | `condición ? +N : +0` sobre una acción que ya existe | El Puntero Láser da +1 al ataque a corta/media distancia |
-| 3 | **Modificador de texto** | `condición ? nota informativa : nada` — no suma ningún número | El Visor Nocturno deja ver a través del humo; no crea su propia acción, solo cuelga una nota de "Buscar/percibir" |
+| 1 | **Modificador de acción** (Acción) | Añade una o varias acciones nuevas a la capa 2 | Equipar un arma añade "Disparar con X"; un poder psiónico; una acción de dote; Reparar/Fabricar |
+| 2 | **Modificador numérico** (Ajuste) | `condición ? +N : +0` sobre una acción que ya existe | El Puntero Láser da +1 al ataque a corta/media distancia |
+| 3 | **Modificador de texto** (Texto) | `condición ? nota informativa : nada` — no suma ningún número | El Visor Nocturno deja ver a través del humo; no crea su propia acción, solo cuelga una nota de "Buscar/percibir" |
 | 4 | **Modificador narrativo** | No modifica nada, es solo para que quede apuntado | Trasfondo, motivación, y cualquier frase de sabor sin número detrás |
-| 5 | **Modificador habilitador/deshabilitador** | Habilita o deshabilita una acción entera | Sin balas, ¿el disparo en F. Auto desaparece de la lista, se atenúa, o solo avisa? — **sin decidir todavía, ver abajo** |
+| 5 | **Modificador habilitador/deshabilitador** (Habilitador) | Habilita o deshabilita una acción entera **o un aporte** | Sin balas, ¿el disparo en F. Auto desaparece de la lista, se atenúa, o solo avisa? — **sin decidir todavía, ver abajo**; `bloqueada`, `soloConEspecialidad`, el permiso de la dote *Bloqueo* |
+| 6 | **Resolución** | Cambia **cómo** se resuelve la tirada, no su total: qué aplicado, qué habilidad o especialidad, dados, umbrales de crítico/fallo, reglas del daño | Sutil (`aplicadoSutil`), `habilidadAlternativa`, `ventaja`, `criticoFijo`, `subeGradoFijo`, `falloCritico`, `anulaPenalizadores`, `ignoraBlindaje`, `extremidad` |
+| 7 | **Coste** | Gasta un recurso al confirmar la acción; no toca el total | `costeFatiga`, `ahorroFatiga`, `usoPorEscena`, munición (`recursoInstanciaId`), `farmacoId`, la fatiga de un poder |
 
-Los tipos 1-4 ya tienen forma en el código o son trivialmente representables.
-El tipo 5 es el que falta construir de verdad — ver "Lo que falta construir".
+**Seis tipos de aporte, no siete filas (usuario, 2026-10-28).** El narrativo
+(4) se queda como tipo de catálogo, pero no es un aporte: nunca llega a la
+pestaña Acciones. Los otros seis son los tipos de aporte del vocabulario de
+"Ítems y aportes" (más abajo). La numeración 1-5 se conserva porque el resto
+del documento y el historial hablan de "tipo 5", "tipo 1"…; los dos nuevos
+van detrás.
+
+**Por qué se amplió con Resolución y Coste (2026-10-28, `docs/aportes/plan.md` §1.3).**
+Hasta entonces Sutil, la ventaja, los críticos fijos o la fatiga de un poder
+se metían como "numérico" porque eran lo más parecido. No lo son, y tratarlos
+igual es lo que obliga a la UI a conocer cada campo por su nombre:
+
+| | Ajuste (2) | Resolución (6) | Coste (7) |
+|---|---|---|---|
+| Toca | el total | la fórmula | recursos al confirmar |
+| Se combina | suma conmutativa | no apila: hay regla de quién gana (la ventaja no se acumula, el crítico más bajo gana) | suma aparte del total |
+| Puede impedir tirar | no | no | sí (sin fatiga → Habilitador) |
+| Se pinta como | línea del desglose | chip/opción en la hoja | precio en el botón |
+
+La lista sigue siendo **cerrada**: añadir un tipo exige una justificación como
+esta tabla (qué toca, cómo se combina, cómo se pinta, y por qué no cabe en
+ninguno de los existentes). Si un efecto no encaja, se para y se discute; no
+se estira el más cercano hasta que quepa.
 
 ### El tipo 5 lleva un sub-campo pendiente: `arbitraje`
 
@@ -99,7 +123,7 @@ fija el valor para el resto de casos del tipo 5 que vengan después.
 
 ## El eje ortogonal: mecanismos de entrega
 
-Los cinco tipos de arriba responden "¿qué clase de efecto es esto?" — una
+Los tipos de arriba responden "¿qué clase de efecto es esto?" — una
 pregunta de **diseño**. Hay una segunda pregunta, de **ingeniería**, que es
 ortogonal: "¿por qué mecanismo concreto llega este efecto hasta la acción?".
 El motor ya tiene cuatro mecanismos de entrega documentados en
@@ -134,9 +158,64 @@ No fusiones los dos ejes en una sola tabla — un mismo tipo semántico (p. ej.
 numérico) puede entregarse por mecanismos distintos según cuándo se activa, y
 mezclarlos en una tabla produce confusión, no claridad.
 
+## Ítems y aportes (vocabulario oficial, 2026-10-28)
+
+Vocabulario oficial desde el 2026-10-28 (plan aprobado por el usuario), en
+código, docs y conversación. Pone nombre a los dos ejes de arriba (tipo y
+mecanismo) y añade lo que faltaba para que la pestaña Acciones la pueda
+montar el motor: dónde cuelga cada cosa. El detalle, los ejemplos campo a
+campo y las fases están en `docs/aportes/plan.md` (sección 1); aquí va el
+resumen.
+
+- **Ítem**: cualquier elemento de capa 1 que aporta algo a la ficha — equipo
+  (armas, armaduras, mejoras, subsistemas, implantes, herramientas, munición
+  especial), aumento, poder psiónico, dote, rasgo de especie, fármaco y
+  **estado** (lo pone el máster, pero se comporta igual). "Pieza" en
+  conversaciones anteriores es lo mismo.
+- **Árbol**: la parte fija, que no crea ningún ítem — **Habilidad ›
+  Especialidad › Hoja**. Una hoja es una acción concreta, con dado (`Accion`)
+  o sin dado (`AccionDirecta`). **Raíces fuera del árbol**: la barra
+  (salvaciones y tirada libre, sin habilidad) y **Sin dado** (agrupadas por
+  lo que hacen, no por habilidad).
+- **Aporte**: cada cosa concreta que hace un ítem. Un ítem tiene uno o
+  varios, y cada aporte es de **un** tipo de los seis: **Acción, Ajuste,
+  Resolución, Coste, Texto, Habilitador** (tabla "Los tipos de aporte"
+  arriba). Es lo mismo que hasta ahora se llamaba "efecto" en este documento.
+- **Blanco**: a qué apunta un aporte. Generaliza `AlcanceModificador`: un
+  nodo del árbol (`habilidad`, `especialidad`, `tiradaId`, o la hoja de *una*
+  instancia concreta), algo transversal (`aplicado`, `grupo`,
+  `grupoHabilidad`, `familiaArma`, `modo`, `todas`) o un derivado (vida,
+  fatiga, movimiento, carga, atributo, blindaje, nivel de disciplina — no se
+  pintan en Acciones, pero están en el modelo).
+- **Entrega**: cuándo actúa — **fijo** (siempre, por llevarlo), **casilla**
+  (el jugador lo marca al tirar: `CondicionTirada`) o **tramo** (depende de
+  otra elección ya hecha: `bonosTramo`). Es el eje "mecanismos de entrega" de
+  arriba, con nombres de cara al jugador; se corresponde con
+  `MotorMetadata.mecanismo`.
+- **Momento** (solo Texto): **antes** (informa una decisión: si tirar, cómo,
+  qué casilla marcar; se pinta en la hoja) o **después** (solo tiene sentido
+  con el resultado; se pinta en el resultado). El resultado enseña siempre
+  todos los textos, los de antes incluidos. Condición de grado opcional:
+  siempre · en éxito · en crítico · en crítico natural · en fallo.
+- **Anclaje**: dónde cuelga una hoja de Acción — lista de (habilidad,
+  especialidad?) y quién elige: **fijo** (uno solo), **cualquiera** (cuenta
+  si tienes cualquiera, se pinta en cada una: `especialidadesAccion`) o
+  **jugador** (elige antes de tirar, se pinta en cada anclaje posible:
+  `especialidadAElegir`, `habilidadAlternativa`, `habilidadesAElegir`).
+
+**La regla: dónde se pinta un aporte se deduce de su blanco; dónde se pinta
+una hoja, de sus anclajes.** Ningún ítem declara "dónde pintarme" aparte. Un
+blanco transversal aparece en **cada hoja** a la que llega.
+
+Lo que no sigue la regla y está bien que no la siga son las **excepciones
+declaradas** de `docs/aportes/plan.md` §1.8 (la barra, Sin dado, aporte sobre
+aporte —Gran Puntería sobre «Apuntado»—, el tablero y la economía de
+creación). Una excepción nueva se añade allí con su motivo, o no es
+excepción sino deuda.
+
 ## El dato: `MotorMetadata`
 
-Todo lo de arriba (los cinco tipos, `arbitraje`, los mecanismos de entrega) es
+Todo lo de arriba (los tipos, `arbitraje`, los mecanismos de entrega) es
 un modelo mental — vive en la cabeza de quien lee el código, no en el
 catálogo. Es la causa raíz de que tres barridos independientes del mismo
 catálogo (2026-09-22) discreparan entre sí sobre qué estaba "resuelto": cada
@@ -173,6 +252,31 @@ type MotorMetadata = {
   bloqueoPor?: string;                         // "H5", "pregunta 29", "Fase 5"... obligatorio si estado === "bloqueado"
 };
 ```
+
+**Correspondencia con el vocabulario de aportes (2026-10-28).** El bloque de
+arriba es la foto del 2026-09-23; la lista viva es `TIPOS_MODIFICADOR` y
+`MECANISMOS_MOTOR` en `src/lib/rules/motor.ts` (que ya tiene además
+`suma_derivado`, 2026-09-27).
+
+- **Tipo → aporte**: `accion` = Acción, `numerico` = Ajuste, `texto` = Texto,
+  `habilitador` = Habilitador. `narrativo` existe pero no es aporte (nunca
+  llega a Acciones). **Resolución y Coste no tienen valor todavía**:
+  `"resolucion"` y `"coste"` se añaden a `TIPOS_MODIFICADOR` en la fase 1 de
+  `docs/aportes/plan.md`, sin reclasificar nada del catálogo; hasta que el
+  usuario apruebe la reclasificación, esos aportes siguen tipados como
+  estaban (p. ej. Sutil es `numerico` + `sustitucion_aplicado` en
+  `armasMelee.ts`).
+- **Mecanismo → entrega**: `eleccion_jugador` = casilla; `bono_tramo` =
+  tramo; `siempre_activo`, `ajuste_fijo`, `nota_fija` y `suma_derivado` =
+  fijo (este último con blanco derivado). `accion_equipo` y
+  `accion_sin_equipo` no son entrega sino cómo nace un aporte de Acción;
+  `gate_instalacion`, cómo se entrega un Habilitador; `sustitucion_aplicado`,
+  un aporte de Resolución que el jugador elige al tirar sin pasar por
+  `CondicionTirada`.
+- **`Afecta` → blanco**: `accion_existente`/`accion_nueva` nombran el blanco
+  o la hoja nueva con un id suelto; el blanco completo (nodo del árbol,
+  transversal, derivado) es más rico que `Afecta` y su forma de dato se
+  decide en las fases siguientes del plan, no aquí.
 
 **`accion_equipo`/`nota_fija` (2026-09-23, al empezar el barrido pieza a pieza):**
 la lista de mecanismos de arriba se escribió antes de rellenar un solo dato real, y
@@ -349,9 +453,10 @@ tres recursos de personaje. No se prioriza hasta que haga falta de verdad.
 
 - **Coste y rareza**: metadatos de creación/economía (cuánto pagas, qué tope
   de rareza te deja tu letra de Recursos), no efecto de la pieza una vez la
-  llevas puesta. No son ninguno de los cinco tipos — si algo los está
-  forzando ahí, es una señal de que se está confundiendo "cuánto cuesta" con
-  "qué hace".
+  llevas puesta. No son ninguno de los tipos — tampoco el aporte **Coste**
+  (7), que es gastar un recurso al usar una acción, no el precio de
+  compra — si algo los está forzando ahí, es una señal de que se está
+  confundiendo "cuánto cuesta" con "qué hace".
 - **Identidad narrativa** (trasfondo, motivación, edad, altura, peso mientras
   no alimenten ningún derivado): modificador narrativo por definición, no
   hay nada que mecanizar salvo que el diseñador dé una regla concreta que los
@@ -400,15 +505,16 @@ como transcrita de verdad:
 1. Lee la regla completa en la fuente (`EQUIP`, `sistema.md`, el documento
    que traiga Murillo), no solo la fila de una tabla.
 2. Por cada efecto que tenga, rellena: **¿a qué acción(es) de capa 2 afecta?**
-   y **¿qué tipo, de los cinco, es?**
+   y **¿qué tipo de aporte es?** (los seis de la lista cerrada, o narrativo)
 3. Si es tipo 5, declara `arbitraje` (duro/blando/pendiente) — nunca lo
    asumas.
 4. Si es tipo 1 (crea su propia acción) y no es una pieza de equipo con
    precedente ya construido, dilo explícito — es terreno sin mecanismo
    genérico todavía.
-5. Si un efecto no encaja en ninguno de los cinco, para y discútelo antes de
-   forzarlo — el objetivo de esta lista es que sean cinco y no seis, no
-   estirar el quinto hasta que quepa cualquier cosa.
+5. Si un efecto no encaja en ninguno de la lista, para y discútelo antes de
+   forzarlo — la lista es cerrada a propósito: ampliarla exige justificarlo
+   como se hizo con Resolución y Coste (2026-10-28), no estirar el más
+   cercano hasta que quepa cualquier cosa.
 6. Solo cuando cada efecto tiene sus dos respuestas, el elemento está
    transcrito de verdad — copiar el texto a `descripcion`/`detalle` no cuenta
    como transcripción, es solo el primer paso.

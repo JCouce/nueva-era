@@ -181,8 +181,8 @@ Lo que hay hoy y motiva el plan, para que nadie lo redescubra:
 Orden: 0 → 1 → 2 → 3 → 4 → 5. La 6 depende de una regla pendiente; la 7 se decide al final.
 Cada fase deja la app funcionando y se puede parar entre fases.
 
-### Fase 0 — Vocabulario oficial en `motor.md` ⬜
-**Tipo:** solo docs. **Quién:** sesión principal (es corto y es decisión de modelo).
+### Fase 0 — Vocabulario oficial en `motor.md` ✅ (2026-10-28)
+**Tipo:** solo docs. **Quién:** subagente, revisado en la sesión principal. La fila de `traspaso.md` ya se añadió con el plan.
 
 **Objetivo:** que `docs/motor.md` hable este idioma, sin dos vocabularios en paralelo.
 
