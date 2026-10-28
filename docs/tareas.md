@@ -38,6 +38,8 @@ foco. Frentes abiertos, cada uno con su sección en Pendiente:
   Personaje, Sistema, Equipamiento, Especies, Psiónica, Habilidades) contra
   `docs/sistema.md`. Primer adelanto (Creación): Vida/Fatiga base 8 → 10 (hecho, §4 `HOJA3`), Dotes con
   presupuesto por prioridad, topes de creación movidos.
+- **Ítems y aportes (pestaña Acciones)**: plan aprobado 2026-10-28 en `docs/aportes/plan.md`,
+  fases 0-7 sin empezar. El estado por fase vive en su cabecera allí.
 - "Preguntas al diseñador" (final de este documento) — lo que bloquea a Murillo.
 - **La fábrica** (épica en Pendiente, N1 construido, en rodaje desde 2026-10-22): cadena de montaje de cambios con
   Jefe de fábrica, línea determinista y revisión con oráculos. Uso y qué se apunta dónde: `fabrica/README.md`.
@@ -953,12 +955,12 @@ motor no cambia.
   comunicación, Referencia.
 - Las filas de la barra y del árbol se siguen montando sueltas (sin pintar) para ★ y la cabina. NPC y combate del
   máster, igual.
-- [ ] **Genérica por habilidad** (entera, §3) para "tírame Sigilo" sin especialidad: propuesta, sin decidir. Con ella la
-  Libre solo haría falta para atributo a secas.
-- [ ] Las cuatro de Exploración siguen ocultas sin su especialidad (S99): en el árbol la especialidad sale "sin tiradas"
-  aunque la tirada existe y se podría tirar a la mitad. Decidir si en el árbol se pintan siempre.
+- [ ] **Genérica por habilidad** (entera, §3) para "tírame Sigilo" sin especialidad: aprobada (usuario, 2026-10-28), se
+  construye en la fase 3 de `docs/aportes/plan.md`. Con ella la Libre queda para atributo a secas.
+- [ ] Las cuatro de Exploración siguen ocultas sin su especialidad (S99): decidido pintarlas siempre en el árbol, a la
+  mitad (usuario, 2026-10-28); S99 queda para ★ y cabina. Fase 3 de `docs/aportes/plan.md`.
 - [ ] Los valores de habilidad y especialidad del árbol los suma la pantalla (réplica de `valorEfectivo`, vetado en UI).
-  Si se queda, pasar a un helper del motor para que no se desincronicen.
+  Lo cierra la fase 3 de `docs/aportes/plan.md` (el árbol lo monta el motor).
 
 ### La fábrica: automatizar el desarrollo y el mantenimiento de Nueva Era ⬜ (épica; N1 construido 2026-10-19, en rodaje desde 2026-10-22)
 **Cómo está hoy:** `fabrica/README.md` es la foto vigente (procesos, piezas, uso y qué se apunta dónde) y
