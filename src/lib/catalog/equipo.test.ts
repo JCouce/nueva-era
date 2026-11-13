@@ -128,6 +128,13 @@ describe("retroceso entrópico (Kerzul)", () => {
       assert.equal(declara, tiene, a.id);
     }
   });
+
+  test("construido (T3c): el golpe lleva la salvación propia (rules/retrocesoEntropico.ts)", () => {
+    for (const a of EQUIPO) {
+      if (a.familia !== "armaMelee") continue;
+      for (const m of a.motor ?? []) if (m.afecta.modo === "accion_nueva" && m.afecta.id === "salvacion_retroceso_entropico") assert.equal(m.estado, "construido", a.id);
+    }
+  });
 });
 
 describe("munición especial: textos del documento (S95)", () => {

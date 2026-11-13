@@ -87,11 +87,15 @@ describe("Golpe Fatigante: salva Fortaleza + Atletismo contra tu ataque", () => 
     assert.equal(resto.length, 0);
     assert.equal(aviso.titulo, "El objetivo salva Fortaleza + Atletismo contra Golpe Fatigante, dificultad 14 (el total de tu ataque)");
     assert.equal(aviso.estadoId, null);
-    assert.deepEqual(aviso.grados.map((g) => [g.id, g.fatiga]), [
-      ["fracasoCritico", 1],
-      ["fracaso", 1],
-      ["exito", undefined],
+    // Los cuatro resultados, con el tramo de su tirada sacado solo de tu total (14): el que la
+    // fuente no nombra (su éxito crítico), «Ningún efecto».
+    assert.deepEqual(aviso.grados.map((g) => [g.id, g.fatiga, g.rango]), [
+      ["fracasoCritico", 1, "8 o menos"],
+      ["fracaso", 1, "9 a 13"],
+      ["exito", undefined, "14 a 19"],
+      ["critico", undefined, "20 o más"],
     ]);
+    assert.equal(aviso.grados[3].texto, "Ningún efecto.");
     assert.match(aviso.grados[0].texto, /asfixia grado 1/);
   });
 

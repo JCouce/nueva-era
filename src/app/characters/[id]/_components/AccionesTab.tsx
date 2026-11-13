@@ -80,6 +80,9 @@ import {
   type OpcionesFabricar,
   type PoderPreparado,
   type GolpeRecibido,
+  type OperacionConsecuenciaPropia,
+  consecuenciaPropia,
+  salvacionPropiaDe,
   especialidadesDeTirada,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
@@ -678,6 +681,7 @@ export function AccionesTab({
   onGastarUsosEscena,
   onUsarAccionAumento,
   onEstadoDePoder,
+  onConsecuenciaPropia,
   onGastarUsoLimitado,
   onMarcarFavorita,
   libre = false,
@@ -757,6 +761,10 @@ export function AccionesTab({
   // servidor, en la ficha del jugador o en la fila del NPC (NpcAccionesPanel). Sin él, no se
   // pone nada.
   onEstadoDePoder?: (op: OperacionEstadoDePoder, onMensaje: (mensaje: string) => void) => void;
+  // Lo que una acción te hace a ti (T3c): el Miedo del fracaso crítico al intimidar y el
+  // retroceso entrópico del Kerzul. Lo aplica el servidor (aplicarConsecuenciaPropiaAction) con la
+  // ficha guardada. Sin él (NPC), el resultado lo dice y el máster lo aplica a mano.
+  onConsecuenciaPropia?: (op: OperacionConsecuenciaPropia, onMensaje: (mensaje: string) => void) => void;
   // Límites de las acciones de dote (Accion.usoLimitado): se gastan al tirar, con el aliado del
   // selector si va por aliado. Sin él (NPC), el límite es texto.
   onGastarUsoLimitado?: (uso: UsoLimitado, aliadoId: string | null) => void;
@@ -1175,6 +1183,13 @@ export function AccionesTab({
     ) : null;
 
 
+  // El aviso del servidor, en el último resultado de esa acción.
+  const anotarPropio = (accionId: string, m: string) =>
+    setHistorial((h) => {
+      const i = h.findIndex((x) => x.accionId === accionId);
+      return i < 0 ? h : h.map((x, j) => (j === i ? { ...x, mensajesPropios: [...(x.mensajesPropios ?? []), m] } : x));
+    });
+
   const tirar = ({
     dado,
     dados,
@@ -1284,11 +1299,19 @@ export function AccionesTab({
     if (gastoEspecial && gastoEspecial.cantidad > 0) onAjustarMunicionEspecial?.(gastoEspecial.id, -gastoEspecial.cantidad);
 
     const id = Date.now();
+    // Lo que la acción te pone por su grado (fracaso crítico al intimidar, T3c): el servidor.
+    const gradoPropio = gradoDeTirada(r);
+    if (gradoPropio && consecuenciaPropia(tirada, { tipo: "grado", grado: gradoPropio })) {
+      onConsecuenciaPropia?.({ tipo: "grado", accionId: tirada.id, grado: gradoPropio }, (m) => anotarPropio(tirada.id, m));
+    }
+    const salvacionPropia = salvacionPropiaDe(tirada, modoId);
     setHistorial((h) =>
       [
         {
           ...r,
           id,
+          accionId: tirada.id,
+          ...(salvacionPropia && { salvacionPropia }),
           // La tirada libre, con el par elegido: "Tirada libre (Reflejos + Sigilo)".
           label: tirada.libre ? etiquetaTiradaLibre(montada.aplicado.id, montada.habilidad?.id ?? null) : tirada.label,
           dados,
@@ -1306,6 +1329,23 @@ export function AccionesTab({
       ].slice(0, 6),
     );
     setModal((m) => (m ? { ...m, resultadoId: id } : m));
+  };
+
+  // «Salvar retroceso» (T3c): la app tira la salvación de la ficha contra la dificultad del
+  // motor; el servidor aplica lo que toque con el grado.
+  const tirarSalvacionPropia = () => {
+    const ultimo = resultadoModal;
+    const s = ultimo?.salvacionPropia;
+    if (!ultimo || !s || ultimo.salvacionPropiaTirada) return;
+    const base = ACCIONES.find((a) => a.id === s.tiradaId);
+    if (!base) return;
+    const r = tirarMontada(montarTirada(ficha, conExtras(base), SIN_ELECCION), tirarD12(), s.dificultad);
+    const grado = gradoDeTirada(r);
+    setHistorial((h) => h.map((x) => (x.id === ultimo.id ? { ...x, salvacionPropiaTirada: { ...r, grado } } : x)));
+    const accionId = ultimo.accionId;
+    if (grado && accionId && consecuenciaPropia({ salvacionesPropias: [s] }, { tipo: "salvacion", modoId: s.soloModo ?? null, grado })) {
+      onConsecuenciaPropia?.({ tipo: "salvacion", accionId, modoId: s.soloModo ?? null, grado }, (m) => anotarPropio(accionId, m));
+    }
   };
 
   const tirarDanio = () => {
@@ -1893,6 +1933,7 @@ export function AccionesTab({
             circunstancialInicial={memoria[modal.tirada.id]?.circunstancial ?? 0}
             resultado={resultadoModal}
             onTirarDanio={tirarDanio}
+            onSalvacionPropia={tirarSalvacionPropia}
             onCerrar={cerrarPoder}
             onTirar={tirar}
           />

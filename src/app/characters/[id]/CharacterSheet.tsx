@@ -44,6 +44,7 @@ import {
   liberarUsoEscenaAction,
   usarAccionAumentoAction,
   ponerEstadosDePoderAction,
+  aplicarConsecuenciaPropiaAction,
   quitarEstadoDePoderAction,
   comprarDoteAction,
   quitarDoteAction,
@@ -102,7 +103,15 @@ import {
   type DoteComprada,
   type EstadoActivo,
 } from "@/lib/rules";
-import type { ExtraAccionAumento, GolpeRecibido, MesaDeFicha, OperacionEstadoDePoder, Sheet, UsoLimitado } from "@/lib/rules";
+import type {
+  ExtraAccionAumento,
+  GolpeRecibido,
+  MesaDeFicha,
+  OperacionConsecuenciaPropia,
+  OperacionEstadoDePoder,
+  Sheet,
+  UsoLimitado,
+} from "@/lib/rules";
 import { PersonajeTab, PanelFieldset } from "./_components/personaje/PersonajeTab";
 import { AvisoEnRevision } from "./_components/RevisionFicha";
 import { EstadoFichaChip } from "@/components/EstadoFichaChip";
@@ -580,6 +589,19 @@ export function CharacterSheet({
       return res;
     });
   };
+  // Lo que una acción te hace a ti (T3c: Miedo del fracaso crítico al intimidar, retroceso
+  // entrópico del Kerzul): lo recalcula y aplica el servidor; daño y estados llegan con la ficha
+  // que devuelve y la revalidación de la página.
+  const commitConsecuenciaPropia = (op: OperacionConsecuenciaPropia, onMensaje: (m: string) => void) => {
+    runSave(
+      async () => {
+        const res = await aplicarConsecuenciaPropiaAction(characterId, op);
+        onMensaje(res.ok ? (res.mensaje ?? "Hecho.") : res.error);
+        return res;
+      },
+      setSheet,
+    );
+  };
   // Límites de las acciones de dote: el uso se gasta al tirar. La ficha local se adelanta con la
   // misma regla; el servidor lo vuelve a calcular con su ficha y su mesa.
   const commitGastarUsoLimitado = (uso: UsoLimitado, aliadoId: string | null) => {
@@ -874,6 +896,7 @@ export function CharacterSheet({
             onGastarUsosEscena={commitGastarUsosEscena}
             onUsarAccionAumento={commitUsarAccionAumento}
             onEstadoDePoder={commitEstadoDePoder}
+            onConsecuenciaPropia={commitConsecuenciaPropia}
             onGastarUsoLimitado={commitGastarUsoLimitado}
             onMarcarFavorita={commitMarcarFavorita}
             soloLectura={soloLectura}

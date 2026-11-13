@@ -73,6 +73,20 @@ describe("por modo y por tramo (eq-09, eq-10)", () => {
     assert.deepEqual(saltan(t, { modo: compleja }, ACIERTA), ["derribado 10"]);
   });
 
+  test("los cuatro resultados con su tramo; un estado de un solo grado cae con el fracaso", () => {
+    const t = fila("mecanica_ariete_percusivo");
+    const [aviso] = efectosSobreObjetivo(t, { modo: t.ataque!.modos[0].id }, ACIERTA, () => 1);
+    assert.deepEqual(
+      aviso.grados.map((g) => [g.id, g.rango, g.texto.split(".")[0]]),
+      [
+        ["fracasoCritico", "0 o menos", "Queda Derribado"],
+        ["fracaso", "1 a 5", "Queda Derribado"],
+        ["exito", "6 a 11", "Ningún efecto"],
+        ["critico", "12 o más", "Ningún efecto"],
+      ],
+    );
+  });
+
   test("Kerzul: Derribo y Aturdimiento, sin modo (Maza)", () => {
     const t = fila("kerzul_maza");
     assert.deepEqual(saltan(t, { modo: t.ataque!.modos[0].id }, ACIERTA), ["derribado 11", "aturdido 9"]);

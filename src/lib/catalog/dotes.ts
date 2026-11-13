@@ -414,13 +414,10 @@ export const DOTES: readonly DoteCatalogo[] = [
             "por": "turno"
           },
           "resolucion": {
-            "tipo": "tirada",
+            "tipo": "enfrentada",
             "aplicado": "expresion",
             "habilidad": "actitud",
-            "especialidad": "intimidacion",
-            "dificultad": {
-              "manual": "la de intimidar a ese objetivo; la fuente no la fija"
-            }
+            "especialidad": "intimidacion"
           },
           "objetivoTira": [],
           "resultados": {},
@@ -436,6 +433,45 @@ export const DOTES: readonly DoteCatalogo[] = [
           ]
         },
         "borrador": 0
+      },
+      {
+        "tipo": "objetivo",
+        "lugar": "dotes_mirada_desafiante",
+        "condicion": null,
+        "efecto": {
+          "tipo": "salvacion",
+          "estadoId": "miedo",
+          "tirada": {
+            "etiqueta": "Voluntad + Actitud"
+          },
+          "dificultad": "totalDelAtaque",
+          "tabla": {
+            "fracasoCritico": {
+              "texto": "Aterrorizado 1 turno y con Miedo el siguiente.",
+              "estado": {
+                "estadoId": "miedo",
+                "gradoId": "aterrorizado",
+                "turnos": 1
+              }
+            },
+            "fracaso": {
+              "texto": "Miedo durante 1 turno.",
+              "estado": {
+                "estadoId": "miedo",
+                "gradoId": "asustado",
+                "turnos": 1
+              }
+            },
+            "exito": {
+              "texto": "Ningún efecto."
+            },
+            "critico": {
+              "texto": "Ningún efecto, y tú sufres Miedo 1 turno (te lo pone el máster)."
+            }
+          },
+          "cuando": "siempre"
+        },
+        "borrador": 0
       }
     ],
     "limite": null,
@@ -448,6 +484,15 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_mirada_desafiante"
         },
         "mecanismo": "accion_sin_equipo",
+        "estado": "construido"
+      },
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "objetivo_tercero",
+          "id": "dotes_mirada_desafiante"
+        },
+        "mecanismo": "nota_fija",
         "estado": "construido"
       }
     ]
@@ -551,11 +596,7 @@ export const DOTES: readonly DoteCatalogo[] = [
             "habilidad": "actitud",
             "especialidad": "intimidacion"
           },
-          "objetivoTira": [
-            {
-              "que": "Sin definir en la fuente (cada enemigo a 40 m)"
-            }
-          ],
+          "objetivoTira": [],
           "resultados": {},
           "notas": [
             {
@@ -567,6 +608,46 @@ export const DOTES: readonly DoteCatalogo[] = [
               "condicion": null
             }
           ]
+        },
+        "borrador": 0
+      },
+      {
+        "tipo": "objetivo",
+        "lugar": "dotes_grito_de_guerra",
+        "condicion": null,
+        "efecto": {
+          "tipo": "salvacion",
+          "estadoId": "miedo",
+          "tirada": {
+            "etiqueta": "Voluntad + Actitud"
+          },
+          "dificultad": "totalDelAtaque",
+          "tabla": {
+            "fracasoCritico": {
+              "texto": "Aterrorizado 1 turno y con Miedo el siguiente.",
+              "estado": {
+                "estadoId": "miedo",
+                "gradoId": "aterrorizado",
+                "turnos": 1
+              }
+            },
+            "fracaso": {
+              "texto": "Miedo durante 1 turno.",
+              "estado": {
+                "estadoId": "miedo",
+                "gradoId": "asustado",
+                "turnos": 1
+              }
+            },
+            "exito": {
+              "texto": "Ningún efecto."
+            },
+            "critico": {
+              "texto": "Ningún efecto, y tú sufres Miedo 1 turno (te lo pone el máster)."
+            }
+          },
+          "cuando": "siempre",
+          "quien": "Cada enemigo a 40 m"
         },
         "borrador": 0
       }
@@ -581,6 +662,15 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_grito_de_guerra"
         },
         "mecanismo": "accion_sin_equipo",
+        "estado": "construido"
+      },
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "objetivo_tercero",
+          "id": "dotes_grito_de_guerra"
+        },
+        "mecanismo": "nota_fija",
         "estado": "construido"
       }
     ]
@@ -629,11 +719,7 @@ export const DOTES: readonly DoteCatalogo[] = [
             "habilidad": "actitud",
             "especialidad": "intimidacion"
           },
-          "objetivoTira": [
-            {
-              "que": "Sin definir en la fuente (cada enemigo a 40 m que lo presencie)"
-            }
-          ],
+          "objetivoTira": [],
           "resultados": {},
           "notas": [
             {
@@ -649,6 +735,46 @@ export const DOTES: readonly DoteCatalogo[] = [
               "condicion": null
             }
           ]
+        },
+        "borrador": 0
+      },
+      {
+        "tipo": "objetivo",
+        "lugar": "dotes_violencia_aterradora",
+        "condicion": null,
+        "efecto": {
+          "tipo": "salvacion",
+          "estadoId": "miedo",
+          "tirada": {
+            "etiqueta": "Voluntad + Actitud"
+          },
+          "dificultad": "totalDelAtaque",
+          "tabla": {
+            "fracasoCritico": {
+              "texto": "Aterrorizado 1 turno y con Miedo el siguiente.",
+              "estado": {
+                "estadoId": "miedo",
+                "gradoId": "aterrorizado",
+                "turnos": 1
+              }
+            },
+            "fracaso": {
+              "texto": "Miedo durante 1 turno.",
+              "estado": {
+                "estadoId": "miedo",
+                "gradoId": "asustado",
+                "turnos": 1
+              }
+            },
+            "exito": {
+              "texto": "Ningún efecto."
+            },
+            "critico": {
+              "texto": "Ningún efecto, y tú sufres Miedo 1 turno (te lo pone el máster)."
+            }
+          },
+          "cuando": "siempre",
+          "quien": "Cada enemigo a 40 m que lo presencie"
         },
         "borrador": 0
       },
@@ -669,6 +795,15 @@ export const DOTES: readonly DoteCatalogo[] = [
           "id": "dotes_violencia_aterradora"
         },
         "mecanismo": "accion_sin_equipo",
+        "estado": "construido"
+      },
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "objetivo_tercero",
+          "id": "dotes_violencia_aterradora"
+        },
+        "mecanismo": "nota_fija",
         "estado": "construido"
       },
       {
@@ -7912,9 +8047,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   197 efectos (192 en el borrador)
+//   200 efectos (192 en el borrador)
 //   construidos: 97
-//   texto: 100
+//   texto: 103
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0

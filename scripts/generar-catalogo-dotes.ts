@@ -618,12 +618,62 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
 };
 
 // Retoques a las acciones de dote del borrador (D2c-1; ver cabecera). Por id de acción.
+// `resolucion` se mezcla con la del borrador; si cambia el `tipo`, la sustituye entera (los
+// campos de un tipo no valen en otro). `objetivoTira` y `resultados`, enteros (T3c).
 type AjusteAccion = {
   resolucion?: Record<string, unknown>;
   notas?: Record<number, { texto: string; condicion: string | null }>;
   notasExtra?: { texto: string; condicion: string | null }[];
   grupoExtra?: "Defensa" | "Salvaciones" | "Iniciativa" | "Acciones";
+  objetivoTira?: { que: string }[];
+  resultados?: Record<string, { texto: string; estadosPropios?: { estadoId: string; gradoId: string; turnos?: number }[] }>;
 };
+
+// Intimidar en combate (docs/fuente/habilidades.md, Actitud › Intimidación; cuestionario do-04,
+// usuario 2026-11-13): «prueba de expresión + intimidación contra una de voluntad + actitud del
+// rival, en caso de éxito el objetivo sufre miedo durante un turno, en caso de éxito crítico el
+// objetivo está aterrorizado durante un turno y con miedo durante el siguiente. Si el personaje
+// obtiene fracaso crítico, sufrirá miedo durante un turno». Grito de Guerra, Violencia Aterradora
+// y Mirada Desafiante se resuelven así: cada enemigo salva Voluntad + Actitud contra tu total (lo
+// dice «El objetivo» del resultado con el tramo de cada grado, eq-02: lo aplica el máster).
+// Tu crítico (le sacas 6 o más) es su fracaso crítico, y tu fracaso crítico, su éxito crítico:
+// depende de su tirada, que la app no conoce, así que tu Miedo lo pone el máster (regla dura del
+// usuario, 2026-11-13: nada que dependa de la tirada de otro).
+// TODO(revisar): el empate. «Un éxito se consigue igualando la dificultad»: con su tirada contra tu
+// total, empatar le salva; la fuente no dice quién gana una enfrentada empatada.
+const MIEDO_UN_TURNO = { estadoId: "miedo", gradoId: "asustado", turnos: 1 };
+const intimidarEnCombate = (accionId: string, quien?: string) => ({
+  tipo: "objetivo",
+  lugar: accionId,
+  condicion: null,
+  efecto: {
+    tipo: "salvacion",
+    estadoId: "miedo",
+    tirada: { etiqueta: "Voluntad + Actitud" },
+    dificultad: "totalDelAtaque",
+    tabla: {
+      fracasoCritico: {
+        texto: "Aterrorizado 1 turno y con Miedo el siguiente.",
+        estado: { estadoId: "miedo", gradoId: "aterrorizado", turnos: 1 },
+      },
+      fracaso: { texto: "Miedo durante 1 turno.", estado: MIEDO_UN_TURNO },
+      exito: { texto: "Ningún efecto." },
+      critico: { texto: "Ningún efecto, y tú sufres Miedo 1 turno (te lo pone el máster)." },
+    },
+    cuando: "siempre",
+    ...(quien && { quien }),
+  },
+});
+const AJUSTE_INTIMIDAR: AjusteAccion = { objetivoTira: [] };
+
+// Efectos que salen de otro del borrador sin sustituirlo ("<id de dote>#<índice>" → efectos v2
+// que van detrás, con el mismo `borrador`). T3c: lo que la acción de intimidar le hace al objetivo.
+const ANADIDOS: Record<string, Record<string, unknown>[]> = {
+  "dote_grito_de_guerra#0": [intimidarEnCombate("dotes_grito_de_guerra", "Cada enemigo a 40 m")],
+  "dote_violencia_aterradora#0": [intimidarEnCombate("dotes_violencia_aterradora", "Cada enemigo a 40 m que lo presencie")],
+  "dote_mirada_desafiante#0": [intimidarEnCombate("dotes_mirada_desafiante")],
+};
+const anadidosUsados = new Set<string>();
 const AJUSTES_ACCION: Readonly<Record<string, AjusteAccion>> = {
   // Prosa: "expresión + empatía o liderazgo". El borrador no traía la especialidad en la
   // resolución (decisión del usuario, D2c-1): va en especialidad con cualquiera de las dos.
@@ -632,7 +682,15 @@ const AJUSTES_ACCION: Readonly<Record<string, AjusteAccion>> = {
     resolucion: { especialidad: ["empatia", "liderazgo"] },
     notas: { 1: { texto: "Con Empatía o Liderazgo: va en especialidad con cualquiera de las dos.", condicion: null } },
   },
-  // Violencia Aterradora: la ventaja tras un crítico también es casilla (D2d), sin ajuste.
+  // Violencia Aterradora: la ventaja tras un crítico también es casilla (D2d).
+  // Grito de Guerra, Violencia Aterradora y Mirada Desafiante: intimidar en combate (T3c, arriba).
+  // Mirada pasa de tirada con dificultad a criterio a enfrentada, como la regla de intimidar.
+  dotes_grito_de_guerra: AJUSTE_INTIMIDAR,
+  dotes_violencia_aterradora: AJUSTE_INTIMIDAR,
+  dotes_mirada_desafiante: {
+    ...AJUSTE_INTIMIDAR,
+    resolucion: { tipo: "enfrentada", aplicado: "expresion", habilidad: "actitud", especialidad: "intimidacion" },
+  },
   // Prosa: "tirada de ataque con el atributo de potencia", sin habilidad. Decisión del usuario
   // (D2c-1, supuesto S53): Combate Melee, en especialidad Pelea (el requisito de la dote).
   dotes_arrollar: { resolucion: { especialidad: "pelea" } },
@@ -646,12 +704,12 @@ const AJUSTES_ACCION: Readonly<Record<string, AjusteAccion>> = {
     },
   },
 };
-// TODO(revisar): Agarre Rápido y Mirada Desafiante (pregunta a Murillo, tareas.md; Zafarse
-// confirmado por el usuario: regla de Atrapado). Las tres: la prosa da la economía pero no
-// la tirada; el borrador supone Reflejos + Atletismo (Escalada), Potencia + Atletismo
-// (Escapismo; docs/fuente/reglas-base.md, Atrapado) y Expresión + Actitud (Intimidación), con la
-// dificultad a criterio del máster. Se dejan así (no es un error evidente) hasta que Murillo
-// lo aclare.
+// TODO(revisar): Agarre Rápido (pregunta a Murillo, tareas.md; Zafarse confirmado por el
+// usuario: regla de Atrapado). La prosa da la economía pero no la tirada; el borrador supone
+// Reflejos + Atletismo (Escalada) y Potencia + Atletismo (Escapismo; docs/fuente/reglas-base.md,
+// Atrapado), con la dificultad a criterio del máster. Se dejan así (no es un error evidente)
+// hasta que Murillo lo aclare. Mirada Desafiante se resuelve como intimidar en combate desde T3c
+// (do-04, usuario 2026-11-13).
 const ajustesUsados = new Set<string>();
 
 function ajustarAccion(id: string, e: Efecto): Efecto {
@@ -667,13 +725,16 @@ function ajustarAccion(id: string, e: Efecto): Efecto {
   }
   notas.push(...(ajuste.notasExtra ?? []));
   avisos.push(`  ${id}: acción ${accion.id} ajustada (${Object.keys(ajuste).join(", ")})`);
+  const cambiaTipo = ajuste.resolucion?.tipo !== undefined && ajuste.resolucion.tipo !== accion.resolucion.tipo;
   return {
     ...e,
     accion: {
       ...accion,
-      resolucion: { ...accion.resolucion, ...ajuste.resolucion },
+      resolucion: cambiaTipo ? ajuste.resolucion : { ...accion.resolucion, ...ajuste.resolucion },
       notas,
       ...(ajuste.grupoExtra && { grupoExtra: ajuste.grupoExtra }),
+      ...(ajuste.objetivoTira && { objetivoTira: ajuste.objetivoTira }),
+      ...(ajuste.resultados && { resultados: ajuste.resultados }),
     },
   };
 }
@@ -951,6 +1012,11 @@ function normalizarEfectos(id: string, efectos: unknown): Efecto[] {
       e.valor = { base: v.base, siMin: { tipo: "atributo", id: s.atributo, min: s.min, valor: s.valor } };
     }
     salida.push(e);
+    const anadidos = ANADIDOS[`${id}#${borrador}`];
+    if (anadidos) {
+      anadidosUsados.add(`${id}#${borrador}`);
+      for (const a of anadidos) salida.push({ ...a, borrador });
+    }
   });
   return salida;
 }
@@ -1079,7 +1145,8 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
       // Efecto sobre el objetivo (T3b): en los ataques de arma o en un poder (sin casilla: un
       // poder no tiene casillas de dote).
       (e.tipo === "objetivo" &&
-        ((familiaDestino !== null && familiaDestino !== "levantar_escudo") || (destino?.tipo === "poder" && e.condicion === null)));
+        ((familiaDestino !== null && familiaDestino !== "levantar_escudo") ||
+          ((destino?.tipo === "poder" || destino?.tipo === "accionDote") && e.condicion === null)));
     if (!construible) {
       falla(id, `efecto ${e.borrador} (${String(e.tipo)}): sin tanda y sin forma de construirlo (D2a, D2b-1, D2b-2, D2c-1, D2c-2, D2d)`);
       return null;
@@ -1202,6 +1269,7 @@ export function generarCatalogoDotes(): { texto: string; total: number; avisos: 
   errores.length = 0;
   avisos.length = 0;
   ajustesUsados.clear();
+  anadidosUsados.clear();
   ajustesPoderUsados.clear();
 
   const dotes: DoteCatalogo[] = [];
@@ -1298,6 +1366,7 @@ export function generarCatalogoDotes(): { texto: string; total: number; avisos: 
   for (const [clave, destino] of Object.entries(DESTINOS_DOTES))
     if (destino.tipo === "accionDote" && !accionesDeCatalogo.has(clave)) falla("(destinos)", `accionDote "${clave}" sin acción en el catálogo`);
   for (const a of Object.keys(AJUSTES_ACCION)) if (!ajustesUsados.has(a)) falla("(AJUSTES_ACCION)", `"${a}" no es una acción del borrador`);
+  for (const a of Object.keys(ANADIDOS)) if (!anadidosUsados.has(a)) falla("(ANADIDOS)", `"${a}" no es un efecto del borrador`);
   for (const a of Object.keys(AJUSTES_PODER)) if (!ajustesPoderUsados.has(a)) falla("(AJUSTES_PODER)", `"${a}" no es un poder del borrador`);
   // Destino "poder" (D2c-2): el id es una acción de psiónica o un poder de dote del catálogo.
   const poderesConocidos = new Set([

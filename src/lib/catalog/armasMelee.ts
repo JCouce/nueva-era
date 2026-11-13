@@ -1102,7 +1102,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     id: "kerzul_espada_hacha_pico",
     material: "kerzul",
     label: "Espada, Hacha o Pico de Guerra de Kerzul",
-    resumen: "Arma de filo de kerzul a una mano; el modo Compleja arriesga retroceso entrópico.",
+    resumen: "Arma de filo de kerzul a una mano; en Estándar y Compleja arriesga retroceso entrópico.",
     descripcion: "Arma de filo de kerzul a una mano.",
     empleo: "una mano",
     modos: [
@@ -1141,7 +1141,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "accion",
         afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
         mecanismo: "accion_equipo",
-        estado: "pendiente",
+        // Botón «Salvar retroceso» en el resultado del golpe (rules/retrocesoEntropico.ts, T3c).
+        estado: "construido",
       },
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
@@ -1195,7 +1196,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "accion",
         afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
         mecanismo: "accion_equipo",
-        estado: "pendiente",
+        // Botón «Salvar retroceso» en el resultado del golpe (rules/retrocesoEntropico.ts, T3c).
+        estado: "construido",
       },
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
@@ -1248,7 +1250,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "accion",
         afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
         mecanismo: "accion_equipo",
-        estado: "pendiente",
+        // Botón «Salvar retroceso» en el resultado del golpe (rules/retrocesoEntropico.ts, T3c).
+        estado: "construido",
       },
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
@@ -1302,7 +1305,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "accion",
         afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
         mecanismo: "accion_equipo",
-        estado: "pendiente",
+        // Botón «Salvar retroceso» en el resultado del golpe (rules/retrocesoEntropico.ts, T3c).
+        estado: "construido",
       },
       // "Con alcance": la nota "Alcance N" del golpe (combate.ts, tiradaDeArmaMelee).
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "construido" },
@@ -1355,7 +1359,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "accion",
         afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
         mecanismo: "accion_equipo",
-        estado: "pendiente",
+        // Botón «Salvar retroceso» en el resultado del golpe (rules/retrocesoEntropico.ts, T3c).
+        estado: "construido",
       },
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
@@ -1405,7 +1410,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "accion",
         afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
         mecanismo: "accion_equipo",
-        estado: "pendiente",
+        // Botón «Salvar retroceso» en el resultado del golpe (rules/retrocesoEntropico.ts, T3c).
+        estado: "construido",
       },
       // "Con alcance": la nota "Alcance N" del golpe (combate.ts, tiradaDeArmaMelee).
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "construido" },
@@ -1460,7 +1466,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "accion",
         afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
         mecanismo: "accion_equipo",
-        estado: "pendiente",
+        // Botón «Salvar retroceso» en el resultado del golpe (rules/retrocesoEntropico.ts, T3c).
+        estado: "construido",
       },
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
@@ -1510,7 +1517,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "accion",
         afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
         mecanismo: "accion_equipo",
-        estado: "pendiente",
+        // Botón «Salvar retroceso» en el resultado del golpe (rules/retrocesoEntropico.ts, T3c).
+        estado: "construido",
       },
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
@@ -1559,7 +1567,8 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         tipo: "accion",
         afecta: { modo: "accion_nueva", id: "salvacion_retroceso_entropico" },
         mecanismo: "accion_equipo",
-        estado: "pendiente",
+        // Botón «Salvar retroceso» en el resultado del golpe (rules/retrocesoEntropico.ts, T3c).
+        estado: "construido",
       },
       // defensa.blindaje es del propio escudo, no del portador (Murillo, 2026-10-23): en
       // "Resistir daño", "Al escudo", golpeAlEscudo() (lib/rules/blindaje.ts) lo resta del

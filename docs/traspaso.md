@@ -158,6 +158,12 @@ Las 30 preguntas, con cuáles son las de más impacto ahora mismo, están al fin
 
 ## 8. Lo que el usuario ya ha decidido, para no volver a preguntarlo
 
+- **La app solo conoce la tirada de quien la usa. Nunca depende de la tirada de otro
+  jugador ni de un NPC** (regla dura, repetida muchas veces). En una enfrentada o una salvación
+  del rival, el resultado se resuelve con tu total: la app enseña umbrales concretos sacados de
+  él («saca 9 o menos: Aterrorizado; 10–14: Miedo; 15 o más: nada») y el máster compara a ojo.
+  Nada de pedir el total del otro como dificultad ni de efectos automáticos que salten por el
+  grado del otro.
 - El sistema viejo **desaparece**; no se compara con él ni se resucita.
 - Las fichas antiguas **se borran**; los jugadores empiezan de cero.
 - Las migraciones se escriben **antes de que el grupo cree sus personajes**, no después.

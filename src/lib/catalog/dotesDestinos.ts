@@ -12,9 +12,10 @@
 //   especialidadArmaElegida → los ataques con arma de la especialidad elegida al comprar
 //            (Crítico Mejorado: crítico fijo, sin casilla; rules/dotesEfectos.ts). `familias`:
 //            qué tiradas de esa arma cuentan como ataque (ni lanzarla ni bloquear con ella).
-//   accionDote → una acción propia de dote (D2c-1): sus textos van a la nota de la acción y
-//            sus bonos a la casilla de opción de la acción (rules/dotesAcciones.ts). Solo
-//            sale si la acción sale (la dote que la da está activa).
+//   accionDote → una acción propia de dote (D2c-1): sus textos van a la nota de la acción,
+//            sus bonos a la casilla de opción de la acción y sus efectos sobre el objetivo (T3c)
+//            a «El objetivo» de su resultado (rules/dotesAcciones.ts). Solo sale si la acción
+//            sale (la dote que la da está activa).
 //   poder  → un poder, psiónico o de dote (D2c-2), por el id de su acción: solo textos, que
 //            prepararPoder (rules/usoPoder.ts) pone en la nota o el crítico de la tirada del
 //            poder, o en las notas de su ventana si no tira. Casillas y bonos no se saben
@@ -125,9 +126,12 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   dotes_ataque_de_oportunidad: { tipo: "accionDote" },
 
   // ── Acciones propias de dote (D2c-1, rules/dotesAcciones.ts) ──
-  // Apoyo y Violencia Aterradora: solo los usa la ventaja con casilla (D2d, dotesAcciones.ts).
+  // Apoyo y Violencia Aterradora: la ventaja con casilla (D2d, dotesAcciones.ts).
   dotes_apoyo: { tipo: "accionDote" },
+  // Intimidar en combate (T3c, do-04): lo que le hacen al objetivo, en «El objetivo».
   dotes_violencia_aterradora: { tipo: "accionDote" },
+  dotes_grito_de_guerra: { tipo: "accionDote" },
+  dotes_mirada_desafiante: { tipo: "accionDote" },
   // Finta: casilla «Finta repetida» (§9.3), con la opción de Maestro de Fintas.
   dotes_finta: { tipo: "accionDote" },
 

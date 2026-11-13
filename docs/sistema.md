@@ -656,6 +656,42 @@ imponen penalizadores por umbral:
     pérdidas de fatiga (2); «aturdido» sin salvación es el grado Fracaso del catálogo; la asfixia
     no está en el catálogo de estados (no se pone desde el panel); el Derribo (N) de un arma
     cuenta como «maniobra del atacante» para Dominio Elevado.
+- **Lo que una acción te hace a ti** `[FIRME · usuario, cuestionario de cierre 2026-11-13: eq-18 (a), eq-19 (a), do-04 (a)]`.
+  Lo resuelve el motor (`rules/consecuenciasPropias.ts`) y lo aplica el servidor recalculándolo
+  con la ficha guardada (`aplicarConsecuenciaPropiaAction`; el cliente solo dice qué acción, qué
+  modo y qué grado, los dados son suyos, como en P1). El daño entra a la vida por el camino de la
+  pestaña Vida del máster (en combate, a la foto del Combatiente) y los estados por el de siempre:
+  cada cosa con su entrada en el registro del máster, con el jugador de autor, y su Deshacer.
+  - **Retroceso entrópico del Kerzul (eq-18, eq-19)**: tras cualquier golpe **Estándar o
+    Compleja** con arma de Kerzul, acierte o falle, el resultado ofrece «Salvar retroceso»: la app
+    tira la **Fortaleza** de la ficha (con sus modificadores) contra el **daño básico de ese modo
+    con tu Fuerza** (el que ya calcula el golpe: Fue+7 con Fuerza 3 = 10). Fallo: la mitad
+    redondeada abajo como daño **no letal** y **Entorpecido 1 turno** (grado «fallo»). Fracaso
+    crítico: el mismo daño, Entorpecido grado «fracaso crítico» 1 turno y **Derribado** (hasta
+    levantarse). Éxito: nada. El Puñal (solo Simple) no; la Lanza Corta y la Larga, solo en
+    Estándar; el Escudo de Kerzul (un solo modo, Estándar), sí. Lo declara la pieza
+    (`salvacion_retroceso_entropico`, construido); la regla, `rules/retrocesoEntropico.ts`; el dato
+    en la tirada, `Accion.salvacionesPropias`. Sin `onConsecuenciaPropia` (NPC en la consola) la
+    app tira y dice el resultado, y el máster lo aplica. `TODO(revisar)`: el daño del retroceso
+    no pasa por «Resistir daño» (es el propio golpe, sin blindaje ni armadura).
+  - **Intimidar en combate (do-04)**: *Grito de Guerra*, *Violencia Aterradora* y *Mirada
+    Desafiante* se resuelven como intimidar en combate (`fuente/habilidades.md`, Actitud ›
+    Intimidación), las tres **enfrentadas** (Mirada deja la dificultad a criterio). En «El
+    objetivo» del resultado, acierte o no: cada enemigo salva **Voluntad + Actitud contra Miedo,
+    dificultad tu total**, con el **tramo de su tirada para cada resultado**, sacado solo de tu
+    total (con 15: «9 o menos», Aterrorizado 1 turno y Miedo el siguiente; «10 a 14», Miedo
+    —Asustado— 1 turno; «15 a 20», nada; «21 o más», nada y tú sufres Miedo 1 turno). Grito:
+    «Cada enemigo a 40 m»; Violencia: «… que lo presencie»; Mirada: «El objetivo». Lo aplica el
+    máster a viva voz (eq-02), también tu Miedo: **la app nunca depende de la tirada del otro**
+    (regla dura del usuario, 2026-11-13; `traspaso.md` §8), así que no hay nada automático sobre
+    ti. Modelo: efecto de dote `objetivo` sobre una acción de dote (destino `accionDote`,
+    `dotesAcciones.ts`) y `quien` en `EfectoArma` (a quién le toca, si no es «el objetivo»).
+  - **Tramos en toda salvación con dificultad conocida** (usuario, 2026-11-13): «El objetivo»
+    enseña los cuatro resultados posibles (los que la fuente no nombra, «Ningún efecto»), cada
+    uno con el tramo de total que cae en él según `MARGEN_CRITICO` (`GradoAviso.rango`,
+    `efectosArma.ts`), desplegados. Estados cuyos grados no son de salvación (niveles, «activo»)
+    se quedan como vienen.
+    `TODO(revisar)`: el empate (con su tirada contra tu total, empatar le salva).
 - **A FIRME sin código** `[FIRME · usuario, cuestionario de cierre 2026-11-13: eq-11, eq-13, eq-17, eq-40, td-29]`:
   - **eq-11**: el crítico «Derribado o Entorpecido (N)» de Látigo y Cadena Armada: **lo decide el
     máster según la escena**. El aviso lo dice como texto.
@@ -2680,7 +2716,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S56 | ***Traicionero* en Iniciativa es una tirada de iniciativa**: la copia del grupo Iniciativa recibe los bonos con alcance de grupo Iniciativa (*Vigilancia Táctica* +2); la de la sección Dotes, no. Los textos de dote de Iniciativa siguen yendo a las tres tiradas fijas. `TODO(revisar)` en `dotesAcciones.ts`. | Conservador sobre "pudiendo usarse como tirada de iniciativa" (D2c-1). |
 | S57 | **«Finta repetida» es una casilla de opción**: No (0) · contra el mismo enemigo (−2, *Finta*) · y con *Maestro de Fintas*, contra un enemigo ya engañado (0). El jugador elige una: así "vale la mejor" sin sumar casillas. | §9.3 y §9.5 ("Maestro de Fintas lo quita tras finta con éxito"); D2c-1. |
 | S58 | **Texto de crítico que empieza por "Además"** (*Humor Negro*, *Alentar*, *Llamada a las Armas*) se enseña tras el del éxito: el crítico incluye el efecto del éxito. Sin texto de crítico vale el del éxito; sin el de fracaso crítico, el del fracaso (como los poderes). | Lectura de la prosa ("además"); D2c-1. |
-| S59 | ***Agarre Rápido*, *Zafarse* y *Mirada Desafiante* llevan tirada aunque la prosa solo da la economía**: Reflejos + Atletismo (Escalada), Potencia + Atletismo (Escapismo; "potencia o fortaleza + atletismo" de Atrapado, `fuente/reglas-base.md`) y Expresión + Actitud (Intimidación), con la dificultad a criterio del máster. Es lo que traía el borrador; no se toca por no ser un error evidente. `TODO(revisar)` en `generar-catalogo-dotes.ts`. | Pendiente de Murillo (D2c-1). **Usuario (2026-10-15)**: vale; *Zafarse* se apoya en la regla de Atrapado; *Agarre Rápido* y *Mirada Desafiante*, pregunta pendiente a Murillo (`docs/tareas.md`, "Preguntas al diseñador"). |
+| S59 | ***Agarre Rápido*, *Zafarse* y *Mirada Desafiante* llevan tirada aunque la prosa solo da la economía**: Reflejos + Atletismo (Escalada), Potencia + Atletismo (Escapismo; "potencia o fortaleza + atletismo" de Atrapado, `fuente/reglas-base.md`) y Expresión + Actitud (Intimidación), con la dificultad a criterio del máster. Es lo que traía el borrador; no se toca por no ser un error evidente. `TODO(revisar)` en `generar-catalogo-dotes.ts`. | Pendiente de Murillo (D2c-1). **Usuario (2026-10-15)**: vale; *Zafarse* se apoya en la regla de Atrapado; *Agarre Rápido* y *Mirada Desafiante*, pregunta pendiente a Murillo (`docs/tareas.md`, "Preguntas al diseñador"). **Usuario (2026-11-13, do-04)**: *Mirada Desafiante* pasa a intimidar en combate (enfrentada contra Voluntad + Actitud, §7 «Lo que una acción te hace a ti»); *Agarre Rápido* sigue igual. |
 | S60 | ***Impacto Métrico* no tira en la app.** Es un poder sobre el ataque de un arma (§9.3: texto): la ventana del poder (nivel empleado, vector) cobra la fatiga al pulsar "Usar", aunque el ataque falle (§9.5), y enseña el daño extra; la tirada de ataque (Potencia + Combate Melee, con el arma o el golpe de Pelea) la hace el jugador aparte, en Ataques, y lo dice la primera nota. Lo que pasa si impacta o falla, el tamaño y lo que tira el objetivo van como notas y texto tras usarlo. Se convierte en el generador (`normalizarPoder`, `scripts/generar-catalogo-dotes.ts`). | Decisión del usuario (D2c-2) sobre §9.3. |
 | S61 | **Los poderes de dote no reciben las reglas propias de su disciplina**: ni descuentos de fatiga, ni rebajas de tipo de acción, ni ventajas (son de los poderes de la disciplina). Sí las casillas externas (*Xovromium*, *Munición Supresora*), la *Derivación Psiónica*, la sobrecarga y el peaje neurológico, que son de cualquier gasto psiónico. Hoy no cambia ningún número (las reglas de Singularidad y Traslación van por id de acción). `TODO(revisar)` en `dotesPoderes.ts`. | Supuesto del modelado aceptado en §9.3 ("Sobrecarga Métrica sin descuentos de Traslación"), extendido a *Impacto Métrico*. |
 | S62 | ***Impacto Métrico*, vector descendente**: la compresión es un dato aparte ("Daño por compresión (letal, se suma)", 1 por cada dos niveles empleados, mínimo 1) junto al daño extra, y +1 a la dificultad del objetivo. El borrador quitaba el desplazamiento en este vector, pero la tirada del objetivo que vuela lo usa ("se desplaza 4 m × nivel"): se deja, y una nota dice que los metros solo cuentan si volaba. `TODO(revisar)` en `generar-catalogo-dotes.ts` (`AJUSTES_PODER`). | Prosa del vector descendente; §9.5 ("daño letal que se suma"). |

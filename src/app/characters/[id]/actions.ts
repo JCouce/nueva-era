@@ -132,8 +132,14 @@ import {
   danioDeFoto,
   recibirGolpe,
   type GolpeAplicado,
+  accionesDeAtaque,
+  consecuenciaPropia,
+  estadosActivosDe,
+  salvacionPropiaDe,
+  textoDeConsecuencia,
 } from "@/lib/rules";
 import { mesaDeFicha } from "@/lib/mesaDeFicha";
+import { ajustarVidaDePersonajes } from "@/lib/vidaMando";
 
 export type SaveResult =
   // `mensaje`: qué ha pasado, cuando no basta con ver la ficha (acciones de aumento, A4a).
@@ -855,6 +861,56 @@ export async function ponerEstadosDePoderAction(characterId: string, entrada: un
   const fila = await prisma.character.findUnique({ where: { id: characterId }, select: { stats: true, estados: true } });
   const sheet = fila ? reconciliarVidaConEstados(parseSheet(fila.stats), leerEstados(fila.estados)) : ctx.sheet;
   return { ok: true, sheet, mensaje: `Te pones ${nombres}.` };
+}
+
+// Lo que una acción te hace a ti (T3c del cuestionario, rules/consecuenciasPropias.ts): el Miedo
+// del fracaso crítico al intimidar (Grito de Guerra y compañía, por el grado de la tirada) y el
+// retroceso entrópico del Kerzul (por el grado de su salvación de Fortaleza, con el modo del
+// golpe). Como los estados propios de los poderes (P1): el cliente dice qué acción y qué grado (los
+// dados son suyos); la acción, la dificultad, el daño y los estados se recalculan aquí con la
+// ficha guardada. El daño va por el camino de la pestaña Vida del máster (en combate, a la foto
+// del Combatiente) y los estados por el de siempre: cada uno con su entrada en el registro del
+// máster, con el jugador de autor, que se puede deshacer allí.
+// TODO(revisar): el daño del retroceso no pasa por «Resistir daño» (sin blindaje ni armadura).
+const consecuenciaPropiaSchema = z.discriminatedUnion("tipo", [
+  z.object({ tipo: z.literal("grado"), accionId: z.string().min(1).max(120), grado: z.enum(GRADOS) }),
+  z.object({
+    tipo: z.literal("salvacion"),
+    accionId: z.string().min(1).max(120),
+    modoId: z.string().min(1).max(20).nullable(),
+    grado: z.enum(GRADOS),
+  }),
+]);
+
+export async function aplicarConsecuenciaPropiaAction(characterId: string, entrada: unknown): Promise<SaveResult> {
+  const parsed = consecuenciaPropiaSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Datos no válidos" };
+  const op = parsed.data;
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const mesa = await mesaDeFicha(characterId);
+  const ficha = resolverFicha(ctx.sheet, { estados: ctx.estados, vitalidad: VITALIDAD_DE_FICHA, aprobada: ctx.aprobada, mesa });
+  const tiradas = op.tipo === "grado" ? ficha.accionesDotes.tiradas : accionesDeAtaque(ctx.sheet, ficha.modificadores, ficha.extrasDotes.permisos);
+  const tirada = tiradas.find((t) => t.id === op.accionId);
+  if (!tirada) return { ok: false, error: "Esa acción ya no está en tu ficha." };
+  const c = consecuenciaPropia(tirada, op);
+  if (!c) return { ok: true, sheet: ctx.sheet, mensaje: "Nada que aplicar." };
+  const fuente = op.tipo === "salvacion" ? (salvacionPropiaDe(tirada, op.modoId)?.fuente ?? tirada.label) : tirada.label;
+  const autoria = { userId: ctx.userId, motivo: `${fuente}, desde la ficha` };
+  if (c.danio) {
+    const r = await ajustarVidaDePersonajes([characterId], "vida", -c.danio.valor, c.danio.categoria, autoria);
+    if (!r.ok) return { ok: false, error: r.error };
+  }
+  const inmune: string[] = [];
+  for (const estado of estadosActivosDe(c.estados)) {
+    const hecho = await cambiarEstadosDePersonajes([characterId], { tipo: "poner", estado }, autoria);
+    if (!hecho) return { ok: false, error: "Personaje no encontrado" };
+    if (hecho.inmunes.length > 0) inmune.push(estadoPorId(estado.estadoId)?.label ?? estado.estadoId);
+  }
+  const fila = await prisma.character.findUnique({ where: { id: characterId }, select: { stats: true, estados: true } });
+  const sheet = fila ? reconciliarVidaConEstados(parseSheet(fila.stats), leerEstados(fila.estados)) : ctx.sheet;
+  const aviso = inmune.length > 0 ? ` Eres inmune a ${inmune.join(" y ")}: no se pone.` : "";
+  return { ok: true, sheet, mensaje: `${textoDeConsecuencia(c)}${aviso}` };
 }
 
 // Quitar a mano un estado propio de poder («Terminar contención»). Solo los de poder: el resto

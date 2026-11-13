@@ -202,6 +202,7 @@ export function AccionModal({
   resultado,
   notaResultado,
   onTirarDanio,
+  onSalvacionPropia,
   onCerrar,
   onTirar,
 }: {
@@ -253,6 +254,8 @@ export function AccionModal({
   // (dejan el prop sin pasar, ver FabricarSeccion.tsx/ReparaFabricaModal.tsx).
   notaResultado?: string;
   onTirarDanio: () => void;
+  // «Salvar retroceso» y similares (Accion.salvacionesPropias, T3c): tira la salvación propia.
+  onSalvacionPropia?: () => void;
   onCerrar: () => void;
   onTirar: (args: {
     dado: number;
@@ -428,7 +431,7 @@ export function AccionModal({
 
       {resultado && !rodando && (
         <div className="mt-4 border-t border-border pt-3">
-          <ContenidoResultado resultado={resultado} onTirarDanio={onTirarDanio} />
+          <ContenidoResultado resultado={resultado} onTirarDanio={onTirarDanio} onSalvacionPropia={onSalvacionPropia} />
           {pieResultado}
           {notaResultado && (
             <p className="mt-3 border-l-2 border-accent pl-2 font-sans text-[12px] font-semibold leading-relaxed text-accent">

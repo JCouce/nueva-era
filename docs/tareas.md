@@ -928,6 +928,8 @@ Criterios de construcción (usuario, 2026-11-13): reglas respetadas; todo en el 
 va a cargar mucho el frontend, se avisa antes de construirlo.
 
 Reglas generales que salen de las notas:
+- **Nunca depender de la tirada de otro jugador o NPC** (usuario, 2026-11-13, regla dura): enfrentadas
+  y salvaciones del rival se enseñan como umbrales calculados de tu total; ver `docs/traspaso.md` §8.
 - Una nota aparece en la tirada donde se aplica, no solo en la descripción (au-01, es-05).
 - La app nunca recibe el daño del enemigo: entra por «Resistir daño» eligiendo el tipo, y todo lo
   que dependa de recibir daño se dispara desde ahí (es-02, es-03, do-02).
@@ -994,7 +996,20 @@ Tandas, en orden:
     Expansión, siempre). Sus notas viejas se quitan. Sin migración ni cambio de UI. Quedan
     `TODO(revisar)`: fatiga doble en el fracaso crítico del derribo, grado de «aturdido», asfixia
     fuera del catálogo, Derribo (N) de arma como maniobra para Dominio Elevado.
-  - [ ] **T3c** retroceso entrópico de Kerzul (eq-18, eq-19) y Grito de Guerra y compañía (do-04).
+  - [x] **T3c** retroceso entrópico de Kerzul (eq-18, eq-19) y Grito de Guerra y compañía (do-04).
+    *(2026-11-13)* Motor nuevo `rules/consecuenciasPropias.ts` (lo que una acción le hace a quien
+    tira) y server action `aplicarConsecuenciaPropiaAction`, que lo recalcula con la ficha guardada
+    y lo aplica: daño por el camino de la pestaña Vida (foto del combate si hay uno en curso) y
+    estados por `cambiarEstadosDePersonajes`, con entradas en el registro del máster y su Deshacer.
+    Kerzul: `Accion.salvacionesPropias` (`rules/retrocesoEntropico.ts`, por modo Estándar/Compleja),
+    botón «Salvar retroceso» en el resultado que tira la Fortaleza de la ficha; la MotorMetadata
+    `salvacion_retroceso_entropico` pasa a construida. Intimidar: efecto de dote `objetivo` sobre
+    una acción de dote (tabla `ANADIDOS` del generador), `quien` en `EfectoArma`, Mirada pasa a
+    enfrentada. Tu Miedo por fracaso crítico NO es automático (depende de la tirada del enemigo):
+    sale en el tramo de su éxito crítico y lo pone el máster. Toda salvación con dificultad
+    conocida enseña los cuatro resultados con el tramo de total de cada uno (`GradoAviso.rango`).
+    Sin migración. Quedan `TODO(revisar)`: el retroceso no pasa por Resistir daño; el empate en
+    la enfrentada.
 - [ ] **T4 Estado Sigilo**: di-09, do-01, eq-25, eq-26, eq-30, eq-31, eq-33.
 - [ ] **T5 Fase 4 de aportes + lo que sale en la tirada**: pl-05, eq-35, do-07, es-05, au-06, td-05,
   do-03, fa-01, fa-02, di-32, td-06, td-08, td-10, td-11.

@@ -14,6 +14,7 @@ import type { AccionPoder } from "../rules/psionica";
 import { ESPECIALIDAD_IDS } from "./especialidades";
 import { motorMetadataSchema } from "../rules/motor";
 import { efectoArmaSchema } from "../rules/efectosArma";
+import { estadoPropioSchema } from "../rules/consecuenciasPropias";
 
 const ids = <T extends readonly { id: string }[]>(lista: T) =>
   lista.map((x) => x.id) as unknown as [T[number]["id"], ...T[number]["id"][]];
@@ -157,7 +158,12 @@ export const accionDoteSchema = z.strictObject({
   limite,
   resolucion: resolucionDote,
   objetivoTira: z.array(z.strictObject({ que: z.string().min(1), grados: z.partialRecord(grado, z.string().min(1)).optional() })),
-  resultados: z.partialRecord(grado, z.strictObject({ texto: z.string().min(1) })),
+  // `estadosPropios`: los que la app te pone con ese grado (T3c: el fracaso crítico al intimidar,
+  // Miedo 1 turno), por rules/consecuenciasPropias.ts.
+  resultados: z.partialRecord(
+    grado,
+    z.strictObject({ texto: z.string().min(1), estadosPropios: z.array(estadoPropioSchema).min(1).optional() }),
+  ),
   notas: z.array(z.strictObject({ texto: z.string().min(1), condicion })),
   // Grupo fijo de Acciones donde la acción sale además de la sección Dotes (§9.3, UX propia:
   // Traicionero «pudiendo usarse como tirada de iniciativa»). Lo pone el generador.
@@ -260,7 +266,8 @@ export const efectoDoteSchema = z.discriminatedUnion("tipo", [
   // Lo que la dote le hace al objetivo del ataque (T3b, do-05): un efecto del modelo de arma
   // (rules/efectosArma.ts) que sale en «El objetivo» del resultado. Con `condicion`, solo con
   // la casilla de la dote de esa condición marcada (la del bono del mismo destino, si la hay).
-  // Lo pone el generador (CONVERSIONES).
+  // También sobre una acción de dote (T3c, do-04: intimidar con Grito de Guerra), sin casilla.
+  // Lo pone el generador (CONVERSIONES, ANADIDOS).
   z.strictObject({
     tipo: z.literal("objetivo"),
     lugar: alcance,

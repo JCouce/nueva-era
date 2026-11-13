@@ -29,10 +29,17 @@
 //               porque el jugador elige una sola opción.
 //   ventaja con casilla (D2d) → un toggle por efecto: marcado, dos d12 y vale el mejor (Apoyo
 //               con vínculo fuerte, Violencia Aterradora tras un crítico).
+//   objetivo (T3c) → `efectosObjetivoDeFicha`: lo que la acción le hace a su objetivo, en «El
+//               objetivo» del resultado (intimidar en combate: Grito de Guerra y compañía).
+//
+// Lo que la acción te pone a ti por su grado (`resultados.<grado>.estadosPropios`, T3c: Miedo
+// en el fracaso crítico al intimidar) va en `consecuenciasPropias`; lo aplica el servidor.
 //
 // Requisito roto (S34) y "vale la mejor" entre básica y mejorada los resuelve dotesActivas:
 // aquí solo llegan las activas.
 import type { Accion, AccionDirecta, UsoLimitado } from "./acciones";
+import type { EfectoEnTirada } from "./efectosArma";
+import type { ConsecuenciaPropia } from "./consecuenciasPropias";
 import type { CondicionTirada } from "./condiciones";
 import type { Sheet } from "./sheet";
 import { claveContador, conContador, contadorEscena } from "./usosEscena";
@@ -177,9 +184,15 @@ function anadidosPorAccion(activas: readonly DoteActiva[]) {
   const textos = new Map<string, string[]>();
   const bonos = new Map<string, Bono[]>();
   const ventajas = new Map<string, CondicionTirada[]>();
-  for (const { dote } of activas) {
+  const objetivos = new Map<string, EfectoEnTirada[]>();
+  for (const activa of activas) {
+    const { dote } = activa;
     dote.efectos.forEach((e, i) => {
       if (dote.motor[i]?.estado !== "construido") return;
+      if (e.tipo === "objetivo" && DESTINOS_DOTES[e.lugar]?.tipo === "accionDote") {
+        const efecto: EfectoEnTirada = { ...e.efecto, fuente: dote.label, origen: origenDeDote(activa) };
+        objetivos.set(e.lugar, [...(objetivos.get(e.lugar) ?? []), efecto]);
+      }
       if (e.tipo === "texto" && DESTINOS_DOTES[e.lugar]?.tipo === "accionDote") {
         const texto = e.condicion ? `${e.condicion}: ${e.texto}` : e.texto;
         textos.set(e.lugar, [...(textos.get(e.lugar) ?? []), `${texto} (${dote.label})`]);
@@ -201,7 +214,16 @@ function anadidosPorAccion(activas: readonly DoteActiva[]) {
       }
     });
   }
-  return { textos, bonos, ventajas };
+  return { textos, bonos, ventajas, objetivos };
+}
+
+// Los estados que la acción te pone por su grado, como consecuencia propia.
+function consecuenciasDe(a: AccionDote): Partial<Record<Grado, ConsecuenciaPropia>> | null {
+  const c: Partial<Record<Grado, ConsecuenciaPropia>> = {};
+  for (const [g, v] of Object.entries(a.resultados) as [Grado, AccionDote["resultados"][Grado]][]) {
+    if (v?.estadosPropios) c[g] = { texto: v.texto, estados: v.estadosPropios };
+  }
+  return Object.keys(c).length > 0 ? c : null;
 }
 
 // Nombre corto de la casilla por acción; sin entrada, la condición de la base.
@@ -260,6 +282,8 @@ function construir(
     ...(anadidos.ventajas.get(accion.id) ?? []),
   ];
   const detalle: DetallePoder = { resultados: resultadosDe(accion), objetivoTira: accion.objetivoTira };
+  const objetivos = anadidos.objetivos.get(accion.id) ?? [];
+  const consecuencias = consecuenciasDe(accion);
   const especialidades = r.especialidad === undefined ? [] : [r.especialidad].flat();
   return {
     tirada: {
@@ -274,6 +298,8 @@ function construir(
       ...(r.tipo === "ataque" && r.modificador !== undefined && { ajustesFijos: [{ valor: r.modificador, fuente: accion.label }] }),
       ...(casillas.length > 0 && { condiciones: casillas }),
       poder: detalle,
+      ...(objetivos.length > 0 && { efectosObjetivoDeFicha: objetivos }),
+      ...(consecuencias && { consecuenciasPropias: consecuencias }),
       ...(limite && { usoLimitado: limite.uso }),
       ...(limite?.bloqueada && { bloqueada: limite.bloqueada }),
     },

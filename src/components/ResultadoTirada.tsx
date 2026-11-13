@@ -12,6 +12,7 @@ import {
   type Resultado,
   type ResultadoDanio,
   type ResultadoVuelo,
+  type SalvacionPropia,
 } from "@/lib/rules";
 
 function signo(n: number) {
@@ -125,6 +126,15 @@ export type Lanzamiento = Resultado & {
   vueloResuelto?: ResultadoVuelo;
   // Poder psiónico (Accion.poder): resultado propio por grado y lo que tira el objetivo.
   poder?: DetallePoder;
+  // La acción que se tiró (Accion.id): la que el servidor vuelve a buscar para las consecuencias
+  // propias (T3c).
+  accionId?: string;
+  // Salvación propia tras la acción con el modo elegido (retroceso entrópico del Kerzul, T3c) y,
+  // una vez tirada, su resultado y grado.
+  salvacionPropia?: SalvacionPropia;
+  salvacionPropiaTirada?: Resultado & { grado: Grado | null };
+  // Lo que la app te ha aplicado por esta acción (lo dice el servidor): «Recibes 5 de daño…».
+  mensajesPropios?: string[];
   // Marca un registro de una AccionDirecta (docs/motor.md, "Acciones sin
   // dado") en vez de una tirada real — los campos de Resultado se rellenan a
   // 0/null solo para que el tipo cierre (nunca se leen: FilaHistorial los
@@ -143,9 +153,11 @@ export type Lanzamiento = Resultado & {
 export function ContenidoResultado({
   resultado,
   onTirarDanio,
+  onSalvacionPropia,
 }: {
   resultado: Lanzamiento;
   onTirarDanio: () => void;
+  onSalvacionPropia?: () => void;
 }) {
   const { exito, critico, margen } = resultado;
   const tono =
@@ -354,7 +366,69 @@ export function ContenidoResultado({
       {resultado.poder && resultado.poder.objetivoTira.length > 0 && (
         <ObjetivoTira tiradas={resultado.poder.objetivoTira} />
       )}
+
+      {/* Lo que la acción te hace a ti (T3c): el retroceso entrópico, acierte o falle. */}
+      {resultado.salvacionPropia && (
+        <BloqueSalvacionPropia
+          salvacion={resultado.salvacionPropia}
+          tirada={resultado.salvacionPropiaTirada}
+          onTirar={onSalvacionPropia}
+        />
+      )}
+
+      {resultado.mensajesPropios?.map((m, i) => (
+        <p key={i} className="mt-2 border-l-2 border-danger pl-2 font-sans text-[12px] font-semibold text-danger">
+          {m}
+        </p>
+      ))}
     </>
+  );
+}
+
+function BloqueSalvacionPropia({
+  salvacion,
+  tirada,
+  onTirar,
+}: {
+  salvacion: SalvacionPropia;
+  tirada?: Resultado & { grado: Grado | null };
+  onTirar?: () => void;
+}) {
+  const grados = (["fracasoCritico", "fracaso", "exito"] as const).filter((g) => salvacion.grados[g]);
+  const consecuencia = tirada?.grado ? salvacion.grados[tirada.grado] : undefined;
+  return (
+    <div className="mt-3 border-t border-border pt-3">
+      <p className="font-mono text-[10px] uppercase tracking-widest text-muted">Tú</p>
+      <p className="mt-1 font-sans text-prosa font-semibold text-foreground">
+        {salvacion.fuente}: salvas {salvacion.tiradaLabel} contra {salvacion.dificultad}
+      </p>
+      {tirada ? (
+        <p className="mt-1 font-mono text-xs uppercase text-foreground">
+          {salvacion.tiradaLabel} <span className="tabular-nums">{tirada.total}</span> (d12 {tirada.dado}) vs{" "}
+          {salvacion.dificultad} · <span className={tirada.exito ? "text-info" : "text-danger"}>{tirada.grado ? ETIQUETA_GRADO[tirada.grado] : "—"}</span>
+          {consecuencia && <span className="block normal-case text-soft">{consecuencia.texto}</span>}
+        </p>
+      ) : (
+        <>
+          <ul className="mt-1 flex flex-col gap-0.5">
+            {grados.map((g) => (
+              <li key={g} className="font-sans text-[12px] text-soft">
+                <span className="font-mono uppercase text-muted">{ETIQUETA_GRADO[g]}:</span> {salvacion.grados[g]!.texto}
+              </li>
+            ))}
+          </ul>
+          {onTirar && (
+            <button
+              type="button"
+              onClick={onTirar}
+              className="clip-chamfer-sm mt-2 w-full border border-accent py-2 font-display text-xs font-semibold uppercase tracking-wide text-accent active:scale-[0.98]"
+            >
+              {salvacion.etiqueta} ({salvacion.tiradaLabel} contra {salvacion.dificultad})
+            </button>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -376,15 +450,18 @@ function AvisoObjetivo({ efectos }: { efectos: EfectoSobreObjetivo[] }) {
               </p>
             ))}
             {e.grados.length > 0 && (
-              <details className="mt-1">
+              <details className="mt-1" open={e.grados.some((g) => g.rango)}>
                 <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-wide text-muted">
-                  {e.salvacion ? "Qué pasa en cada grado" : "Qué hace"}
+                  {e.salvacion ? (e.grados.some((g) => g.rango) ? "Según lo que saque" : "Qué pasa en cada grado") : "Qué hace"}
                 </summary>
                 {e.resumen && <p className="mt-1 font-sans text-[12px] text-soft">{e.resumen}</p>}
                 <ul className="mt-1 flex flex-col gap-0.5">
                   {e.grados.map((g) => (
                     <li key={g.id} className="font-sans text-[12px] text-soft">
-                      <span className="font-mono uppercase text-muted">{g.label}:</span> {g.texto}
+                      <span className="font-mono uppercase text-muted">
+                        {g.rango ? `${g.rango} (${g.label})` : g.label}:
+                      </span>{" "}
+                      {g.texto}
                     </li>
                   ))}
                 </ul>

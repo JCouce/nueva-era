@@ -24,6 +24,8 @@ import type { TextoEnTirada } from "./especie";
 import type { TipoDanio } from "../catalog/tiposDanio";
 import type { DanioExtra } from "./armasModificadas";
 import type { EfectoEnTirada } from "./efectosArma";
+import type { ConsecuenciaPropia, SalvacionPropia } from "./consecuenciasPropias";
+import type { Grado } from "./psionica";
 import { etiquetaEspecialidad, type EspecialidadId } from "../catalog/especialidades";
 
 export const CARAS_DADO = 12;
@@ -90,6 +92,12 @@ export type Accion = {
   // aparte, porque la munición que sustituye el crítico del arma no los toca. Los pone
   // conExtrasDeFicha (o prepararPoder en un poder: Onda Residual).
   efectosObjetivoDeFicha?: EfectoEnTirada[];
+  // Lo que la acción le hace a quien tira (T3c, rules/consecuenciasPropias.ts), que aplica el
+  // servidor recalculándolo con la ficha guardada. Por el grado de esta tirada (fracaso crítico
+  // al intimidar: Miedo 1 turno) o por una salvación propia tras ella, con el modo elegido
+  // (retroceso entrópico del Kerzul).
+  consecuenciasPropias?: Partial<Record<Grado, ConsecuenciaPropia>>;
+  salvacionesPropias?: SalvacionPropia[];
   // Habilidad que el jugador puede usar en su lugar con una casilla de la fila
   // (Levitar: esquivar con Física). Mismo patrón que `aplicadoSutil`, pero sobre
   // la habilidad; la especialidad, si la nombra, se resuelve sola (ver

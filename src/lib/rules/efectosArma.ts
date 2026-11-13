@@ -27,6 +27,7 @@
 //     cada grado). Sin esa salvación, no sale.
 import { z } from "zod";
 import { estadoPorId } from "../catalog/estados";
+import { MARGEN_CRITICO } from "./acciones";
 import type { EstadoCondiciones, TramoDistancia } from "./condiciones";
 import type { Grado } from "./psionica";
 import type { OrigenAporte } from "./origen";
@@ -76,6 +77,8 @@ const comunes = {
   soloSiRecibeDanio: z.literal(true).optional(),
   // Lo que la fuente añade y no cabe en lo anterior (sintéticos +2, relanzar a los 10 turnos…).
   nota: z.string().min(1).optional(),
+  // A quién le toca, si no es «el objetivo» del golpe: «Cada enemigo a 40 m» (Grito de Guerra).
+  quien: z.string().min(1).optional(),
 };
 
 export const efectoArmaSchema = z.discriminatedUnion("tipo", [
@@ -135,6 +138,9 @@ export type GradoAviso = {
   // Fatiga que pierde en total con ese resultado, añadidos incluidos.
   fatiga?: number;
   anadidos?: AnadidoAGrado[];
+  // Qué total de su tirada cae en este grado («10 a 14»), sacado solo de la dificultad: el
+  // máster compara la tirada del rival sin que la app la necesite.
+  rango?: string;
 };
 
 // Lo que el resultado del ataque enseña: a quién le
@@ -186,8 +192,9 @@ export type TiradaConEfectos = {
 };
 
 // Lo que hace falta del resultado: si acertó, si fue crítico y contra cuánto; el total, para
-// la salvación enfrentada a tu ataque (Golpe Fatigante). Sin él, el aviso no dice el número.
-export type ResultadoParaAviso = { exito: boolean | null; critico: boolean; dificultad: number | null; total?: number };
+// la salvación enfrentada a tu tirada (Golpe Fatigante, intimidar). Sin él, el aviso no dice el
+// número. `esAtaque`: el total se nombra como «de tu ataque» (si no, «tu total»).
+export type ResultadoParaAviso = { exito: boolean | null; critico: boolean; dificultad: number | null; total?: number; esAtaque?: boolean };
 
 function etiquetaModoElegido(t: TiradaConEfectos, estado: EstadoCondiciones): string | null {
   const modos = t.ataque?.modos ?? [];
@@ -278,6 +285,41 @@ function gradosDeTabla(tabla: Partial<Record<Grado, ResultadoDeTabla>>): GradoAv
   });
 }
 
+// Cada grado de una salvación por su id, sea de la tabla propia o del catálogo de estados.
+const GRADO_POR_ID: Record<string, Grado> = {
+  fracasoCritico: "fracasoCritico",
+  fracaso_critico: "fracasoCritico",
+  fracaso: "fracaso",
+  fallo: "fracaso",
+  exito: "exito",
+  critico: "critico",
+  exito_critico: "critico",
+};
+
+function rangoDe(grado: Grado, d: number): string {
+  const m = MARGEN_CRITICO;
+  if (grado === "fracasoCritico") return `${d - m} o menos`;
+  if (grado === "fracaso") return `${d - m + 1} a ${d - 1}`;
+  if (grado === "exito") return `${d} a ${d + m - 1}`;
+  return `${d + m} o más`;
+}
+
+// Con dificultad conocida, todos los resultados posibles de su tirada, cada uno con su tramo; el
+// que la fuente no nombra, «Ningún efecto». Un estado de un solo grado (Derribado, «activo») le
+// cae con el fracaso, crítico o no. Varios grados que no son de salvación (niveles) se dejan como
+// vienen.
+function conRangos(grados: GradoAviso[], d: number, nombre: string): GradoAviso[] {
+  const unico = grados.length === 1 && !(grados[0].id in GRADO_POR_ID) ? grados[0] : null;
+  if (!unico && grados.length > 0 && !grados.every((g) => g.id in GRADO_POR_ID)) return grados;
+  return ORDEN_TABLA.map((grado) => {
+    const cae = unico && (grado === "fracaso" || grado === "fracasoCritico");
+    const g = cae
+      ? { ...unico, id: grado, label: ETIQUETA_GRADO[grado], texto: `Queda ${nombre}. ${unico.texto}` }
+      : (grados.find((x) => GRADO_POR_ID[x.id] === grado) ?? { id: grado, label: ETIQUETA_GRADO[grado], texto: "Ningún efecto." });
+    return { ...g, rango: rangoDe(grado, d) };
+  });
+}
+
 // Un dado de N caras (Hemorragia 1d6): se inyecta para los tests.
 export type TirarCaras = (caras: number) => number;
 
@@ -292,9 +334,11 @@ const conSigno = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`);
 
 export function avisoDeEfecto(
   e: Exclude<EfectoEnTirada, { tipo: "ajusteSalvacion" }>,
-  resultado: Pick<ResultadoParaAviso, "critico" | "total">,
+  resultado: Pick<ResultadoParaAviso, "critico" | "total" | "esAtaque">,
   tirar: TirarCaras,
 ): EfectoSobreObjetivo {
+  const quien = e.quien ?? "El objetivo";
+  const tuTotal = resultado.esAtaque === false ? "tu total" : "el total de tu ataque";
   const enCritico = resultado.critico && e.cuando === "critico";
   const notas = [...(e.soloSiRecibeDanio ? [NOTA_SI_RECIBE_DANIO] : []), ...(e.nota ? [e.nota] : [])];
   if (e.tipo === "texto") {
@@ -315,7 +359,7 @@ export function avisoDeEfecto(
     const duracion = duracionDe(e.duracion, tirar);
     const nombre = e.etiqueta ?? label;
     const titulo =
-      duracion.turnos === null ? `El objetivo sufre ${nombre}: ${duracion.detalle}` : `El objetivo sufre ${nombre} durante ${duracion.detalle}`;
+      duracion.turnos === null ? `${quien} sufre ${nombre}: ${duracion.detalle}` : `${quien} sufre ${nombre} durante ${duracion.detalle}`;
     const grado = e.gradoId ? estado?.grados.find((g) => g.id === e.gradoId) : undefined;
     return {
       fuente: e.fuente,
@@ -338,15 +382,15 @@ export function avisoDeEfecto(
     e.dificultad === "exitosDelAtaque"
       ? "tantos éxitos o más como los de tu ataque (antes de restar los de su defensa)"
       : e.dificultad === "totalDelAtaque" && dificultad === undefined
-        ? "el total de tu ataque"
+        ? tuTotal
         : undefined;
   const cuanto =
     dificultad !== undefined
-      ? `dificultad ${dificultad}${e.dificultad === "totalDelAtaque" ? " (el total de tu ataque)" : ""}`
+      ? `dificultad ${dificultad}${e.dificultad === "totalDelAtaque" ? ` (${tuTotal})` : ""}`
       : e.dificultad === "exitosDelAtaque"
         ? `necesita ${contra}`
         : `contra ${contra}`;
-  const titulo = `El objetivo salva${tirada ? ` ${tirada.etiqueta}` : ""} contra ${label}, ${cuanto}`;
+  const titulo = `${quien} salva${tirada ? ` ${tirada.etiqueta}` : ""} contra ${label}, ${cuanto}`;
   return {
     fuente: e.fuente,
     enCritico,
@@ -359,7 +403,9 @@ export function avisoDeEfecto(
       ...(contra && { contra }),
     },
     ...(estado && { resumen: estado.resumen }),
-    grados: e.tabla ? gradosDeTabla(e.tabla) : e.estadoId ? gradosDelEstado(e.estadoId) : [],
+    grados: ((g) => (dificultad !== undefined ? conRangos(g, dificultad, label) : g))(
+      e.tabla ? gradosDeTabla(e.tabla) : e.estadoId ? gradosDelEstado(e.estadoId) : [],
+    ),
     notas,
   };
 }
@@ -414,7 +460,7 @@ export function efectosSobreObjetivo(
   const ajustes = saltan.filter((e): e is Extract<EfectoEnTirada, { tipo: "ajusteSalvacion" }> => e.tipo === "ajusteSalvacion");
   const avisos = saltan
     .filter((e): e is Exclude<EfectoEnTirada, { tipo: "ajusteSalvacion" }> => e.tipo !== "ajusteSalvacion")
-    .map((e) => avisoDeEfecto(e, resultado, tirar));
+    .map((e) => avisoDeEfecto(e, { ...resultado, esAtaque: resultado.esAtaque ?? t.ataque !== undefined }, tirar));
   return avisos.map((a) => ajustes.reduce((x, e) => (x.salvacion && x.estadoId === e.contra ? conAjuste(x, e) : x), a));
 }
 

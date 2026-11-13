@@ -35,6 +35,7 @@ import { escudoRoto, gastoDelModo, MOTIVO_ESCUDO_ROTO, recursoDe } from "./recur
 import { CONDICION_ATACANTES_ADICIONALES, condicionApuntado, type Accion, type AccionDirecta } from "./acciones";
 import { atributoEfectivo, aplicado } from "./derivados";
 import { criticoDesarmado, golpeDesarmadoConArmadura } from "./golpeDesarmado";
+import { ID_RETROCESO_ENTROPICO, retrocesoEntropico } from "./retrocesoEntropico";
 import { ESPECIALIDAD_ARMA, ESPECIALIDAD_ATAQUE_ESPECIAL, ESPECIALIDAD_LANZAR } from "../catalog/especialidadesArma";
 import { FAMILIAS_SOLO_CON_DOTE } from "../catalog/dotesDestinos";
 import type { PermisosDeDotes } from "./dotesEfectos";
@@ -846,6 +847,24 @@ function tiradaDeArmaMelee(
   const ajusteModoUnico =
     !modo && modosConId[0].dificultad !== 0 ? [{ valor: modosConId[0].dificultad, fuente: arma.label }] : [];
   const casillas = casillasDelGolpe(arma, modosConId);
+  const modosDelGolpe = modosConId.map((m) => {
+    const bono = bonoFormulaFuerza(m.formulaDanio);
+    return modoConPerfil(
+      {
+        id: m.id,
+        etiqueta: m.etiqueta,
+        danio: bono === null ? null : fuerza + bono + bonoArmadura,
+        danioSutil: esSutil && bono !== null && potencia !== null ? potencia + bono + bonoArmadura : undefined,
+        formulaDanio: m.formulaDanio === null ? null : formulaConSuma(m.formulaDanio, bonoArmadura),
+        categoriaDanio: conArmadura?.letal ? "Letal" : m.categoriaDanio,
+        ...(m.ignoraBlindaje && { ignoraBlindaje: { valor: m.ignoraBlindaje, fuente: `${nombre} (${m.etiqueta})` } }),
+      },
+      perfil,
+    );
+  });
+  // Retroceso entrópico (Kerzul, eq-18/eq-19): lo declara la pieza en su MotorMetadata.
+  const conRetroceso = arma.motor?.some((m) => m.afecta.modo === "accion_nueva" && m.afecta.id === ID_RETROCESO_ENTROPICO && m.estado === "construido");
+  const salvacionesPropias = conRetroceso ? retrocesoEntropico(arma.label, modosDelGolpe) : [];
 
   return {
     id: `ataque_melee_${instanciaId}`,
@@ -869,23 +888,8 @@ function tiradaDeArmaMelee(
     condiciones: [...(modo ? [modo] : []), ...casillas.condiciones, ...(malla ? condicionesSacrificioColchon(malla.nivel) : [])],
     ajustesFijos: ajusteModoUnico,
     ...(casillas.bonos.length > 0 && { bonosTramo: casillas.bonos }),
-    ataque: {
-      modos: modosConId.map((m) => {
-        const bono = bonoFormulaFuerza(m.formulaDanio);
-        return modoConPerfil(
-          {
-            id: m.id,
-            etiqueta: m.etiqueta,
-            danio: bono === null ? null : fuerza + bono + bonoArmadura,
-            danioSutil: esSutil && bono !== null && potencia !== null ? potencia + bono + bonoArmadura : undefined,
-            formulaDanio: m.formulaDanio === null ? null : formulaConSuma(m.formulaDanio, bonoArmadura),
-            categoriaDanio: conArmadura?.letal ? "Letal" : m.categoriaDanio,
-            ...(m.ignoraBlindaje && { ignoraBlindaje: { valor: m.ignoraBlindaje, fuente: `${nombre} (${m.etiqueta})` } }),
-          },
-          perfil,
-        );
-      }),
-    },
+    ...(salvacionesPropias.length > 0 && { salvacionesPropias }),
+    ataque: { modos: modosDelGolpe },
   };
 }
 
@@ -1370,8 +1374,8 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
 // confirmado tras el barrido y la auditoría del catálogo — así que este
 // filtro no cambia el resultado de ninguna pieza real de hoy; varias piezas
 // (Kerzul, Armas Mecánicas) tienen ADEMÁS una segunda entrada "accion"
-// bloqueada/pendiente para un efecto distinto (Derribo, Retroceso Entrópico)
-// que ningún generador construye todavía — un match "alguna entrada
+// para un efecto distinto (Derribo; el Retroceso Entrópico, construido en T3c
+// como salvación propia del golpe, no como fila) — un match "alguna entrada
 // construida" basta, no hace falta que TODAS lo estén.
 //
 // "cat" es la unión Equipo; motor existe como campo directo en las familias
