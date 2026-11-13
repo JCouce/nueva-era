@@ -954,7 +954,7 @@ Tandas, en orden:
   Tensión ósea. do-02: notas de Saber Caer / Caer Parado (destino `sinDado` de dotes). eq-24:
   casilla «Golpe cuerpo a cuerpo» de la Malla. eq-20: recurso `"blindaje"` de la armadura,
   casilla «Este golpe rompe blindaje», Equipo y Reparar. di-08 a FIRME (S19). Sin migración.
-  Crítico en el selector de tipo (normal → crítico → sin tipo; eléctrico, frío y sónico).
+  Crítico en el selector de tipo (segunda pulsación alterna normal ↔ crítico; eléctrico, frío y sónico).
   Quedan `TODO(revisar)`: «ataque físico» sin definir (todo menos mental), si el punto roto
   cuenta ya contra ese golpe, si la Malla devuelve
   sin estar activa, y el blindaje perdido de un NPC en combate (se apunta a mano).

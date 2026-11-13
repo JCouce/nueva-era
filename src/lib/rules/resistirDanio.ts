@@ -87,16 +87,15 @@ export function efectosAlRecibir(
 
 // ── El selector de tipo (usuario, 2026-11-13) ───────────────────────────
 
-// Lo elegido en el selector de tipo de daño, o null si no hay ninguno.
-export type TipoElegido = { tipo: TipoDanio; critico: boolean } | null;
+// Lo elegido en el selector de tipo de daño: siempre hay un tipo.
+export type TipoElegido = { tipo: TipoDanio; critico: boolean };
 
-// Cada pulsación sobre un tipo avanza un paso: normal → crítico → sin elegir. El paso «crítico»
-// solo existe en los tipos que cambian de categoría en crítico (Eléctrico, Frío, Sónico); en los
-// demás, normal → sin elegir. Pulsar otro tipo lo elige en normal.
+// Pulsar otro tipo lo elige en normal; volver a pulsar el elegido alterna normal ↔ crítico, solo
+// en los tipos que cambian de categoría en crítico (Eléctrico, Frío, Sónico). En los demás no
+// cambia nada.
 export function pulsarTipoDanio(actual: TipoElegido, pulsado: TipoDanio): TipoElegido {
-  if (actual?.tipo !== pulsado) return { tipo: pulsado, critico: false };
-  if (!actual.critico && cambiaEnCritico(pulsado)) return { tipo: pulsado, critico: true };
-  return null;
+  if (actual.tipo !== pulsado) return { tipo: pulsado, critico: false };
+  return cambiaEnCritico(pulsado) ? { tipo: pulsado, critico: !actual.critico } : actual;
 }
 
 // ── Resolver el golpe (lo que pinta el modal) ───────────────────────────

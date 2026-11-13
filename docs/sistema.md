@@ -516,10 +516,9 @@ imponen penalizadores por umbral:
   - **Recibir N de daño <categoría>** resta lo que entra tras el blindaje con la categoría del
     tipo (`categoriaDelGolpe`: Ignífuga 2 o Polímero 2 la dejan en letal); el Cinético no
     trae categoría y la elige el jugador (la del arma; letal por defecto). **Crítico**
-    (usuario, 2026-11-13): cada pulsación en un tipo avanza normal → crítico → sin tipo; el paso
-    «crítico» solo existe en Eléctrico, Frío y Sónico, que en crítico entran como grave, letal y
-    letal (`pulsarTipoDanio`, `categoriaCritico` de `tiposDanio.ts`). Sin tipo elegido no se
-    calcula ni se recibe nada. Con un combate en
+    (usuario, 2026-11-13): volver a pulsar el tipo elegido alterna normal ↔ crítico, solo en
+    Eléctrico, Frío y Sónico, que en crítico entran como grave, letal y letal (`pulsarTipoDanio`,
+    `categoriaCritico` de `tiposDanio.ts`). Siempre hay un tipo elegido. Con un combate en
     curso va a la vida de la **foto** del combatiente (vuelve a la ficha al terminar, td-13);
     si no, a la de la ficha (`recibirDanioAction`). Una vez aplicado, los controles se
     bloquean y **Deshacer** devuelve exactamente lo aplicado; «Otro golpe» empieza uno nuevo.

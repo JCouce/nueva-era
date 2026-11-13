@@ -156,10 +156,10 @@ export function ResistirDanioModal({
   onLanzamiento?: (l: Lanzamiento) => void;
   onCerrar: () => void;
 }) {
-  // Cada pulsación en un tipo avanza: normal → crítico (solo los que cambian) → sin elegir
-  // (pulsarTipoDanio). Sin tipo elegido no se calcula nada ni se puede recibir.
+  // Volver a pulsar el tipo elegido alterna normal ↔ crítico (solo los que cambian de categoría;
+  // pulsarTipoDanio).
   const [elegido, setElegido] = useState<TipoElegido>({ tipo: "cinetico", critico: false });
-  const tipo: TipoDanio = elegido?.tipo ?? "cinetico";
+  const tipo = elegido.tipo;
   const [destinoElegido, setDestino] = useState<Destino>("portador");
   const [danioRecibido, setDanioRecibidoEstado] = useState(0);
   const [reactivo, setReactivo] = useState(false);
@@ -197,7 +197,7 @@ export function ResistirDanioModal({
   const casillaBrazo = casillaBlindajeBrazo(ficha.ficha, tipo);
   const enVivo = resolverGolpe(ficha, {
     tipo,
-    critico: elegido?.critico ?? false,
+    critico: elegido.critico,
     danio: danioRecibido,
     reactivo,
     conBrazo,
@@ -250,13 +250,13 @@ export function ResistirDanioModal({
   // Cambiar a un tipo en el que no vale (Mental, Fuego) la desmarca y devuelve la fatiga.
   const elegirTipo = (t: TipoDanio) => {
     const siguiente = pulsarTipoDanio(elegido, t);
-    const otra = siguiente && casillaBlindajeReactivo(ficha.ficha, siguiente.tipo, reactivo, ficha.fatigaEnJuego.actual);
-    // Sin tipo, o uno en el que no vale (Mental, Fuego): Densificar se desmarca y devuelve la fatiga.
-    if (reactivo && (!siguiente || otra?.bloqueada)) {
-      if (casilla) onAjustarFatiga?.(casilla.costeFatiga);
+    const otra = casillaBlindajeReactivo(ficha.ficha, siguiente.tipo, reactivo, ficha.fatigaEnJuego.actual);
+    // Cambiar a un tipo en el que no vale (Mental, Fuego) la desmarca y devuelve la fatiga.
+    if (reactivo && otra?.bloqueada) {
+      onAjustarFatiga?.(otra.costeFatiga);
       setReactivo(false);
     }
-    if (!siguiente || casillaBlindajeBrazo(ficha.ficha, siguiente.tipo)?.bloqueada) setConBrazo(false);
+    if (casillaBlindajeBrazo(ficha.ficha, siguiente.tipo)?.bloqueada) setConBrazo(false);
     setEscudoAplicado(null);
     setElegido(siguiente);
   };
@@ -330,7 +330,7 @@ export function ResistirDanioModal({
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Tipo de daño"}</p>
           <div className="mt-1.5 grid grid-cols-3 gap-1.5">
             {TIPOS_DANIO.map((t) => {
-              const activo = elegido?.tipo === t.id;
+              const activo = elegido.tipo === t.id;
               const critico = activo && elegido.critico;
               return (
                 <button
@@ -353,12 +353,10 @@ export function ResistirDanioModal({
             })}
           </div>
           <p className="mt-1.5 font-mono text-[10px] text-muted">
-            Otra pulsación: crítico (eléctrico, frío y sónico) y luego sin tipo.
+            Eléctrico, frío y sónico: vuelve a pulsar para marcar crítico.
           </p>
         </div>
 
-        {elegido && (
-          <>
 
         <div className="mt-4 border-t border-border pt-3">
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// ¿A qué da el golpe?"}</p>
@@ -513,13 +511,9 @@ export function ResistirDanioModal({
             </button>
           </div>
         </div>
-          </>
-        )}
       </fieldset>
 
-      {!elegido && <p className="mt-4 border-t border-border pt-3 font-mono text-[11px] text-muted">Elige el tipo de daño.</p>}
-
-      {elegido && destino === "portador" && (
+      {destino === "portador" && (
         <>
           {r.notas.length > 0 && (
             <div className="mt-4 flex flex-col gap-1 border-t border-border pt-3">
@@ -612,7 +606,7 @@ export function ResistirDanioModal({
         </>
       )}
 
-      {elegido && destino === "escudo" && golpe && (
+      {destino === "escudo" && golpe && (
         <div className="mt-4 flex flex-col gap-1 border-t border-border pt-3">
           <p className="font-display text-sm font-semibold uppercase text-info">Te golpean el escudo</p>
           <p className="font-sans text-prosa-sm text-soft">
@@ -648,7 +642,7 @@ export function ResistirDanioModal({
         </div>
       )}
 
-      {elegido && destino === "cobertura" && (
+      {destino === "cobertura" && (
         <div className="mt-4 border-t border-border pt-3">
           <p className="font-display text-sm font-semibold uppercase text-info">
             Te golpean la cobertura: no recibes daño

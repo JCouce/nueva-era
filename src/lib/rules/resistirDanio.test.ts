@@ -236,13 +236,13 @@ describe("crítico: categoría y selector de tipo (usuario, 2026-11-13)", () => 
     assert.equal(resolverGolpe(f(), entrada({ tipo: "fuego", danio: 4, critico: true })).categoria, "grave");
   });
 
-  test("pulsaciones: normal → crítico → sin tipo en los que cambian; normal → sin tipo en los demás", () => {
-    const a = pulsarTipoDanio(null, "frio");
+  test("pulsaciones: normal ↔ crítico en los que cambian; en los demás no cambia; nunca sin tipo", () => {
+    const a = pulsarTipoDanio({ tipo: "cinetico", critico: false }, "frio");
     assert.deepEqual(a, { tipo: "frio", critico: false });
     const b = pulsarTipoDanio(a, "frio");
     assert.deepEqual(b, { tipo: "frio", critico: true });
-    assert.equal(pulsarTipoDanio(b, "frio"), null);
-    assert.equal(pulsarTipoDanio({ tipo: "fuego", critico: false }, "fuego"), null);
+    assert.deepEqual(pulsarTipoDanio(b, "frio"), { tipo: "frio", critico: false });
+    assert.deepEqual(pulsarTipoDanio({ tipo: "fuego", critico: false }, "fuego"), { tipo: "fuego", critico: false });
     assert.deepEqual(pulsarTipoDanio(b, "plasma"), { tipo: "plasma", critico: false });
   });
 });
