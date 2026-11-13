@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { revalidarPanelMaster } from "@/lib/revalidarMaster";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
-import { cambiarEstadosDePersonajes, fotoEnJuego, guardarFichaConFotos } from "@/lib/estadosPersonaje";
+import { cambiarEstadosDePersonajes, fotoEnJuego, guardarFichaConFotos, guardarGolpe } from "@/lib/estadosPersonaje";
 import { escribirFicha, FichaCambiada, MENSAJE_FICHA_CAMBIADA, type FichaLeida } from "@/lib/escrituraFicha";
 import type { Prisma } from "@/generated/prisma/client";
 import { z } from "zod";
@@ -129,6 +129,9 @@ import {
   resolverFicha,
   VITALIDAD_DE_FICHA,
   gastarUsoLimitado,
+  danioDeFoto,
+  recibirGolpe,
+  type GolpeAplicado,
 } from "@/lib/rules";
 import { mesaDeFicha } from "@/lib/mesaDeFicha";
 
@@ -627,6 +630,36 @@ export async function ajustarDanioAction(
   return persist(ctx, characterId, ajustarDanioCategoria(ctx.sheet, parsed.data.categoria, parsed.data.delta, ctx.estados));
 }
 
+// «Recibir» en Resistir daño (T2 del cuestionario, 2026-11-13): resta lo que entra de la vida —
+// la de la foto si el personaje está en un combate en curso (la que vale en combate y vuelve a la
+// ficha al terminarlo, td-13), si no la de la ficha— y apunta en la armadura el blindaje que se
+// pierde para siempre (eq-20). La cantidad y la categoría las calcula el modal con las reglas
+// (resolverGolpe), igual que el «− recibir» de Recursos confía en lo que mete el jugador; aquí se
+// recortan y se aplican con la cuenta de siempre. Con `deshacer`, al revés: `golpe` es lo que
+// devolvió la llamada que se deshace (`aplicado`).
+const golpeSchema = z.object({
+  categoria: z.enum(CATEGORIAS_DANIO),
+  cantidad: z.number().int().min(0).max(999),
+  rompeBlindaje: z.number().int().min(0).max(2),
+  deshacer: z.boolean().optional(),
+});
+
+export type RecibirDanioResult = (SaveResult & { ok: true; aplicado: GolpeAplicado }) | Extract<SaveResult, { ok: false }>;
+
+export async function recibirDanioAction(characterId: string, entrada: unknown): Promise<RecibirDanioResult> {
+  const parsed = golpeSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Golpe no válido" };
+  const { deshacer = false, ...golpe } = parsed.data;
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const foto = await fotoEnJuego(characterId);
+  const vidaFoto = foto && { pgActual: foto.pgActual, pgMax: foto.pgMax, danio: danioDeFoto(foto.danio, foto.pgActual, foto.pgMax) };
+  const r = recibirGolpe(ctx.sheet, golpe, ctx.estados, vidaFoto, deshacer);
+  const ficha = r.sheet === ctx.sheet ? null : r.sheet;
+  if (!(await guardarGolpe(characterId, ctx.leida, ficha, foto && r.foto && { id: foto.id, ...r.foto }))) return CONFLICTO;
+  return { ok: true, sheet: r.sheet, aplicado: r.aplicado };
+}
+
 export async function ajustarFatigaAction(characterId: string, delta: number): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
@@ -652,7 +685,7 @@ export async function pagarFatigaAction(
   return { ok: true, sheet };
 }
 
-// Devolver fatiga que se acaba de cobrar (desmarcar Densificar en "Bloquear daño", A4b): como
+// Devolver fatiga que se acaba de cobrar (desmarcar Densificar en "Resistir daño", A4b): como
 // ajustarFatigaAction, pero en combate también a la foto, para deshacer lo que hizo
 // pagarFatigaAction. El +/- de Recursos sigue siendo solo de la ficha.
 export async function devolverFatigaAction(characterId: string, cantidad: number): Promise<SaveResult> {

@@ -17,6 +17,7 @@ import {
   resumenArmaModificada,
   nombreDePieza,
   rarezaPermitida,
+  blindajeDeInstancia,
   type ModificacionArmaId,
   type Rareza,
   type PiezaEquipada,
@@ -380,7 +381,7 @@ export function EquipoTab({
             }
             defaultAbierto
           >
-            <DetalleArmadura p={cat} />
+            <DetalleArmadura p={cat} blindaje={blindajeDeInstancia(sheet, a.instanciaId)} />
             <p className="mt-3 font-mono text-[10px] uppercase tracking-widest text-muted">
               Ranuras de subsistema: {usadas}/{cat.ranurasSubsistema}
             </p>

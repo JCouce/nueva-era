@@ -1214,7 +1214,7 @@ function conBrazo(t: Accion, pieza: PiezaEquipada, brazo: BrazoBionico): Accion 
 
 // "Bloquear con el brazo biónico" (A6a): nivel 2+ y, como todo "Bloquear con X", solo con la
 // dote Bloqueo (familia bloquear_melee, la filtra accionesDeAtaque). Siempre con la Fuerza y la
-// Agilidad del brazo, sin casilla. Su blindaje se marca en "Bloquear daño" (R12).
+// Agilidad del brazo, sin casilla. Su blindaje se marca en "Resistir daño" (R12).
 // TODO(revisar): especialidad Pelea (la del Puñetazo), sin Sutil y sin `desarmado` (el brazo "se
 // puede utilizar como arma para bloquear").
 function tiradaBloqueoBrazo(brazo: BrazoBionico): Accion | null {
@@ -1231,7 +1231,7 @@ function tiradaBloqueoBrazo(brazo: BrazoBionico): Accion | null {
     empleoArma: "una mano",
     nota:
       `Reacción gratuita e ilimitada, como Esquivar. Con la Fuerza ${brazo.fuerza} y la Agilidad ${brazo.agilidad} del brazo (${brazo.fuente}). ` +
-      `Su blindaje (${brazo.blindaje ?? 0}) solo para este golpe: marca "Bloqueado con el brazo biónico" en Bloquear daño.`,
+      `Su blindaje (${brazo.blindaje ?? 0}) solo para este golpe: marca "Bloqueado con el brazo biónico" en Resistir daño.`,
     condiciones: [CONDICION_ATACANTES_ADICIONALES],
     extremidad,
     origen: origenDeBrazo(brazo),
@@ -1505,7 +1505,7 @@ export function accionesDirectasDeAtaque(sheet: Sheet): AccionDirecta[] {
         nota:
           `Acción simple. Cobertura Nivel ${cat.defensa.cobertura} hasta tu próximo turno ` +
           `— no cuenta si te atacan por la espalda. Marca "Tengo cobertura" al esquivar; si el ataque ` +
-          `supera tu defensa pero falla por la cobertura, en Bloquear daño elige "Al escudo". ` +
+          `supera tu defensa pero falla por la cobertura, en Resistir daño elige "Al escudo". ` +
           NOTA_ESCUDO_SUBSISTEMAS,
         confirmarLabel: "Levantar",
         ...(escudoRoto(sheet, pieza.instanciaId) && { bloqueada: MOTIVO_ESCUDO_ROTO }),

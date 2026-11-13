@@ -520,8 +520,9 @@ export function efectosDeDotes(
           for (const id of destino.textos) textos.push({ en: { tipo: "tiradaId", id }, texto, fuente, soloEnCritico: true, soloEnCriticoNatural: true, origen });
           return;
         }
-        // Poder (D2c-2): por el id de su acción; lo recoge prepararPoder (usoPoder.ts).
-        if (destino?.tipo === "poder") {
+        // Poder (D2c-2) o acción sin dado (Resistir daño, do-02): por su id; lo recogen
+        // prepararPoder (usoPoder.ts) y resolverGolpe (resistirDanio.ts).
+        if (destino?.tipo === "poder" || destino?.tipo === "sinDado") {
           textos.push({ en: { tipo: "tiradaId", id: destino.id }, texto, fuente, soloEnCritico, origen });
           return;
         }

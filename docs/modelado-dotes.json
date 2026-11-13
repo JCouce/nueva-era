@@ -2183,7 +2183,7 @@
       "efectos": [
         {
           "tipo": "texto",
-          "lugar": "ficha",
+          "lugar": "bloquear_danio",
           "texto": "Caídas: la altura efectiva se reduce en 4 m para calcular el daño.",
           "condicion": null,
           "porque": "sin_regla"
@@ -2195,11 +2195,10 @@
           "tipo": "texto",
           "afecta": {
             "modo": "accion_existente",
-            "id": "danio_caida"
+            "id": "bloquear_danio"
           },
           "mecanismo": "nota_fija",
-          "estado": "bloqueado",
-          "bloqueoPor": "regla de daño por caída (no aparece en ninguna fuente)",
+          "estado": "construido",
           "claims": [
             "4"
           ]
@@ -2231,7 +2230,7 @@
       "efectos": [
         {
           "tipo": "texto",
-          "lugar": "ficha",
+          "lugar": "bloquear_danio",
           "texto": "Caídas: la altura efectiva se reduce en 8 m para calcular el daño (no se suma con Saber Caer).",
           "condicion": null,
           "porque": "sin_regla"
@@ -2243,11 +2242,10 @@
           "tipo": "texto",
           "afecta": {
             "modo": "accion_existente",
-            "id": "danio_caida"
+            "id": "bloquear_danio"
           },
           "mecanismo": "nota_fija",
-          "estado": "bloqueado",
-          "bloqueoPor": "regla de daño por caída (no aparece en ninguna fuente)",
+          "estado": "construido",
           "claims": [
             "4"
           ]

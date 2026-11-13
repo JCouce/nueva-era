@@ -361,6 +361,11 @@ que el aviso tenga sentido en ese momento.
   un hueco a rellenar. No reabrir esta rama para las piezas que caigan aquí
   (los 5 escudos, Camuflaje Trifásico, y el efecto de detección de
   Compartimento Oculto son los casos ya identificados, `docs/tareas.md`).
+- **Al recibir el golpe** (T2 del cuestionario, 2026-11-13): «Resistir daño» es la
+  acción del portador donde cuelga lo que pasa cuando le golpean. El «devuelve daño» de
+  la Malla Plasmática pasa por ahí: casilla «Golpe cuerpo a cuerpo» que solo avisa
+  (`objetivo_tercero` + `eleccion_jugador`, dato `NivelModulo.alRecibirDanio`,
+  `rules/resistirDanio.ts`). Sigue siendo texto: la app no toca al atacante.
 
 Dos piezas de este mismo lote NO son "solo dónde vive el texto" — son
 mecanismos que faltan de verdad, siguen bloqueados y su solución vive en

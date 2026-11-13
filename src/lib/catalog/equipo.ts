@@ -33,6 +33,7 @@ import type { CondicionTirada, TramoDistancia } from "../rules/condiciones";
 import type { MotorMetadata } from "../rules/motor";
 import type { HabilidadId } from "../rules/habilidades";
 import type { EfectoSalvacion } from "../rules/aumentosTiradas";
+import type { EfectoAlRecibir } from "../rules/resistirDanio";
 import type { TipoDanio } from "./tiposDanio";
 import { ARMAS_MELEE, type ArmaMelee } from "./armasMelee";
 import { VALIJA_TACTICA_MEDICA, FARMACOS } from "./medicina";
@@ -100,6 +101,9 @@ export const RAREZA_ORDEN: readonly Rareza[] = [
 // decidió para los módulos "medio objeto, medio poder" (ver docs/traspaso.md).
 export type NivelModulo = {
   nivel: number;
+  // Lo que pasa al recibir un golpe con la pieza puesta (Malla Plasmática: devolver el golpe),
+  // del nivel más alto que lo defina. Lo resuelve efectosAlRecibir (rules/resistirDanio.ts).
+  alRecibirDanio?: EfectoAlRecibir[];
   rareza: Rareza;
   coste: number;
   detalle: string[];

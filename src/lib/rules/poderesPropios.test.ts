@@ -309,7 +309,7 @@ describe("P1: Contención pone su estado propio", () => {
     assert.equal("estadoPropio" in usarPoder(fr(t), preparar(t, "psi_traslacion_auto_proyeccion")), false);
   });
 
-  test("con el estado puesto: −Agilidad en la ficha y absorción en Bloquear daño (también contra fuego, no mental)", () => {
+  test("con el estado puesto: −Agilidad en la ficha y absorción en Resistir daño (también contra fuego, no mental)", () => {
     const s = conContencion(3);
     const sin = resolver(s);
     const f = resolver(s, [{ estadoId: "psi_contencion", gradoId: "2_-2", rondasRestantes: 10 }]);

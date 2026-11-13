@@ -49,6 +49,7 @@ import { SIN_ARMADURA_NATURAL, type ArmaduraNatural } from "./blindaje";
 import type { HabilidadId } from "./habilidades";
 import type { CondicionTirada } from "./condiciones";
 import type { OrigenAporte } from "./origen";
+import type { EfectoSalvacion } from "./aumentosTiradas";
 import { SIN_AJUSTE_UMBRALES, type AjusteUmbral, type AjusteUmbrales } from "./estados";
 import type { DestinoTexto } from "../catalog/especies";
 import type { AccionDirecta } from "./acciones";
@@ -444,6 +445,12 @@ export type PeajeNeurologico = { dificultadBase: number; fuente: string };
 export function peajeNeurologicoDeEspecie(especie: EspecieResuelta | null): PeajeNeurologico | null {
   const r = (especie?.rasgos ?? []).find((x) => x.peajeNeurologico);
   return r ? { dificultadBase: r.peajeNeurologico!.dificultadBase, fuente: r.fuente } : null;
+}
+
+// Opciones del selector «Contra…» de las salvaciones que da la especie (Deslumbramiento del
+// Axadren), con el rasgo como fuente; van con las del equipo a casillasDeAumentos.
+export function salvacionesDeEspecie(especie: EspecieResuelta | null): { fuente: string; efectos: EfectoSalvacion[] }[] {
+  return (especie?.rasgos ?? []).flatMap((r) => (r.salvaciones?.length ? [{ fuente: r.label, efectos: r.salvaciones }] : []));
 }
 
 // Notas fijas en las filas de fármaco (Irota, efectos a la mitad): la app no

@@ -35,7 +35,7 @@
 // Tanda A4b: acciones con dado (`tirada` en la acción: el barrido de Percepción
 // Electromagnética, que va en la opción de Introgresión; Incorporar arma del Brazo; Tempestad
 // Nanobótica del Enjambre 4, con daño fijo) y el `blindajeReactivo` del Enjambre 3 (Densificar,
-// casilla en "Bloquear daño": blindaje.ts).
+// casilla en "Resistir daño": blindaje.ts).
 //
 // Tanda A5a: activables. La acción de activar (`efecto: "activar"`, aumentosAcciones.ts) pone un
 // estado propio (catalog/estados.ts, ESTADOS_DE_AUMENTO); `activo` (en la operación o en el
@@ -1569,7 +1569,7 @@ export const IMPLANTES: Implante[] = [
         modificadores: [],
         // A6a: Fuerza +1 (tope 5), la misma Agilidad, blindaje 3, bloquea y letal en pelea.
         extremidad: { fuerza: { delta: 1, tope: 5 }, agilidad: { delta: 0 }, blindaje: 3, bloquea: true, peleaLetal: true },
-        // A6a: casilla (Fuerza y Agilidad), blindaje en "Bloquear daño" (casilla), letal en la
+        // A6a: casilla (Fuerza y Agilidad), blindaje en "Resistir daño" (casilla), letal en la
         // casilla del Puñetazo y el codazo, y la fila "Bloquear con el brazo biónico" (con la dote
         // Bloqueo).
         motor: [
@@ -1903,7 +1903,7 @@ export const IMPLANTES: Implante[] = [
           { contra: ["toxinas", "venenos", "enfermedad"], bono: 4 },
           { contra: ["aturdimiento"], bono: 3, nota: "solo tras Densificar, contra el aturdimiento de ese golpe" },
         ],
-        // A4b: casilla en "Bloquear daño" que cobra al marcarla.
+        // A4b: casilla en "Resistir daño" que cobra al marcarla.
         blindajeReactivo: {
           etiqueta: "Densificar",
           valor: 3,
@@ -1912,7 +1912,7 @@ export const IMPLANTES: Implante[] = [
         },
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          // Densificar: casilla en Bloquear daño que suma blindaje y cobra la fatiga (no es una
+          // Densificar: casilla en Resistir daño que suma blindaje y cobra la fatiga (no es una
           // acción propia; triaje 2026-10-28, #20).
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "coste", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "eleccion_jugador", estado: "construido" },

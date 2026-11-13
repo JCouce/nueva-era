@@ -287,13 +287,30 @@ describe("E4: textos sin mecanizar, solo con su rasgo", () => {
   test("Zimethroni: dos notas en Defensa", () => {
     const nota = fija(resolver(ficha(ESPECIE.zimethroni)), "defensa").nota!;
     assert.match(nota, /una casilla de movimiento gratis/);
-    assert.match(nota, /\+1 al daño recibido por cada 4 niveles/);
+    assert.match(nota, /Resistir daño \(\+1 al daño que te entra por cada 4\)/);
     assert.equal(fija(resolver(ficha()), "defensa").nota, ACCIONES.find((a) => a.id === "defensa")!.nota);
   });
 
-  test("Ílkrem: aturdimiento con plasma o fuego, en la Salvación de Fortaleza", () => {
-    assert.match(fija(resolver(ficha(ESPECIE.ilkrem)), "salv_fortaleza").nota!, /plasma o fuego.*Falla metabólica · Casa de Ílkrem/);
-    assert.doesNotMatch(fija(resolver(ficha(ESPECIE.irota)), "salv_fortaleza").nota!, /plasma o fuego/);
+  // es-02 (T2): Deslumbramiento del Axadren en el selector «Contra…» de la Salvación de Fortaleza.
+  test("Axadren: «Ceguera por destello, plasma o PEM» abre con dificultad 9; la ceguera normal recuerda el +3", () => {
+    const selector = (f: FichaResuelta) => (fija(f, "salv_fortaleza").condiciones ?? []).find((c) => c.etiqueta === "Contra…");
+    const sel = selector(resolver(ficha(ESPECIE.axadren)));
+    assert.ok(sel && sel.tipo === "opcion");
+    const destello = sel.opciones.find((o) => o.id === "ceguera_destello")!;
+    assert.equal(destello.dificultad, 9);
+    assert.doesNotMatch(destello.nota ?? "", /\+3/);
+    const ceguera = sel.opciones.find((o) => o.id === "ceguera")!;
+    assert.equal(ceguera.dificultad, undefined);
+    assert.match(ceguera.nota ?? "", /Deslumbramiento: .*\+3 a la dificultad/);
+    // Sin el rasgo, no sale la opción de destello.
+    const otro = selector(resolver(ficha(ESPECIE.irota)));
+    assert.ok(!otro || (otro.tipo === "opcion" && !otro.opciones.some((o) => o.id === "ceguera_destello")));
+  });
+
+  // es-02 (T2): la salvación la dispara Resistir daño al recibir (resistirDanio.test.ts); la nota
+  // suelta en la Salvación de Fortaleza sobraba.
+  test("Ílkrem: la Falla metabólica ya no es nota de la Salvación de Fortaleza", () => {
+    assert.doesNotMatch(fija(resolver(ficha(ESPECIE.ilkrem)), "salv_fortaleza").nota ?? "", /plasma o fuego/);
   });
 
   test("Arköru: crítico desarmado letal en toda la Pelea (Codazo o Rodillazo incluido), no en armas", () => {

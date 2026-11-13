@@ -4,6 +4,8 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import {
   equipoPorId,
   capacidadDePieza,
+  esReparable,
+  rarezaDePieza,
   rarezaPermitida,
   MATERIAL_TIERS,
   rarezaMaterial,
@@ -55,12 +57,15 @@ function ReparacionCard({
   titulo,
   rareza,
   recurso,
+  unidad,
   materiales,
   onReparar,
 }: {
   titulo: string;
   rareza: Rareza | null;
   recurso: RecursoInstancia;
+  // "PG" (durabilidad del escudo) o "blindaje" (armadura con blindaje perdido, eq-20).
+  unidad: string;
   materiales: Materiales;
   onReparar: (tier: MaterialTier) => void;
 }) {
@@ -70,7 +75,7 @@ function ReparacionCard({
         <p className="font-display text-sm font-semibold uppercase text-foreground">{titulo}</p>
         <p className="font-mono text-lg tabular-nums text-danger">
           {recurso.actual}
-          <span className="text-sm text-muted">/{recurso.max} PG</span>
+          <span className="text-sm text-muted">/{recurso.max} {unidad}</span>
         </p>
       </div>
       <div className="mt-2 flex flex-wrap gap-1.5">
@@ -119,10 +124,11 @@ function ReparacionSeccion({
     const pieza = sheet.equipo.find((p) => p.instanciaId === recurso.instanciaId);
     const cat = pieza ? equipoPorId(pieza.catalogoId) : null;
     if (!pieza || !cat) return [];
-    const cap = capacidadDePieza(pieza);
-    if (!cap || cap.tipo !== "durabilidad") return [];
-    const rareza = cat.familia === "armaMelee" ? cat.rareza : null;
-    return [{ instanciaId: pieza.instanciaId, titulo: cat.label, rareza, recurso }];
+    // Escudos (durabilidad) y armaduras con blindaje perdido (eq-20); la rareza, la que mira el
+    // servidor al reparar (rarezaDePieza).
+    if (!esReparable(pieza)) return [];
+    const unidad = capacidadDePieza(pieza)?.tipo === "blindaje" ? "blindaje" : "PG";
+    return [{ instanciaId: pieza.instanciaId, titulo: cat.label, rareza: rarezaDePieza(pieza), recurso, unidad }];
   });
 
   // Tirada de Reparar en curso: null mientras no se ha pulsado ningún tier.
@@ -207,7 +213,8 @@ function ReparacionSeccion({
             {"//SYSTEM · nada que reparar"}
           </p>
           <p className="mt-2 font-sans text-prosa text-soft">
-            Un Escudo equipado aparece aquí en cuanto pierde puntos de golpe.
+            Un Escudo equipado aparece aquí en cuanto pierde puntos de golpe, y una armadura en
+            cuanto pierde blindaje para siempre.
           </p>
         </HudCard>
       ) : (
@@ -217,6 +224,7 @@ function ReparacionSeccion({
             titulo={p.titulo}
             rareza={p.rareza}
             recurso={p.recurso}
+            unidad={p.unidad}
             materiales={sheet.materiales}
             onReparar={(tier) => onElegirTier(p.instanciaId, p.titulo, p.rareza, tier)}
           />

@@ -166,7 +166,7 @@ mejor tratarlas aparte:
    los hubiera enlazado entre sí: Mejora Ignífuga nivel 2, Polímero Anticorrosivo
    nivel 2, Tejido Conductor nivel 2 (`me4`/`me6` del backlog).
    **Propuesta del usuario, sin construir, bloqueada por la pregunta 29**: una tirada
-   "que no tira" — "Bloquear daño" — donde eliges tipo de daño + valor recibido y la
+   "que no tira" — "Resistir daño" — donde eliges tipo de daño + valor recibido y la
    app calcula cuánto se "come" el blindaje, consultable en cualquier momento (hoy no
    hay dónde consultar "cuánto aguanto", ni en la app ni en el documento). Necesita
    primero la fórmula de la 29, y que blindaje se agregue de verdad (armadura +
@@ -179,7 +179,7 @@ mejor tratarlas aparte:
    igual que las salvaciones del Hallazgo #3, no solo por categoría de gravedad.
 
    **✅ Construido 2026-09-27** (`blindajeContra()`, `lib/rules/blindaje.ts`, más la
-   acción nueva "Bloquear daño" en Acciones → Defensa): resumen arriba, en el
+   acción nueva "Resistir daño" en Acciones → Defensa): resumen arriba, en el
    checklist. Malla Plasmática se queda fuera a propósito (es un colchón/buffer, no
    blindaje) y Mejora Ignífuga/Anticorrosivo/Tejido Conductor siguen sin construirse
    ellas mismas — ver sus entradas más abajo.
@@ -388,7 +388,7 @@ de control.
   (`lib/rules/blindaje.ts`) suma armadura + Escudo Deflector + escudo melee (solo si
   está en alto) + **Tejido Conductor nivel 2** (+1 específico contra Eléctrico, la
   única de las tres mejoras "elementales" con ese mecanismo — ver corrección abajo) y
-  alimenta la acción nueva "Bloquear daño" (Acciones → Defensa) — selector de tipo de
+  alimenta la acción nueva "Resistir daño" (Acciones → Defensa) — selector de tipo de
   daño + daño recibido, sin dado, no muta la ficha. Mental y Fuego se quedan en 0
   (supuesto S19, `sistema.md`): ninguna fuente de blindaje del catálogo menciona Fuego
   como cubierto, es justo lo que Mejora Ignífuga nivel 1 reabriría (**sigue sin

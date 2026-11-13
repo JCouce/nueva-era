@@ -10,6 +10,7 @@ import {
   aumentoPorId,
   textoDanioModo,
   type ResumenArmaModificada,
+  type BlindajeDeArmadura,
 } from "@/lib/rules";
 import { TipoYExtras } from "@/components/TipoDanio";
 import { BotonManual } from "@/components/manual/BotonManual";
@@ -113,12 +114,17 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function DetalleArmadura({ p }: { p: Armadura }) {
+// `blindaje`: el de la instancia equipada (Equipo), con lo perdido para siempre (eq-20); sin él
+// (Tienda, Fabricar), el del catálogo.
+export function DetalleArmadura({ p, blindaje }: { p: Armadura; blindaje?: BlindajeDeArmadura | null }) {
   return (
     <>
       <p className="font-sans text-prosa text-soft">{p.descripcion}</p>
       <dl className="mt-3 grid grid-cols-1 gap-x-4 font-mono text-[11px] sm:grid-cols-2">
-        <Stat label="Blindaje" value={String(p.blindaje)} />
+        <Stat
+          label="Blindaje"
+          value={blindaje && blindaje.perdido > 0 ? `${blindaje.actual} de ${blindaje.base}` : String(p.blindaje)}
+        />
         <Stat
           label="Bonif. máx. Agilidad"
           value={p.bonifMaxAgilidad === null ? "Ilimitado" : `+${p.bonifMaxAgilidad}`}
@@ -133,6 +139,11 @@ export function DetalleArmadura({ p }: { p: Armadura }) {
           value={p.topeMovilidadAerea === null ? "No admite" : `Nivel ${p.topeMovilidadAerea}`}
         />
       </dl>
+      {blindaje && blindaje.perdido > 0 && (
+        <p className="mt-2 font-mono text-[11px] text-danger">
+          {blindaje.perdido} de blindaje perdido para siempre: repárala con materiales (Reparar) para recuperarlo.
+        </p>
+      )}
       <ChipsModificadores mods={p.modificadores} />
       <BotonManual tipo="equipo" id={p.id} className="mt-3" />
     </>

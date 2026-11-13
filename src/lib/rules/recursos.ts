@@ -269,7 +269,16 @@ export const recursoSchema = z.object({
 // Materiales (repararPieza) — el "regenera N por turno" y el tiempo de
 // reactivación tras destruirse siguen sin automatizar (comunicación de
 // mesa), el jugador ajusta el número a mano con el +/- de siempre.
-export type TipoRecarga = "stock" | "tope" | "durabilidad" | "colchon";
+//
+// "blindaje" (Armaduras, eq-20 del cuestionario, 2026-11-13): los puntos de blindaje que le
+// quedan a la armadura; los que faltan hasta el máximo son los perdidos para siempre (Munición
+// Perforante, Proyector de Pulso 4, Impacto Estructural de Kerzul). Se pierden desde «Resistir
+// daño» (romperBlindaje, blindaje.ts) y se devuelven reparando, como la durabilidad del escudo.
+export type TipoRecarga = "stock" | "tope" | "durabilidad" | "colchon" | "blindaje";
+
+// Lo que se repara con Materiales (repararPieza) en vez de recargarse con créditos.
+const SE_REPARA: readonly TipoRecarga[] = ["durabilidad", "blindaje"];
+const SIN_RECARGA: readonly TipoRecarga[] = [...SE_REPARA, "colchon"];
 
 // Batería portátil de una célula ("tope": Subsistemas, Movilidad Aérea), precio fijo (S17).
 export const PRECIO_BATERIA_PORTATIL = 150; // S17
@@ -303,7 +312,7 @@ export function recargaDePieza(
   recurso?: Pick<RecursoInstancia, "actual" | "max">,
 ): Recarga | null {
   const cap = capacidadDePieza(pieza);
-  if (!cap || cap.tipo === "durabilidad" || cap.tipo === "colchon") return null;
+  if (!cap || SIN_RECARGA.includes(cap.tipo)) return null;
   if (cap.tipo === "tope") return { etiqueta: "Batería", precio: PRECIO_BATERIA_PORTATIL, municion: null, proyectiles: cap.max };
   const municion = municionRegularDePieza(pieza);
   if (!municion) return null;
@@ -346,7 +355,15 @@ export function capacidadDePieza(pieza: PiezaEquipada): { max: number; tipo: Tip
   // durabilidad de objeto, no del personaje — antes devolvía null a
   // propósito (comentario de arriba), ahora tiene mecanismo (tarea 8).
   if (cat.familia === "armaMelee" && cat.defensa) return { max: cat.defensa.puntosGolpe, tipo: "durabilidad" };
+  // Armaduras (eq-20): su blindaje, que se puede perder punto a punto (ver TipoRecarga).
+  if (cat.familia === "armadura" && cat.blindaje > 0) return { max: cat.blindaje, tipo: "blindaje" };
   return null;
+}
+
+// Si la pieza se repara con Materiales (Reparar, ReparaFabricaModal): escudos y armaduras.
+export function esReparable(pieza: PiezaEquipada): boolean {
+  const cap = capacidadDePieza(pieza);
+  return cap !== null && SE_REPARA.includes(cap.tipo);
 }
 
 // Reconcilia sheet.recursos con sheet.equipo: añade una entrada a tope por
@@ -411,8 +428,8 @@ export function comprarRecarga(
   const cap = capacidadDePieza(pieza);
   // "durabilidad" no se recarga con créditos, se repara con Materiales — ver
   // repararPieza() más abajo. "colchon" no se recarga de ningún modo
-  // automatizado, se ajusta a mano (ver TipoRecarga más arriba).
-  if (!cap || cap.tipo === "durabilidad" || cap.tipo === "colchon") return null;
+  // automatizado, se ajusta a mano (ver TipoRecarga más arriba). "blindaje", como la durabilidad.
+  if (!cap || SIN_RECARGA.includes(cap.tipo)) return null;
 
   // Ver comentario de cabecera: "tope" siempre restaura sin más; "stock"
   // solo crece cuando no queda nada que rellenar (ya está a max).
@@ -428,7 +445,8 @@ export function comprarRecarga(
   };
 }
 
-// Repara una pieza con durabilidad (hoy solo Escudos): gasta 1 unidad del
+// Repara una pieza con durabilidad (Escudos) o con blindaje perdido (Armaduras, eq-20, con el
+// mismo criterio: S92, restaura entero): gasta 1 unidad del
 // tier dado y, con éxito, restaura `actual = max` de un golpe (no reparte
 // éxitos por nivel de daño como la prosa general de la VTF — Escudos son un
 // pool de PG, no categorías de daño; -4 a la dificultad SÍ se respeta, ver
@@ -446,8 +464,7 @@ export function repararPieza(sheet: Sheet, instanciaId: string, tier: MaterialTi
   const pieza = sheet.equipo.find((p) => p.instanciaId === instanciaId);
   const recurso = recursoDe(sheet, instanciaId);
   if (!pieza || !recurso) return sheet;
-  const cap = capacidadDePieza(pieza);
-  if (!cap || cap.tipo !== "durabilidad") return sheet;
+  if (!esReparable(pieza)) return sheet;
   if (recurso.actual >= recurso.max) return sheet;
   if (sheet.materiales[tier] < 1) return sheet;
 

@@ -261,7 +261,7 @@ usuario). Construido de una sentada tras aclarar en conversación una excepción
   corrigiendo un supuesto peor que se había barajado antes): el blindaje sí reduce el
   daño de un arma tóxica, lo que se le escapa es el estado de Enfermedad/
   Envenenamiento que dispare, resuelto aparte por su propia salvación.
-- **"Bloquear daño"** (Acciones → Defensa, `AccionesTab.tsx`/`BloquearDanioModal.tsx`
+- **"Resistir daño"** (Acciones → Defensa, `AccionesTab.tsx`/`BloquearDanioModal.tsx`
   nuevo): selector de tipo de daño + toggle "Escudo en alto" (solo si hay uno
   equipado; quitado el 2026-10-23, ver "Cobertura y escudos") + contador de daño recibido → "Blindaje: N · Pasa: N". Es un calculador
   puro, sin dado y sin mutar la ficha — no necesita el patrón de callback de
@@ -305,7 +305,7 @@ usuario). Construido de una sentada tras aclarar en conversación una excepción
 ### "Acciones sin dado" — arquitectura construida + primer caso real, 2026-09-27
 
 Nace de una pregunta directa del usuario ("¿es mala práctica un componente bespoke
-por cada acción sin dado?") tras ver que Reparar/Fabricar y Bloquear daño ya repetían
+por cada acción sin dado?") tras ver que Reparar/Fabricar y Resistir daño ya repetían
 el mismo chasis de modal a mano. Con 3-4 casos reales a la vista (Movilidad Aérea,
 Malla Plasmática, Radar nv4, VTM nv4), tocaba generalizar lo mínimo — la pregunta que
 `docs/motor.md` dejó abierta desde 2026-09-22 ("¿un campo que apaga el dado o un tipo
@@ -853,7 +853,7 @@ blindaje del escudo **deja de sumar al del portador**.
 - **Esquiva**: casilla "Tengo cobertura (+2)" en "Defensa / esquiva" (`ACCIONES`,
   `rules/acciones.ts`), para cualquier ficha, lleve escudo o no (+2 fijo, decisión del usuario).
 - **Blindaje del portador sin escudo**: `desgloseBlindaje`/`blindajeContra` (`rules/blindaje.ts`)
-  pierden el parámetro `escudoEnAlto`; fuera la casilla "Escudo en alto" de "Bloquear daño".
+  pierden el parámetro `escudoEnAlto`; fuera la casilla "Escudo en alto" de "Resistir daño".
   Ignífuga (S85) y el Brazo Biónico no cambian.
 - **Golpe al escudo**: `golpeAlEscudo(sheet, tipo, daño)` (`rules/blindaje.ts`) da el blindaje del
   escudo, lo que pasa a durabilidad (`max(0, daño − blindaje)`), la durabilidad actual y la
@@ -862,7 +862,7 @@ blindaje del escudo **deja de sumar al del portador**.
 - **Escudo roto** (durabilidad a 0): "Golpear con", "Bloquear con" y "Levantar" ese escudo salen
   bloqueadas con "Escudo roto: repáralo" (`escudoRoto`, `rules/recursos.ts`; `combate.ts`).
   Reparar con Materiales las devuelve solas.
-- **"Bloquear daño"**: selector "¿A qué da el golpe?" (A ti · Al escudo · A la cobertura). "Al
+- **"Resistir daño"**: selector "¿A qué da el golpe?" (A ti · Al escudo · A la cobertura). "Al
   escudo" enseña el blindaje del escudo y "El escudo recibe X · durabilidad A → B", con botón
   que lo resta (`onDaniarEscudo` → `ajustarRecursoAction`, solo en la ficha del jugador; en NPC y
   combate en vivo, solo los números). "A la cobertura": no recibes daño.
@@ -945,7 +945,19 @@ Tandas, en orden:
   leído; el máster reintenta solo y el autoguardado del jugador reintenta una vez. td-24: vista
   previa con `ajusteUmbrales`. td-25: `FichaResuelta.fatigaEnJuego` (en combate, la de la foto)
   para bloqueos y cobros, también la temporal de Proeza. Sin migración de Prisma.
-- [ ] **T2 «Resistir daño» como puerta del daño**: es-02, es-03, es-04, do-02, eq-24, eq-20, di-08.
+- [x] **T2 «Resistir daño» como puerta del daño**: es-02, es-03, es-04, do-02, eq-24, eq-20, di-08.
+  *(2026-11-13)* «Bloquear daño» pasa a «Resistir daño» (id interno `bloquear_danio`, favorita
+  incluida) y aplica el golpe: `resolverGolpe`/`recibirGolpe` (`rules/resistirDanio.ts`),
+  `recibirDanioAction` (foto del combate en curso o ficha), Deshacer exacto; NPC de la consola,
+  su vida con la acción de la pestaña Vida. es-02: panel Falla metabólica (Fortaleza 9) y
+  opción «Ceguera por destello, plasma o PEM» (dificultad 9) del Axadren. es-03/04: casilla
+  Tensión ósea. do-02: notas de Saber Caer / Caer Parado (destino `sinDado` de dotes). eq-24:
+  casilla «Golpe cuerpo a cuerpo» de la Malla. eq-20: recurso `"blindaje"` de la armadura,
+  casilla «Este golpe rompe blindaje», Equipo y Reparar. di-08 a FIRME (S19). Sin migración.
+  Crítico en el selector de tipo (normal → crítico → sin tipo; eléctrico, frío y sónico).
+  Quedan `TODO(revisar)`: «ataque físico» sin definir (todo menos mental), si el punto roto
+  cuenta ya contra ese golpe, si la Malla devuelve
+  sin estar activa, y el blindaje perdido de un NPC en combate (se apunta a mano).
 - [ ] **T3 Efectos de arma sobre el objetivo** (aviso + tarjeta del máster): eq-01…08, eq-09, eq-10,
   eq-12, eq-14…17, eq-18, eq-19, eq-21, eq-22, eq-40, do-04, do-05, td-29.
 - [ ] **T4 Estado Sigilo**: di-09, do-01, eq-25, eq-26, eq-30, eq-31, eq-33.
@@ -959,7 +971,7 @@ Tandas, en orden:
 
 ### Pestaña Acciones: pestañas y favoritas ✅ (usuario, 2026-10-23; T-005, T-006 y T-007)
 Dentro de Acciones, una barra por **origen** de la fila (rehecha el 2026-10-23; antes era Básicas sin dado / Tiradas
-con dado): **★** (Favoritas) · **Básicas** (catálogo fijo `ACCIONES` por grupo, Bloquear daño, Reparar/Fabricar,
+con dado): **★** (Favoritas) · **Básicas** (catálogo fijo `ACCIONES` por grupo, Resistir daño, Reparar/Fabricar,
 Tirada libre) · **Equipo** (Ataques, Defensa con Bloquear con X y Levantar escudo, Movimiento con Volar,
 Herramientas, Fármacos; Pelea incluida) · **Aptitudes** (Psiónica por disciplina, Dotes —también las de un grupo fijo,
 como Traicionero—, Especie) · **Aumentos** (filas e informativas). Con dado y sin dado mezclados. Una tirada fija
@@ -971,7 +983,7 @@ su propio `PanelFieldset` y `CharacterSheet` ya no lo envuelve. NPC y consola de
 - [x] **T-005** — Básicas y Tiradas (2026-10-23)
 - [x] **T-006** — Favoritas (2026-10-23): estrella (`BotonEstrella`) en toda fila con botón de Básicas y Tiradas
   (bloqueadas incluidas, no en `FilaInfo`), guardada en `sheet.favoritas` (v21, sin Prisma) con
-  `marcarFavoritaAction`; cambia al momento y se deshace si falla el guardado. Bloquear daño y Reparar/Fabricar usan
+  `marcarFavoritaAction`; cambia al momento y se deshace si falla el guardado. Resistir daño y Reparar/Fabricar usan
   las claves fijas `fija:bloquear_danio` / `fija:reparar_fabricar`. Pestaña ★ la primera, con las marcadas de todas
   bajo sus subtítulos de siempre (las secciones del mismo título, como las dos Defensa, se juntan); un id sin acción no
   se pinta ni se limpia. Solo personajes: sin
@@ -1032,7 +1044,7 @@ motor no cambia.
   lo que tira con habilidad, de cualquier origen: fijas (esquiva, iniciativas incluidas), ataques y bloqueos por la
   especialidad del arma, herramientas, fármacos, dotes, aumentos, Reparar/Fabricar (Tecnociencia) y poderes con tirada
   (una hoja por variante que cambie habilidad o especialidad; etiqueta con la disciplina).
-- **Sin dado**: Combate (Bloquear daño, Levantar escudo…), Activar y desactivar, Poderes, Curación y fármacos, Sensores y
+- **Sin dado**: Combate (Resistir daño, Levantar escudo…), Activar y desactivar, Poderes, Curación y fármacos, Sensores y
   comunicación, Referencia.
 - Las filas de la barra y del árbol se siguen montando sueltas (sin pintar) para ★ y la cabina. NPC y combate del
   máster, igual.
@@ -1770,7 +1782,7 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
     (Reflejos + Tecnociencia, dificultad 0; `Accion.costeFatiga` que `montarTirada` suma al
     cobro de fatiga al tirar, y `ataque.sinBonoExitos` para el daño fijo de 1 grave).
     Densificar: `blindajeReactivo` del Enjambre 3, `casillaBlindajeReactivo` y el 5.º
-    parámetro de `desgloseBlindaje` (`blindaje.ts`); "Bloquear daño" cobra al marcar y
+    parámetro de `desgloseBlindaje` (`blindaje.ts`); "Resistir daño" cobra al marcar y
     devuelve al desmarcar (`onAjustarFatiga` nuevo en AccionesTab).
 - [x] A5 · Activables.
   - [x] A5a · Capa de activables, Neuroprótesis 1-2 y Proyección (commit 0567b20). Efecto `activar` en `AccionAumentoCatalogo` (con `eleccion` en la
@@ -1813,7 +1825,7 @@ como **familia de equipo** (chip propio, Tienda, la bolsa del humano paga primer
     (`conExtremidad`, línea "Potencia · Brazo Biónico 2: Fuerza 3 (tuya 1), …") y el daño de
     Fuerza (o de Potencia con Sutil) como ajuste con su fuente, aunque bajen.
     "Bloquear con el brazo biónico" (`aumentos_bloquear_brazo`, familia `bloquear_melee`: solo
-    con la dote Bloqueo; nivel 2+), con `Accion.extremidad` fija. "Bloquear daño": casilla
+    con la dote Bloqueo; nivel 2+), con `Accion.extremidad` fija. "Resistir daño": casilla
     "Bloqueado con el brazo biónico" (`casillaBlindajeBrazo`, 6.º parámetro de
     `desgloseBlindaje`), nivel 2+, sin coste, donde cuente el blindaje.
   - [x] A6b · Casilla en "Bloquear con X" y arma incorporada, ficha **v20**. *(commiteada)* `llevaCasillaBrazo` admite `bloquear_melee` de una mano
@@ -2288,7 +2300,7 @@ especie". `viaEspecie` sube `SCHEMA_VERSION` con paso de migración y test, como
       *(`multiplicadorCarga` → `cargaMaxima(…, multiplicador)`; Fuerza 0 = 18 kg, nota "×1,2 · Arköru")*
 - [x] Armadura natural 1 en `desgloseBlindaje` (se suma; no contra fuego ni mental)
       *(`armaduraNatural` en Matriz Biometálica → `FichaResuelta.blindaje.armaduraNatural`;
-      Bloquear daño la lee de ahí. El crítico desarmado, E4)*
+      Resistir daño la lee de ahí. El crítico desarmado, E4)*
 
 **Deploy de especies** (tras E3, decidido 2026-10-09: un solo reset y cada jugador crea su
 ficha una vez, ya con costes de casta, descuentos y derivados)

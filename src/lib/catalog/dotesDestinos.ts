@@ -19,6 +19,8 @@
 //            prepararPoder (rules/usoPoder.ts) pone en la nota o el crítico de la tirada del
 //            poder, o en las notas de su ventana si no tira. Casillas y bonos no se saben
 //            poner aquí (el poder no pasa por el índice de condiciones): el generador los rechaza.
+//   sinDado → una acción fija sin dado (Resistir daño, id interno "bloquear_danio"): solo textos,
+//            que van a sus notas (resolverGolpe, rules/resistirDanio.ts). Do-02 del cuestionario.
 //   tanda  → el destino aún no existe: el efecto queda pendiente de esa tanda.
 import type { AlcanceModificador, FamiliaArma } from "../rules/modificadores";
 
@@ -46,6 +48,7 @@ export type DestinoDote =
   | { tipo: "especialidadArmaElegida"; familias: readonly FamiliaArma[] }
   | { tipo: "accionDote" }
   | { tipo: "poder"; id: string }
+  | { tipo: "sinDado"; id: string }
   | { tipo: "tanda"; tanda: TandaDote; motivo: string };
 
 const tirada = (id: string): DestinoDote => ({ tipo: "tirada", alcance: { tipo: "tiradaId", id }, textos: [id] });
@@ -96,6 +99,11 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
 
   // ── Texto que solo vive en la tarjeta de la dote ──
   ficha: { tipo: "ficha" },
+
+  // ── Acciones fijas sin dado ──
+  // Resistir daño (do-02, usuario 2026-11-13): el daño de caída entra por ahí como cualquier
+  // otro; Saber Caer y Caer Parado dejan su nota.
+  bloquear_danio: { tipo: "sinDado", id: "bloquear_danio" },
 
   // ── Tiradas generadas por arma (D2b-1): por su familia, puesta al crearlas ──
   "familia:ataque_melee": familia("ataque_melee"),

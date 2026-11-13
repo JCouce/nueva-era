@@ -15,3 +15,14 @@ export const TIPOS_DANIO = [
   { id: "mental", label: "Mental", categoria: "Letal" },
 ] as const;
 export type TipoDanio = (typeof TIPOS_DANIO)[number]["id"];
+
+// Los que cambian de categoría en crítico (Eléctrico, Frío, Sónico): solo en ellos importa si el
+// golpe fue crítico.
+export function cambiaEnCritico(tipo: TipoDanio): boolean {
+  const t = TIPOS_DANIO.find((x) => x.id === tipo);
+  return Boolean(t && "categoriaCritico" in t);
+}
+
+// Los que puede traer un «ataque físico» (Tensión ósea del Zimethroni, rules/resistirDanio.ts):
+// todos menos el mental. TODO(revisar): ninguna fuente define «ataque físico».
+export const TIPOS_FISICOS: readonly TipoDanio[] = TIPOS_DANIO.map((t) => t.id).filter((t) => t !== "mental");

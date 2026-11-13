@@ -62,9 +62,10 @@ describe("capacidadDePieza", () => {
     assert.equal(cap, null);
   });
 
-  test("una armadura no tiene recurso (fuera de alcance de este primer pase)", () => {
-    const cap = capacidadDePieza({ instanciaId: "arm1", catalogoId: "armadura_ligera" });
-    assert.equal(cap, null);
+  // eq-20 (T2): el blindaje que le queda a la armadura, que se pierde para siempre punto a punto.
+  test("una armadura es tipo blindaje, con su blindaje del catálogo como máximo", () => {
+    assert.deepEqual(capacidadDePieza({ instanciaId: "arm1", catalogoId: "armadura_ligera" }), { max: 4, tipo: "blindaje" });
+    assert.deepEqual(capacidadDePieza({ instanciaId: "arm1", catalogoId: "armadura_pesada" }), { max: 8, tipo: "blindaje" });
   });
 
   test("Malla Plasmática es tipo colchon, con el colchón de SU nivel como máximo", () => {
@@ -90,9 +91,14 @@ describe("reconciliarRecursos (vía equipar/desequipar)", () => {
     assert.deepEqual(recursoDe(s, "a1"), { instanciaId: "a1", actual: 7, max: 7 });
   });
 
-  test("equipar algo sin recurso (una armadura) no añade nada a recursos", () => {
-    const s = equipar(defaultSheet(), { instanciaId: "arm1", catalogoId: "armadura_ligera" });
+  test("equipar algo sin recurso (un arma melee sin defensa) no añade nada a recursos", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "m1", catalogoId: "espada_cuchillo_combate" });
     assert.equal(s.recursos.length, 0);
+  });
+
+  test("equipar una armadura le pone su blindaje a tope (eq-20)", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "arm1", catalogoId: "armadura_ligera" });
+    assert.deepEqual(recursoDe(s, "arm1"), { instanciaId: "arm1", actual: 4, max: 4 });
   });
 
   test("desequipar retira su entrada de recursos", () => {

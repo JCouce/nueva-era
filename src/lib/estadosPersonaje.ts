@@ -17,6 +17,7 @@ import {
   sinEstados,
   vaciarUsosEscena,
   type CambioEstadoNpc,
+  type DanioVida,
   type CambioEstadoPersonaje,
   type DatosRegistro,
   type InmuneAlAplicar,
@@ -317,9 +318,32 @@ async function escribirFotosCobradas(tx: Tx, antes: FotoCobro[], despues: FotoCo
 export async function fotoEnJuego(characterId: string) {
   const fotos = await prisma.combatiente.findMany({
     where: { characterId, combate: { estado: "EN_CURSO" } },
-    select: { id: true, orden: true, derrotado: true, pgActual: true, pgMax: true, fatigaActual: true, fatigaMax: true },
+    select: { id: true, orden: true, derrotado: true, pgActual: true, pgMax: true, fatigaActual: true, fatigaMax: true, danio: true },
   });
   return fotoEnMesa(fotos);
+}
+
+// Lo que escribe «Recibir» en Resistir daño (T2, recibirGolpe en rules/resistirDanio.ts): la ficha
+// (blindaje perdido y, fuera de combate, la vida) y, con combate en curso, la vida de la foto, en
+// una transacción. `ficha` null: la ficha no cambia. Mismo contrato que guardarFichaConFotos: no
+// comprueba permisos y devuelve false si la ficha cambió desde `leida` (td-22).
+export async function guardarGolpe(
+  characterId: string,
+  leida: FichaLeida,
+  ficha: Sheet | null,
+  foto: { id: string; pgActual: number; danio: DanioVida } | null,
+): Promise<boolean> {
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (ficha) await escribirFicha(tx, characterId, leida, { stats: ficha });
+      if (foto) await tx.combatiente.update({ where: { id: foto.id }, data: { pgActual: foto.pgActual, danio: foto.danio } });
+    });
+    if (foto) revalidarEstados([characterId]);
+    return true;
+  } catch (e) {
+    if (e instanceof FichaCambiada) return false;
+    throw e;
+  }
 }
 
 // Guarda la ficha que ha cobrado o sumado vida o fatiga por su cuenta (pagar fatiga, acciones

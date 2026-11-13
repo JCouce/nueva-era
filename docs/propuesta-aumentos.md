@@ -246,7 +246,7 @@ total intacta.
 
 **Decidido (usuario, 2026-10-22):** se parte en dos pasadas. **A4a** (luz verde): el contador
 por escena y las acciones sin dado. **A4b** (pendiente de plantear): Barrido
-electromagnético, Tempestad Nanobótica, Densificar (casilla en "Bloquear daño", +3 de
+electromagnético, Tempestad Nanobótica, Densificar (casilla en "Resistir daño", +3 de
 blindaje por 1 de fatiga) e Incorporar arma (solo la tirada; el vínculo va en A6).
 - **Uso por escena:** `sheet.usosEscena` (ficha v19). Se gasta al tirar con la casilla
   marcada, no al marcarla. La casilla gastada queda bloqueada hasta "Terminar escena". En
@@ -322,7 +322,7 @@ que la casilla se reinicie con "Terminar escena".
 - **Tempestad Nanobótica:** 1 de daño grave **fijo, sin sumar éxitos**. Ataque cuerpo a cuerpo
   de Reflejos + Tecnociencia, dificultad 0, 2 de fatiga al tirar. Quitar blindaje y sabotear
   objetos, como nota.
-- **Densificar:** casilla en "Bloquear daño" (+3) que **cobra 1 de fatiga al marcarla**;
+- **Densificar:** casilla en "Resistir daño" (+3) que **cobra 1 de fatiga al marcarla**;
   desmarcarla sin cerrar el modal lo devuelve. Vale **donde cuenta el blindaje** (no contra el
   daño mental ni el fuego sin Ignífuga), igual que la armadura natural. El +3 contra el
   aturdimiento, como nota.
@@ -485,7 +485,7 @@ la sustitución del nivel 4.
   menores (R4). Con el nivel 2+, el Puñetazo es letal.
 - **Bloquear con el brazo:** nivel 2+ y siempre con la dote Bloqueo, por el camino de
   "Bloquear con X".
-- **Blindaje (R12):** casilla "Bloqueado con el brazo" en "Bloquear daño", sin coste, **solo
+- **Blindaje (R12):** casilla "Bloqueado con el brazo" en "Resistir daño", sin coste, **solo
   con el Brazo de nivel 2 o más**, que suma su blindaje (3, 6 u 8) a ese golpe.
 - **Tras A6a (usuario, 2026-10-22):** la casilla del brazo también en "Bloquear con X" con un
   arma de una mano (va en A6b); lanzar armas arrojadizas y granadas, sin casilla. "Bloquear con

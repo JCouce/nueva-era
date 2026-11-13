@@ -848,6 +848,8 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
       e.tipo === "poder" ||
       // Sobre un poder (D2c-2): solo textos, a la nota/crítico de su tirada o a su ventana.
       (e.tipo === "texto" && destino?.tipo === "poder") ||
+      // Sobre una acción sin dado (Resistir daño, do-02): solo textos, a sus notas.
+      (e.tipo === "texto" && destino?.tipo === "sinDado" && !e.grados) ||
       (e.tipo === "bono" && destino?.tipo === "tirada") ||
       // Sobre una acción de dote (D2c-1): bono con casilla (Finta repetida) y textos a su nota.
       (e.tipo === "bono" && destino?.tipo === "accionDote" && typeof e.valor === "number" && typeof e.condicion === "string") ||

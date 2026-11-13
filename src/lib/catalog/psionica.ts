@@ -2205,7 +2205,7 @@ export const ESTADOS_DE_PODER: Estado[] = [
       label: `Absorción ${absorcion}${agilidad < 0 ? ` · Agilidad ${agilidad}` : ""}`,
       modificadores: agilidad < 0 ? [{ tipo: "atributo", id: "agilidad", valor: agilidad }] : [],
       detalle: [
-        `Absorción ${absorcion} contra todo daño menos el mental (en Bloquear daño); no la reducen los efectos antiblindaje.` +
+        `Absorción ${absorcion} contra todo daño menos el mental (en Resistir daño); no la reducen los efectos antiblindaje.` +
           (agilidad < 0 ? ` Agilidad ${agilidad}.` : ""),
         "Quieto o contra el ataque, la absorción es otra: mira la Contención en Acciones.",
       ],
@@ -2308,7 +2308,7 @@ const CONTENCION: AccionPoder = {
   resultados: {},
   notas: [
     {
-      texto: "Al usarla te pones el estado «Contención», con su absorción (en Bloquear daño) y su −Agilidad. Se va al acabar la duración o con «Terminar contención».",
+      texto: "Al usarla te pones el estado «Contención», con su absorción (en Resistir daño) y su −Agilidad. Se va al acabar la duración o con «Terminar contención».",
       lugar: "tirada",
     },
     { texto: "Quieto (sin esquivar): la absorción de quieto sustituye a la normal.", lugar: "tirada" },
@@ -2323,7 +2323,7 @@ const CONTENCION: AccionPoder = {
   motor: motorDeAccion(CONTENCION_ID, {
     propias: true,
     extra: [
-      // Estado propio al usarla: la absorción (Bloquear daño) y la −Agilidad.
+      // Estado propio al usarla: la absorción (Resistir daño) y la −Agilidad.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
       // Área de la forma colectiva, calculada (objetivo.area): texto en la ventana del poder.

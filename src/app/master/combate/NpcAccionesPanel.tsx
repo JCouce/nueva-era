@@ -1,12 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Sheet, EstadoActivo, OperacionEstadoDePoder, VitalidadActual } from "@/lib/rules";
+import { vidaTrasAjuste, type Sheet, type EstadoActivo, type GolpeRecibido, type OperacionEstadoDePoder, type VitalidadActual } from "@/lib/rules";
 import { Modal } from "@/components/Modal";
 import { AccionesTab } from "@/app/characters/[id]/_components/AccionesTab";
 import { useFichaResuelta } from "@/hooks/useFichaResuelta";
 import type { Lanzamiento } from "@/components/ResultadoTirada";
-import { estadoDePoderNpcAction } from "./actions";
+import type { ResultadoRecibir } from "@/app/characters/[id]/_components/ResistirDanioModal";
+import { deshacerRegistroAction } from "../actions";
+import { ajustarVidaEnCombateAction, estadoDePoderNpcAction } from "./actions";
 
 // Fase 6b, subtarea 5.5 (el motivo original de todo el rediseño del bloque
 // 5): mismo AccionesTab.tsx que ya usa el jugador, alimentado por el `sheet`
@@ -62,6 +64,32 @@ export function NpcAccionesPanel({
       else if (res.mensaje) onMensaje(res.mensaje);
     });
   };
+  // «Recibir» en Resistir daño (T2): la vida de su fila, con la acción de la pestaña Vida (con
+  // registro, que es lo que deshace). TODO(revisar): el blindaje perdido del NPC no se apunta
+  // (su ficha es la foto congelada de la fila, Combatiente.sheet, y no hay acción que la
+  // reescriba); el modal avisa de apuntarlo a mano.
+  const recibirDanio = async (golpe: GolpeRecibido): Promise<ResultadoRecibir> => {
+    const vida = pgActual - vidaTrasAjuste(pgActual, pgMax, -golpe.cantidad);
+    const aplicado = { categoria: golpe.categoria, vida, blindaje: 0 };
+    if (golpe.cantidad === 0) return { ok: true, aplicado, deshacer: async () => null };
+    const res = await ajustarVidaEnCombateAction({
+      combatienteIds: [combatienteId],
+      recurso: "vida",
+      cantidad: -golpe.cantidad,
+      categoria: golpe.categoria,
+    });
+    if (!res.ok) return res;
+    const registroId = res.registroId;
+    return {
+      ok: true,
+      aplicado,
+      deshacer: async () => {
+        if (!registroId) return null;
+        const d = await deshacerRegistroAction(registroId);
+        return d.ok ? null : d.error;
+      },
+    };
+  };
   const [memoria, setMemoria] = useState<
     Record<string, { dificultad: number | null; circunstancial: number }>
   >({});
@@ -89,6 +117,7 @@ export function NpcAccionesPanel({
           memoria={memoria}
           setMemoria={setMemoria}
           onEstadoDePoder={estadoDePoder}
+          onRecibirDanio={recibirDanio}
         />
       </div>
     </Modal>

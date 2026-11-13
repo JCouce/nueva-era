@@ -32,6 +32,8 @@ import {
   comprarFarmacoAction,
   ajustarVidaAction,
   ajustarDanioAction,
+  recibirDanioAction,
+  type RecibirDanioResult,
   ajustarFatigaAction,
   devolverFatigaAction,
   pagarFatigaAction,
@@ -100,7 +102,7 @@ import {
   type DoteComprada,
   type EstadoActivo,
 } from "@/lib/rules";
-import type { ExtraAccionAumento, MesaDeFicha, OperacionEstadoDePoder, Sheet, UsoLimitado } from "@/lib/rules";
+import type { ExtraAccionAumento, GolpeRecibido, MesaDeFicha, OperacionEstadoDePoder, Sheet, UsoLimitado } from "@/lib/rules";
 import { PersonajeTab, PanelFieldset } from "./_components/personaje/PersonajeTab";
 import { AvisoEnRevision } from "./_components/RevisionFicha";
 import { EstadoFichaChip } from "@/components/EstadoFichaChip";
@@ -110,6 +112,7 @@ import { HabilidadesTab } from "./_components/HabilidadesTab";
 import { DotesTab } from "./_components/DotesTab";
 import { PsionicaTab } from "./_components/PsionicaTab";
 import { AccionesTab } from "./_components/AccionesTab";
+import type { ResultadoRecibir } from "./_components/ResistirDanioModal";
 import { TiendaTab } from "./_components/TiendaTab";
 import { EquipoTab } from "./_components/EquipoTab";
 import { RecursosTab } from "./_components/RecursosTab";
@@ -470,6 +473,38 @@ export function CharacterSheet({
     setSheet((s) => ajustarVida(s, delta, estados));
     runSave(() => ajustarVidaAction(characterId, delta), setSheet);
   };
+  // «Recibir» en Resistir daño (T2): lo aplica el servidor (recibirDanioAction), en la foto del
+  // combate si estoy en uno en curso o en la ficha, con el blindaje perdido. Sin adelanto
+  // optimista: dónde cae (ficha o foto) lo decide el servidor. La promesa se resuelve con lo
+  // aplicado de verdad y cómo deshacerlo, también si falla la red.
+  const golpeEnServidor = (entrada: GolpeRecibido & { deshacer?: true }) =>
+    new Promise<RecibirDanioResult>((resolve) => {
+      let ultimo: RecibirDanioResult = { ok: false, error: "Sin conexión" };
+      runSave(
+        async () => {
+          ultimo = await recibirDanioAction(characterId, entrada).catch(() => ({ ok: false as const, error: "Sin conexión" }));
+          return ultimo;
+        },
+        (s) => {
+          setSheet(s);
+          resolve(ultimo);
+        },
+        () => resolve(ultimo),
+      );
+    });
+  const commitRecibirDanio = async (golpe: GolpeRecibido): Promise<ResultadoRecibir> => {
+    const res = await golpeEnServidor(golpe);
+    if (!res.ok) return res;
+    const { categoria, vida, blindaje } = res.aplicado;
+    return {
+      ok: true,
+      aplicado: res.aplicado,
+      deshacer: async () => {
+        const d = await golpeEnServidor({ categoria, cantidad: vida, rompeBlindaje: blindaje, deshacer: true });
+        return d.ok ? null : d.error;
+      },
+    };
+  };
   const commitAjustarDanio = (categoria: CategoriaDanio, delta: number) => {
     setSheet((s) => ajustarDanioCategoria(s, categoria, delta, estados));
     runSave(() => ajustarDanioAction(characterId, categoria, delta), setSheet);
@@ -829,6 +864,7 @@ export function CharacterSheet({
             onFabricar={commitFabricar}
             onGastarRecurso={commitAjustarRecurso}
             onDaniarEscudo={commitAjustarRecurso}
+            onRecibirDanio={commitRecibirDanio}
             onAjustarFarmaco={commitAjustarFarmaco}
             onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
             onPagarFatiga={commitPagarFatiga}

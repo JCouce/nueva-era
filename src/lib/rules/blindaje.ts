@@ -14,13 +14,13 @@ import type { ArmaMelee } from "../catalog/armasMelee";
 import { nivelesHasta, ultimoQueDefine } from "./equipo";
 import { armaduraNaturalDeAumentos, blindajeReactivoDeAumentos } from "./aumentosTiradas";
 import { blindajeDelBrazo } from "./brazoBionico";
-import { MOTIVO_ESCUDO_ROTO } from "./recursos";
+import { ajustarRecurso, MOTIVO_ESCUDO_ROTO, reconciliarRecursos } from "./recursos";
 import type { Sheet } from "./sheet";
 import type { EstadoActivo } from "./estados";
 import { absorcionDeGradoContencion, ESTADO_CONTENCION_ID } from "../catalog/psionica";
 
-import { TIPOS_DANIO, type TipoDanio } from "../catalog/tiposDanio";
-export { TIPOS_DANIO, type TipoDanio };
+import { TIPOS_DANIO, cambiaEnCritico, type TipoDanio } from "../catalog/tiposDanio";
+export { TIPOS_DANIO, cambiaEnCritico, type TipoDanio };
 
 function armaduraEquipadaConInstancia(sheet: Sheet): { armadura: Armadura; instanciaId: string } | null {
   for (const pieza of sheet.equipo) {
@@ -30,8 +30,55 @@ function armaduraEquipadaConInstancia(sheet: Sheet): { armadura: Armadura; insta
   return null;
 }
 
-function armaduraEquipada(sheet: Sheet): Armadura | null {
-  return armaduraEquipadaConInstancia(sheet)?.armadura ?? null;
+// Blindaje perdido para siempre (eq-20 del cuestionario, usuario 2026-11-13): el crítico de la
+// Munición Perforante, el Proyector de Pulso 4 y el Impacto Estructural de Kerzul quitan puntos
+// a la armadura del objetivo. Se guardan en el recurso "blindaje" de la instancia (recursos.ts,
+// como la durabilidad del escudo): perdidos = máximo − actual. Lo que enseña la app (Resistir
+// daño, Equipo) es el del catálogo menos los perdidos. Reparar la armadura los devuelve.
+export type BlindajeDeArmadura = {
+  instanciaId: string;
+  etiqueta: string;
+  base: number;
+  perdido: number;
+  actual: number;
+};
+
+export function blindajeDeInstancia(
+  sheet: Pick<Sheet, "equipo" | "recursos">,
+  instanciaId: string,
+): BlindajeDeArmadura | null {
+  const pieza = sheet.equipo.find((p) => p.instanciaId === instanciaId);
+  const cat = pieza ? equipoPorId(pieza.catalogoId) : undefined;
+  if (cat?.familia !== "armadura") return null;
+  // Sin entrada en recursos (ficha sin reconciliar), la armadura está entera.
+  const recurso = sheet.recursos.find((r) => r.instanciaId === instanciaId);
+  const perdido = recurso ? Math.min(cat.blindaje, Math.max(0, recurso.max - recurso.actual)) : 0;
+  return { instanciaId, etiqueta: cat.label, base: cat.blindaje, perdido, actual: cat.blindaje - perdido };
+}
+
+// La armadura que cuenta (la primera equipada), con su blindaje de ahora. null sin armadura.
+export function blindajeDeArmadura(sheet: Pick<Sheet, "equipo" | "recursos">): BlindajeDeArmadura | null {
+  const pieza = sheet.equipo.find((p) => equipoPorId(p.catalogoId)?.familia === "armadura");
+  return pieza ? blindajeDeInstancia(sheet, pieza.instanciaId) : null;
+}
+
+// Quita `puntos` de blindaje a la armadura que cuenta (sin bajar de 0); con `puntos` negativo los
+// devuelve (deshacer en Resistir daño). Sin armadura, la misma ficha.
+export function romperBlindaje(sheet: Sheet, puntos: number): Sheet {
+  const armadura = blindajeDeArmadura(sheet);
+  if (!armadura || !Number.isFinite(puntos) || Math.round(puntos) === 0) return sheet;
+  return ajustarRecurso(reconciliarRecursos(sheet), armadura.instanciaId, -Math.round(puntos));
+}
+
+// Línea del desglose de la armadura: su blindaje de ahora, con lo perdido en la nota.
+function lineaDeArmadura(sheet: Sheet, etiqueta: (label: string) => string): LineaBlindaje | null {
+  const a = blindajeDeArmadura(sheet);
+  if (!a) return null;
+  return {
+    etiqueta: etiqueta(a.etiqueta),
+    valor: a.actual,
+    ...(a.perdido > 0 && { nota: `${a.perdido} de ${a.base} perdido${a.perdido > 1 ? "s" : ""} para siempre (repárala con materiales).` }),
+  };
 }
 
 // Mejora Ignífuga (cualquier nivel incluye el 1) instalada en la armadura que cuenta, no
@@ -114,7 +161,7 @@ export function blindajeNoCuenta(tipo: TipoDanio): string | null {
 }
 
 // Desglose de qué aporta cada fuente contra `tipo` — fuente única de verdad
-// para blindajeContra() (la suma de estas líneas) y para "Bloquear daño"
+// para blindajeContra() (la suma de estas líneas) y para "Resistir daño"
 // (que las pinta una a una: "nada suma en silencio", mismo criterio que
 // AccionModal.tsx). Mental/Fuego devuelven una única línea a 0 explicando por
 // qué, en vez de una lista vacía sin más; Fuego con Mejora Ignífuga, solo la
@@ -139,15 +186,15 @@ export function desgloseBlindaje(
   // Ignífuga nv1 (S85): contra Fuego cuenta solo "el blindaje de su armadura", sin natural,
   // deflector, Densificar ni brazo.
   if (tipo === "fuego") {
-    const ignifuga = armaduraConIgnifuga(sheet);
-    if (ignifuga) return [{ etiqueta: `${ignifuga.label} · Mejora Ignífuga`, valor: ignifuga.blindaje }, ...deContencion];
+    const ignifuga = armaduraConIgnifuga(sheet) && lineaDeArmadura(sheet, (l) => `${l} · Mejora Ignífuga`);
+    if (ignifuga) return [ignifuga, ...deContencion];
   }
   const noCuenta = blindajeNoCuenta(tipo);
   if (noCuenta) return [{ etiqueta: noCuenta, valor: 0 }, ...deContencion];
 
   const lineas: LineaBlindaje[] = [];
-  const armadura = armaduraEquipada(sheet);
-  if (armadura) lineas.push({ etiqueta: armadura.label, valor: armadura.blindaje });
+  const armadura = lineaDeArmadura(sheet, (l) => l);
+  if (armadura) lineas.push(armadura);
 
   if (armaduraNatural.valor > 0) {
     lineas.push({
@@ -178,7 +225,7 @@ export function desgloseBlindaje(
   return [...lineas, ...deContencion];
 }
 
-// La casilla "Bloqueado con el brazo biónico" de "Bloquear daño" (A6a, R12), o null sin el Brazo
+// La casilla "Bloqueado con el brazo biónico" de "Resistir daño" (A6a, R12), o null sin el Brazo
 // de nivel 2 o más. Sin coste. `bloqueada`: el tipo de daño no lo para el blindaje (el mismo
 // criterio que la armadura natural y Densificar).
 export type CasillaBlindajeBrazo = { etiqueta: string; valor: number; nota: string; bloqueada: string | null };
@@ -195,7 +242,7 @@ export function casillaBlindajeBrazo(sheet: Pick<Sheet, "equipo">, tipo: TipoDan
   };
 }
 
-// La casilla de blindaje reactivo de "Bloquear daño" (Densificar, Enjambre 3+; A4b), o null sin
+// La casilla de blindaje reactivo de "Resistir daño" (Densificar, Enjambre 3+; A4b), o null sin
 // la pieza. Se cobra al marcarla y se devuelve al desmarcarla (lo hace el modal con estos
 // datos). `bloqueada`: por qué no se puede marcar ahora (el tipo de daño no lo para el
 // blindaje, o no llega la fatiga; marcada ya está pagada, así que la fatiga no la bloquea).
@@ -247,12 +294,15 @@ export function blindajeContra(
 // La categoría con la que el portador recibe un golpe de `tipo` (R8, 2026-10-24): la del tipo
 // (tiposDanio.ts; null en Cinético, que la pone el arma) salvo que una mejora de la armadura
 // que cuenta diga otra — Mejora Ignífuga 2 y Polímero Anticorrosivo 2: "lo considera letal en
-// lugar de grave". `fuente`: la mejora que la cambia, o null. "Bloquear daño" la enseña.
+// lugar de grave". `fuente`: la mejora que la cambia, o null. "Resistir daño" la enseña.
 export function categoriaDelGolpe(
   sheet: Sheet,
   tipo: TipoDanio,
+  critico = false,
 ): { categoria: string | null; fuente: string | null } {
-  const delTipo = TIPOS_DANIO.find((t) => t.id === tipo)?.categoria ?? null;
+  // En crítico, la categoría de crítico del tipo si la tiene (Eléctrico, Frío, Sónico).
+  const t = TIPOS_DANIO.find((x) => x.id === tipo);
+  const delTipo = (critico && t && "categoriaCritico" in t ? t.categoriaCritico : t?.categoria) ?? null;
   const armadura = armaduraEquipadaConInstancia(sheet);
   if (armadura && delTipo === "Grave") {
     for (const p of sheet.equipo) {

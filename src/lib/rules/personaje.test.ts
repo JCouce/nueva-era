@@ -144,17 +144,17 @@ const ESPERADAS: Record<string, EtiquetaRasgo> = {
   "manduk.siervo/umbral_fatiga": "siempre",
   "manduk.siervo/frugal": "siempre",
   "manduk.ilkrem/regeneracion": "texto", // triaje 2026-10-28 (#59): texto en la ficha, bloqueado, como la regeneración del Enjambre
-  "manduk.ilkrem/falla_metabolica": "texto", // TODO(revisar): la prosa pide una salvación de Fortaleza; el catálogo la tiene como nota_fija (en Salvación de Fortaleza, E4)
+  "manduk.ilkrem/falla_metabolica": "texto", // salvación tras recibir en Resistir daño (es-02, T2): acción propia sin dado, como el peaje del Maolher
   "manduk.zimethroni/movimiento": "siempre",
   "manduk.zimethroni/tras_esquivar": "texto", // TODO(revisar): nota_fija en Defensa
-  "manduk.zimethroni/hiperactividad": "texto", // TODO(revisar): nota_fija en Defensa (E4)
+  "manduk.zimethroni/hiperactividad": "tirada", // casilla en Resistir daño (es-03/es-04, T2) y nota en Defensa
   "manduk.irota/contra_toxinas": "tirada",
   "manduk.irota/farmacos_mitad": "texto", // E5: nota fija en las filas de fármaco (la app no mecaniza sus efectos)
   "manduk.maolher/coste_psionico": "creacion",
   "manduk.maolher/peaje_neurologico": "texto", // TODO(revisar): acción nueva con tirada de Fortaleza propia
   "manduk.axadren/vision_infrarroja": "texto",
   "manduk.axadren/contra_ocultos": "tirada",
-  "manduk.axadren/deslumbramiento": "texto", // TODO(revisar): la prosa pide tirada de ceguera; el catálogo la tiene como nota_fija
+  "manduk.axadren/deslumbramiento": "tirada", // opciones del «Contra…» de la Salvación de Fortaleza (es-02, T2)
   "manduk.elion/contra_sugestion": "tirada",
   "manduk.elion/rigidez_narcisista": "siempre", // triaje 2026-10-28 (#67): fallo crítico automático por especialidad, siempre_activo
 };

@@ -403,7 +403,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
 // se aplica si atacan por la espalda, y se benefician de escudo deflector / malla
 // plasmática si el usuario los lleva ("Especial", cabecera de Escudos).
 // Texto, no motor: el Escudo Deflector y la Malla son de la armadura y la app no sabe
-// todavía repartir su absorción entre portador y escudo al "Bloquear daño" (2026-10-24).
+// todavía repartir su absorción entre portador y escudo al "Resistir daño" (2026-10-24).
 export const NOTA_ESCUDO_SUBSISTEMAS = "El escudo se beneficia del Escudo Deflector y la Malla Plasmática si los llevas.";
 
 export const ESCUDOS: ArmaMelee[] = [
@@ -428,7 +428,7 @@ export const ESCUDOS: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
       // defensa.blindaje es del propio escudo, no del portador (Murillo, 2026-10-23): en
-      // "Bloquear daño", "Al escudo", golpeAlEscudo() (lib/rules/blindaje.ts) lo resta del
+      // "Resistir daño", "Al escudo", golpeAlEscudo() (lib/rules/blindaje.ts) lo resta del
       // golpe y el resto va a la durabilidad (defensa.puntosGolpe).
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // "Levantar [escudo]" construido 2026-09-27 (docs/motor.md, "Acciones sin
@@ -476,7 +476,7 @@ export const ESCUDOS: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
       // defensa.blindaje es del propio escudo, no del portador (Murillo, 2026-10-23): en
-      // "Bloquear daño", "Al escudo", golpeAlEscudo() (lib/rules/blindaje.ts) lo resta del
+      // "Resistir daño", "Al escudo", golpeAlEscudo() (lib/rules/blindaje.ts) lo resta del
       // golpe y el resto va a la durabilidad (defensa.puntosGolpe).
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // "Levantar [escudo]" construido 2026-09-27 (docs/motor.md, "Acciones sin
@@ -513,7 +513,7 @@ export const ESCUDOS: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
       // defensa.blindaje es del propio escudo, no del portador (Murillo, 2026-10-23): en
-      // "Bloquear daño", "Al escudo", golpeAlEscudo() (lib/rules/blindaje.ts) lo resta del
+      // "Resistir daño", "Al escudo", golpeAlEscudo() (lib/rules/blindaje.ts) lo resta del
       // golpe y el resto va a la durabilidad (defensa.puntosGolpe).
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // "Levantar [escudo]" construido 2026-09-27 (docs/motor.md, "Acciones sin
@@ -550,7 +550,7 @@ export const ESCUDOS: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
       // defensa.blindaje es del propio escudo, no del portador (Murillo, 2026-10-23): en
-      // "Bloquear daño", "Al escudo", golpeAlEscudo() (lib/rules/blindaje.ts) lo resta del
+      // "Resistir daño", "Al escudo", golpeAlEscudo() (lib/rules/blindaje.ts) lo resta del
       // golpe y el resto va a la durabilidad (defensa.puntosGolpe).
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // "Levantar [escudo]" construido 2026-09-27 (docs/motor.md, "Acciones sin
@@ -1011,7 +1011,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
-        // el blindaje del objetivo se baja a mano.
+        // el objetivo lo apunta en su Resistir daño (casilla «Este golpe rompe blindaje», eq-20).
         estado: "construido",
       },
       // Sin retroceso entrópico: solo salta con ataques Estándar o Compleja (EQUIP, Kerzul) y
@@ -1054,7 +1054,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
-        // el blindaje del objetivo se baja a mano.
+        // el objetivo lo apunta en su Resistir daño (casilla «Este golpe rompe blindaje», eq-20).
         estado: "construido",
       },
       {
@@ -1110,7 +1110,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
-        // el blindaje del objetivo se baja a mano.
+        // el objetivo lo apunta en su Resistir daño (casilla «Este golpe rompe blindaje», eq-20).
         estado: "construido",
       },
       {
@@ -1165,7 +1165,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
-        // el blindaje del objetivo se baja a mano.
+        // el objetivo lo apunta en su Resistir daño (casilla «Este golpe rompe blindaje», eq-20).
         estado: "construido",
       },
       {
@@ -1221,7 +1221,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
-        // el blindaje del objetivo se baja a mano.
+        // el objetivo lo apunta en su Resistir daño (casilla «Este golpe rompe blindaje», eq-20).
         estado: "construido",
       },
       {
@@ -1272,7 +1272,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
-        // el blindaje del objetivo se baja a mano.
+        // el objetivo lo apunta en su Resistir daño (casilla «Este golpe rompe blindaje», eq-20).
         estado: "construido",
       },
       {
@@ -1320,7 +1320,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
-        // el blindaje del objetivo se baja a mano.
+        // el objetivo lo apunta en su Resistir daño (casilla «Este golpe rompe blindaje», eq-20).
         estado: "construido",
       },
       {
@@ -1377,7 +1377,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
-        // el blindaje del objetivo se baja a mano.
+        // el objetivo lo apunta en su Resistir daño (casilla «Este golpe rompe blindaje», eq-20).
         estado: "construido",
       },
       {
@@ -1425,7 +1425,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
-        // el blindaje del objetivo se baja a mano.
+        // el objetivo lo apunta en su Resistir daño (casilla «Este golpe rompe blindaje», eq-20).
         estado: "construido",
       },
       {
@@ -1476,7 +1476,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "nota_fija",
         // El crítico ya lleva el texto del efecto (textoCriticoArma, combate.ts, 2026-10-24);
-        // el blindaje del objetivo se baja a mano.
+        // el objetivo lo apunta en su Resistir daño (casilla «Este golpe rompe blindaje», eq-20).
         estado: "construido",
       },
       {
@@ -1486,7 +1486,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         estado: "pendiente",
       },
       // defensa.blindaje es del propio escudo, no del portador (Murillo, 2026-10-23): en
-      // "Bloquear daño", "Al escudo", golpeAlEscudo() (lib/rules/blindaje.ts) lo resta del
+      // "Resistir daño", "Al escudo", golpeAlEscudo() (lib/rules/blindaje.ts) lo resta del
       // golpe y el resto va a la durabilidad (defensa.puntosGolpe).
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
       // "Levantar [escudo]" construido 2026-09-27 (docs/motor.md, "Acciones sin

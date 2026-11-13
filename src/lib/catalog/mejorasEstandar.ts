@@ -290,7 +290,7 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         recibeComoLetal: "fuego",
         motor: [
           // "Daño de fuego letal en vez de grave": la categoría del golpe recibido
-          // (categoriaDelGolpe, lib/rules/blindaje.ts), que "Bloquear daño" enseña.
+          // (categoriaDelGolpe, lib/rules/blindaje.ts), que "Resistir daño" enseña.
           { tipo: "texto", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "nota_fija", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_reflejos" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],

@@ -52,6 +52,7 @@ import {
   multiplicadorCargaDeEspecie,
   textosDeEspecie,
   peajeNeurologicoDeEspecie,
+  salvacionesDeEspecie,
   notasFarmacosDeEspecie,
   accionesSinDadoDeEspecie,
   type EspecieResuelta,
@@ -406,7 +407,7 @@ export function resolverFicha(
     indiceCondiciones: indiceDeCondiciones(sheet, [
       ...casillasDeEspecie(especie),
       ...dotes.casillas,
-      ...conUsosEscena(casillasDeAumentos(sheet, activables.salvaciones, salvacionesDeEquipo(sheet)), sheet.usosEscena),
+      ...conUsosEscena(casillasDeAumentos(sheet, activables.salvaciones, [...salvacionesDeEspecie(especie), ...salvacionesDeEquipo(sheet)]), sheet.usosEscena),
       ...casillasDeFarmacos(sheet),
       ...casillasDePsionica(psionica.paraEfectos),
     ]),

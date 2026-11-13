@@ -44,6 +44,8 @@ export type SalvacionConSelector = "salv_fortaleza" | "salv_reflejos" | "salv_vo
 export const AMENAZAS = [
   { id: "ceguera", label: "Ceguera", salvacion: "salv_fortaleza" },
   { id: "ceguera_detonacion", label: "Ceguera por detonación", salvacion: "salv_fortaleza", incluye: ["ceguera"] },
+  // Deslumbramiento del Axadren (es-02 del cuestionario, 2026-11-13): solo sale con el rasgo.
+  { id: "ceguera_destello", label: "Ceguera por destello, plasma o PEM", salvacion: "salv_fortaleza", incluye: ["ceguera"] },
   { id: "sordera", label: "Sordera", salvacion: "salv_fortaleza" },
   { id: "aturdimiento", label: "Aturdimiento", salvacion: "salv_fortaleza" },
   // El shock va con Fortaleza: la nota de la propia salvación lo lista (acciones.ts).
@@ -80,7 +82,17 @@ export type AmenazaId = (typeof AMENAZAS)[number]["id"];
 // esa amenaza, no se cobra la de pago.
 // `nota`: cuándo vale el bono, si no siempre (Soporte Vital: "solo con la armadura dañada o
 // tras un daño directo en el ambiente tóxico"); sale en la opción del selector "Contra…".
-export type EfectoSalvacion = { contra: AmenazaId[]; bono?: number; ventaja?: "gratis" | "fatiga"; nota?: string };
+// `dificultad`: con la que se abre la salvación al elegir esa opción (Deslumbramiento del Axadren:
+// 9 contra la ceguera por destello). `soloDirecta`: vale solo en la opción de su amenaza, no en
+// las que la incluyen (el +3 del Axadren a la ceguera normal no va a la de destello, que es 9).
+export type EfectoSalvacion = {
+  contra: AmenazaId[];
+  bono?: number;
+  ventaja?: "gratis" | "fatiga";
+  nota?: string;
+  dificultad?: number;
+  soloDirecta?: true;
+};
 
 // Lo que puede traer una operación, una opción de Introgresión o un nivel de implante para
 // las tiradas. Las casillas llevan `alcance` (si no, no llegan a ninguna tirada).
@@ -100,7 +112,7 @@ export type EfectosTiradaAumento = {
   // Conectividad Callosa, que es su progresión: usuario, 2026-10-22).
   casillasOcultasCon?: string;
   // Blindaje que se paga al recibir un golpe (Densificar, Enjambre 3; A4b): casilla en
-  // "Bloquear daño" (blindaje.ts, casillaBlindajeReactivo).
+  // "Resistir daño" (blindaje.ts, casillaBlindajeReactivo).
   blindajeReactivo?: BlindajeReactivo;
 };
 
@@ -180,7 +192,9 @@ function inmunidadDeAmenaza(a: (typeof AMENAZAS)[number], inmunidades: Inmunidad
 
 function opcionesSinInmunidad(a: (typeof AMENAZAS)[number], efectos: EfectoConFuente[]): OpcionCondicion[] {
   const cuenta = amenazasQueCuenta(a);
-  const aplican = efectos.filter((e) => e.contra.some((c) => cuenta.includes(c)));
+  const aplican = efectos.filter((e) => (e.soloDirecta ? e.contra.includes(a.id) : e.contra.some((c) => cuenta.includes(c))));
+  // La dificultad, la de una fuente que la dé para esta amenaza (si varias, la más alta).
+  const dificultades = aplican.filter((e) => e.dificultad !== undefined && e.contra.includes(a.id)).map((e) => e.dificultad!);
   const partes = aplican.filter((e) => e.bono).map((e) => ({ fuente: e.fuente, valor: e.bono! }));
   const valor = partes.reduce((t, p) => t + p.valor, 0);
   const gratis = aplican.filter((e) => e.ventaja === "gratis").map((e) => e.fuente);
@@ -192,7 +206,14 @@ function opcionesSinInmunidad(a: (typeof AMENAZAS)[number], efectos: EfectoConFu
     ...gratis.map((f) => `${f}: ventaja`),
     ...pago.map((f) => (gratis.length ? `${f}: ventaja (no se paga, ya la da ${gratis.join(" y ")})` : `${f}: ventaja pagando 1 de fatiga`)),
   ];
-  const base: OpcionCondicion = { id: a.id, etiqueta: a.label, valor, partes, nota: lineas.join(" · ") };
+  const base: OpcionCondicion = {
+    id: a.id,
+    etiqueta: a.label,
+    valor,
+    partes,
+    nota: lineas.join(" · "),
+    ...(dificultades.length > 0 && { dificultad: Math.max(...dificultades) }),
+  };
   if (gratis.length) return [{ ...base, ventaja: true, fuenteVentaja: gratis.join(" y ") }];
   if (!pago.length) return [base];
   const pagando: OpcionCondicion = {

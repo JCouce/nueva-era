@@ -1,4 +1,6 @@
 import type { NivelModulo } from "./equipo";
+import type { MotorMetadata } from "../rules/motor";
+import type { EfectoAlRecibir } from "../rules/resistirDanio";
 
 export type Subsistema = {
   familia: "subsistema";
@@ -18,6 +20,31 @@ export type Subsistema = {
   celula?: { cargas: number; recarga: string; bateriaCoste: number };
   notaApilamiento?: string;
   niveles: NivelModulo[];
+};
+
+// Malla Plasmática, devolver el golpe (eq-24 del cuestionario, usuario 2026-11-13): «Si el
+// usuario es impactado por un golpe melee devuelve daño al objeto con el que es golpeado o al
+// sujeto en caso de ser un golpe desarmado, el daño es de plasma y es igual al nivel de
+// subsistema»; en el nivel 4, «además se causa los efectos de shock y llamarada (dificultad 8)».
+// Casilla en Resistir daño que solo avisa: la app no calcula nada sobre el atacante.
+// TODO(revisar): la prosa no dice si hace falta la Malla activa (el colchón sí lo dice); la
+// casilla sale con la pieza puesta, esté activa o no.
+function devolverGolpe(nivel: number): EfectoAlRecibir {
+  return {
+    tipo: "aviso",
+    id: "malla_devuelve",
+    etiqueta: "Golpe cuerpo a cuerpo",
+    aviso:
+      `Devuelves ${nivel} de plasma al objeto con el que te golpean (al atacante, si es desarmado)` +
+      (nivel >= 4 ? ", y Shock y Llamarada (8)." : "."),
+  };
+}
+
+const MALLA_DEVUELVE: MotorMetadata = {
+  tipo: "texto",
+  afecta: { modo: "objetivo_tercero", id: "ataque_melee" },
+  mecanismo: "eleccion_jugador",
+  estado: "construido",
 };
 
 export const SUBSISTEMAS: Subsistema[] = [
@@ -269,7 +296,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         coste: 5000,
         detalle: ["Absorción de 1 punto de daño físico o energético mientras esté activo."],
         // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: absorcion
-        // alimenta blindajeContra() (blindaje.ts), leído por "Bloquear daño".
+        // alimenta blindajeContra() (blindaje.ts), leído por "Resistir daño".
         absorcion: 1,
         modificadores: [],
         motor: [
@@ -376,6 +403,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         // comunicación de mesa. Sigilo y neutralizar camuflaje: S96 (ver `condiciones` y motor).
         modificadores: [],
         colchon: 10,
+        alRecibirDanio: [devolverGolpe(1)],
         // "Al activarse este subsistema el usuario recibe un penalizador de -8 al sigilo que solo
         // afecta a la percepción visual" (docs/fuente/equipamiento.md): la Malla no tiene tirada
         // propia donde colgar el aviso (se activa sin dado), así que va como casilla en las
@@ -401,17 +429,10 @@ export const SUBSISTEMAS: Subsistema[] = [
           // fusión, dificultad 6+nivel) va en la MISMA nota del toggle, no en
           // una condición aparte.
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          // Devuelve daño de plasma al atacante: tirada/daño de un TERCERO
-          // (quien golpea al portador). Revisado 2026-09-28 (pedido del
-          // usuario): docs/motor.md resuelve objetivo_tercero SIEMPRE como
-          // texto — con tirada de portador donde colgarlo, o sin ella. Este
-          // caso no modifica ninguna tirada del portador (nunca la tuvo), así
-          // que cae en la rama "no hace falta código, ya está en la
-          // descripción" — mismo criterio que Escudos/Lanzallamas/Soporte
-          // Vital (coste de acción, comunicación de mesa). Se cierra como
-          // `ad_hoc`, no `bloqueado`: no falta ningún mecanismo, solo no
-          // había una tirada de ataque donde colgar la nota, y no hacía falta.
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+          // Devuelve daño de plasma al atacante (un TERCERO: objetivo_tercero, siempre texto,
+          // docs/motor.md). eq-24 del cuestionario (usuario, 2026-11-13): casilla «Golpe cuerpo a
+          // cuerpo» en Resistir daño (`alRecibirDanio`); marcada, solo avisa de cuánto devuelves.
+          MALLA_DEVUELVE,
           // -8 al sigilo al activarse: casilla "Malla Plasmática activa" en Sigilo (S96).
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "construido" },
           // Neutraliza el Camuflaje Trifásico activo: la ficha no guarda si una ni otra están
@@ -432,10 +453,11 @@ export const SUBSISTEMAS: Subsistema[] = [
         ],
         modificadores: [],
         colchon: 12,
+        alRecibirDanio: [devolverGolpe(2)],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+          MALLA_DEVUELVE,
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "activar_camuflaje" }, mecanismo: "nota_fija", estado: "construido" },
           // ✅ Construido 2026-09-28: "acción sin dado" (tiradaDetonacionPulsoTermico(),
@@ -457,13 +479,14 @@ export const SUBSISTEMAS: Subsistema[] = [
         ],
         modificadores: [],
         colchon: 14,
+        alRecibirDanio: [devolverGolpe(3)],
         // Mismos 6 efectos que nivel 2 (solo cambian números: colchón,
         // dificultades de crítico, coste del sacrificio) — nada nuevo que
         // clasificar en este nivel. Todos construidos 2026-09-28, ver nivel 1.
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+          MALLA_DEVUELVE,
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "activar_camuflaje" }, mecanismo: "nota_fija", estado: "construido" },
           { tipo: "accion", afecta: { modo: "accion_existente", id: "detonacion_pulso_termico" }, mecanismo: "accion_equipo", estado: "construido" },
@@ -480,10 +503,11 @@ export const SUBSISTEMAS: Subsistema[] = [
         ],
         modificadores: [],
         colchon: 16,
+        alRecibirDanio: [devolverGolpe(4)],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+          MALLA_DEVUELVE,
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "activar_camuflaje" }, mecanismo: "nota_fija", estado: "construido" },
           { tipo: "accion", afecta: { modo: "accion_existente", id: "detonacion_pulso_termico" }, mecanismo: "accion_equipo", estado: "construido" },

@@ -387,14 +387,14 @@ export const CONDICION_MARCHA: CondicionTirada = {
 
 // Casilla "Tengo cobertura" de la esquiva, para cualquier ficha y cualquier cobertura (escudo
 // en alto, un muro...): +2 fijo, sin mirar el nivel (S86, decisión del usuario). Si el ataque
-// supera la defensa pero falla por la cobertura, golpea la cobertura (Bloquear daño).
+// supera la defensa pero falla por la cobertura, golpea la cobertura (Resistir daño).
 export const ID_TENGO_COBERTURA = "tengo_cobertura";
 const CONDICION_TENGO_COBERTURA: CondicionTirada = {
   id: ID_TENGO_COBERTURA,
   tipo: "toggle",
   etiqueta: "Tengo cobertura (+2)",
   valorActivo: 2,
-  nota: "Si el ataque supera tu defensa pero falla por la cobertura, golpea la cobertura: elígelo en Bloquear daño.",
+  nota: "Si el ataque supera tu defensa pero falla por la cobertura, golpea la cobertura: elígelo en Resistir daño.",
 };
 
 export const ACCIONES: Accion[] = [

@@ -1954,7 +1954,7 @@ export const DOTES: readonly DoteCatalogo[] = [
     "efectos": [
       {
         "tipo": "texto",
-        "lugar": "ficha",
+        "lugar": "bloquear_danio",
         "texto": "Caídas: la altura efectiva se reduce en 4 m para calcular el daño.",
         "condicion": null,
         "porque": "sin_regla",
@@ -1967,9 +1967,10 @@ export const DOTES: readonly DoteCatalogo[] = [
       {
         "tipo": "texto",
         "afecta": {
-          "modo": "ninguna"
+          "modo": "accion_existente",
+          "id": "bloquear_danio"
         },
-        "mecanismo": null,
+        "mecanismo": "nota_fija",
         "estado": "construido"
       }
     ]
@@ -2000,7 +2001,7 @@ export const DOTES: readonly DoteCatalogo[] = [
     "efectos": [
       {
         "tipo": "texto",
-        "lugar": "ficha",
+        "lugar": "bloquear_danio",
         "texto": "Caídas: la altura efectiva se reduce en 8 m para calcular el daño (no se suma con Saber Caer).",
         "condicion": null,
         "porque": "sin_regla",
@@ -2013,9 +2014,10 @@ export const DOTES: readonly DoteCatalogo[] = [
       {
         "tipo": "texto",
         "afecta": {
-          "modo": "ninguna"
+          "modo": "accion_existente",
+          "id": "bloquear_danio"
         },
-        "mecanismo": null,
+        "mecanismo": "nota_fija",
         "estado": "construido"
       }
     ]

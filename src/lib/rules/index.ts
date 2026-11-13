@@ -22,7 +22,8 @@
 //   estados.ts         fase 6b — umbrales de salud/fatiga (y sus estados derivados: Heridas, Fatiga, Inconsciencia) y estados de combate
 //   npc.ts             fase 6b — "Poder" del catálogo de NPCs (métrica del usuario, no del sistema)
 //   npcAleatorio.ts    generación de NPC al azar (botón del catálogo de NPCs)
-//   blindaje.ts        absorción de daño por blindaje (armadura, Escudo Deflector) y golpe al escudo
+//   blindaje.ts        absorción de daño por blindaje (armadura, Escudo Deflector), golpe al escudo y blindaje perdido
+//   resistirDanio.ts   «Resistir daño»: el golpe que entra, lo que dispara al recibirlo y aplicarlo a la vida
 //   movimiento.ts      Movilidad Aérea equipada convertida en su propia tirada ("Volar")
 //   vitalidad.ts       vida/fatiga como recurso persistente de la ficha (vidaActual/fatigaActual)
 //   danio.ts           desglose de la vida perdida por categoría: no letal, letal, grave (§7)
@@ -110,6 +111,7 @@ export * from "./ajusteVida";
 export * from "./origen";
 export * from "./aportes";
 export * from "./teAfecta";
+export * from "./resistirDanio";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

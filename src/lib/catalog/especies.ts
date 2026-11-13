@@ -20,6 +20,9 @@ import { ATRIBUTOS, type AtributoId } from "../rules/atributos";
 import type { HabilidadId } from "../rules/habilidades";
 import type { EspecialidadId } from "./especialidades";
 import type { MaterialPieza } from "./equipo";
+import type { EfectoAlRecibir } from "../rules/resistirDanio";
+import { TIPOS_FISICOS } from "./tiposDanio";
+import type { EfectoSalvacion } from "../rules/aumentosTiradas";
 
 // Peso/altura de referencia (§14.5): solo se enseña junto a los campos libres de
 // Identidad, no se valida. Peso = min-max + porFuerza × Fuerza con especie (M21).
@@ -69,6 +72,12 @@ export type Rasgo = {
   peajeNeurologico?: { dificultadBase: number }; // salvación de Fortaleza base + nivel empleado
   notaFarmacos?: string;
   accionSinDado?: AccionSinDadoRasgo;
+  // Lo que pasa al recibir un golpe (T2 del cuestionario): casillas y salvaciones de «Resistir
+  // daño». Lo resuelve efectosAlRecibir (rules/resistirDanio.ts).
+  alRecibirDanio?: EfectoAlRecibir[];
+  // Opciones del selector «Contra…» de las salvaciones (como las de los aumentos y el equipo):
+  // las recoge salvacionesDeEspecie (rules/especie.ts).
+  salvaciones?: EfectoSalvacion[];
   motor: MotorMetadata[];
 };
 
@@ -203,7 +212,7 @@ const tiradaFija = (id: string): DestinoTexto => ({ tipo: "tiradaId", id });
 // Fórmula de un derivado (movimiento, carga): se ve en Personaje → Estado, pero no
 // la lee ninguna acción (motor.md, "Derivados estáticos"), así que no tiene
 // mecanismo. suma_derivado no encaja: exige una acción fija que consulte el número
-// (como Bloquear daño con el blindaje), y el movimiento y la carga no los consulta
+// (como Resistir daño con el blindaje), y el movimiento y la carga no los consulta
 // ninguna. El día que los penalizadores de carga toquen tiradas, se reclasifica.
 const derivadoEstatico: MotorMetadata = {
   tipo: "numerico",
@@ -227,8 +236,6 @@ const textoBloqueado = (id: string, por: string): MotorMetadata => ({
   estado: "bloqueado",
   bloqueoPor: por,
 });
-
-const ESTADOS_DEFINIDOS = "estados bien definidos (sistema.md §14.10)";
 
 const ref = (pMin: number, pMax: number, porFuerza: number, aMin: number, aMax: number): ReferenciaFisica => ({
   pesoKg: { min: pMin, max: pMax, porFuerza },
@@ -340,10 +347,23 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         id: "falla_metabolica",
         label: "Falla metabólica",
         texto: "Al recibir daño de plasma o fuego, Fortaleza (dificultad 9) contra aturdimiento.",
-        // Mecanizarlo (tirada propia contra aturdimiento) depende de "estados bien
-        // definidos" (§14.10); hasta entonces, nota en la Salvación de Fortaleza.
-        textos: [{ en: [tiradaFija("salv_fortaleza")], texto: "Al recibir daño de plasma o fuego, dificultad 9 contra aturdimiento." }],
-        motor: [textoEn("salv_fortaleza")],
+        // es-02 del cuestionario (usuario, 2026-11-13): al pulsar «Recibir» en Resistir daño con
+        // fuego o plasma y daño que entra, panel con la salvación (como el peaje del Maolher).
+        // Recibir el daño es lo que la dispara: ya no hace falta la nota en la Salvación de
+        // Fortaleza.
+        alRecibirDanio: [
+          {
+            tipo: "salvacion",
+            id: "falla_metabolica",
+            etiqueta: "Falla metabólica",
+            tipos: ["plasma", "fuego"],
+            salvacion: "salv_fortaleza",
+            dificultad: 9,
+            contra: "aturdimiento",
+            fracaso: "Fracaso: quedas aturdido (díselo al máster, que te pone el estado).",
+          },
+        ],
+        motor: [accionDeEspecie("salv_falla_metabolica")],
       },
     ],
   },
@@ -377,12 +397,23 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         id: "hiperactividad",
         label: "Tensión ósea",
         texto: "Si recibe un ataque físico mientras se mueve, +1 al daño recibido por cada 4 niveles.",
-        // TODO(revisar): es daño RECIBIDO, así que se cuelga de Defensa (la tirada al
-        // ser atacado). El encargo de E4 decía "Defensa y ataque": no hay ataque propio
-        // al que le toque, y Bloquear daño (donde de verdad se cuenta el daño) es un
-        // modal sin nota de especie. Mecanizarlo sigue esperando a §14.10.
-        textos: [{ en: [tiradaFija("defensa")], texto: "Atacado físicamente mientras se mueve: +1 al daño recibido por cada 4 niveles." }],
-        motor: [textoEn("defensa")],
+        // es-03/es-04 del cuestionario (usuario, 2026-11-13): casilla en Resistir daño, solo con
+        // el rasgo; marcada, +1 por cada 4 puntos que entran tras el blindaje (si lo para todo,
+        // nada). La nota de Defensa se queda (es donde te atacan) y manda allí.
+        // TODO(revisar): «ataque físico» no lo define ninguna fuente (sistema.md, tiposDanio.ts):
+        // la casilla vale con todo tipo de daño salvo el mental.
+        textos: [{ en: [tiradaFija("defensa")], texto: "Atacado físicamente mientras te mueves: marca «¿Te atacaron mientras te movías?» en Resistir daño (+1 al daño que te entra por cada 4)." }],
+        alRecibirDanio: [
+          {
+            tipo: "danioExtra",
+            id: "tension_osea",
+            etiqueta: "¿Te atacaron mientras te movías?",
+            nota: "Ataque físico durante una acción de movimiento: +1 por cada 4 puntos de daño que te entran tras el blindaje.",
+            tipos: TIPOS_FISICOS,
+            cada: 4,
+          },
+        ],
+        motor: [textoEn("defensa"), casilla("bloquear_danio")],
       },
     ],
   },
@@ -465,10 +496,19 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         label: "Deslumbramiento",
         texto:
           "Explosión de plasma, destello intenso o PEM: ceguera (dificultad 9); otras cegueras similares, dificultad +3.",
-        // TODO(revisar): sin texto en ninguna tirada (E4). No hay salvación contra
-        // ceguera: §Ceguera de sistema-y-combate.md no dice qué atributo la resiste
-        // (mismo hueco que el visor de mejorasEstandar.ts, salv_ceguera_destello).
-        motor: [textoBloqueado("salv_ceguera_destello", ESTADOS_DEFINIDOS)],
+        // es-02 del cuestionario (usuario, 2026-11-13): en el selector «Contra…» de la Salvación
+        // de Fortaleza, «Ceguera por destello, plasma o PEM» abre con dificultad 9 y la ceguera
+        // normal recuerda el +3 a la dificultad.
+        salvaciones: [
+          { contra: ["ceguera_destello"], dificultad: 9, nota: "explosión de plasma, destello intenso o PEM: dificultad 9" },
+          {
+            contra: ["ceguera"],
+            soloDirecta: true,
+            nota: "si te ciega algo parecido (luz, plasma, PEM), +3 a la dificultad",
+          },
+        ],
+        // Opción del selector que cambia la dificultad, no el total: Resolución.
+        motor: [casillaResolucion("salv_fortaleza")],
       },
     ],
   },
@@ -686,7 +726,7 @@ export const ESPECIES: Especie[] = [
         textos: [{ en: [{ tipo: "desarmado" }], texto: "Daño letal.", soloEnCritico: true }],
         motor: [
           // Mismo mecanismo que el blindaje de una armadura: alimenta desgloseBlindaje,
-          // que lee Bloquear daño.
+          // que lee Resistir daño.
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
           // Crítico desarmado letal: cambia una regla del daño y se entrega como nota (mismo
           // criterio que `ignoraBlindaje` de las armas melee).

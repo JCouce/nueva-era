@@ -77,6 +77,7 @@ import {
   type MaterialTier,
   type OpcionesFabricar,
   type PoderPreparado,
+  type GolpeRecibido,
   especialidadesDeTirada,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
@@ -84,7 +85,7 @@ import { AccionModal } from "@/components/AccionModal";
 import { UsarModal } from "@/components/UsarModal";
 import { SacrificioRecursoModal } from "@/components/SacrificioRecursoModal";
 import { ReparaFabricaModal } from "./ReparaFabricaModal";
-import { BloquearDanioModal } from "./BloquearDanioModal";
+import { ResistirDanioModal, type ResultadoRecibir } from "./ResistirDanioModal";
 import { CabeceraPoder } from "./CabeceraPoder";
 import { SobrecargaPanel } from "./SobrecargaPanel";
 import { PeajePanel } from "./PeajePanel";
@@ -120,7 +121,8 @@ type Seccion = { origen: Origen; titulo: string; filas: FilaSeccion[]; aviso?: R
 
 // Favoritas (T-006) de las filas que no son una Accion: clave fija, con prefijo para que no
 // choque con ningún id de acción.
-const FAVORITA_BLOQUEAR_DANIO = "fija:bloquear_danio";
+// Id heredado de cuando se llamaba "Bloquear daño": va guardado en sheet.favoritas.
+const FAVORITA_RESISTIR_DANIO = "fija:bloquear_danio";
 const FAVORITA_REPARA_FABRICA = "fija:reparar_fabricar";
 const FAVORITA_TIRADA_LIBRE = "fija:tirada_libre";
 
@@ -479,20 +481,18 @@ function FilaTiradaLibre({ onAbrir, estrella }: { onAbrir: () => void; estrella?
   );
 }
 
-// "Bloquear daño" (Hallazgo #5, docs/tareas.md): calculador puro de blindaje,
-// sin dado — no necesita onXxx: a diferencia de Reparar/Fabricar, no muta la
-// ficha, solo lee sheet. Por eso no lleva ninguna prop de gating (siempre
-// visible, jugador y NPC).
-function FilaBloquearDanio({ onAbrir, estrella }: { onAbrir: () => void; estrella?: Estrella }) {
+// "Resistir daño" (antes "Bloquear daño"; T2 del cuestionario, 2026-11-13): la puerta del daño,
+// sin dado. Siempre visible, jugador y NPC: sin onRecibirDanio el modal solo da los números.
+function FilaResistirDanio({ onAbrir, estrella }: { onAbrir: () => void; estrella?: Estrella }) {
   return (
     <HudCard className="p-3">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <span className="block font-display text-base font-semibold uppercase leading-tight">
-            Bloquear daño
+            Resistir daño
           </span>
           <span className="mt-1 block font-mono text-[10px] uppercase text-muted">
-            Cuánto absorbe tu blindaje ahora mismo
+            El daño que te dice el máster: blindaje y lo que te entra
           </span>
         </div>
         <button
@@ -663,6 +663,7 @@ export function AccionesTab({
   onFabricar,
   onGastarRecurso,
   onDaniarEscudo,
+  onRecibirDanio,
   onAjustarFarmaco,
   onAjustarMunicionEspecial,
   onPagarFatiga,
@@ -712,10 +713,14 @@ export function AccionesTab({
   // en vivo, `sheet` es la foto congelada de un Combatiente, sin
   // characterId/npcId al que persistir el gasto).
   onGastarRecurso?: (instanciaId: string, delta: number) => void;
-  // Durabilidad que pierde el escudo cuando el golpe le da a él ("Bloquear daño", Murillo
+  // Durabilidad que pierde el escudo cuando el golpe le da a él ("Resistir daño", Murillo
   // 2026-10-23). Solo lo pasa CharacterSheet: sin él (NPC, combate en vivo) el modal da los
   // números y no resta nada.
   onDaniarEscudo?: (instanciaId: string, delta: number) => void;
+  // «Recibir» en Resistir daño (T2): aplica el golpe (vida y blindaje perdido) y dice cómo
+  // deshacerlo. CharacterSheet (ficha o foto del combate) y NpcAccionesPanel (vida del NPC en
+  // la cola). Sin él (editor de NPC), el modal solo da los números.
+  onRecibirDanio?: (golpe: GolpeRecibido) => Promise<ResultadoRecibir>;
   // Gasto de 1 dosis de sheet.farmacos al confirmar "Usar [fármaco]"
   // (docs/prompt-gasto-recursos.md, Fase 2) — mismo motivo de ausencia que
   // onGastarRecurso en NpcAccionesPanel.tsx.
@@ -728,7 +733,7 @@ export function AccionesTab({
   // Con `permiteTemporal` (Proeza) el exceso sobre la fatiga que se tiene pasa
   // a fatiga temporal (vitalidad.ts, pagarFatiga).
   onPagarFatiga?: (coste: number, permiteTemporal: boolean) => void;
-  // Devolver fatiga (Densificar desmarcado en "Bloquear daño", A4b). Ausente en el combate
+  // Devolver fatiga (Densificar desmarcado en "Resistir daño", A4b). Ausente en el combate
   // en vivo, como onPagarFatiga.
   onAjustarFatiga?: (delta: number) => void;
   // Daño de la sobrecarga psiónica, restado de la vida de la ficha.
@@ -773,7 +778,7 @@ export function AccionesTab({
       : undefined;
   const mods = ficha.modificadores;
   const [reparaFabricaAbierta, setReparaFabricaAbierta] = useState(false);
-  const [bloquearDanioAbierta, setBloquearDanioAbierta] = useState(false);
+  const [resistirDanioAbierta, setResistirDanioAbierta] = useState(false);
   const [modalDirecta, setModalDirecta] = useState<AccionDirecta | null>(null);
   // AccionDirecta con recursoInstanciaId (docs/tareas.md, 2026-09-28: "Detonar
   // pulso térmico") necesita el modal con contador, no el genérico "Usar" a
@@ -1463,13 +1468,13 @@ export function AccionesTab({
   const basicasConDado = conDado.filter(({ accion }) => aBasicas(accion));
   const arbolConDado = conDado.filter(({ accion }) => !aBasicas(accion));
 
-  const filaBloquearDanio: FilaSeccion = {
-    id: FAVORITA_BLOQUEAR_DANIO,
+  const filaResistirDanio: FilaSeccion = {
+    id: FAVORITA_RESISTIR_DANIO,
     nodo: (
-      <FilaBloquearDanio
-        key={FAVORITA_BLOQUEAR_DANIO}
-        onAbrir={() => setBloquearDanioAbierta(true)}
-        estrella={estrella(FAVORITA_BLOQUEAR_DANIO)}
+      <FilaResistirDanio
+        key={FAVORITA_RESISTIR_DANIO}
+        onAbrir={() => setResistirDanioAbierta(true)}
+        estrella={estrella(FAVORITA_RESISTIR_DANIO)}
       />
     ),
   };
@@ -1619,7 +1624,7 @@ export function AccionesTab({
 
   // Sin dado, agrupado por lo que hace.
   const directasPorGrupo: Record<GrupoSinDado, FilaSeccion[]> = {
-    Combate: [filaBloquearDanio, ...[...ataqueDirecta, ...defensaDirecta, ...dotesDirectas, ...directasDotesEnGrupos].map(filaUsar)],
+    Combate: [filaResistirDanio, ...[...ataqueDirecta, ...defensaDirecta, ...dotesDirectas, ...directasDotesEnGrupos].map(filaUsar)],
     "Activar y desactivar": [...subsistemasDirectas, ...ficha.accionesEspecie].map(filaUsar),
     Poderes: poderesSinTirada.map(({ poder, dote }) => filaPoder(poder, subDePoder(poder, dote))),
     "Curación y fármacos": farmacosDirectas.map(filaUsar),
@@ -1768,13 +1773,15 @@ export function AccionesTab({
           ))}
         </div>
 
-        {bloquearDanioAbierta && (
-          <BloquearDanioModal
+        {resistirDanioAbierta && (
+          <ResistirDanioModal
             ficha={ficha}
             onPagarFatiga={onPagarFatiga}
             onAjustarFatiga={onAjustarFatiga}
             onDaniarEscudo={onDaniarEscudo}
-            onCerrar={() => setBloquearDanioAbierta(false)}
+            onRecibirDanio={onRecibirDanio}
+            onLanzamiento={(l) => setHistorial((h) => [l, ...h].slice(0, 6))}
+            onCerrar={() => setResistirDanioAbierta(false)}
           />
         )}
 
