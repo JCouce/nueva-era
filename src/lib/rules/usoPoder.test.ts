@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { prepararPoder, usarPoder, efectosDelResultado, type SeleccionPoder } from "./usoPoder";
+import { prepararPoder, usarPoder, efectosDelResultado, estadosPropiosDeUso, type SeleccionPoder } from "./usoPoder";
 import { accionesDePsionica } from "./poderes";
 import { defaultSheet, type Sheet } from "./sheet";
 import type { ModificadorConFuente } from "./modificadores";
@@ -182,6 +182,47 @@ describe("efectosDelResultado", () => {
   test("otros grados o sin grado: nada", () => {
     assert.deepEqual(efectosDelResultado(p, "fracaso"), { vida: 0, avisos: [] });
     assert.deepEqual(efectosDelResultado(p, null), { vida: 0, avisos: [] });
+  });
+});
+
+describe("ps-06: Alerta pasiva exhausto", () => {
+  // Resonancia 1: fatiga máxima de la ficha por defecto; exhausto por debajo del 10 % (mínimo 2).
+  const conFatiga = (fatigaActual: number) => ficha({ psionica: { resonancia: 1 }, fatigaActual });
+
+  test("exhausto: inhabilitada, con el motivo, y no se puede usar", () => {
+    const p = preparar(conFatiga(1), "psi_resonancia_alerta_pasiva");
+    assert.equal(p.inhabilitado, "Exhausto: no funciona");
+    assert.equal(p.bloqueo, "Exhausto: no funciona");
+  });
+
+  test("con fatiga, funciona; la activa no tiene la regla", () => {
+    assert.equal(preparar(conFatiga(8), "psi_resonancia_alerta_pasiva").inhabilitado, null);
+    assert.equal(preparar(conFatiga(1), "psi_resonancia_alerta_activa").inhabilitado, null);
+  });
+
+  test("en combate cuenta la fatiga efectiva del combate (td-25)", () => {
+    const f = conFatiga(8);
+    const poder = accionesDePsionica(f, niv(f)).find((x) => x.accion.id === "psi_resonancia_alerta_pasiva")!;
+    const p = prepararPoder({ ficha: f, modificadores: [], niveles: niv(f), poder, seleccion: sel(), fatigaEfectiva: 0 })!;
+    assert.equal(p.inhabilitado, "Exhausto: no funciona");
+  });
+});
+
+describe("ps-07: estado del crítico del Sondeo", () => {
+  const f = ficha({ psionica: { resonancia: 3, hipercognicion: 2 } });
+
+  test("el servidor lo pone con la duración del poder y la fatiga del uso como número", () => {
+    const [e] = estadosPropiosDeUso(f, niv(f), "psi_hipercognicion_sondeo", { distancia: "mitad" }, "critico");
+    assert.deepEqual(e, { estadoId: "psi_sondeo_no_local", gradoId: "activo", rondasRestantes: 2, valor: 2 });
+  });
+
+  test("solo con crítico", () => {
+    assert.deepEqual(estadosPropiosDeUso(f, niv(f), "psi_hipercognicion_sondeo", {}, "exito"), []);
+  });
+
+  test("la pantalla sabe que hay estado que poner (sin número: lo calcula el servidor)", () => {
+    const p = preparar(f, "psi_hipercognicion_sondeo");
+    assert.deepEqual(efectosDelResultado(p, "critico").estadosPropios?.map((e) => [e.estadoId, e.valor]), [["psi_sondeo_no_local", undefined]]);
   });
 });
 

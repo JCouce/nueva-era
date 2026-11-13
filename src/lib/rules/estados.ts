@@ -450,6 +450,8 @@ export type EstadoActivoDescrito = EstadoActivo & {
   valorTexto?: string;
   // El botón con que el propio jugador se lo quita («Salir del sigilo»), si puede.
   quitarJugador?: string;
+  // El botón con que lo alarga (ps-07, «Prolongar un turno») y la fatiga que cuesta.
+  prolongar?: { etiqueta: string; coste: number };
 };
 
 // "3 rondas, en combate" / "hasta el final de la escena" (A5a).
@@ -459,8 +461,9 @@ export function textoDuracionActivable(d: DuracionEstado): string {
 }
 
 // «dificultad 12 · Mosquito», «14»: el número del estado (T4) con su etiqueta y su nota.
+// En uno prolongable, el número es la fatiga de prolongarlo: va en su botón, no aquí.
 function textoValorEstado(ea: EstadoActivo): string | undefined {
-  if (ea.valor === undefined) return ea.nota;
+  if (ea.valor === undefined || estadoPorId(ea.estadoId)?.prolongable) return ea.nota;
   const etiqueta = estadoPorId(ea.estadoId)?.valor?.etiqueta;
   return [`${etiqueta ? `${etiqueta} ` : ""}${ea.valor}`, ea.nota].filter(Boolean).join(" · ");
 }
@@ -486,6 +489,7 @@ export function describirEstadosActivos(activos: EstadoActivo[], inmunidades: re
       detalle: [...(estado?.valor ? [estado.resumen] : []), ...(grado?.detalle ?? [])],
       ...(valorTexto && { valorTexto }),
       ...(estado?.quitarJugador && { quitarJugador: estado.quitarJugador }),
+      ...(estado?.prolongable && ea.valor !== undefined && { prolongar: { etiqueta: estado.prolongable.etiqueta, coste: ea.valor } }),
       ...(esEstadoDeAumento(ea.estadoId) && { duracionActivable: textoDuracionActivable(duracionDe(ea)) }),
       ...(anula && { inmune: anula.fuente }),
     };

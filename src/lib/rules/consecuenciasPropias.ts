@@ -52,7 +52,7 @@ export function salvacionPropiaDe(t: Pick<Accion, "salvacionesPropias">, modoId:
 // número de un estado (Sigilo, Arma escondida, Disfrazado), con la opción que da su nota;
 // `usar`, la opción elegida en una acción sin dado que pone un estado (Activar camuflaje);
 // `atacar`, un ataque estando en Sigilo, que te lo baja. T6a: `sobreesfuerzo`, el fallo de la
-// salvación de sobreesfuerzo de un poder.
+// salvación de sobreesfuerzo de un poder. T6b: `prolongar`, un turno más de un estado propio.
 export type OperacionConsecuenciaPropia =
   | { tipo: "grado"; accionId: string; grado: Grado }
   | { tipo: "salvacion"; accionId: string; modoId: string | null; grado: Grado }
@@ -61,7 +61,9 @@ export type OperacionConsecuenciaPropia =
   | { tipo: "atacar"; accionId: string }
   // T6a (rules/sobreesfuerzo.ts): el fallo del sobreesfuerzo tras usar un poder, con el grado de
   // la salvación y la opción elegida (fracaso crítico del implante 4; si no, 0).
-  | { tipo: "sobreesfuerzo"; poderId: string; elecciones: Record<string, string>; grado: Grado; opcion: number };
+  | { tipo: "sobreesfuerzo"; poderId: string; elecciones: Record<string, string>; grado: Grado; opcion: number }
+  // T6b (rules/prolongarEstado.ts): alargar un estado propio pagando su fatiga (Sondeo No-Local).
+  | { tipo: "prolongar"; estadoId: string };
 
 export function consecuenciaPropia(
   t: Pick<Accion, "consecuenciasPropias" | "salvacionesPropias">,

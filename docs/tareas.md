@@ -1133,10 +1133,26 @@ Tandas, en orden:
     `TODO(revisar)` (S104): umbral de fatiga tras pagar, Aturdido sin duración = 1 turno, «más
     suave» casilla a casilla y daño antes que estados, dos fuentes a la vez, Proeza prolongada sin
     sobreesfuerzo, muerte cerebral solo avisada.
-  - [ ] **T6b poderes sueltos**: ps-05 (Auto-Proyección dobla/cuadruplica la traslación, 10 m × nivel),
+  - [x] **T6b poderes sueltos**: ps-05 (Auto-Proyección dobla/cuadruplica la traslación, 10 m × nivel),
     ps-06 (Alerta pasiva, Exhausto: atenuado «Exhausto: no funciona», no se tira), ps-07 (Sondeo
     No-Local con crítico: estado visible en la ficha con botón «Prolongar un turno» que cobra la
     fatiga), ps-08 (Proyección: contador de kilos, +1 letal por cada 200 kg sobre 100).
+    *(2026-11-13)* ps-05: Auto-proyección con `desplazamiento` 20/40 m × nivel poseído (opción ×2 / ×4)
+    y nota con los metros; fuera la nota «a criterio del máster». ps-06: `AccionPoder.noFuncionaConFatiga`
+    (Habilitador duro, MotorMetadata `gate_instalacion`), `noFuncionaPorFatiga` (poderes.ts) y
+    `PoderPreparado.inhabilitado`, que atenúan la fila y la hoja del árbol (`FilaPoder`, `HojaPoder`) y
+    entran en `bloqueo`. ps-07: estado de poder «Sondeo No-Local» (`ESTADO_SONDEO_ID`) que pone el
+    crítico (`EstadoDeResultado.valor: "fatiga"`: guarda la fatiga del uso en `EstadoActivo.valor`;
+    `estadosPropiosDeUso` la calcula con `costeFatiga`), con la duración del poder (el minuto de nivel 3
+    pasa a 10 turnos); `Estado.prolongable` y motor `rules/prolongarEstado.ts`; tipo `prolongar` de
+    `aplicarConsecuenciaPropiaAction` (cobro por la pestaña Vida, en combate de la foto, y el turno de
+    más por `cambiarEstadosDePersonajes`: dos entradas de registro con Deshacer). Chip con
+    «Prolongar un turno (−N fatiga)» y × «Terminar sondeo» en Acciones (`EstadoActivoDescrito.prolongar`,
+    `ChipEstado.onProlongar`). ps-08: `AccionPoder.danioPorPeso` (+1 por cada 200 kg completos sobre
+    100), el campo de peso de Proeza sirve a los dos (`pidePesoDelObjetivo`), `PoderResuelto.danioPorPeso`
+    y la línea «N kg → +X al daño». `prolongarEstado` y `noFuncionaPorFatiga` vetadas en la UI (ESLint).
+    Sin migración. Quedan `TODO(revisar)` (S105): «la misma fatiga» sin las casillas del uso ni las
+    cargas, prolongar no tira sobrecarga ni sobreesfuerzo, los 200 kg por tramos completos.
 - [ ] **T7 Shock (fase 6 de aportes)**: pl-01…04, eq-28, eq-29, fa-03, di-07.
 - [ ] **T8 Recursos**: au-01, au-02, au-03, au-07, au-08, td-12, td-19.
 - [ ] **T9 Catálogo y tienda**: td-01, td-03, td-04, di-24, eq-23, eq-34, eq-36, eq-37.

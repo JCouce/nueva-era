@@ -15,7 +15,7 @@ import type { CondicionTirada } from "./condiciones";
 import type { OrigenAporte } from "./origen";
 import { bajarUnPaso, etiquetaEconomia, mismaEconomia } from "./tipoAccion";
 import { DISCIPLINAS, PSIONICA, disciplinaPorId, type DisciplinaId } from "../catalog/psionica";
-import { umbralFatiga } from "./estados";
+import { umbralFatiga, type UmbralFatiga } from "./estados";
 import { recursoDe } from "./recursos";
 import { DOTES } from "../catalog/dotes";
 import type { AlcanceModificador } from "./modificadores";
@@ -89,6 +89,8 @@ export type PoderResuelto = {
   carga: ValorResuelto | null;
   datos: { etiqueta: string; valor: ValorResuelto }[];
   exceso: ExcesoResuelto | null;
+  // Proyección (ps-08): el peso escrito y lo que suma al daño (ya dentro de resolucion.danio).
+  danioPorPeso: { pesoKg: number | null; extra: number } | null;
   unidades: NonNullable<AccionPoder["unidades"]>;
   notas: Nota[];
   togglesPropios: BonoToggle[]; // ya filtrados por nivel poseído
@@ -111,7 +113,7 @@ export type ContextoPoder = {
   // Para lo que la acción deja en "tabla" (fatiga, alcance… de la fila del nivel
   // empleado) y las rebajas de tipo de acción por nivel poseído.
   disciplina?: Disciplina;
-  pesoKg?: number; // Proeza: peso del objetivo (excesoDeCarga)
+  pesoKg?: number; // peso del objetivo (Proeza: excesoDeCarga; Proyección: danioPorPeso)
   // Derivación Psiónica 2+ (Canal de Alta Resonancia): +10 % al alcance en metros, mínimo 2 m,
   // a la baja (bonoAlcanceDeFicha).
   bonoAlcance?: BonoAlcancePoder;
@@ -253,6 +255,8 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
   const objetivo = w.objetivo as Record<string, unknown> | null;
   if (objetivo && "area" in objetivo) objetivo.area = evaluar(objetivo.area, "objetivo.area");
   if ("danio" in res) res.danio = evaluar(res.danio, "resolucion.danio");
+  const porPeso = accion.danioPorPeso ? extraDeDanioPorPeso(accion.danioPorPeso, ctx.pesoKg) : null;
+  if (porPeso && typeof res.danio === "number") res.danio = res.danio + porPeso.extra;
   if ("dificultad" in res) res.dificultad = evaluar(res.dificultad, "resolucion.dificultad");
   for (const t of w.objetivoTira as Record<string, unknown>[]) {
     if ("dificultad" in t) t.dificultad = evaluar(t.dificultad, "objetivoTira.dificultad");
@@ -337,6 +341,7 @@ export function resolverPoder(accion: AccionPoder, ctx: ContextoPoder): PoderRes
     carga,
     datos,
     exceso,
+    danioPorPeso: porPeso,
     unidades: accion.unidades ?? {},
     notas: w.notas as Nota[],
     togglesPropios: accion.togglesPropios.filter((t) => enTramo(t, nivelPoseido)),
@@ -353,6 +358,33 @@ function multiplicarTiempo(tiempo: string, n: number, accionId: string): string 
   if (!m) throw new Error(`${accionId}: no sé multiplicar el tiempo "${tiempo}"`);
   const total = Number(m[1]) * n;
   return `${total} ${m[2]}${total === 1 ? "" : "s"}`;
+}
+
+// Sin peso (o hasta `hastaKg`), el daño base. El peso no bloquea: sin escribirlo, objeto ligero.
+function extraDeDanioPorPeso(
+  regla: NonNullable<AccionPoder["danioPorPeso"]>,
+  pesoKg: number | undefined,
+): { pesoKg: number | null; extra: number } {
+  if (pesoKg === undefined || !Number.isFinite(pesoKg) || pesoKg <= 0) return { pesoKg: null, extra: 0 };
+  return { pesoKg, extra: Math.floor(Math.max(0, pesoKg - regla.hastaKg) / regla.cadaKg) * regla.suma };
+}
+
+// El modal pide el peso del objetivo (Proeza por la carga, Proyección por el daño).
+export function pidePesoDelObjetivo(accion: Pick<AccionPoder, "excesoDeCarga" | "danioPorPeso">): boolean {
+  return !!accion.excesoDeCarga || !!accion.danioPorPeso;
+}
+
+// Habilitador por fatiga (ps-06): el motivo si el umbral de fatiga de ahora (contra la efectiva)
+// es el del poder o peor; null si funciona.
+export function noFuncionaPorFatiga(
+  accion: Pick<AccionPoder, "noFuncionaConFatiga">,
+  fatigaEfectiva: number,
+  fatigaMax: number,
+): string | null {
+  const regla = accion.noFuncionaConFatiga;
+  if (!regla) return null;
+  const orden: UmbralFatiga[] = ["normal", "fatigado", "exhausto"];
+  return orden.indexOf(umbralFatiga(fatigaEfectiva, fatigaMax)) >= orden.indexOf(regla.umbral) ? regla.motivo : null;
 }
 
 function resolverExceso(

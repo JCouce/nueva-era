@@ -1446,7 +1446,8 @@ al preparar su modelado:
     fatiga por cada 10% de peso extra", fatiga a mano; ~~área/duración de Contención ampliada:
     no se calcula, se mira en el manual~~ (2026-10-28: el área y la duración se calculan).
   - *Notas, no acciones*: Alertar por Vínculo, Confrontar (Contención), "requiere objetivo
-    anclado" (Trasladar/Proyección), Alerta pasiva exhausta (aviso, se puede tirar).
+    anclado" (Trasladar/Proyección). ~~Alerta pasiva exhausta (aviso, se puede tirar)~~ (ps-06,
+    2026-11-13: atenuada y sin tirar, §10.6b).
   - *Acciones propias*: "Duelo de Métrica" como reacción en fichas con Traslación, con toggle
     "soy 2 niveles superior". Auto-anclaje: siempre con tirada de Reflejos + Física.
   - *Hipercongnición*: sus tramos (distancia, tiempo transcurrido) son una opción que fija
@@ -1558,9 +1559,9 @@ al preparar su modelado:
     anclar a varios a la vez pasa de compleja a **estándar** (Murillo, respuestas del
     2026-09-29: "anclaje colectivo pasa a acción estándar (nv4)"; corregido 2026-10-19, T-004).
     Añadir un objetivo en otro turno sigue estándar (sin respuesta).
-  - Auto-proyección es una acción aparte de Proyección (sin tirada ni objetivo). Qué
-    velocidad dobla o cuadruplica (carrera o traslación de 10 × nivel) no lo dice la prosa:
-    **preguntado a Murillo** en `/preguntas` (Traslación); mientras, a criterio del máster.
+  - Auto-proyección es una acción aparte de Proyección (sin tirada ni objetivo). La velocidad
+    que dobla o cuadruplica es la de **traslación psiónica, 10 m × nivel** (ps-05, usuario
+    2026-11-13; §10.6b).
 - **Construcción de Traslación, tanda 2 (usuario, 2026-09-30):**
   - Auto-anclaje: "el gasto apropiado de fatiga" = la fila de la tabla del nivel empleado,
     con tu propio peso como carga (y sus casillas de carga). Reacción, dificultad 6.
@@ -1619,7 +1620,8 @@ al preparar su modelado:
 - **Construcción de Resonancia, tanda 2 (usuario, 2026-09-30):** Alerta pasiva, Alerta
   activa y Vínculo.
   - Alerta pasiva y activa son dos acciones (cambian alcance y unidades). Pasiva: tirada
-    normal, dificultad 6, sin fatiga, 20 m × nivel poseído; estar exhausto es solo una nota.
+    normal, dificultad 6, sin fatiga, 20 m × nivel poseído; ~~estar exhausto es solo una nota~~
+    exhausta no funciona (ps-06, §10.6b).
     Activa: estándar, 1 de fatiga, 1 km², dificultad 8.
   - **La Alerta activa tiene coste fijo** (estándar y 1) y no pasa por las rebajas de la
     tabla (Murillo: "mejorará en niveles altos, sin definir").
@@ -1703,7 +1705,7 @@ al preparar su modelado:
     (¼, ½ y todo el alcance de su fila; local 1 km²).
   - **Duración del Sondeo:** nivel turnos (errata de Murillo); **desde nivel 3, 1 minuto**
     (la línea de nivel 3 alarga la duración). Solo el crítico se prolonga, pagando la misma
-    fatiga cada turno a mano.
+    fatiga cada turno: desde el estado «Sondeo No-Local» de la ficha (ps-07, §10.6b).
   - El **daño propio que depende del resultado** lo resta la app al tirar: fracaso crítico
     del Sondeo (1 de daño mental por punto de fatiga) y de Precognición (1).
   - Precognición: estándar, 1, dificultad 8, burbuja de 10 m × nivel, nivel turnos. Los
@@ -1745,6 +1747,30 @@ al preparar su modelado:
   pendiente de Murillo — es la pregunta 16.
 - Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de
   alcance, etc.) se han mandado a Murillo.
+
+### 10.6b Poderes sueltos del cuestionario de cierre `[FIRME · cuestionario de cierre ps-05…08; usuario 2026-11-13]`
+
+Construidos en la tanda T6b del barrido. Supuestos tomados al construirlo: S105.
+
+- **Auto-Proyección (ps-05)**: dobla (acción estándar) o cuadruplica (compleja) la velocidad de
+  **traslación psiónica, 10 m × nivel del poder** (poseído). Nivel 3: 60 o 120 m. La app lo
+  calcula y lo enseña en la ventana del poder («Desplaz.» y la nota con los metros). El +1 a la
+  esquiva sigue siendo la casilla «Auto-proyección».
+- **Alerta pasiva de Resonancia (ps-06)**: «funciona siempre y cuando el psiónico no se
+  encuentre exhausto». Con el umbral Exhausto (contra la fatiga efectiva; en combate, la de la
+  foto) el poder sale **atenuado con «Exhausto: no funciona» y no se puede tirar** (Habilitador,
+  arbitraje duro: `AccionPoder.noFuncionaConFatiga`). La Alerta activa no lleva la regla.
+- **Sondeo No-Local con crítico (ps-07)**: la visión dura lo que el poder (nivel turnos; 10
+  turnos = 1 minuto desde nivel 3) y se puede prolongar **pagando la misma fatiga cada turno,
+  sin volver a tirar**. El crítico pone el estado propio **«Sondeo No-Local»**, que guarda esa
+  fatiga como su número y sale en la ficha (Acciones, junto a los estados que te quitas tú) con
+  el botón **«Prolongar un turno (−N fatiga)»** y la × «Terminar sondeo». Prolongar cobra la
+  fatiga (en combate, de la foto) y suma un turno; cobro y turno van al registro del máster con
+  su Deshacer. Sin fatiga suficiente no deja.
+- **Proyección (ps-08)**: daño nivel + 4 letal para objetos de hasta 100 kg; **+1 letal por cada
+  200 kg completos por encima de 100** (300 kg → +1; 500 → +2). El jugador escribe el peso en la
+  ventana del poder (el mismo campo que Proeza) y la app lo suma al daño. Lo que el poder le
+  hace a la armadura del rival y al objeto lanzado sigue como nota para el máster.
 
 ### 10.7 Sobreesfuerzo y quién puede tener poderes `[FIRME · cuestionario de cierre es-01, au-04, au-05, ps-01…04, td-31; usuario 2026-11-13]`
 
@@ -2960,6 +2986,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S102 | **Efectos de poder sobre uno mismo (P1 de psiónica, 2026-10-28)**, supuestos al construirlos (§10.6), revisados el mismo día con el usuario: (1) **Leer Mente**: "tiradas enfrentadas contra el objetivo" = ataques, defensas, las fijas que la fuente da como enfrentadas (Convencer / mentir, Discernir mentiras, Resistir distracción, Iniciativa distrayendo, Sigilo, Hurto) y, **decidido por el usuario**, los poderes y las acciones de dote con resolución `enfrentada` (por sus datos); el jugador la marca solo contra el leído. Los poderes de ataque (resolución `ataque`) no la llevan: no son `enfrentada` en el catálogo. (2) **Auto-proyección**: "+1 a tiradas de esquiva" = la fila Defensa / esquiva, no los bloqueos. (3) **Precognición**: en ataques de arma, defensas y, **decidido por el usuario**, los poderes de ataque (resolución `ataque`, daño al objetivo o `contraLaDefensa`, que hoy solo lleva Anclaje). Las acciones de dote de ataque (Arrollar) no: el encargo era de poderes. (4) **Estabilizado** (estado, **decidido por el usuario**): −N a cada penalizador de tirada de los estados apuntados al usarla, por separado y sin pasar de 0, detrás de la Neuroprótesis (entre las dos no pasan de 0); heridas y fatiga (nv4+) fuera enteras, también las que lleguen después: la prosa de "no afecta a los nuevos" es de los penalizadores de estado; los −N a atributos de un estado no se tocan (como la Neuroprótesis). Reusarla sustituye al anterior y vuelve a apuntar. (5) **Retrocognición**: el Aturdido automático del fracaso crítico es el grado «fracaso» del estado (sin salvación cuenta como fallarla, **usuario**), 1 turno. (6) **Contención**: el estado se pone en cualquier forma (el psiónico también está dentro de la ampliada); con duración sin número (nv6, nivel 1 personal) dura hasta quitarlo. Quieto y contra el ataque siguen como texto. | Construcción; (1), (3), (4) y (5) cerrados por el usuario el 2026-10-28. |
 | S103 | **Límites de las acciones de dote y contador de Sanar grave (2026-10-28)**, supuestos al construirlos (§9.3, §11.3): (1) **aliados** = los otros personajes en juego (aprobados, sin borrar), la lista más parecida a "compañeros" que hay (no existen grupos ni campañas; la cola del combate solo vale en combate). La ficha del jugador ve sus nombres. (2) **"por aliado"** se reinicia con la escena (Apoyo: «1 vez por aliado y escena», usuario). (3) **"por turno"** = por ronda del combate en curso (cada combatiente actúa una vez por ronda); fuera de combate no se cuenta. (4) Lo gastado vive en `sheet.usosEscena` como contador (`<clave>#<n>`) y el tope de la lista sube de 20 a 40 entradas (`MAX_USOS_ESCENA`, `usosEscena.ts`): sin migración, porque la lectura sigue siendo tolerante. (5) **Sanar grave**: «5 turnos seguidos» no se comprueba; el contador va por escena y se reinicia a mano. | Construcción, sin preguntar; revisables. |
 | S104 | **Sobreesfuerzo (T6a, 2026-11-13)**, supuestos al construirlo (§10.7), todos `TODO(revisar)`: (1) **«fatigado» es el umbral tras pagar el poder** (el que ve el servidor al aplicar el fallo): un gasto que te deja fatigado ya lo dispara; la prosa dice «estando fatigado» sin aclarar si antes o después. (2) **Aturdido sin duración** («queda aturdido», «causa aturdimiento») = 1 turno; el fracaso crítico exhausto que solo cambia el daño (Arianyi y Maestría, implante 3) conserva el Aturdido. (3) **Más suave** casilla a casilla, daño antes que estados (con el implante 1 exhausto, «1 grave» frente a «1 letal y Aturdido» gana Maestría). (4) **Dos fuentes** a la vez (Maolher con implante): vale la que salte con más dificultad. (5) **Prolongar Proeza** no vuelve a tirar sobreesfuerzo (solo el uso). (6) **Muerte cerebral** (implante 1 y 2, exhausto, fracaso crítico): la app la avisa, no la aplica. (7) El **NPC del máster** (modo libre) no mira quién puede tener poderes. | Construcción de T6a; formas de es-01, au-04, au-05, ps-01…04 decididas por el usuario. |
+| S105 | **Poderes sueltos (T6b, 2026-11-13)**, supuestos al construirlos (§10.6b), `TODO(revisar)`: (1) **«La misma fatiga» del Sondeo** = la del uso con lo que el servidor sabe (tramo, descuentos por nivel y los Supresores puestos); las casillas que se marcaron al usarlo (Xovromium) y lo pagado con cargas de Derivación no cuentan al prolongar. (2) **Prolongar el Sondeo** cobra contra la fatiga efectiva; si cruza a exhausto, avisa de la sobrecarga (la salvación, a mano) y no vuelve a saltar el sobreesfuerzo (como prolongar Proeza, S104). (3) Fuera de combate las rondas no corren: el estado sigue hasta quitarlo y prolongar solo cobra. (4) **Proyección**: «por cada 200 kg adicionales» se cuenta por tramos completos (299 kg sobre 100 no suma); sin peso escrito, objeto de hasta 100 kg. (5) **Alerta pasiva**: exhausto es el umbral de la fatiga efectiva (la temporal de Proeza cuenta), como la sobrecarga. | Construcción de T6b; formas de ps-05…08 decididas por el usuario. |
 
 ## Conflictos detectados
 

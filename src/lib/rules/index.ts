@@ -26,6 +26,7 @@
 //   resistirDanio.ts   «Resistir daño»: el golpe que entra, lo que dispara al recibirlo y aplicarlo a la vida
 //   efectosArma.ts     efectos de arma sobre el objetivo (salvación, estado, grados): el aviso del resultado (T3a)
 //   consecuenciasPropias.ts  lo que una acción le hace a quien tira: por su grado o por una salvación propia (T3c)
+//   prolongarEstado.ts       alargar un estado propio pagando la fatiga que guarda (Sondeo No-Local, ps-07)
 //   sobreesfuerzo.ts   el sobreesfuerzo psiónico: fuentes, cuándo salta, tabla y lo que retocan las dotes (T6a)
 //   retrocesoEntropico.ts    retroceso entrópico del Kerzul: la salvación propia de sus golpes Estándar y Compleja (T3c)
 //   movimiento.ts      Movilidad Aérea equipada convertida en su propia tirada ("Volar")
@@ -120,6 +121,7 @@ export * from "./resistirDanio";
 export * from "./efectosArma";
 export * from "./consecuenciasPropias";
 export * from "./sobreesfuerzo";
+export * from "./prolongarEstado";
 export * from "./retrocesoEntropico";
 export * from "./sigilo";
 export * from "./textosDeTirada";

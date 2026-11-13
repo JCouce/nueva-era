@@ -26,6 +26,8 @@ import {
   bonoAlcanceDeFicha,
   maxPuntosConCargas,
   pagoConCargas,
+  pidePesoDelObjetivo,
+  noFuncionaPorFatiga,
 } from "./poderes";
 import { condicionesActivas } from "./equipo";
 import { defaultSheet, parseSheet, type Sheet } from "./sheet";
@@ -468,6 +470,32 @@ describe("Traslación", () => {
     assert.equal(tiradaDePoder(acc("auto_proyeccion"), res("auto_proyeccion", 1)), null);
     assert.equal(res("auto_proyeccion", 1, { velocidad: "cuadruple" }).economia, "compleja");
     assert.equal(res("auto_proyeccion", 1).fatiga, 1);
+  });
+
+  test("Auto-proyección (ps-05): traslación 10 m × nivel, ×2 o ×4 (nivel 3: 60 y 120 m)", () => {
+    assert.equal(res("auto_proyeccion", 3).desplazamiento, 60);
+    assert.equal(res("auto_proyeccion", 3, { velocidad: "cuadruple" }).desplazamiento, 120);
+    assert.equal(res("auto_proyeccion", 1).desplazamiento, 20);
+    assert.ok(res("auto_proyeccion", 3).notas.some((n) => n.texto.includes("60 m este turno")));
+  });
+
+  test("Proyección (ps-08): +1 letal por cada 200 kg completos sobre 100", () => {
+    const danio = (pesoKg?: number) => {
+      const p = resolverPoder(acc("proyeccion"), { nivelPoseido: 3, disciplina: disciplinaPorId("traslacion"), pesoKg });
+      return p?.resolucion.tipo === "ataque" ? p.resolucion.danio : null;
+    };
+    assert.equal(danio(), 7);
+    assert.equal(danio(100), 7);
+    assert.equal(danio(299), 7);
+    assert.equal(danio(300), 8);
+    assert.equal(danio(699), 9);
+    assert.equal(danio(700), 10);
+    const p = resolverPoder(acc("proyeccion"), { nivelPoseido: 3, disciplina: disciplinaPorId("traslacion"), pesoKg: 500 })!;
+    assert.deepEqual(p.danioPorPeso, { pesoKg: 500, extra: 2 });
+    assert.equal(tiradaDePoder(acc("proyeccion"), p)!.ataque?.modos[0].danio, 9);
+    assert.equal(res("anclaje", 3).danioPorPeso, null);
+    assert.equal(pidePesoDelObjetivo(acc("proyeccion")), true);
+    assert.equal(pidePesoDelObjetivo(acc("anclaje")), false);
   });
 });
 
@@ -1246,9 +1274,17 @@ describe("Hipercognición", () => {
     assert.equal(resolverH("sondeo", 5).economia, "simple");
   });
 
-  test("Sondeo: dura nivel turnos; desde el 3, 1 minuto", () => {
+  // T6b: el minuto pasa a número (10 turnos) para que el estado del crítico corra en combate.
+  test("Sondeo: dura nivel turnos; desde el 3, 1 minuto (10 turnos)", () => {
     assert.equal(resolverH("sondeo", 2).duracion, 2);
-    assert.deepEqual(resolverH("sondeo", 3).duracion, { manual: "1 minuto (10 turnos)" });
+    assert.equal(resolverH("sondeo", 3).duracion, 10);
+  });
+
+  test("Sondeo (ps-07): el crítico pone el estado propio con la duración del poder y su fatiga", () => {
+    const estado = (n: number, distancia?: string) => resolverH("sondeo", n, distancia ? { distancia } : {}).resultados.critico!.estados;
+    assert.deepEqual(estado(2), [{ estado: "psi_sondeo_no_local", duracion: 2, sobre: "propio", valor: "fatiga" }]);
+    assert.equal(estado(3, "maximo")[0].duracion, 10);
+    assert.deepEqual(resolverH("sondeo", 2).resultados.exito!.estados, []);
   });
 
   test("Sondeo: el fracaso crítico resta 1 de daño mental por punto de fatiga", () => {
@@ -1405,6 +1441,15 @@ describe("Derivación Psiónica 2+: Canal de Alta Resonancia", () => {
   });
   const alerta = disciplinaPorId("resonancia").acciones.find((a) => a.id === "psi_resonancia_alerta_pasiva")!;
   const resonancia = disciplinaPorId("resonancia");
+
+  test("ps-06: exhausta no funciona (umbral exhausto contra la fatiga efectiva); la activa, sí", () => {
+    const activa = resonancia.acciones.find((a) => a.id === "psi_resonancia_alerta_activa")!;
+    assert.equal(noFuncionaPorFatiga(alerta, 10, 10), null);
+    assert.equal(noFuncionaPorFatiga(alerta, 2, 10), null); // fatigado
+    assert.equal(noFuncionaPorFatiga(alerta, 1, 10), "Exhausto: no funciona");
+    assert.equal(noFuncionaPorFatiga(alerta, 0, 10), "Exhausto: no funciona");
+    assert.equal(noFuncionaPorFatiga(activa, 0, 10), null);
+  });
 
   test("solo desde el nivel 2", () => {
     assert.equal(bonoAlcanceDeFicha(con(1)), null);

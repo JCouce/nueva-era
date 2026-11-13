@@ -14,6 +14,7 @@ import { PUNTOS_PSIONICA_POR_LETRA } from "./prioridad";
 import { costeNivelDisciplina, type AjusteCoste } from "./progresion";
 import { bonoDisciplina, type ModificadorConFuente } from "./modificadores";
 import { DISCIPLINAS, disciplinaPorId, type DisciplinaId } from "../catalog/psionica";
+import type { UmbralFatiga } from "./estados";
 
 // ── Forma de los datos ─────────────────────────────────────────────
 
@@ -69,7 +70,9 @@ export type TiradaObjetivo = { que: string; dificultad?: Valor; grados?: Partial
 // `escena`: dura hasta el final de la escena (la "hora" o los "30 minutos" de la prosa; una
 // hora = una escena, usuario 2026-10-28) y `duracion` no cuenta. `apuntaEstados`: el estado
 // guarda qué otros estados tenía el psiónico al ponérselo (EstadoActivo.cubre: Estabilizado
-// solo reduce esos, no los que lleguen después).
+// solo reduce esos, no los que lleguen después). `valor: "fatiga"`: el estado guarda como su
+// número (EstadoActivo.valor) la fatiga que costó el uso: lo que se paga por prolongarlo
+// (Estado.prolongable; el Sondeo No-Local con crítico, ps-07).
 export type EstadoDeResultado = {
   estado: string;
   grado?: string;
@@ -77,6 +80,7 @@ export type EstadoDeResultado = {
   sobre: "objetivo" | "propio";
   escena?: true;
   apuntaEstados?: true;
+  valor?: "fatiga";
 };
 
 export type ResultadoPoder = {
@@ -178,6 +182,12 @@ export type AccionPoder = {
     limitePorcentaje: number;
     danioAlLimite: { valor: number; categoria: string };
   };
+  // Habilitador (tipo 5, arbitraje duro): con ese umbral de fatiga o peor el poder no funciona;
+  // sale atenuado con `motivo` y no se puede usar (Alerta pasiva exhausto, ps-06).
+  noFuncionaConFatiga?: { umbral: Exclude<UmbralFatiga, "normal">; motivo: string };
+  // El daño sube con el peso del objetivo que escribe el jugador: +`suma` por cada `cadaKg`
+  // completos por encima de `hastaKg` (Proyección: +1 letal por cada 200 kg sobre 100, ps-08).
+  danioPorPeso?: { hastaKg: number; cadaKg: number; suma: number };
   // Datos del poder que se enseñan tal cual en su ficha (Contención: absorción,
   // −Agilidad…) y que el jugador aplica a mano.
   datos?: { etiqueta: string; valor: Valor }[];

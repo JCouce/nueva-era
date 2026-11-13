@@ -147,6 +147,7 @@ import {
   accesoPsionicoDeFicha,
   type AccesoPsionico,
   falloDeSobreesfuerzo,
+  prolongarEstado,
   type ConsecuenciaPropia,
   type VitalidadActual,
   estadosActivosDe,
@@ -917,7 +918,7 @@ const consecuenciaPropiaSchema = z.discriminatedUnion("tipo", [
     elecciones: z.record(z.string().max(40), z.string().max(40)),
     grado: z.enum(GRADOS),
     opcion: z.number().int().min(0).max(5),
-  }),
+  }),  z.object({ tipo: z.literal("prolongar"), estadoId: z.string().min(1).max(60) }),
 ]);
 
 export async function aplicarConsecuenciaPropiaAction(characterId: string, entrada: unknown): Promise<SaveResult> {
@@ -927,13 +928,36 @@ export async function aplicarConsecuenciaPropiaAction(characterId: string, entra
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   const mesa = await mesaDeFicha(characterId);
-  if (op.tipo === "sobreesfuerzo") {
-    // El umbral de fatiga que cuenta es el de ahora, ya pagado el poder: en combate, el de la foto.
+  // La ficha con la vida y la fatiga de ahora: en combate, las de la foto.
+  const fichaEnJuego = async () => {
     const foto = await fotoEnJuego(characterId);
     const vitalidad: VitalidadActual = foto
       ? { origen: "combate", pgActual: foto.pgActual, pgMax: foto.pgMax, fatigaActual: foto.fatigaActual, fatigaMax: foto.fatigaMax }
       : VITALIDAD_DE_FICHA;
-    const enJuego = resolverFicha(ctx.sheet, { estados: ctx.estados, vitalidad, aprobada: ctx.aprobada, mesa });
+    return { foto, ficha: resolverFicha(ctx.sheet, { estados: ctx.estados, vitalidad, aprobada: ctx.aprobada, mesa }) };
+  };
+  if (op.tipo === "prolongar") {
+    // Primero el cobro (pestaña Vida: en combate, de la foto) y luego el turno de más; cada uno
+    // con su entrada en el registro, que el máster puede deshacer.
+    const { foto, ficha: enJuego } = await fichaEnJuego();
+    const max = foto?.fatigaMax ?? enJuego.salud.fatiga;
+    const p = prolongarEstado(ctx.estados, op.estadoId, { efectiva: enJuego.fatigaEnJuego.efectiva, max });
+    if (!p.ok) return { ok: false, error: p.error };
+    const autoria = { userId: ctx.userId, motivo: `${p.fuente}: prolongar un turno, desde la ficha` };
+    if (p.coste > 0) {
+      const cobro = await ajustarVidaDePersonajes([characterId], "fatiga", -p.coste, undefined, autoria);
+      if (!cobro.ok) return { ok: false, error: cobro.error };
+    }
+    const hecho = await cambiarEstadosDePersonajes([characterId], { tipo: "poner", estado: p.estado }, autoria);
+    if (!hecho) return { ok: false, error: "Personaje no encontrado" };
+    const fila = await prisma.character.findUnique({ where: { id: characterId }, select: { stats: true, estados: true } });
+    const sheet = fila ? reconciliarVidaConEstados(parseSheet(fila.stats), leerEstados(fila.estados)) : ctx.sheet;
+    const turnos = p.estado.rondasRestantes === null ? "" : ` (quedan ${p.estado.rondasRestantes} turnos)`;
+    return { ok: true, sheet, mensaje: [`${p.fuente}: un turno más por ${p.coste} de fatiga${turnos}.`, ...p.avisos].join(" ") };
+  }
+  if (op.tipo === "sobreesfuerzo") {
+    // El umbral de fatiga que cuenta es el de ahora, ya pagado el poder: en combate, el de la foto.
+    const { ficha: enJuego } = await fichaEnJuego();
     const fallo = falloDeSobreesfuerzo(enJuego, enJuego.umbrales.fatiga, op);
     if (!fallo) return { ok: true, sheet: ctx.sheet, mensaje: "Ese uso no genera sobreesfuerzo: nada que aplicar." };
     const c = consecuenciaDeSobreesfuerzo(fallo.resultado, fallo.uso.nivel, fallo.uso.fuente);

@@ -33,6 +33,7 @@ import {
   estadosComoCondicionFatiga,
   enEspecialidadDePoder,
   maxPuntosConCargas,
+  noFuncionaPorFatiga,
   pagoConCargas,
   resolverPoder,
   tiradaDePoder,
@@ -98,6 +99,9 @@ export type PoderPreparado = {
   casillas: ToggleFatiga[];
   cargas: { derivacion: Derivacion; puntos: number; gastar: number; max: number } | null;
   bloqueo: string | null;
+  // El poder no funciona ahora (ps-06: Alerta pasiva exhausto): la fila sale atenuada con el
+  // motivo y no se puede usar. También va en `bloqueo`.
+  inhabilitado: string | null;
   fatigaActual: number; // efectiva (menos la temporal de Proeza)
   // Tirada lista para el modal, con los ajustes de las casillas ya puestos; null
   // si el poder no tira.
@@ -146,8 +150,10 @@ export function prepararPoder({
   const pago = sinCargas && derivacion ? pagoConCargas(sinCargas, derivacion, seleccion.puntosCargas) : null;
   const coste = pago?.coste ?? sinCargas;
   const fatigaActual = efectivaEnJuego ?? fatigaEfectiva(ficha);
+  const inhabilitado = noFuncionaPorFatiga(poder.accion, fatigaActual, salud(ficha, modificadores).fatiga);
   const bloqueo =
     poder.bloqueo ??
+    inhabilitado ??
     sinTextos.exceso?.bloqueo ??
     (coste ? bloqueoPorFatiga(poder.accion, coste.total, Math.max(0, fatigaActual)) : null);
 
@@ -195,6 +201,7 @@ export function prepararPoder({
           }
         : null,
     bloqueo,
+    inhabilitado,
     fatigaActual,
     tirada,
     enEspecialidad,
@@ -293,8 +300,15 @@ export function estadoAlUsar(poder: Pick<PoderDisponible, "accion">, resuelto: P
 // Aturdido del fracaso crítico de Retrocognición, el Estabilizado de la Estabilización), con su
 // grado de estado y su duración (turnos; `escena`, hasta el final de la escena; sin número,
 // hasta quitarlo). `actuales`: los estados que lleva el psiónico, que apunta el que los pide
-// (`apuntaEstados` → EstadoActivo.cubre, sin contarse a sí mismo).
-export function estadosDelResultado(resuelto: PoderResuelto, grado: Grado | null, actuales: readonly EstadoActivo[] = []): EstadoActivo[] {
+// (`apuntaEstados` → EstadoActivo.cubre, sin contarse a sí mismo). `fatiga`: lo que costó el uso,
+// para el estado que lo guarda como número (`valor: "fatiga"`, Sondeo No-Local); sin ella, no
+// lo lleva (la pantalla solo pregunta si hay estados; los pone el servidor, que sí la sabe).
+export function estadosDelResultado(
+  resuelto: PoderResuelto,
+  grado: Grado | null,
+  actuales: readonly EstadoActivo[] = [],
+  fatiga?: number,
+): EstadoActivo[] {
   const r = grado ? resuelto.resultados[grado] : undefined;
   return (r?.estados ?? []).flatMap((e) => {
     if (e.sobre !== "propio") return [];
@@ -302,11 +316,14 @@ export function estadosDelResultado(resuelto: PoderResuelto, grado: Grado | null
     const gradoId = e.grado ?? cat?.grados[0]?.id;
     if (!cat || !gradoId || !cat.grados.some((g) => g.id === gradoId)) return [];
     const d = e.duracion;
-    const activo = estadoActivoCon(
-      e.estado,
-      gradoId,
-      e.escena ? { tipo: "escena" } : typeof d === "number" && d > 0 ? { tipo: "rondas", rondas: d } : { tipo: "hastaQuitarlo" },
-    );
+    const activo: EstadoActivo = {
+      ...estadoActivoCon(
+        e.estado,
+        gradoId,
+        e.escena ? { tipo: "escena" } : typeof d === "number" && d > 0 ? { tipo: "rondas", rondas: d } : { tipo: "hastaQuitarlo" },
+      ),
+      ...(e.valor === "fatiga" && fatiga !== undefined && { valor: fatiga }),
+    };
     if (!e.apuntaEstados) return [activo];
     return [{ ...activo, cubre: [...new Set(actuales.map((a) => a.estadoId).filter((id) => id !== e.estado))] }];
   });
@@ -359,7 +376,16 @@ export function estadosPropiosDeUso(
     const e = estadoAlUsar(poder, resuelto);
     return e ? [e] : [];
   }
-  return estadosDelResultado(resuelto, grado, actuales);
+  return estadosDelResultado(resuelto, grado, actuales, fatigaDelUso(poder, resuelto, actuales));
+}
+
+// La fatiga del uso con lo que el servidor sabe: la del poder con sus descuentos y los estados
+// que la tocan (Supresores). TODO(revisar): las casillas que marcó al usarlo (Xovromium) y lo
+// pagado con cargas no las sabe; prolongar el Sondeo cobra sin ellas.
+function fatigaDelUso(poder: PoderDisponible, resuelto: PoderResuelto, actuales: readonly EstadoActivo[]): number | undefined {
+  if (typeof resuelto.fatiga !== "number") return undefined;
+  const toggles = new Set(estadosComoCondicionFatiga(actuales));
+  return costeFatiga(poder.disciplina, poder.accion.id, resuelto, { externos: FUENTES_EXTERNAS_FATIGA, toggles }).total;
 }
 
 // El sobreesfuerzo de usar el poder (T6a): con su nivel empleado y el umbral de fatiga tras

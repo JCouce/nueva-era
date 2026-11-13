@@ -6,16 +6,19 @@ const FOCO =
 // Un estado activo en un chip: "Aturdido · Fracaso · 2r". Fondo tintado y borde del
 // color de aviso, nombre en tinta y negrita (se lee sobre cualquier superficie), grado y
 // duración en mono atenuado. Sin text-shadow: la utilidad `text-glitch` de globals.css
-// añade sombra doble y no se lee. Con `onQuitar`, una × de 44 px de área táctil.
+// añade sombra doble y no se lee. Con `onQuitar`, una × de 44 px de área táctil. Con
+// `onProlongar` (ps-07, Sondeo No-Local), el botón de alargarlo con lo que cuesta.
 // Mesa, cola del combate y ficha del jugador.
 export function ChipEstado({
   estado,
   onQuitar,
   quitarLabel,
+  onProlongar,
   deshabilitado = false,
 }: {
   estado: EstadoActivoDescrito;
   onQuitar?: () => void;
+  onProlongar?: () => void;
   quitarLabel?: string;
   deshabilitado?: boolean;
 }) {
@@ -40,7 +43,7 @@ export function ChipEstado({
           : estado.automatico
             ? "border-danger bg-danger/10"
             : "border-glitch bg-glitch/15"
-      } ${quitable ? "pl-2" : "px-2"}`}
+      } ${quitable ? "pl-2" : "px-2"} ${onProlongar && estado.prolongar ? "flex-wrap py-1" : ""}`}
     >
       <b className={`truncate font-bold ${estado.inmune ? "line-through decoration-info" : ""}`}>{estado.nombre}</b>
       {/* T4: el número que guarda (Sigilo por sentido, «dificultad 12 · Mosquito»). */}
@@ -51,6 +54,16 @@ export function ChipEstado({
         >
           · {extra}
         </span>
+      )}
+      {onProlongar && estado.prolongar && (
+        <button
+          type="button"
+          onClick={onProlongar}
+          disabled={deshabilitado}
+          className={`min-h-9 shrink-0 border border-accent px-2 font-display text-[0.72rem] font-semibold uppercase tracking-wide text-accent active:scale-95 disabled:opacity-50 ${FOCO}`}
+        >
+          {estado.prolongar.etiqueta} (−{estado.prolongar.coste} fatiga)
+        </button>
       )}
       {quitable && (
         <button

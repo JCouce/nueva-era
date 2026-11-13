@@ -2,6 +2,7 @@ import {
   HABILIDADES,
   etiquetaEconomia,
   opcionesDisponibles,
+  pidePesoDelObjetivo,
   textoValor,
   type AccionPoder,
   type CosteFatiga,
@@ -50,7 +51,7 @@ export function CabeceraPoder({
     max: number;
     onCambiar: (puntos: number) => void;
   };
-  // Proeza: peso del objetivo (excesoDeCarga).
+  // Peso del objetivo: Proeza (excesoDeCarga) y Proyección (danioPorPeso).
   pesoKg?: number;
   onPeso?: (kg: number | undefined) => void;
 }) {
@@ -166,7 +167,7 @@ export function CabeceraPoder({
         </div>
       )}
 
-      {accion.excesoDeCarga && onPeso && (
+      {pidePesoDelObjetivo(accion) && onPeso && (
         <div>
           <label className="flex items-center justify-between gap-2 font-mono text-[11px] uppercase text-muted">
             Peso del objetivo (kg)
@@ -184,6 +185,11 @@ export function CabeceraPoder({
             <p className="mt-1 font-mono text-[11px] text-foreground">
               {poder.exceso.porcentajeCarga} % de tu carga ({poder.exceso.cargaMax} kg) → +{poder.exceso.extra} de fatiga
               {poder.exceso.enLimite && <span className="text-danger"> · en el límite</span>}
+            </p>
+          )}
+          {poder.danioPorPeso && poder.danioPorPeso.extra > 0 && poder.resolucion.tipo === "ataque" && (
+            <p className="mt-1 font-mono text-[11px] text-foreground">
+              {poder.danioPorPeso.pesoKg} kg → +{poder.danioPorPeso.extra} al daño {poder.resolucion.categoria} (ya sumado)
             </p>
           )}
         </div>

@@ -593,14 +593,22 @@ const ALERTA_PASIVA: AccionPoder = {
   togglesPropios: [MAS_2_RESONANCIA_4(ALERTA_PASIVA_ID)],
   notas: [
     { texto: "Hace de tu alerta ordinaria: tírala cuando el máster pida percibir amenazas.", lugar: "tirada" },
-    { texto: "No funciona si estás exhausto (la app deja tirar: lo decide el máster).", lugar: "tirada" },
     ...NOTAS_ALERTA,
   ],
-  motor: motorDeAccion(ALERTA_PASIVA_ID, { propias: true, tercero: ["sigilo"] }),
+  // «Funciona siempre y cuando el psiónico no se encuentre exhausto» (ps-06, usuario 2026-11-13:
+  // atenuada y sin tirar).
+  noFuncionaConFatiga: { umbral: "exhausto", motivo: "Exhausto: no funciona" },
+  motor: motorDeAccion(ALERTA_PASIVA_ID, {
+    propias: true,
+    tercero: ["sigilo"],
+    extra: [{ tipo: "habilitador", afecta: { modo: "accion_existente", id: ALERTA_PASIVA_ID }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" }],
+  }),
 };
 
 const ALERTA_ACTIVA: AccionPoder = {
   ...ALERTA_PASIVA,
+  // Solo la pasiva deja de funcionar exhausto.
+  noFuncionaConFatiga: undefined,
   id: ALERTA_ACTIVA_ID,
   label: "Alerta activa",
   economia: "estandar",
@@ -1412,12 +1420,36 @@ const REBAJA_DIFICULTAD_HIPERCOGNICION: AccionPoder["ajustesPorNivelPoseido"] = 
   { desdeNivel: 6, sobre: "resolucion.dificultad", op: "suma", valor: -1 },
 ];
 
+// Crítico del Sondeo (ps-07, usuario 2026-11-13): la visión es un estado propio visible en la
+// ficha («Sondeo No-Local»), que dura lo que el poder y guarda la fatiga del uso; su botón
+// «Prolongar un turno» la vuelve a cobrar y suma un turno (prolongarEstado).
+export const ESTADO_SONDEO_ID = "psi_sondeo_no_local";
+const ESTADO_SONDEO: Estado = {
+  id: ESTADO_SONDEO_ID,
+  label: "Sondeo No-Local",
+  resumen:
+    "Visión remota del crítico del Sondeo No-Local: información perfecta y nítida (audio, visual, térmico) mientras dure, " +
+    "ignorando coberturas o interferencias ópticas de baja intensidad.",
+  quitarJugador: "Terminar sondeo",
+  prolongable: { etiqueta: "Prolongar un turno", turnos: 1 },
+  grados: [
+    {
+      id: "activo",
+      label: "Sondeo No-Local",
+      modificadores: [],
+      detalle: ["Para alargarla un turno, «Prolongar un turno»: pagas la misma fatiga que el sondeo, sin volver a tirar."],
+      duracionTurnos: null,
+    },
+  ],
+};
+
 // Fracaso crítico del Sondeo: 1 de daño mental por punto de fatiga empleado; cada
 // tramo pone el suyo.
 const resultadosSondeo = (fatiga: number): AccionPoder["resultados"] => ({
   critico: {
-    texto: "Información perfecta y nítida (audio, visual, térmico) mientras dure, ignorando coberturas o interferencias ópticas de baja intensidad. Puedes prolongarla pagando la misma fatiga cada turno, sin volver a tirar (a mano en Recursos)",
-    estados: [],
+    texto: "Información perfecta y nítida (audio, visual, térmico) mientras dure, ignorando coberturas o interferencias ópticas de baja intensidad. Se te pone «Sondeo No-Local»: desde ese estado puedes prolongarla pagando la misma fatiga cada turno, sin volver a tirar",
+    // La duración es la del poder (nivel turnos; 10 desde nivel 3: ajustesPorNivelPoseido).
+    estados: [{ estado: ESTADO_SONDEO_ID, duracion: { base: 0, porNivelPoseido: 1 }, sobre: "propio", valor: "fatiga" }],
   },
   exito: {
     texto: "Imagen general precisa (distribución de enemigos, accesos, elementos clave) mientras dure, sin poder prolongarla; con un leve desfase de segundos y parpadeos que pueden alterar el orden de lo que ves",
@@ -1450,7 +1482,7 @@ const tramoSondeo = (
   },
 });
 
-// Duración (errata de Murillo): nivel turnos; desde nivel 3, 1 minuto (usuario,
+// Duración (errata de Murillo): nivel turnos; desde nivel 3, 1 minuto = 10 turnos (usuario,
 // 2026-09-30: la línea de nivel 3 alarga la duración). Solo el crítico se prolonga.
 const SONDEO: AccionPoder = {
   ...SIN_EXTRAS,
@@ -1482,14 +1514,19 @@ const SONDEO: AccionPoder = {
   ],
   ajustesPorNivelPoseido: [
     ...REBAJA_DIFICULTAD_HIPERCOGNICION,
-    { desdeNivel: 3, sobre: "duracion", op: "sustituye", valor: { manual: "1 minuto (10 turnos)" } },
+    { desdeNivel: 3, sobre: "duracion", op: "sustituye", valor: 10 },
+    { desdeNivel: 3, sobre: "resultados.critico.estados.0.duracion", op: "sustituye", valor: 10 },
   ],
   resultados: resultadosSondeo(1),
   notas: [
     { texto: "Requiere concentración. Dificultad sugerida: el valor bajo del tramo (6-7, 8-9, 10-11, 12+); súbela si el máster dice más.", lugar: "tirada" },
     { texto: "La supresión cuántica activa puede dejar el objetivo bloqueado sin una brecha previa.", lugar: "tirada" },
   ],
-  motor: motorDeAccion(SONDEO_ID, { propias: true }),
+  motor: motorDeAccion(SONDEO_ID, {
+    propias: true,
+    // «Prolongar un turno» en el estado del crítico: cobra la fatiga del uso, sin tirar.
+    extra: [{ tipo: "coste", afecta: { modo: "accion_existente", id: SONDEO_ID }, mecanismo: "accion_sin_equipo", estado: "construido" }],
+  }),
 };
 
 const tramoRetro = (id: string, label: string, dificultad: number, economia: Economia, fatiga: number): Opcion => ({
@@ -1825,17 +1862,23 @@ const PROYECCION: AccionPoder = {
   notas: [
     { texto: "Requiere un objeto o criatura ya anclado; queda libre al final del trayecto.", lugar: "tirada" },
     { texto: "Puntería: −2 ya incluido en la tirada.", lugar: "tirada" },
-    { texto: "Daño para objetos de hasta 100 kg; +1 por cada 200 kg adicionales (a mano).", lugar: "danio" },
+    { texto: "Escribe el peso del objeto: por encima de 100 kg, +1 al daño letal por cada 200 kg completos (ya sumado).", lugar: "tirada" },
     { texto: "El objeto lanzado recibe el mismo daño que el blanco.", lugar: "danio" },
     { texto: "Si también hay daño por caída, se usa el mayor, sin sumarlos.", lugar: "danio" },
   ],
-  motor: motorDeAccion("psi_traslacion_proyeccion", { propias: true, tercero: ["defensa"] }),
+  // TODO(revisar) (S105): por tramos de 200 kg completos; sin peso escrito, hasta 100 kg.
+  danioPorPeso: { hastaKg: 100, cadaKg: 200, suma: 1 },
+  motor: motorDeAccion("psi_traslacion_proyeccion", {
+    propias: true,
+    tercero: ["defensa"],
+    // El peso que escribe el jugador sube el daño (ps-08): regla del daño, no del total.
+    extra: [{ tipo: "resolucion", afecta: { modo: "accion_existente", id: "psi_traslacion_proyeccion" }, mecanismo: "bono_tramo", estado: "construido" }],
+  }),
 };
 
-// "Doblando su velocidad": la prosa no dice cuál (carrera o traslación). Pregunta
-// a Murillo en /preguntas (Traslación); mientras, a criterio del máster.
-const VELOCIDAD_AMBIGUA = (factor: string) =>
-  `Te mueves al ${factor} de tu velocidad (la prosa no dice cuál: carrera o traslación de 10 × nivel; a criterio del máster).`;
+// "Doblando su velocidad" = la de traslación psiónica, 10 m × nivel de poder (ps-05, usuario
+// 2026-11-13): ×2 con acción estándar, ×4 con compleja. Nivel 3: 60 o 120 m.
+const TRASLACION_PSIONICA_M = 10;
 
 // Auto-proyección va aparte de Proyección: no hay tirada ni objetivo, así que no
 // cabe como forma de un ataque.
@@ -1848,7 +1891,8 @@ const AUTO_PROYECCION: AccionPoder = {
   fatiga: 1,
   alcance: null,
   objetivo: { tipo: "propio" },
-  desplazamiento: null,
+  desplazamiento: { base: 0, porNivelPoseido: 2 * TRASLACION_PSIONICA_M },
+  unidades: { desplazamiento: "m/turno" },
   resolucion: { tipo: "sin_dado" },
   objetivoTira: [],
   ejes: [
@@ -1857,17 +1901,20 @@ const AUTO_PROYECCION: AccionPoder = {
       label: "Velocidad",
       tipo: "opcion",
       opciones: [
-        { id: "doble", label: "×2 (estándar)", cambia: { notas: [{ texto: VELOCIDAD_AMBIGUA("doble"), lugar: "tirada" }] } },
+        { id: "doble", label: "×2 (estándar)", cambia: {} },
         {
           id: "cuadruple",
           label: "×4 (compleja)",
-          cambia: { economia: "compleja", notas: [{ texto: VELOCIDAD_AMBIGUA("cuádruple"), lugar: "tirada" }] },
+          cambia: { economia: "compleja", desplazamiento: { base: 0, porNivelPoseido: 4 * TRASLACION_PSIONICA_M } },
         },
       ],
     },
   ],
   resultados: {},
-  notas: [{ texto: "Por la inercia, +1 a tus esquivas hasta el inicio de tu siguiente turno: marca «Auto-proyección» en la esquiva.", lugar: "tirada" }],
+  notas: [
+    { texto: "Te proyectas a tu velocidad de traslación psiónica (10 m × nivel) multiplicada: {desplazamiento} m este turno.", lugar: "tirada" },
+    { texto: "Por la inercia, +1 a tus esquivas hasta el inicio de tu siguiente turno: marca «Auto-proyección» en la esquiva.", lugar: "tirada" },
+  ],
   // La esquiva es la fila "Defensa / esquiva"; los bloqueos del grupo Defensa no son esquivas.
   casillasEnTiradas: [
     { alcances: [tirada("defensa")], condicion: { id: "psi_auto_proyeccion", tipo: "toggle", etiqueta: "Auto-proyección (+1)", valorActivo: 1 } },
@@ -2196,6 +2243,7 @@ export function absorcionDeGradoContencion(gradoId: string): number | null {
 
 export const ESTADOS_DE_PODER: Estado[] = [
   ESTADO_ESTABILIZADO,
+  ESTADO_SONDEO,
   {
     id: ESTADO_CONTENCION_ID,
     label: "Contención",

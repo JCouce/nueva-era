@@ -74,6 +74,9 @@ export type Estado = {
   valor?: { etiqueta?: string; porSentido?: true };
   // Lo puede quitar el propio jugador desde su ficha, con este botón (los de ocultación).
   quitarJugador?: string;
+  // El jugador lo alarga `turnos` desde su ficha pagando de fatiga el número que guarda
+  // (EstadoActivo.valor): el Sondeo No-Local con crítico (ps-07, rules/prolongarEstado.ts).
+  prolongable?: { etiqueta: string; turnos: number };
   // Casillas que salen ya marcadas en las tiradas mientras dure (el camuflaje activo y la
   // cobertura de la esquiva, eq-26). Id de la CondicionTirada.
   marcaCasillas?: string[];

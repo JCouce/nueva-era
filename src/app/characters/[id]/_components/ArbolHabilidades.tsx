@@ -432,8 +432,10 @@ export function HojaPoder({
   const aplicado = APLICADOS.find((a) => a.id === montada.aplicado.id)!;
   const fatiga = preparado.coste ? preparado.coste.total : textoValor(p.fatiga);
   const datos = [etiquetaEconomia(p.economia), `${fatiga} fatiga`].join(" · ");
+  // Requisito roto o, ps-06, un poder que ahora no funciona (Alerta pasiva exhausto).
+  const bloqueo = poder.bloqueo ?? preparado.inhabilitado;
   return (
-    <div className={`${MARCO_HOJA} ${poder.bloqueo ? "border-dashed opacity-60" : ""}`}>
+    <div className={`${MARCO_HOJA} ${bloqueo ? "border-dashed opacity-60" : ""}`}>
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
           <span className="block font-display text-sm font-semibold uppercase leading-tight">{tirada.label}</span>
@@ -443,12 +445,12 @@ export function HojaPoder({
           <span className="mt-0.5 block font-mono text-[10px] text-muted">{datos}</span>
         </div>
         <Desglose total={montada.modificador} fuentes={montada.desglose} className="text-lg text-info" />
-        <button type="button" disabled={!!poder.bloqueo} onClick={() => onAbrir(poder, preparado.seleccion)} className={BOTON_TIRAR}>
+        <button type="button" disabled={!!bloqueo} onClick={() => onAbrir(poder, preparado.seleccion)} className={BOTON_TIRAR}>
           Usar
         </button>
         {estrella && <BotonEstrella estrella={estrella} />}
       </div>
-      {poder.bloqueo && <p className="font-mono text-[10px] leading-relaxed text-danger">{poder.bloqueo}</p>}
+      {bloqueo && <p className="font-mono text-[10px] leading-relaxed text-danger">{bloqueo}</p>}
     </div>
   );
 }

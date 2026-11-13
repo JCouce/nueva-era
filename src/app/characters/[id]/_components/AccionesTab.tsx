@@ -619,6 +619,8 @@ function FilaPoder({
   const nombreAplicado = montada ? APLICADOS.find((a) => a.id === montada.aplicado.id)! : null;
   const nombreHabilidad = tirada?.habilidad ? HABILIDADES.find((h) => h.id === tirada.habilidad)!.label : null;
   const danio = p.resolucion.tipo === "ataque" ? p.resolucion.danio : null;
+  // Requisito roto o, ps-06, un poder que ahora no funciona (atenuado, sin poder usarse).
+  const bloqueo = poder.bloqueo ?? preparado.inhabilitado;
   // Coste ya pasado por los descuentos por nivel (sin casillas marcadas).
   const fatiga = preparado.coste ? preparado.coste.total : textoValor(p.fatiga);
   const datos = [
@@ -629,7 +631,7 @@ function FilaPoder({
   ].filter(Boolean);
   return (
     <HudCard className="p-3">
-      <div className="flex items-center justify-between gap-3">
+      <div className={`flex items-center justify-between gap-3 ${preparado.inhabilitado ? "opacity-60" : ""}`}>
         <div className="min-w-0 flex-1">
           <span className="block font-display text-base font-semibold uppercase leading-tight">{poder.accion.label}</span>
           {montada && nombreAplicado && (
@@ -648,12 +650,12 @@ function FilaPoder({
             </span>
           )}
           <p className="mt-1 font-mono text-[11px] text-muted">{datos.join(" · ")}</p>
-          {poder.bloqueo && <p className="mt-1 font-mono text-[11px] text-danger">{poder.bloqueo}</p>}
+          {bloqueo && <p className="mt-1 font-mono text-[11px] text-danger">{bloqueo}</p>}
         </div>
         {montada && <span className="font-mono text-2xl tabular-nums text-info">{signo(montada.modificador)}</span>}
         <button
           type="button"
-          disabled={!!poder.bloqueo}
+          disabled={!!bloqueo}
           onClick={() => onAbrir(poder)}
           className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted disabled:active:scale-100"
         >
@@ -1829,7 +1831,8 @@ export function AccionesTab({
         </PanelFieldset>
       )}
 
-      {/* Los estados que te quitas tú (T4: «Salir del sigilo»…), con su número a mano. */}
+      {/* Los estados que te quitas tú (T4: «Salir del sigilo»…), con su número a mano, y los que
+          alargas tú (T6b: «Prolongar un turno» del Sondeo No-Local). */}
       {onEstadoDePoder && propiosQuitables.length > 0 && (
         <div className="flex flex-col gap-1.5">
           <div className="flex flex-wrap gap-1.5">
@@ -1840,6 +1843,11 @@ export function AccionesTab({
                 deshabilitado={soloLectura}
                 quitarLabel={e.quitarJugador}
                 onQuitar={() => onEstadoDePoder({ tipo: "quitar", estadoId: e.estadoId }, setAvisoPropio)}
+                onProlongar={
+                  e.prolongar && onConsecuenciaPropia
+                    ? () => onConsecuenciaPropia({ tipo: "prolongar", estadoId: e.estadoId }, setAvisoPropio)
+                    : undefined
+                }
               />
             ))}
           </div>
