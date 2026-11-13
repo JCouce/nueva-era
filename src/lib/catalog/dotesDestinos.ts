@@ -154,20 +154,12 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
 };
 
 // Bonos por opción de otra condición (`tramo` = "<condición>:<opción>") cuya condición
-// NO existe en la tirada destino: la dote pone su propia casilla de opción. La Sigilo de
-// la app no lleva los penalizadores por moverse oculto (−2/−4/−8, fuente/habilidades.md),
-// así que la casilla dice lo que la dote reduce y el penalizador sigue a mano.
-// TODO(revisar): si Sigilo gana la opción "moverse oculto", esto pasa a bono por tramo.
+// NO existe en la tirada destino: la dote pone su propia casilla de opción. Vacía desde T4
+// (do-01, usuario 2026-11-13): «moverse oculto» pasó a ser el selector «¿Te mueves?» de Sigilo
+// (SELECTORES_DE_TIRADA, abajo).
 export const OPCIONES_DE_TRAMO: Readonly<
   Record<string, { etiqueta: string; ninguna: string; opciones: Readonly<Record<string, string>> }>
-> = {
-  movimiento_oculto: {
-    // dotesEfectos.ts le añade cuánto: "… reduce 2", "… reduce hasta 4".
-    etiqueta: "Moviéndome oculto: reduce",
-    ninguna: "Sin moverte",
-    opciones: { mitad: "A mitad de velocidad", total: "A velocidad total", esprint: "Esprintando" },
-  },
-};
+> = {};
 
 // Selectores que ya trae la tirada (no los pone la dote, a diferencia de OPCIONES_DE_TRAMO):
 // un bono con `tramo` "<selector>:<opción>" va como bono por opción de ese selector, y con
@@ -175,6 +167,9 @@ export const OPCIONES_DE_TRAMO: Readonly<
 // (CONDICION_MARCHA, rules/acciones.ts; un test lo comprueba).
 export const SELECTORES_DE_TIRADA: Readonly<Record<string, { etiqueta: string; opciones: readonly string[] }>> = {
   marcha: { etiqueta: "Marcha", opciones: ["normal_mitad", "normal_total", "adversa_tercio", "adversa_mitad", "adversa_total"] },
+  // «¿Te mueves?» de Sigilo (CONDICION_MOVIMIENTO_OCULTO): las tres Movimiento Sigiloso reducen
+  // el penalizador de cada ritmo con un bono por opción, sin casilla (do-01).
+  movimiento_oculto: { etiqueta: "¿Te mueves?", opciones: ["quieto", "mitad", "total", "esprint"] },
 };
 
 // Excepciones por efecto ("<id de dote>#<índice en el borrador>"): su destino existe,

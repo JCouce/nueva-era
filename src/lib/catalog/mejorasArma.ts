@@ -289,19 +289,12 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
         rareza: "Poco Habitual",
         coste: 1000,
         detalle: ["Reduce a -2 (en vez del habitual) el penalizador de Sigilo en ataques sorpresivos."],
-        // Fija un penalizador a un valor concreto en vez de sumar un bono
-        // propio: no encaja como modificador simple de "+N".
         modificadores: [],
-        // Pregunta 25b resuelta (Murillo, 2026-09-23): afecta a la reacción
-        // de detección de los observadores (objetivo_tercero, SIEMPRE tipo
-        // "texto" per docs/motor.md), no a una tirada propia. Decisión de
-        // producto revisada 2026-09-24: sí se avisa, colgado de la propia
-        // tirada de disparo (notasDeMejoras() en combate.ts) — la decisión
-        // original de 2026-09-23 (no construirlo por sobrecargar la UI) se
-        // revierte a petición del usuario.
-        notaTirada: "Ataque sorpresivo con silenciador: -2 (no el habitual) a la Alerta Activa de quien te detecta.",
+        // Amortiguador (T4, rules/sigilo.ts): el disparo de esta arma te resta 2 del estado
+        // Sigilo en vez de 6. Lo resta la app sola (di-09); el aviso sale en la tirada del arma.
+        amortiguaRuido: 2,
         motor: [
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "suma_derivado", estado: "construido" },
         ],
       },
     ],

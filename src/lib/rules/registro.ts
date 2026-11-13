@@ -282,9 +282,9 @@ export type PlanEstados = {
   npcs: { id: string; estados: EstadoActivo[] }[];
 };
 
-// Mismo estado: mismo grado y misma clase de duración; las rondas pueden haber bajado.
+// Mismo estado: mismo grado, mismo valor (T4) y misma clase de duración; las rondas pueden haber bajado.
 function sigueIgual(actual: EstadoActivo, puesto: EstadoActivo): boolean {
-  if (actual.gradoId !== puesto.gradoId) return false;
+  if (actual.gradoId !== puesto.gradoId || actual.valor !== puesto.valor) return false;
   if (puesto.rondasRestantes !== null) {
     return actual.rondasRestantes !== null && actual.rondasRestantes <= puesto.rondasRestantes;
   }

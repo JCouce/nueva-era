@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import {
-  ESTADOS,
+  estadosDelPanel,
   MAX_RONDAS_ESTADO,
   estadoPorId,
   etiquetaDuracion,
@@ -61,8 +61,11 @@ export function PanelEstados({
   const [pendiente, startTransition] = useTransition();
 
   const q = normalizar(busqueda.trim());
-  const lista = ESTADOS.filter((e) => !q || normalizar(e.label).includes(q));
+  // Los que llevan puestos y no se ponen desde aquí (Sigilo…), al final y solo para quitarlos.
+  const delPanel = estadosDelPanel(objetivos.flatMap((o) => o.estados.filter((e) => !e.automatico).map((e) => e.estadoId)));
+  const lista = delPanel.map((x) => x.estado).filter((e) => !q || normalizar(e.label).includes(q));
   const estado = estadoId ? estadoPorId(estadoId) : null;
+  const soloQuitar = delPanel.some((x) => x.soloQuitar && x.estado.id === estadoId);
   const grado = estado?.grados.find((g) => g.id === gradoId) ?? estado?.grados[0] ?? null;
 
   const elegirEstado = (e: Estado) => {
@@ -155,7 +158,9 @@ export function PanelEstados({
     ? `Aplicar ${estado.label}${objetivos.length > 1 ? ` a ${objetivos.length}` : ""}`
     : "Aplicar";
 
-  const configuracion = estado && grado && (
+  const configuracion = estado && grado && soloQuitar ? (
+    <p className="border-l-2 border-accent py-1 pl-3 text-[0.95rem] leading-snug">{estado.resumen} Lo pone la ficha del jugador; aquí solo se quita.</p>
+  ) : estado && grado && (
     <>
       {estado.grados.length > 1 && (
         <Fila etiqueta="Grado">
@@ -287,9 +292,11 @@ export function PanelEstados({
                     Quitar a {listaLegible(conEste.map((o) => nombreCorto(o.nombre)))}
                   </Boton>
                 )}
-                <Boton variante="primario" onClick={aplicar} disabled={objetivos.length === 0 || pendiente}>
-                  {pendiente ? "Aplicando…" : textoAplicar}
-                </Boton>
+                {!soloQuitar && (
+                  <Boton variante="primario" onClick={aplicar} disabled={objetivos.length === 0 || pendiente}>
+                    {pendiente ? "Aplicando…" : textoAplicar}
+                  </Boton>
+                )}
               </div>
             </div>
           </div>
@@ -311,14 +318,16 @@ export function PanelEstados({
                   Quitar {estado.label} a {listaLegible(conEste.map((o) => nombreCorto(o.nombre)))}
                 </Boton>
               )}
-              <Boton
-                variante="primario"
-                onClick={aplicar}
-                disabled={objetivos.length === 0 || pendiente}
-                className="min-h-13 w-full text-lg"
-              >
-                {objetivos.length === 0 ? "Elige a quién arriba" : pendiente ? "Aplicando…" : textoAplicar}
-              </Boton>
+              {!soloQuitar && (
+                <Boton
+                  variante="primario"
+                  onClick={aplicar}
+                  disabled={objetivos.length === 0 || pendiente}
+                  className="min-h-13 w-full text-lg"
+                >
+                  {objetivos.length === 0 ? "Elige a quién arriba" : pendiente ? "Aplicando…" : textoAplicar}
+                </Boton>
+              )}
             </div>
           }
         >

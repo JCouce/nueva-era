@@ -20,6 +20,7 @@
 import type { Herramienta, Consumible } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
 import type { CondicionTirada } from "../rules/condiciones";
+import { ESTADO_DISFRAZADO_ID, TURNOS_DISFRAZ } from "./estados";
 
 // docs/motor.md — patrones compartidos por varios niveles de este archivo,
 // para no repetir el mismo array literal en cada uno.
@@ -273,8 +274,11 @@ export const DISFRAZ_HOLOGRAFICO: Herramienta = {
       ],
       modificadores: [],
       notaTirada:
-        "Activar es acción simple. El resultado de la tirada marca la dificultad para ser " +
-        "descubierto.",
+        "Activar es acción simple. Tu total queda como «Disfrazado»: la dificultad para " +
+        "descubrirte, durante 1 hora.",
+      // eq-33 (usuario, 2026-11-13): el total queda guardado como estado, 1 hora. Es parte de
+      // la propia acción (su resultado), no un aporte aparte: va en el MotorMetadata de la acción.
+      estadoAlTirar: { estadoId: ESTADO_DISFRAZADO_ID, turnos: TURNOS_DISFRAZ },
       motor: MOTOR_DISFRAZ,
     },
     {
@@ -289,8 +293,8 @@ export const DISFRAZ_HOLOGRAFICO: Herramienta = {
       ],
       modificadores: [],
       notaTirada:
-        "Activar es acción simple. El resultado de la tirada marca la dificultad para ser " +
-        "descubierto.",
+        "Activar es acción simple. Tu total queda como «Disfrazado»: la dificultad para " +
+        "descubrirte, durante 1 hora.",
       // "Mitiga penalizaciones por envergadura" (concepto que no existe en ningún
       // otro sitio del sistema) y "rediseño en 1 minuto" (tiempo, nadie lo tira):
       // texto informativo en `detalle`, decisión 2026-09-24 — mismo patrón que la VTF.

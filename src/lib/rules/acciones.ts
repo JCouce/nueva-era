@@ -25,6 +25,7 @@ import type { TipoDanio } from "../catalog/tiposDanio";
 import type { DanioExtra } from "./armasModificadas";
 import type { EfectoEnTirada } from "./efectosArma";
 import type { ConsecuenciaPropia, SalvacionPropia } from "./consecuenciasPropias";
+import type { EstadoAlTirar, EstadoAlUsar, SigiloAlAtacar } from "./sigilo";
 import type { Grado } from "./psionica";
 import { etiquetaEspecialidad, type EspecialidadId } from "../catalog/especialidades";
 
@@ -98,6 +99,11 @@ export type Accion = {
   // (retroceso entrópico del Kerzul).
   consecuenciasPropias?: Partial<Record<Grado, ConsecuenciaPropia>>;
   salvacionesPropias?: SalvacionPropia[];
+  // T4 (rules/sigilo.ts): el total de esta tirada queda como el número de un estado tuyo
+  // (Sigilo, Arma escondida, Disfrazado), y lo que te resta atacar con ella estando en Sigilo.
+  // Los aplica el servidor (aplicarConsecuenciaPropiaAction) con la ficha guardada.
+  estadoAlTirar?: EstadoAlTirar;
+  sigiloAlAtacar?: SigiloAlAtacar;
   // Habilidad que el jugador puede usar en su lugar con una casilla de la fila
   // (Levitar: esquivar con Física). Mismo patrón que `aplicadoSutil`, pero sobre
   // la habilidad; la especialidad, si la nombra, se resuelve sola (ver
@@ -333,6 +339,9 @@ export type AccionDirecta = {
   // Fatiga que se cobra al confirmar (visión del Arianyi, §14.9), por el mismo camino
   // que la de un poder (onPagarFatiga → pagarFatiga, vitalidad.ts).
   costeFatiga?: number;
+  // El estado que te pone según la opción elegida (Activar camuflaje: estático o dinámico; T4,
+  // rules/sigilo.ts). Lo aplica el servidor.
+  estadoAlUsar?: EstadoAlUsar;
 };
 
 // −1 acumulativo por cada atacante adicional en la ronda (sistema-y-combate.md).
@@ -418,6 +427,36 @@ const CONDICION_TENGO_COBERTURA: CondicionTirada = {
   nota: "Si el ataque supera tu defensa pero falla por la cobertura, golpea la cobertura: elígelo en Resistir daño.",
 };
 
+// Sigilo (fuente/habilidades.md, Sigilo › Esconderse; cuestionario do-01, usuario 2026-11-13):
+// moverse escondido penaliza la tirada (mitad −2, total −4, esprint −8) y esconderse siendo
+// observado, −6. Las dotes Movimiento Sigiloso reducen el del movimiento con bonos por opción
+// (SELECTORES_DE_TIRADA, catalog/dotesDestinos.ts, que repite los ids; un test lo comprueba).
+export const ID_SIGILO = "sigilo";
+export const ID_MOVIMIENTO_OCULTO = "movimiento_oculto";
+export const CONDICION_MOVIMIENTO_OCULTO: CondicionTirada = {
+  id: ID_MOVIMIENTO_OCULTO,
+  tipo: "opcion",
+  etiqueta: "¿Te mueves?",
+  porDefecto: "quieto",
+  opciones: [
+    { id: "quieto", etiqueta: "Quieto", valor: 0 },
+    { id: "mitad", etiqueta: "A mitad de velocidad", valor: -2 },
+    { id: "total", etiqueta: "A velocidad total", valor: -4 },
+    { id: "esprint", etiqueta: "Esprintando", valor: -8 },
+  ],
+};
+const CONDICION_ESCONDERSE_OBSERVADO: CondicionTirada = {
+  id: "escondes_observado",
+  tipo: "toggle",
+  etiqueta: "Te escondes siendo observado",
+  valorActivo: -6,
+  nota: "El −6 vale contra quien te está mirando.",
+};
+// Esconder arma (rules/sigilo.ts, accionEsconderArma): ids de la fila y de sus controles.
+export const ID_ESCONDER_ARMA = "esconder_arma";
+export const ID_ARMA_A_ESCONDER = "arma_a_esconder";
+export const ID_EN_COMPARTIMENTO = "en_compartimento";
+
 export const ACCIONES: Accion[] = [
   // ── Defensa ──
   {
@@ -487,15 +526,19 @@ export const ACCIONES: Accion[] = [
   },
 
   // ── Acciones ──
-  // "reflejos + esconderse" (fuente/habilidades.md, Sigilo).
+  // "reflejos + esconderse" (fuente/habilidades.md, Sigilo). El total queda como tu estado
+  // «Sigilo» (eq-25, di-09): la dificultad para detectarte.
   {
-    id: "sigilo",
+    id: ID_SIGILO,
     label: "Sigilo",
     grupo: "Acciones",
     aplicado: "reflejos",
     habilidad: "sigilo",
     especialidadesAccion: ["esconderse"],
-    nota: "Se tira contra la Alerta del objetivo. En empate gana la alerta",
+    nota:
+      "Esconderse es acción simple; seguir escondido donde ya estabas, gratuita. Tu total queda como «Sigilo»: la dificultad para detectarte, que el máster compara con la Alerta de quien te busca (en empate gana la alerta). Tirar otra vez lo sustituye",
+    condiciones: [CONDICION_MOVIMIENTO_OCULTO, CONDICION_ESCONDERSE_OBSERVADO],
+    estadoAlTirar: { estadoId: "sigilo" },
   },
   {
     id: "hurto",

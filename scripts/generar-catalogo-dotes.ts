@@ -45,8 +45,8 @@
 //     valor con la ficha al montar la casilla (D2d; hasta D2d se partía en dos, S38).
 //   - `condicion` "<condición>:<opción>" (con " + en especialidad" opcional) →
 //     `tramo: "<condición>:<opción>"`, `condicion: null` (y `soloEspecialidad: true`).
-//     "tramo:larga" es la condición de distancia de los disparos; "movimiento_oculto:*"
-//     no existe en la tirada y la pone la dote (OPCIONES_DE_TRAMO, dotesDestinos.ts).
+//     "tramo:larga" es la condición de distancia de los disparos; "movimiento_oculto:*", el
+//     selector «¿Te mueves?» de Sigilo (SELECTORES_DE_TIRADA, dotesDestinos.ts; T4).
 //   - Texto cuya `condicion` es el crítico de la propia tirada (CONDICION_CRITICO) →
 //     `grados: ["critico"]`, `condicion: null`.
 //   - `porque: "capa_pendiente"` se descarta (§9.3: esos efectos se modelan como efecto
@@ -591,30 +591,8 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
   // §9.3 UX propia: Reflejos Felinos resta un atacante al contador de atacantes adicionales de
   // la esquiva (mínimo 0), no una casilla +1 (el borrador lo traía como bono con condición).
   "dote_reflejos_felinos#0": { tipo: "descuento_contador", alcance: "defensa", contador: "atacantes_adicionales", unidades: 1 },
-  // "Se mueve en sigilo sin penalizador": la Sigilo de la app no lleva el penalizador por
-  // moverse oculto, así que no hay número que compensar (el borrador inventaba +2/+4/+8).
-  // Texto en Sigilo; las otras dos velocidades, en la tarjeta.
-  "dote_movimiento_sigiloso_constante#0": {
-    tipo: "texto",
-    lugar: "sigilo",
-    texto: "Moviéndote oculto no tienes penalizador, vayas a la velocidad que vayas: no lo restes.",
-    condicion: null,
-    porque: "sin_regla",
-  },
-  "dote_movimiento_sigiloso_constante#1": {
-    tipo: "texto",
-    lugar: "ficha",
-    texto: "A velocidad total, sin penalizador por moverte oculto.",
-    condicion: null,
-    porque: "sin_regla",
-  },
-  "dote_movimiento_sigiloso_constante#2": {
-    tipo: "texto",
-    lugar: "ficha",
-    texto: "Esprintando, sin penalizador por moverte oculto.",
-    condicion: null,
-    porque: "sin_regla",
-  },
+  // Movimiento Sigiloso Constante («se mueve en sigilo sin penalizador»): desde T4 (do-01) sus
+  // bonos 2/4/8 del borrador compensan entero el selector «¿Te mueves?» de Sigilo; sin conversión.
 };
 
 // Retoques a las acciones de dote del borrador (D2c-1; ver cabecera). Por id de acción.

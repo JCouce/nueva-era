@@ -81,11 +81,15 @@ import {
   type PoderPreparado,
   type GolpeRecibido,
   type OperacionConsecuenciaPropia,
+  atacarTocaSigilo,
+  estadosParaPintar,
   consecuenciaPropia,
   salvacionPropiaDe,
   especialidadesDeTirada,
+  seTiraSinDificultad,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
+import { ChipEstado } from "@/components/ChipEstado";
 import { AccionModal } from "@/components/AccionModal";
 import { UsarModal } from "@/components/UsarModal";
 import { SacrificioRecursoModal } from "@/components/SacrificioRecursoModal";
@@ -1304,6 +1308,19 @@ export function AccionesTab({
     if (gradoPropio && consecuenciaPropia(tirada, { tipo: "grado", grado: gradoPropio })) {
       onConsecuenciaPropia?.({ tipo: "grado", accionId: tirada.id, grado: gradoPropio }, (m) => anotarPropio(tirada.id, m));
     }
+    // T4: el total queda como tu estado (Sigilo, Arma escondida, Disfrazado) y atacar en Sigilo te
+    // lo baja. El servidor lo recalcula con la ficha guardada.
+    if (tirada.estadoAlTirar) {
+      const notaDe = tirada.estadoAlTirar.notaDe;
+      const eleccion = notaDe ? estadoCondiciones[notaDe] : undefined;
+      onConsecuenciaPropia?.(
+        { tipo: "total", accionId: tirada.id, total: r.total, eleccion: typeof eleccion === "string" ? eleccion : null },
+        (m) => anotarPropio(tirada.id, m),
+      );
+    }
+    if (atacarTocaSigilo(ficha.estados, tirada)) {
+      onConsecuenciaPropia?.({ tipo: "atacar", accionId: tirada.id }, (m) => anotarPropio(tirada.id, m));
+    }
     const salvacionPropia = salvacionPropiaDe(tirada, modoId);
     setHistorial((h) =>
       [
@@ -1363,6 +1380,8 @@ export function AccionesTab({
   // lea (ver tonoResultado/textoExitos).
   // Lo que ha pasado al usar la última acción de aumento (lo dice el servidor).
   const [avisoAumento, setAvisoAumento] = useState<string | null>(null);
+  // Lo que dice el servidor al quitarte un estado propio («Se te quita Sigilo»).
+  const [avisoPropio, setAvisoPropio] = useState<string | null>(null);
 
   const usarDirecta = (estadoModal: EstadoCondiciones = {}) => {
     if (!modalDirecta) return;
@@ -1385,11 +1404,18 @@ export function AccionesTab({
         ...(estadoModal[ID_ACCION_REPETIDA] === true && { repetida: true }),
       });
     } else if (modalDirecta.costeFatiga) onPagarFatiga?.(modalDirecta.costeFatiga, false);
+    // T4: el estado que pone según la opción elegida (Activar camuflaje), lo aplica el servidor.
+    const accionId = modalDirecta.id;
+    if (modalDirecta.estadoAlUsar) {
+      const opcion = estadoModal[modalDirecta.estadoAlUsar.condicion];
+      onConsecuenciaPropia?.({ tipo: "usar", accionId, opcion: typeof opcion === "string" ? opcion : null }, setAvisoPropio);
+    }
     const id = Date.now();
     setHistorial((h) =>
       [
         {
           id,
+          accionId,
           label: modalDirecta.label,
           dado: 0,
           modificador: 0,
@@ -1512,6 +1538,7 @@ export function AccionesTab({
     ...ataques.map((accion) => ({ accion, origen: "Arma", titulo: "Ataques" })),
     ...defensaGenerada.map((accion) => ({ accion, origen: "Equipo", titulo: "Defensa" })),
     ...accionesGeneradas.map((accion) => ({ accion, origen: "Equipo", titulo: "Movimiento" })),
+    ...ficha.accionesOcultacion.map((t) => ({ accion: conExtras(t), origen: "Equipo", titulo: "Acciones" })),
     ...herramientas.map((accion) => ({ accion, origen: "Herramienta", titulo: "Herramientas" })),
     ...farmacos.map((accion) => ({ accion, origen: "Fármaco", titulo: "Fármacos" })),
     ...[...dotesTiradas, ...dotesEnGrupos].map((accion) => ({ accion, origen: "Dote", titulo: GRUPOS_BASICOS.has(accion.grupo) ? accion.grupo : "Dotes" })),
@@ -1735,6 +1762,8 @@ export function AccionesTab({
       ? []
       : secciones.filter((s) => s.origen === pestana);
 
+  const propiosQuitables = estadosParaPintar(ficha).filter((e) => e.quitarJugador);
+
   // Cabina de escritorio: las favoritas fijas arriba (sin pestaña ★) y las filas a dos columnas.
   const filasFavoritas = seccionesFavoritas.flatMap((s) => s.filas);
   const rejilla = cabina ? "grid gap-2 xl:grid-cols-2" : "flex flex-col gap-2";
@@ -1768,6 +1797,24 @@ export function AccionesTab({
             )}
           </div>
         </PanelFieldset>
+      )}
+
+      {/* Los estados que te quitas tú (T4: «Salir del sigilo»…), con su número a mano. */}
+      {onEstadoDePoder && propiosQuitables.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
+            {propiosQuitables.map((e) => (
+              <ChipEstado
+                key={e.estadoId}
+                estado={e}
+                deshabilitado={soloLectura}
+                quitarLabel={e.quitarJugador}
+                onQuitar={() => onEstadoDePoder({ tipo: "quitar", estadoId: e.estadoId }, setAvisoPropio)}
+              />
+            ))}
+          </div>
+          {avisoPropio && <p className="border-l-2 border-info pl-2 font-sans text-[12px] leading-relaxed text-info">{avisoPropio}</p>}
+        </div>
       )}
 
       <PanelFieldset disabled={soloLectura}>
@@ -1929,7 +1976,7 @@ export function AccionesTab({
             pieResultado={modal.tirada.grupo === "Psiónica" ? piePoder : undefined}
             ficha={modal.ficha}
             eleccion={modal.eleccion}
-            dificultadInicial={memoria[modal.tirada.id]?.dificultad ?? modal.tirada.dificultadSugerida ?? 7}
+            dificultadInicial={seTiraSinDificultad(modal.tirada) ? null : (memoria[modal.tirada.id]?.dificultad ?? modal.tirada.dificultadSugerida ?? 7)}
             circunstancialInicial={memoria[modal.tirada.id]?.circunstancial ?? 0}
             resultado={resultadoModal}
             onTirarDanio={tirarDanio}

@@ -69,6 +69,14 @@ export type Estado = {
   // Al menos un grado. Los estados sin grados de salvación tienen uno solo
   // (id "activo") con el efecto fijo mientras dure.
   grados: GradoEstado[];
+  // El estado guarda un número (EstadoActivo.valor, T4): cómo se lee. `porSentido`: además, lo
+  // que la ocultación activa suma a cada sentido (Sigilo con el camuflaje, rules/sigilo.ts).
+  valor?: { etiqueta?: string; porSentido?: true };
+  // Lo puede quitar el propio jugador desde su ficha, con este botón (los de ocultación).
+  quitarJugador?: string;
+  // Casillas que salen ya marcadas en las tiradas mientras dure (el camuflaje activo y la
+  // cobertura de la esquiva, eq-26). Id de la CondicionTirada.
+  marcaCasillas?: string[];
 };
 
 export const ESTADOS: Estado[] = [
@@ -969,6 +977,76 @@ export const ESTADOS_DE_AUMENTO: Estado[] = [
   },
 ];
 
+// Estados de ocultación (T4 del cuestionario, usuario 2026-11-13: eq-25, eq-26, eq-30, eq-31,
+// eq-33, di-09). Los pone la app tras la tirada o la acción de quien se esconde
+// (aplicarConsecuenciaPropiaAction), con su número en EstadoActivo.valor: la dificultad para
+// detectarte. Nada los compara con la Alerta de nadie: el máster lo hace a ojo. Los quita el
+// jugador (su botón) o el máster. No están en ESTADOS: sin número no tienen sentido, así que no
+// salen en el selector del máster.
+export const ESTADO_SIGILO_ID = "sigilo";
+export const ESTADO_CAMUFLAJE_ID = "camuflaje";
+export const ESTADO_ARMA_ESCONDIDA_ID = "arma_escondida";
+export const ESTADO_DISFRAZADO_ID = "disfrazado";
+// Una hora: 600 turnos de 6 segundos (criterio de la psiónica, 1 minuto = 10 turnos).
+export const TURNOS_DISFRAZ = 600;
+
+export const ESTADOS_DE_OCULTACION: Estado[] = [
+  {
+    id: ESTADO_SIGILO_ID,
+    label: "Sigilo",
+    resumen:
+      "Escondido. El número es tu total de Sigilo: la dificultad para detectarte. Quien te busca lo " +
+      "compara con su Alerta (en empate, gana la alerta). Disparar te lo baja.",
+    valor: { porSentido: true },
+    quitarJugador: "Salir del sigilo",
+    grados: [{ id: "activo", label: "Sigilo", modificadores: [], detalle: [], duracionTurnos: null }],
+  },
+  {
+    id: ESTADO_CAMUFLAJE_ID,
+    label: "Camuflaje",
+    resumen:
+      "Camuflaje Trifásico en modo activo: su cobertura por sentido se suma a tu Sigilo y en la " +
+      "esquiva cuenta como cobertura. La Malla Plasmática activa lo anula.",
+    quitarJugador: "Apagar el camuflaje",
+    // "Tengo cobertura" de la esquiva (ID_TENGO_COBERTURA, rules/acciones.ts; un test lo comprueba).
+    marcaCasillas: ["tengo_cobertura"],
+    grados: [
+      {
+        id: "estatico",
+        label: "Estático",
+        modificadores: [],
+        detalle: ["Inmóvil: rendimiento óptimo del camuflaje."],
+        duracionTurnos: null,
+      },
+      {
+        id: "dinamico",
+        label: "Dinámico",
+        modificadores: [],
+        detalle: ["En movimiento o atacando: menos cobertura y menos duración."],
+        duracionTurnos: null,
+      },
+    ],
+  },
+  {
+    id: ESTADO_ARMA_ESCONDIDA_ID,
+    label: "Arma escondida",
+    resumen: "Llevas un arma escondida. El número es la dificultad para descubrirla.",
+    valor: { etiqueta: "dificultad" },
+    quitarJugador: "Sacar el arma",
+    grados: [{ id: "activo", label: "Arma escondida", modificadores: [], detalle: [], duracionTurnos: null }],
+  },
+  {
+    id: ESTADO_DISFRAZADO_ID,
+    label: "Disfrazado",
+    resumen:
+      "Disfraz Holográfico activo. El número es la dificultad para descubrirte; de cerca, la farsa " +
+      "depende de tus habilidades sociales.",
+    valor: { etiqueta: "dificultad" },
+    quitarJugador: "Quitar el disfraz",
+    grados: [{ id: "activo", label: "Disfrazado", modificadores: [], detalle: [], duracionTurnos: TURNOS_DISFRAZ }],
+  },
+];
+
 // Los umbrales de §7 como estados (usuario, 2026-10-28): Heridas y Fatiga, un nivel por estado
 // (S14). Derivados, nunca guardados: los calcula resolverFicha con la vida y la fatiga
 // (estadosDerivados, rules/estados.ts) y se van solos al volver por encima del umbral. Fuera de
@@ -1039,14 +1117,15 @@ export const ESTADOS_DERIVADOS: Estado[] = [
   },
 ];
 
-// Los estados que se pueden poner y guardar (los del máster, los de los activables y los propios
-// de los poderes: Contención, catalog/psionica.ts). Los derivados no: ver ESTADOS_DERIVADOS.
+// Los estados que se pueden poner y guardar (los del máster, los de los activables, los propios
+// de los poderes: Contención, catalog/psionica.ts, y los de ocultación, T4). Los derivados no: ver ESTADOS_DERIVADOS.
 // Los de poder, como los de aumento, no están en ESTADOS: no salen en el selector del máster.
 export function estadoPorId(id: string): Estado | null {
   return (
     ESTADOS.find((e) => e.id === id) ??
     ESTADOS_DE_AUMENTO.find((e) => e.id === id) ??
     ESTADOS_DE_PODER.find((e) => e.id === id) ??
+    ESTADOS_DE_OCULTACION.find((e) => e.id === id) ??
     null
   );
 }
@@ -1058,6 +1137,22 @@ export function estadoParaPintar(id: string): Estado | null {
 
 export function esEstadoDeAumento(id: string): boolean {
   return ESTADOS_DE_AUMENTO.some((e) => e.id === id);
+}
+
+// La rejilla del panel de estados del máster: el catálogo que pone (ESTADOS) y, detrás, los que
+// llevan puestos sus objetivos aunque no los ponga él (de ocultación, de aumento, de poder), solo
+// para quitarlos (T4: el máster quita el Sigilo de un jugador).
+export function estadosDelPanel(puestos: readonly string[]): { estado: Estado; soloQuitar: boolean }[] {
+  const aparte = [...new Set(puestos)].flatMap((id) => {
+    const e = ESTADOS.some((x) => x.id === id) ? null : estadoPorId(id);
+    return e ? [{ estado: e, soloQuitar: true }] : [];
+  });
+  return [...ESTADOS.map((estado) => ({ estado, soloQuitar: false })), ...aparte];
+}
+
+// Los que el propio jugador puede quitarse desde su ficha: los de poder y los de ocultación.
+export function loQuitaElJugador(id: string): boolean {
+  return esEstadoDePoder(id) || !!estadoPorId(id)?.quitarJugador;
 }
 
 // Estado propio de un poder (P1 de psiónica): el jugador lo pone al usar el poder y lo quita él.

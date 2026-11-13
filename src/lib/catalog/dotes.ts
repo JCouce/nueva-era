@@ -6933,7 +6933,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "accion_existente",
           "id": "sigilo"
         },
-        "mecanismo": "eleccion_jugador",
+        "mecanismo": "bono_tramo",
         "estado": "construido"
       },
       {
@@ -6942,7 +6942,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "accion_existente",
           "id": "sigilo"
         },
-        "mecanismo": "eleccion_jugador",
+        "mecanismo": "bono_tramo",
         "estado": "construido"
       },
       {
@@ -6951,7 +6951,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "accion_existente",
           "id": "sigilo"
         },
-        "mecanismo": "eleccion_jugador",
+        "mecanismo": "bono_tramo",
         "estado": "construido"
       }
     ]
@@ -7008,7 +7008,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "accion_existente",
           "id": "sigilo"
         },
-        "mecanismo": "eleccion_jugador",
+        "mecanismo": "bono_tramo",
         "estado": "construido"
       },
       {
@@ -7017,7 +7017,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "accion_existente",
           "id": "sigilo"
         },
-        "mecanismo": "eleccion_jugador",
+        "mecanismo": "bono_tramo",
         "estado": "construido"
       },
       {
@@ -7026,7 +7026,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "accion_existente",
           "id": "sigilo"
         },
-        "mecanismo": "eleccion_jugador",
+        "mecanismo": "bono_tramo",
         "estado": "construido"
       }
     ]
@@ -7050,27 +7050,27 @@ export const DOTES: readonly DoteCatalogo[] = [
     "texto": "El personaje se mueve en sigilo sin penalizador",
     "efectos": [
       {
-        "tipo": "texto",
-        "lugar": "sigilo",
-        "texto": "Moviéndote oculto no tienes penalizador, vayas a la velocidad que vayas: no lo restes.",
+        "tipo": "bono",
+        "alcance": "sigilo",
+        "valor": 2,
         "condicion": null,
-        "porque": "sin_regla",
+        "tramo": "movimiento_oculto:mitad",
         "borrador": 0
       },
       {
-        "tipo": "texto",
-        "lugar": "ficha",
-        "texto": "A velocidad total, sin penalizador por moverte oculto.",
+        "tipo": "bono",
+        "alcance": "sigilo",
+        "valor": 4,
         "condicion": null,
-        "porque": "sin_regla",
+        "tramo": "movimiento_oculto:total",
         "borrador": 1
       },
       {
-        "tipo": "texto",
-        "lugar": "ficha",
-        "texto": "Esprintando, sin penalizador por moverte oculto.",
+        "tipo": "bono",
+        "alcance": "sigilo",
+        "valor": 8,
         "condicion": null,
-        "porque": "sin_regla",
+        "tramo": "movimiento_oculto:esprint",
         "borrador": 2
       }
     ],
@@ -7078,28 +7078,30 @@ export const DOTES: readonly DoteCatalogo[] = [
     "candidataUX": null,
     "motor": [
       {
-        "tipo": "texto",
+        "tipo": "numerico",
         "afecta": {
           "modo": "accion_existente",
           "id": "sigilo"
         },
-        "mecanismo": "nota_fija",
+        "mecanismo": "bono_tramo",
         "estado": "construido"
       },
       {
-        "tipo": "texto",
+        "tipo": "numerico",
         "afecta": {
-          "modo": "ninguna"
+          "modo": "accion_existente",
+          "id": "sigilo"
         },
-        "mecanismo": null,
+        "mecanismo": "bono_tramo",
         "estado": "construido"
       },
       {
-        "tipo": "texto",
+        "tipo": "numerico",
         "afecta": {
-          "modo": "ninguna"
+          "modo": "accion_existente",
+          "id": "sigilo"
         },
-        "mecanismo": null,
+        "mecanismo": "bono_tramo",
         "estado": "construido"
       }
     ]
@@ -8048,8 +8050,8 @@ export const DOTES: readonly DoteCatalogo[] = [
 
 // Recuento por tanda (lo escribe el generador):
 //   200 efectos (192 en el borrador)
-//   construidos: 97
-//   texto: 103
+//   construidos: 100
+//   texto: 100
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0

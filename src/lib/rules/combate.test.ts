@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
 import { equipar } from "./equipo";
 import { ajustarRecurso, ajustarGranada, ajustarMunicionEspecial, reconciliarRecursos } from "./recursos";
-import { accionesDeAtaque as accionesDeAtaqueCon, accionesDirectasDeAtaque, generaAccionPropia, MOTIVO_SIN_CARGAS, NOTA_MALLA_ANULA_CAMUFLAJE } from "./combate";
+import { accionesDeAtaque as accionesDeAtaqueCon, accionesDirectasDeAtaque, generaAccionPropia, ID_MODO_CAMUFLAJE, MOTIVO_SIN_CARGAS, NOTA_MALLA_ANULA_CAMUFLAJE } from "./combate";
+import { restaDeSigilo } from "./sigilo";
 import { efectosQueSaltan, type EfectoEnTirada } from "./efectosArma";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
@@ -627,9 +628,14 @@ describe("Accion.efectos (objetivo_tercero / tirada propia distinta, docs/sistem
     assert.deepEqual(efectos(conOjo), []);
   });
 
-  test("Silenciador: el aviso a la Alerta Activa del objetivo cuelga de la tirada de disparo, no de nota", () => {
+  // T4 (di-09): el disparo te resta del estado Sigilo; el Silenciador fija el ruido en 2 y la
+  // luminiscencia se suma. Antes eran avisos a la Alerta Activa de quien te detecta (25b).
+  test("Silenciador: amortigua el ruido del disparo a 2 y lo avisa en la tirada, no en la nota", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_asalto_impetus" });
+    const sin = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
+    assert.equal(restaDeSigilo(sin.sigiloAlAtacar!).total, 6);
+    assert.equal(sin.efectos, undefined);
     sheet = equipar(sheet, {
       instanciaId: "s1",
       catalogoId: "silenciador",
@@ -637,25 +643,29 @@ describe("Accion.efectos (objetivo_tercero / tirada propia distinta, docs/sistem
       instaladoEnId: "arma1",
     });
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Impetus")!;
+    assert.equal(restaDeSigilo(fila.sigiloAlAtacar!).total, 2);
     assert.deepEqual(fila.efectos, [
       {
         fuente: "Silenciador",
-        texto: "Ataque sorpresivo con silenciador: -2 (no el habitual) a la Alerta Activa de quien te detecta.",
+        texto: "En sigilo, atacar con esta arma te resta 2: 2 de ruido, con Silenciador.",
         origen: { tipo: "equipo", id: "silenciador", label: "Silenciador", instanciaId: "s1" },
       },
     ]);
-    assert.doesNotMatch(fila.nota ?? "", /Alerta Activa/);
+    assert.doesNotMatch(fila.nota ?? "", /sigilo/i);
   });
 
-  test("Rayo Ligero: la propia arma también lista su efecto en Alerta Activa por separado de especial/nota", () => {
+  test("Rayo Ligero: la luminiscencia se suma al ruido (−12; con silenciador, −8)", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "r1", catalogoId: "pistola_rayo_ligero" });
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Rayo Ligero")!;
+    assert.equal(restaDeSigilo(fila.sigiloAlAtacar!).total, 12);
     assert.deepEqual(fila.efectos, [
-      { fuente: "Rayo Ligero", texto: "-6 a la Alerta Activa de quien te detecta (percepción visual)." },
+      { fuente: "Rayo Ligero", texto: "En sigilo, atacar con esta arma te resta 12: 6 de ruido, 6 de luminiscencia (Rayo Ligero)." },
     ]);
-    assert.doesNotMatch(fila.nota ?? "", /Alerta Activa/);
     assert.match(fila.nota ?? "", /Crítico de Shock/);
+    sheet = equipar(sheet, { instanciaId: "s1", catalogoId: "silenciador", nivel: 1, instaladoEnId: "r1" });
+    const con = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Rayo Ligero")!;
+    assert.equal(restaDeSigilo(con.sigiloAlAtacar!).total, 8);
   });
 
   test("Sistema de Retroceso nv2: la subida de dificultad de Esquiva del objetivo cuelga de la tirada de disparo", () => {
@@ -1344,13 +1354,18 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
     assert.doesNotMatch(fila.nota ?? "", /Hemorragia/);
   });
 
-  test("el -5 al Sigilo del nivel 1 sale como aviso en efectos, en el disparo y en el Aguijón (S96)", () => {
+  // T4: el −5 pasa de aviso a dato (`delataAlAtacar`) que la app resta de tu Sigilo; el aviso
+  // dice ahora cuánto te resta cada ataque (el disparo, además, el ruido).
+  test("el -5 al Sigilo del nivel 1: lo resta la app en el disparo (con ruido) y en el Aguijón (sin él)", () => {
     const filas = accionesDeAtaque(conProyectorPulso(3)).filter(
       (t) => t.label.startsWith("Disparar Proyector") || t.label === "Golpear con Proyector de Pulso (Aguijón)",
     );
     assert.equal(filas.length, 3);
-    for (const f of filas)
-      assert.deepEqual(f.efectos, [{ fuente: "Proyector de Pulso", texto: "Al atacar con cualquier modo: -5 a tu Sigilo (percepción visual)." }]);
+    for (const f of filas) {
+      const disparo = f.label.startsWith("Disparar");
+      assert.equal(restaDeSigilo(f.sigiloAlAtacar!).total, disparo ? 11 : 5);
+      assert.match(f.efectos?.[0].texto ?? "", disparo ? /te resta 11: 6 de ruido, 5 de ionización/ : /te resta 5: 5 de ionización/);
+    }
   });
 
   test("con las cargas del catálogo (10) nunca avisa de insuficiencia recién equipado", () => {
@@ -1762,8 +1777,12 @@ describe("Activar camuflaje trifásico (acción sin dado, 1 carga)", () => {
     assert.deepEqual(a.gastoRecurso, { instanciaId: "cam", cantidad: 1 });
     assert.equal(a.bloqueada, undefined);
     assert.match(a.nota!, /quedan 10\/10/);
-    assert.match(a.nota!, /5 min estático \/ 2 turnos dinámico/);
-    assert.doesNotMatch(a.nota!, /1 min estático/);
+    // T4 (eq-25): los números de su nivel van en el selector de modo, no en la nota.
+    const modo = a.condiciones?.find((c) => c.id === ID_MODO_CAMUFLAJE);
+    assert.ok(modo?.tipo === "opcion");
+    assert.deepEqual(modo.opciones.map((o) => o.etiqueta), ["Estático (5 minutos)", "Dinámico (2 turnos)"]);
+    assert.equal(modo.opciones[0].nota, "Cobertura visual 4 · térmica 4 · acústica 4.");
+    assert.deepEqual(a.estadoAlUsar?.opciones, { estatico: { gradoId: "estatico", turnos: 50 }, dinamico: { gradoId: "dinamico", turnos: 2 } });
   });
 
   test("sin cargas sale bloqueada", () => {

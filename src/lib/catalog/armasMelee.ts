@@ -59,6 +59,9 @@ export type ArmaMelee = {
   // Mismo nombre y valores que ArmaFuego.empleo. El Puñetazo ("Mano Libre"
   // en EQUIP) se da por "una mano" — decisión 2026-09-28, el usuario.
   empleo: "una mano" | "dos manos";
+  // Bono a esconderla en «Esconder arma» (T4, rules/sigilo.ts), como ArmaFuego.bonoEsconder.
+  // Ninguna lo trae hoy.
+  bonoEsconder?: number;
   // Daño contundente (D2d, filtro de arma de Golpe Fatigante: "daño contundente o arma a dos
   // manos"). La fuente no trae tipo de daño por arma: se marca por lo que dice su resumen o
   // descripción (maza, martillo, porra, impacto) más los golpes a mano vacía (§9.5: puñetazo y

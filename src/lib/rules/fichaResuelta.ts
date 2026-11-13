@@ -24,6 +24,8 @@ import {
   type VentajaFija,
 } from "./aumentosTiradas";
 import { normalizarDanio, type DanioVida } from "./danio";
+import { ESTADO_CAMUFLAJE_ID, estadoPorId } from "../catalog/estados";
+import { accionEsconderArma, ocultacionDeFicha, textoSigiloPorSentido, type OcultacionDeFicha } from "./sigilo";
 import { absorcionDeContencion, tieneEscudoMelee, type AbsorcionPropia, type ArmaduraNatural } from "./blindaje";
 import {
   alerta,
@@ -172,6 +174,12 @@ export type FichaResuelta = {
   movimiento: ReturnType<typeof movimiento>;
   // "Volar" (Movilidad Aérea, movimiento.ts) con los metros ya a media velocidad si toca (td-26).
   accionesMovimiento: Accion[];
+  // T4 (rules/sigilo.ts): «Esconder arma» si hay algo que esconder; la ocultación que lleva
+  // (camuflaje activo y pasivo), que se suma por sentido al Sigilo al pintarlo; y las casillas que
+  // salen ya marcadas por un estado puesto (Camuflaje: «Tengo cobertura» en la esquiva, eq-26).
+  accionesOcultacion: Accion[];
+  ocultacion: OcultacionDeFicha | null;
+  casillasMarcadas: string[];
   // null si la ficha no vuela (Movilidad Aérea) o no levita (Traslación 2+).
   vuelo: ReturnType<typeof vuelo>;
   levitacion: ReturnType<typeof levitacion>;
@@ -401,6 +409,9 @@ export function resolverFicha(
     ajusteUmbrales,
     movimiento: { ...mov, carrera: velocidad(mov.carrera) },
     accionesMovimiento: accionesDeMovimiento(sheet, porUmbral),
+    accionesOcultacion: ((e) => (e ? [e] : []))(accionEsconderArma(sheet)),
+    ocultacion: ocultacionDeFicha(sheet, conEfecto),
+    casillasMarcadas: [...new Set(conEfecto.flatMap((e) => estadoPorId(e.estadoId)?.marcaCasillas ?? []))],
     vuelo: vue && { ...vue, velocidadM: velocidad(vue.velocidadM) },
     levitacion: lev && { ...lev, velocidadM: velocidad(lev.velocidadM) },
     cargaMaxima: porUmbral.reduccionCarga ? reducir(carga, porUmbral.reduccionCarga.fraccion) : carga,
@@ -449,8 +460,17 @@ export function resolverFicha(
 
 // Lo que se pinta en las listas de estados (ficha, Mesa, combate): los derivados de la vida y la
 // fatiga, marcados automáticos, y los guardados con sus inmunidades (describirEstados).
-export function estadosParaPintar(ficha: Pick<FichaResuelta, "estados" | "estadosDerivados" | "inmunidades">): EstadoActivoDescrito[] {
-  return describirEstados(ficha.estados, ficha.estadosDerivados, ficha.inmunidades);
+// T4: el Sigilo con lo que la ocultación suma a cada sentido («14 · visual 17 · …») y el Camuflaje
+// con el nivel de la pieza.
+export function estadosParaPintar(
+  ficha: Pick<FichaResuelta, "estados" | "estadosDerivados" | "inmunidades"> & Partial<Pick<FichaResuelta, "ocultacion">>,
+): EstadoActivoDescrito[] {
+  const o = ficha.ocultacion ?? null;
+  return describirEstados(ficha.estados, ficha.estadosDerivados, ficha.inmunidades).map((e) => {
+    if (e.valor !== undefined && estadoPorId(e.estadoId)?.valor?.porSentido) return { ...e, valorTexto: textoSigiloPorSentido(e.valor, o) };
+    if (e.estadoId === ESTADO_CAMUFLAJE_ID && o) return { ...e, valorTexto: `nivel ${o.nivel}` };
+    return e;
+  });
 }
 
 // --- Lo que la ficha añade a una tirada antes de montarla ------------------------
@@ -465,9 +485,17 @@ export function estadosParaPintar(ficha: Pick<FichaResuelta, "estados" | "estado
 
 export function conExtrasDeFicha(
   ficha: Pick<FichaResuelta, "indiceCondiciones" | "textosTirada" | "extrasDotes" | "ventajasFijas" | "fallosCriticos"> &
-    Partial<Pick<FichaResuelta, "objetivosTirada">>,
+    Partial<Pick<FichaResuelta, "objetivosTirada" | "casillasMarcadas">>,
   t: Accion,
 ): Accion {
+  // T4: las casillas que un estado puesto deja ya marcadas (Camuflaje: «Tengo cobertura»).
+  const marcadas = ficha.casillasMarcadas ?? [];
+  if (marcadas.length > 0 && t.condiciones?.some((c) => c.tipo === "toggle" && marcadas.includes(c.id) && !c.activaPorDefecto)) {
+    t = {
+      ...t,
+      condiciones: t.condiciones.map((c) => (c.tipo === "toggle" && marcadas.includes(c.id) ? { ...c, activaPorDefecto: true } : c)),
+    };
+  }
   // La tirada libre (T-007, R1): sin casillas, textos, ventajas, bonos por tramo, descuentos
   // ni crítico fijo; solo los modificadores de alcance que casen con su aplicado y habilidad.
   if (t.libre) return t;

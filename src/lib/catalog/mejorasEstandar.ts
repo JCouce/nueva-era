@@ -142,18 +142,13 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           "Aumenta en 3 la dificultad para descubrirlo en cacheos físicos rutinarios o escáneres " +
             "de seguridad.",
         ],
-        // La dificultad que sube es la de QUIEN TE REGISTRA, no una tirada propia:
-        // no encaja en "tirada" (que hoy solo modela tiradas del portador).
         modificadores: [],
+        // eq-31 (usuario, 2026-11-13): el +3 va a quien esconde, en la casilla «En el
+        // Compartimento Oculto» de «Esconder arma» (rules/sigilo.ts); el total que sale es la
+        // dificultad para descubrirlo.
+        bonoEsconder: 3,
         motor: [
-          // objetivo_tercero: sube la dificultad de un tercero (quien registra al
-          // portador), nunca la del propio portador. mecanismo "nota_fija" es la
-          // resolución ya aceptada (modificadores-tiradas.md: "se informa en la
-          // tirada del propio portador, para que el máster lo aplique al de
-          // enfrente") — pero AQUÍ no hay ninguna tirada del portador en la que
-          // colgar esa nota (a diferencia de Visor Nocturno, que la cuelga de
-          // Buscar/percibir): bloqueado hasta que se diseñe dónde vive.
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "deteccion_fisica" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "esconder_arma" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
       {
@@ -166,12 +161,11 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
             "visuales o físicas superficiales.",
         ],
         modificadores: [],
+        // +4 a quien esconde (eq-31), como el nivel 1. «Indetectable en inspecciones
+        // superficiales» queda en el detalle: lo decide el máster.
+        bonoEsconder: 4,
         motor: [
-          // Igual que nivel 1, pero el barrido de motor (2026-09-22) apunta que
-          // esto "apunta parcialmente a una tirada real (Escáner Detector)" — no
-          // suficientemente claro para comprometerme a un id concreto, lo marco
-          // como caso inconcluso en vez de adivinar cuál.
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "deteccion_fisica_o_escaner" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "esconder_arma" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
     ],

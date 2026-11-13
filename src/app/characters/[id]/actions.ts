@@ -124,7 +124,16 @@ import {
   GRADOS,
   nivelesDePsionica,
   estadosPropiosDeUso,
-  esEstadoDePoder,
+  loQuitaElJugador,
+  ACCIONES,
+  accionesDeHerramientas,
+  accionesDirectasDeAtaque,
+  estadoPorTirada,
+  estadoPorUso,
+  sigiloTrasAtacar,
+  textoEstadoPuesto,
+  MAX_VALOR_ESTADO,
+  type OperacionEstado,
   estadoPorId,
   resolverFicha,
   VITALIDAD_DE_FICHA,
@@ -872,6 +881,10 @@ export async function ponerEstadosDePoderAction(characterId: string, entrada: un
 // del Combatiente) y los estados por el de siempre: cada uno con su entrada en el registro del
 // máster, con el jugador de autor, que se puede deshacer allí.
 // TODO(revisar): el daño del retroceso no pasa por «Resistir daño» (sin blindaje ni armadura).
+//
+// T4 (rules/sigilo.ts), por el mismo camino: el total de Sigilo, Esconder arma o el Disfraz queda
+// como estado con número (el total lo dice el cliente, como el grado); «Activar camuflaje» pone
+// Camuflaje con el modo elegido; y un ataque estando en Sigilo te lo baja (o te lo quita a 0).
 const consecuenciaPropiaSchema = z.discriminatedUnion("tipo", [
   z.object({ tipo: z.literal("grado"), accionId: z.string().min(1).max(120), grado: z.enum(GRADOS) }),
   z.object({
@@ -880,6 +893,14 @@ const consecuenciaPropiaSchema = z.discriminatedUnion("tipo", [
     modoId: z.string().min(1).max(20).nullable(),
     grado: z.enum(GRADOS),
   }),
+  z.object({
+    tipo: z.literal("total"),
+    accionId: z.string().min(1).max(120),
+    total: z.number().int().min(-MAX_VALOR_ESTADO).max(MAX_VALOR_ESTADO),
+    eleccion: z.string().min(1).max(80).nullable(),
+  }),
+  z.object({ tipo: z.literal("usar"), accionId: z.string().min(1).max(120), opcion: z.string().min(1).max(40).nullable() }),
+  z.object({ tipo: z.literal("atacar"), accionId: z.string().min(1).max(120) }),
 ]);
 
 export async function aplicarConsecuenciaPropiaAction(characterId: string, entrada: unknown): Promise<SaveResult> {
@@ -890,6 +911,36 @@ export async function aplicarConsecuenciaPropiaAction(characterId: string, entra
   if ("error" in ctx) return { ok: false, error: ctx.error };
   const mesa = await mesaDeFicha(characterId);
   const ficha = resolverFicha(ctx.sheet, { estados: ctx.estados, vitalidad: VITALIDAD_DE_FICHA, aprobada: ctx.aprobada, mesa });
+  if (op.tipo === "total" || op.tipo === "usar" || op.tipo === "atacar") {
+    const autoriaT4 = (fuente: string) => ({ userId: ctx.userId, motivo: `${fuente}, desde la ficha` });
+    const aplicar = async (cambio: OperacionEstado, fuente: string, mensaje: string): Promise<SaveResult> => {
+      const hecho = await cambiarEstadosDePersonajes([characterId], cambio, autoriaT4(fuente));
+      if (!hecho) return { ok: false, error: "Personaje no encontrado" };
+      return { ok: true, sheet: ctx.sheet, mensaje };
+    };
+    if (op.tipo === "total") {
+      const tirada = [...ACCIONES, ...ficha.accionesOcultacion, ...accionesDeHerramientas(ctx.sheet)].find((t) => t.id === op.accionId);
+      if (!tirada?.estadoAlTirar) return { ok: false, error: "Esa acción ya no está en tu ficha." };
+      const estado = estadoPorTirada(tirada, op.total, op.eleccion);
+      if (estado) return aplicar({ tipo: "poner", estado }, tirada.label, textoEstadoPuesto(estado));
+      // Con 0 o menos no quedas escondido: lo que hubiera de antes se va (tirar otra vez sustituye).
+      const id = tirada.estadoAlTirar.estadoId;
+      if (!ctx.estados.some((e) => e.estadoId === id)) return { ok: true, sheet: ctx.sheet, mensaje: "Con 0 o menos no queda nada guardado." };
+      return aplicar({ tipo: "quitar", estadoId: id }, tirada.label, `Con 0 o menos se te quita ${estadoPorId(id)?.label ?? id}.`);
+    }
+    if (op.tipo === "usar") {
+      const accion = accionesDirectasDeAtaque(ctx.sheet).find((a) => a.id === op.accionId);
+      if (!accion?.estadoAlUsar) return { ok: false, error: "Esa acción ya no está en tu ficha." };
+      const estado = estadoPorUso(accion, op.opcion);
+      if (!estado) return { ok: false, error: "Opción no válida" };
+      return aplicar({ tipo: "poner", estado }, accion.label, textoEstadoPuesto(estado));
+    }
+    const ataque = accionesDeAtaque(ctx.sheet, ficha.modificadores, ficha.extrasDotes.permisos).find((t) => t.id === op.accionId);
+    if (!ataque) return { ok: false, error: "Esa acción ya no está en tu ficha." };
+    const tras = sigiloTrasAtacar(ctx.estados, ataque.sigiloAlAtacar);
+    if (!tras) return { ok: true, sheet: ctx.sheet };
+    return aplicar(tras.op, ataque.label, tras.mensaje);
+  }
   const tiradas = op.tipo === "grado" ? ficha.accionesDotes.tiradas : accionesDeAtaque(ctx.sheet, ficha.modificadores, ficha.extrasDotes.permisos);
   const tirada = tiradas.find((t) => t.id === op.accionId);
   if (!tirada) return { ok: false, error: "Esa acción ya no está en tu ficha." };
@@ -913,20 +964,20 @@ export async function aplicarConsecuenciaPropiaAction(characterId: string, entra
   return { ok: true, sheet, mensaje: `${textoDeConsecuencia(c)}${aviso}` };
 }
 
-// Quitar a mano un estado propio de poder («Terminar contención»). Solo los de poder: el resto
-// los quita el máster (o una acción de aumento).
+// Quitar a mano un estado propio de poder («Terminar contención») o de ocultación («Salir del
+// sigilo», T4). Solo esos (loQuitaElJugador): el resto los quita el máster (o una acción de aumento).
 const estadoIdSchema = z.string().min(1).max(60);
 
 export async function quitarEstadoDePoderAction(characterId: string, estadoId: unknown): Promise<SaveResult> {
   const parsed = estadoIdSchema.safeParse(estadoId);
-  if (!parsed.success || !esEstadoDePoder(parsed.data)) return { ok: false, error: "Estado no válido" };
+  if (!parsed.success || !loQuitaElJugador(parsed.data)) return { ok: false, error: "Estado no válido" };
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   if (!ctx.estados.some((e) => e.estadoId === parsed.data)) return { ok: true, sheet: ctx.sheet, mensaje: "Ya no estaba puesto." };
   const hecho = await cambiarEstadosDePersonajes(
     [characterId],
     { tipo: "quitar", estadoId: parsed.data },
-    { userId: ctx.userId, motivo: "Poder psiónico terminado, desde la ficha" },
+    { userId: ctx.userId, motivo: `${estadoPorId(parsed.data)?.quitarJugador ?? "Poder psiónico terminado"}, desde la ficha` },
   );
   if (!hecho) return { ok: false, error: "Personaje no encontrado" };
   const fila = await prisma.character.findUnique({ where: { id: characterId }, select: { stats: true, estados: true } });

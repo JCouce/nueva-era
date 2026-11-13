@@ -391,19 +391,11 @@ describe("desequipar", () => {
 });
 
 describe("modificadores de equipo", () => {
-  test("un arma equipada aporta sus modificadores con origen \"equipo\"", () => {
+  // T4 (eq-30): el +2 del Mosquito dejó de ser un modificador con un id marcador ("ocultar_objeto")
+  // y pasó a su opción de «Esconder arma» (bonoEsconder): ninguna arma aporta modificadores hoy.
+  test("el Mosquito ya no aporta modificadores: su +2 va en «Esconder arma»", () => {
     const s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "pistola_mosquito" });
-    const mods = modificadoresDeEquipo(s);
-    assert.deepEqual(mods, [
-      {
-        tipo: "tirada",
-        alcance: { tipo: "tiradaId", id: "ocultar_objeto" },
-        valor: 2,
-        origen: "equipo",
-        fuente: "Mosquito",
-        item: { tipo: "equipo", id: "pistola_mosquito", label: "Mosquito", instanciaId: "a1" },
-      },
-    ]);
+    assert.deepEqual(modificadoresDeEquipo(s), []);
   });
 
   test("una armadura equipada ya no suma a la salvación entera: su bono va contra sus amenazas", () => {

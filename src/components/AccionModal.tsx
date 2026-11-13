@@ -21,6 +21,7 @@ import {
   type EstadoCondiciones,
   type FichaParaTirada,
   type TiradaMontada,
+  seTiraSinDificultad,
 } from "@/lib/rules";
 import { Modal } from "./Modal";
 import { BarraProgreso } from "./BarraProgreso";
@@ -525,7 +526,7 @@ export function AccionModal({
         </div>
       )}
 
-      {!resultado && !rodando && (
+      {!resultado && !rodando && !seTiraSinDificultad(tirada) && (
         <div className="mt-4 border-t border-border pt-3">
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
             {"// Dificultad"}

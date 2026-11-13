@@ -21,6 +21,13 @@ function leerCubre(v: unknown): string[] | null {
   return [...new Set(v.filter((x): x is string => typeof x === "string" && estadoPorId(x) !== null))].slice(0, MAX_CUBRE);
 }
 
+// `valor` (T4): entero y acotado; `nota`: texto corto. Lo que no encaja se descarta.
+export const MAX_VALOR_ESTADO = 99;
+export const MAX_NOTA_ESTADO = 60;
+function valorValido(v: unknown): v is number {
+  return typeof v === "number" && Number.isInteger(v) && Math.abs(v) <= MAX_VALOR_ESTADO;
+}
+
 // Nunca revienta: lo que no es una lista da []; una entrada sin ids, o con un estado o
 // grado que ya no existe en el catálogo, se descarta; una duración que no se entiende
 // queda como "hasta quitarlo" (que el máster lo vea y lo quite, mejor que perderlo). Un
@@ -30,7 +37,7 @@ export function leerEstados(json: unknown): EstadoActivo[] {
   const porId = new Map<string, EstadoActivo>();
   for (const e of json) {
     if (typeof e !== "object" || e === null) continue;
-    const { estadoId, gradoId, rondasRestantes, finDeEscena, forzado, cubre } = e as Record<string, unknown>;
+    const { estadoId, gradoId, rondasRestantes, finDeEscena, forzado, cubre, valor, nota } = e as Record<string, unknown>;
     if (typeof estadoId !== "string" || typeof gradoId !== "string") continue;
     if (!estadoPorId(estadoId)?.grados.some((g) => g.id === gradoId)) continue;
     const activo: EstadoActivo = rondasValidas(rondasRestantes)
@@ -44,6 +51,8 @@ export function leerEstados(json: unknown): EstadoActivo[] {
       ...activo,
       ...(forzado === true && { forzado: true as const }),
       ...(cubiertos && { cubre: cubiertos }),
+      ...(valorValido(valor) && { valor }),
+      ...(typeof nota === "string" && nota.length > 0 && { nota: nota.slice(0, MAX_NOTA_ESTADO) }),
     });
   }
   return [...porId.values()];

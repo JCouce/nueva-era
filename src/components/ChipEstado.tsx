@@ -43,6 +43,8 @@ export function ChipEstado({
       } ${quitable ? "pl-2" : "px-2"}`}
     >
       <b className={`truncate font-bold ${estado.inmune ? "line-through decoration-info" : ""}`}>{estado.nombre}</b>
+      {/* T4: el número que guarda (Sigilo por sentido, «dificultad 12 · Mosquito»). */}
+      {estado.valorTexto && <span className="min-w-0 font-mono text-[0.78rem] tabular-nums text-accent">{estado.valorTexto}</span>}
       {extra && (
         <span
           className={`${estado.duracionActivable || estado.inmune ? "min-w-0" : "shrink-0 whitespace-nowrap"} font-mono text-[0.72rem] text-muted`}

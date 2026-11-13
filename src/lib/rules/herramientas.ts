@@ -41,6 +41,7 @@ function tiradaDeHerramienta(sheet: Sheet, pieza: PiezaEquipada, cat: Herramient
   // niveles hasta el actual, acumuladas por id (el Radar 4 hereda la penetración del 3).
   const niveles = nivelesHasta(cat.niveles, nivelInfo.nivel);
   const dificultad = ultimoQueDefine(niveles, "dificultadTirada")?.dificultadTirada;
+  const estadoAlTirar = ultimoQueDefine(niveles, "estadoAlTirar")?.estadoAlTirar;
   const condiciones = acumulaPorClave(
     niveles.map((n) => (n.condiciones ?? []).filter((c) => !c.alcance)),
     (c) => c.id,
@@ -57,6 +58,7 @@ function tiradaDeHerramienta(sheet: Sheet, pieza: PiezaEquipada, cat: Herramient
     nota: nivelInfo.notaTirada,
     ...(dificultad !== undefined && { dificultadSugerida: dificultad }),
     ...(condiciones.length > 0 && { condiciones }),
+    ...(estadoAlTirar && { estadoAlTirar }),
   };
 }
 

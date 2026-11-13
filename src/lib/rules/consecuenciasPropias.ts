@@ -48,13 +48,20 @@ export function salvacionPropiaDe(t: Pick<Accion, "salvacionesPropias">, modoId:
 }
 
 // Lo que el servidor aplica: por el grado de la tirada o por el de su salvación propia.
+// T4 (rules/sigilo.ts), por el mismo camino: `total`, el total de una tirada que queda como el
+// número de un estado (Sigilo, Arma escondida, Disfrazado), con la opción que da su nota;
+// `usar`, la opción elegida en una acción sin dado que pone un estado (Activar camuflaje);
+// `atacar`, un ataque estando en Sigilo, que te lo baja.
 export type OperacionConsecuenciaPropia =
   | { tipo: "grado"; accionId: string; grado: Grado }
-  | { tipo: "salvacion"; accionId: string; modoId: string | null; grado: Grado };
+  | { tipo: "salvacion"; accionId: string; modoId: string | null; grado: Grado }
+  | { tipo: "total"; accionId: string; total: number; eleccion: string | null }
+  | { tipo: "usar"; accionId: string; opcion: string | null }
+  | { tipo: "atacar"; accionId: string };
 
 export function consecuenciaPropia(
   t: Pick<Accion, "consecuenciasPropias" | "salvacionesPropias">,
-  op: Pick<OperacionConsecuenciaPropia, "grado"> & { tipo: OperacionConsecuenciaPropia["tipo"]; modoId?: string | null },
+  op: { grado: Grado; tipo: "grado" | "salvacion"; modoId?: string | null },
 ): ConsecuenciaPropia | null {
   const c = op.tipo === "grado" ? t.consecuenciasPropias?.[op.grado] : salvacionPropiaDe(t, op.modoId ?? null)?.grados[op.grado];
   return c && (c.danio || c.estados.length > 0) ? c : null;

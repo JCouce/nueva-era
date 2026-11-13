@@ -33,6 +33,8 @@ import type { MotorMetadata } from "./motor";
 import { textoCortoDeEfecto, type EfectoArma, type EfectoEnTirada } from "./efectosArma";
 import { escudoRoto, gastoDelModo, MOTIVO_ESCUDO_ROTO, recursoDe } from "./recursos";
 import { CONDICION_ATACANTES_ADICIONALES, condicionApuntado, type Accion, type AccionDirecta } from "./acciones";
+import { RUIDO_DISPARO, modosDeOcultacion, textoSigiloAlAtacar, type SigiloAlAtacar } from "./sigilo";
+import { ESTADO_CAMUFLAJE_ID } from "../catalog/estados";
 import { atributoEfectivo, aplicado } from "./derivados";
 import { criticoDesarmado, golpeDesarmadoConArmadura } from "./golpeDesarmado";
 import { ID_RETROCESO_ENTROPICO, retrocesoEntropico } from "./retrocesoEntropico";
@@ -205,6 +207,39 @@ function efectosDeMejoras(sheet: Sheet, instanciaId: string): NonNullable<Accion
     }
   }
   return efectos;
+}
+
+// Lo que te resta del Sigilo atacar con esta arma (T4, rules/sigilo.ts): el ruido (`ruido`, null
+// sin ruido), que fija el amortiguador de una mejora instalada en ella (Silenciador), y lo que
+// delata al arma (luminiscencia, ionización). El aviso solo sale en la tirada si algo cambia el
+// −6 de siempre.
+function sigiloDeAtaque(
+  sheet: Sheet,
+  instanciaId: string,
+  ruido: number | null,
+  arma: { label: string; delataAlAtacar?: { motivo: string; valor: number } },
+): { sigiloAlAtacar: SigiloAlAtacar; efecto: NonNullable<Accion["efectos"]>[number] | null } {
+  const amortiguadores: (SigiloAlAtacar["amortiguadores"][number] & { origen: OrigenAporte })[] = [];
+  if (ruido !== null) {
+    for (const pieza of sheet.equipo) {
+      if (pieza.instaladoEnId !== instanciaId || pieza.nivel === undefined) continue;
+      const cat = equipoPorId(pieza.catalogoId);
+      if (!cat || cat.familia !== "mejoraArma") continue;
+      const amortigua = ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel), "amortiguaRuido")?.amortiguaRuido;
+      if (amortigua !== undefined) amortiguadores.push({ fuente: cat.label, ruido: amortigua, origen: origenDePieza("equipo", cat, pieza.instanciaId) });
+    }
+  }
+  const sigiloAlAtacar: SigiloAlAtacar = {
+    ruido,
+    amortiguadores: amortiguadores.map(({ fuente, ruido: r }) => ({ fuente, ruido: r })),
+    extras: arma.delataAlAtacar ? [{ fuente: arma.label, ...arma.delataAlAtacar }] : [],
+  };
+  const texto = textoSigiloAlAtacar(sigiloAlAtacar);
+  const primero = amortiguadores[0];
+  return {
+    sigiloAlAtacar,
+    efecto: texto ? { fuente: primero?.fuente ?? arma.label, texto, ...(primero && { origen: primero.origen }) } : null,
+  };
 }
 
 // Bonos que dependen del tramo YA elegido (la mira telescópica solo ayuda a
@@ -380,10 +415,10 @@ function tiradaDeArmaFuego(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
   );
   condiciones.push(...condicionesDeMejoras(sheet, instanciaId));
 
-  const efectos = [
-    arma.notaTercero ? { fuente: arma.label, texto: arma.notaTercero } : null,
-    ...efectosDeMejoras(sheet, instanciaId),
-  ].filter((e): e is { fuente: string; texto: string } => e !== null);
+  // Las impulsoras (Arco, Ballesta) no hacen el ruido de un disparo.
+  // TODO(revisar): la fuente no dice cuánto resta del Sigilo disparar un arco o una ballesta.
+  const sigilo = sigiloDeAtaque(sheet, instanciaId, arma.tipo === "arma_impulsora" ? null : RUIDO_DISPARO, arma);
+  const efectos = [sigilo.efecto, ...efectosDeMejoras(sheet, instanciaId)].filter((e) => e !== null);
 
   // Sin selector de modo (un único modo, ver condicionModo): su `dificultad`
   // no se pierde, solo cambia de mecanismo — pasa de condición elegible a
@@ -404,6 +439,7 @@ function tiradaDeArmaFuego(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
     nota: notaArma || undefined,
     ...(arma.efectosObjetivo?.length && { efectosObjetivo: efectosConFuente(arma.efectosObjetivo, arma.label) }),
     efectos: efectos.length > 0 ? efectos : undefined,
+    sigiloAlAtacar: sigilo.sigiloAlAtacar,
     recursoInstanciaId: instanciaId,
     recursoUnidad: arma.tipoMunicion ? MUNICION_REGULAR[arma.tipoMunicion].unidadRecurso : undefined,
     municionesEspeciales: municiones.length > 0 ? municiones : undefined,
@@ -459,6 +495,7 @@ function tiradaDeLanzagranadas(sheet: Sheet, arma: ArmaFuego, instanciaId: strin
     familiaArma: "ataque_pesado",
     empleoArma: arma.empleo,
     nota: "Acción estándar · cargador 1 · alcance 200 m.",
+    sigiloAlAtacar: { ruido: RUIDO_DISPARO, amortiguadores: [], extras: [] },
     ajustesFijos: [{ valor: -2, fuente: "Lanzagranadas acoplado" }],
     condiciones: modo ? [modo] : [],
     ataque: {
@@ -577,6 +614,7 @@ function tiradaDeArmamentoPesado(sheet: Sheet, arma: ArmaPesada, instanciaId: st
       familiaArma: "ataque_pesado",
       empleoArma: "dos manos", // "Empleo a dos manos" (características generales del catálogo)
       nota: `${notaAlcance}Cargador ${arma.cargador}.`,
+      sigiloAlAtacar: { ruido: RUIDO_DISPARO, amortiguadores: [], extras: [] },
       ajustesFijos: [{ valor: arma.dificultad, fuente: arma.label }],
       condiciones: modo ? [modo] : [],
       ataque: {
@@ -600,6 +638,7 @@ function tiradaDeArmamentoPesado(sheet: Sheet, arma: ArmaPesada, instanciaId: st
     familiaArma: "ataque_pesado",
     empleoArma: "dos manos",
     nota: `${notaAlcance}${arma.efectos}`,
+    sigiloAlAtacar: { ruido: RUIDO_DISPARO, amortiguadores: [], extras: [] },
     ajustesFijos: [{ valor: arma.dificultad, fuente: arma.label }],
     // Cada disparo gasta 1 de su cargador (S95), con el aviso de insuficiente de siempre.
     recursoInstanciaId: arma.tipoMunicion ? instanciaId : undefined,
@@ -1067,15 +1106,16 @@ function variantesModoDesbloqueadas(nivel: number): string[] {
 
 // "El uso de cualquier modo de ataque impone un penalizador temporal de -5 al sigilo (en
 // términos de percepción visual)" (docs/fuente/equipamiento.md, Proyector de Pulso nivel 1):
-// tirada propia distinta (Sigilo), aviso en Accion.efectos como el Puntero Láser (S96). Sale
-// del `notaTirada` del catálogo, en el disparo y en el Aguijón.
-function efectosProyectorPulso(pieza: PiezaEquipada): Accion["efectos"] {
+// `delataAlAtacar` del nivel, que la app resta de tu Sigilo en el disparo (con el ruido) y en el
+// Aguijón (sin ruido: es cuerpo a cuerpo). T4, rules/sigilo.ts.
+// TODO(revisar): que el disparo del Proyector haga el ruido de un disparo (−6) además de la ionización.
+function sigiloProyectorPulso(sheet: Sheet, pieza: PiezaEquipada, ruido: number | null): ReturnType<typeof sigiloDeAtaque> {
   const cat = equipoPorId(pieza.catalogoId);
-  if (!cat || cat.familia !== "subsistema") return undefined;
-  const efectos = nivelesHasta(cat.niveles, pieza.nivel ?? 1).flatMap((n) =>
-    n.notaTirada ? [{ fuente: cat.label, texto: n.notaTirada }] : [],
-  );
-  return efectos.length > 0 ? efectos : undefined;
+  const delata =
+    cat && cat.familia === "subsistema"
+      ? ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel ?? 1), "delataAlAtacar")?.delataAlAtacar
+      : undefined;
+  return sigiloDeAtaque(sheet, pieza.instanciaId, ruido, { label: cat?.label ?? "Proyector de Pulso", delataAlAtacar: delata });
 }
 
 // Alcances de la tabla "Modo de Ataque" (docs/fuente/equipamiento.md, Proyector de Pulso):
@@ -1105,6 +1145,10 @@ function condicionTramoPulso(nivel: number): CondicionTirada {
     })),
     porDefecto: "media",
   };
+}
+
+function conSigilo(s: ReturnType<typeof sigiloDeAtaque>): Pick<Accion, "sigiloAlAtacar" | "efectos"> {
+  return { sigiloAlAtacar: s.sigiloAlAtacar, ...(s.efecto && { efectos: [s.efecto] }) };
 }
 
 function tiradaDeProyectorPulso(
@@ -1153,7 +1197,7 @@ function tiradaDeProyectorPulso(
     nota,
     // El Barrido no trae crítico en la tabla; la tirada es una sola para los tres modos.
     efectoCritico: criticoProyectorPulso(nivel, "Hemorragia (Pulso y Pulso Cargado; el Barrido no tiene crítico)"),
-    efectos: efectosProyectorPulso(pieza),
+    ...conSigilo(sigiloProyectorPulso(sheet, pieza, RUIDO_DISPARO)),
     recursoInstanciaId: pieza.instanciaId,
     recursoUnidad: "cargas",
     condiciones: [condicionTramoPulso(nivel), modo],
@@ -1204,7 +1248,7 @@ function tiradaGolpeAguijon(sheet: Sheet, mods: ModificadorConFuente[], pieza: P
       ...variantesModoDesbloqueadas(nivel),
     ].join(" · "),
     efectoCritico: criticoProyectorPulso(nivel, "Hemorragia"),
-    efectos: efectosProyectorPulso(pieza),
+    ...conSigilo(sigiloProyectorPulso(sheet, pieza, null)),
     recursoInstanciaId: pieza.instanciaId,
     recursoUnidad: "cargas",
     ataque: {
@@ -1486,16 +1530,21 @@ function tiradaDetonacionPulsoTermico(pieza: PiezaEquipada): AccionDirecta | nul
   };
 }
 
-// "Activar camuflaje trifásico": acción gratuita que gasta 1 carga de su célula
-// (subsistemas.ts). Sin dado: la cobertura la aplica quien busca o dispara al portador, así
-// que la nota da los números del nivel instalado para aplicarlos a mano. El modo pasivo no
-// se activa ni gasta (basta con que quede alguna carga): solo va en la nota.
+// "Activar camuflaje trifásico": acción gratuita que gasta 1 carga de su célula (subsistemas.ts)
+// y te pone el estado Camuflaje con el modo elegido (estático o dinámico) y la duración de su
+// nivel (T4, eq-25). Mientras dura, su cobertura se suma por sentido a tu Sigilo y la esquiva
+// sale con «Tengo cobertura» marcada (eq-26). El modo pasivo no se activa ni gasta: suma
+// mientras quede alguna carga.
 export const MOTIVO_SIN_CARGAS = "Sin cargas: recarga o cambia la batería";
 export const NOTA_MALLA_ANULA_CAMUFLAJE =
   "Con la Malla Plasmática activa, el modo activo del camuflaje no da ningún beneficio.";
+export const ID_MODO_CAMUFLAJE = "modo_camuflaje";
+const textoCobertura = (c: { visual?: number; termica?: number; acustica?: number }) =>
+  `visual ${c.visual ?? 0} · térmica ${c.termica ?? 0} · acústica ${c.acustica ?? 0}`;
 function accionActivarCamuflaje(sheet: Sheet, pieza: PiezaEquipada, cat: Subsistema): AccionDirecta {
   const nivel = cat.niveles.find((n) => n.nivel === pieza.nivel) ?? cat.niveles[0];
   const recurso = recursoDe(sheet, pieza.instanciaId);
+  const modos = modosDeOcultacion(sheet);
   return {
     id: `activar_camuflaje_${pieza.instanciaId}`,
     label: `Activar ${cat.label}`,
@@ -1503,14 +1552,35 @@ function accionActivarCamuflaje(sheet: Sheet, pieza: PiezaEquipada, cat: Subsist
     confirmarLabel: "Activar",
     nota: [
       `Acción gratuita, gasta 1 carga${recurso ? ` (quedan ${recurso.actual}/${recurso.max})` : ""}. Nivel ${nivel.nivel}.`,
-      ...nivel.detalle,
-      "La cobertura la aplica quien te busca o te dispara. Con otra cobertura, la menor suma solo la mitad.",
+      "Te pone el estado Camuflaje: su cobertura se suma a tu Sigilo por sentido y en la esquiva cuenta como cobertura. Con otra cobertura, la menor suma solo la mitad.",
       "El modo pasivo no se activa ni gasta: dura mientras quede alguna carga.",
       // "Su uso [Malla Plasmática] neutraliza por completo los beneficios activos del subsistema
       // de camuflaje" (docs/fuente/equipamiento.md): la ficha no guarda si la Malla está activa,
       // así que se avisa y no se bloquea (S96).
       ...(mallaPlasmaticaEquipada(sheet) ? [NOTA_MALLA_ANULA_CAMUFLAJE] : []),
     ].join(" "),
+    ...(modos.length > 0 && {
+      condiciones: [
+        {
+          id: ID_MODO_CAMUFLAJE,
+          tipo: "opcion",
+          etiqueta: "Modo",
+          porDefecto: modos[0].id,
+          opciones: modos.map((m) => ({
+            id: m.id,
+            etiqueta: `${m.etiqueta} (${m.duracion})`,
+            valor: 0,
+            sinValor: true,
+            nota: `Cobertura ${textoCobertura(m.cobertura)}.`,
+          })),
+        },
+      ],
+      estadoAlUsar: {
+        estadoId: ESTADO_CAMUFLAJE_ID,
+        condicion: ID_MODO_CAMUFLAJE,
+        opciones: Object.fromEntries(modos.map((m) => [m.id, { gradoId: m.id, turnos: m.turnos }])),
+      },
+    }),
     gastoRecurso: { instanciaId: pieza.instanciaId, cantidad: 1 },
     ...(recurso?.actual === 0 && { bloqueada: MOTIVO_SIN_CARGAS }),
   };

@@ -1010,7 +1010,41 @@ Tandas, en orden:
     conocida enseña los cuatro resultados con el tramo de total de cada uno (`GradoAviso.rango`).
     Sin migración. Quedan `TODO(revisar)`: el retroceso no pasa por Resistir daño; el empate en
     la enfrentada.
-- [ ] **T4 Estado Sigilo**: di-09, do-01, eq-25, eq-26, eq-30, eq-31, eq-33.
+- [x] **T4 Estado Sigilo**: di-09, do-01, eq-25, eq-26, eq-30, eq-31, eq-33. Forma decidida (usuario,
+  2026-11-13):
+  - Estado «Sigilo» con número (campo general `valor` en `EstadoActivo`): tu total de Sigilo es la
+    dificultad para detectarte; lo pone la app al tirar (server action con registro, como P1),
+    tirar otra vez lo sustituye, «Salir del sigilo» o el máster lo quitan. Se enseña por sentido
+    con lo activo encima (camuflaje). El máster lo compara a ojo con la Alerta de los suyos.
+  - Disparar en Sigilo resta solo: −6, −2 con silenciador (la fuente); luminiscentes −6 más
+    (suman: −12, −8 con silenciador). Melee no resta. De momento el silenciador es el único
+    amortiguador; el modelo admite apilar los que vengan. A 0 se quita el estado y avisa «Ya no
+    estás en sigilo».
+  - Camuflaje Trifásico: «Activar camuflaje» pregunta estático/dinámico y pone el estado
+    «Camuflaje» con la duración de su nivel; suma su cobertura por sentido al Sigilo (el pasivo,
+    siempre); en la esquiva, «Tengo cobertura» (+2) ya marcada (eq-26).
+  - Sigilo trae selector de movimiento (quieto / mitad −2 / total −4 / esprint −8), que las tres
+    Movimiento Sigiloso reducen solas (fuera sus casillas), y casilla «Te escondes siendo
+    observado» (−6).
+  - Fila «Esconder arma» (Reflejos + Sigilo), selector con tus armas de una mano y lo que vaya en el
+    Compartimento Oculto; Mosquito +2, Compartimento +3/+4 a quien esconde. Guarda «Arma
+    escondida: dificultad X».
+  - Disfraz Holográfico guarda «Disfrazado: dificultad X» 1 hora (600 turnos).
+  *(2026-11-13)* Campo general `valor` (y `nota`) en `EstadoActivo`, leído tolerante; sin migración
+  (vive en `Character.estados`). Motor `rules/sigilo.ts`; lo aplica `aplicarConsecuenciaPropiaAction`
+  (tipos nuevos `total`, `usar`, `atacar`) con registro y Deshacer. Estados `ESTADOS_DE_OCULTACION`
+  (Sigilo, Camuflaje, Arma escondida, Disfrazado): chip con × en Acciones («Salir del sigilo»…,
+  `quitarEstadoDePoderAction` admite los que `loQuitaElJugador`) y, en el panel del máster, al
+  final de la rejilla solo para quitar (`estadosDelPanel`). Sigilo por sentido en ficha y Mesa
+  (`estadosParaPintar` con `FichaResuelta.ocultacion`). `Accion.estadoAlTirar` (Sigilo, Esconder
+  arma, Disfraz vía `NivelModulo.estadoAlTirar`), `AccionDirecta.estadoAlUsar` (camuflaje),
+  `Accion.sigiloAlAtacar` (ruido 6, `NivelModulo.amortiguaRuido` del Silenciador, `delataAlAtacar`
+  de las luminiscentes y del Proyector). `NivelModulo.ocultacion` con los números del camuflaje;
+  `Estado.marcaCasillas` deja «Tengo cobertura» marcada. «¿Te mueves?» y «siendo observado» en
+  Sigilo; Movimiento Sigiloso pasa a bono por opción (`SELECTORES_DE_TIRADA`, regenerado
+  `dotes.ts`). «Esconder arma» en `FichaResuelta.accionesOcultacion`. Quedan `TODO(revisar)`:
+  luminiscencia/ionización solo visual (se resta del número entero), pasiva + activa del camuflaje,
+  ruido del Proyector y de arcos/ballestas, una sola arma escondida a la vez, apilar amortiguadores.
 - [ ] **T5 Fase 4 de aportes + lo que sale en la tirada**: pl-05, eq-35, do-07, es-05, au-06, td-05,
   do-03, fa-01, fa-02, di-32, td-06, td-08, td-10, td-11.
 - [ ] **T6 Psiónica y sobreesfuerzo**: ps-01…08, es-01, au-04, au-05, eq-27, td-31.

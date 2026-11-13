@@ -68,13 +68,14 @@ export type ArmaFuego = {
   // puede ser de nivel superior y sustituye a la integrada (equipo.ts).
   miraIntegrada?: number;
   especial: string | null;
-  // Efecto que toca la tirada de OTRO personaje (objetivo_tercero,
-  // docs/motor.md) — p.ej. el penalizador a la Alerta Activa de quien
-  // detecta el disparo. Se lista aparte en Accion.efectos (acciones.ts), no
-  // se funde en `especial`/`nota`: ese campo es sobre ESTA arma, este es un
-  // aviso para otra tirada que el motor no automatiza. Ver combate.ts,
-  // tiradaDeArmaFuego. docs/sistema.md, pregunta 25b.
-  notaTercero?: string;
+  // Lo que el arma te resta del Sigilo al dispararla además del ruido (T4, rules/sigilo.ts): la
+  // luminiscencia del rayo o del plasma, «-6 al sigilo al dispararla (solo percepción visual)».
+  // Lo resta solo la app si estás en Sigilo (sigiloAlAtacar, combate.ts).
+  // TODO(revisar): la fuente dice que solo afecta a la percepción visual; se resta del número
+  // entero del estado, como decidió el usuario (−6 más, 2026-11-13).
+  delataAlAtacar?: { motivo: string; valor: number };
+  // Bono a esconder el arma en la fila «Esconder arma» (T4, eq-30): Mosquito +2.
+  bonoEsconder?: number;
   // Lo que el disparo le hace al objetivo (T3a del cuestionario, rules/efectosArma.ts): los
   // «Efecto X (N)» y «Crítico de X (N)» de `especial` como dato, y el Derribo de escopetas y
   // ametralladoras en corta y a bocajarro (`soloEn.tramo`). El resultado del ataque los avisa.
@@ -109,15 +110,15 @@ export const ARMAS: ArmaFuego[] = [
     pesoKg: 0.5,
     rareza: "Común",
     coste: 100,
-    // "ocultar arma": no hay tirada de ocultar un objeto en ACCIONES hoy — el
-    // id es un marcador para cuando exista, no se aplica a nada mientras tanto.
-    modificadores: [{ tipo: "tirada", alcance: { tipo: "tiradaId", id: "ocultar_objeto" }, valor: 2 }],
+    // "+2 a tiradas relacionadas con su ocultación": en su opción de «Esconder arma» (eq-30).
+    bonoEsconder: 2,
+    modificadores: [],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "ocultar_objeto" }, mecanismo: "siempre_activo", estado: "pendiente" }, // hay propuesta de diseño escrita para "Ocultar objeto" (equipo-efectos-especiales.md, 2026-09-12), solo falta construirla — no es una pregunta sin responder, así que "pendiente" y no "bloqueado"
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "esconder_arma" }, mecanismo: "eleccion_jugador", estado: "construido" }, // +2 en su opción de «Esconder arma» (T4, eq-30)
     ],
   },
   {
@@ -289,7 +290,7 @@ export const ARMAS: ArmaFuego[] = [
     tipoMunicion: "celula_particulas",
     mejorasAdmitidas: 2,
     especial: "Efecto Shock (5) · Crítico de Shock (12) · F. Auto (Esquiva 9)",
-    notaTercero: "-6 a la Alerta Activa de quien te detecta (percepción visual).",
+    delataAlAtacar: { motivo: "luminiscencia", valor: 6 },
     pesoKg: 2,
     rareza: "Muy Extraño",
     coste: 30000,
@@ -301,13 +302,9 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      // Pregunta 25b resuelta (Murillo, 2026-09-23): el penalizador afecta a
-      // la reacción de detección de los observadores justo tras el disparo,
-      // no a una tirada propia del atacante — aviso objetivo_tercero colgado
-      // de "ataque_fuego" (arma.especial, arriba). Decisión de producto
-      // revisada 2026-09-24: sí se construye — la original de 2026-09-23 (no
-      // avisarlo por sobrecargar la UI) se revierte a petición del usuario.
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" },
+      // La luminiscencia resta de tu estado Sigilo al disparar (T4, di-09: la app lo resta sola;
+      // antes, aviso a la Alerta de quien te detecta, pregunta 25b).
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
@@ -332,7 +329,7 @@ export const ARMAS: ArmaFuego[] = [
     tipoMunicion: "bateria_plasma",
     mejorasAdmitidas: 2,
     especial: "Efecto Shock y Llamarada (7) · Crítico de Fusión (11) · F. Auto (Esquiva 9)",
-    notaTercero: "-6 a la Alerta Activa de quien te detecta (percepción visual).",
+    delataAlAtacar: { motivo: "luminiscencia", valor: 6 },
     pesoKg: 3,
     rareza: "Muy Extraño",
     coste: 45000,
@@ -344,7 +341,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" }, // decisión de 25b revertida 2026-09-24, ver Rayo Ligero
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "suma_derivado", estado: "construido" }, // luminiscencia: resta de tu Sigilo al disparar (T4), ver Rayo Ligero
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "llamarada" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "fusion" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
@@ -495,7 +492,7 @@ export const ARMAS: ArmaFuego[] = [
     tipoMunicion: "bateria_plasma",
     mejorasAdmitidas: 2,
     especial: "Efecto Shock y Llamarada (8) · Crítico de Fusión (12) · F. Auto (Esquiva 10)",
-    notaTercero: "-6 a la Alerta Activa de quien te detecta (percepción visual).",
+    delataAlAtacar: { motivo: "luminiscencia", valor: 6 },
     // Sin Derribo: manda la fila de la tabla, que no lo trae (usuario, cuestionario eq-12,
     // 2026-11-13; hasta entonces se le daba 9 por la regla de familia).
     pesoKg: 7.5,
@@ -509,7 +506,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" }, // decisión de 25b revertida 2026-09-24, ver Rayo Ligero
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "suma_derivado", estado: "construido" }, // luminiscencia: resta de tu Sigilo al disparar (T4), ver Rayo Ligero
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "llamarada" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "fusion" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
@@ -656,7 +653,7 @@ export const ARMAS: ArmaFuego[] = [
     tipoMunicion: "bateria_plasma",
     mejorasAdmitidas: 2,
     especial: "Efecto Shock y Llamarada (8) · Crítico de Fusión (12) · F. Auto (Esquiva 10)",
-    notaTercero: "-5 a la Alerta Activa de quien te detecta (percepción visual).",
+    delataAlAtacar: { motivo: "luminiscencia", valor: 5 },
     pesoKg: 4.5,
     rareza: "Extraño",
     coste: 56000,
@@ -668,7 +665,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" }, // decisión de 25b revertida 2026-09-24, ver Rayo Ligero
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "suma_derivado", estado: "construido" }, // luminiscencia: resta de tu Sigilo al disparar (T4), ver Rayo Ligero
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "llamarada" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "fusion" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
@@ -883,7 +880,7 @@ export const ARMAS: ArmaFuego[] = [
     tipoMunicion: "bateria_plasma",
     mejorasAdmitidas: 2,
     especial: "Efecto Shock y Llamarada (6) · Crítico de Fusión (11) · F. Auto (Esquiva 10)",
-    notaTercero: "-5 a la Alerta Activa de quien te detecta (percepción visual).",
+    delataAlAtacar: { motivo: "luminiscencia", valor: 5 },
     pesoKg: 6,
     rareza: "Extraño",
     coste: 60500,
@@ -895,7 +892,7 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" }, // decisión de 25b revertida 2026-09-24, ver Rayo Ligero
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "suma_derivado", estado: "construido" }, // luminiscencia: resta de tu Sigilo al disparar (T4), ver Rayo Ligero
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "llamarada" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "fusion" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)

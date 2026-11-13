@@ -118,6 +118,7 @@ export * from "./resistirDanio";
 export * from "./efectosArma";
 export * from "./consecuenciasPropias";
 export * from "./retrocesoEntropico";
+export * from "./sigilo";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

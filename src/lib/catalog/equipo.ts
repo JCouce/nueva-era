@@ -34,6 +34,7 @@ import type { MotorMetadata } from "../rules/motor";
 import type { HabilidadId } from "../rules/habilidades";
 import type { EfectoSalvacion } from "../rules/aumentosTiradas";
 import type { EfectoAlRecibir } from "../rules/resistirDanio";
+import type { EstadoAlTirar, Ocultacion } from "../rules/sigilo";
 import type { TipoDanio } from "./tiposDanio";
 import { ARMAS_MELEE, type ArmaMelee } from "./armasMelee";
 import { VALIJA_TACTICA_MEDICA, FARMACOS } from "./medicina";
@@ -160,6 +161,9 @@ export type NivelModulo = {
   // como opción con `dificultad` en `condiciones` sin `alcance`: solo en la fila de la pieza
   // (tiradaDeHerramienta, rules/herramientas.ts). S94.
   dificultadTirada?: number;
+  // El total de esa tirada queda como un estado tuyo con número (T4, rules/sigilo.ts): el Disfraz
+  // Holográfico, «Disfrazado» 1 hora. Del nivel más alto que lo defina.
+  estadoAlTirar?: EstadoAlTirar;
   // Puntos menos del penalizador por umbral de un recurso en las tiradas de ese alcance
   // (Derivación Psiónica 4: −1 al de fatiga en las de poder psiónico). Total del nivel
   // (ultimoQueDefine); lo recoge reduccionesDeEquipo (rules/equipo.ts). S94.
@@ -196,6 +200,18 @@ export type NivelModulo = {
   // Mejora Ignífuga 2 (fuego) y Polímero Anticorrosivo 2 (corrosivo): "el usuario que reciba
   // daño [de ese tipo] lo considera letal en lugar de grave" (categoriaDelGolpe, blindaje.ts).
   recibeComoLetal?: TipoDanio;
+  // Ocultación por sentido (T4, rules/sigilo.ts): modos activos con su duración y cobertura, y
+  // la pasiva mientras quede carga. Camuflaje Trifásico. Total del nivel (ultimoQueDefine).
+  ocultacion?: Ocultacion;
+  // Amortiguador del ruido de un ataque (T4): fija lo que el ruido del disparo resta a tu Sigilo
+  // a este número (Silenciador: 2). En la mejora instalada en el arma.
+  amortiguaRuido?: number;
+  // Lo que atacar con la pieza te resta del Sigilo además del ruido (T4): la ionización del
+  // Proyector de Pulso. Como ArmaFuego.delataAlAtacar.
+  delataAlAtacar?: { motivo: string; valor: number };
+  // Bono a esconder lo que va dentro (T4, eq-31): Compartimento Oculto, +3 (nivel 2, +4), en la
+  // fila «Esconder arma». Total del nivel.
+  bonoEsconder?: number;
   motor?: MotorMetadata[]; // docs/motor.md — un MotorMetadata por efecto DE ESTE NIVEL
 };
 

@@ -1,6 +1,7 @@
 import type { NivelModulo } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
 import type { EfectoAlRecibir } from "../rules/resistirDanio";
+import type { ModoOcultacion, Ocultacion } from "../rules/sigilo";
 
 export type Subsistema = {
   familia: "subsistema";
@@ -47,6 +48,33 @@ const MALLA_DEVUELVE: MotorMetadata = {
   estado: "construido",
 };
 
+// Camuflaje Trifásico como dato (T4 del cuestionario, eq-25 y eq-26, usuario 2026-11-13): por
+// nivel, la duración y la cobertura (visual / térmica / acústica) de cada modo activo y la pasiva.
+// «Activar camuflaje» pone el estado Camuflaje con el modo elegido y su duración (1 minuto = 10
+// turnos, criterio de la psiónica); mientras dura, su cobertura se suma por sentido a tu Sigilo y
+// la esquiva sale con «Tengo cobertura» marcada. La pasiva suma mientras le quede carga.
+const modo = (id: "estatico" | "dinamico", turnos: number, duracion: string, [visual, termica, acustica]: [number, number, number]): ModoOcultacion => ({
+  id,
+  etiqueta: id === "estatico" ? "Estático" : "Dinámico",
+  turnos,
+  duracion,
+  cobertura: { visual, termica, acustica },
+});
+const OCULTACION_CAMUFLAJE: Record<1 | 2 | 3 | 4, Ocultacion> = {
+  1: { modos: [modo("estatico", 10, "1 minuto", [3, 3, 4]), modo("dinamico", 1, "1 turno", [2, 1, 2])], pasiva: { termica: 1, acustica: 1 } },
+  2: { modos: [modo("estatico", 50, "5 minutos", [4, 4, 4]), modo("dinamico", 2, "2 turnos", [2, 1, 2])], pasiva: { termica: 1, acustica: 1 } },
+  3: { modos: [modo("estatico", 100, "10 minutos", [4, 4, 4]), modo("dinamico", 4, "4 turnos", [3, 2, 3])], pasiva: { termica: 2, acustica: 2 } },
+  4: { modos: [modo("estatico", 200, "20 minutos", [4, 4, 4]), modo("dinamico", 6, "6 turnos", [4, 3, 3])], pasiva: { termica: 3, acustica: 3 } },
+};
+const MOTOR_CAMUFLAJE: MotorMetadata[] = [
+  // La cobertura por sentido, sumada a tu estado Sigilo al enseñarlo (rules/sigilo.ts).
+  { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "suma_derivado", estado: "construido" },
+  // Activo: «Tengo cobertura» (+2) ya marcada en la esquiva (eq-26; Estado.marcaCasillas).
+  { tipo: "numerico", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "eleccion_jugador", estado: "construido" },
+  // «Activar camuflaje», acción sin dado que gasta 1 carga y pone el estado (accionActivarCamuflaje, combate.ts).
+  { tipo: "accion", afecta: { modo: "accion_nueva", id: "activar_camuflaje" }, mecanismo: "accion_equipo", estado: "construido" },
+];
+
 export const SUBSISTEMAS: Subsistema[] = [
   {
     familia: "subsistema",
@@ -90,22 +118,10 @@ export const SUBSISTEMAS: Subsistema[] = [
           "Cobertura activa dinámico (Visual/Térmica/Acústica): 2 / 1 / 2.",
           "Cobertura pasiva (Térmica/Acústica): 1 / 1.",
         ],
-        // Sin modificadores: la cobertura depende del modo y de si el usuario
-        // está quieto o en movimiento, así que no hay un número único que
-        // aplique "mientras se lleva puesto" (ver docs/traspaso.md §6).
+        // Sin modificadores: la cobertura depende del modo, va como dato en `ocultacion` (T4).
         modificadores: [],
-        // Cobertura: sube la dificultad de QUIEN busca/detecta/dispara al
-        // portador, nunca una tirada propia — mismo problema estructural que
-        // Compartimento Oculto (objetivo_tercero, mecanismo nota_fija ya
-        // aceptado en conversación, sin tirada de portador donde colgarlo
-        // todavía). Un único efecto por nivel aunque `detalle` liste varios
-        // números (activo estático/dinámico, pasivo): son variantes del mismo
-        // concepto según modo/movimiento, no efectos distintos.
-        motor: [
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "buscar_percibir" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
-          // "Activar camuflaje trifásico", acción sin dado que gasta 1 carga (accionActivarCamuflaje, combate.ts).
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "activar_camuflaje" }, mecanismo: "accion_equipo", estado: "construido" },
-        ],
+        ocultacion: OCULTACION_CAMUFLAJE[1],
+        motor: MOTOR_CAMUFLAJE,
       },
       {
         nivel: 2,
@@ -118,11 +134,8 @@ export const SUBSISTEMAS: Subsistema[] = [
           "Cobertura pasiva (Térmica/Acústica): 1 / 1.",
         ],
         modificadores: [],
-        motor: [
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "buscar_percibir" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
-          // "Activar camuflaje trifásico", acción sin dado que gasta 1 carga (accionActivarCamuflaje, combate.ts).
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "activar_camuflaje" }, mecanismo: "accion_equipo", estado: "construido" },
-        ],
+        ocultacion: OCULTACION_CAMUFLAJE[2],
+        motor: MOTOR_CAMUFLAJE,
       },
       {
         nivel: 3,
@@ -135,11 +148,8 @@ export const SUBSISTEMAS: Subsistema[] = [
           "Cobertura pasiva (Térmica/Acústica): 2 / 2.",
         ],
         modificadores: [],
-        motor: [
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "buscar_percibir" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
-          // "Activar camuflaje trifásico", acción sin dado que gasta 1 carga (accionActivarCamuflaje, combate.ts).
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "activar_camuflaje" }, mecanismo: "accion_equipo", estado: "construido" },
-        ],
+        ocultacion: OCULTACION_CAMUFLAJE[3],
+        motor: MOTOR_CAMUFLAJE,
       },
       {
         nivel: 4,
@@ -152,11 +162,8 @@ export const SUBSISTEMAS: Subsistema[] = [
           "Cobertura pasiva (Térmica/Acústica): 3 / 3.",
         ],
         modificadores: [],
-        motor: [
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "buscar_percibir" }, mecanismo: "nota_fija", estado: "bloqueado", bloqueoPor: "objetivo_tercero sin tirada de portador donde colgar la nota" },
-          // "Activar camuflaje trifásico", acción sin dado que gasta 1 carga (accionActivarCamuflaje, combate.ts).
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "activar_camuflaje" }, mecanismo: "accion_equipo", estado: "construido" },
-        ],
+        ocultacion: OCULTACION_CAMUFLAJE[4],
+        motor: MOTOR_CAMUFLAJE,
       },
     ],
   },
@@ -574,9 +581,10 @@ export const SUBSISTEMAS: Subsistema[] = [
             "cualquier modo de ataque.",
         ],
         modificadores: [],
-        // Aviso en Accion.efectos del disparo y del Aguijón (efectosProyectorPulso, combate.ts),
-        // mismo patrón que el Puntero Láser (S96).
-        notaTirada: "Al atacar con cualquier modo: -5 a tu Sigilo (percepción visual).",
+        // Te resta 5 del Sigilo al atacar con cualquier modo (T4: la app lo resta sola; antes,
+        // aviso, S96). sigiloProyectorPulso, combate.ts.
+        // TODO(revisar): «solo percepción visual»; se resta del número entero del estado.
+        delataAlAtacar: { motivo: "ionización", valor: 5 },
         motor: [
           // Hallazgo #1, construido 2026-09-23: tiradaDeProyectorPulso()
           // (combate.ts), registrado en REGISTRO_DE_ATAQUE bajo "subsistema".
@@ -587,9 +595,8 @@ export const SUBSISTEMAS: Subsistema[] = [
           // habilidad — sin inventar un mecanismo de "elige atributo/habilidad
           // dentro de la misma tirada" que no existe.
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_proyector_pulso" }, mecanismo: "accion_equipo", estado: "construido" },
-          // "-5 al sigilo al disparar": tirada propia distinta, aviso en `efectos` como el
-          // Puntero Láser (pregunta 25b revertida; S96).
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "nota_fija", estado: "construido" },
+          // "-5 al sigilo al disparar": resta de tu estado Sigilo al atacar (T4).
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "suma_derivado", estado: "construido" },
         ],
       },
       {

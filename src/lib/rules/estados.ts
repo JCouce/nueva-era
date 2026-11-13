@@ -290,6 +290,11 @@ export type EstadoActivo = {
   // (Estabilizado: no reduce los que lleguen después; estabilizacionPuesta). Opcional por lo
   // mismo que finDeEscena.
   cubre?: string[];
+  // Un número que el estado guarda (T4 del cuestionario): la dificultad para detectarte en
+  // Sigilo, Disfrazado y Arma escondida. Opcional por lo mismo que finDeEscena.
+  valor?: number;
+  // Qué concreta el estado, si cabe en una etiqueta («Mosquito» en Arma escondida).
+  nota?: string;
 };
 
 // Inmunidad a un estado del catálogo (A7: Ojo Biónico 2-4, Regeneración Tisular), con la pieza
@@ -419,6 +424,11 @@ export type EstadoActivoDescrito = EstadoActivo & {
   inmune?: string;
   // Derivado de la vida o la fatiga (estadosDerivados): sin duración y sin quitar; se va solo.
   automatico?: true;
+  // T4: el número que guarda, para el chip («dificultad 12 · Mosquito»; el Sigilo, por sentido,
+  // lo rehace estadosParaPintar con la ocultación de la ficha).
+  valorTexto?: string;
+  // El botón con que el propio jugador se lo quita («Salir del sigilo»), si puede.
+  quitarJugador?: string;
 };
 
 // "3 rondas, en combate" / "hasta el final de la escena" (A5a).
@@ -427,12 +437,20 @@ export function textoDuracionActivable(d: DuracionEstado): string {
   return d.tipo === "escena" ? "hasta el final de la escena" : "hasta desactivarlo";
 }
 
+// «dificultad 12 · Mosquito», «14»: el número del estado (T4) con su etiqueta y su nota.
+function textoValorEstado(ea: EstadoActivo): string | undefined {
+  if (ea.valor === undefined) return ea.nota;
+  const etiqueta = estadoPorId(ea.estadoId)?.valor?.etiqueta;
+  return [`${etiqueta ? `${etiqueta} ` : ""}${ea.valor}`, ea.nota].filter(Boolean).join(" · ");
+}
+
 // `inmunidades` (A7): las de la ficha; un estado que anulan sale con `inmune`.
 export function describirEstadosActivos(activos: EstadoActivo[], inmunidades: readonly Inmunidad[] = []): EstadoActivoDescrito[] {
   return activos.map((ea) => {
     const anula = inmunidadQueAnula(ea, inmunidades);
     const estado = estadoPorId(ea.estadoId);
     const grado = estado?.grados.find((g) => g.id === ea.gradoId);
+    const valorTexto = textoValorEstado(ea);
     return {
       ...ea,
       duracion: duracionDe(ea),
@@ -441,10 +459,12 @@ export function describirEstadosActivos(activos: EstadoActivo[], inmunidades: re
       // El número de grados de ESTE estado, no de un desplegable ajeno que
       // pueda estar mostrando otro estado a medio elegir.
       label:
-        estado && grado && estado.grados.length !== 1
+        (estado && grado && estado.grados.length !== 1
           ? `${estado.label} (${grado.label})`
-          : (estado?.label ?? ea.estadoId),
-      detalle: grado?.detalle ?? [],
+          : (estado?.label ?? ea.estadoId)) + (valorTexto ? ` ${valorTexto}` : ""),
+      detalle: [...(estado?.valor ? [estado.resumen] : []), ...(grado?.detalle ?? [])],
+      ...(valorTexto && { valorTexto }),
+      ...(estado?.quitarJugador && { quitarJugador: estado.quitarJugador }),
       ...(esEstadoDeAumento(ea.estadoId) && { duracionActivable: textoDuracionActivable(duracionDe(ea)) }),
       ...(anula && { inmune: anula.fuente }),
     };

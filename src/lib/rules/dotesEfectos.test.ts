@@ -2,13 +2,13 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { defaultSheet, type Sheet } from "./sheet";
-import { ACCIONES, GRUPOS_ACCION, elegirEspecialidad, type Accion } from "./acciones";
+import { ACCIONES, GRUPOS_ACCION, ID_MOVIMIENTO_OCULTO, elegirEspecialidad, type Accion } from "./acciones";
 import { HABILIDADES } from "./habilidades";
 import { resolverFicha, conExtrasDeFicha, conExtrasDirectaDeFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
 import { ID_CASILLA_ULTRA_FISICAS, ID_CASILLA_ULTRA_INICIATIVA } from "./farmacos";
 import { montarTirada, eleccionSinTocar, tirarMontada } from "./montaje";
 import { motorMetadataSchema, erroresDeMotorMetadata } from "./motor";
-import { dotesActivas, casillasDeDotes, textosDeDotes, modificadoresDeDotes, permisosDeDotes } from "./dotesEfectos";
+import { dotesActivas, textosDeDotes, modificadoresDeDotes, permisosDeDotes } from "./dotesEfectos";
 import { valoresRequisitoDeFicha, comprarDote, CONTEXTO_LIBRE } from "./dotes";
 import { fuentesDeCapa1 } from "./capa1";
 import { nivelesDePsionica, SIN_BONOS_DISCIPLINA } from "./psionica";
@@ -159,9 +159,10 @@ const ULTRA = [ID_CASILLA_ULTRA_FISICAS, ID_CASILLA_ULTRA_INICIATIVA];
 const idsDeCasillas = (t: Accion) => (t.condiciones ?? []).map((c) => c.id).filter((id) => !ULTRA.includes(id));
 
 describe("efectos de dotes en las tiradas (D2a)", () => {
+  // Sigilo trae sus propios controles desde T4 (do-01): «¿Te mueves?» y «siendo observado».
   test("dote no comprada: nada", () => {
     const f = resolver(fichaCapaz([]));
-    assert.deepEqual(idsDeCasillas(conExtras(f, "sigilo")), []);
+    assert.deepEqual(idsDeCasillas(conExtras(f, "sigilo")), idsDeCasillas(tirada("sigilo")));
     assert.ok(!f.modificadores.some((m) => m.origen === "dote"));
   });
 
@@ -178,19 +179,25 @@ describe("efectos de dotes en las tiradas (D2a)", () => {
     assert.ok(!s.desglose.some((l) => l.etiqueta === "Vigilancia Táctica"));
   });
 
-  test("Movimiento Sigiloso: casilla de opción en Sigilo; con la Mejorada vale la mejor", () => {
-    const basica = conExtras(resolver(fichaCapaz([{ id: "dote_movimiento_sigiloso" }])), "sigilo");
-    const c = basica.condiciones!.find((x) => x.id === "dote_movimiento_sigiloso_movimiento_oculto");
-    assert.ok(c && c.tipo === "opcion");
-    assert.deepEqual(c.opciones.map((o) => [o.id, o.valor]), [["ninguna", 0], ["mitad", 2], ["total", 2], ["esprint", 2]]);
-    assert.match(c.etiqueta, /Movimiento Sigiloso/);
-
-    const f = resolver(fichaCapaz([{ id: "dote_movimiento_sigiloso" }, { id: "dote_movimiento_sigiloso_mejorado" }]));
-    const t = conExtras(f, "sigilo");
-    assert.deepEqual(idsDeCasillas(t), ["dote_movimiento_sigiloso_mejorado_movimiento_oculto"]);
-    const m = montarTirada(f, t, { ...eleccionSinTocar(t), estadoCondiciones: { dote_movimiento_sigiloso_mejorado_movimiento_oculto: "total" } });
-    const sinDote = montarTirada(f, tirada("sigilo"), eleccionSinTocar(tirada("sigilo")));
-    assert.equal(m.modificador - sinDote.modificador, 4); // −4 → 0, no 2 + 4
+  // T4 (do-01): las tres reducen solas el penalizador del selector «¿Te mueves?» de Sigilo (bono
+  // por opción), sin casilla propia; antes, casilla de opción con el penalizador a mano.
+  test("Movimiento Sigiloso: reduce el «¿Te mueves?» de Sigilo sin casilla; con la Mejorada vale la mejor", () => {
+    const movimiento = (dotes: { id: string }[], opcion: string) => {
+      const f = resolver(fichaCapaz(dotes));
+      const t = conExtras(f, "sigilo");
+      const sinMover = montarTirada(f, t, eleccionSinTocar(t)).modificador;
+      return montarTirada(f, t, { ...eleccionSinTocar(t), estadoCondiciones: { [ID_MOVIMIENTO_OCULTO]: opcion } }).modificador - sinMover;
+    };
+    assert.equal(movimiento([], "total"), -4);
+    assert.equal(movimiento([{ id: "dote_movimiento_sigiloso" }], "mitad"), 0);
+    assert.equal(movimiento([{ id: "dote_movimiento_sigiloso" }], "esprint"), -6);
+    const t = conExtras(resolver(fichaCapaz([{ id: "dote_movimiento_sigiloso" }])), "sigilo");
+    assert.ok(!idsDeCasillas(t).some((c) => c.startsWith("dote_movimiento_sigiloso")));
+    // −4 → 0, no 2 + 4.
+    assert.equal(movimiento([{ id: "dote_movimiento_sigiloso" }, { id: "dote_movimiento_sigiloso_mejorado" }], "total"), 0);
+    assert.equal(movimiento([{ id: "dote_movimiento_sigiloso_mejorado" }], "esprint"), -4);
+    // La Constante, todo.
+    assert.equal(movimiento([{ id: "dote_movimiento_sigiloso_constante" }], "esprint"), 0);
   });
 
   test("Paso Defensivo: texto en el crítico de la esquiva, no en la nota", () => {
@@ -268,10 +275,11 @@ describe("efectos de dotes en las tiradas (D2a)", () => {
   });
 
   test("una mejorada con el requisito roto deja valer la básica", () => {
-    // Sigilo 2: cumple la básica (2) y no la Mejorada (3).
+    // Sigilo 2: cumple la básica (2) y no la Mejorada (3). Desde T4, bonos por opción de «¿Te mueves?».
     const s = fichaCapaz([{ id: "dote_movimiento_sigiloso" }, { id: "dote_movimiento_sigiloso_mejorado" }]);
     const conSigilo2 = { ...s, habilidades: { ...s.habilidades, sigilo: { valor: 2, especialidades: [] } } };
-    assert.deepEqual(casillasDeDotes(conSigilo2).map((c) => c.id), ["dote_movimiento_sigiloso_movimiento_oculto"]);
+    const fuentes = resolver(conSigilo2).extrasDotes.bonosTramo.filter((b) => b.bono.condicion === ID_MOVIMIENTO_OCULTO).map((b) => b.bono.fuente);
+    assert.deepEqual([...new Set(fuentes)], ["Movimiento Sigiloso"]);
   });
 
   test("las dotes activas entran en fuentesDeCapa1 con su motor", () => {
