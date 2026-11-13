@@ -22,6 +22,7 @@ import {
   type ValorDeshacerVida,
 } from "@/lib/rules";
 import { COMBATE_ABIERTO, registrar, revalidarEstados, type Autoria } from "@/lib/estadosPersonaje";
+import { conReintentos, escribirFicha } from "@/lib/escrituraFicha";
 
 type Tx = Prisma.TransactionClient;
 export type ResultadoVida = { ok: true; registroId: string | null } | { ok: false; error: string };
@@ -77,18 +78,22 @@ async function fichasComoObjetivos(tx: Tx, ids: string[], recurso: RecursoVital)
       // Ya normalizado contra este mismo tope (reconciliarVidaConEstados).
       ...(recurso === "vida" ? { danio: sheet.danio } : {}),
     };
-    return { objetivo, sheet };
+    return { objetivo, sheet, leida: f.stats };
   });
 }
 
+type FichaParaEscribir = { sheet: ReturnType<typeof parseSheet>; leida: Prisma.JsonValue };
+const paraEscribir = (fichas: { objetivo: ObjetivoVidaActual; sheet: ReturnType<typeof parseSheet>; leida: Prisma.JsonValue }[]) =>
+  new Map<string, FichaParaEscribir>(fichas.map((f) => [f.objetivo.id, { sheet: f.sheet, leida: f.leida }]));
+
 // Escribe los valores nuevos (ajuste o deshacer), con el desglose de la vida si lo trae.
 // Las fichas se reescriben enteras desde la ya leída (parseSheet), como el resto de
-// acciones sobre `stats`.
+// acciones sobre `stats`, y solo si nadie la ha cambiado desde entonces (escribirFicha, td-22).
 async function escribir(
   tx: Tx,
   recurso: RecursoVital,
   valores: (ValorDeshacerVida & { danio?: DanioVida })[],
-  fichas: Map<string, ReturnType<typeof parseSheet>>,
+  fichas: Map<string, FichaParaEscribir>,
 ) {
   for (const v of valores) {
     const danio = recurso === "vida" && v.danio ? { danio: v.danio } : {};
@@ -96,9 +101,9 @@ async function escribir(
       await tx.combatiente.update({ where: { id: v.id }, data: { [CAMPO_FOTO[recurso]]: v.valor, ...danio } });
       continue;
     }
-    const sheet = fichas.get(v.id);
-    if (sheet) {
-      await tx.character.update({ where: { id: v.id }, data: { stats: { ...sheet, [CAMPO_FICHA[recurso]]: v.valor, ...danio } } });
+    const ficha = fichas.get(v.id);
+    if (ficha) {
+      await escribirFicha(tx, v.id, { stats: ficha.leida }, { stats: { ...ficha.sheet, [CAMPO_FICHA[recurso]]: v.valor, ...danio } });
     }
   }
 }
@@ -106,7 +111,7 @@ async function escribir(
 async function aplicar(
   tx: Tx,
   objetivos: ObjetivoVidaActual[],
-  fichas: Map<string, ReturnType<typeof parseSheet>>,
+  fichas: Map<string, FichaParaEscribir>,
   recurso: RecursoVital,
   delta: number,
   categoria: CategoriaDanio | undefined,
@@ -146,10 +151,8 @@ export async function ajustarVidaDeCombatientes(
 }
 
 // Mesa: la vida de la ficha (stats). Si el jugador está en un combate en curso, la de su
-// foto, que es la que enseña la Mesa (vidaEnMesa/fotoEnMesa).
-// TODO(revisar): con combate en curso se ajusta la foto y no la ficha (coherente con
-// E1d: la Mesa enseña la del combate); al terminar el combate la ficha no recibe ese
-// daño, igual que cuando lo ajusta el jugador desde su fila de combate.
+// foto, que es la que enseña la Mesa (vidaEnMesa/fotoEnMesa); al terminar el combate la foto
+// vuelve a la ficha (td-13, terminarCombateAction).
 export async function ajustarVidaDePersonajes(
   characterIds: string[],
   recurso: RecursoVital,
@@ -158,7 +161,7 @@ export async function ajustarVidaDePersonajes(
   autoria: Autoria,
 ): Promise<ResultadoVida> {
   const ids = [...new Set(characterIds)];
-  const res = await prisma.$transaction(async (tx) => {
+  const res = await conReintentos(() => prisma.$transaction(async (tx) => {
     const fichas = await fichasComoObjetivos(tx, ids, recurso);
     if (fichas.length !== ids.length) return { ok: false as const, error: "Alguno de esos personajes no existe." };
     const fotos = await tx.combatiente.findMany({
@@ -170,9 +173,8 @@ export async function ajustarVidaDePersonajes(
       // El nombre del personaje, no el copiado en la foto (es el mismo salvo renombrado).
       return foto ? { ...objetivoDeFoto(foto, recurso), nombre: objetivo.nombre } : objetivo;
     });
-    const porId = new Map(fichas.map((f) => [f.objetivo.id, f.sheet]));
-    return { ok: true as const, registroId: await aplicar(tx, objetivos, porId, recurso, delta, categoria, autoria) };
-  });
+    return { ok: true as const, registroId: await aplicar(tx, objetivos, paraEscribir(fichas), recurso, delta, categoria, autoria) };
+  }));
   if (!res.ok) return res;
   revalidarEstados(ids);
   return { ok: true, registroId: res.registroId };
@@ -193,7 +195,7 @@ export async function deshacerVidaEnTx(tx: Tx, datos: DatosVida, fallo: (error: 
     ...fotos.map((f) => ({ ...objetivoDeFoto(f, datos.recurso), nombre: nombreGuardado(datos, f.id) ?? f.nombre })),
   ]);
   if (!plan.ok) throw fallo(plan.error);
-  await escribir(tx, datos.recurso, plan.plan, new Map(fichas.map((f) => [f.objetivo.id, f.sheet])));
+  await escribir(tx, datos.recurso, plan.plan, paraEscribir(fichas));
   return [...fichas.map((f) => f.objetivo.id), ...fotos.flatMap((f) => (f.characterId ? [f.characterId] : []))];
 }
 

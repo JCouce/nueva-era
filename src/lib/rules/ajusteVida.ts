@@ -6,7 +6,7 @@
 // El tope es el de siempre (vidaTrasAjuste): suelo 0; la curación topa en el máximo en
 // reposo en la ficha (S74) y en pgMax/fatigaMax en la foto. Cómo se registra y se
 // deshace: registro.ts (tipo "vida").
-import { umbralVital, type UmbralVital } from "./estados";
+import { umbralVital, type AjusteUmbral, type UmbralVital } from "./estados";
 import { vidaTrasAjuste } from "./vitalidad";
 import { ajustarDanioVital, normalizarDanio, type CategoriaDanio, type DanioVida } from "./danio";
 
@@ -17,7 +17,9 @@ export type ModoVida = "danio" | "curacion";
 // sube una curación (en la ficha, el máximo en reposo, que puede ser mayor que `max` si
 // un estado lo ha bajado).
 // `danio` (solo vida): el desglose de lo perdido contra `tope`.
-export type VitalDeObjetivo = { actual: number; max: number; tope: number; danio?: DanioVida };
+// `ajuste`: la reducción de penalizador de ese recurso (FichaResuelta.ajusteUmbrales.salud o
+// .fatiga: Guerrero, Siervo, aumentos), la misma que aplica la ficha; sin él, el −N base.
+export type VitalDeObjetivo = { actual: number; max: number; tope: number; danio?: DanioVida; ajuste?: AjusteUmbral | null };
 
 export const deltaDeModo = (modo: ModoVida, cantidad: number) => (modo === "danio" ? -cantidad : cantidad);
 
@@ -57,8 +59,8 @@ export function previaAjusteVida(
 ): PreviaVida {
   const r = ajustarVidaDeObjetivo(recurso === "vida" ? v : { actual: v.actual, tope: v.tope }, delta, categoria);
   const despues = r.despues;
-  const umbralAntes = umbralVital(recurso, v.actual, v.max);
-  const umbralDespues = umbralVital(recurso, despues, v.max);
+  const umbralAntes = umbralVital(recurso, v.actual, v.max, v.ajuste ?? null);
+  const umbralDespues = umbralVital(recurso, despues, v.max, v.ajuste ?? null);
   return {
     antes: v.actual,
     despues,
@@ -70,9 +72,8 @@ export function previaAjusteVida(
   };
 }
 
-// "Herido (−1)"; sin umbral, "sin penalizador".
-// TODO(revisar): el −N es el base de §7; el ajuste de especie (Guerrero, Siervo, §14.8)
-// solo lo aplica la ficha resuelta, la vista previa no lo conoce.
+// "Herido (−1)"; con ajuste, "Herido (−0 · Guerrero)"; sin umbral, "sin penalizador".
 export function textoUmbral(u: UmbralVital | null): string {
-  return u ? `${u.etiqueta} (−${Math.abs(u.penalizador)})` : "sin penalizador";
+  if (!u) return "sin penalizador";
+  return `${u.etiqueta} (−${Math.abs(u.penalizador)}${u.fuenteAjuste ? ` · ${u.fuenteAjuste}` : ""})`;
 }

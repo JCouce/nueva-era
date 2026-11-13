@@ -67,18 +67,34 @@ const ETIQUETA_UMBRAL: Record<Exclude<UmbralSalud, "normal"> | Exclude<UmbralFat
   exhausto: "Exhausto",
 };
 
-// El umbral de un recurso con su etiqueta y su −N base (sin el ajuste de especie),
-// para enseñarlo fuera de la ficha (vista previa de la pestaña Vida del máster).
-// null = sin umbral.
-export type UmbralVital = { id: Exclude<UmbralSalud | UmbralFatiga, "normal">; etiqueta: string; penalizador: number };
+// El umbral de un recurso con su etiqueta y su −N, para enseñarlo fuera de la ficha (vista
+// previa de la pestaña Vida del máster). Con `ajuste` (FichaResuelta.ajusteUmbrales del
+// recurso: Guerrero, Siervo, aumentos…), el −N ya ajustado con la misma cuenta que las tiradas
+// (valorDeUmbral) y la fuente del ajuste (td-24). null = sin umbral.
+export type UmbralVital = {
+  id: Exclude<UmbralSalud | UmbralFatiga, "normal">;
+  etiqueta: string;
+  penalizador: number;
+  fuenteAjuste?: string;
+};
 
-export function umbralVital(recurso: "vida" | "fatiga", actual: number, max: number): UmbralVital | null {
-  if (recurso === "vida") {
-    const u = umbralSalud(actual, max);
-    return u === "normal" ? null : { id: u, etiqueta: ETIQUETA_UMBRAL[u], penalizador: PENALIZADOR_SALUD[u] };
-  }
-  const u = umbralFatiga(actual, max);
-  return u === "normal" ? null : { id: u, etiqueta: ETIQUETA_UMBRAL[u], penalizador: PENALIZADOR_FATIGA[u] };
+export function umbralVital(
+  recurso: "vida" | "fatiga",
+  actual: number,
+  max: number,
+  ajuste: AjusteUmbral | null = null,
+): UmbralVital | null {
+  const base =
+    recurso === "vida"
+      ? ((u) => (u === "normal" ? null : { id: u, penalizador: PENALIZADOR_SALUD[u] }))(umbralSalud(actual, max))
+      : ((u) => (u === "normal" ? null : { id: u, penalizador: PENALIZADOR_FATIGA[u] }))(umbralFatiga(actual, max));
+  if (!base) return null;
+  return {
+    id: base.id,
+    etiqueta: ETIQUETA_UMBRAL[base.id],
+    penalizador: valorDeUmbral(base.penalizador, ajuste),
+    ...(ajuste && { fuenteAjuste: ajuste.fuente }),
+  };
 }
 
 // Puntos menos de penalizador por recurso (§14.8 y R8 de §11.3): especie (Guerrero heridas,
@@ -220,6 +236,13 @@ export function movimientoPorUmbrales(salud: UmbralSalud, fatiga: UmbralFatiga):
         ? { fraccion, fuentes: activos.filter((u) => REDUCCION_CARGA[u] === fraccion).map((u) => ETIQUETA_UMBRAL[u]) }
         : null,
   };
+}
+
+// La "media velocidad" (Malherido, Exhausto; S26) sobre unos metros: la mitad hacia abajo si
+// algún umbral la da, una sola vez (S27). La única cuenta: la usan la ficha resuelta (carrera,
+// vuelo, levitación) y la tirada de Volar (td-26).
+export function velocidadConUmbrales(metros: number, mov: Pick<MovimientoPorUmbral, "mediaVelocidad">): number {
+  return mov.mediaVelocidad.length > 0 ? Math.floor(metros / 2) : metros;
 }
 
 // Los umbrales como estados (usuario, 2026-10-28; docs/tareas.md "Umbrales de salud y fatiga

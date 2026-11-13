@@ -75,6 +75,9 @@ export type EntradaPoder = {
   // (A2b de aumentos: las de aplicado, como Prefrontal en un poder de Voluntad, y las de
   // "todas", como Conectividad Callosa), igual que conExtrasDeFicha en cualquier otra tirada.
   indiceCondiciones?: IndiceCondiciones;
+  // FichaResuelta.fatigaEnJuego.efectiva (td-25): en combate, la de la foto menos la temporal de
+  // Proeza. Sin ella, la efectiva de la ficha.
+  fatigaEfectiva?: number;
 };
 
 export type PoderPreparado = {
@@ -107,6 +110,7 @@ export function prepararPoder({
   seleccion,
   textos = [],
   indiceCondiciones,
+  fatigaEfectiva: efectivaEnJuego,
 }: EntradaPoder): PoderPreparado | null {
   const sinTextos = resolverPoder(poder.accion, {
     nivelPoseido: poder.nivelPoseido,
@@ -128,7 +132,7 @@ export function prepararPoder({
   const derivacion = derivacionDeFicha(ficha);
   const pago = sinCargas && derivacion ? pagoConCargas(sinCargas, derivacion, seleccion.puntosCargas) : null;
   const coste = pago?.coste ?? sinCargas;
-  const fatigaActual = fatigaEfectiva(ficha);
+  const fatigaActual = efectivaEnJuego ?? fatigaEfectiva(ficha);
   const bloqueo =
     poder.bloqueo ??
     sinTextos.exceso?.bloqueo ??
@@ -203,8 +207,10 @@ export type EfectosDeUso = {
   estadoPropio?: EstadoActivo;
 };
 
-// Lo de la ficha resuelta que hace falta para usar un poder.
-export type FichaParaUso = Pick<FichaResuelta, "ficha" | "modificadores" | "peajeNeurologico">;
+// Lo de la ficha resuelta que hace falta para usar un poder. `fatigaEnJuego` (td-25): la
+// sobrecarga y el "sin fatiga" miran la del combate si hay uno en curso; sin ella, la de la ficha.
+export type FichaParaUso = Pick<FichaResuelta, "ficha" | "modificadores" | "peajeNeurologico"> &
+  Partial<Pick<FichaResuelta, "fatigaEnJuego">>;
 
 // Gasto al usar un poder (con tirada o sin ella), falle o no. "prolongar" = otro
 // turno de Proeza: cobra solo el extra, sin cargas ni daño propio del uso.
@@ -215,7 +221,7 @@ export function usarPoder(f: FichaParaUso, p: PoderPreparado, modo: "uso" | "pro
   const { ficha, modificadores } = f;
   const uso = modo === "uso";
   const pagar = uso ? Math.max(0, (p.coste?.total ?? 0) - ahorro) : p.extraProrroga;
-  const antes = fatigaEfectiva(ficha);
+  const antes = f.fatigaEnJuego?.efectiva ?? fatigaEfectiva(ficha);
   const despues = antes - pagar;
   const cruza = cruzaSobrecarga(antes, despues, salud(ficha, modificadores).fatiga);
 

@@ -75,11 +75,36 @@ export function sinEstados(json: unknown): EstadoActivo[] | null {
 }
 
 // Poner o quitar un estado a un NPC (su Combatiente.estados): sin vida que restar (su
-// foto no recalcula el máximo con estados) ni registro. null si quitar no cambia nada.
+// foto no recalcula el máximo con estados). null si quitar no cambia nada.
 export function estadosDeNpcTras(json: unknown, op: OperacionEstado): EstadoActivo[] | null {
   const activos = leerEstados(json);
   if (op.tipo === "poner") return ponerEstado(activos, op.estado);
   return activos.some((e) => e.estadoId === op.estadoId) ? quitarEstado(activos, op.estadoId) : null;
+}
+
+// Lo que guarda el registro del máster de un NPC al ponerle o quitarle un estado desde el panel
+// de mando del combate (td-20), para que "Deshacer" se lo devuelva como a los jugadores: el
+// estado antes y después en su fila (null = no lo tenía / ya no lo tiene). Sin vida restada.
+// `nombre`: el de la fila, para el texto del registro (un NPC no tiene ficha de donde leerlo).
+export type CambioEstadoNpc = {
+  combatienteId: string;
+  nombre: string;
+  estadoId: string;
+  antes: EstadoActivo | null;
+  despues: EstadoActivo | null;
+};
+
+// estadosDeNpcTras con el cambio para el registro. null si no cambia nada.
+export function operacionEstadoNpc(
+  fila: { id: string; nombre: string; estados: unknown },
+  op: OperacionEstado,
+): { estados: EstadoActivo[]; cambio: CambioEstadoNpc } | null {
+  const estados = estadosDeNpcTras(fila.estados, op);
+  if (!estados) return null;
+  const estadoId = op.tipo === "poner" ? op.estado.estadoId : op.estadoId;
+  const antes = leerEstados(fila.estados).find((e) => e.estadoId === estadoId) ?? null;
+  const despues = estados.find((e) => e.estadoId === estadoId) ?? null;
+  return { estados, cambio: { combatienteId: fila.id, nombre: fila.nombre, estadoId, antes, despues } };
 }
 
 // Un solo sitio para los estados de un jugador, también en combate: los de su ficha

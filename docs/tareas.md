@@ -41,6 +41,7 @@ foco. Frentes abiertos, cada uno con su sección en Pendiente:
 - **Ítems y aportes (pestaña Acciones)**: plan aprobado 2026-10-28 en `docs/aportes/plan.md`,
   fases 0, 1, 1b y 2 y los umbrales como estados hechos; sigue la auditoría de todos los ítems y
   la fase 3 (el árbol lo monta el motor). El estado por fase vive en su cabecera allí.
+- **Barrido del cuestionario de cierre** (2026-11-13): ver su sección en Pendiente.
 - "Preguntas al diseñador" (final de este documento) — lo que bloquea a Murillo.
 - **La fábrica** (épica en Pendiente, N1 construido, en rodaje desde 2026-10-22): cadena de montaje de cambios con
   Jefe de fábrica, línea determinista y revisión con oráculos. Uso y qué se apunta dónde: `fabrica/README.md`.
@@ -910,9 +911,51 @@ blindaje del escudo **deja de sumar al del portador**.
 - Vida por categoría (no letal / letal / grave) en todo ajuste manual: `ControlVida` en Recursos,
   raíl, fila de combate y editor de NPC; selector de categoría en el panel del máster (Mesa y
   Combate), con Deshacer que restaura el desglose. Migración `combatiente_danio`.
-- Queda fuera: que el daño del combate vuelva a la ficha al terminar (TODO en `vidaMando.ts`).
+- Que el daño del combate vuelva a la ficha al terminar: hecho en T1 del barrido (td-13).
 
 ## Pendiente
+
+### Barrido del cuestionario de cierre ⬜ (contestado entero 2026-11-13)
+
+Objetivo (usuario, 2026-10-28): ningún ítem sin tirada ni efecto sin aplicar. Las 135 decisiones
+están en el artifact https://claude.ai/artifact/5WH274UNLooJRE5cdKuiV8: el contexto de cada una en
+su `preguntas.json` y las respuestas en su db (colección `respuestas`, doc = id; la `nota` manda
+sobre la `opcion`). Las respuestas «como hoy» no llevan código: se pasan a FIRME en `sistema.md`
+dentro de la tanda de su tema.
+
+Criterios de construcción (usuario, 2026-11-13): reglas respetadas; todo en el motor
+(`src/lib/rules/`) y bien modelado según `motor.md`; nada de apaños ni campos ad hoc; si algo
+va a cargar mucho el frontend, se avisa antes de construirlo.
+
+Reglas generales que salen de las notas:
+- Una nota aparece en la tirada donde se aplica, no solo en la descripción (au-01, es-05).
+- La app nunca recibe el daño del enemigo: entra por «Resistir daño» eligiendo el tipo, y todo lo
+  que dependa de recibir daño se dispara desde ahí (es-02, es-03, do-02).
+- Nada de casillas genéricas en todas las fichas por una pieza o dote concreta (au-07).
+- Lo que abarata una acción se ofrece en el selector de tipo de acción solo si tienes la pieza o
+  la dote (eq-35, do-07).
+
+Tandas, en orden:
+- [x] **T1 Bugs de partida**: td-13 (el daño del combate vuelve a la ficha), td-26 (media velocidad
+  en la tirada de Volar), td-20, td-21, td-22, td-24, td-25 (td-23: sin código hasta que haya caso).
+  *(2026-11-13)* td-13: `terminarCombateAction` copia la foto a la ficha. td-26: tirada de Volar a
+  media velocidad. td-20: los estados de NPC del panel de combate van a la misma entrada del
+  registro (`npcs`) y Deshacer se los devuelve. td-21: «Quitar» se queda. td-22: concurrencia
+  optimista sobre `Character.stats` (`lib/escrituraFicha.ts`): toda reescritura compara el Json
+  leído; el máster reintenta solo y el autoguardado del jugador reintenta una vez. td-24: vista
+  previa con `ajusteUmbrales`. td-25: `FichaResuelta.fatigaEnJuego` (en combate, la de la foto)
+  para bloqueos y cobros, también la temporal de Proeza. Sin migración de Prisma.
+- [ ] **T2 «Resistir daño» como puerta del daño**: es-02, es-03, es-04, do-02, eq-24, eq-20, di-08.
+- [ ] **T3 Efectos de arma sobre el objetivo** (aviso + tarjeta del máster): eq-01…08, eq-09, eq-10,
+  eq-12, eq-14…17, eq-18, eq-19, eq-21, eq-22, eq-40, do-04, do-05, td-29.
+- [ ] **T4 Estado Sigilo**: di-09, do-01, eq-25, eq-26, eq-30, eq-31, eq-33.
+- [ ] **T5 Fase 4 de aportes + lo que sale en la tirada**: pl-05, eq-35, do-07, es-05, au-06, td-05,
+  do-03, fa-01, fa-02, di-32, td-06, td-08, td-10, td-11.
+- [ ] **T6 Psiónica y sobreesfuerzo**: ps-01…08, es-01, au-04, au-05, eq-27, td-31.
+- [ ] **T7 Shock (fase 6 de aportes)**: pl-01…04, eq-28, eq-29, fa-03, di-07.
+- [ ] **T8 Recursos**: au-01, au-02, au-03, au-07, au-08, td-12, td-19.
+- [ ] **T9 Catálogo y tienda**: td-01, td-03, td-04, di-24, eq-23, eq-34, eq-36, eq-37.
+- [ ] Auditoría por lote al terminar.
 
 ### Pestaña Acciones: pestañas y favoritas ✅ (usuario, 2026-10-23; T-005, T-006 y T-007)
 Dentro de Acciones, una barra por **origen** de la fila (rehecha el 2026-10-23; antes era Básicas sin dado / Tiradas
@@ -2269,7 +2312,7 @@ no `base`); con dos opciones que bajen el margen de crítico gana el más bajo, 
 - [x] Tests de caracterización de cada lista de Acciones antes de mover nada *(M1a: `montaje-caracterizacion.test.ts`, los 8 sitios + `prepararPoder`; ningún esperado cambió al migrar)*
 - [x] `montarTirada`: total + desglose + márgenes de crítico/pifia *(M1a: `rules/montaje.ts`, con `tirarMontada`; ESLint veta las sumas sueltas en componentes)*
 - [x] Penalizadores por umbral de salud y fatiga dentro (`modificadoresDeUmbrales`) *(M1b, 2026-10-13: modificadores de la `FichaResuelta` con alcance `todas`, con su línea en el desglose; vida/fatiga del combatiente en combate (jugador y NPC de la consola), de la ficha fuera; fatiga efectiva con la temporal de Proeza. Tabla entera de §7: media velocidad (carrera, vuelo, levitación) y −25 %/−50 % de carga, con nota en Estado; supuestos S26-S29. La fila de Acciones enseña el modificador completo, como el modal sin tocar. **Cambian números visibles, avisar a la mesa al desplegar:** los personajes heridos o cansados tiran peor (también los poderes y las salvaciones), y en Malherido/Exhausto/Moribundo bajan la velocidad y la carga; además la fila de Acciones ya no enseña solo atributo + habilidad, sino el total que se va a tirar (traje, estados, modo de disparo por defecto…))*
-- [ ] Media velocidad en los metros de la tirada de Volar (Movilidad Aérea): Estado ya enseña el vuelo a la mitad, pero `accionesDeMovimiento` no recibe la ficha resuelta (`TODO(revisar)` en `rules/movimiento.ts`). "Una casilla por turno" de Moribundo sigue solo como nota
+- [x] Media velocidad en los metros de la tirada de Volar (Movilidad Aérea) *(T1 del barrido, td-26: `FichaResuelta.accionesMovimiento` con `velocidadConUmbrales`)*. "Una casilla por turno" de Moribundo sigue solo como nota
 - [x] Sacar de `AccionesTab` la suma del modal y el crítico de la VTM *(M1a: la VTM "complejo" lleva `margenCriticoExito: 0` como dato de la opción)*
 - [x] Índice de casillas sin el memo parcial `[sheet.equipo]` + `eslint-disable` (hecho en E1b: sale de `resolverFicha`)
 - [x] Al entrar en combate el jugador arrancaba con la vida y la fatiga máximas, no con las

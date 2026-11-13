@@ -25,6 +25,7 @@ import {
   type ResumenCombate,
   type Sheet,
   type DanioVida,
+  type AjusteUmbrales,
 } from "@/lib/rules";
 import { ChipEstado } from "@/components/ChipEstado";
 import { Aviso } from "@/components/mando/Aviso";
@@ -69,6 +70,8 @@ type CombatienteView = {
   estados: EstadoActivoDescrito[];
   // A7: los de su ficha (jugador) o los de la foto (NPC).
   inmunidades: Inmunidad[];
+  // Reducción de penalizador por umbral de su ficha resuelta (vista previa de Vida, td-24).
+  ajusteUmbrales: AjusteUmbrales;
   // Los de su ficha (jugador); null en un NPC.
   xp: number | null;
   creditos: number | null;
@@ -226,8 +229,8 @@ export function CombateConsole({
       creditos: c.creditos,
       estados: c.estados,
       inmunidades: c.inmunidades,
-      vida: { actual: c.pgActual, max: c.pgMax, tope: c.pgMax, danio: c.danio },
-      fatiga: { actual: c.fatigaActual, max: c.fatigaMax, tope: c.fatigaMax },
+      vida: { actual: c.pgActual, max: c.pgMax, tope: c.pgMax, danio: c.danio, ajuste: c.ajusteUmbrales.salud },
+      fatiga: { actual: c.fatigaActual, max: c.fatigaMax, tope: c.fatigaMax, ajuste: c.ajusteUmbrales.fatiga },
     }));
   const todos = cola.length > 0 && cola.every((c) => seleccion.includes(c.id));
   const alternar = (id: string) => setSeleccion((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));

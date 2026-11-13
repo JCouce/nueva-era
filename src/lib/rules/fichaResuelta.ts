@@ -92,6 +92,7 @@ import {
   modificadoresDeEstados,
   modificadoresDeUmbrales,
   movimientoPorUmbrales,
+  velocidadConUmbrales,
   sumaAjustesUmbrales,
   umbralFatiga,
   type AjusteUmbrales,
@@ -105,7 +106,8 @@ import {
   type UmbralSalud,
 } from "./estados";
 import { casillasDePsionica, levitacion, type PoderDisponible } from "./poderes";
-import { fatigaEfectiva } from "./vitalidad";
+import { fatigaEfectiva, fatigaEnJuego } from "./vitalidad";
+import { accionesDeMovimiento } from "./movimiento";
 import { alcanzaA, descartadosPorNoApila, type AlcanceModificador, type ModificadorConFuente } from "./modificadores";
 import { conTextosEnTirada, contextoDe, junta, textosDe, textosSinDado } from "./textosTirada";
 import type { Sheet } from "./sheet";
@@ -164,6 +166,8 @@ export type FichaResuelta = {
   // propia en `modificadores`. Derivado: también al NPC.
   ajusteUmbrales: AjusteUmbrales;
   movimiento: ReturnType<typeof movimiento>;
+  // "Volar" (Movilidad Aérea, movimiento.ts) con los metros ya a media velocidad si toca (td-26).
+  accionesMovimiento: Accion[];
   // null si la ficha no vuela (Movilidad Aérea) o no levita (Traslación 2+).
   vuelo: ReturnType<typeof vuelo>;
   levitacion: ReturnType<typeof levitacion>;
@@ -218,6 +222,10 @@ export type FichaResuelta = {
   // con las filas informativas (defensa del MQE). Sin las de requisito roto; derivadas: también
   // al NPC.
   accionesAumentos: AccionesDeAumentos;
+  // La fatiga que se gasta ahora (td-25): con combate en curso, la de la foto (`vitalidad`); si
+  // no, la de la ficha. `actual`, lo que se puede pagar (bloqueos por coste, cobros);
+  // `efectiva`, menos la temporal de Proeza (umbrales, sobrecarga).
+  fatigaEnJuego: { actual: number; efectiva: number };
   // Casillas "una vez por escena" ya gastadas (sheet.usosEscena), con su etiqueta: la lista de
   // Recursos. En el índice de condiciones esas casillas ya salen bloqueadas.
   usosEscena: { id: string; etiqueta: string }[];
@@ -323,13 +331,14 @@ export function resolverFicha(
   const sinUmbrales: ModificadorConFuente[] = tope ? [...sinTope, tope.modificador] : sinTope;
   // Los umbrales solo dan modificadores de tirada: no tocan los máximos de salud.
   const maximos = salud(sheet, sinUmbrales);
-  // La temporal de Proeza cuenta para el umbral mientras dura la escena (sheet.ts).
-  // TODO(revisar): en combate se resta de la fatiga del combatiente, porque Combatiente
-  // no lleva temporal propia y Proeza la apunta en la ficha.
+  // La temporal de Proeza cuenta para el umbral mientras dura la escena (sheet.ts). Vive en la
+  // ficha (Combatiente no lleva temporal propia) y en combate se resta de la fatiga de la foto,
+  // que es la que vale (td-25: se paga contra ella, pagarFatiga con fatigaEnJuego).
   const v =
     vitalidad.origen === "combate"
       ? { pg: vitalidad.pgActual, pgMax: vitalidad.pgMax, fatiga: vitalidad.fatigaActual - sheet.fatigaTemporal, fatigaMax: vitalidad.fatigaMax }
       : { pg: sheet.vidaActual, pgMax: maximos.vida, fatiga: fatigaEfectiva(sheet), fatigaMax: maximos.fatiga };
+  const enJuego = fatigaEnJuego(sheet, vitalidad.origen === "combate" ? vitalidad : null);
   const umbrales = {
     salud: umbralSalud(v.pg, v.pgMax),
     fatiga: umbralFatiga(v.fatiga, v.fatigaMax),
@@ -350,7 +359,7 @@ export function resolverFicha(
   ];
 
   // Media velocidad: carrera, vuelo y levitación; saltos, escalada y nado no (S26).
-  const velocidad = (m: number) => (porUmbral.mediaVelocidad.length > 0 ? Math.floor(m / 2) : m);
+  const velocidad = (m: number) => velocidadConUmbrales(m, porUmbral);
   const mov = movimiento(sheet, modificadores, formulaMovimiento.formula);
   const vue = vuelo(sheet);
   const psionica = nivelesDePsionica(sheet, bonosDeDisciplina(modificadores));
@@ -383,6 +392,7 @@ export function resolverFicha(
     umbrales: { ...umbrales, movimiento: porUmbral },
     ajusteUmbrales,
     movimiento: { ...mov, carrera: velocidad(mov.carrera) },
+    accionesMovimiento: accionesDeMovimiento(sheet, porUmbral),
     vuelo: vue && { ...vue, velocidadM: velocidad(vue.velocidadM) },
     levitacion: lev && { ...lev, velocidadM: velocidad(lev.velocidadM) },
     cargaMaxima: porUmbral.reduccionCarga ? reducir(carga, porUmbral.reduccionCarga.fraccion) : carga,
@@ -413,7 +423,8 @@ export function resolverFicha(
     },
     accionesDotes: accionesDeDotes(activas, { usosEscena: sheet.usosEscena, mesa }),
     poderesDotes: poderesDeDotes(activas, sheet, psionica.paraEfectos),
-    accionesAumentos: accionesDeAumentos(sheet, estados),
+    fatigaEnJuego: { actual: enJuego, efectiva: v.fatiga },
+    accionesAumentos: accionesDeAumentos(sheet, estados, enJuego),
     usosEscena: usosEscenaDeFicha(sheet, mesa?.aliados),
     ajusteCoste,
     ajusteCosteSubida: libre ? AJUSTE_NEUTRO : ajusteCosteDeSubida(ajusteCoste, sheet, aprobada),

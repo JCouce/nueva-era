@@ -3,7 +3,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { deltaDeModo, previaAjusteVida, textoUmbral } from "./ajusteVida";
 import { textoAjusteVida } from "./textosRegistro";
-import { umbralVital } from "./estados";
+import { modificadoresDeUmbrales, umbralVital } from "./estados";
 
 describe("previaAjusteVida", () => {
   test("daño: baja y dice el umbral que cruza (8 de máximo, Herido < 4)", () => {
@@ -41,6 +41,28 @@ describe("previaAjusteVida", () => {
   test("el modo pone el signo", () => {
     assert.equal(deltaDeModo("danio", 3), -3);
     assert.equal(deltaDeModo("curacion", 3), 3);
+  });
+});
+
+describe("previaAjusteVida con el ajuste de umbrales de la ficha (td-24)", () => {
+  test("Guerrero: Herido queda en −0 y lo dice", () => {
+    const p = previaAjusteVida({ actual: 6, max: 8, tope: 8, ajuste: { valor: 1, fuente: "Guerrero" } }, "vida", -3);
+    assert.equal(p.umbralDespues?.id, "herido");
+    assert.equal(p.umbralDespues?.penalizador, 0);
+    assert.equal(textoUmbral(p.umbralDespues), "Herido (−0 · Guerrero)");
+  });
+  test("Malherido con el ajuste: −2 en vez de −3", () => {
+    const p = previaAjusteVida({ actual: 6, max: 10, tope: 10, ajuste: { valor: 1, fuente: "Guerrero" } }, "vida", -4);
+    assert.equal(textoUmbral(p.umbralDespues), "Malherido (−2 · Guerrero)");
+  });
+  test("el mismo número que la ficha resuelta (modificadoresDeUmbrales)", () => {
+    const ajuste = { valor: 1, fuente: "Siervo" };
+    const [mod] = modificadoresDeUmbrales(10, 10, 1, 10, { salud: null, fatiga: ajuste });
+    assert.equal(umbralVital("fatiga", 1, 10, ajuste)?.penalizador, mod.valor);
+  });
+  test("sin ajuste (null), el base", () => {
+    const p = previaAjusteVida({ actual: 6, max: 8, tope: 8, ajuste: null }, "vida", -3);
+    assert.equal(textoUmbral(p.umbralDespues), "Herido (−1)");
   });
 });
 

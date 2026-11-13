@@ -15,6 +15,8 @@ import {
 import { aplicarOperacionEstado, maximosConEstados, quitarEstadosDe } from "./vidaPorEstados";
 import { defaultSheet, parseSheet, type Sheet } from "./sheet";
 import type { EstadoActivo } from "./estados";
+import { operacionEstadoNpc } from "./estadosFicha";
+import { textoEntradaRegistro } from "./textosRegistro";
 
 const base = defaultSheet();
 const SHEET: Sheet = parseSheet({ ...base, atributos: { ...base.atributos, fuerza: 3, aguante: 3, caracter: 3 } });
@@ -357,5 +359,86 @@ describe("vida (pestaña Vida del máster)", () => {
       [{ tipo: "vida", datos: JSON.parse(JSON.stringify(datosParaGuardar(vida))) }],
     );
     assert.equal(r.ok, true);
+  });
+});
+
+describe("td-20: estados de NPC en la entrada del combate", () => {
+  const npcFila = (estados: EstadoActivo[]) => ({ id: "c-npc", nombre: "Guardia corporativo", estados });
+
+  test("operacionEstadoNpc guarda el antes y el después de la fila", () => {
+    const r = operacionEstadoNpc({ id: "c-npc", nombre: "Guardia", estados: [] }, { tipo: "poner", estado: ENF2 });
+    assert.ok(r);
+    assert.deepEqual(r!.cambio, { combatienteId: "c-npc", nombre: "Guardia", estadoId: "enfermedad", antes: null, despues: ENF2 });
+    assert.equal(operacionEstadoNpc({ id: "c-npc", nombre: "Guardia", estados: [] }, { tipo: "quitar", estadoId: "enfermedad" }), null);
+  });
+
+  test("se guarda y se lee con los NPC, y sus filas van a combatienteIds", () => {
+    const d: DatosRegistro = {
+      tipo: "estado_poner",
+      cambios: [],
+      npcs: [{ combatienteId: "c-npc", nombre: "Guardia", estadoId: "enfermedad", antes: null, despues: ENF2 }],
+    };
+    assert.deepEqual(guardadoYLeido(d), d);
+    assert.deepEqual(idsDeRegistro(d), { characterIds: [], combatienteIds: ["c-npc"] });
+  });
+
+  test("deshacer poner: se le quita al NPC", () => {
+    const d = {
+      tipo: "estado_poner" as const,
+      cambios: [],
+      npcs: [{ combatienteId: "c-npc", nombre: "Guardia", estadoId: "enfermedad", antes: null, despues: ENF2 }],
+    };
+    const plan = planDeshacerEstados(d, [], [], [], [npcFila([ENF2])]);
+    assert.ok(plan.ok);
+    if (plan.ok) assert.deepEqual(plan.plan.npcs, [{ id: "c-npc", estados: [] }]);
+  });
+
+  test("deshacer quitar: se le devuelve el que tenía", () => {
+    const d = {
+      tipo: "estado_quitar" as const,
+      cambios: [],
+      npcs: [{ combatienteId: "c-npc", nombre: "Guardia", estadoId: "enfermedad", antes: ENF3, despues: null }],
+    };
+    const plan = planDeshacerEstados(d, [], [], [], [npcFila([])]);
+    assert.ok(plan.ok);
+    if (plan.ok) assert.deepEqual(plan.plan.npcs, [{ id: "c-npc", estados: [ENF3] }]);
+  });
+
+  test("si al NPC le cambiaron el estado después, no se deshace nada", () => {
+    const d = {
+      tipo: "estado_poner" as const,
+      cambios: [],
+      npcs: [{ combatienteId: "c-npc", nombre: "Guardia", estadoId: "enfermedad", antes: null, despues: ENF2 }],
+    };
+    const plan = planDeshacerEstados(d, [], [], [], [npcFila([ENF3])]);
+    assert.equal(plan.ok, false);
+    if (!plan.ok) assert.match(plan.error, /Guardia/);
+  });
+
+  test("una entrada posterior sobre el mismo estado del NPC lo impide", () => {
+    const npcs = [{ combatienteId: "c-npc", nombre: "Guardia", estadoId: "enfermedad", antes: null, despues: ENF2 }];
+    const posterior = { tipo: "estado_quitar", datos: datosParaGuardar({ tipo: "estado_quitar", cambios: [], npcs: [{ ...npcs[0], antes: ENF2, despues: null }] }) };
+    const plan = planDeshacerEstados({ tipo: "estado_poner", cambios: [], npcs }, [], [], [posterior], [npcFila([ENF2])]);
+    assert.equal(plan.ok, false);
+  });
+
+  test("un NPC que ya no está (combate cerrado) se salta", () => {
+    const d = {
+      tipo: "estado_poner" as const,
+      cambios: [],
+      npcs: [{ combatienteId: "c-npc", nombre: "Guardia", estadoId: "enfermedad", antes: null, despues: ENF2 }],
+    };
+    const plan = planDeshacerEstados(d, [], [], [], []);
+    assert.ok(plan.ok);
+    if (plan.ok) assert.deepEqual(plan.plan.npcs, []);
+  });
+
+  test("el texto nombra a jugadores y NPC juntos", () => {
+    const d: DatosRegistro = {
+      tipo: "estado_quitar",
+      cambios: [],
+      npcs: [{ combatienteId: "c-npc", nombre: "Guardia corporativo", estadoId: "enfermedad", antes: ENF2, despues: null }],
+    };
+    assert.match(textoEntradaRegistro("estado_quitar", d, []), /a Guardia corporativo$/);
   });
 });

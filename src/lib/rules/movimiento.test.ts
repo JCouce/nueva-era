@@ -5,6 +5,7 @@ import { equipar } from "./equipo";
 import { accionesDeMovimiento, conEsquivaEnVuelo } from "./movimiento";
 import { capacidadDePieza } from "./recursos";
 import { resolverVuelo, MARGEN_CRITICO, ACCIONES, usarHabilidadAlternativa } from "./acciones";
+import { resolverFicha } from "./fichaResuelta";
 
 function equiparMovilidadAerea(nivel: number) {
   let s = equipar(defaultSheet(), { instanciaId: "arm1", catalogoId: "armadura_pesada" }); // tope 4
@@ -69,6 +70,32 @@ describe("accionesDeMovimiento", () => {
     const [accion] = accionesDeMovimiento(sheet);
     assert.deepEqual(accion.ajustesFijos, [{ valor: -4, fuente: "Maniobrabilidad (Movilidad Aérea)" }]);
     assert.deepEqual(accion.vuelo, { velocidadBase: 140, bonusCritico: 70 });
+  });
+});
+
+describe("Volar a media velocidad (Malherido/Exhausto, S26; td-26)", () => {
+  test("con media velocidad, la base de la tirada es la mitad y la nota lo dice", () => {
+    const [accion] = accionesDeMovimiento(equiparMovilidadAerea(1), { mediaVelocidad: ["Malherido"] });
+    assert.deepEqual(accion.vuelo, { velocidadBase: 25, bonusCritico: 25 });
+    assert.match(accion.nota ?? "", /Media velocidad \(Malherido\): 25 m en vez de 50 m\./);
+  });
+
+  test("sin umbrales, entera y sin nota de media velocidad", () => {
+    const [accion] = accionesDeMovimiento(equiparMovilidadAerea(1), { mediaVelocidad: [] });
+    assert.equal(accion.vuelo?.velocidadBase, 50);
+    assert.doesNotMatch(accion.nota ?? "", /Media velocidad/);
+  });
+
+  test("la ficha resuelta da la misma velocidad en Estado y en la tirada", () => {
+    // Exhausto por la fatiga del combate (la que manda en combate): 1 de 20.
+    const ficha = resolverFicha(equiparMovilidadAerea(2), {
+      estados: [],
+      vitalidad: { origen: "combate", pgActual: 20, pgMax: 20, fatigaActual: 1, fatigaMax: 20 },
+    });
+    assert.ok(ficha.umbrales.movimiento.mediaVelocidad.length > 0);
+    const [accion] = ficha.accionesMovimiento;
+    assert.equal(accion.vuelo?.velocidadBase, ficha.vuelo?.velocidadM);
+    assert.equal(accion.vuelo?.velocidadBase, 35);
   });
 });
 

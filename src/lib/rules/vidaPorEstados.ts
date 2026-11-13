@@ -122,9 +122,12 @@ export function vidaTrasCambioDeEstados(
 export type FotoConMaximos = FotoCombatiente & { pgMax: number; fatigaMax: number };
 type ParActual = Pick<Sheet, "vidaActual" | "fatigaActual">;
 
-export function fotoTrasCambioDeFicha<T extends FotoConMaximos>(foto: T, antes: ParActual, despues: ParActual): T {
+// `fatigaCobrada` (td-25): lo pagado de la fatiga en juego (cobroDeFatiga contra la foto); se
+// resta tal cual a la foto en vez de la diferencia de la ficha, que se recorta en 0 y puede bajar
+// menos.
+export function fotoTrasCambioDeFicha<T extends FotoConMaximos>(foto: T, antes: ParActual, despues: ParActual, fatigaCobrada?: number): T {
   const dv = despues.vidaActual - antes.vidaActual;
-  const df = despues.fatigaActual - antes.fatigaActual;
+  const df = fatigaCobrada !== undefined ? -fatigaCobrada : despues.fatigaActual - antes.fatigaActual;
   if (dv === 0 && df === 0) return foto;
   // Restar: suelo 0. Sumar: hasta el máximo, sin bajar una actual que ya esté por encima.
   const mover = (actual: number, delta: number, max: number) =>

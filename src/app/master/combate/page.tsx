@@ -13,6 +13,7 @@ import {
   resumenCombate,
   textoEntradaRegistro,
   danioDeFoto,
+  SIN_AJUSTE_UMBRALES,
 } from "@/lib/rules";
 import { CombateConsole } from "./CombateConsole";
 import { NO_BORRADA } from "@/lib/borrado";
@@ -67,6 +68,8 @@ export default async function CombatePage() {
         danio: danioDeFoto(c.danio, c.pgActual, c.pgMax),
         estados: ficha ? estadosParaPintar(ficha) : describirEstadosActivos(guardados),
         inmunidades: ficha?.inmunidades ?? [],
+        // Para la vista previa de la pestaña Vida (td-24): el mismo ajuste que aplica la ficha.
+        ajusteUmbrales: ficha?.ajusteUmbrales ?? SIN_AJUSTE_UMBRALES,
         xp: character?.xp ?? null,
         creditos: character?.creditos ?? null,
         sheet,

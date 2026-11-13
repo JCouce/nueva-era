@@ -30,7 +30,7 @@
 //     categoría y dañar otra deja el número igual) y devuelve exactamente el de antes.
 //     Las entradas viejas, sin desglose, vuelven al número y el desglose se normaliza.
 import { z } from "zod";
-import { leerEstados, ponerEstado, quitarEstado } from "./estadosFicha";
+import { leerEstados, ponerEstado, quitarEstado, type CambioEstadoNpc } from "./estadosFicha";
 import type { EstadoActivo } from "./estados";
 import {
   cambianActivables,
@@ -55,9 +55,12 @@ export type CambioRecurso = { characterId: string; antes: number; despues: numbe
 export type DatosRecurso = { tipo: "xp"; cambios: CambioRecurso[] } | { tipo: "creditos"; cambios: CambioRecurso[] };
 // fin_escena (entradas de antes de "Limpiar estados") y limpiar_estados: un cambio por
 // estado quitado (varios por personaje).
+// `npcs` (td-20, poner y quitar desde el combate): los NPC de la misma acción, en su fila;
+// deshacer se los devuelve con las mismas comprobaciones que a los jugadores. Entradas de antes,
+// sin él.
 export type DatosEstado =
-  | { tipo: "estado_poner"; cambios: CambioEstadoPersonaje[] }
-  | { tipo: "estado_quitar"; cambios: CambioEstadoPersonaje[] }
+  | { tipo: "estado_poner"; cambios: CambioEstadoPersonaje[]; npcs?: CambioEstadoNpc[] }
+  | { tipo: "estado_quitar"; cambios: CambioEstadoPersonaje[]; npcs?: CambioEstadoNpc[] }
   | { tipo: "fin_escena"; cambios: CambioEstadoPersonaje[] }
   | { tipo: "limpiar_estados"; cambios: CambioEstadoPersonaje[] };
 // Vida o fatiga (pestaña Vida): un cambio por objetivo. `ficha`: Character.stats (id =
@@ -85,15 +88,19 @@ export type DatosRegistro = DatosRecurso | DatosEstado | DatosVida;
 export function datosParaGuardar(
   d: DatosRegistro,
 ):
-  | { cambios: DatosRegistro["cambios"] }
+  | { cambios: DatosRegistro["cambios"]; npcs?: CambioEstadoNpc[] }
   | { recurso: RecursoVital; delta: number; categoria?: CategoriaDanio; cambios: CambioVida[] } {
   if (d.tipo === "vida") {
     return d.categoria
       ? { recurso: d.recurso, delta: d.delta, categoria: d.categoria, cambios: d.cambios }
       : { recurso: d.recurso, delta: d.delta, cambios: d.cambios };
   }
-  return { cambios: d.cambios };
+  const npcs = npcsDe(d);
+  return npcs.length > 0 ? { cambios: d.cambios, npcs } : { cambios: d.cambios };
 }
+
+const npcsDe = (d: DatosRegistro): CambioEstadoNpc[] =>
+  (d.tipo === "estado_poner" || d.tipo === "estado_quitar") && d.npcs ? d.npcs : [];
 
 // Las columnas characterIds y combatienteIds de RegistroMaster: a quién toca la entrada.
 export function idsDeRegistro(d: DatosRegistro): { characterIds: string[]; combatienteIds: string[] } {
@@ -101,7 +108,10 @@ export function idsDeRegistro(d: DatosRegistro): { characterIds: string[]; comba
     const de = (o: ObjetivoVida) => [...new Set(d.cambios.filter((c) => c.objetivo === o).map((c) => c.id))];
     return { characterIds: de("ficha"), combatienteIds: de("combatiente") };
   }
-  return { characterIds: [...new Set(d.cambios.map((c) => c.characterId))], combatienteIds: [] };
+  return {
+    characterIds: [...new Set(d.cambios.map((c) => c.characterId))],
+    combatienteIds: [...new Set(npcsDe(d).map((c) => c.combatienteId))],
+  };
 }
 
 const parVidaSchema = z.object({ vida: z.number().int().min(0), fatiga: z.number().int().min(0) });
@@ -113,6 +123,14 @@ const cambioEstadoSchema = z.object({
   despues: z.unknown(),
   restado: parVidaSchema,
   combatientes: z.array(z.object({ id: z.string(), restado: parVidaSchema })),
+});
+
+const cambioEstadoNpcSchema = z.object({
+  combatienteId: z.string(),
+  nombre: z.string(),
+  estadoId: z.string(),
+  antes: z.unknown(),
+  despues: z.unknown(),
 });
 
 // Un EstadoActivo guardado, por el lector tolerante de siempre; null si no había.
@@ -161,7 +179,19 @@ export function leerDatosRegistro(tipo: string, json: unknown): DatosRegistro | 
       if (antes === undefined || despues === undefined) return null;
       leidos.push({ ...c, antes, despues });
     }
-    return { tipo, cambios: leidos };
+    if (tipo === "fin_escena" || tipo === "limpiar_estados") return { tipo, cambios: leidos };
+    const npcsJson = (json as { npcs?: unknown } | null)?.npcs;
+    if (npcsJson === undefined) return { tipo, cambios: leidos };
+    const n = z.array(cambioEstadoNpcSchema).safeParse(npcsJson);
+    if (!n.success) return null;
+    const npcs: CambioEstadoNpc[] = [];
+    for (const c of n.data) {
+      const antes = leerEstadoGuardado(c.antes);
+      const despues = leerEstadoGuardado(c.despues);
+      if (antes === undefined || despues === undefined) return null;
+      npcs.push({ ...c, antes, despues });
+    }
+    return { tipo, cambios: leidos, npcs };
   }
   return null;
 }
@@ -242,9 +272,14 @@ export type CombatienteParaDeshacer = {
 };
 export type EntradaPosterior = { tipo: string; datos: unknown };
 
+// La fila de un NPC de un combate abierto (td-20).
+export type NpcParaDeshacer = { id: string; nombre: string; estados: EstadoActivo[] };
+
 export type PlanEstados = {
   personajes: { id: string; estados: EstadoActivo[]; sheet: Sheet }[];
   combatientes: { id: string; pgActual: number; pgMax: number; fatigaActual: number; fatigaMax: number }[];
+  // Los estados que vuelven a la fila de cada NPC (td-20).
+  npcs: { id: string; estados: EstadoActivo[] }[];
 };
 
 // Mismo estado: mismo grado y misma clase de duración; las rondas pueden haber bajado.
@@ -262,13 +297,32 @@ function tocaEstado(posterior: EntradaPosterior, characterId: string, estadoId: 
   return d.cambios.some((c) => c.characterId === characterId && c.estadoId === estadoId);
 }
 
+function tocaEstadoNpc(posterior: EntradaPosterior, combatienteId: string, estadoId: string): boolean {
+  const d = leerDatosRegistro(posterior.tipo, posterior.datos);
+  return !!d && npcsDe(d).some((c) => c.combatienteId === combatienteId && c.estadoId === estadoId);
+}
+
+// Si el estado de ahora ya no es el que dejó la entrada, por qué no se puede deshacer.
+function noSePuedeDeshacer(nombre: string, actual: EstadoActivo | null, despues: EstadoActivo | null): string | null {
+  if (despues) {
+    if (!actual) return `${nombre} ya no tiene ese estado (se quitó o se le acabaron las rondas).`;
+    if (!sigueIgual(actual, despues)) return `A ${nombre} le han cambiado ese estado después.`;
+  } else if (actual) {
+    return `A ${nombre} le han vuelto a poner ese estado después.`;
+  }
+  return null;
+}
+
 // Los cambios se aplican uno tras otro sobre el mismo personaje (fin de escena trae
 // varios por personaje), y la vida y los máximos se calculan al final con todos.
+// `npcs` (td-20): las filas de NPC de la entrada que siguen en un combate abierto; la que ya no
+// está se salta, como un personaje borrado.
 export function planDeshacerEstados(
   datos: DatosEstado,
   personajes: PersonajeParaDeshacer[],
   combatientes: CombatienteParaDeshacer[],
   posteriores: EntradaPosterior[],
+  npcs: NpcParaDeshacer[] = [],
 ): Plan<PlanEstados> {
   const porId = new Map(personajes.map((p) => [p.id, p]));
   type EnCurso = { p: PersonajeParaDeshacer; estados: EstadoActivo[]; ficha: ParVida; fotos: Map<string, ParVida> };
@@ -280,12 +334,8 @@ export function planDeshacerEstados(
     const w = enCurso.get(p.id) ?? { p, estados: p.estados, ficha: { vida: 0, fatiga: 0 }, fotos: new Map() };
     const actual = w.estados.find((e) => e.estadoId === c.estadoId) ?? null;
 
-    if (c.despues) {
-      if (!actual) return { ok: false, error: `${p.nombre} ya no tiene ese estado (se quitó o se le acabaron las rondas).` };
-      if (!sigueIgual(actual, c.despues)) return { ok: false, error: `A ${p.nombre} le han cambiado ese estado después.` };
-    } else if (actual) {
-      return { ok: false, error: `A ${p.nombre} le han vuelto a poner ese estado después.` };
-    }
+    const error = noSePuedeDeshacer(p.nombre, actual, c.despues);
+    if (error) return { ok: false, error };
     if (posteriores.some((e) => tocaEstado(e, c.characterId, c.estadoId))) {
       return {
         ok: false,
@@ -303,7 +353,23 @@ export function planDeshacerEstados(
   // Si deshacer pone o quita un activable de aumento (deshacer "Activar", A5b), la vida que
   // quede por encima del máximo nuevo se recorta, como al caerse (vidaTrasCambioDeEstados).
   // La ficha, a su tope (topesDeVida, también para devolver); la foto, a su máximo.
-  const plan: PlanEstados = { personajes: [], combatientes: [] };
+  // Los NPC (td-20): uno tras otro sobre su fila, con las mismas comprobaciones.
+  const npcPorId = new Map(npcs.map((n) => [n.id, n]));
+  const npcsEnCurso = new Map<string, EstadoActivo[]>();
+  for (const c of datos.tipo === "estado_poner" || datos.tipo === "estado_quitar" ? (datos.npcs ?? []) : []) {
+    const n = npcPorId.get(c.combatienteId);
+    if (!n) continue;
+    const estados = npcsEnCurso.get(n.id) ?? n.estados;
+    const error = noSePuedeDeshacer(n.nombre, estados.find((e) => e.estadoId === c.estadoId) ?? null, c.despues);
+    if (error) return { ok: false, error };
+    if (posteriores.some((e) => tocaEstadoNpc(e, c.combatienteId, c.estadoId))) {
+      return { ok: false, error: `Hay una acción posterior sobre ese estado de ${n.nombre}: deshazla antes.` };
+    }
+    const sinEste = quitarEstado(estados, c.estadoId);
+    npcsEnCurso.set(n.id, c.antes ? ponerEstado(sinEste, c.antes) : sinEste);
+  }
+
+  const plan: PlanEstados = { personajes: [], combatientes: [], npcs: [...npcsEnCurso].map(([id, estados]) => ({ id, estados })) };
   for (const { p, estados, ficha, fotos } of enCurso.values()) {
     const maximos = maximosConEstados(p.sheet, estados);
     const topes = topesDeVida(p.sheet, estados);

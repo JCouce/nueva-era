@@ -98,18 +98,22 @@ export function textoEntradaRegistro(
   }
 
   // Poner o quitar: se agrupa por lo que se puso (el mismo estado, grado y duración a
-  // varios es una sola frase).
+  // varios es una sola frase), jugadores y NPC (td-20) juntos.
   const grupos = new Map<string, string[]>();
-  for (const c of datos.cambios) {
+  const cambios = [
+    ...datos.cambios.map((c) => ({ ...c, quien: nombre(c.characterId) })),
+    ...(datos.npcs ?? []).map((c) => ({ ...c, quien: nombreDeObjetivo({ nombre: c.nombre, npc: true }) })),
+  ];
+  for (const c of cambios) {
     const estado = datos.tipo === "estado_poner" ? c.despues : c.antes;
     const clave = estado
       ? datos.tipo === "estado_poner"
         ? `${etiquetaEstado(estado)}${estado.forzado ? " forzado (inmune)" : ""} a {} · ${etiquetaDuracion(duracionDe(estado))}`
         : `Quitado ${etiquetaEstado(estado)} a {}`
       : `${datos.tipo === "estado_poner" ? "Puesto" : "Quitado"} ${c.estadoId} a {}`;
-    grupos.set(clave, [...(grupos.get(clave) ?? []), c.characterId]);
+    grupos.set(clave, [...(grupos.get(clave) ?? []), c.quien]);
   }
-  return [...grupos].map(([plantilla, ids]) => plantilla.replace("{}", de(ids))).join("; ");
+  return [...grupos].map(([plantilla, quienes]) => plantilla.replace("{}", listaLegible([...new Set(quienes)]))).join("; ");
 }
 
 // "Ahora", "Hace 5 min", "Hace 2 h", "Hace 3 días".

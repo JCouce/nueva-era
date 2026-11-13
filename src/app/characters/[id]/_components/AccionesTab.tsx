@@ -21,7 +21,6 @@ import {
   accionesDirectasDeAtaque,
   accionesDeHerramientas,
   accionesDirectasDeHerramientas,
-  accionesDeMovimiento,
   accionesDeFarmacos,
   accionesDirectasDeFarmacos,
   recursoDe,
@@ -576,6 +575,7 @@ function FilaPoder({
   niveles,
   textos,
   indiceCondiciones,
+  fatigaEfectiva,
   onAbrir,
   estrella,
 }: {
@@ -585,6 +585,7 @@ function FilaPoder({
   niveles: NivelesPsionica;
   textos: FichaResuelta["textosTirada"];
   indiceCondiciones: FichaResuelta["indiceCondiciones"];
+  fatigaEfectiva: number;
   onAbrir: (p: PoderDisponible) => void;
   estrella?: Estrella;
 }) {
@@ -597,6 +598,7 @@ function FilaPoder({
     seleccion: SELECCION_PODER_VACIA,
     textos,
     indiceCondiciones,
+    fatigaEfectiva,
   });
   if (!preparado) return null;
   const p = preparado.resuelto;
@@ -847,10 +849,10 @@ export function AccionesTab({
       // "Volar" (Movilidad Aérea) — mismo criterio que Bloqueo en Defensa:
       // generada por equipo, se mezcla en el grupo fijo "Acciones" en vez de
       // vivir en su propia sección.
-      accionesGeneradas: accionesDeMovimiento(sheet).map(conExtras),
+      accionesGeneradas: ficha.accionesMovimiento.map(conExtras),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, ficha.textosTirada, ficha.extrasDotes, ficha.notasFarmacos, mods]);
+  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, ficha.textosTirada, ficha.extrasDotes, ficha.notasFarmacos, ficha.accionesMovimiento, mods]);
 
   // Acciones de dote (D2c-1): las de la sección Dotes y las copias en otro grupo fijo.
   const { dotesTiradas, dotesEnGrupos, dotesDirectas, directasDotesEnGrupos } = useMemo(() => {
@@ -890,6 +892,7 @@ export function AccionesTab({
       seleccion: SELECCION_PODER_VACIA,
       textos: ficha.textosTirada,
       indiceCondiciones: ficha.indiceCondiciones,
+      fatigaEfectiva: ficha.fatigaEnJuego.efectiva,
     }) !== null;
   const poderesPintables = poderes.filter(poderPintable);
   const poderesDotesPintables = ficha.poderesDotes.filter(poderPintable);
@@ -914,6 +917,7 @@ export function AccionesTab({
         seleccion: poderAbierto.seleccion,
         textos: ficha.textosTirada,
         indiceCondiciones: ficha.indiceCondiciones,
+        fatigaEfectiva: ficha.fatigaEnJuego.efectiva,
       })
     : null;
 
@@ -987,6 +991,7 @@ export function AccionesTab({
       seleccion,
       textos: ficha.textosTirada,
       indiceCondiciones: ficha.indiceCondiciones,
+      fatigaEfectiva: ficha.fatigaEnJuego.efectiva,
     });
     if (!p) return;
     if (p.tirada) abrir(p.tirada, false);
@@ -1416,6 +1421,7 @@ export function AccionesTab({
         niveles={niveles}
         textos={ficha.textosTirada}
         indiceCondiciones={ficha.indiceCondiciones}
+        fatigaEfectiva={ficha.fatigaEnJuego.efectiva}
         onAbrir={abrirPoder}
         estrella={estrella(p.accion.id)}
       />
@@ -1507,6 +1513,7 @@ export function AccionesTab({
       seleccion,
       textos: ficha.textosTirada,
       indiceCondiciones: ficha.indiceCondiciones,
+      fatigaEfectiva: ficha.fatigaEnJuego.efectiva,
     });
   const variantesDePoder = (poder: PoderDisponible): { preparado: PoderPreparado; etiqueta: string | null }[] => {
     const base = prepara(poder, SELECCION_PODER_VACIA);

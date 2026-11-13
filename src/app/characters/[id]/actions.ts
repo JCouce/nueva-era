@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { revalidarPanelMaster } from "@/lib/revalidarMaster";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
-import { cambiarEstadosDePersonajes, guardarFichaConFotos } from "@/lib/estadosPersonaje";
+import { cambiarEstadosDePersonajes, fotoEnJuego, guardarFichaConFotos } from "@/lib/estadosPersonaje";
+import { escribirFicha, FichaCambiada, MENSAJE_FICHA_CAMBIADA, type FichaLeida } from "@/lib/escrituraFicha";
+import type { Prisma } from "@/generated/prisma/client";
 import { z } from "zod";
 import {
   characterCreateSchema,
@@ -78,6 +80,8 @@ import {
   DISCIPLINA_MAX,
   type DisciplinaId,
   pagarFatiga,
+  cobroDeFatiga,
+  fatigaEnJuego,
   ajustarFatigaTemporal,
   terminarEscena,
   elegirEspecie,
@@ -131,7 +135,11 @@ import { mesaDeFicha } from "@/lib/mesaDeFicha";
 export type SaveResult =
   // `mensaje`: qué ha pasado, cuando no basta con ver la ficha (acciones de aumento, A4a).
   | { ok: true; sheet: Sheet; xp?: number; creditos?: number; mensaje?: string }
-  | { ok: false; error: string };
+  // `conflicto` (td-22): otra escritura cambió la ficha entre leerla y guardarla y no se ha
+  // guardado nada; la cola de autoguardado lo reintenta (CharacterSheet, runSave).
+  | { ok: false; error: string; conflicto?: true };
+
+const CONFLICTO = { ok: false, error: MENSAJE_FICHA_CAMBIADA, conflicto: true } as const;
 
 type Editable = {
   sheet: Sheet;
@@ -155,6 +163,8 @@ type Editable = {
   // (Character.estados): los usan las acciones de aumento que quitan un estado (A4a).
   userId: string;
   estados: EstadoActivo[];
+  // Lo leído de la base (td-22): la escritura solo se hace si sigue igual (escribirFicha).
+  leida: FichaLeida;
 };
 
 // Carga la ficha comprobando permisos. Base de todas las acciones de autosave.
@@ -195,18 +205,28 @@ async function loadEditable(characterId: string): Promise<Editable | { error: st
     esMaster: user.role === "MASTER",
     userId: user.id,
     estados,
+    leida: { stats: character.stats, xp: character.xp, creditos: character.creditos },
   };
 }
 
+// Escribe la ficha si nadie la ha cambiado desde loadEditable (td-22); false si sí.
+async function guardar(ctx: Editable, characterId: string, data: Prisma.CharacterUpdateManyMutationInput): Promise<boolean> {
+  try {
+    await escribirFicha(prisma, characterId, ctx.leida, data);
+    return true;
+  } catch (e) {
+    if (e instanceof FichaCambiada) return false;
+    throw e;
+  }
+}
+
 async function persist(
+  ctx: Editable,
   characterId: string,
   sheet: Sheet,
   name?: string,
 ): Promise<SaveResult> {
-  await prisma.character.update({
-    where: { id: characterId },
-    data: name === undefined ? { stats: sheet } : { name, stats: sheet },
-  });
+  if (!(await guardar(ctx, characterId, name === undefined ? { stats: sheet } : { name, stats: sheet }))) return CONFLICTO;
   return { ok: true, sheet };
 }
 
@@ -225,7 +245,7 @@ export async function setAtributoAction(
   if ("error" in ctx) return { ok: false, error: ctx.error };
 
   if (!ctx.aprobada) {
-    return persist(characterId, setAtributoValue(ctx.sheet, atributoId, value));
+    return persist(ctx, characterId, setAtributoValue(ctx.sheet, atributoId, value));
   }
 
   const actual = ctx.sheet.atributos[atributoId];
@@ -237,7 +257,7 @@ export async function setAtributoAction(
 
   const sheet: Sheet = { ...ctx.sheet, atributos: { ...ctx.sheet.atributos, [atributoId]: objetivo } };
   const xp = ctx.xp - coste;
-  await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, xp } });
+  if (!(await guardar(ctx, characterId, { stats: sheet, xp }))) return CONFLICTO;
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
   return { ok: true, sheet, xp };
@@ -252,7 +272,7 @@ export async function setHabilidadAction(
   if ("error" in ctx) return { ok: false, error: ctx.error };
 
   if (!ctx.aprobada) {
-    return persist(characterId, setHabilidadValue(ctx.sheet, habilidadId, value, ctx.ajuste));
+    return persist(ctx, characterId, setHabilidadValue(ctx.sheet, habilidadId, value, ctx.ajuste));
   }
 
   const actual = ctx.sheet.habilidades[habilidadId].valor;
@@ -270,7 +290,7 @@ export async function setHabilidadAction(
     },
   };
   const xp = ctx.xp - coste;
-  await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, xp } });
+  if (!(await guardar(ctx, characterId, { stats: sheet, xp }))) return CONFLICTO;
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
   return { ok: true, sheet, xp };
@@ -289,7 +309,7 @@ export async function setDisciplinaAction(
   if ("error" in ctx) return { ok: false, error: ctx.error };
 
   if (!ctx.aprobada) {
-    return persist(characterId, setDisciplinaValue(ctx.sheet, disciplinaId, value, ctx.ajuste, ctx.bonosDisciplina));
+    return persist(ctx, characterId, setDisciplinaValue(ctx.sheet, disciplinaId, value, ctx.ajuste, ctx.bonosDisciplina));
   }
 
   const actual = nivelDisciplina(ctx.sheet, disciplinaId);
@@ -303,7 +323,7 @@ export async function setDisciplinaAction(
   if (coste > ctx.xp) return { ok: false, error: "No tienes XP suficiente" };
 
   const xp = ctx.xp - coste;
-  await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, xp } });
+  if (!(await guardar(ctx, characterId, { stats: sheet, xp }))) return CONFLICTO;
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
   return { ok: true, sheet, xp };
@@ -326,10 +346,10 @@ export async function comprarDoteAction(characterId: string, entrada: unknown): 
     xp: ctx.xp,
   });
   if (!res.ok) return { ok: false, error: res.error };
-  if (!ctx.aprobada) return persist(characterId, res.sheet);
+  if (!ctx.aprobada) return persist(ctx, characterId, res.sheet);
 
   const xp = ctx.xp - res.costeXp;
-  await prisma.character.update({ where: { id: characterId }, data: { stats: res.sheet, xp } });
+  if (!(await guardar(ctx, characterId, { stats: res.sheet, xp }))) return CONFLICTO;
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
   return { ok: true, sheet: res.sheet, xp };
@@ -345,7 +365,7 @@ export async function quitarDoteAction(characterId: string, entrada: unknown): P
 
   const res = quitarDote(ctx.sheet, parsed.data, { aprobada: ctx.aprobada, foto: ctx.snapshot?.dotes ?? null });
   if (!res.ok) return { ok: false, error: res.error };
-  return persist(characterId, res.sheet);
+  return persist(ctx, characterId, res.sheet);
 }
 
 // Reparto de letras (creación por prioridad, docs/sistema.md §2). Congelado
@@ -368,10 +388,7 @@ export async function setPrioridadAction(
     const creditos = sheet.prioridades.recursos
       ? RECURSOS_POR_LETRA[sheet.prioridades.recursos].creditos
       : 0;
-    await prisma.character.update({
-      where: { id: characterId },
-      data: { stats: sheet, creditos },
-    });
+    if (!(await guardar(ctx, characterId, { stats: sheet, creditos }))) return CONFLICTO;
     // El creditos que se acaba de fijar lo lee la tira de máster de esta
     // misma página (server component) y el panel /master — sin esto se
     // quedan con el valor viejo hasta un F5. Por el mismo motivo va también
@@ -381,7 +398,7 @@ export async function setPrioridadAction(
     revalidarPanelMaster();
     return { ok: true, sheet, creditos };
   }
-  return persist(characterId, sheet);
+  return persist(ctx, characterId, sheet);
 }
 
 export async function addEspecialidadAction(
@@ -393,7 +410,7 @@ export async function addEspecialidadAction(
   if (!parsed.success) return { ok: false, error: "Especialidad inválida para esa habilidad" };
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, addEspecialidad(ctx.sheet, parsed.data.habilidadId, parsed.data.especialidadId, ctx.ajuste));
+  return persist(ctx, characterId, addEspecialidad(ctx.sheet, parsed.data.habilidadId, parsed.data.especialidadId, ctx.ajuste));
 }
 
 export async function removeEspecialidadAction(
@@ -405,14 +422,14 @@ export async function removeEspecialidadAction(
   if (!parsed.success) return { ok: false, error: "Especialidad inválida para esa habilidad" };
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, removeEspecialidad(ctx.sheet, parsed.data.habilidadId, parsed.data.especialidadId));
+  return persist(ctx, characterId, removeEspecialidad(ctx.sheet, parsed.data.habilidadId, parsed.data.especialidadId));
 }
 
 // Fuera el aviso de especialidades no reconocidas por la migración v17.
 export async function descartarAvisoEspecialidadesAction(characterId: string): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, descartarAvisoEspecialidades(ctx.sheet));
+  return persist(ctx, characterId, descartarAvisoEspecialidades(ctx.sheet));
 }
 
 // Comprar = equipar: no hay inventario aparte (ver lib/rules/equipo.ts), así
@@ -458,7 +475,7 @@ export async function equiparAction(
   if (sheet === ctx.sheet) return { ok: false, error: "Pieza de equipo inválida" };
 
   const creditos = ctx.creditos - coste;
-  await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, creditos } });
+  if (!(await guardar(ctx, characterId, { stats: sheet, creditos }))) return CONFLICTO;
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
   return { ok: true, sheet, creditos };
@@ -486,7 +503,7 @@ export async function convertirArmaAction(characterId: string, entrada: unknown)
 
   const sheet = { ...ctx.sheet, equipo: ctx.sheet.equipo.map((p) => (p.instanciaId === conv.pieza.instanciaId ? conv.pieza : p)) };
   const creditos = ctx.creditos - conv.coste;
-  await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, creditos } });
+  if (!(await guardar(ctx, characterId, { stats: sheet, creditos }))) return CONFLICTO;
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
   return { ok: true, sheet, creditos };
@@ -525,7 +542,7 @@ export async function comprarAumentoAction(characterId: string, entrada: unknown
   if (!res.ok) return { ok: false, error: res.error };
 
   const creditos = ctx.creditos - res.pago.deCreditos;
-  await prisma.character.update({ where: { id: characterId }, data: { stats: res.sheet, creditos } });
+  if (!(await guardar(ctx, characterId, { stats: res.sheet, creditos }))) return CONFLICTO;
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
   return { ok: true, sheet: res.sheet, creditos };
@@ -551,7 +568,7 @@ export async function desequiparAction(
     ? { ...sinPieza, bolsaAumentosGastada: Math.max(0, sinPieza.bolsaAumentosGastada - devolucion.deBolsa) }
     : sinPieza;
   const creditos = ctx.creditos + refund;
-  await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, creditos } });
+  if (!(await guardar(ctx, characterId, { stats: sheet, creditos }))) return CONFLICTO;
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
   return { ok: true, sheet, creditos };
@@ -566,7 +583,7 @@ export async function fijarArmaIncorporadaAction(characterId: string, entrada: u
   if ("error" in ctx) return { ok: false, error: ctx.error };
   const res = fijarArmaIncorporada(ctx.sheet, parsed.data.brazoInstanciaId, parsed.data.armaInstanciaId);
   if (!res.ok) return res;
-  return persist(characterId, res.sheet);
+  return persist(ctx, characterId, res.sheet);
 }
 
 // RECURSOS (docs/tareas.md, fase 6b): gasto manual (+/-), igual que PG/fatiga
@@ -579,7 +596,7 @@ export async function ajustarRecursoAction(
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, ajustarRecurso(ctx.sheet, instanciaId, delta));
+  return persist(ctx, characterId, ajustarRecurso(ctx.sheet, instanciaId, delta));
 }
 
 // Vida y fatiga (docs/tareas.md, 2026-09-27): recurso persistente del propio
@@ -588,7 +605,7 @@ export async function ajustarRecursoAction(
 export async function ajustarVidaAction(characterId: string, delta: number): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, ajustarVida(ctx.sheet, delta, ctx.estados));
+  return persist(ctx, characterId, ajustarVida(ctx.sheet, delta, ctx.estados));
 }
 
 // Daño de vida por categoría (docs/sistema.md §7, pregunta 24): delta > 0 recibe, < 0 cura
@@ -607,18 +624,19 @@ export async function ajustarDanioAction(
   if (!parsed.success) return { ok: false, error: "Ajuste de daño no válido" };
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, ajustarDanioCategoria(ctx.sheet, parsed.data.categoria, parsed.data.delta, ctx.estados));
+  return persist(ctx, characterId, ajustarDanioCategoria(ctx.sheet, parsed.data.categoria, parsed.data.delta, ctx.estados));
 }
 
 export async function ajustarFatigaAction(characterId: string, delta: number): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, ajustarFatiga(ctx.sheet, delta, ctx.estados));
+  return persist(ctx, characterId, ajustarFatiga(ctx.sheet, delta, ctx.estados));
 }
 
 // Pago de fatiga de un poder psiónico, de las casillas de una tirada y de las acciones sin
 // dado; con `permiteTemporal` (Proeza) el exceso sobre la fatiga que se tiene pasa a fatiga
-// temporal. En combate se cobra también de la foto (guardarFichaConFotos, A5b).
+// temporal. En combate se cobra también de la foto (guardarFichaConFotos, A5b), y se paga contra
+// la fatiga de la foto, que es la que vale (td-25): lo que no llega de ella es lo que va a temporal.
 export async function pagarFatigaAction(
   characterId: string,
   coste: number,
@@ -626,8 +644,11 @@ export async function pagarFatigaAction(
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  const sheet = pagarFatiga(ctx.sheet, coste, permiteTemporal === true);
-  await guardarFichaConFotos(characterId, ctx.sheet, sheet);
+  const foto = await fotoEnJuego(characterId);
+  const enJuego = fatigaEnJuego(ctx.sheet, foto);
+  const sheet = pagarFatiga(ctx.sheet, coste, permiteTemporal === true, enJuego);
+  const cobrada = foto ? cobroDeFatiga(coste, enJuego, permiteTemporal === true).pagado : undefined;
+  if (!(await guardarFichaConFotos(characterId, ctx.leida, ctx.sheet, sheet, cobrada))) return CONFLICTO;
   return { ok: true, sheet };
 }
 
@@ -639,20 +660,20 @@ export async function devolverFatigaAction(characterId: string, cantidad: number
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   const sheet = ajustarFatiga(ctx.sheet, cantidad, ctx.estados);
-  await guardarFichaConFotos(characterId, ctx.sheet, sheet);
+  if (!(await guardarFichaConFotos(characterId, ctx.leida, ctx.sheet, sheet))) return CONFLICTO;
   return { ok: true, sheet };
 }
 
 export async function ajustarFatigaTemporalAction(characterId: string, delta: number): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, ajustarFatigaTemporal(ctx.sheet, delta));
+  return persist(ctx, characterId, ajustarFatigaTemporal(ctx.sheet, delta));
 }
 
 export async function terminarEscenaAction(characterId: string): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, terminarEscena(ctx.sheet));
+  return persist(ctx, characterId, terminarEscena(ctx.sheet));
 }
 
 // Usos "una vez por escena" de los aumentos (A4a, usosEscena.ts): se gastan al tirar con la
@@ -667,7 +688,7 @@ export async function gastarUsosEscenaAction(characterId: string, ids: unknown):
   if (!parsed.success) return { ok: false, error: "Usos no válidos" };
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, gastarUsosEscena(ctx.sheet, parsed.data));
+  return persist(ctx, characterId, gastarUsosEscena(ctx.sheet, parsed.data));
 }
 
 export async function liberarUsoEscenaAction(characterId: string, id: unknown): Promise<SaveResult> {
@@ -675,7 +696,7 @@ export async function liberarUsoEscenaAction(characterId: string, id: unknown): 
   if (!parsed.success) return { ok: false, error: "Uso no válido" };
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, liberarUsoEscena(ctx.sheet, parsed.data));
+  return persist(ctx, characterId, liberarUsoEscena(ctx.sheet, parsed.data));
 }
 
 // Límites de las acciones de dote (dotesAcciones.ts; usuario, 2026-10-28): "N por escena", "1 por
@@ -699,7 +720,7 @@ export async function gastarUsoLimitadoAction(characterId: string, entrada: unkn
   if (tirada.bloqueada) return { ok: false, error: tirada.bloqueada };
   const r = gastarUsoLimitado(ctx.sheet, tirada.usoLimitado, parsed.data.aliadoId, mesa.aliados);
   if (!r.ok) return { ok: false, error: r.error };
-  return persist(characterId, r.sheet);
+  return persist(ctx, characterId, r.sheet);
 }
 
 // Acciones favoritas (T-006): preferencia del jugador, sin regla detrás, pero pasa por
@@ -716,7 +737,7 @@ export async function marcarFavoritaAction(characterId: string, entrada: unknown
   if (parsed.data.marcada && !sheet.favoritas.includes(parsed.data.id)) {
     return { ok: false, error: "Ya tienes el máximo de favoritas" };
   }
-  return persist(characterId, sheet);
+  return persist(ctx, characterId, sheet);
 }
 
 // Acciones propias de aumento (A4a, aumentosAcciones.ts). El servidor comprueba que la ficha
@@ -744,20 +765,24 @@ export async function usarAccionAumentoAction(characterId: string, accionId: unk
   if (!parsed.success || !parsedExtra.success) return { ok: false, error: "Acción no válida" };
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  const uso = usoDeAccionAumento(ctx.sheet, ctx.estados, parsed.data, parsedExtra.data ?? {});
+  // La fatiga que se comprueba y se cobra es la en juego: con combate en curso, la de la foto (td-25).
+  const foto = await fotoEnJuego(characterId);
+  const enJuego = fatigaEnJuego(ctx.sheet, foto);
+  const uso = usoDeAccionAumento(ctx.sheet, ctx.estados, parsed.data, parsedExtra.data ?? {}, enJuego);
   if (!uso.ok) return { ok: false, error: uso.error };
+  const coste = uso.coste;
+  const cobrada = foto ? coste : undefined;
   if (!uso.op) {
-    await guardarFichaConFotos(characterId, ctx.sheet, uso.sheet);
+    if (!(await guardarFichaConFotos(characterId, ctx.leida, ctx.sheet, uso.sheet, cobrada))) return CONFLICTO;
     return { ok: true, sheet: uso.sheet, mensaje: uso.mensaje };
   }
-  const coste = uso.coste;
   const hecho = await cambiarEstadosDePersonajes(
     [characterId],
     uso.op,
     { userId: ctx.userId, motivo: `${uso.accion.label} (${uso.accion.fuente}), desde la ficha` },
     // El cobro, en la misma transacción que el estado; cambiarEstadosDePersonajes lo lleva
     // también a la foto del combate abierto.
-    { preparar: coste > 0 ? (s) => pagarFatiga(s, coste, false) : undefined },
+    { preparar: coste > 0 ? (s) => pagarFatiga(s, coste, false, enJuego) : undefined, fatigaCobrada: coste > 0 ? cobrada : undefined },
   );
   if (!hecho) return { ok: false, error: "Personaje no encontrado" };
   // Cambiar el estado puede tocar la vida (S75): la ficha que vale es la de la base.
@@ -845,10 +870,7 @@ export async function comprarRecargaAction(
   if (resultado.coste > ctx.creditos) return { ok: false, error: "No tienes créditos suficientes" };
 
   const creditos = ctx.creditos - resultado.coste;
-  await prisma.character.update({
-    where: { id: characterId },
-    data: { stats: resultado.sheet, creditos },
-  });
+  if (!(await guardar(ctx, characterId, { stats: resultado.sheet, creditos }))) return CONFLICTO;
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
   return { ok: true, sheet: resultado.sheet, creditos };
@@ -863,7 +885,7 @@ export async function ajustarMaterialAction(
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, ajustarMaterial(ctx.sheet, tier, delta));
+  return persist(ctx, characterId, ajustarMaterial(ctx.sheet, tier, delta));
 }
 
 // Precio recalculado en servidor, igual que comprarRecargaAction — no se
@@ -879,10 +901,7 @@ export async function comprarMaterialAction(
   if (resultado.coste > ctx.creditos) return { ok: false, error: "No tienes créditos suficientes" };
 
   const creditos = ctx.creditos - resultado.coste;
-  await prisma.character.update({
-    where: { id: characterId },
-    data: { stats: resultado.sheet, creditos },
-  });
+  if (!(await guardar(ctx, characterId, { stats: resultado.sheet, creditos }))) return CONFLICTO;
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
   return { ok: true, sheet: resultado.sheet, creditos };
@@ -915,10 +934,7 @@ export async function comprarGranadaAction(
   if (resultado.coste > ctx.creditos) return { ok: false, error: "No tienes créditos suficientes" };
 
   const creditos = ctx.creditos - resultado.coste;
-  await prisma.character.update({
-    where: { id: characterId },
-    data: { stats: resultado.sheet, creditos },
-  });
+  if (!(await guardar(ctx, characterId, { stats: resultado.sheet, creditos }))) return CONFLICTO;
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
   return { ok: true, sheet: resultado.sheet, creditos };
@@ -933,7 +949,7 @@ export async function ajustarGranadaAction(
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, ajustarGranada(ctx.sheet, catalogoId, delta));
+  return persist(ctx, characterId, ajustarGranada(ctx.sheet, catalogoId, delta));
 }
 
 // Fármacos (docs/prompt-gasto-recursos.md, Fase 2): mismo patrón exacto que
@@ -962,10 +978,7 @@ export async function comprarFarmacoAction(
   if (resultado.coste > ctx.creditos) return { ok: false, error: "No tienes créditos suficientes" };
 
   const creditos = ctx.creditos - resultado.coste;
-  await prisma.character.update({
-    where: { id: characterId },
-    data: { stats: resultado.sheet, creditos },
-  });
+  if (!(await guardar(ctx, characterId, { stats: resultado.sheet, creditos }))) return CONFLICTO;
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
   return { ok: true, sheet: resultado.sheet, creditos };
@@ -981,7 +994,7 @@ export async function ajustarFarmacoAction(
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, ajustarFarmaco(ctx.sheet, catalogoId, delta));
+  return persist(ctx, characterId, ajustarFarmaco(ctx.sheet, catalogoId, delta));
 }
 
 // Munición especial (docs/tareas.md, 2026-09-28): un lote por compra, mismo
@@ -1010,10 +1023,7 @@ export async function comprarMunicionEspecialAction(
   if (resultado.coste > ctx.creditos) return { ok: false, error: "No tienes créditos suficientes" };
 
   const creditos = ctx.creditos - resultado.coste;
-  await prisma.character.update({
-    where: { id: characterId },
-    data: { stats: resultado.sheet, creditos },
-  });
+  if (!(await guardar(ctx, characterId, { stats: resultado.sheet, creditos }))) return CONFLICTO;
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
   return { ok: true, sheet: resultado.sheet, creditos };
@@ -1026,7 +1036,7 @@ export async function ajustarMunicionEspecialAction(
 ): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(characterId, ajustarMunicionEspecial(ctx.sheet, municionId, delta));
+  return persist(ctx, characterId, ajustarMunicionEspecial(ctx.sheet, municionId, delta));
 }
 
 // Reparar (docs/tareas.md, tarea 8): sin requisito de VTF (a diferencia de
@@ -1058,7 +1068,7 @@ export async function repararAction(
 
   const sheet = repararPieza(ctx.sheet, instanciaId, tier, exito);
   if (sheet === ctx.sheet) return { ok: false, error: "Esa pieza ya está al máximo de durabilidad." };
-  return persist(characterId, sheet);
+  return persist(ctx, characterId, sheet);
 }
 
 // Fabricar (docs/tareas.md, tarea 8): requiere la VTF equipada (a
@@ -1103,7 +1113,7 @@ export async function fabricarAction(
 
   const sheet = fabricar(ctx.sheet, catalogoId, tier, exito, parsedOpciones.data);
   if (sheet === ctx.sheet) return { ok: false, error: "No tienes materiales suficientes de ese tier." };
-  return persist(characterId, sheet);
+  return persist(ctx, characterId, sheet);
 }
 
 // Devuelve atributos y habilidades a cero. La identidad se conserva.
@@ -1112,7 +1122,7 @@ export async function resetBuildAction(characterId: string): Promise<SaveResult>
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   if (ctx.aprobada) return { ok: false, error: "La ficha ya está aprobada" };
-  return persist(characterId, resetBuild(ctx.sheet));
+  return persist(ctx, characterId, resetBuild(ctx.sheet));
 }
 
 // Especie, casta y linaje (docs/sistema.md §14.2-14.3). Única vía para cambiarlos:
@@ -1139,10 +1149,10 @@ export async function setEspecieAction(
   // El reset deja vida y fatiga en el centinela 999 y una especie nueva puede bajar el
   // máximo: se recortan aquí, no al releer, para que la pantalla no vea "999/9".
   const sheet = reconciliarVidaConEstados(res.sheet, ctx.estados);
-  if (!res.reseteada) return persist(characterId, sheet);
+  if (!res.reseteada) return persist(ctx, characterId, sheet);
 
   const creditos = creditosDeLaLetra(sheet.prioridades);
-  await prisma.character.update({ where: { id: characterId }, data: { stats: sheet, creditos } });
+  if (!(await guardar(ctx, characterId, { stats: sheet, creditos }))) return CONFLICTO;
   revalidatePath(`/characters/${characterId}`);
   revalidarPanelMaster();
   return { ok: true, sheet, creditos };
@@ -1157,7 +1167,7 @@ export async function setAtributoLibreAction(characterId: string, atributo: unkn
   if ("error" in ctx) return { ok: false, error: ctx.error };
   const res = elegirAtributoLibre(ctx.sheet, parsed.data, { aprobada: ctx.aprobada, esMaster: ctx.esMaster, libre: false });
   if ("error" in res) return { ok: false, error: res.error };
-  return persist(characterId, res.sheet);
+  return persist(ctx, characterId, res.sheet);
 }
 
 export async function saveIdentityAction(
@@ -1180,6 +1190,7 @@ export async function saveIdentityAction(
   const numeroOpcional = (v: number | null) => (v === null ? null : clampInt(v, 0, 999));
 
   return persist(
+    ctx,
     characterId,
     {
       ...ctx.sheet,

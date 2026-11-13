@@ -154,8 +154,7 @@ function aportes(sheet: Pick<Sheet, "equipo">): Aporte[] {
 
 const fatigaTexto = (n: number) => `${n} de fatiga`;
 
-// TODO(revisar): en combate la fatiga que vale es la de la foto (A5b la cobra en las dos), pero
-// esto mira la de la ficha; si el máster ha bajado la de la foto a mano, pueden no coincidir.
+// `fatigaActual`: la fatiga en juego (fatigaEnJuego, td-25): en combate, la de la foto.
 const sinFatiga = (coste: number, fatigaActual: number) =>
   coste > fatigaActual ? { bloqueada: `No te llega la fatiga: cuesta ${coste} y te quedan ${fatigaActual}.` } : {};
 
@@ -272,10 +271,12 @@ const estadoQuePone = (e: EfectoAccionAumento): string | null =>
   e.tipo === "activar" ? e.estadoId : e.tipo === "accionAdicional" ? (e.repetida.activar?.estadoId ?? null) : null;
 
 // `estados`: los del personaje, para los activables (A5a): la nota de "ya activa" y las filas de
-// desactivar.
+// desactivar. `fatiga`: la que se comprueba para bloquear por coste, la en juego (td-25: en
+// combate, la de la foto; FichaResuelta.fatigaEnJuego). Sin ella, la de la ficha.
 export function accionesDeAumentos(
   sheet: Pick<Sheet, "equipo" | "fatigaActual"> & Partial<Pick<Sheet, "usosEscena">>,
   estados: readonly EstadoActivo[] = [],
+  fatiga: number = sheet.fatigaActual,
 ): AccionesDeAumentos {
   const filas: FilaAumento[] = [];
   const informativas: InfoDeAumento[] = [];
@@ -284,8 +285,8 @@ export function accionesDeAumentos(
     for (const a of ap.acciones) {
       filas.push(
         a.tirada
-          ? { tipo: "tirada", accion: { ...conTirada(a, a.tirada, ap.fuente, sheet.fatigaActual), origen: ap.origen } }
-          : { tipo: "directa", accion: { ...directa(a, ap.fuente, sheet.fatigaActual, estados, usos), origen: ap.origen } },
+          ? { tipo: "tirada", accion: { ...conTirada(a, a.tirada, ap.fuente, fatiga), origen: ap.origen } }
+          : { tipo: "directa", accion: { ...directa(a, ap.fuente, fatiga, estados, usos), origen: ap.origen } },
       );
       const hechas = a.efecto?.tipo === "contador" ? contadorEscena(usos, a.id) : 0;
       if (a.efecto?.tipo === "contador" && hechas > 0) {
@@ -389,10 +390,11 @@ function usoDeAdicional(
   sheet: Sheet,
   estados: readonly EstadoActivo[],
   repetida: boolean,
+  fatiga: number,
 ): UsoAccionAumento {
   const coste = repetida ? efecto.repetida.costeFatiga : (accion.costeFatiga ?? 0);
-  if (coste > sheet.fatigaActual) return { ok: false, error: `No te llega la fatiga: cuesta ${coste} y te quedan ${sheet.fatigaActual}.` };
-  const pagado = pagarFatiga(sheet, coste, false);
+  if (coste > fatiga) return { ok: false, error: `No te llega la fatiga: cuesta ${coste} y te quedan ${fatiga}.` };
+  const pagado = pagarFatiga(sheet, coste, false, fatiga);
   const activar = repetida ? efecto.repetida.activar : undefined;
   if (!activar) {
     return { ok: true, accion, sheet: pagado, op: null, mensaje: `−${coste} de fatiga. Una acción simple más este turno.`, coste };
@@ -412,19 +414,22 @@ function usoDeAdicional(
 // Valida contra la ficha que la acción existe (pieza equipada, requisito sano, nivel) y que
 // llega la fatiga, y devuelve lo que hay que escribir. `extra.eleccion`: lo elegido en el modal
 // de activar (Neuroprótesis 2); `extra.repetida`: la casilla "ya usada" de la acción adicional.
+// `fatiga`: la fatiga en juego (fatigaEnJuego, td-25); en combate, la de la foto. `coste` del
+// resultado es lo cobrado de ella: quien escribe lo resta tal cual a la foto.
 export function usoDeAccionAumento(
   sheet: Sheet,
   estados: readonly EstadoActivo[],
   accionId: string,
   extra: ExtraAccionAumento = {},
+  fatiga: number = sheet.fatigaActual,
 ): UsoAccionAumento {
-  const accion = accionesDeAumentos(sheet, estados).directas.find((a) => a.id === accionId);
+  const accion = accionesDeAumentos(sheet, estados, fatiga).directas.find((a) => a.id === accionId);
   if (!accion) return { ok: false, error: "No tienes esa acción (falta el aumento o tiene un requisito roto)." };
   if (accion.bloqueada) return { ok: false, error: accion.bloqueada };
   const efecto = accion.efecto;
-  if (efecto?.tipo === "accionAdicional") return usoDeAdicional(efecto, accion, sheet, estados, extra.repetida === true);
+  if (efecto?.tipo === "accionAdicional") return usoDeAdicional(efecto, accion, sheet, estados, extra.repetida === true, fatiga);
   const cobrado = accion.costeFatiga ?? 0;
-  const pagado = pagarFatiga(sheet, cobrado, false);
+  const pagado = pagarFatiga(sheet, cobrado, false, fatiga);
   const coste = cobrado ? `−${cobrado} de fatiga.` : null;
   if (efecto?.tipo === "activar") {
     const r = usoDeActivar(efecto, estados, extra.eleccion);

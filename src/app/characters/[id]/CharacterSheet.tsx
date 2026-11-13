@@ -266,8 +266,12 @@ export function CharacterSheet({
   const runSave = useCallback(
     (fn: () => Promise<SaveResult>, onOk?: (s: Sheet) => void, onError?: (error: string) => void) => {
       setStatus("saving");
+      // `conflicto` (td-22): otra escritura (el máster) cambió la ficha entre que el servidor la
+      // leyó y la guardó, y no se guardó nada. Se repite una vez: el servidor vuelve a leerla y
+      // aplica el cambio sobre la nueva.
       queue.current = queue.current
         .then(() => fn())
+        .then((res) => (!res.ok && res.conflicto ? fn() : res))
         .then(
           (res) => {
             if (res.ok) {
@@ -482,7 +486,8 @@ export function CharacterSheet({
     runSave(() => devolverFatigaAction(characterId, delta), setSheet);
   };
   const commitPagarFatiga = (coste: number, permiteTemporal: boolean) => {
-    setSheet((s) => pagarFatiga(s, coste, permiteTemporal));
+    // Contra la fatiga en juego (td-25: en combate, la de mi fila), como el servidor.
+    setSheet((s) => pagarFatiga(s, coste, permiteTemporal, ficha.fatigaEnJuego.actual));
     runSave(() => pagarFatigaAction(characterId, coste, permiteTemporal), setSheet);
   };
   const commitAjustarFatigaTemporal = (delta: number) => {

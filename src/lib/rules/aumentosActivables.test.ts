@@ -541,4 +541,9 @@ describe("A5b: lo que la ficha cobra en combate llega a la foto", () => {
   test("sin cambio en la ficha, la misma foto", () => {
     assert.equal(fotoTrasCambioDeFicha(foto, ficha, { ...ficha }), foto);
   });
+
+  test("td-25: con la fatiga cobrada de la foto, se resta esa y no la diferencia de la ficha", () => {
+    // La ficha (1) solo baja 1 al cobrar 3 contra la foto (5): la foto baja 3.
+    assert.equal(fotoTrasCambioDeFicha(foto, { vidaActual: 9, fatigaActual: 1 }, { vidaActual: 9, fatigaActual: 0 }, 3).fatigaActual, 2);
+  });
 });

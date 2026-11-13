@@ -212,18 +212,19 @@ const MOTIVO_NO_CUENTA = {
   fuego: "No vale contra el fuego: contra el fuego solo cuenta la armadura (con Mejora Ignífuga).",
 } as const;
 
+// `fatiga`: la que se comprueba, la en juego (FichaResuelta.fatigaEnJuego.actual, td-25: en
+// combate, la de la foto). Sin ella, la de la ficha.
 export function casillaBlindajeReactivo(
   sheet: Pick<Sheet, "equipo" | "fatigaActual">,
   tipo: TipoDanio,
   marcada: boolean,
+  fatiga: number = sheet.fatigaActual,
 ): CasillaBlindajeReactivo | null {
   const r = blindajeReactivoDeAumentos(sheet);
   if (!r) return null;
   const noCuenta = blindajeNoCuenta(tipo);
   const sinFatiga =
-    !marcada && sheet.fatigaActual < r.costeFatiga
-      ? `No te llega la fatiga: cuesta ${r.costeFatiga} y te quedan ${sheet.fatigaActual}.`
-      : null;
+    !marcada && fatiga < r.costeFatiga ? `No te llega la fatiga: cuesta ${r.costeFatiga} y te quedan ${fatiga}.` : null;
   return {
     etiqueta: `${r.etiqueta} (${r.fuente.replace(/ \d+$/, "")}, ${r.costeFatiga} fatiga)`,
     valor: r.valor,

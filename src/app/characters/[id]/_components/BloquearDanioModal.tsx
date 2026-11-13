@@ -82,7 +82,7 @@ export function BloquearDanioModal({
   const durabilidad =
     escudoAplicado ?? (golpe && { recibe: golpe.aDurabilidad, de: golpe.durabilidadActual, a: golpe.durabilidadResultante });
   const seRompe = escudoAplicado ? escudoAplicado.a === 0 && escudoAplicado.de > 0 : Boolean(golpe?.seRompe);
-  const casilla = casillaBlindajeReactivo(ficha.ficha, tipo, reactivo);
+  const casilla = casillaBlindajeReactivo(ficha.ficha, tipo, reactivo, ficha.fatigaEnJuego.actual);
   const casillaBrazo = casillaBlindajeBrazo(ficha.ficha, tipo);
   const desglose = desgloseBlindaje(
     ficha.ficha,
@@ -130,7 +130,7 @@ export function BloquearDanioModal({
 
   // Cambiar a un tipo en el que no vale (Mental, Fuego) la desmarca y devuelve la fatiga.
   const elegirTipo = (t: TipoDanio) => {
-    const otra = casillaBlindajeReactivo(ficha.ficha, t, reactivo);
+    const otra = casillaBlindajeReactivo(ficha.ficha, t, reactivo, ficha.fatigaEnJuego.actual);
     if (reactivo && otra?.bloqueada) {
       onAjustarFatiga?.(otra.costeFatiga);
       setReactivo(false);

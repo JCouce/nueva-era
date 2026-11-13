@@ -11,11 +11,26 @@ import type { Sheet } from "./sheet";
 import type { Accion } from "./acciones";
 import type { CondicionTirada } from "./condiciones";
 import { origenDePieza } from "./origen";
+import { velocidadConUmbrales, type MovimientoPorUmbral } from "./estados";
 
-function tiradaDeVolar(pieza: PiezaEquipada, cat: MejoraMovimiento): Accion | null {
+const SIN_UMBRALES: Pick<MovimientoPorUmbral, "mediaVelocidad"> = { mediaVelocidad: [] };
+
+function tiradaDeVolar(
+  pieza: PiezaEquipada,
+  cat: MejoraMovimiento,
+  umbrales: Pick<MovimientoPorUmbral, "mediaVelocidad">,
+): Accion | null {
   if (cat.id !== "movilidad_aerea") return null;
   const nivelInfo = cat.niveles.find((n) => n.nivel === pieza.nivel);
   if (!nivelInfo?.velocidadM) return null;
+  // La media velocidad de Malherido/Exhausto (§7, S26), con la misma cuenta que el vuelo de
+  // Personaje → Estado (FichaResuelta.vuelo): velocidadConUmbrales. La nota lo dice en la tirada.
+  const velocidadBase = velocidadConUmbrales(nivelInfo.velocidadM, umbrales);
+  const notaMedia =
+    velocidadBase !== nivelInfo.velocidadM
+      ? `Media velocidad (${umbrales.mediaVelocidad.join(" y ")}): ${velocidadBase} m en vez de ${nivelInfo.velocidadM} m.`
+      : null;
+  const nota = [nivelInfo.notaTirada, notaMedia].filter(Boolean).join(" ") || undefined;
 
   const condiciones: CondicionTirada[] = [
     {
@@ -42,14 +57,13 @@ function tiradaDeVolar(pieza: PiezaEquipada, cat: MejoraMovimiento): Accion | nu
     grupo: "Acciones",
     aplicado: "reflejos",
     habilidad: "tecnociencia",
-    nota: nivelInfo.notaTirada,
+    nota,
     recursoInstanciaId: pieza.instanciaId,
     recursoUnidad: "cargas",
     condiciones,
-    // TODO(revisar): la "media velocidad" de Malherido/Exhausto (§7, S26) ya parte el
-    // vuelo de Personaje → Estado (FichaResuelta.vuelo), pero no los metros de esta
-    // tirada: accionesDeMovimiento no recibe la ficha resuelta. Pendiente en tareas.md.
-    vuelo: { velocidadBase: nivelInfo.velocidadM, bonusCritico: nivelInfo.bonusCriticoM ?? 0 },
+    // TODO(revisar): S26 parte la velocidad, no dice nada del +N m del crítico de Máxima
+    // Potencia; se deja entero.
+    vuelo: { velocidadBase, bonusCritico: nivelInfo.bonusCriticoM ?? 0 },
     ajustesFijos: nivelInfo.maniobrabilidad
       ? [{ valor: nivelInfo.maniobrabilidad, fuente: `Maniobrabilidad (${cat.label})` }]
       : [],
@@ -80,12 +94,14 @@ export function conEsquivaEnVuelo(sheet: Sheet, t: Accion): Accion {
   return t;
 }
 
-export function accionesDeMovimiento(sheet: Sheet): Accion[] {
+// `umbrales`: lo que hacen los umbrales de §7 al movimiento (FichaResuelta.umbrales.movimiento);
+// la ficha resuelta las expone ya con ellos (FichaResuelta.accionesMovimiento). Sin él, sin umbrales.
+export function accionesDeMovimiento(sheet: Sheet, umbrales: Pick<MovimientoPorUmbral, "mediaVelocidad"> = SIN_UMBRALES): Accion[] {
   const acciones: Accion[] = [];
   for (const pieza of sheet.equipo) {
     const cat: Equipo | null = equipoPorId(pieza.catalogoId);
     if (cat?.familia !== "movimiento") continue;
-    const accion = tiradaDeVolar(pieza, cat);
+    const accion = tiradaDeVolar(pieza, cat, umbrales);
     if (accion) acciones.push({ ...accion, origen: origenDePieza("equipo", cat, pieza.instanciaId) });
   }
   return acciones;

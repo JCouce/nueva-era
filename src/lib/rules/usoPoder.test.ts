@@ -45,6 +45,13 @@ describe("prepararPoder", () => {
     assert.match(p.bloqueo ?? "", /Te faltan 1 de fatiga/);
   });
 
+  test("td-25: en combate bloquea con la fatiga efectiva del combate, no la de la ficha", () => {
+    const poder = accionesDePsionica(f, niv(f)).find((x) => x.accion.id === "psi_singularidad_impulso")!;
+    const p = prepararPoder({ ficha: f, modificadores: [], niveles: niv(f), poder, seleccion: sel(), fatigaEfectiva: 1 })!;
+    assert.match(p.bloqueo ?? "", /Te faltan 1 de fatiga/);
+    assert.equal(p.fatigaActual, 1);
+  });
+
   test("las elecciones no disponibles se corrigen", () => {
     const p = preparar(f, "psi_singularidad_impulso", { elecciones: { nivel: "n6" } });
     assert.equal(p.seleccion.elecciones.nivel, "n2");

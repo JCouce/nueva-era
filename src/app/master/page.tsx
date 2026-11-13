@@ -105,8 +105,9 @@ async function cargarMesa() {
       especie,
       xp: f.xp,
       creditos: f.creditos,
-      vida: { ...mostrada.vida, tope: tope.vida, danio },
-      fatiga: { ...mostrada.fatiga, tope: tope.fatiga },
+      // El ajuste de umbrales (especie, aumentos) para la vista previa, el mismo que la ficha (td-24).
+      vida: { ...mostrada.vida, tope: tope.vida, danio, ajuste: ficha.ajusteUmbrales.salud },
+      fatiga: { ...mostrada.fatiga, tope: tope.fatiga, ajuste: ficha.ajusteUmbrales.fatiga },
       deCombate: mostrada.deCombate,
       estados: estadosParaPintar(ficha),
       inmunidades: ficha.inmunidades,

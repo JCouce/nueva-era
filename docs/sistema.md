@@ -493,8 +493,13 @@ imponen penalizadores por umbral:
   registro guarda el desglose de antes y de después de cada objetivo: deshacer devuelve el
   exacto y se niega si el desglose cambió después aunque la vida sea la misma. Lo que mueve
   la vida sin categoría (estados por S75, efectos de reglas) sigue normalizándose al leer.
-  Pendiente: Fortaleza absorbiendo el no letal, curas por descanso/medicina, y que el daño
-  del combate vuelva a la ficha al terminar.
+  Pendiente: Fortaleza absorbiendo el no letal y curas por descanso/medicina.
+  *Al terminar el combate (td-13, usuario 2026-11-13):* el daño vuelve a la ficha. Cada jugador
+  deja en su ficha el daño recibido y la fatiga gastada en su foto (máximo de la foto − actual,
+  no el valor: si el máximo de la ficha cambió, el daño sigue siendo el mismo) y su desglose
+  (`vitalidadAlSalirDeCombate`, `rules/vitalidad.ts`), sin bajar de 0; con varias filas, la
+  misma que enseña la Mesa (`fotoEnMesa`). Solo si el combate estaba en curso (en preparación la
+  foto es la de entrada). Va en la misma transacción que lo cierra (`terminarCombateAction`).
 - **Daño específico** (eléctrico, fuego, frío, corrosivo, plasma, sónico, tóxico, mental),
   cada uno con su categoría de gravedad y su efecto asociado. El **mental omite armaduras**.
   *En la app (2026-10-24, aviso de Murillo: "el fuego es daño grave"):* la gravedad de
@@ -524,13 +529,24 @@ imponen penalizadores por umbral:
   `Combatiente` (`pgActual/pgMax`, `fatigaActual/fatigaMax`): para el jugador, su fila
   (`CharacterSheet`, `miCombatiente`); para el NPC de la consola, la de su fila, no la de
   su plantilla (`NpcAccionesPanel`). La temporal de la ficha también se resta en combate.
+- **La fatiga que se gasta** (td-25, usuario 2026-11-13): con un combate en curso, la de la foto,
+  no la de la ficha (`FichaResuelta.fatigaEnJuego`; en servidor, `fotoEnJuego` + `fatigaEnJuego`).
+  Con ella se bloquean las acciones de aumento, los poderes y Densificar por coste, y contra ella
+  se paga: lo que Proeza no puede pagar de la fatiga del combate es lo que pasa a temporal
+  (`pagarFatiga` con `enJuego`). La foto baja lo cobrado y la ficha lo mismo sin pasar de 0.
 - **Media velocidad y carga** (`movimientoPorUmbrales`, `estados.ts`): carrera, vuelo y
   levitación a la mitad; carga −25 % o −50 %. Supuestos S26-S29. Notas en Personaje →
   Estado: "media velocidad · Malherido", "−25 % · Exhausto", "una casilla por turno ·
   Moribundo".
+- **Tirada de Volar** (td-26): sus metros salen ya a media velocidad con la misma cuenta que el
+  vuelo de Estado (`velocidadConUmbrales`, `estados.ts`; la ficha resuelta da la tirada en
+  `FichaResuelta.accionesMovimiento`), con una nota en la tirada. El +N m del crítico de Máxima
+  Potencia no se parte (`TODO(revisar)` en `movimiento.ts`).
+- **Vista previa de la pestaña Vida del máster** (td-24): el penalizador del umbral que se cruza
+  sale con el ajuste de la ficha (Guerrero, Siervo, aumentos: `FichaResuelta.ajusteUmbrales`),
+  "Herido (−0 · Guerrero)", con la misma cuenta que las tiradas.
 - **Sin mecanizar**: "una casilla por turno" de Moribundo (solo la nota; el número de
-  carrera no cambia) y la media velocidad en los metros de la tirada de Volar (solo se
-  parte el vuelo de Estado; pendiente en `docs/tareas.md`).
+  carrera no cambia).
 - **Como estados automáticos** (usuario, 2026-10-28): los umbrales se ven como los estados
   **Heridas** (Herido, Malherido, Moribundo) y **Fatiga** (Fatigado, Exhausto), un nivel por
   estado, más **Inconsciencia** con vida ≤ 0 o fatiga efectiva ≤ 0. Son **derivados, nunca

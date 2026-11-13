@@ -153,15 +153,35 @@ export function fatigaEfectiva(sheet: Sheet): number {
   return sheet.fatigaActual - sheet.fatigaTemporal;
 }
 
-// Paga `coste` de fatiga. Sin `permiteTemporal`, recorta en 0 como ajustarFatiga
-// (el bloqueo previo ya impide llegar aquí sin fatiga); con él, el exceso pasa a
-// fatiga temporal.
-export function pagarFatiga(sheet: Sheet, coste: number, permiteTemporal: boolean): Sheet {
-  if (!Number.isFinite(coste) || coste <= 0) return sheet;
+// La fatiga que se gasta ahora mismo (td-25): con un combate en curso, la de la foto del
+// combatiente (la que vale en combate, §7); si no, la de la ficha. Sin restar la temporal de
+// Proeza: es lo que se puede pagar. La efectiva (umbrales, sobrecarga) es esta menos la temporal.
+export function fatigaEnJuego(sheet: Pick<Sheet, "fatigaActual">, foto: { fatigaActual: number } | null): number {
+  return foto ? foto.fatigaActual : sheet.fatigaActual;
+}
+
+// Cuánto de `coste` sale de la fatiga en juego y cuánto pasa a temporal (solo con
+// `permiteTemporal`, Proeza). Sin él, lo que no llega no se paga (el bloqueo previo ya impide
+// llegar aquí sin fatiga).
+export function cobroDeFatiga(coste: number, enJuego: number, permiteTemporal: boolean): { pagado: number; temporal: number } {
+  if (!Number.isFinite(coste) || coste <= 0) return { pagado: 0, temporal: 0 };
   const c = Math.round(coste);
-  const pagado = Math.min(c, sheet.fatigaActual);
-  const exceso = permiteTemporal ? c - pagado : 0;
-  return { ...sheet, fatigaActual: sheet.fatigaActual - pagado, fatigaTemporal: Math.min(999, sheet.fatigaTemporal + exceso) };
+  const pagado = Math.min(c, Math.max(0, enJuego));
+  return { pagado, temporal: permiteTemporal ? c - pagado : 0 };
+}
+
+// Paga `coste` de fatiga. Sin `permiteTemporal`, recorta en 0 como ajustarFatiga; con él, el
+// exceso pasa a fatiga temporal. `enJuego` (td-25): la fatiga contra la que se paga
+// (fatigaEnJuego); en combate, la de la foto, y la ficha baja lo mismo sin pasar de 0 (A5b: se
+// cobra en las dos). Sin él, la de la ficha.
+export function pagarFatiga(sheet: Sheet, coste: number, permiteTemporal: boolean, enJuego: number = sheet.fatigaActual): Sheet {
+  const { pagado, temporal } = cobroDeFatiga(coste, enJuego, permiteTemporal);
+  if (pagado === 0 && temporal === 0) return sheet;
+  return {
+    ...sheet,
+    fatigaActual: Math.max(0, sheet.fatigaActual - pagado),
+    fatigaTemporal: Math.min(999, sheet.fatigaTemporal + temporal),
+  };
 }
 
 export function ajustarFatigaTemporal(sheet: Sheet, delta: number): Sheet {
@@ -192,4 +212,22 @@ export function vitalidadAlEntrarEnCombate(
     // El desglose de la ficha, contra lo perdido en la foto (su máximo puede ser otro).
     danio: normalizarDanio(sheet.danio, max.vida - pgActual),
   };
+}
+
+// Al terminar un combate (td-13, decisiones del usuario 2026-11-13): lo perdido en el combate
+// vuelve a la ficha. Se copia el daño recibido (máximo de la foto − actual), no el valor: si el
+// tope de la ficha (`topes`: topesDeVida con sus estados) no coincide con el máximo de la foto
+// (equipo o base cambiados), el daño sigue siendo el mismo. Igual con la fatiga gastada. El
+// desglose, el de la foto (danioDeFoto). Sin cambio, la misma ficha.
+export function vitalidadAlSalirDeCombate(
+  sheet: Sheet,
+  foto: { pgActual: number; pgMax: number; fatigaActual: number; fatigaMax: number; danio: DanioVida },
+  topes: TopesVida,
+): Sheet {
+  const perdida = (actual: number, max: number) => Math.max(0, max - actual);
+  const vidaActual = Math.max(0, Math.min(topes.vida - perdida(foto.pgActual, foto.pgMax), topes.vida));
+  const fatigaActual = Math.max(0, Math.min(topes.fatiga - perdida(foto.fatigaActual, foto.fatigaMax), topes.fatiga));
+  const danio = normalizarDanio(foto.danio, topes.vida - vidaActual);
+  if (vidaActual === sheet.vidaActual && fatigaActual === sheet.fatigaActual && danioIgual(danio, sheet.danio)) return sheet;
+  return { ...sheet, vidaActual, fatigaActual, danio };
 }

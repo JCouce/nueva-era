@@ -18,6 +18,7 @@ import {
 import type { Prisma } from "@/generated/prisma/client";
 import { COMBATE_ABIERTO, registrar, revalidarEstados, type Autoria } from "@/lib/estadosPersonaje";
 import { deshacerVidaEnTx } from "@/lib/vidaMando";
+import { conReintentos, escribirFicha } from "@/lib/escrituraFicha";
 
 export type ResultadoRegistro = { ok: true } | { ok: false; error: string };
 
@@ -61,7 +62,7 @@ async function marcarDeshecha(tx: Prisma.TransactionClient, id: string) {
 
 export async function deshacerRegistro(id: string): Promise<ResultadoRegistro> {
   try {
-    const ids = await prisma.$transaction(async (tx) => {
+    const ids = await conReintentos(() => prisma.$transaction(async (tx) => {
       const entrada = await tx.registroMaster.findUnique({ where: { id } });
       if (!entrada) throw new NoSePuede("No existe esa entrada del registro.");
       const leida = entradaDeshacible(entrada);
@@ -96,12 +97,18 @@ export async function deshacerRegistro(id: string): Promise<ResultadoRegistro> {
           where: { characterId: { in: characterIds }, combate: COMBATE_ABIERTO },
           select: { id: true, characterId: true, pgActual: true, fatigaActual: true },
         });
+        // Los NPC de la entrada (td-20) que siguen en un combate abierto.
+        const npcIds = entrada.combatienteIds;
+        const npcs = await tx.combatiente.findMany({
+          where: { id: { in: npcIds }, characterId: null, combate: COMBATE_ABIERTO },
+          select: { id: true, nombre: true, estados: true },
+        });
         const posteriores = await tx.registroMaster.findMany({
           where: {
             id: { not: entrada.id },
             createdAt: { gte: entrada.createdAt },
             deshechoAt: null,
-            characterIds: { hasSome: characterIds },
+            OR: [{ characterIds: { hasSome: characterIds } }, { combatienteIds: { hasSome: npcIds } }],
           },
           select: { tipo: true, datos: true },
         });
@@ -113,10 +120,16 @@ export async function deshacerRegistro(id: string): Promise<ResultadoRegistro> {
           }),
           fotos.flatMap((f) => (f.characterId === null ? [] : [{ ...f, characterId: f.characterId }])),
           posteriores,
+          npcs.map((n) => ({ id: n.id, nombre: n.nombre, estados: leerEstados(n.estados) })),
         );
         if (!plan.ok) throw new NoSePuede(plan.error);
+        const leidas = new Map(filas.map((f) => [f.id, f.stats]));
         for (const p of plan.plan.personajes) {
-          await tx.character.update({ where: { id: p.id }, data: { estados: p.estados, stats: p.sheet } });
+          // escribirFicha (td-22): si el jugador guarda a la vez, se repite el deshacer entero.
+          await escribirFicha(tx, p.id, { stats: leidas.get(p.id) ?? null }, { estados: p.estados, stats: p.sheet });
+        }
+        for (const n of plan.plan.npcs) {
+          await tx.combatiente.update({ where: { id: n.id }, data: { estados: n.estados } });
         }
         for (const c of plan.plan.combatientes) {
           await tx.combatiente.update({
@@ -128,7 +141,7 @@ export async function deshacerRegistro(id: string): Promise<ResultadoRegistro> {
 
       await marcarDeshecha(tx, id);
       return characterIds;
-    });
+    }));
     revalidarEstados(ids);
     return { ok: true };
   } catch (e) {

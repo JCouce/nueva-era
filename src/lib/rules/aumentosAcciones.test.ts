@@ -97,6 +97,50 @@ describe("acciones de aumento: cuáles salen y cuánto cuestan", () => {
   });
 });
 
+describe("td-25: con combate en curso cuenta la fatiga del combate", () => {
+  const base = conTodas([MATRIZ_OSEA, BIOGENESIS, ANGIOGENESIS]);
+
+  test("ficha con fatiga de sobra, foto con 1: bloqueada, y el servidor la rechaza", () => {
+    const s = conRecursos(base, 8);
+    const a = new Map(accionesDeAumentos(s, [], 1).directas.map((x) => [x.id, x]));
+    assert.match(a.get("aumentos_cortar_exanguinante")!.bloqueada!, /cuesta 2 y te quedan 1/);
+    assert.equal(usoDeAccionAumento(s, [], "aumentos_cortar_exanguinante", {}, 1).ok, false);
+  });
+
+  test("ficha con 1, foto con 5: se puede, y cobra", () => {
+    const s = conRecursos(base, 1);
+    const uso = usoDeAccionAumento(s, [], "aumentos_cortar_exanguinante", {}, 5);
+    assert.ok(uso.ok);
+    if (uso.ok) assert.equal(uso.coste, 2);
+  });
+
+  test("la ficha resuelta en combate bloquea con la fatiga de la foto", () => {
+    const s = conRecursos(base, 8);
+    const ficha = resolverFicha(s, {
+      estados: [],
+      vitalidad: { origen: "combate", pgActual: 8, pgMax: 10, fatigaActual: 1, fatigaMax: 10 },
+    });
+    assert.deepEqual(ficha.fatigaEnJuego, { actual: 1, efectiva: 1 });
+    const a = new Map(ficha.accionesAumentos.directas.map((x) => [x.id, x]));
+    assert.match(a.get("aumentos_cortar_exanguinante")!.bloqueada!, /te quedan 1/);
+  });
+
+  test("la temporal de Proeza se resta de la fatiga del combate en la efectiva", () => {
+    const s = { ...conRecursos(base, 8), fatigaTemporal: 2 };
+    const ficha = resolverFicha(s, {
+      estados: [],
+      vitalidad: { origen: "combate", pgActual: 8, pgMax: 10, fatigaActual: 5, fatigaMax: 10 },
+    });
+    assert.deepEqual(ficha.fatigaEnJuego, { actual: 5, efectiva: 3 });
+  });
+
+  test("Densificar (blindaje reactivo) mira la fatiga que se le pasa", () => {
+    const s = conRecursos(con(defaultSheet(), ENJAMBRE, 3), 8);
+    assert.equal(casillaBlindajeReactivo(s, "cinetico", false)!.bloqueada, null);
+    assert.match(casillaBlindajeReactivo(s, "cinetico", false, 0)!.bloqueada!, /te quedan 0/);
+  });
+});
+
 describe("usar una acción de aumento", () => {
   const angio = conRecursos(conTodas([MATRIZ_OSEA, BIOGENESIS, ANGIOGENESIS]), 5);
   const estab = conRecursos(con(defaultSheet(), ESTABILIZACION));

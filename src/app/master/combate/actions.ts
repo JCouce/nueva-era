@@ -19,6 +19,9 @@ import {
   resolverFicha,
   VITALIDAD_DE_FICHA,
   vitalidadAlEntrarEnCombate,
+  vitalidadAlSalirDeCombate,
+  fotoEnMesa,
+  topesDeVida,
   leerEstados,
   estadoActivoCon,
   estadosAlCerrarVuelta,
@@ -43,7 +46,8 @@ import {
   quitarEstadoEnCombateSchema,
 } from "@/lib/validation";
 import { ajustarVidaDeCombatientes } from "@/lib/vidaMando";
-import { cambiarEstadosDeNpcs, cambiarEstadosDePersonajes, revalidarEstados } from "@/lib/estadosPersonaje";
+import { cambiarEstadosDeNpcs, cambiarEstadosEnCombate, revalidarEstados } from "@/lib/estadosPersonaje";
+import { conReintentos, escribirFicha } from "@/lib/escrituraFicha";
 import type { MandoResult } from "../actions";
 
 export type CombateResult = { ok: true } | { ok: false; error: string };
@@ -109,14 +113,58 @@ export async function comenzarCombateAction(combateId: string): Promise<CombateR
   return { ok: true };
 }
 
+// Al terminar, el daño del combate vuelve a la ficha (td-13): cada jugador deja en su
+// Character.stats la vida, la fatiga y el desglose de su foto (vitalidadAlSalirDeCombate); con
+// varias filas, la misma que enseña la Mesa (fotoEnMesa). Solo si el combate estaba EN_CURSO: en
+// PREPARANDO la foto es la de entrada y lo que vale es la ficha. En la misma transacción que lo
+// cierra, con escribirFicha (td-22): si un jugador guarda a la vez, se repite entera.
 export async function terminarCombateAction(combateId: string): Promise<CombateResult> {
   if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede terminar un combate." };
 
-  await prisma.combate.update({
-    where: { id: combateId },
-    data: { estado: "TERMINADO", terminadoAt: new Date() },
-  });
+  const tocados = await conReintentos(() =>
+    prisma.$transaction(async (tx) => {
+      const combate = await tx.combate.findUnique({
+        where: { id: combateId },
+        select: {
+          estado: true,
+          combatientes: {
+            where: { characterId: { not: null } },
+            select: { characterId: true, orden: true, derrotado: true, pgActual: true, pgMax: true, fatigaActual: true, fatigaMax: true, danio: true },
+          },
+        },
+      });
+      if (!combate) return null;
+      await tx.combate.update({ where: { id: combateId }, data: { estado: "TERMINADO", terminadoAt: new Date() } });
+      if (combate.estado !== "EN_CURSO") return [];
+      const ids = [...new Set(combate.combatientes.flatMap((c) => (c.characterId ? [c.characterId] : [])))];
+      const fichas = await tx.character.findMany({ where: { id: { in: ids } }, select: { id: true, stats: true, estados: true } });
+      const tocados: string[] = [];
+      for (const f of fichas) {
+        const foto = fotoEnMesa(combate.combatientes.filter((c) => c.characterId === f.id));
+        if (!foto) continue;
+        const estados = leerEstados(f.estados);
+        const sheet = reconciliarVidaConEstados(parseSheet(f.stats), estados);
+        const tras = vitalidadAlSalirDeCombate(
+          sheet,
+          {
+            pgActual: foto.pgActual,
+            pgMax: foto.pgMax,
+            fatigaActual: foto.fatigaActual,
+            fatigaMax: foto.fatigaMax,
+            danio: danioDeFoto(foto.danio, foto.pgActual, foto.pgMax),
+          },
+          topesDeVida(sheet, estados),
+        );
+        if (tras === sheet) continue;
+        await escribirFicha(tx, f.id, { stats: f.stats }, { stats: tras });
+        tocados.push(f.id);
+      }
+      return tocados;
+    }),
+  );
+  if (!tocados) return { ok: false, error: "No existe ese combate." };
   revalidateCombate();
+  if (tocados.length > 0) revalidarEstados(tocados);
   return { ok: true };
 }
 
@@ -236,12 +284,9 @@ export async function avanzarTurnoAction(combateId: string): Promise<CombateResu
   if (combate.combatientes.length === 0) return { ok: false, error: "No hay combatientes en la cola." };
 
   const paso = pasarTurno(combate, combate.combatientes.length);
-  const moverTurno = prisma.combate.update({
-    where: { id: combateId },
-    data: { turnoIndex: paso.turnoIndex, ronda: paso.ronda },
-  });
+  const datosTurno = { turnoIndex: paso.turnoIndex, ronda: paso.ronda };
   if (!paso.cierraVuelta) {
-    await moverTurno;
+    await prisma.combate.update({ where: { id: combateId }, data: datosTurno });
     revalidateCombate();
     return { ok: true };
   }
@@ -257,50 +302,47 @@ export async function avanzarTurnoAction(combateId: string): Promise<CombateResu
   const idsJugadores = [
     ...new Set(combate.combatientes.flatMap((c) => (c.characterId !== null ? [c.characterId] : []))),
   ];
-  const jugadores = await prisma.character.findMany({
-    where: { id: { in: idsJugadores } },
-    select: { id: true, estados: true, stats: true },
-  });
-  // Al caerse un estado por rondas, su foto recalcula el máximo (sube) sin tocar la
-  // vida actual; vidaTrasCambioDeEstados solo restaría si el máximo bajara (S75). Si el que
-  // se cae es un activable de aumento (la Neuroprótesis, A5b), recorta la ficha y la foto
-  // a su máximo nuevo.
-  const actualizacionesJugadores = jugadores.flatMap((j) => {
-    const estados = estadosAlCerrarVuelta(j.estados);
-    if (!estados) return [];
-    const antes = leerEstados(j.estados);
-    const sheet = reconciliarVidaConEstados(parseSheet(j.stats), antes);
-    const vida = vidaTrasCambioDeEstados(
-      sheet,
-      antes,
-      estados,
-      combate.combatientes.filter((c) => c.characterId === j.id),
-    );
-    return [{ id: j.id, estados, stats: vida.sheet === sheet ? undefined : vida.sheet, fotos: vida.combatientes }];
-  });
-
-  await prisma.$transaction([
-    moverTurno,
-    ...actualizaciones.map((c) =>
-      prisma.combatiente.update({ where: { id: c.id }, data: { estados: c.estados } }),
-    ),
-    ...actualizacionesJugadores.map((j) =>
-      prisma.character.update({
-        where: { id: j.id },
-        data: j.stats ? { estados: j.estados, stats: j.stats } : { estados: j.estados },
-      }),
-    ),
-    ...actualizacionesJugadores.flatMap((j) =>
-      j.fotos.map((c) =>
-        prisma.combatiente.update({
-          where: { id: c.id },
-          data: { pgActual: c.pgActual, pgMax: c.pgMax, fatigaActual: c.fatigaActual, fatigaMax: c.fatigaMax },
-        }),
-      ),
-    ),
-  ]);
+  // Las fichas se leen y se escriben en la misma transacción, con escribirFicha (td-22): si el
+  // jugador guarda a la vez, se repite entera (todo lo que escribe es absoluto).
+  const tocados = await conReintentos(() =>
+    prisma.$transaction(async (tx) => {
+      await tx.combate.update({ where: { id: combateId }, data: datosTurno });
+      for (const c of actualizaciones) await tx.combatiente.update({ where: { id: c.id }, data: { estados: c.estados } });
+      const jugadores = await tx.character.findMany({
+        where: { id: { in: idsJugadores } },
+        select: { id: true, estados: true, stats: true },
+      });
+      // Al caerse un estado por rondas, su foto recalcula el máximo (sube) sin tocar la
+      // vida actual; vidaTrasCambioDeEstados solo restaría si el máximo bajara (S75). Si el que
+      // se cae es un activable de aumento (la Neuroprótesis, A5b), recorta la ficha y la foto
+      // a su máximo nuevo.
+      const ids: string[] = [];
+      for (const j of jugadores) {
+        const estados = estadosAlCerrarVuelta(j.estados);
+        if (!estados) continue;
+        const antes = leerEstados(j.estados);
+        const sheet = reconciliarVidaConEstados(parseSheet(j.stats), antes);
+        const vida = vidaTrasCambioDeEstados(
+          sheet,
+          antes,
+          estados,
+          combate.combatientes.filter((c) => c.characterId === j.id),
+        );
+        if (vida.sheet === sheet) await tx.character.update({ where: { id: j.id }, data: { estados } });
+        else await escribirFicha(tx, j.id, { stats: j.stats }, { estados, stats: vida.sheet });
+        for (const c of vida.combatientes) {
+          await tx.combatiente.update({
+            where: { id: c.id },
+            data: { pgActual: c.pgActual, pgMax: c.pgMax, fatigaActual: c.fatigaActual, fatigaMax: c.fatigaMax },
+          });
+        }
+        ids.push(j.id);
+      }
+      return ids;
+    }),
+  );
   revalidateCombate();
-  if (actualizacionesJugadores.length > 0) revalidarEstados(actualizacionesJugadores.map((j) => j.id));
+  if (tocados.length > 0) revalidarEstados(tocados);
   return { ok: true };
 }
 
@@ -482,18 +524,14 @@ export async function ajustarVidaEnCombateAction(input: {
 // --- Estados (panel de mando dentro del combate, E1d) ---
 //
 // Objetivos = filas de la cola, jugadores y NPC mezclados. Un jugador lleva sus estados
-// en la ficha (Character.estados, E1a), con su vida (S75) y una sola entrada en el
-// registro del máster para todos los jugadores de la acción; un NPC, en su fila y sin
-// registro. Un solo grado de cada estado a la vez: aplicar uno que ya tenía sustituye
+// en la ficha (Character.estados, E1a), con su vida (S75); un NPC, en su fila. Una sola
+// entrada en el registro del máster para todos, jugadores y NPC, que "Deshacer" devuelve
+// entera (td-20). Un solo grado de cada estado a la vez: aplicar uno que ya tenía sustituye
 // grado y duración.
-// TODO(revisar): con jugadores y NPC mezclados, "Deshacer" (registro) solo devuelve lo de
-// los jugadores; lo de los NPC se queda. El registro ya admite combatientes
-// (`combatienteIds`, pestaña Vida): registrar los estados de NPC pide su propio tipo de
-// cambio (sin vida restada) y su deshacer.
 
 // Inmunidades (A7): los inmunes, jugadores y NPC, vuelven en `inmunes` con su combatienteId
 // (el id de la cola, que es el que repite "Aplicar igualmente" con `forzar`).
-async function cambiarEstadosEnCombate(
+async function cambiarEstadosDeLaCola(
   userId: string,
   combatienteIds: string[],
   op: OperacionEstado,
@@ -505,20 +543,15 @@ async function cambiarEstadosEnCombate(
   if (filas.length !== ids.length) return { ok: false, error: "Alguno de esos combatientes ya no está en la cola." };
 
   const characterIds = filas.flatMap((f) => (f.characterId !== null ? [f.characterId] : []));
-  let registroId: string | null = null;
-  const inmunes: InmuneAlAplicar[] = [];
-  if (characterIds.length > 0) {
-    const hecho = await cambiarEstadosDePersonajes(characterIds, op, { userId, motivo }, { forzar });
-    if (!hecho) return { ok: false, error: "No existe el personaje de alguno de esos combatientes." };
-    registroId = hecho.registroId;
-    for (const i of hecho.inmunes) {
-      for (const f of filas.filter((f) => f.characterId === i.id)) inmunes.push({ ...i, id: f.id });
-    }
+  const npcIds = filas.flatMap((f) => (f.characterId === null ? [f.id] : []));
+  const hecho = await cambiarEstadosEnCombate(characterIds, npcIds, op, { userId, motivo }, forzar);
+  if (!hecho) return { ok: false, error: "No existe el personaje de alguno de esos combatientes." };
+  const inmunes: InmuneAlAplicar[] = [...hecho.inmunesNpc];
+  for (const i of hecho.inmunes) {
+    for (const f of filas.filter((f) => f.characterId === i.id)) inmunes.push({ ...i, id: f.id });
   }
-  const npcs = await cambiarEstadosDeNpcs(ids, op, forzar);
-  inmunes.push(...npcs.inmunes);
   revalidateCombate();
-  return { ok: true, registroId, ...(op.tipo === "poner" && { inmunes }) };
+  return { ok: true, registroId: hecho.registroId, ...(op.tipo === "poner" && { inmunes }) };
 }
 
 export async function aplicarEstadoEnCombateAction(input: {
@@ -534,7 +567,7 @@ export async function aplicarEstadoEnCombateAction(input: {
 
   const { combatienteIds, estado, motivo, forzar } = parsed.data;
   const nuevo = estadoActivoCon(estado.estadoId, estado.gradoId, estado.duracion);
-  return cambiarEstadosEnCombate(user.id, combatienteIds, { tipo: "poner", estado: nuevo }, motivo, forzar);
+  return cambiarEstadosDeLaCola(user.id, combatienteIds, { tipo: "poner", estado: nuevo }, motivo, forzar);
 }
 
 // También la × de cada chip de estado en la cola (con un solo combatiente).
@@ -549,7 +582,7 @@ export async function quitarEstadoEnCombateAction(input: {
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
 
   const { combatienteIds, estadoId, motivo } = parsed.data;
-  return cambiarEstadosEnCombate(user.id, combatienteIds, { tipo: "quitar", estadoId }, motivo);
+  return cambiarEstadosDeLaCola(user.id, combatienteIds, { tipo: "quitar", estadoId }, motivo);
 }
 
 // --- Estados propios de los poderes de un NPC (P1 de psiónica) ---
