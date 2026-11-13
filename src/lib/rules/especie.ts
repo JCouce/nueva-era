@@ -401,6 +401,7 @@ export function fallosCriticosDeEspecie(especie: EspecieResuelta | null): FalloC
 
 // `soloEnCriticoNatural` (con soloEnCritico): solo con crítico natural, sin la conversión éxito →
 // crítico (Gran Puntería en Apuntar); va a Accion.efectoCriticoNatural.
+// `grado`: solo con éxito o con fallo (fase 4: sale con el resultado, no antes de tirar).
 // `origen` (fase 2): el ítem que lo pone (rasgo, dote, aumento, activable).
 export type TextoEnTirada = {
   en: DestinoTexto;
@@ -408,6 +409,7 @@ export type TextoEnTirada = {
   fuente: string;
   soloEnCritico: boolean;
   soloEnCriticoNatural?: true;
+  grado?: "exito" | "fallo";
   origen?: OrigenAporte;
 };
 
@@ -415,7 +417,14 @@ export type TextoEnTirada = {
 export function textosDeEspecie(especie: EspecieResuelta | null): TextoEnTirada[] {
   return (especie?.rasgos ?? []).flatMap((r) =>
     (r.textos ?? []).flatMap((t) =>
-      t.en.map((en) => ({ en, texto: t.texto, fuente: `${r.label} · ${r.fuente}`, soloEnCritico: t.soloEnCritico ?? false, origen: origenDeRasgo(r) })),
+      t.en.map((en) => ({
+        en,
+        texto: t.texto,
+        fuente: `${r.label} · ${r.fuente}`,
+        soloEnCritico: t.soloEnCritico ?? false,
+        ...(t.grado && { grado: t.grado }),
+        origen: origenDeRasgo(r),
+      })),
     ),
   );
 }

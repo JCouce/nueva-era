@@ -3369,7 +3369,8 @@ export const DOTES: readonly DoteCatalogo[] = [
         "valor": -3,
         "condicion": "Desarmado frente a atacante armado",
         "filtroArma": {
-          "desarmado": true
+          "desarmado": true,
+          "conPenalizadorDesarmado": true
         },
         "borrador": 7
       },
@@ -3380,7 +3381,8 @@ export const DOTES: readonly DoteCatalogo[] = [
         "condicion": "Desarmado frente a atacante armado",
         "porque": "tercero",
         "filtroArma": {
-          "desarmado": true
+          "desarmado": true,
+          "conPenalizadorDesarmado": true
         },
         "borrador": 8
       }
@@ -6283,13 +6285,35 @@ export const DOTES: readonly DoteCatalogo[] = [
     "texto": "Con el gasto de un punto de fatiga y como acción compleja el personaje puede realizar un ataque con arco sumando su total de puntuación de **fuerza**.",
     "efectos": [
       {
+        "tipo": "coste",
+        "alcance": "familia:ataque_fuego",
+        "condicion": "Disparo poderoso",
+        "fatiga": 1,
+        "filtroArma": {
+          "especialidad": "armas_impulsoras",
+          "mediaFuerza": true
+        },
+        "borrador": 0
+      },
+      {
+        "tipo": "fuerza_entera",
+        "alcance": "familia:ataque_fuego",
+        "condicion": "Disparo poderoso",
+        "filtroArma": {
+          "especialidad": "armas_impulsoras",
+          "mediaFuerza": true
+        },
+        "borrador": 0
+      },
+      {
         "tipo": "texto",
         "lugar": "familia:ataque_fuego",
-        "texto": "Solo con arco, como acción compleja y gastando 1 punto de fatiga: el ataque suma tu puntuación total de Fuerza.",
-        "condicion": null,
-        "porque": "sin_regla",
+        "texto": "como acción compleja; cobra 1 punto de fatiga y el daño suma tu Fuerza entera (Fue + 8 en vez de ½ Fue + 8).",
+        "condicion": "Disparo poderoso",
+        "porque": "turno",
         "filtroArma": {
-          "especialidad": "armas_impulsoras"
+          "especialidad": "armas_impulsoras",
+          "mediaFuerza": true
         },
         "borrador": 0
       }
@@ -6297,6 +6321,24 @@ export const DOTES: readonly DoteCatalogo[] = [
     "limite": null,
     "candidataUX": null,
     "motor": [
+      {
+        "tipo": "coste",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "familia:ataque_fuego"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      },
+      {
+        "tipo": "resolucion",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "familia:ataque_fuego"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      },
       {
         "tipo": "texto",
         "afecta": {
@@ -8049,8 +8091,8 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   200 efectos (192 en el borrador)
-//   construidos: 100
+//   202 efectos (192 en el borrador)
+//   construidos: 102
 //   texto: 100
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0

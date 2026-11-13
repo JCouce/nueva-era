@@ -185,6 +185,8 @@ function alcanceDe(destino: AlcanceModificador, e: { filtroArma?: FiltroArma }):
     ...(f.desarmado && { desarmado: true as const }),
     ...(f.tipoDanio?.includes("contundente") && { contundente: true as const }),
     ...(f.especialidad && { especialidad: f.especialidad }),
+    ...(f.mediaFuerza && { mediaFuerza: true as const }),
+    ...(f.conPenalizadorDesarmado && { conPenalizadorDesarmado: true as const }),
   };
 }
 
@@ -443,6 +445,11 @@ export function efectosDeDotes(
       if (e.tipo === "categoria_danio") {
         const c = casillaPara(e, i);
         if (c) conDanio(c, { categoria: categoriaLegible(e.a) });
+        return;
+      }
+      if (e.tipo === "fuerza_entera") {
+        const c = casillaPara(e, i);
+        if (c) conDanio(c, { fuerzaEntera: true });
         return;
       }
       if (e.tipo === "danio_por_exitos") {

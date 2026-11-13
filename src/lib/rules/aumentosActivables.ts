@@ -9,9 +9,10 @@
 //   mejora            el "en lugar de" del nivel 2: el atributo elegido al activar (el grado del
 //                     estado) recibe este valor en vez del de `atributos`.
 //   reducePenalizadores  −N a cada penalizador por separado, sin pasar de 0: heridas y fatiga por
-//                     el ajuste de umbrales (se suma a especie y Estabilización, A3) y cada
-//                     modificador negativo de tirada de cada estado, con su línea
-//                     (modificadoresDeEstados). No toca lo que pone el propio activable.
+//                     el ajuste de umbrales (se suma a especie y Estabilización, A3; solo el −N de
+//                     las tiradas, td-10) y cada modificador negativo de tirada o de atributo de
+//                     cada estado (td-11), con su línea (modificadoresDeEstados). No toca lo que
+//                     pone el propio activable.
 //   salvaciones       al selector "Contra…" (aumentosTiradas.ts), como cualquier aumento.
 //   anulaPenalizadores Modificador "anulaPenalizadores" (lo resuelve montarTirada).
 //   textos            textos en tiradas mientras dura (A5b: la segunda reacción de la
@@ -20,7 +21,8 @@
 //                     activable de ese estado no cuentan (Neuroprótesis 4: su +2 sustituye al
 //                     +1/+2 de la activa, no se suman). El resto de lo que hace aquel, sí.
 //   eliminaPenalizadoresUmbrales  (A5b) heridas y fatiga a 0 (Neuroprótesis 4), por el ajuste
-//                     de umbrales con un valor que cubre cualquier tramo.
+//                     de umbrales con un valor que cubre cualquier tramo y `elimina`: fuera también
+//                     la media velocidad y el recorte de carga de sus umbrales (td-10).
 // Sin la pieza (o con el requisito roto), el estado sigue en la lista hasta que caduque o se
 // desactive, pero no hace nada.
 import type { AtributoId } from "./atributos";
@@ -125,7 +127,7 @@ export function efectosDeActivables(sheet: Pick<Sheet, "equipo">, estados: reado
         : { valor: activo.reducePenalizadores, fuente };
     }
   }
-  const umbral = elimina ? { valor: ELIMINA_UMBRAL, fuente: elimina } : reduccion;
+  const umbral = elimina ? { valor: ELIMINA_UMBRAL, fuente: elimina, elimina: true as const } : reduccion;
   const ajusteUmbrales: AjusteUmbrales = umbral ? { salud: { ...umbral }, fatiga: { ...umbral } } : SIN_AJUSTE_UMBRALES;
   return { modificadores, ajusteUmbrales, reduceEstados: reduccion, salvaciones, textos };
 }

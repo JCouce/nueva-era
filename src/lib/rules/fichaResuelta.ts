@@ -95,6 +95,7 @@ import {
   modificadoresDeEstados,
   modificadoresDeUmbrales,
   movimientoPorUmbrales,
+  penalizadoresDeUmbral,
   velocidadConUmbrales,
   sumaAjustesUmbrales,
   umbralFatiga,
@@ -112,7 +113,7 @@ import { casillasDePsionica, levitacion, type PoderDisponible } from "./poderes"
 import { fatigaEfectiva, fatigaEnJuego } from "./vitalidad";
 import { accionesDeMovimiento } from "./movimiento";
 import { alcanzaA, descartadosPorNoApila, type AlcanceModificador, type ModificadorConFuente } from "./modificadores";
-import { conTextosEnTirada, contextoDe, junta, textosDe, textosSinDado, type ObjetivoEnTirada } from "./textosTirada";
+import { conTextosDeFicha, contextoDe, junta, textosDe, textosSinDado, type ObjetivoEnTirada } from "./textosTirada";
 import type { Sheet } from "./sheet";
 import { condicionApuntado, ID_APUNTADO, ID_APUNTAR, tieneEspecialidad, type Accion, type AccionDirecta } from "./acciones";
 import type { CondicionTirada } from "./condiciones";
@@ -164,7 +165,8 @@ export type FichaResuelta = {
   danio: DanioVida;
   alerta: number;
   // Umbrales de §7 con la vida/fatiga de `vitalidad` (fatiga efectiva) y lo que hacen
-  // a velocidad y carga, ya aplicado en movimiento, vuelo, levitación y cargaMaxima.
+  // a velocidad y carga, ya aplicado en movimiento, vuelo, levitación y cargaMaxima (sin lo de
+  // un umbral que `ajusteUmbrales` elimina, td-10).
   umbrales: { salud: UmbralSalud; fatiga: UmbralFatiga; movimiento: MovimientoPorUmbral };
   // Puntos menos de penalizador por especie (Guerrero, Siervo; §14.8) y por aumentos
   // (Estabilización Autonómica, A3; Neuroprótesis activa, A5a), sumados (R8) y ya aplicados en los modificadores de umbral
@@ -199,7 +201,8 @@ export type FichaResuelta = {
   // derivadas: también al NPC.
   indiceCondiciones: IndiceCondiciones;
   // Textos sin mecanizar de la especie (§14.10), de las dotes (§9.3) y de los aumentos
-  // (A2a: Matriz de Red en la salvación de Voluntad) que cuelgan de una tirada: los pone conExtrasDeFicha en su nota o en su texto de crítico.
+  // (A2a: Matriz de Red en la salvación de Voluntad) que cuelgan de una tirada: los pone conExtrasDeFicha en
+  // `textosDeFicha`; cuándo se enseñan lo dice textosDeTirada (fase 4).
   textosTirada: TextoEnTirada[];
   // Efectos sobre el objetivo que la ficha cuelga de sus tiradas (dotes y la maniobra Derribo,
   // T3b): los pone conExtrasDeFicha (y prepararPoder) en `efectosObjetivoDeFicha`.
@@ -358,12 +361,17 @@ export function resolverFicha(
     salud: umbralSalud(v.pg, v.pgMax),
     fatiga: umbralFatiga(v.fatiga, v.fatigaMax),
   };
-  const porUmbral = movimientoPorUmbrales(umbrales.salud, umbrales.fatiga);
   const ajusteUmbrales = sumaAjustesUmbrales(
     ajusteUmbralesDeEspecie(especie),
     ajusteUmbralesDeAumentos(sheet),
     activables.ajusteUmbrales,
     ajusteUmbralesDeEstabilizado(estabilizado),
+  );
+  // Lo que elimina por completo el umbral (Neuroprótesis 4) quita también su media velocidad y su
+  // recorte de carga (td-10); las reducciones de 1 no.
+  const porUmbral = movimientoPorUmbrales(
+    ajusteUmbrales.salud?.elimina ? "normal" : umbrales.salud,
+    ajusteUmbrales.fatiga?.elimina ? "normal" : umbrales.fatiga,
   );
   const modificadores = [
     ...sinUmbrales,
@@ -426,7 +434,7 @@ export function resolverFicha(
       ...casillasDeEspecie(especie),
       ...dotes.casillas,
       ...conUsosEscena(casillasDeAumentos(sheet, activables.salvaciones, [...salvacionesDeEspecie(especie), ...salvacionesDeEquipo(sheet)]), sheet.usosEscena),
-      ...casillasDeFarmacos(sheet),
+      ...casillasDeFarmacos(sheet, penalizadoresDeUmbral(umbrales.salud, umbrales.fatiga, ajusteUmbrales)),
       ...casillasDePsionica(psionica.paraEfectos),
     ]),
     textosTirada: [...textosDeEspecie(especie), ...dotes.textos, ...textosDeAumentos(sheet), ...activables.textos],
@@ -551,8 +559,7 @@ export function conExtrasDeFicha(
     return t;
   const condiciones = conDescuentos([...(conApuntado ?? []), ...extra], descuentos);
   return {
-    ...conTextosEnTirada(t, textos),
-    ...(textos.length > 0 && { textosDeFicha: [...(t.textosDeFicha ?? []), ...textos] }),
+    ...conTextosDeFicha(t, textos),
     ...(objetivos.length > 0 && { efectosObjetivoDeFicha: [...(t.efectosObjetivoDeFicha ?? []), ...objetivos] }),
     ...((extra.length > 0 || descuentos.length > 0 || conApuntado !== t.condiciones) && { condiciones }),
     ...(bonosTramo.length > 0 && { bonosTramo: [...(t.bonosTramo ?? []), ...bonosTramo] }),

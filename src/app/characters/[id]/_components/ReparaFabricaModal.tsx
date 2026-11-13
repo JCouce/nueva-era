@@ -10,8 +10,7 @@ import {
   MATERIAL_TIERS,
   rarezaMaterial,
   tieneVtf,
-  nivelVtf,
-  dificultadFabricacion,
+  tiradaDeReparar,
   tirarMontada,
   type FichaResuelta,
   type TiradaMontada,
@@ -44,14 +43,8 @@ import { type Lanzamiento } from "@/components/ResultadoTirada";
 // monta localmente aquí (no en el `modal` único de AccionesTab.tsx) para no
 // perder el sitio en el que estaba el jugador.
 //
-// Corrección 2026-09-25 (tercera revisión, "¿aplicamos los niveles de la
-// VTF?"): dificultadFabricacion() (rules/equipo.ts) ya tiene en cuenta el
-// nivel de la VTF equipada (Poco Habitual cuenta como Común desde nivel 2)
-// — antes esta función usaba directamente RAREZA_ORDEN sin mirar la VTF
-// para nada, mismo fallo que tenía Fabricar.
-function dificultadReparar(rareza: Rareza | null, nivel: number | null): number {
-  return dificultadFabricacion(rareza ?? "Común", nivel) - 4;
-}
+// La tirada (dificultad con el nivel de la VTF y la casilla de los Materiales, di-32) la monta el
+// motor: tiradaDeReparar (rules/herramientas.ts).
 
 function ReparacionCard({
   titulo,
@@ -137,7 +130,7 @@ function ReparacionSeccion({
     piezaLabel: string;
     instanciaId: string;
     tier: MaterialTier;
-    dificultadSugerida: number;
+    dificultadSugerida: number | null;
   } | null>(null);
   const [resultado, setResultado] = useState<Lanzamiento | null>(null);
   // Ver el mismo comentario en FabricarSeccion.tsx / AccionModal.tsx
@@ -149,17 +142,7 @@ function ReparacionSeccion({
       onReparar(instanciaId, tier, true);
       return;
     }
-    const tirada: Accion = {
-      id: `reparar_${instanciaId}`,
-      label: `Reparar: ${titulo}`,
-      grupo: "Acciones",
-      aplicado: "perspicacia",
-      habilidad: "tecnociencia",
-      nota:
-        "Perspicacia + Tecnociencia, o la habilidad técnica aplicable. Dificultad 7 para lo común, " +
-        "+2 por cada rango de rareza superior, -4 por ser reparación. El material se gasta salga " +
-        "lo que salga.",
-    };
+    const tirada = tiradaDeReparar(sheet, { instanciaId, titulo, rareza }, tier);
     setResultado(null);
     setMensajeResultado(null);
     setRollOpen({
@@ -167,7 +150,7 @@ function ReparacionSeccion({
       piezaLabel: titulo,
       instanciaId,
       tier,
-      dificultadSugerida: dificultadReparar(rareza, nivelVtf(sheet)),
+      dificultadSugerida: tirada.dificultadSugerida ?? null,
     });
   };
 
@@ -234,7 +217,6 @@ function ReparacionSeccion({
       {rollOpen && (
         <AccionModal
           titulo={rollOpen.tirada.label}
-          nota={rollOpen.tirada.nota}
           tirada={rollOpen.tirada}
           ficha={ficha}
           eleccion={{ sutil: false }}

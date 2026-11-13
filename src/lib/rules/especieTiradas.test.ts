@@ -11,6 +11,7 @@ import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta
 import { eleccionSinTocar, montarTirada, tirarMontada, type EleccionTirada } from "./montaje";
 import { defaultSheet, type Sheet } from "./sheet";
 import { ESPECIES, type Rasgo } from "../catalog/especies";
+import { lineaAntes, lineaDeGrado } from "./textosDeTirada";
 
 // Mismas cuentas que umbrales.test.ts: vida y fatiga 10 con la ficha entera.
 function ficha(patch: Partial<Sheet> = {}): Sheet {
@@ -284,11 +285,14 @@ describe("E4: un tramo menos de penalizador (Guerrero heridas, Siervo fatiga)", 
 });
 
 describe("E4: textos sin mecanizar, solo con su rasgo", () => {
-  test("Zimethroni: dos notas en Defensa", () => {
-    const nota = fija(resolver(ficha(ESPECIE.zimethroni)), "defensa").nota!;
-    assert.match(nota, /una casilla de movimiento gratis/);
-    assert.match(nota, /Resistir daño \(\+1 al daño que te entra por cada 4\)/);
-    assert.equal(fija(resolver(ficha()), "defensa").nota, ACCIONES.find((a) => a.id === "defensa")!.nota);
+  // es-05 (T5a): la casilla gratis tras esquivar sale con el éxito, en el resultado; la Tensión
+  // ósea, antes de tirar (es donde te atacan).
+  test("Zimethroni: dos textos en Defensa, el de tras esquivar solo con éxito", () => {
+    const t = fija(resolver(ficha(ESPECIE.zimethroni)), "defensa");
+    assert.match(lineaDeGrado(t, "exito"), /una casilla de movimiento gratis/);
+    assert.doesNotMatch(lineaAntes(t), /una casilla de movimiento gratis/);
+    assert.match(lineaAntes(t), /Resistir daño \(\+1 al daño que te entra por cada 4\)/);
+    assert.equal(lineaAntes(fija(resolver(ficha()), "defensa")), ACCIONES.find((a) => a.id === "defensa")!.nota);
   });
 
   // es-02 (T2): Deslumbramiento del Axadren en el selector «Contra…» de la Salvación de Fortaleza.
@@ -310,7 +314,7 @@ describe("E4: textos sin mecanizar, solo con su rasgo", () => {
   // es-02 (T2): la salvación la dispara Resistir daño al recibir (resistirDanio.test.ts); la nota
   // suelta en la Salvación de Fortaleza sobraba.
   test("Ílkrem: la Falla metabólica ya no es nota de la Salvación de Fortaleza", () => {
-    assert.doesNotMatch(fija(resolver(ficha(ESPECIE.ilkrem)), "salv_fortaleza").nota ?? "", /plasma o fuego/);
+    assert.doesNotMatch(lineaAntes(fija(resolver(ficha(ESPECIE.ilkrem)), "salv_fortaleza")), /plasma o fuego/);
   });
 
   test("Arköru: crítico desarmado letal en toda la Pelea (Codazo o Rodillazo incluido), no en armas", () => {
@@ -319,7 +323,7 @@ describe("E4: textos sin mecanizar, solo con su rasgo", () => {
     s = equipar(s, { instanciaId: "co", catalogoId: "pelea_codazo_rodillazo" });
     s = equipar(s, { instanciaId: "el", catalogoId: "espada_ligera" });
     const ataques = (f: FichaResuelta) => accionesDeAtaque(f.ficha, f.modificadores, f.extrasDotes.permisos).map((t) => conExtrasDeFicha(f, t));
-    const critico = (f: FichaResuelta, label: string) => ataques(f).find((t) => t.label === label)!.efectoCritico;
+    const critico = (f: FichaResuelta, label: string) => lineaDeGrado(ataques(f).find((t) => t.label === label)!, "critico");
     const f = resolver(s);
     // T3a: el crítico propio del arma (Aturdimiento) ya no es texto, va en sus efectos sobre el
     // objetivo; el texto del crítico es solo el de la especie.
@@ -327,8 +331,8 @@ describe("E4: textos sin mecanizar, solo con su rasgo", () => {
     assert.equal(critico(f, "Golpear con Puñetazo"), letal);
     assert.equal(critico(f, "Golpear con Patada"), letal);
     assert.equal(critico(f, "Golpear con Codazo o Rodillazo"), letal);
-    assert.doesNotMatch(critico(f, "Golpear con Espada Ligera") ?? "", /letal/);
-    assert.equal(critico(resolver({ ...s, especieId: "humano" }), "Golpear con Puñetazo"), undefined);
+    assert.doesNotMatch(critico(f, "Golpear con Espada Ligera"), /letal/);
+    assert.equal(critico(resolver({ ...s, especieId: "humano" }), "Golpear con Puñetazo"), "");
   });
 
   // Una tirada no física: en las físicas sale siempre «Bajo Ultra Estimulante» (S94).

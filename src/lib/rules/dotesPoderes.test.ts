@@ -9,6 +9,7 @@ import { DOTES } from "../catalog/dotes";
 import { DESTINOS_DOTES, TANDAS_DOTES } from "../catalog/dotesDestinos";
 import type { DoteComprada } from "./dotesCompradas";
 import type { EspecialidadId } from "../catalog/especialidades";
+import { lineaAntes } from "./textosDeTirada";
 
 // Atributos a 4, habilidades a 6 con la especialidad de Medicina y fatiga de sobra.
 function ficha(dotes: DoteComprada[], psionica: Sheet["psionica"]): Sheet {
@@ -133,19 +134,19 @@ describe("prepararPoder: textos de la ficha en el poder", () => {
   test("Onda Residual: su zona como efecto sobre el objetivo de Expansión y el narrativo en la nota, solo con la dote", () => {
     const con = resolver(ficha([ONDA], SINGULARIDAD_3));
     const tirada = preparar(con, expansion(con)).tirada;
-    assert.equal((tirada?.nota ?? "").split("(Onda Residual)").length - 1, 1);
+    assert.equal(lineaAntes(tirada!).split("(Onda Residual)").length - 1, 1);
     const [zona] = tirada?.efectosObjetivoDeFicha ?? [];
     assert.ok(zona && zona.tipo === "texto" && zona.fuente === "Onda Residual" && zona.cuando === "siempre");
     assert.deepEqual(zona.duracion, { tipo: "turnos", turnos: 1 });
     const sin = resolver(ficha([], SINGULARIDAD_3));
     const sinTirada = preparar(sin, expansion(sin)).tirada;
-    assert.doesNotMatch(sinTirada?.nota ?? "", /Onda Residual/);
+    assert.doesNotMatch(lineaAntes(sinTirada!), /Onda Residual/);
     assert.equal(sinTirada?.efectosObjetivoDeFicha, undefined);
   });
 
   test("sin textos (llamada sin la lista): la tirada no cambia", () => {
     const f = resolver(ficha([ONDA], SINGULARIDAD_3));
-    assert.equal(preparar(f, expansion(f), {}, false).tirada?.nota, undefined);
+    assert.equal(lineaAntes(preparar(f, expansion(f), {}, false).tirada!), "");
   });
 
   test("Impacto Métrico Relámpago: su texto en las notas de Impacto Métrico (no tira)", () => {

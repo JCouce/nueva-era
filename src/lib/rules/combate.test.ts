@@ -509,26 +509,51 @@ describe("mejoras que afectan a la distancia", () => {
     assert.deepEqual(fila.bonosTramo, []);
   });
 
+  // td-06 (2026-11-13): la integrada ya no se resta a mano de la mira instalada; va en
+  // `yaIncluidos` y montarTirada deja que todo su grupo (mira, Ojo Biónico) aporte solo lo que la
+  // supera. Antes estos dos tests miraban los bonos ya restados; ahora, la tirada montada.
+  const tiradaTelum = (sheet: Sheet, tramo: string) => {
+    const f = resolverFicha(sheet, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+    const t = conExtrasDeFicha(f, accionesDeAtaqueCon(sheet, f.modificadores, f.extrasDotes.permisos).find((x) => x.label === "Disparar con Telum")!);
+    return montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: { tramo, modo: "0" } });
+  };
+  const visionEn = (m: ReturnType<typeof tiradaTelum>) => m.desglose.filter((l) => /Mira Telescópica|Ojo Biónico/.test(l.etiqueta));
+
   test("fusil de precisión con mira nv3: solo el +1 que supera a la integrada nv1", () => {
     let sheet = equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "fusil_precision_telum" });
     sheet = equipar(sheet, { instanciaId: "m1", catalogoId: "mira_telescopica", nivel: 3, instaladoEnId: "f1" });
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Telum")!;
-    // La etiqueta explica por qué una mira de nivel 3 suma solo +1 (2026-10-24).
-    assert.deepEqual(fila.bonosTramo, [
-      {
-        fuente: "Mira Telescópica 3 (la integrada ya va en la dificultad)",
-        porTramo: { media: 1, larga: 1 },
-        noApila: "vision_aumentada",
-        origen: { tipo: "equipo", id: "mira_telescopica", label: "Mira Telescópica", instanciaId: "m1" },
-      },
+    assert.deepEqual(fila.yaIncluidos, [{ fuente: "la Mira Telescópica 1 integrada", porTramo: { media: 1, larga: 1 }, noApila: "vision_aumentada" }]);
+    assert.deepEqual(visionEn(tiradaTelum(sheet, "media")), [
+      { etiqueta: "Mira Telescópica (solo lo que supera a la Mira Telescópica 1 integrada)", valor: 1 },
     ]);
   });
 
   test("fusil de precisión con mira nv2: sin bono de tramo extra (nv2 no mejora el +1)", () => {
     let sheet = equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "fusil_precision_telum" });
     sheet = equipar(sheet, { instanciaId: "m1", catalogoId: "mira_telescopica", nivel: 2, instaladoEnId: "f1" });
-    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Telum")!;
-    assert.deepEqual(fila.bonosTramo, []);
+    const m = tiradaTelum(sheet, "media");
+    assert.equal(visionEn(m).reduce((t, l) => t + l.valor, 0), 0);
+    assert.match(visionEn(m)[0].etiqueta, /no supera a la Mira Telescópica 1 integrada/);
+  });
+
+  test("td-06: el Ojo Biónico solo suma lo que supera a la mira integrada (a media y larga)", () => {
+    // Los aumentos no pasan por equipar (Tienda): van directos al equipo, como en el resto de tests.
+    const conAumento = (s: Sheet, nivel: number): Sheet => ({ ...s, equipo: [...s.equipo, { instanciaId: "o1", catalogoId: "aum_ojo_bionico", nivel }] });
+    const conOjo = (nivel: number) => conAumento(equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "fusil_precision_telum" }), nivel);
+    // Ojo 1 (+1) no supera a la integrada (+1) a media; a corta la mira no da nada y el Ojo suma entero.
+    assert.equal(visionEn(tiradaTelum(conOjo(1), "media")).reduce((t, l) => t + l.valor, 0), 0);
+    assert.equal(visionEn(tiradaTelum(conOjo(1), "corta")).reduce((t, l) => t + l.valor, 0), 1);
+    // Ojo 3 (+2): +1 a media.
+    const m = tiradaTelum(conOjo(3), "media");
+    assert.equal(visionEn(m).reduce((t, l) => t + l.valor, 0), 1);
+    assert.ok(visionEn(m).some((l) => /^Ojo Biónico.*solo lo que supera a la Mira Telescópica 1 integrada/.test(l.etiqueta)));
+    // En un fusil sin mira integrada, el Ojo 3 suma su +2 entero.
+    const asalto = conAumento(equipar(defaultSheet(), { instanciaId: "f1", catalogoId: "fusil_asalto_impetus" }), 3);
+    const f = resolverFicha(asalto, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+    const t = accionesDeAtaqueCon(asalto, f.modificadores, f.extrasDotes.permisos).find((x) => x.label === "Disparar con Impetus")!;
+    const montada = montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: { tramo: "media", modo: "0" } });
+    assert.equal(montada.desglose.filter((l) => /Ojo Biónico/.test(l.etiqueta)).reduce((s, l) => s + l.valor, 0), 2);
   });
 
   test("la mira telescópica nivel 1 no toca el tramo: sale como bono aparte, con su fuente", () => {

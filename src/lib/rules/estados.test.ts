@@ -72,6 +72,7 @@ describe("modificadoresDeUmbrales (S14: no se acumulan dentro del mismo recurso)
       valor: -3,
       origen: "estado",
       fuente: "Malherido",
+      umbral: "salud",
     });
   });
 

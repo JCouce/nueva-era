@@ -26,7 +26,7 @@ import {
 import { PREFIJO_MEJORA_MUNICION } from "../catalog/mejorasArma";
 import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condiciones";
 import { origenDePieza, type OrigenAporte } from "./origen";
-import { nivelesHasta, acumulaPorClave, ultimoQueDefine, sustituyeMiraIntegrada, type PiezaEquipada } from "./equipo";
+import { nivelesHasta, acumulaPorClave, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import { bonoFormulaFuerza, etiquetaTipoDanio, formulaConSuma, nombreArmaModificada, perfilGolpe, type PerfilGolpe } from "./armasModificadas";
 import type { ModificacionArmaId } from "../catalog/armasModificadas";
 import type { MotorMetadata } from "./motor";
@@ -250,9 +250,10 @@ function sigiloDeAtaque(
 // usa el del nivel más alto que lo define, no la suma de todos.
 //
 // Sobre un arma con Mira Telescópica integrada (fusiles de precisión), el
-// bono de la integrada ya está en la dificultad del arma: la mira instalada
-// solo aporta lo que supera a ese nivel (nivel 3 → +1, nivel 2 → nada).
-function bonosTramoDeMejoras(sheet: Sheet, arma: ArmaFuego, instanciaId: string): BonoPorTramo[] {
+// bono de la integrada ya está en la dificultad del arma: va en `yaIncluidos` (abajo) y
+// montarTirada deja que la mira instalada, como el Ojo Biónico o cualquier otra visión
+// aumentada, aporte solo lo que la supera (nivel 3 → +1, nivel 2 → nada; td-06).
+function bonosTramoDeMejoras(sheet: Sheet, instanciaId: string): BonoPorTramo[] {
   const bonos: BonoPorTramo[] = [];
   for (const pieza of sheet.equipo) {
     if (pieza.instaladoEnId !== instanciaId || pieza.nivel === undefined) continue;
@@ -261,30 +262,24 @@ function bonosTramoDeMejoras(sheet: Sheet, arma: ArmaFuego, instanciaId: string)
     const define = ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel), "ajusteTramo");
     const ajuste = define?.ajusteTramo;
     if (!ajuste) continue;
-    const yaIncluido = sustituyeMiraIntegrada(cat.id, arma)
-      ? ultimoQueDefine(nivelesHasta(cat.niveles, arma.miraIntegrada ?? 0), "ajusteTramo")?.ajusteTramo
-      : undefined;
-    const porTramo = restarAjusteTramo(ajuste, yaIncluido ?? {});
-    // Sobre la integrada el desglose dice por qué la mira de nivel 3 suma solo +1 (2026-10-24).
-    const fuente = yaIncluido ? `${cat.label} ${pieza.nivel} (la integrada ya va en la dificultad)` : cat.label;
-    // TODO(revisar): la mira integrada de los fusiles de precisión va dentro de los números
-    // del arma, sin bono propio, así que el Ojo Biónico se le suma (no hay con qué compararlo).
-    if (Object.keys(porTramo).length > 0)
-      bonos.push({ fuente, origen: origenDePieza("equipo", cat, pieza.instanciaId), porTramo, ...(define?.noApila && { noApila: define.noApila }) });
+    bonos.push({
+      fuente: cat.label,
+      origen: origenDePieza("equipo", cat, pieza.instanciaId),
+      porTramo: ajuste,
+      ...(define?.noApila && { noApila: define.noApila }),
+    });
   }
   return bonos;
 }
 
-function restarAjusteTramo(
-  a: Partial<Record<TramoDistancia, number>>,
-  b: Partial<Record<TramoDistancia, number>>,
-): Partial<Record<TramoDistancia, number>> {
-  const out: Partial<Record<TramoDistancia, number>> = {};
-  for (const tramo of Object.keys(a) as TramoDistancia[]) {
-    const v = (a[tramo] ?? 0) - (b[tramo] ?? 0);
-    if (v !== 0) out[tramo] = v;
-  }
-  return out;
+// La Mira Telescópica de serie (fusiles de precisión): su bono ya va en la dificultad del arma,
+// así que no suma, pero compite con lo demás de su grupo de no apilamiento (td-06).
+function miraIntegradaIncluida(arma: ArmaFuego): BonoPorTramo[] {
+  const mira = equipoPorId("mira_telescopica");
+  if (!arma.miraIntegrada || mira?.familia !== "mejoraArma") return [];
+  const define = ultimoQueDefine(nivelesHasta(mira.niveles, arma.miraIntegrada), "ajusteTramo");
+  if (!define?.ajusteTramo || !define.noApila) return [];
+  return [{ fuente: `la ${mira.label} ${arma.miraIntegrada} integrada`, porTramo: define.ajusteTramo, noApila: define.noApila }];
 }
 
 // Ajustes incondicionales de las mejoras instaladas en esta arma en
@@ -436,6 +431,7 @@ function tiradaDeArmaFuego(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
     especialidadArma: ESPECIALIDAD_ARMA[arma.id],
     familiaArma: "ataque_fuego",
     empleoArma: arma.empleo,
+    ...(arma.modos.some((m) => m.danioFuerza === "mitad") && { mediaFuerza: true as const }),
     nota: notaArma || undefined,
     ...(arma.efectosObjetivo?.length && { efectosObjetivo: efectosConFuente(arma.efectosObjetivo, arma.label) }),
     efectos: efectos.length > 0 ? efectos : undefined,
@@ -445,7 +441,8 @@ function tiradaDeArmaFuego(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
     municionesEspeciales: municiones.length > 0 ? municiones : undefined,
     condiciones,
     ajustesFijos: [...ajusteModoUnico, ...ajustesFijosDeMejoras(sheet, instanciaId), ...porModo.fijos],
-    bonosTramo: [...bonosTramoDeMejoras(sheet, arma, instanciaId), ...porModo.bonos],
+    bonosTramo: [...bonosTramoDeMejoras(sheet, instanciaId), ...porModo.bonos],
+    ...(arma.miraIntegrada && { yaIncluidos: miraIntegradaIncluida(arma) }),
     ataque: {
       modos: modosConId.map((m) => ({
         id: m.id,
@@ -953,7 +950,8 @@ function tiradaDeArmaMelee(
 // D2b-2 (§9.2): la fila solo existe con la dote Bloqueo (lo filtra accionesDeAtaque, por
 // familia) y el Sutil solo con Combate Sutil (`sutilPermitido`).
 // `sinPenalizadorDesarmado`: la armadura (o el Refuerzo de Combate) que deja bloquear desarmado
-// contra armas melee sin el −3 (golpeDesarmado.ts): la fila no cuenta como desarmada.
+// contra armas melee sin el −3 (golpeDesarmado.ts): la fila sigue siendo desarmada, sin la
+// casilla del −3 (td-08).
 function tiradaBloqueoDeArmaMelee(
   arma: ArmaMelee,
   instanciaId: string,
@@ -977,7 +975,8 @@ function tiradaBloqueoDeArmaMelee(
         ? `Reacción gratuita e ilimitada, como Esquivar — activa mientras se lleva el arma. · Bloqueas desarmado contra armas melee sin el −3 (${sinPenalizadorDesarmado}).`
         : "Reacción gratuita e ilimitada, como Esquivar — activa mientras se lleva el arma.",
     // Bloquear con Pelea es bloquear desarmado (casilla de Bloqueo "desarmado frente a armado").
-    ...(desarmado && !sinPenalizadorDesarmado && { desarmado: true as const }),
+    ...(desarmado && { desarmado: true as const }),
+    ...(desarmado && sinPenalizadorDesarmado && { sinPenalizadorDesarmado }),
     condiciones: [CONDICION_ATACANTES_ADICIONALES],
     ajustesFijos: [
       ...(!arma.defensa && arma.modos[0].dificultad !== 0 ? [{ valor: arma.modos[0].dificultad, fuente: arma.label }] : []),
@@ -1299,11 +1298,13 @@ function conBrazo(t: Accion, pieza: PiezaEquipada, brazo: BrazoBionico): Accion 
 // "Bloquear con el brazo biónico" (A6a): nivel 2+ y, como todo "Bloquear con X", solo con la
 // dote Bloqueo (familia bloquear_melee, la filtra accionesDeAtaque). Siempre con la Fuerza y la
 // Agilidad del brazo, sin casilla. Su blindaje se marca en "Resistir daño" (R12).
-// TODO(revisar): especialidad Pelea (la del Puñetazo), sin Sutil y sin `desarmado` (el brazo "se
-// puede utilizar como arma para bloquear").
-function tiradaBloqueoBrazo(brazo: BrazoBionico): Accion | null {
+// Cuenta como desarmado (td-08, usuario 2026-11-13): le llega lo que mejora el combate desarmado.
+// Sin el −3 de Bloqueo: su golpe es letal («no se considera desarmado», Bloqueo), o lo quita la
+// armadura. Especialidad Pelea (la del Puñetazo), sin Sutil.
+function tiradaBloqueoBrazo(brazo: BrazoBionico, armaduraSinPenalizador: string | null): Accion | null {
   const extremidad = extremidadDeBloqueo(brazo);
   if (!extremidad) return null;
+  const sinPenalizador = brazo.peleaLetal ? brazo.fuente : armaduraSinPenalizador;
   return {
     id: ID_BLOQUEAR_BRAZO,
     label: "Bloquear con el brazo biónico",
@@ -1315,7 +1316,10 @@ function tiradaBloqueoBrazo(brazo: BrazoBionico): Accion | null {
     empleoArma: "una mano",
     nota:
       `Reacción gratuita e ilimitada, como Esquivar. Con la Fuerza ${brazo.fuerza} y la Agilidad ${brazo.agilidad} del brazo (${brazo.fuente}). ` +
-      `Su blindaje (${brazo.blindaje ?? 0}) solo para este golpe: marca "Bloqueado con el brazo biónico" en Resistir daño.`,
+      `Su blindaje (${brazo.blindaje ?? 0}) solo para este golpe: marca "Bloqueado con el brazo biónico" en Resistir daño.` +
+      (sinPenalizador ? ` · Cuenta como desarmado, sin el −3 de bloquear desarmado (${sinPenalizador}).` : " · Cuenta como desarmado."),
+    desarmado: true,
+    ...(sinPenalizador && { sinPenalizadorDesarmado: sinPenalizador }),
     condiciones: [CONDICION_ATACANTES_ADICIONALES],
     extremidad,
     origen: origenDeBrazo(brazo),
@@ -1484,7 +1488,7 @@ export function accionesDeAtaque(sheet: Sheet, mods: ModificadorConFuente[], per
     const generadas = generador(sheet, pieza, cat, mods, permisos).map((t) => (t.origen ? t : { ...t, origen }));
     tiradas.push(...(brazo ? generadas.map((t) => conBrazo(t, pieza, brazo)) : generadas));
   }
-  const bloqueoBrazo = brazo ? tiradaBloqueoBrazo(brazo) : null;
+  const bloqueoBrazo = brazo ? tiradaBloqueoBrazo(brazo, golpeDesarmadoConArmadura(sheet)?.bloqueoSinPenalizador ?? null) : null;
   if (bloqueoBrazo) tiradas.push(bloqueoBrazo);
   tiradas.push(...accionesDeGranadas(sheet));
   return tiradas

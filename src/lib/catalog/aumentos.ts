@@ -68,13 +68,16 @@ import type { HabilidadId } from "../rules/habilidades";
 import type { CondicionTirada } from "../rules/condiciones";
 import type { Modificador } from "../rules/modificadores";
 import type { MotorMetadata } from "../rules/motor";
-import type { BlindajeReactivo, EfectoSalvacion, EfectosTiradaAumento } from "../rules/aumentosTiradas";
+import type { BlindajeReactivo, EfectoSalvacion, EfectosTiradaAumento, TextoDeNivel } from "../rules/aumentosTiradas";
 import type { AccionAumentoCatalogo, DefensaIntrusion } from "../rules/aumentosAcciones";
 import type { ActivoAumento } from "../rules/aumentosActivables";
 import type { ExtremidadBionica } from "../rules/brazoBionico";
 import type { NivelModulo, Rareza } from "./equipo";
 import { VISION_AUMENTADA } from "./mejorasArma";
 import { NO_APILA_COBERTURA, NOTA_COBERTURA } from "./cobertura";
+
+// au-06 (usuario, 2026-11-13): lo que deja percibir cada sentido, una línea en Buscar / percibir.
+const BUSCAR = { tipo: "tiradaId", id: "alerta_activa" } as const;
 
 // Cobertura (A3): constantes compartidas con el Visor Nocturno 2 (catalog/cobertura.ts).
 
@@ -131,6 +134,8 @@ export type VarianteImplante = { id: string; label: string; detalle: string[]; e
 export type NivelImplante = NivelModulo & {
   variantes?: VarianteImplante[];
   salvaciones?: EfectoSalvacion[];
+  // au-06: lo que deja percibir, como texto en Buscar / percibir.
+  textos?: TextoDeNivel[];
   acciones?: AccionAumentoCatalogo[];
   defensaIntrusion?: DefensaIntrusion;
   blindajeReactivo?: BlindajeReactivo;
@@ -1126,6 +1131,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
             "La adaptación biológica procesa los fotones a nivel celular orgánico, permitiendo una visión nocturna natural que resiste mejor los destellos y explosiones intensas. La visión se adapta a espacios de escasa iluminación con la misma claridad que en espacios iluminados, aunque se podrá restringir a grandes distancias. Además otorga un bonificador de +2 en tiradas de salvación contra ceguera por detonaciones gracias a la rápida respuesta de obturación orgánica.",
           ],
           salvaciones: [{ contra: ["ceguera_detonacion"], bono: 2 }],
+          textos: [{ en: BUSCAR, texto: "Visión Nocturna: ves con poca luz con la misma claridad que con luz, aunque a grandes distancias se restringe." }],
         },
         {
           id: "vision_termica",
@@ -1140,6 +1146,11 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
               en: { tipo: "tiradaId", id: "rastreo" },
               texto:
                 "Visión Térmica: ves el rastro de calor reciente (pisadas, estelas). Se apaga a los 5 turnos y persiste 10-15 min; la mitad con frío extremo o mucha ventilación.",
+            },
+            {
+              en: BUSCAR,
+              texto:
+                "Visión Térmica: ves el infrarrojo superpuesto a la vista normal, sin perder detalle, y el rastro de calor reciente; sin penalizadores de percepción visual fuera del gradiente térmico.",
             },
           ],
         },
@@ -1168,11 +1179,17 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
             {
               id: "aumentos_barrido_buscar",
               label: "Encontrar o distinguir",
-              // TODO(revisar): el texto no separa la acción de ampliar de la de buscar; la
-              // búsqueda no lleva economía propia (la acción compleja va en ampliar).
-              economia: "",
+              // td-05 (usuario, 2026-11-13): como Buscar; la compleja es la de ampliar.
+              economia: "Acción simple o reacción",
               nota: "Dificultad: la pone el máster. Encuentras o distingues campos electromagnéticos (motores, baterías, sintéticos, armamento energético) en el área del barrido, también tras tabiques finos.",
               tirada: { aplicado: "perspicacia", habilidad: "exploracion" },
+            },
+          ],
+          textos: [
+            {
+              en: BUSCAR,
+              texto:
+                "Percepción Electromagnética: detectas campos electromagnéticos (motores, baterías, sintéticos, armamento energético) a 10 m, también tras tabiques finos; con el barrido, a 30 o 60 m.",
             },
           ],
         },
@@ -1201,6 +1218,13 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
               valorActivo: 2,
             },
           ],
+          textos: [
+            {
+              en: BUSCAR,
+              texto:
+                "Espectro Ultravioleta: ves residuos químicos recientes, fluidos orgánicos, huellas de polímeros de ocultación, marcas de seguridad holográficas y la ionización del armamento energético.",
+            },
+          ],
         },
         {
           id: "deteccion_quimica",
@@ -1220,12 +1244,26 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
             },
           ],
           notaAlertaPasiva: "+2 contra ocultos a 4 m o menos, si puedes usar el olfato",
+          textos: [
+            {
+              en: BUSCAR,
+              texto:
+                "Detección Química: hueles transpiración y emisiones hormonales en espacios confinados hasta 20 m; contrarresta el camuflaje químico.",
+            },
+          ],
         },
         {
           id: "ecolocalizacion",
           label: "Ecolocalización y Sónar Orgánico",
           detalle: [
             "Funciona como un sistema de ecolocalización continuo y pasivo que opera de manera idéntica a un sónar de proximidad. Es totalmente imperceptible para escáneres electrónicos, inmune a pulsos de interferencia y permite mapear el entorno en la oscuridad absoluta o bajo el agua, sin requerir acciones manuales de activación. En medios terrestres el alcance efectivo es de hasta 20 metros para la detección precisa de contornos, obstáculos y el movimiento de blancos. Fuera de este radio, las ondas se atenúan con rapidez y pierden resolución táctica. En medios acuáticos o de alta densidad el alcance se duplica (40 metros) gracias a la excelente propagación del sonido a través del agua y fluidos densos. A corta distancia (4 metros), el sistema ofrece una precisión milimétrica capaz de percibir texturas de materiales, oquedades tras paneles delgados o la vibración de estructuras cercanas.",
+          ],
+          textos: [
+            {
+              en: BUSCAR,
+              texto:
+                "Ecolocalización: mapeas a oscuras o bajo el agua hasta 20 m (40 m en agua); a 4 m, texturas, oquedades tras paneles finos y vibraciones de estructuras cercanas.",
+            },
           ],
         },
       ],
@@ -1234,7 +1272,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     modificadores: [],
     motor: [
       { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
-      { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "pendiente" },
+      { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_barrido_electromagnetico" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
@@ -1667,11 +1705,12 @@ export const IMPLANTES: Implante[] = [
         ],
         condiciones: [casillaVisualOjo(1)],
         salvaciones: [{ contra: ["ceguera"], bono: 2 }],
+        textos: [{ id: "vision", en: BUSCAR, texto: "Visión nocturna y termo-óptica: hasta 500 m." }],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
       {
@@ -1711,10 +1750,11 @@ export const IMPLANTES: Implante[] = [
           { tipo: "derivado", id: "alerta", valor: 3, noApila: VISION_AUMENTADA },
         ],
         condiciones: [casillaVisualOjo(3)],
+        textos: [{ id: "rayos_x", en: BUSCAR, texto: "Rayos X: ves a través de tejidos sencillos, hasta 10 m." }],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "construido" },
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
       {
@@ -1731,13 +1771,21 @@ export const IMPLANTES: Implante[] = [
         ],
         // A3: −2 niveles de cualquier cobertura, física o visual (sustituye a la del nivel 2).
         condiciones: [casillaVisualOjo(4), ...casillasCobertura("aum_ojo", 2, true)],
+        // Los 50 m son solo de los rayos X; nocturna y térmica, 500 m (sistema.md §11, Ojo Biónico).
+        textos: [
+          {
+            id: "rayos_x",
+            en: BUSCAR,
+            texto: "Rayos X: ves a través de paredes ligeras o blindajes no reforzados, hasta 50 m; nocturna, térmica y rayos X a la vez.",
+          },
+        ],
         // A7: "completamente inmune a la ceguera" (ya la trae el 2; se repite por la fuente del texto).
         inmuneA: ["ceguera"],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "construido" },
           { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:ceguera" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "construido" },
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],

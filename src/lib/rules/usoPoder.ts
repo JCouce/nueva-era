@@ -47,7 +47,7 @@ import {
 import type { Grado, NivelesPsionica } from "./psionica";
 import type { Sheet } from "./sheet";
 import type { TextoEnTirada } from "./especie";
-import { conTextosEnTirada, contextoDe, textosDe, textosSinDado, type ObjetivoEnTirada } from "./textosTirada";
+import { conTextosDeFicha, contextoDe, textosDe, textosSinDado, type ObjetivoEnTirada } from "./textosTirada";
 import { consultaIndiceCondiciones, type IndiceCondiciones } from "./equipo";
 import { fatigaEfectiva } from "./vitalidad";
 import { FUENTES_EXTERNAS_FATIGA } from "../catalog/psionica";
@@ -167,7 +167,7 @@ export function prepararPoder({
   const conCasillas =
     conAjustes && extra.length > 0 ? { ...conAjustes, condiciones: [...(conAjustes.condiciones ?? []), ...extra] } : conAjustes;
   const objetivosPropios = textosDe(objetivos, ctx, false).map((o) => o.efecto);
-  const conTextos = conCasillas && conTextosEnTirada(conCasillas, propios);
+  const conTextos = conCasillas && conTextosDeFicha(conCasillas, propios);
   const tirada =
     conTextos && objetivosPropios.length > 0
       ? { ...conTextos, efectosObjetivoDeFicha: [...(conTextos.efectosObjetivoDeFicha ?? []), ...objetivosPropios] }

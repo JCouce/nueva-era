@@ -33,6 +33,8 @@ const contexto = (t: Accion, aplicado: AplicadoId): ContextoAccion => ({
   ...(t.empleoArma && { empleoArma: t.empleoArma }),
   ...(t.desarmado && { desarmado: true }),
   ...(t.contundente && { contundente: true }),
+  ...(t.mediaFuerza && { mediaFuerza: true }),
+  ...(t.sinPenalizadorDesarmado && { sinPenalizadorDesarmado: true }),
   ...(t.especialidadArma && { especialidadArma: t.especialidadArma }),
   especialidades: especialidadesDeTirada(t, true),
 });
@@ -42,7 +44,8 @@ function tiposDeCasilla(c: CondicionTirada): TipoAporte[] {
   const tipos = new Set<TipoAporte>();
   if (c.tipo === "contador") tipos.add("ajuste");
   if (c.tipo === "toggle") {
-    if (c.valorActivo !== 0 || (c.valorInactivo ?? 0) !== 0) tipos.add("ajuste");
+    // Las que reducen el umbral (fármacos) valen lo que monte la tirada: también son ajuste.
+    if (c.valorActivo !== 0 || (c.valorInactivo ?? 0) !== 0 || c.reduceUmbral) tipos.add("ajuste");
     if (c.ventaja || c.subeGrado || c.aplicado || c.danio || c.extremidad || c.margenCriticoExito !== undefined) tipos.add("resolucion");
     if (c.costeFatiga || c.ahorroFatiga || c.usoPorEscena || c.gastoActivo || c.gastoInactivo) tipos.add("coste");
     // Enciende bonos por opción de otro selector (Bioma Predilecto en «Marcha»).

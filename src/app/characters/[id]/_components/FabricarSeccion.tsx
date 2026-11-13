@@ -545,7 +545,6 @@ export function FabricarSeccion({
       {rollOpen && (
         <AccionModal
           titulo={rollOpen.tirada.label}
-          nota={rollOpen.tirada.nota}
           tirada={rollOpen.tirada}
           ficha={ficha}
           eleccion={{ sutil: false }}

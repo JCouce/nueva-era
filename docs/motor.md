@@ -196,7 +196,14 @@ resumen.
   qué casilla marcar; se pinta en la hoja) o **después** (solo tiene sentido
   con el resultado; se pinta en el resultado). El resultado enseña siempre
   todos los textos, los de antes incluidos. Condición de grado opcional:
-  siempre · en éxito · en crítico · en crítico natural · en fallo.
+  siempre · en éxito · en crítico · en crítico natural · en fallo. En código
+  (fase 4, `rules/textosDeTirada.ts`): `TextoDeTirada` con `momento`
+  (`antes` · `despues` · `ambos`), `grado` y `origen`; `textosDeTirada` los saca
+  de la tirada (nota, `textosDeFicha`, crítico, `efectos`, notas de la montada),
+  `textosAntes` / `textosDelResultado` deciden dónde salen. Un texto de ítem
+  (`TextoEnTirada`) declara su grado con `soloEnCritico` o `grado` (éxito,
+  fallo); sin grado sale antes y después, como la nota. Los efectos de un
+  ataque esperan al daño (`conDanio`). Ya no se pegan a `nota`/`efectoCritico`.
 - **Anclaje**: dónde cuelga una hoja de Acción — lista de (habilidad,
   especialidad?) y quién elige: **fijo** (uno solo), **cualquiera** (cuenta
   si tienes cualquiera, se pinta en cada una: `especialidadesAccion`) o

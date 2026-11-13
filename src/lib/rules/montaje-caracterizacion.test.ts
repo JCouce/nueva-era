@@ -176,7 +176,7 @@ function legacyModal(f: FichaResuelta, a: Abierto, estado: EstadoCondiciones, ci
     ...desgloseBonosTramo(bonosTramo, estado),
     ...(circunstancial !== 0 ? [{ etiqueta: "Modificador circunstancial", valor: circunstancial }] : []),
   ];
-  return { total, desglose, notas: notasCondiciones(condiciones, estado) };
+  return { total, desglose, notas: notasCondiciones(condiciones, estado).map(({ etiqueta, nota }) => ({ etiqueta, nota })) };
 }
 
 // tirar, AccionesTab.tsx:826-843 (con el `if` de la VTM en :836).
@@ -813,7 +813,9 @@ function nuevo(caso: Caso) {
       return {
         total: m.total,
         desglose: m.desglose,
-        notas: m.notas,
+        // Fase 4 (docs/aportes/plan.md): las notas traen además origen y momento; aquí se comparan
+        // las de antes.
+        notas: m.notas.map(({ etiqueta, nota }) => ({ etiqueta, nota })),
         margenes: m.margenes,
         resultado: res(tirarMontada(m, e.dado, e.dificultad)),
       };
@@ -833,7 +835,7 @@ function nuevoPoder(c: (typeof CASOS_PODER)[number]) {
   });
   return {
     fila: fila(p.montada!),
-    modal: { total: m.total, desglose: m.desglose, notas: m.notas },
+    modal: { total: m.total, desglose: m.desglose, notas: m.notas.map(({ etiqueta, nota }) => ({ etiqueta, nota })) },
     resultado: res(tirarMontada(m, c.dado, c.dificultad)),
   };
 }

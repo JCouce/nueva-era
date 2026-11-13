@@ -200,6 +200,26 @@ describe("Neuroprótesis: −1 a cada penalizador sin pasar de 0", () => {
     assert.equal(linea(ex, /Aturdido/).reduce((t, l) => t + l.valor, 0), 0);
   });
 
+  test("td-11: también los −N a atributos de un estado, cada uno con su línea (Parálisis −4 → −3, −1 → 0)", () => {
+    const paralisis = (grado: string): EstadoActivo => ({ estadoId: "paralisis", gradoId: grado, rondasRestantes: 1 });
+    const s = conNeuro();
+    const soloNeuro = resolver(s, [neuro()]).atributos;
+    const fracaso = resolver(s, [paralisis("fracaso"), neuro()]);
+    assert.equal(fracaso.atributos.agilidad - soloNeuro.agilidad, -3);
+    assert.equal(fracaso.atributos.fuerza - soloNeuro.fuerza, -3);
+    assert.ok(fracaso.modificadores.some((m) => m.tipo === "atributo" && m.id === "agilidad" && m.valor === 1 && m.fuente === "Neuroprótesis Simpática 1 (Parálisis)"));
+    const exito = resolver(s, [paralisis("exito"), neuro()]).atributos;
+    assert.equal(exito.agilidad, soloNeuro.agilidad);
+    // Sin la Neuroprótesis, el −4 entero.
+    assert.equal(resolver(s, [paralisis("fracaso")]).atributos.agilidad - resolver(s, []).atributos.agilidad, -4);
+  });
+
+  test("td-10: la reducción de 1 no quita la media velocidad ni el recorte de carga", () => {
+    const f = resolver(conNeuro(), [neuro()], HERIDO_Y_FATIGADO);
+    assert.deepEqual(f.umbrales.movimiento.mediaVelocidad, ["Malherido"]);
+    assert.equal(f.umbrales.movimiento.reduccionCarga?.fraccion, 0.25);
+  });
+
   test("el −1 de las salvaciones de Fortaleza va en «Contra…» y no se reduce", () => {
     const f = resolver(conNeuro(), [neuro()]);
     const t = tiradaFija(f, "salv_fortaleza");
@@ -368,6 +388,18 @@ describe("A5b: Neuroprótesis 4", () => {
     const aturdido: EstadoActivo = { estadoId: "aturdido", gradoId: "fracaso_critico", rondasRestantes: 1 };
     const conEstado = montar(resolver(s, [aturdido, neuro("fuerza"), neuro4]), "defensa");
     assert.equal(linea(conEstado, /Aturdido/).reduce((t, l) => t + l.valor, 0), -1);
+  });
+
+  test("td-10: «elimina por completo» quita también la media velocidad y el recorte de carga", () => {
+    const s = conNeuro(4);
+    const con4 = resolver(s, [neuro("fuerza"), neuro4], HERIDO_Y_FATIGADO);
+    assert.deepEqual(con4.umbrales.movimiento.mediaVelocidad, []);
+    assert.equal(con4.umbrales.movimiento.reduccionCarga, null);
+    assert.equal(con4.umbrales.salud, "malherido", "el umbral sigue ahí: solo se quitan sus penalizadores");
+    const sin4 = resolver(s, [neuro("fuerza")], HERIDO_Y_FATIGADO);
+    assert.deepEqual(sin4.umbrales.movimiento.mediaVelocidad, ["Malherido"]);
+    assert.ok(con4.movimiento.carrera > sin4.movimiento.carrera);
+    assert.ok(con4.cargaMaxima > sin4.cargaMaxima);
   });
 
   test("no cuenta para los requisitos de dote", () => {

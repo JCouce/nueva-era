@@ -308,6 +308,16 @@ const MOTOR_FARMACO: MotorMetadata[] = [
   { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
 ];
 
+// fa-01 (usuario, 2026-11-13): «reduce en 1 el penalizador por heridas» (y fatiga, el Ultra) es
+// una casilla en todas las tiradas, solo herido y con la dosis (casillasDeFarmacos,
+// rules/farmacos.ts; el tope y el «vale el mayor», montarTirada).
+const MOTOR_CONTRA_DOLOR: MotorMetadata = {
+  tipo: "numerico",
+  afecta: { modo: "accion_existente", id: "todas" },
+  mecanismo: "eleccion_jugador",
+  estado: "construido",
+};
+
 export const FARMACOS: Consumible[] = [
   {
     familia: "consumible",
@@ -323,15 +333,8 @@ export const FARMACOS: Consumible[] = [
     rareza: "Común",
     coste: 5,
     modificadores: [],
-    // Corregido 2026-09-24 (auditoría del catálogo): a diferencia del resto de
-    // FARMACOS, este SÍ trae un número real ("reduce en 1 el penalizador por
-    // heridas") — no es narrativo puro. `afecta: ninguna` porque el penalizador
-    // por heridas es un ajuste de sistema (derivados.ts), no una tirada
-    // concreta a la que apuntar; `pendiente` porque el motor no lleva bonos
-    // temporales de dosis consumida, ni conecta con el cálculo de heridas.
-    motor: [
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
-    ],
+    // "Reduce en 1 el penalizador por heridas": casilla en las tiradas (fa-01).
+    motor: [MOTOR_CONTRA_DOLOR],
   },
   {
     familia: "consumible",
@@ -382,11 +385,11 @@ export const FARMACOS: Consumible[] = [
     rareza: "Común",
     coste: 20,
     modificadores: [],
-    // R9 (2026-10-24): "reduce en 1 el penalizador por herida" es numérico, no narrativo; sin
-    // enganche todavía: el motor no guarda qué dosis siguen haciendo efecto (como el Analgésico).
+    // "Reduce en 1 el penalizador por herida": casilla en las tiradas (fa-01); varias dosis no
+    // suman (fa-02: entre fármacos vale el mayor).
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "farmaco_farmaco_calmante" }, mecanismo: "accion_equipo", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+      MOTOR_CONTRA_DOLOR,
     ],
   },
   {
@@ -430,12 +433,12 @@ export const FARMACOS: Consumible[] = [
     // S94 (2026-10-24): los dos números son la casilla «Bajo Ultra Estimulante» (siempre
     // visible, como la de Xovromium; casillasDeFarmacos, rules/farmacos.ts): +2 en las
     // iniciativas y +1 en las tiradas con Fortaleza, Potencia o Reflejos que no son salvación.
-    // La reducción de penalizadores por heridas y fatiga, el bajón al terminar y el colapso por
-    // doble dosis siguen en `detalle`, a mano.
+    // La reducción de penalizadores por heridas y fatiga, su propia casilla (fa-01). El bajón al
+    // terminar y el colapso por doble dosis siguen en `detalle`, a mano.
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Iniciativa" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:fortaleza/potencia/reflejos" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // −1 a los penalizadores por heridas y fatiga
+      MOTOR_CONTRA_DOLOR, // −1 a los penalizadores por heridas y fatiga
     ],
   },
   {
@@ -457,7 +460,8 @@ export const FARMACOS: Consumible[] = [
     rareza: "Común",
     coste: 50,
     modificadores: [],
-    motor: MOTOR_FARMACO,
+    // Incluye el efecto del Analgésico (fa-01).
+    motor: [...MOTOR_FARMACO, MOTOR_CONTRA_DOLOR],
   },
   {
     familia: "consumible",
@@ -475,7 +479,8 @@ export const FARMACOS: Consumible[] = [
     rareza: "Poco Habitual",
     coste: 250,
     modificadores: [],
-    motor: MOTOR_FARMACO,
+    // Incluye el efecto del Analgésico (fa-01).
+    motor: [...MOTOR_FARMACO, MOTOR_CONTRA_DOLOR],
   },
   {
     familia: "consumible",
@@ -501,6 +506,7 @@ export const FARMACOS: Consumible[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "farmaco_farmaco_nano_elixir" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "farmaco_farmaco_nano_elixir" }, mecanismo: "ajuste_fijo", estado: "construido" },
+      MOTOR_CONTRA_DOLOR, // como el Gel, el efecto del Analgésico (fa-01)
     ],
   },
   {

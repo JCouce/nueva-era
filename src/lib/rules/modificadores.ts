@@ -134,6 +134,10 @@ export type AlcanceModificador =
       desarmado?: true;
       contundente?: true;
       especialidad?: EspecialidadId;
+      // Solo armas cuyo daño suma media Fuerza (el Arco: Arquero Poderoso, do-03).
+      mediaFuerza?: true;
+      // Solo si bloquear desarmado lleva el −3 de Bloqueo (nada se lo quita: td-08).
+      conPenalizadorDesarmado?: true;
     }
   // `salvoGrupo`: no en las tiradas de ese grupo (Ultra Estimulante: acciones físicas de
   // Fuerza o Agilidad, no las salvaciones; S94).
@@ -142,6 +146,9 @@ export type AlcanceModificador =
   // elegida en Convencer / mentir), la tenga o no la ficha: Presencia Imponente, Elión.
   | { tipo: "especialidad"; especialidades: readonly EspecialidadId[] }
   | { tipo: "todas" };
+
+// Los dos recursos con umbrales de §7: heridas (vida) y fatiga.
+export type RecursoUmbral = "salud" | "fatiga";
 
 export type Modificador =
   // `exceptoSaludYSalvaciones` (Exoesqueleto): vale en tiradas y atributos, pero no en la
@@ -155,7 +162,9 @@ export type Modificador =
   | { tipo: "habilidad"; id: HabilidadId; valor: number }
   // `compensa` (A5a): compensación de un penalizador (Neurogénesis sobre la fatiga) que no
   // viene con origen "estado"; cuenta junto a los penalizadores al anularlos (Proyección).
-  | { tipo: "tirada"; alcance: AlcanceModificador; valor: number; noApila?: string; compensa?: true }
+  // `umbral`: es el penalizador de heridas o fatiga de §7 (o una compensación suya), para las
+  // casillas que lo reducen solo en una tirada (fármacos, fa-01; montarTirada).
+  | { tipo: "tirada"; alcance: AlcanceModificador; valor: number; noApila?: string; compensa?: true; umbral?: RecursoUmbral }
   // Nivel de una disciplina psiónica (Resonancia +1 del Arianyi, §14.6). No toca
   // ninguna tirada: sube el nivel efectivo, que es el que miran requisitos y
   // poderes (psionica.ts: nivelesDePsionica). Ver docs/modificadores-tiradas.md §9.
@@ -288,6 +297,8 @@ export type ContextoAccion = {
   empleoArma?: EmpleoArma;
   desarmado?: boolean;
   contundente?: boolean;
+  mediaFuerza?: boolean;
+  sinPenalizadorDesarmado?: boolean;
   especialidadArma?: EspecialidadId;
   // Las que nombra la tirada (especialidadesDeTirada). Antes de abrirla (contextoDe), también
   // las candidatas de `especialidadAElegir`; montarTirada pone las de verdad.
@@ -315,6 +326,8 @@ export function alcanzaA(alcance: AlcanceModificador, ctx: ContextoAccion): bool
       alcance.familia === ctx.familiaArma &&
       arma &&
       (!alcance.desarmado || ctx.desarmado === true) &&
+      (!alcance.mediaFuerza || ctx.mediaFuerza === true) &&
+      (!alcance.conPenalizadorDesarmado || ctx.sinPenalizadorDesarmado !== true) &&
       (alcance.especialidad === undefined || alcance.especialidad === ctx.especialidadArma)
     );
   }
@@ -334,10 +347,18 @@ export function alcanzaAlgunAplicado(alcance: Extract<AlcanceModificador, { tipo
 // "estado", con las compensaciones de la Neuroprótesis) y las compensaciones marcadas.
 const esDePenalizador = (m: ModificadorConFuente) => m.origen === "estado" || (m.tipo === "tirada" && m.compensa === true);
 
+const anulaQueAlcanza = (mods: ModificadorConFuente[], ctx: ContextoAccion) =>
+  mods.find((m) => m.tipo === "anulaPenalizadores" && alcanzaA(m.alcance, ctx));
+
+// Si en esta tirada los penalizadores ya quedan a 0 (Proyección): nada que reducir encima.
+export function penalizadoresAnulados(mods: ModificadorConFuente[], ctx: ContextoAccion): boolean {
+  return anulaQueAlcanza(mods, ctx) !== undefined;
+}
+
 // Con un `anulaPenalizadores` que alcance a la tirada, una línea más que deja a 0 lo que suman
 // sus penalizadores (si suman menos de 0). Sin él, la misma lista.
 export function conPenalizadoresAnulados(mods: ModificadorConFuente[], ctx: ContextoAccion): ModificadorConFuente[] {
-  const anula = mods.find((m) => m.tipo === "anulaPenalizadores" && alcanzaA(m.alcance, ctx));
+  const anula = anulaQueAlcanza(mods, ctx);
   if (!anula) return mods;
   const neto = mods.reduce(
     (t, m) => (m.tipo === "tirada" && esDePenalizador(m) && alcanzaA(m.alcance, ctx) ? t + m.valor : t),

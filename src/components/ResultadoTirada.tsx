@@ -13,6 +13,10 @@ import {
   type ResultadoDanio,
   type ResultadoVuelo,
   type SalvacionPropia,
+  type TextoDeTirada,
+  textosDelResultado,
+  textosPorOrigen,
+  ETIQUETA_GRADO_TEXTO,
 } from "@/lib/rules";
 
 function signo(n: number) {
@@ -106,17 +110,6 @@ export type Lanzamiento = Resultado & {
   dados?: [number, number];
   danioInfo?: DanioInfo | null;
   danioResuelto?: ResultadoDanio;
-  // Texto de crítico de la Accion que generó esta tirada (Accion.efectoCritico,
-  // combate.ts) — solo tiene sentido pintarlo si esta tirada acabó en crítico,
-  // ver el bloque de daño más abajo.
-  efectoCritico?: string;
-  // Solo con crítico natural (Accion.efectoCriticoNatural: Gran Puntería al apuntar).
-  efectoCriticoNatural?: string;
-  // Efectos que tocan otra tirada (Accion.efectos, acciones.ts) — no se
-  // automatizan, se listan para que el jugador/máster los aplique a mano.
-  // Se pintan tras resolver el daño, no antes: es el momento en que el
-  // jugador ya sabe si el ataque impactó de verdad.
-  efectos?: { fuente: string; texto: string }[];
   // Lo que le pasa al objetivo si el ataque acierta (T3a, efectosSobreObjetivo): ya resuelto
   // al tirar, con la duración de la Hemorragia tirada. Vacío si no acertó.
   efectosObjetivo?: EfectoSobreObjetivo[];
@@ -152,10 +145,13 @@ export type Lanzamiento = Resultado & {
 // ya estás mirando.
 export function ContenidoResultado({
   resultado,
+  textos,
   onTirarDanio,
   onSalvacionPropia,
 }: {
   resultado: Lanzamiento;
+  // Los textos de la tirada (textosDeTirada, fase 4): aquí salen los que aplican a este resultado.
+  textos: TextoDeTirada[];
   onTirarDanio: () => void;
   onSalvacionPropia?: () => void;
 }) {
@@ -257,15 +253,6 @@ export function ContenidoResultado({
 
       {resultado.poder && <ResultadoPropio poder={resultado.poder} resultado={resultado} />}
 
-      {/* Con el daño ya tirado, el texto de crítico va pegado al daño (abajo). */}
-      {!resultado.danioResuelto && resultado.critico && resultado.efectoCritico && (
-        <p className="mt-3 border-t border-border pt-3 font-mono text-xs text-accent">{resultado.efectoCritico}</p>
-      )}
-
-      {resultado.criticoNatural && resultado.efectoCriticoNatural && (
-        <p className="mt-3 border-t border-border pt-3 font-mono text-xs text-accent">{resultado.efectoCriticoNatural}</p>
-      )}
-
       {resultado.danioInfo && (
         <div className="mt-3 border-t border-border pt-3">
           {resultado.danioResuelto ? (
@@ -278,11 +265,6 @@ export function ContenidoResultado({
                 {desglose && (
                   <FilaDanio etiqueta="Desglose">
                     <PartesDanio partes={desglose.partes} />
-                  </FilaDanio>
-                )}
-                {resultado.critico && resultado.efectoCritico && (
-                  <FilaDanio etiqueta="Efecto crítico" className="text-accent">
-                    {resultado.efectoCritico}
                   </FilaDanio>
                 )}
                 <FilaDanio etiqueta="Cálculo" className="text-[11px] leading-relaxed text-muted">
@@ -342,26 +324,12 @@ export function ContenidoResultado({
         </div>
       )}
 
-      {/* Efectos que tocan otra tirada (Sigilo, la Esquiva/Alerta Activa de
-          un tercero...): el motor no los automatiza, así que se listan aquí
-          para que se apliquen a mano — docs/sistema.md, pregunta 25b. Solo
-          tras el daño resuelto: antes de eso el jugador todavía no sabe si
-          el ataque impactó de verdad. Si la Accion no tiene daño (no es un
-          ataque), se pintan sin esperar a nada. */}
-      {resultado.efectos &&
-        resultado.efectos.length > 0 &&
-        (!resultado.danioInfo || resultado.danioResuelto) && (
-          <div className="mt-3 border-t border-border pt-3">
-            <p className="font-mono text-[10px] uppercase tracking-wide text-muted">Efectos</p>
-            <ul className="mt-1 flex flex-col gap-1">
-              {resultado.efectos.map((e, i) => (
-                <li key={i} className="font-sans text-prosa text-foreground">
-                  <span className="font-semibold">{e.fuente}:</span> {e.texto}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+      {/* Todo lo que aplica (fase 4): la nota, los textos de ítem, los de crítico y los de
+          las casillas marcadas, por origen. Los efectos de un ataque, con el daño ya tirado. */}
+      <TodoLoQueAplica
+        textos={textosDelResultado(textos, resultado, Boolean(resultado.danioInfo) && !resultado.danioResuelto)}
+        sinGrado={resultado.exito === null}
+      />
 
       {resultado.poder && resultado.poder.objetivoTira.length > 0 && (
         <ObjetivoTira tiradas={resultado.poder.objetivoTira} />
@@ -428,6 +396,33 @@ function BloqueSalvacionPropia({
           )}
         </>
       )}
+    </div>
+  );
+}
+
+function TodoLoQueAplica({ textos, sinGrado }: { textos: TextoDeTirada[]; sinGrado: boolean }) {
+  if (textos.length === 0) return null;
+  return (
+    <div className="mt-3 border-t border-border pt-3">
+      <p className="font-mono text-[10px] uppercase tracking-widest text-muted">Todo lo que aplica</p>
+      <ul className="mt-1 flex flex-col gap-2">
+        {textosPorOrigen(textos).map((g) => (
+          <li key={`${g.origen.tipo}:${g.origen.id}:${g.origen.instanciaId ?? ""}`} className="border-l-2 border-info pl-2">
+            <p className="font-mono text-[10px] uppercase text-info">{g.origen.label}</p>
+            {g.textos.map((x, i) => (
+              <p key={i} className="font-sans text-[12px] leading-relaxed text-foreground">
+                {x.grado && (
+                  <span className="font-mono text-[10px] uppercase text-accent">
+                    {sinGrado ? `si ${ETIQUETA_GRADO_TEXTO[x.grado]}` : ETIQUETA_GRADO_TEXTO[x.grado]}:{" "}
+                  </span>
+                )}
+                {x.etiqueta && <span className="font-semibold">{x.etiqueta}: </span>}
+                {x.texto}
+              </p>
+            ))}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

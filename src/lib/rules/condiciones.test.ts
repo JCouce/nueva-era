@@ -147,7 +147,7 @@ describe("notasCondiciones", () => {
 
   test("un toggle activo con nota la incluye, con la etiqueta de la condición", () => {
     assert.deepEqual(notasCondiciones([TOGGLE_CON_NOTA], { visor: true }), [
-      { etiqueta: "Visor Nocturno activo", nota: "Ves a través del humo." },
+      { etiqueta: "Visor Nocturno activo", nota: "Ves a través del humo.", momento: "antes" },
     ]);
   });
 
@@ -157,7 +157,7 @@ describe("notasCondiciones", () => {
 
   test("la opción elegida con nota la incluye, con la etiqueta de la condición (no de la opción)", () => {
     assert.deepEqual(notasCondiciones([OPCION_CON_NOTA], { modo: "rafaga" }), [
-      { etiqueta: "Modo", nota: "Consume 3 balas." },
+      { etiqueta: "Modo", nota: "Consume 3 balas.", momento: "antes" },
     ]);
   });
 
@@ -171,8 +171,8 @@ describe("notasCondiciones", () => {
       modo: "rafaga",
     });
     assert.deepEqual(notas, [
-      { etiqueta: "Visor Nocturno activo", nota: "Ves a través del humo." },
-      { etiqueta: "Modo", nota: "Consume 3 balas." },
+      { etiqueta: "Visor Nocturno activo", nota: "Ves a través del humo.", momento: "antes" },
+      { etiqueta: "Modo", nota: "Consume 3 balas.", momento: "antes" },
     ]);
   });
 });

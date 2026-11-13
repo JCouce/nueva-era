@@ -70,11 +70,19 @@ export type Accion = {
   // Se pinta en ResultadoTirada.tsx solo cuando `resultado.critico` es true.
   efectoCritico?: string;
   // Golpe a mano vacía (Puñetazo, Patada; combate.ts): a estos ataques llegan los
-  // textos de especie con destino "desarmado" (crítico letal del Arköru, §14.8).
+  // textos de especie con destino "desarmado" (crítico letal del Arköru, §14.8). También
+  // bloquear con la Pelea o con el brazo biónico (td-08).
   desarmado?: true;
+  // Quién deja bloquear desarmado sin el −3 de Bloqueo: la armadura, o un golpe desarmado letal
+  // (Refuerzo de Combate, Brazo Biónico: «no se considera desarmado»). La fila sigue siendo
+  // desarmada para todo lo demás (td-08); solo no le llega la casilla del −3.
+  sinPenalizadorDesarmado?: string;
   // Arma de daño contundente (ArmaMelee.contundente): la mira el filtro de arma de las dotes
   // (Golpe Fatigante, D2d).
   contundente?: true;
+  // El daño suma media Fuerza (Arco, «1/2 Fue + 8»; ModoDisparo.danioFuerza): la mira el filtro
+  // de arma de Arquero Poderoso (do-03), cuyo «Disparo poderoso» la suma entera.
+  mediaFuerza?: true;
   // Efectos que NO se automatizan porque tocan una tirada distinta a esta —
   // la de un tercero (objetivo_tercero, docs/motor.md) o una tirada propia
   // pero distinta (Sigilo por el Puntero Láser). El motor no los aplica en
@@ -161,9 +169,9 @@ export type Accion = {
   // texto es la fuente, para enseñarla en el modal.
   ventaja?: string;
   origenVentaja?: OrigenAporte;
-  // Textos de ítem que conExtrasDeFicha ha pegado a `nota` / `efectoCritico` /
-  // `efectoCriticoNatural` (conTextosEnTirada), tal cual y con su origen: los mismos que se leen
-  // en esos textos, sin tener que buscar «(fuente)» en ellos (E7 del inventario).
+  // Textos de ítem que conExtrasDeFicha (o prepararPoder) cuelga de la tirada, con su origen y su
+  // grado. Ya no se pegan a `nota` / `efectoCritico` (E7 del inventario, fase 4): la UI los lee
+  // todos con textosDeTirada (textosDeTirada.ts), que dice cuándo sale cada uno.
   textosDeFicha?: TextoEnTirada[];
   // Poderes psiónicos (tiradaDePoder, poderes.ts) y acciones de dote (dotesAcciones.ts):
   // texto por grado propio y lo que tira el objetivo, para el panel de resultado.
@@ -237,6 +245,11 @@ export type Accion = {
   // telescópica solo ayuda a media y larga): no se funden en el valor de esa
   // opción, salen como su propia línea del desglose — ver condiciones.ts.
   bonosTramo?: BonoPorTramo[];
+  // Bonos de un grupo de no apilamiento que ya van en los números de la tirada (la Mira
+  // Telescópica de serie de los fusiles de precisión, metida en su dificultad): no suman, pero lo
+  // demás de su grupo (otra mira, el Ojo Biónico) solo aporta lo que los supera (td-06). Lo
+  // resuelve montarTirada (sinApilar).
+  yaIncluidos?: BonoPorTramo[];
   // Solo las tiradas de ataque generadas por combate.ts: qué modo de disparo
   // o de golpe hay detrás de cada opción de la condición "modo" (si la
   // tirada tiene más de un modo), para poder encadenar la tirada de daño con

@@ -3,7 +3,7 @@
 //   pasosPersonaje     Origen → Prioridades → Identidad, con su estado y
 //                      lo que falta. La pasada 2 (envío a revisión) lee `falta`.
 //   subPestanaInicial  dónde se abre la pestaña
-//   etiquetaRasgo      CREACIÓN / SIEMPRE / TIRADA / TEXTO de un rasgo de especie
+//   etiquetaRasgo      CREACIÓN / SIEMPRE / TIRADA / ACCIÓN / TEXTO de un rasgo de especie
 //   resumenRasgos      separa los atributos (chips) del resto de rasgos
 //   identidadPorDefecto altura y peso por defecto: el punto medio del rango (§14.5)
 import { ATRIBUTOS, type AtributoId } from "./atributos";
@@ -70,21 +70,21 @@ export function subPestanaInicial(pasos: PasoPersonaje[], aprobada: boolean): Pa
 
 // --- Rasgos de especie -------------------------------------------------------
 
-export type EtiquetaRasgo = "creacion" | "siempre" | "tirada" | "texto";
+export type EtiquetaRasgo = "creacion" | "siempre" | "tirada" | "accion" | "texto";
 
 const MECANISMOS_TIRADA: MecanismoMotor[] = ["eleccion_jugador", "ajuste_fijo", "bono_tramo"];
 const MECANISMOS_SIEMPRE: MecanismoMotor[] = ["siempre_activo", "suma_derivado"];
 const TIPOS_PASIVOS: TipoModificador[] = ["numerico", "coste", "resolucion"];
 
 // Lee la clasificación del catálogo (MotorMetadata), no la prosa: si un rasgo cambia
-// de mecanismo, la etiqueta le sigue. Prioridad: creación > tirada > siempre > texto.
+// de mecanismo, la etiqueta le sigue. Prioridad: creación > tirada > siempre > acción > texto.
+// ACCIÓN: el rasgo trae una acción propia, un botón en Acciones (Visión UV e Infrarroja del
+// Arianyi, es-05 del cuestionario de cierre; Peaje neurológico; Falla metabólica).
 //
 // TODO(revisar): quedan como TEXTO, por regla, rasgos cuya prosa sí habla de una
-// tirada pero que el catálogo clasifica como nota_fija (Falla metabólica,
-// Deslumbramiento, Tensión ósea, Tras esquivar; desde E4, nota en la tirada) o como acción nueva (Peaje
-// neurológico, Visión UV e Infrarroja). Metabolismo resistente sale TIRADA
-// (ajuste_fijo sobre usar_farmaco) aunque no es una tirada propiamente. Ver
-// personaje.test.ts.
+// tirada pero que el catálogo clasifica como nota_fija (Tras esquivar; desde E4, nota en la
+// tirada). Metabolismo resistente sale TIRADA (ajuste_fijo sobre usar_farmaco) aunque no es
+// una tirada propiamente. Ver personaje.test.ts.
 export function etiquetaRasgo(rasgo: Pick<Rasgo, "creacion" | "motor">): EtiquetaRasgo {
   if (rasgo.creacion) return "creacion";
   const { motor } = rasgo;
@@ -99,6 +99,7 @@ export function etiquetaRasgo(rasgo: Pick<Rasgo, "creacion" | "motor">): Etiquet
     )
   )
     return "siempre";
+  if (motor.some((m) => m.afecta.modo === "accion_nueva")) return "accion";
   return "texto";
 }
 

@@ -116,12 +116,16 @@ const comunes = {
   // Filtro de arma de los efectos sobre familias de arma. Con `empleo` y `tipoDanio` a la vez
   // vale cualquiera de los dos (Golpe Fatigante: "daño contundente o arma a dos manos");
   // `especialidad`: solo armas de esa especialidad (Golpe Mejorado con Escudo, D2d).
+  // `mediaFuerza`: solo armas cuyo daño suma media Fuerza (el Arco: Arquero Poderoso, do-03).
+  // `conPenalizadorDesarmado`: solo si nada quita el −3 de bloquear desarmado (td-08).
   filtroArma: z
     .strictObject({
       empleo: z.enum(["una mano", "dos manos"]).optional(),
       tipoDanio: z.array(z.literal("contundente")).min(1).optional(),
       desarmado: z.literal(true).optional(),
       especialidad: idEspecialidad.optional(),
+      mediaFuerza: z.literal(true).optional(),
+      conPenalizadorDesarmado: z.literal(true).optional(),
     })
     .optional(),
   borrador: z.number().int().min(0),
@@ -213,6 +217,9 @@ export const efectoDoteSchema = z.discriminatedUnion("tipo", [
   z.strictObject({ tipo: z.literal("exito_extra"), alcance, exitos: z.number().int().min(1), condicion, ...comunes }),
   z.strictObject({ tipo: z.literal("danio_por_exitos"), alcance, condicion, ...comunes }),
   z.strictObject({ tipo: z.literal("categoria_danio"), alcance, a: z.string().min(1), condicion, ...comunes }),
+  // El daño que lleva media Fuerza la suma entera con la casilla de la misma condición (Disparo
+  // poderoso de Arquero Poderoso, do-03: Fue + 8 en vez de ½ Fue + 8).
+  z.strictObject({ tipo: z.literal("fuerza_entera"), alcance, condicion, ...comunes }),
   z.strictObject({ tipo: z.literal("economia"), alcance, economia, limite: limite.optional(), condicion, ...comunes }),
   z.strictObject({ tipo: z.literal("habilita"), accion: alcance, borrador: comunes.borrador }),
   // Cuenta `unidades` menos en un contador de la tirada, sin bajar de su mínimo (§9.3, UX

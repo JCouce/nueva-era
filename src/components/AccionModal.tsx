@@ -22,6 +22,8 @@ import {
   type FichaParaTirada,
   type TiradaMontada,
   seTiraSinDificultad,
+  textosDeTirada,
+  lineaAntes,
 } from "@/lib/rules";
 import { Modal } from "./Modal";
 import { BarraProgreso } from "./BarraProgreso";
@@ -190,7 +192,6 @@ function LineaDesglose({ etiqueta, valor }: { etiqueta: string; valor: number })
 export function AccionModal({
   titulo,
   subtitulo,
-  nota,
   cabecera,
   bloqueo,
   pieResultado,
@@ -209,15 +210,6 @@ export function AccionModal({
 }: {
   titulo: string;
   subtitulo?: string;
-  // Texto fijo de la propia Acción (arma.efectos/especial volcado en
-  // combate.ts — "Crítico de Hemorragia (9)", "Daño grave. Pulso: alcance...",
-  // etc.). Antes de 2026-09-24 solo se pintaba en la tarjeta cerrada
-  // (FilaTirada, AccionesTab.tsx) — el modal nunca lo recibía, así que
-  // desaparecía justo cuando más falta hace (al tirar daño). Se muestra
-  // siempre que existe, en cualquier estado del modal (eligiendo, rodando,
-  // con resultado) — es información de la pieza, no del resultado de la
-  // tirada.
-  nota?: string;
   // Controles propios de la tirada antes de las condiciones genéricas — hoy
   // solo los poderes psiónicos (nivel empleado, forma y su ficha resuelta).
   // Se oculta al tirar, como el resto de controles.
@@ -345,7 +337,11 @@ export function AccionModal({
   // informativo" del §8) — `estado` no cambia entre elegir y ver el
   // resultado, así que esto sigue siendo válido en la pantalla final sin
   // necesidad de guardarlo aparte.
-  const notas = montada.notas;
+  // Los textos de la tirada (fase 4, textosDeTirada.ts): antes de tirar, la línea de «antes»
+  // (las notas de casilla ya salen bajo su casilla); con el resultado, todos en «Todo lo que
+  // aplica», también los de las casillas marcadas.
+  const notaAntes = lineaAntes(tiradaEfectiva);
+  const textos = textosDeTirada(tiradaEfectiva, montada.notas);
   // Mismo cálculo de modoId que tirar() (AccionesTab.tsx): el id de
   // `estado.modo` si hay selector, si no el único modo de `ataque.modos`.
   // Reactivo a `estado` — cambiar de modo aquí recalcula el aviso al
@@ -383,9 +379,7 @@ export function AccionModal({
         </button>
       </div>
 
-      {nota && (
-        <p className="mt-2 font-sans text-prosa-sm text-soft">{nota}</p>
-      )}
+      {!resultado && notaAntes && <p className="mt-2 font-sans text-prosa-sm text-soft">{notaAntes}</p>}
 
       {!resultado && !rodando && cabecera}
 
@@ -432,26 +426,17 @@ export function AccionModal({
 
       {resultado && !rodando && (
         <div className="mt-4 border-t border-border pt-3">
-          <ContenidoResultado resultado={resultado} onTirarDanio={onTirarDanio} onSalvacionPropia={onSalvacionPropia} />
+          <ContenidoResultado
+            resultado={resultado}
+            textos={textos}
+            onTirarDanio={onTirarDanio}
+            onSalvacionPropia={onSalvacionPropia}
+          />
           {pieResultado}
           {notaResultado && (
             <p className="mt-3 border-l-2 border-accent pl-2 font-sans text-[12px] font-semibold leading-relaxed text-accent">
               {notaResultado}
             </p>
-          )}
-          {notas.length > 0 && (
-            <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
-              {notas.map((n, i) => (
-                <div key={i}>
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-info">
-                    {n.etiqueta}
-                  </p>
-                  <p className="mt-0.5 border-l-2 border-info pl-2 font-sans text-[12px] leading-relaxed text-foreground">
-                    {n.nota}
-                  </p>
-                </div>
-              ))}
-            </div>
           )}
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button

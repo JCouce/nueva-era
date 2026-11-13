@@ -474,6 +474,20 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
     condicion: null,
     porque: "tercero",
   },
+  // Arquero Poderoso (do-03, usuario 2026-11-13): casilla «Disparo poderoso» en los disparos con
+  // arco (filtro en FILTROS_ARMA), que se marca solo cuando se quiere: cobra 1 de fatiga (como
+  // Ojo Clínico) y el daño suma la Fuerza entera; la acción compleja, en la nota.
+  "dote_arquero_poderoso#0": [
+    { tipo: "coste", alcance: "familia:ataque_fuego", condicion: "Disparo poderoso", fatiga: 1 },
+    { tipo: "fuerza_entera", alcance: "familia:ataque_fuego", condicion: "Disparo poderoso" },
+    {
+      tipo: "texto",
+      lugar: "familia:ataque_fuego",
+      texto: "como acción compleja; cobra 1 punto de fatiga y el daño suma tu Fuerza entera (Fue + 8 en vez de ½ Fue + 8).",
+      condicion: "Disparo poderoso",
+      porque: "turno",
+    },
+  ],
   // Derribo Brutal: "el aumento de dificultad para derribo causando daño se anula" → la casilla
   // «Derribo» sin −2 (antes, una casilla +2 que lo compensaba).
   "dote_derribo_brutal#0": { tipo: "maniobra", maniobra: "derribo", alcance: "familia:ataque_melee", sinPenalizador: true },
@@ -535,13 +549,14 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
   "dote_salto_evasivo#0": { tipo: "bono", alcance: "defensa", valor: 1, condicion: "Esquivando un área" },
   "dote_salto_evasivo_mejorado#0": { tipo: "bono", alcance: "defensa", valor: 2, condicion: "Esquivando un área" },
   // Bloqueo: "desarmado frente a atacante armado" (−3) y su excepción solo al bloquear
-  // desarmado (Pelea), no con un arma (revisión de D2b-2, 2026-10-15).
+  // desarmado (Pelea), no con un arma (revisión de D2b-2, 2026-10-15). Ni cuando algo quita el −3
+  // (armadura, golpe desarmado letal: Refuerzo, Brazo Biónico; td-08).
   "dote_bloqueo#7": {
     tipo: "bono",
     alcance: "familia:bloquear_melee",
     valor: -3,
     condicion: "Desarmado frente a atacante armado",
-    filtroArma: { desarmado: true },
+    filtroArma: { desarmado: true, conPenalizadorDesarmado: true },
   },
   "dote_bloqueo#8": {
     tipo: "texto",
@@ -549,7 +564,7 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
     texto: "Si tu ataque natural o desarmado hace daño letal no cuentas como desarmado: no marques la casilla.",
     condicion: "Desarmado frente a atacante armado",
     porque: "tercero",
-    filtroArma: { desarmado: true },
+    filtroArma: { desarmado: true, conPenalizadorDesarmado: true },
   },
   // §9.3 "Combinación → casilla −1 en el ataque, −1 a defensas como texto" (el borrador lo
   // traía como casilla). En Esquiva ya (tirada fija); en Bloquear, con su tanda (la
@@ -891,8 +906,9 @@ const RAMA_DE_FAMILIA: Readonly<Record<string, "combate_melee" | "combate_distan
 //   Golpe Mejorado con Escudo (D2d): "al golpear con el escudo" → especialidad Escudos.
 //   Pistolero y Pistolero Infernal: "una pistola en cada mano" → especialidad Pistolas y a una
 //     mano (deja fuera el disparo del Proyector de Pulso, que va en Pistolas pero no se empuña).
-//   Arquero Poderoso: "un ataque con arco" → especialidad Armas Impulsoras.
-type FiltroArmaDote = { empleo?: "una mano" | "dos manos"; tipoDanio?: "contundente"[]; especialidad?: string };
+//   Arquero Poderoso: "un ataque con arco" → especialidad Armas Impulsoras y daño con media
+//     Fuerza (el Arco; la Ballesta no).
+type FiltroArmaDote = { empleo?: "una mano" | "dos manos"; tipoDanio?: "contundente"[]; especialidad?: string; mediaFuerza?: true };
 const FILTROS_ARMA: Readonly<Record<string, FiltroArmaDote>> = {
   dote_desenfundado_rapido: { empleo: "una mano" },
   dote_apresar_y_apunalar: { empleo: "una mano" },
@@ -903,11 +919,9 @@ const FILTROS_ARMA: Readonly<Record<string, FiltroArmaDote>> = {
   // si ese +1 sigue, ni si cada ráfaga gasta su cargador: solo texto.
   dote_pistolero: { especialidad: "pistolas", empleo: "una mano" },
   dote_pistolero_infernal: { especialidad: "pistolas", empleo: "una mano" },
-  // TODO(revisar): "sumando su total de puntuación de fuerza" — ¿el daño del Arco pasa de
-  // 1/2 Fue + 8 a Fue + 8, o la Fuerza se suma a la tirada de ataque? ¿Vale la Ballesta ("con
-  // arco")? Hasta que Murillo lo aclare, texto con la prosa en todas las Armas Impulsoras; ni
-  // la fatiga ni el daño se calculan.
-  dote_arquero_poderoso: { especialidad: "armas_impulsoras" },
+  // "sumando su total de puntuación de fuerza" = el daño del Arco pasa de 1/2 Fue + 8 a Fue + 8;
+  // solo con arco, no la Ballesta (do-03, usuario 2026-11-13): el arma con media Fuerza.
+  dote_arquero_poderoso: { especialidad: "armas_impulsoras", mediaFuerza: true },
 };
 
 const claveDeEfecto = (e: Efecto) =>
@@ -1032,6 +1046,7 @@ function tandaDelTipo(e: Efecto): TandaDote | null {
     case "exito_extra":
     case "danio_por_exitos":
     case "categoria_danio":
+    case "fuerza_entera":
     case "maniobra":
       // D2d (cerrada): Combate Sutil desde D2b-2, Crítico Mejorado desde D2b-1; el resto, casillas
       // de D2d. Un cambio de par sobre una tirada que no existe espera a "tiradas-fijas" (destino).
@@ -1115,7 +1130,10 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
       // Daño con casilla (D2d): solo en golpes de arma.
       (familiaDestino !== null &&
         typeof e.condicion === "string" &&
-        (e.tipo === "danio_por_exitos" || e.tipo === "categoria_danio" || (e.tipo === "bono" && e.sobre === "danio"))) ||
+        (e.tipo === "danio_por_exitos" ||
+          e.tipo === "categoria_danio" ||
+          e.tipo === "fuerza_entera" ||
+          (e.tipo === "bono" && e.sobre === "danio"))) ||
       // Ventaja con casilla en una acción de dote (Apoyo, Violencia Aterradora; dotesAcciones.ts).
       (e.tipo === "ventaja" && destino?.tipo === "accionDote" && typeof e.condicion === "string") ||
       // Maniobra Derribo (D2d): casilla propia en los golpes melee.
@@ -1187,6 +1205,7 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
     case "exito_extra":
     case "danio_por_exitos":
     case "categoria_danio":
+    case "fuerza_entera":
       // Resolución (§1.3): cambian cómo se resuelve (dados, umbrales de grado, reglas del daño),
       // no el total.
       return { tipo: "resolucion", afecta: { modo: "accion_existente", id: clave! }, mecanismo: mecanismoCasilla, ...estado };

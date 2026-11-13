@@ -19,6 +19,7 @@ import type { AplicadoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
 import type { CondicionTirada } from "./condiciones";
 import type { OrigenAporte } from "./origen";
+import type { RecursoUmbral } from "./modificadores";
 
 // Los tres que no llevan tirada (docs/checklist-motor-vs-prosa-2026-09-24.md
 // / prompt-gasto-recursos.md): el nota explica el efecto, "Usar" solo gasta
@@ -171,7 +172,8 @@ const CON_EFECTO_ANTIPATOGENO = [
 // la has tomado, y el efecto sigue tras gastar la última dosis). Física = tirada con un aplicado
 // que lleve Fuerza o Agilidad (Fortaleza, Potencia, Reflejos), sin las salvaciones. Las dos
 // casillas no se apilan: una Iniciativa con Reflejos se queda en +2. La reducción de los
-// penalizadores por heridas y fatiga y el bajón al terminar siguen a mano.
+// penalizadores por heridas y fatiga va en su propia casilla (abajo, fa-01); el bajón al terminar
+// sigue a mano.
 export const ID_CASILLA_ULTRA_INICIATIVA = "farmaco_ultra_estimulante_iniciativa";
 export const ID_CASILLA_ULTRA_FISICAS = "farmaco_ultra_estimulante_fisicas";
 const ETIQUETA_ULTRA = "Bajo Ultra Estimulante";
@@ -207,11 +209,61 @@ const CASILLAS_ULTRA_ESTIMULANTE: CondicionTirada[] = [
   },
 ];
 
-export function casillasDeFarmacos(sheet: Pick<Sheet, "farmacos">): CondicionTirada[] {
+// «Reduce en 1 el penalizador por heridas» (Analgésico, Calmante; los Geles Sanadores «incluyen
+// los efectos del Analgésico», y el Avanzado y el Nano-Elixir funcionan como el Gel) y «por
+// heridas y fatiga» (Ultra Estimulante): una casilla por fármaco que se lleve, en todas las
+// tiradas, solo si le queda penalizador de ese recurso tras especie y aumentos (fa-01, usuario
+// 2026-11-13). Vale solo para la tirada; la dosis se descuenta a mano. Entre fármacos no se
+// suman: vale el mayor (fa-02, también con varias dosis de Calmante); sí se suman a la especie
+// y los aumentos. El tope en 0 y el «vale el mayor» los pone montarTirada (`reduceUmbral`).
+// TODO(revisar): la app no sabe si la dosis sigue haciendo efecto (1 hora; el Calmante, lo que
+// dé su tirada): la casilla sale mientras quede alguna en la ficha.
+const REDUCE_UMBRAL: Readonly<Record<string, Partial<Record<RecursoUmbral, number>>>> = {
+  farmaco_analgesico: { salud: 1 },
+  farmaco_calmante: { salud: 1 },
+  farmaco_gel_sanador: { salud: 1 },
+  farmaco_gel_sanador_avanzado: { salud: 1 },
+  farmaco_nano_elixir: { salud: 1 },
+  farmaco_ultra_estimulante: { salud: 1, fatiga: 1 },
+};
+
+export const PREFIJO_CASILLA_UMBRAL = "farmaco_umbral_";
+
+const NOTA_REDUCE_UMBRAL =
+  "Solo para esta tirada. Entre fármacos solo vale el mayor; se suma a lo que den especie y aumentos. La dosis se descuenta a mano.";
+
+function casillasReduceUmbral(sheet: Pick<Sheet, "farmacos">, penalizadores: Record<RecursoUmbral, number>): CondicionTirada[] {
+  return FARMACOS.flatMap((f): CondicionTirada[] => {
+    const reduce = REDUCE_UMBRAL[f.id];
+    if (!reduce || (sheet.farmacos[f.id] ?? 0) <= 0) return [];
+    const recursos = (Object.keys(reduce) as RecursoUmbral[]).filter((r) => (reduce[r] ?? 0) > 0);
+    if (!recursos.some((r) => penalizadores[r] < 0)) return [];
+    return [
+      {
+        id: `${PREFIJO_CASILLA_UMBRAL}${f.id}`,
+        tipo: "toggle",
+        etiqueta: `${f.label} contra el penalizador por ${recursos.map((r) => (r === "salud" ? "heridas" : "fatiga")).join(" y ")}`,
+        valorActivo: 0,
+        reduceUmbral: reduce,
+        nota: NOTA_REDUCE_UMBRAL,
+        alcance: { tipo: "todas" },
+        origen: { tipo: "farmaco", id: f.id, label: f.label },
+      },
+    ];
+  });
+}
+
+// `penalizadores`: lo que le queda a cada umbral a todo tras especie y aumentos
+// (penalizadoresDeUmbral, estados.ts); sin él, ninguna casilla de fármaco contra el dolor.
+export function casillasDeFarmacos(
+  sheet: Pick<Sheet, "farmacos">,
+  penalizadores: Record<RecursoUmbral, number> = { salud: 0, fatiga: 0 },
+): CondicionTirada[] {
+  const comunes = [...CASILLAS_ULTRA_ESTIMULANTE, ...casillasReduceUmbral(sheet, penalizadores)];
   const conAntipatogeno = FARMACOS.find((f) => CON_EFECTO_ANTIPATOGENO.includes(f.id) && (sheet.farmacos[f.id] ?? 0) > 0);
-  if (!conAntipatogeno) return CASILLAS_ULTRA_ESTIMULANTE;
+  if (!conAntipatogeno) return comunes;
   return [
-    ...CASILLAS_ULTRA_ESTIMULANTE,
+    ...comunes,
     {
       id: ID_CASILLA_ANTIPATOGENO,
       tipo: "toggle",

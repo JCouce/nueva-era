@@ -18,7 +18,7 @@
 // que el documento no dice explícitamente: S14 (los umbrales de un mismo
 // recurso no se acumulan, solo el más profundo aporta su penalizador) y S15
 // (cómo se interpreta el "mínimo 1" de Moribundo/Exhausto).
-import type { AlcanceModificador, ModificadorConFuente, OrigenModificador } from "./modificadores";
+import type { AlcanceModificador, ModificadorConFuente, OrigenModificador, RecursoUmbral } from "./modificadores";
 import { esEstadoDeAumento, estadoParaPintar, estadoPorId } from "../catalog/estados";
 import { ESTADO_ESTABILIZADO_ID, reduccionDeGradoEstabilizado } from "../catalog/psionica";
 
@@ -101,12 +101,11 @@ export function umbralVital(
 // Siervo fatiga) y aumentos (Estabilización Autonómica, heridas y fatiga), `valor` puntos
 // menos en cada tramo, con la fuente para el desglose. Cada reducción baja el penalizador en 1
 // y se suma a las demás (sumaAjustesUmbrales); el tramo no pasa de 0. Lo resuelve
-// resolverFicha y llega por parámetro obligatorio; sin nada, SIN_AJUSTE_UMBRALES. Solo toca
-// el −N de las tiradas: la velocidad y la carga del mismo umbral no cambian
-// (movimientoPorUmbrales no lo recibe).
-// TODO(revisar): §14.8 dice "reducen en 1 los penalizadores"; se lee como el −N a
-// todo (M12), no como la media velocidad ni la carga de §7.
-export type AjusteUmbral = { valor: number; fuente: string };
+// resolverFicha y llega por parámetro obligatorio; sin nada, SIN_AJUSTE_UMBRALES. Las que
+// «reducen en 1» solo tocan el −N de las tiradas: la velocidad y la carga del mismo umbral no
+// cambian (td-10, usuario 2026-11-13). `elimina` (Neuroprótesis 4, «elimina por completo»):
+// fuera también la media velocidad y el recorte de carga de ese recurso (resolverFicha).
+export type AjusteUmbral = { valor: number; fuente: string; elimina?: true };
 export type AjusteUmbrales = { salud: AjusteUmbral | null; fatiga: AjusteUmbral | null };
 export const SIN_AJUSTE_UMBRALES: AjusteUmbrales = { salud: null, fatiga: null };
 
@@ -116,7 +115,11 @@ export function sumaAjustesUmbrales(...ajustes: AjusteUmbrales[]): AjusteUmbrale
   const suma = (recurso: keyof AjusteUmbrales): AjusteUmbral | null => {
     const con = ajustes.flatMap((a) => (a[recurso] ? [a[recurso]!] : []));
     if (con.length === 0) return null;
-    return { valor: con.reduce((t, a) => t + a.valor, 0), fuente: [...new Set(con.map((a) => a.fuente))].join(" y ") };
+    return {
+      valor: con.reduce((t, a) => t + a.valor, 0),
+      fuente: [...new Set(con.map((a) => a.fuente))].join(" y "),
+      ...(con.some((a) => a.elimina) && { elimina: true as const }),
+    };
   };
   const salud = suma("salud");
   const fatiga = suma("fatiga");
@@ -143,7 +146,12 @@ function valorDeUmbral(penalizador: number, ajuste: AjusteUmbral | null): number
   return Math.min(0, penalizador + (ajuste?.valor ?? 0));
 }
 
-function modificadorDeUmbral(valor: number, etiqueta: string, ajuste: AjusteUmbral | null): ModificadorConFuente | null {
+function modificadorDeUmbral(
+  valor: number,
+  etiqueta: string,
+  ajuste: AjusteUmbral | null,
+  recurso: RecursoUmbral,
+): ModificadorConFuente | null {
   // Un tramo que el ajuste deja en 0 no da línea en el desglose.
   if (valor === 0) return null;
   return {
@@ -152,6 +160,16 @@ function modificadorDeUmbral(valor: number, etiqueta: string, ajuste: AjusteUmbr
     valor,
     origen: "estado",
     fuente: ajuste ? `${etiqueta} (${ajuste.fuente})` : etiqueta,
+    umbral: recurso,
+  };
+}
+
+// Lo que le queda a cada recurso de penalizador a todo tras especie y aumentos (≤ 0; 0 sin
+// umbral). Lo mira resolverFicha para sacar las casillas de fármaco solo con algo que reducir.
+export function penalizadoresDeUmbral(salud: UmbralSalud, fatiga: UmbralFatiga, ajuste: AjusteUmbrales): Record<RecursoUmbral, number> {
+  return {
+    salud: salud === "normal" ? 0 : valorDeUmbral(PENALIZADOR_SALUD[salud], ajuste.salud),
+    fatiga: fatiga === "normal" ? 0 : valorDeUmbral(PENALIZADOR_FATIGA[fatiga], ajuste.fatiga),
   };
 }
 
@@ -168,7 +186,7 @@ function compensacionesPorAplicado(
     const v = Math.min(r.valor, restante);
     if (v <= 0) return [];
     restante -= v;
-    return [{ tipo: "tirada", alcance: r.alcance, valor: v, compensa: true, origen: r.origen, fuente: `${r.fuente} (${etiqueta})` }];
+    return [{ tipo: "tirada", alcance: r.alcance, valor: v, compensa: true, origen: r.origen, fuente: `${r.fuente} (${etiqueta})`, umbral: r.recurso }];
   });
 }
 
@@ -190,7 +208,7 @@ export function modificadoresDeUmbrales(
   const mods: ModificadorConFuente[] = [];
   const tramo = (recurso: keyof AjusteUmbrales, penalizador: number, etiqueta: string) => {
     const valor = valorDeUmbral(penalizador, ajuste[recurso]);
-    const m = modificadorDeUmbral(valor, etiqueta, ajuste[recurso]);
+    const m = modificadorDeUmbral(valor, etiqueta, ajuste[recurso], recurso);
     if (m) mods.push(m);
     mods.push(...compensacionesPorAplicado(valor, etiqueta, porAplicado.filter((r) => r.recurso === recurso)));
   };
@@ -344,10 +362,9 @@ export function estadoActivoCon(estadoId: string, gradoId: string, duracion: Dur
 // igual que equipoPorId con un catalogoId huérfano.
 // `reduccion` (Neuroprótesis activa, A5a): −valor a cada penalizador de tirada de cada estado,
 // por separado y sin pasar de 0, como una compensación con el mismo alcance detrás de él
-// ("Neuroprótesis Simpática 1 (Aturdido)"). Los penalizadores a atributos no se tocan.
-// TODO(revisar): "reducir penalizadores por estado en 1" se lee como el −N a las tiradas; los
-// −N a atributos de Enfermedad o Parálisis no se reducen.
-// `estabilizado` (Estabilización, P1 de psiónica): lo mismo, pero solo en los estados que tenía
+// ("Neuroprótesis Simpática 1 (Aturdido)"). También a cada −N a un atributo (Enfermedad,
+// Parálisis: −2 a Agilidad → −1; td-11, usuario 2026-11-13), con su línea de atributo.
+// `estabilizado` (Estabilización, P1 de psiónica): solo los de tirada, en los estados que tenía
 // al ponérselo (`cubre`), y detrás de la reducción de arriba: entre las dos no pasan de 0.
 export function modificadoresDeEstados(
   activos: EstadoActivo[],
@@ -362,6 +379,10 @@ export function modificadoresDeEstados(
     const cubierto = estabilizado?.cubre.includes(activo.estadoId) ?? false;
     return grado.modificadores.flatMap((m): ModificadorConFuente[] => {
       const propio: ModificadorConFuente = { ...m, origen: "estado", fuente: estado.label };
+      if (m.tipo === "atributo" && m.valor < 0 && reduccion) {
+        const v = Math.min(reduccion.valor, -m.valor);
+        return [propio, { tipo: "atributo", id: m.id, valor: v, origen: "estado", fuente: `${reduccion.fuente} (${estado.label})` }];
+      }
       if (m.tipo !== "tirada" || m.valor >= 0) return [propio];
       const lineas: ModificadorConFuente[] = [propio];
       let queda = -m.valor;

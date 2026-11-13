@@ -464,8 +464,20 @@ calculados por la pantalla, genérica por habilidad y Exploración oculta en el 
 
 ---
 
-### Fase 4 — Texto: momento antes / después ⬜
+### Fase 4 — Texto: momento antes / después ✅ (2026-11-13, T5a del barrido, pl-05)
 **Tipo:** motor + UI. **Quién:** subagente.
+
+**Hecho:** propuesta de partida tal cual (usuario, cuestionario pl-05). `rules/textosDeTirada.ts`:
+`TextoDeTirada` (`texto`, `origen`, `momento`, `grado?`, más `fuente` para la línea, `etiqueta` de
+casilla o efecto y `conDanio` para los efectos de un ataque), `textosDeTirada(t, montada.notas)`,
+`textosAntes`, `textosDelResultado`, `textosPorOrigen`, `lineaAntes`. Los textos de ítem ya no se
+pegan a `nota`/`efectoCritico` (E7): van solo en `textosDeFicha`. `TiradaMontada.notas` lleva
+`origen` y `momento` (casilla: antes; crítico fijo, fallo crítico y sube grado: después).
+`TextoEnTirada.grado` (éxito / fallo) para los de ítem que dependen del resultado (Tras esquivar del
+Zimethroni). El modal y la fila enseñan la línea de antes; el resultado, «Todo lo que aplica» por
+origen (sin los bloques propios: «El objetivo», «Tú», texto por grado del poder). Test de
+caracterización en `textosDeTirada.test.ts`. **Queda fuera:** la hoja del árbol (`HojaTirada`) sigue
+sin pintar la línea de antes (E6): cada hoja con su párrafo cargaría mucho el árbol; se ve al abrirla.
 
 **Objetivo:** cada texto declara su momento y su condición de grado; la hoja enseña los de
 "antes", el resultado enseña **todos**.

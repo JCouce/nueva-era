@@ -93,15 +93,16 @@ export type CasillaRasgo = { acciones: string[]; condicion: CondicionTirada };
 // Dónde cuelga un texto sin mecanizar: una tirada fija por id, los ataques
 // desarmados (Puñetazo y Patada, Accion.desarmado en combate.ts) o las tiradas de una
 // familia de arma, con su empleo si lo filtra (textos de dote, D2b-1; mismo alcance que
-// AlcanceModificador "familiaArma"). `soloEnCritico`: va al texto de crítico de la tirada
-// (Accion.efectoCritico), no a su nota.
+// AlcanceModificador "familiaArma"). `soloEnCritico`: solo con éxito crítico; `grado`: solo con
+// éxito o con fallo (Tras esquivar del Zimethroni). Los dos salen con el resultado, no antes de
+// tirar (fase 4, textosDeTirada.ts).
 // Desde A2b de aumentos, también un grupo entero (Defensa: flanqueo de Consciencia) o las tiradas
 // de unos aplicados (Asa Estriatotalámica: perspicacia, voluntad o expresión).
 export type DestinoTexto =
   | { tipo: "tiradaId"; id: string }
   | { tipo: "desarmado" }
   | Extract<AlcanceModificador, { tipo: "familiaArma" } | { tipo: "grupo" } | { tipo: "aplicado" }>;
-export type TextoRasgo = { en: DestinoTexto[]; texto: string; soloEnCritico?: true };
+export type TextoRasgo = { en: DestinoTexto[]; texto: string; soloEnCritico?: true; grado?: "exito" | "fallo" };
 
 // `etiqueta`: palabra corta para la pista junto al coste ("−1 casta").
 export type CostesRasgo = {
@@ -220,8 +221,6 @@ const derivadoEstatico: MotorMetadata = {
   mecanismo: null,
   estado: "construido",
 };
-
-const narrativo: MotorMetadata = { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" };
 
 // Descanso y raciones (Riux, Siervo): la ración es lo que se gasta (Coste); la duración y el
 // número de descansos, cómo se resuelve el descanso (Resolución). Ninguno tiene dónde engancharse.
@@ -390,7 +389,8 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         id: "tras_esquivar",
         label: "Tras esquivar",
         texto: "Una esquiva con éxito permite moverse una casilla como acción gratuita, una vez por turno.",
-        textos: [{ en: [tiradaFija("defensa")], texto: "Con éxito, una casilla de movimiento gratis (una vez por turno)." }],
+        // es-05: sale con el éxito de la esquiva, en el resultado (fase 4).
+        textos: [{ en: [tiradaFija("defensa")], texto: "Con éxito, una casilla de movimiento gratis (una vez por turno).", grado: "exito" }],
         motor: [textoEn("defensa")],
       },
       {
@@ -599,7 +599,10 @@ export const ESPECIES: Especie[] = [
         id: "estasis",
         label: "Estasis",
         texto: "Entran y salen de estasis sin apenas daño celular.",
-        motor: [narrativo],
+        // es-05 (usuario, 2026-11-13): texto en la tirada donde se usa. TODO(revisar): no hay regla
+        // de estasis; va en la Salvación de Fortaleza, la que se tira contra el daño al cuerpo.
+        textos: [{ en: [tiradaFija("salv_fortaleza")], texto: "Estasis: entras y sales de estasis sin apenas daño celular." }],
+        motor: [textoEn("salv_fortaleza")],
       },
     ],
   },
@@ -676,7 +679,10 @@ export const ESPECIES: Especie[] = [
         id: "apnea",
         label: "Apnea",
         texto: "Aguantan el doble que un humano sin respirar.",
-        motor: [narrativo],
+        // es-05 (usuario, 2026-11-13): en la Salvación de Fortaleza, la de la asfixia (selector
+        // «Contra…»). Sin regla de apnea: el doble lo cuenta el máster.
+        textos: [{ en: [tiradaFija("salv_fortaleza")], texto: "Apnea: aguantas el doble que un humano sin respirar." }],
+        motor: [textoEn("salv_fortaleza")],
       },
     ],
   },

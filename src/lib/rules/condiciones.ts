@@ -12,7 +12,7 @@
 //   opcion   → una de varias, excluyentes ("tramo de distancia", "modo de disparo")
 //   contador → un número entre un mínimo y un máximo ("atacantes adicionales esta ronda")
 //
-import type { AlcanceModificador } from "./modificadores";
+import type { AlcanceModificador, RecursoUmbral } from "./modificadores";
 import type { OrigenAporte } from "./origen";
 import { APLICADOS, type AplicadoId } from "./atributos";
 
@@ -104,6 +104,11 @@ export type CondicionTirada = (
       // Lo que enseña el control en vez del número, para una casilla que no suma por sí misma
       // sino que enciende bonos por opción de otro selector (Bioma Predilecto en «Marcha»).
       resumen?: string;
+      // Reduce en N el penalizador por heridas o fatiga de §7 solo en esta tirada (fármacos,
+      // fa-01): montarTirada pone en `valorActivo` lo que de verdad compensa, sin pasar de 0 lo
+      // que le quede al umbral tras especie, aumentos y demás (también con Proyección: nada).
+      // Entre casillas que reducen umbral no se suman: vale la mayor por recurso (fa-02).
+      reduceUmbral?: Partial<Record<RecursoUmbral, number>>;
     }
   | {
       id: string;
@@ -151,7 +156,16 @@ export type CondicionTirada = (
 export type AtributosExtremidad = { fuente: string; fuerza: number; agilidad: number; danioDeFuerza?: true; origen?: OrigenAporte };
 
 // `multiplica`: todo el daño por N (Ariete «Contra una estructura», doble daño; eq-16).
-export type EfectoDanioCasilla = { ajuste?: number; categoria?: string; sinBonoExitos?: true; conBonoExitos?: true; multiplica?: number };
+// `fuerzaEntera`: el daño que lleva media Fuerza (Arco, «1/2 Fue + 8») la suma entera (Disparo
+// poderoso de Arquero Poderoso, do-03); lo resuelve montarTirada con la Fuerza de la ficha.
+export type EfectoDanioCasilla = {
+  ajuste?: number;
+  categoria?: string;
+  sinBonoExitos?: true;
+  conBonoExitos?: true;
+  multiplica?: number;
+  fuerzaEntera?: true;
+};
 
 // Lo que enseña el control de la casilla a la derecha: el número si suma algo, y si no lo
 // que hace ("ventaja", "fallo → éxito"…). Pura, para que el modal no decida nada.
@@ -160,8 +174,12 @@ export function resumenCasilla(c: Extract<CondicionTirada, { tipo: "toggle" }>, 
   const valor = activo ? c.valorActivo : (c.valorInactivo ?? 0);
   const signo = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
   const partes: string[] = [];
-  if (valor !== 0 || (!c.ventaja && !c.subeGrado && !c.aplicado && c.margenCriticoExito === undefined && !c.danio && !c.ahorroFatiga && !c.costeFatiga && !c.extremidad))
+  if (
+    valor !== 0 ||
+    (!c.ventaja && !c.subeGrado && !c.aplicado && c.margenCriticoExito === undefined && !c.danio && !c.ahorroFatiga && !c.costeFatiga && !c.extremidad && !c.reduceUmbral)
+  )
     partes.push(signo(valor));
+  if (c.reduceUmbral && valor === 0) partes.push(textoReduceUmbral(c.reduceUmbral));
   if (c.extremidad) partes.push(`Fue ${c.extremidad.fuerza} · Agi ${c.extremidad.agilidad}`);
   if (c.ventaja) partes.push("ventaja");
   if (c.subeGrado) partes.push("fallo → éxito");
@@ -171,10 +189,20 @@ export function resumenCasilla(c: Extract<CondicionTirada, { tipo: "toggle" }>, 
   if (c.danio?.multiplica) partes.push(`daño ×${c.danio.multiplica}`);
   if (c.danio?.categoria) partes.push(c.danio.categoria.toLowerCase());
   if (c.danio?.sinBonoExitos) partes.push("daño básico");
+  if (c.danio?.fuerzaEntera) partes.push("daño con Fuerza entera");
   if (c.danio?.conBonoExitos) partes.push("daño con éxitos");
   if (c.costeFatiga) partes.push(`−${c.costeFatiga} fatiga`);
   if (c.ahorroFatiga) partes.push(`ahorra ${c.ahorroFatiga} fatiga`);
   return partes.join(" · ");
+}
+
+// «1 menos de heridas», «1 menos de heridas y fatiga».
+function textoReduceUmbral(r: Partial<Record<RecursoUmbral, number>>): string {
+  const nombres = { salud: "heridas", fatiga: "fatiga" } as const;
+  const con = (Object.keys(nombres) as RecursoUmbral[]).filter((k) => (r[k] ?? 0) > 0);
+  const valores = [...new Set(con.map((k) => r[k]))];
+  const lista = con.map((k) => nombres[k]).join(" y ");
+  return valores.length === 1 ? `${valores[0]} menos de ${lista}` : con.map((k) => `${r[k]} menos de ${nombres[k]}`).join(", ");
 }
 
 // Lo que enseña un botón de opción junto a su etiqueta: el número y, si los lleva, la
@@ -289,17 +317,26 @@ export function desgloseCondiciones(
 // `nota`; el contador no tiene sentido de "activo/inactivo" así que no
 // aporta ninguna. Pensado para mostrarse junto al resultado, no solo
 // mientras se elige — ver AccionModal.
-export function notasCondiciones(
-  condiciones: CondicionTirada[],
-  estado: EstadoCondiciones,
-): { etiqueta: string; nota: string }[] {
-  const notas: { etiqueta: string; nota: string }[] = [];
+// Una nota que la tirada montada enseña con el resultado (fase 4, docs/aportes/plan.md): la de
+// una casilla marcada (momento "antes": se lee bajo la casilla al elegirla) o la que explica
+// cómo se resuelve (crítico fijo, fallo crítico, sube grado: "despues"). `origen`: el ítem que la
+// trae; sin él, la propia tirada.
+export type NotaMontada = { etiqueta: string; nota: string; origen?: OrigenAporte; momento: "antes" | "despues" };
+
+export function notasCondiciones(condiciones: CondicionTirada[], estado: EstadoCondiciones): NotaMontada[] {
+  const notas: NotaMontada[] = [];
+  const nota = (c: CondicionTirada, texto: string): NotaMontada => ({
+    etiqueta: c.etiqueta,
+    nota: texto,
+    ...(c.origen && { origen: c.origen }),
+    momento: "antes",
+  });
   for (const c of condiciones) {
     if (c.tipo === "toggle") {
-      if (Boolean(estado[c.id]) && c.nota) notas.push({ etiqueta: c.etiqueta, nota: c.nota });
+      if (Boolean(estado[c.id]) && c.nota) notas.push(nota(c, c.nota));
     } else if (c.tipo === "opcion") {
       const elegida = c.opciones.find((o) => o.id === estado[c.id]);
-      if (elegida?.nota) notas.push({ etiqueta: c.etiqueta, nota: elegida.nota });
+      if (elegida?.nota) notas.push(nota(c, elegida.nota));
     }
   }
   return notas;

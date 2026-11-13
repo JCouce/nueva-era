@@ -2,7 +2,8 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet } from "./sheet";
 import { equipar } from "./equipo";
-import { accionesDeHerramientas, accionesDirectasDeHerramientas } from "./herramientas";
+import { accionesDeHerramientas, accionesDirectasDeHerramientas, ID_CASILLA_MATERIALES_REPARAR, tiradaDeReparar } from "./herramientas";
+import type { Rareza } from "../catalog/equipo";
 import { dificultadTrasCambio, estadoInicial } from "./condiciones";
 
 describe("sin nada equipado", () => {
@@ -154,5 +155,38 @@ describe("dificultades del Escáner Detector y el Radar", () => {
       assert.match(c.opciones[1].nota ?? "", new RegExp(`alcance ${alcance}`));
       assert.equal((fila("radar", nivel).condiciones ?? []).length, 1);
     }
+  });
+});
+
+// di-32 (usuario, 2026-11-13): +2 con Sofisticados y la valija (Común y Poco Habitual), +4 con
+// Avanzados y la multiherramienta (hasta Extraño). Casilla solo si llevas la valija.
+describe("Reparar: tirada y casilla de los Materiales", () => {
+  const conVtf = (nivel = 1) => equipar(defaultSheet(), { instanciaId: "v1", catalogoId: "valija_tactica_fabricacion", nivel });
+  const pieza = (rareza: Rareza | null) => ({ instanciaId: "e1", titulo: "Escudo", rareza });
+  const casilla = (t: ReturnType<typeof tiradaDeReparar>) => t.condiciones?.find((c) => c.id === ID_CASILLA_MATERIALES_REPARAR);
+
+  test("dificultad de fabricar −4, con el nivel de la VTF", () => {
+    assert.equal(tiradaDeReparar(defaultSheet(), pieza("Común"), "sencillos").dificultadSugerida, 3);
+    assert.equal(tiradaDeReparar(defaultSheet(), pieza("Extraño"), "sencillos").dificultadSugerida, 7);
+    assert.equal(tiradaDeReparar(conVtf(2), pieza("Poco Habitual"), "sencillos").dificultadSugerida, 3);
+    assert.equal(tiradaDeReparar(defaultSheet(), pieza(null), "sencillos").dificultadSugerida, 3);
+  });
+
+  test("Sofisticados con la valija: +2 en Común y Poco Habitual, no en Extraño", () => {
+    const c = casilla(tiradaDeReparar(conVtf(), pieza("Poco Habitual"), "sofisticados"));
+    assert.ok(c && c.tipo === "toggle" && c.valorActivo === 2 && !c.activaPorDefecto);
+    assert.equal(casilla(tiradaDeReparar(conVtf(), pieza("Extraño"), "sofisticados")), undefined);
+  });
+
+  test("Avanzados con la multiherramienta: +4 hasta Extraño, no en Muy Extraño", () => {
+    const c = casilla(tiradaDeReparar(conVtf(), pieza("Extraño"), "avanzados"));
+    assert.ok(c && c.tipo === "toggle" && c.valorActivo === 4);
+    assert.equal(casilla(tiradaDeReparar(conVtf(), pieza("Muy Extraño"), "avanzados")), undefined);
+  });
+
+  test("sin la valija, o con Sencillos, no sale", () => {
+    assert.equal(casilla(tiradaDeReparar(defaultSheet(), pieza("Común"), "sofisticados")), undefined);
+    assert.equal(casilla(tiradaDeReparar(defaultSheet(), pieza("Común"), "avanzados")), undefined);
+    assert.equal(casilla(tiradaDeReparar(conVtf(), pieza("Común"), "sencillos")), undefined);
   });
 });

@@ -11,6 +11,7 @@ import { desgloseBlindaje } from "./blindaje";
 import { casillasDeAumentos, ID_SELECTOR_CONTRA } from "./aumentosTiradas";
 import { accionesDePsionica } from "./poderes";
 import { prepararPoder, SELECCION_PODER_VACIA, usarPoder } from "./usoPoder";
+import { lineaAntes } from "./textosDeTirada";
 
 let n = 0;
 function con(sheet: Sheet, catalogoId: string, extra: { nivel?: number; eleccion?: string } = {}): Sheet {
@@ -131,7 +132,7 @@ describe("selector «Contra…» de las salvaciones", () => {
     const t = tiradaFija(f, "salv_voluntad");
     const base = montar(f, t);
     assert.equal(montar(f, t, { [selector(t).id]: "miedo" }).modificador - base.modificador, 3);
-    assert.match(t.nota ?? "", /repetir la salvación al final de cada uno de sus turnos/);
+    assert.match(lineaAntes(t), /repetir la salvación al final de cada uno de sus turnos/);
     // Estabilización también en Fortaleza: aturdimiento y shock.
     const fort = tiradaFija(f, "salv_fortaleza");
     assert.deepEqual(selector(fort).opciones.map((o) => o.id), ["nada", "aturdimiento", "shock"]);
@@ -154,7 +155,7 @@ describe("selector «Contra…» de las salvaciones", () => {
     const f = resolver(s);
     assert.equal(tiradaFija(f, "salv_fortaleza").condiciones, undefined);
     assert.equal(tiradaFija(f, "alerta_activa").condiciones, undefined);
-    assert.ok(!(tiradaFija(f, "salv_voluntad").nota ?? "").includes("dominado"));
+    assert.ok(!lineaAntes(tiradaFija(f, "salv_voluntad")).includes("dominado"));
   });
 });
 
@@ -388,7 +389,7 @@ describe("A2b: casillas de la rama cognitiva", () => {
     const m = montar(f, t, { aum_consciencia_esquiva: true });
     assert.equal(m.ventaja, "Esquivar con dos dados · Consciencia Omnidireccional");
     assert.equal(m.costeFatiga, 1);
-    assert.ok(t.nota?.includes("No te pueden flanquear"));
+    assert.ok(lineaAntes(t).includes("No te pueden flanquear"));
   });
 
   test("Foveo: +1 en el ataque a distancia con «Apuntado» en Éxito o Crítico, sin casilla propia", () => {
@@ -450,8 +451,8 @@ describe("A2b: ventaja fija y textos", () => {
       assert.equal(m.modificador, montar(f, t).modificador);
     }
     assert.ok(!ids(tiradaFija(f, "defensa")).includes("aum_asa_simplificar"));
-    assert.ok(tiradaFija(f, "defensa").nota?.includes("Sorprendido"));
-    assert.ok(!tiradaFija(f, "salv_voluntad").nota?.includes("Sorprendido"));
+    assert.ok(lineaAntes(tiradaFija(f, "defensa")).includes("Sorprendido"));
+    assert.ok(!lineaAntes(tiradaFija(f, "salv_voluntad")).includes("Sorprendido"));
   });
 
   // D1 del triaje 2026-10-28: la reacción extra se cobra con una casilla en las defensas.

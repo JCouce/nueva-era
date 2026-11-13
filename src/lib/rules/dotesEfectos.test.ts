@@ -25,6 +25,7 @@ import { DISCIPLINAS } from "../catalog/psionica";
 import { especialidadPorId, type EspecialidadId } from "../catalog/especialidades";
 import { DESTINOS_DOTES, EXCEPCIONES_TANDA, TANDAS_DOTES, type TandaDote } from "../catalog/dotesDestinos";
 import type { DoteComprada } from "./dotesCompradas";
+import { lineaAntes, lineaDeGrado } from "./textosDeTirada";
 
 // ── Catálogo: todo efecto del borrador tiene destino ─────────────────────
 
@@ -202,9 +203,9 @@ describe("efectos de dotes en las tiradas (D2a)", () => {
 
   test("Paso Defensivo: texto en el crítico de la esquiva, no en la nota", () => {
     const t = conExtras(resolver(fichaCapaz([{ id: "dote_paso_defensivo" }])), "defensa");
-    assert.match(t.efectoCritico ?? "", /desplazarte una casilla como acción gratuita\. \(Paso Defensivo\)/);
-    assert.match(t.efectoCritico ?? "", /una vez por turno/);
-    assert.equal(t.nota, tirada("defensa").nota);
+    assert.match(lineaDeGrado(t, "critico"), /desplazarte una casilla como acción gratuita\. \(Paso Defensivo\)/);
+    assert.match(lineaDeGrado(t, "critico"), /una vez por turno/);
+    assert.equal(lineaAntes(t), lineaAntes(tirada("defensa")));
   });
 
   test("Presencia Imponente: casilla solo en las tiradas de Intimidación, con el valor según la Fuerza (D2d)", () => {
@@ -234,8 +235,8 @@ describe("efectos de dotes en las tiradas (D2a)", () => {
 
   test("texto en la nota de la tirada (Asalto Sigiloso en Sigilo)", () => {
     const t = conExtras(resolver(fichaCapaz([{ id: "dote_asalto_sigiloso" }])), "sigilo");
-    assert.match(t.nota ?? "", /gastando tu reacción\. \(Asalto Sigiloso\)/);
-    assert.equal(t.efectoCritico, undefined);
+    assert.match(lineaAntes(t), /gastando tu reacción\. \(Asalto Sigiloso\)/);
+    assert.equal(lineaDeGrado(t, "critico"), "");
   });
 
   test("casilla marcada suma al total (Autocuidados en la Salvación de Fortaleza)", () => {
@@ -268,7 +269,7 @@ describe("efectos de dotes en las tiradas (D2a)", () => {
     assert.deepEqual(textosDeDotes(s), []);
     const f = resolver(s);
     assert.ok(!f.modificadores.some((m) => m.origen === "dote"));
-    assert.equal(conExtras(f, "defensa").efectoCritico, undefined);
+    assert.equal(lineaDeGrado(conExtras(f, "defensa"), "critico"), "");
 
     const npc = resolver(s, true);
     assert.ok(npc.modificadores.some((m) => m.origen === "dote" && m.fuente === "Vigilancia Táctica"));
@@ -438,7 +439,7 @@ describe("efectos de dotes en las tiradas de arma (D2b-1)", () => {
 
   test("filtro de arma (Desenfundado Rápido): solo en armas a una mano", () => {
     const f = resolver(armado(fichaCombate([{ id: "dote_desenfundado_rapido" }]), "pistola_mosquito", "fusil_asalto_impetus", "espada", "espada_montante"));
-    const notas = filasDe(f).filter((t) => t.grupo === "Ataques" && !t.id.startsWith("lanzar_")).map((t) => [t.empleoArma, /Desenfundado Rápido/.test(t.nota ?? "")]);
+    const notas = filasDe(f).filter((t) => t.grupo === "Ataques" && !t.id.startsWith("lanzar_")).map((t) => [t.empleoArma, /Desenfundado Rápido/.test(lineaAntes(t))]);
     assert.ok(notas.length >= 4);
     for (const [empleo, tiene] of notas) assert.equal(tiene, empleo === "una mano", String(empleo));
   });
@@ -505,7 +506,12 @@ describe("efectos de dotes en las tiradas de arma (D2b-1)", () => {
       assert.ok(!(t.condiciones ?? []).some((c) => c.id.startsWith("dote_critico")));
       const m = montar(t);
       assert.equal(m.margenes.criticoExito, 5);
-      assert.deepEqual(m.notas[0], { etiqueta: "Crítico Mejorado: Espadas y Dagas", nota: "Crítico con 5 éxitos en vez de 6." });
+      assert.deepEqual(m.notas[0], {
+        etiqueta: "Crítico Mejorado: Espadas y Dagas",
+        nota: "Crítico con 5 éxitos en vez de 6.",
+        origen: { tipo: "dote", id: "dote_critico_mejorado", label: "Crítico Mejorado: Espadas y Dagas" },
+        momento: "despues",
+      });
       const r = tirarMontada(m, 1, 1 + m.modificador - 5);
       assert.equal(r.critico, true);
     });
@@ -599,8 +605,8 @@ describe("D2b-2: Bloqueo y Combate Sutil habilitan sus filas (§9.2)", () => {
   test("con un arma, Bloquear no lleva la casilla «Desarmado frente a atacante armado» ni su excepción", () => {
     const t = bloquear(resolver(armado(fichaCombate([{ id: "dote_bloqueo" }]), "espada")))!;
     assert.ok(!(t.condiciones ?? []).some((x) => x.id.startsWith("dote_bloqueo")));
-    assert.doesNotMatch(t.nota ?? "", /Desarmado frente a atacante armado/);
-    assert.match(t.nota ?? "", /Solo vale contra ataques melee\. \(Bloqueo\)/);
+    assert.doesNotMatch(lineaAntes(t), /Desarmado frente a atacante armado/);
+    assert.match(lineaAntes(t), /Solo vale contra ataques melee\. \(Bloqueo\)/);
   });
 
   test("bloqueando desarmado (Pelea), la fila lleva la casilla «Desarmado frente a atacante armado» (−3) y los textos de Bloqueo", () => {
@@ -609,17 +615,17 @@ describe("D2b-2: Bloqueo y Combate Sutil habilitan sus filas (§9.2)", () => {
     const c = t.condiciones?.find((x) => x.id.startsWith("dote_bloqueo"));
     assert.ok(c && c.tipo === "toggle" && c.valorActivo === -3);
     assert.match(c.etiqueta, /^Desarmado frente a atacante armado \(Bloqueo\)$/);
-    assert.match(t.nota ?? "", /Solo vale contra ataques melee\. \(Bloqueo\)/);
-    assert.match(t.nota ?? "", /Atacante más grande: −2 por cada tamaño de diferencia\. \(Bloqueo\)/);
-    assert.match(t.nota ?? "", /Desarmado frente a atacante armado: Si tu ataque natural o desarmado hace daño letal/);
-    assert.match(t.efectoCritico ?? "", /puedes contraatacarle como reacción\. \(Bloqueo\)/);
+    assert.match(lineaAntes(t), /Solo vale contra ataques melee\. \(Bloqueo\)/);
+    assert.match(lineaAntes(t), /Atacante más grande: −2 por cada tamaño de diferencia\. \(Bloqueo\)/);
+    assert.match(lineaAntes(t), /Desarmado frente a atacante armado: Si tu ataque natural o desarmado hace daño letal/);
+    assert.match(lineaDeGrado(t, "critico"), /puedes contraatacarle como reacción\. \(Bloqueo\)/);
     // Marcar la casilla resta 3 al total.
     const sin = montarTirada(f, t, eleccionSinTocar(t));
     const con = montarTirada(f, t, { ...eleccionSinTocar(t), estadoCondiciones: { ...eleccionSinTocar(t).estadoCondiciones, [c.id]: true } });
     assert.equal(con.modificador - sin.modificador, -3);
     // Solo en Bloquear: ni en el golpe ni en la esquiva.
     assert.ok(!(fila(f, "ataque_melee_").condiciones ?? []).some((x) => x.id.startsWith("dote_bloqueo")));
-    assert.doesNotMatch(fila(f, "ataque_melee_").nota ?? "", /Bloqueo/);
+    assert.doesNotMatch(lineaAntes(fila(f, "ataque_melee_")), /Bloqueo/);
   });
 
   // R3/F1 (2026-10-24, docs/fuente/equipamiento.md): Armadura Ligera/Intermedia/Pesada "permiten
@@ -628,13 +634,13 @@ describe("D2b-2: Bloqueo y Combate Sutil habilitan sus filas (§9.2)", () => {
   test("con Armadura Ligera (o Refuerzo de Combate), bloquear desarmado no lleva la casilla del −3", () => {
     const conLigera = bloquear(resolver(armado(fichaCombate([{ id: "dote_bloqueo" }]), "pelea_punetazo", "armadura_ligera")))!;
     assert.ok(!(conLigera.condiciones ?? []).some((x) => x.id.startsWith("dote_bloqueo")));
-    assert.doesNotMatch(conLigera.nota ?? "", /Desarmado frente a atacante armado/);
-    assert.match(conLigera.nota ?? "", /sin el −3 \(Armadura Ligera\)/);
+    assert.doesNotMatch(lineaAntes(conLigera), /Desarmado frente a atacante armado/);
+    assert.match(lineaAntes(conLigera), /sin el −3 \(Armadura Ligera\)/);
     let conRefuerzo = armado(fichaCombate([{ id: "dote_bloqueo" }]), "pelea_punetazo", "traje_ultra_ligero");
     conRefuerzo = equipar(conRefuerzo, { instanciaId: "rc", catalogoId: "refuerzo_combate", nivel: 1, instaladoEnId: "a1" });
     const t = bloquear(resolver(conRefuerzo))!;
     assert.ok(!(t.condiciones ?? []).some((x) => x.id.startsWith("dote_bloqueo")));
-    assert.match(t.nota ?? "", /sin el −3 \(Refuerzo de Combate 1\)/);
+    assert.match(lineaAntes(t), /sin el −3 \(Refuerzo de Combate 1\)/);
     // Con el traje a secas (sin bono de desarmado), la casilla sigue.
     const conTraje = bloquear(resolver(armado(fichaCombate([{ id: "dote_bloqueo" }]), "pelea_punetazo", "traje_ultra_ligero")))!;
     assert.ok((conTraje.condiciones ?? []).some((x) => x.id.startsWith("dote_bloqueo")));
@@ -642,19 +648,19 @@ describe("D2b-2: Bloqueo y Combate Sutil habilitan sus filas (§9.2)", () => {
 
   test("Contraataque Rápido y Maestro en Contraataque: texto de crítico en Bloquear", () => {
     const rapido = bloquear(resolver(armado(fichaCombate([{ id: "dote_bloqueo" }, { id: "dote_contraataque_rapido" }]), "espada")))!;
-    assert.match(rapido.efectoCritico ?? "", /acción gratuita en vez de reacción, una vez por turno\. \(Contraataque Rápido\)/);
+    assert.match(lineaDeGrado(rapido, "critico"), /acción gratuita en vez de reacción, una vez por turno\. \(Contraataque Rápido\)/);
     // Maestro pide Contraataque Rápido (y Combate Melee 6) y lo sustituye: vale la mejor (§9.1).
     const maestro = bloquear(
       resolver(armado(fichaCombate([{ id: "dote_bloqueo" }, { id: "dote_contraataque_rapido" }, { id: "dote_maestro_en_contraataque" }], { cm: 6 }), "espada")),
     )!;
-    assert.match(maestro.efectoCritico ?? "", /sin límite por turno\. \(Maestro en Contraataque\)/);
-    assert.doesNotMatch(maestro.efectoCritico ?? "", /Contraataque Rápido/);
+    assert.match(lineaDeGrado(maestro, "critico"), /sin límite por turno\. \(Maestro en Contraataque\)/);
+    assert.doesNotMatch(lineaDeGrado(maestro, "critico"), /Contraataque Rápido/);
   });
 
   test("Combinación y Combinación Rápida: su texto también en Bloquear", () => {
     const t = bloquear(resolver(armado(fichaCombate([{ id: "dote_bloqueo" }, { id: "dote_combinacion" }, { id: "dote_combinacion_rapida" }]), "espada")))!;
-    assert.match(t.nota ?? "", /Si este turno has usado Combinación: −1 a tus acciones defensivas.*\(Combinación\)/);
-    assert.match(t.nota ?? "", /Combinación en modo sutil: sin el −1 a tus acciones defensivas\. \(Combinación Rápida\)/);
+    assert.match(lineaAntes(t), /Si este turno has usado Combinación: −1 a tus acciones defensivas.*\(Combinación\)/);
+    assert.match(lineaAntes(t), /Combinación en modo sutil: sin el −1 a tus acciones defensivas\. \(Combinación Rápida\)/);
   });
 
   test("sin Bloqueo, los textos de bloqueo de otras dotes no tienen dónde ir (no hay fila)", () => {
@@ -674,11 +680,11 @@ describe("Pistolero, Pistolero Infernal y Arquero Poderoso", () => {
     const pistola = fila(f, "ataque_fuego_a0");
     const c = casillaDoble(pistola);
     assert.ok(c && c.tipo === "toggle" && c.valorActivo === -1 && /Disparo doble/.test(c.etiqueta));
-    assert.match(pistola.nota ?? "", /dos disparos que normalmente sean acción simple/);
-    assert.match(pistola.nota ?? "", /Desenfundado Rápido/);
+    assert.match(lineaAntes(pistola), /dos disparos que normalmente sean acción simple/);
+    assert.match(lineaAntes(pistola), /Desenfundado Rápido/);
     const fusil = fila(f, "ataque_fuego_a1");
     assert.equal(casillaDoble(fusil), undefined);
-    assert.doesNotMatch(fusil.nota ?? "", /Pistolero/);
+    assert.doesNotMatch(lineaAntes(fusil), /Pistolero/);
   });
 
   test("Pistolero no llega al disparo del Proyector de Pulso (Pistolas, pero no se empuña)", () => {
@@ -692,18 +698,44 @@ describe("Pistolero, Pistolero Infernal y Arquero Poderoso", () => {
 
   test("Pistolero Infernal pide Pistolero; su texto sale en las pistolas", () => {
     const sin = resolver(armado(fichaCombate([{ id: "dote_pistolero_infernal" }], { esp: ["pistolas"] }), "pistola_bellum"));
-    assert.doesNotMatch(fila(sin, "ataque_fuego_").nota ?? "", /fuego automático a la vez/);
+    assert.doesNotMatch(lineaAntes(fila(sin, "ataque_fuego_")), /fuego automático a la vez/);
     const con = resolver(
       armado(fichaCombate([{ id: "dote_pistolero" }, { id: "dote_pistolero_infernal" }], { esp: ["pistolas"] }), "pistola_bellum"),
     );
-    assert.match(fila(con, "ataque_fuego_").nota ?? "", /dos ataques de fuego automático a la vez, como acción compleja/);
+    assert.match(lineaAntes(fila(con, "ataque_fuego_")), /dos ataques de fuego automático a la vez, como acción compleja/);
   });
 
-  test("Arquero Poderoso: texto en las armas impulsoras, no en las de fuego", () => {
+  // do-03 (usuario, 2026-11-13): antes solo texto; ahora casilla «Disparo poderoso» que cobra 1 de
+  // fatiga y suma la Fuerza entera al daño del Arco (Fue + 8 en vez de ½ Fue + 8).
+  const casillaPoderoso = (t: Accion) => (t.condiciones ?? []).find((c) => c.id.startsWith("dote_arquero_poderoso"));
+
+  test("Arquero Poderoso: casilla «Disparo poderoso» solo en el arco (ni Ballesta ni pistola)", () => {
     const f = resolver(
-      armado(fichaCombate([{ id: "dote_arquero_poderoso" }], { esp: ["armas_impulsoras"] }), "arco_tactico", "pistola_bellum"),
+      armado(fichaCombate([{ id: "dote_arquero_poderoso" }], { esp: ["armas_impulsoras"] }), "arco_tactico", "ballesta_pro_ue", "pistola_bellum"),
     );
-    assert.match(fila(f, "ataque_fuego_a0").nota ?? "", /Solo con arco, como acción compleja y gastando 1 punto de fatiga.*\(Arquero Poderoso\)/);
-    assert.doesNotMatch(fila(f, "ataque_fuego_a1").nota ?? "", /Arquero Poderoso/);
+    const arco = fila(f, "ataque_fuego_a0");
+    const c = casillaPoderoso(arco);
+    assert.ok(c && c.tipo === "toggle" && /Disparo poderoso/.test(c.etiqueta) && !c.activaPorDefecto);
+    assert.match(lineaAntes(arco), /Disparo poderoso: como acción compleja.*\(Arquero Poderoso\)/);
+    for (const otra of ["ataque_fuego_a1", "ataque_fuego_a2"]) {
+      assert.equal(casillaPoderoso(fila(f, otra)), undefined, otra);
+      assert.doesNotMatch(lineaAntes(fila(f, otra)), /Arquero Poderoso/, otra);
+    }
+  });
+
+  test("Arquero Poderoso marcada: cobra 1 de fatiga y el daño suma la Fuerza entera", () => {
+    const s = armado(fichaCombate([{ id: "dote_arquero_poderoso" }], { esp: ["armas_impulsoras"] }), "arco_tactico");
+    const f = resolver({ ...s, atributos: { ...s.atributos, fuerza: 3 } });
+    const arco = fila(f, "ataque_fuego_a0");
+    const c = casillaPoderoso(arco)!;
+    const sin = montarTirada(f, arco, eleccionSinTocar(arco));
+    assert.equal(sin.costeFatiga, 0);
+    assert.deepEqual(sin.danio.ajustes, []);
+    const con = montarTirada(f, arco, { ...eleccionSinTocar(arco), estadoCondiciones: { ...eleccionSinTocar(arco).estadoCondiciones, [c.id]: true } });
+    assert.equal(con.costeFatiga, 1);
+    // Fuerza 3: ½ Fue redondea a 1, entera son 3 → +2.
+    assert.equal(arco.ataque?.modos[0].danio, 8 + 1);
+    assert.deepEqual(con.danio.ajustes, [{ valor: 2, fuente: `${c.etiqueta}: Fuerza entera (3)` }]);
+    assert.equal(con.modificador, sin.modificador, "no toca la tirada de ataque");
   });
 });

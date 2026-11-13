@@ -1045,8 +1045,39 @@ Tandas, en orden:
   `dotes.ts`). «Esconder arma» en `FichaResuelta.accionesOcultacion`. Quedan `TODO(revisar)`:
   luminiscencia/ionización solo visual (se resta del número entero), pasiva + activa del camuflaje,
   ruido del Proyector y de arcos/ballestas, una sola arma escondida a la vez, apilar amortiguadores.
-- [ ] **T5 Fase 4 de aportes + lo que sale en la tirada**: pl-05, eq-35, do-07, es-05, au-06, td-05,
-  do-03, fa-01, fa-02, di-32, td-06, td-08, td-10, td-11.
+- [ ] **T5** partida en tres (usuario, 2026-11-13):
+  - [x] **T5a lo que sale en la tirada**: pl-05 (fase 4 de `docs/aportes/plan.md`: cada texto con su
+    momento; criterio del usuario: lo que se usa al tirar sale antes, lo que salta con el resultado
+    o el daño, después; el resultado enseña todo), es-05 (cada rasgo de especie en la tirada donde
+    se usa), au-06 (una línea por sentido en Buscar / percibir), td-05 (encontrar con la Percepción
+    Electromagnética: simple o reacción).
+    *(2026-11-13)* Motor `rules/textosDeTirada.ts` (`TextoDeTirada` con momento, grado y origen;
+    `textosDeTirada`, `textosAntes`, `textosDelResultado`, `textosPorOrigen`, `lineaAntes`): la nota y
+    los textos de ítem sin grado, antes y después; crítico y crítico natural, después con su grado
+    (el fracaso crítico ya no enseña el texto de crítico); efectos de un ataque, con el daño tirado;
+    notas de casilla, antes; crítico fijo / fallo crítico / sube grado, en el resultado. Los textos de
+    ítem ya no se pegan a `nota`/`efectoCritico` (`conTextosEnTirada` fuera, `textosDeFicha` manda);
+    `TiradaMontada.notas` con `origen` y `momento`; `TextoEnTirada.grado` (éxito/fallo). El modal y la
+    fila enseñan la línea de antes; el resultado, «Todo lo que aplica» por origen (sustituye a los
+    bloques sueltos de crítico, «Efectos» y notas de casilla). es-05: Tras esquivar del Zimethroni
+    solo con éxito; Estasis (Riux) y Apnea (Arianyi) en la Salvación de Fortaleza; etiqueta nueva
+    «Acción» de rasgo (Visión UV, y por la misma regla Peaje neurológico y Falla metabólica). au-06:
+    seis sentidos de la Introgresión y Ojo Biónico 1/3/4 (`NivelImplante.textos`, por id, el nivel alto
+    sustituye) en Buscar / percibir. td-05: «Acción simple o reacción». Sin migración. Quedan
+    `TODO(revisar)`: Estasis sin regla (va en Fortaleza); la hoja del árbol sigue sin la línea de antes
+    (E6, para no cargar el árbol).
+  - [x] **T5b números que no se aplican** (fa-01, fa-02, td-10, td-11, do-03, td-08, td-06, di-32):
+    casilla por fármaco (`CondicionTirada.reduceUmbral`, solo herido y con la dosis, el mayor entre
+    fármacos, sin gastar); `Modificador.umbral` separa heridas de fatiga; `AjusteUmbral.elimina`
+    (Neuroprótesis 4: también velocidad y carga); Neuroprótesis 1 compensa los −N a atributos;
+    «Disparo poderoso» en el Arco (`fuerza_entera`, 1 de fatiga por `costeFatiga`); bloquear con el
+    brazo biónico cuenta como desarmado sin el −3 (`sinPenalizadorDesarmado`), y «Bloquear con» la
+    Pelea con armadura sigue siendo desarmado; `Accion.yaIncluidos` (mira integrada); `tiradaDeReparar`
+    monta la tirada con la casilla +2/+4. Sin migración. `TODO(revisar)`: la app no sabe si la dosis
+    sigue en efecto; la multiherramienta es la VTF; Moribundo con Neuroprótesis 4; Gel Avanzado y
+    Nano-Elixir cuentan como Analgésico.
+  - [ ] **T5c tipo de acción** (eq-35, do-07): falta plantear la forma; no hay selector general de
+    tipo de acción hoy.
 - [ ] **T6 Psiónica y sobreesfuerzo**: ps-01…08, es-01, au-04, au-05, eq-27, td-31.
 - [ ] **T7 Shock (fase 6 de aportes)**: pl-01…04, eq-28, eq-29, fa-03, di-07.
 - [ ] **T8 Recursos**: au-01, au-02, au-03, au-07, au-08, td-12, td-19.

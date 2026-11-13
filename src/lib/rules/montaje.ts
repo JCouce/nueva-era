@@ -36,16 +36,20 @@ import {
   type BonoPorTramo,
   type CondicionTirada,
   type EstadoCondiciones,
+  type NotaMontada,
   type OpcionCondicion,
 } from "./condiciones";
+import type { OrigenAporte } from "./origen";
 import {
   alcanzaA,
   bonoAlcance,
   conPenalizadoresAnulados,
   desgloseAlcance,
   descartadosPorNoApila,
+  penalizadoresAnulados,
   type ContextoAccion,
   type ModificadorConFuente,
+  type RecursoUmbral,
 } from "./modificadores";
 import type { FichaResuelta } from "./fichaResuelta";
 
@@ -112,7 +116,7 @@ export type TiradaMontada = {
   desglose: LineaDesglose[];
   // Un éxito es crítico con margen ≥ criticoExito; un fracaso, con margen ≤ −criticoFallo.
   margenes: { criticoExito: number; criticoFallo: number };
-  notas: { etiqueta: string; nota: string }[];
+  notas: NotaMontada[];
   modoElegido: string | null;
   // Lo que hacen las casillas marcadas además de sumar (D2d, condiciones.ts), cada cosa con
   // la etiqueta de la casilla que la trae como fuente:
@@ -195,9 +199,12 @@ function conFalloCritico(margenes: TiradaMontada["margenes"], fuente: string | n
 // No apilamiento (A2a, `noApila`): de lo que entra en la tirada con el mismo grupo (bonos con
 // alcance, casillas marcadas y bonos por tramo en el tramo elegido) solo vale el mayor. Los
 // demás se quedan en el desglose a 0, diciendo con cuál no se suman: nada desaparece.
+// `incluidos` (Accion.yaIncluidos, td-06): lo del grupo que ya va en los números de la tirada
+// (la mira de serie del fusil de precisión). No suma; el mayor del grupo aporta solo lo que lo
+// supera, y lo dice en su etiqueta.
 type Entradas = { mods: ModificadorConFuente[]; condiciones: CondicionTirada[]; bonosTramo: BonoPorTramo[] };
 
-function sinApilar(e: Entradas, ctx: ContextoAccion, estado: EstadoCondiciones): Entradas {
+function sinApilar(e: Entradas, ctx: ContextoAccion, estado: EstadoCondiciones, incluidos: readonly BonoPorTramo[] = []): Entradas {
   type Aporte = { grupo: string | undefined; valor: number; fuente: string; ref: unknown };
   const aportes: Aporte[] = [
     ...e.mods.flatMap((m): Aporte[] =>
@@ -213,17 +220,71 @@ function sinApilar(e: Entradas, ctx: ContextoAccion, estado: EstadoCondiciones):
     ),
   ];
   const fuera = descartadosPorNoApila(aportes, (a) => a.grupo, (a) => a.valor);
-  if (fuera.size === 0) return e;
-  const porRef = new Map([...fuera].map(([a, gana]) => [a.ref, `no se suma con ${gana.fuente}`]));
+  // Lo ya incluido de cada grupo (el mayor, si hay varios) en lo elegido ahora.
+  const yaVa = new Map<string, { valor: number; fuente: string }>();
+  for (const b of incluidos) {
+    const v = valorBonoTramo(b, estado);
+    if (b.noApila && v > 0 && v > (yaVa.get(b.noApila)?.valor ?? 0)) yaVa.set(b.noApila, { valor: v, fuente: b.fuente });
+  }
+  const porRef = new Map<unknown, { valor: number; nota: string }>(
+    [...fuera].map(([a, gana]) => [a.ref, { valor: 0, nota: `no se suma con ${gana.fuente}` }]),
+  );
+  for (const a of aportes) {
+    const inc = a.grupo ? yaVa.get(a.grupo) : undefined;
+    if (!inc || a.valor <= 0 || fuera.has(a)) continue;
+    const queda = Math.max(0, a.valor - inc.valor);
+    porRef.set(a.ref, { valor: queda, nota: queda > 0 ? `solo lo que supera a ${inc.fuente}` : `no supera a ${inc.fuente}` });
+  }
+  if (porRef.size === 0) return e;
   return {
-    mods: e.mods.map((m) => (porRef.has(m) ? { ...m, valor: 0, fuente: `${m.fuente} (${porRef.get(m)})` } : m)),
-    condiciones: e.condiciones.map((c) =>
-      c.tipo === "toggle" && porRef.has(c) ? { ...c, valorActivo: 0, etiqueta: `${c.etiqueta} (${porRef.get(c)})` } : c,
-    ),
-    bonosTramo: e.bonosTramo.map((b) =>
-      porRef.has(b) ? { ...b, porTramo: { [String(estado[b.condicion ?? "tramo"])]: 0 }, fuente: `${b.fuente} (${porRef.get(b)})` } : b,
-    ),
+    mods: e.mods.map((m) => {
+      const r = m.tipo === "tirada" ? porRef.get(m) : undefined;
+      return m.tipo === "tirada" && r ? { ...m, valor: r.valor, fuente: `${m.fuente} (${r.nota})` } : m;
+    }),
+    condiciones: e.condiciones.map((c) => {
+      const r = c.tipo === "toggle" ? porRef.get(c) : undefined;
+      return c.tipo === "toggle" && r ? { ...c, valorActivo: r.valor, etiqueta: `${c.etiqueta} (${r.nota})` } : c;
+    }),
+    bonosTramo: e.bonosTramo.map((b) => {
+      const r = porRef.get(b);
+      return r ? { ...b, porTramo: { [String(estado[b.condicion ?? "tramo"])]: r.valor }, fuente: `${b.fuente} (${r.nota})` } : b;
+    }),
   };
+}
+
+// Casillas que reducen el penalizador por heridas o fatiga solo en esta tirada (fármacos, fa-01):
+// su `valorActivo` pasa a ser lo que compensan de verdad, sin pasar de 0 lo que le queda al umbral
+// en esta tirada (tras especie, aumentos y compensaciones; con Proyección, nada). Entre ellas, por
+// recurso, solo vale la mayor (fa-02); la que se queda sin nada lo dice en su etiqueta.
+const RECURSOS_UMBRAL: readonly RecursoUmbral[] = ["salud", "fatiga"];
+
+function conReduccionesDeUmbral(
+  condiciones: CondicionTirada[],
+  estado: EstadoCondiciones,
+  mods: ModificadorConFuente[],
+  ctx: ContextoAccion,
+): CondicionTirada[] {
+  const reductoras = condiciones.filter((c): c is Toggle => c.tipo === "toggle" && c.reduceUmbral !== undefined);
+  if (reductoras.length === 0) return condiciones;
+  const anulados = penalizadoresAnulados(mods, ctx);
+  const compensa = new Map<Toggle, number>();
+  const pierdeCon = new Map<Toggle, string>();
+  for (const recurso of RECURSOS_UMBRAL) {
+    const cuanto = (c: Toggle) => c.reduceUmbral?.[recurso] ?? 0;
+    const marcadas = reductoras.filter((c) => Boolean(estado[c.id]) && cuanto(c) > 0);
+    if (marcadas.length === 0) continue;
+    const neto = anulados
+      ? 0
+      : mods.reduce((t, m) => (m.tipo === "tirada" && m.umbral === recurso && alcanzaA(m.alcance, ctx) ? t + m.valor : t), 0);
+    const gana = marcadas.reduce((mejor, c) => (cuanto(c) > cuanto(mejor) ? c : mejor));
+    compensa.set(gana, (compensa.get(gana) ?? 0) + Math.max(0, Math.min(cuanto(gana), -neto)));
+    for (const c of marcadas) if (c !== gana) pierdeCon.set(c, gana.etiqueta);
+  }
+  return condiciones.map((c) => {
+    if (c.tipo !== "toggle" || !c.reduceUmbral) return c;
+    const gana = !compensa.has(c) ? pierdeCon.get(c) : undefined;
+    return { ...c, valorActivo: compensa.get(c) ?? 0, ...(gana && { etiqueta: `${c.etiqueta} (no se suma con ${gana})` }) };
+  });
 }
 
 // Las casillas con alcance "aplicado" (A2b de aumentos) se recogen antes de abrir la tirada
@@ -286,6 +347,16 @@ function ajusteDanioDeExtremidad(
   return delBrazo === tuya ? [] : [{ valor: delBrazo - tuya, fuente: `${e.fuente}: ${nombre} ${delBrazo} (tuya ${tuya})` }];
 }
 
+// «Disparo poderoso» (Arquero Poderoso, do-03): en un arma que suma media Fuerza al daño (el
+// Arco, «1/2 Fue + 8»), la casilla la suma entera: lo que falta hasta la Fuerza, con su fuente.
+function ajusteDanioFuerzaEntera(sheet: Sheet, mods: ModificadorConFuente[], tirada: Accion, activas: Toggle[]): AjusteDanio["ajustes"] {
+  const casilla = tirada.mediaFuerza ? activas.find((c) => c.danio?.fuerzaEntera) : undefined;
+  if (!casilla) return [];
+  const fuerza = atributoEfectivo(sheet, "fuerza", mods);
+  const falta = fuerza - Math.floor(fuerza / 2);
+  return falta === 0 ? [] : [{ valor: falta, fuente: `${casilla.etiqueta}: Fuerza entera (${fuerza})` }];
+}
+
 const conAjustesDanio = (a: AjusteDanio, extra: AjusteDanio["ajustes"]): AjusteDanio =>
   extra.length > 0 ? { ...a, ajustes: [...a.ajustes, ...extra] } : a;
 
@@ -339,6 +410,8 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     ...(tirada.empleoArma && { empleoArma: tirada.empleoArma }),
     ...(tirada.desarmado && { desarmado: true }),
     ...(tirada.contundente && { contundente: true }),
+    ...(tirada.mediaFuerza && { mediaFuerza: true }),
+    ...(tirada.sinPenalizadorDesarmado && { sinPenalizadorDesarmado: true }),
     ...(tirada.especialidadArma && { especialidadArma: tirada.especialidadArma }),
     especialidades: especialidadesDeTirada(tirada),
   };
@@ -352,8 +425,10 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     },
     ctx,
     estado,
+    tirada.yaIncluidos,
   );
-  const { condiciones, bonosTramo } = sinApilados;
+  const { bonosTramo } = sinApilados;
+  const condiciones = conReduccionesDeUmbral(sinApilados.condiciones, estado, sinApilados.mods, ctx);
   // Proyección activa (A5a): sus penalizadores, a 0 en las tiradas de Actitud.
   const mods = conPenalizadoresAnulados(sinApilados.mods, ctx);
 
@@ -402,19 +477,19 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     // El crítico fijo (Crítico Mejorado) va primero, con su línea, en las notas del resultado.
     notas: [
       ...(tirada.criticoFijo
-        ? [{ etiqueta: tirada.criticoFijo.fuente, nota: notaCriticoFijo(tirada.criticoFijo.margen) }]
+        ? [resolucion(tirada.criticoFijo.fuente, notaCriticoFijo(tirada.criticoFijo.margen), tirada.criticoFijo.origen)]
         : []),
-      ...(falloCritico ? [{ etiqueta: falloCritico, nota: "Cualquier fallo es fallo crítico." }] : []),
-      ...(tirada.subeGradoFijo ? [{ etiqueta: tirada.subeGradoFijo, nota: "Un fracaso (no el crítico) cuenta como éxito." }] : []),
+      ...(falloCritico ? [resolucion(falloCritico, "Cualquier fallo es fallo crítico.", tirada.falloCritico?.origen)] : []),
+      ...(tirada.subeGradoFijo ? [resolucion(tirada.subeGradoFijo, "Un fracaso (no el crítico) cuenta como éxito.", tirada.origenSubeGrado)] : []),
       ...notasCondiciones(condiciones, estado),
     ],
     modoElegido: modo,
     ventaja: tirada.ventaja ?? activas.find((c) => c.ventaja)?.etiqueta ?? ventajaDeOpcion(elegidas),
     subeGrado: activas.find((c) => c.subeGrado)?.etiqueta ?? tirada.subeGradoFijo ?? null,
-    danio: conAjustesDanio(
-      conDanioFijo(danioDeCasillas(activas), tirada.ataque?.sinBonoExitos),
-      ajusteDanioDeExtremidad(ficha.ficha, mods, modsAplicado, extremidad, sutil && tirada.aplicadoSutil !== undefined),
-    ),
+    danio: conAjustesDanio(conDanioFijo(danioDeCasillas(activas), tirada.ataque?.sinBonoExitos), [
+      ...ajusteDanioDeExtremidad(ficha.ficha, mods, modsAplicado, extremidad, sutil && tirada.aplicadoSutil !== undefined),
+      ...ajusteDanioFuerzaEntera(ficha.ficha, mods, tirada, activas),
+    ]),
     ...fatiga,
     casillasSinEfecto: porAplicado.sinEfecto,
     usosEscena: usosGastados(activas, fatiga, tirada.grupo === "Psiónica"),
@@ -443,6 +518,13 @@ function fatigaDeCasillas(
   const ahorro = activas.reduce((t, c) => t + (c.ahorroFatiga ?? 0), 0);
   return { costeFatiga: Math.max(0, bruto - ahorro), ahorroSinUsar: Math.max(0, ahorro - bruto) };
 }
+
+const resolucion = (etiqueta: string, nota: string, origen: OrigenAporte | undefined): NotaMontada => ({
+  etiqueta,
+  nota,
+  ...(origen && { origen }),
+  momento: "despues",
+});
 
 const notaCriticoFijo = (margen: number) =>
   margen === 0 ? "Cualquier éxito es crítico." : `Crítico con ${margen} éxitos en vez de ${MARGEN_CRITICO}.`;

@@ -296,7 +296,8 @@ describe("A4b: Barrido electromagnético", () => {
     assert.equal(buscar.habilidad, "exploracion");
     assert.equal(buscar.dificultadSugerida, undefined);
     assert.equal(buscar.costeFatiga, undefined);
-    assert.match(buscar.nota!, /^Dificultad: la pone el máster\./);
+    // td-05: simple o reacción, como Buscar / percibir.
+    assert.match(buscar.nota!, /^Acción simple o reacción\. Dificultad: la pone el máster\./);
     assert.match(buscar.nota!, /\(Introgresión Sensorial Heteróloga \(Percepción Electromagnética\)\)$/);
   });
 

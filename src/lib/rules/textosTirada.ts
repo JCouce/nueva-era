@@ -1,5 +1,5 @@
 // Textos sin mecanizar que cuelgan de una tirada (especie §14.10, dotes §9.3): cuáles le tocan a
-// una tirada y cómo se pegan a ella. Lo comparten conExtrasDeFicha / conExtrasDirectaDeFicha
+// una tirada y cómo se cuelgan de ella. Lo comparten conExtrasDeFicha / conExtrasDirectaDeFicha
 // (fichaResuelta.ts) y prepararPoder (usoPoder.ts, D2c-2), para que un texto salga igual en una
 // tirada fija, en una de arma o en la de un poder.
 import { especialidadesDeTirada, type Accion } from "./acciones";
@@ -7,6 +7,7 @@ import type { TextoEnTirada } from "./especie";
 import type { AplicadoId } from "./atributos";
 import { alcanzaA, alcanzaAlgunAplicado, type ContextoAccion } from "./modificadores";
 import type { EfectoEnTirada } from "./efectosArma";
+import { sinFuenteRepetida } from "./textosDeTirada";
 
 // Un efecto sobre el objetivo que la ficha cuelga de una tirada (dotes, T3b), con el mismo
 // destino que un texto: va a `efectosObjetivoDeFicha` de las tiradas que casen.
@@ -29,7 +30,12 @@ export function aplicadosPosibles(t: Partial<Pick<Accion, "aplicado" | "aplicado
 // de Convencer (`especialidadAElegir`); lo de verdad lo pone montarTirada.
 export const contextoDe = (
   t: Pick<Accion, "id" | "grupo" | "familiaArma" | "empleoArma" | "desarmado" | "contundente" | "especialidadArma"> &
-    Partial<Pick<Accion, "aplicado" | "aplicadoSutil" | "condiciones" | "especialidadesAccion" | "especialidadAElegir">> & {
+    Partial<
+      Pick<
+        Accion,
+        "aplicado" | "aplicadoSutil" | "condiciones" | "especialidadesAccion" | "especialidadAElegir" | "mediaFuerza" | "sinPenalizadorDesarmado"
+      >
+    > & {
       habilidad: Accion["habilidad"];
     },
 ): ContextoAccion => ({
@@ -42,6 +48,8 @@ export const contextoDe = (
   ...(t.empleoArma && { empleoArma: t.empleoArma }),
   ...(t.desarmado && { desarmado: true }),
   ...(t.contundente && { contundente: true }),
+  ...(t.mediaFuerza && { mediaFuerza: true }),
+  ...(t.sinPenalizadorDesarmado && { sinPenalizadorDesarmado: true }),
   ...(t.especialidadArma && { especialidadArma: t.especialidadArma }),
   especialidades: especialidadesDeTirada(t, true),
 });
@@ -57,13 +65,6 @@ export function textosDe<T extends Pick<TextoEnTirada, "en">>(textos: T[], ctx: 
   });
 }
 
-// Si el texto ya empieza por su fuente ("Onda Residual: …", también tras la condición:
-// "Cuando X: Impacto Métrico Relámpago: …"), se quita: la fuente va al final. A mitad de
-// frase se respeta ("has usado Combinación: −1…").
-const escapa = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const sinFuenteRepetida = (texto: string, fuente: string) =>
-  texto.replace(new RegExp(`(^|: )${escapa(fuente)}: `), "$1");
-
 const conFuente = (textos: TextoEnTirada[], critico: boolean, natural = false) =>
   textos
     .filter((x) => x.soloEnCritico === critico && (x.soloEnCriticoNatural ?? false) === natural)
@@ -71,25 +72,14 @@ const conFuente = (textos: TextoEnTirada[], critico: boolean, natural = false) =
 
 export const junta = (actual: string | undefined, nuevas: string[]) => [actual, ...nuevas].filter(Boolean).join(" · ");
 
-// Los de crítico al texto de crítico (los de crítico natural, al suyo); el resto, a la nota. Sin
+// Los textos de ítem que tocan a una tirada con dado van a `textosDeFicha`, con su origen y su
+// grado; cuándo se enseña cada uno lo decide textosDeTirada (textosDeTirada.ts, fase 4). Sin
 // textos, la misma tirada.
-export function conTextosEnTirada<T extends Pick<Accion, "nota" | "efectoCritico"> & Partial<Pick<Accion, "efectoCriticoNatural">>>(
-  t: T,
-  textos: TextoEnTirada[],
-): T {
-  const enNota = conFuente(textos, false);
-  const enCritico = conFuente(textos, true);
-  const enNatural = conFuente(textos, true, true);
-  if (enNota.length === 0 && enCritico.length === 0 && enNatural.length === 0) return t;
-  return {
-    ...t,
-    ...(enNota.length > 0 && { nota: junta(t.nota, enNota) }),
-    ...(enCritico.length > 0 && { efectoCritico: junta(t.efectoCritico, enCritico) }),
-    ...(enNatural.length > 0 && { efectoCriticoNatural: junta(t.efectoCriticoNatural, enNatural) }),
-  };
+export function conTextosDeFicha<T extends Partial<Pick<Accion, "textosDeFicha">>>(t: T, textos: TextoEnTirada[]): T {
+  return textos.length === 0 ? t : { ...t, textosDeFicha: [...(t.textosDeFicha ?? []), ...textos] };
 }
 
-// Sin dado no hay crítico: todos, como líneas de nota (los normales primero).
+// Sin dado no hay resultado: todos, como líneas de nota (los normales primero).
 export const textosSinDado = (textos: TextoEnTirada[]): string[] => [
   ...conFuente(textos, false),
   ...conFuente(textos, true),

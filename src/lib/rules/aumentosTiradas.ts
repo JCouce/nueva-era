@@ -116,6 +116,10 @@ export type EfectosTiradaAumento = {
   blindajeReactivo?: BlindajeReactivo;
 };
 
+// Texto de un nivel de implante (au-06: lo que deja percibir el Ojo Biónico). Como las casillas,
+// los niveles se acumulan por `id` y el alto sustituye al bajo (rayos X a 10 m → a 50 m).
+export type TextoDeNivel = { id: string; en: DestinoTexto; texto: string };
+
 // +1 de blindaje contra unos tipos (R6: Cinético), con a qué golpes vale.
 export type ArmaduraNaturalAumento = { valor: number; tipos: TipoDanio[]; nota: string };
 
@@ -146,6 +150,7 @@ function deImplante(imp: Implante, nivel: number, origen: OrigenAporte): Aporte 
     efectos: {
       casillas: acumulaPorClave(niveles.map((n) => n.condiciones ?? []), (c) => c.id),
       salvaciones: acumulaPorClave(niveles.map((n) => n.salvaciones ?? []), (e) => e.contra.join("+")),
+      textos: acumulaPorClave(niveles.map((n) => n.textos ?? []), (t) => t.id),
       blindajeReactivo: [...niveles].reverse().find((n) => n.blindajeReactivo)?.blindajeReactivo,
     },
   };

@@ -18,6 +18,7 @@ import { DOTES } from "../catalog/dotes";
 import { especialidadesDe, type EspecialidadId } from "../catalog/especialidades";
 import type { DoteComprada } from "./dotesCompradas";
 import { SELECTORES_DE_TIRADA } from "../catalog/dotesDestinos";
+import { lineaAntes, lineaDeGrado } from "./textosDeTirada";
 
 // Atributos a 4 y habilidades a 5, con las especialidades que piden los requisitos de dote
 // (Carrera, Manipulación, Táctica, Empatía…), menos las de `sin`.
@@ -136,19 +137,19 @@ describe("Gran Puntería y las Puntería Relámpago en Apuntar", () => {
     assert.deepEqual([exito.critico, exito.criticoNatural], [true, undefined]);
     const natural = tirarCon(m, 6);
     assert.deepEqual([natural.critico, natural.criticoNatural], [true, true]);
-    assert.match(t.efectoCriticoNatural!, /baja 2 niveles.*\(Gran Puntería\)/);
-    assert.equal(t.efectoCritico, undefined);
+    assert.match(lineaDeGrado(t, "criticoNatural"), /baja 2 niveles.*\(Gran Puntería\)/);
+    assert.equal(lineaDeGrado(t, "critico"), "");
   });
 
   test("Puntería Relámpago: nota de reacción", () => {
-    assert.match(t.nota!, /como reacción durante el turno\. \(Puntería Relámpago\)/);
+    assert.match(lineaAntes(t), /como reacción durante el turno\. \(Puntería Relámpago\)/);
   });
 
   test("Puntería Relámpago Mejorada: sus dos textos en la nota", () => {
     const g = resolver(
       ficha([{ id: "dote_gran_punteria" }, { id: "dote_punteria_relampago" }, { id: "dote_punteria_relampago_mejorada" }]),
     );
-    const nota = fija(g, "apuntar").nota!;
+    const nota = lineaAntes(fija(g, "apuntar"));
     assert.match(nota, /acción gratuita por turno/);
     assert.match(nota, /Sigues pudiendo apuntar como reacción/);
   });
@@ -157,7 +158,7 @@ describe("Gran Puntería y las Puntería Relámpago en Apuntar", () => {
     const g = resolver(ficha([]));
     const s = fija(g, "apuntar");
     assert.equal(montar(g, s).margenes.criticoExito, 6);
-    assert.equal(s.efectoCriticoNatural, undefined);
+    assert.equal(lineaDeGrado(s, "criticoNatural"), "");
   });
 });
 
@@ -181,7 +182,7 @@ describe("Selector «Apuntado» en los ataques a distancia", () => {
     assert.equal(montar(f, t, { apuntado: "exito" }).modificador - base, 1);
     const critico = montar(f, t, { apuntado: "critico" });
     assert.equal(critico.modificador - base, 1);
-    assert.deepEqual(critico.notas, [{ etiqueta: "Apuntado", nota: "Omites 1 nivel de cobertura del objetivo." }]);
+    assert.deepEqual(critico.notas, [{ etiqueta: "Apuntado", nota: "Omites 1 nivel de cobertura del objetivo.", momento: "antes" }]);
     assert.deepEqual(montar(f, t, { apuntado: "exito" }).notas, []);
   });
 
@@ -395,7 +396,7 @@ describe("Rastreo: selector «Marcha» y sus dotes", () => {
     assert.equal(c.resumen, "cambia «Marcha»");
     assert.deepEqual(penalizadores(f), { normal_mitad: 0, normal_total: -3, adversa_tercio: 0, adversa_mitad: -3, adversa_total: -6 });
     assert.deepEqual(penalizadores(f, { [c.id]: true }), { normal_mitad: 0, normal_total: -3, adversa_tercio: 0, adversa_mitad: 0, adversa_total: -3 });
-    assert.match(t.nota!, /En tu bioma predilecto: Lo adverso cuenta como normal/);
+    assert.match(lineaAntes(t), /En tu bioma predilecto: Lo adverso cuenta como normal/);
   });
 
   // S97: el bioma pasa lo adverso a normal y Rastreo al Paso quita 3 encima (adversa total → 0);
@@ -412,7 +413,7 @@ describe("Rastreo: selector «Marcha» y sus dotes", () => {
   test("rastro térmico: nota en Rastreo con Visión Térmica, aunque no haya Supervivencia", () => {
     const f = resolver(conAumento(conExploracion([]), "aum_introgresion_sensorial_heterologa", "vision_termica"));
     assert.ok(tiradaFijaVisible(f, fija(f, "rastreo")));
-    assert.match(fija(f, "rastreo").nota!, /Visión Térmica: ves el rastro de calor reciente/);
+    assert.match(lineaAntes(fija(f, "rastreo")), /Visión Térmica: ves el rastro de calor reciente/);
   });
 
   test("oído biónico: ventaja al rastrear por el sonido; en Buscar, solo detectar ocultos", () => {
@@ -436,11 +437,11 @@ describe("Subsistencia e Investigación: lo que antes colgaba de Buscar / percib
   test("Descartar Teoría: texto en la nota de Investigación y su casilla −2; nada en Buscar", () => {
     const f = resolver(conExploracion(["investigacion"], [{ id: "dote_descartar_teoria" }]));
     const t = fija(f, "investigacion");
-    assert.match(t.nota!, /repetir la prueba con −2.*\(Descartar Teoría\)/);
+    assert.match(lineaAntes(t), /repetir la prueba con −2.*\(Descartar Teoría\)/);
     const c = casillaToggle(t, /Descartar Teoría/)!;
     assert.equal(montar(f, t, { [c.id]: true }).modificador - montar(f, t).modificador, -2);
     const buscar = fija(f, "alerta_activa");
-    assert.doesNotMatch(buscar.nota ?? "", /Descartar Teoría/);
+    assert.doesNotMatch(lineaAntes(buscar), /Descartar Teoría/);
     assert.equal(casillaToggle(buscar, /Descartar Teoría/), undefined);
   });
 

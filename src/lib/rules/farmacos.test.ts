@@ -7,12 +7,14 @@ import {
   ID_CASILLA_ANTIPATOGENO,
   ID_CASILLA_ULTRA_FISICAS,
   ID_CASILLA_ULTRA_INICIATIVA,
+  PREFIJO_CASILLA_UMBRAL,
 } from "./farmacos";
 import { ACCIONES, type Accion } from "./acciones";
 import { dificultadTrasCambio, estadoInicial } from "./condiciones";
 import { equipar } from "./equipo";
-import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
-import { montarTirada, SIN_ELECCION } from "./montaje";
+import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta, type VitalidadActual } from "./fichaResuelta";
+import { montarTirada, SIN_ELECCION, type TiradaMontada } from "./montaje";
+import type { EstadoActivo } from "./estados";
 
 function conFarmaco(catalogoId: string, cantidad: number): Sheet {
   return { ...defaultSheet(), farmacos: { [catalogoId]: cantidad } };
@@ -224,5 +226,80 @@ describe("casilla «Bajo Ultra Estimulante»", () => {
     const estado = { ...estadoInicial(cs), [ID_CASILLA_ULTRA_FISICAS]: true, [ID_CASILLA_ULTRA_INICIATIVA]: true };
     const sin = montarTirada(f, conExtras, { ...SIN_ELECCION, estadoCondiciones: estadoInicial(cs) }).total;
     assert.equal(montarTirada(f, conExtras, { ...SIN_ELECCION, estadoCondiciones: estado }).total - sin, 2);
+  });
+});
+
+// fa-01 / fa-02 (usuario, 2026-11-13): Analgésico, Calmante y Gel Sanador −1 al penalizador por
+// heridas; el Ultra, por heridas y fatiga. Casilla solo herido y con la dosis, solo esa tirada;
+// entre fármacos vale el mayor; se suma a especie y aumentos.
+describe("fármacos contra el penalizador por heridas y fatiga", () => {
+  // Malherido (4/20, −3) y Fatigado (4/20, −1).
+  const HERIDO_Y_FATIGADO: VitalidadActual = { origen: "combate", pgActual: 4, pgMax: 20, fatigaActual: 4, fatigaMax: 20 };
+  const SOLO_FATIGADO: VitalidadActual = { origen: "combate", pgActual: 20, pgMax: 20, fatigaActual: 4, fatigaMax: 20 };
+  const casilla = (id: string) => `${PREFIJO_CASILLA_UMBRAL}${id}`;
+  const conDosis = (...ids: string[]): Sheet => ({ ...defaultSheet(), farmacos: Object.fromEntries(ids.map((i) => [i, 1])) });
+  const atletismo = (f: FichaResuelta) => conExtrasDeFicha(f, ACCIONES.find((a) => a.id === "atletismo")!);
+  const montar = (f: FichaResuelta, marcadas: string[]) => {
+    const t = atletismo(f);
+    const estado = { ...estadoInicial(t.condiciones ?? []), ...Object.fromEntries(marcadas.map((m) => [m, true])) };
+    return montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: estado });
+  };
+  const umbral = (m: TiradaMontada) =>
+    m.desglose.filter((l) => /^(Malherido|Fatigado)|contra el penalizador/.test(l.etiqueta)).reduce((t, l) => t + l.valor, 0);
+  const resolver = (s: Sheet, vitalidad: VitalidadActual, estados: EstadoActivo[] = []) => resolverFicha(s, { estados, vitalidad });
+  const deFarmaco = (f: FichaResuelta) => (atletismo(f).condiciones ?? []).map((c) => c.id).filter((i) => i.startsWith(PREFIJO_CASILLA_UMBRAL));
+
+  test("sin herida, o sin la dosis, no sale", () => {
+    assert.deepEqual(deFarmaco(resolver(conDosis("farmaco_analgesico"), VITALIDAD_DE_FICHA)), []);
+    assert.deepEqual(deFarmaco(resolver(defaultSheet(), HERIDO_Y_FATIGADO)), []);
+    // El Analgésico es de heridas: solo con fatiga no sale; el Ultra sí.
+    const fatigado = resolver(conDosis("farmaco_analgesico", "farmaco_ultra_estimulante"), SOLO_FATIGADO);
+    assert.deepEqual(deFarmaco(fatigado), [casilla("farmaco_ultra_estimulante")]);
+  });
+
+  test("Analgésico marcado: Malherido −3 → −2, solo en esa tirada y sin gastar nada", () => {
+    const f = resolver(conDosis("farmaco_analgesico"), HERIDO_Y_FATIGADO);
+    assert.equal(umbral(montar(f, [])), -4);
+    const m = montar(f, [casilla("farmaco_analgesico")]);
+    assert.equal(umbral(m), -3);
+    assert.deepEqual(
+      m.desglose.filter((l) => /contra el penalizador/.test(l.etiqueta)),
+      [{ etiqueta: "Analgésico contra el penalizador por heridas", valor: 1 }],
+    );
+    assert.equal(m.costeFatiga, 0);
+  });
+
+  test("Ultra: 1 menos de heridas y 1 de fatiga (Fatigado −1 → 0)", () => {
+    const f = resolver(conDosis("farmaco_ultra_estimulante"), HERIDO_Y_FATIGADO);
+    assert.equal(umbral(montar(f, [casilla("farmaco_ultra_estimulante")])), -2);
+  });
+
+  test("fa-02: entre fármacos solo vale el mayor; el que no suma lo dice", () => {
+    const f = resolver(conDosis("farmaco_analgesico", "farmaco_gel_sanador", "farmaco_ultra_estimulante"), HERIDO_Y_FATIGADO);
+    const dos = montar(f, [casilla("farmaco_analgesico"), casilla("farmaco_gel_sanador")]);
+    assert.equal(umbral(dos), -3);
+    assert.ok(dos.desglose.some((l) => /^Gel Sanador .*no se suma con Analgésico/.test(l.etiqueta) && l.valor === 0));
+    // Con el Ultra, las heridas siguen con 1 menos y la fatiga baja aparte.
+    assert.equal(umbral(montar(f, [casilla("farmaco_analgesico"), casilla("farmaco_ultra_estimulante")])), -2);
+  });
+
+  test("se suma a los aumentos y no pasa de 0", () => {
+    const neuro: Sheet = {
+      ...conDosis("farmaco_analgesico", "farmaco_ultra_estimulante"),
+      equipo: [{ instanciaId: "n1", catalogoId: "aum_neuroprotesis_simpatica", nivel: 1 }],
+    };
+    const activa: EstadoActivo = { estadoId: "aum_neuroprotesis", gradoId: "activo", rondasRestantes: 3 };
+    const f = resolver(neuro, HERIDO_Y_FATIGADO, [activa]);
+    // Malherido −3 + 1 (Neuroprótesis) + 1 (Analgésico) = −1.
+    const m = montar(f, [casilla("farmaco_analgesico")]);
+    assert.equal(m.desglose.filter((l) => /^Malherido|^Analgésico/.test(l.etiqueta)).reduce((t, l) => t + l.valor, 0), -1);
+    // Fatigado −1 + 1 ya es 0: el Ultra solo compensa el de heridas.
+    const ultra = montar(f, [casilla("farmaco_ultra_estimulante")]);
+    assert.equal(ultra.desglose.find((l) => /^Ultra Estimulante contra/.test(l.etiqueta))?.valor, 1);
+  });
+
+  test("Calmante y los Geles Avanzado y Nano-Elixir también; los demás fármacos, no", () => {
+    const f = resolver(conDosis("farmaco_calmante", "farmaco_gel_sanador_avanzado", "farmaco_nano_elixir", "farmaco_hemostaticos"), HERIDO_Y_FATIGADO);
+    assert.deepEqual(deFarmaco(f).sort(), [casilla("farmaco_calmante"), casilla("farmaco_gel_sanador_avanzado"), casilla("farmaco_nano_elixir")].sort());
   });
 });

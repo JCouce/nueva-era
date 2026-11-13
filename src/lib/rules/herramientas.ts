@@ -8,10 +8,12 @@
 // catálogo, no por familia entera. La Valija Táctica de Fabricación no
 // genera tirada propia: su uso real es la acción sin dado "Reparar y
 // Fabricar" (ReparaFabricaModal.tsx, docs/tareas.md tarea 8), no una tirada.
-import { equipoPorId, type Equipo, type Herramienta } from "../catalog/equipo";
-import { acumulaPorClave, nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
+import { equipoPorId, RAREZA_ORDEN, type Equipo, type Herramienta, type Rareza } from "../catalog/equipo";
+import { acumulaPorClave, dificultadFabricacion, nivelesHasta, nivelVtf, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
 import type { Accion, AccionDirecta } from "./acciones";
+import type { CondicionTirada } from "./condiciones";
+import type { MaterialTier } from "./recursos";
 import { origenDePieza } from "./origen";
 
 // Qué acción describe cada una, para el label de la fila ("Escanear con
@@ -107,4 +109,55 @@ export function accionesDirectasDeHerramientas(sheet: Sheet): AccionDirecta[] {
     if (accion) acciones.push({ ...accion, origen: origenDePieza("equipo", cat, pieza.instanciaId) });
   }
   return acciones;
+}
+
+// Reparar (Reparar y Fabricar; docs/fuente/equipamiento.md, VTF, «Reparaciones»): Perspicacia + la
+// habilidad técnica aplicable, con la dificultad de fabricar −4 (VTF 2+: Poco Habitual como
+// Común). El material se elige antes de tirar, así que la tirada ya sabe con cuál se repara.
+export const ID_CASILLA_MATERIALES_REPARAR = "reparar_materiales";
+
+// El bono de los Materiales al reparar (di-32, usuario 2026-11-13): «con la valija», +2 con
+// Sofisticados en objetos comunes y poco habituales; «con una multiherramienta», +4 con Avanzados
+// en objetos de hasta rareza extraña. Casilla que solo sale si llevas la valija y el material y
+// la rareza casan. TODO(revisar): la multiherramienta se lee como la propia VTF (su nivel 3 la
+// llama así); no hay otra pieza con ese nombre en el catálogo.
+const BONO_MATERIAL: Partial<Record<MaterialTier, { valor: number; hastaRareza: Rareza; etiqueta: string }>> = {
+  sofisticados: { valor: 2, hastaRareza: "Poco Habitual", etiqueta: "Con la valija y Materiales Sofisticados" },
+  avanzados: { valor: 4, hastaRareza: "Extraño", etiqueta: "Con la multiherramienta y Materiales Avanzados" },
+};
+
+function casillaMaterialReparar(sheet: Sheet, rareza: Rareza, tier: MaterialTier): CondicionTirada | null {
+  const bono = BONO_MATERIAL[tier];
+  const vtf = sheet.equipo.find((p) => p.catalogoId === "valija_tactica_fabricacion");
+  const cat = vtf ? equipoPorId(vtf.catalogoId) : null;
+  if (!bono || !vtf || !cat || RAREZA_ORDEN.indexOf(rareza) > RAREZA_ORDEN.indexOf(bono.hastaRareza)) return null;
+  return {
+    id: ID_CASILLA_MATERIALES_REPARAR,
+    tipo: "toggle",
+    etiqueta: bono.etiqueta,
+    valorActivo: bono.valor,
+    origen: origenDePieza("equipo", cat, vtf.instanciaId),
+  };
+}
+
+export function tiradaDeReparar(
+  sheet: Sheet,
+  pieza: { instanciaId: string; titulo: string; rareza: Rareza | null },
+  tier: MaterialTier,
+): Accion {
+  const rareza = pieza.rareza ?? "Común";
+  const casilla = casillaMaterialReparar(sheet, rareza, tier);
+  return {
+    id: `reparar_${pieza.instanciaId}`,
+    label: `Reparar: ${pieza.titulo}`,
+    grupo: "Acciones",
+    aplicado: "perspicacia",
+    habilidad: "tecnociencia",
+    nota:
+      "Perspicacia + Tecnociencia, o la habilidad técnica aplicable. Dificultad 7 para lo común, " +
+      "+2 por cada rango de rareza superior, -4 por ser reparación. El material se gasta salga " +
+      "lo que salga.",
+    dificultadSugerida: dificultadFabricacion(rareza, nivelVtf(sheet)) - 4,
+    ...(casilla && { condiciones: [casilla] }),
+  };
 }

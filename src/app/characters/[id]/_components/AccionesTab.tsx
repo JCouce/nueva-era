@@ -87,6 +87,7 @@ import {
   salvacionPropiaDe,
   especialidadesDeTirada,
   seTiraSinDificultad,
+  lineaAntes,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { ChipEstado } from "@/components/ChipEstado";
@@ -292,6 +293,7 @@ function FilaTirada({
 
   // La especialidad la decide la tirada (montaje.ts, habilidadEntera): sin selector sí/no.
   const montada = montarTirada(ficha, efectiva, eleccionSinTocar(efectiva, sutilActivo));
+  const notaAntes = lineaAntes(tirada);
   const nombreAplicado = APLICADOS.find((a) => a.id === montada.aplicado.id)!;
   const nombreHabilidad = efectiva.habilidad ? HABILIDADES.find((h) => h.id === efectiva.habilidad)!.label : null;
 
@@ -422,11 +424,7 @@ function FilaTirada({
         </p>
       )}
 
-      {tirada.nota && (
-        <p className="mt-2 font-sans text-prosa-sm text-soft">
-          {tirada.nota}
-        </p>
-      )}
+      {notaAntes && <p className="mt-2 font-sans text-prosa-sm text-soft">{notaAntes}</p>}
     </HudCard>
   );
 }
@@ -1333,12 +1331,9 @@ export function AccionesTab({
           label: tirada.libre ? etiquetaTiradaLibre(montada.aplicado.id, montada.habilidad?.id ?? null) : tirada.label,
           dados,
           danioInfo,
-          efectoCritico: tirada.efectoCritico,
           // Lo que le pasa al objetivo si el golpe acierta (T3a): la app tira la duración de una
           // Hemorragia aquí, al avisar; la salvación la tira el máster por el objetivo.
           efectosObjetivo: efectosSobreObjetivo(tirada, estadoCondiciones, r, tirarDadoDeCaras),
-          efectoCriticoNatural: tirada.efectoCriticoNatural,
-          efectos: tirada.efectos,
           poder: tirada.poder,
           vueloResuelto,
         },
@@ -1954,7 +1949,6 @@ export function AccionesTab({
             // desconocido 12) remonta el modal para que la traiga puesta.
             key={`${modal.tirada.id}:${modal.tirada.dificultadSugerida ?? ""}`}
             titulo={modal.tirada.label}
-            nota={modal.tirada.nota}
             tirada={modal.tirada}
             recursoActual={
               modal.tirada.recursoInstanciaId ? recursoDe(sheet, modal.tirada.recursoInstanciaId) : undefined

@@ -1,13 +1,14 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
-import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import { accionesDeAtaque } from "./combate";
 import { montarTirada, eleccionSinTocar, type EleccionTirada } from "./montaje";
 import { resolverDanio, type Accion } from "./acciones";
 import { brazoBionico, ID_BLOQUEAR_BRAZO, ID_CASILLA_BRAZO } from "./brazoBionico";
 import { casillaBlindajeBrazo, desgloseBlindaje, SIN_ARMADURA_NATURAL } from "./blindaje";
 import type { EstadoActivo } from "./estados";
+import { lineaAntes, lineaDeGrado } from "./textosDeTirada";
 import { armaIncorporadaEntradaSchema, armasIncorporables, desequipar, fijarArmaIncorporada } from "./equipo";
 import { parseSheet } from "./sheet";
 
@@ -258,6 +259,21 @@ describe("Brazo Biónico: «Bloquear con el brazo biónico»", () => {
     const m = montarTirada(resolver(s), t, eleccionSinTocar(t));
     assert.equal(m.aplicado.valor, 3); // ⌊(5+1)/2⌋; la tuya, 1
     assert.equal(m.desglose[0].etiqueta, "Potencia · Brazo Biónico 4 (Modelo Fuerte): Fuerza 5 (tuya 1), Agilidad 1 (tuya 1)");
+  });
+
+  // td-08 (usuario, 2026-11-13): cuenta como desarmado, pero su golpe es letal, así que no lleva
+  // el −3 de Bloqueo («no se considera desarmado»).
+  test("td-08: cuenta como desarmado (le llega lo de desarmado) y sin la casilla del −3", () => {
+    const s = conDotes(conBrazo({ ...ficha(), especieId: "arkoru" }, 2), "dote_bloqueo");
+    const f = resolver(s);
+    const t = conExtrasDeFicha(f, bloqueo(s)!);
+    assert.equal(t.desarmado, true);
+    assert.equal(t.sinPenalizadorDesarmado, "Brazo Biónico 2");
+    assert.ok(!(t.condiciones ?? []).some((c) => c.id.startsWith("dote_bloqueo")), "sin «Desarmado frente a atacante armado»");
+    assert.doesNotMatch(lineaAntes(t), /Desarmado frente a atacante armado/);
+    // El crítico desarmado letal del Arköru (texto con destino «desarmado») le llega.
+    assert.match(lineaDeGrado(t, "critico"), /Daño letal/);
+    assert.match(lineaAntes(t), /Cuenta como desarmado, sin el −3 de bloquear desarmado \(Brazo Biónico 2\)/);
   });
 });
 

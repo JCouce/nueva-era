@@ -9,6 +9,7 @@ const ETIQUETA: Record<EtiquetaRasgo, { texto: string; clase: string }> = {
   creacion: { texto: "Creación", clase: "border-accent text-accent" },
   siempre: { texto: "Siempre", clase: "border-info text-info" },
   tirada: { texto: "Tirada", clase: "border-neon-magenta text-neon-magenta" },
+  accion: { texto: "Acción", clase: "border-neon-green text-neon-green" },
   texto: { texto: "Texto", clase: "border-border text-muted" },
 };
 
