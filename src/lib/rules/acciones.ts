@@ -27,6 +27,7 @@ import type { EfectoEnTirada } from "./efectosArma";
 import type { ConsecuenciaPropia, SalvacionPropia } from "./consecuenciasPropias";
 import type { EstadoAlTirar, EstadoAlUsar, SigiloAlAtacar } from "./sigilo";
 import type { Grado } from "./psionica";
+import type { TipoAccionBase, TipoAccionEnTirada } from "./tipoAccion";
 import { etiquetaEspecialidad, type EspecialidadId } from "../catalog/especialidades";
 
 export const CARAS_DADO = 12;
@@ -112,6 +113,12 @@ export type Accion = {
   // Los aplica el servidor (aplicarConsecuenciaPropiaAction) con la ficha guardada.
   estadoAlTirar?: EstadoAlTirar;
   sigiloAlAtacar?: SigiloAlAtacar;
+  // T5c (rules/tipoAccion.ts): lo que se hace con la fila además de tirarla (desenfundar y recargar
+  // el arma, inyectarse el fármaco) con el tipo de acción de la fuente, que pone quien genera la
+  // fila. conExtrasDeFicha lo resuelve con las rebajas de la ficha en `tiposDeAccion` (y el
+  // selector, si alguna tiene límite de uso); textosDeTirada lo enseña como línea.
+  tiposDeAccionBase?: TipoAccionBase[];
+  tiposDeAccion?: TipoAccionEnTirada[];
   // Habilidad que el jugador puede usar en su lugar con una casilla de la fila
   // (Levitar: esquivar con Física). Mismo patrón que `aplicadoSutil`, pero sobre
   // la habilidad; la especialidad, si la nombra, se resuelve sola (ver
@@ -330,6 +337,8 @@ export type AccionDirecta = {
   empleoArma?: EmpleoArma;
   nota?: string;
   condiciones?: CondicionTirada[];
+  // Como en Accion (T5c): Inyectarse en «Usar [fármaco]». conExtrasDirectaDeFicha lo pasa a la nota.
+  tiposDeAccionBase?: TipoAccionBase[];
   // Texto del botón que confirma dentro del modal — "Usar" por defecto; la
   // fila en sí siempre dice "Usar", este es el de dentro ("Marcar", "Activar"...).
   confirmarLabel?: string;

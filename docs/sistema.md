@@ -371,6 +371,37 @@ Detalle completo en `docs/sistema-y-combate.md`. Lo esencial:
 - **Acciones por turno**: 2 simples · 1 estándar · 1 compleja (bloquea el turno) ·
   gratuitas sin límite · 1 reacción por ronda, salvo defensivas y salvaciones.
 - Un turno de combate son **6 segundos**; una ronda es el turno de todos.
+- **Tipo de acción de desenfundar, recargar e inyectarse** `[FIRME · usuario, cuestionario de cierre 2026-11-13: eq-35, do-07]`.
+  La app no cuenta acciones (§10.6, «La app no cuenta acciones por turno»): el tipo es una
+  **etiqueta que informa**. Cada fila lleva una línea por lo que se hace con ella además de tirarla,
+  con el tipo de la fuente y, si una pieza o dote lo abarata, **ya rebajado y con su fuente**
+  («Inyectarse: acción simple (Inyector Hipodérmico 1)»). Donde la rebaja tiene **límite de uso**
+  («una vez por turno»), un **selector** frente a la normal, por si ya se gastó (por defecto, la
+  barata); no suma ni gasta nada. Nada bloquea ni cuenta. Motor: `rules/tipoAccion.ts` (el tipo de
+  base lo declara quien genera la fila, `Accion.tiposDeAccionBase`; las rebajas, el catálogo:
+  `NivelModulo.rebajasTipoAccion` y el efecto de dote `economia`; las aplica `conExtrasDeFicha`).
+  - **Desenfundar**, en el ataque de cada arma: pistolas, escopetas, subfusiles, fusiles de asalto
+    y granadas, simple; fusiles de precisión, ametralladoras y armas impulsoras, estándar;
+    armamento pesado, compleja («Características generales» de cada bloque). **Funda Automática**:
+    gratuita con armas a una mano; nivel 2, también a dos manos; la línea recuerda que es solo el
+    arma que va en la funda (una a la vez; la app no sabe cuál). El arma incorporada en el **Brazo
+    Biónico**, gratuita (su «desenfundado es gratuito», antes en la nota). Desenfundado Rápido
+    sigue como texto (desenfundar y atacar en la misma acción): no cambia el tipo de desenfundar.
+  - **Recargar**, en cada arma de fuego y en el armamento pesado: pistolas y subfusiles, simple;
+    escopetas y fusiles de asalto, estándar; fusiles de precisión, ametralladoras y armamento
+    pesado, compleja; Arco, simple o reacción; Ballesta, estándar (sale de su «Recarga:» del texto
+    especial). **Recarga Relámpago** baja un grado la compleja y la estándar; a la que **en la
+    fuente** ya es simple le añade «acción gratuita o reacción, una vez por turno», con selector
+    frente a la simple (la estándar que baja a simple no la recibe).
+  - **Inyectarse**, en cada «Usar [fármaco]»: el tipo de aplicación de cada fármaco en la fuente
+    (Hemostáticos y los geles, compleja; Estabilizadores Neurales, estándar; Analgésico,
+    Antipatógeno, Calmante, Ultra Estimulante y Xovromium, estándar o compleja si vistes armadura o
+    traje). **Inyector Hipodérmico** 1: simple (solo sobre ti); nivel 2: además gratuita o
+    reacción una vez por turno, con selector frente a la simple. **Valija Táctica Médica** 3
+    («administrar fármacos … como acción simple»): simple.
+  - `TODO(revisar)`: la fuente no da el tipo de desenfundar un arma melee (sin Funda no sale
+    línea); «armas de fuego» de Recarga Relámpago deja fuera arco, ballesta y armamento pesado;
+    la línea se llama «Inyectarse» también en los geles y cuando lo administras a otro.
 
 ### Combate `[FIRME · COMBATE]`
 

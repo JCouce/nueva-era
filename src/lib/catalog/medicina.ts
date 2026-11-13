@@ -242,7 +242,10 @@ export const VALIJA_TACTICA_MEDICA: Herramienta = {
           mecanismo: "eleccion_jugador",
           estado: "construido",
         },
+        { tipo: "texto", afecta: { modo: "accion_existente", id: "grupo:Fármacos" }, mecanismo: "nota_fija", estado: "construido" },
       ],
+      // «Administrar fármacos … como acción simple» (T5c): «Inyectarse» en «Usar [fármaco]».
+      rebajasTipoAccion: [{ accion: "inyectarse", op: "sustituye", a: ["simple"] }],
     },
     {
       nivel: 4,
@@ -332,6 +335,7 @@ export const FARMACOS: Consumible[] = [
     pesoKg: null,
     rareza: "Común",
     coste: 5,
+    aplicacion: { base: "estandar", conArmadura: "compleja" },
     modificadores: [],
     // "Reduce en 1 el penalizador por heridas": casilla en las tiradas (fa-01).
     motor: [MOTOR_CONTRA_DOLOR],
@@ -349,6 +353,7 @@ export const FARMACOS: Consumible[] = [
     pesoKg: null,
     rareza: "Común",
     coste: 10,
+    aplicacion: { base: "compleja" },
     modificadores: [],
     motor: MOTOR_FARMACO,
   },
@@ -365,6 +370,7 @@ export const FARMACOS: Consumible[] = [
     pesoKg: null,
     rareza: "Común",
     coste: 10,
+    aplicacion: { base: "estandar" },
     modificadores: [],
     motor: MOTOR_FARMACO,
   },
@@ -384,6 +390,7 @@ export const FARMACOS: Consumible[] = [
     pesoKg: null,
     rareza: "Común",
     coste: 20,
+    aplicacion: { base: "estandar", conArmadura: "compleja" },
     modificadores: [],
     // "Reduce en 1 el penalizador por herida": casilla en las tiradas (fa-01); varias dosis no
     // suman (fa-02: entre fármacos vale el mayor).
@@ -406,6 +413,7 @@ export const FARMACOS: Consumible[] = [
     pesoKg: null,
     rareza: "Común",
     coste: 50,
+    aplicacion: { base: "estandar", conArmadura: "compleja" },
     modificadores: [],
     // R9 (2026-10-24): la segunda salvación con +3, casilla en la salvación de Fortaleza
     // mientras quede una dosis (casillasDeFarmacos, rules/farmacos.ts).
@@ -429,6 +437,7 @@ export const FARMACOS: Consumible[] = [
     pesoKg: null,
     rareza: "Común",
     coste: 50,
+    aplicacion: { base: "estandar", conArmadura: "compleja" },
     modificadores: [],
     // S94 (2026-10-24): los dos números son la casilla «Bajo Ultra Estimulante» (siempre
     // visible, como la de Xovromium; casillasDeFarmacos, rules/farmacos.ts): +2 en las
@@ -459,6 +468,7 @@ export const FARMACOS: Consumible[] = [
     pesoKg: null,
     rareza: "Común",
     coste: 50,
+    aplicacion: { base: "compleja" },
     modificadores: [],
     // Incluye el efecto del Analgésico (fa-01).
     motor: [...MOTOR_FARMACO, MOTOR_CONTRA_DOLOR],
@@ -478,6 +488,7 @@ export const FARMACOS: Consumible[] = [
     pesoKg: null,
     rareza: "Poco Habitual",
     coste: 250,
+    aplicacion: { base: "compleja" },
     modificadores: [],
     // Incluye el efecto del Analgésico (fa-01).
     motor: [...MOTOR_FARMACO, MOTOR_CONTRA_DOLOR],
@@ -500,6 +511,7 @@ export const FARMACOS: Consumible[] = [
     pesoKg: null,
     rareza: "Extraño",
     coste: 750,
+    aplicacion: { base: "compleja" },
     modificadores: [],
     // R9 (2026-10-24): el +5 ya va sumado en su fila "Usar Nano-Elixir" (ajustesFijos,
     // rules/farmacos.ts) — numérico construido, no narrativo.
@@ -533,6 +545,7 @@ export const FARMACOS: Consumible[] = [
     pesoKg: null,
     rareza: "Extraño",
     coste: 1000,
+    aplicacion: { base: "estandar", conArmadura: "compleja" },
     modificadores: [],
     motor: [
       // La tirada de tomarlo es su fila en Fármacos; el efecto sobre los poderes,

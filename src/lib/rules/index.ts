@@ -58,6 +58,7 @@
 //   origen.ts          OrigenAporte: de qué ítem viene cada aporte a una tirada (fase 2 de docs/aportes/plan.md)
 //   aportes.ts         aportesDeTirada: los aportes de los ítems de la ficha a una tirada, con su origen
 //   teAfecta.ts        "te afecta" de una hoja de tirada: los nombres de esos ítems
+//   tipoAccion.ts      tipo de acción de desenfundar, recargar e inyectarse, con las rebajas de piezas y dotes (T5c)
 
 export * from "./atributos";
 export * from "./habilidades";
@@ -120,6 +121,7 @@ export * from "./consecuenciasPropias";
 export * from "./retrocesoEntropico";
 export * from "./sigilo";
 export * from "./textosDeTirada";
+export * from "./tipoAccion";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

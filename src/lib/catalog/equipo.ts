@@ -35,6 +35,8 @@ import type { HabilidadId } from "../rules/habilidades";
 import type { EfectoSalvacion } from "../rules/aumentosTiradas";
 import type { EfectoAlRecibir } from "../rules/resistirDanio";
 import type { EstadoAlTirar, Ocultacion } from "../rules/sigilo";
+import type { Economia } from "../rules/psionica";
+import type { RebajaTipoAccion } from "../rules/tipoAccion";
 import type { TipoDanio } from "./tiposDanio";
 import { ARMAS_MELEE, type ArmaMelee } from "./armasMelee";
 import { VALIJA_TACTICA_MEDICA, FARMACOS } from "./medicina";
@@ -212,6 +214,10 @@ export type NivelModulo = {
   // Bono a esconder lo que va dentro (T4, eq-31): Compartimento Oculto, +3 (nivel 2, +4), en la
   // fila «Esconder arma». Total del nivel.
   bonoEsconder?: number;
+  // Lo que abarata una acción de otra fila (T5c, rules/tipoAccion.ts): Funda Automática
+  // (desenfundar) e Inyector Hipodérmico (inyectarse). Se acumulan por niveles (S9): el nivel 2
+  // del Inyector añade su alternativa a la simple del 1. Las recoge rebajasTipoAccionDeEquipo.
+  rebajasTipoAccion?: RebajaTipoAccion[];
   motor?: MotorMetadata[]; // docs/motor.md — un MotorMetadata por efecto DE ESTE NIVEL
 };
 
@@ -253,6 +259,10 @@ export type Consumible = {
   rareza: Rareza;
   coste: number;
   modificadores: Modificador[];
+  // Tipo de acción de aplicarlo sobre uno mismo (fármacos, T5c): `conArmadura`, el de quien viste
+  // armadura o traje de combate («acción estándar, o compleja si viste armadura»). La fila «Usar»
+  // lo enseña como «Inyectarse» (rules/farmacos.ts).
+  aplicacion?: { base: Economia; conArmadura?: Economia };
   motor?: MotorMetadata[]; // docs/motor.md
 };
 

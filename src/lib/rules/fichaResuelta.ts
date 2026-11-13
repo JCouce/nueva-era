@@ -83,7 +83,15 @@ import { conUsosEscena, usosEscenaDeFicha } from "./usosEscena";
 import { poderesDeDotes } from "./dotesPoderes";
 import type { ExcepcionRareza } from "../catalog/especies";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
-import { consultaIndiceCondiciones, indiceDeCondiciones, modificadoresDeEquipo, reduccionesDeEquipo, salvacionesDeEquipo, type IndiceCondiciones } from "./equipo";
+import {
+  consultaIndiceCondiciones,
+  indiceDeCondiciones,
+  modificadoresDeEquipo,
+  rebajasTipoAccionDeEquipo,
+  reduccionesDeEquipo,
+  salvacionesDeEquipo,
+  type IndiceCondiciones,
+} from "./equipo";
 import { casillasDeFarmacos } from "./farmacos";
 import { inmunidadesDe } from "./inmunidades";
 import {
@@ -117,6 +125,7 @@ import { conTextosDeFicha, contextoDe, junta, textosDe, textosSinDado, type Obje
 import type { Sheet } from "./sheet";
 import { condicionApuntado, ID_APUNTADO, ID_APUNTAR, tieneEspecialidad, type Accion, type AccionDirecta } from "./acciones";
 import type { CondicionTirada } from "./condiciones";
+import { idSelectorTipoAccion, resolverTiposDeAccion, selectorTipoAccion, textoTipoAccion, type RebajaConFuente } from "./tipoAccion";
 
 export type DesgloseDerivado = { total: number; fuentes: Fuente[] };
 
@@ -229,6 +238,10 @@ export type FichaResuelta = {
     grados: GradoFijoDeDote[];
     alternativas: AlternativaDeDote[];
   };
+  // Lo que abaratan el equipo y las dotes de desenfundar, recargar o inyectarse (T5c,
+  // rules/tipoAccion.ts): Funda Automática, Inyector Hipodérmico, Recarga Relámpago. Lo aplica
+  // conExtrasDeFicha a la línea de cada fila. Derivado: también al NPC.
+  rebajasTipoAccion: RebajaConFuente[];
   // Acciones propias de dote (D2c-1, dotesAcciones.ts): la sección "Dotes" de Acciones y las
   // copias en su grupo extra. Sin las de requisito roto (S34); el NPC, sin mirar requisitos.
   accionesDotes: AccionesDeDotes;
@@ -449,6 +462,7 @@ export function resolverFicha(
       grados: dotes.grados,
       alternativas: dotes.alternativas,
     },
+    rebajasTipoAccion: [...rebajasTipoAccionDeEquipo(sheet), ...dotes.rebajasTipoAccion],
     accionesDotes: accionesDeDotes(activas, { usosEscena: sheet.usosEscena, mesa }),
     poderesDotes: poderesDeDotes(activas, sheet, psionica.paraEfectos),
     fatigaEnJuego: { actual: enJuego, efectiva: v.fatiga },
@@ -493,9 +507,11 @@ export function estadosParaPintar(
 
 export function conExtrasDeFicha(
   ficha: Pick<FichaResuelta, "indiceCondiciones" | "textosTirada" | "extrasDotes" | "ventajasFijas" | "fallosCriticos"> &
-    Partial<Pick<FichaResuelta, "objetivosTirada" | "casillasMarcadas">>,
+    Partial<Pick<FichaResuelta, "objetivosTirada" | "casillasMarcadas" | "rebajasTipoAccion">>,
   t: Accion,
 ): Accion {
+  // T5c: el tipo de acción de desenfundar, recargar o inyectarse, ya rebajado, y su selector.
+  if (t.tiposDeAccionBase?.length) t = { ...t, ...conTiposDeAccion(t, ficha.rebajasTipoAccion ?? []) };
   // T4: las casillas que un estado puesto deja ya marcadas (Camuflaje: «Tengo cobertura»).
   const marcadas = ficha.casillasMarcadas ?? [];
   if (marcadas.length > 0 && t.condiciones?.some((c) => c.tipo === "toggle" && marcadas.includes(c.id) && !c.activaPorDefecto)) {
@@ -641,12 +657,40 @@ function conDescuentos(condiciones: CondicionTirada[], descuentos: DescuentoDeDo
   });
 }
 
+// Los tipos de acción de la fila resueltos con las rebajas de la ficha (T5c), y sus selectores
+// (los de antes fuera: se puede volver a pasar por aquí).
+function conTiposDeAccion(
+  t: Pick<Accion, "tiposDeAccionBase" | "condiciones">,
+  rebajas: readonly RebajaConFuente[],
+): Pick<Accion, "tiposDeAccion" | "condiciones"> {
+  const tipos = resolverTiposDeAccion(t.tiposDeAccionBase, rebajas);
+  const ids = new Set(tipos.map((x) => idSelectorTipoAccion(x.accion)));
+  const selectores = tipos.flatMap((x) => selectorTipoAccion(x) ?? []);
+  const sinViejos = (t.condiciones ?? []).filter((c) => !ids.has(c.id));
+  return {
+    tiposDeAccion: tipos,
+    ...((selectores.length > 0 || sinViejos.length !== (t.condiciones ?? []).length) && { condiciones: [...sinViejos, ...selectores] }),
+  };
+}
+
 // Lo mismo para una acción sin dado ("Levantar [escudo]"): solo textos, todos a su nota
-// (no hay crítico). Sin nada que añadir, devuelve la misma acción.
-export function conExtrasDirectaDeFicha(ficha: Pick<FichaResuelta, "textosTirada">, d: AccionDirecta): AccionDirecta {
+// (no hay crítico). El tipo de acción (T5c: Inyectarse en «Usar [fármaco]»), a la nota y su
+// selector a las condiciones. Sin nada que añadir, devuelve la misma acción.
+export function conExtrasDirectaDeFicha(
+  ficha: Pick<FichaResuelta, "textosTirada"> & Partial<Pick<FichaResuelta, "rebajasTipoAccion">>,
+  d: AccionDirecta,
+): AccionDirecta {
   const textos = textosDe(ficha.textosTirada, contextoDe({ ...d, habilidad: null }), false);
-  if (textos.length === 0) return d;
-  return { ...d, nota: junta(d.nota, textosSinDado(textos)) };
+  const tipos = d.tiposDeAccionBase?.length ? conTiposDeAccion(d, ficha.rebajasTipoAccion ?? []) : null;
+  if (textos.length === 0 && !tipos) return d;
+  const lineasTipo = (tipos?.tiposDeAccion ?? []).map((x) =>
+    x.fuentes.length > 0 ? `${textoTipoAccion(x)} (${x.fuentes.map((f) => f.fuente).join(", ")})` : textoTipoAccion(x),
+  );
+  return {
+    ...d,
+    nota: junta(d.nota, [...lineasTipo, ...textosSinDado(textos)]),
+    ...(tipos?.condiciones && { condiciones: tipos.condiciones }),
+  };
 }
 
 // --- Notas de Personaje → Estado ------------------------------------------------

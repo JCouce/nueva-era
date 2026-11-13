@@ -188,12 +188,14 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           "Solo puede usarse con un arma a la vez; el enfundado sigue costando lo de siempre.",
         ],
         modificadores: [],
-        // Cambia el COSTE de una acción (desenfundar gratis en vez de gastar
-        // turno), no crea una acción ni suma un número a una tirada: el motor no
-        // modela economía de acciones/turnos todavía. Resuelto como texto
-        // informativo, sin forzar un sexto tipo (decisión ya cerrada).
+        // T5c (eq-35): la línea «Desenfundar» de cada ataque pasa a gratuita con un arma a una
+        // mano (rules/tipoAccion.ts). Texto, no Coste: la app no cuenta acciones. «Un arma a la
+        // vez»: la app no sabe cuál va en la funda, lo dice la línea.
+        rebajasTipoAccion: [
+          { accion: "desenfundar", op: "sustituye", a: ["gratuita"], empleo: "una mano", nota: "Solo el arma que lleves en la funda." },
+        ],
         motor: [
-          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "grupo:Ataques" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
       {
@@ -202,8 +204,11 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         coste: 3600,
         detalle: ["El desenfundado gratuito también funciona con armas a dos manos."],
         modificadores: [],
+        rebajasTipoAccion: [
+          { accion: "desenfundar", op: "sustituye", a: ["gratuita"], empleo: "dos manos", nota: "Solo el arma que lleves en la funda." },
+        ],
         motor: [
-          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "grupo:Ataques" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
     ],
@@ -223,8 +228,10 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         coste: 250,
         detalle: ["Usar medicamentos o drogas sobre uno mismo pasa de acción compleja a simple."],
         modificadores: [],
+        // T5c (eq-35): «Inyectarse» en cada «Usar [fármaco]» pasa a simple (rules/tipoAccion.ts).
+        rebajasTipoAccion: [{ accion: "inyectarse", op: "sustituye", a: ["simple"], nota: "Solo sobre ti." }],
         motor: [
-          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // coste de acción, mismo caso que Funda Automática
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "grupo:Fármacos" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
       {
@@ -238,8 +245,10 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
             "del nivel 1).",
         ],
         modificadores: [],
+        // T5c: gratuita o reacción una vez por turno, en un selector frente a la simple del nivel 1.
+        rebajasTipoAccion: [{ accion: "inyectarse", op: "alternativa", a: ["gratuita", "reaccion"], limite: { veces: 1, por: "turno" } }],
         motor: [
-          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" }, // coste de acción
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "grupo:Fármacos" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "habilitador", afecta: { modo: "ninguna" }, mecanismo: null, arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "pregunta 32" }, // susceptible a shock
         ],
       },

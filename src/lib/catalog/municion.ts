@@ -14,7 +14,7 @@ import type { Rareza } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
 import type { TipoDanio } from "./tiposDanio";
 import type { EfectoArma, ResultadoDeTabla } from "../rules/efectosArma";
-import type { Grado } from "../rules/psionica";
+import type { Economia, Grado } from "../rules/psionica";
 import { enCritico, salva, texto } from "./efectosArma";
 
 // "Potencia x 14" en la columna Alcance de todas las granadas (docs/fuente/equipamiento.md,
@@ -39,6 +39,9 @@ const MOTOR_GRANADA: MotorMetadata[] = [
   { tipo: "texto", afecta: { modo: "accion_existente", id: "lanzagranadas_integrado" }, mecanismo: "eleccion_jugador", estado: "construido" },
   { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_pesado" }, mecanismo: "eleccion_jugador", estado: "construido" },
 ];
+
+// «Granadas · Desenfundado: Acción Simple» (docs/fuente/equipamiento.md): línea del lanzamiento (T5c).
+export const DESENFUNDADO_GRANADA: Economia = "simple";
 
 export type MunicionGranada = {
   familia: "granada";

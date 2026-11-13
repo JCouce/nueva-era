@@ -606,6 +606,25 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
   // §9.3 UX propia: Reflejos Felinos resta un atacante al contador de atacantes adicionales de
   // la esquiva (mínimo 0), no una casilla +1 (el borrador lo traía como bono con condición).
   "dote_reflejos_felinos#0": { tipo: "descuento_contador", alcance: "defensa", contador: "atacantes_adicionales", unidades: 1 },
+  // T5c (do-07, usuario 2026-11-13): Recarga Relámpago abarata la línea «Recargar» de las armas de
+  // fuego (rules/tipoAccion.ts) en vez de un texto: baja un grado la compleja y la estándar; la
+  // simple la deja y le pone la alternativa gratuita (una vez por turno) o reacción, en un selector.
+  // TODO(revisar): «armas de fuego» deja fuera arco, ballesta y armamento pesado.
+  "dote_recarga_relampago#0": {
+    tipo: "economia",
+    rebaja: { accion: "recargar", op: "baja_un_paso", desde: ["compleja", "estandar"], soloArmaDeFuego: true },
+  },
+  "dote_recarga_relampago#1": {
+    tipo: "economia",
+    rebaja: {
+      accion: "recargar",
+      op: "alternativa",
+      a: ["gratuita", "reaccion"],
+      limite: { veces: 1, por: "turno" },
+      desde: ["simple"],
+      soloArmaDeFuego: true,
+    },
+  },
   // Movimiento Sigiloso Constante («se mueve en sigilo sin penalizador»): desde T4 (do-01) sus
   // bonos 2/4/8 del borrador compensan entero el selector «¿Te mueves?» de Sigilo; sin conversión.
 };
@@ -925,7 +944,20 @@ const FILTROS_ARMA: Readonly<Record<string, FiltroArmaDote>> = {
 };
 
 const claveDeEfecto = (e: Efecto) =>
-  (e.tipo === "texto" || e.tipo === "objetivo" ? e.lugar : e.tipo === "habilita" ? e.accion : e.tipo === "accion" ? undefined : e.alcance) as string | undefined;
+  (e.tipo === "texto" || e.tipo === "objetivo"
+    ? e.lugar
+    : e.tipo === "habilita"
+      ? e.accion
+      : e.tipo === "accion" || e.tipo === "economia"
+        ? undefined
+        : e.alcance) as string | undefined;
+
+// La fila donde sale cada acción con tipo (T5c), para el MotorMetadata de un efecto "economia".
+const FILA_DE_ACCION_CON_TIPO = {
+  desenfundar: "grupo:Ataques",
+  recargar: "ataque_fuego_<instancia>",
+  inyectarse: "grupo:Fármacos",
+} as const;
 
 function aplicarRamaYFiltro(id: string, requisitos: unknown, efectos: Efecto[]): Efecto[] {
   const reqs = Array.isArray(requisitos) ? (requisitos as RequisitoDote[]) : [];
@@ -1052,9 +1084,8 @@ function tandaDelTipo(e: Efecto): TandaDote | null {
       // de D2d. Un cambio de par sobre una tirada que no existe espera a "tiradas-fijas" (destino).
       return null;
     case "economia":
-      // TODO(revisar): ningún efecto del borrador lo usa hoy; coste en acciones = texto
-      // hasta el registro de acciones (§9.3). Se supone con las acciones de dote.
-      return "D2c";
+      // T5c: la rebaja la aplica rules/tipoAccion.ts sobre la línea de su acción.
+      return null;
     case "bono":
       // Daño (Golpe Fatigante) y valor por umbral de ficha: D2d, construidos.
       return null;
@@ -1083,6 +1114,8 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
     const familiaDestino = alcanceDestino?.tipo === "familiaArma" ? alcanceDestino.familia : null;
     const construible =
       e.tipo === "accion" ||
+      // Rebaja de tipo de acción (T5c): rules/tipoAccion.ts, sin destino de tirada.
+      e.tipo === "economia" ||
       e.tipo === "poder" ||
       // Sobre un poder (D2c-2): solo textos, a la nota/crítico de su tirada o a su ventana.
       (e.tipo === "texto" && destino?.tipo === "poder") ||
@@ -1212,8 +1245,16 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
     case "coste":
       // Coste (§1.3): lo que cobra la casilla al confirmar (Ojo Clínico, 1 de fatiga).
       return { tipo: "coste", afecta: { modo: "accion_existente", id: clave! }, mecanismo: mecanismoCasilla, ...estado };
-    case "economia":
-      return { tipo: "texto", afecta: { modo: "accion_existente", id: clave! }, mecanismo: "nota_fija", ...estado };
+    case "economia": {
+      // Texto, no Coste: la app no cuenta acciones (T5c). Con alternativa limitada, selector.
+      const rebaja = e.rebaja as { accion: keyof typeof FILA_DE_ACCION_CON_TIPO; op: string };
+      return {
+        tipo: "texto",
+        afecta: { modo: "accion_existente", id: FILA_DE_ACCION_CON_TIPO[rebaja.accion] },
+        mecanismo: rebaja.op === "alternativa" ? "eleccion_jugador" : "nota_fija",
+        ...estado,
+      };
+    }
     case "habilita":
       // §9.2: sin la dote la acción "no aparece" → arbitraje duro.
       return {

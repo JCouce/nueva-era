@@ -1575,8 +1575,8 @@ export const IMPLANTES: Implante[] = [
         extremidad: { fuerza: { delta: 0 }, agilidad: { delta: -1 } },
         // A6a: la casilla "Con el brazo biónico" (una CondicionTirada, de ahí eleccion_jugador).
         // A6b: el arma incorporada (PiezaEquipada.armaIncorporada, selector en Equipo). Sus filas
-        // van siempre con el brazo y llevan la nota de desenfundado gratis, sin desarme y carga
-        // (solo texto), en el cuerpo a cuerpo y en el fuego.
+        // van siempre con el brazo y llevan la nota de sin desarme y carga (solo texto), en el cuerpo
+        // a cuerpo y en el fuego; el desenfundado gratis, en su línea «Desenfundar» (T5c).
         motor: [
           { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "nota_fija", estado: "construido" },

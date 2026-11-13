@@ -1,5 +1,6 @@
 import type { Modificador } from "../rules/modificadores";
 import type { MotorMetadata } from "../rules/motor";
+import type { Economia } from "../rules/psionica";
 import type { Rareza } from "./equipo";
 import type { MunicionEnergiaId } from "./municion";
 import { ARMAS_IMPULSORAS } from "./armasImpulsoras";
@@ -41,6 +42,27 @@ export type TipoArma =
   | "ametralladora"
   | "arma_impulsora";
 
+// Desenfundado y recarga de cada bloque («Características generales» de docs/fuente/
+// equipamiento.md): la línea «Desenfundar» y «Recargar» del ataque (T5c, rules/tipoAccion.ts).
+// Las impulsoras traen su recarga por arma (`ArmaFuego.recarga`: «Recarga: Especial»).
+export const DESENFUNDADO_POR_TIPO: Record<TipoArma, Economia> = {
+  pistola: "simple",
+  escopeta: "simple",
+  subfusil: "simple",
+  fusil_asalto: "simple",
+  fusil_precision: "estandar",
+  ametralladora: "estandar",
+  arma_impulsora: "estandar",
+};
+export const RECARGA_POR_TIPO: Partial<Record<TipoArma, Economia[]>> = {
+  pistola: ["simple"],
+  escopeta: ["estandar"],
+  subfusil: ["simple"],
+  fusil_asalto: ["estandar"],
+  fusil_precision: ["compleja"],
+  ametralladora: ["compleja"],
+};
+
 export type ArmaFuego = {
   familia: "arma";
   id: string;
@@ -68,6 +90,8 @@ export type ArmaFuego = {
   // puede ser de nivel superior y sustituye a la integrada (equipo.ts).
   miraIntegrada?: number;
   especial: string | null;
+  // La recarga del arma cuando no es la de su tipo (RECARGA_POR_TIPO): Arco y Ballesta.
+  recarga?: Economia[];
   // Lo que el arma te resta del Sigilo al dispararla además del ruido (T4, rules/sigilo.ts): la
   // luminiscencia del rayo o del plasma, «-6 al sigilo al dispararla (solo percepción visual)».
   // Lo resta solo la app si estás en Sigilo (sigiloAlAtacar, combate.ts).

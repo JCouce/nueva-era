@@ -12,9 +12,9 @@
 //
 // "Características generales" del documento (empleo a dos manos,
 // desenfundado y recarga como acción compleja, ataque en área) son iguales
-// para las 5 y no dependen de ninguna pieza en concreto — el motor no
-// modela economía de acciones (desenfundar/recargar) todavía, así que se
-// quedan en `descripcion`, no en un campo por arma.
+// para las 5 y no dependen de ninguna pieza en concreto: desenfundado y
+// recarga, en DESENFUNDADO_Y_RECARGA_PESADO (líneas del ataque, T5c); el
+// resto, en `descripcion`.
 //
 // `mejorasAdmitidas` es informativo (columna "Mejoras" del documento), NO
 // está enganchado a validarInstalacion: el catálogo de Mejoras de Arma
@@ -28,11 +28,17 @@
 // instalado dentro de un Fusil de Asalto — mismo tratamiento en combate.ts
 // (daño según la granada cargada de MUNICION_GRANADA, dificultad fija).
 import type { Modificador } from "../rules/modificadores";
+import type { Economia } from "../rules/psionica";
 import type { Rareza } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
 import type { MunicionRegularId } from "./municion";
 
 type MunicionPesadaId = Extract<MunicionRegularId, "deposito_lanzallamas" | "cohete" | "misil" | "bateria_plasma_canon">;
+
+export const DESENFUNDADO_Y_RECARGA_PESADO: { desenfundar: Economia; recargar: Economia } = {
+  desenfundar: "compleja",
+  recargar: "compleja",
+};
 
 export type ArmaPesada = {
   familia: "armaPesada";

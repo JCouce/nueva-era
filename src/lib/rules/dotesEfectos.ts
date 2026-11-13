@@ -72,6 +72,7 @@ import type { ObjetivoEnTirada } from "./textosTirada";
 import type { AlcanceModificador, FamiliaArma, ModificadorConFuente } from "./modificadores";
 import type { TextoEnTirada } from "./especie";
 import type { OrigenAporte } from "./origen";
+import type { RebajaConFuente } from "./tipoAccion";
 import type { Sheet } from "./sheet";
 
 export type DoteActiva = { dote: DoteCatalogo; compra: DoteComprada };
@@ -155,6 +156,8 @@ export type EfectosDeDotes = {
   descuentos: DescuentoDeDote[];
   grados: GradoFijoDeDote[];
   alternativas: AlternativaDeDote[];
+  // Lo que abaratan de una acción de otra fila (T5c, rules/tipoAccion.ts): Recarga Relámpago.
+  rebajasTipoAccion: RebajaConFuente[];
 };
 
 export const SIN_EFECTOS_DE_DOTES: EfectosDeDotes = {
@@ -168,6 +171,7 @@ export const SIN_EFECTOS_DE_DOTES: EfectosDeDotes = {
   descuentos: [],
   grados: [],
   alternativas: [],
+  rebajasTipoAccion: [],
 };
 
 const TRAMOS: readonly TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
@@ -322,6 +326,7 @@ export function efectosDeDotes(
   const descuentos: DescuentoDeDote[] = [];
   const grados: GradoFijoDeDote[] = [];
   const alternativas: AlternativaDeDote[] = [];
+  const rebajasTipoAccion: RebajaConFuente[] = [];
   const familias = new Set<FamiliaArma>();
   const sutil = new Set<FamiliaArma>();
   const compradas = activas.map((a) => a.compra);
@@ -394,6 +399,10 @@ export function efectosDeDotes(
         if (destino?.tipo !== "especialidadArmaElegida" || !esp) return;
         if (valores && !especialidadArmaPropia(dote, esp.id, valores, compradas)) return;
         criticos.push({ especialidad: esp.id, familias: destino.familias, margen: e.valor, fuente, origen });
+        return;
+      }
+      if (e.tipo === "economia") {
+        rebajasTipoAccion.push({ ...e.rebaja, fuente, origen });
         return;
       }
       // Habilitador (Bloqueo): la familia aparece. Arbitraje duro (§9.2): sin él, no existe.
@@ -617,6 +626,7 @@ export function efectosDeDotes(
     descuentos,
     grados,
     alternativas,
+    rebajasTipoAccion,
   };
 }
 

@@ -859,7 +859,8 @@ export function AccionesTab({
       // no sheet.equipo — mismo patrón que Herramientas por lo demás.
       // Con las notas de especie (Irota, §14.9) de la FichaResuelta.
       farmacos: accionesDeFarmacos(sheet, ficha.notasFarmacos).map(conExtras),
-      farmacosDirectas: accionesDirectasDeFarmacos(sheet, ficha.notasFarmacos),
+      // Con «Inyectarse» ya rebajado (T5c) en la nota y su selector.
+      farmacosDirectas: accionesDirectasDeFarmacos(sheet, ficha.notasFarmacos).map((d) => conExtrasDirectaDeFicha(ficha, d)),
       defensaDirecta: directas.filter((a) => a.grupo === "Defensa"),
       // Detonación de pulso térmico (Malla Plasmática, 2026-09-28) — primera
       // "acción sin dado" del grupo Ataques, antes solo tenía Defensa.
@@ -872,7 +873,7 @@ export function AccionesTab({
       accionesGeneradas: ficha.accionesMovimiento.map(conExtras),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, ficha.textosTirada, ficha.extrasDotes, ficha.notasFarmacos, ficha.accionesMovimiento, mods]);
+  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, ficha.textosTirada, ficha.extrasDotes, ficha.notasFarmacos, ficha.accionesMovimiento, ficha.rebajasTipoAccion, mods]);
 
   // Acciones de dote (D2c-1): las de la sección Dotes y las copias en otro grupo fijo.
   const { dotesTiradas, dotesEnGrupos, dotesDirectas, directasDotesEnGrupos } = useMemo(() => {

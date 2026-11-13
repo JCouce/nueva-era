@@ -13,6 +13,7 @@ import type { Sheet } from "./sheet";
 import { tieneEspecialidad, type Accion } from "./acciones";
 import type { CondicionTirada } from "./condiciones";
 import type { OrigenAporte } from "./origen";
+import { bajarUnPaso, etiquetaEconomia, mismaEconomia } from "./tipoAccion";
 import { DISCIPLINAS, PSIONICA, disciplinaPorId, type DisciplinaId } from "../catalog/psionica";
 import { umbralFatiga } from "./estados";
 import { recursoDe } from "./recursos";
@@ -125,21 +126,6 @@ export type ExcesoResuelto = {
   enLimite: boolean;
   bloqueo: string | null; // por qué no se puede tirar con este peso
 };
-
-// Un paso menos: tiempos largos → compleja → estándar → simple (nunca por debajo).
-const PASO_ECONOMIA: Partial<Record<Economia & string, Economia>> = { compleja: "estandar", estandar: "simple" };
-const PASO_TIEMPO: Record<string, Economia> = {
-  "1 hora": { tiempo: "10 minutos" },
-  "10 minutos": { tiempo: "1 minuto" },
-  "1 minuto": "compleja",
-};
-
-const mismaEconomia = (a: Economia, b: Economia) => JSON.stringify(a) === JSON.stringify(b);
-
-function bajarUnPaso(e: Economia): Economia {
-  if (typeof e === "string") return PASO_ECONOMIA[e] ?? e;
-  return PASO_TIEMPO[e.tiempo] ?? e;
-}
 
 export function opcionesDisponibles(eje: EjePoder, nivelPoseido: number): Opcion[] {
   return eje.opciones.filter((o) => (o.desdeNivel ?? 0) <= nivelPoseido);
@@ -490,18 +476,6 @@ export function accionesDePsionica(sheet: Sheet, niveles: NivelesPsionica): Pode
         : [];
     });
   });
-}
-
-const ETIQUETA_ECONOMIA: Record<Exclude<Economia, { tiempo: string }>, string> = {
-  gratuita: "Gratuita",
-  simple: "Simple",
-  estandar: "Estándar",
-  compleja: "Compleja",
-  reaccion: "Reacción",
-};
-
-export function etiquetaEconomia(e: Economia): string {
-  return typeof e === "string" ? ETIQUETA_ECONOMIA[e] : e.tiempo;
 }
 
 export function textoValor(v: ValorResuelto): string {

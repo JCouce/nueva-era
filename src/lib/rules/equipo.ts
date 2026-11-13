@@ -30,6 +30,7 @@ import { ID_BUSQUEDA_MIRA } from "../catalog/mejorasArma";
 import { PELEA } from "../catalog/armasMelee";
 import { alcanzaA, alcanzaAlgunAplicado, type ContextoAccion, type FamiliaArma, type GrupoAccion, type Modificador, type ModificadorConFuente } from "./modificadores";
 import type { CondicionTirada } from "./condiciones";
+import type { RebajaConFuente } from "./tipoAccion";
 import { origenDePieza } from "./origen";
 import type { AmenazaId, EfectoSalvacion } from "./aumentosTiradas";
 import type { ReduccionPorAplicado } from "./estados";
@@ -814,6 +815,21 @@ export function reduccionesDeEquipo(sheet: Pick<Sheet, "equipo">): ReduccionPorA
     const nivel = ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel), "reducePenalizador");
     const r = nivel?.reducePenalizador;
     return r ? [{ ...r, fuente: `${cat.label} ${pieza.nivel}`, origen: "equipo" }] : [];
+  });
+}
+
+// Lo que el equipo abarata de otras filas (T5c, rules/tipoAccion.ts): Funda Automática e Inyector
+// Hipodérmico. Acumulado por niveles (S9) y con el nivel puesto en la fuente («Inyector
+// Hipodérmico 2»), como reduccionesDeEquipo: sin mirar dónde va instalada, como los modificadores.
+export function rebajasTipoAccionDeEquipo(sheet: Pick<Sheet, "equipo">): RebajaConFuente[] {
+  return sheet.equipo.flatMap((pieza): RebajaConFuente[] => {
+    const cat = equipoPorId(pieza.catalogoId);
+    if (!cat || pieza.nivel === undefined || !("niveles" in cat)) return [];
+    if (cat.familia !== "subsistema" && cat.familia !== "mejoraEstandar" && cat.familia !== "herramienta") return [];
+    const origen = origenDePieza("equipo", cat, pieza.instanciaId);
+    return nivelesHasta(cat.niveles, pieza.nivel).flatMap((n) =>
+      (n.rebajasTipoAccion ?? []).map((r) => ({ ...r, fuente: `${cat.label} ${pieza.nivel}`, origen })),
+    );
   });
 }
 

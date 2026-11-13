@@ -13,7 +13,9 @@ import {
   type TipoArma,
 } from "../catalog/equipo";
 import { ESPADAS_Y_DAGAS, NOTA_ESCUDO_SUBSISTEMAS, PELEA, type ArmaMelee } from "../catalog/armasMelee";
-import type { ArmaPesada } from "../catalog/armamentoPesado";
+import { DESENFUNDADO_Y_RECARGA_PESADO, type ArmaPesada } from "../catalog/armamentoPesado";
+import { DESENFUNDADO_POR_TIPO, RECARGA_POR_TIPO } from "../catalog/armasFuego";
+import type { TipoAccionBase } from "./tipoAccion";
 import type { Subsistema } from "../catalog/subsistemas";
 import {
   MUNICION_GRANADA,
@@ -21,6 +23,7 @@ import {
   MUNICION_ESPECIAL,
   MUNICION_REGULAR,
   municionEspecialPorId,
+  DESENFUNDADO_GRANADA,
   type MunicionGranada,
 } from "../catalog/municion";
 import { PREFIJO_MEJORA_MUNICION } from "../catalog/mejorasArma";
@@ -397,6 +400,18 @@ function condicionMunicion(municiones: NonNullable<Accion["municionesEspeciales"
 // Los efectos y el crítico de `especial` van como dato en `efectosObjetivo` (T3a): el
 // resultado los avisa al acertar; `especial` sigue entero en la nota, para leerlo antes.
 
+// Desenfundar y recargar el arma de fuego (T5c): lo de su tipo, o la recarga propia (impulsoras).
+// Arco y ballesta no son armas de fuego para Recarga Relámpago.
+function tiposDeAccionDeArmaFuego(arma: ArmaFuego): TipoAccionBase[] {
+  const recarga = arma.recarga ?? RECARGA_POR_TIPO[arma.tipo];
+  return [
+    { accion: "desenfundar", base: [DESENFUNDADO_POR_TIPO[arma.tipo]], empleo: arma.empleo },
+    ...(recarga
+      ? [{ accion: "recargar" as const, base: recarga, ...(arma.tipo !== "arma_impulsora" && { armaDeFuego: true as const }) }]
+      : []),
+  ];
+}
+
 function tiradaDeArmaFuego(sheet: Sheet, mods: ModificadorConFuente[], arma: ArmaFuego, instanciaId: string): Accion {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}`, nota: notaModoFAuto(arma.tipo, m.etiqueta) }));
   const modo = condicionModo(modosConId);
@@ -433,6 +448,7 @@ function tiradaDeArmaFuego(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
     empleoArma: arma.empleo,
     ...(arma.modos.some((m) => m.danioFuerza === "mitad") && { mediaFuerza: true as const }),
     nota: notaArma || undefined,
+    tiposDeAccionBase: tiposDeAccionDeArmaFuego(arma),
     ...(arma.efectosObjetivo?.length && { efectosObjetivo: efectosConFuente(arma.efectosObjetivo, arma.label) }),
     efectos: efectos.length > 0 ? efectos : undefined,
     sigiloAlAtacar: sigilo.sigiloAlAtacar,
@@ -585,6 +601,12 @@ function tiradaBloqueoBayoneta(sheet: Sheet, arma: ArmaFuego, instanciaId: strin
 // alcance no tiene tramos (un único número, o ninguno en el Lanzallamas): se
 // queda como texto informativo en `nota`, igual que el resto de "Otras
 // Armas a Distancia" — mismo criterio que Radar/Escáner (ver herramientas.ts).
+// TODO(revisar): el armamento pesado no cuenta como arma de fuego para Recarga Relámpago.
+const TIPOS_DE_ACCION_PESADO: TipoAccionBase[] = [
+  { accion: "desenfundar", base: [DESENFUNDADO_Y_RECARGA_PESADO.desenfundar], empleo: "dos manos" },
+  { accion: "recargar", base: [DESENFUNDADO_Y_RECARGA_PESADO.recargar] },
+];
+
 function tiradaDeArmamentoPesado(sheet: Sheet, arma: ArmaPesada, instanciaId: string): Accion | null {
   const notaAlcance = arma.alcanceM !== null ? `Alcance ${arma.alcanceM} m. · ` : "";
 
@@ -611,6 +633,7 @@ function tiradaDeArmamentoPesado(sheet: Sheet, arma: ArmaPesada, instanciaId: st
       familiaArma: "ataque_pesado",
       empleoArma: "dos manos", // "Empleo a dos manos" (características generales del catálogo)
       nota: `${notaAlcance}Cargador ${arma.cargador}.`,
+      tiposDeAccionBase: TIPOS_DE_ACCION_PESADO,
       sigiloAlAtacar: { ruido: RUIDO_DISPARO, amortiguadores: [], extras: [] },
       ajustesFijos: [{ valor: arma.dificultad, fuente: arma.label }],
       condiciones: modo ? [modo] : [],
@@ -635,6 +658,7 @@ function tiradaDeArmamentoPesado(sheet: Sheet, arma: ArmaPesada, instanciaId: st
     familiaArma: "ataque_pesado",
     empleoArma: "dos manos",
     nota: `${notaAlcance}${arma.efectos}`,
+    tiposDeAccionBase: TIPOS_DE_ACCION_PESADO,
     sigiloAlAtacar: { ruido: RUIDO_DISPARO, amortiguadores: [], extras: [] },
     ajustesFijos: [{ valor: arma.dificultad, fuente: arma.label }],
     // Cada disparo gasta 1 de su cargador (S95), con el aviso de insuficiente de siempre.
@@ -675,6 +699,7 @@ function tiradaDeGranada(granada: MunicionGranada): Accion {
     familiaArma: "lanzar_granada",
     empleoArma: "una mano", // se lanza con una mano
     nota: `${granada.areaEfecto} · Alcance ${ALCANCE_ARROJADA}.`,
+    tiposDeAccionBase: [{ accion: "desenfundar", base: [DESENFUNDADO_GRANADA], empleo: "una mano" }],
     ajustesFijos: [{ valor: granada.dificultadArrojada, fuente: granada.label }],
     ataque: {
       modos: [
@@ -917,6 +942,10 @@ function tiradaDeArmaMelee(
     familiaArma: "ataque_melee",
     empleoArma: arma.empleo,
     nota,
+    // Desenfundar (T5c): la fuente no da su tipo para armas melee; sale si algo lo fija (Funda
+    // Automática). Ni la Pelea ni los escudos se desenfundan.
+    // TODO(revisar): tipo de base de desenfundar un arma melee.
+    ...(!esDesarmado && !arma.defensa && { tiposDeAccionBase: [{ accion: "desenfundar" as const, base: null, empleo: arma.empleo }] }),
     efectosObjetivo: criticoDesarmado(efectosDelGolpe(arma, perfil), conArmadura),
     ...(esDesarmado && { desarmado: true as const }),
     ...(arma.contundente && { contundente: true as const }),
@@ -1289,7 +1318,10 @@ function conBrazo(t: Accion, pieza: PiezaEquipada, brazo: BrazoBionico): Accion 
   const incorporada = extremidadIncorporada(brazo, pieza.instanciaId, ataque);
   if (incorporada) {
     const nota = `${NOTA_ARMA_INCORPORADA} Con la Fuerza ${brazo.fuerza} y la Agilidad ${brazo.agilidad} del brazo (${brazo.fuente}).`;
-    return { ...t, extremidad: incorporada, nota: t.nota ? `${t.nota} · ${nota}` : nota };
+    // «Su desenfundado es gratuito» (T5c): rebaja de esta fila sola.
+    const gratis = { accion: "desenfundar" as const, op: "sustituye" as const, a: ["gratuita" as const], fuente: brazo.fuente, ...(incorporada.origen && { origen: incorporada.origen }) };
+    const tiposDeAccionBase = t.tiposDeAccionBase?.map((b) => (b.accion === "desenfundar" ? { ...b, rebajas: [...(b.rebajas ?? []), gratis] } : b));
+    return { ...t, extremidad: incorporada, nota: t.nota ? `${t.nota} · ${nota}` : nota, ...(tiposDeAccionBase && { tiposDeAccionBase }) };
   }
   const casilla = casillaBrazo(brazo, ataque);
   return casilla ? { ...t, condiciones: [...(t.condiciones ?? []), casilla] } : t;

@@ -1076,8 +1076,30 @@ Tandas, en orden:
     monta la tirada con la casilla +2/+4. Sin migración. `TODO(revisar)`: la app no sabe si la dosis
     sigue en efecto; la multiherramienta es la VTF; Moribundo con Neuroprótesis 4; Gel Avanzado y
     Nano-Elixir cuentan como Analgésico.
-  - [ ] **T5c tipo de acción** (eq-35, do-07): falta plantear la forma; no hay selector general de
-    tipo de acción hoy.
+  - [x] **T5c tipo de acción** (eq-35, do-07). Forma (usuario, 2026-11-13): la app no cuenta acciones;
+    el tipo de acción es una etiqueta. Donde una pieza o dote abarata una acción, la app enseña el
+    tipo ya rebajado con su fuente (etiqueta automática); selector solo donde hay límite de uso
+    («gratuita, 1 por turno» frente a la normal). Inyectarse en «Usar [fármaco]» (compleja; simple
+    con Inyector 1; gratuita o reacción 1/turno con Inyector 2); recargar en cada arma de fuego
+    (Recarga Relámpago baja un grado; si ya es simple, gratuita 1/turno o reacción); desenfundar
+    como línea en el ataque de cada arma (Funda Automática: gratuita a una mano; nivel 2, también a
+    dos manos). El resto de do-07 (tablero, ataques de oportunidad) sigue como texto en su tirada.
+    *(2026-11-13)* Motor `rules/tipoAccion.ts`: tipo de base por acción de la fila
+    (`Accion.tiposDeAccionBase`, lo pone el generador desde el catálogo: `DESENFUNDADO_POR_TIPO`,
+    `RECARGA_POR_TIPO`, `ArmaFuego.recarga`, `DESENFUNDADO_Y_RECARGA_PESADO`, `DESENFUNDADO_GRANADA`,
+    `Consumible.aplicacion`) y rebajas declaradas en el catálogo (`NivelModulo.rebajasTipoAccion`:
+    Funda, Inyector, Valija 3; efecto de dote `economia`, que no usaba nadie, rehecho: Recarga
+    Relámpago; rebaja propia de la fila: arma del Brazo Biónico). Operaciones `sustituye`,
+    `baja_un_paso` (la de psiónica, movida aquí con `etiquetaEconomia`) y `alternativa` con límite.
+    `FichaResuelta.rebajasTipoAccion`; `conExtrasDeFicha` resuelve `tiposDeAccion` y pone el
+    selector (opción sin valor, la barata por defecto); `conExtrasDirectaDeFicha`, a la nota (los
+    fármacos sin tirada pasan ahora por ella). `textosDeTirada`: una línea por acción, momento
+    «ambos», con la pieza o dote de origen. Fármacos con el tipo de su fuente (estándar o compleja
+    con armadura según cada uno). Fuera la «Recarga:» del texto especial de Arco y Ballesta y el
+    «desenfundado gratis» de la nota del arma incorporada. Sin migración. Quedan `TODO(revisar)`:
+    desenfundar un arma melee sin tipo en la fuente (solo sale con Funda); Recarga Relámpago no
+    alcanza a arco, ballesta ni armamento pesado; «Inyectarse» también en geles y al administrar a
+    otro.
 - [ ] **T6 Psiónica y sobreesfuerzo**: ps-01…08, es-01, au-04, au-05, eq-27, td-31.
 - [ ] **T7 Shock (fase 6 de aportes)**: pl-01…04, eq-28, eq-29, fa-03, di-07.
 - [ ] **T8 Recursos**: au-01, au-02, au-03, au-07, au-08, td-12, td-19.

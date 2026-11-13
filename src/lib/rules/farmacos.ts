@@ -13,6 +13,8 @@
 // comentario de CON_TIRADA) y gasta 1 dosis al confirmar. El resto sigue
 // siendo comunicación de mesa, igual que hoy.
 import { FARMACOS } from "../catalog/medicina";
+import { equipoPorId, type Consumible } from "../catalog/equipo";
+import type { TipoAccionBase } from "./tipoAccion";
 import type { Sheet } from "./sheet";
 import type { Accion, AccionDirecta } from "./acciones";
 import type { AplicadoId } from "./atributos";
@@ -106,6 +108,15 @@ const CON_TIRADA: Record<
 // final de la nota de cada fila. Solo texto, como el resto del efecto.
 const conNotas = (nota: string, notasEspecie: string[]) => [nota, ...notasEspecie].join(" ");
 
+// «Inyectarse» en la fila (T5c): el tipo de acción de aplicárselo, el de quien viste armadura o
+// traje si la fuente lo distingue. Lo rebaja el Inyector Hipodérmico (rules/tipoAccion.ts).
+function inyectarse(sheet: Sheet, f: Consumible): TipoAccionBase[] {
+  if (!f.aplicacion) return [];
+  const { base, conArmadura } = f.aplicacion;
+  const conArmaduraPuesta = conArmadura && sheet.equipo.some((p) => equipoPorId(p.catalogoId)?.familia === "armadura");
+  return [{ accion: "inyectarse", base: [conArmaduraPuesta ? conArmadura : base] }];
+}
+
 export function accionesDeFarmacos(sheet: Sheet, notasEspecie: string[]): Accion[] {
   const acciones: Accion[] = [];
   for (const f of FARMACOS) {
@@ -128,6 +139,7 @@ export function accionesDeFarmacos(sheet: Sheet, notasEspecie: string[]): Accion
       ...(con.dificultad !== undefined && { dificultadSugerida: con.dificultad }),
       ...(con.condiciones && { condiciones: con.condiciones }),
       farmacoId: f.id,
+      tiposDeAccionBase: inyectarse(sheet, f),
       origen: { tipo: "farmaco", id: f.id, label: f.label },
     });
   }
@@ -147,6 +159,7 @@ export function accionesDirectasDeFarmacos(sheet: Sheet, notasEspecie: string[])
       nota: conNotas(`${f.resumen} Quedan ${cantidad}.`, notasEspecie),
       confirmarLabel: "Usar",
       farmacoId: f.id,
+      tiposDeAccionBase: inyectarse(sheet, f),
       origen: { tipo: "farmaco", id: f.id, label: f.label },
     });
   }

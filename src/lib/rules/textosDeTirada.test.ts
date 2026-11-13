@@ -10,6 +10,7 @@ import { montarTirada, eleccionSinTocar } from "./montaje";
 import { DOTES } from "../catalog/dotes";
 import type { EspecialidadId } from "../catalog/especialidades";
 import type { TextoEnTirada } from "./especie";
+import { textoTipoAccion } from "./tipoAccion";
 import {
   enLinea,
   lineaAntes,
@@ -84,6 +85,8 @@ function deAntes(t: Accion): string[] {
     ...(t.efectoCriticoNatural ? [t.efectoCriticoNatural] : []),
     ...ficha.filter((x) => x.soloEnCriticoNatural).map(conFuente),
     ...(t.efectos ?? []).map((e) => e.texto),
+    // T5c: las líneas de tipo de acción (desenfundar, recargar) son nuevas, no salían de nada.
+    ...(t.tiposDeAccion ?? []).map((x) => (x.fuentes.length > 0 ? `${textoTipoAccion(x)} (${x.fuentes.map((f) => f.fuente).join(", ")})` : textoTipoAccion(x))),
   ];
 }
 const pieza = (x: TextoDeTirada) => enLinea([x]);

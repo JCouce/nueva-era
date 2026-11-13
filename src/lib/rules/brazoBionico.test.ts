@@ -414,7 +414,9 @@ describe("Brazo Biónico: arma incorporada (A6b)", () => {
     const golpe = ataques(s).find((t) => t.id === `ataque_melee_${tonfa}`)!;
     assert.equal(casillaDe(golpe), undefined);
     assert.ok(golpe.extremidad);
-    assert.match(golpe.nota!, /Incorporada en el Brazo Biónico: desenfundado gratis, no te la pueden desarmar, cuenta para la carga\./);
+    assert.match(golpe.nota!, /Incorporada en el Brazo Biónico: no te la pueden desarmar, cuenta para la carga\./);
+    // El desenfundado gratis es la línea «Desenfundar» (T5c), no la nota.
+    assert.match(lineaAntes(golpe), /Desenfundar: acción gratuita \(Brazo Biónico 4/);
     const m = montarTirada(resolver(s), golpe, eleccionSinTocar(golpe));
     assert.equal(m.aplicado.valor, 3); // ⌊(5+1)/2⌋, sin marcar nada
     assert.equal(m.danio.ajustes.length, 1); // Fuerza 5 del brazo frente a la tuya 1

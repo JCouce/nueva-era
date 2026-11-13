@@ -15,6 +15,7 @@ import { ESPECIALIDAD_IDS } from "./especialidades";
 import { motorMetadataSchema } from "../rules/motor";
 import { efectoArmaSchema } from "../rules/efectosArma";
 import { estadoPropioSchema } from "../rules/consecuenciasPropias";
+import { rebajaTipoAccionSchema } from "../rules/tipoAccion";
 
 const ids = <T extends readonly { id: string }[]>(lista: T) =>
   lista.map((x) => x.id) as unknown as [T[number]["id"], ...T[number]["id"][]];
@@ -220,7 +221,9 @@ export const efectoDoteSchema = z.discriminatedUnion("tipo", [
   // El daño que lleva media Fuerza la suma entera con la casilla de la misma condición (Disparo
   // poderoso de Arquero Poderoso, do-03: Fue + 8 en vez de ½ Fue + 8).
   z.strictObject({ tipo: z.literal("fuerza_entera"), alcance, condicion, ...comunes }),
-  z.strictObject({ tipo: z.literal("economia"), alcance, economia, limite: limite.optional(), condicion, ...comunes }),
+  // Lo que la dote abarata de una acción de otra fila (T5c, rules/tipoAccion.ts): Recarga
+  // Relámpago en la línea «Recargar» de las armas de fuego. Lo pone el generador (CONVERSIONES).
+  z.strictObject({ tipo: z.literal("economia"), rebaja: rebajaTipoAccionSchema, borrador: comunes.borrador }),
   z.strictObject({ tipo: z.literal("habilita"), accion: alcance, borrador: comunes.borrador }),
   // Cuenta `unidades` menos en un contador de la tirada, sin bajar de su mínimo (§9.3, UX
   // propia: Reflejos Felinos, un atacante adicional menos en la esquiva). Lo pone el

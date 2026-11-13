@@ -3,6 +3,7 @@
 // lo que salta con el resultado o con el daño, después. El resultado los enseña todos.
 //
 //   nota de la tirada                    ambos
+//   tipo de acción (T5c: desenfundar…)   ambos, con la pieza o dote que lo rebaja de origen
 //   textos de ítem sin grado             ambos (como la nota: se leen al decidir)
 //   texto de crítico / crítico natural   después, con ese grado
 //   textos de ítem con grado             después, con ese grado (Tras esquivar: con éxito)
@@ -17,6 +18,7 @@ import type { Accion, Resultado } from "./acciones";
 import type { NotaMontada } from "./condiciones";
 import type { TextoEnTirada } from "./especie";
 import { claveOrigen, type OrigenAporte } from "./origen";
+import { resolverTiposDeAccion, textoTipoAccion } from "./tipoAccion";
 
 export type MomentoTexto = "antes" | "despues" | "ambos";
 export type GradoTexto = "exito" | "critico" | "criticoNatural" | "fallo";
@@ -36,7 +38,12 @@ export type TextoDeTirada = {
 };
 
 export type TiradaConTextos = Pick<Accion, "id" | "label"> &
-  Partial<Pick<Accion, "origen" | "nota" | "efectoCritico" | "efectoCriticoNatural" | "efectos" | "textosDeFicha" | "ataque">>;
+  Partial<
+    Pick<
+      Accion,
+      "origen" | "nota" | "efectoCritico" | "efectoCriticoNatural" | "efectos" | "textosDeFicha" | "ataque" | "tiposDeAccion" | "tiposDeAccionBase"
+    >
+  >;
 
 // La propia tirada como origen: el ítem que la crea (arma, dote, poder…) o, si es de catálogo, ella.
 export const origenDeTirada = (t: Pick<Accion, "id" | "label" | "origen">): OrigenAporte =>
@@ -71,8 +78,18 @@ export function textosDeTirada(t: TiradaConTextos, notas: readonly NotaMontada[]
     (t.textosDeFicha ?? []).filter((x) => gradoDeFicha(x) === grado).map((x) => deFicha(x, propio));
   const propioCon = (texto: string | undefined, grado: GradoTexto): TextoDeTirada[] =>
     texto ? [{ texto, origen: propio, momento: "despues", grado }] : [];
+  // Sin pasar por conExtrasDeFicha (sin ficha), el tipo de la fuente con las rebajas de la fila.
+  const tipos = t.tiposDeAccion ?? resolverTiposDeAccion(t.tiposDeAccionBase, []);
   return [
     ...(t.nota ? [{ texto: t.nota, origen: propio, momento: "ambos" as const }] : []),
+    ...tipos.map(
+      (x): TextoDeTirada => ({
+        texto: textoTipoAccion(x),
+        origen: x.fuentes[0]?.origen ?? propio,
+        momento: "ambos",
+        ...(x.fuentes.length > 0 && { fuente: x.fuentes.map((f) => f.fuente).join(", ") }),
+      }),
+    ),
     ...deFichaCon(undefined),
     ...propioCon(t.efectoCritico, "critico"),
     ...deFichaCon("critico"),

@@ -6125,19 +6125,36 @@ export const DOTES: readonly DoteCatalogo[] = [
     "texto": "Reduce el tiempo de recarga de las armas de fuego en un grado (ej: de Acción Compleja a Estándar, o de Estándar a Simple). Si la acción de recarga ya es de tipo simple, puede recargar como acción gratuita una vez por turno o como reacción durante la ronda.",
     "efectos": [
       {
-        "tipo": "texto",
-        "lugar": "familia:ataque_fuego",
-        "texto": "Recargar armas de fuego cuesta un grado menos (compleja → estándar, estándar → simple).",
-        "condicion": null,
-        "porque": "turno",
+        "tipo": "economia",
+        "rebaja": {
+          "accion": "recargar",
+          "op": "baja_un_paso",
+          "desde": [
+            "compleja",
+            "estandar"
+          ],
+          "soloArmaDeFuego": true
+        },
         "borrador": 0
       },
       {
-        "tipo": "texto",
-        "lugar": "familia:ataque_fuego",
-        "texto": "Si la recarga ya es simple: puedes recargar como acción gratuita (una vez por turno) o como reacción durante la ronda.",
-        "condicion": null,
-        "porque": "turno",
+        "tipo": "economia",
+        "rebaja": {
+          "accion": "recargar",
+          "op": "alternativa",
+          "a": [
+            "gratuita",
+            "reaccion"
+          ],
+          "desde": [
+            "simple"
+          ],
+          "limite": {
+            "veces": 1,
+            "por": "turno"
+          },
+          "soloArmaDeFuego": true
+        },
         "borrador": 1
       }
     ],
@@ -6148,7 +6165,7 @@ export const DOTES: readonly DoteCatalogo[] = [
         "tipo": "texto",
         "afecta": {
           "modo": "accion_existente",
-          "id": "familia:ataque_fuego"
+          "id": "ataque_fuego_<instancia>"
         },
         "mecanismo": "nota_fija",
         "estado": "construido"
@@ -6157,9 +6174,9 @@ export const DOTES: readonly DoteCatalogo[] = [
         "tipo": "texto",
         "afecta": {
           "modo": "accion_existente",
-          "id": "familia:ataque_fuego"
+          "id": "ataque_fuego_<instancia>"
         },
-        "mecanismo": "nota_fija",
+        "mecanismo": "eleccion_jugador",
         "estado": "construido"
       }
     ]

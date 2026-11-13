@@ -181,7 +181,7 @@ export function casillaBrazo(brazo: BrazoBionico, a: AtaqueParaBrazo): Condicion
 // ── Arma incorporada (A6b) ─────────────────────────────────────────────
 
 export const NOTA_ARMA_INCORPORADA =
-  "Incorporada en el Brazo Biónico: desenfundado gratis, no te la pueden desarmar, cuenta para la carga.";
+  "Incorporada en el Brazo Biónico: no te la pueden desarmar, cuenta para la carga.";
 
 // Las filas del arma incorporada que van con el brazo (las mismas que llevarían la casilla):
 // siempre con sus atributos, sin casilla. Lanzarla, no (fuera de A6b). null si no toca.
