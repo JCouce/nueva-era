@@ -37,9 +37,11 @@ describe("efectos de arma del catálogo (T3a)", () => {
     for (const p of piezas)
       for (const e of p.efectos) {
         if (e.tipo === "texto") continue;
-        const estado = estadoPorId(e.estadoId);
-        assert.ok(estado, `${p.id}: estado ${e.estadoId} no existe`);
-        if (e.tipo === "salvacion") assert.ok(estado.salvacion, `${p.id}: ${e.estadoId} no dice su salvación`);
+        const id = e.tipo === "ajusteSalvacion" ? e.contra : e.estadoId;
+        assert.ok(id, `${p.id}: efecto sin estado`);
+        const estado = estadoPorId(id);
+        assert.ok(estado, `${p.id}: estado ${id} no existe`);
+        if (e.tipo === "salvacion") assert.ok(estado.salvacion, `${p.id}: ${id} no dice su salvación`);
       }
   });
 

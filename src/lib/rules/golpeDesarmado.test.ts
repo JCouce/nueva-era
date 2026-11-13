@@ -82,7 +82,7 @@ describe("golpe desarmado con armadura", () => {
   test("criticoDesarmado sustituye la dificultad del aturdimiento o lo añade", () => {
     const golpe = { bonoDanio: 1, fuentes: [], letal: "R", aturdimiento: { dificultad: 8, fuente: "R" }, bloqueoSinPenalizador: "R" };
     const aturdimiento6 = { tipo: "salvacion" as const, estadoId: "aturdido", dificultad: 6, cuando: "critico" as const, fuente: "Puñetazo" };
-    const dif = (es: { tipo: string; dificultad?: number }[]) => es.map((e) => e.dificultad);
+    const dif = (es: { tipo: string; dificultad?: unknown }[]) => es.map((e) => e.dificultad);
     assert.deepEqual(dif(criticoDesarmado([aturdimiento6], golpe)), [8]);
     assert.deepEqual(dif(criticoDesarmado([], golpe)), [8]);
     assert.deepEqual(dif(criticoDesarmado([aturdimiento6], null)), [6]);

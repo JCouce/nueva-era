@@ -13,6 +13,7 @@ import { DISCIPLINA_IDS, type DisciplinaId } from "./psionica";
 import type { AccionPoder } from "../rules/psionica";
 import { ESPECIALIDAD_IDS } from "./especialidades";
 import { motorMetadataSchema } from "../rules/motor";
+import { efectoArmaSchema } from "../rules/efectosArma";
 
 const ids = <T extends readonly { id: string }[]>(lista: T) =>
   lista.map((x) => x.id) as unknown as [T[number]["id"], ...T[number]["id"][]];
@@ -254,6 +255,19 @@ export const efectoDoteSchema = z.discriminatedUnion("tipo", [
       manual: z.array(z.string()).max(0),
       motor: z.array(motorMetadataSchema).min(1),
     }),
+    borrador: comunes.borrador,
+  }),
+  // Lo que la dote le hace al objetivo del ataque (T3b, do-05): un efecto del modelo de arma
+  // (rules/efectosArma.ts) que sale en «El objetivo» del resultado. Con `condicion`, solo con
+  // la casilla de la dote de esa condición marcada (la del bono del mismo destino, si la hay).
+  // Lo pone el generador (CONVERSIONES).
+  z.strictObject({
+    tipo: z.literal("objetivo"),
+    lugar: alcance,
+    condicion,
+    efecto: efectoArmaSchema,
+    requisitoAlcance: comunes.requisitoAlcance,
+    filtroArma: comunes.filtroArma,
     borrador: comunes.borrador,
   }),
   z.strictObject({

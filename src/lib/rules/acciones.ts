@@ -86,6 +86,10 @@ export type Accion = {
   // munición especial van en `municionesEspeciales`. El resultado los avisa con
   // efectosSobreObjetivo; la app no tira por el objetivo ni le pone el estado.
   efectosObjetivo?: EfectoEnTirada[];
+  // Los de la ficha (dotes, T3b: Golpe Entorpecedor, Golpe Fatigante…; y la maniobra Derribo):
+  // aparte, porque la munición que sustituye el crítico del arma no los toca. Los pone
+  // conExtrasDeFicha (o prepararPoder en un poder: Onda Residual).
+  efectosObjetivoDeFicha?: EfectoEnTirada[];
   // Habilidad que el jugador puede usar en su lugar con una casilla de la fila
   // (Levitar: esquivar con Física). Mismo patrón que `aplicadoSutil`, pero sobre
   // la habilidad; la especialidad, si la nombra, se resuelve sola (ver

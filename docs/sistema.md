@@ -563,7 +563,11 @@ imponen penalizadores por umbral:
     línea por efecto: «El objetivo salva Fortaleza contra Shock, dificultad 5», la fuente, y qué
     pasa en cada grado (plegado). La app no tira por el objetivo ni le pone el estado: el máster
     tira por el NPC y lo pone a mano en su panel. El aviso es un `EfectoSobreObjetivo`
-    (`efectosSobreObjetivo`), el dato que la tarjeta del máster (T3b) guardará.
+    (`efectosSobreObjetivo`).
+  - **eq-02 · quién lo lanza** (usuario, 2026-11-13, sustituye a la tarjeta del máster): el que
+    ataca ve el aviso en su resultado y se lo **canta al máster a viva voz**; el máster pone el
+    estado (o lo que toque) en su panel de estados. Sin tarjetas, sin tabla de pendientes, sin
+    que el jugador toque al objetivo.
   - **eq-03 · cuándo salta**: «Efecto X (N)» con el **acierto** (tirada con la defensa como
     dificultad y éxito), aunque el blindaje se coma todo el daño; «Crítico de X (N)» solo en
     crítico. Sin dificultad elegida no se sabe si acertó y no avisa (`TODO(revisar)`).
@@ -617,6 +621,41 @@ imponen penalizadores por umbral:
     Supresora se salva con Fortaleza, como las toxinas del «Contra…» (usuario, 2026-11-13).
   - Fuera: las armas de área (armamento pesado, granadas) siguen con sus efectos en la nota
     (eq-13); el Proyector de Pulso, también (`TODO(revisar)`).
+- **Efectos de dote sobre el objetivo** `[FIRME · usuario, cuestionario de cierre 2026-11-13: do-05 (a)]`.
+  Mismo modelo y mismo aviso que las armas: la dote declara un efecto `objetivo` (un
+  `EfectoArma`, `catalog/dotesTipos.ts`) y la ficha lo cuelga en `efectosObjetivoDeFicha` de los
+  golpes que toca (`rules/dotesEfectos.ts` → `conExtrasDeFicha`; en un poder, `prepararPoder`).
+  La fuente del aviso es la dote; con condición, solo con su casilla marcada (`soloEn.casilla`);
+  con requisito por rama, solo en la rama que cumple (S46). La munición que sustituye el crítico
+  del arma no toca los de la ficha. El aviso dice estado, grado y turnos; los dados de duración
+  los tira la app.
+  - **Golpe Entorpecedor**: con «Golpe entorpecedor (debilidad reconocida)» y acierto,
+    Entorpecido en el grado «acierto del atacante» **1d4 turnos**; en crítico, en el de «crítico
+    del atacante» («Entorpecido (efecto crítico)»), el mismo 1d4 (un solo dado). Melee y disparo.
+  - **Golpe Fatigante**: con su casilla y acierto, el objetivo salva **Fortaleza + Atletismo
+    contra el total de tu ataque** (salvación sin estado): fracaso, pierde 1 de fatiga; fracaso
+    crítico, 1 de fatiga y asfixia grado 1 su siguiente turno; éxito, nada.
+  - **Maniobra Derribo**: con la casilla «Derribo» marcada, su salvación sale en «El objetivo»
+    (Potencia + Atletismo o Combate Melee, tantos éxitos como los de tu ataque; fracaso,
+    derribado; fracaso crítico, además 1 de fatiga). La casilla conserva su nota.
+  - **Derribo Mejorado**: añade a esa salvación, en el fracaso, 1 de fatiga; en el fracaso
+    crítico, 1 de fatiga y **Aturdido 1 turno** (hasta el final de su próximo turno).
+  - **Dominio Elevado**: con «Objetivo en posición inferior», **−2 a la salvación contra
+    Derribado** de ese golpe (la de la maniobra o el Derribo (N) de un arma). Sin derribo en el
+    golpe, no avisa.
+  - **Asesino**: casilla «Objetivo sorprendido o desprevenido» (no suma; «aviso al objetivo») y,
+    acierte o no, «sigue Sorprendido o desprevenido, con el mismo grado, contra tus siguientes
+    ataques». Melee y disparo, por rama.
+  - **Onda Residual**: tras Expansión, acierte o no (estalla igual), la zona: media velocidad y
+    −2 a Reflejos dentro del área **1 turno**, salvo al psiónico. El narrativo sigue en la nota.
+  - Modelo (`rules/efectosArma.ts`, schema Zod): `cuando: "siempre"`; `soloEn.casilla`;
+    salvación sin estado (`tirada`) y contra `"totalDelAtaque"` / `"exitosDelAtaque"`; `fatiga` y
+    `turnos` en la tabla; `gradoId` en un estado; duración en un texto; `ajusteSalvacion` (retoca
+    la salvación contra un estado que ya salte en el mismo golpe: valor y añadidos por grado).
+  - `TODO(revisar)`: en el fracaso crítico del derribo con Derribo Mejorado se suman las dos
+    pérdidas de fatiga (2); «aturdido» sin salvación es el grado Fracaso del catálogo; la asfixia
+    no está en el catálogo de estados (no se pone desde el panel); el Derribo (N) de un arma
+    cuenta como «maniobra del atacante» para Dominio Elevado.
 - **A FIRME sin código** `[FIRME · usuario, cuestionario de cierre 2026-11-13: eq-11, eq-13, eq-17, eq-40, td-29]`:
   - **eq-11**: el crítico «Derribado o Entorpecido (N)» de Látigo y Cadena Armada: **lo decide el
     máster según la escena**. El aviso lo dice como texto.
@@ -2650,7 +2689,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S65 | ***Crítico Mejorado* en un NPC (modo libre)**: la elección sigue siendo una lista cerrada, con las especialidades de arma que **tenga** el NPC, en cualquier habilidad (sin mirar la del requisito). "Una de sus especializaciones en armas" se lee como parte de la elección, no del requisito. `TODO(revisar)` en `rules/dotes.ts` (`especialidadArmaElegible`) si el máster quiere ponerla sin tener la especialidad. | Conservador (tarea "Dotes para los NPC", 2026-10-15). En libre el efecto no mira la especialidad (`efectosDeDotes` con valores null), así que el crítico vale igual. |
 | S66 | **Fracaso → éxito con casilla** (*Balanceo*, *Como Pez en el Agua*): marcada, un fracaso normal cuenta como éxito **sin éxitos de más** (margen 0) y el resultado enseña el fracaso original y la casilla; el fracaso crítico y el éxito no cambian. Se aplica en `tirarMontada`, después del dado. | Decisión del usuario (D2d) y §9.5 ("solo el fracaso normal pasa a éxito"); el margen 0 es del redactor. |
 | S67 | **Armas contundentes** (`ArmaMelee.contundente`, para *Golpe Fatigante*): la fuente no da tipo de daño por arma; se marcan los golpes a mano vacía (§9.5), Tonfa o Porra, Maza de Armas, Bastón de Combate, Martillo Enastado, los escudos, Guantelete y Martillo de Pistón, Ariete Percusivo y sus versiones de Kerzul. El filtro es "contundente **o** a dos manos": cualquier arma a dos manos vale. `TODO(revisar)`: Mangual y Cadena Armada (flagelos; equipamiento.md separa contundentes de flexibles) quedan fuera. *Golpe Mejorado con Escudo* va por la especialidad Escudos del arma (Escudo de Kerzul incluido). | Redactor (D2d), sobre la decisión del usuario de construir el filtro de tipo de daño. |
-| S68 | **Maniobra Derribo solo con dote de derribo** (*Derribo Mejorado* o *Derribo Brutal*; *Arrollar* no cuenta): casilla «Derribo» en todo golpe melee, "penalizador de dificultad de −2" leído como −2 al ataque, y daño básico sin bono por éxitos. La resistencia del rival y el fracaso crítico (−1 fatiga) van en su nota; los textos de *Derribo Mejorado* siguen en la nota del golpe. "Puede no causar daño, sin −2" y el ±2 por tamaño, a mano en el circunstancial (`TODO(revisar)`). *Brutal*: la casilla vale 0, y «Derribo con acción estándar» devuelve el bono por éxitos aunque «Derribo» esté marcada. | Decisión del usuario (D2d); el −2 al ataque y el tamaño a mano son del redactor. |
+| S68 | **Maniobra Derribo solo con dote de derribo** (*Derribo Mejorado* o *Derribo Brutal*; *Arrollar* no cuenta): casilla «Derribo» en todo golpe melee, "penalizador de dificultad de −2" leído como −2 al ataque, y daño básico sin bono por éxitos. La resistencia del rival y el fracaso crítico (−1 fatiga) van en su nota y, desde T3b (do-05), en «El objetivo» del resultado con lo que añade *Derribo Mejorado*. "Puede no causar daño, sin −2" y el ±2 por tamaño, a mano en el circunstancial (`TODO(revisar)`). *Brutal*: la casilla vale 0, y «Derribo con acción estándar» devuelve el bono por éxitos aunque «Derribo» esté marcada. | Decisión del usuario (D2d); el −2 al ataque y el tamaño a mano son del redactor. |
 | S69 | **Una casilla por dote, destino y condición**: los efectos de una misma dote con el mismo destino (y filtro de arma) y la misma condición van a una casilla que junta lo de todos (*Especialidad Médica*: +1 y crítico con 5, una por pareja comprada). El id es el del primer efecto, así que las casillas de D2a no cambian de id. | Decisión del usuario (D2d) para Especialidad Médica; el resto por el mismo patrón. |
 | S70 | ***Negociación Analítica*: casilla en el modal de Convencer / mentir** («Negociando: Perspicacia en lugar de Expresión»): marcada, la tirada usa Perspicacia (con su valor y su línea en el desglose). La fila sigue enseñando Expresión: el cambio se ve al marcarla en el modal. Si hubiese a la vez estilo Sutil, manda la casilla. | Decisión del usuario (D2d): selector en el modal antes de tirar. |
 | S71 | ***Ojo Clínico*: la fatiga se paga al tirar con la casilla marcada** (1 punto, sin temporal), se acierte o no; sin `onPagarFatiga` (consola del máster), a mano. La ventaja no se acumula: con varias casillas de ventaja, dos d12 igual. | §9.5 ("la fatiga solo paga la ventaja", "la ventaja no se acumula"); el momento del pago es del redactor. |

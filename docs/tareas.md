@@ -965,7 +965,7 @@ Tandas, en orden:
     *(2026-11-13)* `efectosObjetivo` como dato en armas de fuego e impulsoras, melee, munición
     especial y Armas Modificadas (atajos en `catalog/efectosArma.ts`); `rules/efectosArma.ts`
     decide qué salta (acierto/crítico, modo, tramo, munición) y monta `EfectoSobreObjetivo`, que
-    el resultado pinta en «El objetivo» y T3b guardará. `Estado.salvacion` (eq-07). Estados
+    el resultado pinta en «El objetivo». `Estado.salvacion` (eq-07). Estados
     nuevos Supresores (dobla la fatiga de los poderes de verdad: condición de estado en
     `FUENTES_EXTERNAS_FATIGA`, sustituye a las dos casillas) y Dosis acumulada. Derribo de
     escopetas por el mismo mecanismo; Plasma SG/AAA sin Derribo. Hoja Dentada/Sierra «Ignora 1»
@@ -974,8 +974,26 @@ Tandas, en orden:
     Compleja: Aturdimiento 10 y Derribo 8). Sin migración. Quedan `TODO(revisar)`: sin
     dificultad no avisa; el ×2 del Ariete no dobla el daño extra; el «(N)» de Impacto Estructural.
     Fuera: armas de área (eq-13) y Proyector de Pulso siguen como texto.
-  - [ ] **T3b** tarjeta del máster en el centro de mando (eq-02, do-05): tabla propia de efectos
-    pendientes; el máster elige el grado y pone el estado en un toque, con registro.
+  - [x] **T3b** efectos de dote sobre el objetivo (do-05). Decisión (usuario, 2026-11-13, eq-02):
+    **sin tarjeta del máster**. El que ataca ve el aviso en «El objetivo» y se lo canta al máster
+    a viva voz; el máster lo pone en su panel de estados. Nada de tabla de pendientes, migración
+    ni polling. Lo que queda: Golpe Entorpecedor, Golpe Fatigante, Derribo Mejorado, Dominio
+    Elevado, Asesino y Onda Residual dejan de ser nota suelta y pasan al modelo de T3a
+    (`EfectoArma`/`EfectoSobreObjetivo`), con estado, grado y turnos; los dados de duración
+    («1d4 turnos» de Golpe Entorpecedor) los tira la app para que el jugador cante el número.
+    *(2026-11-13)* Efecto de dote `objetivo` (un `EfectoArma`) en el catálogo de dotes (vía
+    CONVERSIONES del generador); `dotesEfectos` lo pone en `objetivos` con la casilla de su
+    condición en `soloEn.casilla`, y `conExtrasDeFicha`/`prepararPoder` lo cuelgan en
+    `Accion.efectosObjetivoDeFicha` (la Perforante no lo toca). Modelo de T3a extendido de forma
+    general: `cuando: "siempre"`, salvación sin estado y contra el total o los éxitos del ataque,
+    `fatiga` en la tabla, grado fijo en un estado, duración en un texto y `ajusteSalvacion`. Golpe
+    Entorpecedor (Entorpecido 1d4, grado de acierto o de crítico), Golpe Fatigante (Fortaleza +
+    Atletismo contra el total), Derribo Mejorado (añade fatiga y Aturdido 1 turno a la salvación
+    de la maniobra, que ahora sale en «El objetivo»), Dominio Elevado (−2 a la salvación contra
+    Derribado), Asesino (casilla y «sigue sorprendido», siempre), Onda Residual (zona 1 turno tras
+    Expansión, siempre). Sus notas viejas se quitan. Sin migración ni cambio de UI. Quedan
+    `TODO(revisar)`: fatiga doble en el fracaso crítico del derribo, grado de «aturdido», asfixia
+    fuera del catálogo, Derribo (N) de arma como maniobra para Dominio Elevado.
   - [ ] **T3c** retroceso entrópico de Kerzul (eq-18, eq-19) y Grito de Guerra y compañía (do-04).
 - [ ] **T4 Estado Sigilo**: di-09, do-01, eq-25, eq-26, eq-30, eq-31, eq-33.
 - [ ] **T5 Fase 4 de aportes + lo que sale en la tirada**: pl-05, eq-35, do-07, es-05, au-06, td-05,

@@ -194,7 +194,7 @@ describe("el golpe", () => {
     // T3a: el crítico ya no es texto: los efectos van como dato, cada uno con su fuente.
     assert.equal(golpe.efectoCritico, undefined);
     assert.deepEqual(
-      golpe.efectosObjetivo?.map((e) => [e.fuente, e.cuando, e.tipo === "texto" ? e.texto : e.estadoId]),
+      golpe.efectosObjetivo?.map((e) => [e.fuente, e.cuando, e.tipo === "texto" ? e.texto : e.tipo === "ajusteSalvacion" ? e.contra : e.estadoId]),
       [
         ["Cuchillo de Combate", "critico", "hemorragia"],
         ["Electrificante", "acierto", "shock"],

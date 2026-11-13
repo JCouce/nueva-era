@@ -383,7 +383,10 @@ describe("efectos de dotes en las tiradas de arma (D2b-1)", () => {
     const golpe = fila(f, "ataque_melee_");
     const c = golpe.condiciones?.find((x) => x.id.startsWith("dote_dominio_elevado"));
     assert.ok(c && c.tipo === "toggle" && c.valorActivo === 1);
-    assert.match(golpe.nota ?? "", /salvación para mantener el equilibrio.*\(Dominio Elevado\)/);
+    // El −2 a la salvación del objetivo ya no es nota: retoca su salvación contra Derribado (T3b).
+    const ajuste = golpe.efectosObjetivoDeFicha?.find((e) => e.fuente === "Dominio Elevado");
+    assert.ok(ajuste && ajuste.tipo === "ajusteSalvacion" && ajuste.contra === "derribado" && ajuste.valor === -2);
+    assert.equal(ajuste.soloEn?.casilla, c.id);
     for (const p of ["ataque_fuego_", "lanzar_melee_", "bloquear_melee_"])
       assert.ok(!(fila(f, p).condiciones ?? []).some((x) => x.id.startsWith("dote_dominio_elevado")), p);
   });
@@ -406,15 +409,17 @@ describe("efectos de dotes en las tiradas de arma (D2b-1)", () => {
 
   test("requisito por rama (Asesino): solo en la rama que la ficha cumple", () => {
     const dotes = [{ id: "dote_asesino" }];
+    // Desde T3b su efecto va al objetivo (efectosObjetivoDeFicha), no a la nota.
+    const tiene = (t: Accion) => (t.efectosObjetivoDeFicha ?? []).some((e) => e.fuente === "Asesino");
     const soloMelee = resolver(armado(fichaCombate(dotes, { cm: 2, cd: 0 }), "espada", "pistola_mosquito"));
-    assert.match(fila(soloMelee, "ataque_melee_").nota ?? "", /\(Asesino\)/);
-    assert.doesNotMatch(fila(soloMelee, "ataque_fuego_").nota ?? "", /Asesino/);
+    assert.ok(tiene(fila(soloMelee, "ataque_melee_")));
+    assert.ok(!tiene(fila(soloMelee, "ataque_fuego_")));
     const soloDistancia = resolver(armado(fichaCombate(dotes, { cm: 0, cd: 2 }), "espada", "pistola_mosquito"));
-    assert.doesNotMatch(fila(soloDistancia, "ataque_melee_").nota ?? "", /Asesino/);
-    assert.match(fila(soloDistancia, "ataque_fuego_").nota ?? "", /\(Asesino\)/);
+    assert.ok(!tiene(fila(soloDistancia, "ataque_melee_")));
+    assert.ok(tiene(fila(soloDistancia, "ataque_fuego_")));
     // NPC del máster: sin mirar requisitos, las dos ramas.
     const npc = resolver(armado(fichaCombate(dotes, { cm: 0, cd: 2 }), "espada"), true);
-    assert.match(fila(npc, "ataque_melee_").nota ?? "", /\(Asesino\)/);
+    assert.ok(tiene(fila(npc, "ataque_melee_")));
   });
 
   test("requisito por rama (Golpe Entorpecedor): las casillas, solo en la rama que cumple", () => {

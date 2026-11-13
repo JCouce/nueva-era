@@ -41,7 +41,7 @@ const preparar = (f: FichaResuelta, poder: PoderDisponible, s: Partial<Seleccion
     niveles: f.psionica.paraEfectos,
     poder,
     seleccion: { ...SELECCION_PODER_VACIA, ...s },
-    ...(conTextos && { textos: f.textosTirada }),
+    ...(conTextos && { textos: f.textosTirada, objetivos: f.objetivosTirada }),
   })!;
 
 describe("catálogo: recuento de D2c-2", () => {
@@ -129,12 +129,18 @@ describe("prepararPoder: textos de la ficha en el poder", () => {
   const expansion = (f: FichaResuelta) =>
     accionesDePsionica(f.ficha, f.psionica.paraEfectos).find((p) => p.accion.id === "psi_singularidad_expansion")!;
 
-  test("Onda Residual: sus 5 textos en la nota de Expansión, solo con la dote", () => {
+  // T3b: la zona va a «El objetivo» (efecto sobre el objetivo); en la nota queda el narrativo.
+  test("Onda Residual: su zona como efecto sobre el objetivo de Expansión y el narrativo en la nota, solo con la dote", () => {
     const con = resolver(ficha([ONDA], SINGULARIDAD_3));
-    const nota = preparar(con, expansion(con)).tirada?.nota ?? "";
-    assert.equal(nota.split("(Onda Residual)").length - 1, 5);
+    const tirada = preparar(con, expansion(con)).tirada;
+    assert.equal((tirada?.nota ?? "").split("(Onda Residual)").length - 1, 1);
+    const [zona] = tirada?.efectosObjetivoDeFicha ?? [];
+    assert.ok(zona && zona.tipo === "texto" && zona.fuente === "Onda Residual" && zona.cuando === "siempre");
+    assert.deepEqual(zona.duracion, { tipo: "turnos", turnos: 1 });
     const sin = resolver(ficha([], SINGULARIDAD_3));
-    assert.doesNotMatch(preparar(sin, expansion(sin)).tirada?.nota ?? "", /Onda Residual/);
+    const sinTirada = preparar(sin, expansion(sin)).tirada;
+    assert.doesNotMatch(sinTirada?.nota ?? "", /Onda Residual/);
+    assert.equal(sinTirada?.efectosObjetivoDeFicha, undefined);
   });
 
   test("sin textos (llamada sin la lista): la tirada no cambia", () => {

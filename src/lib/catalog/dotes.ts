@@ -4251,19 +4251,51 @@ export const DOTES: readonly DoteCatalogo[] = [
         "borrador": 0
       },
       {
-        "tipo": "texto",
+        "tipo": "objetivo",
         "lugar": "familia:ataque_melee",
-        "texto": "Derribo con éxito: el objetivo pierde 1 punto de fatiga.",
-        "condicion": "Derribo",
-        "porque": "tercero",
+        "condicion": null,
+        "efecto": {
+          "tipo": "ajusteSalvacion",
+          "contra": "derribado",
+          "tabla": {
+            "fracaso": {
+              "texto": "Pierde 1 punto de fatiga.",
+              "fatiga": 1
+            },
+            "fracasoCritico": {
+              "texto": "Pierde 1 punto de fatiga.",
+              "fatiga": 1
+            }
+          },
+          "cuando": "acierto",
+          "soloEn": {
+            "casilla": "maniobra_derribo"
+          }
+        },
         "borrador": 0
       },
       {
-        "tipo": "texto",
+        "tipo": "objetivo",
         "lugar": "familia:ataque_melee",
-        "texto": "Si el objetivo saca fracaso crítico en su tirada contra el derribo, además queda aturdido hasta el final de su próximo turno.",
-        "condicion": "Derribo",
-        "porque": "tercero",
+        "condicion": null,
+        "efecto": {
+          "tipo": "ajusteSalvacion",
+          "contra": "derribado",
+          "tabla": {
+            "fracasoCritico": {
+              "texto": "Queda aturdido hasta el final de su próximo turno.",
+              "estado": {
+                "estadoId": "aturdido",
+                "gradoId": "fracaso",
+                "turnos": 1
+              }
+            }
+          },
+          "cuando": "acierto",
+          "soloEn": {
+            "casilla": "maniobra_derribo"
+          }
+        },
         "borrador": 1
       }
     ],
@@ -4286,7 +4318,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "objetivo_tercero",
           "id": "familia:ataque_melee"
         },
-        "mecanismo": "nota_fija",
+        "mecanismo": "eleccion_jugador",
         "estado": "construido"
       },
       {
@@ -4295,7 +4327,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "objetivo_tercero",
           "id": "familia:ataque_melee"
         },
-        "mecanismo": "nota_fija",
+        "mecanismo": "eleccion_jugador",
         "estado": "construido"
       }
     ]
@@ -4885,11 +4917,30 @@ export const DOTES: readonly DoteCatalogo[] = [
         "borrador": 0
       },
       {
-        "tipo": "texto",
+        "tipo": "objetivo",
         "lugar": "familia:ataque_melee",
-        "texto": "Si el golpe tiene éxito, el rival tira una salvación de Fortaleza + Atletismo enfrentada al resultado de tu ataque. Éxito: sin efecto. Fracaso: pierde 1 punto de fatiga. Fracaso crítico: pierde 1 punto de fatiga y durante su siguiente turno sufre asfixia grado 1.",
         "condicion": "Golpe fatigante",
-        "porque": "tercero",
+        "efecto": {
+          "tipo": "salvacion",
+          "tirada": {
+            "etiqueta": "Fortaleza + Atletismo"
+          },
+          "dificultad": "totalDelAtaque",
+          "tabla": {
+            "fracasoCritico": {
+              "texto": "Pierde 1 punto de fatiga y durante su siguiente turno sufre asfixia grado 1 (cada acción le cuesta 1 punto de fatiga más).",
+              "fatiga": 1
+            },
+            "fracaso": {
+              "texto": "Pierde 1 punto de fatiga.",
+              "fatiga": 1
+            },
+            "exito": {
+              "texto": "Ningún efecto."
+            }
+          },
+          "cuando": "acierto"
+        },
         "filtroArma": {
           "empleo": "dos manos",
           "tipoDanio": [
@@ -4917,7 +4968,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "objetivo_tercero",
           "id": "familia:ataque_melee"
         },
-        "mecanismo": "nota_fija",
+        "mecanismo": "eleccion_jugador",
         "estado": "construido"
       }
     ]
@@ -5002,11 +5053,19 @@ export const DOTES: readonly DoteCatalogo[] = [
     "texto": "Si el personaje ataca a un objetivo sorprendido o desprevenido, segundos ataques mantienen la condición de sorpresivo. Esto solo se aplicará si el personaje utiliza un estilo de combate (melee o distancia) con el que cumpla los requisitos para la dote.",
     "efectos": [
       {
-        "tipo": "texto",
+        "tipo": "objetivo",
         "lugar": "familia:ataque_melee",
-        "texto": "Si atacas a un objetivo sorprendido o desprevenido, tus ataques siguientes mantienen la condición de sorpresa. Solo con Combate Melee 2.",
         "condicion": "Objetivo sorprendido o desprevenido",
-        "porque": "tercero",
+        "efecto": {
+          "tipo": "estado",
+          "estadoId": "sorprendido_desprevenido",
+          "duracion": {
+            "tipo": "sinDuracion",
+            "motivo": "lo sigue estando, con el mismo grado, contra tus siguientes ataques"
+          },
+          "etiqueta": "Sorprendido o desprevenido",
+          "cuando": "siempre"
+        },
         "requisitoAlcance": {
           "tipo": "habilidad",
           "id": "combate_melee",
@@ -5015,11 +5074,19 @@ export const DOTES: readonly DoteCatalogo[] = [
         "borrador": 0
       },
       {
-        "tipo": "texto",
+        "tipo": "objetivo",
         "lugar": "familia:ataque_fuego",
-        "texto": "Si atacas a un objetivo sorprendido o desprevenido, tus ataques siguientes mantienen la condición de sorpresa. Solo con Combate a Distancia 2.",
         "condicion": "Objetivo sorprendido o desprevenido",
-        "porque": "tercero",
+        "efecto": {
+          "tipo": "estado",
+          "estadoId": "sorprendido_desprevenido",
+          "duracion": {
+            "tipo": "sinDuracion",
+            "motivo": "lo sigue estando, con el mismo grado, contra tus siguientes ataques"
+          },
+          "etiqueta": "Sorprendido o desprevenido",
+          "cuando": "siempre"
+        },
         "requisitoAlcance": {
           "tipo": "habilidad",
           "id": "combate_distancia",
@@ -5037,7 +5104,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "objetivo_tercero",
           "id": "familia:ataque_melee"
         },
-        "mecanismo": "nota_fija",
+        "mecanismo": "eleccion_jugador",
         "estado": "construido"
       },
       {
@@ -5046,7 +5113,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "objetivo_tercero",
           "id": "familia:ataque_fuego"
         },
-        "mecanismo": "nota_fija",
+        "mecanismo": "eleccion_jugador",
         "estado": "construido"
       }
     ]
@@ -5213,11 +5280,19 @@ export const DOTES: readonly DoteCatalogo[] = [
         "borrador": 4
       },
       {
-        "tipo": "texto",
+        "tipo": "objetivo",
         "lugar": "familia:ataque_melee",
-        "texto": "Si el ataque tiene éxito, el objetivo queda entorpecido 1d4 turnos; con crítico, entorpecido en su grado crítico durante 1d4 turnos.",
         "condicion": "Golpe entorpecedor (debilidad reconocida)",
-        "porque": "tercero",
+        "efecto": {
+          "tipo": "estado",
+          "estadoId": "entorpecido",
+          "duracion": {
+            "tipo": "dado",
+            "caras": 4
+          },
+          "gradoId": "fallo",
+          "cuando": "acierto"
+        },
         "requisitoAlcance": {
           "tipo": "habilidad",
           "id": "combate_melee",
@@ -5226,11 +5301,63 @@ export const DOTES: readonly DoteCatalogo[] = [
         "borrador": 5
       },
       {
-        "tipo": "texto",
-        "lugar": "familia:ataque_fuego",
-        "texto": "Si el ataque tiene éxito, el objetivo queda entorpecido 1d4 turnos; con crítico, entorpecido en su grado crítico durante 1d4 turnos.",
+        "tipo": "objetivo",
+        "lugar": "familia:ataque_melee",
         "condicion": "Golpe entorpecedor (debilidad reconocida)",
-        "porque": "tercero",
+        "efecto": {
+          "tipo": "estado",
+          "estadoId": "entorpecido",
+          "duracion": {
+            "tipo": "dado",
+            "caras": 4
+          },
+          "gradoId": "fracaso_critico",
+          "etiqueta": "Entorpecido (efecto crítico)",
+          "cuando": "critico"
+        },
+        "requisitoAlcance": {
+          "tipo": "habilidad",
+          "id": "combate_melee",
+          "min": 1
+        },
+        "borrador": 5
+      },
+      {
+        "tipo": "objetivo",
+        "lugar": "familia:ataque_fuego",
+        "condicion": "Golpe entorpecedor (debilidad reconocida)",
+        "efecto": {
+          "tipo": "estado",
+          "estadoId": "entorpecido",
+          "duracion": {
+            "tipo": "dado",
+            "caras": 4
+          },
+          "gradoId": "fallo",
+          "cuando": "acierto"
+        },
+        "requisitoAlcance": {
+          "tipo": "habilidad",
+          "id": "combate_distancia",
+          "min": 1
+        },
+        "borrador": 6
+      },
+      {
+        "tipo": "objetivo",
+        "lugar": "familia:ataque_fuego",
+        "condicion": "Golpe entorpecedor (debilidad reconocida)",
+        "efecto": {
+          "tipo": "estado",
+          "estadoId": "entorpecido",
+          "duracion": {
+            "tipo": "dado",
+            "caras": 4
+          },
+          "gradoId": "fracaso_critico",
+          "etiqueta": "Entorpecido (efecto crítico)",
+          "cuando": "critico"
+        },
         "requisitoAlcance": {
           "tipo": "habilidad",
           "id": "combate_distancia",
@@ -5293,7 +5420,16 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "objetivo_tercero",
           "id": "familia:ataque_melee"
         },
-        "mecanismo": "nota_fija",
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      },
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "objetivo_tercero",
+          "id": "familia:ataque_melee"
+        },
+        "mecanismo": "eleccion_jugador",
         "estado": "construido"
       },
       {
@@ -5302,7 +5438,16 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "objetivo_tercero",
           "id": "familia:ataque_fuego"
         },
-        "mecanismo": "nota_fija",
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      },
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "objetivo_tercero",
+          "id": "familia:ataque_fuego"
+        },
+        "mecanismo": "eleccion_jugador",
         "estado": "construido"
       }
     ]
@@ -5462,11 +5607,15 @@ export const DOTES: readonly DoteCatalogo[] = [
         "borrador": 0
       },
       {
-        "tipo": "texto",
+        "tipo": "objetivo",
         "lugar": "familia:ataque_melee",
-        "texto": "El objetivo en posición inferior sufre -2 a su salvación para mantener el equilibrio y no caer derribado por tus maniobras.",
         "condicion": "Objetivo en posición inferior (desnivel apreciable: escalones, rocas, vehículos…)",
-        "porque": "tercero",
+        "efecto": {
+          "tipo": "ajusteSalvacion",
+          "contra": "derribado",
+          "valor": -2,
+          "cuando": "acierto"
+        },
         "borrador": 1
       }
     ],
@@ -5488,7 +5637,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "modo": "objetivo_tercero",
           "id": "familia:ataque_melee"
         },
-        "mecanismo": "nota_fija",
+        "mecanismo": "eleccion_jugador",
         "estado": "construido"
       }
     ]
@@ -7128,16 +7277,24 @@ export const DOTES: readonly DoteCatalogo[] = [
         "borrador": 0
       },
       {
-        "tipo": "texto",
+        "tipo": "objetivo",
         "lugar": "psi_singularidad_expansion",
-        "texto": "Onda Residual: las casillas del área de la explosión quedan cargadas de inestabilidad gravitatoria durante el turno siguiente.",
         "condicion": null,
-        "porque": "tablero",
+        "efecto": {
+          "tipo": "texto",
+          "texto": "Las casillas del área de la explosión quedan cargadas de inestabilidad gravitatoria: quien las atraviese o empiece a moverse en ellas va a media velocidad (cada casilla cuenta como dos) y tiene −2 a Reflejos mientras siga dentro",
+          "duracion": {
+            "tipo": "turnos",
+            "turnos": 1
+          },
+          "cuando": "siempre",
+          "nota": "No afecta al psiónico que la desencadena."
+        },
         "borrador": 1
       },
       {
         "tipo": "texto",
-        "lugar": "psi_singularidad_expansion",
+        "lugar": "ficha",
         "texto": "Onda Residual: quien intente atravesar esas casillas o iniciar un movimiento en ellas reduce su velocidad a la mitad (cada casilla cuenta como dos).",
         "condicion": null,
         "porque": "tablero",
@@ -7145,7 +7302,7 @@ export const DOTES: readonly DoteCatalogo[] = [
       },
       {
         "tipo": "texto",
-        "lugar": "psi_singularidad_expansion",
+        "lugar": "ficha",
         "texto": "Onda Residual: −2 a Reflejos mientras dure el efecto y esté dentro del área.",
         "condicion": null,
         "porque": "tercero",
@@ -7153,7 +7310,7 @@ export const DOTES: readonly DoteCatalogo[] = [
       },
       {
         "tipo": "texto",
-        "lugar": "psi_singularidad_expansion",
+        "lugar": "ficha",
         "texto": "Onda Residual: el efecto no perjudica al psiónico que lo ha desencadenado.",
         "condicion": null,
         "porque": "tercero",
@@ -7175,24 +7332,6 @@ export const DOTES: readonly DoteCatalogo[] = [
       {
         "tipo": "texto",
         "afecta": {
-          "modo": "accion_existente",
-          "id": "psi_singularidad_expansion"
-        },
-        "mecanismo": "nota_fija",
-        "estado": "construido"
-      },
-      {
-        "tipo": "texto",
-        "afecta": {
-          "modo": "accion_existente",
-          "id": "psi_singularidad_expansion"
-        },
-        "mecanismo": "nota_fija",
-        "estado": "construido"
-      },
-      {
-        "tipo": "texto",
-        "afecta": {
           "modo": "objetivo_tercero",
           "id": "psi_singularidad_expansion"
         },
@@ -7202,10 +7341,25 @@ export const DOTES: readonly DoteCatalogo[] = [
       {
         "tipo": "texto",
         "afecta": {
-          "modo": "objetivo_tercero",
-          "id": "psi_singularidad_expansion"
+          "modo": "ninguna"
         },
-        "mecanismo": "nota_fija",
+        "mecanismo": null,
+        "estado": "construido"
+      },
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "ninguna"
+        },
+        "mecanismo": null,
+        "estado": "construido"
+      },
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "ninguna"
+        },
+        "mecanismo": null,
         "estado": "construido"
       }
     ]
@@ -7758,9 +7912,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   195 efectos (192 en el borrador)
+//   197 efectos (192 en el borrador)
 //   construidos: 97
-//   texto: 98
+//   texto: 100
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0

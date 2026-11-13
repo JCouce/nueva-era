@@ -21,6 +21,7 @@ const SIN_DIFICULTAD = { exito: null, critico: false, dificultad: null };
 function corto(e: EfectoEnTirada): string {
   if (e.tipo === "texto") return e.texto;
   if (e.tipo === "salvacion") return `${e.estadoId} ${e.dificultad}`;
+  if (e.tipo === "ajusteSalvacion") return `ajuste ${e.contra}`;
   return e.etiqueta ?? e.estadoId;
 }
 const saltan = (t: Parameters<typeof efectosQueSaltan>[0], estado: EstadoCondiciones, r: typeof ACIERTA | typeof SIN_DIFICULTAD) =>

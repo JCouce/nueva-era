@@ -47,7 +47,7 @@ import {
 import type { Grado, NivelesPsionica } from "./psionica";
 import type { Sheet } from "./sheet";
 import type { TextoEnTirada } from "./especie";
-import { conTextosEnTirada, contextoDe, textosDe, textosSinDado } from "./textosTirada";
+import { conTextosEnTirada, contextoDe, textosDe, textosSinDado, type ObjetivoEnTirada } from "./textosTirada";
 import { consultaIndiceCondiciones, type IndiceCondiciones } from "./equipo";
 import { fatigaEfectiva } from "./vitalidad";
 import { FUENTES_EXTERNAS_FATIGA } from "../catalog/psionica";
@@ -72,6 +72,9 @@ export type EntradaPoder = {
   // aquí se eligen los de este poder (por el id de su acción) y van a la nota o al crítico de su
   // tirada, o a sus notas si no tira (D2c-2: Onda Residual en Expansión). La UI solo los pasa.
   textos?: TextoEnTirada[];
+  // FichaResuelta.objetivosTirada: los efectos sobre el objetivo de este poder (Onda Residual
+  // tras Expansión, T3b) van a `efectosObjetivoDeFicha` de su tirada.
+  objetivos?: ObjetivoEnTirada[];
   // FichaResuelta.indiceCondiciones: las casillas con alcance que casan con la tirada del poder
   // (A2b de aumentos: las de aplicado, como Prefrontal en un poder de Voluntad, y las de
   // "todas", como Conectividad Callosa), igual que conExtrasDeFicha en cualquier otra tirada.
@@ -116,6 +119,7 @@ export function prepararPoder({
   poder,
   seleccion,
   textos = [],
+  objetivos = [],
   indiceCondiciones,
   fatigaEfectiva: efectivaEnJuego,
   estados = [],
@@ -162,7 +166,12 @@ export function prepararPoder({
   const extra = conAjustes && indiceCondiciones ? consultaIndiceCondiciones(indiceCondiciones, ctx) : [];
   const conCasillas =
     conAjustes && extra.length > 0 ? { ...conAjustes, condiciones: [...(conAjustes.condiciones ?? []), ...extra] } : conAjustes;
-  const tirada = conCasillas && conTextosEnTirada(conCasillas, propios);
+  const objetivosPropios = textosDe(objetivos, ctx, false).map((o) => o.efecto);
+  const conTextos = conCasillas && conTextosEnTirada(conCasillas, propios);
+  const tirada =
+    conTextos && objetivosPropios.length > 0
+      ? { ...conTextos, efectosObjetivoDeFicha: [...(conTextos.efectosObjetivoDeFicha ?? []), ...objetivosPropios] }
+      : conTextos;
   const resuelto: PoderResuelto =
     !conAjustes && propios.length > 0
       ? { ...sinTextos, notas: [...sinTextos.notas, ...textosSinDado(propios).map((texto) => ({ texto, lugar: "tirada" as const }))] }

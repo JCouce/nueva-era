@@ -6,6 +6,11 @@ import { especialidadesDeTirada, type Accion } from "./acciones";
 import type { TextoEnTirada } from "./especie";
 import type { AplicadoId } from "./atributos";
 import { alcanzaA, alcanzaAlgunAplicado, type ContextoAccion } from "./modificadores";
+import type { EfectoEnTirada } from "./efectosArma";
+
+// Un efecto sobre el objetivo que la ficha cuelga de una tirada (dotes, T3b), con el mismo
+// destino que un texto: va a `efectosObjetivoDeFicha` de las tiradas que casen.
+export type ObjetivoEnTirada = { en: TextoEnTirada["en"]; efecto: EfectoEnTirada };
 
 // Los aplicados con los que puede tirarse la tirada: el suyo, el de Sutil y el de cualquier
 // casilla que lo cambie (Negociación Analítica). Sin repetidos.
@@ -42,7 +47,8 @@ export const contextoDe = (
 });
 
 // Por aplicado (A2b): basta con que la tirada pueda tirarse con uno de ellos.
-export function textosDe(textos: TextoEnTirada[], ctx: ContextoAccion, desarmado: boolean): TextoEnTirada[] {
+// También los efectos sobre el objetivo, con el mismo destino.
+export function textosDe<T extends Pick<TextoEnTirada, "en">>(textos: T[], ctx: ContextoAccion, desarmado: boolean): T[] {
   return textos.filter((x) => {
     if (x.en.tipo === "desarmado") return desarmado;
     if (x.en.tipo === "tiradaId") return x.en.id === ctx.id;

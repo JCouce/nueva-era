@@ -288,16 +288,192 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
   },
   // Maniobra Derribo (habilidades.md, Combate Melee) solo con dote de derribo (decisión del
   // usuario, D2d): Derribo Mejorado pone la casilla «Derribo» (−2, daño básico) además de su texto.
+  // T3b (do-05): «al efectuar un derribo con éxito el objetivo pierde 1 punto de fatiga, en caso
+  // de que fracase criticamente su salvación además pasa a estar aturdido hasta el final de su
+  // próximo turno» → lo que añade a la salvación de la maniobra (rules/dotesEfectos.ts,
+  // SALVACION_DERRIBO) en el fracaso y el fracaso crítico, con la casilla «Derribo» marcada.
+  // TODO(revisar): en el fracaso crítico la maniobra ya quita 1 de fatiga; se leen las dos (2).
+  // TODO(revisar): «aturdido» sin salvación se toma como el grado Fracaso del catálogo (el efecto
+  // base del estado, el del resumen).
   "dote_derribo_mejorado#0": [
     { tipo: "maniobra", maniobra: "derribo", alcance: "familia:ataque_melee" },
     {
-      tipo: "texto",
+      tipo: "objetivo",
       lugar: "familia:ataque_melee",
-      texto: "Derribo con éxito: el objetivo pierde 1 punto de fatiga.",
-      condicion: "Derribo",
-      porque: "tercero",
+      condicion: null,
+      efecto: {
+        tipo: "ajusteSalvacion",
+        contra: "derribado",
+        tabla: {
+          fracaso: { texto: "Pierde 1 punto de fatiga.", fatiga: 1 },
+          fracasoCritico: { texto: "Pierde 1 punto de fatiga.", fatiga: 1 },
+        },
+        cuando: "acierto",
+        soloEn: { casilla: "maniobra_derribo" },
+      },
     },
   ],
+  "dote_derribo_mejorado#1": {
+    tipo: "objetivo",
+    lugar: "familia:ataque_melee",
+    condicion: null,
+    efecto: {
+      tipo: "ajusteSalvacion",
+      contra: "derribado",
+      tabla: {
+        fracasoCritico: {
+          texto: "Queda aturdido hasta el final de su próximo turno.",
+          estado: { estadoId: "aturdido", gradoId: "fracaso", turnos: 1 },
+        },
+      },
+      cuando: "acierto",
+      soloEn: { casilla: "maniobra_derribo" },
+    },
+  },
+  // T3b (do-05): «si el golpe tiene éxito el rival debe llevar a cabo una tirada de salvación de
+  // fortaleza + atletismo enfrentada al resultado del ataque original» → salvación sin estado
+  // contra el total del ataque, con la tabla de la prosa. La asfixia, como texto: no está en el
+  // catálogo de estados (sistema.md: «estados nuevos… se parametrizan más adelante»).
+  // TODO(revisar): Asfixia grado 1 no se puede poner desde el panel del máster (no es estado).
+  "dote_golpe_fatigante#1": {
+    tipo: "objetivo",
+    lugar: "familia:ataque_melee",
+    condicion: "Golpe fatigante",
+    efecto: {
+      tipo: "salvacion",
+      tirada: { etiqueta: "Fortaleza + Atletismo" },
+      dificultad: "totalDelAtaque",
+      tabla: {
+        fracasoCritico: {
+          texto: "Pierde 1 punto de fatiga y durante su siguiente turno sufre asfixia grado 1 (cada acción le cuesta 1 punto de fatiga más).",
+          fatiga: 1,
+        },
+        fracaso: { texto: "Pierde 1 punto de fatiga.", fatiga: 1 },
+        exito: { texto: "Ningún efecto." },
+      },
+      cuando: "acierto",
+    },
+  },
+  // T3b (do-05): «resuelto el ataque si tiene éxito causa entorpecimiento durante 1d4 turnos, el
+  // golpe crítico también causa efecto crítico durante el mismo tiempo» → Entorpecido en el grado
+  // «acierto del atacante» o, en crítico, en el de «crítico del atacante» (catálogo de estados),
+  // 1d4 turnos que tira la app. Con la casilla del ataque entorpecedor; cada rama, la suya.
+  "dote_golpe_entorpecedor#5": [
+    {
+      tipo: "objetivo",
+      lugar: "familia:ataque_melee",
+      condicion: "Golpe entorpecedor (debilidad reconocida)",
+      efecto: { tipo: "estado", estadoId: "entorpecido", gradoId: "fallo", duracion: { tipo: "dado", caras: 4 }, cuando: "acierto" },
+    },
+    {
+      tipo: "objetivo",
+      lugar: "familia:ataque_melee",
+      condicion: "Golpe entorpecedor (debilidad reconocida)",
+      efecto: {
+        tipo: "estado",
+        estadoId: "entorpecido",
+        gradoId: "fracaso_critico",
+        etiqueta: "Entorpecido (efecto crítico)",
+        duracion: { tipo: "dado", caras: 4 },
+        cuando: "critico",
+      },
+    },
+  ],
+  "dote_golpe_entorpecedor#6": [
+    {
+      tipo: "objetivo",
+      lugar: "familia:ataque_fuego",
+      condicion: "Golpe entorpecedor (debilidad reconocida)",
+      efecto: { tipo: "estado", estadoId: "entorpecido", gradoId: "fallo", duracion: { tipo: "dado", caras: 4 }, cuando: "acierto" },
+    },
+    {
+      tipo: "objetivo",
+      lugar: "familia:ataque_fuego",
+      condicion: "Golpe entorpecedor (debilidad reconocida)",
+      efecto: {
+        tipo: "estado",
+        estadoId: "entorpecido",
+        gradoId: "fracaso_critico",
+        etiqueta: "Entorpecido (efecto crítico)",
+        duracion: { tipo: "dado", caras: 4 },
+        cuando: "critico",
+      },
+    },
+  ],
+  // T3b (do-05): «el objetivo inferior sufre un penalizador de -2 a su tirada de salvación para
+  // mantener el equilibrio y evitar caer derribado […] por maniobras del atacante» → −2 a la
+  // salvación contra Derribado de ese golpe (la de la maniobra o la de un arma que derriba).
+  // TODO(revisar): el Derribo (N) de un arma se cuenta como «maniobra del atacante».
+  "dote_dominio_elevado#1": {
+    tipo: "objetivo",
+    lugar: "familia:ataque_melee",
+    condicion: "Objetivo en posición inferior (desnivel apreciable: escalones, rocas, vehículos…)",
+    efecto: { tipo: "ajusteSalvacion", contra: "derribado", valor: -2, cuando: "acierto" },
+  },
+  // T3b (do-05): «si el personaje ataca a un objetivo sorprendido o desprevenido, segundos ataques
+  // mantienen la condición de sorpresivo» → casilla «Objetivo sorprendido o desprevenido» y aviso
+  // de que lo sigue estando, acierte o no. Cada rama, la suya (requisito por rama).
+  "dote_asesino#0": {
+    tipo: "objetivo",
+    lugar: "familia:ataque_melee",
+    condicion: "Objetivo sorprendido o desprevenido",
+    efecto: {
+      tipo: "estado",
+      estadoId: "sorprendido_desprevenido",
+      etiqueta: "Sorprendido o desprevenido",
+      duracion: { tipo: "sinDuracion", motivo: "lo sigue estando, con el mismo grado, contra tus siguientes ataques" },
+      cuando: "siempre",
+    },
+  },
+  "dote_asesino#1": {
+    tipo: "objetivo",
+    lugar: "familia:ataque_fuego",
+    condicion: "Objetivo sorprendido o desprevenido",
+    efecto: {
+      tipo: "estado",
+      estadoId: "sorprendido_desprevenido",
+      etiqueta: "Sorprendido o desprevenido",
+      duracion: { tipo: "sinDuracion", motivo: "lo sigue estando, con el mismo grado, contra tus siguientes ataques" },
+      cuando: "siempre",
+    },
+  },
+  // T3b (do-05): la zona que deja Expansión, en «El objetivo» de su tirada, acierte o no
+  // (Expansión estalla igual al fallar). Una sola línea con la duración; los textos que recoge
+  // pasan a la tarjeta (ya están en la prosa). El narrativo (#0) sigue en la nota.
+  "dote_onda_residual#1": {
+    tipo: "objetivo",
+    lugar: "psi_singularidad_expansion",
+    condicion: null,
+    efecto: {
+      tipo: "texto",
+      texto:
+        "Las casillas del área de la explosión quedan cargadas de inestabilidad gravitatoria: quien las atraviese o empiece a moverse en ellas va a media velocidad (cada casilla cuenta como dos) y tiene −2 a Reflejos mientras siga dentro",
+      duracion: { tipo: "turnos", turnos: 1 },
+      nota: "No afecta al psiónico que la desencadena.",
+      cuando: "siempre",
+    },
+  },
+  "dote_onda_residual#2": {
+    tipo: "texto",
+    lugar: "ficha",
+    texto: "Onda Residual: quien intente atravesar esas casillas o iniciar un movimiento en ellas reduce su velocidad a la mitad (cada casilla cuenta como dos).",
+    condicion: null,
+    porque: "tablero",
+  },
+  "dote_onda_residual#3": {
+    tipo: "texto",
+    lugar: "ficha",
+    texto: "Onda Residual: −2 a Reflejos mientras dure el efecto y esté dentro del área.",
+    condicion: null,
+    porque: "tercero",
+  },
+  "dote_onda_residual#4": {
+    tipo: "texto",
+    lugar: "ficha",
+    texto: "Onda Residual: el efecto no perjudica al psiónico que lo ha desencadenado.",
+    condicion: null,
+    porque: "tercero",
+  },
   // Derribo Brutal: "el aumento de dificultad para derribo causando daño se anula" → la casilla
   // «Derribo» sin −2 (antes, una casilla +2 que lo compensaba).
   "dote_derribo_brutal#0": { tipo: "maniobra", maniobra: "derribo", alcance: "familia:ataque_melee", sinPenalizador: true },
@@ -696,7 +872,7 @@ const FILTROS_ARMA: Readonly<Record<string, FiltroArmaDote>> = {
 };
 
 const claveDeEfecto = (e: Efecto) =>
-  (e.tipo === "texto" ? e.lugar : e.tipo === "habilita" ? e.accion : e.tipo === "accion" ? undefined : e.alcance) as string | undefined;
+  (e.tipo === "texto" || e.tipo === "objetivo" ? e.lugar : e.tipo === "habilita" ? e.accion : e.tipo === "accion" ? undefined : e.alcance) as string | undefined;
 
 function aplicarRamaYFiltro(id: string, requisitos: unknown, efectos: Efecto[]): Efecto[] {
   const reqs = Array.isArray(requisitos) ? (requisitos as RequisitoDote[]) : [];
@@ -798,6 +974,9 @@ function tandaDelTipo(e: Efecto): TandaDote | null {
       // Poderes de dote (D2c-2): rules/dotesPoderes.ts. Impacto Métrico va sin dado (§9.3: el
       // ataque del arma se tira aparte y la app solo cobra la fatiga y enseña el daño extra).
       return null;
+    case "objetivo":
+      // Efectos sobre el objetivo (T3b, do-05): rules/dotesEfectos.ts → efectosArma.ts.
+      return null;
     case "habilita":
       // Bloqueo (D2b-2): se construye si su familia está en FAMILIAS_SOLO_CON_DOTE (abajo).
       return null;
@@ -896,7 +1075,11 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
       // Ventaja con casilla en una acción de dote (Apoyo, Violencia Aterradora; dotesAcciones.ts).
       (e.tipo === "ventaja" && destino?.tipo === "accionDote" && typeof e.condicion === "string") ||
       // Maniobra Derribo (D2d): casilla propia en los golpes melee.
-      (e.tipo === "maniobra" && familiaDestino === "ataque_melee");
+      (e.tipo === "maniobra" && familiaDestino === "ataque_melee") ||
+      // Efecto sobre el objetivo (T3b): en los ataques de arma o en un poder (sin casilla: un
+      // poder no tiene casillas de dote).
+      (e.tipo === "objetivo" &&
+        ((familiaDestino !== null && familiaDestino !== "levantar_escudo") || (destino?.tipo === "poder" && e.condicion === null)));
     if (!construible) {
       falla(id, `efecto ${e.borrador} (${String(e.tipo)}): sin tanda y sin forma de construirlo (D2a, D2b-1, D2b-2, D2c-1, D2c-2, D2d)`);
       return null;
@@ -976,6 +1159,17 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
         arbitraje: "duro",
         ...estado,
       };
+    case "objetivo": {
+      // Toca la tirada de otro (motor.md: objetivo_tercero, siempre texto). Con casilla (la de la
+      // dote o la de la maniobra), la elige el jugador al tirar.
+      const conCasilla = typeof e.condicion === "string" || Boolean((e.efecto as { soloEn?: { casilla?: string } }).soloEn?.casilla);
+      return {
+        tipo: "texto",
+        afecta: { modo: "objetivo_tercero", id: clave! },
+        mecanismo: conCasilla ? "eleccion_jugador" : "nota_fija",
+        ...estado,
+      };
+    }
     case "maniobra":
       // Sin dote de derribo la casilla no existe (habilitador, duro); Brutal le quita el −2:
       // anula un penalizador de la maniobra, no suma un número (Resolución, auditoría tanda 1).

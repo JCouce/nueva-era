@@ -21,6 +21,7 @@ import { montarTirada, SIN_ELECCION } from "./montaje";
 function resumenEfecto(e: EfectoEnTirada): string {
   if (e.tipo === "texto") return e.texto;
   if (e.tipo === "salvacion") return `${e.estadoId} (${e.dificultad})`;
+  if (e.tipo === "ajusteSalvacion") return `ajuste ${e.contra}`;
   const d = e.duracion;
   const nombre = e.etiqueta ?? e.estadoId;
   return d.tipo === "dado" ? `${nombre} (1d${d.caras})` : d.tipo === "turnos" ? `${nombre} (${d.turnos} turnos)` : nombre;

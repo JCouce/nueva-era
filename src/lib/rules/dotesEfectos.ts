@@ -35,15 +35,21 @@
 // Clínico), fracaso → éxito (Balanceo), crítico más fácil (Equilibrista, Especialidad Médica),
 // otro aplicado (Negociación Analítica) y lo que toca el daño (Golpe Fatigante −1, golpe letal
 // con escudo, «Derribo con acción estándar»). La maniobra Derribo (Derribo Mejorado y Brutal)
-// es una casilla propia en los golpes melee (casillaDeManiobra).
+// es una casilla propia en los golpes melee (casillaDeManiobra), y su salvación del objetivo
+// sale en «El objetivo» con la casilla marcada (SALVACION_DERRIBO).
+//
+// Efectos sobre el objetivo (T3b, do-05: Golpe Entorpecedor, Golpe Fatigante, Derribo Mejorado,
+// Dominio Elevado, Asesino, Onda Residual): `objetivos`, con el destino de un texto; los cuelga
+// conExtrasDeFicha (o prepararPoder) en `efectosObjetivoDeFicha` y los avisa el resultado
+// (rules/efectosArma.ts). Con condición, solo con la casilla de esa condición marcada.
 // Las acciones propias de dote (y lo que otras dotes les añaden) van aparte: dotesAcciones.ts.
 // Los poderes de dote, en dotesPoderes.ts; los textos de dote sobre un poder (D2c-2, destino
 // "poder") van a `textos` por el id de su acción y los pone prepararPoder (usoPoder.ts).
 //
 //   dotesActivas     las compradas que dan efecto: sin requisito roto y sin las que
 //                    sustituye una mejorada que también se tiene ("vale la mejor")
-//   efectosDeDotes   → { casillas, modificadores, textos, bonosTramo, criticos, permisos, descuentos,
-//                        grados, alternativas }
+//   efectosDeDotes   → { casillas, modificadores, textos, objetivos, bonosTramo, criticos, permisos,
+//                        descuentos, grados, alternativas }
 //   casillasDeDotes / textosDeDotes / modificadoresDeDotes / permisosDeDotes   atajos sobre una ficha
 import { ATRIBUTOS, type AplicadoId } from "./atributos";
 import { HABILIDADES, type HabilidadId } from "./habilidades";
@@ -60,7 +66,9 @@ import { DESTINOS_DOTES, OPCIONES_DE_TRAMO, SELECTORES_DE_TIRADA } from "../cata
 import { DOTES } from "../catalog/dotes";
 import { especialidadPorId, etiquetaEspecialidad, type EspecialidadId } from "../catalog/especialidades";
 import type { DoteCatalogo, EfectoDote, ValorDote } from "../catalog/dotesTipos";
-import type { BonoPorTramo, CondicionTirada, EfectoDanioCasilla, OpcionCondicion, TramoDistancia } from "./condiciones";
+import { resumenCasilla, type BonoPorTramo, type CondicionTirada, type EfectoDanioCasilla, type OpcionCondicion, type TramoDistancia } from "./condiciones";
+import type { EfectoArma } from "./efectosArma";
+import type { ObjetivoEnTirada } from "./textosTirada";
 import type { AlcanceModificador, FamiliaArma, ModificadorConFuente } from "./modificadores";
 import type { TextoEnTirada } from "./especie";
 import type { OrigenAporte } from "./origen";
@@ -140,6 +148,7 @@ export type EfectosDeDotes = {
   // Bonos siempre activos (sin casilla): Modificador de tirada con origen "dote".
   modificadores: ModificadorConFuente[];
   textos: TextoEnTirada[];
+  objetivos: ObjetivoEnTirada[];
   bonosTramo: BonoTramoDeDote[];
   criticos: CriticoDeDote[];
   permisos: PermisosDeDotes;
@@ -152,6 +161,7 @@ export const SIN_EFECTOS_DE_DOTES: EfectosDeDotes = {
   casillas: [],
   modificadores: [],
   textos: [],
+  objetivos: [],
   bonosTramo: [],
   criticos: [],
   permisos: SIN_PERMISOS_DE_DOTES,
@@ -238,6 +248,35 @@ const categoriaLegible = (c: string) => c.charAt(0).toUpperCase() + c.slice(1);
 // van en la nota, a mano (circunstancial).
 // TODO(revisar): con varias dotes de derribo la casilla es una sola; su `origen` es el de la
 // primera (como el nombre que enseñaba "te afecta"), las demás solo van en la etiqueta.
+export const ID_MANIOBRA_DERRIBO = "maniobra_derribo";
+const FUENTE_MANIOBRA_DERRIBO = "Derribo (maniobra)";
+
+// La resistencia del objetivo a la maniobra (habilidades.md, Combate Melee): «potencia +
+// atletismo o combate melee […] con tantos éxitos o más que los resultantes en la tirada de
+// ataque (antes de restar los éxitos en defensa del objetivo) o caerá al suelo derribado […]; si
+// obtuviese un fracaso crítico en la defensa además pierde 1 punto de fatiga». Las dotes le
+// añaden lo suyo (Derribo Mejorado, Dominio Elevado: `ajusteSalvacion`).
+const SALVACION_DERRIBO: EfectoArma = {
+  tipo: "salvacion",
+  estadoId: "derribado",
+  tirada: { etiqueta: "Potencia + Atletismo o Combate Melee" },
+  dificultad: "exitosDelAtaque",
+  tabla: {
+    fracasoCritico: {
+      texto: "Cae derribado en su casilla o en una adyacente libre, a tu elección, y pierde 1 punto de fatiga al golpear contra el suelo.",
+      estado: { estadoId: "derribado", gradoId: "activo" },
+      fatiga: 1,
+    },
+    fracaso: {
+      texto: "Cae derribado en su casilla o en una adyacente libre, a tu elección.",
+      estado: { estadoId: "derribado", gradoId: "activo" },
+    },
+    exito: { texto: "Resiste: no cae." },
+  },
+  cuando: "acierto",
+  soloEn: { casilla: ID_MANIOBRA_DERRIBO },
+};
+
 function casillaDeManiobra(maniobras: { fuente: string; sinPenalizador: boolean; origen: OrigenAporte }[]): Toggle {
   const sinPenalizador = maniobras.find((m) => m.sinPenalizador);
   const fuentes = [...new Set(maniobras.map((m) => m.fuente))];
@@ -252,7 +291,7 @@ function casillaDeManiobra(maniobras: { fuente: string; sinPenalizador: boolean;
     .filter(Boolean)
     .join(" ");
   return {
-    id: "maniobra_derribo",
+    id: ID_MANIOBRA_DERRIBO,
     tipo: "toggle",
     etiqueta: `Derribo (${fuentes.join(", ")}${sinPenalizador ? `; sin −2: ${sinPenalizador.fuente}` : ""})`,
     valorActivo: sinPenalizador ? 0 : -2,
@@ -275,6 +314,7 @@ export function efectosDeDotes(
   const casillas: CondicionTirada[] = [];
   const modificadores: ModificadorConFuente[] = [];
   const textos: TextoEnTirada[] = [];
+  const objetivos: ObjetivoEnTirada[] = [];
   const bonosTramo: BonoTramoDeDote[] = [];
   const criticos: CriticoDeDote[] = [];
   const descuentos: DescuentoDeDote[] = [];
@@ -313,6 +353,8 @@ export function efectosDeDotes(
       }
       return c;
     };
+    // Casillas que solo encienden un efecto sobre el objetivo (Asesino): sin número que enseñar.
+    const deObjetivo = new Set<Toggle>();
     const conDanio = (c: Toggle, d: EfectoDanioCasilla) => {
       c.danio = { ...c.danio, ...d, ...(d.ajuste !== undefined && { ajuste: (c.danio?.ajuste ?? 0) + d.ajuste }) };
     };
@@ -511,6 +553,21 @@ export function efectosDeDotes(
         if (c) c.valorActivo += valorBono;
         return;
       }
+      if (e.tipo === "objetivo") {
+        const destino = DESTINOS_DOTES[e.lugar];
+        // La condición es la casilla de la dote (la misma que la del bono de ese destino).
+        const c = e.condicion ? casillaPara({ alcance: e.lugar, condicion: e.condicion, filtroArma: e.filtroArma }, i) : null;
+        if (e.condicion && !c) return;
+        if (c) deObjetivo.add(c);
+        const efecto = { ...e.efecto, ...(c && { soloEn: { ...e.efecto.soloEn, casilla: c.id } }), fuente, origen };
+        if (destino?.tipo === "poder") objetivos.push({ en: { tipo: "tiradaId", id: destino.id }, efecto });
+        else if (destino?.tipo === "tirada") {
+          const alcance = alcanceDe(destino.alcance, e);
+          if (alcance.tipo === "familiaArma") objetivos.push({ en: alcance, efecto });
+          else for (const id of destino.textos) objetivos.push({ en: { tipo: "tiradaId", id }, efecto });
+        }
+        return;
+      }
       if (e.tipo === "texto") {
         const destino = DESTINOS_DOTES[e.lugar];
         const texto = e.condicion ? `${e.condicion}: ${e.texto}` : e.texto;
@@ -532,12 +589,21 @@ export function efectosDeDotes(
         else for (const id of destino.textos) textos.push({ en: { tipo: "tiradaId", id }, texto, fuente, soloEnCritico, origen });
       }
     });
+    for (const c of deObjetivo) if (resumenCasilla(c, true) === "+0") c.resumen = "aviso al objetivo";
   }
-  if (maniobras.length > 0) casillas.push(casillaDeManiobra(maniobras));
+  if (maniobras.length > 0) {
+    const casilla = casillaDeManiobra(maniobras);
+    casillas.push(casilla);
+    objetivos.push({
+      en: { tipo: "familiaArma", familia: "ataque_melee" },
+      efecto: { ...SALVACION_DERRIBO, fuente: FUENTE_MANIOBRA_DERRIBO, ...(casilla.origen && { origen: casilla.origen }) },
+    });
+  }
   return {
     casillas,
     modificadores,
     textos,
+    objetivos,
     bonosTramo,
     criticos,
     permisos: { familias: [...familias], sutil: [...sutil] },

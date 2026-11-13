@@ -110,7 +110,7 @@ import { casillasDePsionica, levitacion, type PoderDisponible } from "./poderes"
 import { fatigaEfectiva, fatigaEnJuego } from "./vitalidad";
 import { accionesDeMovimiento } from "./movimiento";
 import { alcanzaA, descartadosPorNoApila, type AlcanceModificador, type ModificadorConFuente } from "./modificadores";
-import { conTextosEnTirada, contextoDe, junta, textosDe, textosSinDado } from "./textosTirada";
+import { conTextosEnTirada, contextoDe, junta, textosDe, textosSinDado, type ObjetivoEnTirada } from "./textosTirada";
 import type { Sheet } from "./sheet";
 import { condicionApuntado, ID_APUNTADO, ID_APUNTAR, tieneEspecialidad, type Accion, type AccionDirecta } from "./acciones";
 import type { CondicionTirada } from "./condiciones";
@@ -193,6 +193,9 @@ export type FichaResuelta = {
   // Textos sin mecanizar de la especie (§14.10), de las dotes (§9.3) y de los aumentos
   // (A2a: Matriz de Red en la salvación de Voluntad) que cuelgan de una tirada: los pone conExtrasDeFicha en su nota o en su texto de crítico.
   textosTirada: TextoEnTirada[];
+  // Efectos sobre el objetivo que la ficha cuelga de sus tiradas (dotes y la maniobra Derribo,
+  // T3b): los pone conExtrasDeFicha (y prepararPoder) en `efectosObjetivoDeFicha`.
+  objetivosTirada: ObjetivoEnTirada[];
   // Ventajas sin casilla de los aumentos (A2b: Red Frontoparietal en Iniciativa), con su
   // alcance: las pone conExtrasDeFicha en `Accion.ventaja`. Derivadas: también al NPC.
   ventajasFijas: VentajaFija[];
@@ -416,6 +419,7 @@ export function resolverFicha(
       ...casillasDePsionica(psionica.paraEfectos),
     ]),
     textosTirada: [...textosDeEspecie(especie), ...dotes.textos, ...textosDeAumentos(sheet), ...activables.textos],
+    objetivosTirada: dotes.objetivos,
     ventajasFijas: ventajasFijasDeAumentos(sheet),
     fallosCriticos: fallosCriticosDeEspecie(especie),
     extrasDotes: {
@@ -460,7 +464,8 @@ export function estadosParaPintar(ficha: Pick<FichaResuelta, "estados" | "estado
 // Sin nada que añadir, devuelve la misma tirada.
 
 export function conExtrasDeFicha(
-  ficha: Pick<FichaResuelta, "indiceCondiciones" | "textosTirada" | "extrasDotes" | "ventajasFijas" | "fallosCriticos">,
+  ficha: Pick<FichaResuelta, "indiceCondiciones" | "textosTirada" | "extrasDotes" | "ventajasFijas" | "fallosCriticos"> &
+    Partial<Pick<FichaResuelta, "objetivosTirada">>,
   t: Accion,
 ): Accion {
   // La tirada libre (T-007, R1): sin casillas, textos, ventajas, bonos por tramo, descuentos
@@ -469,6 +474,7 @@ export function conExtrasDeFicha(
   const ctx = contextoDe(t);
   const extra = consultaIndiceCondiciones(ficha.indiceCondiciones, ctx);
   const textos = textosDe(ficha.textosTirada, ctx, t.desarmado === true);
+  const objetivos = textosDe(ficha.objetivosTirada ?? [], ctx, t.desarmado === true).map((o) => o.efecto);
   const bonosTramo = ficha.extrasDotes.bonosTramo.filter((b) => alcanzaA(b.alcance, ctx)).map((b) => b.bono);
   const familia = t.familiaArma;
   const critico = familia && t.especialidadArma
@@ -504,6 +510,7 @@ export function conExtrasDeFicha(
   if (
     extra.length === 0 &&
     textos.length === 0 &&
+    objetivos.length === 0 &&
     bonosTramo.length === 0 &&
     !criticoFinal &&
     descuentos.length === 0 &&
@@ -518,6 +525,7 @@ export function conExtrasDeFicha(
   return {
     ...conTextosEnTirada(t, textos),
     ...(textos.length > 0 && { textosDeFicha: [...(t.textosDeFicha ?? []), ...textos] }),
+    ...(objetivos.length > 0 && { efectosObjetivoDeFicha: [...(t.efectosObjetivoDeFicha ?? []), ...objetivos] }),
     ...((extra.length > 0 || descuentos.length > 0 || conApuntado !== t.condiciones) && { condiciones }),
     ...(bonosTramo.length > 0 && { bonosTramo: [...(t.bonosTramo ?? []), ...bonosTramo] }),
     ...(criticoFinal && { criticoFijo: criticoFinal }),
