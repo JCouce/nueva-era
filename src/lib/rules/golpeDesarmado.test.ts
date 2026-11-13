@@ -62,7 +62,10 @@ describe("golpe desarmado con armadura", () => {
     );
     assert.equal(reforzada.ataque?.modos[0].danio, 5); // Fue 3 + 1 + 1
     assert.equal(reforzada.ataque?.modos[0].categoriaDanio, "Letal");
-    assert.equal(reforzada.efectoCritico, "Aturdimiento (7, Refuerzo de Combate 1)");
+    // T3a: el aturdimiento del crítico es dato; el Refuerzo cambia su dificultad y lo dice.
+    const aturdimiento = reforzada.efectosObjetivo?.find((e) => e.cuando === "critico" && e.tipo === "salvacion");
+    assert.equal(aturdimiento?.tipo === "salvacion" && aturdimiento.dificultad, 7);
+    assert.equal(aturdimiento?.nota, "Dificultad del Refuerzo de Combate 1.");
   });
 
   test("un arma melee normal no gana nada con la armadura", () => {
@@ -75,10 +78,13 @@ describe("golpe desarmado con armadura", () => {
     );
   });
 
+  // T3a: sobre los efectos como dato, no sobre el texto; la regla es la misma.
   test("criticoDesarmado sustituye la dificultad del aturdimiento o lo añade", () => {
     const golpe = { bonoDanio: 1, fuentes: [], letal: "R", aturdimiento: { dificultad: 8, fuente: "R" }, bloqueoSinPenalizador: "R" };
-    assert.equal(criticoDesarmado("Aturdimiento (6)", golpe), "Aturdimiento (8, R)");
-    assert.equal(criticoDesarmado(undefined, golpe), "Aturdimiento (8, R)");
-    assert.equal(criticoDesarmado("Aturdimiento (6)", null), "Aturdimiento (6)");
+    const aturdimiento6 = { tipo: "salvacion" as const, estadoId: "aturdido", dificultad: 6, cuando: "critico" as const, fuente: "Puñetazo" };
+    const dif = (es: { tipo: string; dificultad?: number }[]) => es.map((e) => e.dificultad);
+    assert.deepEqual(dif(criticoDesarmado([aturdimiento6], golpe)), [8]);
+    assert.deepEqual(dif(criticoDesarmado([], golpe)), [8]);
+    assert.deepEqual(dif(criticoDesarmado([aturdimiento6], null)), [6]);
   });
 });

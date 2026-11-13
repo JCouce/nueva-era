@@ -30,6 +30,7 @@ import {
   derivacionDeFicha,
   gradoDeTirada,
   efectosDeCasillas,
+  estadosComoCondicionFatiga,
   enEspecialidadDePoder,
   maxPuntosConCargas,
   pagoConCargas,
@@ -78,6 +79,9 @@ export type EntradaPoder = {
   // FichaResuelta.fatigaEnJuego.efectiva (td-25): en combate, la de la foto menos la temporal de
   // Proeza. Sin ella, la efectiva de la ficha.
   fatigaEfectiva?: number;
+  // Los estados que lleva puestos y hacen efecto (FichaResuelta.estadosConEfecto): los que
+  // tocan el coste de los poderes (Supresores, cuestionario eq-22) cuentan sin casilla.
+  estados?: readonly EstadoActivo[];
 };
 
 export type PoderPreparado = {
@@ -99,6 +103,9 @@ export type PoderPreparado = {
   // `modificador`, con los umbrales de §7 dentro); null si no tira.
   montada: TiradaMontada | null;
   extraProrroga: number; // Proeza: lo que cuesta prolongar un turno
+  // Condiciones de fatiga activas: las casillas marcadas y los estados que cuentan (Supresores).
+  // usarPoder las vuelve a leer para el daño por punto de fatiga.
+  condicionesFatiga: string[];
 };
 
 // null = el personaje no llega al nivel de la acción.
@@ -111,6 +118,7 @@ export function prepararPoder({
   textos = [],
   indiceCondiciones,
   fatigaEfectiva: efectivaEnJuego,
+  estados = [],
 }: EntradaPoder): PoderPreparado | null {
   const sinTextos = resolverPoder(poder.accion, {
     nivelPoseido: poder.nivelPoseido,
@@ -123,7 +131,7 @@ export function prepararPoder({
     bonoAlcance: bonoAlcanceDeFicha(ficha) ?? undefined,
   });
   if (!sinTextos) return null;
-  const marcadas = new Set(seleccion.casillas);
+  const marcadas = new Set([...seleccion.casillas, ...estadosComoCondicionFatiga(estados)]);
 
   const sinCargas =
     typeof sinTextos.fatiga === "number"
@@ -182,6 +190,7 @@ export function prepararPoder({
     enEspecialidad,
     montada: tirada ? montarTirada({ ficha, modificadores }, tirada, eleccionSinTocar(tirada)) : null,
     extraProrroga: resuelto.exceso?.extra ?? 0,
+    condicionesFatiga: [...marcadas],
   };
 }
 
@@ -227,15 +236,15 @@ export function usarPoder(f: FichaParaUso, p: PoderPreparado, modo: "uso" | "pro
 
   const propio = uso ? p.resuelto.danioPropio : null;
   const danioPropio = propio && typeof propio.valor === "number" && propio.valor > 0 ? propio.valor : 0;
-  // Supresora con fallo crítico: 1 de daño por punto de fatiga gastado.
-  const porPunto = efectosDeCasillas(FUENTES_EXTERNAS_FATIGA, new Set(p.seleccion.casillas)).danioPorPunto;
+  // Supresores con fallo crítico: 1 de daño por punto de fatiga gastado.
+  const porPunto = efectosDeCasillas(FUENTES_EXTERNAS_FATIGA, new Set(p.condicionesFatiga)).danioPorPunto;
   const danioSupresora = porPunto && pagar > 0 ? pagar : 0;
 
   const estadoPropio = uso ? estadoAlUsar(p.poder, p.resuelto) : null;
 
   const avisos = [
     ...(despues <= 0 && !cruza ? ["Te has quedado sin fatiga: quedas inconsciente al terminar la acción."] : []),
-    ...(danioSupresora > 0 ? [`Munición Supresora: recibes ${pagar} de daño ${porPunto} (ya restado).`] : []),
+    ...(danioSupresora > 0 ? [`Supresores: recibes ${pagar} de daño ${porPunto} (ya restado).`] : []),
     ...(propio && danioPropio > 0
       ? [
           `Recibes ${danioPropio} de daño ${propio.categoria} (ya restado)${

@@ -241,7 +241,9 @@ export type ModificadorFatiga = {
   desdeNivelPoseido?: number;
   // Lo declara el jugador con una casilla. Casillas del mismo `grupo` se
   // excluyen entre sí (la carga no puede ser a la vez < 10 kg y otra cosa).
-  condicion?: { toggle: string; grupo?: string };
+  // `estado`: no es casilla, vale si el psiónico tiene puesto ese estado en ese grado
+  // (Supresores, cuestionario eq-22): lo mira prepararPoder con los estados de la ficha.
+  condicion?: { toggle: string; grupo?: string } | { estado: string; grado: string };
   op: "suma" | "multiplica" | "minimo" | "ignora_primero" | "paga_con_recurso";
   valor: number | { recurso: string; porPunto: number };
   // Lo que la misma casilla hace además de tocar la fatiga: sumar a la tirada del

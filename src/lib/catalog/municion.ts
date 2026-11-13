@@ -13,6 +13,9 @@
 import type { Rareza } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
 import type { TipoDanio } from "./tiposDanio";
+import type { EfectoArma, ResultadoDeTabla } from "../rules/efectosArma";
+import type { Grado } from "../rules/psionica";
+import { enCritico, salva, texto } from "./efectosArma";
 
 // "Potencia x 14" en la columna Alcance de todas las granadas (docs/fuente/equipamiento.md,
 // Granadas); antes ×10, de una transcripción vieja (2026-10-24).
@@ -265,10 +268,20 @@ export type MunicionEspecial = {
   // Mismo aviso que ArmaMelee.ignoraBlindaje (solo la perforante).
   ignoraBlindaje?: number;
   efecto: string;
-  // Su crítico, como dato (va al "Efecto crítico" del resultado junto al del arma). Con
-  // `sustituyeCritico`, en lugar del crítico del arma (la Perforante).
-  efectoCritico?: string;
+  // `efecto` como dato (T3a del cuestionario, rules/efectosArma.ts): lo que el disparo con esta
+  // munición le hace al objetivo, además de lo del arma. En crítico se aplican el crítico del
+  // arma y el de la munición (eq-05), salvo con `sustituyeCritico`: «en lugar del crítico
+  // habitual» (la Perforante), que quita el del arma.
+  efectosObjetivo: EfectoArma[];
   sustituyeCritico?: boolean;
+};
+
+// "Aunque el objetivo supere la tirada recibirá un penalizador de -1 durante un turno (…); si
+// supera de forma crítica no sufre ningún efecto" (Tóxica, Radiactiva, Supresora): el estado
+// corto de 1 turno del cuestionario eq-22.
+const SUPERA_TOXINA: Partial<Record<Grado, ResultadoDeTabla>> = {
+  exito: { texto: "-1 durante un turno a las salvaciones contra la misma toxina.", estado: { estadoId: "dosis_acumulada", gradoId: "activo" } },
+  critico: { texto: "Sin ningún efecto." },
 };
 
 // Se compra por lotes: a 4 cr. la bala, de una en una no tiene sentido.
@@ -286,7 +299,7 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
     efecto:
       "Un nivel menos de daño, pero ignora los 2 primeros puntos de blindaje. Su crítico consume " +
       "un punto de blindaje del objetivo en lugar del crítico habitual.",
-    efectoCritico: "Consume 1 punto de blindaje del objetivo",
+    efectosObjetivo: [enCritico(texto("Consume 1 punto de blindaje del objetivo"))],
     sustituyeCritico: true,
   },
   {
@@ -297,7 +310,7 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
     ajusteDanio: 1,
     tipoDanio: "fuego",
     efecto: "+1 nivel de daño por Fuego y Llamarada (7); en crítico, Ceguera (10).",
-    efectoCritico: "Ceguera (10)",
+    efectosObjetivo: [salva("llamarada", 7), enCritico(salva("ceguera", 10))],
   },
   {
     id: "electrizante",
@@ -307,7 +320,7 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
     ajusteDanio: 1,
     tipoDanio: "electrico",
     efecto: "+1 nivel de daño Eléctrico y Shock (7); en crítico, Shock (10).",
-    efectoCritico: "Shock (10)",
+    efectosObjetivo: [salva("shock", 7), enCritico(salva("shock", 10))],
   },
   {
     id: "toxica",
@@ -319,6 +332,17 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
       "Envenenamiento (7): al fallar, envenenado 1; con fallo crítico, envenenado 2. Superándola, " +
       "-1 durante un turno a salvaciones contra lo mismo; con crítico, sin efecto. Si vuelve a " +
       "recibir daño ya envenenado, relanza y puede agravarse un nivel.",
+    efectosObjetivo: [
+      {
+        ...salva("envenenamiento", 7),
+        tabla: {
+          fracasoCritico: { texto: "Envenenado 2.", estado: { estadoId: "envenenamiento", gradoId: "nivel_2" } },
+          fracaso: { texto: "Envenenado 1.", estado: { estadoId: "envenenamiento", gradoId: "nivel_1" } },
+          ...SUPERA_TOXINA,
+        },
+        nota: "Si vuelve a recibir daño de esta munición ya envenenado, relanza la salvación y puede agravarse un nivel.",
+      },
+    ],
   },
   {
     id: "criogenica",
@@ -328,6 +352,7 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
     ajusteDanio: 1,
     tipoDanio: "frio",
     efecto: "+1 nivel de daño por Frío y Congelación (7).",
+    efectosObjetivo: [salva("congelacion", 7)],
   },
   {
     id: "corrosiva",
@@ -337,6 +362,7 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
     ajusteDanio: 1,
     tipoDanio: "corrosivo",
     efecto: "+1 nivel de daño Corrosivo y Corrosión (7).",
+    efectosObjetivo: [salva("corrosion", 7)],
   },
   {
     id: "radiactiva",
@@ -350,6 +376,22 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
       "Si vuelve a recibir daño ya envenenado por radiación, relanza y puede agravarse un nivel. Sin " +
       "tratamiento médico relanza la salvación a los 10 turnos (basta un éxito). Afecta a sintéticos, " +
       "con +2 a su salvación.",
+    // «Enfermo 2 y recibe un nivel de daño agravado» (fuente): grave, como lo lee el
+    // cuestionario (eq-22, usuario 2026-11-13).
+    efectosObjetivo: [
+      {
+        ...salva("envenenamiento", 7),
+        tabla: {
+          fracasoCritico: { texto: "Enfermo 2 y un nivel de daño grave.", estado: { estadoId: "enfermedad", gradoId: "nivel_2" } },
+          fracaso: { texto: "Enfermo 1.", estado: { estadoId: "enfermedad", gradoId: "nivel_1" } },
+          ...SUPERA_TOXINA,
+        },
+        nota:
+          "Si vuelve a recibir daño de esta munición ya envenenado por radiación, relanza y puede agravarse un nivel. " +
+          "Sin superarla de forma crítica, sin tratamiento médico relanza a los 10 turnos (basta un éxito). " +
+          "Afecta a sintéticos, con +2 a su salvación.",
+      },
+    ],
   },
   {
     id: "supresora",
@@ -362,6 +404,26 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
       "doble de fatiga y sufre -2 a su empleo durante 1 minuto; con fallo crítico, además un nivel de " +
       "daño letal por punto de fatiga empleado. Superándola, -1 durante un turno contra la misma toxina; " +
       "con crítico, sin efecto. Acumular fallos pasa a fallo crítico y prolonga la duración del efecto.",
+    // Estado nuevo «Supresores» (catalog/estados.ts, cuestionario eq-22): con él puesto, los
+    // poderes cuestan el doble de fatiga (FUENTES_EXTERNAS_FATIGA, catalog/psionica.ts).
+    efectosObjetivo: [
+      {
+        ...salva("supresores", 8),
+        tabla: {
+          fracasoCritico: {
+            texto: "Supresores, fallo crítico: sus poderes cuestan el doble de fatiga, -2 a la tirada y un nivel de daño letal por punto de fatiga gastado (1 minuto).",
+            estado: { estadoId: "supresores", gradoId: "fracaso_critico" },
+          },
+          fracaso: {
+            texto: "Supresores: sus poderes cuestan el doble de fatiga y -2 a la tirada (1 minuto).",
+            estado: { estadoId: "supresores", gradoId: "fracaso" },
+          },
+          ...SUPERA_TOXINA,
+        },
+        soloSiRecibeDanio: true,
+        nota: "Acumular fallos pasa a fallo crítico y prolonga la duración.",
+      },
+    ],
   },
 ];
 

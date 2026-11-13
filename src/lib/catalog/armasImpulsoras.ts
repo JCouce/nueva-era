@@ -24,6 +24,7 @@
 // compatibilidad "todas" y las que solo excluyen Plasma (Puntero Láser, Linterna, Silenciador,
 // Sistema de Retroceso, adaptadores de munición), aunque alguna no tenga sentido en un arco.
 import type { ArmaFuego } from "./armasFuego";
+import { enCritico, hemorragiaDado } from "./efectosArma";
 
 const DESCRIPCION_COMUN =
   "Empleo a dos manos. Desenfundar es acción estándar. Su munición admite munición especial " +
@@ -49,12 +50,14 @@ export const ARMAS_IMPULSORAS: ArmaFuego[] = [
     rareza: "Poco Habitual",
     coste: 250,
     modificadores: [],
+    efectosObjetivo: [enCritico(hemorragiaDado(6))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial (recarga, crítico, silencioso)
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // munición especial sin adaptador
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -74,12 +77,14 @@ export const ARMAS_IMPULSORAS: ArmaFuego[] = [
     rareza: "Poco Habitual",
     coste: 500,
     modificadores: [],
+    efectosObjetivo: [enCritico(hemorragiaDado(6))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial (recarga, crítico, silencioso)
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // munición especial sin adaptador
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
 ];

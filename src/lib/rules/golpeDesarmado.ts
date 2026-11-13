@@ -9,6 +9,7 @@
 import { equipoPorId, type Armadura } from "../catalog/equipo";
 import { nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
+import type { EfectoEnTirada } from "./efectosArma";
 
 export type GolpeDesarmadoConArmadura = {
   bonoDanio: number;
@@ -60,10 +61,14 @@ export function golpeDesarmadoConArmadura(sheet: Pick<Sheet, "equipo">): GolpeDe
   return { bonoDanio, fuentes, letal, aturdimiento, bloqueoSinPenalizador };
 }
 
-// El crítico del golpe con el aturdimiento del Refuerzo ("Aturdimiento (6)" → "(7)").
-export function criticoDesarmado(critico: string | null | undefined, golpe: GolpeDesarmadoConArmadura | null): string | undefined {
-  if (!golpe?.aturdimiento) return critico ?? undefined;
-  const nuevo = `Aturdimiento (${golpe.aturdimiento.dificultad}, ${golpe.aturdimiento.fuente})`;
-  if (!critico) return nuevo;
-  return /Aturdimiento \(\d+\)/.test(critico) ? critico.replace(/Aturdimiento \(\d+\)/, nuevo) : `${critico} · ${nuevo}`;
+// El crítico del golpe con el aturdimiento del Refuerzo: la salvación contra Aturdido del
+// crítico pasa de 6 a 7 (u 8), con la fuente en la nota; si el golpe no traía, se añade.
+export function criticoDesarmado(efectos: readonly EfectoEnTirada[], golpe: GolpeDesarmadoConArmadura | null): EfectoEnTirada[] {
+  if (!golpe?.aturdimiento) return [...efectos];
+  const { dificultad, fuente } = golpe.aturdimiento;
+  const esAturdimiento = (e: EfectoEnTirada) => e.cuando === "critico" && e.tipo === "salvacion" && e.estadoId === "aturdido";
+  const nota = `Dificultad del ${fuente}.`;
+  if (efectos.some(esAturdimiento))
+    return efectos.map((e) => (esAturdimiento(e) && e.tipo === "salvacion" ? { ...e, dificultad, nota } : e));
+  return [...efectos, { tipo: "salvacion", estadoId: "aturdido", dificultad, cuando: "critico", fuente, nota }];
 }

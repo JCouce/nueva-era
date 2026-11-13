@@ -11,6 +11,7 @@
 //   fila "2"), igual para todas las modificaciones, y su daño extra va a todos los modos.
 // - Coste multiplicativo: básico × N₁ × N₂…; convertir un arma que ya tienes cuesta la
 //   diferencia. Rareza: la mayor entre la del arma y las de sus modificaciones.
+import type { EfectoEnTirada } from "./efectosArma";
 import { z } from "zod";
 import { equipoPorId, RAREZA_ORDEN, type Rareza } from "../catalog/equipo";
 import { PELEA, type ArmaMelee } from "../catalog/armasMelee";
@@ -187,6 +188,9 @@ export type PerfilGolpe = {
   categoria: string | null;
   efectos: string[];
   efectosCritico: string[];
+  // Lo mismo como dato, con la modificación como fuente (T3a, rules/efectosArma.ts): lo que
+  // lee el golpe para el aviso del resultado. `efectos`/`efectosCritico` quedan para la ficha.
+  efectosObjetivo: EfectoEnTirada[];
   ignoraBlindaje: number | null;
   fuente: string;
 };
@@ -216,6 +220,7 @@ export function perfilGolpe(arma: ArmaMelee, ids: readonly ModificacionArmaId[] 
     categoria: mods.find(({ mod }) => mod.categoriaGolpe)?.mod.categoriaGolpe ?? categoriaDeTipo(tipoBase),
     efectos: mods.map(({ fila }) => fila.efecto),
     efectosCritico: mods.flatMap(({ fila }) => (fila.efectoCritico ? [fila.efectoCritico] : [])),
+    efectosObjetivo: mods.flatMap(({ mod, fila }) => fila.efectosObjetivo.map((e) => ({ ...e, fuente: mod.label }))),
     ignoraBlindaje: ignora > 0 ? ignora : null,
     fuente: mods.map(({ mod }) => mod.label).join(" + "),
   };

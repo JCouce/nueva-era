@@ -5,8 +5,9 @@ import { ESTADOS, estadoPorId } from "./estados";
 // Mismo motivo que equipo.test.ts: con 20 estados y hasta 4 grados cada uno,
 // un id duplicado o un grado sin modificadores por descuido se cuela fácil.
 describe("integridad del catálogo de estados", () => {
-  test("son los 20 que cita docs/sistema.md §7 (Fatiga/Heridas/Muerte no cuentan aparte)", () => {
-    assert.equal(ESTADOS.length, 20);
+  // 20 del documento + Supresores y Dosis acumulada, de la munición especial (cuestionario eq-22).
+  test("son los 20 que cita docs/sistema.md §7 (Fatiga/Heridas/Muerte no cuentan aparte) más los 2 de munición", () => {
+    assert.equal(ESTADOS.length, 22);
   });
 
   test("no hay ids de estado repetidos", () => {

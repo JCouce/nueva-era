@@ -321,13 +321,14 @@ describe("E4: textos sin mecanizar, solo con su rasgo", () => {
     const ataques = (f: FichaResuelta) => accionesDeAtaque(f.ficha, f.modificadores, f.extrasDotes.permisos).map((t) => conExtrasDeFicha(f, t));
     const critico = (f: FichaResuelta, label: string) => ataques(f).find((t) => t.label === label)!.efectoCritico;
     const f = resolver(s);
-    // El crítico propio del arma (Aturdimiento) va delante; la especie lo completa.
-    const letal = "Aturdimiento (6) · Daño letal. (Matriz Biometálica · Arköru)";
+    // T3a: el crítico propio del arma (Aturdimiento) ya no es texto, va en sus efectos sobre el
+    // objetivo; el texto del crítico es solo el de la especie.
+    const letal = "Daño letal. (Matriz Biometálica · Arköru)";
     assert.equal(critico(f, "Golpear con Puñetazo"), letal);
     assert.equal(critico(f, "Golpear con Patada"), letal);
     assert.equal(critico(f, "Golpear con Codazo o Rodillazo"), letal);
     assert.doesNotMatch(critico(f, "Golpear con Espada Ligera") ?? "", /letal/);
-    assert.equal(critico(resolver({ ...s, especieId: "humano" }), "Golpear con Puñetazo"), "Aturdimiento (6)");
+    assert.equal(critico(resolver({ ...s, especieId: "humano" }), "Golpear con Puñetazo"), undefined);
   });
 
   // Una tirada no física: en las físicas sale siempre «Bajo Ultra Estimulante» (S94).

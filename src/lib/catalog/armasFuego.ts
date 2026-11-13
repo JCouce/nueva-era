@@ -3,6 +3,8 @@ import type { MotorMetadata } from "../rules/motor";
 import type { Rareza } from "./equipo";
 import type { MunicionEnergiaId } from "./municion";
 import { ARMAS_IMPULSORAS } from "./armasImpulsoras";
+import type { EfectoArma } from "../rules/efectosArma";
+import { derriboCercano, enCritico, salva, shockYLlamarada } from "./efectosArma";
 
 // ── Armas de fuego ────────────────────────────────────────────────────
 // Un modo de disparo: acción, dificultad propia y daño. La mayoría de las
@@ -73,16 +75,10 @@ export type ArmaFuego = {
   // aviso para otra tirada que el motor no automatiza. Ver combate.ts,
   // tiradaDeArmaFuego. docs/sistema.md, pregunta 25b.
   notaTercero?: string;
-  // Derribo a Corta Distancia y a Bocajarro (escopetas/ametralladoras,
-  // docs/equipo-efectos-especiales.md §Armas de fuego): a diferencia de
-  // `notaTercero` (siempre activo), este solo aplica en esos dos tramos —
-  // mismo mecanismo "texto informativo condicionado" que ya usa
-  // condicionTramo() (OpcionCondicion.nota, docs/modificadores-tiradas.md
-  // §8), no `especial` (que se muestra siempre, sea cual sea el tramo
-  // elegido — el bug real que reportó el barrido). Objetivo_tercero: el
-  // objetivo tira su propia salvación contra `derribado` (catalog/estados.ts),
-  // el motor solo avisa. Valor = dificultad de esa salvación.
-  efectoDerribo?: number;
+  // Lo que el disparo le hace al objetivo (T3a del cuestionario, rules/efectosArma.ts): los
+  // «Efecto X (N)» y «Crítico de X (N)» de `especial` como dato, y el Derribo de escopetas y
+  // ametralladoras en corta y a bocajarro (`soloEn.tramo`). El resultado del ataque los avisa.
+  efectosObjetivo?: EfectoArma[];
   pesoKg: number;
   rareza: Rareza;
   coste: number;
@@ -141,11 +137,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 150,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 8))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -167,11 +165,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 300,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 9))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -198,12 +198,14 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Poco Habitual",
     coste: 500,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 8))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -225,11 +227,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 5000,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 9))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -255,12 +259,15 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 8000,
     modificadores: [],
+    efectosObjetivo: [salva("llamarada", 9), enCritico(salva("ceguera", 10))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "llamarada" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ceguera" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -287,6 +294,7 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Muy Extraño",
     coste: 30000,
     modificadores: [],
+    efectosObjetivo: [salva("shock", 5), enCritico(salva("shock", 12))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
@@ -300,6 +308,8 @@ export const ARMAS: ArmaFuego[] = [
       // revisada 2026-09-24: sí se construye — la original de 2026-09-23 (no
       // avisarlo por sobrecargar la UI) se revierte a petición del usuario.
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -327,6 +337,7 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Muy Extraño",
     coste: 45000,
     modificadores: [],
+    efectosObjetivo: [...shockYLlamarada(7), enCritico(salva("fusion", 11))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
@@ -334,6 +345,9 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" }, // decisión de 25b revertida 2026-09-24, ver Rayo Ligero
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "llamarada" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "fusion" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -351,17 +365,18 @@ export const ARMAS: ArmaFuego[] = [
     municion: 7,
     mejorasAdmitidas: 2,
     especial: "Crítico de Aturdimiento (12)",
-    efectoDerribo: 9,
     pesoKg: 4,
     rareza: "Común",
     coste: 250,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 12)), derriboCercano(9)],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // derriboCercano (efectosObjetivo): aviso en el resultado, y nota en la opción Corta/Bocajarro (condicionTramo)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -379,17 +394,18 @@ export const ARMAS: ArmaFuego[] = [
     municion: 8,
     mejorasAdmitidas: 3,
     especial: "Crítico de Aturdimiento (11)",
-    efectoDerribo: 8,
     pesoKg: 4,
     rareza: "Común",
     coste: 400,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 11)), derriboCercano(8)],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // derriboCercano (efectosObjetivo): aviso en el resultado, y nota en la opción Corta/Bocajarro (condicionTramo)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -410,18 +426,19 @@ export const ARMAS: ArmaFuego[] = [
     municion: 24,
     mejorasAdmitidas: 4,
     especial: "Crítico de Aturdimiento (11) · F. Auto (Esquiva 8)",
-    efectoDerribo: 8,
     pesoKg: 6.5,
     rareza: "Poco Habitual",
     coste: 1200,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 11)), derriboCercano(8)],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // derriboCercano (efectosObjetivo): aviso en el resultado, y nota en la opción Corta/Bocajarro (condicionTramo)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -442,17 +459,18 @@ export const ARMAS: ArmaFuego[] = [
     municion: 12,
     mejorasAdmitidas: 4,
     especial: "Crítico de Aturdimiento (14)",
-    efectoDerribo: 9,
     pesoKg: 6,
     rareza: "Muy Extraño",
     coste: 12500,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 14)), derriboCercano(9)],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // derriboCercano (efectosObjetivo): aviso en el resultado, y nota en la opción Corta/Bocajarro (condicionTramo)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -465,7 +483,7 @@ export const ARMAS: ArmaFuego[] = [
       "Proyectiles de plasma supercaliente que causan daño grave. Además de tener modo automático, " +
       "las armas de plasma no acumulan retroceso gracias a su sistema de electroimanes. Por la " +
       "luminiscencia del proyectil, -6 al sigilo al dispararla (solo percepción visual). Como toda " +
-      "escopeta, +1 al ataque y Derribo en Corta Distancia y a Bocajarro.",
+      "escopeta, +1 al ataque a corta distancia y a bocajarro; su tabla no trae Derribo.",
     empleo: "dos manos",
     tipo: "escopeta",
     modos: [
@@ -478,16 +496,13 @@ export const ARMAS: ArmaFuego[] = [
     mejorasAdmitidas: 2,
     especial: "Efecto Shock y Llamarada (8) · Crítico de Fusión (12) · F. Auto (Esquiva 10)",
     notaTercero: "-6 a la Alerta Activa de quien te detecta (percepción visual).",
-    // Decidido 2026-09-25 (el usuario): sí lleva Derribo como el resto de su
-    // categoría, pese a que "Efecto" no lo listaba con número en el PDF —
-    // dificultad 9, igual que Gong (mismo tramo de daño, danio 14). Cierra la
-    // ambigüedad de docs/equipo-efectos-especiales.md §Armas de fuego y del
-    // checklist 2026-09-24.
-    efectoDerribo: 9,
+    // Sin Derribo: manda la fila de la tabla, que no lo trae (usuario, cuestionario eq-12,
+    // 2026-11-13; hasta entonces se le daba 9 por la regla de familia).
     pesoKg: 7.5,
     rareza: "Muy Extraño",
     coste: 56000,
     modificadores: [],
+    efectosObjetivo: [...shockYLlamarada(8), enCritico(salva("fusion", 12))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
@@ -495,7 +510,9 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" }, // decisión de 25b revertida 2026-09-24, ver Rayo Ligero
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "llamarada" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "fusion" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -518,12 +535,14 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 350,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 10))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -546,12 +565,14 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 500,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 10))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -574,12 +595,14 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Poco Habitual",
     coste: 900,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 11))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -604,12 +627,14 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 25500,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 11))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -636,6 +661,7 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 56000,
     modificadores: [],
+    efectosObjetivo: [...shockYLlamarada(8), enCritico(salva("fusion", 12))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
@@ -643,6 +669,9 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" }, // decisión de 25b revertida 2026-09-24, ver Rayo Ligero
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "llamarada" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "fusion" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -665,12 +694,14 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 500,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 10))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -693,12 +724,14 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 750,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 10))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -721,12 +754,14 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Poco Habitual",
     coste: 1100,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 10))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -752,12 +787,15 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 16000,
     modificadores: [],
+    efectosObjetivo: [salva("llamarada", 8), enCritico(salva("ceguera", 10))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "llamarada" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ceguera" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -780,12 +818,14 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 18500,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 10))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -812,12 +852,15 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 55000,
     modificadores: [],
+    efectosObjetivo: [salva("shock", 6), enCritico(salva("shock", 11))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -845,6 +888,7 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 60500,
     modificadores: [],
+    efectosObjetivo: [...shockYLlamarada(6), enCritico(salva("fusion", 11))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
@@ -852,6 +896,9 @@ export const ARMAS: ArmaFuego[] = [
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
       { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" }, // decisión de 25b revertida 2026-09-24, ver Rayo Ligero
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "llamarada" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "fusion" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -874,11 +921,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 3700,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 10))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -901,11 +950,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Común",
     coste: 4900,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 10))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -931,12 +982,14 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Poco Habitual",
     coste: 6500,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 9))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -959,11 +1012,13 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 11000,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 12))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -987,11 +1042,14 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Extraño",
     coste: 20000,
     modificadores: [],
+    efectosObjetivo: [salva("llamarada", 6), enCritico(salva("ceguera", 10))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "llamarada" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "ceguera" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1015,11 +1073,14 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Muy Extraño",
     coste: 70000,
     modificadores: [],
+    efectosObjetivo: [salva("shock", 6), enCritico(salva("shock", 11))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1046,12 +1107,16 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Muy Extraño",
     coste: 78000,
     modificadores: [],
+    efectosObjetivo: [...shockYLlamarada(8), enCritico(salva("fusion", 12))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "llamarada" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "fusion" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1075,11 +1140,15 @@ export const ARMAS: ArmaFuego[] = [
     rareza: "Singular",
     coste: 156000,
     modificadores: [],
+    efectosObjetivo: [...shockYLlamarada(8), enCritico(salva("fusion", 14))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "llamarada" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "fusion" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1100,18 +1169,19 @@ export const ARMAS: ArmaFuego[] = [
     municion: 150,
     mejorasAdmitidas: 2,
     especial: "Crítico de Aturdimiento (12) · F. Auto (Esquiva 9)",
-    efectoDerribo: 10,
     pesoKg: 10,
     rareza: "Común",
     coste: 4500,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 12)), derriboCercano(10)],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // derriboCercano (efectosObjetivo): aviso en el resultado, y nota en la opción Corta/Bocajarro (condicionTramo)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1132,18 +1202,19 @@ export const ARMAS: ArmaFuego[] = [
     municion: 180,
     mejorasAdmitidas: 3,
     especial: "Crítico de Aturdimiento (12) · F. Auto (Esquiva 9)",
-    efectoDerribo: 10,
     pesoKg: 12,
     rareza: "Poco Habitual",
     coste: 6000,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 12)), derriboCercano(10)],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // derriboCercano (efectosObjetivo): aviso en el resultado, y nota en la opción Corta/Bocajarro (condicionTramo)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1164,18 +1235,19 @@ export const ARMAS: ArmaFuego[] = [
     municion: 150,
     mejorasAdmitidas: 4,
     especial: "Crítico de Aturdimiento (12) · F. Auto (Esquiva 9)",
-    efectoDerribo: 10,
     pesoKg: 9,
     rareza: "Poco Habitual",
     coste: 7000,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 12)), derriboCercano(10)],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // derriboCercano (efectosObjetivo): aviso en el resultado, y nota en la opción Corta/Bocajarro (condicionTramo)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1196,18 +1268,19 @@ export const ARMAS: ArmaFuego[] = [
     municion: 200,
     mejorasAdmitidas: 4,
     especial: "Crítico de Aturdimiento (13) · F. Auto (Esquiva 10)",
-    efectoDerribo: 11,
     pesoKg: 11.5,
     rareza: "Extraño",
     coste: 22000,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("aturdido", 13)), derriboCercano(11)],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // derriboCercano (efectosObjetivo): aviso en el resultado, y nota en la opción Corta/Bocajarro (condicionTramo)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1230,18 +1303,19 @@ export const ARMAS: ArmaFuego[] = [
     tipoMunicion: "celula_particulas", // S93: de energía; Grave como los rayos (S95)
     mejorasAdmitidas: 2,
     especial: "Crítico de Llamarada (12) · F. Auto (Esquiva 10)",
-    efectoDerribo: 10,
     pesoKg: 16,
     rareza: "Muy Extraño",
     coste: 55000,
     modificadores: [],
+    efectosObjetivo: [enCritico(salva("llamarada", 12)), derriboCercano(10)],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // derriboCercano (efectosObjetivo): aviso en el resultado, y nota en la opción Corta/Bocajarro (condicionTramo)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "llamarada" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1251,7 +1325,7 @@ export const ARMAS: ArmaFuego[] = [
     resumen: "La ametralladora más cara del catálogo: plasma con el mayor cargador de todas.",
     descripcion:
       "Ametralladora de plasma con el cargador más grande del catálogo (300 proyectiles) y el mayor " +
-      "coste. Como toda ametralladora, causa Derribo en Corta Distancia y a Bocajarro.",
+      "coste. Su tabla no trae Derribo, a diferencia del resto de ametralladoras.",
     empleo: "dos manos",
     tipo: "ametralladora",
     modos: [
@@ -1263,24 +1337,22 @@ export const ARMAS: ArmaFuego[] = [
     tipoMunicion: "bateria_plasma",
     mejorasAdmitidas: 2,
     especial: "Efecto Shock y Llamarada (8) · Crítico de Fusión (12) · F. Auto (Esquiva 11)",
-    // Decidido 2026-09-25 (el usuario): sí lleva Derribo como el resto de su
-    // categoría, pese a que "Efecto" no lo listaba con número en el PDF —
-    // dificultad 11, igual que Matanza (mismo tramo de daño, la más alta de
-    // la categoría). Cierra la ambigüedad de
-    // docs/equipo-efectos-especiales.md §Armas de fuego y del checklist
-    // 2026-09-24.
-    efectoDerribo: 11,
+    // Sin Derribo: manda la fila de la tabla, que no lo trae (usuario, cuestionario eq-12,
+    // 2026-11-13; hasta entonces se le daba 11 por la regla de familia).
     pesoKg: 10,
     rareza: "Muy Extraño",
     coste: 99000,
     modificadores: [],
+    efectosObjetivo: [...shockYLlamarada(8), enCritico(salva("fusion", 12))],
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_fuego" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // tramo de distancia
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "eleccion_jugador", estado: "construido" }, // selector de modo
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "nota_fija", estado: "ad_hoc" }, // arma.especial
       { tipo: "habilitador", afecta: { modo: "accion_existente", id: "ataque_fuego" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "ad_hoc" }, // aviso de munición insuficiente
-      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // efectoDerribo, nota condicionada a Corta/Bocajarro en condicionTramo()
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "llamarada" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "fusion" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   // Arco y Ballesta: misma lista para que Tienda, Equipo, Acciones y Fabricar las traten como

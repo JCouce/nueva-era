@@ -7,6 +7,7 @@ import {
   type TipoDanio,
   textoDeGrado,
   type DetallePoder,
+  type EfectoSobreObjetivo,
   type Grado,
   type Resultado,
   type ResultadoDanio,
@@ -50,6 +51,12 @@ function CalculoDanio({
         )
       )}
       {suma < 0 && <span> · mínimo 0</span>}
+      {danio.multiplica && (
+        <span>
+          {" "}
+          ×{danio.multiplica.valor} {danio.multiplica.fuente}
+        </span>
+      )}
     </>
   );
 }
@@ -109,6 +116,9 @@ export type Lanzamiento = Resultado & {
   // Se pintan tras resolver el daño, no antes: es el momento en que el
   // jugador ya sabe si el ataque impactó de verdad.
   efectos?: { fuente: string; texto: string }[];
+  // Lo que le pasa al objetivo si el ataque acierta (T3a, efectosSobreObjetivo): ya resuelto
+  // al tirar, con la duración de la Hemorragia tirada. Vacío si no acertó.
+  efectosObjetivo?: EfectoSobreObjetivo[];
   // Payout de "Volar" (Movilidad Aérea) — igual que danioResuelto pero en
   // metros, y ya resuelto en el momento (no hay una segunda tirada "Tirar
   // vuelo" como sí la hay para daño). Ver resolverVuelo(), acciones.ts.
@@ -305,6 +315,11 @@ export function ContenidoResultado({
         </div>
       )}
 
+      {/* Lo que el golpe le hace al objetivo (T3a): sale con el acierto, sin esperar al daño
+          (eq-03: salta aunque el blindaje se lo coma todo). El máster tira por él y pone el
+          estado a mano. */}
+      {resultado.efectosObjetivo && resultado.efectosObjetivo.length > 0 && <AvisoObjetivo efectos={resultado.efectosObjetivo} />}
+
       {resultado.vueloResuelto && (
         <div className="mt-3 border-t border-border pt-3">
           <p className="font-mono text-xs uppercase text-info">
@@ -340,6 +355,45 @@ export function ContenidoResultado({
         <ObjetivoTira tiradas={resultado.poder.objetivoTira} />
       )}
     </>
+  );
+}
+
+function AvisoObjetivo({ efectos }: { efectos: EfectoSobreObjetivo[] }) {
+  return (
+    <div className="mt-3 border-t border-border pt-3">
+      <p className="font-mono text-[10px] uppercase tracking-widest text-muted">El objetivo</p>
+      <ul className="mt-1 flex flex-col gap-2">
+        {efectos.map((e, i) => (
+          <li key={i} className="border-l-2 border-accent pl-2">
+            <p className="font-sans text-prosa font-semibold text-foreground">{e.titulo}</p>
+            <p className="font-mono text-[10px] uppercase text-muted">
+              {e.fuente}
+              {e.enCritico && <span className="text-accent"> · crítico</span>}
+            </p>
+            {e.notas.map((n, j) => (
+              <p key={j} className="font-sans text-[12px] text-soft">
+                {n}
+              </p>
+            ))}
+            {e.grados.length > 0 && (
+              <details className="mt-1">
+                <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-wide text-muted">
+                  {e.salvacion ? "Qué pasa en cada grado" : "Qué hace"}
+                </summary>
+                {e.resumen && <p className="mt-1 font-sans text-[12px] text-soft">{e.resumen}</p>}
+                <ul className="mt-1 flex flex-col gap-0.5">
+                  {e.grados.map((g) => (
+                    <li key={g.id} className="font-sans text-[12px] text-soft">
+                      <span className="font-mono uppercase text-muted">{g.label}:</span> {g.texto}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

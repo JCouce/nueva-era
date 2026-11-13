@@ -16,7 +16,9 @@ import {
   gastoMunicionEspecial,
   municionEspecialElegida,
   danioConMunicion,
-  efectoCriticoConMunicion,
+  efectosSobreObjetivo,
+  ignoraBlindajeDelGolpe,
+  tirarDadoDeCaras,
   accionesDeAtaque,
   accionesDirectasDeAtaque,
   accionesDeHerramientas,
@@ -576,6 +578,7 @@ function FilaPoder({
   textos,
   indiceCondiciones,
   fatigaEfectiva,
+  estados,
   onAbrir,
   estrella,
 }: {
@@ -586,6 +589,7 @@ function FilaPoder({
   textos: FichaResuelta["textosTirada"];
   indiceCondiciones: FichaResuelta["indiceCondiciones"];
   fatigaEfectiva: number;
+  estados: FichaResuelta["estadosConEfecto"];
   onAbrir: (p: PoderDisponible) => void;
   estrella?: Estrella;
 }) {
@@ -599,6 +603,7 @@ function FilaPoder({
     textos,
     indiceCondiciones,
     fatigaEfectiva,
+    estados,
   });
   if (!preparado) return null;
   const p = preparado.resuelto;
@@ -898,6 +903,7 @@ export function AccionesTab({
       textos: ficha.textosTirada,
       indiceCondiciones: ficha.indiceCondiciones,
       fatigaEfectiva: ficha.fatigaEnJuego.efectiva,
+      estados: ficha.estadosConEfecto,
     }) !== null;
   const poderesPintables = poderes.filter(poderPintable);
   const poderesDotesPintables = ficha.poderesDotes.filter(poderPintable);
@@ -923,6 +929,7 @@ export function AccionesTab({
         textos: ficha.textosTirada,
         indiceCondiciones: ficha.indiceCondiciones,
         fatigaEfectiva: ficha.fatigaEnJuego.efectiva,
+        estados: ficha.estadosConEfecto,
       })
     : null;
 
@@ -997,6 +1004,7 @@ export function AccionesTab({
       textos: ficha.textosTirada,
       indiceCondiciones: ficha.indiceCondiciones,
       fatigaEfectiva: ficha.fatigaEnJuego.efectiva,
+      estados: ficha.estadosConEfecto,
     });
     if (!p) return;
     if (p.tirada) abrir(p.tirada, false);
@@ -1207,10 +1215,7 @@ export function AccionesTab({
       const municion = municionEspecialElegida(tirada, estadoCondiciones);
       const conMunicion = danioConMunicion(modo, municion);
       const ajusteMunicion = conMunicion.sumaBase;
-      const ignoraBlindaje = [
-        ...(tirada.ignoraBlindaje ? [tirada.ignoraBlindaje] : []),
-        ...(municion?.ignoraBlindaje ? [{ valor: municion.ignoraBlindaje, fuente: municion.label }] : []),
-      ];
+      const ignoraBlindaje = ignoraBlindajeDelGolpe(tirada, modo, municion);
       const formula = sutilActivo ? modo.formulaDanio?.replace(/^Fue/, "Pot") : modo.formulaDanio;
       const origenBase = [
         tirada.ataque.modos.length > 1 ? modo.etiqueta : undefined,
@@ -1285,7 +1290,10 @@ export function AccionesTab({
           label: tirada.libre ? etiquetaTiradaLibre(montada.aplicado.id, montada.habilidad?.id ?? null) : tirada.label,
           dados,
           danioInfo,
-          efectoCritico: efectoCriticoConMunicion(tirada, municionEspecialElegida(tirada, estadoCondiciones)),
+          efectoCritico: tirada.efectoCritico,
+          // Lo que le pasa al objetivo si el golpe acierta (T3a): la app tira la duración de una
+          // Hemorragia aquí, al avisar; la salvación la tira el máster por el objetivo.
+          efectosObjetivo: efectosSobreObjetivo(tirada, estadoCondiciones, r, tirarDadoDeCaras),
           efectoCriticoNatural: tirada.efectoCriticoNatural,
           efectos: tirada.efectos,
           poder: tirada.poder,
@@ -1427,6 +1435,7 @@ export function AccionesTab({
         textos={ficha.textosTirada}
         indiceCondiciones={ficha.indiceCondiciones}
         fatigaEfectiva={ficha.fatigaEnJuego.efectiva}
+        estados={ficha.estadosConEfecto}
         onAbrir={abrirPoder}
         estrella={estrella(p.accion.id)}
       />
@@ -1519,6 +1528,7 @@ export function AccionesTab({
       textos: ficha.textosTirada,
       indiceCondiciones: ficha.indiceCondiciones,
       fatigaEfectiva: ficha.fatigaEnJuego.efectiva,
+      estados: ficha.estadosConEfecto,
     });
   const variantesDePoder = (poder: PoderDisponible): { preparado: PoderPreparado; etiqueta: string | null }[] => {
     const base = prepara(poder, SELECCION_PODER_VACIA);

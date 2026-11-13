@@ -10,6 +10,8 @@
 import type { Rareza } from "./equipo";
 import type { TipoDanio } from "./tiposDanio";
 import type { MotorMetadata } from "../rules/motor";
+import type { EfectoArma } from "../rules/efectosArma";
+import { enCritico, HEMORRAGIA_EXANGUINANTE, hemorragiaDado, salva, shockYLlamarada } from "./efectosArma";
 
 export const MODIFICACIONES_ARMA_IDS = ["electrificante", "termica", "plasma", "nanofilamento"] as const;
 export type ModificacionArmaId = (typeof MODIFICACIONES_ARMA_IDS)[number];
@@ -22,6 +24,8 @@ export type TramoModificacion = {
   efecto: string;
   // "Crítico: …" de la misma columna: al efecto de crítico del golpe.
   efectoCritico?: string;
+  // `efecto` y `efectoCritico` como dato (T3a del cuestionario, rules/efectosArma.ts).
+  efectosObjetivo: EfectoArma[];
   // "Ignora N puntos de Blindaje" (Nanofilamento).
   ignoraBlindaje?: number;
   // "Básico x N".
@@ -72,9 +76,9 @@ export const ARMAS_MODIFICADAS: readonly ModificacionArma[] = [
     tipoAdicional: "electrico",
     pesoPorcentaje: 25,
     tramos: [
-      { danioAdicional: 1, efecto: "Shock (6)", multiplicadorCoste: 5, rareza: "Común" },
-      { danioAdicional: 2, efecto: "Shock (7)", multiplicadorCoste: 10, rareza: "Poco Habitual" },
-      { danioAdicional: 3, efecto: "Shock (8)", multiplicadorCoste: 15, rareza: "Extraño" },
+      { danioAdicional: 1, efecto: "Shock (6)", efectosObjetivo: [salva("shock", 6)], multiplicadorCoste: 5, rareza: "Común" },
+      { danioAdicional: 2, efecto: "Shock (7)", efectosObjetivo: [salva("shock", 7)], multiplicadorCoste: 10, rareza: "Poco Habitual" },
+      { danioAdicional: 3, efecto: "Shock (8)", efectosObjetivo: [salva("shock", 8)], multiplicadorCoste: 15, rareza: "Extraño" },
     ],
     motor: MOTOR_DANIO_Y_EFECTO,
   },
@@ -88,9 +92,9 @@ export const ARMAS_MODIFICADAS: readonly ModificacionArma[] = [
     convierteBase: "fuego",
     pesoPorcentaje: 35,
     tramos: [
-      { danioAdicional: 1, efecto: "Llamarada (6)", multiplicadorCoste: 100, rareza: "Extraño" },
-      { danioAdicional: 2, efecto: "Llamarada (7)", multiplicadorCoste: 125, rareza: "Extraño" },
-      { danioAdicional: 3, efecto: "Llamarada (8)", multiplicadorCoste: 150, rareza: "Muy Extraño" },
+      { danioAdicional: 1, efecto: "Llamarada (6)", efectosObjetivo: [salva("llamarada", 6)], multiplicadorCoste: 100, rareza: "Extraño" },
+      { danioAdicional: 2, efecto: "Llamarada (7)", efectosObjetivo: [salva("llamarada", 7)], multiplicadorCoste: 125, rareza: "Extraño" },
+      { danioAdicional: 3, efecto: "Llamarada (8)", efectosObjetivo: [salva("llamarada", 8)], multiplicadorCoste: 150, rareza: "Muy Extraño" },
     ],
     motor: MOTOR_DANIO_Y_EFECTO,
   },
@@ -105,9 +109,9 @@ export const ARMAS_MODIFICADAS: readonly ModificacionArma[] = [
     exclusiva: true,
     pesoPorcentaje: 40,
     tramos: [
-      { danioAdicional: 1, efecto: "Shock y Llamarada (5)", efectoCritico: "Fusión (9)", multiplicadorCoste: 200, rareza: "Muy Extraño" },
-      { danioAdicional: 2, efecto: "Shock y Llamarada (6)", efectoCritico: "Fusión (11)", multiplicadorCoste: 225, rareza: "Muy Extraño" },
-      { danioAdicional: 3, efecto: "Shock y Llamarada (7)", efectoCritico: "Fusión (13)", multiplicadorCoste: 250, rareza: "Muy Extraño" },
+      { danioAdicional: 1, efecto: "Shock y Llamarada (5)", efectoCritico: "Fusión (9)", efectosObjetivo: [...shockYLlamarada(5), enCritico(salva("fusion", 9))], multiplicadorCoste: 200, rareza: "Muy Extraño" },
+      { danioAdicional: 2, efecto: "Shock y Llamarada (6)", efectoCritico: "Fusión (11)", efectosObjetivo: [...shockYLlamarada(6), enCritico(salva("fusion", 11))], multiplicadorCoste: 225, rareza: "Muy Extraño" },
+      { danioAdicional: 3, efecto: "Shock y Llamarada (7)", efectoCritico: "Fusión (13)", efectosObjetivo: [...shockYLlamarada(7), enCritico(salva("fusion", 13))], multiplicadorCoste: 250, rareza: "Muy Extraño" },
     ],
     motor: [
       ...MOTOR_DANIO_Y_EFECTO,
@@ -129,6 +133,7 @@ export const ARMAS_MODIFICADAS: readonly ModificacionArma[] = [
         danioAdicional: 1,
         efecto: "Hemorragia (1d6 turnos)",
         efectoCritico: "Hemorragia Exanguinante",
+        efectosObjetivo: [hemorragiaDado(6), enCritico(HEMORRAGIA_EXANGUINANTE)],
         ignoraBlindaje: 2,
         multiplicadorCoste: 250,
         rareza: "Extraño",
@@ -137,6 +142,7 @@ export const ARMAS_MODIFICADAS: readonly ModificacionArma[] = [
         danioAdicional: 1,
         efecto: "Hemorragia (1d8 turnos)",
         efectoCritico: "Hemorragia Exanguinante",
+        efectosObjetivo: [hemorragiaDado(8), enCritico(HEMORRAGIA_EXANGUINANTE)],
         ignoraBlindaje: 3,
         multiplicadorCoste: 300,
         rareza: "Muy Extraño",
@@ -145,6 +151,7 @@ export const ARMAS_MODIFICADAS: readonly ModificacionArma[] = [
         danioAdicional: 1,
         efecto: "Hemorragia (1d10 turnos)",
         efectoCritico: "Hemorragia Exanguinante",
+        efectosObjetivo: [hemorragiaDado(10), enCritico(HEMORRAGIA_EXANGUINANTE)],
         ignoraBlindaje: 4,
         multiplicadorCoste: 350,
         rareza: "Muy Extraño",

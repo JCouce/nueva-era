@@ -23,6 +23,7 @@ import type { OrigenAporte } from "./origen";
 import type { TextoEnTirada } from "./especie";
 import type { TipoDanio } from "../catalog/tiposDanio";
 import type { DanioExtra } from "./armasModificadas";
+import type { EfectoEnTirada } from "./efectosArma";
 import { etiquetaEspecialidad, type EspecialidadId } from "../catalog/especialidades";
 
 export const CARAS_DADO = 12;
@@ -80,6 +81,11 @@ export type Accion = {
   // ResultadoTirada.tsx tras resolver el daño, no en `nota` (que es
   // información sobre ESTA tirada, no un aviso para otra).
   efectos?: { fuente: string; texto: string; origen?: OrigenAporte }[];
+  // Lo que el ataque le hace al objetivo al acertar o en crítico (T3a del cuestionario,
+  // rules/efectosArma.ts): los efectos del arma y de su modificación como dato. Los de la
+  // munición especial van en `municionesEspeciales`. El resultado los avisa con
+  // efectosSobreObjetivo; la app no tira por el objetivo ni le pone el estado.
+  efectosObjetivo?: EfectoEnTirada[];
   // Habilidad que el jugador puede usar en su lugar con una casilla de la fila
   // (Levitar: esquivar con Física). Mismo patrón que `aplicadoSutil`, pero sobre
   // la habilidad; la especialidad, si la nombra, se resuelve sola (ver
@@ -192,7 +198,7 @@ export type Accion = {
     tipoDanio?: TipoDanio;
     ignoraBlindaje?: number;
     efecto: string;
-    efectoCritico?: string;
+    efectosObjetivo: EfectoEnTirada[];
     sustituyeCritico?: boolean;
   }[];
   // "Ignora N puntos de blindaje" del arma (Kerzul): aviso en el resultado del
@@ -234,6 +240,9 @@ export type Accion = {
       // desglose) y el daño extra de otros tipos, que va aparte en el resultado.
       tipoDanio?: TipoDanio;
       danioExtra?: DanioExtra[];
+      // «Acción Compleja: ignora 1 nivel de armadura» (ModoAtaqueMelee.ignoraBlindaje): el
+      // golpe en este modo ignora esos puntos del blindaje del objetivo, con su fuente.
+      ignoraBlindaje?: { valor: number; fuente: string };
       // Cuánto gasta este modo de sheet.recursos al confirmar la tirada
       // (docs/prompt-gasto-recursos.md, Fase 1) — dato, no recalculado de la
       // etiqueta en otro punto (gastoDelModo()/GASTO_MODO_PULSO en combate.ts
@@ -787,6 +796,7 @@ export type ResultadoDanio = {
   ajustes?: { valor: number; fuente: string }[];
   sinBonoExitos?: string;
   categoriaPor?: string;
+  multiplica?: { valor: number; fuente: string };
 };
 
 // Cambios al daño de las casillas marcadas en el ataque, ya juntados por montarTirada
@@ -796,6 +806,10 @@ export type AjusteDanio = {
   categoria: { a: string; fuente: string } | null;
   // Fuente de la casilla que deja el daño en el básico (Derribo), si sigue en pie.
   sinBonoExitos: string | null;
+  // Todo el daño (básico, éxitos y ajustes) por N: Ariete «Contra una estructura» (eq-16).
+  // TODO(revisar): el daño extra de otro tipo (un Ariete Electrificante) va aparte y no se
+  // dobla; la decisión habla de «básico más lo que suman los éxitos».
+  multiplica?: { valor: number; fuente: string };
 };
 
 // Fuente: sistema-y-combate.md — "por cada dos éxitos acumulados en la
@@ -813,18 +827,20 @@ export const categoriaConAjuste = (categoria: string, ajuste?: AjusteDanio): str
 // total con mínimo 0 (Golpe Fatigante −1) y la categoría que cambie (golpe letal con escudo).
 export function resolverDanio(danioBase: number, margen: number, categoria: string, ajuste?: AjusteDanio): ResultadoDanio {
   const bono = margen > 0 ? Math.floor(margen / 2) : 0;
-  if (!ajuste || (ajuste.ajustes.length === 0 && !ajuste.categoria && !ajuste.sinBonoExitos))
+  if (!ajuste || (ajuste.ajustes.length === 0 && !ajuste.categoria && !ajuste.sinBonoExitos && !ajuste.multiplica))
     return { base: danioBase, bonoExitos: bono, total: danioBase + bono, categoria };
   const bonoExitos = ajuste.sinBonoExitos ? 0 : bono;
   const suma = ajuste.ajustes.reduce((t, a) => t + a.valor, 0);
+  const sinMultiplicar = Math.max(0, danioBase + bonoExitos + suma);
   return {
     base: danioBase,
     bonoExitos,
-    total: Math.max(0, danioBase + bonoExitos + suma),
+    total: ajuste.multiplica ? sinMultiplicar * ajuste.multiplica.valor : sinMultiplicar,
     categoria: ajuste.categoria?.a ?? categoria,
     ...(ajuste.ajustes.length > 0 && { ajustes: ajuste.ajustes }),
     ...(ajuste.sinBonoExitos && { sinBonoExitos: ajuste.sinBonoExitos }),
     ...(ajuste.categoria && { categoriaPor: ajuste.categoria.fuente }),
+    ...(ajuste.multiplica && { multiplica: ajuste.multiplica }),
   };
 }
 
@@ -866,16 +882,19 @@ export function municionEspecialElegida(
   return accion.municionesEspeciales?.find((m) => m.id === id) ?? null;
 }
 
-// El crítico de la tirada con la munición especial elegida: el del arma más el de la
-// munición ("en crítico, Ceguera (10)"), o solo el de la munición si lo sustituye (Perforante).
-export function efectoCriticoConMunicion(
-  accion: Pick<Accion, "efectoCritico">,
+// Lo que ignora del blindaje del objetivo este golpe, con su fuente: el arma (Kerzul,
+// Nanofilamento), el modo elegido (Hoja Dentada y Sierra Circular en Compleja, eq-14) y la
+// munición especial (Perforante). El resultado lo avisa junto al daño; se resta a mano.
+export function ignoraBlindajeDelGolpe(
+  accion: Pick<Accion, "ignoraBlindaje">,
+  modo: Pick<ModoAtaque, "ignoraBlindaje"> | null,
   municion: NonNullable<Accion["municionesEspeciales"]>[number] | null,
-): string | undefined {
-  if (!municion?.efectoCritico) return accion.efectoCritico;
-  const delaMunicion = `${municion.efectoCritico} (${municion.label})`;
-  if (municion.sustituyeCritico || !accion.efectoCritico) return delaMunicion;
-  return `${accion.efectoCritico} · ${delaMunicion}`;
+): { valor: number; fuente: string }[] {
+  return [
+    ...(accion.ignoraBlindaje ? [{ valor: accion.ignoraBlindaje.valor, fuente: accion.ignoraBlindaje.fuente }] : []),
+    ...(modo?.ignoraBlindaje ? [modo.ignoraBlindaje] : []),
+    ...(municion?.ignoraBlindaje ? [{ valor: municion.ignoraBlindaje, fuente: municion.label }] : []),
+  ];
 }
 
 // Lo que la munición especial elegida hace al daño del modo: lo que es del tipo del arma
@@ -967,14 +986,19 @@ export function tirarDado(ventaja: boolean, tirar: () => number = tirarD12): { d
 // Dado honesto: getRandomValues con descarte del resto, para que las 12 caras
 // tengan exactamente la misma probabilidad (el módulo a secas sesga las bajas).
 export function tirarD12(): number {
-  const limite = Math.floor(0xffffffff / CARAS_DADO) * CARAS_DADO;
+  return tirarDadoDeCaras(CARAS_DADO);
+}
+
+// Un dado de N caras, honesto como el d12 (la duración de una Hemorragia «1d6 turnos»).
+export function tirarDadoDeCaras(caras: number): number {
+  const limite = Math.floor(0xffffffff / caras) * caras;
   const buf = new Uint32Array(1);
   let n: number;
   do {
     crypto.getRandomValues(buf);
     n = buf[0];
   } while (n >= limite);
-  return (n % CARAS_DADO) + 1;
+  return (n % caras) + 1;
 }
 
 // ¿Tiene la ficha esa especialidad (id) en esa habilidad?

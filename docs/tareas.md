@@ -958,8 +958,25 @@ Tandas, en orden:
   Quedan `TODO(revisar)`: «ataque físico» sin definir (todo menos mental), si el punto roto
   cuenta ya contra ese golpe, si la Malla devuelve
   sin estar activa, y el blindaje perdido de un NPC en combate (se apunta a mano).
-- [ ] **T3 Efectos de arma sobre el objetivo** (aviso + tarjeta del máster): eq-01…08, eq-09, eq-10,
-  eq-12, eq-14…17, eq-18, eq-19, eq-21, eq-22, eq-40, do-04, do-05, td-29.
+- [ ] **T3 Efectos de arma sobre el objetivo**, en tres pasadas (usuario, 2026-11-13):
+  - [x] **T3a** motor de efectos de arma (dato estructurado en el catálogo) y aviso claro en el
+    resultado del ataque: eq-01, eq-03…10, eq-12, eq-14…16, eq-21, eq-22; a FIRME sin código:
+    eq-11, eq-13, eq-17, eq-40, td-29.
+    *(2026-11-13)* `efectosObjetivo` como dato en armas de fuego e impulsoras, melee, munición
+    especial y Armas Modificadas (atajos en `catalog/efectosArma.ts`); `rules/efectosArma.ts`
+    decide qué salta (acierto/crítico, modo, tramo, munición) y monta `EfectoSobreObjetivo`, que
+    el resultado pinta en «El objetivo» y T3b guardará. `Estado.salvacion` (eq-07). Estados
+    nuevos Supresores (dobla la fatiga de los poderes de verdad: condición de estado en
+    `FUENTES_EXTERNAS_FATIGA`, sustituye a las dos casillas) y Dosis acumulada. Derribo de
+    escopetas por el mismo mecanismo; Plasma SG/AAA sin Derribo. Hoja Dentada/Sierra «Ignora 1»
+    en Compleja, casilla de cobertura del Mangual en Estándar, casilla «Contra una estructura»
+    del Ariete (daño ×2). El crítico sustituye solo al normal del mismo estado (Pistón en
+    Compleja: Aturdimiento 10 y Derribo 8). Sin migración. Quedan `TODO(revisar)`: sin
+    dificultad no avisa; el ×2 del Ariete no dobla el daño extra; el «(N)» de Impacto Estructural.
+    Fuera: armas de área (eq-13) y Proyector de Pulso siguen como texto.
+  - [ ] **T3b** tarjeta del máster en el centro de mando (eq-02, do-05): tabla propia de efectos
+    pendientes; el máster elige el grado y pone el estado en un toque, con registro.
+  - [ ] **T3c** retroceso entrópico de Kerzul (eq-18, eq-19) y Grito de Guerra y compañía (do-04).
 - [ ] **T4 Estado Sigilo**: di-09, do-01, eq-25, eq-26, eq-30, eq-31, eq-33.
 - [ ] **T5 Fase 4 de aportes + lo que sale en la tirada**: pl-05, eq-35, do-07, es-05, au-06, td-05,
   do-03, fa-01, fa-02, di-32, td-06, td-08, td-10, td-11.

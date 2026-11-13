@@ -30,6 +30,7 @@ import { nivelesHasta, acumulaPorClave, ultimoQueDefine, sustituyeMiraIntegrada,
 import { bonoFormulaFuerza, etiquetaTipoDanio, formulaConSuma, nombreArmaModificada, perfilGolpe, type PerfilGolpe } from "./armasModificadas";
 import type { ModificacionArmaId } from "../catalog/armasModificadas";
 import type { MotorMetadata } from "./motor";
+import { textoCortoDeEfecto, type EfectoArma, type EfectoEnTirada } from "./efectosArma";
 import { escudoRoto, gastoDelModo, MOTIVO_ESCUDO_ROTO, recursoDe } from "./recursos";
 import { CONDICION_ATACANTES_ADICIONALES, condicionApuntado, type Accion, type AccionDirecta } from "./acciones";
 import { atributoEfectivo, aplicado } from "./derivados";
@@ -87,21 +88,21 @@ function etiquetaTramo(tramo: TramoDistancia, alcance: ArmaFuego["alcance"]): st
   }
 }
 
+// Los efectos del catálogo colgados de una tirada, con quién los produce (rules/efectosArma.ts).
+function efectosConFuente(efectos: readonly EfectoArma[] | undefined, fuente: string, origen?: OrigenAporte): EfectoEnTirada[] {
+  return (efectos ?? []).map((e) => ({ ...e, fuente, ...(origen && { origen }) }));
+}
+
 // La opción de tramo de una tirada de ataque concreta: solo el ajuste base
 // del tipo de arma (con las excepciones de familia). Lo que module una
 // mejora instalada (mira telescópica y lo que llegue después) NO se funde
 // aquí — sale aparte, con su fuente, en bonosTramoDeMejoras.
-// Derribo a Corta Distancia y a Bocajarro (docs/equipo-efectos-especiales.md
-// §Armas de fuego): objetivo_tercero, el motor no lo resuelve, solo avisa —
-// mismo "texto informativo condicionado" que ya usa la opción de tramo para
-// otros casos (Visor Nocturno/Térmico sobre alerta_activa,
-// docs/modificadores-tiradas.md §8), no `arma.especial` (que se vería
-// siempre, sea cual sea el tramo elegido — el bug que reportó el barrido
-// motorMetadata-vs-prosa 2026-09-24).
+// Derribo a Corta Distancia y a Bocajarro (escopetas y ametralladoras): un efecto del arma
+// con `soloEn.tramo` (efectosObjetivo, T3a). El aviso de verdad sale en el resultado al
+// acertar; aquí, en la opción del tramo, se dice antes de tirar que en ese tramo derriba.
 function notaDerribo(arma: ArmaFuego, tramo: TramoDistancia): string | undefined {
-  if (!arma.efectoDerribo) return undefined;
-  if (tramo !== "corta" && tramo !== "bocajarro") return undefined;
-  return `Derribo — el objetivo tira su propia salvación, dificultad ${arma.efectoDerribo}.`;
+  const deTramo = (arma.efectosObjetivo ?? []).filter((e) => e.soloEn?.tramo?.includes(tramo));
+  return deTramo.length > 0 ? `${deTramo.map(textoCortoDeEfecto).join(" · ")}.` : undefined;
 }
 
 // "En fuego automático aumenta en 3 la dificultad de esquiva cuando se realiza a
@@ -337,7 +338,7 @@ function municionesDeArma(sheet: Sheet, arma: ArmaFuego, instanciaId: string): N
     ...(m.tipoDanio && { tipoDanio: m.tipoDanio }),
     ignoraBlindaje: m.ignoraBlindaje,
     efecto: m.efecto,
-    ...(m.efectoCritico && { efectoCritico: m.efectoCritico }),
+    efectosObjetivo: efectosConFuente(m.efectosObjetivo, m.label),
     ...(m.sustituyeCritico && { sustituyeCritico: true }),
   }));
 }
@@ -362,15 +363,8 @@ function condicionMunicion(municiones: NonNullable<Accion["municionesEspeciales"
 }
 
 // `mods`: para el daño que sale de Fuerza (Arco Táctico, `danioFuerza`).
-// El crítico de un arma de fuego vive en su texto `especial` ("Crítico de Aturdimiento (10) ·
-// F. Auto (Esquiva 8)"): se saca de ahí para el "Efecto crítico" del resultado, como el
-// `efectoCritico` de las armas melee.
-export function criticoDeEspecial(especial: string | null | undefined): string | undefined {
-  const criticos = (especial ?? "")
-    .split(" · ")
-    .flatMap((t) => (t.startsWith("Crítico de ") ? [t.slice("Crítico de ".length)] : []));
-  return criticos.length > 0 ? criticos.join(" · ") : undefined;
-}
+// Los efectos y el crítico de `especial` van como dato en `efectosObjetivo` (T3a): el
+// resultado los avisa al acertar; `especial` sigue entero en la nota, para leerlo antes.
 
 function tiradaDeArmaFuego(sheet: Sheet, mods: ModificadorConFuente[], arma: ArmaFuego, instanciaId: string): Accion {
   const modosConId = arma.modos.map((m, i) => ({ ...m, id: `${i}`, nota: notaModoFAuto(arma.tipo, m.etiqueta) }));
@@ -407,7 +401,7 @@ function tiradaDeArmaFuego(sheet: Sheet, mods: ModificadorConFuente[], arma: Arm
     familiaArma: "ataque_fuego",
     empleoArma: arma.empleo,
     nota: notaArma || undefined,
-    efectoCritico: criticoDeEspecial(arma.especial),
+    ...(arma.efectosObjetivo?.length && { efectosObjetivo: efectosConFuente(arma.efectosObjetivo, arma.label) }),
     efectos: efectos.length > 0 ? efectos : undefined,
     recursoInstanciaId: instanciaId,
     recursoUnidad: arma.tipoMunicion ? MUNICION_REGULAR[arma.tipoMunicion].unidadRecurso : undefined,
@@ -517,7 +511,8 @@ function tiradaGolpeBayoneta(sheet: Sheet, mods: ModificadorConFuente[], arma: A
     especialidadArma: ESPECIALIDAD_ATAQUE_ESPECIAL.bayoneta,
     familiaArma: "ataque_melee",
     empleoArma: "dos manos", // "el arma pasa a considerarse arma a dos manos" (catálogo)
-    efectoCritico: CUCHILLO_DE_COMBATE.efectoCritico,
+    // El crítico del Cuchillo de Combate («el daño será idéntico»), como dato.
+    efectosObjetivo: efectosConFuente(CUCHILLO_DE_COMBATE.efectosObjetivo, "Bayoneta"),
     ajustesFijos: [{ valor: -1, fuente: "Bayoneta" }],
     ataque: {
       modos: [{ id: "0", danio: fuerza + bono, formulaDanio: modoCuchillo.formulaDanio, categoriaDanio: modoCuchillo.categoriaDanio }],
@@ -544,6 +539,10 @@ function tiradaBloqueoBayoneta(sheet: Sheet, arma: ArmaFuego, instanciaId: strin
   };
 }
 
+// TODO(revisar): los efectos de las armas de área (armamento pesado y granadas: «Área 6x6
+// (Esquiva 9) · Efecto Aturdimiento (9)») siguen como texto en la nota, sin el aviso de T3a: no
+// saltan con «superar la defensa» de un objetivo, sino a quien no esquive en el área, y eso lo
+// resuelve el máster (eq-13, solo aviso). Si se quieren estructurados, falta decidir su disparador.
 // Armamento pesado: una dificultad fija por arma (columna "Dif." de EQIP),
 // no varios modos entre los que elegir como en ArmaFuego/ArmaMelee — se
 // mecaniza como ajustesFijos (automático, sin condición) en vez de
@@ -723,19 +722,49 @@ function notaConPerfil(textos: (string | null | undefined)[], perfil: PerfilGolp
   return todos.length > 0 ? todos.join(" · ") : undefined;
 }
 
-// "Impacto Estructural: … reduce de forma permanente el valor de blindaje del objetivo en
-// 1 punto. En armas a dos manos la reducción del blindaje es de 2 puntos" (docs/fuente/
-// equipamiento.md, Kerzul): el crítico lleva su efecto, no solo el nombre (2026-10-24).
-function textoCriticoArma(arma: ArmaMelee): string | undefined {
-  const critico = arma.efectoCritico;
-  if (!critico?.startsWith("Impacto Estructural")) return critico;
-  const puntos = arma.empleo === "dos manos" ? 2 : 1;
-  return `${critico}: reduce de forma permanente el blindaje del objetivo en ${puntos} punto${puntos > 1 ? "s" : ""}`;
+// Lo que el golpe le hace al objetivo (T3a): los efectos del arma, con su nombre de fuente, y
+// los de cada modificación (Armas Modificadas, S87), cada uno con la suya. En crítico, cada
+// fuente cambia lo suyo (efectosQueSaltan): el crítico del arma no quita el Shock de la
+// Electrificante.
+function efectosDelGolpe(arma: ArmaMelee, perfil: PerfilGolpe | null): EfectoEnTirada[] {
+  return [...efectosConFuente(arma.efectosObjetivo, arma.label), ...(perfil?.efectosObjetivo ?? [])];
 }
 
-function criticoConPerfil(arma: ArmaMelee, perfil: PerfilGolpe | null): string | undefined {
-  const todos = [textoCriticoArma(arma), ...(perfil?.efectosCritico ?? [])].filter((t): t is string => !!t);
-  return todos.length > 0 ? todos.join(" · ") : undefined;
+// Casillas del golpe que salen de la tabla del arma (no de mejoras): las propias del arma
+// (Ariete «Contra una estructura», eq-16) y la de cobertura de un modo que la ignora
+// (Mangual en Estándar, eq-15). La de cobertura, con varios modos, no suma por sí misma:
+// enciende el bono del modo que la ignora (`siActiva`), como Bioma Predilecto en «Marcha».
+const ID_OBJETIVO_CON_COBERTURA = "objetivo_con_cobertura";
+
+function casillasDelGolpe(
+  arma: ArmaMelee,
+  modos: { id: string; etiqueta: string; ignoraCobertura?: number }[],
+): { condiciones: CondicionTirada[]; bonos: BonoPorTramo[] } {
+  const condiciones: CondicionTirada[] = [...(arma.condiciones ?? [])];
+  const bonos: BonoPorTramo[] = [];
+  const conCobertura = modos.filter((m) => m.ignoraCobertura);
+  if (conCobertura.length > 0) {
+    const nota = `${arma.label} en ${conCobertura.map((m) => m.etiqueta).join(" o ")}: ignora ${conCobertura[0].ignoraCobertura} niveles de cobertura física del objetivo.`;
+    if (modos.length <= 1) {
+      condiciones.push({ id: ID_OBJETIVO_CON_COBERTURA, tipo: "toggle", etiqueta: "El objetivo tiene cobertura", valorActivo: conCobertura[0].ignoraCobertura!, nota });
+    } else {
+      condiciones.push({
+        id: ID_OBJETIVO_CON_COBERTURA,
+        tipo: "toggle",
+        etiqueta: "El objetivo tiene cobertura",
+        valorActivo: 0,
+        resumen: `+${conCobertura[0].ignoraCobertura} en ${conCobertura.map((m) => m.etiqueta).join(" o ")}`,
+        nota,
+      });
+      bonos.push({
+        fuente: `${arma.label} (ignora cobertura)`,
+        condicion: "modo",
+        siActiva: ID_OBJETIVO_CON_COBERTURA,
+        porTramo: Object.fromEntries(conCobertura.map((m) => [m.id, m.ignoraCobertura!])),
+      });
+    }
+  }
+  return { condiciones, bonos };
 }
 
 // Kerzul no se modifica, así que nunca coinciden las dos fuentes de "ignora blindaje".
@@ -816,6 +845,7 @@ function tiradaDeArmaMelee(
   // suya aparte (tiradaBloqueoDeArmaMelee).
   const ajusteModoUnico =
     !modo && modosConId[0].dificultad !== 0 ? [{ valor: modosConId[0].dificultad, fuente: arma.label }] : [];
+  const casillas = casillasDelGolpe(arma, modosConId);
 
   return {
     id: `ataque_melee_${instanciaId}`,
@@ -832,12 +862,13 @@ function tiradaDeArmaMelee(
     familiaArma: "ataque_melee",
     empleoArma: arma.empleo,
     nota,
-    efectoCritico: criticoDesarmado(criticoConPerfil(arma, perfil), conArmadura),
+    efectosObjetivo: criticoDesarmado(efectosDelGolpe(arma, perfil), conArmadura),
     ...(esDesarmado && { desarmado: true as const }),
     ...(arma.contundente && { contundente: true as const }),
     ignoraBlindaje: ignoraBlindajeDe(arma, perfil, nombre),
-    condiciones: [...(modo ? [modo] : []), ...(malla ? condicionesSacrificioColchon(malla.nivel) : [])],
+    condiciones: [...(modo ? [modo] : []), ...casillas.condiciones, ...(malla ? condicionesSacrificioColchon(malla.nivel) : [])],
     ajustesFijos: ajusteModoUnico,
+    ...(casillas.bonos.length > 0 && { bonosTramo: casillas.bonos }),
     ataque: {
       modos: modosConId.map((m) => {
         const bono = bonoFormulaFuerza(m.formulaDanio);
@@ -849,6 +880,7 @@ function tiradaDeArmaMelee(
             danioSutil: esSutil && bono !== null && potencia !== null ? potencia + bono + bonoArmadura : undefined,
             formulaDanio: m.formulaDanio === null ? null : formulaConSuma(m.formulaDanio, bonoArmadura),
             categoriaDanio: conArmadura?.letal ? "Letal" : m.categoriaDanio,
+            ...(m.ignoraBlindaje && { ignoraBlindaje: { valor: m.ignoraBlindaje, fuente: `${nombre} (${m.etiqueta})` } }),
           },
           perfil,
         );
@@ -940,7 +972,7 @@ function tiradaLanzarArmaMelee(
     familiaArma: "lanzar_melee",
     empleoArma: arma.empleo,
     nota: notaConPerfil([`Alcance Potencia × ${arma.arrojadiza} m.`, arma.efectos], perfil),
-    efectoCritico: criticoConPerfil(arma, perfil),
+    efectosObjetivo: efectosDelGolpe(arma, perfil),
     ignoraBlindaje: ignoraBlindajeDe(arma, perfil, nombre),
     ajustesFijos: modo.dificultad !== 0 ? [{ valor: modo.dificultad, fuente: arma.label }] : [],
     ataque: {
@@ -1000,6 +1032,10 @@ const DESCRIPCION_MODO_PULSO: Record<string, string> = {
   barrido: "El haz se abre en abanico y arrasa un área entera de un plumazo, a costa de perder precisión.",
 };
 
+// TODO(revisar): los efectos del Proyector de Pulso (Shock por modo, Hemorragia de crítico y sus
+// variantes por nivel) siguen como texto en la nota y en `efectoCritico`, sin el aviso de T3a: el
+// encargo de T3a no lo incluía (no es un arma del catálogo de armas) y sus dificultades dependen
+// del nivel y del modo. Pasarlos a `efectosObjetivo` es el mismo mecanismo (soloEn.modo).
 // Los 3 "modo adicional" (nivel 2-4) son del SUBSISTEMA entero, no solo de los 3 modos a
 // distancia — Aguijón también los desbloquea (2026-09-24). Lo que cambian del crítico va al
 // `efectoCritico` de la tirada, como en las armas melee y de fuego (S96); lo que no es crítico

@@ -136,6 +136,9 @@ export type FichaResuelta = {
   // A7: estados a los que es inmune, con la pieza que lo da. Los puestos sin forzar no hacen
   // efecto (estadosConEfecto); siguen en `estados`. Derivado: también al NPC.
   inmunidades: Inmunidad[];
+  // `estados` sin los que anula una inmunidad: los que hacen efecto. Los lee prepararPoder
+  // (Supresores dobla la fatiga de los poderes, cuestionario eq-22).
+  estadosConEfecto: EstadoActivo[];
   // Piezas que no funcionan ahora mismo, por instanciaId, con el motivo. Hueco para el
   // Shock (S73: la pieza afectada pierde su bono) y los aumentos; vacío hasta entonces.
   piezasInutilizadas: ReadonlyMap<string, string>;
@@ -374,6 +377,7 @@ export function resolverFicha(
     estados,
     estadosDerivados: estadosDerivados(v.pg, v.pgMax, v.fatiga, v.fatigaMax),
     inmunidades,
+    estadosConEfecto: conEfecto,
     piezasInutilizadas: SIN_PIEZAS_INUTILIZADAS,
     modificadores,
     atributos: atributosEfectivos(sheet, modificadores),

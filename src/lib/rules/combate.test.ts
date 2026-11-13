@@ -3,17 +3,31 @@ import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
 import { equipar } from "./equipo";
 import { ajustarRecurso, ajustarGranada, ajustarMunicionEspecial, reconciliarRecursos } from "./recursos";
-import { accionesDeAtaque as accionesDeAtaqueCon, accionesDirectasDeAtaque, criticoDeEspecial, generaAccionPropia, MOTIVO_SIN_CARGAS, NOTA_MALLA_ANULA_CAMUFLAJE } from "./combate";
+import { accionesDeAtaque as accionesDeAtaqueCon, accionesDirectasDeAtaque, generaAccionPropia, MOTIVO_SIN_CARGAS, NOTA_MALLA_ANULA_CAMUFLAJE } from "./combate";
+import { efectosQueSaltan, type EfectoEnTirada } from "./efectosArma";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
 import { MUNICION_GRANADA } from "../catalog/municion";
 import type { MotorMetadata } from "./motor";
-import { ACCIONES, modificadorAccion, gastoTotal, gastoMunicionEspecial, avisoInsuficiente, danioConMunicion, efectoCriticoConMunicion, municionEspecialElegida } from "./acciones";
+import { ACCIONES, modificadorAccion, gastoTotal, gastoMunicionEspecial, avisoInsuficiente, danioConMunicion, municionEspecialElegida, ignoraBlindajeDelGolpe, resolverDanio, type Accion } from "./acciones";
 import { desgloseDanio } from "./armasModificadas";
 import { aplicado, modificadoresActivos } from "./derivados";
 import { permisosDeDotes } from "./dotesEfectos";
 import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import { montarTirada, SIN_ELECCION } from "./montaje";
+
+// Los efectos sobre el objetivo de una tirada (T3a), en corto: «aturdido (8)», «hemorragia
+// (1d6)», o el texto. `cuando`: los de crítico o los del acierto.
+function resumenEfecto(e: EfectoEnTirada): string {
+  if (e.tipo === "texto") return e.texto;
+  if (e.tipo === "salvacion") return `${e.estadoId} (${e.dificultad})`;
+  const d = e.duracion;
+  const nombre = e.etiqueta ?? e.estadoId;
+  return d.tipo === "dado" ? `${nombre} (1d${d.caras})` : d.tipo === "turnos" ? `${nombre} (${d.turnos} turnos)` : nombre;
+}
+const efectosEn = (t: Pick<Accion, "efectosObjetivo">, cuando: "acierto" | "critico"): string =>
+  (t.efectosObjetivo ?? []).filter((e) => e.cuando === cuando).map(resumenEfecto).join(" · ");
+const critico = (t: Pick<Accion, "efectosObjetivo">) => efectosEn(t, "critico");
 
 // En reposo (especie + equipo): estos tests no llevan estados de combate. Los permisos de
 // dotes (Bloquear, Sutil; D2b-2) salen de las dotes de la propia ficha, con sus requisitos.
@@ -176,27 +190,28 @@ describe("arma de fuego equipada", () => {
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "escopeta_feritas" });
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Feritas")!;
     const tramo = fila.condiciones?.find((c) => c.id === "tramo");
-    assert.match(opcionNota(tramo, "bocajarro")!, /Derribo.*dificultad 9/);
-    assert.match(opcionNota(tramo, "corta")!, /Derribo.*dificultad 9/);
+    // T3a: la nota sale del efecto del catálogo (derriboCercano), con la salvación del estado.
+    assert.match(opcionNota(tramo, "bocajarro")!, /Derribado: si aciertas, el objetivo salva Saltar, levantarse .* contra 9/);
+    assert.match(opcionNota(tramo, "corta")!, /Derribado.*contra 9/);
     assert.equal(opcionNota(tramo, "media"), undefined);
     assert.equal(opcionNota(tramo, "larga"), undefined);
     assert.equal(fila.nota, "Crítico de Aturdimiento (12)");
   });
 
-  test("Plasma SG y Plasma AAA también llevan Derribo (decidido 2026-09-25, cierra la ambigüedad del PDF)", () => {
+  // Cambió con el cuestionario eq-12 (usuario, 2026-11-13): manda la fila, que no trae Derribo.
+  // Antes (2026-09-25) se les daba 9 y 11 por la regla de familia.
+  test("Plasma SG y Plasma AAA no derriban (eq-12)", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "escopeta_plasma_sc" });
     sheet = equipar(sheet, { instanciaId: "arma2", catalogoId: "ametralladora_plasma_aaa" });
     const plasmaSg = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Plasma SG")!;
     const plasmaAaa = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Plasma AAA")!;
-    assert.match(opcionNota(plasmaSg.condiciones?.find((c) => c.id === "tramo"), "corta")!, /Derribo.*dificultad 9/);
-    assert.match(
-      opcionNota(plasmaAaa.condiciones?.find((c) => c.id === "tramo"), "bocajarro")!,
-      /Derribo.*dificultad 11/,
-    );
+    assert.equal(opcionNota(plasmaSg.condiciones?.find((c) => c.id === "tramo"), "corta"), undefined);
+    assert.doesNotMatch(opcionNota(plasmaAaa.condiciones?.find((c) => c.id === "tramo"), "bocajarro") ?? "", /Derrib/);
+    assert.ok(!plasmaSg.efectosObjetivo?.some((e) => e.tipo === "salvacion" && e.estadoId === "derribado"));
   });
 
-  test("un arma sin efectoDerribo no lleva nota de Derribo en ningún tramo (Plaga)", () => {
+  test("un arma sin Derribo no lleva nota de Derribo en ningún tramo (Plaga)", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "arma1", catalogoId: "fusil_precision_plaga" });
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Plaga")!;
@@ -217,7 +232,8 @@ describe("arma de fuego equipada", () => {
   test("Derribo y F. Auto a bocajarro van juntos en la misma nota", () => {
     const sheet = equipar(defaultSheet(), { instanciaId: "am", catalogoId: "ametralladora_asina" });
     const tramo = accionesDeAtaque(sheet).find((t) => t.id === "ataque_fuego_am")!.condiciones?.find((c) => c.id === "tramo");
-    assert.match(opcionNota(tramo, "bocajarro")!, /Derribo.*F\. Auto, \+3/);
+    // T3a: la nota del Derribo sale del efecto («Derribado: si aciertas…»).
+    assert.match(opcionNota(tramo, "bocajarro")!, /Derribado.*F\. Auto, \+3/);
   });
 
   // S96: «ocupando dos casillas adyacentes» (pistolas, escopetas, subfusiles, fusiles de asalto y
@@ -382,21 +398,32 @@ describe("munición especial en el disparo (fase 2)", () => {
   }
   const disparo = (sheet: Sheet) => accionesDeAtaque(sheet).find((t) => t.label === "Disparar con Sydiasi")!;
 
-  test("crítico de arma de fuego: sale del texto especial, como efecto crítico", () => {
+  // T3a: el crítico ya no es texto sacado de `especial` (criticoDeEspecial, retirado): es dato.
+  test("crítico de arma de fuego: va como efecto sobre el objetivo, no como texto", () => {
     const sheet = equipar(defaultSheet(), { instanciaId: "s1", catalogoId: "pistola_sydiasi" });
-    assert.equal(disparo(sheet).efectoCritico, "Aturdimiento (8)");
-    assert.equal(criticoDeEspecial("Efecto Shock y Llamarada (8) · Crítico de Fusión (12) · F. Auto (Esquiva 10)"), "Fusión (12)");
-    assert.equal(criticoDeEspecial("Recarga: acción estándar · Crítico de Hemorragia (1d6 turnos) · Silencioso"), "Hemorragia (1d6 turnos)");
-    assert.equal(criticoDeEspecial("F. Auto (Esquiva 8)"), undefined);
+    assert.equal(disparo(sheet).efectoCritico, undefined);
+    assert.equal(critico(disparo(sheet)), "aturdido (8)");
+    assert.equal(disparo(sheet).efectosObjetivo?.[0].fuente, "Sydiasi");
   });
 
-  test("crítico con munición especial: se suma al del arma, o lo sustituye (Perforante)", () => {
+  // eq-05: con munición especial, el crítico del arma y el de la munición; la Perforante sustituye.
+  test("crítico con munición especial: el del arma y el de la munición, o solo el de la Perforante", () => {
     const fila = disparo(conSydiasiIncendiaria(10));
-    const inc = municionEspecialElegida(fila, { municion: "incendiaria" });
-    assert.equal(efectoCriticoConMunicion(fila, inc), "Aturdimiento (8) · Ceguera (10) (Munición Incendiaria)");
-    assert.equal(efectoCriticoConMunicion(fila, municionEspecialElegida(fila, { municion: "normal" })), "Aturdimiento (8)");
-    const perforante = { id: "perforante", label: "Munición Perforante", stock: 1, ajusteDanio: -1, efecto: "", efectoCritico: "Consume 1 punto de blindaje del objetivo", sustituyeCritico: true };
-    assert.equal(efectoCriticoConMunicion(fila, perforante), "Consume 1 punto de blindaje del objetivo (Munición Perforante)");
+    const exito = { exito: true, critico: true, dificultad: 7 };
+    const saltan = (municion: string) => efectosQueSaltan(fila, { municion }, exito).map(resumenEfecto);
+    assert.deepEqual(saltan("incendiaria"), ["aturdido (8)", "llamarada (7)", "ceguera (10)"]);
+    assert.deepEqual(saltan("normal"), ["aturdido (8)"]);
+    const perforante = {
+      id: "perforante",
+      label: "Munición Perforante",
+      stock: 1,
+      ajusteDanio: -1,
+      efecto: "",
+      efectosObjetivo: [{ tipo: "texto" as const, texto: "Consume 1 punto de blindaje del objetivo", cuando: "critico" as const, fuente: "Munición Perforante" }],
+      sustituyeCritico: true,
+    };
+    const conPerforante = { ...fila, municionesEspeciales: [perforante] };
+    assert.deepEqual(efectosQueSaltan(conPerforante, { municion: "perforante" }, exito).map(resumenEfecto), ["Consume 1 punto de blindaje del objetivo"]);
   });
 
   test("sin adaptador no hay selector de munición", () => {
@@ -793,18 +820,18 @@ describe("Sistema de Retroceso (por arma, 2026-10-24)", () => {
 });
 
 describe("Impacto Estructural (Kerzul, 2026-10-24)", () => {
-  const critico = (id: string) => {
+  const criticoDe = (id: string) => {
     const sheet = equipar(defaultSheet(), { instanciaId: "k1", catalogoId: id });
-    return accionesDeAtaque(sheet).find((t) => t.grupo === "Ataques" && t.id.includes("k1") && !t.id.startsWith("lanzar"))!.efectoCritico;
+    return critico(accionesDeAtaque(sheet).find((t) => t.grupo === "Ataques" && t.id.includes("k1") && !t.id.startsWith("lanzar"))!);
   };
 
   test("una mano: el crítico explica que reduce 1 punto de blindaje de forma permanente", () => {
-    assert.equal(critico("kerzul_punal"), "Impacto Estructural (10): reduce de forma permanente el blindaje del objetivo en 1 punto");
+    assert.equal(criticoDe("kerzul_punal"), "Impacto Estructural (10): reduce de forma permanente el blindaje del objetivo en 1 punto");
   });
 
   test("dos manos: 2 puntos", () => {
     const dosManos = EQUIPO.find((e) => e.familia === "armaMelee" && e.material === "kerzul" && e.empleo === "dos manos")!;
-    assert.match(critico(dosManos.id) ?? "", /en 2 puntos$/);
+    assert.match(criticoDe(dosManos.id) ?? "", /en 2 puntos$/);
   });
 });
 
@@ -822,7 +849,8 @@ describe("bayoneta", () => {
     assert.equal(golpe.ataque?.modos[0].danio, 7); // Fue(4) + 3
     assert.equal(golpe.ataque?.modos[0].formulaDanio, "Fue+3");
     assert.equal(golpe.ataque?.modos[0].categoriaDanio, "Letal");
-    assert.equal(golpe.efectoCritico, "Hemorragia (1d6 turnos)");
+    assert.equal(critico(golpe), "hemorragia (1d6)");
+    assert.equal(golpe.efectosObjetivo?.[0].fuente, "Bayoneta");
 
     const bloqueo = accionesDeAtaque(sheet).find((t) => t.label === "Bloquear con Bayoneta (Impetus)")!;
     assert.ok(bloqueo);
@@ -875,11 +903,11 @@ describe("arma melee equipada", () => {
     assert.match(fila.nota ?? "", /Acción Estándar ignora 2 niveles de Cobertura física/);
   });
 
-  test("el crítico del arma va en efectoCritico, no en la nota", () => {
+  test("el crítico del arma va en sus efectos sobre el objetivo, no en la nota", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "tonfa1", catalogoId: "corta_tonfa_porra" });
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Tonfa o Porra")!;
-    assert.equal(fila.efectoCritico, "Aturdimiento (7)");
+    assert.equal(critico(fila), "aturdido (7)");
     assert.doesNotMatch(fila.nota ?? "", /Crítico/);
   });
 
@@ -887,7 +915,7 @@ describe("arma melee equipada", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada_ligera" });
     const fila = accionesDeAtaque(sheet).find((t) => t.label.includes("Espada Ligera"))!;
-    assert.equal(fila.efectoCritico, "Hemorragia (1d6 turnos)");
+    assert.equal(critico(fila), "hemorragia (1d6)");
     assert.doesNotMatch(fila.nota ?? "", /Sutil/);
   });
 
@@ -972,7 +1000,7 @@ describe("arma melee arrojadiza — Lanzar (INFERIDO, mismo par que una granada)
     assert.equal(lanzar.ataque?.modos.length, 1);
     assert.equal(lanzar.ataque?.modos[0].danio, 6); // Fue(3) + 3
     assert.match(lanzar.nota ?? "", /Alcance Potencia × 12 m/); // "Arrojadiza: Potencia x 12" (EQUIP)
-    assert.equal(lanzar.efectoCritico, "Hemorragia (1d4 turnos)");
+    assert.equal(critico(lanzar), "hemorragia (1d4)");
   });
 
   test("cada arrojadiza con su alcance del documento (S20, 2026-10-24)", () => {
@@ -989,11 +1017,11 @@ describe("arma melee arrojadiza — Lanzar (INFERIDO, mismo par que una granada)
     }
   });
 
-  test("el Cuchillo de Combate (dificultad 0) no lleva ajuste fijo y conserva su efectoCritico", () => {
+  test("el Cuchillo de Combate (dificultad 0) no lleva ajuste fijo y conserva su crítico", () => {
     const sheet = equipar(defaultSheet(), { instanciaId: "c1", catalogoId: "espada_cuchillo_combate" });
     const lanzar = accionesDeAtaque(sheet).find((t) => t.id === "lanzar_melee_c1")!;
     assert.deepEqual(lanzar.ajustesFijos, []);
-    assert.equal(lanzar.efectoCritico, "Hemorragia (1d6 turnos)");
+    assert.equal(critico(lanzar), "hemorragia (1d6)");
   });
 
   test("un arma no arrojadiza no genera Lanzar", () => {
@@ -1013,21 +1041,24 @@ describe("arma melee arrojadiza — Lanzar (INFERIDO, mismo par que una granada)
   });
 });
 
-describe("efectoCritico (Feature 2, piloto Cuchillo de Combate)", () => {
-  test("el Cuchillo de Combate propaga su efectoCritico a la Accion generada, fuera de 'nota'", () => {
+// T3a: el crítico pasó de texto (efectoCritico) a dato (efectosObjetivo); estos tests siguen
+// comprobando lo mismo, que el crítico del catálogo llega a la tirada y no a la nota.
+describe("crítico del arma (Feature 2, piloto Cuchillo de Combate)", () => {
+  test("el Cuchillo de Combate propaga su crítico a la Accion generada, fuera de 'nota'", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "cuchillo1", catalogoId: "espada_cuchillo_combate" });
     const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Cuchillo de Combate")!;
-    assert.equal(golpe.efectoCritico, "Hemorragia (1d6 turnos)");
+    assert.equal(critico(golpe), "hemorragia (1d6)");
+    assert.equal(golpe.efectoCritico, undefined);
     assert.equal(golpe.nota, undefined);
   });
 
-  // Desde 2026-10-23 todas las armas melee del catálogo tienen su crítico en efectoCritico.
-  test("cada arma melee propaga el efectoCritico de su catálogo", () => {
+  // Desde 2026-10-23 todas las armas melee del catálogo tienen su crítico declarado.
+  test("cada arma melee propaga el crítico de su catálogo", () => {
     let sheet = defaultSheet();
     sheet = equipar(sheet, { instanciaId: "espada1", catalogoId: "espada" });
     const golpe = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Espada")!;
-    assert.equal(golpe.efectoCritico, "Hemorragia (1d8 turnos)");
+    assert.equal(critico(golpe), "hemorragia (1d8)");
     assert.doesNotMatch(golpe.nota ?? "", /Crítico/);
   });
 });
@@ -1781,5 +1812,47 @@ describe("Malla Plasmática: -8 al Sigilo con la malla activa (S96)", () => {
   test("no llega a tiradas que no son de Sigilo, ni sin la malla", () => {
     assert.equal(fija(conMalla(1), "alerta_activa").condiciones?.find((x) => x.id === "malla_plasmatica_activa"), undefined);
     assert.equal(fija(defaultSheet(), "sigilo").condiciones?.find((x) => x.id === "malla_plasmatica_activa"), undefined);
+  });
+});
+
+// T3a del cuestionario de cierre (usuario, 2026-11-13): lo que las armas cuerpo a cuerpo hacen
+// por modo y sus casillas propias.
+describe("armas melee: ignora blindaje por modo, cobertura y estructuras (eq-14, eq-15, eq-16)", () => {
+  const golpe = (catalogoId: string) => {
+    const sheet = equipar(defaultSheet(), { instanciaId: "m1", catalogoId });
+    return { sheet, t: accionesDeAtaque(sheet).find((x) => x.id === "ataque_melee_m1")! };
+  };
+  const montar = (sheet: Sheet, t: Accion, estado: Record<string, string | boolean>) =>
+    montarTirada(resolverFicha(sheet, { estados: [], vitalidad: VITALIDAD_DE_FICHA }), t, { ...SIN_ELECCION, estadoCondiciones: estado });
+
+  test("Hoja Dentada y Sierra Circular: «Ignora 1» solo en el golpe en Compleja", () => {
+    for (const id of ["mecanica_hoja_dentada", "mecanica_sierra_circular"]) {
+      const { t } = golpe(id);
+      const [estandar, compleja] = t.ataque!.modos;
+      assert.equal(estandar.ignoraBlindaje, undefined, id);
+      assert.equal(compleja.ignoraBlindaje?.valor, 1, id);
+      assert.deepEqual(ignoraBlindajeDelGolpe(t, compleja, null).map((b) => b.valor), [1]);
+      assert.deepEqual(ignoraBlindajeDelGolpe(t, estandar, null), []);
+    }
+  });
+
+  test("Mangual: «El objetivo tiene cobertura» suma +2 solo en Estándar", () => {
+    const { sheet, t } = golpe("flagelo_mangual");
+    const casilla = t.condiciones?.find((c) => c.id === "objetivo_con_cobertura");
+    assert.ok(casilla);
+    const [simple, estandar] = t.ataque!.modos.map((m) => m.id);
+    const sin = montar(sheet, t, { modo: estandar }).total;
+    assert.equal(montar(sheet, t, { modo: estandar, objetivo_con_cobertura: true }).total, sin + 2);
+    assert.equal(montar(sheet, t, { modo: simple, objetivo_con_cobertura: true }).total, montar(sheet, t, { modo: simple }).total);
+  });
+
+  test("Ariete: «Contra una puerta, muro o estructura» dobla todo el daño", () => {
+    const { sheet, t } = golpe("mecanica_ariete_percusivo");
+    const montada = montar(sheet, t, { modo: t.ataque!.modos[0].id, contra_estructura: true });
+    assert.deepEqual(montada.danio.multiplica, { valor: 2, fuente: "Contra una puerta, muro o estructura" });
+    // 10 de base y 5 éxitos (+2): (10 + 2) × 2.
+    const r = resolverDanio(10, 5, "Letal", montada.danio);
+    assert.equal(r.total, 24);
+    assert.equal(montar(sheet, t, { modo: t.ataque!.modos[0].id }).danio.multiplica, undefined);
   });
 });

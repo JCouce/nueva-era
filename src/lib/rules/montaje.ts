@@ -153,10 +153,12 @@ function danioDeCasillas(activas: Toggle[]): AjusteDanio {
   const categoria = conDanio.find((c) => c.danio!.categoria);
   const sinBono = conDanio.find((c) => c.danio!.sinBonoExitos);
   const devuelve = conDanio.some((c) => c.danio!.conBonoExitos);
+  const multiplica = conDanio.find((c) => c.danio!.multiplica);
   return {
     ajustes: conDanio.filter((c) => c.danio!.ajuste).map((c) => ({ valor: c.danio!.ajuste!, fuente: c.etiqueta })),
     categoria: categoria ? { a: categoria.danio!.categoria!, fuente: categoria.etiqueta } : null,
     sinBonoExitos: sinBono && !devuelve ? sinBono.etiqueta : null,
+    ...(multiplica && { multiplica: { valor: multiplica.danio!.multiplica!, fuente: multiplica.etiqueta } }),
   };
 }
 

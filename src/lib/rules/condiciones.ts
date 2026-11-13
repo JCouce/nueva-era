@@ -150,7 +150,8 @@ export type CondicionTirada = (
 // daño del ataque sale de la Fuerza (o de la Potencia con Sutil) y cambia con ellas.
 export type AtributosExtremidad = { fuente: string; fuerza: number; agilidad: number; danioDeFuerza?: true; origen?: OrigenAporte };
 
-export type EfectoDanioCasilla = { ajuste?: number; categoria?: string; sinBonoExitos?: true; conBonoExitos?: true };
+// `multiplica`: todo el daño por N (Ariete «Contra una estructura», doble daño; eq-16).
+export type EfectoDanioCasilla = { ajuste?: number; categoria?: string; sinBonoExitos?: true; conBonoExitos?: true; multiplica?: number };
 
 // Lo que enseña el control de la casilla a la derecha: el número si suma algo, y si no lo
 // que hace ("ventaja", "fallo → éxito"…). Pura, para que el modal no decida nada.
@@ -167,6 +168,7 @@ export function resumenCasilla(c: Extract<CondicionTirada, { tipo: "toggle" }>, 
   if (c.aplicado) partes.push(APLICADOS.find((a) => a.id === c.aplicado)?.label ?? c.aplicado);
   if (c.margenCriticoExito !== undefined) partes.push(c.margenCriticoExito === 0 ? "éxito = crítico" : `crítico con ${c.margenCriticoExito}`);
   if (c.danio?.ajuste) partes.push(`${signo(c.danio.ajuste)} daño`);
+  if (c.danio?.multiplica) partes.push(`daño ×${c.danio.multiplica}`);
   if (c.danio?.categoria) partes.push(c.danio.categoria.toLowerCase());
   if (c.danio?.sinBonoExitos) partes.push("daño básico");
   if (c.danio?.conBonoExitos) partes.push("daño con éxitos");

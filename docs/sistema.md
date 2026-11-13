@@ -553,6 +553,80 @@ imponen penalizadores por umbral:
     el punto perdido ya cuenta contra ese mismo golpe). En el NPC del combate el blindaje
     perdido no se apunta (su ficha es la foto congelada de la fila): el modal avisa de hacerlo
     a mano (`TODO(revisar)`).
+- **Efectos de arma sobre el objetivo** `[FIRME · usuario, cuestionario de cierre 2026-11-13: eq-01, eq-03…eq-10, eq-12, eq-14…eq-16, eq-21, eq-22]`.
+  «Efecto X (N)», «Crítico de X (N)», «Hemorragia (1d6 turnos)», «Derribo (N)» son **dato** en
+  el catálogo (`efectosObjetivo` de armas de fuego e impulsoras, armas melee, munición especial y
+  Armas Modificadas; tipos en `rules/efectosArma.ts`, atajos en `catalog/efectosArma.ts`). El
+  texto de la fuente (`especial`, `efectos`, `efectoCritico`, `efecto`) se queda para la ficha
+  del arma y la nota del golpe.
+  - **eq-01 · aviso claro**: al acertar, el resultado del ataque enseña «El objetivo» con una
+    línea por efecto: «El objetivo salva Fortaleza contra Shock, dificultad 5», la fuente, y qué
+    pasa en cada grado (plegado). La app no tira por el objetivo ni le pone el estado: el máster
+    tira por el NPC y lo pone a mano en su panel. El aviso es un `EfectoSobreObjetivo`
+    (`efectosSobreObjetivo`), el dato que la tarjeta del máster (T3b) guardará.
+  - **eq-03 · cuándo salta**: «Efecto X (N)» con el **acierto** (tirada con la defensa como
+    dificultad y éxito), aunque el blindaje se coma todo el daño; «Crítico de X (N)» solo en
+    crítico. Sin dificultad elegida no se sabe si acertó y no avisa (`TODO(revisar)`).
+  - **eq-04 · crítico**: en crítico, cada efecto de crítico de una fuente **sustituye al normal
+    del mismo estado** (Rayo Ligero: Shock 12 en lugar de Shock 5). Los normales de otro estado
+    siguen y los críticos sin par se suman (usuario, 2026-11-13): Pistón en Compleja da
+    Aturdimiento 10 y Derribo 8; Plasma SD, Shock 7, Llamarada 7 y Fusión 11; el Impacto
+    Estructural del Kerzul se suma a su Derribo y Aturdimiento. Una fuente sin crítico propio
+    mantiene los normales (la Criogénica en un crítico: Congelación 7 junto al crítico del arma).
+  - **eq-05 · munición especial**: con munición cargada en ese disparo salen el crítico del arma
+    **y** el de la munición; la Perforante («en lugar del crítico habitual», `sustituyeCritico`)
+    quita el del arma.
+  - **eq-06**: «Shock y Llamarada (N)» son **dos salvaciones**, Fortaleza contra Shock N y
+    Reflejos contra Llamarada N.
+  - **eq-07 · salvación**: la dice el estado (`Estado.salvacion`, `catalog/estados.ts`):
+    Aturdimiento, Shock, Ceguera, Fusión, Corrosión, Congelación y Envenenamiento con Fortaleza;
+    Llamarada con Reflejos; Entorpecido con Reflejos + Atletismo; Derribado con «Saltar,
+    levantarse» (Potencia + Atletismo). El número es la dificultad y los grados, los del
+    catálogo de estados tal cual.
+  - **eq-08 · Hemorragia** no se salva: «(1dN turnos)» se tira al avisar (la app tira el dado y
+    lo dice: «durante 4 turnos (1d6)»); «1 turno» dura uno; la **Exanguinante** no tiene
+    duración (solo la quita la medicina). El daño por turno es del estado.
+  - **eq-09 · Derribo**: el de las armas cuerpo a cuerpo (mecánicas y Kerzul) se salva con
+    «Saltar, levantarse» contra N; el **Ariete**, 6 en Estándar y 10 en Compleja según el modo
+    elegido. El de escopetas y ametralladoras va por el mismo mecanismo, solo a corta y a
+    bocajarro (la opción del tramo lo sigue diciendo antes de tirar).
+  - **eq-10**: Guantelete y Martillo de Pistón en Compleja, **las dos**: Aturdimiento (6) y
+    Derribo (8).
+  - **eq-12**: **Plasma SG y Plasma AAA no derriban**: manda la fila de la tabla (antes 9 y 11).
+    Cierra la pregunta 43.
+  - **eq-14**: Hoja Dentada y Sierra Circular en Compleja ignoran **1 punto** de blindaje: el
+    aviso «Ignora 1 puntos de blindaje» del resultado, solo en ese modo
+    (`ModoAtaqueMelee.ignoraBlindaje`, `ignoraBlindajeDelGolpe`).
+  - **eq-15**: Mangual: casilla «El objetivo tiene cobertura» en su golpe, que suma **+2 solo en
+    Estándar** (la cobertura cuenta +2, S86) y la anula (`ModoAtaqueMelee.ignoraCobertura`).
+  - **eq-16**: Ariete: casilla «Contra una puerta, muro o estructura»: **todo** el daño (básico,
+    éxitos y ajustes) **por dos** (`EfectoDanioCasilla.multiplica`). `TODO(revisar)`: el daño
+    extra de otro tipo (un Ariete modificado) va aparte y no se dobla.
+  - **eq-21**: Incendiaria (Llamarada 7; crítico, Ceguera 10), Electrizante (Shock 7; crítico,
+    Shock 10), Criogénica (Congelación 7) y Corrosiva (Corrosión 7), con la munición que lleva
+    ese disparo. Su daño extra ya iba aparte.
+  - **eq-22**: Tóxica y Radiactiva salvan contra Envenenamiento 7 con **tabla propia** (Tóxica:
+    fracaso Envenenamiento 1, fracaso crítico 2; Radiactiva: Enfermedad 1, o Enfermedad 2 y un
+    nivel de daño grave). Supresora: estado nuevo **Supresores** (Fortaleza contra 8, solo si el
+    golpe hace daño): fracaso, los poderes del afectado cuestan **el doble de fatiga** y −2 a su
+    tirada durante 1 minuto (10 turnos); fracaso crítico, además un nivel de daño letal por punto
+    de fatiga. Lo cobra de verdad el coste del poder (`FUENTES_EXTERNAS_FATIGA` con condición de
+    estado; `prepararPoder` mira los estados con efecto); ya no son casillas que marca el
+    jugador. Superar cualquiera de las tres deja **Dosis acumulada** (estado nuevo, 1 turno: −1 a
+    las salvaciones contra la misma toxina, a mano). El nombre «Dosis acumulada» es nuestro y la
+    Supresora se salva con Fortaleza, como las toxinas del «Contra…» (usuario, 2026-11-13).
+  - Fuera: las armas de área (armamento pesado, granadas) siguen con sus efectos en la nota
+    (eq-13); el Proyector de Pulso, también (`TODO(revisar)`).
+- **A FIRME sin código** `[FIRME · usuario, cuestionario de cierre 2026-11-13: eq-11, eq-13, eq-17, eq-40, td-29]`:
+  - **eq-11**: el crítico «Derribado o Entorpecido (N)» de Látigo y Cadena Armada: **lo decide el
+    máster según la escena**. El aviso lo dice como texto.
+  - **eq-13**: fuego automático y armas de área: **solo aviso**; la nota dice la esquiva y el
+    máster la resuelve a mano.
+  - **eq-17**: escudos: la cobertura es para el portador; ya cubierto (Levantar, «Tengo
+    cobertura» en la esquiva y «Al escudo» en Resistir daño, S86).
+  - **eq-40**: **S.A.79: 24 cartuchos, manda la tabla**. Cierra la pregunta 34.
+  - **td-29**: la maniobra Derribo: «±2 por tamaño de diferencia» y «puede no causar daño, sin
+    −2» se quedan en la nota, a mano (la app no conoce tamaños; S68).
 - **20 estados** documentados con sus cuatro grados de resultado (fracaso crítico, fracaso,
   éxito, éxito crítico): atrapado, aturdido, ceguera, confusión, congelación, corrosión,
   derribado, enfermedad, entorpecido, envenenamiento, fatiga, **fusión**, hemorragia,
@@ -2798,12 +2872,13 @@ lo anota a mano.
     día que existan poderes psiónicos (Fase 5) esto no obligue a un tipo de bono
     nuevo solo para un caso. Detectado por el usuario al revisar Derivación Psiónica
     (2026-09-22).~~ **Cerrada (usuario, 2026-09-28): el porcentaje se queda** — el alcance de un poder es informativo y multiplicarlo no pide un bono nuevo (§10.6).
-34. **S.A.79: contradicción interna en la munición.** La prosa de `descripcion` dice
+34. ~~**S.A.79: contradicción interna en la munición.** La prosa de `descripcion` dice
     "tambor extraíble de 20 cartuchos"; el dato transcrito en el catálogo
     (`escopeta_sa79.municion`) trae un número distinto. No hay forma de saber cuál es
     el correcto sin volver a `docs/equipamiento.md` fila por fila o preguntar
     directamente — puede ser un error de transcripción nuestro, no necesariamente del
-    documento fuente. Detectado en el barrido motorMetadata-vs-prosa (2026-09-24).
+    documento fuente. Detectado en el barrido motorMetadata-vs-prosa (2026-09-24).~~
+    **Cerrada (usuario, cuestionario eq-40, 2026-11-13): 24 cartuchos, manda la tabla.**
 35. **Exoesqueleto: ¿puede usarse sin armadura?** La prosa dice que sí; el código exige
     `familia === "armadura"` para poder instalarlo (`equipo.ts`, comprobar la función
     exacta de instalación). Puede ser un requisito de diseño real ("necesitas algo
@@ -2835,8 +2910,9 @@ lo anota a mano.
     es penalizador o bonificador? ¿Cuenta para la esquiva en vuelo?~~ **Resuelta (Murillo vía
     usuario, 2026-10-26):** es un **penalizador** (−3 en los niveles 1-3, −4 en el 4) y también
     se aplica a la esquiva en vuelo. Ver S101.
-43. **Derribo de Plasma SC y Plasma AAA**: su fila de la tabla no trae «Efecto Derribo»; la
-    regla de la familia dice que derriban, sin número. La app usa 9 y 11. ¿Qué dificultad?
+43. ~~**Derribo de Plasma SC y Plasma AAA**: su fila de la tabla no trae «Efecto Derribo»; la
+    regla de la familia dice que derriban, sin número. La app usa 9 y 11. ¿Qué dificultad?~~
+    **Cerrada (usuario, cuestionario eq-12, 2026-11-13): no derriban, manda la fila.**
 
 ---
 

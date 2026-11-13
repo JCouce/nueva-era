@@ -22,12 +22,32 @@
 // rules/armasModificadas.ts, S87).
 import type { MaterialPieza, Rareza } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
+import type { EfectoArma } from "../rules/efectosArma";
+import type { CondicionTirada } from "../rules/condiciones";
+import {
+  derribadoOEntorpecido,
+  enCritico,
+  enModo,
+  HEMORRAGIA_EXANGUINANTE,
+  hemorragiaDado,
+  hemorragiaTurnos,
+  impactoEstructural,
+  salva,
+} from "./efectosArma";
 
 export type ModoAtaqueMelee = {
   etiqueta: string; // "Simple", "Estándar", "Estándar / Compleja"…
   dificultad: number;
   formulaDanio: string; // "Fue+2", "Fuerza", "Fue+11"… tal cual la da EQUIP
   categoriaDanio: string; // "Letal", "No Letal", "Grave"…
+  // «Acción Compleja: ignora 1 nivel de armadura» (Hoja Dentada, Sierra Circular): puntos de
+  // blindaje del objetivo que ignora el golpe en este modo (un nivel = un punto, cuestionario
+  // eq-14). Mismo aviso que `ArmaMelee.ignoraBlindaje`.
+  ignoraBlindaje?: number;
+  // «Acción Estándar ignora 2 niveles de Cobertura física» (Mangual, cuestionario eq-15): el
+  // golpe en este modo lleva la casilla «El objetivo tiene cobertura», que suma esto (la
+  // cobertura cuenta +2 en la defensa del objetivo, S86) y la anula.
+  ignoraCobertura?: number;
 };
 
 export type ArmaMelee = {
@@ -61,8 +81,15 @@ export type ArmaMelee = {
   modos: ModoAtaqueMelee[];
   efectos: string | null;
   // Texto de crítico, separado de `efectos` porque solo aplica si la tirada acaba
-  // en crítico — `efectos` se muestra siempre, esté o no en crítico.
+  // en crítico — `efectos` se muestra siempre, esté o no en crítico. Es la transcripción (la
+  // ficha del arma en Tienda y Equipo); el motor lee `efectosObjetivo`.
   efectoCritico?: string;
+  // `efectos` y `efectoCritico` como dato (T3a del cuestionario, rules/efectosArma.ts): lo que
+  // el golpe le hace al objetivo al acertar o en crítico. El resultado del ataque lo avisa.
+  efectosObjetivo?: EfectoArma[];
+  // Casillas propias del golpe de esta arma (Ariete: «Contra una estructura», doble daño,
+  // cuestionario eq-16). Se pintan solo en su golpe, como las del modo.
+  condiciones?: CondicionTirada[];
   pesoKg: number | null;
   rareza: Rareza | null;
   coste: number | null;
@@ -96,6 +123,7 @@ export const PELEA: ArmaMelee[] = [
     ],
     efectos: null,
     efectoCritico: "Aturdimiento (6)",
+    efectosObjetivo: [enCritico(salva("aturdido", 6))],
     pesoKg: null,
     rareza: null,
     coste: null,
@@ -105,6 +133,7 @@ export const PELEA: ArmaMelee[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -122,6 +151,7 @@ export const PELEA: ArmaMelee[] = [
     ],
     efectos: null,
     efectoCritico: "Aturdimiento (6)",
+    efectosObjetivo: [enCritico(salva("aturdido", 6))],
     pesoKg: null,
     rareza: null,
     coste: null,
@@ -131,6 +161,7 @@ export const PELEA: ArmaMelee[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -147,6 +178,7 @@ export const PELEA: ArmaMelee[] = [
     ],
     efectos: null,
     efectoCritico: "Aturdimiento (6)",
+    efectosObjetivo: [enCritico(salva("aturdido", 6))],
     pesoKg: null,
     rareza: null,
     coste: null,
@@ -155,6 +187,7 @@ export const PELEA: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
 ];
@@ -172,6 +205,7 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     modos: [{ etiqueta: "Simple", dificultad: 0, formulaDanio: "Fue+3", categoriaDanio: "No Letal" }],
     efectos: null,
     efectoCritico: "Aturdimiento (7)",
+    efectosObjetivo: [enCritico(salva("aturdido", 7))],
     pesoKg: 0.5,
     rareza: "Común",
     coste: 40,
@@ -179,6 +213,7 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -192,6 +227,7 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     modos: [{ etiqueta: "Simple", dificultad: -1, formulaDanio: "Fue+3", categoriaDanio: "Letal" }],
     efectos: null,
     efectoCritico: "Aturdimiento (8)",
+    efectosObjetivo: [enCritico(salva("aturdido", 8))],
     pesoKg: 0.8,
     rareza: "Común",
     coste: 50,
@@ -199,6 +235,7 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -212,6 +249,7 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     modos: [{ etiqueta: "Simple", dificultad: -1, formulaDanio: "Fue+3", categoriaDanio: "Letal" }],
     efectos: null,
     efectoCritico: "Hemorragia (1d6 turnos)",
+    efectosObjetivo: [enCritico(hemorragiaDado(6))],
     pesoKg: 0.7,
     rareza: "Poco Habitual",
     coste: 50,
@@ -219,6 +257,7 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -232,6 +271,7 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     modos: [{ etiqueta: "Simple", dificultad: -1, formulaDanio: "Fue+3", categoriaDanio: "Letal" }],
     efectos: null,
     efectoCritico: "Hemorragia (1d6 turnos)",
+    efectosObjetivo: [enCritico(hemorragiaDado(6))],
     pesoKg: 0.6,
     rareza: "Común",
     coste: 30,
@@ -239,6 +279,7 @@ export const ARMAS_CORTAS: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
 ];
@@ -260,6 +301,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
     ],
     efectos: null,
     efectoCritico: "Aturdimiento (7)",
+    efectosObjetivo: [enCritico(salva("aturdido", 7))],
     pesoKg: 1,
     rareza: "Común",
     coste: 40,
@@ -268,6 +310,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -286,6 +329,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
     ],
     efectos: null,
     efectoCritico: "Hemorragia (1d4 turnos)",
+    efectosObjetivo: [enCritico(hemorragiaDado(4))],
     pesoKg: 1,
     rareza: "Común",
     coste: 80,
@@ -296,6 +340,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -313,6 +358,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
     ],
     efectos: null,
     efectoCritico: "Hemorragia (1d6 turnos)",
+    efectosObjetivo: [enCritico(hemorragiaDado(6))],
     pesoKg: 1.6,
     rareza: "Común",
     coste: 120,
@@ -321,6 +367,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -337,6 +384,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
     ],
     efectos: null,
     efectoCritico: "Hemorragia (1d10 turnos)",
+    efectosObjetivo: [enCritico(hemorragiaDado(10))],
     pesoKg: 2,
     rareza: "Común",
     coste: 150,
@@ -345,6 +393,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -361,6 +410,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
     ],
     efectos: null,
     efectoCritico: "Aturdimiento (10)",
+    efectosObjetivo: [enCritico(salva("aturdido", 10))],
     pesoKg: 2.3,
     rareza: "Común",
     coste: 150,
@@ -369,6 +419,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -386,6 +437,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
     ],
     efectos: null,
     efectoCritico: "Hemorragia (1d10 turnos)",
+    efectosObjetivo: [enCritico(hemorragiaDado(10))],
     pesoKg: 2.4,
     rareza: "Común",
     coste: 160,
@@ -394,6 +446,7 @@ export const ARMAS_DE_ASTA: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
 ];
@@ -420,6 +473,7 @@ export const ESCUDOS: ArmaMelee[] = [
     modos: [{ etiqueta: "Simple", dificultad: 0, formulaDanio: "Fue+2", categoriaDanio: "No Letal" }],
     efectos: null,
     efectoCritico: "Aturdimiento (8)",
+    efectosObjetivo: [enCritico(salva("aturdido", 8))],
     pesoKg: 1,
     rareza: "Común",
     coste: 130,
@@ -453,6 +507,7 @@ export const ESCUDOS: ArmaMelee[] = [
         mecanismo: "nota_fija",
         estado: "pendiente",
       },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -468,6 +523,7 @@ export const ESCUDOS: ArmaMelee[] = [
     modos: [{ etiqueta: "Estándar", dificultad: 0, formulaDanio: "Fue+2", categoriaDanio: "No Letal" }],
     efectos: null,
     efectoCritico: "Aturdimiento (8)",
+    efectosObjetivo: [enCritico(salva("aturdido", 8))],
     pesoKg: 2,
     rareza: "Común",
     coste: 190,
@@ -492,6 +548,7 @@ export const ESCUDOS: ArmaMelee[] = [
         mecanismo: "nota_fija",
         estado: "pendiente",
       },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -505,6 +562,7 @@ export const ESCUDOS: ArmaMelee[] = [
     modos: [{ etiqueta: "Simple", dificultad: 0, formulaDanio: "Fue+3", categoriaDanio: "No Letal" }],
     efectos: null,
     efectoCritico: "Aturdimiento (8)",
+    efectosObjetivo: [enCritico(salva("aturdido", 8))],
     pesoKg: 0.5,
     rareza: "Poco Habitual",
     coste: 1200,
@@ -529,6 +587,7 @@ export const ESCUDOS: ArmaMelee[] = [
         mecanismo: "nota_fija",
         estado: "pendiente",
       },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -542,6 +601,7 @@ export const ESCUDOS: ArmaMelee[] = [
     modos: [{ etiqueta: "Estándar", dificultad: 0, formulaDanio: "Fue+3", categoriaDanio: "No Letal" }],
     efectos: null,
     efectoCritico: "Aturdimiento (8)",
+    efectosObjetivo: [enCritico(salva("aturdido", 8))],
     pesoKg: 1,
     rareza: "Poco Habitual",
     coste: 2000,
@@ -566,6 +626,7 @@ export const ESCUDOS: ArmaMelee[] = [
         mecanismo: "nota_fija",
         estado: "pendiente",
       },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
 ];
@@ -585,6 +646,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     modos: [{ etiqueta: "Simple", dificultad: 0, formulaDanio: "Fue+3", categoriaDanio: "Letal" }],
     efectos: null,
     efectoCritico: "Hemorragia (1d6 turnos)",
+    efectosObjetivo: [enCritico(hemorragiaDado(6))],
     pesoKg: 0.3,
     rareza: "Común",
     coste: 30,
@@ -597,6 +659,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
       // pinta cuando resultado.critico es true (ResultadoTirada.tsx), así
       // que pasa a "construido" (piloto, 2026-09-23).
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -614,6 +677,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     ],
     efectos: null,
     efectoCritico: "Hemorragia (1d6 turnos)",
+    efectosObjetivo: [enCritico(hemorragiaDado(6))],
     pesoKg: 0.8,
     // Rareza en blanco en EQUIP (a diferencia de Pelea, esta sí tiene coste):
     // Común, coherente con su precio — ver S13 en docs/sistema.md.
@@ -625,6 +689,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "sustitucion_aplicado", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -641,6 +706,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     ],
     efectos: null,
     efectoCritico: "Hemorragia (1d8 turnos)",
+    efectosObjetivo: [enCritico(hemorragiaDado(8))],
     pesoKg: 1,
     // Ver S13 en docs/sistema.md.
     rareza: "Común",
@@ -650,6 +716,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -666,6 +733,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
     ],
     efectos: null,
     efectoCritico: "Hemorragia (1d10 turnos)",
+    efectosObjetivo: [enCritico(hemorragiaDado(10))],
     pesoKg: 2.2,
     // Ver S13 en docs/sistema.md.
     rareza: "Común",
@@ -675,6 +743,7 @@ export const ESPADAS_Y_DAGAS: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
 ];
@@ -692,6 +761,7 @@ export const FLAGELOS: ArmaMelee[] = [
     modos: [{ etiqueta: "Simple", dificultad: -2, formulaDanio: "Fue+3", categoriaDanio: "Letal" }],
     efectos: null,
     efectoCritico: "Derribado o Entorpecido (10)",
+    efectosObjetivo: [derribadoOEntorpecido(10)],
     pesoKg: 0.3,
     rareza: "Común",
     coste: 50,
@@ -711,12 +781,13 @@ export const FLAGELOS: ArmaMelee[] = [
     empleo: "una mano",
     modos: [
       { etiqueta: "Simple", dificultad: -2, formulaDanio: "Fue+4", categoriaDanio: "Letal" },
-      { etiqueta: "Estándar", dificultad: -2, formulaDanio: "Fue+6", categoriaDanio: "Letal" },
+      { etiqueta: "Estándar", dificultad: -2, formulaDanio: "Fue+6", categoriaDanio: "Letal", ignoraCobertura: 2 },
     ],
-    // "Bloqueo -2" ya es bloqueoAjuste; la cobertura va aquí como texto
-    // para que llegue a la tirada (nota_fija de abajo).
+    // "Bloqueo -2" ya es bloqueoAjuste; la cobertura, en el modo Estándar (`ignoraCobertura`),
+    // y aquí como texto para que se lea en la nota.
     efectos: "Acción Estándar ignora 2 niveles de Cobertura física",
     efectoCritico: "Aturdimiento (9)",
+    efectosObjetivo: [enCritico(salva("aturdido", 9))],
     pesoKg: 1.2,
     rareza: "Poco Habitual",
     coste: 100,
@@ -731,16 +802,15 @@ export const FLAGELOS: ArmaMelee[] = [
       // (bloquear_melee_<instancia>, ver combate.ts), con el mismo par que su
       // ataque. Este -2 es el ajuste propio del Mangual sobre esa acción.
       { tipo: "numerico", afecta: { modo: "accion_nueva", id: "bloquear_melee" }, mecanismo: "ajuste_fijo", estado: "construido" },
-      // EQUIP "Acción Estándar ignora 2 niveles de Cobertura física" — condicionado al modo
-      // Estándar, mismo mecanismo que el selector de arriba, pero la cobertura en sí (afectada
-      // aquí desde el punto de vista del ATACANTE, no de quien se cubre) no tiene ningún cálculo
-      // implementado en ningún sitio del motor todavía, aunque la regla es FIRME (sistema.md:271).
+      // EQUIP "Acción Estándar ignora 2 niveles de Cobertura física" (cuestionario eq-15): casilla
+      // «El objetivo tiene cobertura» en el golpe, que suma +2 solo en Estándar (bono por modo).
       {
         tipo: "numerico",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "eleccion_jugador",
-        estado: "pendiente",
+        estado: "construido",
       },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -758,6 +828,7 @@ export const FLAGELOS: ArmaMelee[] = [
     ],
     efectos: null,
     efectoCritico: "Derribado o Entorpecido (12)",
+    efectosObjetivo: [derribadoOEntorpecido(12)],
     pesoKg: 1.5,
     rareza: "Poco Habitual",
     coste: 150,
@@ -783,10 +854,11 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
     empleo: "una mano",
     modos: [
       { etiqueta: "Estándar", dificultad: -2, formulaDanio: "Fue+4", categoriaDanio: "Letal" },
-      { etiqueta: "Compleja", dificultad: -2, formulaDanio: "Fue+7", categoriaDanio: "Letal" },
+      { etiqueta: "Compleja", dificultad: -2, formulaDanio: "Fue+7", categoriaDanio: "Letal", ignoraBlindaje: 1 },
     ],
     efectos: "Hemorragia 1 turno · Acción Compleja: ignora 1 nivel de armadura",
     efectoCritico: "Hemorragia Exanguinante",
+    efectosObjetivo: [hemorragiaTurnos(1), enCritico(HEMORRAGIA_EXANGUINANTE)],
     pesoKg: 5,
     rareza: "Poco Habitual",
     coste: 700,
@@ -796,16 +868,15 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       // "Hemorragia 1 turno · Crítico de Hemorragia Exanguinante" — funciona igual que el resto.
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      // «Acción Compleja: ignora 1 nivel de armadura» (cuestionario eq-14): 1 punto de blindaje,
+      // aviso «Ignora 1» en el resultado del golpe en Compleja (ModoAtaqueMelee.ignoraBlindaje).
       {
-        tipo: "numerico",
+        tipo: "resolucion",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "eleccion_jugador",
-        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
-        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
-        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
-        // que no está construido; no es una pregunta de diseño sin responder.
-        estado: "pendiente",
+        estado: "construido",
       },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -822,6 +893,7 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
     ],
     efectos: "Aturdimiento (6) · Acción Compleja: Derribo (8)",
     efectoCritico: "Aturdimiento (10)",
+    efectosObjetivo: [salva("aturdido", 6), enModo(["Compleja"], salva("derribado", 8)), enCritico(salva("aturdido", 10))],
     pesoKg: 7,
     rareza: "Poco Habitual",
     coste: 700,
@@ -837,13 +909,10 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
       // marcado el estado como "sin catalogar", que era falso; el hueco real es el trigger.
       // Tipo dudoso entre "accion" (genera su propia salvación) y "numerico" (penalizador si
       // falla) — sigue marcado inconcluso.
-      {
-        tipo: "accion",
-        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
-        mecanismo: "accion_equipo",
-        estado: "bloqueado",
-        bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
-      },
+      // Derribo (cuestionario eq-09): salvación «Saltar, levantarse» contra N, aviso en el
+      // resultado al acertar (efectosObjetivo, T3a).
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // solo en Compleja: según el modo elegido
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -867,10 +936,12 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
         dificultad: -2,
         formulaDanio: "Fue+8",
         categoriaDanio: "Letal",
+        ignoraBlindaje: 1,
       },
     ],
     efectos: "Hemorragia 1 turno · Acción Compleja: ignora 1 nivel de armadura",
     efectoCritico: "Hemorragia Exanguinante",
+    efectosObjetivo: [hemorragiaTurnos(1), enCritico(HEMORRAGIA_EXANGUINANTE)],
     pesoKg: 12,
     rareza: "Extraño",
     coste: 1500,
@@ -879,16 +950,15 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+      // «Acción Compleja: ignora 1 nivel de armadura» (cuestionario eq-14): 1 punto de blindaje,
+      // aviso «Ignora 1» en el resultado del golpe en Compleja (ModoAtaqueMelee.ignoraBlindaje).
       {
-        tipo: "numerico",
+        tipo: "resolucion",
         afecta: { modo: "accion_existente", id: "ataque_melee" },
         mecanismo: "eleccion_jugador",
-        // H5 (pregunta 29) ya no bloquea esto — blindajeContra() existe
-        // (lib/rules/blindaje.ts). Lo que falta es aplicar la reducción del
-        // ATACANTE al blindaje del objetivo dentro de una tirada de ataque,
-        // que no está construido; no es una pregunta de diseño sin responder.
-        estado: "pendiente",
+        estado: "construido",
       },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -905,6 +975,7 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
     ],
     efectos: "Aturdimiento (6) · Acción Compleja: Derribo (8)",
     efectoCritico: "Aturdimiento (12)",
+    efectosObjetivo: [salva("aturdido", 6), enModo(["Compleja"], salva("derribado", 8)), enCritico(salva("aturdido", 12))],
     pesoKg: 18,
     rareza: "Extraño",
     coste: 2100,
@@ -913,13 +984,10 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      {
-        tipo: "accion",
-        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
-        mecanismo: "accion_equipo",
-        estado: "bloqueado",
-        bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
-      },
+      // Derribo (cuestionario eq-09): salvación «Saltar, levantarse» contra N, aviso en el
+      // resultado al acertar (efectosObjetivo, T3a).
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // solo en Compleja: según el modo elegido
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -936,7 +1004,20 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
       { etiqueta: "Compleja", dificultad: -3, formulaDanio: "Fue+8", categoriaDanio: "Letal" },
     ],
     efectos: "Derribo (6) · Acción Compleja: Derribo (10) · Doble daño contra puertas, muros y estructuras",
+    condiciones: [
+      {
+        id: "contra_estructura",
+        tipo: "toggle",
+        etiqueta: "Contra una puerta, muro o estructura",
+        valorActivo: 0,
+        danio: { multiplica: 2 },
+        nota: "Doble daño: todo el golpe, básico y éxitos, por dos.",
+      },
+    ],
     efectoCritico: "Aturdimiento (12)",
+    // «Derribo (6) · Acción Compleja: Derribo (10)»: 6 en Estándar y 10 en Compleja, según el modo
+    // (mismo estado, el de la Compleja sustituye; cuestionario eq-09).
+    efectosObjetivo: [enModo(["Estándar"], salva("derribado", 6)), enModo(["Compleja"], salva("derribado", 10)), enCritico(salva("aturdido", 12))],
     pesoKg: 30,
     rareza: "Extraño",
     coste: 2500,
@@ -950,17 +1031,13 @@ export const ARMAS_MECANICAS: ArmaMelee[] = [
       // Armas Mecánicas (falta el trigger al estado Derribado, no el estado en sí — ver
       // corrección 2026-09-24 más abajo en el archivo), un único efecto con dos valores según
       // el modo.
-      {
-        tipo: "accion",
-        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
-        mecanismo: "accion_equipo",
-        estado: "bloqueado",
-        bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
-      },
-      // "Doble daño contra puertas, muros y estructuras" — no hay concepto de "objetivo
-      // estructura" en el motor (todo objetivo es un Combatiente). Sin acción a la que apuntar
-      // todavía, pero la regla en sí es clara — pendiente, no bloqueada por una pregunta abierta.
-      { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+      // Derribo (cuestionario eq-09): salvación «Saltar, levantarse» contra N, aviso en el
+      // resultado al acertar (efectosObjetivo, T3a).
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "eleccion_jugador", estado: "construido" }, // 6 en Estándar y 10 en Compleja: según el modo elegido
+      // "Doble daño contra puertas, muros y estructuras" (cuestionario eq-16): casilla «Contra una
+      // puerta, muro o estructura» en el golpe; todo el daño (básico y éxitos) por dos.
+      { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
 ];
@@ -987,6 +1064,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     ignoraBlindaje: 2,
     efectos: "Hemorragia (1d8 turnos)",
     efectoCritico: "Impacto Estructural (10)",
+    efectosObjetivo: [hemorragiaDado(8), impactoEstructural(10, "una mano")],
     pesoKg: 2,
     rareza: "Singular",
     coste: 12000,
@@ -1016,6 +1094,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       },
       // Sin retroceso entrópico: solo salta con ataques Estándar o Compleja (EQUIP, Kerzul) y
       // el Puñal solo tiene modo Simple (quitado 2026-10-24).
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1033,6 +1112,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     ignoraBlindaje: 4,
     efectos: "Hemorragia (1d12 turnos)",
     efectoCritico: "Impacto Estructural (12)",
+    efectosObjetivo: [hemorragiaDado(12), impactoEstructural(12, "una mano")],
     pesoKg: 6,
     rareza: "Singular",
     coste: 24000,
@@ -1063,6 +1143,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         mecanismo: "accion_equipo",
         estado: "pendiente",
       },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1080,6 +1161,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     ignoraBlindaje: 8,
     efectos: "Hemorragia Exanguinante · Derribo (12)",
     efectoCritico: "Impacto Estructural (16)",
+    efectosObjetivo: [HEMORRAGIA_EXANGUINANTE, salva("derribado", 12), impactoEstructural(16, "dos manos")],
     pesoKg: 14,
     rareza: "Singular",
     coste: 42000,
@@ -1090,13 +1172,9 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       // "Hemorragia Exanguinante" funciona igual que el resto; "Derribo (12)" es el mismo hueco
       // que el Derribo de las Armas Mecánicas (estado sin catalogar) — se desglosa aparte.
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      {
-        tipo: "accion",
-        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
-        mecanismo: "accion_equipo",
-        estado: "bloqueado",
-        bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
-      },
+      // Derribo (cuestionario eq-09): salvación «Saltar, levantarse» contra N, aviso en el
+      // resultado al acertar (efectosObjetivo, T3a).
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "nota_fija", estado: "construido" },
       {
         // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
         // daño, se resta a mano del blindaje del objetivo (2026-09-28).
@@ -1119,6 +1197,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         mecanismo: "accion_equipo",
         estado: "pendiente",
       },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1137,6 +1216,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     ignoraBlindaje: 2,
     efectos: "Derribo (11) · Aturdimiento (9)",
     efectoCritico: "Impacto Estructural (10)",
+    efectosObjetivo: [salva("derribado", 11), salva("aturdido", 9), impactoEstructural(10, "una mano")],
     pesoKg: 9,
     rareza: "Singular",
     coste: 26000,
@@ -1145,13 +1225,9 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      {
-        tipo: "accion",
-        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
-        mecanismo: "accion_equipo",
-        estado: "bloqueado",
-        bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
-      },
+      // Derribo (cuestionario eq-09): salvación «Saltar, levantarse» contra N, aviso en el
+      // resultado al acertar (efectosObjetivo, T3a).
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "nota_fija", estado: "construido" },
       {
         // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
         // daño, se resta a mano del blindaje del objetivo (2026-09-28).
@@ -1174,6 +1250,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         mecanismo: "accion_equipo",
         estado: "pendiente",
       },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1193,6 +1270,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     ignoraBlindaje: 2,
     efectos: "Derribo (11) · Aturdimiento (9)",
     efectoCritico: "Impacto Estructural (11)",
+    efectosObjetivo: [salva("derribado", 11), salva("aturdido", 9), impactoEstructural(11, "dos manos")],
     pesoKg: 7,
     rareza: "Singular",
     coste: 20000,
@@ -1201,13 +1279,9 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      {
-        tipo: "accion",
-        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
-        mecanismo: "accion_equipo",
-        estado: "bloqueado",
-        bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
-      },
+      // Derribo (cuestionario eq-09): salvación «Saltar, levantarse» contra N, aviso en el
+      // resultado al acertar (efectosObjetivo, T3a).
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "nota_fija", estado: "construido" },
       {
         // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
         // daño, se resta a mano del blindaje del objetivo (2026-09-28).
@@ -1232,6 +1306,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       },
       // "Con alcance": la nota "Alcance N" del golpe (combate.ts, tiradaDeArmaMelee).
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1250,6 +1325,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     ignoraBlindaje: 2,
     efectos: "Hemorragia (1d8 turnos)",
     efectoCritico: "Impacto Estructural (10)",
+    efectosObjetivo: [hemorragiaDado(8), impactoEstructural(10, "una mano")],
     pesoKg: 5,
     rareza: "Singular",
     coste: 18000,
@@ -1281,6 +1357,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         mecanismo: "accion_equipo",
         estado: "pendiente",
       },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1299,6 +1376,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     ignoraBlindaje: 2,
     efectos: "Hemorragia (1d8 turnos)",
     efectoCritico: "Impacto Estructural (10)",
+    efectosObjetivo: [hemorragiaDado(8), impactoEstructural(10, "dos manos")],
     pesoKg: 9,
     rareza: "Singular",
     coste: 22000,
@@ -1331,6 +1409,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       },
       // "Con alcance": la nota "Alcance N" del golpe (combate.ts, tiradaDeArmaMelee).
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "construido" },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1349,6 +1428,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     ignoraBlindaje: 4,
     efectos: "Derribo (14) · Aturdimiento (12)",
     efectoCritico: "Impacto Estructural (16)",
+    efectosObjetivo: [salva("derribado", 14), salva("aturdido", 12), impactoEstructural(16, "dos manos")],
     pesoKg: 18,
     rareza: "Singular",
     coste: 48000,
@@ -1357,13 +1437,9 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      {
-        tipo: "accion",
-        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
-        mecanismo: "accion_equipo",
-        estado: "bloqueado",
-        bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
-      },
+      // Derribo (cuestionario eq-09): salvación «Saltar, levantarse» contra N, aviso en el
+      // resultado al acertar (efectosObjetivo, T3a).
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "nota_fija", estado: "construido" },
       {
         // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
         // daño, se resta a mano del blindaje del objetivo (2026-09-28).
@@ -1386,6 +1462,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         mecanismo: "accion_equipo",
         estado: "pendiente",
       },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1404,6 +1481,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     ignoraBlindaje: 4,
     efectos: "Hemorragia (1d12 turnos)",
     efectoCritico: "Impacto Estructural (12)",
+    efectosObjetivo: [hemorragiaDado(12), impactoEstructural(12, "dos manos")],
     pesoKg: 12,
     rareza: "Singular",
     coste: 38000,
@@ -1434,6 +1512,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         mecanismo: "accion_equipo",
         estado: "pendiente",
       },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "hemorragia" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
   {
@@ -1449,6 +1528,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     ignoraBlindaje: 2,
     efectos: "Derribo (11) · Aturdimiento (9)",
     efectoCritico: "Impacto Estructural (12)",
+    efectosObjetivo: [salva("derribado", 11), salva("aturdido", 9), impactoEstructural(12, "una mano")],
     pesoKg: 4,
     rareza: "Singular",
     coste: 37000,
@@ -1456,13 +1536,9 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_melee" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "nota_fija", estado: "ad_hoc" },
-      {
-        tipo: "accion",
-        afecta: { modo: "accion_nueva", id: "derribo_arma_mecanica" },
-        mecanismo: "accion_equipo",
-        estado: "bloqueado",
-        bloqueoPor: "Derribado existe (estados.ts:312) pero ningún crítico de arma lo dispara — falta el mecanismo de trigger, no el estado",
-      },
+      // Derribo (cuestionario eq-09): salvación «Saltar, levantarse» contra N, aviso en el
+      // resultado al acertar (efectosObjetivo, T3a).
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "derribado" }, mecanismo: "nota_fija", estado: "construido" },
       {
         // "Ignora N puntos de blindaje" (`ignoraBlindaje`): aviso en el resultado del
         // daño, se resta a mano del blindaje del objetivo (2026-09-28).
@@ -1502,6 +1578,7 @@ export const ARMAS_MELEE_KERZUL: ArmaMelee[] = [
         mecanismo: "nota_fija",
         estado: "pendiente",
       },
+      { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "aturdido" }, mecanismo: "nota_fija", estado: "construido" }, // efectosObjetivo: aviso en el resultado (T3a)
     ],
   },
 ];

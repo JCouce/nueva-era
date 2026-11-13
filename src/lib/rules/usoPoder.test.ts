@@ -5,6 +5,7 @@ import { accionesDePsionica } from "./poderes";
 import { defaultSheet, type Sheet } from "./sheet";
 import type { ModificadorConFuente } from "./modificadores";
 import { nivelesDePsionica, SIN_BONOS_DISCIPLINA } from "./psionica";
+import type { EstadoActivo } from "./estados";
 const niv = (s: Sheet) => nivelesDePsionica(s, SIN_BONOS_DISCIPLINA).paraEfectos;
 
 
@@ -17,19 +18,26 @@ const SINGULARIDAD_2 = { traslacion: 2, singularidad: 2 };
 const fr = (f: Sheet, modificadores: ModificadorConFuente[] = []) => ({ ficha: f, modificadores, peajeNeurologico: null });
 const sel = (s: Partial<SeleccionPoder> = {}): SeleccionPoder => ({ elecciones: {}, casillas: [], puntosCargas: 0, ...s });
 
-function preparar(f: Sheet, accionId: string, s: Partial<SeleccionPoder> = {}, modificadores: ModificadorConFuente[] = []) {
+function preparar(
+  f: Sheet,
+  accionId: string,
+  s: Partial<SeleccionPoder> = {},
+  modificadores: ModificadorConFuente[] = [],
+  estados: EstadoActivo[] = [],
+) {
   const poder = accionesDePsionica(f, niv(f)).find((p) => p.accion.id === accionId)!;
-  return prepararPoder({ ficha: f, modificadores, niveles: niv(f), poder, seleccion: sel(s) })!;
+  return prepararPoder({ ficha: f, modificadores, niveles: niv(f), poder, seleccion: sel(s), estados })!;
 }
 
 describe("prepararPoder", () => {
   const f = ficha({ psionica: SINGULARIDAD_2 });
 
-  test("Impulso nivel 2: coste, tirada y las tres casillas externas", () => {
+  // eq-22: los Supresores dejan de ser casilla (son un estado), así que solo queda Xovromium.
+  test("Impulso nivel 2: coste, tirada y la casilla externa", () => {
     const p = preparar(f, "psi_singularidad_impulso");
     assert.equal(p.coste?.total, 2);
     assert.ok(p.tirada);
-    assert.deepEqual(p.casillas.map((c) => c.toggle), ["Bajo Xovromium", "Afectado por Munición Supresora", "Supresora, fallo crítico"]);
+    assert.deepEqual(p.casillas.map((c) => c.toggle), ["Bajo Xovromium"]);
     assert.equal(p.bloqueo, null);
     assert.equal(p.cargas, null);
   });
@@ -78,20 +86,33 @@ describe("usarPoder", () => {
     assert.deepEqual(e, { fatiga: { pagar: 2, temporal: false }, cargas: null, vida: 0, sobrecarga: { tipo: "reiniciar" }, peaje: null, avisos: [] });
   });
 
-  test("Supresora con fallo crítico y Derivación: ×2, paga 2 con cargas y 2 de daño por lo que sí paga", () => {
+  // eq-22: con el estado Supresores (fallo crítico) puesto, en vez de la casilla de antes.
+  test("Supresores con fallo crítico y Derivación: ×2, paga 2 con cargas y 2 de daño por lo que sí paga", () => {
     const f = ficha({
       psionica: SINGULARIDAD_2,
       equipo: [{ instanciaId: "der1", catalogoId: "derivacion_psionica", nivel: 3 }],
       recursos: [{ instanciaId: "der1", actual: 10, max: 10 }],
     });
-    const p = preparar(f, "psi_singularidad_impulso", { casillas: ["Supresora, fallo crítico"], puntosCargas: 2 });
+    const supresores: EstadoActivo = { estadoId: "supresores", gradoId: "fracaso_critico", rondasRestantes: 10 };
+    const p = preparar(f, "psi_singularidad_impulso", { puntosCargas: 2 }, [], [supresores]);
     assert.equal(p.coste?.total, 2);
     assert.deepEqual(p.cargas && { puntos: p.cargas.puntos, gastar: p.cargas.gastar, max: p.cargas.max }, { puntos: 2, gastar: 4, max: 4 });
     const e = usarPoder(fr(f), p);
     assert.deepEqual(e.fatiga, { pagar: 2, temporal: false });
     assert.deepEqual(e.cargas, { instanciaId: "der1", gastar: 4 });
     assert.equal(e.vida, 2);
-    assert.deepEqual(e.avisos, ["Munición Supresora: recibes 2 de daño letal (ya restado)."]);
+    assert.deepEqual(e.avisos, ["Supresores: recibes 2 de daño letal (ya restado)."]);
+    assert.deepEqual(p.tirada?.ajustesFijos?.at(-1), { valor: -2, fuente: "Supresores (fallo crítico)" });
+  });
+
+  test("Supresores (fracaso): el poder cuesta el doble y −2 a la tirada; sin el estado, como siempre", () => {
+    const f = ficha({ psionica: SINGULARIDAD_2 });
+    const supresores: EstadoActivo = { estadoId: "supresores", gradoId: "fracaso", rondasRestantes: 10 };
+    const con = preparar(f, "psi_singularidad_impulso", {}, [], [supresores]);
+    assert.equal(con.coste?.total, 4);
+    assert.deepEqual(con.tirada?.ajustesFijos?.at(-1), { valor: -2, fuente: "Supresores" });
+    assert.equal(usarPoder(fr(f), con).vida, 0);
+    assert.equal(preparar(f, "psi_singularidad_impulso").coste?.total, 2);
   });
 
   test("sobrecarga: salta al cruzar el umbral de exhausto", () => {

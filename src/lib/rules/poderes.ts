@@ -662,7 +662,7 @@ function aplicaModificador(
   if (a.nivelEmpleadoMax !== undefined && p.nivelEmpleado > a.nivelEmpleadoMax) return false;
   if (a.nivelEmpleadoMin !== undefined && p.nivelEmpleado < a.nivelEmpleadoMin) return false;
   if (m.desdeNivelPoseido !== undefined && p.nivelPoseido < m.desdeNivelPoseido) return false;
-  if (m.condicion && !toggles.has(m.condicion.toggle)) return false;
+  if (m.condicion && !toggles.has(claveCondicionFatiga(m.condicion))) return false;
   return true;
 }
 
@@ -755,7 +755,7 @@ export function togglesDeFatiga(
 ): ToggleFatiga[] {
   const vistos = new Map<string, ToggleFatiga>();
   for (const m of [...disciplina.modificadoresFatiga, ...externos]) {
-    if (!m.condicion) continue;
+    if (!m.condicion || !("toggle" in m.condicion)) continue;
     const todos = new Set([m.condicion.toggle]);
     if (!aplicaModificador(m, disciplina, accionId, p, todos)) continue;
     vistos.set(m.condicion.toggle, { toggle: m.condicion.toggle, grupo: m.condicion.grupo });
@@ -866,11 +866,22 @@ export function alcancesDeBlancos(blancos: readonly BlancoDePoder[]): AlcanceMod
 
 // Lo que las casillas marcadas hacen además de la fatiga: ajustes a la tirada del
 // poder (una línea del desglose por fuente) y daño propio por punto gastado.
+// La clave con la que una condición de fatiga cuenta como activa: el nombre de la casilla, o
+// «estado:<id>:<grado>» si la da un estado puesto (estadosComoCondicionFatiga).
+export function claveCondicionFatiga(c: NonNullable<ModificadorFatiga["condicion"]>): string {
+  return "toggle" in c ? c.toggle : `estado:${c.estado}:${c.grado}`;
+}
+
+// Los estados que lleva el psiónico, como condiciones de fatiga activas (Supresores).
+export function estadosComoCondicionFatiga(estados: readonly { estadoId: string; gradoId: string }[]): string[] {
+  return estados.map((e) => claveCondicionFatiga({ estado: e.estadoId, grado: e.gradoId }));
+}
+
 export function efectosDeCasillas(
   mods: ModificadorFatiga[],
   toggles: ReadonlySet<string>,
 ): { ajustes: { valor: number; fuente: string }[]; danioPorPunto: string | null } {
-  const activos = mods.filter((m) => m.condicion && toggles.has(m.condicion.toggle));
+  const activos = mods.filter((m) => m.condicion && toggles.has(claveCondicionFatiga(m.condicion)));
   return {
     ajustes: activos.flatMap((m) => (m.ademas?.tirada ? [{ valor: m.ademas.tirada, fuente: m.fuente }] : [])),
     danioPorPunto: activos.find((m) => m.ademas?.danioPorPunto)?.ademas?.danioPorPunto ?? null,

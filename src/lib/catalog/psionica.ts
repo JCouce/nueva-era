@@ -2404,11 +2404,11 @@ const SINGULARIDAD: Disciplina = {
   acciones: [IMPULSO, EXPANSION, CONVERGENCIA],
 };
 
-// Fuentes de fuera de las disciplinas que tocan la fatiga de cualquier poder, como
-// casillas que declara el jugador (usuario, 2026-09-30: siempre visibles, la app
-// no sabe si te has tomado la dosis o te han disparado). Xovromium: +1 a la tirada
-// e ignora el primer punto. Munición Supresora: ×2 y −2; con fallo crítico, además
-// 1 de daño letal por punto de fatiga gastado.
+// Fuentes de fuera de las disciplinas que tocan la fatiga de cualquier poder. Xovromium, como
+// casilla que declara el jugador (usuario, 2026-09-30: la app no sabe si te has tomado la
+// dosis): +1 a la tirada e ignora el primer punto. Munición Supresora: por el estado
+// «Supresores» puesto (cuestionario eq-22, usuario 2026-11-13; antes eran dos casillas): ×2 y
+// −2; con fallo crítico, además 1 de daño letal por punto de fatiga gastado.
 export const FUENTES_EXTERNAS_FATIGA: ModificadorFatiga[] = [
   // Irota (fármacos a la mitad, hacia abajo, mínimo 1; sistema.md §14.9): la mitad de 1
   // con mínimo 1 sigue siendo 1, así que el +1 y el −1 no cambian para él.
@@ -2421,17 +2421,17 @@ export const FUENTES_EXTERNAS_FATIGA: ModificadorFatiga[] = [
     ademas: { tirada: 1 },
   },
   {
-    fuente: "Munición Supresora",
+    fuente: "Supresores",
     alcance: {},
-    condicion: { toggle: "Afectado por Munición Supresora", grupo: "supresora" },
+    condicion: { estado: "supresores", grado: "fracaso" },
     op: "multiplica",
     valor: 2,
     ademas: { tirada: -2 },
   },
   {
-    fuente: "Munición Supresora (fallo crítico)",
+    fuente: "Supresores (fallo crítico)",
     alcance: {},
-    condicion: { toggle: "Supresora, fallo crítico", grupo: "supresora" },
+    condicion: { estado: "supresores", grado: "fracaso_critico" },
     op: "multiplica",
     valor: 2,
     ademas: { tirada: -2, danioPorPunto: "letal" },

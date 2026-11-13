@@ -196,7 +196,12 @@ mejor tratarlas aparte:
 
 ## El mecanismo genérico
 
-**[ ] Sin construir todavía.** Diseño hablado (2026-09-11/12):
+**[x] Construido 2026-11-13 (T3a del cuestionario de cierre):** `efectosObjetivo` en el catálogo
+(armas de fuego e impulsoras, melee, munición especial, Armas Modificadas), `rules/efectosArma.ts`
+y el bloque «El objetivo» del resultado del ataque. Reglas en `docs/sistema.md` §7, «Efectos de
+arma sobre el objetivo». Quedan fuera las armas de área (eq-13) y el Proyector de Pulso. Lo de
+abajo es el diseño hablado de entonces (2026-09-11/12), que se ha seguido salvo que el aviso sale
+en el resultado y no solo en el Marcador, y que el Derribo por tramo es un efecto con `soloEn`:
 
 - **Relacionado con el hallazgo #3** (arriba): este aviso solo dice "tira Salvación de
   Fortaleza/Reflejos contra Fusión/Shock/lo que sea, dificultad N" — no hace falta

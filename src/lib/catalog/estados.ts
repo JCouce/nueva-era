@@ -9,7 +9,9 @@
 // - **Muerte**: no es un estado con duración que se lleve puesto, es un
 //   marcador terminal del combatiente — vive en el modelo de `Combatiente`
 //   (bloque 1: derrotado/fuera de combate), no en este catálogo.
-// Con esas tres fuera, quedan **20**, el número que ya cita docs/sistema.md §7.
+// Con esas tres fuera, quedan **20**, el número que ya cita docs/sistema.md §7. A esos se
+// suman dos de la munición especial (cuestionario eq-22, usuario 2026-11-13): Supresores y
+// Dosis acumulada.
 //
 // **Metodología de transcripción (S16, docs/sistema.md):** cada grado
 // (Fracaso crítico/Fracaso/Éxito/Éxito crítico, o nivel acumulado) se trata
@@ -51,11 +53,19 @@ export type GradoEstado = {
   duracionTurnos: number | null;
 };
 
+// Con qué se salva el estado cuando un efecto lo provoca (cuestionario eq-07, usuario
+// 2026-11-13): el aviso del ataque lo lee de aquí ("El objetivo salva Fortaleza contra Shock,
+// dificultad 5"). `tiradaId`: la tirada de la ficha que se usa, si existe una sola
+// (Entorpecido, Reflejos + Atletismo, no tiene fila propia).
+export type SalvacionEstado = { etiqueta: string; tiradaId?: string };
+
 export type Estado = {
   id: string;
   label: string;
   // La frase/párrafo introductorio del estado, antes de cualquier grado.
   resumen: string;
+  // Sin ella, el estado no se salva (Hemorragia) o nadie lo provoca con un efecto de arma.
+  salvacion?: SalvacionEstado;
   // Al menos un grado. Los estados sin grados de salvación tienen uno solo
   // (id "activo") con el efecto fijo mientras dure.
   grados: GradoEstado[];
@@ -84,6 +94,7 @@ export const ESTADOS: Estado[] = [
   {
     id: "aturdido",
     label: "Aturdido",
+    salvacion: { etiqueta: "Fortaleza", tiradaId: "salv_fortaleza" },
     resumen:
       "No puede tomar acciones salvo moverse una casilla o defenderse. Debe superar Fortaleza " +
       "(dificultad 8) o suelta todo lo que sujete.",
@@ -132,6 +143,7 @@ export const ESTADOS: Estado[] = [
   {
     id: "ceguera",
     label: "Ceguera",
+    salvacion: { etiqueta: "Fortaleza", tiradaId: "salv_fortaleza" },
     resumen:
       "Falla automáticamente percepción visual y ataques a distancia, y no puede emprender " +
       "acciones defensivas. En melee o movimiento, 50% de posibilidades (sic) de fallar.",
@@ -218,6 +230,7 @@ export const ESTADOS: Estado[] = [
   {
     id: "congelacion",
     label: "Congelación",
+    salvacion: { etiqueta: "Fortaleza", tiradaId: "salv_fortaleza" },
     resumen:
       "Salvación habitual de Fortaleza. Al fallar, un nivel de daño letal sin absorción, más " +
       "penalizadores que escalan con los niveles acumulados (docs/sistema-y-combate.md).",
@@ -267,6 +280,7 @@ export const ESTADOS: Estado[] = [
   {
     id: "corrosion",
     label: "Corrosión",
+    salvacion: { etiqueta: "Fortaleza", tiradaId: "salv_fortaleza" },
     resumen:
       "Destruye materiales y tejido. Accion de Fortaleza; al fracasar, dos niveles de daño grave " +
       "y el equipamiento arriesga su estructura o blindaje.",
@@ -311,6 +325,7 @@ export const ESTADOS: Estado[] = [
   {
     id: "derribado",
     label: "Derribado",
+    salvacion: { etiqueta: "Saltar, levantarse (Potencia + Atletismo)", tiradaId: "atletismo" },
     resumen:
       "-2 a la defensa contra ataques melee. Debe emplear una acción de movimiento como acción " +
       "simple para levantarse. Salvación por defecto: Potencia + Atletismo.",
@@ -390,6 +405,7 @@ export const ESTADOS: Estado[] = [
   {
     id: "entorpecido",
     label: "Entorpecido",
+    salvacion: { etiqueta: "Reflejos + Atletismo" },
     resumen: "Suele salvarse con Reflejos + Atletismo. Salvo indicación, dura 1 turno.",
     grados: [
       {
@@ -431,6 +447,7 @@ export const ESTADOS: Estado[] = [
   {
     id: "envenenamiento",
     label: "Envenenamiento",
+    salvacion: { etiqueta: "Fortaleza", tiradaId: "salv_fortaleza" },
     resumen: "Accion casi siempre de Fortaleza. Algunos venenos imponen penalizadores propios.",
     grados: [
       {
@@ -473,6 +490,7 @@ export const ESTADOS: Estado[] = [
   {
     id: "fusion",
     label: "Fusión",
+    salvacion: { etiqueta: "Fortaleza", tiradaId: "salv_fortaleza" },
     resumen:
       "Somete tejido y equipamiento a temperaturas extremas. Accion de Fortaleza; al fracasar, " +
       "dos niveles de daño grave y el equipamiento arriesga estructura o blindaje.",
@@ -554,6 +572,7 @@ export const ESTADOS: Estado[] = [
   {
     id: "llamarada",
     label: "Llamarada",
+    salvacion: { etiqueta: "Reflejos", tiradaId: "salv_reflejos" },
     resumen:
       "Salvación habitual de Reflejos. Al fallar, arde: cada turno recibe daño de fuego, por " +
       "defecto 2 niveles con posibilidad de absorción.",
@@ -670,6 +689,7 @@ export const ESTADOS: Estado[] = [
   {
     id: "shock",
     label: "Shock",
+    salvacion: { etiqueta: "Fortaleza", tiradaId: "salv_fortaleza" },
     resumen:
       "Resistencia: Fortaleza en orgánicos, Resiliencia en sintéticos, Estructura en equipamiento " +
       "o armadura tecnológica. Duración habitual 1 turno. Los grados de abajo son la tabla de " +
@@ -797,6 +817,65 @@ export const ESTADOS: Estado[] = [
         modificadores: [],
         detalle: ["No puede actuar de ninguna forma mientras dure."],
         duracionTurnos: null,
+      },
+    ],
+  },
+  // Munición Supresora (docs/fuente/equipamiento.md, Munición Especial; cuestionario eq-22,
+  // usuario 2026-11-13): estado nuevo. Lo que hace a la fatiga de los poderes no es un
+  // Modificador: lo cobra costeFatiga con FUENTES_EXTERNAS_FATIGA (catalog/psionica.ts), que
+  // mira si el personaje tiene puesto este estado y en qué grado. Por eso aquí no lleva
+  // `modificadores` (el −2 a la tirada del poder va en ese mismo sitio, para no contarlo dos
+  // veces). 1 minuto = 10 turnos (el criterio de la psiónica, docs/sistema.md §10.6).
+  {
+    id: "supresores",
+    label: "Supresores",
+    // La fuente dice «salvación contra la toxina» sin nombrar el aplicado; va con Fortaleza, como
+    // las toxinas del selector «Contra…» (usuario, 2026-11-13).
+    salvacion: { etiqueta: "Fortaleza", tiradaId: "salv_fortaleza" },
+    resumen:
+      "Dosis de supresores en el cuerpo (Munición Supresora). Salvación contra la toxina. Afecta a " +
+      "quien quiera usar habilidades psiónicas. Acumular fallos pasa a fallo crítico y prolonga la " +
+      "duración.",
+    grados: [
+      {
+        id: "fracaso_critico",
+        label: "Fracaso crítico",
+        modificadores: [],
+        detalle: [
+          "Sus poderes psiónicos cuestan el doble de fatiga y tienen -2 a la tirada.",
+          "Además, recibe un nivel de daño letal por cada punto de fatiga que gaste en ellos.",
+        ],
+        duracionTurnos: 10,
+      },
+      {
+        id: "fracaso",
+        label: "Fracaso",
+        modificadores: [],
+        detalle: ["Sus poderes psiónicos cuestan el doble de fatiga y tienen -2 a la tirada."],
+        duracionTurnos: 10,
+      },
+    ],
+  },
+  // "Aunque el objetivo supere la tirada recibirá un penalizador de -1 durante un turno en
+  // tiradas de salvación contra mismos efectos (…) por aumento de la dosis" (Munición Tóxica,
+  // Radiactiva y Supresora): el "estado corto de 1 turno" del cuestionario eq-22.
+  // El nombre es nuestro (la fuente no le da ninguno); el usuario lo da por bueno (2026-11-13).
+  {
+    id: "dosis_acumulada",
+    label: "Dosis acumulada",
+    resumen:
+      "Superó la salvación contra una toxina, pero la dosis le pesa: -1 a las salvaciones contra " +
+      "esa misma toxina durante un turno.",
+    grados: [
+      {
+        id: "activo",
+        label: "Dosis acumulada",
+        modificadores: [],
+        detalle: [
+          "-1 a las salvaciones contra la misma toxina (no mecanizado: la salvación no sabe de qué " +
+            "toxina viene — aplícalo a mano).",
+        ],
+        duracionTurnos: 1,
       },
     ],
   },

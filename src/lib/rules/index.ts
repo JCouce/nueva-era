@@ -24,6 +24,7 @@
 //   npcAleatorio.ts    generación de NPC al azar (botón del catálogo de NPCs)
 //   blindaje.ts        absorción de daño por blindaje (armadura, Escudo Deflector), golpe al escudo y blindaje perdido
 //   resistirDanio.ts   «Resistir daño»: el golpe que entra, lo que dispara al recibirlo y aplicarlo a la vida
+//   efectosArma.ts     efectos de arma sobre el objetivo (salvación, estado, grados): el aviso del resultado (T3a)
 //   movimiento.ts      Movilidad Aérea equipada convertida en su propia tirada ("Volar")
 //   vitalidad.ts       vida/fatiga como recurso persistente de la ficha (vidaActual/fatigaActual)
 //   danio.ts           desglose de la vida perdida por categoría: no letal, letal, grave (§7)
@@ -112,6 +113,7 @@ export * from "./origen";
 export * from "./aportes";
 export * from "./teAfecta";
 export * from "./resistirDanio";
+export * from "./efectosArma";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";
