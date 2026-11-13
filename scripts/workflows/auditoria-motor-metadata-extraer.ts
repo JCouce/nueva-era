@@ -758,7 +758,7 @@ const CAMPOS_SIN_ORIGEN: Partial<Record<keyof Rasgo, (keyof FichaResuelta)[]>> =
   multiplicadorCarga: ["multiplicadorCarga"],
   armaduraNatural: ["blindaje"],
   ajusteUmbrales: ["ajusteUmbrales"],
-  peajeNeurologico: ["peajeNeurologico"],
+  fuentePsionica: ["sobreesfuerzo", "psionica"],
   notaFarmacos: ["notasFarmacos"],
 };
 

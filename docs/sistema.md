@@ -512,7 +512,7 @@ imponen penalizadores por umbral:
   categoría (S75, panel de mando, −/+ de vida) es **letal por defecto**, y una cura sin
   categoría quita **de lo más leve primero** (no letal, luego letal, luego grave). En
   Recursos, la tarjeta de Vida pinta la barra con lo perdido por categoría y una fila por
-  categoría para recibir o curar 1 (`ajustarDanioCategoria`). Peaje neurológico y
+  categoría para recibir o curar 1 (`ajustarDanioCategoria`). Sobreesfuerzo y
   sobrecarga ya restan con su categoría.
   *Fase 2 (2026-10-25): categoría en todos los −/+ de vida.* Un solo control
   (`components/ficha/ControlVida.tsx`, completo en Recursos y en el editor de NPC, compacto
@@ -938,10 +938,9 @@ aplicar o recalcular se aplica en la ficha; lo demás queda como texto.**
   efecto es texto hasta que exista el área.
 - ***Olfato de Investigador*** no tiene efecto en la fuente: no aparece hasta que Murillo lo
   escriba.
-- **Sobreesfuerzo** (*Potencia/Maestría/Gran Maestría Psiónica*, *Saber es Poder*): la
-  regla solo existe para el implante (`docs/fuente/aumentos.md`). Las cuatro dotes quedan
-  como texto hasta que Murillo la escriba para los psiónicos de nacimiento. Su efecto es
-  general (todos los poderes del nivel indicado), no de una disciplina.
+- **Sobreesfuerzo** (*Potencia/Maestría/Gran Maestría Psiónica*, *Saber es Poder*)
+  `[FIRME · cuestionario de cierre ps-01, ps-03, ps-04, usuario 2026-11-13]`: construidas en T6a
+  (§10.7). Su efecto es general (todos los poderes del nivel indicado), no de una disciplina.
 
 - **Capas de motor nuevas** (Capas de Dotes, usuario 2026-10-15; detalle en
   `docs/modelado-dotes.md` §4). **Se construyen**: `sube_grado` (fracaso → éxito),
@@ -1076,7 +1075,7 @@ aplicar o recalcular se aplica en la ficha; lo demás queda como texto.**
   Métrico* (Singularidad) y *Sobrecarga Métrica* (Traslación) son poderes normales al nivel
   de su disciplina (el mismo que usan los poderes), en la sección "Dotes" de Acciones con la
   misma fila y la misma ventana que los de Psiónica: nivel empleado, 1 de fatiga por nivel
-  empleado, casillas externas, sobrecarga y peaje como cualquier poder. Requisito roto ⇒ no
+  empleado, casillas externas, sobrecarga y sobreesfuerzo como cualquier poder. Requisito roto ⇒ no
   sale (S34); sin la disciplina, tampoco. Sin las reglas propias de la disciplina (S61).
 - ***Impacto Métrico*** no tira en la app (S60): la ventana cobra la fatiga y enseña el daño
   extra (2 + nivel empleado, letal) y, con el vector descendente, la compresión (S62).
@@ -1181,7 +1180,7 @@ o eran texto. Decidido:
   `coste` y `fuerza_entera` con la condición «Disparo poderoso» y filtro de arma `mediaFuerza`.
 
 ### 9.6 Pendiente de Murillo
-Efecto de *Olfato de Investigador*; regla del sobreesfuerzo biológico; mejoradas sin la
+Efecto de *Olfato de Investigador*; mejoradas sin la
 básica (lo pregunta el usuario). No se siembran en `/preguntas` por ahora.
 
 ## 10. Psiónica y arquitectura cuántica `[PARCIAL · CONV-1 + CONV-2 + EQUIP + HOJA2]`
@@ -1732,8 +1731,12 @@ al preparar su modelado:
     instaladas, la de mejor conversión.
   - Nivel 3 (Blindaje Psico-Reactivo): casilla "Contra metasensoría +1" en las tres
     salvaciones.
-  - Niveles 1 y 4, sin mecánica: la prosa psiónica no tiene tirada de "retroceso" (n1);
-    rebajar penalizadores por fatiga (n4) espera a que esos penalizadores se apliquen.
+  - Nivel 1 (Estabilizador Neuronal Básico) `[FIRME · cuestionario eq-27, usuario
+    2026-11-13]`: el «retroceso por el uso prolongado» es la salvación de Fortaleza de la
+    sobrecarga (5 + nivel): **+1**, como línea propia «Derivación Psiónica» en esa tirada (la
+    salvación tiene id propio, `salv_sobrecarga`; el panel enseña su desglose antes de tirar).
+    No llega al sobreesfuerzo. Acumulado en los niveles 2–4 (S9).
+  - Nivel 4: rebajar penalizadores por fatiga (S94, construido).
   - Nivel 2 (Canal de Alta Resonancia), **construido 2026-10-24** (pregunta 33 cerrada: el
     porcentaje se queda): +10 % al alcance de los poderes en metros, a la baja y con mínimo
     de 2 m; no en alcances con otra unidad (km²) ni en los de 0 (S91).
@@ -1742,6 +1745,70 @@ al preparar su modelado:
   pendiente de Murillo — es la pregunta 16.
 - Las erratas y huecos de la prosa (Hipomanía sin crítico, Comando n2 cortado, unidades de
   alcance, etc.) se han mandado a Murillo.
+
+### 10.7 Sobreesfuerzo y quién puede tener poderes `[FIRME · cuestionario de cierre es-01, au-04, au-05, ps-01…04, td-31; usuario 2026-11-13]`
+
+Fuente: la foto de Drive del 14 de octubre (`docs/fuente/especies.md`, Arianyi y Casa de
+Maolher; `docs/fuente/aumentos.md`, Implante de Resonancia Métrica 1–4; `docs/fuente/dotes.md`).
+Sustituye al **peaje neurológico viejo** del Maolher (Fortaleza 5 + nivel, un nivel de daño por
+punto de fatiga), que **desaparece** (es-01): el texto nuevo llama «peaje neurológico» al propio
+sobreesfuerzo.
+
+- **Quién puede tener poderes (au-04)**: solo los **Arianyi**, la **Casa de Maolher** y quien
+  lleve el **Implante de Resonancia Métrica** (cualquier nivel). Es la «fuente psiónica» que
+  declara el catálogo (rasgo `fuentePsionica` de la especie o la casa, `NivelImplante.fuentePsionica`).
+  Sin ella no se compra ninguna disciplina, y la psiónica ya comprada se queda, igual que con un
+  cambio de especie, marcada **«requisito no cumplido»** en Psiónica y con sus poderes bloqueados
+  en Acciones y sin efectos (motivo «Requiere ser Arianyi o de la Casa de Maolher, o llevar el
+  Implante de Resonancia Métrica»). El requisito de dote «psiónica de origen biológico» pasa a
+  ser tener una fuente psiónica. El NPC del máster (modo libre) no lo mira.
+- **Cuándo salta**: tras usar un poder, si su **nivel empleado** llega al de la fuente o si se
+  está **fatigado** (ps-02: umbral Fatigado o peor; Exhausto cuenta como fatigado, con la tabla
+  dura). Por fuente:
+
+  | Fuente | Salta con nivel | Nunca con nivel | Dificultad (Voluntad) |
+  |---|---|---|---|
+  | Casa de Maolher | 2+ | — | 8 + nivel |
+  | Arianyi | 3+ | — | 6 + nivel |
+  | Implante 1 | 3+ | — | 6 + nivel |
+  | Implante 2 | 4+ | — | 6 + nivel (au-05) |
+  | Implante 3 | 5+ | 1 | 6 + nivel (au-05) |
+  | Implante 4 | nunca sin fatiga | 2 o menos | 4 + nivel |
+
+  *Potencia, Maestría y Gran Maestría Psiónica*: los poderes de nivel 1, 2 o menos, 3 o menos
+  no lo generan «en ningún contexto» (tampoco fatigado); vale la más alta.
+- **Tabla al fallar** (1 nivel de daño = 1; Aturdido con el grado «fracaso» y Confusión con
+  «fallo», sin salvación, como el Aturdido de Retrocognición, S102):
+
+  | Fuente | Fracaso | Fracaso crítico | Exhausto: fracaso | Exhausto: fracaso crítico |
+  |---|---|---|---|---|
+  | Maolher | 1 letal, Aturdido 1 | 1 grave, Aturdido 1, Confusión N | 1 grave, Aturdido 1 | 2 graves, Aturdido 1, Confusión N |
+  | Arianyi y Maestría | 1 no letal | 1 letal, Aturdido 1 | 1 letal, Aturdido 1 | 1 grave, Aturdido 1 |
+  | Implante 1 | 1 letal | 1 grave, Aturdido 1 | 1 grave | muerte cerebral |
+  | Implante 2 | 1 no letal | 1 grave, Aturdido 1 | 1 letal | muerte cerebral |
+  | Implante 3 | 1 no letal | 1 letal, Aturdido 1 | 1 letal | 1 grave, Aturdido 1 |
+  | Implante 4 | 1 no letal | a elegir: Aturdido 1 o 1 letal | 1 letal | 1 grave, Aturdido 1 |
+
+  N = nivel del poder empleado. La muerte cerebral no la aplica la app: la avisa y la marca el
+  máster.
+- **Maestría Psiónica (ps-03)**: vale la tabla **más suave** entre la de la fuente y la de la
+  dote, **casilla a casilla**, por este orden: muerte, categoría del daño, niveles de daño y turnos
+  de estado (de una casilla con elección, la opción más suave). El panel dice de dónde sale cada
+  casilla cuando no es de la fuente.
+- **Saber es Poder (ps-04)**: si salta **solo por estar fatigado** (el nivel no llega), la app
+  echa la moneda (50 %) al usar el poder y dice «Saber es Poder: te libras» (sin botón Tirar) o
+  «no te libras».
+- **En la app (ps-01)**: tras usar el poder, debajo del panel de sobrecarga si también salta,
+  panel «Sobreesfuerzo · Voluntad, dificultad X» con la fuente, la causa (nivel o
+  fatigado/exhausto), la tabla y el botón Tirar. La salvación es la de Voluntad con id propio
+  (`salv_sobreesfuerzo`). Al fallar, el servidor vuelve a calcularlo todo con la ficha guardada
+  (poder y elecciones → nivel empleado; umbral de fatiga de ahora, en combate el de la foto) y
+  resta el daño y pone los estados por el camino de T3c (`aplicarConsecuenciaPropiaAction`):
+  registro del máster con el jugador de autor y Deshacer; en combate, a la foto. En el NPC de la
+  consola, el panel sale y lo aplica el máster.
+- **td-31** se cierra sin código: el peaje que se tiraba con la fatiga pagada ya no existe; el
+  sobreesfuerzo no depende de pagar, así que sale también con un poder de fatiga no numérica.
+- Supuestos al construirlo: S104.
 
 ## 11. Aumentos `[PARCIAL · CONV-1 + AUM + ESP]`
 
@@ -2176,9 +2243,9 @@ al preparar su modelado:
   se pierde igual.
 - **Sobreesfuerzo del IRM**: lo tira la app, en la ventana del poder, como la sobrecarga.
   Le salta a cualquiera que lleve el IRM y use un poder; si toca también la sobrecarga, se
-  tiran las dos, primero la sobrecarga. **No se construye hasta la tarea de psiónica
-  biológica** (usuario, R5).
-- **IRM y psiónica: se modela pero no se conecta** en este desarrollo, y no se tocan los
+  tiran las dos, primero la sobrecarga. **Construido en T6a** (§10.7; usuario, 2026-11-13).
+- ~~**IRM y psiónica: se modela pero no se conecta**~~ **Conectado en T6a** (au-04, §10.7):
+  solo Arianyi, Casa de Maolher o el IRM dan acceso a la psiónica. Texto de entonces: «se modela pero no se conecta» en este desarrollo, y no se tocan los
   requisitos de la psiónica. Según Murillo (vía el usuario, 2026-10-16), las únicas especies
   **psiónicas biológicas** son los **Arianyi** y la **Casa Maolher** de los Manduk. Hoy la
   app trata como psiónico biológico a cualquiera que ponga puntos en psiónica al crear.
@@ -2453,7 +2520,8 @@ app. El resto es `FIRME` o `INFERIDO` bloque a bloque.
 > un tramo menos de penalizador (Guerrero, Siervo) y los textos en su tirada (14.8, 14.10).
 > El fallo → fallo crítico de Elión, construido el 2026-10-24 con la tarea "La tirada sabe qué
 > especialidad se usa" (14.8).
-> **E5 construida** (2026-10-13): peaje neurológico del Maolher, nota de fármacos del Irota
+> **E5 construida** (2026-10-13): peaje neurológico del Maolher (sustituido por el sobreesfuerzo
+> en T6a, §10.7), nota de fármacos del Irota
 > y "Activar visión" del Arianyi y del Axadren (14.9). Con E5 queda construido todo lo
 > construible de especies; lo que falta está bloqueado (bolsa de aumentos, descanso y
 > regeneración, fallo crítico de Elión, salvaciones contra ceguera y derribo).
@@ -2737,12 +2805,8 @@ rasgo (usuario, §5b de la propuesta).
 
 ### 14.9 Efectos en otras áreas `[FIRME · ESP + usuario M16, M18]`
 
-- **Maolher, peaje neurológico:** al usar un poder que consuma fatiga, salvación de
-  Fortaleza, dificultad 5 + nivel empleado.
-  - Éxito: nada. Fracaso: 1 nivel de daño **no letal** por punto de fatiga. Fracaso
-    crítico: 1 nivel de daño **letal** por punto de fatiga.
-  - Se tira siempre que se pague fatiga, aunque el poder falle; el blindaje no lo absorbe
-    (M16, como la sobrecarga de la sección 10.6).
+- ~~**Maolher, peaje neurológico:** Fortaleza 5 + nivel, un nivel de daño por punto de
+  fatiga~~ **Sustituido** por el sobreesfuerzo de la foto del 14 de octubre (es-01, §10.7).
 - **Irota, fármacos y drogas a la mitad:** duración, modificadores y efectos sobre vida o
   fatiga, tanto beneficiosos como perjudiciales. Redondeo hacia abajo, mínimo 1 (M18).
 - **Arianyi, Visión UV e infrarroja:** ve calor y huellas químicas o eléctricas; cuesta 1
@@ -2750,20 +2814,9 @@ rasgo (usuario, §5b de la propuesta).
 - **Axadren, visión infrarroja:** la misma percepción; el PDF no le pone coste.
 
 *En la app (E5, 2026-10-13):*
-- **Peaje**: dato `peajeNeurologico: { dificultadBase: 5 }` en el rasgo →
-  `FichaResuelta.peajeNeurologico` → `usarPoder` devuelve `peaje: { dificultad, puntos }`
-  (`rules/usoPoder.ts`). En Acciones, un panel "Peaje neurológico · Salvación de Fortaleza,
-  dificultad X" con botón Tirar, **debajo del de sobrecarga** si saltan los dos. La tirada es
-  la Salvación de Fortaleza montada con `montarTirada` (umbrales, estados…) y resuelta con
-  `tirarMontada`; `danioDePeaje` decide el daño, que se resta de la vida como el resto de
-  daño propio de los poderes, sin blindaje. También al NPC (es efecto): en la consola de
-  combate sale el panel, pero el daño lo resta el máster. Tres decisiones del usuario:
-  - **Solo cuenta la fatiga pagada**: lo que pagan las cargas de Derivación Psiónica no
-    (todo con cargas = sin peaje). La parte que Proeza manda a fatiga temporal sí cuenta.
-  - **Prolongar un turno de Proeza paga peaje** por los puntos de ese extra, con el nivel
-    empleado del poder. Cada peaje lleva su panel.
-  - Un poder con fatiga no numérica (se paga a mano) no genera peaje: también a mano
-    (`TODO(revisar)` en `usoPoder.ts`).
+- **Sobreesfuerzo** (T6a, sustituye al peaje de E5): dato `fuentePsionica` en el rasgo (Arianyi,
+  Casa de Maolher) → `FichaResuelta.sobreesfuerzo` → `usarPoder` devuelve el `sobreesfuerzo`.
+  Detalle en §10.7.
 - **Irota**: la app no mecaniza los efectos de los fármacos, así que va como **nota fija**
   (dato `notaFarmacos` → `FichaResuelta.notasFarmacos` → `accionesDeFarmacos` /
   `accionesDirectasDeFarmacos`) en cada fila de fármaco y en su tirada. La casilla "Bajo
@@ -2863,7 +2916,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S58 | **Texto de crítico que empieza por "Además"** (*Humor Negro*, *Alentar*, *Llamada a las Armas*) se enseña tras el del éxito: el crítico incluye el efecto del éxito. Sin texto de crítico vale el del éxito; sin el de fracaso crítico, el del fracaso (como los poderes). | Lectura de la prosa ("además"); D2c-1. |
 | S59 | ***Agarre Rápido*, *Zafarse* y *Mirada Desafiante* llevan tirada aunque la prosa solo da la economía**: Reflejos + Atletismo (Escalada), Potencia + Atletismo (Escapismo; "potencia o fortaleza + atletismo" de Atrapado, `fuente/reglas-base.md`) y Expresión + Actitud (Intimidación), con la dificultad a criterio del máster. Es lo que traía el borrador; no se toca por no ser un error evidente. `TODO(revisar)` en `generar-catalogo-dotes.ts`. | Pendiente de Murillo (D2c-1). **Usuario (2026-10-15)**: vale; *Zafarse* se apoya en la regla de Atrapado; *Agarre Rápido* y *Mirada Desafiante*, pregunta pendiente a Murillo (`docs/tareas.md`, "Preguntas al diseñador"). **Usuario (2026-11-13, do-04)**: *Mirada Desafiante* pasa a intimidar en combate (enfrentada contra Voluntad + Actitud, §7 «Lo que una acción te hace a ti»); *Agarre Rápido* sigue igual. |
 | S60 | ***Impacto Métrico* no tira en la app.** Es un poder sobre el ataque de un arma (§9.3: texto): la ventana del poder (nivel empleado, vector) cobra la fatiga al pulsar "Usar", aunque el ataque falle (§9.5), y enseña el daño extra; la tirada de ataque (Potencia + Combate Melee, con el arma o el golpe de Pelea) la hace el jugador aparte, en Ataques, y lo dice la primera nota. Lo que pasa si impacta o falla, el tamaño y lo que tira el objetivo van como notas y texto tras usarlo. Se convierte en el generador (`normalizarPoder`, `scripts/generar-catalogo-dotes.ts`). | Decisión del usuario (D2c-2) sobre §9.3. |
-| S61 | **Los poderes de dote no reciben las reglas propias de su disciplina**: ni descuentos de fatiga, ni rebajas de tipo de acción, ni ventajas (son de los poderes de la disciplina). Sí las casillas externas (*Xovromium*, *Munición Supresora*), la *Derivación Psiónica*, la sobrecarga y el peaje neurológico, que son de cualquier gasto psiónico. Hoy no cambia ningún número (las reglas de Singularidad y Traslación van por id de acción). `TODO(revisar)` en `dotesPoderes.ts`. | Supuesto del modelado aceptado en §9.3 ("Sobrecarga Métrica sin descuentos de Traslación"), extendido a *Impacto Métrico*. |
+| S61 | **Los poderes de dote no reciben las reglas propias de su disciplina**: ni descuentos de fatiga, ni rebajas de tipo de acción, ni ventajas (son de los poderes de la disciplina). Sí las casillas externas (*Xovromium*, *Munición Supresora*), la *Derivación Psiónica*, la sobrecarga y el sobreesfuerzo (T6a), que son de cualquier gasto psiónico. Hoy no cambia ningún número (las reglas de Singularidad y Traslación van por id de acción). `TODO(revisar)` en `dotesPoderes.ts`. | Supuesto del modelado aceptado en §9.3 ("Sobrecarga Métrica sin descuentos de Traslación"), extendido a *Impacto Métrico*. |
 | S62 | ***Impacto Métrico*, vector descendente**: la compresión es un dato aparte ("Daño por compresión (letal, se suma)", 1 por cada dos niveles empleados, mínimo 1) junto al daño extra, y +1 a la dificultad del objetivo. El borrador quitaba el desplazamiento en este vector, pero la tirada del objetivo que vuela lo usa ("se desplaza 4 m × nivel"): se deja, y una nota dice que los metros solo cuentan si volaba. `TODO(revisar)` en `generar-catalogo-dotes.ts` (`AJUSTES_PODER`). | Prosa del vector descendente; §9.5 ("daño letal que se suma"). |
 | S63 | ***Sobrecarga Métrica***: "acción simple o reacción" se enseña como simple, con una nota que dice que también va como reacción. El +Fuerza (2 + nivel empleado, 1 turno) es un dato de la ventana y una nota "aplícalo a mano" (§9.3: texto). El daño propio por resultado se resta solo: éxito 1 no letal por cada dos niveles empleados (mínimo 1), fracaso 1 letal por nivel, fracaso crítico igual más la hemorragia (1d8 turnos) como texto. | Prosa de la dote; `Valor.porCadaNiveles` nuevo en `rules/psionica.ts`. |
 | S64 | **Texto de dote en un poder sin tirada** (*Impacto Métrico Relámpago*): va a las notas de la ventana del poder, junto a las suyas; sin dado no hay crítico que separar, así que un texto de crítico saldría también ahí (hoy no hay ninguno). Con tirada, como en cualquier otra: nota o texto de crítico. | Conservador (D2c-2), mismo criterio que las acciones sin dado (`conExtrasDirectaDeFicha`). |
@@ -2906,6 +2959,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S101 | **Maniobrabilidad de Movilidad Aérea como penalizador (pregunta 42, 2026-10-26)**: −3 en los niveles 1-3 y −4 en el 4 (`NivelModulo.maniobrabilidad`), como ajuste fijo a «Volar» y a la esquiva en vuelo. La esquiva gana la casilla «En vuelo: Tecnociencia, −N» si la ficha lleva Movilidad Aérea (`conEsquivaEnVuelo`, `rules/movimiento.ts`; `habilidadAlternativa.ajuste`): esquiva con Tecnociencia en vez de Atletismo y resta la maniobrabilidad (la app no sabe si vuelas, como «Levitando»). Si además puede levitar, la casilla es la de vuelo (solo cabe una habilidad alternativa por fila). La mejora de Maniobrabilidad del nivel 3 («disminuye la dificultad en 1», un punto menos de castigo) sigue a mano; el −1 a los ataques en vuelo, en mesa (S94). | Penalizador y esquiva: Murillo (vía usuario, 2026-10-26). Casilla y prioridad sobre Levitar: decisión de construcción. |
 | S102 | **Efectos de poder sobre uno mismo (P1 de psiónica, 2026-10-28)**, supuestos al construirlos (§10.6), revisados el mismo día con el usuario: (1) **Leer Mente**: "tiradas enfrentadas contra el objetivo" = ataques, defensas, las fijas que la fuente da como enfrentadas (Convencer / mentir, Discernir mentiras, Resistir distracción, Iniciativa distrayendo, Sigilo, Hurto) y, **decidido por el usuario**, los poderes y las acciones de dote con resolución `enfrentada` (por sus datos); el jugador la marca solo contra el leído. Los poderes de ataque (resolución `ataque`) no la llevan: no son `enfrentada` en el catálogo. (2) **Auto-proyección**: "+1 a tiradas de esquiva" = la fila Defensa / esquiva, no los bloqueos. (3) **Precognición**: en ataques de arma, defensas y, **decidido por el usuario**, los poderes de ataque (resolución `ataque`, daño al objetivo o `contraLaDefensa`, que hoy solo lleva Anclaje). Las acciones de dote de ataque (Arrollar) no: el encargo era de poderes. (4) **Estabilizado** (estado, **decidido por el usuario**): −N a cada penalizador de tirada de los estados apuntados al usarla, por separado y sin pasar de 0, detrás de la Neuroprótesis (entre las dos no pasan de 0); heridas y fatiga (nv4+) fuera enteras, también las que lleguen después: la prosa de "no afecta a los nuevos" es de los penalizadores de estado; los −N a atributos de un estado no se tocan (como la Neuroprótesis). Reusarla sustituye al anterior y vuelve a apuntar. (5) **Retrocognición**: el Aturdido automático del fracaso crítico es el grado «fracaso» del estado (sin salvación cuenta como fallarla, **usuario**), 1 turno. (6) **Contención**: el estado se pone en cualquier forma (el psiónico también está dentro de la ampliada); con duración sin número (nv6, nivel 1 personal) dura hasta quitarlo. Quieto y contra el ataque siguen como texto. | Construcción; (1), (3), (4) y (5) cerrados por el usuario el 2026-10-28. |
 | S103 | **Límites de las acciones de dote y contador de Sanar grave (2026-10-28)**, supuestos al construirlos (§9.3, §11.3): (1) **aliados** = los otros personajes en juego (aprobados, sin borrar), la lista más parecida a "compañeros" que hay (no existen grupos ni campañas; la cola del combate solo vale en combate). La ficha del jugador ve sus nombres. (2) **"por aliado"** se reinicia con la escena (Apoyo: «1 vez por aliado y escena», usuario). (3) **"por turno"** = por ronda del combate en curso (cada combatiente actúa una vez por ronda); fuera de combate no se cuenta. (4) Lo gastado vive en `sheet.usosEscena` como contador (`<clave>#<n>`) y el tope de la lista sube de 20 a 40 entradas (`MAX_USOS_ESCENA`, `usosEscena.ts`): sin migración, porque la lectura sigue siendo tolerante. (5) **Sanar grave**: «5 turnos seguidos» no se comprueba; el contador va por escena y se reinicia a mano. | Construcción, sin preguntar; revisables. |
+| S104 | **Sobreesfuerzo (T6a, 2026-11-13)**, supuestos al construirlo (§10.7), todos `TODO(revisar)`: (1) **«fatigado» es el umbral tras pagar el poder** (el que ve el servidor al aplicar el fallo): un gasto que te deja fatigado ya lo dispara; la prosa dice «estando fatigado» sin aclarar si antes o después. (2) **Aturdido sin duración** («queda aturdido», «causa aturdimiento») = 1 turno; el fracaso crítico exhausto que solo cambia el daño (Arianyi y Maestría, implante 3) conserva el Aturdido. (3) **Más suave** casilla a casilla, daño antes que estados (con el implante 1 exhausto, «1 grave» frente a «1 letal y Aturdido» gana Maestría). (4) **Dos fuentes** a la vez (Maolher con implante): vale la que salte con más dificultad. (5) **Prolongar Proeza** no vuelve a tirar sobreesfuerzo (solo el uso). (6) **Muerte cerebral** (implante 1 y 2, exhausto, fracaso crítico): la app la avisa, no la aplica. (7) El **NPC del máster** (modo libre) no mira quién puede tener poderes. | Construcción de T6a; formas de es-01, au-04, au-05, ps-01…04 decididas por el usuario. |
 
 ## Conflictos detectados
 

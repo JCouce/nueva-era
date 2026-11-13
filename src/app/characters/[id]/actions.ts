@@ -143,6 +143,12 @@ import {
   type GolpeAplicado,
   accionesDeAtaque,
   consecuenciaPropia,
+  consecuenciaDeSobreesfuerzo,
+  accesoPsionicoDeFicha,
+  type AccesoPsionico,
+  falloDeSobreesfuerzo,
+  type ConsecuenciaPropia,
+  type VitalidadActual,
   estadosActivosDe,
   salvacionPropiaDe,
   textoDeConsecuencia,
@@ -171,6 +177,9 @@ type Editable = {
   // Bonos de nivel de disciplina (Resonancia +1, §14.6): los requisitos miran el
   // nivel efectivo. Los mismos que FichaResuelta.psionica.bonos.
   bonosDisciplina: BonosDisciplina;
+  // Quién puede tener poderes (au-04): las fuentes psiónicas de la ficha. Igual que
+  // FichaResuelta.psionica.acceso.
+  accesoPsionico: AccesoPsionico;
   estado: EstadoFicha;
   aprobada: boolean;
   snapshot: AprobacionSnapshot | null;
@@ -215,6 +224,7 @@ async function loadEditable(characterId: string): Promise<Editable | { error: st
     ajuste,
     ajusteXp: ajusteCosteDeSubida(ajuste, sheet, true),
     bonosDisciplina: bonosDeDisciplina(modificadoresActivos(sheet)),
+    accesoPsionico: accesoPsionicoDeFicha(sheet),
     estado: character.status,
     aprobada: character.status === "APPROVED",
     snapshot: parseSnapshot(character.approvedSnapshot),
@@ -327,14 +337,14 @@ export async function setDisciplinaAction(
   if ("error" in ctx) return { ok: false, error: ctx.error };
 
   if (!ctx.aprobada) {
-    return persist(ctx, characterId, setDisciplinaValue(ctx.sheet, disciplinaId, value, ctx.ajuste, ctx.bonosDisciplina));
+    return persist(ctx, characterId, setDisciplinaValue(ctx.sheet, disciplinaId, value, ctx.ajuste, ctx.bonosDisciplina, ctx.accesoPsionico));
   }
 
   const actual = nivelDisciplina(ctx.sheet, disciplinaId);
   const objetivo = Math.max(actual, Math.min(DISCIPLINA_MAX, Math.round(value)));
   if (objetivo === actual) return { ok: true, sheet: ctx.sheet, xp: ctx.xp };
 
-  const sheet = setNivelDisciplina(ctx.sheet, disciplinaId, objetivo, ctx.bonosDisciplina);
+  const sheet = setNivelDisciplina(ctx.sheet, disciplinaId, objetivo, ctx.bonosDisciplina, ctx.accesoPsionico);
   if (sheet === ctx.sheet) return { ok: false, error: "No cumples el requisito de la disciplina" };
 
   const coste = costeSubidaXp({ tipo: "disciplina", id: disciplinaId }, actual, objetivo, ctx.ajuste);
@@ -859,7 +869,7 @@ export async function ponerEstadosDePoderAction(characterId: string, entrada: un
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   const { poderId, elecciones, grado } = parsed.data;
-  const niveles = nivelesDePsionica(ctx.sheet, ctx.bonosDisciplina).paraEfectos;
+  const niveles = nivelesDePsionica(ctx.sheet, ctx.bonosDisciplina, ctx.accesoPsionico).paraEfectos;
   const estados = estadosPropiosDeUso(ctx.sheet, niveles, poderId, elecciones, grado, ctx.estados);
   if (estados.length === 0) return { ok: true, sheet: ctx.sheet };
   for (const estado of estados) {
@@ -901,6 +911,13 @@ const consecuenciaPropiaSchema = z.discriminatedUnion("tipo", [
   }),
   z.object({ tipo: z.literal("usar"), accionId: z.string().min(1).max(120), opcion: z.string().min(1).max(40).nullable() }),
   z.object({ tipo: z.literal("atacar"), accionId: z.string().min(1).max(120) }),
+  z.object({
+    tipo: z.literal("sobreesfuerzo"),
+    poderId: z.string().min(1).max(80),
+    elecciones: z.record(z.string().max(40), z.string().max(40)),
+    grado: z.enum(GRADOS),
+    opcion: z.number().int().min(0).max(5),
+  }),
 ]);
 
 export async function aplicarConsecuenciaPropiaAction(characterId: string, entrada: unknown): Promise<SaveResult> {
@@ -910,6 +927,19 @@ export async function aplicarConsecuenciaPropiaAction(characterId: string, entra
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   const mesa = await mesaDeFicha(characterId);
+  if (op.tipo === "sobreesfuerzo") {
+    // El umbral de fatiga que cuenta es el de ahora, ya pagado el poder: en combate, el de la foto.
+    const foto = await fotoEnJuego(characterId);
+    const vitalidad: VitalidadActual = foto
+      ? { origen: "combate", pgActual: foto.pgActual, pgMax: foto.pgMax, fatigaActual: foto.fatigaActual, fatigaMax: foto.fatigaMax }
+      : VITALIDAD_DE_FICHA;
+    const enJuego = resolverFicha(ctx.sheet, { estados: ctx.estados, vitalidad, aprobada: ctx.aprobada, mesa });
+    const fallo = falloDeSobreesfuerzo(enJuego, enJuego.umbrales.fatiga, op);
+    if (!fallo) return { ok: true, sheet: ctx.sheet, mensaje: "Ese uso no genera sobreesfuerzo: nada que aplicar." };
+    const c = consecuenciaDeSobreesfuerzo(fallo.resultado, fallo.uso.nivel, fallo.uso.fuente);
+    if (fallo.resultado.muerte) return { ok: true, sheet: ctx.sheet, mensaje: c.texto };
+    return aplicarConsecuencia(characterId, ctx, c, { userId: ctx.userId, motivo: `Sobreesfuerzo (${fallo.uso.fuente}), desde la ficha` });
+  }
   const ficha = resolverFicha(ctx.sheet, { estados: ctx.estados, vitalidad: VITALIDAD_DE_FICHA, aprobada: ctx.aprobada, mesa });
   if (op.tipo === "total" || op.tipo === "usar" || op.tipo === "atacar") {
     const autoriaT4 = (fuente: string) => ({ userId: ctx.userId, motivo: `${fuente}, desde la ficha` });
@@ -947,7 +977,17 @@ export async function aplicarConsecuenciaPropiaAction(characterId: string, entra
   const c = consecuenciaPropia(tirada, op);
   if (!c) return { ok: true, sheet: ctx.sheet, mensaje: "Nada que aplicar." };
   const fuente = op.tipo === "salvacion" ? (salvacionPropiaDe(tirada, op.modoId)?.fuente ?? tirada.label) : tirada.label;
-  const autoria = { userId: ctx.userId, motivo: `${fuente}, desde la ficha` };
+  return aplicarConsecuencia(characterId, ctx, c, { userId: ctx.userId, motivo: `${fuente}, desde la ficha` });
+}
+
+// El daño por el camino de la pestaña Vida del máster (en combate, a la foto) y los estados por el
+// de siempre, cada uno con su entrada en el registro, que el máster puede deshacer.
+async function aplicarConsecuencia(
+  characterId: string,
+  ctx: { sheet: Sheet },
+  c: ConsecuenciaPropia,
+  autoria: { userId: string; motivo: string },
+): Promise<SaveResult> {
   if (c.danio) {
     const r = await ajustarVidaDePersonajes([characterId], "vida", -c.danio.valor, c.danio.categoria, autoria);
     if (!r.ok) return { ok: false, error: r.error };

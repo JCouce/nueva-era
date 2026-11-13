@@ -79,7 +79,7 @@ const TIPOS_PASIVOS: TipoModificador[] = ["numerico", "coste", "resolucion"];
 // Lee la clasificación del catálogo (MotorMetadata), no la prosa: si un rasgo cambia
 // de mecanismo, la etiqueta le sigue. Prioridad: creación > tirada > siempre > acción > texto.
 // ACCIÓN: el rasgo trae una acción propia, un botón en Acciones (Visión UV e Infrarroja del
-// Arianyi, es-05 del cuestionario de cierre; Peaje neurológico; Falla metabólica).
+// Arianyi, es-05 del cuestionario de cierre; Peaje neurológico (sobreesfuerzo, T6a); Falla metabólica).
 //
 // TODO(revisar): quedan como TEXTO, por regla, rasgos cuya prosa sí habla de una
 // tirada pero que el catálogo clasifica como nota_fija (Tras esquivar; desde E4, nota en la

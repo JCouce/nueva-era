@@ -19,9 +19,10 @@ import {
   type ContextoEleccion,
 } from "./especie";
 import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
-import { accionesDePsionica } from "./poderes";
+import { accionesDePsionica, poderesDeFicha } from "./poderes";
 import {
   cumpleRequisito,
+  MOTIVO_SIN_ACCESO_PSIONICO,
   nivelDisciplina,
   requisitosRotos,
   setDisciplinaValue,
@@ -48,6 +49,9 @@ const ficha = (especieId: string | null, especieOpciones: Sheet["especieOpciones
   especieId,
   especieOpciones,
 });
+
+// Fuente psiónica para fichas sin especie psiónica (au-04, T6a).
+const IRM_1 = { instanciaId: "irm", catalogoId: "aum_implante_de_resonancia_metrica", nivel: 1 };
 
 const CEROS: Record<AtributoId, number> = {
   fuerza: 0,
@@ -162,7 +166,7 @@ describe("especieDeFicha: noble de cada linaje (casta + linaje se suman)", () =>
     const r = especieDeFicha(ficha("manduk", { casta: "noble", linaje: "maolher" }))!;
     assert.equal(r.casta?.id, "noble");
     assert.equal(r.linaje?.id, "maolher");
-    assert.ok(r.rasgos.some((x) => x.id === "peaje_neurologico" && x.fuente === "Casa de Maolher"));
+    assert.ok(r.rasgos.some((x) => x.id === "sobreesfuerzo" && x.fuente === "Casa de Maolher"));
     assert.deepEqual(r.referencia, { pesoKg: { min: 50, max: 70, porFuerza: 10 }, alturaCm: { min: 170, max: 200 } });
     assert.equal(especieDeFicha(ficha("humano"))!.referencia, null);
     assert.deepEqual(especieDeFicha(ficha("arkoru"))!.referencia?.pesoKg, { min: 80, max: 120, porFuerza: 15 });
@@ -484,7 +488,8 @@ describe("Resonancia +1 del Arianyi: nivel efectivo (sistema.md §14.6)", () => 
 
   test("comprado 6 → efectivo 7: cumple requisitos y los efectos usan la fila del 6", () => {
     const arianyi = conPsionica(ficha("arianyi"), { resonancia: 6 });
-    const humano = conPsionica(ficha("humano"), { resonancia: 6 });
+    // El humano, con el implante como fuente psiónica (au-04).
+    const humano = { ...conPsionica(ficha("humano"), { resonancia: 6 }), equipo: [IRM_1] };
     const ra = resuelta(arianyi);
     assert.deepEqual(ra.psionica.disciplinas.resonancia, { comprado: 6, bono: 1, efectivo: 7, paraEfectos: 6 });
     assert.equal(cumpleRequisito(arianyi, "hipercognicion", ra.psionica.bonos), true);
@@ -512,10 +517,38 @@ describe("Resonancia +1 del Arianyi: nivel efectivo (sistema.md §14.6)", () => 
   });
 
   test("sin especie, el nivel efectivo es el comprado", () => {
-    const r = resuelta(conPsionica(ficha(null), { resonancia: 2, induccion: 1 }));
+    const r = resuelta({ ...conPsionica(ficha(null), { resonancia: 2, induccion: 1 }), equipo: [IRM_1] });
     assert.deepEqual(r.psionica.disciplinas.resonancia, { comprado: 2, bono: 0, efectivo: 2, paraEfectos: 2 });
     assert.deepEqual(r.psionica.bonos, {});
     assert.deepEqual(r.psionica.requisitosRotos, []);
+  });
+
+  // au-04 (T6a): sin Arianyi, Casa de Maolher ni el implante, la psiónica comprada se queda (como
+  // con el cambio de especie) pero marcada, bloqueada y sin efectos.
+  test("sin fuente psiónica: requisito no cumplido, sin efectos y sin comprar más", () => {
+    const s = conPsionica(ficha(null), { resonancia: 2, induccion: 1 });
+    const r = resuelta(s);
+    assert.deepEqual(r.psionica.requisitosRotos, ["resonancia", "induccion"]);
+    assert.equal(r.psionica.disciplinas.resonancia.efectivo, 2);
+    assert.equal(r.psionica.paraEfectos.resonancia, 0);
+    assert.equal(r.psionica.sinAcceso?.motivo, MOTIVO_SIN_ACCESO_PSIONICO);
+    assert.equal(cumpleRequisito(s, "resonancia", r.psionica.bonos, r.psionica.acceso!), false);
+    assert.equal(setNivelDisciplina(s, "resonancia", 3, r.psionica.bonos, r.psionica.acceso!), s);
+    assert.deepEqual(setNivelDisciplina(s, "resonancia", 1, r.psionica.bonos, r.psionica.acceso!).psionica, { resonancia: 1, induccion: 1 });
+    const poderes = poderesDeFicha(s, r.psionica);
+    assert.ok(poderes.length > 0);
+    assert.ok(poderes.every((p) => p.bloqueo === MOTIVO_SIN_ACCESO_PSIONICO));
+    // El NPC del máster (libre) no lo mira.
+    assert.deepEqual(resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA, libre: true }).psionica.requisitosRotos, []);
+  });
+
+  test("fuentes psiónicas: Arianyi, Casa de Maolher y el implante; el resto, ninguna", () => {
+    const fuentes = (s: Sheet) => resuelta(s).psionica.acceso?.fuentes;
+    assert.deepEqual(fuentes(ficha("arianyi")), ["Arianyi"]);
+    assert.deepEqual(fuentes(ficha("manduk", { casta: "noble", linaje: "maolher" })), ["Casa de Maolher"]);
+    assert.deepEqual(fuentes(ficha("manduk", { casta: "noble", linaje: "irota" })), []);
+    assert.deepEqual(fuentes(ficha("humano")), []);
+    assert.deepEqual(fuentes({ ...ficha("humano"), equipo: [{ ...IRM_1, nivel: 3 }] }), ["Implante de Resonancia Métrica 3"]);
   });
 
   test("bajar Resonancia comprada de 1 a 0 con Inducción comprada vale: el efectivo queda en 1", () => {

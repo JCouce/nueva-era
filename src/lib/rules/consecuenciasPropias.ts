@@ -51,13 +51,17 @@ export function salvacionPropiaDe(t: Pick<Accion, "salvacionesPropias">, modoId:
 // T4 (rules/sigilo.ts), por el mismo camino: `total`, el total de una tirada que queda como el
 // número de un estado (Sigilo, Arma escondida, Disfrazado), con la opción que da su nota;
 // `usar`, la opción elegida en una acción sin dado que pone un estado (Activar camuflaje);
-// `atacar`, un ataque estando en Sigilo, que te lo baja.
+// `atacar`, un ataque estando en Sigilo, que te lo baja. T6a: `sobreesfuerzo`, el fallo de la
+// salvación de sobreesfuerzo de un poder.
 export type OperacionConsecuenciaPropia =
   | { tipo: "grado"; accionId: string; grado: Grado }
   | { tipo: "salvacion"; accionId: string; modoId: string | null; grado: Grado }
   | { tipo: "total"; accionId: string; total: number; eleccion: string | null }
   | { tipo: "usar"; accionId: string; opcion: string | null }
-  | { tipo: "atacar"; accionId: string };
+  | { tipo: "atacar"; accionId: string }
+  // T6a (rules/sobreesfuerzo.ts): el fallo del sobreesfuerzo tras usar un poder, con el grado de
+  // la salvación y la opción elegida (fracaso crítico del implante 4; si no, 0).
+  | { tipo: "sobreesfuerzo"; poderId: string; elecciones: Record<string, string>; grado: Grado; opcion: number };
 
 export function consecuenciaPropia(
   t: Pick<Accion, "consecuenciasPropias" | "salvacionesPropias">,

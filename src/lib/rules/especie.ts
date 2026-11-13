@@ -23,9 +23,9 @@
 //                   mismo índice que las del equipo, notas fijas y el tramo menos de
 //                   penalizador por umbral
 //   fallosCriticosDeEspecie fallo → fallo crítico en tiradas de ciertas especialidades
-//   peajeNeurologicoDeEspecie / notasFarmacosDeEspecie / accionesSinDadoDeEspecie
-//                   otras áreas (§14.9, E5): el peaje al usar un poder (lo lee
-//                   usarPoder), la nota fija de los fármacos y las acciones sin dado
+//   fuentesPsionicasDeEspecie / notasFarmacosDeEspecie / accionesSinDadoDeEspecie
+//                   otras áreas (§14.9, E5, T6a): si la especie es psiónica y con qué
+//                   sobreesfuerzo, la nota fija de los fármacos y las acciones sin dado
 //
 // Mismo patrón que usoPoder.ts: entrada explícita, nada se lee de fuera salvo el
 // catálogo, y el resultado se aplica tal cual.
@@ -54,6 +54,9 @@ import { SIN_AJUSTE_UMBRALES, type AjusteUmbral, type AjusteUmbrales } from "./e
 import type { DestinoTexto } from "../catalog/especies";
 import type { AccionDirecta } from "./acciones";
 import { ATRIBUTOS, type AtributoId } from "./atributos";
+import type { FuenteConNombre } from "./sobreesfuerzo";
+import { fuentesPsionicasDeAumentos } from "./aumentos";
+import type { AccesoPsionico } from "./psionica";
 
 export type RasgoConFuente = Rasgo & { fuente: string };
 
@@ -447,13 +450,25 @@ export function ajusteUmbralesDeEspecie(especie: EspecieResuelta | null): Ajuste
 
 // --- Otras áreas (§14.9, E5) -----------------------------------------------------
 
-// Peaje neurológico (Maolher): salvación de Fortaleza, dificultad base + nivel
-// empleado, al pagar fatiga por un poder. Lo calcula usarPoder; null sin el rasgo.
-export type PeajeNeurologico = { dificultadBase: number; fuente: string };
+// Fuentes psiónicas de la especie (au-04, T6a): Arianyi y Casa de Maolher pueden tener poderes,
+// cada una con su sobreesfuerzo. Vacío sin el rasgo. La fuente, la de la capa (especie o casa).
+export function fuentesPsionicasDeEspecie(especie: EspecieResuelta | null): FuenteConNombre[] {
+  return (especie?.rasgos ?? []).flatMap((r) => (r.fuentePsionica ? [{ ...r.fuentePsionica.sobreesfuerzo, fuente: r.fuente }] : []));
+}
 
-export function peajeNeurologicoDeEspecie(especie: EspecieResuelta | null): PeajeNeurologico | null {
-  const r = (especie?.rasgos ?? []).find((x) => x.peajeNeurologico);
-  return r ? { dificultadBase: r.peajeNeurologico!.dificultadBase, fuente: r.fuente } : null;
+// Todas las fuentes psiónicas de la ficha: la especie (o la casa) y los implantes. `especie`: la
+// ya resuelta, si la hay (resolverFicha); si no, la de la ficha.
+export function fuentesPsionicasDeFicha(sheet: Sheet, especie: EspecieResuelta | null = especieDeFicha(sheet)): FuenteConNombre[] {
+  return [...fuentesPsionicasDeEspecie(especie), ...fuentesPsionicasDeAumentos(sheet)];
+}
+
+// au-04: el acceso a la psiónica que reciben psionica.ts y la compra de disciplinas.
+export function accesoDeFuentes(fuentes: readonly FuenteConNombre[]): AccesoPsionico {
+  return { fuentes: [...new Set(fuentes.map((f) => f.fuente))] };
+}
+
+export function accesoPsionicoDeFicha(sheet: Sheet): AccesoPsionico {
+  return accesoDeFuentes(fuentesPsionicasDeFicha(sheet));
 }
 
 // Opciones del selector «Contra…» de las salvaciones que da la especie (Deslumbramiento del

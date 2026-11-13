@@ -12,7 +12,8 @@
 import { z } from "zod";
 import { equipoPorId } from "../catalog/equipo";
 import type { Aumento, Implante, NivelImplante, OperacionGenetica, ReduccionPenalizadorAumento } from "../catalog/aumentos";
-import { acumulaPorClave, claveModificador, costeDePieza, nivelesHasta, type PiezaEquipada } from "./equipo";
+import { acumulaPorClave, claveModificador, costeDePieza, nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
+import type { FuenteConNombre } from "./sobreesfuerzo";
 import { HABILIDADES, type HabilidadId } from "./habilidades";
 import { SIN_AJUSTE_UMBRALES, type AjusteUmbral, type AjusteUmbrales, type ReduccionPorAplicado } from "./estados";
 import type { ModificadorConFuente } from "./modificadores";
@@ -289,6 +290,17 @@ export function modificadoresDeAumentos(sheet: Pick<Sheet, "equipo">): Modificad
       claveModificador,
     );
     return mods.map((m) => ({ ...m, origen: "aumento" as const, fuente: `${cat.label} ${pieza.nivel}`, item: origenDePieza("aumento", cat, pieza.instanciaId) }));
+  });
+}
+
+// Fuentes psiónicas de los implantes (au-04, T6a): el Implante de Resonancia Métrica deja tener
+// poderes, con el sobreesfuerzo de su nivel (el del nivel más alto que lo trae).
+export function fuentesPsionicasDeAumentos(sheet: Pick<Sheet, "equipo">): FuenteConNombre[] {
+  return sheet.equipo.flatMap((pieza): FuenteConNombre[] => {
+    const cat = aumentoPorId(pieza.catalogoId);
+    if (cat?.familia !== "implante" || pieza.nivel === undefined) return [];
+    const nivel = ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel), "fuentePsionica");
+    return nivel?.fuentePsionica ? [{ ...nivel.fuentePsionica.sobreesfuerzo, fuente: `${cat.label} ${pieza.nivel}` }] : [];
   });
 }
 

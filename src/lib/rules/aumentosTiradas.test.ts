@@ -315,7 +315,9 @@ describe("A2b: alcance por aplicado", () => {
   });
 
   test("en un poder de Perspicacia: la casilla llega con el índice, y el ahorro baja el coste del poder", () => {
-    const sheet = { ...conTodas([MIELINIZACION, PREFRONTAL]), psionica: { traslacion: 2, singularidad: 2 }, fatigaActual: 8 };
+    const base = conTodas([MIELINIZACION, PREFRONTAL]);
+    // Con el implante como fuente psiónica (au-04, T6a).
+    const sheet = { ...base, equipo: [...base.equipo, { instanciaId: "irm", catalogoId: "aum_implante_de_resonancia_metrica", nivel: 4 }], psionica: { traslacion: 2, singularidad: 2 }, fatigaActual: 8 };
     const fp = resolver(sheet);
     const poder = accionesDePsionica(sheet, fp.psionica.paraEfectos).find((p) => p.accion.id === "psi_singularidad_impulso")!;
     const entrada = { ficha: sheet, modificadores: fp.modificadores, niveles: fp.psionica.paraEfectos, poder, seleccion: SELECCION_PODER_VACIA };
@@ -330,7 +332,7 @@ describe("A2b: alcance por aplicado", () => {
     const conAhorro = montar(fp, p.tirada!, { [AHORRO]: true });
     assert.equal(conAhorro.costeFatiga, 0);
     assert.equal(conAhorro.ahorroSinUsar, 1);
-    const uso = { ficha: sheet, modificadores: fp.modificadores, peajeNeurologico: null };
+    const uso = { ficha: sheet, modificadores: fp.modificadores, sobreesfuerzo: null };
     assert.equal(p.coste?.total, 2);
     assert.equal(usarPoder(uso, p, "uso", conAhorro.ahorroSinUsar).fatiga.pagar, 1);
     assert.equal(usarPoder(uso, p).fatiga.pagar, 2);

@@ -11,7 +11,10 @@ import type { DoteComprada } from "./dotesCompradas";
 import type { EspecialidadId } from "../catalog/especialidades";
 import { lineaAntes } from "./textosDeTirada";
 
-// Atributos a 4, habilidades a 6 con la especialidad de Medicina y fatiga de sobra.
+// Atributos a 4, habilidades a 6 con la especialidad de Medicina y fatiga de sobra. Con el
+// Implante de Resonancia Métrica 4 como fuente psiónica (au-04): sin modificadores, y sin
+// sobreesfuerzo mientras no esté fatigado.
+const IRM_4 = { instanciaId: "irm", catalogoId: "aum_implante_de_resonancia_metrica", nivel: 4 };
 function ficha(dotes: DoteComprada[], psionica: Sheet["psionica"]): Sheet {
   const base = defaultSheet();
   return {
@@ -24,6 +27,7 @@ function ficha(dotes: DoteComprada[], psionica: Sheet["psionica"]): Sheet {
     fatigaActual: 20,
     fatigaTemporal: 0,
     dotes,
+    equipo: [IRM_4],
   };
 }
 

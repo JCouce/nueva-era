@@ -356,19 +356,32 @@ export type NivelDisciplinaResuelto = { comprado: number; bono: number; efectivo
 // Niveles para efectos de todas las disciplinas: lo que reciben los poderes.
 export type NivelesPsionica = Record<DisciplinaId, number>;
 
+// Quién puede tener poderes (au-04, T6a; usuario 2026-11-13): solo con una fuente psiónica, que
+// declara el catálogo (Arianyi, Casa de Maolher, Implante de Resonancia Métrica). `fuentes`: sus
+// nombres; vacío, sin acceso. Llega por parámetro, ya resuelto (especie.ts,
+// fuentesPsionicasDeFicha), como los bonos. Sin él (NPC del máster, modo libre), no se mira.
+export type AccesoPsionico = { fuentes: string[] };
+export const MOTIVO_SIN_ACCESO_PSIONICO = "Requiere ser Arianyi o de la Casa de Maolher, o llevar el Implante de Resonancia Métrica";
+const sinAcceso = (acceso: AccesoPsionico | undefined) => acceso !== undefined && acceso.fuentes.length === 0;
+
 export type PsionicaResuelta = {
   disciplinas: Record<DisciplinaId, NivelDisciplinaResuelto>;
   paraEfectos: NivelesPsionica;
   bonos: BonosDisciplina;
-  // Disciplinas con nivel y el requisito sin cumplir (cambio de especie sin reset).
+  // Disciplinas con nivel y el requisito sin cumplir (cambio de especie sin reset, o sin fuente
+  // psiónica: au-04).
   requisitosRotos: DisciplinaId[];
+  acceso: AccesoPsionico | null;
+  // Sin fuente psiónica y con psiónica comprada: los poderes salen bloqueados con el motivo y sin
+  // efectos (`paraEfectos` a 0); `niveles`, los que tendría, para pintarlos (poderesDeFicha).
+  sinAcceso: { motivo: string; niveles: NivelesPsionica } | null;
 };
 
 export function nivelEfectivo(sheet: Sheet, id: DisciplinaId, bonos: BonosDisciplina): number {
   return Math.max(0, nivelDisciplina(sheet, id) + (bonos[id] ?? 0));
 }
 
-export function nivelesDePsionica(sheet: Sheet, bonos: BonosDisciplina): PsionicaResuelta {
+export function nivelesDePsionica(sheet: Sheet, bonos: BonosDisciplina, acceso?: AccesoPsionico): PsionicaResuelta {
   const disciplinas = {} as Record<DisciplinaId, NivelDisciplinaResuelto>;
   const paraEfectos = {} as NivelesPsionica;
   for (const d of DISCIPLINAS) {
@@ -382,7 +395,19 @@ export function nivelesDePsionica(sheet: Sheet, bonos: BonosDisciplina): Psionic
     disciplinas[d.id] = nivel;
     paraEfectos[d.id] = nivel.paraEfectos;
   }
-  return { disciplinas, paraEfectos, bonos, requisitosRotos: requisitosRotos(sheet, bonos) };
+  if (sinAcceso(acceso)) {
+    const conNivel = DISCIPLINAS.filter((d) => disciplinas[d.id].efectivo > 0).map((d) => d.id);
+    const ceros = Object.fromEntries(DISCIPLINAS.map((d) => [d.id, 0])) as NivelesPsionica;
+    return {
+      disciplinas,
+      paraEfectos: ceros,
+      bonos,
+      requisitosRotos: conNivel,
+      acceso: acceso!,
+      sinAcceso: conNivel.length > 0 ? { motivo: MOTIVO_SIN_ACCESO_PSIONICO, niveles: paraEfectos } : null,
+    };
+  }
+  return { disciplinas, paraEfectos, bonos, requisitosRotos: requisitosRotos(sheet, bonos), acceso: acceso ?? null, sinAcceso: null };
 }
 
 // "2 (1 + 1 especie)" con bono; el nivel a secas sin él. Una línea por origen del
@@ -410,7 +435,8 @@ export function textoNivelDisciplina(
   return `${nivel.efectivo} (${nivel.comprado} ${partes.join(" ")})`;
 }
 
-export function cumpleRequisito(sheet: Sheet, id: DisciplinaId, bonos: BonosDisciplina): boolean {
+export function cumpleRequisito(sheet: Sheet, id: DisciplinaId, bonos: BonosDisciplina, acceso?: AccesoPsionico): boolean {
+  if (sinAcceso(acceso)) return false;
   const { requisito } = disciplinaPorId(id);
   return !requisito || nivelEfectivo(sheet, requisito.disciplina, bonos) >= requisito.nivel;
 }
@@ -443,10 +469,10 @@ export function sueloPorRequisitos(sheet: Sheet, id: DisciplinaId, bonos: BonosD
 // eso lo añade la compra de creación; la subida con XP (ficha aprobada) cobra aparte.
 // Con el requisito roto (ver requisitosRotos) se puede bajar, no subir (decisión del
 // usuario, 2026-10-13).
-export function setNivelDisciplina(sheet: Sheet, id: DisciplinaId, value: number, bonos: BonosDisciplina): Sheet {
+export function setNivelDisciplina(sheet: Sheet, id: DisciplinaId, value: number, bonos: BonosDisciplina, acceso?: AccesoPsionico): Sheet {
   const actual = nivelDisciplina(sheet, id);
   const v = clampInt(value, 0, DISCIPLINA_MAX, actual);
-  if (v > actual && !cumpleRequisito(sheet, id, bonos)) return sheet;
+  if (v > actual && !cumpleRequisito(sheet, id, bonos, acceso)) return sheet;
   if (v < actual && v < sueloPorRequisitos(sheet, id, bonos)) return sheet;
   const psionica = { ...sheet.psionica };
   if (v > 0) psionica[id] = v;
@@ -460,7 +486,8 @@ export function setDisciplinaValue(
   value: number,
   ajuste: AjusteCoste,
   bonos: BonosDisciplina,
+  acceso?: AccesoPsionico,
 ): Sheet {
-  const next = setNivelDisciplina(sheet, id, value, bonos);
+  const next = setNivelDisciplina(sheet, id, value, bonos, acceso);
   return puntosPsionicaDisponibles(next, ajuste) < 0 ? sheet : next;
 }

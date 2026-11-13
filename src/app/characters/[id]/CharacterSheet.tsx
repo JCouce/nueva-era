@@ -365,7 +365,7 @@ export function CharacterSheet({
     );
   };
   const commitDisciplina = (id: DisciplinaId, value: number) => {
-    setSheet((s) => setDisciplinaValue(s, id, value, ficha.ajusteCoste, ficha.psionica.bonos));
+    setSheet((s) => setDisciplinaValue(s, id, value, ficha.ajusteCoste, ficha.psionica.bonos, ficha.psionica.acceso ?? undefined));
     scheduleCommit(
       `disciplina:${id}`,
       () => setDisciplinaAction(characterId, id, value),

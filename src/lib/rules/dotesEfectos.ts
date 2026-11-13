@@ -74,6 +74,7 @@ import type { TextoEnTirada } from "./especie";
 import type { OrigenAporte } from "./origen";
 import type { RebajaConFuente } from "./tipoAccion";
 import type { Sheet } from "./sheet";
+import { SIN_DOTES_SOBREESFUERZO, type EfectoSobreesfuerzoDote, type SobreesfuerzoDeDotes } from "./sobreesfuerzo";
 
 export type DoteActiva = { dote: DoteCatalogo; compra: DoteComprada };
 
@@ -158,6 +159,9 @@ export type EfectosDeDotes = {
   alternativas: AlternativaDeDote[];
   // Lo que abaratan de una acción de otra fila (T5c, rules/tipoAccion.ts): Recarga Relámpago.
   rebajasTipoAccion: RebajaConFuente[];
+  // Lo que hacen con el sobreesfuerzo psiónico (T6a, rules/sobreesfuerzo.ts): Potencia, Maestría
+  // y Gran Maestría Psiónica (vale el nivel más alto), la tabla de Maestría y Saber es Poder.
+  sobreesfuerzo: SobreesfuerzoDeDotes;
 };
 
 export const SIN_EFECTOS_DE_DOTES: EfectosDeDotes = {
@@ -172,6 +176,7 @@ export const SIN_EFECTOS_DE_DOTES: EfectosDeDotes = {
   grados: [],
   alternativas: [],
   rebajasTipoAccion: [],
+  sobreesfuerzo: SIN_DOTES_SOBREESFUERZO,
 };
 
 const TRAMOS: readonly TramoDistancia[] = ["bocajarro", "corta", "media", "larga"];
@@ -327,6 +332,7 @@ export function efectosDeDotes(
   const grados: GradoFijoDeDote[] = [];
   const alternativas: AlternativaDeDote[] = [];
   const rebajasTipoAccion: RebajaConFuente[] = [];
+  let sobreesfuerzo: SobreesfuerzoDeDotes = SIN_DOTES_SOBREESFUERZO;
   const familias = new Set<FamiliaArma>();
   const sutil = new Set<FamiliaArma>();
   const compradas = activas.map((a) => a.compra);
@@ -403,6 +409,10 @@ export function efectosDeDotes(
       }
       if (e.tipo === "economia") {
         rebajasTipoAccion.push({ ...e.rebaja, fuente, origen });
+        return;
+      }
+      if (e.tipo === "sobreesfuerzo") {
+        sobreesfuerzo = conEfectoSobreesfuerzo(sobreesfuerzo, e.efecto, fuente);
         return;
       }
       // Habilitador (Bloqueo): la familia aparece. Arbitraje duro (§9.2): sin él, no existe.
@@ -627,7 +637,15 @@ export function efectosDeDotes(
     grados,
     alternativas,
     rebajasTipoAccion,
+    sobreesfuerzo,
   };
+}
+
+function conEfectoSobreesfuerzo(s: SobreesfuerzoDeDotes, e: EfectoSobreesfuerzoDote, fuente: string): SobreesfuerzoDeDotes {
+  if (e.tipo === "inmune") return !s.inmune || e.hastaNivel > s.inmune.hastaNivel ? { ...s, inmune: { hastaNivel: e.hastaNivel, fuente } } : s;
+  if (e.tipo === "moneda") return { ...s, moneda: { fuente } };
+  const casillas = s.tabla?.casillas ?? {};
+  return { ...s, tabla: { fuente, casillas: { ...casillas, [e.umbral]: { ...casillas[e.umbral], [e.grado]: e.casilla } } } };
 }
 
 // Atajos con los requisitos de la propia ficha (sin especie resuelta aparte).

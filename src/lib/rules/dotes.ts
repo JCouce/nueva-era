@@ -18,7 +18,7 @@ import { HABILIDADES, type HabilidadId } from "./habilidades";
 import { aplicados, atributosEfectivos } from "./derivados";
 import { bonoHabilidad, type ModificadorConFuente } from "./modificadores";
 import { bonosDeDisciplina, nivelEfectivo } from "./psionica";
-import { especieDeFicha } from "./especie";
+import { especieDeFicha, fuentesPsionicasDeFicha } from "./especie";
 import { modificadoresDeAumentos } from "./aumentos";
 import { PUNTOS_DOTES_POR_LETRA } from "./prioridad";
 import type { Sheet } from "./sheet";
@@ -40,14 +40,6 @@ export type ValoresRequisito = {
   disciplinas: Record<DisciplinaId, number>;
   psionico: boolean;
 };
-
-// Hueco para la psiónica por implante (§9.1): el Implante de Resonancia Métrica
-// activará el requisito "psiónica de origen biológico" cuando exista el área de
-// aumentos. Hoy ningún implante lo da.
-function psionicaPorImplante(sheet: Sheet): boolean {
-  void sheet;
-  return false;
-}
 
 // `mods`: los de modificadoresDeRequisito — especie (con casta y linaje) y aumentos
 // permanentes. Ni equipo normal ni estados de combate: un requisito no debería romperse
@@ -71,7 +63,9 @@ export function valoresDeRequisito(sheet: Sheet, mods: ModificadorConFuente[]): 
       HABILIDADES.map((h) => [h.id, [...sheet.habilidades[h.id].especialidades]]),
     ) as Record<HabilidadId, EspecialidadId[]>,
     disciplinas,
-    psionico: Object.values(disciplinas).some((n) => n > 0) || psionicaPorImplante(sheet),
+    // «Psiónica de origen biológico» (§9.1: por especie o por implante): una fuente psiónica
+    // (au-04, T6a), aunque aún no tenga ninguna disciplina.
+    psionico: fuentesPsionicasDeFicha(sheet).length > 0,
   };
 }
 

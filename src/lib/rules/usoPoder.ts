@@ -1,8 +1,8 @@
 // Usar un poder psiónico, sin UI: lo que el modal enseña antes de usarlo
 // (prepararPoder) y lo que hay que aplicar a la ficha al usarlo (usarPoder) o
-// al conocer el resultado de la tirada (efectosDelResultado), y el peaje neurológico
-// del Maolher que deja ese uso (tirarPeaje). La pantalla solo
-// pinta y aplica: no decide ninguna regla.
+// al conocer el resultado de la tirada (efectosDelResultado), y las salvaciones que deja ese uso:
+// la de sobrecarga (montarSalvacionSobrecarga) y la de sobreesfuerzo (T6a, tirarSobreesfuerzo).
+// La pantalla solo pinta y aplica: no decide ninguna regla.
 //
 // Todo entra explícito: la ficha, los modificadores ya montados (equipo,
 // especie, estados de combate…, que no están todos en la ficha) y lo que el
@@ -19,7 +19,7 @@ import {
   type TiradaMontada,
 } from "./montaje";
 import type { FichaResuelta } from "./fichaResuelta";
-import { estadoActivoCon, type EstadoActivo } from "./estados";
+import { estadoActivoCon, umbralFatiga, type EstadoActivo, type UmbralFatiga } from "./estados";
 import { esEstadoDePoder, estadoPorId } from "../catalog/estados";
 import {
   accionesDePsionica,
@@ -51,6 +51,7 @@ import { conTextosDeFicha, contextoDe, textosDe, textosSinDado, type ObjetivoEnT
 import { consultaIndiceCondiciones, type IndiceCondiciones } from "./equipo";
 import { fatigaEfectiva } from "./vitalidad";
 import { FUENTES_EXTERNAS_FATIGA } from "../catalog/psionica";
+import { resultadoElegido, sobreesfuerzoDeUso, type ResultadoSobreesfuerzo, type SobreesfuerzoDeUso } from "./sobreesfuerzo";
 
 export type SeleccionPoder = {
   elecciones: Record<string, string>;
@@ -208,17 +209,14 @@ export function prepararPoder({
 // para no perder una salvación aún sin tirar).
 export type CambioSobrecarga = { tipo: "salta"; nivel: number } | { tipo: "reiniciar" } | { tipo: "mantener" };
 
-// Peaje neurológico (Maolher, §14.9) de este uso: salvación de Fortaleza contra
-// `dificultad`; `puntos` = fatiga pagada, que es el daño si falla.
-export type PeajeDeUso = { dificultad: number; puntos: number };
-
 export type EfectosDeUso = {
   fatiga: { pagar: number; temporal: boolean };
   cargas: { instanciaId: string; gastar: number } | null;
   vida: number; // a restar
   sobrecarga: CambioSobrecarga;
-  // null sin el rasgo o sin fatiga pagada. Va después de la sobrecarga.
-  peaje: PeajeDeUso | null;
+  // El sobreesfuerzo de este uso (T6a), si toca; null al prolongar Proeza. Va después de la
+  // sobrecarga.
+  sobreesfuerzo: SobreesfuerzoDeUso | null;
   avisos: string[];
   // Estado propio que el uso pone sobre el psiónico (Contención, P1). Solo si lo hay: lo pone
   // el servidor (ponerEstadosDePoderAction), que lo vuelve a calcular con estadosPropiosDeUso.
@@ -227,7 +225,7 @@ export type EfectosDeUso = {
 
 // Lo de la ficha resuelta que hace falta para usar un poder. `fatigaEnJuego` (td-25): la
 // sobrecarga y el "sin fatiga" miran la del combate si hay uno en curso; sin ella, la de la ficha.
-export type FichaParaUso = Pick<FichaResuelta, "ficha" | "modificadores" | "peajeNeurologico"> &
+export type FichaParaUso = Pick<FichaResuelta, "ficha" | "modificadores" | "sobreesfuerzo"> &
   Partial<Pick<FichaResuelta, "fatigaEnJuego">>;
 
 // Gasto al usar un poder (con tirada o sin ella), falle o no. "prolongar" = otro
@@ -273,7 +271,7 @@ export function usarPoder(f: FichaParaUso, p: PoderPreparado, modo: "uso" | "pro
       : uso
         ? { tipo: "reiniciar" }
         : { tipo: "mantener" },
-    peaje: peajeDeUso(f, p, pagar),
+    sobreesfuerzo: uso ? sobreesfuerzoAlUsar(f, p, pagar) : null,
     avisos,
     ...(estadoPropio && { estadoPropio }),
   };
@@ -364,42 +362,69 @@ export function estadosPropiosDeUso(
   return estadosDelResultado(resuelto, grado, actuales);
 }
 
-// §14.9: se tira siempre que se pague fatiga, aunque el poder falle. `pagar` ya va sin
-// lo que pagan las cargas de Derivación (si todo va con cargas, no hay peaje) y con la
-// parte que Proeza manda a fatiga temporal (también es fatiga pagada). Prolongar
-// Proeza paga peaje por su extra, con el mismo nivel empleado (usuario, E5).
-// TODO(revisar): un poder con fatiga no numérica (se paga a mano) no llega aquí
-// (AccionesTab no llama a usarPoder sin coste): el peaje de ese gasto, también a mano.
-function peajeDeUso(f: FichaParaUso, p: PoderPreparado, pagar: number): PeajeDeUso | null {
-  if (!f.peajeNeurologico || pagar <= 0) return null;
-  return { dificultad: f.peajeNeurologico.dificultadBase + p.resuelto.nivelEmpleado, puntos: pagar };
+// El sobreesfuerzo de usar el poder (T6a): con su nivel empleado y el umbral de fatiga tras
+// pagar `pagar` (contra la efectiva, como la sobrecarga). Lo llama usarPoder; la pantalla, con un
+// poder cuya fatiga no es un número (se paga a mano, `pagar` 0), lo pide aparte.
+// TODO(revisar): prolongar Proeza no lo vuelve a tirar (solo el uso).
+export function sobreesfuerzoAlUsar(f: FichaParaUso, p: PoderPreparado, pagar: number): SobreesfuerzoDeUso | null {
+  const despues = (f.fatigaEnJuego?.efectiva ?? fatigaEfectiva(f.ficha)) - pagar;
+  return sobreesfuerzoDeUso(f.sobreesfuerzo, p.resuelto.nivelEmpleado, umbralFatiga(despues, salud(f.ficha, f.modificadores).fatiga));
 }
 
-// La salvación del peaje: la Salvación de Fortaleza montada como una normal (umbrales,
-// estados… de la ficha), sin casillas marcadas. Sin blindaje: el daño no se absorbe (M16).
-export function montarPeaje(ficha: FichaParaTirada): TiradaMontada {
-  const salv = ACCIONES.find((a) => a.id === "salv_fortaleza")!;
-  return montarTirada(ficha, salv, SIN_ELECCION);
+// Una Salvación fija montada como una normal (umbrales, estados… de la ficha), sin casillas
+// marcadas y con su propio id, para que la alcancen los modificadores que son solo de ella.
+function montarSalvacion(ficha: FichaParaTirada, base: string, id: string, label: string): TiradaMontada {
+  const salv = ACCIONES.find((a) => a.id === base)!;
+  return montarTirada(ficha, { ...salv, id, label, nota: undefined }, SIN_ELECCION);
 }
 
-export type ResultadoPeaje = {
-  resultado: Resultado;
-  danio: number; // a restar de la vida
-  categoria: "no letal" | "letal" | null;
-  aviso: string | null;
-};
-
-// Éxito (o crítico): nada. Fracaso: un nivel no letal por punto de fatiga pagado.
-// Fracaso crítico: los mismos, letales.
-export function danioDePeaje(puntos: number, grado: Grado): Omit<ResultadoPeaje, "resultado"> {
-  if (grado === "exito" || grado === "critico" || puntos <= 0) return { danio: 0, categoria: null, aviso: null };
-  const categoria = grado === "fracasoCritico" ? "letal" : "no letal";
-  return { danio: puntos, categoria, aviso: `Peaje neurológico: recibes ${puntos} de daño ${categoria}.` };
+// Salvación de Fortaleza de la sobrecarga (§10.6). eq-27: la Derivación Psiónica nivel 1 le da +1
+// («resistir el retroceso por el uso prolongado de disciplinas psiónicas»), como línea propia.
+export const ID_SALVACION_SOBRECARGA = "salv_sobrecarga";
+export function montarSalvacionSobrecarga(ficha: FichaParaTirada): TiradaMontada {
+  return montarSalvacion(ficha, "salv_fortaleza", ID_SALVACION_SOBRECARGA, "Sobrecarga: salvación de Fortaleza");
 }
 
-export function tirarPeaje(ficha: FichaParaTirada, peaje: PeajeDeUso, dado: number): ResultadoPeaje {
-  const resultado = tirarMontada(montarPeaje(ficha), dado, peaje.dificultad);
-  return { resultado, ...danioDePeaje(peaje.puntos, gradoDeTirada(resultado)!) };
+// Salvación de Voluntad del sobreesfuerzo (ps-01). Sin blindaje: el daño entra directo.
+export const ID_SALVACION_SOBREESFUERZO = "salv_sobreesfuerzo";
+export function montarSobreesfuerzo(ficha: FichaParaTirada): TiradaMontada {
+  return montarSalvacion(ficha, "salv_voluntad", ID_SALVACION_SOBREESFUERZO, "Sobreesfuerzo: salvación de Voluntad");
+}
+
+// La tirada y las opciones del grado (vacío con éxito; dos en el fracaso crítico del implante 4,
+// para elegir). Lo aplica el servidor (aplicarConsecuenciaPropiaAction, tipo «sobreesfuerzo»).
+export function tirarSobreesfuerzo(
+  ficha: FichaParaTirada,
+  uso: SobreesfuerzoDeUso,
+  dado: number,
+): { resultado: Resultado; grado: Grado; opciones: ResultadoSobreesfuerzo[] } {
+  const resultado = tirarMontada(montarSobreesfuerzo(ficha), dado, uso.dificultad);
+  const grado = gradoDeTirada(resultado)!;
+  return { resultado, grado, opciones: grado === "fracaso" || grado === "fracasoCritico" ? uso.fallos[grado].casilla : [] };
+}
+
+// Lo que vuelve a calcular el servidor con la ficha guardada: el poder (de disciplina o de dote,
+// con su requisito sano) con las elecciones del modal da el nivel empleado; con él y el umbral de
+// fatiga de ahora, el sobreesfuerzo; y de ahí, la opción del grado. null si no toca.
+export function falloDeSobreesfuerzo(
+  f: Pick<FichaResuelta, "ficha" | "psionica" | "poderesDotes" | "sobreesfuerzo">,
+  umbral: UmbralFatiga,
+  op: { poderId: string; elecciones: Record<string, string>; grado: Grado; opcion: number },
+): { uso: SobreesfuerzoDeUso; resultado: ResultadoSobreesfuerzo } | null {
+  const niveles = f.psionica.paraEfectos;
+  const poder = [...accionesDePsionica(f.ficha, niveles), ...f.poderesDotes].find((p) => p.accion.id === op.poderId);
+  if (!poder || poder.bloqueo) return null;
+  const resuelto = resolverPoder(poder.accion, {
+    nivelPoseido: poder.nivelPoseido,
+    elecciones: op.elecciones,
+    habilidades: valoresHabilidad(f.ficha),
+    niveles,
+    disciplina: poder.disciplina,
+    bonoAlcance: bonoAlcanceDeFicha(f.ficha) ?? undefined,
+  });
+  const uso = resuelto ? sobreesfuerzoDeUso(f.sobreesfuerzo, resuelto.nivelEmpleado, umbral) : null;
+  const resultado = uso ? resultadoElegido(uso, op.grado, op.opcion) : null;
+  return uso && resultado ? { uso, resultado } : null;
 }
 
 // Tras tirar: el daño propio que depende del grado (fracaso crítico del Sondeo

@@ -150,11 +150,15 @@ describe("requisitos", () => {
     assert.equal(cumple(ficha({ psionica: { singularidad: 3 } }), "dote_onda_residual"), true);
   });
 
-  test("psionico: alguna disciplina > 0, comprada o por especie", () => {
+  // au-04 (T6a): «psiónica de origen biológico» = una fuente psiónica (Arianyi, Casa de Maolher o
+  // el Implante de Resonancia Métrica). Antes bastaba una disciplina comprada.
+  test("psionico: una fuente psiónica, por especie o por implante", () => {
     assert.equal(cumple(ficha(), "dote_potencia_psionica"), false);
-    assert.equal(cumple(ficha({ psionica: { induccion: 1 } }), "dote_potencia_psionica"), true);
-    // Arianyi: Resonancia +1 de especie, sin comprar nada.
+    assert.equal(cumple(ficha({ psionica: { induccion: 1 } }), "dote_potencia_psionica"), false, "sin fuente, no");
     assert.equal(cumple(ficha({ especieId: "arianyi" }), "dote_potencia_psionica"), true);
+    assert.equal(cumple(ficha({ especieId: "manduk", especieOpciones: { casta: "noble", linaje: "maolher" } }), "dote_potencia_psionica"), true);
+    const irm = { equipo: [{ instanciaId: "irm", catalogoId: "aum_implante_de_resonancia_metrica", nivel: 1 }] };
+    assert.equal(cumple(ficha(irm), "dote_potencia_psionica"), true);
   });
 
   test("estadoRequisitos: texto legible y si se cumple", () => {

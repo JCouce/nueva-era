@@ -10,8 +10,8 @@
 // sus datos operativos se añaden al rasgo cuando la tanda que los consume los
 // necesite, no antes. Los de creación (costes, bolsa) ya están (E2a), la Resonancia
 // +1 y el kerzul (E2b), movimiento, carga y armadura natural (E3), las casillas,
-// bonos, textos y umbrales de las tiradas (E4), y el peaje del Maolher, la nota de
-// fármacos del Irota y la visión (E5).
+// bonos, textos y umbrales de las tiradas (E4), la nota de fármacos del Irota y la visión (E5),
+// y quién es psiónico, con su sobreesfuerzo (T6a).
 import type { AlcanceModificador, Modificador } from "../rules/modificadores";
 import type { CondicionTirada } from "../rules/condiciones";
 import type { MotorMetadata } from "../rules/motor";
@@ -23,6 +23,8 @@ import type { MaterialPieza } from "./equipo";
 import type { EfectoAlRecibir } from "../rules/resistirDanio";
 import { TIPOS_FISICOS } from "./tiposDanio";
 import type { EfectoSalvacion } from "../rules/aumentosTiradas";
+import type { FuentePsionica } from "../rules/sobreesfuerzo";
+import { SOBREESFUERZO_ARIANYI, SOBREESFUERZO_MAOLHER } from "./sobreesfuerzos";
 
 // Peso/altura de referencia (§14.5): solo se enseña junto a los campos libres de
 // Identidad, no se valida. Peso = min-max + porFuerza × Fuerza con especie (M21).
@@ -67,9 +69,10 @@ export type Rasgo = {
   // Puntos menos de penalizador en cada tramo de heridas o de fatiga (§7; M12).
   ajusteUmbrales?: { salud?: number; fatiga?: number };
   // Otras áreas (§14.9, E5). Los resuelve especie.ts una vez en la FichaResuelta:
-  // peajeNeurologicoDeEspecie (lo lee usarPoder), notasFarmacosDeEspecie (nota fija en
-  // las filas de fármaco) y accionesSinDadoDeEspecie (fila "Usar" en Acciones).
-  peajeNeurologico?: { dificultadBase: number }; // salvación de Fortaleza base + nivel empleado
+  // fuentesPsionicasDeEspecie (au-04 y el sobreesfuerzo, T6a), notasFarmacosDeEspecie (nota
+  // fija en las filas de fármaco) y accionesSinDadoDeEspecie (fila "Usar" en Acciones).
+  // `fuentePsionica`: la especie (o la casa) puede tener poderes, con este sobreesfuerzo.
+  fuentePsionica?: FuentePsionica;
   notaFarmacos?: string;
   accionSinDado?: AccionSinDadoRasgo;
   // Lo que pasa al recibir un golpe (T2 del cuestionario): casillas y salvaciones de «Resistir
@@ -200,13 +203,23 @@ const exitoCritico = (id: string, etiqueta: string): CondicionTirada => ({
   nota: "Si sale éxito, cuenta como crítico.",
 });
 
-// Acción propia del rasgo, sin equipo (peaje del Maolher, activar la visión; §14.9).
+// Acción propia del rasgo, sin equipo (sobreesfuerzo psiónico, activar la visión; §14.9).
 const accionDeEspecie = (id: string): MotorMetadata => ({
   tipo: "accion",
   afecta: { modo: "accion_nueva", id },
   mecanismo: "accion_sin_equipo",
   estado: "construido",
 });
+
+// au-04: solo con una fuente psiónica (Arianyi, Casa de Maolher, Implante de Resonancia Métrica)
+// se pueden tener poderes; sin ella, la psiónica comprada queda «requisito no cumplido».
+const HABILITA_PSIONICA: MotorMetadata = {
+  tipo: "habilitador",
+  afecta: { modo: "accion_existente", id: "psionica" },
+  mecanismo: "gate_instalacion",
+  arbitraje: "duro",
+  estado: "construido",
+};
 
 const tiradaFija = (id: string): DestinoTexto => ({ tipo: "tiradaId", id });
 
@@ -347,7 +360,7 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         label: "Falla metabólica",
         texto: "Al recibir daño de plasma o fuego, Fortaleza (dificultad 9) contra aturdimiento.",
         // es-02 del cuestionario (usuario, 2026-11-13): al pulsar «Recibir» en Resistir daño con
-        // fuego o plasma y daño que entra, panel con la salvación (como el peaje del Maolher).
+        // fuego o plasma y daño que entra, panel con la salvación (como el sobreesfuerzo del Maolher).
         // Recibir el daño es lo que la dispara: ya no hace falta la nota en la Salvación de
         // Fortaleza.
         alRecibirDanio: [
@@ -457,14 +470,15 @@ const LINAJES_MANDUK: OpcionEspecie[] = [
         motor: [],
       },
       {
-        id: "peaje_neurologico",
+        id: "sobreesfuerzo",
         label: "Peaje neurológico",
         texto:
-          "Al usar un poder que consuma fatiga, Fortaleza (dificultad 5 + nivel): fracaso, 1 nivel no letal por punto de fatiga; fracaso crítico, letal. No lo absorbe el blindaje.",
-        peajeNeurologico: { dificultadBase: 5 },
-        // Genera su propia tirada (salvación de Fortaleza tras usar el poder, como la
-        // sobrecarga), no modifica la del poder: acción nueva sin equipo.
-        motor: [accionDeEspecie("peaje_maolher")],
+          "Psiónico de nacimiento. Sobreesfuerzo con poderes de nivel 2 o más, o fatigado: Voluntad (dificultad 8 + nivel). Fracaso: 1 letal y Aturdido 1 turno; fracaso crítico: 1 grave, Aturdido 1 turno y Confusión tantos turnos como el nivel. Exhausto: fracaso, 1 grave y Aturdido; fracaso crítico, 2 graves, Aturdido y Confusión.",
+        fuentePsionica: { sobreesfuerzo: SOBREESFUERZO_MAOLHER },
+        // Genera su propia tirada (salvación de Voluntad tras usar el poder, como la
+        // sobrecarga), no modifica la del poder: acción nueva sin equipo. Además habilita la
+        // psiónica (au-04).
+        motor: [accionDeEspecie("sobreesfuerzo_psionico"), HABILITA_PSIONICA],
       },
     ],
   },
@@ -630,6 +644,14 @@ export const ESPECIES: Especie[] = [
         creacion: true,
         costes: { etiqueta: "arianyi", psionicaNivel1: 2 },
         motor: [],
+      },
+      {
+        id: "sobreesfuerzo",
+        label: "Sobreesfuerzo",
+        texto:
+          "Psiónico de nacimiento. Sobreesfuerzo con poderes de nivel 3 o más, o fatigado: Voluntad (dificultad 6 + nivel). Fracaso: 1 no letal; fracaso crítico: 1 letal y Aturdido 1 turno. Exhausto: fracaso, 1 letal y Aturdido; fracaso crítico, 1 grave.",
+        fuentePsionica: { sobreesfuerzo: SOBREESFUERZO_ARIANYI },
+        motor: [accionDeEspecie("sobreesfuerzo_psionico"), HABILITA_PSIONICA],
       },
       {
         id: "vision_uv_ir",

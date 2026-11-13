@@ -1100,7 +1100,43 @@ Tandas, en orden:
     desenfundar un arma melee sin tipo en la fuente (solo sale con Funda); Recarga Relámpago no
     alcanza a arco, ballesta ni armamento pesado; «Inyectarse» también en geles y al administrar a
     otro.
-- [ ] **T6 Psiónica y sobreesfuerzo**: ps-01…08, es-01, au-04, au-05, eq-27, td-31.
+- [ ] **T6** partida en dos (usuario, 2026-11-13), en serie (las dos tocan `usoPoder.ts`):
+  - [x] **T6a sobreesfuerzo y quién es psiónico**: es-01 (Maolher Voluntad 8 + nivel con poder nv2+ o
+    fatigado; Arianyi Voluntad 6 + nivel con nv3+ o fatigado; cada uno con su tabla; fuera el peaje
+    viejo de Fortaleza por punto de fatiga), au-05 (implante: 6 + nivel en nv1–3, 4 + nivel en nv4),
+    ps-01 (panel «Sobreesfuerzo · Voluntad, dificultad X» tras usar el poder, después de la
+    sobrecarga; al fallar la app resta el daño y pone aturdido/confuso, con registro y deshacer),
+    ps-02 (fatigado = umbral Fatigado o peor; Exhausto, resultados más duros), ps-03 (Maestría
+    Psiónica: vale la tabla más suave entre la del origen y la de la dote), ps-04 (Saber es Poder:
+    si salta solo por fatigado, la app echa la moneda antes del botón), eq-27 (Derivación Psiónica:
+    +1 a la Fortaleza de la sobrecarga, visible), au-04 (solo Arianyi, Maolher o con implante pueden
+    tener poderes; las fichas que no cumplan, «requisito no cumplido»). td-31 se cierra sin código:
+    el peaje viejo desaparece.
+    *(2026-11-13)* Motor `rules/sobreesfuerzo.ts` (datos y decisiones: `saltaSobreesfuerzo`,
+    `sobreesfuerzoDeUso`, `esMasSuave`, `libraPorMoneda`, `consecuenciaDeSobreesfuerzo`) y tablas en
+    `catalog/sobreesfuerzos.ts`. Fuente psiónica declarada en el catálogo: rasgo `fuentePsionica`
+    (Arianyi, Casa de Maolher) y `NivelImplante.fuentePsionica` (IRM 1–4, vale el del nivel más
+    alto), cada una con su sobreesfuerzo (desde qué nivel salta, hasta cuál nunca, dificultad base y
+    tabla normal/exhausto). Dotes: efecto nuevo `sobreesfuerzo` (generador, CONVERSIONES): Potencia,
+    Maestría y Gran Maestría «nunca hasta nivel N», la tabla de Maestría casilla a casilla y la
+    moneda de Saber es Poder. `FichaResuelta.sobreesfuerzo` (sustituye a `peajeNeurologico`);
+    `usarPoder` devuelve `sobreesfuerzo` (también sin fatiga numérica: `sobreesfuerzoAlUsar`);
+    `montarSobreesfuerzo`/`tirarSobreesfuerzo` (Voluntad, id `salv_sobreesfuerzo`); el fallo, por
+    `aplicarConsecuenciaPropiaAction` tipo `sobreesfuerzo` (`falloDeSobreesfuerzo` lo recalcula con la
+    ficha y el umbral de ahora, en combate el de la foto; registro y Deshacer). Panel
+    `SobreesfuerzoPanel` (fuera `PeajePanel`, `tirarPeaje`, `danioDePeaje`). eq-27: la salvación de
+    sobrecarga con id propio `salv_sobrecarga` (`montarSalvacionSobrecarga`), la Derivación 1 suma +1
+    ahí y el panel enseña el desglose. au-04: `nivelesDePsionica`/`cumpleRequisito`/
+    `setNivelDisciplina` reciben el acceso (`accesoPsionicoDeFicha`; sin él, NPC, no se mira);
+    `PsionicaResuelta.acceso`/`sinAcceso`, `poderesDeFicha` (poderes bloqueados con el motivo); el
+    requisito de dote «psiónico» = tener fuente. Sin migración (la ficha no cambia). Quedan
+    `TODO(revisar)` (S104): umbral de fatiga tras pagar, Aturdido sin duración = 1 turno, «más
+    suave» casilla a casilla y daño antes que estados, dos fuentes a la vez, Proeza prolongada sin
+    sobreesfuerzo, muerte cerebral solo avisada.
+  - [ ] **T6b poderes sueltos**: ps-05 (Auto-Proyección dobla/cuadruplica la traslación, 10 m × nivel),
+    ps-06 (Alerta pasiva, Exhausto: atenuado «Exhausto: no funciona», no se tira), ps-07 (Sondeo
+    No-Local con crítico: estado visible en la ficha con botón «Prolongar un turno» que cobra la
+    fatiga), ps-08 (Proyección: contador de kilos, +1 letal por cada 200 kg sobre 100).
 - [ ] **T7 Shock (fase 6 de aportes)**: pl-01…04, eq-28, eq-29, fa-03, di-07.
 - [ ] **T8 Recursos**: au-01, au-02, au-03, au-07, au-08, td-12, td-19.
 - [ ] **T9 Catálogo y tienda**: td-01, td-03, td-04, di-24, eq-23, eq-34, eq-36, eq-37.
@@ -2014,7 +2050,7 @@ Enganches que ya esperan:
   Soporte Vital/Anticorrosivo/Tejido Conductor — `docs/equipo-efectos-especiales.md`
   §Mejoras Estándar) — es la misma pieza de motor vista desde dos tareas distintas.
 
-### Psiónica biológica por especie ⬜ (decidido con Murillo vía el usuario, 2026-10-16)
+### Psiónica biológica por especie ✅ (decidido con Murillo vía el usuario, 2026-10-16; construido en T6a del barrido, 2026-11-13: au-04, `sistema.md` §10.7)
 Solo los **Arianyi** y la **Casa Maolher** (Manduk) son psiónicos biológicos. Hoy la app
 deja comprar psiónica a cualquiera que ponga puntos en creación, y S30 trata como psiónico
 biológico a quien tenga una disciplina mayor que 0. El cambio:

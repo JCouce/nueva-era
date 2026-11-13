@@ -75,8 +75,8 @@ function Casilla({
   );
 }
 
-// La salvación que dispara el golpe al recibirlo (Falla metabólica), con el patrón del panel del
-// peaje neurológico (PeajePanel): la tira la app; el estado lo pone el máster.
+// La salvación que dispara el golpe al recibirlo (Falla metabólica), con el patrón de los paneles
+// de sobrecarga y sobreesfuerzo: la tira la app; el estado lo pone el máster.
 function SalvacionPanel({
   salvacion,
   resultado,

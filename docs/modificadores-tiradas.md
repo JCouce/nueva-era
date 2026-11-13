@@ -671,7 +671,7 @@ mismos, con el dato en el rasgo (`catalog/especies.ts`) y resuelto una vez en la
 | `ajusteUmbrales: { salud?, fatiga? }` | 4, alcance `todas` | `FichaResuelta.ajusteUmbrales` → parámetro obligatorio de `modificadoresDeUmbrales` (sin especie, `SIN_AJUSTE_UMBRALES`) |
 | `textos: { en, texto, soloEnCritico? }[]` | `nota_fija` | `FichaResuelta.textosTirada` → `conExtrasDeFicha` los suma a `Accion.nota` (o a `efectoCritico`). Destino: una tirada fija por id o los ataques desarmados (`Accion.desarmado`) |
 | `notaFarmacos` (E5) | `nota_fija` | `FichaResuelta.notasFarmacos` → parámetro obligatorio de `accionesDeFarmacos` / `accionesDirectasDeFarmacos`, al final de la nota de cada fila (Irota) |
-| `peajeNeurologico` (E5) | ninguno: tirada propia | `FichaResuelta.peajeNeurologico` → `usarPoder` devuelve el `peaje`; la tirada es la Salvación de Fortaleza montada con `montarTirada` (`montarPeaje` / `tirarPeaje`, `usoPoder.ts`) |
+| `fuentePsionica` (T6a, sustituye a `peajeNeurologico`) | ninguno: tirada propia | `FichaResuelta.sobreesfuerzo` → `usarPoder` devuelve el `sobreesfuerzo`; la tirada es la Salvación de Voluntad con id propio `salv_sobreesfuerzo` (`montarSobreesfuerzo` / `tirarSobreesfuerzo`, `usoPoder.ts`); el fallo lo aplica el servidor (`falloDeSobreesfuerzo`). La salvación de sobrecarga tiene también id propio, `salv_sobrecarga` (`montarSalvacionSobrecarga`), al que suma la Derivación Psiónica |
 | `accionSinDado` (E5) | acción sin dado | `FichaResuelta.accionesEspecie` (`AccionDirecta`, con `costeFatiga` opcional) → fila "Usar" en Acciones |
 
 **`conExtrasDeFicha(ficha, tirada)`** (`fichaResuelta.ts`) es lo que antes era el

@@ -195,13 +195,14 @@ export const SUBSISTEMAS: Subsistema[] = [
             "retroceso o la desorientación por el uso prolongado de disciplinas psiónicas.",
         ],
         modificadores: [
-          // La prosa psiónica no tiene tirada de "retroceso" ni "desorientación"
-          // genérica: el id queda como marcador, no se aplica a nada.
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "resistir_retroceso_psionico" }, valor: 1 },
+          // eq-27 (usuario, 2026-11-13): el «retroceso por el uso prolongado» es la salvación de
+          // Fortaleza de la sobrecarga (5 + nivel): +1, como línea propia en esa tirada
+          // (montarSalvacionSobrecarga, usoPoder.ts). Desde el nivel 1, acumulado (S9).
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_sobrecarga" }, valor: 1 },
         ],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Conversión Psiónica: contador "Pagar con cargas" en el modal de todo poder (derivacionDeFicha, poderes.ts)
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "la prosa psiónica no tiene tirada de retroceso a la que sumar" }, // Estabilizador Neuronal Básico
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_sobrecarga" }, mecanismo: "siempre_activo", estado: "construido" }, // Estabilizador Neuronal Básico
         ],
       },
       {
@@ -219,7 +220,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         modificadores: [],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "eleccion_jugador", estado: "construido" }, // cambia la eficiencia (3 cargas), la acción ya se declaró en nivel 1
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "la prosa psiónica no tiene tirada de retroceso a la que sumar" }, // Estabilizador Neuronal, heredado (S9)
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_sobrecarga" }, mecanismo: "siempre_activo", estado: "construido" }, // Estabilizador Neuronal, heredado (S9)
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "suma_derivado", estado: "construido" }, // Canal de Alta Resonancia: +10 % al alcance en metros, mínimo 2 m (bonoAlcanceDeFicha, poderes.ts; pregunta 33 cerrada)
         ],
       },
@@ -232,7 +233,7 @@ export const SUBSISTEMAS: Subsistema[] = [
           "Ventaja Táctica — Blindaje Psico-Reactivo: +1 para resistir efectos de poderes de " +
             "metasensoria contra el usuario.",
         ],
-        // Solo lo NUEVO de este nivel — resistir_retroceso_psionico (nivel 1)
+        // Solo lo NUEVO de este nivel — salv_sobrecarga (nivel 1)
         // y el +10% de alcance (nivel 2, sin número) ya llegan acumulados.
         modificadores: [],
         // Resistir un poder de metasensoría es una salvación: casilla en las tres
@@ -248,7 +249,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         ],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "la prosa psiónica no tiene tirada de retroceso a la que sumar" }, // heredado de nivel 1 (S9)
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_sobrecarga" }, mecanismo: "siempre_activo", estado: "construido" }, // heredado de nivel 1 (S9)
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "suma_derivado", estado: "construido" }, // Canal de Alta Resonancia, heredado
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "Salvaciones" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Blindaje Psico-Reactivo
         ],
@@ -262,7 +263,7 @@ export const SUBSISTEMAS: Subsistema[] = [
           "Ventaja Táctica — Simbiosis Sináptica Total: reduce en 1 los penalizadores por fatiga " +
             "al hacer una tirada relacionada con el empleo de un poder psiónico.",
         ],
-        // Solo lo NUEVO de este nivel — resistir_retroceso_psionico (n1) y
+        // Solo lo NUEVO de este nivel — salv_sobrecarga (n1) y
         // resistir_metasensoria (n3) ya llegan acumulados.
         // Simbiosis Sináptica Total (S94): "reduce en 1 los penalizadores por fatiga cuando vaya a
         // realizar una tirada relacionada con el empleo de un poder psiónico" — compensación del
@@ -272,7 +273,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         reducePenalizador: { recurso: "fatiga", valor: 1, alcance: { tipo: "grupo", grupo: "Psiónica" } },
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "resistir_retroceso_psionico" }, mecanismo: "siempre_activo", estado: "bloqueado", bloqueoPor: "la prosa psiónica no tiene tirada de retroceso a la que sumar" }, // heredado de nivel 1 (S9)
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_sobrecarga" }, mecanismo: "siempre_activo", estado: "construido" }, // heredado de nivel 1 (S9)
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "suma_derivado", estado: "construido" }, // Canal de Alta Resonancia, heredado
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "Salvaciones" }, mecanismo: "eleccion_jugador", estado: "construido" }, // heredado de nivel 3 (S9)
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Psiónica" }, mecanismo: "siempre_activo", estado: "construido" }, // Simbiosis Sináptica Total: −1 al penalizador por fatiga

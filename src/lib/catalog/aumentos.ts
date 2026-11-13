@@ -73,6 +73,8 @@ import type { AccionAumentoCatalogo, DefensaIntrusion } from "../rules/aumentosA
 import type { ActivoAumento } from "../rules/aumentosActivables";
 import type { ExtremidadBionica } from "../rules/brazoBionico";
 import type { NivelModulo, Rareza } from "./equipo";
+import type { FuentePsionica } from "../rules/sobreesfuerzo";
+import { SOBREESFUERZO_IRM } from "./sobreesfuerzos";
 import { VISION_AUMENTADA } from "./mejorasArma";
 import { NO_APILA_COBERTURA, NOTA_COBERTURA } from "./cobertura";
 
@@ -152,6 +154,9 @@ export type NivelImplante = NivelModulo & {
   // A7: ids de estados del catálogo a los que es inmune desde este nivel (se acumula: el 3
   // hereda la del 2).
   inmuneA?: string[];
+  // T6a (au-04, au-05): permite tener poderes, con este sobreesfuerzo. Cada nivel que lo trae lo
+  // trae entero: vale el del nivel más alto (fuentesPsionicasDeAumentos).
+  fuentePsionica?: FuentePsionica;
 };
 
 export type Implante = {
@@ -1335,12 +1340,13 @@ function casillasCobertura(prefijo: string, valor: number, cualquiera: boolean):
   ];
 }
 
-// Sobreesfuerzo del IRM en los niveles 2-4 (triaje 2026-10-28, #10-12): cada nivel cambia
-// cuándo salta (Habilitador) y el daño por tramo, y en el 4 la dificultad 4 + nivel (Resolución)
-// de la tirada que añade el nivel 1. Todo pendiente, como esa tirada.
+// Sobreesfuerzo del IRM (T6a: au-04, au-05). El nivel 1 habilita la psiónica (Habilitador duro:
+// sin fuente psiónica, «requisito no cumplido») y añade la salvación de sobreesfuerzo tras usar
+// un poder; cada nivel cambia cuándo salta (Habilitador) y el daño por tramo, y en el 4 la
+// dificultad 4 + nivel (Resolución). Los datos, en catalog/sobreesfuerzos.ts.
 const MOTOR_SOBREESFUERZO_IRM: MotorMetadata[] = [
-  { tipo: "habilitador", afecta: { modo: "accion_existente", id: "aumentos_sobreesfuerzo_irm" }, mecanismo: "gate_instalacion", arbitraje: "pendiente", estado: "pendiente" },
-  { tipo: "resolucion", afecta: { modo: "accion_existente", id: "aumentos_sobreesfuerzo_irm" }, mecanismo: "accion_equipo", estado: "pendiente" },
+  { tipo: "habilitador", afecta: { modo: "accion_existente", id: "sobreesfuerzo_psionico" }, mecanismo: "siempre_activo", arbitraje: "duro", estado: "construido" },
+  { tipo: "resolucion", afecta: { modo: "accion_existente", id: "sobreesfuerzo_psionico" }, mecanismo: "siempre_activo", estado: "construido" },
 ];
 
 export const IMPLANTES: Implante[] = [
@@ -1366,9 +1372,10 @@ export const IMPLANTES: Implante[] = [
           "Carga Crítica: Si el personaje se encuentra en estado exhausto, la protección del implante colapsa: el daño por fallo deja de ser seguro y pasa a ser grave y en caso de fracaso crítico provoca muerte cerebral automática.",
         ],
         modificadores: [],
+        fuentePsionica: { sobreesfuerzo: SOBREESFUERZO_IRM[1] },
         motor: [
-          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "psionica" }, mecanismo: "gate_instalacion", arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "§11.3: se modela pero no se conecta (tarea psiónico biológico)" },
-          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_sobreesfuerzo_irm" }, mecanismo: "accion_equipo", estado: "pendiente" },
+          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "psionica" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "sobreesfuerzo_psionico" }, mecanismo: "accion_equipo", estado: "construido" },
           { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
         ],
       },
@@ -1384,6 +1391,7 @@ export const IMPLANTES: Implante[] = [
           "Carga Crítica: Si el personaje se encuentra en estado exhausto: el daño por fallo deja de ser seguro y pasa a ser letal y en caso de fracaso crítico provoca muerte cerebral automática.",
         ],
         modificadores: [],
+        fuentePsionica: { sobreesfuerzo: SOBREESFUERZO_IRM[2] },
         motor: [
           ...MOTOR_SOBREESFUERZO_IRM,
           { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
@@ -1402,6 +1410,7 @@ export const IMPLANTES: Implante[] = [
           "Carga Crítica: Si el personaje está exhausto, el margen de error desaparece: cualquier fallo provoca directamente daño letal, y un fracaso crítico escala a daño grave.",
         ],
         modificadores: [],
+        fuentePsionica: { sobreesfuerzo: SOBREESFUERZO_IRM[3] },
         motor: [
           ...MOTOR_SOBREESFUERZO_IRM,
           { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
@@ -1419,6 +1428,7 @@ export const IMPLANTES: Implante[] = [
           "Carga Crítica: el fallo causa daño letal y el fracaso crítico inflige daño grave además de provocar aturdimiento.",
         ],
         modificadores: [],
+        fuentePsionica: { sobreesfuerzo: SOBREESFUERZO_IRM[4] },
         motor: [
           ...MOTOR_SOBREESFUERZO_IRM,
           { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },

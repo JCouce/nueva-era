@@ -192,6 +192,12 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_brazo_bionico 2": 4,
     "aum_brazo_bionico 3": 2,
     "aum_brazo_bionico 4": 2,
+    // T6a (au-04, au-05): el 1 habilita la psiónica y añade la salvación de sobreesfuerzo; cada
+    // nivel, cuándo salta y su tabla.
+    "aum_implante_de_resonancia_metrica 1": 2,
+    "aum_implante_de_resonancia_metrica 2": 2,
+    "aum_implante_de_resonancia_metrica 3": 2,
+    "aum_implante_de_resonancia_metrica 4": 2,
   };
 
   test("A1, A2a, A2b, A3, A4a, A4b, A5a, A5b, A6a, A6b y A7: solo lo construido (o lo narrativo) está marcado como construido", () => {

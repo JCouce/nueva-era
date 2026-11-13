@@ -29,7 +29,6 @@ import {
   conExtrasDeFicha,
   conExtrasDirectaDeFicha,
   tiradaFijaVisible,
-  accionesDePsionica,
   textoNivelEnAcciones,
   etiquetaEconomia,
   textoValor,
@@ -37,7 +36,11 @@ import {
   usarPoder,
   efectosDelResultado,
   estadoParaTerminar,
-  tirarPeaje,
+  tirarSobreesfuerzo,
+  sobreesfuerzoAlUsar,
+  montarSalvacionSobrecarga,
+  libraPorMoneda,
+  poderesDeFicha,
   SELECCION_PODER_VACIA,
   ID_ACCION_REPETIDA,
   ID_ELECCION_ACTIVABLE,
@@ -47,9 +50,8 @@ import {
   type OperacionEstadoDePoder,
   type UsoLimitado,
   type Grado,
-  type PeajeDeUso,
+  type SobreesfuerzoDeUso,
   type CategoriaDanio,
-  categoriaDanioDeTexto,
   usarHabilidadAlternativa,
   elegirEspecialidad,
   etiquetaEspecialidad,
@@ -98,7 +100,7 @@ import { ReparaFabricaModal } from "./ReparaFabricaModal";
 import { ResistirDanioModal, type ResultadoRecibir } from "./ResistirDanioModal";
 import { CabeceraPoder } from "./CabeceraPoder";
 import { SobrecargaPanel } from "./SobrecargaPanel";
-import { PeajePanel } from "./PeajePanel";
+import { SobreesfuerzoPanel, type SalvacionSobreesfuerzo } from "./SobreesfuerzoPanel";
 import { UsarPoderModal } from "./UsarPoderModal";
 import { PanelFieldset } from "./personaje/PersonajeTab";
 import { BarraSalvaciones } from "./BarraSalvaciones";
@@ -749,7 +751,7 @@ export function AccionesTab({
   onAjustarFatiga?: (delta: number) => void;
   // Daño de la sobrecarga psiónica, restado de la vida de la ficha.
   onAjustarVida?: (delta: number) => void;
-  // Daño con categoría conocida (§7, pregunta 24: peaje neurológico, sobrecarga). Sin él, se
+  // Daño con categoría conocida (§7, pregunta 24: sobrecarga). Sin él, se
   // resta con onAjustarVida (y la ficha lo apunta como letal).
   onAjustarDanio?: (categoria: CategoriaDanio, delta: number) => void;
   // Usos "una vez por escena" gastados al tirar (A4a, montada.usosEscena). Ausente donde no
@@ -901,7 +903,7 @@ export function AccionesTab({
   };
 
   const niveles = ficha.psionica.paraEfectos;
-  const poderes = useMemo(() => accionesDePsionica(sheet, niveles), [sheet, niveles]);
+  const poderes = useMemo(() => poderesDeFicha(sheet, ficha.psionica), [sheet, ficha.psionica]);
   // Los que prepararPoder no resuelve no se pintan (FilaPoder devuelve null): fuera ya, para
   // que no cuenten al decidir si una sección o pestaña tiene filas.
   const poderPintable = (p: PoderDisponible): boolean =>
@@ -955,11 +957,17 @@ export function AccionesTab({
     nivel: number;
     salvacion: (Lanzamiento & { danio: number }) | null;
   } | null>(null);
-  // Peajes neurológicos (Maolher, §14.9) del último uso y de cada turno prolongado de
-  // Proeza, cada uno con su salvación. Se pintan después de la sobrecarga.
-  const [peajes, setPeajes] = useState<
-    { peaje: PeajeDeUso; salvacion: (Lanzamiento & { aviso: string | null }) | null }[]
-  >([]);
+  // Sobreesfuerzo del último uso de un poder (T6a): lo que dice el motor, la moneda de Saber es
+  // Poder (null sin ella), la salvación ya tirada, la opción elegida y el aviso del servidor.
+  const [sobreesfuerzo, setSobreesfuerzo] = useState<{
+    uso: SobreesfuerzoDeUso;
+    poderId: string;
+    elecciones: Record<string, string>;
+    libra: boolean | null;
+    salvacion: SalvacionSobreesfuerzo | null;
+    elegida: number | null;
+    mensaje: string | null;
+  } | null>(null);
 
   // Resta `n` de vida con su categoría si se sabe y hay dónde apuntarla.
   const recibirDanio = (categoria: CategoriaDanio | null, n: number) => {
@@ -968,30 +976,50 @@ export function AccionesTab({
     else onAjustarVida?.(-n);
   };
 
-  const tirarSalvacionPeaje = (i: number, id: number) => {
-    const actual = peajes[i];
-    if (!actual || actual.salvacion) return;
-    const t = tirarPeaje(ficha, actual.peaje, tirarD12());
-    recibirDanio(categoriaDanioDeTexto(t.categoria), t.danio);
-    const lanzamiento = {
-      ...t.resultado,
-      id,
-      label: "Peaje neurológico: salvación de Fortaleza",
-      aviso: t.aviso,
-      ...(t.categoria && {
-        danioResuelto: { base: t.danio, bonoExitos: 0, total: t.danio, categoria: t.categoria },
-      }),
-    };
+  // El fallo lo aplica el servidor con la ficha guardada (registro y deshacer del máster).
+  const aplicarSobreesfuerzo = (opcion: number) => {
+    const s = sobreesfuerzo;
+    const grado = s?.salvacion ? gradoDeTirada(s.salvacion) : null;
+    if (!s || !grado || !onConsecuenciaPropia) return;
+    setSobreesfuerzo({ ...s, elegida: opcion });
+    onConsecuenciaPropia({ tipo: "sobreesfuerzo", poderId: s.poderId, elecciones: s.elecciones, grado, opcion }, (m) =>
+      setSobreesfuerzo((x) => (x ? { ...x, mensaje: m } : x)),
+    );
+  };
+
+  const tirarSalvacionSobreesfuerzo = (id: number) => {
+    const s = sobreesfuerzo;
+    if (!s || s.salvacion || s.libra) return;
+    const t = tirarSobreesfuerzo(ficha, s.uso, tirarD12());
+    const lanzamiento = { ...t.resultado, id, label: "Sobreesfuerzo: salvación de Voluntad", opciones: t.opciones };
     setHistorial((h) => [lanzamiento, ...h].slice(0, 6));
-    setPeajes((ps) => ps.map((x, j) => (j === i ? { ...x, salvacion: lanzamiento } : x)));
+    setSobreesfuerzo({ ...s, salvacion: lanzamiento });
+    if (t.opciones.length === 1 && onConsecuenciaPropia) {
+      onConsecuenciaPropia({ tipo: "sobreesfuerzo", poderId: s.poderId, elecciones: s.elecciones, grado: t.grado, opcion: 0 }, (m) =>
+        setSobreesfuerzo((x) => (x ? { ...x, elegida: 0, mensaje: m } : x)),
+      );
+    }
+  };
+
+  // Un uso nuevo sustituye al sobreesfuerzo anterior. Saber es Poder echa la moneda ya.
+  const ponerSobreesfuerzo = (uso: SobreesfuerzoDeUso | null) => {
+    if (!uso || !poderAbierto || !preparado) return setSobreesfuerzo(null);
+    setSobreesfuerzo({
+      uso,
+      poderId: poderAbierto.poder.accion.id,
+      elecciones: preparado.seleccion.elecciones,
+      libra: uso.moneda ? libraPorMoneda(tirarDadoDeCaras(2)) : null,
+      salvacion: null,
+      elegida: null,
+      mensaje: null,
+    });
   };
 
   // `id` llega del click (el compilador de React no acepta Date.now() aquí).
   const tirarSalvacionSobrecarga = (id: number) => {
     if (!sobrecarga || sobrecarga.salvacion) return;
-    const salv = ACCIONES.find((a) => a.id === "salv_fortaleza")!;
     const dificultad = dificultadSobrecarga(sobrecarga.nivel);
-    const r = tirarMontada(montarTirada(ficha, salv, SIN_ELECCION), tirarD12(), dificultad);
+    const r = tirarMontada(montarSalvacionSobrecarga(ficha), tirarD12(), dificultad);
     const danio = danioSobrecarga(sobrecarga.nivel, gradoDeTirada(r)!);
     recibirDanio("letal", danio);
     const lanzamiento = {
@@ -1023,18 +1051,16 @@ export function AccionesTab({
     if (!p) return;
     if (p.tirada) abrir(p.tirada, false);
     setSobrecarga(null);
-    setPeajes([]);
+    setSobreesfuerzo(null);
     setAvisosPoder([]);
     setPoderAbierto({ poder, seleccion: p.seleccion, directo: !p.tirada, usado: null });
   };
 
   // Aplica a la ficha lo que devuelve usarPoder. Devuelve la fatiga pagada.
-  // El peaje sale también sin onPagarFatiga (NPC en la consola): no depende de la
-  // fatiga que quede, solo de lo que cuesta el uso. Un uso nuevo borra los anteriores;
-  // prolongar Proeza añade el suyo sin perder uno aún sin tirar.
+  // El sobreesfuerzo sale también sin onPagarFatiga (NPC en la consola). Prolongar Proeza no
+  // toca el que haya sin tirar.
   const aplicarUso = (e: EfectosDeUso, modo: "uso" | "prolongar"): number => {
-    const nuevo = e.peaje ? [{ peaje: e.peaje, salvacion: null }] : [];
-    setPeajes((ps) => (modo === "uso" ? nuevo : [...ps, ...nuevo]));
+    if (modo === "uso") ponerSobreesfuerzo(e.sobreesfuerzo);
     // El estado propio (Contención) también sin onPagarFatiga: el NPC de la consola lo recibe.
     if (e.estadoPropio && poderAbierto && preparado) ponerEstadosDePoder(poderAbierto.poder.accion.id, preparado.seleccion.elecciones, null);
     if (!onPagarFatiga) return e.fatiga.pagar;
@@ -1056,8 +1082,12 @@ export function AccionesTab({
   // Uso del poder (con tirada o sin ella), falle o no; "prolongar" = otro turno
   // de Proeza. Sin fatiga numérica se paga a mano: no se aplica nada.
   // `ahorro`: lo que la casilla de ahorro de la tirada (Mielinización) no gastó en sus casillas.
-  const pagarPoder = (modo: "uso" | "prolongar" = "uso", ahorro = 0): number =>
-    preparado?.coste ? aplicarUso(usarPoder(ficha, preparado, modo, ahorro), modo) : 0;
+  // El sobreesfuerzo no depende de pagar: sin fatiga numérica, también sale.
+  const pagarPoder = (modo: "uso" | "prolongar" = "uso", ahorro = 0): number => {
+    if (preparado?.coste) return aplicarUso(usarPoder(ficha, preparado, modo, ahorro), modo);
+    if (preparado && modo === "uso") ponerSobreesfuerzo(sobreesfuerzoAlUsar(ficha, preparado, 0));
+    return 0;
+  };
 
   const registroSinDado = (id: number, label: string) =>
     setHistorial((h) =>
@@ -1099,7 +1129,7 @@ export function AccionesTab({
     setModal(null);
     setPoderAbierto(null);
     setSobrecarga(null);
-    setPeajes([]);
+    setSobreesfuerzo(null);
     setAvisosPoder([]);
   };
 
@@ -1107,7 +1137,7 @@ export function AccionesTab({
   // «Terminar contención»: el estado que el poder abierto puso, si sigue puesto.
   const terminar = poderAbierto && onEstadoDePoder ? estadoParaTerminar(poderAbierto.poder.accion, ficha.estados) : null;
   const piePoder =
-    avisosPoder.length > 0 || sobrecarga || peajes.length > 0 || extraProeza > 0 || terminar ? (
+    avisosPoder.length > 0 || sobrecarga || sobreesfuerzo || extraProeza > 0 || terminar ? (
       <>
         {terminar && (
           <button
@@ -1135,19 +1165,23 @@ export function AccionesTab({
         {sobrecarga && (
           <SobrecargaPanel
             dificultad={dificultadSobrecarga(sobrecarga.nivel)}
+            lineas={montarSalvacionSobrecarga(ficha).desglose}
             salvacion={sobrecarga.salvacion}
             onTirar={tirarSalvacionSobrecarga}
           />
         )}
-        {peajes.map((x, i) => (
-          <PeajePanel
-            key={i}
-            dificultad={x.peaje.dificultad}
-            salvacion={x.salvacion}
-            restado={!!(onAjustarVida || onAjustarDanio)}
-            onTirar={(id) => tirarSalvacionPeaje(i, id)}
+        {sobreesfuerzo && (
+          <SobreesfuerzoPanel
+            uso={sobreesfuerzo.uso}
+            libra={sobreesfuerzo.libra}
+            salvacion={sobreesfuerzo.salvacion}
+            elegida={sobreesfuerzo.elegida}
+            mensaje={sobreesfuerzo.mensaje}
+            aplica={!!onConsecuenciaPropia}
+            onTirar={tirarSalvacionSobreesfuerzo}
+            onElegir={aplicarSobreesfuerzo}
           />
-        ))}
+        )}
       </>
     ) : undefined;
 

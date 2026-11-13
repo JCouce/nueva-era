@@ -53,8 +53,11 @@ const neuro4: EstadoActivo = { estadoId: "aum_neuroprotesis_4", gradoId: "activo
 const proyeccion: EstadoActivo = { estadoId: "aum_proyeccion", gradoId: "activo", rondasRestantes: null, finDeEscena: true };
 const aturdido: EstadoActivo = { estadoId: "aturdido", gradoId: "exito", rondasRestantes: 1 };
 
+// Fuente psiónica (au-04, T6a): el Implante de Resonancia Métrica 4, sin modificadores y sin
+// sobreesfuerzo mientras no esté fatigado.
+const IRM_4 = { instanciaId: "irm", catalogoId: "aum_implante_de_resonancia_metrica", nivel: 4 };
 const volador = () => {
-  let s = equipar(ficha({ psionica: { traslacion: 2 } }), { instanciaId: "a", catalogoId: "armadura_pesada" });
+  let s = equipar(ficha({ psionica: { traslacion: 2 }, equipo: [IRM_4] }), { instanciaId: "a", catalogoId: "armadura_pesada" });
   s = equipar(s, { instanciaId: "ma", catalogoId: "movilidad_aerea", nivel: 1, instaladoEnId: "a" });
   return s;
 };

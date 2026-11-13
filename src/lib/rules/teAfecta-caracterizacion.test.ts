@@ -143,8 +143,11 @@ const especie = (especieId: string, especieOpciones?: Sheet["especieOpciones"]):
   return s;
 };
 
+// Fuente psiónica (au-04, T6a): el Implante de Resonancia Métrica 4, sin modificadores y sin
+// sobreesfuerzo mientras no esté fatigado.
+const IRM_4 = { instanciaId: "irm", catalogoId: "aum_implante_de_resonancia_metrica", nivel: 4 };
 // Poderes con tirada que tocan las fijas (psiónica en la tirada, esquiva levitando).
-const psionica = (): Sheet => ({ ...base(), psionica: { resonancia: 4, induccion: 3, traslacion: 3, singularidad: 2 } });
+const psionica = (): Sheet => ({ ...base(), psionica: { resonancia: 4, induccion: 3, traslacion: 3, singularidad: 2 }, equipo: [IRM_4] });
 
 // Fármacos (y la casilla «Bajo Ultra Estimulante», que tiene cualquier ficha).
 const farmacos = (): Sheet => ({

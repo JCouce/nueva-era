@@ -128,6 +128,7 @@ import type { AccionPoder } from "../src/lib/rules/psionica";
 import { DISCIPLINAS } from "../src/lib/catalog/psionica";
 import { especialidadPorId } from "../src/lib/catalog/especialidades";
 import { erroresDeMotorMetadata, type MotorMetadata } from "../src/lib/rules/motor";
+import { TABLA_MAESTRIA_PSIONICA } from "../src/lib/catalog/sobreesfuerzos";
 
 const RAIZ = new URL("..", import.meta.url);
 const BORRADOR = new URL("docs/modelado-dotes.json", RAIZ);
@@ -266,6 +267,10 @@ const CONDICION_CRITICO_NATURAL = new Set(["critico natural"]);
 // Efectos que el borrador trae como texto y §9.3 manda modelar como efecto real
 // ("<id de dote>#<índice en el borrador>" → efecto v2, sin `borrador`).
 // Un array parte el efecto en varios (mismo `borrador`), p.ej. un texto en dos destinos.
+function tablaMaestria(umbral: "base" | "exhausto", grado: "fracaso" | "fracasoCritico") {
+  return { tipo: "sobreesfuerzo", efecto: { tipo: "tabla", umbral, grado, casilla: TABLA_MAESTRIA_PSIONICA[umbral][grado] } };
+}
+
 const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unknown>[]> = {
   // Velocista: "al correr como acción estándar o compleja" es toda tirada de Carrera (la fila
   // ya es eso), así que el éxito → crítico va sin casilla, como su fracaso → éxito (decisión
@@ -625,6 +630,18 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
       soloArmaDeFuego: true,
     },
   },
+  // T6a (ps-01, ps-03, ps-04; usuario 2026-11-13): el sobreesfuerzo psiónico (rules/sobreesfuerzo.ts).
+  // «No generan sobreesfuerzo en ningún contexto» hasta un nivel; la tabla de Maestría (una casilla
+  // por efecto del borrador; vale la más suave entre ella y la del origen); la moneda de Saber es
+  // Poder cuando salta solo por estar fatigado.
+  "dote_potencia_psionica#0": { tipo: "sobreesfuerzo", efecto: { tipo: "inmune", hastaNivel: 1 } },
+  "dote_maestria_psionica#0": { tipo: "sobreesfuerzo", efecto: { tipo: "inmune", hastaNivel: 2 } },
+  "dote_maestria_psionica#1": tablaMaestria("base", "fracaso"),
+  "dote_maestria_psionica#2": tablaMaestria("base", "fracasoCritico"),
+  "dote_maestria_psionica#3": tablaMaestria("exhausto", "fracaso"),
+  "dote_maestria_psionica#4": tablaMaestria("exhausto", "fracasoCritico"),
+  "dote_gran_maestria_psionica#0": { tipo: "sobreesfuerzo", efecto: { tipo: "inmune", hastaNivel: 3 } },
+  "dote_saber_es_poder#1": { tipo: "sobreesfuerzo", efecto: { tipo: "moneda" } },
   // Movimiento Sigiloso Constante («se mueve en sigilo sin penalizador»): desde T4 (do-01) sus
   // bonos 2/4/8 del borrador compensan entero el selector «¿Te mueves?» de Sigilo; sin conversión.
 };
@@ -948,7 +965,7 @@ const claveDeEfecto = (e: Efecto) =>
     ? e.lugar
     : e.tipo === "habilita"
       ? e.accion
-      : e.tipo === "accion" || e.tipo === "economia"
+      : e.tipo === "accion" || e.tipo === "economia" || e.tipo === "sobreesfuerzo"
         ? undefined
         : e.alcance) as string | undefined;
 
@@ -1086,6 +1103,9 @@ function tandaDelTipo(e: Efecto): TandaDote | null {
     case "economia":
       // T5c: la rebaja la aplica rules/tipoAccion.ts sobre la línea de su acción.
       return null;
+    case "sobreesfuerzo":
+      // T6a: rules/sobreesfuerzo.ts, al decidir si salta tras usar un poder y con qué tabla.
+      return null;
     case "bono":
       // Daño (Golpe Fatigante) y valor por umbral de ficha: D2d, construidos.
       return null;
@@ -1116,6 +1136,8 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
       e.tipo === "accion" ||
       // Rebaja de tipo de acción (T5c): rules/tipoAccion.ts, sin destino de tirada.
       e.tipo === "economia" ||
+      // Sobreesfuerzo (T6a): rules/sobreesfuerzo.ts, sin destino de tirada.
+      e.tipo === "sobreesfuerzo" ||
       e.tipo === "poder" ||
       // Sobre un poder (D2c-2): solo textos, a la nota/crítico de su tirada o a su ventana.
       (e.tipo === "texto" && destino?.tipo === "poder") ||
@@ -1254,6 +1276,14 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
         mecanismo: rebaja.op === "alternativa" ? "eleccion_jugador" : "nota_fija",
         ...estado,
       };
+    }
+    case "sobreesfuerzo": {
+      // Sobre la salvación de sobreesfuerzo que sale tras usar un poder: si salta (Habilitador,
+      // la app decide: duro, también la moneda) o con qué tabla (Resolución).
+      const afecta = { modo: "accion_existente" as const, id: "sobreesfuerzo_psionico" };
+      return (e.efecto as { tipo: string }).tipo === "tabla"
+        ? { tipo: "resolucion", afecta, mecanismo: "siempre_activo", ...estado }
+        : { tipo: "habilitador", afecta, mecanismo: "siempre_activo", arbitraje: "duro", ...estado };
     }
     case "habilita":
       // §9.2: sin la dote la acción "no aparece" → arbitraje duro.

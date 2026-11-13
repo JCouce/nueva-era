@@ -16,6 +16,9 @@ import { desgloseBlindaje } from "./blindaje";
 import type { EstadoActivo } from "./estados";
 import { leerEstados } from "./estadosFicha";
 
+// Con el Implante de Resonancia Métrica 4 como fuente psiónica (au-04): sin modificadores, y sin
+// sobreesfuerzo mientras no esté fatigado.
+const IRM_4 = { instanciaId: "irm", catalogoId: "aum_implante_de_resonancia_metrica", nivel: 4 };
 function ficha(patch: Partial<Sheet> = {}): Sheet {
   const d = defaultSheet();
   return {
@@ -24,6 +27,7 @@ function ficha(patch: Partial<Sheet> = {}): Sheet {
     vidaActual: 10,
     fatigaActual: 10,
     fatigaTemporal: 0,
+    equipo: [IRM_4],
     ...patch,
   };
 }
@@ -276,7 +280,7 @@ function preparar(s: Sheet, accionId: string, elecciones: Record<string, string>
   const poder = accionesDePsionica(s, niveles).find((p) => p.accion.id === accionId)!;
   return prepararPoder({ ficha: s, modificadores: [], niveles, poder, seleccion: { ...SELECCION, elecciones } })!;
 }
-const fr = (s: Sheet) => ({ ficha: s, modificadores: [], peajeNeurologico: null });
+const fr = (s: Sheet) => ({ ficha: s, modificadores: [], sobreesfuerzo: null });
 
 describe("P1: Contención pone su estado propio", () => {
   const conContencion = (nivel: number) => ficha({ psionica: { traslacion: 1, contencion: nivel } });

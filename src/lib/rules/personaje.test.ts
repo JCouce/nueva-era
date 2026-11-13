@@ -124,6 +124,7 @@ const ESPERADAS: Record<string, EtiquetaRasgo> = {
   "riux/estasis": "texto",
   "arianyi/resonancia_extra": "siempre",
   "arianyi/coste_psionico_nivel1": "creacion",
+  "arianyi/sobreesfuerzo": "accion", // como el del Maolher (T6a)
   "arianyi/vision_uv_ir": "accion", // botón «Activar visión» (es-05, T5a)
   "arianyi/empatia_biologica": "tirada",
   "arianyi/movimiento_acuatico": "siempre",
@@ -144,14 +145,14 @@ const ESPERADAS: Record<string, EtiquetaRasgo> = {
   "manduk.siervo/umbral_fatiga": "siempre",
   "manduk.siervo/frugal": "siempre",
   "manduk.ilkrem/regeneracion": "texto", // triaje 2026-10-28 (#59): texto en la ficha, bloqueado, como la regeneración del Enjambre
-  "manduk.ilkrem/falla_metabolica": "accion", // salvación tras recibir en Resistir daño (es-02, T2): acción propia sin dado, como el peaje del Maolher
+  "manduk.ilkrem/falla_metabolica": "accion", // salvación tras recibir en Resistir daño (es-02, T2): acción propia sin dado, como el sobreesfuerzo del Maolher
   "manduk.zimethroni/movimiento": "siempre",
   "manduk.zimethroni/tras_esquivar": "texto", // texto en Defensa, con el éxito (es-05)
   "manduk.zimethroni/hiperactividad": "tirada", // casilla en Resistir daño (es-03/es-04, T2) y nota en Defensa
   "manduk.irota/contra_toxinas": "tirada",
   "manduk.irota/farmacos_mitad": "texto", // E5: nota fija en las filas de fármaco (la app no mecaniza sus efectos)
   "manduk.maolher/coste_psionico": "creacion",
-  "manduk.maolher/peaje_neurologico": "accion", // acción propia con tirada de Fortaleza
+  "manduk.maolher/sobreesfuerzo": "accion", // salvación de Voluntad tras usar un poder (T6a), y fuente psiónica
   "manduk.axadren/vision_infrarroja": "texto",
   "manduk.axadren/contra_ocultos": "tirada",
   "manduk.axadren/deslumbramiento": "tirada", // opciones del «Contra…» de la Salvación de Fortaleza (es-02, T2)

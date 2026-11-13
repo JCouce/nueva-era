@@ -27,8 +27,8 @@ const eslintConfig = defineConfig([
   // disciplina (comprado/efectivo/paraEfectos, requisitos rotos) y las excepciones de
   // rareza, de ficha.psionica / ficha.excepcionesRareza. Lo que la especie pone en las
   // tiradas (§14.8): casillas y textos los añade conExtrasDeFicha; los umbrales ya
-  // vienen en ficha.modificadores. Y lo de otras áreas (§14.9): ficha.peajeNeurologico
-  // (lo lee usarPoder), ficha.notasFarmacos y ficha.accionesEspecie. Los valores de
+  // vienen en ficha.modificadores. Y lo de otras áreas (§14.9): ficha.sobreesfuerzo
+  // (lo lee usarPoder) y ficha.psionica.acceso, ficha.notasFarmacos y ficha.accionesEspecie. Los valores de
   // los requisitos de dotes (§9.1), de ficha.requisitosDotes. Lo que las dotes ponen en
   // las tiradas (§9.3, D2a): casillas y textos los añade conExtrasDeFicha; los bonos
   // fijos ya vienen en ficha.modificadores. Las acciones y los poderes de dote (D2c), de
@@ -60,6 +60,9 @@ const eslintConfig = defineConfig([
                 "togglesDeFatiga",
                 "bloqueoPorFatiga",
                 "cruzaSobrecarga",
+                "sobreesfuerzoDeUso",
+                "saltaSobreesfuerzo",
+                "esMasSuave",
                 "tiradaDePoder",
                 "enEspecialidadDePoder",
               ],
@@ -99,7 +102,10 @@ const eslintConfig = defineConfig([
                 "casillasDeEspecie",
                 "textosDeEspecie",
                 "ajusteUmbralesDeEspecie",
-                "peajeNeurologicoDeEspecie",
+                "fuentesPsionicasDeEspecie",
+                "fuentesPsionicasDeAumentos",
+                "fuentesPsionicasDeFicha",
+                "accesoPsionicoDeFicha",
                 "notasFarmacosDeEspecie",
                 "accionesSinDadoDeEspecie",
                 "modificadoresDeUmbrales",

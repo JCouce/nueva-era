@@ -7193,11 +7193,11 @@ export const DOTES: readonly DoteCatalogo[] = [
     "texto": "Los poderes de **nivel 1** no generan sobreesfuerzo en ningún contexto.",
     "efectos": [
       {
-        "tipo": "texto",
-        "lugar": "ficha",
-        "texto": "Los poderes de nivel 1 no generan sobreesfuerzo en ningún contexto.",
-        "condicion": null,
-        "porque": "sin_regla",
+        "tipo": "sobreesfuerzo",
+        "efecto": {
+          "tipo": "inmune",
+          "hastaNivel": 1
+        },
         "borrador": 0
       }
     ],
@@ -7205,11 +7205,13 @@ export const DOTES: readonly DoteCatalogo[] = [
     "candidataUX": null,
     "motor": [
       {
-        "tipo": "texto",
+        "tipo": "habilitador",
         "afecta": {
-          "modo": "ninguna"
+          "modo": "accion_existente",
+          "id": "sobreesfuerzo_psionico"
         },
-        "mecanismo": null,
+        "mecanismo": "siempre_activo",
+        "arbitraje": "duro",
         "estado": "construido"
       }
     ]
@@ -7243,43 +7245,101 @@ export const DOTES: readonly DoteCatalogo[] = [
     "texto": "Los poderes de **nivel 2 o menos** no generan sobreesfuerzo en ningún contexto. Además, cuando se realiza una tirada de salvación contra el sobreesfuerzo y se fracasa con esta dote se recibe un nivel de daño no letal, en caso de fracaso crítico el daño pasa a ser letal y el usuario queda **aturdido** un turno. Estando **exhausto** el daño por fracaso pasa a ser letal y casa *(sic)* **aturdimiento**, en caso de fracaso crítico el daño es **grave**.",
     "efectos": [
       {
-        "tipo": "texto",
-        "lugar": "ficha",
-        "texto": "Los poderes de nivel 2 o menos no generan sobreesfuerzo en ningún contexto.",
-        "condicion": null,
-        "porque": "sin_regla",
+        "tipo": "sobreesfuerzo",
+        "efecto": {
+          "tipo": "inmune",
+          "hastaNivel": 2
+        },
         "borrador": 0
       },
       {
-        "tipo": "texto",
-        "lugar": "ficha",
-        "texto": "Salvación contra el sobreesfuerzo, fracaso: recibes 1 nivel de daño no letal.",
-        "condicion": null,
-        "porque": "sin_regla",
+        "tipo": "sobreesfuerzo",
+        "efecto": {
+          "tipo": "tabla",
+          "umbral": "base",
+          "grado": "fracaso",
+          "casilla": [
+            {
+              "danio": {
+                "valor": 1,
+                "categoria": "noLetal"
+              },
+              "estados": []
+            }
+          ]
+        },
         "borrador": 1
       },
       {
-        "tipo": "texto",
-        "lugar": "ficha",
-        "texto": "Salvación contra el sobreesfuerzo, fracaso crítico: el daño es letal y quedas aturdido 1 turno.",
-        "condicion": null,
-        "porque": "sin_regla",
+        "tipo": "sobreesfuerzo",
+        "efecto": {
+          "tipo": "tabla",
+          "umbral": "base",
+          "grado": "fracasoCritico",
+          "casilla": [
+            {
+              "danio": {
+                "valor": 1,
+                "categoria": "letal"
+              },
+              "estados": [
+                {
+                  "estadoId": "aturdido",
+                  "gradoId": "fracaso",
+                  "turnos": 1
+                }
+              ]
+            }
+          ]
+        },
         "borrador": 2
       },
       {
-        "tipo": "texto",
-        "lugar": "ficha",
-        "texto": "Estando exhausto, fracaso en la salvación contra el sobreesfuerzo: el daño es letal y causa aturdimiento.",
-        "condicion": "exhausto",
-        "porque": "sin_regla",
+        "tipo": "sobreesfuerzo",
+        "efecto": {
+          "tipo": "tabla",
+          "umbral": "exhausto",
+          "grado": "fracaso",
+          "casilla": [
+            {
+              "danio": {
+                "valor": 1,
+                "categoria": "letal"
+              },
+              "estados": [
+                {
+                  "estadoId": "aturdido",
+                  "gradoId": "fracaso",
+                  "turnos": 1
+                }
+              ]
+            }
+          ]
+        },
         "borrador": 3
       },
       {
-        "tipo": "texto",
-        "lugar": "ficha",
-        "texto": "Estando exhausto, fracaso crítico en la salvación contra el sobreesfuerzo: el daño es grave.",
-        "condicion": "exhausto",
-        "porque": "sin_regla",
+        "tipo": "sobreesfuerzo",
+        "efecto": {
+          "tipo": "tabla",
+          "umbral": "exhausto",
+          "grado": "fracasoCritico",
+          "casilla": [
+            {
+              "danio": {
+                "valor": 1,
+                "categoria": "grave"
+              },
+              "estados": [
+                {
+                  "estadoId": "aturdido",
+                  "gradoId": "fracaso",
+                  "turnos": 1
+                }
+              ]
+            }
+          ]
+        },
         "borrador": 4
       }
     ],
@@ -7287,43 +7347,49 @@ export const DOTES: readonly DoteCatalogo[] = [
     "candidataUX": null,
     "motor": [
       {
-        "tipo": "texto",
+        "tipo": "habilitador",
         "afecta": {
-          "modo": "ninguna"
+          "modo": "accion_existente",
+          "id": "sobreesfuerzo_psionico"
         },
-        "mecanismo": null,
+        "mecanismo": "siempre_activo",
+        "arbitraje": "duro",
         "estado": "construido"
       },
       {
-        "tipo": "texto",
+        "tipo": "resolucion",
         "afecta": {
-          "modo": "ninguna"
+          "modo": "accion_existente",
+          "id": "sobreesfuerzo_psionico"
         },
-        "mecanismo": null,
+        "mecanismo": "siempre_activo",
         "estado": "construido"
       },
       {
-        "tipo": "texto",
+        "tipo": "resolucion",
         "afecta": {
-          "modo": "ninguna"
+          "modo": "accion_existente",
+          "id": "sobreesfuerzo_psionico"
         },
-        "mecanismo": null,
+        "mecanismo": "siempre_activo",
         "estado": "construido"
       },
       {
-        "tipo": "texto",
+        "tipo": "resolucion",
         "afecta": {
-          "modo": "ninguna"
+          "modo": "accion_existente",
+          "id": "sobreesfuerzo_psionico"
         },
-        "mecanismo": null,
+        "mecanismo": "siempre_activo",
         "estado": "construido"
       },
       {
-        "tipo": "texto",
+        "tipo": "resolucion",
         "afecta": {
-          "modo": "ninguna"
+          "modo": "accion_existente",
+          "id": "sobreesfuerzo_psionico"
         },
-        "mecanismo": null,
+        "mecanismo": "siempre_activo",
         "estado": "construido"
       }
     ]
@@ -7357,11 +7423,11 @@ export const DOTES: readonly DoteCatalogo[] = [
     "texto": "Los poderes de **nivel 3 o menos** no generan sobreesfuerzo en ningún contexto.",
     "efectos": [
       {
-        "tipo": "texto",
-        "lugar": "ficha",
-        "texto": "Los poderes de nivel 3 o menos no generan sobreesfuerzo en ningún contexto.",
-        "condicion": null,
-        "porque": "sin_regla",
+        "tipo": "sobreesfuerzo",
+        "efecto": {
+          "tipo": "inmune",
+          "hastaNivel": 3
+        },
         "borrador": 0
       }
     ],
@@ -7369,11 +7435,13 @@ export const DOTES: readonly DoteCatalogo[] = [
     "candidataUX": null,
     "motor": [
       {
-        "tipo": "texto",
+        "tipo": "habilitador",
         "afecta": {
-          "modo": "ninguna"
+          "modo": "accion_existente",
+          "id": "sobreesfuerzo_psionico"
         },
-        "mecanismo": null,
+        "mecanismo": "siempre_activo",
+        "arbitraje": "duro",
         "estado": "construido"
       }
     ]
@@ -7416,11 +7484,10 @@ export const DOTES: readonly DoteCatalogo[] = [
         "borrador": 0
       },
       {
-        "tipo": "texto",
-        "lugar": "ficha",
-        "texto": "En estado de fatiga, al emplear poderes psiónicos hay un 50 % de probabilidades de no generar sobreesfuerzo.",
-        "condicion": "fatigado",
-        "porque": "sin_regla",
+        "tipo": "sobreesfuerzo",
+        "efecto": {
+          "tipo": "moneda"
+        },
         "borrador": 1
       }
     ],
@@ -7436,11 +7503,13 @@ export const DOTES: readonly DoteCatalogo[] = [
         "estado": "construido"
       },
       {
-        "tipo": "texto",
+        "tipo": "habilitador",
         "afecta": {
-          "modo": "ninguna"
+          "modo": "accion_existente",
+          "id": "sobreesfuerzo_psionico"
         },
-        "mecanismo": null,
+        "mecanismo": "siempre_activo",
+        "arbitraje": "duro",
         "estado": "construido"
       }
     ]
@@ -8109,8 +8178,8 @@ export const DOTES: readonly DoteCatalogo[] = [
 
 // Recuento por tanda (lo escribe el generador):
 //   202 efectos (192 en el borrador)
-//   construidos: 102
-//   texto: 100
+//   construidos: 110
+//   texto: 92
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0

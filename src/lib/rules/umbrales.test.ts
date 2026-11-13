@@ -18,6 +18,9 @@ import { prepararPoder, SELECCION_PODER_VACIA } from "./usoPoder";
 // Fortaleza 2 y Voluntad 2: vida 10 y fatiga 10. Con 10 de máximo, Herido < 5,
 // Malherido < 2,5, Moribundo < 2 (S15); Fatigado < 2,5, Exhausto < 2.
 // Potencia 2 + Atletismo 2: carrera 20 m. Fuerza 2: carga 40 kg.
+// Fuente psiónica (au-04, T6a): el Implante de Resonancia Métrica 4, sin modificadores y sin
+// sobreesfuerzo mientras no esté fatigado.
+const IRM_4 = { instanciaId: "irm", catalogoId: "aum_implante_de_resonancia_metrica", nivel: 4 };
 function ficha(patch: Partial<Sheet> = {}): Sheet {
   const d = defaultSheet();
   return {
@@ -27,6 +30,7 @@ function ficha(patch: Partial<Sheet> = {}): Sheet {
     vidaActual: 10,
     fatigaActual: 10,
     fatigaTemporal: 0,
+    equipo: [IRM_4],
     ...patch,
   };
 }

@@ -16,6 +16,7 @@ import { motorMetadataSchema } from "../rules/motor";
 import { efectoArmaSchema } from "../rules/efectosArma";
 import { estadoPropioSchema } from "../rules/consecuenciasPropias";
 import { rebajaTipoAccionSchema } from "../rules/tipoAccion";
+import { efectoSobreesfuerzoDoteSchema } from "../rules/sobreesfuerzo";
 
 const ids = <T extends readonly { id: string }[]>(lista: T) =>
   lista.map((x) => x.id) as unknown as [T[number]["id"], ...T[number]["id"][]];
@@ -225,6 +226,10 @@ export const efectoDoteSchema = z.discriminatedUnion("tipo", [
   // Relámpago en la línea «Recargar» de las armas de fuego. Lo pone el generador (CONVERSIONES).
   z.strictObject({ tipo: z.literal("economia"), rebaja: rebajaTipoAccionSchema, borrador: comunes.borrador }),
   z.strictObject({ tipo: z.literal("habilita"), accion: alcance, borrador: comunes.borrador }),
+  // Lo que la dote hace con el sobreesfuerzo psiónico (T6a, rules/sobreesfuerzo.ts): nunca salta
+  // hasta un nivel (Potencia, Maestría y Gran Maestría Psiónica), una casilla de su tabla (Maestría)
+  // o la moneda de Saber es Poder. Lo pone el generador (CONVERSIONES).
+  z.strictObject({ tipo: z.literal("sobreesfuerzo"), efecto: efectoSobreesfuerzoDoteSchema, borrador: comunes.borrador }),
   // Cuenta `unidades` menos en un contador de la tirada, sin bajar de su mínimo (§9.3, UX
   // propia: Reflejos Felinos, un atacante adicional menos en la esquiva). Lo pone el
   // generador (CONVERSIONES); hoy solo el de atacantes adicionales.

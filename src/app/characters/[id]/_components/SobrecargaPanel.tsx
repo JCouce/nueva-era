@@ -1,13 +1,17 @@
 import type { Lanzamiento } from "@/components/ResultadoTirada";
+import type { LineaDesglose } from "@/lib/rules";
 
 // Bloque de sobrecarga bajo el resultado de un poder: la inconsciencia se avisa
-// (la marca el máster), la salvación la tira la app y su daño se resta solo.
+// (la marca el máster), la salvación la tira la app y su daño se resta solo. `lineas`: el
+// desglose de la salvación antes de tirar (eq-27: la línea de la Derivación Psiónica, +1).
 export function SobrecargaPanel({
   dificultad,
+  lineas,
   salvacion,
   onTirar,
 }: {
   dificultad: number;
+  lineas: LineaDesglose[];
   salvacion: (Lanzamiento & { danio: number }) | null;
   onTirar: (id: number) => void;
 }) {
@@ -18,6 +22,11 @@ export function SobrecargaPanel({
         Has cruzado el umbral de exhausto con un gasto psiónico: <strong>quedas inconsciente</strong>. Díselo al
         máster para que lo marque.
       </p>
+      {lineas.length > 0 && (
+        <p className="mt-1 font-mono text-[11px] text-muted">
+          {lineas.map((l) => `${l.etiqueta} ${l.valor >= 0 ? "+" : "−"}${Math.abs(l.valor)}`).join(" · ")}
+        </p>
+      )}
       {salvacion ? (
         <p className="mt-2 font-mono text-[11px] uppercase text-foreground">
           Fortaleza: {salvacion.total} vs {dificultad} ·{" "}

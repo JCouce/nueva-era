@@ -53,18 +53,19 @@ import {
   formulaMovimientoDeEspecie,
   multiplicadorCargaDeEspecie,
   textosDeEspecie,
-  peajeNeurologicoDeEspecie,
+  fuentesPsionicasDeFicha,
+  accesoDeFuentes,
   salvacionesDeEspecie,
   notasFarmacosDeEspecie,
   accionesSinDadoDeEspecie,
   type EspecieResuelta,
   type FalloCriticoFijo,
-  type PeajeNeurologico,
   type TextoEnTirada,
   type FormulaMovimientoResuelta,
   type MultiplicadorCarga,
 } from "./especie";
 import { bonosDeDisciplina, nivelesDePsionica, type PsionicaResuelta } from "./psionica";
+import type { SobreesfuerzoDeFicha } from "./sobreesfuerzo";
 import { modificadoresDeRequisito, valoresDeRequisito, type ValoresRequisito } from "./dotes";
 import {
   dotesActivas,
@@ -282,10 +283,11 @@ export type FichaResuelta = {
   // los aumentos permanentes (§11.3), sin equipo normal ni estados de combate. Los lee
   // la pestaña Dotes y faltasDeDotes.
   requisitosDotes: ValoresRequisito;
-  // Otras áreas (§14.9, E5), derivadas: también al NPC. El peaje al pagar fatiga por un
-  // poder (lo lee usarPoder; null sin el rasgo), las notas fijas de las filas de
-  // fármaco y las acciones sin dado del rasgo (activar la visión).
-  peajeNeurologico: PeajeNeurologico | null;
+  // Otras áreas (§14.9, E5), derivadas: también al NPC. El sobreesfuerzo al usar un poder (T6a:
+  // las fuentes psiónicas de especie e implante con lo que retocan las dotes; lo lee usarPoder;
+  // null sin fuente psiónica), las notas fijas de las filas de fármaco y las acciones sin dado
+  // del rasgo (activar la visión).
+  sobreesfuerzo: SobreesfuerzoDeFicha | null;
   notasFarmacos: string[];
   accionesEspecie: AccionDirecta[];
 };
@@ -398,7 +400,11 @@ export function resolverFicha(
   const velocidad = (m: number) => velocidadConUmbrales(m, porUmbral);
   const mov = movimiento(sheet, modificadores, formulaMovimiento.formula);
   const vue = vuelo(sheet);
-  const psionica = nivelesDePsionica(sheet, bonosDeDisciplina(modificadores));
+  // au-04: sin fuente psiónica, la psiónica comprada queda «requisito no cumplido». El NPC del
+  // máster (libre) no lo mira.
+  const fuentesPsionicas = fuentesPsionicasDeFicha(sheet, especie);
+  const acceso = libre ? undefined : accesoDeFuentes(fuentesPsionicas);
+  const psionica = nivelesDePsionica(sheet, bonosDeDisciplina(modificadores), acceso);
   const lev = levitacion(psionica.paraEfectos);
   const carga = cargaMaxima(sheet, modificadores, multiplicadorCarga.valor);
   const ajusteCoste = libre ? AJUSTE_NEUTRO : ajustesDeCoste(especie);
@@ -474,7 +480,7 @@ export function resolverFicha(
     excepcionesRareza: libre ? [] : excepcionesRareza(especie),
     psionica,
     requisitosDotes,
-    peajeNeurologico: peajeNeurologicoDeEspecie(especie),
+    sobreesfuerzo: fuentesPsionicas.length > 0 ? { fuentes: fuentesPsionicas, dotes: dotes.sobreesfuerzo } : null,
     notasFarmacos: notasFarmacosDeEspecie(especie),
     accionesEspecie: accionesSinDadoDeEspecie(especie),
   };

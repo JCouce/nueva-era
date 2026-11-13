@@ -14,8 +14,8 @@ const niv = (s: Sheet) => nivelesDePsionica(s, SIN_BONOS_DISCIPLINA).paraEfectos
 
 const ficha = (cambios: Partial<Sheet>): Sheet => ({ ...defaultSheet(), fatigaActual: 8, fatigaTemporal: 0, ...cambios });
 const SINGULARIDAD_2 = { traslacion: 2, singularidad: 2 };
-// Sin especie: sin peaje neurológico.
-const fr = (f: Sheet, modificadores: ModificadorConFuente[] = []) => ({ ficha: f, modificadores, peajeNeurologico: null });
+// Sin fuente psiónica en la ficha resuelta a mano: sin sobreesfuerzo.
+const fr = (f: Sheet, modificadores: ModificadorConFuente[] = []) => ({ ficha: f, modificadores, sobreesfuerzo: null });
 const sel = (s: Partial<SeleccionPoder> = {}): SeleccionPoder => ({ elecciones: {}, casillas: [], puntosCargas: 0, ...s });
 
 function preparar(
@@ -83,7 +83,7 @@ describe("usarPoder", () => {
   test("uso normal: paga la fatiga y reinicia la sobrecarga pendiente", () => {
     const f = ficha({ psionica: SINGULARIDAD_2 });
     const e = usarPoder(fr(f), preparar(f, "psi_singularidad_impulso"));
-    assert.deepEqual(e, { fatiga: { pagar: 2, temporal: false }, cargas: null, vida: 0, sobrecarga: { tipo: "reiniciar" }, peaje: null, avisos: [] });
+    assert.deepEqual(e, { fatiga: { pagar: 2, temporal: false }, cargas: null, vida: 0, sobrecarga: { tipo: "reiniciar" }, sobreesfuerzo: null, avisos: [] });
   });
 
   // eq-22: con el estado Supresores (fallo crítico) puesto, en vez de la casilla de antes.

@@ -32,6 +32,7 @@ import type {
   Nota,
   NivelesPsionica,
   Opcion,
+  PsionicaResuelta,
   Valor,
 } from "./psionica";
 
@@ -747,6 +748,14 @@ function etiquetaVentaja(d: Disciplina, v: Disciplina["ventajas"][number]): stri
 
 // Lo que la psiónica de la ficha añade a una tirada fija (Buscar / percibir con
 // Resonancia 4: ventaja y la casilla de +2): `Disciplina.ventajas` y
+// Los poderes que pinta Acciones (FichaResuelta.psionica): sin fuente psiónica (au-04), los que
+// tendría, bloqueados con el motivo y sin efectos, como con un requisito roto.
+export function poderesDeFicha(sheet: Sheet, psionica: Pick<PsionicaResuelta, "paraEfectos" | "sinAcceso">): PoderDisponible[] {
+  const sin = psionica.sinAcceso;
+  if (!sin) return accionesDePsionica(sheet, psionica.paraEfectos);
+  return accionesDePsionica(sheet, sin.niveles).map((p) => ({ ...p, bloqueo: sin.motivo }));
+}
+
 // `bonosEnOtrasTiradas` cuyo alcance es el id o el grupo de la tirada.
 // El ítem es la disciplina (fase 2): lo que da es por su nivel, no por un poder concreto.
 const origenDeDisciplina = (d: Disciplina): OrigenAporte => ({ tipo: "poder", id: d.id, label: d.label });

@@ -3,6 +3,7 @@ import {
   DISCIPLINA_MAX,
   costeSiguienteNivel,
   cumpleRequisito,
+  MOTIVO_SIN_ACCESO_PSIONICO,
   disciplinaPorId,
   presupuestoPsionica,
   puntosPsionicaDisponibles,
@@ -27,7 +28,7 @@ const RAMAS = [
 // NPC) no hay pool ni XP: 0-6 en las dos direcciones, requisitos incluidos.
 // Los poderes se usan desde Acciones; aquí solo se compra. El stepper va sobre lo
 // comprado; el nivel efectivo (con la Resonancia +1 de especie) y los requisitos
-// rotos salen de ficha.psionica.
+// rotos (también sin fuente psiónica, au-04) salen de ficha.psionica.
 export function PsionicaTab({
   ficha,
   aprobada = false,
@@ -44,6 +45,8 @@ export function PsionicaTab({
   const sheet = ficha.ficha;
   const letra = sheet.prioridades.psionica;
   const disponible = libre ? Infinity : aprobada ? xp : puntosPsionicaDisponibles(sheet, ficha.ajusteCoste);
+  // au-04: sin fuente psiónica no se compra nada (null: NPC, sin mirar).
+  const sinFuente = ficha.psionica.acceso?.fuentes.length === 0;
 
   return (
     <div className="flex flex-col gap-2">
@@ -62,6 +65,10 @@ export function PsionicaTab({
         </p>
       )}
 
+      {sinFuente && (
+        <p className="font-mono text-[11px] leading-relaxed text-danger">{MOTIVO_SIN_ACCESO_PSIONICO} para tener poderes.</p>
+      )}
+
       {RAMAS.map((rama) => (
         <section key={rama.id} className="flex flex-col gap-2">
           <h2 className="mt-2 border-b border-border pb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted">
@@ -76,7 +83,7 @@ export function PsionicaTab({
               value,
               ficha.ajusteCoste,
             );
-            const requisitoOk = cumpleRequisito(sheet, d.id, bonos);
+            const requisitoOk = cumpleRequisito(sheet, d.id, bonos, ficha.psionica.acceso ?? undefined);
             const requisitoRoto = ficha.psionica.requisitosRotos.includes(d.id);
             const suelo = sueloPorRequisitos(sheet, d.id, bonos);
             const req = d.requisito;
@@ -92,11 +99,17 @@ export function PsionicaTab({
                         nivel {textoNivelDisciplina(nivel, ficha.modificadores, d.id)}
                       </span>
                     )}
-                    {req && (
-                      <span className={`mt-1 block font-mono text-[10px] uppercase ${requisitoOk ? "text-muted" : "text-danger"}`}>
-                        {requisitoRoto ? "requisito no cumplido: " : "requiere "}
-                        {disciplinaPorId(req.disciplina).label} {req.nivel}
+                    {sinFuente && requisitoRoto ? (
+                      <span className="mt-1 block font-mono text-[10px] uppercase text-danger">
+                        requisito no cumplido: {MOTIVO_SIN_ACCESO_PSIONICO}
                       </span>
+                    ) : (
+                      req && (
+                        <span className={`mt-1 block font-mono text-[10px] uppercase ${requisitoOk ? "text-muted" : "text-danger"}`}>
+                          {requisitoRoto ? "requisito no cumplido: " : "requiere "}
+                          {disciplinaPorId(req.disciplina).label} {req.nivel}
+                        </span>
+                      )
                     )}
                     {pista && !libre && value < DISCIPLINA_MAX && (
                       <span className="mt-1 block font-mono text-[10px] uppercase text-info">
