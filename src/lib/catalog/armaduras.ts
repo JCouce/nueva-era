@@ -345,7 +345,7 @@ export const ARMADURAS: Armadura[] = [
     label: "Armadura Intermedia Avanzada",
     resumen: "La versión prototipo de la armadura intermedia: mismo perfil, mejor en todo.",
     descripcion: DESCRIPCION_AVANZADA,
-    blindaje: 6,
+    blindaje: 7,
     bonifMaxAgilidad: 3,
     ranurasSubsistema: 2,
     topeExoesqueleto: 4,
