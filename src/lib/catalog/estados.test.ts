@@ -5,9 +5,27 @@ import { ESTADOS, estadoPorId } from "./estados";
 // Mismo motivo que equipo.test.ts: con 20 estados y hasta 4 grados cada uno,
 // un id duplicado o un grado sin modificadores por descuido se cuela fácil.
 describe("integridad del catálogo de estados", () => {
-  // 20 del documento + Supresores y Dosis acumulada, de la munición especial (cuestionario eq-22).
-  test("son los 20 que cita docs/sistema.md §7 (Fatiga/Heridas/Muerte no cuentan aparte) más los 2 de munición", () => {
-    assert.equal(ESTADOS.length, 22);
+  // 20 del documento + Supresores y Dosis acumulada, de la munición especial (cuestionario eq-22),
+  // + Shock en el equipo (S73: el Shock del documento se parte en cuerpo y equipo, pl-01).
+  test("son los 20 que cita docs/sistema.md §7 (Fatiga/Heridas/Muerte no cuentan aparte) más los 2 de munición y el Shock en el equipo", () => {
+    assert.equal(ESTADOS.length, 23);
+  });
+
+  test("lo que degrada, lo que arrastra y lo que toca a las piezas apunta a algo que existe", () => {
+    for (const e of ESTADOS) {
+      for (const g of e.grados) {
+        if (g.degrada) assert.ok(e.grados.some((x) => x.id === g.degrada!.gradoId), `${e.label} / ${g.label} degrada a un grado que no existe`);
+        if (g.piezas) assert.ok(e.afectaPiezas, `${e.label} / ${g.label} toca piezas sin decir cuáles`);
+      }
+      if (e.arrastra) {
+        const otro = estadoPorId(e.arrastra.estadoId);
+        assert.ok(otro, `${e.label} arrastra un estado que no existe`);
+        for (const [de, a] of Object.entries(e.arrastra.grados)) {
+          assert.ok(e.grados.some((g) => g.id === de), `${e.label} arrastra desde un grado suyo que no existe`);
+          assert.ok(otro.grados.some((g) => g.id === a), `${e.label} arrastra a un grado de ${otro.label} que no existe`);
+        }
+      }
+    }
   });
 
   test("no hay ids de estado repetidos", () => {

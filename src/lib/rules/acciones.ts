@@ -185,8 +185,12 @@ export type Accion = {
   poder?: DetallePoder;
   // Cuando una tirada depende de algo que el sistema aún no define, se declara
   // en vez de inventársela: la UI la muestra apagada con el motivo. También una acción de
-  // aumento con fatiga fija que no llega (A4b), o una de dote con su límite agotado.
+  // aumento con fatiga fija que no llega (A4b), o una de dote con su límite agotado. O la fila de
+  // una pieza apagada por el Shock (conPiezasAfectadas, fichaResuelta.ts): «Apagada por Shock.».
   bloqueada?: string;
+  // Piezas apagadas (FichaResuelta.piezasInutilizadas) cuyos aportes llegaban a esta tirada y ya
+  // no llegan: una línea a 0 en el desglose cada una (montarTirada). Lo pone conPiezasAfectadas.
+  piezasApagadas?: { origen: OrigenAporte; motivo: string }[];
   // Límite de usos de una acción de dote (Humor de afrontamiento: 1 por escena; Apoyo: 1 por
   // aliado; Mirada desafiante: 1 por turno), que se gasta al tirar (dotesAcciones.ts). Solo en
   // la ficha de un jugador (con mesa); el NPC sigue con el límite como texto.

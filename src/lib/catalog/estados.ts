@@ -11,7 +11,7 @@
 //   (bloque 1: derrotado/fuera de combate), no en este catálogo.
 // Con esas tres fuera, quedan **20**, el número que ya cita docs/sistema.md §7. A esos se
 // suman dos de la munición especial (cuestionario eq-22, usuario 2026-11-13): Supresores y
-// Dosis acumulada.
+// Dosis acumulada, y el Shock en el equipo (S73, usuario 2026-11-14).
 //
 // **Metodología de transcripción (S16, docs/sistema.md):** cada grado
 // (Fracaso crítico/Fracaso/Éxito/Éxito crítico, o nivel acumulado) se trata
@@ -51,6 +51,14 @@ export type GradoEstado = {
   detalle: string[];
   // null cuando el documento no da una duración por defecto para este grado.
   duracionTurnos: number | null;
+  // Al acabársele las rondas, en vez de caerse pasa a este grado con estas rondas (mecanismo
+  // general, descontarDuracion en rules/estados.ts): el fracaso crítico del Shock, que al turno
+  // siguiente da los efectos del fracaso y luego se acaba (pl-01, usuario 2026-11-14).
+  degrada?: { gradoId: string; rondas: number };
+  // Lo que este grado le hace a las piezas que el estado afecta (Estado.afectaPiezas):
+  // `apagadas`, no funcionan (FichaResuelta.piezasInutilizadas); `penaliza`, −N a su bono y a
+  // usarlas, que se aplica a mano con un aviso en sus tiradas (pl-02, rules/shock.ts).
+  piezas?: { apagadas: true } | { penaliza: number };
 };
 
 // Con qué se salva el estado cuando un efecto lo provoca (cuestionario eq-07, usuario
@@ -80,6 +88,13 @@ export type Estado = {
   // Casillas que salen ya marcadas en las tiradas mientras dure (el camuflaje activo y la
   // cobertura de la esquiva, eq-26). Id de la CondicionTirada.
   marcaCasillas?: string[];
+  // Qué piezas toca (rules/shock.ts): las que declaran ese tipo de afectación (`shock` del
+  // catálogo de equipo). Lo que les hace, el `piezas` de cada grado.
+  afectaPiezas?: "cuerpo" | "equipo";
+  // Ponerlo pone también este otro estado, con el grado que diga `grados` (por el id del grado
+  // puesto; sin entrada, nada) y estas rondas, en la misma acción del registro
+  // (operacionesDe, rules/estadosFicha.ts): el Shock del cuerpo pone la Parálisis (pl-01).
+  arrastra?: { estadoId: string; grados: Partial<Record<string, string>>; rondas: number };
 };
 
 export const ESTADOS: Estado[] = [
@@ -702,41 +717,102 @@ export const ESTADOS: Estado[] = [
     label: "Shock",
     salvacion: { etiqueta: "Fortaleza", tiradaId: "salv_fortaleza" },
     resumen:
-      "Resistencia: Fortaleza en orgánicos, Resiliencia en sintéticos, Estructura en equipamiento " +
-      "o armadura tecnológica. Duración habitual 1 turno. Los grados de abajo son la tabla de " +
-      "orgánicos e implantes — sintéticos y armadura tienen su propia tabla en " +
-      "docs/sistema-y-combate.md, sin mecanizar aquí (hoy sin sintéticos ni aumentos en la ficha, " +
-      "no hay nada que un modificador pudiera tocar todavía).",
+      "El cuerpo y los implantes (Fortaleza; Resiliencia en sintéticos, solo NPC). Duración " +
+      "habitual 1 turno. Pone también Parálisis del mismo grado 1 turno. El equipo tecnológico " +
+      "se salva aparte: «Shock en el equipo».",
+    afectaPiezas: "cuerpo",
+    arrastra: {
+      estadoId: "paralisis",
+      grados: { fracaso_critico: "fracaso_critico", fracaso: "fracaso", exito: "exito" },
+      rondas: 1,
+    },
     grados: [
       {
         id: "fracaso_critico",
         label: "Fracaso crítico",
         modificadores: [],
         detalle: [
-          "Los implantes quedan totalmente inutilizados mientras dure el estado (salvo " +
-            "excepciones) y sufre parálisis con parámetros de fracaso crítico durante 1 turno.",
+          "Los implantes quedan apagados mientras dure (salvo excepciones) y Parálisis con " +
+            "parámetros de fracaso crítico durante 1 turno.",
+          "Al turno siguiente pasa a los efectos del fracaso; después se acaba.",
         ],
         duracionTurnos: 1,
+        degrada: { gradoId: "fracaso", rondas: 1 },
+        piezas: { apagadas: true },
       },
       {
         id: "fracaso",
         label: "Fracaso",
         modificadores: [],
         detalle: [
-          "Los bonificadores de los implantes se reducen en 2 y -2 en tiradas destinadas a su uso.",
-          "Además, parálisis con parámetros de fracaso durante 1 turno.",
+          "Los bonos de los implantes −2 y −2 en las tiradas para usarlos (a mano: la tirada lo " +
+            "avisa).",
+          "Parálisis con parámetros de fracaso durante 1 turno.",
         ],
         duracionTurnos: 1,
+        piezas: { penaliza: 2 },
       },
       {
         id: "exito",
         label: "Éxito",
         modificadores: [],
         detalle: [
-          "Igual que el fracaso, pero el beneficio del implante se reduce en 1 y el penalizador " +
-            "es de -1.",
+          "Los bonos de los implantes −1 y −1 en las tiradas para usarlos (a mano: la tirada lo " +
+            "avisa).",
+          "Parálisis con parámetros de éxito durante 1 turno.",
         ],
         duracionTurnos: 1,
+        piezas: { penaliza: 1 },
+      },
+      {
+        id: "exito_critico",
+        label: "Éxito crítico",
+        modificadores: [],
+        detalle: ["Ningún efecto."],
+        duracionTurnos: 0,
+      },
+    ],
+  },
+  // S73 (pl-01, usuario 2026-11-14): el equipo tecnológico salva aparte, con Estructura (o el
+  // blindaje), y el grado vale para todo lo que lleva a la vez, no pieza a pieza. Sin parálisis.
+  {
+    id: "shock_equipo",
+    label: "Shock en el equipo",
+    salvacion: { etiqueta: "Estructura (o blindaje) del equipo" },
+    resumen:
+      "Todo el equipo tecnológico que lleva a la vez (armadura tecnológica, mejoras y subsistemas " +
+      "electrónicos, armas de energía), con un solo grado. Se salva con Estructura o el " +
+      "blindaje. Duración habitual 1 turno.",
+    afectaPiezas: "equipo",
+    grados: [
+      {
+        id: "fracaso_critico",
+        label: "Fracaso crítico",
+        modificadores: [],
+        detalle: [
+          "Los sistemas electrónicos y dispositivos quedan apagados mientras dure (salvo " +
+            "excepciones).",
+          "Al turno siguiente pasa a los efectos del fracaso; después se acaba.",
+        ],
+        duracionTurnos: 1,
+        degrada: { gradoId: "fracaso", rondas: 1 },
+        piezas: { apagadas: true },
+      },
+      {
+        id: "fracaso",
+        label: "Fracaso",
+        modificadores: [],
+        detalle: ["Sus bonos −2 y −2 en las tiradas para usarlos (a mano: la tirada lo avisa)."],
+        duracionTurnos: 1,
+        piezas: { penaliza: 2 },
+      },
+      {
+        id: "exito",
+        label: "Éxito",
+        modificadores: [],
+        detalle: ["Sus bonos −1 y −1 en las tiradas para usarlos (a mano: la tirada lo avisa)."],
+        duracionTurnos: 1,
+        piezas: { penaliza: 1 },
       },
       {
         id: "exito_critico",

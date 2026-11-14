@@ -68,6 +68,7 @@ import type { HabilidadId } from "../rules/habilidades";
 import type { CondicionTirada } from "../rules/condiciones";
 import type { Modificador } from "../rules/modificadores";
 import type { MotorMetadata } from "../rules/motor";
+import type { AfectaShock } from "../rules/shock";
 import type { BlindajeReactivo, EfectoSalvacion, EfectosTiradaAumento, TextoDeNivel } from "../rules/aumentosTiradas";
 import type { AccionAumentoCatalogo, DefensaIntrusion } from "../rules/aumentosAcciones";
 import type { ActivoAumento } from "../rules/aumentosActivables";
@@ -167,8 +168,9 @@ export type Implante = {
   descripcion: string;
   // Reglas generales de los implantes (docs/aumentos.md): marcas para la ficha.
   sabotaje: boolean;
-  // Lo afecta el Shock (§11.3, tercera ronda): todos los implantes hoy.
-  electronico: boolean;
+  // Cómo le afecta el Shock (rules/shock.ts): todos los implantes son del cuerpo (§11.3, tercera
+  // ronda), salvo el material de refuerzo, que aún no existe. Antes `electronico: true`.
+  shock: AfectaShock;
   // null: el documento no dice si se puede extraer (pregunta 20).
   extraible: boolean | null;
   niveles: NivelImplante[];
@@ -1357,7 +1359,7 @@ export const IMPLANTES: Implante[] = [
     resumen: "Permite a una especie no psiónica entrenar la psiónica, con riesgo de sobreesfuerzo al usarla.",
     descripcion: "Las especies no psiónicas carecen de las vías neurosinápticas orgánicas necesarias para modular la dinámica métrica. El IRM lo resuelve con un nodo central biocompatible anclado a la región parietal-temporal y una red de microfilamentos superconductores por la médula espinal y el sistema nervioso central. Ante una orden de pensamiento enfocado intercepta el impulso, lo traduce con un coprocesador cuántico subdérmico y genera un campo de resonancia artificial; actúa como amplificador y disipador de calor sináptico. El usuario no adquiere de forma inmediata capacidad para la psiónica: debe entrenarla como un psiónico orgánico.",
     sabotaje: true,
-    electronico: true,
+    shock: "cuerpo",
     extraible: null,
     niveles: [
       {
@@ -1443,7 +1445,7 @@ export const IMPLANTES: Implante[] = [
     resumen: "Comunicación subvocal cifrada; castiga al psiónico que intente infiltrarse.",
     descripcion: "Implante de perfil bajo, integrado de forma discreta en el tejido subdérmico o maxilar: un chip de comunicaciones cuánticas miniaturizado para el intercambio táctico de datos y voz a corta distancia. Usa una matriz de qubits de baja potencia y protocolos de Distribución de Claves Cuánticas (QKD): si alguien intercepta la transmisión, la perturbación se detecta al instante y la clave se anula. Cualquier psiónico que quiera forzar los cúbits en tránsito asume un riesgo letal. Diseñado exclusivamente para comunicaciones y transferencia cifrada, no para intrusión ni craqueo.",
     sabotaje: true,
-    electronico: true,
+    shock: "cuerpo",
     extraible: null,
     niveles: [
       {
@@ -1569,7 +1571,7 @@ export const IMPLANTES: Implante[] = [
     resumen: "Un brazo con su propia Fuerza y Agilidad, blindaje y arma incorporada. En los niveles 3 y 4 se elige modelo.",
     descripcion: "El brazo biónico sustituye la extremidad orgánica por una estructura de aleación de alta resistencia conectada directamente al sistema nervioso periférico y a los impulsos de la médula espinal. Utiliza un sistema de tendones de nanotubos de carbono y servomotores de respuesta ultrarrápida que traducen las órdenes motoras del usuario en una fuerza bruta o una agilidad sobresaliente, integrando además un chasis blindado y anclajes internos para alojar armamento táctico o herramientas de precisión.",
     sabotaje: true,
-    electronico: true,
+    shock: "cuerpo",
     extraible: null,
     niveles: [
       {
@@ -1697,7 +1699,7 @@ export const IMPLANTES: Implante[] = [
     resumen: "Bonos a percepción visual y a distancia, visión nocturna y térmica, rayos X y, en niveles altos, inmunidad a la ceguera.",
     descripcion: "El Ojo Biónico reemplaza el globo ocular orgánico por un complejo ensamblaje optoelectrónico integrado directamente en el nervio óptico y el córtex visual. Utiliza microcristales de enfoque activo, sensores de espectro variable y un coprocesador gráfico dedicado que procesa la información en tiempo real, eliminando el temblor natural de la pupila biológica, filtrando destellos cegadores y superponiendo una interfaz de datos táctica directamente sobre el campo de visión del usuario.",
     sabotaje: true,
-    electronico: true,
+    shock: "cuerpo",
     extraible: null,
     niveles: [
       {
@@ -1809,7 +1811,7 @@ export const IMPLANTES: Implante[] = [
     resumen: "Se activa pagando fatiga: más Fuerza, Agilidad y Percepción durante unos turnos, y reacciones y acciones extra.",
     descripcion: "Implante biotecnológico acoplado al sistema nervioso autónomo y a las glándulas suprarrenales que fuerza una respuesta de \"lucha o huida\" bajo demanda: microestimuladores sinápticos y microbombas de neuromoduladores aceleran reflejos, contracción muscular y agudeza sensorial a cambio de exprimir la resistencia biológica del usuario.",
     sabotaje: true,
-    electronico: true,
+    shock: "cuerpo",
     extraible: null,
     niveles: [
       {
@@ -1893,7 +1895,7 @@ export const IMPLANTES: Implante[] = [
     resumen: "Nanobots: +3 con fármacos, regeneración, blindaje reactivo y, en nivel 4, Tempestad Nanobótica.",
     descripcion: "Colonia masiva de micro-máquinas programables integrada en el torrente sanguíneo, el tejido linfático y las capas subdérmicas. Concebido como quirófano móvil de emergencia, reestructura tejidos, purga toxinas, blinda el organismo y puede proyectarse de forma ofensiva o táctica.",
     sabotaje: true,
-    electronico: true,
+    shock: "cuerpo",
     extraible: null,
     niveles: [
       {

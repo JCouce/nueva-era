@@ -1153,7 +1153,42 @@ Tandas, en orden:
     y la línea «N kg → +X al daño». `prolongarEstado` y `noFuncionaPorFatiga` vetadas en la UI (ESLint).
     Sin migración. Quedan `TODO(revisar)` (S105): «la misma fatiga» sin las casillas del uso ni las
     cargas, prolongar no tira sobrecarga ni sobreesfuerzo, los 200 kg por tramos completos.
-- [ ] **T7 Shock (fase 6 de aportes)**: pl-01…04, eq-28, eq-29, fa-03, di-07.
+- [ ] **T7 Shock** partida (usuario, 2026-11-14):
+  - [x] **T7a modelo del Shock** (pl-01, pl-02, pl-03, eq-28, di-07): dos estados, «Shock» (cuerpo:
+    Fortaleza, parálisis e implantes) y «Shock en el equipo» (Estructura: todo el equipo tecnológico a
+    la vez), cada uno con su grado, puestos por el máster (la app no tira). Fracaso crítico degrada a
+    fracaso al turno siguiente y luego se acaba (mecanismo general de «degrada a otro grado»). El
+    Shock del cuerpo pone también Parálisis con el grado equivalente 1 turno, en la misma entrada del
+    registro. Cada pieza declara cómo le afecta: cuerpo (implantes salvo material de refuerzo),
+    equipo (armadura tecnológica, mejoras y subsistemas electrónicos, **armas de energía**), o inmune
+    (escrito en la pieza; operaciones genéticas nunca). Crítico: la pieza se apaga entera
+    (`FichaResuelta.piezasInutilizadas`: sus aportes no llegan a ninguna tirada y el desglose lo
+    explica; sus acciones propias, con el `bloqueada` de siempre y motivo «Shock»). Fracaso/éxito:
+    −2/−1 a mano, con aviso en las tiradas de esas piezas. «Apagón» = afectado por Shock. Resiliencia
+    y Estructura solo NPC y equipo. Después, auditoría a contraprueba de la clasificación.
+    *(2026-11-14)* Estados `shock` (ajustado) y `shock_equipo` con `afectaPiezas` y, por grado,
+    `piezas` (apagadas / penaliza N) y `degrada` (general: al acabar sus rondas pasa a otro grado,
+    `descontarDuracion`). `Estado.arrastra` + `operacionesDe`: el Shock pone la Parálisis del mismo
+    grado 1 ronda en la misma entrada del registro (jugadores y NPC; Deshacer quita las dos).
+    Catálogo: `shock` en `NivelModulo` e `Implante` (sustituye a `electronico`), por defecto de
+    familia en `shockDePieza` (`rules/shock.ts`; criterio y dudosos en `sistema.md` §7.1).
+    `afectacionDePiezas` rellena `FichaResuelta.piezasInutilizadas` y `piezasPenalizadas`;
+    `resolverFicha` resuelve los aportes con `fichaSinApagadas` (también Resistir daño);
+    `conPiezasAfectadas` (dentro de `conExtrasDeFicha`) quita lo de la fila que viene de una pieza
+    apagada, bloquea su fila («Apagada por Shock.»), deja `Accion.piezasApagadas` (línea a 0 en el
+    desglose) y el aviso «−2 al bono de X y a usarla, a mano» de las penalizadas;
+    `conExtrasDirectaDeFicha` y `accionesDeAumentos` bloquean las sin dado. La casilla de búsqueda de
+    la Mira ya lleva `instanciaId`. pl-01…03, eq-28, di-07 a FIRME (S73, C5, preguntas 25 y 32).
+    Sin migración. Quedan `TODO(revisar)`: clasificación de Compartimento Oculto, Ignífuga,
+    Refuerzo, Funda, Linterna, armas mecánicas, Lanzamisiles AT, Electrificante/Térmica y Ropa
+    Inteligente; la fuente psiónica del IRM apagado y la Derivación apagada en los poderes; el
+    aviso de los efectos de arma no nombra el Shock en el equipo.
+  - [ ] **Unificación de la habilitación** (paso 1 de la fase 6 de `docs/aportes/plan.md`), en su
+    worktree aparte, en paralelo: `Accion.bloqueada`, `PoderDisponible.bloqueo`,
+    `soloConEspecialidad`/`tiradaFijaVisible` y los permisos de dote → un solo `habilitacion` que da
+    el motor; sin cambio visible para el jugador. Se pone encima de T7a cuando T7a tenga commit.
+  - [ ] **T7b excepciones** (eq-29, Soporte Vital): después.
+  - [ ] **T7c bajón de fármacos** (fa-03): después. pl-04 (avería pieza a pieza), más adelante.
 - [ ] **T8 Recursos**: au-01, au-02, au-03, au-07, au-08, td-12, td-19.
 - [ ] **T9 Catálogo y tienda**: td-01, td-03, td-04, di-24, eq-23, eq-34, eq-36, eq-37.
 - [ ] Auditoría por lote al terminar.

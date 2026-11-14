@@ -85,6 +85,9 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
       },
       {
         nivel: 2,
+        // La 1 es óptica (inmune, el valor de las mejoras de arma); la 2 añade visión nocturna y
+        // térmica y la 3 es un «sistema inteligente»: electrónicas.
+        shock: "equipo",
         rareza: "Común",
         coste: 700,
         detalle: ["Aporta visión nocturna y térmica, como un visor de nivel 1, hasta 500 metros."],
@@ -141,6 +144,8 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
     niveles: [
       {
         nivel: 1,
+        // Emisor láser.
+        shock: "equipo",
         rareza: "Común",
         coste: 150,
         detalle: ["Mientras esté activo: +1 al modificador de ataque, -2 al sigilo (visual)."],
@@ -198,6 +203,8 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
     niveles: [
       {
         nivel: 1,
+        // TODO(revisar): «linterna de alta potencia»; se toma como dispositivo eléctrico.
+        shock: "equipo",
         rareza: "Común",
         coste: 120,
         detalle: ["Sin dificultad ni acción asociada: se enciende y apaga cuando se quiera."],

@@ -40,6 +40,7 @@ import { ajustarVida, pagarFatiga, topesDeVida } from "./vitalidad";
 import { conContador, contadorEscena } from "./usosEscena";
 import type { Sheet } from "./sheet";
 import { origenDePieza, type OrigenAporte } from "./origen";
+import { afectacionDePiezas, motivoApagada } from "./shock";
 import { esEstadoDeAumento, estadoPorId } from "../catalog/estados";
 
 // Lo que hace la acción además de cobrar:
@@ -281,16 +282,21 @@ export function accionesDeAumentos(
   const filas: FilaAumento[] = [];
   const informativas: InfoDeAumento[] = [];
   const usos = sheet.usosEscena ?? [];
+  // Las de un implante apagado por el Shock (rules/shock.ts) siguen en la lista, bloqueadas: así
+  // las rechaza también usoDeAccionAumento.
+  const apagadas = afectacionDePiezas(sheet, estados).inutilizadas;
   for (const ap of aportes(sheet)) {
+    const motivo = ap.origen.instanciaId ? apagadas.get(ap.origen.instanciaId) : undefined;
+    const bloqueo = motivo ? { bloqueada: motivoApagada(motivo) } : {};
     for (const a of ap.acciones) {
       filas.push(
         a.tirada
-          ? { tipo: "tirada", accion: { ...conTirada(a, a.tirada, ap.fuente, fatiga), origen: ap.origen } }
-          : { tipo: "directa", accion: { ...directa(a, ap.fuente, fatiga, estados, usos), origen: ap.origen } },
+          ? { tipo: "tirada", accion: { ...conTirada(a, a.tirada, ap.fuente, fatiga), origen: ap.origen, ...bloqueo } }
+          : { tipo: "directa", accion: { ...directa(a, ap.fuente, fatiga, estados, usos), origen: ap.origen, ...bloqueo } },
       );
       const hechas = a.efecto?.tipo === "contador" ? contadorEscena(usos, a.id) : 0;
       if (a.efecto?.tipo === "contador" && hechas > 0) {
-        filas.push({ tipo: "directa", accion: { ...reiniciar(a, ap.fuente, hechas, a.efecto.cada), origen: ap.origen } });
+        filas.push({ tipo: "directa", accion: { ...reiniciar(a, ap.fuente, hechas, a.efecto.cada), origen: ap.origen, ...bloqueo } });
       }
     }
     if (ap.defensa) {

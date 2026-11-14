@@ -858,10 +858,16 @@ export function condicionBusquedaMiraDeFicha(sheet: Sheet): CondicionTirada | nu
   const mira = equipoPorId("mira_telescopica");
   if (!mira || mira.familia !== "mejoraArma") return null;
   let nivel = 0;
+  // La pieza que da ese nivel (la mira instalada o el fusil que la integra), para el origen: con
+  // ella sabe el Shock de qué pieza es la casilla (T7a).
+  let deInstancia: string | undefined;
   for (const pieza of sheet.equipo) {
-    if (pieza.catalogoId === "mira_telescopica" && pieza.instaladoEnId) nivel = Math.max(nivel, pieza.nivel ?? 0);
     const cat = equipoPorId(pieza.catalogoId);
-    if (cat?.familia === "arma" && cat.miraIntegrada) nivel = Math.max(nivel, cat.miraIntegrada);
+    const n = pieza.catalogoId === "mira_telescopica" && pieza.instaladoEnId ? (pieza.nivel ?? 0) : cat?.familia === "arma" ? (cat.miraIntegrada ?? 0) : 0;
+    if (n > nivel) {
+      nivel = n;
+      deInstancia = pieza.instanciaId;
+    }
   }
   if (nivel === 0) return null;
   const condiciones = acumulaPorClave(
@@ -869,8 +875,8 @@ export function condicionBusquedaMiraDeFicha(sheet: Sheet): CondicionTirada | nu
     (c) => c.id,
   );
   const busqueda = condiciones.find((c) => c.id === ID_BUSQUEDA_MIRA);
-  // Una sola casilla por ficha, la de la mira de más nivel (instalada o integrada): sin instancia.
-  return busqueda ? { ...busqueda, origen: { tipo: "equipo", id: mira.id, label: mira.label } } : null;
+  // Una sola casilla por ficha, la de la mira de más nivel (instalada o integrada).
+  return busqueda ? { ...busqueda, origen: { tipo: "equipo", id: mira.id, label: mira.label, ...(deInstancia && { instanciaId: deInstancia }) } } : null;
 }
 
 export function condicionesActivas(sheet: Sheet, ctx: ContextoAccion): CondicionTirada[] {

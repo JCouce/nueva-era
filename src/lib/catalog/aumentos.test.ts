@@ -65,7 +65,8 @@ describe("catálogo de aumentos contra docs/modelado-aumentos.json", () => {
       assert.equal(j.familia, "implante", imp.id);
       assert.equal(imp.label, j.label, imp.id);
       assert.equal(imp.sabotaje, j.sabotaje, imp.id);
-      assert.equal(imp.electronico, j.electronico, imp.id);
+      // `electronico` del modelado pasó a `shock` (T7a): electrónico = lo toca el Shock del cuerpo.
+      assert.equal(imp.shock === "cuerpo", j.electronico, imp.id);
       assert.deepEqual(
         imp.niveles.map((n) => [n.nivel, n.rareza, n.coste, n.variantes?.map((v) => v.id) ?? null]),
         j.niveles!.map((n) => [n.nivel, n.rareza, n.coste, n.variantes?.map((v) => v.id) ?? null]),

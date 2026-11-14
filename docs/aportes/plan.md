@@ -529,8 +529,15 @@ Coste, que es nuevo.
 
 ---
 
-### Fase 6 — Habilitador a nivel de aporte y Shock ⬜ (bloqueada por S73)
-**Tipo:** motor. **Quién:** subagente, cuando Murillo confirme S73.
+### Fase 6 — Habilitador a nivel de aporte y Shock 🟡 (paso 2 hecho en T7a, 2026-11-14; paso 1 en curso aparte)
+**Estado.** S73 dejó de esperar a Murillo: lo decidió el usuario en el cuestionario de cierre
+(pl-01…03). **Paso 2 hecho** en la T7a del barrido (`rules/shock.ts`): `piezasInutilizadas` se
+rellena con el Shock, la ficha se resuelve sin las piezas apagadas (`fichaSinApagadas`), lo que
+la fila trae de ellas se quita por `origen.instanciaId` (`conPiezasAfectadas`) y el desglose lo
+explica (`Accion.piezasApagadas`); sus acciones propias usan el `bloqueada` de siempre. **Paso 1**
+(unificar la habilitación) va en su worktree aparte y se pone encima de T7a.
+
+**Tipo:** motor. **Quién:** subagente.
 
 **Objetivo:** un habilitador puede apagar una hoja **o los aportes de un ítem**. El Shock (y
 cualquier "pieza averiada") rellena `FichaResuelta.piezasInutilizadas` y los aportes de esas

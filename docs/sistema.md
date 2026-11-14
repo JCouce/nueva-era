@@ -865,6 +865,58 @@ imponen penalizadores por umbral:
   sobrecarga psiónica no es derivable y la sigue poniendo el máster; si está puesta a mano y
   además sale derivada, se enseña una vez, la puesta.
 
+### 7.1 Shock sobre cuerpo y equipo `[FIRME · fuente/reglas-base.md (Shock) + cuestionario de cierre pl-01, pl-02, pl-03, eq-28, di-07; usuario 2026-11-14]`
+
+- **Dos estados, dos grados (pl-01, S73)**: «**Shock**» (el cuerpo: Fortaleza; parálisis e
+  implantes) y «**Shock en el equipo**» (Estructura o blindaje: todo el equipo tecnológico que
+  lleva **a la vez**, con un solo grado, no pieza a pieza). Cada uno con los cuatro grados de la
+  fuente. Los pone el máster eligiendo el grado: la app no tira (§8 de `traspaso.md`).
+- **Degradación**: el fracaso crítico dura 1 turno y al acabar pasa a los efectos del fracaso
+  1 turno; después se acaba. Es un mecanismo general de estado (`GradoEstado.degrada`: al
+  acabársele las rondas pasa a otro grado con N rondas; `descontarDuracion`), no un caso del
+  Shock. Como todo lo de rondas, al cerrar la vuelta (S77).
+- **Parálisis automática**: poner el Shock del cuerpo pone también **Parálisis** del grado
+  equivalente (fracaso crítico → fracaso crítico; fracaso → fracaso; éxito → éxito; éxito
+  crítico, nada) **1 turno**, en **la misma entrada del registro**: un Deshacer quita los dos.
+  Igual a un NPC desde la consola. Mecanismo general: `Estado.arrastra` y `operacionesDe`
+  (`rules/estadosFicha.ts`), que usan `cambiarEstadosEnTx` y `cambiarEstadosDeNpcsEnTx`.
+- **Pieza afectada (pl-02, literal de la fuente)**: fracaso crítico, la pieza **se apaga**
+  (`FichaResuelta.piezasInutilizadas`, instancia → «Shock» o «Shock en el equipo»): sus aportes no
+  llegan a ninguna tirada ni derivado (la ficha se resuelve sin ella, `fichaSinApagadas`; lo que
+  la fila trae de ella se quita en `conPiezasAfectadas`), el desglose de las tiradas a las que
+  llegaba lo dice con una línea a 0 («Ojo Biónico: apagada por Shock») y sus acciones propias
+  (Disparar con un arma de energía, Activar Camuflaje, Volar, Activar Neuroprótesis…) salen
+  bloqueadas: «Apagada por Shock.». Fracaso y éxito: **−2 / −1 al bono y a usarla, a mano**
+  (decisión del usuario): la app no lo calcula; las tiradas donde aporta una pieza afectada, o
+  que la usan, enseñan el aviso «−2 al bono de X y a usarla, a mano (Shock (fracaso))».
+- **«Apagón» = afectado por Shock (pl-03, eq-28)**: el del Soporte Vital es estar afectado por el
+  Shock en el equipo. Su rebaja propia (bonos a +1, la térmica fuera) y lo que conserva el
+  Inyector 2 al caer son **T7b**: hoy se apagan o se penalizan como cualquier otra pieza.
+- **Resiliencia y Estructura (di-07)**: solo de NPC y equipo; la ficha de jugador no las lleva.
+  Sin código: la app no tira la salvación.
+
+*Criterio de clasificación (`shock` en el catálogo, `shockDePieza` en `rules/shock.ts`).* Cada
+pieza, o cada nivel (vale el del nivel más alto instalado que lo diga), declara `cuerpo`,
+`equipo` o `inmune`. Sin declararlo, el de su familia:
+- **cuerpo**: los implantes (todos hoy; el material de refuerzo, cuando exista, irá aparte).
+- **equipo**: mejoras estándar, subsistemas, mejoras de movimiento, herramientas (VTM, VTF,
+  Radar, Disfraz, Escáner) y **armas de energía** (las que cargan batería láser, célula de
+  partículas o batería de plasma, también el Cañón de Plasma).
+- **inmune**: operaciones genéticas (nunca), armaduras (sus placas; lo electrónico de una
+  armadura tecnológica son sus mejoras y subsistemas), armas de bala, melee, mejoras de arma
+  mecánicas, munición, granadas y consumibles.
+- **Lo que dice la pieza**: Inyector 1 inmune («puramente mecánico… no es susceptible a shock») y
+  2 equipo («este nivel se vuelve susceptible»); Polímero Anticorrosivo y Tejido Conductor
+  inmunes; Mira Telescópica 1 óptica (inmune) y 2-3 equipo (visión nocturna/térmica, sistema
+  inteligente); Puntero Láser equipo.
+- **TODO(revisar), dudosos**: Compartimento Oculto, Mejora Ignífuga y Refuerzo de Combate
+  inmunes por ser material pasivo (no dicen nada); Funda Automática equipo («mecanismo», sin decir
+  si es electrónico); Linterna equipo; armas mecánicas motorizadas, Lanzamisiles AT, las
+  modificaciones Electrificante y Térmica y la Ropa Inteligente, inmunes hasta que se aclare.
+  También: la fuente psiónica de un implante apagado (IRM) sigue dando acceso a la psiónica, y
+  los poderes leen la ficha entera (cargas y alcance de una Derivación Psiónica apagada).
+  El aviso de los efectos de arma sigue diciendo solo «Fortaleza contra Shock».
+
 ## 8. Economía `[PARCIAL · EQUIP + HOJA2]`
 
 - Moneda: **créditos**.
@@ -2396,7 +2448,7 @@ sobreesfuerzo.
     minutos.
   - **Shock***: afecta a **todos los implantes**, salvo los que sean puro material de
     refuerzo (pendientes de diseñar; Refuerzo Protésico ya no debe existir). Las
-    operaciones genéticas, no.
+    operaciones genéticas, no. Construido en T7a (§7.1).
   - **IRM**: "Fracaso" y "Fallo" son lo mismo; hay que unificar el texto.
   - **Bucle de Realimentación Motora**: la tercera reacción es por ronda.
 - **Dudas resueltas** (usuario 2026-10-22, segunda pasada):
@@ -2954,7 +3006,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S70 | ***Negociación Analítica*: casilla en el modal de Convencer / mentir** («Negociando: Perspicacia en lugar de Expresión»): marcada, la tirada usa Perspicacia (con su valor y su línea en el desglose). La fila sigue enseñando Expresión: el cambio se ve al marcarla en el modal. Si hubiese a la vez estilo Sutil, manda la casilla. | Decisión del usuario (D2d): selector en el modal antes de tirar. |
 | S71 | ***Ojo Clínico*: la fatiga se paga al tirar con la casilla marcada** (1 punto, sin temporal), se acierte o no; sin `onPagarFatiga` (consola del máster), a mano. La ventaja no se acumula: con varias casillas de ventaja, dos d12 igual. | §9.5 ("la fatiga solo paga la ventaja", "la ventaja no se acumula"); el momento del pago es del redactor. |
 | S72 | **Pool de creación en negativo: se permite, pero bloquea el envío a revisión.** Bajar la letra de una categoría tras gastar (o que otra categoría se lleve su letra) deja el pool en negativo; el cambio de letra no se impide, para poder reordenar prioridades, y el exceso es una falta ("Te has pasado N puntos en …") en Atributos, Habilidades, Psiónica y Dotes. El máster puede aprobar igual. | Decisión del usuario (2026-10-15). |
-| S73 | **Shock: dos grados, cuerpo y equipo (opción B).** El máster aplica el Shock con dos grados: el de **Fortaleza** (cuerpo) decide la parálisis y los implantes; el de **Estructura** (equipo), todos los sistemas electrónicos que lleva encima a la vez, no pieza a pieza. La app no tira: el grado lo pone el máster. Propuesta de la mesa, también pendiente: una pieza afectada **pierde su bono entero** (no −2/−1), salvo excepción escrita en la pieza, por nivel. Un "averiado" pieza a pieza (sabotaje, Sistema de Emergencia) iría aparte, como herramienta del máster. | Decisión del usuario (2026-10-16), fiel a `fuente/reglas-base.md` (Shock). **Pendiente de que Murillo la confirme**: maqueta https://claude.ai/artifact/VYm4ZrSrPBuYSMmx6nLLEX |
+| S73 | **Shock: dos grados, cuerpo y equipo (opción B).** El máster aplica el Shock con dos grados: el de **Fortaleza** (cuerpo) decide la parálisis y los implantes; el de **Estructura** (equipo), todos los sistemas electrónicos que lleva encima a la vez, no pieza a pieza. La app no tira: el grado lo pone el máster. Pieza afectada: **literal de la fuente** (fracaso crítico apagada; fracaso −2, éxito −1 a mano, con aviso); la propuesta de la mesa de perder el bono entero queda descartada. «Apagón» = afectado por Shock. Un "averiado" pieza a pieza (sabotaje, Sistema de Emergencia) iría aparte (pl-04, más adelante). Construido en T7a: §7.1. | **FIRME**: decisión del usuario en el cuestionario de cierre (pl-01, pl-02, pl-03, eq-28; 2026-11-14), fiel a `fuente/reglas-base.md` (Shock). Ya no espera a Murillo. |
 | S74 | **Estados de la ficha y vida máxima (E1a).** Los estados que pone el máster (`Character.estados`) mueven la vida y la fatiga máximas también fuera de combate. La vida actual no se recorta al máximo con estados (`parseSheet` reconcilia contra el máximo en reposo, sin estados): lo que baja al poner el estado es S75; curar topa en el máximo en reposo. *(Superado por S75: "la vida actual no se recorta" y "un estado puesto o quitado dentro del combate no mueve la foto `pgMax`".)* Una duración de **0 rondas** vale (la usa el catálogo: se cae al cerrar la vuelta, S77). | Decisión del usuario (2026-10-16: "los estados mueven la vida máxima también fuera de combate"); el tope de curar, del redactor. |
 | S75 | **Vida perdida al bajar el máximo.** Cuando poner un estado (o cambiarle el grado) **baja** la vida máxima, la vida actual baja lo mismo y se guarda; igual la fatiga. No se recupera al quitarse el estado ni al caerse por rondas: es castigo. Si el máximo sube o no cambia, la actual no se toca. Suelo 0; llegar a 0 no hace nada automático (la inconsciencia la marca el máster). En combate baja también la foto del jugador (`pgActual`/`fatigaActual`), y la foto recalcula `pgMax`/`fatigaMax` con los estados nuevos cada vez que cambian (poner, quitar, caerse por rondas). Deshacer la acción en el registro del máster (E1b) devuelve lo restado, hasta el máximo. **Activables de aumento (A5a-A5b):** sus estados no cuentan para la bajada, pero si al cambiar quedan la vida o la fatiga por encima del máximo nuevo, se recortan a él; y mientras están puestos suben el tope al que se cura (§11, A5b). Motor: `rules/vidaPorEstados.ts`. | Decisión del usuario (2026-10-16; activables, 2026-10-22). |
 | S76 | **Terminar escena (E1c).** "Terminar escena" del máster quita los estados con duración "fin de escena" a todos los personajes **en juego** (aprobados), en una sola acción del registro que se deshace entera (si a alguno le han vuelto a poner uno de esos estados, no se deshace ninguno). Quitar no resta vida (S75); las fotos de combate abiertas recalculan su máximo. Desde E1d también limpia los estados de escena de los **NPC** del combate abierto, sin registro (deshacer no se los devuelve). Recompensas: quitar XP o créditos que dejaría a alguien en negativo **no se hace para nadie** y se explica (antes se recortaba a 0). Motor: `quitarEstadosDeEscena` (`rules/vidaPorEstados.ts`), `planAjusteRecurso` (`rules/registro.ts`). | Decisión del usuario (2026-10-16); "solo aprobados" y "NPC fuera", del redactor. |
@@ -2996,7 +3048,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | 2 | `EQUIP` llama a la misma escopeta **Plasma SC** en la tabla y **Plasma SG** en la descripción; el fusil, **Plasma SA** / **Plasma AR**. | Resuelto (usuario, 2026-10-23): se quedan **Plasma SG** y **Plasma AR**, los de la descripción |
 | 3 | ~~La munición corrosiva no indica dificultad del efecto.~~ | **Resuelto** en la revisión del 31 ago: Corrosión (dificultad 7) |
 | C4 | ~~**Exploración** se usa en las tiradas más importantes del juego... pero no está entre las 10 habilidades.~~ **Resuelto** (2026-09-10, decisión del usuario): Exploración sustituye a Supervivencia en la lista de habilidades. Desbloquea Iniciativa y Alerta. | Resuelto |
-| C5 | `COMBATE` nombra **Resiliencia** (resistencia al shock en sintéticos) y **Estructura** (en equipamiento) como puntuaciones de salvación. Ninguna está entre los 6 aplicados de `HOJA`. ¿Son atributos de PNJ/objeto y no de PJ? | Sin resolver |
+| C5 | `COMBATE` nombra **Resiliencia** (resistencia al shock en sintéticos) y **Estructura** (en equipamiento) como puntuaciones de salvación. Ninguna está entre los 6 aplicados de `HOJA`. ¿Son atributos de PNJ/objeto y no de PJ? | **Resuelto** (di-07, usuario 2026-11-14): solo NPC y equipo; la ficha de jugador no las lleva (§7.1) |
 | C6 | `EQUIP` habla de daño **agravado**; `COMBATE` define solo no letal, letal y grave. Probablemente "agravado" sea el nombre viejo de "grave". | Sin resolver |
 | C7 | `COMBATE` usa **Potencia + Atletismo** para levantarse de un derribo y **Fortaleza o Potencia + Atletismo** para escapar de un agarre: confirma que el par atributo-habilidad es libre, pero no hay tabla de pares canónicos. | Informativo |
 | C8 | ~~**La notación de las tiradas mezcla habilidades y especialidades sin avisar.** Los documentos escriben tanto `Perspicacia + Biociencia (Medicina)` —forma larga y correcta— como `Perspicacia + Medicina` a secas, y lo mismo con Empatía, Manipulación y Bioquímica. De 12 pares distintos, **4 usan el nombre de una especialidad como si fuera la habilidad**. No es cosmético: decide si la habilidad cuenta entera o a la mitad.~~ | **Resuelto (Murillo, 2026-09-23):** la forma corta es siempre una especialidad de la habilidad aplicada — la escogida cuenta entera, la no escogida a la mitad. Ver pregunta 26. |
@@ -3070,7 +3122,7 @@ sospecha que también contra eléctrico, 2026-09-12)? Pendiente de confirmar con
 22. ~~**Exploración** no existe como habilidad en la hoja pero se usa en iniciativa y alerta.~~ **Resuelta**: sustituye a Supervivencia. *(C4)*
 23. ~~¿La app debe llevar la cuenta de PG y fatiga actuales en partida, con sus estados de herida, o eso se lleva en mesa?~~ **Resuelta (usuario, 2026-09-10): en vivo.** La app lleva PG y fatiga en partida — confirma lo ya apuntado en `docs/traspaso.md` §9 (fase 6b). Es la decisión que determina que la ficha pasa a guardar estado mutable además de la creación.
 24. ~~Si se lleva en la app: ¿se registra el daño por categoría (no letal / letal / grave)?~~ **Resuelta: sí.** "Grave" ya es categoría documentada (`COMBATE`, ver también la línea 278 de este documento); las tres categorías se registran por separado. **Construida, fase 1 (ficha), 2026-10-24**: desglose `danio` en la ficha, letal por defecto, cura de lo más leve primero (§7, "En la app"); combate y panel de mando pendientes.
-25. **Resiliencia** y **Estructura**: ¿son puntuaciones de PNJ y equipo, o algún personaje jugador (un sintético) puede tenerlas? *(C5)*
+25. ~~**Resiliencia** y **Estructura**: ¿son puntuaciones de PNJ y equipo, o algún personaje jugador (un sintético) puede tenerlas? *(C5)*~~ **Cerrada (di-07, usuario 2026-11-14)**: solo NPC y equipo (§7.1).
 25b. ~~Varias armas de fuego llevan un penalizador propio "al sigilo" al dispararlas
 (p. ej. Rayo Ligero y Plasma SD/SC/etc.: "-6 al sigilo, solo percepción visual"; el
 Silenciador da a entender que el disparo normal ya trae un penalizador implícito,
@@ -3154,7 +3206,9 @@ lo anota a mano.
     Bloqueo que se suma a su dificultad: −4 (decisión del usuario, 2026-10-23).
     Implementado: `tiradaBloqueoDeArmaMelee()` (`lib/rules/combate.ts`), genera
     "Bloquear con X" junto a "Golpear con X" para cualquier arma melee equipada.
-32. **"Susceptible a shock" / "apagón" no está definido de forma consistente.** Varias
+32. ~~**"Susceptible a shock" / "apagón" no está definido de forma consistente.**~~ **Cerrada
+    (pl-03, eq-28, usuario 2026-11-14)**: apagón = afectado por el Shock en el equipo; cada pieza
+    declara si le afecta (§7.1). Las excepciones del Soporte Vital y el Inyector 2, T7b. Varias
     piezas de `EQUIP` dicen ser inmunes o susceptibles a shock (Inyector Hipodérmico,
     Soporte Vital, Polímero Anticorrosivo, Tejido Conductor), pero: (a) "apagón" — lo
     que dispara la pérdida de bonos en Soporte Vital — aparece **una sola vez en todo

@@ -487,7 +487,7 @@ function Lineas({ lineas }: { lineas: string[] }) {
 
 // Marcas de las reglas generales de los implantes.
 export function MarcasImplante({ p }: { p: Implante }) {
-  const marcas = [p.sabotaje && "sabotaje", p.electronico && "electrónico (Shock)"].filter(
+  const marcas = [p.sabotaje && "sabotaje", p.shock === "cuerpo" && "electrónico (Shock)"].filter(
     (m): m is string => typeof m === "string",
   );
   if (marcas.length === 0) return null;

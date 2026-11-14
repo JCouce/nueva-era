@@ -855,10 +855,8 @@ export function AccionesTab({
       ataques: generadas.filter((t) => t.grupo === "Ataques"),
       defensaGenerada: generadas.filter((t) => t.grupo === "Defensa"),
       herramientas: accionesDeHerramientas(sheet).map(conExtras),
-      // Sin conExtras: las acciones sin dado no llevan
-      // condiciones de alcance (§8, modificadores-tiradas.md) todavía — nada
-      // real las produce hoy, se añade el día que haga falta.
-      herramientasDirectas: accionesDirectasDeHerramientas(sheet),
+      // Con conExtrasDirectaDeFicha por el Shock (S73): la de una herramienta apagada, bloqueada.
+      herramientasDirectas: accionesDirectasDeHerramientas(sheet).map((d) => conExtrasDirectaDeFicha(ficha, d)),
       // Fármacos (docs/prompt-gasto-recursos.md, Fase 2): leen sheet.farmacos,
       // no sheet.equipo — mismo patrón que Herramientas por lo demás.
       // Con las notas de especie (Irota, §14.9) de la FichaResuelta.
@@ -877,7 +875,7 @@ export function AccionesTab({
       accionesGeneradas: ficha.accionesMovimiento.map(conExtras),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, ficha.textosTirada, ficha.extrasDotes, ficha.notasFarmacos, ficha.accionesMovimiento, ficha.rebajasTipoAccion, mods]);
+  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, ficha.textosTirada, ficha.extrasDotes, ficha.notasFarmacos, ficha.accionesMovimiento, ficha.rebajasTipoAccion, ficha.piezasInutilizadas, ficha.piezasPenalizadas, mods]);
 
   // Acciones de dote (D2c-1): las de la sección Dotes y las copias en otro grupo fijo.
   const { dotesTiradas, dotesEnGrupos, dotesDirectas, directasDotesEnGrupos } = useMemo(() => {

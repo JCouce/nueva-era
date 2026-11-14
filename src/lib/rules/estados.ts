@@ -531,9 +531,14 @@ export function describirEstados(
 // 0, sin que el máster tenga que quitarlo a mano. Se llama al cerrar la vuelta (pasar
 // del último de la cola al primero, `pasarTurno` en turnos.ts), para todos a la vez,
 // no con cada turno (decisión del usuario 2026-10-16, S77). `null` es "sin límite"
-// (escena, hasta quitarlo) y no se toca.
+// (escena, hasta quitarlo) y no se toca. Un grado con `degrada` no se cae: pasa a ese grado con
+// sus rondas (el fracaso crítico del Shock pasa a fracaso, pl-01); lo demás del estado se queda.
 export function descontarDuracion(estados: EstadoActivo[]): EstadoActivo[] {
-  return estados
-    .map((e) => (e.rondasRestantes === null ? e : { ...e, rondasRestantes: e.rondasRestantes - 1 }))
-    .filter((e) => e.rondasRestantes === null || e.rondasRestantes > 0);
+  return estados.flatMap((e): EstadoActivo[] => {
+    if (e.rondasRestantes === null) return [e];
+    const rondas = e.rondasRestantes - 1;
+    if (rondas > 0) return [{ ...e, rondasRestantes: rondas }];
+    const degrada = estadoPorId(e.estadoId)?.grados.find((g) => g.id === e.gradoId)?.degrada;
+    return degrada ? [{ ...e, gradoId: degrada.gradoId, rondasRestantes: degrada.rondas }] : [];
+  });
 }

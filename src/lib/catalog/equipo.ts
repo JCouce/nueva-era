@@ -37,6 +37,7 @@ import type { EfectoAlRecibir } from "../rules/resistirDanio";
 import type { EstadoAlTirar, Ocultacion } from "../rules/sigilo";
 import type { Economia } from "../rules/psionica";
 import type { RebajaTipoAccion } from "../rules/tipoAccion";
+import type { AfectaShock } from "../rules/shock";
 import type { TipoDanio } from "./tiposDanio";
 import { ARMAS_MELEE, type ArmaMelee } from "./armasMelee";
 import { VALIJA_TACTICA_MEDICA, FARMACOS } from "./medicina";
@@ -218,6 +219,10 @@ export type NivelModulo = {
   // (desenfundar) e Inyector Hipodérmico (inyectarse). Se acumulan por niveles (S9): el nivel 2
   // del Inyector añade su alternativa a la simple del 1. Las recoge rebajasTipoAccionDeEquipo.
   rebajasTipoAccion?: RebajaTipoAccion[];
+  // Cómo le afecta el Shock desde este nivel (rules/shock.ts, S73): vale el del nivel más alto
+  // instalado que lo diga; sin ninguno, el de su familia (shockDePieza). Inyector 1 «no es
+  // susceptible», el 2 «se vuelve susceptible».
+  shock?: AfectaShock;
   motor?: MotorMetadata[]; // docs/motor.md — un MotorMetadata por efecto DE ESTE NIVEL
 };
 

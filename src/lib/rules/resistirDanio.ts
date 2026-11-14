@@ -146,12 +146,14 @@ export type GolpeResuelto = {
   golpe: GolpeRecibido | null;
 };
 
-type FichaParaResistir = Pick<FichaResuelta, "ficha" | "especie" | "blindaje" | "textosTirada">;
+type FichaParaResistir = Pick<FichaResuelta, "ficha" | "especie" | "blindaje" | "textosTirada"> & Partial<Pick<FichaResuelta, "fichaSinApagadas">>;
 
 const MOTIVO_FUERA_DE_TIPO = "No cuenta con este tipo de daño.";
 
 export function resolverGolpe(ficha: FichaParaResistir, e: EntradaResistir): GolpeResuelto {
-  const sheet = ficha.ficha;
+  // Sin las piezas apagadas por el Shock (S73): un Escudo Deflector o una Malla apagados no paran
+  // ni devuelven nada. El blindaje perdido de la armadura vive en la ficha y va igual.
+  const sheet = ficha.fichaSinApagadas ?? ficha.ficha;
   const conBrazo = e.conBrazo && Boolean(casillaBlindajeBrazo(sheet, e.tipo));
   const desglose = desgloseBlindaje(sheet, e.tipo, ficha.blindaje.armaduraNatural, e.reactivo, conBrazo, ficha.blindaje.contencion);
   const blindaje = desglose.reduce((t, l) => t + l.valor, 0);

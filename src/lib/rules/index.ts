@@ -58,6 +58,7 @@
 //   turnos.ts          combate en el centro de mando: vuelta, contador de rondas, resumen, vida en la Mesa (E1d)
 //   ajusteVida.ts      pestaña Vida del máster: daño/curación, vista previa y umbral que cruza
 //   origen.ts          OrigenAporte: de qué ítem viene cada aporte a una tirada (fase 2 de docs/aportes/plan.md)
+//   shock.ts           Shock sobre las piezas: cómo le afecta a cada una, cuáles apaga y cuáles penaliza (T7a, S73)
 //   aportes.ts         aportesDeTirada: los aportes de los ítems de la ficha a una tirada, con su origen
 //   teAfecta.ts        "te afecta" de una hoja de tirada: los nombres de esos ítems
 //   tipoAccion.ts      tipo de acción de desenfundar, recargar e inyectarse, con las rebajas de piezas y dotes (T5c)
@@ -126,6 +127,7 @@ export * from "./retrocesoEntropico";
 export * from "./sigilo";
 export * from "./textosDeTirada";
 export * from "./tipoAccion";
+export * from "./shock";
 export * from "../catalog/especies";
 export * from "../catalog/equipo";
 export * from "../catalog/armasMelee";

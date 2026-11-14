@@ -55,6 +55,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
     niveles: [
       {
         nivel: 1,
+        // «Vulnerabilidad al Shock»: el apagón es estar afectado por el Shock en el equipo (eq-28).
+        // Su rebaja propia (bonos a +1, la térmica fuera) es T7b; hoy se apaga o penaliza como las demás.
+        shock: "equipo",
         rareza: "Común",
         coste: 4000,
         detalle: [
@@ -135,6 +138,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
     niveles: [
       {
         nivel: 1,
+        // TODO(revisar): no dice nada del Shock; es un hueco con apantallamiento pasivo, sin sistema
+        // que apagar («hueco de doble fondo con sellado hermético… absorción de emisiones»).
+        shock: "inmune",
         rareza: "Común",
         coste: 500,
         detalle: [
@@ -181,6 +187,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
     niveles: [
       {
         nivel: 1,
+        // TODO(revisar): «este mecanismo permite el desenfundado» sin decir si es electrónico; se toma
+        // como un sistema del traje, como el tambor del Inyector 2.
+        shock: "equipo",
         rareza: "Común",
         coste: 1200,
         detalle: [
@@ -224,6 +233,8 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
     niveles: [
       {
         nivel: 1,
+        // «Puramente mecánico… no es susceptible a shock ni pirateo».
+        shock: "inmune",
         rareza: "Común",
         coste: 250,
         detalle: ["Usar medicamentos o drogas sobre uno mismo pasa de acción compleja a simple."],
@@ -236,6 +247,9 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
       },
       {
         nivel: 2,
+        // «Al incorporar actuadores y circuitería electrónica… este nivel se vuelve susceptible a
+        // efectos de shock». Qué conserva del nivel 1 cuando cae es T7b: hoy cae entera.
+        shock: "equipo",
         rareza: "Poco Habitual",
         coste: 1500,
         detalle: [
@@ -266,6 +280,8 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
     niveles: [
       {
         nivel: 1,
+        // TODO(revisar): no dice nada del Shock; son fibras cerámicas y polímeros, material pasivo.
+        shock: "inmune",
         rareza: "Común",
         coste: 1000,
         detalle: ["El usuario puede usar la puntuación total de blindaje de su armadura contra daño de fuego."],
@@ -312,6 +328,8 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
     niveles: [
       {
         nivel: 1,
+        // «Además, esta mejora no es susceptible a shock».
+        shock: "inmune",
         rareza: "Común",
         coste: 1000,
         detalle: ["+1 contra corrosión.", "Esta mejora no es susceptible a shock."],
@@ -362,6 +380,8 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
     niveles: [
       {
         nivel: 1,
+        // TODO(revisar): no dice nada del Shock; son refuerzos del traje, material de refuerzo.
+        shock: "inmune",
         rareza: "Común",
         coste: 500,
         detalle: [
@@ -405,6 +425,8 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
     niveles: [
       {
         nivel: 1,
+        // «Esta mejora no es susceptible a su efecto».
+        shock: "inmune",
         rareza: "Común",
         coste: 1000,
         detalle: ["+1 contra shock.", "Esta mejora no es susceptible a su propio efecto."],

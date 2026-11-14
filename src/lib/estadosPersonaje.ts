@@ -11,6 +11,7 @@ import {
   leerEstados,
   operacionConInmunidad,
   operacionEstadoNpc,
+  operacionesDe,
   parseSheet,
   reconciliarVidaConEstados,
   quitarEstadosDe,
@@ -20,6 +21,7 @@ import {
   type DanioVida,
   type CambioEstadoPersonaje,
   type DatosRegistro,
+  type EstadoActivo,
   type InmuneAlAplicar,
   type OperacionEstado,
   type Sheet,
@@ -138,38 +140,56 @@ async function cambiarEstadosEnTx(
 
   const cambios: CambioEstadoPersonaje[] = [];
   const inmunes: InmuneAlAplicar[] = [];
+  // Poner un estado que arrastra otro (el Shock pone la Parálisis, operacionesDe) son varias
+  // operaciones seguidas sobre la misma ficha, cada una con su inmunidad y su cambio en la misma
+  // entrada del registro. Si es inmune a la primera, no se pone nada.
+  const ops = operacionesDe(op);
   for (const f of filas) {
     const estados = leerEstados(f.estados);
     // Con el recorte exacto de los activables puestos (A5b): parseSheet topa con el posible.
     const leida = reconciliarVidaConEstados(parseSheet(f.stats), estados);
-    const tras = operacionConInmunidad(leida, op, forzar);
-    if (tras.tipo === "inmune") {
+    const primera = operacionConInmunidad(leida, ops[0], forzar);
+    if (primera.tipo === "inmune") {
       // Sin estado no hay cobro (`preparar`): hoy solo lo usan los estados propios de los
       // aumentos, que no tienen inmunidad.
-      inmunes.push({ id: f.id, nombre: f.name, ...tras.inmunidad });
+      inmunes.push({ id: f.id, nombre: f.name, ...primera.inmunidad });
       continue;
     }
     const sheet = preparar ? preparar(leida) : leida;
     const propias = fotos.filter((c) => c.characterId === f.id);
     const cobradas = propias.map((c) => fotoTrasCambioDeFicha(c, leida, sheet, fatigaCobrada));
-    const r = aplicarOperacionEstado({ id: f.id, sheet, estados }, tras.op, cobradas);
-    if (!r) {
+    let actual = { id: f.id, sheet, estados };
+    let fotosActuales: FotoCobro[] = cobradas;
+    const propios: CambioEstadoPersonaje[] = [];
+    for (const [i, o] of ops.entries()) {
+      const tras = i === 0 ? primera : operacionConInmunidad(leida, o, forzar);
+      if (tras.tipo === "inmune") {
+        inmunes.push({ id: f.id, nombre: f.name, ...tras.inmunidad });
+        continue;
+      }
+      const r = aplicarOperacionEstado(actual, tras.op, fotosActuales);
+      if (!r) continue;
+      actual = { id: f.id, sheet: r.vida.sheet, estados: r.estados };
+      fotosActuales = r.vida.combatientes;
+      propios.push(r.cambio);
+    }
+    if (propios.length === 0) {
       if (sheet !== leida) await escribirFicha(tx, f.id, { stats: f.stats }, { stats: sheet });
       await escribirFotosCobradas(tx, propias, cobradas);
       continue;
     }
-    if (r.vida.sheet === leida) {
-      await tx.character.update({ where: { id: f.id }, data: { estados: r.estados } });
+    if (actual.sheet === leida) {
+      await tx.character.update({ where: { id: f.id }, data: { estados: actual.estados } });
     } else {
-      await escribirFicha(tx, f.id, { stats: f.stats }, { estados: r.estados, stats: r.vida.sheet });
+      await escribirFicha(tx, f.id, { stats: f.stats }, { estados: actual.estados, stats: actual.sheet });
     }
-    for (const c of r.vida.combatientes) {
+    for (const c of fotosActuales) {
       await tx.combatiente.update({
         where: { id: c.id },
         data: { pgActual: c.pgActual, pgMax: c.pgMax, fatigaActual: c.fatigaActual, fatigaMax: c.fatigaMax },
       });
     }
-    cambios.push(r.cambio);
+    cambios.push(...propios);
   }
   return { cambios, inmunes };
 }
@@ -265,16 +285,27 @@ async function cambiarEstadosDeNpcsEnTx(
   });
   const inmunes: InmuneAlAplicar[] = [];
   const cambios: CambioEstadoNpc[] = [];
+  // Como en los jugadores: lo arrastrado (operacionesDe) va detrás, en la misma entrada.
+  const ops = operacionesDe(op);
   for (const f of filas) {
-    const tras = operacionConInmunidad(f.sheet ? parseSheet(f.sheet) : null, op, forzar);
-    if (tras.tipo === "inmune") {
-      inmunes.push({ id: f.id, nombre: f.nombre, ...tras.inmunidad });
-      continue;
+    const sheet = f.sheet ? parseSheet(f.sheet) : null;
+    let estados: EstadoActivo[] | null = null;
+    const propios: CambioEstadoNpc[] = [];
+    for (const [i, o] of ops.entries()) {
+      const tras = operacionConInmunidad(sheet, o, forzar);
+      if (tras.tipo === "inmune") {
+        inmunes.push({ id: f.id, nombre: f.nombre, ...tras.inmunidad });
+        if (i === 0) break;
+        continue;
+      }
+      const r = operacionEstadoNpc({ ...f, estados: estados ?? f.estados }, tras.op);
+      if (!r) continue;
+      estados = r.estados;
+      propios.push(r.cambio);
     }
-    const r = operacionEstadoNpc(f, tras.op);
-    if (!r) continue;
-    await tx.combatiente.update({ where: { id: f.id }, data: { estados: r.estados } });
-    cambios.push(r.cambio);
+    if (!estados) continue;
+    await tx.combatiente.update({ where: { id: f.id }, data: { estados } });
+    cambios.push(...propios);
   }
   return { cambios, inmunes };
 }

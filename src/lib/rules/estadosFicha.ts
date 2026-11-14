@@ -64,6 +64,17 @@ export function ponerEstado(activos: EstadoActivo[], nuevo: EstadoActivo): Estad
   return [...activos.filter((e) => e.estadoId !== nuevo.estadoId), nuevo];
 }
 
+// Las operaciones que hace de verdad una: poner un estado que arrastra otro (Estado.arrastra:
+// el Shock del cuerpo pone la Parálisis del grado que toca, pl-01) son dos, que van en la misma
+// acción del registro. Quitar es una sola: lo arrastrado tiene su propia duración.
+export function operacionesDe(op: OperacionEstado): OperacionEstado[] {
+  if (op.tipo === "quitar") return [op];
+  const arrastra = estadoPorId(op.estado.estadoId)?.arrastra;
+  const gradoId = arrastra?.grados[op.estado.gradoId];
+  if (!arrastra || !gradoId) return [op];
+  return [op, { tipo: "poner", estado: { estadoId: arrastra.estadoId, gradoId, rondasRestantes: arrastra.rondas } }];
+}
+
 export function quitarEstado(activos: EstadoActivo[], estadoId: string): EstadoActivo[] {
   return activos.filter((e) => e.estadoId !== estadoId);
 }
