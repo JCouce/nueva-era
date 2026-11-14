@@ -10,7 +10,8 @@ import { equipar } from "./equipo";
 import { ajustarRecurso, claveBateria, recursoDe } from "./recursos";
 import { accionesDeAtaque, accionesDirectasDeAtaque, MOTIVO_MALLA_INACTIVA, MOTIVO_SIN_CARGAS } from "./combate";
 import { estadoPorUso } from "./sigilo";
-import { ESTADO_MALLA_ID, TURNOS_MALLA } from "../catalog/estados";
+import { ESTADO_CAMUFLAJE_ID, ESTADO_MALLA_ID, TURNOS_MALLA } from "../catalog/estados";
+import { ACCIONES } from "./acciones";
 import type { EstadoActivo } from "./estados";
 import { conExtrasDeFicha, conExtrasDirectaDeFicha, resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import { resolverGolpe, type EntradaResistir } from "./resistirDanio";
@@ -104,5 +105,32 @@ describe("Malla Plasmática: el estado «Malla activa» manda", () => {
     const con = resolverGolpe(ficha(conMalla(2), [MALLA_ACTIVA]), entrada);
     assert.equal(con.casillas.find((c) => c.id === "malla_devuelve")?.bloqueada, null);
     assert.match(con.avisos[0] ?? "", /^Devuelves 2 de plasma/);
+  });
+});
+
+describe("Malla Plasmática: Sigilo y Camuflaje con «Malla activa»", () => {
+  const conLasDos = () =>
+    equipar(conMalla(1), { instanciaId: "cam", catalogoId: "camuflaje_trifasico", nivel: 1, instaladoEnId: "a1" });
+  const CAMUFLAJE: EstadoActivo = { estadoId: ESTADO_CAMUFLAJE_ID, gradoId: "estatico", rondasRestantes: 200 };
+  const resuelta = (estados: EstadoActivo[]) => resolverFicha(conLasDos(), { estados, vitalidad: VITALIDAD_DE_FICHA });
+  const sigilo = (estados: EstadoActivo[]) =>
+    conExtrasDeFicha(resuelta(estados), ACCIONES.find((a) => a.id === "sigilo")!).condiciones?.find((c) => c.id === "malla_plasmatica_activa");
+
+  test("la casilla del −8 sale ya marcada con el estado y no existe sin él", () => {
+    const c = sigilo([MALLA_ACTIVA]);
+    assert.ok(c && c.tipo === "toggle");
+    assert.equal(c.activaPorDefecto, true);
+    assert.equal(c.valorActivo, -8);
+    assert.equal(sigilo([]), undefined);
+  });
+
+  test("anula el modo activo del Camuflaje: sin su cobertura ni «Tengo cobertura» marcada", () => {
+    const solo = resuelta([CAMUFLAJE]);
+    assert.ok(solo.ocultacion?.activo);
+    assert.ok(solo.casillasMarcadas.includes("tengo_cobertura"));
+    const conMallaActiva = resuelta([CAMUFLAJE, MALLA_ACTIVA]);
+    assert.equal(conMallaActiva.ocultacion?.activo, null);
+    assert.ok(!conMallaActiva.casillasMarcadas.includes("tengo_cobertura"));
+    assert.ok(conMallaActiva.casillasMarcadas.includes("malla_plasmatica_activa"));
   });
 });

@@ -29,6 +29,7 @@ import { PELEA } from "../catalog/armasMelee";
 import {
   ESTADO_ARMA_ESCONDIDA_ID,
   ESTADO_CAMUFLAJE_ID,
+  ESTADO_MALLA_ID,
   ESTADO_SIGILO_ID,
   estadoPorId,
 } from "../catalog/estados";
@@ -84,10 +85,17 @@ export function modosDeOcultacion(sheet: Sheet): ModoOcultacion[] {
   return ocultacionDePieza(sheet)?.datos.modos ?? [];
 }
 
+// «Su uso [Malla Plasmática] neutraliza por completo los beneficios activos del subsistema de
+// camuflaje»: con «Malla activa» puesta, el estado Camuflaje sigue ahí pero no hace nada (ni
+// cobertura por sentido ni «Tengo cobertura» marcada); la pasiva sí (usuario 2026-11-14).
+export function mallaAnulaCamuflaje(estados: readonly Pick<EstadoActivo, "estadoId">[]): boolean {
+  return estados.some((e) => e.estadoId === ESTADO_MALLA_ID);
+}
+
 export function ocultacionDeFicha(sheet: Sheet, estados: readonly EstadoActivo[]): OcultacionDeFicha | null {
   const p = ocultacionDePieza(sheet);
   if (!p) return null;
-  const puesto = estados.find((e) => e.estadoId === ESTADO_CAMUFLAJE_ID);
+  const puesto = mallaAnulaCamuflaje(estados) ? undefined : estados.find((e) => e.estadoId === ESTADO_CAMUFLAJE_ID);
   const activo = puesto ? (p.datos.modos.find((m) => m.id === puesto.gradoId) ?? null) : null;
   // «Siempre que el sistema mantenga una carga mínima en espera»: sin recurso guardado, cuenta llena.
   const conCarga = (recursoDe(sheet, p.instanciaId)?.actual ?? 1) > 0;

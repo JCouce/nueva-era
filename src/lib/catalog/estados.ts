@@ -1197,6 +1197,8 @@ export const ESTADOS_DE_EQUIPO: Estado[] = [
       "La Malla Plasmática tiene el campo levantado: el colchón absorbe, devuelve los golpes cuerpo a " +
       "cuerpo y se puede sacrificar o detonar. −8 al Sigilo frente a la vista y anula el Camuflaje activo.",
     quitarJugador: "Apagar la Malla",
+    // La casilla del −8 al Sigilo (subsistemas.ts), que solo sale con este estado.
+    marcaCasillas: ["malla_plasmatica_activa"],
     grados: [
       {
         id: "activo",

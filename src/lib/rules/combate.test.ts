@@ -6,7 +6,7 @@ import { equipar } from "./equipo";
 import { ajustarRecurso, ajustarGranada, ajustarMunicionEspecial, comprarRecarga, dispararPulso, reconciliarRecursos, recursoDe } from "./recursos";
 import { accionesDeAtaque as accionesDeAtaqueCon, accionesDirectasDeAtaque, generaAccionPropia, ID_MODO_CAMUFLAJE, MOTIVO_SIN_CARGAS, NOTA_MALLA_ANULA_CAMUFLAJE } from "./combate";
 import { estadoPorUso, restaDeSigilo } from "./sigilo";
-import { ESTADO_AGUIJON_ID } from "../catalog/estados";
+import { ESTADO_AGUIJON_ID, ESTADO_MALLA_ID } from "../catalog/estados";
 import type { EstadoActivo } from "./estados";
 import { efectosQueSaltan, efectosSobreObjetivo, type EfectoEnTirada } from "./efectosArma";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
@@ -1985,8 +1985,10 @@ describe("Malla Plasmática: -8 al Sigilo con la malla activa (S96)", () => {
       nivel,
       instaladoEnId: "a1",
     });
-  const fija = (s: Sheet, id: string) => {
-    const resuelta = resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+  // Desde 2026-11-14 la casilla solo sale con «Malla activa» puesta, y ya marcada (mallaPlasmatica.test.ts).
+  const activa: EstadoActivo[] = [{ estadoId: ESTADO_MALLA_ID, gradoId: "activo", rondasRestantes: 10 }];
+  const fija = (s: Sheet, id: string, estados: EstadoActivo[] = activa) => {
+    const resuelta = resolverFicha(s, { estados, vitalidad: VITALIDAD_DE_FICHA });
     return conExtrasDeFicha(resuelta, ACCIONES.find((a) => a.id === id)!);
   };
 
@@ -1996,13 +1998,15 @@ describe("Malla Plasmática: -8 al Sigilo con la malla activa (S96)", () => {
       assert.ok(c && c.tipo === "toggle", `${id} nivel ${nivel}`);
       assert.equal(c.valorActivo, -8);
       assert.equal(c.valorInactivo, 0);
+      assert.equal(c.activaPorDefecto, true);
       assert.match(c.nota ?? "", /Camuflaje Trifásico/);
     }
   });
 
-  test("no llega a tiradas que no son de Sigilo, ni sin la malla", () => {
+  test("no llega a tiradas que no son de Sigilo, ni sin la malla, ni sin «Malla activa»", () => {
     assert.equal(fija(conMalla(1), "alerta_activa").condiciones?.find((x) => x.id === "malla_plasmatica_activa"), undefined);
     assert.equal(fija(defaultSheet(), "sigilo").condiciones?.find((x) => x.id === "malla_plasmatica_activa"), undefined);
+    assert.equal(fija(conMalla(1), "sigilo", []).condiciones?.find((x) => x.id === "malla_plasmatica_activa"), undefined);
   });
 });
 

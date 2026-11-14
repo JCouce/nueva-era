@@ -468,9 +468,11 @@ export const SUBSISTEMAS: Subsistema[] = [
         colchon: 10,
         alRecibirDanio: [devolverGolpe(1)],
         // "Al activarse este subsistema el usuario recibe un penalizador de -8 al sigilo que solo
-        // afecta a la percepción visual" (docs/fuente/equipamiento.md): la Malla no tiene tirada
-        // propia donde colgar el aviso (se activa sin dado), así que va como casilla en las
-        // tiradas de Sigilo (condicionesActivas, equipo.ts; S96). Los niveles 2-4 la heredan.
+        // afecta a la percepción visual" (docs/fuente/equipamiento.md): casilla en las tiradas de
+        // Sigilo (condicionesActivas, equipo.ts; S96) que solo sale con «Malla activa» puesta, y ya
+        // marcada (Estado.marcaCasillas; usuario 2026-11-14). Se queda como casilla y no como
+        // modificador del estado porque solo vale frente a la vista: si no te buscan con ella, se
+        // desmarca. Los niveles 2-4 la heredan.
         condiciones: [
           {
             id: "malla_plasmatica_activa",
@@ -479,7 +481,8 @@ export const SUBSISTEMAS: Subsistema[] = [
             alcance: { tipo: "habilidad", habilidad: "sigilo" },
             valorActivo: -8,
             valorInactivo: 0,
-            nota: "Solo frente a la percepción visual. Activa, anula los beneficios activos del Camuflaje Trifásico.",
+            requiereEstado: { estadoId: ESTADO_MALLA_ID },
+            nota: "Solo frente a la percepción visual: desmárcala si no te buscan con la vista. Anula los beneficios activos del Camuflaje Trifásico.",
           },
         ],
         motor: [
@@ -496,11 +499,12 @@ export const SUBSISTEMAS: Subsistema[] = [
           // docs/motor.md). eq-24 del cuestionario (usuario, 2026-11-13): casilla «Golpe cuerpo a
           // cuerpo» en Resistir daño (`alRecibirDanio`); marcada, solo avisa de cuánto devuelves.
           MALLA_DEVUELVE,
-          // -8 al sigilo al activarse: casilla "Malla Plasmática activa" en Sigilo (S96).
+          // -8 al sigilo al activarse: casilla "Malla Plasmática activa" en Sigilo (S96), que sale
+          // ya marcada con «Malla activa» y solo con ella (usuario 2026-11-14).
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          // Neutraliza el Camuflaje Trifásico activo: la ficha no guarda si una ni otra están
-          // activas (activar solo gasta la carga), así que no hay nada que apagar — aviso en
-          // "Activar Camuflaje Trifásico" con la Malla equipada y en la casilla de Sigilo (S96).
+          // Neutraliza el Camuflaje Trifásico activo: con «Malla activa» puesta, el modo activo del
+          // Camuflaje no suma a tu Sigilo ni marca «Tengo cobertura» (ocultacionDeFicha, sigilo.ts;
+          // usuario 2026-11-14). Aviso también en "Activar Camuflaje Trifásico" con la Malla equipada.
           { tipo: "texto", afecta: { modo: "accion_existente", id: "activar_camuflaje" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },

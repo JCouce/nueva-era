@@ -26,7 +26,7 @@ import {
 } from "./aumentosTiradas";
 import { normalizarDanio, type DanioVida } from "./danio";
 import { ESTADO_CAMUFLAJE_ID, estadoPorId } from "../catalog/estados";
-import { accionEsconderArma, ocultacionDeFicha, textoSigiloPorSentido, type OcultacionDeFicha } from "./sigilo";
+import { accionEsconderArma, mallaAnulaCamuflaje, ocultacionDeFicha, textoSigiloPorSentido, type OcultacionDeFicha } from "./sigilo";
 import { absorcionDeContencion, tieneEscudoMelee, type AbsorcionPropia, type ArmaduraNatural } from "./blindaje";
 import {
   alerta,
@@ -521,7 +521,13 @@ export function resolverFicha(
     compensaManiobraVuelo: dotes.compensaManiobra,
     accionesOcultacion: ((e) => (e ? [e] : []))(accionEsconderArma(sheet)),
     ocultacion: ocultacionDeFicha(enUso, conEfecto),
-    casillasMarcadas: [...new Set(conEfecto.flatMap((e) => estadoPorId(e.estadoId)?.marcaCasillas ?? []))],
+    casillasMarcadas: [
+      ...new Set(
+        conEfecto
+          .filter((e) => e.estadoId !== ESTADO_CAMUFLAJE_ID || !mallaAnulaCamuflaje(conEfecto))
+          .flatMap((e) => estadoPorId(e.estadoId)?.marcaCasillas ?? []),
+      ),
+    ],
     vuelo: vue && { ...vue, velocidadM: velocidad(vue.velocidadM) },
     levitacion: lev && { ...lev, velocidadM: velocidad(lev.velocidadM) },
     cargaMaxima: porUmbral.reduccionCarga ? reducir(carga, porUmbral.reduccionCarga.fraccion) : carga,

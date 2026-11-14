@@ -1754,8 +1754,8 @@ function accionActivarCamuflaje(sheet: Sheet, pieza: PiezaEquipada, cat: Subsist
         ? "El modo pasivo no se activa ni gasta: funciona mientras lo lleves. Solo con Traje Ultra Ligero, Ropa Inteligente, Ropa Reforzada o sin armadura."
         : "El modo pasivo no se activa ni gasta: dura mientras quede alguna carga.",
       // "Su uso [Malla Plasmática] neutraliza por completo los beneficios activos del subsistema
-      // de camuflaje" (docs/fuente/equipamiento.md): la ficha no guarda si la Malla está activa,
-      // así que se avisa y no se bloquea (S96).
+      // de camuflaje" (docs/fuente/equipamiento.md): con «Malla activa» puesta, el estado
+      // Camuflaje no hace nada (mallaAnulaCamuflaje, sigilo.ts); aquí, solo el aviso (S96).
       ...(mallaPlasmaticaEquipada(sheet) ? [NOTA_MALLA_ANULA_CAMUFLAJE] : []),
     ].join(" "),
     ...(modos.length > 0 && {
