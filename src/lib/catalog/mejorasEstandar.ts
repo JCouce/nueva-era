@@ -128,6 +128,22 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Vulnerabilidad al Shock, heredada (`alShock` del nivel 1)
         ],
       },
+      {
+        // Sync Drive 2026-11-14: el documento añade el nivel 4.
+        nivel: 4,
+        rareza: "Extraño",
+        coste: 48000,
+        detalle: [
+          "Duración: 288 horas de autonomía.",
+          "Blindaje Ambiental Élite: +4 contra efectos tóxicos en las mismas condiciones.",
+        ],
+        modificadores: [],
+        salvaciones: [{ contra: ["toxinas", "radiacion"], bono: 4, nota: notaBlindajeAmbiental(4) }],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Blindaje Ambiental Élite
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Vulnerabilidad al Shock, heredada (`alShock` del nivel 1)
+        ],
+      },
     ],
   },
   {

@@ -23,7 +23,9 @@ import {
 } from "./derivados";
 import { modificadoresDeEstados, type EstadoActivo } from "./estados";
 import { especieDeFicha } from "./especie";
-import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { ACCIONES } from "./acciones";
+import { eleccionSinTocar, montarTirada } from "./montaje";
 
 const base = (): Sheet => {
   const s = defaultSheet();
@@ -385,5 +387,19 @@ describe("Soporte Vital en «Contra…: Toxinas»", () => {
       assert.equal(o.valor, 2, amenaza);
       assert.match(o.nota ?? "", /Soporte Vital 2: protección total contra radiación e intoxicación/);
     }
+  });
+
+  // Sync Drive 2026-11-14: nivel 4, Blindaje Ambiental Élite +4 (sustituye al +3).
+  test("nivel 4: el +4 llega a la salvación de Fortaleza contra toxinas", () => {
+    const salvacion = (nivel: number) => {
+      let s = equipar(defaultSheet(), { instanciaId: "a", catalogoId: "armadura_ligera" });
+      s = equipar(s, { instanciaId: "sv", catalogoId: "soporte_vital", nivel, instaladoEnId: "a" });
+      const f = resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+      const t = conExtrasDeFicha(f, ACCIONES.find((a) => a.id === "salv_fortaleza")!);
+      const eleccion = eleccionSinTocar(t);
+      return montarTirada(f, t, { ...eleccion, estadoCondiciones: { ...eleccion.estadoCondiciones, aum_contra_salv_fortaleza: "toxinas" } }).total;
+    };
+    assert.equal(salvacion(4) - salvacion(3), 1);
+    assert.equal(salvacion(4) - salvacion(1), 3);
   });
 });
