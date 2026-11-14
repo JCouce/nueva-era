@@ -13,6 +13,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
+import { normalizarEtiquetas } from "@/lib/npcEtiquetas";
 import { z } from "zod";
 import {
   atributoLibreSchema,
@@ -95,7 +96,8 @@ async function requireMaster() {
 }
 
 function revalidateNpcs() {
-  revalidatePath("/master/npcs");
+  revalidatePath("/master/npcs", "layout");
+  revalidatePath("/master/combate");
 }
 
 // Un NPC no tiene estados: su tope de vida es el de reposo, el mismo con el que topa parseSheet;
@@ -143,7 +145,12 @@ export async function clonarNpcAction(npcId: string, nuevoNombre: string): Promi
   if (!original) return { ok: false, error: "No existe ese NPC." };
 
   const clon = await prisma.npcTemplate.create({
-    data: { nombre: nombreLimpio, stats: original.stats as object, nota: original.nota },
+    data: {
+      nombre: nombreLimpio,
+      stats: original.stats as object,
+      nota: original.nota,
+      etiquetas: original.etiquetas,
+    },
   });
   revalidateNpcs();
   return { ok: true, id: clon.id };
@@ -176,20 +183,55 @@ export async function crearNpcAleatorioFormAction() {
   if (res.ok) redirect(`/master/npcs/${res.id}`);
 }
 
-export async function eliminarNpcFormAction(formData: FormData) {
+// Papelera: «Borrar» solo marca `deletedAt`; el NPC desaparece del catálogo y del
+// selector de combate, y se recupera desde la pestaña Papelera.
+export async function enviarAPapeleraNpcFormAction(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  await eliminarNpcAction(id);
+  await enviarAPapeleraNpcAction(id);
 }
 
-export async function eliminarNpcAction(npcId: string): Promise<NpcResult> {
-  if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede eliminar NPCs." };
-  // onDelete: SetNull en Combatiente.npcTemplateId (schema.prisma) — borrar
-  // una plantilla no revienta un combate histórico que ya la usó, solo
-  // pierde el enlace; el combatiente conserva su `nombre`/`sheet` congelados.
-  await prisma.npcTemplate.delete({ where: { id: npcId } });
+export async function enviarAPapeleraNpcAction(npcId: string): Promise<NpcResult> {
+  if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede borrar NPCs." };
+  const npc = await prisma.npcTemplate.update({ where: { id: npcId }, data: { deletedAt: new Date() } });
   revalidateNpcs();
-  return { ok: true, sheet: defaultSheet() };
+  return { ok: true, sheet: leerNpc(npc.stats) };
+}
+
+export async function restaurarNpcAction(npcId: string): Promise<NpcResult> {
+  if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede restaurar NPCs." };
+  const npc = await prisma.npcTemplate.update({ where: { id: npcId }, data: { deletedAt: null } });
+  revalidateNpcs();
+  return { ok: true, sheet: leerNpc(npc.stats) };
+}
+
+export async function restaurarNpcFormAction(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  if (id) await restaurarNpcAction(id);
+}
+
+// Borrado de verdad, solo desde la papelera (deleteMany con deletedAt != null: un NPC
+// vivo no se puede borrar de un golpe). onDelete: SetNull en Combatiente.npcTemplateId —
+// un combate que lo usó conserva su `nombre`/`sheet` congelados, solo pierde el enlace.
+export async function borrarDefinitivoNpcAction(npcId: string): Promise<{ ok: boolean; error?: string }> {
+  if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede borrar NPCs." };
+  const { count } = await prisma.npcTemplate.deleteMany({ where: { id: npcId, deletedAt: { not: null } } });
+  revalidateNpcs();
+  return count ? { ok: true } : { ok: false, error: "Solo se borra para siempre lo que está en la papelera." };
+}
+
+const etiquetasSchema = z.array(z.string().max(200)).max(100);
+
+export async function setEtiquetasNpcAction(npcId: string, etiquetas: unknown): Promise<NpcResult> {
+  if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede editar NPCs." };
+  const parsed = etiquetasSchema.safeParse(etiquetas);
+  if (!parsed.success) return { ok: false, error: "Etiquetas no válidas." };
+  const npc = await prisma.npcTemplate.update({
+    where: { id: npcId },
+    data: { etiquetas: normalizarEtiquetas(parsed.data) },
+  });
+  revalidateNpcs();
+  return { ok: true, sheet: leerNpc(npc.stats) };
 }
 
 export async function renombrarNpcAction(npcId: string, nombre: string): Promise<NpcResult> {

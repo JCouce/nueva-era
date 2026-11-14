@@ -69,7 +69,9 @@ import {
   ajustarVidaNpcAction,
   ajustarDanioNpcAction,
   ajustarFatigaNpcAction,
-  eliminarNpcAction,
+  enviarAPapeleraNpcAction,
+  restaurarNpcAction,
+  setEtiquetasNpcAction,
   type NpcResult,
   setDisciplinaNpcAction,
   pagarFatigaNpcAction,
@@ -81,6 +83,7 @@ import {
   quitarDoteNpcAction,
   comprarAumentoNpcAction,
 } from "../actions";
+import { EditorEtiquetas } from "./EditorEtiquetas";
 
 // Fase 6b 5.1: espejo simplificado de CharacterSheet.tsx — reusa sus tabs de
 // Atributos/Habilidades/Equipo/Tienda en modo "libre" (sin point-buy, sin
@@ -113,11 +116,17 @@ export function NpcEditor({
   initialNombre,
   initialNota,
   initialSheet,
+  initialEtiquetas,
+  sugerenciasEtiquetas,
+  enPapelera,
 }: {
   npcId: string;
   initialNombre: string;
   initialNota: string;
   initialSheet: Sheet;
+  initialEtiquetas: string[];
+  sugerenciasEtiquetas: string[];
+  enPapelera: boolean;
 }) {
   const router = useRouter();
   const [active, setActive] = useState<TabId>("identidad");
@@ -126,6 +135,7 @@ export function NpcEditor({
   const ficha = useFichaResuelta(sheet, SIN_ESTADOS, VITALIDAD_DE_FICHA, { libre: true });
   const [nombre, setNombre] = useState(initialNombre);
   const [nota, setNota] = useState(initialNota);
+  const [etiquetas, setEtiquetas] = useState(initialEtiquetas);
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [errorDotes, setErrorDotes] = useState<string | null>(null);
   // Mismo motivo que en CharacterSheet.tsx (2026-09-24): AccionesTab se
@@ -417,12 +427,38 @@ export function NpcEditor({
   // app (deleteCharacter en characters/page.tsx) tampoco pide confirmación
   // para borrar: mismo criterio aquí.
   const eliminar = async () => {
-    await eliminarNpcAction(npcId);
+    await enviarAPapeleraNpcAction(npcId);
     router.push("/master/npcs");
+  };
+  const restaurar = async () => {
+    await restaurarNpcAction(npcId);
+    router.refresh();
+  };
+  const onEtiquetas = async (nuevas: string[]) => {
+    const antes = etiquetas;
+    setEtiquetas(nuevas);
+    setStatus("saving");
+    const res = await setEtiquetasNpcAction(npcId, nuevas);
+    if (!res.ok) setEtiquetas(antes);
+    setStatus(res.ok ? "saved" : "error");
   };
 
   return (
     <div className="flex flex-col gap-4">
+      {enPapelera && (
+        <div role="status" className="clip-chamfer-sm flex items-center gap-3 border border-danger px-3 py-2">
+          <span className="flex-1 font-mono text-xs text-danger">
+            Este NPC está en la papelera: no sale en el catálogo ni en el combate.
+          </span>
+          <button
+            type="button"
+            onClick={restaurar}
+            className="clip-chamfer-sm shrink-0 border border-accent px-3 py-1.5 font-mono text-[11px] uppercase tracking-wide text-accent active:scale-95"
+          >
+            Restaurar
+          </button>
+        </div>
+      )}
       <h1 className="font-display text-3xl font-bold uppercase tracking-wide">
         {nombre || "Sin nombre"}
       </h1>
@@ -458,6 +494,7 @@ export function NpcEditor({
             elegido={sheet.especieOpciones.atributo ?? null}
             onElegir={commitAtributoLibre}
           />
+          <EditorEtiquetas etiquetas={etiquetas} sugerencias={sugerenciasEtiquetas} onCambiar={onEtiquetas} />
           <label className="flex flex-col gap-1">
             <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
               Nota (libre, visible solo para el máster)
@@ -470,13 +507,15 @@ export function NpcEditor({
               className="clip-chamfer-sm border border-border bg-night px-3 py-2 font-mono text-sm outline-none focus:border-accent"
             />
           </label>
-          <button
-            type="button"
-            onClick={eliminar}
-            className="clip-chamfer-sm mt-2 self-start border border-danger px-3 py-1.5 font-mono text-[11px] uppercase tracking-wide text-danger active:scale-95"
-          >
-            Borrar NPC
-          </button>
+          {!enPapelera && (
+            <button
+              type="button"
+              onClick={eliminar}
+              className="clip-chamfer-sm mt-2 self-start border border-danger px-3 py-1.5 font-mono text-[11px] uppercase tracking-wide text-danger active:scale-95"
+            >
+              Mandar a la papelera
+            </button>
+          )}
         </div>
       )}
       {active === "attrs" && (

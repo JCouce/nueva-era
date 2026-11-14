@@ -187,6 +187,10 @@ model NpcTemplate {
   nombre       String
   stats        Json
   nota         String?
+  // Libres, las pone el máster para buscar y agrupar (lib/npcEtiquetas.ts las normaliza).
+  etiquetas    String[]      @default([])
+  // Papelera: borrar solo marca; el borrado de verdad se hace desde la papelera.
+  deletedAt    DateTime?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   combatientes Combatiente[]

@@ -228,27 +228,51 @@ export async function agregarNpcDeCatalogoAction(
 
   const npc = await prisma.npcTemplate.findUnique({ where: { id: npcTemplateId } });
   if (!npc) return { ok: false, error: "No existe ese NPC." };
-
-  const sheet = parseSheet(npc.stats);
-  // Modo libre, como lo resuelven el editor y NpcAccionesPanel: las dotes del NPC cuentan
-  // sin mirar requisitos (§9.4) también en sus máximos.
-  const { vida, fatiga } = resolverFicha(sheet, { estados: [], vitalidad: VITALIDAD_DE_FICHA, libre: true }).salud;
+  if (npc.deletedAt) return { ok: false, error: "Ese NPC está en la papelera." };
 
   await prisma.combatiente.create({
-    data: {
-      combateId,
-      npcTemplateId,
-      nombre: npc.nombre,
-      sheet,
-      pgActual: vida,
-      pgMax: vida,
-      fatigaActual: fatiga,
-      fatigaMax: fatiga,
-      orden: await ordenSiguiente(combateId),
-    },
+    data: { combateId, ...fotoDeNpc(npc), orden: await ordenSiguiente(combateId) },
   });
   revalidateCombate();
   return { ok: true };
+}
+
+// «Añadir los N filtrados» de la consola: varios NPCs del catálogo de una vez, en el orden en
+// que llegan y en una sola escritura. Los que no existen o están en la papelera se saltan.
+const idsNpcsSchema = z.array(z.string().min(1)).min(1).max(100);
+
+export async function agregarNpcsDeCatalogoAction(combateId: string, npcTemplateIds: unknown): Promise<CombateResult> {
+  if (!(await requireMaster())) return { ok: false, error: "Solo el máster puede añadir combatientes." };
+  const parsed = idsNpcsSchema.safeParse(npcTemplateIds);
+  if (!parsed.success) return { ok: false, error: "Lista de NPCs no válida." };
+
+  const npcs = await prisma.npcTemplate.findMany({ where: { id: { in: parsed.data }, deletedAt: null } });
+  const porId = new Map(npcs.map((n) => [n.id, n]));
+  const enOrden = parsed.data.flatMap((id) => porId.get(id) ?? []);
+  if (enOrden.length === 0) return { ok: false, error: "Ninguno de esos NPCs está en el catálogo." };
+
+  const base = await ordenSiguiente(combateId);
+  await prisma.combatiente.createMany({
+    data: enOrden.map((npc, i) => ({ combateId, ...fotoDeNpc(npc), orden: base + i })),
+  });
+  revalidateCombate();
+  return { ok: true };
+}
+
+// Ficha congelada del NPC para su fila de combate. Modo libre, como lo resuelven el editor y
+// NpcAccionesPanel: las dotes del NPC cuentan sin mirar requisitos (§9.4) también en sus máximos.
+function fotoDeNpc(npc: { id: string; nombre: string; stats: unknown }) {
+  const sheet = parseSheet(npc.stats);
+  const { vida, fatiga } = resolverFicha(sheet, { estados: [], vitalidad: VITALIDAD_DE_FICHA, libre: true }).salud;
+  return {
+    npcTemplateId: npc.id,
+    nombre: npc.nombre,
+    sheet,
+    pgActual: vida,
+    pgMax: vida,
+    fatigaActual: fatiga,
+    fatigaMax: fatiga,
+  };
 }
 
 // --- Combatientes: fuera de la cola de turnos, sin borrar la fila ---

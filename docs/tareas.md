@@ -915,6 +915,24 @@ blindaje del escudo **deja de sumar al del portador**.
   Combate), con Deshacer que restaura el desglose. Migración `combatiente_danio`.
 - Que el daño del combate vuelva a la ficha al terminar: hecho en T1 del barrido (td-13).
 
+### Catálogo de NPCs: buscador, etiquetas y papelera ✅, 2026-11-14
+
+- Catálogo (`master/npcs/CatalogoNpcs.tsx`): búsqueda por nombre, nota y etiqueta (sin tildes ni
+  mayúsculas) y orden por nombre, más recientes o poder. Todo en cliente: se trae el catálogo entero.
+- Etiquetas libres: `NpcTemplate.etiquetas` (migración `npc_etiquetas_papelera`), normalizadas en
+  `src/lib/npcEtiquetas.ts` (sin repetidas por mayúsculas/tildes, tope 20 × 40 caracteres). Se
+  editan en Identidad del editor con sugerencias de las ya usadas; en el catálogo, fichas con
+  recuento que filtran en Y. Clonar las copia.
+- Papelera: `NpcTemplate.deletedAt`. «Borrar» solo marca; pestaña Papelera con Restaurar y
+  «Borrar para siempre» (doble pulsación; el servidor solo borra lo que ya está en la papelera).
+  Un NPC en la papelera no sale en el selector de combate ni se puede añadir; su editor lo avisa y
+  deja restaurarlo. Vaciado manual, sin caducidad.
+- Combate, «Añadir combatientes»: el mismo buscador y fichas de etiqueta (`useFiltroNpcs`,
+  `ChipsEtiquetas`); el filtro se mantiene al añadir y «Añadir los N filtrados» mete todos de una
+  vez (`agregarNpcsDeCatalogoAction`, una sola escritura, salta los de la papelera).
+- Escritorio (lg): columna izquierda fija con crear, pestañas y filtros; tarjetas en rejilla.
+- Fuera: exportar/importar el catálogo en JSON y renombrar una etiqueta en bloque.
+
 ## Pendiente
 
 ### Barrido del cuestionario de cierre ⬜ (contestado entero 2026-11-13)

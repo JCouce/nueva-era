@@ -93,11 +93,12 @@ export default async function CombatePage() {
   // Fase 6b, subtarea 5.2: el catálogo entero (nombre + nota + Poder de
   // 5.0b, no solo el id) para que el máster elija con algo de contexto sin
   // saltar a /master/npcs — mismo criterio que ya usa esa pantalla.
-  const npcTemplates = await prisma.npcTemplate.findMany({ orderBy: { nombre: "asc" } });
+  const npcTemplates = await prisma.npcTemplate.findMany({ where: { deletedAt: null }, orderBy: { nombre: "asc" } });
   const npcs = npcTemplates.map((n) => ({
     id: n.id,
     nombre: n.nombre,
     nota: n.nota,
+    etiquetas: n.etiquetas,
     poder: poder(parseSheet(n.stats)),
   }));
 

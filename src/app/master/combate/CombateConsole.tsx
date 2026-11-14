@@ -14,6 +14,8 @@ import { MasterTabs } from "@/components/MasterTabs";
 import { useEffect, useEffectEvent, useOptimistic, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { usePollingCombate } from "@/hooks/usePollingCombate";
+import { useFiltroNpcs } from "@/hooks/useFiltroNpcs";
+import { ChipsEtiquetas } from "@/components/ChipsEtiquetas";
 import {
   duracionLegible,
   formatoNumero,
@@ -45,6 +47,7 @@ import {
   terminarCombateAction,
   agregarJugadorAction,
   agregarNpcDeCatalogoAction,
+  agregarNpcsDeCatalogoAction,
   avanzarTurnoAction,
   establecerIniciativaAction,
   ordenarPorIniciativaAction,
@@ -101,6 +104,7 @@ type NpcOption = {
   id: string;
   nombre: string;
   nota: string | null;
+  etiquetas: string[];
   poder: number;
 };
 
@@ -395,28 +399,12 @@ export function CombateConsole({
                   />
                 ))}
               </ListaAnadir>
-              <ListaAnadir
-                titulo="NPC"
-                vacio={
-                  <>
-                    No hay NPCs en el catálogo.{" "}
-                    <Link href="/master/npcs" className="text-accent hover:underline">
-                      Crea el primero
-                    </Link>
-                    .
-                  </>
-                }
-              >
-                {npcs.map((n) => (
-                  <FilaAnadir
-                    key={n.id}
-                    nombre={n.nombre}
-                    sub={`${n.poder.toFixed(1)} poder${n.nota ? ` · ${n.nota}` : ""}`}
-                    disabled={pending}
-                    onAnadir={() => ejecutar(() => agregarNpcDeCatalogoAction(combate.id, n.id))}
-                  />
-                ))}
-              </ListaAnadir>
+              <AnadirNpcs
+                npcs={npcs}
+                disabled={pending}
+                onAnadir={(id) => ejecutar(() => agregarNpcDeCatalogoAction(combate.id, id))}
+                onAnadirVarios={(ids) => ejecutar(() => agregarNpcsDeCatalogoAction(combate.id, ids))}
+              />
             </div>
           </details>
         </section>
@@ -573,6 +561,87 @@ function ListaAnadir({ titulo, vacio, children }: { titulo: string; vacio: React
         <ul className="grid min-w-0 gap-1.5">{children}</ul>
       ) : (
         <p className="border border-dashed border-border px-3 py-4 text-sm text-muted">{vacio}</p>
+      )}
+    </div>
+  );
+}
+
+// Lista de NPCs del catálogo con el buscador y las fichas de etiqueta del catálogo. El filtro
+// se mantiene al añadir, para meter varios del mismo grupo; «Añadir los N» mete todos los
+// filtrados de una vez.
+function AnadirNpcs({
+  npcs,
+  disabled,
+  onAnadir,
+  onAnadirVarios,
+}: {
+  npcs: NpcOption[];
+  disabled: boolean;
+  onAnadir: (id: string) => void;
+  onAnadirVarios: (ids: string[]) => void;
+}) {
+  const { busqueda, setBusqueda, recuento, marcada, alternar, limpiar, filtrados, filtrando } = useFiltroNpcs(npcs);
+
+  return (
+    <div className="grid min-w-0 gap-2">
+      <h3 className="font-mono text-xs uppercase tracking-widest text-muted">NPC</h3>
+      {npcs.length === 0 ? (
+        <p className="border border-dashed border-border px-3 py-4 text-sm text-muted">
+          No hay NPCs en el catálogo.{" "}
+          <Link href="/master/npcs" className="text-accent hover:underline">
+            Crea el primero
+          </Link>
+          .
+        </p>
+      ) : (
+        <>
+          <input
+            type="search"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar NPC o etiqueta"
+            aria-label="Buscar NPC para añadir"
+            className={`min-h-11 min-w-0 border border-border bg-surface px-3 text-base outline-none focus:border-accent ${FOCO}`}
+          />
+          <ChipsEtiquetas recuento={recuento} marcada={marcada} alternar={alternar} />
+          {filtrando && (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={limpiar}
+                className={`min-h-9 font-mono text-[11px] uppercase tracking-wide text-accent ${FOCO}`}
+              >
+                Limpiar filtros
+              </button>
+              {filtrados.length > 0 && (
+                <Boton
+                  variante="primario"
+                  disabled={disabled}
+                  onClick={() => onAnadirVarios(filtrados.map((n) => n.id))}
+                >
+                  Añadir {filtrados.length === 1 ? "el filtrado" : `los ${filtrados.length} filtrados`}
+                </Boton>
+              )}
+            </div>
+          )}
+          {filtrados.length > 0 ? (
+            <ul className="grid min-w-0 gap-1.5">
+              {filtrados.map((n) => (
+                <FilaAnadir
+                  key={n.id}
+                  nombre={n.nombre}
+                  sub={[`${n.poder.toFixed(1)} poder`, n.etiquetas.join(", "), n.nota].filter(Boolean).join(" · ")}
+                  disabled={disabled}
+                  onAnadir={() => onAnadir(n.id)}
+                />
+              ))}
+            </ul>
+          ) : (
+            <p className="border border-dashed border-border px-3 py-4 text-sm text-muted">
+              Ningún NPC coincide con los filtros.
+            </p>
+          )}
+        </>
       )}
     </div>
   );

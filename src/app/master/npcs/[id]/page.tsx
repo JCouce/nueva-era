@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
 import { parseSheet, reconciliarVida } from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
+import { recuentoEtiquetas } from "@/lib/npcEtiquetas";
 import { NpcEditor } from "./NpcEditor";
 
 export default async function NpcPage({ params }: { params: Promise<{ id: string }> }) {
@@ -12,6 +13,8 @@ export default async function NpcPage({ params }: { params: Promise<{ id: string
 
   const npc = await prisma.npcTemplate.findUnique({ where: { id } });
   if (!npc) notFound();
+  const otros = await prisma.npcTemplate.findMany({ where: { deletedAt: null }, select: { etiquetas: true } });
+  const sugerencias = recuentoEtiquetas(otros).map((r) => r.etiqueta);
 
   return (
     <>
@@ -24,6 +27,9 @@ export default async function NpcPage({ params }: { params: Promise<{ id: string
           initialNombre={npc.nombre}
           initialNota={npc.nota ?? ""}
           initialSheet={reconciliarVida(parseSheet(npc.stats))}
+          initialEtiquetas={npc.etiquetas}
+          sugerenciasEtiquetas={sugerencias}
+          enPapelera={npc.deletedAt !== null}
         />
       </main>
     </>
