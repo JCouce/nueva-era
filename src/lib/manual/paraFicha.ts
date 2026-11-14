@@ -21,6 +21,12 @@ export type ManualFicha = {
   apartados: Record<string, ApartadosDocumento>;
 };
 
+// Anclas que cortan un apartado aunque no sean elemento del catálogo. Temporal hasta que
+// Pilotaje sea habilidad (E6 del plan): sin el corte, Interpretación se traga su bloque.
+const CORTES_FIJOS: Readonly<Record<string, readonly string[]>> = {
+  habilidades: ["pilotaje"],
+};
+
 export function montarManualFicha(
   documentos: ReadonlyMap<string, AnclasDocumento>,
   elementos: readonly ElementoManual[] = elementosDelCatalogo(),
@@ -29,6 +35,7 @@ export function montarManualFicha(
   const referencias = resolverReferencias(elementos, documentos, excepciones);
 
   const cortes = new Map<string, Set<string>>();
+  for (const [slug, anclas] of Object.entries(CORTES_FIJOS)) cortes.set(slug, new Set(anclas));
   for (const r of referencias.values()) {
     if (!cortes.has(r.slug)) cortes.set(r.slug, new Set());
     cortes.get(r.slug)!.add(r.ancla);
