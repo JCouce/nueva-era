@@ -161,6 +161,8 @@ import {
   estadosActivosDe,
   salvacionPropiaDe,
   textoDeConsecuencia,
+  cambiosDeEstadoDe,
+  textoDeCambiosDeEstado,
   motivoDeBloqueo,
   bloqueoDeAccionAumento,
 } from "@/lib/rules";
@@ -1070,7 +1072,7 @@ export async function aplicarConsecuenciaPropiaAction(characterId: string, entra
 // de siempre, cada uno con su entrada en el registro, que el máster puede deshacer.
 async function aplicarConsecuencia(
   characterId: string,
-  ctx: { sheet: Sheet },
+  ctx: { sheet: Sheet; estados: EstadoActivo[] },
   c: ConsecuenciaPropia,
   autoria: { userId: string; motivo: string },
 ): Promise<SaveResult> {
@@ -1089,10 +1091,17 @@ async function aplicarConsecuencia(
     if (!hecho) return { ok: false, error: "Personaje no encontrado" };
     if (hecho.inmunes.length > 0) inmune.push(estadoPorId(estado.estadoId)?.label ?? estado.estadoId);
   }
+  // Fármacos instantáneos: quitar o bajar un grado lo que lleves (Hemostáticos, Estabilizadores).
+  const cambios = cambiosDeEstadoDe(c, ctx.estados);
+  for (const op of cambios) {
+    const hecho = await cambiarEstadosDePersonajes([characterId], op, autoria);
+    if (!hecho) return { ok: false, error: "Personaje no encontrado" };
+  }
   const fila = await prisma.character.findUnique({ where: { id: characterId }, select: { stats: true, estados: true } });
   const sheet = fila ? reconciliarVidaConEstados(parseSheet(fila.stats), leerEstados(fila.estados)) : ctx.sheet;
   const aviso = inmune.length > 0 ? ` Eres inmune a ${inmune.join(" y ")}: no se pone.` : "";
-  return { ok: true, sheet, mensaje: `${textoDeConsecuencia(c)}${aviso}` };
+  const mensaje = [textoDeConsecuencia(c) + aviso, textoDeCambiosDeEstado(c, cambios)].filter(Boolean).join(" ");
+  return { ok: true, sheet, mensaje };
 }
 
 // Quitar a mano un estado propio de poder («Terminar contención») o de ocultación («Salir del

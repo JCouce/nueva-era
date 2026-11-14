@@ -49,6 +49,15 @@ const ESTADO_AL_USAR: Readonly<Record<string, EstadoAlUsar>> = {
   farmaco_ultra_estimulante: { estadoId: ESTADO_BAJO_ULTRA_ID, fijo: { gradoId: "activo", turnos: null } },
 };
 
+// Los estados del catálogo que tocan los instantáneos. Como toda consecuencia propia, sobre quien
+// tira: con lo que lleva puesto (sin el estado, nada).
+// TODO(revisar): administrárselo a otro no se modela (la fila es «Usar» sobre ti); el máster le
+// quita o baja el estado desde la Mesa.
+const ESTADO_HEMORRAGIA_ID = "hemorragia";
+const ESTADO_ATURDIDO_ID = "aturdido";
+// Del peor al más leve (catalog/estados.ts).
+const GRADOS_ATURDIDO = ["fracaso_critico", "fracaso", "exito"];
+
 // Lo que los Geles te ponen al superar su tirada: los efectos del Analgésico y el Antipatógeno.
 function conAnalgesicoAlSuperar(): Partial<Record<Grado, ConsecuenciaPropia>> {
   const c: ConsecuenciaPropia = {
@@ -119,10 +128,16 @@ const CON_TIRADA: Record<
     })(),
   },
   // Dificultades del documento (S94, docs/fuente/equipamiento.md, Fármacos): el modal abre
-  // en ellas; la hemorragia exanguinante es una opción de la propia fila (9).
+  // en ellas; la hemorragia exanguinante es una opción de la propia fila (9). Instantáneo (fármacos
+  // como estados, usuario 2026-11-14): superarla te quita la Hemorragia («detención inmediata del
+  // estado de hemorragia»; la exanguinante no es otro estado, solo pide más).
   farmaco_hemostaticos: {
-    nota: "Perspicacia + Biociencia (Medicina). Dificultad 7 normal, 9 en hemorragia exanguinante.",
+    nota: "Perspicacia + Biociencia (Medicina). Dificultad 7 normal, 9 en hemorragia exanguinante. Con éxito, la app te quita la Hemorragia.",
     dificultad: 7,
+    consecuenciasPropias: (() => {
+      const sella: ConsecuenciaPropia = { texto: "Detiene la hemorragia: se te quita «Hemorragia».", estados: [], quita: [ESTADO_HEMORRAGIA_ID] };
+      return { critico: sella, exito: sella };
+    })(),
     condiciones: [
       {
         id: "hemostaticos_hemorragia",
@@ -136,9 +151,19 @@ const CON_TIRADA: Record<
       },
     ],
   },
+  // Instantáneo (fármacos como estados, usuario 2026-11-14): «purgar instantáneamente un grado del
+  // estado de aturdimiento»; con crítico, «elimina por completo el estado».
+  // TODO(revisar): «un grado» leído sobre los grados del Aturdido (los de su salvación): fracaso
+  // crítico → fracaso → éxito → fuera (el éxito crítico ya no hace nada).
   farmaco_estabilizadores_neurales: {
-    nota: "Perspicacia + Biociencia (Medicina), dificultad 6 — purga un grado del aturdimiento; con éxito crítico, el estado entero.",
+    nota:
+      "Perspicacia + Biociencia (Medicina), dificultad 6 — purga un grado del aturdimiento; con éxito crítico, el estado entero. " +
+      "La app te lo aplica a ti.",
     dificultad: 6,
+    consecuenciasPropias: {
+      exito: { texto: "Purga un grado del aturdimiento.", estados: [], rebaja: [{ estadoId: ESTADO_ATURDIDO_ID, orden: GRADOS_ATURDIDO }] },
+      critico: { texto: "Elimina el aturdimiento.", estados: [], quita: [ESTADO_ATURDIDO_ID] },
+    },
   },
   // «Para establecer la duración»: superada, «Bajo Calmante» (−1 a heridas) 1 hora y 1 más por cada
   // 4 éxitos (texto del estado: la app no mide el tiempo). Varias dosis no suman (fa-02); su fatiga

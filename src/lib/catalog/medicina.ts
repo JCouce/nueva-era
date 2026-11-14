@@ -306,9 +306,10 @@ export const MEDICINA_UNICAS: Herramienta[] = [VALIJA_TACTICA_MEDICA];
 // no un hueco — un fármaco no lleva `modificadores` a propósito (bono POR
 // DOSIS de un solo uso, no un bono de personaje entero). Su `detalle` sigue
 // sin volcarse a ningún `Accion.nota` de forma automática: rules/farmacos.ts
-// lo cita como texto fijo en la nota de "Usar [fármaco]" (Fase 2), pero el
-// efecto en sí (cuánto cura, qué purga) sigue sin mecanizar. Narrativo, sin
-// conexión al cálculo, construido tal cual está — no "pendiente".
+// lo cita como texto fijo en la nota de "Usar [fármaco]" (Fase 2), pero la
+// curación de los Geles sigue sin mecanizar. Narrativo, sin conexión al cálculo,
+// construido tal cual está — no "pendiente". Lo que la dosis te pone o te quita va
+// por estados (fármacos como estados, usuario 2026-11-14; rules/farmacos.ts).
 //
 // Vale para 7 de los 10 — Analgésico, Ultra Estimulante y Xovromium sí traen
 // un número real en su `detalle` (no solo prosa), corregido 2026-09-24
@@ -362,7 +363,10 @@ export const FARMACOS: Consumible[] = [
     coste: 10,
     aplicacion: { base: "compleja" },
     modificadores: [],
-    motor: MOTOR_FARMACO,
+    // Instantáneo (2026-11-14): superar su tirada te quita la Hemorragia (consecuencia propia).
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "farmaco_farmaco_hemostaticos" }, mecanismo: "accion_equipo", estado: "construido" },
+    ],
   },
   {
     familia: "consumible",
@@ -379,7 +383,10 @@ export const FARMACOS: Consumible[] = [
     coste: 10,
     aplicacion: { base: "estandar" },
     modificadores: [],
-    motor: MOTOR_FARMACO,
+    // Instantáneo (2026-11-14): el éxito baja un grado el Aturdido; el crítico lo quita.
+    motor: [
+      { tipo: "accion", afecta: { modo: "accion_nueva", id: "farmaco_farmaco_estabilizadores_neurales" }, mecanismo: "accion_equipo", estado: "construido" },
+    ],
   },
   {
     familia: "consumible",

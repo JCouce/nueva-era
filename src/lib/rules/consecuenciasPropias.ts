@@ -13,6 +13,7 @@ import { z } from "zod";
 import type { Accion } from "./acciones";
 import type { CategoriaDanio } from "./danio";
 import { estadoActivoCon, type EstadoActivo } from "./estados";
+import type { OperacionEstado } from "./vidaPorEstados";
 import type { Grado } from "./psionica";
 import { estadoPorId } from "../catalog/estados";
 
@@ -31,6 +32,12 @@ export type ConsecuenciaPropia = {
   // Fatiga que pierdes (sin pasar de 0, como el ajuste de la pestaña Vida).
   fatiga?: number;
   estados: EstadoPropio[];
+  // Fármacos instantáneos (fármacos como estados, usuario 2026-11-14): estados que te quita
+  // (Hemostáticos: la Hemorragia) y estados que te baja un grado (Estabilizadores Neurales: el
+  // Aturdido). `orden`: sus grados del peor al más leve; bajar del último (o de uno que no esté en
+  // la lista) lo quita. Sin el estado puesto, nada.
+  quita?: string[];
+  rebaja?: { estadoId: string; orden: string[] }[];
 };
 
 // Una salvación que hace quien tira tras la acción: con qué fila de la ficha, contra cuánto y
@@ -76,7 +83,37 @@ export function consecuenciaPropia(
   op: { grado: Grado; tipo: "grado" | "salvacion"; modoId?: string | null },
 ): ConsecuenciaPropia | null {
   const c = op.tipo === "grado" ? t.consecuenciasPropias?.[op.grado] : salvacionPropiaDe(t, op.modoId ?? null)?.grados[op.grado];
-  return c && (c.danio || c.fatiga || c.estados.length > 0) ? c : null;
+  return c && (c.danio || c.fatiga || c.estados.length > 0 || c.quita?.length || c.rebaja?.length) ? c : null;
+}
+
+// Lo que `quita` y `rebaja` hacen de verdad sobre los estados que llevas: quitar el que tengas y
+// bajar un grado (o quitar) el que tengas. Lo que no llevas no da operación.
+export function cambiosDeEstadoDe(c: Pick<ConsecuenciaPropia, "quita" | "rebaja">, actuales: readonly EstadoActivo[]): OperacionEstado[] {
+  const quitar = (c.quita ?? []).flatMap((id): OperacionEstado[] => (actuales.some((e) => e.estadoId === id) ? [{ tipo: "quitar", estadoId: id }] : []));
+  const rebajar = (c.rebaja ?? []).flatMap(({ estadoId, orden }): OperacionEstado[] => {
+    const actual = actuales.find((e) => e.estadoId === estadoId);
+    if (!actual) return [];
+    const i = orden.indexOf(actual.gradoId);
+    const siguiente = i >= 0 ? orden[i + 1] : undefined;
+    return [siguiente ? { tipo: "poner", estado: { ...actual, gradoId: siguiente } } : { tipo: "quitar", estadoId }];
+  });
+  return [...quitar, ...rebajar];
+}
+
+// «Se te quita Hemorragia.» / «Aturdido baja a Éxito.» Sin cambios, lo que no había que quitar.
+export function textoDeCambiosDeEstado(c: Pick<ConsecuenciaPropia, "quita" | "rebaja">, ops: readonly OperacionEstado[]): string {
+  const nombre = (id: string) => estadoPorId(id)?.label ?? id;
+  if (ops.length === 0) {
+    const ids = [...(c.quita ?? []), ...(c.rebaja ?? []).map((r) => r.estadoId)];
+    return ids.length > 0 ? `No llevas ${ids.map(nombre).join(" ni ")}: nada que quitar.` : "";
+  }
+  return ops
+    .map((op) => {
+      if (op.tipo === "quitar") return `Se te quita ${nombre(op.estadoId)}.`;
+      const grado = estadoPorId(op.estado.estadoId)?.grados.find((g) => g.id === op.estado.gradoId)?.label ?? op.estado.gradoId;
+      return `${nombre(op.estado.estadoId)} baja a ${grado}.`;
+    })
+    .join(" ");
 }
 
 // Los EstadoActivo que se ponen (sin los que el catálogo ya no conoce: dato desfasado).

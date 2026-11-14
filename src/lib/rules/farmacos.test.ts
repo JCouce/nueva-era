@@ -10,7 +10,7 @@ import { montarTirada, SIN_ELECCION, type TiradaMontada } from "./montaje";
 import type { EstadoActivo } from "./estados";
 import { ponerEstado } from "./estadosFicha";
 import { estadoPorUso } from "./sigilo";
-import { consecuenciaPropia, estadosActivosDe } from "./consecuenciasPropias";
+import { cambiosDeEstadoDe, consecuenciaPropia, estadosActivosDe, textoDeCambiosDeEstado } from "./consecuenciasPropias";
 
 function conFarmaco(catalogoId: string, cantidad: number): Sheet {
   return { ...defaultSheet(), farmacos: { [catalogoId]: cantidad } };
@@ -388,5 +388,43 @@ describe("Enjambre Nanobot 1: +3 a las medicinas sobre ti mismo (au-07)", () => 
     assert.equal(marcada(pen, t).total - sinMarcar(pen, t).total, 1);
     const apagada = ficha(conEnjambre(), [shock("fracaso_critico")]);
     assert.equal(casilla(fila(apagada, "medicina")), undefined);
+  });
+});
+
+// Instantáneos (fármacos como estados, usuario 2026-11-14): lo que hacen se aplica en el acto,
+// según el grado de su tirada, sobre lo que lleva quien tira.
+describe("fármacos instantáneos: Hemostáticos y Estabilizadores Neurales", () => {
+  const fila = (id: string) => accionesDeFarmacos(conFarmaco(id, 1), []).find((a) => a.farmacoId === id)!;
+  const puesto = (estadoId: string, gradoId = "activo"): EstadoActivo => ({ estadoId, gradoId, rondasRestantes: 2 });
+  const cambios = (id: string, grado: "critico" | "exito" | "fracaso" | "fracasoCritico", actuales: EstadoActivo[]) => {
+    const c = consecuenciaPropia(fila(id), { tipo: "grado", grado });
+    return c ? cambiosDeEstadoDe(c, actuales) : null;
+  };
+
+  test("Hemostáticos: con éxito o crítico te quita la Hemorragia; fallando, nada", () => {
+    for (const grado of ["exito", "critico"] as const) {
+      assert.deepEqual(cambios("farmaco_hemostaticos", grado, [puesto("hemorragia"), puesto("derribado")]), [{ tipo: "quitar", estadoId: "hemorragia" }], grado);
+    }
+    for (const grado of ["fracaso", "fracasoCritico"] as const) assert.equal(cambios("farmaco_hemostaticos", grado, [puesto("hemorragia")]), null, grado);
+  });
+
+  test("Hemostáticos sin Hemorragia puesta: nada que quitar, y lo dice", () => {
+    const c = consecuenciaPropia(fila("farmaco_hemostaticos"), { tipo: "grado", grado: "exito" })!;
+    assert.deepEqual(cambiosDeEstadoDe(c, []), []);
+    assert.equal(textoDeCambiosDeEstado(c, []), "No llevas Hemorragia: nada que quitar.");
+  });
+
+  test("Estabilizadores: el éxito baja un grado el Aturdido (fracaso crítico → fracaso → éxito → fuera)", () => {
+    const baja = (gradoId: string) => cambios("farmaco_estabilizadores_neurales", "exito", [puesto("aturdido", gradoId)]);
+    assert.deepEqual(baja("fracaso_critico"), [{ tipo: "poner", estado: puesto("aturdido", "fracaso") }]);
+    assert.deepEqual(baja("fracaso"), [{ tipo: "poner", estado: puesto("aturdido", "exito") }]);
+    assert.deepEqual(baja("exito"), [{ tipo: "quitar", estadoId: "aturdido" }]);
+    const c = consecuenciaPropia(fila("farmaco_estabilizadores_neurales"), { tipo: "grado", grado: "exito" })!;
+    assert.equal(textoDeCambiosDeEstado(c, baja("fracaso_critico")!), "Aturdido baja a Fracaso.");
+  });
+
+  test("Estabilizadores: el crítico quita el Aturdido entero; fallando, nada", () => {
+    assert.deepEqual(cambios("farmaco_estabilizadores_neurales", "critico", [puesto("aturdido", "fracaso_critico")]), [{ tipo: "quitar", estadoId: "aturdido" }]);
+    for (const grado of ["fracaso", "fracasoCritico"] as const) assert.equal(cambios("farmaco_estabilizadores_neurales", grado, [puesto("aturdido", "fracaso")]), null, grado);
   });
 });
