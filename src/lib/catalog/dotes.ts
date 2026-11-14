@@ -6719,6 +6719,89 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_estrategia_de_combate",
+    "label": "Estrategia de Combate",
+    "grupo": "exploracion",
+    "coste": 4,
+    "requisitos": [
+      {
+        "tipo": "especialidad",
+        "habilidad": "exploracion",
+        "id": "tactica",
+        "min": 4
+      },
+      {
+        "tipo": "aplicado",
+        "id": "perspicacia",
+        "min": 2
+      },
+      {
+        "tipo": "dote",
+        "id": "dote_ataque_coordinado"
+      },
+      {
+        "tipo": "dote",
+        "id": "dote_defensa_coordinada"
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "El personaje resuelve en una única tirada y una sola acción compleja tanto la defensa coordinada como el ataque.",
+    "efectos": [
+      {
+        "tipo": "accion",
+        "accion": {
+          "id": "dotes_estrategia_de_combate",
+          "label": "Estrategia de combate",
+          "economia": "compleja",
+          "limite": null,
+          "resolucion": {
+            "tipo": "tirada",
+            "aplicado": "perspicacia",
+            "habilidad": "exploracion",
+            "especialidad": "tactica",
+            "dificultad": 7
+          },
+          "objetivoTira": [],
+          "resultados": {
+            "exito": {
+              "texto": "Ataque y defensa coordinados a la vez: durante tu siguiente turno, tú y tus aliados ganáis +1 en las tiradas de ataque y +1 en las de defensa contra el objetivo. La app no se lo suma: cada uno lo pone en su tirada."
+            },
+            "critico": {
+              "texto": "Además, los dos bonificadores se mantienen tantos turnos como tu puntuación de Táctica."
+            }
+          },
+          "notas": [
+            {
+              "texto": "Resuelves en una única tirada el Ataque Coordinado y la Defensa Coordinada contra un objetivo.",
+              "condicion": null
+            },
+            {
+              "texto": "Los aliados deben poder mantener una vía de comunicación fluida entre ellos.",
+              "condicion": null
+            }
+          ]
+        },
+        "borrador": 0
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "accion",
+        "afecta": {
+          "modo": "accion_nueva",
+          "id": "dotes_estrategia_de_combate"
+        },
+        "mecanismo": "accion_sin_equipo",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_encontrar_el_angulo",
     "label": "Encontrar el Ángulo",
     "grupo": "exploracion",
@@ -8327,8 +8410,8 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   204 efectos (194 en el borrador)
-//   construidos: 112
+//   205 efectos (195 en el borrador)
+//   construidos: 113
 //   texto: 92
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0

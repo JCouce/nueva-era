@@ -317,6 +317,29 @@ describe("sync Drive 2026-11-14 (T2.M1): dotes nuevas de Exploración", () => {
     assert.match(t.poder!.resultados.critico!, /Además, el bonificador se mantiene tantos turnos como tu puntuación de Táctica/);
   });
 
+  test("Estrategia de Combate: una tirada compleja con los dos bonificadores", () => {
+    const f = resolver(ficha([{ id: "dote_ataque_coordinado" }, { id: "dote_defensa_coordinada" }, { id: "dote_estrategia_de_combate" }]));
+    const t = tirada(f, "dotes_estrategia_de_combate")!;
+    assert.equal(t.aplicado, "perspicacia");
+    assert.equal(t.habilidad, "exploracion");
+    assert.deepEqual(t.especialidadesAccion, ["tactica"]);
+    assert.equal(t.dificultadSugerida, 7);
+    assert.match(t.nota ?? "", /^Compleja · /);
+    assert.equal(montar(f, t).enEspecialidad, true);
+    assert.match(t.poder!.resultados.exito!, /\+1 en las tiradas de ataque y \+1 en las de defensa/);
+    // Las dos sueltas siguen ahí.
+    assert.ok(tirada(f, "dotes_ataque_coordinado"));
+    assert.ok(tirada(f, "dotes_defensa_coordinada"));
+  });
+
+  test("Estrategia de Combate exige Ataque Coordinado y Defensa Coordinada", () => {
+    const sale = (dotes: DoteComprada[]) => tirada(resolver(ficha(dotes)), "dotes_estrategia_de_combate") !== undefined;
+    assert.equal(sale([{ id: "dote_estrategia_de_combate" }]), false);
+    assert.equal(sale([{ id: "dote_ataque_coordinado" }, { id: "dote_estrategia_de_combate" }]), false);
+    assert.equal(sale([{ id: "dote_defensa_coordinada" }, { id: "dote_estrategia_de_combate" }]), false);
+    assert.equal(sale([{ id: "dote_ataque_coordinado" }, { id: "dote_defensa_coordinada" }, { id: "dote_estrategia_de_combate" }]), true);
+  });
+
   test("Ataque Coordinado: sin Táctica 2 no sale", () => {
     const base = ficha([{ id: "dote_ataque_coordinado" }]);
     const sinTactica = { ...base, habilidades: { ...base.habilidades, exploracion: { valor: 6, especialidades: [] } } };

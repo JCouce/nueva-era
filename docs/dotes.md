@@ -16,8 +16,8 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **110 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 12 · Cultura 0 · Exploración 8 · Interpretación 0 · Sigilo 3 ·
+> Recuento: **111 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 12 · Cultura 0 · Exploración 9 · Interpretación 0 · Sigilo 3 ·
 > Tecnociencia 0 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
@@ -27,7 +27,7 @@
 > que **todavía no están aquí**: el resto del documento sigue siendo la foto del 2026-10-14.
 >
 > **Añadidas de la foto de Drive del 2026-11-14** (`docs/plan-sync-2026-11-14.md`, T2.M1), con
-> el mismo criterio: *Ataque Coordinado* y *Defensa Coordinada*. Las que dependen de habilidades nuevas (Ocultación,
+> el mismo criterio: *Ataque Coordinado*, *Defensa Coordinada* y *Estrategia de Combate*. Las que dependen de habilidades nuevas (Ocultación,
 > Mimetismo, Juego de Manos, Exoarmadura) esperan a E6.
 
 ## Actitud
@@ -1133,6 +1133,19 @@ Para que el ataque coordinado pueda ser viable, los personajes aliados deben pod
 El personaje realiza un análisis como acción compleja de un objetivo, la prueba se resuelve con una tirada de **perspicacia + táctica** dificultad 7, en caso de **éxito,** durante su siguiente turno tanto el personaje como sus aliados ganan un bonificador de **+1 en tiradas de defensa** contra el objetivo, en caso de **éxito crítico**, el bonificador se mantiene durante tantos turnos como la puntuación de **táctica** del personaje.
 
 Para que la defensa coordinada pueda ser viable, los personajes aliados deben poder mantener una vía de comunicación fluida entre ellos.
+
+### Estrategia de Combate
+
+**Coste:** 4
+
+**Requisitos:**
+- Táctica 4 · especialidad (Exploración)
+- Perspicacia 2 · atributo aplicado
+- Ataque Coordinado · dote previa
+- Defensa Coordinada · dote previa
+
+**Efecto:**
+El personaje resuelve en una única tirada y una sola acción compleja tanto la defensa coordinada como el ataque.
 
 ### Encontrar el Ángulo
 
