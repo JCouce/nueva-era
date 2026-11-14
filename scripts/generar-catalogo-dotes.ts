@@ -277,18 +277,20 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
   // ya es eso), así que el éxito → crítico va sin casilla, como su fracaso → éxito (decisión
   // del usuario, tiradas fijas 2026-10-23).
   "dote_velocista#1": { tipo: "margen_critico", alcance: "carrera", valor: 0, condicion: null },
-  // Imitación +2, +3 con Interpretación ≥ 3 (valor por umbral de ficha, D2d): una sola casilla
+  // Imitación +2, +3 con Mimetismo ≥ 3 (valor por umbral de ficha, D2d): una sola casilla
   // con el valor que toque (S38 resuelto). El texto capa_pendiente del umbral pasa a la tarjeta.
+  // Foto de Drive 2026-11-14: Interpretación → Mimetismo. El umbral mira Sigilo ≥ 3: la dote
+  // exige Mimetismo, así que Sigilo es lo que vale tu Mimetismo (en especialidad, entera).
   "dote_imitacion#0": {
     tipo: "bono",
     alcance: "imitar",
-    valor: { base: 2, siMin: { tipo: "habilidad", id: "interpretacion", min: 3, valor: 3 } },
+    valor: { base: 2, siMin: { tipo: "habilidad", id: "sigilo", min: 3, valor: 3 } },
     condicion: "Imitando a otra persona",
   },
   "dote_imitacion#1": {
     tipo: "texto",
     lugar: "ficha",
-    texto: "Con Interpretación 3 o más el bono es +3: la casilla «Imitando a otra persona» ya lo pone.",
+    texto: "Con Mimetismo 3 o más el bono es +3: la casilla «Imitando a otra persona» ya lo pone.",
     condicion: null,
     porque: "sin_regla",
   },

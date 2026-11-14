@@ -197,11 +197,11 @@ Durante una escena social o antes de un combate (pudiendo usarse como tirada de 
 
 **Requisitos:**
 - Manipulación 1 · especialidad (Actitud)
-- Interpretación 1 · habilidad
+- Mimetismo 1 · especialidad (Sigilo)
 - Carácter 1 · atributo
 
 **Efecto:**
-El personaje puede memorizar los gestos, el habla y las actitudes de otra persona para imitarlas con precisión. En caso de imitación gana un bonificador de +2 a su tirada. Si su puntuación de **interpretación** es de 3 o superior el bonificador pasa a ser de +3.
+El personaje puede memorizar los gestos, el habla y las actitudes de otra persona para imitarlas con precisión. En caso de imitación gana un bonificador de +2 a su tirada. Si su puntuación de **mimetismo** es de 3 o superior el bonificador pasa a ser de +3.
 
 ### Negociación Analítica
 

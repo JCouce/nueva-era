@@ -1222,8 +1222,9 @@ export const DOTES: readonly DoteCatalogo[] = [
         "min": 1
       },
       {
-        "tipo": "habilidad",
-        "id": "interpretacion",
+        "tipo": "especialidad",
+        "habilidad": "sigilo",
+        "id": "mimetismo",
         "min": 1
       },
       {
@@ -1236,7 +1237,7 @@ export const DOTES: readonly DoteCatalogo[] = [
     "repetible": false,
     "sustituye": null,
     "visible": true,
-    "texto": "El personaje puede memorizar los gestos, el habla y las actitudes de otra persona para imitarlas con precisión. En caso de imitación gana un bonificador de +2 a su tirada. Si su puntuación de **interpretación** es de 3 o superior el bonificador pasa a ser de +3.",
+    "texto": "El personaje puede memorizar los gestos, el habla y las actitudes de otra persona para imitarlas con precisión. En caso de imitación gana un bonificador de +2 a su tirada. Si su puntuación de **mimetismo** es de 3 o superior el bonificador pasa a ser de +3.",
     "efectos": [
       {
         "tipo": "bono",
@@ -1245,7 +1246,7 @@ export const DOTES: readonly DoteCatalogo[] = [
           "base": 2,
           "siMin": {
             "tipo": "habilidad",
-            "id": "interpretacion",
+            "id": "sigilo",
             "min": 3,
             "valor": 3
           }
@@ -1256,7 +1257,7 @@ export const DOTES: readonly DoteCatalogo[] = [
       {
         "tipo": "texto",
         "lugar": "ficha",
-        "texto": "Con Interpretación 3 o más el bono es +3: la casilla «Imitando a otra persona» ya lo pone.",
+        "texto": "Con Mimetismo 3 o más el bono es +3: la casilla «Imitando a otra persona» ya lo pone.",
         "condicion": null,
         "porque": "sin_regla",
         "borrador": 1

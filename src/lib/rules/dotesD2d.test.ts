@@ -13,9 +13,9 @@ import { DOTES } from "../catalog/dotes";
 import type { EspecialidadId } from "../catalog/especialidades";
 import type { DoteComprada } from "./dotesCompradas";
 
-// Atributos a 4 y habilidades a 5 (Fuerza e Interpretación aparte); con todas las
+// Atributos a 4 y habilidades a 5 (Fuerza, Interpretación y Sigilo aparte); con todas las
 // especialidades que piden los requisitos de dote.
-function ficha(dotes: DoteComprada[], { fuerza = 4, interpretacion = 5 } = {}): Sheet {
+function ficha(dotes: DoteComprada[], { fuerza = 4, interpretacion = 5, sigilo = 5 } = {}): Sheet {
   const base = defaultSheet();
   const esp: Record<string, EspecialidadId[]> = {};
   for (const d of DOTES)
@@ -28,7 +28,10 @@ function ficha(dotes: DoteComprada[], { fuerza = 4, interpretacion = 5 } = {}): 
     habilidades: Object.fromEntries(
       HABILIDADES.map((h) => [
         h.id,
-        { valor: h.id === "interpretacion" ? interpretacion : 5, especialidades: [...new Set(esp[h.id] ?? [])] },
+        {
+          valor: h.id === "interpretacion" ? interpretacion : h.id === "sigilo" ? sigilo : 5,
+          especialidades: [...new Set(esp[h.id] ?? [])],
+        },
       ]),
     ) as Sheet["habilidades"],
     dotes,
@@ -148,9 +151,10 @@ describe("D2d: bono según la ficha (umbral)", () => {
     assert.equal(presencia(3, true)[0].valorActivo, 1);
   });
 
-  test("Imitación: Interpretación 2 → +2, 3 → +3 en Convencer / mentir", () => {
-    const valor = (interpretacion: number) => {
-      const f = resolver(ficha([{ id: "dote_imitacion" }], { interpretacion }));
+  // Foto de Drive 2026-11-14: el umbral pasa de Interpretación a Mimetismo (Sigilo en Mimetismo).
+  test("Imitación: Mimetismo 2 → +2, 3 → +3 en Convencer / mentir", () => {
+    const valor = (sigilo: number) => {
+      const f = resolver(ficha([{ id: "dote_imitacion" }], { sigilo, interpretacion: 6 }));
       const cs = (fija(f, "social").condiciones ?? []).filter((c): c is Toggle => c.tipo === "toggle" && c.id.startsWith("dote_imitacion"));
       assert.equal(cs.length, 1);
       return cs[0].valorActivo;

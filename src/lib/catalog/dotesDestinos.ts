@@ -69,7 +69,9 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   salv_fortaleza: tirada("salv_fortaleza"),
   salv_voluntad: tirada("salv_voluntad"),
   // §9.5: "Imitación: casilla «Imitando a alguien» en Convencer / mentir". No hay tirada
-  // propia de imitar (Interpretación no tiene contenido en la fuente).
+  // propia de imitar.
+  // TODO(revisar): desde la foto del 2026-11-14 Imitación pide Mimetismo; ¿el bono va también (o
+  // solo) a «Pasar desapercibido» (Mimetismo)? Se queda en Convencer / mentir.
   imitar: tirada("social"),
   "grupo:Defensa": {
     tipo: "tirada",

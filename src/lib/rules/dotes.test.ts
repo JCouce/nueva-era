@@ -505,3 +505,26 @@ describe("modo libre (NPC del máster, §9.4)", () => {
     assert.deepEqual(s.dotes, [{ id: "dote_especialidad_medica", eleccion: "hemorragia_herida" }]);
   });
 });
+
+// ── Foto de Drive 2026-11-14 (E6): quien ya tenía la dote y deja de cumplir ──────────────────
+describe("E6: dotes cuyo requisito cambia, solo con el aviso de requisito roto", () => {
+  const imitador = (sigilo: Sheet["habilidades"]["sigilo"]) =>
+    conAtributos(
+      conHabilidad(conHabilidad(conHabilidad(ficha({ dotes: [{ id: "dote_imitacion" }] }), "actitud", 2, ["manipulacion"]), "interpretacion", 3), "sigilo", sigilo.valor, sigilo.especialidades),
+      { caracter: 1 },
+    );
+
+  test("Imitación con Interpretación y sin Mimetismo: la dote se queda, marcada con «Mimetismo 1 (Sigilo)»", () => {
+    const s = imitador({ valor: -1, especialidades: [] });
+    assert.deepEqual(s.dotes, [{ id: "dote_imitacion" }]);
+    assert.deepEqual(
+      dotesConRequisitoRoto(s, valoresRequisitoDeFicha(s)).map((r) => [r.label, r.faltan]),
+      [["Imitación", ["Mimetismo 1 (Sigilo)"]]],
+    );
+  });
+
+  test("con Mimetismo, se cumple", () => {
+    const s = imitador({ valor: 1, especialidades: ["mimetismo"] });
+    assert.deepEqual(dotesConRequisitoRoto(s, valoresRequisitoDeFicha(s)), []);
+  });
+});

@@ -1337,8 +1337,9 @@
           "min": 1
         },
         {
-          "tipo": "habilidad",
-          "id": "interpretacion",
+          "tipo": "especialidad",
+          "habilidad": "sigilo",
+          "id": "mimetismo",
           "min": 1
         },
         {
@@ -1361,7 +1362,7 @@
         {
           "tipo": "texto",
           "lugar": "imitar",
-          "texto": "Con Interpretación 3 o más, el bono es +3.",
+          "texto": "Con Mimetismo 3 o más, el bono es +3.",
           "condicion": "Imitando a otra persona",
           "porque": "capa_pendiente"
         }
@@ -1375,8 +1376,7 @@
             "id": "imitar"
           },
           "mecanismo": "eleccion_jugador",
-          "estado": "bloqueado",
-          "bloqueoPor": "falta la tirada de imitar: Interpretación sin contenido en la fuente",
+          "estado": "construido",
           "claims": [
             "6"
           ]
@@ -1387,10 +1387,8 @@
             "modo": "accion_existente",
             "id": "imitar"
           },
-          "mecanismo": "hueco",
-          "estado": "bloqueado",
-          "hueco": "Valor del bono que depende del nivel de una habilidad del portador (Interpretación ≥ 3 → +3): eleccion_jugador exige número fijo de catálogo y Valor solo tiene siAtributoMin, no umbral por habilidad.",
-          "bloqueoPor": "falta la tirada de imitar: Interpretación sin contenido en la fuente",
+          "mecanismo": "eleccion_jugador",
+          "estado": "construido",
           "claims": [
             "7"
           ]
