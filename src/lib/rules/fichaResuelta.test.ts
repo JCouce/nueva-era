@@ -356,6 +356,13 @@ describe("tope de Agilidad de la armadura", () => {
     assert.equal(f.topeAgilidad?.sinTope, 3);
   });
 
+  test("Armadura Ligera Avanzada (tope 5, sync Drive 2026-11-14): Agilidad 6 se queda en 5", () => {
+    const f = resolver(vestida(conAgilidad(6), "armadura_ligera_avanzada"));
+    assert.equal(f.atributos.agilidad, 5);
+    assert.equal(f.topeAgilidad?.tope, 5);
+    assert.equal(resolver(vestida(conAgilidad(5), "armadura_ligera_avanzada")).topeAgilidad, null);
+  });
+
   test("con dos armaduras vale el tope menor", () => {
     const f = resolver(vestida(conAgilidad(4), "armadura_ligera", "armadura_pesada_avanzada"));
     assert.equal(f.atributos.agilidad, 1);

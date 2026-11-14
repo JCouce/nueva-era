@@ -318,7 +318,7 @@ export const ARMADURAS: Armadura[] = [
     resumen: "La versión prototipo de la armadura ligera: mismo perfil, mejor en todo.",
     descripcion: DESCRIPCION_AVANZADA,
     blindaje: 5,
-    bonifMaxAgilidad: 4,
+    bonifMaxAgilidad: 5,
     ranurasSubsistema: 2,
     topeExoesqueleto: 3,
     topeMovilidadAerea: 2,
