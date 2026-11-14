@@ -3628,7 +3628,7 @@
         {
           "nivel": 1,
           "rareza": "Común",
-          "coste": 12500,
+          "coste": 8000,
           "sustituye": [],
           "variantes": null,
           "efectos": [
@@ -3640,7 +3640,7 @@
                 "max": null
               },
               "agilidad": {
-                "delta": -1,
+                "delta": 0,
                 "max": null
               },
               "blindaje": 0,

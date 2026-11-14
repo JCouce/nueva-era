@@ -2304,7 +2304,8 @@ sobreesfuerzo.
     de dote) más el +N a la Fuerza del Exoesqueleto, que se apila (usuario, 2026-10-24), y
     encima el delta con su tope. **El tope limita el bono, nunca baja el brazo por debajo de tu
     atributo** ("máximo contabilizado"; sync Drive 2026-11-14: con Fuerza 6 el nivel 2 vale 6,
-    antes 5). Nivel 1: Fuerza igual, Agilidad −1. Nivel 2: Fuerza +1 (tope 5),
+    antes 5). Nivel 1: Fuerza y Agilidad iguales, sustitutoria (sync Drive 2026-11-14; antes
+    Agilidad −1). Nivel 2: Fuerza +1 (tope 5),
     blindaje 3. Nivel 3 Fuerte: Fuerza +2 (tope 7), blindaje 6; Ágil: como el 2 y Agilidad +1
     (tope 5), blindaje 3. Nivel 4 Fuerte: Fuerza +4 (tope 10), blindaje 8; Equilibrado: Fuerza
     +2 (tope 7), Agilidad +2 (tope 6), blindaje 6; Ágil: Fuerza +1 (tope 5), Agilidad +3 (tope

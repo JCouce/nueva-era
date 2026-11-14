@@ -156,6 +156,13 @@ describe("implantes: cualquier nivel directo y subir paga la diferencia", () => 
     assert.deepEqual([1, 2, 3, 4].map((nivel) => costeDePieza({ instanciaId: "e", catalogoId: ENJAMBRE, nivel })), [22_000, 44_000, 88_000, 176_000]);
   });
 
+  test("Brazo Biónico (sync Drive 2026-11-14): nivel 1, 8.000", () => {
+    const BRAZO = "aum_brazo_bionico";
+    const plan = planCompraAumento(defaultSheet(), { catalogoId: BRAZO, nivel: 1 });
+    assert.equal(plan.ok && plan.precio, 8_000);
+    assert.equal(costeDePieza({ instanciaId: "b", catalogoId: BRAZO, nivel: 1 }), 8_000);
+  });
+
   test("subir de 1 a 3 cuesta 64.000 − 16.000 y sube la misma instancia", () => {
     const s = compra(defaultSheet(), { catalogoId: OJO, nivel: 1 });
     const inst = s.equipo[0].instanciaId;

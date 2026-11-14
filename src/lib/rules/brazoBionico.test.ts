@@ -62,16 +62,16 @@ describe("Brazo Biónico: Fuerza y Agilidad por nivel y modelo", () => {
     assert.equal(brazoBionico(ficha({ fuerza: 3 })), null);
   });
 
-  test("nivel 1: la misma Fuerza y 1 menos de Agilidad; ni blindaje, ni bloqueo, ni letal", () => {
+  // Sync Drive 2026-11-14 (M2.2): sustitutoria, iguala Fuerza y Agilidad (antes, Agilidad −1).
+  test("nivel 1: la misma Fuerza y la misma Agilidad; ni blindaje, ni bloqueo, ni letal", () => {
     assert.deepEqual(valores(conBrazo(ficha({ fuerza: 2, agilidad: 3 }), 1)), {
       fuerza: 2,
-      agilidad: 2,
+      agilidad: 3,
       blindaje: null,
       bloquea: false,
       peleaLetal: false,
     });
-    // Por debajo de la base también con Agilidad negativa.
-    assert.equal(valores(conBrazo(ficha({ agilidad: -1 }), 1)).agilidad, -2);
+    assert.equal(valores(conBrazo(ficha({ agilidad: -1 }), 1)).agilidad, -1);
   });
 
   test("nivel 2: Fuerza +1 con tope 5 (sin bajar de la tuya), la misma Agilidad, blindaje 3", () => {
@@ -152,16 +152,16 @@ describe("Brazo Biónico: casilla «Con el brazo biónico»", () => {
     assert.equal(casillaDe(fila(s, "Golpear con Puñetazo")), undefined);
   });
 
-  test("nivel 1: marcada, la Potencia baja con la Agilidad del brazo; el daño no cambia (misma Fuerza) y sigue no letal", () => {
-    // Agilidad 4: con la media hacia abajo, el −1 del brazo solo se nota si la suma tuya es par.
+  // Sync Drive 2026-11-14 (M2.2): el nivel 1 ya no resta Agilidad.
+  test("nivel 1: marcada, la Potencia es la tuya (misma Fuerza y Agilidad); el daño no cambia y sigue no letal", () => {
     const s = con(conBrazo(ficha({ fuerza: 2, agilidad: 4 }), 1), "pelea_punetazo");
     const t = fila(s, "Golpear con Puñetazo")!;
     const sin = montar(s, t, false);
     const conB = montar(s, t, true);
     assert.equal(sin.aplicado.valor, 3); // ⌊(2+4)/2⌋
-    assert.equal(conB.aplicado.valor, 2); // ⌊(2+3)/2⌋, aunque sea menor (R4)
-    assert.equal(conB.modificador, sin.modificador - 1);
-    assert.equal(conB.desglose[0].etiqueta, "Potencia · Brazo Biónico 1: Fuerza 2 (tuya 2), Agilidad 3 (tuya 4)");
+    assert.equal(conB.aplicado.valor, 3);
+    assert.equal(conB.modificador, sin.modificador);
+    assert.equal(conB.desglose[0].etiqueta, "Potencia · Brazo Biónico 1: Fuerza 2 (tuya 2), Agilidad 4 (tuya 4)");
     assert.deepEqual(conB.danio.ajustes, []);
     assert.equal(conB.danio.categoria, null);
   });
@@ -172,14 +172,14 @@ describe("Brazo Biónico: casilla «Con el brazo biónico»", () => {
     s = { ...s, equipo: [...s.equipo, { instanciaId: "arm", catalogoId: "armadura_ligera" }, { instanciaId: "exo", catalogoId: "exoesqueleto", nivel: 2, instaladoEnId: "arm" }] };
     const t = fila(s, "Golpear con Puñetazo")!;
     assert.equal(montar(s, t, false).aplicado.valor, 4); // ⌊(2+2+4)/2⌋
-    assert.equal(montar(s, t, true).aplicado.valor, 3); // brazo: Fuerza 2+2, Agilidad 4−1 → ⌊(4+3)/2⌋
+    assert.equal(montar(s, t, true).aplicado.valor, 4); // brazo: Fuerza 2+2, Agilidad 4 → ⌊(4+4)/2⌋
   });
 
   test("el tope de Agilidad de la armadura (S93) también topa la del brazo; la base no", () => {
-    // Brazo 1: Agilidad 4 − 1 = 3; con la Intermedia (tope 2), 2.
+    // Brazo 1: Agilidad 4 (la tuya); con la Intermedia (tope 2), 2.
     const sinArmadura = conBrazo(ficha({ fuerza: 2, agilidad: 4 }), 1);
     const conArmadura = con(sinArmadura, "armadura_intermedia");
-    assert.equal(brazoBionico(sinArmadura)!.agilidad, 3);
+    assert.equal(brazoBionico(sinArmadura)!.agilidad, 4);
     assert.equal(brazoBionico(conArmadura)!.agilidad, 2);
     assert.equal(brazoBionico(conArmadura)!.base.agilidad, 4);
   });

@@ -1611,14 +1611,15 @@ export const IMPLANTES: Implante[] = [
       {
         nivel: 1,
         rareza: "Común",
-        coste: 12500,
+        coste: 8000,
         detalle: [
-          "El personaje reemplaza un brazo por uno biónico básico. Esta tiene su propia puntuación de fuerza y agilidad pero basada en los atributos del usuario. Estos valores se aplicarán cuando el personaje emplee una acción usando esta extremidad, la prótesis de primer nivel es más bien sustitutoria, iguala la fuerza del usuario pero se mueve más torpemente, la agilidad de la extremidad es 1 punto menor.",
+          "El personaje reemplaza un brazo por uno biónico básico. Según el nivel esta tiene su propia puntuación de fuerza y agilidad pero siempre basada en los atributos del usuario pues es una pieza personalizada que se ajusta a sus necesidades. Estos valores se aplicarán cuando el personaje emplee una acción usando esta extremidad, la prótesis de primer nivel es más bien sustitutoria, por lo que iguala la fuerza y agilidad del usuario (contabilizando posibles aumentos).",
           "Se puede incorporar un arma en su interior siempre que su uso sea a una mano, mientras esté incorporada, su desenfundado es gratuito y no puede ser desarmado. Para incorporar este arma, es preciso una acción extendida de 10 minutos y realizar una tirada de perspicacia + biónica dificultad 8 con el instrumental adecuado. Para desprendese del arma es preciso la misma acción, pero si esta quiere ser extraída de un cuerpo sin respetar su salud, se realiza como el resto de implantes cuando son saqueados.",
         ],
         modificadores: [],
-        // A6a: iguala la Fuerza del usuario y tiene 1 menos de Agilidad. Ni bloquea ni hace letal.
-        extremidad: { fuerza: { delta: 0 }, agilidad: { delta: -1 } },
+        // A6a: iguala la Fuerza y la Agilidad del usuario (sync Drive 2026-11-14: antes, Agilidad −1).
+        // Ni bloquea ni hace letal.
+        extremidad: { fuerza: { delta: 0 }, agilidad: { delta: 0 } },
         // A6a: la casilla "Con el brazo biónico" (una CondicionTirada, de ahí eleccion_jugador).
         // A6b: el arma incorporada (PiezaEquipada.armaIncorporada, selector en Equipo). Sus filas
         // van siempre con el brazo y llevan la nota de sin desarme y carga (solo texto), en el cuerpo
