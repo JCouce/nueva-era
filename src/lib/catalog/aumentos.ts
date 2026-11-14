@@ -1907,13 +1907,12 @@ export const IMPLANTES: Implante[] = [
           { tipo: "tirada", alcance: DISTANCIA, valor: 3, noApila: VISION_AUMENTADA },
           { tipo: "derivado", id: "alerta", valor: 4, noApila: VISION_AUMENTADA },
         ],
-        // A3: −2 niveles de cualquier cobertura, física o visual (sustituye a la del nivel 2). Sync
-        // Drive 2026-11-14: «visual y termo-óptica de cualquier tipo en un alcance de 100 metros».
-        // TODO(revisar): se mantiene la física (lectura del usuario de «por completo», A3); la foto
-        // nueva solo nombra visual y termo-óptica «de cualquier tipo».
+        // −2 niveles de cobertura visual y termo-óptica hasta 100 m (sustituye a la del nivel 2). Sync
+        // Drive 2026-11-14, manda el documento nuevo (usuario): ya no la física (cae la lectura de A3
+        // para este nivel).
         condiciones: [
           casillaVisualOjo(4),
-          ...casillasCobertura("aum_ojo", 2, true, "Objetivo con cobertura (física, visual o termo-óptica) a 100 m o menos"),
+          ...casillasCobertura("aum_ojo", 2, false, "Objetivo con cobertura visual o termo-óptica a 100 m o menos"),
           ...casillasVentajaOjo(null),
         ],
         // Los 50 m son solo de los rayos X; nocturna y térmica, las de los visores 2 (nivel 1).

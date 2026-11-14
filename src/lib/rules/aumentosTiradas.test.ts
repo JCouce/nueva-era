@@ -651,7 +651,7 @@ describe("A3: cobertura (casillas, sin apilar)", () => {
     for (const id of ["iniciativa_arma", "defensa"]) assert.deepEqual(cobertura(tiradaFija(f, id)), [], id);
   });
 
-  test("Ojo: el 1 no trae cobertura; el 2 y el 3, +1 visual; el 4, +2 a cualquier cobertura", () => {
+  test("Ojo: el 1 no trae cobertura; el 2 y el 3, +1 visual; el 4, +2 visual y termo-óptica", () => {
     assert.deepEqual(cobertura(disparo(conFusil([[OJO, 1]]))), []);
     for (const nivel of [2, 3]) {
       const f = conFusil([[OJO, nivel]]);
@@ -667,11 +667,10 @@ describe("A3: cobertura (casillas, sin apilar)", () => {
     const f4 = conFusil([[OJO, 4]]);
     const t4 = disparo(f4);
     assert.deepEqual(cobertura(t4), ["aum_ojo_cobertura_distancia"]);
-    // Sync Drive 2026-11-14 (M3.3): hasta 100 m y también la termo-óptica (en la etiqueta).
-    assert.equal(
-      t4.condiciones!.find((c) => c.id === "aum_ojo_cobertura_distancia")!.etiqueta,
-      "Objetivo con cobertura (física, visual o termo-óptica) a 100 m o menos · Ojo Biónico 4",
-    );
+    // Sync Drive 2026-11-14 (M3.3, usuario): visual y termo-óptica hasta 100 m; ya no la física.
+    const etiqueta4 = t4.condiciones!.find((c) => c.id === "aum_ojo_cobertura_distancia")!.etiqueta;
+    assert.equal(etiqueta4, "Objetivo con cobertura visual o termo-óptica a 100 m o menos · Ojo Biónico 4");
+    assert.doesNotMatch(etiqueta4, /física/);
     assert.equal(suma(f4, t4, ["aum_ojo_cobertura_distancia"]), 2);
     assert.equal(suma(f4, tiradaFija(f4, "alerta_activa"), ["aum_ojo_cobertura_alerta"]), 2);
   });

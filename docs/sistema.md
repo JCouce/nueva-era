@@ -2140,8 +2140,9 @@ sobreesfuerzo.
     encima de 0 (Siervo Fatigado: nada; Siervo Exhausto: −1 y +1).
   - **Cobertura (usuario, 2026-10-22):** casillas que suman para compensar la cobertura que
     el jugador resta a mano en el circunstancial, en ataques con Combate a Distancia y en
-    Buscar/percibir. Foveo y Ojo 2-3: "Objetivo con cobertura visual" +1; Ojo 4: "Objetivo
-    con cobertura (física o visual)" +2 (sustituye a la del 2). El Ojo 1 no trae. Mismo grupo
+    Buscar/percibir. Foveo y Ojo 2-3: "Objetivo con cobertura visual" +1; Ojo 4: +2 (sustituye
+    a la del 2), desde el sync Drive 2026-11-14 solo visual y termo-óptica (antes también la
+    física). El Ojo 1 no trae. Mismo grupo
     `noApila` (`reduccion_cobertura`): vale la mayor. La nota recuerda que la cobertura
     total no se reduce.
   - **Matriz Ósea:** −1 a los penalizadores por carga solo como nota junto a la carga
@@ -2397,9 +2398,9 @@ sobreesfuerzo.
     «Objetivo con cobertura visual o termo-óptica a 50 m o menos» (+1; la distancia la mira el
     jugador). 28 000 créditos.
   - **Nivel 3:** 56 000 créditos.
-  - **Nivel 4:** −2 a la cobertura hasta 100 m: «Objetivo con cobertura (física, visual o
-    termo-óptica) a 100 m o menos» (+2). Se mantiene la física (lectura de A3); la foto nueva
-    dice «visual y termo-óptica de cualquier tipo» (`TODO(revisar)`). Pierde su «completamente
+  - **Nivel 4:** −2 a la cobertura visual y termo-óptica hasta 100 m: «Objetivo con cobertura
+    visual o termo-óptica a 100 m o menos» (+2). **Ya no la física** (usuario, 2026-11-14: manda
+    el documento nuevo; cae la lectura de A3 para este nivel). Pierde su «completamente
     inmune a la ceguera»: la inmunidad sigue viniendo del nivel 2. 112 000 créditos.
   - **Ventaja por 2 de fatiga**, todos los niveles: casilla «Ventaja del Ojo Biónico (2 de
     fatiga)» en los ataques a distancia y en Buscar / percibir. El límite es texto (usuario:
@@ -2557,9 +2558,10 @@ sobreesfuerzo.
   - **Fatigado** es el estado por umbral de fatiga restante que ya tiene el sistema.
   - **Hemorragia exanguinante**: no para nunca hasta que te curen por medios médicos.
   - **Cobertura**: los aumentos visuales (Foveo, Ojo 1-3) reducen solo la cobertura visual;
-    la total no se reduce salvo con un ataque que la atraviese. **Ojo nivel 4**: −2 niveles
-    de cualquier cobertura, física o visual (desde el sync Drive 2026-11-14, hasta 100 m y
-    también termo-óptica; el 2, hasta 50 m).
+    la total no se reduce salvo con un ataque que la atraviese. ~~**Ojo nivel 4**: −2 niveles
+    de cualquier cobertura, física o visual.~~ *Tumbado por el sync Drive 2026-11-14 (usuario):
+    el 4 reduce 2 niveles de cobertura visual y termo-óptica hasta 100 m, no la física; el 2,
+    1 nivel hasta 50 m.*
   - **Alerta pasiva**: los bonos de vista (Ojo) y de olfato (Detección Química) sí la suben,
     mientras el sentido se pueda usar (en el vacío con traje, no). La ventaja auditiva
     (Vestíbulo-Auditiva) no: solo al buscar activamente.
@@ -3317,7 +3319,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S104 | **Sobreesfuerzo (T6a, 2026-11-13)**, supuestos al construirlo (§10.7), todos `TODO(revisar)`: (1) **«fatigado» es el umbral tras pagar el poder** (el que ve el servidor al aplicar el fallo): un gasto que te deja fatigado ya lo dispara; la prosa dice «estando fatigado» sin aclarar si antes o después. (2) **Aturdido sin duración** («queda aturdido», «causa aturdimiento») = 1 turno; el fracaso crítico exhausto que solo cambia el daño (Arianyi y Maestría, implante 3) conserva el Aturdido. (3) **Más suave** casilla a casilla, daño antes que estados (con el implante 1 exhausto, «1 grave» frente a «1 letal y Aturdido» gana Maestría). (4) **Dos fuentes** a la vez (Maolher con implante): vale la que salte con más dificultad. (5) **Prolongar Proeza** no vuelve a tirar sobreesfuerzo (solo el uso). (6) **Muerte cerebral** (implante 1 y 2, exhausto, fracaso crítico): la app la avisa, no la aplica. (7) El **NPC del máster** (modo libre) no mira quién puede tener poderes. | Construcción de T6a; formas de es-01, au-04, au-05, ps-01…04 decididas por el usuario. |
 | S105 | **Poderes sueltos (T6b, 2026-11-13)**, supuestos al construirlos (§10.6b), `TODO(revisar)`: (1) **«La misma fatiga» del Sondeo** = la del uso con lo que el servidor sabe (tramo, descuentos por nivel y los Supresores puestos); las casillas que se marcaron al usarlo (Xovromium) y lo pagado con cargas de Derivación no cuentan al prolongar. (2) **Prolongar el Sondeo** cobra contra la fatiga efectiva; si cruza a exhausto, avisa de la sobrecarga (la salvación, a mano) y no vuelve a saltar el sobreesfuerzo (como prolongar Proeza, S104). (3) Fuera de combate las rondas no corren: el estado sigue hasta quitarlo y prolongar solo cobra. (4) **Proyección**: «por cada 200 kg adicionales» se cuenta por tramos completos (299 kg sobre 100 no suma); sin peso escrito, objeto de hasta 100 kg. (5) **Alerta pasiva**: exhausto es el umbral de la fatiga efectiva (la temporal de Proeza cuenta), como la sobrecarga. | Construcción de T6b; formas de ps-05…08 decididas por el usuario. |
 | S106 | **Bajón y rechazo de fármacos (T7c, 2026-11-14)**, supuestos al construir fa-03 (§12): (1) **Salvaciones incluidas** en «tiradas con atributos mentales» (el Ultra excluye las salvaciones de las «acciones físicas»; aquí el texto dice «tiradas»). (2) **Fatiga en combate**: a la foto que enseña la Mesa, como la pestaña Vida; fuera, a la ficha. (3) **Fatiga insuficiente** para el bajón: se cobra la que quede (hasta 0) y se avisa; no bloquea. (4) **El servidor acepta la consecuencia del fármaco ya agotado** (el cliente gasta la dosis antes; con la última, la fila ya no está): `accionesDeFarmacos(…, conAgotados)`. (5) ~~Los cinco estados los puede quitar el propio jugador~~: los bajones y el rechazo, solo el máster (usuario, 2026-11-14); los recordatorios, también el jugador. `TODO(revisar)` (4): no comprueba que la ficha haya tenido nunca esa dosis (solo se perjudica a sí mismo). | Construcción de T7c; decisiones de fa-03 del usuario. |
-| S107 | **Sync Drive 2026-11-14, tanda T2 (medianos)**, decisiones del usuario (2026-11-14) y supuestos al construirla (`docs/plan-sync-2026-11-14.md`): (1) **Brazo Biónico, blindaje (lectura A, usuario)**: compite contra la **suma** de armadura + armadura natural (especie y aumentos) y aporta lo que le falte; Deflector, blindaje reactivo y Contención suman aparte. Supuesto: el Tejido Conductor también suma aparte (`TODO(revisar)`). (2) **Requisito de atributo en los aumentos (usuario)**: se construye para el Brazo 4 Fuerte (Fuerza 2); supuesto: se mira solo al comprar, con la Fuerza permanente (la de los requisitos de dote), y no se rompe después. (3) **Brazo, ventaja por 2 de fatiga**: «prueba que utilice el brazo» = las de Fortaleza, Potencia o Reflejos sin salvaciones, con casilla (`TODO(revisar)`); límites por descanso, texto (usuario: límites de uso = texto salvo «por escena»). (4) **Densificar «contra traumatismos»** = solo daño Cinético (supuesto, como la Osteotendinosa). (5) **Sanar grave (usuario)**: un botón que cobra 4 y cura 1 grave en el acto; «tarda un minuto», nota. Se borra el efecto `contador` (sin otro uso); las claves viejas de su contador se ignoran al leer, sin migración. | Plan de sync, decisiones de arriba; supuestos, `TODO(revisar)`. |
+| S107 | **Sync Drive 2026-11-14, tanda T2 (medianos)**, decisiones del usuario (2026-11-14) y supuestos al construirla (`docs/plan-sync-2026-11-14.md`): (1) **Brazo Biónico, blindaje (lectura A, usuario)**: compite contra la **suma** de armadura + armadura natural (especie y aumentos) y aporta lo que le falte; Deflector, blindaje reactivo y Contención suman aparte. Supuesto: el Tejido Conductor también suma aparte (`TODO(revisar)`). (2) **Requisito de atributo en los aumentos (usuario)**: se construye para el Brazo 4 Fuerte (Fuerza 2); supuesto: se mira solo al comprar, con la Fuerza permanente (la de los requisitos de dote), y no se rompe después. (3) **Brazo, ventaja por 2 de fatiga**: «prueba que utilice el brazo» = las de Fortaleza, Potencia o Reflejos sin salvaciones, con casilla (`TODO(revisar)`); límites por descanso, texto (usuario: límites de uso = texto salvo «por escena»). (4) **Densificar «contra traumatismos»** = solo daño Cinético (supuesto, como la Osteotendinosa). (5) **Sanar grave (usuario)**: un botón que cobra 4 y cura 1 grave en el acto; «tarda un minuto», nota. Se borra el efecto `contador` (sin otro uso); las claves viejas de su contador se ignoran al leer, sin migración. (6) **Ojo 4 (usuario)**: manda el documento nuevo, −2 a la cobertura visual y termo-óptica hasta 100 m, ya no la física (cae la lectura de A3 para este nivel). | Plan de sync, decisiones de arriba; supuestos, `TODO(revisar)`. |
 
 ## Conflictos detectados
 
