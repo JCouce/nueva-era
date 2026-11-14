@@ -33,20 +33,22 @@ function preparar(
 describe("prepararPoder", () => {
   const f = ficha({ psionica: SINGULARIDAD_2 });
 
-  // eq-22: los Supresores dejan de ser casilla (son un estado), así que solo queda Xovromium.
-  test("Impulso nivel 2: coste, tirada y la casilla externa", () => {
+  // eq-22 y fármacos como estados (2026-11-14): Supresores y Xovromium son estados, no casillas.
+  test("Impulso nivel 2: coste y tirada, sin casillas externas", () => {
     const p = preparar(f, "psi_singularidad_impulso");
     assert.equal(p.coste?.total, 2);
     assert.ok(p.tirada);
-    assert.deepEqual(p.casillas.map((c) => c.toggle), ["Bajo Xovromium"]);
+    assert.deepEqual(p.casillas, []);
     assert.equal(p.habilitacionAlUsar.estado, "activa");
     assert.equal(p.cargas, null);
   });
 
-  test("Xovromium: −1 de fatiga y +1 en la tirada", () => {
-    const p = preparar(f, "psi_singularidad_impulso", { casillas: ["Bajo Xovromium"] });
+  test("con «Bajo Xovromium» puesto: −1 de fatiga y +1 en la tirada; sin él, nada", () => {
+    const bajo: EstadoActivo = { estadoId: "bajo_xovromium", gradoId: "activo", rondasRestantes: null };
+    const p = preparar(f, "psi_singularidad_impulso", {}, [], [bajo]);
     assert.equal(p.coste?.total, 1);
     assert.deepEqual(p.tirada?.ajustesFijos?.at(-1), { valor: 1, fuente: "Xovromium" });
+    assert.equal(preparar(f, "psi_singularidad_impulso").coste?.total, 2);
   });
 
   test("sin fatiga suficiente, bloqueo", () => {

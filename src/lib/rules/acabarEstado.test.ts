@@ -74,8 +74,15 @@ describe("bajones y rechazo: tiradas con atributos mentales", () => {
     assert.equal(lineas["Rechazo del Xovromium"], -1);
   });
 
-  test("los recordatorios «Bajo …» no tocan ninguna tirada", () => {
-    for (const a of [...MENTALES, ...FISICOS]) assert.equal(diferencia([BAJO_ULTRA, BAJO_XOV], a), 0, a);
+  // Fármacos como estados (2026-11-14): «Bajo Ultra» ya aplica sus bonos (+1 a las físicas); «Bajo
+  // Xovromium», solo en los poderes. Ninguno toca las mentales.
+  test("los estados «Bajo …» no tocan las mentales; el Ultra da +1 a las físicas", () => {
+    // Fuera de Iniciativa (BASE es la iniciativa, donde el Ultra da +2).
+    const atletismo = ACCIONES.find((a) => a.id === "atletismo")!;
+    const con = (a: AplicadoId): Accion => ({ ...atletismo, id: `prueba_${a}`, aplicado: a });
+    for (const a of MENTALES) assert.equal(diferencia([BAJO_ULTRA, BAJO_XOV], a, con(a)), 0, a);
+    for (const a of FISICOS) assert.equal(diferencia([BAJO_ULTRA, BAJO_XOV], a, con(a)), 1, a);
+    for (const a of FISICOS) assert.equal(diferencia([BAJO_XOV], a, con(a)), 0, a);
   });
 
   test("los recordatorios los quita el jugador; bajones y rechazo, solo el máster; solo los recordatorios llevan el botón de acabar", () => {
@@ -110,11 +117,9 @@ describe("el recordatorio al usar o tomar la dosis", () => {
     assert.ok(accionesDeFarmacos(defaultSheet(), [], true).some((a) => a.id === "farmaco_farmaco_xovromium"));
   });
 
-  test("los demás fármacos sin tirada no ponen nada", () => {
-    for (const id of ["farmaco_analgesico", "farmaco_antipatogeno"]) {
-      const [usar] = accionesDirectasDeFarmacos(conFarmaco(id, 1), []);
-      assert.equal(usar.estadoAlUsar, undefined, id);
-    }
+  test("el Antipatógeno no pone nada", () => {
+    const [usar] = accionesDirectasDeFarmacos(conFarmaco("farmaco_antipatogeno", 1), []);
+    assert.equal(usar.estadoAlUsar, undefined);
   });
 
   const xovromium = () => {

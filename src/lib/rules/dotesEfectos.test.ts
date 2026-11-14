@@ -5,7 +5,6 @@ import { defaultSheet, type Sheet } from "./sheet";
 import { ACCIONES, GRUPOS_ACCION, ID_MOVIMIENTO_OCULTO, elegirEspecialidad, type Accion } from "./acciones";
 import { HABILIDADES } from "./habilidades";
 import { resolverFicha, conExtrasDeFicha, conExtrasDirectaDeFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
-import { ID_CASILLA_ULTRA_FISICAS, ID_CASILLA_ULTRA_INICIATIVA } from "./farmacos";
 import { montarTirada, eleccionSinTocar, tirarMontada } from "./montaje";
 import { motorMetadataSchema, erroresDeMotorMetadata } from "./motor";
 import { dotesActivas, textosDeDotes, modificadoresDeDotes, permisosDeDotes } from "./dotesEfectos";
@@ -155,9 +154,7 @@ function fichaCapaz(dotes: DoteComprada[]): Sheet {
 const resolver = (s: Sheet, libre = false) => resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA, libre });
 const tirada = (id: string): Accion => ACCIONES.find((a) => a.id === id)!;
 const conExtras = (f: FichaResuelta, id: string) => conExtrasDeFicha(f, tirada(id));
-// Sin la casilla «Bajo Ultra Estimulante», que sale siempre en las tiradas físicas (S94).
-const ULTRA = [ID_CASILLA_ULTRA_FISICAS, ID_CASILLA_ULTRA_INICIATIVA];
-const idsDeCasillas = (t: Accion) => (t.condiciones ?? []).map((c) => c.id).filter((id) => !ULTRA.includes(id));
+const idsDeCasillas = (t: Accion) => (t.condiciones ?? []).map((c) => c.id);
 
 describe("efectos de dotes en las tiradas (D2a)", () => {
   // Sigilo trae sus propios controles desde T4 (do-01): «¿Te mueves?» y «siendo observado».

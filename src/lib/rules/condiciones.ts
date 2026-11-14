@@ -12,7 +12,7 @@
 //   opcion   → una de varias, excluyentes ("tramo de distancia", "modo de disparo")
 //   contador → un número entre un mínimo y un máximo ("atacantes adicionales esta ronda")
 //
-import type { AlcanceModificador, RecursoUmbral } from "./modificadores";
+import type { AlcanceModificador } from "./modificadores";
 import type { OrigenAporte } from "./origen";
 import { APLICADOS, type AplicadoId } from "./atributos";
 
@@ -112,11 +112,6 @@ export type CondicionTirada = (
       // Lo que enseña el control en vez del número, para una casilla que no suma por sí misma
       // sino que enciende bonos por opción de otro selector (Bioma Predilecto en «Marcha»).
       resumen?: string;
-      // Reduce en N el penalizador por heridas o fatiga de §7 solo en esta tirada (fármacos,
-      // fa-01): montarTirada pone en `valorActivo` lo que de verdad compensa, sin pasar de 0 lo
-      // que le quede al umbral tras especie, aumentos y demás (también con Proyección: nada).
-      // Entre casillas que reducen umbral no se suman: vale la mayor por recurso (fa-02).
-      reduceUmbral?: Partial<Record<RecursoUmbral, number>>;
     }
   | {
       id: string;
@@ -184,10 +179,9 @@ export function resumenCasilla(c: Extract<CondicionTirada, { tipo: "toggle" }>, 
   const partes: string[] = [];
   if (
     valor !== 0 ||
-    (!c.ventaja && !c.subeGrado && !c.aplicado && c.margenCriticoExito === undefined && !c.danio && !c.ahorroFatiga && !c.costeFatiga && !c.extremidad && !c.reduceUmbral)
+    (!c.ventaja && !c.subeGrado && !c.aplicado && c.margenCriticoExito === undefined && !c.danio && !c.ahorroFatiga && !c.costeFatiga && !c.extremidad)
   )
     partes.push(signo(valor));
-  if (c.reduceUmbral && valor === 0) partes.push(textoReduceUmbral(c.reduceUmbral));
   if (c.extremidad) partes.push(`Fue ${c.extremidad.fuerza} · Agi ${c.extremidad.agilidad}`);
   if (c.ventaja) partes.push("ventaja");
   if (c.subeGrado) partes.push("fallo → éxito");
@@ -202,15 +196,6 @@ export function resumenCasilla(c: Extract<CondicionTirada, { tipo: "toggle" }>, 
   if (c.costeFatiga) partes.push(`−${c.costeFatiga} fatiga`);
   if (c.ahorroFatiga) partes.push(`ahorra ${c.ahorroFatiga} fatiga`);
   return partes.join(" · ");
-}
-
-// «1 menos de heridas», «1 menos de heridas y fatiga».
-function textoReduceUmbral(r: Partial<Record<RecursoUmbral, number>>): string {
-  const nombres = { salud: "heridas", fatiga: "fatiga" } as const;
-  const con = (Object.keys(nombres) as RecursoUmbral[]).filter((k) => (r[k] ?? 0) > 0);
-  const valores = [...new Set(con.map((k) => r[k]))];
-  const lista = con.map((k) => nombres[k]).join(" y ");
-  return valores.length === 1 ? `${valores[0]} menos de ${lista}` : con.map((k) => `${r[k]} menos de ${nombres[k]}`).join(", ");
 }
 
 // Lo que enseña un botón de opción junto a su etiqueta: el número y, si los lleva, la

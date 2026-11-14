@@ -41,7 +41,7 @@
 // texto no da un número plano e incondicional, se queda en `detalle` y se
 // aplica a criterio del máster, como ya se hace con Fármacos/VTF en el
 // catálogo de equipo (docs/sistema.md §12).
-import type { Modificador } from "../rules/modificadores";
+import type { Modificador, RecursoUmbral } from "../rules/modificadores";
 import { ESTADOS_DE_PODER } from "./psionica";
 
 export type GradoEstado = {
@@ -103,6 +103,11 @@ export type Estado = {
   // acaba y la app, en una sola entrada del registro, se lo quita, le resta `fatiga` y le pone
   // `pone` (rules/acabarEstado.ts). Quitarlo con la × no hace nada de esto.
   alAcabar?: { etiqueta: string; fatiga: number; pone: { estadoId: string; gradoId: string }[] };
+  // −N al penalizador por heridas (`salud`) o fatiga de §7 mientras dura (fármacos como estados,
+  // usuario 2026-11-14: Analgésico, Calmante, Ultra Estimulante). Entre estados con esto no se
+  // suman: vale el mayor por recurso (fa-02); sí se suma a especie y aumentos, sin pasar de 0 y
+  // solo el −N de las tiradas (td-10). Lo junta ajusteUmbralesDeEstados (rules/estados.ts).
+  reduceUmbral?: Partial<Record<RecursoUmbral, number>>;
 };
 
 export const ESTADOS: Estado[] = [
@@ -1211,14 +1216,27 @@ export const ESTADOS_DE_EQUIPO: Estado[] = [
   },
 ];
 
-// Fármacos con bajón (fa-03, usuario 2026-11-14). El Ultra Estimulante y el Xovromium dejan un
-// recordatorio sin efecto mecánico («Bajo …»: sus bonos siguen en las casillas de las tiradas,
-// td-14) que se acaba con su botón: 2 de fatiga y el bajón. El Rechazo lo pone la tirada fallada
-// del Xovromium (rules/farmacos.ts). «Tiradas con atributos mentales» = las de Voluntad,
-// Perspicacia y Expresión, salvaciones incluidas. Se suman entre ellos (cada uno es su fuente).
-// La app no tiene reloj: duran hasta quitarlos y el texto dice cuánto. Los recordatorios los quita
-// también el jugador (sin bajón); los bajones y el rechazo, solo el máster (usuario, 2026-11-14).
-// No están en ESTADOS: no salen en el selector del máster (sí en su panel, para quitarlos).
+// Fármacos como estados (usuario, 2026-11-14): el efecto de una dosis con duración es un estado que
+// lo aplica solo mientras dura, sin casillas. Usar el fármaco lo pone; usarlo con él puesto lo
+// renueva (no acumula). La app no mide el tiempo fuera de combate y la fuente da horas o minutos,
+// no turnos: duran hasta quitarlos (el jugador, con su botón; el máster, desde la Mesa) y el texto
+// dice cuánto. Entre ellos, contra el penalizador por heridas o fatiga vale el mayor (fa-02).
+//   «Bajo Analgésico» (1 hora) y «Bajo Calmante» (lo que dé su tirada): −1 a heridas. Los Geles
+//     Sanadores ponen el del Analgésico («incluyen sus efectos»).
+//   «Bajo Ultra Estimulante» (30 minutos): +2 a la iniciativa, +1 a las físicas y −1 a heridas y
+//     fatiga; al acabarse, su botón aplica el bajón (fa-03).
+//   «Bajo Xovromium» (1 hora): +1 y −1 de fatiga en los poderes (FUENTES_EXTERNAS_FATIGA,
+//     catalog/psionica.ts, mira el estado); al acabarse, el bajón.
+//   «Antipatógeno» (oportunidad puntual): deja la casilla de la segunda salvación con +3 y se gasta
+//     al tirarla (CondicionTirada.gastaEstado, rules/farmacos.ts). También lo ponen los Geles.
+// Bajones y rechazo (fa-03): «tiradas con atributos mentales» = las de Voluntad, Perspicacia y
+// Expresión, salvaciones incluidas; se suman entre ellos (cada uno es su fuente). Los quita solo el
+// máster (usuario, 2026-11-14); el resto, también el jugador.
+// No están en ESTADOS, pero el máster los pone y quita desde su panel (estadosDelPanel), para
+// arreglar lo que haga falta.
+export const ESTADO_BAJO_ANALGESICO_ID = "bajo_analgesico";
+export const ESTADO_BAJO_CALMANTE_ID = "bajo_calmante";
+export const ESTADO_ANTIPATOGENO_ID = "antipatogeno";
 export const ESTADO_BAJO_ULTRA_ID = "bajo_ultra_estimulante";
 export const ESTADO_BAJO_XOVROMIUM_ID = "bajo_xovromium";
 export const ESTADO_BAJON_ULTRA_ID = "bajon_ultra_estimulante";
@@ -1228,22 +1246,62 @@ export const ESTADO_RECHAZO_XOVROMIUM_ID = "rechazo_xovromium";
 const MENTALES = ["voluntad", "perspicacia", "expresion"] as const;
 const contraMentales = (valor: number): Modificador => ({ tipo: "tirada", alcance: { tipo: "aplicado", aplicados: [...MENTALES] }, valor });
 
+// Un estado de fármaco de un solo grado que dura hasta quitarlo.
+const deFarmaco = (e: Omit<Estado, "grados"> & { modificadores?: Modificador[]; detalle: string[] }): Estado => {
+  const { modificadores = [], detalle, ...resto } = e;
+  return { ...resto, grados: [{ id: "activo", label: e.label, modificadores, detalle, duracionTurnos: null }] };
+};
+
+const QUITAR_FARMACO = "Se acabó el efecto";
+
 export const ESTADOS_DE_FARMACO: Estado[] = [
+  deFarmaco({
+    id: ESTADO_BAJO_ANALGESICO_ID,
+    label: "Bajo Analgésico",
+    resumen: "Las terminaciones nerviosas adormecidas: el dolor de las heridas pesa menos.",
+    quitarJugador: QUITAR_FARMACO,
+    reduceUmbral: { salud: 1 },
+    detalle: ["−1 al penalizador por heridas (no se suma con otro fármaco).", "Dura 1 hora: quítalo cuando se acabe."],
+  }),
+  deFarmaco({
+    id: ESTADO_BAJO_CALMANTE_ID,
+    label: "Bajo Calmante",
+    resumen: "Sedante profundo que enmascara los dolores severos.",
+    quitarJugador: QUITAR_FARMACO,
+    reduceUmbral: { salud: 1 },
+    detalle: [
+      "−1 al penalizador por heridas (no se suma con otro fármaco).",
+      "Dura 1 hora, y 1 más por cada 4 éxitos de la tirada: quítalo cuando se acabe.",
+    ],
+  }),
   {
     id: ESTADO_BAJO_ULTRA_ID,
     label: "Bajo Ultra Estimulante",
-    resumen:
-      "Recordatorio de la dosis: sus efectos se marcan a mano en las casillas de cada tirada («Bajo " +
-      "Ultra Estimulante» y «Ultra Estimulante contra el penalizador por heridas y fatiga»). Cuando se " +
-      "acabe, aplica el bajón.",
+    resumen: "Adrenalina y aceleradores sinápticos en el cuerpo. Cuando se acabe, aplica el bajón.",
     quitarJugador: "Quitar sin bajón",
     alAcabar: { etiqueta: "Se acabó: aplicar el bajón", fatiga: 2, pone: [{ estadoId: ESTADO_BAJON_ULTRA_ID, gradoId: "activo" }] },
+    reduceUmbral: { salud: 1, fatiga: 1 },
     grados: [
       {
         id: "activo",
         label: "Bajo Ultra Estimulante",
-        modificadores: [],
-        detalle: ["Sin efecto propio: es un recordatorio.", "Dura 30 minutos. Al acabar: 2 de fatiga y «Bajón del Ultra»."],
+        // «+2 a la iniciativa y +1 a las acciones físicas basadas en Agilidad o Fuerza» (S94): físicas
+        // = tiradas con Fortaleza, Potencia o Reflejos, sin las salvaciones. No se apilan entre sí:
+        // una iniciativa con Reflejos se queda en +2.
+        modificadores: [
+          { tipo: "tirada", alcance: { tipo: "grupo", grupo: "Iniciativa" }, valor: 2, noApila: "ultra_estimulante" },
+          {
+            tipo: "tirada",
+            alcance: { tipo: "aplicado", aplicados: ["fortaleza", "potencia", "reflejos"], salvoGrupo: "Salvaciones" },
+            valor: 1,
+            noApila: "ultra_estimulante",
+          },
+        ],
+        detalle: [
+          "+2 a la iniciativa y +1 a las tiradas físicas (Fortaleza, Potencia o Reflejos; no las salvaciones), sin sumarse entre sí.",
+          "−1 a los penalizadores por heridas y fatiga (no se suma con otro fármaco).",
+          "Dura 30 minutos. Al acabar: 2 de fatiga y «Bajón del Ultra».",
+        ],
         duracionTurnos: null,
       },
     ],
@@ -1251,17 +1309,19 @@ export const ESTADOS_DE_FARMACO: Estado[] = [
   {
     id: ESTADO_BAJO_XOVROMIUM_ID,
     label: "Bajo Xovromium",
-    resumen:
-      "Recordatorio de la dosis: su efecto se marca a mano en la casilla «Bajo Xovromium» de tus poderes. " +
-      "Cuando se acabe, aplica el bajón.",
+    resumen: "Las vías psiónicas sobrecargadas. Cuando se acabe, aplica el bajón.",
     quitarJugador: "Quitar sin bajón",
     alAcabar: { etiqueta: "Se acabó: aplicar el bajón", fatiga: 2, pone: [{ estadoId: ESTADO_BAJON_XOVROMIUM_ID, gradoId: "activo" }] },
     grados: [
       {
         id: "activo",
         label: "Bajo Xovromium",
+        // El efecto lo cobra el poder (FUENTES_EXTERNAS_FATIGA, condición por este estado).
         modificadores: [],
-        detalle: ["Sin efecto propio: es un recordatorio.", "Dura 1 hora. Al acabar: 2 de fatiga y «Bajón del Xovromium»."],
+        detalle: [
+          "+1 a las tiradas de tus poderes y −1 a su coste de fatiga.",
+          "Dura 1 hora. Al acabar: 2 de fatiga y «Bajón del Xovromium».",
+        ],
         duracionTurnos: null,
       },
     ],

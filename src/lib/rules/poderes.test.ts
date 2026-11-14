@@ -1322,33 +1322,36 @@ describe("Hipercognición", () => {
 
 // Cuestionario eq-22 (usuario, 2026-11-13): la Munición Supresora deja de ser dos casillas que
 // marca el jugador y pasa a ser el estado «Supresores», que pone el máster; cuenta solo. Los
-// números (×2 antes del −1, −2 a la tirada, daño por punto) no cambian.
-describe("fuentes externas: Xovromium y estado Supresores", () => {
+// números (×2 antes del −1, −2 a la tirada, daño por punto) no cambian. Fármacos como estados
+// (usuario, 2026-11-14): el Xovromium tampoco es casilla, cuenta con «Bajo Xovromium» puesto.
+describe("fuentes externas: estados Bajo Xovromium y Supresores", () => {
   const SING = disciplinaPorId("singularidad");
   const impulso = SING.acciones.find((a) => a.id === "psi_singularidad_impulso")!;
   const p = resolverPoder(impulso, { nivelPoseido: 3, disciplina: SING })!;
   const coste = (...toggles: string[]) =>
     costeFatiga(SING, impulso.id, p, { externos: FUENTES_EXTERNAS_FATIGA, toggles: new Set(toggles) }).total;
   const supresores = (grado: string) => estadosComoCondicionFatiga([{ estadoId: "supresores", gradoId: grado }]);
+  const xovromium = estadosComoCondicionFatiga([{ estadoId: "bajo_xovromium", gradoId: "activo" }]);
 
-  test("solo Xovromium es casilla; los Supresores no salen como casilla", () => {
-    const t = togglesDeFatiga(SING, impulso.id, p, FUENTES_EXTERNAS_FATIGA);
-    assert.deepEqual(t.map((x) => x.toggle), ["Bajo Xovromium"]);
+  test("ninguna fuente externa sale como casilla", () => {
+    assert.deepEqual(togglesDeFatiga(SING, impulso.id, p, FUENTES_EXTERNAS_FATIGA), []);
   });
 
   test("cadena: ×2 Supresores antes del −1 de Xovromium", () => {
     assert.equal(coste(), 3);
-    assert.equal(coste("Bajo Xovromium"), 2);
+    assert.equal(coste(...xovromium), 2);
     assert.equal(coste(...supresores("fracaso")), 6);
-    assert.equal(coste(...supresores("fracaso"), "Bajo Xovromium"), 5);
+    assert.equal(coste(...supresores("fracaso"), ...xovromium), 5);
     assert.equal(coste(...supresores("fracaso_critico")), 6);
   });
 
   test("efectos sobre la tirada y daño por punto", () => {
-    assert.deepEqual(efectosDeCasillas(FUENTES_EXTERNAS_FATIGA, new Set(["Bajo Xovromium"])), {
+    assert.deepEqual(efectosDeCasillas(FUENTES_EXTERNAS_FATIGA, new Set(xovromium)), {
       ajustes: [{ valor: 1, fuente: "Xovromium" }],
       danioPorPunto: null,
     });
+    // La casilla vieja ya no hace nada.
+    assert.deepEqual(efectosDeCasillas(FUENTES_EXTERNAS_FATIGA, new Set(["Bajo Xovromium"])).ajustes, []);
     const fc = efectosDeCasillas(FUENTES_EXTERNAS_FATIGA, new Set(supresores("fracaso_critico")));
     assert.deepEqual(fc.ajustes, [{ valor: -2, fuente: "Supresores (fallo crítico)" }]);
     assert.equal(fc.danioPorPunto, "letal");

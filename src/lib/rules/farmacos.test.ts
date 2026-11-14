@@ -1,20 +1,16 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
-import {
-  accionesDeFarmacos,
-  accionesDirectasDeFarmacos,
-  ID_CASILLA_ANTIPATOGENO,
-  ID_CASILLA_ULTRA_FISICAS,
-  ID_CASILLA_ULTRA_INICIATIVA,
-  PREFIJO_CASILLA_UMBRAL,
-} from "./farmacos";
+import { accionesDeFarmacos, accionesDirectasDeFarmacos, ID_CASILLA_ANTIPATOGENO } from "./farmacos";
 import { ACCIONES, type Accion } from "./acciones";
 import { dificultadTrasCambio, estadoInicial } from "./condiciones";
 import { equipar } from "./equipo";
 import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta, type VitalidadActual } from "./fichaResuelta";
 import { montarTirada, SIN_ELECCION, type TiradaMontada } from "./montaje";
 import type { EstadoActivo } from "./estados";
+import { ponerEstado } from "./estadosFicha";
+import { estadoPorUso } from "./sigilo";
+import { consecuenciaPropia, estadosActivosDe } from "./consecuenciasPropias";
 
 function conFarmaco(catalogoId: string, cantidad: number): Sheet {
   return { ...defaultSheet(), farmacos: { [catalogoId]: cantidad } };
@@ -190,118 +186,114 @@ describe("dificultad con la que se abre cada fármaco", () => {
   });
 });
 
-// S94: Ultra Estimulante, "+2 a la iniciativa y +1 a las acciones físicas basadas en Agilidad o
-// Fuerza". Casilla siempre visible, como la de Xovromium.
-describe("casilla «Bajo Ultra Estimulante»", () => {
-  const resolver = (s: Sheet) => resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
-  const f = resolver(defaultSheet());
-  const accion = (id: string) => conExtrasDeFicha(f, ACCIONES.find((a) => a.id === id)!);
-  const ids = (id: string) => (accion(id).condiciones ?? []).map((c) => c.id);
-  const conUltra = (id: string, marcadas: string[]) => {
-    const t = accion(id);
-    const estado = { ...estadoInicial(t.condiciones ?? []), ...Object.fromEntries(marcadas.map((m) => [m, true])) };
-    return montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: estado }).total - montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: estadoInicial(t.condiciones ?? []) }).total;
-  };
-
-  test("sale sin tener la dosis (como la de Xovromium)", () => {
-    assert.ok(ids("carrera").includes(ID_CASILLA_ULTRA_FISICAS));
-    assert.ok(ids("iniciativa").includes(ID_CASILLA_ULTRA_INICIATIVA));
-  });
-
-  test("+2 en la iniciativa, +1 en una tirada física (Carrera, con Reflejos)", () => {
-    assert.equal(conUltra("iniciativa", [ID_CASILLA_ULTRA_INICIATIVA]), 2);
-    assert.equal(conUltra("carrera", [ID_CASILLA_ULTRA_FISICAS]), 1);
-  });
-
-  test("no en las salvaciones ni en las tiradas mentales", () => {
-    assert.ok(!ids("salv_reflejos").includes(ID_CASILLA_ULTRA_FISICAS));
-    assert.ok(!ids("salv_fortaleza").includes(ID_CASILLA_ULTRA_FISICAS));
-    assert.ok(!ids("discernir_mentiras").includes(ID_CASILLA_ULTRA_FISICAS));
-  });
-
-  test("una iniciativa con Reflejos lleva las dos, pero no se apilan: +2", () => {
-    const t: Accion = { ...ACCIONES.find((a) => a.id === "iniciativa")!, aplicado: "reflejos" };
-    const conExtras = conExtrasDeFicha(f, t);
-    const cs = conExtras.condiciones ?? [];
-    assert.ok(cs.some((c) => c.id === ID_CASILLA_ULTRA_FISICAS) && cs.some((c) => c.id === ID_CASILLA_ULTRA_INICIATIVA));
-    const estado = { ...estadoInicial(cs), [ID_CASILLA_ULTRA_FISICAS]: true, [ID_CASILLA_ULTRA_INICIATIVA]: true };
-    const sin = montarTirada(f, conExtras, { ...SIN_ELECCION, estadoCondiciones: estadoInicial(cs) }).total;
-    assert.equal(montarTirada(f, conExtras, { ...SIN_ELECCION, estadoCondiciones: estado }).total - sin, 2);
-  });
-});
-
-// fa-01 / fa-02 (usuario, 2026-11-13): Analgésico, Calmante y Gel Sanador −1 al penalizador por
-// heridas; el Ultra, por heridas y fatiga. Casilla solo herido y con la dosis, solo esa tirada;
-// entre fármacos vale el mayor; se suma a especie y aumentos.
-describe("fármacos contra el penalizador por heridas y fatiga", () => {
+// Fármacos como estados (usuario, 2026-11-14): el efecto con duración lo aplica su estado mientras
+// dura, sin casillas. Sustituye a las casillas «contra dolor» (fa-01) y «Bajo Ultra Estimulante»
+// (S94/td-14). Entre fármacos, contra el penalizador, vale el mayor (fa-02).
+describe("fármacos con duración: el estado aplica el efecto", () => {
   // Malherido (4/20, −3) y Fatigado (4/20, −1).
   const HERIDO_Y_FATIGADO: VitalidadActual = { origen: "combate", pgActual: 4, pgMax: 20, fatigaActual: 4, fatigaMax: 20 };
-  const SOLO_FATIGADO: VitalidadActual = { origen: "combate", pgActual: 20, pgMax: 20, fatigaActual: 4, fatigaMax: 20 };
-  const casilla = (id: string) => `${PREFIJO_CASILLA_UMBRAL}${id}`;
-  const conDosis = (...ids: string[]): Sheet => ({ ...defaultSheet(), farmacos: Object.fromEntries(ids.map((i) => [i, 1])) });
-  const atletismo = (f: FichaResuelta) => conExtrasDeFicha(f, ACCIONES.find((a) => a.id === "atletismo")!);
-  const montar = (f: FichaResuelta, marcadas: string[]) => {
-    const t = atletismo(f);
-    const estado = { ...estadoInicial(t.condiciones ?? []), ...Object.fromEntries(marcadas.map((m) => [m, true])) };
-    return montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: estado });
+  const activo = (estadoId: string): EstadoActivo => ({ estadoId, gradoId: "activo", rondasRestantes: null });
+  const ANALGESICO = activo("bajo_analgesico");
+  const CALMANTE = activo("bajo_calmante");
+  const ULTRA = activo("bajo_ultra_estimulante");
+  const resolver = (s: Sheet, estados: EstadoActivo[] = [], vitalidad: VitalidadActual = HERIDO_Y_FATIGADO) => resolverFicha(s, { estados, vitalidad });
+  const tirada = (f: FichaResuelta, id: string, aplicado?: Accion["aplicado"]) => {
+    const base = ACCIONES.find((a) => a.id === id)!;
+    return conExtrasDeFicha(f, aplicado ? { ...base, aplicado } : base);
   };
-  const umbral = (m: TiradaMontada) =>
-    m.desglose.filter((l) => /^(Malherido|Fatigado)|contra el penalizador/.test(l.etiqueta)).reduce((t, l) => t + l.valor, 0);
-  const resolver = (s: Sheet, vitalidad: VitalidadActual, estados: EstadoActivo[] = []) => resolverFicha(s, { estados, vitalidad });
-  const deFarmaco = (f: FichaResuelta) => (atletismo(f).condiciones ?? []).map((c) => c.id).filter((i) => i.startsWith(PREFIJO_CASILLA_UMBRAL));
+  const montar = (f: FichaResuelta, id: string, aplicado?: Accion["aplicado"]): TiradaMontada => {
+    const t = tirada(f, id, aplicado);
+    return montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: estadoInicial(t.condiciones ?? []) });
+  };
+  const umbral = (m: TiradaMontada) => m.desglose.filter((l) => /^(Malherido|Fatigado)/.test(l.etiqueta)).reduce((t, l) => t + l.valor, 0);
+  const conTodos = conFarmaco("farmaco_analgesico", 3);
+  const directa = (id: string) => accionesDirectasDeFarmacos(conFarmaco(id, 1), []).find((a) => a.farmacoId === id)!;
+  const conTirada = (id: string) => accionesDeFarmacos(conFarmaco(id, 1), []).find((a) => a.farmacoId === id)!;
 
-  test("sin herida, o sin la dosis, no sale", () => {
-    assert.deepEqual(deFarmaco(resolver(conDosis("farmaco_analgesico"), VITALIDAD_DE_FICHA)), []);
-    assert.deepEqual(deFarmaco(resolver(defaultSheet(), HERIDO_Y_FATIGADO)), []);
-    // El Analgésico es de heridas: solo con fatiga no sale; el Ultra sí.
-    const fatigado = resolver(conDosis("farmaco_analgesico", "farmaco_ultra_estimulante"), SOLO_FATIGADO);
-    assert.deepEqual(deFarmaco(fatigado), [casilla("farmaco_ultra_estimulante")]);
+  test("usar el Analgésico o el Ultra pone su estado, hasta quitarlo", () => {
+    assert.deepEqual(estadoPorUso(directa("farmaco_analgesico"), null), ANALGESICO);
+    assert.deepEqual(estadoPorUso(directa("farmaco_ultra_estimulante"), null), ULTRA);
   });
 
-  test("Analgésico marcado: Malherido −3 → −2, solo en esa tirada y sin gastar nada", () => {
-    const f = resolver(conDosis("farmaco_analgesico"), HERIDO_Y_FATIGADO);
-    assert.equal(umbral(montar(f, [])), -4);
-    const m = montar(f, [casilla("farmaco_analgesico")]);
+  test("Calmante y Geles: superar la tirada pone su estado; fallarla, nada", () => {
+    const casos = [
+      ["farmaco_calmante", CALMANTE],
+      ["farmaco_gel_sanador", ANALGESICO],
+      ["farmaco_gel_sanador_avanzado", ANALGESICO],
+      ["farmaco_nano_elixir", ANALGESICO],
+    ] as const;
+    for (const [id, estado] of casos) {
+      for (const grado of ["exito", "critico"] as const) {
+        const c = consecuenciaPropia(conTirada(id), { tipo: "grado", grado });
+        assert.deepEqual(estadosActivosDe(c?.estados ?? []), [estado], `${id} ${grado}`);
+      }
+      for (const grado of ["fracaso", "fracasoCritico"] as const) assert.equal(consecuenciaPropia(conTirada(id), { tipo: "grado", grado }), null, `${id} ${grado}`);
+    }
+  });
+
+  test("con «Bajo Analgésico», Malherido −3 → −2 en cualquier tirada, sin casilla y con su fuente", () => {
+    const f = resolver(conTodos, [ANALGESICO]);
+    const m = montar(f, "atletismo");
     assert.equal(umbral(m), -3);
-    assert.deepEqual(
-      m.desglose.filter((l) => /contra el penalizador/.test(l.etiqueta)),
-      [{ etiqueta: "Analgésico contra el penalizador por heridas", valor: 1 }],
-    );
-    assert.equal(m.costeFatiga, 0);
+    assert.ok(m.desglose.some((l) => l.etiqueta === "Malherido (Bajo Analgésico)" && l.valor === -2));
+    assert.ok(!(tirada(f, "atletismo").condiciones ?? []).some((c) => c.id.startsWith("farmaco_")));
   });
 
-  test("Ultra: 1 menos de heridas y 1 de fatiga (Fatigado −1 → 0)", () => {
-    const f = resolver(conDosis("farmaco_ultra_estimulante"), HERIDO_Y_FATIGADO);
-    assert.equal(umbral(montar(f, [casilla("farmaco_ultra_estimulante")])), -2);
+  test("sin el estado no hay bono, aunque queden dosis", () => {
+    const f = resolver({ ...defaultSheet(), farmacos: { farmaco_analgesico: 2, farmaco_calmante: 2, farmaco_ultra_estimulante: 2, farmaco_gel_sanador: 2 } });
+    assert.equal(umbral(montar(f, "atletismo")), -4);
+    assert.equal(montar(f, "iniciativa").total, montar(resolver(defaultSheet()), "iniciativa").total);
+    assert.ok(!(tirada(f, "atletismo").condiciones ?? []).some((c) => c.id.startsWith("farmaco_umbral_")));
   });
 
-  test("fa-02: entre fármacos solo vale el mayor; el que no suma lo dice", () => {
-    const f = resolver(conDosis("farmaco_analgesico", "farmaco_gel_sanador", "farmaco_ultra_estimulante"), HERIDO_Y_FATIGADO);
-    const dos = montar(f, [casilla("farmaco_analgesico"), casilla("farmaco_gel_sanador")]);
-    assert.equal(umbral(dos), -3);
-    assert.ok(dos.desglose.some((l) => /^Gel Sanador .*no se suma con Analgésico/.test(l.etiqueta) && l.valor === 0));
-    // Con el Ultra, las heridas siguen con 1 menos y la fatiga baja aparte.
-    assert.equal(umbral(montar(f, [casilla("farmaco_analgesico"), casilla("farmaco_ultra_estimulante")])), -2);
+  test("renovar no acumula: ponerlo otra vez deja uno y el mismo −1", () => {
+    const dos = ponerEstado([ANALGESICO], ANALGESICO);
+    assert.deepEqual(dos, [ANALGESICO]);
+    assert.equal(umbral(montar(resolver(conTodos, dos), "atletismo")), -3);
+  });
+
+  test("fa-02: dos fármacos con el mismo −1 no apilan (Analgésico y Calmante: −1, no −2)", () => {
+    const f = resolver(conTodos, [ANALGESICO, CALMANTE]);
+    assert.equal(umbral(montar(f, "atletismo")), -3);
+    assert.ok(montar(f, "atletismo").desglose.some((l) => l.etiqueta === "Malherido (Bajo Analgésico o Bajo Calmante)"));
+    // Con el Ultra, las heridas siguen con 1 menos y la fatiga baja aparte (Fatigado −1 → 0).
+    assert.equal(umbral(montar(resolver(conTodos, [ANALGESICO, ULTRA]), "atletismo")), -2);
   });
 
   test("se suma a los aumentos y no pasa de 0", () => {
-    const neuro: Sheet = {
-      ...conDosis("farmaco_analgesico", "farmaco_ultra_estimulante"),
-      equipo: [{ instanciaId: "n1", catalogoId: "aum_neuroprotesis_simpatica", nivel: 1 }],
-    };
-    const activa: EstadoActivo = { estadoId: "aum_neuroprotesis", gradoId: "activo", rondasRestantes: 3 };
-    const f = resolver(neuro, HERIDO_Y_FATIGADO, [activa]);
-    // Malherido −3 + 1 (Neuroprótesis) + 1 (Analgésico) = −1.
-    const m = montar(f, [casilla("farmaco_analgesico")]);
-    assert.equal(m.desglose.filter((l) => /^Malherido|^Analgésico/.test(l.etiqueta)).reduce((t, l) => t + l.valor, 0), -1);
-    // Fatigado −1 + 1 ya es 0: el Ultra solo compensa el de heridas.
-    const ultra = montar(f, [casilla("farmaco_ultra_estimulante")]);
-    assert.equal(ultra.desglose.find((l) => /^Ultra Estimulante contra/.test(l.etiqueta))?.valor, 1);
+    const neuro: Sheet = { ...conTodos, equipo: [{ instanciaId: "n1", catalogoId: "aum_neuroprotesis_simpatica", nivel: 1 }] };
+    const neuroActiva: EstadoActivo = { estadoId: "aum_neuroprotesis", gradoId: "activo", rondasRestantes: 3 };
+    // Malherido −3 + 1 (Neuroprótesis) + 1 (Analgésico) = −1; Fatigado −1 + 1 + 1 se queda en 0.
+    const f = resolver(neuro, [neuroActiva, ULTRA]);
+    const m = montar(f, "atletismo");
+    assert.equal(m.desglose.filter((l) => /^Malherido/.test(l.etiqueta)).reduce((t, l) => t + l.valor, 0), -1);
+    assert.ok(!m.desglose.some((l) => /^Fatigado/.test(l.etiqueta)));
   });
 
-  test("Calmante y los Geles Avanzado y Nano-Elixir también; los demás fármacos, no", () => {
-    const f = resolver(conDosis("farmaco_calmante", "farmaco_gel_sanador_avanzado", "farmaco_nano_elixir", "farmaco_hemostaticos"), HERIDO_Y_FATIGADO);
-    assert.deepEqual(deFarmaco(f).sort(), [casilla("farmaco_calmante"), casilla("farmaco_gel_sanador_avanzado"), casilla("farmaco_nano_elixir")].sort());
+  test("Bajo Ultra Estimulante: +2 en la iniciativa y +1 en una física (Carrera), sin casillas", () => {
+    const sin = resolver(defaultSheet(), [], VITALIDAD_DE_FICHA);
+    const con = resolver(defaultSheet(), [ULTRA], VITALIDAD_DE_FICHA);
+    assert.equal(montar(con, "iniciativa").total - montar(sin, "iniciativa").total, 2);
+    assert.equal(montar(con, "carrera").total - montar(sin, "carrera").total, 1);
+    assert.deepEqual(tirada(con, "carrera").condiciones ?? [], []);
+  });
+
+  test("Bajo Ultra Estimulante: nada en las salvaciones ni en las tiradas mentales", () => {
+    const sin = resolver(defaultSheet(), [], VITALIDAD_DE_FICHA);
+    const con = resolver(defaultSheet(), [ULTRA], VITALIDAD_DE_FICHA);
+    for (const id of ["salv_reflejos", "salv_fortaleza", "discernir_mentiras"]) {
+      assert.equal(montar(con, id).total, montar(sin, id).total, id);
+    }
+  });
+
+  test("Bajo Ultra Estimulante: una iniciativa con Reflejos se queda en +2 (no se apilan)", () => {
+    const sin = resolver(defaultSheet(), [], VITALIDAD_DE_FICHA);
+    const con = resolver(defaultSheet(), [ULTRA], VITALIDAD_DE_FICHA);
+    assert.equal(montar(con, "iniciativa", "reflejos").total - montar(sin, "iniciativa", "reflejos").total, 2);
+  });
+
+  test("Bajo Ultra Estimulante: −1 a heridas y −1 a fatiga", () => {
+    assert.equal(umbral(montar(resolver(conTodos, [ULTRA]), "atletismo")), -2);
   });
 });
 

@@ -162,8 +162,7 @@ export type Modificador =
   | { tipo: "habilidad"; id: HabilidadId; valor: number }
   // `compensa` (A5a): compensación de un penalizador (Neurogénesis sobre la fatiga) que no
   // viene con origen "estado"; cuenta junto a los penalizadores al anularlos (Proyección).
-  // `umbral`: es el penalizador de heridas o fatiga de §7 (o una compensación suya), para las
-  // casillas que lo reducen solo en una tirada (fármacos, fa-01; montarTirada).
+  // `umbral`: es el penalizador de heridas o fatiga de §7 (o una compensación suya).
   | { tipo: "tirada"; alcance: AlcanceModificador; valor: number; noApila?: string; compensa?: true; umbral?: RecursoUmbral }
   // Nivel de una disciplina psiónica (Resonancia +1 del Arianyi, §14.6). No toca
   // ninguna tirada: sube el nivel efectivo, que es el que miran requisitos y
@@ -349,11 +348,6 @@ const esDePenalizador = (m: ModificadorConFuente) => m.origen === "estado" || (m
 
 const anulaQueAlcanza = (mods: ModificadorConFuente[], ctx: ContextoAccion) =>
   mods.find((m) => m.tipo === "anulaPenalizadores" && alcanzaA(m.alcance, ctx));
-
-// Si en esta tirada los penalizadores ya quedan a 0 (Proyección): nada que reducir encima.
-export function penalizadoresAnulados(mods: ModificadorConFuente[], ctx: ContextoAccion): boolean {
-  return anulaQueAlcanza(mods, ctx) !== undefined;
-}
 
 // Con un `anulaPenalizadores` que alcance a la tirada, una línea más que deja a 0 lo que suman
 // sus penalizadores (si suman menos de 0). Sin él, la misma lista.

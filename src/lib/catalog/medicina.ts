@@ -317,13 +317,14 @@ const MOTOR_FARMACO: MotorMetadata[] = [
   { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
 ];
 
-// fa-01 (usuario, 2026-11-13): «reduce en 1 el penalizador por heridas» (y fatiga, el Ultra) es
-// una casilla en todas las tiradas, solo herido y con la dosis (casillasDeFarmacos,
-// rules/farmacos.ts; el tope y el «vale el mayor», montarTirada).
+// «Reduce en 1 el penalizador por heridas» (y fatiga, el Ultra): fármacos como estados (usuario,
+// 2026-11-14; sustituye a la casilla de fa-01). Usar la dosis pone su estado («Bajo Analgésico»,
+// «Bajo Calmante», «Bajo Ultra Estimulante»; los Geles, el del Analgésico), que rebaja el umbral
+// mientras dura (Estado.reduceUmbral; entre fármacos, el mayor: ajusteUmbralesDeEstados).
 const MOTOR_CONTRA_DOLOR: MotorMetadata = {
   tipo: "numerico",
   afecta: { modo: "accion_existente", id: "todas" },
-  mecanismo: "eleccion_jugador",
+  mecanismo: "siempre_activo",
   estado: "construido",
 };
 
@@ -343,7 +344,7 @@ export const FARMACOS: Consumible[] = [
     coste: 5,
     aplicacion: { base: "estandar", conArmadura: "compleja" },
     modificadores: [],
-    // "Reduce en 1 el penalizador por heridas": casilla en las tiradas (fa-01).
+    // "Reduce en 1 el penalizador por heridas": «Usar» pone «Bajo Analgésico» (rules/farmacos.ts).
     motor: [MOTOR_CONTRA_DOLOR],
   },
   {
@@ -398,8 +399,8 @@ export const FARMACOS: Consumible[] = [
     coste: 20,
     aplicacion: { base: "estandar", conArmadura: "compleja" },
     modificadores: [],
-    // "Reduce en 1 el penalizador por herida": casilla en las tiradas (fa-01); varias dosis no
-    // suman (fa-02: entre fármacos vale el mayor).
+    // "Reduce en 1 el penalizador por herida": superar su tirada pone «Bajo Calmante»; varias
+    // dosis no suman (fa-02: entre fármacos vale el mayor).
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "farmaco_farmaco_calmante" }, mecanismo: "accion_equipo", estado: "construido" },
       MOTOR_CONTRA_DOLOR,
@@ -445,16 +446,15 @@ export const FARMACOS: Consumible[] = [
     coste: 50,
     aplicacion: { base: "estandar", conArmadura: "compleja" },
     modificadores: [],
-    // S94 (2026-10-24): los dos números son la casilla «Bajo Ultra Estimulante» (siempre
-    // visible, como la de Xovromium; casillasDeFarmacos, rules/farmacos.ts): +2 en las
-    // iniciativas y +1 en las tiradas con Fortaleza, Potencia o Reflejos que no son salvación.
-    // La reducción de penalizadores por heridas y fatiga, su propia casilla (fa-01). El bajón al
-    // terminar (fa-03): usar la dosis pone el recordatorio «Bajo Ultra Estimulante», cuyo botón resta
-    // 2 de fatiga y pone «Bajón del Ultra» (−1 a Voluntad, Perspicacia y Expresión; catalog/estados.ts,
+    // Fármacos como estados (usuario, 2026-11-14; antes, casillas: S94, fa-01): usar la dosis pone
+    // «Bajo Ultra Estimulante», que mientras dura da +2 en las iniciativas y +1 en las tiradas con
+    // Fortaleza, Potencia o Reflejos que no son salvación (sin sumarse entre sí) y −1 a los
+    // penalizadores por heridas y fatiga (catalog/estados.ts). Su botón, al acabarse, resta 2 de
+    // fatiga y pone «Bajón del Ultra» (−1 a Voluntad, Perspicacia y Expresión; fa-03,
     // rules/acabarEstado.ts). El colapso por doble dosis sigue en `detalle`, a mano (fa-04).
     motor: [
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Iniciativa" }, mecanismo: "eleccion_jugador", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:fortaleza/potencia/reflejos" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Iniciativa" }, mecanismo: "siempre_activo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:fortaleza/potencia/reflejos" }, mecanismo: "siempre_activo", estado: "construido" },
       MOTOR_CONTRA_DOLOR, // −1 a los penalizadores por heridas y fatiga
       // El bajón: estado «Bajón del Ultra», puesto desde el recordatorio.
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "siempre_activo", estado: "construido" },
@@ -480,7 +480,7 @@ export const FARMACOS: Consumible[] = [
     coste: 50,
     aplicacion: { base: "compleja" },
     modificadores: [],
-    // Incluye el efecto del Analgésico (fa-01).
+    // Incluye el efecto del Analgésico: superar su tirada pone «Bajo Analgésico».
     motor: [...MOTOR_FARMACO, MOTOR_CONTRA_DOLOR],
   },
   {
@@ -500,7 +500,7 @@ export const FARMACOS: Consumible[] = [
     coste: 250,
     aplicacion: { base: "compleja" },
     modificadores: [],
-    // Incluye el efecto del Analgésico (fa-01).
+    // Incluye el efecto del Analgésico: superar su tirada pone «Bajo Analgésico».
     motor: [...MOTOR_FARMACO, MOTOR_CONTRA_DOLOR],
   },
   {
@@ -529,7 +529,7 @@ export const FARMACOS: Consumible[] = [
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "farmaco_farmaco_nano_elixir" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "farmaco_farmaco_nano_elixir" }, mecanismo: "ajuste_fijo", estado: "construido" },
-      MOTOR_CONTRA_DOLOR, // como el Gel, el efecto del Analgésico (fa-01)
+      MOTOR_CONTRA_DOLOR, // como el Gel, el efecto del Analgésico («Bajo Analgésico»)
     ],
   },
   {
@@ -541,9 +541,7 @@ export const FARMACOS: Consumible[] = [
       "Psicoactivo sintético concentrado de moduladores sinápticos exóticos y catalizadores " +
       "neuronales inestables. Sobrecarga temporalmente las vías de conexión psiónica.",
     detalle: [
-      "Requiere Voluntad + Biociencia o Actitud (dificultad 6) — no hay tirada fija en el catálogo " +
-        "para esta pareja; se resuelve con dificultad libre en el modal de la tirada que " +
-        "corresponda mientras no exista una propia.",
+      "Requiere Voluntad + Biociencia o Actitud (dificultad 6), en su fila «Usar Xovromium».",
       "Con éxito dura 1 hora: +1 a las manifestaciones psiónicas e ignora el primer nivel de " +
         "fatiga por uso de poderes (docs/sistema.md §10.4 ya cita este efecto).",
       "Si falla, la dosis se pierde: 1 nivel de fatiga y -1 en tiradas con atributos mentales " +
@@ -559,10 +557,10 @@ export const FARMACOS: Consumible[] = [
     aplicacion: { base: "estandar", conArmadura: "compleja" },
     modificadores: [],
     motor: [
-      // La tirada de tomarlo es su fila en Fármacos; el efecto sobre los poderes,
-      // la casilla "Bajo Xovromium" (FUENTES_EXTERNAS_FATIGA, catalog/psionica.ts).
+      // La tirada de tomarlo es su fila en Fármacos; superarla pone «Bajo Xovromium», que aplica
+      // solo su efecto en los poderes (FUENTES_EXTERNAS_FATIGA, catalog/psionica.ts).
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "farmaco_farmaco_xovromium" }, mecanismo: "accion_equipo", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "psionica" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "psionica" }, mecanismo: "siempre_activo", estado: "construido" },
       // fa-03: el rechazo (fallar la tirada: 1 de fatiga y «Rechazo del Xovromium», −1) y el bajón
       // (desde el recordatorio «Bajo Xovromium»: 2 de fatiga y «Bajón del Xovromium», −2), como
       // estados sobre Voluntad, Perspicacia y Expresión (rules/farmacos.ts, rules/acabarEstado.ts).

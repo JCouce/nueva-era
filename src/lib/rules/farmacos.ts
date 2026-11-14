@@ -6,12 +6,12 @@
 // son consumibles de cantidad — conceptos distintos aunque el patrón de
 // generación se parezca. Fuente: docs/prompt-gasto-recursos.md, Fase 2.
 //
-// Alcance a propósito (no lo amplíes sin revisar el documento): no mecaniza
-// el efecto completo de cada fármaco (curación por niveles, penalizadores
-// acumulados...) — solo genera la fila, tira si corresponde con la
-// dificultad ya conocida (como texto en `nota`, nunca como ajustesFijos: ver
-// comentario de CON_TIRADA) y gasta 1 dosis al confirmar. El resto sigue
-// siendo comunicación de mesa, igual que hoy.
+// Alcance: genera la fila, tira si corresponde con la dificultad ya conocida (como texto en
+// `nota`, nunca como ajustesFijos: ver comentario de CON_TIRADA) y gasta 1 dosis al confirmar. Lo
+// que la dosis te hace va por estados (fármacos como estados, usuario 2026-11-14): «Usar» pone el
+// del efecto con duración (ESTADO_AL_USAR; con tirada, sus consecuencias propias por grado), y el
+// estado lo aplica solo mientras dura (catalog/estados.ts, ESTADOS_DE_FARMACO). Lo que no cabe
+// (curación por niveles, sobredosis...) sigue siendo texto y comunicación de mesa.
 import { FARMACOS, NO_APILA_NANOMEDICINA } from "../catalog/medicina";
 import { equipoPorId, type Consumible } from "../catalog/equipo";
 import type { TipoAccionBase } from "./tipoAccion";
@@ -20,24 +20,39 @@ import type { Accion, AccionDirecta } from "./acciones";
 import type { AplicadoId } from "./atributos";
 import type { HabilidadId } from "./habilidades";
 import type { CondicionTirada } from "./condiciones";
-import type { OrigenAporte } from "./origen";
-import type { RecursoUmbral } from "./modificadores";
 import type { ConsecuenciaPropia } from "./consecuenciasPropias";
 import type { Grado } from "./psionica";
 import type { EstadoAlUsar } from "./sigilo";
-import { ESTADO_BAJO_ULTRA_ID, ESTADO_BAJO_XOVROMIUM_ID, ESTADO_RECHAZO_XOVROMIUM_ID } from "../catalog/estados";
+import {
+  ESTADO_BAJO_ANALGESICO_ID,
+  ESTADO_BAJO_CALMANTE_ID,
+  ESTADO_BAJO_ULTRA_ID,
+  ESTADO_BAJO_XOVROMIUM_ID,
+  ESTADO_RECHAZO_XOVROMIUM_ID,
+} from "../catalog/estados";
 
 // Los tres que no llevan tirada (docs/checklist-motor-vs-prosa-2026-09-24.md
 // / prompt-gasto-recursos.md): el nota explica el efecto, "Usar" solo gasta
 // la dosis, sin resolución de d12 de por medio.
 const SIN_TIRADA = new Set(["farmaco_analgesico", "farmaco_antipatogeno", "farmaco_ultra_estimulante"]);
 
-// El recordatorio que pone usar la dosis (fa-03, usuario 2026-11-14): «Bajo Ultra Estimulante», sin
-// efecto mecánico (sus bonos siguen en las casillas, td-14), con su botón para el bajón al acabarse
-// (Estado.alAcabar, rules/acabarEstado.ts). Lo aplica el servidor (consecuencia propia «usar»).
+// El estado que pone usar la dosis (fármacos como estados, usuario 2026-11-14): «Bajo Analgésico»
+// (−1 a heridas) y «Bajo Ultra Estimulante» (sus bonos y, al acabarse, el bajón: fa-03). Hasta
+// quitarlo: la fuente da horas o minutos y la app no mide el tiempo. Usarlo con el estado puesto lo
+// renueva (ponerEstado sustituye: no acumula). Lo aplica el servidor (consecuencia propia «usar»).
 const ESTADO_AL_USAR: Readonly<Record<string, EstadoAlUsar>> = {
+  farmaco_analgesico: { estadoId: ESTADO_BAJO_ANALGESICO_ID, fijo: { gradoId: "activo", turnos: null } },
   farmaco_ultra_estimulante: { estadoId: ESTADO_BAJO_ULTRA_ID, fijo: { gradoId: "activo", turnos: null } },
 };
+
+// Lo que los Geles te ponen al superar su tirada: el efecto del Analgésico.
+function conAnalgesicoAlSuperar(): Partial<Record<Grado, ConsecuenciaPropia>> {
+  const c: ConsecuenciaPropia = {
+    texto: "Incluye el Analgésico: te pones «Bajo Analgésico» (−1 al penalizador por heridas). La curación, a mano.",
+    estados: [{ estadoId: ESTADO_BAJO_ANALGESICO_ID, gradoId: "activo" }],
+  };
+  return { critico: c, exito: c };
+}
 
 // El resto lleva tirada fija: Perspicacia + Biociencia (especialidad
 // Medicina), dificultad ya conocida — puesta en `nota` como texto, NUNCA en
@@ -67,14 +82,14 @@ const CON_TIRADA: Record<
     consecuenciasPropias?: Partial<Record<Grado, ConsecuenciaPropia>>;
   }
 > = {
-  // Su efecto sobre los poderes es la casilla "Bajo Xovromium" del modal del
-  // poder (FUENTES_EXTERNAS_FATIGA, catalog/psionica.ts). fa-03 (usuario 2026-11-14): superarla
-  // pone el recordatorio «Bajo Xovromium» (su botón aplica el bajón al acabarse); fallarla, 1 de
-  // fatiga y «Rechazo del Xovromium». La sobredosis (segunda dosis en 4 horas) sigue a mano (fa-04).
+  // fa-03 (usuario 2026-11-14): superarla pone «Bajo Xovromium», que aplica solo su efecto en los
+  // poderes (FUENTES_EXTERNAS_FATIGA, catalog/psionica.ts, mira el estado) y cuyo botón aplica el
+  // bajón al acabarse; fallarla, 1 de fatiga y «Rechazo del Xovromium». La sobredosis (segunda dosis
+  // en 4 horas) sigue a mano (fa-04).
   farmaco_xovromium: {
     nota:
-      "Voluntad + Biociencia o Actitud (la más alta), dificultad 6. Con éxito, 1 hora: marca «Bajo Xovromium» en tus poderes (+1 a la tirada y −1 de fatiga); " +
-      "la app te pone el recordatorio «Bajo Xovromium», y desde él aplicas el bajón al acabarse (2 de fatiga y −2 mentales una hora). " +
+      "Voluntad + Biociencia o Actitud (la más alta), dificultad 6. Con éxito, 1 hora: la app te pone «Bajo Xovromium» " +
+      "(+1 a la tirada de tus poderes y −1 a su fatiga), y desde él aplicas el bajón al acabarse (2 de fatiga y −2 mentales una hora). " +
       "Si falla, pierdes la dosis y la app te resta 1 de fatiga y te pone «Rechazo del Xovromium» (−1 mentales 15 minutos). " +
       "Una segunda dosis en 4 horas: salvación de Fortaleza (dificultad 8, +2 por dosis extra), a mano.",
     aplicado: "voluntad",
@@ -83,7 +98,7 @@ const CON_TIRADA: Record<
     dificultad: 6,
     consecuenciasPropias: (() => {
       const estabiliza: ConsecuenciaPropia = {
-        texto: "Se estabiliza: te pones «Bajo Xovromium» (recordatorio; el bajón, desde él al acabarse).",
+        texto: "Se estabiliza: te pones «Bajo Xovromium» (+1 y −1 de fatiga en tus poderes; el bajón, desde él al acabarse).",
         estados: [{ estadoId: ESTADO_BAJO_XOVROMIUM_ID, gradoId: "activo" }],
       };
       const rechazo: ConsecuenciaPropia = {
@@ -116,23 +131,48 @@ const CON_TIRADA: Record<
     nota: "Perspicacia + Biociencia (Medicina), dificultad 6 — purga un grado del aturdimiento; con éxito crítico, el estado entero.",
     dificultad: 6,
   },
+  // «Para establecer la duración»: superada, «Bajo Calmante» (−1 a heridas) 1 hora y 1 más por cada
+  // 4 éxitos (texto del estado: la app no mide el tiempo). Varias dosis no suman (fa-02); su fatiga
+  // y la salvación desde la tercera, a mano.
+  // TODO(revisar): la fuente no dice qué pasa si se falla la tirada; se supone que no hace efecto.
   farmaco_calmante: {
-    nota: "Perspicacia + Medicina, dificultad 4 — fija la duración y reduce en 1 el penalizador por herida.",
+    nota:
+      "Perspicacia + Medicina, dificultad 4 — con éxito, la app te pone «Bajo Calmante» (−1 al penalizador por heridas): " +
+      "1 hora, y 1 más por cada 4 éxitos. Cada dosis más: 4 de fatiga; desde la tercera, Fortaleza 8 (+2 por dosis extra), a mano.",
     dificultad: 4,
+    consecuenciasPropias: (() => {
+      const calma: ConsecuenciaPropia = {
+        texto: "Te pones «Bajo Calmante»: −1 al penalizador por heridas, 1 hora y 1 más por cada 4 éxitos.",
+        estados: [{ estadoId: ESTADO_BAJO_CALMANTE_ID, gradoId: "activo" }],
+      };
+      return { critico: calma, exito: calma };
+    })(),
   },
+  // Los Geles «incluyen de forma integrada los efectos del analgésico» (el Avanzado y el Nano-Elixir
+  // funcionan como el Gel): superada la tirada, la app pone «Bajo Analgésico» (renueva el que
+  // hubiera). La curación sigue a mano.
+  // TODO(revisar): la fuente no dice si con la tirada fallada el gel hace algo; se supone que no.
+  // TODO(revisar): la curación va por éxitos acumulados (margen) y «a discreción del interventor»
+  // (no letal, letal o grave), con el peaje de fatiga del Gel por nivel sanado: sin reparto que
+  // elegir, la app no la aplica sola.
   farmaco_gel_sanador: {
-    nota: "Perspicacia + Medicina, dificultad 4 — cada éxito sana un nivel no letal, cada 2 uno letal, cada 4 uno grave.",
+    nota:
+      "Perspicacia + Medicina, dificultad 4 — cada éxito sana un nivel no letal, cada 2 uno letal, cada 4 uno grave (a mano), " +
+      "con 1, 2 o 4 de fatiga por nivel sanado. Con éxito, la app te pone «Bajo Analgésico».",
     dificultad: 4,
+    consecuenciasPropias: conAnalgesicoAlSuperar(),
   },
   farmaco_gel_sanador_avanzado: {
-    nota: "Perspicacia + Medicina, dificultad 4 — igual que Gel Sanador, sin el peaje de fatiga.",
+    nota: "Perspicacia + Medicina, dificultad 4 — igual que Gel Sanador (curación a mano), sin el peaje de fatiga. Con éxito, «Bajo Analgésico».",
     dificultad: 4,
+    consecuenciasPropias: conAnalgesicoAlSuperar(),
   },
   farmaco_nano_elixir: {
-    nota: "Perspicacia + Medicina, dificultad 4 — igual que Gel Sanador Avanzado, con +5 ya sumado a esta tirada.",
+    nota: "Perspicacia + Medicina, dificultad 4 — igual que Gel Sanador Avanzado (curación a mano), con +5 ya sumado a esta tirada. Con éxito, «Bajo Analgésico».",
     // «No se apila con aumentos tecnológicos de nanomedicina» (au-07): con el Enjambre, el mayor.
     ajustesFijos: [{ valor: 5, fuente: "Nano-Elixir", noApila: NO_APILA_NANOMEDICINA }],
     dificultad: 4,
+    consecuenciasPropias: conAnalgesicoAlSuperar(),
   },
 };
 
@@ -216,104 +256,11 @@ const CON_EFECTO_ANTIPATOGENO = [
   "farmaco_nano_elixir",
 ];
 
-// Ultra Estimulante (S94, docs/fuente/equipamiento.md, Fármacos): "+2 a la iniciativa y +1 a
-// las acciones físicas basadas en Agilidad o Fuerza" durante 30 minutos. Casilla «Bajo Ultra
-// Estimulante» siempre visible, como la de Xovromium (usuario, 2026-09-30: la app no sabe si te
-// la has tomado, y el efecto sigue tras gastar la última dosis). Física = tirada con un aplicado
-// que lleve Fuerza o Agilidad (Fortaleza, Potencia, Reflejos), sin las salvaciones. Las dos
-// casillas no se apilan: una Iniciativa con Reflejos se queda en +2. La reducción de los
-// penalizadores por heridas y fatiga va en su propia casilla (abajo, fa-01); el bajón al terminar,
-// desde el recordatorio «Bajo Ultra Estimulante» que pone usar la dosis (fa-03, arriba).
-export const ID_CASILLA_ULTRA_INICIATIVA = "farmaco_ultra_estimulante_iniciativa";
-export const ID_CASILLA_ULTRA_FISICAS = "farmaco_ultra_estimulante_fisicas";
-const ETIQUETA_ULTRA = "Bajo Ultra Estimulante";
-const NOTA_ULTRA =
-  "30 minutos desde la dosis. Al terminar, el bajón (2 de fatiga y −1 en tiradas mentales durante una hora) desde el estado «Bajo Ultra Estimulante».";
-
-// Origen: un estado («estar bajo sus efectos»), no la dosis de esta ficha. La casilla sale en
-// cualquier ficha, tenga o no el fármaco, así que "te afecta" no la lista (lo general).
-// El estado «Bajo Ultra Estimulante» (fa-03) es solo el recordatorio y no marca la casilla (td-14);
-// el id de aquí es el de la casilla. Tipo "estado" para que no cuente como ítem.
-const ORIGEN_ULTRA: OrigenAporte = { tipo: "estado", id: "farmaco_ultra_estimulante", label: ETIQUETA_ULTRA };
-
-const CASILLAS_ULTRA_ESTIMULANTE: CondicionTirada[] = [
-  {
-    id: ID_CASILLA_ULTRA_INICIATIVA,
-    tipo: "toggle",
-    etiqueta: ETIQUETA_ULTRA,
-    valorActivo: 2,
-    noApila: "ultra_estimulante",
-    nota: NOTA_ULTRA,
-    alcance: { tipo: "grupo", grupo: "Iniciativa" },
-    origen: ORIGEN_ULTRA,
-  },
-  {
-    id: ID_CASILLA_ULTRA_FISICAS,
-    tipo: "toggle",
-    etiqueta: ETIQUETA_ULTRA,
-    valorActivo: 1,
-    noApila: "ultra_estimulante",
-    nota: NOTA_ULTRA,
-    alcance: { tipo: "aplicado", aplicados: ["fortaleza", "potencia", "reflejos"], salvoGrupo: "Salvaciones" },
-    origen: ORIGEN_ULTRA,
-  },
-];
-
-// «Reduce en 1 el penalizador por heridas» (Analgésico, Calmante; los Geles Sanadores «incluyen
-// los efectos del Analgésico», y el Avanzado y el Nano-Elixir funcionan como el Gel) y «por
-// heridas y fatiga» (Ultra Estimulante): una casilla por fármaco que se lleve, en todas las
-// tiradas, solo si le queda penalizador de ese recurso tras especie y aumentos (fa-01, usuario
-// 2026-11-13). Vale solo para la tirada; la dosis se descuenta a mano. Entre fármacos no se
-// suman: vale el mayor (fa-02, también con varias dosis de Calmante); sí se suman a la especie
-// y los aumentos. El tope en 0 y el «vale el mayor» los pone montarTirada (`reduceUmbral`).
-// TODO(revisar): la app no sabe si la dosis sigue haciendo efecto (1 hora; el Calmante, lo que
-// dé su tirada): la casilla sale mientras quede alguna en la ficha.
-const REDUCE_UMBRAL: Readonly<Record<string, Partial<Record<RecursoUmbral, number>>>> = {
-  farmaco_analgesico: { salud: 1 },
-  farmaco_calmante: { salud: 1 },
-  farmaco_gel_sanador: { salud: 1 },
-  farmaco_gel_sanador_avanzado: { salud: 1 },
-  farmaco_nano_elixir: { salud: 1 },
-  farmaco_ultra_estimulante: { salud: 1, fatiga: 1 },
-};
-
-export const PREFIJO_CASILLA_UMBRAL = "farmaco_umbral_";
-
-const NOTA_REDUCE_UMBRAL =
-  "Solo para esta tirada. Entre fármacos solo vale el mayor; se suma a lo que den especie y aumentos. La dosis se descuenta a mano.";
-
-function casillasReduceUmbral(sheet: Pick<Sheet, "farmacos">, penalizadores: Record<RecursoUmbral, number>): CondicionTirada[] {
-  return FARMACOS.flatMap((f): CondicionTirada[] => {
-    const reduce = REDUCE_UMBRAL[f.id];
-    if (!reduce || (sheet.farmacos[f.id] ?? 0) <= 0) return [];
-    const recursos = (Object.keys(reduce) as RecursoUmbral[]).filter((r) => (reduce[r] ?? 0) > 0);
-    if (!recursos.some((r) => penalizadores[r] < 0)) return [];
-    return [
-      {
-        id: `${PREFIJO_CASILLA_UMBRAL}${f.id}`,
-        tipo: "toggle",
-        etiqueta: `${f.label} contra el penalizador por ${recursos.map((r) => (r === "salud" ? "heridas" : "fatiga")).join(" y ")}`,
-        valorActivo: 0,
-        reduceUmbral: reduce,
-        nota: NOTA_REDUCE_UMBRAL,
-        alcance: { tipo: "todas" },
-        origen: { tipo: "farmaco", id: f.id, label: f.label },
-      },
-    ];
-  });
-}
-
-// `penalizadores`: lo que le queda a cada umbral a todo tras especie y aumentos
-// (penalizadoresDeUmbral, estados.ts); sin él, ninguna casilla de fármaco contra el dolor.
-export function casillasDeFarmacos(
-  sheet: Pick<Sheet, "farmacos">,
-  penalizadores: Record<RecursoUmbral, number> = { salud: 0, fatiga: 0 },
-): CondicionTirada[] {
-  const comunes = [...CASILLAS_ULTRA_ESTIMULANTE, ...casillasReduceUmbral(sheet, penalizadores)];
+// Antipatógeno: la casilla de la segunda salvación (abajo).
+export function casillasDeFarmacos(sheet: Pick<Sheet, "farmacos">): CondicionTirada[] {
   const conAntipatogeno = FARMACOS.find((f) => CON_EFECTO_ANTIPATOGENO.includes(f.id) && (sheet.farmacos[f.id] ?? 0) > 0);
-  if (!conAntipatogeno) return comunes;
+  if (!conAntipatogeno) return [];
   return [
-    ...comunes,
     {
       id: ID_CASILLA_ANTIPATOGENO,
       tipo: "toggle",

@@ -48,10 +48,8 @@ import {
   conPenalizadoresAnulados,
   desgloseAlcance,
   descartadosPorNoApila,
-  penalizadoresAnulados,
   type ContextoAccion,
   type ModificadorConFuente,
-  type RecursoUmbral,
 } from "./modificadores";
 import type { FichaResuelta } from "./fichaResuelta";
 
@@ -262,41 +260,6 @@ function sinApilar(e: Entradas, ctx: ContextoAccion, estado: EstadoCondiciones, 
   };
 }
 
-// Casillas que reducen el penalizador por heridas o fatiga solo en esta tirada (fármacos, fa-01):
-// su `valorActivo` pasa a ser lo que compensan de verdad, sin pasar de 0 lo que le queda al umbral
-// en esta tirada (tras especie, aumentos y compensaciones; con Proyección, nada). Entre ellas, por
-// recurso, solo vale la mayor (fa-02); la que se queda sin nada lo dice en su etiqueta.
-const RECURSOS_UMBRAL: readonly RecursoUmbral[] = ["salud", "fatiga"];
-
-function conReduccionesDeUmbral(
-  condiciones: CondicionTirada[],
-  estado: EstadoCondiciones,
-  mods: ModificadorConFuente[],
-  ctx: ContextoAccion,
-): CondicionTirada[] {
-  const reductoras = condiciones.filter((c): c is Toggle => c.tipo === "toggle" && c.reduceUmbral !== undefined);
-  if (reductoras.length === 0) return condiciones;
-  const anulados = penalizadoresAnulados(mods, ctx);
-  const compensa = new Map<Toggle, number>();
-  const pierdeCon = new Map<Toggle, string>();
-  for (const recurso of RECURSOS_UMBRAL) {
-    const cuanto = (c: Toggle) => c.reduceUmbral?.[recurso] ?? 0;
-    const marcadas = reductoras.filter((c) => Boolean(estado[c.id]) && cuanto(c) > 0);
-    if (marcadas.length === 0) continue;
-    const neto = anulados
-      ? 0
-      : mods.reduce((t, m) => (m.tipo === "tirada" && m.umbral === recurso && alcanzaA(m.alcance, ctx) ? t + m.valor : t), 0);
-    const gana = marcadas.reduce((mejor, c) => (cuanto(c) > cuanto(mejor) ? c : mejor));
-    compensa.set(gana, (compensa.get(gana) ?? 0) + Math.max(0, Math.min(cuanto(gana), -neto)));
-    for (const c of marcadas) if (c !== gana) pierdeCon.set(c, gana.etiqueta);
-  }
-  return condiciones.map((c) => {
-    if (c.tipo !== "toggle" || !c.reduceUmbral) return c;
-    const gana = !compensa.has(c) ? pierdeCon.get(c) : undefined;
-    return { ...c, valorActivo: compensa.get(c) ?? 0, ...(gana && { etiqueta: `${c.etiqueta} (no se suma con ${gana})` }) };
-  });
-}
-
 // Las casillas con alcance "aplicado" (A2b de aumentos) se recogen antes de abrir la tirada
 // con los aplicados con los que podría tirarse (consultaIndiceCondiciones); aquí, ya sabido el
 // de verdad (usuario, 2026-10-22: tras Sutil y casillas como Negociación Analítica), las que no
@@ -439,7 +402,7 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
   );
   const { bonosTramo } = sinApilados;
   const ajustesFijos = sinApilados.ajustes;
-  const condiciones = conReduccionesDeUmbral(sinApilados.condiciones, estado, sinApilados.mods, ctx);
+  const condiciones = sinApilados.condiciones;
   // Proyección activa (A5a): sus penalizadores, a 0 en las tiradas de Actitud.
   const mods = conPenalizadoresAnulados(sinApilados.mods, ctx);
 

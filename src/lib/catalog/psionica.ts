@@ -2452,9 +2452,9 @@ const SINGULARIDAD: Disciplina = {
   acciones: [IMPULSO, EXPANSION, CONVERGENCIA],
 };
 
-// Fuentes de fuera de las disciplinas que tocan la fatiga de cualquier poder. Xovromium, como
-// casilla que declara el jugador (usuario, 2026-09-30: la app no sabe si te has tomado la
-// dosis): +1 a la tirada e ignora el primer punto. Munición Supresora: por el estado
+// Fuentes de fuera de las disciplinas que tocan la fatiga de cualquier poder. Xovromium, por el
+// estado «Bajo Xovromium» puesto (fármacos como estados, usuario 2026-11-14; antes, casilla que
+// declaraba el jugador): +1 a la tirada e ignora el primer punto. Munición Supresora: por el estado
 // «Supresores» puesto (cuestionario eq-22, usuario 2026-11-13; antes eran dos casillas): ×2 y
 // −2; con fallo crítico, además 1 de daño letal por punto de fatiga gastado.
 export const FUENTES_EXTERNAS_FATIGA: ModificadorFatiga[] = [
@@ -2463,7 +2463,7 @@ export const FUENTES_EXTERNAS_FATIGA: ModificadorFatiga[] = [
   {
     fuente: "Xovromium",
     alcance: {},
-    condicion: { toggle: "Bajo Xovromium" },
+    condicion: { estado: "bajo_xovromium", grado: "activo" },
     op: "ignora_primero",
     valor: 1,
     ademas: { tirada: 1 },

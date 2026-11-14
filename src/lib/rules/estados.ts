@@ -165,15 +165,6 @@ function modificadorDeUmbral(
   };
 }
 
-// Lo que le queda a cada recurso de penalizador a todo tras especie y aumentos (≤ 0; 0 sin
-// umbral). Lo mira resolverFicha para sacar las casillas de fármaco solo con algo que reducir.
-export function penalizadoresDeUmbral(salud: UmbralSalud, fatiga: UmbralFatiga, ajuste: AjusteUmbrales): Record<RecursoUmbral, number> {
-  return {
-    salud: salud === "normal" ? 0 : valorDeUmbral(PENALIZADOR_SALUD[salud], ajuste.salud),
-    fatiga: fatiga === "normal" ? 0 : valorDeUmbral(PENALIZADOR_FATIGA[fatiga], ajuste.fatiga),
-  };
-}
-
 // Las compensaciones por aplicado de un recurso sobre su penalizador ya ajustado (`valor`,
 // ≤ 0). Se descuentan en orden de lo que queda por compensar, para que juntas tampoco pasen
 // de 0 (hoy solo existe Neurogénesis).
@@ -413,6 +404,26 @@ export function ajusteUmbralesDeEstabilizado(e: Estabilizacion | null): AjusteUm
 
 // Más que cualquier tramo de §7 (el peor es −5): el ajuste lo deja en 0 y no da línea.
 const QUITA_UMBRAL = 99;
+
+// Lo que los estados puestos (los de fármaco: Bajo Analgésico, Bajo Calmante, Bajo Ultra
+// Estimulante; `Estado.reduceUmbral`) quitan al penalizador por heridas y fatiga. Entre ellos no se
+// suman: por recurso, vale el mayor (fa-02), con la fuente de los que lo dan. Va al ajuste de
+// umbrales junto a especie y aumentos (sumaAjustesUmbrales), que sí se suman.
+export function ajusteUmbralesDeEstados(activos: readonly EstadoActivo[]): AjusteUmbrales {
+  const porRecurso = (recurso: RecursoUmbral): AjusteUmbral | null => {
+    const con = activos.flatMap((a) => {
+      const e = estadoPorId(a.estadoId);
+      const valor = e?.reduceUmbral?.[recurso] ?? 0;
+      return e && valor > 0 ? [{ valor, fuente: e.label }] : [];
+    });
+    if (con.length === 0) return null;
+    const valor = Math.max(...con.map((c) => c.valor));
+    return { valor, fuente: [...new Set(con.filter((c) => c.valor === valor).map((c) => c.fuente))].join(" o ") };
+  };
+  const salud = porRecurso("salud");
+  const fatiga = porRecurso("fatiga");
+  return salud || fatiga ? { salud, fatiga } : SIN_AJUSTE_UMBRALES;
+}
 
 // Un EstadoActivo (solo ids) con el label/detalle que trae su grado en el
 // catálogo, para pintarlo sin que cada consumidor repita la búsqueda —

@@ -103,9 +103,9 @@ import {
   estadosDerivados,
   modificadoresDeUmbrales,
   movimientoPorUmbrales,
-  penalizadoresDeUmbral,
   velocidadConUmbrales,
   sumaAjustesUmbrales,
+  ajusteUmbralesDeEstados,
   umbralFatiga,
   type AjusteUmbrales,
   umbralSalud,
@@ -457,6 +457,7 @@ export function resolverFicha(
     ajusteUmbralesDeAumentos(enUso),
     activables.ajusteUmbrales,
     ajusteUmbralesDeEstabilizado(estabilizado),
+    ajusteUmbralesDeEstados(conEfecto),
   );
   // Lo que elimina por completo el umbral (Neuroprótesis 4) quita también su media velocidad y su
   // recorte de carga (td-10); las reducciones de 1 no.
@@ -547,7 +548,7 @@ export function resolverFicha(
         casillasDeAumentos(enUso, activables.salvaciones, [...salvacionesDeEspecie(especie), ...salvacionesDeEquipo(enUso)], afectacion, inmunidades),
         sheet.usosEscena,
       ),
-      ...casillasDeFarmacos(sheet, penalizadoresDeUmbral(umbrales.salud, umbrales.fatiga, ajusteUmbrales)),
+      ...casillasDeFarmacos(sheet),
       ...casillasDePsionica(psionica.paraEfectos),
     ]),
     textosTirada: [...textosDeEspecie(especie), ...dotes.textos, ...textosDeAumentos(enUso), ...activables.textos],

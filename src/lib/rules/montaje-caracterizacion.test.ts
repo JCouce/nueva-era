@@ -90,6 +90,11 @@ const PSIONICA = resolverFicha({ ...base(), psionica: { traslacion: 2, singulari
   vitalidad: VITALIDAD_DE_FICHA,
   estados: ENFERMO_Y_ATURDIDO,
 });
+// La misma, con «Bajo Xovromium» puesto (fármacos como estados, 2026-11-14: antes era una casilla).
+const PSIONICA_XOVROMIUM = resolverFicha(PSIONICA.ficha, {
+  vitalidad: VITALIDAD_DE_FICHA,
+  estados: [...ENFERMO_Y_ATURDIDO, { estadoId: "bajo_xovromium", gradoId: "activo", rondasRestantes: null }],
+});
 
 // --- Réplicas del código de antes (AccionesTab.tsx, AccionModal.tsx, Fabricar/Reparar) --
 
@@ -356,10 +361,10 @@ function legacy(caso: Caso) {
 const CASOS_PODER: { nombre: string; ficha: FichaResuelta; accionId: string; seleccion: SeleccionPoder; dado: number; dificultad: number }[] = [
   { nombre: "Impulso nv2 sin casillas", ficha: PSIONICA, accionId: "psi_singularidad_impulso", seleccion: SELECCION_PODER_VACIA, dado: 6, dificultad: 7 },
   {
-    nombre: "Impulso nv2 bajo Xovromium (ajuste fijo de casilla)",
-    ficha: PSIONICA,
+    nombre: "Impulso nv2 bajo Xovromium (ajuste fijo del estado)",
+    ficha: PSIONICA_XOVROMIUM,
     accionId: "psi_singularidad_impulso",
-    seleccion: { ...SELECCION_PODER_VACIA, casillas: ["Bajo Xovromium"] },
+    seleccion: SELECCION_PODER_VACIA,
     dado: 6,
     dificultad: 7,
   },
@@ -368,7 +373,7 @@ const CASOS_PODER: { nombre: string; ficha: FichaResuelta; accionId: string; sel
 function legacyPoder(c: (typeof CASOS_PODER)[number]) {
   const f = c.ficha;
   const poder = accionesDePsionica(f.ficha, f.psionica.paraEfectos).find((p) => p.accion.id === c.accionId)!;
-  const p = prepararPoder({ ficha: f.ficha, modificadores: f.modificadores, niveles: f.psionica.paraEfectos, poder, seleccion: c.seleccion })!;
+  const p = prepararPoder({ ficha: f.ficha, modificadores: f.modificadores, niveles: f.psionica.paraEfectos, poder, seleccion: c.seleccion, estados: f.estadosConEfecto })!;
   const t = p.tirada!;
   const entera = p.enEspecialidad || !t.especialidadesAccion;
   const abierto = legacyAbrir(f, t, p.enEspecialidad, false, entera);
@@ -749,7 +754,7 @@ const ESPERADO_PODER: Record<string, unknown> = {
     },
     resultado: { modificador: 0, circunstancial: 0, total: 6, margen: -1, exito: false, critico: false },
   },
-  "Impulso nv2 bajo Xovromium (ajuste fijo de casilla)": {
+  "Impulso nv2 bajo Xovromium (ajuste fijo del estado)": {
     fila: { aplicado: 0, habilidad: 1, ajustes: [1], total: 2 },
     modal: {
       total: 1,
@@ -829,7 +834,7 @@ function nuevo(caso: Caso) {
 function nuevoPoder(c: (typeof CASOS_PODER)[number]) {
   const f = c.ficha;
   const poder = accionesDePsionica(f.ficha, f.psionica.paraEfectos).find((p) => p.accion.id === c.accionId)!;
-  const p = prepararPoder({ ficha: f.ficha, modificadores: f.modificadores, niveles: f.psionica.paraEfectos, poder, seleccion: c.seleccion })!;
+  const p = prepararPoder({ ficha: f.ficha, modificadores: f.modificadores, niveles: f.psionica.paraEfectos, poder, seleccion: c.seleccion, estados: f.estadosConEfecto })!;
   const t = p.tirada!;
   const m = montarTirada(f, t, {
     sutil: false,
