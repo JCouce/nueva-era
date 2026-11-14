@@ -140,9 +140,10 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
           // (toggle "maxima_potencia" en Accion.condiciones, resuelto por
           // resolverVuelo()), no un segundo tipo "acción sin dado".
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "volar" }, mecanismo: "accion_equipo", estado: "construido" },
-          // Maniobra simple sin tirada, compleja con Reflejos + Pilotaje (2026-11-14): casilla
-          // «Maniobra compleja» de "Volar"; sin marcar, resolverVuelo no mira el dado.
-          { tipo: "resolucion", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          // Maniobra simple sin tirada (usuario, 2026-11-14): «Volar», acción sin dado que gasta la
+          // carga (accionesDirectasDeMovimiento); la compleja, «Volar: maniobra compleja», con
+          // Reflejos + Pilotaje (Exoarmadura).
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "volar_simple" }, mecanismo: "accion_equipo", estado: "construido" },
           // Crítico en la esquiva en vuelo: reacción para desplazarse una casilla (texto del
           // crítico de la casilla "En vuelo", conEsquivaEnVuelo).
           { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "eleccion_jugador", estado: "construido" },

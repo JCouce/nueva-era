@@ -6,19 +6,19 @@
 // sin dado" para esto (ver docs/tareas.md, "Movilidad Aérea", decisión 2026-09-27).
 //
 // Foto de Drive 2026-11-14: las maniobras simples no tiran; las complejas, Reflejos + Pilotaje
-// (Exoarmadura). Casilla «Maniobra compleja» en la misma fila: sin marcar, la tirada no cuenta y
-// recorres la velocidad entera (resolverVuelo con `maniobraCompleja` false).
+// (Exoarmadura). Dos filas por pieza (usuario, 2026-11-14): «Volar» es la maniobra simple, una
+// acción sin dado que gasta la carga (accionesDirectasDeMovimiento), y «Volar: maniobra compleja»
+// es la tirada de siempre.
 import { equipoPorId, type Equipo, type MejoraMovimiento } from "../catalog/equipo";
 import type { PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
-import type { Accion } from "./acciones";
+import type { Accion, AccionDirecta } from "./acciones";
 import type { CondicionTirada } from "./condiciones";
 import { origenDePieza } from "./origen";
+import { recursoDe } from "./recursos";
 import { velocidadConUmbrales, type MovimientoPorUmbral } from "./estados";
 import { eleccionDePieza, nivelConEleccion } from "./eleccionNivel";
 import type { CompensaManiobra } from "./dotesEfectos";
-
-export const ID_MANIOBRA_COMPLEJA = "maniobra_compleja";
 
 const SIN_UMBRALES: Pick<MovimientoPorUmbral, "mediaVelocidad"> = { mediaVelocidad: [] };
 
@@ -39,18 +39,17 @@ function tiradaDeVolar(
     velocidadBase !== nivelInfo.velocidadM
       ? `Media velocidad (${umbrales.mediaVelocidad.join(" y ")}): ${velocidadBase} m en vez de ${nivelInfo.velocidadM} m.`
       : null;
-  const nota = [nivelInfo.notaTirada, sinElegir, notaMedia].filter(Boolean).join(" ") || undefined;
+  const nota =
+    [
+      "Virajes cerrados, curvas pronunciadas, cambios de rasante o esquivar obstáculos; también una maniobra simple que el mal tiempo o un entorno confinado vuelven compleja.",
+      nivelInfo.notaTirada,
+      sinElegir,
+      notaMedia,
+    ]
+      .filter(Boolean)
+      .join(" ") || undefined;
 
   const condiciones: CondicionTirada[] = [
-    {
-      id: ID_MANIOBRA_COMPLEJA,
-      tipo: "toggle",
-      etiqueta: "Maniobra compleja",
-      valorActivo: 0,
-      valorInactivo: 0,
-      nota:
-        "Virajes cerrados, curvas pronunciadas, cambios de rasante o esquivar obstáculos; también una simple que el mal tiempo o un entorno confinado vuelven compleja. Sin marcar (línea recta, subir o bajar en vertical), no hace falta tirar.",
-    },
     {
       id: "maxima_potencia",
       tipo: "toggle",
@@ -71,7 +70,7 @@ function tiradaDeVolar(
 
   return {
     id: `volar_${pieza.instanciaId}`,
-    label: "Volar",
+    label: "Volar: maniobra compleja",
     grupo: "Acciones",
     aplicado: "reflejos",
     habilidad: "pilotaje",
@@ -86,6 +85,48 @@ function tiradaDeVolar(
     ajustesFijos: nivelInfo.maniobrabilidad
       ? [{ valor: nivelInfo.maniobrabilidad, fuente: `Maniobrabilidad (${cat.label})` }]
       : [],
+  };
+}
+
+// «Volar» con maniobra simple (línea recta, subir o bajar en vertical sin cambios bruscos): sin
+// tirada, recorres la velocidad entera (el doble con Máxima Potencia). Gasta como la compleja: 1
+// carga, 2 con Máxima Potencia (gastoDeDirecta).
+function volarSinTirada(
+  sheet: Sheet,
+  pieza: PiezaEquipada,
+  cat: MejoraMovimiento,
+  umbrales: Pick<MovimientoPorUmbral, "mediaVelocidad">,
+): AccionDirecta | null {
+  if (cat.id !== "movilidad_aerea") return null;
+  const nivelInfo = nivelConEleccion(pieza, cat);
+  if (!nivelInfo?.velocidadM) return null;
+  const velocidad = velocidadConUmbrales(nivelInfo.velocidadM, umbrales);
+  const media =
+    velocidad !== nivelInfo.velocidadM ? ` (media velocidad: ${umbrales.mediaVelocidad.join(" y ")})` : "";
+  const recurso = recursoDe(sheet, pieza.instanciaId);
+  const sinElegir = eleccionDePieza(pieza)?.aviso ?? null;
+  return {
+    id: `volar_simple_${pieza.instanciaId}`,
+    label: "Volar",
+    grupo: "Acciones",
+    economia: "Simple",
+    confirmarLabel: "Volar",
+    nota:
+      `Maniobra simple: línea recta, o subir o bajar en vertical sin cambios bruscos. Sin tirada: recorres ${velocidad} m${media}. ` +
+      `Gasta 1 carga${recurso ? ` (quedan ${recurso.actual}/${recurso.max})` : ""}. Si la maniobra es compleja, «Volar: maniobra compleja».` +
+      (sinElegir ? ` ${sinElegir}` : ""),
+    condiciones: [
+      {
+        id: "maxima_potencia",
+        tipo: "toggle",
+        etiqueta: "Máxima Potencia (acción Compleja, 2 cargas)",
+        valorActivo: 0,
+        valorInactivo: 0,
+        gastoActivo: 1,
+        nota: `Dobla el desplazamiento: ${velocidad * 2} m.`,
+      },
+    ],
+    gastoRecurso: { instanciaId: pieza.instanciaId, cantidad: 1 },
   };
 }
 
@@ -131,6 +172,21 @@ export function accionesDeMovimiento(sheet: Sheet, umbrales: Pick<MovimientoPorU
     const cat: Equipo | null = equipoPorId(pieza.catalogoId);
     if (cat?.familia !== "movimiento") continue;
     const accion = tiradaDeVolar(pieza, cat, umbrales);
+    if (accion) acciones.push({ ...accion, origen: origenDePieza("equipo", cat, pieza.instanciaId) });
+  }
+  return acciones;
+}
+
+// Las acciones sin dado de movimiento: «Volar» con maniobra simple. Con los umbrales, como arriba.
+export function accionesDirectasDeMovimiento(
+  sheet: Sheet,
+  umbrales: Pick<MovimientoPorUmbral, "mediaVelocidad"> = SIN_UMBRALES,
+): AccionDirecta[] {
+  const acciones: AccionDirecta[] = [];
+  for (const pieza of sheet.equipo) {
+    const cat: Equipo | null = equipoPorId(pieza.catalogoId);
+    if (cat?.familia !== "movimiento") continue;
+    const accion = volarSinTirada(sheet, pieza, cat, umbrales);
     if (accion) acciones.push({ ...accion, origen: origenDePieza("equipo", cat, pieza.instanciaId) });
   }
   return acciones;

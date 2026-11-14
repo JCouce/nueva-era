@@ -120,7 +120,7 @@ import {
 import { casillasDePsionica, levitacion, type PoderDisponible } from "./poderes";
 import { fatigaEfectiva, fatigaEnJuego } from "./vitalidad";
 import { baseDeFicha, modificadoresDeBase } from "./baseFicha";
-import { accionesDeMovimiento } from "./movimiento";
+import { accionesDeMovimiento, accionesDirectasDeMovimiento } from "./movimiento";
 import { alcanzaA, descartadosPorNoApila, type AlcanceModificador, type ModificadorConFuente } from "./modificadores";
 import { aplicadosPosibles, conTextosDeFicha, contextoDe, junta, textosDe, textosSinDado, type ObjetivoEnTirada } from "./textosTirada";
 import {
@@ -221,6 +221,8 @@ export type FichaResuelta = {
   movimiento: ReturnType<typeof movimiento>;
   // "Volar" (Movilidad Aérea, movimiento.ts) con los metros ya a media velocidad si toca (td-26).
   accionesMovimiento: Accion[];
+  // «Volar» con maniobra simple, sin dado (movimiento.ts), con la misma media velocidad.
+  directasMovimiento: AccionDirecta[];
   // Lo que las dotes anulan de la dificultad de maniobra en la esquiva en vuelo (Piloto y As de
   // Exoarmadura): se lo pasa la pantalla a conEsquivaEnVuelo, que lo topa en la maniobrabilidad.
   compensaManiobraVuelo: CompensaManiobra | null;
@@ -515,6 +517,7 @@ export function resolverFicha(
     ajusteUmbrales,
     movimiento: { ...mov, carrera: velocidad(mov.carrera) },
     accionesMovimiento: accionesDeMovimiento(sheet, porUmbral),
+    directasMovimiento: accionesDirectasDeMovimiento(sheet, porUmbral),
     compensaManiobraVuelo: dotes.compensaManiobra,
     accionesOcultacion: ((e) => (e ? [e] : []))(accionEsconderArma(sheet)),
     ocultacion: ocultacionDeFicha(enUso, conEfecto),

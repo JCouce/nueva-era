@@ -963,8 +963,7 @@ export function resolverDanio(danioBase: number, margen: number, categoria: stri
   };
 }
 
-// `sinTirada`: maniobra simple (Propulsión Aérea, foto de Drive 2026-11-14): el dado no cuenta.
-export type ResultadoVuelo = { metros: number | null; descontrolado: boolean; sinTirada?: true };
+export type ResultadoVuelo = { metros: number | null; descontrolado: boolean };
 
 // Payout de "Volar" (Propulsión Aérea) a partir del margen ya resuelto —
 // mismo espíritu que resolverDanio(), pero en metros. Máxima Potencia dobla
@@ -976,10 +975,7 @@ export function resolverVuelo(
   vuelo: { velocidadBase: number; bonusCritico: number },
   margen: number,
   maximaPotencia: boolean,
-  // Sin maniobra compleja no se tira: la velocidad entera (o el doble), sin el bonus del crítico.
-  maniobraCompleja = true,
 ): ResultadoVuelo {
-  if (!maniobraCompleja) return { metros: maximaPotencia ? vuelo.velocidadBase * 2 : vuelo.velocidadBase, descontrolado: false, sinTirada: true };
   if (margen <= -MARGEN_CRITICO) return { metros: null, descontrolado: true };
   const base = maximaPotencia ? vuelo.velocidadBase * 2 : vuelo.velocidadBase;
   if (margen < 0) return { metros: Math.floor(base / 2), descontrolado: false };
@@ -1058,6 +1054,16 @@ export function gastoMunicionEspecial(
 
 // Gasto sobre sheet.recursos (el cargador). Con munición especial elegida, el
 // modo no toca el cargador — ese gasto va por gastoMunicionEspecial().
+// Lo que gasta confirmar una acción sin dado con gasto fijo (`gastoRecurso`): su cantidad más el
+// gasto de sus casillas marcadas (Máxima Potencia en «Volar»: 1 carga más).
+export function gastoDeDirecta(d: Pick<AccionDirecta, "gastoRecurso" | "condiciones">, estado: EstadoCondiciones): number {
+  if (!d.gastoRecurso) return 0;
+  return (d.condiciones ?? []).reduce((total, c) => {
+    if (c.tipo !== "toggle") return total;
+    return total + (estado[c.id] ? (c.gastoActivo ?? 0) : (c.gastoInactivo ?? 0));
+  }, d.gastoRecurso.cantidad);
+}
+
 export function gastoTotal(accion: Accion, modoId: string | null, estado: EstadoCondiciones): number {
   const modo = accion.ataque?.modos.find((m) => m.id === modoId);
   const gastoModo = municionEspecialElegida(accion, estado) ? 0 : (modo?.gasto ?? 0);

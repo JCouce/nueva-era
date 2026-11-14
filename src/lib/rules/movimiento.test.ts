@@ -2,9 +2,9 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet } from "./sheet";
 import { equipar } from "./equipo";
-import { accionesDeMovimiento, conEsquivaEnVuelo, ID_MANIOBRA_COMPLEJA } from "./movimiento";
+import { accionesDeMovimiento, accionesDirectasDeMovimiento, conEsquivaEnVuelo } from "./movimiento";
 import { capacidadDePieza } from "./recursos";
-import { resolverVuelo, MARGEN_CRITICO, ACCIONES, usarHabilidadAlternativa } from "./acciones";
+import { resolverVuelo, MARGEN_CRITICO, ACCIONES, usarHabilidadAlternativa, gastoDeDirecta, gastoTotal } from "./acciones";
 import { resolverFicha, conExtrasDeFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import { montarTirada, eleccionSinTocar } from "./montaje";
 import { equipoPorId } from "../catalog/equipo";
@@ -30,7 +30,7 @@ describe("accionesDeMovimiento", () => {
   test("Propulsión Aérea nivel 1: Reflejos + Pilotaje (Exoarmadura), maniobrabilidad −3, grupo Acciones", () => {
     const sheet = equiparMovilidadAerea(1);
     const [accion] = accionesDeMovimiento(sheet);
-    assert.equal(accion.label, "Volar");
+    assert.equal(accion.label, "Volar: maniobra compleja");
     assert.equal(accion.grupo, "Acciones");
     assert.equal(accion.aplicado, "reflejos");
     assert.equal(accion.habilidad, "pilotaje");
@@ -181,20 +181,35 @@ describe("Propulsión Aérea (foto de Drive 2026-11-14)", () => {
     assert.equal(accion.recursoInstanciaId, "m1");
   });
 
-  test("Volar: casilla «Maniobra compleja», sin marcar por defecto y sin tocar el número", () => {
-    const [accion] = accionesDeMovimiento(equiparMovilidadAerea(1));
-    const c = accion.condiciones?.find((x) => x.id === ID_MANIOBRA_COMPLEJA);
-    assert.ok(c?.tipo === "toggle");
-    if (c?.tipo === "toggle") assert.deepEqual([c.valorActivo, c.valorInactivo], [0, 0]);
-    assert.equal(Boolean(eleccionSinTocar(accion).estadoCondiciones[ID_MANIOBRA_COMPLEJA]), false);
+  // Maniobra simple sin tirada, como acción sin dado que gasta la carga; la compleja, la tirada
+  // (usuario, 2026-11-14).
+  test("maniobra simple: «Volar» sin dado, con la velocidad en la nota", () => {
+    const f = resolver(equiparMovilidadAerea(1));
+    const [simple] = f.directasMovimiento;
+    assert.equal(simple.label, "Volar");
+    assert.equal(simple.origen?.label, "Propulsión Aérea");
+    assert.match(simple.nota ?? "", /Sin tirada: recorres 50 m/);
+    // Una AccionDirecta: sin aplicado, habilidad ni dificultad que tirar.
+    assert.equal("aplicado" in simple || "habilidad" in simple || "vuelo" in simple, false);
+    // La compleja sigue siendo una tirada aparte, sin casilla de maniobra.
+    const [compleja] = f.accionesMovimiento;
+    assert.equal(compleja.label, "Volar: maniobra compleja");
+    assert.deepEqual(compleja.condiciones?.map((c) => c.id), ["maxima_potencia"]);
   });
 
-  test("maniobra simple: sin tirada, la velocidad entera aunque el dado falle; sin el bonus del crítico", () => {
-    const vuelo = { velocidadBase: 50, bonusCritico: 25 };
-    for (const margen of [-MARGEN_CRITICO, -1, 0, MARGEN_CRITICO]) {
-      assert.deepEqual(resolverVuelo(vuelo, margen, false, false), { metros: 50, descontrolado: false, sinTirada: true });
-      assert.deepEqual(resolverVuelo(vuelo, margen, true, false), { metros: 100, descontrolado: false, sinTirada: true });
-    }
+  test("maniobra simple: gasta 1 carga, 2 con Máxima Potencia (como la compleja)", () => {
+    const [simple] = accionesDirectasDeMovimiento(equiparMovilidadAerea(1));
+    assert.deepEqual(simple.gastoRecurso, { instanciaId: "m1", cantidad: 1 });
+    assert.equal(gastoDeDirecta(simple, {}), 1);
+    assert.equal(gastoDeDirecta(simple, { maxima_potencia: true }), 2);
+    const [compleja] = accionesDeMovimiento(equiparMovilidadAerea(1));
+    assert.equal(gastoTotal(compleja, null, {}), 1);
+    assert.equal(gastoTotal(compleja, null, { maxima_potencia: true }), 2);
+  });
+
+  test("maniobra simple: a media velocidad con los umbrales, como la compleja", () => {
+    const [simple] = accionesDirectasDeMovimiento(equiparMovilidadAerea(1), { mediaVelocidad: ["Malherido"] });
+    assert.match(simple.nota ?? "", /recorres 25 m \(media velocidad: Malherido\)/);
   });
 
   test("maniobra compleja: Reflejos + Pilotaje entera con Exoarmadura, a la mitad sin ella, con la maniobrabilidad", () => {
@@ -202,8 +217,7 @@ describe("Propulsión Aérea (foto de Drive 2026-11-14)", () => {
     const total = (s: Sheet) => {
       const f = resolver(s);
       const t = conExtrasDeFicha(f, f.accionesMovimiento[0]);
-      const e = eleccionSinTocar(t);
-      return montarTirada(f, t, { ...e, estadoCondiciones: { ...e.estadoCondiciones, [ID_MANIOBRA_COMPLEJA]: true } }).total;
+      return montarTirada(f, t, eleccionSinTocar(t)).total;
     };
     // Atributos a 0: Reflejos 0. Pilotaje 4 − 3 de maniobrabilidad.
     assert.equal(total(conPilotaje(base, ["exoarmadura"])), 1);

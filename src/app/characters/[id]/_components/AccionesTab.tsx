@@ -13,6 +13,7 @@ import {
   resolverDanio,
   resolverVuelo,
   gastoTotal,
+  gastoDeDirecta,
   gastoMunicionEspecial,
   municionEspecialElegida,
   danioConMunicion,
@@ -58,7 +59,6 @@ import {
   etiquetaEspecialidad,
   conEsquivaLevitando,
   conEsquivaEnVuelo,
-  ID_MANIOBRA_COMPLEJA,
   conPsionicaEnTiradaFija,
   etiquetaPoder,
   dificultadSobrecarga,
@@ -145,7 +145,7 @@ const FAVORITA_TIRADA_LIBRE = "fija:tirada_libre";
 const GRUPOS_BASICOS = new Set<Accion["grupo"]>(["Defensa", "Salvaciones", "Iniciativa"]);
 
 // Grupos de Sin dado, en este orden; los vacíos no salen.
-const GRUPOS_SIN_DADO = ["Combate", "Activar y desactivar", "Poderes", "Curación y fármacos", "Sensores y comunicación", "Referencia"] as const;
+const GRUPOS_SIN_DADO = ["Combate", "Movimiento", "Activar y desactivar", "Poderes", "Curación y fármacos", "Sensores y comunicación", "Referencia"] as const;
 type GrupoSinDado = (typeof GRUPOS_SIN_DADO)[number];
 
 // Acciones de aumento sin dado: por lo que hacen.
@@ -860,6 +860,7 @@ export function AccionesTab({
     farmacosDirectas,
     accionesGeneradas,
     subsistemasDirectas,
+    movimientoDirectas,
   } = useMemo(() => {
     // Bloquear y Sutil solo con su dote (D2b-2): los permisos salen de la FichaResuelta.
     const generadas = accionesDeAtaque(sheet, mods, ficha.extrasDotes.permisos).map(conExtras);
@@ -887,9 +888,10 @@ export function AccionesTab({
       // generada por equipo, se mezcla en el grupo fijo "Acciones" en vez de
       // vivir en su propia sección.
       accionesGeneradas: ficha.accionesMovimiento.map(conExtras),
+      movimientoDirectas: ficha.directasMovimiento.map((d) => conExtrasDirectaDeFicha(ficha, d)),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, ficha.textosTirada, ficha.extrasDotes, ficha.notasFarmacos, ficha.accionesMovimiento, ficha.rebajasTipoAccion, ficha.piezasInutilizadas, ficha.piezasPenalizadas, mods]);
+  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, ficha.textosTirada, ficha.extrasDotes, ficha.notasFarmacos, ficha.accionesMovimiento, ficha.directasMovimiento, ficha.rebajasTipoAccion, ficha.piezasInutilizadas, ficha.piezasPenalizadas, mods]);
 
   // Acciones de dote (D2c-1): las de la sección Dotes y las copias en otro grupo fijo.
   const { dotesTiradas, dotesEnGrupos, dotesDirectas, directasDotesEnGrupos } = useMemo(() => {
@@ -1312,12 +1314,7 @@ export function AccionesTab({
     // ver resolverVuelo() (acciones.ts) y movimiento.ts.
     const vueloResuelto =
       tirada.vuelo && r.margen !== null
-        ? resolverVuelo(
-            tirada.vuelo,
-            r.margen,
-            Boolean(estadoCondiciones.maxima_potencia),
-            Boolean(estadoCondiciones[ID_MANIOBRA_COMPLEJA]),
-          )
+        ? resolverVuelo(tirada.vuelo, r.margen, Boolean(estadoCondiciones.maxima_potencia))
         : undefined;
 
     // Gasto automático de RECURSOS al confirmar (docs/prompt-gasto-recursos.md,
@@ -1445,7 +1442,8 @@ export function AccionesTab({
     // criterio que en tirar(), 1 dosis al confirmar.
     if (modalDirecta.farmacoId) onAjustarFarmaco?.(modalDirecta.farmacoId, -1);
     // Gasto fijo de recurso (Activar camuflaje trifásico: 1 carga).
-    if (modalDirecta.gastoRecurso) onGastarRecurso?.(modalDirecta.gastoRecurso.instanciaId, -modalDirecta.gastoRecurso.cantidad);
+    // Con lo que suman sus casillas (Máxima Potencia en «Volar»).
+    if (modalDirecta.gastoRecurso) onGastarRecurso?.(modalDirecta.gastoRecurso.instanciaId, -gastoDeDirecta(modalDirecta, estadoModal));
     // Activar la visión del Arianyi (§14.9): la primera hora, por el camino de la fatiga
     // de los poderes; sin onPagarFatiga (consola), a mano.
     if (deAumento) {
@@ -1761,6 +1759,8 @@ export function AccionesTab({
   // Sin dado, agrupado por lo que hace.
   const directasPorGrupo: Record<GrupoSinDado, FilaSeccion[]> = {
     Combate: [filaResistirDanio, ...[...ataqueDirecta, ...defensaDirecta, ...dotesDirectas, ...directasDotesEnGrupos].map(filaUsar)],
+    // «Volar» con maniobra simple (Propulsión Aérea): sin dado, gasta la carga.
+    Movimiento: movimientoDirectas.map(filaUsar),
     "Activar y desactivar": [...subsistemasDirectas, ...ficha.accionesEspecie].map(filaUsar),
     Poderes: poderesSinTirada.map(({ poder, dote }) => filaPoder(poder, subDePoder(poder, dote))),
     "Curación y fármacos": farmacosDirectas.map(filaUsar),

@@ -319,9 +319,7 @@ export function ContenidoResultado({
           <p className="font-mono text-xs uppercase text-info">
             {resultado.vueloResuelto.descontrolado
               ? "Desplazamiento descontrolado en dirección aleatoria"
-              : resultado.vueloResuelto.sinTirada
-                ? `Maniobra simple: vuelas ${resultado.vueloResuelto.metros} m (el dado no cuenta)`
-                : `Vuelas ${resultado.vueloResuelto.metros} m`}
+              : `Vuelas ${resultado.vueloResuelto.metros} m`}
           </p>
         </div>
       )}
