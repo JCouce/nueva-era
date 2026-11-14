@@ -20,7 +20,7 @@ describe("enlaceDeCombatiente", () => {
   });
 
   test("un NPC, a su plantilla", () => {
-    assert.deepEqual(enlaceDeCombatiente({ characterId: null, npcTemplateId: "n1" }), { href: "/master/npcs/n1", label: "Plantilla" });
+    assert.deepEqual(enlaceDeCombatiente({ characterId: null, npcTemplateId: "n1" }), { href: "/master/npcs/n1", label: "Ficha" });
   });
 
   test("sin ninguno, nada", () => {

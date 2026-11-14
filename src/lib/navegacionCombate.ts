@@ -18,6 +18,6 @@ export type EnlaceCombatiente = { href: string; label: string };
 // plantilla se borró del todo: la relación queda en null), nada.
 export function enlaceDeCombatiente(c: { characterId: string | null; npcTemplateId: string | null }): EnlaceCombatiente | null {
   if (c.characterId !== null) return { href: `/characters/${c.characterId}`, label: "Ficha" };
-  if (c.npcTemplateId !== null) return { href: `/master/npcs/${c.npcTemplateId}`, label: "Plantilla" };
+  if (c.npcTemplateId !== null) return { href: `/master/npcs/${c.npcTemplateId}`, label: "Ficha" };
   return null;
 }
