@@ -2170,8 +2170,8 @@ sobreesfuerzo.
     exanguinante (2, gratuita) de Angiogénesis, Eliminar exanguinante (Regeneración, 1,
     gratuita como cortar: el texto no lo dice; usuario 2026-10-22, pendiente de Murillo),
     Sacudir miedo y Dominar terror (Estabilización, sin coste), Mensaje subvocal (MQE; desde el
-    nivel 2 a varias personas, usuario 2026-10-22) y Telemetría (MQE 2+), Sanar letal y Sanar
-    grave (Enjambre 2+, 1 cada pulsación). Sin fatiga suficiente, la acción sale bloqueada.
+    nivel 2 a varias personas, usuario 2026-10-22) y Telemetría (MQE 2+), Sanar letal (Enjambre
+    2+, 2 desde el sync Drive 2026-11-14) y Sanar grave (Enjambre 2+, 1 cada pulsación). Sin fatiga suficiente, la acción sale bloqueada.
   - **Estados (usuario, 2026-10-22):** Cortar hemorragia quita `hemorragia`; Sacudir miedo
     quita `miedo` en Asustado; Dominar terror lo pasa de Aterrorizado a Asustado (con la misma
     duración). Si la ficha no tiene el estado, la acción se cobra igual y lo dice. La
@@ -2181,7 +2181,8 @@ sobreesfuerzo.
     transacción** (el cobro va en su `preparar`), con una entrada
     del registro del máster (autor: el jugador) que se puede deshacer; deshacer devuelve el
     estado, no la fatiga.
-  - **Sanar letal:** +1 a la vida actual, sin pasar del máximo en reposo; acción gratuita,
+  - **Sanar letal:** 2 de fatiga (sync Drive 2026-11-14; antes 1), +1 a la vida actual, sin
+    pasar del máximo en reposo; acción gratuita,
     **sin tope por ronda** (la prosa no lo pone; usuario, D2 del triaje 2026-10-28). **Sanar
     grave:** contador de pulsaciones (usuario, 2026-10-28; efecto `contador` de
     `aumentosAcciones.ts`): la fila dice «pulsación N/5»; cada uso cobra 1 de fatiga y sube el
@@ -2408,6 +2409,11 @@ sobreesfuerzo.
     utiliza medicinas para sanar al personaje… también se aplica el bonificador». Sin cambio de
     motor (au-07 b): la casilla «Sobre ti mismo» sigue igual y su nota avisa de que, si te los
     aplica otro, él suma el +3 en su tirada.
+  - **Nivel 2, sanar:** Sanar letal cuesta **2** de fatiga. Sanar grave pasa a «si consume 4 se
+    inicia la sanación de 1 nivel de daño grave, la regeneración en este caso tarda en
+    resolverse un minuto»: **sin construir** (`TODO(revisar)`, T2.M4.3). La app sigue con el
+    contador de 5 pulsaciones de 1: cambiarlo deja sin uso el efecto `contador` (es su único
+    caso) y sus contadores guardados, y falta decidir cómo se lleva el minuto.
 - *En la app (A7, inmunidades; usuario, 2026-10-22):* `rules/inmunidades.ts`, con los datos en el
   catálogo (`inmuneA` del nivel del implante o de la operación).
   - **Quién:** Ojo Biónico 2, 3 y 4 contra la **ceguera** (fuente "Ojo Biónico N"; el 1, nada) y

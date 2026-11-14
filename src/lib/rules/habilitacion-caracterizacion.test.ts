@@ -260,6 +260,8 @@ const ESPERADO: Record<string, Vista> = {
     noActivas: {
       "tirada:aumentos_tempestad_nanobotica": "No te llega la fatiga: cuesta 2 y te quedan 1.",
       "usar:aumentos_cortar_exanguinante": "No te llega la fatiga: cuesta 2 y te quedan 1.",
+      // Sanar letal cuesta 2 desde el sync Drive 2026-11-14 (antes 1).
+      "usar:aumentos_enjambre_sanar_letal": "No te llega la fatiga: cuesta 2 y te quedan 1.",
     },
   },
   doteGastada: {

@@ -2055,7 +2055,8 @@ export const IMPLANTES: Implante[] = [
         rareza: "Extraño",
         coste: 44000,
         detalle: [
-          "Gracias a unos nanobots de microcirugía, el personaje que adquiera este aumento biónico regenera un nivel de daño no letal por turno, uno letal por minuto (10 turnos) y uno grave por hora. Además si consume un nivel fatiga podrá sanar un nivel letal de forma automática, y si consume 5 a lo largo de un mínimo de 5 turnos, podrá sanar uno grave. Este implante en su función pasiva funciona siempre y cuando el personaje no tenga penalizadores por fatiga.",
+          "Gracias a unos nanobots de microcirugía, el personaje que adquiera este aumento biónico regenera un nivel de daño no letal por turno, uno letal por minuto (10 turnos) y uno grave por hora. Además si consume 2 niveles de fatiga podrá sanar un nivel letal de forma automática, y si consume 4 se inicia la sanación de 1 nivel de daño grave, la regeneración en este caso tarda en resolverse un minuto, completado este tiempo es que se sana el nivel de daño grave.",
+          "Este implante en su función pasiva funciona siempre y cuando el personaje no tenga penalizadores por fatiga.",
         ],
         modificadores: [],
         salvaciones: [{ contra: ["toxinas", "venenos", "enfermedad"], bono: 2 }],
@@ -2067,10 +2068,16 @@ export const IMPLANTES: Implante[] = [
             label: "Sanar letal",
             // Sin tope por ronda: la prosa no lo pone (usuario, D2 del triaje 2026-10-28).
             economia: "Acción gratuita",
-            costeFatiga: 1,
+            costeFatiga: 2,
             nota: "Sanas un nivel de daño letal de forma automática: +1 a la vida actual, sin pasar del máximo.",
             efecto: { tipo: "vida", delta: 1 },
           },
+          // TODO(revisar) (sync Drive 2026-11-14, T2.M4.3 sin hacer): la foto nueva dice «si consume 4
+          // se inicia la sanación de 1 nivel de daño grave, la regeneración en este caso tarda en
+          // resolverse un minuto». Pasar de este contador de 5 pulsaciones a 4 de golpe deja sin uso
+          // el efecto `contador` (es su único caso) y cambia sus contadores guardados en
+          // sheet.usosEscena: falta decidir la forma (un botón que cobra 4 y cura al pulsarlo al
+          // minuto, cobra al empezar y cura a mano, u otra).
           {
             id: "aumentos_enjambre_sanar_grave",
             label: "Sanar grave",

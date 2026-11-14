@@ -84,7 +84,7 @@ describe("acciones de aumento: cuáles salen y cuánto cuestan", () => {
   test("Enjambre: las de sanar llegan con el nivel 2, no con el 1", () => {
     assert.equal(porId(conRecursos(con(defaultSheet(), ENJAMBRE, 1))).size, 0);
     const a = porId(conRecursos(con(defaultSheet(), ENJAMBRE, 4)));
-    assert.equal(a.get("aumentos_enjambre_sanar_letal")?.costeFatiga, 1);
+    assert.equal(a.get("aumentos_enjambre_sanar_letal")?.costeFatiga, 2); // sync Drive 2026-11-14 (antes 1)
     assert.equal(a.get("aumentos_enjambre_sanar_grave")?.costeFatiga, 1);
   });
 
@@ -191,17 +191,18 @@ describe("usar una acción de aumento", () => {
     assert.equal(operacionDeEfecto(vida, [asustado]), null);
   });
 
-  test("Sanar letal: 1 de fatiga y +1 de vida, topado al máximo", () => {
+  // Sync Drive 2026-11-14 (M4.3): Sanar letal cuesta 2 (antes 1).
+  test("Sanar letal: 2 de fatiga y +1 de vida, topado al máximo", () => {
     const base = con(defaultSheet(), ENJAMBRE, 2);
     const max = topesDeVida(base).vida;
     const herido = usoDeAccionAumento(conRecursos(base, 3, max - 1), [], "aumentos_enjambre_sanar_letal");
     assert.ok(herido.ok);
     assert.equal(herido.sheet.vidaActual, max);
-    assert.equal(herido.sheet.fatigaActual, 2);
+    assert.equal(herido.sheet.fatigaActual, 1);
     const entero = usoDeAccionAumento(conRecursos(base, 3, max), [], "aumentos_enjambre_sanar_letal");
     assert.ok(entero.ok);
     assert.equal(entero.sheet.vidaActual, max);
-    assert.equal(entero.sheet.fatigaActual, 2);
+    assert.equal(entero.sheet.fatigaActual, 1);
     assert.match(entero.mensaje, /Ya estabas al máximo/);
   });
 
