@@ -814,7 +814,8 @@ imponen penalizadores por umbral:
     por escena); por la misma regla la llevan el Peaje neurológico y la Falla metabólica.
   - **au-06**: una línea por sentido en Buscar / percibir: los seis de la Introgresión (visión
     nocturna, térmica, percepción electromagnética, ultravioleta, detección química y
-    ecolocalización) y el Ojo Biónico (nocturna y termo-óptica a 500 m desde el 1; rayos X a 10 m
+    ecolocalización) y el Ojo Biónico (nocturna y termo-óptica desde el 1, como los visores de
+    nivel 2 desde el sync Drive 2026-11-14, antes a 500 m; rayos X a 10 m
     en el 3, a 50 m a través de paredes ligeras en el 4, que sustituye al del 3).
   - **td-05**: «Encontrar o distinguir» con la Percepción Electromagnética es acción simple o
     reacción, como Buscar.
@@ -2382,6 +2383,10 @@ sobreesfuerzo.
     maniobras). Desenfundado, desarme y carga son **solo texto**. Lanzarla, sin cambios.
   - **Fuera:** lanzar o arrojar con el brazo, las granadas, la carga como número, el sabotaje y
     la extracción.
+- *Ojo Biónico, sync Drive 2026-11-14* `[FIRME · docs/fuente/aumentos.md]`:
+  - **Nivel 1:** +3 contra la ceguera (antes +2), en el selector «Contra…» de Fortaleza. Visión
+    nocturna y termo-óptica «con las mismas características de los visores de nivel 2»: texto en
+    Buscar / percibir (`TODO(revisar)`: no copia los números de los visores 2). 14 000 créditos.
 - *En la app (A7, inmunidades; usuario, 2026-10-22):* `rules/inmunidades.ts`, con los datos en el
   catálogo (`inmuneA` del nivel del implante o de la operación).
   - **Quién:** Ojo Biónico 2, 3 y 4 contra la **ceguera** (fuente "Ojo Biónico N"; el 1, nada) y

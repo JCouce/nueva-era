@@ -179,8 +179,15 @@ describe("selector «Contra…» de las salvaciones", () => {
     const t = tiradaFija(f, "salv_fortaleza");
     const sel = selector(t);
     const base = montar(f, t);
-    assert.equal(montar(f, t, { [sel.id]: "ceguera" }).modificador - base.modificador, 4);
-    assert.equal(montar(f, t, { [sel.id]: "ceguera_detonacion" }).modificador - base.modificador, 6);
+    // Ojo 1: +3 contra la ceguera desde el sync Drive 2026-11-14 (M3.1; antes +2).
+    assert.equal(montar(f, t, { [sel.id]: "ceguera" }).modificador - base.modificador, 5);
+    assert.equal(montar(f, t, { [sel.id]: "ceguera_detonacion" }).modificador - base.modificador, 7);
+  });
+
+  test("Ojo Biónico 1 (sync Drive 2026-11-14): +3 contra la ceguera (antes +2)", () => {
+    const f = resolver(con(defaultSheet(), OJO, { nivel: 1 }));
+    const t = tiradaFija(f, "salv_fortaleza");
+    assert.equal(montar(f, t, { [selector(t).id]: "ceguera" }).modificador - montar(f, t).modificador, 3);
   });
 
   test("una operación con el requisito roto no aporta casillas ni opciones", () => {

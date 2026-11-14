@@ -201,17 +201,24 @@ describe("implantes: cualquier nivel directo y subir paga la diferencia", () => 
     assert.equal(plan.ok, true);
   });
 
-  test("subir de 1 a 3 cuesta 64.000 − 16.000 y sube la misma instancia", () => {
+  test("Ojo Biónico (sync Drive 2026-11-14): nivel 1, 14.000", () => {
+    const plan = planCompraAumento(defaultSheet(), { catalogoId: OJO, nivel: 1 });
+    assert.equal(plan.ok && plan.precio, 14_000);
+    assert.equal(costeDePieza({ instanciaId: "o", catalogoId: OJO, nivel: 1 }), 14_000);
+  });
+
+  // Ojo 1 a 14.000 desde el sync Drive 2026-11-14 (M3.1).
+  test("subir de 1 a 3 cuesta 64.000 − 14.000 y sube la misma instancia", () => {
     const s = compra(defaultSheet(), { catalogoId: OJO, nivel: 1 });
     const inst = s.equipo[0].instanciaId;
     assert.deepEqual(planCompraAumento(s, { catalogoId: OJO, nivel: 3 }), {
       ok: true,
-      precio: 48_000,
+      precio: 50_000,
       subeDe: { instanciaId: inst, nivel: 1 },
     });
-    const res = comprarAumento(s, { catalogoId: OJO, nivel: 3 }, ctx({ creditos: 48_000 }));
+    const res = comprarAumento(s, { catalogoId: OJO, nivel: 3 }, ctx({ creditos: 50_000 }));
     assert.ok(res.ok);
-    assert.equal(res.pago.deCreditos, 48_000);
+    assert.equal(res.pago.deCreditos, 50_000);
     assert.deepEqual(res.sheet.equipo, [{ instanciaId: inst, catalogoId: OJO, nivel: 3, eleccion: undefined }]);
   });
 

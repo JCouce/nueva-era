@@ -221,7 +221,8 @@ describe("es-05 y au-06: rasgos y sentidos en la tirada donde se usan", () => {
       /Espectro Ultravioleta: /,
       /Detección Química: /,
       /Ecolocalización: mapeas a oscuras o bajo el agua hasta 20 m \(40 m en agua\)/,
-      /Visión nocturna y termo-óptica: hasta 500 m/,
+      // Sync Drive 2026-11-14 (M3.1): como los visores de nivel 2, sin los 500 m.
+      /Visión nocturna y termo-óptica, como los visores de nivel 2/,
     ])
       assert.match(linea, sentido);
     // El Ojo 4 sustituye los rayos X del 3 (10 m → 50 m).

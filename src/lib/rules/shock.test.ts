@@ -519,25 +519,26 @@ describe("Soporte Vital con el Shock: salvaciones a +1, la resistencia térmica 
   }
 });
 
-describe("bonos «Contra…» de otra pieza con la regla general (Ojo Biónico 3: +2 contra la ceguera)", () => {
+// Ojo 1: +3 contra la ceguera desde el sync Drive 2026-11-14 (M3.1; antes +2).
+describe("bonos «Contra…» de otra pieza con la regla general (Ojo Biónico 3: +3 contra la ceguera)", () => {
   const s = con(base, OJO);
   const contraCeguera = (f: FichaResuelta) => opcion(f, "salv_fortaleza", "ceguera");
 
-  test("sin Shock, +2 con su pieza en las partes", () => {
+  test("sin Shock, +3 con su pieza en las partes", () => {
     const o = contraCeguera(resolver(s, []))!;
-    assert.equal(o.valor, 2);
-    assert.deepEqual(o.partes, [{ fuente: "Ojo Biónico 3", valor: 2, origen: { tipo: "aumento", id: "aum_ojo_bionico", label: "Ojo Biónico", instanciaId: "ojo" } }]);
+    assert.equal(o.valor, 3);
+    assert.deepEqual(o.partes, [{ fuente: "Ojo Biónico 3", valor: 3, origen: { tipo: "aumento", id: "aum_ojo_bionico", label: "Ojo Biónico", instanciaId: "ojo" } }]);
   });
 
   test("penalizada: −2 sin bajar de 0 (fracaso) y −1 (éxito), con «(shock)» en su línea", () => {
     const fracaso = resolver(s, [shock("fracaso")]);
-    assert.deepEqual(contraCeguera(fracaso)!.partes?.map((p) => [p.fuente, p.valor]), [["Ojo Biónico (shock)", 0]]);
-    assert.equal(contraCeguera(fracaso)!.valor, 0);
-    assert.equal(contraCeguera(resolver(s, [shock("exito")]))!.valor, 1);
+    assert.deepEqual(contraCeguera(fracaso)!.partes?.map((p) => [p.fuente, p.valor]), [["Ojo Biónico (shock)", 1]]);
+    assert.equal(contraCeguera(fracaso)!.valor, 1);
+    assert.equal(contraCeguera(resolver(s, [shock("exito")]))!.valor, 2);
     const linea = desgloseContra(fracaso, "salv_fortaleza", "ceguera").find((l) => /Ojo Biónico/.test(l.etiqueta))!;
     // La inmunidad del Ojo 3 (no numérica) sigue: «Ceguera · inmune».
     assert.match(linea.etiqueta, /^Contra…: Ceguera · inmune · Ojo Biónico \(shock\)$/);
-    assert.equal(linea.valor, 0);
+    assert.equal(linea.valor, 1);
   });
 
   test("apagada: su bono no llega y la salvación lo dice con «Ojo Biónico (shock)» a 0", () => {

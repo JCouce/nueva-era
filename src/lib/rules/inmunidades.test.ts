@@ -146,7 +146,7 @@ describe("selector \"Contra…\" con inmunidad a la ceguera", () => {
     const detonacion = sel.opciones.find((o) => o.id === "ceguera_detonacion")!;
     assert.match(ceguera.nota!, /^Inmune \(Ojo Biónico 2\): no hace falta tirar/);
     assert.match(detonacion.nota!, /^Inmune \(Ojo Biónico 2\)/);
-    assert.equal(ceguera.valor, 2);
+    assert.equal(ceguera.valor, 3); // +3 del Ojo 1 desde el sync Drive 2026-11-14
   });
 
   test("Ojo 1: sin aviso ni opción de detonación", () => {

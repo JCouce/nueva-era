@@ -1788,19 +1788,23 @@ export const IMPLANTES: Implante[] = [
       {
         nivel: 1,
         rareza: "Poco Habitual",
-        coste: 16000,
+        coste: 14000,
         detalle: [
           "El personaje obtiene un bonificador de +1 a tiradas de percepción visual y a las de ataques a distancia.",
-          "Además gana un bonificador de +2 en tiradas de salvación contra efectos de ceguera. La mejora no se apila con miras telescópicas u otros objetos de visión aumentada; en tal caso, usa siempre el mayor bonificador.",
-          "Incluye visión nocturna y termo-óptica con un alcance de 500 metros.",
+          "Además, gana un bonificador de +3 en tiradas de salvación contra efectos de ceguera. La mejora no se apila con miras telescópicas u otros objetos de visión aumentada; en tal caso, usa siempre el mayor bonificador.",
+          "Incluye visión nocturna y termo-óptica con las mismas características de los visores de nivel 2.",
         ],
         modificadores: [
           { tipo: "tirada", alcance: DISTANCIA, valor: 1, noApila: VISION_AUMENTADA },
           { tipo: "derivado", id: "alerta", valor: 1, noApila: VISION_AUMENTADA },
         ],
         condiciones: [casillaVisualOjo(1)],
-        salvaciones: [{ contra: ["ceguera"], bono: 2 }],
-        textos: [{ id: "vision", en: BUSCAR, texto: "Visión nocturna y termo-óptica: hasta 500 m." }],
+        salvaciones: [{ contra: ["ceguera"], bono: 3 }],
+        // Sync Drive 2026-11-14: «con las mismas características de los visores de nivel 2» (antes,
+        // 500 m). Solo texto: lo que los visores 2 suman (cobertura, destellos) no se copia aquí.
+        // TODO(revisar): si el Ojo 1 debe aplicar además los números del Visor Nocturno 2 y del
+        // Térmico 2 (−2 a la cobertura visual a 50 m, +3 contra la ceguera por destellos).
+        textos: [{ id: "vision", en: BUSCAR, texto: "Visión nocturna y termo-óptica, como los visores de nivel 2 (Visor Nocturno y Visor Térmico)." }],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "construido" },
