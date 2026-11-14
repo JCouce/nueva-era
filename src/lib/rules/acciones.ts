@@ -470,7 +470,7 @@ const CONDICION_TENGO_COBERTURA: CondicionTirada = {
   nota: "Si el ataque supera tu defensa pero falla por la cobertura, golpea la cobertura: elígelo en Resistir daño.",
 };
 
-// Sigilo (fuente/habilidades.md, Sigilo › Esconderse; cuestionario do-01, usuario 2026-11-13):
+// Sigilo (fuente/habilidades.md, Sigilo › Ocultación; cuestionario do-01, usuario 2026-11-13):
 // moverse escondido penaliza la tirada (mitad −2, total −4, esprint −8) y esconderse siendo
 // observado, −6. Las dotes Movimiento Sigiloso reducen el del movimiento con bonos por opción
 // (SELECTORES_DE_TIRADA, catalog/dotesDestinos.ts, que repite los ids; un test lo comprueba).
@@ -569,29 +569,44 @@ export const ACCIONES: Accion[] = [
   },
 
   // ── Acciones ──
-  // "reflejos + esconderse" (fuente/habilidades.md, Sigilo). El total queda como tu estado
-  // «Sigilo» (eq-25, di-09): la dificultad para detectarte.
+  // "reflejos + ocultación" (fuente/habilidades.md, Sigilo › Ocultación; antes Esconderse). El
+  // total queda como tu estado «Sigilo» (eq-25, di-09): la dificultad para detectarte.
   {
     id: ID_SIGILO,
-    label: "Sigilo",
+    label: "Ocultarse",
     grupo: "Acciones",
     aplicado: "reflejos",
     habilidad: "sigilo",
     especialidadesAccion: ["ocultacion"],
     nota:
-      "Esconderse es acción simple; seguir escondido donde ya estabas, gratuita. Tu total queda como «Sigilo»: la dificultad para detectarte, que el máster compara con la Alerta de quien te busca (en empate gana la alerta). Tirar otra vez lo sustituye",
+      "Ocultarse es acción simple; seguir oculto donde ya estabas, gratuita. Tu total queda como «Sigilo»: la dificultad para detectarte, que el máster compara con la Alerta de quien te busca (en empate gana la alerta). Tirar otra vez lo sustituye",
     condiciones: [CONDICION_MOVIMIENTO_OCULTO, CONDICION_ESCONDERSE_OBSERVADO],
     estadoAlTirar: { estadoId: "sigilo" },
   },
+  // "expresión + mimetismo", habilidad social, "contra una alerta por empatía de posibles
+  // testigos" (fuente/habilidades.md, Sigilo › Mimetismo, 2026-11-14). La app solo conoce tu
+  // tirada: el máster compara tu total con la de los testigos.
+  {
+    id: "mimetismo",
+    label: "Pasar desapercibido",
+    grupo: "Acciones",
+    aplicado: "expresion",
+    habilidad: "sigilo",
+    especialidadesAccion: ["mimetismo"],
+    nota:
+      "Mezclarte con la gente y actuar con naturalidad para no levantar sospechas. Tu total es lo que tiene que superar la alerta por Empatía de los testigos; el aspecto y el contexto social pesan",
+  },
+  // "reflejos + juego de manos" (Sigilo › Juego de Manos; antes Hurto). El id se queda: las
+  // favoritas y los alcances lo citan.
   {
     id: "hurto",
-    label: "Hurto",
+    label: "Juego de manos",
     grupo: "Acciones",
     aplicado: "reflejos",
     habilidad: "sigilo",
     especialidadesAccion: ["juego_de_manos"],
     nota:
-      "Acción simple o reacción, enfrentada a Perspicacia + Exploración del objetivo, con penalizador según lo que se quite y lo difícil que sea llegar a ello",
+      "Hurtar, vaciar bolsillos, ocultar objetos pequeños, sabotear mecanismos simples o plantar pruebas. Acción simple o reacción, enfrentada a Perspicacia + Exploración del objetivo, con penalizador según el objeto y lo difícil que sea llegar a él",
   },
   {
     id: "alerta_activa",

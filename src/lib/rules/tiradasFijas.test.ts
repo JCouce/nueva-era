@@ -268,6 +268,7 @@ describe("especialidad de las tiradas fijas: la decide la tirada", () => {
       ["tecnica", "informatica"],
       ["escalar", "escalada"],
       ["sigilo", "ocultacion"],
+      ["mimetismo", "mimetismo"],
       ["hurto", "juego_de_manos"],
       ["iniciativa_distraccion", "manipulacion"],
     ];
@@ -276,6 +277,23 @@ describe("especialidad de las tiradas fijas: la decide la tirada", () => {
       assert.deepEqual(habilidad(con([esp]), fila(id)), [5, true], id);
       assert.deepEqual(habilidad(con(), fila(id)), [2, false], id);
     }
+  });
+
+  test("Sigilo (2026-11-14): Ocultarse con Reflejos, Pasar desapercibido con Expresión y Juego de manos con Reflejos", () => {
+    const filas = ["sigilo", "mimetismo", "hurto"].map(fila);
+    assert.deepEqual(
+      filas.map((t) => [t.label, t.aplicado, t.habilidad]),
+      [
+        ["Ocultarse", "reflejos", "sigilo"],
+        ["Pasar desapercibido", "expresion", "sigilo"],
+        ["Juego de manos", "reflejos", "sigilo"],
+      ],
+    );
+    // Mimetismo: enfrentada a la alerta por Empatía de los testigos; la app solo conoce tu total.
+    assert.match(fila("mimetismo").nota!, /alerta por Empatía de los testigos/);
+    assert.equal(fila("mimetismo").estadoAlTirar, undefined);
+    // Sigilo 5 en Mimetismo, entera; atributos a 0 en `con` (Expresión 0).
+    assert.equal(montar(con(["mimetismo"]), fila("mimetismo")).total, 5);
   });
 
   test("Saltar, levantarse y Escalar son filas aparte, con su par de la fuente", () => {

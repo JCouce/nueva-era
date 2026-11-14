@@ -64,6 +64,7 @@ export const ESPECIALIDADES = [
   // Sigilo (foto de Drive 2026-11-14: Esconderse pasa a Ocultación y Hurto a Juego de Manos;
   // las fichas viejas, migración v23 → v24).
   { id: "ocultacion", label: "Ocultación", habilidad: "sigilo" },
+  { id: "mimetismo", label: "Mimetismo", habilidad: "sigilo" },
   { id: "juego_de_manos", label: "Juego de Manos", habilidad: "sigilo" },
   // Tecnociencia
   { id: "astrografia", label: "Astrografía", habilidad: "tecnociencia" },

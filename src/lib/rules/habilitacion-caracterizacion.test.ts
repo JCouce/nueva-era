@@ -219,27 +219,27 @@ const FICHAS: Record<string, () => FichaResuelta> = {
 
 const ESPERADO: Record<string, Vista> = {
   sinEspecialidad: {
-    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
+    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "mimetismo", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
     sutil: [],
     noActivas: {},
   },
   supervivencia: {
-    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "rastreo", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "subsistencia", "tecnica", "trato_animales_interaccion", "trato_animales_lectura"],
+    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "mimetismo", "rastreo", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "subsistencia", "tecnica", "trato_animales_interaccion", "trato_animales_lectura"],
     sutil: [],
     noActivas: {},
   },
   enganchadas: {
-    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "investigacion", "medicina", "rastreo", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
+    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "investigacion", "medicina", "mimetismo", "rastreo", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
     sutil: [],
     noActivas: {},
   },
   meleeSinDotes: {
-    conDado: ["alerta_activa", "apuntar", "ataque_melee_e1", "ataque_melee_pu", "ataque_melee_to", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "esconder_arma", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
+    conDado: ["alerta_activa", "apuntar", "ataque_melee_e1", "ataque_melee_pu", "ataque_melee_to", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "esconder_arma", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "mimetismo", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
     sutil: [],
     noActivas: {},
   },
   meleeEscudoRoto: {
-    conDado: ["alerta_activa", "apuntar", "ataque_melee_e1", "ataque_melee_pu", "ataque_melee_to", "atletismo", "bloquear_melee_e1", "bloquear_melee_pu", "bloquear_melee_to", "carrera", "defensa", "discernir_mentiras", "escalar", "esconder_arma", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
+    conDado: ["alerta_activa", "apuntar", "ataque_melee_e1", "ataque_melee_pu", "ataque_melee_to", "atletismo", "bloquear_melee_e1", "bloquear_melee_pu", "bloquear_melee_to", "carrera", "defensa", "discernir_mentiras", "escalar", "esconder_arma", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "mimetismo", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
     sutil: ["ataque_melee_pu", "bloquear_melee_pu"],
     noActivas: {
       "tirada:ataque_melee_e1": "Escudo roto: repáralo",
@@ -248,14 +248,14 @@ const ESPERADO: Record<string, Vista> = {
     },
   },
   camuflajeSinCargas: {
-    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
+    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "mimetismo", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
     sutil: [],
     noActivas: {
       "usar:activar_camuflaje_cam": "Sin cargas: recarga o cambia la batería",
     },
   },
   aumentosSinFatiga: {
-    conDado: ["alerta_activa", "apuntar", "atletismo", "aumentos_tempestad_nanobotica", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
+    conDado: ["alerta_activa", "apuntar", "atletismo", "aumentos_tempestad_nanobotica", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "mimetismo", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
     sutil: [],
     noActivas: {
       "tirada:aumentos_tempestad_nanobotica": "No te llega la fatiga: cuesta 2 y te quedan 1.",
@@ -267,14 +267,14 @@ const ESPERADO: Record<string, Vista> = {
     },
   },
   doteGastada: {
-    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "dotes_humor_de_afrontamiento", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "investigacion", "medicina", "rastreo", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "subsistencia", "tecnica", "trato_animales_interaccion", "trato_animales_lectura"],
+    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "dotes_humor_de_afrontamiento", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "investigacion", "medicina", "mimetismo", "rastreo", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "subsistencia", "tecnica", "trato_animales_interaccion", "trato_animales_lectura"],
     sutil: [],
     noActivas: {
       "tirada:dotes_humor_de_afrontamiento": "Usada esta escena (1/1).",
     },
   },
   psionicaSinAcceso: {
-    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
+    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "mimetismo", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
     sutil: [],
     noActivas: {
       "poder:psi_resonancia_sincronia": "Requiere ser Arianyi o de la Casa de Maolher, o llevar el Implante de Resonancia Métrica",
@@ -296,7 +296,7 @@ const ESPERADO: Record<string, Vista> = {
     },
   },
   psionicaSinAccesoExhausta: {
-    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
+    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "mimetismo", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
     sutil: [],
     noActivas: {
       "poder:psi_resonancia_sincronia": "Requiere ser Arianyi o de la Casa de Maolher, o llevar el Implante de Resonancia Métrica",
@@ -318,7 +318,7 @@ const ESPERADO: Record<string, Vista> = {
     },
   },
   psionicaExhausta: {
-    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
+    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "mimetismo", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
     sutil: [],
     noActivas: {
       "poder:psi_resonancia_alerta_pasiva": "atenuada · Exhausto: no funciona",
@@ -333,7 +333,7 @@ const ESPERADO: Record<string, Vista> = {
     },
   },
   requisitoRoto: {
-    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
+    conDado: ["alerta_activa", "apuntar", "atletismo", "carrera", "defensa", "discernir_mentiras", "escalar", "hurto", "iniciativa", "iniciativa_arma", "iniciativa_distraccion", "medicina", "mimetismo", "resistir_distraccion", "salv_fortaleza", "salv_reflejos", "salv_voluntad", "sigilo", "social", "tecnica"],
     sutil: [],
     noActivas: {
       "poder:psi_induccion_comando": "Requiere Resonancia 1",

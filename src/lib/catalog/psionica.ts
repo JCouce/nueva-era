@@ -493,7 +493,7 @@ const RASTREO: AccionPoder = {
 // CasillaDePoder), los poderes y las acciones de dote con resolución "enfrentada" (Inducción,
 // Duelo de Métrica, Finta, Burla…). La app no sabe contra quién se tira: el jugador la marca si
 // es contra el leído.
-const ENFRENTADAS_FIJAS = ["social", "discernir_mentiras", "resistir_distraccion", "iniciativa_distraccion", "sigilo", "hurto"];
+const ENFRENTADAS_FIJAS = ["social", "discernir_mentiras", "resistir_distraccion", "iniciativa_distraccion", "sigilo", "mimetismo", "hurto"];
 const ALCANCES_ENFRENTADAS: AlcanceModificador[] = [grupo("Ataques"), grupo("Defensa"), ...ENFRENTADAS_FIJAS.map(tirada)];
 
 // Enfrentada: los grados van desde el punto de vista del psiónico (su fracaso =
