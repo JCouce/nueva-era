@@ -53,6 +53,7 @@ import {
   fijarArmaIncorporadaNpcAction,
   fijarEleccionDeNivelNpcAction,
   ajustarRecursoNpcAction,
+  dispararPulsoNpcAction,
   comprarRecargaNpcAction,
   ajustarMaterialNpcAction,
   comprarMaterialNpcAction,
@@ -252,6 +253,12 @@ export function NpcEditor({
   const commitAjustarRecurso = async (instanciaId: string, delta: number) => {
     setStatus("saving");
     const res = await ajustarRecursoNpcAction(npcId, instanciaId, delta);
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
+  const commitDispararPulso = async (instanciaId: string) => {
+    setStatus("saving");
+    const res = await dispararPulsoNpcAction(npcId, instanciaId);
     if (res.ok) setSheet(res.sheet);
     setStatus(res.ok ? "saved" : "error");
   };
@@ -514,6 +521,7 @@ export function NpcEditor({
             onReparar={commitReparar}
             onFabricar={commitFabricar}
             onGastarRecurso={commitAjustarRecurso}
+            onDispararPulso={commitDispararPulso}
             onAjustarFarmaco={commitAjustarFarmaco}
             onAjustarMunicionEspecial={commitAjustarMunicionEspecial}
             onPagarFatiga={commitPagarFatiga}

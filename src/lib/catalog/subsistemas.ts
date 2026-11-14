@@ -591,7 +591,8 @@ export const SUBSISTEMAS: Subsistema[] = [
       "Combate a Distancia (en ambos casos con el aplicado de Reflejos). El daño se clasifica como " +
       "grave.",
     ranurasQueConsume: 1,
-    accionActivacion: "Cada ataque consume las cargas del modo elegido; se dispara como cualquier arma.",
+    accionActivacion:
+      "Cada ataque consume las cargas del modo elegido (el Pulso, 1 cada 3 disparos); se dispara como cualquier arma.",
     celula: { cargas: 10, recarga: "1 hora con conector (1 carga cada 6 minutos)", bateriaCoste: 150 },
     efectosObjetivo: EFECTOS_PROYECTOR_PULSO,
     // La tabla "Modo de Ataque" del documento no es de uso (activo/pasivo),
@@ -601,7 +602,7 @@ export const SUBSISTEMAS: Subsistema[] = [
       {
         label: "Pulso",
         descripcion:
-          "Acción simple, 1 carga, dificultad -2, daño 7 + Nivel, alcance corto 20 + (10 × Nivel), " +
+          "Acción simple, 1 carga cada 3 disparos, dificultad -2, daño 8 + Nivel, alcance corto 20 + (10 × Nivel), " +
           "medio 80 + (20 × Nivel), largo 160 + (20 × Nivel) metros. " +
           "Efecto: Shock (4 + Nivel); crítico: Hemorragia.",
       },

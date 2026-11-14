@@ -681,6 +681,7 @@ export function AccionesTab({
   onReparar,
   onFabricar,
   onGastarRecurso,
+  onDispararPulso,
   onDaniarEscudo,
   onRecibirDanio,
   onAjustarFarmaco,
@@ -734,6 +735,9 @@ export function AccionesTab({
   // en vivo, `sheet` es la foto congelada de un Combatiente, sin
   // characterId/npcId al que persistir el gasto).
   onGastarRecurso?: (instanciaId: string, delta: number) => void;
+  // Disparo en modo Pulso del Proyector (`ModoAtaque.disparoPulso`): la carga y el contador de la
+  // pieza los lleva dispararPulso (rules/recursos.ts). Sin él, se resta el `gasto` del modo.
+  onDispararPulso?: (instanciaId: string) => void;
   // Durabilidad que pierde el escudo cuando el golpe le da a él ("Resistir daño", Murillo
   // 2026-10-23). Solo lo pasa CharacterSheet: sin él (NPC, combate en vivo) el modal da los
   // números y no resta nada.
@@ -1314,7 +1318,12 @@ export function AccionesTab({
     // Fase 1) — nunca bloquea el botón de tirar, se gasta lo que haya
     // (ajustarRecurso ya clampa a [0, max]); en segundo plano, sin esperar al
     // servidor para pintar el resultado del dado.
-    if (tirada.recursoInstanciaId) {
+    // El modo Pulso del Proyector gasta por contador de la pieza (dispararPulso): avanza también
+    // en los disparos que no gastan carga.
+    const disparoPulso = tirada.ataque?.modos.find((m) => m.id === modoId)?.disparoPulso === true;
+    if (tirada.recursoInstanciaId && disparoPulso && onDispararPulso) {
+      onDispararPulso(tirada.recursoInstanciaId);
+    } else if (tirada.recursoInstanciaId) {
       const gasto = gastoTotal(tirada, modoId, estadoCondiciones);
       if (gasto > 0) onGastarRecurso?.(tirada.recursoInstanciaId, -gasto);
     }

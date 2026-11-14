@@ -36,7 +36,7 @@ import type { MotorMetadata } from "./motor";
 import type { TextoEnTirada } from "./especie";
 import { conTextosDeFicha } from "./textosTirada";
 import { textoCortoDeEfecto, type EfectoArma, type EfectoEnTirada } from "./efectosArma";
-import { escudoRoto, gastoDelModo, MOTIVO_ESCUDO_ROTO, recursoDe } from "./recursos";
+import { DISPAROS_POR_CARGA_PULSO, escudoRoto, gastoDelModo, gastoDisparoPulso, MOTIVO_ESCUDO_ROTO, recursoDe } from "./recursos";
 import { sinMejorasNoAdmitidas } from "./compatibilidadArma";
 import { bloqueadaPor, conHabilitacion, esVisible, habilitacionDeFamilia } from "./habilitacion";
 import { CONDICION_ATACANTES_ADICIONALES, condicionApuntado, type Accion, type AccionDirecta } from "./acciones";
@@ -1089,8 +1089,9 @@ function tiradaLanzarArmaMelee(
 // 2-4) se eligen libremente al tirar (Murillo, pregunta 13): selector «Modo adicional» en el
 // disparo y en el Aguijón (eq-23, T9), con lo que hace cada uno como dato del catálogo
 // (`NivelModulo.modoAdicional`, `Subsistema.efectosObjetivo`). El −5 al sigilo, `delataAlAtacar`.
+// El de Pulso es por carga, no por disparo: 1 carga cada DISPAROS_POR_CARGA_PULSO disparos
+// (gastoDisparoPulso, con el contador de la pieza; sync Drive 2026-11-14).
 const GASTO_MODO_PULSO: Record<string, number> = {
-  pulso: 1,
   pulso_cargado: 4,
   barrido: 5,
   aguijon: 1,
@@ -1210,7 +1211,7 @@ function tiradaDeProyectorPulso(
   // salen en el resultado; aquí, el alcance y la esquiva del Barrido (la tirada de los del área).
   const nota = [
     "Daño grave.",
-    `Pulso: alcance ${tramos(alcancePulso("pulso", nivel))}.`,
+    `Pulso: 1 carga cada ${DISPAROS_POR_CARGA_PULSO} disparos (la gasta el primero; recargar empieza de nuevo), alcance ${tramos(alcancePulso("pulso", nivel))}.`,
     `Pulso Cargado: alcance ${tramos(alcancePulso("pulso_cargado", nivel))}.`,
     `Barrido: área 6x6, alcance ${tramos(alcancePulso("barrido", nivel))} · los del área esquivan a ${7 + nivel}; sin crítico.`,
   ].join(" · ");
@@ -1240,7 +1241,15 @@ function tiradaDeProyectorPulso(
     // Con su etiqueta de la tabla: por ella salta cada efecto (soloEn.modo).
     ataque: {
       modos: [
-        { id: "pulso", etiqueta: "Pulso", danio: 7 + nivel, formulaDanio: null, categoriaDanio: "Grave", gasto: GASTO_MODO_PULSO.pulso },
+        {
+          id: "pulso",
+          etiqueta: "Pulso",
+          danio: 8 + nivel,
+          formulaDanio: null,
+          categoriaDanio: "Grave",
+          gasto: gastoDisparoPulso(pieza),
+          disparoPulso: true,
+        },
         {
           id: "pulso_cargado",
           etiqueta: "Pulso Cargado",

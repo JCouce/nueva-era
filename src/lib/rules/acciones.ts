@@ -294,6 +294,10 @@ export type Accion = {
       // ya lo calculan; aquí solo se guarda el resultado). Ausente en armas
       // melee, que no consumen ningún RECURSO.
       gasto?: number;
+      // Proyector de Pulso, modo Pulso: el gasto lo lleva el contador de la pieza (dispararPulso,
+      // recursos.ts) y `gasto` es lo que gasta este disparo (1 o 0). Al confirmar, la pantalla
+      // llama a dispararPulso en vez de restar `gasto`.
+      disparoPulso?: true;
     }[];
     // Poderes que dañan aunque fallen (Expansión, poderes.ts): "Tirar daño"
     // también con fracaso, con el daño base sin bono por éxitos.

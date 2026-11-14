@@ -448,9 +448,43 @@ export function comprarRecarga(
   const coste = recargaDePieza(pieza, recurso)?.precio ?? PRECIO_BATERIA_PORTATIL;
 
   return {
-    sheet: { ...sheet, recursos: sheet.recursos.map((r) => (r.instanciaId === instanciaId ? nuevo : r)) },
+    sheet: {
+      ...sheet,
+      recursos: sheet.recursos.map((r) => (r.instanciaId === instanciaId ? nuevo : r)),
+      // Recargar el Proyector de Pulso empieza carga nueva: el contador de disparos vuelve a 0.
+      equipo: pieza.disparosPulso ? sheet.equipo.map((p) => (p === pieza ? sinContadorPulso(p) : p)) : sheet.equipo,
+    },
     coste,
   };
+}
+
+// Proyector de Pulso, modo Pulso (sync Drive 2026-11-14): «1 carga × 3 disparos». La carga se
+// gasta al primer disparo de cada tres; el contador (`disparosPulso`) vive en la pieza
+// (usuario, 2026-11-14) y la recarga lo pone a 0 (comprarRecarga).
+// TODO(revisar): los otros modos (Pulso Cargado, Barrido, Aguijón) no tocan el contador; un
+// Pulso tras ellos sigue con la carga en curso si le quedaban disparos.
+export const DISPAROS_POR_CARGA_PULSO = 3;
+
+// Lo que gasta el próximo Pulso: 1 si empieza carga nueva, 0 si quedan disparos de la última.
+export function gastoDisparoPulso(pieza: Pick<PiezaEquipada, "disparosPulso">): number {
+  return (pieza.disparosPulso ?? 0) === 0 ? 1 : 0;
+}
+
+function sinContadorPulso(pieza: PiezaEquipada): PiezaEquipada {
+  const resto = { ...pieza };
+  delete resto.disparosPulso;
+  return resto;
+}
+
+// Un disparo en modo Pulso: gasta la carga si toca (lo que haya, como ajustarRecurso) y avanza el
+// contador. Sin la pieza, o si no es un Proyector de Pulso, la ficha tal cual.
+export function dispararPulso(sheet: Sheet, instanciaId: string): Sheet {
+  const pieza = sheet.equipo.find((p) => p.instanciaId === instanciaId);
+  if (!pieza || pieza.catalogoId !== "proyector_pulso") return sheet;
+  const conGasto = ajustarRecurso(sheet, instanciaId, -gastoDisparoPulso(pieza));
+  const siguiente = ((pieza.disparosPulso ?? 0) + 1) % DISPAROS_POR_CARGA_PULSO;
+  const nueva = siguiente === 0 ? sinContadorPulso(pieza) : { ...pieza, disparosPulso: siguiente };
+  return { ...conGasto, equipo: conGasto.equipo.map((p) => (p === pieza ? nueva : p)) };
 }
 
 // Repara una pieza con durabilidad (Escudos) o con blindaje perdido (Armaduras, eq-20, con el

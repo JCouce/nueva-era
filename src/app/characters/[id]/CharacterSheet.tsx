@@ -19,6 +19,7 @@ import {
   fijarEleccionDeNivelAction,
   setPrioridadAction,
   ajustarRecursoAction,
+  dispararPulsoAction,
   comprarRecargaAction,
   ajustarMaterialAction,
   comprarMaterialAction,
@@ -70,6 +71,7 @@ import {
   fijarEleccionDeNivel,
   setPrioridad,
   ajustarRecurso,
+  dispararPulso,
   ajustarMaterial,
   ajustarGranada,
   ajustarMunicionEspecial,
@@ -469,6 +471,10 @@ export function CharacterSheet({
   const commitAjustarRecurso = (instanciaId: string, delta: number) => {
     setSheet((s) => ajustarRecurso(s, instanciaId, delta));
     runSave(() => ajustarRecursoAction(characterId, instanciaId, delta), setSheet);
+  };
+  const commitDispararPulso = (instanciaId: string) => {
+    setSheet((s) => dispararPulso(s, instanciaId));
+    runSave(() => dispararPulsoAction(characterId, instanciaId), setSheet);
   };
   const commitRecargar = (instanciaId: string) => {
     runSave(() => comprarRecargaAction(characterId, instanciaId), setSheet);
@@ -908,6 +914,7 @@ export function CharacterSheet({
             onReparar={commitReparar}
             onFabricar={commitFabricar}
             onGastarRecurso={commitAjustarRecurso}
+            onDispararPulso={commitDispararPulso}
             onDaniarEscudo={commitAjustarRecurso}
             onRecibirDanio={commitRecibirDanio}
             onAjustarFarmaco={commitAjustarFarmaco}

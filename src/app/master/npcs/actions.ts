@@ -13,6 +13,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
+import { z } from "zod";
 import {
   atributoLibreSchema,
   categoriaDanioSchema,
@@ -34,6 +35,7 @@ import {
   retirarPieza,
   piezaEquipadaEntradaSchema,
   ajustarRecurso,
+  dispararPulso,
   comprarRecarga,
   ajustarMaterial,
   comprarMaterial,
@@ -425,6 +427,15 @@ export async function ajustarRecursoNpcAction(
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(npcId, ajustarRecurso(ctx.sheet, instanciaId, delta));
+}
+
+// Disparo en modo Pulso del Proyector de Pulso: como dispararPulsoAction de la ficha.
+export async function dispararPulsoNpcAction(npcId: string, instanciaId: unknown): Promise<NpcResult> {
+  const parsed = z.string().min(1).max(60).safeParse(instanciaId);
+  if (!parsed.success) return { ok: false, error: "Pieza inválida" };
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(npcId, dispararPulso(ctx.sheet, parsed.data));
 }
 
 // Vida y fatiga (docs/tareas.md, 2026-09-27): mismo criterio "libre" que el

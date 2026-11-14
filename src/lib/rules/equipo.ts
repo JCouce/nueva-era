@@ -127,6 +127,10 @@ export type PiezaEquipada = {
   // Armas Modificadas (S87): Electrificante, Térmica, Plasma, Nanofilamento sobre un arma
   // melee. Orden fijo (normalizarModificaciones); lo valida validarModificaciones.
   modificaciones?: ModificacionArmaId[];
+  // Proyector de Pulso, modo Pulso (sync Drive 2026-11-14: «1 carga × 3 disparos»): disparos
+  // sueltos hechos con la carga en curso, 0-2. Lo lleva dispararPulso (rules/recursos.ts) y lo
+  // pone a 0 la recarga. Solo el servidor; ausente = 0.
+  disparosPulso?: number;
 };
 
 export const piezaEquipadaSchema = z.object({
@@ -140,13 +144,15 @@ export const piezaEquipadaSchema = z.object({
   armaIncorporada: z.string().min(1).max(60).optional(),
   // Una lista que no se reconoce se pierde, no la pieza (lectura tolerante, parseSheet).
   modificaciones: listaModificacionesSchema.optional().catch(undefined),
+  // Fuera de rango o mal formado: se pierde (como si fuera 0), no la pieza.
+  disparosPulso: z.number().int().min(0).max(2).optional().catch(undefined),
 });
 
 // Lo que se acepta del cliente al equipar: `viaEspecie` no, lo decide el servidor
 // (zod descarta la clave si llega). El arma incorporada va por su propia acción. Las
 // modificaciones, estrictas: una lista mala se rechaza, no se ignora.
 export const piezaEquipadaEntradaSchema = piezaEquipadaSchema
-  .omit({ viaEspecie: true, pagoBolsa: true, armaIncorporada: true })
+  .omit({ viaEspecie: true, pagoBolsa: true, armaIncorporada: true, disparosPulso: true })
   .extend({ modificaciones: listaModificacionesSchema.optional() });
 
 // Generador de ids, separado de las funciones puras de más abajo para que

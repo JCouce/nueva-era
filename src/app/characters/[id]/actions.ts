@@ -38,6 +38,7 @@ import {
   type BonosDisciplina,
   type EstadoFicha,
   ajustarRecurso,
+  dispararPulso,
   comprarRecarga,
   municionRegularDePieza,
   ajustarMaterial,
@@ -651,6 +652,16 @@ export async function ajustarRecursoAction(
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   return persist(ctx, characterId, ajustarRecurso(ctx.sheet, instanciaId, delta));
+}
+
+// Disparo en modo Pulso del Proyector de Pulso (sync Drive 2026-11-14): la carga y el contador de
+// disparos los decide dispararPulso con la ficha de la base, no la pantalla.
+export async function dispararPulsoAction(characterId: string, instanciaId: unknown): Promise<SaveResult> {
+  const parsed = z.string().min(1).max(60).safeParse(instanciaId);
+  if (!parsed.success) return { ok: false, error: "Pieza inválida" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  return persist(ctx, characterId, dispararPulso(ctx.sheet, parsed.data));
 }
 
 // Vida y fatiga (docs/tareas.md, 2026-09-27): recurso persistente del propio

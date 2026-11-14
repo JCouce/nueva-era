@@ -1,9 +1,9 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { motivoDeBloqueo } from "./habilitacion";
-import { defaultSheet, type Sheet } from "./sheet";
+import { defaultSheet, parseSheet, type Sheet } from "./sheet";
 import { equipar } from "./equipo";
-import { ajustarRecurso, ajustarGranada, ajustarMunicionEspecial, reconciliarRecursos } from "./recursos";
+import { ajustarRecurso, ajustarGranada, ajustarMunicionEspecial, comprarRecarga, dispararPulso, reconciliarRecursos, recursoDe } from "./recursos";
 import { accionesDeAtaque as accionesDeAtaqueCon, accionesDirectasDeAtaque, generaAccionPropia, ID_MODO_CAMUFLAJE, MOTIVO_SIN_CARGAS, NOTA_MALLA_ANULA_CAMUFLAJE } from "./combate";
 import { restaDeSigilo } from "./sigilo";
 import { efectosQueSaltan, efectosSobreObjetivo, type EfectoEnTirada } from "./efectosArma";
@@ -346,6 +346,50 @@ describe("gasto por modo (docs/prompt-gasto-recursos.md, Fase 1)", () => {
     assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso")?.gasto, 1);
     assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso_cargado")?.gasto, 4);
     assert.equal(fila.ataque?.modos.find((m) => m.id === "barrido")?.gasto, 5);
+  });
+
+  // Sync Drive 2026-11-14: «1 carga × 3 disparos», con el contador en la pieza (usuario).
+  test("Pulso: 1 carga cada 3 disparos — el primero la gasta, los dos siguientes no, el cuarto otra", () => {
+    let sheet = reconciliarRecursos(conProyectorPulso(1));
+    const carga = () => recursoDe(sheet, "pp1")!.actual;
+    const pulso = () =>
+      accionesDeAtaque(sheet).find((t) => t.label.startsWith("Disparar Proyector de Pulso"))!.ataque!.modos.find((m) => m.id === "pulso")!;
+    assert.equal(carga(), 10);
+    const gastos: number[] = [];
+    for (let i = 0; i < 4; i++) {
+      assert.equal(pulso().disparoPulso, true);
+      gastos.push(pulso().gasto!);
+      sheet = dispararPulso(sheet, "pp1");
+    }
+    assert.deepEqual(gastos, [1, 0, 0, 1]);
+    assert.equal(carga(), 8);
+    assert.equal(sheet.equipo.find((p) => p.instanciaId === "pp1")!.disparosPulso, 1);
+  });
+
+  test("Pulso: recargar pone el contador a 0 y el siguiente disparo vuelve a gastar", () => {
+    let sheet = dispararPulso(reconciliarRecursos(conProyectorPulso(1)), "pp1");
+    assert.equal(sheet.equipo.find((p) => p.instanciaId === "pp1")!.disparosPulso, 1);
+    sheet = comprarRecarga(sheet, "pp1")!.sheet;
+    assert.equal(sheet.equipo.find((p) => p.instanciaId === "pp1")!.disparosPulso, undefined);
+    assert.equal(recursoDe(sheet, "pp1")!.actual, 10);
+    sheet = dispararPulso(sheet, "pp1");
+    assert.equal(recursoDe(sheet, "pp1")!.actual, 9);
+  });
+
+  test("Pulso: daño 8 + nivel", () => {
+    const fila = accionesDeAtaque(conProyectorPulso(1)).find((t) => t.label.startsWith("Disparar Proyector de Pulso"))!;
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso")?.danio, 9);
+  });
+
+  test("el contador se lee tolerante: fuera de rango se pierde, la pieza no", () => {
+    const sheet = conProyectorPulso(1);
+    const crudo = { ...sheet, equipo: sheet.equipo.map((p) => (p.instanciaId === "pp1" ? { ...p, disparosPulso: 7 } : p)) };
+    const leida = parseSheet(JSON.parse(JSON.stringify(crudo)));
+    const pieza = leida.equipo.find((p) => p.instanciaId === "pp1")!;
+    assert.equal(pieza.catalogoId, "proyector_pulso");
+    assert.equal(pieza.disparosPulso, undefined);
+    const buena = { ...sheet, equipo: sheet.equipo.map((p) => (p.instanciaId === "pp1" ? { ...p, disparosPulso: 2 } : p)) };
+    assert.equal(parseSheet(JSON.parse(JSON.stringify(buena))).equipo.find((p) => p.instanciaId === "pp1")!.disparosPulso, 2);
   });
 
   test("Golpear con Proyector de Pulso (Aguijón) gasta 1 carga", () => {
@@ -1321,7 +1365,7 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
     const fila = accionesDeAtaque(conProyectorPulso(2)).find((t) =>
       t.label.includes("Combate a Distancia"),
     )!;
-    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso")?.danio, 9); // 7 + 2
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso")?.danio, 10); // 8 + 2 (sync Drive 2026-11-14)
     assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso_cargado")?.danio, 12); // 10 + 2
     assert.equal(fila.ataque?.modos.find((m) => m.id === "barrido")?.danio, 11); // 9 + 2
     const modo = fila.condiciones?.find((c) => c.id === "modo");
