@@ -40,12 +40,12 @@ import { DISPAROS_POR_CARGA_PULSO, escudoRoto, gastoDelModo, gastoDisparoPulso, 
 import { sinMejorasNoAdmitidas } from "./compatibilidadArma";
 import { bloqueadaPor, conHabilitacion, esVisible, habilitacionDeFamilia } from "./habilitacion";
 import { CONDICION_ATACANTES_ADICIONALES, condicionApuntado, type Accion, type AccionDirecta } from "./acciones";
-import { RUIDO_DISPARO, modosDeOcultacion, textoSigiloAlAtacar, type SigiloAlAtacar } from "./sigilo";
+import { RUIDO_DISPARO, modosDeOcultacion, ocultacionDeNivel, textoSigiloAlAtacar, type SigiloAlAtacar } from "./sigilo";
 import { ESTADO_AGUIJON_ID, ESTADO_CAMUFLAJE_ID } from "../catalog/estados";
 import { atributoEfectivo, aplicado } from "./derivados";
 import { criticoDesarmado, golpeDesarmado } from "./golpeDesarmado";
 import { ID_RETROCESO_ENTROPICO, retrocesoEntropico } from "./retrocesoEntropico";
-import { FATIGA_INTEGRADO, notaIntegrado, subsistemasIntegrados, type SubsistemaIntegrado } from "./integracionTactica";
+import { bloqueoCamuflajeIntegrado, FATIGA_INTEGRADO, notaIntegrado, subsistemasIntegrados, type SubsistemaIntegrado } from "./integracionTactica";
 import { ESPECIALIDAD_ARMA, ESPECIALIDAD_ATAQUE_ESPECIAL, ESPECIALIDAD_LANZAR } from "../catalog/especialidadesArma";
 import type { PermisosDeDotes } from "./dotesEfectos";
 import {
@@ -1692,19 +1692,26 @@ export const NOTA_MALLA_ANULA_CAMUFLAJE =
 export const ID_MODO_CAMUFLAJE = "modo_camuflaje";
 const textoCobertura = (c: { visual?: number; termica?: number; acustica?: number }) =>
   `visual ${c.visual ?? 0} · térmica ${c.termica ?? 0} · acústica ${c.acustica ?? 0}`;
-function accionActivarCamuflaje(sheet: Sheet, pieza: PiezaEquipada, cat: Subsistema): AccionDirecta {
+// `integrado` (E5b, Chasis Osteomuscular): 2 de fatiga en vez de la carga, sus modos con el nivel del
+// Chasis y bloqueada si una armadura más pesada que un traje lo bloquea (bloqueoCamuflajeIntegrado).
+function accionActivarCamuflaje(sheet: Sheet, pieza: PiezaEquipada, cat: Subsistema, integrado?: SubsistemaIntegrado): AccionDirecta {
   const nivel = cat.niveles.find((n) => n.nivel === pieza.nivel) ?? cat.niveles[0];
-  const recurso = recursoDe(sheet, pieza.instanciaId);
-  const modos = modosDeOcultacion(sheet);
+  const recurso = integrado ? null : recursoDe(sheet, pieza.instanciaId);
+  const modos = integrado ? (ocultacionDeNivel(cat.id, nivel.nivel)?.modos ?? []) : modosDeOcultacion(sheet);
+  const bloqueo = integrado ? bloqueoCamuflajeIntegrado(sheet) : null;
   return {
     id: `activar_camuflaje_${pieza.instanciaId}`,
-    label: `Activar ${cat.label}`,
+    label: `Activar ${cat.label}${integrado ? " integrado" : ""}`,
     grupo: "Acciones",
     confirmarLabel: "Activar",
     nota: [
-      `Acción gratuita, gasta 1 carga${recurso ? ` (quedan ${recurso.actual}/${recurso.max})` : ""}. Nivel ${nivel.nivel}.`,
+      integrado
+        ? `Acción gratuita. ${notaIntegrado(integrado, "activarlo")}`
+        : `Acción gratuita, gasta 1 carga${recurso ? ` (quedan ${recurso.actual}/${recurso.max})` : ""}. Nivel ${nivel.nivel}.`,
       "Te pone el estado Camuflaje: su cobertura se suma a tu Sigilo por sentido y en la esquiva cuenta como cobertura. Con otra cobertura, la menor suma solo la mitad.",
-      "El modo pasivo no se activa ni gasta: dura mientras quede alguna carga.",
+      integrado
+        ? "El modo pasivo no se activa ni gasta: funciona mientras lo lleves. Solo con Traje Ultra Ligero, Ropa Inteligente, Ropa Reforzada o sin armadura."
+        : "El modo pasivo no se activa ni gasta: dura mientras quede alguna carga.",
       // "Su uso [Malla Plasmática] neutraliza por completo los beneficios activos del subsistema
       // de camuflaje" (docs/fuente/equipamiento.md): la ficha no guarda si la Malla está activa,
       // así que se avisa y no se bloquea (S96).
@@ -1732,8 +1739,12 @@ function accionActivarCamuflaje(sheet: Sheet, pieza: PiezaEquipada, cat: Subsist
         opciones: Object.fromEntries(modos.map((m) => [m.id, { gradoId: m.id, turnos: m.turnos }])),
       },
     }),
-    gastoRecurso: { instanciaId: pieza.instanciaId, cantidad: 1 },
-    ...(recurso?.actual === 0 && { habilitacion: bloqueadaPor(MOTIVO_SIN_CARGAS, "duro") }),
+    ...(integrado
+      ? { costeFatiga: FATIGA_INTEGRADO, origen: integrado.origen, ...(bloqueo && { habilitacion: bloqueadaPor(bloqueo, "duro") }) }
+      : {
+          gastoRecurso: { instanciaId: pieza.instanciaId, cantidad: 1 },
+          ...(recurso?.actual === 0 && { habilitacion: bloqueadaPor(MOTIVO_SIN_CARGAS, "duro") }),
+        }),
   };
 }
 
@@ -1784,6 +1795,8 @@ export function accionesDirectasDeAtaque(sheet: Sheet): AccionDirecta[] {
   // Integración táctica del Chasis Osteomuscular (E5b): 2 de fatiga en vez de cargas.
   for (const s of subsistemasIntegrados(sheet)) {
     if (s.catalogoId === "proyector_pulso") acciones.push(accionActivarAguijon(sheet, s.pieza, s));
+    const cat = equipoPorId(s.catalogoId);
+    if (s.catalogoId === "camuflaje_trifasico" && cat?.familia === "subsistema") acciones.push(accionActivarCamuflaje(sheet, s.pieza, cat, s));
   }
   return acciones;
 }

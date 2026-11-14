@@ -64,3 +64,19 @@ export const subsistemaIntegrado = (sheet: Pick<Sheet, "equipo">, catalogoId: Su
 // «Integrado en Chasis Osteomuscular 3: 2 de fatiga por uso, sin cargas.»
 export const notaIntegrado = (s: SubsistemaIntegrado, uso: string) =>
   `Integrado en ${s.fuente} (nivel ${s.nivel}): ${uso} cuesta ${FATIGA_INTEGRADO} de fatiga, sin cargas.`;
+
+// El Camuflaje integrado «puede traspasar o sincronizarse con Traje Ultra Ligero, Ropa Inteligente o
+// Ropa Reforzada, pero queda bloqueado por armaduras más pesadas»: sin armadura, o solo con esas.
+export const ARMADURAS_CAMUFLAJE_INTEGRADO: readonly string[] = ["traje_ultra_ligero", "ropa_inteligente", "ropa_reforzada"];
+
+// El motivo si una armadura equipada bloquea el Camuflaje integrado, o null. Mira todas las
+// armaduras equipadas, no solo la que cuenta para el blindaje.
+export function bloqueoCamuflajeIntegrado(sheet: Pick<Sheet, "equipo">): string | null {
+  for (const p of sheet.equipo) {
+    const cat = equipoPorId(p.catalogoId);
+    if (cat?.familia === "armadura" && !ARMADURAS_CAMUFLAJE_INTEGRADO.includes(cat.id)) {
+      return `${cat.label} bloquea el camuflaje integrado: solo traspasa Traje Ultra Ligero, Ropa Inteligente o Ropa Reforzada.`;
+    }
+  }
+  return null;
+}

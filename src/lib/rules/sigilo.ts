@@ -22,6 +22,7 @@ import type { OperacionEstado } from "./vidaPorEstados";
 import { nivelesHasta, ultimoQueDefine } from "./equipo";
 import { recursoDe } from "./recursos";
 import { origenDePieza } from "./origen";
+import { bloqueoCamuflajeIntegrado, subsistemaIntegrado } from "./integracionTactica";
 import { MAX_NOTA_ESTADO, MAX_VALOR_ESTADO } from "./estadosFicha";
 import { equipoPorId } from "../catalog/equipo";
 import { PELEA } from "../catalog/armasMelee";
@@ -53,6 +54,10 @@ export type OcultacionDeFicha = {
   pasiva: CoberturaSentidos | null;
 };
 
+// E5b: sin pieza propia, el Camuflaje Trifásico integrado en el Chasis Osteomuscular (con su nivel y
+// sin batería: la pasiva vale siempre), salvo que una armadura más pesada lo bloquee.
+// TODO(revisar) (S111): la pasiva del integrado sin carga que mirar («mientras mantenga una carga
+// mínima») se toma como siempre activa: se alimenta del cuerpo.
 function ocultacionDePieza(sheet: Sheet): { fuente: string; nivel: number; instanciaId: string; datos: Ocultacion } | null {
   for (const pieza of sheet.equipo) {
     if (pieza.nivel === undefined) continue;
@@ -61,7 +66,17 @@ function ocultacionDePieza(sheet: Sheet): { fuente: string; nivel: number; insta
     const datos = ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel), "ocultacion")?.ocultacion;
     if (datos) return { fuente: cat.label, nivel: pieza.nivel, instanciaId: pieza.instanciaId, datos };
   }
-  return null;
+  const integrado = subsistemaIntegrado(sheet, "camuflaje_trifasico");
+  if (!integrado || bloqueoCamuflajeIntegrado(sheet)) return null;
+  const datos = ocultacionDeNivel(integrado.catalogoId, integrado.nivel);
+  return datos ? { fuente: `${integrado.label} integrado`, nivel: integrado.nivel, instanciaId: integrado.pieza.instanciaId, datos } : null;
+}
+
+// La ocultación de un nivel de una pieza del catálogo (la del nivel más alto hasta él que la trae).
+export function ocultacionDeNivel(catalogoId: string, nivel: number): Ocultacion | null {
+  const cat = equipoPorId(catalogoId);
+  if (!cat || !("niveles" in cat)) return null;
+  return ultimoQueDefine(nivelesHasta(cat.niveles, nivel), "ocultacion")?.ocultacion ?? null;
 }
 
 // Los modos activos de la pieza de ocultación de la ficha (para el selector de «Activar camuflaje»).

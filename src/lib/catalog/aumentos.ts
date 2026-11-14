@@ -1578,12 +1578,27 @@ const PROYECTOR_INTEGRADO: VarianteImplante = {
   detalle: ["El Proyector de Pulso anclado en el cuerpo, con el nivel del Chasis. Cada disparo y activar el Aguijón cuestan 2 de fatiga, sin cargas."],
   subsistemaIntegrado: "proyector_pulso",
 };
-const VARIANTES_INTEGRACION: VarianteImplante[] = [PROYECTOR_INTEGRADO];
+const CAMUFLAJE_INTEGRADO: VarianteImplante = {
+  id: "camuflaje_trifasico",
+  label: "Camuflaje Trifásico",
+  detalle: [
+    "El Camuflaje Trifásico subdérmico, con el nivel del Chasis. Activarlo cuesta 2 de fatiga, sin cargas. Solo funciona sin armadura o con Traje Ultra Ligero, Ropa Inteligente o Ropa Reforzada: una armadura más pesada lo bloquea.",
+  ],
+  subsistemaIntegrado: "camuflaje_trifasico",
+};
+const VARIANTES_INTEGRACION: VarianteImplante[] = [PROYECTOR_INTEGRADO, CAMUFLAJE_INTEGRADO];
 const MOTOR_INTEGRACION: MotorMetadata[] = [
   // Proyector integrado: sus filas (disparo, Aguijón) con el nivel del Chasis…
   { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_proyector_pulso" }, mecanismo: "accion_equipo", estado: "construido" },
   // …y 2 de fatiga en vez de cargas en cada disparo y al activar el Aguijón.
   { tipo: "coste", afecta: { modo: "accion_nueva", id: "ataque_proyector_pulso" }, mecanismo: "accion_equipo", estado: "construido" },
+  // Camuflaje integrado: «Activar camuflaje» con 2 de fatiga…
+  { tipo: "accion", afecta: { modo: "accion_nueva", id: "activar_camuflaje" }, mecanismo: "accion_equipo", estado: "construido" },
+  { tipo: "coste", afecta: { modo: "accion_nueva", id: "activar_camuflaje" }, mecanismo: "accion_equipo", estado: "construido" },
+  // …bloqueado por una armadura más pesada que un traje (y sin ocultación mientras tanto)…
+  { tipo: "habilitador", afecta: { modo: "accion_existente", id: "activar_camuflaje" }, mecanismo: "gate_instalacion", arbitraje: "duro", estado: "construido" },
+  // …y su cobertura por sentido sumada al Sigilo, como el de la armadura (rules/sigilo.ts).
+  { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "suma_derivado", estado: "construido" },
 ];
 
 // Lo común a cada nivel: Fuerza, armadura natural y golpe desarmado.

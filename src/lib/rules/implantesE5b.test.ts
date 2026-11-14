@@ -4,7 +4,8 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
-import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
+import { conExtrasDeFicha, conExtrasDirectaDeFicha, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
+import { motivoDeBloqueo } from "./habilitacion";
 import { ACCIONES } from "./acciones";
 import { estadoInicial, type CondicionTirada, type EstadoCondiciones } from "./condiciones";
 import { montarTirada, SIN_ELECCION, type TiradaMontada } from "./montaje";
@@ -200,5 +201,53 @@ describe("E5b · Integración táctica: Proyector de Pulso", () => {
     const s = conProyector(2);
     assert.ok(disparo(s));
     assert.equal(s.equipo.some((p) => p.instaladoEnId), false);
+  });
+});
+
+describe("E5b · Integración táctica: Camuflaje Trifásico", () => {
+  const conCamuflaje = (nivel: number, s: Sheet = base()) => con(s, CHASIS, { nivel, eleccion: "camuflaje_trifasico" });
+  const activar = (s: Sheet) => {
+    const a = accionesDirectasDeAtaque(s).find((x) => x.label === "Activar Camuflaje Trifásico integrado");
+    return a && conExtrasDirectaDeFicha(resolver(s), a);
+  };
+  const ESTATICO: EstadoActivo = { estadoId: "camuflaje", gradoId: "estatico", rondasRestantes: 10 };
+
+  test("activarlo cobra 2 de fatiga, sin carga; sus modos, con el nivel del Chasis", () => {
+    const a = activar(conCamuflaje(3))!;
+    assert.equal(a.costeFatiga, 2);
+    assert.equal(a.gastoRecurso, undefined);
+    assert.equal(a.origen?.id, CHASIS);
+    assert.equal(a.habilitacion, undefined);
+    const modo = a.condiciones?.find((c) => c.id === "modo_camuflaje");
+    assert.ok(modo?.tipo === "opcion");
+    assert.match(modo.opciones[0].etiqueta, /30 minutos/, "estático del nivel 3");
+  });
+
+  test("con Traje Ultra Ligero (o Ropa Inteligente, Reforzada o nada) funciona; con Armadura Ligera, bloqueado con motivo", () => {
+    for (const armadura of [null, "traje_ultra_ligero", "ropa_inteligente", "ropa_reforzada"]) {
+      const s = conCamuflaje(2, armadura ? con(base(), armadura) : base());
+      assert.equal(activar(s)!.habilitacion?.estado ?? "activa", "activa", String(armadura));
+      assert.ok(resolver(s).ocultacion, `${armadura}: ocultación`);
+    }
+    const ligera = conCamuflaje(2, con(base(), "armadura_ligera"));
+    const a = activar(ligera)!;
+    assert.equal(a.habilitacion?.estado, "bloqueada");
+    assert.match(motivoDeBloqueo(a.habilitacion) ?? "", /Armadura Ligera bloquea el camuflaje integrado/);
+    assert.equal(resolver(ligera).ocultacion, null, "ni la pasiva ni la activa");
+  });
+
+  test("la cobertura se suma al Sigilo: activo, el modo del nivel; sin activar, la pasiva (sin batería)", () => {
+    const s = conCamuflaje(4);
+    const o = resolver(s, [ESTATICO]).ocultacion!;
+    assert.equal(o.nivel, 4);
+    assert.equal(o.activo?.id, "estatico");
+    assert.deepEqual(o.activo?.cobertura, { visual: 4, termica: 4, acustica: 4 });
+    assert.deepEqual(resolver(s).ocultacion?.pasiva, { termica: 3, acustica: 3 });
+    assert.equal(resolver(s).ocultacion?.fuente, "Camuflaje Trifásico integrado");
+  });
+
+  test("el Proyector no sale con el Camuflaje elegido, ni al revés", () => {
+    assert.equal(filas(conCamuflaje(2)).some((t) => /Proyector/.test(t.label)), false);
+    assert.equal(activar(con(base(), CHASIS, { nivel: 2, eleccion: "proyector_pulso" })), undefined);
   });
 });

@@ -6034,6 +6034,10 @@
             {
               "id": "proyector_pulso",
               "label": "Proyector de Pulso"
+            },
+            {
+              "id": "camuflaje_trifasico",
+              "label": "Camuflaje Trifásico"
             }
           ],
           "efectos": [
@@ -6067,10 +6071,17 @@
             {
               "tipo": "subsistema_integrado",
               "opciones": [
-                "proyector_pulso"
+                "proyector_pulso",
+                "camuflaje_trifasico"
               ],
               "nivel": 2,
-              "coste": "2 de fatiga por uso, sin cargas"
+              "coste": "2 de fatiga por uso o activación, sin cargas",
+              "camuflajeSoloCon": [
+                "traje_ultra_ligero",
+                "ropa_inteligente",
+                "ropa_reforzada",
+                "sin armadura"
+              ]
             }
           ],
           "motor": [
@@ -6145,6 +6156,43 @@
               },
               "mecanismo": "accion_equipo",
               "estado": "construido"
+            },
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "activar_camuflaje"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "construido"
+            },
+            {
+              "tipo": "coste",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "activar_camuflaje"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "construido"
+            },
+            {
+              "tipo": "habilitador",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "activar_camuflaje"
+              },
+              "mecanismo": "gate_instalacion",
+              "arbitraje": "duro",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "sigilo"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
             }
           ]
         },
@@ -6157,6 +6205,10 @@
             {
               "id": "proyector_pulso",
               "label": "Proyector de Pulso"
+            },
+            {
+              "id": "camuflaje_trifasico",
+              "label": "Camuflaje Trifásico"
             }
           ],
           "efectos": [
@@ -6190,10 +6242,17 @@
             {
               "tipo": "subsistema_integrado",
               "opciones": [
-                "proyector_pulso"
+                "proyector_pulso",
+                "camuflaje_trifasico"
               ],
               "nivel": 3,
-              "coste": "2 de fatiga por uso, sin cargas"
+              "coste": "2 de fatiga por uso o activación, sin cargas",
+              "camuflajeSoloCon": [
+                "traje_ultra_ligero",
+                "ropa_inteligente",
+                "ropa_reforzada",
+                "sin armadura"
+              ]
             }
           ],
           "motor": [
@@ -6268,6 +6327,43 @@
               },
               "mecanismo": "accion_equipo",
               "estado": "construido"
+            },
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "activar_camuflaje"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "construido"
+            },
+            {
+              "tipo": "coste",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "activar_camuflaje"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "construido"
+            },
+            {
+              "tipo": "habilitador",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "activar_camuflaje"
+              },
+              "mecanismo": "gate_instalacion",
+              "arbitraje": "duro",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "sigilo"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
             }
           ]
         },
@@ -6280,6 +6376,10 @@
             {
               "id": "proyector_pulso",
               "label": "Proyector de Pulso"
+            },
+            {
+              "id": "camuflaje_trifasico",
+              "label": "Camuflaje Trifásico"
             }
           ],
           "efectos": [
@@ -6313,10 +6413,17 @@
             {
               "tipo": "subsistema_integrado",
               "opciones": [
-                "proyector_pulso"
+                "proyector_pulso",
+                "camuflaje_trifasico"
               ],
               "nivel": 4,
-              "coste": "2 de fatiga por uso, sin cargas"
+              "coste": "2 de fatiga por uso o activación, sin cargas",
+              "camuflajeSoloCon": [
+                "traje_ultra_ligero",
+                "ropa_inteligente",
+                "ropa_reforzada",
+                "sin armadura"
+              ]
             }
           ],
           "motor": [
@@ -6390,6 +6497,43 @@
                 "id": "ataque_proyector_pulso"
               },
               "mecanismo": "accion_equipo",
+              "estado": "construido"
+            },
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "activar_camuflaje"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "construido"
+            },
+            {
+              "tipo": "coste",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "activar_camuflaje"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "construido"
+            },
+            {
+              "tipo": "habilitador",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "activar_camuflaje"
+              },
+              "mecanismo": "gate_instalacion",
+              "arbitraje": "duro",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "sigilo"
+              },
+              "mecanismo": "suma_derivado",
               "estado": "construido"
             }
           ]
