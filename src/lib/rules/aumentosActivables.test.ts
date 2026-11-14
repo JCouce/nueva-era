@@ -521,12 +521,15 @@ describe("A5b: tope de la vida con los activables puestos", () => {
     assert.equal(r?.combatientes[0].pgActual, max);
   });
 
-  test("con un estado del máster que baja el máximo, al caerse recorta al tope de reposo (S74), no más", () => {
-    const cansado = ESTADOS.find((e) => e.grados.some((g) => g.modificadores.some((m) => m.tipo === "atributo" && m.id === "fuerza" && m.valor < 0)));
-    assert.ok(cansado);
-    const otro: EstadoActivo = { estadoId: cansado.id, gradoId: cansado.grados[cansado.grados.length - 1].id, rondasRestantes: null };
+  // td-12 (usuario 2026-11-14): el tope ya no es el de reposo (S74) sino el que se ve, con el
+  // estado del máster dentro. Antes esperaba `max`, con un estado que en esta ficha no llegaba a
+  // bajar la vida (el primero con −Fuerza); ahora uno que sí la baja (Enfermedad 2).
+  test("con un estado del máster que baja el máximo, al caerse recorta al máximo que se ve (td-12)", () => {
+    const otro: EstadoActivo = { estadoId: "enfermedad", gradoId: "nivel_2", rondasRestantes: null };
     const r = vidaTrasCambioDeEstados(conMax(max + 1), [otro, neuro()], [otro]);
-    assert.equal(r.sheet.vidaActual, max);
+    const visto = resolver(s, [otro]).salud.vida;
+    assert.ok(visto < max, "el estado baja el máximo");
+    assert.equal(r.sheet.vidaActual, visto);
   });
 
   test("deshacer Activar la quita y recorta; deshacer Desactivar devuelve lo recortado", () => {

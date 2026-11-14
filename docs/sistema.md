@@ -525,6 +525,19 @@ imponen penalizadores por umbral:
   exacto y se niega si el desglose cambió después aunque la vida sea la misma. Lo que mueve
   la vida sin categoría (estados por S75, efectos de reglas) sigue normalizándose al leer.
   Pendiente: Fortaleza absorbiendo el no letal y curas por descanso/medicina.
+  *Curar hasta el máximo que se ve* `[FIRME · usuario, cuestionario de cierre 2026-11-14: td-12 (b)]`:
+  con un estado que baja la Fortaleza o la Voluntad (y con ellas la vida o la fatiga máximas),
+  curar **no pasa del máximo que se ve**; al quitarse el estado, el máximo sube y la vida no
+  (S75). Todos los caminos: la ficha (−/+ de fatiga, curar por categoría), la pestaña Vida de la
+  Mesa, consecuencias y acciones de aumento (Sanar letal), Resistir daño; en combate la foto ya
+  topaba en su máximo. Motor: `topesDeVida` (`rules/vitalidad.ts`) sale de la misma base que
+  `resolverFicha` (`rules/baseFicha.ts`: Shock, activables, inmunidades, Estabilizado), así que el
+  tope y el máximo pintado no pueden separarse. Una vida guardada por encima («14 de 12», de
+  antes) se recorta al leerla con sus estados (`reconciliarVidaConEstados`). `parseSheet`, que no
+  conoce los estados, ya no rellena el desglose del daño hasta la vida perdida en reposo (solo
+  quita lo que sobra con el tope posible): lo que falta lo pone como letal la lectura con estados
+  (si no, con el tope bajado se comería el no letal). Sustituye a «curar topa en el máximo en
+  reposo» (S74, S78).
   *Al terminar el combate (td-13, usuario 2026-11-13):* el daño vuelve a la ficha. Cada jugador
   deja en su ficha el daño recibido y la fatiga gastada en su foto (máximo de la foto − actual,
   no el valor: si el máximo de la ficha cambió, el daño sigue siendo el mismo) y su desglose
@@ -813,8 +826,21 @@ imponen penalizadores por umbral:
   derribado, enfermedad, entorpecido, envenenamiento, fatiga, **fusión**, hemorragia,
   heridas, inmovilizado, llamarada, miedo, parálisis, shock, sordera, sorprendido y
   desprevenido, inconsciencia y muerte.
-- **Descanso**: 8 horas para un descanso completo; 5 comidas de 1 punto de fatiga y 2
-  descansos breves de 2 puntos a lo largo del día.
+- **Descanso** `[FIRME · fuente/reglas-base.md «Curación y Descanso» + usuario, cuestionario de cierre 2026-11-14: au-01, au-02, au-03]`:
+  descanso largo de 8 horas (recupera toda la fatiga gastada y sana dos niveles de no letal);
+  **2 descansos breves de 10 minutos al día, +3 de fatiga cada uno**, y **5 comidas, +2 cada
+  una**. au-03: manda la foto nueva; las cifras viejas («5 comidas de 1 punto y 2 descansos
+  breves de 2») eran de otra versión.
+  *En la app:* las cifras viven en una sola constante (`DESCANSO`, `catalog/descanso.ts`),
+  pensada para cambiarse ahí con el próximo parche. Recursos la enseña como línea informativa
+  bajo la barra de Fatiga, generada desde la constante (`textoDescanso`, `rules/vitalidad.ts`):
+  «Descanso breve (10 min, 2 al día): +3 · Comida (5 al día): +2». El jugador ajusta la fatiga
+  con el −/+ de siempre.
+  **au-01 y au-02: narrativo, a mano.** Ni recordatorios de regeneración (Enjambre 2 y 4,
+  Regeneración Tisular, Ílkrem) ni botones de descanso o comida: se curan y recuperan a mano en
+  Recursos y en la pestaña Vida, leyendo la nota de cada rasgo. Lo que cambian los rasgos
+  (Riux, 4 breves y Descanso Largo de 4 h; Siervo, de 6 h; Hipertrofia, Angiogénesis,
+  Biogénesis) sigue como texto: la línea de Recursos enseña las cifras base.
 
 *En la app (M1b, 2026-10-13), la tabla de umbrales entera se aplica sola, en la
 `FichaResuelta` (`resolverFicha`, `rules/fichaResuelta.ts`):*
@@ -963,6 +989,11 @@ pieza, o cada nivel (vale el del nivel más alto instalado que lo diga), declara
   la letra de prioridad asignada a Recursos — ver la tabla en "Creación por prioridad"
   (sección 2). De 1.500 créditos/Común (letra E) a 66.000 créditos/Muy Extraño (letra A).
   Sigue sin confirmar si los créditos son la **única** moneda.
+- **XP y créditos que da el máster, en un solo sitio** `[FIRME · usuario, cuestionario de cierre 2026-11-14: td-19 (a)]`:
+  la Mesa, pestaña Recompensas (`darXpAction`/`darCreditosAction`, con motivo y registro). La
+  lista de fichas del máster (`/master/fichas`) ya no los ajusta (fuera `ResourceRow` y
+  `adjustXpAction`/`adjustCreditosAction`). Como la Mesa solo lista fichas en juego, una ficha en
+  creación no recibe XP ni créditos: es lo que se quiere (usuario, 2026-11-14).
 
 ## 9. Dotes `[FIRME · DOTES + HOJA3 + usuario 2026-10-14]`
 
@@ -2077,6 +2108,11 @@ sobreesfuerzo.
     total no se reduce.
   - **Matriz Ósea:** −1 a los penalizadores por carga solo como nota junto a la carga
     (Personaje → Estado); la carga no está mecanizada (§5.5).
+    `[FIRME · usuario, cuestionario de cierre 2026-11-14: au-08]` Preparada para cuando exista:
+    el dato está en la pieza (`reducePenalizador` con `de: "carga"`) y su entrada `motor`,
+    bloqueada por los penalizadores de carga, con un `TODO(au-08)` en el catálogo y en
+    `notasCargaDeAumentos` (`rules/aumentos.ts`) que dice dónde conectarlo. No se inventa el
+    sistema de carga.
 - *En la app (A4a, una vez por escena y acciones sin dado):*
   - **Una vez por escena (R1):** ficha v19, `sheet.usosEscena` (ids de casilla,
     `rules/usosEscena.ts`). Las casillas con `usoPorEscena` (Mielinización "Ahorro de fatiga",
@@ -2215,7 +2251,8 @@ sobreesfuerzo.
     "con la Neuroprótesis puesta el máximo real es 9 y tienes que poder curarte hasta 9". El
     tope al que se cura (+/- de Recursos, Sanar letal, la pestaña Vida del máster sobre la
     ficha) y al que se recorta es el **máximo en reposo más los activables puestos**
-    (`topesDeVida`); los estados del máster siguen fuera (S74). Al leer, `parseSheet` no conoce
+    (`topesDeVida`); los estados del máster siguen fuera (S74). *(Desde td-12, 2026-11-14,
+    también cuentan: el tope es el máximo que se ve, §7.)* Al leer, `parseSheet` no conoce
     `Character.estados` y recorta al **máximo posible** (`topesPosibles`: los activables
     equipados en su mejor grado), así que nunca baja un 9 curado con ella puesta; el recorte
     exacto (`reconciliarVidaConEstados`) lo hacen las lecturas que sí los conocen: la página de
@@ -2467,6 +2504,14 @@ sobreesfuerzo.
   - **Regeneración Tisular**: 2 letales por descanso corto, sin asistencia médica.
   - **Estabilización Autonómica**: librarse del miedo es automático, gastando la acción.
   - **Enjambre Nanobot**: el +3 va a la tirada de Medicina para aplicar fármacos o tratar.
+    `[FIRME · usuario, cuestionario de cierre 2026-11-14: au-07 (b)]` **Solo en la ficha de
+    quien lo lleva**: casilla «Sobre ti mismo» (+3) en Tratar heridas y en el «Usar» de los
+    fármacos con tirada (nivel 1 en adelante). Si te cura otro, se lo dices y lo suma a mano:
+    nada en las fichas de los demás (no hay casillas genéricas por una pieza concreta). Con el
+    Nano-Elixir («no se apila con aumentos tecnológicos de nanomedicina») vale el mayor: grupo
+    `noApila` `nanomedicina` en la casilla y en el +5 de la fila (los ajustes fijos admiten ya
+    `noApila`, `montaje.ts`), así que con el Nano-Elixir la casilla queda a 0 «no se suma con
+    Nano-Elixir». Lleva el origen de la pieza: el Shock del cuerpo la penaliza o la apaga.
     Sanar un letal es **una sola acción gratuita por ronda***. El grave: 1 de fatiga por
     turno durante 5 turnos, pudiendo actuar. Blindaje y +3 contra aturdimiento valen
     **contra todo lo que pare un blindaje*** (el daño mental, no). La velocidad del nivel 4
@@ -3067,11 +3112,11 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S71 | ***Ojo Clínico*: la fatiga se paga al tirar con la casilla marcada** (1 punto, sin temporal), se acierte o no; sin `onPagarFatiga` (consola del máster), a mano. La ventaja no se acumula: con varias casillas de ventaja, dos d12 igual. | §9.5 ("la fatiga solo paga la ventaja", "la ventaja no se acumula"); el momento del pago es del redactor. |
 | S72 | **Pool de creación en negativo: se permite, pero bloquea el envío a revisión.** Bajar la letra de una categoría tras gastar (o que otra categoría se lleve su letra) deja el pool en negativo; el cambio de letra no se impide, para poder reordenar prioridades, y el exceso es una falta ("Te has pasado N puntos en …") en Atributos, Habilidades, Psiónica y Dotes. El máster puede aprobar igual. | Decisión del usuario (2026-10-15). |
 | S73 | **Shock: dos grados, cuerpo y equipo (opción B).** El máster aplica el Shock con dos grados: el de **Fortaleza** (cuerpo) decide la parálisis y los implantes; el de **Estructura** (equipo), todos los sistemas electrónicos que lleva encima a la vez, no pieza a pieza. La app no tira: el grado lo pone el máster. Pieza afectada: **literal de la fuente** (fracaso crítico apagada; fracaso −2, éxito −1 a cada bono positivo, sin bajar de 0, y a usarla); la propuesta de la mesa de perder el bono entero queda descartada. **Cambiado el 2026-11-14 (usuario): el −N ya no es a mano, lo aplica la app** (§7.1). «Apagón» = afectado por Shock; las excepciones del Soporte Vital y el Inyector 2, regla propia en todos los grados con efecto (eq-29, T7b, §7.1). Un "averiado" pieza a pieza (sabotaje, Sistema de Emergencia) iría aparte (pl-04, más adelante). Construido en T7a: §7.1. | **FIRME**: decisión del usuario en el cuestionario de cierre (pl-01, pl-02, pl-03, eq-28, eq-29; 2026-11-14), fiel a `fuente/reglas-base.md` (Shock). Ya no espera a Murillo. |
-| S74 | **Estados de la ficha y vida máxima (E1a).** Los estados que pone el máster (`Character.estados`) mueven la vida y la fatiga máximas también fuera de combate. La vida actual no se recorta al máximo con estados (`parseSheet` reconcilia contra el máximo en reposo, sin estados): lo que baja al poner el estado es S75; curar topa en el máximo en reposo. *(Superado por S75: "la vida actual no se recorta" y "un estado puesto o quitado dentro del combate no mueve la foto `pgMax`".)* Una duración de **0 rondas** vale (la usa el catálogo: se cae al cerrar la vuelta, S77). | Decisión del usuario (2026-10-16: "los estados mueven la vida máxima también fuera de combate"); el tope de curar, del redactor. |
+| S74 | **Estados de la ficha y vida máxima (E1a).** Los estados que pone el máster (`Character.estados`) mueven la vida y la fatiga máximas también fuera de combate. La vida actual no se recorta al máximo con estados (`parseSheet` reconcilia contra el máximo en reposo, sin estados): lo que baja al poner el estado es S75; curar topa en el máximo en reposo. *(Superado por S75: "la vida actual no se recorta" y "un estado puesto o quitado dentro del combate no mueve la foto `pgMax`". Superado por td-12, 2026-11-14: curar topa en el máximo que se ve, con los estados, y la vida guardada por encima se recorta al leerla; §7.)* Una duración de **0 rondas** vale (la usa el catálogo: se cae al cerrar la vuelta, S77). | Decisión del usuario (2026-10-16: "los estados mueven la vida máxima también fuera de combate"); el tope de curar, del redactor. |
 | S75 | **Vida perdida al bajar el máximo.** Cuando poner un estado (o cambiarle el grado) **baja** la vida máxima, la vida actual baja lo mismo y se guarda; igual la fatiga. No se recupera al quitarse el estado ni al caerse por rondas: es castigo. Si el máximo sube o no cambia, la actual no se toca. Suelo 0; llegar a 0 no hace nada automático (la inconsciencia la marca el máster). En combate baja también la foto del jugador (`pgActual`/`fatigaActual`), y la foto recalcula `pgMax`/`fatigaMax` con los estados nuevos cada vez que cambian (poner, quitar, caerse por rondas). Deshacer la acción en el registro del máster (E1b) devuelve lo restado, hasta el máximo. **Activables de aumento (A5a-A5b):** sus estados no cuentan para la bajada, pero si al cambiar quedan la vida o la fatiga por encima del máximo nuevo, se recortan a él; y mientras están puestos suben el tope al que se cura (§11, A5b). Motor: `rules/vidaPorEstados.ts`. | Decisión del usuario (2026-10-16; activables, 2026-10-22). |
 | S76 | **Terminar escena (E1c).** "Terminar escena" del máster quita los estados con duración "fin de escena" a todos los personajes **en juego** (aprobados), en una sola acción del registro que se deshace entera (si a alguno le han vuelto a poner uno de esos estados, no se deshace ninguno). Quitar no resta vida (S75); las fotos de combate abiertas recalculan su máximo. Desde E1d también limpia los estados de escena de los **NPC** del combate abierto, sin registro (deshacer no se los devuelve). Recompensas: quitar XP o créditos que dejaría a alguien en negativo **no se hace para nadie** y se explica (antes se recortaba a 0). Motor: `quitarEstadosDeEscena` (`rules/vidaPorEstados.ts`), `planAjusteRecurso` (`rules/registro.ts`). | Decisión del usuario (2026-10-16); "solo aprobados" y "NPC fuera", del redactor. |
 | S77 | **Las rondas de los estados bajan al cerrar la vuelta (E1d).** "N rondas" se cuenta en vueltas de la cola, no en turnos: cada estado con duración en rondas pierde una cuando el turno pasa del último de la cola al primero (sube la ronda), para todos a la vez (jugadores en su ficha, NPC en su fila), y se cae al llegar a 0. Un turno normal no descuenta nada. Un estado de 1 ronda puesto a mitad de vuelta dura hasta el final de esa vuelta. Sustituye al criterio de la fase 6b (subtarea 2.6: cada turno de cualquiera descontaba una ronda). Al caerse uno, la foto de combate del jugador recalcula su máximo (S75). Motor: `pasarTurno` (`rules/turnos.ts`), `descontarDuracion`, `estadosAlCerrarVuelta`. | Decisión del usuario (2026-10-16). |
-| S78 | **Vida y fatiga a mano por el máster (pestaña Vida, tras E1d).** El máster elige daño o curación y una cantidad; el signo lo pone el modo y las tres categorías de daño restan igual (§7). Suelo 0; la curación topa en el máximo en reposo en la ficha (S74, el mismo `ajustarVida` del jugador) y en `pgMax`/`fatigaMax` en la foto de combate. En combate se ajusta la foto de cada fila (jugador o NPC); en la Mesa, la ficha, salvo que el jugador esté en un combate **en curso**: entonces su foto, la que enseña la Mesa (`TODO(revisar)`). Una acción a varios es una entrada `vida` del registro; deshacerla vuelve al "antes" de cada uno (recortado al tope de hoy) y **no se puede** si el valor actual ya no es el "después" registrado (hay que deshacer antes lo posterior); un objetivo que ya no existe o de un combate terminado se salta. La vista previa enseña el umbral de §7 que se cruza con su −N base (sin el ajuste de especie, §14.8). Motor: `rules/ajusteVida.ts`, `planAjusteVida`/`planDeshacerVida` (`rules/registro.ts`). | Decisión del usuario (2026-10-16: pestaña Vida, deshacer también para NPC); Mesa en combate y "solo mira el valor", del redactor. |
+| S78 | **Vida y fatiga a mano por el máster (pestaña Vida, tras E1d).** El máster elige daño o curación y una cantidad; el signo lo pone el modo y las tres categorías de daño restan igual (§7). Suelo 0; la curación topa en el máximo que se ve en la ficha (td-12; antes, en reposo, S74; el mismo `topesDeVida` que el `ajustarVida` del jugador) y en `pgMax`/`fatigaMax` en la foto de combate. En combate se ajusta la foto de cada fila (jugador o NPC); en la Mesa, la ficha, salvo que el jugador esté en un combate **en curso**: entonces su foto, la que enseña la Mesa (`TODO(revisar)`). Una acción a varios es una entrada `vida` del registro; deshacerla vuelve al "antes" de cada uno (recortado al tope de hoy) y **no se puede** si el valor actual ya no es el "después" registrado (hay que deshacer antes lo posterior); un objetivo que ya no existe o de un combate terminado se salta. La vista previa enseña el umbral de §7 que se cruza con su −N base (sin el ajuste de especie, §14.8). Motor: `rules/ajusteVida.ts`, `planAjusteVida`/`planDeshacerVida` (`rules/registro.ts`). | Decisión del usuario (2026-10-16: pestaña Vida, deshacer también para NPC); Mesa en combate y "solo mira el valor", del redactor. |
 | S79 | ***Gran Puntería*: el éxito al apuntar es crítico, sin casilla** (crítico con 0 éxitos en la fila Apuntar), y el texto "la cobertura baja 2 niveles" solo sale con **crítico natural** (6 éxitos o más). En el selector «Apuntado» del ataque, con la dote, "Éxito" lleva la nota de omitir 1 nivel de cobertura y "Crítico" la de **2 niveles en total** (salvo cobertura total), **no 3** (el 1 del crítico de Apuntar no se suma al 2 de la dote). El bono sigue siendo +1. | "Al apuntar" = la tirada de Apuntar (§9.5). Que el éxito convertido también omita 1 nivel y el "2 en total" son lectura nuestra, aprobada por el usuario (2026-10-23); preguntas de Gran Puntería en `docs/modelado-dotes.md` (Combate a Distancia), pendientes de Murillo. |
 | S80 | ***Velocista* en Carrera, siempre activo y sin casilla: fracaso → éxito y éxito → crítico, en un solo salto.** El fracaso que pasa a éxito queda con margen 0 y **no** llega a crítico; el fracaso crítico no cambia. "Al correr como acción estándar o compleja" es toda tirada de Carrera. | El texto dice "considera el fracaso como éxito y el éxito como éxito crítico"; encadenarlos convertiría todo fracaso en crítico. Decisión del usuario (2026-10-23). |
 | S81 | **Selector «Apuntado» en todos los ataques con Combate a Distancia**, para cualquier ficha (lo que salió en la acción Apuntar previa: No · Éxito · Crítico). La app no comprueba que se apuntara de verdad ni que el ataque sea antes del final del próximo turno: lo marca el jugador. | La regla de Apuntar (fuente/habilidades.md) da el bono al siguiente ataque; la app no lleva registro de acciones por turno. Decisión del usuario (2026-10-23). |

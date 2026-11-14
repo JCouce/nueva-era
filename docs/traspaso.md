@@ -196,8 +196,9 @@ Lo que de verdad falta es superficie de UI dedicada y un puñado de campos nuevo
 diferencia del resto de la ficha, estos los concede el máster, no el jugador: si vivieran
 en el mismo `stats` que escribe el autosave del jugador, el criterio de permiso de esa
 acción ("dueño o máster") dejaría al jugador con una vía, aunque fuera por bug, de tocar un
-recurso que no es suyo. De ahí `adjustXpAction`/`adjustCreditosAction` en
-`app/master/actions.ts`, con `role === 'MASTER'` comprobado solo ahí.
+recurso que no es suyo. De ahí `darXpAction`/`darCreditosAction` en `app/master/actions.ts`
+(la pestaña Recompensas de la Mesa, el único sitio desde td-19), con `role === 'MASTER'`
+comprobado solo ahí.
 
 Aprobar bloquea **bajar** Atributos y Habilidades, no el resto de la ficha (Identidad,
 Equipo, narrativa siguen editables). Al aprobar se congela una foto de esos dos bloques

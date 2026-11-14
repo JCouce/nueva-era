@@ -15,6 +15,7 @@ import {
   type RecursoInstancia,
   type MaterialTier,
   fatigaEfectiva,
+  textoDescanso,
   type CategoriaDanio,
   type DanioVida,
 } from "@/lib/rules";
@@ -93,10 +94,7 @@ export function RecursosTab({
   onLiberarUsoEscena?: (id: string) => void;
 }) {
   const sheet = ficha.ficha;
-  // TODO(revisar) E1b: este máximo lleva todos los estados (FichaResuelta) y el clamp de
-  // ajustarVida/ajustarFatiga (vitalidad.ts, también en el servidor) solo los activables de
-  // aumento (A5b, topesDeVida): puede verse "actual > máximo" curando con un estado del
-  // máster que baje Fortaleza/Voluntad (S74).
+  // El máximo con todos los estados: el mismo al que topan curar y el recorte (topesDeVida, td-12).
   const { vida, fatiga } = ficha.salud;
   // Solo los tipos que ya se poseen (docs/tareas.md, 2026-09-27) — para
   // descubrir/comprar tipos nuevos ya está Tienda, que es donde se compran
@@ -180,6 +178,7 @@ export function RecursosTab({
         actual={sheet.fatigaActual}
         max={fatiga}
         tono="info"
+        nota={textoDescanso()}
         onAjustar={onAjustarFatiga}
       />
       {onAjustarFatigaTemporal &&
@@ -383,6 +382,7 @@ function EstadoCard({
   tono,
   danio,
   apagada = null,
+  nota,
   onAjustar,
 }: {
   titulo: string;
@@ -390,6 +390,8 @@ function EstadoCard({
   max: number;
   tono: TonoVital;
   danio?: DanioVida;
+  // Línea informativa bajo la barra (Fatiga: lo que recuperan descansos y comidas, au-03).
+  nota?: string;
   // La pieza del recurso apagada por el Shock (motivoPiezaApagada): atenuada, sin ajustes.
   apagada?: string | null;
   onAjustar: (delta: number) => void;
@@ -397,6 +399,7 @@ function EstadoCard({
   return (
     <HudCard className={`p-3 ${apagada ? "border-dashed opacity-60" : ""}`}>
       <BarraVital label={titulo} actual={actual} max={max} tono={tono} danio={danio} />
+      {nota && <p className="mt-1 font-mono text-[10px] text-muted">{nota}</p>}
       <MotivoApagada motivo={apagada} />
       <div className="mt-2 flex items-center gap-1.5">
         <BotonDelta onClick={() => onAjustar(-1)} disabled={Boolean(apagada) || actual <= 0}>

@@ -2,6 +2,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { migrar, MIGRACIONES } from "./migraciones";
 import { parseSheet, SCHEMA_VERSION } from "./sheet";
+import { reconciliarVidaConEstados } from "./vitalidad";
 import { ARMAS } from "../catalog/armasFuego";
 
 describe("cadena de migraciones", () => {
@@ -490,10 +491,12 @@ describe("v22 → v23: daño de vida por categoría", () => {
 
   test("una ficha vieja con vida perdida la lee como letal", () => {
     // Atributos a 0: vida máxima 10.
+    // parseSheet no rellena hasta la vida perdida (no conoce los estados, td-12); la lectura exacta
+    // con los estados (reconciliarVidaConEstados) pone lo que falta como letal.
     const s = parseSheet({ schemaVersion: 22, vidaActual: 4 });
     assert.equal(s.schemaVersion, SCHEMA_VERSION);
     assert.equal(s.vidaActual, 4);
-    assert.deepEqual(s.danio, { noLetal: 0, letal: 6, grave: 0 });
+    assert.deepEqual(reconciliarVidaConEstados(s, []).danio, { noLetal: 0, letal: 6, grave: 0 });
   });
 
   test("una ficha vieja a tope no ha perdido nada", () => {

@@ -115,33 +115,6 @@ export async function revertToDraftAction(formData: FormData) {
   revalidateCharacterViews(ctx.character.id);
 }
 
-// xp y créditos son recursos que solo concede el máster — por eso viven aquí y
-// no en el autosave de la ficha (@/app/characters/[id]/actions.ts), que el
-// propio jugador puede disparar. Los botones de siempre (MasterControls), con su
-// entrada en el registro (E1b) como las acciones tipadas de abajo. Quitar más de lo
-// que tiene no hace nada (aquí no hay dónde enseñar el porqué; la Mesa sí lo dice).
-async function adjustResource(
-  formData: FormData,
-  field: "xp" | "creditos",
-): Promise<void> {
-  const user = await requireMaster();
-  if (!user) return;
-  const id = String(formData.get("id") ?? "");
-  const delta = Number(formData.get("delta") ?? "0");
-  if (!id || !Number.isInteger(delta) || delta === 0) return;
-
-  await ajustarRecursoDePersonajes([id], field, delta, { userId: user.id });
-  revalidateCharacterViews(id);
-}
-
-export async function adjustXpAction(formData: FormData) {
-  return adjustResource(formData, "xp");
-}
-
-export async function adjustCreditosAction(formData: FormData) {
-  return adjustResource(formData, "creditos");
-}
-
 // --- Registro del máster (E1b) ---
 
 export type RegistroResult = { ok: true } | { ok: false; error: string };

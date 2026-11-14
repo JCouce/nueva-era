@@ -175,6 +175,8 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_microprocesador_cuantico_de_enlace 2": 2,
     "aum_microprocesador_cuantico_de_enlace 3": 2,
     "aum_microprocesador_cuantico_de_enlace 4": 2,
+    // au-07: la casilla «Sobre ti mismo» en Tratar heridas y en los fármacos, y la nota para quien te cura.
+    "aum_enjambre_nanobot 1": 3,
     "aum_enjambre_nanobot 2": 2, // Sanar letal y Sanar grave (contador de 5 pulsaciones, usuario 2026-10-28)
     // A4b: Incorporar arma, Tempestad Nanobótica y su nota del blindaje del objetivo.
     "aum_enjambre_nanobot 4": 2,

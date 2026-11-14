@@ -61,9 +61,9 @@ function restar(actual: number, bajada: number, tope: number | null = null): { a
 // activable la vida actual queda por encima del máximo nuevo, se recorta a él (como
 // retirarPieza/reconciliarVida al desequipar). Igual la fatiga y las fotos. Solo cuando cambian
 // los activables: un estado normal sigue con S75 y no toca la vida que esté por encima del
-// máximo por otra vía (S74). Lo recortado cuenta como restado (deshacer lo devuelve).
-// La ficha se recorta a su tope (topesDeVida: reposo más los activables que queden, el mismo
-// al que cura); la foto, a su máximo con todos los estados, que es el suyo.
+// máximo por otra vía. Lo recortado cuenta como restado (deshacer lo devuelve).
+// La ficha se recorta a su tope (topesDeVida: el máximo que se ve con los estados que queden, el
+// mismo al que cura, td-12); la foto, a su máximo con todos los estados, que es el suyo.
 const sinActivables = (estados: EstadoActivo[]) => estados.filter((e) => !esEstadoDeAumento(e.estadoId));
 const claveActivables = (estados: readonly EstadoActivo[]) =>
   estados
@@ -136,7 +136,7 @@ export function fotoTrasCambioDeFicha<T extends FotoConMaximos>(foto: T, antes: 
 }
 
 // Devolver lo restado (deshacer): sube hasta el máximo, nunca baja. Si la actual ya
-// está por encima del máximo (curó en reposo, S74), se queda como está.
+// está por encima del máximo (una ficha de antes de td-12, que curaba en reposo), se queda como está.
 export function devolverVida(actual: number, devuelta: number, max: number): number {
   return Math.max(actual, Math.min(max, actual + devuelta));
 }

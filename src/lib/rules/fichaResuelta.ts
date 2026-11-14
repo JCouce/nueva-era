@@ -48,7 +48,6 @@ import {
   armaduraNaturalDeEspecie,
   bolsaDeAumentos,
   casillasDeEspecie,
-  especieDeFicha,
   excepcionesRareza,
   fallosCriticosDeEspecie,
   formulaMovimientoDeEspecie,
@@ -95,14 +94,10 @@ import {
   type IndiceCondiciones,
 } from "./equipo";
 import { casillasDeFarmacos } from "./farmacos";
-import { inmunidadesDe } from "./inmunidades";
 import {
   ajusteUmbralesDeEstabilizado,
   describirEstados,
-  estabilizacionPuesta,
-  estadosConEfecto,
   estadosDerivados,
-  modificadoresDeEstados,
   modificadoresDeUmbrales,
   movimientoPorUmbrales,
   penalizadoresDeUmbral,
@@ -121,19 +116,17 @@ import {
 } from "./estados";
 import { casillasDePsionica, levitacion, type PoderDisponible } from "./poderes";
 import { fatigaEfectiva, fatigaEnJuego } from "./vitalidad";
+import { baseDeFicha, modificadoresDeBase } from "./baseFicha";
 import { accionesDeMovimiento } from "./movimiento";
 import { alcanzaA, descartadosPorNoApila, type AlcanceModificador, type ModificadorConFuente } from "./modificadores";
 import { aplicadosPosibles, conTextosDeFicha, contextoDe, junta, textosDe, textosSinDado, type ObjetivoEnTirada } from "./textosTirada";
 import {
-  afectacionDePiezas,
   bonoConShock,
   conMarcaDeReglaPropia,
-  conShockEnModificadores,
   etiquetaShock,
   MARCA_SHOCK,
   motivoApagada,
   piezasDeEstado,
-  piezasEnUso,
   type PiezaConReglaPropia,
   type PiezaPenalizada,
 } from "./shock";
@@ -401,25 +394,21 @@ export function resolverFicha(
   sheet: Sheet,
   { estados, vitalidad, libre = false, aprobada = false, mesa = null }: OpcionesFicha,
 ): FichaResuelta {
-  const especie = especieDeFicha(sheet);
-  const formulaMovimiento = formulaMovimientoDeEspecie(especie);
-  const multiplicadorCarga = multiplicadorCargaDeEspecie(especie);
-  // Shock (S73, rules/shock.ts): lo que aportan las piezas lo pone la ficha sin las apagadas.
-  // Los requisitos de dote, las dotes y lo que es del personaje (atributos, psiónica, fármacos)
-  // miran la ficha entera.
+  // Shock, activables, inmunidades y estados con efecto (baseDeFicha, rules/baseFicha.ts): lo mismo
+  // que lee el tope de curar (topesDeVida, td-12). Lo que aportan las piezas lo pone la ficha sin
+  // las apagadas (`enUso`). Los requisitos de dote, las dotes y lo que es del personaje (atributos,
+  // psiónica, fármacos) miran la ficha entera.
   // TODO(revisar): la fuente psiónica de un implante apagado (IRM) sigue dando acceso, y
   // prepararPoder lee la ficha entera (cargas y alcance de una Derivación Psiónica apagada).
-  // Las de regla propia (`alShock`, eq-29) no se apagan ni llevan −N: la de `comoNivel` entra en
-  // `enUso` con ese nivel (piezasEnUso) y las salvaciones de `salvacionesA` las cambia el selector
-  // «Contra…» (casillasDeAumentos con `afectacion`, conShockEnSalvaciones).
-  const afectacion = afectacionDePiezas(sheet, estados);
-  const enUso = piezasEnUso(sheet, afectacion);
-  const deAumentos = modificadoresDeAumentos(enUso);
-  // Activables encendidos (A5a): estado propio puesto y pieza que funciona. Sus atributos van con
-  // origen "estado" y no entran en requisitosDotes (R3, S30).
-  const activables = efectosDeActivables(enUso, estados);
-  // A7: lo puesto antes de ganar la inmunidad sigue en la lista pero no hace nada.
-  const inmunidades = inmunidadesDe(enUso);
+  // Las salvaciones de `salvacionesA` (eq-29) las cambia el selector «Contra…» (casillasDeAumentos
+  // con `afectacion`, conShockEnSalvaciones).
+  const base = baseDeFicha(sheet, estados);
+  const { especie, afectacion, enUso, inmunidades, estabilizado } = base;
+  const conEfecto = base.conEfecto;
+  // Los atributos de los activables van con origen "estado" y no entran en requisitosDotes (R3, S30).
+  const activables = base.activables;
+  const formulaMovimiento = formulaMovimientoDeEspecie(especie);
+  const multiplicadorCarga = multiplicadorCargaDeEspecie(especie);
   const requisitosDotes = valoresDeRequisito(sheet, modificadoresDeRequisito(sheet, especie?.modificadores ?? []));
   // Lo que ponen las dotes en las tiradas (§9.3, D2a). Sin las de requisito roto (S34);
   // en modo libre (NPC del máster) sin mirar requisitos (§9.4).
@@ -427,24 +416,7 @@ export function resolverFicha(
   const activas = dotesActivas(sheet, valoresDotes);
   // Los bonos con umbral (D2d) miran la ficha con la especie también en el NPC.
   const dotes = efectosDeDotes(activas, valoresDotes, requisitosDotes);
-  const conEfecto = estadosConEfecto(estados, inmunidades);
-  // Estabilizado (Estabilización, mitigar): reduce los estados que tenía al ponérselo y, desde
-  // nv4, quita heridas y fatiga.
-  const estabilizado = estabilizacionPuesta(conEfecto);
-  // = [...modificadoresActivos(sheet), ...estados], sin volver a resolver la especie. Los bonos de
-  // las piezas penalizadas por el Shock, ya con su −N (conShockEnModificadores): el punto único
-  // por el que atributos, aplicados, derivados y tiradas los leen reducidos.
-  const sinTope: ModificadorConFuente[] = conShockEnModificadores(
-    [
-      ...(especie?.modificadores ?? []),
-      ...dotes.modificadores,
-      ...modificadoresDeEquipo(enUso),
-      ...deAumentos,
-      ...modificadoresDeEstados(conEfecto, activables.reduceEstados, estabilizado),
-      ...activables.modificadores,
-    ],
-    afectacion.penalizadas,
-  );
+  const sinTope: ModificadorConFuente[] = modificadoresDeBase(base, dotes.modificadores);
   // Tope de Agilidad de la armadura (S93): detrás de todo lo demás, para que aplicados,
   // movimiento y tiradas usen ya la Agilidad topada.
   const tope = topeAgilidadAplicado(sheet, sinTope);

@@ -46,8 +46,8 @@ import { esEstadoDeAumento, estadoPorId } from "../catalog/estados";
 // Lo que hace la acción además de cobrar:
 //   estado  quita el estado (`a: null`) o lo pasa a otro grado, solo si la ficha lo tiene (y en
 //           el grado `desde`, si lo trae). Sin él, la acción se cobra igual (usuario, 2026-10-22).
-//   vida    suma a la vida actual, sin pasar del máximo en reposo más los activables puestos
-//           (ajustarVida con los estados, A5b).
+//   vida    suma a la vida actual, sin pasar del máximo que se ve (ajustarVida con los
+//           estados: los activables puestos, A5b, y los del máster, td-12).
 //   activar    (A5a) pone el estado propio del aumento con esa duración; con `eleccion`, el
 //              grado es lo elegido en el modal (Neuroprótesis 2: a qué va el +2); sin ella,
 //              "activo". Si ya estaba, lo sustituye (renueva la duración).

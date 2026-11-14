@@ -405,7 +405,8 @@ function devolverVidaFicha(sheet: Sheet, devuelta: ParVida, maximos: ParVida): S
 // --- Vida y fatiga (pestaña Vida) ---
 
 // Un objetivo de la pestaña Vida tal como está ahora: valor actual y hasta dónde puede
-// subir (máximo en reposo en la ficha, S74; pgMax/fatigaMax en la foto). `danio`: el
+// subir (en la ficha, el máximo que se ve con sus estados, topesDeVida, td-12; pgMax/fatigaMax en
+// la foto). `danio`: el
 // desglose de la vida perdida contra `tope` (solo recurso vida).
 export type ObjetivoVidaActual = {
   objetivo: ObjetivoVida;

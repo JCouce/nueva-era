@@ -125,8 +125,25 @@ describe("parseSheet y el desglose", () => {
     const s = parseSheet({ ...defaultSheet(), vidaActual: 10, danio: { noLetal: -3, letal: "x", grave: 2.4 } });
     // grave 2 sobra (no ha perdido vida): se quita.
     assert.deepEqual(s.danio, d(0, 0, 0));
+    // Lo que falta hasta la vida perdida ya no lo rellena parseSheet (no conoce los estados, y el
+    // tope puede ser más bajo que el de reposo, td-12): lo pone como letal la lectura exacta.
     const h = parseSheet({ ...defaultSheet(), vidaActual: 5, danio: { noLetal: 2, grave: 1 } });
-    assert.deepEqual(h.danio, d(2, 2, 1));
+    assert.deepEqual(h.danio, d(2, 0, 1));
+    assert.deepEqual(reconciliarVidaConEstados(h, []).danio, d(2, 2, 1));
+  });
+
+  test("con un estado del máster que baja el máximo no se come el no letal (td-12)", () => {
+    // Fuerza 2 y Aguante 2 (vida 12); Enfermedad 2 baja la vida máxima. Curado hasta el máximo que
+    // se ve menos 2 de no letal: guardado contra ese tope, la lectura lo deja como estaba.
+    const base = defaultSheet();
+    const s: Sheet = { ...base, atributos: { ...base.atributos, fuerza: 2, aguante: 2 } };
+    const enf: EstadoActivo = { estadoId: "enfermedad", gradoId: "nivel_2", rondasRestantes: null };
+    const visto = resolverFicha(s, { estados: [enf], vitalidad: VITALIDAD_DE_FICHA }).salud.vida;
+    assert.ok(visto < topesDeVida(s).vida, "el estado baja el máximo");
+    const guardada = { ...s, vidaActual: visto - 2, danio: d(2, 0, 0) };
+    const leida = reconciliarVidaConEstados(parseSheet(JSON.parse(JSON.stringify(guardada))), [enf]);
+    assert.equal(leida.vidaActual, visto - 2);
+    assert.deepEqual(leida.danio, d(2, 0, 0));
   });
 
   test("con un activable equipado no se come el no letal (rango, no normalización contra el posible)", () => {

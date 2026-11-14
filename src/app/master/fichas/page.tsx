@@ -5,11 +5,12 @@ import { requireUser } from "@/lib/auth-helpers";
 import { AppHeader } from "@/components/AppHeader";
 import { HudCard } from "@/components/HudCard";
 import { MasterTabs } from "@/components/MasterTabs";
-import { StatusControl, ResourceRow } from "../MasterControls";
+import { StatusControl } from "../MasterControls";
 import { NO_BORRADA } from "@/lib/borrado";
 
 // La lista de fichas del máster (antes en /master, que desde E1c es la Mesa): en
-// revisión, en creación y en juego, con aprobar, devolver y revertir.
+// revisión, en creación y en juego, con aprobar, devolver y revertir. La XP y los créditos
+// no se tocan aquí: van por la Mesa, pestaña Recompensas (td-19).
 export default async function FichasPage() {
   const user = await requireUser();
   if (user.role !== "MASTER") redirect("/characters");
@@ -57,7 +58,7 @@ export default async function FichasPage() {
             <ul className="flex flex-col gap-2">
               {s.fichas.map((c) => (
                 <li key={c.id}>
-                  <HudCard className="flex flex-col gap-3 px-4 py-3">
+                  <HudCard className="px-4 py-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <Link href={`/characters/${c.id}`} className="flex-1">
                         <span className="font-display text-base font-medium uppercase tracking-wide">
@@ -69,7 +70,6 @@ export default async function FichasPage() {
                       </Link>
                       <StatusControl characterId={c.id} status={c.status} />
                     </div>
-                    <ResourceRow characterId={c.id} xp={c.xp} creditos={c.creditos} />
                   </HudCard>
                 </li>
               ))}

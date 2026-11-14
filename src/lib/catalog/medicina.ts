@@ -24,6 +24,11 @@ import type { MotorMetadata } from "../rules/motor";
 import type { AlcanceModificador, Modificador } from "../rules/modificadores";
 import type { CondicionTirada, OpcionCondicion } from "../rules/condiciones";
 
+// «No se apila con aumentos tecnológicos de nanomedicina» (Nano-Elixir; au-07, usuario
+// 2026-11-14): grupo `noApila` del +5 de su fila «Usar Nano-Elixir» (rules/farmacos.ts) y de la
+// casilla «Sobre ti mismo» del Enjambre Nanobot 1 (catalog/aumentos.ts). Vale el mayor.
+export const NO_APILA_NANOMEDICINA = "nanomedicina";
+
 // docs/motor.md: el bono de aplicación de la VTM ya está mecanizado como
 // Modificador tipo "tirada" con alcance a la tirada fija "medicina" — mismo
 // MotorMetadata en los 4 niveles, solo cambia `valor` (que no forma parte de
@@ -518,7 +523,8 @@ export const FARMACOS: Consumible[] = [
     aplicacion: { base: "compleja" },
     modificadores: [],
     // R9 (2026-10-24): el +5 ya va sumado en su fila "Usar Nano-Elixir" (ajustesFijos,
-    // rules/farmacos.ts) — numérico construido, no narrativo.
+    // rules/farmacos.ts) — numérico construido, no narrativo. au-07: con el grupo
+    // NO_APILA_NANOMEDICINA, así que con la casilla del Enjambre Nanobot vale el mayor.
     motor: [
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "farmaco_farmaco_nano_elixir" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "farmaco_farmaco_nano_elixir" }, mecanismo: "ajuste_fijo", estado: "construido" },

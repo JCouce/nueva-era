@@ -8,24 +8,27 @@
 // Deliberadamente fuera de este cambio: el snapshot de PG/fatiga que lleva
 // `Combatiente` en Fase 6b (master/combate) sigue igual — esto es para fuera
 // de combate (la ficha, RecursosTab), no sustituye esa foto.
-import { activosDeAumentos, efectosDeActivables } from "./aumentosActivables";
-import { modificadoresActivos, salud } from "./derivados";
+import { activosDeAumentos } from "./aumentosActivables";
+import { baseDeFicha, modificadoresDeBase } from "./baseFicha";
+import { salud } from "./derivados";
 import { desequipar } from "./equipo";
 import type { EstadoActivo } from "./estados";
 import type { Sheet } from "./sheet";
 import { acotarDanio, ajustarDanioVital, danioIgual, normalizarDanio, type CategoriaDanio, type DanioVida } from "./danio";
 import { estadoPorId } from "../catalog/estados";
+import { DESCANSO } from "../catalog/descanso";
 
 export type TopesVida = { vida: number; fatiga: number };
 
-// Tope de la vida y la fatiga actuales: el máximo en reposo (especie + equipo) más lo que
-// suban los activables de aumento puestos (A5b, usuario 2026-10-22: "con la Neuroprótesis
-// puesta el máximo real es 9 y tienes que poder curarte hasta 9"). Los estados que pone el
-// máster no cuentan: con ellos sigue S74 (curar topa en reposo; lo que bajan es S75). Sin
-// `estados`, el máximo en reposo de siempre.
+// Tope de la vida y la fatiga actuales: el máximo que se ve (td-12, usuario 2026-11-14), el mismo
+// que FichaResuelta.salud. Con todos los estados: los activables de aumento lo suben (A5b, "con la
+// Neuroprótesis puesta el máximo real es 9 y tienes que poder curarte hasta 9") y los del máster
+// que bajan la Fortaleza o la Voluntad lo bajan: curar no pasa de ahí (antes topaba en reposo,
+// S74, y podía verse «14 de 12»). Al quitarse el estado el máximo sube y la vida no (S75). Sale de
+// la misma base que resolverFicha (baseFicha.ts: Shock, inmunidades, Estabilizado); sin las dotes,
+// que solo dan bonos de tirada. Sin `estados`, el máximo en reposo de siempre.
 export function topesDeVida(sheet: Sheet, estados: readonly EstadoActivo[] = []): TopesVida {
-  const activables = efectosDeActivables(sheet, estados).modificadores;
-  return salud(sheet, [...modificadoresActivos(sheet), ...activables]);
+  return salud(sheet, modificadoresDeBase(baseDeFicha(sheet, [...estados])));
 }
 
 // El tope más alto que podrían dar los activables equipados (cada estado propio, puesto o no,
@@ -77,21 +80,20 @@ function conDanio(sheet: Sheet, danio: DanioVida): Sheet {
 }
 
 // Lo que hace parseSheet en cada lectura: recortar al tope posible (topesPosibles). El
-// centinela 999 de una ficha nueva cae aquí a un número de verdad (antes de mirar el daño:
-// con la vida ya recortada, una ficha nueva no ha perdido nada).
-// El desglose del daño no se normaliza del todo: sin los estados, el tope de verdad está entre
-// el de reposo y el posible (Neuroprótesis, A5b). Se acota a ese rango —lo que falte hasta la
-// pérdida en reposo es letal; lo que pase de la pérdida con el tope posible se quita de lo más
-// leve— y el ajuste exacto lo hace reconciliarVidaConEstados. Normalizar aquí contra el posible
-// y luego contra el exacto se comería el no letal (sobraría y se quitaría lo más leve).
+// centinela 999 de una ficha nueva cae aquí a un número de verdad.
+// El desglose del daño no se normaliza: sin los estados no se sabe el tope de verdad, que puede
+// estar por encima del de reposo (Neuroprótesis, A5b) o por debajo (un estado del máster que baja
+// la Fortaleza, td-12). Solo se quita lo que pase de la pérdida con el tope posible (de lo más
+// leve); lo que falte lo pone como letal la normalización exacta (reconciliarVidaConEstados, o
+// la de resolverFicha al pintar). Rellenar aquí hasta la pérdida en reposo y luego normalizar
+// contra un tope más bajo se comería el no letal (sobraría y se quitaría lo más leve).
 export function reconciliarVidaAlLeer(sheet: Sheet): Sheet {
   const posibles = topesPosibles(sheet);
   const vidaActual = Math.min(sheet.vidaActual, posibles.vida);
   const fatigaActual = Math.min(sheet.fatigaActual, posibles.fatiga);
-  const reposo = topesDeVida(sheet).vida;
   return conDanio(
     vidaActual === sheet.vidaActual && fatigaActual === sheet.fatigaActual ? sheet : { ...sheet, vidaActual, fatigaActual },
-    acotarDanio(sheet.danio, reposo - vidaActual, posibles.vida - vidaActual),
+    acotarDanio(sheet.danio, 0, posibles.vida - vidaActual),
   );
 }
 
@@ -104,15 +106,16 @@ export function retirarPieza(sheet: Sheet, instanciaId: string, estados: readonl
   return reconciliarVidaConEstados(desequipar(sheet, instanciaId), estados);
 }
 
-// El recorte exacto: al tope con los activables puestos (topesDeVida). Lo usan las lecturas
-// que conocen Character.estados (la ficha, loadEditable, la Mesa, el combate).
+// El recorte exacto: al tope con los estados (topesDeVida, el máximo que se ve). Lo usan las
+// lecturas que conocen Character.estados (la ficha, loadEditable, la Mesa, el combate).
 export function reconciliarVidaConEstados(sheet: Sheet, estados: readonly EstadoActivo[]): Sheet {
   return reconciliarVida(sheet, topesDeVida(sheet, estados));
 }
 
 // Delta manual (+/-), clamp [0, topesDeVida] — mismo patrón que ajustarRecurso() en
-// recursos.ts. `estados`: los del personaje (con la Neuroprótesis puesta se cura hasta su
-// máximo, A5b); sin ellos, el máximo en reposo. Sin categoría: el daño entra como letal y la
+// recursos.ts. `estados`: los del personaje (se cura hasta el máximo que se ve: con la
+// Neuroprótesis puesta, el suyo, A5b; con un estado que baja la Fortaleza, el bajado, td-12);
+// sin ellos, el máximo en reposo. Sin categoría: el daño entra como letal y la
 // cura quita lo más leve primero (normalizarDanio).
 export function ajustarVida(sheet: Sheet, delta: number, estados: readonly EstadoActivo[] = []): Sheet {
   if (!Number.isFinite(delta)) return sheet;
@@ -142,6 +145,13 @@ export function ajustarFatiga(sheet: Sheet, delta: number, estados: readonly Est
   const fatigaActual = vidaTrasAjuste(sheet.fatigaActual, topesDeVida(sheet, estados).fatiga, delta);
   if (fatigaActual === sheet.fatigaActual) return sheet;
   return { ...sheet, fatigaActual };
+}
+
+// La línea informativa bajo la barra de Fatiga (au-03): lo que recuperan un descanso breve y una
+// comida, sacado de DESCANSO. Solo informa: la fatiga se ajusta a mano (au-02).
+export function textoDescanso(): string {
+  const { breve, comida } = DESCANSO;
+  return `Descanso breve (${breve.minutos} min, ${breve.porDia} al día): +${breve.fatiga} · Comida (${comida.porDia} al día): +${comida.fatiga}`;
 }
 
 // ── Fatiga temporal (Proeza) ───────────────────────────────────────

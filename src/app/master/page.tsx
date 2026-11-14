@@ -90,8 +90,8 @@ async function cargarMesa() {
       },
       propias,
     );
-    // Hasta dónde cura la pestaña Vida: la foto, a su máximo; la ficha, al de reposo (S74)
-    // más los activables puestos (A5b).
+    // Hasta dónde cura la pestaña Vida: la foto, a su máximo; la ficha, al que se ve con sus
+    // estados (topesDeVida, td-12), el mismo que `mostrada`.
     const tope = mostrada.deCombate
       ? { vida: mostrada.vida.max, fatiga: mostrada.fatiga.max }
       : topesDeVida(sheet, estados);

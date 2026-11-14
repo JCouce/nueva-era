@@ -1,10 +1,18 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { defaultSheet } from "./sheet";
+import { defaultSheet, type Sheet } from "./sheet";
 import { modificadoresActivos, salud } from "./derivados";
+import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { aplicarOperacionEstado } from "./vidaPorEstados";
+import { usoDeAccionAumento } from "./aumentosAcciones";
+import { previaAjusteVida } from "./ajusteVida";
+import type { EstadoActivo } from "./estados";
 import {
   reconciliarVida,
+  reconciliarVidaConEstados,
+  topesDeVida,
   ajustarVida,
+  ajustarDanioCategoria,
   ajustarFatiga,
   vitalidadAlEntrarEnCombate,
   vitalidadAlSalirDeCombate,
@@ -73,6 +81,76 @@ describe("ajustarFatiga", () => {
     assert.equal(ajustarFatiga(s, -10).fatigaActual, 0);
     assert.equal(ajustarFatiga(s, 10).fatigaActual, 10);
     assert.equal(ajustarFatiga(s, -2).fatigaActual, 8);
+  });
+});
+
+describe("curar hasta el máximo que se ve (td-12)", () => {
+  // Fuerza 2, Aguante 2, Carácter 2: vida y fatiga por encima de 10. Enfermedad 2 (−2 a Fuerza y
+  // Aguante) baja las dos; la Neuroprótesis (implante) puesta, +1 a Fuerza; el Shock con fracaso
+  // crítico la apaga.
+  const base = defaultSheet();
+  const s: Sheet = {
+    ...base,
+    atributos: { ...base.atributos, fuerza: 2, aguante: 2, caracter: 2 },
+    equipo: [{ instanciaId: "neuro", catalogoId: "aum_neuroprotesis_simpatica", nivel: 1 }],
+  };
+  const ENF2: EstadoActivo = { estadoId: "enfermedad", gradoId: "nivel_2", rondasRestantes: null };
+  const NEURO: EstadoActivo = { estadoId: "aum_neuroprotesis", gradoId: "activo", rondasRestantes: 3 };
+  const SHOCK: EstadoActivo = { estadoId: "shock", gradoId: "fracaso_critico", rondasRestantes: 1 };
+  const visto = (estados: EstadoActivo[]) => resolverFicha(s, { estados, vitalidad: VITALIDAD_DE_FICHA }).salud;
+  const reposo = topesDeVida(s);
+  const bajado = visto([ENF2]);
+
+  test("el tope es el máximo que pinta la ficha, con cualquier estado", () => {
+    assert.ok(bajado.vida < reposo.vida && bajado.fatiga < reposo.fatiga, "la Enfermedad baja los dos máximos");
+    for (const estados of [[], [ENF2], [NEURO], [ENF2, NEURO], [NEURO, SHOCK], [ENF2, NEURO, SHOCK]]) {
+      assert.deepEqual(topesDeVida(s, estados), visto(estados), JSON.stringify(estados.map((e) => e.estadoId)));
+    }
+  });
+
+  test("curar vida y fatiga no pasa del máximo bajado por el estado", () => {
+    const herido = { ...s, vidaActual: 1, fatigaActual: 1 };
+    assert.equal(ajustarVida(herido, 99, [ENF2]).vidaActual, bajado.vida);
+    assert.equal(ajustarFatiga(herido, 99, [ENF2]).fatigaActual, bajado.fatiga);
+    const porCategoria = ajustarDanioCategoria({ ...herido, danio: { noLetal: reposo.vida - 1, letal: 0, grave: 0 } }, "noLetal", -99, [ENF2]);
+    assert.equal(porCategoria.vidaActual, bajado.vida);
+    // Sin estados, el de reposo de siempre.
+    assert.equal(ajustarVida(herido, 99).vidaActual, reposo.vida);
+  });
+
+  test("Sanar letal del Enjambre también topa en el máximo que se ve", () => {
+    const e: Sheet = {
+      ...s,
+      equipo: [...s.equipo, { instanciaId: "enj", catalogoId: "aum_enjambre_nanobot", nivel: 2 }],
+      vidaActual: bajado.vida,
+      fatigaActual: 5,
+    };
+    const r = usoDeAccionAumento(e, [ENF2], "aumentos_enjambre_sanar_letal");
+    assert.ok(r.ok);
+    assert.equal(r.sheet.vidaActual, bajado.vida);
+  });
+
+  test("la vista previa de la pestaña Vida usa ese mismo tope", () => {
+    const p = previaAjusteVida({ actual: 1, max: bajado.vida, tope: topesDeVida(s, [ENF2]).vida }, "vida", 99);
+    assert.equal(p.despues, bajado.vida);
+  });
+
+  test("una vida guardada por encima («14 de 12») se recorta al leerla con sus estados", () => {
+    const encima = { ...s, vidaActual: reposo.vida, fatigaActual: reposo.fatiga };
+    const leida = reconciliarVidaConEstados(encima, [ENF2]);
+    assert.equal(leida.vidaActual, bajado.vida);
+    assert.equal(leida.fatigaActual, bajado.fatiga);
+  });
+
+  test("al quitarse el estado sube el máximo, no la vida", () => {
+    const curado = { ...s, vidaActual: bajado.vida, fatigaActual: bajado.fatiga };
+    const r = aplicarOperacionEstado({ id: "p", sheet: curado, estados: [ENF2] }, { tipo: "quitar", estadoId: "enfermedad" });
+    assert.ok(r);
+    assert.equal(r.vida.sheet.vidaActual, bajado.vida);
+    assert.equal(r.vida.sheet.fatigaActual, bajado.fatiga);
+    assert.deepEqual(r.vida.maximos, reposo);
+    // Y ya se puede curar hasta el de reposo.
+    assert.equal(ajustarVida(r.vida.sheet, 99, r.estados).vidaActual, reposo.vida);
   });
 });
 

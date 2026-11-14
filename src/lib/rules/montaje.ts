@@ -198,12 +198,14 @@ function conFalloCritico(margenes: TiradaMontada["margenes"], fuente: string | n
 }
 
 // No apilamiento (A2a, `noApila`): de lo que entra en la tirada con el mismo grupo (bonos con
-// alcance, casillas marcadas y bonos por tramo en el tramo elegido) solo vale el mayor. Los
+// alcance, casillas marcadas, bonos por tramo en el tramo elegido y ajustes fijos: el +5 del
+// Nano-Elixir frente al Enjambre Nanobot, au-07) solo vale el mayor. Los
 // demás se quedan en el desglose a 0, diciendo con cuál no se suman: nada desaparece.
 // `incluidos` (Accion.yaIncluidos, td-06): lo del grupo que ya va en los números de la tirada
 // (la mira de serie del fusil de precisión). No suma; el mayor del grupo aporta solo lo que lo
 // supera, y lo dice en su etiqueta.
-type Entradas = { mods: ModificadorConFuente[]; condiciones: CondicionTirada[]; bonosTramo: BonoPorTramo[] };
+type AjusteFijo = NonNullable<Accion["ajustesFijos"]>[number];
+type Entradas = { mods: ModificadorConFuente[]; condiciones: CondicionTirada[]; bonosTramo: BonoPorTramo[]; ajustes: AjusteFijo[] };
 
 function sinApilar(e: Entradas, ctx: ContextoAccion, estado: EstadoCondiciones, incluidos: readonly BonoPorTramo[] = []): Entradas {
   type Aporte = { grupo: string | undefined; valor: number; fuente: string; ref: unknown };
@@ -219,6 +221,7 @@ function sinApilar(e: Entradas, ctx: ContextoAccion, estado: EstadoCondiciones, 
         ? [{ grupo: b.noApila, valor: valorBonoTramo(b, estado), fuente: b.fuente, ref: b }]
         : [],
     ),
+    ...e.ajustes.flatMap((a): Aporte[] => (a.noApila ? [{ grupo: a.noApila, valor: a.valor, fuente: a.fuente, ref: a }] : [])),
   ];
   const fuera = descartadosPorNoApila(aportes, (a) => a.grupo, (a) => a.valor);
   // Lo ya incluido de cada grupo (el mayor, si hay varios) en lo elegido ahora.
@@ -249,6 +252,10 @@ function sinApilar(e: Entradas, ctx: ContextoAccion, estado: EstadoCondiciones, 
     bonosTramo: e.bonosTramo.map((b) => {
       const r = porRef.get(b);
       return r ? { ...b, porTramo: { [String(estado[b.condicion ?? "tramo"])]: r.valor }, fuente: `${b.fuente} (${r.nota})` } : b;
+    }),
+    ajustes: e.ajustes.map((a) => {
+      const r = porRef.get(a);
+      return r ? { ...a, valor: r.valor, fuente: `${a.fuente} (${r.nota})` } : a;
     }),
   };
 }
@@ -387,7 +394,6 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
   const { sutil, circunstancial } = eleccion;
   const estado = sinBloqueadas(tirada.condiciones ?? [], eleccion.estadoCondiciones);
   const enEspecialidad = enEspecialidadEfectiva(ficha.ficha, tirada);
-  const ajustesFijos = tirada.ajustesFijos ?? [];
   // El aplicado con el que se tira de verdad. Una casilla que lo cambia (Negociación
   // Analítica) manda sobre el estilo Sutil.
   const otroAplicado = (tirada.condiciones ?? []).find(
@@ -423,12 +429,14 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
       mods: ficha.modificadores,
       condiciones: porAplicado.condiciones,
       bonosTramo: bonosTramoAplicables(tirada.bonosTramo ?? [], estado, enEspecialidad),
+      ajustes: tirada.ajustesFijos ?? [],
     },
     ctx,
     estado,
     tirada.yaIncluidos,
   );
   const { bonosTramo } = sinApilados;
+  const ajustesFijos = sinApilados.ajustes;
   const condiciones = conReduccionesDeUmbral(sinApilados.condiciones, estado, sinApilados.mods, ctx);
   // Proyección activa (A5a): sus penalizadores, a 0 en las tiradas de Actitud.
   const mods = conPenalizadoresAnulados(sinApilados.mods, ctx);

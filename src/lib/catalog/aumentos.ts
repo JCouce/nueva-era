@@ -78,6 +78,7 @@ import type { FuentePsionica } from "../rules/sobreesfuerzo";
 import { SOBREESFUERZO_IRM } from "./sobreesfuerzos";
 import { VISION_AUMENTADA } from "./mejorasArma";
 import { NO_APILA_COBERTURA, NOTA_COBERTURA } from "./cobertura";
+import { NO_APILA_NANOMEDICINA } from "./medicina";
 
 // au-06 (usuario, 2026-11-13): lo que deja percibir cada sentido, una línea en Buscar / percibir.
 const BUSCAR = { tipo: "tiradaId", id: "alerta_activa" } as const;
@@ -769,10 +770,15 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     modificadores: [{ tipo: "atributo", id: "fuerza", valor: 1 }, { tipo: "atributo", id: "aguante", valor: 1 }],
     armaduraNatural: { valor: 1, tipos: ["cinetico"], nota: "Vale contra golpes contundentes e impactos masivos; el máster lo arbitra." },
     // A3: solo nota junto a la carga (Personaje → Estado); el número sigue bloqueado.
+    // au-08 (usuario 2026-11-14): el dato queda aquí, preparado. La app no aplica los penalizadores
+    // por carga (sistema.md §5.5), así que la Matriz no tiene qué reducir.
+    // TODO(au-08): cuando existan los penalizadores por carga, que lean `reducePenalizador` con
+    // `de: "carga"` (rules/aumentos.ts, notasCargaDeAumentos: ahí está el hueco), quiten la nota
+    // «(sin mecanizar)» y pasen la entrada `acciones_fisicas_carga` de abajo a "construido".
     reducePenalizador: [{ de: "carga", valor: 1 }],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "acciones_fisicas_carga" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "penalizadores por carga sin mecanizar (sistema.md §5.5)" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "acciones_fisicas_carga" }, mecanismo: "suma_derivado", estado: "bloqueado", bloqueoPor: "penalizadores por carga sin mecanizar (sistema.md §5.5; au-08: el dato está en reducePenalizador)" },
       { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
     ],
@@ -1342,6 +1348,26 @@ function casillasCobertura(prefijo: string, valor: number, cualquiera: boolean):
   ];
 }
 
+// Enjambre Nanobot 1 (au-07, usuario 2026-11-14, opción b): +3 al usar drogas y medicamentos
+// sobre ti mismo. Casilla solo en la ficha de quien lo lleva, en sus tiradas médicas: Tratar
+// heridas y el «Usar» de los fármacos con tirada (grupo Fármacos; los sin tirada no tiran). Si te
+// cura otro, se lo dices y lo suma a mano: nada en las fichas de los demás (no hay casillas
+// genéricas por una pieza concreta). Con el +5 del Nano-Elixir no se suma: vale el mayor
+// (NO_APILA_NANOMEDICINA). Lleva el origen de la pieza (casillasDeAumentos): el Shock la ve.
+function casillasEnjambreSobreTi(): CondicionTirada[] {
+  const comun = {
+    tipo: "toggle",
+    etiqueta: "Sobre ti mismo",
+    valorActivo: 3,
+    noApila: NO_APILA_NANOMEDICINA,
+    nota: "Solo si te lo aplicas tú. Si te cura otro con medicinas, él también gana +3: díselo y que lo sume a mano. No se suma con el Nano-Elixir: vale el mayor.",
+  } as const;
+  return [
+    { ...comun, id: "aum_enjambre_sobre_ti_medicina", alcance: { tipo: "tiradaId", id: "medicina" } },
+    { ...comun, id: "aum_enjambre_sobre_ti_farmacos", alcance: { tipo: "grupo", grupo: "Fármacos" } },
+  ];
+}
+
 // Sobreesfuerzo del IRM (T6a: au-04, au-05). El nivel 1 habilita la psiónica (Habilitador duro:
 // sin fuente psiónica, «requisito no cumplido») y añade la salvación de sobreesfuerzo tras usar
 // un poder; cada nivel cambia cuándo salta (Habilitador) y el daño por tramo, y en el 4 la
@@ -1906,9 +1932,14 @@ export const IMPLANTES: Implante[] = [
           "Gracias a este implante, el personaje puede utilizar drogas y medicamentos con un bonificador de +3 exclusivamente cuando las utilice de modo personal. Si un tercero utiliza medicinas para sanar al personaje con este implante, también gana el mismo bonificador.",
         ],
         modificadores: [],
+        // au-07: la casilla «Sobre ti mismo», en Tratar heridas y en los fármacos con tirada.
+        condiciones: casillasEnjambreSobreTi(),
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "medicina" }, mecanismo: "eleccion_jugador", estado: "pendiente" },
-          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "medicina" }, mecanismo: "nota_fija", estado: "pendiente" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "medicina" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Fármacos" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          // El +3 de quien te cura: pieza pasiva sin tirada del portador para el tercero (motor.md,
+          // «Dónde vive ese texto»): va en la nota de la propia casilla y en el detalle de la pieza.
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "medicina" }, mecanismo: "nota_fija", estado: "construido" },
         ],
       },
       {

@@ -1248,7 +1248,24 @@ Tandas, en orden:
     `finDeEstado` y `aplicarFinDeEstado` vetadas en la UI (ESLint). Sin migración. fa-03 a FIRME
     (§12), supuestos S106.
   - pl-04 (avería pieza a pieza), más adelante.
-- [ ] **T8 Recursos**: au-01, au-02, au-03, au-07, au-08, td-12, td-19.
+- [x] **T8 Recursos**: au-01, au-02, au-03, au-07, au-08, td-12, td-19 (decisiones del usuario
+  2026-11-14) *(2026-11-14)*. au-01 y au-02 sin código: narrativo, a mano (ni recordatorios de
+  regeneración ni botones de descanso o comida). au-03: constante `DESCANSO`
+  (`catalog/descanso.ts`, foto nueva: breve de 10 min, 2 al día, +3; comida +2, 5 al día; largo
+  8 h) y línea bajo la barra de Fatiga en Recursos (`textoDescanso`, `rules/vitalidad.ts`);
+  cifras viejas corregidas en `sistema.md` §7. au-07: casilla «Sobre ti mismo» +3 del Enjambre
+  Nanobot 1 (`NivelModulo.condiciones`, ids `aum_enjambre_sobre_ti_*`) en Tratar heridas y en el
+  grupo Fármacos, solo en la ficha de quien lo lleva, con el origen de la pieza (el Shock la ve);
+  frente al +5 del Nano-Elixir vale el mayor: grupo `NO_APILA_NANOMEDICINA`
+  (`catalog/medicina.ts`) y `noApila` también en `ajustesFijos` (`sinApilar`, `montaje.ts`).
+  au-08: Matriz Ósea preparada (`reducePenalizador` carga, `motor` bloqueado, `TODO(au-08)` en el
+  catálogo y en `notasCargaDeAumentos`); sin sistema de carga. td-12: `topesDeVida` = el máximo
+  que se ve (misma base que `resolverFicha`, nuevo `rules/baseFicha.ts`): curar topa ahí en todos
+  los caminos y la vida guardada por encima se recorta al leer; `reconciliarVidaAlLeer` ya no
+  rellena el desglose hasta la pérdida en reposo (lo hace la lectura con estados). td-19: fuera
+  la fila de XP y créditos de `/master/fichas` (`ResourceRow`, `Stepper`) y sus acciones
+  (`adjustXpAction`, `adjustCreditosAction`); quedan las de la Mesa. Sin migración. Quedan
+  `TODO(revisar)`: la línea de descanso no mira los rasgos que cambian las cifras (Riux, Siervo).
 - [ ] **T9 Catálogo y tienda**: td-01, td-03, td-04, di-24, eq-23, eq-34, eq-36, eq-37.
 - [ ] Auditoría por lote al terminar.
 

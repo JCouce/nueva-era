@@ -252,8 +252,9 @@ export type Accion = {
   // jugador de por medio (a diferencia de las condiciones), pero tampoco
   // números fantasma — el peso del Lanzagranadas Integrado en el arma que lo
   // lleva, la dificultad -2 fija de su propio disparo... Se suman al
-  // modificador base y se pintan como una línea más del desglose.
-  ajustesFijos?: { valor: number; fuente: string; origen?: OrigenAporte }[];
+  // modificador base y se pintan como una línea más del desglose. `noApila`: grupo de no
+  // apilamiento, como el de las casillas (el +5 del Nano-Elixir, au-07): vale el mayor.
+  ajustesFijos?: { valor: number; fuente: string; origen?: OrigenAporte; noApila?: string }[];
   // Bonos que dependen del tramo ya elegido en la condición "tramo" (la mira
   // telescópica solo ayuda a media y larga): no se funden en el valor de esa
   // opción, salen como su propia línea del desglose — ver condiciones.ts.

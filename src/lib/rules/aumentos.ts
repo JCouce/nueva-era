@@ -385,6 +385,9 @@ export function reduccionesPorAplicadoDeAumentos(sheet: Pick<Sheet, "equipo">): 
 
 // Matriz Ósea: los penalizadores por carga no están mecanizados (§5.5), así que su −1 va como
 // nota junto a la carga (notasDeEstado).
+// TODO(au-08): cuando haya penalizadores por carga, su reducción sale de aquí: la suma de las
+// `reduccionesDeAumentos` con `de: "carga"` (con su fuente), restada al penalizador sin pasar de 0,
+// como hace ajusteUmbralesDeAumentos con heridas y fatiga. Entonces esta nota sobra.
 export function notasCargaDeAumentos(sheet: Pick<Sheet, "equipo">): string[] {
   return reduccionesDeAumentos(sheet).flatMap(({ fuente, r }) =>
     r.de === "carga" ? [`−${r.valor} a los penalizadores por carga (sin mecanizar) · ${fuente}`] : [],

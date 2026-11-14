@@ -3,8 +3,8 @@
 // Las tres categorías de daño restan de los mismos PG (docs/sistema.md §7): hay una sola
 // cantidad, el signo lo pone el modo (daño resta, curación suma) y, en la vida, la
 // categoría dice a qué parte del desglose va (daño) o de cuál sale (curación).
-// El tope es el de siempre (vidaTrasAjuste): suelo 0; la curación topa en el máximo en
-// reposo en la ficha (S74) y en pgMax/fatigaMax en la foto. Cómo se registra y se
+// El tope es el de siempre (vidaTrasAjuste): suelo 0; la curación topa en el máximo que se ve
+// (td-12): en la ficha, topesDeVida con sus estados; en la foto, pgMax/fatigaMax. Cómo se registra y se
 // deshace: registro.ts (tipo "vida").
 import { umbralVital, type AjusteUmbral, type UmbralVital } from "./estados";
 import { vidaTrasAjuste } from "./vitalidad";
@@ -14,8 +14,8 @@ export type RecursoVital = "vida" | "fatiga";
 export type ModoVida = "danio" | "curacion";
 
 // `max`: el que se enseña y contra el que se miden los umbrales; `tope`: hasta dónde
-// sube una curación (en la ficha, el máximo en reposo, que puede ser mayor que `max` si
-// un estado lo ha bajado).
+// sube una curación. Desde td-12 los dos coinciden (en la ficha, topesDeVida con sus estados;
+// en la foto, su máximo); `tope` sigue aparte porque lo da quien lee el objetivo.
 // `danio` (solo vida): el desglose de lo perdido contra `tope`.
 // `ajuste`: la reducción de penalizador de ese recurso (FichaResuelta.ajusteUmbrales.salud o
 // .fatiga: Guerrero, Siervo, aumentos), la misma que aplica la ficha; sin él, el −N base.

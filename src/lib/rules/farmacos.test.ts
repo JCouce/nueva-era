@@ -63,7 +63,8 @@ describe("fármacos con tirada", () => {
   test("Nano-Elixir: +5 real a la tirada, vía ajustesFijos (no es una dificultad)", () => {
     const sheet = conFarmaco("farmaco_nano_elixir", 1);
     const [fila] = accionesDeFarmacos(sheet, []);
-    assert.deepEqual(fila.ajustesFijos, [{ valor: 5, fuente: "Nano-Elixir" }]);
+    // au-07: con su grupo de no apilamiento frente al Enjambre Nanobot (vale el mayor).
+    assert.deepEqual(fila.ajustesFijos, [{ valor: 5, fuente: "Nano-Elixir", noApila: "nanomedicina" }]);
   });
 
   test("Agentes Hemostáticos: los dos valores de dificultad viven en la nota", () => {
@@ -301,5 +302,77 @@ describe("fármacos contra el penalizador por heridas y fatiga", () => {
   test("Calmante y los Geles Avanzado y Nano-Elixir también; los demás fármacos, no", () => {
     const f = resolver(conDosis("farmaco_calmante", "farmaco_gel_sanador_avanzado", "farmaco_nano_elixir", "farmaco_hemostaticos"), HERIDO_Y_FATIGADO);
     assert.deepEqual(deFarmaco(f).sort(), [casilla("farmaco_calmante"), casilla("farmaco_gel_sanador_avanzado"), casilla("farmaco_nano_elixir")].sort());
+  });
+});
+
+describe("Enjambre Nanobot 1: +3 a las medicinas sobre ti mismo (au-07)", () => {
+  const ENJAMBRE = { instanciaId: "enj", catalogoId: "aum_enjambre_nanobot", nivel: 1 };
+  const base: Sheet = {
+    ...defaultSheet(),
+    farmacos: { farmaco_gel_sanador: 1, farmaco_nano_elixir: 1, farmaco_analgesico: 1 },
+    vidaActual: 10,
+    fatigaActual: 10,
+  };
+  const conEnjambre = (nivel = 1): Sheet => ({ ...base, equipo: [{ ...ENJAMBRE, nivel }] });
+  const ficha = (s: Sheet, estados: EstadoActivo[] = []) => resolverFicha(s, { estados, vitalidad: VITALIDAD_DE_FICHA });
+  const filas = (f: FichaResuelta): Accion[] =>
+    [ACCIONES.find((a) => a.id === "medicina")!, ...accionesDeFarmacos(f.ficha, [])].map((t) => conExtrasDeFicha(f, t));
+  const fila = (f: FichaResuelta, id: string) => filas(f).find((t) => t.id === id)!;
+  const casilla = (t: Accion) => (t.condiciones ?? []).find((c) => c.id.startsWith("aum_enjambre_sobre_ti"));
+  const marcada = (f: FichaResuelta, t: Accion): TiradaMontada => {
+    const c = casilla(t);
+    assert.ok(c, t.id);
+    return montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: { ...estadoInicial(t.condiciones ?? []), [c.id]: true } });
+  };
+  const sinMarcar = (f: FichaResuelta, t: Accion): TiradaMontada =>
+    montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: estadoInicial(t.condiciones ?? []) });
+
+  test("casilla en Tratar heridas y en los fármacos con tirada, con el origen de la pieza", () => {
+    const f = ficha(conEnjambre());
+    for (const id of ["medicina", "farmaco_farmaco_gel_sanador", "farmaco_farmaco_nano_elixir"]) {
+      const c = casilla(fila(f, id));
+      assert.ok(c, id);
+      assert.equal(c.tipo, "toggle");
+      assert.match(c.etiqueta, /^Sobre ti mismo · Enjambre Nanobot 1/);
+      assert.equal(c.origen?.instanciaId, "enj");
+    }
+    // Los fármacos sin tirada no tiran: nada que marcar.
+    assert.ok(accionesDirectasDeFarmacos(f.ficha, []).some((a) => a.farmacoId === "farmaco_analgesico"));
+  });
+
+  test("marcada suma +3 en Tratar heridas y en el Gel", () => {
+    const f = ficha(conEnjambre());
+    for (const id of ["medicina", "farmaco_farmaco_gel_sanador"]) {
+      const t = fila(f, id);
+      assert.equal(marcada(f, t).total - sinMarcar(f, t).total, 3, id);
+    }
+  });
+
+  test("con el Nano-Elixir no se suma: vale el +5 y la casilla queda a 0 diciendo por qué", () => {
+    const f = ficha(conEnjambre());
+    const t = fila(f, "farmaco_farmaco_nano_elixir");
+    const m = marcada(f, t);
+    assert.equal(m.total, sinMarcar(f, t).total);
+    assert.ok(m.desglose.some((l) => l.etiqueta === "Nano-Elixir" && l.valor === 5));
+    assert.ok(m.desglose.some((l) => /Sobre ti mismo .*no se suma con Nano-Elixir/.test(l.etiqueta) && l.valor === 0));
+  });
+
+  test("los niveles altos la conservan (se acumulan por id)", () => {
+    const f = ficha(conEnjambre(4));
+    assert.equal(casilla(fila(f, "medicina"))?.tipo, "toggle");
+  });
+
+  test("solo en la ficha de quien lo lleva", () => {
+    const f = ficha(base);
+    for (const t of filas(f)) assert.equal(casilla(t), undefined, t.id);
+  });
+
+  test("el Shock del cuerpo la ve: fracaso, +1; fracaso crítico, fuera", () => {
+    const shock = (gradoId: string): EstadoActivo => ({ estadoId: "shock", gradoId, rondasRestantes: 1 });
+    const pen = ficha(conEnjambre(), [shock("fracaso")]);
+    const t = fila(pen, "medicina");
+    assert.equal(marcada(pen, t).total - sinMarcar(pen, t).total, 1);
+    const apagada = ficha(conEnjambre(), [shock("fracaso_critico")]);
+    assert.equal(casilla(fila(apagada, "medicina")), undefined);
   });
 });

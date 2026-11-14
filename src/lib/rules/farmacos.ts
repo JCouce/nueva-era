@@ -12,7 +12,7 @@
 // dificultad ya conocida (como texto en `nota`, nunca como ajustesFijos: ver
 // comentario de CON_TIRADA) y gasta 1 dosis al confirmar. El resto sigue
 // siendo comunicación de mesa, igual que hoy.
-import { FARMACOS } from "../catalog/medicina";
+import { FARMACOS, NO_APILA_NANOMEDICINA } from "../catalog/medicina";
 import { equipoPorId, type Consumible } from "../catalog/equipo";
 import type { TipoAccionBase } from "./tipoAccion";
 import type { Sheet } from "./sheet";
@@ -47,7 +47,9 @@ const ESTADO_AL_USAR: Readonly<Record<string, EstadoAlUsar>> = {
 // disparo), no el número objetivo que el jugador teclea a mano en el modal
 // — confundir los dos infla el resultado, no fija la dificultad.
 // `ajustesFijos` aquí es SOLO para el +5 real de Nano-Elixir (bono de la
-// dosis a la propia tirada, no una dificultad).
+// dosis a la propia tirada, no una dificultad; no se suma con el Enjambre Nanobot, au-07).
+// El +3 del Enjambre Nanobot 1 «sobre ti mismo» llega a estas filas como casilla de la pieza
+// (grupo Fármacos, catalog/aumentos.ts), no desde aquí.
 // Por defecto Perspicacia + Biociencia (Medicina): entera con Medicina, la mitad sin ella;
 // `habilidades` con dos = la más alta de la ficha ("Biociencia o Actitud"); `sinEspecialidad`,
 // la tirada que no nombra especialidad (Xovromium): entera (docs/sistema.md §3).
@@ -55,7 +57,7 @@ const CON_TIRADA: Record<
   string,
   {
     nota: string;
-    ajustesFijos?: { valor: number; fuente: string }[];
+    ajustesFijos?: NonNullable<Accion["ajustesFijos"]>;
     aplicado?: AplicadoId;
     habilidades?: HabilidadId[];
     sinEspecialidad?: true;
@@ -128,7 +130,8 @@ const CON_TIRADA: Record<
   },
   farmaco_nano_elixir: {
     nota: "Perspicacia + Medicina, dificultad 4 — igual que Gel Sanador Avanzado, con +5 ya sumado a esta tirada.",
-    ajustesFijos: [{ valor: 5, fuente: "Nano-Elixir" }],
+    // «No se apila con aumentos tecnológicos de nanomedicina» (au-07): con el Enjambre, el mayor.
+    ajustesFijos: [{ valor: 5, fuente: "Nano-Elixir", noApila: NO_APILA_NANOMEDICINA }],
     dificultad: 4,
   },
 };
