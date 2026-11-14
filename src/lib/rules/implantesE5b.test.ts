@@ -9,7 +9,7 @@ import { ACCIONES } from "./acciones";
 import { estadoInicial, type CondicionTirada, type EstadoCondiciones } from "./condiciones";
 import { montarTirada, SIN_ELECCION, type TiradaMontada } from "./montaje";
 import { ID_SELECTOR_CONTRA } from "./aumentosTiradas";
-import { accionesDeAtaque } from "./combate";
+import { accionesDeAtaque, accionesDirectasDeAtaque } from "./combate";
 import { permisosDeDotes } from "./dotesEfectos";
 import { resolverGolpe, type EntradaResistir } from "./resistirDanio";
 import type { EstadoActivo } from "./estados";
@@ -145,5 +145,60 @@ describe("E5b · Chasis Osteomuscular, incompatibilidades", () => {
     const s = con(conChasis(1), "aum_integridad_osteotendinosa");
     assert.equal(aumentosIncompatibles(s).length, 2);
     assert.equal(resolver(s).atributos.fuerza - resolver(base()).atributos.fuerza, 2, "las dos siguen dando su Fuerza");
+  });
+});
+
+describe("E5b · Integración táctica: Proyector de Pulso", () => {
+  const conProyector = (nivel: number, s: Sheet = base()) => con(s, CHASIS, { nivel, eleccion: "proyector_pulso" });
+  const disparo = (s: Sheet) => filas(s).find((t) => t.label === "Disparar Proyector de Pulso integrado (Combate a Distancia)");
+
+  test("se elige al comprar el nivel 2+ (Proyector), no en el 1", () => {
+    assert.equal(planCompraAumento(conChasis(1), { catalogoId: CHASIS, nivel: 2 }).ok, false);
+    const sin = planCompraAumento(conChasis(1), { catalogoId: CHASIS, nivel: 2 });
+    assert.match(sin.ok ? "" : sin.motivo, /Elige subsistema integrado/);
+    assert.equal(planCompraAumento(conChasis(1), { catalogoId: CHASIS, nivel: 2, eleccion: "proyector_pulso" }).ok, true);
+    assert.equal(planCompraAumento(base(), { catalogoId: CHASIS, nivel: 1, eleccion: "proyector_pulso" }).ok, false);
+    assert.equal(disparo(conChasis(1)), undefined);
+  });
+
+  test("el disparo cobra 2 de fatiga y no gasta cargas (sin recurso ni contador de disparos)", () => {
+    const s = conProyector(2);
+    const f = resolver(s);
+    const t = conExtrasDeFicha(f, disparo(s)!);
+    assert.equal(t.recursoInstanciaId, undefined);
+    assert.ok(t.ataque!.modos.every((m) => m.gasto === undefined && !m.disparoPulso));
+    for (const modo of ["pulso", "pulso_cargado", "barrido"]) {
+      const m = montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: { ...estadoInicial(t.condiciones ?? []), modo } });
+      assert.equal(m.costeFatiga, 2, modo);
+    }
+    assert.equal(t.origen?.id, CHASIS, "el origen es el implante");
+    assert.match(t.nota ?? "", /Integrado en Chasis Osteomuscular 2 \(nivel 2\): cada disparo cuesta 2 de fatiga, sin cargas/);
+  });
+
+  test("Activar Aguijón cobra 2 de fatiga, sin carga; golpear con el Aguijón pide el estado", () => {
+    const s = conProyector(3);
+    const activar = accionesDirectasDeAtaque(s).find((a) => a.label === "Activar Aguijón (Proyector de Pulso integrado)")!;
+    assert.equal(activar.costeFatiga, 2);
+    assert.equal(activar.gastoRecurso, undefined);
+    assert.equal(activar.habilitacion, undefined, "sin cargas que mirar");
+    assert.deepEqual(activar.estadoAlUsar, { estadoId: "aguijon_activo", fijo: { gradoId: "activo", turnos: 3 } });
+    const golpe = filas(s).find((t) => t.label === "Golpear con Proyector de Pulso integrado (Aguijón)")!;
+    assert.match(golpe.requiereEstado?.motivo ?? "", /2 de fatiga/);
+  });
+
+  test("el nivel del subsistema es el del Chasis: daño 8 + N y modos adicionales hasta el suyo", () => {
+    for (const nivel of [2, 3, 4]) {
+      const t = disparo(conProyector(nivel))!;
+      assert.equal(t.ataque!.modos.find((m) => m.id === "pulso")!.danio, 8 + nivel, `nivel ${nivel}`);
+      const adicional = t.condiciones?.find((c) => c.id === "modo_adicional");
+      const modos = adicional?.tipo === "opcion" ? adicional.opciones.length - 1 : 0;
+      assert.equal(modos, nivel - 1, `modos adicionales del nivel ${nivel}`);
+    }
+  });
+
+  test("no ocupa ranura ni pide armadura: sale sin armadura y no cuenta como subsistema instalado", () => {
+    const s = conProyector(2);
+    assert.ok(disparo(s));
+    assert.equal(s.equipo.some((p) => p.instaladoEnId), false);
   });
 });

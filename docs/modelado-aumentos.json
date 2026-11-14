@@ -6030,7 +6030,12 @@
           "rareza": "Extraño",
           "coste": 36000,
           "sustituye": [],
-          "variantes": null,
+          "variantes": [
+            {
+              "id": "proyector_pulso",
+              "label": "Proyector de Pulso"
+            }
+          ],
           "efectos": [
             {
               "tipo": "atributo",
@@ -6058,6 +6063,14 @@
               "alcance": "salv_fortaleza",
               "valor": 2,
               "condicion": "¿Contra aturdimiento (por impactos)?"
+            },
+            {
+              "tipo": "subsistema_integrado",
+              "opciones": [
+                "proyector_pulso"
+              ],
+              "nivel": 2,
+              "coste": "2 de fatiga por uso, sin cargas"
             }
           ],
           "motor": [
@@ -6114,6 +6127,24 @@
               },
               "mecanismo": "eleccion_jugador",
               "estado": "construido"
+            },
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "ataque_proyector_pulso"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "construido"
+            },
+            {
+              "tipo": "coste",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "ataque_proyector_pulso"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "construido"
             }
           ]
         },
@@ -6122,7 +6153,12 @@
           "rareza": "Extraño",
           "coste": 72000,
           "sustituye": [],
-          "variantes": null,
+          "variantes": [
+            {
+              "id": "proyector_pulso",
+              "label": "Proyector de Pulso"
+            }
+          ],
           "efectos": [
             {
               "tipo": "atributo",
@@ -6150,6 +6186,14 @@
               "alcance": "salv_fortaleza",
               "valor": 3,
               "condicion": "¿Contra aturdimiento (por impactos)?"
+            },
+            {
+              "tipo": "subsistema_integrado",
+              "opciones": [
+                "proyector_pulso"
+              ],
+              "nivel": 3,
+              "coste": "2 de fatiga por uso, sin cargas"
             }
           ],
           "motor": [
@@ -6206,6 +6250,24 @@
               },
               "mecanismo": "eleccion_jugador",
               "estado": "construido"
+            },
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "ataque_proyector_pulso"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "construido"
+            },
+            {
+              "tipo": "coste",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "ataque_proyector_pulso"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "construido"
             }
           ]
         },
@@ -6214,7 +6276,12 @@
           "rareza": "Muy Extraño",
           "coste": 144000,
           "sustituye": [],
-          "variantes": null,
+          "variantes": [
+            {
+              "id": "proyector_pulso",
+              "label": "Proyector de Pulso"
+            }
+          ],
           "efectos": [
             {
               "tipo": "atributo",
@@ -6242,6 +6309,14 @@
               "alcance": "salv_fortaleza",
               "valor": 4,
               "condicion": "¿Contra aturdimiento (por impactos)?"
+            },
+            {
+              "tipo": "subsistema_integrado",
+              "opciones": [
+                "proyector_pulso"
+              ],
+              "nivel": 4,
+              "coste": "2 de fatiga por uso, sin cargas"
             }
           ],
           "motor": [
@@ -6297,6 +6372,24 @@
                 "id": "salv_fortaleza"
               },
               "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "ataque_proyector_pulso"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "construido"
+            },
+            {
+              "tipo": "coste",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "ataque_proyector_pulso"
+              },
+              "mecanismo": "accion_equipo",
               "estado": "construido"
             }
           ]

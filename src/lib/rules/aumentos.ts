@@ -209,9 +209,10 @@ function planImplante(
   const nivel = nivelDeImplante(imp, compra.nivel);
   if (!nivel) return { ok: false, motivo: `${imp.label} no tiene nivel ${compra.nivel}.` };
   if (nivel.variantes?.length) {
-    if (!compra.eleccion) return { ok: false, motivo: "Elige modelo." };
+    const que = nivel.etiquetaVariantes?.toLowerCase() ?? "modelo";
+    if (!compra.eleccion) return { ok: false, motivo: `Elige ${que}.` };
     const variante = nivel.variantes.find((v) => v.id === compra.eleccion);
-    if (!variante) return { ok: false, motivo: "Modelo no válido." };
+    if (!variante) return { ok: false, motivo: `${nivel.etiquetaVariantes ?? "Modelo"} no válido.` };
     const falta = requisitoAtributoQueFalta(variante.requisitoAtributo, atributos);
     if (falta) return { ok: false, motivo: falta };
   } else if (compra.eleccion !== undefined) {

@@ -1006,13 +1006,13 @@ function AccionImplante({ imp, ctx }: { imp: Implante; ctx: ContextoPagoAumento 
         ))}
       </div>
       {variantes.length > 0 && (
-        <Opciones titulo="Modelo" opciones={variantes} elegida={eleccion} onElegir={setEleccion} />
+        <Opciones titulo={nivelInfo?.etiquetaVariantes ?? "Modelo"} opciones={variantes} elegida={eleccion} onElegir={setEleccion} />
       )}
       <CompraAumentoBoton
         compra={{ catalogoId: imp.id, nivel, eleccion: variantes.length ? eleccion : undefined }}
         rareza={nivelInfo?.rareza ?? null}
         etiqueta={actual ? `Subir a nivel ${nivel}` : `Comprar nivel ${nivel}`}
-        pista={variantes.length > 0 && !eleccion ? "Elige modelo." : null}
+        pista={variantes.length > 0 && !eleccion ? `Elige ${(nivelInfo?.etiquetaVariantes ?? "modelo").toLowerCase()}.` : null}
         ctx={ctx}
       />
     </div>

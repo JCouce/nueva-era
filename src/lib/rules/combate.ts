@@ -45,6 +45,7 @@ import { ESTADO_AGUIJON_ID, ESTADO_CAMUFLAJE_ID } from "../catalog/estados";
 import { atributoEfectivo, aplicado } from "./derivados";
 import { criticoDesarmado, golpeDesarmado } from "./golpeDesarmado";
 import { ID_RETROCESO_ENTROPICO, retrocesoEntropico } from "./retrocesoEntropico";
+import { FATIGA_INTEGRADO, notaIntegrado, subsistemasIntegrados, type SubsistemaIntegrado } from "./integracionTactica";
 import { ESPECIALIDAD_ARMA, ESPECIALIDAD_ATAQUE_ESPECIAL, ESPECIALIDAD_LANZAR } from "../catalog/especialidadesArma";
 import type { PermisosDeDotes } from "./dotesEfectos";
 import {
@@ -1123,13 +1124,14 @@ const DESCRIPCION_MODO_PULSO: Record<string, string> = {
 // Lo que el ataque del Proyector le hace al objetivo (eq-23): los `efectosObjetivo` de la pieza,
 // con las dificultades «N + Nivel» ya con el nivel instalado. Cada uno salta con su modo de ataque
 // (`soloEn.modo`, por la etiqueta del modo) y su modo adicional (`soloEn.opcion` / `salvoEn`).
-function efectosDelProyector(pieza: PiezaEquipada): EfectoEnTirada[] {
+// `integrado` (E5b): el del Chasis Osteomuscular, con el implante de origen.
+function efectosDelProyector(pieza: PiezaEquipada, integrado?: SubsistemaIntegrado): EfectoEnTirada[] {
   const cat = equipoPorId(pieza.catalogoId);
   if (cat?.familia !== "subsistema") return [];
   const nivel = pieza.nivel ?? 1;
   const conNivel = (e: EfectoArma): EfectoArma =>
     (e.tipo === "salvacion" && typeof e.dificultad === "number" ? { ...e, dificultad: e.dificultad + nivel } : e);
-  return efectosConFuente(cat.efectosObjetivo?.map(conNivel), cat.label, origenDePieza("equipo", cat, pieza.instanciaId));
+  return efectosConFuente(cat.efectosObjetivo?.map(conNivel), cat.label, integrado?.origen ?? origenDePieza("equipo", cat, pieza.instanciaId));
 }
 
 // El selector «Modo adicional» (eq-23): «Ninguno» y los modos que abren los niveles instalados
@@ -1199,10 +1201,13 @@ function conSigilo(s: ReturnType<typeof sigiloDeAtaque>): Pick<Accion, "sigiloAl
   return { sigiloAlAtacar: s.sigiloAlAtacar, ...(s.efecto && { efectos: [s.efecto] }) };
 }
 
+// `integrado` (E5b, Chasis Osteomuscular): cada disparo cuesta 2 de fatiga (`costeFatiga`), sin
+// cargas ni contador de disparos; el origen es el implante.
 function tiradaDeProyectorPulso(
   sheet: Sheet,
   pieza: PiezaEquipada,
   habilidad: Extract<Accion["habilidad"], "combate_distancia" | "tecnociencia">,
+  integrado?: SubsistemaIntegrado,
 ): Accion {
   const nivel = pieza.nivel ?? 1;
   const modo: CondicionTirada = {
@@ -1222,8 +1227,11 @@ function tiradaDeProyectorPulso(
   // Los efectos sobre el objetivo (Shock, Hemorragia y los del modo adicional) van como dato y
   // salen en el resultado; aquí, el alcance y la esquiva del Barrido (la tirada de los del área).
   const nota = [
+    ...(integrado ? [notaIntegrado(integrado, "cada disparo")] : []),
     "Daño grave.",
-    `Pulso: 1 carga cada ${DISPAROS_POR_CARGA_PULSO} disparos (la gasta el primero; recargar empieza de nuevo), alcance ${tramos(alcancePulso("pulso", nivel))}.`,
+    integrado
+      ? `Pulso: alcance ${tramos(alcancePulso("pulso", nivel))}.`
+      : `Pulso: 1 carga cada ${DISPAROS_POR_CARGA_PULSO} disparos (la gasta el primero; recargar empieza de nuevo), alcance ${tramos(alcancePulso("pulso", nivel))}.`,
     `Pulso Cargado: alcance ${tramos(alcancePulso("pulso_cargado", nivel))}.`,
     `Barrido: área 6x6, alcance ${tramos(alcancePulso("barrido", nivel))} · los del área esquivan a ${7 + nivel}; sin crítico.`,
   ].join(" · ");
@@ -1231,9 +1239,12 @@ function tiradaDeProyectorPulso(
 
   const etiquetaHabilidad = habilidad === "combate_distancia" ? "Combate a Distancia" : "Tecnociencia";
 
+  // Integrado: lo que gasta cada modo, fuera (paga la fatiga de la fila).
+  const gasto = (g: { gasto: number; disparoPulso?: true }) => (integrado ? {} : g);
   return {
     id: `ataque_proyector_pulso_${habilidad}_${pieza.instanciaId}`,
-    label: `Disparar Proyector de Pulso (${etiquetaHabilidad})`,
+    label: `Disparar Proyector de Pulso${integrado ? " integrado" : ""} (${etiquetaHabilidad})`,
+    ...(integrado && { origen: integrado.origen }),
     grupo: "Ataques",
     aplicado: "reflejos",
     habilidad,
@@ -1245,10 +1256,9 @@ function tiradaDeProyectorPulso(
     // empleo de dote (Desenfundado Rápido) no lo alcanza. Confirmado por el usuario.
     familiaArma: "ataque_fuego",
     nota,
-    efectosObjetivo: efectosDelProyector(pieza),
+    efectosObjetivo: efectosDelProyector(pieza, integrado),
     ...conSigilo(sigiloProyectorPulso(sheet, pieza, RUIDO_DISPARO)),
-    recursoInstanciaId: pieza.instanciaId,
-    recursoUnidad: "cargas",
+    ...(integrado ? { costeFatiga: FATIGA_INTEGRADO } : { recursoInstanciaId: pieza.instanciaId, recursoUnidad: "cargas" }),
     condiciones: [condicionTramoPulso(nivel), modo, ...(modoAdicional ? [modoAdicional] : [])],
     // Con su etiqueta de la tabla: por ella salta cada efecto (soloEn.modo).
     ataque: {
@@ -1259,8 +1269,7 @@ function tiradaDeProyectorPulso(
           danio: 8 + nivel,
           formulaDanio: null,
           categoriaDanio: "Grave",
-          gasto: gastoDisparoPulso(pieza),
-          disparoPulso: true,
+          ...gasto({ gasto: gastoDisparoPulso(pieza), disparoPulso: true }),
         },
         {
           id: "pulso_cargado",
@@ -1268,7 +1277,7 @@ function tiradaDeProyectorPulso(
           danio: 11 + nivel,
           formulaDanio: null,
           categoriaDanio: "Grave",
-          gasto: GASTO_MODO_PULSO.pulso_cargado,
+          ...gasto({ gasto: GASTO_MODO_PULSO.pulso_cargado }),
         },
         {
           id: "barrido",
@@ -1276,7 +1285,7 @@ function tiradaDeProyectorPulso(
           danio: 10 + nivel,
           formulaDanio: null,
           categoriaDanio: "Grave",
-          gasto: GASTO_MODO_PULSO.barrido,
+          ...gasto({ gasto: GASTO_MODO_PULSO.barrido }),
         },
       ],
     },
@@ -1292,12 +1301,13 @@ function tiradaDeProyectorPulso(
 // TODO(revisar): con la dote el Aguijón sigue siendo Reflejos fijo, sin interruptor y con el
 // daño de Fuerza; las armas Sutil normales ofrecen elegir y sacan el daño Sutil de Potencia.
 // Se dejó como estaba (decisión del usuario: "con la dote, como hoy").
-function tiradaGolpeAguijon(sheet: Sheet, mods: ModificadorConFuente[], pieza: PiezaEquipada, sutil: boolean): Accion {
+function tiradaGolpeAguijon(sheet: Sheet, mods: ModificadorConFuente[], pieza: PiezaEquipada, sutil: boolean, integrado?: SubsistemaIntegrado): Accion {
   const nivel = pieza.nivel ?? 1;
   const modoAdicional = condicionModoAdicional(pieza);
   return {
     id: `ataque_proyector_pulso_aguijon_${pieza.instanciaId}`,
-    label: "Golpear con Proyector de Pulso (Aguijón)",
+    label: `Golpear con Proyector de Pulso${integrado ? " integrado" : ""} (Aguijón)`,
+    ...(integrado && { origen: integrado.origen }),
     grupo: "Ataques",
     aplicado: sutil ? "reflejos" : "potencia",
     habilidad: "combate_melee",
@@ -1307,11 +1317,13 @@ function tiradaGolpeAguijon(sheet: Sheet, mods: ModificadorConFuente[], pieza: P
     // carga la gasta «Activar Aguijón» (usuario, 2026-11-14): golpear no gasta y pide el estado.
     nota: [
       "Repliega el emisor a un pincho corto de energía y lo descarga a bocajarro, casi sin gesto — Sutil.",
-      `Con el Aguijón activo (1 carga lo mantiene ${nivel} ronda(s)), golpear no gasta.`,
+      integrado
+        ? `Con el Aguijón activo (activarlo cuesta ${FATIGA_INTEGRADO} de fatiga y dura ${nivel} ronda(s)), golpear no gasta.`
+        : `Con el Aguijón activo (1 carga lo mantiene ${nivel} ronda(s)), golpear no gasta.`,
     ].join(" · "),
-    efectosObjetivo: efectosDelProyector(pieza),
+    efectosObjetivo: efectosDelProyector(pieza, integrado),
     ...conSigilo(sigiloProyectorPulso(sheet, pieza, null)),
-    requiereEstado: REQUIERE_AGUIJON,
+    requiereEstado: integrado ? REQUIERE_AGUIJON_INTEGRADO : REQUIERE_AGUIJON,
     ...(modoAdicional && { condiciones: [modoAdicional] }),
     ataque: {
       modos: [
@@ -1328,10 +1340,11 @@ function tiradaGolpeAguijon(sheet: Sheet, mods: ModificadorConFuente[], pieza: P
 }
 
 // Solo con Bloqueo (lo filtra accionesDeAtaque); Reflejos solo con Combate Sutil, como el golpe.
-function tiradaBloqueoAguijon(pieza: PiezaEquipada, sutil: boolean): Accion {
+function tiradaBloqueoAguijon(pieza: PiezaEquipada, sutil: boolean, integrado?: SubsistemaIntegrado): Accion {
   return {
     id: `bloquear_proyector_pulso_aguijon_${pieza.instanciaId}`,
-    label: "Bloquear con Proyector de Pulso (Aguijón)",
+    label: `Bloquear con Proyector de Pulso${integrado ? " integrado" : ""} (Aguijón)`,
+    ...(integrado && { origen: integrado.origen }),
     grupo: "Defensa",
     aplicado: sutil ? "reflejos" : "potencia",
     habilidad: "combate_melee",
@@ -1339,17 +1352,33 @@ function tiradaBloqueoAguijon(pieza: PiezaEquipada, sutil: boolean): Accion {
     familiaArma: "bloquear_melee",
     nota: "Reacción gratuita e ilimitada, como Esquivar — con el Aguijón activo.",
     condiciones: [CONDICION_ATACANTES_ADICIONALES],
-    requiereEstado: REQUIERE_AGUIJON,
+    requiereEstado: integrado ? REQUIERE_AGUIJON_INTEGRADO : REQUIERE_AGUIJON,
   };
 }
 
 // Golpear y bloquear con el Aguijón piden el estado «Aguijón activo» (usuario, 2026-11-14).
 const REQUIERE_AGUIJON = { estadoId: ESTADO_AGUIJON_ID, motivo: "Activa el Aguijón primero (1 carga)." };
+const REQUIERE_AGUIJON_INTEGRADO = { estadoId: ESTADO_AGUIJON_ID, motivo: `Activa el Aguijón primero (${FATIGA_INTEGRADO} de fatiga).` };
 
 // «Activar Aguijón» (sync Drive 2026-11-14, «1 carga × nivel en turnos»; usuario 2026-11-14): gasta
 // 1 carga y pone «Aguijón activo» con tantas rondas como el nivel, como «Activar camuflaje».
-function accionActivarAguijon(sheet: Sheet, pieza: PiezaEquipada): AccionDirecta {
+// `integrado` (E5b): cuesta 2 de fatiga en vez de la carga.
+function accionActivarAguijon(sheet: Sheet, pieza: PiezaEquipada, integrado?: SubsistemaIntegrado): AccionDirecta {
   const nivel = pieza.nivel ?? 1;
+  if (integrado) {
+    return {
+      id: `activar_aguijon_${pieza.instanciaId}`,
+      label: "Activar Aguijón (Proyector de Pulso integrado)",
+      grupo: "Acciones",
+      confirmarLabel: "Activar",
+      nota:
+        `${notaIntegrado(integrado, "activarlo")} Te pone «Aguijón activo» ${nivel} ronda(s): ` +
+        "mientras dure, golpear y bloquear con el Aguijón no gastan. Las rondas corren en combate; fuera, quítalo a mano.",
+      estadoAlUsar: { estadoId: ESTADO_AGUIJON_ID, fijo: { gradoId: "activo", turnos: nivel } },
+      costeFatiga: FATIGA_INTEGRADO,
+      origen: integrado.origen,
+    };
+  }
   const recurso = recursoDe(sheet, pieza.instanciaId);
   return {
     id: `activar_aguijon_${pieza.instanciaId}`,
@@ -1507,16 +1536,18 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
   // futuro otro subsistema construye su propia acción (la Malla Plasmática
   // es la siguiente candidata, ver Hallazgo #1 ampliado), este `if` necesita
   // una rama nueva, no una reescritura.
-  subsistema: (sheet, pieza, _cat, mods, permisos) => {
-    if (pieza.catalogoId !== "proyector_pulso") return [];
-    return [
-      tiradaDeProyectorPulso(sheet, pieza, "combate_distancia"),
-      tiradaDeProyectorPulso(sheet, pieza, "tecnociencia"),
-      tiradaGolpeAguijon(sheet, mods, pieza, permisos.sutil.includes("ataque_melee")),
-      tiradaBloqueoAguijon(pieza, permisos.sutil.includes("bloquear_melee")),
-    ];
-  },
+  subsistema: (sheet, pieza, _cat, mods, permisos) => (pieza.catalogoId === "proyector_pulso" ? filasDelProyector(sheet, pieza, mods, permisos) : []),
 };
+
+// Las filas del Proyector de Pulso: el de la armadura y el integrado en el Chasis (E5b).
+function filasDelProyector(sheet: Sheet, pieza: PiezaEquipada, mods: ModificadorConFuente[], permisos: PermisosDeDotes, integrado?: SubsistemaIntegrado): Accion[] {
+  return [
+    tiradaDeProyectorPulso(sheet, pieza, "combate_distancia", integrado),
+    tiradaDeProyectorPulso(sheet, pieza, "tecnociencia", integrado),
+    tiradaGolpeAguijon(sheet, mods, pieza, permisos.sutil.includes("ataque_melee"), integrado),
+    tiradaBloqueoAguijon(pieza, permisos.sutil.includes("bloquear_melee"), integrado),
+  ];
+}
 
 // T6 (docs/motor.md §Escalabilidad): el registro de arriba sigue siendo la
 // autoridad de "sé renderizar esta familia" — esto es un filtro ADICIONAL,
@@ -1601,6 +1632,10 @@ export function accionesDeAtaque(ficha: Sheet, mods: ModificadorConFuente[], per
   }
   const bloqueoBrazo = brazo ? tiradaBloqueoBrazo(brazo, golpeDesarmado(sheet)?.bloqueoSinPenalizador ?? null) : null;
   if (bloqueoBrazo) tiradas.push(bloqueoBrazo);
+  // Integración táctica del Chasis Osteomuscular (E5b): el Proyector anclado en el cuerpo.
+  for (const s of subsistemasIntegrados(sheet)) {
+    if (s.catalogoId === "proyector_pulso") tiradas.push(...filasDelProyector(sheet, s.pieza, mods, permisos, s));
+  }
   tiradas.push(...accionesDeGranadas(sheet));
   return tiradas
     .map((t) => conHabilitacion(t, habilitacionDeFamilia(t.familiaArma, permisos)))
@@ -1745,6 +1780,10 @@ export function accionesDirectasDeAtaque(sheet: Sheet): AccionDirecta[] {
     } else if (cat?.familia === "subsistema" && pieza.catalogoId === "proyector_pulso") {
       acciones.push({ ...accionActivarAguijon(sheet, pieza), origen: origenDePieza("equipo", cat, pieza.instanciaId) });
     }
+  }
+  // Integración táctica del Chasis Osteomuscular (E5b): 2 de fatiga en vez de cargas.
+  for (const s of subsistemasIntegrados(sheet)) {
+    if (s.catalogoId === "proyector_pulso") acciones.push(accionActivarAguijon(sheet, s.pieza, s));
   }
   return acciones;
 }

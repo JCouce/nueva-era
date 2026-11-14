@@ -135,12 +135,16 @@ export type OperacionGenetica = {
 // `requisitoAtributo` (sync Drive 2026-11-14): el atributo que pide para instalarse (Brazo 4
 // Fuerte, Fuerza 2), con el valor permanente de los requisitos (rules/aumentos.ts).
 export type RequisitoAtributoAumento = { id: AtributoId; min: number };
+// `subsistemaIntegrado` (E5b, Chasis Osteomuscular 2-4): la opción es un subsistema del catálogo
+// anclado en el cuerpo, con el nivel del implante (rules/integracionTactica.ts).
+export type SubsistemaIntegrable = "proyector_pulso" | "camuflaje_trifasico";
 export type VarianteImplante = {
   id: string;
   label: string;
   detalle: string[];
   extremidad?: ExtremidadBionica;
   requisitoAtributo?: RequisitoAtributoAumento;
+  subsistemaIntegrado?: SubsistemaIntegrable;
 };
 // A2a: `modificadores` lleva los bonos siempre activos (Ojo a distancia y a la Alerta
 // pasiva), `condiciones` las casillas con alcance y `salvaciones` lo que entra en el
@@ -151,6 +155,8 @@ export type VarianteImplante = {
 // acciones con dado (`tirada`).
 export type NivelImplante = NivelModulo & {
   variantes?: VarianteImplante[];
+  // Cómo se llama la elección de `variantes` en la Tienda y al pedirla («Modelo» si no lo dice).
+  etiquetaVariantes?: string;
   salvaciones?: EfectoSalvacion[];
   // au-06: lo que deja percibir, como texto en Buscar / percibir.
   textos?: TextoDeNivel[];
@@ -1562,6 +1568,24 @@ const MOTOR_SALVACIONES_CHASIS: MotorMetadata[] = [
   { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
 ];
 
+// Integración táctica (nivel 2+; usuario, 2026-11-14): un subsistema elegido al comprar el nivel (el
+// patrón de los modelos del Brazo: `variantes`, guardado en PiezaEquipada.eleccion), con el nivel
+// del Chasis. Cada uso o activación cuesta 2 de fatiga en vez de cargas (rules/integracionTactica.ts).
+const ETIQUETA_INTEGRACION = "Subsistema integrado";
+const PROYECTOR_INTEGRADO: VarianteImplante = {
+  id: "proyector_pulso",
+  label: "Proyector de Pulso",
+  detalle: ["El Proyector de Pulso anclado en el cuerpo, con el nivel del Chasis. Cada disparo y activar el Aguijón cuestan 2 de fatiga, sin cargas."],
+  subsistemaIntegrado: "proyector_pulso",
+};
+const VARIANTES_INTEGRACION: VarianteImplante[] = [PROYECTOR_INTEGRADO];
+const MOTOR_INTEGRACION: MotorMetadata[] = [
+  // Proyector integrado: sus filas (disparo, Aguijón) con el nivel del Chasis…
+  { tipo: "accion", afecta: { modo: "accion_nueva", id: "ataque_proyector_pulso" }, mecanismo: "accion_equipo", estado: "construido" },
+  // …y 2 de fatiga en vez de cargas en cada disparo y al activar el Aguijón.
+  { tipo: "coste", afecta: { modo: "accion_nueva", id: "ataque_proyector_pulso" }, mecanismo: "accion_equipo", estado: "construido" },
+];
+
 // Lo común a cada nivel: Fuerza, armadura natural y golpe desarmado.
 const MOTOR_NIVEL_CHASIS: MotorMetadata[] = [
   // Fuerza +N: Modificador "atributo" (atributos, aplicados, derivados y daño de Fuerza).
@@ -2534,7 +2558,9 @@ export const IMPLANTES: Implante[] = [
           "Integración Táctica: Permite anclar quirúrgicamente en el cuerpo un subsistema táctico de hasta Nivel 2 como los que utilizan las armaduras. El personaje podrá elegir exclusivamente entre: el Proyector de Pulso o el Camuflaje Trifásico. Al alimentarse directamente de la bioelectricidad y el metabolismo del usuario en lugar de baterías externas, cada uso o activación consume 2 puntos de fatiga del personaje. En el caso del El camuflaje subdérmico este puede «traspasar» o sincronizarse con Traje Ultra Ligero, Ropa Inteligente o Ropa Reforzada, pero queda bloqueado por armaduras más pesadas.",
         ],
         ...nivelChasis(2),
-        motor: [...MOTOR_NIVEL_CHASIS, ...MOTOR_SALVACIONES_CHASIS],
+        variantes: VARIANTES_INTEGRACION,
+        etiquetaVariantes: ETIQUETA_INTEGRACION,
+        motor: [...MOTOR_NIVEL_CHASIS, ...MOTOR_SALVACIONES_CHASIS, ...MOTOR_INTEGRACION],
       },
       {
         nivel: 3,
@@ -2546,7 +2572,9 @@ export const IMPLANTES: Implante[] = [
           "La modificación a estos niveles suele hacerse muy evidente a simple vista alterando el aspecto físico del usuario.",
         ],
         ...nivelChasis(3),
-        motor: [...MOTOR_NIVEL_CHASIS, ...MOTOR_SALVACIONES_CHASIS],
+        variantes: VARIANTES_INTEGRACION,
+        etiquetaVariantes: ETIQUETA_INTEGRACION,
+        motor: [...MOTOR_NIVEL_CHASIS, ...MOTOR_SALVACIONES_CHASIS, ...MOTOR_INTEGRACION],
       },
       {
         nivel: 4,
@@ -2558,7 +2586,9 @@ export const IMPLANTES: Implante[] = [
           "Una vez por descanso, el usuario puede gastar 2 puntos de fatiga para duplicar durante un turno su capacidad de carga o para realizar una prueba de potencia o fortaleza que implique soportar o vencer una resistencia con ventaja: Realizar o evitar agarres y derribos, soportar impactos cinéticos extremos, resistir efectos de aturdimiento físico y llevar a cabo proezas de fuerza bruta como romper objetos.",
         ],
         ...nivelChasis(4),
-        motor: [...MOTOR_NIVEL_CHASIS, ...MOTOR_SALVACIONES_CHASIS],
+        variantes: VARIANTES_INTEGRACION,
+        etiquetaVariantes: ETIQUETA_INTEGRACION,
+        motor: [...MOTOR_NIVEL_CHASIS, ...MOTOR_SALVACIONES_CHASIS, ...MOTOR_INTEGRACION],
       },
     ],
   },

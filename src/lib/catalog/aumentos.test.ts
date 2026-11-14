@@ -251,10 +251,11 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_control_sensorial 2": 2,
     // E5b. Chasis Osteomuscular: Fuerza, armadura natural, desarmado letal y bloquear sin el −3.
     "aum_chasis_osteomuscular 1": 4,
-    // 2-4: lo del 1 con su N, más la casilla contra el derribo y el «Contra…» del aturdimiento.
-    "aum_chasis_osteomuscular 2": 6,
-    "aum_chasis_osteomuscular 3": 6,
-    "aum_chasis_osteomuscular 4": 6,
+    // 2-4: lo del 1 con su N, más la casilla contra el derribo y el «Contra…» del aturdimiento, y el
+    // Proyector integrado (Acción y Coste).
+    "aum_chasis_osteomuscular 2": 8,
+    "aum_chasis_osteomuscular 3": 8,
+    "aum_chasis_osteomuscular 4": 8,
   };
 
   test("A1, A2a, A2b, A3, A4a, A4b, A5a, A5b, A6a, A6b y A7: solo lo construido (o lo narrativo) está marcado como construido", () => {
